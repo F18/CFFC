@@ -1,0 +1,371 @@
+#
+# Reconstruction2D input file
+#
+###########################
+# Set function parameters
+###########################
+#
+Function_Definition =
+Example8
+Method_Used =
+CENO
+CENO_Tolerance =
+300
+Reconstruction_Order =
+3
+Limiter =
+Venkatakrishnan
+#Barth_Jespersen
+###########################
+# Set grid parameters
+###########################
+#
+Grid_Type      =
+Rectangular_Box
+Box_Width      =
+2.0
+Box_Height     =
+2.0
+Number_of_Cells_Idir =
+80
+Number_of_Cells_Jdir =
+80
+Number_of_Blocks_Idir =
+1
+Number_of_Blocks_Jdir =
+1
+Number_of_Subgrid_Points_Idir =
+3
+Number_of_Subgrid_Points_Jdir =
+3
+##### Mesh Stretching Parameters *********
+#Stretch_I =
+#Sine
+#Min_Clustering
+#Max-Clustering
+#Midpt_Clustering
+#Cosine
+#MinMax_Clustering
+#Linear
+#Stretch_J =
+#Min_Clustering
+#MinMax_Clustering
+#Beta_I =
+#1.001
+#Beta_J =
+#1.0001
+Iter_UnsmoothMesh =
+0
+Output_File_Name =
+Abgrall_CENO_80x80_BadMesh
+#
+Output_Format_Type =
+tecplot
+#######################
+# Execute program
+#######################
+Execute
+Write_Output_Mesh
+#Write_Mesh_Definition
+Write_Output
+Write_Output_OneZone
+Write_Output_Solution_Nodes
+Write_Output_Full_Solution_Nodes
+Write_Function_Graph
+############################
+# Terminate program
+############################
+Terminate
+# -------------------------------------
+# Test 2
+# --------------------------------------
+Reconstruction_Order =
+2
+Output_File_Name =
+Abgrall_CENO_Order2
+Execute
+Write_Output_OneZone
+#
+# --------------------------------------
+# Test 3
+# ______________________________________
+Reconstruction_Order =
+3
+Output_File_Name =
+Abgrall_CENO_Order3
+Execute
+Write_Output_OneZone
+Terminate
+#
+# --------------------------------------
+# Test 4
+# ______________________________________
+# --------------------------------------
+# Test 5
+# ______________________________________
+# --------------------------------------
+# Test 6
+# ______________________________________
+
+##############################################################
+##########################  HELP  ############################
+##############################################################
++-------+                     |            +----------------+
+| Field |                     |            | Possible Value |
++-------+                     |            +----------------+
+--------------------------------------------------------------
+                              |
+Function_Definition:                             Default                   
+Function_Definition:                             Example1
+Function_Definition:                             Example2
+Function_Definition:                             Example3
+Function_Definition:                             Example4
+*************************************************************
+Reconstruction_Order:                   positive integer number 
+*************************************************************
+Grid_Type:                                   Grid_Cartesian
+Grid_Type:                               Grid_Predefined1  (x=-1.5 : 1.5)
+Grid_Type:			 Grid_Read_From_Data_File
+************************************************************
+X_min:( min X of the Domain)                      val
+Length (Domain length)	 			  val
+X_Shift:					  val
+X_Scale:                                          val
+************************************************************
+CellNumber_or_DeltaCell:
+ --for number				 	   N
+ -- for delta                                      D
+***********************************************************
+Number_of_Cells_Idir: 				  val
+Delta_Cell: 					  val
+***********************************************************
+SubGridPoints_or_DeltaSubGrid:
+ -- for number 					   N
+ -- for delta                                      D
+***********************************************************
+Number_of_Subgrid_Points:			  val
+Delta_of_Subgrid:				  val
+***********************************************************
+Output_File_Name:				file_name
+***********************************************************
+Output_Format_Type:				tecplot
+Output_Format_Type:				matlab
+**********************************************************
+
+
+**********************************************************
+Commands:
+
+------------------------------------------------------------
+# Execute program			Execute
+------------------------------------------------------------
+# Continue program			Continue
+------------------------------------------------------------
+# Write output cells			Write_Output_Cells
+------------------------------------------------------------
+# Write output				Write_Output
+------------------------------------------------------------
+# Write Cell Center Values		Write_Cell_Comparison
+------------------------------------------------------------
+# Write Mathematical Function Plot	Write_Function_Graph
+------------------------------------------------------------
+# Write the derivatives			Write_Output_Derivatives
+------------------------------------------------------------
+# Terminate program			Terminate
+------------------------------------------------------------
+
+
+
+#
+# Reconstruction2D input file
+#
+##########################################
+# Set method for solving the linear system
+##########################################
+Method_Used =
+LSH
+Geometric_Weighting =
+Yes
+Data_Dependent_Weighting =
+Yes
+#
+###########################
+# Set function parameters
+###########################
+#
+Function_Definition =
+Example7
+Reconstruction_Order =
+0
+###########################
+# Set grid parameters
+###########################
+#
+Grid_Type      =
+Grid_Cartesian
+X_min
+-1.0          =
+#-1.65
+Y_min
+-1.0          =
+#-1.8
+Length_Xdir    =
+2.0
+#4.25
+Length_Ydir    =
+2.0
+#5.15
+CellNumber_or_DeltaCell =
+N
+Number_of_Cells_Idir =
+64
+Delta_Cell_Idir =
+0.2323
+Number_of_Cells_Jdir =
+64
+Delta_Cell_Jdir =
+0.2323
+SubGridPoints_or_DeltaSubGrid =
+N
+Number_of_Subgrid_Points_Idir =
+5
+Delta_of_Subgrid_Idir =
+0.1
+Number_of_Subgrid_Points_Jdir =
+5
+Delta_of_Subgrid_Jdir =
+0.1
+Output_File_Name =
+Polynomial2D_Order5
+Output_Format_Type =
+tecplot
+#######################
+# Execute program
+#######################
+Execute
+#######################
+# Write output
+#######################
+# Write_Output
+#######################
+# Write Cell Center Values
+######################
+# Write_Cell_Comparison
+######################
+# Write Mathematical Function
+######################
+# Write_Function_Graph
+############################
+#Write the derivatives
+############################
+#Write_Output_Derivatives
+############################
+# Terminate program
+############################
+Terminate
+# -------------------------------------
+# Test 2
+# --------------------------------------
+Number_of_Cells_Idir =
+32
+Number_of_Cells_Jdir =
+32
+Execute
+#
+# --------------------------------------
+# Test 3
+# ______________________________________
+Number_of_Cells_Idir =
+64
+Number_of_Cells_Jdir =
+64
+Execute
+#
+# --------------------------------------
+# Test 4
+# ______________________________________
+Number_of_Cells_Idir =
+128
+Number_of_Cells_Jdir =
+128
+Execute
+Terminate
+Number_of_Cells_Idir =
+256
+Number_of_Cells_Jdir =
+256
+Execute
+Number_of_Cells_Idir =
+512
+Number_of_Cells_Jdir =
+512
+Execute
+Terminate
+
+##############################################################
+##########################  HELP  ############################
+##############################################################
++-------+                     |            +----------------+
+| Field |                     |            | Possible Value |
++-------+                     |            +----------------+
+--------------------------------------------------------------
+                              |
+Function_Definition:                             Default                   
+Function_Definition:                             Example1
+Function_Definition:                             Example2
+Function_Definition:                             Example3
+Function_Definition:                             Example4
+*************************************************************
+Reconstruction_Order:                   positive integer number 
+*************************************************************
+Grid_Type:                                   Grid_Cartesian
+Grid_Type:                               Grid_Predefined1  (x=-1.5 : 1.5)
+Grid_Type:			 Grid_Read_From_Data_File
+************************************************************
+X_min:( min X of the Domain)                      val
+Length (Domain length)	 			  val
+X_Shift:					  val
+X_Scale:                                          val
+************************************************************
+CellNumber_or_DeltaCell:
+ --for number				 	   N
+ -- for delta                                      D
+***********************************************************
+Number_of_Cells_Idir: 				  val
+Delta_Cell: 					  val
+***********************************************************
+SubGridPoints_or_DeltaSubGrid:
+ -- for number 					   N
+ -- for delta                                      D
+***********************************************************
+Number_of_Subgrid_Points:			  val
+Delta_of_Subgrid:				  val
+***********************************************************
+Output_File_Name:				file_name
+***********************************************************
+Output_Format_Type:				tecplot
+Output_Format_Type:				matlab
+**********************************************************
+
+
+**********************************************************
+Commands:
+
+------------------------------------------------------------
+# Execute program			Execute
+------------------------------------------------------------
+# Continue program			Continue
+------------------------------------------------------------
+# Write output cells			Write_Output_Cells
+------------------------------------------------------------
+# Write output				Write_Output
+------------------------------------------------------------
+# Write Cell Center Values		Write_Cell_Comparison
+------------------------------------------------------------
+# Write Mathematical Function Plot	Write_Function_Graph
+------------------------------------------------------------
+# Write the derivatives			Write_Output_Derivatives
+------------------------------------------------------------
+# Terminate program			Terminate
+------------------------------------------------------------
+

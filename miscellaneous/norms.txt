@@ -1,0 +1,110 @@
+/**********************************************************************
+ * Routine: Output_Ringleb_Flow_Error                                 *
+ *                                                                    *
+ *                                                                    *
+ **********************************************************************/
+void Output_Ringleb_Flow_Error(Dusty2D_Quad_Block &SolnBlk,
+			       double &l1_norm,
+			       double &l2_norm,
+			       double &max_norm) {
+
+  Dusty2D_pState W;
+
+//    for (int j = SolnBlk.Grid.JCl; j <= SolnBlk.Grid.JCu; j++) {
+//      for (int i = SolnBlk.Grid.ICl; i <= SolnBlk.Grid.ICu; i++) {
+//        W = RinglebFlow(W,SolnBlk.Grid.Cell[i][j].Xc);
+//        l1_norm += fabs(W.rho - SolnBlk.W[i][j].rho);
+//        l2_norm += sqr(W.rho - SolnBlk.W[i][j].rho);
+//        max_norm = max(max_norm,fabs(W.rho - SolnBlk.W[i][j].rho));
+//      }
+//    }
+//    l1_norm = l1_norm/((SolnBlk.NCi-2*SolnBlk.Nghost)*(SolnBlk.NCj-2*SolnBlk.Nghost));
+//    l2_norm = sqrt(l2_norm/((SolnBlk.NCi-2*SolnBlk.Nghost)*(SolnBlk.NCj-2*SolnBlk.Nghost)));
+
+  Vector2D X, X1, X2, X3, X4;
+  double *w;
+  Dusty2D_pState **f;
+  double *epsilon;
+  double *eta;
+
+  double epsilon1 = -ONE, epsilon2 = ONE, epsilon3 = -ONE, epsilon4 = ONE;
+  double eta1 = -ONE, eta2 = -ONE, eta3 =  ONE, eta4 = ONE;
+  double N1, N2, N3, N4;
+
+  l1_norm = ZERO;
+  l2_norm = ZERO;
+  max_norm = ZERO;
+ 
+  // Allocate memory.
+  w = new double[3];
+  f = new Dusty2D_pState*[3];
+  epsilon = new double[3];
+  eta = new double[3];
+  for (int i = 0; i < 3; i++) f[i] = new Dusty2D_pState[3];
+
+  // Assign values... the dumbest way possible.
+  w[0] = 5.0/9.0;
+  w[1] = 8.0/9.0;
+  w[2] = 5.0/9.0;
+  epsilon[0] = -sqrt(15.0)/5.0;
+  epsilon[1] = 0.0;
+  epsilon[2] = sqrt(15.0)/5.0;
+  eta[0] = -sqrt(15.0)/5.0;
+  eta[1] = 0.0;
+  eta[2] = sqrt(15.0)/5.0;
+
+  // Get the value of 'f' at each point then perform the integration and finally compute the norm.
+  for (int j = SolnBlk.Grid.JCl; j <= SolnBlk.Grid.JCu; j++) {
+    for (int i = SolnBlk.Grid.ICl; i <= SolnBlk.Grid.ICu; i++) {
+
+      // Get the value of 'f' at each point.
+      for (int jj = 0; jj < 3; jj++) {
+	for (int ii = 0; ii < 3; ii++) {
+
+	  // Save node values.
+	  X1 = SolnBlk.Grid.Node[i  ][j  ].X;
+	  X2 = SolnBlk.Grid.Node[i+1][j  ].X;
+	  X3 = SolnBlk.Grid.Node[i+1][j+1].X;
+	  X4 = SolnBlk.Grid.Node[i  ][j+1].X;
+
+	  // Set basis functions.
+	  N1 = 0.25*(1 + epsilon[ii]*epsilon1)*(1 + eta[jj]*eta1);
+	  N2 = 0.25*(1 + epsilon[ii]*epsilon2)*(1 + eta[jj]*eta2);
+	  N3 = 0.25*(1 + epsilon[ii]*epsilon3)*(1 + eta[jj]*eta3);
+	  N4 = 0.25*(1 + epsilon[ii]*epsilon4)*(1 + eta[jj]*eta4);
+
+	  // Get point X.
+	  X = X1*N1 + X2*N2 + X3*N3 + X4*N4;
+
+	  // Determine the value of 'f'.
+	  f[ii][jj] = RinglebFlow(f[ii][jj],X);
+	  
+	}
+      }
+
+      // Perform the integration to find the average value of the exact value of rho.
+      W = Dusty2D_W_VACUUM;
+      for (int jj = 0; jj < 3; jj++)
+	for (int ii = 0; ii < 3; ii++)
+	  W += w[ii]*w[jj]*f[ii][jj]/FOUR;
+
+      // Compute the norms.
+      l1_norm += fabs(W.rho - SolnBlk.W[i][j].rho);
+      l2_norm += sqr(W.rho - SolnBlk.W[i][j].rho);
+      max_norm = max(max_norm,fabs(W.rho - SolnBlk.W[i][j].rho));
+
+    }
+  }
+  l1_norm = l1_norm/((SolnBlk.NCi-2*SolnBlk.Nghost)*(SolnBlk.NCj-2*SolnBlk.Nghost));
+  l2_norm = sqrt(l2_norm/((SolnBlk.NCi-2*SolnBlk.Nghost)*(SolnBlk.NCj-2*SolnBlk.Nghost)));
+
+  // Delete memory.
+  for (int i = 0; i < 3; i++) {
+    delete []f[i]; f[i] = NULL;
+  }
+  delete []w; w = NULL;
+  delete []f; f = NULL;
+  delete []epsilon; epsilon = NULL;
+  delete []eta; eta = NULL;
+
+}
