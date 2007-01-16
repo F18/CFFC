@@ -150,7 +150,7 @@ help:
 	@echo "|        make clean               delete all the intermediate files |"
 	@echo "+-------------------------------------------------------------------+"
 
-allnew:
+allnew: clean
 	@$(MAKE) --no-print-directory sparselib
 	@$(MAKE) --no-print-directory bpkit
 	@$(MAKE) --no-print-directory $(EXE_REC)
