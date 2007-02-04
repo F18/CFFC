@@ -15,11 +15,6 @@
 #-------------------------------------------------------------------------
 
 #
-#####################################################
-# Define Reconstruction_Path
-#####################################################
-Reconstruction_Path= $(shell cd ../../;  pwd)
-export $(Reconstruction_Path)
 
 ################################################################
 #
@@ -41,7 +36,7 @@ error:
 	@echo "|  to reflect your system configuration.                          |"
 	@echo "|                                                                 |"
 	@echo "+-----------------------------------------------------------------+"
-	
+
 all: sp test done
 
 
@@ -49,7 +44,7 @@ sp:
 	cd ./src; make;
 	cd ./spblas; make;
 	cd ./mv/src; make ;
-	
+
 
 test:
 	cd ./testing; make;

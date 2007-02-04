@@ -6,11 +6,11 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <Test_Run.h>
 
 using namespace std;
 
-// Declere the Test_Run function
-void Test_Run(string, int);
+/* Begin Reconstruction main program. */
 
 int main(int num_arg, char *arg_ptr[]){
 

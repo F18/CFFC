@@ -14,6 +14,7 @@ export Reconstruction_Path
 include makefile.def
 
 # Assign sub directories
+DEPENDDIR               = Depend/
 TEST_DIR		= UnitTesting/Tests
 CFD_DIR                 = CFD
 GRID1D_DIR              = Grid/Grid1D
@@ -150,7 +151,8 @@ help:
 	@echo "|        make clean               delete all the intermediate files |"
 	@echo "+-------------------------------------------------------------------+"
 
-allnew: clean
+allnew: 
+	@$(MAKE) --no-print-directory clean
 	@$(MAKE) --no-print-directory sparselib
 	@$(MAKE) --no-print-directory bpkit
 	@$(MAKE) --no-print-directory $(EXE_REC)
@@ -161,7 +163,7 @@ all: $(EXE_REC)
 	@echo '------------------------------------------'
 	@echo ' '
 
-$(EXE_REC) : $(OBJ_RECONSTRUCTION) $(EXE_REC).depend
+$(EXE_REC) : $(OBJ_RECONSTRUCTION)
 	@echo ' '
 	@echo Building program $(EXE_REC) for a $(PLATFORM) platform.
 	@echo '--------------------------------------------------------'
@@ -172,21 +174,10 @@ $(EXE_REC) : $(OBJ_RECONSTRUCTION) $(EXE_REC).depend
 	@echo '------------------------------------------------'
 	@echo ' '
 
-$(EXE_REC).depend: $(SRC_RECONSTRUCTION)
-	@echo ' '
-	@echo Determining Reconstruction source file dependencies for a $(PLATFORM) platform.
-	@echo '--------------------------------------------------------------------------------'
-	@echo ' '
-	touch $(EXE_REC).depend
-	makedepend -f $(EXE_REC).depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_RECONSTRUCTION) >& /dev/null
-	@echo ' '
-	@echo Reconstruction source file dependencies have been brought up to date.
-	@echo '----------------------------------------------------------------------'
-	@echo ' '
-
 # Build libraries
 show:
 	@echo $(SPARSELIB_DIR)
+	@echo $(BPKIT_DIR)
 
 sparselib:
 	@echo ' '
@@ -218,8 +209,7 @@ clean:
 	@echo Cleaning source file directory.
 	@echo '-------------------------------'
 	@echo ' '
-	@echo "Remove *.depend  *.bak  *.o  *.obj  *.s  *.rtl  core* *~ #*# $(EXE_REC)"
-	@../miscellaneous/rmlots "*.depend"
+	@echo "Remove *.bak  *.o  *.obj  *.s  *.rtl  core* *~ #*# $(EXE_REC)"
 	@../miscellaneous/rmlots "*.bak"
 	@../miscellaneous/rmlots "*.o"
 	@../miscellaneous/rmlots "*.obj"
@@ -227,16 +217,80 @@ clean:
 	@../miscellaneous/rmlots "*.rtl"
 	@../miscellaneous/rmlots "core*"
 	@../miscellaneous/rmlots "*~"
-	@rm -f $(EXE_REC) $(TUT_DIR)/*.o
+	@rm -f $(TUT_DIR)/*.o
+	@echo "Remove the automatically created dependency files *.d"
+	rm -fr $(DEPENDDIR)
+	rm -f $(EXE_REC)
 	@echo ' '
 	@echo Source file directory is now clean.
 	@echo '-----------------------------------'
 	@echo ' '
 
-#Include header file dependencies
-ifneq ($(MAKECMDGOALS),help)
- ifneq ($(MAKECMDGOALS),clean)
-   include $(EXE_REC).depend
- endif
+clean-sparselib:
+	@echo ' '
+	@echo Cleaning $(SPARSELIB) library.
+	@echo '--------------------------------------------------------'
+	@echo ' '
+	cd $(SPARSELIB_DIR); make clean;
+	@echo ' '
+	@echo $(SPARSELIB) library has been cleaned.
+	@echo '------------------------------------------------'
+	@echo ' '
+
+clean-bpkit:
+	@echo ' '
+	@echo Cleaning $(BPKIT) library.
+	@echo '----------------------------------------------------'
+	@echo ' '
+	cd $(BPKIT_DIR)/src; make clean;
+	@echo ' '
+	@echo $(BPKIT) library has been cleaned.
+	@echo '--------------------------------------------'
+	@echo ' '
+
+clean-lib: clean-sparselib clean-bpkit clean-cgns
+	@echo ' '
+	@echo Libraries directories cleaned.
+	@echo '----------------------------------------------------'
+
+#
+# Include header file dependencies
+#
+#------------------------------------------------------------------
+# For some commands (targets) there is no need to include the 
+# dependencies. Therefore a list of targets for which the dependencies
+# DON'T need to be generated is provided.
+# If you don't want to have dependencies generated, just add the target 
+# to NODEP_LIST.
+#
+NODEP_LIST = help clean clean-lib clean-sparselib clean-bpkit \
+	     allnew
+
+
+#-----------------------------------
+# Include header file dependencies
+#-----------------------------------
+ifeq ($(strip $(filter $(MAKECMDGOALS), $(NODEP_LIST)) ), )
+############# Include dependencies of files that have extensions different than " .cc " (e.g. *.c)
+       sinclude $(patsubst %.c,$(DEPENDDIR)%.d, $(filter %.c, $(SRC_RECONSTRUCTION)))
+############# Include the .d files comming from different executables
+       # this command includes most of the *.d files
+       sinclude $(patsubst %.cc,$(DEPENDDIR)%.d, $(filter %.cc, $(SRC_RECONSTRUCTION)))
 endif
+
+##################################################################################################
+#------------------------------------- IMPLICIT RULES --------------------------------------------
+##################################################################################################
+
+# Rule for building automatic dependencies (#include <file_name>)
+# These file are assigned '.d' extension
+$(DEPENDDIR)%.d : %.cc
+	@mkdir -p $(dir $@)
+	@makedepend -f- $(DEPENDSFLAGS) $(CPPFLAGS) $< 2>/dev/null \
+        | sed 's,\($*\.o\)[ :]*\(.*\),$@ : $$\(wildcard \2\) =\1 : \2,g' | tr "=" "\n" > $@ 
+
+$(DEPENDDIR)%.d : %.c
+	@mkdir -p $(dir $@)
+	@makedepend -f- $(DEPENDSFLAGS) $(CPPFLAGS) $< 2>/dev/null \
+        | sed 's,\($*\.o\)[ :]*\(.*\),$@ : $$\(wildcard \2\) \n\1 : \2,g' | tr "=" "\n" > $@
 

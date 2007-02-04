@@ -27,6 +27,7 @@ RECONSTRUCT_BIN_DIR = $(Reconstruction_Path)/bin
 #       Platform Specific Compiler Flags                    #
 #-----------------------------------------------------------#
 # Set defaults
+F77 = g77
 FC = g77
 CC = gcc
 CXX = g++
@@ -90,17 +91,17 @@ BPKIT_LD_FLAGS            = -L$(BPKIT_LIB_DIR) -lbpkit
 
 BLAS_LD_FLAGS             = -lblas -llapack -lg2c -lgcc
 ifeq ($(PLATFORM),Linux_i386)
-  BLAS_LD_FLAGS           = -lblas -llapack -lg2c -lgcc
+  BLAS_LD_FLAGS           = -lblas -llapack # -lg2c -lgcc
   ifeq ($(GCC_VERSION),ICC)
-   BLAS_LD_FLAGS   	  = -lblas -llapack -lifcore -L/usr/lib/gcc-lib/i386-redhat-linux/3.3.2 -lg2c
+   BLAS_LD_FLAGS   	  = -lblas -llapack -lifcore -L/usr/lib/gcc-lib/i386-redhat-linux/3.3.2
   endif
 endif
 ifeq ($(PLATFORM),Linux_alpha)
-  BLAS_LD_FLAGS           = -L/usr/lib/gcc-lib/alpha-redhat-linux/2.96/ -lg2c -L/usr/lib/compaq/cxml-5.2.0 \
+  BLAS_LD_FLAGS           = -L/usr/lib/gcc-lib/alpha-redhat-linux/2.96/ -lg2c -lUfor -L/usr/lib/compaq/cxml-5.2.0 \
                             -lcxml_ev6
 endif
 ifeq ($(PLATFORM),Linux_ia64)
- BLAS_LD_FLAGS   	  = -lblas -llapack -L/opt/gcc3.3.3/lib/ -lg2c
+ BLAS_LD_FLAGS   	  = -lblas -llapack -lg2c -lifcore
 endif	
 ifeq ($(PLATFORM),Linux_x86_64)
   BLAS_LD_FLAGS           = -lblas -llapack -lg2c -lgcc
@@ -125,7 +126,7 @@ RECONSTRUCT_CPP_FLAGS     = -I$(RECONSTRUCT_INC_DIR)
 
 # Set Linux i386 specific compile flags
 ifeq ($(PLATFORM),Linux_i386)
-    FC = g77
+    FC = gfortran
     CC = gcc
     CXX = g++
     CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_296 -D__NUM_LIMITS__ $(SPARSELIB_CPP_FLAGS) \

@@ -2,12 +2,11 @@
 # Include Reconstruction platform and compiler flags
 #####################################################
 #
-Reconstruction_Path:= $(shell cd ../../../; pwd)
 include $(Reconstruction_Path)/src/makefile.def
 
 #overide for linking
-F77=g77
-FFLAGS=
+F77=$(FC)
+#FFLAGS=
 
 BPKIT_LIB = ../lib/libbpkit.a
 

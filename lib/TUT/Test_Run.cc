@@ -1,7 +1,5 @@
 // Test_Run function: Runs the tests and prints the results
-#include <iostream>
-#include "tut.h"
-#include "tut_reporter.h"
+#include "Test_Run.h"
 
 using namespace tut;
 namespace tut

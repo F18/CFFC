@@ -14,7 +14,6 @@
 #include <winbase.h>
 #endif
 
-
 /**
  * Template Unit Tests Framework for C++.
  * http://tut.dozen.ru
@@ -283,7 +282,6 @@ namespace tut
      */
     void run_tests() const
     {
-
       callback_->run_started();
 
       const_iterator i = groups_.begin();
@@ -338,6 +336,7 @@ namespace tut
       {
         // ok
       }
+
       callback_->run_completed();
     }
 
@@ -441,6 +440,15 @@ namespace tut
     void ensure(const char* msg,bool cond)
     {
        if( !cond ) throw failure(msg);
+    }
+
+    /**
+     * Tests provided condition.
+     * Throws if true.
+     */
+    void ensure_fail(const char* msg,bool cond)
+    {
+       if( cond ) throw failure(msg);
     }
 
     /**

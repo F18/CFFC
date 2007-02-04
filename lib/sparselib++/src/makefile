@@ -1,7 +1,6 @@
 #
 # Makefile for sparselb src
 #
-CFDkit_Path:= $(shell cd ../../; pwd)
 
 SPARSELIB_DIR = ..
 include $(SPARSELIB_DIR)/makefile.def 
