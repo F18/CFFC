@@ -44,8 +44,12 @@ SRC_MATH_UnitTesting    = test_LinearSystems.cc test_NumericalLibrary.cc \
 
 SRC_MATH_UnitTesting	:= $(addprefix  $(TEST_DIR)/, $(SRC_MATH_UnitTesting))
 #
-SRC_COMMON              = StateData.cc
+SRC_COMMON              = StateData.cc SourceRevisionData.cc
 SRC_COMMON		:= $(addprefix  $(COMMON_DIR)/, $(SRC_COMMON))
+#
+SRC_COMMON_UnitTesting  = test_SourceCode.cc 
+
+SRC_COMMON_UnitTesting	:= $(addprefix  $(TEST_DIR)/, $(SRC_COMMON_UnitTesting))
 #
 SRC_CONTAINERS_UnitTesting = test_PointWiseSolution.cc test_SubGridMesh.cc test_TaylorDerivatives.cc \
 			     test_ReconstructionSolver.cc test_ComputationalDomain.cc
@@ -122,7 +126,7 @@ SRC_RECONSTRUCTION3D	:= $(SRC_RECONSTRUCTION3D) $(SRC_GRID3D) $(SRC_3D_TEST_FUNC
 #
 #
 SRC_UnitTesting         = $(SRC_1D_UnitTesting) $(SRC_2D_UnitTesting) $(SRC_MATH_UnitTesting) \
-			  $(SRC_CONTAINERS_UnitTesting)
+			  $(SRC_CONTAINERS_UnitTesting) $(SRC_COMMON_UnitTesting)
 SRC_RECONSTRUCTION	= main.cc Reconstruction/ReconstructionHelpers.cc \
 			  $(SRC_RECONSTRUCTION1D) $(SRC_RECONSTRUCTION2D) $(SRC_RECONSTRUCTION3D) \
 			  $(SRC_CFD) $(SRC_MATH) \
@@ -164,6 +168,12 @@ all: $(EXE_REC)
 	@echo ' '
 
 $(EXE_REC) : $(OBJ_RECONSTRUCTION)
+	@echo ' '
+	@echo Update compilation time and SVN revision data
+	@echo '--------------------------------------------------------'
+	@../miscellaneous/Update_SourceRevision_Data.py
+        # Update Common/SourceRevisionData.o
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) Common/SourceRevisionData.cc -c -o Common/SourceRevisionData.o
 	@echo ' '
 	@echo Building program $(EXE_REC) for a $(PLATFORM) platform.
 	@echo '--------------------------------------------------------'
