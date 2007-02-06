@@ -13,6 +13,9 @@ export Reconstruction_Path
 # Platform compile options
 include makefile.def
 
+# File SVN
+SVN_File = Common/SourceRevisionData.cc
+
 # Assign sub directories
 DEPENDDIR               = Depend/
 TEST_DIR		= UnitTesting/Tests
@@ -173,7 +176,7 @@ $(EXE_REC) : $(OBJ_RECONSTRUCTION)
 	@echo '--------------------------------------------------------'
 	@../miscellaneous/Update_SourceRevision_Data.py
         # Update Common/SourceRevisionData.o
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) Common/SourceRevisionData.cc -c -o Common/SourceRevisionData.o
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(SVN_File) -c -o $(SVN_File:.cc=.o)
 	@echo ' '
 	@echo Building program $(EXE_REC) for a $(PLATFORM) platform.
 	@echo '--------------------------------------------------------'
