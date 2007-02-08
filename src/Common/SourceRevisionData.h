@@ -5,6 +5,7 @@
 #define _SOURCE_REVISION_DATA_INCLUDED
 
 /* Include header files. */
+#include <fstream>
 
 class SourceCode{
 
@@ -23,9 +24,25 @@ class SourceCode{
   static const char* LastCommitted_Revision(void){return LastChanged_Revision;}
   static const char* LastCommitted_Date(void){return LastChanged_Date;}
 
- private:
+  static void PrintTecplotAuxData(std::ofstream &output_file);
+
+ protected:
   SourceCode(){};
 };
+
+/***************************************************
+ * PrintTecplotAuxData()                           *
+ * Print the source code data as auxiliary dataset *
+ *  
+ ************************************************/
+inline void SourceCode::PrintTecplotAuxData(std::ofstream &output_file){
+
+  output_file << "DATASETAUXDATA Code_Used = \"  " << SourceCode::ProgramName() << "     \" \n "
+	      << "DATASETAUXDATA Compiled_On = \"  " << SourceCode::TimeAtCompilation() << " \" \n "
+	      << "DATASETAUXDATA Last_Committed_Date = \"  " << SourceCode::LastCommitted_Date() << "    \" \n "
+	      << "DATASETAUXDATA Last_Committed_Revision = \"  " << SourceCode::LastCommitted_Revision() << "     \" \n "
+	      << "DATASETAUXDATA Revision_At_Compile_Time = \"  " << SourceCode::RevisionAtCompileTime() << "     \" \n ";
+}
 
 
 #endif

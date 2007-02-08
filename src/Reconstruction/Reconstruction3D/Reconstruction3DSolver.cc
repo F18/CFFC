@@ -4,6 +4,7 @@
 /* Include header files. */
 #include "CFD/CFD.h"
 #include "Reconstruction/ComputationalDomain.h"
+#include "Common/SourceRevisionData.h"
 
 /********************************************************
  * Routine: Reconstruction3DSolver                      *
@@ -28,6 +29,19 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
   /**********************************************************
    *               Pre-processing Step                      *
    *********************************************************/
+
+  cout << '\n'
+       << "****************************************************" << "\n"
+       << "*\t Running " << SourceCode::ProgramName() << " for 3D " << "\n"
+       << "****************************************************" << "\n"
+       << " Executable information:" << "\n"
+       << "    --> repository version: rev. " << SourceCode::LastCommitted_Revision() << '\n'
+       << "    --> committed on: " << SourceCode::LastCommitted_Date() << '\n'
+       << "    --> committed by: " << SourceCode::LastCommitted_Author() << '\n'
+       << "    --> local version: rev. " << SourceCode::RevisionAtCompileTime() << '\n'
+       << "    --> compiled on: " << SourceCode::TimeAtCompilation() << '\n'
+       << "####################################################" << "\n";
+  cout.flush();
   
   /********************************************************  
    * Set default values for the input solution parameters *

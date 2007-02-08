@@ -206,7 +206,7 @@ class ComputationalCell<OneD, GeometryType, SolutionType>{
   void OutputSolutionCellTecplotOneZone(std::ofstream &output_file, const int & _dummy1_, const int & _dummy2_){
     OutputSolutionCellTecplotOneZone(output_file);
   };
-  void OutputPWC(std::ofstream &output_file){ };
+  void OutputPWC(std::ofstream &output_file);
   void OutputPWC(std::ofstream &output_file, const int & _dummy1_, const int & _dummy2_){
     OutputPWC(output_file);
   };
@@ -604,6 +604,21 @@ void ComputationalCell<OneD,GeometryType,SolutionType>::
   OutputSolutionCellTecplotOneZone(std::ofstream &output_file)
 {
   SubgridSolution.OutputSolutionTecplotOneZone(output_file);
+}
+
+// OutputPWC()
+/* Outputs the piecewise constant solution at the nodes of the subgrid */
+template<class GeometryType,class SolutionType> inline
+void ComputationalCell<OneD,GeometryType,SolutionType>::
+  OutputPWC(std::ofstream &output_file)
+{
+
+  output_file << setprecision(14);
+
+  for(int i=0; i<iSubgridPoints(); ++i)
+    output_file << SubgridSolution(i).GetNode() <<  "\t" <<  CellSolution() << "\n";
+
+  output_file << setprecision(6);
 }
 
 // OutputReconstructedSolutionTecplot()

@@ -8,7 +8,7 @@
 ##########################################
 Method_Used =
 CENO
-#ENO_LS
+#CENO
 CENO_Tolerance =
 40
 Limiter =
@@ -52,7 +52,7 @@ Execute
 #######################
 Write_Output_OneZone
 #Write_Function_Graph
-#Write_Output
+Write_Output
 #Write_Stencil_Reconstruction
 #Write_Output_Accuracy
 Terminate

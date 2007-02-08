@@ -1,6 +1,5 @@
 #include <tut.h>
 #include "include/TaylorDerivatives.h"
-#include "Reconstruction/Reconstruction1D/CompCell1D.h"
 #include "CFD/Gaussian2DState.h"
 
 using namespace std;
@@ -14,7 +13,6 @@ namespace tut
     DerivativeObj<OneD,double> Obj1D;
     DerivativeObj<TwoD,double> Obj2D;
     DerivativeObj<ThreeD,double> Obj3D;
-    DerivativeObj<ThreeD,CompCell1D_NonUniform> Obj3D_Try;
 
     TaylorDerivativesContainer<TwoD,Gaussian2D_pState> GaussianHOD;
     TaylorDerivativesContainer<OneD,double> Container1D;

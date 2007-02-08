@@ -66,16 +66,16 @@ SRC_GRID1D		:= $(addprefix $(GRID1D_DIR)/, $(SRC_GRID1D))
 SRC_1D_TEST_FUNCTIONS   = TestFunctions.cc
 SRC_1D_TEST_FUNCTIONS   := $(addprefix $(TESTFUNCTIONS_DIR)/, $(SRC_1D_TEST_FUNCTIONS))
 #
-SRC_1D_UnitTesting	= test_Cell1D.cc test_Cell1DNonUniform.cc  \
-		         test_CompCell1D.cc
+SRC_1D_UnitTesting	= test_Cell1D.cc test_Cell1DNonUniform.cc
 
 SRC_1D_UnitTesting	:= $(addprefix $(TEST_DIR)/, $(SRC_1D_UnitTesting))
 #
 #*********************************
 # SRC_RECONSTRUCTION 1D Main Files
 #*********************************
-SRC_RECONSTRUCTION1D	= CompCell1D.cc CompDomain1D.cc Reconstruct1DInput.cc \
+SRC_RECONSTRUCTION1D	=  Reconstruct1DInput.cc \
 			  Reconstruction1DSolver.cc 
+
 SRC_RECONSTRUCTION1D	:= $(addprefix  $(RECONSTRUCTION1D_DIR)/, $(SRC_RECONSTRUCTION1D))
 #*********************************
 # SRC_RECONSTRUCTION 1D Adds-on Files
@@ -174,7 +174,7 @@ $(EXE_REC) : $(OBJ_RECONSTRUCTION)
 	@echo ' '
 	@echo Update compilation time and SVN revision data
 	@echo '--------------------------------------------------------'
-	@../miscellaneous/Update_SourceRevision_Data.py
+	@python ../miscellaneous/Update_SourceRevision_Data.py
         # Update Common/SourceRevisionData.o
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(SVN_File) -c -o $(SVN_File:.cc=.o)
 	@echo ' '

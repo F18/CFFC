@@ -7,6 +7,7 @@
 #include <fstream>
 #include <vector>
 #include <Test_Run.h>
+#include "Common/SourceRevisionData.h"
 
 using namespace std;
 
@@ -33,11 +34,11 @@ int main(int num_arg, char *arg_ptr[]){
 
   // Title of code:
   char *program_title_ptr = 
-    "RECONSTRUCT -- Program for reconstruction of functions in one-, two- and three-dimensions.";
+    "'Reconstruction++' is a program for reconstructing functions \nin one-, two- and three-dimensions based on cell averages.";
 
   // Version of code:
   char *program_version_ptr = 
-    "UTIAS CFD & Propulsion Group, 1999-2004";
+    "UTIAS CFD & Propulsion Group, 1999-";
   
   // Input file name:
   char *Input_File_Name_ptr = "reconstruct_DEFAULT.in";
@@ -132,8 +133,11 @@ int main(int num_arg, char *arg_ptr[]){
    ******************************************************************/
 
   if (version_flag || help_flag) {
-    cout << '\n' << program_title_ptr << '\n';
-    cout << program_version_ptr << '\n';
+    cout << '\n' << program_title_ptr << '\n'
+	 << program_version_ptr << SourceCode::LastCommitted_Date() << '\n'
+	 << " --> repository version: rev. " << SourceCode::LastCommitted_Revision() << '\n'
+	 << " --> local version: rev. " << SourceCode::RevisionAtCompileTime() << '\n'
+	 << " --> compiled on: " << SourceCode::TimeAtCompilation() << '\n';
     cout.flush();
     if (version_flag) return (0);
   } /* endif */

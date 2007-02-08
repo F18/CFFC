@@ -11,6 +11,7 @@
 #include "Grid/Grid2D/QuadrilateralGrid.h"
 #include "ReconstructionFunction.h"
 #include "CENO_DataAnalysis.h"
+#include "Common/TecplotAuxData.h"
 
 template<typename T> inline
 void Print_Progress(const T & Counter, const T & Frequency){
@@ -693,8 +694,9 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   switch(SpaceDimension){
   case OneD:
     if (Title) {
-      output_file << "TITLE = \"Mesh" << SpaceDimension << "D" << " (Node Locations)\"\n ";
       output_file << "VARIABLES = \"x\" \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
     }
     
     for(i=0; i<=iLastCell(); ++i){
@@ -705,9 +707,10 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 
   case TwoD:
     if (Title) {
-      output_file << "TITLE = \"Mesh" << SpaceDimension << "D" << " (Node Locations)\"\n ";
       output_file << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
     }
 
     for(j=0; j<=jLastCell(); ++j)
@@ -719,10 +722,11 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 
   case ThreeD:
     if (Title) {
-      output_file << "TITLE = \"Mesh" << SpaceDimension << "D" << " (Node Locations)\"\n ";
       output_file << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n"
 		  << "\"z\" \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
     }
 
     for(k=0; k<=kLastCell(); ++k)
@@ -747,9 +751,10 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   switch(SpaceDimension){
   case OneD:
     if (Title) {
-      output_file << "TITLE = \"" << " Mesh nodes \"\n";
+      output_file << "VARIABLES = \"x\" \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
     }
-    output_file << "VARIABLES = \"x\" \n";
     output_file << "ZONE T = \" Mesh \" \\ \n"
 		<< "I=" << iEnd() - iStart() + 2 << "\n"
 		<< "F = POINT \n";
@@ -761,10 +766,11 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 
   case TwoD:
     if (Title) {
-      output_file << "TITLE = \"" << " Mesh nodes \"\n";
+      output_file << "VARIABLES = \"x\" \\ \n"
+		  << "\"y\" \\ \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
     }
-    output_file << "VARIABLES = \"x\" \\ \n"
-		<< "\"y\" \\ \n";
     output_file << "ZONE T = \" Mesh \" \\ \n"
 		<< "I=" << iEnd() - iStart() + 2 << "\n"
 		<< "J=" << jEnd() - jStart() + 2 << "\n"
@@ -778,11 +784,12 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 
   case ThreeD:
     if (Title) {
-      output_file << "TITLE = \"" << " Mesh nodes \"\n";
+      output_file << "VARIABLES = \"x\" \\ \n"
+		  << "\"y\" \\ \n"
+		  << "\"z\" \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
     }
-    output_file << "VARIABLES = \"x\" \\ \n"
-		<< "\"y\" \\ \n"
-		<< "\"z\" \n";
     output_file << "ZONE T = \" Mesh \" \\ \n"
 		<< "I=" << iEnd() - iStart() + 2 << "\n"
 		<< "J=" << jEnd() - jStart() + 2 << "\n"
@@ -810,13 +817,10 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   switch(SpaceDimension){
   case OneD:
     if (Title) {
-      output_file << "TITLE = \"Mesh" << SpaceDimension << "D" << " (Node Locations)\"\n ";
       output_file << "VARIABLES = \"x\" \n";
       VarNames.PrintHeaderTecplot(output_file);
-    }
-    else {
-      output_file << "VARIABLES = \"x\" \n";
-      VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
     }
     
     for(int i=iStart(), _dummy_parameter_=0; i<=iEnd(); ++i){
@@ -826,15 +830,11 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
     
   case TwoD:
     if (Title) {
-      output_file << "TITLE = \"Mesh" << SpaceDimension << "D" << " (Node Locations)\"\n ";
       output_file << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n";
       VarNames.PrintHeaderTecplot(output_file);
-    }
-    else {
-      output_file << "VARIABLES = \"x\" \\ \n"
-		  << "\"y\" \\ \n";
-      VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
     }
 
     for(int j=jStart(), _dummy_parameter_=0; j<=jEnd(); ++j)
@@ -845,17 +845,12 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 
   case ThreeD:
     if (Title) {
-      output_file << "TITLE = \"Mesh" << SpaceDimension << "D" << " (Node Locations)\"\n ";
       output_file << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n"
 		  << "\"z\" \\ \n";
       VarNames.PrintHeaderTecplot(output_file);
-    }
-    else {
-      output_file << "VARIABLES = \"x\" \\ \n"
-		  << "\"y\" \\ \n"
-		  << "\"z\" \\ \n";
-      VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
     }
 
     for(int k=kStart(), _dummy_parameter_=0; k<=kEnd(); ++k)
@@ -877,29 +872,24 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   switch(SpaceDimension){
   case OneD:
     if (Title) {
-      output_file << "TITLE = \"Solution" << SpaceDimension << "D" << " (at node locations)\"\n ";
       output_file << "VARIABLES = \"x\" \n";
       VarNames.PrintHeaderTecplot(output_file);
-    } else {
-      output_file << "VARIABLES = \"x\" \n";
-      VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
     }
     
     for(int i=0, _dummy_parameter_=0; i<=iLastCell(); ++i){
-	SolnPtr[0][0][i].OutputSolutionTecplot(output_file,i,_dummy_parameter_,_dummy_parameter_);
-      }
+      SolnPtr[0][0][i].OutputSolutionTecplot(output_file,i,_dummy_parameter_,_dummy_parameter_);
+    }
     break;
 
   case TwoD:
     if (Title) {
-      output_file << "TITLE = \"Solution" << SpaceDimension << "D" << " (at node locations)\"\n ";
       output_file << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n";
       VarNames.PrintHeaderTecplot(output_file);
-    } else {
-      output_file << "VARIABLES = \"x\" \\ \n"
-		  << "\"y\" \\ \n";
-      VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
     }
     
     for(int j=0, _dummy_parameter_=0; j<=jLastCell(); ++j)
@@ -910,17 +900,12 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 
   case ThreeD:
     if (Title) {
-      output_file << "TITLE = \"Solution" << SpaceDimension << "D" << " (Node Locations)\"\n ";
       output_file << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n"
 		  << "\"z\" \\ \n";
       VarNames.PrintHeaderTecplot(output_file);
-    }
-    else {
-      output_file << "VARIABLES = \"x\" \\ \n"
-		  << "\"y\" \\ \n"
-		  << "\"z\" \\ \n";
-      VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
     }
 
     for(int k=0, _dummy_parameter_=0; k<=kLastCell(); ++k)
@@ -942,27 +927,17 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   switch(SpaceDimension){
   case OneD:
     if (Title) {
-      output_file << "TITLE = \"Solution" << SpaceDimension << "D" << " (at cell center locations)\"\n ";
       output_file << "VARIABLES = \"x\" \n";
+      VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
 
-      VarNames.PrintHeaderTecplot(output_file);
       output_file << "ZONE T = \" SolBlock \" \\ \n";
-      //      output_file << "I=" << iEnd() - iStart() + 1 << "\\ \n"
-      output_file << "I=" << iLastCell() + 1 << "\\ \n"
-		  << "F = POINT \n";
-      VarNames.PrintDataTypeTecplot(output_file,OneD);
-    }
-    else {
-      output_file << "VARIABLES = \"x\" \n";
-      VarNames.PrintHeaderTecplot(output_file);
-      output_file << "ZONE T = \" SolBlock \" \\ \n";
-      //      output_file << "I=" << iEnd() - iStart() + 1 << "\\ \n"
       output_file << "I=" << iLastCell() + 1 << "\\ \n"
 		  << "F = POINT \n";
       VarNames.PrintDataTypeTecplot(output_file,OneD);
     }
     
-    //    for(int i=iStart(), _dummy_parameter_=0; i<=iEnd(); ++i){
     for(int i=0, _dummy_parameter_=0; i<=iLastCell(); ++i){
       SolnPtr[0][0][i].OutputSolutionCellTecplot(output_file,i,_dummy_parameter_,_dummy_parameter_);
     }
@@ -970,20 +945,12 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 
   case TwoD:
     if (Title) {
-      output_file << "TITLE = \"Solution" << SpaceDimension << "D" << " (at cell center locations)\"\n ";
       output_file << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n";
       VarNames.PrintHeaderTecplot(output_file);
-      output_file << "ZONE T = \" SolBlock \" \\ \n";
-      output_file << "I=" << iEnd() - iStart() + 1 << "\\ \n"
-		  << "J=" << jEnd() - jStart() + 1 << "\\ \n"
-		  << "F = POINT \n";
-      VarNames.PrintDataTypeTecplot(output_file,TwoD);
-    }
-    else {
-      output_file << "VARIABLES = \"x\" \\ \n"
-		  << "\"y\" \\ \n";
-      VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << iEnd() - iStart() + 1 << "\\ \n"
 		  << "J=" << jEnd() - jStart() + 1 << "\\ \n"
@@ -999,23 +966,13 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 
   case ThreeD:
     if (Title) {
-      output_file << "TITLE = \"Solution" << SpaceDimension << "D" << " (at cell center locations)\"\n ";
       output_file << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n"
 		  << "\"z\" \\ \n";
       VarNames.PrintHeaderTecplot(output_file);
-      output_file << "ZONE T = \" SolBlock \" \\ \n";
-      output_file << "I=" << iEnd() - iStart() + 1 << "\\ \n"
-		  << "J=" << jEnd() - jStart() + 1 << "\\ \n"
-		  << "K=" << kEnd() - kStart() + 1 << "\\ \n"
-		  << "F = POINT \n";
-      VarNames.PrintDataTypeTecplot(output_file,ThreeD);
-    }
-    else {
-      output_file << "VARIABLES = \"x\" \\ \n"
-		  << "\"y\" \\ \n"
-		  << "\"z\" \\ \n";
-      VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << iEnd() - iStart() + 1 << "\\ \n"
 		  << "J=" << jEnd() - jStart() + 1 << "\\ \n"
@@ -1043,9 +1000,11 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   switch(SpaceDimension){
   case OneD:
     if (Title) {
-      output_file << "TITLE = \"Solution" << SpaceDimension << "D" << " (at cell center locations)\"\n ";
       output_file << "VARIABLES = \"x\" \n";
       VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << N_XYZ[0] << "\\ \n"
 		  << "F = POINT \n";
@@ -1062,6 +1021,9 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
       output_file << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n";
       VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << N_XYZ[0] << "\\ \n"
 		  << "J=" << N_XYZ[1] << "\\ \n"
@@ -1081,6 +1043,9 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 		  << "\"y\" \\ \n"
 		  << "\"z\" \\ \n";
       VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << N_XYZ[0] << "\\ \n"
 		  << "J=" << N_XYZ[1] << "\\ \n"
@@ -1110,9 +1075,11 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   case OneD:
     if (Title){
       /* Write TECPLOT title */
-      output_file << "TITLE = \"Solution" << SpaceDimension << "D" << " (at subgrid nodes locations)\"\n ";
       output_file << "VARIABLES = \"x\" \n";
       VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
 		  << "F = POINT \n";
@@ -1132,10 +1099,12 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   case TwoD:
     if (Title){
       /* Write TECPLOT title */
-      output_file << "TITLE = \"Solution" << SpaceDimension << "D" << " (at subgrid nodes locations)\"\n ";
       output_file << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n";
       VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
 		  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
@@ -1160,11 +1129,13 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   case ThreeD:
     if (Title){
       /* Write TECPLOT title */
-      output_file << "TITLE = \"Solution" << SpaceDimension << "D" << " (at subgrid nodes locations)\"\n ";
       output_file << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n"
 		  << "\"z\" \\ \n";
       VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
 		  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
@@ -1209,6 +1180,9 @@ OutputPWC(std::ofstream &output_file, const bool Title) const{
       output_file << "TITLE = \"PWC " << SpaceDimension << "D" << " (at subgrid nodes locations)\"\n ";
       output_file << "VARIABLES = \"x\" \n";
       VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
 		  << "F = POINT \n";
@@ -1232,6 +1206,9 @@ OutputPWC(std::ofstream &output_file, const bool Title) const{
       output_file << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n";
       VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
 		  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
@@ -1261,6 +1238,9 @@ OutputPWC(std::ofstream &output_file, const bool Title) const{
 		  << "\"y\" \\ \n"
 		  << "\"z\" \\ \n";
       VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
 		  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
@@ -1310,6 +1290,9 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
       output_file << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n";
       VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << (iEnd() - iStart() + 1)*4 << "\\ \n"
 		  << "J=" << (jEnd() - jStart() + 1)*2 << "\\ \n"
@@ -1375,6 +1358,9 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
       output_file << "TITLE = \"Smoothness Indicator in " << SpaceDimension << "D" << " (at subgrid nodes locations)\"\n ";
       output_file << "VARIABLES = \"x\" \n"
 		  << "\"SI\" \\ \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
 		  << "F = POINT \n";
@@ -1398,6 +1384,9 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
       output_file << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n"
 		  << "\"SI\" \\ \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
 		  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
@@ -1427,6 +1416,9 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 		  << "\"y\" \\ \n"
 		  << "\"z\" \\ \n"
 		  << "\"SI\" \\ \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
 		  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
@@ -1468,6 +1460,9 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
       output_file << "TITLE = \"Multiple-Correlation Coeffcient in " <<SpaceDimension <<"D"<< " (at cell center locations)\"\n ";
       output_file << "VARIABLES = \"x\" \n";
       output_file << "\"MCC\" \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << iEnd() - iStart() + 1 << "\\ \n"
 		  << "F = POINT \n";
@@ -1476,6 +1471,9 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
     else {
       output_file << "VARIABLES = \"x\" \n";
       output_file << "\"MCC\" \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << iEnd() - iStart() + 1 << "\\ \n"
 		  << "F = POINT \n";
@@ -1508,6 +1506,9 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
       output_file << "TITLE = \"Smoothness Indicator Flag for " << SpaceDimension << "D" << " (at cell center locations)\"\n ";
       output_file << "VARIABLES = \"x\" \n";
       output_file << "\"SI\" \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << iEnd() - iStart() + 1 << "\\ \n"
 		  << "F = POINT \n";
@@ -1516,6 +1517,9 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
     else {
       output_file << "VARIABLES = \"x\" \n";
       output_file << "\"SI\" \\ \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << iEnd() - iStart() + 1 << "\\ \n"
 		  << "F = POINT \n";
@@ -1533,6 +1537,9 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
       output_file << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n";
       output_file << "\"SI\" \\ \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << (iEnd() - iStart() + 1) << "\\ \n"
 		  << "J=" << (jEnd() - jStart() + 1) << "\\ \n"
@@ -1543,6 +1550,9 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
       output_file << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n";
       output_file << "\"SI\" \\ \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << (iEnd() - iStart() + 1) << "\\ \n"
 		  << "J=" << (jEnd() - jStart() + 1) << "\\ \n"
@@ -1576,10 +1586,14 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
       output_file << "TITLE = \"Solution" << SpaceDimension << "D" << " (at subgrid nodes locations)\"\n ";
       output_file << "VARIABLES = \"x\" \n";
       VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
     }
     else {
       output_file << "VARIABLES = \"x\" \n";
       VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
     }
 
     int cell, StencilCell, SGPoint;    
@@ -1606,11 +1620,15 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
       output_file << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n";
       VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
     }
     else {
       output_file << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n";
       VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
     }
     
     for(int j=jStart(), _dummy_parameter_=0; j<=jEnd(); ++j)
@@ -1626,12 +1644,16 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 		  << "\"y\" \\ \n"
 		  << "\"z\" \\ \n";
       VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
     }
     else {
       output_file << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n"
 		  << "\"z\" \\ \n";
       VarNames.PrintHeaderTecplot(output_file);
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
     }
     
     for(int k=kStart(); k<=kEnd(); ++k)
@@ -1746,7 +1768,7 @@ template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inli
       /* Make Stencil */
       MakeReconstructionStencil(SolnPtr[0][0][0].CellRings(),i,i_index);
       /* Solve reconstruction for the current cell */
-      kExact_Reconstruction(*this,i_index,i);
+      kExact_Reconstruction(*this,i_index,i,NumberOfTaylorDerivatives(),OFF);
     }
 
     /************* STEP 2: Compute the Multiple-Correlation Coefficient ************/
@@ -1818,8 +1840,8 @@ template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inli
   /* Make Stencil */
   MakeReconstructionStencil(1,iCell,i_index);
 
-  /* Solve reconstruction for the current cell */
-  Reconstruction_FirstOrder(*this, i_index, iCell);
+  /* Solve the PWL reconstruction for the current cell */
+    kExact_Reconstruction(*this,i_index,iCell,2,ON);
 
   /* Copy the derivatives in the TD container */
   SolnPtr[0][0][iCell].CellDeriv(0,true,true,true).D() = SolnPtr[0][0][iCell].CellDerivFirstOrder(0,true,true,true).D();
@@ -2794,36 +2816,6 @@ std::ostream& operator<< (std::ostream& os,
   return os;
 }
 
-/*********************************************************
-* ComputeMultipleCorrelationCoefficient2D(void)          *
-*                                                        *
-* Computes the multiple correlation coefficient for each *
-* computational cell based on the solution at the        *
-* centroid after the reconstruction has been carried out.*
-*********************************************************/
-/* template<> */
-/* void ComputationalDomain<TwoD,Cell2D_Quad,double>:: */
-/*   ComputeMultipleCorrelationCoefficient2D(void) */
-/* { */
-
-/*   vector<int> i_index,j_index; */
-/*   int CellsInOneDirection; */
-  
-/*   CellsInOneDirection = 3 + 2*(SolnPtr[0][0][0].CellRings() - 1); */
-/*   i_index.reserve(CellsInOneDirection); */
-/*   j_index.reserve(CellsInOneDirection); */
-  
-/*   for (int i=iStart(); i<=iEnd(); ++i) */
-/*     for (int j=jStart(); j<=jEnd(); ++j){ */
-/*       /\* Make Stencil *\/ */
-/*       MakeReconstructionStencil(SolnPtr[0][0][0].CellRings(),i,j,i_index,j_index); */
-      
-/*       /\* estimate the correlation coefficient for the current cell *\/ */
-/*       MultipleCorrelationCoefficient(*this,i_index,j_index,i,j); */
-/*     } */
-/* } */
-
-
 // Static variables
 template< SpaceType SpaceDimension, class GeometryType, class SolutionType>
 HeaderData ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::VarNames("Solution");
@@ -2849,8 +2841,8 @@ void SetUpDomain(SolutionType & SolnBlk, InputParameterType &IP)
 template<class SolutionType, class InputParameterType>
 void SolveTask(SolutionType & SolnBlk, InputParameterType &IP)
 {
-  // a switch must be introduce to distinguish between Filtering and Reconstruction
 
+  // a switch must be introduce to distinguish between Filtering and Reconstruction
   std::cout << " Reconstruct the solution:\n";
   // Reconstruct solution
   SolnBlk.ReconstructSolution(IP);
@@ -2924,7 +2916,7 @@ void Output_Tecplot(SolutionBlock & SolnBlk, InputParameters &IP, bool MultipleO
 
   // Write solution data
   if(MultipleOrOnlyOneZone == true){
-    SolnBlk.OutputSolutionCellTecplot(output_file,false);
+    SolnBlk.OutputSolutionCellTecplot(output_file);
   } else {
     SolnBlk.OutputSolutionCellTecplotOneZone(output_file);
   }
@@ -3028,7 +3020,7 @@ void Output_Mesh_Nodes_Tecplot(SolutionBlock & SolnBlk, InputParameters &IP)
   output_file << "TITLE = \"" << " Mesh nodes for grid " << IP.Grid_Type << "\"\n";
 
   // Write solution data
-  SolnBlk.OutputMeshNodesTecplot(output_file,false);
+  SolnBlk.OutputMeshNodesTecplot(output_file);
 
   // Close the output data file.
   output_file << setprecision(6);  
@@ -3092,7 +3084,7 @@ void Output_Solution_Nodes_Tecplot(SolutionBlock & SolnBlk, InputParameters &IP)
 	      << IP.Function_Type << "\"" << "\n";
 
   // Write solution data
-  SolnBlk.OutputSolutionNodesTecplot(output_file,false);
+  SolnBlk.OutputSolutionNodesTecplot(output_file);
 
   // Close the output data file.
   output_file << setprecision(6);  
@@ -3209,7 +3201,7 @@ void Output_Full_Solution_Nodes_Tecplot(SolutionBlock & SolnBlk, InputParameters
 	      << IP.Function_Type << "\"" << "\n";
 
   // Write solution data
-  SolnBlk.OutputFullSolutionNodesTecplot(output_file,false);
+  SolnBlk.OutputFullSolutionNodesTecplot(output_file);
 
   // Close the output data file.
   output_file << setprecision(6);  
@@ -3521,7 +3513,7 @@ void Output_Tecplot_Stencil_Reconstruction(SolutionBlock & SolnBlk, InputParamet
 	      << IP.Function_Type << "\"" << "\n";
 
   // Write solution data
-  SolnBlk.OutputReconstructedSolutionTecplot(output_file,false);
+  SolnBlk.OutputReconstructedSolutionTecplot(output_file);
 
   // Close the output data file.
   output_file << setprecision(6);  
