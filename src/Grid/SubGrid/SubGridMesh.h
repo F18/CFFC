@@ -210,28 +210,30 @@ void SubGridMesh<NodeType,SpaceDimension,SolutionType>::allocate( ) {
 // Deallocate function
 template<class NodeType, SpaceType SpaceDimension, class SolutionType>
 void SubGridMesh<NodeType,SpaceDimension,SolutionType>::deallocate( ) {
-  switch(SpaceDimension){
-  case OneD:
+  if (Ptr!=NULL){
+    switch(SpaceDimension){
+    case OneD:
       delete [] Ptr[0][0];
       delete Ptr[0];
       delete Ptr;
-    break;
-  case TwoD:
-    for (int i=0; i<XYZ[1]; ++i)
-      delete [] Ptr[0][i];
-    delete [] Ptr[0];
-    delete [] Ptr;
-    break;
-  case ThreeD:
-    for (int i=0; i<XYZ[2]; ++i)
-      for (int j=0; j<XYZ[1]; ++j)
-	delete [] Ptr[i][j];
-    for (int i=0; i<XYZ[2]; ++i)
-      delete [] Ptr[i];
-    delete [] Ptr;
-    break;
-  default: 
-    std::cout << "In SubGridMesh::deallocate() the number of dimensions are not properly defined.\n";
+      break;
+    case TwoD:
+      for (int i=0; i<XYZ[1]; ++i)
+	delete [] Ptr[0][i];
+      delete [] Ptr[0];
+      delete Ptr;
+      break;
+    case ThreeD:
+      for (int i=0; i<XYZ[2]; ++i)
+	for (int j=0; j<XYZ[1]; ++j)
+	  delete [] Ptr[i][j];
+      for (int i=0; i<XYZ[2]; ++i)
+	delete [] Ptr[i];
+      delete [] Ptr;
+      break;
+    default: 
+      std::cout << "In SubGridMesh::deallocate() the number of dimensions are not properly defined.\n";
+    }
   }
 
   Ptr = NULL;

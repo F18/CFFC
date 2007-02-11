@@ -768,6 +768,50 @@ namespace tut
     //    ensure ("Residual",fabs(RezNormMatlab-RezNorm)/RezNorm<=tol);
   }
 
+  /* Test 18:*/
+  template<>
+  template<>
+  void LinearSystems_TestObject::test<18>()
+  {
+    integer NROW, NCOL;
+    NROW = 4;
+    NCOL = 3;
+
+    DenseMatrix A(NROW,NCOL);	// Test matrix
+    ColumnVector B(NROW);	// Test free term
+    ColumnVector X(NCOL);		// Solution vector
+    ColumnVector XMatlab(NCOL);	// Matlab solution vector
+    ColumnVector SolutionDiff(NCOL);	// Difference between the two solutions
+    // Initialize variables
+    tol = 1.0e-14;
+
+    // Initialize test matrix & free term
+    A(0,0)= -2.093656e-01; A(0,1)= 2.114593e-01; A(0,2)= -1.512815e-01;
+    A(1,0)= -9.900990e-01; A(1,1)= 5.000000e-01; A(1,2)= -2.104167e-01;
+    A(2,0)=  9.900990e-01; A(2,1)= 5.000000e-01; A(2,2)=  2.104167e-01;
+    A(3,0)=  4.950495e-01; A(3,1)= 5.000000e-01; A(3,2)= 3.577083e-01;
+
+    B(0) = 4.364948e-01; B(1) = 4.353389e-16; B(2) = 0.000000e+00; B(3) = 0.000000e+00;
+
+    // Initialize Matlab solution
+    XMatlab(0) = 0.20223247422880; XMatlab(1) = 0.24027609285144;
+    XMatlab(2) =-0.95158872955264;
+    RezNormMatlab = 0.35212869025901;
+
+    // solve the least-squares system with local subroutine
+    //##    Solve_LS_Householder(A,B,X,krank,RezNorm);
+
+    // solve the least-squares system with Lapack subroutine
+    Solve_LS_Householder_F77(A,B,krank,NROW,NCOL);
+
+    // check condition
+    for (int i=0; i<(int)A.size(1); ++i){
+      SolutionDiff(i) = fabs(B(i)-XMatlab(i))/(1.0 + fabs(XMatlab(i)));
+      ensure ("System 4x3",SolutionDiff(i)<=tol);
+    }
+
+  }
+
 };
 
 namespace tut

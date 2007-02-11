@@ -200,6 +200,8 @@ class TaylorDerivativesContainer<OneD,T>{
   Derivative & operator()(const unsigned & position, const bool, const bool, const bool) const {return DContainer[position];}
   T & operator()(const unsigned & p1);
   T & operator()(const unsigned & p1) const;
+  double & operator()(const unsigned p1, const unsigned VarPosition);
+  double & operator()(const unsigned p1, const unsigned VarPosition) const;
 
   /* Friend functions */
   friend bool operator== <OneD,T> (const TaylorDerivativesContainer<OneD,T>& left,
@@ -318,6 +320,16 @@ template<class T> inline
 T & TaylorDerivativesContainer<OneD,T>::operator()(const unsigned & p1) const{
 
   return DContainer[p1].D();
+}
+
+template<class T> inline
+double & TaylorDerivativesContainer<OneD,T>::operator()(const unsigned p1, const unsigned VarPosition){
+  return DContainer[p1].D(VarPosition);
+}
+
+template<class T> inline
+double & TaylorDerivativesContainer<OneD,T>::operator()(const unsigned p1, const unsigned VarPosition) const{
+  return DContainer[p1].D(VarPosition);
 }
 
 // ComputeSolutionFor :-> Compute the solution of the Taylor series expansion for a particular distance DeltaX

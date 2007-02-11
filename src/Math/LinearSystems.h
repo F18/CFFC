@@ -329,7 +329,7 @@ inline void Solve_LS_Householder_F77(DenseMatrix &A,
 
 
   static const char TRANS('N');
-  static integer INFO;
+  static integer INFO(1);
   static double RCOND(1.0e-15);
   static integer NRHS, NROW, NCOL, LWORK;
   static double *WORK;
@@ -342,12 +342,15 @@ inline void Solve_LS_Householder_F77(DenseMatrix &A,
   LWORK = max( min(NROW, NCOL) + 3*NCOL+1, 2*min(NROW,NCOL) +  NumberOfParameters);
   WORK = new double[LWORK];
   JPVT = new int[NCOL];
-  INFO = 1;
-  
-  F77NAME(dgelsy)(&NROW, &NCOL,  &NRHS, &A(0,0), &NROW, &B(0,0), &NROW, JPVT, &RCOND,
-		  &krank, WORK,  &LWORK,
-		  &INFO);
+  for (int i=0; i<NCOL; ++i){
+    JPVT[i] = 0;
+  }
 
+  /* Call Fortran subroutine */
+  F77NAME(dgelsy)(&NROW, &NCOL,  &NRHS, &A(0,0), &NROW, &B(0,0), &NROW, JPVT, &RCOND,
+		  &krank, WORK,  &LWORK, &INFO);
+
+  /* Free memory */
   delete [] WORK; WORK = NULL;
   delete [] JPVT; JPVT = NULL;
 }

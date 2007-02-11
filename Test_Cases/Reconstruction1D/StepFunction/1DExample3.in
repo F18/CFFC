@@ -10,7 +10,7 @@ Method_Used =
 CENO
 #ENO
 CENO_Tolerance =
-30
+100
 Integration_Type =
 Theoretic
 #
@@ -23,7 +23,7 @@ Example3
 Limiter =
 Barth_Jespersen
 Reconstruction_Order =
-4
+3
 ###########################
 # Set grid parameters
 ###########################
@@ -35,7 +35,7 @@ X_min     =
 X_max    =
 4.0
 Number_of_Cells_Idir =
-11
+23
 Number_of_Subgrid_Points =
 50
 Output_File_Name =

@@ -47,7 +47,7 @@ SRC_MATH_UnitTesting    = test_LinearSystems.cc test_NumericalLibrary.cc \
 
 SRC_MATH_UnitTesting	:= $(addprefix  $(TEST_DIR)/, $(SRC_MATH_UnitTesting))
 #
-SRC_COMMON              = StateData.cc SourceRevisionData.cc
+SRC_COMMON              = StateData.cc SourceRevisionData.cc EpsilonTol.cc
 SRC_COMMON		:= $(addprefix  $(COMMON_DIR)/, $(SRC_COMMON))
 #
 SRC_COMMON_UnitTesting  = test_SourceCode.cc 
@@ -285,7 +285,7 @@ NODEP_LIST = help clean clean-lib clean-sparselib clean-bpkit \
 #-----------------------------------
 ifeq ($(strip $(filter $(MAKECMDGOALS), $(NODEP_LIST)) ), )
 ############# Include dependencies of files that have extensions different than " .cc " (e.g. *.c)
-       sinclude $(patsubst %.c,$(DEPENDDIR)%.d, $(filter %.c, $(SRC_RECONSTRUCTION)))
+       # sinclude $(patsubst %.c,$(DEPENDDIR)%.d, $(filter %.c, $(SRC_RECONSTRUCTION)))
 ############# Include the .d files comming from different executables
        # this command includes most of the *.d files
        sinclude $(patsubst %.cc,$(DEPENDDIR)%.d, $(filter %.cc, $(SRC_RECONSTRUCTION)))
