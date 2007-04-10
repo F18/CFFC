@@ -6,6 +6,9 @@
 #include "tut_reporter.h"
 #include <cstring>
 
+using tut::reporter;
+using tut::groupnames;
+
 void Test_Run(std::string, int);
 
 #endif

@@ -38,7 +38,7 @@ int main(int num_arg, char *arg_ptr[]){
 
   // Version of code:
   char *program_version_ptr = 
-    "UTIAS CFD & Propulsion Group, 1999-";
+    "UTIAS CFD & Propulsion Group, 1999 -";
   
   // Input file name:
   char *Input_File_Name_ptr = "reconstruct_DEFAULT.in";

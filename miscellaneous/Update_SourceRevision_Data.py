@@ -37,7 +37,7 @@ cmd="svnversion"
 RevisionData['GlobalRevision'] = commands.getoutput(cmd)
 
 ################# Get compilation time with 'date' ###############
-cmd="date +%c"
+cmd="date '+%d %b %Y, %R'"
 RevisionData['CompilationTime'] = commands.getoutput(cmd)
 
 ################# Get SVN info ###################

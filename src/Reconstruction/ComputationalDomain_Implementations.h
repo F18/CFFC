@@ -421,9 +421,7 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
       In_File >> SolnPtr[0][j][i].CellSolution();
 
 
-      // SolnPtr[0][j][i].CellSolution() *= 1.0e5;
       SolnPtr[0][j][i].CellDeriv(0,true,true,true) = SolnPtr[0][j][i].CellSolution();
-      //      Print_(SolnPtr[0][j][i].CellDeriv(0,true,true,true))
       SolnPtr[0][j][i].UpdateSubgridSolution();
     }
   }

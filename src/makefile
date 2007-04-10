@@ -50,7 +50,7 @@ SRC_MATH_UnitTesting	:= $(addprefix  $(TEST_DIR)/, $(SRC_MATH_UnitTesting))
 SRC_COMMON              = StateData.cc SourceRevisionData.cc EpsilonTol.cc
 SRC_COMMON		:= $(addprefix  $(COMMON_DIR)/, $(SRC_COMMON))
 #
-SRC_COMMON_UnitTesting  = test_SourceCode.cc 
+SRC_COMMON_UnitTesting  = test_SourceCode.cc BasicTestData.cc test_BasicTestData.cc
 
 SRC_COMMON_UnitTesting	:= $(addprefix  $(TEST_DIR)/, $(SRC_COMMON_UnitTesting))
 #
@@ -175,8 +175,10 @@ $(EXE_REC) : $(OBJ_RECONSTRUCTION)
 	@echo Update compilation time and SVN revision data
 	@echo '--------------------------------------------------------'
 	@python ../miscellaneous/Update_SourceRevision_Data.py
-        # Update Common/SourceRevisionData.o
+        # Update $(SVN_File,.cc=.o)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(SVN_File) -c -o $(SVN_File:.cc=.o)
+        # The updated SourceRevisionData is not required anymore ==> Revert SVN_File to the default (original)
+	@svn revert $(SVN_File) >& /dev/null
 	@echo ' '
 	@echo Building program $(EXE_REC) for a $(PLATFORM) platform.
 	@echo '--------------------------------------------------------'
@@ -230,6 +232,7 @@ clean:
 	@../miscellaneous/rmlots "*.rtl"
 	@../miscellaneous/rmlots "core*"
 	@../miscellaneous/rmlots "*~"
+	@../miscellaneous/rmlots "#*#"
 	@rm -f $(TUT_DIR)/*.o
 	@echo "Remove the automatically created dependency files *.d"
 	rm -fr $(DEPENDDIR)
