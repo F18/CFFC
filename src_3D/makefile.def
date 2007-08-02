@@ -17,6 +17,9 @@ ICEMCFD_VERSION = NoICEMCFD
 # Version V296, V3+, ICC
 GCC_VERSION = V3+
 
+# NoCANTERA, V70
+CANTERA_VERSION = NoCANTERA
+
 # Set to ON for use with "gprof"
 # <x86  >  gprof cffc3D gmon.out > output.txt
 # <alpha>  gprof --demangle=compaq cffc3D gmon.out > output.txt
@@ -138,6 +141,40 @@ ifeq ($(PLATFORM),Linux_ia64)
 endif	
 ifeq ($(PLATFORM),Linux_x86_64)
   BLAS_LD_FLAGS           = -lblas -llapack -lg2c -lgcc
+endif
+
+#
+# Set flags associated with cantera
+ifeq ($(PLATFORM),Linux_i386)
+  CANTERA_ARCH          = $(shell uname -m)-pc-linux-gnu
+  CANTERA_LCXX_END_LIBS = -lm
+endif
+ifeq ($(PLATFORM),Linux_alpha)
+  CANTERA_ARCH          = alphaev68-unknown-linux-gnu
+  CANTERA_LCXX_END_LIBS = -lm
+endif
+ifeq ($(PLATFORM),Linux_ia64)
+  CANTERA_ARCH          = ia64-unknown-linux-gnu
+  CANTERA_LCXX_END_LIBS = -limf
+endif	
+ifeq ($(PLATFORM),Linux_x86_64)
+  CANTERA_ARCH          = $(shell uname -m)-pc-linux-gnu
+  CANTERA_LCXX_END_LIBS = -lm
+endif
+
+CANTERA                   = CANTERA
+CANTERA_DIR               = $(CFFC_Path)/cantera
+
+CANTERA_LIB_DIR           = $(CANTERA_DIR)/build/lib/$(CANTERA_ARCH)
+CANTERA_INC_DIR           = $(CANTERA_DIR)/build/include
+
+ifeq ($(CANTERA_VERSION),NoCANTERA)
+  CANTERA_CPP_FLAGS       = -D_NO_CANTERA_VERSION
+  CANTERA_LD_FLAGS        =  
+endif
+ifeq ($(CANTERA_VERSION),V70)
+  CANTERA_CPP_FLAGS       =  -D_CANTERA_VERSION -D_ICEMCFD_70 -I$(CANTERA_INC_DIR)
+  CANTERA_LD_FLAGS        =  -L$(CANTERA_LIB_DIR) -luser -loneD -lzeroD -ltransport -lcantera -lcvode -lctlapack -lctblas -lctmath -ltpx -lg2c -lctcxx
 endif
 
 #

@@ -906,7 +906,7 @@ inline void OcTreeBlock::broadcast(void) {
 #ifdef _MPI_VERSION
   int number_of_children; 
    AdaptiveBlock3D::Broadcast_Adaptive_Block(block);
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
      if (!block.used && childBSW_ptr != NULL) {
        number_of_children = 8;
      } else {
@@ -915,39 +915,39 @@ inline void OcTreeBlock::broadcast(void) {
   } /* endif */
   MPI::COMM_WORLD.Bcast(&number_of_children, 1, MPI::INT, 0);
   if (!block.used && number_of_children > 0) {
-     if (!CFDkit_Primary_MPI_Processor() && childBSW_ptr != NULL) { delete childBSW_ptr; childBSW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childBSW_ptr = new OcTreeBlock; childBSW_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childBSW_ptr != NULL) { delete childBSW_ptr; childBSW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childBSW_ptr = new OcTreeBlock; childBSW_ptr->parent_ptr = this; }
      childBSW_ptr->broadcast();
-     if (!CFDkit_Primary_MPI_Processor() && childBSE_ptr != NULL) { delete childBSE_ptr; childBSE_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childBSE_ptr = new OcTreeBlock; childBSE_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childBSE_ptr != NULL) { delete childBSE_ptr; childBSE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childBSE_ptr = new OcTreeBlock; childBSE_ptr->parent_ptr = this; }
      childBSE_ptr->broadcast();
-     if (!CFDkit_Primary_MPI_Processor() && childBNW_ptr != NULL) { delete childBNW_ptr; childBNW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childBNW_ptr = new OcTreeBlock; childBNW_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childBNW_ptr != NULL) { delete childBNW_ptr; childBNW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childBNW_ptr = new OcTreeBlock; childBNW_ptr->parent_ptr = this; }
      childBNW_ptr->broadcast();
-     if (!CFDkit_Primary_MPI_Processor() && childBNE_ptr != NULL) { delete childBNE_ptr; childBNE_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childBNE_ptr = new OcTreeBlock; childBNE_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childBNE_ptr != NULL) { delete childBNE_ptr; childBNE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childBNE_ptr = new OcTreeBlock; childBNE_ptr->parent_ptr = this; }
      childBNE_ptr->broadcast();
-     if (!CFDkit_Primary_MPI_Processor() && childTSW_ptr != NULL) { delete childTSW_ptr; childTSW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childTSW_ptr = new OcTreeBlock; childTSW_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childTSW_ptr != NULL) { delete childTSW_ptr; childTSW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childTSW_ptr = new OcTreeBlock; childTSW_ptr->parent_ptr = this; }
      childTSW_ptr->broadcast();
-     if (!CFDkit_Primary_MPI_Processor() && childTSE_ptr != NULL) { delete childTSE_ptr; childTSE_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childTSE_ptr = new OcTreeBlock; childTSE_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childTSE_ptr != NULL) { delete childTSE_ptr; childTSE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childTSE_ptr = new OcTreeBlock; childTSE_ptr->parent_ptr = this; }
      childTSE_ptr->broadcast();
-     if (!CFDkit_Primary_MPI_Processor() && childTNW_ptr != NULL) { delete childTNW_ptr; childTNW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childTNW_ptr = new OcTreeBlock; childTNW_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childTNW_ptr != NULL) { delete childTNW_ptr; childTNW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childTNW_ptr = new OcTreeBlock; childTNW_ptr->parent_ptr = this; }
      childTNW_ptr->broadcast();
-     if (!CFDkit_Primary_MPI_Processor() && childTNE_ptr != NULL) { delete childTNE_ptr; childTNE_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childTNE_ptr = new OcTreeBlock; childTNE_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childTNE_ptr != NULL) { delete childTNE_ptr; childTNE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childTNE_ptr = new OcTreeBlock; childTNE_ptr->parent_ptr = this; }
      childTNE_ptr->broadcast();
   } else {
-     if (!CFDkit_Primary_MPI_Processor() && childBSW_ptr != NULL) { delete childBSW_ptr; childBSW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor() && childBSE_ptr != NULL) { delete childBSE_ptr; childBSE_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor() && childBNW_ptr != NULL) { delete childBNW_ptr; childBNW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor() && childBNE_ptr != NULL) { delete childBNE_ptr; childBNE_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor() && childTSW_ptr != NULL) { delete childTSW_ptr; childTSW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor() && childTSE_ptr != NULL) { delete childTSE_ptr; childTSE_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor() && childTNW_ptr != NULL) { delete childTNW_ptr; childTNW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor() && childTNE_ptr != NULL) { delete childTNE_ptr; childTNE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childBSW_ptr != NULL) { delete childBSW_ptr; childBSW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childBSE_ptr != NULL) { delete childBSE_ptr; childBSE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childBNW_ptr != NULL) { delete childBNW_ptr; childBNW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childBNE_ptr != NULL) { delete childBNE_ptr; childBNE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childTSW_ptr != NULL) { delete childTSW_ptr; childTSW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childTSE_ptr != NULL) { delete childTSE_ptr; childTSE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childTNW_ptr != NULL) { delete childTNW_ptr; childTNW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childTNE_ptr != NULL) { delete childTNE_ptr; childTNE_ptr = NULL; }
   } /* endif */
 #endif
 }
@@ -956,7 +956,7 @@ inline void OcTreeBlock::broadcast(AdaptiveBlock3DResourceList &List_of_Availabl
 #ifdef _MPI_VERSION
   int number_of_children; 
    AdaptiveBlock3D::Broadcast_Adaptive_Block(block);
-  if (!CFDkit_Primary_MPI_Processor()) {
+  if (!CFFC_Primary_MPI_Processor()) {
      if (block.used) {
         if (List_of_Available_Blocks.Nfree > 0) {
            block.info.cpu = List_of_Available_Blocks.nextCPU();
@@ -968,7 +968,7 @@ inline void OcTreeBlock::broadcast(AdaptiveBlock3DResourceList &List_of_Availabl
         } /* endif */
      } /* endif */
   } /* endif */
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
      if (!block.used && childBSW_ptr != NULL) {
        number_of_children = 8;
      } else {
@@ -977,39 +977,39 @@ inline void OcTreeBlock::broadcast(AdaptiveBlock3DResourceList &List_of_Availabl
   } /* endif */
   MPI::COMM_WORLD.Bcast(&number_of_children, 1, MPI::INT, 0);
   if (!block.used && number_of_children > 0) {
-     if (!CFDkit_Primary_MPI_Processor() && childBSW_ptr != NULL) { delete childBSW_ptr; childBSW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childBSW_ptr = new OcTreeBlock; childBSW_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childBSW_ptr != NULL) { delete childBSW_ptr; childBSW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childBSW_ptr = new OcTreeBlock; childBSW_ptr->parent_ptr = this; }
      childBSW_ptr->broadcast(List_of_Available_Blocks);
-     if (!CFDkit_Primary_MPI_Processor() && childBSE_ptr != NULL) { delete childBSE_ptr; childBSE_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childBSE_ptr = new OcTreeBlock; childBSE_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childBSE_ptr != NULL) { delete childBSE_ptr; childBSE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childBSE_ptr = new OcTreeBlock; childBSE_ptr->parent_ptr = this; }
      childBSE_ptr->broadcast(List_of_Available_Blocks);
-     if (!CFDkit_Primary_MPI_Processor() && childBNW_ptr != NULL) { delete childBNW_ptr; childBNW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childBNW_ptr = new OcTreeBlock; childBNW_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childBNW_ptr != NULL) { delete childBNW_ptr; childBNW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childBNW_ptr = new OcTreeBlock; childBNW_ptr->parent_ptr = this; }
      childBNW_ptr->broadcast(List_of_Available_Blocks);
-     if (!CFDkit_Primary_MPI_Processor() && childBNE_ptr != NULL) { delete childBNE_ptr; childBNE_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childBNE_ptr = new OcTreeBlock; childBNE_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childBNE_ptr != NULL) { delete childBNE_ptr; childBNE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childBNE_ptr = new OcTreeBlock; childBNE_ptr->parent_ptr = this; }
      childBNE_ptr->broadcast(List_of_Available_Blocks);
-     if (!CFDkit_Primary_MPI_Processor() && childTSW_ptr != NULL) { delete childTSW_ptr; childTSW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childTSW_ptr = new OcTreeBlock; childTSW_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childTSW_ptr != NULL) { delete childTSW_ptr; childTSW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childTSW_ptr = new OcTreeBlock; childTSW_ptr->parent_ptr = this; }
      childTSW_ptr->broadcast(List_of_Available_Blocks);
-     if (!CFDkit_Primary_MPI_Processor() && childTSE_ptr != NULL) { delete childTSE_ptr; childTSE_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childTSE_ptr = new OcTreeBlock; childTSE_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childTSE_ptr != NULL) { delete childTSE_ptr; childTSE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childTSE_ptr = new OcTreeBlock; childTSE_ptr->parent_ptr = this; }
      childTSE_ptr->broadcast(List_of_Available_Blocks);
-     if (!CFDkit_Primary_MPI_Processor() && childTNW_ptr != NULL) { delete childTNW_ptr; childTNW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childTNW_ptr = new OcTreeBlock; childTNW_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childTNW_ptr != NULL) { delete childTNW_ptr; childTNW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childTNW_ptr = new OcTreeBlock; childTNW_ptr->parent_ptr = this; }
      childTNW_ptr->broadcast(List_of_Available_Blocks);
-     if (!CFDkit_Primary_MPI_Processor() && childTNE_ptr != NULL) { delete childTNE_ptr; childTNE_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childTNE_ptr = new OcTreeBlock; childTNE_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childTNE_ptr != NULL) { delete childTNE_ptr; childTNE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childTNE_ptr = new OcTreeBlock; childTNE_ptr->parent_ptr = this; }
      childTNE_ptr->broadcast(List_of_Available_Blocks);
   } else {
-     if (!CFDkit_Primary_MPI_Processor() && childTSW_ptr != NULL) { delete childTSW_ptr; childTSW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor() && childTSE_ptr != NULL) { delete childTSE_ptr; childTSE_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor() && childTNW_ptr != NULL) { delete childTNW_ptr; childTNW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor() && childTNE_ptr != NULL) { delete childTNE_ptr; childTNE_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor() && childBSW_ptr != NULL) { delete childBSW_ptr; childBSW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor() && childBSE_ptr != NULL) { delete childBSE_ptr; childBSE_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor() && childBNW_ptr != NULL) { delete childBNW_ptr; childBNW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor() && childBNE_ptr != NULL) { delete childBNE_ptr; childBNE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childTSW_ptr != NULL) { delete childTSW_ptr; childTSW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childTSE_ptr != NULL) { delete childTSE_ptr; childTSE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childTNW_ptr != NULL) { delete childTNW_ptr; childTNW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childTNE_ptr != NULL) { delete childTNE_ptr; childTNE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childBSW_ptr != NULL) { delete childBSW_ptr; childBSW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childBSE_ptr != NULL) { delete childBSE_ptr; childBSE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childBNW_ptr != NULL) { delete childBNW_ptr; childBNW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childBNE_ptr != NULL) { delete childBNE_ptr; childBNE_ptr = NULL; }
   } /* endif */
 #endif
 }

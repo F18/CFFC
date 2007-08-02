@@ -33,7 +33,7 @@ void AdaptiveBlock3DResourceList::Create_Block_Resource_List(AdaptiveBlock3DReso
 
     /* Assign values to the adaptive block resource list. */
 
-    List_of_Available_Blocks.ThisCPU = CFDkit_MPI::This_Processor_Number;
+    List_of_Available_Blocks.ThisCPU = CFFC_MPI::This_Processor_Number;
     List_of_Available_Blocks.initialize();   
 
 }

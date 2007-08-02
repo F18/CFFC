@@ -152,6 +152,7 @@ help:
 	@echo "|        make documentation        create code documentaion using doxygen & latex   |"
 	@echo "|        make sparselib            create SparseLib++ library                       |"
 	@echo "|        make bpkit                create BPKIT library                             |"
+	@echo "|        make cantera              create Cantera library                           |"
 	@echo "|        make clean                clean up source directories                      |"
 	@echo "|        make superclean           clean up documentation and library directories   |"
 	@echo "|        make help                 display makefile usage information               |"
@@ -159,6 +160,7 @@ help:
 	@echo "| Package Options: MPI_VERSION = NoMPI (default), MPICH, MPT (sgi)                  |"
 	@echo "|                  ICEMCFD_VERSION = NoICEMCFD (default), V41, V42, V43, V50        |"
 	@echo "|                  GCC_VERSION = V296, V3+ (default), ICC                           |"
+	@echo "|                  CANTERA_VERSION = NoCANTERA (default), V70                       |"
 	@echo "|                  PROFILING = OFF (default), ON                                    |"
 	@echo "|                                                                                   |"
 	@echo "| Ensure that the source directory is clean and the ICEMCFD, SparseLib++,           |"
@@ -200,6 +202,22 @@ bpkit:
 	cd $(BPKIT_DIR)/src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE);
 	@echo ' '
 	@echo $(BPKIT) library has been brought up to date.
+	@echo '--------------------------------------------'
+	@echo ' '
+
+cantera:
+	@echo ' '
+	@echo Building $(CANTERA) library for a $(PLATFORM) platform.
+	@echo '----------------------------------------------------'
+	@echo ' '
+	cd $(CANTERA_DIR); make -i clean;
+	cd $(CANTERA_DIR); ./preconfig CXX="$(CXX) $(CXXFLAGS)" CC="$(CC)" F77="$(FC)" \
+          CXXFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" \
+	  FFLAGS="$(FFLAGS)" LCXX_END_LIBS="$(CANTERA_LCXX_END_LIBS)";
+	cd $(CANTERA_DIR); make -i clean;
+	cd $(CANTERA_DIR); make;
+	@echo ' '
+	@echo $(CANTERA) library has been brought up to date.
 	@echo '--------------------------------------------'
 	@echo ' '
 
@@ -344,6 +362,7 @@ superclean:
 	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) wipe;
 	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
 	cd $(BPKIT_DIR)/src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
+	cd $(CANTERA_DIR); make -i clean;
 	@echo ' '
 	@echo All documentation and library directories are now clean.
 	@echo '-------------------------------------------------------'
