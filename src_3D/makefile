@@ -49,6 +49,7 @@ SRC_MATH = $(MATH_DIR)Vector2D.cc \
 	   $(MATH_DIR)Polygon.cc
 SRC_CFD = $(CFD_DIR)CFD.cc
 SRC_MPI	= $(MPI_DIR)MPI.cc
+SRC_SYSTEM = $(SYSTEM_DIR)System_Linux.cc
 ifeq ($(MPI_VERSION),NoMPI)
   SRC_AMR = $(AMR_DIR)AdaptiveBlock3D.cc \
 	    $(AMR_DIR)AdaptiveBlock3D_NoMPI.cc \
@@ -76,7 +77,7 @@ SRC_FANS = $(FANS_DIR)FANS3DThermallyPerfectState.cc \
 SRC_SPECIES = $(NASA_DIR)NASARP1311data.cc \
               $(NASA_DIR)Reactions.cc
 SRC_TURBULENCE = $(TURBULENCE_DIR)TurbulenceModelling.cc 
-SRC_BASE = $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) \
+SRC_BASE = $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_SYSTEM) \
            $(SRC_AMR) $(SRC_GRID) $(SRC_ICEM) $(SRC_HEXA) \
            $(SRC_TURBULENCE)
 SRC_CFFC = $(SRC_BASE) \
@@ -95,6 +96,7 @@ OBJ_MATH = $(MATH_DIR)Vector2D.o \
 	   $(MATH_DIR)Polygon.o
 OBJ_CFD = $(CFD_DIR)CFD.o
 OBJ_MPI	= $(MPI_DIR)MPI.o
+OBJ_SYSTEM = $(SYSTEM_DIR)System_Linux.o
 ifeq ($(MPI_VERSION),NoMPI)
   OBJ_AMR = $(AMR_DIR)AdaptiveBlock3D.o \
 	    $(AMR_DIR)AdaptiveBlock3D_NoMPI.o \
@@ -122,7 +124,7 @@ OBJ_FANS = $(FANS_DIR)FANS3DThermallyPerfectState.o \
 OBJ_SPECIES = $(NASA_DIR)NASARP1311data.o \
               $(NASA_DIR)Reactions.o
 OBJ_TURBULENCE = $(TURBULENCE_DIR)TurbulenceModelling.o 
-OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) \
+OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_SYSTEM) \
            $(OBJ_AMR) $(OBJ_GRID) $(OBJ_ICEM) $(OBJ_HEXA) \
            $(OBJ_TURBULENCE)
 OBJ_CFFC = $(OBJ_BASE) \
@@ -338,7 +340,7 @@ superclean:
 	rm -f $(DOXYGEN_DIR_3D)/latex/*
 	cd $(LATEX_DIR_3D)/users_guide_src; rm -f *~ *.ps *.pdf *.aux *.log *.dvi *.toc users_guide/*; 
 	cd $(LATEX_DIR_3D)/programmers_guide_src; rm -f *~ *.ps *.pdf *.aux *.log *.dvi *.toc programmers_guide/*; 
-	cd $(LATEX_DIR_3D)/reference_manual_src; rm -f *~ *.ps *.pdf *.aux *.log *.dvi *.toc reference _manual/*;
+	cd $(LATEX_DIR_3D)/reference_manual_src; rm -f *~ *.ps *.pdf *.aux *.log *.dvi *.toc reference_manual/*;
 	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) wipe;
 	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
 	cd $(BPKIT_DIR)/src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
