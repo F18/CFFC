@@ -1,0 +1,170 @@
+#
+# EMBEDDED TRANSLATING ELLIPSE
+#
+#
+# PROBLEM PARAMETERS:
+#Flow_Type =
+#Inviscid
+Flow_Geometry_Type =
+Planar
+#
+# TIME-STEPPING PARAMETERS:
+Time_Integration_Type =
+Explicit_Predictor_Corrector
+Time_Accurate =
+1
+Local_Time_Stepping =
+0
+CFL_Number =
+0.50
+Time_Max =
+0.000000000
+#0.091832375
+#0.183664750
+#0.275497125
+#0.367329500
+#0.459161875
+#0.550994250
+#0.642826625
+#0.734659000
+#0.826491375
+#0.918323750
+#1.010156125
+#1.101988500
+#1.193820875
+#1.285653250
+#1.377485625
+#1.469318000
+#1.561150375
+#1.652982750
+#1.744815125
+#1.836647500
+#1.928479875
+#2.020312250
+#2.112144625
+#2.203977000
+Maximum_Number_of_Time_Steps =
+0
+#
+# FLUX PARAMETERS:
+Reconstruction_Type =
+Least_Squares
+Limiter_Type =
+Venkatakrishnan
+Flux_Function_Type =
+HLLE_MB
+#Roe_MB
+#
+# INITIAL CONDITIONS:
+ICs_Type =
+Uniform
+Mach_Number =
+0.0
+Gas_Type =
+AIR
+#
+# MESH PARAMETERS:
+Grid_Type =
+Rectangular_Box
+Box_Height =
+0.80
+Box_Width =
+2.00
+Number_of_Cells_Idir =
+100
+Number_of_Cells_Jdir =
+40
+Number_of_Blocks_Idir =
+10
+Number_of_Blocks_Jdir =
+4
+Boundary_Conditions_Specified =
+On
+BC_North =
+Reflection
+BC_South =
+Reflection
+BC_East =
+Constant_Extrapolation
+BC_West =
+Constant_Extrapolation
+#
+# INTERFACE PARAMETERS:
+Number_of_Interface_Components =
+1
+Interface_Spline_Type =
+Ellipse
+Interface_Characteristic_Length_1 =
+0.200
+Interface_Characteristic_Length_2 =
+0.025
+Number_of_Specified_Interface_Points =
+1
+Interface_Points =
+0.750   0.000   0   0
+Interface_Reference_Point =
+0.750   0.000
+Interface_BC_Type =
+Reflection
+Interface_Motion =
+Translate
+Interface_Characteristic_Velocity =
+-510.441  0.000
+#
+# INITIAL AMR PARAMETERS:
+Number_of_Uniform_Mesh_Refinements =
+0
+Number_of_Boundary_Mesh_Refinements =
+0
+Number_of_Initial_Mesh_Refinements =
+0
+Number_of_Interface_Mesh_Refinements =
+3
+#
+# UNSTEADY AMR PARAMETERS:
+AMR =
+On
+AMR_Frequency =
+9
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+3
+#7
+Minimum_Refinement_Level =
+0
+Threshold_for_Refinement =
+0.15
+Threshold_for_Coarsening =
+0.05
+Refinement_Criteria_Gradient_Density =
+On
+Refinement_Criteria_Divergence_Velocity =
+Off
+Refinement_Criteria_Curl_Velocity =
+Off
+Number_of_Blocks_Per_Processor =
+128
+#
+# I/O PARAMETERS:
+Output_File_Name =
+ellipse
+Restart_Solution_Save_Frequency =
+50000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+Write_Output
+Write_Output_Cells
+Write_Output_Elements
+Write_Output_Nodes
+Write_Output_Interface_Component_List
+Write_Output_Interface_Union_List
+#
+# WRITE RESTART:
+Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate

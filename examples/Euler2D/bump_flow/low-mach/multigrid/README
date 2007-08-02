@@ -1,0 +1,2 @@
+For unknown reasons the low Mach number preconditioner does not work in
+conjunction with the FAS multigrid code.  It should... there is a bug.

@@ -1,0 +1,25 @@
+#!/bin/tcsh
+#
+#PBS -N jets_sv_000
+#PBS -q iqmaster
+#PBS -l walltime=2:00:00,nodes=2:ppn=4:itanium-8G,other=day
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/Dusty2D/crossing_jets/single-velocity/000/
+mpirun -np 8 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/dusty2D -f jets.in -pde Dusty2D >& jets.log
+cat jets_0000_cpu*.dat > sv.000.0000.dat
+cat jets_0050_cpu*.dat > sv.000.0050.dat
+cat jets_0100_cpu*.dat > sv.000.0100.dat
+cat jets_0150_cpu*.dat > sv.000.0150.dat
+cat jets_0200_cpu*.dat > sv.000.0200.dat
+cat jets_0250_cpu*.dat > sv.000.0250.dat
+cat jets_0300_cpu*.dat > sv.000.0300.dat
+cat jets_0350_cpu*.dat > sv.000.0350.dat
+cat jets_0400_cpu*.dat > sv.000.0400.dat
+cat jets_0450_cpu*.dat > sv.000.0450.dat
+cat jets_0500_cpu*.dat > sv.000.0500.dat
+cat jets_0550_cpu*.dat > sv.000.0550.dat
+cat jets_0600_cpu*.dat > sv.000.0600.dat
+rm jets_*_cpu*.dat
+rm jets_*_residual.*
+rm jets_sv_000.e* jets_sv_000.o*

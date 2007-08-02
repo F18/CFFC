@@ -1,0 +1,13 @@
+#!/bin/tcsh
+#
+#PBS -N nozzleless_0.90_R3
+#PBS -q ilong_32for12
+#PBS -l walltime=12:00:00,nodes=8:ppn=4:itanium-8G,other=night
+#PBS -W group_list=cfd
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/NavierStokes2D/nozzleless_rocket_motor/0.90/R3/
+mpirun -np 32 --gm-no-shmem --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/navierstokes2D -f nozzleless.in -pde NavierStokes2D >& nozzleless.log
+cat nozzleless_cpu*.dat > points.dat
+cat nozzleless_cells_cpu*.dat > cells.dat
+rm nozzleless_*cpu*.dat
+rm nozzleless_0.90_R3.e* nozzleless_0.90_R3.o*

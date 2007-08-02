@@ -1,0 +1,64 @@
+Time_Integration_Type =
+Explicit_Predictor_Corrector
+Reconstruction_Type =
+Least_Squares 
+Limiter_Type = 
+Venkatakrishnan 
+Flux_Function_Type = 
+Godunov
+ICs_Type = 
+Groth
+Grid_Type =
+Uniform
+Number_of_Cells = 
+60
+CFL_Number =
+0.90
+Time_Max = 
+ 0.0018
+Output_File_Name = 
+sod
+Execute
+Write_Output
+Terminate
+
+Uniform                        :ICs_Type
+Sod                            :ICs_Type
+Groth                          :ICs_Type 
+Einfeldt                       :ICs_Type 
+
+Explicit_Euler                 :Time_Integration_Type
+Explicit_Predictor_Corrector   :Time_Integration_Type
+Lax_Friedrichs                 :Time_Integration_Type
+Lax_Wendroff                   :Time_Integration_Type
+MacCormack                     :Time_Integration_Type
+Hancock                       :Time_Integration_Type
+
+MUSCL                          :Reconstruction_Type
+Least_Squares                  :Reconstruction_Type
+Green_Gauss                    :Reconstruction_Type
+Characteristic                 :Reconstruction_Type
+
+Zero                           :Limiter_Type
+One                            :Limiter_Type
+Minmod                         :Limiter_Type
+UMIST                          :Limiter_Type
+Double_Minmod                  :Limiter_Type
+Superbee                       :Limiter_Type
+Phi                            :Limiter_Type
+VanLeer                        :Limiter_Type
+VanAlbada                      :Limiter_Type
+Venkatakrishnan                :Limiter_Type
+Barth_Jespersen                :Limiter_Type
+
+Godunov                        :Flux_Function_Type
+Roe                            :Flux_Function_Type
+Rusanov                        :Flux_Function_Type
+HLLE                           :Flux_Function_Type
+Linde                          :Flux_Function_Type
+HLLC                           :Flux_Function_Type
+Osher                          :Flux_Function_Type
+
+Tecplot                        :Output_Format_Type
+Gnuplot                        :Output_Format_Type
+Matlab                         :Output_Format_Type

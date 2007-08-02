@@ -1,0 +1,731 @@
+#!MC 1000
+$!VarSet |LFDSFN1| = '"sinewave_0000_cpu000000.dat" "sinewave_0050_cpu000000.dat" "sinewave_0100_cpu000000.dat" "sinewave_0175_cpu000000.dat" "sinewave_0350_cpu000000.dat"'
+$!VarSet |LFDSVL1| = '"x" "y" "rho" "vx" "vy" "p" "T" "M" "H" "s" "sigma" "ux" "uy" "Tp" "chi" "zetap" "phip" "ln(sigmap)" "sigma1" "ux1" "uy1" "Tp1" "sigma2" "ux2" "uy2" "Tp2" "sigma3" "ux3" "uy3" "Tp3" "sigma4" "ux4" "uy4" "Tp4"'
+$!SETSTYLEBASE FACTORY
+$!PAPER 
+  BACKGROUNDCOLOR = WHITE
+  ISTRANSPARENT = YES
+  ORIENTPORTRAIT = NO
+  SHOWGRID = YES
+  SHOWRULER = YES
+  SHOWPAPER = YES
+  PAPERSIZE = LETTER
+  PAPERSIZEINFO
+    {
+    LETTER
+      {
+      WIDTH = 8.5
+      HEIGHT = 11
+      LEFTHARDCLIPOFFSET = 0.125
+      RIGHTHARDCLIPOFFSET = 0.125
+      TOPHARDCLIPOFFSET = 0.125
+      BOTTOMHARDCLIPOFFSET = 0.125
+      }
+    }
+  RULERSPACING = ONEINCH
+  PAPERGRIDSPACING = HALFINCH
+  REGIONINWORKAREA
+    {
+    X1 = -0.05
+    Y1 = -0.05
+    X2 = 11.05
+    Y2 = 8.55
+    }
+$!COLORMAP 
+  CONTOURCOLORMAP = SMRAINBOW
+$!COLORMAPCONTROL RESETTOFACTORY
+### Frame Number 1 ###
+$!READDATASET  '|LFDSFN1|' 
+  INITIALPLOTTYPE = XYLINE
+  INCLUDETEXT = NO
+  INCLUDEGEOM = NO
+  RESETSTYLE = NO
+  VARLOADMODE = BYNAME
+  VARNAMELIST = '|LFDSVL1|' 
+$!REMOVEVAR |LFDSVL1|
+$!REMOVEVAR |LFDSFN1|
+$!ALTERDATA  [1-3]
+  EQUATION = '{x} = {x} + 0.6' 
+$!ALTERDATA  [1-3]
+  EQUATION = '{x} = {x} - 0.6' 
+$!ALTERDATA  [1]
+  EQUATION = '{x} = {x} + 0.6' 
+$!ALTERDATA  [2]
+  EQUATION = '{x} = {x} + 0.3' 
+$!ALTERDATA  [4]
+  EQUATION = '{x} = {x} - 0.3' 
+$!ALTERDATA  [5]
+  EQUATION = '{x} = {x} - 0.6' 
+$!ALTERDATA  [5]
+  EQUATION = '{x} = {x} - 0.6' 
+$!ALTERDATA  [5]
+  EQUATION = '{x} = {x} + 0.6' 
+$!ALTERDATA  [1]
+  EQUATION = '{x} = {x} - 1.2' 
+$!ALTERDATA  [2]
+  EQUATION = '{x} = {x} - 0.6' 
+$!ALTERDATA  [4]
+  EQUATION = '{x} = {x} + 0.6' 
+$!ALTERDATA  [5]
+  EQUATION = '{x} = {x} + 1.2' 
+$!FRAMELAYOUT 
+  SHOWBORDER = NO
+  SHOWHEADER = NO
+  HEADERCOLOR = RED
+  XYPOS
+    {
+    X = 0.5
+    Y = 0.25
+    }
+  WIDTH = 10
+  HEIGHT = 3
+$!PLOTTYPE  = XYLINE
+$!FRAMENAME  = 'Frame 001' 
+$!DELETELINEMAPS 
+$!ACTIVELINEMAPS  =  [1-2,4-5,7-8,10-11,13-14]
+$!GLOBALLINEPLOT 
+  DATALABELS
+    {
+    DISTANCESKIP = 5
+    }
+  LEGEND
+    {
+    XYPOS
+      {
+      X = 95
+      }
+    }
+$!LINEMAP  [1]
+  NAME = '&DV&' 
+  ASSIGN
+    {
+    ZONE = 1
+    XAXISVAR = 1
+    YAXISVAR = 11
+    YAXIS = 2
+    }
+  LINES
+    {
+    COLOR = BLACK
+    LINETHICKNESS = 0.8
+    }
+  SYMBOLS
+    {
+    COLOR = RED
+    FILLCOLOR = RED
+    }
+  BARCHARTS
+    {
+    COLOR = RED
+    FILLCOLOR = RED
+    }
+  ERRORBARS
+    {
+    COLOR = RED
+    }
+$!LINEMAP  [2]
+  NAME = '&DV&' 
+  ASSIGN
+    {
+    ZONE = 1
+    XAXISVAR = 1
+    YAXISVAR = 12
+    }
+  LINES
+    {
+    COLOR = BLACK
+    LINETHICKNESS = 0.8
+    }
+  SYMBOLS
+    {
+    COLOR = GREEN
+    FILLCOLOR = GREEN
+    }
+  BARCHARTS
+    {
+    COLOR = GREEN
+    FILLCOLOR = GREEN
+    }
+  ERRORBARS
+    {
+    COLOR = GREEN
+    }
+$!LINEMAP  [3]
+  NAME = '&DV&' 
+  ASSIGN
+    {
+    ZONE = 1
+    XAXISVAR = 1
+    YAXISVAR = 4
+    }
+  LINES
+    {
+    COLOR = BLUE
+    LINETHICKNESS = 0.8
+    }
+  SYMBOLS
+    {
+    COLOR = BLUE
+    FILLCOLOR = BLUE
+    }
+  BARCHARTS
+    {
+    COLOR = BLUE
+    FILLCOLOR = BLUE
+    }
+  ERRORBARS
+    {
+    COLOR = BLUE
+    }
+$!LINEMAP  [4]
+  NAME = '&DV&' 
+  ASSIGN
+    {
+    ZONE = 2
+    XAXISVAR = 1
+    YAXISVAR = 11
+    YAXIS = 2
+    }
+  LINES
+    {
+    COLOR = BLACK
+    LINETHICKNESS = 0.8
+    }
+  SYMBOLS
+    {
+    COLOR = RED
+    FILLCOLOR = RED
+    }
+  BARCHARTS
+    {
+    COLOR = RED
+    FILLCOLOR = RED
+    }
+  ERRORBARS
+    {
+    COLOR = RED
+    }
+$!LINEMAP  [5]
+  NAME = '&DV&' 
+  ASSIGN
+    {
+    ZONE = 2
+    XAXISVAR = 1
+    YAXISVAR = 12
+    }
+  LINES
+    {
+    COLOR = BLACK
+    LINETHICKNESS = 0.8
+    }
+  SYMBOLS
+    {
+    COLOR = GREEN
+    FILLCOLOR = GREEN
+    }
+  BARCHARTS
+    {
+    COLOR = GREEN
+    FILLCOLOR = GREEN
+    }
+  ERRORBARS
+    {
+    COLOR = GREEN
+    }
+$!LINEMAP  [6]
+  NAME = '&DV&' 
+  ASSIGN
+    {
+    ZONE = 2
+    XAXISVAR = 1
+    YAXISVAR = 4
+    }
+  LINES
+    {
+    COLOR = BLUE
+    LINETHICKNESS = 0.8
+    }
+  SYMBOLS
+    {
+    COLOR = BLUE
+    FILLCOLOR = BLUE
+    }
+  BARCHARTS
+    {
+    COLOR = BLUE
+    FILLCOLOR = BLUE
+    }
+  ERRORBARS
+    {
+    COLOR = BLUE
+    }
+$!LINEMAP  [7]
+  NAME = '&DV&' 
+  ASSIGN
+    {
+    ZONE = 3
+    XAXISVAR = 1
+    YAXISVAR = 11
+    YAXIS = 2
+    }
+  LINES
+    {
+    COLOR = BLACK
+    LINETHICKNESS = 0.8
+    }
+  SYMBOLS
+    {
+    COLOR = RED
+    FILLCOLOR = RED
+    }
+  BARCHARTS
+    {
+    COLOR = RED
+    FILLCOLOR = RED
+    }
+  ERRORBARS
+    {
+    COLOR = RED
+    }
+$!LINEMAP  [8]
+  NAME = '&DV&' 
+  ASSIGN
+    {
+    ZONE = 3
+    XAXISVAR = 1
+    YAXISVAR = 12
+    }
+  LINES
+    {
+    COLOR = BLACK
+    LINETHICKNESS = 0.8
+    }
+  SYMBOLS
+    {
+    COLOR = GREEN
+    FILLCOLOR = GREEN
+    }
+  BARCHARTS
+    {
+    COLOR = GREEN
+    FILLCOLOR = GREEN
+    }
+  ERRORBARS
+    {
+    COLOR = GREEN
+    }
+$!LINEMAP  [9]
+  NAME = '&DV&' 
+  ASSIGN
+    {
+    ZONE = 3
+    XAXISVAR = 1
+    YAXISVAR = 4
+    }
+  LINES
+    {
+    COLOR = BLUE
+    LINETHICKNESS = 0.8
+    }
+  SYMBOLS
+    {
+    COLOR = BLUE
+    FILLCOLOR = BLUE
+    }
+  BARCHARTS
+    {
+    COLOR = BLUE
+    FILLCOLOR = BLUE
+    }
+  ERRORBARS
+    {
+    COLOR = BLUE
+    }
+$!LINEMAP  [10]
+  NAME = '&DV&' 
+  ASSIGN
+    {
+    ZONE = 4
+    XAXISVAR = 1
+    YAXISVAR = 11
+    YAXIS = 2
+    }
+  LINES
+    {
+    COLOR = BLACK
+    LINETHICKNESS = 0.8
+    }
+  SYMBOLS
+    {
+    COLOR = RED
+    FILLCOLOR = RED
+    }
+  BARCHARTS
+    {
+    COLOR = RED
+    FILLCOLOR = RED
+    }
+  ERRORBARS
+    {
+    COLOR = RED
+    }
+$!LINEMAP  [11]
+  NAME = '&DV&' 
+  ASSIGN
+    {
+    ZONE = 4
+    XAXISVAR = 1
+    YAXISVAR = 12
+    }
+  LINES
+    {
+    COLOR = BLACK
+    LINETHICKNESS = 0.8
+    }
+  SYMBOLS
+    {
+    COLOR = GREEN
+    FILLCOLOR = GREEN
+    }
+  BARCHARTS
+    {
+    COLOR = GREEN
+    FILLCOLOR = GREEN
+    }
+  ERRORBARS
+    {
+    COLOR = GREEN
+    }
+$!LINEMAP  [12]
+  NAME = '&DV&' 
+  ASSIGN
+    {
+    ZONE = 4
+    XAXISVAR = 1
+    YAXISVAR = 4
+    }
+  LINES
+    {
+    COLOR = BLUE
+    LINETHICKNESS = 0.8
+    }
+  SYMBOLS
+    {
+    COLOR = BLUE
+    FILLCOLOR = BLUE
+    }
+  BARCHARTS
+    {
+    COLOR = BLUE
+    FILLCOLOR = BLUE
+    }
+  ERRORBARS
+    {
+    COLOR = BLUE
+    }
+$!LINEMAP  [13]
+  NAME = '&DV&' 
+  ASSIGN
+    {
+    ZONE = 5
+    XAXISVAR = 1
+    YAXISVAR = 11
+    YAXIS = 2
+    }
+  LINES
+    {
+    COLOR = BLACK
+    LINETHICKNESS = 0.8
+    }
+  SYMBOLS
+    {
+    COLOR = RED
+    FILLCOLOR = RED
+    }
+  BARCHARTS
+    {
+    COLOR = RED
+    FILLCOLOR = RED
+    }
+  ERRORBARS
+    {
+    COLOR = RED
+    }
+$!LINEMAP  [14]
+  NAME = '&DV&' 
+  ASSIGN
+    {
+    ZONE = 5
+    XAXISVAR = 1
+    YAXISVAR = 12
+    }
+  LINES
+    {
+    COLOR = BLACK
+    LINETHICKNESS = 0.8
+    }
+  SYMBOLS
+    {
+    COLOR = GREEN
+    FILLCOLOR = GREEN
+    }
+  BARCHARTS
+    {
+    COLOR = GREEN
+    FILLCOLOR = GREEN
+    }
+  ERRORBARS
+    {
+    COLOR = GREEN
+    }
+$!LINEMAP  [15]
+  NAME = '&DV&' 
+  ASSIGN
+    {
+    ZONE = 5
+    XAXISVAR = 1
+    YAXISVAR = 4
+    }
+  LINES
+    {
+    COLOR = BLUE
+    LINETHICKNESS = 0.8
+    }
+  SYMBOLS
+    {
+    COLOR = BLUE
+    FILLCOLOR = BLUE
+    }
+  BARCHARTS
+    {
+    COLOR = BLUE
+    FILLCOLOR = BLUE
+    }
+  ERRORBARS
+    {
+    COLOR = BLUE
+    }
+$!XYLINEAXIS 
+  DEPXTOYRATIO = 1
+  GRIDAREA
+    {
+    DRAWBORDER = YES
+    LINETHICKNESS = 0.1
+    }
+  VIEWPORTPOSITION
+    {
+    X1 = 8
+    Y1 = 6
+    X2 = 98
+    Y2 = 95
+    }
+  VIEWPORTTOPSNAPTARGET = 95
+$!XYLINEAXIS 
+  XDETAIL 1
+    {
+    SHOWAXIS = NO
+    RANGEMIN = -0.80000000000000004441
+    RANGEMAX = 0.80000000000000004441
+    GRSPACING = 0.2
+    TICKS
+      {
+      LINETHICKNESS = 0.1
+      }
+    TITLE
+      {
+      SHOWONAXISLINE = NO
+      }
+    AXISLINE
+      {
+      LINETHICKNESS = 0.1
+      AXISALIGNMENT = WITHOPPOSINGAXISVALUE
+      }
+    }
+$!XYLINEAXIS 
+  YDETAIL 1
+    {
+    RANGEMIN = -200
+    RANGEMAX = 200
+    GRSPACING = 50
+    TICKS
+      {
+      LINETHICKNESS = 0.1
+      }
+    TICKLABEL
+      {
+      TEXTSHAPE
+        {
+        HEIGHT = 5
+        }
+      }
+    TITLE
+      {
+      TITLEMODE = USETEXT
+      TEXT = 'u<sub>x</sub>' 
+      TEXTSHAPE
+        {
+        FONT = TIMESITALICBOLD
+        HEIGHT = 9.6
+        }
+      OFFSET = 5
+      }
+    AXISLINE
+      {
+      LINETHICKNESS = 0.1
+      }
+    }
+$!XYLINEAXIS 
+  YDETAIL 2
+    {
+    SHOWAXIS = NO
+    RANGEMIN = -0.14999999999999999445
+    RANGEMAX = 0.14999999999999999445
+    GRSPACING = 0.05
+    AXISLINE
+      {
+      AXISALIGNMENT = WITHGRIDMAX
+      }
+    }
+$!ATTACHTEXT 
+  ANCHORPOS
+    {
+    X = 86.5
+    Y = 85
+    }
+  TEXTSHAPE
+    {
+    FONT = TIMESITALIC
+    SIZEUNITS = FRAME
+    HEIGHT = 7.6
+    }
+  TEXT = 't<sub>4</sub>' 
+$!ATTACHTEXT 
+  ANCHORPOS
+    {
+    X = 69
+    Y = 85
+    }
+  TEXTSHAPE
+    {
+    FONT = TIMESITALIC
+    SIZEUNITS = FRAME
+    HEIGHT = 7.6
+    }
+  TEXT = 't<sub>3</sub>' 
+$!ATTACHTEXT 
+  ANCHORPOS
+    {
+    X = 52
+    Y = 85
+    }
+  TEXTSHAPE
+    {
+    FONT = TIMESITALIC
+    SIZEUNITS = FRAME
+    HEIGHT = 7.6
+    }
+  TEXT = 't<sub>2</sub>' 
+$!ATTACHTEXT 
+  ANCHORPOS
+    {
+    X = 35.25
+    Y = 85
+    }
+  TEXTSHAPE
+    {
+    FONT = TIMESITALIC
+    SIZEUNITS = FRAME
+    HEIGHT = 7.6
+    }
+  TEXT = 't<sub>1</sub>' 
+$!ATTACHTEXT 
+  ANCHORPOS
+    {
+    X = 18.5
+    Y = 85
+    }
+  TEXTSHAPE
+    {
+    FONT = TIMESITALIC
+    SIZEUNITS = FRAME
+    HEIGHT = 7.6
+    }
+  TEXT = 't<sub>0</sub>' 
+$!ATTACHTEXT 
+  ANCHORPOS
+    {
+    X = 51
+    Y = 56
+    }
+  TEXTSHAPE
+    {
+    FONT = HELV
+    SIZEUNITS = FRAME
+    HEIGHT = 7.6
+    }
+  TEXT = '~0' 
+$!ATTACHGEOM 
+  ANCHORPOS
+    {
+    X = 0.645
+    Y = 24
+    }
+  LINETHICKNESS = 0.8
+  ARROWHEADSTYLE = FILLED
+  ARROWHEADATTACHMENT = ATBEGINNING
+  ARROWHEADSIZE = 3
+  ARROWHEADANGLE = 18
+  RAWDATA
+1
+2
+-6.4193788063E-09 -3.80923938792E-06 
+-0.0641703680158 -3.80923938792E-06 
+$!ATTACHGEOM 
+  ANCHORPOS
+    {
+    X = 0.325
+    Y = 24
+    }
+  LINETHICKNESS = 0.8
+  ARROWHEADSTYLE = FILLED
+  ARROWHEADATTACHMENT = ATBEGINNING
+  ARROWHEADSIZE = 3
+  ARROWHEADANGLE = 18
+  RAWDATA
+1
+2
+8.13803469057E-11 -3.10244536195E-06 
+-0.0641703605652 -3.10244536195E-06 
+$!ATTACHGEOM 
+  ANCHORPOS
+    {
+    X = -0.275
+    Y = 24
+    }
+  LINETHICKNESS = 0.8
+  ARROWHEADSTYLE = FILLED
+  ARROWHEADATTACHMENT = ATEND
+  ARROWHEADSIZE = 3
+  ARROWHEADANGLE = 18
+  RAWDATA
+1
+2
+8.13804024169E-11 -3.10244536195E-06 
+-0.0641703605652 -3.10244536195E-06 
+$!ATTACHGEOM 
+  ANCHORPOS
+    {
+    X = -0.58
+    Y = 24
+    }
+  LINETHICKNESS = 0.8
+  ARROWHEADSTYLE = FILLED
+  ARROWHEADATTACHMENT = ATEND
+  ARROWHEADSIZE = 3
+  ARROWHEADANGLE = 18
+  RAWDATA
+1
+2
+8.13803469057E-11 -3.10244536195E-06 
+-0.0641703605652 -3.10244536195E-06 
+$!SETSTYLEBASE CONFIG

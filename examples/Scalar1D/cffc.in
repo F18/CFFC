@@ -1,0 +1,48 @@
+Time_Integration_Type =
+Explicit_Predictor_Corrector
+Reconstruction_Type =
+MUSCL
+Limiter_Type = 
+VanLeer
+ICs_Type = 
+Sinx2_Wave
+Grid_Type =
+Uniform
+Number_of_Cells = 
+200
+CFL_Number =
+0.90
+Time_Max = 
+ 1.00
+Output_File_Name = 
+sinx2
+Execute
+Write_Output
+Terminate
+
+Riemann                        :ICs_Type
+Square_Wave                    :ICs_Type
+Sinx2_Wave                     :ICs_Type 
+
+Explicit_Euler                 :Time_Integration_Type
+Explicit_Predictor_Corrector   :Time_Integration_Type
+Lax_Friedrichs                 :Time_Integration_Type
+Lax_Wendroff                   :Time_Integration_Type
+MacCormack                     :Time_Integration_Type
+
+MUSCL                          :Reconstruction_Type
+Least_Squares                  :Reconstruction_Type
+Green_Gauss                    :Reconstruction_Type
+
+Zero                           :Limiter_Type
+One                            :Limiter_Type
+Minmod                         :Limiter_Type
+UMIST                          :Limiter_Type
+Double_Minmod                  :Limiter_Type
+Superbee                       :Limiter_Type
+Phi                            :Limiter_Type
+VanLeer                        :Limiter_Type
+VanAlbada                      :Limiter_Type
+Venkatakrishnan                :Limiter_Type
+Barth_Jespersen                :Limiter_Type
+

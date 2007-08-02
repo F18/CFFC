@@ -1,0 +1,8 @@
+#!/bin/sh
+
+mpirun -np 16 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/navierstokes2D -f crv7.in -pde NavierStokes2D < /dev/null >& crv7.log
+#mpirun -np 16 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/bin/navierstokes2D_b -f crv7.in -pde NavierStokes2D < /dev/null >& crv7.log
+cat crv7_cpu*.dat > points.dat
+cat crv7_cells_cpu*.dat > cells.dat
+cat crv7_nodes_cpu*.dat > nodes.dat
+rm crv7_*cpu*.dat

@@ -1,0 +1,16 @@
+#!/bin/sh
+
+#mpirun -np 16 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/embeddedboundaries2D -f flatplate.in -pde NavierStokes2D < /dev/null >& flatplate.log
+mpirun -np 16 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/bin/embeddedboundaries2D_b -f flatplate.in -pde NavierStokes2D < /dev/null >& flatplate.log
+cat flatplate_cpu*.dat > points.dat
+cat flatplate_active_cpu*.dat > active.dat
+cat flatplate_inactive_cpu*.dat > inactive.dat
+#cat flatplate_cells_cpu*.dat > cells.dat
+cat flatplate_nodes_cpu*.dat > nodes.dat
+cat flatplate_status_cpu*.dat > status.dat
+cat flatplate_interface_component_list_cpu*.dat > components.dat
+cat flatplate_interface_union_list_cpu*.dat > union.dat
+cat flatplate_flatplate_soln_cpu*.dat > flatplate.dat
+cat flatplate_flatplate_skin_friction_cpu*.dat > skinfriction.dat
+rm flatplate_cpu*.dat
+rm flatplate_*_cpu*.dat

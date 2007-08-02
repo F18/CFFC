@@ -1,0 +1,13 @@
+#!/bin/tcsh
+#
+#PBS -N ringleb
+#PBS -q small_8for8
+#PBS -l walltime=8:00:00,nodes=1:ppn=4:parallel
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/Euler2D/Ringleb/40x40/
+mpirun -np 1 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/pdes++ -f ringleb.in -pde Euler2D >& ringleb.log
+cat ringleb_cpu*.dat > nodes.dat
+cat ringleb_cells_cpu*.dat > cells.dat
+cat ringleb_ringleb_cpu*.dat > ringleb.dat
+rm ringleb_cpu*.dat ringleb_cells_cpu*.dat ringleb_ringleb_cpu*.dat ringleb_residual.* ringleb.e* ringleb.o*

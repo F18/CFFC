@@ -1,0 +1,222 @@
+#
+# Supersonic missile
+#
+########################
+# Set solver parameters
+########################
+Time_Integration_Type =
+Multistage_Optimal_Smoothing
+#Multigrid
+#Multistage_Optimal_Smoothing 
+#Explicit_Predictor_Corrector
+Multigrid_Levels =
+4
+Multigrid_Cycle_Type =
+V
+Multigrid_Number_of_Smooths_on_Finest_Level =
+1
+Multigrid_Number_of_Pre_Smooths =
+1
+Multigrid_Number_of_Post_Smooths =
+0
+Multigrid_Number_of_Smooths_on_Coarsest_Level =
+0
+Multigrid_Smoothing_Type = 
+Multistage_Optimal_Smoothing
+#Explicit_Runge_Kutta
+N_Stage =
+4
+Time_Accurate = 
+0
+Local_Time_Stepping =
+1
+Reconstruction_Type =
+Least_Squares
+Limiter_Type = 
+Zero
+#Barth_Jespersen
+Flux_Function_Type =
+Godunov
+#########################
+# Set flow and initial conditions
+#########################
+Flow_Geometry_Type =
+Axisymmetric
+ICs_Type = 
+Restart
+#Restart
+#Uniform
+Mach_Number = 
+6.0
+Grid_Type =
+Missile
+Number_of_Cells_Idir = 
+8
+Number_of_Cells_Jdir =
+8
+AMR =
+0
+AMR_Frequency =
+8
+Number_of_Initial_Mesh_Refinements =
+0
+#2
+Number_of_Uniform_Mesh_Refinements =
+0
+#2
+Number_of_Boundary_Mesh_Refinements =
+0
+Maximum_Refinement_Level
+9
+Minimum_Refinement_Level
+2
+Threshold_for_Refinement =
+0.50
+Threshold_for_Coarsening =
+0.10
+###############################
+# Set time stepping parameters
+###############################
+CFL_Number =
+      0.50
+Time_Max = 
+3.00
+Maximum_Number_of_Time_Steps =
+0
+Full_Multigrid =
+50
+Maximum_Number_of_NKS_Iterations =
+0
+Maximum_Number_of_GMRES_Iterations =
+80
+GMRES_Restart =
+40
+Number_of_Blocks_Per_Processor =
+512
+Output_File_Name = 
+missile
+#######################
+# Execute program
+#######################
+Execute
+#######################
+# Write output
+#######################
+#Write_Output
+#Write_Output_Mesh
+#Write_Output_Mesh_Cells
+#Write_Output_Mesh_Nodes
+#Write_Restart
+#Write_Mesh_Definition
+#######################
+# Terminate program
+#######################
+#Terminate
+##############################
+# Refine grid
+##############################
+Refine_Grid
+##############################
+# Re-set some input parameters
+##############################
+Maximum_Number_of_Time_Steps =
+500
+Limiter_Type = 
+Barth_Jespersen
+##############################
+# Restart program
+##############################
+Continue
+#######################
+# Write output
+#######################
+Write_Output
+#Write_Output_Mesh
+#Write_Output_Mesh_Cells
+#Write_Output_Mesh_Nodes
+Write_Restart
+#Write_Mesh_Definition
+#######################
+# Terminate program
+#######################
+Terminate
+##############################
+# Refine grid
+##############################
+Refine_Grid
+##############################
+# Re-set some input parameters
+##############################
+Maximum_Number_of_Time_Steps =
+0
+##############################
+# Restart program
+##############################
+Continue
+#######################
+# Write output
+#######################
+Write_Output
+#Write_Output_Mesh
+#Write_Output_Mesh_Cells
+#Write_Output_Mesh_Nodes
+Write_Restart
+#Write_Mesh_Definition
+#######################
+# Terminate program
+#######################
+Terminate
+
+#####################################
+Flux_Function_Type = 
+Godunov
+Execute 
+Write_Output
+Write_Output_Mesh
+Write_Output_Mesh_Cells
+Write_Output_Mesh_Nodes
+Write_Restart
+Write_Mesh_Definition
+Terminate
+
+Explicit_Euler                 :Time_Integration_Type
+Explicit_Predictor_Corrector   :Time_Integration_Type
+Explicit_Runge_Kutta           :Time_Integration_Type
+Multistage_Optimal_Smoothing   :Time_Integration_Type
+
+Least_Squares                  :Reconstruction_Type
+Green_Gauss                    :Reconstruction_Type
+
+Venkatakrishnan                :Limiter_Type
+Barth_Jespersen                :Limiter_Type
+Zero                           :Limiter_Type
+One                            :Limiter_Type
+
+Godunov                        :Flux_Function_Type
+Roe                            :Flux_Function_Type
+Rusanov                        :Flux_Function_Type
+HLLE                           :Flux_Function_Type
+Linde                          :Flux_Function_Type
+HLLC                           :Flux_Function_Type
+
+Uniform                        :ICs_Type
+Sod                            :ICs_Type
+Sod_Xdir                       :ICs_Type
+Sod_Ydir                       :ICs_Type
+Groth                          :ICs_Type
+Groth_Xdir                     :ICs_Type
+Groth_Ydir                     :ICs_Type
+Einfeldt                       :ICs_Type
+Einfeldt_Xdir                  :ICs_Type
+Einfeldt_Ydir                  :ICs_Type
+ShockBox                       :ICs_Type
+Restart                        :ICs_Type
+
+Square                         :Grid_Type
+Rectangular_Box                :Grid_Type
+Flat_Plate                     :Grid_Type
+Pipe                           :Grid_Type
+Blunt_Body                     :Grid_Type
+Circular_Cylinder              :Grid_Type
+Ellipse                        :Grid_Type
+NACA_Aerofoil                  :Grid_Type

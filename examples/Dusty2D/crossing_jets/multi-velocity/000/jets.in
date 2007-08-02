@@ -1,0 +1,256 @@
+#
+# CROSSING JETS TEST CASE
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Type = 
+Inviscid
+Flow_Geometry_Type = 
+Planar
+Particle_Phase = 
+Eulerian
+Phase_Interaction =
+Off
+Electrostatic_Force =
+Off
+#
+# TIME-STEPPING PARAMETERS:
+Time_Integration_Type =
+Explicit_Predictor_Corrector
+N_Stage =
+2
+Time_Accurate = 
+1
+Local_Time_Stepping =
+0
+CFL_Number =
+0.250
+Time_Max = 
+0.00
+Maximum_Number_of_Time_Steps =
+0
+#
+# FLUX PARAMETERS:
+Reconstruction_Type =
+Least_Squares
+Limiter_Type =
+Venkatakrishnan
+#Zero
+Gas_Phase_Flux_Function_Type =
+Roe
+Particle_Phase_Flux_Function_Type =
+MultiVelocityComponent
+#
+# INITIAL CONDITIONS:
+ICs_Type =
+Crossing_Jets
+Gas_Type =
+AIR
+Mach_Number =
+0.00
+Pressure =
+100.0
+Particle_Mach_Number =
+0.80
+Particle_Type = 
+Heavy_AP_HTPB
+#
+# MESH PARAMETERS:
+Grid_Type =
+Rectangular_Box
+Box_Width =
+1.5
+Box_Height =
+1.0
+Number_of_Cells_Idir = 
+30
+Number_of_Cells_Jdir =
+20
+Number_of_Blocks_Idir = 
+3
+Number_of_Blocks_Jdir =
+2
+X_Shift =
+0.750  0.500
+Boundary_Conditions_Specified =
+On
+BC_North =
+Reflection
+BC_South =
+Reflection
+BC_East =
+Constant_Extrapolation
+BC_West =
+Fixed
+#
+# INITIAL AMR PARAMETERS:
+Number_of_Uniform_Mesh_Refinements =
+2
+Number_of_Boundary_Mesh_Refinements =
+0
+Number_of_Interface_Mesh_Refinements =
+0
+Number_of_Initial_Mesh_Refinements =
+0
+#
+# I/O PARAMETERS:
+Output_File_Name = 
+jets_0000
+Restart_Solution_Save_Frequency = 
+100000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+Write_Output
+#
+# RESET INPUT PARAMETERS:
+Time_Max =
+0.50
+Output_File_Name = 
+jets_0050
+#
+# CONTINUE PROGRAM:
+Continue
+#
+# WRITE OUTPUT:
+Write_Output
+#
+# RESET INPUT PARAMETERS:
+Time_Max =
+1.00
+Output_File_Name = 
+jets_0100
+#
+# CONTINUE PROGRAM:
+Continue
+#
+# WRITE OUTPUT:
+Write_Output
+#
+# RESET INPUT PARAMETERS:
+Time_Max =
+1.50
+Output_File_Name = 
+jets_0150
+#
+# CONTINUE PROGRAM:
+Continue
+#
+# WRITE OUTPUT:
+Write_Output
+#
+# RESET INPUT PARAMETERS:
+Time_Max =
+2.00
+Output_File_Name = 
+jets_0200
+#
+# CONTINUE PROGRAM:
+Continue
+#
+# WRITE OUTPUT:
+Write_Output
+#
+# RESET INPUT PARAMETERS:
+Time_Max =
+2.50
+Output_File_Name = 
+jets_0250
+#
+# CONTINUE PROGRAM:
+Continue
+#
+# WRITE OUTPUT:
+Write_Output
+#
+# RESET INPUT PARAMETERS:
+Time_Max =
+3.00
+Output_File_Name = 
+jets_0300
+#
+# CONTINUE PROGRAM:
+Continue
+#
+# WRITE OUTPUT:
+Write_Output
+#
+# RESET INPUT PARAMETERS:
+Time_Max =
+3.50
+Output_File_Name = 
+jets_0350
+#
+# CONTINUE PROGRAM:
+Continue
+#
+# WRITE OUTPUT:
+Write_Output
+#
+# RESET INPUT PARAMETERS:
+Time_Max =
+4.00
+Output_File_Name = 
+jets_0400
+#
+# CONTINUE PROGRAM:
+Continue
+#
+# WRITE OUTPUT:
+Write_Output
+#
+# RESET INPUT PARAMETERS:
+Time_Max =
+4.50
+Output_File_Name = 
+jets_0450
+#
+# CONTINUE PROGRAM:
+Continue
+#
+# WRITE OUTPUT:
+Write_Output
+#
+# RESET INPUT PARAMETERS:
+Time_Max =
+5.00
+Output_File_Name = 
+jets_0500
+#
+# CONTINUE PROGRAM:
+Continue
+#
+# WRITE OUTPUT:
+Write_Output
+#
+# RESET INPUT PARAMETERS:
+Time_Max =
+5.50
+Output_File_Name = 
+jets_0550
+#
+# CONTINUE PROGRAM:
+Continue
+#
+# WRITE OUTPUT:
+Write_Output
+#
+# RESET INPUT PARAMETERS:
+Time_Max =
+6.00
+Output_File_Name = 
+jets_0600
+#
+# CONTINUE PROGRAM:
+Continue
+#
+# WRITE OUTPUT:
+Write_Output
+#
+# WRITE RESTART:
+#Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate

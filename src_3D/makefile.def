@@ -1,0 +1,329 @@
+#-----------------------------------------------------------#
+#  CFFC Platform Specific Compile Options  (3D Version)     # 
+#-----------------------------------------------------------#
+#
+# NOTE:  CFFC_Path must be set to the directory with this file
+# by the calling makefile or as an evironment variable.
+#
+# Set some default platform and version options
+PLATFORM = generic
+
+# NoMPI, MPICH, MPT (SG)
+MPI_VERSION = NoMPI
+
+# NoICEMCFD, V41, V42. V43, V50
+ICEMCFD_VERSION = NoICEMCFD
+
+# Version V296, V3+, ICC
+GCC_VERSION = V3+
+
+# Set to ON for use with "gprof"
+# <x86  >  gprof cffc3D gmon.out > output.txt
+# <alpha>  gprof --demangle=compaq cffc3D gmon.out > output.txt
+PROFILING = OFF
+
+#-----------------------------------------------------------#
+#       Platform Specific Compiler Flags                    #
+#-----------------------------------------------------------#
+# Set defaults
+FC = gfortran
+CC = gcc
+CXX = g++
+CPPFLAGS =
+FFLAGS = 
+CFLAGS = -O
+CXXFLAGS = -O
+LD = $(CXX)
+LDFLAGS = -lm
+DEPENDSFLAGS =
+
+#
+# Determine the platform that is being used for this compilation
+# Currently setup to support: 
+#   x86    - gcc (2.96,3.x,4.x), icc (v8.0,v8.1)
+#   x86_64 - gcc (3.x,4.x) 
+#   alpha  - cxx (6.x)
+#   ia64   - icc (v8.0,v8.1)
+#
+PLATFORM:= $(shell uname)_$(shell uname -m)
+ifeq ($(PLATFORM),Linux_i486)
+  PLATFORM = Linux_i386
+endif
+ifeq ($(PLATFORM),Linux_i586)
+  PLATFORM = Linux_i386
+endif
+ifeq ($(PLATFORM),Linux_i686)
+  PLATFORM = Linux_i386
+endif
+
+#
+# Set flags for Doxygen code documentation preparation
+DOXYGEN                 = Doxygen
+DOXYGEN_DIR_2D          = $(CFFC_Path)/doc/2D/doxygen
+DOXYGEN_DIR_3D          = $(CFFC_Path)/doc/3D/doxygen
+
+#
+# Set flags for LaTeX manual preparation
+LATEX                 = LATEX
+LATEX_DIR_2D          = $(CFFC_Path)/doc/2D/latex
+LATEX_DIR_3D          = $(CFFC_Path)/doc/3D/latex
+
+#
+# Set flags for including ICEMCFD libraries
+ICEMCFD = ICEMCFD
+ICEMCFD_CPP_FLAGS = -D_NO_ICEMCFD_VERSION
+ICEMCFD_LD_FLAGS  =
+ 
+ifeq ($(ICEMCFD_VERSION),NoICEMCFD)
+  ICEMCFD_CPP_FLAGS = -D_NO_ICEMCFD_VERSION
+  ICEMCFD_LD_FLAGS  = 
+endif
+ifeq ($(ICEMCFD_VERSION),V41)
+  ICEMCFD_CPP_FLAGS = -D_ICEMCFD_VERSION -D_ICEMCFD_V41 -I$(CFFC_Path)/icemcfd/icemcfd_v4.1/include
+  ICEMCFD_LD_FLAGS  = -L$(CFFC_Path)/icemcfd/icemcfd_v4.1/lib -lboco -ldomain -ltopo
+endif
+ifeq ($(ICEMCFD_VERSION),V42)
+  ICEMCFD_CPP_FLAGS = -D_ICEMCFD_VERSION -D_ICEMCFD_V42 -I$(CFFC_Path)/icemcfd/icemcfd_v4.2/include
+  ICEMCFD_LD_FLAGS  = -L$(CFFC_Path)/icemcfd/icemcfd_v4.2/lib -lboco -ldomain -ltopo
+endif
+ifeq ($(ICEMCFD_VERSION),V43)
+  ICEMCFD_CPP_FLAGS = -D_ICEMCFD_VERSION -D_ICEMCFD_V43 -I$(CFFC_Path)/icemcfd/icemcfd_v4.3/include
+  ICEMCFD_LD_FLAGS  = -L$(CFFC_Path)/icemcfd/icemcfd_v4.3/lib -lboco -ldomain -ltopo
+endif
+ifeq ($(ICEMCFD_VERSION),V50)
+  ICEMCFD_CPP_FLAGS = -D_ICEMCFD_VERSION -D_ICEMCFD_V50 -I$(CFFC_Path)/icemcfd/icemcfd_v5.0/include
+  ICEMCFD_LD_FLAGS  = -L$(CFFC_Path)/icemcfd/icemcfd_v5.0/lib -lboco -ldomain -ltopo
+endif
+
+#
+# Set flags associated with sparse linear system solvers:
+# SparseLib++, MV++, IML++, BLAS, and BPKit
+SPARSELIB                 = SparseLib++
+SPARSELIB_DIR             = $(CFFC_Path)/sparselib++
+
+SPARSELIB_LIB_DIR         = $(SPARSELIB_DIR)/lib
+SPARSELIB_INC_DIR         = $(SPARSELIB_DIR)/include
+
+SPARSELIB_IML_DIR         = $(SPARSELIB_DIR)/iml
+SPARSELIB_IML_INC_DIR     = $(SPARSELIB_IML_DIR)/include
+
+SPARSELIB_MV_DIR          = $(SPARSELIB_DIR)/mv
+SPARSELIB_MV_INC_DIR      = $(SPARSELIB_MV_DIR)/include
+
+SPARSELIB_CPP_FLAGS       = -I$(SPARSELIB_INC_DIR) -I$(SPARSELIB_IML_INC_DIR) -I$(SPARSELIB_MV_INC_DIR)
+
+SPARSELIB_LD_FLAGS        = -L$(SPARSELIB_LIB_DIR) -lsparse -lspblas -lmv 
+
+BPKIT                     = BPKIT
+BPKIT_DIR                 = $(CFFC_Path)/bpkit
+
+BPKIT_LIB_DIR             = $(BPKIT_DIR)/lib
+BPKIT_INC_DIR             = $(BPKIT_DIR)/src
+
+BPKIT_CPP_FLAGS           = -I$(BPKIT_INC_DIR)
+BPKIT_LD_FLAGS            = -L$(BPKIT_LIB_DIR) -lbpkit
+
+BLAS_LD_FLAGS             = -lblas -llapack -lgcc -lg2c
+ifeq ($(PLATFORM),Linux_i386)
+  BLAS_LD_FLAGS           = -lblas -llapack -lgcc 
+  ifeq ($(GCC_VERSION),ICC)
+   BLAS_LD_FLAGS   	  = -lblas -llapack -lifcore -L/usr/lib/gcc-lib/i386-redhat-linux/3.3.2 -lg2c
+  endif
+endif
+ifeq ($(PLATFORM),Linux_alpha)
+  BLAS_LD_FLAGS           = -L/usr/lib/gcc-lib/alpha-redhat-linux/2.96/ -lg2c -L/usr/lib/compaq/cxml-5.2.0 -lcxml_ev6
+endif
+ifeq ($(PLATFORM),Linux_ia64)
+  BLAS_LD_FLAGS   	  = -lblas -llapack -L/opt/gcc3.3.3/lib/ -lg2c
+endif	
+ifeq ($(PLATFORM),Linux_x86_64)
+  BLAS_LD_FLAGS           = -lblas -llapack -lg2c -lgcc
+endif
+
+#
+# CPPFLAG -D__USE_MALLOC explicitly handles C++ string memory issues, but 
+# is only really necessary when using memory checkers, ( ie. valgrind) 
+
+# Set Linux i386 specific compile flags
+ifeq ($(PLATFORM),Linux_i386)
+  ifeq ($(MPI_VERSION),NoMPI)
+    FC = gfortran
+    CC = gcc
+    CXX = g++
+    CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_296 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS)
+    FFLAGS = -O 
+    FLAGS = -O  
+    CXXFLAGS = -O 	
+    ifeq ($(GCC_VERSION),V3+)
+       CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) 
+       CFLAGS = -O 
+       CXXFLAGS = -O
+    endif   
+    # Intel Compiler Flags (Version 8.0)
+    ifeq ($(GCC_VERSION),ICC)
+       FC = ifort
+       CC = icc
+       CXX = icc
+       CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS)
+       CXXFLAGS = -w0 -O2 -ip
+       FFLAGS = -O2 -ip
+       CFLAGS = -O2
+    endif
+    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) -lm
+    # Profiling with gprof 
+    ifeq ($(PROFILING),ON)
+      CXXFLAGS = -g -pg 
+      LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) -lm -pg
+    endif
+    LD = $(CXX)
+    DEPENDSFLAGS =
+  endif
+  ifeq ($(MPI_VERSION),MPICH)
+    FC = /usr/local/mpi/bin/mpif77
+    CC = /usr/local/mpi/bin/mpicc
+    CXX = /usr/local/mpi/bin/mpiCC
+    CPPFLAGS = -D_MPI_VERSION -D_GNU_GCC_296 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS)
+    ifeq ($(GCC_VERSION),V3+)
+       CPPFLAGS = -D_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS)
+    endif
+    FFLAGS = -O
+    CFLAGS = -O
+    CXXFLAGS = -O
+    LD = $(CXX)
+    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) -lm
+    DEPENDSFLAGS = -I/usr/local/mpi/include/mpi2c++
+  endif
+endif
+
+#
+# Set Linux Alpha specific compile flags
+ifeq ($(PLATFORM),Linux_alpha)
+  ifeq ($(MPI_VERSION),NoMPI)
+    FC = fort
+    CC = ccc
+    CXX = cxx
+    CPPFLAGS = -D_NO_MPI_VERSION -D_NO_ICEMCFD_VERSION -D__USE_STD_IOSTREAM $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) 
+    FFLAGS = -arch host -tune host -fast -w
+    CFLAGS = -arch host -tune host -fast -w 
+    CXXFLAGS = -arch host -tune host -fast -w -std gnu
+    LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) -lm 
+    ifeq ($(PROFILING),ON)
+      CXXFLAGS = -pg -arch host -tune host -fast -w -std gnu 
+      LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) -lm -pg 
+    endif
+    LD = $(CXX)	
+    DEPENDSFLAGS = 
+  endif
+  ifeq ($(MPI_VERSION),MPICH)
+    FC = /usr/local/mpi/bin/mpif77
+    CC = /usr/local/mpi/bin/mpicc
+    CXX = /usr/local/mpi/bin/mpiCC
+    CPPFLAGS = -D_MPI_VERSION -D_NO_ICEMCFD_VERSION -D__USE_STD_IOSTREAM $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS)
+    FFLAGS = -arch host -tune host -fast -w
+    CFLAGS = -arch host -tune host -fast -w
+    CXXFLAGS = -arch host -tune host -fast -w -std gnu
+    LD = $(CXX)
+    LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) -lm
+    DEPENDSFLAGS = -I/usr/local/mpi/include/mpi2c++
+  endif
+endif
+
+#
+# Set Itanium (ia64) specific compile flags
+ifeq ($(PLATFORM),Linux_ia64)
+  ifeq ($(MPI_VERSION),NoMPI)
+    FC = ifort
+    CC = icc
+    CXX = icpc
+    CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS)
+    CXXFLAGS = -w0 -O2 -mp -ftz 
+    FFLAGS = -w0 -O2 -mp -ftz 
+    CFLAGS = -w0 -O2 -mp -ftz 
+    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) -limf
+    LD = $(CXX)
+    DEPENDSFLAGS =
+  endif
+  ifeq ($(MPI_VERSION),MPT) #basalt
+    FC = ifort
+    CC = icc
+    CXX = icpc
+    CPPFLAGS = -D_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS)
+    CXXFLAGS = -w0 -O2 -mp -ftz
+    FFLAGS = -w0 -O2 -mp -ftz
+    CFLAGS = -w0 -O2 -mp -ftz
+    LD = $(CXX)
+    LDFLAGS =  $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) -limf -lmpi -lmpi++
+    DEPENDSFLAGS = 
+  endif
+  ifeq ($(MPI_VERSION),MPICH)
+    FC = /usr/local/mpi/bin/mpif77
+    CC = /usr/local/mpi/bin/mpicc
+    CXX = /usr/local/mpi/bin/mpiCC
+    CPPFLAGS = -D_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) 
+    CXXFLAGS = -w0 -O2 -mp -ftz
+    FFLAGS = -w0 -O2 -mp -ftz 
+    CFLAGS = -w0 -O2 -mp -ftz 
+    LD = $(CXX)
+    LDFLAGS =  $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) -limf
+    DEPENDSFLAGS = 
+  endif
+endif
+
+#
+# Set Opteron/Athlon64 (x86_64) specific compile flags
+ifeq ($(PLATFORM),Linux_x86_64)
+  ifeq ($(MPI_VERSION),NoMPI)
+    FC = gfortran
+    CC = gcc
+    CXX = g++
+    CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) 
+    #CXXFLAGS = -march=k8 -mmmx -msse -msse2 -m3dnow -m64 -O3 -pipe -fexpensive-optimizations -mfpmath=sse,387 
+    CXXFLAGS = -O2
+    FFLAGS = -O2
+    CFLAGS = -O2 
+  endif
+  LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) -lm
+  LD = $(CXX)
+  DEPENDSFLAGS =
+#  ifeq ($(MPI_VERSION),MPICH)
+#    FFLAGS = 
+#    CFLAGS = 
+#    CXXFLAGS = 
+#    LD = $(CXX)
+#    DEPENDSFLAGS = 
+#  endif
+endif
+
+#
+# Set SGI specific compile flags
+ifeq ($(PLATFORM),IRIX64_IP27)
+  ifeq ($(MPI_VERSION),NoMPI)
+    FC = f77
+    CC = cc
+    CXX = CC
+    CPPFLAGS = -D_NO_MPI_VERSION -D_NO_ICEMCFD_VERSION
+    FFLAGS = -O -w
+    CFLAGS = -O -w
+    CXXFLAGS = -O -w
+    LD = $(CXX)
+    LDFLAGS = -lm
+    DEPENDSFLAGS =
+  endif
+endif
+
+#
+# Set HP specific compile flags
+ifeq ($(PLATFORM),hpux)
+  ifeq ($(MPI_VERSION),NoMPI)
+    FC = f77
+    CC = cc
+    CXX = CC
+    CPPFLAGS = -D_HP_CC -D_NO_MPI_VERSION -D_NO_ICEMCFD_VERSION
+    FFLAGS = -O -w
+    CFLAGS = -O -w
+    CXXFLAGS = -O -w
+    LD = $(CXX)
+    LDFLAGS = -lm
+    DEPENDSFLAGS =
+  endif
+endif

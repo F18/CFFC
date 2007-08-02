@@ -1,0 +1,13 @@
+#!/bin/tcsh
+#
+#PBS -N bump_su_ex
+#PBS -q iqmaster
+#PBS -l walltime=2:00:00,nodes=2:ppn=4:itanium-8G,other=day
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/Dusty2D/bump_flow/supersonic/explicit/
+mpirun -np 8 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/dusty2D -f bump.in -pde Dusty2D >& bump.log
+cat bump_cpu*.dat > points.dat
+cat bump_cells_cpu*.dat > cells.dat
+rm bump_*cpu*.dat
+rm bump_su_ex.e* bump_su_ex.o*

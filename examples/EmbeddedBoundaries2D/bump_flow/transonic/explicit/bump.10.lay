@@ -1,0 +1,556 @@
+#!MC 900
+$!VarSet |LFDSFN1| = '"active.dat"'
+$!VarSet |LFDSVL1| = '"x" "y" "rho" "u" "v" "p" "T" "M" "H" "s"'
+$!SETSTYLEBASE FACTORY
+$!PAPER 
+  BACKGROUNDCOLOR = WHITE
+  ISTRANSPARENT = YES
+  ORIENTPORTRAIT = NO
+  SHOWGRID = YES
+  SHOWRULER = YES
+  SHOWPAPER = YES
+  PAPERSIZE = LETTER
+  PAPERSIZEINFO
+    {
+    LETTER
+      {
+      WIDTH = 8.5
+      HEIGHT = 11
+      LEFTHARDCLIPOFFSET = 0.125
+      RIGHTHARDCLIPOFFSET = 0.125
+      TOPHARDCLIPOFFSET = 0.125
+      BOTTOMHARDCLIPOFFSET = 0.125
+      }
+    }
+  RULERSPACING = ONEINCH
+  PAPERGRIDSPACING = HALFINCH
+  REGIONINWORKAREA
+    {
+    X1 = -0.05
+    Y1 = -0.05
+    X2 = 11.05
+    Y2 = 8.55
+    }
+$!COLORMAP 
+  CONTOURCOLORMAP = SMRAINBOW
+$!COLORMAPCONTROL RESETTOFACTORY
+### Frame Number 1 ###
+$!READDATASET  '|LFDSFN1|' 
+  INCLUDETEXT = NO
+  INCLUDEGEOM = NO
+  VARLOADMODE = BYNAME
+  VARNAMELIST = '|LFDSVL1|' 
+$!REMOVEVAR |LFDSVL1|
+$!FRAMELAYOUT 
+  SHOWBORDER = NO
+  SHOWHEADER = NO
+  HEADERCOLOR = RED
+  XYPOS
+    {
+    X = 0.5
+    Y = 0.25
+    }
+  WIDTH = 10
+  HEIGHT = 4
+$!FRAMEMODE  = TWOD
+$!FRAMENAME  = 'Frame 001' 
+$!ACTIVEFIELDZONES  =  [1-8]
+$!GLOBALCONTOUR 
+  VAR = 8
+  LABELS
+    {
+    AUTOLEVELSKIP = 10
+    }
+  LEGEND
+    {
+    SHOW = YES
+    ROWSPACING = 1.5
+    XYPOS
+      {
+      X = 85
+      Y = 92
+      }
+    OVERLAYBARGRID = NO
+    TEXTSHAPE
+      {
+      HEIGHT = 4
+      }
+    BOX
+      {
+      BOXTYPE = NONE
+      }
+    }
+  COLORCUTOFF
+    {
+    RANGEMIN = 0.346408426762
+    RANGEMAX = 0.348802804947
+    }
+  COLORMAPFILTER
+    {
+    CONTINUOUSCOLOR
+      {
+      CMIN = 0.345211237669
+      CMAX = 0.34999999404
+      }
+    }
+$!CONTOURLEVELS NEW
+  RAWDATA
+51
+0.66
+0.6734
+0.6868
+0.7002
+0.7136
+0.727
+0.7404
+0.7538
+0.7672
+0.7806
+0.794
+0.8074
+0.8208
+0.8342
+0.8476
+0.861
+0.8744
+0.8878
+0.9012
+0.9146
+0.928
+0.9414
+0.9548
+0.9682
+0.9816
+0.995
+1.0084
+1.0218
+1.0352
+1.0486
+1.062
+1.0754
+1.0888
+1.1022
+1.1156
+1.129
+1.1424
+1.1558
+1.1692
+1.1826
+1.196
+1.2094
+1.2228
+1.2362
+1.2496
+1.263
+1.2764
+1.2898
+1.3032
+1.3166
+1.33
+$!FIELD  [1]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.8
+    USELIGHTINGEFFECT = YES
+    }
+  VECTOR
+    {
+    COLOR = RED
+    }
+  SCATTER
+    {
+    COLOR = RED
+    }
+  SHADE
+    {
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    COLOR = BLACK
+    LINETHICKNESS = 0.1
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    SURFACESTOPLOT = KPLANES
+    POINTSTOPLOT = SURFACESONLY
+    }
+$!FIELD  [2]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.8
+    USELIGHTINGEFFECT = YES
+    }
+  VECTOR
+    {
+    COLOR = GREEN
+    }
+  SCATTER
+    {
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    COLOR = BLACK
+    LINETHICKNESS = 0.1
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    SURFACESTOPLOT = KPLANES
+    POINTSTOPLOT = SURFACESONLY
+    }
+$!FIELD  [3]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.8
+    USELIGHTINGEFFECT = YES
+    }
+  VECTOR
+    {
+    COLOR = BLUE
+    }
+  SCATTER
+    {
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    COLOR = BLACK
+    LINETHICKNESS = 0.1
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    SURFACESTOPLOT = KPLANES
+    POINTSTOPLOT = SURFACESONLY
+    }
+$!FIELD  [4]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.8
+    USELIGHTINGEFFECT = YES
+    }
+  VECTOR
+    {
+    COLOR = CYAN
+    }
+  SCATTER
+    {
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    COLOR = BLACK
+    LINETHICKNESS = 0.1
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    SURFACESTOPLOT = KPLANES
+    POINTSTOPLOT = SURFACESONLY
+    }
+$!FIELD  [5]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.8
+    USELIGHTINGEFFECT = YES
+    }
+  VECTOR
+    {
+    COLOR = YELLOW
+    }
+  SCATTER
+    {
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    COLOR = BLACK
+    LINETHICKNESS = 0.1
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    SURFACESTOPLOT = KPLANES
+    POINTSTOPLOT = SURFACESONLY
+    }
+$!FIELD  [6]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.8
+    USELIGHTINGEFFECT = YES
+    }
+  VECTOR
+    {
+    COLOR = PURPLE
+    }
+  SCATTER
+    {
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    COLOR = BLACK
+    LINETHICKNESS = 0.1
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    SURFACESTOPLOT = KPLANES
+    POINTSTOPLOT = SURFACESONLY
+    }
+$!FIELD  [7]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.8
+    USELIGHTINGEFFECT = YES
+    }
+  VECTOR
+    {
+    COLOR = RED
+    }
+  SCATTER
+    {
+    COLOR = RED
+    }
+  SHADE
+    {
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    COLOR = BLACK
+    LINETHICKNESS = 0.1
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    SURFACESTOPLOT = KPLANES
+    POINTSTOPLOT = SURFACESONLY
+    }
+$!FIELD  [8]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.8
+    USELIGHTINGEFFECT = YES
+    }
+  VECTOR
+    {
+    COLOR = GREEN
+    }
+  SCATTER
+    {
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    COLOR = BLACK
+    LINETHICKNESS = 0.1
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    SURFACESTOPLOT = KPLANES
+    POINTSTOPLOT = SURFACESONLY
+    }
+$!TWODAXIS 
+  XVAR = 1
+  YVAR = 2
+$!VIEW FIT
+$!TWODAXIS 
+  GRIDAREA
+    {
+    EXTENTS
+      {
+      X1 = 6
+      Y1 = 10
+      X2 = 98
+      Y2 = 93.8
+      }
+    DRAWGRIDLAST = YES
+    DRAWBORDER = YES
+    LINETHICKNESS = 0.1
+    }
+  DEPXTOYRATIO = 1
+  XDETAIL
+    {
+    SHOWTICKS = NO
+    AUTOGRID = NO
+    AXISPOSITION = 10
+    RANGEMIN = -1
+    RANGEMAX = 4.4892601432
+    GRSPACING = 0.5
+    LINETHICKNESS = 0.1
+    TICKLABEL
+      {
+      TEXTSHAPE
+        {
+        HEIGHT = 4
+        }
+      }
+    TITLE
+      {
+      TITLEMODE = USETEXT
+      TEXT = 'x (m)' 
+      TEXTSHAPE
+        {
+        FONT = TIMESITALICBOLD
+        HEIGHT = 6
+        }
+      }
+    }
+  YDETAIL
+    {
+    SHOWTICKS = NO
+    AUTOGRID = NO
+    AXISPOSITION = 6
+    RANGEMIN = 0
+    RANGEMAX = 2
+    GRSPACING = 0.5
+    LINETHICKNESS = 0.1
+    TICKLABEL
+      {
+      TEXTSHAPE
+        {
+        HEIGHT = 4
+        }
+      }
+    TITLE
+      {
+      TITLEMODE = USETEXT
+      TEXT = 'y (m)' 
+      TEXTSHAPE
+        {
+        FONT = TIMESITALICBOLD
+        HEIGHT = 6
+        }
+      OFFSET = 4
+      }
+    }
+$!GLOBALISOSURFACE 
+  ISOVALUE1 = 0.346408426762
+  ISOVALUE2 = 0.347605615854
+  ISOVALUE3 = 0.348802804947
+$!FIELDLAYERS 
+  SHOWMESH = NO
+  SHOWCONTOUR = YES
+$!FRAMELINKING 
+  LINKCONTOURLEVELS = YES
+  LINKXAXISRANGE = YES
+  LINKYAXISRANGE = YES
+$!REMOVEVAR |LFDSFN1|
+$!SETSTYLEBASE CONFIG

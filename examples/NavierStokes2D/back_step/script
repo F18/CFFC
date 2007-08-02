@@ -1,0 +1,9 @@
+#!/bin/sh
+
+mpirun -np 1 --gm-no-shmem --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/navierstokes2D -f backstep.in -pde NavierStokes2D
+cat backstep_cpu*.dat > nodes.dat
+cat backstep_cells_cpu*.dat > cells.dat
+cat backstep_backstep_cpu*.dat > backstep.dat
+rm backstep_cpu*.dat
+rm backstep_cells_cpu*.dat
+rm backstep_backstep_cpu*.dat

@@ -1,0 +1,20 @@
+#!/bin/tcsh
+#
+#PBS -N naca0012_00.0
+#PBS -q iqmaster
+#PBS -l walltime=0:10:00,nodes=12:ppn=4:itanium-8G,other=night
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/EmbeddedBoundaries2D/naca0012/00.0/
+cp ../SU/RUN_4/*.soln .
+cp ../SU/RUN_4/*.tree .
+cp ../SU/RUN_4/*residual* .
+mpirun -np 48 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/embeddedboundaries2D -f naca0012.in -pde Euler2D >& naca0012.log
+cat naca0012_cpu*.dat > points.dat
+cat naca0012_active_cpu*.dat > active.dat
+cat naca0012_inactive_cpu*.dat > inactive.dat
+cat naca0012_nodes_cpu*.dat > nodes.dat
+cat naca0012_interface_union_list_cpu*.dat > union.dat
+cat naca0012_cp_cpu*.dat > cp.dat
+rm naca0012_*cpu*.dat
+rm naca0012_00.0.e* naca0012_00.0.o*

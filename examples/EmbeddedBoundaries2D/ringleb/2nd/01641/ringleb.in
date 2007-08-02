@@ -1,0 +1,118 @@
+#
+# RINGLEB's FLOW
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Geometry_Type =
+Planar
+#
+# SOLVER PARAMETERS:
+Time_Integration_Type =
+Multistage_Optimal_Smoothing
+N_Stage =
+5
+Time_Accurate =
+0
+Local_Time_Stepping =
+1
+Reconstruction_Type =
+Least_Squares
+Limiter_Type =
+One
+#Venkatakrishnan
+Flux_Function_Type =
+Roe
+#
+# INITIAL CONDITIONS:
+ICs_Type =
+Ringleb_Flow
+Gas_Type =
+AIR
+#
+# GRID PARAMETERS:
+Grid_Type =
+Square
+Number_of_Cells_Idir =
+76
+Number_of_Cells_Jdir =
+76
+Number_of_Blocks_Idir =
+1
+Number_of_Blocks_Jdir =
+1
+X_Shift =
+0.00 0.50
+X_Scale =
+9.00
+Boundary_Conditions_Specified =
+On
+BC_North =
+None
+BC_South =
+Ringleb
+BC_East =
+None
+BC_West =
+None
+#
+# INTERFACE PARAMETERS:
+Number_of_Interface_Components =
+1
+Interface_Spline_Type =
+Ringleb_Flow
+Interface_Reference_Point =
+ 2.00  2.00
+Interface_BC_Type =
+RinglebFlow
+Inner_Streamline_Number =
+0.80
+Outer_Streamline_Number =
+0.40
+Isotach_Line =
+0.30
+#
+# INITIAL AMR PARAMETERS:
+Number_of_Initial_Mesh_Refinements =
+0
+Number_of_Uniform_Mesh_Refinements =
+0
+Number_of_Boundary_Mesh_Refinements =
+0
+Number_of_Interface_Mesh_Refinements =
+0
+#
+# UNSTEADY AMR PARAMETERS:
+AMR =
+0
+#
+# TIME-STEPPING PARAMETERS:
+CFL_Number =
+1.00
+Time_Max =
+0.00
+Maximum_Number_of_Time_Steps =
+12000
+Number_of_Blocks_Per_Processor =
+1
+Output_File_Name =
+ringleb
+Restart_Solution_Save_Frequency =
+100000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+Write_Output
+Write_Output_Cells
+Write_Output_Nodes
+Write_Output_Elements
+Write_Output_Ringleb
+Write_Output_Interface_Component_List
+Write_Output_Interface_Union_List
+#
+# WRITE RESTART:
+#Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate

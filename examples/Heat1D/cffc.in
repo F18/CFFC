@@ -1,0 +1,30 @@
+Time_Integration_Type =
+Simple_Implicit
+ICs_Type = 
+Impulsive_Rod
+Kappa = 
+0.02
+Grid_Type =
+Uniform
+Number_of_Nodes = 
+101
+CFL_Number =
+0.90
+Time_Max = 
+ 100.00
+Output_File_Name = 
+rod1
+Execute
+Write_Output
+Terminate
+
+Uniform                        :ICs_Type
+Impulsive_Rod                  :ICs_Type
+Sinusoidal_Rod1                :ICs_Type
+Sinusoidal_Rod4                :ICs_Type 
+
+Simple_Explicit                :Time_Integration_Type
+Simple_Implicit                :Time_Integration_Type
+Crank_Nicolson                 :Time_Integration_Type
+ADE                            :Time_Integration_Type
+

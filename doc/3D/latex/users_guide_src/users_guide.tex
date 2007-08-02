@@ -1,0 +1,279 @@
+\documentclass[11pt]{report}
+
+\oddsidemargin=0.00in
+\evensidemargin=0.00in
+\topmargin=0.00in
+\headheight=0.00in
+\headsep=0.00in
+\topskip=0.0in
+\textwidth=6.50in
+\textheight=9.00in
+\footskip=0.50in
+
+\title{\Large \bf
+       Computational Framework for Fluids and Combustion (CFFC)\\
+       \ \\ \Huge
+       \protect\underline{CFFC User's Guide}}
+
+\author{\Large \em 
+        University of Toronto Institute for Aerospace Studies\\
+        \Large \em
+        4925 Dufferin Street, Toronto, Ontario, Canada M3H 5T6}
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\chapter{What is {\tt CFFC}?}
+
+{\bf Synopsis}: An overview of the CFFC is given.
+
+\section{The Source Tree}
+
+{\bf Synopsis}: An overview of the source tree
+
+\subsection{CVS}
+
+\subsection{{\tt src} Directory}
+
+\subsection{{\tt bin} Directory}
+
+\subsection{{\tt data} Directory}
+
+\subsection{{\tt doc} Directory}
+
+\section{Makefile}
+
+{\bf Synopsis}: The makefile
+
+\subsection{Support for a Variety of Computer Architectures}
+
+\section{The Development Team}
+
+{\bf Synopsis}: The development team  
+
+%%%%%%%%%%%%%%%%%%%%%%
+%% pdes++           %%
+%%%%%%%%%%%%%%%%%%%%%%
+\chapter{What is {\tt pdes++}?}
+
+{\bf Synopsis}: An overview of the
+
+\section{How to Compile {\tt pdes++}}
+
+{\bf Synopsis}:
+
+\section{How to Run {\tt pdes++}}
+
+{\bf Synopsis}:
+
+\subsection{Command Line Arguments}
+
+\subsection{Input Files}
+
+\section{Examples}
+
+{\bf Synopsis}:
+
+%%%%%%%%%%%%%%%%%%%%%%
+%% Solution Classes %%
+%%%%%%%%%%%%%%%%%%%%%%
+\chapter{{\tt CFFC} PDE Solution Classes}
+
+{\bf Synopsis}: An overview of the
+
+\section{{\tt Euler1D} Class and Supporting Routines}
+
+{\bf Synopsis}: The {\tt Euler1D} class
+
+\section{{\tt Euler2D} Class and Supporting Routines}
+
+{\bf Synopsis}: The {\tt Euler2D} class
+
+\section{{\tt Scalar1D} Class and Supporting Routines}
+
+{\bf Synopsis}: The {\tt EulerD} class
+
+\section{{\tt Heat1D} Class and Supporting Routines}
+
+{\bf Synopsis}: The {\tt Heat1D} class
+
+\section{{\tt Heat2D} Class and Supporting Routines}
+
+{\bf Synopsis}: The {\tt Heat2D} class
+
+\section{{\tt HyperHeat1D} Class and Supporting Routines}
+
+{\bf Synopsis}: The {\tt HyperHeat1D} class
+
+\section{{\tt MHD1D} Class and Supporting Routines}
+
+{\bf Synopsis}: The {\tt MHD1D} class
+
+%%%%%%%%%%%%%%%%%%%%%%
+%% Mesh Classes     %%
+%%%%%%%%%%%%%%%%%%%%%%
+\chapter{{\tt CFFC} Computational Mesh Classes}
+
+{\bf Synopsis}: An overview of the
+
+\section{{\tt Grid2D\_Quad\_Block}: A Multi-Block 
+         Two-Dimensional Quadrilateral Mesh Class}
+
+{\bf Synopsis}: The {\tt Grid2D\_Quad\_Block} class
+
+\subsection{Initial Mesh Generation and Mesh Smoothing}
+
+\subsection{Grid Definition Files}
+
+\subsection{Some Default Mesh}
+
+%%%%%%%%%%%%%%%%%%%%%%
+%% Block-Based AMR  %%
+%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Block-Based Adaptive Mesh Refinement}
+
+{\bf Synopsis}: An overview of the 
+
+\section{{\tt AdaptiveBlock2D} Class and Supporting Routines}
+
+{\bf Synopsis}: The {\tt AdaptiveBlock2D} class
+
+\section{{\tt QuadTree} Class and Supporting Routines}
+
+{\bf Synopsis}: The {\tt QuadTree} class
+
+\section{{\tt Octree} Class and Supporting Routines}
+
+{\bf Synopsis}: The {\tt Octree} class
+
+%%%%%%%%%%%%%%%%%%%%%%
+%% Parallel & MPI   %%
+%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Parallel Implementation Via MPI}
+
+{\bf Synopsis}: An overview of the
+
+\section{MPI}
+
+{\bf Synopsis}: The MPI
+
+%%%%%%%%%%%%%%%%%%%%%%
+%% NASA Rotors      %%
+%%%%%%%%%%%%%%%%%%%%%%
+\chapter{The NASA Rotor 37/67 Classes}
+
+{\bf Author}: Tomas Dusatko, dusatko@ecf.utoronto.ca, January 2002\\
+\
+\noindent
+{\bf Synopsis}: The need for detailed, experimental 
+flow-field measurements continues to be an important 
+issue as computational algorithms evolve towards 
+fully three-dimensional viscous solution methods. 
+Due to the low number of available experimental data 
+sets for turbomachinary flow, NASA undertook the task 
+to create several sets of accurate experimental data 
+to meet this ongoing demand. Primarily this data can 
+be used to validate computational methods for both 2-D 
+and 3-D flow scenarios. The purpose of the 
+{\tt NASARotor37} and {\tt NASARotor67} classes
+are to provide CFD developers with a readily available 
+interface to all the geometry and flow data that is 
+available for the two NASA axial compressors labelled 
+Rotor 37 and Rotor 67. Written in C++, this code can be 
+used to process both the experimental and geometric data 
+available and generate suitable grids for computation.
+
+This chapter contains a summary of 
+the available functions in the {\tt NASARotor37} and 
+{\tt NASARotor67} classes and supporting routines and 
+their correct usage. The classes include functions that:
+(i) return the upstream and downstream boundary conditions 
+at any radial location, process experimental flow-field 
+data provided by NASA; and (ii) return various parts of the 
+rotor geometry for use in other routines, and create single 
+and multi-block structured grids for use in CFD computations. 
+Also included, is a detailed description of all the 
+experimental data that has been made available by the NASA 
+Glenn Research Centre.
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+%% Supporting Classes %%
+%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Other Supporting Classes and Data Types}
+
+{\bf Synopsis}: An overview of the 
+
+\section{{\tt Vector2D} Class and Supporting Routines}
+
+{\bf Synopsis}: The {\tt Vector2D} class
+
+\section{{\tt Vector3D} Class and Supporting Routines}
+
+{\bf Synopsis}: The {\tt Vector3D} class
+
+\section{{\tt Tensor2D} Class and Supporting Routines}
+
+{\bf Synopsis}: The {\tt Tensor2D} class
+
+\section{{\tt Tensor3D} Class and Supporting Routines}
+
+{\bf Synopsis}: The {\tt Tensor3D} class
+
+\section{{\tt Spline2D} Class and Supporting Routines}
+
+{\bf Synopsis}: The {\tt Spline2D} class
+
+\section{Generic {\tt CFD} Classes and Supporting Routines}
+
+{\bf Synopsis}: Some generic {\tt CFD} class
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Other Documentation %%
+%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Other Documentation}
+
+{\bf Synopsis}: 
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+%% Supporting Classes %%
+%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Questions, Requests, and Feeback}
+
+{\bf Synopsis}: Contact information is given for reaching the
+                developers and distributors of the 
+                {\tt CFFC} software.
+
+\section{Contact Information}
+
+If you have any questions, request, and/or feedback concerning the 
+{\tt CFFC} software or this user's manual,
+please contact Prof.\ Clinton Groth at:
+%%
+\begin{verbatim}
+Prof. Clinton P. T. Groth
+
+Phone: (416) 667-7715   Fax: (416) 667-7799
+E-mail: groth@utias.utoronto.ca
+Home page: http://www.utias.utoronto.ca/~groth
+
+Address: Institute for Aerospace Studies
+         University of Toronto
+         4925 Dufferin Street
+         Toronto, Ontario, Canada M3H 5T6
+\end{verbatim}
+%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Acknowledgments     %%
+%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Acknowledgments}
+
+The {\tt CFFC} software was developed through 
+support received 
+
+\end{document}

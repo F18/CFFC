@@ -1,0 +1,167 @@
+#
+# FLAT PLATE: CARTESIAN-MESH WITH EMBEDDED FLAT-PLATE BOUNDARY AT 30 DEGREES
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Type =
+Laminar
+Flow_Geometry_Type =
+Planar
+#
+# TIME-STEPPING PARAMETERS:
+Time_Integration_Type =
+Multistage_Optimal_Smoothing
+N_Stage =
+5
+Time_Accurate =
+0
+Local_Time_Stepping =
+1
+CFL_Number =
+0.75
+Time_Max =
+0.0
+Maximum_Number_of_Time_Steps =
+20000
+#
+# FLUX PARAMETERS:
+Reconstruction_Type =
+Least_Squares
+Limiter_Type =
+One
+#Venkatakrishnan
+#Freeze_Limiter =
+#0
+#Freeze_Limiter_Residual_Level =
+#1.00
+Flux_Function_Type =
+Roe
+Viscous_Reconstruction_Type =
+Diamond_Path
+#
+# INITIAL CONDITIONS:
+ICs_Type =
+Restart
+#Flat_Plate
+Mach_Number =
+0.20
+Reynolds_Number =
+10000.0
+Gas_Type =
+AIR
+#
+# GRID PARAMETERS:
+Grid_Type =
+Rectangular_Box
+Box_Width =
+2.00
+Box_Height =
+2.00
+Number_of_Cells_Idir =
+16
+Number_of_Cells_Jdir =
+16
+Number_of_Blocks_Idir =
+1
+Number_of_Blocks_Jdir =
+1
+X_Rotate =
+-30.0
+Boundary_Conditions_Specified =
+On
+BC_North =
+None
+#Fixed
+BC_South =
+None
+#Constant_Extrapolation
+BC_East =
+None
+#Constant_Extrapolation
+BC_West =
+None
+#Fixed
+#
+# INTERFACE PARAMETERS:
+Number_of_Interface_Components =
+1
+Interface_Spline_Type =
+Flat_Plate
+Plate_Length =
+0.01
+#0.0020
+Interface_Characteristic_Length_1 =
+0.01
+#0.0020
+Interface_Characteristic_Length_2 =
+1.0
+#1.5
+Number_of_Specified_Interface_Points =
+1
+Interface_Points =
+ 0.000   0.000  0  0
+Interface_Reference_Point =
+ 0.000  -0.020
+Interface_BC_Type =
+Flat_Plate
+Interface_Motion =
+Stationary
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+8
+Minimum_Refinement_Level =
+2
+Threshold_for_Refinement =
+0.10
+Threshold_for_Coarsening =
+0.01
+Refinement_Criteria_Gradient_Density =
+Off
+Refinement_Criteria_Divergence_Velocity =
+Off
+Refinement_Criteria_Curl_Velocity =
+On
+Number_of_Blocks_Per_Processor =
+256
+#
+# INITIAL AMR PARAMETERS:
+Number_of_Uniform_Mesh_Refinements =
+0
+Number_of_Boundary_Mesh_Refinements =
+0
+Number_of_Initial_Mesh_Refinements =
+5
+Number_of_Interface_Mesh_Refinements =
+0
+#
+# UNSTEADY AMR PARAMETERS:
+AMR =
+Off
+AMR_Frequency =
+0
+#
+# I/O PARAMETERS:
+Output_File_Name =
+flatplate
+Restart_Solution_Save_Frequency =
+500000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+Write_Output
+#Write_Output_Cells
+Write_Output_Elements
+Write_Output_Nodes
+Write_Output_Cell_Status
+Write_Output_Interface_Component_List
+Write_Output_Interface_Union_List
+Write_Output_Flat_Plate
+#
+# WRITE RESTART:
+Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate

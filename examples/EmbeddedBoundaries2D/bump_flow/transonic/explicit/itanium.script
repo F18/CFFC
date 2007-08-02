@@ -1,0 +1,20 @@
+#!/bin/tcsh
+#
+#PBS -N bump_tr_ex
+#PBS -q iqmaster
+#PBS -l walltime=1:00:00,nodes=2:ppn=4:itanium-8G,other=day
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/EmbeddedBoundaries2D/bump_flow/transonic/explicit/
+#mpirun -np 8 --gm-no-shmem --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/embeddedboundaries2D -f bump.in -pde Euler2D >& bump.log
+mpirun -np 8 --gm-no-shmem --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/bin/embeddedboundaries2D_i -f bump.in -pde Euler2D >& bump.log
+cat bump_cpu*.dat > points.dat
+cat bump_active_cpu*.dat > active.dat
+cat bump_inactive_cpu*.dat > inactive.dat
+cat bump_cells_cpu*.dat > cells.dat
+cat bump_nodes_cpu*.dat > nodes.dat
+cat bump_interface_component_list_cpu*.dat > components.dat
+cat bump_interface_union_list_cpu*.dat > union.dat
+rm bump_cpu*.dat
+rm bump_*_cpu*.dat
+rm bump_tr_ex.e* bump_tr_ex.o* 

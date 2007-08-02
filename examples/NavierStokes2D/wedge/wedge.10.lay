@@ -1,0 +1,7592 @@
+#!MC 1000
+$!VarSet |LFDSFN1| = '"points.dat"'
+$!VarSet |LFDSVL1| = '"x" "y" "rho" "u" "v" "p" "T" "M" "H" "s"'
+$!SETSTYLEBASE FACTORY
+$!PAPER 
+  BACKGROUNDCOLOR = WHITE
+  ISTRANSPARENT = YES
+  ORIENTPORTRAIT = NO
+  SHOWGRID = YES
+  SHOWRULER = YES
+  SHOWPAPER = YES
+  PAPERSIZE = LETTER
+  PAPERSIZEINFO
+    {
+    LETTER
+      {
+      WIDTH = 8.5
+      HEIGHT = 11
+      LEFTHARDCLIPOFFSET = 0.125
+      RIGHTHARDCLIPOFFSET = 0.125
+      TOPHARDCLIPOFFSET = 0.125
+      BOTTOMHARDCLIPOFFSET = 0.125
+      }
+    }
+  RULERSPACING = ONEINCH
+  PAPERGRIDSPACING = HALFINCH
+  REGIONINWORKAREA
+    {
+    X1 = -0.05
+    Y1 = -0.05
+    X2 = 11.05
+    Y2 = 8.55
+    }
+$!COLORMAP 
+  CONTOURCOLORMAP = SMRAINBOW
+$!COLORMAPCONTROL RESETTOFACTORY
+### Frame Number 1 ###
+$!READDATASET  '|LFDSFN1|' 
+  INITIALPLOTTYPE = CARTESIAN2D
+  INCLUDETEXT = NO
+  INCLUDEGEOM = NO
+  VARLOADMODE = BYNAME
+  VARNAMELIST = '|LFDSVL1|' 
+$!REMOVEVAR |LFDSVL1|
+$!REMOVEVAR |LFDSFN1|
+$!FRAMELAYOUT 
+  SHOWBORDER = NO
+  SHOWHEADER = NO
+  HEADERCOLOR = RED
+  XYPOS
+    {
+    X = 0.5
+    Y = 0.25
+    }
+  WIDTH = 10
+  HEIGHT = 8
+$!PLOTTYPE  = CARTESIAN2D
+$!FRAMENAME  = 'Frame 001' 
+$!ACTIVEFIELDZONES  =  [1-155]
+$!GLOBALRGB 
+  RANGEMIN = 0
+  RANGEMAX = 1
+$!GLOBALCONTOUR  1
+  VAR = 6
+  DEFNUMLEVELS = 90
+  LABELS
+    {
+    AUTOLEVELSKIP = 21
+    }
+  LEGEND
+    {
+    SHOW = YES
+    ROWSPACING = 1.5
+    XYPOS
+      {
+      X = 14.252
+      Y = 87.425
+      }
+    ANCHORALIGNMENT = TOPLEFT
+    ISVERTICAL = NO
+    OVERLAYBARGRID = NO
+    BOX
+      {
+      BOXTYPE = NONE
+      }
+    LABELINCREMENT = 1.507E+04
+    }
+  COLORCUTOFF
+    {
+    RANGEMIN = 138776.267578
+    RANGEMAX = 214128.818359
+    }
+  COLORMAPFILTER
+    {
+    CONTINUOUSCOLOR
+      {
+      CMIN = 101099.992188
+      CMAX = 251805.09375
+      }
+    }
+$!CONTOURLEVELS NEW
+  CONTOURGROUP = 1
+  RAWDATA
+90
+102000
+104000
+106000
+108000
+110000
+112000
+114000
+116000
+118000
+120000
+122000
+124000
+126000
+128000
+130000
+132000
+134000
+136000
+138000
+140000
+142000
+144000
+146000
+148000
+150000
+152000
+154000
+156000
+158000
+160000
+162000
+164000
+166000
+168000
+170000
+172000
+174000
+176000
+178000
+180000
+182000
+184000
+186000
+188000
+190000
+192000
+194000
+196000
+198000
+200000
+202000
+204000
+206000
+208000
+210000
+212000
+214000
+216000
+218000
+220000
+222000
+224000
+226000
+228000
+230000
+232000
+234000
+236000
+238000
+240000
+242000
+244000
+246000
+248000
+250000
+252000
+254000
+256000
+258000
+260000
+262000
+264000
+266000
+268000
+270000
+272000
+274000
+276000
+278000
+280000
+$!GLOBALCONTOUR  2
+  COLORMAPFILTER
+    {
+    CONTINUOUSCOLOR
+      {
+      CMIN = 0
+      CMAX = 1
+      }
+    }
+$!GLOBALCONTOUR  3
+  COLORMAPFILTER
+    {
+    CONTINUOUSCOLOR
+      {
+      CMIN = 0
+      CMAX = 1
+      }
+    }
+$!GLOBALCONTOUR  4
+  COLORMAPFILTER
+    {
+    CONTINUOUSCOLOR
+      {
+      CMIN = 0
+      CMAX = 1
+      }
+    }
+$!GLOBALTWODVECTOR 
+  UVAR = 4
+  VVAR = 5
+  RELATIVELENGTH = 3E-06
+$!FIELD  [1]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    USELIGHTINGEFFECT = YES
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [2]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    USELIGHTINGEFFECT = YES
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [3]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    USELIGHTINGEFFECT = YES
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [4]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    USELIGHTINGEFFECT = YES
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [5]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    USELIGHTINGEFFECT = YES
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [6]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    USELIGHTINGEFFECT = YES
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [7]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    USELIGHTINGEFFECT = YES
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [8]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    USELIGHTINGEFFECT = YES
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [9]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [10]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [11]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [12]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [13]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [14]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [15]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [16]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [17]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [18]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [19]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [20]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [21]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [22]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [23]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [24]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [25]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [26]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [27]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [28]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [29]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [30]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [31]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [32]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [33]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [34]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [35]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [36]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [37]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [38]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [39]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [40]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [41]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [42]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [43]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [44]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [45]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [46]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [47]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [48]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [49]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [50]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [51]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [52]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [53]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [54]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [55]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [56]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [57]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [58]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [59]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [60]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [61]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [62]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [63]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [64]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [65]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [66]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [67]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [68]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [69]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [70]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [71]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [72]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [73]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [74]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [75]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [76]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [77]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [78]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [79]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [80]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [81]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [82]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [83]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [84]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [85]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [86]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [87]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [88]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [89]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [90]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [91]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [92]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [93]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [94]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [95]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [96]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [97]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [98]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [99]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [100]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [101]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [102]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [103]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [104]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [105]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [106]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [107]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [108]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [109]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [110]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [111]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [112]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [113]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [114]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [115]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [116]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [117]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [118]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [119]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [120]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [121]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [122]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [123]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [124]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [125]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [126]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [127]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [128]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [129]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [130]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [131]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [132]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [133]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [134]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [135]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [136]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [137]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [138]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [139]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [140]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [141]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [142]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [143]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [144]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [145]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [146]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [147]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [148]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [149]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [150]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = PURPLE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [151]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = RED
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [152]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = GREEN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [153]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = BLUE
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [154]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = CYAN
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!FIELD  [155]
+  MESH
+    {
+    MESHTYPE = WIREFRAME
+    COLOR = CUSTOM42
+    }
+  CONTOUR
+    {
+    COLOR = MULTI
+    LINETHICKNESS = 0.4
+    }
+  VECTOR
+    {
+    COLOR = BLACK
+    }
+  SCATTER
+    {
+    SHOW = NO
+    COLOR = YELLOW
+    }
+  SHADE
+    {
+    SHOW = NO
+    COLOR = WHITE
+    }
+  BOUNDARY
+    {
+    SHOW = YES
+    COLOR = BLACK
+    }
+  POINTS
+    {
+    POINTSTOPLOT = SURFACENODES
+    }
+  SURFACES
+    {
+    SURFACESTOPLOT = KPLANES
+    }
+  VOLUMEMODE
+    {
+    VOLUMEOBJECTSTOPLOT
+      {
+      SHOWISOSURFACES = NO
+      SHOWSLICES = NO
+      SHOWSTREAMTRACES = NO
+      }
+    }
+$!TWODAXIS 
+  XDETAIL
+    {
+    VARNUM = 1
+    }
+  YDETAIL
+    {
+    VARNUM = 2
+    }
+$!VIEW FIT
+$!TWODAXIS 
+  DEPXTOYRATIO = 1
+  GRIDAREA
+    {
+    DRAWBORDER = YES
+    LINETHICKNESS = 0.1
+    DRAWGRIDLAST = YES
+    }
+  VIEWPORTPOSITION
+    {
+    X1 = 10
+    Y1 = 10
+    X2 = 95
+    Y2 = 95
+    }
+  VIEWPORTTOPSNAPTARGET = 95
+$!TWODAXIS 
+  XDETAIL
+    {
+    RANGEMIN = -0.5
+    RANGEMAX = 1.4064984472870827314
+    GRSPACING = 0.5
+    TICKS
+      {
+      SHOWONGRIDBORDERMIN = YES
+      SHOWONGRIDBORDERMAX = YES
+      LINETHICKNESS = 0.1
+      }
+    AXISLINE
+      {
+      LINETHICKNESS = 0.1
+      POSITION = 1.176
+      }
+    }
+$!TWODAXIS 
+  YDETAIL
+    {
+    RANGEMIN = 0
+    RANGEMAX = 1.5251987578296659631
+    GRSPACING = 0.5
+    TICKS
+      {
+      SHOWONGRIDBORDERMIN = YES
+      SHOWONGRIDBORDERMAX = YES
+      LINETHICKNESS = 0.1
+      }
+    AXISLINE
+      {
+      LINETHICKNESS = 0.1
+      POSITION = 3.529
+      }
+    }
+$!GLOBALISOSURFACE 
+  ISOVALUE1 = 138776.267578
+  ISOVALUE2 = 176452.542969
+  ISOVALUE3 = 214128.818359
+$!GLOBALSLICE 
+  BOUNDARY
+    {
+    SHOW = NO
+    }
+$!FIELDLAYERS 
+  SHOWCONTOUR = YES
+$!SETSTYLEBASE CONFIG

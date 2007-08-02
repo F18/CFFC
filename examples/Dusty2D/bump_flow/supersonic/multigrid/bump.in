@@ -1,0 +1,132 @@
+#
+# SUPERSONIC BUMP FLOW
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Geometry_Type =
+Planar
+#
+# TIME-STEPPING PARAMETERS:
+Time_Integration_Type =
+Multigrid
+Time_Accurate =
+0
+Local_Time_Stepping =
+1
+CFL_Number =
+1.0
+Maximum_Number_of_Time_Steps =
+2000
+#
+# MULTIGRID PARAMETERS:
+Multigrid_Levels =
+4
+Multigrid_Cycle_Type =
+V
+Multigrid_Number_of_Smooths_on_Finest_Level =
+2
+Multigrid_Number_of_Pre_Smooths =
+2
+Multigrid_Number_of_Post_Smooths =
+2
+Multigrid_Number_of_Smooths_on_Coarsest_Level =
+4
+Full_Multigrid =
+500
+Defect_Correction =
+On
+Prolong_Using_Injection =
+Off
+First_Order_Coarse_Mesh_Reconstruction =
+On
+Apply_Coarse_Mesh_Boundary_Conditions =
+On
+Injection_at_Dirichlet_Boundary_Conditions =
+On
+Update_Stability_Switch =
+On
+Maximum_Number_of_Update_Reductions =
+5
+Multigrid_Smoothing_Type =
+Multistage_Optimal_Smoothing
+N_Stage =
+5
+#
+# RESIDUAL SMOOTHING PARAMETERS:
+Residual_Smoothing_Epsilon =
+0.125
+Residual_Smoothing_Gauss_Seidel_Iterations =
+2
+#
+# FLUX PARAMETERS:
+Reconstruction_Type =
+Least_Squares
+Limiter_Type =
+Venkatakrishnan
+Freeze_Limiter =
+1
+Freeze_Limiter_Residual_Level =
+0.05
+Flux_Function_Type =
+Roe
+#
+# INITIAL CONDITIONS:
+ICs_Type =
+Uniform
+Mach_Number =
+1.40
+Gas_Type =
+AIR
+#
+# GRID PARAMETERS:
+Grid_Type =
+Bump_Channel_Flow
+Smooth_Bump =
+On
+Number_of_Cells_Idir =
+32
+Number_of_Cells_Jdir =
+32
+#
+# INITIAL AMR PARAMETERS:
+Number_of_Initial_Mesh_Refinements =
+0
+Number_of_Uniform_Mesh_Refinements =
+0
+Number_of_Boundary_Mesh_Refinements =
+0
+#
+# UNSTEADY AMR PARAMETERS:
+AMR =
+Off
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+5
+Minimum_Refinement_Level =
+2
+Threshold_for_Refinement =
+0.50
+Threshold_for_Coarsening =
+0.10
+Number_of_Blocks_Per_Processor =
+64
+#
+# I/O PARAMETERS:
+Output_File_Name =
+bump
+Restart_Solution_Save_Frequency =
+10000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+Write_Output
+Write_Output_Cells
+#
+# WRITE RESTART:
+Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate

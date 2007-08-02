@@ -1,0 +1,6 @@
+#!/bin/tcsh
+
+mpirun -np 1 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/euler2D -f shockbox.in -pde Euler2D
+cat shockbox_cpu*.dat > points.dat
+cat shockbox_cells_cpu*.dat > cells.dat
+rm shockbox_*cpu*.dat

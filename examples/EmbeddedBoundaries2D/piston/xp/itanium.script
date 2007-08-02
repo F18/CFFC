@@ -1,0 +1,20 @@
+#!/bin/tcsh
+#
+#PBS -N piston
+#PBS -q qmaster
+#PBS -l walltime=2:00:00,nodes=1:ppn=4:parallel,other=day
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/Dusty2D/PistonProblem/Horizontal/
+mpirun -np 1 --gm-no-shmem --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/bin/dusty2D_piston -f piston.in -pde Dusty2D >& piston.log
+cat piston_cpu*.dat > nodes.dat
+cat piston_inactive_cpu*.dat > inactive.dat
+cat piston_point_cpu*.dat > points.dat
+cat piston_cells_cpu*.dat > cells.dat
+cat piston_interface_nodes_cpu*.dat > interface.dat
+rm piston_cpu*.dat
+rm piston_inactive_cpu*.dat
+rm piston_point_cpu*.dat
+rm piston_cells_cpu*.dat
+rm piston_interface_nodes_cpu*.dat
+rm piston.e* piston.o*

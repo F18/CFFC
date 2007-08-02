@@ -1,0 +1,164 @@
+#
+# OSCILLATING NACA0012 AEROFOIL
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Geometry_Type =
+Planar
+#
+# TIME-STEPPING PARAMETERS:
+Time_Integration_Type =
+Explicit_Predictor_Corrector
+N_Stage =
+2
+Time_Accurate =
+1
+Local_Time_Stepping =
+0
+CFL_Number =
+0.50
+Time_Max =
+0.0
+Maximum_Number_of_Time_Steps =
+0
+#
+# FLUX PARAMETERS:
+Reconstruction_Type =
+Least_Squares 
+Limiter_Type =
+Venkatakrishnan
+Flux_Function_Type =
+HLLE_MB
+#
+# INITIAL CONDITIONS:
+ICs_Type =
+Restart
+Pressure =
+101.3250
+Temperature =
+288.139203
+Mach_Number =
+0.755
+Flow_Angle =
+0.0
+Gas_Type =
+AIR
+#
+# GRID PARAMETERS:
+Grid_Type =
+Circular_Cylinder
+Cylinder_Radius =
+ 0.0035
+Cylinder_Radius2 =
+3.25120
+Mesh_Stretching_Type_Idir =
+Linear
+Mesh_Stretching_Type_Jdir =
+Min_Clustering
+Mesh_Stretching_Factor_Idir =
+1.050
+Mesh_Stretching_Factor_Jdir =
+1.001
+Number_of_Cells_Idir =
+32
+Number_of_Cells_Jdir =
+24
+Number_of_Blocks_Idir =
+2
+Number_of_Blocks_Jdir =
+1
+Boundary_Conditions_Specified =
+On
+BC_North =
+Fixed
+BC_South =
+Constant_Extrapolation
+BC_East =
+None
+BC_West =
+None
+#
+# INTERFACE PARAMETERS:
+Number_of_Interface_Components =
+1
+Interface_Spline_Type =
+NACA_Aerofoil
+Interface_Characteristic_Length =
+0.1016
+Number_of_Specified_Interface_Points =
+1
+Interface_Points =
+-0.016  0.000  0  0
+Interface_Reference_Point =
+-0.250  0.000
+Interface_BC_Type =
+Reflection
+Interface_Motion =
+Stationary
+Interface_Characteristic_Velocity =
+1.0  0.0
+Solution_Redistribution_Type =
+Injection
+Reset_Interface_Motion_Type =
+On
+#
+# INITIAL AMR PARAMETERS:
+Number_of_Initial_Mesh_Refinements =
+0
+Number_of_Uniform_Mesh_Refinements =
+0
+Number_of_Boundary_Mesh_Refinements =
+0
+Number_of_Interface_Mesh_Refinements =
+0
+Number_of_Bounding_Box_Mesh_Refinements =
+0
+AMR_Xmin =
+-0.045 -0.025
+AMR_Xmax =
+ 0.100  0.025
+#
+# UNSTEADY AMR PARAMETERS:
+AMR =
+Off
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+7
+Minimum_Refinement_Level =
+2
+Threshold_for_Refinement =
+0.10
+Threshold_for_Coarsening =
+0.05
+Refinement_Criteria_Gradient_Density =
+On
+Refinement_Criteria_Divergence_Velocity =
+Off
+Refinement_Criteria_Curl_Velocity =
+Off
+Smooth_Quad_Block =
+On
+Number_of_Blocks_Per_Processor =
+128
+#
+# I/O PARAMETERS:
+Output_File_Name =
+naca0012
+Restart_Solution_Save_Frequency =
+1000001
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+Write_Output
+Write_Output_Elements
+Write_Output_Nodes
+Write_Output_Interface_Union_List
+Write_Output_Aerodynamic_Coefficients
+#
+# WRITE RESTART:
+Write_Restart
+# TERMINATE PROGRAM:
+Terminate

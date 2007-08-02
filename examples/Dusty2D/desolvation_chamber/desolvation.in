@@ -1,0 +1,100 @@
+#
+# DESOLVATION CHAMBER with MEDIUM-size charged particles.
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Type =
+Inviscid
+#Turbulent_k_omega
+Flow_Geometry_Type =
+Axisymmetric
+Particle_Phase =
+Off
+#Phase_Interaction =
+#On
+Electrostatic_Force =
+On
+#
+# TIME-STEPPING PARAMETERS:
+Time_Integration_Type =
+Multistage_Optimal_Smoothing
+N_Stage =
+5
+Time_Accurate =
+0
+Local_Time_Stepping =
+1
+CFL_Number =
+0.50
+Time_Max =
+0.0
+Maximum_Number_of_Time_Steps =
+100
+#
+# FLUX PARAMETERS:
+Reconstruction_Type =
+Least_Squares
+Limiter_Type =
+Venkatakrishnan
+Gas_Phase_Flux_Function_Type =
+Roe
+Particle_Phase_Flux_Function_Type =
+MultiVelocity
+#
+# INITIAL CONDITIONS:
+ICs_Type =
+Restart
+#Low_Pressure_Reservoir
+Mach_Number =
+0.00
+Pressure =
+0.0101325
+Wave_Position =
+0.014  0.000
+Gas_Type =
+AIR
+Particle_Type =
+SCIEX_MEDIUM
+Particle_Volume_Fraction =
+0.00005
+Particle_Mach_Number =
+0.00
+#
+# MESH PARAMETERS:
+Grid_Type =
+Desolvation_Chamber
+Number_of_Cells_Idir =
+36
+Number_of_Cells_Jdir =
+18
+#
+# TURBULENCE PARAMETERS:
+Turbulence_BC_Type =
+Automatic_Wall_Treatment
+Friction_Velocity_Type =
+Iterative
+yplus_sublayer =
+2.5
+yplus_buffer_layer =
+25.0
+yplus_outer_layer =
+250.0
+#
+# I/O PARAMETERS:
+Output_File_Name =
+desolvation
+Restart_Solution_Save_Frequency =
+5000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+Write_Output
+Write_Output_Cells
+#
+# WRITE RESTART:
+Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate

@@ -1,0 +1,153 @@
+#
+# Rotor 37 test case
+#
+########################
+# Set solver parameters
+########################
+Time_Integration_Type =
+Multistage_Optimal_Smoothing 
+N_Stage = 
+1
+Time_Accurate = 
+0
+Flow_Geometry_Type = 
+Planar
+Local_Time_Stepping =
+1
+Reconstruction_Type =
+Least_Squares
+Limiter_Type = 
+Zero            
+Flux_Function_Type =
+HLLE 
+#########################
+# Set initial conditions
+#########################
+ICs_Type = 
+Riemann_Xdir
+NASA_Rotor37_Data_Directory =
+/home/groth/CFDkit+caboodle/data/NASA_Rotors/R37/
+Grid_Type =
+NASA_Rotor37       
+Rotor_Percent_Span = 
+70
+Number_of_Cells_Idir = 
+96 
+Number_of_Cells_Jdir =
+48  
+###############################
+# Set time stepping parameters
+###############################
+CFL_Number =
+       0.50
+Maximum_Number_of_Time_Steps =
+1000
+Number_of_Blocks_Per_Processor =
+64
+Output_File_Name = 
+rotor37
+Restart_Solution_Save_Frequency = 
+2000
+#######################
+# Execute program
+#######################
+Execute
+#######################
+# Write output
+#######################
+Write_Output
+Write_Restart
+Write_Mesh_Definition
+#Terminate
+##############################
+# Re-set some input parameters
+##############################
+N_Stage = 
+4
+Limiter_Type = 
+Venkatakrishnan           
+Flux_Function_Type =
+Linde
+CFL_Number =
+       0.70
+Maximum_Number_of_Time_Steps =
+10000
+##############################
+# Restart program
+##############################
+Continue
+#######################
+# Write output
+#######################
+Write_Output
+Write_Output_Mesh
+Write_Output_Mesh_Cells
+Write_Output_Mesh_Nodes
+Write_Restart
+Write_Mesh_Definition
+#######################
+# Terminate program
+#######################
+Terminate
+
+#####################################
+Flux_Function_Type = 
+Godunov
+Write_Output
+Write_Output_Mesh
+Write_Output_Mesh_Cells
+Write_Output_Mesh_Nodes
+Write_Restart
+Write_Mesh_Definition
+Terminate
+
+Planar                         :Flow_Geometry_Type
+Axisymmetric                   :Flow_Geometry_Type
+
+Explicit_Euler                 :Time_Integration_Type
+Explicit_Predictor_Corrector   :Time_Integration_Type
+Explicit_Runge_Kutta           :Time_Integration_Type
+Multistage_Optimal_Smoothing   :Time_Integration_Type
+
+Least_Squares                  :Reconstruction_Type
+Green_Gauss                    :Reconstruction_Type
+
+Venkatakrishnan                :Limiter_Type
+Barth_Jespersen                :Limiter_Type
+Zero                           :Limiter_Type
+One                            :Limiter_Type
+
+Godunov                        :Flux_Function_Type
+Roe                            :Flux_Function_Type
+Rusanov                        :Flux_Function_Type
+HLLE                           :Flux_Function_Type
+Linde                          :Flux_Function_Type
+HLLC                           :Flux_Function_Type
+
+Uniform                        :ICs_Type
+Sod                            :ICs_Type
+Sod_Xdir                       :ICs_Type
+Sod_Ydir                       :ICs_Type
+Groth                          :ICs_Type
+Groth_Xdir                     :ICs_Type
+Groth_Ydir                     :ICs_Type
+Einfeldt                       :ICs_Type
+Einfeldt_Xdir                  :ICs_Type
+Einfeldt_Ydir                  :ICs_Type
+ShockBox                       :ICs_Type
+High_Pressure_Reservoir        :ICs_Type
+Restart                        :ICs_Type
+
+Square                         :Grid_Type
+Rectangular_Box                :Grid_Type
+Flat_Plate                     :Grid_Type
+Pipe                           :Grid_Type
+Blunt_Body                     :Grid_Type
+Rocket_Motor                   :Grid_Type
+Circular_Cylinder              :Grid_Type
+Ellipse                        :Grid_Type
+NACA_Aerofoil                  :Grid_Type
+NASA_Rotor37                   :Grid_Type
+NASA_Rotor67                   :Grid_Type
+Read_From_Definition_File      :Grid_Type
+Read_From_Data_File            :Grid_Type

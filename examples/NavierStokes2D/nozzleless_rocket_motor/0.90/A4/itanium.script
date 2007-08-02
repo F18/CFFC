@@ -1,0 +1,15 @@
+#!/bin/tcsh
+#
+#PBS -N nozzleless_0.90_A4
+#PBS -q iqmaster
+#PBS -l walltime=0:30:00,nodes=11:ppn=4:itanium-8G,other=day
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/NavierStokes2D/nozzleless_rocket_motor/0.90/A4/
+cp ../R3/*.soln .
+cp ../R3/*.tree .
+mpirun -np 42 --gm-no-shmem --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/navierstokes2D -f nozzleless.in -pde NavierStokes2D >& nozzleless.log
+cat nozzleless_cpu*.dat > points.dat
+cat nozzleless_cells_cpu*.dat > cells.dat
+rm nozzleless_*cpu*.dat
+rm nozzleless_0.90_A4.e* nozzleless_0.90_A4.o*

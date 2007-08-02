@@ -1,0 +1,151 @@
+#
+# CRV7 ROCKET MOTOR -- TURBULENT
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Type =
+Laminar
+Flow_Geometry_Type =
+Planar
+#
+# TIME-STEPPING PARAMETERS:
+Time_Integration_Type =
+Multistage_Optimal_Smoothing
+N_Stage =
+3
+Time_Accurate =
+0
+Local_Time_Stepping =
+1
+CFL_Number =
+0.050
+Maximum_Number_of_Time_Steps =
+10000
+#
+# FLUX PARAMETERS:
+Reconstruction_Type =
+Least_Squares
+Limiter_Type =
+Venkatakrishnan
+Flux_Function_Type =
+Roe
+Viscous_Reconstruction_Type =
+Diamond_Path
+#
+# INITIAL CONDITIONS:
+ICs_Type =
+Restart
+Gas_Type =
+AP_HTPB
+Mach_Number =
+0.10
+Pressure_Gradient =
+-100.0
+Temperature =
+298.0
+Wall_Temperature =
+298.0
+Propellant_Type =
+AP_HTPB
+#
+# GRID PARAMETERS:
+Grid_Type =
+Rocket_Motor
+Chamber_Length =
+0.20875
+Chamber_Radius =
+0.03175
+Chamber_To_Throat_Length =
+0.050
+Nozzle_Length =
+0.100
+Nozzle_Radius_Exit =
+0.030
+Nozzle_Radius_Throat =
+0.01015
+Grain_Radius =
+0.000
+Nozzle_Type =
+Hybrid_Conical
+#Conical
+#Gottlieb
+#Quartic
+Mesh_Stretching =
+On
+Mesh_Stretching_Type_Jdir =
+MinMax_Clustering
+Mesh_Stretching_Factor_Idir =
+1.05
+Mesh_Stretching_Factor_Jdir =
+1.01
+Number_of_Cells_Idir =
+24
+Number_of_Cells_Jdir =
+24
+#16
+Number_of_Blocks_Idir =
+3
+Number_of_Blocks_Jdir =
+1
+#
+# INITIAL AMR PARAMETERS:
+Number_of_Uniform_Mesh_Refinements =
+2
+Number_of_Boundary_Mesh_Refinements =
+0
+#2
+#3
+Number_of_Initial_Mesh_Refinements =
+0
+#
+# UNSTEADY AMR PARAMETERS:
+AMR =
+Off
+AMR_Frequency =
+1000
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+5
+Minimum_Refinement_Level =
+2
+Threshold_for_Refinement =
+0.40
+Threshold_for_Coarsening =
+0.20
+Refinement_Criteria_Gradient_Density =
+Off
+Refinement_Criteria_Divergence_Velocity =
+On
+Refinement_Criteria_Curl_Velocity =
+On
+Smooth_Quad_Block =
+On
+Number_of_Blocks_Per_Processor =
+128
+#
+# I/O PARAMETERS:
+Output_File_Name =
+crv7
+Restart_Solution_Save_Frequency =
+20000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# REFINE GRID:
+#Refine_Grid
+#Continue
+#Refine_Grid
+#Continue
+#
+# WRITE OUTPUT:
+Write_Output
+Write_Output_Cells
+Write_Output_Nodes
+#
+# WRITE RESTART:
+Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate

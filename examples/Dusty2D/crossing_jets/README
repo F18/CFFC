@@ -1,0 +1,29 @@
+Crossing Particle Jets:
+-----------------------
+
+Particle-phase test case of two particle jets impinging at a 90 degree
+angle [1].  The single velocity formulation does not allow for the 
+crossing of particle jets that are occur in disperse concentrations
+and instead results in a single jet who's velocity is the average of
+the two incident jets.  This is an unphysical solution.  The multi-
+velocity formulation allows for the crossing of the particle jets. 
+Note that higher-order solution of the single-velocity formulation
+suffers from a Kelvin-Helmholtz instability.  Note this is purely a
+numerical artifact.  The single-velocity formulation here was 
+proposed by Saurel et al. [2].  The multi-velocity formulation is 
+explained by Sachdev et al. [3].
+
+[1] S. A. Slater and J. B. Young, The calculation of inertial particle
+    transport in dilute gas-particle flows, International Journal of
+    Multiphase Flow, 27, pp 61--87, 2001.
+
+[2] R. Saurel, E. Daniel, and J. C. Loraud, Two-Phase Flows: Second-
+    Order Schemes and Boundary Conditions, AIAA Journal, 32:6, pp
+    1214--1221, 1994.
+
+[3] J. S. Sachdev, C. P. T. Groth, J. J. Gottlieb, Numerical Solution
+    Scheme for Inert, Disperse, and Dilute Gas-Particle Flows, 
+    Accepted for publication in the International Journal of
+    Multiphase Flow, 2006.
+
+

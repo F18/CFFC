@@ -1,0 +1,136 @@
+#
+# PISTON PROBLEM
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Type = 
+Inviscid
+Flow_Geometry_Type = 
+Planar
+#
+# SOLVER PARAMETERS:
+Time_Integration_Type =
+Explicit_Predictor_Corrector
+Time_Accurate = 
+1
+Local_Time_Stepping =
+0
+Reconstruction_Type =
+Least_Squares 
+Limiter_Type = 
+Venkatakrishnan
+Flux_Function_Type =
+Roe_MB
+#Godunov_MB
+#VanLeer_MB
+#
+# INITIAL CONDITIONS:
+ICs_Type = 
+Uniform
+Mach_Number = 
+0.0
+#2.0
+#Flow_Angle =
+#180.0
+Gas_Type = 
+AIR
+#
+# GRID PARAMETERS:
+Grid_Type =
+Rectangular_Box
+Box_Height =
+0.1
+Box_Width =
+10.0
+#0.5
+Number_of_Cells_Idir = 
+1000
+#250
+Number_of_Cells_Jdir =
+4
+Number_of_Blocks_Idir = 
+1
+Number_of_Blocks_Jdir =
+1
+Boundary_Conditions_Specified =
+On
+BC_North =
+Reflection
+BC_South =
+Reflection
+BC_East =
+Constant_Extrapolation
+#Reflection
+BC_West =
+Constant_Extrapolation
+#Reflection
+#
+# INTERFACE PARAMETERS:
+Number_of_Interface_Components =
+1
+Interface_Spline_Type =
+User_Specified
+Interface_Characteristic_Length = 
+1.0
+Number_of_Specified_Interface_Points = 
+5
+Interface_Points =
+-0.010   0.100 0 0
+-0.010  -0.100 0 0
+-0.000  -0.100 0 0
+-0.000   0.100 0 0
+-0.010   0.100 0 0
+#-1.210   0.100
+#-1.210  -0.100
+#-0.200  -0.100
+#-0.200   0.100
+#-1.210   0.100
+#-0.210   0.100
+#-0.210  -0.100
+#-0.200  -0.100
+#-0.200   0.100
+#-0.210   0.100
+Interface_Reference_Point = 
+-0.005   0.000
+#-0.205   0.000
+Interface_BC_Type =
+Reflection
+Interface_Motion =
+Translate
+Interface_Characteristic_Velocity = 
+ 680.588  0.00
+Solution_Redistribution_Type =
+Weighted_Injection
+#
+# TIME-STEPPING PARAMETERS:
+CFL_Number =
+0.75
+#0.70
+Time_Max = 
+3.00
+Maximum_Number_of_Time_Steps =
+200
+Number_of_Blocks_Per_Processor =
+5
+Restart_Solution_Save_Frequency = 
+5000
+Output_File_Name = 
+piston
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+Write_Output
+Write_Output_Cells
+Write_Output_Elements
+Write_Output_Nodes
+Write_Output_Interface_Component_List
+Write_Output_Interface_Union_List
+#
+# WRITE RESTART:
+#Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate
+

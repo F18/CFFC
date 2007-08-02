@@ -1,0 +1,72 @@
+###################################
+# Set problem parameters          #
+###################################
+Flow_Geometry_Type = 
+Planar
+###################################
+# Set solver parameters           #
+###################################
+Time_Integration_Type =
+Explicit_Predictor_Corrector
+#Multistage_Optimal_Smoothing
+Time_Accurate = 
+0
+Local_Time_Stepping =
+1
+Reconstruction_Type =
+Least_Squares
+Limiter_Type = 
+Venkatakrishnan
+Flux_Function_Type =
+Roe
+###################################
+# Set initial conditions          #
+###################################
+ICs_Type =
+Ringleb_Flow
+Gas_Type = 
+AIR
+###################################
+# Set mesh type                   #
+###################################
+Grid_Type =
+Ringleb_Flow
+Number_of_Cells_Idir = 
+40
+Number_of_Cells_Jdir =
+40
+Number_of_Blocks_Idir = 
+1
+Number_of_Blocks_Jdir =
+1
+###################################
+# Set time stepping parameters    #
+###################################
+CFL_Number =
+0.50
+Time_Max =
+0.0
+Maximum_Number_of_Time_Steps =
+2000
+Number_of_Blocks_Per_Processor =
+1
+Output_File_Name = 
+ringleb
+Restart_Solution_Save_Frequency = 
+1000
+###################################
+# Execute program                 #
+###################################
+Execute
+###################################
+# Write output                    #
+###################################
+Write_Output
+Write_Output_Cells
+Write_Output_Ringleb_Flow
+Write_Restart
+###################################
+# Terminate                       #
+###################################
+Terminate
+

@@ -1,0 +1,16 @@
+#!/bin/sh
+#
+#PBS -N pipe
+#PBS -q iserial
+#PBS -l walltime=2:00:00,nodes=1:ppn=1:itanium-8G
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/NavierStokes2D/pipe_flow/laminar/
+mpirun -np 1 --gm-no-shmem --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/navierstokes2D -f pipe.in -pde NavierStokes2D >& pipe.log
+cat pipe_cpu*.dat > points.dat
+cat pipe_cells_cpu*.dat > cells.dat
+cat pipe_viscous_pipe_cpu*.dat > viscous.dat
+rm pipe_cpu*.dat
+rm pipe_cells_cpu*.dat
+rm pipe_viscous_pipe_cpu*.dat
+rm pipe.e* pipe.o*

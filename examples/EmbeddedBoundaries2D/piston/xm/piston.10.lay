@@ -1,0 +1,276 @@
+#!MC 1000
+$!VarSet |LFDSFN1| = '"piston.dat"'
+$!VarSet |LFDSVL1| = '"x" "y" "rho" "u" "v" "p" "T" "M" "H" "s"'
+$!VarSet |LFDSFN2| = '"exact.dat"'
+$!VarSet |LFDSVL2| = '"x" "y" "rho" "u" "v" "p" "T" "M" "H" "s"'
+$!SETSTYLEBASE FACTORY
+$!PAPER 
+  BACKGROUNDCOLOR = WHITE
+  ISTRANSPARENT = YES
+  ORIENTPORTRAIT = NO
+  SHOWGRID = YES
+  SHOWRULER = YES
+  SHOWPAPER = YES
+  PAPERSIZE = LETTER
+  PAPERSIZEINFO
+    {
+    LETTER
+      {
+      WIDTH = 8.5
+      HEIGHT = 11
+      LEFTHARDCLIPOFFSET = 0.125
+      RIGHTHARDCLIPOFFSET = 0.125
+      TOPHARDCLIPOFFSET = 0.125
+      BOTTOMHARDCLIPOFFSET = 0.125
+      }
+    }
+  RULERSPACING = ONEINCH
+  PAPERGRIDSPACING = HALFINCH
+  REGIONINWORKAREA
+    {
+    X1 = -0.05
+    Y1 = -0.05
+    X2 = 11.05
+    Y2 = 8.55
+    }
+$!COLORMAP 
+  CONTOURCOLORMAP = SMRAINBOW
+$!COLORMAPCONTROL RESETTOFACTORY
+### Frame Number 1 ###
+$!READDATASET  '|LFDSFN1|' 
+  INITIALPLOTTYPE = XYLINE
+  INCLUDETEXT = NO
+  INCLUDEGEOM = NO
+  VARLOADMODE = BYNAME
+  VARNAMELIST = '|LFDSVL1|' 
+$!REMOVEVAR |LFDSVL1|
+$!REMOVEVAR |LFDSFN1|
+$!READDATASET  '|LFDSFN2|' 
+  INITIALPLOTTYPE = XYLINE
+  INCLUDETEXT = NO
+  INCLUDEGEOM = NO
+  READDATAOPTION = APPEND
+  RESETSTYLE = NO
+  VARLOADMODE = BYNAME
+  VARNAMELIST = '|LFDSVL2|' 
+$!REMOVEVAR |LFDSVL2|
+$!REMOVEVAR |LFDSFN2|
+$!FRAMELAYOUT 
+  SHOWBORDER = NO
+  SHOWHEADER = NO
+  HEADERCOLOR = RED
+  XYPOS
+    {
+    X = 0.5
+    Y = 0.25
+    }
+  WIDTH = 10
+  HEIGHT = 8
+$!PLOTTYPE  = XYLINE
+$!FRAMENAME  = 'Frame 001' 
+$!DELETELINEMAPS 
+$!ACTIVELINEMAPS  =  [1-4]
+$!GLOBALLINEPLOT 
+  DATALABELS
+    {
+    DISTANCESKIP = 5
+    }
+  LEGEND
+    {
+    SHOW = YES
+    BOX
+      {
+      BOXTYPE = NONE
+      }
+    XYPOS
+      {
+      X = 60
+      Y = 82.837
+      }
+    ANCHORALIGNMENT = TOPLEFT
+    }
+$!LINEMAP  [1]
+  NAME = 'Density' 
+  ASSIGN
+    {
+    ZONE = 1
+    XAXISVAR = 1
+    YAXISVAR = 3
+    }
+  LINES
+    {
+    COLOR = RED
+    LINETHICKNESS = 0.4
+    }
+  SYMBOLS
+    {
+    COLOR = GREEN
+    FILLCOLOR = GREEN
+    }
+  BARCHARTS
+    {
+    COLOR = GREEN
+    FILLCOLOR = GREEN
+    }
+  ERRORBARS
+    {
+    COLOR = GREEN
+    }
+$!LINEMAP  [2]
+  NAME = 'Pressure' 
+  ASSIGN
+    {
+    ZONE = 1
+    XAXISVAR = 1
+    YAXISVAR = 6
+    }
+  LINES
+    {
+    COLOR = BLUE
+    }
+  SYMBOLS
+    {
+    COLOR = YELLOW
+    FILLCOLOR = YELLOW
+    }
+  BARCHARTS
+    {
+    COLOR = YELLOW
+    FILLCOLOR = YELLOW
+    }
+  ERRORBARS
+    {
+    COLOR = YELLOW
+    }
+$!LINEMAP  [3]
+  NAME = 'Density' 
+  ASSIGN
+    {
+    ZONE = 2
+    XAXISVAR = 1
+    YAXISVAR = 3
+    }
+  LINES
+    {
+    COLOR = GREEN
+    LINETHICKNESS = 0.4
+    }
+  SYMBOLS
+    {
+    COLOR = GREEN
+    FILLCOLOR = GREEN
+    }
+  BARCHARTS
+    {
+    COLOR = GREEN
+    FILLCOLOR = GREEN
+    }
+  ERRORBARS
+    {
+    COLOR = GREEN
+    }
+$!LINEMAP  [4]
+  NAME = 'Pressure' 
+  ASSIGN
+    {
+    ZONE = 2
+    XAXISVAR = 1
+    YAXISVAR = 6
+    }
+  LINES
+    {
+    COLOR = CUSTOM3
+    }
+  SYMBOLS
+    {
+    COLOR = YELLOW
+    FILLCOLOR = YELLOW
+    }
+  BARCHARTS
+    {
+    COLOR = YELLOW
+    FILLCOLOR = YELLOW
+    }
+  ERRORBARS
+    {
+    COLOR = YELLOW
+    }
+$!XYLINEAXIS 
+  DEPXTOYRATIO = 1
+  GRIDAREA
+    {
+    DRAWBORDER = YES
+    LINETHICKNESS = 0.1
+    DRAWGRIDLAST = YES
+    }
+  VIEWPORTPOSITION
+    {
+    X1 = 5
+    Y1 = 10
+    X2 = 95
+    Y2 = 95
+    }
+  VIEWPORTTOPSNAPTARGET = 95
+$!XYLINEAXIS 
+  XDETAIL 1
+    {
+    RANGEMIN = -4
+    RANGEMAX = 2
+    GRSPACING = 2
+    TICKS
+      {
+      LINETHICKNESS = 0.1
+      }
+    TITLE
+      {
+      TITLEMODE = USETEXT
+      TEXT = 'x (m)' 
+      TEXTSHAPE
+        {
+        FONT = TIMESITALICBOLD
+        }
+      }
+    AXISLINE
+      {
+      LINETHICKNESS = 0.1
+      POSITION = 1.176
+      }
+    }
+$!XYLINEAXIS 
+  YDETAIL 1
+    {
+    RANGEMIN = -0.75
+    RANGEMAX = 7
+    GRSPACING = 1
+    TICKS
+      {
+      LINETHICKNESS = 0.1
+      NUMMINORTICKS = 1
+      }
+    TITLE
+      {
+      TITLEMODE = USETEXT
+      TEXTSHAPE
+        {
+        HEIGHT = 4
+        }
+      }
+    AXISLINE
+      {
+      LINETHICKNESS = 0.1
+      POSITION = 8.889
+      }
+    }
+$!ATTACHGEOM 
+  GEOMTYPE = RECTANGLE
+  ANCHORPOS
+    {
+    X = -2.00738884937
+    Y = -0.741553279276
+    }
+  COLOR = CUSTOM1
+  ISFILLED = YES
+  FILLCOLOR = CUSTOM1
+  RAWDATA
+-0.0632478669286 7.72893667221 
+$!SETSTYLEBASE CONFIG

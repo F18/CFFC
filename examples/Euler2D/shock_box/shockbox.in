@@ -1,0 +1,83 @@
+#
+# SHOCK BOX
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Geometry_Type = 
+Planar
+#
+# TIME-STEPPING PARAMETERS:
+Time_Integration_Type =
+Explicit_Predictor_Corrector
+Time_Accurate = 
+1
+Local_Time_Stepping =
+0
+CFL_Number =
+0.25
+Time_Max = 
+2.5
+Maximum_Number_of_Time_Steps =
+0
+#
+# FLUX PARAMETERS:
+Reconstruction_Type =
+Least_Squares
+Limiter_Type = 
+Zero
+#Barth_Jespersen
+Flux_Function_Type =
+Roe
+#
+# INITIAL CONDITIONS:
+ICs_Type = 
+ShockBox
+Gas_Type = 
+AIR
+#
+# GRID PARAMETERS:
+Grid_Type =
+Square
+Number_of_Cells_Idir = 
+32
+#64
+Number_of_Cells_Jdir =
+32
+#64
+Number_of_Blocks_Idir = 
+1
+#4
+Number_of_Blocks_Jdir =
+1
+#4
+Boundary_Conditions_Specified =
+On
+BC_North =
+Reflection
+BC_South =
+Reflection
+BC_East =
+Reflection
+BC_West =
+Reflection
+Number_of_Blocks_Per_Processor =
+64
+#
+# I/O PARAMETERS:
+Output_File_Name = 
+shockbox
+Restart_Solution_Save_Frequency = 
+10000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+Write_Output
+Write_Output_Cells
+#
+# WRITE RESTART:
+Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate

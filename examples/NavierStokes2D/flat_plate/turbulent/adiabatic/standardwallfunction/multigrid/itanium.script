@@ -1,0 +1,23 @@
+#!/bin/tcsh
+#
+#PBS -N fp_5e6_adb_swf_V4
+#PBS -q iqmaster
+#PBS -l walltime=0:30:00,nodes=2:ppn=4:itanium-8G,other=night
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/NavierStokes2D/flat_plate/turbulent/adiabatic/standardwallfunction/multigrid/
+mpirun -np 8 --gm-no-shmem --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/navierstokes2D -f flatplate.in -pde NavierStokes2D >& flatplate.log
+cat flatplate_00_cpu*.dat > points_00.dat
+cat flatplate_01_cpu*.dat > points_01.dat
+cat flatplate_02_cpu*.dat > points_02.dat
+cat flatplate_03_cpu*.dat > points_03.dat
+cat flatplate_cells_00_cpu*.dat > cells_00.dat
+cat flatplate_cells_01_cpu*.dat > cells_01.dat
+cat flatplate_cells_02_cpu*.dat > cells_02.dat
+cat flatplate_cells_03_cpu*.dat > cells_03.dat
+cat flatplate_flatplate_soln_cpu*.dat > flatplate.dat
+cat flatplate_flatplate_skin_friction_cpu*.dat > skinfriction.dat
+rm flatplate_cpu*.dat
+rm flatplate_*_cpu*.dat
+rm fp_5e6_adb_swf_V4.e* fp_5e6_adb_swf_V4.o*
+

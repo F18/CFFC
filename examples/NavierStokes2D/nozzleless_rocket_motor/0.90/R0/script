@@ -1,0 +1,6 @@
+#!/bin/tcsh
+
+mpirun -np 2 --gm-no-shmem --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/navierstokes2D -f nozzleless.in -pde NavierStokes2D
+cat nozzleless_cpu*.dat > points.dat
+cat nozzleless_cells_cpu*.dat > cells.dat
+rm nozzleless_*cpu*.dat

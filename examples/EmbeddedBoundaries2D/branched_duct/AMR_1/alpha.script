@@ -1,0 +1,21 @@
+#!/bin/tcsh
+#
+#PBS -N duct_SU_A1
+#PBS -q qmaster
+#PBS -l walltime=0:20:00,nodes=4:ppn=4:parallel-2G,other=night
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/EmbeddedBoundaries2D/branched_duct/SU/AMR_1/
+cp ../RUN_0/*.soln .
+cp ../RUN_0/*.tree .
+cp ../RUN_0/*residual* .
+mpirun --gm-no-shmem -np 16 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/embeddedboundaries2D -f duct.in -pde NavierStokes2D >& duct.log
+#mpirun --gm-no-shmem -np 16 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/bin/embeddedboundaries2D_a -f duct.in -pde NavierStokes2D >& duct.log
+cat duct_cpu*.dat > points.dat
+cat duct_active_cpu*.dat > active.dat
+cat duct_inactive_cpu*.dat > inactive.dat
+cat duct_nodes_cpu*.dat > nodes.dat
+cat duct_interface_union_list_cpu*.dat > union.dat
+rm duct_cpu*.dat
+rm duct_*_cpu*.dat
+rm duct_SU_A1.e* duct_SU_A1.o*

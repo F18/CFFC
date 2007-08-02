@@ -1,0 +1,19 @@
+#!/bin/tcsh
+#
+#PBS -N mixing_layer
+#PBS -q iqmaster
+#PBS -l walltime=0:30:00,nodes=8:ppn=4:itanium-8G,other=day
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/NavierStokes2D/mixing_layer/turbulent/supersonic/mach2/
+mpirun -np 32 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/navierstokes2D -f mixing_layer.in -pde NavierStokes2D >& mixing_layer.log
+cat mixing_layer_00_cpu*.dat > points_00.dat
+cat mixing_layer_01_cpu*.dat > points_01.dat
+cat mixing_layer_02_cpu*.dat > points_02.dat
+cat mixing_layer_03_cpu*.dat > points_03.dat
+cat mixing_layer_cells_00_cpu*.dat > cells_00.dat
+cat mixing_layer_cells_01_cpu*.dat > cells_01.dat
+cat mixing_layer_cells_02_cpu*.dat > cells_02.dat
+cat mixing_layer_cells_03_cpu*.dat > cells_03.dat
+rm mixing_layer_*cpu*.dat
+rm mixing_layer.e* mixing_layer.o*

@@ -1,0 +1,414 @@
+#
+# SINE WAVE TEST CASE
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Type = 
+Inviscid
+Flow_Geometry_Type =
+Planar
+Particle_Phase = 
+On
+Phase_Interaction =
+On
+Measure_Conservation_Properties =
+On
+#
+# TIME-STEPPING PARAMETERS:
+Time_Integration_Type =
+Explicit_Predictor_Corrector
+Time_Accurate = 
+1
+Local_Time_Stepping =
+0
+CFL_Number =
+0.25
+Time_Max =
+0.000
+Maximum_Number_of_Time_Steps = 
+0
+#
+# FLUX PARAMETERS:
+Reconstruction_Type =
+Least_Squares
+Limiter_Type =
+Zero
+#VanLeer
+Gas_Phase_Flux_Function_Type =
+Roe
+Particle_Phase_Flux_Function_Type =
+MultiVelocity
+#
+# INITIAL CONDITIONS:
+ICs_Type =
+Sine_Wave_Xdir
+Wave_Position =
+0.00 0.00
+Wave_Width =
+0.20
+Gas_Type = 
+AIR
+Mach_Number =
+0.500
+Temperature =
+300.0
+Particle_Type =
+Heavy_AP_HTPB
+Particle_Volume_Fraction =
+0.050
+Particle_Mach_Number =
+0.600
+Particle_Flow_Angle =
+180.0
+Particle_Temperature =
+300.0
+#
+# MESH PARAMETERS:
+Grid_Type =
+Rectangular_Box
+Box_Width =
+0.80
+Box_Height = 
+0.10
+Number_of_Blocks_Idir = 
+1
+Number_of_Blocks_Jdir =
+1
+Number_of_Cells_Idir = 
+250
+Number_of_Cells_Jdir =
+4
+Boundary_Conditions_Specified =
+On
+BC_North =
+Reflection
+BC_South =
+Reflection
+BC_East =
+Constant_Extrapolation
+BC_West =
+Constant_Extrapolation
+Smooth_Quad_Block =
+Off
+#
+# INITIAL AMR PARAMETERS:
+Number_of_Uniform_Mesh_Refinements =
+0
+Number_of_Boundary_Mesh_Refinements =
+0
+Number_of_Initial_Mesh_Refinements =
+0
+#
+# UNSTEADY AMR PARAMETERS:
+AMR =
+Off
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+3
+Minimum_Refinement_Level =
+2
+Threshold_for_Refinement =
+0.20
+Threshold_for_Coarsening =
+0.10
+Number_of_Blocks_Per_Processor =
+1
+#
+# I/O PARAMETERS:
+Output_File_Name = 
+sinewave_0000
+Restart_Solution_Save_Frequency = 
+10000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+Write_Output
+#
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.025
+Output_File_Name = 
+sinewave_0025
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.050
+Output_File_Name = 
+sinewave_0050
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.075
+Output_File_Name = 
+sinewave_0075
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.100
+Output_File_Name = 
+sinewave_0100
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.125
+Output_File_Name = 
+sinewave_0125
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.150
+Output_File_Name = 
+sinewave_0150
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.175
+Output_File_Name = 
+sinewave_0175
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.200
+Output_File_Name = 
+sinewave_0200
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.225
+Output_File_Name = 
+sinewave_0225
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.250
+Output_File_Name = 
+sinewave_0250
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.275
+Output_File_Name = 
+sinewave_0275
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.300
+Output_File_Name = 
+sinewave_0300
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.325
+Output_File_Name = 
+sinewave_0325
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.350
+Output_File_Name = 
+sinewave_0350
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.375
+Output_File_Name = 
+sinewave_0375
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.400
+Output_File_Name = 
+sinewave_0400
+Continue
+Write_Output
+Terminate
+
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.425
+Output_File_Name = 
+sinewave_0425
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.450
+Output_File_Name = 
+sinewave_0450
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.475
+Output_File_Name = 
+sinewave_0475
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.500
+Output_File_Name = 
+sinewave_0500
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.525
+Output_File_Name = 
+sinewave_0525
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.550
+Output_File_Name = 
+sinewave_0550
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.575
+Output_File_Name = 
+sinewave_0575
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.600
+Output_File_Name = 
+sinewave_0600
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.625
+Output_File_Name = 
+sinewave_0625
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.650
+Output_File_Name = 
+sinewave_0650
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.675
+Output_File_Name = 
+sinewave_0675
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.700
+Output_File_Name = 
+sinewave_0700
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.725
+Output_File_Name = 
+sinewave_0725
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.750
+Output_File_Name = 
+sinewave_0750
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.775
+Output_File_Name = 
+sinewave_0775
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.800
+Output_File_Name = 
+sinewave_0800
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.825
+Output_File_Name = 
+sinewave_0825
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.850
+Output_File_Name = 
+sinewave_0850
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.875
+Output_File_Name = 
+sinewave_0875
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.900
+Output_File_Name = 
+sinewave_0900
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.925
+Output_File_Name = 
+sinewave_0925
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.950
+Output_File_Name = 
+sinewave_0950
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+0.975
+Output_File_Name = 
+sinewave_0975
+Continue
+Write_Output
+# RESET INPUT PARAMETERS AND CONTINUE:
+Time_Max =
+1.000
+Output_File_Name = 
+sinewave_1000
+Continue
+Write_Output
+#
+# TERMINATE PROGRAM:
+Terminate

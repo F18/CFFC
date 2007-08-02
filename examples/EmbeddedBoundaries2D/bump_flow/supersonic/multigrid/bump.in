@@ -1,0 +1,190 @@
+#
+# SUPERSONIC FLOW OVER A NON-SMOOTH BUMP
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Geometry_Type =
+Planar
+#
+# TIME-STEPPING PARAMETERS:
+Time_Integration_Type =
+Multigrid
+Time_Accurate =
+0
+Local_Time_Stepping =
+1
+CFL_Number =
+1.00
+Maximum_Number_of_Time_Steps =
+2000
+#
+# MULTIGRID PARAMETERS:
+Multigrid_Levels =
+4
+Multigrid_Cycle_Type =
+V
+Multigrid_Number_of_Smooths_on_Finest_Level =
+2
+Multigrid_Number_of_Pre_Smooths =
+2
+Multigrid_Number_of_Post_Smooths =
+2
+Multigrid_Number_of_Smooths_on_Coarsest_Level =
+4
+Full_Multigrid =
+500
+Defect_Correction =
+On
+Prolong_Using_Injection =
+Off
+First_Order_Coarse_Mesh_Reconstruction =
+On
+Apply_Coarse_Mesh_Boundary_Conditions =
+On
+Injection_at_Dirichlet_Boundary_Conditions =
+On
+Update_Stability_Switch =
+On
+Maximum_Number_of_Update_Reductions =
+5
+Multigrid_Smoothing_Type =
+Multistage_Optimal_Smoothing
+N_Stage =
+5
+#
+# RESIDUAL SMOOTHING PARAMETERS:
+Residual_Smoothing_Epsilon =
+0.125
+Residual_Smoothing_Gauss_Seidel_Iterations =
+2
+#
+# FLUX PARAMETERS:
+Reconstruction_Type =
+Least_Squares
+Limiter_Type =
+Venkatakrishnan
+Freeze_Limiter =
+1
+Freeze_Limiter_Residual_Level =
+0.05
+Flux_Function_Type =
+Roe
+#
+# INITIAL CONDITIONS:
+ICs_Type =
+Uniform
+Mach_Number =
+1.40
+Gas_Type =
+AIR
+#
+# GRID PARAMETERS:
+Grid_Type =
+Rectangular_Box
+Box_Width =
+5.5
+Box_Height =
+2.0
+X_Shift =
+1.75 1.00
+Number_of_Cells_Idir =
+64
+Number_of_Cells_Jdir =
+32
+Number_of_Blocks_Idir =
+2
+Number_of_Blocks_Jdir =
+1
+Mesh_Stretching =
+On
+Mesh_Stretching_Type_Idir =
+Linear
+Mesh_Stretching_Type_Jdir =
+Min_Clustering
+Mesh_Stretching_Factor_Jdir =
+1.10
+Boundary_Conditions_Specified =
+On
+BC_North =
+Reflection
+BC_South =
+Reflection
+BC_East =
+Characteristic
+BC_West =
+Fixed
+#
+# INTERFACE PARAMETERS:
+Number_of_Interface_Components =
+1
+Interface_Spline_Type =
+Circle
+Interface_Characteristic_Length =
+2.997190476
+Number_of_Specified_Interface_Points =
+1
+Interface_Points =
+ 0.500  -2.955190476  0  0
+Interface_Reference_Point =
+ 0.500  -2.955190476
+Interface_BC_Type =
+Reflection
+Interface_Motion =
+Stationary
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+6
+Minimum_Refinement_Level =
+1
+Threshold_for_Refinement =
+0.25
+Threshold_for_Coarsening =
+0.10
+Refinement_Criteria_Gradient_Density =
+On
+Refinement_Criteria_Divergence_Velocity =
+Off
+Refinement_Criteria_Curl_Velocity =
+Off
+Smooth_Quad_Block =
+Off
+Number_of_Blocks_Per_Processor =
+128
+#
+# INITIAL AMR PARAMETERS:
+Number_of_Initial_Mesh_Refinements =
+0
+Number_of_Uniform_Mesh_Refinements =
+1
+Number_of_Boundary_Mesh_Refinements =
+0
+Number_of_Interface_Mesh_Refinements =
+0
+#
+# UNSTEADY AMR PARAMETERS:
+AMR =
+Off
+#
+# I/O PARAMETERS:
+Output_File_Name =
+bump
+Restart_Solution_Save_Frequency =
+100000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+Write_Output
+Write_Output_Cells
+Write_Output_Elements
+Write_Output_Nodes
+Write_Output_Interface_Component_List
+Write_Output_Interface_Union_List
+#
+# WRITE RESTART:
+#Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate

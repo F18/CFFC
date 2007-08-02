@@ -1,0 +1,322 @@
+#!MC 1000
+$!VarSet |LFDSFN1| = '"viscous.dat"'
+$!VarSet |LFDSVL1| = '"x" "y" "rho" "u" "v" "p" "T" "rho_exact" "u_exact" "v_exact" "p_exact" "rho_error" "u_error" "v_error" "p_error"'
+$!SETSTYLEBASE FACTORY
+$!PAPER 
+  BACKGROUNDCOLOR = WHITE
+  ISTRANSPARENT = YES
+  ORIENTPORTRAIT = NO
+  SHOWGRID = YES
+  SHOWRULER = YES
+  SHOWPAPER = YES
+  PAPERSIZE = LETTER
+  PAPERSIZEINFO
+    {
+    LETTER
+      {
+      WIDTH = 8.5
+      HEIGHT = 11
+      LEFTHARDCLIPOFFSET = 0.125
+      RIGHTHARDCLIPOFFSET = 0.125
+      TOPHARDCLIPOFFSET = 0.125
+      BOTTOMHARDCLIPOFFSET = 0.125
+      }
+    }
+  RULERSPACING = ONEINCH
+  PAPERGRIDSPACING = HALFINCH
+  REGIONINWORKAREA
+    {
+    X1 = -0.05
+    Y1 = -0.05
+    X2 = 11.05
+    Y2 = 8.55
+    }
+$!COLORMAP 
+  CONTOURCOLORMAP = SMRAINBOW
+$!COLORMAPCONTROL RESETTOFACTORY
+### Frame Number 1 ###
+$!READDATASET  '|LFDSFN1|' 
+  INITIALPLOTTYPE = XYLINE
+  INCLUDETEXT = NO
+  INCLUDEGEOM = NO
+  VARLOADMODE = BYNAME
+  VARNAMELIST = '|LFDSVL1|' 
+$!REMOVEVAR |LFDSVL1|
+$!REMOVEVAR |LFDSFN1|
+$!FRAMELAYOUT 
+  SHOWBORDER = NO
+  SHOWHEADER = NO
+  HEADERCOLOR = RED
+  XYPOS
+    {
+    X = 0.5
+    Y = 0.25
+    }
+  WIDTH = 10
+  HEIGHT = 8
+$!PLOTTYPE  = XYLINE
+$!FRAMENAME  = 'Frame 001' 
+$!DELETELINEMAPS 
+$!ACTIVELINEMAPS  =  [1-6]
+$!GLOBALLINEPLOT 
+  DATALABELS
+    {
+    DISTANCESKIP = 5
+    }
+  LEGEND
+    {
+    XYPOS
+      {
+      X = 95
+      }
+    }
+$!LINEMAP  [1]
+  NAME = '&DV&' 
+  ASSIGN
+    {
+    ZONE = 1
+    XAXISVAR = 4
+    YAXISVAR = 2
+    }
+  LINES
+    {
+    COLOR = RED
+    LINETHICKNESS = 0.4
+    }
+  SYMBOLS
+    {
+    COLOR = RED
+    FILLCOLOR = BLUE
+    }
+  BARCHARTS
+    {
+    COLOR = BLUE
+    FILLCOLOR = BLUE
+    }
+  ERRORBARS
+    {
+    COLOR = BLUE
+    }
+  INDICES
+    {
+    IJKLINES = J
+    }
+$!LINEMAP  [2]
+  NAME = '&DV&' 
+  ASSIGN
+    {
+    ZONE = 1
+    XAXISVAR = 1
+    YAXISVAR = 6
+    XAXIS = 3
+    YAXIS = 2
+    }
+  LINES
+    {
+    COLOR = CUSTOM3
+    LINETHICKNESS = 0.4
+    }
+  SYMBOLS
+    {
+    COLOR = CUSTOM3
+    FILLCOLOR = YELLOW
+    }
+  BARCHARTS
+    {
+    COLOR = YELLOW
+    FILLCOLOR = YELLOW
+    }
+  ERRORBARS
+    {
+    COLOR = YELLOW
+    }
+$!LINEMAP  [3]
+  NAME = '&DV&' 
+  ASSIGN
+    {
+    ZONE = 1
+    XAXISVAR = 9
+    YAXISVAR = 2
+    }
+  LINES
+    {
+    COLOR = GREEN
+    }
+  SYMBOLS
+    {
+    COLOR = GREEN
+    FILLCOLOR = GREEN
+    }
+  BARCHARTS
+    {
+    COLOR = GREEN
+    FILLCOLOR = GREEN
+    }
+  ERRORBARS
+    {
+    COLOR = GREEN
+    }
+  INDICES
+    {
+    IJKLINES = J
+    }
+$!LINEMAP  [4]
+  NAME = '&DV&' 
+  ASSIGN
+    {
+    ZONE = 1
+    XAXISVAR = 1
+    YAXISVAR = 11
+    XAXIS = 3
+    YAXIS = 2
+    }
+  LINES
+    {
+    COLOR = CUSTOM7
+    }
+  SYMBOLS
+    {
+    COLOR = CUSTOM7
+    FILLCOLOR = CYAN
+    }
+  BARCHARTS
+    {
+    COLOR = CYAN
+    FILLCOLOR = CYAN
+    }
+  ERRORBARS
+    {
+    COLOR = CYAN
+    }
+$!LINEMAP  [5]
+  NAME = '&DV&' 
+  ASSIGN
+    {
+    ZONE = 1
+    XAXISVAR = 13
+    YAXISVAR = 2
+    XAXIS = 2
+    }
+  LINES
+    {
+    COLOR = BLUE
+    }
+  SYMBOLS
+    {
+    COLOR = BLUE
+    FILLCOLOR = PURPLE
+    }
+  BARCHARTS
+    {
+    COLOR = PURPLE
+    FILLCOLOR = PURPLE
+    }
+  ERRORBARS
+    {
+    COLOR = PURPLE
+    }
+  INDICES
+    {
+    IJKLINES = J
+    }
+$!LINEMAP  [6]
+  NAME = '&DV&' 
+  ASSIGN
+    {
+    ZONE = 1
+    XAXISVAR = 1
+    YAXISVAR = 15
+    XAXIS = 3
+    YAXIS = 3
+    }
+  LINES
+    {
+    COLOR = CUSTOM42
+    }
+  SYMBOLS
+    {
+    COLOR = CUSTOM42
+    FILLCOLOR = GREEN
+    }
+  BARCHARTS
+    {
+    COLOR = GREEN
+    FILLCOLOR = GREEN
+    }
+  ERRORBARS
+    {
+    COLOR = GREEN
+    }
+$!XYLINEAXIS 
+  DEPXTOYRATIO = 1
+  VIEWPORTPOSITION
+    {
+    X1 = 10
+    Y1 = 10
+    X2 = 90
+    Y2 = 90
+    }
+  VIEWPORTTOPSNAPTARGET = 90
+$!XYLINEAXIS 
+  XDETAIL 1
+    {
+    RANGEMIN = -2.5
+    RANGEMAX = 11.5
+    GRSPACING = 2
+    }
+$!XYLINEAXIS 
+  XDETAIL 2
+    {
+    RANGEMIN = -0.00050000000000000001041
+    RANGEMAX = 0.0050000000000000001041
+    GRSPACING = 0.001
+    AXISLINE
+      {
+      AXISALIGNMENT = WITHGRIDMAX
+      }
+    }
+$!XYLINEAXIS 
+  XDETAIL 3
+    {
+    RANGEMIN = -0.70000000000000006661
+    RANGEMAX = 2.7000000000000001776
+    GRSPACING = 0.5
+    AXISLINE
+      {
+      AXISALIGNMENT = WITHGRIDMAX
+      OFFSET = 2.5
+      }
+    }
+$!XYLINEAXIS 
+  YDETAIL 1
+    {
+    RANGEMIN = -0.00015000000000000001396
+    RANGEMAX = 0.0011500000000000001974
+    GRSPACING = 0.0002
+    }
+$!XYLINEAXIS 
+  YDETAIL 2
+    {
+    RANGEMIN = 101000
+    RANGEMAX = 102400
+    GRSPACING = 200
+    AXISLINE
+      {
+      AXISALIGNMENT = WITHGRIDMAX
+      }
+    }
+$!XYLINEAXIS 
+  YDETAIL 3
+    {
+    RANGEMIN = -10
+    RANGEMAX = 50
+    GRSPACING = 10
+    AXISLINE
+      {
+      AXISALIGNMENT = WITHGRIDMAX
+      OFFSET = 2.5
+      }
+    }
+$!LINEPLOTLAYERS 
+  SHOWSYMBOLS = YES
+$!SETSTYLEBASE CONFIG

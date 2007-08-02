@@ -1,0 +1,120 @@
+#
+# STUBBY ROCKET MOTOR
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Type =
+Inviscid
+Flow_Geometry_Type = 
+Axisymmetric
+#
+# TIME-STEPPING PARAMETERS:
+Time_Integration_Type =
+Multistage_Optimal_Smoothing
+N_Stage =
+5
+Time_Accurate = 
+0
+Local_Time_Stepping =
+1
+CFL_Number =
+0.250
+Maximum_Number_of_Time_Steps =
+100000
+#
+# FLUX PARAMETERS:
+Reconstruction_Type =
+Least_Squares
+Limiter_Type = 
+Venkatakrishnan
+Flux_Function_Type =
+Roe
+#
+# INITIAL CONDITIONS:
+ICs_Type =
+Restart
+#Uniform
+Gas_Type = 
+AP_HTPB
+Mach_Number =
+0.0
+#
+# GRID PARAMETERS:
+Grid_Type =
+Rocket_Motor
+Chamber_Length = 
+0.40
+Chamber_Radius = 
+0.040
+Chamber_To_Throat_Length = 
+0.050
+Grain_Radius =
+0.020
+Nozzle_Length = 
+0.150
+Nozzle_Radius_Exit = 
+0.030
+Nozzle_Radius_Throat = 
+0.010
+Number_of_Cells_Idir = 
+24
+Number_of_Cells_Jdir =
+16
+Number_of_Blocks_Idir = 
+4
+Number_of_Blocks_Jdir =
+2
+#
+# INITIAL AMR PARAMETERS:
+Number_of_Uniform_Mesh_Refinements =
+1
+Number_of_Boundary_Mesh_Refinements =
+0
+Number_of_Initial_Mesh_Refinements =
+0
+#
+# UNSTEADY AMR PARAMETERS:
+AMR =
+Off
+AMR_Frequency =
+800
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+6
+Minimum_Refinement_Level =
+2
+Threshold_for_Refinement =
+0.50
+Threshold_for_Coarsening =
+0.10
+#Refinement_Criteria_Gradient_Density =
+#Off
+#Refinement_Criteria_Divergence_Velocity =
+#Off
+#Refinement_Criteria_Curl_Velocity =
+#Off
+#
+# TIME-STEPPING PARAMETERS:
+Number_of_Blocks_Per_Processor =
+64
+Output_File_Name = 
+stubby
+Restart_Solution_Save_Frequency = 
+30000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# REFINE GRID:
+#Refine_Grid
+#
+# WRITE OUTPUT:
+Write_Output
+Write_Output_Cells
+#
+# WRITE RESTART:
+Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate

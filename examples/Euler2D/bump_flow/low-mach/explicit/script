@@ -1,0 +1,6 @@
+#!/bin/tcsh
+
+mpirun -np 2 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/euler2D -f bump.in -pde Euler2D
+cat bump_cpu*.dat > points.dat
+cat bump_cells_cpu*.dat > cells.dat
+rm bump_*cpu*.dat

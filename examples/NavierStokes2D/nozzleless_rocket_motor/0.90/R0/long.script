@@ -1,0 +1,23 @@
+#!/bin/tcsh
+#
+#PBS -N cvbmb_02.75
+#PBS -q ilong_32for12
+#PBS -l walltime=12:00:00,nodes=6:ppn=4:itanium-8G,other=night
+#PBS -W group_list=cfd
+
+cd /nfs/fe03/d1/cfd/jai/EmbeddedBoundaries2D/constant_volume_bomb/explicit/quick/02.75/
+#mpirun -np 24 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/embeddedboundaries2D -f cvbmb.in -pde NavierStokes2D >& cvbmb.log
+mpirun -np 24 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/bin/embeddedboundaries2D_cvbmb -f cvbmb.in -pde NavierStokes2D >& cvbmb.log
+cat cvbmb_cpu*.dat > points.dat
+cat cvbmb_active_cpu*.dat > active.dat
+cat cvbmb_inactive_cpu*.dat > inactive.dat
+#cat cvbmb_cells_cpu*.dat > cells.dat
+#cat cvbmb_nodes_cpu*.dat > nodes.dat
+#cat cvbmb_status_cpu*.dat > status.dat
+cat cvbmb_interface_component_list_cpu*.dat > components.dat
+cat cvbmb_interface_union_list_cpu*.dat > union.dat
+cat cvbmb_levelset_cpu*.dat > levelset_points.dat
+cat cvbmb_levelset_cells_cpu*.dat > levelset_cells.dat
+cat cvbmb_levelset_interface_list_cpu*.dat > levelset_interface_list.dat
+rm cvbmb_*cpu*.dat
+rm cvbmb_02.75.e* cvbmby_02.75.o*

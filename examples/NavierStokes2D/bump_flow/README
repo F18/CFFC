@@ -1,0 +1,27 @@
+Bump Channel Flow:
+------------------
+
+Standard inviscid flow test case.  The initial mesh consists of eight
+solution blocks -- four in the x-direction and two in the y-direction.
+The bump is the south boundary of the second block and can be set as a
+smooth or non-smooth bump.
+
+The non-smooth bump is an arc of a circle with radius of 2.997190476 m 
+centred at (x,y) = (0.5 m,-2.955190476 m).  This is the test case used
+by Lynn [1], Tsang [2], and Li [3] in their theses.
+
+The smooth bump is specified by 0.042 sin^2(pi x) where 0 <= x <= 1.
+This is the test case used by Darmofal and Van Leer [4].  The smooth
+bump removes the discontinuity in the geometry.
+
+[1] J. F. Lynn, Multigrid Solution of the Euler Equations with Local
+    Preconditioning, Ph.D. Thesis, University of Michigan, 1995.
+[2] K. C. H. Tsang, Parallel Implicit Newton-Krylov-Schwarz Method for
+    Predicting Compressible Turbomachinery Flows, M.A.Sc. Thesis,
+    University of Toronto, 2003.
+[3] E. L. Li, A Parllel Multigrid Method for Predicting Compressible
+    Flow in Turbomachinery, M.A.Sc. Thesis, University of Toronto,
+    2004.
+[4] D. L. Darmofal and B. Van Leer, Multigrid Acceleration of the
+    Preconditioned Euler and Navier-Stokes Equations, von Karman
+    Lecture Series.

@@ -1,0 +1,151 @@
+#
+# LEVEL SET INPUT FILE FOR SOLID PROPELLANT ROCKET MOTOR
+#
+#
+# SOLVER PARAMETERS:
+Time_Accurate = 
+0
+Time_Integration_Type =
+Explicit_Runge_Kutta
+N_Stage =
+2
+BC_Type =
+Linear_Extrapolation
+Reconstruction_Type =
+Weighted_Essentially_Non_Oscillatory
+#
+# INTERFACE PARAMETERS:
+Number_of_Interface_Components =
+1
+Interface_Spline_Type =
+Rocket_Propellant_Grain
+Number_of_Specified_Interface_Points = 
+3
+Interface_Points =
+-0.4250  0.0200  0  0
+-0.0150  0.0200  0  0
+-0.0150  0.0400  0  0
+#-0.8500  0.0200  0  0
+#-0.0150  0.0200  0  0
+#-0.0150  0.0400  0  0
+Interface_Reference_Point =
+-0.4000  0.0250
+#-0.8000  0.0250
+Interface_Motion =
+Constant
+Interface_Characteristic_Velocity = 
+-0.5000  0.0000
+#
+# GRID PARAMETERS:
+Grid_Type =
+Rocket_Motor
+Grain_Length = 
+0.4175
+#0.8350
+Grain_Radius = 
+0.03175
+Grain_To_Throat_Length = 
+0.050
+Nozzle_Length = 
+0.100
+Nozzle_Radius_Exit = 
+0.030
+Nozzle_Radius_Throat = 
+0.01015
+Number_of_Cells_Idir =
+120
+#240
+Number_of_Cells_Jdir =
+10
+Number_of_Ghost_Cells =
+3
+Number_of_Blocks_Idir =
+4
+#8
+Number_of_Blocks_Jdir =
+1
+Number_of_Blocks_Per_Processor =
+128
+#
+# HAMILTON-JACOBI EQUATION PARAMETERS:
+Time_Integration_Type =
+Explicit_Predictor_Corrector
+Hamilton_Jacobi_CFL_Number =
+0.25
+Time_Max = 
+0.0
+Maximum_Number_of_Time_Steps =
+0
+#
+# EXTENSION PROBLEM PARAMETERS:
+Eikonal_Solution_Type =
+Sussman
+Eikonal_Sign_Function =
+Derivative
+Initial_Distance_Type =
+Geometric
+Extension_Distance =
+10.05
+Number_of_Initial_Redistance_Iterations = 
+100
+#
+# EIKONAL EQUATION PARAMETERS:
+Redistance_Frequency =
+100
+Eikonal_CFL_Number =
+0.25
+Redistance_Tolerance = 
+0.001
+Number_of_Redistance_Iterations = 
+10
+#
+# SCALAR (FRONT SPEED) EXTENSION EQUATION PARAMETERS:
+Scalar_Extension_CFL_Number =
+0.25
+Number_of_Scalar_Extension_Iterations = 
+0
+#
+# BULK FLOW PARAMETERS:
+Bulk_Flow_Field_Type =
+None
+#
+# INITIAL AMR PARAMETERS:
+Number_of_Initial_Mesh_Refinements =
+5
+#
+# UNSTEADY AMR PARAMETERS:
+AMR =
+Off
+AMR_Frequency =
+3999
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+6
+Minimum_Refinement_Level =
+2
+Threshold_for_Refinement =
+0.10
+Threshold_for_Coarsening =
+0.05
+#
+# IO PARAMETERS:
+Output_File_Name = 
+crv7_levelset
+Restart_Solution_Save_Frequency = 
+1000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+Write_Output
+Write_Output_Cells
+Write_Output_Nodes
+Write_Output_Interface_List
+#
+# WRITE RESTART:
+#Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate

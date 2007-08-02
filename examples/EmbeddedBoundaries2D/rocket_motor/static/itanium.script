@@ -1,0 +1,20 @@
+#!/bin/tcsh
+#
+#PBS -N crv7_st
+#PBS -q iqmaster
+#PBS -l walltime=4:00:00,nodes=3:ppn=4:itanium-8G,other=night
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/EmbeddedBoundaries2D/rocket_motor/static/crv7/
+mpirun -np 12 --gm-no-shmem --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/embeddedboundaries2D -f crv7.in -pde NavierStokes2D >& crv7.log
+#mpirun -np 48 --gm-no-shmem --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/bin/embeddedboundaries2D_i -f crv7.in -pde NavierStokes2D >& crv7.log
+cat crv7_cpu*.dat > points.dat
+cat crv7_active_cpu*.dat > active.dat
+cat crv7_inactive_cpu*.dat > inactive.dat
+#cat crv7_cells_cpu*.dat > cells.dat
+#cat crv7_nodes_cpu*.dat > nodes.dat
+#cat crv7_status_cpu*.dat > status.dat
+#cat crv7_interface_component_list_cpu*.dat > components.dat
+cat crv7_interface_union_list_cpu*.dat > union.dat
+rm crv7_*cpu*.dat
+rm crv7_st.e* crv7_st.o*

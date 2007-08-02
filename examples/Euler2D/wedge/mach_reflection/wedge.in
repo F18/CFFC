@@ -1,0 +1,115 @@
+#
+# WEDGE FLOW TEST CASE
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Geometry_Type =
+Planar
+#
+# TIME-STEPPING PARAMETERS:
+Time_Integration_Type =
+Explicit_Predictor_Corrector
+Time_Accurate =
+1
+Local_Time_Stepping =
+0
+CFL_Number =
+0.250
+Time_Max =
+2.50
+#1.50
+Maximum_Number_of_Time_Steps =
+0
+#
+# FLUX PARAMETERS:
+Reconstruction_Type =
+Least_Squares
+Limiter_Type =
+Barth_Jespersen
+Flux_Function_Type =
+Roe
+#
+# INITIAL CONDITIONS:
+ICs_Type =
+Shock_Wave_Xdir
+Wave_Position =
+-0.50 0.00
+Gas_Type =
+AIR
+Mach_Number =
+0.4724862789
+Pressure =
+202.6595732
+Temperature =
+354.6383418
+#
+# GRID PARAMETERS:
+Grid_Type =
+Wedge
+Wedge_Angle =
+25.0
+Wedge_Length =
+1.0
+Number_of_Blocks_Idir =
+2
+Number_of_Blocks_Jdir =
+1
+Number_of_Cells_Idir =
+14
+Number_of_Cells_Jdir =
+14
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+6
+Minimum_Refinement_Level =
+1
+Threshold_for_Refinement =
+0.10
+Threshold_for_Coarsening =
+0.05
+Refinement_Criteria_Gradient_Density =
+On
+Refinement_Criteria_Divergence_Velocity =
+Off
+Refinement_Criteria_Curl_Velocity =
+Off
+Number_of_Blocks_Per_Processor =
+128
+Smooth_Quad_Block =
+Off
+#
+# INITIAL AMR PARAMETERS:
+Number_of_Uniform_Mesh_Refinements =
+0
+Number_of_Initial_Mesh_Refinements =
+5
+Number_of_Boundary_Mesh_Refinements =
+0
+#
+# UNSTEADY AMR PARAMETERS:
+AMR =
+On
+AMR_Frequency =
+12
+#
+# I/O PARAMETERS:
+Output_File_Name =
+wedge
+Restart_Solution_Save_Frequency =
+100000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+Write_Output
+Write_Output_Cells
+Write_Output_Wedge_Solution_Distribution
+Determine_Mach_Stem_Height
+#
+# WRITE RESTART FILES:
+#Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate

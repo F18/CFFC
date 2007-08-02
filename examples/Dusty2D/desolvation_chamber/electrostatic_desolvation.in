@@ -1,0 +1,61 @@
+#
+# DESOLVATION CHAMBER
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Geometry_Type =
+Axisymmetric
+#
+# TIME-STEPPING PARAMETERS:
+Time_Integration_Type =
+Multistage_Optimal_Smoothing
+N_Stage =
+5
+Time_Accurate =
+0
+Local_Time_Stepping =
+1
+CFL_Number =
+0.250
+Time_Max =
+0.0
+Maximum_Number_of_Time_Steps =
+0
+#
+# FLUX PARAMETERS:
+Reconstruction_Type =
+Linear_Least_Squares
+Flux_Reconstruction_Type =
+Diamond_Path
+#
+# INITIAL CONDITIONS:
+ICs_Type =
+Restart
+#Desolvation_Chamber
+#
+# MESH PARAMETERS:
+Grid_Type =
+Desolvation_Chamber
+Number_of_Cells_Idir =
+36
+Number_of_Cells_Jdir =
+18
+#
+# I/O PARAMETERS:
+Output_File_Name =
+electrostatic_desolvation
+Restart_Solution_Save_Frequency =
+1000000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+#Write_Output
+#Write_Output_Cells
+#
+# WRITE RESTART:
+#Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate

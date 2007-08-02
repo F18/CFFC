@@ -1,0 +1,10 @@
+#!/bin/sh
+
+mpirun -np 1 --gm-no-shmem --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/dusty2D -f pipe.in -pde Dusty2D
+cat pipe_cpu*.dat > points.dat
+cat pipe_cells_cpu*.dat > cells.dat
+cat pipe_turbulent_pipe_k_cpu*.dat > k.dat
+cat pipe_turbulent_pipe_u_cpu*.dat > u.dat
+cat pipe_turbulent_pipe_uv_cpu*.dat > uv.dat
+rm pipe_cpu*.dat
+rm pipe_*_cpu*.dat

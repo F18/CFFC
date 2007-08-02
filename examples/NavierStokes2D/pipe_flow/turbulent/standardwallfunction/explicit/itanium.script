@@ -1,0 +1,17 @@
+#!/bin/sh
+#
+#PBS -N pipe_5e5_swf_ex
+#PBS -q iqmaster
+#PBS -l walltime=2:00:00,nodes=1:ppn=4:itanium-8G,other=day
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/NavierStokes2D/pipe_flow/turbulent/5e5/standardwallfunction/explicit/
+mpirun -np 4 --gm-no-shmem --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/navierstokes2D -f pipe.in -pde NavierStokes2D >& pipe.log
+cat pipe_cpu*.dat > points.dat
+cat pipe_cells_cpu*.dat > cells.dat
+cat pipe_turbulent_pipe_k_cpu*.dat > k.dat
+cat pipe_turbulent_pipe_u_cpu*.dat > u.dat
+cat pipe_turbulent_pipe_uv_cpu*.dat > uv.dat
+rm pipe_cpu*.dat
+rm pipe_*_cpu*.dat
+rm pipe_5e5_swf_ex.e* pipe_5e5_swf_ex.o*

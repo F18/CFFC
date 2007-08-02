@@ -1,0 +1,23 @@
+#!/bin/tcsh
+#
+#PBS -N bluntbody_V4
+#PBS -q iqmaster
+#PBS -l walltime=0:20:00,nodes=1:ppn=4:itanium-8G,other=day
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/Euler2D/blunt_body/multigrid/
+mpirun -np 4 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/euler2D -f bluntbody.in -pde Euler2D >& bluntbody.log
+cat bluntbody_00_cpu*.dat > points_00.dat
+cat bluntbody_01_cpu*.dat > points_01.dat
+cat bluntbody_02_cpu*.dat > points_02.dat
+cat bluntbody_03_cpu*.dat > points_03.dat
+cat bluntbody_cells_00_cpu*.dat > cells_00.dat
+cat bluntbody_cells_01_cpu*.dat > cells_01.dat
+cat bluntbody_cells_02_cpu*.dat > cells_02.dat
+cat bluntbody_cells_03_cpu*.dat > cells_03.dat
+cat bluntbody_nodes_00_cpu*.dat > nodes_00.dat
+cat bluntbody_nodes_01_cpu*.dat > nodes_01.dat
+cat bluntbody_nodes_02_cpu*.dat > nodes_02.dat
+cat bluntbody_nodes_03_cpu*.dat > nodes_03.dat
+rm bluntbody_*cpu*.dat
+rm bluntbody_V4.e* bluntbody_V4.o*

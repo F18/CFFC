@@ -1,0 +1,16 @@
+#!/bin/tcsh
+#
+#PBS -N couette_M2
+#PBS -q iserial
+#PBS -l walltime=2:00:00,nodes=1:ppn=1:itanium-8G
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/NavierStokes2D/channel_flow/couette/M2/
+mpirun -np 1 --gm-no-shmem --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/navierstokes2D -f couette.in -pde NavierStokes2D >& couette.log
+cat couette_cpu*.dat > points.dat
+cat couette_cells_cpu*.dat > cells.dat
+cat couette_viscous_channel_cpu*.dat > couette.dat
+rm couette_cpu*.dat
+rm couette_cells_cpu*.dat
+rm couette_viscous_channel_cpu*.dat
+rm couette_M2.e* couette_M2.o*

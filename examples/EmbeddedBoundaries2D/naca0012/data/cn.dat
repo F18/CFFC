@@ -1,0 +1,16 @@
+TITLE = "COMPUTED AERODYNAMIC COEFFICIENTS"
+VARIABLES = "t" \
+"alpha" \
+"dalpha" \
+"Cn" \
+"Ca" \
+"Cl" \
+"Cd" \
+"Cm" \
+"Cnp" \
+"Cmp" \
+ZONE T = "Coefficients" \
+I = 1 \
+J = 1 \
+F = POINT \
+0.0000   0.01600000  1   0.0031227  -0.000649675   0.00312288  -0.0006488030  -0.00009948690  -0.00809022  -0.0032810600

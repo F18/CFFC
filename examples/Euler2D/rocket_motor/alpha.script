@@ -1,0 +1,15 @@
+#!/bin/tcsh
+#
+#PBS -N tep
+#PBS -q qmaster
+#PBS -l walltime=4:00:00,nodes=1:ppn=4:parallel-4G,other=night
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/Euler2D/rocket_motor/tep/
+mpirun -np 3 --gm-no-shmem --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/euler2D -f tep.in -pde Euler2D >& tep.log
+cat tep_cpu*.dat > points.dat
+cat tep_cells_cpu*.dat > cells.dat
+cat tep_nodes_cpu*.dat > nodes.dat
+rm tep_cpu*.dat
+rm tep_*_cpu*.dat
+rm tep.e* tep.o*

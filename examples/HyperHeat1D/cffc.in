@@ -1,0 +1,60 @@
+Time_Integration_Type =
+Semi_Implicit_Predictor_Corrector
+Reconstruction_Type =
+Green_Gauss
+Limiter_Type = 
+Venkatakrishnan
+Flux_Function_Type = 
+Godunov
+ICs_Type = 
+Sinusoidal_Rod4
+Kappa = 
+0.02
+Tau =
+ 0.10
+Grid_Type =
+Uniform
+Number_of_Cells = 
+200
+CFL_Number =
+0.95
+Time_Max = 
+ 10.0
+Output_File_Name = 
+rod2
+Execute
+Write_Output
+Terminate
+
+Uniform                        :ICs_Type
+Impulsive_Rod                  :ICs_Type
+Sinusoidal_Rod1                :ICs_Type
+Sinusoidal_Rod4                :ICs_Type
+Riemann_IVP_qx=0               :ICs_Type
+Riemann_IVP_T=0                :ICs_Type
+Riemann_IVP                    :ICs_Type
+
+Explicit_Euler                       :Time_Integration_Type
+Semi_Implicit_Euler                  :Time_Integration_Type
+Semi_Implicit_Predictor_Corrector   :Time_Integration_Type
+
+MUSCL                          :Reconstruction_Type
+Least_Squares                  :Reconstruction_Type
+Green_Gauss                    :Reconstruction_Type
+
+Zero                           :Limiter_Type
+One                            :Limiter_Type
+Minmod                         :Limiter_Type
+UMIST                          :Limiter_Type
+Double_Minmod                  :Limiter_Type
+Superbee                       :Limiter_Type
+Phi                            :Limiter_Type
+VanLeer                        :Limiter_Type
+VanAlbada                      :Limiter_Type
+Venkatakrishnan                :Limiter_Type
+Barth_Jespersen                :Limiter_Type
+
+Godunov                        :Flux_Function_Type
+Roe                            :Flux_Function_Type
+Rusanov                        :Flux_Function_Type
+HLLE                           :Flux_Function_Type

@@ -1,0 +1,13 @@
+#!/bin/tcsh
+#
+#PBS -N bump_sb_ex
+#PBS -q iqmaster
+#PBS -l walltime=0:30:00,nodes=2:ppn=4:itanium-8G,other=day
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/NavierStokes2D/bump_flow/subsonic/explicit/
+mpirun -np 8 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/navierstokes2D -f bump.in -pde NavierStokes2D >& bump.log
+cat bump_cpu*.dat > points.dat
+cat bump_cells_cpu*.dat > cells.dat
+rm bump_*cpu*.dat
+rm bump_sb_ex.e* bump_sb_ex.o*

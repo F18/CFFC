@@ -1,0 +1,95 @@
+#
+# POISEUILLE FLOW
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Type =
+Laminar
+Flow_Geometry_Type = 
+Planar
+#
+# TIME-STEPPING PARAMETERS:
+Time_Integration_Type =
+Multistage_Optimal_Smoothing
+N_Stage =
+5
+Time_Accurate = 
+0
+Local_Time_Stepping =
+1
+CFL_Number =
+0.05
+Time_Max =
+1.00
+Maximum_Number_of_Time_Steps =
+10000
+Residual_Variable =
+2
+#
+# FLUX PARAMETERS:
+Reconstruction_Type =
+Least_Squares
+Limiter_Type = 
+One
+Flux_Function_Type =
+Roe
+Viscous_Reconstruction_Type =
+Diamond_Path
+#
+# INITIAL CONDITIONS:
+ICs_Type =
+Viscous_Channel_Flow
+Wall_Speed =
+0.0  0.0
+Pressure_Gradient =
+-635.54
+Gas_Type = 
+AIR
+#
+# GRID PARAMETERS:
+Grid_Type =
+Rectangular_Box
+Box_Width =
+0.20
+Box_Height =
+0.0010
+Number_of_Cells_Idir = 
+16
+Number_of_Cells_Jdir =
+32
+Number_of_Blocks_Idir = 
+1
+Number_of_Blocks_Jdir =
+1
+X_Shift = 
+0.100  0.0005
+Boundary_Conditions_Specified =
+On
+BC_North =
+Wall_Viscous_Heatflux
+BC_South =
+Wall_Viscous_Heatflux
+BC_East =
+Outflow_Subsonic
+BC_West =
+Inflow_Subsonic
+#
+# I/O PARAMETERS:
+Output_File_Name = 
+poiseuille
+Restart_Solution_Save_Frequency = 
+20000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+Write_Output
+Write_Output_Cells
+Write_Output_Viscous_Channel
+#
+# WRITE RESTART:
+#Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate

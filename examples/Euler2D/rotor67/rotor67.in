@@ -1,0 +1,370 @@
+#
+# Rotor 67 test case
+#
+########################
+# Set solver parameters
+########################
+Time_Integration_Type =
+Multigrid
+#Multigrid
+#Multistage_Optimal_Smoothing 
+#Explicit_Predictor_Corrector
+Multigrid_Levels =
+3
+Multigrid_Cycle_Type =
+V
+Multigrid_Number_of_Smooths_on_Finest_Level =
+1
+Multigrid_Number_of_Pre_Smooths =
+2
+Multigrid_Number_of_Post_Smooths =
+2
+Multigrid_Number_of_Smooths_on_Coarsest_Level =
+5
+Multigrid_Smoothing_Type = 
+Multistage_Optimal_Smoothing
+#Explicit_Runge_Kutta
+N_Stage =
+5
+Time_Accurate = 
+0
+Local_Time_Stepping =
+2
+Reconstruction_Type =
+Least_Squares
+#Green_Gauss 
+#Least_Squares
+Limiter_Type =
+Venkatakrishnan
+#Venkatakrishnan
+#Barth_Jespersen
+#Zero
+Flux_Function_Type =
+HLLE
+#Roe
+#Linde
+#HLLE
+#Godunov
+Freeze_Limiter =
+0
+Freeze_Limiter_Residual_Level = 
+1.0e-4
+GMRES_Overlap =
+0
+GMRES_Tolerance =
+2.5e-01
+Overall_Tolerance =
+1.0e-10
+GMRES_P_Switch = 
+1
+#(1 -> ILUK, 2 -> Diagonal)
+GMRES_ILUK_Level_of_Fill = 
+6
+Finite_Time_Step =
+0
+Finite_Time_Step_Initial_CFL =
+1.0e100
+Normalization = 
+1
+#########################
+# Set initial conditions
+#########################
+ICs_Type = 
+Restart
+#Riemann_Xdir
+#Uniform
+#Restart
+NASA_Rotor67_Data_Directory =
+/home/groth/CFDkit+caboodle/data/NASA_Rotors/R67/
+Grid_Type =
+NASA_Rotor67
+#Read_From_Data_File
+Rotor_Percent_Span = 
+70
+Number_of_Cells_Idir = 
+8
+Number_of_Cells_Jdir =
+8 
+###############################
+# Set time stepping parameters
+###############################
+CFL_Number =
+       1.00
+Maximum_Number_of_Time_Steps =
+0
+Full_Multigrid =
+0
+Maximum_Number_of_NKS_Iterations =
+100
+Maximum_Number_of_GMRES_Iterations =
+100
+GMRES_Restart =
+50
+Number_of_Blocks_Per_Processor =
+128
+Output_File_Name = 
+rotor67_01
+Restart_Solution_Save_Frequency = 
+10000
+#######################
+# Execute program
+#######################
+Execute
+#######################
+# Write output
+#######################
+#Write_Output
+#Write_Output_Mesh
+#Write_Output_Mesh_Cells
+#Write_Output_Mesh_Nodes
+#Write_Restart
+#Write_Mesh_Definition
+#######################
+# Terminate program
+#######################
+Terminate
+##############################
+# Refine grid 1
+##############################
+Refine_Grid
+#Refine_Grid
+##############################
+# Re-set some input parameters
+##############################
+Maximum_Number_of_Time_Steps =
+10
+Full_Multigrid =
+5
+Maximum_Number_of_NKS_Iterations =
+0
+Maximum_Number_of_GMRES_Iterations =
+100
+GMRES_Restart =
+50
+Limiter_Type =
+Venkatakrishnan
+#Venkatakrishnan
+#Barth_Jespersen
+#Zero
+Output_File_Name = 
+rotor67_01
+##############################
+# Restart program
+##############################
+Continue
+#######################
+# Write output
+#######################
+Write_Output
+#Write_Output_Mesh
+#Write_Output_Mesh_Cells
+#Write_Output_Mesh_Nodes
+Write_Restart
+#Write_Mesh_Definition
+#######################
+# Terminate program
+#######################
+Terminate
+##############################
+# Refine grid 2
+##############################
+Refine_Grid
+##############################
+# Re-set some input parameters
+##############################
+Maximum_Number_of_Time_Steps =
+100
+##############################
+# Restart program
+##############################
+Continue
+#######################
+# Write output
+#######################
+Write_Output
+#Write_Output_Mesh
+#Write_Output_Mesh_Cells
+#Write_Output_Mesh_Nodes
+#Write_Restart
+#Write_Mesh_Definition
+#######################
+# Terminate program
+#######################
+#Terminate
+##############################
+# Refine grid 3
+##############################
+Refine_Grid
+##############################
+# Re-set some input parameters
+##############################
+Maximum_Number_of_Time_Steps =
+100
+##############################
+# Restart program
+##############################
+Continue
+#######################
+# Write output
+#######################
+Write_Output
+#Write_Output_Mesh
+#Write_Output_Mesh_Cells
+#Write_Output_Mesh_Nodes
+#Write_Restart
+#Write_Mesh_Definition
+#######################
+# Terminate program
+#######################
+#Terminate
+##############################
+# Refine grid 4
+##############################
+Refine_Grid
+##############################
+# Re-set some input parameters
+##############################
+Maximum_Number_of_Time_Steps =
+100
+##############################
+# Restart program
+##############################
+Continue
+#######################
+# Write output
+#######################
+Write_Output
+#Write_Output_Mesh
+#Write_Output_Mesh_Cells
+#Write_Output_Mesh_Nodes
+#Write_Restart
+#Write_Mesh_Definition
+#######################
+# Terminate program
+#######################
+#Terminate
+##############################
+# Refine grid 5
+##############################
+Refine_Grid
+##############################
+# Re-set some input parameters
+##############################
+Maximum_Number_of_Time_Steps =
+100
+##############################
+# Restart program
+##############################
+Continue
+#######################
+# Write output
+#######################
+Write_Output
+Write_Output_Mesh
+Write_Output_Mesh_Cells
+Write_Output_Mesh_Nodes
+Write_Restart
+Write_Mesh_Definition
+#######################
+# Terminate program
+#######################
+Terminate
+
+#####################################
+Time_Integration_Type =
+Multistage_Optimal_Smoothing 
+N_Stage = 
+4
+Time_Accurate = 
+0
+Flow_Geometry_Type = 
+Planar
+Local_Time_Stepping =
+1
+Reconstruction_Type =
+Green_Gauss
+Limiter_Type = 
+Venkatakrishnan
+Flux_Function_Type =
+Linde 
+ICs_Type = 
+Restart
+NASA_Rotor67_Data_Directory =
+/home/groth/CFDkit+caboodle/data/NASA_Rotors/R67/
+Grid_Type =
+Read_From_Data_File
+Rotor_Percent_Span = 
+70
+Number_of_Cells_Idir = 
+48 
+Number_of_Cells_Jdir =
+24 
+CFL_Number =
+       0.75
+Maximum_Number_of_Time_Steps =
+500
+Number_of_Blocks_Per_Processor =
+12
+Output_File_Name = 
+rotor67
+Restart_Solution_Save_Frequency = 
+10000
+Execute
+Write_Output
+Write_Output_Mesh
+Write_Output_Mesh_Cells
+Write_Output_Mesh_Nodes
+Write_Restart
+Write_Mesh_Definition
+Terminate
+
+Planar                         :Flow_Geometry_Type
+Axisymmetric                   :Flow_Geometry_Type
+
+Explicit_Euler                 :Time_Integration_Type
+Explicit_Predictor_Corrector   :Time_Integration_Type
+Explicit_Runge_Kutta           :Time_Integration_Type
+Multistage_Optimal_Smoothing   :Time_Integration_Type
+
+Least_Squares                  :Reconstruction_Type
+Green_Gauss                    :Reconstruction_Type
+
+Venkatakrishnan                :Limiter_Type
+Barth_Jespersen                :Limiter_Type
+Zero                           :Limiter_Type
+One                            :Limiter_Type
+
+Godunov                        :Flux_Function_Type
+Roe                            :Flux_Function_Type
+Rusanov                        :Flux_Function_Type
+HLLE                           :Flux_Function_Type
+Linde                          :Flux_Function_Type
+HLLC                           :Flux_Function_Type
+
+Uniform                        :ICs_Type
+Sod                            :ICs_Type
+Sod_Xdir                       :ICs_Type
+Sod_Ydir                       :ICs_Type
+Groth                          :ICs_Type
+Groth_Xdir                     :ICs_Type
+Groth_Ydir                     :ICs_Type
+Einfeldt                       :ICs_Type
+Einfeldt_Xdir                  :ICs_Type
+Einfeldt_Ydir                  :ICs_Type
+ShockBox                       :ICs_Type
+High_Pressure_Reservoir        :ICs_Type
+Restart                        :ICs_Type
+
+Square                         :Grid_Type
+Rectangular_Box                :Grid_Type
+Flat_Plate                     :Grid_Type
+Pipe                           :Grid_Type
+Blunt_Body                     :Grid_Type
+Rocket_Motor                   :Grid_Type
+Circular_Cylinder              :Grid_Type
+Ellipse                        :Grid_Type
+NACA_Aerofoil                  :Grid_Type
+NASA_Rotor37                   :Grid_Type
+NASA_Rotor67                   :Grid_Type
+Read_From_Definition_File      :Grid_Type
+Read_From_Data_File            :Grid_Type

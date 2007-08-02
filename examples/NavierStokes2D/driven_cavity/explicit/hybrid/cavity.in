@@ -1,0 +1,135 @@
+#
+# DRIVEN CAVITY FLOW
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Type =
+Laminar
+Flow_Geometry_Type =
+Planar
+#
+# TIME-STEPPING PARAMETERS:
+Time_Integration_Type =
+Multistage_Optimal_Smoothing
+N_Stage =
+5
+Time_Accurate = 
+0
+Local_Time_Stepping =
+1
+CFL_Number =
+0.50
+Time_Max =
+0.0
+Maximum_Number_of_Time_Steps =
+100000
+Residual_Variable =
+2
+#
+# RESIDUAL SMOOTHING PARAMETERS:
+Residual_Smoothing_Epsilon =
+0.175
+Residual_Smoothing_Gauss_Seidel_Iterations =
+2
+#
+# FLUX PARAMETERS:
+Reconstruction_Type =
+Least_Squares
+Limiter_Type =
+Venkatakrishnan
+Freeze_Limiter =
+0
+Freeze_Limiter_Residual_Level =
+0.001
+Flux_Function_Type =
+Roe
+Viscous_Reconstruction_Type =
+Hybrid
+#
+# INITIAL CONDITIONS:
+ICs_Type =
+Driven_Cavity_Flow
+Re_lid =
+400.0
+Mach_Number =
+0.0
+Gas_Type = 
+AIR
+#
+# GRID PARAMETERS:
+Grid_Type =
+Driven_Cavity_Flow
+Box_Width =
+0.0010
+Box_Height =
+0.0010
+Mesh_Stretching =
+On
+Mesh_Stretching_Type_Idir =
+MinMax_Clustering
+Mesh_Stretching_Type_Jdir =
+MinMax_Clustering
+Mesh_Stretching_Factor_Idir =
+1.05
+Mesh_Stretching_Factor_Jdir =
+1.05
+Number_of_Cells_Idir =
+32
+Number_of_Cells_Jdir =
+32
+Number_of_Blocks_Idir =
+1
+Number_of_Blocks_Jdir =
+1
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+6
+Minimum_Refinement_Level =
+2
+Threshold_for_Refinement =
+0.10
+Threshold_for_Coarsening =
+0.01
+Refinement_Criteria_Gradient_Density =
+Off
+Refinement_Criteria_Divergence_Velocity =
+Off
+Refinement_Criteria_Curl_Velocity =
+On
+Smooth_Quad_Block =
+Off
+Number_of_Blocks_Per_Processor =
+16
+#
+# INITIAL AMR PARAMETERS:
+Number_of_Initial_Mesh_Refinements =
+0
+Number_of_Uniform_Mesh_Refinements =
+2
+Number_of_Boundary_Mesh_Refinements =
+0
+#
+# UNSTEADY AMR PARAMETERS:
+AMR =
+Off
+#
+# I/O PARAMETERS:
+Output_File_Name =
+cavity
+Restart_Solution_Save_Frequency =
+40000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+Write_Output
+Write_Output_Cells
+Write_Output_Driven_Cavity_Flow
+#
+# WRITE RESTART:
+Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate

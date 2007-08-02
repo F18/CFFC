@@ -1,0 +1,15 @@
+#!/bin/tcsh
+#
+#PBS -N crv7_kw_R0
+#PBS -q iqmaster
+#PBS -l walltime=6:00:00,nodes=4:ppn=4:itanium-8G,other=night
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/Dusty2D/rocket_motor/crv7/turbulent/R0/
+mpirun -np 16 --gm-no-shmem --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/dusty2D -f crv7.in -pde Dusty2D >& crv7.log
+cat crv7_cpu*.dat > points.dat
+cat crv7_cells_cpu*.dat > cells.dat
+cat crv7_nodes_cpu*.dat > nodes.dat
+cat crv7_gradients_cpu*.dat > gradients.dat
+rm crv7_*cpu*.dat
+rm crv7_kw_R0.e* crv7_kw_R0.o*

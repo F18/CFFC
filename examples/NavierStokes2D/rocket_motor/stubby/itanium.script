@@ -1,0 +1,14 @@
+#!/bin/tcsh
+#
+#PBS -N stubby
+#PBS -q iqmaster
+#PBS -l walltime=4:00:00,nodes=7:ppn=4:itanium-8G,other=night
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/NavierStokes2D/rocket_motor/stubby/
+mpirun -np 28 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/navierstokes2D -f stubby.in -pde NavierStokes2D >& stubby.log
+cat stubby_cpu*.dat > points.dat
+cat stubby_cells_cpu*.dat > cells.dat
+rm stubby_cpu*.dat
+rm stubby_*_cpu*.dat
+rm stubby.e* stubby.o*

@@ -1,0 +1,55 @@
+Time_Integration_Type =
+Explicit_Euler           
+Reconstruction_Type =
+Least_Squares
+Limiter_Type = 
+Barth_Jespersen
+Flux_Function_Type = 
+Linde
+ICs_Type = 
+Brio_Wu
+Grid_Type =
+Uniform
+Number_of_Cells = 
+400
+CFL_Number =
+0.90
+Time_Max = 
+ 0.22
+Output_File_Name = 
+briowu
+Execute
+Write_Output
+Terminate
+
+Uniform                        :ICs_Type
+Brio_Wu                        :ICs_Type
+
+Explicit_Euler                 :Time_Integration_Type
+Explicit_Predictor_Corrector   :Time_Integration_Type
+Lax_Friedrichs                 :Time_Integration_Type
+Lax_Wendroff                   :Time_Integration_Type
+MacCormack                     :Time_Integration_Type
+Hancock                       :Time_Integration_Type
+
+MUSCL                          :Reconstruction_Type
+Least_Squares                  :Reconstruction_Type
+Green_Gauss                    :Reconstruction_Type
+
+Zero                           :Limiter_Type
+One                            :Limiter_Type
+Minmod                         :Limiter_Type
+UMIST                          :Limiter_Type
+Double_Minmod                  :Limiter_Type
+Superbee                       :Limiter_Type
+Phi                            :Limiter_Type
+VanLeer                        :Limiter_Type
+VanAlbada                      :Limiter_Type
+Venkatakrishnan                :Limiter_Type
+Barth_Jespersen                :Limiter_Type
+
+Roe                            :Flux_Function_Type
+Rusanov                        :Flux_Function_Type
+HLLE                           :Flux_Function_Type
+Linde                          :Flux_Function_Type
+

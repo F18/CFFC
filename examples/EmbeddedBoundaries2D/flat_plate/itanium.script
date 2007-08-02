@@ -1,0 +1,22 @@
+#!/bin/tcsh
+#
+#PBS -N fp_30_10e3_5
+#PBS -q iqmaster
+#PBS -l walltime=4:00:00,nodes=12:ppn=4:itanium-8G,other=night
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/EmbeddedBoundaries2D/flat_plate/30/10e3/AMR_5/
+mpirun -np 48 --gm-no-shmem --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/embeddedboundaries2D -f flatplate.in -pde NavierStokes2D >& flatplate.log
+cat flatplate_cpu*.dat > points.dat
+cat flatplate_active_cpu*.dat > active.dat
+cat flatplate_inactive_cpu*.dat > inactive.dat
+#cat flatplate_cells_cpu*.dat > cells.dat
+cat flatplate_nodes_cpu*.dat > nodes.dat
+cat flatplate_status_cpu*.dat > status.dat
+cat flatplate_interface_component_list_cpu*.dat > components.dat
+cat flatplate_interface_union_list_cpu*.dat > union.dat
+cat flatplate_flatplate_soln_cpu*.dat > flatplate.dat
+cat flatplate_flatplate_skin_friction_cpu*.dat > skinfriction.dat
+rm flatplate_cpu*.dat
+rm flatplate_*_cpu*.dat
+rm fp_30_10e3_5.e* fp_30_10e3_5.o*

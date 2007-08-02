@@ -1,0 +1,1311 @@
+/* Euler1D.cc:  Subroutines for 1D Euler Solution Classes. */
+
+/* Include 1D Euler solution header file. */
+
+#ifndef _EULER1D_INCLUDED
+#include "Euler1D.h"
+#endif // _EULER1D_INCLUDED
+
+/********************************************************
+ * Routine: Allocate                                    *
+ *                                                      *
+ * Allocate memory for 1D Euler equation solution.      *
+ *                                                      *
+ ********************************************************/
+Euler1D_UniformMesh* Allocate(Euler1D_UniformMesh *Soln_ptr,
+                              const int Number_of_Cells) {
+
+    /* Allocate memory. */
+
+    Soln_ptr = new Euler1D_UniformMesh[Number_of_Cells+2];
+
+    /* Return memory location. */
+
+    return(Soln_ptr);
+
+}
+
+/********************************************************
+ * Routine: Deallocate                                  *
+ *                                                      *
+ * Deallocate memory for 1D Euler equation solution.    *
+ *                                                      *
+ ********************************************************/
+Euler1D_UniformMesh* Deallocate(Euler1D_UniformMesh *Soln_ptr,
+                                const int Number_of_Cells) {
+
+    /* Deallocate memory. */
+
+    delete []Soln_ptr;
+    Soln_ptr = NULL;
+
+    /* Return memory location. */
+
+    return(Soln_ptr);
+
+}
+
+/********************************************************
+ * Routine: Output_Gnuplot                              *
+ *                                                      *
+ * Writes the solution to specified output stream       *
+ * suitable for plotting with GNUPLOT.                  *
+ *                                                      *
+ ********************************************************/
+void Output_Gnuplot(Euler1D_UniformMesh *Soln,
+                    const int Number_of_Cells,
+                    const int Number_of_Time_Steps,
+                    const double &Time,
+	            ostream &out_file) {
+
+    int i;
+
+    out_file << "# " << CFDkit_Name() << ": 1D Euler Solution, "
+             << "Time Step/Iteration Level = "
+             << Number_of_Time_Steps
+             << ", Time = " << Time*THOUSAND << " (ms)\n"
+	     << "# cell, x(m), dx(m), rho (kg/m^3), "
+	     << "v (m/s), p (Pa), T (K)\n";
+    
+    for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
+        out_file << " " << i << " " << Soln[i] << "\n";
+    } /* endfor */
+
+    out_file << "\n";
+    
+}
+
+/********************************************************
+ * Routine: Output_Tecplot                              *
+ *                                                      *
+ * Writes the solution to specified output stream       *
+ * suitable for plotting with TECPLOT.                  *
+ *                                                      *
+ ********************************************************/
+void Output_Tecplot(Euler1D_UniformMesh *Soln,
+                    const int Number_of_Cells,
+                    const int Number_of_Time_Steps,
+                    const double &Time,
+	            ostream &out_file) {
+
+    int i;
+
+    out_file << "TITLE = \"" << CFDkit_Name() << ": 1D Euler Solution, "
+             << "Time Step/Iteration Level = "
+             << Number_of_Time_Steps
+             << ", Time = " << Time*THOUSAND << " (ms)\"" << "\n"
+	     << "VARIABLES = \"x\" \\ \n"
+             << "\"dx\" \\ \n"
+             << "\"rho\" \\ \n"
+             << "\"u\" \\ \n"
+             << "\"p\" \\ \n"
+             << "\"T\" \n"
+             << "ZONE \n";
+    
+    for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
+        out_file << " " << Soln[i] << "\n";
+    } /* endfor */
+
+    out_file << "\n";
+    
+}
+
+/********************************************************
+ * Routine: Grid                                        *
+ *                                                      *
+ * Generates a uniform mesh and assign the locations of *
+ * the cell centers to appropriate solution variables.  *
+ *                                                      *
+ ********************************************************/
+void Grid(Euler1D_UniformMesh *Soln,
+          const double &xMin,
+	  const double &xMax,
+	  const int Number_of_Cells) {
+
+    int i;
+    double delta_x;
+
+    /* Determine the mesh spacing. */
+
+    delta_x = (xMax - xMin)/double(Number_of_Cells);
+    Soln[0].X.setsize(delta_x);
+
+    /* Create the cells. */
+
+    Soln[0].X.x = xMin - HALF*delta_x;
+
+    for ( i = 1 ; i <= Number_of_Cells+1 ; ++i ) {
+        Soln[i].X.x =  Soln[0].X.x + double(i)*delta_x;
+    } /* endfor */
+
+}
+
+/********************************************************
+ * Routine: ICs                                         *
+ *                                                      *
+ * Assigns initial conditions and data to the           *
+ * solution variables.                                  *
+ *                                                      *
+ ********************************************************/
+void ICs(Euler1D_UniformMesh *Soln,
+         char *gas_ptr,
+	 const int i_ICtype,
+         const int Number_of_Cells) {
+
+    int i;
+    Euler1D_pState Wl,Wr;
+
+    /* Assign the gas constants for the gas of interest. */
+
+    Soln[0].W.setgas(gas_ptr);
+    Soln[0].U.setgas(gas_ptr);
+
+    /* Assign the initial data for the IVP of interest. */
+    
+    switch(i_ICtype) {
+      case IC_CONSTANT :
+        Wl = Euler1D_W_STDATM;
+        for ( i = 0 ; i <= Number_of_Cells+1 ; ++i ) {
+            Soln[i].W = Wl;
+            Soln[i].U = U(Soln[i].W);
+        } /* endfor */
+        break;
+      case IC_UNIFORM :
+        Wl = Euler1D_W_STDATM;
+        for ( i = 0 ; i <= Number_of_Cells+1 ; ++i ) {
+            Soln[i].W = Wl;
+            Soln[i].U = U(Soln[i].W);
+        } /* endfor */
+        break;
+      case IC_SOD :
+        Wl = Euler1D_W_STDATM;
+        Wr = Euler1D_pState(DENSITY_STDATM/EIGHT,
+          		    ZERO,
+         		    PRESSURE_STDATM/TEN); 
+        for ( i = 0 ; i <= Number_of_Cells+1 ; ++i ) {
+	    if (Soln[i].X.x <= ZERO) {
+               Soln[i].W = Wl;
+            } else {
+               Soln[i].W = Wr;	     
+            } /* end if */
+            Soln[i].U = U(Soln[i].W);
+        } /* endfor */
+        break;
+      case IC_GROTH :
+        Wl = Euler1D_pState(4.696, ZERO, 404.4e03);
+        Wr = Euler1D_pState(1.408, ZERO, 101.1e03);
+        for ( i = 0 ; i <= Number_of_Cells+1 ; ++i ) {
+	    if (Soln[i].X.x <= ZERO) {
+               Soln[i].W = Wl;
+            } else {
+               Soln[i].W = Wr;	     
+            } /* end if */
+            Soln[i].U = U(Soln[i].W);
+        } /* endfor */
+        break;
+      case IC_EINFELDT :
+        Wl = Euler1D_pState(ONE,-TWO,FOUR/TEN);
+        Wr = Euler1D_pState(ONE,TWO,FOUR/TEN);
+        for ( i = 0 ; i <= Number_of_Cells+1 ; ++i ) {
+	    if (Soln[i].X.x <= ZERO) {
+               Soln[i].W = Wl;
+            } else {
+               Soln[i].W = Wr;	     
+            } /* end if */
+            Soln[i].U = U(Soln[i].W);
+        } /* endfor */
+        break;
+      case IC_SHOCK_WAVE :
+        Wl = Euler1D_pState(2.281, 164.83, 201.17e03);
+        Wr = Euler1D_pState(1.408, ZERO, 101.1e03);
+        for ( i = 0 ; i <= Number_of_Cells+1 ; ++i ) {
+	    if (Soln[i].X.x <= ZERO) {
+               Soln[i].W = Wl;
+            } else {
+               Soln[i].W = Wr;	     
+            } /* end if */
+            Soln[i].U = U(Soln[i].W);
+        } /* endfor */
+        break;
+      case IC_CONTACT_SURFACE :
+        Wl = Euler1D_pState(1.045, 200.00, 300.00e03);
+        Wr = Euler1D_pState(3.483, 200.00, 300.00e03);
+        for ( i = 0 ; i <= Number_of_Cells+1 ; ++i ) {
+	    if (Soln[i].X.x <= ZERO) {
+               Soln[i].W = Wl;
+            } else {
+               Soln[i].W = Wr;	     
+            } /* end if */
+            Soln[i].U = U(Soln[i].W);
+        } /* endfor */
+        break;
+      case IC_RAREFACTION_WAVE :
+        Wl = Euler1D_pState(1.598, -383.64, 91.88e03);
+        Wr = Euler1D_pState(2.787, -216.97, 200.0e03);
+        for ( i = 0 ; i <= Number_of_Cells+1 ; ++i ) {
+	    if (Soln[i].X.x <= ZERO) {
+               Soln[i].W = Wl;
+            } else {
+               Soln[i].W = Wr;	     
+            } /* end if */
+            Soln[i].U = U(Soln[i].W);
+        } /* endfor */
+        break;
+      default:
+        Wl = Euler1D_W_STDATM;
+        for ( i = 0 ; i <= Number_of_Cells+1 ; ++i ) {
+            Soln[i].W = Wl;
+            Soln[i].U = U(Soln[i].W);
+        } /* endfor */
+        break;
+    } /* endswitch */
+
+}
+
+/********************************************************
+ * Routine: CFL                                         *
+ *                                                      *
+ * Determines the allowable global and local time steps *
+ * (for explicit Euler time stepping scheme) according  *
+ * to the Courant-Friedrichs-Lewy condition.            *
+ *                                                      *
+ ********************************************************/
+double CFL(Euler1D_UniformMesh *Soln,
+           const int Number_of_Cells) {
+
+    int i;
+    double dtMin;
+
+    /* Determine local and global time steps. */
+
+    dtMin = MILLION;
+
+    for ( i = 0 ; i <= Number_of_Cells+1 ; ++i ) {
+        Soln[i].dt = Soln[i].X.dx/
+	             (Soln[i].W.a()+fabs(Soln[i].W.v));
+        dtMin = min(dtMin, Soln[i].dt);
+    } /* endfor */
+
+    /* Return the global time step. */
+
+    return (dtMin);
+
+}
+
+/********************************************************
+ * Routine: Linear_Reconstruction_MUSCL                 *
+ *                                                      *
+ * Peforms the reconstruction of a limited piecewise    *
+ * linear solution state within each cell of the        *
+ * computational mesh.  The MUSCL approach of Van Leer  *
+ * (1978) is used.  Several slope limiters may be used. *
+ *                                                      *
+ ********************************************************/
+void Linear_Reconstruction_MUSCL(Euler1D_UniformMesh *Soln,
+                                 const int Number_of_Cells,
+                                 const int Limiter) {
+
+    int i, n;
+    double phi;
+    Euler1D_pState a, b;
+
+    /* Carry out the limited solution reconstruction in
+       each cell. */
+
+    b = (Soln[1].W-Soln[0].W)/Soln[0].X.dx;
+    for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
+        Soln[i].dWdx = HALF*(Soln[i+1].W-Soln[i-1].W)/
+                       Soln[i].X.dx;
+        a = b;
+        b = (Soln[i+1].W-Soln[i].W)/Soln[i].X.dx;
+
+        for ( n = 1 ; n <= NUM_VAR_EULER1D ; ++n ) {
+           switch(Limiter) {
+             case LIMITER_ZERO :
+	       phi = ZERO;
+               break;
+             case LIMITER_ONE :
+	       phi = ONE;
+               break;
+             case LIMITER_MINMOD :
+	       phi = minmod(a[n], b[n])/(Soln[i].dWdx[n]+sgn(Soln[i].dWdx[n])*TOLER*TOLER);
+               break; 
+             case LIMITER_UMIST :
+               phi = minmod(TWO*a[n], 
+                            TWO*b[n],
+                            (a[n]+THREE*b[n])/FOUR,
+                            (THREE*a[n]+b[n])/FOUR)/
+                     (Soln[i].dWdx[n]+sgn(Soln[i].dWdx[n])*TOLER*TOLER);
+               break;
+             case LIMITER_DOUBLE_MINMOD :
+               phi = minmod(HALF*(a[n]+b[n]), 
+	                    TWO*a[n], 
+	                    TWO*b[n])/(Soln[i].dWdx[n]+sgn(Soln[i].dWdx[n])*TOLER*TOLER);
+               break;
+             case LIMITER_SUPERBEE :
+               phi = superbee(a[n], b[n])/
+                     (Soln[i].dWdx[n]+sgn(Soln[i].dWdx[n])*TOLER*TOLER);
+               break; 
+             case LIMITER_PHI :
+               phi = philimiter(a[n], b[n], 1.50)/
+                     (Soln[i].dWdx[n]+sgn(Soln[i].dWdx[n])*TOLER*TOLER);
+               break;
+             case LIMITER_VANLEER :
+               phi = vanleer(a[n], b[n])/
+                     (Soln[i].dWdx[n]+sgn(Soln[i].dWdx[n])*TOLER*TOLER);
+               break;
+             case LIMITER_VANALBADA :
+               phi = vanalbada(a[n], b[n], 0.10)/
+                     (Soln[i].dWdx[n]+sgn(Soln[i].dWdx[n])*TOLER*TOLER);
+               break;
+	     default:
+               phi = philimiter(a[n], b[n], ONE)/
+                     (Soln[i].dWdx[n]+sgn(Soln[i].dWdx[n])*TOLER*TOLER);
+               break;
+           } /* endswitch */
+
+           Soln[i].phi[n] = phi;
+        } /* endfor */
+
+    } /* endfor */
+
+    Soln[0].dWdx = Soln[1].phi^Soln[1].dWdx;
+    Soln[0].phi = Euler1D_W_ONE;
+
+    Soln[Number_of_Cells+1].dWdx = Soln[Number_of_Cells].phi^Soln[Number_of_Cells].dWdx;
+    Soln[Number_of_Cells+1].phi = Euler1D_W_ONE;
+
+}
+
+/********************************************************
+ * Routine: Linear_Reconstruction_GreenGauss            *
+ *                                                      *
+ * Peforms the reconstruction of a limited piecewise    *
+ * linear solution state within each cell of the        *
+ * computational mesh.  A Green-Gauss approach is used  *
+ * in the evaluation of the unlimited solution          *
+ * gradients.  Several slope limiters may be used.      *
+ *                                                      *
+ ********************************************************/
+void Linear_Reconstruction_GreenGauss(Euler1D_UniformMesh *Soln,
+                                      const int Number_of_Cells,
+                                      const int Limiter) {
+
+    int i, n;
+    double u0Min, u0Max, uQuad[2], phi;
+
+    /* Carry out the limited solution reconstruction in
+       each cell. */
+
+    for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
+        Soln[i].dWdx = HALF*(Soln[i+1].W-Soln[i-1].W)/
+                       Soln[i].X.dx;
+
+        for ( n = 1 ; n <= NUM_VAR_EULER1D ; ++n ) {
+	   u0Min = min(Soln[i-1].W[n], Soln[i].W[n]);
+	   u0Min = min(u0Min, Soln[i+1].W[n]);
+	   u0Max = max(Soln[i-1].W[n], Soln[i].W[n]);
+	   u0Max = max(u0Max, Soln[i+1].W[n]);
+	   uQuad[0] = Soln[i].W[n] - HALF*Soln[i].dWdx[n]*Soln[i].X.dx;
+	   uQuad[1] = Soln[i].W[n] + HALF*Soln[i].dWdx[n]*Soln[i].X.dx;
+
+           switch(Limiter) {
+             case LIMITER_ZERO :
+	       phi = ZERO;
+               break;
+             case LIMITER_ONE :
+	       phi = ONE;
+               break;
+             case LIMITER_BARTH_JESPERSEN :
+               phi = Limiter_BarthJespersen(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
+               break;
+             case LIMITER_VENKATAKRISHNAN :
+               phi = Limiter_Venkatakrishnan(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
+               break;
+             case LIMITER_VANLEER :
+               phi = Limiter_VanLeer(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
+               break;
+             case LIMITER_VANALBADA :
+               phi = Limiter_VanAlbada(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
+               break;
+	     default:
+               phi = Limiter_BarthJespersen(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
+               break;
+           } /* endswitch */
+
+           Soln[i].phi[n] = phi;
+        } /* endfor */
+
+    } /* endfor */
+
+    Soln[0].dWdx = Soln[1].phi^Soln[1].dWdx;
+    Soln[0].phi = Euler1D_W_ONE;
+
+    Soln[Number_of_Cells+1].dWdx = Soln[Number_of_Cells].phi^Soln[Number_of_Cells].dWdx;
+    Soln[Number_of_Cells+1].phi = Euler1D_W_ONE;
+
+}
+
+/********************************************************
+ * Routine: Linear_Reconstruction_Characteristic        *
+ *                                                      *
+ * Peforms the reconstruction of a limited piecewise    *
+ * linear solution state within each cell of the        *
+ * computational mesh.  Characteristic reconstruction   *
+ * is used and several slope limiters may be applied.   *
+ *                                                      *
+ ********************************************************/
+void Linear_Reconstruction_Characteristic(Euler1D_UniformMesh *Soln,
+                                          const int Number_of_Cells,
+                                          const int Limiter) {
+
+    int i, n;
+    double u0Min, u0Max, uQuad[2], phi;
+    Euler1D_pState Cl, Cm, Cr;
+
+    /* Carry out the limited solution reconstruction in
+       each cell.  Use characteristic variables. */
+
+    Cm = Soln[0].W.C();
+    Cr = Soln[1].W.C();
+
+    for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
+
+        Cl = Cm;       
+        Cm = Cr;
+        Cr = Soln[i+1].W.C();
+        Soln[i].dWdx = HALF*(Cr-Cl)/Soln[i].X.dx;
+
+        for ( n = 1 ; n <= NUM_VAR_EULER1D ; ++n ) {
+           u0Min = min(Cl[n], Cm[n]);
+           u0Min = min(u0Min, Cr[n]);
+           u0Max = max(Cl[n], Cm[n]);
+           u0Max = max(u0Max, Cr[n]);
+           uQuad[0] = Cm[n] - HALF*Soln[i].dWdx[n]*Soln[i].X.dx;
+           uQuad[1] = Cm[n] + HALF*Soln[i].dWdx[n]*Soln[i].X.dx;
+
+           switch(n) {
+             case 1 :
+               //phi = Limiter_BarthJespersen(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
+               //phi = Limiter_Venkatakrishnan(uQuad, Cm[n], u0Min, u0Max, 2);
+               phi = Limiter_VanLeer(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
+               //phi = Limiter_VanAlbada(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
+	       Soln[i].phi.d = phi;
+               break; 
+             case 2 :
+               //phi = Limiter_BarthJespersen(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
+               //phi = Limiter_Venkatakrishnan(uQuad, Cm[n], u0Min, u0Max, 2);
+               phi = Limiter_VanLeer(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
+               //phi = Limiter_VanAlbada(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
+	       Soln[i].phi.v = phi;
+               break;
+             case 3 :
+               //phi = Limiter_BarthJespersen(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
+               //phi = Limiter_Venkatakrishnan(uQuad, Cm[n], u0Min, u0Max, 2);
+               phi = Limiter_VanLeer(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
+               //phi = Limiter_VanAlbada(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
+	       Soln[i].phi.p = phi;
+               break;
+           } /* endswitch */
+        } /* endfor */
+
+    } /* endfor */
+
+    Soln[0].dWdx = Soln[1].phi^Soln[1].dWdx;
+    Soln[0].phi = Euler1D_W_ONE;
+
+    Soln[Number_of_Cells+1].dWdx = Soln[Number_of_Cells].phi^Soln[Number_of_Cells].dWdx;
+    Soln[Number_of_Cells+1].phi = Euler1D_W_ONE;
+
+}
+
+/********************************************************
+ * Routine: Linear_Reconstruction_LeastSquares          *
+ *                                                      *
+ * Peforms the reconstruction of a limited piecewise    *
+ * linear solution state within each cell of the        *
+ * computational mesh.  A least squares approach is     *
+ * used in the evaluation of the unlimited solution     *
+ * gradients.  Several slope limiters may be used.      *
+ *                                                      *
+ ********************************************************/
+void Linear_Reconstruction_LeastSquares(Euler1D_UniformMesh *Soln,
+                                        const int Number_of_Cells,
+                                        const int Limiter) {
+
+    int i, n, n2, n_pts, index[2];
+    double u0Min, u0Max, uQuad[2], phi;
+    double Dx, DxDx_ave;
+    Euler1D_pState DU, DUDx_ave;
+
+    /* Carry out the limited solution reconstruction in
+       each cell. */
+
+    for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
+        n_pts = 2;
+        index[0] = i-1;
+        index[1] = i+1; 
+
+        DUDx_ave = Euler1D_W_VACUUM;
+        DxDx_ave = ZERO;
+    
+        for ( n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
+            Dx = Soln[ index[n2] ].X.x - Soln[i].X.x;
+            DU = Soln[ index[n2] ].W - Soln[i].W;
+            DUDx_ave += DU*Dx;
+            DxDx_ave += Dx*Dx;
+        } /* endfor */
+    					    
+        DUDx_ave = DUDx_ave/double(n_pts);
+        DxDx_ave = DxDx_ave/double(n_pts);
+
+        Soln[i].dWdx = DUDx_ave/DxDx_ave;
+
+        for ( n = 1 ; n <= NUM_VAR_EULER1D ; ++n ) {
+           u0Min = Soln[i].W[n];
+           u0Max = u0Min;
+           for ( n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
+              u0Min = min(u0Min, Soln[ index[n2] ].W[n]);
+              u0Max = max(u0Max, Soln[ index[n2] ].W[n]);
+           } /* endfor */
+
+	   uQuad[0] = Soln[i].W[n] - HALF*Soln[i].dWdx[n]*Soln[i].X.dx;
+	   uQuad[1] = Soln[i].W[n] + HALF*Soln[i].dWdx[n]*Soln[i].X.dx;
+
+           switch(Limiter) {
+             case LIMITER_ZERO :
+	       phi = ZERO;
+               break;
+             case LIMITER_ONE :
+	       phi = ONE;
+               break;
+             case LIMITER_BARTH_JESPERSEN :
+               phi = Limiter_BarthJespersen(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
+               break;
+             case LIMITER_VENKATAKRISHNAN :
+               phi = Limiter_Venkatakrishnan(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
+               break;
+             case LIMITER_VANLEER :
+               phi = Limiter_VanLeer(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
+               break;
+             case LIMITER_VANALBADA :
+               phi = Limiter_VanAlbada(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
+               break;
+	     default:
+               phi = Limiter_BarthJespersen(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
+               break;
+           } /* endswitch */
+
+	   Soln[i].phi[n] = phi;
+        } /* endfor */
+
+    } /* endfor */
+
+    Soln[0].dWdx = Soln[1].phi^Soln[1].dWdx;
+    Soln[0].phi = Euler1D_W_ONE;
+
+    Soln[Number_of_Cells+1].dWdx = Soln[Number_of_Cells].phi^Soln[Number_of_Cells].dWdx;
+    Soln[Number_of_Cells+1].phi = Euler1D_W_ONE;
+
+}
+
+/********************************************************
+ * Routine: dUdt_explicitEuler_upwind                   *
+ *                                                      *
+ * This routine updates the solution using a 1st-order  *
+ * explicit Euler time integration and 1st-order upwind *
+ * spatial discretization scheme in conjunction with    *
+ * either the Godunov, Roe, Rusanov, HLLE, Linde, or    *
+ * HLLC flux functions.                                 *
+ *                                                      *
+ ********************************************************/
+int dUdt_explicitEuler_upwind(Euler1D_UniformMesh *Soln,
+	                      const int Number_of_Cells,
+			      double &dtMin,
+			      const double &CFL_Number,
+                              const int Flux_Function_Type,
+			      const int Local_Time_Stepping) {
+
+    int i;
+    Euler1D_cState Flux;
+
+    /* Evaluate the time rate of change of the solution
+       (i.e., the solution residuals) using the first-order
+       upwind scheme with a variety of flux functions. */
+
+    Soln[0].dUdt = Euler1D_U_VACUUM;
+    for ( i = 0 ; i <= Number_of_Cells ; ++i ) {
+        Soln[i+1].dUdt = Euler1D_U_VACUUM;
+
+        switch(Flux_Function_Type) {
+          case FLUX_FUNCTION_GODUNOV :
+            Flux = FluxGodunov(Soln[i].W, Soln[i+1].W);
+            break;
+          case FLUX_FUNCTION_ROE :
+            Flux = FluxRoe(Soln[i].W, Soln[i+1].W);
+            break;
+          case FLUX_FUNCTION_RUSANOV :
+            Flux = FluxRusanov(Soln[i].W, Soln[i+1].W);
+            break;
+          case FLUX_FUNCTION_HLLE :
+            Flux = FluxHLLE(Soln[i].W, Soln[i+1].W);
+            break;
+          case FLUX_FUNCTION_LINDE :
+            Flux = FluxLinde(Soln[i].W, Soln[i+1].W);
+            break;
+          case FLUX_FUNCTION_HLLC :
+            Flux = FluxHLLC(Soln[i].W, Soln[i+1].W);
+            break;
+          case FLUX_FUNCTION_OSHER :
+            Flux = FluxOsher(Soln[i].W, Soln[i+1].W);
+            break;
+	  default:
+            Flux = FluxRoe(Soln[i].W, Soln[i+1].W);
+            break;
+        } /* endswitch */
+
+        Soln[i].dUdt -= Flux/Soln[i].X.dx;
+        Soln[i+1].dUdt += Flux/Soln[i+1].X.dx;
+    } /* endfor */
+    Soln[Number_of_Cells+1].dUdt = Euler1D_U_VACUUM;
+
+    /* Update both conserved and primitive solution
+       variables using explicit Euler method. */
+
+    for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
+        if ( !Local_Time_Stepping ) Soln[i].dt = dtMin;
+	
+        Soln[i].U += (CFL_Number*Soln[i].dt)*Soln[i].dUdt;
+	
+	if (Soln[i].U.d   <= ZERO ||
+	    Soln[i].U.E   <= ZERO ||
+	    Soln[i].U.e() <= ZERO ) {
+	    cout << "\n " << CFDkit_Name() << " ERROR: Negative Density and/or Energy: \n"
+	         << " node = " << i << "\n U = " << Soln[i].U << "\n dUdt = "
+	         << Soln[i].dUdt << "\n";
+	    return (i);
+	}
+	
+	Soln[i].W = W(Soln[i].U);
+    } /* endfor */
+
+    /* By default, constant extrapolation boundary
+       conditions are applied at either end of the mesh. */
+
+    Soln[0].U = Soln[1].U;
+    Soln[0].W = Soln[1].W;
+
+    Soln[Number_of_Cells+1].U = Soln[Number_of_Cells].U;
+    Soln[Number_of_Cells+1].W = Soln[Number_of_Cells].W;
+
+    /* Solution successfully updated. */
+
+    return (0);
+    
+}
+
+/********************************************************
+ * Routine: dUdt_LaxFriedrichs                          *
+ *                                                      *
+ * This routine updates the solution using the          *
+ * first-order single-stage Lax-Friedrichs scheme.      *
+ * See Lax (1954).                                      *
+ *                                                      *
+ ********************************************************/
+int dUdt_LaxFriedrichs(Euler1D_UniformMesh *Soln,
+	               const int Number_of_Cells,
+		       double &dtMin,
+		       const double &CFL_Number,
+		       const int Local_Time_Stepping) {
+
+    int i;
+    double delta_x;
+
+    /* Assign the mesh space to local variable. */
+
+    delta_x = Soln[0].X.dx;
+
+    /* Evaluate the time rate of change of the solution
+       (i.e., the solution residuals) using the first-order
+       Lax-Friedrichs scheme. */
+
+    Soln[0].dUdt = Euler1D_U_VACUUM;
+    for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
+        if ( !Local_Time_Stepping ) Soln[i].dt = dtMin;
+        Soln[i].dUdt = - (Soln[i+1].W.F()-Soln[i-1].W.F())/
+                         (TWO*delta_x)
+	               + HALF*(Soln[i+1].U-TWO*Soln[i].U+
+		   	       Soln[i-1].U)/
+                              (CFL_Number*Soln[i].dt);
+    } /* endfor */
+    Soln[Number_of_Cells+1].dUdt = Euler1D_U_VACUUM;
+
+    /* Now update both conserved and primitive solution
+       variables. */
+
+    for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
+        Soln[i].U += (CFL_Number*Soln[i].dt)*Soln[i].dUdt;
+	
+	if (Soln[i].U.d   <= ZERO ||
+	    Soln[i].U.E   <= ZERO ||
+	    Soln[i].U.e() <= ZERO ) {
+	    cout << "\n " << CFDkit_Name() << " ERROR: Negative Density and/or Energy: \n"
+	         << " node = " << i << "\n U = " << Soln[i].U << "\n dUdt = "
+	         << Soln[i].dUdt << "\n";
+	    return (i);
+	}
+	
+	Soln[i].W = W(Soln[i].U);
+    } /* endfor */
+
+    /* By default, constant extrapolation boundary
+       conditions are applied at either end of the mesh. */
+
+    Soln[0].U = Soln[1].U;
+    Soln[0].W = Soln[1].W;
+
+    Soln[Number_of_Cells+1].U = Soln[Number_of_Cells].U;
+    Soln[Number_of_Cells+1].W = Soln[Number_of_Cells].W;
+
+    /* Solution successfully updated. */
+
+    return (0);
+    
+}
+
+/********************************************************
+ * Routine: dUdt_LaxWendroff                            *
+ *                                                      *
+ * This routine updates the solution using the          *
+ * second-order two-step Lax-Wendroff scheme.           *
+ * See Lax and Wendroff (1960, 1964).                   *
+ *                                                      *
+ ********************************************************/
+int dUdt_LaxWendroff(Euler1D_UniformMesh *Soln,
+	             const int Number_of_Cells,
+		     double &dtMin,
+		     const double &CFL_Number,
+		     const int Local_Time_Stepping) {
+
+    int i;
+    double delta_x;
+    Euler1D_cState Ul, Ur;
+    
+    /* Assign the mesh space to local variable. */
+
+    delta_x = Soln[0].X.dx;
+
+    /* Evaluate the time rate of change of the solution
+       (i.e., the solution residuals) using the second-order
+       Lax-Wendroff scheme. */
+
+    if ( !Local_Time_Stepping ) Soln[0].dt = dtMin;
+    Ur =   HALF*(Soln[1].U + Soln[0].U)
+         - (CFL_Number*Soln[0].dt)*
+           (Soln[1].W.F()-Soln[0].W.F())/(TWO*delta_x);
+
+    Soln[0].dUdt = Euler1D_U_VACUUM;
+    for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
+        if ( !Local_Time_Stepping ) Soln[i].dt = dtMin;
+
+	/* Evaluate temporary cell interface solution states. */
+        Ul = Ur;
+	Ur =   HALF*(Soln[i+1].U + Soln[i].U)
+             - (CFL_Number*Soln[i].dt)*
+               (Soln[i+1].W.F()-Soln[i].W.F())/(TWO*delta_x);
+
+	/* Evaluate the solution residual. */
+	Soln[i].dUdt = - (Ur.F()-Ul.F())/delta_x;
+
+    } /* endfor */
+    Soln[Number_of_Cells+1].dUdt = Euler1D_U_VACUUM;
+
+    /* Now update both conserved and primitive solution
+       variables. */
+
+    for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
+        Soln[i].U += (CFL_Number*Soln[i].dt)*Soln[i].dUdt;
+	
+	if (Soln[i].U.d   <= ZERO ||
+	    Soln[i].U.E   <= ZERO ||
+	    Soln[i].U.e() <= ZERO ) {
+	    cout << "\n " << CFDkit_Name() << " ERROR: Negative Density and/or Energy: \n"
+	         << " node = " << i << "\n U = " << Soln[i].U << "\n dUdt = "
+	         << Soln[i].dUdt << "\n";
+	    return (i);
+	}
+	
+	Soln[i].W = W(Soln[i].U);
+    } /* endfor */
+
+    /* By default, constant extrapolation boundary
+       conditions are applied at either end of the mesh. */
+
+    Soln[0].U = Soln[1].U;
+    Soln[0].W = Soln[1].W;
+
+    Soln[Number_of_Cells+1].U = Soln[Number_of_Cells].U;
+    Soln[Number_of_Cells+1].W = Soln[Number_of_Cells].W;
+
+    /* Solution successfully updated. */
+
+    return (0);
+    
+}
+
+/********************************************************
+ * Routine: dUdt_MacCormack                             *
+ *                                                      *
+ * This routine updates the solution using the          *
+ * second-order predictor-corrector scheme of           *
+ * MacCormack (1969, 1971).  Artificial viscosity of    *
+ * the type devised by Harten and Zwas (1972) is        *
+ * added to smooth the solution near discontinuities.   *
+ *                                                      *
+ ********************************************************/
+int dUdt_MacCormack(Euler1D_UniformMesh *Soln,
+	            const int Number_of_Cells,
+		    double &dtMin,
+		    const double &CFL_Number,
+		    const int Local_Time_Stepping) {
+
+    int i;
+    static int Order=1;
+    double delta_x, delta_l, delta_r, 
+           theta, theta_r, theta_l, 
+           switch_l, switch_r;
+    Euler1D_cState Ul, Ur;
+
+    /* Detemine order of first-order spatial operators. */
+    
+    if (Order) {
+       Order = 0;
+    } else {
+       Order = 1;
+    } /* endif */
+
+    /* Assign the mesh space to local variable. */
+
+    delta_x = Soln[0].X.dx;
+
+    /* Evaluate the time rate of change of the solution
+       (i.e., the solution residuals) for the predictor
+       step using first-order backward/forward spatial
+       differences. */
+
+    Soln[0].dUdt = Euler1D_U_VACUUM;
+    for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
+        Soln[i].dUdt = - (Soln[i+1-Order].W.F()-
+                          Soln[i-Order].W.F())/delta_x;
+    } /* endfor */
+    Soln[Number_of_Cells+1].dUdt = Euler1D_U_VACUUM;
+
+    /* Evaluate the time rate of change of the solution
+       (i.e., the solution residuals) for the corrector
+       step using first-order backward/forward spatial
+       differences. */
+
+    if ( !Local_Time_Stepping ) Soln[Order].dt = dtMin;
+    Ur = Soln[Order].U +
+         (CFL_Number*Soln[Order].dt)*Soln[Order].dUdt;
+
+    for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
+        if ( !Local_Time_Stepping ) Soln[i+Order].dt = dtMin;
+
+	/* Evaluate temporary predictor solution states. */
+        Ul = Ur;
+	Ur = Soln[i+Order].U +
+	     (CFL_Number*Soln[i+Order].dt)*Soln[i+Order].dUdt;
+
+	/* Evaluate corrector solution residual. */
+	Soln[i].dUdt =   HALF*Soln[i].dUdt
+	               - HALF*(Ur.F()-Ul.F())/delta_x;
+
+	/* Add artificial dissipation of Harten and Zwas. */
+	if (i == 1) {
+            theta_l = ZERO;
+	    
+	    delta_l = fabs(Soln[i].U.d-Soln[i-1].U.d)/Soln[i].U.d;
+	    delta_r = fabs(Soln[i+1].U.d-Soln[i].U.d)/Soln[i].U.d;
+            if (delta_l + delta_r < TOLER) {
+	        theta = ZERO;
+	    } else {
+	        theta = fabs((delta_r - delta_l)/(delta_l + delta_r));
+            } /* endif */
+	    
+	    delta_l = fabs(Soln[i+1].U.d-Soln[i].U.d)/Soln[i+1].U.d;
+	    delta_r = fabs(Soln[i+2].U.d-Soln[i+1].U.d)/Soln[i+1].U.d;
+            if (delta_l + delta_r < TOLER) {
+	        theta_r = ZERO;
+	    } else {
+	        theta_r = fabs((delta_r - delta_l)/(delta_l + delta_r));
+            } /* endif */
+	} else if (i < Number_of_Cells) {
+	    theta_l = theta;
+	    theta = theta_r;
+	    
+	    delta_l = fabs(Soln[i+1].U.d-Soln[i].U.d)/Soln[i+1].U.d;
+	    delta_r = fabs(Soln[i+2].U.d-Soln[i+1].U.d)/Soln[i+1].U.d;
+            if (delta_l + delta_r < TOLER) {
+	        theta_r = ZERO;
+	    } else {
+	        theta_r = fabs((delta_r - delta_l)/(delta_l + delta_r));
+            } /* endif */
+        } else {
+	    theta_l = theta;
+	    theta = theta_r;
+            theta_r = ZERO;
+        } /* endif */
+        switch_r = max(theta,theta_r);
+        switch_l = max(theta,theta_l);
+	
+	Soln[i].dUdt += (switch_r*(Soln[i+1].U-Soln[i].U) -
+		   	 switch_l*(Soln[i].U-Soln[i-1].U))/
+	                (EIGHT*CFL_Number*Soln[i].dt);
+    } /* endfor */
+
+    /* Update both conserved and primitive solution variables. */
+
+    for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
+
+        /* Update the conserved variable solution state. */
+	Soln[i].U += (CFL_Number*Soln[i].dt)*Soln[i].dUdt;
+	
+	if (Soln[i].U.d   <= ZERO ||
+	    Soln[i].U.E   <= ZERO ||
+	    Soln[i].U.e() <= ZERO ) {
+	    cout << "\n " << CFDkit_Name() << " ERROR: Negative Density and/or Energy: \n"
+	         << " node = " << i << "\n U = " << Soln[i].U << "\n dUdt = "
+	         << Soln[i].dUdt << "\n";
+	    return (i);
+	}
+
+	/* Update the primitive variable solution state. */
+	Soln[i].W = W(Soln[i].U);
+
+    } /* endfor */
+
+    /* By default, constant extrapolation boundary
+       conditions are applied at either end of the mesh. */
+
+    Soln[0].U = Soln[1].U;
+    Soln[0].W = Soln[1].W;
+
+    Soln[Number_of_Cells+1].U = Soln[Number_of_Cells].U;
+    Soln[Number_of_Cells+1].W = Soln[Number_of_Cells].W;
+
+    /* Solution successfully updated. */
+
+    return (0);
+    
+}
+
+/********************************************************
+ * Routine: dUdt_Hancock                                *
+ *                                                      *
+ * This routine updates the solution using the          *
+ * second-order predictor-corrector TVD scheme of       *
+ * Hancock (19??).  Various flux functions may be used. *
+ *                                                      *
+ ********************************************************/
+int dUdt_Hancock(Euler1D_UniformMesh *Soln,
+	         const int Number_of_Cells,
+		 double &dtMin,
+		 const double &CFL_Number,
+                 const int Limiter_Type,
+                 const int Flux_Function_Type,
+		 const int Local_Time_Stepping) {
+
+    int i, n_stage;
+    Euler1D_pState Wl, Wr, A[NUM_VAR_EULER1D];
+    Euler1D_cState Flux;
+
+    /* Perform second-order Hancock predictor-corrector 
+       update of solution varibles for new time level. */
+
+    for ( n_stage = 1 ; n_stage <= 2 ; ++n_stage ) {
+
+        /* Apply boundary conditions for each step. */
+
+
+        /* Perform the linear reconstruction within each cell
+           of the computational grid in the predictor step. */
+
+        if ( n_stage == 1 ) Linear_Reconstruction_MUSCL(Soln, 
+                            Number_of_Cells, Limiter_Type);
+
+        /* Evaluate the time rate of change of the solution
+           (i.e., the solution residuals) using 
+           1) a limited central discretization of the
+              non-conservative form of the equations in
+              the predictor step, and
+           2) a second-order limited upwind discretization
+              and of the conserved equations with
+              Roe flux function in the corrector step. */
+
+        if ( !Local_Time_Stepping && n_stage == 1 ) Soln[0].dt = dtMin;
+        if ( n_stage == 1 ) {
+           Soln[0].Uo = Soln[0].U;
+           Soln[0].dUdt = Euler1D_U_VACUUM;
+        } /* endif */
+
+        for ( i = 0 ; i <= Number_of_Cells ; ++i ) {
+            if ( !Local_Time_Stepping && n_stage == 1 ) Soln[i+1].dt = dtMin;
+            if ( n_stage == 1 ) {
+               Soln[i+1].Uo = Soln[i+1].U;
+               Soln[i+1].dUdt = Euler1D_U_VACUUM;
+            } /* endif */
+
+            if (n_stage == 1) {
+	       if ( i > 0) {
+                  A[1] = Euler1D_pState(Soln[i].W.v, Soln[i].W.d, ZERO);
+                  A[2] = Euler1D_pState(ZERO, Soln[i].W.v, ONE/Soln[i].W.d);
+                  A[3] = Euler1D_pState(ZERO, Soln[i].W.g*Soln[i].W.p,
+                                        Soln[i].W.v);
+                  Soln[i].W.d -= HALF*(CFL_Number*Soln[i].dt)*A[1]*
+                                 (Soln[i].phi^Soln[i].dWdx); 
+                  Soln[i].W.v -= HALF*(CFL_Number*Soln[i].dt)*A[2]*
+                                 (Soln[i].phi^Soln[i].dWdx);
+                  Soln[i].W.p -= HALF*(CFL_Number*Soln[i].dt)*A[3]*
+                                 (Soln[i].phi^Soln[i].dWdx);
+               } /* endif */
+            } else {
+               /* Evaluate the cell interface flux. */
+               Wl = Soln[i].W + HALF*(Soln[i].phi^Soln[i].dWdx)*Soln[i].X.dx;
+               Wr = Soln[i+1].W - HALF*(Soln[i+1].phi^Soln[i+1].dWdx)*Soln[i+1].X.dx;
+
+               switch(Flux_Function_Type) {
+                 case FLUX_FUNCTION_GODUNOV :
+                   Flux = FluxGodunov(Wl, Wr);
+                   break;
+                 case FLUX_FUNCTION_ROE :
+                   Flux = FluxRoe(Wl, Wr);
+                   break;
+                 case FLUX_FUNCTION_RUSANOV :
+                   Flux = FluxRusanov(Wl, Wr);
+                   break;
+                 case FLUX_FUNCTION_HLLE :
+                   Flux = FluxHLLE(Wl, Wr);
+                   break;
+                 case FLUX_FUNCTION_LINDE :
+                   Flux = FluxLinde(Wl, Wr);
+                   break;
+                 case FLUX_FUNCTION_HLLC :
+                   Flux = FluxHLLC(Wl, Wr);
+                   break;
+                 case FLUX_FUNCTION_OSHER :
+                   Flux = FluxOsher(Wl, Wr);
+                   break;
+	         default:
+                   Flux = FluxRoe(Wl, Wr);
+                   break;
+               } /* endswitch */
+
+               /* Evaluate cell-averaged solution changes. */
+               Soln[i].dUdt -= (CFL_Number*Soln[i].dt)*Flux/Soln[i].X.dx;
+               Soln[i+1].dUdt += (CFL_Number*Soln[i+1].dt)*Flux/Soln[i+1].X.dx;
+	    } /* endif */
+
+        } /* endfor */
+
+        Soln[0].dUdt = Euler1D_U_VACUUM;
+        Soln[Number_of_Cells+1].dUdt = Euler1D_U_VACUUM;
+
+        /* Update all solution variables after corrector step. */
+
+        if (n_stage == 2) {
+           for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
+               Soln[i].U = Soln[i].Uo + Soln[i].dUdt;
+
+               /* Update the primitive variable solution state. */
+	       Soln[i].W = W(Soln[i].U);
+           } /* endfor */
+        } /* endif */
+
+    } /* endfor */
+
+    /* By default, constant extrapolation boundary
+       conditions are applied at either end of the mesh. */
+
+    Soln[0].U = Soln[1].U;
+    Soln[0].W = Soln[1].W;
+
+    Soln[Number_of_Cells+1].U = Soln[Number_of_Cells].U;
+    Soln[Number_of_Cells+1].W = Soln[Number_of_Cells].W;
+
+    /* Solution successfully updated. */
+
+    return (0);
+    
+}
+
+/********************************************************
+ * Routine: dUdt_2stage_2ndOrder_upwind                 *
+ *                                                      *
+ * This routine updates the solution using a two-stage  *
+ * second-order explicit time integration scheme        *
+ * and a 2nd-ororder limited upwind spatial             *
+ * discretization scheme with either the Godunov, Roe,  *
+ * Rusanov, HLLE, Linde, or HLLC flux functions.        *
+ *                                                      *
+ ********************************************************/
+int dUdt_2stage_2ndOrder_upwind(Euler1D_UniformMesh *Soln,
+	                        const int Number_of_Cells,
+			        double &dtMin,
+				const double &CFL_Number,
+                                const int Reconstruction_Type,
+                                const int Limiter_Type,
+                                const int Flux_Function_Type,
+			        const int Local_Time_Stepping) {
+
+    int i, n_stage;
+    double omega;
+    Euler1D_pState Wl, Wr;
+    Euler1D_cState Flux;
+
+    /* Perform second-order two-stage semi-implicit update of solution
+       varibles for new time level. */
+
+    for ( n_stage = 1 ; n_stage <= 2 ; ++n_stage ) {
+
+        /* Evaluate the time step fraction for stage. */
+
+        omega = ONE/double(n_stage);
+
+        /* Apply boundary conditions for stage. */
+
+
+        /* Perform the linear reconstruction within each cell
+           of the computational grid in first stage. */
+
+        if ( n_stage == 1 ) {
+          switch(Reconstruction_Type) {
+            case RECONSTRUCTION_MUSCL :
+               Linear_Reconstruction_MUSCL(Soln, 
+                                           Number_of_Cells, 
+                                           Limiter_Type);
+              break;
+            case RECONSTRUCTION_GREEN_GAUSS :
+               Linear_Reconstruction_GreenGauss(Soln, 
+                                                Number_of_Cells, 
+                                                Limiter_Type);
+              break;
+            case RECONSTRUCTION_LEAST_SQUARES :
+               Linear_Reconstruction_LeastSquares(Soln, 
+                                                  Number_of_Cells, 
+                                                  Limiter_Type);
+              break;
+            case RECONSTRUCTION_CHARACTERISTIC :
+               Linear_Reconstruction_Characteristic(Soln, 
+                                                    Number_of_Cells, 
+                                                    Limiter_Type);
+              break;
+	    default:
+               Linear_Reconstruction_MUSCL(Soln, 
+                                           Number_of_Cells, 
+                                           Limiter_Type);
+              break;
+          } /* endswitch */
+        } /* endif */
+
+        /* Evaluate the time rate of change of the solution
+           (i.e., the solution residuals) using a second-order
+           limited upwind scheme with a variety of flux functions. */
+
+        if ( !Local_Time_Stepping && n_stage == 1 ) Soln[0].dt = dtMin;
+        if ( n_stage == 1 ) Soln[0].Uo = Soln[0].U;
+        Soln[0].dUdt = Euler1D_U_VACUUM;
+
+        for ( i = 0 ; i <= Number_of_Cells ; ++i ) {
+            if ( !Local_Time_Stepping && n_stage == 1 ) Soln[i+1].dt = dtMin;
+            if ( n_stage == 1 ) {
+               Soln[i+1].Uo = Soln[i+1].U;
+               Soln[i+1].dUdt = Euler1D_U_VACUUM;
+            } else {
+               Soln[i+1].dUdt = HALF*Soln[i+1].dUdt;
+            } /* endif */
+
+            /* Evaluate the cell interface flux. */
+            if (Reconstruction_Type != RECONSTRUCTION_CHARACTERISTIC) {
+               Wl = Soln[i].W + 
+                    HALF*(Soln[i].phi^Soln[i].dWdx)*Soln[i].X.dx;
+               Wr = Soln[i+1].W - 
+                    HALF*(Soln[i+1].phi^Soln[i+1].dWdx)*Soln[i+1].X.dx;
+            } else {
+               Wl = CtoW(Soln[i].W.C() + 
+                    HALF*(Soln[i].phi^Soln[i].dWdx)*Soln[i].X.dx);
+               Wr = CtoW(Soln[i+1].W.C() - 
+                    HALF*(Soln[i+1].phi^Soln[i+1].dWdx)*Soln[i+1].X.dx);
+            } /* endif */
+
+            switch(Flux_Function_Type) {
+              case FLUX_FUNCTION_GODUNOV :
+                Flux = FluxGodunov(Wl, Wr);
+                break;
+              case FLUX_FUNCTION_ROE :
+                Flux = FluxRoe(Wl, Wr);
+                break;
+              case FLUX_FUNCTION_RUSANOV :
+                Flux = FluxRusanov(Wl, Wr);
+                break;
+              case FLUX_FUNCTION_HLLE :
+                Flux = FluxHLLE(Wl, Wr);
+                break;
+              case FLUX_FUNCTION_LINDE :
+                Flux = FluxLinde(Wl, Wr);
+                break;
+              case FLUX_FUNCTION_HLLC :
+                Flux = FluxHLLC(Wl, Wr);
+                break;
+              case FLUX_FUNCTION_OSHER :
+                Flux = FluxOsher(Wl, Wr);
+                break;
+	      default:
+                Flux = FluxRoe(Wl, Wr);
+                break;
+            } /* endswitch */
+
+            /* Evaluate cell-averaged solution changes. */
+
+            Soln[i].dUdt -= (omega*CFL_Number*Soln[i].dt)*Flux/Soln[i].X.dx;
+            Soln[i+1].dUdt += (omega*CFL_Number*Soln[i+1].dt)*Flux/Soln[i+1].X.dx;
+
+        } /* endfor */
+
+        Soln[0].dUdt = Euler1D_U_VACUUM;
+        Soln[Number_of_Cells+1].dUdt = Euler1D_U_VACUUM;
+
+        /* Update solution variables for this stage. */
+
+        for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
+            Soln[i].U = Soln[i].Uo + Soln[i].dUdt;
+
+  	    if (Soln[i].U.d   <= ZERO ||
+	        Soln[i].U.E   <= ZERO ||
+	        Soln[i].U.e() <= ZERO ) {
+	        cout << "\n " << CFDkit_Name() << " ERROR: Negative Density and/or Energy: \n"
+	             << " node = " << i << "\n U = " << Soln[i].U << "\n dUdt = "
+	             << Soln[i].dUdt << "\n";
+	        return (i);
+	    }
+
+            /* Update the primitive variable solution state. */
+	    Soln[i].W = W(Soln[i].U);
+        } /* endfor */
+
+    } /* endfor */
+
+    /* By default, constant extrapolation boundary
+       conditions are applied at either end of the mesh. */
+
+    Soln[0].U = Soln[1].U;
+    Soln[0].W = Soln[1].W;
+
+    Soln[Number_of_Cells+1].U = Soln[Number_of_Cells].U;
+    Soln[Number_of_Cells+1].W = Soln[Number_of_Cells].W;
+
+    /* Solution successfully updated. */
+
+    return (0);
+    
+}

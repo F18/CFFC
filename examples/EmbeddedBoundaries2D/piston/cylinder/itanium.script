@@ -1,0 +1,16 @@
+#!/bin/tcsh
+#
+#PBS -N piston_cyl
+#PBS -q iqmaster
+#PBS -l walltime=0:20:00,nodes=1:ppn=4:itanium-8G,other=night
+#PBS -W group_list=jai
+
+cd /nfs/fe03/d1/cfd/jai/EmbeddedBoundaries2D/piston/cylinder/
+mpirun -np 1 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/euler2D -f piston.in -pde Euler2D >& piston.log
+cat piston_cpu*.dat > points.dat
+cat piston_cells_cpu*.dat > cells.dat
+cat piston_nodes_cpu*.dat > nodes.dat
+cat piston_interface_component_list_cpu*.dat > components.dat
+cat piston_interface_union_list_cpu*.dat > union.dat
+rm piston_*cpu*.dat
+rm piston_cyl.e* piston_cyl.o*

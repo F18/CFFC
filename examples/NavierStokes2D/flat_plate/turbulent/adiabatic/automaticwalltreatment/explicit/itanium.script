@@ -1,0 +1,16 @@
+#!/bin/tcsh
+#
+#PBS -N fp_5e6_adb_au_ex
+#PBS -q iqmaster
+#PBS -l walltime=0:30:00,nodes=5:ppn=4:itanium-8G,other=day
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/NavierStokes2D/flat_plate/turbulent/adiabatic/automaticwalltreatment/explicit/
+mpirun -np 17 --gm-no-shmem --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/navierstokes2D -f flatplate.in -pde NavierStokes2D >& flatplate.log
+cat flatplate_cpu*.dat > points.dat
+cat flatplate_cells_cpu*.dat > cells.dat
+cat flatplate_flatplate_soln_cpu*.dat > flatplate.dat
+cat flatplate_flatplate_skin_friction_cpu*.dat > skinfriction.dat
+rm flatplate_cpu*.dat
+rm flatplate_*_cpu*.dat
+rm fp_5e6_adb_di_ex.e* fp_5e6_adb_di_ex.o*

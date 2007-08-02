@@ -1,0 +1,13 @@
+#!/bin/tcsh
+#
+#PBS -N shockbox
+#PBS -q iqmaster
+#PBS -l walltime=0:05:00,nodes=1:ppn=4:itanium-8G,other=day
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/Euler2D/shock_box/
+mpirun -np 4 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/euler2D -f shockbox.in -pde Euler2D >& shockbox.log
+cat shockbox_cpu*.dat > points.dat
+cat shockbox_cells_cpu*.dat > cells.dat
+rm shockbox_*cpu*.dat
+rm shockbox.e* shockbox.o*

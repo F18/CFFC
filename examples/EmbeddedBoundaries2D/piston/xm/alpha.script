@@ -1,0 +1,19 @@
+#!/bin/tcsh
+#
+#PBS -N piston_x-
+#PBS -q qmaster
+#PBS -l walltime=0:10:00,nodes=1:ppn=4:parallel-4G,other=night
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/EmbeddedBoundaries2D/piston/xm/
+mpirun -np 1 --gm-no-shmem --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/embeddedboundaries2D -f piston.in -pde NavierStokes2D >& piston.log
+cat piston_cpu*.dat > points.dat
+cat piston_active_cpu*.dat > active.dat
+cat piston_inactive_cpu*.dat > inactive.dat
+cat piston_nodes_cpu*.dat > nodes.dat
+cat piston_cells_cpu*.dat > cells.dat
+cat piston_interface_component_list_cpu*.dat > components.dat
+cat piston_interface_union_list_cpu*.dat > union.dat
+rm piston_cpu*.dat
+rm piston_*_cpu*.dat
+rm piston_x-.e* piston_x-.o*

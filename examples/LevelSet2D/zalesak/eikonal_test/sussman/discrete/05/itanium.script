@@ -1,0 +1,16 @@
+#!/bin/tcsh
+#
+#PBS -N zal_suss_dis_05
+#PBS -q iqmaster
+#PBS -l walltime=1:00:00,nodes=1:ppn=4:itanium-8G,other=day
+#PBS -W group_list=jai
+
+cd /nfs/fe03/d2/cfd/jai/CFDkit+caboodle/pdes++/examples/LevelSet2D/zalesak/eikonal_test/sussman/discrete/05/
+mpirun -np 4 --gm-no-shmem --gm-kill 2 /nfs/fe03/d2/cfd/jai/CFDkit+caboodle/src/levelset2D -f zalesak.in -pde LevelSet2D >& zalesak.log
+cat zalesak_cpu*.dat > points.dat
+cat zalesak_cells_cpu*.dat > cells.dat
+#cat zalesak_nodes_cpu*.dat > nodes.dat
+#cat zalesak_interface_list_cpu*.dat > interface_list.dat
+rm zalesak_*cpu*.dat
+rm zal_suss_dis_05.e* zal_suss_dis_05.o*
+cp cells.dat ~jai/zal_suss_dis_05.dat

@@ -1,0 +1,8 @@
+#!/bin/tcsh
+
+mpirun -np 1 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/euler2D -f tep.in -pde Euler2D
+cat tep_cpu*.dat > points.dat
+cat tep_cells_cpu*.dat > cells.dat
+cat tep_nodes_cpu*.dat > nodes.dat
+rm tep_cpu*.dat
+rm tep_*_cpu*.dat

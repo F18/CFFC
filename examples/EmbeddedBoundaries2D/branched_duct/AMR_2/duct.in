@@ -1,0 +1,464 @@
+#
+# BRANCHED DUCT TEST CASE -- See Bill Coirier's thesis.
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Type =
+Inviscid
+Flow_Geometry_Type =
+Planar
+#
+# TIME-STEPPING PARAMETERS:
+Time_Integration_Type =
+Multistage_Optimal_Smoothing 
+#Explicit_Predictor_Corrector
+N_Stage =
+5
+#2
+Time_Accurate =
+0
+Local_Time_Stepping =
+0
+CFL_Number =
+1.000
+#0.500
+Time_Max =
+0.000
+Maximum_Number_of_Time_Steps =
+0
+#
+# FLUX PARAMETERS:
+Reconstruction_Type =
+Least_Squares 
+Limiter_Type =
+Venkatakrishnan
+Flux_Function_Type =
+Roe
+Viscous_Reconstruction_Type =
+Diamond_Path
+#
+# INITIAL CONDITIONS:
+ICs_Type =
+Restart
+Pressure =
+101.3250
+Temperature =
+288.139203
+Mach_Number =
+0.10
+Gas_Type =
+AIR
+#
+# GRID PARAMETERS:
+Grid_Type =
+Rectangular_Box
+Box_Width =
+1.0670
+Box_Height =
+0.2667
+X_Shift =
+0.0765  0.13335
+Number_of_Cells_Idir =
+80
+Number_of_Cells_Jdir =
+32
+Number_of_Blocks_Idir =
+4
+Number_of_Blocks_Jdir =
+2
+Mesh_Stretching =
+On
+Mesh_Stretching_Type_Idir =
+Linear
+Mesh_Stretching_Type_Jdir =
+Linear
+#MinMax_Clustering
+Mesh_Stretching_Factor_Jdir =
+1.025
+Boundary_Conditions_Specified =
+On
+BC_North =
+Reflection
+BC_South =
+Reflection
+BC_East =
+Constant_Extrapolation
+BC_West =
+Fixed
+#
+# INITERFACE PARAMETERS:
+Solution_Redistribution_Type =
+None
+Number_of_Interface_Components =
+17
+### Backward step.
+Interface_Spline_Type =
+Rectangle
+Interface_Characteristic_Length_1 =
+0.2286
+#0.1143
+Interface_Characteristic_Length_2 =
+0.9140
+#0.4570
+Number_of_Specified_Interface_Points =
+1
+Interface_Points =
+-0.4570  0.22860  0  0
+#-0.2285  0.20955  0  0
+Interface_Reference_Point =
+-0.4570  0.22860
+#-0.2285  0.20955
+Interface_BC_Type =
+Reflection
+Interface_Motion =
+Stationary
+### Flow diverter plate.
+Interface_Spline_Type =
+Rectangle
+Interface_Characteristic_Length_1 =
+0.012700
+Interface_Characteristic_Length_2 =
+0.454425
+Number_of_Specified_Interface_Points =
+1
+Interface_Points =
+ 0.3827875  0.13335  0  0
+Interface_Reference_Point =
+ 0.3827875  0.13335  0  0
+Interface_BC_Type =
+Reflection
+Interface_Motion =
+Stationary
+### Flow diverter cap.
+Interface_Spline_Type =
+Circle
+Interface_Characteristic_Length =
+0.00635
+Number_of_Specified_Interface_Points =
+1
+Interface_Points =
+ 0.155575  0.13335  0  0
+Interface_Reference_Point =
+ 0.155575  0.13335  0  0
+Interface_BC_Type =
+Reflection
+Interface_Motion =
+Stationary
+### Pin 1.
+Interface_Spline_Type =
+Circle
+Interface_Characteristic_Length =
+ 0.00475
+Interface_Characteristic_Velocity =
+ 0.00000  0.0000
+# 0.00950  0.0100
+Number_of_Specified_Interface_Points =
+1
+Interface_Points =
+ 0.161925   0.0127  0  0
+Interface_Reference_Point =
+ 0.161925   0.0127
+Interface_BC_Type =
+Reflection
+Interface_Motion =
+Stationary
+#Rotate
+### Pin 2.
+Interface_Spline_Type =
+Circle
+Interface_Characteristic_Length =
+ 0.00475
+Interface_Characteristic_Velocity =
+ 0.00000  0.0000
+#0.00950  0.0100
+Number_of_Specified_Interface_Points =
+1
+Interface_Points =
+ 0.161925   0.0381  0  0
+Interface_Reference_Point =
+ 0.161925   0.0381
+Interface_BC_Type =
+Reflection
+Interface_Motion =
+Stationary
+#Rotate
+### Pin 3.
+Interface_Spline_Type =
+Circle
+Interface_Characteristic_Length =
+ 0.00475
+Interface_Characteristic_Velocity =
+ 0.00000  0.0000
+#0.00950  0.0100
+Number_of_Specified_Interface_Points =
+1
+Interface_Points =
+ 0.161925   0.0635  0  0
+Interface_Reference_Point =
+ 0.161925   0.0635
+Interface_BC_Type =
+Reflection
+Interface_Motion =
+Stationary
+#Rotate
+### Pin 4.
+Interface_Spline_Type =
+Circle
+Interface_Characteristic_Length =
+ 0.00475
+Interface_Characteristic_Velocity =
+ 0.00000  0.0000
+#0.00950  0.0100
+Number_of_Specified_Interface_Points =
+1
+Interface_Points =
+ 0.161925   0.0889  0  0
+Interface_Reference_Point =
+ 0.161925   0.0889
+Interface_BC_Type =
+Reflection
+Interface_Motion =
+Stationary
+#Rotate
+### Pin 5.
+Interface_Spline_Type =
+Circle
+Interface_Characteristic_Length =
+ 0.00475
+Interface_Characteristic_Velocity =
+ 0.00000  0.0000
+#0.00950  0.0100
+Number_of_Specified_Interface_Points =
+1
+Interface_Points =
+ 0.161925   0.1143  0  0
+Interface_Reference_Point =
+ 0.161925   0.1143
+Interface_BC_Type =
+Reflection
+Interface_Motion =
+Stationary
+#Rotate
+### Pin 6.
+Interface_Spline_Type =
+Circle
+Interface_Characteristic_Length =
+ 0.00475
+Number_of_Specified_Interface_Points =
+1
+Interface_Points =
+ 0.187325   0.0254  0  0
+Interface_Reference_Point =
+ 0.187325   0.0254
+Interface_BC_Type =
+Reflection
+Interface_Motion =
+Stationary
+### Pin 7.
+Interface_Spline_Type =
+Circle
+Interface_Characteristic_Length =
+ 0.00475
+Number_of_Specified_Interface_Points =
+1
+Interface_Points =
+ 0.187325   0.0508  0  0
+Interface_Reference_Point =
+ 0.187325   0.0508
+Interface_BC_Type =
+Reflection
+Interface_Motion =
+Stationary
+### Pin 8.
+Interface_Spline_Type =
+Circle
+Interface_Characteristic_Length =
+ 0.00475
+Number_of_Specified_Interface_Points =
+1
+Interface_Points =
+ 0.187325   0.0762  0  0
+Interface_Reference_Point =
+ 0.187325   0.0762
+Interface_BC_Type =
+Reflection
+Interface_Motion =
+Stationary
+### Pin 9.
+Interface_Spline_Type =
+Circle
+Interface_Characteristic_Length =
+ 0.00475
+Number_of_Specified_Interface_Points =
+1
+Interface_Points =
+ 0.187325   0.1016  0  0
+Interface_Reference_Point =
+ 0.187325   0.1016
+Interface_BC_Type =
+Reflection
+Interface_Motion =
+Stationary
+### Pin 10.
+Interface_Spline_Type =
+Circle
+Interface_Characteristic_Length =
+ 0.00475
+Interface_Characteristic_Velocity =
+ 0.00000  0.00000
+#-0.00950  0.0100
+Number_of_Specified_Interface_Points =
+1
+Interface_Points =
+ 0.212725   0.0127  0  0
+Interface_Reference_Point =
+ 0.212725   0.0127
+Interface_BC_Type =
+Reflection
+Interface_Motion =
+Stationary
+#Rotate
+### Pin 11.
+Interface_Spline_Type =
+Circle
+Interface_Characteristic_Length =
+ 0.00475
+Interface_Characteristic_Velocity =
+ 0.00000  0.00000
+#-0.00950  0.0100
+Number_of_Specified_Interface_Points =
+1
+Interface_Points =
+ 0.212725   0.0381  0  0
+Interface_Reference_Point =
+ 0.212725   0.0381
+Interface_BC_Type =
+Reflection
+Interface_Motion =
+Stationary
+#Rotate
+### Pin 12.
+Interface_Spline_Type =
+Circle
+Interface_Characteristic_Length =
+ 0.00475
+Interface_Characteristic_Velocity =
+ 0.00000  0.00000
+#-0.00950  0.0100
+Number_of_Specified_Interface_Points =
+1
+Interface_Points =
+ 0.212725   0.0635  0  0
+Interface_Reference_Point =
+ 0.212725   0.0635
+Interface_BC_Type =
+Reflection
+Interface_Motion =
+Stationary
+#Rotate
+### Pin 13.
+Interface_Spline_Type =
+Circle
+Interface_Characteristic_Length =
+ 0.00475
+Interface_Characteristic_Velocity =
+ 0.00000  0.00000
+#-0.00950  0.0100
+Number_of_Specified_Interface_Points =
+1
+Interface_Points =
+ 0.212725   0.0889  0  0
+Interface_Reference_Point =
+ 0.212725   0.0889
+Interface_BC_Type =
+Reflection
+Interface_Motion =
+Stationary
+#Rotate
+### Pin 14.
+Interface_Spline_Type =
+Circle
+Interface_Characteristic_Length =
+ 0.00475
+Interface_Characteristic_Velocity =
+ 0.00000  0.00000
+#-0.00950  0.0100
+Number_of_Specified_Interface_Points =
+1
+Interface_Points =
+ 0.212725   0.1143  0  0
+Interface_Reference_Point =
+ 0.212725   0.1143
+Interface_BC_Type =
+Reflection
+Interface_Motion =
+Stationary
+#Rotate
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+5
+Minimum_Refinement_Level =
+2
+Threshold_for_Refinement =
+0.50
+Threshold_for_Coarsening =
+0.10
+Refinement_Criteria_Gradient_Density =
+On
+Refinement_Criteria_Divergence_Velocity =
+On
+Refinement_Criteria_Curl_Velocity =
+On
+Smooth_Quad_Block =
+Off
+Number_of_Blocks_Per_Processor =
+256
+#
+# INITIAL AMR PARAMETERS:
+Number_of_Initial_Mesh_Refinements =
+0
+Number_of_Uniform_Mesh_Refinements =
+1
+Number_of_Boundary_Mesh_Refinements =
+0
+Number_of_Interface_Mesh_Refinements =
+0
+Number_of_Bounding_Box_Mesh_Refinements =
+0
+AMR_Xmin =
+ 0.150  0.000
+AMR_Xmax =
+ 0.225  0.120
+Interface_Refinement_Condition =
+On
+#
+# UNSTEADY AMR PARAMETERS:
+AMR =
+Off
+#
+# I/O PARAMETERS:
+Output_File_Name =
+duct
+Restart_Solution_Save_Frequency =
+1000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# REFINE_GRID:
+Bounding_Box_Refine_Grid
+#
+# WRITE OUTPUT:
+Write_Output
+#Write_Output_Cells
+Write_Output_Elements
+#Write_Output_Nodes
+#Write_Output_Interface_Component_List
+Write_Output_Interface_Union_List
+#
+# WRITE RESTART:
+Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate

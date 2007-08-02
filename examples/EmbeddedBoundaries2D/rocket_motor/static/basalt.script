@@ -1,0 +1,13 @@
+#!/bin/sh
+
+#mpirun -np 16 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/embeddedboundaries2D -f srm.in -pde NavierStokes2D < /dev/null >& srm.log
+mpirun -np 16 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/bin/embeddedboundaries2D_b -f srm.in -pde NavierStokes2D < /dev/null >& srm.log
+cat srm_cpu*.dat > points.dat
+cat srm_active_cpu*.dat > active.dat
+cat srm_inactive_cpu*.dat > inactive.dat
+#cat srm_cells_cpu*.dat > cells.dat
+#cat srm_nodes_cpu*.dat > nodes.dat
+#cat srm_status_cpu*.dat > status.dat
+#cat srm_interface_component_list_cpu*.dat > components.dat
+cat srm_interface_union_list_cpu*.dat > union.dat
+rm srm_*cpu*.dat

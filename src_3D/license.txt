@@ -1,0 +1,79 @@
+-----------------------------------------------------------------------
+                          CFFC Version 0.00
+----------------------------------------------------------------------- 
+
+SOFTWARE
+--------
+
+Welcome to CFFC Version 0.00.  CFFC  in a Computational  Framework  for 
+Fluids and Combustion (CFFC) and includes a  package of C++ subroutines 
+for  solving fluid  dynamics and combustion  problems  using  numerical
+methods  (i.e., Computational  Fluid  Dynamics  or  CFD).  It  includes
+all  files in  this directory  and  the  corresponding  subdirectories.
+It  includes support  for  the solution  of fluid  flow  and combustion
+problmems governed  by a variety  of  systems  of  partial differential
+equations  including the Euler and Navier-Stokes equations.
+
+COPYRIGHT
+---------
+
+Copyright (C) 1999-2007 Clinton P. T. Groth and the Governing Council
+of the University of Toronto.
+
+LICENSE
+-------
+
+CFFC is free  software;  you  can redistribute  it  and/or  modify  it
+under  the  terms of  the GNU  General  Public License as published by
+the Free  Software Foundation  (version 2 of the License, or any later 
+version).  A  copy  of the  licencing  agreement is  provided in  this
+directory in  the  file  GNU_license.txt.   For additional information
+contact  the  Free  Software  Foundation Inc., 65 Mass Ave, Cambridge, 
+MA 02139, USA.
+
+DISCLAIMER
+----------
+
+This program  is distributed in the  hope that it will  be useful, but
+WITHOUT   ANY  WARRANTY;   without  even   the  implied   warranty  of
+MERCHANTABILITY  or FITNESS  FOR A  PARTICULAR PURPOSE.   See  the GNU
+General Public License for more details.
+
+CONTRIBUTORS
+------------
+
+Contributors to the development of CFFC Version 0.00 include:
+
+Clinton Groth
+Jai Sachdev
+Scott Northrup
+Eric Li
+Kalvin Tsang
+Xinfeng Gao
+James McDonald
+Tomoki Ohsawa
+Ken Miura
+Francisco Hernandez-Perez
+Wen Lin
+Dagmara Biskupska
+Alistair Wood
+Lucian Ivan
+Tom Dusatko
+MingYao Ding
+Stefan Neata
+Tim Blair
+Eska Ko
+
+CONTACT
+-------
+
+For additional information concerning CFFC contact the primary author:
+
+Clinton P. T. Groth
+University of Toronto Institute for Aerospace Studies
+4925 Dufferin Street, Toronto, Ontario
+M3H 5T6, Canada
+
+groth@utias.utoronto.ca
+
+----------------------------------------------------------------------- 

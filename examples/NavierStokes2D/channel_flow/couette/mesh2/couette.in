@@ -1,0 +1,95 @@
+#
+# COUETTE FLOW WITH AN ADVERSE PRESSURE GRADIENT.
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Type =
+Laminar
+Flow_Geometry_Type = 
+Planar
+#
+# TIME-STEPPING PARAMETERS:
+Time_Integration_Type =
+Multistage_Optimal_Smoothing
+N_Stage =
+5
+Time_Accurate = 
+0
+Local_Time_Stepping =
+1
+CFL_Number =
+0.50
+Time_Max =
+0.0
+Maximum_Number_of_Time_Steps =
+10000
+Residual_Variable =
+2
+#
+# FLUX PARAMETERS:
+Reconstruction_Type =
+Least_Squares
+Limiter_Type = 
+Venkatakrishnan
+Flux_Function_Type =
+Roe
+Viscous_Reconstruction_Type =
+Diamond_Path
+#
+# INITIAL CONDITIONS:
+ICs_Type =
+Viscous_Channel_Flow
+Wall_Speed =
+29.4  0.0
+Pressure_Gradient =
+ 423.33
+Gas_Type = 
+AIR
+#
+# GRID PARAMETERS:
+Grid_Type =
+Rectangular_Box
+Box_Width =
+0.20
+Box_Height =
+0.0010
+Number_of_Cells_Idir = 
+16
+Number_of_Cells_Jdir =
+32
+Number_of_Blocks_Idir = 
+1
+Number_of_Blocks_Jdir =
+1
+X_Shift =
+0.10  0.0005
+Boundary_Conditions_Specified =
+On
+BC_North =
+Moving_Wall_Heatflux
+BC_South =
+Wall_Viscous_Heatflux
+BC_East =
+Fixed_Pressure
+BC_West =
+Inflow_Subsonic
+#
+# I/O PARAMETERS:
+Output_File_Name = 
+couette
+Restart_Solution_Save_Frequency = 
+20000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+Write_Output
+Write_Output_Cells
+Write_Output_Viscous_Channel
+#
+# WRITE RESTART:
+#Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate

@@ -1,0 +1,169 @@
+#
+# SOLID PROPELLANT ROCKET MOTOR
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Type =
+Inviscid
+Flow_Geometry_Type =
+Axisymmetric
+#
+# TIME-STEPPING PARAMETERS:
+Time_Integration_Type =
+Multistage_Optimal_Smoothing
+N_Stage =
+5
+Time_Accurate =
+0
+Local_Time_Stepping =
+0
+CFL_Number =
+0.750
+Time_Max =
+0.00
+Maximum_Number_of_Time_Steps =
+100000
+#
+# FLUX PARAMETERS:
+Reconstruction_Type =
+Least_Squares
+Limiter_Type =
+Venkatakrishnan
+Flux_Function_Type =
+Roe
+Viscous_Reconstruction_Type =
+Diamond_Path
+#
+# INITIAL CONDITIONS:
+ICs_Type =
+Restart
+#Uniform
+Gas_Type =
+AP_HTPB
+Mach_Number =
+0.0
+Pressure =
+101.325
+Temperature =
+288.139
+Wall_Temperature =
+288.139
+Propellant_Type =
+AP_HTPB
+#
+# GRID PARAMETERS:
+Grid_Type =
+Rocket_Motor
+Chamber_Length =
+0.20875
+#0.4175
+#0.8350
+Chamber_Radius =
+0.03175
+Chamber_To_Throat_Length =
+0.050
+Nozzle_Length =
+0.100
+Nozzle_Radius_Exit =
+0.030
+Nozzle_Radius_Throat =
+0.01015
+Grain_Radius =
+0.000
+Nozzle_Type =
+Hybrid_Conical
+#Conical
+#Gottlieb
+#Quartic
+Mesh_Stretching =
+On
+Mesh_Stretching_Type_Jdir =
+MinMax_Clustering
+Mesh_Stretching_Factor_Idir =
+1.05
+Mesh_Stretching_Factor_Jdir =
+1.05
+Number_of_Cells_Idir =
+32
+Number_of_Cells_Jdir =
+24
+Number_of_Blocks_Idir =
+3
+Number_of_Blocks_Jdir =
+1
+#
+# INTERFACE PARAMETERS:
+Number_of_Interface_Components =
+1
+Interface_Spline_Type =
+Rocket_Propellant_Grain
+Number_of_Specified_Interface_Points =
+3
+Interface_Points =
+-0.2125  0.0200  0  0
+-0.0150  0.0200  0  0
+-0.0150  0.0400  0  0
+#-0.8500  0.0200  0  0
+#-0.0150  0.0200  0  0
+#-0.0150  0.0400  0  0
+Interface_Reference_Point =
+-0.2000  0.0250
+#-0.8000  0.0250
+Interface_BC_Type =
+Burning_Surface
+Interface_Motion =
+Stationary
+#
+# INITIAL AMR PARAMETERS:
+Number_of_Uniform_Mesh_Refinements =
+1
+Number_of_Boundary_Mesh_Refinements =
+0
+Number_of_Initial_Mesh_Refinements =
+0
+Number_of_Interface_Mesh_Refinements =
+0
+#
+# UNSTEADY AMR PARAMETERS:
+AMR =
+Off
+AMR_Frequency =
+4000
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+6
+Minimum_Refinement_Level =
+2
+Threshold_for_Refinement =
+0.25
+Threshold_for_Coarsening =
+0.05
+Smooth_Quad_Block =
+On
+Number_of_Blocks_Per_Processor =
+128
+#
+# I/O PARAMETERS:
+Output_File_Name =
+crv7
+Restart_Solution_Save_Frequency =
+1000000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+Write_Output
+#Write_Output_Cells
+Write_Output_Elements
+#Write_Output_Nodes
+#Write_Output_Cell_Status
+#Write_Output_Interface_Component_List
+Write_Output_Interface_Union_List
+#
+# WRITE RESTART:
+Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate

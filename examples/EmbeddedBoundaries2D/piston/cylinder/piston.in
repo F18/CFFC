@@ -1,0 +1,146 @@
+#
+# CYLINDER TEST CASE
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Geometry_Type = 
+Planar
+#
+# SOLVER PARAMETERS:
+Time_Integration_Type =
+Explicit_Predictor_Corrector
+Time_Accurate = 
+1
+Local_Time_Stepping =
+0
+Reconstruction_Type =
+Least_Squares 
+Limiter_Type = 
+Venkatakrishnan
+Flux_Function_Type =
+Roe_MB
+#Godunov_MB
+#VanLeer_MB
+#
+# INITIAL CONDITIONS:
+ICs_Type = 
+Uniform
+#Restart
+Mach_Number = 
+0.00
+Flow_Angle =
+0.00
+#
+# INTERFACE PARAMETERS:
+Number_of_Interface_Components =
+1
+Interface_Spline_Type =
+Circle
+Interface_Characteristic_Length =
+2.00
+Number_of_Specified_Interface_Points =
+1
+Interface_Points =
+ 0.000  0.000  0  0
+Interface_Reference_Point =
+ 0.000  0.000
+Interface_BC_Type =
+Reflection
+Interface_Motion =
+Constant
+Interface_Characteristic_Velocity =
+680.588  0.00
+Solution_Redistribution_Type =
+Injection
+#
+# GRIDAMETERS:
+Grid_Type =
+Circular_Cylinder
+Cylinder_Radius = 
+1.00
+Number_of_Cells_Idir = 
+40
+Number_of_Cells_Jdir =
+40
+Mesh_Stretching_Type_Idir =
+Linear
+Mesh_Stretching_Type_Jdir =
+Min_Clustering
+Mesh_Stretching_Factor_Idir =
+1.025
+Mesh_Stretching_Factor_Jdir =
+1.10
+#Number_of_Blocks_Idir = 
+#1
+#Number_of_Blocks_Jdir =
+#1
+Boundary_Conditions_Specified =
+On
+BC_North =
+Constant_Extrapolation
+BC_South =
+Constant_Extrapolation
+BC_East =
+None
+BC_West =
+None
+#
+# INITIAL AMR PARAMETERS:
+Number_of_Uniform_Mesh_Refinements =
+0
+Number_of_Boundary_Mesh_Refinements =
+0
+Number_of_Initial_Mesh_Refinements =
+0
+Number_of_Interface_Mesh_Refinements =
+0
+#
+# UNSTEADY AMR PARAMETERS:
+AMR =
+0
+AMR_Frequency =
+15
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+4
+Minimum_Refinement_Level =
+2
+Threshold_for_Refinement =
+0.25
+Threshold_for_Coarsening =
+0.10
+#
+# TIME-STEPPING PARAMETERS:
+CFL_Number =
+0.50
+Time_Max =
+3.0
+Maximum_Number_of_Time_Steps =
+25
+Number_of_Blocks_Per_Processor =
+16
+Output_File_Name = 
+piston
+Restart_Solution_Save_Frequency =
+20000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+Write_Output
+Write_Output_Cells
+Write_Output_Elements
+Write_Output_Nodes
+Write_Output_Interface_Component_List
+Write_Output_Interface_Union_List
+#
+# STEADY AMR:
+#Refine_Grid
+#
+# WRITE RESTART:
+#Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate

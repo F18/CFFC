@@ -1,0 +1,9 @@
+#!/bin/tcsh
+#PBS -N Couette_fine 
+#PBS -q iserial
+#PBS -l walltime=48:00:00,nodes=1:ppn=1:itanium-8G
+#PBS -W group_list=xinfeng
+#
+cd /nfs/fe01/d1/cfd/xinfeng/THREEDCODE/THERMALLYPERFECT/pdes++/examples/NS/
+/nfs/fe01/d1/cfd/xinfeng/THREEDCODE/THERMALLYPERFECT/exe/pdes++ -f Couette.in -pde NavierStokes3D >& zoutput.log
+rm Couette_fine.e* Couette_fine.o*

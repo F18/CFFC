@@ -1,0 +1,116 @@
+#
+# BACKWARD FACING STEP (Driver and Seegmiller AIAA J. 23:2 1985)
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Type =
+Turbulent
+Flow_Geometry_Type =
+Planar
+#
+# SOLVER PARAMETERS:
+Time_Integration_Type =
+Multistage_Optimal_Smoothing
+N_Stage =
+3
+Time_Accurate = 
+0
+Local_Time_Stepping =
+1
+Residual_Smoothing_Epsilon =
+0.125
+Residual_Smoothing_Gauss_Seidel_Iterations =
+2
+Reconstruction_Type =
+Least_Squares
+Limiter_Type =
+Venkatakrishnan
+Freeze_Limiter =
+1
+Freeze_Limiter_Residual_Level =
+0.001
+Flux_Function_Type =
+Roe
+Viscous_Reconstruction_Type =
+Diamond_Path
+#
+# INITIAL CONDITIONS:
+ICs_Type =
+Backward_Facing_Step
+#Restart
+Mach_Number =
+0.0
+Gas_Type = 
+AIR
+#
+# GRID PARAMETERS:
+Grid_Type =
+Backward_Facing_Step
+Step_Height =
+0.0127
+Top_Wall_Deflection =
+0.0
+Number_of_Cells_Idir =
+32
+Number_of_Cells_Jdir =
+16
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+6
+Minimum_Refinement_Level =
+2
+Threshold_for_Refinement =
+0.10
+Threshold_for_Coarsening =
+0.01
+Refinement_Criteria_Gradient_Density =
+Off
+Refinement_Criteria_Divergence_Velocity =
+Off
+Refinement_Criteria_Curl_Velocity =
+On
+#
+# INITIAL AMR PARAMETERS:
+Number_of_Initial_Mesh_Refinements =
+0
+Number_of_Uniform_Mesh_Refinements =
+0
+Number_of_Boundary_Mesh_Refinements =
+0
+#
+# UNSTEADY AMR PARAMETERS:
+AMR =
+0
+AMR_Frequency =
+41
+#
+# TIME-STEPPING PARAMETERS:
+CFL_Number =
+0.50
+Time_Max =
+0.0
+Maximum_Number_of_Time_Steps =
+0
+Residual_Variable =
+2
+Number_of_Blocks_Per_Processor =
+19
+Output_File_Name =
+backstep
+Restart_Solution_Save_Frequency =
+1000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+Write_Output
+Write_Output_Cells
+Write_Output_Backward_Facing_Step
+#
+# WRITE RESTART:
+Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate

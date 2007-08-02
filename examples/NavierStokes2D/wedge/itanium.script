@@ -1,0 +1,13 @@
+#!/bin/tcsh
+#
+#PBS -N wedge_lam_ex
+#PBS -q iqmaster
+#PBS -l walltime=1:00:00,nodes=1:ppn=4:itanium-8G,other=day
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/NavierStokes2D/wedge/explicit/
+mpirun -np 1 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/navierstokes2D -f wedge.in >& wedge.log
+cat wedge_cpu*.dat > points.dat
+cat wedge_cells_cpu*.dat > cells.dat
+rm wedge_*cpu*.dat
+rm wedge_lam_ex.e* wedge_lam_ex.o*

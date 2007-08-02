@@ -1,0 +1,351 @@
+#!MC 1000
+$!VarSet |LFDSFN1| = '"skinfriction.dat"'
+$!VarSet |LFDSVL1| = '"x" "Rex" "Cf" "Cf_e" "Cf-Cf_e"'
+$!SETSTYLEBASE FACTORY
+$!PAPER 
+  BACKGROUNDCOLOR = WHITE
+  ISTRANSPARENT = YES
+  ORIENTPORTRAIT = NO
+  SHOWGRID = YES
+  SHOWRULER = YES
+  SHOWPAPER = YES
+  PAPERSIZE = LETTER
+  PAPERSIZEINFO
+    {
+    LETTER
+      {
+      WIDTH = 8.5
+      HEIGHT = 11
+      LEFTHARDCLIPOFFSET = 0.125
+      RIGHTHARDCLIPOFFSET = 0.125
+      TOPHARDCLIPOFFSET = 0.125
+      BOTTOMHARDCLIPOFFSET = 0.125
+      }
+    }
+  RULERSPACING = ONEINCH
+  PAPERGRIDSPACING = HALFINCH
+  REGIONINWORKAREA
+    {
+    X1 = -0.05
+    Y1 = -0.05
+    X2 = 11.05
+    Y2 = 8.55
+    }
+$!COLORMAP 
+  CONTOURCOLORMAP = SMRAINBOW
+$!COLORMAPCONTROL RESETTOFACTORY
+### Frame Number 1 ###
+$!READDATASET  '|LFDSFN1|' 
+  INITIALPLOTTYPE = XYLINE
+  INCLUDETEXT = NO
+  INCLUDEGEOM = NO
+  VARLOADMODE = BYNAME
+  VARNAMELIST = '|LFDSVL1|' 
+$!REMOVEVAR |LFDSVL1|
+$!REMOVEVAR |LFDSFN1|
+$!FRAMELAYOUT 
+  SHOWBORDER = NO
+  SHOWHEADER = NO
+  HEADERCOLOR = RED
+  XYPOS
+    {
+    X = 1
+    Y = 0.25
+    }
+  WIDTH = 10
+  HEIGHT = 8
+$!PLOTTYPE  = XYLINE
+$!FRAMENAME  = 'Frame 001' 
+$!DELETELINEMAPS 
+$!ACTIVELINEMAPS  =  [1-6]
+$!GLOBALLINEPLOT 
+  DATALABELS
+    {
+    DISTANCESKIP = 5
+    }
+  LEGEND
+    {
+    SHOW = YES
+    BOX
+      {
+      BOXTYPE = NONE
+      }
+    XYPOS
+      {
+      X = 55
+      Y = 85
+      }
+    ANCHORALIGNMENT = TOPLEFT
+    }
+$!LINEMAP  [1]
+  NAME = 'Schultz-Grunow' 
+  ASSIGN
+    {
+    ZONE = 1
+    XAXISVAR = 2
+    YAXISVAR = 4
+    }
+  LINES
+    {
+    COLOR = BLUE
+    }
+  SYMBOLS
+    {
+    SHOW = NO
+    SYMBOLSHAPE
+      {
+      GEOMSHAPE = CIRCLE
+      }
+    COLOR = BLUE
+    FILLMODE = USESPECIFICCOLOR
+    FILLCOLOR = WHITE
+    SIZE = 1
+    }
+  BARCHARTS
+    {
+    COLOR = RED
+    FILLCOLOR = RED
+    }
+  ERRORBARS
+    {
+    COLOR = RED
+    }
+$!LINEMAP  [2]
+  NAME = 'Schultz-Grunow' 
+  ASSIGN
+    {
+    ZONE = 2
+    XAXISVAR = 2
+    YAXISVAR = 4
+    }
+  LINES
+    {
+    COLOR = BLUE
+    }
+  SYMBOLS
+    {
+    SHOW = NO
+    SYMBOLSHAPE
+      {
+      GEOMSHAPE = CIRCLE
+      }
+    COLOR = BLUE
+    FILLMODE = USESPECIFICCOLOR
+    FILLCOLOR = WHITE
+    SIZE = 1
+    }
+  BARCHARTS
+    {
+    COLOR = GREEN
+    FILLCOLOR = GREEN
+    }
+  ERRORBARS
+    {
+    COLOR = GREEN
+    }
+$!LINEMAP  [3]
+  NAME = 'Schultz-Grunow' 
+  ASSIGN
+    {
+    ZONE = 3
+    XAXISVAR = 2
+    YAXISVAR = 4
+    }
+  LINES
+    {
+    COLOR = BLUE
+    }
+  SYMBOLS
+    {
+    SHOW = NO
+    SYMBOLSHAPE
+      {
+      GEOMSHAPE = CIRCLE
+      }
+    COLOR = BLUE
+    FILLMODE = USESPECIFICCOLOR
+    FILLCOLOR = WHITE
+    SIZE = 1
+    }
+  BARCHARTS
+    {
+    COLOR = BLUE
+    FILLCOLOR = BLUE
+    }
+  ERRORBARS
+    {
+    COLOR = BLUE
+    }
+$!LINEMAP  [4]
+  NAME = 'Computed Solution' 
+  ASSIGN
+    {
+    ZONE = 1
+    XAXISVAR = 2
+    YAXISVAR = 3
+    }
+  LINES
+    {
+    SHOW = NO
+    COLOR = CUSTOM3
+    }
+  SYMBOLS
+    {
+    SYMBOLSHAPE
+      {
+      GEOMSHAPE = CIRCLE
+      }
+    COLOR = CUSTOM3
+    FILLMODE = USESPECIFICCOLOR
+    FILLCOLOR = WHITE
+    SIZE = 1
+    }
+  BARCHARTS
+    {
+    COLOR = RED
+    FILLCOLOR = RED
+    }
+  ERRORBARS
+    {
+    COLOR = RED
+    }
+$!LINEMAP  [5]
+  NAME = 'Computed Solution' 
+  ASSIGN
+    {
+    ZONE = 2
+    XAXISVAR = 2
+    YAXISVAR = 3
+    }
+  LINES
+    {
+    SHOW = NO
+    COLOR = CUSTOM3
+    }
+  SYMBOLS
+    {
+    SYMBOLSHAPE
+      {
+      GEOMSHAPE = CIRCLE
+      }
+    COLOR = CUSTOM3
+    FILLMODE = USESPECIFICCOLOR
+    FILLCOLOR = WHITE
+    SIZE = 1
+    }
+  BARCHARTS
+    {
+    COLOR = GREEN
+    FILLCOLOR = GREEN
+    }
+  ERRORBARS
+    {
+    COLOR = GREEN
+    }
+$!LINEMAP  [6]
+  NAME = 'Computed Solution' 
+  ASSIGN
+    {
+    ZONE = 3
+    XAXISVAR = 2
+    YAXISVAR = 3
+    }
+  LINES
+    {
+    SHOW = NO
+    COLOR = CUSTOM3
+    }
+  SYMBOLS
+    {
+    SYMBOLSHAPE
+      {
+      GEOMSHAPE = CIRCLE
+      }
+    COLOR = CUSTOM3
+    FILLMODE = USESPECIFICCOLOR
+    FILLCOLOR = WHITE
+    SIZE = 1
+    }
+  BARCHARTS
+    {
+    COLOR = BLUE
+    FILLCOLOR = BLUE
+    }
+  ERRORBARS
+    {
+    COLOR = BLUE
+    }
+$!XYLINEAXIS 
+  DEPXTOYRATIO = 1
+  GRIDAREA
+    {
+    DRAWBORDER = YES
+    LINETHICKNESS = 0.1
+    DRAWGRIDLAST = YES
+    }
+  VIEWPORTPOSITION
+    {
+    X1 = 10
+    Y1 = 10
+    X2 = 95
+    Y2 = 95
+    }
+  VIEWPORTTOPSNAPTARGET = 95
+$!XYLINEAXIS 
+  XDETAIL 1
+    {
+    RANGEMIN = 11855.8701171875
+    RANGEMAX = 4975325.2973129879683
+    GRSPACING = 1000000
+    TICKS
+      {
+      SHOWONGRIDBORDERMIN = YES
+      SHOWONGRIDBORDERMAX = YES
+      LINETHICKNESS = 0.1
+      }
+    TITLE
+      {
+      TEXT = 'x (m)' 
+      TEXTSHAPE
+        {
+        FONT = TIMESITALICBOLD
+        }
+      }
+    AXISLINE
+      {
+      LINETHICKNESS = 0.1
+      POSITION = 1.176
+      }
+    }
+$!XYLINEAXIS 
+  YDETAIL 1
+    {
+    COORDSCALE = LOG
+    RANGEMIN = 0.0014024920528754591942
+    RANGEMAX = 0.010056245230848435968
+    GRSPACING = 0.001
+    TICKS
+      {
+      SHOWONGRIDBORDERMIN = YES
+      SHOWONGRIDBORDERMAX = YES
+      LINETHICKNESS = 0.1
+      }
+    TITLE
+      {
+      TITLEMODE = USETEXT
+      TEXT = 'C<sub>f' 
+      TEXTSHAPE
+        {
+        FONT = TIMESITALICBOLD
+        HEIGHT = 4.5
+        }
+      }
+    AXISLINE
+      {
+      LINETHICKNESS = 0.1
+      POSITION = 3.529
+      }
+    }
+$!LINEPLOTLAYERS 
+  SHOWSYMBOLS = YES
+$!SETSTYLEBASE CONFIG

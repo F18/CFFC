@@ -1,0 +1,232 @@
+#
+# supersonic inlet test case
+#
+########################
+# Set solver parameters
+########################
+Time_Integration_Type =
+Multigrid
+#Multigrid
+#Multistage_Optimal_Smoothing 
+#Explicit_Predictor_Corrector
+Multigrid_Levels =
+4
+Multigrid_Cycle_Type =
+V
+Multigrid_Number_of_Smooths_on_Finest_Level =
+1
+Multigrid_Number_of_Pre_Smooths =
+2
+Multigrid_Number_of_Post_Smooths =
+0
+Multigrid_Number_of_Smooths_on_Coarsest_Level =
+2
+Multigrid_Smoothing_Type = 
+Multistage_Optimal_Smoothing
+#Multistage_Optimal_Smoothing
+#Explicit_Runge_Kutta
+N_Stage =
+3
+Time_Accurate = 
+0
+Local_Time_Stepping =
+1
+Residual_Smoothing_Epsilon = 
+0.125
+Residual_Smoothing_Gauss_Seidel_Iterations =
+2
+Mr_Min_Factor =
+1.00
+Reconstruction_Type =
+Least_Squares
+#Green_Gauss 
+#Least_Squares
+Limiter_Type =
+Venkatakrishnan
+#Venkatakrishnan
+#Barth_Jespersen
+#Zero
+Flux_Function_Type =
+HLLE
+#Roe
+#Linde
+#HLLE
+#Godunov
+#Roe_Precon_WS
+Freeze_Limiter =
+1
+Freeze_Limiter_Residual_Level = 
+10.0e00
+GMRES_Overlap =
+0
+GMRES_Tolerance =
+2.0e-01
+Overall_Tolerance =
+1.0e-12
+GMRES_P_Switch = 
+1
+#(1 -> ILUK, 2 -> Diagonal)
+GMRES_ILUK_Level_of_Fill = 
+3
+Finite_Time_Step =
+0
+Finite_Time_Step_Initial_CFL =
+1e12
+Normalization = 
+1
+#########################
+# Set initial conditions
+#########################
+ICs_Type = 
+Uniform
+#Uniform
+#Restart
+Mach_Number = 
+ 3.00
+########################
+# Set mesh info
+########################
+Grid_Type =
+Supersonic_Inlet
+Number_of_Cells_Idir = 
+32
+#16
+#32
+#64
+#128
+Number_of_Cells_Jdir =
+32
+#16
+#32
+#64
+#128
+AMR =
+0
+AMR_Frequency =
+8
+Number_of_Initial_Mesh_Refinements =
+0
+#2
+Number_of_Uniform_Mesh_Refinements =
+0
+#0
+#1
+#2
+Number_of_Boundary_Mesh_Refinements =
+0
+Maximum_Refinement_Level
+5
+Minimum_Refinement_Level
+1
+Threshold_for_Refinement =
+0.50
+Threshold_for_Coarsening =
+0.10
+################################
+# Set Morton ordering parameters
+################################
+Morton =
+0
+Morton_Reordering_Frequency =
+1000
+###############################
+# Set time stepping parameters
+###############################
+CFL_Number =
+  0.50
+Maximum_Number_of_Time_Steps =
+0
+Full_Multigrid =
+100
+Maximum_Number_of_NKS_Iterations =
+0
+Maximum_Number_of_GMRES_Iterations =
+80
+GMRES_Restart =
+40
+Number_of_Blocks_Per_Processor =
+16
+Output_File_Name = 
+supersonic_inlet
+#######################
+# Execute program
+#######################
+Execute
+##############################
+# Apply Morton Ordering
+##############################
+Morton_Ordering
+##############################
+# Re-set some input parameters
+##############################
+Maximum_Number_of_Time_Steps =
+0
+Maximum_Number_of_NKS_Iterations =
+0
+##############################
+# Restart program
+##############################
+Continue
+#######################
+# Write output
+#######################
+Write_Output
+#Write_Output_Cells
+#Write_Output_Mesh
+#Write_Output_Mesh_Cells
+#Write_Output_Mesh_Nodes
+Write_Restart
+#Write_Mesh_Definition
+#######################
+# Terminate program
+#######################
+Terminate
+
+Planar                         :Flow_Geometry_Type
+Axisymmetric                   :Flow_Geometry_Type
+
+Explicit_Euler                 :Time_Integration_Type
+Explicit_Predictor_Corrector   :Time_Integration_Type
+Explicit_Runge_Kutta           :Time_Integration_Type
+Multistage_Optimal_Smoothing   :Time_Integration_Type
+
+Least_Squares                  :Reconstruction_Type
+Green_Gauss                    :Reconstruction_Type
+
+Venkatakrishnan                :Limiter_Type
+Barth_Jespersen                :Limiter_Type
+Zero                           :Limiter_Type
+One                            :Limiter_Type
+
+Godunov                        :Flux_Function_Type
+Roe                            :Flux_Function_Type
+Rusanov                        :Flux_Function_Type
+HLLE                           :Flux_Function_Type
+Linde                          :Flux_Function_Type
+HLLC                           :Flux_Function_Type
+
+Uniform                        :ICs_Type
+Sod                            :ICs_Type
+Sod_Xdir                       :ICs_Type
+Sod_Ydir                       :ICs_Type
+Groth                          :ICs_Type
+Groth_Xdir                     :ICs_Type
+Groth_Ydir                     :ICs_Type
+Einfeldt                       :ICs_Type
+Einfeldt_Xdir                  :ICs_Type
+Einfeldt_Ydir                  :ICs_Type
+ShockBox                       :ICs_Type
+High_Pressure_Reservoir        :ICs_Type
+Restart                        :ICs_Type
+
+Square                         :Grid_Type
+Rectangular_Box                :Grid_Type
+Flat_Plate                     :Grid_Type
+Pipe                           :Grid_Type
+Blunt_Body                     :Grid_Type
+Rocket_Motor                   :Grid_Type
+Circular_Cylinder              :Grid_Type
+Ellipse                        :Grid_Type
+NACA_Aerofoil                  :Grid_Type
+Read_From_Definition_File      :Grid_Type
+Read_From_Data_File            :Grid_Type

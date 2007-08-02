@@ -1,0 +1,127 @@
+#
+# CRV7 ROCKET MOTOR -- TURBULENT
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Type =
+Inviscid
+Flow_Geometry_Type =
+Planar
+#
+# TIME-STEPPING PARAMETERS:
+Time_Integration_Type =
+Multistage_Optimal_Smoothing
+N_Stage =
+5
+Time_Accurate =
+0
+Local_Time_Stepping =
+1
+CFL_Number =
+0.475
+Maximum_Number_of_Time_Steps =
+10000
+#
+# FLUX PARAMETERS:
+Reconstruction_Type =
+Least_Squares
+Limiter_Type =
+Venkatakrishnan
+Flux_Function_Type =
+Godunov
+#Roe
+#HLLE
+#AUSM+
+#
+# INITIAL CONDITIONS:
+ICs_Type =
+Uniform
+#Restart
+Gas_Type =
+AIR
+Mach_Number =
+0.0
+Pressure =
+318.36315
+Temperature =
+260.0
+Wall_Temperature =
+260.0
+#
+# GRID PARAMETERS:
+Grid_Type =
+Nozzleless_Rocket_Motor
+Mesh_Stretching =
+On
+Mesh_Stretching_Type_Jdir =
+Max_Clustering
+Mesh_Stretching_Factor_Idir =
+1.1000
+Mesh_Stretching_Factor_Jdir =
+1.0001
+Number_of_Cells_Idir =
+24
+Number_of_Cells_Jdir =
+32
+Number_of_Blocks_Idir =
+8
+Number_of_Blocks_Jdir =
+1
+#
+# INITIAL AMR PARAMETERS:
+Number_of_Uniform_Mesh_Refinements =
+0
+Number_of_Boundary_Mesh_Refinements =
+0
+Number_of_Initial_Mesh_Refinements =
+0
+#
+# UNSTEADY AMR PARAMETERS:
+AMR =
+Off
+AMR_Frequency =
+1000
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+5
+Minimum_Refinement_Level =
+1
+Threshold_for_Refinement =
+0.10
+Threshold_for_Coarsening =
+0.01
+Refinement_Criteria_Gradient_Density =
+On
+Refinement_Criteria_Divergence_Velocity =
+On
+Refinement_Criteria_Curl_Velocity =
+On
+Smooth_Quad_Block =
+Off
+Number_of_Blocks_Per_Processor =
+128
+#
+# I/O PARAMETERS:
+Output_File_Name =
+nozzleless
+Restart_Solution_Save_Frequency =
+30000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# REFINE GRID:
+#Refine_Grid
+#
+# WRITE RESTART:
+Write_Restart
+#
+# WRITE OUTPUT:
+Write_Output
+Write_Output_Cells
+#Write_Output_Nodes
+#Write_Output_Gradients
+#
+# TERMINATE PROGRAM:
+Terminate

@@ -1,0 +1,20 @@
+#!/bin/tcsh
+#
+#PBS -N ringleb_eb_1_00410
+#PBS -q iserial
+#PBS -l walltime=1:00:00,nodes=1:ppn=1:itanium-8G
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/EmbeddedBoundaries2D/ringleb/1st/00410/
+mpirun -np 1 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/embeddedboundaries2D -f ringleb.in -pde Euler2D >& ringleb.log
+cat ringleb_cpu*.dat > points.dat
+cat ringleb_active_cpu*.dat > active.dat
+cat ringleb_inactive_cpu*.dat > inactive.dat
+cat ringleb_nodes_cpu*.dat > nodes.dat
+cat ringleb_cells_cpu*.dat > cells.dat
+cat ringleb_ringleb_cpu*.dat > ringleb.dat
+cat ringleb_interface_component_list_cpu*.dat > components.dat
+cat ringleb_interface_union_list_cpu*.dat > union.dat
+rm ringleb_cpu*.dat
+rm ringleb_*_cpu*.dat
+rm ringleb_eb_1_00410.e* ringleb_eb_1_00410.o*

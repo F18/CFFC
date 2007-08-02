@@ -1,0 +1,16 @@
+#!/bin/tcsh
+#
+#PBS -N cavity_ex_av
+#PBS -q iqmaster
+#PBS -l walltime=1:00:00,nodes=4:ppn=4:itanium-8G,other=day
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/NavierStokes2D/driven_cavity/explicit/average/
+mpirun -np 16 --gm-no-shmem --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/navierstokes2D -f cavity.in -pde NavierStokes2D >& cavity.log
+cat cavity_cpu*.dat > points.dat
+cat cavity_cells_cpu*.dat > cells.dat
+cat cavity_driven_cavity_flow_u_cpu*.dat > cavity_u.dat
+cat cavity_driven_cavity_flow_v_cpu*.dat > cavity_v.dat
+rm cavity_cpu*.dat
+rm cavity_*_cpu*.dat
+rm cavity_ex_av.e* cavity_ex_av.o*

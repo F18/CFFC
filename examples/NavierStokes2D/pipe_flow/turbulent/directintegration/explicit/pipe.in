@@ -1,0 +1,149 @@
+#
+# TURBULENT PIPE FLOW -- Re = 500,000
+#
+# Consistent with the experimental data reported by Laufer (1953).
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Type =
+Turbulent_k_omega
+Flow_Geometry_Type =
+Axisymmetric
+#
+# TIME-STEPPING PARAMETERS:
+Time_Integration_Type =
+Multistage_Optimal_Smoothing 
+N_Stage =
+5
+Time_Accurate =
+0
+Local_Time_Stepping =
+1
+CFL_Number =
+0.50
+Maximum_Number_of_Time_Steps =
+50000
+Residual_Variable =
+2
+#
+# RESIDUAL SMOOTHING:
+Residual_Smoothing_Epsilon =
+0.175
+Residual_Smoothing_Gauss_Seidel_Iterations =
+2
+#
+# FLUX PARAMETERS:
+Reconstruction_Type =
+Least_Squares
+Limiter_Type =
+Venkatakrishnan
+#Freeze_Limiter =
+#0
+#Freeze_Limiter_Residual_Level =
+#1.00
+Flux_Function_Type =
+Roe
+Viscous_Reconstruction_Type =
+Diamond_Path
+#
+# INITIAL CONDITIONS:
+ICs_Type =
+Restart
+#Turbulent_Pipe_Flow
+Reynolds_Number =
+500000.0
+Pressure_Gradient =
+-112.80501
+Gas_Type =
+AIR
+#
+# GRID PARAMETERS:
+Grid_Type =
+Pipe
+Pipe_Length =
+4.877
+Pipe_Radius =
+0.123
+Number_of_Cells_Idir =
+16
+Number_of_Cells_Jdir =
+32
+Number_of_Blocks_Idir =
+1
+Number_of_Blocks_Jdir =
+1
+Mesh_Stretching =
+On
+Mesh_Stretching_Factor_Jdir =
+1.0001
+Boundary_Conditions_Specified =
+On
+BC_North =
+Wall_Viscous_Heatflux
+BC_South =
+Reflection
+BC_East =
+Outflow_Subsonic
+BC_West =
+Inflow_Subsonic
+#
+# TURBULENCE PARAMETERS:
+Turbulence_BC_Type =
+Direct_Integration
+Friction_Velocity_Type =
+Iterative
+yplus_sublayer =
+2.5
+yplus_buffer_layer =
+30.0
+yplus_outer_layer =
+250.0
+#
+# INITIAL AMR PARAMETERS:
+Number_of_Uniform_Mesh_Refinements =
+2
+Number_of_Boundary_Mesh_Refinements =
+0
+Number_of_Initial_Mesh_Refinements =
+0
+#
+# UNSTEADY AMR PARAMETERS:
+AMR =
+Off
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+7
+Minimum_Refinement_Level =
+2
+Threshold_for_Refinement =
+0.10
+Threshold_for_Coarsening =
+0.01
+Smooth_Quad_Block =
+Off
+Number_of_Blocks_Per_Processor =
+16
+#
+# I/O PARAMETERS:
+Output_File_Name =
+pipe
+Restart_Solution_Save_Frequency =
+500001
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+Write_Output
+Write_Output_Cells
+Write_Output_Turbulent_Pipe
+#
+# STEADY AMR:
+#Refine_Grid
+#
+# WRITE RESTART:
+Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate

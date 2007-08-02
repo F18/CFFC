@@ -1,0 +1,73 @@
+#!/bin/tcsh
+#
+#PBS -N jets_sv_050
+#PBS -q iqmaster
+#PBS -l walltime=0:30:00,nodes=12:ppn=4:itanium-8G,other=day
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/Dusty2D/crossing_jets/single-velocity/050/
+mpirun -np 48 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/dusty2D -f jets.in -pde Dusty2D >& jets.log
+cat jets_0000_cpu*.dat > sv.050.0000.dat
+cat jets_0050_cpu*.dat > sv.050.0050.dat
+cat jets_0100_cpu*.dat > sv.050.0100.dat
+cat jets_0150_cpu*.dat > sv.050.0150.dat
+cat jets_0200_cpu*.dat > sv.050.0200.dat
+cat jets_0250_cpu*.dat > sv.050.0250.dat
+cat jets_0300_cpu*.dat > sv.050.0300.dat
+cat jets_0350_cpu*.dat > sv.050.0350.dat
+cat jets_0400_cpu*.dat > sv.050.0400.dat
+cat jets_0450_cpu*.dat > sv.050.0450.dat
+cat jets_0500_cpu*.dat > sv.050.0500.dat
+cat jets_0550_cpu*.dat > sv.050.0550.dat
+cat jets_0600_cpu*.dat > sv.050.0600.dat
+cat jets_0650_cpu*.dat > sv.050.0650.dat
+cat jets_0700_cpu*.dat > sv.050.0700.dat
+cat jets_0750_cpu*.dat > sv.050.0750.dat
+cat jets_0800_cpu*.dat > sv.050.0800.dat
+cat jets_0850_cpu*.dat > sv.050.0850.dat
+cat jets_0900_cpu*.dat > sv.050.0900.dat
+cat jets_0950_cpu*.dat > sv.050.0950.dat
+cat jets_1000_cpu*.dat > sv.050.1000.dat
+cat jets_1050_cpu*.dat > sv.050.1050.dat
+cat jets_1100_cpu*.dat > sv.050.1100.dat
+cat jets_1150_cpu*.dat > sv.050.1150.dat
+cat jets_1200_cpu*.dat > sv.050.1200.dat
+cat jets_1250_cpu*.dat > sv.050.1250.dat
+cat jets_1300_cpu*.dat > sv.050.1300.dat
+cat jets_1350_cpu*.dat > sv.050.1350.dat
+cat jets_1400_cpu*.dat > sv.050.1400.dat
+cat jets_1450_cpu*.dat > sv.050.1450.dat
+cat jets_1500_cpu*.dat > sv.050.1500.dat
+cat jets_1550_cpu*.dat > sv.050.1550.dat
+cat jets_1600_cpu*.dat > sv.050.1600.dat
+cat jets_1650_cpu*.dat > sv.050.1650.dat
+cat jets_1700_cpu*.dat > sv.050.1700.dat
+cat jets_1750_cpu*.dat > sv.050.1750.dat
+cat jets_1800_cpu*.dat > sv.050.1800.dat
+cat jets_1850_cpu*.dat > sv.050.1850.dat
+cat jets_1900_cpu*.dat > sv.050.1900.dat
+cat jets_1950_cpu*.dat > sv.050.1950.dat
+cat jets_2000_cpu*.dat > sv.050.2000.dat
+cat jets_2050_cpu*.dat > sv.050.2050.dat
+cat jets_2100_cpu*.dat > sv.050.2100.dat
+cat jets_2150_cpu*.dat > sv.050.2150.dat
+cat jets_2200_cpu*.dat > sv.050.2200.dat
+cat jets_2250_cpu*.dat > sv.050.2250.dat
+cat jets_2300_cpu*.dat > sv.050.2300.dat
+cat jets_2350_cpu*.dat > sv.050.2350.dat
+cat jets_2400_cpu*.dat > sv.050.2400.dat
+cat jets_2450_cpu*.dat > sv.050.2450.dat
+cat jets_2500_cpu*.dat > sv.050.2500.dat
+cat jets_2550_cpu*.dat > sv.050.2550.dat
+cat jets_2600_cpu*.dat > sv.050.2600.dat
+cat jets_2650_cpu*.dat > sv.050.2650.dat
+cat jets_2700_cpu*.dat > sv.050.2700.dat
+cat jets_2750_cpu*.dat > sv.050.2750.dat
+cat jets_2800_cpu*.dat > sv.050.2800.dat
+cat jets_2850_cpu*.dat > sv.050.2850.dat
+cat jets_2900_cpu*.dat > sv.050.2900.dat
+cat jets_2950_cpu*.dat > sv.050.2950.dat
+cat jets_3000_cpu*.dat > sv.050.3000.dat
+rm jets_*_cpu*.dat
+rm jets_*_residual.*
+rm jets_sv_050.e* jets_sv_050.o*

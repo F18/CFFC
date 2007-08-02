@@ -1,0 +1,19 @@
+#!/bin/tcsh
+#
+#PBS -N bump_lm_V4
+#PBS -q iqmaster
+#PBS -l walltime=0:25:00,nodes=2:ppn=4:itanium-8G,other=day
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/Euler2D/bump_flow/low-mach/multigrid/
+mpirun -np 8 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/euler2D -f bump.in -pde Euler2D >& bump.log
+cat bump_00_cpu*.dat > points_00.dat
+cat bump_01_cpu*.dat > points_01.dat
+cat bump_02_cpu*.dat > points_02.dat
+cat bump_03_cpu*.dat > points_03.dat
+cat bump_cells_00_cpu*.dat > cells_00.dat
+cat bump_cells_01_cpu*.dat > cells_01.dat
+cat bump_cells_02_cpu*.dat > cells_02.dat
+cat bump_cells_03_cpu*.dat > cells_03.dat
+rm bump_*cpu*.dat
+rm bump_lm_V4.e* bump_lm_V4.o*
