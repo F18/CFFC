@@ -62,7 +62,7 @@ void  OcTreeBlock_DataStructure::Broadcast_OcTree_Data_Structure(OcTreeBlock_Dat
     /* Broadcast the number of roots, the number of CPUs, and
        the number of local solution blocks. */
 
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
        nri = OcTree.NRi;
        nrj = OcTree.NRj;
        nrk = OcTree.NRk;
@@ -79,7 +79,7 @@ void  OcTreeBlock_DataStructure::Broadcast_OcTree_Data_Structure(OcTreeBlock_Dat
     /* On non-primary MPI processors, allocate (re-allocate) 
        memory for the octree data structure as necessary. */
 
-    if (!CFDkit_Primary_MPI_Processor()) {
+    if (!CFFC_Primary_MPI_Processor()) {
        if (OcTree.NRi != nri ||
            OcTree.NRj != nrj ||
            OcTree.NRk != nrk ||

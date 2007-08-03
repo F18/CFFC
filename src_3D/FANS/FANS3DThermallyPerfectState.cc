@@ -2005,7 +2005,7 @@ int FANS3D_ThermallyPerfect_KOmega_cState::Unphysical_Properties_Check(
    
 //    if (rho <= ZERO || !negative_speccheck(n) || es() <= ZERO ||
 //        rhok <= ZERO || rhoomega <= ZERO) {    
-//       cout << "\n " << CFDkit_Name() 
+//       cout << "\n " << CFFC_Name() 
 //            << " FANS3D ERROR: Negative Density || Energy || mass fractions || "
 //            << " Turbulent kinetic energy || Dissipation rate: \n";
       

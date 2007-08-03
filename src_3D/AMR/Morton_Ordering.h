@@ -162,7 +162,7 @@ template<typename SOLN_pSTATE, typename SOLN_cSTATE>
 	   << ".\n";
       cout.flush();
     } // endif 
-//    error_flag = CFDkit_OR_MPI(error_flag);
+//    error_flag = CFFC_OR_MPI(error_flag);
 //    if (error_flag) return (error_flag);
 
     error_flag = Hexa_MultiBlock_List.Write_Restart_Solution(IPs,
@@ -177,7 +177,7 @@ template<typename SOLN_pSTATE, typename SOLN_cSTATE>
 	   << ".\n";
       cout.flush();
     } /* endif */
-//    error_flag = CFDkit_OR_MPI(error_flag);
+//    error_flag = CFFC_OR_MPI(error_flag);
 //    if (error_flag) return (error_flag);
     
     
@@ -255,7 +255,7 @@ template<typename SOLN_pSTATE, typename SOLN_cSTATE>
     
     
     
-//    error_flag = CFDkit_OR_MPI(error_flag);
+//    error_flag = CFFC_OR_MPI(error_flag);
 //    if (error_flag) return (error_flag);
   
     /*Allocates memory for all message passing buffers used  *
@@ -267,7 +267,7 @@ template<typename SOLN_pSTATE, typename SOLN_cSTATE>
                              Hexa_MultiBlock_List.Hexa_Block_List[0]->NumVar()
                              +NUM_COMP_VECTOR3D);
 
-//    error_flag = CFDkit_OR_MPI(error_flag);
+//    error_flag = CFFC_OR_MPI(error_flag);
 //    if (error_flag) return (error_flag);
 
 
@@ -292,18 +292,18 @@ template<typename SOLN_pSTATE, typename SOLN_cSTATE>
       cout.flush();
     } // endif 
 
-/*     error_flag = CFDkit_OR_MPI(error_flag); */
+/*     error_flag = CFFC_OR_MPI(error_flag); */
 /*     if (error_flag) return (error_flag); */
 /*     // Ensure each processor has the correct time and time!!! */
-/*     number_of_time_steps = CFDkit_Maximum_MPI(number_of_time_steps); */
-/*     Time = CFDkit_Maximum_MPI(Time); */
-/*     processor_cpu_time.cput = CFDkit_Maximum_MPI(processor_cpu_time.cput); */
+/*     number_of_time_steps = CFFC_Maximum_MPI(number_of_time_steps); */
+/*     Time = CFFC_Maximum_MPI(Time); */
+/*     processor_cpu_time.cput = CFFC_Maximum_MPI(processor_cpu_time.cput); */
     
     
     /* Send solution information between neighbouring blocks to complete
        prescription of initial data. */
     
-/*     CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization. */
+/*     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization. */
    
    
 /*    cout <<" \n MO- Send_All_Messages() ON ";cout.flush();
@@ -324,7 +324,7 @@ template<typename SOLN_pSTATE, typename SOLN_cSTATE>
       cout.flush();
     } // endif 
   
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
 */    
 

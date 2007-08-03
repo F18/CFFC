@@ -12,9 +12,11 @@
 *.soln
 *.log
 *.gplt
+*.plt
 *.e*
 *.o*
 .gm_mpi
+*.core
 
 # latex document directories
 #*~
