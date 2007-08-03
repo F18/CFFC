@@ -63,6 +63,8 @@ using namespace std;
 #include "LevelSet2D/LevelSet2DQuad.h"
 #include "Chem2D/Chem2DQuad.h"
 #include "NavierStokes2D/NavierStokes2DQuad.h"
+#include "Gaussian2D/Gaussian2DCartesian.h"
+#include "Gaussian2D/Gaussian2DQuad.h"
 #include "MPI/MPI.h"
 #include "ICEM/ICEMCFD.h"
 
@@ -317,7 +319,18 @@ int main(int num_arg, char *arg_ptr[]) {
   } else if (strcmp(Equation_Type, "NavierStokes2D") == 0) {
       error_flag = NavierStokes2DQuadSolver(Input_File_Name_ptr,
 			  	            batch_flag);
+  /* Gaussian2D_Cartesian */
+  if (strcmp(Equation_Type, "Gaussian2D_Cartesian") == 0){
+      if(CFDkit_Primary_MPI_Processor()) {
+        error_flag = Gaussian2DCartesianSolver(Input_File_Name_ptr,
+	  				       batch_flag);
+      } /* endif */
+      CFDkit_Broadcast_MPI(&error_flag, 1);
 
+  /* Gaussian2D */
+  } else if(strcmp(Equation_Type, "Gaussian2D") == 0){
+      error_flag = Gaussian2DQuadSolver(Input_File_Name_ptr,
+	  				       batch_flag);
   } /* endif */
 
   if (error_flag) {
