@@ -1,0 +1,10 @@
+prefix=/nfs/kris/d1/people/francisco/CFFC/fftw-3.2alpha2
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: FFTW
+Description: fast Fourier transform library
+Version: 3.2alpha2
+Libs: -L${libdir} -lfftw3 -lm
+Cflags: -I${includedir}

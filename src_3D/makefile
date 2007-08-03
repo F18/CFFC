@@ -37,7 +37,6 @@ NAVIERSTOKES_DIR = NavierStokes/
 PHYSICS_DIR = Physics/
 SYSTEM_DIR = System/
 TURBULENCE_DIR = Turbulence/
-LES_TF_DIR = LES/LES_ThickenedFlame/
 
 # C++ Source files
 SRC_MATH = $(MATH_DIR)Vector2D.cc \
@@ -78,7 +77,6 @@ SRC_FANS = $(FANS_DIR)FANS3DThermallyPerfectState.cc \
 SRC_SPECIES = $(NASA_DIR)NASARP1311data.cc \
               $(NASA_DIR)Reactions.cc
 SRC_TURBULENCE = $(TURBULENCE_DIR)TurbulenceModelling.cc 
-SRC_LES_TF = $(LES_TF_DIR)LES3DThickenedFlameState.cc
 SRC_BASE = $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_SYSTEM) \
            $(SRC_AMR) $(SRC_GRID) $(SRC_ICEM) $(SRC_HEXA) \
            $(SRC_TURBULENCE)
@@ -126,13 +124,12 @@ OBJ_FANS = $(FANS_DIR)FANS3DThermallyPerfectState.o \
 OBJ_SPECIES = $(NASA_DIR)NASARP1311data.o \
               $(NASA_DIR)Reactions.o
 OBJ_TURBULENCE = $(TURBULENCE_DIR)TurbulenceModelling.o 
-OBJ_LES_TF = $(LES_TF_DIR)LES3DThickenedFlameState.o
 OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_SYSTEM) \
            $(OBJ_AMR) $(OBJ_GRID) $(OBJ_ICEM) $(OBJ_HEXA) \
            $(OBJ_TURBULENCE) 
 OBJ_CFFC = $(OBJ_BASE) \
            $(OBJ_EULER) $(OBJ_NAVIERSTOKES) $(OBJ_FANS) \
-           $(OBJ_SPECIES) $(OBJ_LES_TF)
+           $(OBJ_SPECIES)
 OBJ_MAIN = cffc3D.o
 
 #
@@ -230,10 +227,10 @@ fftw:
 	@echo Building $(FFTW) library for a $(PLATFORM) platform.
 	@echo '--------------------------------------------------------'
 	@echo ' '
-	cd $(FFTW_DIR); make -i clean;
 	cd $(FFTW_DIR); ./configure --prefix=$(FFTW_DIR);
 	cd $(FFTW_DIR); make;
-	cd $(FFTW_DIR); make -i check;
+	cd $(FFTW_DIR); make check;
+	cd $(FFTW_DIR); make install;
 	@echo ' '
 	@echo $(FFTW) library has been brought up to date.
 	@echo '------------------------------------------------'
@@ -361,7 +358,6 @@ clean:
 	rm -f $(PHYSICS_DIR)*.o $(PHYSICS_DIR)*.il $(PHYSICS_DIR)*~
 	rm -f $(SYSTEM_DIR)*.o $(SYSTEM_DIR)*.il $(SYSTEM_DIR)*~
 	rm -f $(TURBULENCE_DIR)*.o $(TURBULENCE_DIR)*.il $(TURBULENCE_DIR)*~
-	rm -f $(LES_TF_DIR)*.o $(LES_TF_DIR)*.il $(LES_TF_DIR)*~
 	rm -f $(EXE_MAIN)
 	@echo ' '
 	@echo All source file directories are now clean.
@@ -382,7 +378,8 @@ superclean:
 	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
 	cd $(BPKIT_DIR)/src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
 	cd $(CANTERA_DIR); make -i clean;
-	cd $(FFTW_DIR); make -i clean;
+	cd $(FFTW_DIR); make clean; 
+#	cd $(FFTW_DIR); make distclean;
 	@echo ' '
 	@echo All documentation and library directories are now clean.
 	@echo '-------------------------------------------------------'
