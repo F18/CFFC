@@ -318,7 +318,7 @@ int Output_Cells_Tecplot(Gaussian2D_Quad_Block *Soln_ptr,
     for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
           Output_Cells_Tecplot(Soln_ptr[i], 
-			       Input_Parameters,
+			       //Input_Parameters,
                                Number_of_Time_Steps, 
                                Time,
                                Soln_Block_List.Block[i].gblknum,
@@ -714,4 +714,26 @@ void Output_Drag(Gaussian2D_Quad_Block *Soln_ptr,
     }
   }
 
+}
+
+/**********************************************************************
+ * Routine: Output_Gradients_Tecplot                                  *
+ *                                                                    *
+ * Writes the gradients of the primitive solution states (as well as  *
+ * the slope limiters) for a 1D array of 2D quadrilateral multi-block *
+ * solution blocks to the specified output data file(s) in a format   *
+ * suitable for plotting with TECPLOT.  Returns a non-zero value if   *
+ * cannot write any of the TECPLOT solution files.                    *
+ *                                                                    *
+ **********************************************************************/
+int Output_Gradients_Tecplot(Gaussian2D_Quad_Block *Soln_ptr,
+			     AdaptiveBlock2D_List &Soln_Block_List,
+			     Gaussian2D_Input_Parameters &IP,
+			     const int Number_of_Time_Steps,
+			     const double &Time) {
+
+  cout << "This has not been implemented." << endl;
+
+  //this is here only for compalibility with embedded boundaries
+  return 0;
 }

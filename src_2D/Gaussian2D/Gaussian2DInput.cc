@@ -149,6 +149,9 @@ void Set_Default_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
     IP.Ellipse_Length_Y_Axis = HALF;
     IP.Chord_Length = ONE;
     IP.Orifice_Radius = ONE;
+    IP.Inner_Streamline_Number = 0.80;
+    IP.Outer_Streamline_Number = 0.40;
+    IP.Isotach_Line = 0.30;
     IP.Wedge_Angle = 25.0;
     IP.Wedge_Length = HALF;
     IP.Couette_Plate_Separation = ONE;
@@ -161,12 +164,12 @@ void Set_Default_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
     IP.X_Scale = ONE;
     IP.X_Rotate = ZERO;
 
-    //string_ptr = "/home/groth/CFDkit+caboodle/data/NASA_Rotors/R37/";
-    //strcpy(IP.NASA_Rotor37_Data_Directory, string_ptr);
-    //string_ptr = "/home/groth/CFDkit+caboodle/data/NASA_Rotors/R67/";
-    //strcpy(IP.NASA_Rotor67_Data_Directory, string_ptr);
-    //IP.Rotor_Flow_Type = PEAK_FLOW;
-    //IP.Rotor_Percent_Span = 50.00;
+    string_ptr = "/home/groth/CFDkit+caboodle/data/NASA_Rotors/R37/";
+    strcpy(IP.NASA_Rotor37_Data_Directory, string_ptr);
+    string_ptr = "/home/groth/CFDkit+caboodle/data/NASA_Rotors/R67/";
+    strcpy(IP.NASA_Rotor67_Data_Directory, string_ptr);
+    IP.Rotor_Flow_Type = PEAK_FLOW;
+    IP.Rotor_Percent_Span = 50.00;
 
     IP.ICEMCFD_FileNames = ICEMCFD_get_filenames();
 
@@ -512,6 +515,15 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Orifice_Radius), 
                           1, 
                           MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Inner_Streamline_Number),
+			  1,
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Outer_Streamline_Number),
+			  1,
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Isotach_Line),
+			  1,
+			  MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Wedge_Angle), 
 			  1, 
 			  MPI::DOUBLE, 0);
@@ -585,18 +597,18 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.BC_West),
 			  1,
 			  MPI::INT,0);
-    //MPI::COMM_WORLD.Bcast(IP.NASA_Rotor37_Data_Directory, 
-    //                      INPUT_PARAMETER_LENGTH_GAUSSIAN2D, 
-    //                      MPI::CHAR, 0);
-    //MPI::COMM_WORLD.Bcast(IP.NASA_Rotor67_Data_Directory, 
-    //                      INPUT_PARAMETER_LENGTH_GAUSSIAN2D, 
-    //                      MPI::CHAR, 0);
-    //MPI::COMM_WORLD.Bcast(&(IP.Rotor_Flow_Type), 
-    //                      1, 
-    //                      MPI::INT, 0);
-    //MPI::COMM_WORLD.Bcast(&(IP.Rotor_Percent_Span), 
-    //                      1, 
-    //                      MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(IP.NASA_Rotor37_Data_Directory, 
+                          INPUT_PARAMETER_LENGTH_GAUSSIAN2D, 
+                          MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(IP.NASA_Rotor67_Data_Directory, 
+                          INPUT_PARAMETER_LENGTH_GAUSSIAN2D, 
+                          MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Rotor_Flow_Type), 
+                          1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Rotor_Percent_Span), 
+                          1, 
+                          MPI::DOUBLE, 0);
     if (!CFDkit_Primary_MPI_Processor()) {
        IP.ICEMCFD_FileNames = new char*[3];
        for (i = 0; i < 3; i++) {
@@ -730,7 +742,7 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
 			  MPI::INT,0);
 
     // Multigrid Related Parameters
-    //IP.Multigrid_IP.Broadcast_Input_Parameters();
+    IP.Multigrid_IP.Broadcast_Input_Parameters();
 
     if (!CFDkit_Primary_MPI_Processor()) {
        IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
@@ -1041,6 +1053,15 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Orifice_Radius), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Inner_Streamline_Number),
+		       1,
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Outer_Streamline_Number),
+		       1,
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Isotach_Line),
+		       1,
+		       MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.Wedge_Angle), 
 		       1, 
 		       MPI::DOUBLE, Source_Rank);
@@ -1114,19 +1135,18 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.BC_West),
 		       1,
 		       MPI::INT,Source_Rank);
-
-    //Communicator.Bcast(IP.NASA_Rotor37_Data_Directory, 
-    //                 INPUT_PARAMETER_LENGTH_GAUSSIAN2D, 
-    //                 MPI::CHAR, Source_Rank);
-    //Communicator.Bcast(IP.NASA_Rotor67_Data_Directory, 
-    //                 INPUT_PARAMETER_LENGTH_GAUSSIAN2D, 
-    //                 MPI::CHAR, Source_Rank);
-    //Communicator.Bcast(&(IP.Rotor_Flow_Type), 
-    //                 1, 
-    //                 MPI::INT, Source_Rank);
-    //Communicator.Bcast(&(IP.Rotor_Percent_Span), 
-    //                 1, 
-    //                 MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(IP.NASA_Rotor37_Data_Directory, 
+                     INPUT_PARAMETER_LENGTH_GAUSSIAN2D, 
+                     MPI::CHAR, Source_Rank);
+    Communicator.Bcast(IP.NASA_Rotor67_Data_Directory, 
+                     INPUT_PARAMETER_LENGTH_GAUSSIAN2D, 
+                     MPI::CHAR, Source_Rank);
+    Communicator.Bcast(&(IP.Rotor_Flow_Type), 
+                     1, 
+                     MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.Rotor_Percent_Span), 
+                     1, 
+                     MPI::DOUBLE, Source_Rank);
     if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
        IP.ICEMCFD_FileNames = new char*[3];
        for (i = 0; i < 3; i++) {
@@ -1261,9 +1281,9 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP,
 		       1,
 		       MPI::INT,Source_Rank);
     // Multigrid Related Parameters
-    //IP.Multigrid_IP.Broadcast_Input_Parameters(Communicator,
-    //				       Source_CPU);
-    //
+    IP.Multigrid_IP.Broadcast_Input_Parameters(Communicator,
+    				       Source_CPU);
+    
     if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
        IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
     } // endif
@@ -1383,8 +1403,9 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
            IP.i_Time_Integration = TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING;
            IP.N_Stage = 4;	   
 	   /* Multigrid */
-	   //} else if (strcmp(IP.Time_Integration_Type, "Multigrid") == 0) {
-	   //IP.i_Time_Integration = TIME_STEPPING_MULTIGRID;
+	   } else if (strcmp(IP.Time_Integration_Type, "Multigrid") == 0) {
+	 cout << "Warning multigrid has not been tested with Gaussian2D and will probably not work!" << endl;
+	 IP.i_Time_Integration = TIME_STEPPING_MULTIGRID;
        } else {
            IP.i_Time_Integration = TIME_STEPPING_EXPLICIT_EULER;
            IP.N_Stage = 1;
@@ -1582,38 +1603,38 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
 	  IP.i_Grid = GRID_UNSTEADY_BLUNT_BODY;
 	  IP.Blunt_Body_Radius = ONE;
 	  IP.Blunt_Body_Mach_Number = TWO;
-	  //} else if (strcmp(IP.Grid_Type, "NASA_Rotor37") == 0) {
-          //IP.i_Grid = GRID_NASA_ROTOR_37;
-          //IP.Rotor_Flow_Type = PEAK_FLOW;
-          //IP.Rotor_Percent_Span = 50.00;
-          //IP.NASA_Rotor37.init(IP.Rotor_Flow_Type,
-          //                     IP.NASA_Rotor37_Data_Directory);
-          //IP.Wo.setgas("AIR");
-          //IP.Wo = IP.NASA_Rotor37.getPstateREL_up(IP.Rotor_Percent_Span);
-          //IP.Pressure = IP.Wo.p;
-          //IP.Temperature = IP.Wo.T();
-          //IP.Mach_Number = IP.NASA_Rotor37.getMachREL_up(IP.Rotor_Percent_Span);
-          //IP.Flow_Angle = atan2(IP.Wo.v.y, IP.Wo.v.x); 
-          //if (IP.Flow_Angle < ZERO) IP.Flow_Angle = TWO*PI + IP.Flow_Angle;
-          //IP.Flow_Angle = 180.00*IP.Flow_Angle/PI;
-          //IP.W1 = IP.NASA_Rotor37.getPstateREL_down(IP.Rotor_Percent_Span);
-	  //} else if (strcmp(IP.Grid_Type, "NASA_Rotor67") == 0) {
-          //IP.i_Grid = GRID_NASA_ROTOR_67;
-          //IP.Rotor_Flow_Type = PEAK_FLOW;
-          //IP.Rotor_Percent_Span = 50.00;
-          //IP.NASA_Rotor67.init(IP.Rotor_Flow_Type,
-          //                     IP.NASA_Rotor67_Data_Directory);
-          //IP.Wo.setgas("AIR");
-          //IP.Wo = IP.NASA_Rotor67.getPstateREL_up(IP.Rotor_Percent_Span);
-          //IP.Pressure = IP.Wo.p;
-          //IP.Temperature = IP.Wo.T();
-          //IP.Mach_Number = IP.NASA_Rotor67.getMachREL_up(IP.Rotor_Percent_Span);
-          //IP.Flow_Angle = atan2(IP.Wo.v.y, IP.Wo.v.x); 
-          //if (IP.Flow_Angle < ZERO) IP.Flow_Angle = TWO*PI + IP.Flow_Angle;
-          //IP.Flow_Angle = 180.00*IP.Flow_Angle/PI;
-          //IP.W1 = IP.NASA_Rotor67.getPstateREL_down(IP.Rotor_Percent_Span);
+//       } else if (strcmp(IP.Grid_Type, "NASA_Rotor37") == 0) {
+//          IP.i_Grid = GRID_NASA_ROTOR_37;
+//          IP.Rotor_Flow_Type = PEAK_FLOW;
+//          IP.Rotor_Percent_Span = 50.00;
+//          IP.NASA_Rotor37.init(IP.Rotor_Flow_Type,
+//                               IP.NASA_Rotor37_Data_Directory);
+//          IP.Wo.setgas("AIR");
+//          IP.Wo = IP.NASA_Rotor37.getPstateREL_up(IP.Rotor_Percent_Span);
+//          IP.Pressure = IP.Wo.p;
+//          IP.Temperature = IP.Wo.T();
+//          IP.Mach_Number = IP.NASA_Rotor37.getMachREL_up(IP.Rotor_Percent_Span);
+//          IP.Flow_Angle = atan2(IP.Wo.v.y, IP.Wo.v.x); 
+//          if (IP.Flow_Angle < ZERO) IP.Flow_Angle = TWO*PI + IP.Flow_Angle;
+//          IP.Flow_Angle = 180.00*IP.Flow_Angle/PI;
+//          IP.W1 = IP.NASA_Rotor37.getPstateREL_down(IP.Rotor_Percent_Span);
+//       } else if (strcmp(IP.Grid_Type, "NASA_Rotor67") == 0) {
+//	 IP.i_Grid = GRID_NASA_ROTOR_67;
+//	 IP.Rotor_Flow_Type = PEAK_FLOW;
+//	 IP.Rotor_Percent_Span = 50.00;
+//	 IP.NASA_Rotor67.init(IP.Rotor_Flow_Type,
+//			      IP.NASA_Rotor67_Data_Directory);
+//	 IP.Wo.setgas("AIR");
+//	 IP.Wo = IP.NASA_Rotor67.getPstateREL_up(IP.Rotor_Percent_Span);
+//	 IP.Pressure = IP.Wo.p;
+//	 IP.Temperature = IP.Wo.T();
+//	 IP.Mach_Number = IP.NASA_Rotor67.getMachREL_up(IP.Rotor_Percent_Span);
+//	 IP.Flow_Angle = atan2(IP.Wo.v.y, IP.Wo.v.x); 
+//	 if (IP.Flow_Angle < ZERO) IP.Flow_Angle = TWO*PI + IP.Flow_Angle;
+//	 IP.Flow_Angle = 180.00*IP.Flow_Angle/PI;
+//	 IP.W1 = IP.NASA_Rotor67.getPstateREL_down(IP.Rotor_Percent_Span);
        } else if (strcmp(IP.Grid_Type, "Bump_Channel_Flow") == 0) {
-	  IP.i_Grid = GRID_BUMP_CHANNEL_FLOW;
+	 IP.i_Grid = GRID_BUMP_CHANNEL_FLOW;
        } else if (strcmp(IP.Grid_Type,"Non_Smooth_Bump_Channel_Flow") == 0) {
 	 IP.i_Grid = GRID_BUMP_CHANNEL_FLOW;
 	 IP.Smooth_Bump = OFF;

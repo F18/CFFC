@@ -54,6 +54,16 @@ void Read_Solution_Block(Gaussian2D_Quad_Block &SolnBlk,
  *                                                      *
  ********************************************************/
 void Output_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
+		    Gaussian2D_Input_Parameters &IP,
+                    const int Number_of_Time_Steps,
+                    const double &Time,
+                    const int Block_Number,
+                    const int Output_Title,
+	            ostream &Out_File) {
+  Output_Tecplot(SolnBlk, Number_of_Time_Steps, Time, Block_Number, Output_Title, Out_File);
+}
+
+void Output_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
                     const int Number_of_Time_Steps,
                     const double &Time,
                     const int Block_Number,
@@ -185,7 +195,7 @@ void Output_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
  *                                                      *
  ********************************************************/
 void Output_Cells_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
-			  Gaussian2D_Input_Parameters &IP,
+			  //Gaussian2D_Input_Parameters &IP,
                           const int Number_of_Time_Steps,
                           const double &Time,
                           const int Block_Number,
@@ -197,7 +207,7 @@ void Output_Cells_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
     /* Ensure boundary conditions are updated before
        outputting solution */
 
-    BCs(SolnBlk,IP);
+    //BCs(SolnBlk,IP);  //I took this out for now so it would compile with embedded boundaries2D
 
     Out_File << setprecision(14);
     if (Output_Title) {
@@ -611,3 +621,23 @@ void Output_Drag(Gaussian2D_Quad_Block &SolnBlk,
 
 }
 
+/**********************************************************************
+ * Routine: Output_Gradients_Tecplot                                  *
+ *                                                                    *
+ * Writes the cell centred primitive variable state gradients and     *
+ * limiters of the specified quadrilateral solution block to the      *
+ * specified output stream suitable for plotting with TECPLOT.        *
+ *                                                                    *
+ **********************************************************************/
+void Output_Gradients_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
+			      const int Number_of_Time_Steps,
+			      const double &Time,
+			      const int Block_Number,
+			      const int Output_Title,
+			      ostream &Out_File) {
+
+  cout << "This has not been implemented." << endl;
+
+  //this is here only for compalibility with embedded boundaries
+  return;
+}

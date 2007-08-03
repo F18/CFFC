@@ -2457,3 +2457,24 @@ void Integrate_distribution(Gaussian2D_pState &solution,
 
   return;
 }
+
+/**********************************************************************
+ * Routine: RinglebFlow                                               *
+ *                                                                    *
+ * This function returns the average exact solution to Ringleb's flow *
+ * for a quadrilateral cell defined by points X1, X2, X3, and X4      *
+ * which are defined in a counter-clockwise direction starting in the *
+ * south-west corner.  The average solution is determined using a     *
+ * ?????th-order numerical quadrature.                                *
+ *                                                                    *
+ **********************************************************************/
+Gaussian2D_pState RinglebFlowAverageState(const Gaussian2D_pState &Wdum,
+					  const Vector2D &Y1,
+					  const Vector2D &Y2,
+					  const Vector2D &Y3,
+					  const Vector2D &Y4) {
+  //This has not been implemented.  It is only here for
+  //compatibility with embeddedboundaries2D.
+  //      ~james
+  return Gaussian2D_pState();
+}

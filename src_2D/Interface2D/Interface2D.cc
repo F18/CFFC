@@ -68,7 +68,7 @@ void Interface2D::BoundingBox(void) {
   }
   // Special case: If the area of the bounding box is zero then include
   // twice the reference point in the bounding-box creation.
-  if ((Xmax.x-Xmin.x)*(Xmax.y-Xmin.y) < 0.001) {
+  if ((Xmax.x-Xmin.x)*(Xmax.y-Xmin.y) < NANO) {
     if (Xref.y > Xmax.y) Xmax.y += TWO*(Xref.y-Xmax.y);
     if (Xref.y < Xmin.y) Xmin.y += TWO*(Xref.y-Xmin.y);
     if (Xref.x > Xmax.x) Xmax.x += TWO*(Xref.x-Xmax.x);
@@ -160,7 +160,7 @@ int Interface2D::Point_In_Interface(const Vector2D &Xt) {
     //if (Xt == Spline.Xp[n] || Xt == Spline.Xp[n+1]) return 2;
     //if (Point_On_Line(Spline.Xp[n],Spline.Xp[n+1],Xt)) return 2;
     // Get the points defining the edge of the polygon.
-    if (Line_Intersection(Spline.Xp[n],Spline.Xp[n+1],Xt,Xref,Xp)) {
+    if (Line_Intersection(Spline.Xp[n],Spline.Xp[n+1],Xt,Xref,Xp,NANO*abs(Spline.Xp[n]-Spline.Xp[n+1]))) {
       if (abs(Xp-Spline.Xp[n]) > NANO*abs(Spline.Xp[n]-Spline.Xp[n+1])) number_of_intersections++;
     }
   }

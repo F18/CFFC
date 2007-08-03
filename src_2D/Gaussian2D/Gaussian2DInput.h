@@ -19,6 +19,20 @@
 #include "../Grid/Grid2DQuad.h"
 #endif // _GRID2D_QUAD_BLOCK_INCLUDED
 
+#ifndef _NASA_ROTOR37_INCLUDED
+#include "../Grid/NASARotor37.h"
+#endif // _NASA_ROTOR37_INCLUDED
+
+#ifndef _NASA_ROTOR67_INCLUDED
+#include "../Grid/NASARotor67.h"
+#endif // _NASA_ROTOR67_INCLUDED
+
+/* Include multigrid input header file. */
+
+#ifndef _FASMULTIGRID2DINPUT_INCLUDED
+#include "../FASMultigrid2D/FASMultigrid2DInput.h"
+#endif // _FASMULTIGRID2DINPUT_INCLUDED
+
 // Include embedded boundary input header file.
 
 #ifndef _EMBEDDEDBOUNDARIES2DINPUT_INCLUDED
@@ -91,7 +105,7 @@ class Gaussian2D_Input_Parameters{
 
   /***************************************
    * Multigrid related input parameters: */
-  //Multigrid_Input_Parameters Multigrid_IP;
+  Multigrid_Input_Parameters Multigrid_IP;
   /***************************************/  
 
   // Reconstruction type indicator and related input parameters:
@@ -133,6 +147,7 @@ class Gaussian2D_Input_Parameters{
          Nozzle_Length, Nozzle_Radius_Exit, Nozzle_Radius_Throat,
          Cylinder_Radius, Cylinder_Radius2, Ellipse_Length_X_Axis, 
          Ellipse_Length_Y_Axis, Chord_Length, Orifice_Radius,
+         Inner_Streamline_Number, Outer_Streamline_Number, Isotach_Line,
          Wedge_Angle, Wedge_Length, Couette_Plate_Separation,
          Couette_Plate_Velocity, Pressure_Drop;
   int Smooth_Bump;
@@ -151,12 +166,12 @@ class Gaussian2D_Input_Parameters{
   char BC_West_Type[INPUT_PARAMETER_LENGTH_GAUSSIAN2D];
   int BC_North, BC_South, BC_East, BC_West;
 
-  //char NASA_Rotor37_Data_Directory[INPUT_PARAMETER_LENGTH_GAUSSIAN2D],
-  //     NASA_Rotor67_Data_Directory[INPUT_PARAMETER_LENGTH_GAUSSIAN2D];
-  //int Rotor_Flow_Type;
-  //double Rotor_Percent_Span;
-  //NASARotor37 NASA_Rotor37;
-  //NASARotor67 NASA_Rotor67;
+  char NASA_Rotor37_Data_Directory[INPUT_PARAMETER_LENGTH_GAUSSIAN2D],
+       NASA_Rotor67_Data_Directory[INPUT_PARAMETER_LENGTH_GAUSSIAN2D];
+  int Rotor_Flow_Type;
+  double Rotor_Percent_Span;
+  NASARotor37 NASA_Rotor37;
+  NASARotor67 NASA_Rotor67;
 
   char **ICEMCFD_FileNames;
 
@@ -279,6 +294,13 @@ inline ostream &operator << (ostream &out_file,
              << IP.Time_Integration_Type;
     out_file << "\n  -> Number of Stages in Multi-Stage Scheme: " 
              << IP.N_Stage;
+    /*****************************************************
+     *                     Multigrid                     */
+    if (IP.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
+	IP.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
+      out_file << IP.Multigrid_IP;
+    }
+    /*****************************************************/
     if (IP.Local_Time_Stepping == GLOBAL_TIME_STEPPING) {
       out_file << "\n  -> Global Time Stepping";
     } else if (IP.Local_Time_Stepping == SCALAR_LOCAL_TIME_STEPPING) {

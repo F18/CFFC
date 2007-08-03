@@ -2841,13 +2841,28 @@ extern void Output_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
                            const int Output_Title,
 	                   ostream &Out_File);
 
+extern void Output_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
+			   Gaussian2D_Input_Parameters &IP,
+		           const int Number_of_Time_Steps,
+                           const double &Time,
+                           const int Block_Number,
+                           const int Output_Title,
+	                   ostream &Out_File);
+
 extern void Output_Cells_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
-				 Gaussian2D_Input_Parameters &IP,
+				 //Gaussian2D_Input_Parameters &IP,
 		                 const int Number_of_Time_Steps,
                                  const double &Time,
                                  const int Block_Number,
                                  const int Output_Title,
 	                         ostream &Out_File);
+
+extern void Output_Gradients_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
+				     const int Number_of_Time_Steps,
+				     const double &Time,
+				     const int Block_Number,
+				     const int Output_Title,
+				     ostream &Out_File);
 
 extern void Output_Flat_Plate(Gaussian2D_Quad_Block &SolnBlk,
 			      const int Number_of_Time_Steps,
@@ -3003,6 +3018,12 @@ extern int Output_Cells_Tecplot(Gaussian2D_Quad_Block *Soln_ptr,
                                 Gaussian2D_Input_Parameters &Input_Parameters,
 		                const int Number_of_Time_Steps,
                                 const double &Time);
+
+extern int Output_Gradients_Tecplot(Gaussian2D_Quad_Block *Soln_ptr,
+				    AdaptiveBlock2D_List &Soln_Block_List,
+				    Gaussian2D_Input_Parameters &Input_Parameters,
+				    const int Number_of_Time_Steps,
+				    const double &Time);
 
 extern int Output_Mesh_Tecplot(Gaussian2D_Quad_Block *Soln_ptr,
                                AdaptiveBlock2D_List &Soln_Block_List,

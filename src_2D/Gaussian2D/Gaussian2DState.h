@@ -221,6 +221,10 @@ class Gaussian2D_pState{
 
     /* Source terms */
     void relax(double deltat, int stage, const Gaussian2D_pState &W);
+    int analytically_inverted_relaxation() { //this is needed for embeddedboundaries with gaussian2D
+      return 1;
+    }
+
 
     /* Set gas constants. */
     void setgas(void);
@@ -475,6 +479,9 @@ class Gaussian2D_pState{
 	       << " " << p.xy << " " << p.yy << " " << p.zz << " " << erot
 	       << " " << pressure() << " " << (sqrt(sqr(v.x)+sqr(v.y))/sound());
     }
+
+
+    double a(void) const {return 0.0;} //needed for compatibility with embeddedboundaries2D
 
 };
 
@@ -2934,6 +2941,12 @@ extern Gaussian2D_pState Adiabatic_Wall(const Gaussian2D_pState &W,
 extern Gaussian2D_pState Adiabatic_Wall(const Gaussian2D_pState &W,
 					const Vector2D &V,
 					const Vector2D &norm_dir);
+
+extern Gaussian2D_pState RinglebFlowAverageState(const Gaussian2D_pState &Wdum,
+						 const Vector2D &Y1,
+						 const Vector2D &Y2,
+						 const Vector2D &Y3,
+						 const Vector2D &Y4);
 
 extern Gaussian2D_pState BC_Characteristic_Pressure(const Gaussian2D_pState &Wi,
                                                     const Gaussian2D_pState &Wo,
