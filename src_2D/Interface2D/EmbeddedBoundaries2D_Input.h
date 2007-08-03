@@ -212,6 +212,8 @@ inline ostream &operator << (ostream &out_file,
 	     << IP.Solution_Redistribution_Type;
     out_file << "\n     -> Interface evolution frequency: " << IP.Evolution_Frequency;
   }
+
+  return out_file;
 }
 
 inline istream &operator >> (istream &in_file,
