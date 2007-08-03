@@ -50,9 +50,37 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 		                        Input_Parameters.Number_of_Blocks_Jdir,
                                         Input_Parameters.Box_Width,
 					Input_Parameters.Box_Width,
- 		                        Input_Parameters.Number_of_Cells_Idir,
+		                        Input_Parameters.Number_of_Cells_Idir,
 		                        Input_Parameters.Number_of_Cells_Jdir,
-		                        Input_Parameters.Number_of_Ghost_Cells);
+					Input_Parameters.Number_of_Ghost_Cells);
+        for ( jBlk = 0; jBlk <= Input_Parameters.Number_of_Blocks_Jdir-1; ++jBlk ) {
+	  for ( iBlk = 0; iBlk <= Input_Parameters.Number_of_Blocks_Idir-1; ++iBlk ) {
+	    if (jBlk == Input_Parameters.Number_of_Blocks_Jdir-1) {
+	      Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(BC_CONSTANT_EXTRAPOLATION);
+	    } else {
+	      Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(BC_NONE);
+	    } /* endif */
+	    if (jBlk == 0) {
+	      Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_CONSTANT_EXTRAPOLATION);  //BC_FIXED
+	    } else {
+	      Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_NONE);
+	    } /* endif */
+	    if (iBlk == Input_Parameters.Number_of_Blocks_Idir-1) {
+	      Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(BC_CONSTANT_EXTRAPOLATION);
+	    } else {
+	      Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(BC_NONE);
+	    } /* endif */
+	    if (iBlk == 0) {
+		 Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_CONSTANT_EXTRAPOLATION);
+	    } else {
+	      Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_NONE);
+	    } /* endif */
+	    Set_BCs(Grid_ptr[iBlk][jBlk]);
+	    Update_Exterior_Nodes(Grid_ptr[iBlk][jBlk]);
+	    Update_Cells(Grid_ptr[iBlk][jBlk]);
+	  } 
+        } 
+	
         break;
     
 	//***************** FOR VISCOUS FLOWS *************************//
@@ -64,8 +92,105 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
                                         Input_Parameters.Box_Height,
  		                        Input_Parameters.Number_of_Cells_Idir,
 		                        Input_Parameters.Number_of_Cells_Jdir,
-		                        Input_Parameters.Number_of_Ghost_Cells);
+					Input_Parameters.Number_of_Ghost_Cells);
+        for ( jBlk = 0; jBlk <= Input_Parameters.Number_of_Blocks_Jdir-1; ++jBlk ) {
+	  for ( iBlk = 0; iBlk <= Input_Parameters.Number_of_Blocks_Idir-1; ++iBlk ) {
+	    // North (Top)
+	    if (jBlk == Input_Parameters.Number_of_Blocks_Jdir-1) {
+	      Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(BC_MOVING_WALL_HEATFLUX);
+	    } else {
+                 Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(BC_NONE);
+	    } 
+	    // South (Bottom)
+	    if (jBlk == 0) {
+	      Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_WALL_VISCOUS_HEATFLUX);
+	    } else {
+	      Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_NONE);
+	    } 
+	    // East (Outflow)
+	    if (iBlk == Input_Parameters.Number_of_Blocks_Idir-1) {
+	      Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(BC_OUTFLOW_SUBSONIC);
+	    } else {
+	      Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(BC_NONE);
+	    }
+	    // West (Inflow)
+	    if (iBlk == 0) {  
+	      Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_INFLOW_SUBSONIC);
+	    } else {
+	      Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_NONE);
+	    } 
+	    
+	    Set_BCs(Grid_ptr[iBlk][jBlk]);
+	    Update_Exterior_Nodes(Grid_ptr[iBlk][jBlk]);
+	    Update_Cells(Grid_ptr[iBlk][jBlk]);
+	  } 
+        } 
         break;
+
+	/*************** TEST MULTIBLOCK GRID *******************************/
+	// Primarily used to test BC's convergence issues with NKS
+    case GRID_TEST :
+      Grid_ptr = Grid_Rectangular_Box(Grid_ptr,
+				      Input_Parameters.Number_of_Blocks_Idir,
+				      Input_Parameters.Number_of_Blocks_Jdir,
+				      Input_Parameters.Box_Width,
+				      Input_Parameters.Box_Height,
+				      Input_Parameters.Number_of_Cells_Idir,
+				      Input_Parameters.Number_of_Cells_Jdir,
+				      Input_Parameters.Number_of_Ghost_Cells);
+      for ( jBlk = 0; jBlk <= Input_Parameters.Number_of_Blocks_Jdir-1; ++jBlk ) {
+	for ( iBlk = 0; iBlk <= Input_Parameters.Number_of_Blocks_Idir-1; ++iBlk ) {
+	  // North (Top)
+	  if (jBlk == Input_Parameters.Number_of_Blocks_Jdir-1) {
+	    Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(BC_2DFLAME_OUTFLOW);
+	  } else {
+	    Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(BC_NONE);
+	  } 
+	  // South (Bottom)
+	  if (iBlk == 0) {
+	    Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_FIXED); //BC_2DFLAME_INFLOW); //
+	  } else if ( iBlk == 1) {
+	    Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_2DFLAME_INFLOW); //BC_WALL_VISCOUS_HEATFLUX);
+	  } else {
+	    Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_FIXED); 
+	  } 
+
+	  // East 
+	  if (iBlk == Input_Parameters.Number_of_Blocks_Idir-1) {
+	    Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(BC_REFLECTION);
+	  } else {
+	    Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(BC_NONE); 
+	  }
+	  // West
+	  if (iBlk == 0) {  
+	    Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_REFLECTION);
+	  } else {
+	    Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_NONE);
+	  } 
+	    
+	  Set_BCs(Grid_ptr[iBlk][jBlk]);
+	  Update_Exterior_Nodes(Grid_ptr[iBlk][jBlk]);
+	  Update_Cells(Grid_ptr[iBlk][jBlk]);
+	} 
+      } 
+      break;
+      
+    case GRID_DRIVEN_CAVITY_FLOW :
+      Grid_ptr = Grid_Driven_Cavity_Flow(Grid_ptr,
+					 Input_Parameters.Number_of_Blocks_Idir,
+					 Input_Parameters.Number_of_Blocks_Jdir,
+					 Input_Parameters.Box_Width,
+					 Input_Parameters.Box_Height,
+					 Input_Parameters.Mesh_Stretching_Type_Idir,
+					 Input_Parameters.Mesh_Stretching_Type_Jdir,
+					 Input_Parameters.Mesh_Stretching_Factor_Idir,
+					 Input_Parameters.Mesh_Stretching_Factor_Jdir,		
+					 Input_Parameters.Number_of_Cells_Idir,
+					 Input_Parameters.Number_of_Cells_Jdir,
+					 Input_Parameters.Number_of_Ghost_Cells);
+
+       break;
+
 	//***************** FOR 1D Premixed FLAMES *************************//
     case GRID_1DFLAME :
       Grid_ptr = Grid_1D_Flame(Grid_ptr,
@@ -87,7 +212,8 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 				       Input_Parameters.Pipe_Length,
 				       Input_Parameters.Number_of_Cells_Idir,
 				       Input_Parameters.Number_of_Cells_Jdir,
-				       Input_Parameters.Number_of_Ghost_Cells);
+				       Input_Parameters.Number_of_Ghost_Cells,
+				       Input_Parameters.i_ICs);
       break;      
       case GRID_RECTANGULAR_BOX :
         Grid_ptr = Grid_Rectangular_Box(Grid_ptr,
@@ -100,11 +226,10 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 		                        Input_Parameters.Number_of_Ghost_Cells);
         break;
       case GRID_FLAT_PLATE :
-        Grid_ptr = Grid_Flat_Plate(Grid_ptr,
+        Grid_ptr = Grid_Flat_Plate_NK(Grid_ptr,
                                    Input_Parameters.Number_of_Blocks_Idir,
 		                   Input_Parameters.Number_of_Blocks_Jdir,
-                                   Input_Parameters.Plate_Length,
-				   Input_Parameters.BC_South,
+                                   Input_Parameters.Plate_Length, 
 				   Input_Parameters.i_Mesh_Stretching,
 				   Input_Parameters.Mesh_Stretching_Factor_Idir,
 				   Input_Parameters.Mesh_Stretching_Factor_Jdir,
@@ -199,14 +324,13 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 				 Input_Parameters.Number_of_Ghost_Cells);
         break; 
       case GRID_WEDGE :
-	if (Input_Parameters.FlowType == FLOWTYPE_INVISCID) Input_Parameters.BC_South = BC_REFLECTION;
 	Grid_ptr = Grid_Wedge(Grid_ptr,
                               Input_Parameters.Number_of_Blocks_Idir,
 		              Input_Parameters.Number_of_Blocks_Jdir,
 			      Input_Parameters.Wedge_Angle,
 			      Input_Parameters.Wedge_Length,
-			      Input_Parameters.BC_South,
-			      Input_Parameters.i_Mesh_Stretching,
+			      Input_Parameters.Mesh_Stretching_Type_Idir,
+			      Input_Parameters.Mesh_Stretching_Type_Jdir,
 			      Input_Parameters.Mesh_Stretching_Factor_Idir,
 			      Input_Parameters.Mesh_Stretching_Factor_Jdir,
 			      Input_Parameters.Number_of_Cells_Idir,
@@ -214,7 +338,7 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 			      Input_Parameters.Number_of_Ghost_Cells);   
 	break;
       case GRID_BUMP_CHANNEL_FLOW :
- 	Grid_ptr = Grid_Bump_Channel_Flow(Grid_ptr,
+	Grid_ptr = Grid_Bump_Channel_Flow(Grid_ptr,
                                           Input_Parameters.Number_of_Blocks_Idir,
 		                          Input_Parameters.Number_of_Blocks_Jdir,
                                           Input_Parameters.Cylinder_Radius,

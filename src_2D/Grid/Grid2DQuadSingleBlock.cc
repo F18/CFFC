@@ -2494,6 +2494,38 @@ void Smooth_Rocket_Motor(Grid2D_Quad_Block &Grid,
 
 }
 
+/*********** Change a block's BC's **************/
+void Grid2D_Quad_Block::set_BCs(const int& FACE, const int& BC){
+  switch(FACE){
+  case NORTH:
+    for ( int i = ICl - Nghost; i <=  ICu + Nghost; i++) {
+      BCtypeN[i] = BC;
+    }
+    break;
+  case SOUTH:
+    for ( int i = ICl - Nghost; i <=  ICu + Nghost; i++) {
+      BCtypeS[i] = BC;
+    }
+    break;
+  case EAST:
+    for ( int j = JCl - Nghost; j <=  JCu + Nghost; j++) {
+      BCtypeE[j] = BC;
+    }
+    break;
+  case WEST:
+    for ( int j = JCl - Nghost; j <=  JCu + Nghost; j++) {
+      BCtypeW[j] = BC;
+    }
+    break;
+  default:
+    cerr<<"\n WRONG \"FACE\" in set_BCs. \n";
+    exit(1);
+    break;
+  };
+}
+
+
+
 /********************************************************
  * Routine: Set_BCs                                     *
  *                                                      *

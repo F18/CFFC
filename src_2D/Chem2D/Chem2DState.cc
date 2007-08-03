@@ -8,30 +8,32 @@
 
 *********************************************************************/
 
+//DEBUGGING FLAG FOR FIGUREING OUT proper NS-1 setup.
+#define _NS_MINUS_ONE
+
 #ifndef _CHEM2D_STATE_INCLUDED
 #include "Chem2DState.h"
 #endif // _CHEM2D_STATE_INCLUDED   
 
 /***********************************************************/
 //Static members initialization
-int Chem2D_pState::ns = 1; 
+
+int Chem2D_pState::ns =1;
 int Chem2D_pState::NUM_VAR_CHEM2D = NUM_CHEM2D_VAR_SANS_SPECIES; 
 NASARP1311data* Chem2D_pState::specdata=NULL;
 Reaction_set Chem2D_pState::React;
 double Chem2D_pState::low_temp_range = 200.0;
 double Chem2D_pState::high_temp_range = 300.0;
-int Chem2D_pState::debug_level = 0;            // debug level flag (0=none, 1,2,..)
 double Chem2D_pState::Mref=0.5;
 double* Chem2D_pState::Schmidt=NULL;
-//total duplication -- find a better way   
+
 int Chem2D_cState::ns = 1; 
 int Chem2D_cState::NUM_VAR_CHEM2D = NUM_CHEM2D_VAR_SANS_SPECIES;   
 NASARP1311data* Chem2D_cState::specdata=NULL;   
 double Chem2D_cState::low_temp_range = 200.0;
 double Chem2D_cState::high_temp_range = 300.0;
-
-int Chem2D_pState::flow_type = FLOWTYPE_LAMINAR;
-int Chem2D_cState::flow_type = FLOWTYPE_LAMINAR;
+double Chem2D_cState::Mref=0.5;
+double* Chem2D_cState::Schmidt=NULL;
 
 //k-omega Turbulence model coefficients
 double Chem2D_pState::alpha = FIVE/NINE; //13.0/15.0; 
@@ -42,7 +44,7 @@ double Chem2D_pState::f_beta = ONE;
 double Chem2D_pState::beta_star = NINE/100.0;
 double Chem2D_pState::f_beta_star = ONE;
 double Chem2D_pState::Coeff_edm = ZERO;
-
+double Chem2D_pState::y_sublayer = 2.50;
 double Chem2D_cState::alpha = FIVE/NINE; //13.0/15.0; 
 double Chem2D_cState::sigma = HALF;
 double Chem2D_cState::sigma_star = HALF;
@@ -51,10 +53,7 @@ double Chem2D_cState::f_beta = ONE;
 double Chem2D_cState::beta_star = NINE/100.0;
 double Chem2D_cState::f_beta_star = ONE;
 double Chem2D_cState::Coeff_edm = ZERO;
-
-int Chem2D_cState::debug_level = 0;           // debug level flag (0=none, 1,2,..)
-double Chem2D_cState::Mref=0.5;
-double* Chem2D_cState::Schmidt=NULL;
+double Chem2D_cState::y_sublayer = 2.50;
 
 /**********************************************************************
  * Chem2D_pState -- Create storage and assign turbulence static       *
@@ -85,13 +84,22 @@ double Chem2D_cState::yplus_outer_layer = 100.0;
 **********************************************************/
 //set Global data for Species (STATIC, ie. so only call once! in Chem2Dinput)
 void Chem2D_pState::set_species_data(const int &n,const string *S,const char *PATH,
-				     const int &debug, const double &Mr, const double* Sc){ 
-  //Deallocate_static();
+				     const double &Mr, const double* Sc){ 
+ 
+#ifdef STATIC_NUMBER_OF_SPECIES
+  if( STATIC_NUMBER_OF_SPECIES < n) {                    //fix for mpi as called by each processor!!!!!!
+    cerr<<"\n WARNING USING STATIC CHEM2D BUILT WITH "<<STATIC_NUMBER_OF_SPECIES 
+        <<" SPECIES PREDEFINED, HOWEVER ASKING FOR "<<n<<endl; 
+    exit(1); 
+  }
+#else 
   Deallocate(); //Clean up memory before changing ns
+#endif
+  ns = n;
 
-  ns =n;
   NUM_VAR_CHEM2D = ns + NUM_CHEM2D_VAR_SANS_SPECIES;
-  //read in NASA data for each species to be used 
+  //read in NASA data for each species to be used  
+  Deallocate_static();
   specdata = new NASARP1311data[ns]; 
   Schmidt = new double[ns];
   for(int i=0; i<ns; i++){
@@ -104,8 +112,7 @@ void Chem2D_pState::set_species_data(const int &n,const string *S,const char *PA
   Temp_low_range(); 
   Temp_high_range(); 
   
-  //Set Debug Information level
-  debug_level = debug;
+  //Preconditioning Reference Mach Number
   Mref = Mr;
 
   //setup initial array for mass fractions
@@ -115,13 +122,21 @@ void Chem2D_pState::set_species_data(const int &n,const string *S,const char *PA
 //exact same thing with conserved variables, 
 //should just point to pState data but for now duplication will work 
 void Chem2D_cState::set_species_data(const int &n, const string *S, const char *PATH,
-				     const int &debug, const double &Mr, const double* Sc){ 
-  //Deallocate_static();
+				     const double &Mr, const double* Sc){ 
+#ifdef STATIC_NUMBER_OF_SPECIES
+  if( STATIC_NUMBER_OF_SPECIES < n ) { 
+    cerr<<"\n WARNING USING STATIC CHEM2D BUILT WITH "<<STATIC_NUMBER_OF_SPECIES 
+        <<" SPECIES PREDEFINED, HOWEVER ASKING FOR "<<n<<endl; 
+    exit(1); 
+  }
+#else 
   Deallocate(); //Clean up memory before changing ns
- 
-  ns =n; 
+#endif  
+  ns = n;
+
   NUM_VAR_CHEM2D = ns + NUM_CHEM2D_VAR_SANS_SPECIES;
   //read in NASA data for each species to be used
+  Deallocate_static();
   specdata = new NASARP1311data[ns];
   Schmidt = new double[ns];
   for(int i=0; i<ns; i++){
@@ -134,8 +149,7 @@ void Chem2D_cState::set_species_data(const int &n, const string *S, const char *
   Temp_low_range();
   Temp_high_range();
 
-  //Set Debug Information level
-  debug_level = debug;
+  //Preconditioning Reference Mach Number
   Mref = Mr;
   
   //setup initial array for mass fractions
@@ -240,6 +254,20 @@ double Chem2D_pState::e(void) const{
   }
   return sum;
 }
+
+// double Chem2D_pState::e(void) const{
+//   // = sum (mass fraction * species e) 
+//   double sum = 0.0;
+//   double cs = 0.0;
+//   double Temp = T();
+//   for(int i=0; i<ns-1; i++){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
+//     sum += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform()
+//     		      - specdata[i].Rs()*Temp);
+//     cs += spec[i].c;
+//   }
+//   sum += (ONE - cs )*(specdata[ns-1].Enthalpy(Temp) + specdata[ns-1].Heatofform() - specdata[ns-1].Rs()*Temp);
+//   return sum;
+// }
 
 // reference internal energy e + heat of formation - offset
 double Chem2D_pState::eref(void)const{
@@ -352,13 +380,7 @@ double Chem2D_pState::E(void) const{
 ***************************************************/
 double Chem2D_pState::H(void) const{
   // H = h + velocity^2 
-  double TotalEnthalpy = ZERO;
-  
-  
-  TotalEnthalpy = (rho*(h() + HALF*v.sqr() +k));
-  
-
-  return (TotalEnthalpy);
+  return(rho*(h() + HALF*v.sqr() +k)); 
 }
 
 double Chem2D_pState::Hs(void) const{
@@ -373,7 +395,11 @@ double Chem2D_pState::Hs(void) const{
 double Chem2D_pState::mu() const{
   double sum =0.0; 
   double Temp = T();
+#ifdef STATIC_NUMBER_OF_SPECIES
+  double  vis[STATIC_NUMBER_OF_SPECIES];
+#else
   double  *vis = new double[ns];
+#endif
 
   for(int i=0; i<ns; i++){
     double phi = 0.0;
@@ -389,8 +415,33 @@ double Chem2D_pState::mu() const{
     sum += (spec[i].c * vis[i]) / 
       (specdata[i].Mol_mass() * phi);
   }  
-  
+
+#ifndef STATIC_NUMBER_OF_SPECIES  
   delete[] vis;
+#endif
+
+  return sum;
+
+}
+
+/***********************************************************
+Molecular viscosity is function of Temperature
+This derivative is needed by Jacobian
+ ***********************************************************/
+double Chem2D_pState::dmudT(void) const{
+  double sum =0.0; 
+  double Temp = T();
+  for(int i=0; i<ns; i++){
+    double phi = 0.0;
+    for (int j=0; j<ns; j++){
+      phi += (spec[j].c / specdata[j].Mol_mass())*
+	pow(1.0 + sqrt(specdata[i].dViscositydT(Temp)/specdata[j].dViscositydT(Temp))*
+	    pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
+       sqrt(8.0*(1.0 +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
+    }
+    sum += (spec[i].c * specdata[i].dViscositydT(Temp) ) / 
+      (specdata[i].Mol_mass() * phi);
+  }  
   return sum;
 }
 
@@ -400,7 +451,11 @@ double Chem2D_pState::mu() const{
 double Chem2D_pState::kappa(void) const{
   double sum = 0.0;  
   double Temp = T();
+#ifdef STATIC_NUMBER_OF_SPECIES
+  double  vis[STATIC_NUMBER_OF_SPECIES];
+#else
   double  *vis = new double[ns];
+#endif
 
   for(int i=0; i<ns; i++){
     double phi = 0.0;
@@ -428,9 +483,12 @@ double Chem2D_pState::kappa(void) const{
 //     two += spec[i].c/specdata[i].ThermalConduct(Temp);
 //   }
 //   sum = HALF*(one + ONE/two);
-
+#ifndef STATIC_NUMBER_OF_SPECIES
   delete[] vis;
+#endif
+
   return sum;
+
 }
 
 /**************************************************
@@ -504,10 +562,10 @@ double Chem2D_pState::T(double &h_s) const{
 	 > CONV_TOLERANCE && numit<20 && T >= low_temp_range){  
     if(T >= Tmin && T <= Tmax){
       T = T - fn/dfn;
-      if(T >= Tmax) T = HALF*(Tmax - Tmin);	
+      if(T >= Tmax) T = HALF*(Tmax + Tmin);	
       //Bisection
     } else {
-      T = HALF*(Tmax - Tmin);
+      T = HALF*(Tmax + Tmin);
     } 
     fn = hs(T) - h_s;  
     dfn = hprime(T); 
@@ -522,11 +580,9 @@ double Chem2D_pState::T(double &h_s) const{
   }
   if (numit>=19 || T <= low_temp_range){
     T = max(Tguess,low_temp_range); 
-    if(debug_level){ 
-      cout<<"\nTemperature didn't converge in Chem2D_cState::T(void)";
-      cout<<" with polytopic Tguess "<<Tguess<<", or lower than Tmin "
-	  <<low_temp_range<<" using "<<T;
-    }
+    cout<<"\nTemperature didn't converge in Chem2D_cState::T(void)";
+    cout<<" with polytopic Tguess "<<Tguess<<", or lower than Tmin "
+	<<low_temp_range<<" using "<<T;
   }
   return T;
 }
@@ -553,11 +609,11 @@ double Chem2D_pState::a(void) const{
   return sqrt(sum);
 }
 
-// /******************************************************
-//  Calculating the thermal diffusion component of 
-//  the heat flux vector (qflux)
-//   sum( hs * Ds * grad cs)
-// *******************************************************/
+/******************************************************
+ Calculating the thermal diffusion component of 
+ the heat flux vector (qflux)
+  sum( hs * Ds * grad cs)
+*******************************************************/
 Vector2D Chem2D_pState::thermal_diffusion(void) const{
   Vector2D sum;
   sum.zero();
@@ -569,9 +625,11 @@ Vector2D Chem2D_pState::thermal_diffusion(void) const{
   }
   return sum;
 }
+
 /*******************************************************************
- ***************** FLUXES ******************************************
+ *************** INVISCID FLUXES ***********************************
  *******************************************************************/
+
 /********************************************************
  * Chem2D_pState::Fx -- Inviscid flux (x-direction).   *
  ********************************************************/
@@ -590,9 +648,353 @@ Chem2D_cState Chem2D_pState::Fx(void) const{
   for(int i=0; i<ns; i++){
     Temp.rhospec[i].c = rho*v.x*spec[i].c;
   }
-  
+
   return (Temp);
 }
+
+/***************************************************************
+ *************** INVISCID FLUX JACOBIANS ***********************
+ ***************************************************************/
+
+/********************************************************
+ * Chem2D_pState::dFIdU -- Invisicd Flux Jacobian       *
+ ********************************************************/
+void dFIdU(DenseMatrix &dFdU, const Chem2D_pState &W, const int Flow_Type) {
+  
+  //cout<<"\n USING DFIDU \n";
+  
+  //int num_species = dFdU.get_n() - NUM_CHEM2D_VAR_SANS_SPECIES; 
+  int num_species=W.ns-1;
+
+  double Temp = W.T();
+  double Rt = W.Rtot();
+  double C_p = W.Cp();
+  double ht = W.h();
+  double denominator = (C_p/Rt - ONE);
+  double phi = ZERO;   
+  for(int i=0; i<num_species; i++){ 
+#ifdef _NS_MINUS_ONE
+    phi += W.spec[i].c*(W.specdata[i].Enthalpy(Temp) + W.specdata[i].Heatofform() - C_p*Temp*W.specdata[i].Rs()/Rt
+			-(W.specdata[W.ns-1].Enthalpy(Temp)+W.specdata[W.ns-1].Heatofform()  -C_p*Temp*W.specdata[W.ns-1].Rs()/Rt));   
+#else
+    phi += W.spec[i].c*(W.specdata[i].Enthalpy(Temp) + W.specdata[i].Heatofform() - C_p*Temp*W.specdata[i].Rs()/Rt);
+#endif 
+  }
+  dFdU(0,1) += ONE;
+  dFdU(1,0) += ( (C_p/Rt)*( - W.v.x*W.v.x) + HALF*(THREE*W.v.x*W.v.x + W.v.y+W.v.y) - ht + C_p*Temp + phi )/denominator;
+  dFdU(1,1) += W.v.x*(TWO*C_p/Rt-THREE)/denominator; 
+  dFdU(1,2) -= W.v.y/denominator;
+  dFdU(1,3) += ONE/denominator;
+  dFdU(2,0) -= W.v.x*W.v.y;
+  dFdU(2,1) += W.v.y;
+  dFdU(2,2) += W.v.x;
+  dFdU(3,0) += W.v.x*( W.v.x*W.v.x + W.v.y+W.v.y + C_p*Temp - (C_p/Rt)*( HALF*(W.v.x*W.v.x + W.v.y+W.v.y) + ht) + phi)/denominator;
+  dFdU(3,1) += ht + HALF*(W.v.x*W.v.x + W.v.y*W.v.y) - W.v.x*W.v.x/denominator;
+  dFdU(3,2) -= W.v.x*W.v.y/denominator;
+  dFdU(3,3) += W.v.x*C_p/denominator/Rt;
+  //Species
+  for(int i = 0; i<num_species; i++){ 
+#ifdef _NS_MINUS_ONE
+    dFdU(1,NUM_CHEM2D_VAR_SANS_SPECIES+i) -= (W.specdata[i].Enthalpy(Temp) + W.specdata[i].Heatofform() - C_p*Temp*W.specdata[i].Rs()/Rt
+		  -(W.specdata[W.ns-1].Enthalpy(Temp)+W.specdata[W.ns-1].Heatofform() - C_p*Temp*W.specdata[W.ns-1].Rs()/Rt))/denominator; 
+#else
+    dFdU(1,NUM_CHEM2D_VAR_SANS_SPECIES+i) -= (W.specdata[i].Enthalpy(Temp) + W.specdata[i].Heatofform() 
+					      - C_p*Temp*W.specdata[i].Rs()/Rt)/denominator;	
+#endif 
+	
+    dFdU(3,NUM_CHEM2D_VAR_SANS_SPECIES+i) = W.v.x*dFdU(1,NUM_CHEM2D_VAR_SANS_SPECIES+i);    
+    dFdU(NUM_CHEM2D_VAR_SANS_SPECIES+i, 0) -= W.spec[i].c*W.v.x ;
+    dFdU(NUM_CHEM2D_VAR_SANS_SPECIES+i, 1) += W.spec[i].c ;
+    dFdU(NUM_CHEM2D_VAR_SANS_SPECIES+i,NUM_CHEM2D_VAR_SANS_SPECIES+i) += W.v.x ;        
+  }
+  //Turbulence 
+  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
+      Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON){ 
+    dFdU(4,0) -= W.v.x*W.k;
+    dFdU(4,1) += W.k;  
+    dFdU(5,0) -= W.v.x*W.omega;
+    dFdU(5,1) += W.omega;
+  }
+  dFdU(4,4) += W.v.x;
+  dFdU(5,5) += W.v.x;  
+ 
+}
+
+// Finite differnece check of dFxdU
+void dFIdU_FD(DenseMatrix &dFdU, const Chem2D_pState &WW, const int Flow_Type) {
+
+  Chem2D_cState UU = U(WW);
+  Chem2D_cState A,C;
+  Chem2D_pState B,D;
+  double perturb = 5e-6;
+  double a;
+
+  for(int jcol=0; jcol<(dFdU.get_n()); jcol++){    
+    A = UU;  C = UU;
+    if( jcol <NUM_CHEM2D_VAR_SANS_SPECIES) {
+      A[jcol+1] += perturb*max(ONE,UU[jcol+1]); 
+      C[jcol+1] -= perturb*max(ONE,UU[jcol+1]);
+    } else {                                       //enforce sum(ci) = 1;
+      a = perturb*max(ONE,UU[jcol+1]); 
+      A[jcol+1] += a;
+      A[WW.NUM_VAR_CHEM2D] -= a;      
+      C[jcol+1] -= a;
+      C[WW.NUM_VAR_CHEM2D] += a;
+    }   
+    B = W(A);  D = W(C);    
+    A = B.Fx();  C = D.Fx();
+    for(int irow=0; irow<(dFdU.get_n()); irow++){
+      dFdU(irow,jcol) = ( A[irow+1] - C[irow+1])/(TWO*perturb*max(ONE, UU[jcol+1]));      
+    }
+  } 
+
+}
+
+/********************************************************
+ * Chem2D_pState::dFIdW -- Invisicd Flux Jacobian       *
+ ********************************************************/
+void dFIdW(DenseMatrix &dFdW, const Chem2D_pState &W, const int Flow_Type) {
+
+  //int num_species = dFdW.get_n() - NUM_CHEM2D_VAR_SANS_SPECIES; 
+  int num_species=W.ns-1;
+
+  double Temp = W.T();
+  double Rt = W.Rtot();
+  double C_p = W.Cp();
+  double ht = W.h();
+
+  dFdW(0,0) = W.v.x;
+  dFdW(0,1) = W.rho;
+  dFdW(1,0) = W.v.x*W.v.x;
+  dFdW(1,1) = TWO*W.rho*W.v.x; 
+  dFdW(1,3) = ONE;
+  dFdW(2,0) = W.v.x*W.v.y;
+  dFdW(2,1) = W.rho*W.v.y;
+  dFdW(2,2) = W.rho*W.v.x;
+  dFdW(3,0) = (HALF*(W.v.x*W.v.x+W.v.y*W.v.y) + ht)*W.v.x - C_p*Temp*W.v.x;
+  dFdW(3,1) = W.rho*W.v.x*W.v.x+ W.rho*(ht + HALF*(W.v.x*W.v.x+W.v.y*W.v.y));
+  dFdW(3,2) = W.rho*W.v.x*W.v.y;
+  dFdW(3,3) = W.v.x*C_p/Rt;
+
+  //Species
+  for(int i = 0; i<num_species; i++){ 
+#ifdef _NS_MINUS_ONE
+    dFdW(3,NUM_CHEM2D_VAR_SANS_SPECIES+i) = W.rho*W.v.x*( 
+          (W.specdata[i].Enthalpy(Temp) + W.specdata[i].Heatofform() - C_p*Temp*W.specdata[i].Rs()/Rt) - 
+	  (W.specdata[W.ns-1].Enthalpy(Temp) + W.specdata[W.ns-1].Heatofform() - C_p*Temp*W.specdata[W.ns-1].Rs()/Rt));    
+#else
+    dFdW(3,NUM_CHEM2D_VAR_SANS_SPECIES+i) =  W.rho*W.v.x*
+      (W.specdata[i].Enthalpy(Temp) + W.specdata[i].Heatofform() - C_p*Temp*W.specdata[i].Rs()/Rt); 
+#endif 
+
+     dFdW(NUM_CHEM2D_VAR_SANS_SPECIES+i, 0) = W.spec[i].c*W.v.x ;
+     dFdW(NUM_CHEM2D_VAR_SANS_SPECIES+i, 1) = W.rho*W.spec[i].c ;
+     dFdW(NUM_CHEM2D_VAR_SANS_SPECIES+i,NUM_CHEM2D_VAR_SANS_SPECIES+i) =W.rho*W.v.x ;        
+  }
+  //Turbulence 
+  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
+      Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON){ 
+     dFdW(1,0) += TWO/THREE*W.k;
+     dFdW(1,4) = TWO/THREE*W.rho;
+     dFdW(3,0) += FIVE/THREE*W.k*W.v.x;
+     dFdW(3,1) += FIVE/THREE*W.rho*W.k; 
+     dFdW(3,4) += FIVE/THREE*W.rho*W.v.x;
+     dFdW(4,0) = W.v.x*W.k;
+     dFdW(4,1) = W.rho*W.k;  
+     dFdW(5,0) = W.v.x*W.omega;
+     dFdW(5,1) = W.rho*W.omega;
+  }  
+  dFdW(4,4) = W.rho*W.v.x;
+  dFdW(5,5) = W.rho*W.v.x;  
+  
+}
+
+// Finite differnece check of dFxdW
+void dFIdW_FD(DenseMatrix &dFdW, const Chem2D_pState &W, const int Flow_Type) {
+
+  Chem2D_pState A,C;
+  Chem2D_cState B,D;
+  double perturb = 5e-6;
+  double a;
+
+  for(int jcol=0; jcol<(dFdW.get_n()); jcol++){    
+    A.Copy(W);  C.Copy(W);
+    if( jcol <NUM_CHEM2D_VAR_SANS_SPECIES) {
+      A[jcol+1] += perturb*max(ONE,W[jcol+1]); 
+      C[jcol+1] -= perturb*max(ONE,W[jcol+1]);
+    } else {                                       //enforce sum(ci) = 1;
+      a = perturb*max(ONE,W[jcol+1]); 
+      A[jcol+1] += a;
+      A[W.NUM_VAR_CHEM2D] -= a;      
+      C[jcol+1] -= a;
+      C[W.NUM_VAR_CHEM2D] += a;
+    }   
+    B = A.Fx();   D = C.Fx();
+    for(int irow=0; irow<(dFdW.get_n()); irow++){
+      dFdW(irow,jcol) = ( B[irow+1] - D[irow+1])/(TWO*perturb*max(ONE, W[jcol+1]));      
+    }
+  } 
+
+}
+
+/************************************************************************
+ * Chem2D_pState::dWdU -- Primitive/Conserved transformation Jacobian   *
+ ************************************************************************/
+void Chem2D_pState::dWdU(DenseMatrix &dWdQ, const int Flow_Type) const{
+
+  //int num_species = dWdQ.get_n() - NUM_CHEM2D_VAR_SANS_SPECIES; //ns -1 or ns
+  int num_species=ns-1;
+
+  double Temp = T();
+  double Rt = Rtot();
+  double C_p = Cp();
+  double denominator = (C_p/Rt - ONE);
+
+  dWdQ(0,0) = ONE;
+  dWdQ(1,0) = -v.x/rho;
+  dWdQ(1,1) = ONE/rho;
+  dWdQ(2,0) = -v.y/rho;
+  dWdQ(2,2) = ONE/rho; 
+  double phi = ZERO;   
+  for(int i=0; i<num_species; i++){  
+#ifdef _NS_MINUS_ONE
+    phi += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - C_p*Temp*specdata[i].Rs()/Rt
+    - (specdata[ns-1].Enthalpy(Temp)+specdata[ns-1].Heatofform() - C_p*Temp*specdata[ns-1].Rs()/Rt));
+#else
+    phi += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - C_p*Temp*specdata[i].Rs()/Rt);
+#endif
+  }
+
+  dWdQ(3,0) = (HALF*(v.x*v.x+v.y*v.y) - h() + C_p*Temp + phi)/denominator;
+  dWdQ(3,1) = -v.x/denominator;
+  dWdQ(3,2) = -v.y/denominator;
+  dWdQ(3,3) = ONE/denominator;
+  //Species
+  int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES;
+  for(int i=0; i<num_species;i++){  
+#ifdef _NS_MINUS_ONE  
+    dWdQ(3, NUM_VAR+i) = - (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - C_p*Temp*specdata[i].Rs()/Rt
+			    -(specdata[ns-1].Enthalpy(Temp)+specdata[ns-1].Heatofform() - C_p*Temp*specdata[ns-1].Rs()/Rt))/denominator;
+#else
+    dWdQ(3, NUM_VAR+i) = - (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - C_p*Temp*specdata[i].Rs()/Rt)/denominator;
+#endif
+    dWdQ(NUM_VAR+i, 0) = - spec[i].c/rho;
+    dWdQ(NUM_VAR+i, NUM_VAR+i) = ONE/rho;
+  }
+  //Turbulence 
+  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
+      Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {    
+    dWdQ(4,0) = -k/rho;
+    dWdQ(5,0) = -omega/rho;
+  }  
+  dWdQ(3,4) -= ONE/denominator;
+  dWdQ(4,4) =  ONE/rho;
+  dWdQ(5,5) =  ONE/rho;
+}
+
+// Finite differnece check of dWdU
+// shows error in (3,0) ie dp/rho due to pertubing rho and cState T() calc.
+void Chem2D_pState::dWdU_FD(DenseMatrix &dWdQ, const int Flow_Type){
+
+  Chem2D_cState UU = U(*this);
+  Chem2D_cState A,C;
+  Chem2D_pState B,D;
+  double perturb = 5e-6;
+  double a;
+
+  for(int jcol=0; jcol<dWdQ.get_n(); jcol++){    
+    A = UU;    C = UU;
+    if( jcol <NUM_CHEM2D_VAR_SANS_SPECIES) {
+      A[jcol+1] += perturb*max(ONE,A[jcol+1]); 
+      C[jcol+1] -= perturb*max(ONE,C[jcol+1]);
+    } else {                                       //enforce sum(ci) = 1;
+      a =  perturb*max(ONE,A[jcol+1]); 
+      A[jcol+1] += a;
+      A[NUM_VAR_CHEM2D] -= a;      
+      C[jcol+1] -= a;
+      C[NUM_VAR_CHEM2D] += a;
+    }
+    B = W(A);    D = W(C);
+    for(int irow=0; irow<(dWdQ.get_n()); irow++){
+      dWdQ(irow,jcol) = ( B[irow+1] - D[irow+1])/(TWO*perturb*max(ONE,UU[jcol+1]));     
+    }
+  } 
+
+}
+
+/************************************************************************
+ * Chem2D_pState::dUdW -- Conserved/Primitive transformation Jacobian   *
+ ************************************************************************/
+void Chem2D_pState::dUdW(DenseMatrix &dQdW, const int Flow_Type){
+
+  //int num_species = dQdW.get_n() - NUM_CHEM2D_VAR_SANS_SPECIES; //ns -1 or ns
+  int num_species=ns-1;
+  
+  double Temp = T();
+  double Rt = Rtot();
+  double C_p = Cp();
+
+  dQdW(0,0) =  ONE;
+  dQdW(1,0) =  v.x;
+  dQdW(1,1) =  rho;  
+  dQdW(2,0) =  v.y;
+  dQdW(2,2) =  rho;  
+  dQdW(3,0) =  HALF*(v.x*v.x + v.y*v.y) + h() - C_p*Temp;
+  dQdW(3,1) =  rho*v.x;
+  dQdW(3,2) =  rho*v.y;
+  dQdW(3,3) =  C_p/Rt - ONE;
+  //Species
+  int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES;
+  for(int i=0; i<(num_species);i++){  
+#ifdef _NS_MINUS_ONE   
+     dQdW(3,NUM_VAR+i) = rho*(specdata[i].Enthalpy(Temp)+specdata[i].Heatofform() - C_p*Temp*specdata[i].Rs()/Rt
+			      - (specdata[ns-1].Enthalpy(Temp)+specdata[ns-1].Heatofform() - C_p*Temp*specdata[ns-1].Rs()/Rt));
+#else
+    dQdW(3,NUM_VAR+i) = rho*(specdata[i].Enthalpy(Temp)+specdata[i].Heatofform() - C_p*Temp*specdata[i].Rs()/Rt);
+#endif
+    dQdW(NUM_VAR+i,0) = spec[i].c;
+    dQdW(NUM_VAR+i,NUM_VAR+i) =  rho;
+  }
+  //Turbulence  
+  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
+      Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {    
+    dQdW(4,0) =  k;
+    dQdW(5,0) =  omega; 
+  }   
+  dQdW(3,4) = rho;
+  dQdW(4,4) =  rho;   
+  dQdW(5,5) =  rho;
+}
+
+// Finite differnece check of dWdU
+void Chem2D_pState::dUdW_FD(DenseMatrix &dUdW, const int Flow_Type){
+
+  Chem2D_pState W(*this);
+  Chem2D_pState A,C;
+  Chem2D_cState B,D;
+  double perturb = 5e-6;
+  double a;
+
+  for(int jcol=0; jcol<(dUdW.get_n()); jcol++){    
+    A.Copy(*this);  C.Copy(*this);
+    if( jcol <NUM_CHEM2D_VAR_SANS_SPECIES) {
+      A[jcol+1] += perturb*max(ONE,A[jcol+1]); 
+      C[jcol+1] -= perturb*max(ONE,C[jcol+1]);
+    } else {                                       //enforce sum(ci) = 1;
+      a =  perturb*max(ONE,A[jcol+1]); 
+      A[jcol+1] += a;
+      A[NUM_VAR_CHEM2D] -= a;      
+      C[jcol+1] -= a;
+      C[NUM_VAR_CHEM2D] += a;
+    }   
+    B = U(A);   D = U(C);
+    for(int irow=0; irow<(dUdW.get_n()); irow++){
+      dUdW(irow,jcol) = ( B[irow+1] - D[irow+1])/(TWO*perturb*max(ONE, W[jcol+1]));      
+    }
+  } 
+
+}
+
 
 /*******************************************************************
  ***************** EIGENVALUES *************************************
@@ -611,51 +1013,12 @@ Chem2D_pState Chem2D_pState::lambda_x(void) const {
   for(int i=0; i<ns; i++){
     Temp.spec[i].c = v.x;
   }
- 
   Temp.k = v.x;
-  Temp.omega = v.x;
-  
+  Temp.omega = v.x; 
   return (Temp);
 }
 
-/***********************************************************
-Molecular viscosity is function of Temperature
-This derivative is needed by Jacobian
- ***********************************************************/
-double Chem2D_pState::dmudT(void) const{
-  double sum =0.0; 
-  double Temp = T();
-  for(int i=0; i<ns; i++){
-    double phi = 0.0;
-    for (int j=0; j<ns; j++){
-      phi += (spec[j].c / specdata[j].Mol_mass())*
-	pow(1.0 + sqrt(specdata[i].dViscositydT(Temp)/specdata[j].dViscositydT(Temp))*
-	    pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
-       sqrt(8.0*(1.0 +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
-    }
-    sum += (spec[i].c * specdata[i].dViscositydT(Temp) ) / 
-      (specdata[i].Mol_mass() * phi);
-  }  
-  return sum;
-}
 
-double Chem2D_cState::dmudT(void) const{
-  double sum =0.0; 
-  double Temp = T();
-
-  for(int i=0; i<ns; i++){
-    double phi = 0.0;
-    for (int j=0; j<ns; j++){
-      phi += (rhospec[j].c/rho / specdata[j].Mol_mass())*
-	pow(1.0 + sqrt(specdata[i].dViscositydT(Temp)/specdata[j].dViscositydT(Temp))*
-	    pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
-       sqrt(8.0*(1.0 +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
-    }
-    sum += (rhospec[i].c/rho * specdata[i].dViscositydT(Temp) ) / 
-      (specdata[i].Mol_mass() * phi);
-  }  
-  return sum;
-}
 /************************************************************
  * Low Mach Number Preconditioned Eigenvalue(s)             *
  * Chem2D_pState::lambda_preconditioned_x                   *
@@ -674,11 +1037,8 @@ Chem2D_pState Chem2D_pState::lambda_preconditioned_x(const double &MR2) const {
   for(int i=0; i<ns; i++){
     NEW.spec[i].c = v.x;
   }
-  
   NEW.k = v.x;
-  NEW.omega = v.x;
-  
-  
+  NEW.omega = v.x;  
   return (NEW);
 }
 
@@ -687,7 +1047,7 @@ Chem2D_pState Chem2D_pState::lambda_preconditioned_x(const double &MR2) const {
  *******************************************************************/
 // Conserved Right Eigenvector -- (x-direction)
 Chem2D_cState Chem2D_pState::rc_x(const int &index) const {
-     assert( index >= 1 && index <= NUM_VAR_CHEM2D );
+
     if(index == 1){
       double c = a(); 
       return (Chem2D_cState(ONE, v.x-c, v.y, H()/rho-v.x*c, k, omega, spec));
@@ -700,28 +1060,30 @@ Chem2D_cState Chem2D_pState::rc_x(const int &index) const {
       return (Chem2D_cState(ONE, v.x+c, v.y, H()/rho+v.x*c, k, omega, spec));
     } else if(index == 5) { 
       return (Chem2D_cState(ZERO, ZERO, ZERO, rho, rho, ZERO, ZERO) );
+      //return (Chem2D_cState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO) );
     } else if(index == 6) {
       return (Chem2D_cState(ZERO, ZERO, ZERO, ZERO, ZERO, rho, ZERO) ) ;
+      //return (Chem2D_cState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO) ) ;
     } else{ 
-      for(int i=7; i<=NUM_VAR_CHEM2D; i++){
-	if(index == i){
-	  Chem2D_cState NEW(ZERO);
-	  double RTOT = Rtot();
-	  double TEMP = p/(rho*RTOT);      
-	  NEW.E = rho*(specdata[i-7].Enthalpy(TEMP) + specdata[i-7].Heatofform() 
-		       - Cp(TEMP)*TEMP*specdata[i-7].Rs()/RTOT);
-	  NEW.rhospec[i-7].c = rho;
-	  return NEW;
-	  break;
-	}
-      }
+      Chem2D_cState NEW(ZERO);
+      double RTOT = Rtot();
+      double TEMP = p/(rho*RTOT);    
+      int count = index-(NUM_CHEM2D_VAR_SANS_SPECIES+1);
+#ifdef _NS_MINUS_ONE
+      NEW.E = rho*((specdata[count].Enthalpy(TEMP) + specdata[count].Heatofform() - Cp(TEMP)*TEMP*specdata[count].Rs()/RTOT) -
+		   (specdata[ns-1].Enthalpy(TEMP)  + specdata[ns-1].Heatofform() - Cp(TEMP)*TEMP*specdata[ns-1].Rs()/RTOT)); 
+#else
+      NEW.E = rho*(specdata[count].Enthalpy(TEMP) + specdata[count].Heatofform() - Cp(TEMP)*TEMP*specdata[count].Rs()/RTOT);      
+#endif
+      NEW.rhospec[count].c = rho;
+      return NEW;
     }
 }
 
 // Primitive Left Eigenvector -- (x-direction)
 Chem2D_pState Chem2D_pState::lp_x(const int &index) const {
-     assert( index >= 1 && index <= NUM_VAR_CHEM2D );
-    if(index == 1){
+ 
+   if(index == 1){
       double c = a(); 
       return (Chem2D_pState(ZERO, -HALF*rho/c, ZERO, HALF/(c*c), ZERO));
     } else if(index == 2) {
@@ -734,17 +1096,14 @@ Chem2D_pState Chem2D_pState::lp_x(const int &index) const {
       return (Chem2D_pState(ZERO, HALF*rho/c, ZERO, HALF/(c*c), ZERO));
     }else if(index == 5) {  
       return (Chem2D_pState(ZERO, ZERO, ZERO, ZERO, ONE,ZERO, ZERO));
+      //return (Chem2D_pState(ZERO, ZERO, ZERO, ZERO, ZERO,ZERO, ZERO));
     }else if(index == 6) {  
       return (Chem2D_pState(ZERO, ZERO, ZERO, ZERO, ZERO, ONE, ZERO));
+      //return (Chem2D_pState(ZERO, ZERO, ZERO, ZERO, ZERO,ZERO, ZERO));
     } else{ 
-      for(int i=7; i<=NUM_VAR_CHEM2D; i++){
-	if(index == i){
-	  Chem2D_pState NEW(ZERO);
-	  NEW.spec[i-7].c = ONE;
-	  return NEW;
-	  break;
-	}
-      }
+      Chem2D_pState NEW(ZERO);
+      NEW.spec[index-(NUM_CHEM2D_VAR_SANS_SPECIES+1)].c = ONE;
+      return NEW;
     } 
 
 }
@@ -754,7 +1113,7 @@ Chem2D_pState Chem2D_pState::lp_x(const int &index) const {
  ************************************************************/
 // Conserved Right Eigenvector -- (x-direction)
 Chem2D_cState Chem2D_pState::rc_x_precon(const int &index, const double &MR2) const {
-  assert( index >= 1 && index <= NUM_VAR_CHEM2D );
+
   if(index == 1){
     double c = a(); 
     double uprimed,cprimed;
@@ -786,26 +1145,26 @@ Chem2D_cState Chem2D_pState::rc_x_precon(const int &index, const double &MR2) co
   } else if(index == 6) {
     return (Chem2D_cState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO) ) ;
   } else{ 
-    for(int i=7; i<=NUM_VAR_CHEM2D; i++){
-      if(index == i){
-	Chem2D_cState NEW(ZERO);
-	NEW.E = rho*(specdata[i-7].Enthalpy(T()) + specdata[i-7].Heatofform() 
-		     - Cp()*T()*specdata[i-7].Rs()/Rtot());
+    Chem2D_cState NEW(ZERO);
+    double RTOT = Rtot();
+    double TEMP = p/(rho*RTOT);    
+    int count = index-(NUM_CHEM2D_VAR_SANS_SPECIES+1);
+#ifdef _NS_MINUS_ONE
+    NEW.E = rho*((specdata[count].Enthalpy(TEMP) + specdata[count].Heatofform() - Cp(TEMP)*TEMP*specdata[count].Rs()/RTOT) -
+ 		 (specdata[ns-1].Enthalpy(TEMP)  + specdata[ns-1].Heatofform()  - Cp(TEMP)*TEMP*specdata[ns-1].Rs()/RTOT)); 
+#else
+    NEW.E = rho*(specdata[count].Enthalpy(TEMP) + specdata[count].Heatofform() - Cp(TEMP)*TEMP*specdata[count].Rs()/RTOT);
+#endif
 
-	NEW.rhospec[i-7].c = rho;
-
-	return NEW;
-	break;
-      }
-    }
-  }
+    NEW.rhospec[count].c = rho;
+    return NEW;    
+   }
 
 }
 
 // Primitive Left Eigenvector -- (x-direction)
 Chem2D_pState Chem2D_pState::lp_x_precon(const int &index, const double &MR2) const {
   
-  assert( index >= 1 && index <= NUM_VAR_CHEM2D );
   if(index == 1){
     double c = a();   
     double uprimed,cprimed;
@@ -829,19 +1188,16 @@ Chem2D_pState Chem2D_pState::lp_x_precon(const int &index, const double &MR2) co
 			  ZERO,
 			  (uprimed+cprimed - v.x)/(TWO*cprimed*c*c), k, omega,
 			  ZERO));
-  }else if(index == 5) {  
-    return (Chem2D_pState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO));
+  }else if(index == 5) { 
+    return (Chem2D_pState(ZERO, ZERO, ZERO, ZERO, ONE,ZERO, ZERO)); 
+    //return (Chem2D_pState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO));
   }else if(index == 6) {  
-    return (Chem2D_pState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO));
+    return (Chem2D_pState(ZERO, ZERO, ZERO, ZERO,ZERO, ONE, ZERO));
+    //return (Chem2D_pState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO));
   } else{ 
-    for(int i=7; i<=NUM_VAR_CHEM2D; i++){
-      if(index == i){
-	Chem2D_pState NEW(ZERO);
-	NEW.spec[i-7].c = ONE;
-	return NEW;
-	break;
-      }
-    }
+    Chem2D_pState NEW(ZERO);
+    NEW.spec[index-(NUM_CHEM2D_VAR_SANS_SPECIES+1)].c = ONE;
+    return NEW;
   } 
 }
 
@@ -853,10 +1209,11 @@ Chem2D_pState Chem2D_pState::lp_x_precon(const int &index, const double &MR2) co
  *******************************************************************/
 // For CFL Calculation
 double Chem2D_pState::u_plus_aprecon(const double &u, 
+				     const int    &flow_type_flag, 
 				     const double &deltax) const {
   double Temp = T();
   double c = a();
-  double UR2 = Mr2(deltax)*c*c;
+  double UR2 = Mr2(flow_type_flag,deltax)*c*c;
   double alpha = HALF*( ONE - (ONE/(Rtot()*Temp) - ONE/(Cp()*Temp))*UR2);
   
   // uprime + cprime
@@ -878,13 +1235,14 @@ void Chem2D_pState::u_a_precon(const double &UR2, double &uprimed, double &cprim
 
 /************************************************************/
 // as defined by E.Turkel (1999)
-double Chem2D_pState::Mr2(const double &deltax) const {
+double Chem2D_pState::Mr2(const int    &flow_type_flag, 
+                          const double &deltax) const {
   
   double c = a();
   double MR2 = min(max((v.sqr()/(c*c)),Mref*Mref),ONE);
   
   // Need deltax which is based on cell spacing 
-  if (flow_type) {
+  if(flow_type_flag){ 
     MR2 = pow(max(sqrt(MR2*c*c), mu()/(rho*deltax)),2.0)/(c*c);
   }
 
@@ -896,26 +1254,33 @@ double Chem2D_pState::Mr2(const double &deltax) const {
 /* (will be replaced by version commented out below when corrected) */
 /************************************************************/
 void Chem2D_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P,
+						   const int &Viscous_flag, 
 						   const double &deltax ) const{  
+  
   double Temp = T();
   double Rmix = Rtot();
   double enthalpy = h();
   double CP = Cp();
   double c = a();
-  double theta = (ONE/(Mr2(deltax)*c*c) + ONE/(CP*Temp));
+  double theta = (ONE/(Mr2(Viscous_flag,deltax)*c*c) + ONE/(CP*Temp));
  
   double phi = ZERO;   
   for(int j=0; j<ns-1; j++){   
+#ifdef _NS_MINUS_ONE
+    phi += spec[j].c*(specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix -    
+		      (specdata[ns-1].Enthalpy(Temp) + specdata[ns-1].Heatofform() - CP*Temp*specdata[ns-1].Rs()/Rmix));
+#else
     phi += spec[j].c*(specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() 
 		      - CP*Temp*specdata[j].Rs()/Rmix);   
-  }
+#endif
+  }		      
 
   double alpha = theta*p/rho;
   double alpham1 = alpha - ONE;
   double Omega = (Rmix - CP)*p/(rho*Rmix);
   double beta = enthalpy - CP*p/(rho*Rmix) - phi;
   double V = HALF*v.sqr();
-  P.zero();
+  P.zero();  //RESET MATRIX TO ZERO!!!
 
   P(0,0) = (alpha*(beta-V)+V+Rmix*Temp-enthalpy+phi)/Omega;
   P(0,1) = v.x*alpham1/Omega;
@@ -938,12 +1303,17 @@ void Chem2D_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P,
   P(4,4) = ONE;
   P(5,5) = ONE;
 
-  int NUM_VAR =   NUM_CHEM2D_VAR_SANS_SPECIES;
+  int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES;
 
   //Multispecies
-  for(int j=0; j<ns-1; j++){       
-    double enth_j = specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() 
-      - CP*Temp*specdata[j].Rs()/Rmix;
+  for(int j=0; j<ns-1; j++){  
+#ifdef _NS_MINUS_ONE     
+    double enth_j = specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix-
+      ( specdata[ns-1].Enthalpy(Temp) + specdata[ns-1].Heatofform() - CP*Temp*specdata[ns-1].Rs()/Rmix);
+#else
+    double enth_j = specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix;
+#endif
+     
     P(0,j+NUM_VAR) = enth_j*alpham1/Omega;
     P(1,j+NUM_VAR) = v.x*enth_j*alpham1/Omega;
     P(2,j+NUM_VAR) = v.y*enth_j*alpham1/Omega;
@@ -955,29 +1325,40 @@ void Chem2D_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P,
 	P(i+NUM_VAR,2) = (spec[i].c)*v.y*alpham1/Omega;
 	P(i+NUM_VAR,3) = -(spec[i].c)*alpham1/Omega;
 	//diagonal
-	P(i+NUM_VAR,j+NUM_VAR) = spec[i].c*enth_j*alpham1/Omega+1.0;
+	P(i+NUM_VAR,j+NUM_VAR) = spec[i].c*enth_j*alpham1/Omega+ONE;
       }
       else {
 	P(i+NUM_VAR,j+NUM_VAR) = spec[i].c*enth_j*alpham1/Omega;
       }
     }       
   }
+
+//   cout<<"\n Pin with Mref \n"<<Mref<<endl<<P;
+
+  //P.zero(); P.identity(); //SET TO Mref=1.0;
+
+
 }
 
 /************************************************************/
 void Chem2D_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,	
+							   const int &Viscous_flag, 
 							   const double &deltax ) const{  
   double Temp = T();
   double Rmix = Rtot();
   double enthalpy = h();
   double CP = Cp();
   double c = a();
-  double theta = (ONE/(Mr2(deltax)*c*c) + ONE/(CP*Temp));  
+  double theta = (ONE/(Mr2(Viscous_flag,deltax)*c*c) + ONE/(CP*Temp));  
 
   double phi = ZERO;
-  for(int j=0; j<ns-1; j++){   
-    phi += spec[j].c*(specdata[j].Enthalpy(Temp) 
-		      + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix);   
+  for(int j=0; j<ns-1; j++){ 
+#ifdef _NS_MINUS_ONE       
+    phi += spec[j].c*(specdata[j].Enthalpy(Temp)+ specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix
+		      - (specdata[ns-1].Enthalpy(Temp)+ specdata[ns-1].Heatofform() - CP*Temp*specdata[ns-1].Rs()/Rmix));
+#else
+    phi += spec[j].c*(specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix);   
+#endif
   }
 
   double AA = p*(rho*Rmix-theta*p*CP);
@@ -985,7 +1366,7 @@ void Chem2D_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,
   double EE = HALF*v.sqr() - enthalpy + phi;
   double CC = EE + CP*Temp; 
   double DD = HALF*v.sqr() + enthalpy;
-  Pinv.zero();    
+  Pinv.zero();   //RESET MATRIX TO ZERO!!! 
   
   Pinv(0,0) = rho*Rmix/AA*(theta*p*EE-rho*CC+p);
   Pinv(0,1) = -v.x*BB/AA;
@@ -1004,14 +1385,18 @@ void Chem2D_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,
   Pinv(3,2) = -v.y*DD*BB/AA;
   Pinv(3,3) = rho*Rmix/AA*(theta*p*(DD-CP*Temp)-rho*DD+p);
 
-  Pinv(4,4) = ONE;
+  Pinv(4,4) = ONE; //fixes so it can work without Turbulence !!!
   Pinv(5,5) = ONE;
   
-  int NUM_VAR =   NUM_CHEM2D_VAR_SANS_SPECIES;
+  int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES;
   //Multispecies
   for(int j=0; j<ns-1; j++){   
-    double enth_j =  specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() 
-      - CP*Temp*specdata[j].Rs()/Rmix;
+#ifdef _NS_MINUS_ONE    
+    double enth_j =  specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix -
+      ( specdata[ns-1].Enthalpy(Temp) + specdata[ns-1].Heatofform() - CP*Temp*specdata[ns-1].Rs()/Rmix);
+#else
+    double enth_j =  specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix;
+#endif
     Pinv(0,j+NUM_VAR) = -enth_j*BB/AA;
     Pinv(1,j+NUM_VAR) = -v.x*enth_j*BB/AA;
     Pinv(2,j+NUM_VAR) = -v.y*enth_j*BB/AA;
@@ -1030,301 +1415,53 @@ void Chem2D_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,
       } 
     }   
   }  
+
+  //Pinv.zero(); Pinv.identity(); //SET TO Mref=1.0;
+
 }
-
-// Still some problems with this form
-// /*******************************************************************
-//  *******************************************************************
-//  *  Low Mach Number Preconditioner Based on Weiss & Smith (1995)   *
-//  *                                                                 *
-//  *******************************************************************
-//  *******************************************************************/
-// void Chem2D_pState::Low_Mach_Number_Preconditioner(DenseMatrix  &P,
-// 						   const double &deltax ) const{ 
-//   double Temp = T();
-//   double Rmix = Rtot();
-//   double enthalpy = h();
-//   double CP = Cp();
-//   double c = a();
-//   double Theta = (ONE/(Mr2deltax)*c*c) + ONE/(CP*Temp));
- 
-//   double phi = ZERO;   
-//   for(int j=0; j<ns-1; j++){   
-//     phi += spec[j].c*(specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix);   
-//   }
-//   double V = HALF*v.sqr();
-//   double Omega = (Rmix - CP)*p/(rho*Rmix);
-//   double psi = Theta*p/rho; 
-//   double chi =  enthalpy - CP*p/(rho*Rmix) - phi - V;
-//   double coefficient = (psi -ONE)/Omega;
-//   double H = (enthalpy+V);
- 
-//   P.zero();
- 
-//   P(0,0) = coefficient*chi +ONE;
-//   P(0,1) = coefficient*v.x;
-//   P(0,2) = coefficient*v.y;
-//   P(0,3) =  -coefficient;
-
-//   P(1,0) = coefficient*v.x*chi;
-//   P(1,1) = coefficient*v.x*v.x+ONE;
-//   P(1,2) = coefficient*v.x*v.y;
-//   P(1,3) = -coefficient*v.x;
-
-//   P(2,0) = coefficient*v.y*chi;
-//   P(2,1) = coefficient*v.x*v.y;
-//   P(2,2) = coefficient*v.y*v.y+ONE;
-//   P(2,3) = -coefficient*v.y;
-
-//   P(3,0) = coefficient*H*chi;
-//   P(3,1) = coefficient*H*v.x;
-//   P(3,2) = coefficient*H*v.y;
-//   P(3,3) = -coefficient*H +ONE;
-
-//   P(4,4) = coefficient*k+ONE;
-//   P(5,5) = ONE;
-
-//   if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-//       flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-//     P(0,4) = coefficient;
-//     P(1,4) = coefficient*v.x;
-//     P(2,4) = coefficient*v.y;
-//     P(3,4) = coefficient*H;
-//     //k-omega ...
-//     P(4,0) = coefficient*k*chi;
-//     P(4,1) = coefficient*k*v.x;
-//     P(4,2) = coefficient*k*v.y;
-//     P(4,3) = -coefficient*k;
-  
-//     P(5,0) = coefficient*omega*chi;
-//     P(5,1) = coefficient*omega*v.x;
-//     P(5,2) = coefficient*omega*v.y;
-//     P(5,3) = -coefficient*omega;
-//     P(5,4) = coefficient*omega;
- 
-
-//   }
-//   int NUM_VAR =   NUM_CHEM2D_VAR_SANS_SPECIES;
-//   //Multispecies (column entries)...
-//   for(int j=0; j<ns-1; j++){ 
-   
-//     double enth_j = specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix;
-//     P(0,j+NUM_VAR) = coefficient*enth_j;
-//     P(1,j+NUM_VAR) = coefficient*v.x*enth_j;
-//     P(2,j+NUM_VAR) = coefficient*v.y*enth_j;
-//     P(3,NUM_VAR) =coefficient* H*enth_j;	
-    
-//     if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-// 	flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-   
-//       P(4,j+NUM_VAR) = coefficient*k*enth_j;
-//       P(5,j+NUM_VAR) = coefficient*omega*enth_j;
-//     }
-//   }
- 
-//   //Multispecies (row entries)
-//   for(int i=0; i<ns-1; i++){ 
-//     double enth_i = specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - CP*Temp*specdata[i].Rs()/Rmix;
-//     P(i+NUM_VAR,0) = coefficient*(spec[i].c)*chi;
-//     P(i+NUM_VAR,1) = coefficient*(spec[i].c)*v.x;
-//     P(i+NUM_VAR,2) = coefficient*(spec[i].c)*v.y;
-//     P(i+NUM_VAR,3) = -coefficient*(spec[i].c);
-    
-//     if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-// 	flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-     
-//       P(i+NUM_VAR,4) = coefficient*spec[i].c;
-//     }
-    
-//     for(int j=0; j<ns-1; j++){ 
-//       if(j==i){
-// 	//diagonal
-// 	P(i+NUM_VAR,j+NUM_VAR) = coefficient*spec[i].c*enth_i+ONE;
-//       }else{
-// 	double enth_j = specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix;
-// 	P(i+NUM_VAR,j+NUM_VAR) = coefficient*spec[i].c*enth_j;
-//       }
-//     }//multispecies  
-    
-//   }//end of row entries 
-
-
-// }
-
-// //Inverse of low mach number preconditioner
-// void Chem2D_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix  &Pinv,	
-// 							   const double &deltax ) const{ 
-//   double Temp = T();
-//   double Rmix = Rtot();
-//   double enthalpy = h();
-//   double CP = Cp();
-//   double c = a();
-//   double Theta = (ONE/(Mr2(deltax)*c*c) + ONE/(CP*Temp));
-//   double phi = ZERO;   
-//   for(int j=0; j<ns-1; j++){   
-//     phi += spec[j].c*(specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix);   
-//   }
-//   double V = HALF*v.sqr();
-//   double Omega = (Rmix - CP)*p/(rho*Rmix);
-//   double psi = Theta*p/rho; 
-//   double chi =  enthalpy - CP*p/(rho*Rmix) - phi - V;
-//   double H = (enthalpy+V);
-  
-//   double AA = -H + TWO*V + k +chi +phi;
-//   double BB = (psi-ONE);
-//   double coefficient = ONE/(BB*AA+Omega);
- 
-//   Pinv.zero();
-//   Pinv(0,0) =  BB*(AA-chi)+Omega;
-//   Pinv(0,1) =  - BB*v.x;
-//   Pinv(0,2) =  - BB*v.y;
-//   Pinv(0,3) =   BB;
-
-//   Pinv(1,0) = - BB*v.x*chi;
-//   Pinv(1,1) =  BB*(AA-v.x*v.x)+Omega;
-//   Pinv(1,2) = - BB*v.x*v.y;
-//   Pinv(1,3) =  BB*v.x;
-
-//   Pinv(2,0) = - BB*v.y*chi;
-//   Pinv(2,1) = - BB*v.x*v.y;
-//   Pinv(2,2) =  BB*(AA-v.y*v.y) +Omega; 
-//   Pinv(2,3) =  BB*v.y;
-
-//   Pinv(3,0) = - BB*H*chi;
-//   Pinv(3,1) = - BB*H*v.x;
-//   Pinv(3,2) = - BB*H*v.y;
-//   Pinv(3,3) = BB*(AA+ H)+Omega;
-
-//   Pinv(4,4) = BB*(AA-k)+Omega;
-//   Pinv(5,5) = BB*AA+Omega;
-  
-//   if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-//       flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-//     Pinv(0,4) = -BB;
-//     Pinv(1,4) = -BB*v.x;
-//     Pinv(2,4) = -BB*v.y;
-//     Pinv(3,4) = -BB*H;
-//     //k-omega ...
-//     Pinv(4,0) = -BB*k*chi;
-//     Pinv(4,1) = -BB*k*v.x;
-//     Pinv(4,2) = -BB*k*v.y;
-//     Pinv(4,3) = BB*k;
-    
-//     Pinv(5,0) = -BB*omega*chi;
-//     Pinv(5,1) = -BB*omega*v.x;
-//     Pinv(5,2) = -BB*omega*v.y;
-//     Pinv(5,3) = BB*omega;
-//     Pinv(5,4) = -BB*omega;
-    
-    
-//   }
-//   //Multispecies (column entries)...
-//   int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES;
-//   for(int j=0; j<ns-1; j++){  
-//     double enth_j = specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix;
-//     Pinv(0,j+NUM_VAR) = -BB*enth_j;
-//     Pinv(1,j+NUM_VAR) = -BB*v.x*enth_j;
-//     Pinv(2,j+NUM_VAR) = -BB*v.y*enth_j;
-//     Pinv(3,j+NUM_VAR) = -BB*H*enth_j;	
-    
-//     if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-// 	flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-      
-//       Pinv(4,j+NUM_VAR) = -BB*k*enth_j;
-//       Pinv(5,j+NUM_VAR) = -BB*omega*enth_j;
-//     }
-//   }
-//   //Multispecies (row entries)
-//   for(int i=0; i<ns-1; i++){ 
-//     double enth_i = specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - CP*Temp*specdata[i].Rs()/Rmix;
-//     Pinv(i+NUM_VAR,0) = -BB*(spec[i].c)*chi;
-//     Pinv(i+NUM_VAR,1) = -BB*(spec[i].c)*v.x;
-//     Pinv(i+NUM_VAR,2) = -BB*(spec[i].c)*v.y;
-//     Pinv(i+NUM_VAR,3) = BB*(spec[i].c);
-    
-//     if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-// 	flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-//       Pinv(i+NUM_VAR,4) = -BB*(spec[i].c);
-//     }
-    
-//     for(int j=0; j<ns-1; j++){ 
-//       if(j==i){
-// 	//diagonal
-// 	Pinv(i+NUM_VAR,j+NUM_VAR) =BB*(AA - spec[i].c*enth_i)+ Omega;
-//       }else{
-// 	double enth_j = specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix;
-// 	Pinv(i+NUM_VAR,j+NUM_VAR) = -BB*spec[i].c*enth_j;
-//       }
-//     }//multispecies  
-    
-//   }//end of row entries 
-
- 
-//   Pinv = coefficient *Pinv; 
-  
-// }
 
 
 /***********************************************************
  *************** Operator Overloading **********************
  ***********************************************************/
+ //Assuming # of species are equal to avoid overhead of checking
+ //ie.  if(ns == W.ns)
 
 /********************************************************
  * Chem2D_pState -- Binary arithmetic operators.        *
  ********************************************************/
 //----------------- Addition -----------------------------//
-Chem2D_pState Chem2D_pState::operator +(const Chem2D_pState &W) const{ 
-  
-  if(ns == W.ns){ //check that species are equal   
-    Chem2D_pState Temp(W.rho,W.v,W.p, W.k, W.omega);
-    Temp.Copy(*this);
-    Temp += W;
-    return Temp;
-  } else {
-    cerr<<"\n Mismatch in number of species \n";
-    exit(1);
-  }
+Chem2D_pState Chem2D_pState::operator +(const Chem2D_pState &W) const{    
+  Chem2D_pState Temp(*this);
+  Temp += W;
+  return Temp;
 }
 
 //------------------ Subtraction ------------------------//
- Chem2D_pState Chem2D_pState::operator -(const Chem2D_pState &W) const{
-  if(ns == W.ns){ //check that species are equal
-    Chem2D_pState Temp(W.rho,W.v,W.p, W.k, W.omega);
-    Temp.Copy(*this);
+Chem2D_pState Chem2D_pState::operator -(const Chem2D_pState &W) const{
+    Chem2D_pState Temp(*this);
     Temp -= W;
     return Temp;
-  } else {
-    cerr<<"\n Mismatch in number of species \n";
-    exit(1);
-  }
 }
 
 //---------------- Scalar Multiplication ------------------//
 Chem2D_pState Chem2D_pState::operator *(const double &a) const{
-  Chem2D_pState Temp(rho,v,p,k,omega);
-  Temp.Copy(*this);
+  Chem2D_pState Temp(*this);
   Temp.rho = rho*a;  Temp.v = v*a; Temp.p = p*a;
   Temp.k = k*a; Temp.omega = omega*a;
-  for( int i=0; i<ns; i++){
-    Temp.spec[i] = spec[i]*a;
-  } 
+  for( int i=0; i<ns; i++) Temp.spec[i] = spec[i]*a; 
   Temp.tau = tau*a;
   Temp.qflux = qflux*a;
   Temp.lambda= lambda*a;
   Temp.theta = theta*a;
-
   return(Temp);
 }
 
 Chem2D_pState operator *(const double &a, const Chem2D_pState &W){
   Chem2D_pState Temp;
-  //Temp.Copy(W);
   Temp.rho = W.rho*a;  Temp.v = W.v*a; Temp.p = W.p*a;
- Temp.k = W.k*a; Temp.omega = W.omega*a;
-  for( int i=0; i<W.ns; i++){
-    Temp.spec[i] = W.spec[i]*a;
-  } 
-
+  Temp.k = W.k*a; Temp.omega = W.omega*a;
+  for( int i=0; i<W.ns; i++) Temp.spec[i] = W.spec[i]*a;
   Temp.tau = W.tau*a;
   Temp.qflux = W.qflux*a;
   Temp.lambda= W.lambda*a;
@@ -1334,83 +1471,46 @@ Chem2D_pState operator *(const double &a, const Chem2D_pState &W){
 
 //--------------- Scalar Division ------------------------//
 Chem2D_pState Chem2D_pState::operator /(const double &a) const {
-  Chem2D_pState Temp(rho,v,p,k,omega);
-  Temp.Copy(*this);
+  Chem2D_pState Temp(*this);
   Temp.rho = rho/a; Temp.v = v/a; Temp.p = p/a; 
   Temp.k = k/a; Temp.omega = omega/a;
-  for(int i=0; i<ns; i++){
-     Temp.spec[i] = spec[i]/a; 
-  } 
-
+  for(int i=0; i<ns; i++) Temp.spec[i] = spec[i]/a;
   Temp.tau = tau/a;
   Temp.qflux = qflux/a;
   Temp.lambda= lambda/a;
   Temp.theta = theta/a;
-
   return(Temp);
 }
 
 //----------------- Inner Product ------------------------//
 double Chem2D_pState::operator *(const Chem2D_pState &W) const{
   double sum=0.0;
-  if(ns == W.ns){ //check that species are equal
-    for(int i=0; i<ns; i++){
-      sum += spec[i]*W.spec[i];
-    }  
-    return (rho*W.rho + v*W.v + p*W.p + k*W.k+omega*W.omega+ sum);
-  } else {
-    cerr<<"\n Mismatch in number of species \n";
-    exit(1);
-  }
+  for(int i=0; i<ns; i++) sum += spec[i]*W.spec[i];
+  return (rho*W.rho + v*W.v + p*W.p + k*W.k + omega*W.omega + sum);
 }
 
 //----------- solution state product operator ------------//
 Chem2D_pState Chem2D_pState::operator ^( const Chem2D_pState &W) const {
-  if(ns == W.ns){ //check that species are equal
-    Chem2D_pState Temp(rho,v,p,k, omega);
-    Temp.Copy(*this);
+    Chem2D_pState Temp(*this);
     Temp.rho = rho*W.rho;
     Temp.v.x = v.x*W.v.x;
     Temp.v.y = v.y*W.v.y;
     Temp.p = p*W.p;
     Temp.k = k*W.k;
     Temp.omega = omega*W.omega;
-    for(int i=0; i<ns; i++){
-      Temp.spec[i] = spec[i]*W.spec[i];
-    }  
+    for(int i=0; i<ns; i++) Temp.spec[i] = spec[i]*W.spec[i];
     return(Temp);
-  } else {
-    cerr<<"\n Mismatch in number of species \n";
-    exit(1);
-  }
 }
 
 //----------------- Assignment ----------------------------//
 Chem2D_pState& Chem2D_pState::operator =(const Chem2D_pState &W){
   //self assignment protection
-  if( this != &W){   
-    //copy assignment
-    rho = W.rho;
-    v = W.v; 
-    p = W.p; 
-    k = W.k;
-    omega = W.omega;
-    if ( ns == W.ns){
-      for(int i=0; i<ns; i++){
-	spec[i] = W.spec[i];
-      }   
-      tau = W.tau;
-      qflux = W.qflux;
-      lambda= W.lambda;
-      theta = W.theta;
-    }   
-    else {
-      cerr<<"\n Mismatch in number of species \n ";
-    }  
+  if( this != &W){ 
+    Copy(W);
   }
   return (*this);
-
 }
+
 /********************************************************
  * Chem2D_pState -- Shortcut arithmetic operators.     *
  ********************************************************/
@@ -1420,15 +1520,11 @@ Chem2D_pState& Chem2D_pState::operator +=(const Chem2D_pState &W){
   p += W.p; 
   k += W.k;
   omega += W.omega;
-  for( int i=0; i<ns; i++){
-    spec[i] += W.spec[i];
-  } 
-
+  for( int i=0; i<ns; i++)  spec[i].c += W.spec[i].c;
   tau += W.tau;
   qflux += W.qflux;
   lambda += W.lambda;
   theta += W.theta;
-
   return (*this);
 }
 
@@ -1438,46 +1534,12 @@ Chem2D_pState& Chem2D_pState::operator -=(const Chem2D_pState &W) {
   p -= W.p;
   k -= W.k;
   omega -= W.omega;
-  for(int i=0; i<ns; i++){
-    spec[i] -= W.spec[i];
-  }
-
+  for(int i=0; i<ns; i++) spec[i].c -= W.spec[i].c;
   tau -= W.tau;
   qflux -= W.qflux;
   lambda -= W.lambda;
   theta -= W.theta;
-
   return (*this); 
-}
-
-inline Chem2D_pState& Chem2D_pState::operator *=(const double &a) {
-  rho *= a;
-  v.x *= a;
-  v.y *= a;
-  p *= a;
-  k *= a;
-  omega *= a;
-  for (int i = 0; i < ns; i++) spec[i] *= a;
-  tau *= a;
-  qflux *= a;
-  lambda *= a;
-  theta *= a;
-  return *this;
-}
-
-inline Chem2D_pState& Chem2D_pState::operator /=(const double &a) {
-  rho /= a;
-  v.x /= a;
-  v.y /= a;
-  p /= a;
-  k /= a;
-  omega /= a;
-  for (int i = 0; i < ns; i++) spec[i] /= a;
-  tau /= a;
-  qflux /= a;
-  lambda /= a;
-  theta /= a;
-  return *this;
 }
 
 /********************************************************
@@ -1488,18 +1550,23 @@ inline Chem2D_pState& Chem2D_pState::operator /=(const double &a) {
 // }
 
 Chem2D_pState operator -(const Chem2D_pState &W) {
+#ifdef STATIC_NUMBER_OF_SPECIES
+  Species spt[STATIC_NUMBER_OF_SPECIES];
+#else
   Species *spt= new Species[W.ns];
-  for(int i=0; i<W.ns; i++){
-    spt[i] = -W.spec[i]; 
-  }  
+#endif
 
+  for(int i=0; i<W.ns; i++)  spt[i] = -W.spec[i]; 
   Chem2D_pState Temp(-W.rho,-W.v,-W.p, -W.k, -W.omega ,spt);
   Temp.tau = -W.tau;
   Temp.qflux = -W.qflux;
   Temp.lambda = -W.lambda;
   Temp.theta= -W.theta;
 
+#ifndef STATIC_NUMBER_OF_SPECIES
   delete[] spt;
+#endif
+
   return(Temp);
 }
 
@@ -1545,6 +1612,7 @@ int operator !=(const Chem2D_pState &W1, const Chem2D_pState &W2) {
     exit(1);
   }
 }
+
 /********************************************************
  * Chem2D_pState -- Input-output operators.            *
  ********************************************************/
@@ -1555,7 +1623,7 @@ ostream &operator << (ostream &out_file, const Chem2D_pState &W) {
   for( int i=0; i<W.ns; i++){
     out_file<<" "<<W.spec[i];
   }
-  out_file << " " << W.qflux << " " <<W.tau << " " << W.theta << " " << W.lambda;
+  //out_file << " " << W.qflux << " " <<W.tau << " " << W.theta << " " << W.lambda;
   out_file.unsetf(ios::scientific);
   return (out_file);
 }
@@ -1567,530 +1635,15 @@ istream &operator >> (istream &in_file, Chem2D_pState &W) {
   for( int i=0; i<W.ns; i++){
     in_file>>W.spec[i];
   }
-  in_file >>W.qflux >>W.tau >>W.theta >>W.lambda;
+  //in_file >>W.qflux >>W.tau >>W.theta >>W.lambda;
   in_file.unsetf(ios::skipws);
    return (in_file);
 }
-/***************************************************************
- ***************************************************************
- *************** AXISYMMETRIC SOURCE Jacobians *****************
- ***************************************************************
- ***************************************************************/
 
-/****************************************************************
- * Axisymmetric Source Term Jacboian (Inviscid)                 * 
- ****************************************************************/
-void Chem2D_pState::dSa_idU(DenseMatrix &dSa_IdU,
-			    const Vector2D &X,
-			    const int Axisymmetric) const {
-
-  double enthalpy = h();
-  double CP = Cp();
-  double CV = Cv();
-  double Gamma = g();
-  double RTOT = Rtot();
-  double phi = ZERO;
-  double Temp = p/(rho*RTOT);
-  for(int j=0; j<ns-1; j++){   
-    phi += spec[j].c*(specdata[j].Enthalpy(Temp) 
- 		      + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/RTOT);   
-  }
- 
-  if(Axisymmetric == 1){
-    dSa_IdU(0,2) -= ONE;
-    dSa_IdU(1,0) += v.x*v.y;
-    dSa_IdU(1,1) -= v.y;
-    dSa_IdU(1,2) -= v.x;
-    dSa_IdU(2,0) += v.y*v.y;
-    dSa_IdU(2,2) -= TWO*v.y;
-    
-    if((flow_type == FLOWTYPE_INVISCID) || (flow_type == FLOWTYPE_LAMINAR)) {
-      double ee = e();
-      double dedp = rho*rho*diedip();
-      dSa_IdU(3,0) += v.y*(rho*ee +HALF*(v.x*v.x +v.y*v.y) + 
-			   (-HALF*(v.x*v.x +v.y*v.y) + TWO*rho*ee)/(dedp));
-      dSa_IdU(3,1) += ((v.x*v.y)/dedp);
-      dSa_IdU(3,2) -= (rho*ee +HALF*(v.x*v.x +v.y*v.y) + p/rho - (v.y*v.y)/(dedp));
-      dSa_IdU(3,3) -= v.y*(ONE + ONE/dedp);
-      
-    } //end of laminar or inviscid cases
-    //multispecies terms 
-    int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES;
-    for(int i=0; i<(ns-1);i++){
-      
-      dSa_IdU(3,i+NUM_VAR) += v.y*(specdata[i].Enthalpy(Temp) 
-				   + specdata[i].Heatofform() - CP*Temp*specdata[i].Rs()/RTOT)/(CP/RTOT - ONE); 
-      //combine turbulence and laminar cases together
-      dSa_IdU(NUM_VAR+i,0) += v.y*spec[i].c;
-      dSa_IdU(NUM_VAR+i,2) -= spec[i].c;
-      dSa_IdU(NUM_VAR+i,NUM_VAR+i) -= v.y;
-    }
-    
-    if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-	flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-      
-      dSa_IdU(3,0) -= -(v.x*v.x +v.y*v.y)*v.y+ Gamma*v.y*(v.x*v.x+v.y*v.y+2.0*RTOT*Temp)/2.0-k*v.y -v.y*h();
-      dSa_IdU(3,1) -= v.x*v.y- Gamma *v.y*v.x;
-      dSa_IdU(3,2) -= THREE/TWO*v.y*v.y +HALF*v.x*v.x +h() +k -Gamma*v.y*v.y;
-      dSa_IdU(3,3) -= v.y*Gamma;
-      dSa_IdU(3,4) -= -dSa_IdU(3,3)+v.y;
-      
-      dSa_IdU(4,0) = k*v.y;
-      dSa_IdU(5,0) = omega*v.y;
-      dSa_IdU(4,2) -= k;
-      dSa_IdU(5,2) -= omega;
-      dSa_IdU(4,4) -= v.y;
-      dSa_IdU(5,5) -= v.y;
-      
-    }//end of turbulent case
-    
-    dSa_IdU = dSa_IdU/X.y;
-
-    //end of axisymmetric case 1  -- y radial direction 
-  } else if(Axisymmetric ==2){ 
-    
-    dSa_IdU(0,1) -= ONE;
-    dSa_IdU(1,0) += v.x*v.x;
-    dSa_IdU(1,1) -= TWO*v.x;
-    dSa_IdU(2,0) += v.x*v.y;
-    dSa_IdU(2,1) -= v.y;
-    dSa_IdU(2,2) -= v.x;
-
-    if((flow_type == FLOWTYPE_INVISCID) || (flow_type ==FLOWTYPE_LAMINAR)) {
-    
-      dSa_IdU(3,0) -= RTOT/(CP-RTOT)*(v.x*(phi + v.sqr()) + v.x*CP*( p/rho - enthalpy - HALF*v.sqr())/RTOT);
-      dSa_IdU(3,1) -= (enthalpy + CP/(CP-RTOT)*HALF*v.sqr() - RTOT/(CP-RTOT)*HALF*(THREE*v.x*v.x +v.y*v.y));
-      dSa_IdU(3,2) += RTOT/(CP-RTOT)*v.x*v.y;
-      dSa_IdU(3,3) -= CP/(CP-RTOT)*v.x;
-      
-    }//end of laminar case
-    
-    //Multispecies terms
-    int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES;
-    for(int i=0; i<(ns-1);i++){
-      dSa_IdU(3,i+NUM_VAR) += v.x*(specdata[i].Enthalpy(Temp) 
-				   + specdata[i].Heatofform() - CP*Temp*specdata[i].Rs()/RTOT)/(CP/RTOT - ONE); 
-      dSa_IdU(NUM_VAR+i,0) += v.x*spec[i].c;
-      dSa_IdU(NUM_VAR+i,1) -= spec[i].c;
-      dSa_IdU(NUM_VAR+i,NUM_VAR+i) -= v.x;
-    }
-    
-    if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-	flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-       
-      dSa_IdU(3,0) -= -(v.x*v.x +v.y*v.y)*v.x+ Gamma*v.x*(v.x*v.x+v.y*v.y+2.0*RTOT*Temp)/2.0-k*v.x -v.x*h();
-      dSa_IdU(3,1) -= THREE/TWO*v.x*v.x +HALF*v.y*v.y +h() +k -Gamma*v.x*v.x;
-      dSa_IdU(3,2) -= v.x*v.y- Gamma*v.y*v.x;
-      
-      dSa_IdU(3,3) -= Gamma*v.x;
-      dSa_IdU(3,4) -= -dSa_IdU(3,3)+v.x;
-    
-      dSa_IdU(4,0) = k*v.x;
-      dSa_IdU(4,1) -= k;
-      dSa_IdU(4,4) -= v.x;
-      dSa_IdU(5,0) = omega*v.x;
-      dSa_IdU(5,1) = omega;
-      dSa_IdU(5,5) -= v.x;  
-    }//end of turbulent case
-
-    dSa_IdU = dSa_IdU/X.x;
-
-    //    cout<<"\n Axisymmetric-x dSa_IdU";
-  }//end of axisymmetric case   -- x radial 
-}
- 
-/****************************************************************
- * Axisymmetric Source Term Jacboian (Viscous)                  * 
- ****************************************************************/
-void Chem2D_pState::dSa_vdU(DenseMatrix &dSa_VdU,
-			    DenseMatrix &dWdQ,
-			    const Chem2D_pState &dWdx,
-			    const Chem2D_pState &dWdy,
-			    const Vector2D &X, 
-			    const int Axisymmetric, 
-			    const double d_dWdx_dW,
-			    const double d_dWdy_dW) const {
-
-  DenseMatrix dSa_VdW(NUM_VAR_CHEM2D-1,NUM_VAR_CHEM2D-1); 
-  dSa_VdW.zero();
-  
-  double enthalpy = h();
-  double CP = Cp();
-  double RTOT = Rtot();
-  double phi = ZERO;
-  double Temp = p/(rho*RTOT);
-  
-  if((flow_type ==FLOWTYPE_INVISCID)||(flow_type ==FLOWTYPE_LAMINAR)){
-    if(Axisymmetric == 1){  
-      double t1,t2,t4,t6, t7, t8, t9, t11;
-      double t14,t15,t23,t25,t26,t27,t28,t32;
-      double t54,t56,t62,t71;
-
-      double r =X.y; 
-      t1 = mu();
-      t2 = d_dWdy_dW ;
-      t4 = d_dWdx_dW;
-      t6 = dmudT();
-      t7 = dWdy.v.x;
-      t8 = dWdx.v.y; 
-      t9 = t7+t8;
-      t11 = d_dWdx_dW ;
-      t14 = d_dWdy_dW;
-      t15 = 1/r;
-      t23 = dWdx.v.x; 
-      t25 = dWdy.v.y; 
-      t26 = t25/3.0;
-      t27 = v.y*t15;
-      t28 = t27/3.0;
-      t32 = t23/3.0;
-      t54 = v.x*t1;
-      t56 = v.y*t1;
-      t62 = 2.0/3.0*t25-t32-t28;
-      t71 =  d_dWdy_dW ;
-
-      dSa_VdW(1,1) = t1*t2;
-      dSa_VdW(1,2) = t1*t4;
-      dSa_VdW(1,3) = t6*t9;
-
-      dSa_VdW(2,1) = 2.0*t1*t11;
-      dSa_VdW(2,2) = 2.0/3.0*t1*(-t14-t15)-2.0*t1*(2.0/3.0*t15-t14/3.0);
-      dSa_VdW(2,3) = 2.0*t6*(2.0/3.0*t23-t26-t28)-2.0*t6*(2.0/3.0*t27-t32-t26);
-
-      dSa_VdW(3,0) = thermal_diffusion().y;
-      dSa_VdW(3,1) = t1*t9+t54*t2-2.0/3.0*t56*t11;
-      dSa_VdW(3,2) = t54*t4+2.0*t1*t62+2.0*t56*(2.0/3.0*t14-t15/3.0);
-
-      double Sum_dh = 0.0;
-      for(int Num = 0; Num<ns; Num++)
-	{
-	  // sum of (dhidT *(Dmi)*gradc
-	  Sum_dh +=  specdata[Num].Enthalpy_prime(Temp)
-	    *spec[Num].diffusion_coef*dWdy.spec[Num].c;
-	  
-	}
-      dSa_VdW(3,3)=  kappa()*t71+rho*Sum_dh +v.x*t6*t9+2.0*v.y*t6*t62;
-      int NUM_VAR =  NUM_CHEM2D_VAR_SANS_SPECIES;
-
-      for(int Num = 0; Num<(ns-1); Num++)
-	{ 
-	  
-	  dSa_VdW(3,NUM_VAR+Num)= rho*spec[Num].diffusion_coef*(specdata[Num].Enthalpy(Temp)+specdata[Num].Heatofform())*d_dWdy_dW;
-	  dSa_VdW(NUM_VAR+Num,0)= spec[Num].diffusion_coef*dWdy.spec[Num].c;
-	  dSa_VdW(NUM_VAR+Num,NUM_VAR+Num) = rho*spec[Num].diffusion_coef*d_dWdy_dW;
-	}
-      //then devided by the radial distance
-      
-      dSa_VdU = dSa_VdW*dWdQ;
-      dSa_VdU = dSa_VdU/r;
-      
-    }//end of axisymmetric case -- y
-
-    if(Axisymmetric == 2){  
-      double t1,t2,t4,t6, t9, t12;
-      double t13,t15,t19,t22,t24,t26,t27,t28;
-      double t49,t52,t60;
-      
-      double r =X.x; 
-    
-      t1 = mu();
-      t2 = d_dWdx_dW;
-      t4 = 1/r;
-      t6 = 2.0/3.0*t2-t4/3.0;
-      t9 = d_dWdy_dW;
-      t12 = dmudT();
-      t13 = dWdx.v.x;
-      t15 = dWdy.v.y;
-      t19 = 2.0/3.0*t13-t15/3.0-v.x*t4/3.0;
-      t22 = d_dWdy_dW;
-      t24 = d_dWdx_dW;
-      t26 = dWdy.v.x;
-      t27 = dWdx.v.y;
-      t28 = t26+t27;
-
-      t49 = v.x*t1;
-      t52 = v.y*t1;
-
-      t60 = d_dWdx_dW;
-
-      dSa_VdW(1,1) = 2.0*t1*t6;
-      dSa_VdW(1,2) = -2.0/3.0*t1*t9;
-      dSa_VdW(1,3) = 2.0*t12*t19;
-   
-      dSa_VdW(2,1) = t1*t22;
-      dSa_VdW(2,2) = t1*t24;
-      dSa_VdW(2,3) = t12*t28;
-    
-      dSa_VdW(3,0) = thermal_diffusion().x;
-      dSa_VdW(3,1) = 2.0*t1*t19+2.0*t49*t6+t52*t22;
-      dSa_VdW(3,2) = -2.0/3.0*t49*t9+t1*t28+t52*t24;
-      double Sum_dh = 0.0;
-      for(int Num = 0; Num<ns; Num++)
-	{
-	  // sum of (dhidT *(Dmi)*gradc
-	  Sum_dh +=  specdata[Num].Enthalpy_prime(Temp)
-	    *spec[Num].diffusion_coef*dWdx.spec[Num].c;
-	  
-	}
-      dSa_VdW(3,3) = kappa()*t60+rho*Sum_dh+2.0*v.x*t12*t19+v.y*t12*t28;
-	  
-      int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES;
-      for(int Num = 0; Num<(ns-1); Num++)
-	{ 
-	  //rho*Di*hi*d_dWdx_dW
-	  dSa_VdW(3,NUM_VAR+Num)= rho*spec[Num].diffusion_coef*(specdata[Num].Enthalpy(Temp)+specdata[Num].Heatofform())*d_dWdx_dW;
-	  dSa_VdW(NUM_VAR+Num,0)= spec[Num].diffusion_coef*dWdx.spec[Num].c;
-	  dSa_VdW(NUM_VAR+Num,NUM_VAR+Num) = rho*spec[Num].diffusion_coef*d_dWdx_dW;
-	}
-    
-      dSa_VdU = dSa_VdW*dWdQ;
-      dSa_VdU = dSa_VdU/r;
-      
-    }//x-radius 
-    
-  }//end of laminar case
-  
-  if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-      flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-    
-    double Temp =T();
-    double r;
-
-    if(Axisymmetric == 1){
-      double t1,t2,t3,t4,t5,t7,t8,t10;
-      double t13,t14,t18,t19,t21,t23,t24,t27,t29;
-      double t31,t34,t38,t39,t43,t44,t47,t51,t57; 
-      double  t62, t63 ,t91, t92, t93, t95, t116;
-      double t146, t155, t156, t159, t160, t161; 
-      double t166, t170, t200, t201, t204, t210; 
-    
-      r = X.y;
-      t1 = 1/max(omega,TOLER);
-      t2 = k*t1;
-      t3 =  dWdy.v.x; 
-      t4 =  dWdx.v.y;
-      t5 = t3+t4;
-      t7 = mu();
-      t8 =  d_dWdy_dW;
-      t10 = rho*k;
-      t13 = t7*t8+t10*t1*t8;
-      t14 = d_dWdx_dW;
-      t18 = t7*t14+t10*t1*t14;
-      t19 = dmudT();
-      t21 = rho*t1;
-      t23 = max(omega,TOLER)*max(omega,TOLER);
-      t24 = 1/t23;
-      t27 = dWdy.v.y;
-      t29 = dWdx.v.x; 
-    
-      t31 = 1/r;
-      t34 = 2.0/3.0*t27-t29/3.0-v.x*t31/3.0;
-      t38 = 2.0*t2*t34-2.0/3.0*k;
-      t39 =  d_dWdx_dW;
-      t43 = -t7*t39-t10*t1*t39;
-      t44 =  d_dWdy_dW;
-      t47 = 2.0/3.0*t44-t31/3.0;
-      t51 = t7*t47+t10*t1*t47;
-      t57 = 2.0*t21*t34-2.0/3.0*rho;
-      t62 = Cp()/Pr_turb();
-      // t63 = dTdy;
-      t63 = (ONE/(rho*Rtot()))*(dWdy.p - (p/rho)*dWdy.rho);
-      
-      t91 = dWdy.k;
-      t92 = t1*t91;
-      t93 = sigma_star*k*t92;
-      t95 = t1*t5;
-      t116 = d_dWdy_dW;
-      t146 = t19*t91;
-      t155 = sigma_star*rho;
-      t156 = t155*t92;
-      t159 = d_dWdy_dW;
-      t160 = (t7+t155*t2)*t159;
-      t161 = v.x*rho;
-      t166 = k*t24;
-      t170 = t155*t166*t91;
-    
-      t200 = dWdy.omega;
-      t201 = t1*t200;
-      t204 = sigma*rho;
-      t210 = d_dWdy_dW;
-      
-      dSa_VdW(1,0) = t2*t5;
-      dSa_VdW(1,1) = t13;
-      dSa_VdW(1,2) = t18;
-      dSa_VdW(1,3) = t19*t5;
-      dSa_VdW(1,4) = t21*t5;
-      dSa_VdW(1,5) = -t10*t24*t5;
- 
-      dSa_VdW(2,0) = t38;
-      dSa_VdW(2,1) = 2.0/3.0*t43;
-      dSa_VdW(2,2) = 2.0*t51;
-      dSa_VdW(2,3) = 2.0*t19*t34;
-      dSa_VdW(2,4) = t57;
-      dSa_VdW(2,5) = -2.0*t10*t24*t34;
-      
-      double Sum_q = 0.0;
-      double Sum_dq = 0.0;
-      // 6 represents rho, vr,vz, p, k, omega in 2D axisymmetric turbulent flows
-      
-      for(int Num = 0; Num<(ns); Num++)
-	{
-	  //for each species	// h*(Dm+Dt)*gradc  
-	  Sum_q +=  (specdata[Num].Enthalpy(Temp)+specdata[Num].Heatofform())*(spec[Num].diffusion_coef+Dm_turb())*dWdy.spec[Num].c;
-	  //dhdT *(Dm+Dmt)*gradc
-	  Sum_dq +=  specdata[Num].Enthalpy_prime(Temp)*(spec[Num].diffusion_coef+Dm_turb())*dWdy.spec[Num].c;
-	  
-	}
-      dSa_VdW(3,0) = t62*t2*t63+Sum_q+t93+v.x*k*t95+v.y*t38;
-      dSa_VdW(3,1) = t7*t5+t10*t95+v.x*t13+2.0/3.0*v.y*t43;
-      dSa_VdW(3,2) = v.x*t18+2.0*t7*t34+2.0*t10*t1*t34-2.0/3.0*t10+2.0*v.y*t51;
-      dSa_VdW(3,3) = (kappa()+t62*t10*t1)*t116+ rho*Sum_dq+t146+v.x*t19*t5+2.0*v.y*t19*t34;
-      dSa_VdW(3,4) = t62*t21*t63+t156+t160+t161*t95+v.y*t57;
-      dSa_VdW(3,5) = -t62*rho*t166*t63-t170-t161*t166*t5-2.0*v.y*rho*t166*t34;
-
-      int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES;
-     for(int Num = 0; Num<(ns-1); Num++)
-       {//h*rho*(D+Dt)*d_dWdy_dW
-	 
-	  dSa_VdW(3, NUM_VAR+Num) = (specdata[Num].Enthalpy(Temp)+specdata[Num].Heatofform())*rho*(spec[Num].diffusion_coef+Dm_turb())*d_dWdy_dW;
-	  //(D+Dt)*gradc
-	  dSa_VdW(NUM_VAR+Num, 0) =(spec[Num].diffusion_coef+Dm_turb())*dWdy.spec[Num].c;
-	  //rho*(D+Dt)*dcydc
-	  dSa_VdW(NUM_VAR+Num,NUM_VAR+Num) = rho*(spec[Num].diffusion_coef+Dm_turb())*d_dWdy_dW;
-	}// end the center ones
-      
-     dSa_VdW(4,0) = t93;
-     dSa_VdW(4,3) = t146;
-     dSa_VdW(4,4) = t156+t160;
-     dSa_VdW(4,5) = -t170;
-     dSa_VdW(5,0) = sigma_star*k*t201;
-     dSa_VdW(5,3) = t19*t200;
-     dSa_VdW(5,4) = t204*t201;
-     dSa_VdW(5,5) = -t204*t166*t200+(t7+t204*t2)*t210;
-     
-     dSa_VdU = dSa_VdW*dWdQ;
-     dSa_VdU = dSa_VdU/r;
-    }  
-    if(Axisymmetric == 2){
-   
-      double t1,t2,t3,t5,t7,t10;
-      double t14,t15,t16,t19,t21,t24,t25,t29,t30;
-      double t33,t37,t38,t39,t43,t44,t45,t47,t51; 
-      double  t52, t56 ,t62, t63 ,t91, t92, t93, t96 ;
-      double t146, t155, t156, t159, t160, t162; 
-      double t166, t170, t200, t201, t204, t210; 
-      r = X.x;
-      t1 = 1/max(omega,TOLER);
-      t2 = k*t1;
-      t3 = dWdx.v.x;
-      t5 = dWdy.v.y;
-      t7 = 1/r;
-      t10 = 2.0/3.0*t3-t5/3.0-v.x*t7/3.0;
-      t14 = 2.0*t2*t10-2.0/3.0*k;
-      t15 = mu();
-      t16 = d_dWdx_dW;
-      t19 = 2.0/3.0*t16-t7/3.0;
-      t21 = rho*k;
-      t24 = t15*t19+t21*t1*t19;
-      t25 = d_dWdy_dW;
-      t29 = -t15*t25-t21*t1*t25;
-      t30 = dmudT();
-      t33 = rho*t1;
-      t37 = 2.0*t33*t10-2.0/3.0*rho;
-      t38 = max(omega,TOLER)*max(omega,TOLER);
-      t39 = 1/t38;
-      t43 = dWdy.v.x;
-      t44 = dWdx.v.y;
-      t45 = t43+t44;
-      t47 = d_dWdy_dW;
-      t51 = t15*t47+t21*t1*t47;
-      t52 = d_dWdx_dW;
-      t56 = t15*t52+t21*t1*t52;
-      t62 = CP/Pr_turb();
-      t63 = (ONE/(rho*Rtot()))*(dWdx.p - (p/rho)*dWdx.rho);//dTdx;
-
-      t91 = dWdx.k;
-      t92 = t1*t91;
-      t93 = sigma*k*t92;
-      t96 = t1*t45;
-   
-      t146 = t30*t91;
-      t155 = sigma*rho;
-      t156 = t155*t92;
-      t159 = d_dWdx_dW;
-      t160 = (t15+t155*t2)*t159;
-      t162 = v.y*rho;
-      t166 = k*t39;
-      t170 = t155*t166*t91;
-
-      t200 = dWdx.omega;
-      t201 = t1*t200;
-      t204 = sigma_star*rho;
-      t210 = d_dWdx_dW;
-   
-      dSa_VdW(1,0) = t14;
-      dSa_VdW(1,1) = 2.0*t24;
-      dSa_VdW(1,2) = 2.0/3.0*t29;
-      dSa_VdW(1,3) = 2.0*t30*t10;
-      dSa_VdW(1,4) = t37;
-      dSa_VdW(1,5) = -2.0*t21*t39*t10;
-  
-      dSa_VdW(2,0) = t2*t45;
-      dSa_VdW(2,1) = t51;
-      dSa_VdW(2,2) = t56;
-      dSa_VdW(2,3) = t30*t45;
-      dSa_VdW(2,4) = t33*t45;
-      dSa_VdW(2,5) = -t21*t39*t45;
-      double Sum_q = 0.0;
-      double Sum_dq = 0.0;
-      for(int Num = 0; Num<(ns); Num++)
-	{
-	  //for each species	// h*(Dm+Dt)*gradc  
-	  Sum_q +=  (specdata[Num].Enthalpy(Temp)+specdata[Num].Heatofform())*(spec[Num].diffusion_coef+Dm_turb())*dWdx.spec[Num].c;
-	  //dhdT *(Dm+Dmt)*gradc
-	  Sum_dq +=  specdata[Num].Enthalpy_prime(Temp)*(spec[Num].diffusion_coef+Dm_turb())*dWdx.spec[Num].c;
-	  
-	}
-
-    
-      dSa_VdW(3,0) = t62*t2*t63 + Sum_dq +t93+v.x*t14+v.y*k*t96;
-      dSa_VdW(3,1) = 2.0*t15*t10+2.0*t21*t1*t10-2.0/3.0*t21+2.0*v.x*t24+v.y*t51;
-      dSa_VdW(3,2) = 2.0/3.0*v.x*t29+t15*t45+t21*t96+v.y*t56;
-      dSa_VdW(3,3) =(kappa()+t62*t21*t1)*t52+rho*Sum_dq+t146+2.0*v.x*t30*t10+v.y*t30*t45;
-      dSa_VdW(3,4) = t62*t33*t63+t156+t160+v.x*t37+t162*t96;
-      dSa_VdW(3,5) = -t62*rho*t166*t63-t170-2.0*v.x*rho*t166*t10-t162*t166*t45;
-      
-      int NUM_VAR =  NUM_CHEM2D_VAR_SANS_SPECIES;
- 
-      for(int Num = 0; Num<(ns-1); Num++)
-	{//h*rho*(D+Dt)*d_dWdy_dW
-	  dSa_VdW(3, NUM_VAR+Num) = (specdata[Num].Enthalpy(Temp)+specdata[Num].Heatofform())*rho*(spec[Num].diffusion_coef+Dm_turb())*d_dWdx_dW;
-	  //(D+Dt)*gradc
-	  dSa_VdW(NUM_VAR+Num, 0) =(spec[Num].diffusion_coef+Dm_turb())*dWdx.spec[Num].c;
-	  //rho*(D+Dt)*dcydc
-	  dSa_VdW(NUM_VAR+Num,NUM_VAR+Num) = rho*(spec[Num].diffusion_coef+Dm_turb())*d_dWdx_dW;
-	}// end the center ones
-      dSa_VdW(4,0) = t93;
-      dSa_VdW(4,3) = t146;
-      dSa_VdW(4,4) = t156+t160;
-      dSa_VdW(4,5) = -t170;
-      
-      dSa_VdW(5,0) = sigma_star*k*t201;
-      dSa_VdW(5,3) = t30*t200;
-      dSa_VdW(5,4) = t204*t201;
-      dSa_VdW(5,5) = -t204*t166*t200+(t15+t204*t2)*t210;
-      
-      dSa_VdU = dSa_VdW*dWdQ;
-      dSa_VdU = dSa_VdU/r;
-  
-    }//end of axisymmetric x
-
-  }//end of turbulent case 
-  
-}
 
 /***************************************************************
  ***************************************************************
- *************** SOURCE TERMS **********************************
+ ********** SOURCE TERMS & JACOBIANS ***************************
  ***************************************************************
  ***************************************************************/
 
@@ -2098,26 +1651,28 @@ void Chem2D_pState::dSa_vdU(DenseMatrix &dSa_VdU,
  * Axisymmetric flow source terms (Inviscid)                   *
  ***************************************************************/
 Chem2D_cState Chem2D_pState::Sa_inviscid(const Vector2D &X,
+                                         const int Flow_Type,
                                          const int Axisymmetric) const{
 
   Chem2D_cState Temp; Temp.Vacuum();
 
-  if (Axisymmetric == 2) {
+  //x is radial
+  if (Axisymmetric == AXISYMMETRIC_X) {
      Temp.rho = -rho*v.x/X.x;
      Temp.rhov.x = -rho*v.x*v.x/X.x; 
      Temp.rhov.y = -rho*v.x*v.y/X.x;
      Temp.E =  -v.x*H()/X.x;
      //species contributions
      for(int i=0; i<ns;i++){
-       Temp.rhospec[i].c = -rho*v.x*spec[i].c/X.x;
+       Temp.rhospec[i].c = -rho*v.x*spec[i].c/X.x;         //correct for ns-1 ????
      }
-     if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-         flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+     if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
+         Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
         Temp.rhok =  -v.x*rho*k/X.x;
         Temp.rhoomega = -v.x*rho*omega/X.x;
      } 
-//      cout<<"\n Axisymmetric-x Sa_inviscid";
-  } else if (Axisymmetric == 1) {
+     //y is radial
+  } else if (Axisymmetric == AXISYMMETRIC_Y) {
      Temp.rho = -rho*v.y/X.y;
      Temp.rhov.x = -rho*v.x*v.y/X.y; 
      Temp.rhov.y = -rho*v.y*v.y/X.y;
@@ -2126,8 +1681,8 @@ Chem2D_cState Chem2D_pState::Sa_inviscid(const Vector2D &X,
      for(int i=0; i<ns;i++){
        Temp.rhospec[i].c = -rho*v.y*spec[i].c/X.y;
      }
-     if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-         flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+     if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
+         Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
         Temp.rhok =  -v.y*rho*k/X.y;
         Temp.rhoomega = -v.y*rho*omega/X.y;
      }
@@ -2137,108 +1692,181 @@ Chem2D_cState Chem2D_pState::Sa_inviscid(const Vector2D &X,
 
 }
 
+
+// Finite differnece check of dSa_idU
+void Chem2D_pState::dSa_idU_FD(DenseMatrix &dSa_IdU, const Vector2D &X, const int Flow_Type,const int Axisymmetric ) const {
+
+  Chem2D_cState UU = U(*this);
+  Chem2D_cState A,C;
+  Chem2D_pState B,D;
+  double perturb = 5e-6;
+  double a;
+
+  for(int jcol=0; jcol<(dSa_IdU.get_n()); jcol++){    
+    A = UU; C = UU;
+    if( jcol <NUM_CHEM2D_VAR_SANS_SPECIES) {
+      A[jcol+1] += perturb*max(ONE,UU[jcol+1]); 
+      C[jcol+1] -= perturb*max(ONE,UU[jcol+1]);
+    } else {                                       //enforce sum(ci) = 1;
+      a =  perturb*max(ONE,UU[jcol+1]); 
+      A[jcol+1] += a;
+      A[NUM_VAR_CHEM2D] -= a;      
+      C[jcol+1] -= a;
+      C[NUM_VAR_CHEM2D] += a;
+    }   
+    B = W(A);  D = W(C);
+    A = B.Sa_inviscid(X,Flow_Type,Axisymmetric);   C = D.Sa_inviscid(X,Flow_Type,Axisymmetric);
+    for(int irow=0; irow<(dSa_IdU.get_n()); irow++){
+      dSa_IdU(irow,jcol) = ( A[irow+1] - C[irow+1])/(TWO*perturb*max(ONE, UU[jcol+1]));      
+    }
+  } 
+
+}
+
+/****************************************************************
+ * Axisymmetric Source Term Jacboian (Inviscid)                 * 
+ ****************************************************************/
+void Chem2D_pState::dSa_idU(DenseMatrix &dSa_IdU, const Vector2D &X, const int Flow_Type,const int Axisymmetric ) const {
+
+  double enthalpy = h();
+  double CP = Cp();
+  double RTOT = Rtot();
+  double phi = ZERO;
+  double Temp = p/(rho*RTOT);
+
+  for(int j=0; j<ns-1; j++){   
+#ifdef _NS_MINUS_ONE
+    phi += spec[j].c*(specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/RTOT
+		      -(specdata[ns-1].Enthalpy(Temp)+specdata[ns-1].Heatofform() - CP*Temp*specdata[ns-1].Rs()/RTOT)); 		      
+#else
+    phi += spec[j].c*(specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/RTOT);
+#endif
+  } 
+ 
+  if(Axisymmetric == AXISYMMETRIC_Y){
+    cout<<"\n ISSUES IN dSa_idU AXISYMMETRIC_Y \n"; exit(1);
+    //end of axisymmetric case 1  -- y radial direction 
+  } else if(Axisymmetric == AXISYMMETRIC_X){ 
+    
+    dSa_IdU(0,1) -= ONE/X.x;
+    dSa_IdU(1,0) += v.x*v.x/X.x;
+    dSa_IdU(1,1) -= TWO*v.x/X.x;
+    dSa_IdU(2,0) += v.x*v.y/X.x;
+    dSa_IdU(2,1) -= v.y/X.x;
+    dSa_IdU(2,2) -= v.x/X.x;
+   
+//     if((Flow_Type ==FLOWTYPE_INVISCID)||(Flow_Type ==FLOWTYPE_LAMINAR)){    
+//     dSa_IdU(3,0) -= v.x*( - CP*(HALF*(v.x*v.x+v.y*v.y)-enthalpy+phi-CP*Temp)/(RTOT-CP) - (phi +v.x*v.x +v.y*v.y + CP*Temp))/X.x;
+//     dSa_IdU(3,1) -= (v.x*v.x + H()/rho + CP*v.x*v.x/(RTOT-CP))/X.x;
+//     dSa_IdU(3,2) -= (v.x*v.y + CP*v.x*v.y/(RTOT-CP))/X.x ;    
+//     dSa_IdU(3,3) -= CP/(CP-RTOT)*v.x/X.x;     
+
+    // XINFENGS ORIGINAL
+    dSa_IdU(3,0) -= RTOT/(CP-RTOT)*(v.x*(phi + v.sqr()) + v.x*CP*( p/rho - enthalpy - HALF*v.sqr())/RTOT)/X.x;
+    dSa_IdU(3,1) -= (enthalpy + CP/(CP-RTOT)*HALF*v.sqr() - RTOT/(CP-RTOT)*HALF*(THREE*v.x*v.x +v.y*v.y))/X.x;
+    dSa_IdU(3,2) += RTOT/(CP-RTOT)*v.x*v.y/X.x;
+    dSa_IdU(3,3) -= CP/(CP-RTOT)*v.x/X.x;      
+    //}//end of laminar case
+    
+    //Multispecies terms
+    int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES;
+    for(int i=0; i<(ns-1);i++){
+#ifdef _NS_MINUS_ONE     
+      dSa_IdU(3,i+NUM_VAR) += v.x*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - CP*Temp*specdata[i].Rs()/RTOT
+				   -(specdata[ns-1].Enthalpy(Temp)+specdata[ns-1].Heatofform() - CP*Temp*specdata[ns-1].Rs()/RTOT))/(CP/RTOT - ONE)/X.x; 
+#else
+      dSa_IdU(3,i+NUM_VAR) += v.x*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - CP*Temp*specdata[i].Rs()/RTOT)/(CP/RTOT - ONE)/X.x; 
+#endif
+      dSa_IdU(NUM_VAR+i,0) += v.x*spec[i].c/X.x;
+      dSa_IdU(NUM_VAR+i,1) -= spec[i].c/X.x;
+      dSa_IdU(NUM_VAR+i,NUM_VAR+i) -= v.x/X.x;
+    }
+    
+    if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
+	Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+      cout<<"\n SCOTT BROKE THE TURBULENCE, dSa_idU ;)";
+//       dSa_IdU(3,0) -= (-(v.x*v.x +v.y*v.y)*v.x+ Gamma*v.x*(v.x*v.x+v.y*v.y+2.0*RTOT*Temp)/2.0-k*v.x -v.x*h())/X.x;
+//       dSa_IdU(3,1) -= (THREE/TWO*v.x*v.x +HALF*v.y*v.y +h() +k -Gamma*v.x*v.x)/X.x;
+//       dSa_IdU(3,2) -= (v.x*v.y- Gamma*v.y*v.x)/X.x;      
+//       dSa_IdU(3,3) -= Gamma*v.x/X.x;
+//       dSa_IdU(3,4) -= (-dSa_IdU(3,3)+v.x)/X.x;    
+//       dSa_IdU(4,0) = k*v.x/X.x;
+//       dSa_IdU(4,1) -= k/X.x;
+//       dSa_IdU(4,4) -= v.x/X.x;
+//       dSa_IdU(5,0) = omega*v.x/X.x;
+//       dSa_IdU(5,1) = omega/X.x;
+//       dSa_IdU(5,5) -= v.x/X.x;  
+    }//end of turbulent case
+
+  }//end of axisymmetric case   -- x radial 
+}
+
 /***************************************************************
  * Axisymmetric flow source terms (Viscous)                    *  
  ***************************************************************/
 Chem2D_cState Chem2D_pState::Sa_viscous(const Chem2D_pState &dWdx,
 					const Chem2D_pState &dWdy,
                                         const Vector2D &X,
+                                        const int Flow_Type,
                                         const int Axisymmetric){
-
-  double div_v, radius;
-  double Mu, Kappa, Temperature, Rmix, Cpmix;
-  double mu_t, kappa_t, Dm_t;
+  double Mu, Temperature, Rmix;
+  double mu_t, Dm_t;
   double rhohsDs;
   Vector2D grad_T;
-  Tensor2D strain_rate;
   Chem2D_cState Temp; Temp.Vacuum();
 
   //Transport and thermodynamic properties
   Mu = mu();
-  Kappa = kappa();
   Temperature = T();
   Rmix = Rtot();
-  Cpmix = Cp();
-
-  //Turbulence model transport properties
-  if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-      flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-      mu_t = eddy_viscosity();
-      kappa_t =  mu_t*Cpmix/Pr_turb();
-      Dm_t = Dm_turb();
-  } /* endif */
-  //Strain rate (+dilatation)
-  div_v = dWdx.v.x + dWdy.v.y;
-  if (Axisymmetric == 2) {
-     radius = X.x;
-     div_v += v.x/radius;
-  } else if (Axisymmetric == 1) {
-     radius = X.y;
-     div_v += v.y/radius;
-  } /* endif */
-  strain_rate.xx = dWdx.v.x-div_v/THREE;
-  strain_rate.xy = HALF*(dWdx.v.y + dWdy.v.x);
-  strain_rate.yy = dWdy.v.y-div_v/THREE;
-  if (Axisymmetric == 0) {
-     strain_rate.zz = -(strain_rate.xx + strain_rate.yy); 
-  } else if (Axisymmetric == 2) {
-     strain_rate.zz = v.x/radius-div_v/THREE;
-  } else if (Axisymmetric == 1) {
-     strain_rate.zz = v.y/radius-div_v/THREE;
-  } /* endif */
 
   //Temperature gradient
   //dT/dx = 1/rho*R *( dP/dx - P/rho * drho/dx)
   grad_T.x = (ONE/(rho*Rmix))*(dWdx.p - (p/rho)*dWdx.rho);
   grad_T.y = (ONE/(rho*Rmix))*(dWdy.p - (p/rho)*dWdy.rho);
- //Molecular (laminar) stress tensor
-  tau = TWO*Mu*strain_rate;
 
-  //Turbulent (Reynolds) Stresses
-  if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-      flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-     lambda = (TWO*mu_t)*strain_rate;
-     lambda.xx -= (TWO/THREE)*rho*k; 
-     lambda.yy -= (TWO/THREE)*rho*k; 
-     lambda.zz -= (TWO/THREE)*rho*k; 
-  } /* endif */
+  //Molecular (laminar) stress tensor
+  Laminar_Stress(dWdx,dWdy, Flow_Type,Axisymmetric, X);
 
   //Molecular (laminar) heat flux
   //Thermal conduction, q = - kappa * grad(T)
-  qflux = - Kappa*grad_T;
+  qflux = - kappa()*grad_T;
   //Thermal diffusion, q -= rho * sum ( hs * Ds *gradcs)
   for(int i=0; i<ns; i++){ 
     rhohsDs = rho*(Mu/(rho*Schmidt[i]))*(specdata[i].Enthalpy(Temperature) + specdata[i].Heatofform());
     qflux.x -= rhohsDs*dWdx.spec[i].c;
     qflux.y -= rhohsDs*dWdy.spec[i].c;
   }
- 
+  
   //Turbulent heat flux
   //Thermal conduction, q = - kappa * grad(T)
-  if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-      flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
+      Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+    mu_t = eddy_viscosity();
+    Dm_t = Dm_turb();
 
-    theta = - kappa_t*grad_T;
+    theta = - mu_t*Cp()/Pr_turb()*grad_T;
     //Thermal Diffusion, q -= rho * sum ( hs * Ds *gradcs)  
     for (int i=0; i<ns; i++) {
       rhohsDs = rho*Dm_t*(specdata[i].Enthalpy(Temperature)+specdata[i].Heatofform());
       theta.x -= rhohsDs*dWdx.spec[i].c;
       theta.y -= rhohsDs*dWdy.spec[i].c;
-
-
     }
-  } /* endif */
+    Reynolds_Stress(dWdx,dWdy, Flow_Type,Axisymmetric, X);  
+  } 
 
+  /////////////////////////////////////////////////////////////
   //Determine axisymmetric source terms
-  if (Axisymmetric == 2) {
+  /////////////////////////////////////////////////////////////
+  if (Axisymmetric == AXISYMMETRIC_X) {
     Temp.rhov.x = (tau.xx - tau.zz)/X.x;
     Temp.rhov.y = tau.xy/X.x;
     Temp.E = (- qflux.x + v.x*tau.xx + v.y*tau.xy)/X.x;
     for(int i=0; i<ns;i++){
       Temp.rhospec[i].c = rho*(Mu/(rho*Schmidt[i]))*dWdx.spec[i].c/X.x;
     }
-    if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-	flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+    if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
+	Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
       Temp.rhov.x += (lambda.xx - lambda.zz)/X.x;
       Temp.rhov.y += lambda.xy/X.x;
       Temp.E += (- theta.x + v.x*lambda.xx + v.y*lambda.xy)/X.x 
@@ -2250,15 +1878,15 @@ Chem2D_cState Chem2D_pState::Sa_viscous(const Chem2D_pState &dWdx,
       }
     }
     
-  } else if (Axisymmetric == 1) {
+  } else if (Axisymmetric == AXISYMMETRIC_Y) {
     Temp.rhov.x = tau.xy/X.y;
     Temp.rhov.y = (tau.xx - tau.zz)/X.y;
     Temp.E = (- qflux.y + v.x*tau.xy + v.y*tau.yy)/X.y;
     for(int i=0; i<ns;i++){
       Temp.rhospec[i].c = rho*(Mu/(rho*Schmidt[i]))*dWdy.spec[i].c/X.y;
     }
-    if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-	flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+    if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
+	Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
       Temp.rhov.x += lambda.xy/X.y;
       Temp.rhov.y += (lambda.xx - lambda.zz)/X.y;
       Temp.E += (- theta.y + v.x*lambda.xy + v.y*lambda.yy)/X.y 
@@ -2272,10 +1900,64 @@ Chem2D_cState Chem2D_pState::Sa_viscous(const Chem2D_pState &dWdx,
     
   } /* endif */
   
- 
   return (Temp);
   
 }
+
+/**************************************************************** 
+ * Axisymmetric Source Term Jacboian (Viscous)                  *  
+ ****************************************************************/
+ void Chem2D_pState::dSa_vdW(DenseMatrix &dSa_VdW,
+			     const Chem2D_pState &dWdx,
+			     const Chem2D_pState &dWdy,const Vector2D &X, 
+			     const int Flow_Type,const int Axisymmetric,
+			     const double d_dWdx_dW, const double d_dWdy_dW) const {
+
+  int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES;
+  double Rmix = Rtot();
+  double Temp = T();
+  double Mu = mu();
+  double Kappa = kappa();
+  
+  if(Axisymmetric == AXISYMMETRIC_X){   
+    double radius = X.x;
+
+    dSa_VdW(2,2) += TWO*Mu*(d_dWdx_dW - ONE/radius)/radius;    
+    dSa_VdW(2,1) += Mu*d_dWdy_dW/radius;
+    dSa_VdW(2,2) += Mu*d_dWdx_dW/radius ;
+    
+    //energy
+    double Sum_q(ZERO), Sum_dq(ZERO), Sum_dhi(ZERO);
+    for(int Num = 0; Num<ns; Num++){
+      Sum_q += specdata[Num].Enthalpy_prime(Temp)*Mu*dWdx.spec[Num].c/(Schmidt[Num]*rho*Rmix);      // - ns-1 ???
+      Sum_dq -= specdata[Num].Enthalpy_prime(Temp)*Mu*dWdx.spec[Num].c*Temp/(rho*Schmidt[Num]);
+      //Sum_dhi += specdata[Num].Enthalpy_prime(Temp)*Temp*Mu*dWdx.spec[Num].c/(Rmix*Schmidt[Num]); 
+    } 
+
+    dSa_VdW(3,0) += (Kappa*( -(dWdx.p - p/rho*dWdx.rho)/rho + (p*dWdx.rho/(rho*rho) - p*d_dWdx_dW/rho))/(rho*Rmix) + Sum_dq)/radius;
+    dSa_VdW(3,1) += (Mu*v.y*d_dWdy_dW + TWO*Mu*(TWO/THREE*dWdx.v.x - dWdx.v.y/THREE - v.x/(THREE*radius)) 
+		     + TWO*v.x*Mu*(TWO/THREE*d_dWdx_dW-ONE/(THREE*radius)))/radius;    
+    dSa_VdW(3,2) += (Mu*(dWdy.v.x +dWdx.v.y) + v.y*Mu*d_dWdx_dW - TWO/THREE*Mu*v.x*d_dWdy_dW)/radius;
+    dSa_VdW(3,3) += (Kappa*(d_dWdx_dW - dWdx.rho/rho)/(rho*Rmix)+Sum_q)/radius;
+   
+    //Multispecies
+    for(int Num = 0; Num<(ns-1); Num++){ 
+      dSa_VdW(3,NUM_VAR+Num) += (Mu/Schmidt[Num]*(specdata[Num].Enthalpy(Temp)+specdata[Num].Heatofform())*d_dWdx_dW)/radius;  
+      //- specdata[Num].Rs()*Sum_dhi)/radius; 
+      dSa_VdW(NUM_VAR+Num,NUM_VAR+Num) += (Mu/Schmidt[Num]*d_dWdx_dW)/radius;
+    }
+    
+    if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
+        Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+      cout<<"\n Missing Turbulent dSa_vdU components for AXISYMMETRIC_X ";
+    }
+
+  } else if(Axisymmetric == AXISYMMETRIC_Y){ 
+    cout<<"\n AXISYMMETRIC_Y NOT DONE YET ";
+  }
+       
+}
+
 
 /***************************************************************
  * Turbulence model source terms                               *  
@@ -2283,90 +1965,49 @@ Chem2D_cState Chem2D_pState::Sa_viscous(const Chem2D_pState &dWdx,
 Chem2D_cState Chem2D_pState::S_turbulence_model(const Chem2D_pState &dWdx,
 					        const Chem2D_pState &dWdy,
                                                 const Vector2D &X,
+                                                const int Flow_Type,
                                                 const int Axisymmetric){
-
-  double div_v, radius;
+  double radius;
   double mu_t, production;
-  Tensor2D strain_rate;
   Chem2D_cState Temp; Temp.Vacuum();
 
   //Turbulence model eddy viscosity
   mu_t = eddy_viscosity();
-
-  //Strain rate (+dilatation)
-  div_v = dWdx.v.x + dWdy.v.y;
-  if (Axisymmetric == 2) {
-     radius = X.x;
-     div_v += v.x/radius;
-  } else if (Axisymmetric == 1) {
-     radius = X.y;
-     div_v += v.y/radius;
+ 
+  if (Axisymmetric == AXISYMMETRIC_X) {
+    if(X.x !=0){
+       radius = X.x;
+     }
+  } else if (Axisymmetric == AXISYMMETRIC_Y) {
+     if(X.y !=0){
+        radius = X.y;
+     }
   } /* endif */
-  strain_rate.xx = dWdx.v.x-div_v/THREE;
-  strain_rate.xy = HALF*(dWdx.v.y + dWdy.v.x);
-  strain_rate.yy = dWdy.v.y-div_v/THREE;
-  if (Axisymmetric == 0) {
-     strain_rate.zz = -(strain_rate.xx + strain_rate.yy); 
-  } else if (Axisymmetric == 2) {
-     strain_rate.zz = v.x/radius-div_v/THREE;
-  } else if (Axisymmetric == 1) {
-     strain_rate.zz = v.y/radius-div_v/THREE;
-  } /* endif */
-
-  //Turbulent (Reynolds) Stresses
-  lambda = (TWO*mu_t)*strain_rate;
-  lambda.xx -= (TWO/THREE)*rho*k; 
-  lambda.yy -= (TWO/THREE)*rho*k; 
-  lambda.zz -= (TWO/THREE)*rho*k; 
-
-  //Production term
+  
   production = lambda.xx*dWdx.v.x + 
-               lambda.xy*(dWdy.v.x + dWdx.v.y) + 
-               lambda.yy*dWdy.v.y;
-  if (Axisymmetric == 2) {
-     production += lambda.zz*v.x/radius;
-  } else if (Axisymmetric == 1) {
-     production += lambda.zz*v.y/radius;
+    lambda.xy*(dWdy.v.x + dWdx.v.y) + 
+    lambda.yy*dWdy.v.y;
+  if (Axisymmetric == AXISYMMETRIC_X) {
+    production += lambda.zz*v.x/radius;
+  } else if (Axisymmetric == AXISYMMETRIC_Y) {
+    production += lambda.zz*v.y/radius;    
   } /* endif */
-
-  //Determine axisymmetric source terms
-  Temp.rhok = production - 
-              f_beta_star*beta_star*rho*k*omega;
-  Temp.rhoomega = alpha*(omega/max(k, TOLER))*production -
-                  f_beta*beta*rho*omega*omega;
-
+  
+  cout<<"\n SCOTT BROKE THE TURBULENCE, S_turbulence_model ;)";
+  //Determine axisymmetric source terms (1998)
+//   Temp.rhok = production - F_betastar(dWdx, dWdy)*beta_star*rho*k*omega;
+//   Temp.rhoomega = alpha*(omega/max(k, TOLER))*production - F_beta(dWdx, dWdy)*beta*rho*omega*omega;
+  
+  //  cout<<"\n S_turbulence= "<<Temp.rhok<<endl;  
+  //(1989)
+//   Temp.rhok = production - f_beta_star*beta_star*rho*k*omega;
+//   Temp.rhoomega = alpha*(omega/max(k, TOLER))*production -
+//      f_beta*beta*rho*omega*omega;
+  
   return (Temp);
 
-//   double radius;
-//   double  production;
-//   Chem2D_cState Temp; Temp.Vacuum();
-
-// //Xinfeng Note: the lambda = Reynolds_Stress(... ... ) may be computed/assigned outside
-// //To see which way is more general ...
-// // maybe modifying the viscous calculations some sort...
-//   lambda = Reynolds_Stress(dWdx,dWdy,Axisymmetric, X);
-					       
-					      
-//   //Production term
-//   production = lambda.xx*dWdx.v.x + 
-//                lambda.xy*(dWdy.v.x + dWdx.v.y) + 
-//                lambda.yy*dWdy.v.y;
-//   if (Axisymmetric == 2) {
-//     production += lambda.zz*v.x/radius;
-//   } else if (Axisymmetric == 1) {
-//     production += lambda.zz*v.y/radius;
-//   } /* endif */
-
-//   //Determine axisymmetric source terms
-//   Temp.rhok = production - 
-//               f_beta_star*beta_star*rho*k*omega;
-//   Temp.rhoomega = alpha*(omega/max(k, TOLER))*production -
-//                   f_beta*beta*rho*omega*omega;
-
-//   return (Temp);
-
-
 }
+
 
 /*****************************************************************
  *****************************************************************
@@ -2376,14 +2017,14 @@ Chem2D_cState Chem2D_pState::S_turbulence_model(const Chem2D_pState &dWdx,
  ** specific "Reaction_set".                                    ** 
  *****************************************************************
  *****************************************************************/
-Chem2D_cState Chem2D_pState::Sw(int &REACT_SET_FLAG, const int &Flow_Type) const {
+Chem2D_cState Chem2D_pState::Sw(int &REACT_SET_FLAG, const int Flow_Type) const {
   Chem2D_cState NEW;     
   NEW.Vacuum();
 
   //Adds concentration rate of change for species 1->N
-  if (REACT_SET_FLAG != NO_REACTIONS) {
-    bool test = negative_speccheck();
-    React.omega(NEW,*this,Flow_Type);  
+  if( REACT_SET_FLAG != NO_REACTIONS){
+    //bool test = negative_speccheck();            //FOR TESTING 
+    React.omega(NEW,*this,Flow_Type );  
   }
      
   return NEW;
@@ -2391,9 +2032,64 @@ Chem2D_cState Chem2D_pState::Sw(int &REACT_SET_FLAG, const int &Flow_Type) const
 }
 
 /************* Chemical Source Term Jacobian ****************************/
-void Chem2D_pState::dSwdU(DenseMatrix &dSwdU) const {
-  React.dSwdU(dSwdU,*this,false,flow_type);
+void Chem2D_pState::dSwdU(DenseMatrix &dSwdU, const int &Flow_Type,const int &solver_type) const {
+  React.dSwdU(dSwdU,*this,false, Flow_Type,solver_type);
 }
+
+void Chem2D_pState::dSwdU_FD(DenseMatrix &dSwdU, const int Flow_Type) const{
+
+  Chem2D_cState A,C;
+  Chem2D_cState B,D;
+  double perturb = 1e-6; //5e-6;
+  double a;
+
+  for(int jcol=0; jcol<NUM_VAR_CHEM2D-1; jcol++){    
+    A =U(*this);  C=U(*this);
+    a =  perturb*max(ONE,A[jcol+1]);
+
+    if( jcol <NUM_CHEM2D_VAR_SANS_SPECIES) {
+      A[jcol+1] += a;
+ //      C[jcol+1] -= perturb*max(ONE,C[jcol+1]);
+    } else {                                       //enforce sum(ci) = 1;
+      A[jcol+1] += a;
+      A[NUM_VAR_CHEM2D] -= a;            
+//       if(C[jcol+1] - a > ZERO) {  C[jcol+1] -= a; C[NUM_VAR_CHEM2D] += a;}      
+    }   
+    B = A.W().Sw(React.reactset_flag,Flow_Type);   D = C.W().Sw(React.reactset_flag,Flow_Type);
+    for(int irow=0; irow<NUM_VAR_CHEM2D-1; irow++){
+      //dSwdU(irow,jcol) += ( B[irow+1] - D[irow+1])/(TWO*perturb*max(ONE, U(*this)[jcol+1]));      
+      dSwdU(irow,jcol) += ( B[irow+1] - D[irow+1])/a;      
+    }
+  } 
+
+}
+/************* Max Diagonal of Jacobian for CFL **************************/
+double Chem2D_pState::dSwdU_max_diagonal(const int &Preconditioned,					 
+					 const int &flow_type_flag,
+					 const double &delta_n,
+					 const int &solver_type) const {
+
+  //this is expensive as I am recalculating the whole Jacobain
+  //as above, but its really easy to setup.
+  //should change later to only calculate the diagonal terms!!!!
+
+  double max_diagonal =ONE;
+  DenseMatrix dSwdU(NUM_VAR_CHEM2D-1,NUM_VAR_CHEM2D-1,ZERO);
+  React.dSwdU(dSwdU,*this,true,flow_type_flag,solver_type);
+
+//   if(Preconditioned){
+//     DenseMatrix Pinv(NUM_VAR_CHEM2D-1,NUM_VAR_CHEM2D-1);
+//     Low_Mach_Number_Preconditioner_Inverse(Pinv,flow_type_flag,delta_n);
+//     dSwdU = Pinv*dSwdU;
+//   }
+
+  for(int i=0; i < NUM_VAR_CHEM2D-1; i++){
+    max_diagonal = max(max_diagonal,fabs(dSwdU(i,i)));
+    // cout<<"\n "<<i<<" "<<dSwdU(i,i);
+  }
+  return max_diagonal;
+}
+
 
 /*****************************************************************
  *****************************************************************
@@ -2424,35 +2120,37 @@ void Chem2D_pState::dSgdU(DenseMatrix &dSgdU) const {
   dSgdU(3,2) += gravity_z;
 }
 
-/************* Max Diagonal of Jacobian for CFL **************************/
-double Chem2D_pState::dSwdU_max_diagonal(const int &Preconditioned,
-					 const double &delta_n) const {
-
-  //this is expensive as I am recalculating the whole Jacobain
-  //as above, but its really easy to setup.
-  //should change later to only calculate the diagonal terms!!!!
-
-  double max_diagonal =ONE;
-  DenseMatrix dSwdU(NUM_VAR_CHEM2D-1,NUM_VAR_CHEM2D-1);
-  dSwdU.zero();
-  React.dSwdU(dSwdU,*this,true,flow_type);
-
-  if(Preconditioned == 1){
-    DenseMatrix Pinv(NUM_VAR_CHEM2D-1,NUM_VAR_CHEM2D-1);
-    Low_Mach_Number_Preconditioner_Inverse(Pinv,delta_n);
-    dSwdU = Pinv*dSwdU;
-  }
-
-  for(int i=0; i < NUM_VAR_CHEM2D-1; i++){
-    max_diagonal = max(max_diagonal,fabs(dSwdU(i,i)));
-  }
-  
-  return max_diagonal;
+/*****************************************************************
+ *****************************************************************
+ ** Chem2D_pState::S_dual_time_stepping                         **
+ **                                                             **
+ **                -- Source Terms for dual time stepping.      **
+ **                                                             **
+ *****************************************************************
+ *****************************************************************/
+Chem2D_cState Chem2D_pState::S_dual_time_stepping(const Chem2D_cState &U,
+                                                  const Chem2D_cState &Ut,
+                                                  const Chem2D_cState &Uold,
+                                                  const double &dTime,
+                                                  const int &first_step) const {
+Chem2D_cState NEW;
+ if (first_step) {
+   // Implicit Euler
+   //cout << "\n First step, Implicit Euler" << endl;
+   NEW = (U - Ut)/dTime;
+ } else {
+   // Second-order backward implicit
+   //cout << "\n Second-order backward implicit" << endl;
+   NEW = (THREE*U - FOUR*Ut + Uold)/(TWO*dTime);
+ }
+ 
+  return NEW; 
 }
 
+
 /**************************************************************************
-********************* CHEM2D_CSTATE CONSTRUCTORS **************************
-***************************************************************************/
+ ********************* CHEM2D_CSTATE CONSTRUCTORS **************************
+ ***************************************************************************/
 
 /**************************************************
   mixture gas constant  J/(kg*K)
@@ -2627,10 +2325,10 @@ double Chem2D_cState::T(void) const{
     // Newton 
     if(T >= Tmin && T <= Tmax){
       T = T - fn/dfn;
-      if(T >= Tmax) T = HALF*(Tmax - Tmin);	
+      if(T >= Tmax) T = HALF*(Tmax + Tmin);	
       //Bisection
     } else {
-      T = HALF*(Tmax - Tmin);
+      T = HALF*(Tmax + Tmin);
     } 
     //evaluate function and derivative
     fn = h(T) - T*RTOT - A;
@@ -2646,10 +2344,8 @@ double Chem2D_cState::T(void) const{
   }  
   if (numit>=19 || T <= low_temp_range){
     T = max(Tguess,low_temp_range); 	
-    if(debug_level){ 
-      cout<<"\nTemperature didn't converge in Chem2D_cState::T(void)";
-      cout<<" with polytopic Tguess "<<Tguess<<", or lower than Tmin "<<low_temp_range<<" using "<<T;
-    }   
+    cout<<"\nTemperature didn't converge in Chem2D_cState::T(void)";
+    cout<<" with polytopic Tguess "<<Tguess<<", or lower than Tmin "<<low_temp_range<<" using "<<T;
   }
 
   return T;
@@ -2716,6 +2412,24 @@ double Chem2D_cState::mu(void) const{
   return sum;
 }
 
+double Chem2D_cState::dmudT(void) const{
+  double sum =0.0; 
+  double Temp = T();
+
+  for(int i=0; i<ns; i++){
+    double phi = 0.0;
+    for (int j=0; j<ns; j++){
+      phi += (rhospec[j].c/rho / specdata[j].Mol_mass())*
+	pow(1.0 + sqrt(specdata[i].dViscositydT(Temp)/specdata[j].dViscositydT(Temp))*
+	    pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
+       sqrt(8.0*(1.0 +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
+    }
+    sum += (rhospec[i].c/rho * specdata[i].dViscositydT(Temp) ) / 
+      (specdata[i].Mol_mass() * phi);
+  }  
+  return sum;
+}
+
 /******************************************************
  Calculating the thermal diffusion component of 
  the heat flux vector (qflux)
@@ -2738,7 +2452,8 @@ Vector2D Chem2D_cState::thermal_diffusion(const double &Temp) const{
  * Viscous fluxes  (laminar flow)                                * 
  * Viscous fluxes  (turbulent flows) are defined in single block * 
  ****************************************************************/
-Chem2D_cState Chem2D_cState::Viscous_Flux_x(const Chem2D_pState &dWdx) const{
+Chem2D_cState Chem2D_cState::Viscous_Flux_x(const Chem2D_pState &dWdx, 
+                                            const int Flow_Type) const{
  
   Chem2D_cState temp;
 
@@ -2752,8 +2467,8 @@ Chem2D_cState Chem2D_cState::Viscous_Flux_x(const Chem2D_pState &dWdx) const{
     temp.rhospec[i].c = (rhospec[i].diffusion_coef * rhospec[i].gradc.x)/rho; 
   }
 
-  if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-      flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
+      Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
     
     temp[2] += lambda.xx; 
     temp[3] += lambda.xy;
@@ -2772,7 +2487,8 @@ Chem2D_cState Chem2D_cState::Viscous_Flux_x(const Chem2D_pState &dWdx) const{
   return(temp);  
 }
 
-Chem2D_cState Chem2D_cState::Viscous_Flux_y(const Chem2D_pState &dWdy) const {
+Chem2D_cState Chem2D_cState::Viscous_Flux_y(const Chem2D_pState &dWdy, 
+                                            const int Flow_Type) const {
   Chem2D_cState temp;
 
   temp[1] = ZERO;
@@ -2784,8 +2500,8 @@ Chem2D_cState Chem2D_cState::Viscous_Flux_y(const Chem2D_pState &dWdy) const {
     temp.rhospec[i].c = (rhospec[i].diffusion_coef * rhospec[i].gradc.y)/rho;     
   }
 
-  if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-      flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
+      Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
      temp[2] += lambda.xy; 
      temp[3] += lambda.xy;
      temp[4] += - theta.y + v().x*lambda.xy + v().y*lambda.yy
@@ -2807,46 +2523,28 @@ Chem2D_cState Chem2D_cState::Viscous_Flux_y(const Chem2D_pState &dWdy) const {
 
 //----------------- Addition -----------------------------//
 Chem2D_cState Chem2D_cState::operator +(const Chem2D_cState &U) const{ 
-  
-  if(ns == U.ns){ //check that species are equal   
-    Chem2D_cState Temp(U.rho,U.rhov,U.E, U.rhok, U.rhoomega);
-    Temp.Copy(*this);
-    Temp += U;
-    return Temp;
-  } else {
-    cerr<<"\n Mismatch in number of species \n";
-    exit(1);
-  }
+  Chem2D_cState Temp(*this);
+  Temp += U;
+  return Temp;
 }
 
 //------------------ Subtraction ------------------------//
 Chem2D_cState Chem2D_cState::operator -(const Chem2D_cState &U) const{
-  if(ns == U.ns){ //check that species are equal
-    Chem2D_cState Temp(U.rho,U.rhov,U.E, U.rhok, U.rhoomega);
-    Temp.Copy(*this);
-    Temp -= U;
-    return Temp;
-  } else {
-    cerr<<"\n Mismatch in number of species \n";
-    exit(1);
-  }
+  Chem2D_cState Temp(*this);
+  Temp -= U;
+  return Temp;
 }
 
 //---------------- Scalar Multiplication ------------------//
 Chem2D_cState Chem2D_cState::operator *(const double &a) const{
-  Chem2D_cState Temp(rho,rhov,E, rhok, rhoomega);
-  Temp.Copy(*this);
+  Chem2D_cState Temp(*this);
   Temp.rho = rho*a;  Temp.rhov = rhov*a; Temp.E = E*a;
   Temp.rhok = rhok*a; Temp.rhoomega = rhoomega*a;
-  for( int i=0; i<ns; i++){
-    Temp.rhospec[i] = rhospec[i]*a;
-  } 
-
+  for( int i=0; i<ns; i++)Temp.rhospec[i] = rhospec[i]*a;
   Temp.tau = tau*a;
   Temp.qflux = qflux*a;
   Temp.lambda = lambda*a;
   Temp.theta = theta*a;
-
   return(Temp);
 }
 
@@ -2854,62 +2552,41 @@ Chem2D_cState operator *(const double &a, const Chem2D_cState &U){
   Chem2D_cState Temp;
   Temp.rho = U.rho*a;  Temp.rhov = U.rhov*a; Temp.E = U.E*a;
   Temp.rhok = U.rhok*a;Temp.rhoomega = U.rhoomega*a;
-  for( int i=0; i<U.ns; i++){
-    Temp.rhospec[i] = U.rhospec[i]*a;
-  } 
+  for( int i=0; i<U.ns; i++) Temp.rhospec[i] = U.rhospec[i]*a;
   return(Temp);
 }
+
 //--------------- Scalar Division ------------------------//
 Chem2D_cState Chem2D_cState::operator /(const double &a) const {
-  Chem2D_cState Temp(rho,rhov,E,rhok,rhoomega);
-  Temp.Copy(*this);
+  Chem2D_cState Temp(*this);
   Temp.rho = rho/a; Temp.rhov = rhov/a; Temp.E = E/a;
   Temp.rhok = rhok/a; Temp.rhoomega = rhoomega/a;
-  for(int i=0; i<ns; i++){
-     Temp.rhospec[i] = rhospec[i]/a; 
-  } 
-
+  for(int i=0; i<ns; i++) Temp.rhospec[i] = rhospec[i]/a; 
   Temp.tau = tau/a;
   Temp.qflux = qflux/a;
   Temp.lambda = lambda/a;
   Temp.theta = theta/a;
-
   return(Temp);
 }
 
 //----------------- Inner Product ------------------------//
 double Chem2D_cState::operator *(const Chem2D_cState &U) const{
   double sum=0.0;
-  if(ns == U.ns){ //check that species are equal
-    for(int i=0; i<ns; i++){
-      sum += rhospec[i]*U.rhospec[i];
-    }  
-    return (rho*U.rho + rhov*U.rhov + E*U.E +rhok*U.rhok+rhoomega*U.rhoomega+ sum);
-  } else {
-    cerr<<"\n Mismatch in number of species \n";
-    exit(1);
-  }
+  for(int i=0; i<ns; i++)  sum += rhospec[i]*U.rhospec[i];
+  return (rho*U.rho + rhov*U.rhov + E*U.E +rhok*U.rhok+rhoomega*U.rhoomega+ sum);
 }
 
 //----------- solution state product operator ------------//
 Chem2D_cState Chem2D_cState::operator ^( const Chem2D_cState &U) const {
-  if(ns == U.ns){ //check that species are equal
-    Chem2D_cState Temp(rho,rhov,E,rhok, rhoomega);
-    Temp.Copy(*this);
-    Temp.rho = rho*U.rho;
-    Temp.rhov.x = rhov.x*U.rhov.x;
-    Temp.rhov.y = rhov.y*U.rhov.y;
-    Temp.E = E*U.E;
-    Temp.rhok= rhok*U.rhok;
-    Temp.rhoomega = rhoomega*U.rhoomega;
-    for(int i=0; i<ns; i++){
-      Temp.rhospec[i] = rhospec[i]*U.rhospec[i];
-    }  
-    return(Temp);
-  } else {
-    cerr<<"\n Mismatch in number of species \n";
-    exit(1);
-  }
+  Chem2D_cState Temp(*this);
+  Temp.rho = rho*U.rho;
+  Temp.rhov.x = rhov.x*U.rhov.x;
+  Temp.rhov.y = rhov.y*U.rhov.y;
+  Temp.E = E*U.E;
+  Temp.rhok= rhok*U.rhok;
+  Temp.rhoomega = rhoomega*U.rhoomega;
+  for(int i=0; i<ns; i++) Temp.rhospec[i] = rhospec[i]*U.rhospec[i];
+  return(Temp);
 }
 
 //----------------- Assignment ----------------------------//
@@ -2917,24 +2594,7 @@ Chem2D_cState& Chem2D_cState::operator =(const Chem2D_cState &U){
   //self assignment protection
   if( this != &U){   
     //copy assignment
-    rho = U.rho;
-    rhov = U.rhov; 
-    E = U.E; 
-    rhok = U.rhok;
-    rhoomega = U.rhoomega;
-    if ( ns == U.ns){
-      for(int i=0; i<ns; i++){
-	rhospec[i] = U.rhospec[i];
-      }
-
-      tau = U.tau;
-      qflux = U.qflux; 
-      lambda = U.lambda;
-      theta = U.theta; 
-
-    } else {
-      cerr<<"\n Mismatch in number of species \n ";
-    }  
+    Copy(U);
   }
   return (*this);
 }
@@ -2949,15 +2609,11 @@ Chem2D_cState& Chem2D_cState::operator +=(const Chem2D_cState &U){
   E += U.E;
   rhok += U.rhok;
   rhoomega += U.rhoomega;
-  for( int i=0; i<ns; i++){
-    rhospec[i] += U.rhospec[i];
-  } 
-
+  for( int i=0; i<ns; i++)  rhospec[i].c += U.rhospec[i].c;
   tau += U.tau;
   qflux += U.qflux; 
   lambda += U.lambda;
   theta += U.theta; 
-
   return (*this);
 }
 
@@ -2967,15 +2623,11 @@ Chem2D_cState& Chem2D_cState::operator -=(const Chem2D_cState &U) {
   E -= U.E;
   rhok -= U.rhok;
   rhoomega -= U.rhoomega;
-  for(int i=0; i<ns; i++){
-    rhospec[i] -= U.rhospec[i];
-  }  
-
+  for(int i=0; i<ns; i++)   rhospec[i].c -= U.rhospec[i].c;
   tau -= U.tau;
   qflux -= U.qflux; 
   lambda -= U.lambda;
   theta -= U.theta; 
-
   return (*this); 
 }
 
@@ -2992,7 +2644,7 @@ Chem2D_cState& Chem2D_cState::operator *=(const double &a) {
   lambda *= a;
   theta *= a;
   return *this;
-}
+}   
 
 Chem2D_cState& Chem2D_cState::operator /=(const double &a) {
   rho /= a;
@@ -3013,18 +2665,20 @@ Chem2D_cState& Chem2D_cState::operator /=(const double &a) {
  * Chem2D_cState -- Unary arithmetic operators.        *
  ********************************************************/
 Chem2D_cState operator -(const Chem2D_cState &U) {
+#ifdef STATIC_NUMBER_OF_SPECIES
+  Species spt[STATIC_NUMBER_OF_SPECIES];
+#else
   Species *spt= new Species[U.ns];
-  for(int i=0; i<U.ns; i++){
-    spt[i] = -U.rhospec[i]; 
-  }  
-
+#endif
+  for(int i=0; i<U.ns; i++) spt[i] = -U.rhospec[i];
   Chem2D_cState Temp(-U.rho,-U.rhov, -U.E, -U.rhok, -U.rhoomega, spt);
   Temp.tau = -U.tau;
   Temp.qflux = -U.qflux;
   Temp.lambda = -U.lambda;
   Temp.theta = -U.theta;
-
+#ifndef STATIC_NUMBER_OF_SPECIES
   delete[] spt;
+#endif
   return(Temp);
 }
 
@@ -3083,7 +2737,7 @@ ostream &operator << (ostream &out_file, const Chem2D_cState &U) {
   for( int i=0; i<U.ns; i++){
     out_file<<" "<<U.rhospec[i];
   } 
-  out_file << " " <<U.qflux<< " " <<U.tau << " " <<U.theta<< " " <<U.lambda;
+  // out_file << " " <<U.qflux<< " " <<U.tau << " " <<U.theta<< " " <<U.lambda;
   out_file.unsetf(ios::scientific);
   return (out_file);
 }
@@ -3095,7 +2749,7 @@ istream &operator >> (istream &in_file, Chem2D_cState &U) {
   for( int i=0; i<U.ns; i++){
     in_file>>U.rhospec[i]; 
   } 
-  in_file >>U.qflux>>U.tau >>U.theta>>U.lambda;
+  //in_file >>U.qflux>>U.tau >>U.theta>>U.lambda;
   in_file.unsetf(ios::skipws);
   return (in_file);
 }
@@ -3107,17 +2761,21 @@ istream &operator >> (istream &in_file, Chem2D_cState &U) {
  *******************************************************************
  *******************************************************************/
 void Chem2D_cState::Low_Mach_Number_Preconditioner(DenseMatrix  &P,
+						   const int    &flow_type_flag, 
 						   const double &deltax) const {
   Chem2D_pState NEW = W();
-  NEW.Low_Mach_Number_Preconditioner(P,deltax);
+  NEW.Low_Mach_Number_Preconditioner(P,flow_type_flag,deltax);
 }
 
 void Chem2D_cState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix  &Pinv,
+							   const int    &flow_type_flag, 
 							   const double &deltax) const {
  
   Chem2D_pState NEW = W();
-  NEW.Low_Mach_Number_Preconditioner_Inverse(Pinv,deltax);
+  NEW.Low_Mach_Number_Preconditioner_Inverse(Pinv,flow_type_flag,deltax);
 }
+
+
 
 /*********************************************************************************
  *********************************************************************************
@@ -3208,10 +2866,8 @@ Chem2D_pState Moving_Wall(const Chem2D_pState &Win,
 			  const int &TEMPERATURE_BC_FLAG) {
 
   double ur, vr;
-  double q_xr,q_yr, theta_xr,theta_yr;  
   double cos_angle, sin_angle;
-  Chem2D_pState Temp;
-  Temp.Copy(Win);
+  Chem2D_pState Temp(Win);
   
   /* Determine the direction cosine's for the frame
      rotation. */
@@ -3222,21 +2878,18 @@ Chem2D_pState Moving_Wall(const Chem2D_pState &Win,
   /* Apply the frame rotation and calculate the primitive
      solution state variables in the local rotated frame
      defined by the unit normal vector. */
-  ur = Win.v.x*cos_angle +
-    Win.v.y*sin_angle;
-  vr = - Win.v.x*sin_angle +
-    Win.v.y*cos_angle;
+  ur = Win.v.x*cos_angle +  Win.v.y*sin_angle;
+  vr = - Win.v.x*sin_angle +  Win.v.y*cos_angle;
   
-   /* Use the Roeaveraged value to find the correct tangential velocity */
-   ur = -ur;
-   vr = -TWO*wall_velocity - vr;
+  /* Use the Roeaveraged value to find the correct tangential velocity */
+  ur = -ur;
+  vr = -TWO*wall_velocity - vr;
 
-   /* Rotate back to the original Cartesin reference frame. */  
-   Temp.v.x = ur*cos_angle - vr*sin_angle;
-   Temp.v.y = ur*sin_angle + vr*cos_angle;
-   //   Temp.k = -Win.k; //turbulent kinetic energy  vanishes on the wall (no-slip)
+  /* Rotate back to the original Cartesin reference frame. */  
+  Temp.v.x = ur*cos_angle - vr*sin_angle;
+  Temp.v.y = ur*sin_angle + vr*cos_angle;
    
-//   /* Fixed Wall Temperature ISOTHERMAL */
+ //   /* Fixed Wall Temperature */
 //    if(TEMPERATURE_BC_FLAG == FIXED_TEMPERATURE_WALL){
 //      Temp.rho = Temp.p/(Temp.Rtot()*Wout.T());
 //    }
@@ -3254,66 +2907,130 @@ Chem2D_pState Moving_Wall(const Chem2D_pState &Win,
  *        - 1DFlame Inflow conditions                   *
  *                                                      *
  ********************************************************/
-Chem2D_pState BC_Flame_Inflow(const Chem2D_pState &Wi,
-			      const Chem2D_pState &Wo,
-			      const Chem2D_pState &Woutlet,
-			      const Vector2D &norm_dir){
-  Chem2D_pState Wnew;
-
-  //fixed
-  Wnew.Copy(Wo);
-
-  //Constant Extrapolate 
-  //Wnew.Copy(Wi);
- 
-  //Calculate upstream velocity to balance
-  //flame ie. mass flow rate 
-  // rho_1*u_1 = rho_2*u_2
-  //Wnew.v.x =  Woutlet.rho*Woutlet.v.x/Wo.rho;
+Chem2D_pState BC_1DFlame_Inflow(const Chem2D_pState &Wi,
+				const Chem2D_pState &Wo,
+				const Chem2D_pState &Woutlet,
+				const Vector2D &norm_dir){ 
+  //fixed Wo
+  Chem2D_pState Wnew(Wo);
   Wnew.v.y = ZERO;
-  
-  Wnew.v.x = Wi.v.x + 0.5*(Woutlet.rho*Woutlet.v.x/Wo.rho - Wi.v.x);
+
+  //Constant Extrapolate Wi 
+  //Calculate upstream velocity to balance flame ie. mass flow rate 
+  // rho_1*u_1 = rho_2*u_2  
+  //relaxation
+  //Wnew.v.x = Wi.v.x + 0.5*(Woutlet.rho*Woutlet.v.x/Wo.rho - Wi.v.x);
+
+  //no relaxation
+  Wnew.v.x = Woutlet.rho*Woutlet.v.x/Wo.rho;
 
   if(Wnew.v.x  < 0.1 || Wnew.v.x > (Wo.v.x + 0.5)){
     Wnew.v.x = Wo.v.x;
   }
-
+   
   return Wnew;
+
 }
-
-
 /********************************************************
  * Routine: BC_Flame_Outflow                            *
  *        - 1DFlame outflow conditions                  *
  *                                                      *
  ********************************************************/
-Chem2D_pState BC_Flame_Outflow(const Chem2D_pState &Wi, 
-			       const Chem2D_pState &Wo,
-			       const Chem2D_pState &Winlet,
-			       const Vector2D &norm_dir){
+Chem2D_pState BC_1DFlame_Outflow(const Chem2D_pState &Wi,       //ICu
+				 const Chem2D_pState &Wo,       //Ghost
+				 const Chem2D_pState &Winlet,   //ICl
+				 const Vector2D &norm_dir){
 
   //Constant extrapolate ( zero gradient)
   Chem2D_pState Wnew(Wi);
- 
+  Wnew.v.y = ZERO;
+
   //Calculate Pressure assuming constant mass flow rate
   //and Wo.p == Winput.p (constant pressure initial condition)
   double sum = Wi.rho*Wi.v.x*(Wi.v.x - Winlet.v.x);
   if( sum < ZERO){
     Wnew.p = Wo.p;
   } else {
-    //Wnew.p = Wo.p - sum;
-    Wnew.p = Wi.p + 0.5*( (Wo.p-sum) - Wi.p);
+    //no relaxation
+    Wnew.p = Wo.p - sum;
+
+    // relaxation
+    //Wnew.p = Wi.p + 0.5*( (Wo.p-sum) - Wi.p);
   }
 
-   return Wnew;
+  return Wnew;
+ 
 }
+
+/********************************************************
+ * Routine: BC_2DFlame_Inflow                           *
+ *        - 2DFlame Inflow conditions                   *
+ *                                                      *
+ ********************************************************/
+Chem2D_pState BC_2DFlame_Inflow(const Chem2D_pState &Wi,
+				const Chem2D_pState &Wo,
+				const Vector2D &norm_dir){ 
+
+//   //fixed rho, v, p, and species
+//   Chem2D_pState Wnew(Wo);
+//   Wnew.v.x = Wi.v.x;
+
+  Chem2D_pState Wnew(Wi);  
+  Wnew.p = Wo.p;         //fix pressure & V velocity
+  Wnew.v.y = Wo.v.y;
+
+  return Wnew;
+ 
+}
+
+/********************************************************
+ * Routine: BC_2DFlame_Outflow                          *
+ *        - 2DFlame outflow conditions                  *
+ *                                                      *
+ ********************************************************/
+Chem2D_pState BC_2DFlame_Outflow(const Chem2D_pState &Wi, 
+				 const Chem2D_pState &Wo,
+ 				 const Vector2D &norm_dir){
+  //2D Coreflame OUTFLOW
+  Chem2D_pState Wnew(Wi);  
+  Wnew.p = Wo.p;  
+  if(Wnew.v.y < ZERO){ 
+    Wnew.v.y = ZERO;
+  }
+  return Wnew;
+
+//   Chem2D_pState Wi_rotated(Wi), Wo_rotated(Wo), Wnew;
+//   double ab, ub_rotated, vb_rotated;
+//   double cos_angle = norm_dir.x; 
+//   double sin_angle = norm_dir.y;
+
+//   Wi_rotated.v.x = Wi.v.x*cos_angle + Wi.v.y*sin_angle;
+//   Wi_rotated.v.y = - Wi.v.x*sin_angle +  Wi.v.y*cos_angle; 
+//   Wo_rotated.v.x = Wo.v.x*cos_angle + Wo.v.y*sin_angle;
+//   Wo_rotated.v.y = - Wo.v.x*sin_angle + Wo.v.y*cos_angle;
+    
+//   Wnew.Copy(Wi_rotated);
+//   Wnew.p = Wo_rotated.p;
+//   Wnew.rho = Wi_rotated.rho*pow(Wnew.p/Wi_rotated.p, ONE/Wi_rotated.g());
+
+//   ab = Wnew.a();
+//   ub_rotated = Wi_rotated.v.x + TWO*(Wi_rotated.a()-ab)/(Wi_rotated.g() -ONE);
+//   vb_rotated = Wi_rotated.v.y;
+
+//   Wnew.v.x = ub_rotated*cos_angle - vb_rotated*sin_angle;
+//   Wnew.v.y = ub_rotated*sin_angle + vb_rotated*cos_angle;
+
+//   return (Wnew);
+
+}
+
 /********************************************************
  * Routine: BC_Characteristic_Pressure                  *
  *   (Characteristic-Based Boundary Condition with      *
  *    Static Pressure Specified Whenever Possible)      *
  *                                                      *
  * This function returns the boundary solution state    *
- * for a given direction given the primitive solution   *
+ * for a given direction given the primitive solution   * 
  * state on the interior of the boundary, Wi, the       *
  * desired flow state to be imposed at the boundary,    *
  * Wo, and the unit normal vector in the direction of   *
@@ -3338,90 +3055,74 @@ Chem2D_pState BC_Flame_Outflow(const Chem2D_pState &Wi,
  *    wave approximation to match both boundary state   *
  *    pressure and sound speed,                         *
  * 4) for supersonic inflow: the known boundary state   *
- *    is used to specify the boundary state.            *
+ *    is used to specify the boundary state.            *    
  *                                                      *
  ********************************************************/
 Chem2D_pState BC_Characteristic_Pressure(const Chem2D_pState &Wi,
 					 const Chem2D_pState &Wo,
 					 const Vector2D &norm_dir) {
 
-  Chem2D_pState Wnew(Wi);  
-  Wnew.p = Wo.p;
+  //USED FOR BUMP FLOW EXIT
+  Chem2D_pState Wi_rotated(Wi), Wo_rotated(Wo), Wnew;
+  double mi, ab, ub_rotated, vb_rotated;
+  double cos_angle, sin_angle;
   
-  if(Wnew.v.y < ZERO){ 
-    Wnew.v.y = ZERO;
-  }
-  return Wnew;
-
-//   Chem2D_pState Wi_rotated, Wo_rotated, Wnew;
-//   double mi, ab, ub_rotated, vb_rotated;
-//   double cos_angle, sin_angle;
+  /* Determine the direction cosine's for the frame
+     rotation. */
   
-//   /* Determine the direction cosine's for the frame
-//      rotation. */
+  cos_angle = norm_dir.x; 
+  sin_angle = norm_dir.y;
   
-//   cos_angle = norm_dir.x; 
-//   sin_angle = norm_dir.y;
-  
-//   /* Apply the frame rotation and evaluate interior and 
-//      imposed boundary solution states in the local rotated 
-//        frame defined by the unit normal vector. */
-//   Wi_rotated.Copy(Wi);
-//   Wo_rotated.Copy(Wo);
+  /* Apply the frame rotation and evaluate interior and 
+     imposed boundary solution states in the local rotated 
+       frame defined by the unit normal vector. */
 
-
-//   Wi_rotated.v.x = Wi.v.x*cos_angle +
-//     Wi.v.y*sin_angle;
-//   Wi_rotated.v.y = - Wi.v.x*sin_angle +
-//     Wi.v.y*cos_angle;
-
+  Wi_rotated.v.x = Wi.v.x*cos_angle  +  Wi.v.y*sin_angle;
+  Wi_rotated.v.y = - Wi.v.x*sin_angle + Wi.v.y*cos_angle;
  
-//   Wo_rotated.v.x = Wo.v.x*cos_angle +
-//     Wo.v.y*sin_angle;
-//   Wo_rotated.v.y = - Wo.v.x*sin_angle +
-//     Wo.v.y*cos_angle;
+  Wo_rotated.v.x = Wo.v.x*cos_angle +  Wo.v.y*sin_angle;
+  Wo_rotated.v.y = - Wo.v.x*sin_angle +  Wo.v.y*cos_angle;
  
-
-//   /* Determine the Mach number at the interior node. */
-//   mi = Wi_rotated.v.x/Wi_rotated.a();
+  /* Determine the Mach number at the interior node. */
+  mi = Wi_rotated.v.x/Wi_rotated.a();
   
-//   /* Boundary condition for supersonic outflow. */
-//   if (mi >= ONE) {
-//     Wnew.Copy(Wi);
+  /* Boundary condition for supersonic outflow. */
+  if (mi >= ONE) {
+    Wnew.Copy(Wi);
     
-//     /* Boundary condition for subsonic outflow. 
-//        Pressure specified. */
-//   } else if (mi >= ZERO) {
-//     Wnew.Copy(Wi_rotated);
-//     Wnew.p = Wo_rotated.p;
-//     Wnew.rho = Wi_rotated.rho*pow(Wnew.p/Wi_rotated.p, ONE/Wi_rotated.g());
+    /* Boundary condition for subsonic outflow. 
+       Pressure specified. */
+  } else if (mi >= ZERO) {
+    Wnew.Copy(Wi_rotated);
+    Wnew.p = Wo_rotated.p;
+    Wnew.rho = Wi_rotated.rho*pow(Wnew.p/Wi_rotated.p, ONE/Wi_rotated.g());
     
-//     ab = Wnew.a();
-//     ub_rotated = Wi_rotated.v.x + TWO*(Wi_rotated.a()-ab)/(Wi_rotated.g() -ONE);
-//     vb_rotated = Wi_rotated.v.y;
+    ab = Wnew.a();
+    ub_rotated = Wi_rotated.v.x + TWO*(Wi_rotated.a()-ab)/(Wi_rotated.g() -ONE);
+    vb_rotated = Wi_rotated.v.y;
     
-//     /* Boundary condition for subsonic inflow. 
-//        Pressure specified. */
-//   } else if (mi >= -ONE) {
-//     Wnew.Copy(Wo_rotated);
+    /* Boundary condition for subsonic inflow. 
+       Pressure specified. */
+  } else if (mi >= -ONE) {
+    Wnew.Copy(Wo_rotated);
     
-//     ab = Wnew.a();
-//     ub_rotated = Wi_rotated.v.x + TWO*(Wi_rotated.a()-ab)*(Wo_rotated.g() -ONE);
-//     vb_rotated = Wo_rotated.v.y;
+    ab = Wnew.a();
+    ub_rotated = Wi_rotated.v.x + TWO*(Wi_rotated.a()-ab)*(Wo_rotated.g() -ONE);
+    vb_rotated = Wo_rotated.v.y;
      
-//     /* Boundary condition for supersonic inflow.  */
-//   } else {
-//     Wnew.Copy(Wo);
-//   } 
+    /* Boundary condition for supersonic inflow.  */
+  } else {
+    Wnew.Copy(Wo);
+  } 
 
-//   if( fabs(mi) <=ONE){
-//     //rotate frame back to cartesian
-//     Wnew.v.x = ub_rotated*cos_angle - vb_rotated*sin_angle;
-//     Wnew.v.y = ub_rotated*sin_angle + vb_rotated*cos_angle;
-//   }
+  if( fabs(mi) <=ONE){
+    //rotate frame back to cartesian
+    Wnew.v.x = ub_rotated*cos_angle - vb_rotated*sin_angle;
+    Wnew.v.y = ub_rotated*sin_angle + vb_rotated*cos_angle;
+  }
 
-//   /* Return boundary solution state. */
-//   return (Wnew);
+  /* Return boundary solution state. */
+  return (Wnew);
   
 }
 
@@ -3508,8 +3209,8 @@ Chem2D_pState ViscousChannelFlow(const Chem2D_pState &Wdum,
 				  const double Vwall,
 				  const double dp) {
 
-  Chem2D_pState W;
-  W.Copy(Wdum);  //use same species and viscosity
+  Chem2D_pState W(Wdum);
+  //W.Copy(Wdum);  //use same species and viscosity
 
   // Compute the exact viscous channel solution.
  //  W.rho = Wdum.rho;
@@ -3536,20 +3237,23 @@ Chem2D_pState ViscousChannelFlow(const Chem2D_pState &Wdum,
  *                                                                    *
  **********************************************************************/
 Chem2D_pState FlatPlate(const Chem2D_pState &Winf,
-			 const Vector2D X,
-			 double &eta,
-			 double &f,
-			 double &fp,
-			 double &fpp) {
+			const Vector2D X,
+			double &eta,
+			double &f,
+			double &fp,
+			double &fpp) {
 
-  Chem2D_pState W;
+  Chem2D_pState W(Winf);
   double fo, dn, sign, k1, k2, k3, k4;
+  
+  W.v.zero();
 
   // Initialize variables.
-  W.Vacuum(); W.rho = Winf.rho; W.p = Winf.p;
-  for(int i=0; i<W.ns; i++){
-    W.spec[i].c = Winf.spec[i].c;
-  } 
+//   W.Vacuum(); W.rho = Winf.rho; W.p = Winf.p;
+//   for(int i=0; i<W.ns; i++){
+//     W.spec[i].c = Winf.spec[i].c;
+//   } 
+  
 
   eta = ZERO;
   f = ZERO; fo = ZERO; fp = ZERO; fpp = 0.33206;
@@ -3607,7 +3311,7 @@ Chem2D_pState FlatPlate(const Chem2D_pState &Winf,
 
   // Compute the velocity vector at point X.
   W.v.x = fp*Winf.v.x;
-  W.v.y = HALF*(eta*fp-f);
+  //W.v.y = HALF*(eta*fp-f);
 
   //if (eta <= 8.8) cout << eta << " " << f << " " << fp << " " << fpp << endl;
 
@@ -3660,8 +3364,8 @@ Chem2D_pState RoeAverage(const Chem2D_pState &Wl,
     Ha = (srhol*Hl+srhor*Hr)/(srhol+srhor);
     ha = Ha - HALF*(sqr(Temp.v.x)+sqr(Temp.v.y));
 
-    double TEMP = Temp.T(ha);
-    Temp.p = Temp.rho*TEMP*Temp.Rtot();
+    //double TEMP = Temp.T(ha);
+    Temp.p = Temp.rho*Temp.T(ha)*Temp.Rtot();
    
     /* Return the Roe-averged state. */
     return (Temp);     
@@ -3681,7 +3385,8 @@ Chem2D_pState RoeAverage(const Chem2D_pState &Wl,
  *********************************************************/
 Chem2D_cState FluxHLLE_x(const Chem2D_pState &Wl,
 			 const Chem2D_pState &Wr,
-			 const int &Preconditioning) {
+			 const int &Preconditioning,
+			 const int Flow_Type) {
 
     double wavespeed_l, wavespeed_r;
     Chem2D_pState Wa, lambdas_l, lambdas_r, lambdas_a;
@@ -3729,8 +3434,9 @@ Chem2D_cState FluxHLLE_x(const Chem2D_pState &Wl,
 
 Chem2D_cState FluxHLLE_x(const Chem2D_cState &Ul,
 			 const Chem2D_cState &Ur,
-			 const int &Preconditioning) {
-   return (FluxHLLE_x(Ul.W(), Ur.W(),Preconditioning));
+			 const int &Preconditioning,
+			 const int Flow_Type) {
+   return (FluxHLLE_x(Ul.W(), Ur.W(),Preconditioning, Flow_Type));
 }
 
 
@@ -3753,10 +3459,11 @@ Chem2D_cState FluxHLLE_x(const Chem2D_cState &Ul,
 Chem2D_cState FluxHLLE_n(const Chem2D_pState &Wl,
 			 const Chem2D_pState &Wr,
 			 const Vector2D &norm_dir,
-			 const int &Preconditioning) {
+			 const int &Preconditioning,
+			 const int Flow_Type) {
 
     double cos_angle, sin_angle;
-    Chem2D_pState Wl_rotated, Wr_rotated;
+    Chem2D_pState Wl_rotated(Wl), Wr_rotated(Wr);
     Chem2D_cState Flux, Flux_rotated;
     Flux.Vacuum();
     /* Determine the direction cosine's for the frame
@@ -3768,8 +3475,8 @@ Chem2D_cState FluxHLLE_n(const Chem2D_pState &Wl,
     /* Apply the frame rotation and evaluate left and right
        solution states in the local rotated frame defined
        by the unit normal vector. */
-    Wl_rotated.Copy(Wl);
-    Wr_rotated.Copy(Wr);
+ //    Wl_rotated.Copy(Wl);
+//     Wr_rotated.Copy(Wr);
 
 
     Wl_rotated.v.x = Wl.v.x*cos_angle +
@@ -3785,12 +3492,12 @@ Chem2D_cState FluxHLLE_n(const Chem2D_pState &Wl,
     /* Evaluate the intermediate state solution 
        flux in the rotated frame. */
 
-    Flux_rotated = FluxHLLE_x(Wl_rotated, Wr_rotated, Preconditioning);
+    Flux_rotated = FluxHLLE_x(Wl_rotated, Wr_rotated, Preconditioning, Flow_Type);
 
     /* Rotate back to the original Cartesian reference
        frame and return the solution flux. */
-    Flux.Copy(Flux_rotated);
-  
+    Flux.Copy(Flux_rotated);    
+
     Flux.rhov.x = Flux_rotated.rhov.x*cos_angle -
                 Flux_rotated.rhov.y*sin_angle;
     Flux.rhov.y = Flux_rotated.rhov.x*sin_angle +
@@ -3804,8 +3511,9 @@ Chem2D_cState FluxHLLE_n(const Chem2D_pState &Wl,
 Chem2D_cState FluxHLLE_n(const Chem2D_cState &Ul,
 			 const Chem2D_cState &Ur,
 			 const Vector2D &norm_dir,
-			 const int &Preconditioning) {
-  return (FluxHLLE_n(Ul.W(), Ur.W(),norm_dir,Preconditioning));
+			 const int &Preconditioning,
+			 const int Flow_Type) {
+  return (FluxHLLE_n(Ul.W(), Ur.W(),norm_dir,Preconditioning, Flow_Type));
 }
 
 /*********************************************************
@@ -3819,7 +3527,8 @@ Chem2D_cState FluxHLLE_n(const Chem2D_cState &Ul,
  *                                                       *
  *********************************************************/
 Chem2D_cState FluxLinde(const Chem2D_pState &Wl,
-			const Chem2D_pState &Wr) {
+                         const Chem2D_pState &Wr, 
+			const int Flow_Type) {
 
     double wavespeed_l, wavespeed_r, wavespeed_m, rhoa, ca, dU, alpha;
     Chem2D_pState Wa, lambdas_l, lambdas_r, lambdas_a;
@@ -3881,8 +3590,9 @@ Chem2D_cState FluxLinde(const Chem2D_pState &Wl,
 }
 
 Chem2D_cState FluxLinde(const Chem2D_cState &Ul,
-	      	         const Chem2D_cState &Ur) {
-   return (FluxLinde(Ul.W(), Ur.W()));
+	      	         const Chem2D_cState &Ur,
+			const int Flow_Type) {
+   return (FluxLinde(Ul.W(), Ur.W(), Flow_Type));
 }
 
 /*********************************************************
@@ -3903,10 +3613,11 @@ Chem2D_cState FluxLinde(const Chem2D_cState &Ul,
  *********************************************************/
 Chem2D_cState FluxLinde_n(const Chem2D_pState &Wl,
 	      	           const Chem2D_pState &Wr,
-                           const Vector2D &norm_dir) {
+                           const Vector2D &norm_dir,
+			  const int Flow_Type) {
 
     double cos_angle, sin_angle;
-    Chem2D_pState Wl_rotated, Wr_rotated;
+    Chem2D_pState Wl_rotated(Wl), Wr_rotated(Wr);
     Chem2D_cState Flux, Flux_rotated;
 
     /* Determine the direction cosine's for the frame
@@ -3918,8 +3629,8 @@ Chem2D_cState FluxLinde_n(const Chem2D_pState &Wl,
     /* Apply the frame rotation and evaluate left and right
        solution states in the local rotated frame defined
        by the unit normal vector. */
-    Wl_rotated.Copy(Wl);
-    Wr_rotated.Copy(Wr);
+//     Wl_rotated.Copy(Wl);
+//     Wr_rotated.Copy(Wr);
 
     Wl_rotated.v.x = Wl.v.x*cos_angle +
                      Wl.v.y*sin_angle;
@@ -3934,7 +3645,7 @@ Chem2D_cState FluxLinde_n(const Chem2D_pState &Wl,
     /* Evaluate the intermediate state solution 
        flux in the rotated frame. */ 
 
-    Flux_rotated = FluxLinde(Wl_rotated, Wr_rotated);
+    Flux_rotated = FluxLinde(Wl_rotated, Wr_rotated, Flow_Type);
 
     /* Rotate back to the original Cartesian reference
        frame and return the solution flux. */
@@ -3952,9 +3663,10 @@ Chem2D_cState FluxLinde_n(const Chem2D_pState &Wl,
 }
 
 Chem2D_cState FluxLinde_n(const Chem2D_cState &Ul,
-			  const Chem2D_cState &Ur,
-			  const Vector2D &norm_dir) {
-  return (FluxLinde_n(Ul.W(), Ur.W(), norm_dir));
+	      	           const Chem2D_cState &Ur,
+                           const Vector2D &norm_dir,
+			  const int Flow_Type) {
+  return (FluxLinde_n(Ul.W(), Ur.W(), norm_dir, Flow_Type));
 }
 
 
@@ -3966,20 +3678,12 @@ Chem2D_cState FluxLinde_n(const Chem2D_cState &Ul,
  *                                                       *
  *********************************************************/
 Chem2D_pState Rotate(const Chem2D_pState &W,
-                      const Vector2D &norm_dir) {
-  Chem2D_pState W_rotated;
-  double cos_angle = norm_dir.x;  
-  double sin_angle = norm_dir.y;
+		     const Vector2D &norm_dir) {
 
-  W_rotated.rho   = W.rho;
-  W_rotated.v.x =   W.v.x*cos_angle + W.v.y*sin_angle;
-  W_rotated.v.y = - W.v.x*sin_angle + W.v.y*cos_angle;
-  W_rotated.p   = W.p;
-  W_rotated.k   = W.k;
-  W_rotated.omega   = W.omega;
-  for( int i=0; i<W.ns; i++){
-     W_rotated.spec[i] = W.spec[i];
-  } 
+  Chem2D_pState W_rotated(W);
+  W_rotated.v.x =   W.v.x*norm_dir.x + W.v.y*norm_dir.y;
+  W_rotated.v.y = - W.v.x*norm_dir.y + W.v.y*norm_dir.x;
+  
   return (W_rotated);
 
 }
@@ -4016,9 +3720,12 @@ Vector2D HLLE_wavespeeds(const Chem2D_pState &Wl,
 
     /* Determine the intermediate state flux. */
     wavespeed.x = min(lambdas_l[1],
-                      lambdas_a[1]);
-    wavespeed.y = max(lambdas_r[NUM_VAR_CHEM2D],
-                      lambdas_a[NUM_VAR_CHEM2D]);
+                      lambdas_a[1]);   //u-a
+    wavespeed.y = max(lambdas_r[4],
+                      lambdas_a[4]);   //u+a
+ 
+  //   wavespeed.y = max(lambdas_r[NUM_VAR_CHEM2D],
+//                       lambdas_a[NUM_VAR_CHEM2D]);  //THIS IS u! not u+a WTF!!!
  
     wavespeed.x = min(wavespeed.x, ZERO); //lambda minus
     wavespeed.y = max(wavespeed.y, ZERO); //lambda plus 
@@ -4099,8 +3806,8 @@ Chem2D_pState HartenFixPos(const Chem2D_pState &lambdas_a,
   NEW.k = fabs(lambdas_a[5]);
   NEW.omega = fabs(lambdas_a[6]);
   
-  for( int i=7; i<=NEW.NUM_VAR_CHEM2D; i++){
-    NEW.spec[i-7].c = HALF*(lambdas_a[i]+fabs(lambdas_a[i]));
+  for( int i=(NUM_CHEM2D_VAR_SANS_SPECIES+1); i<=NEW.NUM_VAR_CHEM2D; i++){
+    NEW.spec[i-(NUM_CHEM2D_VAR_SANS_SPECIES+1)].c = HALF*(lambdas_a[i]+fabs(lambdas_a[i]));
   }
   
   return (NEW);
@@ -4126,8 +3833,8 @@ Chem2D_pState HartenFixNeg(const Chem2D_pState &lambdas_a,
   NEW.k = fabs(lambdas_a[5]);
   NEW.omega = fabs(lambdas_a[6]);
   
-  for( int i=7; i<=NEW.NUM_VAR_CHEM2D; i++){
-    NEW.spec[i-7].c = HALF*(lambdas_a[i]-fabs(lambdas_a[i]));
+  for( int i=(NUM_CHEM2D_VAR_SANS_SPECIES+1); i<=NEW.NUM_VAR_CHEM2D; i++){
+    NEW.spec[i-(NUM_CHEM2D_VAR_SANS_SPECIES+1)].c = HALF*(lambdas_a[i]-fabs(lambdas_a[i]));
   }
   return (NEW);
 }
@@ -4151,8 +3858,8 @@ Chem2D_pState HartenFixAbs(const Chem2D_pState &lambdas_a,
   NEW.k = fabs(lambdas_a[5]);
   NEW.omega = fabs(lambdas_a[6]);
   
-  for( int i=7; i<=NEW.NUM_VAR_CHEM2D; i++){
-    NEW.spec[i-7].c = fabs(lambdas_a[i]);
+  for( int i=(NUM_CHEM2D_VAR_SANS_SPECIES+1); i<=NEW.NUM_VAR_CHEM2D; i++){
+    NEW.spec[i-(NUM_CHEM2D_VAR_SANS_SPECIES+1)].c = fabs(lambdas_a[i]);
   }
   return (NEW);
 }
@@ -4169,6 +3876,7 @@ Chem2D_pState HartenFixAbs(const Chem2D_pState &lambdas_a,
 Chem2D_cState FluxRoe_x(const Chem2D_pState &Wl,
 			const Chem2D_pState &Wr,
 			const int &Preconditioning,
+			const int &flow_type_flag,
 			const double &deltax) {
 
 
@@ -4176,48 +3884,48 @@ Chem2D_cState FluxRoe_x(const Chem2D_pState &Wl,
     Chem2D_pState Wa, dWrl, wavespeeds, lambdas_l, lambdas_r, lambdas_a;
     Chem2D_cState Flux;
 
- 
-    /* Evaluate the Roe-average primitive solution state. */    
+     /* Evaluate the Roe-average primitive solution state. */    
     Wa = RoeAverage(Wl, Wr);
 
     /* Evaluate the jumps in the primitive solution states. */
     dWrl = Wr-Wl;
 
     /* Evaluate the left, right, and average state eigenvalues. */
-    if(Preconditioning == 0){
+    if(!Preconditioning){
       lambdas_l = Wl.lambda_x();
       lambdas_r = Wr.lambda_x();
       lambdas_a = Wa.lambda_x();
 
-    
+//       //////TEST FOR DRDU///////////////
+//       wavespeeds = HartenFixAbs(lambdas_a,
+// 				lambdas_l,
+// 				lambdas_r);
+//       Flux = HALF*(Wl.Fx()+Wr.Fx()); 
+//       Chem2D_cState Flux_dissipation(ZERO);     
+//       for ( int i = 1 ; i <= Wa.NUM_VAR_CHEM2D ; i++ ) {
+// 	   Flux_dissipation -= HALF*wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i);
+//       }
+//       Flux += Flux_dissipation;
+//       /////////////////////////////////
+
       /* Determine the intermediate state flux. */
       if (Wa.v.x >= ZERO) {
         Flux = Wl.Fx();   
-
-// 	wavespeeds = WaveSpeedNeg(lambdas_a,
-// 				  lambdas_l,
-// 				  lambdas_r);
-
         wavespeeds = HartenFixNeg(lambdas_a,
                                   lambdas_l,
                                   lambdas_r);
 	
-
-        for (int i=1 ; i <= Wl.NUM_VAR_CHEM2D; i++) {
+        for (int i=1 ; i < Wl.NUM_VAR_CHEM2D; i++) {
 	  if (wavespeeds[i] < ZERO) {
  	    Flux += wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i);
-
 	  }
         } 
       } else {
         Flux = Wr.Fx();
-//  	wavespeeds = WaveSpeedPos(lambdas_a,
-// 				  lambdas_l,
-// 				  lambdas_r);
         wavespeeds = HartenFixPos(lambdas_a,
                                   lambdas_l,
                                   lambdas_r);
-        for (int i=1; i <= Wl.NUM_VAR_CHEM2D; i++) {
+        for (int i=1; i < Wl.NUM_VAR_CHEM2D; i++) {
 	  if (wavespeeds[i] > ZERO) {
 	    Flux -= wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i);
           }
@@ -4226,14 +3934,14 @@ Chem2D_cState FluxRoe_x(const Chem2D_pState &Wl,
    
       /******* LOW MACH NUMBER PRECONDITIONING ********************/
       /* Evaluate the left, right, and average state eigenvalues. */
-      } else if(Preconditioning == 1){
+    } else if(Preconditioning){
 	
       //calculating Mr^2 and passing to save computation,
       //not conceptually nice but saves from recalculating
 
-      double MR2a = Wa.Mr2(deltax); 
-      lambdas_l = Wl.lambda_preconditioned_x(Wl.Mr2(deltax)); 
-      lambdas_r = Wr.lambda_preconditioned_x(Wr.Mr2(deltax));
+      double MR2a = Wa.Mr2(flow_type_flag,deltax); 
+      lambdas_l = Wl.lambda_preconditioned_x(Wl.Mr2(flow_type_flag,deltax)); 
+      lambdas_r = Wr.lambda_preconditioned_x(Wr.Mr2(flow_type_flag,deltax));
       lambdas_a = Wa.lambda_preconditioned_x(MR2a);
                                                                     
       /* Evaluate the jumps in the primitive solution states. */
@@ -4244,20 +3952,17 @@ Chem2D_cState FluxRoe_x(const Chem2D_pState &Wl,
 				lambdas_l,
 				lambdas_r);
           
-      DenseMatrix P(Wa.NUM_VAR_CHEM2D-1,Wa.NUM_VAR_CHEM2D-1);        
+      DenseMatrix P(Wa.NUM_VAR_CHEM2D-1,Wa.NUM_VAR_CHEM2D-1);     //COULD BE STORED IN CLASS AS STATIC AND REUSED REDUCING OVERHEAD???
       /* Evaluate the low-Mach-number local preconditioner for the Roe-averaged state. */  
     
-      Wa.Low_Mach_Number_Preconditioner(P,deltax);
+      Wa.Low_Mach_Number_Preconditioner(P,flow_type_flag,deltax);
                                                                                      
       /* Determine the intermediate state flux. */                                                
       Flux = HALF*(Wl.Fx()+Wr.Fx()); 
       Chem2D_cState Flux_dissipation(ZERO);   
     
-      for ( int i = 1 ; i <= Wa.NUM_VAR_CHEM2D ; i++ ) {
-
-	
+      for ( int i = 1 ; i < Wa.NUM_VAR_CHEM2D ; i++ ) {
 	Flux_dissipation -= HALF*wavespeeds[i]*(Wa.lp_x_precon(i,MR2a)*dWrl)*Wa.rc_x_precon(i,MR2a);
-    
       }
   
       for ( int i = 1 ; i < Wa.NUM_VAR_CHEM2D ; i++ ) {
@@ -4278,8 +3983,9 @@ Chem2D_cState FluxRoe_x(const Chem2D_pState &Wl,
 Chem2D_cState FluxRoe_x(const Chem2D_cState &Ul,
 			const Chem2D_cState &Ur,
 			const int &Preconditioning, 
+			const int &flow_type_flag,
 			const double &deltax) {
-   return (FluxRoe_x(Ul.W(), Ur.W(),Preconditioning,deltax));
+   return (FluxRoe_x(Ul.W(), Ur.W(),Preconditioning,flow_type_flag,deltax));
 }
 
 /*********************************************************
@@ -4301,72 +4007,253 @@ Chem2D_cState FluxRoe_n(const Chem2D_pState &Wl,
 			const Chem2D_pState &Wr,
 			const Vector2D &norm_dir,
 			const int &Preconditioning,
+			const int &flow_type_flag,
 			const double &delta_n ) {
 
  
   double cos_angle, sin_angle, delta_rotated;
-  Chem2D_pState Wl_rotated, Wr_rotated;
+  Chem2D_pState Wl_rotated(Wl), Wr_rotated(Wr);
   Chem2D_cState Flux, Flux_rotated;
 
+  /* Determine the direction cosine's for the frame rotation. */
 
-    /* Determine the direction cosine's for the frame
-       rotation. */
+  cos_angle = norm_dir.x; 
+  sin_angle = norm_dir.y;
 
-    cos_angle = norm_dir.x; 
-    sin_angle = norm_dir.y;
-
-    /* Apply the frame rotation and evaluate left and right
-       solution states in the local rotated frame defined
-       by the unit normal vector. */
-    Wl_rotated.Copy(Wl);
-    Wr_rotated.Copy(Wr);
-   
-    Wl_rotated.v.x = Wl.v.x*cos_angle +
-                     Wl.v.y*sin_angle;
-    Wl_rotated.v.y = - Wl.v.x*sin_angle +
-                       Wl.v.y*cos_angle;
-
-    Wr_rotated.v.x = Wr.v.x*cos_angle +
-                     Wr.v.y*sin_angle;
-    Wr_rotated.v.y = - Wr.v.x*sin_angle +
-                       Wr.v.y*cos_angle;
+  /* Apply the frame rotation and evaluate left and right
+     solution states in the local rotated frame defined
+     by the unit normal vector. */
   
-
-    /* Evaluate the intermediate state solution 
-       flux in the rotated frame. */
+  Wl_rotated.v.x = Wl.v.x*cos_angle +  Wl.v.y*sin_angle;
+  Wl_rotated.v.y = - Wl.v.x*sin_angle + Wl.v.y*cos_angle;
   
-    Flux_rotated = FluxRoe_x(Wl_rotated, Wr_rotated, 
-			     Preconditioning,delta_n);
-
-    
-    /* Rotate back to the original Cartesian reference
-       frame and return the solution flux. */
-    Flux.Copy(Flux_rotated);
+  Wr_rotated.v.x = Wr.v.x*cos_angle + Wr.v.y*sin_angle;
+  Wr_rotated.v.y = - Wr.v.x*sin_angle + Wr.v.y*cos_angle;
   
-    Flux.rhov.x = Flux_rotated.rhov.x*cos_angle -
-                Flux_rotated.rhov.y*sin_angle;
-    Flux.rhov.y = Flux_rotated.rhov.x*sin_angle +
-                Flux_rotated.rhov.y*cos_angle;
+  /* Evaluate the intermediate state solution 
+     flux in the rotated frame. */
+  
+  Flux_rotated = FluxRoe_x(Wl_rotated, Wr_rotated, 
+			   Preconditioning,flow_type_flag,delta_n);
+  
+  /* Rotate back to the original Cartesian reference
+     frame and return the solution flux. */
+  Flux.Copy(Flux_rotated);
+  
+  Flux.rhov.x = Flux_rotated.rhov.x*cos_angle - Flux_rotated.rhov.y*sin_angle;
+  Flux.rhov.y = Flux_rotated.rhov.x*sin_angle + Flux_rotated.rhov.y*cos_angle;
  
-    Flux.zero_non_sol();
+  Flux.zero_non_sol();
  
-    return (Flux);
-
+  return (Flux);
+  
 }
 
 Chem2D_cState FluxRoe_n(const Chem2D_cState &Ul,
 			const Chem2D_cState &Ur,
 			const Vector2D &norm_dir, 
 			const int &Preconditioning,
-			const double &delta_n) {
+			const int &flow_type_flag,
+			const double &delta_n ) {
     return (FluxRoe_n(Ul.W(), Ur.W(), norm_dir,
-		      Preconditioning,delta_n));
+		      Preconditioning,flow_type_flag,delta_n));
 }
+
+
+/**********************************************************************
+ * Routine: FluxAUSMplus_up (Liou's updated Advection Upstream        * 
+ *                           Splitting Method flux function for all   *
+ *                           speeds,  x-direction)                    *
+ *                                                                    *
+ * This function returns the intermediate state solution flux for the *
+ * x-direction given left and right solution states by using the      *
+ * AUSM+-up (updated AUSM scheme) approximation for the fluxes.  See  *
+ * M.-S. Liou (J. Comp. Physics 2006).                                *
+ *                                                                    *
+ **********************************************************************/
+Chem2D_cState FluxAUSMplus_up(const Chem2D_pState &Wl,
+			      const Chem2D_pState &Wr) {
+
+  Chem2D_cState Flux, Convected_Quantities;
+  double beta = 0.125, sigma = 1.0, Kp =0.25, Ku = 0.5/*0.75*/;
+  double alpha, rhohalf, mass_flux_half;
+  double ahalf, Ml, Mr, Mplus, Mminus, Mhalf, pplus, pminus, phalf;
+  //double al, ar, atilde_l, atilde_r;
+
+  // Determine the intermediate state sound speed and density:
+  // al = sqrt(Wl.H()/Wl.rho)*sqrt(TWO*(Wl.g() - ONE)/(Wl.g() + ONE));
+//   ar = sqrt(Wr.H()/Wr.rho)*sqrt(TWO*(Wr.g() - ONE)/(Wr.g() + ONE));
+//   atilde_l = sqr(al)/max(al, Wl.v.x);    
+//   atilde_r = sqr(ar)/max(ar, -Wr.v.x);
+//   ahalf = min(atilde_l, atilde_r);
+
+  ahalf = HALF*(Wl.a() + Wr.a());
+  rhohalf = HALF*(Wl.rho + Wr.rho); 
+  
+
+  // Determine the left and right state Mach numbers based on the
+  // intermediate state sound speed:
+  Ml = Wl.v.x/ahalf;
+  Mr = Wr.v.x/ahalf;
+
+  // Determine the reference Mach number, scaling function and coefficient
+  double M2_bar, M2_ref, fa;
+  M2_bar = (Wl.v.x*Wl.v.x + Wr.v.x*Wr.v.x)/(TWO*ahalf*ahalf);
+  M2_ref = min(ONE, max(M2_bar, Wl.Mref*Wl.Mref));
+  if (M2_ref > ONE || M2_ref < 0.0) cout << "\nM2_ref out of range";
+  //fa = sqrt(M2_ref)*(TWO - sqrt(M2_ref));
+  fa = sqrt(sqr(ONE - M2_ref)*M2_bar + FOUR*M2_ref)/(ONE + M2_ref);
+  if (fa > ONE || fa <= ZERO) cout << "\nfa out of range";
+  alpha = (3.0/16.0)*(-4.0 + 5.0*fa*fa);
+  if (alpha < (-3.0/4.0)  ||  alpha > (3.0/16.0)) cout << "\nalpha out of range";
+
+
+  // Determine the left state split Mach number:
+  if (fabs(Ml) >= ONE) {
+    Mplus = Mplus_1(Ml);
+    pplus = Mplus_1(Ml)/Ml;
+  } else {
+    Mplus = Mplus_2(Ml) * (1.0 - 16.0*beta*Mminus_2(Ml));
+    pplus = Mplus_2(Ml) * ((2.0 - Ml) - 16.0*alpha*Ml*Mminus_2(Ml));
+  }
+
+
+  // Determine the right state split Mach number:
+  if (fabs(Mr) >= ONE) {
+    Mminus = Mminus_1(Mr);
+    pminus = Mminus_1(Mr)/Mr;        
+  } else {
+    Mminus = Mminus_2(Mr) * (1.0 + 16.0*beta*Mplus_2(Mr));
+    pminus = Mminus_2(Mr) * ((-2.0 - Mr) + 16.0*alpha*Mr*Mplus_2(Mr));
+  } 
+
+
+  // Determine the intermediate state Mach number, pressure and mass flux:
+  Mhalf = Mplus + Mminus
+    - (Kp/fa)*max((ONE - sigma*M2_bar), ZERO)*(Wr.p - Wl.p)/(rhohalf*ahalf*ahalf);
+
+  phalf = pplus*Wl.p + pminus*Wr.p
+    - Ku*pplus*pminus*TWO*rhohalf*(fa*ahalf)*(Wr.v.x - Wl.v.x);
+
+  mass_flux_half = (Mhalf > ZERO) ? ahalf*Mhalf*Wl.rho : ahalf*Mhalf*Wr.rho; 
+
+
+  // Determine the intermediate state convective solution flux:
+  if (mass_flux_half  > ZERO) {
+    Convected_Quantities.rho = ONE;
+    Convected_Quantities.rhov.x = Wl.v.x; 
+    Convected_Quantities.rhov.y = Wl.v.y; 
+    Convected_Quantities.E = Wl.H()/Wl.rho;
+
+//     if(Wl.nscal > 0){
+//       for(int i=0; i<Wl.nscal; ++i){
+// 	Convected_Quantities.rhoscalar[i] = Wl.scalar[i];
+//       }
+//     }
+
+    for(int i=0; i<Wl.ns; ++i){
+      Convected_Quantities.rhospec[i].c = Wl.spec[i].c;
+    }
+    
+  } else {
+    Convected_Quantities.rho = ONE;
+    Convected_Quantities.rhov.x = Wr.v.x; 
+    Convected_Quantities.rhov.y = Wr.v.y; 
+    Convected_Quantities.E = Wr.H()/Wr.rho;
+
+//     if(Wr.nscal > 0){
+//       for(int i=0; i<Wr.nscal; ++i){
+// 	Convected_Quantities.rhoscalar[i] = Wr.scalar[i];
+//       }
+//     }
+
+    for(int i=0; i<Wr.ns; ++i){
+      Convected_Quantities.rhospec[i].c = Wr.spec[i].c;
+    }
+
+  } //end if
+
+  Flux = mass_flux_half*Convected_Quantities;
+
+  // Add the pressure contribution to the intermediate state solution flux:
+  Flux[2] += phalf;
+
+
+  // Return solution flux.
+  return Flux;
+
+}
+
+Chem2D_cState FluxAUSMplus_up(const Chem2D_cState &Ul,
+			      const Chem2D_cState &Ur) {
+  return FluxAUSMplus_up(Ul.W(),Ur.W());
+}
+
+/**********************************************************************
+ * Routine: FluxAUSMplus_up_n (M.-S. Liou's Advection Upstream        *
+ *                             Splitting Method flux function for     *
+ *                             all speeds, n-direction)               *
+ *                                                                    *
+ * This function returns the intermediate state solution flux for an  *
+ * arbitrary direction defined by a unit normal vector in the         *
+ * direction of interest, given left and right solution states.  The  *
+ * problem is solved by first applying a frame rotation to rotate the *
+ * problem to a local frame aligned with the unit normal vector and   *
+ * then by using the AUSM+-up approximation to specify the            * 
+ * intermediate  state in terms of the rotated solution states.       *
+ * See M.-S. Liou (J. Comp. Physics 2006).                            *
+ **********************************************************************/
+Chem2D_cState FluxAUSMplus_up_n(const Chem2D_pState &Wl,
+				const Chem2D_pState &Wr,
+				const Vector2D &norm_dir) {
+
+  Chem2D_pState Wl_rotated(Wl), Wr_rotated(Wr);
+  Chem2D_cState Flux_rotated;
+
+  /* Determine the direction cosine's for the frame rotation. */
+   double cos_angle = norm_dir.x; 
+   double sin_angle = norm_dir.y;
+
+  /* Apply the frame rotation and evaluate left and right
+     solution states in the local rotated frame defined
+     by the unit normal vector. */
+//   Wl_rotated.Copy(Wl);
+//   Wr_rotated.Copy(Wr);
+   
+  Wl_rotated.v.x = Wl.v.x*cos_angle + Wl.v.y*sin_angle;
+  Wl_rotated.v.y = - Wl.v.x*sin_angle +  Wl.v.y*cos_angle;
+
+  Wr_rotated.v.x = Wr.v.x*cos_angle +  Wr.v.y*sin_angle;
+  Wr_rotated.v.y = - Wr.v.x*sin_angle + Wr.v.y*cos_angle;
+  
+  // Evaluate the intermediate state solution flux in the rotated frame.
+  Flux_rotated = FluxAUSMplus_up(Wl_rotated,Wr_rotated); 
+
+  // Rotate back to the original Cartesian reference frame and return
+  // the solution flux.
+  Chem2D_cState Flux(Flux_rotated);
+
+  Flux.rhov.x = Flux_rotated.rhov.x*cos_angle - Flux_rotated.rhov.y*sin_angle;
+  Flux.rhov.y = Flux_rotated.rhov.x*sin_angle + Flux_rotated.rhov.y*cos_angle;
+
+  Flux.zero_non_sol();
+
+  // Return the solution flux.  
+  return Flux;
+
+}
+
+Chem2D_cState FluxAUSMplus_up_n(const Chem2D_cState &Ul,
+				const Chem2D_cState &Ur,
+				const Vector2D &norm_dir) {
+  return FluxAUSMplus_up_n(Ul.W(),Ur.W(),norm_dir);
+}
+
 
 
 /************************************************************************
  ************************************************************************
- ************** VISCOUS RECONSTRUCTION  *********************************               
+ ************** VISCOUS RECONSTRUCTION  ********************************* 
  ************************************************************************
  ************************************************************************/
 
@@ -4384,13 +4271,14 @@ Chem2D_cState Viscous_FluxArithmetic_n(const Chem2D_cState &Ul,
 				       const Chem2D_cState &Ur,
    			               const Chem2D_pState &dWdx_r,
 			               const Chem2D_pState &dWdy_r,
+                                       const int Flow_Type,
 				       const Vector2D &norm_dir) {
 
   Chem2D_cState Fx, Fy;
   Vector2D i = Vector2D(1,0), j = Vector2D(0,1);
 
-  Fx = HALF*(Ul.Viscous_Flux_x(dWdx_l) + Ur.Viscous_Flux_x(dWdx_r));
-  Fy = HALF*(Ul.Viscous_Flux_y(dWdy_l) + Ur.Viscous_Flux_y(dWdy_r));
+  Fx = HALF*(Ul.Viscous_Flux_x(dWdx_l, Flow_Type) + Ur.Viscous_Flux_x(dWdx_r, Flow_Type));
+  Fy = HALF*(Ul.Viscous_Flux_y(dWdy_l, Flow_Type) + Ur.Viscous_Flux_y(dWdy_r, Flow_Type));
 
   return (Fx*dot(i,norm_dir) + Fy*dot(j,norm_dir));
 
@@ -4404,83 +4292,33 @@ Chem2D_cState Viscous_FluxArithmetic_n(const Chem2D_cState &Ul,
  * the primitive variables.                                           *
  *                                                                    *
  **********************************************************************/
-Chem2D_cState Viscous_Flux_n(const Chem2D_pState &W,
+Chem2D_cState Viscous_Flux_n(Chem2D_pState &W,
 			     const Chem2D_pState &dWdx,
 			     const Chem2D_pState &dWdy,
+                             const int Flow_Type,
 			     const int Axisymmetric,
 			     const Vector2D X,
 			     const Vector2D &norm_dir) {
 
   Chem2D_cState U;
-  double mu, kappa, div_v, radius;
-  double Temperature, Rmix, Cp;
-  double mu_t, kappa_t, Dm_t;
+  double Temperature, Rmix;
   Vector2D grad_T;
   Vector2D i = Vector2D(1,0), j = Vector2D(0,1);
-  Tensor2D strain_rate;
 
   //Molecular transport properties
-  mu = W.mu();
-  kappa = W.kappa();
   Temperature = W.T();
   Rmix = W.Rtot();
-  Cp = W.Cp();
  
-  //Turbulence model transport properties
-  if (W.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-      W.flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-    mu_t = W.eddy_viscosity();
-    kappa_t =  mu_t*Cp/W.Pr_turb();
-    Dm_t = W.Dm_turb();
-    
-  
-  } /* endif */
-
   //Conserved variables from primitive
   U.rho = W.rho;
   U.rhov = W.rhov();
   U.E = W.E();
   U.rhok = W.rho*W.k;
   U.rhoomega = W.rho*W.omega;
-  //U.tau = W.tau;
-  //U.lambda = W.lambda;
-
   for(int i=0; i<W.ns; i++){
     U.rhospec[i].c = W.rho*W.spec[i].c;
   } 
-	
-  //Strain rate (+dilatation)
-  div_v = dWdx.v.x + dWdy.v.y;
-  if (Axisymmetric == 2) {
-    if(X.x < MICRO) {
-      radius = MICRO;
-    } else {
-      radius = X.x;
-    }
-    div_v += W.v.x/radius;
-    
-  } else if (Axisymmetric == 1) {
-    if(X.y < MICRO) {
-      radius = MICRO;
-    } else { 
-       radius = X.y;
-    }
-    div_v += W.v.y/radius;
-    
-  } /* endif */
-  
-  strain_rate.xx = dWdx.v.x-div_v/THREE;
-  strain_rate.xy = HALF*(dWdx.v.y + dWdy.v.x);
-  strain_rate.yy = dWdy.v.y-div_v/THREE;
-  
-  if (Axisymmetric == 0) {
-    strain_rate.zz = -(strain_rate.xx + strain_rate.yy); 
-  } else if (Axisymmetric == 2) {
-      strain_rate.zz = W.v.x/radius-div_v/THREE;
-  } else if (Axisymmetric == 1) {
-      strain_rate.zz = W.v.y/radius-div_v/THREE;
-  } /* endif */
-  
+ 
   //Temperature gradient
   //dT/dx = 1/rho*R *( dP/dx - P/rho * drho/dx)
   grad_T.x = (ONE/(W.rho*Rmix))*(dWdx.p - (W.p/W.rho)*dWdx.rho);
@@ -4490,50 +4328,43 @@ Chem2D_cState Viscous_Flux_n(const Chem2D_pState &W,
   // for each of the "n" species
   for( int k=0; k<U.ns; k++){
     /***************** Diffusion coefficients **********************/
-    // using global Schmidt number relation Sc = mu/rho*Ds
-    U.rhospec[k].diffusion_coef = mu/U.Schmidt[k];
+    // using global Schmidt number relation Scs = mu/rho*Ds
+    U.rhospec[k].diffusion_coef = W.mu()/U.Schmidt[k];
     /***************** mass fraction gradients *********************/
     U.rhospec[k].gradc.x = U.rho * dWdx.spec[k].c;
     U.rhospec[k].gradc.y = U.rho * dWdy.spec[k].c;
   }
   
   //Molecular (laminar) stress tensor
-  U.tau = TWO*mu*strain_rate;
-  
-  //Turbulent (Reynolds) Stresses
-  if (W.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-      W.flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-    U.lambda = (TWO*mu_t)*strain_rate;
-    U.lambda.xx -= (TWO/THREE)*U.rhok; 
-    U.lambda.yy -= (TWO/THREE)*U.rhok; 
-    U.lambda.zz -= (TWO/THREE)*U.rhok; 
-  } /* endif */
+  W.Laminar_Stress(dWdx,dWdy, Flow_Type,Axisymmetric, X);
+  U.tau = W.tau;
+
   //Molecular (laminar) heat flux
   //Thermal conduction, q = - kappa * grad(T)
-  U.qflux = - kappa*grad_T;
+  U.qflux = - W.kappa()*grad_T;
   //Thermal diffusion, q -= rho * sum ( hs * Ds *gradcs)
   U.qflux -= U.rho*U.thermal_diffusion(Temperature);  
   
   //Turbulent heat flux
   //Thermal conduction, q = - kappa * grad(T)
-  if (W.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-      W.flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-    U.theta = - kappa_t*grad_T;
+  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
+      Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) { 
+       
+    U.theta = - W.eddy_viscosity()*W.Cp()/W.Pr_turb()*grad_T;
     //Thermal Diffusion, q -= rho * sum ( hs * Ds *gradcs)   
     for (int k=0; k<U.ns; k++) {
-      U.theta -= Dm_t*U.rhospec[k].gradc*
+      U.theta -= W.Dm_turb()*U.rhospec[k].gradc*
 	(U.specdata[k].Enthalpy(Temperature)+U.specdata[k].Heatofform());
     }
-  } /* endif */
-  //Xinfeng Note: the lambda = Reynolds_Stress(... ... ) may be computed/assigned outside
-  //To see which way is more general ...
-  // maybe modifying the viscous calculations some sort...
-  //  lambda = Reynolds_Stress(dWdx,dWdy,Axisymmetric, X);
-  //tau = Laminar_Stress(dWdx,dWdy,Axisymmetric, X);					       
-  //Return Viscous Fluxes
+    // NOTE: WASTEFUL AS "Strain_Rate" is called in Laminar_Stress as well,
+    //Turbulnent stress 
+    W.Reynolds_Stress(dWdx,dWdy, Flow_Type,Axisymmetric, X); 
+    U.lambda = W.lambda;
 
-  return (U.Viscous_Flux_x(dWdx)*dot(i,norm_dir) 
-	  + U.Viscous_Flux_y(dWdy)*dot(j,norm_dir));
+  } 
+
+  return (U.Viscous_Flux_x(dWdx, Flow_Type)*dot(i,norm_dir) 
+	  + U.Viscous_Flux_y(dWdy, Flow_Type)*dot(j,norm_dir));
 
 }
 

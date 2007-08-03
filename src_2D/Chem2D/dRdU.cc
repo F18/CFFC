@@ -2,132 +2,167 @@
 #include "dRdU.h"
 #endif 
 
+// All functions setup to use "Uo" values as point implicit 
+// can be used in a multistage scheme and this insures 
+// that all Jacobians are taken as dR/dUo.
 
-DenseMatrix PointImplicitBlockJacobi(Chem2D_Quad_Block &SolnBlk,
-				     Chem2D_Input_Parameters &Input_Parameters,
-				     const int &ii, const int &jj){
+/********************************************************
+ * Routine: PointImplicitBlockJacobi                    *
+ *                                                      *
+ * This routine adds all the appropriate Jacobians      *    
+ * based on flow type, for use as a Point Implicit      *
+ * Block Jacobi precondtioner.                          *
+ *                                                      * 
+ ********************************************************/ 
+void PointImplicitBlockJacobi(DenseMatrix &dRdU,
+			      Chem2D_Quad_Block &SolnBlk,
+			      Chem2D_Input_Parameters &Input_Parameters,
+			      const int &ii, const int &jj){
+   
+  int NUM_VAR_CHEM2D =  SolnBlk.NumVar(); 
+  DenseMatrix dRdW(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);  
+
+  //Inviscid dRdU
+  dFIdW_Inviscid(dRdW, SolnBlk, Input_Parameters, ii,jj);
   
-  int NUM_VAR_CHEM2D =  SolnBlk.NumVar() -1; 
-  DenseMatrix PIBJ(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D);
-  PIBJ.zero();
-  //Inviscid
-  DenseMatrix dFIdU(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D);
-  dFIdU.zero();
-  
-  dFIdU = dFIdU_Inviscid(SolnBlk, Input_Parameters, ii, jj);
-  PIBJ =  dFIdU;
- 
-  if (SolnBlk.Flow_Type != FLOWTYPE_INVISCID) {
-    //Viscous
-    DenseMatrix dGVdU(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D);
-    DenseMatrix dGVdW(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D);
-    dGVdW.zero();
-    dGVdU.zero();
-    DenseMatrix dWdQ(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D); 
-    dWdQ.zero();
-    //transformation Jacobian
-    SolnBlk.W[ii][jj].dWdU(dWdQ);
-    //Inviscid + Viscous + Source (axisymmetric + turbulence + chemistry)     
-    
-    dGVdW = dGVdW_Viscous(SolnBlk,Input_Parameters, ii, jj);
-    dGVdU = dGVdW *dWdQ;
-    PIBJ  += dGVdU;
- }
-  //  Source Jacobians (axisymmetric, turbulence and source)
+  //Viscous dRdU
+  if (SolnBlk.Flow_Type != FLOWTYPE_INVISCID) {    
+    dGVdW_Viscous(dRdW, SolnBlk,Input_Parameters, ii, jj); 
+  }
 
-  DenseMatrix SIBJ(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D);
-  SIBJ.zero();
-  SIBJ = SemiImplicitBlockJacobi(SolnBlk,ii,jj);
-  PIBJ += SIBJ ;
+  // Add Source Jacobians (axisymmetric, turbulence)
+  SemiImplicitBlockJacobi_dSdW(dRdW,SolnBlk,EXPLICIT,ii,jj);                          
 
-  return PIBJ;
+  DenseMatrix dWdU(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);     
+  // Transformation Jacobian 
+  SolnBlk.Uo[ii][jj].W().dWdU(dWdU, SolnBlk.Flow_Type); 
+  dRdU += dRdW*dWdU;
+
+  // Add Source Jacobians (axisymmetric, chemistry, gravity)
+  SemiImplicitBlockJacobi_dSdU(dRdU,SolnBlk,EXPLICIT,ii,jj);                 
+
 }
-//SemiImplicit Block Jacobi
-DenseMatrix SemiImplicitBlockJacobi(Chem2D_Quad_Block &SolnBlk,
-				    const int &ii, const int &jj){
+
+/********************************************************
+ * Routine: SemiImplicitBlockJacobi                     *
+ *                                                      *
+ * This routine adds all the appropriate source         *    
+ * Jacobians based on flow type, for in semi-implicit   *
+ * and implicit calculations.                           *
+ *                                                      * 
+ ********************************************************/ 
+void SemiImplicitBlockJacobi(DenseMatrix &dSdU,
+			     Chem2D_Quad_Block &SolnBlk,
+			     const int &solver_type,
+			     const int &ii, const int &jj){ 
   
-  int NUM_VAR_CHEM2D =  SolnBlk.NumVar() -1; 
-  DenseMatrix SIBJ(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D);
-  SIBJ.zero();
+  if( (SolnBlk.Axisymmetric && SolnBlk.Flow_Type != FLOWTYPE_INVISCID) ||
+      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) { 
 
-  //transformation matrix
-  DenseMatrix dWdQ(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D);  
-  dWdQ.zero();
-  SolnBlk.W[ii][jj].dWdU(dWdQ);
- 
-  //Add Jacobian for inviscid axisymmetric source terms
-  if (SolnBlk.Axisymmetric) {
-      SolnBlk.W[ii][jj].dSa_idU(SIBJ,SolnBlk.Grid.Cell[ii][jj].Xc,SolnBlk.Axisymmetric);
-      // Add Jacobian for viscous axisymmetric source terms 
-//     if(SolnBlk.Flow_Type != FLOWTYPE_INVISCID){
-//        DenseMatrix dSa_VdU(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D);
-//        dSa_VdU.zero();
-//        SolnBlk.W[ii][jj].dSa_vdU(dSa_VdU, dWdQ, SolnBlk.dWdx[ii][jj],SolnBlk.dWdy[ii][jj],
-// 	 		      SolnBlk.Grid.Cell[ii][jj].Xc,
-// 		 	      SolnBlk.Flow_Type, SolnBlk.Axisymmetric, SolnBlk.d_dWdx_dW[ii][jj][0], 
-// 			      SolnBlk.d_dWdy_dW[ii][jj][0]);
-//        SIBJ += dSa_VdU;
-//     }
+    int NUM_VAR_CHEM2D =  SolnBlk.NumVar(); 
+    DenseMatrix dRdW(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);  
+    
+    // Add Source Jacobians (viscous axisymmetric, turbulence)
+    SemiImplicitBlockJacobi_dSdW(dRdW,SolnBlk,EXPLICIT,ii,jj);                          
+    
+    DenseMatrix dWdU(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);     
+    // Transformation Jacobian 
+    SolnBlk.Uo[ii][jj].W().dWdU(dWdU, SolnBlk.Flow_Type); 
+    dSdU += dRdW*dWdU;
   }
 
-  //Xinfeng: turbulence source Jacobian has a temperature outofrange problem
-  //so commented out for debugging  ... temperarily
-  //turbulence
+  // Add Source Jacobians (inviscid axisymmetric, chemistry, gravity)
+  SemiImplicitBlockJacobi_dSdU(dSdU,SolnBlk,EXPLICIT,ii,jj);                 
+
+}
+
+void SemiImplicitBlockJacobi_dSdW(DenseMatrix &dSdW,
+				  Chem2D_Quad_Block &SolnBlk,
+				  const int &solver_type,
+				  const int &ii, const int &jj){ 
+  
+  //Cacluate 2nd derivatives  
+  double d_dWdx_dW_C,d_dWdy_dW_C;
+  d_dWd_dW_Center(d_dWdx_dW_C,d_dWdy_dW_C,SolnBlk,ii, jj);  
+  
+  // Viscous Axisymmetric source term jacobian    
+  if(SolnBlk.Axisymmetric && SolnBlk.Flow_Type != FLOWTYPE_INVISCID){         
+    SolnBlk.W[ii][jj].dSa_vdW(dSdW,
+			      SolnBlk.dWdx[ii][jj],
+			      SolnBlk.dWdy[ii][jj],
+			      SolnBlk.Grid.Cell[ii][jj].Xc,
+			      SolnBlk.Flow_Type, SolnBlk.Axisymmetric,
+			      d_dWdx_dW_C,d_dWdy_dW_C);
+  }
+  
+  // Add Jacobian for turbulence
   if((SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ) ||
-     (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON )){
-     
-    DenseMatrix dStdW(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D); 
-    dStdW.zero();
-    DenseMatrix dStdU(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D); 
-    dStdU.zero();
-    dStdW_Turbulence(dStdW, SolnBlk, ii, jj);
-    dStdU = dStdW *dWdQ; 
-    SIBJ +=dStdU;
+     (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON )){    
+    dS_tdW(dSdW,SolnBlk, d_dWdx_dW_C, d_dWdy_dW_C, ii,jj);
   }
-  //Add Jacobian for finite-rate chemistry source terms
-  if (SolnBlk.W[ii][jj].React.reactset_flag != NO_REACTIONS){
-    DenseMatrix dSwdU(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D); 
-    dSwdU.zero(); 
-    SolnBlk.W[ii][jj].dSwdU(dSwdU);
-    SIBJ += dSwdU;
+  
+}
+
+void SemiImplicitBlockJacobi_dSdU(DenseMatrix &dSdU,
+				  Chem2D_Quad_Block &SolnBlk,
+				  const int &solver_type,
+				  const int &ii, const int &jj){
+  
+   //Add Jacobian for inviscid axisymmetric source terms
+  if (SolnBlk.Axisymmetric) {
+    // Inviscid source Jacobian
+    SolnBlk.W[ii][jj].dSa_idU(dSdU,
+			      SolnBlk.Grid.Cell[ii][jj].Xc, 
+			      SolnBlk.Flow_Type,
+			      SolnBlk.Axisymmetric);
+  }
+  
+  //Add Jacobian for finite-rate chemistry source terms  
+  if (SolnBlk.W[ii][jj].React.reactset_flag != NO_REACTIONS){    
+    SolnBlk.W[ii][jj].dSwdU(dSdU, SolnBlk.Flow_Type,solver_type);
   }  
+
   //Add Jacobian for gravitational source terms
   if (SolnBlk.Gravity){
-    DenseMatrix dSgdU(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D); 
-    dSgdU.zero();
-    SolnBlk.W[ii][jj].dSgdU(dSgdU);
-    SIBJ += dSgdU;
-  }
-  
-  return SIBJ;
+    SolnBlk.W[ii][jj].dSgdU(dSdU);
+  } 
   
 }
+
 /********************************************************
- * Routine: PointImplicitBlkJ  Inviscid Flux Jacobian   *
+ * Routine: PointImplicitBlkJ Inviscid Flux Jacobian    *
  *                                                      *
- * This routine returns the inviscid components of       *    
+ * This routine returns the inviscid components of      *    
  * Point Implicit Block Jacobian matrix for the         *
  * specified local solution block.                      *
  *                                                      *
  ********************************************************/
 // Based on HLLE || ROE Flux Function
-DenseMatrix dFIdU_Inviscid(Chem2D_Quad_Block &SolnBlk, Chem2D_Input_Parameters &Input_Parameters,const int &ii, const int &jj){
+void dFIdW_Inviscid(DenseMatrix &dRdW, Chem2D_Quad_Block &SolnBlk, Chem2D_Input_Parameters 
+		    &Input_Parameters,const int &ii, const int &jj){
   
-  int NUM_VAR_CHEM2D =  SolnBlk.NumVar() -1; 
-  DenseMatrix dFIdU(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D);
-  dFIdU.zero();
 
-   if (Input_Parameters.i_Flux_Function == FLUX_FUNCTION_HLLE ){
-    dFIdU = dFIdU_Inviscid_HLLE(SolnBlk,ii, jj);
+  if (Input_Parameters.i_Flux_Function == FLUX_FUNCTION_HLLE ){    
+    dFIdW_Inviscid_HLLE(dRdW,SolnBlk,Input_Parameters,ii, jj, NORTH);
+    dFIdW_Inviscid_HLLE(dRdW,SolnBlk,Input_Parameters,ii, jj, SOUTH);
+    dFIdW_Inviscid_HLLE(dRdW,SolnBlk,Input_Parameters,ii, jj, EAST);
+    dFIdW_Inviscid_HLLE(dRdW,SolnBlk,Input_Parameters,ii, jj, WEST);
+    dRdW = dRdW/SolnBlk.Grid.Cell[ii][jj].A;
     
-  }
-  if (Input_Parameters.i_Flux_Function == FLUX_FUNCTION_ROE ){
-    dFIdU = dFIdU_Inviscid_ROE(SolnBlk,ii, jj);
+  } else if (Input_Parameters.i_Flux_Function == FLUX_FUNCTION_ROE ){
     
+    dFIdW_Inviscid_ROE(dRdW,SolnBlk,Input_Parameters,ii, jj, NORTH);
+    dFIdW_Inviscid_ROE(dRdW,SolnBlk,Input_Parameters,ii, jj, SOUTH);
+    dFIdW_Inviscid_ROE(dRdW,SolnBlk,Input_Parameters,ii, jj, EAST);
+    dFIdW_Inviscid_ROE(dRdW,SolnBlk,Input_Parameters,ii, jj, WEST);
+    dRdW = dRdW/SolnBlk.Grid.Cell[ii][jj].A;
+    
+  } else {
+    cerr<<"\n NOT A VALID FLUX FUNCTION FOR USE WITH Point Implicit \n";
   }
-  return dFIdU;
   
 }
+
 /*********************************************************
  * Routine: Rotation_Matrix2                             *
  *                                                       *
@@ -139,7 +174,7 @@ DenseMatrix dFIdU_Inviscid(Chem2D_Quad_Block &SolnBlk, Chem2D_Input_Parameters &
  *                                                       *
  *********************************************************/
 /*The rotation matrix is used for the inviscid flux calculations */
- DenseMatrix Rotation_Matrix2(Vector2D nface, int Size,  int A_matrix) 
+DenseMatrix Rotation_Matrix2(Vector2D nface, int Size,  int A_matrix) 
 {
   double cos_angle = nface.x; 
   double sin_angle = nface.y;
@@ -162,3097 +197,1738 @@ DenseMatrix dFIdU_Inviscid(Chem2D_Quad_Block &SolnBlk, Chem2D_Input_Parameters &
   } /* endif */
 
   return mat;
+} 
 
-} /* End of Rotation_Matrix. */
 
-//Inviscid Flux Jacobian based on HLLE Flux Function
-DenseMatrix dFIdU_Inviscid_HLLE(Chem2D_Quad_Block &SolnBlk, const int &ii, const int &jj){
+/********************************************************
+ * Routine: Inviscid Flux Jacobian using HLLE           *
+ *                                                      *
+ * This routine returns the inviscid components of      *    
+ * Point Implicit Block Jacobian matrix for the         *
+ * specified local solution block.                      *
+ *                                                      *
+ ********************************************************/
+void dFIdW_Inviscid_HLLE(DenseMatrix &dRdW, Chem2D_Quad_Block &SolnBlk,
+			 Chem2D_Input_Parameters &Input_Parameters, 
+			 const int &ii, const int &jj, const int Orient){
 
-  int NUM_VAR_CHEM2D =  SolnBlk.NumVar()-1; 
-  DenseMatrix dFidU(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D),
-              II(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D), 
-              A_N(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D), 
-              AI_N(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D),
-              A_S(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D), 
-              AI_S(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D),
-              A_E(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D), 
-              AI_E(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D),
-              A_W(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D), 
-              AI_W(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D),
-              dFidU_N(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D),
-              dFidU_S(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D),
-              dFidU_E(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D),
-	      dFidU_W(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D);
+  int NUM_VAR_CHEM2D =  SolnBlk.NumVar(); 
+  int overlap = Input_Parameters.NKS_IP.GMRES_Overlap;
 
-  Vector2D lambdas_N, lambdas_S, lambdas_E, lambdas_W;
-  Vector2D nface_N, nface_S, nface_E, nface_W;
-  
-  double alpha_N, gamma_N;
-  double alpha_S, gamma_S;
-  double alpha_W, gamma_W;
-  double alpha_E, gamma_E;
-
-  if (ii < SolnBlk.ICl || ii > SolnBlk.ICu ||
-      jj < SolnBlk.JCl || jj > SolnBlk.JCu) {
-    // GHOST CELL
-    dFidU.zero();
-    return dFidU;
+   DenseMatrix dFidW(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO);    
+   Vector2D nface, lambdas;   
     
-  } else {
-//     // NON-GHOST CELL.
-  
-    dFidU.zero();
-    II.identity();
+   if (ii < SolnBlk.ICl -overlap || ii > SolnBlk.ICu +overlap ||
+       jj < SolnBlk.JCl -overlap || jj > SolnBlk.JCu +overlap) {
+     //Ghost cell so shouldn't be here
+     exit(1);
+   } else if (Orient == NORTH) {
+     nface = SolnBlk.Grid.nfaceN(ii, jj-1);
+     lambdas = HLLE_wavespeeds(SolnBlk.Uo[ii][jj-1].W(), 
+			       SolnBlk.Uo[ii][jj].W(), nface);
+   } else if (Orient == SOUTH) {
+     nface = SolnBlk.Grid.nfaceS(ii, jj+1);
+     lambdas = HLLE_wavespeeds(SolnBlk.Uo[ii][jj+1].W(), 
+			       SolnBlk.Uo[ii][jj].W(), nface);
+   } else if (Orient == EAST) {
+     nface = SolnBlk.Grid.nfaceE(ii-1, jj);     
+     lambdas = HLLE_wavespeeds(SolnBlk.Uo[ii-1][jj].W(), 
+			       SolnBlk.Uo[ii][jj].W(), nface);
+   } else if (Orient == WEST) {
+     nface = SolnBlk.Grid.nfaceW(ii+1, jj);
+     lambdas = HLLE_wavespeeds(SolnBlk.Uo[ii+1][jj].W(), 
+			       SolnBlk.Uo[ii][jj].W(), nface);
+   }
 
-    nface_N = SolnBlk.Grid.nfaceN(ii, jj);
-    nface_S = SolnBlk.Grid.nfaceS(ii, jj);
-    nface_E = SolnBlk.Grid.nfaceE(ii, jj);
-    nface_W = SolnBlk.Grid.nfaceW(ii, jj);
+   DenseMatrix A( Rotation_Matrix2(nface,NUM_VAR_CHEM2D, 1));
+   DenseMatrix AI( Rotation_Matrix2(nface,NUM_VAR_CHEM2D, 0));
+   DenseMatrix II(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO); 
+   II.identity();
+   
+   //Weightings
+   double gamma = (lambdas.x*lambdas.y)/(lambdas.y-lambdas.x);
+   double beta  = - lambdas.x/(lambdas.y-lambdas.x);
 
+   //Jacobian
+   dFIdW(dFidW, Rotate(SolnBlk.Uo[ii][jj].W(), nface) , SolnBlk.Flow_Type);     
+
+   if (Orient == NORTH) {                 
+     dRdW += SolnBlk.Grid.lfaceN(ii, jj-1)*(AI*(beta*dFidW + gamma*II)*A); 
+   } else if (Orient == SOUTH) {     
+     dRdW += SolnBlk.Grid.lfaceS(ii, jj+1)*(AI*(beta*dFidW + gamma*II)*A); 
+   } else if (Orient == EAST) {                
+     dRdW += SolnBlk.Grid.lfaceE(ii-1, jj)*(AI*(beta*dFidW + gamma*II)*A);      
+   } else if (Orient == WEST) {     
+     dRdW += SolnBlk.Grid.lfaceW(ii+1, jj)*(AI*(beta*dFidW + gamma*II)*A); 
+   } else {
+     cerr<<" NOT A VALID ORIENTATION "; exit(1);
+   }
+
+} 
+
+
+/********************************************************
+ * Routine: Inviscid Flux Jacobian using Roe            *
+ *                                                      *
+ * This routine returns the inviscid components of      *    
+ * Jacobian matrix for the specified local solution     *
+ * block calculated analytically.                       *
+ *                                                      *
+ * dF/dW_R                                              *
+ ********************************************************/
+void dFIdW_Inviscid_ROE(DenseMatrix& dRdW, Chem2D_Quad_Block &SolnBlk,  
+			Chem2D_Input_Parameters &Input_Parameters,
+			const int &ii, const int &jj, const int Orient){
+   
+  int overlap = Input_Parameters.NKS_IP.GMRES_Overlap;
+  int Ri, Rj;
+
+  if (ii < SolnBlk.ICl -overlap || ii > SolnBlk.ICu + overlap ||
+      jj < SolnBlk.JCl -overlap || jj > SolnBlk.JCu + overlap) {
+
+     // GHOST CELL so do nothing
+     cout<<"\n Hey I am not suppose to be here! \n"; exit(1);
+
+  } else {     
+    int NUM_VAR_CHEM2D = dRdW.get_n();  //  SolnBlk.NumVar()-1;    
+    DenseMatrix dFidW(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO);
+    
+    Vector2D nface,DX; double lface;   
+    Chem2D_pState Wa, wavespeeds, Left, Right, Wl, Wr;   
+    Left.Vacuum();   Right.Vacuum();  Wl.Vacuum();  Wr.Vacuum();
+          
+     if (Orient == NORTH) {
+       Ri = ii; Rj=jj-1;
+       nface = SolnBlk.Grid.nfaceN(Ri, Rj);
+       lface = SolnBlk.Grid.lfaceN(Ri, Rj);
+     } else if (Orient == SOUTH) {
+       Ri = ii; Rj=jj+1;
+       nface = SolnBlk.Grid.nfaceS(Ri, Rj);
+       lface = SolnBlk.Grid.lfaceS(Ri, Rj);
+     } else if (Orient == EAST) { 
+       Ri = ii-1; Rj=jj;
+       nface = SolnBlk.Grid.nfaceE(Ri, Rj);     
+       lface = SolnBlk.Grid.lfaceE(Ri, Rj);
+     } else if (Orient == WEST) { 
+       Ri = ii+1; Rj=jj;
+       nface = SolnBlk.Grid.nfaceW(Ri, Rj);
+       lface = SolnBlk.Grid.lfaceW(Ri, Rj);
+     }
      
-    lambdas_N = HLLE_wavespeeds(W(SolnBlk.Uo[ii][jj]), 
-				W(SolnBlk.Uo[ii][jj+1]), 
-				nface_N);
-    lambdas_S = HLLE_wavespeeds(W(SolnBlk.Uo[ii][jj]),
-				W(SolnBlk.Uo[ii][jj-1]), 
-				nface_S);
-    lambdas_E = HLLE_wavespeeds(W(SolnBlk.Uo[ii][jj]), 
-				W(SolnBlk.Uo[ii+1][jj]), 
-				nface_E);
-    lambdas_W = HLLE_wavespeeds(W(SolnBlk.Uo[ii][jj]),
-				W(SolnBlk.Uo[ii-1][jj]),
-				nface_W);
-    
-    dFidU_N.zero();
-    dFIdU(dFidU_N, Rotate(W(SolnBlk.Uo[ii][jj]), nface_N));
-    A_N  = Rotation_Matrix2(nface_N,NUM_VAR_CHEM2D, 1);
-    AI_N = Rotation_Matrix2(nface_N,NUM_VAR_CHEM2D, 0);
-    if (lambdas_N.x >= ZERO) {
-   
-       dFidU = (-SolnBlk.Grid.lfaceN(ii, jj)/SolnBlk.Grid.area(ii, jj))*AI_N*dFidU_N*A_N;
-    } else if (lambdas_N.y <= ZERO) {
-       // Do nothing.
-    } else {
-       alpha_N = lambdas_N.y/(lambdas_N.y-lambdas_N.x);
-       gamma_N = (lambdas_N.x*lambdas_N.y)/(lambdas_N.y-lambdas_N.x);
+     DenseMatrix A( Rotation_Matrix2(nface,NUM_VAR_CHEM2D, 1));
+     DenseMatrix AI( Rotation_Matrix2(nface,NUM_VAR_CHEM2D, 0));
      
-       dFidU = (-SolnBlk.Grid.lfaceN(ii, jj)/SolnBlk.Grid.area(ii, jj))*AI_N*(alpha_N*dFidU_N-gamma_N*II)*A_N;
-    
-    } /* endif */
+     //Left and Right States                                                       ///Ri ,Rj fixed not ii, jj 
+     Inviscid_Flux_Used_Reconstructed_LeftandRight_States(Wl, Wr, DX, SolnBlk, Orient, Ri, Rj );   
+     Left  = Rotate(Wl, nface);
+     Right = Rotate(Wr, nface);
+     
+     //Determin Roe Averaged State
+     Wa = RoeAverage(Left,Right);       
 
-    dFidU_S.zero();
-    dFIdU(dFidU_S, Rotate(W(SolnBlk.Uo[ii][jj]), nface_S));
-    A_S  = Rotation_Matrix2(nface_S,NUM_VAR_CHEM2D, 1);
-    AI_S = Rotation_Matrix2(nface_S,NUM_VAR_CHEM2D, 0);
-    if (lambdas_S.x >= ZERO) {
-       dFidU += (-SolnBlk.Grid.lfaceS(ii, jj)/SolnBlk.Grid.area(ii, jj))*AI_S*dFidU_S*A_S;
-    } else if (lambdas_S.y <= ZERO) {
-       // Do nothing.
-    } else {
-      alpha_S = lambdas_S.y/(lambdas_S.y-lambdas_S.x);
-      gamma_S = (lambdas_S.x*lambdas_S.y)/(lambdas_S.y-lambdas_S.x);
-      dFidU += (-SolnBlk.Grid.lfaceS(ii, jj)/SolnBlk.Grid.area(ii, jj))*AI_S*(alpha_S*dFidU_S-gamma_S*II)*A_S;
-      
-    } /* endif */
+     // Jacobian dF/dW         
+     dFIdW(dFidW, Rotate(SolnBlk.Uo[ii][jj].W(), nface) , SolnBlk.Flow_Type);       
+     dFidW = HALF*dFidW;
+     
+     /***************************** Regular Roe (no preconditioning) *************************************/
+     if(!Input_Parameters.Preconditioning){
+       // Determine Wave Speeds
+       wavespeeds = HartenFixAbs( Wa.lambda_x(),
+				  Left.lambda_x(),
+				  Right.lambda_x());         
+       
+       //Loop through each wavespeed and each element of Jacobian(i,j)        
+       for (int i=1; i <= NUM_VAR_CHEM2D; i++) {		   
+	 for(int irow =0; irow< NUM_VAR_CHEM2D; irow++){
+	   for(int jcol =0; jcol< NUM_VAR_CHEM2D; jcol++){
 
-    dFidU_E.zero();
-    dFIdU(dFidU_E, Rotate(W(SolnBlk.Uo[ii][jj]), nface_E));
-    A_E  = Rotation_Matrix2(nface_E,NUM_VAR_CHEM2D, 1);
-    AI_E = Rotation_Matrix2(nface_E,NUM_VAR_CHEM2D, 0);
-    if (lambdas_E.x >= ZERO) {
-       dFidU += (-SolnBlk.Grid.lfaceE(ii, jj)/SolnBlk.Grid.area(ii, jj))*AI_E*dFidU_E*A_E;
-    } else if (lambdas_E.y <= ZERO) {
-       // Do nothing.
-    } else {
-       alpha_E = lambdas_E.y/(lambdas_E.y-lambdas_E.x);
-       gamma_E = (lambdas_E.x*lambdas_E.y)/(lambdas_E.y-lambdas_E.x);
-       dFidU += (-SolnBlk.Grid.lfaceE(ii, jj)/SolnBlk.Grid.area(ii, jj))*AI_E*(alpha_E*dFidU_E-gamma_E*II)*A_E;
-    } /* endif */
-
-    dFidU_W.zero();
-    dFIdU(dFidU_W, Rotate(W(SolnBlk.Uo[ii][jj]), nface_W));
-    A_W  = Rotation_Matrix2(nface_W,NUM_VAR_CHEM2D, 1);
-    AI_W = Rotation_Matrix2(nface_W,NUM_VAR_CHEM2D, 0);
-    if (lambdas_W.x >= ZERO) {
-       dFidU += (-SolnBlk.Grid.lfaceW(ii, jj)/SolnBlk.Grid.area(ii, jj))*AI_W*dFidU_W*A_W;
-    } else if (lambdas_W.y <= ZERO) {
-       // Do nothing.
-    } else {
-       alpha_W = lambdas_W.y/(lambdas_W.y-lambdas_W.x);
-       gamma_W = (lambdas_W.x*lambdas_W.y)/(lambdas_W.y-lambdas_W.x);
-       dFidU += (-SolnBlk.Grid.lfaceW(ii, jj)/SolnBlk.Grid.area(ii, jj))*AI_W*(alpha_W*dFidU_W-gamma_W*II)*A_W;
-    } /* endif */
-   }// endif
-
-    
-  return (dFidU);
-
-} /*********/
-//Inviscid Flux Jacobian based on ROE Flux Function
-DenseMatrix dFIdU_Inviscid_ROE(Chem2D_Quad_Block &SolnBlk, const int &ii, const int &jj){
-  
-  int NUM_VAR_CHEM2D =  SolnBlk.NumVar()-1 ; 
-  DenseMatrix dFidU(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D),
-              II(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D), 
-              A_N(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D), 
-              AI_N(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D),
-              A_S(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D), 
-              AI_S(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D),
-              A_E(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D), 
-              AI_E(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D),
-              A_W(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D), 
-              AI_W(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D),
-              dFidU_N(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D),
-              dFidU_S(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D),
-              dFidU_E(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D),
-	      dFidU_W(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D);
-
- 
-  Vector2D nface_N, nface_S, nface_E, nface_W;
-
-  Chem2D_pState Wa_N, Wa_S, Wa_E, Wa_W;
-  Chem2D_pState lambdas_N, lambdas_S, lambdas_E, lambdas_W;
-  Chem2D_pState Left, Right;
-
-  double alpha_N, gamma_N;
-  double alpha_S, gamma_S;
-  double alpha_W, gamma_W;
-  double alpha_E, gamma_E;
-
-  dFidU.zero();
-  if (ii < SolnBlk.ICl || ii > SolnBlk.ICu ||
-      jj < SolnBlk.JCl || jj > SolnBlk.JCu) {
-    // GHOST CELL
-  
-    return dFidU;
-    
-  } else {
-//     // NON-GHOST CELL.
-    
- 
-    II.identity();
-
-    nface_N = SolnBlk.Grid.nfaceN(ii, jj);
-    nface_S = SolnBlk.Grid.nfaceS(ii, jj);
-    nface_E = SolnBlk.Grid.nfaceE(ii, jj);
-    nface_W = SolnBlk.Grid.nfaceW(ii, jj);
-  
-    Wa_N = RoeAverage(W(SolnBlk.Uo[ii][jj]), W(SolnBlk.Uo[ii][jj+1]));
-    Wa_S = RoeAverage(W(SolnBlk.Uo[ii][jj]), W(SolnBlk.Uo[ii][jj-1]));
-    Wa_E = RoeAverage(W(SolnBlk.Uo[ii][jj]), W(SolnBlk.Uo[ii+1][jj]));
-    Wa_W = RoeAverage(W(SolnBlk.Uo[ii][jj]), W(SolnBlk.Uo[ii-1][jj]));
-  
-    lambdas_N = Wa_N.lambda_x();  
-    lambdas_S = Wa_S.lambda_x(); 
-    lambdas_E = Wa_E.lambda_x(); 
-    lambdas_W = Wa_W.lambda_x(); 
-    
-    dFidU_N.zero();
-    dFIdU(dFidU_N, Rotate(W(SolnBlk.Uo[ii][jj]), nface_N));
-    A_N  = Rotation_Matrix2(nface_N,NUM_VAR_CHEM2D, 1);
-    AI_N = Rotation_Matrix2(nface_N,NUM_VAR_CHEM2D, 0);
-  
-    for(int index=1; index<=NUM_VAR_CHEM2D; index++)
-      {
-	II(index,index) =  lambdas_N[index];
-      }
-    // ROE FLUX FUNCTION
-    dFidU =HALF*(-SolnBlk.Grid.lfaceN(ii, jj)/SolnBlk.Grid.area(ii, jj))*AI_N*(dFidU_N + II)*A_N;
-
-    dFidU_S.zero();
-    dFIdU(dFidU_S, Rotate(W(SolnBlk.Uo[ii][jj]), nface_S));
-    A_S  = Rotation_Matrix2(nface_S,NUM_VAR_CHEM2D, 1);
-    AI_S = Rotation_Matrix2(nface_S,NUM_VAR_CHEM2D, 0);
-  
-    dFidU += HALF*(-SolnBlk.Grid.lfaceS(ii, jj)/SolnBlk.Grid.area(ii, jj))*AI_S*(dFidU_S + II)*A_S;
-    
-    for(int index=1; index<=NUM_VAR_CHEM2D; index++)
-      {
-	II(index,index) =  lambdas_S[index];
-      }
-    
-    dFidU_E.zero();
-    dFIdU(dFidU_E, Rotate(W(SolnBlk.Uo[ii][jj]), nface_E));
-    A_E  = Rotation_Matrix2(nface_E,NUM_VAR_CHEM2D, 1);
-    AI_E = Rotation_Matrix2(nface_E,NUM_VAR_CHEM2D, 0);
-   
-    for(int index=1; index<=NUM_VAR_CHEM2D; index++)
-      {
-	II(index,index) =  lambdas_E[index];
-      }
-    
-    dFidU += HALF*(-SolnBlk.Grid.lfaceE(ii, jj)/SolnBlk.Grid.area(ii, jj))*AI_E*(dFidU_E+ II )*A_E;
-    dFidU_W.zero();
-    dFIdU(dFidU_W, Rotate(W(SolnBlk.Uo[ii][jj]), nface_W));
-    A_W  = Rotation_Matrix2(nface_W,NUM_VAR_CHEM2D, 1);
-    AI_W = Rotation_Matrix2(nface_W,NUM_VAR_CHEM2D, 0);
-  
-    for(int index=1; index<=NUM_VAR_CHEM2D; index++)
-      {
-	II(index,index) =  lambdas_W[index];
-      }
-    
-    dFidU += HALF*(-SolnBlk.Grid.lfaceW(ii, jj)/SolnBlk.Grid.area(ii, jj))*AI_W*(dFidU_W + II  )*A_W;
-   
-  }// endif
-
-    
-  return (dFidU);
-
-} /*********/
-/*Viscous Flux Jacobians  */
-/*Viscous Flux Jacobians  */
-void dFvdW_Laminar(DenseMatrix &dFvdW,  Chem2D_Quad_Block &SolnBlk,const int &ii, const int &jj){
-
-  //planar flow
-
-  double  d_dWdx_dW=0;
-  double  d_dWdy_dW=0;
-
-  d_dWdx_dW = SolnBlk.d_dWdx_dW[ii][jj][0];
-  d_dWdy_dW = SolnBlk.d_dWdy_dW[ii][jj][0];
-    
-  double t1,t2,t5,t8,t9,t11,t13, t16,t18;
-  double t20,t21, t22, t27, t35,t38,t46;
-    
-  double kappa, Cp, mu;
-  double rho, U, V;
-  double Temp =SolnBlk.W[ii][jj].T();
-    
-  kappa =SolnBlk.W[ii][jj].kappa();
-  Cp =SolnBlk.W[ii][jj].Cp();
-  mu  =SolnBlk.W[ii][jj].mu();
-    
-  rho = SolnBlk.W[ii][jj].rho;
-  U =  SolnBlk.W[ii][jj].v.x;
-  V =  SolnBlk.W[ii][jj].v.y;
-
-  t1 = mu;
-  t2 = d_dWdx_dW;
-  t5 = d_dWdy_dW;
-  t8 = SolnBlk.W[ii][jj].dmudT();
-  t9 = SolnBlk.dWdx[ii][jj].v.x;
-  t11 = SolnBlk.dWdy[ii][jj].v.y;
-  t13 = 2.0/3.0*t9-t11/3.0;
-  t16 = d_dWdy_dW;
-  t18 = d_dWdx_dW;
-  t20 = SolnBlk.dWdy[ii][jj].v.x;
-  t21 = SolnBlk.dWdx[ii][jj].v.y;
-  t22 = t20+t21;
-  t35 = U*t1;
-  t38 = V*t1;
-  t46 = d_dWdx_dW;
-    
-  dFvdW(1,1) = 4.0/3.0*t1*t2;
-  dFvdW(1,2) = -2.0/3.0*t1*t5;
-  dFvdW(1,3) = 2.0*t8*t13;
-    
-  dFvdW(2,1) = t1*t16;
-  dFvdW(2,2) = t1*t18;
-  dFvdW(2,3) = t8*t22;
-
-  double Sum_q = 0.0;
-  double Sum_dq = 0.0;
-  int ns = SolnBlk.W[0][0].ns;
-    
-  for(int Num = 0; Num<ns; Num++)
-    {
-      //for each species	// h*Dm*gradc  
-      Sum_q +=  (SolnBlk.W[ii][jj].specdata[Num].Enthalpy(Temp)+SolnBlk.W[ii][jj].specdata[Num].Heatofform())*(SolnBlk.W[ii][jj].spec[Num].diffusion_coef)*SolnBlk.dWdx[ii][jj].spec[Num].c;
-      //dhdT *(Dm)*gradc
-      Sum_dq +=  SolnBlk.W[ii][jj].specdata[Num].Enthalpy_prime(Temp)*(SolnBlk.W[ii][jj].spec[Num].diffusion_coef)*SolnBlk.dWdx[ii][jj].spec[Num].c;
-      
-    }  
-  dFvdW(3,0) = Sum_q ;
-  dFvdW(3,1) = 2.0*t1*t13+4.0/3.0*t35*t2+t38*t16;
-  dFvdW(3,2) = -2.0/3.0*t35*t5+t1*t22+t38*t18;
-  dFvdW(3,3) = kappa*t46+rho*Sum_dq+2.0*U*t8*t13+V*t8*t22;
-      
-  //multispecies
-  int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES; 
-  for(int Num = 0; Num<(ns-1); Num++)
-    {//h*rho*(Dm)*d_dWdx_dW
-      dFvdW(3, NUM_VAR+Num) = (SolnBlk.W[ii][jj].specdata[Num].Enthalpy(Temp)+SolnBlk.W[ii][jj].specdata[Num].Heatofform())*rho*(SolnBlk.U[ii][jj].rhospec[Num].diffusion_coef)*d_dWdx_dW;
-      //(Dm)*gradc
-      dFvdW(NUM_VAR+Num, 0) =(SolnBlk.U[ii][jj].rhospec[Num].diffusion_coef)*SolnBlk.dWdx[ii][jj].spec[Num].c;
-      //rho*(Dm)*dcxdc
-      dFvdW(NUM_VAR+Num,NUM_VAR+Num) = rho*(SolnBlk.U[ii][jj].rhospec[Num].diffusion_coef)*d_dWdx_dW;
-    }
-
-  //The following entries are different for axisymmetric flow and planar flow
-  // For those terms involves fluid molecular stess tau_xx and tau_yy
-  // They are some terms in the scond row  and fourth of Jacobian matrix
-  if(SolnBlk.Axisymmetric){ 
-    double r;
-    if (SolnBlk.Axisymmetric == 1) {
-      r = SolnBlk.Grid.Cell[ii][jj].Xc.y;
-      
-      t13 -= (V/r)/3.0;
-    
-      dFvdW(1,2) = 2.0/3.0*t1*(-t5-ONE/r);
-      dFvdW(1,3) = 2.0*t8*t13;
-      dFvdW(3,2) = 2.0/3.0*t35*(-t5-ONE/r)+t1*t22+t38*t18;
-      dFvdW(3,3) = kappa*t46+rho*Sum_dq +2.0*U*t8*t13+V*t8*t22;
-    }
-    if (SolnBlk.Axisymmetric == 2) {
-      r = SolnBlk.Grid.Cell[ii][jj].Xc.x;
-      double term1 = 2.0/3.0*t2 - 1.0/r*1.0/3.0;
-      
-      t13 -= (U/r)/3.0;
-
-      dFvdW(1,1) = 4.0/3.0*t1*term1;
-      dFvdW(1,3) = 2.0*t8*t13;
-      dFvdW(3,1) = 2.0*t1*t13+2.0*t35*term1+t38*t16;
-      dFvdW(3,3) = kappa*t46+rho*Sum_dq +2.0*U*t8*t13+V*t8*t22;
-    }
-  }//end of axisymmetric case
-
-
-}//Laminar viscous Jacobian (X)
- 
-void dGvdW_Laminar(DenseMatrix &dGvdW,  Chem2D_Quad_Block &SolnBlk,const int &ii, const int &jj){
-
-  //planar flow
-
-  double  d_dWdx_dW=0;
-  double  d_dWdy_dW=0;
-
-  d_dWdx_dW = SolnBlk.d_dWdx_dW[ii][jj][0];
-  d_dWdy_dW = SolnBlk.d_dWdy_dW[ii][jj][0];
-    
-  double t1,t2,t5,t8,t9,t11,t13, t16,t18;
-  double t20,t21, t22, t27, t35,t38,t46;
-    
-  double kappa, Cp, mu;
-  double rho, U, V;
-  double Temp =SolnBlk.W[ii][jj].T();
-    
-  kappa =SolnBlk.W[ii][jj].kappa();
-  Cp =SolnBlk.W[ii][jj].Cp();
-  mu  =SolnBlk.W[ii][jj].mu();
-    
-  rho = SolnBlk.W[ii][jj].rho;
-  U =  SolnBlk.W[ii][jj].v.x;
-  V =  SolnBlk.W[ii][jj].v.y;
-
-  t1 = mu;
-  t2 = d_dWdy_dW;
-  t5 = d_dWdx_dW;
-  t8 = SolnBlk.W[ii][jj].dmudT();
-  t9 = SolnBlk.dWdy[ii][jj].v.x;
-  t11 = SolnBlk.dWdx[ii][jj].v.y;
-  t13 = 2.0/3.0*t9-t11/3.0;
-  t16 = d_dWdx_dW;
-  t18 = d_dWdy_dW;
-  t20 = SolnBlk.dWdy[ii][jj].v.y;
-  t21 = SolnBlk.dWdx[ii][jj].v.x;
-  t22 = t20+t21;
-  t35 = U*t1;
-  t38 = V*t1;
-  t46 = d_dWdy_dW;
-    
-  dGvdW(1,1) = t1*t2;
-  dGvdW(1,2) = -2.0/3.0*t1*t5;
-  dGvdW(1,3) = t8*t22;
-    
-  dGvdW(2,1) = -2.0/3.0*t1*t16;
-  dGvdW(2,2) = 4.0/3.0*t1*t18;
-  dGvdW(2,3) = 2.0*t8*t13;
-
-  double Sum_q = 0.0;
-  double Sum_dq = 0.0;
-  int ns = SolnBlk.W[0][0].ns;
-    
-  for(int Num = 0; Num<ns; Num++)
-    {
-      //for each species	// h*Dm*gradc  
-      Sum_q +=  (SolnBlk.W[ii][jj].specdata[Num].Enthalpy(Temp)+SolnBlk.W[ii][jj].specdata[Num].Heatofform())*(SolnBlk.W[ii][jj].spec[Num].diffusion_coef)*SolnBlk.dWdy[ii][jj].spec[Num].c;
-      //dhdT *(Dm)*gradc
-      Sum_dq +=  SolnBlk.W[ii][jj].specdata[Num].Enthalpy_prime(Temp)*(SolnBlk.W[ii][jj].spec[Num].diffusion_coef)*SolnBlk.dWdy[ii][jj].spec[Num].c;
-      
-    }  
-  dGvdW(3,0) = Sum_q ;
-  dGvdW(3,1) = t1*t22+t35*t2-2.0/3.0*t38*t16;
-  dGvdW(3,2) = t35*t5+2.0*t1*t13+4.0/3.0*t38*t18;
-  dGvdW(3,3) = kappa*t46+rho*Sum_dq+U*t8*t22+2.0*V*t8*t13;
-      
-  //multispecies
-  int NUM_VAR =NUM_CHEM2D_VAR_SANS_SPECIES; 
-  for(int Num = 0; Num<(ns-1); Num++)
-    {//h*rho*(Dm)*d_dWdy_dW
-      dGvdW(3, NUM_VAR+Num) = (SolnBlk.W[ii][jj].specdata[Num].Enthalpy(Temp)+SolnBlk.W[ii][jj].specdata[Num].Heatofform())*rho*(SolnBlk.U[ii][jj].rhospec[Num].diffusion_coef)*d_dWdy_dW;
-      //(Dm)*gradc
-      dGvdW(NUM_VAR+Num, 0) =(SolnBlk.U[ii][jj].rhospec[Num].diffusion_coef)*SolnBlk.dWdy[ii][jj].spec[Num].c;
-      //rho*(Dm)*dcydc
-      dGvdW(NUM_VAR+Num,NUM_VAR+Num) = rho*(SolnBlk.U[ii][jj].rhospec[Num].diffusion_coef)*d_dWdy_dW;
-    }
-
-  //The following entries are different for axisymmetric flow and planar flow
-  // For those terms involves fluid molecular stess tau_xx and tau_yy
-  // They are some terms in the third row  and fourth of Jacobian matrix
-  if(SolnBlk.Axisymmetric){ 
-    double r;
-    if (SolnBlk.Axisymmetric == 1) {
-      r = SolnBlk.Grid.Cell[ii][jj].Xc.y;
-      
-      t13 -= (V/r)/3.0;
-      t18 = 2.0/3.0*t18 -1.0/r*1.0/3.0;
-    
-      dGvdW(2,2) = 2.0*t1*t18;
-      dGvdW(2,3) = 2.0*t8*t13;
-      dGvdW(3,2) = t35*t5+2.0*t1*t13+2.0*t38*t18;
-      dGvdW(3,3) = kappa*t46+rho*Sum_dq +2.0*U*t8*t22+2.0*V*t8*t13;
-    }
-    if (SolnBlk.Axisymmetric == 2) {
-      r = SolnBlk.Grid.Cell[ii][jj].Xc.x;
-      double term1 = -t16 - 1.0/r;
-      
-      t13 -= (U/r)/3.0;
-
-      dGvdW(2,1) = -2.0/3.0*t1*term1;
-      dGvdW(2,3) = 2.0*t8*t13;
-      dGvdW(3,1) = t1*t22+t35*t2+2.0/3.0*t38*t13;
-      dGvdW(3,3) = kappa*t46+rho*Sum_dq +U*t8*t22+2.0*V*t8*t13;
-    }
-  }//end of axisymmetric case
-
- 
-
-}//Laminar viscous Jacobian (Y)
-
-void dFvdW_Laminar_Neigbour(DenseMatrix &dFvdW,Chem2D_Quad_Block &SolnBlk, 
-				   const string &Orient, const int &ii, const int &jj){
-  double d_dWdx_dW, d_dWdy_dW;
-  int i, j;
-  i = ii;
-  j=jj;
-  
-  if( Orient == "NORTH"){
-    j = jj+1;
-    d_dWdx_dW = SolnBlk.d_dWdx_dW[ii][jj][1];
-    d_dWdy_dW = SolnBlk.d_dWdy_dW[ii][jj][1];
-      
-  }else if( Orient == "SOUTH"){
-    j = jj-1;
-    d_dWdx_dW = SolnBlk.d_dWdx_dW[ii][jj][2];
-    d_dWdy_dW = SolnBlk.d_dWdy_dW[ii][jj][2];
-    
-  }else if( Orient == "WEST"){
-    i = ii-1;
-    d_dWdx_dW = SolnBlk.d_dWdx_dW[ii][jj][3];
-    d_dWdy_dW = SolnBlk.d_dWdy_dW[ii][jj][3];
-    
-  }else if( Orient == "EAST"){
-    i = ii+1;
-    d_dWdx_dW = SolnBlk.d_dWdx_dW[ii][jj][4];
-    d_dWdy_dW = SolnBlk.d_dWdy_dW[ii][jj][4];
-    
-  }
- if (i < SolnBlk.ICl || i > SolnBlk.ICu ||
-      j < SolnBlk.JCl || j > SolnBlk.JCu) {
-    // GHOST CELL
-  } else {
-    //     // NON-GHOST CELL.
-  double t1,t2,t5,t12, t15;
-  double kappa = SolnBlk.W[i][j].kappa();
-  double Temp =  SolnBlk.W[i][j].T();
-
-  double rho,U,V;
-  rho = SolnBlk.W[ii][jj].rho;
-  U =  SolnBlk.W[ii][jj].v.x;
-  V =  SolnBlk.W[ii][jj].v.y;
-  
-  t1 = SolnBlk.W[i][j].mu();
-  t2 = d_dWdx_dW;
-  t5 = d_dWdy_dW;
-  t12 = U*t1;
-  t15 = V*t1;
-  
-  dFvdW(1,1) = 4.0/3.0*t1*t2;
-  dFvdW(1,2) = -2.0/3.0*t1*t5;
-  dFvdW(2,1) = t1*t5;
-  dFvdW(2,2) = t1*t2;
-  
-  dFvdW(3,1) = 4.0/3.0*t12*t2+t15*t5;
-  dFvdW(3,2) = t15*t2-2.0/3.0*t12*t5;
-  dFvdW(3,3) = kappa*d_dWdx_dW;
-  
-  int ns = SolnBlk.W[0][0].ns;
-  int NUM_VAR =NUM_CHEM2D_VAR_SANS_SPECIES; 
-  for(int Num = 0; Num<(ns-1); Num++)
-    {
-      dFvdW(3,NUM_VAR+Num) = (SolnBlk.W[ii][jj].specdata[Num].Enthalpy(Temp)+SolnBlk.W[ii][jj].specdata[Num].Heatofform())*rho*(SolnBlk.U[ii][jj].rhospec[Num].diffusion_coef)*d_dWdx_dW;
-      dFvdW(NUM_VAR+Num,NUM_VAR+Num) = rho*(SolnBlk.U[ii][jj].rhospec[Num].diffusion_coef)*d_dWdx_dW;
-      
-    }
-  }
-
-}//end of neigbour cell for x viscous flux Jacobian
-void dGvdW_Laminar_Neigbour(DenseMatrix &dGvdW,Chem2D_Quad_Block &SolnBlk, 
-				   const string &Orient, const int &ii, const int &jj){
- double d_dWdx_dW, d_dWdy_dW;
-  int i, j;
-  i = ii;
-  j=jj;
-
-  if( Orient == "NORTH"){
-    j = jj+1;
-    d_dWdx_dW = SolnBlk.d_dWdx_dW[ii][jj][1];
-    d_dWdy_dW = SolnBlk.d_dWdy_dW[ii][jj][1];
-
-  }else if( Orient == "SOUTH"){
-    j = jj-1;
-    d_dWdx_dW = SolnBlk.d_dWdx_dW[ii][jj][2];
-    d_dWdy_dW = SolnBlk.d_dWdy_dW[ii][jj][2];
-
-  }else if( Orient == "WEST"){
-    i = ii-1;
-    d_dWdx_dW = SolnBlk.d_dWdx_dW[ii][jj][3];
-    d_dWdy_dW = SolnBlk.d_dWdy_dW[ii][jj][3];
-
-  }else if( Orient == "EAST"){
-    i = ii+1;
-    d_dWdx_dW = SolnBlk.d_dWdx_dW[ii][jj][4];
-    d_dWdy_dW = SolnBlk.d_dWdy_dW[ii][jj][4];
-
-  }
-  if (i < SolnBlk.ICl || i > SolnBlk.ICu ||
-      j < SolnBlk.JCl || j > SolnBlk.JCu) {
-    // GHOST CELL
-  } else {
-    //     // NON-GHOST CELL.
-    double t1,t2,t4, t12, t15;
-    double kappa = SolnBlk.W[i][j].kappa();
-    double Temp =  SolnBlk.W[i][j].T();
-    
-    double rho,U,V;
-    rho = SolnBlk.W[ii][jj].rho;
-    U =  SolnBlk.W[ii][jj].v.x;
-    V =  SolnBlk.W[ii][jj].v.y;
-    
-    t1 = SolnBlk.W[i][j].mu();
-    t2 = d_dWdy_dW;
-    t4 = d_dWdx_dW;
-    t12 = V*t1;
-    t15 = U*t1;
-   
-    dGvdW(1, 1) = t1*t2;
-    dGvdW(1, 2) = t1*t4;
-    dGvdW(2, 1) = -2.0/3.0*t1*t4;
-    dGvdW(2, 2) = 4.0/3.0*t1*t2;
-    dGvdW(3, 1) = -2.0/3.0*t12*t4+t15*t2;
-    dGvdW(3, 2) = t15*t4+4.0/3.0*t12*t2;
-    dGvdW(3, 3) = kappa*d_dWdy_dW;
-    
-    int ns = SolnBlk.W[0][0].ns;
-    int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES; 
-    for(int Num = 0; Num<(ns-1); Num++)
-      {
-	dGvdW(3,NUM_VAR+Num) = (SolnBlk.W[ii][jj].specdata[Num].Enthalpy(Temp)+SolnBlk.W[ii][jj].specdata[Num].Heatofform())*rho*(SolnBlk.U[ii][jj].rhospec[Num].diffusion_coef)*d_dWdy_dW;
-	dGvdW(NUM_VAR+Num,NUM_VAR+Num) = rho*(SolnBlk.U[ii][jj].rhospec[Num].diffusion_coef)*d_dWdy_dW;
-	
-      }
-  }
- 
-}//end of neigbour cell for viscous Jacobian
-
-
-//Turbulent Flux Jacobian
-void dFvdW_Turbulent(DenseMatrix &dFvdW, Chem2D_Quad_Block &SolnBlk,
-			    const int &ii, const int &jj){
-
-  double  d_dWdx_dW, d_dWdy_dW;
-  d_dWdx_dW = SolnBlk.d_dWdx_dW[ii][jj][0];
-  d_dWdy_dW = SolnBlk.d_dWdy_dW[ii][jj][0];
-
-  double t1,t2,t3,t5,t7,t11,t12,t13, t15,t18,t19,t23, t24, t27, t31,t32;
-  double t33,t37,t38,t39,t41,t45,t46,t50, t56, t57;
-  double t85,t86, t87, t90, t110, t140;
-  double t149, t150, t153, t154, t156, t160, t164;
-  double t194, t195, t198, t204;
-  
-  double kappa, Cp, mu, sigma, sigma_star;
-  double rho, U, V, k, omega;
-  double mu_turb, kappa_turb, Pr_turb, Dm_turb;
-  double Temp =SolnBlk.W[ii][jj].T();
-  double Rmix = SolnBlk.W[ii][jj].Rtot();  
-   
-  kappa =SolnBlk.W[ii][jj].kappa();
-  Cp =SolnBlk.W[ii][jj].Cp();
-  mu  =SolnBlk.W[ii][jj].mu();
-    
-  mu_turb = SolnBlk.W[ii][jj].eddy_viscosity();  
-  Pr_turb = SolnBlk.W[ii][jj].Pr_turb(); 
-  Dm_turb = SolnBlk.W[ii][jj].Dm_turb(); 
-  
-  sigma = SolnBlk.W[0][0].sigma;
-  sigma_star = SolnBlk.W[0][0].sigma_star;  
-  
-  rho = SolnBlk.W[ii][jj].rho;
-  U =  SolnBlk.W[ii][jj].v.x;
-  V =  SolnBlk.W[ii][jj].v.y;
-  k = SolnBlk.W[ii][jj].k;
-  omega = SolnBlk.W[ii][jj].omega;
-  
-  t1 = 1/max(omega, TOLER);
-  t2 = k*t1;
-  t3 = SolnBlk.dWdx[ii][jj].v.x; 
-  t5 =  SolnBlk.dWdy[ii][jj].v.y; 
-  t7 = 2.0/3.0*t3-t5/3.0;
-  t11 = 2.0*t2*t7-2.0/3.0*k;
-  t12 = mu;
-  t13 =  d_dWdx_dW;
-  t15 = rho*k;
-  t18 = t12*t13+t15*t1*t13;
-  t19 =  d_dWdy_dW;
-  t23 = -t12*t19-t15*t1*t19;
-  t24 = SolnBlk.W[ii][jj].dmudT();
-  t27 = rho*t1;
-  t31 = 2.0*t27*t7-2.0/3.0*rho;
-  t32 = omega*omega;
-  t33 = 1/t32;
-  t37 = SolnBlk.dWdy[ii][jj].v.x;
-  t38 = SolnBlk.dWdx[ii][jj].v.y;
-  t39 = t37+t38;
-  t41 = d_dWdx_dW;
-  t45 = t12*t41+t15*t1*t41;
-  t46 = d_dWdx_dW;
-  t50 = t12*t46+t15*t1*t46;
-  t56 = Cp/Pr_turb;
-  //t57 = dTdx
-  t57 = (ONE/(SolnBlk.W[ii][jj].rho*Rmix)) * (SolnBlk.dWdx[ii][jj].p - 
-	(SolnBlk.W[ii][jj].p/SolnBlk.W[ii][jj].rho)*SolnBlk.dWdx[ii][jj].rho);
-  t85 = SolnBlk.dWdx[ii][jj].k;
-  t86 = t1*t85;
-  t87 = sigma_star*k*t86;
-  t90 = t1*t39;
-  t110 = d_dWdx_dW;
-  t140 = t24*t85;
-  t149 = sigma_star*rho;
-  t150 = t149*t86;
-  t153 = d_dWdx_dW;
-  t154 = (t12+t149*t2)*t153;
-  t156 = V*rho;
-  t160 = k*t33;
-  t164 = t149*t160*t85;
-  t194 =  SolnBlk.dWdx[ii][jj].omega;
-  t195 = t1*t194;
-  t198 = sigma*rho;
-  t204 =  d_dWdx_dW;
-
-  dFvdW(1,0) = t11;
-  dFvdW(1,1) = 4.0/3.0*t18;
-  dFvdW(1,2) = 2.0/3.0*t23;
-  dFvdW(1,3) = 2.0*t24*t7;
-  dFvdW(1,4) = t31;
-  dFvdW(1,5) = -2.0*t15*t33*t7;
-  dFvdW(2,0) = t2*t39;
-  dFvdW(2,1) = t45;
-  dFvdW(2,2) = t50;
-  dFvdW(2,3) = t24*t39;
-  dFvdW(2,4) = t27*t39;
-  dFvdW(2,5) = -t15*t33*t39;
-    
-  double Sum_q = 0.0;
-  double Sum_dq = 0.0;
-  int ns = SolnBlk.W[0][0].ns;
-  
-  for(int Num = 0; Num<(ns-1); Num++)
-    {
-      //for each species	// h*Dm*gradc  
-      Sum_q +=  (SolnBlk.W[ii][jj].specdata[Num].Enthalpy(Temp)+SolnBlk.W[ii][jj].specdata[Num].Heatofform())*(SolnBlk.W[ii][jj].spec[Num].diffusion_coef+Dm_turb)*SolnBlk.dWdx[ii][jj].spec[Num].c;
-      //dhdT *(Dm+Dmt)*gradc
-      Sum_dq +=  SolnBlk.W[ii][jj].specdata[Num].Enthalpy_prime(Temp)*(SolnBlk.W[ii][jj].spec[Num].diffusion_coef+Dm_turb)*SolnBlk.dWdx[ii][jj].spec[Num].c;
-      
-    }
-    
-  dFvdW(3,0) = t56*t2*t57+ Sum_q+t87+U*t11+V*k*t90;
-  dFvdW(3,1) = 2.0*t12*t7+2.0*t15*t1*t7-2.0/3.0*t15+4.0/3.0*U*t18+V*t45;
-  dFvdW(3,2) = 2.0/3.0*U*t23+t12*t39+t15*t90+V*t50;
-  dFvdW(3,3) = (kappa+t56*t15*t1)*t110+ rho*Sum_dq +t140+2.0*U*t24*t7+V*t24*t39;
-  dFvdW(3,4) = t56*t27*t57+t150+t154+U*t31+t156*t90;
-  dFvdW(3,5) = -t56*rho*t160*t57-t164-2.0*U*rho*t160*t7-t156*t160*t39;
-      
-  int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES; 
-  for(int Num = 0; Num<(ns-1); Num++)
-    {//h*rho*(D+Dt)*d_dWdx_dW
-      dFvdW(3, NUM_VAR+Num) = (SolnBlk.W[ii][jj].specdata[Num].Enthalpy(Temp)+SolnBlk.W[ii][jj].specdata[Num].Heatofform())*rho*(SolnBlk.U[ii][jj].rhospec[Num].diffusion_coef+Dm_turb)*d_dWdx_dW;
-      //(D+Dt)*gradc
-      dFvdW(NUM_VAR+Num, 0) =(SolnBlk.U[ii][jj].rhospec[Num].diffusion_coef+Dm_turb)*SolnBlk.dWdx[ii][jj].spec[Num].c;
-      //rho*(D+Dt)*dcxdc
-      dFvdW(NUM_VAR+Num,NUM_VAR+Num) = rho*(SolnBlk.U[ii][jj].rhospec[Num].diffusion_coef+Dm_turb)*d_dWdx_dW;
-    }// end the center ones
-  
-  dFvdW(4,0) = t87;
-  dFvdW(4,3) = t140;
-  dFvdW(4,4) = t150+t154;
-  dFvdW(4,5) = -t164;
-  dFvdW(5,0) = sigma*k*t195;
-  dFvdW(5,3) = t24*t194;
-  dFvdW(5,4) = t198*t195;
-  dFvdW(5,5) = -t198*t160*t194+(t12+t198*t2)*t204;
-    
-  //The following entries are different for axisymmetric flow and planar flow
-  // For matrix row 1 and row 3
-  if (SolnBlk.Axisymmetric == 1) {
-
-    double term1,term2,term3,term5, term7,term10;
-    double term14,term15,term16,term18;
-    double term21,term22,term23,term27,term28,term31,term35,term36, term37, term41, term42, term43;
-    double term45, term49,term50, term54, term60, term61, term89,term90, term91,term94, term114; 
-    double term144, term153, term154, term157, term158, term160, term164,term168 , term198, term199, term202, term208; 
-    
-    double r = SolnBlk.Grid.Cell[ii][jj].Xc.y;
-    term1 = 1/max(omega,TOLER);
-    term2 = k*term1;
-    term3 = SolnBlk.dWdx[ii][jj].v.x; 
-    term5 =  SolnBlk.dWdy[ii][jj].v.y; 
-    term7 = 1/r;
-    term10 = 2.0/3.0*term3-term5/3.0-V*term7/3.0;
-    term14 = 2.0*term2*term10-2.0/3.0*k;
-    term15 = mu;
-    term16 = d_dWdx_dW;
-    term18 = rho*k;
-    term21 = term15*term16+term18*term1*term16;
-    term22 = d_dWdy_dW;
-    term23 = -term22-term7;
-    term27 = term15*term23/3.0+term18*term1*term23/3.0;
-    term28 = SolnBlk.W[ii][jj].dmudT();
-    term31 = rho*term1;
-    term35 = 2.0*term31*term10-2.0/3.0*rho;
-    term36 = omega*omega;
-    term37 = 1/term36;
-    term41 = SolnBlk.dWdy[ii][jj].v.x; 
-    term42 = SolnBlk.dWdx[ii][jj].v.y;
-    term43 = term41+term42;
-    term45 = d_dWdy_dW;
-    term49 = term15*term45+term18*term1*term45;
-    term50 = d_dWdx_dW;
-    term54 = term15*term50+term18*term1*term50;
-    term60 = Cp/Pr_turb;
-    //term61 = dTdx
-    term61 = (ONE/(SolnBlk.W[ii][jj].rho*Rmix)) * (SolnBlk.dWdx[ii][jj].p - 
-	(SolnBlk.W[ii][jj].p/SolnBlk.W[ii][jj].rho)*SolnBlk.dWdx[ii][jj].rho);
-    term89 =  SolnBlk.dWdx[ii][jj].k;
-    term90 = term1*term89;
-    term91 = sigma*k*term90;
-    term94 = term1*term43;
-    term114 = d_dWdx_dW;
-    term144 = term28*term89;
-    term153 = sigma*rho;
-    term154 = term153*term90;
-    term157 = d_dWdx_dW;
-    term158 = (term15+term153*term2)*term157;
-    term160 = V*rho;
-    term164 = k*term37;
-    term168 = term153*term164*term89;
-    term198 = SolnBlk.dWdx[ii][jj].omega;
-    term199 = term1*term198;
-    term202 = sigma_star*rho;
-    term208 = d_dWdx_dW;
-	
-    dFvdW(1,0) = term14;
-    dFvdW(1,1) = 4.0/3.0*term21;
-    dFvdW(1,2) = 2.0*term27;
-    dFvdW(1,3) = 2.0*term28*term10;
-    dFvdW(1,4) = term35;
-    dFvdW(1,5) = -2.0*term18*term37*term10;
-    
-    dFvdW(3,0) = term60*term2*term61+ Sum_q+term91+U*term14+V*k*term94;
-    dFvdW(3,1) = 2.0*term15*term10+2.0*term18*term1*term10-2.0/3.0*term18+4.0/3.0*U*term21+V*term49;
-    dFvdW(3,2) = 2.0*U*term27+term15*term43+term18*term94+V*term54;
-    dFvdW(3,3) = (kappa+term60*term18*term1)*term114+ rho*Sum_dq+term144+2.0*U*term28*term10+V*term28*term43;
-    dFvdW(3,4) = term60*term31*term61+term154+term158+U*term35+term160*term94;
-    dFvdW(3,5) = -term60*rho*term164*term61-term168-2.0*U*rho*term164*term10-term160*term164*term43;
-    
-  }
-
-  if (SolnBlk.Axisymmetric == 2) {
-    double tt1,tt2,tt3,tt5,tt7,tt10,tt14,tt15,tt16;
-    double tt19,tt21,tt24,tt25,tt29,tt30,tt33;
-    double tt37,tt38,tt39,tt43,tt44,tt45,tt47,tt51, tt52;
-    double tt56,tt62,tt63,tt79,tt80, tt81,tt84;
-    double tt104,tt120,tt129,tt130,tt133,tt134, tt136,tt140;
-    double tt144,tt152,tt155,tt157,tt160,tt164, tt165,tt168,tt174;
-    
-    double r = SolnBlk.Grid.Cell[ii][jj].Xc.x;
-    
-    tt1 = 1/max(omega,TOLER);
-    tt2 = k*tt1;
-    tt3 =  SolnBlk.dWdx[ii][jj].v.x; 
-    tt5 =  SolnBlk.dWdy[ii][jj].v.y;
-    tt7 = 1/r;
-    tt10 = 2.0/3.0*tt3-tt5/3.0-U*tt7/3.0;
-    tt14 = 2.0*tt2*tt10-2.0/3.0*k;
-    tt15 =  SolnBlk.W[ii][jj].mu();
-    tt16 = d_dWdx_dW;
-    tt19 = 2.0/3.0*tt16-tt7/3.0;
-    tt21 = rho*k;
-    tt24 = tt15*tt19+tt21*tt1*tt19;
-    tt25 = d_dWdy_dW;
-    tt29 = -tt15*tt25-tt21*tt1*tt25;
-    tt30 = SolnBlk.W[ii][jj].dmudT();
-    tt33 = rho*t1;
-    tt37 = 2.0*tt33*tt10-2.0/3.0*rho;
-    tt38 = omega*omega;
-    tt39 = 1/tt38;
-    tt43 = SolnBlk.dWdy[ii][jj].v.x;
-    tt44 =SolnBlk.dWdx[ii][jj].v.y; 
-    tt45 = tt43+tt44;
-    tt47 = d_dWdy_dW;
-    tt51 = tt15*tt47+tt21*tt1*tt47;
-    tt52 = d_dWdx_dW;
-    tt56 = tt15*tt52+tt21*tt1*tt52;
-    tt62 = Cp/Pr_turb;
-    tt79 = SolnBlk.dWdx[ii][jj].k;
-    tt80 = tt1*tt79;
-    tt81 = sigma*k*tt80;
-    tt84 = tt1*tt45;
-    tt104 = d_dWdx_dW;
-    tt120 = tt30*tt79;
-    tt129 = sigma*rho;
-    tt130 = tt129*tt80;
-    tt133 = d_dWdx_dW;
-    tt134 = (tt15+tt129*tt2)*tt133;
-    tt136 = V*rho;
-    tt140 = k*tt39;
-    tt144 = tt129*tt140*tt79;
-    tt164 = SolnBlk.dWdx[ii][jj].omega;
-    tt165 = tt1*tt164;
-    tt168 = sigma_star*rho;
-    tt174 = d_dWdx_dW;
-    
-    dFvdW(2,0) =tt2*tt45;
-    dFvdW(2,1) =tt51;
-    dFvdW(2,2) =tt56;
-    dFvdW(2,3) =tt30*tt45;
-    dFvdW(2,4) =tt33*tt45;
-    dFvdW(2,5) =-tt21*tt39*tt45;
-    dFvdW(3,0) =tt62*tt2*tt63+Sum_q+tt81+U*tt14+V*k*tt84;
-    dFvdW(3,1) =2.0*tt15*tt10+2.0*tt21*tt1*tt10-2.0/3.0*tt21+2.0*U*tt24+V*tt51;
-    dFvdW(3,2) =2.0/3.0*U*tt29+tt15*tt45+tt21*tt84+V*tt56;
-    dFvdW(3,3) =(kappa+tt62*tt21*tt1)*tt104+rho*Sum_dq+tt120+2.0*U*tt30*tt10+V*tt30*tt45;
-    dFvdW(3,4) =tt62*tt33*tt63+tt130+tt134+U*tt37+tt136*tt84;
-    dFvdW(3,5) =-tt62*rho*tt140*tt63-tt144-2.0*U*rho*tt140*tt10-tt136*tt140*tt45;
+	     dFidW(irow, jcol) -= HALF*wavespeeds[i]*Wa.lp_x(i)[jcol+1]*Wa.rc_x(i)[irow+1];  
+		   
+             //     2nd Order terms	   
+	     //        if(irow ==jcol){  // now the rotated Wc is used in Wr = Wc + phi*grad(Wc), chain rule...
+	     //    	 dFidW(irow,jcol) -= SolnBlk.phi[ii][jj][irow+1]*(SolnBlk.d_dWdx_dW[ii][jj][0]*DX.x 
+	     //                          + SolnBlk.d_dWdy_dW[ii][jj][0]*DX.y);
+	     //        }
+	   }
+	 }
+       } 
+       
+       /****************************** LOW MACH NUMBER PRECONDITIONING ************************************/
+     } else if(Input_Parameters.Preconditioning){
+       
+       //THIS MAY NOT BE CONSISTENT !!!!!!!!!!!
+       double deltax = min(TWO*(SolnBlk.Grid.Cell[ii][jj].A/(SolnBlk.Grid.lfaceE(ii, jj)+SolnBlk.Grid.lfaceW(ii, jj))),
+			   TWO*(SolnBlk.Grid.Cell[ii][jj].A/(SolnBlk.Grid.lfaceN(ii, jj)+SolnBlk.Grid.lfaceS(ii, jj))));
+       
+       double MR2a = Wa.Mr2(SolnBlk.Flow_Type,deltax);  
+       // Determine Preconditioned Wave Speeds                                                                   
+       wavespeeds = HartenFixAbs( Wa.lambda_preconditioned_x(MR2a),
+				  Wl.lambda_preconditioned_x(Wl.Mr2(SolnBlk.Flow_Type,deltax)),
+				  Wr.lambda_preconditioned_x(Wr.Mr2(SolnBlk.Flow_Type,deltax)));
+       
+       
+       //Calculate the preconditioned upwind dissipation flux.
+       DenseMatrix Flux_dissipation(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);        
+       for (int i=1; i <=  NUM_VAR_CHEM2D; i++) {		   
+	 for(int irow =0; irow < NUM_VAR_CHEM2D; irow++){
+	   for(int jcol =0; jcol < NUM_VAR_CHEM2D; jcol++){	   
+	     Flux_dissipation(irow, jcol) -= HALF*wavespeeds[i]*Wa.lp_x_precon(i,MR2a)[jcol+1]*Wa.rc_x_precon(i,MR2a)[irow+1];   
+	   }
+	 }
+       }
+       
+       // Evaluate the low-Mach-number local preconditioner for the Roe-averaged state.
+       DenseMatrix P( NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO);          
+       Wa.Low_Mach_Number_Preconditioner(P,SolnBlk.Flow_Type,deltax);
+       
+       // Add preconditioned dissipation to Inviscid Jacobian
+       dFidW += P*Flux_dissipation;
+       
+     }     
+     
+     //Rotate back 
+     dRdW += lface*AI*dFidW*A;
+        
   } 
- 
-  
-}
-void dGvdW_Turbulent(DenseMatrix &dGvdW, Chem2D_Quad_Block &SolnBlk, 
-				   const int &ii, const int &jj){
-  
-  double  d_dWdx_dW,  d_dWdy_dW;
-  
-  d_dWdx_dW = SolnBlk.d_dWdx_dW[ii][jj][0];
-  d_dWdy_dW = SolnBlk.d_dWdy_dW[ii][jj][0];
-      
-  double t1,t2,t3,t4,t5,t7,t8,t10;
-  double t13,t14,t18,t19,t21,t23,t24,t27,t29;
-  double t31,t35,t36,t40,t41,t45,t51,t56,t57;
-  double t85, t86, t87,t89, t110;
-  double t140, t149, t150, t153, t154, t155; 
-  double t160, t164, t194, t195, t198, t204; 
-      
-  double kappa, Cp,mu;
-  double rho, U, V, k, omega;
-  double mu_turb, kappa_turb, Pr_turb, Dm_turb, sigma, sigma_star;
-  double Rmix = SolnBlk.W[ii][jj].Rtot();    
-  double Temp =SolnBlk.W[ii][jj].T();
-  
-  kappa =SolnBlk.W[ii][jj].kappa();
-  Cp =SolnBlk.W[ii][jj].Cp();
-  mu  =SolnBlk.W[ii][jj].mu();
-  
-  mu_turb = SolnBlk.W[ii][jj].eddy_viscosity();  
-  Pr_turb = SolnBlk.W[ii][jj].Pr_turb(); 
-  Dm_turb = SolnBlk.W[ii][jj].Dm_turb(); 
-  
-  sigma = SolnBlk.W[0][0].sigma;
-  sigma_star = SolnBlk.W[0][0].sigma_star;  
-  
-  rho = SolnBlk.W[ii][jj].rho;
-  U =  SolnBlk.W[ii][jj].v.x;
-  V =  SolnBlk.W[ii][jj].v.y;
-  k = SolnBlk.W[ii][jj].k;
-  omega = SolnBlk.W[ii][jj].omega;
-  
-  t1 = 1/max(omega,TOLER);
-  t2 = k*t1;
-  t3 =  SolnBlk.dWdy[ii][jj].v.x;
-  t4 = SolnBlk.dWdx[ii][jj].v.y;
-  t5 = t3+t4;
-  t7 = mu;
-  t8 = d_dWdy_dW;
-  t10 = rho*k;
-  t13 = t7*t8+t10*t1*t8;
-  t14 =  d_dWdx_dW;
-  t18 = t7*t14+t10*t1*t14;
-  t19 = SolnBlk.W[ii][jj].dmudT();
-  t21 = rho*t1;
-  t23 = omega*omega;
-  t24 = 1/t23;
-  t27 =SolnBlk.dWdy[ii][jj].v.y;
-  t29 = SolnBlk.dWdx[ii][jj].v.x;
-  t31 = 2.0/3.0*t27-t29/3.0;
-  t35 = 2.0*t2*t31-2.0/3.0*k;
-  t36 =  d_dWdx_dW;
-  t40 = -t7*t36-t10*t1*t36;
-  t41 = d_dWdy_dW;
-  t45 = t7*t41+t10*t1*t41;
-  t51 = 2.0*t21*t31-2.0/3.0*rho;
-  t56 = Cp/Pr_turb;
-  //t57 =  SolnBlk.dTdy(ii,jj);
-  t57= (ONE/(SolnBlk.W[ii][jj].rho*Rmix)) * (SolnBlk.dWdy[ii][jj].p - 
-                 (SolnBlk.W[ii][jj].p/SolnBlk.W[ii][jj].rho)*SolnBlk.dWdy[ii][jj].rho);
-  
-  t85 =SolnBlk.dWdy[ii][jj].k;
-  t86 = t1*t85;
-  t87 = sigma_star*k*t86;
-  t89 = t1*t5;
-  t110 =  d_dWdy_dW;
-
-  t140 = t19*t85;
-  t149 = sigma_star*rho;
-  t150 = t149*t86;
-  t153 =  d_dWdy_dW;
-  t154 = (t7+t149*t2)*t153;
-  t155 = U*rho;
-  t160 = k*t24;
-  t164 = t149*t160*t85;
-      
-  t194 =  SolnBlk.dWdy[ii][jj].omega;
-  t195 = t1*t194;
-  t198 = sigma*rho;
-  t204 = d_dWdy_dW;
-  
-  dGvdW(1,0) = t2*t5;
-  dGvdW(1,1) = t13;
-  dGvdW(1,2) = t18;
-  dGvdW(1,3) = t19*t5;
-  dGvdW(1,4) = t21*t5;
-  dGvdW(1,5) = -t10*t24*t5;
-    
-  dGvdW(2,0) = t35;
-  dGvdW(2,1) = 2.0/3.0*t40;
-  dGvdW(2,2) = 4.0/3.0*t45;
-  dGvdW(2,3) = 2.0*t19*t31;
-  dGvdW(2,4) = t51;
-  dGvdW(2,5) = -2.0*t10*t24*t31;
-  double Sum_q = 0.0;
-  double Sum_dq = 0.0;
-  int ns = SolnBlk.W[0][0].ns;
-  // 6 represents rho, vr,vz, p, k, omega in 2D axisymmetric turbulent flows
-  
-  for(int Num = 0; Num<ns; Num++)
-    {
-      //for each species	// h*(Dm+Dt)*gradc  
-      Sum_q +=  (SolnBlk.W[ii][jj].specdata[Num].Enthalpy(Temp)+SolnBlk.W[ii][jj].specdata[Num].Heatofform())*(SolnBlk.W[ii][jj].spec[Num].diffusion_coef+Dm_turb)*SolnBlk.dWdy[ii][jj].spec[Num].c;
-      //dhdT *(Dm+Dmt)*gradc
-      Sum_dq +=  SolnBlk.W[ii][jj].specdata[Num].Enthalpy_prime(Temp)*(SolnBlk.W[ii][jj].spec[Num].diffusion_coef+Dm_turb)*SolnBlk.dWdy[ii][jj].spec[Num].c;
-      
-    }
-  
-  dGvdW(3,0) = t56*t2*t57+Sum_q+t87+U*k*t89+V*t35;
-  dGvdW(3,1) = t7*t5+t10*t89+U*t13+2.0/3.0*V*t40;
-  dGvdW(3,2) = U*t18+2.0*t7*t31+2.0*t10*t1*t31-2.0/3.0*t10+4.0/3.0*V*t45;
-  dGvdW(3,3) = (kappa+t56*t10*t1)*t110+ rho*Sum_dq+t140+U*t19*t5+2.0*V*t19*t31;
-  dGvdW(3,4) = t56*t21*t57+t150+t154+t155*t89+V*t51;
-  dGvdW(3,5) = -t56*rho*t160*t57-t164-t155*t160*t5-2.0*V*rho*t160*t31;
-  
-  int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES; 
-  for(int Num = 0; Num<(ns-1); Num++)
-    {//h*rho*(D+Dt)*d_dWdy_dW
-      dGvdW(3, NUM_VAR+Num) = (SolnBlk.W[ii][jj].specdata[Num].Enthalpy(Temp)+SolnBlk.W[ii][jj].specdata[Num].Heatofform())*rho*(SolnBlk.U[ii][jj].rhospec[Num].diffusion_coef+Dm_turb)*d_dWdy_dW;
-      //(D+Dt)*gradc
-      dGvdW(NUM_VAR+Num, 0) =(SolnBlk.U[ii][jj].rhospec[Num].diffusion_coef+Dm_turb)*SolnBlk.dWdy[ii][jj].spec[Num].c;
-      //rho*(D+Dt)*dcydc
-      dGvdW(NUM_VAR+Num,NUM_VAR+Num) = rho*(SolnBlk.U[ii][jj].rhospec[Num].diffusion_coef+Dm_turb)*d_dWdy_dW;
-    }// end the center ones
-  
-  dGvdW(4,0) = t87;
-  dGvdW(4,3) = t140;
-  dGvdW(4,4) = t150+t154;
-  dGvdW(4,5) = -t164;
-  
-  dGvdW(5,0) = sigma*k*t195;
-  dGvdW(5,3) = t19*t194;
-  dGvdW(5,4) = t198*t195;
-  dGvdW(5,5) = -t198*t160*t194+(t7+t198*t2)*t204;
-  
-  
-  //The follwoing entries are different for axisymmetric flow and planar flow
-  // For matrix row 2 and row 3
-  if (SolnBlk.Axisymmetric == 1) {
-    
-    double term1,term2,term3,term4, term5,term7,term8,term10;
-    double term13, term14,term18,term19;
-    double term21,term22,term23,term24,term27,term29,term31,term34, term38, term39, term43, term44;
-    double term47, term51,term57, term62, term63, term91, term92,term93, term95, term116; 
-    double term146, term155, term156, term159, term160, term161, term166,term170 , term200, term201, term204, term210; 
-    
-    double r = SolnBlk.Grid.Cell[ii][jj].Xc.y;
-    
-    term1 = 1/max(omega,TOLER);
-    term2 = k*term1;
-    term3 =  SolnBlk.dWdy[ii][jj].v.x; 
-    term4 =  SolnBlk.dWdx[ii][jj].v.y;
-    term5 = term3+term4;
-    term7 = mu;
-    term8 = d_dWdy_dW;
-    term10 = rho*k;
-    term13 = term7*term8+term10*term1*term8;
-    term14 = d_dWdx_dW;
-    term18 = term7*term14+term10*term1*term14;
-    term19 = SolnBlk.W[ii][jj].dmudT();
-    term21 = rho*term1;
-    term23 = omega*omega;
-    term24 = 1/term23;
-    term27 =  SolnBlk.dWdy[ii][jj].v.y;
-    term29 = SolnBlk.dWdx[ii][jj].v.x; 
-    term31 = 1/r;
-    term34 = 2.0/3.0*term27-term29/3.0-V*term31/3.0;
-    term38 = 2.0*term2*term34-2.0/3.0*k;
-    term39 = d_dWdx_dW;
-    term43 = -term7*term39-term10*term1*term39;
-    term44 = d_dWdy_dW;
-    term47 = 2.0/3.0*term44-term31/3.0;
-    term51 = term7*term47+term10*term1*term47;
-    term57 = 2.0*term21*term34-2.0/3.0*rho;
-    term62 = Cp/Pr_turb;
-    // term63 = SolnBlk.dTdy(ii,jj);
-    term63 = (ONE/(SolnBlk.W[ii][jj].rho*Rmix)) * (SolnBlk.dWdy[ii][jj].p - 
-	    (SolnBlk.W[ii][jj].p/SolnBlk.W[ii][jj].rho)*SolnBlk.dWdy[ii][jj].rho);
-    term91 =SolnBlk.dWdy[ii][jj].k;
-    term92 = term1*term91;
-    term93 = sigma*k*term92;
-    term95 = term1*term5;
-    term116 = d_dWdy_dW;
-    term146 = term19*term91;
-    term155 = sigma*rho;
-    term156 = term155*term92;
-    term159 = d_dWdy_dW;
-    term160 = (term7+term155*term2)*term159;
-    term161 = U*rho;
-    term166 = k*term24;
-    term170 = term155*term166*term91;
-    
-    term200 =SolnBlk.dWdy[ii][jj].omega;
-    term201 = term1*term200;
-    term204 = sigma_star*rho;
-    term210 = d_dWdy_dW;
-    
-    dGvdW(2,0) = term38;
-    dGvdW(2,1) = 2.0/3.0*term43;
-    dGvdW(2,2) = 2.0*term51;
-    dGvdW(2,3) = 2.0*term19*term34;
-    dGvdW(2,4) = term57;
-    dGvdW(2,5) = -2.0*term10*term24*term34;
-    
-    dGvdW(3,0) = term62*term2*term63+Sum_q+term93+U*k*term95+V*term38;
-    dGvdW(3,1) = term7*term5+term10*term95+U*term13+2.0/3.0*V*term43;
-    dGvdW(3,2) = U*term18+2.0*term7*term34+2.0*term10*term1*term34-2.0/3.0*term10+2.0*V*term51;
-    dGvdW(3,3) = (kappa+term62*term10*term1)*term116+ rho*Sum_dq+term146+U*term19*term5+2.0*V*term19*term34;
-    dGvdW(3,4) = term62*term21*term63+term156+term160+term161*term95+V*term57;
-    dGvdW(3,5) = -term62*rho*term166*term63-term170-term161*term166*term5-2.0*V*rho*term166*term34;
-    
-  }
- if (SolnBlk.Axisymmetric == 2) {
-
-   double tt1,tt2,tt3,tt4,tt5,tt7,tt8, tt10,tt13,tt14,tt18;
-   double tt19,tt21,tt23,tt24,tt27,tt29,tt31;
-   double tt34,tt38,tt39,tt40,tt44,tt45,tt49,tt55, tt60;
-   double tt61,tt77,tt78,tt79,tt81, tt102;
-   double tt118,tt127,tt128,tt131,tt132,tt133, tt138,tt142;
-   double tt150,tt153,tt155,tt158,tt162,tt163, tt166,tt172;
-   
-   
-   double r = SolnBlk.Grid.Cell[ii][jj].Xc.x;
- 
-   tt1 = 1/max(omega,TOLER);
-   tt2 = k*tt1;
-   tt3 = SolnBlk.dWdy[ii][jj].v.x;
-   tt4 = SolnBlk.dWdx[ii][jj].v.y; 
-   tt5 = tt3+tt4;
-   tt7 = SolnBlk.W[ii][jj].mu();
-   tt8 = d_dWdy_dW;
-   tt10 = rho*k;
-   tt13 = tt7*tt8+tt10*tt1*tt8;
-   tt14 = d_dWdx_dW;
-   tt18 = tt7*tt14+tt10*tt1*tt14;
-   tt19 =  SolnBlk.W[ii][jj].dmudT();
-   tt21 = rho*tt1;
-   tt23 = omega*omega;
-   tt24 = 1/tt23;
-   tt27 = SolnBlk.dWdy[ii][jj].v.y;
-   tt29 = SolnBlk.dWdx[ii][jj].v.x;
-   tt31 = 1/r;
-   tt34 = 2.0/3.0*tt27-tt29/3.0-U*tt31/3.0;
-   tt38 = 2.0*tt2*tt34-2.0/3.0*k;
-   tt39 = d_dWdx_dW;
-   tt40 = -tt39-tt31;
-   tt44 = tt7*tt40/3.0+tt10*tt1*tt40/3.0;
-   tt45 = d_dWdy_dW;
-   tt49 = tt7*tt45+tt10*tt1*tt45;
-   tt55 = 2.0*tt21*tt34-2.0/3.0*rho;
-   tt60 = Cp/Pr_turb;
-   // tt61 =SolnBlk.dTdy(ii,jj);
-   tt61= (ONE/(SolnBlk.W[ii][jj].rho*Rmix)) * (SolnBlk.dWdy[ii][jj].p - 
-                 (SolnBlk.W[ii][jj].p/SolnBlk.W[ii][jj].rho)*SolnBlk.dWdy[ii][jj].rho);
-   tt77 = SolnBlk.dWdy[ii][jj].k;
-   tt78 = tt1*tt77;
-   tt79 = sigma*k*tt78;
-   tt81 = tt1*tt5;
-   tt102 = d_dWdy_dW;
-   tt127 = sigma*rho;
-   tt128 = tt127*tt78;
-   tt131 = d_dWdy_dW;
-   tt132 = (tt7+tt127*tt2)*tt131;
-   tt133 = U*rho;
-   tt138 = k*tt24;
-   tt142 = tt127*tt138*tt77;
-   tt162 = SolnBlk.dWdy[ii][jj].omega;
-   tt163 = tt1*tt162;
-   tt166 = sigma_star*rho;
-   tt172 = d_dWdy_dW;
-    
-    
-   dGvdW(2,0) = tt38;
-   dGvdW(2,1) = 2.0*tt44;
-   dGvdW(2,2) = 4.0/3.0*tt49;
-   dGvdW(2,3) = 2.0*tt19*tt34;
-   dGvdW(2,4) = tt55;
-   dGvdW(2,5) = -2.0*tt10*tt24*tt34;
-    
-   dGvdW(3,0) = tt60*tt2*tt61+Sum_q+tt79+U*k*tt81+V*tt38;
-   dGvdW(3,1) = tt7*tt5+tt10*tt81+U*tt13+2.0*V*tt44;
-   dGvdW(3,2) = U*tt18+2.0*tt7*tt34+2.0*tt10*tt1*tt34-2.0/3.0*tt10+4.0/3.0*V*tt49;
-   dGvdW(3,3) = (kappa+tt60*tt1*tt10)*tt102+ rho*Sum_dq+tt118+U*tt19*t5+2.0*V*tt19*tt34;
-   dGvdW(3,4) = tt60*tt21*tt61+tt128+tt132+tt133*tt81+V*tt55;
-   dGvdW(3,5) = -tt60*rho*tt138*tt61-tt142-tt133*tt138*tt5-2.0*V*rho*tt138*tt34;
-    
-     
- }
- 
-}
-//The following two neigbour Jacobians are defined ... because ...
-//when computing the viscous flux through cell faces by  averaging quantities of the left (i,j) and its' neigbour cell  
-void dFvdW_Turbulent_Neigbour(DenseMatrix &dFvdW,  Chem2D_Quad_Block &SolnBlk, 
-				     const string &Orient, const int &ii, const int &jj){
-  double d_dWdx_dW, d_dWdy_dW;
-  int i, j;
-  i = ii;
-  j=jj;
-  
-  if( Orient == "NORTH"){
-    j = jj+1;
-    d_dWdx_dW = SolnBlk.d_dWdx_dW[ii][jj][1];
-    d_dWdy_dW = SolnBlk.d_dWdy_dW[ii][jj][1];
-      
-  }else if( Orient == "SOUTH"){
-    j = jj-1;
-    d_dWdx_dW = SolnBlk.d_dWdx_dW[ii][jj][2];
-    d_dWdy_dW = SolnBlk.d_dWdy_dW[ii][jj][2];
-    
-  }else if( Orient == "WEST"){
-    i = ii-1;
-    d_dWdx_dW = SolnBlk.d_dWdx_dW[ii][jj][3];
-    d_dWdy_dW = SolnBlk.d_dWdy_dW[ii][jj][3];
-    
-  }else if( Orient == "EAST"){
-    i = ii+1;
-    d_dWdx_dW = SolnBlk.d_dWdx_dW[ii][jj][4];
-    d_dWdy_dW = SolnBlk.d_dWdy_dW[ii][jj][4];
-    
-  }
-  if (i < SolnBlk.ICl || i > SolnBlk.ICu ||
-      j < SolnBlk.JCl || j > SolnBlk.JCu) {
-    // GHOST CELL
-  } else {
-    //     // NON-GHOST CELL.  
-    double t1,t3,t4,t5,t6,t8, t10, t12,t16, t27, t30,t33;
-    double t34,t35, t36, t38;
-    double t40,t41, t43, t45, t46, t48;
-    double t50,t51, t53, t62;   
-    
-    double kappa, Cp, mu;
-    double rho, U, V, k, omega;
-    double mu_turb, kappa_turb, Pr_turb, Dm_turb, sigma, sigma_star;
-    
-    double Temp =SolnBlk.W[i][j].T();
-    
-    kappa =SolnBlk.W[i][j].kappa();
-    Cp =SolnBlk.W[i][j].Cp();
-    mu  =SolnBlk.W[i][j].mu();
-    
-    mu_turb = SolnBlk.W[i][j].eddy_viscosity();  
-    Pr_turb = SolnBlk.W[i][j].Pr_turb(); 
-    Dm_turb = SolnBlk.W[i][j].Dm_turb(); 
-    sigma = SolnBlk.W[0][0].sigma;
-    sigma_star = SolnBlk.W[0][0].sigma_star;  
-    
-    rho = SolnBlk.W[i][j].rho;
-    U =  SolnBlk.W[i][j].v.x;
-    V =  SolnBlk.W[i][j].v.y;
-    k = SolnBlk.W[i][j].k;
-    omega = SolnBlk.W[i][j].omega;
-    
-    t1 = mu;
-    t3 = 1/max(omega,TOLER);
-    t4 = rho*k*t3;
-    t5 = t1+t4;
-    t6 = d_dWdx_dW;
-    t8 =  d_dWdy_dW;
-    t10 =  d_dWdy_dW;
-    t12 = d_dWdx_dW;
-    t16 = V*t5;
-    t27 = d_dWdx_dW;
-    t30 = k*t3;
-    t33 =d_dWdx_dW;
-    t34 = (t1+sigma*rho*t30)*t33;
-    t62 =  d_dWdx_dW;
-    
-    dFvdW(1,1) = 4.0/3.0*t5*t6;
-    dFvdW(1,2) = -2.0/3.0*t5*t8;
-    
-    dFvdW(2,1) = t5*t10;
-    dFvdW(2,2) = t5*t12;
-    
-    dFvdW(3,1) = 4.0/3.0*U*t5*t6+t10*t16;
-    dFvdW(3,2) = t16*t12-2.0/3.0*U*t5*t8;
-    dFvdW(3,3) = (kappa+Cp/Pr_turb*t4)*t27;
-    dFvdW(3,4) = t34;
-
-    int ns = SolnBlk.W[0][0].ns;
-    int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES; 
-    for(int Num = 0; Num<(ns-1); Num++)
-      {//h*rho*(D+Dt)*dcxdc;
-	dFvdW(3,NUM_VAR+Num) =(SolnBlk.W[i][j].specdata[Num].Enthalpy(Temp)+SolnBlk.W[i][j].specdata[Num].Heatofform())*rho*(SolnBlk.U[ii][jj].rhospec[Num].diffusion_coef+Dm_turb)*d_dWdx_dW;
-	//rho*(D+Dt)*dcxdc;
-	dFvdW(NUM_VAR+Num,NUM_VAR+Num) = rho*(SolnBlk.U[i][j].rhospec[Num].diffusion_coef+Dm_turb)*d_dWdx_dW;
-	
-      }//endof the neigbours
- 
-  dFvdW(4,4) = t34;
-  dFvdW(5,5) = (t1+sigma*rho*t30)*t62;
-  
-  }
-  
-}
- 
-void dGvdW_Turbulent_Neigbour(DenseMatrix &dGvdW,  Chem2D_Quad_Block &SolnBlk, 
-				     const string &Orient, const int &ii, const int &jj){
-  double d_dWdx_dW, d_dWdy_dW;
-  int i, j;
-  i = ii;
-  j=jj;
-
-  if( Orient == "NORTH"){
-    j = jj+1;
-    d_dWdx_dW = SolnBlk.d_dWdx_dW[ii][jj][1];
-    d_dWdy_dW = SolnBlk.d_dWdy_dW[ii][jj][1];
-
-  }else if( Orient == "SOUTH"){
-    j = jj-1;
-    d_dWdx_dW = SolnBlk.d_dWdx_dW[ii][jj][2];
-    d_dWdy_dW = SolnBlk.d_dWdy_dW[ii][jj][2];
-
-  }else if( Orient == "WEST"){
-    i = ii-1;
-    d_dWdx_dW = SolnBlk.d_dWdx_dW[ii][jj][3];
-    d_dWdy_dW = SolnBlk.d_dWdy_dW[ii][jj][3];
-
-  }else if( Orient == "EAST"){
-    i = ii+1;
-    d_dWdx_dW = SolnBlk.d_dWdx_dW[ii][jj][4];
-    d_dWdy_dW = SolnBlk.d_dWdy_dW[ii][jj][4];
-
-  }
-  if (i < SolnBlk.ICl || i > SolnBlk.ICu ||
-      j < SolnBlk.JCl || j > SolnBlk.JCu) {
-    // GHOST CELL
-  } else {
-    //     // NON-GHOST CELL. 
-    
-    double t1,t3,t4,t5,t6,t8,t10, t12;
-    double t16,t27,t30,t33;
-    double t59,t61,t62,t71;
-    
-    
-    double kappa, Cp, mu;
-    double rho, U, V, k, omega;
-    double mu_turb, kappa_turb, Pr_turb, Dm_turb, sigma, sigma_star;
-    double Temp =SolnBlk.W[i][j].T();
-    
-    kappa =SolnBlk.W[i][j].kappa();
-    Cp =SolnBlk.W[i][j].Cp();
-    mu  =SolnBlk.W[i][j].mu();
-    
-    mu_turb = SolnBlk.W[i][j].eddy_viscosity();  
-    Pr_turb = SolnBlk.W[i][j].Pr_turb(); 
-    Dm_turb = SolnBlk.W[i][j].Dm_turb(); 
-    
-    sigma = SolnBlk.W[0][0].sigma;
-    sigma_star = SolnBlk.W[0][0].sigma_star;  
-    
-    rho = SolnBlk.W[i][j].rho;
-    U =  SolnBlk.W[i][j].v.x;
-    V =  SolnBlk.W[i][j].v.y;
-    k = SolnBlk.W[i][j].k;
-    omega = SolnBlk.W[i][j].omega;
-	
-    
-    t1 = mu;
-    t3 = 1/max(omega,TOLER);
-    t4 = rho*k*t3;
-    t5 = t1+t4;
-    t6 = d_dWdy_dW;
-    t8 = d_dWdx_dW;
-    t10 = d_dWdx_dW;
-    t12 = d_dWdy_dW;
-    t16 = U*t5;
-    t27 = d_dWdy_dW;
-    t30 = k*t3;
-    t33 = d_dWdy_dW;
-  
-    t59 = rho;
-    t61 = k;
-    t62 = omega;
-    t71 = d_dWdy_dW;
-   
-    dGvdW(1,1) = t5*t6;
-    dGvdW(1,2) = t5*t8;
-    dGvdW(2,1) = -2.0/3.0*t5*t10;
-    dGvdW(2,2) = 4.0/3.0*t5*t12;
-    dGvdW(3,1) = -2.0/3.0*V*t5*t10+t16*t6;
-    dGvdW(3,2) = t16*t8+4.0/3.0*V*t5*t12;
-    dGvdW(3,3) = (kappa+Cp/Pr_turb*t4)*t27;
-    dGvdW(3,4) = (t1+sigma*rho*t30)*t33;
-    int ns = SolnBlk.W[0][0].ns;
-    int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES; 
-    for(int Num = 0; Num<(ns-1); Num++)
-      {//h*rho*(D+Dt)*dcydc;
-	dGvdW(3,NUM_VAR+Num) =(SolnBlk.W[i][j].specdata[Num].Enthalpy(Temp)+SolnBlk.W[i][j].specdata[Num].Heatofform())*rho*(SolnBlk.U[ii][jj].rhospec[Num].diffusion_coef+Dm_turb)*d_dWdy_dW;
-	//rho*(D+Dt)*dcydc;
-	dGvdW(NUM_VAR+Num,NUM_VAR+Num) = rho*(SolnBlk.U[i][j].rhospec[Num].diffusion_coef+Dm_turb)*d_dWdy_dW;
-	
-      }//endof the neigbours
-    
-    dGvdW(4,4) = (t1+sigma*t59*t61/t62)*t33;
-    
-    dGvdW(5,5) = (t1+sigma*rho*t30)*t71;
-
-  }
- 
-} 
-
-//Turbulence source Jacobian
-void dStdW_Turbulence(DenseMatrix &dStdW, Chem2D_Quad_Block &SolnBlk, const int &ii, const int &jj){
-
-
-  double t1,t2,t3,t5,t7,t10;
-  double t12,t13,t14,t15,t16,t17,t20;
-  double t24,t28,t29,t30,t37,t38,t40,t41, t48;
-  double t49,t50,t54,t64,t66, t67,t70, t72, t73, t77, t78; 
-  double t81, t82, t86, t88, t92, t95 , t96 , t106, t112; 
-  
-  double alpha, beta, beta_star;
-  double rho, U, V, k, omega;
-  
-  double d_dWdx_dW, d_dWdy_dW ;
- 
-  d_dWdx_dW = SolnBlk.d_dWdx_dW[ii][jj][0];
-  d_dWdy_dW = SolnBlk.d_dWdy_dW[ii][jj][0];
-  
-   
-  beta = SolnBlk.W[0][0].beta;
-  beta_star = SolnBlk.W[0][0].beta_star;
-  alpha =SolnBlk.W[0][0].alpha;
-  
-  t1 = 1/max(omega,TOLER);
-  t2 = k*t1;
-  t3 = SolnBlk.dWdx[ii][jj].v.x;
-  t5 = SolnBlk.dWdy[ii][jj].v.y;
-  t7 = 2.0/3.0*t3-t5/3.0;
-  t10 = 2.0/3.0*k;
-  t12 = (2.0*t2*t7-t10)*t3;
-  t13 = SolnBlk.dWdy[ii][jj].v.x;
-  t14 = SolnBlk.dWdx[ii][jj].v.y;
-  t15 = t13+t14;
-  t16 = t15*t15;
-  t17 = t2*t16;
-  t20 = 2.0/3.0*t5-t3/3.0;
-  t24 = (2.0*t2*t20-t10)*t5;
-  t28 = rho*k;
-  t29 = d_dWdx_dW;
-  t30 = t1*t29;
-  t37 = 2.0/3.0*t28;
-  t38 = 2.0*t28*t1*t7-t37;
-  t40 = t1*t15;
-  t41 = d_dWdy_dW;
-  t48 = 4.0/3.0*t28*t30*t3+t38*t29+2.0*t28*t40*t41-2.0/3.0*t28*t30*t5;
-  t49 = d_dWdy_dW;
-  t50 = t1*t49;
-  t54 =d_dWdx_dW;
-  t64 = 2.0*t28*t1*t20-t37;
-  t66 = -2.0/3.0*t28*t50*t3+2.0*t28*t40*t54+4.0/3.0*t28*t50*t5+t64*t49;
-  t67 = rho*t1;
-  t70 = 2.0/3.0*rho;
-  t72 = (2.0*t67*t7-t70)*t3;
-  t73 = t67*t16;
-  t77 = (2.0*t67*t20-t70)*t5;
-  t78 = beta_star*rho;
-  t81 = max(omega,TOLER)*max(omega,TOLER);
-  t82 = 1/t81;
-  t86 = 2.0*t28*t82*t7*t3;
-  t88 = t28*t82*t16;
-  t92 = 2.0*t28*t82*t20*t5;
-  t95 = alpha*omega;
-  t96 = 1/max(k, TOLER);
-  t106 =k*k;
-  t112 = t38*t3+t28*t1*t16+t64*t5;
-  
-  dStdW(4,0) =  t12+t17+t24-beta_star*k*omega;
-  dStdW(4,1) =  t48;
-  dStdW(4,2) =  t66;
-   
-  dStdW(4,4) =  t72+t73+t77-t78*omega;
-  dStdW(4,5) =  -t86-t88-t92-t78*k;
-  
-  dStdW(5,0) =  t95*t96*(t12+t17+t24)-beta*t81;
-  dStdW(5,1) =  t95*t96*t48;
-  dStdW(5,2) =  t95*t96*t66;
-  
-  dStdW(5,4) =  -t95/t106*t112+t95*t96*(t72+t73+t77);
-  dStdW(5,5) =  alpha*t96*t112+t95*t96*(-t86-t88-t92)-2.0*beta*rho*omega;
-//   //Axisymmetric casee
-  if(SolnBlk.Axisymmetric){ 
-    double r;
-    if (SolnBlk.Axisymmetric == 1) {
-      
-      r = SolnBlk.Grid.Cell[ii][jj].Xc.y;
-      double tt1,tt2,tt3,tt4,tt5,tt6, tt9,tt10;
-      double tt16,tt23,tt24,tt25,tt26, tt27, tt30;
-      double tt37,tt52,tt54,tt55,tt66,tt67,tt69;
-      double tt78,tt79, tt80,tt88, tt96; 
-      
-
-      tt1 = 1/max(omega, TOLER);
-      tt2 = k*tt1;
-      tt3 = 1/r;
-      tt4 = V*t3;
-      tt5 = SolnBlk.dWdx[ii][jj].v.x;
-      tt6 = tt4*tt5;
-      tt9 = SolnBlk.dWdy[ii][jj].v.y;
-      tt10 = tt4*tt9;
-      tt16 = 2.0/3.0*tt4-tt5/3.0-tt9/3.0;
-      tt23 = -2.0/3.0*tt2*tt6-2.0/3.0*tt2*tt10+(2.0*tt2*tt16-2.0/3.0*k)*V*tt3;
-      tt24 = rho*k;
-      tt25 = tt24*tt1;
-      tt26 = d_dWdx_dW;
-      tt27 = tt4*tt26;
-      tt30 = tt1*tt3;
-      tt37 = d_dWdy_dW;
-      tt52 = 2.0*tt24*tt1*tt16-2.0/3.0*tt24;
-      tt54 = -2.0/3.0*tt24*tt30*tt5-2.0/3.0*tt24*tt30*tt9-2.0/3.0*tt25*tt4*tt37+2.0*tt25*(
-2.0/3.0*tt3-tt37/3.0)*V*tt3+tt52*tt3;
-      tt55 = rho*tt1;
-      tt66 = -2.0/3.0*tt55*tt6-2.0/3.0*tt55*tt10+(2.0*tt55*tt16-2.0/3.0*rho)*V*tt3;
-      tt67 = max(omega, TOLER)*max(omega, TOLER);
-      tt69 = tt24/tt67;
-      tt78 = 2.0/3.0*tt69*tt6+2.0/3.0*tt69*tt10-2.0*tt69*tt16*V*tt3;
-      tt79 = alpha*omega;
-      tt80 = 1/max(k,TOLER);
-      tt88 = max(k,TOLER)*max(k,TOLER);
-      tt96 = -2.0/3.0*tt25*tt6-2.0/3.0*tt25*tt10+tt52*V*tt3;
-     
-      dStdW(4,0) +=tt23;
-      dStdW(4,1) +=-4.0/3.0*tt25*tt27;
-      dStdW(4,2) +=tt54;
-      dStdW(4,4) +=tt66;
-      dStdW(4,5) +=tt78;
-   
-      dStdW(5,0) +=tt79*tt80*tt23;
-      dStdW(5,1) +=-4.0/3.0*alpha*rho*tt27;
-      dStdW(5,2) +=tt79*tt80*tt54;
-      dStdW(5,4) +=-tt79/tt88*tt96+tt79*tt80*tt66;
-      dStdW(5,5) +=alpha*tt80*tt96+tt79*tt80*tt78;
-      
-    }//end of axisymmetric case (1) 
-    if (SolnBlk.Axisymmetric == 2) {
-      r = SolnBlk.Grid.Cell[ii][jj].Xc.x;
-     
-      double tt1,tt2,tt3,tt4,tt5,tt6, tt9,tt10;
-      double tt16,tt23,tt24,tt25,tt29,tt30;
-      double tt48,tt50,tt51,tt52,tt55,tt66,tt67,tt69;
-      double tt78,tt79, tt80,tt88, tt96; 
-     
-      tt1 = 1/max(omega,TOLER);
-      tt2 = k*tt1;
-      tt3 = 1/r;
-      tt4 = U*tt3;
-      tt5 = SolnBlk.dWdx[ii][jj].v.x;
-      tt6 = tt4*tt5;
-      tt9 = SolnBlk.dWdy[ii][jj].v.y;
-      tt10 = tt4*tt9;
-      tt16 = 2.0/3.0*tt4-tt5/3.0-tt9/3.0;
-      tt23 = -2.0/3.0*tt2*tt6-2.0/3.0*tt2*tt10+(2.0*tt2*tt16-2.0/3.0*k)*U*tt3;
-      tt24 = rho*k;
-      tt25 = tt1*tt3;
-      tt29 = tt24*tt1;
-      tt30 = d_dWdx_dW; 
-      tt48 = 2.0*tt24*tt1*tt16-2.0/3.0*tt24;
-      tt50 = -2.0/3.0*tt24*tt25*tt5-2.0/3.0*tt29*tt4*tt30-2.0/3.0*tt24*tt25*tt9+2.0*tt29*(
-2.0/3.0*tt3-tt30/3.0)*U*tt3+tt48*tt3;
-      tt51 = d_dWdy_dW;
-      tt52 = tt4*tt51;
-      tt55 = rho*tt1;
-      tt66 = -2.0/3.0*tt55*tt6-2.0/3.0*tt55*tt10+(2.0*tt55*tt16-2.0/3.0*rho)*U*tt3;
-      tt67 = max(omega, TOLER)*max(omega,TOLER);
-      tt69 = tt24/tt67;
-      tt78 = 2.0/3.0*tt69*tt6+2.0/3.0*tt69*tt10-2.0*tt69*tt16*U*tt3;
-      tt79 = alpha*omega;
-      tt80 = 1/max(k,TOLER);
-      tt88 = max(k,TOLER)*max(k,TOLER);
-      tt96 = -2.0/3.0*tt29*tt6-2.0/3.0*tt29*tt10+tt48*U*tt3;
-     
-      dStdW(4,0) += tt23;
-      dStdW(4,1) += tt50;
-      dStdW(4,2) += -4.0/3.0*tt29*tt52;
-      dStdW(4,4) += tt66;
-      dStdW(4,5) += tt78;
-      dStdW(5,0) += tt79*tt80*tt23;
-      dStdW(5,1) += tt79*tt80*tt50;
-      dStdW(5,2) += -4.0/3.0*alpha*rho*tt52;
-      dStdW(5,4) += -tt79/tt88*tt96+tt79*tt80*tt66;
-      dStdW(5,5) == alpha*tt80*tt96+tt79*tt80*tt78;
-
-    }//end of axisymmetric case (2)
-  }
-
-    
-} 
-// /********************************************************
-//  * Routine: PointImplicitBlkJ_Viscous                   *
-//  *                                                      *
-//  * This routine returns the viscous components of       *    
-//  * Point Implicit Block Jacobian matrix for the         *
-//  * specified local solution block.                      *
-//  *                                                      *
-//  ********************************************************/
-DenseMatrix dGVdW_Viscous(Chem2D_Quad_Block &SolnBlk, Chem2D_Input_Parameters &Input_Parameters,
-			  const int &ii, const int &jj){
-  
-  int NUM_VAR_CHEM2D = SolnBlk.NumVar()-1; 
-
-  
-  DenseMatrix dFvdW_N(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D),
-              dFvdW_S(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D),
-              dFvdW_E(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D),
-              dFvdW_W(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D);
-  DenseMatrix dGvdW_N(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D),
-              dGvdW_S(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D),
-              dGvdW_E(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D),
-              dGvdW_W(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D);
-
-  DenseMatrix dFvdW_Center(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D);
-  DenseMatrix dGvdW_Center(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D);
-  DenseMatrix dGVdW(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D);
-  DenseMatrix dWf_dWc(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D);
-  Vector2D nface_N, nface_S, nface_E, nface_W;
-
-  dWf_dWc.zero();
-  string Orient;
-
-
-  if (ii < SolnBlk.ICl || ii > SolnBlk.ICu ||
-      jj < SolnBlk.JCl || jj > SolnBlk.JCu) {
-    // GHOST CELL
-    dGVdW.zero();
-    return dGVdW;
-    
-  } else {
-//     // NON-GHOST CELL.
-
-    dGVdW.zero();
-
-  nface_N = SolnBlk.Grid.nfaceN(ii, jj);
-  nface_S = SolnBlk.Grid.nfaceS(ii, jj);
-  nface_E = SolnBlk.Grid.nfaceE(ii, jj);
-  nface_W = SolnBlk.Grid.nfaceW(ii, jj);
-
-  // Compute the flux Jacobians at cell centers
-  dFvdW_Center.zero();
-  dGvdW_Center.zero();
-
-  if (Input_Parameters.i_Viscous_Flux_Evaluation != VISCOUS_RECONSTRUCTION_DIAMOND_PATH) {
-
-    if (SolnBlk.Flow_Type == FLOWTYPE_LAMINAR) {
-
-      dFvdW_Laminar(dFvdW_Center, SolnBlk,  ii,jj);
-      dGvdW_Laminar(dGvdW_Center, SolnBlk, ii,jj);
-      //Viscous flux Jacobians at North face of cell (ii, jj)
-      dFvdW_N.zero();
-      dGvdW_N.zero();
-      Orient =  "NORTH";
-      //  cell (ii, jj+1)
-      dFvdW_Laminar_Neigbour( dFvdW_N, SolnBlk,Orient,ii,jj);  
-      dGvdW_Laminar_Neigbour( dGvdW_N, SolnBlk,Orient,ii,jj);
-      dFvdW_N = HALF*(dFvdW_N+dFvdW_Center);
-      dGvdW_N = HALF*(dGvdW_N+dGvdW_Center);
-
-      // Viscous flux Jacobians at South face of cell (ii, jj)
-      dFvdW_S.zero();
-      dGvdW_S.zero();
-      Orient =  "SOUTH";
-      dFvdW_Laminar_Neigbour( dFvdW_S, SolnBlk,Orient,ii,jj);
-      dGvdW_Laminar_Neigbour( dGvdW_S, SolnBlk,Orient,ii,jj);
-      dFvdW_S = HALF*(dFvdW_S+dFvdW_Center);
-      dGvdW_S = HALF*(dGvdW_S+dGvdW_Center);
-
-      // Viscous flux Jacobians at West face of cell (ii, jj)
-      dFvdW_W.zero();
-      dGvdW_W.zero();
-      Orient =  "WEST";
-      dFvdW_Laminar_Neigbour( dFvdW_W, SolnBlk,Orient,ii,jj);
-      dGvdW_Laminar_Neigbour( dGvdW_W, SolnBlk,Orient,ii,jj);
-      dFvdW_W = HALF*(dFvdW_W+dFvdW_Center);
-      dGvdW_W = HALF*(dGvdW_W+dGvdW_Center);
-      // Viscous flux Jacobians at East face of cell (ii, jj)
-      dFvdW_E.zero();
-      dGvdW_E.zero();
-      Orient =  "EAST";
-      dFvdW_Laminar_Neigbour( dFvdW_E, SolnBlk,Orient,ii,jj);
-      dGvdW_Laminar_Neigbour( dGvdW_E, SolnBlk,Orient,ii,jj);
-      dFvdW_E = HALF*(dFvdW_E+dFvdW_Center);
-      dGvdW_E = HALF*(dGvdW_E+dGvdW_Center);
-
-    }
-
-    if((SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ) ||
-       (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON )){
-      //Xinfeng : differentiate diamond and average process
-      dFvdW_Turbulent(dFvdW_Center, SolnBlk, ii,jj);
-      dGvdW_Turbulent(dGvdW_Center, SolnBlk, ii,jj);
-      //Viscous flux Jacobians at North face of cell (ii, jj)
-      dFvdW_N.zero();
-      dGvdW_N.zero();
-      Orient =  "NORTH"; 
-      //  cell (ii, jj+1)
-      dFvdW_Turbulent_Neigbour( dFvdW_N, SolnBlk,Orient,ii,jj);  
-      dGvdW_Turbulent_Neigbour( dGvdW_N, SolnBlk,Orient,ii,jj);
-      dFvdW_N = HALF*(dFvdW_N+dFvdW_Center);
-      dGvdW_N = HALF*(dGvdW_N+dGvdW_Center);
-      
-      // Viscous flux Jacobians at South face of cell (ii, jj)
-      dFvdW_S.zero();
-      dGvdW_S.zero();
-      Orient =  "SOUTH";
-      dFvdW_Turbulent_Neigbour( dFvdW_S, SolnBlk,Orient,ii,jj);
-      dGvdW_Turbulent_Neigbour( dGvdW_S, SolnBlk,Orient,ii,jj);
-      dFvdW_S = HALF*(dFvdW_S+dFvdW_Center);
-      dGvdW_S = HALF*(dGvdW_S+dGvdW_Center);
-    
-      // Viscous flux Jacobians at West face of cell (ii, jj)
-      dFvdW_W.zero();
-      dGvdW_W.zero();
-      Orient =  "WEST";
-      dFvdW_Turbulent_Neigbour( dFvdW_W, SolnBlk,Orient,ii,jj);
-      dGvdW_Turbulent_Neigbour( dGvdW_W, SolnBlk,Orient,ii,jj);
-      dFvdW_W = HALF*(dFvdW_W+dFvdW_Center);
-      dGvdW_W = HALF*(dGvdW_W+dGvdW_Center);
-      // Viscous flux Jacobians at East face of cell (ii, jj)
-      dFvdW_E.zero();
-      dGvdW_E.zero();
-      Orient =  "EAST";
-      dFvdW_Turbulent_Neigbour( dFvdW_E, SolnBlk,Orient,ii,jj);
-      dGvdW_Turbulent_Neigbour( dGvdW_E, SolnBlk,Orient,ii,jj);
-      dFvdW_E = HALF*(dFvdW_E+dFvdW_Center);
-      dGvdW_E = HALF*(dGvdW_E+dGvdW_Center);
-      
-    }//end of turbulent case
-  }//end of the viscous formualtion not diamond path
-  else{//Diamond path
-    
-    if(SolnBlk.Flow_Type == FLOWTYPE_LAMINAR){
-      
-      dFvdW_N.zero();
-      dGvdW_N.zero();
-      Orient =  "NORTH"; 
-      dFvdW_Laminar_Diamond(dFvdW_N, dWf_dWc, SolnBlk, Orient,  ii,jj);
-      dGvdW_Laminar_Diamond(dGvdW_N, dWf_dWc,SolnBlk, Orient, ii,jj);
-    
-      // Viscous flux Jacobians at South face of cell (ii, jj)
-      dFvdW_S.zero();
-      dGvdW_S.zero();
-      Orient =  "SOUTH";
-      dFvdW_Laminar_Diamond(dFvdW_S, dWf_dWc,SolnBlk, Orient,  ii,jj);
-      dGvdW_Laminar_Diamond(dGvdW_S, dWf_dWc,SolnBlk, Orient, ii,jj);
-      
-      // Viscous flux Jacobians at West face of cell (ii, jj)
-      dFvdW_W.zero();
-      dGvdW_W.zero();
-      Orient =  "WEST";
-      dFvdW_Laminar_Diamond(dFvdW_W, dWf_dWc,SolnBlk, Orient,  ii,jj);
-      dGvdW_Laminar_Diamond(dGvdW_W, dWf_dWc,SolnBlk, Orient, ii,jj);
- 
-      // Viscous flux Jacobians at East face of cell (ii, jj)
-      dFvdW_E.zero();
-      dGvdW_E.zero();
-      Orient =  "EAST";
-      dFvdW_Laminar_Diamond(dFvdW_E, dWf_dWc,SolnBlk, Orient,  ii,jj);
-      dGvdW_Laminar_Diamond(dGvdW_E, dWf_dWc,SolnBlk, Orient, ii,jj);
- 
-      
-    }
-
-    if((SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ) ||
-       (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON )){
-   
-      //Viscous flux Jacobians at North face of cell (ii, jj)
-      dFvdW_N.zero();
-      dGvdW_N.zero();
-      Orient =  "NORTH"; 
-      dFvdW_Turbulent_Diamond(dFvdW_N, dWf_dWc,SolnBlk, Orient, ii,jj);
-      dGvdW_Turbulent_Diamond(dGvdW_N, dWf_dWc,SolnBlk, Orient,ii,jj);
-      // Viscous flux Jacobians at South face of cell (ii, jj)
-      dFvdW_S.zero();
-      dGvdW_S.zero();
-      Orient =  "SOUTH";
-      dFvdW_Turbulent_Diamond(dFvdW_S, dWf_dWc,SolnBlk, Orient, ii,jj);
-      dGvdW_Turbulent_Diamond(dGvdW_S, dWf_dWc,SolnBlk, Orient,ii,jj);
-     
-      // Viscous flux Jacobians at West face of cell (ii, jj)
-      dFvdW_W.zero();
-      dGvdW_W.zero();
-      Orient =  "WEST";
-      dFvdW_Turbulent_Diamond(dFvdW_W, dWf_dWc,SolnBlk,Orient, ii,jj);
-      dGvdW_Turbulent_Diamond(dGvdW_W, dWf_dWc,SolnBlk,Orient,ii,jj);
-      // Viscous flux Jacobians at East face of cell (ii, jj)
-      dFvdW_E.zero();
-      dGvdW_E.zero();
-      Orient =  "EAST";
-      dFvdW_Turbulent_Diamond(dFvdW_E, dWf_dWc,SolnBlk, Orient, ii,jj);
-      dGvdW_Turbulent_Diamond(dGvdW_E, dWf_dWc,SolnBlk, Orient,ii,jj);
-         
-    }
-  }//DIAMOND PATH
-  
-  dGVdW = 1.0/ SolnBlk.Grid.Cell[ii][jj].A*(SolnBlk.Grid.lfaceN(ii, jj)* (nface_N.x* dFvdW_N + nface_N.y* dGvdW_N)
-					    + SolnBlk.Grid.lfaceS(ii, jj)*(nface_S.x* dFvdW_S + nface_S.y* dGvdW_S)
-					    + SolnBlk.Grid.lfaceW(ii, jj)*(nface_W.x* dFvdW_W + nface_W.y* dGvdW_W)
-					    + SolnBlk.Grid.lfaceE(ii, jj)*(nface_E.x* dFvdW_E + nface_E.y* dGvdW_E)
-					    );
-  //  cout<< "This function is for computing the viscous components in point Implicit Block Jacobi"<<endl;
-  return (dGVdW);
-  }
-  
 }
 
-
-//Laminar viscous Jacobian --Diamond path
-void dFvdW_Laminar_Diamond(DenseMatrix &dFvdW, DenseMatrix &dWf_dWc, Chem2D_Quad_Block &SolnBlk,
-				  const string &Orient,  const int &ii, const int &jj){
-  //planar flow
-  double  d_dWdx_dW=0;
-  double  d_dWdy_dW=0;
-    
-  double t1,t2,t5,t8,t9,t11,t13, t16,t18;
-  double t20,t21, t22, t27, t35,t38,t46;
-    
-  double kappa, Cp, mu;
-  double rho, U, V;
-
-  double  *Dm, *h, *dcdx, *dhdT;
-  double dUdx,dUdy, dVdx,dVdy;
-  double dmudT;
-  int ns = SolnBlk.W[0][0].ns;
-  Chem2D_pState  QuadraturePoint_W;
-  Dm = new double [ns];
-  h  = new double [ns];
-  dcdx = new double [ns];
-  dhdT = new double [ns];
-  //needs to deallocate the momery
-  if (Orient == "NORTH"){ 
-    
-    QuadraturePoint_W = HALF*(SolnBlk.WnNW(ii, jj) +SolnBlk.WnNE(ii, jj) );
-    Cp = HALF*(SolnBlk.WnNW_Cp(ii, jj) +SolnBlk.WnNE_Cp(ii, jj));
-    kappa = HALF*(SolnBlk.WnNW_kappa(ii, jj) +SolnBlk.WnNE_kappa(ii, jj)); 
-    mu = HALF*(SolnBlk.WnNW_mu(ii, jj) +SolnBlk.WnNE_mu(ii, jj)); 
-    dmudT = HALF*(SolnBlk.WnNW_dmudT(ii, jj) +SolnBlk.WnNE_dmudT(ii, jj)); 
-
-    for(int Num = 0; Num<ns; Num++){
-      h[Num] = HALF*(SolnBlk.WnNW_hi(ii, jj, Num) +SolnBlk.WnNE_hi(ii, jj, Num));
-      Dm[Num] = HALF*(SolnBlk.WnNW_Dm(ii, jj, Num) +SolnBlk.WnNE_Dm(ii, jj, Num));
-      dcdx[Num] = SolnBlk.dWdx_faceN[ii][jj].spec[Num].c;
-      dhdT[Num] = HALF*(SolnBlk.WnNW_Cpi(ii, jj, Num) +SolnBlk.WnNE_Cpi(ii, jj, Num));
-    }
-    
-    dUdx = SolnBlk.dWdx_faceN[ii][jj].v.x;
-    dUdy = SolnBlk.dWdy_faceN[ii][jj].v.x;
-    dVdx = SolnBlk.dWdx_faceN[ii][jj].v.y;
-    dVdy = SolnBlk.dWdy_faceN[ii][jj].v.y;
-    
-    d_dWdx_dW =  SolnBlk.d_dWdx_dW[ii][jj][1];
-    d_dWdy_dW =  SolnBlk.d_dWdy_dW[ii][jj][1];
-  
-    dWfdWc(SolnBlk, dWf_dWc, Orient,  ii, jj);
-  
-  }
-  
-  if (Orient == "EAST"){ 
+/********************************************************
+ * Routine: Inviscid Roe Flux Jacobian                  *
+ *                                                      *
+ *     Finite Differences                               *
+ *                                                      *
+ ********************************************************/
+void dFIdW_Inviscid_ROE_FD(DenseMatrix& dRdW, Chem2D_Quad_Block &SolnBlk,  
+			   Chem2D_Input_Parameters &Input_Parameters,
+			   const int &ii, const int &jj, const int Orient){
    
-    QuadraturePoint_W = HALF*(SolnBlk.WnNE(ii, jj) +SolnBlk.WnSE(ii, jj) );
-    Cp = HALF*(SolnBlk.WnNE_Cp(ii, jj) +SolnBlk.WnSE_Cp(ii, jj));
-    kappa = HALF*(SolnBlk.WnNE_kappa(ii, jj) +SolnBlk.WnSE_kappa(ii, jj)); 
-    mu = HALF*(SolnBlk.WnNE_mu(ii, jj) +SolnBlk.WnSE_mu(ii, jj)); 
-    dmudT = HALF*(SolnBlk.WnNE_dmudT(ii, jj) +SolnBlk.WnSE_dmudT(ii, jj)); 
+  int overlap = Input_Parameters.NKS_IP.GMRES_Overlap;
+  int Ri, Rj;
+
+  if (ii < SolnBlk.ICl -overlap || ii > SolnBlk.ICu + overlap ||
+      jj < SolnBlk.JCl -overlap || jj > SolnBlk.JCu + overlap) {
+
+     // GHOST CELL so do nothing
+     cout<<"\n Hey I am not suppose to be here! \n"; exit(1);
+
+  } else {     
+     int NUM_VAR_CHEM2D = dRdW.get_n();   
+     DenseMatrix dFidW(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO);
+     
+     Vector2D nface, DX;   double lface;
+     Chem2D_pState Wa, wavespeeds, Left, Right, Wl, Wr;   
+     Left.Vacuum();   Right.Vacuum();  Wl.Vacuum();  Wr.Vacuum();
+     
+     if (Orient == NORTH) {
+       Ri = ii; Rj=jj-1;
+       nface = SolnBlk.Grid.nfaceN(Ri, Rj);
+       lface = SolnBlk.Grid.lfaceN(Ri, Rj);
+     } else if (Orient == SOUTH) {
+       Ri = ii; Rj=jj+1;
+       nface = SolnBlk.Grid.nfaceS(Ri, Rj);
+       lface = SolnBlk.Grid.lfaceS(Ri, Rj);
+     } else if (Orient == EAST) { 
+       Ri = ii-1; Rj=jj;
+       nface = SolnBlk.Grid.nfaceE(Ri, Rj);     
+       lface = SolnBlk.Grid.lfaceE(Ri, Rj);
+     } else if (Orient == WEST) { 
+       Ri = ii+1; Rj=jj;
+       nface = SolnBlk.Grid.nfaceW(Ri, Rj);
+       lface = SolnBlk.Grid.lfaceW(Ri, Rj);
+     }
+     
+     DenseMatrix A( Rotation_Matrix2(nface,NUM_VAR_CHEM2D, 1));
+     DenseMatrix AI( Rotation_Matrix2(nface,NUM_VAR_CHEM2D, 0));
+     
+     //Left and Right States 
+     Inviscid_Flux_Used_Reconstructed_LeftandRight_States(Wl, Wr, DX, SolnBlk, Orient, Ri, Rj );   
+     Left  = Rotate(Wl, nface);
+     Right = Rotate(Wr, nface);
+     
+     /**********************************************/
+     //Jacobain using Finite Differences
+     Chem2D_cState FluxA, FluxB; 
+     Chem2D_pState WA, WB;
+  
+     double perturb = 5e-6;
+     double a;
+     
+     //For Preconditioning
+     double delta_n = min(TWO*(SolnBlk.Grid.Cell[ii][jj].A/
+			      (SolnBlk.Grid.lfaceE(ii, jj)+SolnBlk.Grid.lfaceW(ii, jj))),
+			 TWO*(SolnBlk.Grid.Cell[ii][jj].A/
+			      (SolnBlk.Grid.lfaceN(ii, jj)+SolnBlk.Grid.lfaceS(ii, jj))));
+ 
+     for(int jcol=0; jcol<(NUM_VAR_CHEM2D); jcol++){
+       WA = Right;
+       WB = Right;
        
-    for(int Num = 0; Num<ns; Num++){
-      h[Num] = HALF*(SolnBlk.WnNE_hi(ii, jj, Num) +SolnBlk.WnSE_hi(ii, jj, Num));
-      Dm[Num] = HALF*(SolnBlk.WnNE_Dm(ii, jj, Num) +SolnBlk.WnSE_Dm(ii, jj, Num));
-      dcdx[Num] = SolnBlk.dWdx_faceE[ii][jj].spec[Num].c;
-      dhdT[Num] = HALF*(SolnBlk.WnNE_Cpi(ii, jj, Num) +SolnBlk.WnSE_Cpi(ii, jj, Num));
-    }
+       if( jcol <NUM_CHEM2D_VAR_SANS_SPECIES) {
+	 WA[jcol+1] += perturb*max(ONE,Right[jcol+1]); 	 
+	 WB[jcol+1] -= perturb*max(ONE,Right[jcol+1]); 
+       } else {
+	 a =  perturb*max(ONE,Right[jcol+1]); 
+	 WA[jcol+1] += a;
+	 WA[NUM_VAR_CHEM2D+1] -= a;      
+	 WB[jcol+1] -= a;
+	 WB[NUM_VAR_CHEM2D+1] += a;
+       }
 
-    dUdx = SolnBlk.dWdx_faceE[ii][jj].v.x;
-    dUdy = SolnBlk.dWdy_faceE[ii][jj].v.x;
-    dVdx = SolnBlk.dWdx_faceE[ii][jj].v.y;
-    dVdy = SolnBlk.dWdy_faceE[ii][jj].v.y;
-    
-    d_dWdx_dW =  SolnBlk.d_dWdx_dW[ii][jj][2];
-    d_dWdy_dW =  SolnBlk.d_dWdy_dW[ii][jj][2];
-    dWfdWc(SolnBlk, dWf_dWc, Orient,  ii, jj);
-  
-  }
-    if (Orient == "SOUTH"){ 
-      
-      QuadraturePoint_W = HALF*(SolnBlk.WnSE(ii, jj) +SolnBlk.WnSW(ii, jj) );
-      Cp = HALF*(SolnBlk.WnSW_Cp(ii, jj) +SolnBlk.WnSE_Cp(ii, jj));
-      kappa = HALF*(SolnBlk.WnSW_kappa(ii, jj) +SolnBlk.WnSE_kappa(ii, jj)); 
-      mu = HALF*(SolnBlk.WnSW_mu(ii, jj) +SolnBlk.WnSE_mu(ii, jj)); 
-      dmudT = HALF*(SolnBlk.WnSW_dmudT(ii, jj) +SolnBlk.WnSE_dmudT(ii, jj)); 
-
-      for(int Num = 0; Num<ns; Num++){
-	h[Num] = HALF*(SolnBlk.WnSW_hi(ii, jj, Num) +SolnBlk.WnSE_hi(ii, jj, Num));
-	Dm[Num] = HALF*(SolnBlk.WnSW_Dm(ii, jj, Num) +SolnBlk.WnSE_Dm(ii, jj, Num));
-	dcdx[Num] = SolnBlk.dWdx_faceS[ii][jj].spec[Num].c;
-	dhdT[Num] = HALF*(SolnBlk.WnSW_Cpi(ii, jj, Num) +SolnBlk.WnSE_Cpi(ii, jj, Num));
-	
-      }
-      
-      dUdx = SolnBlk.dWdx_faceS[ii][jj].v.x;
-      dUdy = SolnBlk.dWdy_faceS[ii][jj].v.x;
-      dVdx = SolnBlk.dWdx_faceS[ii][jj].v.y;
-      dVdy = SolnBlk.dWdy_faceS[ii][jj].v.y;
-      
-      d_dWdx_dW =  SolnBlk.d_dWdx_dW[ii][jj][4];
-      d_dWdy_dW =  SolnBlk.d_dWdy_dW[ii][jj][4];
-      dWfdWc(SolnBlk, dWf_dWc, Orient,  ii, jj);
-    }
-
-    if (Orient == "WEST"){ 
-      
-      QuadraturePoint_W = HALF*(SolnBlk.WnNW(ii, jj) +SolnBlk.WnSW(ii, jj));
-      Cp = HALF*(SolnBlk.WnNW_Cp(ii, jj) +SolnBlk.WnSW_Cp(ii, jj));
-      kappa = HALF*(SolnBlk.WnNW_kappa(ii, jj) +SolnBlk.WnSW_kappa(ii, jj)); 
-      mu = HALF*(SolnBlk.WnNW_mu(ii, jj) +SolnBlk.WnSW_mu(ii, jj)); 
-      dmudT = HALF*(SolnBlk.WnNW_dmudT(ii, jj) +SolnBlk.WnSW_dmudT(ii, jj)); 
-    
-      for(int Num = 0; Num<ns; Num++){
-	h[Num] = HALF*(SolnBlk.WnNW_hi(ii, jj, Num) +SolnBlk.WnSW_hi(ii, jj, Num));
-	Dm[Num] = HALF*(SolnBlk.WnNW_Dm(ii, jj, Num) +SolnBlk.WnSW_Dm(ii, jj, Num));
-	dcdx[Num] = SolnBlk.dWdx_faceW[ii][jj].spec[Num].c;
-	dhdT[Num] = HALF*(SolnBlk.WnNW_Cpi(ii, jj, Num) +SolnBlk.WnSW_Cpi(ii, jj, Num));
-
-      }
-
-      dUdx = SolnBlk.dWdx_faceW[ii][jj].v.x;
-      dUdy = SolnBlk.dWdy_faceW[ii][jj].v.x;
-      dVdx = SolnBlk.dWdx_faceW[ii][jj].v.y;
-      dVdy = SolnBlk.dWdy_faceW[ii][jj].v.y;
-      
-      d_dWdx_dW =  SolnBlk.d_dWdx_dW[ii][jj][3];
-      d_dWdy_dW =  SolnBlk.d_dWdy_dW[ii][jj][3];
-      dWfdWc(SolnBlk, dWf_dWc, Orient,  ii, jj);
-      
-    }
- 
-    rho = QuadraturePoint_W.rho;
-    U = QuadraturePoint_W.v.x;
-    V = QuadraturePoint_W.v.y;
-
-    t1 = mu;
-    t2 = d_dWdx_dW;
-    t5 = d_dWdy_dW;
-    t8 = dmudT;
-    t9 = dUdx;
-    t11 = dVdy;
-    t13 = 2.0/3.0*t9-t11/3.0;
-    t16 = d_dWdy_dW;
-    t18 = d_dWdx_dW;
-    t20 = dUdy;
-    t21 = dVdx;
-    t22 = t20+t21;
-    t35 = U*t1;
-    t38 = V*t1;
-    t46 = d_dWdx_dW;
-    
-    dFvdW(1,1) = 4.0/3.0*t1*t2;
-    dFvdW(1,2) = -2.0/3.0*t1*t5;
-    dFvdW(1,3) = 2.0*t8*t13;
-    
-    dFvdW(2,1) = t1*t16;
-    dFvdW(2,2) = t1*t18;
-    dFvdW(2,3) = t8*t22;
-
-    double Sum_q = 0.0;
-    double Sum_dq = 0.0;
-    for(int Num = 0; Num<ns; Num++)
-      {
-	//for each species	// h*Dm*gradc  
-	Sum_q +=  h[Num]*Dm[Num]*dcdx[Num];
-	//dhdT *(Dm)*gradc
-	Sum_dq +=   dhdT[Num]*Dm[Num]*dcdx[Num];
-	
-      }  
-    dFvdW(3,0) = Sum_q ;
-    dFvdW(3,1) = 2.0*t1*t13+4.0/3.0*t35*t2+t38*t16;
-    dFvdW(3,2) = -2.0/3.0*t35*t5+t1*t22+t38*t18;
-    dFvdW(3,3) = kappa*t46+rho*Sum_dq+2.0*U*t8*t13+V*t8*t22;
-      
-  //multispecies
-  int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES; 
-  for(int Num = 0; Num<(ns-1); Num++)
-    {//h*rho*(Dm)*d_dWdx_dW
-      dFvdW(3, NUM_VAR+Num) = h[Num]*rho*Dm[Num]*d_dWdx_dW;
-      //(Dm)*gradc
-      dFvdW(NUM_VAR+Num, 0) = Dm[Num]*dcdx[Num];
-      //rho*(Dm)*dcxdc
-      dFvdW(NUM_VAR+Num,NUM_VAR+Num) = rho*Dm[Num]*d_dWdx_dW;
-    }
-
-  //The following entries are different for axisymmetric flow and planar flow
-  // For those terms involves fluid molecular stess tau_xx and tau_yy
-  // They are some terms in the scond row  and fourth of Jacobian matrix
-  if(SolnBlk.Axisymmetric){ 
-    double r;
-    if (SolnBlk.Axisymmetric == 1) {
-      r = SolnBlk.Grid.Cell[ii][jj].Xc.y;
-      
-      t13 -= (V/r)/3.0;
-    
-      dFvdW(1,2) = 2.0/3.0*t1*(-t5-ONE/r);
-      dFvdW(1,3) = 2.0*t8*t13;
-      dFvdW(3,2) = 2.0/3.0*t35*(-t5-ONE/r)+t1*t22+t38*t18;
-      dFvdW(3,3) = kappa*t46+rho*Sum_dq +2.0*U*t8*t13+V*t8*t22;
-    }
-    if (SolnBlk.Axisymmetric == 2) {
-      r = SolnBlk.Grid.Cell[ii][jj].Xc.x;
-      double term1 = 2.0/3.0*t2 - 1.0/r*1.0/3.0;
-      
-      t13 -= (U/r)/3.0;
-
-      dFvdW(1,1) = 4.0/3.0*t1*term1;
-      dFvdW(1,3) = 2.0*t8*t13;
-      dFvdW(3,1) = 2.0*t1*t13+2.0*t35*term1+t38*t16;
-      dFvdW(3,3) = kappa*t46+rho*Sum_dq +2.0*U*t8*t13+V*t8*t22;
-    }
-  }//end of axisymmetric case
-  // Here the use of dFvdW is only convenient, but
-  // dGvdW is the Jacobian obtained (with respect to the primitive solution variable on the cell edges )
-  // to obtain the Jacobian (with respect to the primitive soltuion variable at the cell center)
-  // dGvdW *dWfdWc 
- 
- 
-  dFvdW = dFvdW * dWf_dWc;
-  
-
-}//Laminar viscous Jacobian (X)
-
-void dGvdW_Laminar_Diamond(DenseMatrix &dGvdW,  DenseMatrix &dWf_dWc, Chem2D_Quad_Block &SolnBlk,
-				  const string &Orient,
-				  const int &ii, const int &jj){
-
-  //planar flow
-  double  d_dWdx_dW=0;
-  double  d_dWdy_dW=0;
-  
-  double t1,t2,t5,t8,t9,t11,t13, t16,t18;
-  double t20,t21, t22, t27, t35,t38,t46;
-  
-  double kappa, mu;
-  double rho, U, V;
-  double dmudT; 
-  double  *Dm, *h, *dcdy, *dhdT;
-  double dUdx,dUdy, dVdx,dVdy;
-  int ns = SolnBlk.W[0][0].ns;
-  Chem2D_pState  QuadraturePoint_W;
-  Dm = new double [ns];
-  h  = new double [ns];
-  dcdy = new double [ns];
-  dhdT = new double [ns];
-  //needs to deallocate the momery
- 
-  if (Orient == "NORTH"){ 
-     
-    QuadraturePoint_W = HALF*(SolnBlk.WnNW(ii, jj) +SolnBlk.WnNE(ii, jj) );
-    kappa = HALF*(SolnBlk.WnNW_kappa(ii, jj) +SolnBlk.WnNE_kappa(ii, jj)); 
-    mu = HALF*(SolnBlk.WnNW_mu(ii, jj) +SolnBlk.WnNE_mu(ii, jj)); 
-    dmudT = HALF*(SolnBlk.WnNW_dmudT(ii, jj) +SolnBlk.WnNE_dmudT(ii, jj)); 
-    for(int Num = 0; Num<ns; Num++){
-      h[Num] = HALF*(SolnBlk.WnNW_hi(ii, jj, Num) +SolnBlk.WnNE_hi(ii, jj, Num));
-      Dm[Num] = HALF*(SolnBlk.WnNW_Dm(ii, jj, Num) +SolnBlk.WnNE_Dm(ii, jj, Num));
-      dcdy[Num] = SolnBlk.dWdy_faceN[ii][jj].spec[Num].c;
-      dhdT[Num] = HALF*(SolnBlk.WnNW_Cpi(ii, jj, Num) +SolnBlk.WnNE_Cpi(ii, jj, Num));
-    }
-    
-    dUdx = SolnBlk.dWdx_faceN[ii][jj].v.x;
-    dUdy = SolnBlk.dWdy_faceN[ii][jj].v.x;
-    dVdx = SolnBlk.dWdx_faceN[ii][jj].v.y;
-    dVdy = SolnBlk.dWdy_faceN[ii][jj].v.y;
-    
-    d_dWdx_dW =  SolnBlk.d_dWdx_dW[ii][jj][1];
-    d_dWdy_dW =  SolnBlk.d_dWdy_dW[ii][jj][1];
-    dWfdWc(SolnBlk, dWf_dWc, Orient,  ii, jj);
-     
-    }
-    
-  if (Orient == "EAST"){ 
- 
-    QuadraturePoint_W = HALF*(SolnBlk.WnNE(ii, jj) +SolnBlk.WnSE(ii, jj) );
-    kappa = HALF*(SolnBlk.WnNE_kappa(ii, jj) +SolnBlk.WnSE_kappa(ii, jj)); 
-    mu = HALF*(SolnBlk.WnNE_mu(ii, jj) +SolnBlk.WnSE_mu(ii, jj)); 
-    dmudT = HALF*(SolnBlk.WnNE_dmudT(ii, jj) +SolnBlk.WnSE_dmudT(ii, jj)); 
-    
-    for(int Num = 0; Num<ns; Num++){
-      h[Num] = HALF*(SolnBlk.WnNE_hi(ii, jj, Num) +SolnBlk.WnSE_hi(ii, jj, Num));
-      Dm[Num] = HALF*(SolnBlk.WnNE_Dm(ii, jj, Num) +SolnBlk.WnSE_Dm(ii, jj, Num));
-      dcdy[Num] = SolnBlk.dWdy_faceE[ii][jj].spec[Num].c;
-      dhdT[Num] = HALF*(SolnBlk.WnNE_Cpi(ii, jj, Num) +SolnBlk.WnSE_Cpi(ii, jj, Num));
-    }
-    
-    dUdx = SolnBlk.dWdx_faceE[ii][jj].v.x;
-    dUdy = SolnBlk.dWdy_faceE[ii][jj].v.x;
-    dVdx = SolnBlk.dWdx_faceE[ii][jj].v.y;
-    dVdy = SolnBlk.dWdy_faceE[ii][jj].v.y;
-    
-    d_dWdx_dW =  SolnBlk.d_dWdx_dW[ii][jj][2];
-    d_dWdy_dW =  SolnBlk.d_dWdy_dW[ii][jj][2];
-  
-    dWfdWc(SolnBlk, dWf_dWc, Orient,  ii, jj);
+       FluxA = FluxRoe_x(Left,WA, Input_Parameters.Preconditioning,SolnBlk.Flow_Type,delta_n);       
+       FluxB = FluxRoe_x(Left,WB, Input_Parameters.Preconditioning,SolnBlk.Flow_Type,delta_n);
        
-  }
-  if (Orient == "SOUTH"){ 
-    
-    QuadraturePoint_W = HALF*(SolnBlk.WnSE(ii, jj) +SolnBlk.WnSW(ii, jj) );
-    kappa = HALF*(SolnBlk.WnSW_kappa(ii, jj) +SolnBlk.WnSE_kappa(ii, jj)); 
-    mu = HALF*(SolnBlk.WnSW_mu(ii, jj) +SolnBlk.WnSE_mu(ii, jj)); 
-    dmudT = HALF*(SolnBlk.WnSW_dmudT(ii, jj) +SolnBlk.WnSE_dmudT(ii, jj)); 
-    
-    for(int Num = 0; Num<ns; Num++){
-      h[Num] = HALF*(SolnBlk.WnSW_hi(ii, jj, Num) +SolnBlk.WnSE_hi(ii, jj, Num));
-      Dm[Num] = HALF*(SolnBlk.WnSW_Dm(ii, jj, Num) +SolnBlk.WnSE_Dm(ii, jj, Num));
-      dcdy[Num] = SolnBlk.dWdy_faceS[ii][jj].spec[Num].c;
-      dhdT[Num] = HALF*(SolnBlk.WnSW_Cpi(ii, jj, Num) +SolnBlk.WnSE_Cpi(ii, jj, Num));
-      
-    }
-    
-    dUdx = SolnBlk.dWdx_faceS[ii][jj].v.x;
-    dUdy = SolnBlk.dWdy_faceS[ii][jj].v.x;
-    dVdx = SolnBlk.dWdx_faceS[ii][jj].v.y;
-    dVdy = SolnBlk.dWdy_faceS[ii][jj].v.y;
-   
-    d_dWdx_dW =  SolnBlk.d_dWdx_dW[ii][jj][4];
-    d_dWdy_dW =  SolnBlk.d_dWdy_dW[ii][jj][4];
-   
-    dWfdWc(SolnBlk, dWf_dWc, Orient,  ii, jj);
-  }
+       for(int irow=0; irow<(NUM_VAR_CHEM2D); irow++){
+	 dFidW(irow,jcol) = (FluxA[irow+1] - FluxB[irow+1])/(TWO*perturb*max(ONE,Right[jcol+1]));           
+       }
+     } 
+     /**********************************************/
+        
+     //Rotate back 
+     dRdW += lface*AI*dFidW*A;
 
-  if (Orient == "WEST"){ 
-    
-    QuadraturePoint_W = HALF*(SolnBlk.WnNW(ii, jj) +SolnBlk.WnSW(ii, jj));
-    kappa = HALF*(SolnBlk.WnNW_kappa(ii, jj) +SolnBlk.WnSW_kappa(ii, jj)); 
-    mu = HALF*(SolnBlk.WnNW_mu(ii, jj) +SolnBlk.WnSW_mu(ii, jj)); 
-    dmudT = HALF*(SolnBlk.WnNW_dmudT(ii, jj) +SolnBlk.WnSW_dmudT(ii, jj)); 
-      
-    for(int Num = 0; Num<ns; Num++){
-      h[Num] = HALF*(SolnBlk.WnNW_hi(ii, jj, Num) +SolnBlk.WnSW_hi(ii, jj, Num));
-      Dm[Num] = HALF*(SolnBlk.WnNW_Dm(ii, jj, Num) +SolnBlk.WnSW_Dm(ii, jj, Num));
-      dcdy[Num] = SolnBlk.dWdy_faceW[ii][jj].spec[Num].c;
-      dhdT[Num] = HALF*(SolnBlk.WnNW_Cpi(ii, jj, Num) +SolnBlk.WnSW_Cpi(ii, jj, Num));
+  } 
+}
 
-    }
-    dUdx = SolnBlk.dWdx_faceW[ii][jj].v.x;
-    dUdy = SolnBlk.dWdy_faceW[ii][jj].v.x;
-    dVdx = SolnBlk.dWdx_faceW[ii][jj].v.y;
-    dVdy = SolnBlk.dWdy_faceW[ii][jj].v.y;
-    d_dWdx_dW =  SolnBlk.d_dWdx_dW[ii][jj][3];
-    d_dWdy_dW =  SolnBlk.d_dWdy_dW[ii][jj][3];
-    dWfdWc(SolnBlk, dWf_dWc, Orient,  ii, jj);
-    
-  }
-  rho = QuadraturePoint_W.rho;
-  U = QuadraturePoint_W.v.x;
-  V = QuadraturePoint_W.v.y;
-  t1 = mu;
-  t2 = d_dWdy_dW;
-  t5 = d_dWdx_dW;
-  t8 = dmudT;
-  t9 = dUdy;
-  t11 = dVdx;
-  t13 = 2.0/3.0*t9-t11/3.0;
-  t16 = d_dWdx_dW;
-  t18 = d_dWdy_dW;
-  t20 = dVdy;
-  t21 = dUdx;
-  t22 = t20+t21;
-  t35 = U*t1;
-  t38 = V*t1;
-  t46 = d_dWdy_dW;
-  
-  dGvdW(1,1) = t1*t2;
-  dGvdW(1,2) = -2.0/3.0*t1*t5;
-  dGvdW(1,3) = t8*t22;
-    
-  dGvdW(2,1) = -2.0/3.0*t1*t16;
-  dGvdW(2,2) = 4.0/3.0*t1*t18;
-  dGvdW(2,3) = 2.0*t8*t13;
+//ARE the BC checks required if everything calculated using Uo ???????
 
-  double Sum_q = 0.0;
-  double Sum_dq = 0.0;
+//Needed by inviscid flux Jacobian -- reconstructed higher order left and right solution states
+int Inviscid_Flux_Used_Reconstructed_LeftandRight_States(Chem2D_pState &Wl, Chem2D_pState &Wr, 
+                                                         Vector2D &DX, Chem2D_Quad_Block &SolnBlk, 
+                                                         const int &Orient, const int &i, const int &j ){  
+  switch(Orient) {
+  case WEST:
+    //Wl = SolnBlk.W[i][j];  
+     Wl = SolnBlk.Uo[i][j].W(); 
+     //	   + ((SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x + (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y); 
+     //DX = SolnBlk.Grid.xfaceW(i+1, j)-SolnBlk.Grid.Cell[i+1][j].Xc;      
  
-    
-  for(int Num = 0; Num<ns; Num++)
-    {
-      //for each species	// h*Dm*gradc  
-      Sum_q +=  h[Num]*Dm[Num]*dcdy[Num];
-      //dhdT *(Dm)*gradc
-      Sum_dq += dhdT[Num]*Dm[Num]*dcdy[Num];
-      
-    }  
-  dGvdW(3,0) = Sum_q ;
-  dGvdW(3,1) = t1*t22+t35*t2-2.0/3.0*t38*t16;
-  dGvdW(3,2) = t35*t5+2.0*t1*t13+4.0/3.0*t38*t18;
-  dGvdW(3,3) = kappa*t46+rho*Sum_dq+U*t8*t22+2.0*V*t8*t13;
-      
-  //multispecies
-  int NUM_VAR =NUM_CHEM2D_VAR_SANS_SPECIES; 
-  for(int Num = 0; Num<(ns-1); Num++)
-    {//h*rho*(Dm)*d_dWdy_dW
-      dGvdW(3, NUM_VAR+Num) = h[Num]*Dm[Num]*rho*d_dWdy_dW;
-      //(Dm)*gradc
-      dGvdW(NUM_VAR+Num, 0) = Dm[Num]*dcdy[Num];
-      //rho*(Dm)*dcydc
-      dGvdW(NUM_VAR+Num,NUM_VAR+Num) = rho*Dm[Num]*d_dWdy_dW;
-    }
+     /* Reconstruct left and right solution states at the east-west faces */
+     if (i == SolnBlk.ICl && 
+	 (SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+	  SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
+	  SolnBlk.Grid.BCtypeW[j] == BC_FREE_SLIP_ISOTHERMAL ||
+	  SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+	  SolnBlk.Grid.BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL ||
 
-  //The following entries are different for axisymmetric flow and planar flow
-  // For those terms involves fluid molecular stess tau_xx and tau_yy
-  // They are some terms in the third row  and fourth of Jacobian matrix
-  if(SolnBlk.Axisymmetric){ 
-    double r;
-    if (SolnBlk.Axisymmetric == 1) {
-      r = SolnBlk.Grid.Cell[ii][jj].Xc.y;
-      
-      t13 -= (V/r)/3.0;
-      t18 = 2.0/3.0*t18 -1.0/r*1.0/3.0;
-    
-      dGvdW(2,2) = 2.0*t1*t18;
-      dGvdW(2,3) = 2.0*t8*t13;
-      dGvdW(3,2) = t35*t5+2.0*t1*t13+2.0*t38*t18;
-      dGvdW(3,3) = kappa*t46+rho*Sum_dq +2.0*U*t8*t22+2.0*V*t8*t13;
-    }
-    if (SolnBlk.Axisymmetric == 2) {
-      r = SolnBlk.Grid.Cell[ii][jj].Xc.x;
-      double term1 = -t16 - 1.0/r;
-      
-      t13 -= (U/r)/3.0;
-
-      dGvdW(2,1) = -2.0/3.0*t1*term1;
-      dGvdW(2,3) = 2.0*t8*t13;
-      dGvdW(3,1) = t1*t22+t35*t2+2.0/3.0*t38*t13;
-      dGvdW(3,3) = kappa*t46+rho*Sum_dq +U*t8*t22+2.0*V*t8*t13;
-    }
-  }//end of axisymmetric case
-  dGvdW = dGvdW * dWf_dWc;
-
-
-}//Laminar viscous Jacobian (Y)
-//Turbulent Flux Jacobian
-void dFvdW_Turbulent_Diamond(DenseMatrix &dFvdW,  DenseMatrix &dWf_dWc, Chem2D_Quad_Block &SolnBlk, 
-				    const string &Orient, const int &ii, const int &jj){
- 
-
-  double  d_dWdx_dW=0;
-  double  d_dWdy_dW=0;
-  
-  double t1,t2,t3,t5,t7,t11,t12,t13, t15,t18,t19,t23, t24, t27, t31,t32;
-  double t33,t37,t38,t39,t41,t45,t46,t50, t56, t57;
-  double t85,t86, t87, t90, t110, t140;
-  double t149, t150, t153, t154, t156, t160, t164;
-  double t194, t195, t198, t204;
- 
-  double kappa, Cp, mu, sigma, sigma_star;
-  double rho, U, V, k, omega;
-  double mu_turb, kappa_turb, Pr_turb, Dm_turb;
-  double Temp =SolnBlk.W[ii][jj].T();
-
-  double dmudT; 
-  double  *Dm, *h, *dcdx, *dhdT;
-  double dUdx,dUdy, dVdx,dVdy;
-  double dkdx, dkdy, domegadx, domegady;
-  double drhodx;
-  int ns = SolnBlk.W[0][0].ns;
-  double Rmix = SolnBlk.W[ii][jj].Rtot();    
-  Chem2D_pState  QuadraturePoint_W;
-  Dm = new double [ns];
-  h  = new double [ns];
-  dcdx = new double [ns];
-  dhdT = new double [ns];
-
-  Pr_turb = SolnBlk.W[ii][jj].Pr_turb(); 
-  Dm_turb = SolnBlk.W[ii][jj].Dm_turb(); 
-  
-  //needs to deallocate the momery
- 
-  if (Orient == "NORTH"){ 
+	  SolnBlk.Grid.BCtypeW[j] == BC_1DFLAME_INFLOW ||
+	  SolnBlk.Grid.BCtypeW[j] == BC_1DFLAME_OUTFLOW ||
+	  SolnBlk.Grid.BCtypeW[j] == BC_2DFLAME_INFLOW ||
+	  SolnBlk.Grid.BCtypeW[j] == BC_2DFLAME_OUTFLOW )) {
+       
+       if (SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION) {
+	 Wr = Reflect(Wl, SolnBlk.Grid.nfaceW(i, j));
+       } else if (SolnBlk.Grid.BCtypeW[j] == BC_FREE_SLIP_ISOTHERMAL) {
+	 Wr = Free_Slip(Wl,SolnBlk.WoW[j], SolnBlk.Grid.nfaceW(i, j),FIXED_TEMPERATURE_WALL);	      
+       } else if (SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
+	 Wr = No_Slip(Wl,SolnBlk.WoW[j], SolnBlk.Grid.nfaceW(i, j),FIXED_TEMPERATURE_WALL);
+       } else if (SolnBlk.Grid.BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL) {
+	 Wr = Moving_Wall(Wl,SolnBlk.WoW[j], SolnBlk.Grid.nfaceW(i, j),
+			  SolnBlk.Moving_wall_velocity,FIXED_TEMPERATURE_WALL);            
+       } else if (SolnBlk.Grid.BCtypeW[j] == BC_1DFLAME_INFLOW){
+	 Wr = BC_1DFlame_Inflow(Wl, 
+			      SolnBlk.WoW[j],
+			      SolnBlk.W[SolnBlk.ICu][j],
+			      SolnBlk.Grid.nfaceW(i, j));
+            
+       } else if (SolnBlk.Grid.BCtypeW[j] == BC_1DFLAME_OUTFLOW){
+	 Wr = BC_1DFlame_Outflow(Wl, 
+			       SolnBlk.WoW[j], 
+			       SolnBlk.W[SolnBlk.ICu][j],             
+			       SolnBlk.Grid.nfaceW(i, j));
+       } else { 
+	 Wr = BC_Characteristic_Pressure(Wl, SolnBlk.WoW[j], 
+					 SolnBlk.Grid.nfaceW(i, j));
+       }         
+     } else {
+       //Wr = SolnBlk.W[i-1][j];
+       Wr = SolnBlk.Uo[i-1][j].W();
+     }     
+     break;
      
-    QuadraturePoint_W = HALF*(SolnBlk.WnNW(ii, jj) +SolnBlk.WnNE(ii, jj) );
-    kappa = HALF*(SolnBlk.WnNW_kappa(ii, jj) +SolnBlk.WnNE_kappa(ii, jj)); 
-    mu = HALF*(SolnBlk.WnNW_mu(ii, jj) +SolnBlk.WnNE_mu(ii, jj)); 
-    dmudT = HALF*(SolnBlk.WnNW_dmudT(ii, jj) +SolnBlk.WnNE_dmudT(ii, jj)); 
- 
-    for(int Num = 0; Num<ns; Num++){
-      h[Num] = HALF*(SolnBlk.WnNW_hi(ii, jj, Num) +SolnBlk.WnNE_hi(ii, jj, Num));
-      Dm[Num] = HALF*(SolnBlk.WnNW_Dm(ii, jj, Num) +SolnBlk.WnNE_Dm(ii, jj, Num));
-      dcdx[Num] = SolnBlk.dWdx_faceN[ii][jj].spec[Num].c;
-      dhdT[Num] = HALF*(SolnBlk.WnNW_Cpi(ii, jj, Num) +SolnBlk.WnNE_Cpi(ii, jj, Num));
-    }
-    drhodx = SolnBlk.dWdx_faceN[ii][jj].rho;
-    dUdx = SolnBlk.dWdx_faceN[ii][jj].v.x;
-    dUdy = SolnBlk.dWdy_faceN[ii][jj].v.x;
-    dVdx = SolnBlk.dWdx_faceN[ii][jj].v.y;
-    dVdy = SolnBlk.dWdy_faceN[ii][jj].v.y;
-    dkdx = SolnBlk.dWdx_faceN[ii][jj].k;
-    dkdy = SolnBlk.dWdy_faceN[ii][jj].k;
-    domegadx = SolnBlk.dWdx_faceN[ii][jj].omega;
-    domegady = SolnBlk.dWdy_faceN[ii][jj].omega;
-   
- 
-    d_dWdx_dW =  SolnBlk.d_dWdx_dW[ii][jj][1];
-    d_dWdy_dW =  SolnBlk.d_dWdy_dW[ii][jj][1];
-
-    dWfdWc(SolnBlk, dWf_dWc , Orient,  ii, jj);  
-  
-    }
+  case EAST:
+    //Wl = SolnBlk.W[i][j]; 
+    Wl = SolnBlk.Uo[i][j].W(); 
+    //     + ((SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x + (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y);
+    //DX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
     
-  if (Orient == "EAST"){ 
- 
-    QuadraturePoint_W = HALF*(SolnBlk.WnNE(ii, jj) +SolnBlk.WnSE(ii, jj) );
-    kappa = HALF*(SolnBlk.WnNE_kappa(ii, jj) +SolnBlk.WnSE_kappa(ii, jj)); 
-    mu = HALF*(SolnBlk.WnNE_mu(ii, jj) +SolnBlk.WnSE_mu(ii, jj)); 
-    dmudT = HALF*(SolnBlk.WnNE_dmudT(ii, jj) +SolnBlk.WnSE_dmudT(ii, jj)); 
-  
-    for(int Num = 0; Num<ns; Num++){
-      h[Num] = HALF*(SolnBlk.WnNE_hi(ii, jj, Num) +SolnBlk.WnSE_hi(ii, jj, Num));
-      Dm[Num] = HALF*(SolnBlk.WnNE_Dm(ii, jj, Num) +SolnBlk.WnSE_Dm(ii, jj, Num));
-      dcdx[Num] = SolnBlk.dWdx_faceE[ii][jj].spec[Num].c;
-      dhdT[Num] = HALF*(SolnBlk.WnNE_Cpi(ii, jj, Num) +SolnBlk.WnSE_Cpi(ii, jj, Num));
-    }
-    drhodx = SolnBlk.dWdx_faceE[ii][jj].rho;
-    dUdx = SolnBlk.dWdx_faceE[ii][jj].v.x;
-    dUdy = SolnBlk.dWdy_faceE[ii][jj].v.x;
-    dVdx = SolnBlk.dWdx_faceE[ii][jj].v.y;
-    dVdy = SolnBlk.dWdy_faceE[ii][jj].v.y;
-    dkdx = SolnBlk.dWdx_faceE[ii][jj].k;
-    dkdy = SolnBlk.dWdy_faceE[ii][jj].k;
-    domegadx = SolnBlk.dWdx_faceE[ii][jj].omega;
-    domegady = SolnBlk.dWdy_faceE[ii][jj].omega;
-   
-    d_dWdx_dW =  SolnBlk.d_dWdx_dW[ii][jj][2];
-    d_dWdy_dW =  SolnBlk.d_dWdy_dW[ii][jj][2];
-
-    dWfdWc(SolnBlk, dWf_dWc , Orient,  ii, jj);  
-         
-  }
-  if (Orient == "SOUTH"){ 
-    
-    QuadraturePoint_W = HALF*(SolnBlk.WnSE(ii, jj) +SolnBlk.WnSW(ii, jj) );
-    kappa = HALF*(SolnBlk.WnSW_kappa(ii, jj) +SolnBlk.WnSE_kappa(ii, jj)); 
-    mu = HALF*(SolnBlk.WnSW_mu(ii, jj) +SolnBlk.WnSE_mu(ii, jj)); 
-    dmudT = HALF*(SolnBlk.WnSW_dmudT(ii, jj) +SolnBlk.WnSE_dmudT(ii, jj)); 
-    
-    for(int Num = 0; Num<ns; Num++){
-      h[Num] = HALF*(SolnBlk.WnSW_hi(ii, jj, Num) +SolnBlk.WnSE_hi(ii, jj, Num));
-      Dm[Num] = HALF*(SolnBlk.WnSW_Dm(ii, jj, Num) +SolnBlk.WnSE_Dm(ii, jj, Num));
-      dcdx[Num] = SolnBlk.dWdx_faceS[ii][jj].spec[Num].c;
-      dhdT[Num] = HALF*(SolnBlk.WnSW_Cpi(ii, jj, Num) +SolnBlk.WnSE_Cpi(ii, jj, Num));
+    if (i == SolnBlk.ICu && 
+	(SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+	 SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
+	 SolnBlk.Grid.BCtypeE[j] == BC_FREE_SLIP_ISOTHERMAL ||
+	 SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+	 SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL || 
+	 SolnBlk.Grid.BCtypeE[j] == BC_1DFLAME_INFLOW ||
+	 SolnBlk.Grid.BCtypeE[j] == BC_1DFLAME_OUTFLOW )) {
       
-    }
-    drhodx = SolnBlk.dWdx_faceS[ii][jj].rho;
-    dUdx = SolnBlk.dWdx_faceS[ii][jj].v.x;
-    dUdy = SolnBlk.dWdy_faceS[ii][jj].v.x;
-    dVdx = SolnBlk.dWdx_faceS[ii][jj].v.y;
-    dVdy = SolnBlk.dWdy_faceS[ii][jj].v.y;
-    dkdx = SolnBlk.dWdx_faceS[ii][jj].k;
-    dkdy = SolnBlk.dWdy_faceS[ii][jj].k;
-    domegadx = SolnBlk.dWdx_faceS[ii][jj].omega;
-    domegady = SolnBlk.dWdy_faceS[ii][jj].omega;
+      if (SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION) {
+	Wr = Reflect(Wl, SolnBlk.Grid.nfaceE(i, j));   
+      } else if (SolnBlk.Grid.BCtypeE[j] == BC_FREE_SLIP_ISOTHERMAL) {
+	Wr = Free_Slip(Wl, SolnBlk.WoE[j],SolnBlk.Grid.nfaceE(i, j),FIXED_TEMPERATURE_WALL);
+      } else if (SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
+	Wr = No_Slip(Wl, SolnBlk.WoE[j],SolnBlk.Grid.nfaceE(i, j),FIXED_TEMPERATURE_WALL);
+      } else if (SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL) {
+	Wr = Moving_Wall(Wl,SolnBlk.WoE[j], SolnBlk.Grid.nfaceE(i, j),
+			 SolnBlk.Moving_wall_velocity,FIXED_TEMPERATURE_WALL);
+      } else if (SolnBlk.Grid.BCtypeE[j] == BC_1DFLAME_INFLOW){
+	Wr = BC_1DFlame_Inflow(Wl, 
+			     SolnBlk.WoE[j],
+			     SolnBlk.W[SolnBlk.ICl][j],
+			     SolnBlk.Grid.nfaceE(i, j));
+      } else if (SolnBlk.Grid.BCtypeE[j] == BC_1DFLAME_OUTFLOW){
+	Wr = BC_1DFlame_Outflow(Wl, 
+			      SolnBlk.WoE[j],
+			      SolnBlk.W[SolnBlk.ICl][j],
+			      SolnBlk.Grid.nfaceE(i, j));
+      } else {
+	Wr = BC_Characteristic_Pressure(Wl, SolnBlk.WoE[j], 
+					SolnBlk.Grid.nfaceE(i, j));
+      } 
+    } else { 
+      //Wr = SolnBlk.W[i+1][j];
+      Wr = SolnBlk.Uo[i+1][j].W();
+    }       
+    break;
+    
+  case SOUTH:
 
-    d_dWdx_dW =  SolnBlk.d_dWdx_dW[ii][jj][4];
-    d_dWdy_dW =  SolnBlk.d_dWdy_dW[ii][jj][4];
-  
-    dWfdWc(SolnBlk, dWf_dWc , Orient,  ii, jj); 
-  
+    // Wl = SolnBlk.W[i][j]; 
+    Wl = SolnBlk.Uo[i][j].W(); 
+    //+ (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x + (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y);
+    // DX = SolnBlk.Grid.xfaceS(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
+    
+    /* Reconstruct left and right solution states at the north-south faces */
+    if (j == SolnBlk.JCl && 
+	(SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+	 SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
+	 SolnBlk.Grid.BCtypeS[i] == BC_FREE_SLIP_ISOTHERMAL ||
+	 SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+	 SolnBlk.Grid.BCtypeS[i] == BC_MOVING_WALL_ISOTHERMAL ||
+	 SolnBlk.Grid.BCtypeS[i] == BC_1DFLAME_OUTFLOW )) {
+      
+      if (SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION) {
+	Wr = Reflect(Wl, SolnBlk.Grid.nfaceS(i, j));	
+      } else if (SolnBlk.Grid.BCtypeS[i] == BC_FREE_SLIP_ISOTHERMAL) {
+	Wr = Free_Slip(Wl,SolnBlk.WoS[i], SolnBlk.Grid.nfaceS(i, j),FIXED_TEMPERATURE_WALL);
+      } else if (SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
+	Wr = No_Slip(Wl,SolnBlk.WoS[i], SolnBlk.Grid.nfaceS(i, j),FIXED_TEMPERATURE_WALL);
+      } else if (SolnBlk.Grid.BCtypeS[i] == BC_MOVING_WALL_ISOTHERMAL) {
+	Wr = Moving_Wall(Wl,SolnBlk.WoS[i], SolnBlk.Grid.nfaceS(i, j),
+			 SolnBlk.Moving_wall_velocity,FIXED_TEMPERATURE_WALL);
+      } else if (SolnBlk.Grid.BCtypeS[i] == BC_1DFLAME_OUTFLOW){
+	Wr = BC_1DFlame_Outflow(Wl, 
+			      SolnBlk.WoS[i], 
+			      SolnBlk.W[i][SolnBlk.JCu],
+			      SolnBlk.Grid.nfaceS(i, j+1));
+      } else { 
+	Wr = BC_Characteristic_Pressure(Wl, 
+					SolnBlk.WoS[i], 
+					SolnBlk.Grid.nfaceS(i, j));
+      }        
+    } else {
+      //Wr = SolnBlk.W[i][j-1];
+      Wr = SolnBlk.Uo[i][j-1].W();  
+    }
+    break;
+
+  case NORTH:
+        
+    //Wl = SolnBlk.W[i][j]; 
+    Wl = SolnBlk.Uo[i][j].W(); 
+    //+ (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x + (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y);
+    // DX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
+
+    if (j == SolnBlk.JCu && 	
+	(SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+	 SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
+	 SolnBlk.Grid.BCtypeN[i] == BC_FREE_SLIP_ISOTHERMAL ||
+	 SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+	 SolnBlk.Grid.BCtypeN[i] == BC_MOVING_WALL_ISOTHERMAL ||
+	 SolnBlk.Grid.BCtypeN[i] == BC_1DFLAME_OUTFLOW ||
+	 SolnBlk.Grid.BCtypeN[i] == BC_2DFLAME_OUTFLOW )) {                       
+      
+      if (SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION) {
+	Wr = Reflect(Wl, SolnBlk.Grid.nfaceN(i, j));	
+      } else if (SolnBlk.Grid.BCtypeN[i] == BC_FREE_SLIP_ISOTHERMAL) {
+	Wr = Free_Slip(Wl, SolnBlk.WoN[i], SolnBlk.Grid.nfaceN(i, j),FIXED_TEMPERATURE_WALL);
+      } else if (SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
+	Wr = No_Slip(Wl, SolnBlk.WoN[i], SolnBlk.Grid.nfaceN(i, j),FIXED_TEMPERATURE_WALL);
+      } else if (SolnBlk.Grid.BCtypeN[i] == BC_MOVING_WALL_ISOTHERMAL) { 	
+	Wr = Moving_Wall(Wl,SolnBlk.WoN[i],  SolnBlk.Grid.nfaceN(i, j),
+			 SolnBlk.Moving_wall_velocity,FIXED_TEMPERATURE_WALL);
+      } else if (SolnBlk.Grid.BCtypeN[i] == BC_1DFLAME_OUTFLOW){
+	Wr = BC_1DFlame_Outflow(Wl, 
+			      SolnBlk.WoN[i], 
+			      SolnBlk.W[i][SolnBlk.JCl],
+			      SolnBlk.Grid.nfaceW(i, j));
+      } else if (SolnBlk.Grid.BCtypeN[i] == BC_2DFLAME_OUTFLOW){
+	Wr = BC_2DFlame_Outflow(Wl, 
+				SolnBlk.WoN[i], 			      
+				SolnBlk.Grid.nfaceW(i, j));
+      } else {
+	Wr = BC_Characteristic_Pressure(Wl, 
+					SolnBlk.WoN[i], 
+					SolnBlk.Grid.nfaceN(i, j));
+      } 
+    } else {      
+      //Wr = SolnBlk.W[i][j+1]; 
+      Wr = SolnBlk.Uo[i][j+1].W(); 
+    }    
+    break;
   }
 
-  if (Orient == "WEST"){ 
-    
-    QuadraturePoint_W = HALF*(SolnBlk.WnNW(ii, jj) +SolnBlk.WnSW(ii, jj));
-    kappa = HALF*(SolnBlk.WnNW_kappa(ii, jj) +SolnBlk.WnSW_kappa(ii, jj)); 
-    mu = HALF*(SolnBlk.WnNW_mu(ii, jj) +SolnBlk.WnSW_mu(ii, jj)); 
-    dmudT = HALF*(SolnBlk.WnNW_dmudT(ii, jj) +SolnBlk.WnSW_dmudT(ii, jj)); 
-      
-    for(int Num = 0; Num<ns; Num++){
-      h[Num] = HALF*(SolnBlk.WnNW_hi(ii, jj, Num) +SolnBlk.WnSW_hi(ii, jj, Num));
-      Dm[Num] = HALF*(SolnBlk.WnNW_Dm(ii, jj, Num) +SolnBlk.WnSW_Dm(ii, jj, Num));
-      dcdx[Num] = SolnBlk.dWdx_faceW[ii][jj].spec[Num].c;
-      dhdT[Num] = HALF*(SolnBlk.WnNW_Cpi(ii, jj, Num) +SolnBlk.WnSW_Cpi(ii, jj, Num));
-
-    }
-    drhodx = SolnBlk.dWdx_faceW[ii][jj].rho;
-    dUdx = SolnBlk.dWdx_faceW[ii][jj].v.x;
-    dUdy = SolnBlk.dWdy_faceW[ii][jj].v.x;
-    dVdx = SolnBlk.dWdx_faceW[ii][jj].v.y;
-    dVdy = SolnBlk.dWdy_faceW[ii][jj].v.y;
-    dkdx = SolnBlk.dWdx_faceW[ii][jj].k;
-    dkdy = SolnBlk.dWdy_faceW[ii][jj].k;
-    domegadx = SolnBlk.dWdx_faceW[ii][jj].omega;
-    domegady = SolnBlk.dWdy_faceW[ii][jj].omega;
-
-    d_dWdx_dW =  SolnBlk.d_dWdx_dW[ii][jj][3];
-    d_dWdy_dW =  SolnBlk.d_dWdy_dW[ii][jj][3];
-    dWfdWc(SolnBlk, dWf_dWc , Orient,  ii, jj);  
-  }
+  return 0;
    
-  mu_turb =  QuadraturePoint_W.rho* QuadraturePoint_W.k/max(QuadraturePoint_W.omega, TOLER);
-  sigma = SolnBlk.W[0][0].sigma;
-  sigma_star = SolnBlk.W[0][0].sigma_star;  
-  
-  rho = QuadraturePoint_W.rho;
-  U = QuadraturePoint_W.v.x;
-  V = QuadraturePoint_W.v.y;
-  k= QuadraturePoint_W.k;
-  omega= QuadraturePoint_W.omega;
-  
-  t1 = 1/max(omega, TOLER);
-  t2 = k*t1;
-  t3 = dUdx; 
-  t5 = dVdy;  
-  t7 = 2.0/3.0*t3-t5/3.0;
-  t11 = 2.0*t2*t7-2.0/3.0*k;
-  t12 = mu;
-  t13 =  d_dWdx_dW;
-  t15 = rho*k;
-  t18 = t12*t13+t15*t1*t13;
-  t19 =  d_dWdy_dW;
-  t23 = -t12*t19-t15*t1*t19;
-  t24 = dmudT;
-  t27 = rho*t1;
-  t31 = 2.0*t27*t7-2.0/3.0*rho;
-  t32 = omega*omega;
-  t33 = 1/t32;
-  t37 = dUdy; 
-  t38 = dVdx; 
-  t39 = t37+t38;
-  t41 = d_dWdx_dW;
-  t45 = t12*t41+t15*t1*t41;
-  t46 = d_dWdx_dW;
-  t50 = t12*t46+t15*t1*t46;
-  t56 = Cp/Pr_turb;
-  //t57 = SolnBlk.dTdx(ii,jj);
-  t57 = (ONE/(rho*Rmix)) * (QuadraturePoint_W.p - 
-	(QuadraturePoint_W.p/rho)*drhodx);
-  t85 = dkdx;
-  t86 = t1*t85;
-  t87 = sigma_star*k*t86;
-  t90 = t1*t39;
-  t110 = d_dWdx_dW;
-  t140 = t24*t85;
-  t149 = sigma_star*rho;
-  t150 = t149*t86;
-  t153 = d_dWdx_dW;
-  t154 = (t12+t149*t2)*t153;
-  t156 = V*rho;
-  t160 = k*t33;
-  t164 = t149*t160*t85;
-  t194 =  domegadx;
-  t195 = t1*t194;
-  t198 = sigma*rho;
-  t204 =  d_dWdx_dW;
+}
 
-  dFvdW(1,0) = t11;
-  dFvdW(1,1) = 4.0/3.0*t18;
-  dFvdW(1,2) = 2.0/3.0*t23;
-  dFvdW(1,3) = 2.0*t24*t7;
-  dFvdW(1,4) = t31;
-  dFvdW(1,5) = -2.0*t15*t33*t7;
-  dFvdW(2,0) = t2*t39;
-  dFvdW(2,1) = t45;
-  dFvdW(2,2) = t50;
-  dFvdW(2,3) = t24*t39;
-  dFvdW(2,4) = t27*t39;
-  dFvdW(2,5) = -t15*t33*t39;
-  
-  double Sum_q = 0.0;
-  double Sum_dq = 0.0;
-  for(int Num = 0; Num<(ns); Num++)
-    {
-      //for each species	// h*(Dm+Dm_turb)*gradc  
-      Sum_q +=  h[Num]*(Dm[Num]+Dm_turb)*dcdx[Num];
-      //dhdT *(Dm)*gradc
-      Sum_dq +=   dhdT[Num]*(Dm[Num]+Dm_turb)*dcdx[Num];
-      
-    }   
-
-    
-  dFvdW(3,0) = t56*t2*t57+ Sum_q+t87+U*t11+V*k*t90;
-  dFvdW(3,1) = 2.0*t12*t7+2.0*t15*t1*t7-2.0/3.0*t15+4.0/3.0*U*t18+V*t45;
-  dFvdW(3,2) = 2.0/3.0*U*t23+t12*t39+t15*t90+V*t50;
-  dFvdW(3,3) = (kappa+t56*t15*t1)*t110+ rho*Sum_dq +t140+2.0*U*t24*t7+V*t24*t39;
-  dFvdW(3,4) = t56*t27*t57+t150+t154+U*t31+t156*t90;
-  dFvdW(3,5) = -t56*rho*t160*t57-t164-2.0*U*rho*t160*t7-t156*t160*t39;
+/********************************************************
+ * Routine: Inviscid Flux Jacobian using AUSM_plus_up   *
+ *                                                      *
+ * This routine returns the inviscid components of      *    
+ * Jacobian matrix for the specified local solution     *
+ * block calculated analytically.                       *
+ *                                                      *
+ * dF/dW_R                                              *
+ ********************************************************/
+void dFIdW_Inviscid_AUSM_plus_up(DenseMatrix& dRdW, Chem2D_Quad_Block &SolnBlk,  
+				 Chem2D_Input_Parameters &Input_Parameters,
+				 const int &ii, const int &jj, const int Orient){
    
+  int overlap = Input_Parameters.NKS_IP.GMRES_Overlap;
+  int Ri, Rj;
+
+  if (ii < SolnBlk.ICl -overlap || ii > SolnBlk.ICu + overlap ||
+      jj < SolnBlk.JCl -overlap || jj > SolnBlk.JCu + overlap) {
+     // GHOST CELL so do nothing
+     cout<<"\n Hey I am not suppose to be here! \n"; exit(1);
+
+  } else {     
+    int NUM_VAR_CHEM2D = dRdW.get_n();  //  SolnBlk.NumVar();    
+    DenseMatrix dFidW(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO);
+    
+    Vector2D nface,DX; double lface;   
+    Chem2D_pState Wa, wavespeeds, Left, Right, Wl, Wr;   
+    Left.Vacuum();   Right.Vacuum();  Wl.Vacuum();  Wr.Vacuum();
+          
+     if (Orient == NORTH) {
+       Ri = ii; Rj=jj-1;
+       nface = SolnBlk.Grid.nfaceN(Ri, Rj);
+       lface = SolnBlk.Grid.lfaceN(Ri, Rj);
+     } else if (Orient == SOUTH) {
+       Ri = ii; Rj=jj+1;
+       nface = SolnBlk.Grid.nfaceS(Ri, Rj);
+       lface = SolnBlk.Grid.lfaceS(Ri, Rj);
+     } else if (Orient == EAST) { 
+       Ri = ii-1; Rj=jj;
+       nface = SolnBlk.Grid.nfaceE(Ri, Rj);     
+       lface = SolnBlk.Grid.lfaceE(Ri, Rj);
+     } else if (Orient == WEST) { 
+       Ri = ii+1; Rj=jj;
+       nface = SolnBlk.Grid.nfaceW(Ri, Rj);
+       lface = SolnBlk.Grid.lfaceW(Ri, Rj);
+     }
+     
+     DenseMatrix A( Rotation_Matrix2(nface,NUM_VAR_CHEM2D, 1));
+     DenseMatrix AI( Rotation_Matrix2(nface,NUM_VAR_CHEM2D, 0));
+          
+     //********** FILL IN AUSM SPECIFIC STUFF HERE ********************//
+     Left  = Rotate(Wl, nface);
+     Right = Rotate(Wr, nface);
+     
+
+     //***************************************************************//
+
+     // Jacobian dF/dW         
+     dFIdW(dFidW, Rotate(SolnBlk.Uo[ii][jj].W(), nface) , SolnBlk.Flow_Type);       
+     dFidW = HALF*dFidW;
+          
+     //Rotate back 
+     dRdW += lface*AI*dFidW*A;
+        
+  } 
+}
+
+
+/********************************************************
+ * Routine: dGVdW_Viscous                               *
+ *                                                      *
+ * This routine calculates the Viscous components of    *
+ * the residual with respect to the primitive variables *   
+ * ie dG/dW                                             *
+ *                                                      *
+ ********************************************************/
+void dGVdW_Viscous(DenseMatrix &dRdW, Chem2D_Quad_Block &SolnBlk, 
+		   Chem2D_Input_Parameters &Input_Parameters,
+		   const int &ii, const int &jj){
+   
+   int NUM_VAR_CHEM2D = SolnBlk.NumVar()-1; 
+   int ns = SolnBlk.W[ii][jj].ns-1;
+
+   DenseMatrix dFvdWf(NUM_VAR_CHEM2D, 14+(ns),ZERO);
+   DenseMatrix dWfdWx(14+(ns), NUM_VAR_CHEM2D,ZERO);  
+   DenseMatrix dGvdWf(NUM_VAR_CHEM2D, 14+(ns),ZERO);
+   DenseMatrix dWfdWy(14+(ns), NUM_VAR_CHEM2D,ZERO);
+   
+   DenseMatrix dGVdW(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);
+   Vector2D nface;
+
+   if (ii < SolnBlk.ICl || ii > SolnBlk.ICu ||
+       jj < SolnBlk.JCl || jj > SolnBlk.JCu) {
+     // GHOST CELL so do nothing to dRdW     
+   } else {
+     // NON-GHOST CELL.
+           
+     //Viscous flux Jacobians at North face of cell (ii, jj)
+     nface = SolnBlk.Grid.nfaceN(ii, jj);    
+     dFvdWf_Diamond(dFvdWf,dGvdWf, SolnBlk, NORTH, ii, jj);
+     dWfdWc_Diamond(dWfdWx,dWfdWy, SolnBlk, NORTH, ii, jj, CENTER);     
+     dGVdW = SolnBlk.Grid.lfaceN(ii, jj)* (nface.x*(dFvdWf*dWfdWx) + nface.y*(dGvdWf*dWfdWy));
+     
+     //Viscous flux Jacobians at South face of cell (ii, jj)
+     nface = SolnBlk.Grid.nfaceS(ii, jj);
+     dFvdWf.zero(); dGvdWf.zero(); dWfdWx.zero(); dWfdWy.zero();
+     dFvdWf_Diamond(dFvdWf,dGvdWf, SolnBlk, SOUTH, ii, jj);
+     dWfdWc_Diamond(dWfdWx,dWfdWy, SolnBlk, SOUTH, ii, jj,CENTER); 
+     dGVdW += SolnBlk.Grid.lfaceS(ii, jj)* (nface.x*(dFvdWf*dWfdWx) + nface.y*(dGvdWf*dWfdWy));
+     
+     // Viscous flux Jacobians at West face of cell (ii, jj)
+     nface = SolnBlk.Grid.nfaceW(ii, jj);
+     dFvdWf.zero(); dGvdWf.zero(); dWfdWx.zero(); dWfdWy.zero();
+     dFvdWf_Diamond(dFvdWf,dGvdWf, SolnBlk, WEST, ii, jj);
+     dWfdWc_Diamond(dWfdWx,dWfdWy, SolnBlk, WEST, ii, jj, CENTER);
+     dGVdW += SolnBlk.Grid.lfaceW(ii, jj)* (nface.x*(dFvdWf*dWfdWx) + nface.y*(dGvdWf*dWfdWy));
+     
+     // Viscous flux Jacobians at East face of cell (ii, jj)
+     nface = SolnBlk.Grid.nfaceE(ii, jj);
+     dFvdWf.zero(); dGvdWf.zero(); dWfdWx.zero(); dWfdWy.zero(); 
+     dFvdWf_Diamond(dFvdWf,dGvdWf, SolnBlk, EAST, ii, jj);
+     dWfdWc_Diamond(dWfdWx,dWfdWy, SolnBlk, EAST, ii, jj, CENTER);     
+     dGVdW += SolnBlk.Grid.lfaceE(ii, jj)* (nface.x*(dFvdWf*dWfdWx) + nface.y*(dGvdWf*dWfdWy));
+     
+     dRdW += dGVdW/SolnBlk.Grid.Cell[ii][jj].A;
+   }  
+}
+
+/********************************************************
+ * Routine: dFvdWf_Diamond                              *
+ *                                                      *
+ * This routine calculates the Viscous components of    *
+ * the residual with respect to the primitive variables *   
+ * in based on Green Gauss Diamond Path Reconstruction. *
+ *                                                      *
+ ********************************************************/
+void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf, 
+		    Chem2D_Quad_Block &SolnBlk,
+		    const int &Orient, const int &ii, const int &jj){
+   
+  
+   double kappa, Cp, mu, mu_t, kappa_t,Dm_t,Pr_t, Sc_t;
+   double sigma, sigma_star, Rmix;
+   double rho, U, V, p, k, omega;
+   double  *h, *dcdx, *dcdy, *dhdT;
+   double dUdx,dUdy, dVdx,dVdy;
+   double dkdx, dkdy, domegadx, domegady;
+   double drhodx, drhody, dpdx, dpdy, Temp;
+   double radius;
+   
+   Chem2D_pState QuadraturePoint_W;
+   QuadraturePoint_W.Vacuum();
+
+   int ns_values = SolnBlk.W[ii][jj].ns;
+   int ns_species = SolnBlk.W[ii][jj].ns-1;
+   h  = new double [ns_values];
+   dcdx = new double [ns_values]; 
+   dcdy = new double [ns_values];
+   dhdT = new double [ns_values];
+  
+   switch(Orient){
+     /****************************** NORTH ******************************/
+   case NORTH:
+     QuadraturePoint_W = HALF*(SolnBlk.UnoNW(ii, jj).W() +SolnBlk.UnoNE(ii, jj).W() );
+     Temp =  QuadraturePoint_W.T();
+     for(int Num = 0; Num<ns_values; Num++){
+       h[Num] =  QuadraturePoint_W.specdata[Num].Enthalpy(Temp)+QuadraturePoint_W.specdata[Num].Heatofform();
+       dcdx[Num] = SolnBlk.dWdx_faceN[ii][jj].spec[Num].c;
+       dcdy[Num] = SolnBlk.dWdy_faceN[ii][jj].spec[Num].c;
+       dhdT[Num] = QuadraturePoint_W.specdata[Num].Enthalpy_prime(Temp); //HeatCapacity_p(Temp)
+     }
+     
+     drhodx = SolnBlk.dWdx_faceN[ii][jj].rho;
+     drhody = SolnBlk.dWdy_faceN[ii][jj].rho;
+     dpdx = SolnBlk.dWdx_faceN[ii][jj].p;
+     dpdy = SolnBlk.dWdy_faceN[ii][jj].p;
+     dUdx = SolnBlk.dWdx_faceN[ii][jj].v.x;
+     dUdy = SolnBlk.dWdy_faceN[ii][jj].v.x;
+     dVdx = SolnBlk.dWdx_faceN[ii][jj].v.y;
+     dVdy = SolnBlk.dWdy_faceN[ii][jj].v.y;
+     dkdx = SolnBlk.dWdx_faceN[ii][jj].k;
+     dkdy = SolnBlk.dWdy_faceN[ii][jj].k;
+     domegadx = SolnBlk.dWdx_faceN[ii][jj].omega;
+     domegady = SolnBlk.dWdy_faceN[ii][jj].omega;
+
+     if (SolnBlk.Axisymmetric == AXISYMMETRIC_X) {
+       radius = (SolnBlk.Grid.xfaceN(ii,jj).x < MICRO) ? MICRO : SolnBlk.Grid.xfaceN(ii,jj).x;     
+     } else if (SolnBlk.Axisymmetric == AXISYMMETRIC_Y) {    
+       radius = (SolnBlk.Grid.xfaceN(ii,jj).y < MICRO) ? MICRO : SolnBlk.Grid.xfaceN(ii,jj).y;            
+     } 
+
+     break;
+     /****************************** EAST ******************************/
+   case EAST:
+     QuadraturePoint_W = HALF*(SolnBlk.UnoNE(ii, jj).W() + SolnBlk.UnoSE(ii, jj).W() );     
+     Temp =  QuadraturePoint_W.T();   
+     for(int Num = 0; Num<ns_values; Num++){
+       h[Num] =  QuadraturePoint_W.specdata[Num].Enthalpy(Temp)+QuadraturePoint_W.specdata[Num].Heatofform();
+       dcdx[Num] = SolnBlk.dWdx_faceE[ii][jj].spec[Num].c; 
+       dcdy[Num] = SolnBlk.dWdy_faceE[ii][jj].spec[Num].c;
+       dhdT[Num] = QuadraturePoint_W.specdata[Num].Enthalpy_prime(Temp);
+     } 
+     
+     drhodx = SolnBlk.dWdx_faceE[ii][jj].rho; 
+     drhody = SolnBlk.dWdy_faceE[ii][jj].rho;
+     dpdx = SolnBlk.dWdx_faceE[ii][jj].p;
+     dpdy = SolnBlk.dWdy_faceE[ii][jj].p;
+     dUdx = SolnBlk.dWdx_faceE[ii][jj].v.x;
+     dUdy = SolnBlk.dWdy_faceE[ii][jj].v.x;
+     dVdx = SolnBlk.dWdx_faceE[ii][jj].v.y;
+     dVdy = SolnBlk.dWdy_faceE[ii][jj].v.y;
+     dkdx = SolnBlk.dWdx_faceE[ii][jj].k;
+     dkdy = SolnBlk.dWdy_faceE[ii][jj].k;
+     domegadx = SolnBlk.dWdx_faceE[ii][jj].omega;
+     domegady = SolnBlk.dWdy_faceE[ii][jj].omega;
+
+     if (SolnBlk.Axisymmetric == AXISYMMETRIC_X) {
+       radius = ( SolnBlk.Grid.xfaceE(ii,jj).x < MICRO) ? MICRO : SolnBlk.Grid.xfaceE(ii,jj).x;     
+     } else if (SolnBlk.Axisymmetric == AXISYMMETRIC_Y) {    
+       radius = ( SolnBlk.Grid.xfaceE(ii,jj).y < MICRO) ? MICRO : SolnBlk.Grid.xfaceE(ii,jj).y;            
+     } 
+
+     break;
+    /****************************** SOUTH ******************************/
+   case SOUTH:      
+     QuadraturePoint_W = HALF*(SolnBlk.UnoSE(ii, jj).W() +SolnBlk.UnoSW(ii, jj).W() );
+    Temp =  QuadraturePoint_W.T();     
+     for(int Num = 0; Num<ns_values; Num++){
+       h[Num] =  QuadraturePoint_W.specdata[Num].Enthalpy(Temp)+QuadraturePoint_W.specdata[Num].Heatofform();
+       dcdx[Num] = SolnBlk.dWdx_faceS[ii][jj].spec[Num].c;  
+       dcdy[Num] = SolnBlk.dWdy_faceS[ii][jj].spec[Num].c;
+       dhdT[Num] = QuadraturePoint_W.specdata[Num].Enthalpy_prime(Temp);
+     }
+
+     drhodx = SolnBlk.dWdx_faceS[ii][jj].rho; 
+     drhody = SolnBlk.dWdy_faceS[ii][jj].rho;
+     dpdx = SolnBlk.dWdx_faceS[ii][jj].p;
+     dpdy = SolnBlk.dWdy_faceS[ii][jj].p;
+     dUdx = SolnBlk.dWdx_faceS[ii][jj].v.x;
+     dUdy = SolnBlk.dWdy_faceS[ii][jj].v.x;
+     dVdx = SolnBlk.dWdx_faceS[ii][jj].v.y;
+     dVdy = SolnBlk.dWdy_faceS[ii][jj].v.y;
+     dkdx = SolnBlk.dWdx_faceS[ii][jj].k;
+     dkdy = SolnBlk.dWdy_faceS[ii][jj].k;
+     domegadx = SolnBlk.dWdx_faceS[ii][jj].omega;
+     domegady = SolnBlk.dWdy_faceS[ii][jj].omega;  
+     
+     if (SolnBlk.Axisymmetric == AXISYMMETRIC_X) {
+       radius = (SolnBlk.Grid.xfaceS(ii,jj).x < MICRO) ? MICRO : SolnBlk.Grid.xfaceS(ii,jj).x;     
+     } else if (SolnBlk.Axisymmetric == AXISYMMETRIC_Y) {    
+       radius = (SolnBlk.Grid.xfaceS(ii,jj).y < MICRO) ? MICRO : SolnBlk.Grid.xfaceS(ii,jj).y;            
+     } 
+     break;
+     /****************************** WEST ******************************/
+   case WEST:       
+     QuadraturePoint_W = HALF*(SolnBlk.UnoNW(ii, jj).W() +SolnBlk.UnoSW(ii, jj).W());
+     Temp =  QuadraturePoint_W.T();
+     for(int Num = 0; Num<ns_values; Num++){
+       h[Num] =  QuadraturePoint_W.specdata[Num].Enthalpy(Temp)+QuadraturePoint_W.specdata[Num].Heatofform();
+       dcdx[Num] = SolnBlk.dWdx_faceW[ii][jj].spec[Num].c;
+       dcdy[Num] = SolnBlk.dWdy_faceW[ii][jj].spec[Num].c;
+       dhdT[Num] = QuadraturePoint_W.specdata[Num].Enthalpy_prime(Temp);
+     } 
+    
+     drhodx = SolnBlk.dWdx_faceW[ii][jj].rho; 
+     drhody = SolnBlk.dWdy_faceW[ii][jj].rho;
+     dpdx = SolnBlk.dWdx_faceW[ii][jj].p;
+     dpdy = SolnBlk.dWdy_faceW[ii][jj].p;
+     dUdx = SolnBlk.dWdx_faceW[ii][jj].v.x;
+     dUdy = SolnBlk.dWdy_faceW[ii][jj].v.x;
+     dVdx = SolnBlk.dWdx_faceW[ii][jj].v.y;
+     dVdy = SolnBlk.dWdy_faceW[ii][jj].v.y;
+     dkdx = SolnBlk.dWdx_faceW[ii][jj].k;
+     dkdy = SolnBlk.dWdy_faceW[ii][jj].k;
+     domegadx = SolnBlk.dWdx_faceW[ii][jj].omega;
+     domegady = SolnBlk.dWdy_faceW[ii][jj].omega;
+     
+     if (SolnBlk.Axisymmetric == AXISYMMETRIC_X) {
+       radius = (SolnBlk.Grid.xfaceW(ii,jj).x < MICRO) ? MICRO : SolnBlk.Grid.xfaceW(ii,jj).x;     
+     } else if (SolnBlk.Axisymmetric == AXISYMMETRIC_Y) {    
+       radius = (SolnBlk.Grid.xfaceW(ii,jj).y < MICRO) ? MICRO : SolnBlk.Grid.xfaceW(ii,jj).y;            
+     } 
+     break;
+   }
+   
+   /////////////////////////////////////////////////////////////////////////////////
+
+   rho = QuadraturePoint_W.rho;
+   p = QuadraturePoint_W.p;
+   kappa = QuadraturePoint_W.kappa();
+   Cp =   QuadraturePoint_W.Cp();
+   mu = QuadraturePoint_W.mu();
+   Rmix =  QuadraturePoint_W.Rtot();
+   
+   /*********************** X - DIRECTION **************************************/
+
+   dFvdWf(1, 7) += FOUR/THREE*mu;
+   dFvdWf(1, 10) -= TWO/THREE*mu;
+   dFvdWf(2, 8) += mu;
+   dFvdWf(2, 9) += mu;  
+   
+   double Sum_q(ZERO);
+   double Sum_dq(ZERO);
+   
+   for(int Num = 0; Num<ns_values; Num++){
+      Sum_q +=  dhdT[Num]/(rho*Rmix)*mu/QuadraturePoint_W.Schmidt[Num]*dcdx[Num];
+      Sum_dq -= dhdT[Num]*(mu/QuadraturePoint_W.Schmidt[Num])*dcdx[Num]*p/(rho*rho*Rmix);
+   } 
+
+   dFvdWf(3,0) += kappa*(-dpdx/(rho*rho*Rmix) +TWO*p*drhodx/(rho*rho*rho*Rmix))+Sum_dq;
+   dFvdWf(3,1) += TWO*mu*(TWO/THREE*dUdx - dVdy/THREE);
+   dFvdWf(3,2) += mu*(dUdy+dVdx);
+   dFvdWf(3,3) += -drhodx/(rho*rho*Rmix)*kappa+Sum_q;
+
+   dFvdWf(3,6) -= p/(rho*rho*Rmix)*kappa;
+   dFvdWf(3,7) += FOUR/THREE*QuadraturePoint_W.v.x*mu;
+   dFvdWf(3,8) += QuadraturePoint_W.v.y*mu;
+   dFvdWf(3,9) = dFvdWf(3,8);
+   dFvdWf(3,10) -= TWO/THREE*QuadraturePoint_W.v.x*mu;
+   dFvdWf(3,11) = kappa/(rho*Rmix); 
+
+   // Axisymmetric
+   if(SolnBlk.Axisymmetric == AXISYMMETRIC_Y){
+     dFvdWf(1,2) -=  TWO/THREE*mu/radius;
+     dFvdWf(3,1) -=  TWO/THREE*mu*QuadraturePoint_W.v.y/radius;
+     dFvdWf(3,2) -=  TWO/THREE*mu*QuadraturePoint_W.v.x/radius;
+   }
+   if(SolnBlk.Axisymmetric == AXISYMMETRIC_X){    
+     dFvdWf(1,1) -=  TWO/THREE*mu/radius;
+     dFvdWf(3,1) -=  FOUR/THREE*mu*QuadraturePoint_W.v.x/radius;
+   }
+ 
    //multispecies
-  int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES; 
-  for(int Num = 0; Num<(ns-1); Num++)
-    {//h*rho*(Dm+Dmt)*d_dWdx_dW
-      dFvdW(3, NUM_VAR+Num) = h[Num]*rho*(Dm[Num]+Dm_turb)*d_dWdx_dW;
-      //(Dm+Dmt)*gradc
-      dFvdW(NUM_VAR+Num, 0) = (Dm[Num]+Dm_turb)*dcdx[Num];
-      //rho*(Dm+Dmt)*dcxdc
-      dFvdW(NUM_VAR+Num,NUM_VAR+Num) = rho*(Dm[Num]+Dm_turb)*d_dWdx_dW;
-    }
-  
-  dFvdW(4,0) = t87;
-  dFvdW(4,3) = t140;
-  dFvdW(4,4) = t150+t154;
-  dFvdW(4,5) = -t164;
-  dFvdW(5,0) = sigma*k*t195;
-  dFvdW(5,3) = t24*t194;
-  dFvdW(5,4) = t198*t195;
-  dFvdW(5,5) = -t198*t160*t194+(t12+t198*t2)*t204;
-    
-  //The following entries are different for axisymmetric flow and planar flow
-  // For matrix row 1 and row 3
-  if (SolnBlk.Axisymmetric == 1) {
+   for(int Num = 0; Num<(ns_species); Num++){
+     dFvdWf(3,14+Num) = mu/QuadraturePoint_W.Schmidt[Num]*h[Num];  //+  H3???
+     dFvdWf(6+Num, 14+Num) = mu/QuadraturePoint_W.Schmidt[Num];
+   }
 
-    double term1,term2,term3,term5, term7,term10;
-    double term14,term15,term16,term18;
-    double term21,term22,term23,term27,term28,term31,term35,term36, term37, term41, term42, term43;
-    double term45, term49,term50, term54, term60, term61, term89,term90, term91,term94, term114; 
-    double term144, term153, term154, term157, term158, term160, term164,term168 , term198, term199, term202, term208; 
-    
-    double r = SolnBlk.Grid.Cell[ii][jj].Xc.y;
-    term1 = 1/max(omega,TOLER);
-    term2 = k*term1;
-    term3 = SolnBlk.dWdx[ii][jj].v.x; 
-    term5 =  SolnBlk.dWdy[ii][jj].v.y; 
-    term7 = 1/r;
-    term10 = 2.0/3.0*term3-term5/3.0-V*term7/3.0;
-    term14 = 2.0*term2*term10-2.0/3.0*k;
-    term15 = mu;
-    term16 = d_dWdx_dW;
-    term18 = rho*k;
-    term21 = term15*term16+term18*term1*term16;
-    term22 = d_dWdy_dW;
-    term23 = -term22-term7;
-    term27 = term15*term23/3.0+term18*term1*term23/3.0;
-    term28 = dmudT;
-    term31 = rho*term1;
-    term35 = 2.0*term31*term10-2.0/3.0*rho;
-    term36 = omega*omega;
-    term37 = 1/term36;
-    term41 = dUdy; 
-    term42 = dVdx;;
-    term43 = term41+term42;
-    term45 = d_dWdy_dW;
-    term49 = term15*term45+term18*term1*term45;
-    term50 = d_dWdx_dW;
-    term54 = term15*term50+term18*term1*term50;
-    term60 = Cp/Pr_turb;
-    //  term61 = SolnBlk.dTdx(ii,jj);
-    term61 = (ONE/(rho*Rmix)) * ( QuadraturePoint_W.p - 
-	     ( QuadraturePoint_W.p/rho)*drhodx);  
-    term89 = dkdx;
-    term90 = term1*term89;
-    term91 = sigma*k*term90;
-    term94 = term1*term43;
-    term114 = d_dWdx_dW;
-    term144 = term28*term89;
-    term153 = sigma*rho;
-    term154 = term153*term90;
-    term157 = d_dWdx_dW;
-    term158 = (term15+term153*term2)*term157;
-    term160 = V*rho;
-    term164 = k*term37;
-    term168 = term153*term164*term89;
-    term198 = domegadx;
-    term199 = term1*term198;
-    term202 = sigma_star*rho;
-    term208 = d_dWdx_dW;
-	
-    dFvdW(1,0) = term14;
-    dFvdW(1,1) = 4.0/3.0*term21;
-    dFvdW(1,2) = 2.0*term27;
-    dFvdW(1,3) = 2.0*term28*term10;
-    dFvdW(1,4) = term35;
-    dFvdW(1,5) = -2.0*term18*term37*term10;
-    
-    dFvdW(3,0) = term60*term2*term61+ Sum_q+term91+U*term14+V*k*term94;
-    dFvdW(3,1) = 2.0*term15*term10+2.0*term18*term1*term10-2.0/3.0*term18+4.0/3.0*U*term21+V*term49;
-    dFvdW(3,2) = 2.0*U*term27+term15*term43+term18*term94+V*term54;
-    dFvdW(3,3) = (kappa+term60*term18*term1)*term114+ rho*Sum_dq+term144+2.0*U*term28*term10+V*term28*term43;
-    dFvdW(3,4) = term60*term31*term61+term154+term158+U*term35+term160*term94;
-    dFvdW(3,5) = -term60*rho*term164*term61-term168-2.0*U*rho*term164*term10-term160*term164*term43;
-    
-  }
-
-  if (SolnBlk.Axisymmetric == 2) {
-    double tt1,tt2,tt3,tt5,tt7,tt10,tt14,tt15,tt16;
-    double tt19,tt21,tt24,tt25,tt29,tt30,tt33;
-    double tt37,tt38,tt39,tt43,tt44,tt45,tt47,tt51, tt52;
-    double tt56,tt62,tt63,tt79,tt80, tt81,tt84;
-    double tt104,tt120,tt129,tt130,tt133,tt134, tt136,tt140;
-    double tt144,tt152,tt155,tt157,tt160,tt164, tt165,tt168,tt174;
-    
-    double r = SolnBlk.Grid.Cell[ii][jj].Xc.x;
-    
-    tt1 = 1/max(omega,TOLER);
-    tt2 = k*tt1;
-    tt3 =  dUdx; 
-    tt5 =  dVdy;
-    tt7 = 1/r;
-    tt10 = 2.0/3.0*tt3-tt5/3.0-U*tt7/3.0;
-    tt14 = 2.0*tt2*tt10-2.0/3.0*k;
-    tt15 = mu;
-    tt16 = d_dWdx_dW;
-    tt19 = 2.0/3.0*tt16-tt7/3.0;
-    tt21 = rho*k;
-    tt24 = tt15*tt19+tt21*tt1*tt19;
-    tt25 = d_dWdy_dW;
-    tt29 = -tt15*tt25-tt21*tt1*tt25;
-    tt30 = dmudT;
-    tt33 = rho*t1;
-    tt37 = 2.0*tt33*tt10-2.0/3.0*rho;
-    tt38 = omega*omega;
-    tt39 = 1/tt38;
-    tt43 = dUdy;
-    tt44 = dVdx; 
-    tt45 = tt43+tt44;
-    tt47 = d_dWdy_dW;
-    tt51 = tt15*tt47+tt21*tt1*tt47;
-    tt52 = d_dWdx_dW;
-    tt56 = tt15*tt52+tt21*tt1*tt52;
-    tt62 = Cp/Pr_turb;
-    tt79 = dkdx;
-    tt80 = tt1*tt79;
-    tt81 = sigma*k*tt80;
-    tt84 = tt1*tt45;
-    tt104 = d_dWdx_dW;
-    tt120 = tt30*tt79;
-    tt129 = sigma*rho;
-    tt130 = tt129*tt80;
-    tt133 = d_dWdx_dW;
-    tt134 = (tt15+tt129*tt2)*tt133;
-    tt136 = V*rho;
-    tt140 = k*tt39;
-    tt144 = tt129*tt140*tt79;
-    tt164 = domegadx;
-    tt165 = tt1*tt164;
-    tt168 = sigma_star*rho;
-    tt174 = d_dWdx_dW;
-    
-    dFvdW(2,0) =tt2*tt45;
-    dFvdW(2,1) =tt51;
-    dFvdW(2,2) =tt56;
-    dFvdW(2,3) =tt30*tt45;
-    dFvdW(2,4) =tt33*tt45;
-    dFvdW(2,5) =-tt21*tt39*tt45;
-    dFvdW(3,0) =tt62*tt2*tt63+Sum_q+tt81+U*tt14+V*k*tt84;
-    dFvdW(3,1) =2.0*tt15*tt10+2.0*tt21*tt1*tt10-2.0/3.0*tt21+2.0*U*tt24+V*tt51;
-    dFvdW(3,2) =2.0/3.0*U*tt29+tt15*tt45+tt21*tt84+V*tt56;
-    dFvdW(3,3) =(kappa+tt62*tt21*tt1)*tt104+rho*Sum_dq+tt120+2.0*U*tt30*tt10+V*tt30*tt45;
-    dFvdW(3,4) =tt62*tt33*tt63+tt130+tt134+U*tt37+tt136*tt84;
-    dFvdW(3,5) =-tt62*rho*tt140*tt63-tt144-2.0*U*rho*tt140*tt10-tt136*tt140*tt45;
-  } 
- 
-   dFvdW = dFvdW * dWf_dWc;
-  
-  
-}
-void dGvdW_Turbulent_Diamond(DenseMatrix &dGvdW,  DenseMatrix &dWf_dWc, Chem2D_Quad_Block &SolnBlk, 
-					   const string &Orient, const int &ii, const int &jj){
-  
-  //planar flow
-  double  d_dWdx_dW=0;
-  double  d_dWdy_dW=0;
-       
-  double t1,t2,t3,t4,t5,t7,t8,t10;
-  double t13,t14,t18,t19,t21,t23,t24,t27,t29;
-  double t31,t35,t36,t40,t41,t45,t51,t56,t57;
-  double t85, t86, t87,t89, t110;
-  double t140, t149, t150, t153, t154, t155; 
-  double t160, t164, t194, t195, t198, t204; 
-  
-  double kappa, Cp, mu, mu_turb, Dm_turb, Pr_turb;
-  double sigma, sigma_star;
-  double rho, U, V, k, omega;
-  double dmudT; 
-  double  *Dm, *h, *dcdy, *dhdT;
-  double dUdx,dUdy, dVdx,dVdy;
-  double dkdx,dkdy, domegadx,domegady;
-  double drhody;
-  int ns = SolnBlk.W[0][0].ns;
-  double Rmix = SolnBlk.W[ii][jj].Rtot();    
-  Chem2D_pState  QuadraturePoint_W;
-  Dm = new double [ns];
-  h  = new double [ns];
-  dcdy = new double [ns];
-  dhdT = new double [ns];
-  //needs to deallocate the momery
- 
-  if (Orient == "NORTH"){ 
+   //Turbulence
+   if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
+       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+      double k = QuadraturePoint_W.k;
+      double omega = QuadraturePoint_W.omega;
+      double taux = (TWO/THREE*dUdx - dVdy/THREE);
+      double tauy = dUdy+dVdx;
+      kappa_t = QuadraturePoint_W.Kappa_turb();
+      Dm_t = QuadraturePoint_W.Dm_turb();
+      mu_t =  QuadraturePoint_W.eddy_viscosity();
+      Pr_t =  QuadraturePoint_W.Pr_turb();
+      Sc_t =  QuadraturePoint_W.Sc_turb();
+      double sigma_s = QuadraturePoint_W.sigma_star;
+      double sigma = QuadraturePoint_W.sigma;
      
-    QuadraturePoint_W = HALF*(SolnBlk.WnNW(ii, jj) +SolnBlk.WnNE(ii, jj) );
-    kappa = HALF*(SolnBlk.WnNW_kappa(ii, jj) +SolnBlk.WnNE_kappa(ii, jj)); 
-    mu = HALF*(SolnBlk.WnNW_mu(ii, jj) +SolnBlk.WnNE_mu(ii, jj)); 
-    dmudT = HALF*(SolnBlk.WnNW_dmudT(ii, jj) +SolnBlk.WnNE_dmudT(ii, jj)); 
-    for(int Num = 0; Num<ns; Num++){
-      h[Num] = HALF*(SolnBlk.WnNW_hi(ii, jj, Num) +SolnBlk.WnNE_hi(ii, jj, Num));
-      Dm[Num] = HALF*(SolnBlk.WnNW_Dm(ii, jj, Num) +SolnBlk.WnNE_Dm(ii, jj, Num));
-      dcdy[Num] = SolnBlk.dWdy_faceN[ii][jj].spec[Num].c;
-      dhdT[Num] = HALF*(SolnBlk.WnNW_Cpi(ii, jj, Num) +SolnBlk.WnNE_Cpi(ii, jj, Num));
-    }
-    drhody = SolnBlk.dWdx_faceN[ii][jj].rho;
-    dUdx = SolnBlk.dWdx_faceN[ii][jj].v.x;
-    dUdy = SolnBlk.dWdy_faceN[ii][jj].v.x;
-    dVdx = SolnBlk.dWdx_faceN[ii][jj].v.y;
-    dVdy = SolnBlk.dWdy_faceN[ii][jj].v.y;
- 
-    dkdx = SolnBlk.dWdx_faceN[ii][jj].k;
-    dkdy = SolnBlk.dWdy_faceN[ii][jj].k;
-    domegadx = SolnBlk.dWdx_faceN[ii][jj].omega;
-    domegady = SolnBlk.dWdy_faceN[ii][jj].omega;
-    
-    d_dWdx_dW =  SolnBlk.d_dWdx_dW[ii][jj][1];
-    d_dWdy_dW =  SolnBlk.d_dWdy_dW[ii][jj][1];
-
-    dWfdWc(SolnBlk, dWf_dWc,Orient,  ii, jj);  
-   
-    }
-    
-  if (Orient == "EAST"){ 
- 
-    QuadraturePoint_W = HALF*(SolnBlk.WnNE(ii, jj) +SolnBlk.WnSE(ii, jj) );
-    kappa = HALF*(SolnBlk.WnNE_kappa(ii, jj) +SolnBlk.WnSE_kappa(ii, jj)); 
-    mu = HALF*(SolnBlk.WnNE_mu(ii, jj) +SolnBlk.WnSE_mu(ii, jj)); 
-    dmudT = HALF*(SolnBlk.WnNE_dmudT(ii, jj) +SolnBlk.WnSE_dmudT(ii, jj)); 
-    
-    for(int Num = 0; Num<ns; Num++){
-      h[Num] = HALF*(SolnBlk.WnNE_hi(ii, jj, Num) +SolnBlk.WnSE_hi(ii, jj, Num));
-      Dm[Num] = HALF*(SolnBlk.WnNE_Dm(ii, jj, Num) +SolnBlk.WnSE_Dm(ii, jj, Num));
-      dcdy[Num] = SolnBlk.dWdy_faceE[ii][jj].spec[Num].c;
-      dhdT[Num] = HALF*(SolnBlk.WnNE_Cpi(ii, jj, Num) +SolnBlk.WnSE_Cpi(ii, jj, Num));
-    }
-    drhody = SolnBlk.dWdx_faceE[ii][jj].rho;
-    dUdx = SolnBlk.dWdx_faceE[ii][jj].v.x;
-    dUdy = SolnBlk.dWdy_faceE[ii][jj].v.x;
-    dVdx = SolnBlk.dWdx_faceE[ii][jj].v.y;
-    dVdy = SolnBlk.dWdy_faceE[ii][jj].v.y;
-   
-    dkdx = SolnBlk.dWdx_faceE[ii][jj].k;
-    dkdy = SolnBlk.dWdy_faceE[ii][jj].k;
-    domegadx = SolnBlk.dWdx_faceE[ii][jj].omega;
-    domegady = SolnBlk.dWdy_faceE[ii][jj].omega;
-     
-    d_dWdx_dW =  SolnBlk.d_dWdx_dW[ii][jj][2];
-    d_dWdy_dW =  SolnBlk.d_dWdy_dW[ii][jj][2];
-    dWfdWc(SolnBlk, dWf_dWc,Orient,  ii, jj);
-   
-  }
-  if (Orient == "SOUTH"){ 
-    
-    QuadraturePoint_W = HALF*(SolnBlk.WnSE(ii, jj) +SolnBlk.WnSW(ii, jj) );
-    kappa = HALF*(SolnBlk.WnSW_kappa(ii, jj) +SolnBlk.WnSE_kappa(ii, jj)); 
-    mu = HALF*(SolnBlk.WnSW_mu(ii, jj) +SolnBlk.WnSE_mu(ii, jj)); 
-    dmudT = HALF*(SolnBlk.WnSW_dmudT(ii, jj) +SolnBlk.WnSE_dmudT(ii, jj)); 
-    
-    for(int Num = 0; Num<ns; Num++){
-      h[Num] = HALF*(SolnBlk.WnSW_hi(ii, jj, Num) +SolnBlk.WnSE_hi(ii, jj, Num));
-      Dm[Num] = HALF*(SolnBlk.WnSW_Dm(ii, jj, Num) +SolnBlk.WnSE_Dm(ii, jj, Num));
-      dcdy[Num] = SolnBlk.dWdy_faceS[ii][jj].spec[Num].c;
-      dhdT[Num] = HALF*(SolnBlk.WnSW_Cpi(ii, jj, Num) +SolnBlk.WnSE_Cpi(ii, jj, Num));
+      U= QuadraturePoint_W.v.x;
+      V= QuadraturePoint_W.v.y;
       
-    }
-    drhody = SolnBlk.dWdx_faceS[ii][jj].rho;
-    dUdx = SolnBlk.dWdx_faceS[ii][jj].v.x;
-    dUdy = SolnBlk.dWdy_faceS[ii][jj].v.x;
-    dVdx = SolnBlk.dWdx_faceS[ii][jj].v.y;
-    dVdy = SolnBlk.dWdy_faceS[ii][jj].v.y;
-   
-    dkdx = SolnBlk.dWdx_faceS[ii][jj].k;
-    dkdy = SolnBlk.dWdy_faceS[ii][jj].k;
-    domegadx = SolnBlk.dWdx_faceS[ii][jj].omega;
-    domegady = SolnBlk.dWdy_faceS[ii][jj].omega;
-    
-    d_dWdx_dW =  SolnBlk.d_dWdx_dW[ii][jj][4];
-    d_dWdy_dW =  SolnBlk.d_dWdy_dW[ii][jj][4];
-    dWfdWc(SolnBlk, dWf_dWc,Orient,  ii, jj);
-   
-  }
+      dFvdWf(1, 0) += TWO*k/max(omega,TOLER)*taux;
+      dFvdWf(1, 4) += TWO*rho/max(omega,TOLER)*taux;
+      dFvdWf(1, 5) += -TWO*rho*k/max(omega*omega,TOLER)*taux;
+      dFvdWf(1, 7) += FOUR/THREE*mu_t;
+      dFvdWf(1, 10) += -TWO/THREE*mu_t;
 
-  if (Orient == "WEST"){ 
+      dFvdWf(2, 0) += k/max(omega, TOLER)*tauy;
+      dFvdWf(2, 4) += rho/max(omega, TOLER)*tauy; 
+      dFvdWf(2, 5) += -mu_t/max(omega,TOLER)*tauy;
+      dFvdWf(2, 8) += mu_t;
+      dFvdWf(2, 9) += mu_t;
+
+      double Sum_dh = 0.0;
+      double Sum_h = 0.0;
     
-    QuadraturePoint_W = HALF*(SolnBlk.WnNW(ii, jj) +SolnBlk.WnSW(ii, jj));
-    kappa = HALF*(SolnBlk.WnNW_kappa(ii, jj) +SolnBlk.WnSW_kappa(ii, jj)); 
-    mu = HALF*(SolnBlk.WnNW_mu(ii, jj) +SolnBlk.WnSW_mu(ii, jj)); 
-    dmudT = HALF*(SolnBlk.WnNW_dmudT(ii, jj) +SolnBlk.WnSW_dmudT(ii, jj)); 
+       for(int Num = 0; Num<ns_values; Num++){
+         Sum_h +=  h[Num]*dcdx[Num]/Sc_t;
+         Sum_dh -= dhdT[Num]*dcdx[Num]/Sc_t;
+      }
       
-    for(int Num = 0; Num<ns; Num++){
-      h[Num] = HALF*(SolnBlk.WnNW_hi(ii, jj, Num) +SolnBlk.WnSW_hi(ii, jj, Num));
-      Dm[Num] = HALF*(SolnBlk.WnNW_Dm(ii, jj, Num) +SolnBlk.WnSW_Dm(ii, jj, Num));
-      dcdy[Num] = SolnBlk.dWdy_faceW[ii][jj].spec[Num].c;
-      dhdT[Num] = HALF*(SolnBlk.WnNW_Cpi(ii, jj, Num) +SolnBlk.WnSW_Cpi(ii, jj, Num));
-
-    }
-    drhody = SolnBlk.dWdx_faceW[ii][jj].rho;
-    dUdx = SolnBlk.dWdx_faceW[ii][jj].v.x;
-    dUdy = SolnBlk.dWdy_faceW[ii][jj].v.x;
-    dVdx = SolnBlk.dWdx_faceW[ii][jj].v.y;
-    dVdy = SolnBlk.dWdy_faceW[ii][jj].v.y;
-
-    dkdx = SolnBlk.dWdx_faceW[ii][jj].k;
-    dkdy = SolnBlk.dWdy_faceW[ii][jj].k;
-    domegadx = SolnBlk.dWdx_faceW[ii][jj].omega;
-    domegady = SolnBlk.dWdy_faceW[ii][jj].omega;
-    
-    d_dWdx_dW =  SolnBlk.d_dWdx_dW[ii][jj][3];
-    d_dWdy_dW =  SolnBlk.d_dWdy_dW[ii][jj][3];
-    dWfdWc(SolnBlk, dWf_dWc,Orient,  ii, jj);
-    
-  }
-
-  
-  mu_turb =QuadraturePoint_W.rho*QuadraturePoint_W.k/max(QuadraturePoint_W.omega, TOLER);
-  Pr_turb = SolnBlk.W[ii][jj].Pr_turb(); 
-  Dm_turb = SolnBlk.W[ii][jj].Dm_turb(); 
-  sigma = SolnBlk.W[0][0].sigma;
-  sigma_star = SolnBlk.W[0][0].sigma_star;  
-  
-  rho = QuadraturePoint_W.rho;
-  U =  QuadraturePoint_W.v.x;
-  V =  QuadraturePoint_W.v.y;
-  k = QuadraturePoint_W.k;
-  omega = QuadraturePoint_W.omega;
-  
-  t1 = 1/max(omega,TOLER);
-  t2 = k*t1;
-  t3 = dUdy; 
-  t4 = dVdx;
-  t5 = t3+t4;
-  t7 = mu;
-  t8 = d_dWdy_dW;
-  t10 = rho*k;
-  t13 = t7*t8+t10*t1*t8;
-  t14 =  d_dWdx_dW;
-  t18 = t7*t14+t10*t1*t14;
-  t19 = dmudT;
-  t21 = rho*t1;
-  t23 = omega*omega;
-  t24 = 1/t23;
-  t27 = dVdy;
-  t29 = dUdx;
-  t31 = 2.0/3.0*t27-t29/3.0;
-  t35 = 2.0*t2*t31-2.0/3.0*k;
-  t36 =  d_dWdx_dW;
-  t40 = -t7*t36-t10*t1*t36;
-  t41 = d_dWdy_dW;
-  t45 = t7*t41+t10*t1*t41;
-  t51 = 2.0*t21*t31-2.0/3.0*rho;
-  t56 = Cp/Pr_turb;
-  //t57 =  SolnBlk.dTdy(ii,jj);
-  t57= (ONE/(rho*Rmix)) * (QuadraturePoint_W.p - 
-                 (QuadraturePoint_W.p/rho)*drhody);
-  t85 = dkdy;
-  t86 = t1*t85;
-  t87 = sigma_star*k*t86;
-  t89 = t1*t5;
-  t110 =  d_dWdy_dW;
-
-  t140 = t19*t85;
-  t149 = sigma_star*rho;
-  t150 = t149*t86;
-  t153 =  d_dWdy_dW;
-  t154 = (t7+t149*t2)*t153;
-  t155 = U*rho;
-  t160 = k*t24;
-  t164 = t149*t160*t85;
+      dFvdWf(3,0) += k/max(omega,TOLER)*Cp/Pr_t*p*drhodx/(Rmix*rho*rho) 
+	+ Temp/rho*k/max(omega,TOLER)*Sum_dh +k/max(omega,TOLER)*Sum_h 
+         +TWO*QuadraturePoint_W.v.x*k/max(omega,TOLER)*taux+
+         QuadraturePoint_W.v.y*k/max(omega,TOLER)*tauy+k/max(omega,TOLER)*sigma_s*dkdx;
+      dFvdWf(3,1) += TWO*mu_t*taux;
+      dFvdWf(3,2) += mu_t*tauy;
+      dFvdWf(3,3) += -k*Cp*drhodx/(max(omega,TOLER)*Pr_t*Rmix*rho)- k/max(omega,TOLER)*Sum_dh/(Rmix);
+      dFvdWf(3,4) += Cp*(dpdx - p*drhodx/rho)/(max(omega, TOLER) *Pr_t*Rmix) 
+	+ rho/max(omega,TOLER)*Sum_h+TWO*rho*QuadraturePoint_W.v.x*taux/max(omega,TOLER)
+         +QuadraturePoint_W.v.y*rho*tauy/max(omega,TOLER)+rho*sigma_s*dkdx/max(omega,TOLER);
       
-  t194 =  domegady;
-  t195 = t1*t194;
-  t198 = sigma*rho;
-  t204 = d_dWdy_dW;
-  
-  dGvdW(1,0) = t2*t5;
-  dGvdW(1,1) = t13;
-  dGvdW(1,2) = t18;
-  dGvdW(1,3) = t19*t5;
-  dGvdW(1,4) = t21*t5;
-  dGvdW(1,5) = -t10*t24*t5;
-    
-  dGvdW(2,0) = t35;
-  dGvdW(2,1) = 2.0/3.0*t40;
-  dGvdW(2,2) = 4.0/3.0*t45;
-  dGvdW(2,3) = 2.0*t19*t31;
-  dGvdW(2,4) = t51;
-  dGvdW(2,5) = -2.0*t10*t24*t31;
- 
-  double Sum_q = 0.0;
-  double Sum_dq = 0.0;
- 
-  for(int Num = 0; Num<ns; Num++)
-    {
-      //for each species	// h*(Dm+Dmt)*gradc  
-      Sum_q +=  h[Num]*(Dm[Num]+Dm_turb)*dcdy[Num];
-      //dhdT *(Dm)*gradc
-      Sum_dq += dhdT[Num]*(Dm[Num]+Dm_turb)*dcdy[Num];
+      dFvdWf(3,5) += -k*Cp*(dpdx-p*drhodx/rho)/(max(omega*omega, TOLER)*Pr_t*Rmix)
+	- Sum_h*mu_t/max(omega,TOLER)-TWO*QuadraturePoint_W.v.x*mu_t*taux/max(omega,TOLER)
+         -QuadraturePoint_W.v.y*mu_t*tauy/max(omega,TOLER)-mu_t*sigma_s*dkdx/max(omega,TOLER);
+      dFvdWf(3,6) += -k*Cp*Temp/(max(omega,TOLER)*Pr_t);
       
-    }   
-   
-  dGvdW(3,0) = t56*t2*t57+Sum_q+t87+U*k*t89+V*t35;
-  dGvdW(3,1) = t7*t5+t10*t89+U*t13+2.0/3.0*V*t40;
-  dGvdW(3,2) = U*t18+2.0*t7*t31+2.0*t10*t1*t31-2.0/3.0*t10+4.0/3.0*V*t45;
-  dGvdW(3,3) = (kappa+t56*t10*t1)*t110+ rho*Sum_dq+t140+U*t19*t5+2.0*V*t19*t31;
-  dGvdW(3,4) = t56*t21*t57+t150+t154+t155*t89+V*t51;
-  dGvdW(3,5) = -t56*rho*t160*t57-t164-t155*t160*t5-2.0*V*rho*t160*t31;
-  
+      dFvdWf(3,7) += FOUR/THREE*QuadraturePoint_W.v.x*mu_t;
+      dFvdWf(3,8) += QuadraturePoint_W.v.y*mu_t;
+      dFvdWf(3,9) += QuadraturePoint_W.v.y*mu_t;
+      dFvdWf(3,10) += -TWO/THREE*QuadraturePoint_W.v.x*mu_t;
+      dFvdWf(3,11) += k*Cp/(max(omega,TOLER)*Rmix*Pr_t);
+      dFvdWf(3,12) += mu+mu_t*sigma_s;
+      
+      for(int Num = 0; Num<(ns_species); Num++){ 
+         dFvdWf(3,14+Num) += h[Num]*mu_t/Sc_t;
+         dFvdWf(6+Num,0) += dcdx[Num]*k/max(omega,TOLER)/Sc_t;
+         dFvdWf(6+Num,4) += dcdx[Num]*rho/max(omega,TOLER)/Sc_t;
+         dFvdWf(6+Num,5) += -mu_t*dcdx[Num]/max(omega,TOLER)/Sc_t;     
+         dFvdWf(6+Num,14+Num) += mu_t/Sc_t;
+      } 
 
-  //multispecies
-  int NUM_VAR =NUM_CHEM2D_VAR_SANS_SPECIES; 
-  for(int Num = 0; Num<(ns-1); Num++)
-    {//h*rho*(Dm+Dmt)*d_dWdy_dW
-      dGvdW(3, NUM_VAR+Num) = h[Num]*(Dm[Num]+Dm_turb)*rho*d_dWdy_dW;
-      //(Dm+Dmt)*gradc
-      dGvdW(NUM_VAR+Num, 0) = (Dm[Num]+Dm_turb)*dcdy[Num];
-      //rho*(Dm+Dmt)*dcydc
-      dGvdW(NUM_VAR+Num,NUM_VAR+Num) = rho*(Dm[Num]+Dm_turb)*d_dWdy_dW;
-    }
+      dFvdWf(4,0) += k*sigma_s*dkdx/max(omega,TOLER);
+      dFvdWf(4,4) += rho*sigma_s*dkdx/max(omega,TOLER);
+      dFvdWf(4,5) -=mu_t*sigma_s*dkdx/max(omega,TOLER); 
+      dFvdWf(4,12) += mu+mu_t*sigma_s;
+      
+      dFvdWf(5,0) += k*sigma*domegadx/max(omega,TOLER);
+      dFvdWf(5,4) += rho*sigma*domegadx/max(omega,TOLER);
+      dFvdWf(5,5) += -mu_t*sigma*domegadx/max(omega,TOLER);
+      dFvdWf(5,13) += mu+mu_t*sigma;
 
-  dGvdW(4,0) = t87;
-  dGvdW(4,3) = t140;
-  dGvdW(4,4) = t150+t154;
-  dGvdW(4,5) = -t164;
-  
-  dGvdW(5,0) = sigma*k*t195;
-  dGvdW(5,3) = t19*t194;
-  dGvdW(5,4) = t198*t195;
-  dGvdW(5,5) = -t198*t160*t194+(t7+t198*t2)*t204;
-  
-  
-  //The follwoing entries are different for axisymmetric flow and planar flow
-  // For matrix row 2 and row 3
-  if (SolnBlk.Axisymmetric == 1) {
-    
-    double term1,term2,term3,term4, term5,term7,term8,term10;
-    double term13, term14,term18,term19;
-    double term21,term22,term23,term24,term27,term29,term31,term34, term38, term39, term43, term44;
-    double term47, term51,term57, term62, term63, term91, term92,term93, term95, term116; 
-    double term146, term155, term156, term159, term160, term161, term166,term170 , term200, term201, term204, term210; 
-    
-    double r = SolnBlk.Grid.Cell[ii][jj].Xc.y;
-    
-    term1 = 1/max(omega,TOLER);
-    term2 = k*term1;
-    term3 = dUdy; 
-    term4 = dVdx;
-    term5 = term3+term4;
-    term7 = mu;
-    term8 = d_dWdy_dW;
-    term10 = rho*k;
-    term13 = term7*term8+term10*term1*term8;
-    term14 = d_dWdx_dW;
-    term18 = term7*term14+term10*term1*term14;
-    term19 = dmudT;
-    term21 = rho*term1;
-    term23 = omega*omega;
-    term24 = 1/term23;
-    term27 = dVdy;
-    term29 = dUdx; 
-    term31 = 1/r;
-    term34 = 2.0/3.0*term27-term29/3.0-V*term31/3.0;
-    term38 = 2.0*term2*term34-2.0/3.0*k;
-    term39 = d_dWdx_dW;
-    term43 = -term7*term39-term10*term1*term39;
-    term44 = d_dWdy_dW;
-    term47 = 2.0/3.0*term44-term31/3.0;
-    term51 = term7*term47+term10*term1*term47;
-    term57 = 2.0*term21*term34-2.0/3.0*rho;
-    term62 = Cp/Pr_turb;
-    //  term63 = SolnBlk.dTdy(ii,jj);
-    term63=(ONE/(rho*Rmix)) * (QuadraturePoint_W.p - 
-                 (QuadraturePoint_W.p/rho)*drhody); 
-    term91 = dkdy;
-    term92 = term1*term91;
-    term93 = sigma*k*term92;
-    term95 = term1*term5;
-    term116 = d_dWdy_dW;
-    
-    term146 = term19*term91;
-    term155 = sigma*rho;
-    term156 = term155*term92;
-    term159 = d_dWdy_dW;
-    term160 = (term7+term155*term2)*term159;
-    term161 = U*rho;
-    term166 = k*term24;
-    term170 = term155*term166*term91;
-    
-    term200 = domegady;
-    term201 = term1*term200;
-    term204 = sigma_star*rho;
-    term210 = d_dWdy_dW;
-    
-    dGvdW(2,0) = term38;
-    dGvdW(2,1) = 2.0/3.0*term43;
-    dGvdW(2,2) = 2.0*term51;
-    dGvdW(2,3) = 2.0*term19*term34;
-    dGvdW(2,4) = term57;
-    dGvdW(2,5) = -2.0*term10*term24*term34;
-    
-    dGvdW(3,0) = term62*term2*term63+Sum_q+term93+U*k*term95+V*term38;
-    dGvdW(3,1) = term7*term5+term10*term95+U*term13+2.0/3.0*V*term43;
-    dGvdW(3,2) = U*term18+2.0*term7*term34+2.0*term10*term1*term34-2.0/3.0*term10+2.0*V*term51;
-    dGvdW(3,3) = (kappa+term62*term10*term1)*term116+ rho*Sum_dq+term146+U*term19*term5+2.0*V*term19*term34;
-    dGvdW(3,4) = term62*term21*term63+term156+term160+term161*term95+V*term57;
-    dGvdW(3,5) = -term62*rho*term166*term63-term170-term161*term166*term5-2.0*V*rho*term166*term34;
-    
-  }
- if (SolnBlk.Axisymmetric == 2) {
+      if(SolnBlk.Axisymmetric == AXISYMMETRIC_Y){            
+	dFvdWf(1,0) -= TWO/THREE*V*k/(max(omega,TOLER)*radius);
+	dFvdWf(1,2) -= TWO/THREE*mu_t/radius;
+	dFvdWf(1,4) -= TWO/THREE*rho*V/(max(omega,TOLER)*radius);
+	dFvdWf(1,5) += TWO/THREE*mu_t*V/(max(omega,TOLER)*radius);	
+	dFvdWf(3,0) -= TWO/THREE*U*k*V/(max(omega,TOLER)*radius);
+	dFvdWf(3,1) -= TWO/THREE*mu_t*V/radius;
+	dFvdWf(3,2) -= TWO/THREE*U*mu_t/radius;
+	dFvdWf(3,4) -= TWO/THREE*U*V*rho/(max(omega,TOLER)*radius);
+	dFvdWf(3,5) += TWO/THREE*U*V*mu_t/(max(omega,TOLER)*radius);                 
+      }//endofaxisymmetric                 
+   }//endof turbulence
+   
+   /*********************** Y - DIRECTION **************************************/
 
-   double tt1,tt2,tt3,tt4,tt5,tt7,tt8, tt10,tt13,tt14,tt18;
-   double tt19,tt21,tt23,tt24,tt27,tt29,tt31;
-   double tt34,tt38,tt39,tt40,tt44,tt45,tt49,tt55, tt60;
-   double tt61,tt77,tt78,tt79,tt81, tt102;
-   double tt118,tt127,tt128,tt131,tt132,tt133, tt138,tt142;
-   double tt150,tt153,tt155,tt158,tt162,tt163, tt166,tt172;
+   dGvdWf(1, 8) += mu;
+   dGvdWf(1, 9) += mu; 
+   dGvdWf(2, 7) -= TWO/THREE*mu;
+   dGvdWf(2, 10) += FOUR/THREE*mu;
+
+   Sum_q = ZERO;  Sum_dq = ZERO;
+
+   for(int Num = 0; Num<ns_values; Num++){
+      Sum_q +=  dhdT[Num]/(rho*Rmix)*mu/QuadraturePoint_W.Schmidt[Num]*dcdy[Num];
+      Sum_dq -= dhdT[Num]*(mu/QuadraturePoint_W.Schmidt[Num])*dcdy[Num]*p/(rho*rho*Rmix);
+   } 
    
-   
-   double r = SolnBlk.Grid.Cell[ii][jj].Xc.x;
+   dGvdWf(3,0) += kappa*(-dpdy/(rho*rho*Rmix) +TWO*p*drhody/(rho*rho*rho*Rmix))+Sum_dq; 
+   dGvdWf(3,1) += mu*(dUdy +dVdx);
+   dGvdWf(3,2) += TWO*mu*(TWO/THREE*dVdy-dUdx/THREE);
+   dGvdWf(3,3) += -drhody/(rho*rho*Rmix)*kappa+Sum_q;
+   dGvdWf(3,6) -= p/(rho*rho*Rmix)*kappa;
  
-   tt1 = 1/max(omega,TOLER);
-   tt2 = k*tt1;
-   tt3 = dUdy;
-   tt4 = dVdx; 
-   tt5 = tt3+tt4;
-   tt7 = mu;
-   tt8 = d_dWdy_dW;
-   tt10 = rho*k;
-   tt13 = tt7*tt8+tt10*tt1*tt8;
-   tt14 = d_dWdx_dW;
-   tt18 = tt7*tt14+tt10*tt1*tt14;
-   tt19 = dmudT;
-   tt21 = rho*tt1;
-   tt23 = omega*omega;
-   tt24 = 1/tt23;
-   tt27 = dVdy;
-   tt29 = dUdx;
-   tt31 = 1/r;
-   tt34 = 2.0/3.0*tt27-tt29/3.0-U*tt31/3.0;
-   tt38 = 2.0*tt2*tt34-2.0/3.0*k;
-   tt39 = d_dWdx_dW;
-   tt40 = -tt39-tt31;
-   tt44 = tt7*tt40/3.0+tt10*tt1*tt40/3.0;
-   tt45 = d_dWdy_dW;
-   tt49 = tt7*tt45+tt10*tt1*tt45;
-   tt55 = 2.0*tt21*tt34-2.0/3.0*rho;
-   tt60 = Cp/Pr_turb;
-   //tt61 =SolnBlk.dTdy(ii,jj);
-   tt61= (ONE/(rho*Rmix)) * (QuadraturePoint_W.p - 
-                 (QuadraturePoint_W.p/rho)*drhody); 
-   tt77 = dkdy;
-   tt78 = tt1*tt77;
-   tt79 = sigma*k*tt78;
-   tt81 = tt1*tt5;
-   tt102 = d_dWdy_dW;
-   tt127 = sigma*rho;
-   tt128 = tt127*tt78;
-   tt131 = d_dWdy_dW;
-   tt132 = (tt7+tt127*tt2)*tt131;
-   tt133 = U*rho;
-   tt138 = k*tt24;
-   tt142 = tt127*tt138*tt77;
-   tt162 = domegady;
-   tt163 = tt1*tt162;
-   tt166 = sigma_star*rho;
-   tt172 = d_dWdy_dW;
-    
-    
-   dGvdW(2,0) = tt38;
-   dGvdW(2,1) = 2.0*tt44;
-   dGvdW(2,2) = 4.0/3.0*tt49;
-   dGvdW(2,3) = 2.0*tt19*tt34;
-   dGvdW(2,4) = tt55;
-   dGvdW(2,5) = -2.0*tt10*tt24*tt34;
-    
-   dGvdW(3,0) = tt60*tt2*tt61+Sum_q+tt79+U*k*tt81+V*tt38;
-   dGvdW(3,1) = tt7*tt5+tt10*tt81+U*tt13+2.0*V*tt44;
-   dGvdW(3,2) = U*tt18+2.0*tt7*tt34+2.0*tt10*tt1*tt34-2.0/3.0*tt10+4.0/3.0*V*tt49;
-   dGvdW(3,3) = (kappa+tt60*tt1*tt10)*tt102+ rho*Sum_dq+tt118+U*tt19*t5+2.0*V*tt19*tt34;
-   dGvdW(3,4) = tt60*tt21*tt61+tt128+tt132+tt133*tt81+V*tt55;
-   dGvdW(3,5) = -tt60*rho*tt138*tt61-tt142-tt133*tt138*tt5-2.0*V*rho*tt138*tt34;
-     
- }
- // Here the use of dGvdW is only convenient, but
- // dGvdW is the Jacobian obtained (with respect to the primitive solution variable on the cell edges )
- // to obtain the Jacobian (with respect to the primitive soltuion variable at the cell center)
- // dGvdW *dWfdWc 
- dGvdW = dGvdW * dWf_dWc;
+   dGvdWf(3,7) -= TWO/THREE*QuadraturePoint_W.v.y*mu;
+   dGvdWf(3,8) += QuadraturePoint_W.v.x*mu;
+   dGvdWf(3,9) = dGvdWf(3,8);
+   dGvdWf(3,10) += FOUR/THREE*QuadraturePoint_W.v.y*mu;
+   dGvdWf(3,11) = kappa/(rho*Rmix); 
 
+   //Axisymmetric 
+   if(SolnBlk.Axisymmetric == AXISYMMETRIC_Y){    
+     dGvdWf(2,2) -=  TWO/THREE*mu/radius;
+     dGvdWf(3,2) -=  FOUR/THREE*mu*QuadraturePoint_W.v.y/radius;
+   }
+   if(SolnBlk.Axisymmetric == AXISYMMETRIC_X){
+     dGvdWf(2,1) -=  TWO/THREE*mu/radius;
+     dGvdWf(3,1) -=  TWO/THREE*mu*QuadraturePoint_W.v.y/radius;
+     dGvdWf(3,2) -=  TWO/THREE*mu*QuadraturePoint_W.v.x/radius;
+   }
+
+   //multispecies
+   for(int Num = 0; Num<(ns_species); Num++){
+      dGvdWf(3,14+Num) = mu/QuadraturePoint_W.Schmidt[Num]*h[Num];
+      dGvdWf(6+Num, 14+Num) =  mu/QuadraturePoint_W.Schmidt[Num];
+   }
+
+   if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
+       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+      double k = QuadraturePoint_W.k;
+      double omega = QuadraturePoint_W.omega;
+      double taux = (TWO/THREE*dVdy - dUdx/THREE);
+      double tauy = dUdy+dVdx;
+      kappa_t = QuadraturePoint_W.Kappa_turb();
+      Dm_t = QuadraturePoint_W.Dm_turb();
+      mu_t =  QuadraturePoint_W.eddy_viscosity();
+      Pr_t =  QuadraturePoint_W.Pr_turb();
+      Sc_t =  QuadraturePoint_W.Sc_turb();
+      double sigma_s = QuadraturePoint_W.sigma_star;
+      double sigma = QuadraturePoint_W.sigma;
+      
+      U= QuadraturePoint_W.v.x;
+      V= QuadraturePoint_W.v.y;
+
+      dGvdWf(1, 0) += k/max(omega, TOLER)*tauy;
+      dGvdWf(1, 4) += rho/max(omega, TOLER)*tauy;
+      dGvdWf(1, 5) += -mu_t/max(omega,TOLER)*tauy;
+      dGvdWf(1, 8) += mu_t;
+      dGvdWf(1, 9) += mu_t;
+
+      dGvdWf(2, 0) += TWO*k/max(omega,TOLER)*taux;
+      dGvdWf(2, 4) += TWO*rho/max(omega,TOLER)*taux;
+      dGvdWf(2, 5) += -TWO*rho*k/max(omega*omega,TOLER)*taux;
+      dGvdWf(2, 7) += -TWO/THREE*mu_t;
+      dGvdWf(2, 10) += FOUR/THREE*mu_t;
  
+      double Sum_dh = 0.0;
+      double Sum_h = 0.0;
+      for(int Num = 0; Num<ns_values; Num++){
+         Sum_dh  -=  dhdT[Num]*dcdy[Num]/Sc_t;
+         Sum_h +=  h[Num]*dcdy[Num]/Sc_t;
+      }
+
+      dGvdWf(3,0) += k/max(omega,TOLER)*Cp/Pr_t*drhody*Temp/rho 
+	+ Temp/rho*k/max(omega,TOLER)* Sum_dh+k/max(omega,TOLER)*Sum_h
+	+TWO*QuadraturePoint_W.v.y*k/max(omega,TOLER)*taux+
+	QuadraturePoint_W.v.x*k/max(omega,TOLER)*tauy+k/max(omega,TOLER)*sigma_s*dkdy;
+      dGvdWf(3,1) += mu_t*tauy;
+      dGvdWf(3,2) += TWO*mu_t*taux;
+      dGvdWf(3,3) += -k/max(omega,TOLER)*Cp/Pr_t*drhody/(rho*Rmix) -k/max(omega,TOLER)*ONE/(Rmix)*Sum_dh;
+      dGvdWf(3,4) += Cp*(dpdy - p/rho*drhody)/(max(omega, TOLER)*Pr_t*Rmix) + 
+	rho*Sum_h/max(omega,TOLER)+TWO*rho*QuadraturePoint_W.v.y*taux/max(omega,TOLER) 
+	+ QuadraturePoint_W.v.x*rho*tauy/max(omega,TOLER)+rho*sigma_s*dkdy/max(omega,TOLER);      
+      dGvdWf(3,5) += -k*Cp*(dpdy-p/rho*drhody)/(max(omega*omega,TOLER)*Pr_t*Rmix) - 
+	Sum_h*mu_t/max(omega,TOLER)-TWO*QuadraturePoint_W.v.y*mu_t*taux/max(omega,TOLER)
+         -QuadraturePoint_W.v.x*mu_t*tauy/max(omega,TOLER)-mu_t*sigma_s*dkdy/max(omega,TOLER);
+      dGvdWf(3,6) += -k/max(omega,TOLER)*Cp/Pr_t*Temp;
+      
+      dGvdWf(3,7) += -TWO/THREE*QuadraturePoint_W.v.y*mu_t;
+      dGvdWf(3,8) += QuadraturePoint_W.v.x*mu_t;
+      dGvdWf(3,9) +=QuadraturePoint_W.v.x*mu_t;
+      dGvdWf(3,10) += FOUR/THREE*QuadraturePoint_W.v.y*mu_t;
+      dGvdWf(3,11) += k*Cp/(max(omega,TOLER)*Pr_t*Rmix);
+      dGvdWf(3,12) += mu+mu_t*sigma_s;
+      
+      for(int Num = 0; Num<(ns_species); Num++){ 
+         dGvdWf(3,14+Num) += h[Num]*mu_t/Sc_t;
+         dGvdWf(6+Num,0) +=k/max(omega,TOLER)*dcdy[Num]/Sc_t;  
+         dGvdWf(6+Num,4) += dcdy[Num]*rho/max(omega,TOLER)/Sc_t;
+         dGvdWf(6+Num,5) += -dcdy[Num]*mu_t/max(omega,TOLER)/Sc_t;     
+         dGvdWf(6+Num,14+Num) += mu_t/Sc_t;
+      } 
+
+      dGvdWf(4,0) += k*sigma_s*dkdy/max(omega,TOLER);
+      dGvdWf(4,4) += rho*sigma_s*dkdy/max(omega,TOLER);
+      dGvdWf(4,5) -=  mu_t*sigma_s*dkdy/max(omega,TOLER); 
+      dGvdWf(4,12) +=mu+mu_t*sigma_s;
+      
+      dGvdWf(5,0) += k*sigma*domegady/max(omega,TOLER);
+      dGvdWf(5,4) += rho*sigma*domegady/max(omega,TOLER);
+      dGvdWf(5,5) += -mu_t*sigma*domegady/max(omega,TOLER);
+      dGvdWf(5,13) += mu+mu_t*sigma;
+
+      if(SolnBlk.Axisymmetric == AXISYMMETRIC_Y){        
+	dGvdWf(2,0) -=  TWO/THREE*V*k/(max(omega,TOLER)*radius);
+	dGvdWf(2,2) -=  TWO/THREE*mu_t/radius;
+	dGvdWf(2,4) -=  TWO/THREE*V*rho/(max(omega,TOLER)*radius);
+	dGvdWf(2,5) +=  TWO/THREE*V*mu_t/(max(omega,TOLER)*radius);	
+	dGvdWf(3,0) -=  TWO/THREE*V*V*k/(max(omega,TOLER)*radius);
+	dGvdWf(3,2) -=  FOUR/THREE*mu_t*V/radius;
+	dGvdWf(3,4) -=  TWO/THREE*V*V*rho/(max(omega,TOLER)*radius);
+	dGvdWf(3,5) +=  TWO/THREE*V*V*mu_t/(max(omega,TOLER)*radius);         
+      }//endofaxisymmetric      
+   }//endof turbulence
+
+
+   // Memory cleanup
+   delete []h;   h = NULL;
+   delete []dcdx;   dcdx = NULL;
+   delete []dcdy;   dcdy = NULL;
+   delete []dhdT;   dhdT = NULL;   
+   
 }
 
-//For diamond path, formulation of Viscous Jacobian Needs the transformation matrix
-// Wf  --- primitive solution variables at cell face
-// Wc  --- primitive solution variables at cell center
-void dWfdWc(Chem2D_Quad_Block &SolnBlk, DenseMatrix dWf_dWc, const string &Orient,  const int &ii, const int &jj){
 
-  int NUM_VAR_CHEM2D =  SolnBlk.NumVar()-1; 
-  string Left;
-  string Right;
-  if (Orient == "NORTH"){
-    Left = "NW";
-    Right = "NE";
-  }
-  if (Orient == "SOUTH"){
-    Left = "SW";
-    Right = "SE";
-  }
- if (Orient == "WEST"){
-    Left = "NW";
-    Right = "SW";
-  }
- if (Orient == "EAST"){
-    Left = "NE";
-    Right = "SE";
-  }
+/********************************************************
+ * Routine: dWfdWc_Diamond                              *
+ *                                                      *
+ * This routine calculates the transformation matrix    *
+ * to convert from the Cell Face to Cell Center used    *
+ * for constructing the Viscous Jacobians based         *
+ * on a diamond path recontstruction.                   *  
+ *                                                      *
+ ********************************************************/
+void dWfdWc_Diamond(DenseMatrix &dWfdWc_x,DenseMatrix &dWfdWc_y, Chem2D_Quad_Block &SolnBlk,
+		    const int &Orient_face, const int &i, const int &j, const int &Orient_cell){
 
-  for(int nn=0; nn<(NUM_VAR_CHEM2D); nn++){
-    dWf_dWc(nn,nn) = HALF*(SolnBlk.dWn_dWc(ii,jj, Left) +SolnBlk.dWn_dWc(ii,jj, Right) );
-  } 
-  if(SolnBlk.Flow_Type == FLOWTYPE_LAMINAR){
-    dWf_dWc(4,4) = ZERO;
-    dWf_dWc(5,5) = ZERO;
-  } 
+   int ns = SolnBlk.W[i][j].ns-1;
+     
+   int Left, Right; 
+   double LL(ZERO),RR(ZERO); 
+   double d_dWdx_dW(ZERO), d_dWdy_dW(ZERO);
+   
+   // All these confusing relationships are based on an outward
+   // facing normal from the Orient_face ie  NORTH face ,
+   // left is NW and right is NE.  
+
+   switch (Orient_face){
+   case NORTH:
+     if(Orient_cell == CENTER){    
+       LL = SolnBlk.dWn_dWc(i,j+1, NW);
+       RR = SolnBlk.dWn_dWc(i+1, j+1, NE);
+     } else if(Orient_cell == NORTH){     
+       LL = SolnBlk.dWn_dWc(i,j+1, SW);
+       RR = SolnBlk.dWn_dWc(i+1, j+1, SE);
+     } else if(Orient_cell == EAST){
+       LL = ZERO;
+       RR = SolnBlk.dWn_dWc(i+1,j+1,NW);                  
+     } else if(Orient_cell == WEST){ 
+       LL = SolnBlk.dWn_dWc(i,j+1,NE);      
+       RR = ZERO;                   
+     } else if(Orient_cell == NW){
+       LL = SolnBlk.dWn_dWc(i,j+1,SE);      
+       RR = ZERO;   
+     } else if(Orient_cell == NE){
+       LL = ZERO;
+       RR = SolnBlk.dWn_dWc(i+1,j+1,SW);    
+     }
+     break;
+      
+   case EAST:
+     if(Orient_cell == CENTER){  
+       LL = SolnBlk.dWn_dWc(i+1, j+1, NE);
+       RR = SolnBlk.dWn_dWc(i+1, j, SE); 
+     } else if(Orient_cell == EAST){    
+       LL = SolnBlk.dWn_dWc(i+1, j+1, NW);
+       RR = SolnBlk.dWn_dWc(i+1, j, SW); 
+     } else if(Orient_cell == NORTH){     
+       LL = SolnBlk.dWn_dWc(i+1,j+1,SE);
+       RR = ZERO;
+     } else if(Orient_cell == SOUTH){           
+       LL = ZERO;
+       RR = SolnBlk.dWn_dWc(i+1,j,NE);       
+     } else if(Orient_cell == NE){     
+       LL = SolnBlk.dWn_dWc(i+1,j+1,SW);
+       RR = ZERO;
+     } else if(Orient_cell == SE){           
+       LL = ZERO;
+       RR = SolnBlk.dWn_dWc(i+1,j,NW);       
+     }
+     break;
   
+   case SOUTH:
+     if(Orient_cell == CENTER){  
+       LL = SolnBlk.dWn_dWc(i+1,j,SE);
+       RR = SolnBlk.dWn_dWc(i,j, SW);
+     } else if(Orient_cell == SOUTH){     
+       LL = SolnBlk.dWn_dWc(i+1,j, NE);
+       RR = SolnBlk.dWn_dWc(i,j, NW);
+     } else if(Orient_cell == EAST){ 
+       LL = SolnBlk.dWn_dWc(i+1,j, SW);      
+       RR = ZERO;
+     } else if(Orient_cell == WEST){    
+       LL = ZERO; 
+       RR = SolnBlk.dWn_dWc(i,j, SE);                              
+     } else if(Orient_cell == SE){ 
+       LL = SolnBlk.dWn_dWc(i+1,j, NW);      
+       RR = ZERO;
+     } else if(Orient_cell == SW){    
+       LL = ZERO; 
+       RR = SolnBlk.dWn_dWc(i,j, NE);      
+     }
+     break;
+   
+   case WEST:
+     if(Orient_cell == CENTER){  
+       LL = SolnBlk.dWn_dWc(i,j, SW);
+       RR = SolnBlk.dWn_dWc(i,j+1,NW);  
+     } else if(Orient_cell == WEST){  
+       LL = SolnBlk.dWn_dWc(i,j, SE);
+       RR = SolnBlk.dWn_dWc(i,j+1,NE);  
+     } else if(Orient_cell == SOUTH){           
+       LL = SolnBlk.dWn_dWc(i,j,NW);
+       RR = ZERO;
+     } else if(Orient_cell == NORTH){   
+       LL = ZERO;
+       RR = SolnBlk.dWn_dWc(i,j+1,SW);
+     } else if(Orient_cell == SW){           
+       LL = SolnBlk.dWn_dWc(i,j,NE);
+       RR = ZERO;
+     } else if(Orient_cell == NW){   
+       LL = ZERO;
+       RR = SolnBlk.dWn_dWc(i,j+1,SE);
+     }
+     break;     
+   }
+
+   //get 2nd derivatives
+   d_dWd_dW_Diamond(d_dWdx_dW,d_dWdy_dW,SolnBlk,LL,RR,Orient_cell,Orient_face,i,j);
  
+   /*********************** X - DIRECTION **************************************/
+   for(int nn=0; nn<6; nn++){
+      dWfdWc_x(nn,nn) = HALF*(LL+RR);
+      dWfdWc_y(nn,nn) = dWfdWc_x(nn,nn);
+   } 
+ 
+   dWfdWc_x(6,0) = d_dWdx_dW;
+   dWfdWc_x(7,1) = d_dWdx_dW;        //NOTE 7,1 & 8,1 same for X and Y 
+   dWfdWc_x(8,1) = d_dWdy_dW;
+   dWfdWc_x(9,2) =  dWfdWc_x(7,1);
+   dWfdWc_x(10,2) =  dWfdWc_x(8,1);
+   dWfdWc_x(11,3) = d_dWdx_dW;
+   dWfdWc_x(12,4) = d_dWdx_dW;
+   dWfdWc_x(13,5) = d_dWdx_dW;
+   
+   for(int Num=0; Num<(ns); Num++){
+     dWfdWc_x(14+Num,6+Num) =  d_dWdx_dW;
+     dWfdWc_y(14+Num,6+Num) =  d_dWdy_dW;
+   }
+
+   /*********************** Y - DIRECTION **************************************/
+   dWfdWc_y(6,0) = d_dWdy_dW;   
+   dWfdWc_y(7,1) = d_dWdx_dW;
+   dWfdWc_y(8,1) = d_dWdy_dW;
+   dWfdWc_y(9,2) =  dWfdWc_y(7,1);
+   dWfdWc_y(10,2) =  dWfdWc_y(8,1);
+   dWfdWc_y(11,3) = d_dWdy_dW;
+   dWfdWc_y(12,4) = d_dWdy_dW;
+   dWfdWc_y(13,5) = d_dWdy_dW;
+     
 }
+
+/********************************************************
+ * Routine: d_dWd_dW_Diamond                            *
+ *                                                      *
+ * This routine calculates the 2nd deriavaites          *
+ * associated with diamond path and bilinear            *
+ * interpolation.                                       *
+ *                                                      *
+ ********************************************************/
+void d_dWd_dW_Diamond(double &d_dWdx_dW, double &d_dWdy_dW, Chem2D_Quad_Block &SolnBlk, 
+		      const double &LEFT, const double &RIGHT, const int &Orient_cell,
+		      const int &Orient_face,  const int &i, const int &j){
+
+  //  double area[4];
+  double AREA;
+  Vector2D norm[4];
+  double  dWnNWdWc, dWnNEdWc,  dWnSWdWc, dWnSEdWc;
+ 
+  switch(Orient_face){
+    /*************** NORTH ****************************/
+  case NORTH: 
+    dWnNWdWc = LEFT;
+    dWnNEdWc = RIGHT;
+
+    //  normal vector of the SE side of a diamond 
+    norm[0].x = SolnBlk.Grid.nodeNE(i,j).X.y - SolnBlk.Grid.Cell[i][j].Xc.y;
+    norm[0].y = -( SolnBlk.Grid.nodeNE(i,j).X.x - SolnBlk.Grid.Cell[i][j].Xc.x);
+    //  normal vector of the NE side of a diamond 
+    norm[1].x = SolnBlk.Grid.Cell[i][j+1].Xc.y - SolnBlk.Grid.nodeNE(i,j).X.y;
+    norm[1].y = -(SolnBlk.Grid.Cell[i][j+1].Xc.x - SolnBlk.Grid.nodeNE(i,j).X.x);
+    //  normal vector of the NW side of a diamond 
+    norm[2].x =  SolnBlk.Grid.nodeNW(i,j).X.y - SolnBlk.Grid.Cell[i][j+1].Xc.y;
+    norm[2].y = -(SolnBlk.Grid.nodeNW(i,j).X.x - SolnBlk.Grid.Cell[i][j+1].Xc.x);
+    //  normal vector of the SW side of a diamond 
+    norm[3].x = SolnBlk.Grid.Cell[i][j].Xc.y - SolnBlk.Grid.nodeNW(i,j).X.y ;
+    norm[3].y = -( SolnBlk.Grid.Cell[i][j].Xc.x - SolnBlk.Grid.nodeNW(i,j).X.x);
+    
+    AREA =  HALF*(fabs((SolnBlk.Grid.nodeNE(i,j).X-SolnBlk.Grid.Cell[i][j].Xc)^
+		       (SolnBlk.Grid.nodeNW(i,j).X-SolnBlk.Grid.Cell[i][j].Xc)) +
+		  fabs((SolnBlk.Grid.nodeNW(i,j).X-SolnBlk.Grid.Cell[i][j+1].Xc)^
+		       (SolnBlk.Grid.nodeNE(i,j).X-SolnBlk.Grid.Cell[i][j+1].Xc)));
+    
+    if(Orient_cell == CENTER){
+      d_dWdx_dW = HALF*((ONE+dWnNEdWc)* norm[0].x+dWnNEdWc* norm[1].x+ dWnNWdWc* norm[2].x+ (ONE+dWnNWdWc)* norm[3].x)/AREA;
+      d_dWdy_dW = HALF*((ONE+dWnNEdWc)* norm[0].y+dWnNEdWc* norm[1].y+ dWnNWdWc* norm[2].y+ (ONE+dWnNWdWc)* norm[3].y)/AREA;  
+    } else if( Orient_cell == NORTH) {
+      d_dWdx_dW = HALF*(dWnNEdWc*norm[0].x + (ONE+dWnNEdWc)* norm[1].x + (ONE+dWnNWdWc)* norm[2].x + dWnNWdWc*norm[3].x)/AREA;
+      d_dWdy_dW = HALF*(dWnNEdWc*norm[0].y + (ONE+dWnNEdWc)* norm[1].y + (ONE+dWnNWdWc)* norm[2].y + dWnNWdWc*norm[3].y)/AREA;  
+    } else if( Orient_cell == EAST || Orient_cell == NE) {
+      d_dWdx_dW = HALF*( dWnNEdWc*(norm[0].x+norm[1].x))/AREA;
+      d_dWdy_dW = HALF*( dWnNEdWc*(norm[0].y+norm[1].y))/AREA;  
+    } else if( Orient_cell == WEST || Orient_cell == NW) {
+      d_dWdx_dW = HALF*( dWnNWdWc*(norm[2].x+norm[3].x))/AREA;
+      d_dWdy_dW = HALF*( dWnNWdWc*(norm[2].y+norm[3].y))/AREA;  
+    }
+
+    break;
+    
+    /*************** EAST ****************************/
+  case EAST:
+    dWnNEdWc = LEFT;
+    dWnSEdWc = RIGHT; 
+
+    //  normal vector of the SE side of a diamond 
+    norm[0].x =  SolnBlk.Grid.Cell[i+1][j].Xc.y - SolnBlk.Grid.nodeSE(i,j).X.y;
+    norm[0].y = -(SolnBlk.Grid.Cell[i+1][j].Xc.x - SolnBlk.Grid.nodeSE(i,j).X.x);
+    //  normal vector of the NE side of a diamond 
+    norm[1].x = SolnBlk.Grid.nodeNE(i,j).X.y -  SolnBlk.Grid.Cell[i+1][j].Xc.y ;
+    norm[1].y = -(SolnBlk.Grid.nodeNE(i,j).X.x -  SolnBlk.Grid.Cell[i+1][j].Xc.x );
+    //  normal vector of the NW side of a diamond 
+    norm[2].x =   SolnBlk.Grid.Cell[i][j].Xc.y - SolnBlk.Grid.nodeNE(i,j).X.y ;
+    norm[2].y = -(SolnBlk.Grid.Cell[i][j].Xc.x - SolnBlk.Grid.nodeNE(i,j).X.x);
+    //  normal vector of the SW side of a diamond 
+    norm[3].x = SolnBlk.Grid.nodeSE(i,j).X.y - SolnBlk.Grid.Cell[i][j].Xc.y;
+    norm[3].y = -(SolnBlk.Grid.nodeSE(i,j).X.x - SolnBlk.Grid.Cell[i][j].Xc.x);
+    
+    AREA =  HALF*(fabs((SolnBlk.Grid.nodeNE(i,j).X-SolnBlk.Grid.Cell[i+1][j].Xc)^
+		       (SolnBlk.Grid.nodeSE(i,j).X-SolnBlk.Grid.Cell[i+1][j].Xc)) +
+		  fabs((SolnBlk.Grid.nodeSE(i,j).X-SolnBlk.Grid.Cell[i][j].Xc)^
+		       (SolnBlk.Grid.nodeNE(i,j).X-SolnBlk.Grid.Cell[i][j].Xc)));
+   
+    if(Orient_cell == CENTER){
+      d_dWdx_dW = HALF*(dWnSEdWc* norm[0].x+ dWnNEdWc* norm[1].x+ (ONE+ dWnNEdWc)* norm[2].x+ (ONE+dWnSEdWc)* norm[3].x)/AREA;
+      d_dWdy_dW = HALF*(dWnSEdWc* norm[0].y+ dWnNEdWc* norm[1].y+ (ONE+ dWnNEdWc)* norm[2].y+ (ONE+dWnSEdWc)* norm[3].y)/AREA;  
+    } else if( Orient_cell == EAST) {
+      d_dWdx_dW = HALF*( (ONE+dWnSEdWc)* norm[0].x + (ONE+dWnNEdWc)*norm[1].x + dWnNEdWc* norm[2].x + dWnSEdWc*norm[3].x)/AREA;
+      d_dWdy_dW = HALF*( (ONE+dWnSEdWc)* norm[0].y + (ONE+dWnNEdWc)*norm[1].y + dWnNEdWc* norm[2].y + dWnSEdWc*norm[3].y)/AREA;  
+    } else if( Orient_cell == NORTH || Orient_cell == NE) {
+      d_dWdx_dW = HALF*( dWnNEdWc*(norm[1].x+norm[2].x))/AREA;
+      d_dWdy_dW = HALF*( dWnNEdWc*(norm[1].y+norm[2].y))/AREA;  
+    } else if( Orient_cell == SOUTH || Orient_cell == SE) {
+      d_dWdx_dW = HALF*( dWnSEdWc*(norm[0].x+norm[3].x))/AREA;
+      d_dWdy_dW = HALF*( dWnSEdWc*(norm[0].y+norm[3].y))/AREA;  
+    }
+    break;
+
+    /*************** SOUTH ****************************/
+  case SOUTH:
+    dWnSEdWc = LEFT;
+    dWnSWdWc = RIGHT;
+
+    //  normal vector of the SE side of a diamond 
+    norm[0].x =  SolnBlk.Grid.nodeSE(i,j).X.y - SolnBlk.Grid.Cell[i][j-1].Xc.y;
+    norm[0].y = -(SolnBlk.Grid.nodeSE(i,j).X.x - SolnBlk.Grid.Cell[i][j-1].Xc.x  );
+    //  normal vector of the NE side of a diamond 
+    norm[1].x = SolnBlk.Grid.Cell[i][j].Xc.y -  SolnBlk.Grid.nodeSE(i,j).X.y;
+    norm[1].y = -(SolnBlk.Grid.Cell[i][j].Xc.x -  SolnBlk.Grid.nodeSE(i,j).X.x);
+    //  normal vector of the NW side of a diamond 
+    norm[2].x =   SolnBlk.Grid.nodeSW(i,j).X.y - SolnBlk.Grid.Cell[i][j].Xc.y ;
+    norm[2].y = -(SolnBlk.Grid.nodeSW(i,j).X.x - SolnBlk.Grid.Cell[i][j].Xc.x);
+    //  normal vector of the SW side of a diamond 
+    norm[3].x =  SolnBlk.Grid.Cell[i][j-1].Xc.y - SolnBlk.Grid.nodeSW(i,j).X.y;
+    norm[3].y = -(SolnBlk.Grid.Cell[i][j-1].Xc.x- SolnBlk.Grid.nodeSW(i,j).X.x);
+    
+    AREA =  HALF*(fabs((SolnBlk.Grid.nodeSE(i,j).X-SolnBlk.Grid.Cell[i][j-1].Xc)^
+		       (SolnBlk.Grid.nodeSW(i,j).X-SolnBlk.Grid.Cell[i][j-1].Xc)) +
+		  fabs((SolnBlk.Grid.nodeSE(i,j).X-SolnBlk.Grid.Cell[i][j].Xc)^
+		       (SolnBlk.Grid.nodeSW(i,j).X-SolnBlk.Grid.Cell[i][j].Xc)));
+    if(Orient_cell == CENTER){
+      d_dWdx_dW = HALF*(dWnSEdWc* norm[0].x+ (ONE+dWnSEdWc)* norm[1].x+ (ONE+ dWnSWdWc)* norm[2].x+ (dWnSWdWc)* norm[3].x)/AREA;
+      d_dWdy_dW = HALF*(dWnSEdWc* norm[0].y+ (ONE+dWnSEdWc)* norm[1].y+ (ONE+ dWnSWdWc)* norm[2].y+ (dWnSWdWc)* norm[3].y)/AREA;  
+    } else if( Orient_cell == SOUTH) {
+      d_dWdx_dW = HALF*( (ONE+dWnSEdWc)*norm[0].x + dWnSEdWc*norm[1].x + dWnSWdWc*norm[2].x + (ONE+dWnSWdWc)* norm[3].x)/AREA;
+      d_dWdy_dW = HALF*( (ONE+dWnSEdWc)*norm[0].y + dWnSEdWc*norm[1].y + dWnSWdWc*norm[2].y + (ONE+dWnSWdWc)* norm[3].y)/AREA;  
+    } else if( Orient_cell == EAST || Orient_cell == SE) {
+      d_dWdx_dW = HALF*( dWnSEdWc*(norm[0].x+norm[1].x))/AREA;
+      d_dWdy_dW = HALF*( dWnSEdWc*(norm[0].y+norm[1].y))/AREA;  
+    } else if( Orient_cell == WEST || Orient_cell == SW) {
+      d_dWdx_dW = HALF*( dWnSWdWc*(norm[2].x+norm[3].x))/AREA;
+      d_dWdy_dW = HALF*( dWnSWdWc*(norm[2].y+norm[3].y))/AREA;  
+    }
+    break;
+    
+    /*************** WEST ****************************/
+  case WEST:
+    dWnSWdWc = LEFT;
+    dWnNWdWc = RIGHT;
+    
+    //  normal vector of the SE side of a diamond 
+    norm[0].x =   SolnBlk.Grid.Cell[i][j].Xc.y - SolnBlk.Grid.nodeSW(i,j).X.y;
+    norm[0].y = -(SolnBlk.Grid.Cell[i][j].Xc.x - SolnBlk.Grid.nodeSW(i,j).X.x);
+    //  normal vector of the NE side of a diamond 
+    norm[1].x =  SolnBlk.Grid.nodeNW(i,j).X.y - SolnBlk.Grid.Cell[i][j].Xc.y;
+    norm[1].y = -(SolnBlk.Grid.nodeNW(i,j).X.x - SolnBlk.Grid.Cell[i][j].Xc.x);
+    //  normal vector of the NW side of a diamond 
+    norm[2].x =  SolnBlk.Grid.Cell[i-1][j].Xc.y - SolnBlk.Grid.nodeNW(i,j).X.y ;
+    norm[2].y = -( SolnBlk.Grid.Cell[i-1][j].Xc.x - SolnBlk.Grid.nodeNW(i,j).X.x);
+    //  normal vector of the SW side of a diamond 
+    norm[3].x =  SolnBlk.Grid.nodeSW(i,j).X.y - SolnBlk.Grid.Cell[i-1][j].Xc.y;
+    norm[3].y = -(SolnBlk.Grid.nodeSW(i,j).X.x - SolnBlk.Grid.Cell[i-1][j].Xc.x);
+    
+    AREA =  HALF*(fabs((SolnBlk.Grid.nodeNW(i,j).X-SolnBlk.Grid.Cell[i][j].Xc)^
+		       (SolnBlk.Grid.nodeSW(i,j).X-SolnBlk.Grid.Cell[i][j].Xc)) +
+		  fabs((SolnBlk.Grid.nodeNW(i,j).X-SolnBlk.Grid.Cell[i-1][j].Xc)^
+		       (SolnBlk.Grid.nodeSW(i,j).X-SolnBlk.Grid.Cell[i-1][j].Xc)));
+    
+    if(Orient_cell == CENTER){
+      d_dWdx_dW = HALF*((ONE+dWnSWdWc)* norm[0].x+ (ONE+dWnNWdWc)* norm[1].x+ dWnNWdWc* norm[2].x+ dWnSWdWc* norm[3].x)/AREA;
+      d_dWdy_dW = HALF*((ONE+dWnSWdWc)* norm[0].y+ (ONE+dWnNWdWc)* norm[1].y+ dWnNWdWc* norm[2].y+ dWnSWdWc* norm[3].y)/AREA;  
+    }  else if( Orient_cell == WEST) {
+      d_dWdx_dW = HALF*(dWnSWdWc*norm[0].x + dWnNWdWc*norm[1].x + (ONE+dWnNWdWc)* norm[2].x+ (ONE+dWnSWdWc)* norm[3].x)/AREA;
+      d_dWdy_dW = HALF*(dWnSWdWc*norm[0].y + dWnNWdWc*norm[1].y + (ONE+dWnNWdWc)* norm[2].y+ (ONE+dWnSWdWc)* norm[3].y)/AREA;    
+    } else if( Orient_cell == NORTH || Orient_cell == NW) {
+      d_dWdx_dW = HALF*( dWnNWdWc*(norm[1].x+norm[2].x))/AREA;
+      d_dWdy_dW = HALF*( dWnNWdWc*(norm[1].y+norm[2].y))/AREA;  
+    } else if( Orient_cell == SOUTH || Orient_cell == SW) {
+      d_dWdx_dW = HALF*( dWnSWdWc*(norm[0].x+norm[3].x))/AREA;
+      d_dWdy_dW = HALF*( dWnSWdWc*(norm[0].y+norm[3].y))/AREA;      
+    }
+    break;
+
+  }
+
+}
+
+/*************** CENTER ****************************/
+void d_dWd_dW_Center(double &d_dWdx_dW_C, double &d_dWdy_dW_C, 
+		     Chem2D_Quad_Block &SolnBlk, 
+		     const int &i, const int &j){
+
+  double area[4], d_dWdx_dW[4], d_dWdy_dW[4];
+
+  // area weighted gradients at cell centers, 4 inside triangles
+  area[0] = HALF*(SolnBlk.Grid.Node[i+1][j+1].X - SolnBlk.Grid.Node[i][j+1].X )^
+    (SolnBlk.Grid.xfaceN(i,j)- SolnBlk.Grid.Cell[i][j].Xc);
+  area[1] = HALF*(SolnBlk.Grid.Node[i+1][j+1].X - SolnBlk.Grid.Node[i+1][j].X )^
+    (SolnBlk.Grid.Cell[i][j].Xc - SolnBlk.Grid.xfaceE(i,j)); 
+  area[2] = HALF*(SolnBlk.Grid.Node[i+1][j].X - SolnBlk.Grid.Node[i][j].X )^
+    (SolnBlk.Grid.Cell[i][j].Xc - SolnBlk.Grid.xfaceS(i,j) );  
+  area[3] = HALF*(SolnBlk.Grid.Node[i][j+1].X - SolnBlk.Grid.Node[i][j].X )^
+    ( SolnBlk.Grid.xfaceW(i, j) - SolnBlk.Grid.Cell[i][j].Xc );
+  
+
+  //NORTH
+  d_dWd_dW_Diamond(d_dWdx_dW[0] ,d_dWdy_dW[0], SolnBlk,
+		   SolnBlk.dWn_dWc(i,j+1, NW), SolnBlk.dWn_dWc(i+1, j+1, NE), 
+		   CENTER, NORTH, i, j);  
+  //EAST
+  d_dWd_dW_Diamond(d_dWdx_dW[1] ,d_dWdy_dW[1], SolnBlk,
+		   SolnBlk.dWn_dWc(i+1,j+1, NE), SolnBlk.dWn_dWc(i+1, j, SE), 
+		   CENTER, EAST, i, j);
+  //SOUTH
+  d_dWd_dW_Diamond(d_dWdx_dW[2] ,d_dWdy_dW[2], SolnBlk,
+		   SolnBlk.dWn_dWc(i+1,j, SE), SolnBlk.dWn_dWc(i, j, SW), 
+		   CENTER, SOUTH, i, j);
+  //WEST
+  d_dWd_dW_Diamond(d_dWdx_dW[3] ,d_dWdy_dW[3], SolnBlk,
+		   SolnBlk.dWn_dWc(i,j, SW), SolnBlk.dWn_dWc(i, j+1, NW), 
+		   CENTER, WEST, i, j);
+  
+  //2nd derivative's at cell center 
+  d_dWdx_dW_C = (d_dWdx_dW[0]*area[0] + d_dWdx_dW[1]*area[1] +
+		 d_dWdx_dW[2]*area[2] + d_dWdx_dW[3]*area[3])/SolnBlk.Grid.Cell[i][j].A; 
+  
+  d_dWdy_dW_C = (d_dWdy_dW[0]*area[0]+d_dWdy_dW[1]*area[1] +
+		 d_dWdy_dW[2]*area[2] + d_dWdy_dW[3]*area[3])/SolnBlk.Grid.Cell[i][j].A; 
+      
+
+}
+
+/********************************************************
+ * Routine:  dS_tdW                                     *
+ *                                                      *
+ * This routine calculates the Turbulence (k-omeaga)    *
+ * source Jacobian.                                     *
+ *                                                      *
+ ********************************************************/
+int dS_tdW(DenseMatrix &dStdW,  Chem2D_Quad_Block &SolnBlk,
+	   double &d_dWdx_dW, double &d_dWdy_dW,
+	   const int &ii, const int &jj){
+  
+   double rho, U,V, k, omega;
+   double dUdx, dUdy, dVdx, dVdy;
+   double mu_t, alpha, beta_star, beta;
+   
+   beta_star = SolnBlk.W[ii][jj].beta_star;
+   beta = SolnBlk.W[ii][jj].beta;
+   alpha = SolnBlk.W[ii][jj].alpha;
+   mu_t = SolnBlk.W[ii][jj].eddy_viscosity();
+   
+   rho = SolnBlk.W[ii][jj].rho;
+   U = SolnBlk.W[ii][jj].v.x;
+   V = SolnBlk.W[ii][jj].v.y;
+   k = SolnBlk.W[ii][jj].k;
+   omega = SolnBlk.W[ii][jj].omega;
+   
+   dUdx =  SolnBlk.dWdx[ii][jj].v.x;
+   dUdy =  SolnBlk.dWdy[ii][jj].v.x;
+   dVdx =  SolnBlk.dWdx[ii][jj].v.y;
+   dVdy =  SolnBlk.dWdy[ii][jj].v.y;
+
+//    d_dWdx_dW =  SolnBlk.d_dWdx_dW[ii][jj][CENTER];
+//    d_dWdy_dW =  SolnBlk.d_dWdy_dW[ii][jj][CENTER];
+
+   double tau_x = TWO/THREE*dUdx - dVdy/THREE;
+   double tau_y = TWO/THREE*dVdy-dUdx/THREE;
+   double tau_z = dUdy+dVdx;
+   
+   dStdW(4,0) += (TWO*k/max(omega,TOLER)*tau_x - TWO/THREE*k)*dUdx +k/max(omega,TOLER)
+      *tau_z*tau_z + (TWO*k/max(omega,TOLER)*tau_y - TWO/THREE*k)*dVdy - beta_star*k*omega;
+   
+   dStdW(4,1) += FOUR/THREE*mu_t*d_dWdx_dW*dUdx+(TWO*mu_t*tau_x - TWO/THREE*rho*k)*d_dWdx_dW
+      + TWO*mu_t*tau_z*d_dWdy_dW - TWO/THREE*mu_t*d_dWdx_dW*dVdy;
+   
+   dStdW(4,2) += -TWO/THREE*mu_t*d_dWdy_dW*dUdx+TWO*mu_t*tau_z*d_dWdx_dW+FOUR/THREE*
+      mu_t*d_dWdy_dW*dVdy+(TWO*mu_t*tau_y-TWO/THREE*rho*k)*d_dWdy_dW;
+   
+   dStdW(4,4) += (TWO*rho/max(omega,TOLER)*tau_x - TWO/THREE*rho)*dUdx +rho/max(omega,TOLER)*
+      tau_z*tau_z + (TWO*rho/max(omega,TOLER)*tau_y - TWO/THREE*rho)*dVdy - beta_star*rho*omega;
+
+   dStdW(4,5) += -TWO*mu_t/max(omega,TOLER)*tau_x*dUdx - mu_t/max(omega,TOLER)*tau_z*tau_z -
+      TWO*mu_t/max(omega,TOLER)*tau_y*dVdy - beta_star*rho*k;
+  
+   dStdW(5,0) +=alpha*omega/max(k,TOLER)*((TWO*k/max(omega,TOLER)*tau_x - TWO/THREE*k)*dUdx +k/max(omega,TOLER)*tau_z*tau_z
+                                         + (TWO*k/max(omega,TOLER)*tau_y - TWO/THREE*k)*dVdy) - beta*omega*omega;
+   
+   dStdW(5,1) +=alpha*omega/max(k,TOLER)*(FOUR/THREE*mu_t*d_dWdx_dW*dUdx+( TWO*mu_t*tau_x - TWO/THREE*rho*k)*d_dWdx_dW +
+                                         TWO*mu_t*tau_z*d_dWdy_dW - TWO/THREE*mu_t*d_dWdx_dW*dVdy);
+   
+   dStdW(5,2) +=alpha*omega/max(k,TOLER)*(-TWO/THREE*mu_t*d_dWdy_dW*dUdx + TWO*mu_t*tau_z*d_dWdx_dW + 
+      FOUR/THREE*mu_t*d_dWdy_dW*dVdy + (TWO*mu_t*tau_y - TWO/THREE*rho*k)*d_dWdy_dW  );
+   
+   dStdW(5,4) += -alpha*omega/max(k*k,TOLER)*((TWO*mu_t*tau_x - TWO/THREE*rho*k )*dUdx + mu_t*tau_z*tau_z 
+                                             +(TWO*mu_t*tau_y - TWO/THREE*rho*k)*dVdy) +
+      alpha*omega/max(k,TOLER)*((TWO*rho/max(omega,TOLER)*tau_x - TWO/THREE*rho)*dUdx+rho/max(omega,TOLER)*tau_z*tau_z 
+       + (TWO*rho/max(omega,TOLER)*tau_y-TWO/THREE*rho)*dVdy);
+   
+   dStdW(5,5) +=  alpha/max(k,TOLER)*((TWO*mu_t*tau_x - TWO/THREE*rho*k)*dUdx + mu_t*tau_z*tau_z+(TWO*mu_t*tau_y-TWO*rho*k)*dVdy) +
+      alpha/max(k,TOLER)*(-TWO*mu_t*tau_x*dUdx - mu_t*tau_z*tau_z - TWO*mu_t*tau_y*dVdy) - TWO*beta*rho*omega;
+
+
+   if(SolnBlk.Axisymmetric ==AXISYMMETRIC_Y){
+      double radius  = SolnBlk.Grid.Cell[ii][jj].Xc.y;
+      if(radius !=ZERO){
+         double tau_t = TWO/THREE*V/radius - dUdx/THREE - dVdy/THREE;
+        
+         dStdW(4,0) += -TWO/THREE*V*k/max(omega,TOLER)/radius*(dUdx +dVdy) + (TWO*k*tau_t/max(omega,TOLER) - TWO/THREE*k)*V/radius;
+         dStdW(4,1) -=FOUR/THREE*mu_t*V*d_dWdx_dW/radius;
+         dStdW(4,2) += - TWO/THREE*mu_t*(dUdx+dVdy)/radius - TWO/THREE*mu_t*V*d_dWdy_dW/radius+TWO*mu_t*(TWO/THREE/radius - d_dWdy_dW/THREE)*V/radius
+	   + (TWO*mu_t*tau_t - TWO/THREE*rho*k)/radius;
+         dStdW(4,4) += -TWO/THREE*rho*V/max(omega,TOLER)/radius*(dUdx+dVdy) + V*(TWO*rho/max(omega,TOLER)*tau_t - TWO/THREE*rho)/radius;
+         dStdW(4,5) += TWO/THREE*mu_t*V/max(omega,TOLER)/radius*(dUdx+dVdy) - TWO*mu_t*V*tau_t/max(omega,TOLER)/radius;         
+         dStdW(5,0) += alpha*omega/max(TOLER,k)*(-TWO/THREE*k*V*(dUdx+dVdy)/max(omega,TOLER)/radius + (TWO*k*tau_t/max(omega,TOLER) - TWO/THREE*k)*V/radius);
+         dStdW(5,1) -= FOUR/THREE*alpha*rho*V*d_dWdx_dW/radius;
+         dStdW(5,2) += alpha*omega/max(k,TOLER)*(-TWO/THREE*mu_t*(dUdx+dVdy)/radius-TWO/THREE*mu_t*V*d_dWdy_dW/radius
+                                                 +TWO*mu_t*(TWO/THREE/radius - d_dWdy_dW/THREE)*V/radius + (TWO*mu_t*tau_t - TWO/THREE*rho*k)/radius);
+	 dStdW(5,4) += - alpha*omega/max(k*k,TOLER)*(-TWO/THREE*mu_t*V*(dUdx + dVdy)/radius + (TWO*mu_t*tau_t - TWO/THREE*rho*k)*V/radius)+
+	   alpha*omega/max(TOLER,k)*(-TWO/THREE*V*rho*(dUdx+dVdy)/max(omega,TOLER)/radius +(TWO*rho*tau_t/max(omega,TOLER) - TWO/THREE*rho)*V/radius );         
+         dStdW(5,5) += alpha/max(k,TOLER)*(-TWO/THREE*mu_t*V*(dUdx+dVdy)/radius + (TWO*mu_t*tau_t - TWO/THREE*rho*k)*V/radius )+
+            alpha/max(k,TOLER)*(TWO/THREE*mu_t*V*(dUdx+dVdy)/radius - TWO*mu_t*V*tau_t/radius);
+      }      
+   }
+   
+   return (0);
+}
+
+
+// ARE THES FUNCTIONS EVER CALLED ????
+
+
+// int Automatic_Wall_Treatment_Residual_Jacobian(Chem2D_Quad_Block &SolnBlk, Chem2D_Input_Parameters &Input_Parameters, int i, int j, DenseMatrix &dRdU){
+   
+//    int NUM_VAR = SolnBlk.NumVar()-1;  
+
+//     //First cells off wall  
+//    if(((i==SolnBlk.ICl) && ((SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS ||
+//                              SolnBlk.Grid.BCtypeW[j] == BC_NO_SLIP  ||
+//                              SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                              SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
+//                              SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL))  ) 
+//       ||((i==SolnBlk.ICu) &&(SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS ||
+//                              SolnBlk.Grid.BCtypeE[j] == BC_NO_SLIP  ||
+//                              SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                              SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
+//                              SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL))
+//       || ((j == SolnBlk.JCl) &&((SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS ||
+//                                  SolnBlk.Grid.BCtypeS[i] == BC_NO_SLIP  ||
+//                                  SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                                  SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
+//                                  SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL))  )
+//       || ((j ==SolnBlk.JCu) &&((SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS ||
+//                                 SolnBlk.Grid.BCtypeN[i] == BC_NO_SLIP  ||
+//                                 SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                                 SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX ||
+//                                 SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)))){
+
+//       if(SolnBlk.Wall[i][j].yplus <=SolnBlk.W[i][j].y_sublayer){
+//          for(int jcol=0; jcol<NUM_VAR; jcol++){
+//             if(jcol!=5){
+//                dRdU(5,jcol) = 0.0;
+//             }
+//          }
+         
+            
+//       }
+      
+//       /* y+ > 2.5 && y+<30  apply  blending formulation */
+//       if(SolnBlk.Wall[i][j].yplus >SolnBlk.W[i][j].y_sublayer
+//          && SolnBlk.Wall[i][j].yplus <SolnBlk.W[i][j].Yplus_l){
+//          for(int jcol=0; jcol<NUM_VAR; jcol++){
+//             if(jcol!=4){
+//                dRdU(4,jcol) = 0.0;
+//             }
+//          }
+//          for(int jcol=0; jcol<NUM_VAR; jcol++){
+//             if(jcol!=5){
+//                dRdU(5,jcol) = 0.0;
+//             }
+//          }
+//       }      
+//       /* y+ >= 30  apply wall function */
+//       if(SolnBlk.Wall[i][j].yplus >= SolnBlk.W[i][j].Yplus_l){
+//          //cout<<"-----------#3"<<endl;
+//          // Set k
+//          for(int jcol=0; jcol<NUM_VAR; jcol++){
+//             if(jcol!=4){
+//                dRdU(4,jcol) = 0.0;
+//             }
+//          }
+//          for(int jcol=0; jcol<NUM_VAR; jcol++){
+//             if(jcol!=5){
+//                dRdU(5,jcol) = 0.0;
+//             }
+                    
+//          }
+//       }
+      
+//     // first cells off walls
+//    }else if ((SolnBlk.Wall[i][j].yplus >SolnBlk.W[i][j].y_sublayer
+//               && SolnBlk.Wall[i][j].yplus <SolnBlk.W[i][j].Yplus_l) &&(
+//                  (((i-1 ==SolnBlk.ICl) && ((SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS ||
+//                                             SolnBlk.Grid.BCtypeW[j] == BC_NO_SLIP  ||
+//                                             SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                                             SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
+//                                             SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL))  ) 
+//                   ||((i+1==SolnBlk.ICu) &&(SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS ||
+//                                            SolnBlk.Grid.BCtypeE[j] == BC_NO_SLIP  ||
+//                                            SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                                            SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
+//                                            SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL))
+//                   || ((j-1 == SolnBlk.JCl) &&((SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS ||
+//                                                SolnBlk.Grid.BCtypeS[i] == BC_NO_SLIP  ||
+//                                                SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                                                SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
+//                                                SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL))  )
+//                   || ((j+1 ==SolnBlk.JCu) &&((SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS ||
+//                                               SolnBlk.Grid.BCtypeN[i] == BC_NO_SLIP  ||
+//                                               SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                                               SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX ||
+//                                               SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)))) ||
+//                  (((i-2 ==SolnBlk.ICl) && ((SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS ||
+//                                             SolnBlk.Grid.BCtypeW[j] == BC_NO_SLIP  ||
+//                                             SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                                             SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
+//                                             SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL))  ) 
+//                   ||((i+2==SolnBlk.ICu) &&(SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS ||
+//                                            SolnBlk.Grid.BCtypeE[j] == BC_NO_SLIP  ||
+//                                            SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                                            SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
+//                                            SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL))
+//                   || ((j-2 == SolnBlk.JCl) &&((SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS ||
+//                                                SolnBlk.Grid.BCtypeS[i] == BC_NO_SLIP  ||
+//                                                SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                                                SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
+//                                                SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL))  )
+//                   || ((j+2 ==SolnBlk.JCu) &&((SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS ||
+//                                               SolnBlk.Grid.BCtypeN[i] == BC_NO_SLIP  ||
+//                                               SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                                               SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX ||
+//                                               SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)))))) {
+//       for(int jcol=0; jcol<NUM_VAR; jcol++){
+//          if(jcol!=4){
+//             dRdU(4,jcol) = 0.0;
+//          }
+//       }
+//       for(int jcol=0; jcol<NUM_VAR; jcol++){
+//          if(jcol!=5){
+//             dRdU(5,jcol) = 0.0;
+//          }         
+//       }
+      
+//    } else if (SolnBlk.Wall[i][j].yplus <=SolnBlk.W[i][j].y_sublayer){
+   
+//       for(int jcol=0; jcol<NUM_VAR; jcol++){
+//          if(jcol!=5){
+//             dRdU(5,jcol) = 0.0;
+//          }        
+//       }     
+//    }
+   
+//    return 0;
+
+// }
+
+// int Wall_Function_Residual_Jacobian(Chem2D_Quad_Block &SolnBlk, 
+//                          Chem2D_Input_Parameters &Input_Parameters, 
+//                          int i, int j, DenseMatrix &dRdU){
+   
+//   int NUM_VAR = SolnBlk.NumVar()-1;
+
+//   if (SolnBlk.Wall[i][j].yplus <= SolnBlk.W[i][j].Yplus_u) {                    
+//     for(int jcol=0; jcol<NUM_VAR; jcol++){
+//       if(jcol!=4){
+// 	dRdU(4,jcol) = 0.0;
+//       }
+//     }
+//     for(int jcol=0; jcol<NUM_VAR; jcol++){
+//       if(jcol!=5){
+// 	dRdU(5,jcol) = 0.0;
+//       }      
+//     }    
+//    } /* endif */
+  
+//   return 0;   
+// }
+
+
+// void Low_Reynoldsnumber_Formulation_Residual_Jacobian(Chem2D_Quad_Block &SolnBlk, 
+// 						      Chem2D_Input_Parameters &Input_Parameters, 
+// 						      int i, int j, DenseMatrix & dRdU){
+  
+//   int NUM_VAR = SolnBlk.NumVar()-1;
+  
+//   if (( SolnBlk.Wall[i][j].yplus <=SolnBlk.W[i][j].y_sublayer)
+//       ||((i==SolnBlk.ICl) && ( (SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS ||
+// 				SolnBlk.Grid.BCtypeW[j] == BC_NO_SLIP  ||
+// 				SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+// 				SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
+// 				SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL))  ) 
+//       ||  ((i==SolnBlk.ICu) &&(SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS ||
+// 			       SolnBlk.Grid.BCtypeE[j] == BC_NO_SLIP  ||
+// 			       SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+// 			       SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
+// 			       SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL))
+//       || ((j == SolnBlk.JCl) &&((SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS ||
+//                                  SolnBlk.Grid.BCtypeS[i] == BC_NO_SLIP  ||
+//                                  SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                                  SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
+//                                  SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL))  )
+//       || ((j ==SolnBlk.JCu) &&((SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS ||
+// 				SolnBlk.Grid.BCtypeN[i] == BC_NO_SLIP  ||
+// 				SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+// 				SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX ||
+// 				SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)))){
+    
+//     for(int jcol=0; jcol<NUM_VAR; jcol++){
+//       if(jcol!=5){
+// 	dRdU(5,jcol) = 0.0;
+//       }      
+//     }    
+//   }   
+
+// }
+
+
+// void BC_Residual_Jacobian(Chem2D_Quad_Block &SolnBlk, Chem2D_Input_Parameters &Input_Parameters, int i, int j, DenseMatrix &dRdU){
+   
+//   if (((i==SolnBlk.ICl) && ( (SolnBlk.Grid.BCtypeW[j] != BC_NONE ))) 
+//       ||  ((i==SolnBlk.ICu) &&(SolnBlk.Grid.BCtypeE[j] != BC_NONE))
+//       || ((j == SolnBlk.JCl) &&((SolnBlk.Grid.BCtypeS[i] != BC_NONE )))
+//       || ((j ==SolnBlk.JCu) &&((SolnBlk.Grid.BCtypeN[i] != BC_NONE )))){
+          
+//     dRdU.zero();
+//     int NUM_VAR_CHEM2D = SolnBlk.NumVar();
+    
+//     for(int irow=0; irow<(NUM_VAR_CHEM2D-1); irow++)
+//       for(int jcol=0; jcol<(NUM_VAR_CHEM2D-1); jcol++){
+// 	if(irow==jcol){
+// 	  dRdU(irow, jcol) = -ONE/SolnBlk.dt[i][j];
+// 	}
+//       }    
+//   }
+// }
+
+

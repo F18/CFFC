@@ -78,7 +78,12 @@ class Vector2D{
     Vector2D(void) {
        x = ZERO; y = ZERO;
     }
-
+  
+    //! Copy constructor.
+    Vector2D(const double &V) {
+       x = V; y = V;
+    }
+  
     //! Copy constructor.
     Vector2D(const Vector2D &V) {
        x = V.x; y = V.y;

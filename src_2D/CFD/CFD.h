@@ -95,6 +95,7 @@ inline char *Date_And_Time() {
 #define REFINE_GRID_CODE                                 10014
 #define BOUNDING_BOX_REFINE_GRID_CODE                    10015
 #define MORTON_ORDERING_CODE                             10016
+#define SWITCH_BCS_TO_FIXED                              10017
 
 #define WRITE_OUTPUT_ELEMENTS_CODE                       10020
 #define WRITE_OUTPUT_CELL_STATUS_CODE                    10022
