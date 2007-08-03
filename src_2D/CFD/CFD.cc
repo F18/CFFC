@@ -270,7 +270,7 @@ int Open_Progress_File(ofstream &Progress_File,
                  << "\"" << progress_file_name_ptr << "\""
                  << " using 1:2 \"%lf%*lf%*lf%*lf%*lf%lf\" \\\n"
 	         << "     title \"Max-norm\" with lines\n"
-                 << "pause 1\n"
+                 << "pause 10\n"
                  << "reread\n";
 
     gnuplot_file.close();

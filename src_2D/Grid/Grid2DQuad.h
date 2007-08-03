@@ -1708,4 +1708,37 @@ extern Grid2D_Quad_Block** Grid_Desolvation_Chamber(Grid2D_Quad_Block **Grid_ptr
 						    const int Number_of_Cells_Jdir,
 						    const int Number_of_Ghost_Cells);
 
+extern Grid2D_Quad_Block** Grid_Adiabatic_Flat_Plate(Grid2D_Quad_Block **Grid_ptr,
+                                              int &Number_of_Blocks_Idir,
+                                              int &Number_of_Blocks_Jdir,
+                                              const double &Length,
+ 		                              const int Number_of_Cells_Idir,
+		                              const int Number_of_Cells_Jdir,
+					      const int Number_of_Ghost_Cells);
+
+extern Grid2D_Quad_Block** Grid_Adiabatic_Circular_Cylinder(Grid2D_Quad_Block **Grid_ptr,
+							    int &Number_of_Blocks_Idir,
+							    int &Number_of_Blocks_Jdir,
+							    const double &Radius,
+							    const int Number_of_Cells_Idir,
+							    const int Number_of_Cells_Jdir,
+							    const int Number_of_Ghost_Cells);
+
+extern Grid2D_Quad_Block** Grid_Adiabatic_Circular_Cylinder(Grid2D_Quad_Block **Grid_ptr,
+							    int &Number_of_Blocks_Idir,
+							    int &Number_of_Blocks_Jdir,
+							    const double &Inner_Radius,
+							    const double &Outer_Radius,
+							    const int Number_of_Cells_Idir,
+							    const int Number_of_Cells_Jdir,
+							    const int Number_of_Ghost_Cells);
+
+extern Grid2D_Quad_Block** Grid_Adiabatic_Couette(Grid2D_Quad_Block **Grid_ptr,
+						  int &Number_of_Blocks_Idir,
+						  int &Number_of_Blocks_Jdir,
+						  const double &Separation,
+						  const int Number_of_Cells_Idir,
+						  const int Number_of_Cells_Jdir,
+						  const int Number_of_Ghost_Cells);
+
 #endif /* _GRID2D_QUAD_BLOCK_INCLUDED  */

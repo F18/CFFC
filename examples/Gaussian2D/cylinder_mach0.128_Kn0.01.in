@@ -1,0 +1,78 @@
+########################
+#
+# Blunt body test case
+#
+########################
+# Set solver parameters
+########################
+Time_Integration_Type =
+Explicit_Predictor_Corrector
+Time_Accurate = 
+0
+Flow_Geometry_Type = 
+Planar
+Local_Time_Stepping =
+1
+Reconstruction_Type =
+Least_Squares 
+Limiter_Type =
+Venkatakrishnan
+Flux_Function_Type =
+Roe
+#########################
+# Set initial conditions
+#########################
+ICs_Type = 
+Uniform
+Mach_Number = 
+0.127889461199
+Grid_Type =
+Adiabatic_Circular_Cylinder
+Cylinder_Radius =
+3.36e-7
+Number_of_Cells_Idir = 
+100
+Number_of_Cells_Jdir =
+100
+Alpha =
+1.0
+Number_of_Uniform_Mesh_Refinements =
+0
+AMR =
+0
+AMR_Frequency =
+1000
+Maximum_Refinement_Level =
+5
+Restart_Solution_Save_Frequency =
+1000
+Freeze_Limiter =
+0
+Freeze_Limiter_Residual_Level =
+1e10
+###############################
+# Set time stepping parameters
+###############################
+CFL_Number =
+0.3
+Maximum_Number_of_Time_Steps =
+100000
+Number_of_Blocks_Per_Processor =
+16
+Output_File_Name = 
+cylinder_Gaussian
+#######################
+# Execute program
+#######################
+Execute
+#######################
+# Write output
+#######################
+Write_Output_Cylinder_Free_Molecular
+Write_Output_Cells
+Write_Output
+Write_Output_Drag
+#######################
+# Terminate program
+#######################
+Terminate

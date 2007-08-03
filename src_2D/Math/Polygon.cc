@@ -120,7 +120,7 @@ void Polygon_Intersection(const Polygon &P1, const Polygon &P2, Polygon &P) {
       X21 = P2[n2];
       X22 = P2[n2+1];
       // Determine and add the intersection point if any.
-      intersect_flag = Line_Intersection(X11,X12,X21,X22,eps,Xp);
+      intersect_flag = Line_Intersection(X11,X12,X21,X22,Xp,eps);
       if (intersect_flag) {
 	if (Y1.find(Xp,eps) == NULL && abs(X12-Xp) > eps &&
 	    abs(X21-Xp) > eps && abs(X22-Xp) > eps) {
@@ -196,7 +196,7 @@ void Polygon_Intersection(const Polygon &P1, const Polygon &P2, Polygon &P) {
       X11 = P1[n1];
       X12 = P1[n1+1];
       // Determine and add the intersection point if any.
-      intersect_flag = Line_Intersection(X11,X12,X21,X22,Xp);
+      intersect_flag = Line_Intersection(X11,X12,X21,X22,Xp,eps);
       if (intersect_flag) {
 	if (Y2.find(Xp,eps) == NULL && abs(X22-Xp) > eps &&
 	    abs(X11-Xp) > eps && abs(X12-Xp) > eps) {

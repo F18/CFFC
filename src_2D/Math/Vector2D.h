@@ -440,13 +440,13 @@ extern int Line_Intersection(const Vector2D Xa1,
 			     const Vector2D Xa3,
 			     const Vector2D Xb1,
 			     const Vector2D Xb3,
-			     Vector2D &Xp);
+			     Vector2D &Xp,
+			     const double eps);
 
 extern int Line_Intersection(const Vector2D Xa1,
 			     const Vector2D Xa3,
 			     const Vector2D Xb1,
 			     const Vector2D Xb3,
-			     const double &eps,
 			     Vector2D &Xp);
 
 extern int Line_Intersection(const Vector2D Xa1,
