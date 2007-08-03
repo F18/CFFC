@@ -805,7 +805,6 @@ BCs_Interface(const int &nb, const double &Time) {
   int Interface_BC_Type;
   double length, Temperature;
   Vector2D V;
-  Gaussian2D_pState Wbc;
 
   for (int j = Local_SolnBlk[nb].JCl-Local_SolnBlk[nb].Nghost; j <= Local_SolnBlk[nb].JCu+Local_SolnBlk[nb].Nghost; j++) {
     for (int i = Local_SolnBlk[nb].ICl-Local_SolnBlk[nb].Nghost; i <= Local_SolnBlk[nb].ICu+Local_SolnBlk[nb].Nghost; i++) {
@@ -839,17 +838,13 @@ BCs_Interface(const int &nb, const double &Time) {
 	    Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceN(i,j));
 	    // Determine the boundary velocity.
 	    V = Interface_Union_List[Ni].Determine_Interface_Velocity(Local_SolnBlk[nb].Grid.xfaceN(i,j),Time);
-	    // Translate the boundary state into a stationary reference frame.
-	    Wbc = Translate(Local_SolnBlk[nb].W[i][j+1],V);
 	    // Apply the boundary condition.
 	    switch(Interface_BC_Type) {
 	    case INTERFACE_BC_REFLECTION :
-	      Local_SolnBlk[nb].W[i][j] += Translate(Reflect(Wbc,-Local_SolnBlk[nb].Grid.nfaceN(i,j)),
-						     Vector2D(-V.x,-V.y))*Local_SolnBlk[nb].Grid.lfaceN(i,j);
+	      Local_SolnBlk[nb].W[i][j] += Reflect(Local_SolnBlk[nb].W[i][j+1],-Local_SolnBlk[nb].Grid.nfaceN(i,j),V)*Local_SolnBlk[nb].Grid.lfaceN(i,j);
 	      break;
 	    case INTERFACE_BC_ADIABATIC_WALL :
-	      Local_SolnBlk[nb].W[i][j] += Translate(Adiabatic_Wall(Wbc,Vector2D(0.0,0.0),-Local_SolnBlk[nb].Grid.nfaceN(i,j)),
-						     Vector2D(-V.x,-V.y))*Local_SolnBlk[nb].Grid.lfaceN(i,j);
+	      Local_SolnBlk[nb].W[i][j] += Adiabatic_Wall(Local_SolnBlk[nb].W[i][j+1],V,-Local_SolnBlk[nb].Grid.nfaceN(i,j))*Local_SolnBlk[nb].Grid.lfaceN(i,j);
 	      break;
 	    default :
 	      cout << endl << " -> " << Local_SolnBlk[nb].Grid.Cell[i][j].Xc << " " << Interface_BC_Type;
@@ -869,17 +864,13 @@ BCs_Interface(const int &nb, const double &Time) {
 	    Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceS(i,j));
 	    // Determine the boundary velocity.
 	    V = Interface_Union_List[Ni].Determine_Interface_Velocity(Local_SolnBlk[nb].Grid.xfaceS(i,j),Time);
-	    // Translate the boundary state into a stationary reference frame.
-	    Wbc = Translate(Local_SolnBlk[nb].W[i][j-1],V);
 	    // Apply the boundary condition.
 	    switch(Interface_BC_Type) {
 	    case INTERFACE_BC_REFLECTION :
-	      Local_SolnBlk[nb].W[i][j] += Translate(Reflect(Wbc,-Local_SolnBlk[nb].Grid.nfaceS(i,j)),
-						     Vector2D(-V.x,-V.y))*Local_SolnBlk[nb].Grid.lfaceS(i,j);
+	      Local_SolnBlk[nb].W[i][j] += Reflect(Local_SolnBlk[nb].W[i][j-1],-Local_SolnBlk[nb].Grid.nfaceS(i,j),V)*Local_SolnBlk[nb].Grid.lfaceS(i,j);
 	      break;
 	    case INTERFACE_BC_ADIABATIC_WALL :
-	      Local_SolnBlk[nb].W[i][j] += Translate(Adiabatic_Wall(Wbc,Vector2D(0.0,0.0),-Local_SolnBlk[nb].Grid.nfaceS(i,j)),
-						     Vector2D(-V.x,-V.y))*Local_SolnBlk[nb].Grid.lfaceS(i,j);
+	      Local_SolnBlk[nb].W[i][j] += Adiabatic_Wall(Local_SolnBlk[nb].W[i][j-1],V,-Local_SolnBlk[nb].Grid.nfaceS(i,j))*Local_SolnBlk[nb].Grid.lfaceS(i,j);
 	      break;
 	    default :
 	      cout << endl << " -> " << Local_SolnBlk[nb].Grid.Cell[i][j].Xc << " " << Interface_BC_Type;
@@ -899,17 +890,13 @@ BCs_Interface(const int &nb, const double &Time) {
 	    Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceE(i,j));
 	    // Determine the boundary velocity.
 	    V = Interface_Union_List[Ni].Determine_Interface_Velocity(Local_SolnBlk[nb].Grid.xfaceE(i,j),Time);
-	    // Translate the boundary state into a stationary reference frame.
-	    Wbc = Translate(Local_SolnBlk[nb].W[i+1][j],V);
 	    // Apply the boundary condition.
 	    switch(Interface_BC_Type) {
 	    case INTERFACE_BC_REFLECTION :
-	      Local_SolnBlk[nb].W[i][j] += Translate(Reflect(Wbc,-Local_SolnBlk[nb].Grid.nfaceE(i,j)),
-						     Vector2D(-V.x,-V.y))*Local_SolnBlk[nb].Grid.lfaceE(i,j);
+	      Local_SolnBlk[nb].W[i][j] += Reflect(Local_SolnBlk[nb].W[i+1][j],-Local_SolnBlk[nb].Grid.nfaceE(i,j),V)*Local_SolnBlk[nb].Grid.lfaceE(i,j);
 	      break;
 	    case INTERFACE_BC_ADIABATIC_WALL :
-	      Local_SolnBlk[nb].W[i][j] += Translate(Adiabatic_Wall(Wbc,Vector2D(0.0,0.0),-Local_SolnBlk[nb].Grid.nfaceE(i,j)),
-						     Vector2D(-V.x,-V.y))*Local_SolnBlk[nb].Grid.lfaceE(i,j);
+	      Local_SolnBlk[nb].W[i][j] += Adiabatic_Wall(Local_SolnBlk[nb].W[i+1][j],V,-Local_SolnBlk[nb].Grid.nfaceE(i,j))*Local_SolnBlk[nb].Grid.lfaceE(i,j);
 	      break;
 	    default :
 	      cout << endl << " -> " << Local_SolnBlk[nb].Grid.Cell[i][j].Xc << " " << Interface_BC_Type;
@@ -929,17 +916,13 @@ BCs_Interface(const int &nb, const double &Time) {
 	    Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceW(i,j));
 	    // Determine the boundary velocity.
 	    V = Interface_Union_List[Ni].Determine_Interface_Velocity(Local_SolnBlk[nb].Grid.xfaceW(i,j),Time);
-	    // Translate the boundary state into a stationary reference frame.
-	    Wbc = Translate(Local_SolnBlk[nb].W[i-1][j],V);
 	    // Apply the boundary condition.
 	    switch(Interface_BC_Type) {
 	    case INTERFACE_BC_REFLECTION :
-	      Local_SolnBlk[nb].W[i][j] += Translate(Reflect(Wbc,-Local_SolnBlk[nb].Grid.nfaceW(i,j)),
-						     Vector2D(-V.x,-V.y))*Local_SolnBlk[nb].Grid.lfaceW(i,j);
+	      Local_SolnBlk[nb].W[i][j] += Reflect(Local_SolnBlk[nb].W[i-1][j],-Local_SolnBlk[nb].Grid.nfaceW(i,j),V)*Local_SolnBlk[nb].Grid.lfaceW(i,j);
 	      break;
 	    case INTERFACE_BC_ADIABATIC_WALL :
-	      Local_SolnBlk[nb].W[i][j] += Translate(Adiabatic_Wall(Wbc,Vector2D(0.0,0.0),-Local_SolnBlk[nb].Grid.nfaceW(i,j)),
-						     Vector2D(-V.x,-V.y))*Local_SolnBlk[nb].Grid.lfaceW(i,j);
+	      Local_SolnBlk[nb].W[i][j] += Adiabatic_Wall(Local_SolnBlk[nb].W[i-1][j],V,-Local_SolnBlk[nb].Grid.nfaceW(i,j))*Local_SolnBlk[nb].Grid.lfaceW(i,j);
 	      break;
 	    default :
 	      cout << endl << " -> " << Local_SolnBlk[nb].Grid.Cell[i][j].Xc << " " << Interface_BC_Type;
@@ -964,17 +947,13 @@ BCs_Interface(const int &nb, const double &Time) {
 	      Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceN(i,j+1));
 	      // Determine the boundary velocity.
 	      V = Interface_Union_List[Ni].Determine_Interface_Velocity(Local_SolnBlk[nb].Grid.xfaceN(i,j+1),Time);
-	      // Translate the boundary state into a stationary reference frame.
-	      Wbc = Translate(Local_SolnBlk[nb].W[i][j+2],V);
 	      // Apply the boundary condition.
 	      switch(Interface_BC_Type) {
 	      case INTERFACE_BC_REFLECTION :
-		Local_SolnBlk[nb].W[i][j] += Translate(Reflect(Wbc,-Local_SolnBlk[nb].Grid.nfaceN(i,j+1)),
-						       Vector2D(-V.x,-V.y))*Local_SolnBlk[nb].Grid.lfaceN(i,j+1);
+		Local_SolnBlk[nb].W[i][j] += Reflect(Local_SolnBlk[nb].W[i][j+2],-Local_SolnBlk[nb].Grid.nfaceN(i,j+1),V)*Local_SolnBlk[nb].Grid.lfaceN(i,j+1);
 		break;
 	      case INTERFACE_BC_ADIABATIC_WALL :
-		Local_SolnBlk[nb].W[i][j] += Translate(Adiabatic_Wall(Wbc,Vector2D(0.0,0.0),-Local_SolnBlk[nb].Grid.nfaceN(i,j+1)),
-						       Vector2D(-V.x,-V.y))*Local_SolnBlk[nb].Grid.lfaceN(i,j+1);
+		Local_SolnBlk[nb].W[i][j] += Adiabatic_Wall(Local_SolnBlk[nb].W[i][j+2],V,-Local_SolnBlk[nb].Grid.nfaceN(i,j+1))*Local_SolnBlk[nb].Grid.lfaceN(i,j+1);
 		break;
 	      default :
 		cout << endl << " -> " << Local_SolnBlk[nb].Grid.Cell[i][j].Xc << " " << Interface_BC_Type;
@@ -993,17 +972,13 @@ BCs_Interface(const int &nb, const double &Time) {
 	      Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceS(i,j-1));
 	      // Determine the boundary velocity.
 	      V = Interface_Union_List[Ni].Determine_Interface_Velocity(Local_SolnBlk[nb].Grid.xfaceS(i,j-1),Time);
-	      // Translate the boundary state into a stationary reference frame.
-	      Wbc = Translate(Local_SolnBlk[nb].W[i][j-2],V);
 	      // Apply the boundary condition.
 	      switch(Interface_BC_Type) {
 	      case INTERFACE_BC_REFLECTION :
-		Local_SolnBlk[nb].W[i][j] += Translate(Reflect(Wbc,-Local_SolnBlk[nb].Grid.nfaceS(i,j-1)),
-						       Vector2D(-V.x,-V.y))*Local_SolnBlk[nb].Grid.lfaceS(i,j-1);
+		Local_SolnBlk[nb].W[i][j] += Reflect(Local_SolnBlk[nb].W[i][j-2],-Local_SolnBlk[nb].Grid.nfaceS(i,j-1),V)*Local_SolnBlk[nb].Grid.lfaceS(i,j-1);
 		break;
 	      case INTERFACE_BC_ADIABATIC_WALL :
-		Local_SolnBlk[nb].W[i][j] += Translate(Adiabatic_Wall(Wbc,Vector2D(0.0,0.0),-Local_SolnBlk[nb].Grid.nfaceS(i,j-1)),
-						       Vector2D(-V.x,-V.y))*Local_SolnBlk[nb].Grid.lfaceS(i,j-1);
+		Local_SolnBlk[nb].W[i][j] += Adiabatic_Wall(Local_SolnBlk[nb].W[i][j-2],V,-Local_SolnBlk[nb].Grid.nfaceS(i,j-1))*Local_SolnBlk[nb].Grid.lfaceS(i,j-1);
 		break;
 	      default :
 		cout << endl << " -> " << Local_SolnBlk[nb].Grid.Cell[i][j].Xc << " " << Interface_BC_Type;
@@ -1021,17 +996,13 @@ BCs_Interface(const int &nb, const double &Time) {
 	      Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceE(i+1,j));
 	      // Determine the boundary velocity.
 	      V = Interface_Union_List[Ni].Determine_Interface_Velocity(Local_SolnBlk[nb].Grid.xfaceE(i+1,j),Time);
-	      // Translate the boundary state into a stationary reference frame.
-	      Wbc = Translate(Local_SolnBlk[nb].W[i+2][j],V);
 	      // Apply the boundary condition.
 	      switch(Interface_BC_Type) {
 	      case INTERFACE_BC_REFLECTION :
-		Local_SolnBlk[nb].W[i][j] += Translate(Reflect(Wbc,-Local_SolnBlk[nb].Grid.nfaceE(i+1,j)),
-						       Vector2D(-V.x,-V.y))*Local_SolnBlk[nb].Grid.lfaceE(i+1,j);
+		Local_SolnBlk[nb].W[i][j] += Reflect(Local_SolnBlk[nb].W[i+2][j],-Local_SolnBlk[nb].Grid.nfaceE(i+1,j),V)*Local_SolnBlk[nb].Grid.lfaceE(i+1,j);
 		break;
 	      case INTERFACE_BC_ADIABATIC_WALL :
-		Local_SolnBlk[nb].W[i][j] += Translate(Adiabatic_Wall(Wbc,Vector2D(0.0,0.0),-Local_SolnBlk[nb].Grid.nfaceE(i+1,j)),
-						       Vector2D(-V.x,-V.y))*Local_SolnBlk[nb].Grid.lfaceE(i+1,j);
+		Local_SolnBlk[nb].W[i][j] += Adiabatic_Wall(Local_SolnBlk[nb].W[i+2][j],V,-Local_SolnBlk[nb].Grid.nfaceE(i+1,j))*Local_SolnBlk[nb].Grid.lfaceE(i+1,j);
 		break;
 	      default :
 		cout << endl << " -> " << Local_SolnBlk[nb].Grid.Cell[i][j].Xc << " " << Interface_BC_Type;
@@ -1049,17 +1020,13 @@ BCs_Interface(const int &nb, const double &Time) {
 	      Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceW(i-1,j));
 	      // Determine the boundary velocity.
 	      V = Interface_Union_List[Ni].Determine_Interface_Velocity(Local_SolnBlk[nb].Grid.xfaceW(i-1,j),Time);
-	      // Translate the boundary state into a stationary reference frame.
-	      Wbc = Translate(Local_SolnBlk[nb].W[i-2][j],V);
 	      // Apply the boundary condition.
 	      switch(Interface_BC_Type) {
 	      case INTERFACE_BC_REFLECTION :
-		Local_SolnBlk[nb].W[i][j] += Translate(Reflect(Wbc,-Local_SolnBlk[nb].Grid.nfaceW(i-1,j)),
-						       Vector2D(-V.x,-V.y))*Local_SolnBlk[nb].Grid.lfaceW(i-1,j);
+		Local_SolnBlk[nb].W[i][j] += Reflect(Local_SolnBlk[nb].W[i-2][j],-Local_SolnBlk[nb].Grid.nfaceW(i-1,j),V)*Local_SolnBlk[nb].Grid.lfaceW(i-1,j);
 		break;
 	      case INTERFACE_BC_ADIABATIC_WALL :
-		Local_SolnBlk[nb].W[i][j] += Translate(Adiabatic_Wall(Wbc,Vector2D(0.0,0.0),-Local_SolnBlk[nb].Grid.nfaceW(i-1,j)),
-						       Vector2D(-V.x,-V.y))*Local_SolnBlk[nb].Grid.lfaceW(i-1,j);
+		Local_SolnBlk[nb].W[i][j] += Adiabatic_Wall(Local_SolnBlk[nb].W[i-2][j],V,-Local_SolnBlk[nb].Grid.nfaceW(i-1,j))*Local_SolnBlk[nb].Grid.lfaceW(i-1,j);
 		break;
 	      default :
 		cout << endl << " -> " << Local_SolnBlk[nb].Grid.Cell[i][j].Xc << " " << Interface_BC_Type;
@@ -1266,16 +1233,14 @@ dUdt_Residual_Evaluation(const double &Time) {
 	      Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceW(i+1,j));
 	      // Determine the boundary velocity.
 	      V = Interface_Union_List[Ni].Determine_Interface_Velocity(Local_SolnBlk[nb].Grid.xfaceW(i+1,j),Time);
-	      // Translate the right state into a stationary reference frame.
-	      Wr = Translate(Wr,V);
 	      // Determine the left state by applying the appropriate
 	      // boundary condition.
 	      if (Interface_BC_Type == INTERFACE_BC_REFLECTION) {
 		// WEST face of cell (i+1,j) is a REFLECTION boundary.
-		Wl = Reflect(Wr,Local_SolnBlk[nb].Grid.nfaceW(i+1,j));
+		Wl = Reflect(Wr,Local_SolnBlk[nb].Grid.nfaceW(i+1,j),V);
 	      } else if (Interface_BC_Type == INTERFACE_BC_ADIABATIC_WALL) {
 		// WEST face of cell (i+1,j) is an ADIABATIC_WALL boundary.
-		Wl = Adiabatic_Wall(Wr,Vector2D(0.0,0.0),Local_SolnBlk[nb].Grid.nfaceW(i+1,j));
+		Wl = Adiabatic_Wall(Wr,V,Local_SolnBlk[nb].Grid.nfaceW(i+1,j));
 	      }
 
  	    } else if (Mesh[nb].cell_status[i  ][j] == CELL_STATUS_ACTIVE &&
@@ -1290,16 +1255,14 @@ dUdt_Residual_Evaluation(const double &Time) {
 	      Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceE(i,j));
 	      // Determine the boundary velocity.
 	      V = Interface_Union_List[Ni].Determine_Interface_Velocity(Local_SolnBlk[nb].Grid.xfaceE(i,j),Time);
-	      // Translate the left state into a stationary coordinate frame.
-	      Wl = Translate(Wl,V);
 	      // Determine the right state by applying the appropriate
 	      // boundary condition.
 	      if (Interface_BC_Type == INTERFACE_BC_REFLECTION) {
 		// EAST face of cell (i,j) is a REFLECTION boundary.
-		Wr = Reflect(Wl,Local_SolnBlk[nb].Grid.nfaceE(i,j));
+		Wr = Reflect(Wl,Local_SolnBlk[nb].Grid.nfaceE(i,j),V);
 	      } else if (Interface_BC_Type == INTERFACE_BC_ADIABATIC_WALL) {
 		// EAST face of cell (i,j) is an ADIABATIC_WALL boundary.
-		Wr = Adiabatic_Wall(Wl,Vector2D(0.0,0.0),Local_SolnBlk[nb].Grid.nfaceE(i,j));
+		Wr = Adiabatic_Wall(Wl,V,Local_SolnBlk[nb].Grid.nfaceE(i,j));
 	      }
 
  	    } else if (Mesh[nb].cell_status[i  ][j] == CELL_STATUS_ACTIVE &&
@@ -1456,16 +1419,14 @@ dUdt_Residual_Evaluation(const double &Time) {
 	    Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceS(i,j+1));
 	    // Determine the boundary velocity.
 	    V = Interface_Union_List[Ni].Determine_Interface_Velocity(Local_SolnBlk[nb].Grid.xfaceS(i,j+1),Time);
-	    // Translate the right state into a stationary reference frame.
-	    Wr = Translate(Wr,V);
 	    // Determine the left state by applying the appropriate
 	    // boundary condition.
 	    if (Interface_BC_Type == INTERFACE_BC_REFLECTION) {
 	      // SOUTH face of cell (i,j+1) is a REFLECTION boundary.
-	      Wl = Reflect(Wr,Local_SolnBlk[nb].Grid.nfaceS(i,j+1));
+	      Wl = Reflect(Wr,Local_SolnBlk[nb].Grid.nfaceS(i,j+1),V);
 	    } else if (Interface_BC_Type == INTERFACE_BC_ADIABATIC_WALL) {
 	      // SOUTH face of cell (i,j+1) is an ADIABATIC_WALL boundary.
-	      Wl = Adiabatic_Wall(Wr,Vector2D(0.0,0.0),Local_SolnBlk[nb].Grid.nfaceS(i,j+1));
+	      Wl = Adiabatic_Wall(Wr,V,Local_SolnBlk[nb].Grid.nfaceS(i,j+1));
 	    }
 
  	  } else if (Mesh[nb].cell_status[i][j  ] == CELL_STATUS_ACTIVE &&
@@ -1479,16 +1440,14 @@ dUdt_Residual_Evaluation(const double &Time) {
 	    Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceN(i,j));
 	    // Determine the boundary velocity.
 	    V = Interface_Union_List[Ni].Determine_Interface_Velocity(Local_SolnBlk[nb].Grid.xfaceN(i,j),Time);
-	    // Translate the left state into a stationary reference frame.
-	    Wl = Translate(Wl,V);
 	    // Determine the right state by applying the appropriate
 	    // boundary condition.
 	    if (Interface_BC_Type == INTERFACE_BC_REFLECTION) {
 	      // NORTH face of cell (i,j) is a REFLECTION boundary.
-	      Wr = Reflect(Wl,Local_SolnBlk[nb].Grid.nfaceN(i,j));
+	      Wr = Reflect(Wl,Local_SolnBlk[nb].Grid.nfaceN(i,j),V);
 	    } else if (Interface_BC_Type == INTERFACE_BC_ADIABATIC_WALL) {
 	      // NORTH face of cell (i,j) is an ADIABATIC_WALL boundary.
-	      Wr = Adiabatic_Wall(Wl,Vector2D(0.0,0.0),Local_SolnBlk[nb].Grid.nfaceN(i,j));
+	      Wr = Adiabatic_Wall(Wl,V,Local_SolnBlk[nb].Grid.nfaceN(i,j));
 	    }
 
  	  } else if (Mesh[nb].cell_status[i][j  ] == CELL_STATUS_ACTIVE &&
@@ -1726,16 +1685,14 @@ dUdt_Multistage_Explicit(const int &i_stage,
 	      Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceW(i+1,j));
 	      // Determine the boundary velocity.
 	      V = Interface_Union_List[Ni].Determine_Interface_Velocity(Local_SolnBlk[nb].Grid.xfaceW(i+1,j),Time);
-	      // Translate the right state into a stationary reference frame.
-	      Wr = Translate(Wr,V);
 	      // Determine the left state by applying the appropriate
 	      // boundary condition.
 	      if (Interface_BC_Type == INTERFACE_BC_REFLECTION) {
 		// WEST face of cell (i+1,j) is a REFLECTION boundary.
-		Wl = Reflect(Wr,Local_SolnBlk[nb].Grid.nfaceW(i+1,j));
+		Wl = Reflect(Wr,Local_SolnBlk[nb].Grid.nfaceW(i+1,j),V);
 	      } else if (Interface_BC_Type == INTERFACE_BC_ADIABATIC_WALL) {
 		// WEST face of cell (i+1,j) is an ADIABATIC_WALL boundary.
-		Wl = Adiabatic_Wall(Wr,Vector2D(0.0,0.0),Local_SolnBlk[nb].Grid.nfaceW(i+1,j));
+		Wl = Adiabatic_Wall(Wr,V,Local_SolnBlk[nb].Grid.nfaceW(i+1,j));
 	      }
 
  	    } else if (Mesh[nb].cell_status[i  ][j] == CELL_STATUS_ACTIVE &&
@@ -1750,16 +1707,14 @@ dUdt_Multistage_Explicit(const int &i_stage,
 	      Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceE(i,j));
 	      // Determine the boundary velocity.
 	      V = Interface_Union_List[Ni].Determine_Interface_Velocity(Local_SolnBlk[nb].Grid.xfaceE(i,j),Time);
-	      // Translate the left state into a stationary coordinate frame.
-	      Wl = Translate(Wl,V);
 	      // Determine the right state by applying the appropriate
 	      // boundary condition.
 	      if (Interface_BC_Type == INTERFACE_BC_REFLECTION) {
 		// EAST face of cell (i,j) is a REFLECTION boundary.
-		Wr = Reflect(Wl,Local_SolnBlk[nb].Grid.nfaceE(i,j));
+		Wr = Reflect(Wl,Local_SolnBlk[nb].Grid.nfaceE(i,j),V);
 	      } else if (Interface_BC_Type == INTERFACE_BC_ADIABATIC_WALL) {
 		// EAST face of cell (i,j) is a ADIABATIC_WALL boundary.
-		Wr = Adiabatic_Wall(Wl,Vector2D(0.0,0.0),Local_SolnBlk[nb].Grid.nfaceE(i,j));
+		Wr = Adiabatic_Wall(Wl,V,Local_SolnBlk[nb].Grid.nfaceE(i,j));
 	      }
 
  	    } else if (Mesh[nb].cell_status[i  ][j] == CELL_STATUS_ACTIVE &&
@@ -1920,16 +1875,14 @@ dUdt_Multistage_Explicit(const int &i_stage,
 	    Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceS(i,j+1));
 	    // Determine the boundary velocity.
 	    V = Interface_Union_List[Ni].Determine_Interface_Velocity(Local_SolnBlk[nb].Grid.xfaceS(i,j+1),Time);
-	    // Translate the right state into a stationary reference frame.
-	    Wr = Translate(Wr,V);
 	    // Determine the left state by applying the appropriate
 	    // boundary condition.
 	    if (Interface_BC_Type == INTERFACE_BC_REFLECTION) {
 	      // SOUTH face of cell (i,j+1) is a REFLECTION boundary.
-	      Wl = Reflect(Wr,Local_SolnBlk[nb].Grid.nfaceS(i,j+1));
+	      Wl = Reflect(Wr,Local_SolnBlk[nb].Grid.nfaceS(i,j+1),V);
 	    } else if (Interface_BC_Type == INTERFACE_BC_ADIABATIC_WALL) {
 	      // SOUTH face of cell (i,j+1) is an ADIABATIC_WALL boundary.
-	      Wl = Adiabatic_Wall(Wr,Vector2D(0.0,0.0),Local_SolnBlk[nb].Grid.nfaceS(i,j+1));
+	      Wl = Adiabatic_Wall(Wr,V,Local_SolnBlk[nb].Grid.nfaceS(i,j+1));
 	    }
 
  	  } else if (Mesh[nb].cell_status[i][j  ] == CELL_STATUS_ACTIVE &&
@@ -1943,16 +1896,14 @@ dUdt_Multistage_Explicit(const int &i_stage,
 	    Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceN(i,j));
 	    // Determine the boundary velocity.
 	    V = Interface_Union_List[Ni].Determine_Interface_Velocity(Local_SolnBlk[nb].Grid.xfaceN(i,j),Time);
-	    // Translate the left state into a stationary reference frame.
-	    Wl = Translate(Wl,V);
 	    // Determine the right state by applying the appropriate
 	    // boundary condition.
 	    if (Interface_BC_Type == INTERFACE_BC_REFLECTION) {
 	      // NORTH face of cell (i,j) is a REFLECTION boundary.
-	      Wr = Reflect(Wl,Local_SolnBlk[nb].Grid.nfaceN(i,j));
+	      Wr = Reflect(Wl,Local_SolnBlk[nb].Grid.nfaceN(i,j),V);
 	    } else if (Interface_BC_Type == INTERFACE_BC_ADIABATIC_WALL) {
 	      // NORTH face of cell (i,j) is an ADIABATIC_WALL boundary.
-	      Wr = Adiabatic_Wall(Wl,Vector2D(0.0,0.0),Local_SolnBlk[nb].Grid.nfaceN(i,j));
+	      Wr = Adiabatic_Wall(Wl,V,Local_SolnBlk[nb].Grid.nfaceN(i,j));
 	    }
 
  	  } else if (Mesh[nb].cell_status[i][j  ] == CELL_STATUS_ACTIVE &&

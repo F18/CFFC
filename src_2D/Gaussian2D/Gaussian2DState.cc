@@ -206,6 +206,75 @@ Gaussian2D_pState Reflect(const Gaussian2D_pState &W,
 }
 
 /********************************************************
+ * Routine: Reflect                                     *
+ *                                                      *
+ * This function returns the reflected solution state   *
+ * in a given direction given the primitive solution    *
+ * variables and the unit normal vector in the          *
+ * direction of interest.                               *
+ *                                                      *
+ ********************************************************/
+Gaussian2D_pState Reflect(const Gaussian2D_pState &W,
+			  const Vector2D &norm_dir,
+			  const Vector2D &V) {
+
+    double dr, ur, vr, pxxr, pxyr, pyyr, pzzr, erotr;
+    double u, v, pxx, pxy, pyy;
+    Tensor2D pr;
+    double cos_angle, sin_angle;
+    Vector2D Vr;
+
+    /* Determine the direction cosine's for the frame
+       rotation. */
+
+    cos_angle = norm_dir.x; 
+    sin_angle = norm_dir.y;
+
+    /* Apply the frame rotation and calculate the primitive
+       solution state variables in the local rotated frame
+       defined by the unit normal vector. */
+
+    dr    = W.d;
+    ur    = W.v.x*cos_angle + W.v.y*sin_angle;
+    vr    = - W.v.x*sin_angle + W.v.y*cos_angle;
+    pxxr  = W.p.xx*cos_angle*cos_angle+W.p.yy*sin_angle*sin_angle
+            +2.0*W.p.xy*cos_angle*sin_angle;
+    pxyr  = W.p.xy*(cos_angle*cos_angle-sin_angle*sin_angle)
+            -(W.p.xx-W.p.yy)*cos_angle*sin_angle;
+    pyyr  = W.p.xx*sin_angle*sin_angle+W.p.yy*cos_angle*cos_angle
+            -2.0*W.p.xy*cos_angle*sin_angle;
+    pzzr  = W.p.zz;
+    erotr = W.erot;
+
+    Vr.Rotate(V,norm_dir);
+
+    /* Reflect the normal velocity in the rotated frame. */
+
+    ur = -ur + TWO*Vr.x;
+    vr =  vr + TWO*Vr.y;
+    pxyr = -pxyr;
+
+    /* Rotate back to the original Cartesian reference frame. */
+
+    sin_angle = -sin_angle;
+
+    u   = ur*cos_angle + vr*sin_angle;
+    v   = - ur*sin_angle + vr*cos_angle;
+    pxx = pxxr*cos_angle*cos_angle+pyyr*sin_angle*sin_angle
+          +2.0*pxyr*cos_angle*sin_angle;
+    pxy = pxyr*(cos_angle*cos_angle-sin_angle*sin_angle)
+          -(pxxr-pyyr)*cos_angle*sin_angle;
+    pyy = pxxr*sin_angle*sin_angle+pyyr*cos_angle*cos_angle
+          -2.0*pxyr*cos_angle*sin_angle;
+
+    /* Return the reflected state. */
+
+    return (Gaussian2D_pState(dr, u, v, pxx, pxy, pyy, pzzr, erotr));
+
+       
+}
+
+/********************************************************
  * Routine: Adiabatic_Wall                              *
  *                                                      *
  * This function returns the solution state for a wall  *
@@ -270,8 +339,8 @@ Gaussian2D_pState Adiabatic_Wall(const Gaussian2D_pState &W,
     */
     //  Mine 2
     
-    ur2   = -ur;
-    vr2   = vr;
+    ur2   = -ur + TWO*V.x; // V != 0 for embeddedboundaries2D calculations
+    vr2   =  vr; 
     pxxr2 = pxxr;
     pxyr2 = (W.alpha-1.0)*pxyr+2.0*W.alpha*sqrt(dr*pxxr/(2.0*PI))*(vr-vWallr);
     pyyr2 = pyyr;
@@ -1478,19 +1547,14 @@ Gaussian2D_cState FluxRoe_MB_n(const Gaussian2D_pState &Wl,
 			       const Vector2D &norm_dir) {
 
   Gaussian2D_pState Wl_rotated, Wr_rotated;
-  Gaussian2D_pState Wl_nonstationary, Wr_nonstationary;
   Gaussian2D_cState Flux, Flux_rotated;
   Vector2D V_rotated;
-
-  // Move left and right states back into nonstationary frame.
-  Wl_nonstationary = Translate(Wl,-V);
-  Wr_nonstationary = Translate(Wr,-V);
 
   // Apply the frame rotation and evaluate left and right solution 
   // states in the local rotated frame defined by the unit normal 
   // vector.
-  Wl_rotated = Rotate(Wl_nonstationary,norm_dir);
-  Wr_rotated = Rotate(Wr_nonstationary,norm_dir);
+  Wl_rotated = Rotate(Wl,norm_dir);
+  Wr_rotated = Rotate(Wr,norm_dir);
   V_rotated.Rotate(V,norm_dir);
 
   // Evaluate the intermediate state solution flux in the rotated frame.
