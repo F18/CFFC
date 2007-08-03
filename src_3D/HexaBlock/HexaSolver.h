@@ -57,16 +57,15 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
     * specified input parameter file.                      *
     ********************************************************/
    // The primary MPI processor processes the input parameter file.
-   if (CFDkit_Primary_MPI_Processor()) {
+   if (CFFC_Primary_MPI_Processor()) {
       if (!batch_flag) {
          cout << "\n Reading input data file `"
               << Input_File_Name_ptr << "'.";
       } /* endif */
- 
    
       error_flag = IPs.Process_Input_Control_Parameter_File
-         (Input_File_Name_ptr,
-          command_flag);
+                   (Input_File_Name_ptr,
+                    command_flag);
 
       if (!batch_flag && error_flag == 0) {
          cout << IPs << "\n";
@@ -76,8 +75,14 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
       error_flag = 0;
    } /* endif */
 
+   // Broadcast input solution parameters to other MPI processors.
+   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+   CFFC_Broadcast_MPI(&error_flag, 1);
+   if (error_flag != 0) return (error_flag);
+   CFFC_Broadcast_MPI(&command_flag, 1);
    if (command_flag == TERMINATE_CODE) return (0);
    IPs.Broadcast_Input_Parameters();
+
    /********************************************************  
     * Create initial mesh and allocate solution            *
     * variables for specified IBVP/BVP problem.            *
@@ -92,8 +97,6 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
    // create the solution block list on each processor
    Hexa_MultiBlock<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > 
       Local_SolnBlk(IPs);
-
-
       
    if (!batch_flag) cout << "\n Creating multi-block octree data structure and assigning"
                          << "\n  solution blocks corresponding to initial mesh.";
@@ -140,18 +143,18 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
       if (error_flag) {
          cout << "\n  ERROR: Unable to open restart" 
             " input data file(s) "
-              << "on processor "<< CFDkit_MPI::This_Processor_Number
+              << "on processor "<< CFFC_MPI::This_Processor_Number
               << ".\n";
          cout.flush();
       } /* endif */
 
       if (error_flag) return (error_flag);
       // Ensure each processor has the correct time and time!!!
-      number_of_time_steps = CFDkit_Maximum_MPI(number_of_time_steps);
-      Time = CFDkit_Maximum_MPI(Time);
-      processor_cpu_time.cput = CFDkit_Maximum_MPI(processor_cpu_time.cput);
+      number_of_time_steps = CFFC_Maximum_MPI(number_of_time_steps);
+      Time = CFFC_Maximum_MPI(Time);
+      processor_cpu_time.cput = CFFC_Maximum_MPI(processor_cpu_time.cput);
       IPs.Maximum_Number_of_Time_Steps =
-         CFDkit_Maximum_MPI(IPs.Maximum_Number_of_Time_Steps);
+         CFFC_Maximum_MPI(IPs.Maximum_Number_of_Time_Steps);
       
    } else {
       
@@ -180,13 +183,13 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
 //    * hexadedral mesh.                                     *
 //    ********************************************************/
 continue_existing_calculation: ;
-   CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
  
 // /* Open residual file and reset the CPU time. */
    first_step = 1;
    limiter_freezing_off = ON;
    
-   if (CFDkit_Primary_MPI_Processor()) {
+   if (CFFC_Primary_MPI_Processor()) {
       
       error_flag = Open_Progress_File(residual_file,
                                       IPs.Output_File_Name,
@@ -198,8 +201,8 @@ continue_existing_calculation: ;
       } /* endif */
    }
 
-   CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-   CFDkit_Broadcast_MPI(&error_flag, 1);
+   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+   CFFC_Broadcast_MPI(&error_flag, 1);
    if (error_flag) return (error_flag);
    processor_cpu_time.reset();
 
@@ -228,7 +231,7 @@ continue_existing_calculation: ;
         
           /* Determine local and global time steps. */
           dTime =  Local_SolnBlk.CFL(IPs);
-          dTime = CFDkit_Minimum_MPI(dTime); 
+          dTime = CFFC_Minimum_MPI(dTime); 
           // Find global minimum time step for all processors.
                 
           if (IPs.Time_Accurate) {
@@ -260,18 +263,18 @@ continue_existing_calculation: ;
        
           /* Determine the L1, L2, and max norms of the solution residual. */
           residual_l1_norm =  Local_SolnBlk.L1_Norm_Residual();
-          residual_l1_norm = CFDkit_Summation_MPI(residual_l1_norm); 
+          residual_l1_norm = CFFC_Summation_MPI(residual_l1_norm); 
           // L1 norm for all processors.
           residual_l2_norm =  Local_SolnBlk.L2_Norm_Residual();
-          residual_l2_norm = CFDkit_Summation_MPI(residual_l2_norm); 
+          residual_l2_norm = CFFC_Summation_MPI(residual_l2_norm); 
           
  	 residual_max_norm =  Local_SolnBlk.Max_Norm_Residual();
          
- 	 residual_max_norm = CFDkit_Maximum_MPI(residual_max_norm);
+ 	 residual_max_norm = CFFC_Maximum_MPI(residual_max_norm);
  	 // Max norm for all processors.
  	 /* Update CPU time used for the calculation so far. */
  	 processor_cpu_time.update();
-         total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput); 
+         total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput); 
  	 // Total CPU time for all processors.
          
           /* Periodically save restart solution files. */
@@ -287,7 +290,7 @@ continue_existing_calculation: ;
              //                                       IPs);
              if (error_flag) {
                 cout << "\n ERROR: Unable to open octree data file "
-                     << "on processor "<< CFDkit_MPI::This_Processor_Number
+                     << "on processor "<< CFFC_MPI::This_Processor_Number
                      << ".\n";
                 cout.flush();
              } /* endif */
@@ -303,7 +306,7 @@ continue_existing_calculation: ;
              if (error_flag) {
                 cout << "\n ERROR: Unable to open restart "
                    "output  data file(s) on processor "
-                     << CFDkit_MPI::This_Processor_Number
+                     << CFFC_MPI::This_Processor_Number
                      << ".\n";
                 cout.flush();
              } /* endif */
@@ -320,7 +323,7 @@ continue_existing_calculation: ;
                                                  residual_l2_norm,
                                                  first_step,
                                                  50);
-         if (CFDkit_Primary_MPI_Processor() && !first_step) {
+         if (CFFC_Primary_MPI_Processor() && !first_step) {
             Output_Progress_to_File(residual_file,
                                     number_of_time_steps,
                                     Time*THOUSAND,
@@ -376,7 +379,7 @@ continue_existing_calculation: ;
                  
           if (error_flag) {
              cout<<"\n ERROR: solution residual error on processor"
-             <<CFDkit_MPI::This_Processor_Number<< ".\n";
+             <<CFFC_MPI::This_Processor_Number<< ".\n";
              cout.flush();
           } /* endif */
           
@@ -389,7 +392,7 @@ continue_existing_calculation: ;
           if (error_flag) {
              
              cout<<"\n ERROR: solution update error on processor "
-             <<CFDkit_MPI::This_Processor_Number<<".\n";
+             <<CFFC_MPI::This_Processor_Number<<".\n";
              cout.flush();
           } /* endif */
           if (error_flag) return (error_flag);
@@ -438,7 +441,7 @@ continue_existing_calculation: ;
    Local_SolnBlk.BCs(IPs);
 
    /* Close residual file. */
-   if (CFDkit_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file);
+   if (CFFC_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file);
 
 //    /********************************************************
 //    * Solution calculations complete.                      *
@@ -451,16 +454,16 @@ continue_existing_calculation: ;
   postprocess_current_calculation: ;
    while (1) {
       
-      if (CFDkit_Primary_MPI_Processor()) {    
+      if (CFFC_Primary_MPI_Processor()) {    
       IPs.Get_Next_Input_Control_Parameter();
       command_flag = IPs.Parse_Next_Input_Control_Parameter();
       line_number = IPs.Line_Number;
 
       }
       
-      CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+      CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
       IPs.Broadcast_Input_Parameters();
-      CFDkit_Broadcast_MPI(&command_flag, 1);
+      CFFC_Broadcast_MPI(&command_flag, 1);
       if (command_flag == EXECUTE_CODE) {
          
 //          Deallocate memory for 3D Euler equation solution.
@@ -490,7 +493,7 @@ continue_existing_calculation: ;
          IPs.Close_Input_File();
          cout.flush();
 
-         // if (CFDkit_Primary_MPI_Processor()) IPs.Close_Input_File();
+         // if (CFFC_Primary_MPI_Processor()) IPs.Close_Input_File();
          // Terminate calculation
          return (0);
                
@@ -507,11 +510,11 @@ continue_existing_calculation: ;
          if (error_flag) {
             cout << "\n  ERROR: Unable to open  node output " 
                "data file(s) on processor "
-             <<CFDkit_MPI::This_Processor_Number<< ".\n";
+             <<CFFC_MPI::This_Processor_Number<< ".\n";
             cout.flush();
          } /* endif */
          
-         error_flag = CFDkit_OR_MPI(error_flag);
+         error_flag = CFFC_OR_MPI(error_flag);
          if (error_flag) return (error_flag);   
          cout.flush();
          
@@ -528,12 +531,12 @@ continue_existing_calculation: ;
          if (error_flag) {
             cout << "\n  ERROR: Unable to open  cell output "
                "data file(s) on processor "
-                 <<CFDkit_MPI::This_Processor_Number
+                 <<CFFC_MPI::This_Processor_Number
                  << ".\n";
             cout.flush();
          } /* endif */   
          
-         error_flag = CFDkit_OR_MPI(error_flag);
+         error_flag = CFFC_OR_MPI(error_flag);
          if (error_flag) return (error_flag);   
          cout.flush();
          
@@ -545,7 +548,7 @@ continue_existing_calculation: ;
          //                                    IPs);
          if (error_flag) {
             cout << "\n  ERROR: Unable to open  octree data file "
-                 << "on processor " <<CFDkit_MPI::This_Processor_Number
+                 << "on processor " <<CFFC_MPI::This_Processor_Number
                  << ".\n";
             cout.flush();
          } /* endif */
@@ -559,12 +562,12 @@ continue_existing_calculation: ;
          if (error_flag) {
             cout << "\n  ERROR: Unable to open  restart "
                "output data file(s) on processor " 
-               //  <<CFDkit_MPI::This_Processor_Number
+               //  <<CFFC_MPI::This_Processor_Number
                  << ".\n";
             cout.flush();
             
          } /* endif */
-         error_flag = CFDkit_OR_MPI(error_flag);
+         error_flag = CFFC_OR_MPI(error_flag);
          if (error_flag) return (error_flag);
          
       } else if (command_flag == INVALID_INPUT_CODE ||
