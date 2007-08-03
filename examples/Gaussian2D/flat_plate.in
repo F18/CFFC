@@ -1,0 +1,70 @@
+########################
+#
+# Blunt body test case
+#
+########################
+# Set solver parameters
+########################
+Time_Integration_Type =
+Explicit_Predictor_Corrector
+Time_Accurate = 
+0
+Flow_Geometry_Type = 
+Planar
+Local_Time_Stepping =
+1
+Reconstruction_Type =
+Least_Squares 
+Limiter_Type = 
+Venkatakrishnan
+Flux_Function_Type =
+Roe
+#########################
+# Set initial conditions
+#########################
+ICs_Type = 
+Uniform
+Mach_Number = 
+0.2
+Grid_Type =
+Adiabatic_Flat_Plate
+Plate_Length =
+0.005
+Number_of_Cells_Idir = 
+20
+Number_of_Cells_Jdir =
+30
+Alpha =
+1.0
+Number_of_Uniform_Mesh_Refinements =
+0
+AMR =
+1
+AMR_Frequency =
+500
+Maximum_Refinement_Level =
+10
+###############################
+# Set time stepping parameters
+###############################
+CFL_Number =
+0.40
+Maximum_Number_of_Time_Steps =
+200000
+Number_of_Blocks_Per_Processor =
+512
+Output_File_Name = 
+flat_plate_Gaussian
+#######################
+# Execute program
+#######################
+Execute
+#######################
+# Write output
+#######################
+Write_Output
+Write_Output_Cells
+#######################
+# Terminate program
+#######################
+Terminate
