@@ -11,6 +11,7 @@
 using namespace std;
 
 #include "BpMatrix.h"
+#include "DenseMat.h"
 
 class LocalMat;
 class HBTMat;
@@ -59,7 +60,12 @@ class BlockMat : public BpMatrix
   LocalMat& val(unsigned int i) {return *a[i];}
   const int& row_ptr(unsigned int i) const {return ia[i];}
   const int& col_ind(unsigned int i) const {return ja[i];}
-  
+
+  //added by SN, probably temporary !
+  void setblock(const int, const int, const DenseMat&);
+  void setup(int nrow, int nnz, int *row, int *col, double *A, int blocksize);
+
+
   int numrow() const {return nrow;}
   int numcol() const {return ncol;}
   int numnz()  const {return nnz;}

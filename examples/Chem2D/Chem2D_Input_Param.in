@@ -1,0 +1,269 @@
+###############################
+###############################
+#  Chem2D Available Input
+#  Parameters
+#
+#  NOTE: The environment variable
+#  "CFDkit_Path" must be set to the 
+#  the location of CFDkit+caboodle
+#  directory so the thermodynamic 
+#  and transport data can be used.
+#  
+#  ie. setenv CFDkit_Path /home/me/CFDkit+caboodle
+#  or  export CFDkit_Path=/home/me/CFDkit+caboodle
+# 
+###############################
+# Time Integration Types
+#  -> Explicit_Predictor_Corrector
+#  -> Multistage_Optimal_Smoothing
+#  -> etc.
+#  -> Multigrid
+###############################
+Time_Integration_Type=
+Multigrid
+###############################
+# Multigrid Parameters
+#
+###############################
+Multigrid_Levels=
+4
+Multigrid_Cycle_Type=
+V
+Full_Multigrid=
+20000
+Multigrid_Number_of_Smooths_on_Finest_Level=
+2
+Multigrid_Number_of_Pre_Smooths=
+1
+Multigrid_Number_of_Post_Smooths=
+1
+Multigrid_Number_of_Smooths_on_Coarsest_Level=
+3
+Multigrid_Smoothing_Type=
+Multistage_Optimal_Smoothing
+N_Stage=
+3
+###############################
+# Local Time Stepping
+# 0 -> for GLOBAL_TIME_STEPPING    
+# 1 -> for SCALAR_LOCAL_TIME_STEPPING 
+# 2 -> for MATRIX_LOCAL_TIME_STEPPING 
+# 3 -> for LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER  
+# 4 -> for SEMI_IMPLICIT_LOCAL_TIME_STEPPING
+# 5 -> for SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER
+# 7 -> for DUAL_TIME_STEPPING                                 
+# 8 -> for DUAL_LOW_MACH_NUMBER_PRECONDITIONER                 
+# 9 -> for DUAL_SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER   
+###############################
+Local_Time_Stepping=
+0
+
+###############################
+# Dual Time Stepping Parameters
+##############################
+# time in (ms)
+Physical_Time_Step=
+1.0
+# "Outer" CFL number 
+Physical_CFL_Number=
+1.0
+
+###############################
+# Mach Number Reference for Preconditioner 
+# set to Mach_Number Free
+# stream by default if specified 
+###############################
+Mach_Number_Reference=
+0.25
+###############################
+# Flow Type 
+#  -> Inviscid (Euler)
+#  -> Laminar
+#  -> Turbulent-k-epsilon
+#  -> Turbulent-k-omega
+#  -> Turbulent-LES
+#  -> Turbulent-DES-k-omega
+#  -> Turbulent-DNS
+###############################
+Flow_Type=
+Laminar
+###############################
+# Viscous Evaluation Method
+# -> Arithmetic_Mean
+# -> Mean_Gradient
+# -> Cartesian
+# -> Diamond_Path_Green_Gauss
+# -> Diamond_Path_Least_Squares
+###############################
+Viscous_Flux_Evaluation_Type=
+Diamond_Path_Green_Gauss
+###############################
+# Global Schmidt Number, default 1.0,
+# for Viscous Flows
+# (depricated though, see below)
+###############################
+Schmidt= 
+1.1
+###############################
+# Default no gravity, -z 
+# added if flag
+###############################
+Gravity
+###############################
+# Flow Geometry Type
+#  -> Planar
+#  -> Axisymmetric-x ( x radial, y axial)
+#  -> Axisymmetric-y ( y radial, x axial)
+###############################
+Planar
+###############################
+# Flux Functions Available
+#   -> HLLE (default)
+#   -> Linde
+#   -> Roe
+#   -> AUSM_plus_up
+###############################
+Flux_Function_Type=
+HLLE
+###############################
+# Initial Conditions Added
+#   -> Mix
+#   -> 1DPremixedFlame
+#   -> Core_Flame
+#   -> Inverse_Flame
+#   -> Pressure_Gradient_x
+#   -> Pressure_Gradient_y
+#   -> Couette
+#   -> Couette_with_Pressure
+#   -> Restart
+#
+###############################
+ICs_Type=
+Uniform
+###############################
+# Grid Types Added
+#   -> Couette
+#   -> 1DFlame
+#   -> Laminar_Flame
+#   -> Testing
+#
+###############################
+Grid_Type=
+Couette
+##############################
+# Pressure Cradient for 
+# Channel flows
+###############################
+Pressure_Gradient=
+635.54
+###############################
+# For Couette Grid can 
+# set Moving wall velocity
+# -> 0 by default
+################################
+Moving_Wall_Velocity=
+0.0  
+###############################
+# Time Accurate Plot Frequency
+#   -> 0 for none  (default)
+#   -> # for every # iterations
+#
+# (Mainly for diagnostic usage)
+###############################
+Time_Accurate_Plot_Frequency=
+0
+###############################
+# Reaction Mechanisms with 
+# intial mass fractions
+#   -> NO_REACTIONS  (see Species)
+#   -> CH4_1STEP     (4 + N2)
+#   -> CH4_2STEP     (5 + N2)
+#   -> H2O2_2STEP    (4 + N2)
+#   -> H2O2_8STEP    (6 + N2)
+#
+# Can also set viscous Schmidt numbers
+# for each species
+###############################
+Reaction_Mechanism=
+CH4_1STEP
+Schmidt_Numbers=
+0.73 0.8 1.0 0.66 1.0 
+Mass_Fractions=
+0.0551 0.2202 0.0 0.0 0.7247 
+################################
+# MultiSpecies with NO_REACTIONS
+# used for nonreacting cases   
+# of N species with initial 
+# mass fractions.
+#
+# (Use Species instead of 
+#       Reaction_Machanism)
+################################
+Species=
+5 CH4 O2 CO2 H2O N2
+Mass_Fractions=
+0.0 0.0 0.1514 0.1239 0.7247
+###############################
+###############################
+##     AMR Parameters
+## 
+###############################
+###############################
+# 0 off, 1 on
+AMR =
+1
+# number of iterations between refinements
+AMR_Frequency =
+8
+# Initial refinements based on physics criteria
+Number_of_Initial_Mesh_Refinements =
+4
+# Initial refinements everywhere 
+Number_of_Uniform_Mesh_Refinements =
+2
+#
+Number_of_Boundary_Mesh_Refinements =
+0
+Maximum_Refinement_Level =
+7
+Minimum_Refinement_Level =
+2
+# Physics based refinement and coarseing thresholds
+Threshold_for_Refinement =
+0.50
+Threshold_for_Coarsening =
+0.10
+###############################
+# Another way to perform refinements 
+# by calling "Refine_Grid" before the 
+# "Terminate" command and can be 
+# used in conjunction with the 
+# "Continue" command to perform succesive
+# refinements/coarsenings.
+###############################
+Refine_Grid
+
+##########################
+# Morton Ordering
+#
+##########################
+Morton=
+0
+Morton_Reordering_Frequency=
+100000
+
+##########################
+# Grid Smoother
+##########################
+Smooth_Quad_Block=
+OFF
+
+##############################
+# Implicit Residual Smoothing
+########################### 
+Residual_Smoothing_Epsilon=
+0.125
+Residual_Smoothing_Gauss_Seidel_Iterations=
+2
+
+

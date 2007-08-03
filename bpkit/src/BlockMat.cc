@@ -9,7 +9,7 @@ using namespace std;
 
 #include "BlockMat.h"
 #include "BlockVec.h"
-#include "DenseMat.h"
+//#include "DenseMat.h"
 #include "CSRMat.h"
 #include "BPKIT.h"
 
@@ -415,7 +415,7 @@ ostream& operator << (ostream& os, const BlockMat& mat)
         int M = mat.numrow();
         int N = mat.numcol();
         int rowp1, colp1;
-        // int flag = 0;
+        int flag = 0;
 
 #ifdef _GNU_GCC_3
         ios::fmtflags olda = os.setf(ios::right,ios::adjustfield);
@@ -435,16 +435,12 @@ ostream& operator << (ostream& os, const BlockMat& mat)
         for (int i = 0; i < M ; i++)
            for (int j=mat.row_ptr(i);j<mat.row_ptr(i+1);j++)
            {   
-              rowp1 =  i + 1;
-              colp1 =  mat.col_ind(j) + 1;
-              // if ( rowp1 == M && colp1 == N ) flag = 1;
-              os.width(14);
-              os <<  rowp1 ; os << "    " ;
-              os.width(14);
-              os <<  colp1;
-#if 0
-              os.width(20);
-              os <<  *(mat.val(j).Data());
+              rowp1 =  i ;
+              colp1 =  mat.col_ind(j) ;
+	      os <<" Block ("<< rowp1<<","<<colp1<<")"<<endl;
+#if 1
+              //os.width(20); 
+              os << (DenseMat &) mat.val(j); // *(mat.val(j).Data());
 #endif
               os << endl;
            }
@@ -563,3 +559,118 @@ for (i=0; i<nnz; i++)
 fflush(NULL);
 #endif
 }
+
+// Convert a matrix in block coordinate format to the BlockMat data structure.
+// nrow = number of block rows
+// nnz = number of block nonzeros
+// note that the rows in the resultant data structure
+// may not be sorted; they are in the order in which they were given
+
+void BlockMat::setup(int nrow_, int nnz_, int *row, int *col, double *A, 
+  int blocksize)
+{
+    a = (LocalMat **) NULL;
+    ja = (int *) NULL;
+    ia = (int *) NULL;
+    kvstr = NULL;
+    kvstc = NULL;
+    contig_memory = FALSE;
+
+    int i;
+
+    nrow = nrow_;
+    ncol = nrow_;
+    nnz  = nnz_;
+
+    kvstr = new int[nrow+1];
+    kvstc = new int[ncol+1];
+
+    for (i=0; i<=nrow; i++)
+        kvstr[i] = i*blocksize;
+    for (i=0; i<=ncol; i++)
+        kvstc[i] = i*blocksize;
+
+    // allocate memory
+    contig_memory = TRUE;
+    ia = new int[nrow+1];
+    ja = new int[nnz];
+    a  = new LocalMatp[nnz];   // array of pointers to blocks
+
+    DenseMat *p = new DenseMat[nnz]; // array of DENSE blocks  
+
+    for (i=0; i<nnz; i++)
+        a[i] = &p[i];
+
+    double *pp = new double[nnz*blocksize*blocksize];  // array of values
+
+    // construct ia ja structure
+
+    // count the nonzeros in each row and store in ia array
+    for (i=0; i<=nrow; i++)
+        ia[i] = 0;
+
+    for (i=0; i<nnz; i++)
+        ia[row[i]-1]++;
+
+    // put starting position of each row in ia array
+    int prev, temp;
+    prev = 0;
+    for (i=0; i<=nrow; i++)
+    {
+        temp = ia[i];
+        ia[i] = prev;
+        prev = prev + temp;
+    }
+
+    // fill output matrix
+    double *b;
+    int j;
+    for (i=0; i<nnz; i++)
+    {
+        int irow = row[i]-1;
+        ja[ia[irow]] = col[i] - 1; // 0-based
+
+        p[ia[irow]].set(blocksize,blocksize,pp);
+	pp += blocksize*blocksize;
+
+        b = a[ia[irow]]->Data();
+        for (j=0; j<blocksize*blocksize; j++)
+            *b++ = *A++;
+
+        ia[irow]++;
+    }
+
+    // shift back ia
+    for (i=nrow-1; i>=0; i--)
+        ia[i+1] = ia[i];
+    ia[0] = 0;
+
+#if 0
+for (i=0; i<=nrow; i++)
+   printf("ia(%d) = %d\n", i, ia[i]);
+for (i=0; i<ia[nrow]; i++)
+   printf("ja(%d) = %d\n", i, ja[i]);
+for (i=0; i<nnz; i++)
+   printf("a(%d) = %f\n", i, *(a[i]->Data()));
+fflush(NULL);
+#endif
+}
+
+
+
+/********************************************************
+ * BlockMat::setblock -- set the specified block.    *
+ ********************************************************/
+void BlockMat::setblock(const int BLK_i,const int BLK_j,const DenseMat &A) {
+
+   int index = -99;
+   //find equivalent Localmat location in block CSR form (SIMPLER/BETTER WAY ???)
+   for (int t = ia[BLK_i]; t < ia[BLK_i+1]; t++) {
+     if (ja[t] == BLK_j) {
+       index = t;
+     }
+   } 
+   //Copy A into BlockMat data structure at (I,J)
+   a[index][0].MatCopy(A);
+
+} 

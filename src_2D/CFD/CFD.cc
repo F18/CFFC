@@ -281,7 +281,148 @@ int Open_Progress_File(ofstream &Progress_File,
     return(0);
 
 }
+/********************************************************
+ * Routine: Output_Progress_to_File                     *
+ *                                                      *
+ * This routine writes out progress information for     *
+ * a CFD calculation to a progress file, including      *
+ * iteration level, time, CPU time, and residual norm(s). *
+ *                                                      *
+ ********************************************************/
+void Output_Progress_to_File(ostream &Progress_File,
+                             const int Number_of_Time_Steps,
+                             const double &Time,
+                             const CPUTime &CPU_Time,
+                             const double *Residual_L1_Norm,
+                             const double *Residual_L2_Norm,
+                             const double *Residual_Max_Norm,
+			     const int &Residual_Norm,
+			     const int &Number_of_Residual_Norms) {
 
+    Progress_File << setprecision(6);
+    Progress_File << Number_of_Time_Steps
+                  << " " << Time
+                  << " " << CPU_Time.min();
+    Progress_File.setf(ios::scientific);
+
+    for(int q=0; q < Number_of_Residual_Norms; q++){
+	Progress_File << " " << Residual_L1_Norm[q]
+		      << " " << Residual_L2_Norm[q] 
+		      << " " << Residual_Max_Norm[q];
+    }
+
+    Progress_File << "\n";
+    Progress_File.unsetf(ios::scientific);
+    Progress_File.flush();
+
+}
+
+/********************************************************
+ * Routine: Open_Progress_File                          *
+ *                                                      *
+ * This routine opens the progress file for a CFD       *
+ * calculation and prepares it for I/O.                 *   //CURRENTLY SET TO SHOW FIRST 4 SOLN VARS NORMS
+ *                                                      *
+ ********************************************************/
+int Open_Progress_File(ofstream &Progress_File,
+                       char *File_Name,
+                       const int Append_to_File,
+		       const int &Residual_Norm,
+		       const int &Number_of_Residual_Norms) {
+
+    char prefix[256], extension[256], 
+         progress_file_name[256], gnuplot_file_name[256];
+    char *progress_file_name_ptr, *gnuplot_file_name_ptr;
+    ofstream gnuplot_file;
+
+    /* Determine the name of the progress file. */
+    int i = 0;
+    while (1) {
+       if (File_Name[i] == ' ' ||
+           File_Name[i] == '.') break;
+       prefix[i] = File_Name[i];
+       i = i + 1;
+       if (i > strlen(File_Name) ) break;
+    } /* endwhile */
+    prefix[i] = '\0';
+    strcat(prefix, "_residual");
+
+    strcpy(extension, ".dat");
+    strcpy(progress_file_name, prefix);
+    strcat(progress_file_name, extension);
+
+    progress_file_name_ptr = progress_file_name;
+
+    /* Open the progress file. */
+    if (Append_to_File) {
+       Progress_File.open(progress_file_name_ptr, ios::out|ios::app);
+    } else {
+       Progress_File.open(progress_file_name_ptr, ios::out);
+    } 
+    if (Progress_File.bad()) return (1);
+
+    /* Write the appropriate GNUPLOT command file for 
+       plotting progress file information. */
+    strcpy(extension, ".gplt");
+    strcpy(gnuplot_file_name, prefix);
+    strcat(gnuplot_file_name, extension);
+
+    gnuplot_file_name_ptr = gnuplot_file_name;
+
+    gnuplot_file.open(gnuplot_file_name_ptr, ios::out);
+    if (gnuplot_file.bad()) return(1);
+
+    // Write gnuplot script
+    gnuplot_file << "set term x11 enhanced font \",10\"\n"
+//                  << "set xlabel \"N (iterations)\"\n"
+//                  << "set ylabel \"residual\"\n" 
+                 << "set logscale y \n"
+		 << "set style data lines \n"
+		 << "set key spacing 0.5 \n"
+                 << "set size 1.0,1.0 \n"
+                 << "set origin 0.0,0.0 \n"
+		 << "set title 0,-1 \n"
+                 << "set multiplot \n";
+    
+    // Format  time, cput, {L1, L2, Max}xNumber_of_Residual_Norms for 4
+    for(int q=4; q < Number_of_Residual_Norms*3+3; q=q+3){
+      gnuplot_file << "set size 0.5,0.5 \n";
+      switch(q){
+      case 4:
+	gnuplot_file << "set origin 0.0,0.5 \n"
+		     << "set title \"Density convergence\"\n";
+	break;
+      case 7:
+	gnuplot_file << "set origin 0.5,0.5 \n"
+		     << "set title \"Momentum-x convergence\"\n";
+	break;
+      case 10:
+	gnuplot_file << "set origin 0.0,0.0 \n"
+		     << "set title \"Momentum-y convergence\"\n";
+	break;
+      case 13:
+	gnuplot_file << "set origin 0.5,0.0 \n"
+		     << "set title \"Energy convergence\"\n";
+	break;
+      default:
+	gnuplot_file << "ISSUES IN Open_Progress_File \n";
+	break;
+      }            
+      gnuplot_file<<"plot \""<< progress_file_name_ptr << "\" using 1:"<<q<<" title \"L1-norm\", \\\n"
+		  <<"\""<< progress_file_name_ptr <<"\" using 1:"<<q+1<<" title \"L2-norm\", \\\n"
+		  <<"\""<< progress_file_name_ptr <<"\" using 1:"<<q+2<<" title \"Max-norm\" \n";
+    }
+    gnuplot_file << "unset multiplot \n";
+    gnuplot_file<< "pause -1  \"Hit return to continue\"\n";
+
+    gnuplot_file.close();
+
+    /* Preparation of progress file complete.
+       Return zero value. */
+
+    return(0);
+
+}
 /********************************************************
  * Routine: Close_Progress_File                         *
  *                                                      *

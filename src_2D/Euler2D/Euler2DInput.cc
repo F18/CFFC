@@ -59,8 +59,6 @@ void Set_Default_Input_Parameters(Euler2D_Input_Parameters &IP) {
     IP.Time_Accurate = 0;
     IP.Local_Time_Stepping = SCALAR_LOCAL_TIME_STEPPING;
     IP.Maximum_Number_of_Time_Steps = 100;
-    IP.Maximum_Number_of_NKS_Iterations = 0;
-    IP.Maximum_Number_of_GMRES_Iterations = 0;
     IP.N_Stage = 1;
     IP.Time_Max = ZERO;
     IP.Mr_Min_Factor = ONE;
@@ -174,6 +172,8 @@ void Set_Default_Input_Parameters(Euler2D_Input_Parameters &IP) {
     IP.BC_West  = BC_NONE;
 
     // NASA rotor input variables:
+
+    //THIS NEEDS OT BE CLEANED UP
     string_ptr = "/home/groth/CFDkit+caboodle/data/NASA_Rotors/R37/";
     strcpy(IP.NASA_Rotor37_Data_Directory, string_ptr);
     string_ptr = "/home/groth/CFDkit+caboodle/data/NASA_Rotors/R67/";
@@ -204,16 +204,16 @@ void Set_Default_Input_Parameters(Euler2D_Input_Parameters &IP) {
     IP.AMR_Xmin = Vector2D_ZERO;
     IP.AMR_Xmax = Vector2D_ZERO;
 
+    IP.Solver_Type = EXPLICIT;
+
+    IP.Morton = 0;
+    IP.Morton_Reordering_Frequency = 1000;
+
     // Smooth quad block flag:
     IP.i_Smooth_Quad_Block = ON;
 
     // Embedded boundary parameters:
     IP.Reset_Interface_Motion_Type = OFF;
-
-    // Morton ordering parameters:
-    IP.Morton = 0;
-    IP.Morton_Reordering_Frequency = 1000;
-
 
     string_ptr = "outputfile.dat";
     strcpy(IP.Output_File_Name, string_ptr);
@@ -244,31 +244,6 @@ void Set_Default_Input_Parameters(Euler2D_Input_Parameters &IP) {
 
     IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
     IP.Number_of_Blocks_Per_Processor = 10;
-
-    // GMRES restart:
-    IP.GMRES_Restart = 30;
-    
-    // GMRES tolerance:
-    IP.GMRES_Toler = 1e-5;
-    
-    // Overall tolerance:
-    IP.Overall_Toler = 1e-5;
-    
-    // GMRES overlap:
-    IP.GMRES_Overlap = 0;
-
-    // GMRES P_Switch:
-    IP.GMRES_P_Switch = 1;
-
-    // GMRES ILUK Level of Fill:
-    IP.GMRES_ILUK_Level_of_Fill = 0;
-
-    // Finite_Time_Step:
-    IP.Finite_Time_Step = 0;
-    IP.Finite_Time_Step_Initial_CFL = 1;
-
-    // Normalization:
-    IP.Normalization = 0;
 
     // Freezing_Limiter
     IP.Freeze_Limiter = 0;
@@ -310,12 +285,6 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP) {
                           1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Maximum_Number_of_Time_Steps), 
-                          1, 
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Maximum_Number_of_NKS_Iterations), 
-                          1, 
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Maximum_Number_of_GMRES_Iterations), 
                           1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.N_Stage), 
@@ -736,50 +705,15 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP) {
     // Multigrid Related Parameters
     IP.Multigrid_IP.Broadcast_Input_Parameters();
 
+    // NKS Parameters
+    IP.NKS_IP.Broadcast_Input_Parameters();
+
     if (!CFDkit_Primary_MPI_Processor()) {
        IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
     } /* endif */
     MPI::COMM_WORLD.Bcast(&(IP.Number_of_Blocks_Per_Processor), 
                           1, 
                           MPI::INT, 0);
-    // GMRES restart:
-    MPI::COMM_WORLD.Bcast(&(IP.GMRES_Restart), 
-                          1, 
-                          MPI::INT, 0);
-    // GMRES overlap:
-    MPI::COMM_WORLD.Bcast(&(IP.GMRES_Overlap), 
-			  1, 
-			  MPI::INT, 0);
-    // GMRES tolerance:
-    MPI::COMM_WORLD.Bcast(&(IP.GMRES_Toler), 
-			  1, 
-                          MPI::DOUBLE, 0);
-    // Overall tolerance:
-    MPI::COMM_WORLD.Bcast(&(IP.Overall_Toler), 
-			  1, 
-                          MPI::DOUBLE, 0);
-    // GMRES P_Switch:
-    MPI::COMM_WORLD.Bcast(&(IP.GMRES_P_Switch), 
-			  1, 
-			  MPI::INT, 0);
-
-    // GMRES ILUK_Level_of_Fill:
-    MPI::COMM_WORLD.Bcast(&(IP.GMRES_ILUK_Level_of_Fill), 
-			  1, 
-			  MPI::INT, 0);
-
-    // Finite Time Step:
-    MPI::COMM_WORLD.Bcast(&(IP.Finite_Time_Step), 
-			  1, 
-			  MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Finite_Time_Step_Initial_CFL), 
-			  1, 
-			  MPI::DOUBLE, 0);
-
-    // Normalization:
-    MPI::COMM_WORLD.Bcast(&(IP.Normalization), 
-			  1, 
-			  MPI::INT, 0);
 
     // Freeze_Limiter
     MPI::COMM_WORLD.Bcast(&(IP.Freeze_Limiter), 
@@ -831,12 +765,6 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP,
                        1, 
                        MPI::INT, Source_Rank);
     Communicator.Bcast(&(IP.Maximum_Number_of_Time_Steps), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Maximum_Number_of_NKS_Iterations), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Maximum_Number_of_GMRES_Iterations), 
                        1, 
                        MPI::INT, Source_Rank);
     Communicator.Bcast(&(IP.N_Stage), 
@@ -1259,47 +1187,13 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP,
     IP.Multigrid_IP.Broadcast_Input_Parameters(Communicator,
 					       Source_CPU);
 
+    // NKS Parameters
+    IP.NKS_IP.Broadcast_Input_Parameters(Communicator, Source_CPU);
+
     if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
        IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
     } /* endif */
     Communicator.Bcast(&(IP.Number_of_Blocks_Per_Processor), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    // GMRES restart:
-    Communicator.Bcast(&(IP.GMRES_Restart), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    // GMRES overlap:
-    Communicator.Bcast(&(IP.GMRES_Overlap), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    // GMRES tolerance:
-    Communicator.Bcast(&(IP.GMRES_Toler), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    // Overll tolerance:
-    Communicator.Bcast(&(IP.Overall_Toler), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    // GMRES P_Switch:
-    Communicator.Bcast(&(IP.GMRES_P_Switch), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    // GMRES ILUK_Level_of_Fill:
-    Communicator.Bcast(&(IP.GMRES_ILUK_Level_of_Fill), 
-                       1, 
-                       MPI::INT, Source_Rank);
-
-    // GMRES Finite_Time_Step:
-    Communicator.Bcast(&(IP.Finite_Time_Step), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Finite_Time_Step_Initial_CFL), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-
-    // GMRES Normalization:
-    Communicator.Bcast(&(IP.Normalization), 
                        1, 
                        MPI::INT, Source_Rank);
 
@@ -1330,6 +1224,22 @@ void Get_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File.getline(buffer, sizeof(buffer));
+
+	if (IP.Input_File.gcount() == sizeof(buffer)-1) {
+		// if getline does not find a delimiter before size-1
+		// characters then it sets the ifstream state to not
+		// good. I never knew.
+		IP.Input_File.clear(); 
+
+		IP.Input_File.ignore(10000, '\n');
+		if (buffer[0] != '#') {
+			cout << "\n***\n\nWarning: input file line " << IP.Line_Number;
+			cout << ": Line is more than " << sizeof(buffer) << " characters long. ";
+			cout << "Ignoring rest of line.";
+			cout << "\n\n***\n";
+		}
+	}
+
     i = 0;
     if (buffer[0] != '#') {
        while (1) {
@@ -2230,83 +2140,6 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.X_Rotate;
        IP.Input_File.getline(buffer, sizeof(buffer));
-
-    } else if (strcmp(IP.Next_Control_Parameter, "GMRES_Restart") == 0) {
-      // GMRES restart:
-      i_command = 64;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.GMRES_Restart;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.GMRES_Restart < 0) i_command = INVALID_INPUT_VALUE;
-      
-    } else if (strcmp(IP.Next_Control_Parameter, "GMRES_Overlap") == 0) {
-      // GMRES overlap:
-      i_command = 65;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.GMRES_Overlap;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.GMRES_Overlap < 0) i_command = INVALID_INPUT_VALUE;
-      
-    } else if (strcmp(IP.Next_Control_Parameter, "GMRES_Tolerance") == 0) {
-      // GMRES tolerance:
-      i_command = 66;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.GMRES_Toler;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.GMRES_Toler <= ZERO) i_command = INVALID_INPUT_VALUE;
-
-    } else if (strcmp(IP.Next_Control_Parameter, "Overall_Tolerance") == 0) {
-      // GMRES tolerance:
-      i_command = 67;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.Overall_Toler;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.Overall_Toler <= ZERO) i_command = INVALID_INPUT_VALUE;
-      
-    } else if (strcmp(IP.Next_Control_Parameter, "GMRES_P_Switch") == 0) {
-      // GMRES P_Switch:
-      i_command = 68;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.GMRES_P_Switch;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.GMRES_P_Switch < 0) i_command = INVALID_INPUT_VALUE;
-
-    } else if (strcmp(IP.Next_Control_Parameter, "GMRES_ILUK_Level_of_Fill") == 0) {
-      // GMRES ILUK_Level_of_Fill:
-      i_command = 69;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.GMRES_ILUK_Level_of_Fill;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.GMRES_ILUK_Level_of_Fill < 0) i_command = INVALID_INPUT_VALUE;
-
-    } else if (strcmp(IP.Next_Control_Parameter, "Maximum_Number_of_NKS_Iterations") == 0) {
-      i_command = 70;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.Maximum_Number_of_NKS_Iterations;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.Maximum_Number_of_NKS_Iterations < 0) i_command = INVALID_INPUT_VALUE;
-     
-    } else if (strcmp(IP.Next_Control_Parameter, "Maximum_Number_of_GMRES_Iterations") == 0) {
-      i_command = 71;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.Maximum_Number_of_GMRES_Iterations;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.Maximum_Number_of_GMRES_Iterations < 0) i_command = INVALID_INPUT_VALUE;
-
-    } else if (strcmp(IP.Next_Control_Parameter, "Finite_Time_Step") == 0) {
-      i_command = 72;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.Finite_Time_Step;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.Finite_Time_Step < 0) i_command = INVALID_INPUT_VALUE;
-      
-    } else if (strcmp(IP.Next_Control_Parameter, "Normalization") == 0) {
-      i_command = 73;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.Normalization;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.Normalization < 0) i_command = INVALID_INPUT_VALUE;
-      
     } else if (strcmp(IP.Next_Control_Parameter, "Freeze_Limiter") == 0) {
       // Freeze_Limiter:
       i_command = 74;
@@ -2323,13 +2156,6 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
       IP.Input_File.getline(buffer, sizeof(buffer));
       if (IP.Freeze_Limiter_Residual_Level < ZERO) i_command = INVALID_INPUT_VALUE;
       
-    } else if (strcmp(IP.Next_Control_Parameter, "Finite_Time_Step_Initial_CFL") == 0) {
-      i_command = 76;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.Finite_Time_Step_Initial_CFL;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.Finite_Time_Step_Initial_CFL < ZERO) i_command = INVALID_INPUT_VALUE;
-
     } else if (strcmp(IP.Next_Control_Parameter, "AMR") == 0) {
       i_command = 77;
       Get_Next_Input_Control_Parameter(IP);
@@ -3237,7 +3063,29 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 
     } /* endif */
 
-    /* Return the parser command type indicator. */
+	if (i_command == INVALID_INPUT_CODE) {
+		// that is, we have an input line which:
+		//  - is not a comment (that's COMMENT_CODE), and,
+		//  - is not a valid code with an invalid value (that's INVALID_INPUT_VALUE), 
+		// and so is an unknown option. Maybe it's an NKS option:
+		strcpy(buffer, IP.Next_Control_Parameter);
+		Get_Next_Input_Control_Parameter(IP);
+		i_command = IP.NKS_IP.Parse_Next_Input_Control_Parameter(buffer, IP.Next_Control_Parameter);
+
+		// If it's still unknown then ignore it. 
+		// This could be a bad idea if it was an unknown command 
+		// as opposed to an unknown code.
+		if (i_command == INVALID_INPUT_CODE) {
+			cout << "\n***\n\nWarning: input file line " << IP.Line_Number << ": ";
+			cout << "ignoring unknown input code:\n";
+			cout << "code: " << buffer;
+			cout << "\nvalue: " << IP.Next_Control_Parameter;
+			cout << "\n\n***\n";
+		}
+		i_command = COMMENT_CODE; // sure why not
+	}
+
+	if (!IP.Input_File.good()) { i_command = INVALID_INPUT_VALUE; }
 
     return (i_command);
 

@@ -7,17 +7,18 @@
 #include "Euler2DQuad.h"
 #endif // _EULER2D_QUAD_INCLUDED
 
-/* Include 2D Euler Newton-Krylov-Schwarz solver header file. */
-
-#ifndef _EULER2D_QUAD_NKS_INCLUDED
-#include "Euler2DQuad_NKS.h"
-#endif // _EULER2D_QUAD_NKS_INCLUDED
-
 /* Include 2D FAS Multigrid solver header file. */
 
 #ifndef _FASMULTIGRID2D_INCLUDED
 #include "../FASMultigrid2D/FASMultigrid2D.h"
 #endif // _FASMULTIGRID2D_INCLUDED
+
+
+/* Include 2D NKS solver header file. */
+#include "../NewtonKrylovSchwarz2D/NKS2D.h"
+
+/* Inlcude Euler Specializaitons for NKS */
+#include "Euler2DQuadNKS.h" 
 
 /********************************************************
  * Routine: Euler2DQuadSolver                           *
@@ -52,7 +53,8 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
   /* Define residual file and cpu time variables. */
 
   ofstream residual_file;
-  CPUTime processor_cpu_time, total_cpu_time, NKS_time;
+  CPUTime processor_cpu_time, total_cpu_time, NKS_total_cpu_time;
+  time_t start_explicit = 0, end_explicit = 0;
 
   /* Other local solution variables. */
 
@@ -75,7 +77,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
   if (CFDkit_Primary_MPI_Processor()) {
      if (!batch_flag) {
         cout << "\n Reading Euler2D input data file `"
-             << Input_File_Name_ptr << "'.";
+             << Input_File_Name_ptr << "'." << endl;
      } /* endif */
      error_flag = Process_Input_Control_Parameter_File(Input_Parameters,
                                                        Input_File_Name_ptr,
@@ -196,6 +198,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 
   processor_cpu_time.zero();
   total_cpu_time.zero();
+	NKS_total_cpu_time.zero();
   
   /* Initialize the conserved and primitive state
      solution variables. */
@@ -379,6 +382,8 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
   continue_existing_calculation: ;
   CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
 
+	if(!batch_flag) { time(&start_explicit); }
+
   if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
 
     // Allocate memory for multigrid solver.
@@ -466,11 +471,11 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 	 Input_Parameters.Maximum_Number_of_Time_Steps > 0 &&
 	 number_of_time_steps < Input_Parameters.Maximum_Number_of_Time_Steps) ||
         (!Input_Parameters.Time_Accurate &&
-	 Input_Parameters.Maximum_Number_of_NKS_Iterations > 0) ||
+	 Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) ||
 	(Input_Parameters.Time_Accurate &&
 	 Input_Parameters.Time_Max > Time)) {
-      if (!batch_flag) cout << "\n\n Beginning Euler2D computations on "
-			    << Date_And_Time() << ".\n\n";
+      if (!batch_flag){ cout << "\n\n Beginning Euler2D computations on "
+			     << Date_And_Time() << ".\n\n"; start_explicit = clock();  }
 
       if ((!Input_Parameters.Time_Accurate &&
 	   Input_Parameters.Maximum_Number_of_Time_Steps > 0 &&
@@ -784,8 +789,9 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 	
       } /* endwhile */
 
-      if (!batch_flag) cout << "\n\n Euler2D computations complete on " 
-                            << Date_And_Time() << ".\n";
+      if (!batch_flag){ cout << "\n\n Euler2D computations complete on " 
+			     << Date_And_Time() << ".\n"; end_explicit = clock(); }
+
     } /* endif */
     
     /* Update ghostcell information and prescribe boundary conditions to ensure
@@ -816,10 +822,16 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 
   } /* endif - Multigrid or Not */
 
-  /*******************************/
-  /* APPLY Newton_Krylov_Schwarz */
-  /*******************************/
-  if (Input_Parameters.Maximum_Number_of_NKS_Iterations > 0) {
+	if(!batch_flag) { time(&end_explicit); }
+
+  // Start APPLY Newton_Krylov_Schwarz
+
+  if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+    time_t start_NKS = 0, end_NKS = 0;
+     processor_cpu_time.update();
+     total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput);  
+		double temp_t = total_cpu_time.cput;
+
      if (CFDkit_Primary_MPI_Processor()) {
         error_flag = Open_Progress_File(residual_file,
 	 			        Input_Parameters.Output_File_Name,
@@ -827,33 +839,40 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
         if (error_flag) {
            cout << "\n Euler2D ERROR: Unable to open residual file for Euler2D calculation.\n";
            cout.flush();
-        } /* endif */
-     } /* endif */
+        } 
+     }
 
      CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
      CFDkit_Broadcast_MPI(&error_flag, 1);
      if (error_flag) return (error_flag);
 
-     Evaluate_Limiters(Local_SolnBlk, 
-                        List_of_Local_Solution_Blocks);
+     //Turn Limiter Freezing OFF for startup 
+     Evaluate_Limiters(Local_SolnBlk, List_of_Local_Solution_Blocks);
 
-     if (!batch_flag) cout << "\n\n Beginning Euler2D NKS computations on "
-			   << Date_And_Time() << ".\n\n";
+     if (!batch_flag){ cout << "\n\n Beginning Euler2D NKS computations on " << Date_And_Time() << ".\n\n"; time(&start_NKS); }
 
-     NKS_time.zero();
-
-     error_flag = Newton_Krylov_Schwarz_Solver(NKS_time,
-					       residual_file,
-                                               number_of_time_steps,
-         			   	       Local_SolnBlk, 
-   					       List_of_Local_Solution_Blocks,
-   					       Input_Parameters);
-
-     NKS_time.update();
+     CPUTime NKS_processor_cpu_time, NKS_total_cpu_time;                 //TRYING TO FIX RESIDUAL PLOT TIMES
+     NKS_processor_cpu_time.zero(); NKS_total_cpu_time.zero();    
+     
+     NKS_processor_cpu_time = processor_cpu_time;
+     NKS_total_cpu_time = total_cpu_time; 
     
-     if (CFDkit_Primary_MPI_Processor()) { 
-        cout << "\nNKS_time in minutes = " << NKS_time.min() << endl;
-     } /* endif */
+     //Perform NKS Iterations 
+     error_flag = Newton_Krylov_Schwarz_Solver<Euler2D_pState,
+                                               Euler2D_Quad_Block,                                               
+                                               Euler2D_Input_Parameters>(processor_cpu_time, //NKS_processor_cpu_time,
+									 total_cpu_time,     //NKS_total_cpu_time, 
+									 residual_file,
+									 number_of_time_steps, // explicit time steps
+									 Local_SolnBlk, 
+									 List_of_Local_Solution_Blocks,
+									 Input_Parameters);
+     
+     //NKS_processor_cpu_time.update();
+     //NKS_total_cpu_time.cput = CFDkit_Summation_MPI(NKS_processor_cpu_time.cput);  
+     processor_cpu_time.update();
+     total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput);  
+		 NKS_total_cpu_time.cput += total_cpu_time.cput - temp_t;
     
      if (error_flag) {
         if (CFDkit_Primary_MPI_Processor()) { 
@@ -867,11 +886,33 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
      CFDkit_Broadcast_MPI(&error_flag, 1);
      if (error_flag) return (error_flag);
 
-     if (!batch_flag) cout << "\n\n Euler2D NKS computations complete on " 
-                           << Date_And_Time() << ".\n";
+     /***********************************************************************/
+     if (!batch_flag) { cout << "\n\n Euler2D NKS computations complete on " << Date_And_Time() << ".\n"; time(&end_NKS); }
 
-     if (CFDkit_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file);
-  } /* endif */
+     if (!batch_flag) {
+       cout<<"\n ----------------------------------------------------------------";
+       cout<<"\n -------- Solution Computations Summary in minutes --------------";
+       cout<<"\n ----------------------------------------------------------------";
+       cout<<"\n Total Startup CPU Time\t\t = "<<NKS_total_cpu_time.min();          //total_cpu_time.min();
+       cout<<"\n Total NKS CPU Time \t\t = "<<total_cpu_time.min()-NKS_total_cpu_time.min();
+       cout<<"\n Total CPU Time \t\t = "<<total_cpu_time.min();    //NKS_total_cpu_time.min()+total_cpu_time.min(); 
+       cout<<"\n Total Startup Clock Time\t = "<<difftime(end_explicit,start_explicit)/60.0;
+       cout<<"\n Total NKS Clock Time\t\t = "<<difftime(end_NKS,start_NKS)/60.0;
+       cout<<"\n Total Clock Time\t\t = "<<difftime(end_NKS,start_explicit)/60.0;   
+       cout<<"\n ----------------------------------------------------------------";
+       cout<<"\n ----------------------------------------------------------------";
+       cout<<"\n ----------------------------------------------------------------\n";
+     } 
+     //Also want to output total GMRES & NKS Iterations, and maybe max memory usage possibly??
+
+     if (CFDkit_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file); 
+     
+     //add implicit and explicit times 
+     //total_cpu_time.cput += NKS_total_cpu_time.cput;
+  } 
+  /*************************************************************************************************************************/
+  /*************************************************************************************************************************/
+  /*************************************************************************************************************************/
 
   /********************************************************
    * Solution calculations complete.                      *
@@ -1035,7 +1076,9 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
     } else if (command_flag == WRITE_OUTPUT_CODE) {
        // Output solution data.
        if (!batch_flag) cout << "\n Writing Euler2D solution to output data file(s).";
-       if (!(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
+
+			 if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0 ||
+         !(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
 	     Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING)) {
 	 error_flag = Output_Tecplot(Local_SolnBlk, 
 				     List_of_Local_Solution_Blocks, 
@@ -1059,7 +1102,8 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
    } else if (command_flag == WRITE_OUTPUT_CELLS_CODE) {
        // Output solution data.
        if (!batch_flag) cout << "\n Writing cell-centered Euler2D solution to output data file(s).";
-       if (!(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
+			 if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0 ||
+         !(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
 	     Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING)) {
 	 error_flag = Output_Cells_Tecplot(Local_SolnBlk, 
 					   List_of_Local_Solution_Blocks, 
@@ -1082,7 +1126,8 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 
     } else if (command_flag == WRITE_OUTPUT_NODES_CODE) {
       if (!batch_flag) cout << "\n Writing Euler2D node locations to output data file(s).";
-      if (!(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
+			 if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0 ||
+         !(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
 	    Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING)) {
 	error_flag = Output_Nodes_Tecplot(Local_SolnBlk,
 					  List_of_Local_Solution_Blocks,

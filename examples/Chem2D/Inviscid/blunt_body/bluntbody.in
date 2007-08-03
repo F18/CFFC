@@ -1,0 +1,178 @@
+#
+# Blunt body test case
+#
+########################
+# Set solver parameters
+########################
+Time_Integration_Type =
+Multistage_Optimal_Smoothing 
+#Explicit_Runge_Kutta
+N_Stage =
+5
+#3
+#########################################
+Time_Accurate = 
+0
+Local_Time_Stepping =
+1
+#Residual_Smoothing_Epsilon = 
+#0.125
+#Residual_Smoothing_Gauss_Seidel_Iterations =
+#2
+Reconstruction_Type =
+Green_Gauss
+#Least_Squares
+#Green_Gauss
+Limiter_Type =
+Venkatakrishnan
+Flux_Function_Type =
+Roe
+#HLLE
+#Roe
+Freeze_Limiter =
+1
+#
+Freeze_Limiter_Residual_Level = 
+10.0
+# 1 density
+Residual_Variable =
+1
+############################
+# NKS PARAMETERS
+############################
+GMRES_Overlap =
+0
+GMRES_Tolerance =
+1.0e-01
+NKS_Overall_Tolerance =
+1.0e-10
+GMRES_Block_Preconditioner = 
+ILUK
+#( ILUK, Diagonal)
+GMRES_ILUK_Level_of_Fill = 
+4
+GMRES_Check
+ON
+# Implict Euler Startup
+NKS_Finite_Time_Step =
+ON
+NKS_Finite_Time_Step_Initial_CFL =
+5
+NKS_Finite_Time_Step_Max_CFL =
+1e12
+GMRES_Normalization = 
+ON
+Jacobian_Order =
+First_Order_Inviscid_HLLE
+#First_Order_Inviscid_Roe
+#########################
+# Set initial conditions
+#########################
+ICs_Type = 
+Uniform
+Mach_Number = 
+2.0
+Number_of_Ghost_Cells=
+2
+########################
+# Set mesh info
+########################
+Grid_Type =
+Blunt_Body
+Blunt_Body_Radius = 
+1.00
+Blunt_Body_Mach_Number =
+1.8
+Number_of_Cells_Idir = 
+32
+#64
+#128
+Number_of_Cells_Jdir =
+32
+#64
+#128
+AMR =
+Off
+#AMR_Frequency =
+#8
+Number_of_Initial_Mesh_Refinements =
+0
+Number_of_Uniform_Mesh_Refinements =
+0
+Number_of_Boundary_Mesh_Refinements =
+0
+Maximum_Refinement_Level
+5
+Minimum_Refinement_Level
+1
+Threshold_for_Refinement =
+0.50
+Threshold_for_Coarsening =
+0.10
+################################
+# Set Morton ordering parameters
+################################
+#Morton =
+#0
+#Morton_Reordering_Frequency =
+#1000
+###############################
+# Set time stepping parameters
+###############################
+CFL_Number =
+0.5
+# 1000,300
+Maximum_Number_of_Time_Steps =
+500
+Full_Multigrid =
+0
+##### IMPLICIT PARAMETERS ###############
+Maximum_Number_of_NKS_Iterations =
+100
+Maximum_Number_of_GMRES_Iterations =
+80
+GMRES_Restart =
+80
+Restart_Solution_Save_Frequency=
+5000
+########################################
+Number_of_Blocks_Per_Processor =
+16
+Output_File_Name = 
+blunt_body_1x1
+#Output_File_Name = 
+#blunt_body_1x1
+#Output_File_Name = 
+#blunt_body_2x2
+#Output_File_Name = 
+#blunt_body_4x4
+#######################
+# Execute program
+#######################
+Execute
+##############################
+# Apply Morton Ordering
+##############################
+#Morton_Ordering
+#############################
+#
+#Refine_Grid
+##############################
+# Restart program
+##############################
+#Continue
+#######################
+# Write output
+#######################
+Write_Output
+Write_Output_Cells
+#Write_Output_Mesh
+#Write_Output_Mesh_Cells
+#Write_Output_Mesh_Nodes
+#Write_Restart
+#Write_Mesh_Definition
+#######################
+# Terminate program
+#######################
+Terminate
+

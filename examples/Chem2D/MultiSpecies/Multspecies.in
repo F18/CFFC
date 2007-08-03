@@ -1,0 +1,150 @@
+# Chem2D Multispecies Test Case
+# 
+# Simple Test case showing how to perform
+# a calculation with an aribitrary gas 
+# mixture.  It does nothing except load
+# the Initial Conditions "Mix"
+# sets half the domain to the given mixture 
+# properties, and the other half to a remix
+# of the given species mass fractions. 
+#
+########################
+# Set solver parameters
+########################
+Time_Integration_Type=
+Multistage_Optimal_Smoothing
+N_Stage=
+3
+# 0 for steady, 1 unsteady
+Time_Accurate= 
+1
+Local_Time_Stepping=
+0
+# Least_Squares, Green_Gauss
+Reconstruction_Type=
+Least_Squares
+#
+# Zero, Barth_Jespersen, Venkatakrishnan, VanLeer, VanAlbada
+Limiter_Type= 
+Venkatakrishnan
+# HLLE, Linde
+Flux_Function_Type=
+Linde
+#
+Flow_Type=
+Inviscid
+#########################
+# Set initial conditions
+#########################
+# ShockBox, Mix, Uniform, CoreFlame, Restart, Planar
+ICs_Type= 
+Mix
+Grid_Type=
+Square
+Number_of_Cells_Idir= 
+20
+Number_of_Cells_Jdir=
+20
+Number_of_Blocks_Idir= 
+1
+Number_of_Blocks_Jdir=
+1
+###############################
+# Set time stepping parameters
+###############################
+CFL_Number=
+0.5
+# Time necessary for unsteady
+Time_Max= 
+0.0
+Output_File_Name= 
+Multispecies
+Restart_Solution_Save_Frequency=
+500
+##################################
+# Chem2D Parameters
+##################################
+Species=
+10 O2 N2 H2 H2O CO CO2 CH4 NO2 Ar He
+Mass_Fractions=
+0.1 0.5 0.05 0.05 0.05 0.05 0.05 0.05 0.05 0.05
+#################################
+# Non STD_ATM properties
+# T(K) and P(kPa)
+#################################
+Temperature=
+500.0
+#################################
+# Execute program
+#################################
+Execute
+# The next section is used by the 
+# postprocessor , until terminate
+#######################
+# Write output
+#######################
+Write_Output
+Write_Output_Cells
+#Write_Output_Mesh
+#Write_Mesh_Definition
+#Write_Output_Mesh_Cells
+#Write_Output_Mesh_Nodes
+Write_Restart
+#######################
+# Terminate program
+#######################
+Terminate
+
+#####################################
+Flux_Function_Type = 
+Godunov
+Execute 
+Write_Output
+Write_Output_Mesh
+Write_Output_Mesh_Cells
+Write_Output_Mesh_Nodes
+Write_Restart
+Write_Mesh_Definition
+Terminate
+
+Explicit_Euler                 :Time_Integration_Type
+Explicit_Predictor_Corrector   :Time_Integration_Type
+Explicit_Runge_Kutta           :Time_Integration_Type
+Multistage_Optimal_Smoothing   :Time_Integration_Type
+
+Least_Squares                  :Reconstruction_Type
+Green_Gauss                    :Reconstruction_Type
+
+Venkatakrishnan                :Limiter_Type
+Barth_Jespersen                :Limiter_Type
+Zero                           :Limiter_Type
+One                            :Limiter_Type
+
+Godunov                        :Flux_Function_Type
+Roe                            :Flux_Function_Type
+Rusanov                        :Flux_Function_Type
+HLLE                           :Flux_Function_Type
+Linde                          :Flux_Function_Type
+HLLC                           :Flux_Function_Type
+
+Uniform                        :ICs_Type
+Sod                            :ICs_Type
+Sod_Xdir                       :ICs_Type
+Sod_Ydir                       :ICs_Type
+Groth                          :ICs_Type
+Groth_Xdir                     :ICs_Type
+Groth_Ydir                     :ICs_Type
+Einfeldt                       :ICs_Type
+Einfeldt_Xdir                  :ICs_Type
+Einfeldt_Ydir                  :ICs_Type
+ShockBox                       :ICs_Type
+Restart                        :ICs_Type
+
+Square                         :Grid_Type
+Rectangular_Box                :Grid_Type
+Flat_Plate                     :Grid_Type
+Pipe                           :Grid_Type
+Blunt_Body                     :Grid_Type
+Circular_Cylinder              :Grid_Type
+Ellipse                        :Grid_Type
+NACA_Aerofoil                  :Grid_Type
