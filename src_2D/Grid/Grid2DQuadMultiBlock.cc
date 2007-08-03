@@ -7161,3 +7161,532 @@ Grid2D_Quad_Block** Grid_Driven_Cavity_Flow(Grid2D_Quad_Block **Grid_ptr,
   return Grid_ptr;
 
 }
+
+
+/********************************************************
+ * Routine: Grid_Adiabatic_Flat_Plate                   *
+ *                                                      *
+ * Generates a quadilateral mesh with clustering        *
+ * consisting of two grid blocks for predicting viscous *
+ * flow and boundary layer development over a flat      *
+ * plate with adiabatic BCs.                            *
+ *                                                      *
+ * Usage: Grid_ptr = Grid_Adiabatic_Flat_Plate(Grid_ptr,*
+ *                                             nblk_i,  *
+ *                                             nblk_j,  *
+ *                                             TWO,     *
+ *         		                       100,     *
+ *         		                       100,     *
+ *                                             2);      *
+ *                                                      *
+ ********************************************************/
+Grid2D_Quad_Block** Grid_Adiabatic_Flat_Plate(Grid2D_Quad_Block **Grid_ptr,
+                                              int &Number_of_Blocks_Idir,
+                                              int &Number_of_Blocks_Jdir,
+                                              const double &Length,
+ 		                              const int Number_of_Cells_Idir,
+		                              const int Number_of_Cells_Jdir,
+					      const int Number_of_Ghost_Cells) {
+
+    int iBlk, n_cells_i, n_cells_j, 
+        Stretch_I, Stretch_J,
+        Orthogonal_North, Orthogonal_South,
+        Orthogonal_East, Orthogonal_West;
+    double Beta_I, Tau_I, Beta_J, Tau_J;
+    Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
+    Spline2D Bnd_Spline_North, Bnd_Spline_South,
+             Bnd_Spline_East, Bnd_Spline_West;
+
+    double distance = TEN;//HUNDRED;
+    double height = TEN;//HUNDRED;
+
+    /* Allocate memory for grid blocks.  There are two grid
+       blocks for this mesh. */
+
+    Number_of_Blocks_Idir = 3;
+    Number_of_Blocks_Jdir = 1;
+    Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
+                                         Number_of_Blocks_Idir, 
+                                         Number_of_Blocks_Jdir);
+
+    /* Create the mesh for each block representing
+       the complete grid. */
+
+    for ( iBlk = 0; iBlk <= Number_of_Blocks_Idir-1; ++iBlk ) {
+
+        /* Assign values to the locations of the corners
+           of the rectangular box shaped domain representing
+           each of the blocks in the grid. */
+
+        if (iBlk == 0) {
+           xc_NW = Vector2D(-distance*Length, height*Length);
+           xc_NE = Vector2D(ZERO       , height*Length);
+           xc_SE = Vector2D(ZERO       , ZERO);
+           xc_SW = Vector2D(-distance*Length, ZERO);
+        } else if (iBlk == 1) {
+           xc_NW = Vector2D(ZERO  , height*Length);
+           xc_NE = Vector2D(Length, height*Length);
+           xc_SE = Vector2D(Length, ZERO);
+           xc_SW = Vector2D(ZERO  , ZERO);
+        } else {
+	   xc_NW = Vector2D(Length, height*Length);
+           xc_NE = Vector2D((distance+1.0)*Length, height*Length);
+           xc_SE = Vector2D((distance+1.0)*Length, ZERO);
+           xc_SW = Vector2D(Length, ZERO);
+	}/* endif */
+   
+        /* Create the splines defining the north, south,
+           east, and west boundaries of the rectangular boxes. */
+
+        Create_Spline_Line(Bnd_Spline_North, xc_NW, xc_NE, 2);
+        Create_Spline_Line(Bnd_Spline_South, xc_SW, xc_SE, 2);
+        Create_Spline_Line(Bnd_Spline_East, xc_SE, xc_NE, 2);
+        Create_Spline_Line(Bnd_Spline_West, xc_SW, xc_NW, 2);
+
+        /* Set the boundary condition types for each of the
+           boundary splines. */
+
+        if (iBlk == 0) {
+           Bnd_Spline_North.setBCtype(BC_CHARACTERISTIC);
+           Bnd_Spline_South.setBCtype(BC_REFLECTION);
+           Bnd_Spline_East.setBCtype(BC_NONE);
+           Bnd_Spline_West.setBCtype(BC_CHARACTERISTIC_VELOCITY);
+        } else if (iBlk == 1) {
+           Bnd_Spline_North.setBCtype(BC_CHARACTERISTIC);
+           Bnd_Spline_South.setBCtype(BC_ADIABATIC_WALL);
+           Bnd_Spline_East.setBCtype(BC_NONE);
+           Bnd_Spline_West.setBCtype(BC_NONE);
+        } else {
+           Bnd_Spline_North.setBCtype(BC_CHARACTERISTIC);
+           Bnd_Spline_South.setBCtype(BC_REFLECTION);
+           Bnd_Spline_East.setBCtype(BC_CHARACTERISTIC_VELOCITY);
+           Bnd_Spline_West.setBCtype(BC_NONE);
+	}/* endif */
+
+        /* Determine the number of cells for this block. */
+
+        n_cells_i = Number_of_Cells_Idir;// /2;
+	n_cells_j = Number_of_Cells_Jdir;
+
+        /* Assign values to the stretching function parameters
+           and boundary grid line orthogonality parameters. */
+
+        if (iBlk == 0) {
+ 	   Stretch_I = STRETCHING_FCN_MAX_CLUSTERING;
+           Beta_I = 1.001; 
+           Tau_I = ZERO;
+           Stretch_J = STRETCHING_FCN_MIN_CLUSTERING;
+           Beta_J = 1.00001;
+           Tau_J = ZERO;
+           Orthogonal_North = 0;
+           Orthogonal_South = 0;
+           Orthogonal_East = 0;
+           Orthogonal_West = 0;
+        } else if (iBlk == 1) {
+	   Stretch_I = STRETCHING_FCN_MINMAX_CLUSTERING;
+           Beta_I = 1.005; 
+           Tau_I = ZERO;
+           Stretch_J = STRETCHING_FCN_MIN_CLUSTERING;
+           Beta_J = 1.00001;
+           Tau_J = ZERO;
+           Orthogonal_North = 0;
+           Orthogonal_South = 0;
+           Orthogonal_East = 0;
+           Orthogonal_West = 0;
+        } else {
+ 	   Stretch_I = STRETCHING_FCN_MIN_CLUSTERING;
+           Beta_I = 1.001; 
+           Tau_I = ZERO;
+           Stretch_J = STRETCHING_FCN_MIN_CLUSTERING;
+           Beta_J = 1.00001;
+           Tau_J = ZERO;
+           Orthogonal_North = 0;
+           Orthogonal_South = 0;
+           Orthogonal_East = 0;
+           Orthogonal_West = 0;
+	}/* endif */
+
+        /* Create the 2D quadrilateral grid block. */
+
+        Create_Quad_Block(Grid_ptr[iBlk][0],
+                          Bnd_Spline_North,
+                          Bnd_Spline_South,
+                          Bnd_Spline_East,
+                          Bnd_Spline_West,
+                          n_cells_i,
+  	                  n_cells_j,
+			  Number_of_Ghost_Cells,
+                          GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+                          Stretch_I,
+                          Beta_I, 
+                          Tau_I,
+                          Stretch_J,
+                          Beta_J,
+                          Tau_J,
+                          Orthogonal_North,
+		          Orthogonal_South,
+     		          Orthogonal_East,
+                          Orthogonal_West);
+
+        /* Deallocate the memory for the boundary splines. */
+
+        Bnd_Spline_North.deallocate();
+        Bnd_Spline_South.deallocate();
+        Bnd_Spline_East.deallocate();
+        Bnd_Spline_West.deallocate();
+
+    } /* endfor */    
+
+    /* Return the grid. */
+
+    return(Grid_ptr);
+
+}
+
+/******************************************************************
+ * Routine: Grid_Adiabatic_Circular_Cylinder                      *
+ *                                                                *
+ * Generates a double-block O-type grid for predicting            *
+ * flow past a circular cylinder with adiabatic BCs.              *
+ *                                                                *
+ * Usage: Grid_ptr = Grid_Adiabatic_Circular_Cylinder(Grid_ptr,   *
+ *                                                    nblk_i,     *
+ *                                                    nblk_j,     *
+ *                                                    THREE,      *
+ *   		                                      100,        *
+ *  		                                      50);        *
+ *                                                                *
+ *****************************************************************/
+Grid2D_Quad_Block** Grid_Adiabatic_Circular_Cylinder(Grid2D_Quad_Block **Grid_ptr,
+                                                     int &Number_of_Blocks_Idir,
+                                                     int &Number_of_Blocks_Jdir,
+                                                     const double &Radius,
+ 		                                     const int Number_of_Cells_Idir,
+		                                     const int Number_of_Cells_Jdir,
+						     const int Number_of_Ghost_Cells) {
+
+  return Grid_Adiabatic_Circular_Cylinder(Grid_ptr,
+                                          Number_of_Blocks_Idir,
+                                          Number_of_Blocks_Jdir,
+                                          Radius,
+					  96.0*Radius,
+					  Number_of_Cells_Idir,
+		                          Number_of_Cells_Jdir,
+					  Number_of_Ghost_Cells);
+}
+
+Grid2D_Quad_Block** Grid_Adiabatic_Circular_Cylinder(Grid2D_Quad_Block **Grid_ptr,
+                                                     int &Number_of_Blocks_Idir,
+                                                     int &Number_of_Blocks_Jdir,
+                                                     const double &Inner_Radius,
+                                                     const double &Outer_Radius,
+ 		                                     const int Number_of_Cells_Idir,
+		                                     const int Number_of_Cells_Jdir,
+						     const int Number_of_Ghost_Cells) {
+
+
+    int iBlk, n_cells_i, n_cells_j, Stretch_I, Stretch_J,
+        Orthogonal_North, Orthogonal_South,
+        Orthogonal_East, Orthogonal_West;
+    double Beta_I, Tau_I, Beta_J, Tau_J;
+    Vector2D x1, x2;
+    Spline2D Bnd_Spline_North, Bnd_Spline_South,
+             Bnd_Spline_East, Bnd_Spline_West;
+
+    /* Allocate memory for grid blocks.  There are two grid
+       blocks for this mesh. */
+
+    Number_of_Blocks_Idir = 2;
+    Number_of_Blocks_Jdir = 1;
+    Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
+                                         Number_of_Blocks_Idir, 
+                                         Number_of_Blocks_Jdir);
+
+    /* Create the mesh for each block representing
+       the complete grid. */
+
+    for ( iBlk = 0; iBlk <= Number_of_Blocks_Idir-1; ++iBlk ) {
+
+        /* Create the splines defining the north, south,
+           east, and west boundaries of the grid. */
+
+        if (iBlk == 0) {
+           x1 = Vector2D(ZERO , ZERO);
+           Create_Spline_Circular_Arc(Bnd_Spline_North,
+	      		              x1,
+			              Outer_Radius,   //was 96*R
+                                      360.00,
+			              180.00,
+  	                              361);
+           Create_Spline_Circular_Arc(Bnd_Spline_South,
+			              x1,
+			              Inner_Radius,
+                                      360.00,
+			              180.00,
+  	                              361);
+           x1 = Vector2D(Inner_Radius, ZERO);
+           x2 = Vector2D(Outer_Radius, ZERO);
+           Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+           x1 = Vector2D(-Inner_Radius, ZERO);
+           x2 = Vector2D(-Outer_Radius, ZERO);
+           Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+        } else {
+           x1 = Vector2D(ZERO , ZERO);
+           Create_Spline_Circular_Arc(Bnd_Spline_North,
+	      		              x1,
+			              Outer_Radius,
+                                      180.00,
+			              ZERO,
+  	                              361);
+           Create_Spline_Circular_Arc(Bnd_Spline_South,
+			              x1,
+			              Inner_Radius,
+                                      180.00,
+			              ZERO,
+  	                              361);
+           x1 = Vector2D(-Inner_Radius, ZERO);
+           x2 = Vector2D(-Outer_Radius, ZERO);
+           Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+           x1 = Vector2D(Inner_Radius, ZERO);
+           x2 = Vector2D(Outer_Radius, ZERO);
+           Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+        } /* endif */
+
+        /* Set the boundary condition types for each of the
+           boundary splines. */
+
+        if (iBlk == 0) {
+	  Bnd_Spline_North.setBCtype(BC_FIXED);
+	  Bnd_Spline_South.setBCtype(BC_ADIABATIC_WALL);
+	   Bnd_Spline_East.setBCtype(BC_NONE);
+	   Bnd_Spline_West.setBCtype(BC_NONE);
+        } else {
+	  Bnd_Spline_North.setBCtype(BC_FIXED);
+	  Bnd_Spline_South.setBCtype(BC_ADIABATIC_WALL);
+	   Bnd_Spline_East.setBCtype(BC_NONE);
+	   Bnd_Spline_West.setBCtype(BC_NONE);
+        } /* endif */
+
+        /* Determine the number of cells for this block. */
+
+        n_cells_i = Number_of_Cells_Idir/2;
+	n_cells_j = Number_of_Cells_Jdir;
+
+        /* Assign values to the stretching function parameters
+           and boundary grid line orthogonality parameters. */
+
+        if (iBlk == 0) {
+	  Stretch_I = STRETCHING_FCN_LINEAR;//MINMAX_CLUSTERING;
+	  Beta_I = 1.001;
+	   Tau_I = ZERO;
+	   Stretch_J = STRETCHING_FCN_MIN_CLUSTERING;
+	   Beta_J = 1.01;//1.000001;
+           Tau_J = ZERO;
+           Orthogonal_North = 0;
+           Orthogonal_South = 0;
+           Orthogonal_East = 0;
+           Orthogonal_West = 0;
+        } else {
+	  Stretch_I = STRETCHING_FCN_LINEAR;//MINMAX_CLUSTERING;
+	  Beta_I = 1.001; 
+           Tau_I = ZERO;
+           Stretch_J = STRETCHING_FCN_MIN_CLUSTERING;
+           Beta_J = 1.01;//1.000001;
+           Tau_J = ZERO;
+           Orthogonal_North = 0;
+           Orthogonal_South = 0;
+           Orthogonal_East = 0;
+           Orthogonal_West = 0;
+        } /* endif */
+
+        /* Create the 2D quadrilateral grid block. */
+
+        Create_Quad_Block(Grid_ptr[iBlk][0],
+                          Bnd_Spline_North,
+                          Bnd_Spline_South,
+                          Bnd_Spline_East,
+                          Bnd_Spline_West,
+                          n_cells_i,
+  	                  n_cells_j,
+			  Number_of_Ghost_Cells,
+                          GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+                          Stretch_I,
+                          Beta_I, 
+                          Tau_I,
+                          Stretch_J,
+                          Beta_J,
+                          Tau_J,
+                          Orthogonal_North,
+		          Orthogonal_South,
+     		          Orthogonal_East,
+                          Orthogonal_West);
+
+        /* Deallocate the memory for the boundary splines. */
+
+        Bnd_Spline_North.deallocate();
+        Bnd_Spline_South.deallocate();
+        Bnd_Spline_East.deallocate();
+        Bnd_Spline_West.deallocate();
+
+    } /* endfor */
+
+    /* Return the grid. */
+
+    return(Grid_ptr);
+
+}
+
+/********************************************************
+ * Routine: Grid_Adiabatic_Couette                      *
+ *                                                      *
+ * Generates a quadilateral mesh with clustering        *
+ * consisting of two grid blocks for predicting viscous *
+ * flow between two adiabatic plates.                   *
+ *                                                      *
+ * Usage: Grid_ptr = Grid_Adiabatic_Couette(Grid_ptr,   *
+ *                                          nblk_i,     *
+ *                                          nblk_j,     *
+ *                                          TWO,        *
+ *         		                    100,        *
+ *         		                    100);       *
+ *                                                      *
+ ********************************************************/
+Grid2D_Quad_Block** Grid_Adiabatic_Couette(Grid2D_Quad_Block **Grid_ptr,
+                                           int &Number_of_Blocks_Idir,
+                                           int &Number_of_Blocks_Jdir,
+                                           const double &Separation,
+ 		                           const int Number_of_Cells_Idir,
+		                           const int Number_of_Cells_Jdir,
+					   const int Number_of_Ghost_Cells) {
+
+    int jBlk, n_cells_i, n_cells_j, 
+        Stretch_I, Stretch_J,
+        Orthogonal_North, Orthogonal_South,
+        Orthogonal_East, Orthogonal_West;
+    double Beta_I, Tau_I, Beta_J, Tau_J;
+    Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
+    Spline2D Bnd_Spline_North, Bnd_Spline_South,
+             Bnd_Spline_East, Bnd_Spline_West;
+
+    /* Allocate memory for grid blocks.  There are two grid
+       blocks for this mesh. */
+
+    Number_of_Blocks_Idir = 1;
+    Number_of_Blocks_Jdir = 2;
+    Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
+                                         Number_of_Blocks_Idir, 
+                                         Number_of_Blocks_Jdir);
+
+    /* Create the mesh for each block representing
+       the complete grid. */
+
+    for ( jBlk = 0; jBlk <= Number_of_Blocks_Jdir-1; ++jBlk ) {
+
+        /* Assign values to the locations of the corners
+           of the rectangular box shaped domain representing
+           each of the blocks in the grid. */
+
+        if (jBlk == 0) {
+           xc_NW = Vector2D(-Separation/8.0, ZERO);
+           xc_NE = Vector2D( Separation/8.0, ZERO);
+           xc_SE = Vector2D( Separation/8.0, -Separation/TWO);
+           xc_SW = Vector2D(-Separation/8.0, -Separation/TWO);
+        } else {
+           xc_NW = Vector2D(-Separation/8.0, Separation/TWO);
+           xc_NE = Vector2D( Separation/8.0, Separation/TWO);
+           xc_SE = Vector2D( Separation/8.0, ZERO);
+           xc_SW = Vector2D(-Separation/8.0, ZERO);
+        } /* endif */
+   
+        /* Create the splines defining the north, south,
+           east, and west boundaries of the rectangular boxes. */
+
+        Create_Spline_Line(Bnd_Spline_North, xc_NW, xc_NE, 200);
+        Create_Spline_Line(Bnd_Spline_South, xc_SW, xc_SE, 200);
+        Create_Spline_Line(Bnd_Spline_East, xc_SE, xc_NE, 200);
+        Create_Spline_Line(Bnd_Spline_West, xc_SW, xc_NW, 200);
+
+        /* Set the boundary condition types for each of the
+           boundary splines. */
+
+        if (jBlk == 0) {
+           Bnd_Spline_North.setBCtype(BC_NONE);
+           Bnd_Spline_South.setBCtype(BC_ADIABATIC_WALL);
+           Bnd_Spline_East.setBCtype(BC_CHARACTERISTIC);
+           Bnd_Spline_West.setBCtype(BC_CHARACTERISTIC);
+        } else {
+           Bnd_Spline_North.setBCtype(BC_ADIABATIC_WALL);
+           Bnd_Spline_South.setBCtype(BC_NONE);
+           Bnd_Spline_East.setBCtype(BC_CHARACTERISTIC);
+           Bnd_Spline_West.setBCtype(BC_CHARACTERISTIC);
+        } /* endif */
+
+        /* Determine the number of cells for this block. */
+
+        n_cells_i = Number_of_Cells_Idir;
+	n_cells_j = Number_of_Cells_Jdir/2;
+
+        /* Assign values to the stretching function parameters
+           and boundary grid line orthogonality parameters. */
+
+        if (jBlk == 0) {
+           Stretch_I = STRETCHING_FCN_LINEAR;
+           Beta_I = ZERO; 
+           Tau_I = ZERO;
+           Stretch_J = STRETCHING_FCN_LINEAR;//MIN_CLUSTERING;
+           Beta_J = ZERO;//1.01;
+           Tau_J = ZERO;
+           Orthogonal_North = 0;
+           Orthogonal_South = 0;
+           Orthogonal_East = 0;
+           Orthogonal_West = 0;
+        } else {
+           Stretch_I = STRETCHING_FCN_LINEAR;
+           Beta_I = ZERO; 
+           Tau_I = ZERO;
+           Stretch_J = STRETCHING_FCN_LINEAR;//MAX_CLUSTERING;
+           Beta_J = ZERO;//1.01;
+           Tau_J = ZERO;
+           Orthogonal_North = 0;
+           Orthogonal_South = 0;
+           Orthogonal_East = 0;
+           Orthogonal_West = 0;
+        } /* endif */
+
+        /* Create the 2D quadrilateral grid block. */
+
+        Create_Quad_Block(Grid_ptr[0][jBlk],
+                          Bnd_Spline_North,
+                          Bnd_Spline_South,
+                          Bnd_Spline_East,
+                          Bnd_Spline_West,
+                          n_cells_i,
+  	                  n_cells_j,
+			  Number_of_Ghost_Cells,
+                          GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+                          Stretch_I,
+                          Beta_I, 
+                          Tau_I,
+                          Stretch_J,
+                          Beta_J,
+                          Tau_J,
+                          Orthogonal_North,
+		          Orthogonal_South,
+     		          Orthogonal_East,
+                          Orthogonal_West);
+
+        /* Deallocate the memory for the boundary splines. */
+
+        Bnd_Spline_North.deallocate();
+        Bnd_Spline_South.deallocate();
+        Bnd_Spline_East.deallocate();
+        Bnd_Spline_West.deallocate();
+
+    } /* endfor */    
+
+    /* Return the grid. */
+
+    return(Grid_ptr);
+
+}
+

@@ -11,7 +11,7 @@ PLATFORM = generic
 # NoMPI, MPICH, MPT (SG)
 MPI_VERSION = NoMPI
 
-# NoICEMCFD, V41, V42. V43, V50
+# NoICEMCFD, V41, V42. V43, V50, V10, V11
 ICEMCFD_VERSION = NoICEMCFD
 
 # Version V296, V3+, ICC
@@ -97,6 +97,14 @@ ifeq ($(ICEMCFD_VERSION),V50)
   ICEMCFD_CPP_FLAGS = -D_ICEMCFD_VERSION -D_ICEMCFD_V50 -I$(CFFC_Path)/icemcfd/icemcfd_v5.0/include
   ICEMCFD_LD_FLAGS  = -L$(CFFC_Path)/icemcfd/icemcfd_v5.0/lib -lboco -ldomain -ltopo
 endif
+ifeq ($(ICEMCFD_VERSION),V10)
+  ICEMCFD_CPP_FLAGS = -D_ICEMCFD_VERSION -D_ICEMCFD_V10 -I$(CFFC_Path)/icemcfd/icemcfd_v10/include
+  ICEMCFD_LD_FLAGS  = -L$(CFFC_Path)/icemcfd/icemcfd_v10/lib -lboco -ldomain -ltopo
+endif
+ifeq ($(ICEMCFD_VERSION),V11)
+  ICEMCFD_CPP_FLAGS = -D_ICEMCFD_VERSION -D_ICEMCFD_V11 -I$(CFFC_Path)/icemcfd/icemcfd_v11/include
+  ICEMCFD_LD_FLAGS  = -L$(CFFC_Path)/icemcfd/icemcfd_v11/lib -lboco -ldomain -ltopo
+endif
 
 #
 # Set flags associated with sparse linear system solvers:
@@ -173,7 +181,7 @@ ifeq ($(CANTERA_VERSION),NoCANTERA)
   CANTERA_LD_FLAGS        =  
 endif
 ifeq ($(CANTERA_VERSION),V70)
-  CANTERA_CPP_FLAGS       =  -D_CANTERA_VERSION -D_ICEMCFD_70 -I$(CANTERA_INC_DIR)
+  CANTERA_CPP_FLAGS       =  -D_CANTERA_VERSION -D_CANTERA_V70 -I$(CANTERA_INC_DIR)
   CANTERA_LD_FLAGS        =  -L$(CANTERA_LIB_DIR) -luser -loneD -lzeroD -ltransport -lcantera -lcvode -lctlapack -lctblas -lctmath -ltpx -lg2c -lctcxx
 endif
 

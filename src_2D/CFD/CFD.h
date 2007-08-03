@@ -109,6 +109,11 @@ inline char *Date_And_Time() {
 #define WRITE_OUTPUT_LEVEL_SET_ELLIPSE_CODE              10034
 #define WRITE_OUTPUT_LEVEL_SET_ZALESAK_CODE              10035
 
+#define WRITE_OUTPUT_DRAG_CODE                           10036
+#define WRITE_OUTPUT_CYLINDER_DRAG_CODE                  10037
+#define WRITE_OUTPUT_CYLINDER_FREE_MOLECULAR_CODE        10038
+#define WRITE_OUTPUT_COUETTE                             10039
+
 #define WRITE_OUTPUT_RHS_CODE                            10040
 #define WRITE_OUTPUT_PERTURB_CODE                        10041
 
@@ -182,6 +187,10 @@ inline char *Date_And_Time() {
 #define GRID_NOZZLELESS_ROCKET_MOTOR         21
 #define GRID_DESOLVATION_CHAMBER             22
 #define GRID_FREE_JET_FLAME                  23
+#define GRID_ADIABATIC_FLAT_PLATE            24
+#define GRID_ADIABATIC_PIPE                  25
+#define GRID_ADIABATIC_CIRCULAR_CYLINDER     26
+#define GRID_ADIABATIC_COUETTE               27
 
 #define GRID_ICEMCFD                       1000
 #define GRID_READ_FROM_DEFINITION_FILE    10000
@@ -247,6 +256,7 @@ inline char *Date_And_Time() {
 #define BC_FARFIELD                      8000   // Core | CGNS
 #define BC_CHARACTERISTIC                8001   //      | CFFC ?
 #define BC_FIXED_PRESSURE                8002   //      | CFFC
+#define BC_CHARACTERISTIC_VELOCITY       8003   //      | CFDKit
 
 //--Inflow
 #define BC_INFLOW                        9000   // Core | CGNS
@@ -280,6 +290,7 @@ inline char *Date_And_Time() {
 #define BC_MOVING_WALL                  11900   //      | CFFC
 #define BC_MOVING_WALL_ISOTHERMAL       11901   //      | CFFC
 #define BC_MOVING_WALL_HEATFLUX         11902   //      | CFFC
+#define BC_MOVING_ADIABATIC_WALL BC_MOVING_WALL_HEATFLUX 
 #define BC_BURNING_SURFACE              11903   //      | CFFC
 #define BC_MASS_INJECTION               11904   //      | CFFC
 //  Core
@@ -305,6 +316,9 @@ inline char *Date_And_Time() {
 #define BC_FIXED_TEMP                   99903   // ? Dirichlet ?
 #define BC_FIXED_HEATFLUX               99904   // ? Neumann ?
 #define BC_RINGLEB_FLOW                 99905   // ?
+
+#define BC_DEVELOPED_CHANNEL            99906   // Developed channel inlet
+#define BC_COUETTE                      99907   // Couette BC, used by ~james
 
 /**********************************************************************
  * CFD - BC OPTIONS                                                   *
@@ -457,6 +471,14 @@ inline char *Date_And_Time() {
 #define IC_ELECTRIC_FIELD_OCTAPOLE           202
 #define IC_ELECTRIC_FIELD_DOUBLE_QUADRUPOLE  203
 #define IC_ELECTRIC_FIELD_DOUBLE_OCTAPOLE    204
+
+#define IC_SHOCK_STRUCTURE_M1_1       300
+#define IC_SHOCK_STRUCTURE_M1_3       301
+#define IC_SHOCK_STRUCTURE_M1_5       302
+#define IC_SHOCK_STRUCTURE_M2_0       303
+#define IC_SHOCK_STRUCTURE_M10_0      304
+#define IC_PIPE                       305
+#define IC_COUETTE                    306
 
 /********************************************************
  * CFD -- Time Integration (Time-Stepping) Types.       *

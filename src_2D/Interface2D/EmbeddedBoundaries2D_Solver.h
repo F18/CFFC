@@ -35,6 +35,10 @@
 #include "EmbeddedBoundaries2D_Dusty.h"
 #endif // _EMBEDDEDBOUNDARIES2D_DUSTY_INCLUDED
 
+// #ifndef _EMBEDDEDBOUNDARIES2D_GAUSSIAN_INCLUDED
+ #include "EmbeddedBoundaries2D_Gaussian.h"
+// #endif // _EMBEDDEDBOUNDARIES2D_GAUSSIAN_INCLUDED
+
 /**********************************************************************
  * Routine:EmbeddedBoundaries2D_Solver                                *
  *                                                                    *
@@ -223,6 +227,19 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
   if (!batch_flag) cout << "\n Prescribing initial data.";
   if (Input_Parameters.i_ICs == IC_RESTART) {
     if (!batch_flag) cout << "\n Reading solution from restart data files.";
+
+    //Check that restart files are probably not corrupt. //added by ~james
+    if (CFDkit_Primary_MPI_Processor()) {
+      if(System::Restart_In_Progress()) {
+	cout << "\n  Restart-in-progress flag detected, assuming data is corrupt."
+	     << "\n  Uncompressing backups.";
+	System::Uncompress_Restart();
+	System::Remove_Restart_Flag();
+	cout << "\n  Backup successfully uncompressed; reading.";
+      }
+    }
+    CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+
     // Read the quadtree restart file.
     error_flag = Read_QuadTree(QuadTree,
 			       Global_Solution_Block_List,
@@ -463,6 +480,17 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
     error_flag = CFDkit_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
+    //re-apply ICs after refinement
+    if (Input_Parameters.Number_of_Uniform_Mesh_Refinements ||
+	Input_Parameters.Number_of_Boundary_Mesh_Refinements ||
+	Input_Parameters.Number_of_Interface_Mesh_Refinements ||
+	Input_Parameters.Number_of_Initial_Mesh_Refinements ||
+	Input_Parameters.Number_of_Bounding_Box_Mesh_Refinements) {
+      if (!batch_flag) cout << "\n Re-applying ICs after mesh refinement.";
+      // Apply initial conditions.
+      ICs(Local_SolnBlk,Local_Solution_Block_List,Input_Parameters);
+    }
+
     // MPI barrier to ensure processor synchronization.
     CFDkit_Barrier_MPI();
 
@@ -540,6 +568,8 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
   CFDkit_Barrier_MPI();
 
   // Allocate memory for multigrid solver if required.
+
+        //Note: this has never been tested for Gaussian2D!!!!
   if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
       Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
     error_flag = MGSolver.allocate(Local_SolnBlk,
@@ -582,6 +612,8 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 
   } else if (Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
     // Perform dual-time computations with FAS multigrid.
+
+       //Note: This has never been tested for Gaussian2D!!!
     error_flag = MGSolver.DTS_Multigrid_Solution(batch_flag,
 						 number_of_time_steps,
 						 evolution_counter,
@@ -1024,6 +1056,34 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       CFDkit_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
 
+    } else if (command_flag == WRITE_OUTPUT_CYLINDER_DRAG_CODE) {
+      if (!batch_flag) cout << endl << " Calculating Cylinder Cd and Cl.";
+      if (!(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
+	    Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING)) {
+	error_flag = EBSolver.Output_Cylinder_Drag();
+      } else {
+	// 	error_flag = MGSolver.EBSolver[0].Output_Flat_Plate_Tecplot();
+      }
+      if (error_flag) {
+	cout << endl << "\n ERROR: Problem calculating Cd and Cl." << endl;
+      }
+      CFDkit_Broadcast_MPI(&error_flag,1);
+      if (error_flag) return error_flag;
+
+    } else if (command_flag == WRITE_OUTPUT_COUETTE) {
+      if (!batch_flag) cout << endl << " Calculating Couette info.";
+      if (!(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
+	    Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING)) {
+	error_flag = EBSolver.Output_Couette();
+      } else {
+	// 	error_flag = MGSolver.EBSolver[0].Output_Flat_Plate_Tecplot();
+      }
+      if (error_flag) {
+	cout << endl << "\n ERROR: Problem calculating Couette info." << endl;
+      }
+      CFDkit_Broadcast_MPI(&error_flag,1);
+      if (error_flag) return error_flag;
+
     } else if (command_flag == WRITE_OUTPUT_AERODYNAMIC_COEFFICIENTS_CODE) {
       if (!batch_flag) cout << endl << " Writing the aerodynamic coefficients to an output data file.";
       if (!(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
@@ -1042,6 +1102,21 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 
     } else if (command_flag == WRITE_RESTART_CODE) {
       // Write restart files.
+      if (!batch_flag) cout << "\n Writing solution to restart data file(s).";
+      //  Save and delete old restart files in compressed archive (just in case)
+      if (CFDkit_Primary_MPI_Processor()) {
+	cout << "\n  Creating compressed archive of (and deleting) old restarts.";
+	System::Compress_Restart();
+	cout << "\n  Writing new restart files.";
+	cout.flush();
+      }
+      CFDkit_Barrier_MPI(); // MPI barrier so that other processors do
+                            // not start over writing restarts
+
+      if (CFDkit_Primary_MPI_Processor()) {
+	System::Set_Restart_Flag();  //Set flag to indicate a restart is being saved
+      }
+
       if (!batch_flag) cout << "\n Writing solution to restart data file(s).";
       // Write the quadtree restart file.
       error_flag = Write_QuadTree(QuadTree,Input_Parameters);
@@ -1085,6 +1160,10 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       }
       error_flag = CFDkit_OR_MPI(error_flag);
       if (error_flag) return error_flag;
+
+       if (CFDkit_Primary_MPI_Processor()) {
+	 System::Remove_Restart_Flag();  //Remove flag to indicate the restart is finished
+       }
 
     } else if (command_flag == INVALID_INPUT_CODE ||
 	       command_flag == INVALID_INPUT_VALUE) {
