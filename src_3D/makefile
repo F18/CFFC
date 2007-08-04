@@ -379,7 +379,7 @@ superclean:
 	cd $(BPKIT_DIR)/src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
 	cd $(CANTERA_DIR); make -i clean;
 	cd $(FFTW_DIR); make clean; 
-#	cd $(FFTW_DIR); make distclean;
+	cd $(FFTW_DIR); make distclean;
 	@echo ' '
 	@echo All documentation and library directories are now clean.
 	@echo '-------------------------------------------------------'
