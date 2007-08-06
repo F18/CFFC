@@ -9,7 +9,6 @@ Multistage_Optimal_Smoothing
 #Explicit_Runge_Kutta
 N_Stage =
 5
-#3
 #########################################
 Time_Accurate = 
 0
@@ -20,20 +19,17 @@ Local_Time_Stepping =
 #Residual_Smoothing_Gauss_Seidel_Iterations =
 #2
 Reconstruction_Type =
-Green_Gauss
-#Least_Squares
+Least_Squares
 #Green_Gauss
 Limiter_Type =
 Venkatakrishnan
 Flux_Function_Type =
 Roe
-#HLLE
-#Roe
 Freeze_Limiter =
 1
 #
 Freeze_Limiter_Residual_Level = 
-10.0
+50.0
 # 1 density
 Residual_Variable =
 1
@@ -57,7 +53,7 @@ ON
 NKS_Finite_Time_Step =
 ON
 NKS_Finite_Time_Step_Initial_CFL =
-5
+5.0
 NKS_Finite_Time_Step_Max_CFL =
 1e12
 GMRES_Normalization = 
@@ -70,7 +66,8 @@ First_Order_Inviscid_Roe
 ICs_Type = 
 Uniform
 Mach_Number = 
-2.0
+4.0
+#2.0
 Number_of_Ghost_Cells=
 2
 ########################
@@ -81,7 +78,8 @@ Blunt_Body
 Blunt_Body_Radius = 
 1.00
 Blunt_Body_Mach_Number =
-1.8
+2.0
+#1.8
 Number_of_Cells_Idir = 
 32
 #64
@@ -119,10 +117,10 @@ Threshold_for_Coarsening =
 # Set time stepping parameters
 ###############################
 CFL_Number =
-0.5
+0.75
 # 1000,300
 Maximum_Number_of_Time_Steps =
-300
+500
 Full_Multigrid =
 0
 ##### IMPLICIT PARAMETERS ###############
@@ -139,12 +137,6 @@ Number_of_Blocks_Per_Processor =
 16
 Output_File_Name = 
 blunt_body_1x1
-#Output_File_Name = 
-#blunt_body_1x1
-#Output_File_Name = 
-#blunt_body_2x2
-#Output_File_Name = 
-#blunt_body_4x4
 #######################
 # Execute program
 #######################

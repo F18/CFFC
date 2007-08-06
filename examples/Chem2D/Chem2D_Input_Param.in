@@ -209,9 +209,9 @@ Mass_Fractions=
 ## 
 ###############################
 ###############################
-# 0 off, 1 on
+# Off, On
 AMR =
-1
+On
 # number of iterations between refinements
 AMR_Frequency =
 8
@@ -233,6 +233,21 @@ Threshold_for_Refinement =
 0.50
 Threshold_for_Coarsening =
 0.10
+# Criteria to Use
+Number_of_Refinement_Criteria =
+6
+Refinement_Criteria_Gradient_Density =
+On
+Refinement_Criteria_Divergence_Velocity = On
+On
+Refinement_Criteria_Curl_Velocity = On
+On
+Refinement_Criteria_Gradient_Temperature = On
+On
+Refinement_Criteria_Gradient_CH4 = On
+On
+Refinement_Criteria_Gradient_CO2 = On
+On
 ###############################
 # Another way to perform refinements 
 # by calling "Refine_Grid" before the 
@@ -256,7 +271,7 @@ Morton_Reordering_Frequency=
 # Grid Smoother
 ##########################
 Smooth_Quad_Block=
-OFF
+Off
 
 ##############################
 # Implicit Residual Smoothing

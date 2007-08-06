@@ -78,7 +78,7 @@ Moving_Wall_Velocity=
 Grid_Type=
 Couette
 Smooth_Quad_Block=
-OFF
+Off
 Box_Width=
 0.2
 Box_Height=

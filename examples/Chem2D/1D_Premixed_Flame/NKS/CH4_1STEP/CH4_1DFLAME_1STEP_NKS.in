@@ -15,8 +15,8 @@ Freeze_Limiter =
 Freeze_Limiter_Residual_Level = 
 0.1
 # 1 rho, 4 energy (follows index operator for pstate)
-Residual_Norm =
-1
+#Residual_Variable =
+#1
 ############################
 # NKS PARAMETERS
 ############################
@@ -76,8 +76,9 @@ ICs_Type=
 1DPremixedFlame
 Grid_Type=
 1DFlame
-Smooth_Quad_Block=
+Smooth_Quad_Block =
 OFF
+#Off
 Mach_Number_Reference=
 0.1 0.1 
 Box_Width=

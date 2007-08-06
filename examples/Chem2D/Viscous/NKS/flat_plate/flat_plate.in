@@ -33,7 +33,7 @@ GMRES_Overlap =
 GMRES_Tolerance =
 0.1
 NKS_Overall_Tolerance =
-1.0e-12
+1.0e-10
 GMRES_Block_Preconditioner = 
 ILUK
 #( ILUK, Diagonal)
@@ -85,7 +85,7 @@ Flat_Plate
 Plate_Length =
 0.002
 Smooth_Quad_Block=
-OFF
+Off
 Number_of_Cells_Idir= 
 16
 #32
@@ -96,6 +96,12 @@ Number_of_Blocks_Idir=
 3
 Number_of_Blocks_Jdir=
 1
+Mesh_Stretching =
+On
+Mesh_Stretching_Type_Idir =
+Max_Clustering
+Mesh_Stretching_Type_Jdir =
+Min_Clustering
 Mesh_Stretching_Factor_Idir =
 1.10
 Mesh_Stretching_Factor_Jdir =
@@ -111,7 +117,7 @@ Mesh_Stretching_Factor_Jdir =
 # AMR PARAMETERS
 #############################
 AMR =
-0
+Off
 #AMR_Frequency =
 #0
 Number_of_Initial_Mesh_Refinements =
@@ -178,9 +184,8 @@ Execute
 #Write_Output_Mesh_Cells
 #Write_Output_Mesh_Nodes
 #Write_Restart
-#######################
-# Terminate program
-#######################
+#############################
+##############################
 Refine_Grid
 Maximum_Number_of_Time_Steps =
 0

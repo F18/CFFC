@@ -1837,7 +1837,7 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
       **************************************************************************/
     case IC_CHEM_CORE_FLAME :           
 
-  //     if(Wo[0].React.reactset_flag == CH4_2STEP || Wo[0].React.reactset_flag == CH4_1STEP){
+//       if(Wo[0].React.reactset_flag == CH4_2STEP || Wo[0].React.reactset_flag == CH4_1STEP){
 	fuel_spacing = 0.002;      //m
 	fuel_velocity = 0.70;      //m/s  //0.70
 	fuel_temp_inlet = 298.0;   //K 
@@ -1951,19 +1951,19 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 	    SolnBlk.W[i][j].v.zero(); 	   	    
  	  } 
 
-// 	  //IGNITOR across fuel and air inlets   //0.006  & 0.003
-// 	  if( SolnBlk.Grid.Cell[i][j].Xc.y < 0.006 && SolnBlk.Grid.Cell[i][j].Xc.y > 0.003){   	   
-// 	    if ( SolnBlk.Grid.Cell[i][j].Xc.x <= fuel_spacing && SolnBlk.Grid.Cell[i][j].Xc.y <0.011 && 
-// 		 SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing*0.25){ 
-// 	      SolnBlk.W[i][j].rho = Wl.p/(Wl.Rtot()*ignition_temp);
-// 	    } else if (SolnBlk.Grid.Cell[i][j].Xc.x <= fuel_spacing){
-// 	      SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*ignition_temp);
-// 	    } else if (SolnBlk.Grid.Cell[i][j].Xc.x <= air_spacing*0.25){
-// 	      SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*ignition_temp);
-// 	    } else {
-// 	      //left at air
-// 	    }
-// 	  }
+	  //IGNITOR across fuel and air inlets   //0.006  & 0.003
+	  if( SolnBlk.Grid.Cell[i][j].Xc.y < 0.006 && SolnBlk.Grid.Cell[i][j].Xc.y > 0.003){   	   
+	    if ( SolnBlk.Grid.Cell[i][j].Xc.x <= fuel_spacing && SolnBlk.Grid.Cell[i][j].Xc.y <0.011 && 
+		 SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing*0.25){ 
+	      SolnBlk.W[i][j].rho = Wl.p/(Wl.Rtot()*ignition_temp);
+	    } else if (SolnBlk.Grid.Cell[i][j].Xc.x <= fuel_spacing){
+	      SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*ignition_temp);
+	    } else if (SolnBlk.Grid.Cell[i][j].Xc.x <= air_spacing*0.25){
+	      SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*ignition_temp);
+	    } else {
+	      //left at air
+	    }
+	  }
 	  SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
 	} 
       } 
@@ -5395,9 +5395,9 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
       curl_V_z, curl_V_abs, curl_V_criteria, curl_V_criteria_max,
       grad_Temp_x, grad_Temp_y, grad_Temp_abs, grad_Temp_criteria, grad_Temp_criteria_max,
       grad_CH4_x, grad_CH4_y, grad_CH4_abs, grad_CH4_criteria, grad_CH4_criteria_max,
-      grad_CO2_x, grad_CO2_y, grad_CO2_abs, grad_CO2_criteria, grad_CO2_criteria_max,
-      grad_dudy, grad_dudy_criteria, grad_dudy_criteria_max,
-      grad_pressure_x, grad_pressure_y, grad_pressure_abs, grad_pressure_criteria, grad_pressure_criteria_max;
+      grad_CO2_x, grad_CO2_y, grad_CO2_abs, grad_CO2_criteria, grad_CO2_criteria_max;
+//       grad_dudy, grad_dudy_criteria, grad_dudy_criteria_max,
+//       grad_pressure_x, grad_pressure_y, grad_pressure_abs, grad_pressure_criteria, grad_pressure_criteria_max;
 
     /* Set the number of refinement criteria to be used (3):
        (1) refinement criteria #1 based on the gradient of the density field;
@@ -5409,8 +5409,8 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
        (7) refinement criteria #7 based on du/dy (for pipe flow)
        (8) refinement criteria #8 based on the gradient of Pressure
     */
-//     number_refinement_criteria = 1;
 
+    number_refinement_criteria = IP.Number_of_Refinement_Criteria;
     /* Initialize the refinement criteria for the block. */
 
     grad_rho_criteria_max = ZERO;
@@ -5419,7 +5419,7 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
     grad_Temp_criteria_max = ZERO;
     grad_CH4_criteria_max = ZERO;      
     grad_CO2_criteria_max = ZERO;
-    grad_pressure_criteria_max = ZERO;
+    //grad_pressure_criteria_max = ZERO;
 
     /* Calculate the refinement criteria for each cell of the 
        computational mesh and assign the maximum value for
@@ -5451,36 +5451,36 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
 
              // Evaluate refinement criteria #3 based on the curl
              // of the velocity vector.
-//              curl_V_z = SolnBlk.dWdx[i][j].v.y - SolnBlk.dWdy[i][j].v.x; 
-//              curl_V_abs = sqrt(sqr(curl_V_z)); 
-//              curl_V_criteria = sqrt(SolnBlk.Grid.Cell[i][j].A)*curl_V_abs/SolnBlk.W[i][j].a(); 
-//              curl_V_criteria_max = max(curl_V_criteria_max, curl_V_criteria);
+             curl_V_z = SolnBlk.dWdx[i][j].v.y - SolnBlk.dWdy[i][j].v.x; 
+             curl_V_abs = sqrt(sqr(curl_V_z)); 
+             curl_V_criteria = sqrt(SolnBlk.Grid.Cell[i][j].A)*curl_V_abs/SolnBlk.W[i][j].a(); 
+             curl_V_criteria_max = max(curl_V_criteria_max, curl_V_criteria);
 
-//	     Evaluate refinement criteria #4 based on the gradient
-//	     of the Temperature
-// 	     grad_Temp_x = (ONE/( SolnBlk.W[i][j].rho* SolnBlk.W[i][j].Rtot())) * 
-// 	       (SolnBlk.dWdx[i][j].p - (SolnBlk.W[i][j].p/SolnBlk.W[i][j].rho) * SolnBlk.dWdx[i][j].rho);
-//              grad_Temp_y = (ONE/( SolnBlk.W[i][j].rho* SolnBlk.W[i][j].Rtot())) *
-// 	       (SolnBlk.dWdy[i][j].p - (SolnBlk.W[i][j].p/SolnBlk.W[i][j].rho) * SolnBlk.dWdy[i][j].rho);
-//              grad_Temp_abs = sqrt(sqr(grad_Temp_x) + sqr(grad_Temp_y));
-//              grad_Temp_criteria = sqrt(SolnBlk.Grid.Cell[i][j].A)*grad_Temp_abs/SolnBlk.W[i][j].T();
-//              grad_Temp_criteria_max = max(grad_Temp_criteria_max, grad_Temp_criteria);
+// 	     Evaluate refinement criteria #4 based on the gradient
+// 	     of the Temperature
+	     grad_Temp_x = (ONE/( SolnBlk.W[i][j].rho* SolnBlk.W[i][j].Rtot())) * 
+	       (SolnBlk.dWdx[i][j].p - (SolnBlk.W[i][j].p/SolnBlk.W[i][j].rho) * SolnBlk.dWdx[i][j].rho);
+             grad_Temp_y = (ONE/( SolnBlk.W[i][j].rho* SolnBlk.W[i][j].Rtot())) *
+	       (SolnBlk.dWdy[i][j].p - (SolnBlk.W[i][j].p/SolnBlk.W[i][j].rho) * SolnBlk.dWdy[i][j].rho);
+             grad_Temp_abs = sqrt(sqr(grad_Temp_x) + sqr(grad_Temp_y));
+             grad_Temp_criteria = sqrt(SolnBlk.Grid.Cell[i][j].A)*grad_Temp_abs/SolnBlk.W[i][j].T();
+             grad_Temp_criteria_max = max(grad_Temp_criteria_max, grad_Temp_criteria);
 
-	     // Evaluate refinement criteria #5 based on the gradient
-	     // based on the gradient of CH4 mass fraction	     	     
-// 	     grad_CH4_x = SolnBlk.dWdx[i][j].spec[0].c;
-//              grad_CH4_y = SolnBlk.dWdy[i][j].spec[0].c;
-//              grad_CH4_abs = sqrt(sqr(grad_CH4_x) + sqr(grad_CH4_y));
-// 	     grad_CH4_criteria = sqrt(SolnBlk.Grid.Cell[i][j].A)*grad_CH4_abs;
-//              grad_CH4_criteria_max = max(grad_CH4_criteria_max, grad_CH4_criteria);
+// 	     Evaluate refinement criteria #5 based on the gradient
+// 	     based on the gradient of CH4 mass fraction	     	     
+	     grad_CH4_x = SolnBlk.dWdx[i][j].spec[0].c;
+             grad_CH4_y = SolnBlk.dWdy[i][j].spec[0].c;
+             grad_CH4_abs = sqrt(sqr(grad_CH4_x) + sqr(grad_CH4_y));
+	     grad_CH4_criteria = sqrt(SolnBlk.Grid.Cell[i][j].A)*grad_CH4_abs;
+             grad_CH4_criteria_max = max(grad_CH4_criteria_max, grad_CH4_criteria);
 
-	     // Evaluate refinement criteria #6 based on the gradient
-	     // based on the gradient of CO2 mass fraction	     	     
-// 	     grad_CO2_x = SolnBlk.dWdx[i][j].spec[2].c;
-//              grad_CO2_y = SolnBlk.dWdy[i][j].spec[2].c;
-//              grad_CO2_abs = sqrt(sqr(grad_CO2_x) + sqr(grad_CO2_y));
-// 	     grad_CO2_criteria = sqrt(SolnBlk.Grid.Cell[i][j].A)*grad_CO2_abs;
-//              grad_CO2_criteria_max = max(grad_CO2_criteria_max, grad_CO2_criteria);
+// 	     Evaluate refinement criteria #6 based on the gradient
+// 	     based on the gradient of CO2 mass fraction	     	     
+	     grad_CO2_x = SolnBlk.dWdx[i][j].spec[2].c;
+             grad_CO2_y = SolnBlk.dWdy[i][j].spec[2].c;
+             grad_CO2_abs = sqrt(sqr(grad_CO2_x) + sqr(grad_CO2_y));
+	     grad_CO2_criteria = sqrt(SolnBlk.Grid.Cell[i][j].A)*grad_CO2_abs;
+             grad_CO2_criteria_max = max(grad_CO2_criteria_max, grad_CO2_criteria);
 
 // 	    // Evaluate refinement criteria #7 based on the gradient dudy
 // 	    grad_dudy = SolnBlk.dWdy[i][j].v.x;
@@ -5498,14 +5498,33 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
     } /* endfor */
 
     /* Return the refinement criteria. */
+    int  refinement_criteria_number(0);
+    if (IP.Refinement_Criteria_Gradient_Density) {
+      refinement_criteria[refinement_criteria_number] = grad_rho_criteria_max;
+      refinement_criteria_number++;
+    }
+    if (IP.Refinement_Criteria_Divergence_Velocity) {
+      refinement_criteria[refinement_criteria_number] = div_V_criteria_max;
+      refinement_criteria_number++;
+    }
+    if (IP.Refinement_Criteria_Curl_Velocity) {
+      refinement_criteria[refinement_criteria_number] = curl_V_criteria_max;
+      refinement_criteria_number++;
+    }
+    if (IP.Refinement_Criteria_Gradient_Temperature){
+      refinement_criteria[refinement_criteria_number] = grad_Temp_criteria_max;
+      refinement_criteria_number++;
+    }
+    if (IP.Refinement_Criteria_Gradient_CH4){
+      refinement_criteria[refinement_criteria_number] = grad_CO2_criteria_max;
+      refinement_criteria_number++;
+    }
+    if (IP.Refinement_Criteria_Gradient_CO2){
+      refinement_criteria[refinement_criteria_number] = grad_CO2_criteria_max;
+      refinement_criteria_number++;
+    }
 
-    refinement_criteria[0] = grad_rho_criteria_max;
-    refinement_criteria[1] = div_V_criteria_max;
-//    refinement_criteria[0] = curl_V_criteria_max;
-//     refinement_criteria[1] = grad_Temp_criteria_max;
-//     refinement_criteria[2] = grad_CH4_criteria_max;
-//    refinement_criteria[1] = grad_CO2_criteria_max;
-//    refinement_criteria[0] = grad_dudy_criteria_max;
+//     refinement_criteria[0] = grad_dudy_criteria_max;
 //     refinement_criteria[1] = grad_pressure_criteria_max;
 
 }

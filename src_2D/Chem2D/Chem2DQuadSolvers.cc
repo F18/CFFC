@@ -212,7 +212,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     if (error_flag) return (error_flag);
     Allocate_Message_Buffers(List_of_Local_Solution_Blocks,
 			     Local_SolnBlk[0].NumVar()+NUM_COMP_VECTOR2D);
-    
+
     error_flag = Read_Restart_Solution(Local_SolnBlk, 
 				       List_of_Local_Solution_Blocks, 
 				       Input_Parameters,
@@ -357,13 +357,16 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
           << QuadTree.efficiencyRefinement() << "\n"; 
      cout.flush();
   } /* endif */
- 	
+ 
   /***********************************************************************	
    MORTON ORDERING of initial solution blocks 
   (should be meshed with AMR, ie when Refine_Grid is done call the ordering)
   ************************************************************************/
   if (Input_Parameters.Morton){
     if (!batch_flag) cout << "\n\n Applying Morton re-ordering algorithm to initial solution blocks. ";
+
+    //NOTES: Issue here with Input_Parameters.Maximum_Number_of_Time_Steps related to reading restart files
+
     error_flag = Morton_ReOrdering_of_Solution_Blocks(QuadTree, 
 						      List_of_Global_Solution_Blocks, 
 						      List_of_Local_Solution_Blocks, 
@@ -399,7 +402,6 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
  
   /******************* MULTIGRID SETUP ****************************************/
-
   if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
  
     MGSolver.allocate(Local_SolnBlk,
@@ -459,7 +461,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     
     /**************************************************************************
      Perform required number of iterations (time steps). 
-    **************************************************************************/
+    **************************************************************************/ 
     if ((!Input_Parameters.Time_Accurate && 
 	 Input_Parameters.Maximum_Number_of_Time_Steps > 0 &&
 	 number_of_time_steps < Input_Parameters.Maximum_Number_of_Time_Steps) ||
@@ -708,7 +710,8 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
            Possibly replace while(1) so that these if's are the conditions 
            used or some sort of resonable facisimile.
 	  ***************************************************************************/
- 	if (!Input_Parameters.Time_Accurate &&
+ 
+	if (!Input_Parameters.Time_Accurate &&
  	    number_of_time_steps >= 
  	    Input_Parameters.Maximum_Number_of_Time_Steps) break;
  	if (Input_Parameters.Time_Accurate && 

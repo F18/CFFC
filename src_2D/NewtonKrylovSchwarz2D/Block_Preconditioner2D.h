@@ -191,11 +191,11 @@ Get_Block_Index(const int &cell_index_i,const int &cell_index_j, int *Block_inde
     /*! Determine 2nd order Block_Indicies for Cell (i,j)   
      *
      *        --- --- ---
-     *       | 5 | 1 | 8 |
+     *       | 6 | 1 | 5 |
      *        --- --- --- 
      *       | 2 | 0 | 4 | 
      *       --- --- --- -
-     *       | 6 | 3 | 7 |
+     *       | 8 | 3 | 7 |
      *        --- --- ---
      */ 
     Block_index_i[NORTH_EAST] = (cell_index_j - 1)*SolnBlk->NCi+cell_index_i-1;    //NORTH_EAST  

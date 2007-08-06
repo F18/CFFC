@@ -655,15 +655,15 @@ inline char *Date_And_Time() {
 #define WEST                            2
 #define SOUTH                           3
 #define EAST                            4
+#define NORTH_EAST                      5
+#define NORTH_WEST                      6
+#define SOUTH_EAST                      7
+#define SOUTH_WEST                      8
 
 #define SNORTH                          101
 #define SSOUTH                          102
 #define SEAST                           103
 #define SWEST                           104
-#define NORTH_EAST                     105
-#define NORTH_WEST                     106
-#define SOUTH_EAST                     107
-#define SOUTH_WEST                     108
 
 #define X_DIRECTION                     0 
 #define Y_DIRECTION                     1

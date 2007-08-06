@@ -227,15 +227,15 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
         break;
       case GRID_FLAT_PLATE :
         Grid_ptr = Grid_Flat_Plate_NK(Grid_ptr,
-                                   Input_Parameters.Number_of_Blocks_Idir,
-		                   Input_Parameters.Number_of_Blocks_Jdir,
-                                   Input_Parameters.Plate_Length, 
-				   Input_Parameters.i_Mesh_Stretching,
-				   Input_Parameters.Mesh_Stretching_Factor_Idir,
-				   Input_Parameters.Mesh_Stretching_Factor_Jdir,
- 		                   Input_Parameters.Number_of_Cells_Idir,
-		                   Input_Parameters.Number_of_Cells_Jdir,
-				   Input_Parameters.Number_of_Ghost_Cells);
+				      Input_Parameters.Number_of_Blocks_Idir,
+				      Input_Parameters.Number_of_Blocks_Jdir,
+				      Input_Parameters.Plate_Length, 
+				      Input_Parameters.i_Mesh_Stretching,
+				      Input_Parameters.Mesh_Stretching_Factor_Idir,
+				      Input_Parameters.Mesh_Stretching_Factor_Jdir,
+				      Input_Parameters.Number_of_Cells_Idir,
+				      Input_Parameters.Number_of_Cells_Jdir,
+				      Input_Parameters.Number_of_Ghost_Cells);
         break;
       case GRID_PIPE :
         Grid_ptr = Grid_Pipe(Grid_ptr,

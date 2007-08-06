@@ -19,7 +19,7 @@ void PointImplicitBlockJacobi(DenseMatrix &dRdU,
 			      Chem2D_Input_Parameters &Input_Parameters,
 			      const int &ii, const int &jj){
    
-  int NUM_VAR_CHEM2D =  SolnBlk.NumVar(); 
+  int NUM_VAR_CHEM2D =  SolnBlk.NumVar()-1; 
   DenseMatrix dRdW(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);  
 
   //Inviscid dRdU
@@ -59,7 +59,7 @@ void SemiImplicitBlockJacobi(DenseMatrix &dSdU,
   if( (SolnBlk.Axisymmetric && SolnBlk.Flow_Type != FLOWTYPE_INVISCID) ||
       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) { 
 
-    int NUM_VAR_CHEM2D =  SolnBlk.NumVar(); 
+    int NUM_VAR_CHEM2D =  SolnBlk.NumVar()-1; 
     DenseMatrix dRdW(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);  
     
     // Add Source Jacobians (viscous axisymmetric, turbulence)

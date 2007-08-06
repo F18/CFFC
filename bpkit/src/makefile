@@ -26,11 +26,11 @@ endif
 #
 # Overide F77 flags for linking bpkit
 #
-F77 = gfortran
-ifeq ($(PLATFORM),Linux_alpha)
-   F77 = g77
-endif
-FFLAGS = -O3
+#F77 = gfortran
+#ifeq ($(PLATFORM),Linux_alpha)
+#   F77 = g77
+#endif
+#FFLAGS = -O3
 
 BPKIT_LIB = ../lib/libbpkit.a
 

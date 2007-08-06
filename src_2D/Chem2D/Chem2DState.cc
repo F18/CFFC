@@ -2971,13 +2971,13 @@ Chem2D_pState BC_2DFlame_Inflow(const Chem2D_pState &Wi,
 				const Chem2D_pState &Wo,
 				const Vector2D &norm_dir){ 
 
-//   //fixed rho, v, p, and species
-//   Chem2D_pState Wnew(Wo);
-//   Wnew.v.x = Wi.v.x;
+  //fixed rho, v, p, and species
+  Chem2D_pState Wnew(Wo);
+  Wnew.v.x = Wi.v.x;
 
-  Chem2D_pState Wnew(Wi);  
-  Wnew.p = Wo.p;         //fix pressure & V velocity
-  Wnew.v.y = Wo.v.y;
+//   Chem2D_pState Wnew(Wi);  
+//   Wnew.p = Wo.p;         //fix pressure & V velocity
+//   Wnew.v.y = Wo.v.y;
 
   return Wnew;
  
@@ -2991,7 +2991,7 @@ Chem2D_pState BC_2DFlame_Inflow(const Chem2D_pState &Wi,
 Chem2D_pState BC_2DFlame_Outflow(const Chem2D_pState &Wi, 
 				 const Chem2D_pState &Wo,
  				 const Vector2D &norm_dir){
-  //2D Coreflame OUTFLOW
+  //2D Coreflame OUTFLOW hold pressure
   Chem2D_pState Wnew(Wi);  
   Wnew.p = Wo.p;  
   if(Wnew.v.y < ZERO){ 

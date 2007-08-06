@@ -286,11 +286,11 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.Threshold_for_Coarsening = 0.10;
     IP.Number_of_Refinement_Criteria = 6;
     IP.Refinement_Criteria_Gradient_Density = ON;
-    IP.Refinement_Criteria_Divergence_Velocity = ON;
-    IP.Refinement_Criteria_Curl_Velocity = ON;
-    IP.Refinement_Criteria_Gradient_Temperature = ON;
-    IP.Refinement_Criteria_Gradient_CH4 = ON;
-    IP.Refinement_Criteria_Gradient_CO2 = ON;
+    IP.Refinement_Criteria_Divergence_Velocity = OFF;
+    IP.Refinement_Criteria_Curl_Velocity = OFF;
+    IP.Refinement_Criteria_Gradient_Temperature = OFF;
+    IP.Refinement_Criteria_Gradient_CH4 = OFF;
+    IP.Refinement_Criteria_Gradient_CO2 = OFF;
 
     // Smooth quad block flag:
     IP.i_Smooth_Quad_Block = ON;
@@ -299,8 +299,8 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.Solver_Type = EXPLICIT;
   
     IP.Morton = 0;
-    IP.Morton_Reordering_Frequency = 1000;
-    
+    IP.Morton_Reordering_Frequency = 1000000;
+ 
     string_ptr = "outputfile.dat";
     strcpy(IP.Output_File_Name, string_ptr);
 
@@ -627,9 +627,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Number_of_Cells_Jdir),
                           1, 
                           MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Number_of_Ghost_Cells),
-                          1, 
-                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Number_of_Blocks_Idir), 
                           1, 
                           MPI::INT, 0);
@@ -935,6 +932,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     // Freeze_Limiter_Residual_Level
     MPI::COMM_WORLD.Bcast(&(IP.Freeze_Limiter_Residual_Level),
                           1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Relaxation_multiplier),
+			  1, 
                           MPI::DOUBLE, 0);
 
     // Reset the static variables.
@@ -1547,6 +1547,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
 
     // Freeze_Limiter_Residual_Level
     Communicator.Bcast(&(IP.Freeze_Limiter_Residual_Level), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Relaxation_multiplier), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
 
@@ -2795,6 +2798,20 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       } else {
          IP.Residual_Smoothing = 1;
       } /* endif */
+   
+    } else if (strcmp(IP.Next_Control_Parameter, "Morton") == 0) {
+      i_command = 83;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Morton;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      if (IP.Morton < 0) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Morton_Reordering_Frequency") == 0) {
+      i_command = 84;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Morton_Reordering_Frequency;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      if (IP.Morton_Reordering_Frequency < 0) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Residual_Smoothing_Gauss_Seidel_Iterations") == 0) {
       i_command = 71;
