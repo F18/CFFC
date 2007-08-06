@@ -199,7 +199,7 @@ double Ja(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	double Na, Sa, Ea, Wa;
 	
 	Vector2D VN, VS, VE, VW;
-	Vector2D NN, NS, NE, NW;
+	Vector2D NN, NS, NORTHEAST, NORTHWEST;
 	
 	MV_Vector_double Vn(2,0.0);
 	MV_Vector_double Vs(2,0.0);      
@@ -230,13 +230,13 @@ double Ja(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	/* Normal vectors *************/
 	NN = SolnBlk.Grid.nfaceN(i,j);
 	NS = SolnBlk.Grid.nfaceS(i,j); 
-	NE = SolnBlk.Grid.nfaceE(i,j); 
-	NW = SolnBlk.Grid.nfaceW(i,j); 
+	NORTHEAST = SolnBlk.Grid.nfaceE(i,j); 
+	NORTHWEST = SolnBlk.Grid.nfaceW(i,j); 
 	
 	nn[0]=NN.x;nn[1]=NN.y;
 	ns[0]=NS.x;ns[1]=NS.y;
-	ne[0]=NE.x;ne[1]=NE.y;
-	nw[0]=NW.x;nw[1]=NW.y;
+	ne[0]=NORTHEAST.x;ne[1]=NORTHEAST.y;
+	nw[0]=NORTHWEST.x;nw[1]=NORTHWEST.y;
 	/******************************/
 	
 	Cn = dot(Vn, nn);
@@ -336,7 +336,7 @@ double Jd(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	double kappaN, kappaS, kappaE, kappaW;
 	
 	Vector2D VN, VS, VE, VW;
-	Vector2D NN, NS, NE, NW;
+	Vector2D NN, NS, NORTHEAST, NORTHWEST;
 
 	MV_Vector_double Vn(2,0.0);
 	MV_Vector_double Vs(2,0.0);      
@@ -384,57 +384,57 @@ double Jd(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	// Block (i,j)
 	NN = SolnBlk.Grid.nfaceN(i,j);
 	NS = SolnBlk.Grid.nfaceS(i,j); 
-	NE = SolnBlk.Grid.nfaceE(i,j); 
-	NW = SolnBlk.Grid.nfaceW(i,j); 
+	NORTHEAST = SolnBlk.Grid.nfaceE(i,j); 
+	NORTHWEST = SolnBlk.Grid.nfaceW(i,j); 
 	
 	nn_ij[0]=NN.x;nn_ij[1]=NN.y;
 	ns_ij[0]=NS.x;ns_ij[1]=NS.y;
-	ne_ij[0]=NE.x;ne_ij[1]=NE.y;
-	nw_ij[0]=NW.x;nw_ij[1]=NW.y;
+	ne_ij[0]=NORTHEAST.x;ne_ij[1]=NORTHEAST.y;
+	nw_ij[0]=NORTHWEST.x;nw_ij[1]=NORTHWEST.y;
 
 	// Block (i-1,j)
 	NN = SolnBlk.Grid.nfaceN(i-1,j);
 	NS = SolnBlk.Grid.nfaceS(i-1,j); 
-	NE = SolnBlk.Grid.nfaceE(i-1,j); 
-	NW = SolnBlk.Grid.nfaceW(i-1,j); 
+	NORTHEAST = SolnBlk.Grid.nfaceE(i-1,j); 
+	NORTHWEST = SolnBlk.Grid.nfaceW(i-1,j); 
 
 	nn_mij[0]=NN.x;nn_mij[1]=NN.y;
 	ns_mij[0]=NS.x;ns_mij[1]=NS.y;
-	ne_mij[0]=NE.x;ne_mij[1]=NE.y;
-	nw_mij[0]=NW.x;nw_mij[1]=NW.y;
+	ne_mij[0]=NORTHEAST.x;ne_mij[1]=NORTHEAST.y;
+	nw_mij[0]=NORTHWEST.x;nw_mij[1]=NORTHWEST.y;
 
 	// Block (i+1,j)
 	NN = SolnBlk.Grid.nfaceN(i+1,j);
 	NS = SolnBlk.Grid.nfaceS(i+1,j); 
-	NE = SolnBlk.Grid.nfaceE(i+1,j); 
-	NW = SolnBlk.Grid.nfaceW(i+1,j); 
+	NORTHEAST = SolnBlk.Grid.nfaceE(i+1,j); 
+	NORTHWEST = SolnBlk.Grid.nfaceW(i+1,j); 
 
 	nn_pij[0]=NN.x;nn_pij[1]=NN.y;
 	ns_pij[0]=NS.x;ns_pij[1]=NS.y;
-	ne_pij[0]=NE.x;ne_pij[1]=NE.y;
-	nw_pij[0]=NW.x;nw_pij[1]=NW.y;
+	ne_pij[0]=NORTHEAST.x;ne_pij[1]=NORTHEAST.y;
+	nw_pij[0]=NORTHWEST.x;nw_pij[1]=NORTHWEST.y;
 
 	// Block (i,j-1)
 	NN = SolnBlk.Grid.nfaceN(i,j-1);
 	NS = SolnBlk.Grid.nfaceS(i,j-1); 
-	NE = SolnBlk.Grid.nfaceE(i,j-1); 
-	NW = SolnBlk.Grid.nfaceW(i,j-1); 
+	NORTHEAST = SolnBlk.Grid.nfaceE(i,j-1); 
+	NORTHWEST = SolnBlk.Grid.nfaceW(i,j-1); 
 	
 	nn_ijm[0]=NN.x;nn_ijm[1]=NN.y;
 	ns_ijm[0]=NS.x;ns_ijm[1]=NS.y;
-	ne_ijm[0]=NE.x;ne_ijm[1]=NE.y;
-	nw_ijm[0]=NW.x;nw_ijm[1]=NW.y;
+	ne_ijm[0]=NORTHEAST.x;ne_ijm[1]=NORTHEAST.y;
+	nw_ijm[0]=NORTHWEST.x;nw_ijm[1]=NORTHWEST.y;
 	
 	// Block (i,j+1)
 	NN = SolnBlk.Grid.nfaceN(i,j+1);
 	NS = SolnBlk.Grid.nfaceS(i,j+1); 
-	NE = SolnBlk.Grid.nfaceE(i,j+1); 
-	NW = SolnBlk.Grid.nfaceW(i,j+1); 
+	NORTHEAST = SolnBlk.Grid.nfaceE(i,j+1); 
+	NORTHWEST = SolnBlk.Grid.nfaceW(i,j+1); 
 	
 	nn_ijp[0]=NN.x;nn_ijp[1]=NN.y;
 	ns_ijp[0]=NS.x;ns_ijp[1]=NS.y;
-	ne_ijp[0]=NE.x;ne_ijp[1]=NE.y;
-	nw_ijp[0]=NW.x;nw_ijp[1]=NW.y;
+	ne_ijp[0]=NORTHEAST.x;ne_ijp[1]=NORTHEAST.y;
+	nw_ijp[0]=NORTHWEST.x;nw_ijp[1]=NORTHWEST.y;
 	/******************************/
 	
 	if (Fswitch == -(xpts*2)) {

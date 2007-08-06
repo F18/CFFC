@@ -656,11 +656,6 @@ inline char *Date_And_Time() {
 #define SOUTH                           3
 #define EAST                            4
 
-#define NW                              5
-#define SW                              6
-#define SE                              7
-#define NE                              8
-
 #define SNORTH                          101
 #define SSOUTH                          102
 #define SEAST                           103

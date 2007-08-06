@@ -613,16 +613,16 @@ inline double Chem2D_Quad_Block::dWn_dWc(const int &i, const int &j, const int &
   BiLinearInterpolationCoefficients(eta, zeta, i, j);
 
   switch(Orient) {
-  case  NW:  
+  case  NORTH_WEST:  
     return (eta - zeta*eta);
     break;
-  case NE:
+  case NORTH_EAST:
     return (ONE - zeta - eta + zeta*eta);
     break;
-  case SW:
+  case SOUTH_WEST:
     return (zeta*eta);
     break;
-  case SE:
+  case SOUTH_EAST:
     return (zeta - zeta*eta);
     break;
   default:

@@ -5409,7 +5409,7 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
        (7) refinement criteria #7 based on du/dy (for pipe flow)
        (8) refinement criteria #8 based on the gradient of Pressure
     */
-    number_refinement_criteria = 1;
+//     number_refinement_criteria = 1;
 
     /* Initialize the refinement criteria for the block. */
 

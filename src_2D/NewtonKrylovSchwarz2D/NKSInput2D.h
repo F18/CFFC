@@ -362,7 +362,8 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
  * NKS_Input_Parameters -- Display Output Operator             *
  ***************************************************************/
 inline void NKS_Input_Parameters::Output(){
-  cout.setf(ios::scientific);
+  //cout.setf(ios::scientific);
+  cout.unsetf(ios::scientific);
   cout << " " << endl;
   for (int star=0;star<75;star++){cout <<"*";}
   cout << "\n********                   Newton-Krylov-Schwarz                 **********" << endl;   

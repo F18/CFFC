@@ -1276,89 +1276,89 @@ void dWfdWc_Diamond(DenseMatrix &dWfdWc_x,DenseMatrix &dWfdWc_y, Chem2D_Quad_Blo
    switch (Orient_face){
    case NORTH:
      if(Orient_cell == CENTER){    
-       LL = SolnBlk.dWn_dWc(i,j+1, NW);
-       RR = SolnBlk.dWn_dWc(i+1, j+1, NE);
+       LL = SolnBlk.dWn_dWc(i,j+1, NORTH_WEST);
+       RR = SolnBlk.dWn_dWc(i+1, j+1, NORTH_EAST);
      } else if(Orient_cell == NORTH){     
-       LL = SolnBlk.dWn_dWc(i,j+1, SW);
-       RR = SolnBlk.dWn_dWc(i+1, j+1, SE);
+       LL = SolnBlk.dWn_dWc(i,j+1, SOUTH_WEST);
+       RR = SolnBlk.dWn_dWc(i+1, j+1, SOUTH_EAST);
      } else if(Orient_cell == EAST){
        LL = ZERO;
-       RR = SolnBlk.dWn_dWc(i+1,j+1,NW);                  
+       RR = SolnBlk.dWn_dWc(i+1,j+1,NORTH_WEST);                  
      } else if(Orient_cell == WEST){ 
-       LL = SolnBlk.dWn_dWc(i,j+1,NE);      
+       LL = SolnBlk.dWn_dWc(i,j+1,NORTH_EAST);      
        RR = ZERO;                   
-     } else if(Orient_cell == NW){
-       LL = SolnBlk.dWn_dWc(i,j+1,SE);      
+     } else if(Orient_cell == NORTH_WEST){
+       LL = SolnBlk.dWn_dWc(i,j+1,SOUTH_EAST);      
        RR = ZERO;   
-     } else if(Orient_cell == NE){
+     } else if(Orient_cell == NORTH_EAST){
        LL = ZERO;
-       RR = SolnBlk.dWn_dWc(i+1,j+1,SW);    
+       RR = SolnBlk.dWn_dWc(i+1,j+1,SOUTH_WEST);    
      }
      break;
       
    case EAST:
      if(Orient_cell == CENTER){  
-       LL = SolnBlk.dWn_dWc(i+1, j+1, NE);
-       RR = SolnBlk.dWn_dWc(i+1, j, SE); 
+       LL = SolnBlk.dWn_dWc(i+1, j+1, NORTH_EAST);
+       RR = SolnBlk.dWn_dWc(i+1, j, SOUTH_EAST); 
      } else if(Orient_cell == EAST){    
-       LL = SolnBlk.dWn_dWc(i+1, j+1, NW);
-       RR = SolnBlk.dWn_dWc(i+1, j, SW); 
+       LL = SolnBlk.dWn_dWc(i+1, j+1, NORTH_WEST);
+       RR = SolnBlk.dWn_dWc(i+1, j, SOUTH_WEST); 
      } else if(Orient_cell == NORTH){     
-       LL = SolnBlk.dWn_dWc(i+1,j+1,SE);
+       LL = SolnBlk.dWn_dWc(i+1,j+1,SOUTH_EAST);
        RR = ZERO;
      } else if(Orient_cell == SOUTH){           
        LL = ZERO;
-       RR = SolnBlk.dWn_dWc(i+1,j,NE);       
-     } else if(Orient_cell == NE){     
-       LL = SolnBlk.dWn_dWc(i+1,j+1,SW);
+       RR = SolnBlk.dWn_dWc(i+1,j,NORTH_EAST);       
+     } else if(Orient_cell == NORTH_EAST){     
+       LL = SolnBlk.dWn_dWc(i+1,j+1,SOUTH_WEST);
        RR = ZERO;
-     } else if(Orient_cell == SE){           
+     } else if(Orient_cell == SOUTH_EAST){           
        LL = ZERO;
-       RR = SolnBlk.dWn_dWc(i+1,j,NW);       
+       RR = SolnBlk.dWn_dWc(i+1,j,NORTH_WEST);       
      }
      break;
   
    case SOUTH:
      if(Orient_cell == CENTER){  
-       LL = SolnBlk.dWn_dWc(i+1,j,SE);
-       RR = SolnBlk.dWn_dWc(i,j, SW);
+       LL = SolnBlk.dWn_dWc(i+1,j,SOUTH_EAST);
+       RR = SolnBlk.dWn_dWc(i,j, SOUTH_WEST);
      } else if(Orient_cell == SOUTH){     
-       LL = SolnBlk.dWn_dWc(i+1,j, NE);
-       RR = SolnBlk.dWn_dWc(i,j, NW);
+       LL = SolnBlk.dWn_dWc(i+1,j, NORTH_EAST);
+       RR = SolnBlk.dWn_dWc(i,j, NORTH_WEST);
      } else if(Orient_cell == EAST){ 
-       LL = SolnBlk.dWn_dWc(i+1,j, SW);      
+       LL = SolnBlk.dWn_dWc(i+1,j, SOUTH_WEST);      
        RR = ZERO;
      } else if(Orient_cell == WEST){    
        LL = ZERO; 
-       RR = SolnBlk.dWn_dWc(i,j, SE);                              
-     } else if(Orient_cell == SE){ 
-       LL = SolnBlk.dWn_dWc(i+1,j, NW);      
+       RR = SolnBlk.dWn_dWc(i,j, SOUTH_EAST);                              
+     } else if(Orient_cell == SOUTH_EAST){ 
+       LL = SolnBlk.dWn_dWc(i+1,j, NORTH_WEST);      
        RR = ZERO;
-     } else if(Orient_cell == SW){    
+     } else if(Orient_cell == SOUTH_WEST){    
        LL = ZERO; 
-       RR = SolnBlk.dWn_dWc(i,j, NE);      
+       RR = SolnBlk.dWn_dWc(i,j, NORTH_EAST);      
      }
      break;
    
    case WEST:
      if(Orient_cell == CENTER){  
-       LL = SolnBlk.dWn_dWc(i,j, SW);
-       RR = SolnBlk.dWn_dWc(i,j+1,NW);  
+       LL = SolnBlk.dWn_dWc(i,j, SOUTH_WEST);
+       RR = SolnBlk.dWn_dWc(i,j+1,NORTH_WEST);  
      } else if(Orient_cell == WEST){  
-       LL = SolnBlk.dWn_dWc(i,j, SE);
-       RR = SolnBlk.dWn_dWc(i,j+1,NE);  
+       LL = SolnBlk.dWn_dWc(i,j, SOUTH_EAST);
+       RR = SolnBlk.dWn_dWc(i,j+1,NORTH_EAST);  
      } else if(Orient_cell == SOUTH){           
-       LL = SolnBlk.dWn_dWc(i,j,NW);
+       LL = SolnBlk.dWn_dWc(i,j,NORTH_WEST);
        RR = ZERO;
      } else if(Orient_cell == NORTH){   
        LL = ZERO;
-       RR = SolnBlk.dWn_dWc(i,j+1,SW);
-     } else if(Orient_cell == SW){           
-       LL = SolnBlk.dWn_dWc(i,j,NE);
+       RR = SolnBlk.dWn_dWc(i,j+1,SOUTH_WEST);
+     } else if(Orient_cell == SOUTH_WEST){           
+       LL = SolnBlk.dWn_dWc(i,j,NORTH_EAST);
        RR = ZERO;
-     } else if(Orient_cell == NW){   
+     } else if(Orient_cell == NORTH_WEST){   
        LL = ZERO;
-       RR = SolnBlk.dWn_dWc(i,j+1,SE);
+       RR = SolnBlk.dWn_dWc(i,j+1,SOUTH_EAST);
      }
      break;     
    }
@@ -1445,10 +1445,10 @@ void d_dWd_dW_Diamond(double &d_dWdx_dW, double &d_dWdy_dW, Chem2D_Quad_Block &S
     } else if( Orient_cell == NORTH) {
       d_dWdx_dW = HALF*(dWnNEdWc*norm[0].x + (ONE+dWnNEdWc)* norm[1].x + (ONE+dWnNWdWc)* norm[2].x + dWnNWdWc*norm[3].x)/AREA;
       d_dWdy_dW = HALF*(dWnNEdWc*norm[0].y + (ONE+dWnNEdWc)* norm[1].y + (ONE+dWnNWdWc)* norm[2].y + dWnNWdWc*norm[3].y)/AREA;  
-    } else if( Orient_cell == EAST || Orient_cell == NE) {
+    } else if( Orient_cell == EAST || Orient_cell == NORTH_EAST) {
       d_dWdx_dW = HALF*( dWnNEdWc*(norm[0].x+norm[1].x))/AREA;
       d_dWdy_dW = HALF*( dWnNEdWc*(norm[0].y+norm[1].y))/AREA;  
-    } else if( Orient_cell == WEST || Orient_cell == NW) {
+    } else if( Orient_cell == WEST || Orient_cell == NORTH_WEST) {
       d_dWdx_dW = HALF*( dWnNWdWc*(norm[2].x+norm[3].x))/AREA;
       d_dWdy_dW = HALF*( dWnNWdWc*(norm[2].y+norm[3].y))/AREA;  
     }
@@ -1484,10 +1484,10 @@ void d_dWd_dW_Diamond(double &d_dWdx_dW, double &d_dWdy_dW, Chem2D_Quad_Block &S
     } else if( Orient_cell == EAST) {
       d_dWdx_dW = HALF*( (ONE+dWnSEdWc)* norm[0].x + (ONE+dWnNEdWc)*norm[1].x + dWnNEdWc* norm[2].x + dWnSEdWc*norm[3].x)/AREA;
       d_dWdy_dW = HALF*( (ONE+dWnSEdWc)* norm[0].y + (ONE+dWnNEdWc)*norm[1].y + dWnNEdWc* norm[2].y + dWnSEdWc*norm[3].y)/AREA;  
-    } else if( Orient_cell == NORTH || Orient_cell == NE) {
+    } else if( Orient_cell == NORTH || Orient_cell == NORTH_EAST) {
       d_dWdx_dW = HALF*( dWnNEdWc*(norm[1].x+norm[2].x))/AREA;
       d_dWdy_dW = HALF*( dWnNEdWc*(norm[1].y+norm[2].y))/AREA;  
-    } else if( Orient_cell == SOUTH || Orient_cell == SE) {
+    } else if( Orient_cell == SOUTH || Orient_cell == SOUTH_EAST) {
       d_dWdx_dW = HALF*( dWnSEdWc*(norm[0].x+norm[3].x))/AREA;
       d_dWdy_dW = HALF*( dWnSEdWc*(norm[0].y+norm[3].y))/AREA;  
     }
@@ -1521,10 +1521,10 @@ void d_dWd_dW_Diamond(double &d_dWdx_dW, double &d_dWdy_dW, Chem2D_Quad_Block &S
     } else if( Orient_cell == SOUTH) {
       d_dWdx_dW = HALF*( (ONE+dWnSEdWc)*norm[0].x + dWnSEdWc*norm[1].x + dWnSWdWc*norm[2].x + (ONE+dWnSWdWc)* norm[3].x)/AREA;
       d_dWdy_dW = HALF*( (ONE+dWnSEdWc)*norm[0].y + dWnSEdWc*norm[1].y + dWnSWdWc*norm[2].y + (ONE+dWnSWdWc)* norm[3].y)/AREA;  
-    } else if( Orient_cell == EAST || Orient_cell == SE) {
+    } else if( Orient_cell == EAST || Orient_cell == SOUTH_EAST) {
       d_dWdx_dW = HALF*( dWnSEdWc*(norm[0].x+norm[1].x))/AREA;
       d_dWdy_dW = HALF*( dWnSEdWc*(norm[0].y+norm[1].y))/AREA;  
-    } else if( Orient_cell == WEST || Orient_cell == SW) {
+    } else if( Orient_cell == WEST || Orient_cell == SOUTH_WEST) {
       d_dWdx_dW = HALF*( dWnSWdWc*(norm[2].x+norm[3].x))/AREA;
       d_dWdy_dW = HALF*( dWnSWdWc*(norm[2].y+norm[3].y))/AREA;  
     }
@@ -1559,10 +1559,10 @@ void d_dWd_dW_Diamond(double &d_dWdx_dW, double &d_dWdy_dW, Chem2D_Quad_Block &S
     }  else if( Orient_cell == WEST) {
       d_dWdx_dW = HALF*(dWnSWdWc*norm[0].x + dWnNWdWc*norm[1].x + (ONE+dWnNWdWc)* norm[2].x+ (ONE+dWnSWdWc)* norm[3].x)/AREA;
       d_dWdy_dW = HALF*(dWnSWdWc*norm[0].y + dWnNWdWc*norm[1].y + (ONE+dWnNWdWc)* norm[2].y+ (ONE+dWnSWdWc)* norm[3].y)/AREA;    
-    } else if( Orient_cell == NORTH || Orient_cell == NW) {
+    } else if( Orient_cell == NORTH || Orient_cell == NORTH_WEST) {
       d_dWdx_dW = HALF*( dWnNWdWc*(norm[1].x+norm[2].x))/AREA;
       d_dWdy_dW = HALF*( dWnNWdWc*(norm[1].y+norm[2].y))/AREA;  
-    } else if( Orient_cell == SOUTH || Orient_cell == SW) {
+    } else if( Orient_cell == SOUTH || Orient_cell == SOUTH_WEST) {
       d_dWdx_dW = HALF*( dWnSWdWc*(norm[0].x+norm[3].x))/AREA;
       d_dWdy_dW = HALF*( dWnSWdWc*(norm[0].y+norm[3].y))/AREA;      
     }
@@ -1592,19 +1592,19 @@ void d_dWd_dW_Center(double &d_dWdx_dW_C, double &d_dWdy_dW_C,
 
   //NORTH
   d_dWd_dW_Diamond(d_dWdx_dW[0] ,d_dWdy_dW[0], SolnBlk,
-		   SolnBlk.dWn_dWc(i,j+1, NW), SolnBlk.dWn_dWc(i+1, j+1, NE), 
+		   SolnBlk.dWn_dWc(i,j+1, NORTH_WEST), SolnBlk.dWn_dWc(i+1, j+1, NORTH_EAST), 
 		   CENTER, NORTH, i, j);  
   //EAST
   d_dWd_dW_Diamond(d_dWdx_dW[1] ,d_dWdy_dW[1], SolnBlk,
-		   SolnBlk.dWn_dWc(i+1,j+1, NE), SolnBlk.dWn_dWc(i+1, j, SE), 
+		   SolnBlk.dWn_dWc(i+1,j+1, NORTH_EAST), SolnBlk.dWn_dWc(i+1, j, SOUTH_EAST), 
 		   CENTER, EAST, i, j);
   //SOUTH
   d_dWd_dW_Diamond(d_dWdx_dW[2] ,d_dWdy_dW[2], SolnBlk,
-		   SolnBlk.dWn_dWc(i+1,j, SE), SolnBlk.dWn_dWc(i, j, SW), 
+		   SolnBlk.dWn_dWc(i+1,j, SOUTH_EAST), SolnBlk.dWn_dWc(i, j, SOUTH_WEST), 
 		   CENTER, SOUTH, i, j);
   //WEST
   d_dWd_dW_Diamond(d_dWdx_dW[3] ,d_dWdy_dW[3], SolnBlk,
-		   SolnBlk.dWn_dWc(i,j, SW), SolnBlk.dWn_dWc(i, j+1, NW), 
+		   SolnBlk.dWn_dWc(i,j, SOUTH_WEST), SolnBlk.dWn_dWc(i, j+1, NORTH_WEST), 
 		   CENTER, WEST, i, j);
   
   //2nd derivative's at cell center 

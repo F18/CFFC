@@ -828,16 +828,16 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	/********** UPDATE STATES FOR DUAL TIME STEPPING ***************************  
          Update solution states, at different times, required by dual time stepping.
         ****************************************************************************/
-        //if (Input_Parameters.Dual_Time_Stepping) {
-	error_flag = Update_Dual_Solution_States(Local_SolnBlk, 
+        if (Input_Parameters.Dual_Time_Stepping) {
+	  error_flag = Update_Dual_Solution_States(Local_SolnBlk, 
 						 List_of_Local_Solution_Blocks);
-	if (error_flag) {
-	  cout << "\n Chem2D ERROR: Chem2D solution states update error on processor "
-	       << List_of_Local_Solution_Blocks.ThisCPU
-	       << ".\n";
-	  cout.flush();
+	  if (error_flag) {
+	    cout << "\n Chem2D ERROR: Chem2D solution states update error on processor "
+		 << List_of_Local_Solution_Blocks.ThisCPU
+		 << ".\n";
+	    cout.flush();
+	  }
 	}
-	//}
 	
 	/******************* UPDATE TIMER & COUNTER *******************************
           Update time and time step counter. 

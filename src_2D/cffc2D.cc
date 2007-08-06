@@ -56,7 +56,6 @@ using namespace std;
 #include "AdvectDiffuse2D/AdvectDiffuse2DQuad.h"
 #include "AdvectDiffuse2D/AdvectDiffuse2DQuad_NKS.h"
 #include "Euler2D/Euler2DQuad.h"
-#include "Euler2D/Euler2DQuad_NKS.h"
 #include "Dusty2D/Dusty2DQuad.h"
 #include "Ion5Moment2D/Ion5Moment2DQuad.h"
 #include "Electrostatic2D/Electrostatic2DQuad.h"
@@ -321,11 +320,12 @@ int main(int num_arg, char *arg_ptr[]) {
 			  	            batch_flag);
   /* Gaussian2D_Cartesian */
   if (strcmp(Equation_Type, "Gaussian2D_Cartesian") == 0){
-      if(CFDkit_Primary_MPI_Processor()) {
-        error_flag = Gaussian2DCartesianSolver(Input_File_Name_ptr,
-	  				       batch_flag);
-      } /* endif */
-      CFDkit_Broadcast_MPI(&error_flag, 1);
+    if(CFDkit_Primary_MPI_Processor()) {
+      error_flag = Gaussian2DCartesianSolver(Input_File_Name_ptr,
+					     batch_flag);
+    } /* endif */
+    CFDkit_Broadcast_MPI(&error_flag, 1);
+  }
 
   /* Gaussian2D */
   } else if(strcmp(Equation_Type, "Gaussian2D") == 0){

@@ -98,8 +98,6 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &NKS_processor_cpu_time,
   //Reset Solver Type flag
   Input_Parameters.Solver_Type = IMPLICIT;
 
-  cout.setf(ios::scientific);
-
   /**************************************************************************/  
   /****************** SETTING UP STORAGE AND DATASTRUCTURES *****************/
   /**************************************************************************/  
@@ -137,7 +135,6 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &NKS_processor_cpu_time,
   /******************* BEGIN NEWTON-KRYLOV-SCHWARZ CALCULATION **************/
   /**************************************************************************/
   bool NKS_continue_flag = true;    
-//   bool Update_Jacobian_flag = true;  //what's the deal with this flag, I think it is basically useless....
 
   int Number_of_Newton_Steps = 1;  // FOR RESTART, THIS SHOULD BE SET TO LAST NKS STEP
   int i_limiter = Input_Parameters.i_Limiter;
@@ -154,19 +151,6 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &NKS_processor_cpu_time,
     } 
     /**************************************************************************/
     
-//     //THIS IS CHEM2D SPECIFIC SHOULD BE MOVED TO Chem2DQuad_Specializations.h !!!!!
-//     /************** Change Low-Mach Number Preconditioning Mref ***************/ 
-//     if(Input_Parameters.Preconditioning && Mrefnew > Input_Parameters.Mach_Number_Reference_target ){      
-//       if(L2norm_current_n < 0.01){
-// 	//start at 1 and decrease to Mref set in input
-// 	Mrefnew = Input_Parameters.Mach_Number_Reference - 
-// 	  (Input_Parameters.Mach_Number_Reference - Input_Parameters.Mach_Number_Reference_target)*(log10(ONE/L2norm_current_n)/FOUR);     
-// 	if( Mrefnew < Input_Parameters.Mach_Number_Reference_target) Mrefnew = Input_Parameters.Mach_Number_Reference_target;
-// 	}
-//       Change_Mref(SolnBlk, List_of_Local_Solution_Blocks,Mrefnew);
-//     }	
-//     /**************************************************************************/
-
     // -R(U_n)
     /**************************************************************************/
     /* Calculate residual: dudt[i][j][0]  from U,W */
@@ -348,7 +332,7 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &NKS_processor_cpu_time,
       /**************************************************************************/
       // Create/Update Jacobian Matrix(s) using Uo = U  
       if (Number_of_Newton_Steps < MIN_NUMBER_OF_NEWTON_STEPS_REQUIRING_JACOBIAN_UPDATE
-	   || L2norm_current_n > MIN_L2_NORM_REQUIRING_JACOBIAN_UPDATE ) { // && Update_Jacobian_flag ) { 
+	   || L2norm_current_n > MIN_L2_NORM_REQUIRING_JACOBIAN_UPDATE ) { 
 	
 	if (CFDkit_Primary_MPI_Processor()) cout << "\n Creating/Updating Jacobian Matrix";  
 	
@@ -360,11 +344,6 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &NKS_processor_cpu_time,
 	  } 
 	} 
       }
- //      else { 
-// 	// don't update the Jacobian any more, but this is a stupid use of a flag 
-// 	// as the Number of Iterations of tolerance must be violated first anyway. ????
-// 	Update_Jacobian_flag == false;
-//       } /* endif */ 
       /**************************************************************************/
 
 

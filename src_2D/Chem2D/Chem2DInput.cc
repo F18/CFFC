@@ -166,7 +166,7 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     /* Flow type */
     string_ptr = "Inviscid";
     strcpy(IP.Flow_Type, string_ptr);
-    IP.FlowType = FLOWTYPE_LAMINAR;
+    IP.FlowType = FLOWTYPE_INVISCID;
 
     /* Flow geometry type */
     string_ptr = "Planar";
@@ -295,8 +295,7 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     // Smooth quad block flag:
     IP.i_Smooth_Quad_Block = ON;
 
-    // Smooth quad block indicator:
-    IP.i_Smooth_Quad_Block = ON;
+    // Default Solver Type
     IP.Solver_Type = EXPLICIT;
   
     IP.Morton = 0;

@@ -50,7 +50,7 @@ NKS_Finite_Time_Step_Max_CFL=
 GMRES_Normalization= 
 ON
 Jacobian_Order =
-First_Order_Inviscid_HLLE
+First_Order_Inviscid_Roe
 #
 GMRES_Overlap=
 0
@@ -68,8 +68,8 @@ Uniform
 #Restart
 Mach_Number= 
 0.01
-#Mach_Number_Reference =
-#0.01 0.01
+Mach_Number_Reference =
+0.01 
 ########################
 # Set mesh info
 ########################

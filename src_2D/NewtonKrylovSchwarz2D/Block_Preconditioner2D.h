@@ -146,15 +146,15 @@ Get_Block_Index(const int &i, int *Block_index_j)
     Block_index_j[WEST] = ( (i+1)%SolnBlk->NCi != 0) ? i+1 : -1;
     Block_index_j[SOUTH] = i + SolnBlk->NCi ;   
   }  else if ( Jacobian_stencil_size == 9) {
-    Block_index_j[NE] = ( (i - SolnBlk->NCi)%SolnBlk->NCi != 0) ? i - SolnBlk->NCi - 1 : -1;
+    Block_index_j[NORTH_EAST] = ( (i - SolnBlk->NCi)%SolnBlk->NCi != 0) ? i - SolnBlk->NCi - 1 : -1;
     Block_index_j[NORTH] = i - SolnBlk->NCi;
-    Block_index_j[NW] = ( (i - SolnBlk->NCi+1)%SolnBlk->NCi != 0) ? i - SolnBlk->NCi + 1 : -1;
+    Block_index_j[NORTH_WEST] = ( (i - SolnBlk->NCi+1)%SolnBlk->NCi != 0) ? i - SolnBlk->NCi + 1 : -1;
     Block_index_j[EAST] = ( i%SolnBlk->NCi != 0) ? i-1 : -1;
     Block_index_j[CENTER] = i;
     Block_index_j[WEST] = ( (i+1)%SolnBlk->NCi != 0) ? i+1 : -1;
-    Block_index_j[SE] = ( (i + SolnBlk->NCi)%SolnBlk->NCi != 0) ? i + SolnBlk->NCi - 1 : -1;
+    Block_index_j[SOUTH_EAST] = ( (i + SolnBlk->NCi)%SolnBlk->NCi != 0) ? i + SolnBlk->NCi - 1 : -1;
     Block_index_j[SOUTH] = i + SolnBlk->NCi;
-    Block_index_j[SW] = ( (i + SolnBlk->NCi+1)%SolnBlk->NCi != 0) ? i + SolnBlk->NCi + 1 : -1;
+    Block_index_j[SOUTH_WEST] = ( (i + SolnBlk->NCi+1)%SolnBlk->NCi != 0) ? i + SolnBlk->NCi + 1 : -1;
   }  
 }
 
@@ -198,15 +198,15 @@ Get_Block_Index(const int &cell_index_i,const int &cell_index_j, int *Block_inde
      *       | 6 | 3 | 7 |
      *        --- --- ---
      */ 
-    Block_index_i[NE] = (cell_index_j - 1)*SolnBlk->NCi+cell_index_i-1;    //NE  
+    Block_index_i[NORTH_EAST] = (cell_index_j - 1)*SolnBlk->NCi+cell_index_i-1;    //NORTH_EAST  
     Block_index_i[NORTH] = (cell_index_j - 1)*SolnBlk->NCi+cell_index_i;   //NORTH
-    Block_index_i[NW] = (cell_index_j - 1)*SolnBlk->NCi+cell_index_i+1;    //NW   
+    Block_index_i[NORTH_WEST] = (cell_index_j - 1)*SolnBlk->NCi+cell_index_i+1;    //NORTH_WEST   
     Block_index_i[EAST] = cell_index_j*SolnBlk->NCi+cell_index_i-1;        //EAST      
     Block_index_i[CENTER] = cell_index_j*SolnBlk->NCi+cell_index_i;        //CENTER
     Block_index_i[WEST] = cell_index_j*SolnBlk->NCi+cell_index_i+1;        //WEST
-    Block_index_i[SE] = (cell_index_j + 1)*SolnBlk->NCi+cell_index_i-1;    //SE     
+    Block_index_i[SOUTH_EAST] = (cell_index_j + 1)*SolnBlk->NCi+cell_index_i-1;    //SOUTH_EAST     
     Block_index_i[SOUTH] = (cell_index_j + 1)*SolnBlk->NCi+cell_index_i;   //SOUTH    
-    Block_index_i[SW] = (cell_index_j + 1)*SolnBlk->NCi+cell_index_i+1;    //SW  
+    Block_index_i[SOUTH_WEST] = (cell_index_j + 1)*SolnBlk->NCi+cell_index_i+1;    //SOUTH_WEST  
   }  
 
 }
@@ -389,10 +389,10 @@ Update_Jacobian_and_Preconditioner()
       if(block_i[SOUTH] > block_mat_size - TWO*SolnBlk->NCi) Jacobian_Data[SOUTH].zero();
 
       if(Jacobian_stencil_size == 9){		
-	if(block_i[NE] < TWO*SolnBlk->NCi)    Jacobian_Data[NE].zero();
-	if(block_i[NW] < TWO*SolnBlk->NCi)    Jacobian_Data[NW].zero(); 
-	if(block_i[SE] > block_mat_size - TWO*SolnBlk->NCi)    Jacobian_Data[SE].zero();
-	if(block_i[SW] > block_mat_size - TWO*SolnBlk->NCi)    Jacobian_Data[SW].zero();
+	if(block_i[NORTH_EAST] < TWO*SolnBlk->NCi)    Jacobian_Data[NORTH_EAST].zero();
+	if(block_i[NORTH_WEST] < TWO*SolnBlk->NCi)    Jacobian_Data[NORTH_WEST].zero(); 
+	if(block_i[SOUTH_EAST] > block_mat_size - TWO*SolnBlk->NCi)    Jacobian_Data[SOUTH_EAST].zero();
+	if(block_i[SOUTH_WEST] > block_mat_size - TWO*SolnBlk->NCi)    Jacobian_Data[SOUTH_WEST].zero();
       }
       //--------------------------------------------------------------------------//
       //! Update BlockMat with Local Approximate Jacobians 
@@ -657,34 +657,34 @@ Second_Order_Viscous_Jacobian(const int &cell_index_i,const int &cell_index_j, D
   /***************** dR(i+1,j+1)/dU(i,j) *********************************************/
   //SOUTHWEST
   Preconditioner_dFVdU(JacobianS,cell_index_i+1,cell_index_j+1,
-		       cell_index_i,cell_index_j,SOUTH,SW);
+		       cell_index_i,cell_index_j,SOUTH,SOUTH_WEST);
   Preconditioner_dFVdU(JacobianS,cell_index_i+1,cell_index_j+1,
-		       cell_index_i,cell_index_j, WEST,SW);  
-  Jacobian[SW] += JacobianS/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j+1].A;
+		       cell_index_i,cell_index_j, WEST,SOUTH_WEST);  
+  Jacobian[SOUTH_WEST] += JacobianS/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j+1].A;
   
   /***************** dR(i-1,j+1)/dU(i,j) *********************************************/
   //SOUTHEAST
   Preconditioner_dFVdU(JacobianE,cell_index_i-1,cell_index_j+1,
-		       cell_index_i,cell_index_j,SOUTH,SE);
+		       cell_index_i,cell_index_j,SOUTH,SOUTH_EAST);
   Preconditioner_dFVdU(JacobianE,cell_index_i-1,cell_index_j+1,
-		       cell_index_i,cell_index_j,EAST,SE);  
-  Jacobian[SE] += JacobianE/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j+1].A;
+		       cell_index_i,cell_index_j,EAST,SOUTH_EAST);  
+  Jacobian[SOUTH_EAST] += JacobianE/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j+1].A;
 
   /***************** dR(i+1,j-1)/dU(i,j) *********************************************/
   //NORTHWEST
   Preconditioner_dFVdU(JacobianW,cell_index_i+1,cell_index_j-1,
-		       cell_index_i,cell_index_j, NORTH,NW);
+		       cell_index_i,cell_index_j, NORTH,NORTH_WEST);
   Preconditioner_dFVdU(JacobianW,cell_index_i+1,cell_index_j-1,
-		       cell_index_i,cell_index_j, WEST,NW);  
-  Jacobian[NW] += JacobianW/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j-1].A;
+		       cell_index_i,cell_index_j, WEST,NORTH_WEST);  
+  Jacobian[NORTH_WEST] += JacobianW/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j-1].A;
 
   /***************** dR(i-1,j-1)/dU(i,j) *********************************************/
   //NORTHEAST
   Preconditioner_dFVdU(JacobianN,cell_index_i-1,cell_index_j-1,
-		       cell_index_i,cell_index_j, NORTH,NE);
+		       cell_index_i,cell_index_j, NORTH,NORTH_EAST);
   Preconditioner_dFVdU(JacobianN,cell_index_i-1,cell_index_j-1,
-		       cell_index_i,cell_index_j, EAST,NE);  
-  Jacobian[NE] += JacobianN/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j-1].A;
+		       cell_index_i,cell_index_j, EAST,NORTH_EAST);  
+  Jacobian[NORTH_EAST] += JacobianN/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j-1].A;
 
 
 }
