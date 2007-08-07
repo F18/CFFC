@@ -4,7 +4,7 @@
 # $Date: 2006/10/20 21:56:39 $
 #
 #
-test_python=2
+test_python=0
 test_ck=1
 test_cathermo=
 

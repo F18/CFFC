@@ -2,15 +2,15 @@
 import sys
 
 bindir = '/usr/local/cantera/bin'
-libdir = '/home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu'
-incdir = '/home/groth/CFFC/cantera/build/include'
+libdir = '/nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu'
+incdir = '/nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/include'
 dflibdir = ''
 
 bllibstr = "-lctlapack -lctblas"
 bllibs = bllibstr.replace('-l',' ')
 bllist = bllibs.split()
 
-bldir = "/home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu"
+bldir = "/nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu"
 
 libs = ['clib', 'oneD', 'zeroD', 'transport', 'cantera', 'recipes',
         'cvode', 'ctmath', 'tpx']

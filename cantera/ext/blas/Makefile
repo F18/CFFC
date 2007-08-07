@@ -4,7 +4,7 @@
 # $Id: Makefile.in,v 1.6 2006/03/03 20:39:27 hkmoffa Exp $
 #
 do_ranlib = 1                                                                                                                     
-BLASLIB = /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/libctblas.a
+BLASLIB = /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/libctblas.a
 
 SUFFIXES=
 SUFFIXES= .f .o

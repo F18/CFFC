@@ -2,8 +2,8 @@
 import sys
 
 bindir = '/usr/local/cantera/bin'
-libdir = '-L/home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu  -L/home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu'
-incdir = '/home/groth/CFFC/cantera/build/include'
+libdir = '-L/nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu  -L/nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu'
+incdir = '/nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/include'
 libs   = '-lclib  -luser -loneD -lzeroD -ltransport -lcantera -lcvode -lctlapack -lctblas -lctmath -ltpx -lctf2c -lconverters  '
 
 f = open('setup.m','w')

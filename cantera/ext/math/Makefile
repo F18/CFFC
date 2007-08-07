@@ -10,7 +10,7 @@
 
 do_ranlib = 1
 
-LIB = /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/libctmath.a
+LIB = /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/libctmath.a
 
 all: $(LIB)
 
@@ -48,7 +48,7 @@ ifeq ($(do_ranlib),1)
 	ranlib $(LIB)
 endif
 %.o : %.cpp
-	g++ -O -c $< -DHAVE_CONFIG_H  -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/home/groth/CFFC/sparselib++/include -I/home/groth/CFFC/sparselib++/iml/include -I/home/groth/CFFC/sparselib++/mv/include -I/home/groth/CFFC/bpkit/src  $(INCLUDES)
+	g++ -O -c $< -DHAVE_CONFIG_H  -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/iml/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/mv/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/bpkit/src  $(INCLUDES)
 
 %.o : %.f
 	gfortran -c $< $(F_FLAGS)

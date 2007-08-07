@@ -61,7 +61,7 @@ using namespace std;
 #define	INPUT_PARAMETER_LENGTH_CHEM2D    128
 
 //Enviroment Flag 
-#define PATHVAR "CFDkit_Path"
+#define PATHVAR "CFFC_Path"
 
 /*!
  * Class:  Chem2D_Input_Parameters

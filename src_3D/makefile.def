@@ -185,6 +185,11 @@ ifeq ($(CANTERA_VERSION),V70)
   CANTERA_LD_FLAGS        =  -L$(CANTERA_LIB_DIR) -luser -loneD -lzeroD -ltransport -lcantera -lcvode -lctlapack -lctblas -lctmath -ltpx -lg2c -lctcxx
 endif
 
+# make cantera with python (cantera needs it for some special features)
+#    none      Don't install  or run any Python scripts during the 
+#    default   try to do a full installation, but fall back to a minimal
+CANTERA_PYTHON_PACKAGE    = none
+
 #
 # Set flags for including FFTW libraries
 FFTW           = fftw
@@ -195,7 +200,6 @@ FFTW_INC_DIR   = $(FFTW_DIR)/include
 
 FFTW_CPP_FLAGS = -I$(FFTW_INC_DIR)
 FFTW_LD_FLAGS  = -L$(FFTW_LIB_DIR) -lfftw3
-
 
 #
 # CPPFLAG -D__USE_MALLOC explicitly handles C++ string memory issues, but 

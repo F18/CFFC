@@ -38,16 +38,16 @@ CXX = g++ -O
 
 # C++ compile flags
 ifeq ($(src_dir_tree), 1)
-CXX_FLAGS = -DSRCDIRTREE -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/home/groth/CFFC/sparselib++/include -I/home/groth/CFFC/sparselib++/iml/include -I/home/groth/CFFC/sparselib++/mv/include -I/home/groth/CFFC/bpkit/src 
+CXX_FLAGS = -DSRCDIRTREE -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/iml/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/mv/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/bpkit/src 
 else
-CXX_FLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/home/groth/CFFC/sparselib++/include -I/home/groth/CFFC/sparselib++/iml/include -I/home/groth/CFFC/sparselib++/mv/include -I/home/groth/CFFC/bpkit/src 
+CXX_FLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/iml/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/mv/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/bpkit/src 
 endif
 
 # Ending C++ linking libraries
 LCXX_END_LIBS =  -lctf2c -lm
 
 # the directory where the Cantera libraries are located
-CANTERA_LIBDIR=/home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu
+CANTERA_LIBDIR=/nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu
 
 # required Cantera libraries
 CANTERA_LIBS =  -luser -loneD -lzeroD -ltransport -lcantera -lcvode -lctlapack -lctblas -lctmath -ltpx -lctf2c -lconverters -lctcxx
@@ -57,12 +57,12 @@ ifeq ($(src_dir_tree), 1)
 CANTERA_INCDIR=../../../Cantera/src
 INCLUDES=-I$(CANTERA_INCDIR) -I$(CANTERA_INCDIR)/thermo
 else
-CANTERA_INCDIR=/home/groth/CFFC/cantera/build/include/cantera
+CANTERA_INCDIR=/nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/include/cantera
 INCLUDES=-I$(CANTERA_INCDIR) -I$(CANTERA_INCDIR)/kernel
 endif
 
 # flags passed to the C++ compiler/linker for the linking step
-LCXX_FLAGS = -L$(CANTERA_LIBDIR)  -L/home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/home/groth/CFFC/sparselib++/include -I/home/groth/CFFC/sparselib++/iml/include -I/home/groth/CFFC/sparselib++/mv/include -I/home/groth/CFFC/bpkit/src 
+LCXX_FLAGS = -L$(CANTERA_LIBDIR)  -L/nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/iml/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/mv/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/bpkit/src 
 
 # How to compile C++ source files to object files
 .cpp.o:

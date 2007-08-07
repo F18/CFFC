@@ -12,7 +12,7 @@
 SUFFIXES=
 SUFFIXES= .cpp .d .o
 
-CXX_FLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/home/groth/CFFC/sparselib++/include -I/home/groth/CFFC/sparselib++/iml/include -I/home/groth/CFFC/sparselib++/mv/include -I/home/groth/CFFC/bpkit/src  $(CXX_OPT)
+CXX_FLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/iml/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/mv/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/bpkit/src  $(CXX_OPT)
 
 OBJS = cxxutils.o 
 
@@ -31,7 +31,7 @@ CXX_INCLUDES = -I$(CANTERA_INCDIR)
 	$(CXX) -c $< $(CXX_INCLUDES) $(CXX_FLAGS)
 
 LIB_NAME=libctcxx
-CXXLIB=/home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/$(LIB_NAME).a
+CXXLIB=/nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/$(LIB_NAME).a
 
 all: $(CXXLIB)
 

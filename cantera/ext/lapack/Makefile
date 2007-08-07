@@ -6,7 +6,7 @@
 .SUFFIXES :
 .SUFFIXES : .f .o
 
-LAPACKLIB = /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/libctlapack.a
+LAPACKLIB = /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/libctlapack.a
 
 do_ranlib = 1
 

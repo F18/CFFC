@@ -29,10 +29,10 @@ cvlist = cvlibs.split()
 extra_link = ""
 linkargs = extra_link.split()    
 
-bldirstr = " -L/home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu"
+bldirstr = " -L/nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu"
 bldirs = bldirstr.replace('-L',' ')
 dirlist = bldirs.split()
-libdir = ['/home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu']
+libdir = ['/nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu']
 for d in dirlist:
     libdir.append(d)
 
@@ -60,7 +60,7 @@ else:
 #  2   install full package
 #  3   try to install full, but install ctml_writer if full package
 #      install fails
-buildPython = 2
+buildPython = 0
 if buildPython >= 2:
 
     try:
