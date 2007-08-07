@@ -220,7 +220,7 @@ ifeq ($(PLATFORM),Linux_i386)
     ifeq ($(GCC_VERSION),ICC)
        FC = ifort
        CC = icc
-       CXX = icc
+       CXX = icpc
        CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS)
        CXXFLAGS = -w0 -O2 -ip
        FFLAGS = -O2 -ip
