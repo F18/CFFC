@@ -91,8 +91,8 @@ class Hexa_MultiBlock{
        typename HEXA_BLOCK::Soln_cState> &IPs, 
        const int I_Stage);
    // flow type dependent memeber functions 
-   int Create_Wall_Data(void);
-  
+   int Create_Wall_Data(void); // calculate wall data for serial code (all blocks on one processor)
+   // the other Create wall data template function is in Turbulence/*.h for parallel version
 /* Copy the boundaries of different blocks on on processor */
 /* This was written for testing multiblock serial code, i.e.
    running the code with multiblock but on only one processor */

@@ -109,11 +109,11 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
       List_of_Global_Solution_Blocks,
       List_of_Local_Solution_Blocks);
      
-   // The Grid3D_Hexa_Multi_Block class is no longer required.  Destruction of the
-   // class will only delete unused grid blocks (used grid blocks have been handed
-   // off to the local solution blocks who are now responsible for deleting that
-   // memory).
-//    delete Create_MultiBlock_Grid; Create_MultiBlock_Grid = NULL;
+  // The Grid3D_Hexa_Multi_Block class is no longer required. Destruction of the
+  // class will only delete unused grid blocks (used grid blocks have been handed
+  // off to the local solution blocks who are now responsible for deleting that
+  // memory).
+   //  delete Create_MultiBlock_Grid; Create_MultiBlock_Grid = NULL;
   
    /********************************************************  
     * Initialize solution variables.                       *
@@ -158,7 +158,9 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
       
    } else {
       
-      Local_SolnBlk.Create_Wall_Data( );
+//      Local_SolnBlk.Create_Wall_Data( );
+      Wall_Distance( Local_SolnBlk.Hexa_Block_List,
+                     OcTree, List_of_Local_Solution_Blocks);
       Local_SolnBlk.ICs(IPs);
       
             

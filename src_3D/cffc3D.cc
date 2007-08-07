@@ -5,7 +5,7 @@
  ****                       (07/19/07)                          ****
  ****                                                           ****
  ****  Computational Framework for Fluids and Combustion (CFFC) ****
- ****              in One and Two Space Dimensions              ****
+ ****              in Three Space Dimensions                    ****
  ****                                                           ****
  ******       UTIAS, CFD & Propulsion Group, 1999-2007        ******
  **********                                               **********

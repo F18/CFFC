@@ -24,13 +24,13 @@ Cube
 Number_of_Cells_Idir = 
 10
 Number_of_Cells_Jdir =
-20
+10
 Number_of_Cells_Kdir =
 10
 Number_of_Blocks_Idir = 
 2
 Number_of_Blocks_Jdir =
-1
+2
 Number_of_Blocks_Kdir =
 2
 ###############################
@@ -39,11 +39,11 @@ Number_of_Blocks_Kdir =
 CFL_Number =
 0.1
 Time_Max = 
-0.
+0.2
 Maximum_Number_of_Time_Steps =
 0
 Number_of_Blocks_Per_Processor =
-2
+1
 Output_File_Name = 
 multiblock
 #######################

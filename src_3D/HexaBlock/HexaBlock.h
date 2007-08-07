@@ -688,13 +688,13 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
                
                W[i][j][k].p = IPs.Wo.p - (i-ICl-Nghost)*delta_pres/(ICu-ICl);	 
                //start
-               if( i == ICl-Nghost || i == ICl-Nghost+1 ){
-                  W[i][j][k].p = IPs.Wo.p;
-               }
-               //end
-               if( i == ICu+Nghost || i == ICu+Nghost-1 ){
-                  W[i][j][k].p = IPs.Wo.p - delta_pres; 
-               }
+              /*  if( i == ICl-Nghost || i == ICl-Nghost+1 ){ */
+/*                   W[i][j][k].p = IPs.Wo.p; */
+/*                } */
+/*                //end */
+/*                if( i == ICu+Nghost || i == ICu+Nghost-1 ){ */
+/*                   W[i][j][k].p = IPs.Wo.p - delta_pres;  */
+/*                } */
                U[i][j][k] = W[i][j][k].U( );
             } 
          }       
@@ -756,14 +756,14 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
                   
               W[i][j][k].p = IPs.Wo.p - (Grid->Cell[i][j][k].Xc.y)*delta_pres/IPs.IP_Grid.Box_Width;	 
          
-              //start
-              if( j == JCl-Nghost || j == JCl-Nghost+1 ){
-                 W[i][j][k].p = IPs.Wo.p;
-              }
-               //end
-              if( j == JCu+Nghost || j == JCu+Nghost-1 ){
-                 W[i][j][k].p = IPs.Wo.p - delta_pres; 
-              }
+             /*  //start */
+/*               if( j == JCl-Nghost || j == JCl-Nghost+1 ){ */
+/*                  W[i][j][k].p = IPs.Wo.p; */
+/*               } */
+/*                //end */
+/*               if( j == JCu+Nghost || j == JCu+Nghost-1 ){ */
+/*                  W[i][j][k].p = IPs.Wo.p - delta_pres;  */
+/*               } */
               U[i][j][k] = W[i][j][k].U( );
            
               
@@ -833,14 +833,14 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
                   (Grid->Cell[i][j][k].Xc.z - 0.5*IPs.IP_Grid.Box_Height);
                
                W[i][j][k].p = IPs.Wo.p - (i-ICl-Nghost)*delta_pres/(ICu-ICl);	 
-               //start
-               if( i == ICl-Nghost || i == ICl-Nghost+1 ){
-                  W[i][j][k].p = IPs.Wo.p;
-               }
-               //end
-               if( i == ICu+Nghost || i == ICu+Nghost-1){
-                  W[i][j][k].p = IPs.Wo.p - delta_pres; 
-               }
+             /*   //start */
+/*                if( i == ICl-Nghost || i == ICl-Nghost+1 ){ */
+/*                   W[i][j][k].p = IPs.Wo.p; */
+/*                } */
+/*                //end */
+/*                if( i == ICu+Nghost || i == ICu+Nghost-1){ */
+/*                   W[i][j][k].p = IPs.Wo.p - delta_pres;  */
+/*                } */
                U[i][j][k] = W[i][j][k].U( );
             } 
          }       
@@ -863,14 +863,14 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
                W[i][j][k] = IPs.Wo;
                W[i][j][k].p = IPs.Wo.p - (i-ICl-Nghost)*delta_pres/(ICu-ICl);	 
                //start
-               if( i == ICl-Nghost || i == ICl-Nghost+1 ){
-                  W[i][j][k].p = IPs.Wo.p;
-               }
+              /*  if( i == ICl-Nghost || i == ICl-Nghost+1 ){ */
+/*                   W[i][j][k].p = IPs.Wo.p; */
+/*                } */
                
-               //end
-               if( i == ICu+Nghost || i == ICu+Nghost-1){
-                  W[i][j][k].p = IPs.Wo.p - delta_pres; 
-               }
+/*                //end */
+/*                if( i == ICu+Nghost || i == ICu+Nghost-1){ */
+/*                   W[i][j][k].p = IPs.Wo.p - delta_pres;  */
+/*                } */
                
                /* velocity is function of y only (2D flow) */
                W[i][j][k].v.x = 0.5*(-dpdx)/W[i][j][k].mu()*(Grid->Cell[i][j][k].Xc.y + 0.5*IPs.IP_Grid.Box_Width)*
