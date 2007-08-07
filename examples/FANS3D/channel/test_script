@@ -1,0 +1,12 @@
+#!/bin/tcsh
+#PBS -N fans3d_lrf
+#PBS -q qmaster
+#PBS -l walltime=6:00:00,nodes=4:ppn=4:parallel-2G,other=night
+#PBS -W group_list=xinfeng
+
+cd /nfs/fe03/d1/cfd/xinfeng/CFFC/examples/FANS3D/channel/
+mpirun -np 16 --gm-no-shmem --gm-kill 2 /nfs/fe03/d1/cfd/xinfeng/CFFC/src_3D/cffc3D -f test.in -pde FANS3DThermallyPerfect >& put.log 
+cat test_channel_cells_cpu*.dat>test_channel_cells.dat
+rm fans3d_lrf.e*
+rm fans3d_lrf.o*
+
