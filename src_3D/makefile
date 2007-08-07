@@ -49,6 +49,7 @@ SRC_MATH = $(MATH_DIR)Vector2D.cc \
 	   $(MATH_DIR)Polygon.cc
 SRC_CFD = $(CFD_DIR)CFD.cc
 SRC_MPI	= $(MPI_DIR)MPI.cc
+SRC_SYSTEM = $(SYSTEM_DIR)System_Linux.cc
 ifeq ($(MPI_VERSION),NoMPI)
   SRC_AMR = $(AMR_DIR)AdaptiveBlock3D.cc \
 	    $(AMR_DIR)AdaptiveBlock3D_NoMPI.cc \
@@ -76,7 +77,7 @@ SRC_FANS = $(FANS_DIR)FANS3DThermallyPerfectState.cc \
 SRC_SPECIES = $(NASA_DIR)NASARP1311data.cc \
               $(NASA_DIR)Reactions.cc
 SRC_TURBULENCE = $(TURBULENCE_DIR)TurbulenceModelling.cc 
-SRC_BASE = $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) \
+SRC_BASE = $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_SYSTEM) \
            $(SRC_AMR) $(SRC_GRID) $(SRC_ICEM) $(SRC_HEXA) \
            $(SRC_TURBULENCE)
 SRC_CFFC = $(SRC_BASE) \
@@ -95,6 +96,7 @@ OBJ_MATH = $(MATH_DIR)Vector2D.o \
 	   $(MATH_DIR)Polygon.o
 OBJ_CFD = $(CFD_DIR)CFD.o
 OBJ_MPI	= $(MPI_DIR)MPI.o
+OBJ_SYSTEM = $(SYSTEM_DIR)System_Linux.o
 ifeq ($(MPI_VERSION),NoMPI)
   OBJ_AMR = $(AMR_DIR)AdaptiveBlock3D.o \
 	    $(AMR_DIR)AdaptiveBlock3D_NoMPI.o \
@@ -122,12 +124,12 @@ OBJ_FANS = $(FANS_DIR)FANS3DThermallyPerfectState.o \
 OBJ_SPECIES = $(NASA_DIR)NASARP1311data.o \
               $(NASA_DIR)Reactions.o
 OBJ_TURBULENCE = $(TURBULENCE_DIR)TurbulenceModelling.o 
-OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) \
+OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_SYSTEM) \
            $(OBJ_AMR) $(OBJ_GRID) $(OBJ_ICEM) $(OBJ_HEXA) \
-           $(OBJ_TURBULENCE)
+           $(OBJ_TURBULENCE) 
 OBJ_CFFC = $(OBJ_BASE) \
            $(OBJ_EULER) $(OBJ_NAVIERSTOKES) $(OBJ_FANS) \
-           $(OBJ_SPECIES)  
+           $(OBJ_SPECIES)
 OBJ_MAIN = cffc3D.o
 
 #
@@ -148,15 +150,19 @@ help:
 	@echo "|        make uninstall            removes cffc3D executable from bin directory     |"
 	@echo "|        make uinstall-all         removes all executables from bin directory       |"
 	@echo "|        make documentation        create code documentaion using doxygen & latex   |"
+	@echo "|        make libraries-all        create all supporting libraries                  |"
 	@echo "|        make sparselib            create SparseLib++ library                       |"
 	@echo "|        make bpkit                create BPKIT library                             |"
+	@echo "|        make cantera              create Cantera library                           |"
+	@echo "|        make fftw                 create fftw library                              |"
 	@echo "|        make clean                clean up source directories                      |"
 	@echo "|        make superclean           clean up documentation and library directories   |"
 	@echo "|        make help                 display makefile usage information               |"
 	@echo "|                                                                                   |"
 	@echo "| Package Options: MPI_VERSION = NoMPI (default), MPICH, MPT (sgi)                  |"
-	@echo "|                  ICEMCFD_VERSION = NoICEMCFD (default), V41, V42, V43, V50        |"
+	@echo "|                  ICEMCFD_VERSION = NoICEMCFD (default),V41,V42,V43,V50,V10,V11    |"
 	@echo "|                  GCC_VERSION = V296, V3+ (default), ICC                           |"
+	@echo "|                  CANTERA_VERSION = NoCANTERA (default), V70                       |"
 	@echo "|                  PROFILING = OFF (default), ON                                    |"
 	@echo "|                                                                                   |"
 	@echo "| Ensure that the source directory is clean and the ICEMCFD, SparseLib++,           |"
@@ -173,6 +179,12 @@ help:
 all: $(EXE_MAIN)
 	@echo ' '	
 	@echo All programs have been brought up to date.
+	@echo '-------------------------------------------'
+	@echo ' '
+
+libraries-all: sparselib bpkit fftw
+	@echo ' '	
+	@echo All libraries have been brought up to date.
 	@echo '-------------------------------------------'
 	@echo ' '
 
@@ -199,6 +211,35 @@ bpkit:
 	@echo ' '
 	@echo $(BPKIT) library has been brought up to date.
 	@echo '--------------------------------------------'
+	@echo ' '
+
+cantera:
+	@echo ' '
+	@echo Building $(CANTERA) library for a $(PLATFORM) platform.
+	@echo '----------------------------------------------------'
+	@echo ' '
+	cd $(CANTERA_DIR); make -i clean;
+	cd $(CANTERA_DIR); ./preconfig CXX="$(CXX) $(CXXFLAGS)" CC="$(CC)" F77="$(FC)" \
+          CXXFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" \
+	  FFLAGS="$(FFLAGS)" LCXX_END_LIBS="$(CANTERA_LCXX_END_LIBS)";
+	cd $(CANTERA_DIR); make -i clean;
+	cd $(CANTERA_DIR); make;
+	@echo ' '
+	@echo $(CANTERA) library has been brought up to date.
+	@echo '--------------------------------------------'
+	@echo ' '
+
+fftw:
+	@echo ' '
+	@echo Building $(FFTW) library for a $(PLATFORM) platform.
+	@echo '--------------------------------------------------------'
+	@echo ' '
+	cd $(FFTW_DIR); ./configure --prefix=$(FFTW_DIR);
+	cd $(FFTW_DIR); make;
+	cd $(FFTW_DIR); make install;
+	@echo ' '
+	@echo $(FFTW) library has been brought up to date.
+	@echo '------------------------------------------------'
 	@echo ' '
 
 $(EXE_MAIN): CFFC.depend cffc3D.depend $(OBJ_MAIN) $(OBJ_CFFC)
@@ -338,10 +379,13 @@ superclean:
 	rm -f $(DOXYGEN_DIR_3D)/latex/*
 	cd $(LATEX_DIR_3D)/users_guide_src; rm -f *~ *.ps *.pdf *.aux *.log *.dvi *.toc users_guide/*; 
 	cd $(LATEX_DIR_3D)/programmers_guide_src; rm -f *~ *.ps *.pdf *.aux *.log *.dvi *.toc programmers_guide/*; 
-	cd $(LATEX_DIR_3D)/reference_manual_src; rm -f *~ *.ps *.pdf *.aux *.log *.dvi *.toc reference _manual/*;
+	cd $(LATEX_DIR_3D)/reference_manual_src; rm -f *~ *.ps *.pdf *.aux *.log *.dvi *.toc reference_manual/*;
 	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) wipe;
 	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
 	cd $(BPKIT_DIR)/src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
+	cd $(CANTERA_DIR); make -i clean;
+	cd $(FFTW_DIR); make clean; 
+	cd $(FFTW_DIR); make distclean;
 	@echo ' '
 	@echo All documentation and library directories are now clean.
 	@echo '-------------------------------------------------------'

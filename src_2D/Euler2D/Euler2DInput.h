@@ -45,6 +45,10 @@
 #include "../ICEM/ICEMCFD.h"
 #endif // _ICEMCFD_INCLUDED
 
+
+/* Include file for NKS */
+#include "../NewtonKrylovSchwarz2D/NKSInput2D.h"
+
 /* Define the structures and classes. */
 
 #define	INPUT_PARAMETER_LENGTH_EULER2D    128
@@ -78,30 +82,6 @@ class Euler2D_Input_Parameters{
   int i_Residual_Variable;
   //@}
 
-  //@{ @name Newton-Krylov-Schwarz input parameters.
-  //! Maximum number of Newton-Krylov-Schwarz iterations.
-  int Maximum_Number_of_NKS_Iterations;
-  //! Maximum number of GMRES iterations.
-  int Maximum_Number_of_GMRES_Iterations;
-  //! GMRES restart:
-  int GMRES_Restart;
-  //! GMRES tolerance:
-  double GMRES_Toler;
-  //! Overall tolerance:
-  double Overall_Toler;
-  //! GMRES overlap:
-  int GMRES_Overlap;
-  //! GMRES P_Switch:
-  int GMRES_P_Switch;
-  //! ILU(k) - level of fill
-  int GMRES_ILUK_Level_of_Fill;
-  //! Finite_Time_Step:
-  int Finite_Time_Step;
-  double Finite_Time_Step_Initial_CFL;
-  //! Normalization:
-  int Normalization;
-  //@}
-
   //@{ @name Implicit residual smoothing control parameters:
   int Residual_Smoothing;
   double Residual_Smoothing_Epsilon;
@@ -110,6 +90,11 @@ class Euler2D_Input_Parameters{
 
   //@{ @name Multigrid related input parameters:
   Multigrid_Input_Parameters Multigrid_IP;
+  //@}
+
+  //@{ @name Newton-Krylov-Schwarz related input parameters:
+  NKS_Input_Parameters  NKS_IP;
+  int Solver_Type;
   //@}
 
   //@{ @name Reconstruction type indicator and related input parameters:
@@ -547,12 +532,20 @@ inline ostream &operator << (ostream &out_file,
       out_file << "\n     -> Bounding-box for bounding-box AMR:" << IP.AMR_Xmin << IP.AMR_Xmax;
     out_file << "\n  -> CFL Number: " 
              << IP.CFL_Number;
-    out_file << "\n  -> Maximum Time (ms): " 
-             << IP.Time_Max*THOUSAND;
-    out_file << "\n  -> Maximum Number of Time Steps (Iterations): " 
-             << IP.Maximum_Number_of_Time_Steps;
-    out_file << "\n  -> Maximum Number of NKS Iterations: " 
-             << IP.Maximum_Number_of_NKS_Iterations;
+    if (IP.Time_Accurate) { 
+      out_file << "\n  -> Maximum Time (ms): " << IP.Time_Max*THOUSAND;
+    }
+    out_file << "\n  -> Maximum Number of ";
+    if (IP.Time_Accurate) { 
+      out_file << "Time Steps: ";
+    } else { 
+      out_file << "Relaxation (Pseudo-Time) Iterations: ";
+    }
+    out_file << IP.Maximum_Number_of_Time_Steps;
+    if (IP.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+      out_file << "\n  -> Maximum Number of NKS Iterations: " 
+	       << IP.NKS_IP.Maximum_Number_of_NKS_Iterations;
+    }
     out_file << "\n  -> Number of Processors: " 
              << IP.Number_of_Processors;
     out_file << "\n  -> Number of Blocks Per Processor: " 

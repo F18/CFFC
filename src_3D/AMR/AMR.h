@@ -225,7 +225,7 @@ int Read_OcTree(OcTreeBlock_DataStructure &OcTree,
 
     /* On primary processor, determine name of OcTree input data file name. */
 
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
        i = 0;
        while (1) {
           if (Input_Parameters.Restart_File_Name[i] == ' ' ||
@@ -241,7 +241,7 @@ int Read_OcTree(OcTreeBlock_DataStructure &OcTree,
 
     /* On primary processor, open the OcTree data file. */
 
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
        OcTree_file.open(OcTree_file_name_ptr, ios::in);
        if (OcTree_file.bad()) return (1);
     } /* endif */
@@ -249,7 +249,7 @@ int Read_OcTree(OcTreeBlock_DataStructure &OcTree,
     /* On primary processor, read in the data structure size parameters and 
        re-allocate memory as required. */
 
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
        OcTree_file.setf(ios::skipws);
        OcTree_file >> nri >> nrj >> nrk >> ncpu >> nblk;
        
@@ -272,7 +272,7 @@ int Read_OcTree(OcTreeBlock_DataStructure &OcTree,
 
     /* On primary processor, read the OcTree data from the file. */
 
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
        for ( kBLK = 0 ; kBLK <= OcTree.NRk-1 ; ++kBLK ) {
 	 for ( jBLK = 0 ; jBLK <= OcTree.NRj-1 ; ++jBLK ) {
            for ( iBLK = 0 ; iBLK <= OcTree.NRi-1 ; ++iBLK ) {
@@ -328,7 +328,7 @@ int Read_OcTree(OcTreeBlock_DataStructure &OcTree,
 
     /* On primary processor, close OcTree data file. */
 
-    if (CFDkit_Primary_MPI_Processor()) OcTree_file.close();
+    if (CFFC_Primary_MPI_Processor()) OcTree_file.close();
 
     /* Reading of OcTree data file complete.  Return zero value. */
 
@@ -354,7 +354,7 @@ int Write_OcTree(OcTreeBlock_DataStructure &OcTree,
 
     /* On primary processor, determine name of OcTree output data file name. */
 
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
        i = 0;
        while (1) {
           if (Input_Parameters.Restart_File_Name[i] == ' ' ||
@@ -369,19 +369,19 @@ int Write_OcTree(OcTreeBlock_DataStructure &OcTree,
     } /* endif */
     /* On primary processor, ppen the OcTree data file. */
 
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
        OcTree_file.open(OcTree_file_name_ptr, ios::out);
        if (OcTree_file.bad()) return (1);
     } /* endif */
 
     /* On primary processor, write the OcTree data to the file. */
 
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       OcTree_file << OcTree;
     }
     /* On primary processor, close OcTree data file. */
 
-    if (CFDkit_Primary_MPI_Processor()) OcTree_file.close();
+    if (CFFC_Primary_MPI_Processor()) OcTree_file.close();
 
     /* Writing of OcTree data file complete.  Return zero value. */
 

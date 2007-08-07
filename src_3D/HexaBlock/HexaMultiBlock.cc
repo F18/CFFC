@@ -41,7 +41,7 @@
 //    if(imssg > 0){
         
 //       MPI::Request::Waitall(imssg, SendRecv_requests);
-//      //if( CFDkit_MPI::This_Processor_Number == 1 ){
+//      //if( CFFC_MPI::This_Processor_Number == 1 ){
 // 	//for (int im = 0; im<imssg; ++im){
 //    //		cout<<"\n imssg  = "<<im<<" Test=   "<<SendRecv_requests[im].Test()<<endl;
 // 	//}       

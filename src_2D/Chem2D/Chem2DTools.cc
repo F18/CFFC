@@ -105,7 +105,7 @@ int Close_Time_Accurate_File(ofstream &Time_Accurate_File) {
 }
 
 /********************************************************
- * Routine: Output_Progress_to_File                     *
+ * Routine: Output_Time_Accurate_File                   *
  *                                                      *
  * This routine writes out progress information for     *
  * a CFD calculation to a progress file, including      *
@@ -359,7 +359,7 @@ void Output_Viscous_Channel(Chem2D_Quad_Block &SolnBlk,
 			    double &l2_norm,
 			    double &max_norm,
 			    double &Vwall,
-			    const double dp) {
+			    const double dpdx) {
 
   Chem2D_pState We, W;
 
@@ -386,18 +386,26 @@ void Output_Viscous_Channel(Chem2D_Quad_Block &SolnBlk,
 	   << "F = POINT \\ \n";
 
   Out_File.setf(ios::scientific);
+ 
   for (int j = 0; j < SolnBlk.Grid.NCj; j++) {
-    for (int i = 0; i < SolnBlk.Grid.NCi; i++) {
+  
+    //    double dpdx = ((SolnBlk.W[SolnBlk.ICl][j].p - SolnBlk.W[SolnBlk.ICu][j].p)/
+    // 		   (SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc.x - SolnBlk.Grid.Cell[SolnBlk.ICu][j].Xc.x));
+    //    cout<<"\n j "<<dpdx;
+
+   for (int i = 0; i < SolnBlk.Grid.NCi; i++) {
       W = SolnBlk.W[i][j];
       if (i < SolnBlk.Nghost || i > SolnBlk.ICu ||
 	  j < SolnBlk.Nghost || j > SolnBlk.JCu) {
 	We = SolnBlk.W[i][j];
       } else {
-	We = ViscousChannelFlow(W,SolnBlk.Grid.Cell[i][j].Xc,Vwall,dp);
+	// changed from dp to dpdx
+	We = ViscousChannelFlow(W,SolnBlk.Grid.Cell[i][j].Xc,Vwall,dpdx);
 	l1_norm += fabs(W.v.x - We.v.x);
 	l2_norm += sqr(W.v.x - We.v.x);
 	max_norm = max(max_norm,fabs(W.v.x - We.v.x));
       }
+
       Out_File << SolnBlk.Grid.Cell[i][j].Xc << " " 
 	       << W.rho << " " 
 	       << W.v.x << " " 
@@ -406,8 +414,8 @@ void Output_Viscous_Channel(Chem2D_Quad_Block &SolnBlk,
 	       << We.v.y << " " 
 	       << W.p   << " " 
 	       << W.T() << " " 
-	       << fabs(W.v.x - We.v.x) << " "
-	       << fabs(W.v.y - We.v.y) << endl;
+	       << (W.v.x - We.v.x) << " "
+	       << (W.v.y - We.v.y) << endl;
     }
   }
   l2_norm = sqrt(l2_norm);
@@ -435,7 +443,7 @@ void Output_Flat_Plate(Chem2D_Quad_Block &SolnBlk,
 
   Chem2D_pState W, We;
   Vector2D X;
-  double eta, f, fp, fpp, Rex, linf, Cf, Cfe, xpt;
+  double eta, f, fp, fpp, Rex, linf, Cf, Cfe, xpt;                          //NEEDS LOGIC TO ONLY OUTPUT BLOCKS ALONG PLATE !!!!!!
 
   // Output node solution data.  
   Out_File_Soln << setprecision(14);
@@ -514,7 +522,7 @@ void Output_Flat_Plate(Chem2D_Quad_Block &SolnBlk,
       // Determine the skin friction coefficient.
       linf = 10000.0*(Winf.mu()/Winf.rho)/Winf.v.x;
       Rex = (Winf.v.x/(Winf.mu()/Winf.rho))*((X.x+NANO)/ONE);
-      if (X.x >= ZERO && j == 2 && SolnBlk.Grid.BCtypeS[i] == BC_NO_SLIP) {//BC_WALL_VISCOUS_HEATFLUX
+      if (X.x >= ZERO && j == 2 && SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX){
 	// Get exact skin friction coefficient.
 	Cfe = TWO*0.32206/sqrt(Rex);
 	// Get computed skin friction coefficient.
@@ -535,25 +543,25 @@ void Output_Flat_Plate(Chem2D_Quad_Block &SolnBlk,
   l2_norm = sqrt(l2_norm);
 
 
-  if (Output_Title_Skin) {
+//   if (Output_Title_Skin) {
       Out_File_Skin << "TITLE = \"" << CFDkit_Name() << ": 2D Chem2D Solution, "
 		    << "\"" << "\n"
 		    << "VARIABLES = \"x\" \\ \n"
 		    << "\"Rex\" \\ \n"
 		    << "\"Cf\" \\ \n"
 		    << "\"Cf_e\" \\ \n";
+   //    Out_File_Skin << "ZONE T =  \"Block Number = " << Block_Number
+// 		    << "\" \\ \n"
+// 		    << "I = " <<  16 << " \\ \n"
+// 		    << "J = " << 1 << " \\ \n"
+// 		    << "F = POINT \n";
+//     } else {
       Out_File_Skin << "ZONE T =  \"Block Number = " << Block_Number
 		    << "\" \\ \n"
-		    << "I = " <<  16 << " \\ \n"
+		    << "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl << " \\ \n"
 		    << "J = " << 1 << " \\ \n"
 		    << "F = POINT \n";
-    } else {
-      Out_File_Skin << "ZONE T =  \"Block Number = " << Block_Number
-		    << "\" \\ \n"
-		    << "I = " <<  16<< " \\ \n"
-		    << "J = " << 1 << " \\ \n"
-		    << "F = POINT \n";
-    }
+//     }
     for (int j = SolnBlk.Grid.JCl; j <= SolnBlk.Grid.JCu; j++) {
       for (int i = SolnBlk.Grid.ICl; i <= SolnBlk.Grid.ICu; i++) {
 	  // Get cell position and solution data.
@@ -562,7 +570,7 @@ void Output_Flat_Plate(Chem2D_Quad_Block &SolnBlk,
 	  // Determine the skin friction coefficient.
 	  linf = 10000.0*(Winf.mu()/Winf.rho)/Winf.v.x;
 	  Rex = (Winf.v.x/(Winf.mu()/Winf.rho))*((X.x+NANO)/ONE);
-	  if (X.x >= ZERO && j == 2 && SolnBlk.Grid.BCtypeS[i] == BC_NO_SLIP){	     
+	  if (X.x >= ZERO && j == 2 && SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX){	     
 	    Cfe = TWO*0.32206/sqrt(Rex);
 	    Cf  = TWO*WallShearStress(W,X,
 				      SolnBlk.Grid.nodeSW(i,j).X,
@@ -582,3 +590,332 @@ void Output_Flat_Plate(Chem2D_Quad_Block &SolnBlk,
 }
  
 
+/**********************************************************************
+ * Routine: Output_Driven_Cavity_Flow                                 *
+ *                                                                    *
+ * This routine writes a comparison of the computed solution for the  *
+ * driven cavity flow with the computations done by Ghia et al. (J.   *
+ * Comp. Phys. Vol. 48 1982) for the specified quadrilateral solution *
+ * block to the specified output stream suitable for plotting with    *
+ * TECPLOT.                                                           *
+ *                                                                    *
+ **********************************************************************/
+void Output_Driven_Cavity_Flow(Chem2D_Quad_Block &SolnBlk,
+			       const int Block_Number,
+			       const int Output_Title,
+			       ostream &Out_File_u,
+			       ostream &Out_File_v,
+			       const double &Re,
+			       const double &Vwall,
+			       const double &length) {
+
+  // Set the output precision and type.
+  Out_File_u << setprecision(14);
+  Out_File_u.setf(ios::scientific);
+  Out_File_v << setprecision(14);
+  Out_File_v.setf(ios::scientific);
+
+  // Output node solution data.  
+  if (Output_Title) {
+    Out_File_u << "TITLE = \"" << CFDkit_Name() << ": 2D Dusty Driven Cavity Flow Solution u-velocity Comparison "
+	       << "\"" << "\n"
+	       << "VARIABLES = \"x\" \\ \n"
+	       << "\"u\" \\ \n";
+    Out_File_v << "TITLE = \"" << CFDkit_Name() << ": 2D Dusty Driven Cavity Flow Solution v-velocity Comparison "
+	       << "\"" << "\n"
+	       << "VARIABLES = \"x\" \\ \n"
+	       << "\"v\" \\ \n";
+  }
+
+  // If the output title flag is on (first time the current processor
+  // is writing data) and the current processor is the primary processor
+  // then write the solution data of Ghia et al. to the output file.
+  if (Output_Title && CFDkit_Primary_MPI_Processor()) {
+    // Output a zone corresponding to the u-velocity component at the
+    // geometric centre of the cavity.
+    Out_File_u << "ZONE T = \"u-velocity"
+	       << "\" \\ \n"
+	       << "I = " << 17 << " \\ \n"
+	       << "J = " << 1 << " \\ \n"
+	       << "F = POINT \\ \n";
+    if (Re == 100.0) {
+      Out_File_u << 0.0000 << " " <<  0.00000 << endl
+		 << 0.0547 << " " << -0.03717 << endl
+		 << 0.0625 << " " << -0.04192 << endl
+		 << 0.0703 << " " << -0.04775 << endl
+		 << 0.1016 << " " << -0.06434 << endl
+		 << 0.1719 << " " << -0.10150 << endl
+		 << 0.2813 << " " << -0.15662 << endl
+		 << 0.4531 << " " << -0.21090 << endl
+		 << 0.5000 << " " << -0.20581 << endl
+		 << 0.6172 << " " << -0.13641 << endl
+		 << 0.7344 << " " <<  0.00332 << endl
+		 << 0.8516 << " " <<  0.23151 << endl
+		 << 0.9531 << " " <<  0.68717 << endl
+		 << 0.9609 << " " <<  0.73722 << endl
+		 << 0.9688 << " " <<  0.78871 << endl
+		 << 0.9766 << " " <<  0.84123 << endl
+		 << 1.0000 << " " <<  1.00000 << endl;
+    } else if (Re == 400.0) {
+      Out_File_u << 0.0000 << " " <<  0.00000 << endl
+		 << 0.0547 << " " << -0.08186 << endl
+		 << 0.0625 << " " << -0.09266 << endl
+		 << 0.0703 << " " << -0.10338 << endl
+		 << 0.1016 << " " << -0.14612 << endl
+		 << 0.1719 << " " << -0.24299 << endl
+		 << 0.2813 << " " << -0.32726 << endl
+		 << 0.4531 << " " << -0.17119 << endl
+		 << 0.5000 << " " << -0.11477 << endl
+		 << 0.6172 << " " <<  0.02135 << endl
+		 << 0.7344 << " " <<  0.16256 << endl
+		 << 0.8516 << " " <<  0.29093 << endl
+		 << 0.9531 << " " <<  0.55892 << endl
+		 << 0.9609 << " " <<  0.61756 << endl
+		 << 0.9688 << " " <<  0.68439 << endl
+		 << 0.9766 << " " <<  0.75837 << endl
+		 << 1.0000 << " " <<  1.00000 << endl;
+    }
+    // Output a zone corresponding to the v-velocity component at the
+    // geometric centre of the cavity.
+    Out_File_v << "ZONE T = \"v-velocity"
+	       << "\" \\ \n"
+	       << "I = " << 17 << " \\ \n"
+	       << "J = " << 1 << " \\ \n"
+	       << "F = POINT \\ \n";
+    if (Re == 100.0) {
+      Out_File_v << 0.0000 << " " <<  0.00000 << endl
+		 << 0.0625 << " " <<  0.09233 << endl
+		 << 0.0703 << " " <<  0.10091 << endl
+		 << 0.0781 << " " <<  0.10890 << endl
+		 << 0.0938 << " " <<  0.12317 << endl
+		 << 0.1563 << " " <<  0.16077 << endl
+		 << 0.2266 << " " <<  0.17507 << endl
+		 << 0.2344 << " " <<  0.17527 << endl
+		 << 0.5000 << " " <<  0.05454 << endl
+		 << 0.8047 << " " << -0.24533 << endl
+		 << 0.8594 << " " << -0.22445 << endl
+		 << 0.9063 << " " << -0.16914 << endl
+		 << 0.9453 << " " << -0.10313 << endl
+		 << 0.9531 << " " << -0.08864 << endl
+		 << 0.9609 << " " << -0.07391 << endl
+		 << 0.9688 << " " << -0.05906 << endl
+		 << 1.0000 << " " <<  0.00000 << endl;
+    } else if (Re == 400.0) {
+      Out_File_v << 0.0000 << " " <<  0.00000 << endl
+		 << 0.0625 << " " <<  0.18360 << endl
+		 << 0.0703 << " " <<  0.19713 << endl
+		 << 0.0781 << " " <<  0.20920 << endl
+		 << 0.0938 << " " <<  0.22965 << endl
+		 << 0.1563 << " " <<  0.28124 << endl
+		 << 0.2266 << " " <<  0.30203 << endl
+		 << 0.2344 << " " <<  0.30174 << endl
+		 << 0.5000 << " " <<  0.05186 << endl
+		 << 0.8047 << " " << -0.38598 << endl
+		 << 0.8594 << " " << -0.44993 << endl
+		 << 0.9063 << " " << -0.33827 << endl
+		 << 0.9453 << " " << -0.22847 << endl
+		 << 0.9531 << " " << -0.19254 << endl
+		 << 0.9609 << " " << -0.15663 << endl
+		 << 0.9688 << " " << -0.12146 << endl
+		 << 1.0000 << " " <<  0.00000 << endl;
+    }
+  }
+
+  if (fabs(SolnBlk.Grid.nodeSE(SolnBlk.ICu,SolnBlk.JCl).X.x) < TOLER*TOLER) {
+    Out_File_u << "ZONE T =  \"u-velocity " << Block_Number
+	       << "\" \\ \n"
+	       << "I = " << (SolnBlk.JCu+1)-(SolnBlk.JCl-1) << " \\ \n"
+	       << "J = " << 1 << " \\ \n"
+	       << "F = POINT \\ \n";
+    for (int j = SolnBlk.JCl; j <= SolnBlk.JCu+1; j++) {
+      Out_File_u << SolnBlk.Grid.nodeSE(SolnBlk.ICu,j).X.y/length + HALF << " "
+		 << SolnBlk.WnSE(SolnBlk.ICu,j).v.x/Vwall << endl;
+    }
+  }
+  if (fabs(SolnBlk.Grid.nodeSW(SolnBlk.ICl,SolnBlk.JCl).X.y) < TOLER*TOLER) {
+    Out_File_v << "ZONE T =  \"v-velocity " << Block_Number
+	       << "\" \\ \n"
+	       << "I = " << (SolnBlk.ICu+1)-(SolnBlk.ICl-1) << " \\ \n"
+	       << "J = " << 1 << " \\ \n"
+	       << "F = POINT \\ \n";
+    for (int i = SolnBlk.ICl; i <= SolnBlk.ICu+1; i++) {
+      Out_File_v << SolnBlk.Grid.nodeSW(i,SolnBlk.JCl).X.x/length + HALF << " "
+		 << SolnBlk.WnSW(i,SolnBlk.JCl).v.y/Vwall << endl;
+    }
+  }
+
+}
+
+/********************************************************
+ * Routine: Output_Tecplot                              *
+ *                                                      *
+ * Writes the solution values at the nodes of the       *
+ * specified quadrilateral solution block to the        *
+ * specified output stream suitable for plotting with   *
+ * TECPLOT.                                             *
+ *                                                      *
+ ********************************************************/
+void Output_Quasi3D_Tecplot(Chem2D_Quad_Block &SolnBlk,
+			    Chem2D_Input_Parameters &IP,
+			    const int Number_of_Time_Steps,
+			    const double &Time,
+			    const int Block_Number,
+			    const int Output_Title,
+			    ostream &Out_File) {
+
+  Chem2D_pState W_node;
+  int numberofrotations = 360/5;
+  int numberofnodes = ((SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1)*
+		       (SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1));
+
+  if (SolnBlk.Flow_Type != FLOWTYPE_INVISCID) {
+    Viscous_Calculations(SolnBlk);
+  }
+
+  
+  // Ensure boundary conditions are updated before evaluating
+  // solution at the nodes.
+  BCs(SolnBlk,IP);
+
+  // Output node solution data.  
+  Out_File << setprecision(14);
+  if (Output_Title) {
+    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Chem2D Solution, "
+	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
+	     << ", Time = " << Time
+	     << "\"" << "\n"
+	     << "VARIABLES = \"x\" \\ \n"
+	     << "\"y\" \\ \n" 
+	     << "\"z\" \\ \n"
+	     << "\"rho\" \\ \n"
+	     << "\"u\" \\ \n"
+	     << "\"v\" \\ \n"
+             << "\"w\" \\ \n"
+	     << "\"p\" \\ \n";
+    //n species mass fractions names
+    for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
+      Out_File <<"\"c_"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
+    }  
+    //   Viscous Terms 
+    Out_File << "\"qflux_x\" \\ \n"  
+	     << "\"qflux_y\" \\  \n"   
+	     << "\"Tau_xx\" \\  \n"  //rr -axisymmetric
+	     << "\"Tau_xy\" \\  \n"  //rz
+	     << "\"Tau_yy\" \\  \n"  //zz
+	     << "\"Tau_zz\" \\  \n"
+	     << "\"T\" \\  \n" 
+	    << "\"R\" \\  \n"
+	    << "\"M\" \\  \n"
+            << "\"viscosity\" \\  \n"
+            << "\"thermal conduct\" \\  \n";
+  }
+
+  Out_File << "ZONE T =  \"Block Number = " << Block_Number 
+	    << "\" \\ \n"
+	   << "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1 << " \\ \n"
+	   << "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1 << " \\ \n"
+	   << "K = " << numberofrotations+1 << " \\ \n"
+	   << "DATAPACKING = POINT \\ \n";    
+  for (int nr = 0; nr <= numberofrotations; nr++) { 
+    for (int j = SolnBlk.Grid.JNl; j <= SolnBlk.Grid.JNu; j++) {
+      for (int i = SolnBlk.Grid.INl; i <= SolnBlk.Grid.INu; i++) { 
+     
+	W_node = SolnBlk.Wn(i,j);           
+	Out_File.setf(ios::scientific);  
+	Out_File << " " << SolnBlk.Grid.Node[i][j].X.x*sin(TWO*PI*double(nr)/double(numberofrotations))
+		 << " " << SolnBlk.Grid.Node[i][j].X.y
+		 << " " << SolnBlk.Grid.Node[i][j].X.x*cos(TWO*PI*double(nr)/double(numberofrotations))
+		 << " " << W_node.rho
+		 << " " << W_node.v.x*sin(TWO*PI*double(nr)/double(numberofrotations))
+		 << " " << W_node.v.y
+		 << " " << W_node.v.x*cos(TWO*PI*double(nr)/double(numberofrotations))
+		 << " " << W_node.p;
+	//Species
+	for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
+	  Out_File <<" "<<SolnBlk.W[i][j].spec[i].c;
+	}  
+	
+	Out_File << " " << W_node.qflux<< " " <<W_node.tau
+		 << " " << W_node.T()<< " " << W_node.Rtot()
+		 << " " << W_node.v.abs()/W_node.a() 
+		 << " " << W_node.mu() << " " << W_node.kappa() 
+		 << endl;
+      }
+    }
+  }
+  
+  Out_File << setprecision(6);
+
+
+}
+
+/**********************************************************************
+ * Routine: Output_Quasi3D_Tecplot                                    *
+ *                                                                    *
+ * Writes the solution values at nodes of the positive cells for a 1D *
+ * array of 2D quadrilateral multi-block solution blocks to the       *
+ * specified output data file(s) in a quasi-3D format suitable for    *
+ * plotting a with TECPLOT.  Returns a non-zero value if cannot write *
+ * any of the TECPLOT solution files.                                 *
+ *                                                                    *
+ **********************************************************************/
+int Output_Quasi3D_Tecplot(Chem2D_Quad_Block *Soln_ptr,
+			   AdaptiveBlock2D_List &Soln_Block_List,
+			   Chem2D_Input_Parameters &IP,
+			   const int Number_of_Time_Steps,
+			   const double &Time) {
+
+  // Only create output file if the number of blocks used by the 
+  // current processor is greater than zero.
+  if (Soln_Block_List.Nused() == 0) return 0;
+  
+  int i, i_output_title;
+  char prefix[256], extension[256], output_file_name[256];
+  char *output_file_name_ptr;
+  ofstream output_file;
+
+  // Determine prefix of output data file names.
+  i = 0;
+  while (1) {
+    if (IP.Output_File_Name[i] == ' ' ||
+	IP.Output_File_Name[i] == '.') break;
+    prefix[i] = IP.Output_File_Name[i];
+    i = i + 1;
+    if (i > strlen(IP.Output_File_Name)) break;
+  }
+  prefix[i] = '\0';
+  strcat(prefix,"_quasi3D_cpu");
+
+  // Determine output data file name for this processor.
+  sprintf(extension,"%.6d",Soln_Block_List.ThisCPU);
+  strcat(extension,".dat");
+  strcpy(output_file_name,prefix);
+  strcat(output_file_name,extension);
+  output_file_name_ptr = output_file_name;
+  
+  // Open the output data file.
+  output_file.open(output_file_name_ptr,ios::out);
+  if (output_file.bad()) return 1;
+  
+  // Write the solution data for each solution block.
+  i_output_title = 1;
+  for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
+    if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
+      Output_Quasi3D_Tecplot(Soln_ptr[nb],
+			     IP,
+			     Number_of_Time_Steps, 
+			     Time,
+			     Soln_Block_List.Block[nb].gblknum,
+			     i_output_title,
+			     output_file);
+      if (i_output_title) i_output_title = 0;
+    }
+  }
+  
+  // Close the output data file.
+  output_file.close();
+
+  // Writing of output data files complete.  Return zero value.
+  return 0;
+
+}

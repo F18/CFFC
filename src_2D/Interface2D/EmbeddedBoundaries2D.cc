@@ -222,6 +222,12 @@ int main(int num_arg, char *arg_ptr[]) {
                                              Dusty2D_Quad_Block, 
                                              Dusty2D_Input_Parameters>(Input_File_Name_ptr,
  								       batch_flag);
+   } else if (strcmp(Equation_Type,"Gaussian2D") == 0) {
+     error_flag = EmbeddedBoundaries2D_Solver<Gaussian2D_cState,
+                                              Gaussian2D_pState,
+                                              Gaussian2D_Quad_Block, 
+                                              Gaussian2D_Input_Parameters>(Input_File_Name_ptr,
+									   batch_flag);
   } else {
     if (CFDkit_Primary_MPI_Processor() && !batch_flag)
       cout << "\n\n EmbeddedBoundaries2D ERROR: Specified equation set is not supported.\n";

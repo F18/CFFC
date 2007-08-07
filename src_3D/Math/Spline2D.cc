@@ -327,7 +327,7 @@ void Broadcast_Spline(Spline2D &S) {
  
     /* Broadcast the number of spline points. */
 
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       npts = S.np;
     } /* endif */
 
@@ -336,7 +336,7 @@ void Broadcast_Spline(Spline2D &S) {
     /* On non-primary MPI processors, allocate (re-allocate) 
        memory for the spline as necessary. */
 
-    if (!CFDkit_Primary_MPI_Processor()) {
+    if (!CFFC_Primary_MPI_Processor()) {
        if (S.np != npts) {
           if (S.np != 0) S.deallocate();
           if (npts >= 2) S.allocate(npts);
@@ -354,7 +354,7 @@ void Broadcast_Spline(Spline2D &S) {
        buffer = new double[3*npts];
        i_buffer = new int[2*npts];
 
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
           i_buffer_size = 0;
           for ( i = 0; i <= S.np-1; ++i ) {
@@ -373,7 +373,7 @@ void Broadcast_Spline(Spline2D &S) {
        MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
        MPI::COMM_WORLD.Bcast(i_buffer, i_buffer_size, MPI::INT, 0);
 
-       if (!CFDkit_Primary_MPI_Processor()) {
+       if (!CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
           i_buffer_size = 0;
           for ( i = 0; i <= S.np-1; ++i ) {
@@ -416,7 +416,7 @@ void Broadcast_Spline(Spline2D &S,
  
     /* Broadcast the number of spline points. */
 
-    if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+    if (CFFC_MPI::This_Processor_Number == Source_CPU) {
       npts = S.np;
     } /* endif */
 
@@ -425,7 +425,7 @@ void Broadcast_Spline(Spline2D &S,
     /* On non-source MPI processors, allocate (re-allocate) 
        memory for the spline as necessary. */
 
-    if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
        if (S.np != npts) {
           if (S.np != 0) S.deallocate();
           if (npts >= 2) S.allocate(npts);
@@ -443,7 +443,7 @@ void Broadcast_Spline(Spline2D &S,
        buffer = new double[3*npts];
        i_buffer = new int[2*npts];
 
-       if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+       if (CFFC_MPI::This_Processor_Number == Source_CPU) {
           buffer_size = 0;
           i_buffer_size = 0;
           for ( i = 0; i <= S.np-1; ++i ) {
@@ -462,7 +462,7 @@ void Broadcast_Spline(Spline2D &S,
        Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
        Communicator.Bcast(i_buffer, i_buffer_size, MPI::INT, Source_Rank);
 
-       if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+       if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
           buffer_size = 0;
           i_buffer_size = 0;
           for ( i = 0; i <= S.np-1; ++i ) {

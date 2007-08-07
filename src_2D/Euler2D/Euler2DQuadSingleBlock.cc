@@ -2431,21 +2431,15 @@ void Set_Global_TimeStep(Euler2D_Quad_Block &SolnBlk,
  * for steady state problems.                           *
  *                                                      *
  ********************************************************/
-double L1_Norm_Residual(Euler2D_Quad_Block &SolnBlk) {
+double L1_Norm_Residual(Euler2D_Quad_Block &SolnBlk, const int &norm) {
 
-    int i, j;
-    double l1_norm;
-
-    l1_norm = ZERO;
-
-    for ( j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
-       for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-          l1_norm += fabs(SolnBlk.dUdt[i][j][0][SolnBlk.residual_variable]);
-       } /* endfor */
-    } /* endfor */
-
+    double l1_norm(ZERO);
+    for ( int j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
+       for ( int i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
+          l1_norm += fabs(SolnBlk.dUdt[i][j][0][norm]);
+       } 
+    } 
     return (l1_norm);
-
 }
 
 /********************************************************
@@ -2457,22 +2451,19 @@ double L1_Norm_Residual(Euler2D_Quad_Block &SolnBlk) {
  * for steady state problems.                           *
  *                                                      *
  ********************************************************/
-double L2_Norm_Residual(Euler2D_Quad_Block &SolnBlk) {
+double L2_Norm_Residual(Euler2D_Quad_Block &SolnBlk, const int &norm) {
 
-    int i, j;
-    double l2_norm;
 
-    l2_norm = ZERO;
-
-    for ( j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
-       for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-          l2_norm += sqr(SolnBlk.dUdt[i][j][0][SolnBlk.residual_variable]);
-       } /* endfor */
-    } /* endfor */
-
-    l2_norm = sqrt(l2_norm);
-
-    return (l2_norm);
+  double l2_norm(ZERO);
+  
+  for (int j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
+    for (int i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
+      l2_norm += sqr(SolnBlk.dUdt[i][j][0][norm]);
+    } 
+  } 
+  l2_norm = sqrt(l2_norm);
+  
+  return (l2_norm);
 
 }
 
@@ -2485,20 +2476,16 @@ double L2_Norm_Residual(Euler2D_Quad_Block &SolnBlk) {
  * for steady state problems.                           *
  *                                                      *
  ********************************************************/
-double Max_Norm_Residual(Euler2D_Quad_Block &SolnBlk) {
+double Max_Norm_Residual(Euler2D_Quad_Block &SolnBlk, const int &norm) {
 
-    int i, j;
-    double max_norm;
+  double max_norm(ZERO);
 
-    max_norm = ZERO;
-
-    for ( j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
-       for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-          max_norm = max(max_norm, fabs(SolnBlk.dUdt[i][j][0][SolnBlk.residual_variable]));
-       } /* endfor */
-    } /* endfor */
-
-    return (max_norm);
+  for (int j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
+    for (int i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
+      max_norm = max(max_norm, fabs(SolnBlk.dUdt[i][j][0][norm]));
+    } 
+  } 
+  return (max_norm);
 
 }
 

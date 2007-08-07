@@ -481,7 +481,7 @@ Set_Default_Input_Parameters(void) {
    
    Line_Number = 0;
    
-   Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+   Number_of_Processors = CFFC_MPI::Number_of_Processors;
    //  Number_of_Processors = 1;
    Number_of_Blocks_Per_Processor = 100;      
 
@@ -2161,8 +2161,8 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
                           1, 
                           MPI::INT, 0); 
 
-    if (!CFDkit_Primary_MPI_Processor()) {
-       Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+    if (!CFFC_Primary_MPI_Processor()) {
+       Number_of_Processors = CFFC_MPI::Number_of_Processors;
     } /* endif */
     MPI::COMM_WORLD.Bcast(&(Number_of_Blocks_Per_Processor), 
                           1, 
@@ -2182,7 +2182,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
                          MPI::CHAR, 0);
     
    //delete current dynamic memory before changing num_species
-   if(!CFDkit_Primary_MPI_Processor()) {   
+   if(!CFFC_Primary_MPI_Processor()) {   
       Deallocate();
    } 
    //number of species
@@ -2190,7 +2190,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
                          1, 
                          MPI::INT, 0);
    //set up new dynamic memory
-   if(!CFDkit_Primary_MPI_Processor()) {   
+   if(!CFFC_Primary_MPI_Processor()) {   
       Allocate();
    } 
 
@@ -2207,7 +2207,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
 			    MPI::CHAR, 0);
     }
    //set recaction and species parameters
-   if (!CFDkit_Primary_MPI_Processor()) {      
+   if (!CFFC_Primary_MPI_Processor()) {      
       react_name = React_Name;
       for (int i = 0; i < num_species; i++) {
          multispecies[i] = Multispecies[i];  
@@ -2247,7 +2247,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
       Uo = Wo.U();
    } 
    
-   if(!CFDkit_Primary_MPI_Processor()) {   
+   if(!CFFC_Primary_MPI_Processor()) {   
       Wo.v.x = Mach_Number*Wo.a()*cos(TWO*PI*Flow_Angle/360.00);
       Wo.v.y = Mach_Number*Wo.a()*sin(TWO*PI*Flow_Angle/360.00);
       Wo.v.z = Mach_Number*Wo.a()*sin(TWO*PI*Flow_Angle/360.00);

@@ -56,13 +56,14 @@ using namespace std;
 #include "AdvectDiffuse2D/AdvectDiffuse2DQuad.h"
 #include "AdvectDiffuse2D/AdvectDiffuse2DQuad_NKS.h"
 #include "Euler2D/Euler2DQuad.h"
-#include "Euler2D/Euler2DQuad_NKS.h"
 #include "Dusty2D/Dusty2DQuad.h"
 #include "Ion5Moment2D/Ion5Moment2DQuad.h"
 #include "Electrostatic2D/Electrostatic2DQuad.h"
 #include "LevelSet2D/LevelSet2DQuad.h"
 #include "Chem2D/Chem2DQuad.h"
 #include "NavierStokes2D/NavierStokes2DQuad.h"
+#include "Gaussian2D/Gaussian2DCartesian.h"
+#include "Gaussian2D/Gaussian2DQuad.h"
 #include "MPI/MPI.h"
 #include "ICEM/ICEMCFD.h"
 
@@ -207,7 +208,7 @@ int main(int num_arg, char *arg_ptr[]) {
      cout << "Built using " << CFDkit_Version() << "\n";
      cout << CFDkit_Version_MPI() << "\n";
      cout << ICEMCFD_Version() << "\n";
-     cout << "Built using MV++, SparseLib++, IML++, and BPKIT Libraries\n";
+     cout << "Built using MV++, SparseLib++, IML++, BPKIT, and FFTW Libraries\n";
      cout << "Built using CEA Thermodynamic and Transport Data, NASA Glenn Research Center\n";
      cout.flush();
      if (version_flag) return (0);
@@ -317,7 +318,19 @@ int main(int num_arg, char *arg_ptr[]) {
   } else if (strcmp(Equation_Type, "NavierStokes2D") == 0) {
       error_flag = NavierStokes2DQuadSolver(Input_File_Name_ptr,
 			  	            batch_flag);
+  /* Gaussian2D_Cartesian */
+  if (strcmp(Equation_Type, "Gaussian2D_Cartesian") == 0){
+    if(CFDkit_Primary_MPI_Processor()) {
+      error_flag = Gaussian2DCartesianSolver(Input_File_Name_ptr,
+					     batch_flag);
+    } /* endif */
+    CFDkit_Broadcast_MPI(&error_flag, 1);
+  }
 
+  /* Gaussian2D */
+  } else if(strcmp(Equation_Type, "Gaussian2D") == 0){
+      error_flag = Gaussian2DQuadSolver(Input_File_Name_ptr,
+	  				       batch_flag);
   } /* endif */
 
   if (error_flag) {

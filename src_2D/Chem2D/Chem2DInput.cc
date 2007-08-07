@@ -1,6 +1,8 @@
 /****************** Chem2DInput.cc ************************************
   Constructors for the Chem2DInput class.
 
+NEW
+
   associated header file:  Chem2DInput.h
 ***********************************************************************/
 
@@ -63,15 +65,18 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.Time_Accurate = 0;
     IP.Local_Time_Stepping = SCALAR_LOCAL_TIME_STEPPING;
     IP.Preconditioning = 0; //default off
+    IP.Dual_Time_Stepping = 0; //default off
     IP.Maximum_Number_of_Time_Steps = 100;
     IP.N_Stage = 1;
     IP.CFL_Number = 0.5;
     IP.Time_Max = ZERO;
-
-    // Residual variable:
-    IP.i_Residual_Variable = 1;
-
-    // Residual smoothing:
+    
+    /* Dual time stepping */
+    IP.Physical_CFL_Number = 0.9;
+    IP.dTime = ZERO;
+    IP.Max_Inner_Steps = 1;
+    IP.first_step = 0;
+    
     IP.Residual_Smoothing = 0;
     IP.Residual_Smoothing_Epsilon = ZERO;
     IP.Residual_Smoothing_Gauss_Seidel_Iterations = 2;
@@ -109,9 +114,13 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
 
     IP.Mach_Number = ZERO;
     IP.Mach_Number_Reference = ONE;  //for precondtioning
+    IP.Mach_Number_Reference_target = ONE;
     IP.Flow_Angle = ZERO; 
     IP.Global_Schmidt = ONE;
-
+    IP.Reynolds_Number = 500000.0;
+    IP.Kinematic_Viscosity_Wall = 1.4590E-5;
+    IP.i_Grid_Level = 0;
+    
     /******************************************/
     /********** CHEM2D SPECIFIC ***************/
     //define multispecies with no reactions.
@@ -132,9 +141,9 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
    
     //Get Species parameters and set default initial values
     IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFDkit_Path,
-			   IP.debug_level,IP.Mach_Number_Reference,IP.Schmidt); 
+			   IP.Mach_Number_Reference,IP.Schmidt); 
     IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFDkit_Path,
-			   IP.debug_level,IP.Mach_Number_Reference,IP.Schmidt);
+			   IP.Mach_Number_Reference,IP.Schmidt);
 
     //Air at STD_ATM
     IP.Pressure = IP.Wo.p;
@@ -143,26 +152,30 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.Wo.v.y =IP.Mach_Number*IP.Wo.a()*sin(TWO*PI*IP.Flow_Angle/360.00);
     IP.Wo.set_initial_values(IP.mass_fractions);
     IP.Uo.set_initial_values(IP.mass_fractions);
-
+    IP.Wo.k = ZERO;
+    IP.Wo.omega = ZERO;
     IP.Uo = U(IP.Wo);   
+    IP.Heat_Source = ZERO;
+    
     /***** END CHEM2D SPECFIC *****************/
     /******************************************/
     //BC
-
     IP.Moving_wall_velocity = ZERO; 
-
+    IP.Re_lid = 100.0;
+    IP.Pressure_Gradient = ZERO; 
     /* Flow type */
     string_ptr = "Inviscid";
     strcpy(IP.Flow_Type, string_ptr);
-    IP.FlowType = FLOWTYPE_LAMINAR;
-    IP.Wo.set_flow_type(IP.FlowType); 
-    IP.Uo.set_flow_type(IP.FlowType); 
+    IP.FlowType = FLOWTYPE_INVISCID;
 
     /* Flow geometry type */
     string_ptr = "Planar";
     strcpy(IP.Flow_Geometry_Type, string_ptr);
     IP.Axisymmetric = 0;
     IP.Gravity = 0;  //default sans gravity
+
+    IP.BluffBody_Data_Usage = 0; 
+    IP.Wall_Boundary_Treatments = 0; 
 
     // Turbulence parameters:
     string_ptr = "Direct_Integration";
@@ -219,12 +232,24 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.Orifice_Radius = ONE;
     IP.Wedge_Angle = 25.0;
     IP.Wedge_Length = HALF;
-    IP.Smooth_Bump = OFF;
+    IP.Smooth_Bump = ON;
 
     IP.X_Shift = Vector2D_ZERO;
     IP.X_Scale = ONE;
     IP.X_Rotate = ZERO;
-
+    IP.Length_Shroud = 0.1;
+    IP.Radius_Shroud = 0.043;
+    IP.Length_BluffBody = 0.04;
+    IP.Radius_BluffBody = 0.02 ;
+    IP.Radius_Orifice = 0.001;
+    IP.Radius_Inlet_Pipe = 0.0508;
+    IP.Radius_Combustor_Tube = 0.0762;
+    IP.Length_Inlet_Pipe = 0.127;
+    IP.Length_Combustor_Tube = 0.508;
+    
+    IP.BluffBody_Coflow_Air_Velocity = 20.0;
+    IP.BluffBody_Coflow_Fuel_Velocity = 61.0; 
+  
     // Boundary conditions:
     string_ptr = "Off";
     strcpy(IP.Boundary_Conditions_Specified,string_ptr);
@@ -261,15 +286,21 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.Threshold_for_Coarsening = 0.10;
     IP.Number_of_Refinement_Criteria = 6;
     IP.Refinement_Criteria_Gradient_Density = ON;
-    IP.Refinement_Criteria_Divergence_Velocity = ON;
-    IP.Refinement_Criteria_Curl_Velocity = ON;
-    IP.Refinement_Criteria_Gradient_Temperature = ON;
-    IP.Refinement_Criteria_Gradient_CH4 = ON;
-    IP.Refinement_Criteria_Gradient_CO2 = ON;
+    IP.Refinement_Criteria_Divergence_Velocity = OFF;
+    IP.Refinement_Criteria_Curl_Velocity = OFF;
+    IP.Refinement_Criteria_Gradient_Temperature = OFF;
+    IP.Refinement_Criteria_Gradient_CH4 = OFF;
+    IP.Refinement_Criteria_Gradient_CO2 = OFF;
 
     // Smooth quad block flag:
     IP.i_Smooth_Quad_Block = ON;
 
+    // Default Solver Type
+    IP.Solver_Type = EXPLICIT;
+  
+    IP.Morton = 0;
+    IP.Morton_Reordering_Frequency = 1000000;
+ 
     string_ptr = "outputfile.dat";
     strcpy(IP.Output_File_Name, string_ptr);
 
@@ -289,9 +320,6 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.i_Output_Format = IO_TECPLOT;
     IP.Restart_Solution_Save_Frequency = 1000;
 
-    // Default output progress frequency:
-    IP.Output_Progress_Frequency = 50;
-
     //CHEM2D
     IP.Time_Accurate_Plot_Frequency = 0;
 
@@ -299,15 +327,20 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     strcpy(IP.Next_Control_Parameter, string_ptr);
 
     IP.Line_Number = 0;
-
+   
     IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
     IP.Number_of_Blocks_Per_Processor = 10;      
 
     // Freezing_Limiter
     IP.Freeze_Limiter = 0;
+   
+    IP.i_Residual_Variable = 1; //density
 
     // Limiter_switch
     IP.Freeze_Limiter_Residual_Level = 1e-4;
+
+    // Relazation for update stage in NKS
+    IP.Relaxation_multiplier = 1.0;
 }
 
 /********************************************************
@@ -352,9 +385,15 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Time_Max), 
                           1, 
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.i_Residual_Variable),
-			  1,
-			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.dTime), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Physical_CFL_Number), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Max_Inner_Steps), 
+                          1, 
+                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Residual_Smoothing), 
                           1, 
                           MPI::INT, 0);
@@ -423,6 +462,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.i_ICs), 
                           1, 
                           MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.i_Grid_Level), 
+                          1, 
+                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Pressure), 
                           1, 
                           MPI::DOUBLE, 0);
@@ -435,10 +477,15 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Mach_Number_Reference), 
 			  1, 
 			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Mach_Number_Reference_target), 
+			  1, 
+			  MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Flow_Angle), 
                           1, 
                           MPI::DOUBLE, 0);   
-
+    MPI::COMM_WORLD.Bcast(&(IP.Re_lid),
+			  1,
+			  MPI::DOUBLE,0);
     /*********************************************************
      ******************* CHEM2D SPECIFIC *********************
      *********************************************************/
@@ -461,7 +508,7 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     //set up new dynamic memory
     if(!CFDkit_Primary_MPI_Processor()) {   
       IP.Allocate();
-    }
+    } 
 
     //species names & mass fractions
     for(int i =0; i < IP.num_species; i++){
@@ -493,9 +540,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
       //set the data for each
       IP.get_cfdkit_path();
       IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFDkit_Path,
-			     IP.debug_level,IP.Mach_Number_Reference,IP.Schmidt); 
+			     IP.Mach_Number_Reference,IP.Schmidt); 
       IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFDkit_Path,
-			     IP.debug_level,IP.Mach_Number_Reference,IP.Schmidt);
+			     IP.Mach_Number_Reference,IP.Schmidt);
       IP.Wo.set_initial_values(IP.mass_fractions);
       IP.Uo.set_initial_values(IP.mass_fractions);
    
@@ -530,6 +577,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Axisymmetric), 
                           1, 
                           MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Wall_Boundary_Treatments), 
+                          1, 
+                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Global_Schmidt), 
                           1, 
                           MPI::INT, 0);    
@@ -541,11 +591,26 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
 			  MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Preconditioning), 
                           1, 
-			  MPI::INT, 0);
+			  MPI::INT, 0); 
+    MPI::COMM_WORLD.Bcast(&(IP.Dual_Time_Stepping), 
+                          1, 
+			  MPI::INT, 0); 
+    MPI::COMM_WORLD.Bcast(&(IP.BluffBody_Data_Usage), 
+                          1, 
+                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Moving_wall_velocity), 
                           1, 
 			  MPI::DOUBLE, 0);
 
+    MPI::COMM_WORLD.Bcast(&(IP.Pressure_Gradient), 
+                          1, 
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Reynolds_Number), 
+                          1, 
+			  MPI::DOUBLE, 0);
+   MPI::COMM_WORLD.Bcast(&(IP.Kinematic_Viscosity_Wall), 
+                          1, 
+			  MPI::DOUBLE, 0);
     /**************************************/
     MPI::COMM_WORLD.Bcast(IP.Grid_Type, 
                           INPUT_PARAMETER_LENGTH_CHEM2D, 
@@ -562,14 +627,14 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Number_of_Cells_Jdir),
                           1, 
                           MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Number_of_Ghost_Cells),
-                          1, 
-                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Number_of_Blocks_Idir), 
                           1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Number_of_Blocks_Jdir), 
                           1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Number_of_Ghost_Cells), 
+			  1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Box_Width), 
                           1, 
@@ -615,6 +680,43 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
 			  MPI::INT,0);
     MPI::COMM_WORLD.Bcast(&(IP.Grain_Radius),
 			  1,
+                          MPI::DOUBLE, 0);    
+    MPI::COMM_WORLD.Bcast(&(IP.Length_Shroud), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Radius_Shroud), 
+                          1, 
+                          MPI::DOUBLE, 0);
+
+    MPI::COMM_WORLD.Bcast(&(IP.Length_BluffBody), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Radius_BluffBody), 
+                          1, 
+                          MPI::DOUBLE, 0);
+
+    MPI::COMM_WORLD.Bcast(&(IP.Radius_Orifice), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.BluffBody_Coflow_Air_Velocity), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.BluffBody_Coflow_Fuel_Velocity), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    
+    MPI::COMM_WORLD.Bcast(&(IP.Radius_Inlet_Pipe), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Radius_Combustor_Tube), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    
+    MPI::COMM_WORLD.Bcast(&(IP.Length_Inlet_Pipe), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Length_Combustor_Tube), 
+                          1, 
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Cylinder_Radius), 
                           1, 
@@ -768,8 +870,14 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     // Smooth quad block flag:
     MPI::COMM_WORLD.Bcast(&(IP.i_Smooth_Quad_Block),
 			  1,
-			  MPI::INT,0);
-
+			  MPI::INT,0); 
+    // Morton Ordering Parameters
+    MPI::COMM_WORLD.Bcast(&(IP.Morton), 
+                          1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Morton_Reordering_Frequency),
+                          1,
+                          MPI::INT,0);
     // File Names
     MPI::COMM_WORLD.Bcast(IP.Output_File_Name, 
                           INPUT_PARAMETER_LENGTH_CHEM2D, 
@@ -803,6 +911,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     // Multigrid Related Parameters
     IP.Multigrid_IP.Broadcast_Input_Parameters();
     
+    // NKS Parameters
+    IP.NKS_IP.Broadcast_Input_Parameters();
+
     if (!CFDkit_Primary_MPI_Processor()) {
        IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
     } /* endif */
@@ -815,14 +926,18 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
 			  1, 
 			  MPI::INT, 0);
 
+    MPI::COMM_WORLD.Bcast(&(IP.i_Residual_Variable), 
+			  1, 
+			  MPI::INT, 0);
     // Freeze_Limiter_Residual_Level
     MPI::COMM_WORLD.Bcast(&(IP.Freeze_Limiter_Residual_Level),
                           1, 
                           MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Relaxation_multiplier),
+			  1, 
+                          MPI::DOUBLE, 0);
 
     // Reset the static variables.
-    IP.Wo.set_flow_type(IP.FlowType);
-    IP.Uo.set_flow_type(IP.FlowType);
     IP.Wo.set_turbulence_variables(IP.C_constant,
 				   IP.von_Karman_Constant,
 				   IP.yplus_sublayer,
@@ -885,11 +1000,15 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Time_Max), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
-    // Residual variable:
-    Communicator.Bcast(&(IP.i_Residual_Variable),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    // Residual Smoothing:
+    Communicator.Bcast(&(IP.dTime), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Physical_CFL_Number), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Max_Inner_Steps), 
+                       1, 
+                       MPI::INT, Source_Rank);
     Communicator.Bcast(&(IP.Residual_Smoothing), 
                        1, 
                        MPI::INT, Source_Rank);
@@ -960,6 +1079,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.i_ICs), 
                        1, 
                        MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.i_Grid_Level), 
+                       1, 
+                       MPI::INT, Source_Rank);
     Communicator.Bcast(&(IP.Pressure), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
@@ -971,11 +1093,16 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
                        MPI::DOUBLE, Source_Rank); 
     Communicator.Bcast(&(IP.Mach_Number_Reference), 
                        1, 
+                       MPI::DOUBLE, Source_Rank); 
+    Communicator.Bcast(&(IP.Mach_Number_Reference_target), 
+                       1, 
                        MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.Flow_Angle), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
-
+    Communicator.Bcast(&(IP.Re_lid), 
+                       1, 
+		       MPI::DOUBLE,Source_Rank);
     /*********************************************************
      ******************* CHEM2D SPECIFIC *********************
      *********************************************************/
@@ -1027,9 +1154,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
       //set the data for each
       IP.get_cfdkit_path();
       IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFDkit_Path,
-			     IP.debug_level,IP.Mach_Number_Reference,IP.Schmidt); 
+			     IP.Mach_Number_Reference,IP.Schmidt); 
       IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFDkit_Path,
-			     IP.debug_level,IP.Mach_Number_Reference,IP.Schmidt);
+			     IP.Mach_Number_Reference,IP.Schmidt);
       IP.Wo.set_initial_values(IP.mass_fractions);
       IP.Uo.set_initial_values(IP.mass_fractions);
 
@@ -1064,6 +1191,12 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Axisymmetric), 
                        1, 
                        MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.Wall_Boundary_Treatments), 
+                       1, 
+                       MPI::INT, Source_Rank);
+//     Communicator.Bcast(&(IP.Stretch_Level), 
+//                        1, 
+//                        MPI::INT, Source_Rank);
     Communicator.Bcast(&(IP.Gravity), 
                        1, 
                        MPI::INT, Source_Rank);
@@ -1075,8 +1208,23 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
                        MPI::INT, Source_Rank);
     Communicator.Bcast(&(IP.Preconditioning), 
                        1, 
+                       MPI::INT, Source_Rank); 
+    Communicator.Bcast(&(IP.Dual_Time_Stepping), 
+                       1, 
+                       MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.BluffBody_Data_Usage), 
+                       1, 
                        MPI::INT, Source_Rank);
     Communicator.Bcast(&(IP.Moving_wall_velocity), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Pressure_Gradient), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Reynolds_Number), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Kinematic_Viscosity_Wall), 
 		       1, 
 		       MPI::DOUBLE, Source_Rank);
     /********************************************/
@@ -1148,7 +1296,43 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
 		       MPI::INT,Source_Rank);
     Communicator.Bcast(&(IP.Grain_Radius),
 		       1,
-		       MPI::DOUBLE,Source_Rank);
+		       MPI::DOUBLE,Source_Rank); 
+    Communicator.Bcast(&(IP.Length_Shroud), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Radius_Shroud), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Length_BluffBody), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Radius_BluffBody), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Radius_Orifice), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+
+    Communicator.Bcast(&(IP.BluffBody_Coflow_Air_Velocity), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    
+    Communicator.Bcast(&(IP.BluffBody_Coflow_Fuel_Velocity), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+
+    Communicator.Bcast(&(IP.Radius_Inlet_Pipe), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Radius_Combustor_Tube), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Length_Inlet_Pipe), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Length_Combustor_Tube), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.Cylinder_Radius), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
@@ -1303,7 +1487,13 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.i_Smooth_Quad_Block),
 		       1,
 		       MPI::INT,Source_Rank);
-
+    // Morton Ordering Parameters
+    Communicator.Bcast(&(IP.Morton), 
+                       1, 
+                       MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.Morton_Reordering_Frequency),
+                       1,
+                       MPI::INT,Source_Rank);
     // File Names
     Communicator.Bcast(IP.Output_File_Name, 
                        INPUT_PARAMETER_LENGTH_CHEM2D, 
@@ -1336,6 +1526,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     // Multigrid Related Parameters
     IP.Multigrid_IP.Broadcast_Input_Parameters(Communicator,
 					       Source_Rank);
+    // Multigrid Related Parameters
+    IP.NKS_IP.Broadcast_Input_Parameters(Communicator,
+					 Source_CPU);
 
     if (!(CFDkit_MPI::This_Processor_Number == Source_Rank)) {
        IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
@@ -1348,14 +1541,19 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
                        1, 
                        MPI::INT, Source_Rank);
 
+    Communicator.Bcast(&(IP.i_Residual_Variable), 
+                       1, 
+                       MPI::INT, Source_Rank);
+
     // Freeze_Limiter_Residual_Level
     Communicator.Bcast(&(IP.Freeze_Limiter_Residual_Level), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Relaxation_multiplier), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
 
     // Reset the static variables.
-    IP.Wo.set_flow_type(IP.FlowType);
-    IP.Uo.set_flow_type(IP.FlowType);
     IP.Wo.set_turbulence_variables(IP.C_constant,
 				   IP.von_Karman_Constant,
 				   IP.yplus_sublayer,
@@ -1433,7 +1631,11 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
            IP.N_Stage = 4;
        	   /* Multigrid */
        } else if (strcmp(IP.Time_Integration_Type, "Multigrid") == 0) {
-	   IP.i_Time_Integration = TIME_STEPPING_MULTIGRID;
+	   IP.i_Time_Integration = TIME_STEPPING_MULTIGRID;  
+	   // Jai's Dual Time Stepping
+//        } else if (strcmp(IP.Time_Integration_Type, "Dual_Time_Stepping") == 0) {
+// 	  IP.i_Time_Integration = TIME_STEPPING_DUAL_TIME_STEPPING;
+// 	  IP.Multigrid_IP.i_Dual_Time_Stepping = ON; 
        } else {
            IP.i_Time_Integration = TIME_STEPPING_EXPLICIT_EULER;
            IP.N_Stage = 1;
@@ -1490,6 +1692,8 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
           IP.i_Flux_Function = FLUX_FUNCTION_LINDE;
        } else if (strcmp(IP.Flux_Function_Type, "HLLC") == 0) {
           IP.i_Flux_Function = FLUX_FUNCTION_HLLC;
+       } else if (strcmp(IP.Flux_Function_Type, "AUSM_plus_up") == 0) {
+          IP.i_Flux_Function = FLUX_FUNCTION_AUSM_PLUS_UP;
        } else {
           IP.i_Flux_Function = FLUX_FUNCTION_ROE;
        } /* endif */
@@ -1554,9 +1758,7 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	 IP.BC_South = BC_WALL_VISCOUS_HEATFLUX;
        } else if (strcmp(IP.ICs_Type, "Couette") == 0 ){
 	 IP.i_ICs = IC_VISCOUS_COUETTE; 
-       } else if (strcmp(IP.ICs_Type, "Couette_with_Pressure_Gradient") == 0 ){
-	 IP.i_ICs = IC_VISCOUS_COUETTE_PRESSURE_GRADIENT;
-       /****************** CHEMD2D ******************************/
+      /****************** CHEMD2D ******************************/
        } else if (strcmp(IP.ICs_Type, "Mix") == 0) {
 	 IP.i_ICs = IC_GAS_MIX;
        } else if (strcmp(IP.ICs_Type, "Core_Flame") == 0 ){
@@ -1570,13 +1772,22 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        } else if (strcmp(IP.ICs_Type, "1DPremixedFlame") == 0 ){
 	 IP.i_ICs = IC_CHEM_1DFLAME;  
        } else if (strcmp(IP.ICs_Type, "Pipe_Flow") == 0) {
-          IP.i_ICs = IC_VISCOUS_PIPE_FLOW;
-       /**************** END - CHEMD2D **************************/
-       } else if (strcmp(IP.ICs_Type, "Restart") == 0) {
+          IP.i_ICs = IC_TURBULENT_PIPE_FLOW;
+       } else if (strcmp(IP.ICs_Type, "Coflow") == 0) {
+          IP.i_ICs = IC_TURBULENT_COFLOW;
+       }else if (strcmp(IP.ICs_Type, "Driven_Cavity_Flow") == 0) {
+          IP.i_ICs = IC_VISCOUS_DRIVEN_CAVITY_FLOW;
+       } else if (strcmp(IP.ICs_Type, "Turbulent_Dump_Combustor") == 0) {
+          IP.i_ICs = IC_TURBULENT_DUMP_COMBUSTOR;
+       }else if (strcmp(IP.ICs_Type, "Turbulent_Diffusion_Flame") == 0) {
+          IP.i_ICs = IC_TURBULENT_DIFFUSION_FLAME;
+       }else if (strcmp(IP.ICs_Type, "Turbulent_Free_Jet_Flame") == 0) {
+          IP.i_ICs = IC_FREE_JET_FLAME;
+       }else if (strcmp(IP.ICs_Type, "Restart") == 0) {
           IP.i_ICs = IC_RESTART;
        } else {
-          IP.i_ICs = IC_UNIFORM;
-       } /* endif */
+	 cerr<<"\n Not a vaild Initial Condition for Chem2D, check Chem2DInput.cc :  "<<IP.ICs_Type; exit(1);
+       } /* endif */ 
 
     } else if (strcmp(IP.Next_Control_Parameter, "Grid_Type") == 0) {
        i_command = 6;
@@ -1599,6 +1810,10 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
           IP.i_Grid = GRID_COUETTE;
           IP.Box_Width = ONE;
           IP.Box_Height = 0.001;
+       } else if (strcmp(IP.Grid_Type, "Testing") == 0) {
+          IP.i_Grid = GRID_TEST;
+          IP.Box_Width = ONE;
+          IP.Box_Height = ONE;
       } else if (strcmp(IP.Grid_Type, "1DFlame") == 0) {
           IP.i_Grid = GRID_1DFLAME;
           IP.Box_Width = ONE;
@@ -1607,19 +1822,47 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
           IP.i_Grid = GRID_LAMINAR_FLAME;
           IP.Pipe_Length = 0.1;
           IP.Pipe_Radius = 0.2;
-      } else if (strcmp(IP.Grid_Type,"Flat_Plate") == 0 ||
-		 strcmp(IP.Grid_Type,"Adiabatic_Flat_Plate") == 0) {
-	  IP.i_Grid = GRID_FLAT_PLATE;
-	  IP.Plate_Length = ONE;
-	  IP.BC_South = BC_WALL_VISCOUS_HEATFLUX;
-      } else if (strcmp(IP.Grid_Type,"Isothermal_Flat_Plate") == 0) {
-	  IP.i_Grid = GRID_FLAT_PLATE;
-	  IP.Plate_Length = ONE;
-	  IP.BC_South = BC_WALL_VISCOUS_ISOTHERMAL;
+
+       } else if (strcmp(IP.Grid_Type, "Flat_Plate") == 0) {
+          IP.i_Grid = GRID_FLAT_PLATE;
+          IP.Plate_Length = ONE;
        } else if (strcmp(IP.Grid_Type, "Pipe") == 0) {
           IP.i_Grid = GRID_PIPE;
-          IP.Pipe_Length = ONE;
-          IP.Pipe_Radius = 0.1;
+	  //channel (laufer 1953)
+	  //IP.Pipe_Length = 1.524 ;
+          //IP.Pipe_Radius = 0.0635;
+	  //pipe (laufer 1953)
+          IP.Kinematic_Viscosity_Wall = 1.4590E-5;
+	  IP.Pipe_Length = 4.877;
+	  IP.Pipe_Radius = 0.123;
+       }else if (strcmp(IP.Grid_Type, "Driven_Cavity_Flow") == 0) {
+	 IP.i_Grid = GRID_DRIVEN_CAVITY_FLOW;
+	 IP.Box_Width = 0.00044;
+	 IP.Box_Height = 0.00044;	  
+       }else if (strcmp(IP.Grid_Type, "Bluff_Body") == 0) {
+          IP.i_Grid = GRID_BLUFF_BODY;
+          IP.Radius_BluffBody = 0.025;
+          IP.Radius_Shroud = 0.07;
+          IP.Radius_Orifice = 0.0018;
+          IP.Length_BluffBody = 0.1;
+          IP.Length_Shroud = 0.3;
+          
+       }else if (strcmp(IP.Grid_Type, "Free_Jet_Flame") == 0) {
+          IP.i_Grid = GRID_FREE_JET_FLAME;
+          IP.Radius_Inlet_Pipe = 0.00387;
+          IP.Radius_Shroud = 0.48;
+          IP.Length_Shroud = 1.6;
+       //    IP.Radius_Inlet_Pipe = 0.00305;
+//           IP.Radius_Shroud = 0.96;
+//           IP.Length_Shroud = 3.2;
+          
+       }else if (strcmp(IP.Grid_Type, "Dump_Combustor") == 0) {
+          IP.i_Grid = GRID_DUMP_COMBUSTOR;
+          IP.Radius_Inlet_Pipe = 0.0508;
+          IP.Radius_Combustor_Tube = 0.0762;
+          IP.Length_Inlet_Pipe = 0.127;
+          IP.Length_Combustor_Tube = 0.508;
+          
        } else if (strcmp(IP.Grid_Type, "Blunt_Body") == 0) {
           IP.i_Grid = GRID_BLUNT_BODY;
           IP.Blunt_Body_Radius = ONE;
@@ -1723,6 +1966,13 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Number_of_Cells_Idir < 1) i_command = INVALID_INPUT_VALUE;
 
+    } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Ghost_Cells") == 0) {
+       i_command = 100;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Number_of_Ghost_Cells;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.Number_of_Ghost_Cells < 2) i_command = INVALID_INPUT_VALUE;
+
     } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Cells_Jdir") == 0) {
        i_command = 11;
        IP.Line_Number = IP.Line_Number + 1;
@@ -1772,12 +2022,22 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	   IP.Local_Time_Stepping != MATRIX_LOCAL_TIME_STEPPING &&	   
            IP.Local_Time_Stepping != LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER &&
 	   IP.Local_Time_Stepping != SEMI_IMPLICIT_LOCAL_TIME_STEPPING &&
-	   IP.Local_Time_Stepping != SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER) {
+	   IP.Local_Time_Stepping != SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER &&
+           IP.Local_Time_Stepping != DUAL_TIME_STEPPING &&
+           IP.Local_Time_Stepping != DUAL_LOW_MACH_NUMBER_PRECONDITIONER &&
+           IP.Local_Time_Stepping != DUAL_SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER) {
          IP.Local_Time_Stepping = SCALAR_LOCAL_TIME_STEPPING;
 	}
-       if(IP.Local_Time_Stepping == LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER ||
-       	  IP.Local_Time_Stepping == SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER){
+       if (IP.Local_Time_Stepping == LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER ||
+       	 IP.Local_Time_Stepping == SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER ||
+         IP.Local_Time_Stepping == DUAL_LOW_MACH_NUMBER_PRECONDITIONER ||
+         IP.Local_Time_Stepping == DUAL_SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER) {
 	 IP.Preconditioning = 1;
+       }
+       if (IP.Local_Time_Stepping == DUAL_TIME_STEPPING ||
+           IP.Local_Time_Stepping == DUAL_LOW_MACH_NUMBER_PRECONDITIONER ||
+	   IP.Local_Time_Stepping == DUAL_SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER) {
+         IP.Dual_Time_Stepping = 1;
        }       
 
     } else if (strcmp(IP.Next_Control_Parameter, "Maximum_Number_of_Time_Steps") == 0) {
@@ -1786,6 +2046,13 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        IP.Input_File >> IP.Maximum_Number_of_Time_Steps;
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Maximum_Number_of_Time_Steps < 0) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Maximum_Number_of_Inner_Time_Steps") == 0) {
+       i_command = 1600;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Max_Inner_Steps;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.Max_Inner_Steps < 1) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "N_Stage") == 0) {
        i_command = 17;
@@ -1981,6 +2248,33 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        IP.Input_File >> IP.Grain_Radius;
        IP.Input_File.getline(buffer,sizeof(buffer));
 
+    } else if (strcmp(IP.Next_Control_Parameter, "Length_BluffBody") == 0) {
+       i_command =38 ;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Length_BluffBody;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.Length_BluffBody <ZERO) i_command = INVALID_INPUT_VALUE;
+    } else if (strcmp(IP.Next_Control_Parameter, "Radius_Orifice") == 0) {
+       i_command =39 ;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Radius_Orifice;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.Radius_Orifice <ZERO) i_command = INVALID_INPUT_VALUE;   
+    }else if (strcmp(IP.Next_Control_Parameter, "BluffBody_Coflow_Air_Velocity") == 0) {
+       i_command =40 ;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.BluffBody_Coflow_Air_Velocity;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.BluffBody_Coflow_Air_Velocity <ZERO) i_command = INVALID_INPUT_VALUE;
+       
+    }else if (strcmp(IP.Next_Control_Parameter, "BluffBody_Coflow_Fuel_Velocity") == 0) {
+       i_command =41 ;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.BluffBody_Coflow_Fuel_Velocity;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.BluffBody_Coflow_Fuel_Velocity <ZERO) i_command = INVALID_INPUT_VALUE;       
+
+
        /***********************************************************************
         ************************ CHEM2D SPECIFIC ******************************
         For Chem2D the following input parameters are added:
@@ -2035,9 +2329,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 
        //Set appropriate species data
        IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFDkit_Path,
-			      IP.debug_level,IP.Mach_Number_Reference,IP.Schmidt); 
+			      IP.Mach_Number_Reference,IP.Schmidt); 
        IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFDkit_Path,
-			      IP.debug_level,IP.Mach_Number_Reference,IP.Schmidt);
+			      IP.Mach_Number_Reference,IP.Schmidt);
   
        //Get next line and read in mass fractions or set defaults
        if(flag){
@@ -2105,16 +2399,17 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       //read in species names
       for(int i=0; i<IP.num_species; i++){
 	IP.Input_File >> IP.multispecies[i];
+        IP.Schmidt[i] = IP.Global_Schmidt;
       }
-      
+
       //copy names into Reaction class for storage
       IP.Wo.React.set_species(IP.multispecies,IP.num_species);
-     
+       
       //Setup State class data and find species thermo and transport properties
       IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFDkit_Path,
-			     IP.debug_level,IP.Mach_Number_Reference,IP.Schmidt); 
+			     IP.Mach_Number_Reference,IP.Schmidt); 
       IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFDkit_Path,
-			     IP.debug_level,IP.Mach_Number_Reference,IP.Schmidt);
+			     IP.Mach_Number_Reference,IP.Schmidt);
     
       //More Fudging of lines 
       IP.Line_Number = IP.Line_Number + 1 ;
@@ -2176,7 +2471,17 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	 IP.Wo.p = IP.Pressure;	
 	 //IP.Wo.v.zero();
        } /* endif */
-      
+
+       /************* HEAT SOURCE ****************/
+    } else if (strcmp(IP.Next_Control_Parameter, "Temperature_Rise") == 0) {
+       i_command = 43;
+       IP.Line_Number = IP.Line_Number + 1;
+       double temp;
+       IP.Input_File >> temp;
+       IP.Heat_Source = IP.Wo.rho*(IP.Wo.h(temp+IP.Temperature) - IP.Wo.Rtot()*IP.Temperature);
+
+       IP.Input_File.getline(buffer, sizeof(buffer));
+         
        /***********************************************************************
 	**************** END CHEM2D MODIFICATIONS *****************************
 	***********************************************************************/
@@ -2202,7 +2507,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter, "Mach_Number_Reference") == 0) {
       i_command = 40;
       IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.Mach_Number_Reference;
+      IP.Input_File >> IP.Mach_Number_Reference; // >> IP.Mach_Number_Reference_target;
+      //if( IP.Mach_Number_Reference_target > IP.Mach_Number_Reference) 
+      IP.Mach_Number_Reference_target = IP.Mach_Number_Reference; 
       IP.Input_File.getline(buffer, sizeof(buffer));
       if (IP.Mach_Number_Reference < ZERO) {
 	i_command = INVALID_INPUT_VALUE;
@@ -2219,6 +2526,13 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        IP.Wo.v.x = IP.Mach_Number*IP.Wo.a()*cos(TWO*PI*IP.Flow_Angle/360.00);
        IP.Wo.v.y = IP.Mach_Number*IP.Wo.a()*sin(TWO*PI*IP.Flow_Angle/360.00);
        
+    } else if (strcmp(IP.Next_Control_Parameter,"Re_lid") == 0) {
+      i_command = 42;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Re_lid;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Re_lid < ZERO) i_command = INVALID_INPUT_VALUE;
+
     } else if (strcmp(IP.Next_Control_Parameter, "Time_Max") == 0) {
        i_command = 43;
        IP.Line_Number = IP.Line_Number + 1;
@@ -2226,6 +2540,21 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        IP.Time_Max = IP.Time_Max/THOUSAND;
        if (IP.Time_Max < ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Physical_Time_Step") == 0) {
+       i_command = 4300;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.dTime;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       IP.dTime = IP.dTime/THOUSAND;
+       if (IP.dTime < ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Physical_CFL_Number") == 0) {
+       i_command = 4301;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Physical_CFL_Number;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.Physical_CFL_Number <= ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Blocks_Per_Processor") == 0) {
        i_command = 44;
@@ -2288,15 +2617,15 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        strcpy(IP.Flow_Geometry_Type, 
               IP.Next_Control_Parameter);
        if (strcmp(IP.Flow_Geometry_Type, "Planar") == 0) {
-          IP.Axisymmetric = 0;
+          IP.Axisymmetric = PLANAR;
        } else if (strcmp(IP.Flow_Geometry_Type, "Axisymmetric") == 0) {
-	 IP.Axisymmetric = 1;
+	 IP.Axisymmetric = AXISYMMETRIC_X;
        } else if (strcmp(IP.Flow_Geometry_Type, "Axisymmetric-x") == 0) {
-	 IP.Axisymmetric = 2;
+	 IP.Axisymmetric = AXISYMMETRIC_X;
        } else if (strcmp(IP.Flow_Geometry_Type, "Axisymmetric-y") == 0) {
-	 IP.Axisymmetric = 1;
+	 IP.Axisymmetric = AXISYMMETRIC_Y;
        } else {
-          IP.Axisymmetric = 0;
+          IP.Axisymmetric = PLANAR;
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Restart_Solution_Save_Frequency") == 0) {
@@ -2319,14 +2648,23 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       Get_Next_Input_Control_Parameter(IP);
       strcpy(IP.Viscous_Flux_Evaluation_Type,IP.Next_Control_Parameter);
       if (strcmp(IP.Viscous_Flux_Evaluation_Type, "Arithmetic_Mean") == 0) {
-	IP.i_Viscous_Flux_Evaluation = VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE; 
+	IP.i_Viscous_Flux_Evaluation = VISCOUS_RECONSTRUCTION_ARITHMETIC; 
+      } else if (strcmp(IP.Viscous_Flux_Evaluation_Type, "Mean_Gradient") == 0) {
+	IP.i_Viscous_Flux_Evaluation = VISCOUS_RECONSTRUCTION_MEAN_GRADIENT;
       } else if (strcmp(IP.Viscous_Flux_Evaluation_Type, "Cartesian") == 0) {
 	IP.i_Viscous_Flux_Evaluation = VISCOUS_RECONSTRUCTION_CARTESIAN; 
-      } else if (strcmp(IP.Viscous_Flux_Evaluation_Type,"Diamond_Path") == 0) {
-	IP.i_Viscous_Flux_Evaluation = VISCOUS_RECONSTRUCTION_DIAMOND_PATH;
+      } else if (strcmp(IP.Viscous_Flux_Evaluation_Type,"Diamond_Path_Least_Squares") == 0) {
+	IP.i_Viscous_Flux_Evaluation = VISCOUS_RECONSTRUCTION_DIAMONDPATH_LEAST_SQUARES;
+	//Must have regular reconstruction set to least squares as well.
+	IP.i_Reconstruction = RECONSTRUCTION_LEAST_SQUARES; 
+      } else if (strcmp(IP.Viscous_Flux_Evaluation_Type,"Diamond_Path_Green_Gauss") == 0) {
+	IP.i_Viscous_Flux_Evaluation = VISCOUS_RECONSTRUCTION_DIAMONDPATH_GREEN_GAUSS;
+	//Must have regular reconstruction set to green_gauss as well.
+	IP.i_Reconstruction = RECONSTRUCTION_GREEN_GAUSS;
       } else {
-	i_command = INVALID_INPUT_VALUE;
-	IP.i_Viscous_Flux_Evaluation = VISCOUS_RECONSTRUCTION_DIAMOND_PATH; 	
+	cout<<"\n Not a valid Viscous Flux Evaluation Type, Using Diamond_Path_Green_Gauss\n";
+	i_command = INVALID_INPUT_VALUE;	
+	IP.i_Viscous_Flux_Evaluation = VISCOUS_RECONSTRUCTION_DIAMONDPATH_GREEN_GAUSS; 	
       } 
 
     } else if (strcmp(IP.Next_Control_Parameter, "Gravity") == 0) {
@@ -2359,10 +2697,34 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Time_Accurate_Plot_Frequency < 0) i_command = INVALID_INPUT_VALUE;
      
-      /***** END CHEM2D *******/
-
+    }else if (strcmp(IP.Next_Control_Parameter, "Wall_Boundary_Treatments") == 0) {
+       i_command = 516;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Wall_Boundary_Treatments;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+        
+//     }else if (strcmp(IP.Next_Control_Parameter, "Stretch_Level") == 0) {
+//        i_command = 517;
+//        IP.Line_Number = IP.Line_Number + 1;
+//        IP.Input_File >> IP.Stretch_Level;
+//        IP.Input_File.getline(buffer, sizeof(buffer));
+       
+    }else if (strcmp(IP.Next_Control_Parameter, "Pressure_Gradient") == 0) {
+       i_command = 518;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Pressure_Gradient;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+    }else if (strcmp(IP.Next_Control_Parameter, "Reynolds_Number") == 0) {
+       i_command = 519;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Reynolds_Number;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+    }else if (strcmp(IP.Next_Control_Parameter, "BluffBody_Data_Usage") == 0) {
+       i_command = 520;
+       IP.BluffBody_Data_Usage = 1;
+       
     } else if (strcmp(IP.Next_Control_Parameter, "ICEMCFD_Topology_File") == 0) {
-      i_command = 52;
+       i_command = 52;
       Get_Next_Input_Control_Parameter(IP);
       strcpy(IP.ICEMCFD_FileNames[0], IP.Next_Control_Parameter);
       
@@ -2393,7 +2755,21 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        i_command = 57;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.X_Rotate;
-       IP.Input_File.getline(buffer, sizeof(buffer));
+       IP.Input_File.getline(buffer, sizeof(buffer));  
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Residual_Variable") == 0) {
+      i_command = 666;
+      IP.Line_Number = IP.Line_Number + 1;                   //should change to read (rho, momentum, energy)
+      IP.Input_File >> IP.i_Residual_Variable;                     //as apposed to 1, 2, or 4
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      if (IP.i_Residual_Variable < ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Relaxation_multiplier") == 0) {
+      i_command = 667;
+      IP.Line_Number = IP.Line_Number + 1;                
+      IP.Input_File >> IP.Relaxation_multiplier;               
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      if (IP.Relaxation_multiplier < ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Freeze_Limiter") == 0) {
       // Freeze_Limiter:
@@ -2422,6 +2798,20 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       } else {
          IP.Residual_Smoothing = 1;
       } /* endif */
+   
+    } else if (strcmp(IP.Next_Control_Parameter, "Morton") == 0) {
+      i_command = 83;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Morton;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      if (IP.Morton < 0) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Morton_Reordering_Frequency") == 0) {
+      i_command = 84;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Morton_Reordering_Frequency;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      if (IP.Morton_Reordering_Frequency < 0) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Residual_Smoothing_Gauss_Seidel_Iterations") == 0) {
       i_command = 71;
@@ -2442,14 +2832,14 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       } else {
 	i_command = INVALID_INPUT_VALUE;
       }
-
+      
     } else if (strcmp(IP.Next_Control_Parameter,"Mesh_Stretching_Type_Idir") == 0) {
       i_command = 102;
       Get_Next_Input_Control_Parameter(IP);
       if (strcmp(IP.Next_Control_Parameter,"Linear") == 0) {
 	IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_LINEAR;
       } else if (strcmp(IP.Next_Control_Parameter,"Min_Clustering") == 0) {
-	IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MIN_CLUSTERING;
+      IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MIN_CLUSTERING;
       } else if (strcmp(IP.Next_Control_Parameter,"Max_Clustering") == 0) {
 	IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MAX_CLUSTERING;
       } else if (strcmp(IP.Next_Control_Parameter,"MinMax_Clustering") == 0) {
@@ -2459,7 +2849,7 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       } else {
 	i_command = INVALID_INPUT_VALUE;
       }
-
+      
     } else if (strcmp(IP.Next_Control_Parameter,"Mesh_Stretching_Type_Jdir") == 0) {
       i_command = 103;
       Get_Next_Input_Control_Parameter(IP);
@@ -2468,29 +2858,29 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       } else if (strcmp(IP.Next_Control_Parameter,"Min_Clustering") == 0) {
 	IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
       } else if (strcmp(IP.Next_Control_Parameter,"Max_Clustering") == 0) {
-	IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MAX_CLUSTERING;
+      IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MAX_CLUSTERING;
       } else if (strcmp(IP.Next_Control_Parameter,"MinMax_Clustering") == 0) {
 	IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MINMAX_CLUSTERING;
       } else if (strcmp(IP.Next_Control_Parameter,"Midpt_Clustering") == 0) {
 	IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIDPT_CLUSTERING;
-      } else {
-	i_command = INVALID_INPUT_VALUE;
-      }
-
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+    }
+      
     } else if (strcmp(IP.Next_Control_Parameter,"Mesh_Stretching_Factor_Idir") == 0) {
       i_command = 104;
       IP.Line_Number = IP.Line_Number + 1;
       IP.Input_File >> IP.Mesh_Stretching_Factor_Idir;
       IP.Input_File.getline(buffer,sizeof(buffer));
       if (IP.Mesh_Stretching_Factor_Idir < ONE) i_command = INVALID_INPUT_VALUE;
-
+      
     } else if (strcmp(IP.Next_Control_Parameter,"Mesh_Stretching_Factor_Jdir") == 0) {
       i_command = 105;
       IP.Line_Number = IP.Line_Number + 1;
       IP.Input_File >> IP.Mesh_Stretching_Factor_Jdir;
       IP.Input_File.getline(buffer,sizeof(buffer));
       if (IP.Mesh_Stretching_Factor_Jdir < ONE) i_command = INVALID_INPUT_VALUE;
-
+      
     } else if (strcmp(IP.Next_Control_Parameter,"Smooth_Quad_Block") == 0) {
       i_command = 106;
       Get_Next_Input_Control_Parameter(IP);
@@ -3211,12 +3601,24 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter, "Write_Restart") == 0) {
        i_command = WRITE_RESTART_CODE;
 
+ //    }else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Multigrid") == 0) {
+//        i_command = WRITE_OUTPUT_MULTIGRID_CODE;
+       
+//     } else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Multigrid_Cells") == 0) {
+//        i_command = WRITE_OUTPUT_MULTIGRID_CELLS_CODE;
+       
     } else if (strcmp(IP.Next_Control_Parameter, "Write_Output_RHS") == 0) {
        i_command = WRITE_OUTPUT_RHS_CODE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Write_Output_Mesh") == 0) {
        i_command = WRITE_OUTPUT_GRID_CODE;
 
+    }else if (strcmp(IP.Next_Control_Parameter, "Perturbation") == 0) {
+       i_command = WRITE_OUTPUT_PERTURB_CODE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Driven_Cavity_Flow") == 0) {
+       i_command = WRITE_OUTPUT_DRIVEN_CAVITY_FLOW_CODE;
+       
     } else if (strcmp(IP.Next_Control_Parameter, "Write_Mesh_Definition") == 0) {
        i_command = WRITE_GRID_DEFINITION_CODE;
 
@@ -3234,18 +3636,49 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
         
     } else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Flat_Plate") == 0) {
       i_command = WRITE_OUTPUT_FLAT_PLATE_CODE;
-    
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Driven_Cavity_Flow") == 0) {
+      i_command = WRITE_OUTPUT_DRIVEN_CAVITY_FLOW_CODE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Quasi3D") == 0) {
+      i_command = WRITE_OUTPUT_QUASI3D_CODE;
+
     } else if (strcmp(IP.Next_Control_Parameter, "Refine_Grid") == 0) {
        i_command = REFINE_GRID_CODE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Morton_Ordering") == 0) {
+       i_command = MORTON_ORDERING_CODE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Fix_BCs") == 0) {
+      i_command = SWITCH_BCS_TO_FIXED;
 
     } else if (IP.Next_Control_Parameter[0] == '#') {
        i_command = COMMENT_CODE;
     } else {
-       i_command = INVALID_INPUT_CODE;
-       cout<<"\n ERROR ERROR WILL ROBINSON.... INVALID_INPUT_CODE \n";
+       i_command = INVALID_INPUT_CODE;    
     } /* endif */
 
-   
+    if (i_command == INVALID_INPUT_CODE) {
+      
+      strcpy(buffer, IP.Next_Control_Parameter);
+      Get_Next_Input_Control_Parameter(IP);
+      i_command = IP.NKS_IP.Parse_Next_Input_Control_Parameter(buffer, IP.Next_Control_Parameter);
+      
+      // If it's still unknown then ignore it. 
+      // This could be a bad idea if it was an unknown command 
+      // as opposed to an unknown code.
+      if (i_command == INVALID_INPUT_CODE) {
+	cout << "\n***\n\nWarning: input file line " << IP.Line_Number << ": ";
+	cout << "ignoring unknown input code:\n";
+	cout << "code: " << buffer;
+	cout << "\nvalue: " << IP.Next_Control_Parameter;
+	cout << "\n\n***\n";
+      }
+      i_command = COMMENT_CODE; // sure why not
+    }
+    
+    if (!IP.Input_File.good()) { i_command = INVALID_INPUT_VALUE; }
+       
     /* Return the parser command type indicator. */
     return (i_command);
 
@@ -3320,8 +3753,6 @@ int Process_Input_Control_Parameter_File(Chem2D_Input_Parameters &Input_Paramete
     Input_Parameters.Temperature = Input_Parameters.Wo.T();
  
     // Reset the static variables.
-    Input_Parameters.Wo.set_flow_type(Input_Parameters.FlowType);
-    Input_Parameters.Uo.set_flow_type(Input_Parameters.FlowType);
     Input_Parameters.Wo.set_turbulence_variables(Input_Parameters.C_constant,
 						 Input_Parameters.von_Karman_Constant,
 						 Input_Parameters.yplus_sublayer,
