@@ -14,9 +14,9 @@
 #include "Chem2DQuad.h"
 #endif // _CHEM2D_QUAD_INCLUDED
 
-/**********************************************************************
- * Chem2D_Quad_Block -- Multiple Block External Subroutines.          *
- **********************************************************************/
+/**************************************************************************
+ * Chem2D_Quad_Block -- Multiple Block External Subroutines.             *
+ **************************************************************************/
 
 /********************************************************
  * Routine: Allocate                                    *
@@ -72,9 +72,6 @@ void ICs(Chem2D_Quad_Block *Soln_ptr,
   
   /* Define various reference flow states. */
   Wo[0] = Input_Parameters.Wo;
-  //Wo[1] = Input_Parameters.W1;
-  // Wo[1].p = 1.20*Wo[1].p;
-  //Wo[2] = Input_Parameters.W2;
     
   //Assign initial data for each solution block.
   for (int i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
@@ -82,6 +79,7 @@ void ICs(Chem2D_Quad_Block *Soln_ptr,
       // Set flow geometry indicator (planar/axisymmetric) flow block.
       Soln_ptr[i].Flow_Type = Input_Parameters.FlowType;
       Soln_ptr[i].Axisymmetric = Input_Parameters.Axisymmetric;
+      //      Soln_ptr[i].Wall_Functions = Input_Parameters.Wall_Functions;
       Soln_ptr[i].Gravity = Input_Parameters.Gravity;
       Soln_ptr[i].debug_level = Input_Parameters.debug_level;
       Soln_ptr[i].Moving_wall_velocity = Input_Parameters.Moving_wall_velocity;
@@ -184,11 +182,11 @@ int Read_Restart_Solution(Chem2D_Quad_Block *Soln_ptr,
 	  //setup properties 
 	  Input_Parameters.Wo.set_species_data
 	    (Input_Parameters.Wo.React.num_species,Input_Parameters.Wo.React.species,
-	     Input_Parameters.CFDkit_Path,Input_Parameters.debug_level,
+	     Input_Parameters.CFDkit_Path,
 	     Input_Parameters.Mach_Number_Reference,Input_Parameters.Schmidt);   
 	  Input_Parameters.Uo.set_species_data
 	    (Input_Parameters.Wo.React.num_species,Input_Parameters.Wo.React.species,
-	     Input_Parameters.CFDkit_Path,Input_Parameters.debug_level,
+	     Input_Parameters.CFDkit_Path,
 	     Input_Parameters.Mach_Number_Reference,Input_Parameters.Schmidt);    
 	  Input_Parameters.Uo = U(Input_Parameters.Wo);
 
@@ -357,8 +355,7 @@ int Output_Tecplot(Chem2D_Quad_Block *Soln_ptr,
     for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
       
-	Output_Tecplot(Soln_ptr[i],
-		       Input_Parameters,
+	Output_Tecplot(Soln_ptr[i], Input_Parameters,
 		       Number_of_Time_Steps, 
 		       Time,
 		       Soln_Block_List.Block[i].gblknum,
@@ -411,7 +408,7 @@ int Output_Cells_Tecplot(Chem2D_Quad_Block *Soln_ptr,
            Input_Parameters.Output_File_Name[i] == '.') break;
        prefix[i]=Input_Parameters.Output_File_Name[i];
        i = i + 1;
-       if (i > strlen(Input_Parameters.Output_File_Name)) break;
+       if (i > strlen(Input_Parameters.Output_File_Name) ) break;
     } /* endwhile */
     prefix[i] = '\0';
     strcat(prefix, "_cells_cpu");
@@ -434,7 +431,7 @@ int Output_Cells_Tecplot(Chem2D_Quad_Block *Soln_ptr,
     i_output_title = 1;
     for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-          Output_Cells_Tecplot(Soln_ptr[i],
+	 Output_Cells_Tecplot(Soln_ptr[i],Input_Parameters, 
                                Number_of_Time_Steps, 
                                Time,
                                Soln_Block_List.Block[i].gblknum,
@@ -506,12 +503,12 @@ int Output_Nodes_Tecplot(Chem2D_Quad_Block *Soln_ptr,
     i_output_title = 1;
     for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-          Output_Nodes_Tecplot(Soln_ptr[i],
-                               Number_of_Time_Steps,
-                               Time,
-                               Soln_Block_List.Block[i].gblknum,
-                               i_output_title,
-                               output_file);
+	 Output_Nodes_Tecplot(Soln_ptr[i],
+			      Number_of_Time_Steps,
+			      Time,
+			      Soln_Block_List.Block[i].gblknum,
+			      i_output_title,
+			      output_file);
 	  if (i_output_title) i_output_title = 0;
        } /* endif */
     }  /* endfor */
@@ -597,16 +594,16 @@ int Output_Mesh_Tecplot(Chem2D_Quad_Block *Soln_ptr,
 }
 
 /********************************************************
- * Routine: Output_RHS                                  *
+ * Routine: Output_RHS                                 *
  * For testing Jacobians                                *
  *                                                      *
  *                                                      *
  ********************************************************/
 int Output_RHS(Chem2D_Quad_Block *Soln_ptr,
-	       AdaptiveBlock2D_List &Soln_Block_List,
-	       Chem2D_Input_Parameters &Input_Parameters,
-	       const int Number_of_Time_Steps,
-	       const double &Time) {
+                         AdaptiveBlock2D_List &Soln_Block_List,
+                         Chem2D_Input_Parameters &Input_Parameters,
+                         const int Number_of_Time_Steps,
+                         const double &Time) {
 
   
     int i, i_output_title;
@@ -671,11 +668,11 @@ int Output_RHS(Chem2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 int Output_PERTURB(Chem2D_Quad_Block *Soln_ptr,
-		   AdaptiveBlock2D_List &Soln_Block_List,
-		   Chem2D_Input_Parameters &Input_Parameters,
-		   const int Number_of_Time_Steps,
-		   const double &Time,
-		   const CPUTime &CPU_Time) {
+                           AdaptiveBlock2D_List &Soln_Block_List,
+                           Chem2D_Input_Parameters &Input_Parameters,
+                           const int Number_of_Time_Steps,
+                           const double &Time,
+                           const CPUTime &CPU_Time) {
 
     int i;
     char prefix[256], extension[256], restart_file_name[256];
@@ -728,14 +725,16 @@ int Output_PERTURB(Chem2D_Quad_Block *Soln_ptr,
 	  }
 	  /**************************************************************/
 
-	  for(int jj= Soln_ptr[i].JCl; jj<=Soln_ptr[i].JCu; jj++) {
-	    for  (int ii= Soln_ptr[i].ICl; ii<=Soln_ptr[i].ICu ; ii++) {	
-	      if((ii==16)&&(jj==4)){
-		Soln_ptr[i].U[ii][jj][7] =Soln_ptr[i].U[ii][jj][7]*(1.0+1e-8);
+	  for(int jj= Soln_ptr[i].JCl; jj<=Soln_ptr[i].JCu; jj++)
+	    for  (int ii= Soln_ptr[i].ICl; ii<=Soln_ptr[i].ICu ; ii++)
+	      {	
+		if((ii==16)&&(jj==4)){
+		  Soln_ptr[i].U[ii][jj][7] =Soln_ptr[i].U[ii][jj][7]*(1.0+1e-8);
+		  
+		}
 	      }
-	    }
-	  }	  
-
+	  
+	  
       	  restart_file << setprecision(14) << Soln_ptr[i];
 
     
@@ -835,7 +834,7 @@ void BCs(Chem2D_Quad_Block *Soln_ptr,
 
     for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-          BCs(Soln_ptr[i],Input_Parameters);
+	 BCs(Soln_ptr[i],Input_Parameters);
        } /* endif */
     }  /* endfor */
 }
@@ -900,26 +899,17 @@ void Set_Global_TimeStep(Chem2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 double L1_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
-                        AdaptiveBlock2D_List &Soln_Block_List) {
+		      AdaptiveBlock2D_List &Soln_Block_List) {
 
-    int i;
-    double l1_norm;
+  /* Calculate the L1-norm. Sum the L1-norm for each solution block. */
+  double l1_norm(ZERO);
+  for ( int i = 0 ; i < Soln_Block_List.Nblk; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {     
+      l1_norm += L1_Norm_Residual(Soln_ptr[i],Soln_ptr[i].residual_variable);       
+    }
+  }    
 
-    l1_norm = ZERO;
-
-    /* Calculate the L1-norm.
-       Sum the L1-norm for each solution block. */
-
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-          l1_norm += L1_Norm_Residual(Soln_ptr[i]);
-       } /* endif */
-    }  /* endfor */
-
-    /* Return the L1-norm. */
-
-    return (l1_norm);
-
+  return l1_norm;
 }
 
 /********************************************************
@@ -932,31 +922,19 @@ double L1_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 double L2_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
-                        AdaptiveBlock2D_List &Soln_Block_List) {
-
-    int i;
-    double l2_norm;
-
-    l2_norm = ZERO;
-
-    /* Sum the square of the L2-norm for each solution block. */
-
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-          l2_norm += sqr(L2_Norm_Residual(Soln_ptr[i]));
-       } /* endif */
-    }  /* endfor */
-
-    /* Calculate the L2-norm for all blocks. */
-
-    l2_norm = sqrt(l2_norm);
-
-    /* Return the L2-norm. */
-
-    return (l2_norm);
+			AdaptiveBlock2D_List &Soln_Block_List) {
+	
+  /* Sum the square of the L2-norm for each solution block. */
+  double l2_norm(ZERO);
+  for ( int i = 0 ; i < Soln_Block_List.Nblk; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+      l2_norm += sqr(L2_Norm_Residual(Soln_ptr[i],Soln_ptr[i].residual_variable));       
+    } 
+  }  
+  return sqrt(l2_norm);
+  
 
 }
-
 /********************************************************
  * Routine: Max_Norm_Residual                           *
  *                                                      *
@@ -967,24 +945,92 @@ double L2_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 double Max_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
-                         AdaptiveBlock2D_List &Soln_Block_List) {
+			 AdaptiveBlock2D_List &Soln_Block_List){	
+  
+  /* Find the maximum norm for all solution blocks. */
+  double max_norm(ZERO);
+  for (int i = 0 ; i < Soln_Block_List.Nblk ; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+      max_norm = max(max_norm, Max_Norm_Residual(Soln_ptr[i],Soln_ptr[i].residual_variable));
+    } 
+  } 
 
-    int i;
-    double max_norm;
+  return max_norm;
+}
 
-    max_norm = ZERO;
+/********************************************************
+ * Routine: L1_Norm_Residual                            *
+ *                                                      *
+ * Determines the L1-norm of the solution residual for  *
+ * a 1D array of 2D quadrilateral multi-block solution  *
+ * blocks.  Useful for monitoring convergence of the    *
+ * solution for steady state problems.                  *
+ *                                                      *
+ ********************************************************/
+void L1_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
+		      AdaptiveBlock2D_List &Soln_Block_List,
+		      double *l1_norm) {
 
-    /* Find the maximum norm for all solution blocks. */
+  /* Calculate the L1-norm. Sum the L1-norm for each solution block. */
+  for( int k = 0; k< Soln_ptr[0].Number_of_Residual_Norms; k++){    
+    l1_norm[k] = ZERO;
+    for ( int i = 0 ; i < Soln_Block_List.Nblk; ++i ) {
+      if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {     
+	l1_norm[k] += L1_Norm_Residual(Soln_ptr[i],k+1);       
+      }
+    }
+  }  
 
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-          max_norm = max(max_norm, Max_Norm_Residual(Soln_ptr[i]));
-       } /* endif */
-    }  /* endfor */
 
-    /* Return the maximum norm. */
+}
 
-    return (max_norm);
+/********************************************************
+ * Routine: L2_Norm_Residual                            *
+ *                                                      *
+ * Determines the L2-norm of the solution residual for  *
+ * a 1D array of 2D quadrilateral multi-block solution  *
+ * blocks.  Useful for monitoring convergence of the    *
+ * solution for steady state problems.                  *
+ *                                                      *
+ ********************************************************/
+void L2_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
+		      AdaptiveBlock2D_List &Soln_Block_List,
+		      double *l2_norm) {
+
+  /* Sum the square of the L2-norm for each solution block. */
+  for( int k = 0; k< Soln_ptr[0].Number_of_Residual_Norms; k++){
+    l2_norm[k] =ZERO;
+    for ( int i = 0 ; i < Soln_Block_List.Nblk; ++i ) {
+      if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+	l2_norm[k] += sqr(L2_Norm_Residual(Soln_ptr[i],k+1));     
+      } 
+    }  
+    l2_norm[k] = sqrt(l2_norm[k]);
+  }
+
+}
+/********************************************************
+ * Routine: Max_Norm_Residual                           *
+ *                                                      *
+ * Determines the maximum norm of the solution residual *
+ * for a 1D array of 2D quadrilateral multi-block       *
+ * solution blocks.  Useful for monitoring convergence  *
+ * of the solution for steady state problems.           *
+ *                                                      *
+ ********************************************************/
+void Max_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
+		       AdaptiveBlock2D_List &Soln_Block_List,
+		       double *max_norm) {
+  
+  /* Find the maximum norm for all solution blocks. */
+  for( int k = 0; k< Soln_ptr[0].Number_of_Residual_Norms; k++){
+    max_norm[k] = ZERO;
+    for (int i = 0 ; i < Soln_Block_List.Nblk ; ++i ) {
+      if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+	max_norm[k] = max(max_norm[k], Max_Norm_Residual(Soln_ptr[i],k+1));
+      } 
+    } 
+  }
 
 }
 
@@ -999,12 +1045,9 @@ double Max_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
 void Evaluate_Limiters(Chem2D_Quad_Block *Soln_ptr,
                        AdaptiveBlock2D_List &Soln_Block_List) {
 
-    int i;
-
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) Soln_ptr[i].evaluate_limiters();
-    }  /* endfor */
-
+    for (int i = 0 ; i < Soln_Block_List.Nblk ; ++i ) {
+      if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) Soln_ptr[i].evaluate_limiters();
+    }
 }
 
 /********************************************************
@@ -1018,12 +1061,26 @@ void Evaluate_Limiters(Chem2D_Quad_Block *Soln_ptr,
 void Freeze_Limiters(Chem2D_Quad_Block *Soln_ptr,
                      AdaptiveBlock2D_List &Soln_Block_List) {
 
-    int i;
-
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+    for (int i = 0 ; i < Soln_Block_List.Nblk ; ++i ) {
        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) Soln_ptr[i].freeze_limiters();
-    }  /* endfor */
+    }  
+}
 
+/********************************************************
+ * Routine: Change Mref                                 *
+ *                                                      *
+ ********************************************************/
+void Change_Mref(Chem2D_Quad_Block *Soln_ptr,
+		 AdaptiveBlock2D_List &Soln_Block_List,
+		 const double &Mr) {
+
+    for ( int i = 0 ; i < Soln_Block_List.Nblk ; ++i ) {
+      if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED){
+	Soln_ptr[i].W[0][0].Mref = Mr;  //static so only need to change once per block.
+	Soln_ptr[i].U[0][0].Mref = Mr;
+	Soln_ptr[i].Uo[0][0].Mref = Mr;
+      }
+    }  
 }
 
 /********************************************************
@@ -1245,6 +1302,33 @@ int Update_Solution_Multistage_Explicit(Chem2D_Quad_Block *Soln_ptr,
 
 }
 
+/********************************************************
+ * Routine: Update_Dual_Solution_States                 *
+ *                                                      *
+ * This routine updates solution states of the given    *
+ * solution block corresponding to different times,     *
+ * required in the dual time stepping.                  * 
+ *                                                      *
+ ********************************************************/
+int Update_Dual_Solution_States(Chem2D_Quad_Block *Soln_ptr,
+                                 AdaptiveBlock2D_List &Soln_Block_List) {
+    int i, error_flag;
+ 
+    error_flag = 0;
+
+    /* Update the solution states required by the dual time stepping for each * 
+     *  solution block.                                                       */
+
+    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+          error_flag =  Update_Dual_Solution_States(Soln_ptr[i]);
+          if (error_flag) return (error_flag);
+       }
+    }  
+    
+    return(error_flag); 
+}
+
 
 //FROM DUSTY2D
 
@@ -1412,7 +1496,7 @@ int Output_Viscous_Channel(Chem2D_Quad_Block *Soln_ptr,
   output_file.open(output_file_name_ptr,ios::out);
   if (output_file.bad()) return 1;
   
-  double dp = 635.54;  //should be Input_Parameter.delta_pres;
+  double dpdx = -3177.7;  //should be from dp/dx = Input_Parameter.delta_pres/length
 
   // Write the solution data for each solution block.
   i_output_title = 1;
@@ -1420,7 +1504,7 @@ int Output_Viscous_Channel(Chem2D_Quad_Block *Soln_ptr,
     if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
       l1_temp = ZERO; l2_temp = ZERO; max_temp = ZERO;
       Output_Viscous_Channel(Soln_ptr[nb],nb,i_output_title,output_file,
-			     l1_temp,l2_temp,max_temp,IP.Moving_wall_velocity,dp);
+			     l1_temp,l2_temp,max_temp,IP.Moving_wall_velocity,dpdx);
       l1_norm += l1_temp;
       l2_norm += sqr(l2_temp);
       max_norm = max(max_norm,max_temp);
@@ -1583,115 +1667,82 @@ int Output_Flat_Plate(Chem2D_Quad_Block *Soln_ptr,
   return 0;
 
 }
-//  int Output_Flat_Plate(Chem2D_Quad_Block *Soln_ptr,
-//  		      AdaptiveBlock2D_List &Soln_Block_List,
-//  		      Chem2D_Input_Parameters &IP) {
 
-//    int i, i_output_title_soln, i_output_title_skin;
-//    char prefix_soln[256], prefix_skin[256], extension_soln[256], extension_skin[256];
-//    char output_file_name_soln[256], output_file_name_skin[256];
-//    char *output_file_name_soln_ptr, *output_file_name_skin_ptr;
-//    ofstream output_file_soln, output_file_skin;
-//    double l1_norm, l2_norm, max_norm;
-//    double l1_temp, l2_temp, max_temp;
-//    int numberofactivecells, numberofactivecells_temp;
+
+/**********************************************************************
+ * Routine: Output_Driven_Cavity_Flow                                 *
+ *                                                                    *
+ * This routine outputs a comparison of the computed solution for the *
+ * driven cavity flow with the computations done by Ghia et al. (J.   *
+ * Comp. Phys. Vol. 48 1982) for a 1D array of 2D quadrilateral       *
+ * multi-block solution blocks to the specified output data file(s)   *
+ * in a format suitable for plotting with tecplot.                    *
+ *                                                                    *
+ **********************************************************************/
+int Output_Driven_Cavity_Flow(Chem2D_Quad_Block *Soln_ptr,
+			      AdaptiveBlock2D_List &Soln_Block_List,
+			      Chem2D_Input_Parameters &IP) {
+
+  int i, i_output_title;
+  char prefix_u[256], extension_u[256], output_file_name_u[256];
+  char *output_file_name_ptr_u;
+  ofstream output_file_u;
+  char prefix_v[256], extension_v[256], output_file_name_v[256];
+  char *output_file_name_ptr_v;
+  ofstream output_file_v;
+
+  // Determine prefix of output data file names.
+  i = 0;
+  while (1) {
+    if (IP.Output_File_Name[i] == ' ' || IP.Output_File_Name[i] == '.') break;
+    prefix_u[i] = IP.Output_File_Name[i];
+    prefix_v[i] = IP.Output_File_Name[i];
+    i = i + 1;
+    if (i > strlen(IP.Output_File_Name)) break;
+  }
+  prefix_u[i] = '\0';
+  prefix_v[i] = '\0';
+  strcat(prefix_u,"_driven_cavity_flow_u_cpu");
+  strcat(prefix_v,"_driven_cavity_flow_v_cpu");
+
+  // Determine output data file name for this processor.
+  sprintf(extension_u,"%.6d",Soln_Block_List.ThisCPU);
+  sprintf(extension_v,"%.6d",Soln_Block_List.ThisCPU);
+  strcat(extension_u,".dat");
+  strcat(extension_v,".dat");
+  strcpy(output_file_name_u,prefix_u);
+  strcpy(output_file_name_v,prefix_v);
+  strcat(output_file_name_u,extension_u);
+  strcat(output_file_name_v,extension_v);
+  output_file_name_ptr_u = output_file_name_u;
+  output_file_name_ptr_v = output_file_name_v;
+
+  // Open the output data files.
+  output_file_u.open(output_file_name_ptr_u,ios::out);
+  if (output_file_u.bad()) return 1;
+  output_file_v.open(output_file_name_ptr_v,ios::out);
+  if (output_file_v.bad()) return 2;
+
+  // Write the solution data for each solution block.
+  i_output_title = 1;
+  for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
+    if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
+      Output_Driven_Cavity_Flow(Soln_ptr[nb],nb,
+				i_output_title,
+				output_file_u,
+				output_file_v,
+				IP.Re_lid,
+				IP.Moving_wall_velocity,
+				IP.Box_Width);
+      if (i_output_title) i_output_title = 0;
+    }
+  }
   
-//    // Initialize error variables.
-//    l1_norm = ZERO; l2_norm = ZERO; max_norm = ZERO;
-//    l1_temp = ZERO; l2_temp = ZERO; max_temp = ZERO; 
-//    numberofactivecells = 0; numberofactivecells_temp = 0;
+  // Close the output data files.
+  output_file_u.close();
+  output_file_v.close();
 
-//    // Determine prefix of output data file names.
-//    i = 0;
-//    while (1) {
-//      if (IP.Output_File_Name[i] == ' ' || IP.Output_File_Name[i] == '.') break;
-//      prefix_soln[i] = IP.Output_File_Name[i];
-//      i = i + 1;
-//      if (i > strlen(IP.Output_File_Name)) break;
-//    }
-//    prefix_soln[i] = '\0';
-//    strcat(prefix_soln,"_flatplate_soln_cpu");
-//    i = 0;
-//    while (1) {
-//      if (IP.Output_File_Name[i] == ' ' || IP.Output_File_Name[i] == '.') break;
-//      prefix_skin[i] = IP.Output_File_Name[i];
-//      i = i + 1;
-//      if (i > strlen(IP.Output_File_Name)) break;
-//    }
-//    prefix_skin[i] = '\0';
-//    strcat(prefix_skin,"_flatplate_skin_friction_cpu");
-  
-//    // Determine output data file name for this processor.
-//    sprintf(extension_soln,"%.6d",Soln_Block_List.ThisCPU);
-//    strcat(extension_soln,".dat");
-//    strcpy(output_file_name_soln,prefix_soln);
-//    strcat(output_file_name_soln,extension_soln);
-//    output_file_name_soln_ptr = output_file_name_soln;
-//    sprintf(extension_skin,"%.6d",Soln_Block_List.ThisCPU);
-//    strcat(extension_skin,".dat");
-//    strcpy(output_file_name_skin,prefix_skin);
-//    strcat(output_file_name_skin,extension_skin);
-//    output_file_name_skin_ptr = output_file_name_skin;
-  
-//    // Open the output data files.
-//    output_file_soln.open(output_file_name_soln_ptr,ios::out);
-//    if (output_file_soln.bad()) return 1;
-//    output_file_skin.open(output_file_name_skin_ptr,ios::out);
-//    if (output_file_skin.bad()) return 1;
-  
-//    // Write the solution data for each solution block.
-//    i_output_title_soln = 1;
-//    for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
-//      if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
-//        l1_temp = ZERO; l2_temp = ZERO; max_temp = ZERO; numberofactivecells_temp = 0;
-//        Output_Flat_Plate(Soln_ptr[nb],nb,
-//  			i_output_title_soln,output_file_soln,
-//  			i_output_title_skin,output_file_skin,
-//  			IP.Wo,
-//  			l1_temp,l2_temp,max_temp,numberofactivecells_temp);
-//        l1_norm += l1_temp;
-//        l2_norm += sqr(l2_temp);
-//        max_norm = max(max_norm,max_temp);
-//        numberofactivecells += numberofactivecells_temp;
-//        if (i_output_title_soln) i_output_title_soln = 0;
-//      }
-//    }
-  
-//    // Close the output data file.
-//    output_file_soln.close();
-//    output_file_skin.close();
+  // Writing of output data files complete.  Return zero value.
+  return 0;
 
-//    // Calculate the L1-norm and L2-norm for all blocks.
-//  #ifdef _MPI_VERSION
-//    l1_norm = CFDkit_Summation_MPI(l1_norm);
-//    l2_norm = CFDkit_Summation_MPI(l2_norm);
-//    max_norm = CFDkit_Maximum_MPI(max_norm);
-//    numberofactivecells = CFDkit_Summation_MPI(numberofactivecells);
-//  #endif
-//    l1_norm = l1_norm/numberofactivecells;
-//    l2_norm = sqrt(l2_norm/numberofactivecells);
-
-//    if (CFDkit_Primary_MPI_Processor()) {
-//      cout << endl
-//  	 << endl
-//  	 << " ==================================================================== "
-//  	 << endl
-//  	 << " Error norms for the skin friction coefficient for the laminar flow"
-//  	 << " over a flat plate:"
-//  	 << endl
-//  	 << "   L1_Norm = " << l1_norm
-//  	 << endl
-//  	 << "   L2_Norm = " << l2_norm
-//  	 << endl
-//  	 << "   Max_Norm = " << max_norm
-//  	 << endl
-//  	 << "   Number of cells = " << numberofactivecells
-//  	 << endl
-//  	 << " ==================================================================== "
-//  	 << endl;
-//    }
-
-//    // Writing of output data files complete.  Return zero value.
-//    return 0;
-
-//  }
+}

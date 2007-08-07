@@ -13,8 +13,9 @@
    -> Viscosity
    -> Gravity
    -> Low Mach Number Precondtioning 
-   -> BCs NO_SLIP, MOVING_WALL, SUBSONIC_INFLOW, SUBSONIC_OUTFLOW 
  
+NEW
+
   - based on Euler2DInput.h 
 ***********************************************************************/
 
@@ -47,6 +48,9 @@ using namespace std;
 #include "../FASMultigrid2D/FASMultigrid2DInput.h"
 #endif // _FASMULTIGRID2DINPUT_INCLUDED
 
+/* Also include NKS  input header file. */
+#include "../NewtonKrylovSchwarz2D/NKSInput2D.h"
+
 // Include ICEMCFD input header file.
 
 #ifndef _ICEMCFD_INCLUDED
@@ -78,15 +82,19 @@ class Chem2D_Input_Parameters{
   int Line_Number;
   //@}
 
-  //@{ @name Time integration type indicator and related input parameters:
+  // Input file line number, the index of solution parameters:
+  int Solution_Parameters_Index;
+  
+  // Time integration type indicator and related input parameters:
   char Time_Integration_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
   int i_Time_Integration;
   int Time_Accurate, Local_Time_Stepping, 
       Maximum_Number_of_Time_Steps, N_Stage;
   double CFL_Number, Time_Max;
-  // Residual variable:
-  int i_Residual_Variable;
-  //@}
+  
+  // Additional input parameters for dual time stepping
+  int     Max_Inner_Steps, first_step;
+  double  dTime, Physical_CFL_Number;
 
   //@{ @name Implicit residual smoothing control parameters:
   int Residual_Smoothing;
@@ -98,6 +106,11 @@ class Chem2D_Input_Parameters{
   Multigrid_Input_Parameters Multigrid_IP;
   //@}
 
+  //@{ @name NKS related input parametrs:
+  NKS_Input_Parameters  NKS_IP;
+  int Solver_Type; 
+  //@}
+
   //@{ @name Reconstruction type indicator and related input parameters:
   char Reconstruction_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
   int i_Reconstruction;
@@ -107,6 +120,7 @@ class Chem2D_Input_Parameters{
   char Limiter_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
   int i_Limiter;
   int  Freeze_Limiter;
+  int i_Residual_Variable;
   double Freeze_Limiter_Residual_Level;
   //@}
 
@@ -120,10 +134,12 @@ class Chem2D_Input_Parameters{
   //@{ @name Initial condition type indicator and related input parameters:
   char ICs_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
   int i_ICs;
+  int i_Grid_Level;
+  
   //Pa, K, m/s, degress from horizontal
   double Pressure, Temperature, Flow_Angle;
-  double Mach_Number_Reference,Mach_Number;
-  int Preconditioning;
+  double Mach_Number_Reference,Mach_Number_Reference_target,Mach_Number,Re_lid;
+  int Preconditioning,Dual_Time_Stepping;
   //@}
 
   //@{ @name Chemical reacting flow inpput parameters.
@@ -137,9 +153,9 @@ class Chem2D_Input_Parameters{
   int num_species;
   Chem2D_pState Wo;
   Chem2D_cState Uo;
-  double Global_Schmidt; // Depricated, use each individual Schmidt's
-  //! Individual Schmidt number for each species.
-  double *Schmidt;
+  
+  //! BC Pressure Gradient 
+  double Pressure_Gradient;
 
   //! Root path of CFDkit+caboodle 
   char CFDkit_Path[INPUT_PARAMETER_LENGTH_CHEM2D];
@@ -154,6 +170,16 @@ class Chem2D_Input_Parameters{
   //@{ @name Flow geometry (planar or axisymmetric):
   char Flow_Geometry_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
   int Axisymmetric; //0 no, 1 yes
+  double Global_Schmidt;  //depricated, use each individual Schmidt's
+  double *Schmidt;  //individual for each species
+  int Wall_Boundary_Treatments; //0, 1,2 , automatic, wall function, low_Reynolds number
+   
+  double Reynolds_Number;
+  double Kinematic_Viscosity_Wall;
+  double Eddy_Viscosity_Limit_Coefficient;
+
+  //@{ @Debug Level 0 for none, 1,2,3... level of verboseness  
+  int debug_level;
   //@}
 
   //@{ @name Gravity indicator (yes/no) = (1,0).
@@ -167,6 +193,10 @@ class Chem2D_Input_Parameters{
   int i_Friction_Velocity;
   double C_constant, von_Karman_Constant;
   double yplus_sublayer, yplus_buffer_layer, yplus_outer_layer;
+  //@}
+  
+  //@{ @name Solution Relaxation Multiplier 
+  double Relaxation_multiplier;
   //@}
 
   //@{ @name Grid type indicator and related input parameters:
@@ -182,7 +212,15 @@ class Chem2D_Input_Parameters{
          Nozzle_Length, Nozzle_Radius_Exit, Nozzle_Radius_Throat, Grain_Radius,
          Cylinder_Radius, Ellipse_Length_X_Axis, 
          Ellipse_Length_Y_Axis, Chord_Length, Orifice_Radius,
-         Wedge_Angle, Wedge_Length;
+         Wedge_Angle, Wedge_Length, Heat_Source; 
+
+  //! Bluff Body
+  double Length_Shroud,Radius_Shroud,Length_BluffBody,Radius_BluffBody,
+     Radius_Orifice, Length_Inlet_Pipe, Radius_Inlet_Pipe, Length_Combustor_Tube, 
+     Radius_Combustor_Tube;
+  double BluffBody_Coflow_Air_Velocity, BluffBody_Coflow_Fuel_Velocity;
+  int BluffBody_Data_Usage; // 0 no, 1 yes, 
+
   int Smooth_Bump, Nozzle_Type;
   double X_Scale, X_Rotate;
   Vector2D X_Shift;
@@ -209,6 +247,10 @@ class Chem2D_Input_Parameters{
 
   //@{ @name Flow constants:
   double Moving_wall_velocity;
+  //@}
+
+  //@{ @name Morton Re-Ordering
+  int Morton, Morton_Reordering_Frequency;
   //@}
 
   //@{ @name AMR input parameters:
@@ -246,10 +288,6 @@ class Chem2D_Input_Parameters{
   int Refinement_Criteria_Gradient_CO2;
   //! Smooth quad block flag:
   int i_Smooth_Quad_Block;
-  //@}
-
-  //@{ @name Debug Level 0 for none, 1,2,3... level of verboseness
-  int debug_level;
   //@}
 
   //@{ @name Output parameters:
@@ -450,7 +488,20 @@ inline ostream &operator << (ostream &out_file,
     } else if (IP.Local_Time_Stepping == SEMI_IMPLICIT_LOCAL_TIME_STEPPING) {
       out_file << "\n  -> Semi-Implicit Local Time Stepping";
     } else if (IP.Local_Time_Stepping == SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER) {
-      out_file << "\n  -> Semi-Implicit Low-Mach-Number Local Preconditioned Time Stepping";
+      out_file << "\n  -> Semi-Implicit Low-Mach-Number Local Preconditioned Time Stepping"; 
+    } else if (IP.Local_Time_Stepping == MATRIX_WITH_LOW_MACH_NUMBER_PRECONDITIONER) {
+      out_file << "\n  -> Matrix Local Time Stepping with Low-Mach-Number Local Preconditioning";
+    } else if (IP.Local_Time_Stepping == DUAL_TIME_STEPPING) {
+      out_file << "\n  -> Dual Time Stepping";
+    } else if (IP.Local_Time_Stepping == DUAL_LOW_MACH_NUMBER_PRECONDITIONER) {
+      out_file << "\n  -> Dual Low-Mach-Number Local Preconditioned Time Stepping";
+    } else if (IP.Local_Time_Stepping == DUAL_SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER) {
+      out_file << "\n  -> Dual Semi-Implicit Low-Mach-Number Local Preconditioned Time Stepping";
+    } 
+
+
+    if( IP.Relaxation_multiplier != 1.0){
+      out_file <<"\n  -> Update Stage Relaxation Multiplier: "<<IP.Relaxation_multiplier;
     }
 
     /*********************************************************/
@@ -479,6 +530,10 @@ inline ostream &operator << (ostream &out_file,
       out_file << "\n  -> Freeze Limiter when L2-norm of residual is < "
 	       << IP.Freeze_Limiter_Residual_Level;
     } 
+    out_file << "\n  -> Residual L2 Norm of: "; 
+    if (IP.i_Residual_Variable == 1) out_file <<" density ";
+    if (IP.i_Residual_Variable == 2 || IP.i_Residual_Variable == 3) out_file <<" momentum ";
+    if (IP.i_Residual_Variable == 4) out_file <<" energy ";
     out_file << "\n  -> Flux Function: " 
              << IP.Flux_Function_Type;
     /********** CHEM2D ****************************/
@@ -518,6 +573,8 @@ inline ostream &operator << (ostream &out_file,
                  << IP.Pressure/THOUSAND;
         out_file << "\n  -> Temperature (K): " 
                  << IP.Temperature;
+	out_file << "\n  -> Heat_source : " 
+		 << IP.Heat_Source;
         out_file << "\n  -> Mach Number: " 
                  << IP.Mach_Number;
         out_file << "\n  -> Flow Angle (degrees): " 
@@ -555,7 +612,11 @@ inline ostream &operator << (ostream &out_file,
         out_file << "\n  -> Flow Angle (degrees): " 
                  << IP.Flow_Angle;
         break;
-	/******** CHEM2D ********/
+    case IC_VISCOUS_DRIVEN_CAVITY_FLOW :
+       out_file << "\n  -> Driven cavity flow with lid speed: " << IP.Moving_wall_velocity
+                << " and Reynolds number: " << IP.Re_lid;
+       break;
+       /******** CHEM2D ********/
     case IC_GAS_MIX :
       break;
     case IC_CHEM_CORE_FLAME:
@@ -568,7 +629,12 @@ inline ostream &operator << (ostream &out_file,
       break;
     case IC_PRESSURE_GRADIENT_Y:
       break;
-    case IC_VISCOUS_CHANNEL_FLOW:
+    case IC_VISCOUS_COUETTE:
+      break;
+    case IC_VISCOUS_FLAT_PLATE :
+      out_file << "\n  -> Viscous flat plate free stream Mach number: " << IP.Mach_Number;
+      out_file << "\n  -> Viscous flat plate Reynolds number: "  //<< IP.Reynolds_Number;
+	       <<IP.Wo.rho*IP.Wo.v.abs()*IP.Plate_Length/IP.Wo.mu();
       break;
       /********** CHEM2D *******/
     default:
@@ -600,6 +666,12 @@ inline ostream &operator << (ostream &out_file,
 		 << IP.Box_Height;
 	out_file << "\n  -> Moving Wall Velocity (m/s): "
 		 << IP.Moving_wall_velocity;
+	break;   
+      case GRID_TEST :
+	out_file << "\n  -> Width of Solution Domain (m): " 
+		 << IP.Box_Width;
+	out_file << "\n  -> Height of Solution Domain (m): " 
+		 << IP.Box_Height;
 	break;
       case GRID_1DFLAME :
 	out_file << "\n  -> Width of Solution Domain (m): " 
@@ -617,34 +689,44 @@ inline ostream &operator << (ostream &out_file,
         out_file << "\n  -> Plate Length (m): " 
                  << IP.Plate_Length;
         break;
-      case GRID_PIPE :
-        out_file << "\n  -> Pipe Length (m): " 
-                 << IP.Pipe_Length;
-        out_file << "\n  -> Pipe Radius (m): " 
-                 << IP.Pipe_Radius;
-        break;
-      case GRID_BLUNT_BODY :
-        out_file << "\n  -> Cylinder Radius (m): " 
-                 << IP.Blunt_Body_Radius;
-        break;
-      case GRID_ROCKET_MOTOR :
-	out_file << "\n  -> Length of Chamber (m): "
-		 << IP.Chamber_Length;
-	out_file << "\n  -> Radius of Chamber (m): "
-		 << IP.Chamber_Radius;
-	out_file << "\n  -> Distance from Chamber to Nozzle Throat (m): "
-		 << IP.Chamber_To_Throat_Length;
-	out_file << "\n  -> Length of the Nozzle (m): "
-		 << IP.Nozzle_Length;
-	out_file << "\n  -> Radius of the Nozzle at Throat (m): "
-		 << IP.Nozzle_Radius_Throat;
-	out_file << "\n  -> Radius of the Nozzle at Exit(m): "
-		 << IP.Nozzle_Radius_Exit;
-	out_file << "\n  -> Radius of the Propellant Grain (m): "
-		 << IP.Grain_Radius;
-	out_file << "\n  -> Nozzle type: "
-		 << IP.Nozzle_Type;
-        break;
+    case GRID_PIPE :
+       out_file << "\n  -> Pipe Length (m): " 
+                << IP.Pipe_Length;
+       out_file << "\n  -> Pipe Radius (m): " 
+                << IP.Pipe_Radius;
+       break;
+    case GRID_DRIVEN_CAVITY_FLOW:
+       out_file << "\n  -> Cavity Depth (m): " 
+                << IP.Box_Width; 
+//        out_file <<" \n  -> Cavity Grid Stretch level "<<IP.Stretch_Level;
+       break;
+       
+    case GRID_BLUNT_BODY :
+       out_file << "\n  -> Cylinder Radius (m): " 
+                << IP.Blunt_Body_Radius;
+       break;
+    case GRID_BLUFF_BODY :
+       out_file << "\n  -> Shroud Length (m): " 
+                << IP.Length_Shroud;
+       out_file << "\n  -> Shroud Radius (m): " 
+                << IP.Radius_Shroud;
+       out_file << "\n  -> Bluff Body Length (m): " 
+                << IP.Length_BluffBody;
+       out_file << "\n  -> Bluff Body Radius (m): " 
+                << IP.Radius_BluffBody;
+       out_file << "\n  -> Fuel Orifice Radius (m): " 
+                << IP.Radius_Orifice;
+       break;
+    case GRID_DUMP_COMBUSTOR :
+       out_file << "\n  -> Inlet Pipe Length (m): " 
+                << IP.Length_Inlet_Pipe;
+       out_file << "\n  -> Inlet Pipe Radius (m): " 
+                << IP.Radius_Inlet_Pipe;
+       out_file << "\n  -> Combustor Tube Length (m): " 
+                << IP.Length_Combustor_Tube;
+       out_file << "\n  -> Combustor Tube Radius(m): " 
+                << IP.Radius_Combustor_Tube;
+       break;
       case GRID_CIRCULAR_CYLINDER :
         out_file << "\n  -> Cylinder Radius (m): " 
                  << IP.Cylinder_Radius;
@@ -732,10 +814,15 @@ inline ostream &operator << (ostream &out_file,
 	   << IP.i_Smooth_Quad_Block;
     out_file << "\n  -> CFL Number: " 
              << IP.CFL_Number;
+    if (IP.Dual_Time_Stepping)
+      out_file << "\n  -> Physical CFL Number: "
+	       << IP.Physical_CFL_Number; 
     out_file << "\n  -> Maximum Time (ms): " 
              << IP.Time_Max*THOUSAND;
-    out_file << "\n  -> Maximum Number of Time Steps (Iterations): " 
+    out_file << "\n  -> Maximum Number of Explicit Time Steps (Iterations): " 
              << IP.Maximum_Number_of_Time_Steps;
+    out_file << "\n  -> Maximum Number of Implicit (NKS) Steps (Iterations): " 
+	     << IP.NKS_IP.Maximum_Number_of_NKS_Iterations;
     out_file << "\n  -> Number of Processors: " 
              << IP.Number_of_Processors;
     out_file << "\n  -> Number of Blocks Per Processor: " 
@@ -747,10 +834,12 @@ inline ostream &operator << (ostream &out_file,
     out_file << "\n  -> Restart Solution Save Frequency: "
              << IP.Restart_Solution_Save_Frequency
              << " steps (iterations)"; 
-    out_file << "\n  -> Output Progress Frequency: "
-	     << IP.Output_Progress_Frequency
-	     << " steps (iterations)";
-    //CHEM2D
+    if (IP.AMR) out_file << "\n  -> AMR Frequency: "
+                         << IP.AMR_Frequency
+                         << " steps (iterations)";
+    if (IP.Morton) out_file << "\n  -> Morton Re-Ordering Frequency: "
+                            << IP.Morton_Reordering_Frequency
+                            << " steps (iterations)"; 
     if (IP.Time_Accurate_Plot_Frequency !=0 && IP.Time_Accurate){
       out_file << "\n  -> Time Accurate Solution Plot Frequency: "
 	       << IP.Time_Accurate_Plot_Frequency
@@ -764,6 +853,7 @@ inline istream &operator >> (istream &in_file,
     return (in_file);
 }
 
+
 /****************** Get CFD kit Path *********/
 inline void Chem2D_Input_Parameters::get_cfdkit_path(){
  
@@ -776,6 +866,7 @@ inline void Chem2D_Input_Parameters::get_cfdkit_path(){
   //Set Path
   strcpy(CFDkit_Path,getenv(PATHVAR));
 }
+
 
 /**************** DESTRUCTOR ******************/
 //inline Chem2D_Input_Parameters::Chem2D_Input_Parameters(){

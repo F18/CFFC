@@ -393,7 +393,7 @@ class ColumnVector: public MV_Vector_double{
   private:
   public:
     /* Creation, copy, and assignment constructors. */
-    ColumnVector(void) { }
+    ColumnVector(void)                                              : MV_Vector_double() { }
     ColumnVector(unsigned int i)                                    : MV_Vector_double(i)       { /* ... */ }
     ColumnVector(unsigned int i, const double &xval)                : MV_Vector_double(i, xval) { /* ... */ }
     ColumnVector(double *xval, unsigned int i)                      : MV_Vector_double(xval, i) { /* ... */ }
@@ -733,12 +733,12 @@ inline RowVector transpose(const ColumnVector &CVec) {
  * cin  >> M; (input function)                          *
  *                                                      *
  ********************************************************/
-class DenseMatrix: public MV_ColMat_double{
+class DenseMatrix: public MV_ColMat_double{               // v_ and lda_ 
   private:
     static RowVector temp_RVec;
   public:
     /* Creation, copy, and assignment constructors. */
-    DenseMatrix(void) : MV_ColMat_double() { }
+    DenseMatrix(void) : MV_ColMat_double()  { }
     DenseMatrix(unsigned int m, unsigned int n) : 
        MV_ColMat_double(m, n) { /* ... */ } 
     DenseMatrix(unsigned int m, unsigned int n, const double &x) : 
@@ -761,6 +761,8 @@ class DenseMatrix: public MV_ColMat_double{
     /* Destructor. */
     // ~DenseMatrix(void);
     // Use automatically generated destructor.
+    int get_n(void) {return dim0_;}
+    int get_m(void) {return dim1_;}
 
     /* Assign the zero matrix. */
     void zero(void);

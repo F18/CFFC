@@ -95,6 +95,7 @@ inline char *Date_And_Time() {
 #define REFINE_GRID_CODE                                 10014
 #define BOUNDING_BOX_REFINE_GRID_CODE                    10015
 #define MORTON_ORDERING_CODE                             10016
+#define SWITCH_BCS_TO_FIXED                              10017
 
 #define WRITE_OUTPUT_ELEMENTS_CODE                       10020
 #define WRITE_OUTPUT_CELL_STATUS_CODE                    10022
@@ -185,10 +186,12 @@ inline char *Date_And_Time() {
 #define GRID_NOZZLE                          20
 #define GRID_NOZZLELESS_ROCKET_MOTOR         21
 #define GRID_DESOLVATION_CHAMBER             22
-#define GRID_ADIABATIC_FLAT_PLATE            22
-#define GRID_ADIABATIC_PIPE                  23
-#define GRID_ADIABATIC_CIRCULAR_CYLINDER     24
-#define GRID_ADIABATIC_COUETTE               25
+#define GRID_FREE_JET_FLAME                  23
+#define GRID_ADIABATIC_FLAT_PLATE            24
+#define GRID_ADIABATIC_PIPE                  25
+#define GRID_ADIABATIC_CIRCULAR_CYLINDER     26
+#define GRID_ADIABATIC_COUETTE               27
+
 #define GRID_ICEMCFD                       1000
 #define GRID_READ_FROM_DEFINITION_FILE    10000
 #define GRID_READ_FROM_GRID_DATA_FILE     10001
@@ -196,6 +199,10 @@ inline char *Date_And_Time() {
 #define GRID_COUETTE                         50
 #define GRID_1DFLAME                         51
 #define GRID_LAMINAR_FLAME                   52
+#define GRID_BLUFF_BODY                      53
+#define GRID_DUMP_COMBUSTOR                  54
+
+#define GRID_TEST                         12345
 
 /**********************************************************************
  * CFD -- Nozzle Types.                                               *
@@ -256,7 +263,10 @@ inline char *Date_And_Time() {
 #define BC_INFLOW_SUBSONIC               9001   //      | CGNS
 #define BC_INFLOW_SUPERSONIC             9002   //      | CGNS
 #define BC_TUNNEL_INFLOW                 9003   //      | CGNS
-#define BC_FLAME_INFLOW                  9003   //      | CFFC 
+#define BC_1DFLAME_INFLOW                9004   //      | CFFC
+#define BC_2DFLAME_INFLOW                9005   //      | CFFC
+#define BC_INFLOW_EXTRAPOLATION          9006   //      | CFFC 
+#define BC_PIPE_INFLOW                   9007   //      | CFFC 
 
 //--Outflow
 #define BC_OUTFLOW                      10000   // Core | CGNS
@@ -264,7 +274,9 @@ inline char *Date_And_Time() {
 #define BC_OUTFLOW_SUBSONIC             10001   //      | CGNS
 #define BC_OUTFLOW_SUPERSONIC           10002   //      | CGNS
 #define BC_TUNNEL_OUTFLOW               10003   //      | CGNS
-#define BC_FLAME_OUTFLOW                10004   //      | CFFC
+#define BC_1DFLAME_OUTFLOW              10004   //      | CFFC
+#define BC_2DFLAME_OUTFLOW              10005   //      | CFFC
+#define BC_OUTFLOW_EXTRAPOLATION        10006   //      | CFFC 
 
 //--Frozen
 #define BC_ROBIN                        10999   //      | CFFC
@@ -285,6 +297,8 @@ inline char *Date_And_Time() {
 #define BC_WALL                         12000   // Core | CGNS
 //  Invisid walls
 #define BC_WALL_INVISCID                12001   //      | CGNS
+#define BC_FREE_SLIP_ISOTHERMAL         12002   //      | ????     
+
 //  Viscous walls
 #define BC_WALL_VISCOUS                 12100   //      | CGNS
 #define BC_NO_SLIP            BC_WALL_VISCOUS   //      | Duplicate
@@ -329,6 +343,8 @@ inline char *Date_And_Time() {
 #define FLOWTYPE_TURBULENT_DES                         9
 #define FLOWTYPE_TURBULENT_DES_K_OMEGA                10
 #define FLOWTYPE_TURBULENT_DNS                        11
+
+#define NO_REACTIONS                           0
 
 /**********************************************************************
  * CFD -- Particle-phase formulation.                                 *
@@ -430,6 +446,13 @@ inline char *Date_And_Time() {
 #define IC_VISCOUS_BRANCHED_DUCT               86
 #define IC_MIXING_LAYER                        87
 
+#define IC_TURBULENT_PIPE_FLOW                 88
+#define IC_TURBULENT_COFLOW                    89 
+#define IC_TURBULENT_DIFFUSION_FLAME           90 
+#define IC_TURBULENT_DUMP_COMBUSTOR            91 
+
+#define IC_FREE_JET_FLAME                      92 
+
 #define	IC_RIEMANN                    100
 #define	IC_SQUARE_WAVE                101
 #define	IC_SINX2_WAVE                 102
@@ -517,11 +540,21 @@ inline char *Date_And_Time() {
 #define VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE  23
 #define VISCOUS_RECONSTRUCTION_HYBRID              24
 
+#define VISCOUS_RECONSTRUCTION_ARITHMETIC                     11
+#define VISCOUS_RECONSTRUCTION_MEAN_GRADIENT                  14
+#define VISCOUS_RECONSTRUCTION_DIAMONDPATH_LEAST_SQUARES      15
+#define VISCOUS_RECONSTRUCTION_DIAMONDPATH_GREEN_GAUSS        16
+
+//Jai's
 #define DIAMONDPATH_NONE                           0
 #define DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX         1
 #define DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL       2
 #define DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX        3
 #define DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL      4
+//Alistair's
+#define DIAMONDPATH_LEFT_TRIANGLE                  7
+#define DIAMONDPATH_RIGHT_TRIANGLE                 9
+
 #define DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION   5
 
 /**********************************************************************
@@ -563,8 +596,10 @@ inline char *Date_And_Time() {
 #define FLUX_FUNCTION_VANLEER                          8
 #define FLUX_FUNCTION_AUSM                             9
 #define FLUX_FUNCTION_AUSMplus                        10
-#define	FLUX_FUNCTION_ROE_PRECON_WS                   11
-#define	FLUX_FUNCTION_HLLE_PRECON_WS                  12
+#define FLUX_FUNCTION_AUSM_PLUS_UP                    11
+
+#define	FLUX_FUNCTION_ROE_PRECON_WS                   12
+#define	FLUX_FUNCTION_HLLE_PRECON_WS                  13
 
 #define FLUX_FUNCTION_GODUNOV_MB                      21
 #define FLUX_FUNCTION_ROE_MB                          22
@@ -588,6 +623,11 @@ inline char *Date_And_Time() {
 #define LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER     3
 #define SEMI_IMPLICIT_LOCAL_TIME_STEPPING              4
 #define SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER   5
+#define MATRIX_WITH_LOW_MACH_NUMBER_PRECONDITIONER     6
+
+#define DUAL_TIME_STEPPING                                  7
+#define DUAL_LOW_MACH_NUMBER_PRECONDITIONER                 8
+#define DUAL_SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER   9
 
 #define MELSON_SCALAR_LOCAL_TIME_STEPPING             11
 
@@ -612,17 +652,47 @@ inline char *Date_And_Time() {
 
 #define CENTER                          0
 #define NORTH                           1
-#define SOUTH                           2
-#define EAST                            3
-#define WEST                            4
-#define SNORTH                          5
-#define SSOUTH                          6
-#define SEAST                           7
-#define SWEST                           8
-#define NORTH_EAST                     11
-#define NORTH_WEST                     12
-#define SOUTH_EAST                     13
-#define SOUTH_WEST                     14
+#define WEST                            2
+#define SOUTH                           3
+#define EAST                            4
+#define NORTH_EAST                      5
+#define NORTH_WEST                      6
+#define SOUTH_EAST                      7
+#define SOUTH_WEST                      8
+
+#define SNORTH                          101
+#define SSOUTH                          102
+#define SEAST                           103
+#define SWEST                           104
+
+#define X_DIRECTION                     0 
+#define Y_DIRECTION                     1
+#define Z_DIRECITON                     2
+
+/********************************************************
+ * CFD -- Flow Geometry                                 *
+ ********************************************************/
+#define PLANAR                          0
+#define AXISYMMETRIC_Y                  1   // y=r, x=z
+#define AXISYMMETRIC_X                  2   // x=r, y=z
+
+
+/********************************************************
+ * CFD -- Solver Types                                  *
+ ********************************************************/
+#define EXPLICIT                          0
+#define IMPLICIT                          1
+
+// and for the stricter among us ...
+enum current_solver_types { CST_EXPLICIT , CST_IMPLICIT };
+
+/********************************************************
+ *
+ * CFD -- Maximum length of codes and values of input parameter strings.
+ * Ideally this will be used for all input parameter classes.
+ *
+ ********************************************************/
+#define	INPUT_PARAMETER_MAX_LENGTH    128
 
 /**********************************************************************
  * CFD -- Inline functions.                                           *
@@ -1119,9 +1189,32 @@ extern void Output_Progress_L2norm(const int Number_of_Time_Steps,
 				   const int Frequency,
 				   const int progress_character);
 
+extern void Output_Progress_L2norm(const int Number_of_Time_Steps,
+				   const double &Time,
+				   const CPUTime &CPU_Time,
+				   const double &Residual_L2_Norm,
+				   const double &Ratio_Residual_L2_Norm,
+				   const int First_Step,
+				   const int Frequency);
+
+extern void Output_Progress_L2norm(const int Number_of_Time_Steps,
+				   const double &Time,
+				   const CPUTime &CPU_Time,
+				   const double &Residual_L2_Norm,
+				   const double &Ratio_Residual_L2_Norm,
+				   const int First_Step,
+				   const int Frequency,
+				   const int progress_character);
+
 extern int Open_Progress_File(ofstream &Progress_File,
                               char *File_Name,
                               const int Append_to_File);
+
+extern int Open_Progress_File(ofstream &Progress_File,
+			      char *File_Name,
+			      const int Append_to_File,
+			      const int &Residual_Norm,
+			      const int &Number_of_Residual_Norms);
 
 extern int Close_Progress_File(ofstream &Progress_File);
 
@@ -1133,6 +1226,16 @@ extern void Output_Progress_to_File(ostream &Progress_File,
                                     const double &Residual_L2_Norm,
                                     const double &Residual_Max_Norm);
 
+extern void Output_Progress_to_File(ostream &Progress_File,
+				    const int Number_of_Time_Steps,
+				    const double &Time,
+				    const CPUTime &CPU_Time,
+				    const double *Residual_L1_Norm,
+				    const double *Residual_L2_Norm,
+				    const double *Residual_Max_Norm,
+				    const int &Residual_Norm,
+				    const int &Number_of_Residual_Norms);
+ 
 extern double StretchingFcn(const double &xx,
                             const double &beta,
 	      	            const double &tau,
@@ -1195,8 +1298,9 @@ extern void A_Stable_Implicit_Method_Coefficients(double &theta,
  * P4, and the associated templated solution variables (U1, U2, U3,   *
  * and U4) at these points using the bilinear interpolation routine   *
  * outlined by Zingg and Yarrow (SIAM J. Sci. Stat. Comput. Vol. 13   *
- * No. 3 1992).  This function returns an error code if the point P0  *
- * falls outside of the quadrilateral.                                *
+ * No. 3 1992).  Note that the vectors defining the quadrilateral     *
+ * cell must be given in clock-wise order.  This function returns an  *
+ * error code if the point P0 fall outside of the quadrilateral.      *
  *                                                                    *
  **********************************************************************/
 template <class T>
@@ -1226,13 +1330,13 @@ int Bilinear_Interpolation(const T U1, const Vector2D P1,
 
   if (a > TOLER || a < -TOLER) {
     // Check for complex roots
-    if (b*b-4*a*c < 0) return 1;
+    if (b*b-4*a*c < 0) return(1);
     zeta0 = (-b + sqrt(b*b - 4*a*c))/(2*a);
     // Check if zeta0 is within range, if not calculate conjugate
     if (zeta0 < 0 || zeta0 > 1) {
       zeta0 = (-b - sqrt(b*b - 4*a*c))/(2*a);
       // Check if zeta0 is within range
-      if (zeta0 < 0 || zeta0 > 1) return 1;
+      if (zeta0 < 0 || zeta0 > 1) return(1);
     }
   } else if (b > TOLER || b < -TOLER) { // if (a == 0 AND b != 0)
     zeta0 = -c/b;
@@ -1334,11 +1438,11 @@ int Bilinear_Interpolation_ZY(const T U1, const Vector2D P1,
  *                                                                    *
  **********************************************************************/
 template <class T>
-int Bilinear_Interpolation_HC(const T U1, const Vector2D X1,
-			      const T U2, const Vector2D X2,
-			      const T U3, const Vector2D X3,
-			      const T U4, const Vector2D X4,
-			      const Vector2D X0, T &U0) {
+int Bilinear_Interpolation_HC(const T &U1, const Vector2D &X1,
+			      const T &U2, const Vector2D &X2,
+			      const T &U3, const Vector2D &X3,
+			      const T &U4, const Vector2D &X4,
+			      const Vector2D &X0, T &U0) {
   Polygon P;
   P.convert(X1,X4,X3,X2);
   if (!P.point_in_polygon(X0)) return 1;
@@ -1399,10 +1503,10 @@ T Linear_Interpolation(const Vector2D &X1, const T &U1,
  *                                                                    *
  **********************************************************************/
 template <class T>
-int Green_Gauss_Integration(const Vector2D X1, const T U1,
-			    const Vector2D X2, const T U2,
-			    const Vector2D X3, const T U3,
-			    const Vector2D X4, const T U4,
+int Green_Gauss_Integration(const Vector2D &X1, const T &U1,
+			    const Vector2D &X2, const T &U2,
+			    const Vector2D &X3, const T &U3,
+			    const Vector2D &X4, const T &U4,
 			    T &dUdx, T &dUdy) {
 
   double A;
@@ -1435,5 +1539,136 @@ int Green_Gauss_Integration(const Vector2D X1, const T U1,
   return 0;
 
 }
+
+//  DiamondPath_Find_dWdX
+//  
+//  Returns the gradient of a solution state on a cell interface 
+//  using a diamond-path integration method.
+//  
+//  In:
+//  - [XW][ldru]: The position and solution at the four points
+//    (left, down, right, and up) of the diamond.
+//  - stencil_flag: Indicates if one of the two neighbouring cells is a
+//    boundary cell and specifies which cell is a boundary in that case.
+//  
+//  Out:
+//  - dWd[xy]: The solution gradient on the cell interface.
+template <class Soln2D_State>
+void DiamondPath_Find_dWdX(
+		Soln2D_State &dWdx, Soln2D_State &dWdy,
+		const Vector2D &Xl, const Soln2D_State &Wl,
+		const Vector2D &Xd, const Soln2D_State &Wd,
+		const Vector2D &Xr, const Soln2D_State &Wr,
+		const Vector2D &Xu, const Soln2D_State &Wu,
+		int stencil_flag) {
+
+  if (stencil_flag == DIAMONDPATH_NONE) { 
+		dWdx.Vacuum();
+		dWdy.Vacuum();
+		return; 
+	}
+
+  Soln2D_State Wtemp, dWdxl, dWdyl, dWdxr, dWdyr;
+  double Al, Ar;
+
+  // Compute Green-Gauss integration on 'left' triangle:
+  if (stencil_flag == DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION ||
+      stencil_flag == DIAMONDPATH_LEFT_TRIANGLE) {
+    Vector2D ndl = Vector2D((Xd.y-Xl.y),-(Xd.x-Xl.x));
+    Vector2D nud = Vector2D((Xu.y-Xd.y),-(Xu.x-Xd.x));
+    Vector2D nlu = Vector2D((Xl.y-Xu.y),-(Xl.x-Xu.x));
+    Al = HALF*((Xd-Xl)^(Xu-Xl));
+    Wtemp = HALF*(Wd+Wl);
+    dWdxl = Wtemp*ndl.x;
+    dWdyl = Wtemp*ndl.y;
+    Wtemp = HALF*(Wu+Wd);
+    dWdxl += Wtemp*nud.x;
+    dWdyl += Wtemp*nud.y;
+    Wtemp = HALF*(Wl+Wu);
+    dWdxl += Wtemp*nlu.x;
+    dWdyl += Wtemp*nlu.y;
+    dWdxl /= Al;
+    dWdyl /= Al;
+  }
+
+  // Compute Green-Gauss integration on 'right' triangle:
+  if (stencil_flag == DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION ||
+      stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE) {
+    Vector2D nrd = Vector2D((Xr.y-Xd.y),-(Xr.x-Xd.x));
+    Vector2D nur = Vector2D((Xu.y-Xr.y),-(Xu.x-Xr.x));
+    Vector2D ndu = Vector2D((Xd.y-Xu.y),-(Xd.x-Xu.x));
+    Ar = HALF*((Xr-Xu)^(Xr-Xd));
+    Wtemp = HALF*(Wr+Wd);
+    dWdxr = Wtemp*nrd.x;
+    dWdyr = Wtemp*nrd.y;
+    Wtemp = HALF*(Wu+Wr);
+    dWdxr += Wtemp*nur.x;
+    dWdyr += Wtemp*nur.y;
+    Wtemp = HALF*(Wd+Wu);
+    dWdxr += Wtemp*ndu.x;
+    dWdyr += Wtemp*ndu.y;
+    dWdxr /= Ar;
+    dWdyr /= Ar;
+  }
+
+	switch (stencil_flag) {
+		case DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION: 
+			double A = Al + Ar;
+			// determine the area-averaged gradients
+			dWdx = (Al*dWdxl + Ar*dWdxr)/A;
+			dWdy = (Al*dWdyl + Ar*dWdyr)/A;
+			break;
+		case DIAMONDPATH_LEFT_TRIANGLE:
+			dWdx = dWdxl; dWdy = dWdyl;
+			break;
+		case DIAMONDPATH_RIGHT_TRIANGLE: 
+			dWdx = dWdxr; dWdy = dWdyr; 
+			break;
+  }
+}
+
+//  Hybrid_Find_dWdX 
+//
+//  Returns the gradient of the solution state on a cell interface
+//  using a hybrid method (which does not require knowledge of the solution
+//  at cell nodes).
+//  
+//  In:
+//  - X[12], W[12], dW[12]d[xy]: The position of, the solution in, and the
+//    cell-centred solution gradient in, respectively, the cells 
+//    neighbouring the interface. 
+//  
+//  - norm_dir: normal (not unit) vector to the face which 
+//    points from cell 1 to cell 2.
+//  
+//  Out: 
+//  - dWd[xy]: The solution gradient on the cell interface.
+template <class Soln2D_State>
+void Hybrid_Find_dWdX(
+		Soln2D_State &dWdx, Soln2D_State &dWdy, 
+		const Vector2D &X1,
+		const Soln2D_State &W1,
+		const Soln2D_State &dW1dx,
+		const Soln2D_State &dW1dy,
+		const Vector2D &X2,
+		const Soln2D_State &W2,
+		const Soln2D_State &dW2dx,
+		const Soln2D_State &dW2dy,
+		const Vector2D &norm_dir) {
+
+  Soln2D_State dWdx_ave = HALF*(dW1dx + dW2dx);
+  Soln2D_State dWdy_ave = HALF*(dW1dy + dW2dy);
+
+  Vector2D dX = X2-X1; 
+	double ds = dX.abs(); dX /= ds;
+
+  Soln2D_State dWds = (W2-W1)/ds;
+
+  dWdx = dWdx_ave + (dWds - dWdx_ave*dX.x)*norm_dir.x/dot(norm_dir,dX);
+  dWdy = dWdy_ave + (dWds - dWdy_ave*dX.y)*norm_dir.y/dot(norm_dir,dX);
+}
+
+// for use with qsort
+int compare_ints(const void *p, const void *q);
 
 #endif /* _CFD_INCLUDED  */

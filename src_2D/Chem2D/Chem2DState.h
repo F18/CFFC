@@ -2,26 +2,31 @@
   This class defines the state variables and constructors for the 
   2D Axisymmertric Navier-Stokes with Multiple Species solution.
 
-  TODO:  
+  NOTES:  
          - be careful with set_species_data() and set_initial_values(),
            due to dynamic memory 
-    
+
+         - if #define STATIC_NUMBER_OF_SPECIES is set dynamic memory
+           is not used so code is faster, however code is not as flexible
+           as only up to STATIC_NUMBER_OF_SPECIES can be used without recompling.
+  
          - Avoid cState.T() as much as possible as it is $$$ to calculate, pass
-           the temperature from pState if possible as it is cheap (p/rhoR)
-             
+           the temperature from pState if possible as it is cheap (p/rhoR)             
               
-   NOTES: - The Static "specdata" has to be deleted outside the class
-            in order to avoid seg faults. In Chem2D it is done by calling
-            the deallocate function from the Input destructor as it is kept
-            until the end of the program.
+         - The Static "specdata" has to be deleted outside the class
+           in order to avoid seg faults. In Chem2D it is done by calling
+           the deallocate function from the Input destructor as it is kept
+           until the end of the program.
+
+  TODO:  - Unphysical_properties & negativespec_check functions need to be  
+           worked through
+
                    
 ***********************************************************************/
-
 #ifndef _CHEM2D_STATE_INCLUDED 
 #define _CHEM2D_STATE_INCLUDED
 
 // define early so can be used in other classes
-// yeah I know its a fudge, but it works...
 class Chem2D_cState;
 class Chem2D_pState;
 
@@ -29,8 +34,6 @@ class Chem2D_pState;
 #include <iostream>
 
 using namespace std;
-
-// Required CFDkit+caboodle header files
 
 #ifndef _MATH_MACROS_INCLUDED
 #include "../Math/Math.h"
@@ -72,11 +75,26 @@ using namespace std;
 //Temperature convergence tolerance in
 //Chem2D_cState::T(void)
 // these should be moved to CFD.h or Math.h
-#define CONV_TOLERANCE 1e-8
-#define gravity_z -9.81  //m/s^2 acceleration due to gravity
+#define CONV_TOLERANCE 1e-8  //Used for temperature convergence
+#define gravity_z -9.81      //m/s^2 acceleration due to gravity  
+#define SPEC_TOLERANCE 1e-8  //Used in negative_speccheck for species round off (was MICRO)      
 
 //number of fixed variables in the Chem2D class
 #define NUM_CHEM2D_VAR_SANS_SPECIES 6  //rho, v(2), p, k and omega
+
+// If you define this variable, the number of species will be
+// predetermined for faster calculations.., however it is not as general 
+#define STATIC_NUMBER_OF_SPECIES 6 //2 AIR, 6 2STEP_CH4
+
+/* Define some functions. */
+// M+1
+inline double Mplus_1(double M) { return 0.5*(M + fabs(M)); }
+// M-1
+inline double Mminus_1(double M) { return 0.5*(M - fabs(M)); }
+// M+2
+inline double Mplus_2(double M) { return 0.25*sqr(M + 1.0); }
+// M-2
+inline double Mminus_2(double M) { return -0.25*sqr(M - 1.0); }
 
 /*!
  * Class: Chem2D_pState
@@ -110,20 +128,28 @@ using namespace std;
  * \endverbatim
  */
 class Chem2D_pState {
-private: 
-protected:
-public:
-  //@{ @name Primitive variables and associated constants:
-  double                      rho; //!< Density.
-  Vector2D                      v; //!< Flow velocity (2D)  
-  double                        p; //!< Pressure.
-  Species                   *spec; //!< Species class c[ns]
-  double                        k; //!< Turbulent kinetic energy.
-  double                    omega; //!< Turbulent specific dissipation rate.
-  Tensor2D                    tau; //!< Shear Stress Tensor
-  Vector2D                  qflux; //!< Heat Flux Vector  
-  Tensor2D                 lambda; //!< Reynolds Stress Tensor
-  Vector2D                  theta; //!< Turbulent Heat Flux Vector  
+
+   private:
+   //all public ....
+   protected:
+   public:
+    //@{ @name Primitive variables and associated constants:
+   double         rho;   //!< Density.
+   Vector2D         v;   //!< Flow velocity (2D)  
+   double           p;   //!< Pressure.
+#ifdef STATIC_NUMBER_OF_SPECIES
+   Species        spec[STATIC_NUMBER_OF_SPECIES];
+#else 
+   Species      *spec;   //!< Species class c[ns]
+#endif
+   double           k;   //!< Turbulent kinetic energy.
+   double       omega;   //!< Turbulent specific dissipation rate.
+   Tensor2D                    tau; //!< Shear Stress Tensor
+   Vector2D                  qflux; //!< Heat Flux Vector  
+   Tensor2D                 lambda; //!< Reynolds Stress Tensor
+   Vector2D                  theta; //!< Turbulent Heat Flux Vector  
+  
+  //! Static Variaables 
   static int                   ns; //!< number of species
   static NASARP1311data *specdata; //!< Global Species Data
   static double          *Schmidt; //!< Schmidt Number for each species
@@ -131,9 +157,7 @@ public:
   static double    low_temp_range; //!< Low temp data range
   static double   high_temp_range; //!< High temp data range
   static int       NUM_VAR_CHEM2D; //!< Number of Chem2d variables (6+ns)
-  static int            flow_type; //!< Flow-type indicator (inviscid, laminar, or k-omega turbulent).
   static double              Mref; //!< Mref for Precondtioning (normally set to incoming freestream Mach)
-  static int          debug_level; //!< Debug level flag (0=none, 1,2,..)
   //@}
 
   //@{ @name Turbulence boundary-layer constants:
@@ -144,450 +168,7 @@ public:
   static double yplus_buffer_layer; //!< Buffer layer dimensionless wall distance.
   static double  yplus_outer_layer; //!< Outer layer dimensionless wall distance.
   //@}
-
-  //@{ @name k-omega closure coefficients:
-  static double              alpha;
-  static double              sigma;
-  static double         sigma_star;
-  static double               beta;
-  static double             f_beta;
-  static double          beta_star;
-  static double        f_beta_star;
-  static double          Coeff_edm;
-  //@}
- 
-  //@{ @name Creation, copy, and assignment constructors.
-  Chem2D_pState(){rho = DENSITY_STDATM; v.zero(); p = PRESSURE_STDATM; 
-                  k = ZERO; omega = ZERO; tau.zero(); qflux.zero(); 
-                  lambda.zero(); theta.zero(); spec = NULL;  set_initial_values(); }
-
-  Chem2D_pState(const double &value)
-               {rho =value; v.x=value, v.y=value; p = value; 
-                k = ZERO; omega = ZERO; tau.zero(); qflux.zero(); lambda.zero(); theta.zero(); 
-                spec = NULL;  set_initial_values(value); }
-
-  Chem2D_pState(const double &d, const Vector2D &V, const double &pre)
-                {rho = d; v = V; p = pre;  k = ZERO; omega = ZERO; 
-                 tau.zero(); qflux.zero(); lambda.zero(); theta.zero();
-		 spec = NULL;  set_initial_values(); }
-
-  Chem2D_pState(const double &d, const double &vx, const double &vy, const double &pre)
-                {rho = d; v.x = vx; v.y = vy; p = pre; k = ZERO; omega = ZERO; 
-                 tau.zero(); qflux.zero(); lambda.zero(); theta.zero();
-		 spec = NULL;  set_initial_values(); }
-
-  Chem2D_pState(const double &d, const double &vx, const double &vy, const double &pre, const double &value)
-                {rho = d; v.x=vx; v.y=vy; p = pre; k = ZERO; omega = ZERO; 
-                 tau.zero(); qflux.zero(); lambda.zero(); theta.zero();
-		 spec = NULL;  set_initial_values(value); }
-
-  Chem2D_pState(const double &d, const double &vx, const double &vy, const double &pre, 
-                const double &kk, const double &oomega,	const double &value)
-                {rho = d; v.x=vx; v.y=vy; p = pre; k = kk; omega = oomega; 
-                 tau.zero(); qflux.zero(); lambda.zero(); theta.zero();
-		 spec = NULL;  set_initial_values(value); }
-
-  Chem2D_pState(const double &d, const double &vx, const double &vy, const double &pre, 
-                const double &kk, const double &oomega) 
-                {rho = d; v.x=vx; v.y=vy; p = pre; k = kk; omega = oomega; tau.zero(); qflux.zero();
-		lambda.zero(); theta.zero(); spec = NULL;  set_initial_values(); }
-
-  Chem2D_pState(const double &d, const Vector2D &V, const double &pre, const double &kk, const double & oomega)
-                {rho = d; v = V; p = pre; k = kk; omega = oomega; tau.zero(); qflux.zero();
-		lambda.zero(); theta.zero(); spec = NULL;  set_initial_values(); } 
-
-  Chem2D_pState(const double &d, const double &vx, const double &vy, const double &pre, 
-                const double &kk, const double & oomega, Species *mfrac) 
-                {rho = d; v.x=vx; v.y=vy; p = pre; k = kk; omega = oomega; 
-                 tau.zero(); qflux.zero(); lambda.zero(); theta.zero(); 
-		 spec = NULL;  set_initial_values(mfrac); }
-
-  Chem2D_pState(const double &d, const Vector2D &V, const double &pre,
-                const double &kk, const double & oomega, Species *mfrac) 
-                {rho = d; v = V; p = pre; k = kk; omega = oomega; tau.zero(); qflux.zero();
-		 lambda.zero(); theta.zero(); spec = NULL; set_initial_values(mfrac); }
-
-  //this is needed for the operator overload returns!!!!
-  Chem2D_pState(const Chem2D_pState &W)
-                {spec = NULL; rho = DENSITY_STDATM; set_initial_values(); Copy(W);}
-
-  //! Default destructor.
-  ~Chem2D_pState(){ Deallocate(); }
-
-  //! Deallocation for static specdata.
-  void Deallocate_static(void){ if(specdata != NULL) delete[] specdata; 
-                                          specdata = NULL; 
-				if(Schmidt != NULL) delete[] Schmidt; 
-				           Schmidt = NULL;
-                              }
-
-  void Deallocate(void){ if(spec != NULL) delete[] spec; spec = NULL; }
-  //@}
-
-  //@{ @name Set static variables.
-  //! Read in ns species data, call only once as its static
-  void set_species_data(const int &, const string *, const char *,
-			const int &, const double&, const double *);
-
-  //! Set initial data values predominately used internally !!!
-  void set_initial_values();
-  void set_initial_values(const double &value);
-  void set_initial_values(double *cfrac);
-  void set_initial_values(Species *mfrac);
-
-  //! Set flow type static variable.
-  void set_flow_type(const int &Flow_Type) { flow_type = Flow_Type; }
-
-  //! Set turbulence static variables.
-  void set_turbulence_variables(const double &C_constant,
-				const double &von_karman_constant,
-				const double &yplus_sub,
-				const double &yplus_buffer,
-				const double &yplus_oute);
-  //@}
-
-  //@{ @name Useful operators.
-  //! Copy operator.
-  void Copy(const Chem2D_pState &W);
-
-  //! Vacuum operator.
-  void Vacuum(){ rho=ZERO; v.x=ZERO; v.y=ZERO; p=ZERO; k=ZERO; omega = ZERO; 
-    for(int i=0; i<ns; i++){
-      spec[i].Vacuum();
-    }
-    tau.zero();  qflux.zero();
-    lambda.zero(); theta.zero(); 
-
-  }
-
-  //! Zero non-solution quantities.
-  void zero_non_sol(){
-    for(int i = 0; i < ns; i++){
-      spec[i].gradc.zero();
-      spec[i].diffusion_coef=ZERO;
-    }
-    tau.zero();  qflux.zero();
-    lambda.zero(); theta.zero();
-  }
-
-  //! Set the lowest value of the temperature range.
-  void Temp_low_range();
-
-  //! Set the highest value of the temperature range.
-  void Temp_high_range();
-
-  //! Check for unphysical state properties.
-  int Unphysical_Properties(void) const;
-  //@}
-
-  //@{ @name Mixing Rules.
-
-  // The following constructors return "total" physical
-  // parameters based on mixture rules for each.
-
-  //! Mixture molecular mass.
-  double Mass(void) const;
-  //! Mixture gas constant.
-  double Rtot(void);
-  double Rtot(void) const;
-  //! Mixture heat capacity (Pressure constant)
-  double Cp(void) const;
-  double Cp(const double &TEMP) const;
-  //! Mixture heat capacity (Volume constant)
-  double Cv(void) const;
-  //! Mixture heat capacity ratio
-  double g(void) const;
-  //! Mixture absolute (sensible+chemical) internal energy
-  double e(void) const;
-  double eref(void) const;
-  //! Mixture sensible internal energy.
-  double es(void) const;
-  //! Mixture specific enthalpy.
-  double h(void) const;
-  double h(const double &T) const;
-  double href(void) const;
-  double hs(void) const;
-  double hs(const double &T) const;
-  //! Mixture total internal energy.
-  double E(void) const;
-  //! Mixture total enthalpy.
-  double H(void) const;
-  //! Mixture total enthalpy.
-  double Hs(void) const;
-  //! Mixture viscosity.
-  double mu(void) const;
-  //! Mixture thermal conductivity.
-  double kappa(void) const;
-  double hprime(void) const;  
-  double hprime(double &Temp) const;
-
-  // Mixture diffusion coefficient 
-  //double Diffusion_coef() const;
-  //@}
-
-  //@{ @name State functions.
-  //! Momentum.
-  Vector2D rhov(void) const;
-  //! Temperature.
-  double T(void) const;
-  //! Determine temperature given the sensible enthalpy.
-  double T(double &h_s) const;
-  //! Initial gamma for iterative schemes.
-  double gamma_guess(void) const;
-  //! Speed of sound.
-  double a(void);
-  double a(void) const;
-  //! Check for -ve mass fractions and sets small -ve c's to ZERO.
-  bool negative_speccheck(void) const;
-  //! Check for unphysical state properties.
-  bool Unphysical_Properties_Check(Chem2D_cState &U, const int n) const;
-  //! Species i concentration (rho*c/mol_mass).
-  double SpecCon(int i) const;
-  //! Gibbs Free Energy (H-TS) for species.
-  double Gibbs(int species) const;
-  //@}
-
-  //@{ @name Turbulence related functions.
-  double eddy_viscosity(void) const;      
-  double Pr_turb(void) const;      
-  double Sc_turb(void) const;      
-  double Kappa_turb(void) const;      
-  double Dm_turb(void) const;
-  double omega_sublayer_BC(const double &y) const;
-  //@}
-
-  //@{ @name Dimensionless Parameters.
-  double Schmidt_No(const int &) const;
-  double Prandtl() const;
-  double Lewis(const int &) const;
-  //@}
-
-  //@{ @name Temperature Derivatives.
-  double diedip() const;
-  double diedirho() const;
-  double dmudT(void) const;
-  //@}
-
-  //@{ @name Strain rate, laminar stress, and Reynolds stress tensors.
-  Tensor2D Strain_Rate(const Chem2D_pState &dWdx,
-		       const Chem2D_pState &dWdy,
-		       const int Axisymmetric,
-		       const Vector2D X);
-
-  Tensor2D Laminar_Stress(const Chem2D_pState &dWdx,
-			  const Chem2D_pState &dWdy,
-			  const int Axisymmetric,
-			  const Vector2D X);
-
-  Tensor2D Reynolds_Stress(const Chem2D_pState &dWdx,
-			   const Chem2D_pState &dWdy,
-			   const int Axisymmetric,
-			   const Vector2D X);
-
-  Tensor2D Strain_Rate(const Chem2D_pState &W,
-		       const Chem2D_pState &dWdx,
-		       const Chem2D_pState &dWdy,
-		       const int Axisymmetric,
-		       const Vector2D X);
-
-  Tensor2D Laminar_Stress(const Chem2D_pState &W,
-			  const Chem2D_pState &dWdx,
-			  const Chem2D_pState &dWdy,
-			  const int Axisymmetric,
-			  const Vector2D X);
-
-  Tensor2D Reynolds_Stress(const Chem2D_pState &W,
-			   const Chem2D_pState &dWdx,
-			   const Chem2D_pState &dWdy,
-			   const int Axisymmetric,
-			   const Vector2D X);
-  //@}
-
-  //@{ @name Heat Flux vector thermal Diffusion.
-  Vector2D thermal_diffusion(void) const;
-  //@}
-
-  //@{ @name Conserved solution state.
-  Chem2D_cState U(void) const;
-  Chem2D_cState U(const Chem2D_pState &W) const;
-  friend Chem2D_cState U(const Chem2D_pState &W);
-  //@}
-
-  //@{ @name Fluxes.
-  //! Inviscid Solution flux (x-direction).
-  Chem2D_cState Fx(void) const;
   
-  //! For rotated frame.
-  void dFIdU(DenseMatrix &dFdU);
-  void dFIdU(DenseMatrix &dFdU) const;
-  friend void dFIdU(DenseMatrix &dFdU, const Chem2D_pState &W);
-  
-  //! Compute the dWdU.
-  void dWdU(DenseMatrix &dWdQ);
-  //@}
-
-  //@{ @name Eigenstructure.
-  //! Eigenvalue(s) (x-direction).
-  Chem2D_pState lambda_x(void) const;
-
-  //! Precondtioned Eigenvalues.
-  Chem2D_pState lambda_preconditioned_x(const double &MR2) const;
-
-  //! Conserved right eigenvectors (x-direction).
-  Chem2D_cState rc_x(const int &index) const;
-  //! Primitive left eigenvectors (x-direction).
-  Chem2D_pState lp_x(const int &index) const;
-   
-  //! Conserved right preconditioned eigenvectors (x-direction).
-  Chem2D_cState rc_x_precon(const int &index,const double &MR2) const;
-  //! Primitive left preconditioned eigenvectors (x-direction).
-  Chem2D_pState lp_x_precon(const int &index,const double &MR2) const;
-  //@}
-  
-  //@{ @name Preconditioner.
-  double u_plus_aprecon(const double &u,
-			const double &deltax) const;
-  void u_a_precon(const double &UR,double &uprimed, double &cprimed) const;
-  double Mr2(const double &deltax) const;
-  void Low_Mach_Number_Preconditioner(DenseMatrix &P,
-				      const double &deltax) const; 
-  void Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,
-					      const double &deltax) const; 
-  //@}
-
-  //@{ @name Axisymmetric Source Terms.
-  //! Inviscid axisymmetric coordinate system source term.
-  Chem2D_cState Sa_inviscid(const Vector2D &X,
-                            const int Axisymmetric) const;
-
-  //! Vicous axisymmetric coordinate system source term.
-  Chem2D_cState Sa_viscous(const Chem2D_pState &dWdx, 
-                           const Chem2D_pState &dWdy, 
-                           const Vector2D &X,
-                           const int Axisymmetric);
-  //! Inviscid axisymmetric coordinate system Jacobian.
-  void dSa_idU(DenseMatrix &dSa_idU,
-	       const Vector2D &X,
-	       const int Axisymmetric) const;
-  //! Vicous axisymmetric coordinate system Jacobian.
-  void dSa_vdU(DenseMatrix &dSa_VdU,
-	       DenseMatrix &dWdQ,
-	       const Chem2D_pState &dWdx,
-	       const Chem2D_pState &dWdy,
-	       const Vector2D &X, 
-	       const int Axisymmetric, 
-	       const double d_dWdx_dW,
-	       const double d_dWdy_dW) const;
-  //@}
-
-  //@{ @name Source term and Jacobian associated with finite-rate chemistry.
-  Chem2D_cState Sw(int &REACT_SET_FLAG, const int &Flow_Type) const;
-  void dSwdU(DenseMatrix &dSwdU) const;
-  double dSwdU_max_diagonal(const int &Preconditioned,
-			    const double &delta_n) const;
-
-  //@{ @name Source term and Jacobian associated with gravitational forces.
-  Chem2D_cState Sg(void) const;
-  void dSgdU(DenseMatrix &dSgdU) const;
-  //@}
-
-  //@{ @name Source terms associated with turbulence model.
-  Chem2D_cState S_turbulence_model(const Chem2D_pState &dWdx, 
-                                   const Chem2D_pState &dWdy, 
-                                   const Vector2D &X,
-                                   const int Axisymmetric);
-  //@}
-
-  /**************** Operators Overloading ********************/
-
-  //@{ @name Index operator.
-  double &operator[](int index);
-  const double &operator[](int index) const;
-  //@}
-
-  //@{ @name Binary arithmetic operators.
-  Chem2D_pState operator +(const Chem2D_pState &W) const;
-  Chem2D_pState operator -(const Chem2D_pState &W) const;
-  Chem2D_pState operator *(const double &a) const;
-  friend Chem2D_pState operator *(const double &a, const Chem2D_pState &W);
-  Chem2D_pState operator /(const double &a) const;
-  double operator *(const Chem2D_pState &W) const;
-  Chem2D_pState operator ^(const Chem2D_pState &W) const;
-  //@}
-
-  //@{ @name Assignment Operator.
-  Chem2D_pState& operator =(const Chem2D_pState &W); 
-  //@}
-
-  //@{ @name Shortcut arithmetic operators.
-  Chem2D_pState& operator +=(const Chem2D_pState &W);
-  Chem2D_pState& operator -=(const Chem2D_pState &W);
-  Chem2D_pState& operator *=(const double &a);
-  Chem2D_pState& operator /=(const double &a);
-  //@}
-
-  //@{ @name Unary arithmetic operators.
-  //Chem2D_pState operator +(const Chem2D_pState &W);
-  friend Chem2D_pState operator -(const Chem2D_pState &W);
-  //@}
-
-  //@{ @name Relational operators.
-  friend int operator ==(const Chem2D_pState &W1, const Chem2D_pState &W2);
-  friend int operator !=(const Chem2D_pState &W1, const Chem2D_pState &W2);
-  //@}
-
-  //@{ @name Input-output operators.
-  friend ostream& operator << (ostream &out_file, const Chem2D_pState &W);
-  friend istream& operator >> (istream &in_file,  Chem2D_pState &W);
-  //@}
-
-};
-
-
-/*!
- * Class: Chem2D_cState
- *
- * @brief Conserved variable solution state class definition for an
- *        inviscid, laminar, or turbulent chemically reacting gas-flow.
- *
- * Conserved variable solution state class definition for an inviscid, 
- * laminar, or turbulent chemically reacting gas-flow.
- */
-class Chem2D_cState {
-private: 
-protected:
-public:
-  //@{ @name Cerved variables and associated constants:
-  double                      rho; //!< Density.
-  Vector2D                   rhov; //!< Momentum (2D)
-  double                        E; //!< Total Energy (rho *(e + HALF*v^2))
-  Species                *rhospec; //!< Species class using (rho*c[ns])
-  double                     rhok; //!< Total turbulent kinetic energy.
-  double                 rhoomega; //!< Total turbulent specific dissipation rate.
-  Tensor2D                    tau; //!< Shear Stress Tensor
-  Vector2D                  qflux; //!< Heat Flux Vector  
-  Tensor2D                 lambda; //!< Reynolds Stress Tensor
-  Vector2D                  theta; //!< Turbulent Heat Flux Vector  
-  static int                   ns; //!< number of species
-  static NASARP1311data *specdata; //!< Global species data 
-  static double          *Schmidt; //!< Schmidt Number for each species
-  static double    low_temp_range; //!< Low temp data range
-  static double   high_temp_range; //!< High temp data range
-  static int       NUM_VAR_CHEM2D; //!< Number of Chem2d variables (4+ns)
-  static int            flow_type; //!< Flow-type indicator (inviscid, laminar, or k-omega turbulent).
-  static double              Mref; //!< Mref for Precondtioning (normally set to incoming freestream Mach)
-  static int          debug_level; //!< Debug level flag (0=none, 1,2,..) 
-  //@}
-
-  //@{ @name Turbulence boundary-layer constants:
-  static double            yplus_o; //!< Transition between viscous sublayer and log layer.
-  static double                  C; //!< Surface roughness coefficient.
-  static double         von_karman; //!< Von Karman constant.
-  static double     yplus_sublayer; //!< Sublayer dimensionless wall distance.
-  static double yplus_buffer_layer; //!< Buffer layer dimensionless wall distance.
-  static double  yplus_outer_layer; //!< Outer layer dimensionless wall distance.
-  //@}
-
   //@{ @name k-omega closure coefficients:
   static double alpha;
   static double sigma;
@@ -597,317 +178,634 @@ public:
   static double beta_star;
   static double f_beta_star;
   static double Coeff_edm;
+  static double y_sublayer;    //Xinfeng
   //@}
-
+  
+  //default constructors of many flavours, hopefully one is right 4U   
+  //v.zero(); tau.zero(); qflux.zero(); lambda.zero(); theta.zero();  //Unecessary as Vector2D and Tensor2D defaults are ZERO
   //@{ @name Creation, copy, and assignment constructors.
-  Chem2D_cState(){rho = DENSITY_STDATM; rhov.zero(); E = PRESSURE_STDATM/(rho*(0.4)); 
-                  rhok = ZERO; rhoomega = ZERO; tau.zero(); qflux.zero(); lambda.zero(); 
-                  theta.zero(); rhospec = NULL; set_initial_values(); }   
+ 
+   Chem2D_pState(): rho(DENSITY_STDATM), p(PRESSURE_STDATM), k(ZERO), omega(ZERO) 
+                { specnull();  set_initial_values(); }
 
-  Chem2D_cState(const double &d, const double &vx, const double &vy, const double &En,
-		const double &dk, const double &domega )
-                {rho = d; rhov.x=vx; rhov.y=vy; E = En; rhok = dk; rhoomega = domega;  
-		tau.zero(); qflux.zero(); lambda.zero(); theta.zero(); rhospec = NULL;  set_initial_values(); }
+   Chem2D_pState(const double &value): rho(value), v(value), p(value),  k(ZERO), omega(ZERO)
+                { specnull(); set_initial_values(value); }
 
-  Chem2D_cState(const double &value){ rho = value; rhov.x=value; rhov.y=value;
-                                      E = value; rhok = ZERO; rhoomega = ZERO; tau.zero(); qflux.zero();
-                                     lambda.zero(); theta.zero();  rhospec = NULL; set_initial_values(value); }   
+   Chem2D_pState(const double &d, const Vector2D &V, const double &pre):
+                 rho(d), v(V), p(pre), k(ZERO), omega(ZERO) 
+ 		{ specnull();  set_initial_values(); }
 
-  Chem2D_cState(const double &d, const double &vx, const double &vy, const double &En)
-                {rho = d; rhov.x=vx; rhov.y=vy; E = En; rhok = ZERO; rhoomega = ZERO; tau.zero(); qflux.zero();
-		lambda.zero(); theta.zero(); rhospec = NULL;  set_initial_values(); }
+   Chem2D_pState(const double &d, const double &vx, const double &vy, const double &pre):
+                 rho(d), v(vx,vy), p(pre), k(ZERO), omega(ZERO) 
+ 		{specnull();  set_initial_values(); }
 
-  Chem2D_cState(const double &d, const Vector2D &V, const double &En, const double &dk,const double &domega)
-                {rho = d; rhov = V; E = En; rhok = dk; rhoomega = domega; tau.zero(); qflux.zero();
-		lambda.zero(); theta.zero(); rhospec = NULL;  set_initial_values(); }
+   Chem2D_pState(const double &d, const Vector2D &V, const double &pre, const double &kk, const double & oomega):
+                 rho(d), v(V), p(pre), k(kk), omega(oomega) 
+ 		{ specnull();  set_initial_values(); } 
 
-  Chem2D_cState(const double &d, const double &vx, const double &vy, const double &En,	const double &dk,
-		const double &domega, Species *rhomfrac) 
-                {rho = d; rhov.x=vx; rhov.y=vy; E = En; rhok = dk; rhoomega = domega;  tau.zero(); qflux.zero();
-		lambda.zero(); theta.zero(); rhospec = NULL;  set_initial_values(rhomfrac); }
+   Chem2D_pState(const double &d, const double &vx, const double &vy, const double &pre, 
+                 const double &kk, const double &oomega):
+                 rho(d), v(vx,vy), p(pre) , k(kk), omega(oomega) 
+ 		{ specnull();  set_initial_values(); }
 
-  Chem2D_cState(const double &d, const Vector2D &V, const double &En)
-                {rho = d; rhov = V; E = En; rhok = ZERO; rhoomega = ZERO; tau.zero(); qflux.zero();
-		 lambda.zero(); theta.zero(); rhospec = NULL;  set_initial_values(); } 
+   Chem2D_pState(const double &d, const double &vx, const double &vy, const double &pre, const double &value):
+                 rho(d), v(vx,vy), p(pre), k(ZERO), omega(ZERO)                
+ 		{ specnull();  set_initial_values(value); }
 
-  Chem2D_cState(const double &d, const double &vx, const double &vy, const double &En, const double &value) 
-                {rho = d; rhov.x=vx; rhov.y=vy; E = En; rhok = ZERO; rhoomega = ZERO; tau.zero(); qflux.zero();
-                 lambda.zero(); theta.zero(); rhospec = NULL;  set_initial_values(value); }
+   Chem2D_pState(const double &d, const double &vx, const double &vy, const double &pre, 
+                 const double &kk, const double &oomega,	const double &value):
+                 rho(d), v(vx,vy), p(pre) ,k(kk), omega(oomega) 
+ 		{ specnull();  set_initial_values(value); }
 
-  Chem2D_cState(const double &d, const double &vx, const double &vy, const double &En, 
-                const double &kk, const double &oomega,	const double &value) 
-                {rho = d; rhov.x=vx; rhov.y=vy; E = En; rhok = kk; rhoomega = oomega; tau.zero(); qflux.zero();
-                 lambda.zero(); theta.zero(); rhospec = NULL;  set_initial_values(value); }
+   Chem2D_pState(const double &d, const double &vx, const double &vy, const double &pre, 
+                 const double &kk, const double & oomega, const Species *mfrac): 
+                 rho(d), v(vx,vy), p(pre), k(kk), omega(oomega) 
+ 		{ specnull();  set_initial_values(mfrac); }
 
-  Chem2D_cState(const double &d, const double &vx, const double &vy, const double &En, Species *rhomfrac) 
-                {rho = d; rhov.x=vx; rhov.y=vy; E = En; rhok = ZERO; rhoomega = ZERO; tau.zero(); qflux.zero();
-		lambda.zero(); theta.zero(); rhospec = NULL;  set_initial_values(rhomfrac); }
-
-  Chem2D_cState(const double &d, const Vector2D &V, const double &En,  const double &dk, 
-		const double &domega, Species *rhomfrac) 
-                {rho = d; rhov = V; E = En; rhok = dk; rhoomega = domega;  tau.zero(); qflux.zero();
-		lambda.zero(); theta.zero();
-		rhospec = NULL;  set_initial_values(rhomfrac); }
+   Chem2D_pState(const double &d, const Vector2D &V, const double &pre,
+                 const double &kk, const double & oomega, const Species *mfrac): 
+                 rho(d), v(V), p(pre), k(kk), omega(oomega) 
+                 { specnull(); set_initial_values(mfrac); }
 
   //this is needed for the operator overload returns!!!!
-  Chem2D_cState(const Chem2D_cState &U)
-               { rhospec = NULL; rho = DENSITY_STDATM; set_initial_values();  Copy(U); }
-
-  //! Default destructor.
-  ~Chem2D_cState(){ Deallocate(); }
-
-  //! Deallocation for static specdata.
-  void Deallocate_static(void){ if(specdata != NULL) delete[] specdata; 
-                                  specdata = NULL; 
-				if(Schmidt != NULL) delete[] Schmidt; 
-				  Schmidt = NULL; 
-                              }
-  void Deallocate(void){ if(rhospec != NULL) delete[] rhospec; rhospec = NULL;  }
+  Chem2D_pState(const Chem2D_pState &W): rho(W.rho), v(W.v), p(W.p), k(W.k), omega(W.omega),
+ 					 tau(W.tau), qflux(W.qflux), lambda(W.lambda), theta(W.theta) 
+                                        { specnull(); set_initial_values(W.spec); }      
   //@}
 
-  //@{ @name Set static variables.
-  //! Read in ns species data, call only once as its static
-  void set_species_data(const int &,const string *,const char *,
-			const int &, const double&,const double *);
-  
-  //! Set initial data values predominately used internally 
-  void set_initial_values();
-  void set_initial_values(const double &value);
-  void set_initial_values(double *rhomfrac);
-  void set_initial_values(Species *rhomfrac);
+   //read in ns species data, call only once as its static
+   void set_species_data(const int &,const string *,const char *,
+ 			 const double&,const double *);
 
-  //! Set flow type static variable.
-  void set_flow_type(const int &Flow_Type) { flow_type = Flow_Type; }
+   //set initial data values predominately used internally !!!
+   void set_initial_values();
+   void set_initial_values(const double &value);
+   void set_initial_values(double *cfrac);
+   void set_initial_values(const Species *mfrac);
 
+   //Copy construtor, cheaper than = operator
+   void Copy(const Chem2D_pState &W);
+
+   /*************** VACUUM OPERATOR *********************/
+   void Vacuum(){ rho=ZERO; v.zero(); p=ZERO; k=ZERO; omega = ZERO; 
+     for(int i=0; i<ns; i++)  spec[i].Vacuum();
+     tau.zero(); qflux.zero(); lambda.zero(); theta.zero(); 
+   }
+
+   void zero_non_sol(){
+     for(int i=0; i<ns; i++){
+       spec[i].gradc.zero();
+       spec[i].diffusion_coef=ZERO;
+     }
+     tau.zero(); qflux.zero(); lambda.zero(); theta.zero(); 
+   }  
+ 
   //! Set turbulence static variables.
   void set_turbulence_variables(const double &C_constant,
 				const double &von_karman_constant,
 				const double &yplus_sub,
 				const double &yplus_buffer,
-				const double &yplus_outer);
+				const double &yplus_oute);
   //@}
 
-  //@{ @name Useful operators.
-  //! Copy operator.
-  void Copy(const Chem2D_cState &U);
+   /******** Set Data Temperature Ranges ***************/
+   void Temp_low_range();     
+   void Temp_high_range(); 
 
-  //! Vacuum operator.
-  void Vacuum(){
-    rho=ZERO; rhov.x=ZERO; rhov.y=ZERO; E=ZERO; rhok = ZERO; rhoomega = ZERO; 
-    for(int i=0; i<ns; i++){
-      rhospec[i].Vacuum();
-    }
-    tau.zero();  qflux.zero(); lambda.zero(); theta.zero(); 
-  }  
+   /***************** Mixing Rules ********************
+    The following constructors return "total" physical
+    parameters based on mixture rules for each.
+   ****************************************************/
+   double Mass(void) const;   //mixture molecular mass
+   double Rtot(void);         //mixture gas constant
+   double Rtot(void) const;   
+   double Cp(void) const;     //mixture heat capacity (Pressure constant)
+   double Cp(const double& TEMP) const;
+   double Cv(void) const;     //mixture heat capacity (Volume constant)
+   double g(void) const;      //mixture heat capacity ratio
+   double e(void) const;      //mixture absolute (sensible+chemical) internal energy
+   double eref(void) const;
+   double es(void) const;     //mixture sensible internal energy  
+   double h(void) const;      //mixture specific enthalpy
+   double h(const double &T) const;
+   double href(void) const;
+   double hs(void) const;
+   double hs(const double &T) const;
+   double E(void) const;      //mixture total internal energy  
+   double H(void) const;      //mixture total enthalpy
+   double Hs(void) const;     //mixture total enthalpy
+   double mu(void) const;     //mixture viscosity
+   double kappa(void) const;  //mixture thermal conductivity
+   double hprime(void) const;  
+   double hprime(double &Temp) const;
+   //double Diffusion_coef() const;  //mixture diffusion coefficient 
 
-  //! Zero non-solution quantities.
-  void zero_non_sol(){
-    for(int i=0; i<ns; i++){
-      rhospec[i].gradc.zero();
-      rhospec[i].diffusion_coef=ZERO;
-    }
-    tau.zero();  qflux.zero();
-    lambda.zero(); theta.zero(); 
+   /***************************************************/
+   Vector2D rhov(void) const;      //Momentum
+   double T(void) const;           //Temperature
+   double T(double &h_s) const;    //Determine temperature knowing sensible enthalpy
+   double gamma_guess(void) const; //gamma for iterative schemes
+   double a(void);                 //speed of sound
+   double a(void) const;
+//    bool negative_speccheck(void) ; //-ve mass frac check and sets small -ve c's to ZERO  
+//    bool Unphysical_Properties_Check(Chem2D_cState &U, const int Flow_Type, const int n) ;   
+   double SpecCon(int i) const;     //Species i concentration (rho*c/mol_mass)
+   double Gibbs(int species) const; //Gibbs Free Energy (H-TS) for species
+
+   /**************** turbulence model related parameters*********/
+   double eddy_viscosity(void) const;      
+   double Pr_turb(void) const;      
+   double Sc_turb(void) const;      
+   double Kappa_turb(void) const;      
+   double Dm_turb(void) const;
+   double omega_sublayer_BC(const double &y) const;
+
+   /************* Dimensionless Parameters ********************/
+   double Schmidt_No(const int &) const;
+   double Prandtl() const;
+   double Lewis(const int &) const;
+
+   /************** Temperature Derivatives *******************/
+   double diedip() const;
+   double diedirho() const;
+   double dmudT(void) const;
+   double dkappadT(void) const;
+
+   /************ Strain rate tensor, laminar stress and Reynolds stress tensors ***********/
+   Tensor2D Strain_Rate(const Chem2D_pState &dWdx,
+			const Chem2D_pState &dWdy,
+			const int Flow_Type,
+			const int Axisymmetric,
+			const Vector2D X);
+
+   void Laminar_Stress(const Chem2D_pState &dWdx,
+		       const Chem2D_pState &dWdy,
+		       const int Flow_Type,
+		       const int Axisymmetric,
+		       const Vector2D X);
+
+   void Reynolds_Stress(const Chem2D_pState &dWdx,
+			const Chem2D_pState &dWdy,
+			const int Flow_Type,
+			const int Axisymmetric,
+			const Vector2D X);
+
+   /************ Heat Flux vector thermal Diffusion ***********/
+   Vector2D thermal_diffusion(void) const;
+
+   /*************** Conserved solution state. ****************/
+   Chem2D_cState U(void) const;
+   Chem2D_cState U(const Chem2D_pState &W) const;
+   friend Chem2D_cState U(const Chem2D_pState &W);
+
+   /**************** Fluxes ***********************************/
+   /* Inviscid Solution flux (x-direction). */
+   Chem2D_cState Fx(void) const;
+
+   /*********** Inviscid Flux Jacobian X ***********************/
+   friend void dFIdU(DenseMatrix &dFdU, const Chem2D_pState &W, const int Flow_Type);
+   friend void dFIdU_FD(DenseMatrix &dFdU, const Chem2D_pState &W, const int Flow_Type);
+   friend void dFIdW(DenseMatrix &dFdW, const Chem2D_pState &W, const int Flow_Type);
+   friend void dFIdW_FD(DenseMatrix &dFdW, const Chem2D_pState &W, const int Flow_Type);
+
+   /** Conserved/Primitive  & Primitive/Conservered Jacobians **/
+   void dWdU(DenseMatrix &dWdQ, const int Flow_Type)const;
+   void dWdU_FD(DenseMatrix &dWdQ, const int Flow_Type);
+
+   void dUdW(DenseMatrix &dQdW, const int Flow_Type);
+   void dUdW_FD(DenseMatrix &dUdW, const int Flow_Type);
+
+   /************* Eigenvalues *********************************/
+   /* Eigenvalue(s) (x-direction). */ 
+   Chem2D_pState lambda_x(void) const;
+
+   /************** Precondtioned Eigenvalues ******************/
+   Chem2D_pState lambda_preconditioned_x(const double &MR2) const;
+
+   /**************** Eigenvectors *****************************/  
+   Chem2D_cState rc_x(const int &index) const; // Conserved right (x-direction)
+   Chem2D_pState lp_x(const int &index) const; // Primitive left (x-direction)
+
+   /************** Preconditioned Eigenvectors ****************/
+   Chem2D_cState rc_x_precon(const int &index,const double &MR2) const;  // Conserved right (x-direction)
+   Chem2D_pState lp_x_precon(const int &index,const double &MR2) const;  // Primitive left  (x-direction)
+
+   /*************** Preconditioner ****************************/
+   double u_plus_aprecon(const double &u,const int &flow_type_flag,const double &deltax) const;
+   void u_a_precon(const double &UR,double &uprimed, double &cprimed) const;
+   double Mr2(const int &flow_type_flag, const double &deltax) const;
+   void Low_Mach_Number_Preconditioner(DenseMatrix &P,const int &flow_type_flag, const double &deltax) const; 
+   void Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,const int &flow_type_flag, const double &deltax) const; 
+
+   /********** Axisymmetric Source Terms **********************/
+   Chem2D_cState Sa_inviscid(const Vector2D &X,
+                             const int Flow_Type,
+                             const int Axisymmetric) const;
+
+   Chem2D_cState Sa_viscous(const Chem2D_pState &dWdx, 
+                            const Chem2D_pState &dWdy, 
+                            const Vector2D &X,
+                            const int Flow_Type,
+                            const int Axisymmetric);
+
+   //Due to axisymmetric coordinate system
+  void dSa_idU(DenseMatrix &dSa_idU, const Vector2D &X, const int Flow_Type,const int Axisymmetric) const;  //Inviscid source Jacobian
+  void dSa_idU_FD(DenseMatrix &dSa_idU, const Vector2D &X, const int Flow_Type,const int Axisymmetric) const;
+  void dSa_vdW(DenseMatrix &dSa_VdW, const Chem2D_pState &dWdx,
+ 	       const Chem2D_pState &dWdy,const Vector2D &X, 
+ 	       const int Flow_Type,const int Axisymmetric, 
+ 	       const double d_dWdx_dW, const double d_dWdy_dW) const;  //Viscous source Jacobian
+
+   /****** Source terms associated with finite-rate chemistry ******/
+   Chem2D_cState Sw(int &REACT_SET_FLAG, const int Flow_Type ) const;
+   void dSwdU(DenseMatrix &dSwdU, const int &Flow_Type,const int &solver_type) const; //Jacobian
+   void dSwdU_FD(DenseMatrix &dSwdU, const int Flow_Type) const;
+   double dSwdU_max_diagonal(const int &Preconditioned,					 
+ 			    const int &Viscous,
+ 			    const double &delta_n,
+ 			    const int &solver_type) const;
+
+   /****** Source terms associated with gravitational forces ******/
+   Chem2D_cState Sg(void) const;
+   void dSgdU(DenseMatrix &dSgdU) const; //Jacobian
+
+   /********** Source terms associated with turbulence model *****************/
+   Chem2D_cState S_turbulence_model(const Chem2D_pState &dWdx, 
+                                    const Chem2D_pState &dWdy, 
+                                    const Vector2D &X,
+                                    const int Flow_Type,
+                                    const int Axisymmetric);
+
+  /****** Source terms associated with dual time stepping *******/
+  Chem2D_cState S_dual_time_stepping(const Chem2D_cState &U,
+                                     const Chem2D_cState &Ut,
+                                     const Chem2D_cState &Uold,
+                                     const double &dTime,
+                                     const int &first_step) const;
+
+   /**************** Operators Overloading ********************/
+   /* Index operator */
+   double &operator[](int index);
+   const double &operator[](int index) const;
+
+   /* Binary arithmetic operators. */
+   Chem2D_pState operator +(const Chem2D_pState &W) const;
+   Chem2D_pState operator -(const Chem2D_pState &W) const;
+   Chem2D_pState operator *(const double &a) const;
+   friend Chem2D_pState operator *(const double &a, const Chem2D_pState &W);
+   Chem2D_pState operator /(const double &a) const;
+   double operator *(const Chem2D_pState &W) const;
+   Chem2D_pState operator ^(const Chem2D_pState &W) const;
+
+   /* Assignment Operator. */ 
+   Chem2D_pState& operator =(const Chem2D_pState &W); 
+
+   /* Shortcut arithmetic operators. */
+   Chem2D_pState& operator +=(const Chem2D_pState &W);
+   Chem2D_pState& operator -=(const Chem2D_pState &W);
  
-  }  
+   /* Unary arithmetic operators. */
+   //Chem2D_pState operator +(const Chem2D_pState &W);
+   friend Chem2D_pState operator -(const Chem2D_pState &W);
 
-  //! Set the lowest value of the temperature range.
-  void Temp_low_range();
+   /* Relational operators. */
+   friend int operator ==(const Chem2D_pState &W1, const Chem2D_pState &W2);
+   friend int operator !=(const Chem2D_pState &W1, const Chem2D_pState &W2);
 
-  //! Set the highest value of the temperature range.
-  void Temp_high_range();
+   /* Input-output operators. */
+   friend ostream& operator << (ostream &out_file, const Chem2D_pState &W);
+   friend istream& operator >> (istream &in_file,  Chem2D_pState &W);
 
-  //! Check for unphysical state properties.
-  int Unphysical_Properties(void) const;
-  //@}
+   /**************** Destructors ******************************/
+   //for static specdata
+   void Deallocate_static(void){ if(specdata != NULL) delete[] specdata; 
+                                           specdata = NULL; 
+ 				if(Schmidt != NULL) delete[] Schmidt; 
+ 				           Schmidt = NULL;
+                                }
+
+#ifdef STATIC_NUMBER_OF_SPECIES    
+   void specnull() {}
+   void spec_memory() {}
+   ~Chem2D_pState(){}
+#else
+   void specnull() {spec=NULL;}
+   void spec_memory() { Deallocate(); spec = new Species[ns];}
+   void Deallocate(void){ if(spec != NULL){ delete[] spec;}  specnull();  }
+   ~Chem2D_pState(){ Deallocate(); }
+#endif
  
-  //@{ @name Functions required for multigrid.
-  //! Copy variables solved by multigrid only.
-  void Copy_Multigrid_State_Variables(const Chem2D_cState &Ufine);
-
-  //! Zero variables not-solved by multigrid.
-  void Zero_Non_Multigrid_State_Variables(void);
-  //@}
-
-  //@{ @name Mixing Rules.
-
-  // The following constructors return "total" physical
-  // parameters based on mixture rules for each.
-
-  // Mixture molecular mass
-  //double Mass(void);
-  double Rtot(void) const; 
-  // Mixture heat capacity (Pressure constant)
-  //double Cp(void) const;
-  // Mixture heat capacity (Volume constant)
-  //double Cv(void) const;
-  // Mixture heat capacity ratio
-  //double g(void) const;
-  double gamma_guess(void) const;   //mixture specifc heat ratio
-  //! Mixture specific internal energy
-  double e(void) const;
-  //! Mixture specific sensible internal energy.
-  double es(void) const;
-  //! Mixture specific enthalpy
-  double h(const double &T) const;
-  //! Mixture specific enthalpy
-  double hs(const double &T) const;
-  double hprime(const double &T) const; 
-  //! Mixture heat of formation.
-  double heatofform(void) const;
-  // Mixture total internal energy
-  //double E(void) const;
-  // Mixture total enthalpy
-  //double H(void);
-  //! Mixture viscosity.
-  double mu(void) const;
-  //! Mixture thermal conductivity.
-  double kappa(void) const;
-  //@}
-
-  //@{ @name State functions.
-  //! Velocity.
-  Vector2D v(void) const;
-  //! Pressure.
-  double p(void) const;
-  //! Turbulent kinetic energy.
-  double k(void) const;
-  //! Turbulent specific dissipation.
-  double omega(void) const;
-  //! Temperature
-  double T(void) const;
-  //! Speed of sound.
-  double a(void) const;
-  //! Check for -ve mass fractions and sets small -ve c's to ZERO.
-  bool negative_speccheck(const int &step) const;
-  //! Check for unphysical state properties.
-  bool Unphysical_Properties_Check(const int n) const;   
-  double sum_species(void) const;
-  //@}
-
-  //@{ @name Temperature Derivatives.
-  double dmudT(void) const;
-  //@}
-
-  //@{ @name Heat Flux vector thermal Diffusion.
-  Vector2D thermal_diffusion(const double &Temp) const;
-  //@}
-
-  //@{ @name Turbulence related functions.
-  double eddy_viscosity(void) const;      
-  double Pr_turb(void) const;      
-  double Sc_turb(void) const;      
-  double Kappa_turb(void) const;     
-  double Dm_turb(void) const;  //!< Molecular diffusivity.
-  double omega_sublayer_BC(const double &y) const;
-  //@}
-
-  //@{ @name Primitive solution state.
-  Chem2D_pState W(void) const;
-  Chem2D_pState W(const Chem2D_cState &U) const;
-  friend Chem2D_pState W(const Chem2D_cState &U);
-  //@}
-
-  //@{ @name Viscous Flux (laminar+turbulent)
-  Chem2D_cState Viscous_Flux_x(const Chem2D_pState &dWdx) const;
-  Chem2D_cState Viscous_Flux_y(const Chem2D_pState &dWdy) const;
-  //@}
-
-  //@{ @name Low Mach number preconditioner.
-  void Low_Mach_Number_Preconditioner(DenseMatrix &P,
-				      const double &deltax) const; 
-  void Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,
-					      const double &deltax) const; 
-  //@}
-
-  //@{ @name Index operators.
-  double &operator[](int index);
-  const double &operator[](int index) const;
-  //@}
-
-  //@{ @name Binary arithmetic operators.
-  Chem2D_cState operator +(const Chem2D_cState &U) const;
-  Chem2D_cState operator -(const Chem2D_cState &U) const;
-  Chem2D_cState operator *(const double &a) const;
-  friend Chem2D_cState operator *(const double &a, const Chem2D_cState &U);
-  Chem2D_cState operator /(const double &a) const;
-  double operator *(const Chem2D_cState &U) const;
-  Chem2D_cState operator ^(const Chem2D_cState &U) const;
-  //@}
-
-  //@{ @name Assignment Operator.
-  Chem2D_cState& operator =(const Chem2D_cState &U); 
-  //@}
-
-  //@{ @name Shortcut arithmetic operators.
-  Chem2D_cState& operator +=(const Chem2D_cState &U);
-  Chem2D_cState& operator -=(const Chem2D_cState &U);
-  Chem2D_cState& operator *=(const double &a);
-  Chem2D_cState& operator /=(const double &a);
-  //@}
-
-  //@{ @name Unary arithmetic operators.
-  //Chem2D_cState operator +(const Chem2D_cState &U);
-  friend Chem2D_cState operator -(const Chem2D_cState &U);
-  //@}
-
-  //@{ @name Relational operators.
-  friend int operator ==(const Chem2D_cState &U1, const Chem2D_cState &U2);
-  friend int operator !=(const Chem2D_cState &U1, const Chem2D_cState &U2);
-  //@}
-
-  //@{ @name Input-output operators.
-  friend ostream& operator << (ostream &out_file, const Chem2D_cState &U);
-  friend istream& operator >> (istream &in_file,  Chem2D_cState &U);
-  //@}
 
 };
 
-/**************************************************************************
-********************* CHEM2D_PSTATE CONSTRUCTORS **************************
-***************************************************************************/
 
-/**************************************************************************
-   Set up mass fractions memory and initial values, ie. Species Class  
-**************************************************************************/
-inline void Chem2D_pState::set_initial_values(){
-  Deallocate();
-  spec = new Species[ns];
-  for(int i=0; i<ns; i++){
-    spec[i].c = ONE/ns ; 
-  }
-}
+ /**************************************************************************
+ ********************* CHEM2D_CSTATE CLASS DEFINTION ***********************
+     The conserved variables edition of CHEM2D_PSTATE... 
+ ***************************************************************************
+ ***************************************************************************/
+ class Chem2D_cState {
+   private: 
+   //all public .... yes I know ....
+   protected:
+   public:
+   /****** Conservative Vector "U" **************************/
+  double                      rho; //!< Density.
+  Vector2D                   rhov; //!< Momentum (2D)
+  double                        E; //!< Total Energy (rho *(e + HALF*v^2))
+#ifdef STATIC_NUMBER_OF_SPECIES
+   Species   rhospec[STATIC_NUMBER_OF_SPECIES];
+#else 
+  Species                *rhospec; //!< Species class using (rho*c[ns])
+#endif
+   double                     rhok; //!< Total turbulent kinetic energy.
+   double                 rhoomega; //!< Total turbulent specific dissipation rate.
+   Tensor2D                    tau; //!< Shear Stress Tensor
+   Vector2D                  qflux; //!< Heat Flux Vector  
+   Tensor2D                 lambda; //!< Reynolds Stress Tensor
+   Vector2D                  theta; //!< Turbulent Heat Flux Vector  
+ 
+   static int                   ns; //!< number of species
+   static NASARP1311data *specdata; //!< Global species data 
+   static double          *Schmidt; //!< Schmidt Number for each species
+   static double    low_temp_range; //!< Low temp data range
+   static double   high_temp_range; //!< High temp data range
+   static int       NUM_VAR_CHEM2D; //!< Number of Chem2d variables (4+ns)
+   static double              Mref; //!< Mref for Precondtioning (normally set to incoming freestream Mach)
+   //@}
+ 
+   //@{ @name Turbulence boundary-layer constants:
+   static double            yplus_o; //!< Transition between viscous sublayer and log layer.
+   static double                  C; //!< Surface roughness coefficient.
+   static double         von_karman; //!< Von Karman constant.
+   static double     yplus_sublayer; //!< Sublayer dimensionless wall distance.
+   static double yplus_buffer_layer; //!< Buffer layer dimensionless wall distance.
+   static double  yplus_outer_layer; //!< Outer layer dimensionless wall distance.
+   //@}
 
-inline void  Chem2D_pState::set_initial_values(const double &value){
-  Deallocate();
-  spec = new Species[ns];
-  for(int i=0; i<ns; i++){
-    spec[i].c = value ; 
-  }
-}
+   //@{ @name k-omega closure coefficients:
+   static double alpha;
+   static double sigma;
+   static double sigma_star;
+   static double beta;
+   static double f_beta;
+   static double beta_star;
+   static double f_beta_star;
+   static double Coeff_edm;
+   static double y_sublayer;
+   //@}
 
-//user specified
-inline void Chem2D_pState::set_initial_values(double *cfrac){
-  Deallocate();
-  spec = new Species[ns];
-  for(int i=0; i<ns; i++){
-    spec[i].c = cfrac[i];
-  }
-}
+   /*****************************************************/
+   //default constructors of many flavours, hopefully one is right 4U
+   Chem2D_cState(): rho(DENSITY_STDATM), E(PRESSURE_STDATM/(rho*((double)0.4))), rhok(ZERO), rhoomega(ZERO)
+                    {rhospecnull(); set_initial_values(); }   
 
-//another set using species class
-inline void Chem2D_pState::set_initial_values(Species *mfrac){
-  Deallocate();
-  spec = new Species[ns];
-  for(int i=0; i<ns; i++){
-    spec[i] = mfrac[i];
-  }
-}
+   Chem2D_cState(const double &value): rho(value), rhov(value), E(value), rhok(ZERO), rhoomega(ZERO)
+                 { rhospecnull();  set_initial_values(value); }   
 
-/**********************************************************************
- * Chem2D_pState::set_turbulence_variables -- Set the turbulence      *
- *                                            static variables.       *
- **********************************************************************/
+   Chem2D_cState(const double &d, const Vector2D &V, const double &En):
+                 rho(d), rhov(V), E(En), rhok(ZERO), rhoomega(ZERO)
+ 		{ rhospecnull(); set_initial_values(); }
+
+   Chem2D_cState(const double &d, const double &vx, const double &vy, const double &En):
+                 rho(d), rhov(vx,vy), E(En), rhok(ZERO), rhoomega(ZERO)
+ 		{ rhospecnull(); set_initial_values(); }
+
+   Chem2D_cState(const double &d, const Vector2D &V, const double &En, const double &dk,const double &domega):
+                 rho(d), rhov(V), E(En), rhok(dk), rhoomega(domega)
+ 		{ rhospecnull(); set_initial_values(); }
+
+   Chem2D_cState(const double &d, const double &vx, const double &vy, const double &En,
+ 		const double &dk, const double &domega ):
+                 rho(d), rhov(vx,vy), E(En), rhok(dk), rhoomega(domega)
+ 		{ rhospecnull();   set_initial_values(); }
+
+   Chem2D_cState(const double &d, const double &vx, const double &vy, const double &En, const double &value): 
+                 rho(d), rhov(vx,vy), E(En), rhok(ZERO), rhoomega(ZERO)
+                 { rhospecnull();  set_initial_values(value); }
+
+   Chem2D_cState(const double &d, const double &vx, const double &vy, const double &En, 
+                 const double &dk, const double &domega,	const double &value): 
+                 rho(d), rhov(vx,vy), E(En), rhok(dk), rhoomega(domega)
+ 		{ rhospecnull();   set_initial_values(value); }
+
+   Chem2D_cState(const double &d, const double &vx, const double &vy, const double &En,	const double &dk,
+ 		const double &domega, const Species *rhomfrac): 
+                 rho(d), rhov(vx,vy), E(En), rhok(dk), rhoomega(domega)
+ 		{ rhospecnull();   set_initial_values(rhomfrac); }
+
+   Chem2D_cState(const double d, const Vector2D &V, const double &En,  const double &dk, 
+ 		const double &domega, const Species *rhomfrac): 
+                 rho(d), rhov(V), E(En), rhok(dk), rhoomega(domega)
+                 { rhospecnull();   set_initial_values(rhomfrac); }
+
+   //this is needed for the operator overload returns!!!!
+   Chem2D_cState(const Chem2D_cState &U): rho(U.rho), rhov(U.rhov), E(U.E), rhok(U.rhok), rhoomega(U.rhoomega),
+ 					 tau(U.tau), qflux(U.qflux), lambda(U.lambda), theta(U.theta)
+                                         { rhospecnull(); set_initial_values(U.rhospec); }
+
+   //read in ns species data, call only once as its static
+   void set_species_data(const int &,const string *,const char *,
+ 			const double&,const double *);
+
+   //set initial data values predominately used internally 
+   void set_initial_values();
+   void set_initial_values(const double &value);
+   void set_initial_values(double *rhomfrac);
+   void set_initial_values(const Species *rhomfrac);
+
+   //Copy construtor, cheaper than = operator
+   void Copy(const Chem2D_cState &U);
+
+   /***************** VACUUM ************************/
+   void Vacuum(){ rho=ZERO; rhov.zero(); E=ZERO; rhok = ZERO; rhoomega = ZERO; 
+     for(int i=0; i<ns; i++) rhospec[i].Vacuum();
+     tau.zero();  qflux.zero(); lambda.zero(); theta.zero(); 
+   }  
+
+   void zero_non_sol(){
+     for(int i=0; i<ns; i++){
+       rhospec[i].gradc.zero();
+       rhospec[i].diffusion_coef=ZERO;
+     }
+     tau.zero(); qflux.zero(); lambda.zero(); theta.zero();  
+   }  
+
+   //! Set turbulence static variables.
+   void set_turbulence_variables(const double &C_constant,
+				 const double &von_karman_constant,
+				 const double &yplus_sub,
+				 const double &yplus_buffer,
+				 const double &yplus_outer);
+   //@}
+
+   /******** Set Data Temperature Ranges ***************/
+   void Temp_low_range();     
+   void Temp_high_range(); 
+
+   /***************** Mixing Rules ********************
+    The following constructors return "total" physical
+    parameters based on mixture rules for each.
+   ****************************************************/
+   //double Mass(void);       //mixture molecular mass
+   double Rtot(void) const; 
+ //  double Cp(void) const;   //mixture heat capacity (Pressure constant)
+ //  double Cv(void) const;   //mixture heat capacity (Volume constant)
+ //  double g(void) const;    //specific heat ratio
+   double gamma_guess(void) const;   //mixture specifc heat ratio
+   double e(void) const;             //mixture specific internal energy
+   double es(void) const;            //mixture specific sensible internal energy
+   double h(const double &T) const;  //mixture specific enthalpy
+   double hs(const double &T) const; //mixture specific enthalpy
+   double hprime(const double &T) const; 
+   double heatofform(void) const;      //mixture heat of formations
+   //double E(void) const;             //mixture total internal energy
+   //double H(void);                   //mixture total enthalpy
+   double mu(void) const;              //mixture viscosity
+   double kappa(void) const;           //mixture thermal conductivity
+
+   /***********************************************************/
+   Vector2D v(void) const;    //velocity  
+   double p(void) const;      //pressure
+   double k(void) const;
+   double omega(void) const;
+   double T(void) const;      //temperature
+   double a(void) const;      //speed of sound
+   bool negative_speccheck(const int &step) ; //-ve mass frac check and sets small -ve c's to ZERO
+   bool Unphysical_Properties();
+   bool Unphysical_Properties_Check(const int Flow_Type, const int n);   
+   double sum_species(void) const;
+
+   //@{ @name Functions required for multigrid.
+   //! Copy variables solved by multigrid only.
+   void Copy_Multigrid_State_Variables(const Chem2D_cState &Ufine);
+  
+   //! Zero variables not-solved by multigrid.
+   void Zero_Non_Multigrid_State_Variables(void);
+   //@}
+
+
+   /************** Temperature Derivatives *******************/
+   double dmudT(void) const;
+
+   // STRAIN RATE, LAMINAR STRESS, REYNOLD STRESS 6 FUNCTIONS\
+   // LIKE PRIMITIVE 
+
+   /************ Heat Flux vector thermal Diffusion ***********/
+   Vector2D thermal_diffusion(const double &Temp) const;
+
+   /*********** Primitive solution state ***********************/
+   Chem2D_pState W(void) const;
+   Chem2D_pState W(const Chem2D_cState &U) const;
+   friend Chem2D_pState W(const Chem2D_cState &U);
+
+   /**************** turbulence model related parameters*********/
+   double eddy_viscosity(void) const;      
+   double Pr_turb(void) const;      
+   double Sc_turb(void) const;      
+   double Kappa_turb(void) const;     
+   double Dm_turb(void) const;  //molecular diffusivity
+   double omega_sublayer_BC(const double &y) const;
+
+   /**************** Fluxes ***********************************/
+   //Viscous Flux (laminar+turbulent)
+   Chem2D_cState Viscous_Flux_x(const Chem2D_pState &dWdx, const int Flow_Type) const;
+   Chem2D_cState Viscous_Flux_y(const Chem2D_pState &dWdy, const int Flow_Type) const;
+
+   /*************** Preconditioner ****************************/
+   void Low_Mach_Number_Preconditioner(DenseMatrix &P,const int &flow_type_flag, const double &deltax) const; 
+   void Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,const int &flow_type_flag, const double &deltax) const; 
+
+   /***************** Index operators *************************/
+   double &operator[](int index);
+   const double &operator[](int index) const;
+
+   /**************** Operators Overloading ********************/
+   /* Binary arithmetic operators. */
+   Chem2D_cState operator +(const Chem2D_cState &U) const;
+   Chem2D_cState operator -(const Chem2D_cState &U) const;
+   Chem2D_cState operator *(const double &a) const;
+   friend Chem2D_cState operator *(const double &a, const Chem2D_cState &U);
+   Chem2D_cState operator /(const double &a) const;
+
+   double operator *(const Chem2D_cState &U) const;
+   Chem2D_cState operator ^(const Chem2D_cState &U) const;
+
+   /* Assignment Operator. */ 
+   Chem2D_cState& operator =(const Chem2D_cState &U); 
+
+   /* Shortcut arithmetic operators. */
+   Chem2D_cState& operator +=(const Chem2D_cState &U);
+   Chem2D_cState& operator -=(const Chem2D_cState &U);
+   Chem2D_cState& operator *=(const double &a);
+   Chem2D_cState& operator /=(const double &a);
+
+   /* Unary arithmetic operators. */
+   //Chem2D_cState operator +(const Chem2D_cState &U);
+   friend Chem2D_cState operator -(const Chem2D_cState &U);
+
+   /* Relational operators. */
+   friend int operator ==(const Chem2D_cState &U1, const Chem2D_cState &U2);
+   friend int operator !=(const Chem2D_cState &U1, const Chem2D_cState &U2);
+
+   /* Input-output operators. */
+   friend ostream& operator << (ostream &out_file, const Chem2D_cState &U);
+   friend istream& operator >> (istream &in_file,  Chem2D_cState &U);
+
+   /**************** Destructors ******************************/
+   void Deallocate_static(void){ if(specdata != NULL) delete[] specdata; 
+                                   specdata = NULL; 
+ 				if(Schmidt != NULL) delete[] Schmidt; 
+ 				  Schmidt = NULL; 
+                               }
+
+#ifdef STATIC_NUMBER_OF_SPECIES  
+   void rhospecnull() {}          
+   void rhospec_memory() {}
+   ~Chem2D_cState() {}
+#else
+   void rhospecnull() {rhospec=NULL;}
+   void rhospec_memory() { Deallocate(); rhospec = new Species[ns];}
+   void Deallocate(void){ if(rhospec != NULL) { delete[] rhospec;} rhospecnull(); }
+   ~Chem2D_cState() { Deallocate(); }
+#endif
+
+
+ };
+
+ /**************************************************************************
+ ********************* CHEM2D_PSTATE CONSTRUCTORS **************************
+ ***************************************************************************/
+
+ /**************************************************************************
+    Set up mass fractions memory and initial values, ie. Species Class  
+ **************************************************************************/
+ inline void Chem2D_pState::set_initial_values(){
+   spec_memory();
+   for(int i=0; i<ns; i++) spec[i].c = ONE/ns; 
+ }
+
+ inline void  Chem2D_pState::set_initial_values(const double &value){
+   spec_memory();
+   for(int i=0; i<ns; i++) spec[i].c = value; 
+ }
+
+ //user specified
+ inline void Chem2D_pState::set_initial_values(double *cfrac){
+   spec_memory();
+   for(int i=0; i<ns; i++) spec[i].c = cfrac[i];
+ }
+
+ //another set using species class
+ inline void Chem2D_pState::set_initial_values(const Species *mfrac){
+   spec_memory();
+   for(int i=0; i<ns; i++) spec[i] = mfrac[i];
+ }
+
+ /**********************************************************************
+  * Chem2D_pState::set_turbulence_variables -- Set the turbulence      *
+  *                                            static variables.       *
+  **********************************************************************/
 inline void Chem2D_pState::set_turbulence_variables(const double &C_constant,
 						    const double &von_karman_constant,
 						    const double &yplus_sub,
@@ -929,249 +827,181 @@ inline void Chem2D_pState::set_turbulence_variables(const double &C_constant,
   } while(fabs(f) >= 0.00000001);
 }
 
-/*****************  Momentum *******************************/
-inline Vector2D Chem2D_pState::rhov(void) const{
-  return rho*v; 
-} 
+ /*****************  Momentum *******************************/
+ inline Vector2D Chem2D_pState::rhov(void) const{
+   return rho*v; 
+ } 
 
-/********************** Prandtl ****************************/
-inline double Chem2D_pState::Prandtl(void) const{
-  //Pr = Cp*mu/k
-  return Cp()*mu()/kappa();
-}
+ /********************** Prandtl ****************************/
+ inline double Chem2D_pState::Prandtl(void) const{
+   //Pr = Cp*mu/k
+   return Cp()*mu()/kappa();
+ }
 
-/********************** Schmidt ****************************/
-inline double Chem2D_pState::Schmidt_No(const int &i) const{
-  if(spec[i].diffusion_coef != ZERO){
-    return mu()/(rho*spec[i].diffusion_coef);
-  } else {
-    return Schmidt[i];
-  }
-  
-}
+ /********************** Schmidt ****************************/
+ inline double Chem2D_pState::Schmidt_No(const int &i) const{
+   if(spec[i].diffusion_coef > ZERO){
+     return mu()/(rho*spec[i].diffusion_coef);
+   } else {
+     return Schmidt[i];
+   }
+ }
 
-/********************** Lewis *****************************/
-inline double Chem2D_pState::Lewis(const int &i) const{
-  if(spec[i].diffusion_coef != ZERO){
-    return kappa()/(rho*Cp()*spec[i].diffusion_coef);
-  }
-  return ZERO;
-}
+ /********************** Lewis *****************************/
+ inline double Chem2D_pState::Lewis(const int &i) const{
+   if(spec[i].diffusion_coef > ZERO){
+     return kappa()/(rho*Cp()*spec[i].diffusion_coef);
+   }
+   return ZERO;
+ }
 
-/******* Mixture Diffusion Coefficient ********************/
-// inline double Chem2D_pState::Diffusion_coef(void) const{
-//   double sum=ZERO;
-//   for(int i=0; i<ns; i++){
-//     sum += spec[i].c * spec[i].diffusion_coef;
-//   }
-//   return sum;
-// }
+ /******* Mixture Diffusion Coefficient ********************/
+ // inline double Chem2D_pState::Diffusion_coef(void) const{
+ //   double sum=ZERO;
+ //   for(int i=0; i<ns; i++){
+ //     sum += spec[i].c * spec[i].diffusion_coef;
+ //   }
+ //   return sum;
+ // }
 
-/************* Temperature ********************************/
-inline double Chem2D_pState::T(void) const{
-  return p/(rho*Rtot());
-}
-//strain rate tensor 
-inline Tensor2D Chem2D_pState::Strain_Rate(const Chem2D_pState &dWdx,
-					   const Chem2D_pState &dWdy,
-					   const int Axisymmetric,
-					   const Vector2D X){
+ /************* Temperature ********************************/
+ inline double Chem2D_pState::T(void) const{
+   return p/(rho*Rtot());
+ }
 
-  Tensor2D strain_rate;
+ /************* Strain rate tensor ***********************************/
+ inline Tensor2D Chem2D_pState::Strain_Rate(const Chem2D_pState &dWdx,
+ 					   const Chem2D_pState &dWdy,
+ 					   const int Flow_Type,
+ 					   const int Axisymmetric,
+ 					   const Vector2D X){
+   Tensor2D strain_rate;
+   double radius, div_v;
 
-  double r, div_v;
- 
-  /***************** Strain rate (+dilatation) **********************/	
-  div_v = dWdx.v.x + dWdy.v.y;
-  if (Axisymmetric == 2) {
-    r = X.x; 
-    div_v += v.x/r;
-  } else if (Axisymmetric == 1) {
-    r = X.y;
-    div_v += v.y/r;
-  } /* endif */
-
-  strain_rate.xx = dWdx.v.x-div_v/THREE;
-  strain_rate.xy = HALF*(dWdx.v.y + dWdy.v.x);
-  strain_rate.yy = dWdy.v.y-div_v/THREE;
-  
-  if (Axisymmetric == 0) {
-    strain_rate.zz = -(strain_rate.xx + strain_rate.yy); 
-  } else if (Axisymmetric == 2) {
-    strain_rate.zz = v.x/r-div_v/THREE;
-  } else if (Axisymmetric == 1) {
-    strain_rate.zz = v.y/r-div_v/THREE;
-  } /* endif */
-  
-  return strain_rate;
-  
-}
-//laminar (molecular) fluid stress
-inline Tensor2D Chem2D_pState::Laminar_Stress(const Chem2D_pState &dWdx,
-					      const Chem2D_pState &dWdy,
-					      const int Axisymmetric,
-					      const Vector2D X){
- /*  Tensor2D laminar_stress; */
- 
-/*   laminar_stress = mu()* Strain_Rate(dWdx,dWdy,Axisymmetric,X); */
-  
-/*   return laminar_stress; */
-
-  tau = mu()* Strain_Rate(dWdx,dWdy,Axisymmetric,X);
-  
-  return tau;
-  
-}
-// Reynolds stress
-inline Tensor2D Chem2D_pState::Reynolds_Stress(const Chem2D_pState &dWdx,
-					       const Chem2D_pState &dWdy,
-					       const int Axisymmetric,
-					       const Vector2D X){
-/*   Tensor2D reynolds_stress; */
-/*   double mu_t; */
-/*   mu_t = eddy_viscosity(); */
-  
-/*   reynolds_stress = mu_t*Strain_Rate(dWdx,dWdy,Axisymmetric, X); */
-  
-/*   return reynolds_stress; */
-
-
- 
-  double mu_t;
-  mu_t = eddy_viscosity();
-  
-  lambda = mu_t*Strain_Rate(dWdx,dWdy,Axisymmetric, X);
-  
-  return lambda;
-
-
-
-}
-//The passing parameter const Chem2D_pState &W is necessary when using the 
-//solution parameter on the face (for computing viscous fluxes) 
-inline Tensor2D Chem2D_pState::Strain_Rate(const Chem2D_pState &W,
-					   const Chem2D_pState &dWdx,
-					   const Chem2D_pState &dWdy,
-					   const int Axisymmetric,
-					   const Vector2D X){
-
-  Tensor2D strain_rate;
-
-  double  r, div_v;
-  
    /***************** Strain rate (+dilatation) **********************/	
-  div_v = dWdx.v.x + dWdy.v.y;
-  if (Axisymmetric == 2) {
-    r = X.x; 
-    div_v += W.v.x/r;
-  } else if (Axisymmetric == 1) {
-    r = X.y;
-    div_v += W.v.y/r;
-  } /* endif */
+   div_v = dWdx.v.x + dWdy.v.y;
+   if (Axisymmetric == AXISYMMETRIC_X) {
+     radius = (X.x < MICRO) ? MICRO : X.x;    //fabs(X.x) ??
+     div_v += v.x/radius;
+   } else if (Axisymmetric == AXISYMMETRIC_Y) {    
+     radius = (X.y < MICRO) ? MICRO : X.y;
+     div_v += v.y/radius;
+   } 
 
-  strain_rate.xx = dWdx.v.x-div_v/THREE;
-  strain_rate.xy = HALF*(dWdx.v.y + dWdy.v.x);
-  strain_rate.yy = dWdy.v.y-div_v/THREE;
+   strain_rate.xx = dWdx.v.x-div_v/THREE;
+   strain_rate.xy = HALF*(dWdx.v.y + dWdy.v.x);
+   strain_rate.yy = dWdy.v.y-div_v/THREE;
+
+   if (Axisymmetric == PLANAR) {
+     strain_rate.zz = -(strain_rate.xx + strain_rate.yy); 
+   } else if (Axisymmetric == AXISYMMETRIC_X) {
+     strain_rate.zz = v.x/radius-div_v/THREE;
+   } else if (Axisymmetric == AXISYMMETRIC_Y) {
+     strain_rate.zz = v.y/radius-div_v/THREE;
+   } 
+
+   return strain_rate;  
+ }
+
+ /***************** Laminar (molecular) fluid stress ***********************/
+ inline void Chem2D_pState::Laminar_Stress(const Chem2D_pState &dWdx,
+ 					  const Chem2D_pState &dWdy,
+ 					  const int Flow_Type,
+ 					  const int Axisymmetric,
+ 					  const Vector2D X){
+
+   tau = TWO*mu()*Strain_Rate(dWdx,dWdy, Flow_Type,Axisymmetric,X); 
+ }
+
+ /***************** Turbulent Reynolds stress ******************************/
+ inline void Chem2D_pState::Reynolds_Stress(const Chem2D_pState &dWdx,
+ 					   const Chem2D_pState &dWdy,
+ 					   const int Flow_Type,
+ 					   const int Axisymmetric,
+ 					   const Vector2D X){
+
+   lambda = TWO*eddy_viscosity()*Strain_Rate(dWdx,dWdy, Flow_Type,Axisymmetric, X);
+   lambda.xx -= (TWO/THREE)*rho*k;
+   lambda.yy -= (TWO/THREE)*rho*k;
+   lambda.zz -= (TWO/THREE)*rho*k;
+
+ }
+
+
+//  //Check for unphysical properties
+//  /**********************************************************/
+//  /* If unphysical properties and using global timestepping */ 
+//  /* stop simulation                                        */
+//  /**********************************************************/ 
+
+//  inline bool Chem2D_pState::Unphysical_Properties_Check(Chem2D_cState &U, const int Flow_Type, const int n) {
+//    if ((Flow_Type == FLOWTYPE_INVISCID ||
+//         Flow_Type == FLOWTYPE_LAMINAR) &&
+//        (U.rho <= ZERO ||!U.negative_speccheck(n) ||U.es() <= ZERO)) {
+//     cout << "\n " << CFDkit_Name() 
+// 	 << " Chem2D ERROR: Negative Density || Energy || mass fractions: \n"
+// 	 << U << "\n";
+//     return false;
   
-  if (Axisymmetric == 0) {
-    strain_rate.zz = -(strain_rate.xx + strain_rate.yy); 
-  } else if (Axisymmetric == 2) {
-    strain_rate.zz = W.v.x/r-div_v/THREE;
-  } else if (Axisymmetric == 1) {
-    strain_rate.zz = W.v.y/r-div_v/THREE;
-  } /* endif */
+//   }
+//   if ((Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON ||
+//        Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) &&
+//       (U.rho <= ZERO || !U.negative_speccheck(n) ||U.es() <= ZERO ||
+//        U.rhok < ZERO ||U.rhoomega < ZERO)) {
+//     cout << "\n " << CFDkit_Name() 
+// 	 << " Chem2D ERROR: Negative Density || Energy || mass fractions || Turbulent kinetic energy || : \n"
+// 	 << " Dissipation rate per unit turbulent kinetic energy || : \n"
+// 	 <<U << "\n";
+//     return false;
+//   }else{
+//     return true;
+//   }  
+// } 
+// /**************************************************************
+//   Check for -ve mass fractions and set small -ve values
+//   to ZERO. Then check that no mass is lost and that 
+//   the mass fractions still sum = 1
+
+//   Return "true" if passes
+//   and "false" if failed
+
+//   Should add "strict" and "anything goes" flags
+//   currently only set to give warnings, but still 
+//   continues.
+
+// ***************************************************************/
+// inline bool Chem2D_pState::negative_speccheck(void) {
+//   double sum(ZERO);
+//   double SPEC_TOLERANCE(SPEC_TOLERANCE);
+
+//   //-------- Negative Check ------------//
+//   for(int i=0; i<ns-1; i++){
+//     if(spec[i].c > ONE){ //check for > 1.0
+//       spec[i].c = ONE;
+//     } else if(spec[i].c < ZERO){  //check for -ve
+//       if(spec[i].c > -SPEC_TOLERANCE){  //check for small -ve and set to ZERO 
+// 	spec[i].c = ZERO;
+//       } else {
+// 	spec[i].c = ZERO;
+// 	//#ifdef _DEBUG
+// 	cout <<"\n pState -ve mass fraction in "<<specdata[i].Speciesname()<<" "<<
+// 	  spec[i].c<<" greater than allowed tolerance of "<<-SPEC_TOLERANCE; 
+// 	//#endif
+//       }      
+//     } 
+//     sum += spec[i].c;
+//   } 
   
-  return strain_rate;
-  
-}
-//laminar (molecular) fluid stress
-inline Tensor2D Chem2D_pState::Laminar_Stress(const Chem2D_pState &W,
-					      const Chem2D_pState &dWdx,
-					      const Chem2D_pState &dWdy,
-					      const int Axisymmetric,
-					      const Vector2D X){
-  Tensor2D laminar_stress;
-  double mu;
-  mu = W.mu();
- 
-  laminar_stress = mu* Strain_Rate(W,dWdx,dWdy,Axisymmetric,X);
-  
-  return laminar_stress;
-  
-}
-// Reynolds stress
-inline Tensor2D Chem2D_pState::Reynolds_Stress(const Chem2D_pState &W,
-					       const Chem2D_pState &dWdx,
-					       const Chem2D_pState &dWdy,
-					       const int Axisymmetric,
-					       const Vector2D X){
-  Tensor2D reynolds_stress;
-  double mu_t;
-  mu_t = W.eddy_viscosity();
+//   //   spec[ns-1].c = (ONE - sum);  //PUSH error into NS-1
+//   //Spread error across species
+//   spec[ns-1].c = max(ONE- sum, ZERO);
+//   sum += spec[ns-1].c;
+//   for(int i=0; i<ns; i++){
+//     spec[i].c = spec[i].c*(ONE/sum);
+//   }
 
-  reynolds_stress = mu_t*Strain_Rate(W,dWdx,dWdy,Axisymmetric, X);
-
-  return reynolds_stress;
-}
-//Check for unphysical properties
-/**********************************************************/
-/* If unphysical properties and using global timestepping */ 
-/* stop simulation                                        */
-/**********************************************************/ 
-
-inline bool Chem2D_pState::Unphysical_Properties_Check(Chem2D_cState &U, const int n) const{
-  if ((U.flow_type == FLOWTYPE_INVISCID ||
-       U.flow_type == FLOWTYPE_LAMINAR) &&
-      (U.rho <= ZERO ||!U.negative_speccheck(n) ||U.es() <= ZERO)) {
-    cout << "\n " << CFDkit_Name() 
-	 << " Chem2D ERROR: Negative Density || Energy || mass fractions: \n"
-	 << U << "\n";
-    return false;
-  }
-  if ((U.flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON ||
-       U.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) &&
-      (U.rho <= ZERO || !U.negative_speccheck(n) ||U.es() <= ZERO ||
-       U.rhok < ZERO || U.rhoomega < ZERO)) {
-    cout << "\n " << CFDkit_Name() 
-	 << " Chem2D ERROR: Negative Density || Energy || mass fractions || Turbulent kinetic energy || : \n"
-	 << " Dissipation rate per unit turbulent kinetic energy || : \n"
-	 <<U << "\n";
-    return false;
-  }else{
-    return true;
-  }  
-} 
-/**************************************************************
-  Check for -ve mass fractions and set small -ve values
-  to ZERO. Then check that no mass is lost and that 
-  the mass fractions still sum = 1
-
-  Return "true" if passes
-  and "false" if failed
-
-  Should add "strict" and "anything goes" flags
-  currently only set to give warnings, but still 
-  continues.
-
-***************************************************************/
-inline bool Chem2D_pState::negative_speccheck(void) const{
-  double LOCAL_TOL = 0.0001; 
-  //-------- Negative Check ------------//
-  for(int i=0; i<ns; i++){
-    if(spec[i].c < ZERO){  //check for -ve
-      if(spec[i].c > -LOCAL_TOL){  //check for small -ve and set to ZERO 
-	spec[i].c = ZERO;
-      } else {
-	spec[i].c = ZERO;
-	if(debug_level){ 	
-	  cout <<"\n -ve mass fraction in "<<specdata[i].Speciesname()<<" "<<
-	       spec[i].c<<" greater than allowed tolerance of "<<-LOCAL_TOL; 
-	}
-      }
-    } 
-  } 
-  return(1);
-}
+//   return true;
+//}
 
 /***** Species Concentrations ******************************/
 inline double Chem2D_pState::SpecCon(int i) const{
@@ -1217,56 +1047,53 @@ inline void Chem2D_pState::Copy(const Chem2D_pState &W){
   p = W.p;  
   k = W.k;
   omega = W.omega;
-  for( int i=0; i<ns; i++){
-    spec[i] = W.spec[i];
-  }
+  for( int i=0; i<ns; i++) spec[i] = W.spec[i];
   tau = W.tau;
   qflux = W.qflux;
   lambda = W.lambda;
   theta = W.theta;
 }
-//----------------- Index Operator ------------------------/
-//should probably inline these guys for speed
-inline double& Chem2D_pState::operator[](int index) {
-  
-    assert( index >= 1 && index <= NUM_VAR_CHEM2D );
-    if(index == 1){
-      return (rho);
-    } else if(index ==  2) {
-      return (v.x);
-    } else if(index ==  3) {
-      return (v.y);
-    } else if(index ==  4) {
-      return (p);
-    } else if(index ==   5) {
-      return (k);
-    } else if(index ==   6) {
-      return (omega);
-    } else {
-      return spec[index-7].c;
-    }
 
+//**************** Index Operators *************************/
+inline double& Chem2D_pState::operator[](int index) {  
+  //  assert( index >= 1 && index <= NUM_VAR_CHEM2D );
+  switch(index){  
+  case 1:
+    return rho;    
+  case 2:
+    return v.x;
+  case 3:
+    return v.y;
+  case 4:
+    return p;
+  case 5:
+    return k;
+  case 6:
+    return omega;
+  default :
+    return spec[index-NUM_CHEM2D_VAR_SANS_SPECIES-1].c;
+  };
 }
 
-inline const double& Chem2D_pState::operator[](int index) const {
-  
-    assert( index >= 1 && index <= NUM_VAR_CHEM2D );
-    if(index == 1){
-      return (rho);
-    } else if(index ==  2) {
-      return (v.x);
-    } else if(index ==  3) {
-      return (v.y);
-    } else if(index ==  4) {
-      return (p);
-    }else if(index ==   5 ) {
-      return (k);
-    }else if(index ==   6) {
-      return (omega);
-    } else{
-      return spec[index-7].c;
-    }
- 
+inline const double& Chem2D_pState::operator[](int index) const {  
+  //   assert( index >= 1 && index <= NUM_VAR_CHEM2D );
+  switch(index){  
+  case 1:
+    return rho;    
+  case 2:
+    return v.x;
+  case 3:
+    return v.y;
+  case 4:
+    return p;
+  case 5:
+    return k;
+  case 6:
+    return omega;
+  default :
+    return spec[index-NUM_CHEM2D_VAR_SANS_SPECIES-1].c;
+  };
+
 }
 /**************************************************************
   Get max of the min temperature of the lowest region
@@ -1288,8 +1115,6 @@ inline void Chem2D_pState::Temp_high_range(void){
   high_temp_range = temp;  
 }
 
-
-
 /********************************************************
  * Chem2D_pState::U -- Conserved solution state.        *
  ********************************************************/
@@ -1298,16 +1123,15 @@ inline Chem2D_cState Chem2D_pState::U(void) const {
 }
 
 inline Chem2D_cState Chem2D_pState::U(const Chem2D_pState &W) const{
-  if(ns == W.ns){ //check that species are equal   
     Chem2D_cState Temp;
     Temp.rho = W.rho;
     Temp.rhov = W.rhov();
-    Temp.E = W.E();
     for(int i=0; i<W.ns; i++){
-      Temp.rhospec[i] = W.rho*W.spec[i];
+      Temp.rhospec[i].c = W.rho*W.spec[i].c;
       Temp.rhospec[i].gradc = W.rho*W.spec[i].gradc;
       Temp.rhospec[i].diffusion_coef = W.rho*W.spec[i].diffusion_coef;
     } 
+    Temp.E = W.E();
     Temp.rhok = W.rho*W.k;
     Temp.rhoomega = W.rho*W.omega;
     Temp.tau = W.tau;
@@ -1315,22 +1139,18 @@ inline Chem2D_cState Chem2D_pState::U(const Chem2D_pState &W) const{
     Temp.lambda = W.lambda;
     Temp.theta = W.theta; 
     return Temp;
-  } else {
-    cerr<<"\n Mismatch in number of species \n";
-    exit(1);
-  } 
 }
 
 inline Chem2D_cState U(const Chem2D_pState &W) {
   Chem2D_cState Temp;
   Temp.rho = W.rho;
   Temp.rhov = W.rhov();
-  Temp.E = W.E();
   for(int i=0; i<W.ns; i++){
-    Temp.rhospec[i] = W.rho*W.spec[i];
+    Temp.rhospec[i].c = W.rho*W.spec[i].c;
     Temp.rhospec[i].gradc = W.rho*W.spec[i].gradc;
     Temp.rhospec[i].diffusion_coef = W.rho*W.spec[i].diffusion_coef;
   }  
+  Temp.E = W.E(); 
   Temp.rhok = W.rho*W.k;
   Temp.rhoomega = W.rho*W.omega;
   Temp.tau = W.tau;
@@ -1340,137 +1160,50 @@ inline Chem2D_cState U(const Chem2D_pState &W) {
   return Temp;
 }
 
-inline void dFIdU(DenseMatrix &dFdU, const Chem2D_pState &W) {
-
-  double Rsum = W.Rtot();
-  double Temp = W.T();
-  double term1 = W.Cp() - Rsum;
-  double term2 = W.Cp();
-  double g = W.g();
-  double gm1 = g-ONE;
-  double gm1i = ONE/gm1;
-
-  dFdU(0,1) += ONE;
-  dFdU(1,0) += HALF*(sqr(W.v.x)*(g-THREE)+sqr(W.v.y)*(g-1));
-  dFdU(1,1) -= W.v.x*(g-THREE);
-  dFdU(1,2) -= W.v.y*gm1;
-  dFdU(1,3) += gm1;
-  dFdU(2,0) -= W.v.x*W.v.y;
-  dFdU(2,1) += W.v.y;
-  dFdU(2,2) += W.v.x;
-
-  double phi = ZERO;   
-  for(int i=0; i<W.ns-1; i++) {
-    phi += W.spec[i].c*(W.specdata[i].Enthalpy(Temp) + W.specdata[i].Heatofform());   
-  }
-  dFdU(3,0) += W.v.x*((HALF*g -1)*(W.v.x*W.v.x +W.v.y+W.v.y) - phi);
-  dFdU(3,1) += (ONE -g)*W.v.x + W.H()/W.rho;
-  dFdU(3,2) -= W.v.x*W.v.y*gm1;
-  dFdU(3,3) += g*W.v.x; 
- 
-  for(int i = 0; i<(W.ns-1); i++) {
-    dFdU(1,NUM_CHEM2D_VAR_SANS_SPECIES+i) -=(g-ONE)*(W.specdata[i].Enthalpy(Temp)+W.specdata[i].Heatofform())- g*W.specdata[i].Rs()*Temp;
-    dFdU(3,NUM_CHEM2D_VAR_SANS_SPECIES+i) = W.v.x*dFdU(1,NUM_CHEM2D_VAR_SANS_SPECIES+i);
-    dFdU(NUM_CHEM2D_VAR_SANS_SPECIES+i, 0) -= W.spec[i].c*W.v.x ;
-    dFdU(NUM_CHEM2D_VAR_SANS_SPECIES+i, 1) += W.spec[i].c ;
-    dFdU(NUM_CHEM2D_VAR_SANS_SPECIES+i,NUM_CHEM2D_VAR_SANS_SPECIES+i) += W.v.x ;    
-  }
-
-  if (W.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-      W.flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON){ 
-    dFdU(3,0) -= W.v.x*W.k;
-    dFdU(3,4) += (ONE-g)*W.v.x; 
-    dFdU(4,0) = -W.k*W.v.x;
-    dFdU(4,1) = W.k;
-    dFdU(4,4) = W.v.x;
-    dFdU(5,0) = -W.omega*W.v.x;
-    dFdU(5,1) = W.omega;
-    dFdU(5,5) = W.v.x;
-  }
-
-}
-
-inline void Chem2D_pState::dWdU(DenseMatrix &dWdQ) {
-  
-
-  dWdQ(0,0) = ONE;
-  dWdQ(1,0) = -v.x/rho;
-  dWdQ(1,1) = ONE/rho;
-  dWdQ(2,0) = -v.y/rho;
-  dWdQ(2,2) = ONE/rho;
-
-  double Temp = T();
-  double Rt = Rtot();
-  double C_p = Cp();
-  double C_v1 = Rt-C_p;
-
-  
-  dWdQ(3,0) = -ONE/TWO *sqr(v.x+v.y)/(rho*C_v1);
-  dWdQ(3,1) = v.x/(rho*C_v1);
-  dWdQ(3,2) = v.y/(rho*C_v1);
-  dWdQ(3,3) = -ONE/(rho*C_v1);
-
-  int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES;
-  for(int i=0; i<(ns-1);i++){
-    
-    dWdQ(3, NUM_VAR+i) = (specdata[i].Enthalpy(Temp)+specdata[i].Heatofform()-specdata[i].Rs()*Temp)/(rho*C_v1);
-    dWdQ(NUM_VAR+i, 0) = -spec[i].c/rho;
-    dWdQ(NUM_VAR+i, NUM_VAR+i) = ONE/rho;
-  }
-  
-  if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-      flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-    
-    dWdQ(3,4) = ONE/(rho*C_v1);
-    
-    dWdQ(4,0) = -k/rho;
-    dWdQ(5,0) = -omega/rho;
-    dWdQ(4,4) =  ONE/rho;
-    dWdQ(5,5)=  ONE/rho;
-  
-  }
-
-}
-
 /**************************************************************************
 ********************* CHEM2D_CSTATE CONSTRUCTORS **************************
 ***************************************************************************/
 
-/**************************************************************
+/***************************************************************
   Set up mass fractions memory and initial values, ie. Species Class  
 ****************************************************************/
 inline void Chem2D_cState::set_initial_values(){
-  Deallocate();
-  rhospec = new Species[ns];
-  for(int i=0; i<ns; i++){
-    rhospec[i].c = rho/ns; 
-  }
-}
+  rhospec_memory();
+  for(int i=0; i<ns; i++) rhospec[i].c = rho/ns; 
+} 
 
 inline void  Chem2D_cState::set_initial_values(const double &value){
-  Deallocate();
-  rhospec = new Species[ns];
-  for(int i=0; i<ns; i++){
-    rhospec[i].c = value; 
-  }
+  rhospec_memory();
+  for(int i=0; i<ns; i++) rhospec[i].c = value; 
 }
 
 //user specified
 inline void Chem2D_cState::set_initial_values(double *rhomfrac){
-  Deallocate();
-  rhospec = new Species[ns];
-  for(int i=0; i<ns; i++){
-    rhospec[i].c = rhomfrac[i];
-  }
+  rhospec_memory();
+  for(int i=0; i<ns; i++) rhospec[i].c = rhomfrac[i];
 }
 
 //another set using species class
-inline void Chem2D_cState::set_initial_values(Species *rhomfrac){
-  Deallocate();
-  rhospec = new Species[ns];
-  for(int i=0; i<ns; i++){
-    rhospec[i] = rhomfrac[i];
-  }
+inline void Chem2D_cState::set_initial_values( const Species *rhomfrac){
+  rhospec_memory();
+  for(int i=0; i<ns; i++) rhospec[i] = rhomfrac[i];
+}
+
+/**************** Copy *************************************/
+inline void Chem2D_cState::Copy(const Chem2D_cState &U){
+  rho = U.rho;
+  rhov = U.rhov; 
+  E = U.E; 
+  rhok = U.rhok;
+  rhoomega = U.rhoomega;
+
+  for( int i=0; i<ns; i++){ 
+    rhospec[i] = U.rhospec[i];
+  } 
+  tau = U.tau;
+  qflux = U.qflux; 
+  lambda = U.lambda;
+  theta = U.theta; 
 }
 
 /**********************************************************************
@@ -1498,49 +1231,6 @@ inline void Chem2D_cState::set_turbulence_variables(const double &C_constant,
   } while(fabs(f) >= 0.00000001);
 }
 
-/**************** Copy *************************************/
-inline void Chem2D_cState::Copy(const Chem2D_cState &U){
-  rho = U.rho;
-  rhov = U.rhov; 
-  E = U.E; 
-  rhok = U.rhok;
-  rhoomega = U.rhoomega;
-
-  for( int i=0; i<ns; i++){ 
-    rhospec[i] = U.rhospec[i];
-  } 
-  tau = U.tau;
-  qflux = U.qflux; 
-  lambda = U.lambda;
-  theta = U.theta; 
-}
-
-/**********************************************************************
- * Chem2D_cState::Unphysical_Properties -- Check for unphysical state *
- *                                          properties.               *
- **********************************************************************/
-inline int Chem2D_cState::Unphysical_Properties(void) const {
-  if (rho <= ZERO || !negative_speccheck(ns) || es() <= ZERO || rhok < ZERO || rhoomega < ZERO) return 1;
-  return 0;
-}
-
-/**********************************************************************
- * Chem2D_cState::Copy_Multigrid_State_Variables --                   *
- *                           Copy variables solved by multigrid only. *
- **********************************************************************/
-inline void Chem2D_cState::Copy_Multigrid_State_Variables(const Chem2D_cState &Ufine) {
-  Copy(Ufine);
-  Zero_Non_Multigrid_State_Variables();
-}
-
-/**********************************************************************
- * Chem2D_cState::Zero_Non_Multigrid_State_Variables --               *
- *                            Zero variables not-solved by multigrid. *
- **********************************************************************/
-inline void Chem2D_cState::Zero_Non_Multigrid_State_Variables(void) {
-  rhok = ZERO; rhoomega = ZERO;
-}
-
 /**************** Velocity *********************************/
 inline Vector2D Chem2D_cState::v() const{
   return (rhov/rho);
@@ -1562,55 +1252,43 @@ inline double Chem2D_cState::omega() const{
 
 //----------------- Index Operator ---------------------//
 inline double& Chem2D_cState::operator[](int index) {
-  assert( index >= 1 && index <= NUM_VAR_CHEM2D );
-
-    if(index == 1){
-      return (rho);
-    } else if(index ==  2) {
-      return (rhov.x);
-    } else if(index ==  3) {
-      return (rhov.y);
-    } else if(index ==  4) {
-      return (E);
-    } else if(index ==  5 ) {
-      return (rhok);
-    }else if(index ==   6) {
-      return (rhoomega);
-    } else {
-      for(int i=7; i<=(NUM_VAR_CHEM2D); i++){
-	if(index ==i){
-	  return rhospec[i-7].c;
-	  break;
-	}
-      }
-    }
- 
+  //  assert( index >= 1 && index <= NUM_VAR_CHEM2D );
+  switch(index){  
+  case 1:
+    return rho;    
+  case 2:
+    return (rhov.x);
+  case 3:
+    return (rhov.y);
+  case 4:
+    return (E);
+  case 5:
+    return (rhok);
+  case 6:
+    return (rhoomega);
+  default :
+    return rhospec[index-NUM_CHEM2D_VAR_SANS_SPECIES-1].c;
+  };
 }
 
 inline const double& Chem2D_cState::operator[](int index) const{
-  assert( index >= 1 && index <= NUM_VAR_CHEM2D );
- 
-    if(index == 1){
-      return (rho);
-    } else if(index ==  2) {
-      return (rhov.x);
-    } else if(index ==  3) {
-      return (rhov.y);
-    } else if(index ==  4) {
-      return (E);
-    } else if(index==   5){
-      return (rhok);
-    }else if(index==    6){
-      return (rhoomega);
-    }else{
-      for(int i=7; i<=(NUM_VAR_CHEM2D); i++){
-	if(index ==i){
-	  return rhospec[i-7].c;
-	  break;
-	}
-      }
-    }
- 
+  //  assert( index >= 1 && index <= NUM_VAR_CHEM2D ); 
+  switch(index){  
+  case 1:
+    return rho;    
+  case 2:
+    return (rhov.x);
+  case 3:
+    return (rhov.y);
+  case 4:
+    return (E);
+  case 5:
+    return (rhok);
+  case 6:
+    return (rhoomega);
+  default :
+    return rhospec[index-NUM_CHEM2D_VAR_SANS_SPECIES-1].c;
+  };
 }
 
 /**************************************************************
@@ -1626,71 +1304,93 @@ inline const double& Chem2D_cState::operator[](int index) const{
   continues.
 
 ***************************************************************/
-inline bool Chem2D_cState::negative_speccheck(const int &step) const{
-  double sum = 0.0;
-  double temp = 0.0;
+inline bool Chem2D_cState::negative_speccheck(const int &step) {
+  double sum(ZERO);
+  double temp(ZERO);
 
-  double LOCAL_TOL = 0.0001; 
-  //-------- Negative Check ------------//
-  for(int i=0; i<ns; i++){
-    temp = rhospec[i].c/rho;
-    if(temp < ZERO){  //check for -ve
-      if(temp > -LOCAL_TOL){  //check for small -ve and set to ZERO 
+  //-------- Negative Check ------------//     
+  for(int i=0; i<ns-1; i++){
+    temp = rhospec[i].c/rho;    
+    if(temp > ONE){            //check for > 1.0
+      rhospec[i].c =rho;
+      temp = ONE; 
+
+    } else if(temp < ZERO){   //check for -ve
+      if(temp > -SPEC_TOLERANCE){  //check for small -ve and set to ZERO 
 	rhospec[i].c = ZERO;
+	temp = ZERO;
       } else {
-	if(debug_level){ 	
-	  cout<<"\n -ve mass fraction in "<<specdata[i].Speciesname()<<" "<<
-	    temp<<" greater than allowed tolerance of "<<-LOCAL_TOL; 
-	}
+
+#ifdef _DEBUG
+	cout<<"\ncState -ve mass fraction in "<<specdata[i].Speciesname()<<" "<<
+	  temp<<" greater than allowed tolerance of "<<-SPEC_TOLERANCE; 
+#endif
+
 	if( step < 10){
 	  return false;
-	} else {
+	} else { 
+
+#ifdef _DEBUG
+	  cout<<"\ncState rhospec["<<i<<"] = "<<rhospec[i].c<<" -ve mass fraction larger than tolerance,"
+	      <<" but setting to zero and continuing anyway. ";
+#endif
 	  rhospec[i].c = ZERO;
-	  cout<<"\n Still -ve mass fractions, but continuing anyway ";
-	  return true;
+	  temp = ZERO;	 
 	}
       }
-    } 
+    } else {
+      // cout<<"\n negative_speccheck else";
+    }
     sum += temp;
   } 
+
+//   rhospec[ns-1].c = rho*(ONE - sum); //PUSH error into NS-1 species, probably N2
+
+  temp = max(ONE- sum, ZERO);    //Spread Error across species
+  sum += temp;
+  rhospec[ns-1].c = rho*temp;
+  for(int i=0; i<ns; i++){
+    rhospec[i].c = rhospec[i].c*(ONE/sum);
+  } 
   
-  //--------- Sum Check --------------//
-  if( sum < ONE - LOCAL_TOL || sum > ONE + LOCAL_TOL){
-    cout.precision(10);
-    if(debug_level){ 
-      cout<<"\n WARNING IN MASS FRACTION SUM != 1  ->"<<sum; 
-    }
-    if(step <10){
-      return false;
-    } else {
-      cout<<"\n Still mass fractions sum !=1, but continuing anyway ";
-      return true;
-    }
-  } else {
-    return true;
-  }
+  return true;
 }
 
-inline bool Chem2D_cState::Unphysical_Properties_Check(const int n) const{
-  if ((flow_type == FLOWTYPE_INVISCID ||
-       flow_type == FLOWTYPE_LAMINAR) &&
-      (rho <= ZERO || !negative_speccheck(n) ||es() <= ZERO)) {
+// USED IN MULTIGRID
+inline bool Chem2D_cState::Unphysical_Properties(){
+  Chem2D_cState::Unphysical_Properties_Check(FLOWTYPE_LAMINAR,10);
+}
+
+/**************************************************************
+  Unphysical_Properties_Check
+ ***************************************************************/
+inline bool Chem2D_cState::Unphysical_Properties_Check(const int Flow_Type, const int n){
+
+  // check for nan's, inf's etc.... debugging !!!
+#ifdef _DEBUG
+  for( int i=0; i<NUM_CHEM2D_VAR_SANS_SPECIES+ns; i++){ 
+    if( this[i] != this[i]){ cout<<"\n nan's in solution, variable "<<i<<endl; exit(1); return false; }
+  }
+#endif
+
+  if ((Flow_Type == FLOWTYPE_INVISCID ||
+       Flow_Type == FLOWTYPE_LAMINAR) &&
+      (rho <= ZERO ||!negative_speccheck(n) ||es() <= ZERO)) {
     cout << "\n " << CFDkit_Name() 
-	 << " Chem2D ERROR: Negative Density || Energy || mass fractions: \n";
+	 << " Chem2D ERROR: Negative Density || Energy || mass fractions: \n" << *this <<endl;
     return false;
   }
-  if ((flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON ||
-       flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) &&
+  if ((Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON ||
+       Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) &&
       (rho <= ZERO || !negative_speccheck(n) ||es() <= ZERO ||
        rhok < ZERO ||rhoomega < ZERO)) {
     cout << "\n " << CFDkit_Name() 
 	 << " Chem2D ERROR: Negative Density || Energy || mass fractions || Turbulent kinetic energy || : \n"
-	 << " Dissipation rate per unit turbulent kinetic energy || : \n";
+	 << " Dissipation rate per unit turbulent kinetic energy || : \n" << *this <<endl;
     return false;
-  } else {
+  }else{
     return true ;
   }
-  
 } 
 
 /**************************************************************
@@ -1702,6 +1402,23 @@ inline double Chem2D_cState::sum_species(void) const{
     sum += rhospec[i].c;
   }
   return sum/rho;
+}
+
+/**********************************************************************
+ * Chem2D_cState::Copy_Multigrid_State_Variables --                   *
+ *                           Copy variables solved by multigrid only. *
+ **********************************************************************/
+inline void Chem2D_cState::Copy_Multigrid_State_Variables(const Chem2D_cState &Ufine) {
+  Copy(Ufine);
+  Zero_Non_Multigrid_State_Variables();
+} 
+  
+/**********************************************************************
+ * Chem2D_cState::Zero_Non_Multigrid_State_Variables --               *
+ *                            Zero variables not-solved by multigrid. *
+ **********************************************************************/
+inline void Chem2D_cState::Zero_Non_Multigrid_State_Variables(void) {
+  rhok = ZERO; rhoomega = ZERO;
 }
 
 /**************************************************************
@@ -1723,14 +1440,6 @@ inline void Chem2D_cState::Temp_high_range(void){
   high_temp_range = temp;  
 }
 
-/***************************************************************
- * Chem2D_cState::Sa -- Axisymmetric flow source terms.  *
- ***************************************************************/
-// inline Chem2D_cState Chem2D_cState::Sa(const Vector2D &X) const{
-//   Chem2D_cState Temp;
-//   return Temp;
-// }
-
 
 /********************************************************
  * Chem2D_cState::W -- Primitive solution state.       *
@@ -1740,49 +1449,42 @@ inline Chem2D_pState Chem2D_cState::W(void) const {
 }
 
 inline Chem2D_pState Chem2D_cState::W(const Chem2D_cState &U) const{
-  if(ns == U.ns){ //check that species are equal   
     Chem2D_pState Temp;
     Temp.rho = U.rho;
     Temp.v = U.v();  
+    for(int i=0; i<U.ns; i++){
+      Temp.spec[i].c = U.rhospec[i].c/U.rho;
+      Temp.spec[i].gradc = U.rhospec[i].gradc/U.rho;
+      Temp.spec[i].diffusion_coef = U.rhospec[i].diffusion_coef/U.rho;
+    }   
     Temp.p = U.p();
     Temp.k = U.k();
     Temp.omega = U.omega();
-    for(int i=0; i<U.ns; i++){
-      Temp.spec[i] = U.rhospec[i]/U.rho;
-      Temp.spec[i].gradc = U.rhospec[i].gradc/U.rho;
-      Temp.spec[i].diffusion_coef = U.rhospec[i].diffusion_coef/U.rho;
-    }
-    
     Temp.tau = U.tau;
     Temp.qflux = U.qflux; 
     Temp.lambda = U.lambda;
     Temp.theta = U.theta; 
    
     return Temp;
-  } else {
-    cerr<<"\n Mismatch in number of species \n";
-    exit(1);
-  } 
 }
 
 inline Chem2D_pState W(const Chem2D_cState &U) {
   Chem2D_pState Temp;
   Temp.rho = U.rho;
   Temp.v = U.v();
+  for(int i=0; i<U.ns; i++){
+    Temp.spec[i].c = U.rhospec[i].c/U.rho;
+    Temp.spec[i].gradc = U.rhospec[i].gradc/U.rho;
+    Temp.spec[i].diffusion_coef = U.rhospec[i].diffusion_coef/U.rho;
+  } 
   Temp.p = U.p();
   Temp.k = U.k();
   Temp.omega = U.omega();
-  for(int i=0; i<U.ns; i++){
-    Temp.spec[i] = U.rhospec[i]/U.rho;
-    Temp.spec[i].gradc = U.rhospec[i].gradc/U.rho;
-    Temp.spec[i].diffusion_coef = U.rhospec[i].diffusion_coef/U.rho;
-  }
   Temp.tau = U.tau;
   Temp.qflux = U.qflux;
   Temp.lambda = U.lambda;
   Temp.theta = U.theta;
-  
- 
+
   return Temp;
 }
 
@@ -1821,15 +1523,23 @@ extern Chem2D_pState BC_Characteristic_Pressure(const Chem2D_pState &Wi,
 						const Chem2D_pState &Wo,
 						const Vector2D &norm_dir);
 
-extern Chem2D_pState BC_Flame_Inflow(const Chem2D_pState &Wi,
+extern Chem2D_pState BC_1DFlame_Inflow(const Chem2D_pState &Wi,
 				     const Chem2D_pState &Wo, 
 				     const Chem2D_pState &Woutlet,
 				     const Vector2D &norm_dir);
 
-extern Chem2D_pState BC_Flame_Outflow(const Chem2D_pState &Wi,
-				      const Chem2D_pState &Wo,
-				      const Chem2D_pState &Winlet,
-				      const Vector2D &norm_dir);
+extern Chem2D_pState BC_2DFlame_Inflow(const Chem2D_pState &Wi,
+				       const Chem2D_pState &Wo, 				
+				       const Vector2D &norm_dir);
+
+extern Chem2D_pState BC_1DFlame_Outflow(const Chem2D_pState &Wi,
+					const Chem2D_pState &Wo,
+					const Chem2D_pState &Winlet,
+					const Vector2D &norm_dir);
+
+extern Chem2D_pState BC_2DFlame_Outflow(const Chem2D_pState &Wi, 
+					const Chem2D_pState &Wo,
+					const Vector2D &norm_dir);
 
 /*******************************************************
  * Exact Test Case Solution Functions                  *
@@ -1858,16 +1568,19 @@ extern Chem2D_pState RoeAverage(const Chem2D_pState &Wl,
 // HLLE
 extern Chem2D_cState FluxHLLE_x(const Chem2D_pState &Wl,
 				const Chem2D_pState &Wr,
-				const int &Preconditioning);
+				const int &Preconditioning, 
+				const int Flow_Type);
 
 extern Chem2D_cState FluxHLLE_x(const Chem2D_cState &Ul,
 				const Chem2D_cState &Ur,
-				const int &Preconditioning);
+				const int &Preconditioning,
+				const int Flow_Type);
   
 extern Chem2D_cState FluxHLLE_n(const Chem2D_pState &Wl,
 				const Chem2D_pState &Wr,
 				const Vector2D &norm_dir,
-				const int &Preconditioning);
+				const int &Preconditioning,
+				const int Flow_Type);
 
 extern Chem2D_cState FluxHLLE_n(const Chem2D_cState &Ul,
 				const Chem2D_cState &Ur,
@@ -1876,19 +1589,23 @@ extern Chem2D_cState FluxHLLE_n(const Chem2D_cState &Ul,
 
 // Linde
 extern Chem2D_cState FluxLinde(const Chem2D_pState &Wl,
-			       const Chem2D_pState &Wr);
+			       const Chem2D_pState &Wr,
+			       const int Flow_Type);
 
 extern Chem2D_cState FluxLinde(const Chem2D_cState &Ul,
-			       const Chem2D_cState &Ur);
+			       const Chem2D_cState &Ur,
+			       const int Flow_Type);
 
 
 extern Chem2D_cState FluxLinde_n(const Chem2D_pState &Wl,
 				 const Chem2D_pState &Wr,
-				 const Vector2D &norm_dir);
+				 const Vector2D &norm_dir,
+				 const int Flow_Type);
 
 extern Chem2D_cState FluxLinde_n(const Chem2D_cState &Ul,
 				 const Chem2D_cState &Ur,
-				 const Vector2D &norm_dir);
+				 const Vector2D &norm_dir,
+ 				 const int Flow_Type);
 
 // Roe
 extern Chem2D_pState WaveSpeedPos(const Chem2D_pState &lambda_a,
@@ -1922,24 +1639,42 @@ extern Chem2D_pState HartenFixAbs(const Chem2D_pState &lambdas_a,
 extern Chem2D_cState FluxRoe_x(const Chem2D_pState &Wl,
 			       const Chem2D_pState &Wr,
 			       const int &Preconditioning, 
+			       const int &flow_type_flag,
 			       const double &deltax);
 
 extern Chem2D_cState FluxRoe_x(const Chem2D_cState &Ul,
 			       const Chem2D_cState &Ur,
 			       const int &Preconditioning, 
+			       const int &flow_type_flag,
 			       const double &deltax);
 
 extern Chem2D_cState FluxRoe_n(const Chem2D_pState &Wl,
 			       const Chem2D_pState &Wr,
 			       const Vector2D &norm_dir,
 			       const int &Preconditioning, 
+			       const int &flow_type_flag,
 			       const double &deltax);
 
 extern Chem2D_cState FluxRoe_n(const Chem2D_cState &Ul,
 			       const Chem2D_cState &Ur,
 			       const Vector2D &norm_dir,
 			       const int &Preconditioning, 
+			       const int &flow_type_flag,
 			       const double &deltax);
+
+extern Chem2D_cState FluxAUSMplus_up(const Chem2D_pState &Wl,
+				     const Chem2D_pState &Wr);
+
+extern Chem2D_cState FluxAUSMplus_up(const Chem2D_cState &Wl,
+				     const Chem2D_cState &Wr);
+
+extern Chem2D_cState FluxAUSMplus_up_n(const Chem2D_pState &Wl,
+				       const Chem2D_pState &Wr,
+				       const Vector2D &norm_dir);
+
+extern Chem2D_cState FluxAUSMplus_up_n(const Chem2D_cState &Wl,
+				       const Chem2D_cState &Wr,
+				       const Vector2D &norm_dir);
 
 /* Viscous Solution flux (laminar+turbulent) */
 extern Chem2D_cState Viscous_FluxArithmetic_n(const Chem2D_cState &Ul,
@@ -1948,11 +1683,13 @@ extern Chem2D_cState Viscous_FluxArithmetic_n(const Chem2D_cState &Ul,
 				              const Chem2D_cState &Ur,
    			                      const Chem2D_pState &dWdx_r,
 			                      const Chem2D_pState &dWdy_r,
+                                              const int Flow_Type,
 				              const Vector2D &norm_dir);
 
-extern Chem2D_cState Viscous_Flux_n(const Chem2D_pState &W,
+extern Chem2D_cState Viscous_Flux_n(Chem2D_pState &W,
 				    const Chem2D_pState &dWdx,
 				    const Chem2D_pState &dWdy,
+                                    const int Flow_Type,
 				    const int Axisymmetric,
 				    const Vector2D X,			
 				    const Vector2D &norm_dir);
@@ -1967,7 +1704,6 @@ extern double WallShearStress(const Chem2D_pState &W1,
 extern Chem2D_pState Rotate(const Chem2D_pState &W,
 	      	             const Vector2D &norm_dir);
 
-extern DenseMatrix Rotation_Matrix2(Vector2D nface, int Size, int A_matrix); 
 
 extern Vector2D HLLE_wavespeeds(const Chem2D_pState &Wl,
                                 const Chem2D_pState &Wr,

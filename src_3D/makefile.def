@@ -138,14 +138,14 @@ BLAS_LD_FLAGS             = -lblas -llapack -lgcc -lg2c
 ifeq ($(PLATFORM),Linux_i386)
   BLAS_LD_FLAGS           = -lblas -llapack -lgcc 
   ifeq ($(GCC_VERSION),ICC)
-   BLAS_LD_FLAGS   	  = -lblas -llapack -lifcore -L/usr/lib/gcc-lib/i386-redhat-linux/3.3.2 -lg2c
+   BLAS_LD_FLAGS   	  = -lblas -llapack -lifcore -lg2c
   endif
 endif
 ifeq ($(PLATFORM),Linux_alpha)
-  BLAS_LD_FLAGS           = -L/usr/lib/gcc-lib/alpha-redhat-linux/2.96/ -lg2c -L/usr/lib/compaq/cxml-5.2.0 -lcxml_ev6
+  BLAS_LD_FLAGS           = -L/usr/lib/gcc-lib/alpha-redhat-linux/2.96/ -lg2c -L/usr/lib/compaq/cxml-5.2.0 -lUfor -lcxml_ev6
 endif
 ifeq ($(PLATFORM),Linux_ia64)
-  BLAS_LD_FLAGS   	  = -lblas -llapack -L/opt/gcc3.3.3/lib/ -lg2c
+  BLAS_LD_FLAGS   	  = -lblas -llapack -lg2c -lifcore
 endif	
 ifeq ($(PLATFORM),Linux_x86_64)
   BLAS_LD_FLAGS           = -lblas -llapack -lg2c -lgcc
@@ -294,7 +294,7 @@ ifeq ($(PLATFORM),Linux_ia64)
     CXX = icpc
     CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS)
     CXXFLAGS = -w0 -O2 -mp -ftz 
-    FFLAGS = -w0 -O2 -mp -ftz 
+    FFLAGS = -O2 -mp -ftz 
     CFLAGS = -w0 -O2 -mp -ftz 
     LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -limf
     LD = $(CXX)
@@ -306,7 +306,7 @@ ifeq ($(PLATFORM),Linux_ia64)
     CXX = icpc
     CPPFLAGS = -D_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS)
     CXXFLAGS = -w0 -O2 -mp -ftz
-    FFLAGS = -w0 -O2 -mp -ftz
+    FFLAGS = -O2 -mp -ftz
     CFLAGS = -w0 -O2 -mp -ftz
     LD = $(CXX)
     LDFLAGS =  $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -limf -lmpi -lmpi++

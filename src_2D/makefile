@@ -31,6 +31,7 @@ DUSTY_DIR = Dusty2D/
 ELECTROSTATIC_DIR = Electrostatic2D/
 EULER_DIR = Euler2D/
 MULTIGRID_DIR = FASMultigrid2D/
+NKS_DIR = NewtonKrylov2D/
 GRID_DIR = Grid/
 ICEM_DIR = ICEM/
 INTERFACE_DIR = Interface2D/
@@ -142,9 +143,7 @@ SRC_EULER = $(EULER_DIR)Euler2DState.cc \
             $(EULER_DIR)Euler2DQuadSingleBlock.cc \
             $(EULER_DIR)Euler2DQuadMultiBlock.cc \
             $(EULER_DIR)Euler2DQuadGrid.cc \
-            $(EULER_DIR)Euler2DQuadSolvers.cc \
-            $(EULER_DIR)Euler2DQuad_GMRES.cc \
-	    $(EULER_DIR)Euler2DQuad_NKS.cc
+            $(EULER_DIR)Euler2DQuadSolvers.cc 
 SRC_EULER_EXE = $(EULER_DIR)Euler2D.cc
 SRC_INTERFACE = $(INTERFACE_DIR)Interface2D.cc
 SRC_EMBEDDEDBOUNDARIES_EXE = $(INTERFACE_DIR)EmbeddedBoundaries2D.cc
@@ -260,9 +259,7 @@ INC_ELECTROSTATIC = $(ELECTROSTATIC_DIR)Electrostatic2DState.h \
 	            $(ELECTROSTATIC_DIR)Electrostatic2DQuad.h
 INC_EULER = $(EULER_DIR)Euler2DState.h \
 	    $(EULER_DIR)Euler2DInput.h \
-	    $(EULER_DIR)Euler2DQuad.h \
-	    $(EULER_DIR)Euler2DQuad_GMRES.h \
-            $(EULER_DIR)Euler2DQuad_NKS.h
+	    $(EULER_DIR)Euler2DQuad.h 
 INC_INTERFACE = $(INTERFACE_DIR)Interface2D.h
 INC_EMBEDDEDBOUNDARIES = $(INTERFACE_DIR)EmbeddedBoundaries2D_Input.h \
 	                 $(INTERFACE_DIR)EmbeddedBoundaries2D.h \
@@ -285,6 +282,10 @@ INC_TURBULENT = $(TURBULENT_DIR)Turbulent2DWallData.h \
 	        $(TURBULENT_DIR)TurbulenceModelling.h
 INC_MULTIGRID = $(MULTIGRID_DIR)FASMultigrid2D.h \
 	        $(MULTIGRID_DIR)FASMultigrid2DInput.h
+INV_NKS = $(NKS_DIR)NKS2D.h \
+	  $(NKS_DIR)NKSInput2D.h \
+	  $(NKS_DIR)GMRES2D.h \
+	  $(NKS_DIR)Block_Preconditioner2D.h
 INC_ICEMCFD = $(ICEM_DIR)ICEMCFD.h
 INC_NASA_ROTORS = $(GRID_DIR)NASARotor37.h \
 	          $(GRID_DIR)NASARotor67.h
@@ -387,9 +388,7 @@ OBJ_EULER = $(EULER_DIR)Euler2DState.o \
             $(EULER_DIR)Euler2DQuadSingleBlock.o \
             $(EULER_DIR)Euler2DQuadMultiBlock.o \
             $(EULER_DIR)Euler2DQuadGrid.o \
-            $(EULER_DIR)Euler2DQuadSolvers.o \
-            $(EULER_DIR)Euler2DQuad_GMRES.o \
-            $(EULER_DIR)Euler2DQuad_NKS.o
+            $(EULER_DIR)Euler2DQuadSolvers.o 
 OBJ_EULER_EXE = $(EULER_DIR)Euler2D.o
 OBJ_INTERFACE = $(INTERFACE_DIR)Interface2D.o
 OBJ_EMBEDDEDBOUNDARIES_EXE = $(INTERFACE_DIR)EmbeddedBoundaries2D.o

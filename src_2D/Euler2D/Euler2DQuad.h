@@ -187,7 +187,8 @@ public:
   double                  **dt; //!< Local time step.
   Euler2D_cState       ***dUdt; //!< Solution residual.
   Euler2D_cState          **Uo; //!< Initial solution state.
-  static int residual_variable; //!< Static integer that indicates which variable is used for residual calculations.
+  static int residual_variable; //!< Static integer that indicates which variable is used for residual calculations.  
+  static int Number_of_Residual_Norms; //!< How many Residual norms to plot?
   //@}
 
   //@{ @name Solution gradient arrays:
@@ -1859,6 +1860,22 @@ extern void Output_Tecplot(Euler2D_Quad_Block &SolnBlk,
                            const int Output_Title,
 	                   ostream &Out_File);
 
+extern void Output_Tecplot(Euler2D_Quad_Block &SolnBlk,
+			   Euler2D_Input_Parameters &IP,
+		           const int Number_of_Time_Steps,
+                           const double &Time,
+                           const int Block_Number,
+                           const int Output_Title,
+													 double l2_norm, double l2_norm_rel,
+	                   ostream &Out_File);
+
+extern void Output_Cells_Tecplot(Euler2D_Quad_Block &SolnBlk,
+		                 const int Number_of_Time_Steps,
+                                 const double &Time,
+                                 const int Block_Number,
+                                 const int Output_Title,
+	                         ostream &Out_File);
+
 extern void Output_Cells_Tecplot(Euler2D_Quad_Block &SolnBlk,
 		                 const int Number_of_Time_Steps,
                                  const double &Time,
@@ -1911,11 +1928,11 @@ extern double CFL(Euler2D_Quad_Block &SolnBlk,
 extern void Set_Global_TimeStep(Euler2D_Quad_Block &SolnBlk, 
                                 const double &Dt_min);
 
-extern double L1_Norm_Residual(Euler2D_Quad_Block &SolnBlk);
+extern double L1_Norm_Residual(Euler2D_Quad_Block &SolnBlk, const int &norm);
 
-extern double L2_Norm_Residual(Euler2D_Quad_Block &SolnBlk);
+extern double L2_Norm_Residual(Euler2D_Quad_Block &SolnBlk, const int &norm);
 
-extern double Max_Norm_Residual(Euler2D_Quad_Block &SolnBlk);
+extern double Max_Norm_Residual(Euler2D_Quad_Block &SolnBlk, const int &norm);
 
 extern void Linear_Reconstruction_GreenGauss(Euler2D_Quad_Block &SolnBlk,
                                              const int i,
@@ -2107,6 +2124,18 @@ extern double L2_Norm_Residual(Euler2D_Quad_Block *Soln_ptr,
 
 extern double Max_Norm_Residual(Euler2D_Quad_Block *Soln_ptr,
                                 AdaptiveBlock2D_List &Soln_Block_List);
+
+extern void L1_Norm_Residual(Euler2D_Quad_Block *Soln_ptr, 
+			     AdaptiveBlock2D_List &Soln_Block_List,
+			     double *l1_norm);
+
+extern void L2_Norm_Residual(Euler2D_Quad_Block *Soln_ptr,
+			     AdaptiveBlock2D_List &Soln_Block_List,
+			     double *l2_norm);
+
+extern void Max_Norm_Residual(Euler2D_Quad_Block *Soln_ptr,
+			      AdaptiveBlock2D_List &Soln_Block_List,
+			      double *max_norm);
 
 extern void Evaluate_Limiters(Euler2D_Quad_Block *Soln_ptr,
                               AdaptiveBlock2D_List &Soln_Block_List);

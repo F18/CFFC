@@ -1,20 +1,7 @@
 /************* Chem2DQuadSolvers.cc ***************************** 
    Chem2DQuadSolvers.cc:  2D Axisymmetric Solver for.... 
-   
-   TODO:
-
-       - call deallocate functions in Chem2D_Quad_Block 
-         desctructor instead on in TERMINATE??
-  
-
-    NOTES:
-       - current initial conditions (IC) inlcude
-         CONSTANT, UNIFORM, SOD_xDIR, SHOCK_BOX
-
-       - current boundary conditions (BC) include
-         NONE, FIXED, CONSTANT_EXTRAPOLATION, REFLECTION, PERIODIC,etc.
-
-      
+     
+    NOTES:      
 
    - based on Euler2DQuadSolvers.cc
 *****************************************************************/
@@ -22,17 +9,15 @@
 #include "Chem2DQuad.h"
 #endif // _CHEM2D_QUAD_INCLUDED
 
-// Include the multigrid header file.
-
-#ifndef _FASMULTIGRID2D_INCLUDED
-#include "../FASMultigrid2D/FASMultigrid2D.h"
-#endif // _FASMULTIGRID2D_INCLUDED
-
-// Include 2D Chemistry multigrid specializations header file.
-
+/* Include CHEM2D Multigrid Specializations header file. */
 #ifndef _CHEM_QUAD_MULTIGRID_INCLUDED
 #include "Chem2DQuadMultigrid.h"
-#endif // _CHEM_QUAD_MULTIGRID_INCLUDED
+#endif //_CHEM_QUAD_MULTIGRID_INCLUDED
+
+/* Include CHEM2D NKS Specializations header file. */
+#ifndef _CHEM2D_NKS_INCLUDED 
+#include "Chem2DQuadNKS.h"
+#endif // _CHEM2D_NKS_INCLUDED 
 
 /********************************************************
  * Routine: Chem2DQuadSolver                            *
@@ -69,16 +54,19 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   ofstream residual_file;
   ofstream time_accurate_data_file;
   CPUTime processor_cpu_time, total_cpu_time;
-  
+  time_t start_explicit, end_explicit;
+
   /* Other local solution variables. */
-  int number_of_time_steps, first_step,
+  int number_of_time_steps, first_step, last_step,
     command_flag, error_flag, line_number, 
     i_stage, limiter_freezing_off;
   
-  double Time, dTime;
-  double residual_l1_norm, residual_l2_norm, residual_max_norm;
-  
- 
+  double Time, dTime, initial_residual_l2_norm;
+
+  /* Variables used for dual time stepping. */
+  int n_inner = 0, n_inner_temp = 0;
+  const double dual_eps = 1.0E-3;  // 5.0E-4;
+
   /*************************************************************************
    ******************** INPUT PARAMETERS  **********************************
      Set default values for the input solution parameters and then read user 
@@ -203,7 +191,6 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   if (!batch_flag){ 
     cout << "\n Prescribing Chem2D initial data.";
   }
-  
  
   /*************************************************************************
    **************** RESTART SOLUTION or INITIAL CONDITIONS *****************
@@ -225,7 +212,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     if (error_flag) return (error_flag);
     Allocate_Message_Buffers(List_of_Local_Solution_Blocks,
 			     Local_SolnBlk[0].NumVar()+NUM_COMP_VECTOR2D);
-    
+
     error_flag = Read_Restart_Solution(Local_SolnBlk, 
 				       List_of_Local_Solution_Blocks, 
 				       Input_Parameters,
@@ -247,11 +234,29 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     number_of_time_steps = CFDkit_Maximum_MPI(number_of_time_steps);
     Time = CFDkit_Maximum_MPI(Time);
     processor_cpu_time.cput = CFDkit_Maximum_MPI(processor_cpu_time.cput);
+    Input_Parameters.Maximum_Number_of_Time_Steps = CFDkit_Maximum_MPI(Input_Parameters.Maximum_Number_of_Time_Steps);
+    Input_Parameters.Time_Max = CFDkit_Maximum_MPI(Input_Parameters.Time_Max);
+
+    // Send grid information between neighbouring blocks
+    CFDkit_Barrier_MPI(); 
+    error_flag = Send_All_Messages(Local_SolnBlk, 
+				   List_of_Local_Solution_Blocks,
+				   NUM_COMP_VECTOR2D,
+				   ON);     
 
     /****** Else apply initial conditions from input parameters *******/
-  } else {  
+  } else {   
+
+    // Send grid information between neighbouring blocks BEFORE applying ICs
+    CFDkit_Barrier_MPI(); 
+    error_flag = Send_All_Messages(Local_SolnBlk, 
+				   List_of_Local_Solution_Blocks,
+				   NUM_COMP_VECTOR2D,
+				   ON);     
+
     ICs(Local_SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
   } /* endif */
+  
   
   /******************************************************************************  
     Send solution information between neighbouring blocks to complete
@@ -259,10 +264,9 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   *******************************************************************************/
   CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
  
-  error_flag = Send_All_Messages(Local_SolnBlk, 
-                                 List_of_Local_Solution_Blocks,
-                                 NUM_COMP_VECTOR2D,
-                                 ON);   
+  // OLD grid send_all_messages, moved before ICs to help with values used in BCs 
+  // set from ICs, ie ghost cell node locations, changed before ICs 
+
   if (!error_flag) error_flag = Send_All_Messages(Local_SolnBlk, 
                                                   List_of_Local_Solution_Blocks,
                                                   NUM_VAR_CHEM2D,
@@ -279,13 +283,11 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   error_flag = CFDkit_OR_MPI(error_flag);
   if (error_flag) return (error_flag);
     
-
   /*******************************************************************************
    ************************* BOUNDARY CONDITIONS *********************************
    *******************************************************************************/
   // Prescribe boundary data consistent with initial data. 
   BCs(Local_SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
-
 
   /*******************************************************************************
    ******************* ADAPTIVE MESH REFINEMENT (AMR) ****************************
@@ -306,6 +308,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
      error_flag = CFDkit_OR_MPI(error_flag);
      if (error_flag) return error_flag;
 
+     ///////////////////////////////////////////////////////////////////////////
      if (!batch_flag) cout << "\n Performing Chem2D boundary mesh refinement.";
      error_flag = Boundary_AMR(Local_SolnBlk,
                                Input_Parameters,
@@ -320,6 +323,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
      error_flag = CFDkit_OR_MPI(error_flag);
      if (error_flag) return error_flag;
 
+     ///////////////////////////////////////////////////////////////////////////
      if (!batch_flag) cout << "\n Performing Chem2D initial mesh refinement.";
      error_flag = Initial_AMR(Local_SolnBlk,
                               Input_Parameters,
@@ -354,6 +358,39 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
      cout.flush();
   } /* endif */
  
+  /***********************************************************************	
+   MORTON ORDERING of initial solution blocks 
+  (should be meshed with AMR, ie when Refine_Grid is done call the ordering)
+  ************************************************************************/
+  if (Input_Parameters.Morton){
+    if (!batch_flag) cout << "\n\n Applying Morton re-ordering algorithm to initial solution blocks. ";
+
+    //NOTES: Issue here with Input_Parameters.Maximum_Number_of_Time_Steps related to reading restart files
+
+    error_flag = Morton_ReOrdering_of_Solution_Blocks(QuadTree, 
+						      List_of_Global_Solution_Blocks, 
+						      List_of_Local_Solution_Blocks, 
+						      Local_SolnBlk, 
+						      Input_Parameters, 
+						      number_of_time_steps, 
+						      Time, 
+						      processor_cpu_time); 
+    if (error_flag) {
+      cout <<"\n Chem2D ERROR: Morton re-ordering error on processor "
+	   << List_of_Local_Solution_Blocks.ThisCPU
+	   << ".\n";
+      cout.flush();
+      return (error_flag);
+    } 
+    error_flag = CFDkit_OR_MPI(error_flag);
+    if (error_flag) return (error_flag);
+    //Output space filling curve in Tecplot format
+    if (!batch_flag) cout << "\n Outputting space filling curve showing block loading for CPUs.";
+    Morton_SFC_Output_Tecplot(Local_SolnBlk, 
+			      Input_Parameters, 
+			      List_of_Local_Solution_Blocks);
+  } 
+  
   /****************************************************************************
    *********************** MAIN SOLVER ****************************************
    Solve IBVP or BVP for conservation form of 2D Axisymmetric multispecies 
@@ -363,49 +400,46 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
    ****************************************************************************/  
   continue_existing_calculation: ;
   CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-
+ 
   /******************* MULTIGRID SETUP ****************************************/
-
   if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
  
-    // Allocate memory for multigrid solver.
-    error_flag = MGSolver.allocate(Local_SolnBlk,
-				   &QuadTree,
-				   &List_of_Global_Solution_Blocks,
-				   &List_of_Local_Solution_Blocks,
-				   &Input_Parameters);
-    if (error_flag) {
-      cout << "\n Euler2D ERROR: Unable to allocate memory for multigrid solver.\n";
-      cout.flush();
-    }
-    error_flag = CFDkit_OR_MPI(error_flag);
-    if (error_flag) return error_flag;
+    MGSolver.allocate(Local_SolnBlk,
+		      &QuadTree,
+		      &List_of_Global_Solution_Blocks,
+		      &List_of_Local_Solution_Blocks,
+		      &Input_Parameters); 
 
-    // Execute multigrid solver.
+    if(!batch_flag) time(&start_explicit);
+
     error_flag = MGSolver.Execute(batch_flag,
 				  number_of_time_steps,
 				  Time,
 				  processor_cpu_time,
 				  total_cpu_time,
 				  residual_file);
-    if (error_flag) {
-      cout << "\n Euler2D ERROR: Multigrid error on processor "
-	   << List_of_Local_Solution_Blocks.ThisCPU << ".\n";
-      cout.flush();
-    }
-    error_flag = CFDkit_OR_MPI(error_flag);
-    if (error_flag) return error_flag;
 
-  /*********************** NON MULTIGRID ***********************************/
-  } else { 
+    if(!batch_flag) time(&end_explicit);
     
+  /*********************** NON-MULTIGRID EXPLICT ***********************************/
+  } else if(Input_Parameters.Maximum_Number_of_Time_Steps > 0){ 
+    double *residual_l1_norm = new double[Local_SolnBlk[0].Number_of_Residual_Norms]; 
+    double *residual_l2_norm = new double[Local_SolnBlk[0].Number_of_Residual_Norms]; 
+    double *residual_max_norm = new double[Local_SolnBlk[0].Number_of_Residual_Norms];  
+
     /* Open residual file and reset the CPU time. */
     first_step = 1;
     limiter_freezing_off = ON;
+    if (Input_Parameters.i_ICs != IC_RESTART) {
+      Input_Parameters.first_step = first_step;
+    }
 
     if (CFDkit_Primary_MPI_Processor()) {
-      error_flag = Open_Progress_File(residual_file,Input_Parameters.Output_File_Name,
-				      number_of_time_steps);
+      error_flag = Open_Progress_File(residual_file,
+				      Input_Parameters.Output_File_Name,
+				      number_of_time_steps,
+				      Local_SolnBlk[0].residual_variable,
+				      Local_SolnBlk[0].Number_of_Residual_Norms);
       //for unsteady plotting
       if( Input_Parameters.Time_Accurate_Plot_Frequency != 0){
 	error_flag = Open_Time_Accurate_File(time_accurate_data_file,
@@ -427,23 +461,59 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     
     /**************************************************************************
      Perform required number of iterations (time steps). 
-    **************************************************************************/
+    **************************************************************************/ 
     if ((!Input_Parameters.Time_Accurate && 
 	 Input_Parameters.Maximum_Number_of_Time_Steps > 0 &&
 	 number_of_time_steps < Input_Parameters.Maximum_Number_of_Time_Steps) ||
 	(Input_Parameters.Time_Accurate && Input_Parameters.Time_Max > Time)) {
      
-      if (!batch_flag) cout << "\n\n Beginning Chem2D computations on "
-			    << Date_And_Time() << ".\n\n";
- 
-      while (1) { //  infinite loop hmmmm....
+      if (!batch_flag) { cout << "\n\n Beginning Explicit Chem2D computations on "
+			      << Date_And_Time() << ".\n\n"; time(&start_explicit); /*start_explicit = clock();*/ }
 
+     last_step = 0;
+     int i=1; //markthis
 
+     while ((!Input_Parameters.Time_Accurate &&
+	     number_of_time_steps < Input_Parameters.Maximum_Number_of_Time_Steps) ||
+	    (Input_Parameters.Time_Accurate && Time < Input_Parameters.Time_Max)) {
+
+       /***********************************************************************	
+	MORTON ORDERING of solution blocks during solution ever "n" steps
+        ??? Should this be coupled with AMR Frequency ????
+       ************************************************************************/
+       if (Input_Parameters.Morton && !first_step &&
+	   number_of_time_steps%Input_Parameters.Morton_Reordering_Frequency == 0) {
+	 if (!batch_flag) cout << "\n\n Applying Morton re-ordering algorithm to solution blocks at n = "
+			       << number_of_time_steps << ".";
+	 error_flag = Morton_ReOrdering_of_Solution_Blocks(QuadTree, 
+							   List_of_Global_Solution_Blocks, 
+							   List_of_Local_Solution_Blocks, 
+							   Local_SolnBlk, 
+							   Input_Parameters, 
+							   number_of_time_steps, 
+							   Time, 
+							   processor_cpu_time); 
+	 if (error_flag) {
+	   cout <<"\n Chem2D ERROR: Morton re-ordering error on processor "
+		<< List_of_Local_Solution_Blocks.ThisCPU
+		<< ".\n";
+	   cout.flush();
+	   return (error_flag);
+	 } 
+	 error_flag = CFDkit_OR_MPI(error_flag);
+	 if (error_flag) return (error_flag);
+	 //Output space filling curve in Tecplot format
+	 if (!batch_flag) cout << "\n Outputting space filling curve showing block loading for CPUs.";
+	 Morton_SFC_Output_Tecplot(Local_SolnBlk, 
+				   Input_Parameters, 
+				    List_of_Local_Solution_Blocks);
+       } 
+       
         /***********************************************************************	
 	MESH REFINEMENT: Periodically refine the mesh (AMR). 
 	************************************************************************/
         if (Input_Parameters.AMR) {
-           if (!first_step &&
+	  if (!first_step &&
 	       number_of_time_steps-Input_Parameters.AMR_Frequency*
 	       (number_of_time_steps/Input_Parameters.AMR_Frequency) == 0 ) {
               if (!batch_flag) cout << "\n\n Refining Grid.  Performing adaptive mesh refinement at n = "
@@ -455,7 +525,8 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
                                QuadTree,
                                List_of_Global_Solution_Blocks,
                                List_of_Local_Solution_Blocks,
-                               ON,ON);
+                               ON, 
+			       ON);
               if (error_flag) {
                  cout << "\n Chem2D ERROR: Chem2D AMR error on processor "
 	              << List_of_Local_Solution_Blocks.ThisCPU
@@ -483,266 +554,336 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
            } /* endif */
         } /* endif */
 
-	/********************** TIME STEPS **************************************
-         Determine local and global time steps. 
-	*************************************************************************/
+	n_inner_temp = n_inner;
+        n_inner = 0;
 
-	dTime = CFL(Local_SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
+	do{
+	  /********************** TIME STEPS **************************************
+           Determine local and global time steps. 
+	  *************************************************************************/
 
-	// Find global minimum time step for all processors.
-	dTime = CFDkit_Minimum_MPI(dTime);
-	if (Input_Parameters.Time_Accurate) {
-	  if ((Input_Parameters.i_Time_Integration != 
-	       TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING) &&
-	      (Time + Input_Parameters.CFL_Number*dTime > Input_Parameters.Time_Max)) {
-	    dTime = (Input_Parameters.Time_Max-Time)/Input_Parameters.CFL_Number;
-	    
-	  } else if (Time + Input_Parameters.CFL_Number*dTime*
-		     MultiStage_Optimally_Smoothing(Input_Parameters.N_Stage, 
-						    Input_Parameters.N_Stage,
-						    Input_Parameters.i_Limiter) > 
-		     Input_Parameters.Time_Max) {
-	    
-	    dTime = (Input_Parameters.Time_Max-Time)/
-	      (Input_Parameters.CFL_Number*
-	       MultiStage_Optimally_Smoothing(Input_Parameters.N_Stage, 
-					      Input_Parameters.N_Stage,
-					      Input_Parameters.i_Limiter));
-	  } /* endif */
-	} /* endif */
-		
-	if (!Input_Parameters.Local_Time_Stepping) { 
-	  // Set global time step.	
-	  Set_Global_TimeStep(Local_SolnBlk, List_of_Local_Solution_Blocks,
-			      dTime);
-	} /* endif */
+	  dTime = CFL(Local_SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
+	  if (!Input_Parameters.Dual_Time_Stepping) {
+	    // Find global minimum time step for all processors.
+	    dTime = CFDkit_Minimum_MPI(dTime);
+	  } else {
+            // Assign physical time step for dual time stepping.
+            if (n_inner == 0) { 
+	      dTime = Input_Parameters.Physical_CFL_Number*CFDkit_Minimum_MPI(dTime);
+              Input_Parameters.dTime = dTime;              
+	    }
+            dTime = Input_Parameters.dTime;
+	  }
 
-	/************************ NORMS *****************************************
-        Determine the L1, L2, and max norms of the solution residual. 
-	*************************************************************************/
-	residual_l1_norm = L1_Norm_Residual(Local_SolnBlk, List_of_Local_Solution_Blocks);
-	residual_l1_norm = CFDkit_Summation_MPI(residual_l1_norm); // L1 norm for all processors.
-	
-	residual_l2_norm = L2_Norm_Residual(Local_SolnBlk, List_of_Local_Solution_Blocks);
-	residual_l2_norm = sqr(residual_l2_norm);
-	residual_l2_norm = CFDkit_Summation_MPI(residual_l2_norm); // L2 norm for all processors.
-	residual_l2_norm = sqrt(residual_l2_norm);
+	  if (Input_Parameters.Time_Accurate) {
+	    if ((Input_Parameters.i_Time_Integration != 
+		 TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING) &&
+		(Time + Input_Parameters.CFL_Number*dTime > Input_Parameters.Time_Max)) {
+	      dTime = (Input_Parameters.Time_Max-Time)/Input_Parameters.CFL_Number;
+	      last_step = 1;
+	       
+	    } else if (Time + Input_Parameters.CFL_Number*dTime*
+		       MultiStage_Optimally_Smoothing(Input_Parameters.N_Stage, 
+						      Input_Parameters.N_Stage,
+						      Input_Parameters.i_Limiter) > 
+		       Input_Parameters.Time_Max && (!Input_Parameters.Dual_Time_Stepping)) {
+	      
+	      dTime = (Input_Parameters.Time_Max-Time)/
+		(Input_Parameters.CFL_Number*
+		 MultiStage_Optimally_Smoothing(Input_Parameters.N_Stage, 
+						Input_Parameters.N_Stage,
+						Input_Parameters.i_Limiter)); 
+	      last_step = 1;
+	   
+	    } else if (Time + dTime > Input_Parameters.Time_Max && Input_Parameters.Dual_Time_Stepping) {
+	      dTime = Input_Parameters.Time_Max - Time;
+              Input_Parameters.dTime = dTime;
+              last_step = 1;
+            } 
+	  } 	 
+	  
+	  if (!Input_Parameters.Local_Time_Stepping) { 
+	    // Set global time step.	
+	    Set_Global_TimeStep(Local_SolnBlk, List_of_Local_Solution_Blocks,dTime);
+	  } 
 
-	residual_max_norm = Max_Norm_Residual(Local_SolnBlk, List_of_Local_Solution_Blocks);
-	residual_max_norm = CFDkit_Maximum_MPI(residual_max_norm); // Max norm for all processors.
-	/* Update CPU time used for the calculation so far. */
-	processor_cpu_time.update();
-	// Total CPU time for all processors.
-	total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput); 
-	/************************ RESTART *****************************************
+	  /************************ NORMS *****************************************
+           Determine the L1, L2, and max norms of the solution residual. 
+	  *************************************************************************/
+	  L1_Norm_Residual(Local_SolnBlk, List_of_Local_Solution_Blocks,residual_l1_norm);	  
+	  L2_Norm_Residual(Local_SolnBlk, List_of_Local_Solution_Blocks,residual_l2_norm);       	  
+	  Max_Norm_Residual(Local_SolnBlk, List_of_Local_Solution_Blocks,residual_max_norm);
+	  
+	  for(int q=0; q < Local_SolnBlk[0].Number_of_Residual_Norms; q++){
+	    residual_l1_norm[q] = CFDkit_Summation_MPI(residual_l1_norm[q]); // L1 norm for all processors.
+	    residual_l2_norm[q] =residual_l2_norm[q]*residual_l2_norm[q];
+	    residual_l2_norm[q] = sqrt(CFDkit_Summation_MPI(residual_l2_norm[q])); // L2 norm for all processors.
+	    residual_max_norm[q] = CFDkit_Maximum_MPI(residual_max_norm[q]); // Max norm for all processors.
+	  }
+	  if (n_inner == 1) initial_residual_l2_norm = residual_l2_norm[Local_SolnBlk[0].residual_variable-1];
+	  
+	  /* Update CPU time used for the calculation so far. */
+	  processor_cpu_time.update();
+	  // Total CPU time for all processors.
+	  total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput); 
+	  /************************ RESTART *****************************************
           Periodically save restart solution files. 
-	***************************************************************************/
-	if (!first_step &&
-	    number_of_time_steps%Input_Parameters.Restart_Solution_Save_Frequency == 0 ) {
-	  if (!batch_flag){
-	    cout << "\n\n  Saving Chem2D solution to restart data file(s) after"
-		 << " n = " << number_of_time_steps << " steps (iterations).";
+	  ***************************************************************************/ 
+	  if (!Input_Parameters.Dual_Time_Stepping  ||  
+	      (Input_Parameters.Dual_Time_Stepping && n_inner == 0)) {
+	    
+	    if (!first_step &&
+		number_of_time_steps%Input_Parameters.Restart_Solution_Save_Frequency == 0 ) {
+	      if (!batch_flag){
+		cout << "\n\n  Saving Chem2D solution to restart data file(s) after"
+		     << " n = " << number_of_time_steps << " steps (iterations).";
+	      }
+	      if (!batch_flag) cout << "\n  Writing Chem2D solution to restart data file(s). \n";
+	      error_flag = Write_QuadTree(QuadTree,
+					  Input_Parameters);
+	      if (error_flag) {
+		cout << "\n Chem2D ERROR: Unable to open Chem2D quadtree data file "
+		     << "on processor "
+		     << List_of_Local_Solution_Blocks.ThisCPU
+		     << ".\n";
+		cout.flush();
+	      } 
+	      error_flag = Write_Restart_Solution(Local_SolnBlk, 
+						  List_of_Local_Solution_Blocks, 
+						  Input_Parameters,
+						  number_of_time_steps,
+						  Time,
+						  processor_cpu_time);
+	      if (error_flag) {
+		cout << "\n Chem2D ERROR: Unable to open Chem2D restart output data file(s) "
+		     << "on processor "
+		     << List_of_Local_Solution_Blocks.ThisCPU
+		     << ".\n";
+		cout.flush();
+	      } 
+	      error_flag = CFDkit_OR_MPI(error_flag);
+	      if (error_flag) return (error_flag);
+	      cout.flush();
+	    } 
 	  }
-	  if (!batch_flag) cout << "\n  Writing Chem2D solution to restart data file(s). \n";
-	  error_flag = Write_QuadTree(QuadTree,
-				      Input_Parameters);
-	  if (error_flag) {
-	    cout << "\n Chem2D ERROR: Unable to open Chem2D quadtree data file "
-		 << "on processor "
-		 << List_of_Local_Solution_Blocks.ThisCPU
-		 << ".\n";
-	    cout.flush();
-	  } /* endif */ 
-	  error_flag = Write_Restart_Solution(Local_SolnBlk, 
-					      List_of_Local_Solution_Blocks, 
-					      Input_Parameters,
-					      number_of_time_steps,
-					      Time,
-					      processor_cpu_time);
-	  if (error_flag) {
-	    cout << "\n Chem2D ERROR: Unable to open Chem2D restart output data file(s) "
-		 << "on processor "
-		 << List_of_Local_Solution_Blocks.ThisCPU
-		 << ".\n";
-	    cout.flush();
-	  } /* endif */
-	  error_flag = CFDkit_OR_MPI(error_flag);
-	  if (error_flag) return (error_flag);
-	  cout.flush();
-	} /* endif */
-	/************************ PROGRESS *****************************************
-          Output progress information for the calculation. 
-	***************************************************************************/
-	//screen
-	if (!batch_flag) Output_Progress_L2norm(number_of_time_steps,
-					 Time*THOUSAND, //time in ms
-					 total_cpu_time,
-					 residual_l2_norm,
-					 first_step,
-					 50);
-	//residual to file
-	if (CFDkit_Primary_MPI_Processor() && !first_step) {
-	  Output_Progress_to_File(residual_file,
-				  number_of_time_steps,
-				  Time*THOUSAND,
-				  total_cpu_time,
-				  residual_l1_norm,
-				  residual_l2_norm,
-				  residual_max_norm);
-	} /* endif */
-
-	//time vs mass frac (time accurate) for debugging
-	//chemical solutions with no flow ie. just nonequilibrium chemistry
-	if (Input_Parameters.Time_Accurate && Input_Parameters.Time_Accurate_Plot_Frequency != 0){
-	  if ( (number_of_time_steps%Input_Parameters.Time_Accurate_Plot_Frequency) == 0 ){ 
-	    Output_to_Time_Accurate_File(time_accurate_data_file,
-					 Time,
-					 Local_SolnBlk[0].W[2][2]);
+	  
+	  /************************ PROGRESS *****************************************
+           Output progress information for the calculation. 
+	  ***************************************************************************/
+	  //screen 
+	  if (!Input_Parameters.Dual_Time_Stepping || 
+	      (Input_Parameters.Dual_Time_Stepping && n_inner == 0)) {
+	    
+	    if (!batch_flag) Output_Progress_L2norm(number_of_time_steps,
+						    Time*THOUSAND, //time in ms
+						    total_cpu_time,
+						    residual_l2_norm[Local_SolnBlk[0].residual_variable-1],
+						    first_step,
+						    50);
+	    //residual to file
+	    if (CFDkit_Primary_MPI_Processor() && !first_step) {
+	      Output_Progress_to_File(residual_file,
+				      number_of_time_steps,
+				      Time*THOUSAND,
+				      total_cpu_time,
+				      residual_l1_norm,
+				      residual_l2_norm,
+				      residual_max_norm,
+				      Local_SolnBlk[0].residual_variable,
+				      Local_SolnBlk[0].Number_of_Residual_Norms);
+	    }
+	    
+	    //time vs mass frac (time accurate) for debugging
+	    //chemical solutions with no flow ie. just nonequilibrium chemistry
+	    if (Input_Parameters.Time_Accurate && Input_Parameters.Time_Accurate_Plot_Frequency != 0){
+	      if ( (number_of_time_steps%Input_Parameters.Time_Accurate_Plot_Frequency) == 0 ){ 
+		Output_to_Time_Accurate_File(time_accurate_data_file,
+					     Time,
+					     Local_SolnBlk[0].W[2][2]);
+	      }
+	    }
 	  }
-	}
-	/******************* CALCULATION CHECK ************************************
-         Check to see if calculations are complete and if so jump of out of 
-         this infinite loop.   
+	  /******************* CALCULATION CHECK ************************************
+           Check to see if calculations are complete and if so jump of out of 
+           this infinite loop.   
 
-         Possibly replace while(1) so that these if's are the conditions 
-         used or some sort of resonable facisimile.
-	***************************************************************************/
+           Possibly replace while(1) so that these if's are the conditions 
+           used or some sort of resonable facisimile.
+	  ***************************************************************************/
+ 
 	if (!Input_Parameters.Time_Accurate &&
-	    number_of_time_steps >= 
-	    Input_Parameters.Maximum_Number_of_Time_Steps) break;
-	if (Input_Parameters.Time_Accurate && 
-	    Time >= Input_Parameters.Time_Max) break;
+ 	    number_of_time_steps >= 
+ 	    Input_Parameters.Maximum_Number_of_Time_Steps) break;
+ 	if (Input_Parameters.Time_Accurate && 
+ 	    Time >= Input_Parameters.Time_Max) break;
+	  if (Input_Parameters.Dual_Time_Stepping && 
+	      (n_inner == Input_Parameters.Max_Inner_Steps ||
+	       (n_inner > 0  && (residual_l2_norm[Local_SolnBlk[0].residual_variable-1] < dual_eps  || 
+				 residual_l2_norm[Local_SolnBlk[0].residual_variable-1]/
+				 initial_residual_l2_norm < dual_eps)))) break;
 
-	/******************* LIMITER FREEZE ***************************************	
-	 Freeze limiters as necessary
-	***************************************************************************/
-        if (!first_step &&
-            Input_Parameters.Freeze_Limiter &&
-            limiter_freezing_off &&           
-            residual_l2_norm <= Input_Parameters.Freeze_Limiter_Residual_Level) {
-  	   Freeze_Limiters(Local_SolnBlk, 
-			   List_of_Local_Solution_Blocks);
-	   limiter_freezing_off = ON;	
-        } 
+// 	/******************* LIMITER FREEZE ***************************************	
+// 	 Freeze limiters as necessary
+// 	***************************************************************************/
+//         if (!first_step &&
+//             Input_Parameters.Freeze_Limiter &&
+//             limiter_freezing_off &&           
+//             residual_l2_norm[Local_SolnBlk[0].residual_variable-1] <= Input_Parameters.Freeze_Limiter_Residual_Level) {
+//   	   Freeze_Limiters(Local_SolnBlk, 
+// 			   List_of_Local_Solution_Blocks);
+// 	   limiter_freezing_off = ON;	
+//         } 
 
-	/******************* BLOCK SOLUTION UPDATE ********************************
-           Update solution for next time step using a multistage
-           time stepping scheme. 
-	***************************************************************************/
-	for ( i_stage  = 1 ; i_stage <= Input_Parameters.N_Stage ; ++i_stage ) {
-	  // 1. Exchange solution information between neighbouring blocks.
-	  error_flag = Send_All_Messages(Local_SolnBlk, 
-					 List_of_Local_Solution_Blocks,
-					 NUM_VAR_CHEM2D, 
-					 OFF);
-	  if (error_flag) {
-	     cout << "\n Chem2D ERROR: Chem2D message passing error on processor "
-		  << List_of_Local_Solution_Blocks.ThisCPU
-		  << ".\n";
-	     cout.flush();
-	   } /* endif */
-	   
-             // Reduce message passing error flag to other MPI processors.
-	   error_flag = CFDkit_OR_MPI(error_flag);
-	   if (error_flag) return (error_flag);
+	  /******************* BLOCK SOLUTION UPDATE ********************************
+            Update solution for next time step using a multistage
+            time stepping scheme. 
+	  ***************************************************************************/
+	  for ( i_stage  = 1 ; i_stage <= Input_Parameters.N_Stage ; ++i_stage ) {
+	    // 1. Exchange solution information between neighbouring blocks.
+	    error_flag = Send_All_Messages(Local_SolnBlk, 
+					   List_of_Local_Solution_Blocks,
+					   NUM_VAR_CHEM2D, 
+					   OFF);
+	    if (error_flag) {
+	      cout << "\n Chem2D ERROR: Chem2D message passing error on processor "
+		   << List_of_Local_Solution_Blocks.ThisCPU
+		   << ".\n";
+	      cout.flush();
+	    } /* endif */
+	    
+	    // Reduce message passing error flag to other MPI processors.
+	    error_flag = CFDkit_OR_MPI(error_flag);
+	    if (error_flag) return (error_flag);
+	    
+	    
+	    /************* BOUNDARY CONDITIONS *********************************/
+	    // 2. Apply boundary conditions for stage.
+	    BCs(Local_SolnBlk, List_of_Local_Solution_Blocks,Input_Parameters);
+	    
+	    /*************** UPDATE SOLUTION ************************************/
+	    // 3. Determine solution residuals for stage.
+	    
+	    error_flag = dUdt_Multistage_Explicit(Local_SolnBlk,
+						  List_of_Global_Solution_Blocks,
+						  List_of_Local_Solution_Blocks,
+						  Input_Parameters,
+						  i_stage);
+	    if (error_flag) {
+	      cout << "\n Chem2D ERROR: Chem2D solution residual error on processor "
+		   << List_of_Local_Solution_Blocks.ThisCPU
+		   << ".\n";
+	      cout.flush();
+	    } /* endif */
+	    
+	    error_flag = CFDkit_OR_MPI(error_flag);
+	    if (error_flag) return (error_flag);
+	    
+	    // 4. Send boundary flux corrections at block interfaces with resolution changes.
+	    error_flag = Send_Conservative_Flux_Corrections(Local_SolnBlk, 
+							    List_of_Local_Solution_Blocks,
+							    NUM_VAR_CHEM2D);
+	    if (error_flag) {
+	      cout << "\n Chem2D ERROR: Chem2D flux correction message passing error on processor "
+		   << List_of_Local_Solution_Blocks.ThisCPU
+		   << ".\n";
+	      cout.flush();
+	    } /* endif */
+	    error_flag = CFDkit_OR_MPI(error_flag);
+	    if (error_flag) return (error_flag);
+	    
 	
+	    // 5. Apply boundary flux corrections to ensure that method is conservative.
+	    Apply_Boundary_Flux_Corrections_Multistage_Explicit(Local_SolnBlk, 
+								List_of_Local_Solution_Blocks,
+								Input_Parameters,
+								i_stage);
 	 
-	   /************* BOUNDARY CONDITIONS *********************************/
-	   // 2. Apply boundary conditions for stage.
-	   BCs(Local_SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
-	   
-	   /*************** UPDATE SOLUTION ************************************/
-	   // 3. Determine solution residuals for stage.
-	   //cout<<"\n 3 "; cout.flush();
-	   
-	   error_flag = dUdt_Multistage_Explicit(Local_SolnBlk, 
-						 List_of_Global_Solution_Blocks,
-						 List_of_Local_Solution_Blocks,
-						 Input_Parameters,
-						 i_stage);
-	   if (error_flag) {
-	     cout << "\n Chem2D ERROR: Chem2D solution residual error on processor "
-		  << List_of_Local_Solution_Blocks.ThisCPU
-		  << ".\n";
-	     cout.flush();
-	   } /* endif */
-	 
-	   error_flag = CFDkit_OR_MPI(error_flag);
-	   if (error_flag) return (error_flag);
-
-	   //cout<<"\n 4 "; cout.flush();
-	   
-	   // 4. Send boundary flux corrections at block interfaces with resolution changes.
-	   error_flag = Send_Conservative_Flux_Corrections(Local_SolnBlk, 
-							   List_of_Local_Solution_Blocks,
-							   NUM_VAR_CHEM2D);
-	   if (error_flag) {
-	     cout << "\n Chem2D ERROR: Chem2D flux correction message passing error on processor "
-		  << List_of_Local_Solution_Blocks.ThisCPU
-		  << ".\n";
-	     cout.flush();
-	   } /* endif */
-	   error_flag = CFDkit_OR_MPI(error_flag);
-	   if (error_flag) return (error_flag);
-
-	
-	   // 5. Apply boundary flux corrections to ensure that method is conservative.
-	   Apply_Boundary_Flux_Corrections_Multistage_Explicit(Local_SolnBlk, 
-							       List_of_Local_Solution_Blocks,
-							       Input_Parameters,
-							       i_stage);
-	   // cout<<"\n Solver 6 \n "; cout.flush();	   
-	 
-           // 6. Smooth the solution residual using implicit residual smoothing. */
-           if (Input_Parameters.Residual_Smoothing) {
+	    // 6. Smooth the solution residual using implicit residual smoothing. */
+	    if (Input_Parameters.Residual_Smoothing) {
               Residual_Smoothing(Local_SolnBlk,
                                  List_of_Local_Solution_Blocks,
                                  Input_Parameters,
                                  i_stage);
-           } /* endif */
+	    } 
+	    
+	    // 7. Update solution for stage.
+	    error_flag = Update_Solution_Multistage_Explicit(Local_SolnBlk, 
+							     List_of_Local_Solution_Blocks,
+							     Input_Parameters,
+							     i_stage);
+	    
+	    if (error_flag) {
+	      cout << "\n Chem2D ERROR: Chem2D solution update error on processor "
+		   << List_of_Local_Solution_Blocks.ThisCPU
+		   << ".\n";
+	      cout.flush();
+	    } 
+	    
+	    error_flag = CFDkit_OR_MPI(error_flag);
+	    if (error_flag) return (error_flag);
+	    
+	  } /* endfor */
 
-	   //cout<<"\n 7 "; cout.flush();
-	   
-	   // 7. Update solution for stage.
-	   error_flag = Update_Solution_Multistage_Explicit(Local_SolnBlk, 
-							    List_of_Local_Solution_Blocks,
-							    Input_Parameters,
-							    i_stage);
+	  n_inner++;
+	} while (Input_Parameters.Dual_Time_Stepping && 
+                 (n_inner < Input_Parameters.Max_Inner_Steps+1  || first_step)); 
 
-	   if (error_flag) {
-	     cout << "\n Chem2D ERROR: Chem2D solution update error on processor "
-		  << List_of_Local_Solution_Blocks.ThisCPU
-		  << ".\n";
-	     cout.flush();
-	   } /* endif */
-
-	   error_flag = CFDkit_OR_MPI(error_flag);
-	   if (error_flag) return (error_flag);
-	   
-	} /* endfor */
-
-		/******************* UPDATE TIMER & COUNTER *******************************
+	/********** UPDATE STATES FOR DUAL TIME STEPPING ***************************  
+         Update solution states, at different times, required by dual time stepping.
+        ****************************************************************************/
+        if (Input_Parameters.Dual_Time_Stepping) {
+	  error_flag = Update_Dual_Solution_States(Local_SolnBlk, 
+						 List_of_Local_Solution_Blocks);
+	  if (error_flag) {
+	    cout << "\n Chem2D ERROR: Chem2D solution states update error on processor "
+		 << List_of_Local_Solution_Blocks.ThisCPU
+		 << ".\n";
+	    cout.flush();
+	  }
+	}
+	
+	/******************* UPDATE TIMER & COUNTER *******************************
           Update time and time step counter. 
 	***************************************************************************/
-	if (first_step) first_step = 0;
+	if (first_step) {
+	  first_step = 0;
+	  Input_Parameters.first_step = 0;
+	}
+
 	number_of_time_steps = number_of_time_steps + 1;
+
+	// check for last step
+        if (!Input_Parameters.Time_Accurate &&
+	    number_of_time_steps == Input_Parameters.Maximum_Number_of_Time_Steps) {
+          last_step = 1;
+	}
+		
 	if (Input_Parameters.i_Time_Integration != 
-	    TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING) {
-	  Time = Time + Input_Parameters.CFL_Number*dTime;	  
-	} else {
+	  TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING  &&
+          !Input_Parameters.Dual_Time_Stepping) {
+	  Time = Time + Input_Parameters.CFL_Number*dTime;
+ 
+	} else if (Input_Parameters.i_Time_Integration == 
+	  TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING  &&
+	  !Input_Parameters.Dual_Time_Stepping) {
 	  Time = Time + Input_Parameters.CFL_Number*dTime*
 	    MultiStage_Optimally_Smoothing(Input_Parameters.N_Stage, 
 					   Input_Parameters.N_Stage,
-					   Input_Parameters.i_Limiter);	  
+					   Input_Parameters.i_Limiter);
+	} else if (Input_Parameters.Dual_Time_Stepping) {
+          Time = Time + dTime;
 	} /* endif */
-
+        
+	i++; // is this necessary???
+	
       } /* endwhile */
-
-      if (!batch_flag) cout << "\n\n Chem2D computations complete on " 
-			    << Date_And_Time() << ".\n";
-
-     
+      
+      if (!batch_flag) { cout << "\n\n Explicit Chem2D computations complete on " 
+			      << Date_And_Time() << ".\n"; time(&end_explicit); /*end_explicit = clock();*/ }
+          
     } /* endif */
+
+
     /************************************************************************************  
     Update ghostcell information and prescribe boundary conditions to ensure
     that the solution is consistent on each block. 
@@ -763,15 +904,102 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     error_flag = CFDkit_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
     
-    BCs(Local_SolnBlk,List_of_Local_Solution_Blocks,Input_Parameters);
+    BCs(Local_SolnBlk,List_of_Local_Solution_Blocks, Input_Parameters);
     /* Close residual file. */
     
     if (CFDkit_Primary_MPI_Processor()) {
       error_flag = Close_Progress_File(residual_file);
       error_flag = Close_Time_Accurate_File(time_accurate_data_file);
     } /* endif */
+      
+    //housecleaning
+    delete[] residual_l1_norm;  delete[] residual_l2_norm;  delete[] residual_max_norm;
+
+  }  //END EXPLICT NON-MULTIGRID
+
+ 
+  /*************************************************************************************************************************/
+  /************************ APPLY Newton_Krylov_Schwarz ********************************************************************/
+  /*************************************************************************************************************************/
+  if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+    time_t start_NKS, end_NKS;
+
+     if (CFDkit_Primary_MPI_Processor()) {
+        error_flag = Open_Progress_File(residual_file,
+	 			        Input_Parameters.Output_File_Name,
+				        number_of_time_steps,
+					Local_SolnBlk[0].residual_variable,
+					Local_SolnBlk[0].Number_of_Residual_Norms);
+        if (error_flag) {
+           cout << "\n Chem2D ERROR: Unable to open residual file for Chem2D calculation.\n";
+           cout.flush();
+        } 
+     }
+
+     CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+     CFDkit_Broadcast_MPI(&error_flag, 1);
+     if (error_flag) return (error_flag);
+
+     //Turn Limiter Freezing OFF for startup
+     Evaluate_Limiters(Local_SolnBlk, List_of_Local_Solution_Blocks);
+
+     if (!batch_flag){ cout << "\n\n Beginning Chem2D NKS computations on " << Date_And_Time() << ".\n\n"; time(&start_NKS); }
+
+     //Store Explicit times for output
+     CPUTime Explicit_processor_cpu_time = processor_cpu_time;
+     CPUTime Explicit_total_cpu_time =  total_cpu_time;
     
-  } //END NON-MULTIGRID
+     //Perform NKS Iterations 
+     error_flag = Newton_Krylov_Schwarz_Solver<Chem2D_pState,
+                                               Chem2D_Quad_Block,                                               
+                                               Chem2D_Input_Parameters>(processor_cpu_time,
+									total_cpu_time, 
+									residual_file,
+									number_of_time_steps, // explicit time steps
+									Local_SolnBlk, 
+									List_of_Local_Solution_Blocks,
+									Input_Parameters);
+     
+     processor_cpu_time.update();
+     total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput);  
+    
+     if (error_flag) {
+        if (CFDkit_Primary_MPI_Processor()) { 
+   	   cout << "\n Chem2D_NKS ERROR: Chem2D solution error on processor " 
+                << List_of_Local_Solution_Blocks.ThisCPU << ".\n";
+   	   cout.flush();
+   	} /* endif */
+     } /* endif */
+
+     CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+     CFDkit_Broadcast_MPI(&error_flag, 1);
+     if (error_flag) return (error_flag);
+    
+     /***********************************************************************/
+     if (!batch_flag) { cout << "\n\n Chem2D NKS computations complete on " << Date_And_Time() << ".\n"; time(&end_NKS); }
+
+     if (!batch_flag) {
+       cout<<"\n ----------------------------------------------------------------";
+       cout<<"\n -------- Solution Computations Summary in minutes --------------";
+       cout<<"\n ----------------------------------------------------------------";
+       cout<<"\n Total Startup CPU Time\t\t = "<<Explicit_total_cpu_time.min();
+       cout<<"\n Total NKS CPU Time \t\t = "<<total_cpu_time.min()-Explicit_total_cpu_time.min();
+       cout<<"\n Total CPU Time \t\t = "<<total_cpu_time.min(); 
+       cout<<"\n Total Startup Clock Time\t = "<<difftime(end_explicit,start_explicit)/60.0;
+       cout<<"\n Total NKS Clock Time\t\t = "<<difftime(end_NKS,start_NKS)/60.0;
+       cout<<"\n Total Clock Time\t\t = "<<difftime(end_NKS,start_explicit)/60.0;    //if no explicit start_eplicit not defined...
+       cout<<"\n ----------------------------------------------------------------";
+       cout<<"\n ----------------------------------------------------------------";
+       cout<<"\n ----------------------------------------------------------------\n";
+     } 
+     //Also want to output total GMRES & NKS Iterations, and maybe max memory usage possibly??
+
+     if (CFDkit_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file); 
+     
+  } 
+  /*************************************************************************************************************************/
+  /*************************************************************************************************************************/
+  /*************************************************************************************************************************/
 
   /***************************************************************************
    ************************** POST PROCESSSING *******************************
@@ -780,19 +1008,18 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     by input parameters.        
    *************************************************************************** 
    ****************************************************************************/ 
- 
+  
   postprocess_current_calculation: ;
   CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
 
   // To infinity and beyond....
   while (1) {
-     
-    if (CFDkit_Primary_MPI_Processor()) 
-      {
-	Get_Next_Input_Control_Parameter(Input_Parameters);
-        command_flag = Parse_Next_Input_Control_Parameter(Input_Parameters);
-        line_number = Input_Parameters.Line_Number;
-      } /* endif */
+    
+    if (CFDkit_Primary_MPI_Processor()) {
+      Get_Next_Input_Control_Parameter(Input_Parameters);
+      command_flag = Parse_Next_Input_Control_Parameter(Input_Parameters);
+      line_number = Input_Parameters.Line_Number;
+    } 
 
     //Debugging -- gives command directives from the end of the input file
     //cout<<" \n HERE "<<command_flag;
@@ -801,12 +1028,16 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
     Broadcast_Input_Parameters(Input_Parameters);
     CFDkit_Broadcast_MPI(&command_flag, 1);
+    
     /************************************************************************
      **************** EXECUTE CODE ******************************************
      ************************************************************************/
     if (command_flag == EXECUTE_CODE) {
       // Deallocate memory for 2D Chem equation solution.
-      if (!batch_flag) cout << "\n Deallocating Chem2D solution variables.";
+      if (!batch_flag) cout << "\n Deallocating Chem2D solution variables."; 
+      if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
+	MGSolver.deallocate();
+      }
       Local_SolnBlk = Deallocate(Local_SolnBlk, 
 				 Input_Parameters);
       //Deallocate_Message_Buffers(List_of_Local_Solution_Blocks); // Not necessary here!
@@ -833,7 +1064,10 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
      ************************************************************************/
     else if (command_flag == TERMINATE_CODE) {
       // Deallocate memory for 2D Chem equation solution.
-      if (!batch_flag) cout << "\n Deallocating Chem2D solution variables.";
+      if (!batch_flag) cout << "\n Deallocating Chem2D solution variables."; 
+      if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
+	MGSolver.deallocate();
+      }
       Local_SolnBlk = Deallocate(Local_SolnBlk, 
 				 Input_Parameters);
 
@@ -867,7 +1101,8 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
        goto continue_existing_calculation;
       //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    } 
+    }
+    
     /************************************************************************
      ******************** REFINE GRID (AMR) *********************************
      *************************************************************************/
@@ -879,7 +1114,8 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 		       QuadTree,
 		       List_of_Global_Solution_Blocks,
 		       List_of_Local_Solution_Blocks,
-		       ON,ON);
+		       ON,
+		       ON);
       if (error_flag) {
 	cout << "\n Chem2D ERROR: Chem2D AMR error on processor "
 	     << List_of_Local_Solution_Blocks.ThisCPU
@@ -924,26 +1160,49 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       //                } /* endfor */
       //             } /* endfor */
       //          } /* endif */
+      
     }
+    /************************************************************************
+     ********************* PERFORM MORTON ORDERING **************************
+     *************************************************************************/
+    else if (command_flag == MORTON_ORDERING_CODE) {
+      if (!batch_flag) cout << "\n\n Applying Morton re-ordering algorithm.";
+        error_flag = Morton_ReOrdering_of_Solution_Blocks(QuadTree, 
+                                                          List_of_Global_Solution_Blocks, 
+                                                          List_of_Local_Solution_Blocks, 
+                                                          Local_SolnBlk, 
+                                                          Input_Parameters, 
+                                                          number_of_time_steps, 
+                                                          Time, 
+                                                          processor_cpu_time); 
+        if (error_flag) {
+           cout <<"\n Chem2D ERROR: Morton re-ordering error on processor "
+                << List_of_Local_Solution_Blocks.ThisCPU
+                << ".\n";
+           cout.flush();
+           return (error_flag);
+        } /* endif */
+        error_flag = CFDkit_OR_MPI(error_flag);
+        if (error_flag) return (error_flag);
+        //Output space filling curve in Tecplot format
+        if (!batch_flag) cout << "\n Outputting space filling curve showing block loading for CPUs.";
+        Morton_SFC_Output_Tecplot(Local_SolnBlk, 
+                                  Input_Parameters,
+                                  List_of_Local_Solution_Blocks);
 
+    }
     /************************************************************************
      ********************* WRITE OUTPUT @ NODES ******************************
      *************************************************************************/
-	 else if (command_flag == WRITE_OUTPUT_CODE) {
+    else if (command_flag == WRITE_OUTPUT_CODE) {
       // Output solution data.
       if (!batch_flag) cout << "\n Writing Chem2D solution to output data file(s).";
       
-      if (!(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
-	    Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING)) {
-	error_flag = Output_Tecplot(Local_SolnBlk, 
-				    List_of_Local_Solution_Blocks, 
-				    Input_Parameters,
-				    number_of_time_steps,
-				    Time);
-      } else {
-	error_flag = MGSolver.Output_Multigrid(number_of_time_steps,
-					       Time);
-      }
+      error_flag = Output_Tecplot(Local_SolnBlk, 
+				  List_of_Local_Solution_Blocks, 
+				  Input_Parameters,
+				  number_of_time_steps,
+				  Time);
       if (error_flag) {
 	cout << "\n Chem2D ERROR: Unable to open Chem2D output data file(s) "
 	     << "on processor "
@@ -962,17 +1221,11 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     else if (command_flag == WRITE_OUTPUT_CELLS_CODE) {
       // Output solution data.
       if (!batch_flag) cout << "\n Writing cell-centered Chem2D solution to output data file(s).";
-      if (!(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
-	    Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING)) {
-	error_flag = Output_Cells_Tecplot(Local_SolnBlk, 
-					  List_of_Local_Solution_Blocks, 
-					  Input_Parameters,
-					  number_of_time_steps,
-					  Time);
-      } else {
-	error_flag = MGSolver.Output_Multigrid_Cells(number_of_time_steps,
-						     Time);
-      }
+      error_flag = Output_Cells_Tecplot(Local_SolnBlk, 
+					List_of_Local_Solution_Blocks, 
+					Input_Parameters,
+					number_of_time_steps,
+					Time);
       if (error_flag) {
 	cout << "\n Chem2D ERROR: Unable to open Chem2D cell output data file(s) "
 	     << "on processor "
@@ -982,39 +1235,12 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       } /* endif */
       error_flag = CFDkit_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
+      
     }
-
-    /*************************************************************************
-     ********************** WRITE OUTPUT CELL-CENTERED ***********************
+    /************************************************************************
+     ********************* WRITE OUTPUT RightHandSide ***********************
      *************************************************************************/
-
-    else if (command_flag == WRITE_OUTPUT_NODES_CODE) {
-      if (!batch_flag) cout << "\n Writing Chem2D node locations to output data file(s).";
-      if (!(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
-	    Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING)) {
-	error_flag = Output_Nodes_Tecplot(Local_SolnBlk,
-					  List_of_Local_Solution_Blocks,
-					  Input_Parameters,
-					  number_of_time_steps,
-					  Time);
-      } else {
-	error_flag = MGSolver.Output_Multigrid_Cells(number_of_time_steps,
-						     Time);
-      }
-      if (error_flag) {
-	cout << "\n Chem2D ERROR: Unable to open Chem2D nodes output data file(s) "
-	     << "on processor "
-	     << List_of_Local_Solution_Blocks.ThisCPU
-	     << "." << endl;
-      }
-      error_flag = CFDkit_OR_MPI(error_flag);
-      if (error_flag) return error_flag;
-    }
-
-    /*************************************************************************
-     ********************* WRITE OUTPUT RightHandSide ************************
-     *************************************************************************/
-    else if (command_flag == WRITE_OUTPUT_RHS_CODE) {
+	 else if (command_flag == WRITE_OUTPUT_RHS_CODE) {
       // Output the RHS
       if (!batch_flag) cout << "\n Writing right hand side to output data file(s).";
       
@@ -1033,8 +1259,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       error_flag = CFDkit_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
     }
-
-    /*************************************************************************
+    /************************************************************************
      ********************* WRITE OUTPUT RightHandSide after Perturbation******
      *************************************************************************/
     else if (command_flag == WRITE_OUTPUT_PERTURB_CODE) {
@@ -1058,7 +1283,6 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       error_flag = CFDkit_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
     }
-
     /*************************************************************************
      ******************** WRITE RESTART FILE *********************************
      *************************************************************************/
@@ -1209,6 +1433,76 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       }
       CFDkit_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
+    } 
+    /*************************************************************************
+     **************** WRITE CAVITY DRIVEN FLOW *******************************
+     *************************************************************************/ 
+    else if (command_flag == WRITE_OUTPUT_DRIVEN_CAVITY_FLOW_CODE) {
+      if (!batch_flag) cout << endl << " Writing the driven cavity flow output file.";
+      error_flag = Output_Driven_Cavity_Flow(Local_SolnBlk,
+					     List_of_Local_Solution_Blocks,
+					     Input_Parameters);
+      if (error_flag) {
+	cout << endl << "\n Chem2D ERROR: Unable to open Chem2D driven cavity flow." << endl;
+	cout.flush();
+      }
+      CFDkit_Broadcast_MPI(&error_flag,1);
+      if (error_flag) return error_flag;
+      
+    } 
+
+    /*************************************************************************
+     **************** WRITE QUASI 3D for AXISYMMETRIC ************************
+     *************************************************************************/ 
+    else if (command_flag == WRITE_OUTPUT_QUASI3D_CODE) {
+      // Output solution data.
+      if (!batch_flag) cout << "\n Writing Chem2D quasi3D solution to output data file(s).";
+      error_flag = Output_Quasi3D_Tecplot(Local_SolnBlk,
+					  List_of_Local_Solution_Blocks,
+					  Input_Parameters,
+					  number_of_time_steps,
+					  Time);
+      if (error_flag) {
+	cout << "\n NavierStokes2D ERROR: Unable to open NavierStokes2D quasi3D output data file(s) "
+	     << "on processor "
+	     << List_of_Local_Solution_Blocks.ThisCPU
+	     << "." << endl;
+      }
+      error_flag = CFDkit_OR_MPI(error_flag);
+      if (error_flag) return error_flag;
+ 
+    }
+    /*************************************************************************
+     **************** SWITCH BCs TO FIXED  ***********************************
+     *************************************************************************/ 
+    else if (command_flag == SWITCH_BCS_TO_FIXED) {      
+      if (!batch_flag) cout << endl << " Setting EAST & WEST BC's Fixed. -> WARNING: ONLY VALID FOR 1D FLAME CASE!!!! \n";
+
+      //Should be calling a quadmultiblock function that would do this per block,
+      //but since the 1D FLAME case only has one block this should work, even though it is a hack.
+      
+      Local_SolnBlk[0].Grid.set_BCs(WEST,BC_CONSTANT_EXTRAPOLATION);      
+      Local_SolnBlk[0].Grid.set_BCs(EAST,BC_CONSTANT_EXTRAPOLATION); 
+      
+      //SET all V-velocity to ZERO
+      Local_SolnBlk[0].set_v_zero();  //????
+
+      //Switch to const_extrap then run BCS to set ghost cell W values to internal values
+      BCs(Local_SolnBlk, List_of_Local_Solution_Blocks,Input_Parameters);
+
+      //Copy adjusted ghost cell values to overwrite previous WoS, WoN, etc..
+      Reset_Wo(Local_SolnBlk[0]);
+
+      //Swich to Fixed and now BCs will use updated WoS, WoN, etc...
+      Local_SolnBlk[0].Grid.set_BCs(WEST,BC_FIXED);      
+      Local_SolnBlk[0].Grid.set_BCs(EAST,BC_FIXED); 
+
+      if (error_flag) {
+	cout << endl << "\n Chem2D ERROR: Problem in Chem2D SWITCH_BCS_TO_FIXED. " << endl;
+	cout.flush();
+      }
+      CFDkit_Broadcast_MPI(&error_flag,1);
+      if (error_flag) return error_flag;      
     }
     /*************************************************************************
      **************** NOT A VALID INPUT_CODE  ********************************
@@ -1236,12 +1530,3 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 
 
 
-  /***************** DEUBUGGING JUNK ****************************************/
-  //cout<<endl<<Local_SolnBlk[1].W[1][1]<<endl<<Local_SolnBlk[1].W[1][1].T()<<endl;
-  //cout<<Local_SolnBlk[1].U[1][1]<<endl<<Local_SolnBlk[1].U[1][1].T()<<endl;
- 
-  //cout<<endl;
-  //for(int k=1; k <= Local_SolnBlk[1].U[1][1].NUM_VAR_CHEM2D ; k++){
-  //  cout<<Local_SolnBlk[1].U[1][1][k]<<endl;
-  // }
-  /**************************************************************************/
