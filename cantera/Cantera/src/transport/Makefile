@@ -15,7 +15,7 @@ INCDIR = ../../../build/include/cantera/kernel/transport
 INSTALL_TSC = ../../../bin/install_tsc
 do_ranlib = 1
 
-CXX_FLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/home/groth/CFFC/sparselib++/include -I/home/groth/CFFC/sparselib++/iml/include -I/home/groth/CFFC/sparselib++/mv/include -I/home/groth/CFFC/bpkit/src  $(CXX_OPT)
+CXX_FLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/iml/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/mv/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/bpkit/src  $(CXX_OPT)
 
 # Transport Object Files
 OBJS    = TransportFactory.o MultiTransport.o MixTransport.o MMCollisionInt.o \
@@ -25,7 +25,7 @@ TRAN_H  =  TransportFactory.h MultiTransport.h MixTransport.h \
            TransportBase.h L_matrix.h TransportParams.h
 
 CXX_INCLUDES = -I.. 
-LIB = /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/libtransport.a
+LIB = /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/libtransport.a
 
 DEPENDS = $(OBJS:.o=.d)
 

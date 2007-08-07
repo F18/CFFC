@@ -11,7 +11,7 @@
 .SUFFIXES :
 .SUFFIXES :  .cpp .d .o .f90 .mod
 
-CXX_FLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/home/groth/CFFC/sparselib++/include -I/home/groth/CFFC/sparselib++/iml/include -I/home/groth/CFFC/sparselib++/mv/include -I/home/groth/CFFC/bpkit/src  $(CXX_OPT)
+CXX_FLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/iml/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/mv/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/bpkit/src  $(CXX_OPT)
 FORT_FLAGS = -fno-second-underscore -I. -O3
 
 
@@ -41,7 +41,7 @@ F90 = /usr/bin/f95
 EXT_LIBS =  -luser -loneD -lzeroD -ltransport -lcantera -lcvode -lctlapack -lctblas -lctmath -ltpx -lctf2c -lconverters 
 
 # the directory where the Cantera libraries are located
-CANTERA_LIBDIR=/home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu
+CANTERA_LIBDIR=/nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu
 
 # ../../../lib
 LIB_DEPS = $(CANTERA_LIBDIR)/libcantera.a \
@@ -51,12 +51,12 @@ LIB_DEPS = $(CANTERA_LIBDIR)/libcantera.a \
 CANTERA_INCDIR=../../src
 
 # the directory where module .mod files should be put
-MODULE_DIR = /home/groth/CFFC/cantera/build/include/cantera
+MODULE_DIR = /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/include/cantera
 
 CXX_INCLUDES = -I$(CANTERA_INCDIR)  
 
 # flags passed to the C++ compiler/linker for the linking step
-LCXX_FLAGS = -L$(CANTERA_LIBDIR) -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/home/groth/CFFC/sparselib++/include -I/home/groth/CFFC/sparselib++/iml/include -I/home/groth/CFFC/sparselib++/mv/include -I/home/groth/CFFC/bpkit/src 
+LCXX_FLAGS = -L$(CANTERA_LIBDIR) -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/iml/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/mv/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/bpkit/src 
 
 # how to compile C++ source files to object files
 %.o : %.cpp
@@ -73,7 +73,7 @@ LCXX_FLAGS = -L$(CANTERA_LIBDIR) -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VE
 
 LIB_NAME=libfct.a
 
-FTLIB = /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/$(LIB_NAME)
+FTLIB = /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/$(LIB_NAME)
 
 $(FTLIB): $(MODFILES) $(USER_MODULE_OBJS) $(CXX_OBJS) $(LIB_DEPS)
 	$(RM)     $(FTLIB)

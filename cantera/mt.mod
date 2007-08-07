@@ -1,4 +1,4 @@
-GFORTRAN module created from testf90.f90 on Thu Aug  2 16:54:05 2007
+GFORTRAN module created from testf90.f90 on Tue Aug  7 10:03:08 2007
 If you edit this, you'll get what you deserve.
 
 (() () () () () () () () () () () () () () () () () () () () ())

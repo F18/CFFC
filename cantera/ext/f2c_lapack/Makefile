@@ -12,7 +12,7 @@
 do_ranlib = 1
 
 # the directory where the Cantera libraries are located
-CANTERA_LIBDIR=/home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu
+CANTERA_LIBDIR=/nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu
 
 # the C++ compiler
 CXX = g++ -O
@@ -21,7 +21,7 @@ CXX = g++ -O
 CC = gcc
 
 # C++ compile flags
-CXX_FLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/home/groth/CFFC/sparselib++/include -I/home/groth/CFFC/sparselib++/iml/include -I/home/groth/CFFC/sparselib++/mv/include -I/home/groth/CFFC/bpkit/src  
+CXX_FLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/iml/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/mv/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/bpkit/src  
 
 # Local include files
 CXX_INCLUDES=-I../f2c_libs
@@ -35,7 +35,7 @@ CXX_INCLUDES=-I../f2c_libs
 
 # -----------------------------------------------
 
-LAPACKLIB = /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/libctlapack.a
+LAPACKLIB = /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/libctlapack.a
 
 all: $(LAPACKLIB)
 

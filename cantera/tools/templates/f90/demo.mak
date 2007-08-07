@@ -30,7 +30,7 @@ LINK_OPTIONS =
 CXX = g++ -O
 
 # C++ compile flags
-CXX_FLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/home/groth/CFFC/sparselib++/include -I/home/groth/CFFC/sparselib++/iml/include -I/home/groth/CFFC/sparselib++/mv/include -I/home/groth/CFFC/bpkit/src 
+CXX_FLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/iml/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/mv/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/bpkit/src 
 
 # external libraries
 EXT_LIBS = -lfct -lclib  -luser -loneD -lzeroD -ltransport -lcantera -lcvode -lctlapack -lctblas -lctmath -ltpx -lctf2c -lconverters -lctcxx -lstdc++ 
@@ -51,7 +51,7 @@ CANTERA_INCDIR=/usr/local/cantera/include
 CANTERA_MODULE_DIR=/usr/local/cantera/include/cantera
 
 # flags passed to the C++ compiler/linker for the linking step
-LCXXFLAGS = -L$(CANTERA_LIBDIR)  -L/home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu
+LCXXFLAGS = -L$(CANTERA_LIBDIR)  -L/nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu
 
 # how to compile C++ source files to object files
 %.o : %.cpp

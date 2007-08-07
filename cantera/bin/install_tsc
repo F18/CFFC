@@ -43,7 +43,7 @@ if test ! -f "${th}" ; then
     fi
 else 
 #            if test "${lh}" -nt "${th}" ; then 
-   /home/groth/CFFC/cantera/bin/tscompare "${lh}" "${th}"
+   /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/bin/tscompare "${lh}" "${th}"
    res=$?
    if test "$res" = "0" ; then
     if test -x "${lh}" ; then

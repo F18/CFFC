@@ -18,7 +18,7 @@ do_electro = 0
 do_issp    = 0
 
 LOCAL_DEFS = -DDEBUG_MODE
-CXX_FLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/home/groth/CFFC/sparselib++/include -I/home/groth/CFFC/sparselib++/iml/include -I/home/groth/CFFC/sparselib++/mv/include -I/home/groth/CFFC/bpkit/src  $(LOCAL_DEFS) $(CXX_OPT)
+CXX_FLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/iml/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/mv/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/bpkit/src  $(LOCAL_DEFS) $(CXX_OPT)
 
 # Extended Cantera Thermodynamics Object Files
 
@@ -48,7 +48,7 @@ CATHERMO_H   = $(ELECTRO_H) $(ISSP_H)
 
 
 CXX_INCLUDES = -I.. 
-LIB = /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/libcaThermo.a
+LIB = /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/libcaThermo.a
 
 DEPENDS = $(CATHERMO_OBJ:.o=.d)
 
