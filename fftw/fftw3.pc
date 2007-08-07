@@ -1,4 +1,4 @@
-prefix=/home/groth/CFFC/fftw-3.2alpha2
+prefix=/home/groth/CFFC/fftw
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
