@@ -64,6 +64,7 @@ using namespace std;
 #include "NavierStokes2D/NavierStokes2DQuad.h"
 #include "Gaussian2D/Gaussian2DCartesian.h"
 #include "Gaussian2D/Gaussian2DQuad.h"
+#include "HighTemp2D/HighTemp2DQuad.h"
 #include "MPI/MPI.h"
 #include "ICEM/ICEMCFD.h"
 
@@ -331,7 +332,10 @@ int main(int num_arg, char *arg_ptr[]) {
   } else if(strcmp(Equation_Type, "Gaussian2D") == 0){
       error_flag = Gaussian2DQuadSolver(Input_File_Name_ptr,
 	  				       batch_flag);
-  } /* endif */
+
+  } else if (strcmp(Equation_Type, "HighTemp2D") == 0) {
+      error_flag = HighTemp2DQuadSolver(Input_File_Name_ptr,
+			  	    batch_flag);
 
   if (error_flag) {
      CFDkit_Finalize_MPI();
