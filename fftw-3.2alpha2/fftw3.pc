@@ -1,4 +1,4 @@
-prefix=/nfs/kris/d1/people/francisco/CFFC/fftw-3.2alpha2
+prefix=/home/groth/CFFC/fftw-3.2alpha2
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include

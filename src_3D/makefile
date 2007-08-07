@@ -150,6 +150,7 @@ help:
 	@echo "|        make uninstall            removes cffc3D executable from bin directory     |"
 	@echo "|        make uinstall-all         removes all executables from bin directory       |"
 	@echo "|        make documentation        create code documentaion using doxygen & latex   |"
+	@echo "|        make libraries-all        create all supporting libraries                  |"
 	@echo "|        make sparselib            create SparseLib++ library                       |"
 	@echo "|        make bpkit                create BPKIT library                             |"
 	@echo "|        make cantera              create Cantera library                           |"
@@ -178,6 +179,12 @@ help:
 all: $(EXE_MAIN)
 	@echo ' '	
 	@echo All programs have been brought up to date.
+	@echo '-------------------------------------------'
+	@echo ' '
+
+libraries-all: sparselib bpkit fftw
+	@echo ' '	
+	@echo All libraries have been brought up to date.
 	@echo '-------------------------------------------'
 	@echo ' '
 
@@ -229,7 +236,6 @@ fftw:
 	@echo ' '
 	cd $(FFTW_DIR); ./configure --prefix=$(FFTW_DIR);
 	cd $(FFTW_DIR); make;
-	cd $(FFTW_DIR); make check;
 	cd $(FFTW_DIR); make install;
 	@echo ' '
 	@echo $(FFTW) library has been brought up to date.

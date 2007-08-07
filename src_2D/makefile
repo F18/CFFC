@@ -486,9 +486,11 @@ help:
 	@echo "|        make navierstokes2D       compile navierstokes2D stand alone program       |"
 	@echo "|        make embeddedboundaries2D compile embeddedboundaries2D stand alone program |"
 	@echo "|        make gaussian2D           compile gaussian2D stand alone program           |"
+	@echo "|        make libraries-all        create all supporting libraries                  |"
 	@echo "|        make sparselib            create SparseLib++ library                       |"
 	@echo "|        make bpkit                create BPKIT library                             |"
 	@echo "|        make cantera              create Cantera library                           |"
+	@echo "|        make fftw                 create fftw library                              |"
 	@echo "|        make clean                clean up source directories                      |"
 	@echo "|        make superclean           clean up documentation and library directories   |"
 	@echo "|        make help                 display makefile usage information               |"
@@ -516,6 +518,12 @@ all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) $(EXE_CHEM2D) $(EXE_A
 	@echo ' '
 	@echo All programs have been brought up to date.
 	@echo '------------------------------------------'
+	@echo ' '
+
+libraries-all: sparselib bpkit fftw
+	@echo ' '	
+	@echo All libraries have been brought up to date.
+	@echo '-------------------------------------------'
 	@echo ' '
 
 sparselib:
@@ -557,6 +565,19 @@ cantera:
 	@echo ' '
 	@echo $(CANTERA) library has been brought up to date.
 	@echo '--------------------------------------------'
+	@echo ' '
+
+fftw:
+	@echo ' '
+	@echo Building $(FFTW) library for a $(PLATFORM) platform.
+	@echo '--------------------------------------------------------'
+	@echo ' '
+	cd $(FFTW_DIR); ./configure --prefix=$(FFTW_DIR);
+	cd $(FFTW_DIR); make;
+	cd $(FFTW_DIR); make install;
+	@echo ' '
+	@echo $(FFTW) library has been brought up to date.
+	@echo '------------------------------------------------'
 	@echo ' '
 
 $(EXE_MAIN): CFFC.depend cffc2D.depend $(OBJ_MAIN) $(OBJ_CFFC)
@@ -1006,6 +1027,8 @@ superclean:
 	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
 	cd $(BPKIT_DIR)/src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
 	cd $(CANTERA_DIR); make -i clean;
+	cd $(FFTW_DIR); make clean; 
+	cd $(FFTW_DIR); make distclean;
 	@echo ' '
 	@echo All documentation and library directories are now clean.
 	@echo '-------------------------------------------------------'

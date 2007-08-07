@@ -185,10 +185,8 @@ ifeq ($(CANTERA_VERSION),V70)
   CANTERA_LD_FLAGS        =  -L$(CANTERA_LIB_DIR) -luser -loneD -lzeroD -ltransport -lcantera -lcvode -lctlapack -lctblas -lctmath -ltpx -lg2c -lctcxx
 endif
 
-
-#----------------------------------------------#
-# Set flags for including FFTW libraries       #
-#----------------------------------------------#
+#
+# Set flags for including FFTW libraries
 FFTW           = fftw-3.2alpha2 
 FFTW_DIR       = $(CFFC_Path)/fftw-3.2alpha2
 
