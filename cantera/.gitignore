@@ -1,0 +1,4 @@
+# ignore cantera makefiles cause they are auto-gened
+Makefile
+build
+

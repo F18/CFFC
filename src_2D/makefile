@@ -469,6 +469,7 @@ help:
 	@echo "|        make embeddedboundaries2D compile embeddedboundaries2D stand alone program |"
 	@echo "|        make sparselib            create SparseLib++ library                       |"
 	@echo "|        make bpkit                create BPKIT library                             |"
+	@echo "|        make cantera              create BPKIT library                             |"
 	@echo "|        make clean                clean up source directories                      |"
 	@echo "|        make superclean           clean up documentation and library directories   |"
 	@echo "|        make help                 display makefile usage information               |"
@@ -519,6 +520,22 @@ bpkit:
 	cd $(BPKIT_DIR)/src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE);
 	@echo ' '
 	@echo $(BPKIT) library has been brought up to date.
+	@echo '--------------------------------------------'
+	@echo ' '
+
+cantera:
+	@echo ' '
+	@echo Building $(CANTERA) library for a $(PLATFORM) platform.
+	@echo '----------------------------------------------------'
+	@echo ' '
+	cd $(CANTERA_DIR); make -i clean;
+	cd $(CANTERA_DIR); ./preconfig CXX="$(CXX) $(CXXFLAGS)" CC="$(CC)" F77="$(FC)" \
+          CXXFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" FFLAGS="$(FFLAGS)" \
+	  LCXX_END_LIBS="$(CANTERA_LCXX_END_LIBS)" PYTHON_PACKAGE="$(CANTERA_PYTHON_PACKAGE)";
+	cd $(CANTERA_DIR); make -i clean;
+	cd $(CANTERA_DIR); make;
+	@echo ' '
+	@echo $(CANTERA) library has been brought up to date.
 	@echo '--------------------------------------------'
 	@echo ' '
 
@@ -943,6 +960,7 @@ superclean:
 	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) wipe;
 	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
 	cd $(BPKIT_DIR)/src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
+	cd $(CANTERA_DIR); make -i clean;
 	@echo ' '
 	@echo All documentation and library directories are now clean.
 	@echo '-------------------------------------------------------'
