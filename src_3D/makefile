@@ -220,8 +220,8 @@ cantera:
 	@echo ' '
 	cd $(CANTERA_DIR); make -i clean;
 	cd $(CANTERA_DIR); ./preconfig CXX="$(CXX) $(CXXFLAGS)" CC="$(CC)" F77="$(FC)" \
-          CXXFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" \
-	  FFLAGS="$(FFLAGS)" LCXX_END_LIBS="$(CANTERA_LCXX_END_LIBS)";
+          CXXFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" FFLAGS="$(FFLAGS)" \
+	  LCXX_END_LIBS="$(CANTERA_LCXX_END_LIBS)" PYTHON_PACKAGE="$(CANTERA_PYTHON_PACKAGE)";
 	cd $(CANTERA_DIR); make -i clean;
 	cd $(CANTERA_DIR); make;
 	@echo ' '

@@ -196,6 +196,7 @@ endif
 CANTERA_PYTHON_PACKAGE    = none
 
 
+
 #
 # Set flags associated with cantera
 ifeq ($(PLATFORM),Linux_i386)
