@@ -26,12 +26,12 @@ SHELL = /bin/sh
 do_ranlib = 1
 do_stripsymbols = yes
 
-CFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/home/groth/CFFC/sparselib++/include -I/home/groth/CFFC/sparselib++/iml/include -I/home/groth/CFFC/sparselib++/mv/include -I/home/groth/CFFC/bpkit/src  $(CXX_OPT)
+CFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/iml/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/mv/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/bpkit/src  $(CXX_OPT)
 
 # Destination f2c lib located in Cantera's build directory
 # -> Calling it ctf2c
 BUILDINCDIR=../../build/include/cantera
-F2C_LIB = /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/libctf2c.a
+F2C_LIB = /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/libctf2c.a
 F2C_H   = $(BUILDINCDIR)/f2c.h
 
 # compile, then strip unnecessary symbols

@@ -15,9 +15,8 @@
 
 using namespace std;
 
-#ifndef _VECTOR2D_INCLUDED
 #include "../Math/Vector2D.h"
-#endif //_VECTOR2D_INCLUDED
+
 
 /*************************************************************************
  ******************** SPECIES CLASS DEFINITION ***************************
@@ -39,12 +38,13 @@ class Species {
   double diffusion_coef;
   Vector2D gradc;
  
-  //read species parameters from data file
-  Species(){c=ONE; diffusion_coef=ZERO; gradc.x=ZERO; gradc.y=ZERO;}
-  Species(const double &frac){c=frac; diffusion_coef=ZERO; gradc.x=ZERO; gradc.y=ZERO;}
-  Species(const double &frac, const double &dcoef, const Vector2D &gc)
-  {c=frac; diffusion_coef=dcoef; gradc=gc; }
-  
+  /*************** DEFAULT CONSTRUCTORS *****************/
+  Species() : c(ONE), diffusion_coef(ZERO)  {}
+  Species(const double &frac): c(frac), diffusion_coef(ZERO) {}
+  Species(const double &frac, const double &dcoef, const Vector2D &gc):
+    c(frac), diffusion_coef(dcoef), gradc(gc) {}
+  Species(const Species &S): c(S.c), diffusion_coef(S.diffusion_coef), gradc(S.gradc) {}
+
   /*************** VACUUM OPERATOR *********************/
   void Vacuum(){c=ZERO; diffusion_coef=ZERO; gradc.zero();}
 
@@ -56,7 +56,6 @@ class Species {
   friend  Species operator *(const double &a, const Species &A);
   Species operator /( const double &a) const;
   
-
   /* Unary arithmetic operators. */
   Species operator +(void) const;
   Species operator -(void) const;
@@ -159,12 +158,12 @@ inline Species &Species::operator -=(Species &A){
 }
 
 inline Species& Species::operator *=(const double &a) {
-  c *= a; 
+  c *= a;
   return *this;
 }
 
 inline Species& Species::operator /=(const double &a) {
-  c /= a; 
+  c /= a;
   return *this;
 }
 

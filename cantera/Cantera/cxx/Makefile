@@ -10,7 +10,7 @@
 ###############################################################
 
 build_f90=1
-build_python=2
+build_python=0
 
 INCDIR =      ../../build/include/cantera
 INSTALL_TSC = ../../../bin/install_tsc

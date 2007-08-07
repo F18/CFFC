@@ -141,6 +141,25 @@
 #define APHTPB_c4           0.000000
 #define APHTPB_c5           MU_APHTPB
 
+/* Coefficients to find Viscosity (used by james)*/
+
+#define OMEGA_AIR          0.75
+#define OMEGA_A            0.81
+#define OMEGA_CO           0.73
+#define OMEGA_H2           0.67
+#define OMEGA_HE           0.66
+#define OMEGA_N2           0.74
+#define OMEGA_O2           0.77
+
+#define MU_NOT_AIR         1.779e-5
+#define MU_NOT_A           2.117e-5
+#define MU_NOT_CO          1.635e-5
+#define MU_NOT_H2          0.845e-5
+#define MU_NOT_HE          1.865e-5
+#define MU_NOT_N2          1.656e-5
+#define MU_NOT_O2          1.919e-5
+
+
 // Euken's formula for the Prandtl number (Pr = mu cp/k).
 inline double Pr(double g) {
   return 20.0*g/(39.0*g - 15.0);  

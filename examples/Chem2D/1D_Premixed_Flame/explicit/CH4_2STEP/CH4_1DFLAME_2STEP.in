@@ -1,0 +1,107 @@
+# 1D Premixed Flame Test Case
+#
+########################
+# Set solver parameters
+########################
+Time_Integration_Type=
+Multistage_Optimal_Smoothing
+N_Stage=
+4
+# 0 for steady, 1 unsteady
+Time_Accurate= 
+0
+###############################
+# Local Time Stepping
+# 0 -> for GLOBAL_TIME_STEPPING
+# 1 -> for SCALAR_LOCAL_TIME_STEPPING
+# 2 -> for MATRIX_LOCAL_TIME_STEPPING
+# 3 -> for LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER
+# 4 -> for SEMI_IMPLICIT_LOCAL_TIME_STEPPING
+# 5 -> for SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER
+###############################
+Local_Time_Stepping=
+5
+# Least_Squares, Green_Gauss
+Reconstruction_Type=
+Least_Squares
+#
+Limiter_Type= 
+Venkatakrishnan
+Flux_Function_Type=
+Roe
+# 0 rho, 3 energy (follows index operator for pstate)
+Residual_Norm =
+0
+#########################
+Flow_Type=
+Laminar
+Viscous_Flux_Evaluation_Type=
+Diamond_Path_Green_Gauss
+#########################
+# Set initial conditions
+#########################
+ICs_Type= 
+1DPremixedFlame
+Grid_Type=
+1DFlame
+Mach_Number_Reference=
+0.1 0.1
+Box_Width=
+0.02
+Box_Height=
+0.0002
+Number_of_Cells_Idir= 
+50
+Number_of_Cells_Jdir=
+2
+Number_of_Blocks_Idir= 
+1
+Number_of_Blocks_Jdir=
+1
+###############################
+# Set time stepping parameters
+###############################
+CFL_Number=
+0.5
+Maximum_Number_of_Time_Steps=
+500
+Output_File_Name= 
+2STEP_CH4_1DFLAME
+Restart_Solution_Save_Frequency=
+2000
+##################################
+# Chem2D Parameters
+##################################
+Reaction_Mechanism=
+CH4_2STEP
+Schmidt_Numbers=
+0.73 0.8 1.0 0.66 1.0 1.0
+Mass_Fractions=
+0.0551 0.2202 0.0 0.0 0.0 0.7247 
+#################################
+# Non STD_ATM properties
+# T(K) and P(kPa)
+#################################ls
+Temperature=
+298.0
+#################################
+# Execute program
+#################################
+Execute
+# The next section is used by the 
+# postprocessor , until terminate
+#######################
+# Write output
+#######################
+Write_Output
+Write_Output_Cells
+#Write_Output_Mesh
+#Write_Mesh_Definition
+#Write_Output_Mesh_Cells
+#Write_Output_Mesh_Nodes
+Write_Restart
+#######################
+# Terminate program
+#######################
+Terminate
+

@@ -16,9 +16,9 @@ apps:
 apps-install:
 	/usr/bin/install -c -d /usr/local/cantera/bin
 ifeq ($(build_ck),1)
-	/usr/bin/install -c /home/groth/CFFC/cantera/build/bin/i686-pc-linux-gnu/ck2cti /usr/local/cantera/bin
+	/usr/bin/install -c /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/bin/i686-pc-linux-gnu/ck2cti /usr/local/cantera/bin
 endif
-	/usr/bin/install -c /home/groth/CFFC/cantera/build/bin/i686-pc-linux-gnu/cti2ctml /usr/local/cantera/bin
+	/usr/bin/install -c /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/bin/i686-pc-linux-gnu/cti2ctml /usr/local/cantera/bin
 
 man-install:
 	/usr/bin/install -c -d /usr/local/cantera/man1
@@ -53,4 +53,4 @@ templates-install:
 	/usr/bin/install -c -d /usr/local/cantera/templates/cxx
 	/usr/bin/install -c -m 644 templates/cxx/*.cpp /usr/local/cantera/templates/cxx
 	/usr/bin/install -c -m 644 templates/cxx/*.mak /usr/local/cantera/templates/cxx
-	chown -R groth /usr/local/cantera/templates
+	chown -R charestm /usr/local/cantera/templates

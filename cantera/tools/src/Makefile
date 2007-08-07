@@ -1,11 +1,11 @@
 #/bin/sh
 
-LIBDIR = /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu
-INCDIR = -I/home/groth/CFFC/cantera/Cantera/src
-BINDIR = /home/groth/CFFC/cantera/build/bin/i686-pc-linux-gnu
+LIBDIR = /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu
+INCDIR = -I/nfs/kris/d1/people/charestm/Programs/CFFC/cantera/Cantera/src
+BINDIR = /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/bin/i686-pc-linux-gnu
 build_ck = 1
 
-LCXX_FLAGS = -L$(LIBDIR)   -L/home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/home/groth/CFFC/sparselib++/include -I/home/groth/CFFC/sparselib++/iml/include -I/home/groth/CFFC/sparselib++/mv/include -I/home/groth/CFFC/bpkit/src 
+LCXX_FLAGS = -L$(LIBDIR)   -L/nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/iml/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/mv/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/bpkit/src 
 LOCAL_LIBS = -lcantera -ltpx -lctcxx 
 #LOCAL_LIBS = -lcantera -lcvode -lctmath -lctlapack -lctblas -lctcxx 
 
@@ -15,9 +15,9 @@ OBJS = ck2cti.o cti2ctml.o fixtext.o
 
 DEPENDS = $(OBJS:.o=.d)
 
-CONVLIB_DEP = /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/libconverters.a
-CANTERALIB_DEP = /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/libcantera.a \
-	         /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/libctcxx.a
+CONVLIB_DEP = /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/libconverters.a
+CANTERALIB_DEP = /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/libcantera.a \
+	         /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/libctcxx.a
 
 progs = $(BINDIR)/cti2ctml $(BINDIR)/fixtext
 ifeq ($(build_ck),1) 
@@ -27,7 +27,7 @@ exes = $(progs)
 endif
 
 .cpp.o:
-	g++ -O -c $< -DHAVE_CONFIG_H  $(INCDIR) -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/home/groth/CFFC/sparselib++/include -I/home/groth/CFFC/sparselib++/iml/include -I/home/groth/CFFC/sparselib++/mv/include -I/home/groth/CFFC/bpkit/src  $(CXX_FLAGS) 
+	g++ -O -c $< -DHAVE_CONFIG_H  $(INCDIR) -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/iml/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/mv/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/bpkit/src  $(CXX_FLAGS) 
 
 all: $(exes)
 
@@ -58,7 +58,7 @@ clean:
         fi )
 
 %.d:
-	g++ -O -MM $(INCDIR) -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/home/groth/CFFC/sparselib++/include -I/home/groth/CFFC/sparselib++/iml/include -I/home/groth/CFFC/sparselib++/mv/include -I/home/groth/CFFC/bpkit/src  $(CXX_FLAGS) $*.cpp > $*.d
+	g++ -O -MM $(INCDIR) -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/iml/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/mv/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/bpkit/src  $(CXX_FLAGS) $*.cpp > $*.d
 
 depends: $(DEPENDS)
 	cat *.d &> .depends

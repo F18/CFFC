@@ -49,10 +49,10 @@
 #include "../Turbulent2D/Turbulent2DWallData.h"
 #endif // _TURBULENT2D_WALLDATA_INCLUDED
 
+
 /* Define the structures and classes. */
 
-//I think this is OK
-#define	NUMBER_OF_RESIDUAL_VECTORS_CHEM2D    3
+#define	NUMBER_OF_RESIDUAL_VECTORS_CHEM2D    3  //K for dUdt[i][j][K]
 
 /*!
  * Class: Chem2D_Quad_Block
@@ -60,355 +60,307 @@
  * @brief Class definition of the 2D Chemistry solution blocks.
  *
  * \verbatim
- * Member functions
- *       W      -- Return primitive variable solution for the block
- *                 (cell average).
- *       U      -- Return conserved variable solution for the block
- *                 (cell average).
- *    Wall      -- Return turbulent wall data.
- *    Grid      -- Return the solution block quadrilateral grid or mesh.
- *      dt      -- Return local time step for the solution block.
- *    dUdt      -- Return the solution block residuals.
- *    dWdx      -- Return the unlimited primitive variable solution
- *                 gradients (x-direction) for the block.
- *    dWdy      -- Return the unlimited primitive variable solution
- *                 gradients (y-direction) for the block.
- *     phi      -- Return the solution slope limiters.
- *      Uo      -- Return initial solution state.
- *     NCi      -- Return number of cells in the i-direction 
- *                 (zeta-direction).
- *     ICl      -- Return lower index for cells in the i-direction 
- *                 (zeta-direction).
- *     ICu      -- Return upper index for cells in the i-direction 
- *                 (zeta-direction).
- *     NCj      -- Return number of cells in the j-direction 
- *                 (eta-direction).
- *     JCl      -- Return lower index for cells in the j-direction 
- *                 (eta-direction).
- *     JCu      -- Return upper index for cells in the j-direction 
- *                 (eta-direction).
- *  Nghost      -- Number of ghost cells.
- * Axisymmetric -- Return axisymmetric flow indicator (= 1 for 
- *                 axisymmetric flow, = 0 for planar flow).
- * Freeze_Limiter -- Return limiter freezing indicator
- *                   (=1 for limiter freezing on,
- *                   (=0 for limiter freezing off).
- *  Viscous     -- Return Viscous(=1) or Inviscid(=0)
- *  Gravity     -- Return Gravity Flag (1 ON, 0 OFF)
- * debug_level  -- Level of Verboseness (0 none, 1,2..) 
- *  Moving_wall_veloicty -- Moving wall boundary
- *                          condition velocity           
- *     WoN      -- Return array of reference states for the
- *                 application of boundary conditions at the north
- *                 boundary of the solution block.
- *     WoS      -- Return array of reference states for the
- *                 application of boundary conditions at the south
- *                 boundary of the solution block.
- *     WoE      -- Return array of reference states for the
- *                 application of boundary conditions at the east
- *                 boundary of the solution block.
- *     WoW      -- Return array of reference states for the
- *                 application of boundary conditions at the west
- *                 boundary of the solution block.
- *   allocate   -- Allocate memory for structured quadrilateral
- *                 solution block.
- *   deallocate -- Deallocate memory for structured quadrilateral
- *                 solution block.
- *      Wn      -- Return primitive variable solution at the
- *                 specified node.
- *      Un      -- Return conserved variable solution at the
- *                 specified node.
- *    WnNW      -- Return primitive variable solution at the
- *                 north-west node.
- *    WnNE      -- Return primitive variable solution at the
- *                 north-east node.
- *    WnSW      -- Return primitive variable solution at the
- *                 south-west node.
- *    WnSE      -- Return primitive variable solution at the
- *                 south-east node.
- *    UnNW      -- Return conserved variable solution at the
- *                 north-west node.
- *    UnNE      -- Return conserved variable solution at the
- *                 north-east node.
- *    UnSW      -- Return conserved variable solution at the
- *                 south-west node.
- *    UnSE      -- Return conserved variable solution at the
- *                 south-east node.
- *   allocate   -- Allocate memory for structured quadrilateral
- *                 solution block.
- *   deallocate -- Deallocate memory for structured quadrilateral
- *                 solution block.
- *      Wn      -- Return primitive variable solution at the
- *                 specified node.
- *      Un      -- Return conserved variable solution at the
- *                 specified node.
- *    WnNW      -- Return primitive variable solution at the
- *                 north-west node.
- *    WnNE      -- Return primitive variable solution at the
- *                 north-east node.
- *    WnSW      -- Return primitive variable solution at the
- *                 south-west node.
- *    WnSE      -- Return primitive variable solution at the
- *                 south-east node.
- *    UnNW      -- Return conserved variable solution at the
- *                 north-west node.
- *    UnNE      -- Return conserved variable solution at the
- *                 north-east node.
- *    UnSW      -- Return conserved variable solution at the
- *                 south-west node.
- *    UnSE      -- Return conserved variable solution at the
- *                 south-east node.
- * evaluate_limiters -- Set flag to evaluate limiters.
- * freeze_limiters -- Set flag to freeze limiters.
- * Member functions required for message passing.
- *    NumVar    -- Returns number of solution variables in primitive
- *                 and conserved solution state vectors.
- * LoadSendBuffer -- Loads send buffer.
- * LoadSendBuffer_F2C -- Loads send buffer for fine to coarse block 
- *                       messages.
- * UnloadReceiveBuffer -- Unloads receive buffer.
- * UnloadReceiveBuffer_F2C -- Unloads receive buffer for fine to
- *                            coarse block messages.
- * SubcellReconstruction -- Performs subcell solution reconstruction
- *                          used in adaptive mesh refinement.
- * LoadSendBuffer_Flux_F2C -- Loads send buffer for sending
- *                            conservative flux corrections from fine
- *                            to coarse solution blocks.
- * UnLoadSendBuffer_Flux_F2C -- Loads send buffer for sending
- *                              conservative flux corrections from
- *                              fine to coarse solution blocks.
- *
- * Member operators
- *      S -- a 2D NavierStokes solution
- *
- * S = S;
- * cout << S; (output function)
- * cin  >> S; (input function)
+ * Member functions                                     *
+ *       W      -- Return primitive variable solution   *
+ *                 for the block (cell average).        *
+ *       U      -- Return conserved variable solution   *
+ *                 for the block (cell average).        *
+ *    Grid      -- Return the solution block            *
+ *                 quadrilateral grid or mesh.          *
+ *      dt      -- Return local time step for the       *
+ *                 solution block.                      *
+ *    dUdt      -- Return the solution block residuals. *
+ *    dWdx      -- Return the unlimited primitive       *
+ *                 variable solution gradients          *
+ *                 (x-direction) for the block.         *
+ *    dWdy      -- Return the unlimited primitive       *
+ *                 variable solution gradients          *
+ *                 (y-direction) for the block.         *
+ *     phi      -- Return the solution slope limiters.  *
+ *      Uo      -- Return initial solution state.       *
+ *      Ut      -- Return solution state at the current *
+ *                 physical time.                       *
+ *                 (Used in the treatment of physical   *
+ *                  time for dual time-stepping)        *
+ *     Uold     -- Return solution state at the         *
+ *                 previous physical time step.         *
+ *                 (Used in the treatment of physical   *
+ *                  time for dual time-stepping)        *
+ *    FluxN     -- Return array of north boundary       *
+ *                 solution fluxes.                     *
+ *    FluxS     -- Return array of south boundary       *
+ *                 solution fluxes.                     *
+ *    FluxE     -- Return array of east boundary        *
+ *                 solution fluxes.                     *
+ *    FluxW     -- Return array of west boundary        *
+ *                 solution fluxes.                     *
+ *     NCi      -- Return number of cells in            *
+ *                 the i-direction (zeta-direction).    *
+ *     ICl      -- Return lower index for cells in      *
+ *                 the i-direction (zeta-direction).    *
+ *     ICu      -- Return upper index for cells in      *
+ *                 the i-direction (zeta-direction).    *
+ *     NCj      -- Return number of cells in            *
+ *                 the j-direction (eta-direction).     *
+ *     JCl      -- Return lower index for cells in      *
+ *                 the j-direction (eta-direction).     *
+ *     JCu      -- Return upper index for cells in      *
+ *                 the j-direction (eta-direction).     *
+ *     Nghost   -- Return number of ghost (halo or      *
+ *                 overlap) cells.                      *
+ * Axisymmetric -- Return axisymmetric flow             *
+ *                 indicator (=1 for axisymmetric flow, *
+ *                            =0 for planar flow).      *
+ * Freeze_Limiter -- Return limiter freezing indicator  *
+ *                 (=1 for limiter freezing on,         *
+ *                 (=0 for limiter freezing off).       * 
+ *  Gravity     -- Return Gravity Flag (1 ON, 0 OFF)    *
+ * debug_level  -- Level of Verboseness (0 none, 1,2..) * 
+ *  Moving_wall_veloicty -- Moving wall boundary        *
+ *                          condition velocity          *             
+ *     WoN      -- Return array of reference states for *
+ *                 the application of boundary          *
+ *                 conditions at the north boundary of  *
+ *                 the solution block.                  *
+ *     WoS      -- Return array of reference states for *
+ *                 the application of boundary          *
+ *                 conditions at the south boundary of  *
+ *                 the solution block.                  *
+ *     WoE      -- Return array of reference states for *
+ *                 the application of boundary          *
+ *                 conditions at the east boundary of   *
+ *                 the solution block.                  *
+ *     WoW      -- Return array of reference states for *
+ *                 the application of boundary          *
+ *                 conditions at the west boundary of   *
+ *                 the solution block.                  *
+ *   allocate   -- Allocate memory for structured       *
+ *                 quadrilateral solution block.        *
+ *   deallocate -- Deallocate memory for structured     *
+ *                 quadrilateral solution block.        *
+ *      Wn      -- Return primitive variable solution   *
+ *                 at the specified node.               *
+ *      Un      -- Return conserved variable solution   *
+ *                 at the specified node.               *
+ *    WnNW      -- Return primitive variable solution   *
+ *                 at the north-west node.              *
+ *    WnNE      -- Return primitive variable solution   *
+ *                 at the north-east node.              *
+ *    WnSW      -- Return primitive variable solution   *
+ *                 at the south-west node.              *
+ *    WnSE      -- Return primitive variable solution   *
+ *                 at the south-east node.              *
+ *    UnNW      -- Return conserved variable solution   *
+ *                 at the north-west node.              *
+ *    UnNE      -- Return conserved variable solution   *
+ *                 at the north-east node.              *
+ *    UnSW      -- Return conserved variable solution   *
+ *                 at the south-west node.              *
+ *    UnSE      -- Return conserved variable solution   *
+ *                 at the south-east node.              *
+ * Member functions required for message passing.       *
+ *    NumVar    -- Returns number of solution variables *
+ *                 in primitive and conserved solution  *
+ *                 state vectors.                       *
+ * LoadSendBuffer -- Loads send buffer.                 *
+ * LoadSendBuffer_F2C -- Loads send buffer for fine to  *
+ *                        coarse block messages.        *
+ * UnloadReceiveBuffer -- Unloads receive buffer.       *
+ * UnloadReceiveBuffer_F2C -- Unloads receive buffer    *
+ *                            for fine to coarse block  *
+ *                            messages.                 *
+ * SubcellReconstruction -- Performs subcell solution   *
+ *                          reconstruction used in      *
+ *                          adaptive mesh refinement.   *
+ * LoadSendBuffer_Flux_F2C -- Loads send buffer for     *
+ *                            sending conservative flux *
+ *                            corrections from fine to  *
+ *                            coarse solution blocks.   *
+ * UnLoadSendBuffer_Flux_F2C -- Loads send buffer for   *
+ *                            sending conservative flux *
+ *                            corrections from fine to  *
+ *                            coarse solution blocks.   *
+ *                                                      *
+ * Member operators                                     *
+ *      S -- a 2D Chem solution                         *
+ *                                                      *
+ * S = S;                                               *
+ * cout << S; (output function)                         *
+ * cin  >> S; (input function)                          *
+ *                                                      *
  * \endverbatim
  */
 class Chem2D_Quad_Block{
   private:
   public:
+  
+  /***************** CLASS DATA *****************************************************/
   //@{ @name Solution state arrays:
-  Chem2D_pState            **W; //!< Primitive solution state.
-  Chem2D_cState            **U; //!< Conserved solution state.
-  //@}
+  Chem2D_pState             **W;   //!< Primitive solution state.
+  Chem2D_cState             **U;   //!< Conserved solution state. 
+  //@} 
+  
+  Chem2D_cState            **Uo;   //!< Initial solution state.
+  Chem2D_cState            **Ut;   //!< Solution state at the current time step.
+  Chem2D_cState          **Uold;   //!< Solution state at the previous time step.
+ 
+  double                   **dt;   //!< Local time step.  
+  Chem2D_cState         ***dUdt;   //!< Solution residual.
 
-  //@{ @name Grid block information:
-  int                      NCi, //!< Total number of i-direction cells.
-                           ICl, //!< First i-direction non-ghost cell counter.
-                           ICu; //!< Final i-direction non-ghost cell counter.
-  int                      NCj, //!< Total number of j-direction cells.
-                           JCl, //!< First j-direction non-ghost cell counter.
-                           JCu; //!< Final j-direction non-ghost cell counter.
-  int                   Nghost; //!< Number of ghost cells.
-  Grid2D_Quad_Block       Grid; //!< 2D quadrilateral grid geometry.
-  //@}
-
-  //@{ @name Residual and time-stepping arrays:
-  double                  **dt; //!< Local time step.
-  Chem2D_cState        ***dUdt; //!< Solution residual.
-  Chem2D_cState           **Uo; //!< Initial solution state.
-  Chem2D_cState          **RHS; //!< Solution residual???
-  Chem2D_cState        **Entry; //!< Solution residual???
-  static int residual_variable; //!< Static integer that indicates which variable is used for residual calculations.
-  //@}
-
-  //@{ @name Solution gradient arrays:
-  Chem2D_pState         **dWdx; //!< Unlimited solution gradient (x-direction).
-  Chem2D_pState         **dWdy; //!< Unlimited solution gradient (y-direction).
-  Chem2D_pState          **phi; //!< Solution slope limiter.
-  Chem2D_pState   **dWdx_faceN; //!< North face unlimited solution gradient (x-direction).
-  Chem2D_pState   **dWdx_faceS; //!< South face unlimited solution gradient (x-direction).
-  Chem2D_pState   **dWdx_faceE; //!< East face unlimited solution gradient (x-direction).
-  Chem2D_pState   **dWdx_faceW; //!< West face unlimited solution gradient (x-direction).
-  Chem2D_pState   **dWdy_faceN; //!< North face unlimited solution gradient (y-direction).
-  Chem2D_pState   **dWdy_faceS; //!< South face unlimited solution gradient (y-direction).
-  Chem2D_pState   **dWdy_faceE; //!< East face unlimited solution gradient (y-direction).
-  Chem2D_pState   **dWdy_faceW; //!< West face unlimited solution gradient (y-direction).
-  double          ***d_dWdx_dW; //!< Derivative of primitive solution gradient (x-direction).
-  double          ***d_dWdy_dW; //!< Derivative of primitive solution gradient (y-direction).
-  //@}
 
   //@{ @name Boundary solution flux arrays:
-  Chem2D_cState         *FluxN, //!< North boundary solution flux.
-                        *FluxS, //!< South boundary solution flux.
-                        *FluxE, //!< East boundary solution flux.
-                        *FluxW; //!< West boundary solution flux.
-  //@}
-
-  //@{ @name Problem indicator flags:
-  int             Axisymmetric; //!< Axisymmetric flow indicator.
-  int                Flow_Type; //!< Flow-type flag (inviscid, laminar, or k-omega).
-  int                  Gravity; //!< Gravity flag
-  int           Freeze_Limiter; //!< Limiter freezing indicator.
-  int              debug_level; //!< Debug level flag (0=none, 1,2,3,.. level of verboseness)
-  //@}
+  Chem2D_cState   *FluxN,*FluxS,   //!< Boundary solution fluxes.
+                  *FluxE,*FluxW; 
+  //@}  
 
   //@{ @name Boundary condtion reference states:
-  Chem2D_pState           *WoN, //!< Boundary condition reference states for north boundary.
-                          *WoS, //!< Boundary condition reference states for south boundary.
-                          *WoE, //!< Boundary condition reference states for east boundary.
-                          *WoW; //!< Boundary condition reference states for west boundary.
+  Chem2D_pState       *WoN,*WoS,   //!< Boundary condition reference states for
+                      *WoE,*WoW;   //!< north, south, east, & west boundaries.
+  //@}  
+
+  //@{ @name Solution gradient arrays:
+  Chem2D_pState        **dWdx;     //!< (x-direction).
+  Chem2D_pState        **dWdy;     //!< (y-direction).
+  Chem2D_pState         **phi;     //!< Solution slope limiter.
+  //@}  
+
+  //Store face gradients for Diamond Path & Jacobian formation
+  Chem2D_pState       **dWdx_faceN;   //!< north cell face(x-direction).
+  Chem2D_pState       **dWdx_faceE;   //!< east  cell face(x-direction).
+  Chem2D_pState       **dWdx_faceS;   //!< south cell face(x-direction).
+  Chem2D_pState       **dWdx_faceW;   //!< west  cell face(x-direction).
+  Chem2D_pState       **dWdy_faceN;   //!< north cell face(y-direction).
+  Chem2D_pState       **dWdy_faceE;   //!< east  cell face(y-direction).
+  Chem2D_pState       **dWdy_faceS;   //!< south cell face(y-direction).
+  Chem2D_pState       **dWdy_faceW;   //!< west  cell face(y-direction).
+  //@}  
+
+  //@{ @name Grid block information:
+  Grid2D_Quad_Block       Grid;   //!< 2D quadrilateral grid geometry.
+  int              NCi,ICl,ICu;   //!< i-direction cell counters.
+  int              NCj,JCl,JCu;   //!< j-direction cell counters.
+  int                   Nghost;   //!< Number of ghost cells.
   //@}
+
 
   //@{ @name Turbulence wall data arrays:
   Turbulent2DWallData   **Wall; //!< Turbulent wall data.
   //@}
 
-  //@{ @name Flow constants:
-  double               Schmidt; //!< Schmidt Number.
-  double  Moving_wall_velocity; //!< Moving wall BC velocity.
-  double     Pressure_gradient; //!< Specified flow pressure gradient.
+  //@{ @name FLAGS ( These are all esentially "static" Input parameters put in the SolnBlk for ease of access)
+  int             Axisymmetric;   //!< Axisymmetric flow indicator.
+  int                  Gravity;   //!< Gravity flag
+  int                Flow_Type;   //!< Laminar, Viscous, Turbulent etc..
+  int           Wall_Functions;
+  int              debug_level;   //Debug level flag (0=none, 1,2,3,.. level of verboseness)
+  int           Freeze_Limiter;   //Limiter freezing indicator (Multigrid/NKS) 0/1
+  static int residual_variable;          //!< 1 = rho, 2,3 = rhou, 4 = E
+  static int Number_of_Residual_Norms;   //!< (default 4 )
+  double  Moving_wall_velocity;   //Moving Wall BC velocity
+  double     Pressure_gradient;   //Moving Wall BC velocity
   //@}
 
-  //@{ @name Creation, copy, and assignment constructors.
+  /****************** MEMBER FUNCTIONS ****************************************************/  
+  /* Creation, copy, and assignment constructors. */
   Chem2D_Quad_Block(void) {
     NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
-    W = NULL; U = NULL; dt = NULL; d_dWdx_dW = NULL; d_dWdy_dW = NULL; dUdt = NULL;
+    W = NULL; U = NULL; dt = NULL; dUdt = NULL;
     dWdx = NULL; dWdy = NULL; dWdx_faceN = NULL; dWdy_faceN = NULL;
     dWdx_faceE = NULL; dWdy_faceE = NULL;
     dWdx_faceW = NULL; dWdy_faceW = NULL;
     dWdx_faceS = NULL; dWdy_faceS = NULL;
-    phi = NULL; RHS = NULL; Entry = NULL; Uo = NULL;
+    phi = NULL;  Uo = NULL; Ut = NULL; Uold = NULL;
     FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
     WoN = NULL; WoS = NULL; WoE = NULL; WoW = NULL;
-    Axisymmetric = 0; Gravity = 0; Flow_Type = 0;
-    Moving_wall_velocity = ZERO; Pressure_gradient = ZERO; debug_level=0; 
-    // Turbulent wall data:
-    Wall = NULL;
+    Axisymmetric = 0; Gravity =0; Flow_Type = 0;
+    Wall_Functions = 0; Freeze_Limiter = OFF;
+    Moving_wall_velocity=ZERO; Pressure_gradient =ZERO; debug_level=0;
+    Wall = NULL; 
   }
-
+  
   Chem2D_Quad_Block(const Chem2D_Quad_Block &Soln) {
     NCi = Soln.NCi; ICl = Soln.ICl; ICu = Soln.ICu;
     NCj = Soln.NCj; JCl = Soln.JCl; JCu = Soln.JCu; Nghost = Soln.Nghost;
     Grid = Soln.Grid; W = Soln.W; U = Soln.U;
-    dt = Soln.dt; d_dWdx_dW = Soln.d_dWdx_dW; d_dWdy_dW = Soln.d_dWdy_dW;
+    dt = Soln.dt; 
     dUdt = Soln.dUdt; dWdx = Soln.dWdx; dWdy = Soln.dWdy;
     dWdx_faceN = Soln.dWdx_faceN; dWdy_faceN = Soln.dWdy_faceN;
     dWdx_faceE = Soln.dWdx_faceE; dWdy_faceE = Soln.dWdy_faceE;
     dWdx_faceW = Soln.dWdx_faceW; dWdy_faceW = Soln.dWdy_faceW;
     dWdx_faceS = Soln.dWdx_faceS; dWdy_faceS = Soln.dWdy_faceS;
-    phi = Soln.phi; RHS = Soln.RHS; Entry = Soln.Entry; Uo = Soln.Uo;
+    phi = Soln.phi; Uo = Soln.Uo; Ut = Soln.Ut; Uold = Soln.Uold; 
     FluxN = Soln.FluxN; FluxS = Soln.FluxS; FluxE = Soln.FluxE; FluxW = Soln.FluxW;
     WoN = Soln.WoN; WoS = Soln.WoS; WoE = Soln.WoE; WoW = Soln.WoW;
-    Axisymmetric = Soln.Axisymmetric; Gravity = Soln.Gravity;
-    Schmidt = Soln.Schmidt;
-    Freeze_Limiter = Soln.Freeze_Limiter; debug_level = 0; 
-    Moving_wall_velocity = Soln.Moving_wall_velocity; 
+    Axisymmetric = Soln.Axisymmetric ; Gravity = Soln.Gravity; 
+    Flow_Type = Soln.Flow_Type; 
+    Wall_Functions = Soln.Wall_Functions; Freeze_Limiter = Soln.Freeze_Limiter;
     Pressure_gradient = Soln.Pressure_gradient;
-    // Turbulent wall data:
-    Wall = Soln.Wall;
+    debug_level=0; Wall = Soln.Wall;
   }
-
-  /* Destructor. */
-  // ~Chem2D_Quad_Block(void);
-  // Use automatically generated destructor.
-  //@}
-
+   
   /* Assignment operator. */
   // Chem2D_Quad_Block operator = (const Chem2D_Quad_Block &Soln);
-  // Use automatically generated assignment operator.
-
-  //@{ @name Allocate and deallocate functions.
-  //! Allocate memory for structured quadrilateral solution block.
+  // Use automatically generated assignment operator.  //THIS IS NOT GOOD DUE TO MEMORY ALLOCATION!!!!, POINTERS ONLY
+  
+  /* Allocate memory for structured quadrilateral solution block. */
   void allocate(const int Ni, const int Nj, const int Ng);
-  //! Deallocate memory for structured quadrilateral solution block.
+  
+  /* Deallocate memory for structured quadrilateral solution block. */
   void deallocate(void);
-  //@}
-
-  //@{ @name Bilinear interplation (Zingg & Yarrow).
-  //! Return primitive solution state at specified node.
+  
+  /* Return primitive solution state at specified node. */
   Chem2D_pState Wn(const int &ii, const int &jj);
-
-  //! Retern conserverd solution state at specified node.
+  
+  /* Return conserverd solution state at specified node. */
   Chem2D_cState Un(const int &ii, const int &jj);
 
-  //! Return primitive solution state at cell nodes.
-  Chem2D_pState WnNW(const int &ii, const int &jj); //!< Return primitive solution state at cell NW node.
-  Chem2D_pState WnNE(const int &ii, const int &jj); //!< Return primitive solution state at cell NE node.
-  Chem2D_pState WnSE(const int &ii, const int &jj); //!< Return primitive solution state at cell SE node.
-  Chem2D_pState WnSW(const int &ii, const int &jj); //!< Return primitive solution state at cell SW node.
+  /* Return conserverd solution state at specified node. */
+  Chem2D_cState Uno(const int &ii, const int &jj);
 
-  Chem2D_cState UnNW(const int &ii, const int &jj); //!< Return conserved solution state at cell NW node.
-  Chem2D_cState UnNE(const int &ii, const int &jj); //!< Return conserved solution state at cell NE node.
-  Chem2D_cState UnSE(const int &ii, const int &jj); //!< Return conserved solution state at cell SE node.
-  Chem2D_cState UnSW(const int &ii, const int &jj); //!< Return conserved solution state at cell SW node.
+  /* Return primitive solution state at cell nodes. */
+  Chem2D_pState WnNW(const int &ii, const int &jj);
+  Chem2D_pState WnNE(const int &ii, const int &jj);
+  Chem2D_pState WnSE(const int &ii, const int &jj);
+  Chem2D_pState WnSW(const int &ii, const int &jj);
+  
+  /* Return conserved solution state at cell nodes. */
+  Chem2D_cState UnNW(const int &ii, const int &jj);
+  Chem2D_cState UnNE(const int &ii, const int &jj);
+  Chem2D_cState UnSE(const int &ii, const int &jj);
+  Chem2D_cState UnSW(const int &ii, const int &jj);
 
-  //! Bilinear interpolation coefficients for Jacobian calculations.
+  /* Return conserved solution state at cell nodes. */
+  Chem2D_cState UnoNW(const int &ii, const int &jj);
+  Chem2D_cState UnoNE(const int &ii, const int &jj);
+  Chem2D_cState UnoSE(const int &ii, const int &jj);
+  Chem2D_cState UnoSW(const int &ii, const int &jj);
+
   int BiLinearInterpolationCoefficients(double &eta, double &zeta, const int &ii, const int &jj);
-  //@}
+  
+  void set_v_zero(void);
 
-  //@{ @name Viscous Jacobian calculation routines.
   /*****************************************************************************
      dWn_dWc is the derivative of node solution w.r.t. cell center solution
      which is used by calculating the viscous Jacobians
   ******************************************************************************/
-  double dWn_dWc (const int &i, const int &j, const string &Orient);
-  double Wn_mu(const int &i, const int &j);
-  double Wn_dmudT(const int &i, const int &j);
-  double Wn_hi(const int &i, const int &j, const int &SpeciesNum);
-  double Wn_Cp(const int &i, const int &j);
-  double Wn_kappa(const int &i, const int &j);
-  double Wn_Rtot(const int &i, const int &j);
-  double Wn_Dm(const int &i, const int &j, const int &SpeciesNum);
-  double Wn_Cpi(const int &i, const int &j, const int &SpeciesNum); //dhdT
-
-  double WnNW_mu(const int &i, const int &j);
-  double WnNE_mu(const int &i, const int &j);
-  double WnSE_mu(const int &i, const int &j);
-  double WnSW_mu(const int &i, const int &j);
-
-  double WnNW_dmudT(const int &i, const int &j);
-  double WnNE_dmudT(const int &i, const int &j);
-  double WnSE_dmudT(const int &i, const int &j);
-  double WnSW_dmudT(const int &i, const int &j);
-     
-  double WnNW_hi(const int &i, const int &j, const int &SpeciesNum);
-  double WnNE_hi(const int &i, const int &j, const int &SpeciesNum);
-  double WnSE_hi(const int &i, const int &j, const int &SpeciesNum);
-  double WnSW_hi(const int &i, const int &j, const int &SpeciesNum);
-    
-  double WnNW_Dm(const int &i, const int &j, const int &SpeciesNum);
-  double WnNE_Dm(const int &i, const int &j, const int &SpeciesNum);
-  double WnSE_Dm(const int &i, const int &j, const int &SpeciesNum);
-  double WnSW_Dm(const int &i, const int &j, const int &SpeciesNum);
+  double dWn_dWc (const int &i, const int &j, const int &Orient);
   
-  double WnNW_Cpi(const int &i, const int &j, const int &SpeciesNum);
-  double WnNE_Cpi(const int &i, const int &j, const int &SpeciesNum);
-  double WnSE_Cpi(const int &i, const int &j, const int &SpeciesNum);
-  double WnSW_Cpi(const int &i, const int &j, const int &SpeciesNum);
+  /* Set flags for limiter evaluation. */
+  void evaluate_limiters(void) {Freeze_Limiter = OFF; } 
+  void freeze_limiters(void) {Freeze_Limiter = ON; }
   
-  double WnNW_Cp(const int &i, const int &j);
-  double WnNE_Cp(const int &i, const int &j);
-  double WnSE_Cp(const int &i, const int &j);
-  double WnSW_Cp(const int &i, const int &j);
- 
-  double WnNW_kappa(const int &i, const int &j);
-  double WnNE_kappa(const int &i, const int &j);
-  double WnSE_kappa(const int &i, const int &j);
-  double WnSW_kappa(const int &i, const int &j);
+  /* Input-output operators. */
+  friend ostream &operator << (ostream &out_file,
+			       const Chem2D_Quad_Block
+			       &Soln);
+  friend istream &operator >> (istream &in_file,
+			       Chem2D_Quad_Block
+			       &Soln);
 
-  double WnNW_Rtot(const int &i, const int &j);
-  double WnNE_Rtot(const int &i, const int &j);
-  double WnSE_Rtot(const int &i, const int &j);
-  double WnSW_Rtot(const int &i, const int &j);
-  //@}
-
-  //@{ @name Member functions for limiter freezing.
-  void evaluate_limiters(void); //!< Set flags for limiter evaluation.
-  void freeze_limiters(void);   //!< Set flags for limiter freezing.
-  //@}
-
-  //@{ @name Input-output operators.
-  friend ostream &operator << (ostream &out_file, const Chem2D_Quad_Block &Soln);
-  friend istream &operator >> (istream &in_file, Chem2D_Quad_Block &Soln);
-  //@}
-
-  //@{ @name Member functions required for message passing.
-  //! Number of solution state variables.
+  /* MEMBER FUNCTIONS REQUIRED FOR MESSAGE PASSING. */
+  /* Number of solution state variables. */
   int NumVar(void);
-  //! Load send message passing buffer.
+  /* Load send message passing buffer. */
   int LoadSendBuffer(double *buffer,
 		     int &buffer_count,
 		     const int buffer_size,
@@ -418,7 +370,6 @@ class Chem2D_Quad_Block{
 		     const int j_min,
 		     const int j_max,
 		     const int j_inc);
-  //! Load F2C send message passing buffer.
   int LoadSendBuffer_F2C(double *buffer,
 			 int &buffer_count,
 			 const int buffer_size,
@@ -428,7 +379,6 @@ class Chem2D_Quad_Block{
 			 const int j_min,
 			 const int j_max,
 			 const int j_inc);
-  //! Load C2F send message passing buffer.
   int LoadSendBuffer_C2F(double *buffer,
 			 int &buffer_count,
 			 const int buffer_size,
@@ -440,17 +390,16 @@ class Chem2D_Quad_Block{
 			 const int j_inc,
 			 const int face,
 			 const int sector);
-  //! Unload receive message passing buffer.
+  /* Unload receive message passing buffer. */
   int UnloadReceiveBuffer(double *buffer,
-                            int &buffer_count,
-                            const int buffer_size,
-                            const int i_min,
-                            const int i_max,
-                            const int i_inc,
-                            const int j_min,
-                            const int j_max,
-                            const int j_inc);
-  //! Unload F2C receive message passing buffer.
+			  int &buffer_count,
+			  const int buffer_size,
+			  const int i_min,
+			  const int i_max,
+			  const int i_inc,
+			  const int j_min,
+			  const int j_max,
+			  const int j_inc);
   int UnloadReceiveBuffer_F2C(double *buffer,
 			      int &buffer_count,
 			      const int buffer_size,
@@ -460,7 +409,6 @@ class Chem2D_Quad_Block{
 			      const int j_min,
 			      const int j_max,
 			      const int j_inc);
-  //! Unload C2F receive message passing buffer.
   int UnloadReceiveBuffer_C2F(double *buffer,
 			      int &buffer_count,
 			      const int buffer_size,
@@ -469,12 +417,13 @@ class Chem2D_Quad_Block{
 			      const int i_inc,
 			      const int j_min,
 			      const int j_max,
-			      const int j_inc);
-  //! Subcell solution reconstruction within given computational cell.
+                                const int j_inc);
+  /* Subcell solution reconstruction within given computational cell. */
   void SubcellReconstruction(const int i,
 			     const int j,
 			     const int Limiter);
-  //! Load F2C conservative flux message passing buffer.
+  
+  /* Load and unload conservative flux message passing buffer. */
   int LoadSendBuffer_Flux_F2C(double *buffer,
 			      int &buffer_count,
 			      const int buffer_size,
@@ -484,7 +433,6 @@ class Chem2D_Quad_Block{
 			      const int j_min,
 			      const int j_max,
 			      const int j_inc);
-  //! Unload F2C conservative flux message passing buffer.
   int UnloadReceiveBuffer_Flux_F2C(double *buffer,
 				   int &buffer_count,
 				   const int buffer_size,
@@ -494,8 +442,22 @@ class Chem2D_Quad_Block{
 				   const int j_min,
 				   const int j_max,
 				   const int j_inc);
-  //@}
-
+  /* Destructor. */
+  // ~Chem2D_Quad_Block(void);
+  // Use automatically generated destructor
+  // should maybe call the deallocate functions
+  // from here ???
+  //
+  // Something like..... or will this mess with the AMR ???
+  // Local_SolnBlk = Deallocate(Local_SolnBlk,Input_Parameters);
+  // Deallocate_Message_Buffers(List_of_Local_Solution_Blocks); // Not necessary here!
+  // List_of_Local_Solution_Blocks.deallocate();
+  // List_of_Global_Solution_Blocks.deallocate();
+  // QuadTree.deallocate();
+  // MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk,
+  //					    Input_Parameters.Number_of_Blocks_Idir,
+  //					    Input_Parameters.Number_of_Blocks_Jdir);
+  //
 };
 
 /**************************************************************************
@@ -507,7 +469,6 @@ inline void Chem2D_Quad_Block::allocate(const int Ni, const int Nj, const int Ng
    NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1; Nghost = Ng;
    W = new Chem2D_pState*[NCi]; U = new Chem2D_cState*[NCi];
    dt = new double*[NCi];
-   // 2D center 0, North 1, South 2, West 3, East 4  for the d_dWdx_dW and d_dWdx_dW;
    dUdt = new Chem2D_cState**[NCi];
    dWdx = new Chem2D_pState*[NCi]; dWdy = new Chem2D_pState*[NCi];
    dWdx_faceN = new Chem2D_pState*[NCi]; dWdy_faceN = new Chem2D_pState*[NCi];
@@ -515,21 +476,14 @@ inline void Chem2D_Quad_Block::allocate(const int Ni, const int Nj, const int Ng
    dWdx_faceW = new Chem2D_pState*[NCi]; dWdy_faceW = new Chem2D_pState*[NCi];
    dWdx_faceS = new Chem2D_pState*[NCi]; dWdy_faceS = new Chem2D_pState*[NCi];
    phi = new Chem2D_pState*[NCi]; Uo = new Chem2D_cState*[NCi];
-   RHS = new Chem2D_cState*[NCi];
-   Entry = new Chem2D_cState*[NCi];
-   d_dWdx_dW = new double  **[NCi];
-   d_dWdy_dW = new double  **[NCi];
+   Ut = new Chem2D_cState*[NCi]; Uold = new Chem2D_cState*[NCi];
    Wall = new Turbulent2DWallData*[NCi];
-
+   
    for (int i = 0; i <= NCi-1 ; ++i ) {
       W[i] = new Chem2D_pState[NCj]; U[i] = new Chem2D_cState[NCj];
       dt[i] = new double[NCj]; dUdt[i] = new Chem2D_cState*[NCj];
-      d_dWdx_dW[i] = new double  *[NCj];
-      d_dWdy_dW[i] = new double  *[NCj];
       for (int j = 0; j <= NCj-1 ; ++j ){
 	dUdt[i][j] = new Chem2D_cState[NUMBER_OF_RESIDUAL_VECTORS_CHEM2D];
-	d_dWdx_dW[i][j] = new double [5];
-	d_dWdy_dW[i][j] = new double [5];
       }
       dWdx[i] = new Chem2D_pState[NCj]; dWdy[i] = new Chem2D_pState[NCj];
       dWdx_faceN[i] = new Chem2D_pState[NCj]; dWdy_faceN[i] = new Chem2D_pState[NCj];
@@ -537,26 +491,25 @@ inline void Chem2D_Quad_Block::allocate(const int Ni, const int Nj, const int Ng
       dWdx_faceW[i] = new Chem2D_pState[NCj]; dWdy_faceW[i] = new Chem2D_pState[NCj];
       dWdx_faceS[i] = new Chem2D_pState[NCj]; dWdy_faceS[i] = new Chem2D_pState[NCj];
       phi[i] = new Chem2D_pState[NCj]; Uo[i] = new Chem2D_cState[NCj];
-      RHS[i] = new Chem2D_cState[NCj];
-      Entry[i] = new Chem2D_cState[NCj];
+      Ut[i] = new Chem2D_cState[NCj]; Uold[i] = new Chem2D_cState[NCj]; 
       Wall[i] = new Turbulent2DWallData[NCj];
    } /* endfor */
    FluxN = new Chem2D_cState[NCi]; FluxS = new Chem2D_cState[NCi];
    FluxE = new Chem2D_cState[NCj]; FluxW = new Chem2D_cState[NCj];
    WoN = new Chem2D_pState[NCi]; WoS = new Chem2D_pState[NCi];
    WoE = new Chem2D_pState[NCj]; WoW = new Chem2D_pState[NCj];
-   // Set the solution residuals, gradients, limiters, and other values to zero.
+
+  // Set the solution residuals, gradients, limiters, and other values to zero.
    for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
       for ( int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
           for ( int k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_CHEM2D-1 ; ++k ) {
 	     dUdt[i][j][k].Vacuum();
-          } /* endfor */
+          } 
 	  dWdx[i][j].Vacuum() ; dWdy[i][j].Vacuum();
 	  phi[i][j].Vacuum(); Uo[i][j].Vacuum();
 	  dt[i][j] = ZERO;
-      } /* endfor */
-   } /* endfor */
-
+      } 
+   }  
 }
 
 /**************************************************************************
@@ -568,34 +521,27 @@ inline void Chem2D_Quad_Block::deallocate(void) {
       delete []W[i]; W[i] = NULL; delete []U[i]; U[i] = NULL;
       delete []dt[i]; dt[i] = NULL;
       for ( j = 0; j <= NCj-1 ; ++j ) { delete []dUdt[i][j]; dUdt[i][j] = NULL;
-      delete []d_dWdx_dW[i][j]; d_dWdx_dW[i][j] =NULL;
-      delete []d_dWdy_dW[i][j]; d_dWdy_dW[i][j] =NULL; }
+      }
       delete []dUdt[i]; dUdt[i] = NULL;
-      delete []d_dWdx_dW[i];d_dWdx_dW[i] = NULL;
-      delete []d_dWdy_dW[i];d_dWdy_dW[i] = NULL;
       delete []dWdx[i]; dWdx[i] = NULL; delete []dWdy[i]; dWdy[i] = NULL;
       delete []dWdx_faceN[i]; dWdx_faceN[i] = NULL; delete []dWdy_faceN[i]; dWdy_faceN[i] = NULL;
       delete []dWdx_faceE[i]; dWdx_faceE[i] = NULL; delete []dWdy_faceE[i]; dWdy_faceE[i] = NULL;
       delete []dWdx_faceW[i]; dWdx_faceW[i] = NULL; delete []dWdy_faceW[i]; dWdy_faceW[i] = NULL;
       delete []dWdx_faceS[i]; dWdx_faceS[i] = NULL; delete []dWdy_faceS[i]; dWdy_faceS[i] = NULL;
       delete []phi[i]; phi[i] = NULL; delete []Uo[i]; Uo[i] = NULL; 
-      delete []RHS[i]; RHS[i] = NULL;
-      delete []Entry[i]; Entry[i] = NULL;
+      delete []Ut[i]; Ut[i] = NULL; delete []Uold[i]; Uold[i] = NULL;
       delete []Wall[i]; Wall[i] = NULL; 
    } /* endfor */
    delete []W; W = NULL; delete []U; U = NULL;
    delete []dt; dt = NULL; delete []dUdt; dUdt = NULL;
-   delete [] d_dWdx_dW; d_dWdx_dW = NULL;
-   delete [] d_dWdy_dW; d_dWdy_dW = NULL;
    delete []dWdx; dWdx = NULL; delete []dWdy; dWdy = NULL;
    delete []dWdx_faceN; dWdx_faceN = NULL; delete []dWdy_faceN; dWdy_faceN = NULL;
    delete []dWdx_faceE; dWdx_faceE = NULL; delete []dWdy_faceE; dWdy_faceE = NULL;
    delete []dWdx_faceW; dWdx_faceW = NULL; delete []dWdy_faceW; dWdy_faceW = NULL;
    delete []dWdx_faceS; dWdx_faceS = NULL; delete []dWdy_faceS; dWdy_faceS = NULL;
 
-   delete []phi; phi = NULL; delete []Uo; Uo = NULL;
-   delete []RHS; RHS = NULL;
-   delete []Entry; Entry = NULL;
+   delete []phi; phi = NULL; delete []Uo; Uo = NULL;  
+   delete []Ut; Ut = NULL; delete []Uold; Uold = NULL;
    delete []Wall; Wall = NULL;
    delete []FluxN; FluxN = NULL; delete []FluxS; FluxS = NULL;
    delete []FluxE; FluxE = NULL; delete []FluxW; FluxW = NULL;
@@ -604,7 +550,11 @@ inline void Chem2D_Quad_Block::deallocate(void) {
    NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
 }
 
-// Coefficients used by bilinear interpolation
+
+/**************************************************************************
+ * Chem2D_Quad_Block:BiLinearInterpolationCoefficients --                 *
+ *                     Coefficients used by bilinear interpolation        *
+ **************************************************************************/
 inline int Chem2D_Quad_Block::BiLinearInterpolationCoefficients(double &eta, double &zeta, const int &ii, const int &jj){
 
    double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y, 
@@ -649,352 +599,39 @@ inline int Chem2D_Quad_Block::BiLinearInterpolationCoefficients(double &eta, dou
 
     return 0;
 
-
+    //DOES NOT CORRESPOND TO HOLMES BILINEAR INTERPOLATION SEE Wn, Un functions
 }
 
 
 /**************************************************************************
- * Chem2D_Quad_Block::dWn_dWc -- Derivative of Node primitive solution 
-                                 w.r.r Cell primitive solution *
+ * Chem2D_Quad_Block::dWn_dWc -- Derivative of Node primitive solution    *  
+ *                                 w.r.t Cell primitive solution          *
  **************************************************************************/
-inline double Chem2D_Quad_Block::dWn_dWc(const int &i, const int &j, const string &Orient) {
+inline double Chem2D_Quad_Block::dWn_dWc(const int &i, const int &j, const int &Orient) {
  
-  int ii, jj;
+  double eta(ZERO), zeta(ZERO); 
+  BiLinearInterpolationCoefficients(eta, zeta, i, j);
 
-  if (Orient == "NW"){
-    ii = i; 
-    jj=j+1;
-  }
-  if (Orient == "NE"){
-    ii = i+1; 
-    jj=j+1;
-  }
-    
-  if (Orient == "SW"){
-    ii = i; 
-    jj=j;
-  }
-  if (Orient == "SE"){
-    ii = i+1; 
-    jj=j;
-  }
- 
-  double eta, zeta;
-  zeta = ZERO;
-  zeta = ZERO;
-
-  BiLinearInterpolationCoefficients(eta, zeta, ii, jj);
-     
-  if (Orient == "NW"){
+  switch(Orient) {
+  case  NORTH_WEST:  
     return (eta - zeta*eta);
-  }
-  if (Orient == "NE"){
+    break;
+  case NORTH_EAST:
     return (ONE - zeta - eta + zeta*eta);
-  }
-  if (Orient == "SW"){
+    break;
+  case SOUTH_WEST:
     return (zeta*eta);
-  }
-  if (Orient == "SE"){
+    break;
+  case SOUTH_EAST:
     return (zeta - zeta*eta);
+    break;
+  default:
+    cerr<<"\n Improper Orient in Chem2D_Quad_Block::dWn_dWc\n";
+    break;
   }
-   
-}//
-//Gas property
-inline double Chem2D_Quad_Block::Wn_mu(const int &ii, const int &jj) {
-
-  double eta, zeta;
-  zeta = ZERO;
-  zeta = ZERO;
-
-  BiLinearInterpolationCoefficients(eta, zeta, ii, jj);
-     
-    return (W[ii-1][jj-1].mu() +(W[ii-1][jj].mu()-W[ii-1][jj-1].mu())*zeta+  
-    	    (W[ii][jj-1].mu()-W[ii-1][jj-1].mu())*eta + 
-    	    (W[ii][jj].mu()+W[ii-1][jj-1].mu()-W[ii-1][jj].mu()-W[ii][jj-1].mu())*zeta*eta);
-
-   
-}
-//dmudT ... used by viscous Jacobians
-inline double Chem2D_Quad_Block::Wn_dmudT(const int &ii, const int &jj) {
-
-  double eta, zeta;
-  zeta = ZERO;
-  zeta = ZERO;
-
-  BiLinearInterpolationCoefficients(eta, zeta, ii, jj);
-     
-    return (W[ii-1][jj-1].dmudT() +(W[ii-1][jj].dmudT()-W[ii-1][jj-1].dmudT())*zeta+  
-    	    (W[ii][jj-1].dmudT()-W[ii-1][jj-1].dmudT())*eta + 
-    	    (W[ii][jj].dmudT()+W[ii-1][jj-1].dmudT()-W[ii-1][jj].dmudT()-W[ii][jj-1].dmudT())*zeta*eta);
-
-   
-}
-//Cp  -- specific heat
-inline double Chem2D_Quad_Block::Wn_Cp(const int &ii, const int &jj) {
-  double eta, zeta;
-  zeta = ZERO;
-  zeta = ZERO;
-
-  BiLinearInterpolationCoefficients(eta, zeta, ii, jj);
-     
-    return (W[ii-1][jj-1].Cp() +(W[ii-1][jj].Cp()-W[ii-1][jj-1].Cp())*zeta+  
-    	    (W[ii][jj-1].Cp()-W[ii-1][jj-1].Cp())*eta + 
-    	    (W[ii][jj].Cp()+W[ii-1][jj-1].Cp()-W[ii-1][jj].Cp()-W[ii][jj-1].Cp())*zeta*eta);
-
-   
+      
 }
 
-//enthapy 
-inline double Chem2D_Quad_Block::Wn_hi(const int &ii, const int &jj, const int &SpeciesNum) {
-  double eta, zeta;
-    zeta = ZERO;
-    zeta = ZERO;
-    
-    BiLinearInterpolationCoefficients(eta, zeta, ii, jj);
-     
-    double Temp1, Temp2, Temp3, Temp4;
-
-    Temp1 = W[ii-1][jj-1].T();
-    Temp2 = W[ii-1][jj].T();
-    Temp3 = W[ii][jj-1].T();
-    Temp4 = W[ii][jj].T();
- 
-    double h1, h2, h3, h4;
-
-    h1 = W[ii-1][jj-1].specdata[SpeciesNum].Enthalpy(Temp1)+W[ii-1][jj-1].specdata[SpeciesNum].Heatofform();
-    h2 = W[ii-1][jj].specdata[SpeciesNum].Enthalpy(Temp2)+ W[ii-1][jj].specdata[SpeciesNum].Heatofform();
-    h3 = W[ii][jj-1].specdata[SpeciesNum].Enthalpy(Temp3)+ W[ii][jj-1].specdata[SpeciesNum].Heatofform();
-    h4 = W[ii][jj].specdata[SpeciesNum].Enthalpy(Temp4)+ W[ii][jj].specdata[SpeciesNum].Heatofform();
-
-
-    return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta);
-
-   
-}
-//dhdT for species
-inline double Chem2D_Quad_Block::Wn_Cpi(const int &ii, const int &jj, const int &SpeciesNum) {
-  double eta, zeta;
-    zeta = ZERO;
-    zeta = ZERO;
-    
-    BiLinearInterpolationCoefficients(eta, zeta, ii, jj);
-     
-    double Temp1, Temp2, Temp3, Temp4;
-
-    Temp1 = W[ii-1][jj-1].T();
-    Temp2 = W[ii-1][jj].T();
-    Temp3 = W[ii][jj-1].T();
-    Temp4 = W[ii][jj].T();
- 
-    double cpi1, cpi2, cpi3, cpi4;
-
-    cpi1 = W[ii-1][jj-1].specdata[SpeciesNum].Enthalpy_prime(Temp1);
-    cpi2 = W[ii-1][jj].specdata[SpeciesNum].Enthalpy_prime(Temp2);
-    cpi3 = W[ii][jj-1].specdata[SpeciesNum].Enthalpy_prime(Temp3);
-    cpi4 = W[ii][jj].specdata[SpeciesNum].Enthalpy_prime(Temp4);
-
-
-    return (cpi1 +(cpi2- cpi1)*zeta+ (cpi3-cpi1)*eta + (cpi4+cpi1-cpi2-cpi3)*zeta*eta);
-
-   
-}
-inline double Chem2D_Quad_Block::Wn_Dm(const int &ii, const int &jj, const int &SpeciesNum) {
-  double eta, zeta;
-    zeta = ZERO;
-    zeta = ZERO;
-    
-    BiLinearInterpolationCoefficients(eta, zeta, ii, jj);
-     
-    double Dm1, Dm2, Dm3, Dm4;
-
-    Dm1 = W[ii-1][jj-1].spec[SpeciesNum].diffusion_coef;
-    Dm2= W[ii-1][jj].spec[SpeciesNum].diffusion_coef;
-    Dm3 = W[ii][jj-1].spec[SpeciesNum].diffusion_coef;
-    Dm4 = W[ii][jj].spec[SpeciesNum].diffusion_coef;
-
-    return (Dm1 +(Dm2- Dm1)*zeta+ (Dm3-Dm1)*eta + (Dm4+Dm1-Dm2-Dm3)*zeta*eta);
-
-   
-}
-inline double Chem2D_Quad_Block::Wn_kappa(const int &ii, const int &jj) {
-  double eta, zeta;
-  zeta = ZERO;
-  zeta = ZERO;
-  
-  BiLinearInterpolationCoefficients(eta, zeta, ii, jj);
-  
-     
-  return (W[ii-1][jj-1].kappa() +(W[ii-1][jj].kappa()-W[ii-1][jj-1].kappa())*zeta+  
-    	    (W[ii][jj-1].kappa()-W[ii-1][jj-1].kappa())*eta + 
-    	    (W[ii][jj].kappa()+W[ii-1][jj-1].kappa()-W[ii-1][jj].kappa()-W[ii][jj-1].kappa())*zeta*eta);
-
-   
-}
-
-inline double Chem2D_Quad_Block::Wn_Rtot(const int &ii, const int &jj) {
-  double eta, zeta;
-  zeta = ZERO;
-  zeta = ZERO;
-  
-  BiLinearInterpolationCoefficients(eta, zeta, ii, jj);
-  
-     
-  return (W[ii-1][jj-1].Rtot() +(W[ii-1][jj].Rtot()-W[ii-1][jj-1].Rtot())*zeta+  
-    	    (W[ii][jj-1].Rtot()-W[ii-1][jj-1].Rtot())*eta + 
-    	    (W[ii][jj].Rtot()+W[ii-1][jj-1].Rtot()-W[ii-1][jj].Rtot()-W[ii][jj-1].Rtot())*zeta*eta);
-
-   
-}
-
-/**************************************************************************
- * Chem2D_Quad_Block::Wn??-- Get cell node gas properties                *
- **************************************************************************/
-inline double Chem2D_Quad_Block::WnNW_mu(const int &ii, const int &jj) {
-  return (Wn_mu(ii, jj+1));
-}
-
-inline double Chem2D_Quad_Block::WnNE_mu(const int &ii, const int &jj) {
-  return (Wn_mu(ii+1, jj+1));
-}
-
-inline double Chem2D_Quad_Block::WnSE_mu(const int &ii, const int &jj) {
-  return (Wn_mu(ii+1, jj));
-}
-
-inline double Chem2D_Quad_Block::WnSW_mu(const int &ii, const int &jj) {
-  return (Wn_mu(ii, jj));
-}
-
-/**************************************************************************
- * Chem2D_Quad_Block::Wn??-- Get cell node dmudT                          *
- **************************************************************************/
-inline double Chem2D_Quad_Block::WnNW_dmudT(const int &ii, const int &jj) {
-  return (Wn_dmudT(ii, jj+1));
-}
-
-inline double Chem2D_Quad_Block::WnNE_dmudT(const int &ii, const int &jj) {
-  return (Wn_dmudT(ii+1, jj+1));
-}
-
-inline double Chem2D_Quad_Block::WnSE_dmudT(const int &ii, const int &jj) {
-  return (Wn_dmudT(ii+1, jj));
-}
-
-inline double Chem2D_Quad_Block::WnSW_dmudT(const int &ii, const int &jj) {
-  return (Wn_dmudT(ii, jj));
-}
-
-/**************************************************************************
- * Chem2D_Quad_Block::Wn??-- Get cell node gas properties                *
- **************************************************************************/
-inline double Chem2D_Quad_Block::WnNW_Cp(const int &ii, const int &jj) {
-  return (Wn_Cp(ii, jj+1));
-}
-
-inline double Chem2D_Quad_Block::WnNE_Cp(const int &ii, const int &jj) {
-  return (Wn_Cp(ii+1, jj+1));
-}
-
-inline double Chem2D_Quad_Block::WnSE_Cp(const int &ii, const int &jj) {
-  return (Wn_Cp(ii+1, jj));
-}
-
-inline double Chem2D_Quad_Block::WnSW_Cp(const int &ii, const int &jj) {
-  return (Wn_Cp(ii, jj));
-}
-
-/**************************************************************************
- * Chem2D_Quad_Block::Wn??-- Get cell node gas properties                *
- **************************************************************************/
-inline double Chem2D_Quad_Block::WnNW_hi(const int &ii, const int &jj, const int &SpeciesNum) {
-  return (Wn_hi(ii, jj+1, SpeciesNum));
-}
-
-inline double Chem2D_Quad_Block::WnNE_hi(const int &ii, const int &jj, const int &SpeciesNum) {
-  return (Wn_hi(ii+1, jj+1, SpeciesNum));
-}
-
-inline double Chem2D_Quad_Block::WnSE_hi(const int &ii, const int &jj, const int &SpeciesNum) {
-  return (Wn_hi(ii+1, jj, SpeciesNum));
-}
-
-inline double Chem2D_Quad_Block::WnSW_hi(const int &ii, const int &jj, const int &SpeciesNum) {
-  return (Wn_hi(ii, jj, SpeciesNum));
-}
-
-/**************************************************************************
- * Chem2D_Quad_Block::Wn??-- Get cell node gas properties                *
- **************************************************************************/
-inline double Chem2D_Quad_Block::WnNW_Dm(const int &ii, const int &jj, const int &SpeciesNum) {
-  return (Wn_Dm(ii, jj+1, SpeciesNum));
-}
-
-inline double Chem2D_Quad_Block::WnNE_Dm(const int &ii, const int &jj, const int &SpeciesNum) {
-  return (Wn_Dm(ii+1, jj+1, SpeciesNum));
-}
-
-inline double Chem2D_Quad_Block::WnSE_Dm(const int &ii, const int &jj, const int &SpeciesNum) {
-  return (Wn_Dm(ii+1, jj, SpeciesNum));
-}
-
-inline double Chem2D_Quad_Block::WnSW_Dm(const int &ii, const int &jj, const int &SpeciesNum) {
-  return (Wn_Dm(ii, jj, SpeciesNum));
-}
-/**************************************************************************
- * Chem2D_Quad_Block::Wn??-- Get cell node gas properties                *
- **************************************************************************/
-inline double Chem2D_Quad_Block::WnNW_Cpi(const int &ii, const int &jj, const int &SpeciesNum) {
-  return (Wn_Cpi(ii, jj+1, SpeciesNum));
-}
-
-inline double Chem2D_Quad_Block::WnNE_Cpi(const int &ii, const int &jj, const int &SpeciesNum) {
-  return (Wn_Cpi(ii+1, jj+1, SpeciesNum));
-}
-
-inline double Chem2D_Quad_Block::WnSE_Cpi(const int &ii, const int &jj, const int &SpeciesNum) {
-  return (Wn_Cpi(ii+1, jj, SpeciesNum));
-}
-
-inline double Chem2D_Quad_Block::WnSW_Cpi(const int &ii, const int &jj, const int &SpeciesNum) {
-  return (Wn_Cpi(ii, jj, SpeciesNum));
-}
-/**************************************************************************
- * Chem2D_Quad_Block::Wn??-- Get cell node gas properties                *
- **************************************************************************/
-inline double Chem2D_Quad_Block::WnNW_kappa(const int &ii, const int &jj) {
-  return (Wn_kappa(ii, jj+1));
-}
-
-inline double Chem2D_Quad_Block::WnNE_kappa(const int &ii, const int &jj) {
-  return (Wn_kappa(ii+1, jj+1));
-}
-
-inline double Chem2D_Quad_Block::WnSE_kappa(const int &ii, const int &jj) {
-  return (Wn_kappa(ii+1, jj));
-}
-
-inline double Chem2D_Quad_Block::WnSW_kappa(const int &ii, const int &jj) {
-  return (Wn_kappa(ii, jj));
-}
-
-/**************************************************************************
- * Chem2D_Quad_Block::Wn??-- Get cell node gas properties                *
- **************************************************************************/
-inline double Chem2D_Quad_Block::WnNW_Rtot(const int &ii, const int &jj) {
-  return (Wn_Rtot(ii, jj+1));
-}
-
-inline double Chem2D_Quad_Block::WnNE_Rtot(const int &ii, const int &jj) {
-  return (Wn_Rtot(ii+1, jj+1));
-}
-
-inline double Chem2D_Quad_Block::WnSE_Rtot(const int &ii, const int &jj) {
-  return (Wn_Rtot(ii+1, jj));
-}
-
-inline double Chem2D_Quad_Block::WnSW_Rtot(const int &ii, const int &jj) {
-  return (Wn_Rtot(ii, jj));
-}
 
 /**************************************************************************
  * Chem2D_Quad_Block::Wn -- Node primitive solution.                     *
@@ -1002,9 +639,7 @@ inline double Chem2D_Quad_Block::WnSW_Rtot(const int &ii, const int &jj) {
 inline Chem2D_pState Chem2D_Quad_Block::Wn(const int &ii, const int &jj) {
   double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y,
     eta1, zeta1, eta2, zeta2, eta, zeta;
-
-  //Chem2D_pState A, B, C, D;
-       
+  
   x=Grid.Node[ii][jj].X.x; y=Grid.Node[ii][jj].X.y;
   ax=Grid.Cell[ii-1][jj-1].Xc.x;
   bx=Grid.Cell[ii-1][jj].Xc.x-Grid.Cell[ii-1][jj-1].Xc.x;
@@ -1041,16 +676,43 @@ inline Chem2D_pState Chem2D_Quad_Block::Wn(const int &ii, const int &jj) {
   } else {
     zeta=HALF; eta=HALF;
   } /* endif */
-    //A=W[ii-1][jj-1]; B=W[ii-1][jj]-W[ii-1][jj-1]; C=W[ii][jj-1]-W[ii-1][jj-1];
-    //D=W[ii][jj]+W[ii-1][jj-1]-W[ii-1][jj]-W[ii][jj-1];
-    //cout<<"\n Wn "<<ii<<" "<<jj<<" "<<W[ii-1][jj-1]<<endl; cout.flush;
-  
+   
   return (W[ii-1][jj-1] +(W[ii-1][jj]-W[ii-1][jj-1])*zeta+  
 	  (W[ii][jj-1]-W[ii-1][jj-1])*eta + 
-	  (W[ii][jj]+W[ii-1][jj-1]-W[ii-1][jj]-W[ii][jj-1])*zeta*eta);
-  
-  // (A+B*zeta+C*eta+D*zeta*eta);
+	  (W[ii][jj]+W[ii-1][jj-1]-W[ii-1][jj]-W[ii][jj-1])*zeta*eta);  
+ 
+
+  //HOLMES et al.
+//    double w1, w2, w3, w4;
+//    Chem2D_pState W1, W2, W3, W4;
+//    Vector2D X0, X1, X2, X3, X4, lambda, R;
+//    Tensor2D I;
+//    // Summarize cell-centres and state:
+//    X1 = Grid.Cell[ii-1][jj-1].Xc; W1 = W[ii-1][jj-1];
+//    X2 = Grid.Cell[ii  ][jj-1].Xc; W2 = W[ii  ][jj-1];
+//    X3 = Grid.Cell[ii-1][jj  ].Xc; W3 = W[ii-1][jj  ];
+//    X4 = Grid.Cell[ii  ][jj  ].Xc; W4 = W[ii  ][jj  ];
+//    X0 = Grid.Node[ii][jj].X;
+//    // Determine weighting coefficients:
+//    R = (X1 - X0) + (X2 - X0) + (X3 - X0) + (X4 - X0);
+//    I.xx = (X1.x - X0.x)*(X1.x - X0.x) + (X2.x - X0.x)*(X2.x - X0.x) +
+//       (X3.x - X0.x)*(X3.x - X0.x) + (X4.x - X0.x)*(X4.x - X0.x);
+//    I.xy = (X1.x - X0.x)*(X1.y - X0.y) + (X2.x - X0.x)*(X2.y - X0.y) +
+//       (X3.x - X0.x)*(X3.y - X0.y) + (X4.x - X0.x)*(X4.y - X0.y);
+//    I.yy = (X1.y - X0.y)*(X1.y - X0.y) + (X2.y - X0.y)*(X2.y - X0.y) +
+//       (X3.y - X0.y)*(X3.y - X0.y) + (X4.y - X0.y)*(X4.y - X0.y);
+//    lambda.x = (I.xy*R.y - I.yy*R.x)/(I.xx*I.yy - I.xy*I.xy);
+//    lambda.y = (I.xy*R.x - I.xx*R.y)/(I.xx*I.yy - I.xy*I.xy);
+//    // Determine the weights:
+//    w1 = 1 + lambda.x*(X1.x - X0.x) + lambda.y*(X1.y - X0.y);
+//    w2 = 1 + lambda.x*(X2.x - X0.x) + lambda.y*(X2.y - X0.y);
+//    w3 = 1 + lambda.x*(X3.x - X0.x) + lambda.y*(X3.y - X0.y);
+//    w4 = 1 + lambda.x*(X4.x - X0.x) + lambda.y*(X4.y - X0.y);
+//    // Return the interpolated state:
+//    return (w1*W1 + w2*W2 + w3*W3+ w4*W4)/(w1 + w2 + w3 + w4);
+
 }
+
 /**************************************************************************
 /**************************************************************************
  * Chem2D_Quad_Block::Wn?? -- Get cell node primitive solution states.   *
@@ -1072,12 +734,12 @@ inline Chem2D_pState Chem2D_Quad_Block::WnSW(const int &ii, const int &jj) {
 }
 
 /**************************************************************************
- * Chem2D_Quad_Block::Un -- Node primitive solution.                     *
+ * Chem2D_Quad_Block::Un -- Node conservative solution.                     *
  **************************************************************************/
 inline Chem2D_cState Chem2D_Quad_Block::Un(const int &ii, const int &jj) {
+ 
   double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y,
     eta1, zeta1, eta2, zeta2, eta, zeta;
-    //Chem2D_cState A, B, C, D;
  
   x=Grid.Node[ii][jj].X.x; y=Grid.Node[ii][jj].X.y;
   ax=Grid.Cell[ii-1][jj-1].Xc.x;
@@ -1115,16 +777,49 @@ inline Chem2D_cState Chem2D_Quad_Block::Un(const int &ii, const int &jj) {
   } else {
     zeta=HALF; eta=HALF;
   } /* endif */
-    //A=U[ii-1][jj-1]; B=U[ii-1][jj]-U[ii-1][jj-1]; C=U[ii][jj-1]-U[ii-1][jj-1];
-    // D=U[ii][jj]+U[ii-1][jj-1]-U[ii-1][jj]-U[ii][jj-1];
   
-    return (U[ii-1][jj-1] +(U[ii-1][jj]-U[ii-1][jj-1])*zeta+  
-	    (U[ii][jj-1]-U[ii-1][jj-1])*eta + 
-	    (U[ii][jj]+U[ii-1][jj-1]-U[ii-1][jj]-U[ii][jj-1])*zeta*eta);
-    //(A+B*zeta+C*eta+D*zeta*eta);
+  return (U[ii-1][jj-1] +(U[ii-1][jj]-U[ii-1][jj-1])*zeta+  
+	  (U[ii][jj-1]-U[ii-1][jj-1])*eta + 
+	  (U[ii][jj]+U[ii-1][jj-1]-U[ii-1][jj]-U[ii][jj-1])*zeta*eta);
+  
+// /**********************************************************************
+//  * Chem2DQuad::Un -- Return the solution state                        *
+//  *                              at the specified node using bilinear  *
+//  *                              the interpolation presented by Holmes *
+//  *                              and (AIAA Paper 1989-1932).           *
+//  **********************************************************************/
+//    double w1, w2, w3, w4;
+//    Chem2D_cState U1, U2, U3, U4;
+//    Vector2D X0, X1, X2, X3, X4, lambda, R;
+//    Tensor2D I;
+//    // Summarize cell-centres and state:
+//    X1 = Grid.Cell[ii-1][jj-1].Xc; U1 = U[ii-1][jj-1];
+//    X2 = Grid.Cell[ii  ][jj-1].Xc; U2 = U[ii  ][jj-1];
+//    X3 = Grid.Cell[ii-1][jj  ].Xc; U3 = U[ii-1][jj  ];
+//    X4 = Grid.Cell[ii  ][jj  ].Xc; U4 = U[ii  ][jj  ];
+//    X0 = Grid.Node[ii][jj].X;
+//    // Determine weighting coefficients:
+//    R = (X1 - X0) + (X2 - X0) + (X3 - X0) + (X4 - X0);
+//    I.xx = (X1.x - X0.x)*(X1.x - X0.x) + (X2.x - X0.x)*(X2.x - X0.x) +
+//       (X3.x - X0.x)*(X3.x - X0.x) + (X4.x - X0.x)*(X4.x - X0.x);
+//    I.xy = (X1.x - X0.x)*(X1.y - X0.y) + (X2.x - X0.x)*(X2.y - X0.y) +
+//       (X3.x - X0.x)*(X3.y - X0.y) + (X4.x - X0.x)*(X4.y - X0.y);
+//    I.yy = (X1.y - X0.y)*(X1.y - X0.y) + (X2.y - X0.y)*(X2.y - X0.y) +
+//       (X3.y - X0.y)*(X3.y - X0.y) + (X4.y - X0.y)*(X4.y - X0.y);
+//    lambda.x = (I.xy*R.y - I.yy*R.x)/(I.xx*I.yy - I.xy*I.xy);
+//    lambda.y = (I.xy*R.x - I.xx*R.y)/(I.xx*I.yy - I.xy*I.xy);
+//    // Determine the weights:
+//    w1 = 1 + lambda.x*(X1.x - X0.x) + lambda.y*(X1.y - X0.y);
+//    w2 = 1 + lambda.x*(X2.x - X0.x) + lambda.y*(X2.y - X0.y);
+//    w3 = 1 + lambda.x*(X3.x - X0.x) + lambda.y*(X3.y - X0.y);
+//    w4 = 1 + lambda.x*(X4.x - X0.x) + lambda.y*(X4.y - X0.y);
+//    // Return the interpolated state:
+//    return (w1*U1 + w2*U2 + w3*U3+ w4*U4)/(w1 + w2 + w3 + w4);
+
 }
+
 /**************************************************************************
- * Chem2D_Quad_Block::Un?? -- Get cell node conserved solution states.    *
+ * Chem2D_Quad_Block::Un -- Get cell node conserved solution states.    *
  **************************************************************************/
 inline Chem2D_cState Chem2D_Quad_Block::UnNW(const int &ii, const int &jj) {
   return (Un(ii, jj+1));
@@ -1143,18 +838,74 @@ inline Chem2D_cState Chem2D_Quad_Block::UnSW(const int &ii, const int &jj) {
 }
 
 /**************************************************************************
- * Chem2D_Quad_Block::evaluate_limiters -- Set flag to evaluate limiters.*
+ * Chem2D_Quad_Block::Un -- Node conservative solution.                     *
  **************************************************************************/
-inline void Chem2D_Quad_Block::evaluate_limiters(void) {
-  Freeze_Limiter = OFF; 
+inline Chem2D_cState Chem2D_Quad_Block::Uno(const int &ii, const int &jj) {
+ 
+  double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y,
+    eta1, zeta1, eta2, zeta2, eta, zeta;
+ 
+  x=Grid.Node[ii][jj].X.x; y=Grid.Node[ii][jj].X.y;
+  ax=Grid.Cell[ii-1][jj-1].Xc.x;
+  bx=Grid.Cell[ii-1][jj].Xc.x-Grid.Cell[ii-1][jj-1].Xc.x;
+  cx=Grid.Cell[ii][jj-1].Xc.x-Grid.Cell[ii-1][jj-1].Xc.x;
+  dx=Grid.Cell[ii][jj].Xc.x+Grid.Cell[ii-1][jj-1].Xc.x-
+    Grid.Cell[ii-1][jj].Xc.x-Grid.Cell[ii][jj-1].Xc.x;
+  ay=Grid.Cell[ii-1][jj-1].Xc.y;
+  by=Grid.Cell[ii-1][jj].Xc.y-Grid.Cell[ii-1][jj-1].Xc.y;
+  cy=Grid.Cell[ii][jj-1].Xc.y-Grid.Cell[ii-1][jj-1].Xc.y;
+  dy=Grid.Cell[ii][jj].Xc.y+Grid.Cell[ii-1][jj-1].Xc.y-
+    Grid.Cell[ii-1][jj].Xc.y-Grid.Cell[ii][jj-1].Xc.y;
+  aa=bx*dy-dx*by; bb=dy*(ax-x)+bx*cy-cx*by+dx*(y-ay); cc=cy*(ax-x)+cx*(y-ay);
+  if (fabs(aa) < TOLER*TOLER) {
+    if (fabs(bb) >= TOLER*TOLER) { zeta1=-cc/bb; }
+    else { zeta1 = -cc/sgn(bb)*(TOLER*TOLER); }
+    if (fabs(cy+dy*zeta1) >= TOLER*TOLER) { eta1=(y-ay-by*zeta1)/(cy+dy*zeta1); }
+    else { eta1 = HALF; } zeta2=zeta1; eta2=eta1;
+  } else {
+    if (bb*bb-FOUR*aa*cc >= TOLER*TOLER) { zeta1=HALF*(-bb+sqrt(bb*bb-FOUR*aa*cc))/aa; }
+    else { zeta1 = -HALF*bb/aa; }
+    if (fabs(cy+dy*zeta1) < TOLER*TOLER) { eta1=-ONE; }
+    else { eta1=(y-ay-by*zeta1)/(cy+dy*zeta1); }
+    if (bb*bb-FOUR*aa*cc >= TOLER*TOLER) { zeta2=HALF*(-bb-sqrt(bb*bb-FOUR*aa*cc))/aa; }
+    else { zeta2 = -HALF*bb/aa; }
+    if (fabs(cy+dy*zeta2) < TOLER*TOLER) { eta2=-ONE; }
+    else { eta2=(y-ay-by*zeta2)/(cy+dy*zeta2); }
+  } /* end if */
+  if (zeta1 > -TOLER && zeta1 < ONE + TOLER &&
+      eta1  > -TOLER && eta1  < ONE + TOLER) {
+    zeta=zeta1; eta=eta1;
+  } else if (zeta2 > -TOLER && zeta2 < ONE + TOLER &&
+	     eta2  > -TOLER && eta2  < ONE + TOLER) {
+    zeta=zeta2; eta=eta2;
+  } else {
+    zeta=HALF; eta=HALF;
+  } /* endif */
+  
+  return (Uo[ii-1][jj-1] +(Uo[ii-1][jj]-Uo[ii-1][jj-1])*zeta+  
+	  (Uo[ii][jj-1]-Uo[ii-1][jj-1])*eta + 
+	  (Uo[ii][jj]+Uo[ii-1][jj-1]-Uo[ii-1][jj]-Uo[ii][jj-1])*zeta*eta);
 }
 
 /**************************************************************************
- * Chem2D_Quad_Block::freeze_limiters -- Set flag to freeze limiters.    *
+ * Chem2D_Quad_Block::Un -- Get cell node conserved solution states.    *
  **************************************************************************/
-inline void Chem2D_Quad_Block::freeze_limiters(void) {
-  Freeze_Limiter = ON; 
+inline Chem2D_cState Chem2D_Quad_Block::UnoNW(const int &ii, const int &jj) {
+  return (Uno(ii, jj+1));
 }
+
+inline Chem2D_cState Chem2D_Quad_Block::UnoNE(const int &ii, const int &jj) {
+  return (Uno(ii+1, jj+1));
+}
+
+inline Chem2D_cState Chem2D_Quad_Block::UnoSE(const int &ii, const int &jj) {
+  return (Uno(ii+1, jj));
+}
+
+inline Chem2D_cState Chem2D_Quad_Block::UnoSW(const int &ii, const int &jj) {
+  return (Uno(ii, jj));
+}
+
 
 /**************************************************************************
  * Chem2D_Quad_Block -- Input-output operators.                           *
@@ -1163,12 +914,11 @@ inline ostream &operator << (ostream &out_file,
 			     const Chem2D_Quad_Block &SolnBlk) {
   int i, j; 
   out_file << SolnBlk.Grid;
-  out_file << SolnBlk.NCi << " " << SolnBlk.ICl << " " 
-	   << SolnBlk.ICu << " " << SolnBlk.Nghost << "\n";
+  out_file << SolnBlk.NCi << " " << SolnBlk.ICl << " " << SolnBlk.ICu << " " << SolnBlk.Nghost << "\n";
   out_file << SolnBlk.NCj << " " << SolnBlk.JCl << " " << SolnBlk.JCu << "\n";
   out_file << SolnBlk.Axisymmetric << "\n";
   out_file << SolnBlk.Flow_Type <<"\n";
-  out_file << SolnBlk.Schmidt <<"\n";
+  out_file << SolnBlk.Wall_Functions <<"\n";
   out_file << SolnBlk.Gravity <<"\n";
   out_file << SolnBlk.debug_level <<"\n";
   out_file << SolnBlk.Moving_wall_velocity <<"\n";
@@ -1176,7 +926,9 @@ inline ostream &operator << (ostream &out_file,
   if (SolnBlk.NCi == 0 || SolnBlk.NCj == 0) return(out_file);
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-         out_file << SolnBlk.U[i][j] << "\n";
+         out_file << SolnBlk.U[i][j] << "\n"
+	          << SolnBlk.Ut[i][j] << "\n"
+		  << SolnBlk.Uold[i][j] << "\n";
      } /* endfor */
   } /* endfor */
   for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
@@ -1192,6 +944,7 @@ inline ostream &operator << (ostream &out_file,
 
 inline istream &operator >> (istream &in_file,
 			     Chem2D_Quad_Block &SolnBlk) {
+
   int i, j, k, ni, il, iu, nj, jl, ju, ng;
   Chem2D_pState Chem2D_W_VACUUM(ZERO, Vector2D_ZERO, ZERO, ZERO, ZERO);
   Chem2D_cState Chem2D_U_VACUUM(ZERO, Vector2D_ZERO, ZERO, ZERO, ZERO);
@@ -1200,7 +953,7 @@ inline istream &operator >> (istream &in_file,
   in_file >> ni >> il >> iu >> ng; in_file >> nj >> jl >> ju;
   in_file >> SolnBlk.Axisymmetric;
   in_file >> SolnBlk.Flow_Type;
-  in_file >> SolnBlk.Schmidt;
+  in_file >> SolnBlk.Wall_Functions;
   in_file >> SolnBlk.Gravity; 
   in_file >> SolnBlk.debug_level;
   in_file >> SolnBlk.Moving_wall_velocity;
@@ -1216,8 +969,9 @@ inline istream &operator >> (istream &in_file,
   Copy_Quad_Block(SolnBlk.Grid, New_Grid); New_Grid.deallocate();
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-         in_file >> SolnBlk.U[i][j];
+         in_file >> SolnBlk.U[i][j] >> SolnBlk.Ut[i][j] >> SolnBlk.Uold[i][j];
          SolnBlk.W[i][j] = W(SolnBlk.U[i][j]);
+	 SolnBlk.Ut[i][j] = SolnBlk.U[i][j]; 
          for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_CHEM2D-1 ; ++k ) {
 	     SolnBlk.dUdt[i][j][k] = Chem2D_U_VACUUM;
          } /* endfor */
@@ -1257,9 +1011,7 @@ inline istream &operator >> (istream &in_file,
  * Chem2D_Quad_Block::NumVar -- Returns number of state variables.            *
  *******************************************************************************/
 inline int Chem2D_Quad_Block::NumVar(void) {
-  int num=0;
-  int NUM_VAR_CHEM2D = W[num][num].NUM_VAR_CHEM2D;    
-  return (int(NUM_VAR_CHEM2D));
+  return (int(W[0][0].NUM_VAR_CHEM2D));    
 }
 
 /*******************************************************************************
@@ -1328,9 +1080,9 @@ inline int Chem2D_Quad_Block::LoadSendBuffer_F2C(double *buffer,
 }
 
 /*******************************************************************************
- * Chem2D_Quad_Block::LoadSendBuffer_C2F -- Loads send message buffer for      *
- *                                          coarse to fine block message       *
- *                                          passing.                           *
+ * Chem2D_Quad_Block::LoadSendBuffer_C2F -- Loads send message buffer for     *
+ *                                           coarse to fine block message      *
+ *                                           passing.                          *
  *******************************************************************************/
 inline int Chem2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
 						 int &buffer_count,
@@ -1349,111 +1101,76 @@ inline int Chem2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
   Chem2D_pState Wfine;
   Chem2D_cState Ufine;
 
-  if (j_inc > 0) {
-    if (i_inc > 0) {
-      for ( j = j_min; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max); j += j_inc) {
-	for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	  // Perform limited linear least squares reconstruction in cell (i, j_min).
-	  SubcellReconstruction(i, j, LIMITER_VENKATAKRISHNAN);
-	  // Evaluate SW sub (fine) cell values if required.
-	  if (!(face == NORTH && sector == WEST && Nghost%2 && j == j_min) &&
-	      !(face == NORTH && sector == EAST && Nghost%2 && (i == i_min || j == j_min)) &&
-	      !(face == SOUTH && sector == EAST && Nghost%2 && i == i_min) &&
-	      !(face == EAST && sector == NORTH && Nghost%2 && (i == i_min || j == j_min)) &&
-	      !(face == EAST && sector == SOUTH && Nghost%2 && i == i_min) &&
-	      !(face == WEST && sector == NORTH && Nghost%2 && j == j_min) &&
-	      !(face == NORTH_EAST && Nghost%2 && (i == i_min || j == j_min)) &&
-	      !(face == NORTH_WEST && Nghost%2 && j == j_min) &&
-	      !(face == SOUTH_EAST && Nghost%2 && i == i_min)) {
-	    dX = Grid.centroidSW(i,j) - Grid.Cell[i][j].Xc;
-	    Wfine = W[i][j] + (phi[i][j]^dWdx[i][j])*dX.x +
-                              (phi[i][j]^dWdy[i][j])*dX.y;
-	    Ufine = Wfine.U();
-	    for ( k = 1 ; k <= NUM_VAR_CHEM2D; ++ k) {
-	      buffer_count = buffer_count + 1;
-	      if (buffer_count >= buffer_size) return(1);
-	      buffer[buffer_count] = Ufine[k];
-	    } /* endfor */
-	  } /* endif */
-	  // Evaluate SE sub (fine) cell values if required.
-	  if (!(face == NORTH && sector == WEST && Nghost%2 && (i == i_max || j == j_min)) &&
-	      !(face == NORTH && sector == EAST && Nghost%2 && j == j_min) &&
-	      !(face == SOUTH && sector == WEST && Nghost%2 && i == i_max) &&
-	      !(face == EAST && sector == NORTH && Nghost%2 && j == j_min) &&
-	      !(face == WEST && sector == NORTH && Nghost%2 && (i == i_max || j == j_min)) &&
-	      !(face == WEST && sector == SOUTH && Nghost%2 && i == i_max) &&
-	      !(face == NORTH_EAST && Nghost%2 && j == j_min) &&
-	      !(face == NORTH_WEST && Nghost%2 && (i == i_max || j == j_min)) &&
-	      !(face == SOUTH_WEST && Nghost%2 && i == i_max)) {
-	    dX = Grid.centroidSE(i,j) - Grid.Cell[i][j].Xc;
-	    Wfine = W[i][j] + (phi[i][j]^dWdx[i][j])*dX.x +
-                              (phi[i][j]^dWdy[i][j])*dX.y;
-	    Ufine = Wfine.U();
-	    for ( k = 1 ; k <= NUM_VAR_CHEM2D; ++ k) {
-	      buffer_count = buffer_count + 1;
-	      if (buffer_count >= buffer_size) return(1);
-	      buffer[buffer_count] = Ufine[k];
-	    } /* endfor */
-	  } /* endif */
-	} /* endfor */
-	for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	  // Evaluate NW sub (fine) cell values if required.
-	  if (!(face == NORTH && sector == EAST && Nghost%2 && i == i_min) &&
-	      !(face == SOUTH && sector == EAST && Nghost%2 && (i == i_min || j == j_max)) &&
-	      !(face == SOUTH && sector == WEST && Nghost%2 && j == j_max) &&
-	      !(face == EAST && sector == NORTH && Nghost%2 && i == i_min) &&
-	      !(face == EAST && sector == SOUTH && Nghost%2 && (i == i_min || j == j_max)) &&
-	      !(face == WEST && sector == SOUTH && Nghost%2 && j == j_max) &&
-	      !(face == NORTH_EAST && Nghost%2 && i == i_min) &&
-	      !(face == SOUTH_EAST && Nghost%2 && (i == i_min || j == j_max)) &&
-	      !(face == SOUTH_WEST && Nghost%2 && j == j_max)) {
-	    dX = Grid.centroidNW(i,j) - Grid.Cell[i][j].Xc;
-	    Wfine = W[i][j] + (phi[i][j]^dWdx[i][j])*dX.x +
-                              (phi[i][j]^dWdy[i][j])*dX.y;
-	    Ufine = Wfine.U();
-	    for ( k = 1 ; k <= NUM_VAR_CHEM2D; ++ k) { 
-	      buffer_count = buffer_count + 1;
-	      if (buffer_count >= buffer_size) return(1);
-	      buffer[buffer_count] = Ufine[k];
-	    } /* endfor */
-	  } /* endif */
-	  // Evaluate NE sub (fine) cell values if required.
-	  if (!(face == NORTH && sector == WEST && Nghost%2 && i == i_max) &&
-	      !(face == SOUTH && sector == EAST && Nghost%2 && j == j_max) &&
-	      !(face == SOUTH && sector == WEST && Nghost%2 && (i == i_max || j == j_max)) &&
-	      !(face == EAST && sector == SOUTH && Nghost%2 && j == j_max) &&
-	      !(face == WEST && sector == NORTH && Nghost%2 && i == i_max) &&
-	      !(face == WEST && sector == SOUTH && Nghost%2 && (i == i_max || j == j_max)) &&
-	      !(face == NORTH_WEST && Nghost%2 && i == i_max) &&
-	      !(face == SOUTH_EAST && Nghost%2 && j == j_max) &&
-	      !(face == SOUTH_WEST && Nghost%2 && (i == i_max || j == j_max))) {
-	    dX = Grid.centroidNE(i,j) - Grid.Cell[i][j].Xc;
-	    Wfine = W[i][j] + (phi[i][j]^dWdx[i][j])*dX.x +
-                              (phi[i][j]^dWdy[i][j])*dX.y;
-	    Ufine = Wfine.U();
-	    for ( k = 1 ; k <= NUM_VAR_CHEM2D; ++ k) {
-	      buffer_count = buffer_count + 1;
-	      if (buffer_count >= buffer_size) return(1);
-	      buffer[buffer_count] = Ufine[k];
-	    } /* endfor */
-	  } /* endif */
-	} /* endfor */
-      } /* endfor */
-
-      return 0;
-
-    } /* endif */
-  } /* endif */
-
-  // Load send message buffer for the coarse-to-fine grid for cases in
-  // which one (or both) of the increments is negative.  Only for two
-  // ghost cells.
-
   if (j_min == j_max) { // North or south boundary.
      // Four different orderings to consider depending on the value of i_inc & j_inc.
      if (j_inc > 0) {
         if (i_inc > 0) {
-	  return 1;
+           for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
+              // Perform limited linear least squares reconstruction in cell (i, j_min).
+              SubcellReconstruction(i, j_min, LIMITER_VENKATAKRISHNAN);
+              // Evaluate SW sub (fine) cell values.
+              dX = (Grid.Node[i][j_min].X+
+                    HALF*(Grid.Node[i][j_min].X+Grid.Node[i+1][j_min].X)+
+                    HALF*(Grid.Node[i][j_min].X+Grid.Node[i][j_min+1].X)+
+                    Grid.Cell[i][j_min].Xc)/FOUR -
+                   Grid.Cell[i][j_min].Xc;
+              Wfine = W[i][j_min] +
+                      (phi[i][j_min]^dWdx[i][j_min])*dX.x +
+                      (phi[i][j_min]^dWdy[i][j_min])*dX.y;
+              Ufine = Wfine.U();
+              for ( k = 1 ; k <= NUM_VAR_CHEM2D; ++ k) {
+  	         buffer_count = buffer_count + 1;
+                 if (buffer_count >= buffer_size) return(1);
+                 buffer[buffer_count] = Ufine[k];
+              } /* endfor */
+              // Evaluate SE sub (fine) cell values.
+              dX = (HALF*(Grid.Node[i][j_min].X+Grid.Node[i+1][j_min].X)+
+                    Grid.Node[i+1][j_min].X+
+                    Grid.Cell[i][j_min].Xc+
+                    HALF*(Grid.Node[i+1][j_min].X+Grid.Node[i+1][j_min+1].X))/FOUR -
+                   Grid.Cell[i][j_min].Xc;
+              Wfine = W[i][j_min] +
+                      (phi[i][j_min]^dWdx[i][j_min])*dX.x +
+                      (phi[i][j_min]^dWdy[i][j_min])*dX.y;
+              Ufine = Wfine.U();
+              for ( k = 1 ; k <= NUM_VAR_CHEM2D; ++ k) {
+  	         buffer_count = buffer_count + 1;
+                 if (buffer_count >= buffer_size) return(1);
+                 buffer[buffer_count] = Ufine[k];
+              } /* endfor */
+           } /* endfor */
+           for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
+              // Evaluate NW sub (fine) cell values.
+              dX = (HALF*(Grid.Node[i][j_min].X+Grid.Node[i][j_min+1].X)+
+                    Grid.Cell[i][j_min].Xc+
+                    Grid.Node[i][j_min+1].X+
+                    HALF*(Grid.Node[i][j_min+1].X+Grid.Node[i+1][j_min+1].X))/FOUR -
+                   Grid.Cell[i][j_min].Xc;
+              Wfine = W[i][j_min] +
+                      (phi[i][j_min]^dWdx[i][j_min])*dX.x +
+                      (phi[i][j_min]^dWdy[i][j_min])*dX.y;
+              Ufine = Wfine.U();
+              for ( k = 1 ; k <= NUM_VAR_CHEM2D; ++ k) { 
+                 buffer_count = buffer_count + 1;
+                 if (buffer_count >= buffer_size) return(1);
+                 buffer[buffer_count] = Ufine[k];
+              } /* endfor */
+              // Evaluate NE sub (fine) cell values.
+              dX = (Grid.Cell[i][j_min].Xc+
+                    HALF*(Grid.Node[i+1][j_min].X+Grid.Node[i+1][j_min+1].X)+
+                    HALF*(Grid.Node[i][j_min+1].X+Grid.Node[i+1][j_min+1].X)+
+                    Grid.Node[i+1][j_min+1].X)/FOUR -
+                   Grid.Cell[i][j_min].Xc;
+              Wfine = W[i][j_min] +
+                      (phi[i][j_min]^dWdx[i][j_min])*dX.x +
+                      (phi[i][j_min]^dWdy[i][j_min])*dX.y;
+              Ufine = Wfine.U();
+              for ( k = 1 ; k <= NUM_VAR_CHEM2D; ++ k) {
+  	         buffer_count = buffer_count + 1;
+                 if (buffer_count >= buffer_size) return(1);
+                 buffer[buffer_count] = Ufine[k];
+              } /* endfor */
+           } /* endfor */
         } else {
            for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
               // Perform limited linear least squares reconstruction in cell (i, j_min).
@@ -2043,12 +1760,12 @@ inline void Chem2D_Quad_Block::SubcellReconstruction(const int i,
   /* Carry out the limited solution reconstruction in
      each cell of the computational mesh. */
 
-  if (i == ICl-2 || i == ICu+2 ||
-      j == JCl-2 || j == JCu+2) {
+  if (i == ICl-Nghost || i == ICu+Nghost ||
+      j == JCl-Nghost || j == JCu+Nghost) {
     n_pts = 0;
-  } else if ((i == ICl-1) && 
+  } else if ((i == ICl-Nghost+1) && 
              (Grid.BCtypeW[j] != BC_NONE)) {
-    if (j == JCl-1 || j == JCu+1) {
+    if (j == JCl-Nghost+1 || j == JCu+Nghost-1) {
        n_pts = 0;
     } else if (Grid.BCtypeW[j] == BC_PERIODIC ||
                Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
@@ -2099,9 +1816,9 @@ inline void Chem2D_Quad_Block::SubcellReconstruction(const int i,
           i_index[4] = i+1; j_index[4] = j+1;
        } /* endif */
     } /* endif */           
-  } else if ((i == ICu+1) && 
+  } else if ((i == ICu+Nghost-1) && 
              (Grid.BCtypeE[j] != BC_NONE)) {
-    if (j == JCl-1 || j == JCu+1) {
+    if (j == JCl-Nghost+1 || j == JCu+Nghost-1) {
        n_pts = 0;
     } else if (Grid.BCtypeE[j] == BC_PERIODIC ||
                Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
@@ -2152,9 +1869,9 @@ inline void Chem2D_Quad_Block::SubcellReconstruction(const int i,
           i_index[4] = i  ; j_index[4] = j+1;
        } /* endif */
     } /* endif */
-  } else if ((j == JCl-1) && 
+  } else if ((j == JCl-Nghost+1) && 
              (Grid.BCtypeS[i] != BC_NONE)) {
-    if (i == ICl-1 || i == ICu+1) {
+    if (i == ICl-Nghost+1 || i == ICu+Nghost-1) {
        n_pts = 0;
     } else if (Grid.BCtypeS[i] == BC_PERIODIC ||
                Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
@@ -2205,9 +1922,9 @@ inline void Chem2D_Quad_Block::SubcellReconstruction(const int i,
           i_index[4] = i+1; j_index[4] = j+1;
        } /* endif */
     } /* endif */
-  } else if ((j == JCu+1) && 
+  } else if ((j == JCu+Nghost-1) && 
              (Grid.BCtypeN[i] != BC_NONE)) {
-    if (i == ICl-1 || i == ICu+1) {
+    if (i == ICl-Nghost+1 || i == ICu+Nghost-1) {
        n_pts = 0;
     } else if (Grid.BCtypeN[i] == BC_PERIODIC ||
                Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
@@ -2499,17 +2216,17 @@ extern void Copy_Solution_Block(Chem2D_Quad_Block &SolnBlk1,
 		                Chem2D_Quad_Block &SolnBlk2);
 
 extern int Prolong_Solution_Block(Chem2D_Quad_Block &SolnBlk_Fine,
-				  Chem2D_Quad_Block &SolnBlk_Original,
-				  const int Sector);
+		                   Chem2D_Quad_Block &SolnBlk_Original,
+                                   const int Sector);
 
 extern int Restrict_Solution_Block(Chem2D_Quad_Block &SolnBlk_Coarse,
-				   Chem2D_Quad_Block &SolnBlk_Original_SW,
-				   Chem2D_Quad_Block &SolnBlk_Original_SE,
-				   Chem2D_Quad_Block &SolnBlk_Original_NW,
-				   Chem2D_Quad_Block &SolnBlk_Original_NE);
+		                    Chem2D_Quad_Block &SolnBlk_Original_SW,
+                                    Chem2D_Quad_Block &SolnBlk_Original_SE,
+                                    Chem2D_Quad_Block &SolnBlk_Original_NW,
+                                    Chem2D_Quad_Block &SolnBlk_Original_NE);
 
 extern void Output_Tecplot(Chem2D_Quad_Block &SolnBlk,
-			   Chem2D_Input_Parameters &Input_Parameters,
+			   Chem2D_Input_Parameters &IP,
 			   const int Number_of_Time_Steps,
                            const double &Time,
                            const int Block_Number,
@@ -2517,6 +2234,7 @@ extern void Output_Tecplot(Chem2D_Quad_Block &SolnBlk,
 	                   ostream &Out_File);
 
 extern void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
+				 Chem2D_Input_Parameters &IP,
 		                 const int Number_of_Time_Steps,
                                  const double &Time,
                                  const int Block_Number,
@@ -2542,7 +2260,10 @@ extern void ICs(Chem2D_Quad_Block &SolnBlk,
  	        const int i_ICtype,
                 Chem2D_pState *Wo, Chem2D_Input_Parameters &Input_Parameters);
 
-extern void BCs(Chem2D_Quad_Block &SolnBlk, Chem2D_Input_Parameters &IP);
+extern void Reset_Wo(Chem2D_Quad_Block &SolnBlk );
+
+extern void BCs(Chem2D_Quad_Block &SolnBlk, 
+		Chem2D_Input_Parameters &IP);
 
 extern double CFL(Chem2D_Quad_Block &SolnBlk,
                   Chem2D_Input_Parameters &Input_Parameters);
@@ -2550,44 +2271,55 @@ extern double CFL(Chem2D_Quad_Block &SolnBlk,
 extern void Set_Global_TimeStep(Chem2D_Quad_Block &SolnBlk, 
                                 const double &Dt_min);
 
-extern double L1_Norm_Residual(Chem2D_Quad_Block &SolnBlk);
+extern double L1_Norm_Residual(Chem2D_Quad_Block &SolnBlk, const int &norm);
 
-extern double L2_Norm_Residual(Chem2D_Quad_Block &SolnBlk);
+extern double L2_Norm_Residual(Chem2D_Quad_Block &SolnBlk, const int &norm);
 
-extern double Max_Norm_Residual(Chem2D_Quad_Block &SolnBlk);
+extern double Max_Norm_Residual(Chem2D_Quad_Block &SolnBlk, const int &norm);
 
-extern void Linear_Reconstruction_GreenGauss(Chem2D_Quad_Block &SolnBlk,
-                                             const int i,
-                                             const int j,
-					     const int Limiter);
 
-extern void Linear_Reconstruction_GreenGauss(Chem2D_Quad_Block &SolnBlk,
-					     const int Limiter);
+/**************** Reconstruction Methods ****************************/
+
+extern void Linear_Reconstruction_LeastSquares(Chem2D_Quad_Block &SolnBlk,
+					       const int Limiter);
 
 extern void Linear_Reconstruction_LeastSquares(Chem2D_Quad_Block &SolnBlk,
                                                const int i,
                                                const int j,
 					       const int Limiter);
 
-extern void Linear_Reconstruction_LeastSquares_Whatname(Chem2D_Quad_Block &SolnBlk,
-				        const int i, 
-                                        const int j,
-				        const int Limiter);
-
 extern void Linear_Reconstruction_LeastSquares_2(Chem2D_Quad_Block &SolnBlk,
                                                  const int i,
                                                  const int j,
 					         const int Limiter);
 
+extern void Linear_Reconstruction_GreenGauss(Chem2D_Quad_Block &SolnBlk,
+					     const int Limiter);
+
+extern void Linear_Reconstruction_GreenGauss(Chem2D_Quad_Block &SolnBlk,
+                                             const int i,
+                                             const int j,
+					     const int Limiter);
+
+/******* Diamond Path Reconstruction Methods *************************/
+extern void Linear_Reconstruction_LeastSquares_Diamond(Chem2D_Quad_Block &SolnBlk,
+					       const int Limiter);
+
 extern void Linear_Reconstruction_LeastSquares_Diamond(Chem2D_Quad_Block &SolnBlk,
 						       const int i, 
 						       const int j,
 						       const int Limiter);
-extern void Linear_Reconstruction_LeastSquares(Chem2D_Quad_Block &SolnBlk,
-					       const int Limiter);
 
-extern void Linear_Reconstruction_LeastSquares_Diamond(Chem2D_Quad_Block &SolnBlk,
-					       const int Limiter);
+
+extern void Linear_Reconstruction_GreenGauss_Diamond(Chem2D_Quad_Block &SolnBlk,
+						     const int Limiter);
+
+extern void Linear_Reconstruction_GreenGauss_Diamond(Chem2D_Quad_Block &SolnBlk,
+						     const int i,
+						     const int j,
+						     const int Limiter);
+
+
 
 extern void Residual_Smoothing(Chem2D_Quad_Block &SolnBlk,
                                const int k_residual,
@@ -2595,8 +2327,8 @@ extern void Residual_Smoothing(Chem2D_Quad_Block &SolnBlk,
                                const int number_of_Gauss_Seidel_iterations);
 
 extern void Calculate_Refinement_Criteria(double *refinement_criteria,
-					  Chem2D_Input_Parameters &IP,
-                                          int &number_refinement_criteria,
+					  Chem2D_Input_Parameters &IP, 
+                                          int &number_refinement_criteria,					  
                                           Chem2D_Quad_Block &SolnBlk);
 
 extern void Fix_Refined_Block_Boundaries(Chem2D_Quad_Block &SolnBlk,
@@ -2638,6 +2370,8 @@ extern int Update_Solution_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
    	                                       const int i_stage,
                                                Chem2D_Input_Parameters &Input_Parameters);
 
+extern int Update_Dual_Solution_States(Chem2D_Quad_Block &SolnBlk); 
+
 extern void Viscous_Calculations(Chem2D_Quad_Block &SolnBlk);
 
 /**************************************************************************
@@ -2654,7 +2388,7 @@ extern Chem2D_Quad_Block* Deallocate(Chem2D_Quad_Block *Soln_ptr,
 extern void ICs(Chem2D_Quad_Block *Soln_ptr,
                 AdaptiveBlock2D_List &Soln_Block_List,
                 Chem2D_Input_Parameters &Input_Parameters);
-
+  
 extern int Read_Restart_Solution(Chem2D_Quad_Block *Soln_ptr,
                                  AdaptiveBlock2D_List &Soln_Block_List,
                                  Chem2D_Input_Parameters &Input_Parameters,
@@ -2681,20 +2415,14 @@ extern int Output_RHS(Chem2D_Quad_Block *Soln_ptr,
 		      const int Number_of_Time_Steps,
 		      const double &Time);
 
-extern int Output_PERTURB(Chem2D_Quad_Block *Soln_ptr,
-			  AdaptiveBlock2D_List &Soln_Block_List,
-			  Chem2D_Input_Parameters &Input_Parameters,
-			  const int Number_of_Time_Steps,
-			  const double &Time,
-			  const CPUTime &CPU_Time);
+int Output_PERTURB(Chem2D_Quad_Block *Soln_ptr,
+		   AdaptiveBlock2D_List &Soln_Block_List,
+		   Chem2D_Input_Parameters &Input_Parameters,
+		   const int Number_of_Time_Steps,
+		   const double &Time,
+		   const CPUTime &CPU_Time);
 
 extern int Output_Cells_Tecplot(Chem2D_Quad_Block *Soln_ptr,
-                                AdaptiveBlock2D_List &Soln_Block_List,
-                                Chem2D_Input_Parameters &Input_Parameters,
-		                const int Number_of_Time_Steps,
-                                const double &Time);
-
-extern int Output_Nodes_Tecplot(Chem2D_Quad_Block *Soln_ptr,
                                 AdaptiveBlock2D_List &Soln_Block_List,
                                 Chem2D_Input_Parameters &Input_Parameters,
 		                const int Number_of_Time_Steps,
@@ -2724,6 +2452,10 @@ extern int Output_Flat_Plate(Chem2D_Quad_Block *Soln_ptr,
 			     AdaptiveBlock2D_List &Soln_Block_List,
 			     Chem2D_Input_Parameters &IP);
 
+extern int Output_Driven_Cavity_Flow(Chem2D_Quad_Block *Soln_ptr,
+				     AdaptiveBlock2D_List &Soln_Block_List,
+				     Chem2D_Input_Parameters &IP);
+
 extern void BCs(Chem2D_Quad_Block *Soln_ptr,
                 AdaptiveBlock2D_List &Soln_Block_List,
 		Chem2D_Input_Parameters &Input_Parameters);
@@ -2738,18 +2470,34 @@ extern void Set_Global_TimeStep(Chem2D_Quad_Block *Soln_ptr,
 
 extern double L1_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
                                AdaptiveBlock2D_List &Soln_Block_List);
-
-extern double L2_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
+		
+extern double L2_Norm_Residual(Chem2D_Quad_Block *Soln_ptr ,
                                AdaptiveBlock2D_List &Soln_Block_List);
 
 extern double Max_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
                                 AdaptiveBlock2D_List &Soln_Block_List);
+
+extern void L1_Norm_Residual(Chem2D_Quad_Block *Soln_ptr, 
+                               AdaptiveBlock2D_List &Soln_Block_List,
+			       double *l1_norm);
+
+extern void L2_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
+                               AdaptiveBlock2D_List &Soln_Block_List,
+			       double *l2_norm);
+
+extern void Max_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
+                                AdaptiveBlock2D_List &Soln_Block_List,
+				double *max_norm);
 
 extern void Evaluate_Limiters(Chem2D_Quad_Block *Soln_ptr,
                               AdaptiveBlock2D_List &Soln_Block_List);
 
 extern void Freeze_Limiters(Chem2D_Quad_Block *Soln_ptr,
                             AdaptiveBlock2D_List &Soln_Block_List);
+
+extern void Change_Mref(Chem2D_Quad_Block *Soln_ptr,
+			AdaptiveBlock2D_List &Soln_Block_List,
+			const double &Mr);
 
 extern void Residual_Smoothing(Chem2D_Quad_Block *Soln_ptr,
                                AdaptiveBlock2D_List &Soln_Block_List,
@@ -2775,15 +2523,19 @@ extern int Update_Solution_Multistage_Explicit(Chem2D_Quad_Block *Soln_ptr,
                                                Chem2D_Input_Parameters &Input_Parameters,
    	                                       const int I_Stage);
 
-//************Viscous Stuff************************************/
-//Viscous (Turbulence) Flux
+extern int Update_Dual_Solution_States(Chem2D_Quad_Block *Soln_ptr,
+                                        AdaptiveBlock2D_List &Soln_Block_List); 
+
+
+
+//************ Viscous Stuff************************************/
 extern void Viscous_Calculations(Chem2D_Quad_Block &SolnBlk);
-extern Chem2D_cState Flux_Viscous_x(Chem2D_Quad_Block &SolnBlk, const int &i, const int &j);
-extern Chem2D_cState Flux_Viscous_y(Chem2D_Quad_Block &SolnBlk, const int &i, const int &j);
-extern Chem2D_cState Flux_Viscous_n(Chem2D_Quad_Block &SolnBlk, const string &Orient, const int &i, const int &j);
-//Viscous (Turbulence) Flux (Diamond Path)
-extern Chem2D_cState Flux_Viscous_EastFace_Diamond(Chem2D_Quad_Block &SolnBlk, const int &i, const int &j);
-extern Chem2D_cState Flux_Viscous_NorthFace_Diamond(Chem2D_Quad_Block &SolnBlk, const int &i, const int &j);
+
+// extern Chem2D_cState Flux_Viscous_x(Chem2D_Quad_Block &SolnBlk, const int &i, const int &j);
+// extern Chem2D_cState Flux_Viscous_y(Chem2D_Quad_Block &SolnBlk, const int &i, const int &j);
+// extern Chem2D_cState Flux_Viscous_n(Chem2D_Quad_Block &SolnBlk, const int &Orient, const int &i, const int &j);
+// extern Chem2D_cState Flux_Viscous_EastFace_Diamond(Chem2D_Quad_Block &SolnBlk, const int &i, const int &j);
+// extern Chem2D_cState Flux_Viscous_NorthFace_Diamond(Chem2D_Quad_Block &SolnBlk, const int &i, const int &j);
 
 /* Low-Reynolds number formulation;                                  */
 /* Now temperarily set 5~7 nodes closest to the wall inside y+ <2.5  */
@@ -2792,8 +2544,9 @@ extern void Low_ReynoldsNumber_Formulation(Chem2D_Quad_Block &SolnBlk,
                                            Chem2D_Input_Parameters &Input_Parameters, 
                                            int i, int j);
 
-extern double  Wall_Distance(Chem2D_Quad_Block &SolnBlk, Chem2D_Input_Parameters &Input_Parameters, int i, int j);
+// extern double  Wall_Distance(Chem2D_Quad_Block &SolnBlk, Chem2D_Input_Parameters &Input_Parameters, int i, int j);
 extern double Distance_to_Wall(Chem2D_Quad_Block &SolnBlk, const Vector2D X_cell);
+
 /**************************************************************************
  * Chem2D_Quad_Block -- Multiple Block External Subroutines for Mesh.     * 
  * Chem2DQuadGrid.cc                                                      *
@@ -2838,6 +2591,7 @@ extern int Chem2DQuadSolver(char *Input_File_Name_ptr, int batch_flag);
  * Chem2D_Tools -- Tools and stuff                                         *
  * Chem2DTools.cc                                                          *
  **************************************************************************/
+
 extern int Open_Time_Accurate_File(ofstream &Time_Accurate_File,
 				   char *File_Name,
 				   const int Append_to_Fileconst,
@@ -2848,7 +2602,7 @@ extern int Close_Time_Accurate_File(ofstream &Time_Accurate_File);
 extern void Output_to_Time_Accurate_File(ostream &Time_Accurate_File,
 					 const double &Time,
 					 const Chem2D_pState &Soln);
-
+  
 extern void Output_Ringleb_Solution(Chem2D_Quad_Block &SolnBlk,
 				    const int Block_Number,
 				    const int Output_Title,
@@ -2881,7 +2635,28 @@ extern void Output_Flat_Plate(Chem2D_Quad_Block &SolnBlk,
 			      double &l2_norm,
 			      double &max_norm);
 			      
+extern void Output_Driven_Cavity_Flow(Chem2D_Quad_Block &SolnBlk,
+				      const int Block_Number,
+				      const int Output_Title,
+				      ostream &Out_File_u,
+				      ostream &Out_File_v,
+				      const double &Re,
+				      const double &Vwall,
+				      const double &length);
 
+extern int Output_Quasi3D_Tecplot(Chem2D_Quad_Block *Soln_ptr,
+				  AdaptiveBlock2D_List &Soln_Block_List,
+				  Chem2D_Input_Parameters &IP,
+				  const int Number_of_Time_Steps,
+				  const double &Time);
+
+extern void Output_Quasi3D_Tecplot(Chem2D_Quad_Block &SolnBlk,
+				   Chem2D_Input_Parameters &IP,
+				   const int Number_of_Time_Steps,
+				   const double &Time,
+				   const int Block_Number,
+				   const int Output_Title,
+				   ostream &Out_File);
 
 /*************** END CHEM2D ***************************************/
 

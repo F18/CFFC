@@ -10,7 +10,7 @@
 ###############################################################
 
 build_f90=1
-build_python=2
+build_python=0
 build_matlab = 0
 
 all:

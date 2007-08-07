@@ -6,7 +6,7 @@ echo "***************************************************"
 echo "        Testing CK2CTI                             "
 echo "***************************************************"
 echo " "
-BINDIR=/home/groth/CFFC/cantera/build/bin/i686-pc-linux-gnu
+BINDIR=/nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/bin/i686-pc-linux-gnu
 CK2CTI=$BINDIR/ck2cti
 /bin/rm  -f gri30.cti gri30a.cti gri30b.cti
 echo "...Test 1: Converting file gri30.inp..."

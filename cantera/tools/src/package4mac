@@ -60,9 +60,9 @@ cp -R -f $pylibdir/MixMaster/*.py $PYDIR/$mixname
 cp -f $pylibdir/ctml_writer.py $PYDIR
 cp -f ~/setup_cantera $CTDIR
 
-chmod +x /home/groth/CFFC/cantera/tools/src/postflight
-cp -f /home/groth/CFFC/cantera/tools/src/postflight $RESDIR
-cp -f /home/groth/CFFC/cantera/License.rtf $RESDIR
+chmod +x /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/tools/src/postflight
+cp -f /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/tools/src/postflight $RESDIR
+cp -f /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/License.rtf $RESDIR
 
 cp -R -f $pylibdir/numarray/*.py $NUMARRAYPYDIR/numarray
 cp -R -f $pylibdir/numarray/*.so $NUMARRAYPYDIR/numarray

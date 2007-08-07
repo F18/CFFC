@@ -853,6 +853,13 @@ class Dusty2D_pState {
     }
   }
 
+  int analytically_inverted_relaxation() { //this is needed for embeddedboundaries with gaussian2D
+    return 0;
+  }
+  void relax(double deltat, int stage, const Dusty2D_pState &W) {return;} //this is needed for embeddedboundaries with gaussian2D
+
+  double pressure() const {return p;} //added for compatibility with embeddedboundaries2D
+
 };
 
 /*!

@@ -88,7 +88,7 @@ typedef  int          ftnlen;       // Fortran hidden string length type
 
 // If this is defined, then python will not be assumed to be
 // present to support conversions
-/* #undef HAS_NO_PYTHON */
+#define HAS_NO_PYTHON 1
 
 //--------------------- Cantera -----------------------------------
 // This is the data pathway used to locate the top of the

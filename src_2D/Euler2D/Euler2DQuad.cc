@@ -21,5 +21,6 @@
  * Euler2D_Quad_Block -- Create storage for the static variables.     *
  **********************************************************************/
 int Euler2D_Quad_Block::residual_variable = 1;
+int Euler2D_Quad_Block::Number_of_Residual_Norms = 1;
 int Euler2D_Quad_Block::Flow_Type = FLOWTYPE_INVISCID;
 

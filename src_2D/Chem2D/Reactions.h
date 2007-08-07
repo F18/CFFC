@@ -19,17 +19,11 @@ class Reaction_set;
 
 using namespace std;
 
-#ifndef _MATH_MACROS_INCLUDED
 #include "../Math/Math.h"
-#endif // _MATH_MACROS_INCLUDED
-
-#ifndef _GAS_CONSTANTS_INCLUDED
+#include "../Math/Matrix.h"
+#include "../Math/Tensor2D.h"
 #include "../Physics/GasConstants.h"
-#endif // _GAS_CONSTANTS_INCLUDED
-
-#ifndef _CHEM2D_STATE_INCLUDED
 #include "Chem2DState.h"
-#endif // _CHEM2D_STATE_INCLUDED   
 
 //Calorie to Joule conversion
 #define CAL_TO_JOULE 4.1868 // 4.1868 Joules = 1 calorie
@@ -80,8 +74,10 @@ public:
   
   //get reaction rate coefficients
   double kf(const double &Temp) const;
-  double kf(const double &Temp,double &H2, double &O2, double &N2)const; //for H2&O2
+  double dkf_dT(const double &Temp) const;
+  double kf(const double &Temp, const double &H2, const  double &O2, const double &N2)const; //for H2&O2
   double kb(const double &Temp) const;
+  double dkb_dT(const double &Temp) const;
   double keq(const Chem2D_pState &W, const double &Temp) const;
 
   //Determine change in Gibbs free energy
@@ -99,8 +95,13 @@ inline double React_data::kf(const double &Temp) const{
   return A*pow(Temp,n)*exp(-E/(R_UNIVERSAL*Temp));
 }
 
+/****** derivative of forward reaction coef (kf) wrt to Temperature *********/
+inline double React_data::dkf_dT(const double &Temp) const{
+  return A*pow(Temp,n-1)*exp(-E/(R_UNIVERSAL*Temp))*(n + E/(R_UNIVERSAL*Temp));
+}
+
 /*************** forward reaction kf for 2Step H2 ***********************/
-inline double React_data::kf(const double &Temp,double &H2, double &O2, double &N2) const{
+inline double React_data::kf(const double &Temp, const double &H2, const double &O2, const double &N2) const{
   //equivalence ratio
   double stoich = 4.0/(32.0+3.76*28.0);
   double phi = (H2/(O2+N2))/stoich;
@@ -125,6 +126,11 @@ inline double React_data::kf(const double &Temp,double &H2, double &O2, double &
 /*************** backward reaction coef (kb) ****************************/
 inline double React_data::kb(const double &Temp) const{
   return Ab*pow(Temp,n)*exp(-E/(R_UNIVERSAL*Temp));
+}
+
+/****** derivative of backward reaction coef (kb) wrt to Temperature *********/
+inline double React_data::dkb_dT(const double &Temp) const{
+   return Ab*pow(Temp,n-1)*exp(-E/(R_UNIVERSAL*Temp))*(n + E/(R_UNIVERSAL*Temp));
 }
 
 /***************** equilibrium coef Keq ********************************/
@@ -166,8 +172,10 @@ inline istream &operator >> (istream &in_file, React_data &W) {
 //Hardcoded Reaction Systems
 #define CH4_1STEP 1
 #define CH4_2STEP 2
+#define H2O2_1STEP 5
 #define H2O2_2STEP 3
 #define H2O2_8STEP 4
+
 
 // User defined flag
 #define USER 100
@@ -175,6 +183,14 @@ inline istream &operator >> (istream &in_file, React_data &W) {
 class Reaction_set{
 
 private:  
+
+  //Temp vectors used during omega & dSwdU
+  double *kf; 
+  double *kb; 
+  double *M; 
+  double *c; 
+  double *c_denom; 
+
 protected:
 public: 
   int reactset_flag;       //Reaction Set Flag
@@ -186,7 +202,8 @@ public:
   string Reaction_system;  //Reaction system name
 
   Reaction_set(){ reactset_flag=0; num_reactions=0; num_species=0; 
-  num_react_species=0; reactions = NULL; species = NULL;}
+  num_react_species=0; reactions = NULL; species = NULL; 
+  kf=NULL; kb=NULL; M=NULL; c=NULL; c_denom=NULL;}
                       
   /******** Constructors *******************/
   //for hardcoded reactions
@@ -194,6 +211,15 @@ public:
   //for user defined
   void set_species(string *, int);
   void set_reactions(int &,string*,double*,double*,double*);
+
+  //setup storage after num_reactions & num_species set.
+  void set_storage(void){
+    kf = new double[num_reactions];        
+    kb = new double[num_reactions];
+    M  = new double[num_react_species];
+    c  = new double[num_react_species];
+    c_denom = new double[num_react_species]; 
+  }
 
   //Operator Overloading 
   Reaction_set& operator =(const Reaction_set &W);
@@ -206,7 +232,7 @@ public:
   void omega(Chem2D_cState &U, const Chem2D_pState &W, const int Flow_Type ) const;
 
   //Jacobian ( flag true for cfl calc)
-  void dSwdU(DenseMatrix &dSwdU,const Chem2D_pState &W, const bool &CFL_flag, const int Flow_Type) const;
+  void dSwdU(DenseMatrix &dSwdU,const Chem2D_pState &W, const bool &CFL_flag, const int Flow_Type, const int Solver_type) const;
 
   void Deallocate();
 
@@ -219,14 +245,13 @@ public:
 /**************** Destructor *******************************************/
 inline void Reaction_set::Deallocate(){
   //deallocate memory
-  if(reactions != NULL){
-    delete[] reactions;
-    reactions = NULL;
-  }
-  if(species != NULL){
-    delete[] species;
-    species = NULL;
-  }
+  if(reactions != NULL){  delete[] reactions; reactions = NULL;  }
+  if(species != NULL){    delete[] species;   species = NULL;  }
+  if(kf != NULL){  delete[] kf; kf = NULL;}
+  if(kb != NULL){  delete[] kb; kb = NULL;}
+  if(M != NULL){  delete[] M; M = NULL;}
+  if(c != NULL){  delete[] c; c = NULL;}
+  if(c_denom != NULL){  delete[] c_denom; c_denom = NULL;}
 }
 
 

@@ -28,7 +28,7 @@ SRCS = cantera/private/ctmethods.cpp \
        cantera/private/write.cpp
 
 
-CANTERA_LIBDIR=/home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu
+CANTERA_LIBDIR=/nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu
 os_is_win=0
 
 ifeq ($(os_is_win),0)
@@ -52,7 +52,7 @@ all: cantera/ctmethods.mexglx
 
 cantera/ctmethods.mexglx: $(SRCS) $(LIBDEPS) Makefile
 ifeq ($(os_is_win),0)
-	/usr/bin/python2 setup_matlab.py /usr/local/cantera/bin /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu clib '$(LIBS)'
+	/usr/bin/python2 setup_matlab.py /usr/local/cantera/bin /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu clib '$(LIBS)'
 else
 	/usr/bin/python2 setup_winmatlab.py
 endif
@@ -140,8 +140,8 @@ install:
 	/usr/bin/install -c cantera/examples/*.m /usr/local/cantera/demos/matlab
 	/usr/bin/install -c -d /usr/local/cantera/tutorials/matlab
 	/usr/bin/install -c cantera/tutorial/*.m /usr/local/cantera/tutorials/matlab
-	chown -R groth /usr/local/cantera/demos/matlab
-	chown -R groth /usr/local/cantera/tutorials/matlab
+	chown -R charestm /usr/local/cantera/demos/matlab
+	chown -R charestm /usr/local/cantera/tutorials/matlab
 
 
 clean:

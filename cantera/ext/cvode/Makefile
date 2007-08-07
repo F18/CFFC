@@ -21,22 +21,22 @@
 #
 do_ranlib = 1
 
-all: /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/libcvode.a
+all: /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/libcvode.a
    
 COMPILER = gcc
 
-OPTS = -I../include -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/home/groth/CFFC/sparselib++/include -I/home/groth/CFFC/sparselib++/iml/include -I/home/groth/CFFC/sparselib++/mv/include -I/home/groth/CFFC/bpkit/src  $(CXX_OPT)
+OPTS = -I../include -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/iml/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/mv/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/bpkit/src  $(CXX_OPT)
 
 OBJS = source/cvode.o source/cvdense.o source/dense.o source/cvband.o \
        source/band.o source/cvdiag.o source/cvspgmr.o source/spgmr.o  \
        source/iterativ.o source/cvbandpre.o source/nvector.o source/llnlmath.o
 
 
-/home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/libcvode.a: $(OBJS)
-	$(RM) /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/libcvode.a
-	(ar rcv /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/libcvode.a $(OBJS))
+/nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/libcvode.a: $(OBJS)
+	$(RM) /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/libcvode.a
+	(ar rcv /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/libcvode.a $(OBJS))
 ifeq ($(do_ranlib),1)
-	ranlib /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/libcvode.a
+	ranlib /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/libcvode.a
 endif
 
 source/cvode.o: source/cvode.c include/cvode.h include/llnltyps.h \
@@ -91,7 +91,7 @@ source/llnlmath.o: source/llnlmath.c include/llnlmath.h include/llnltyps.h
 	(cd source; $(COMPILER) $(OPTS) -c llnlmath.c)
 
 clean:
-	$(RM)  /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/libcvode.a
+	$(RM)  /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/libcvode.a
 	$(RM)  $(OBJS)
 
 depends:

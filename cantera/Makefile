@@ -3,7 +3,7 @@ version = 1.7.0
 ct = $(export_dir)/cantera-$(version)
 build_ck = 1
 build_clib = 1
-build_python = 2
+build_python = 0
 build_f90 = 1
 build_matlab = 0
 os_is_win = 0
@@ -46,12 +46,12 @@ demos: example_codes
 
 # build the Cantera static libraries
 kernel:  
-	/usr/bin/install -c -d /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu
-	/usr/bin/install -c -d /home/groth/CFFC/cantera/build/bin/i686-pc-linux-gnu
+	/usr/bin/install -c -d /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu
+	/usr/bin/install -c -d /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/bin/i686-pc-linux-gnu
 	cd ext; make
 	cd Cantera/src; make
 #ifeq ($(do_ranlib),1)
-#	ranlib /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/*.a
+#	ranlib /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/*.a
 #endif
 
 # build the user library
@@ -82,7 +82,7 @@ utils:
 kernel-install:
 	/usr/bin/install -c -d /usr/local/cantera/lib
 	rm -fR /usr/local/cantera/lib/*
-	( for ilib in /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/*.a ; do  \
+	( for ilib in /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/*.a ; do  \
 	  /usr/bin/install -c -m 644 $${ilib} /usr/local/cantera/lib ; \
           done )
 ifeq ($(do_ranlib),1)
@@ -97,12 +97,12 @@ endif
 win-kernel-install:
 	/usr/bin/install -c -d /usr/local/cantera/lib
 	$(RMDIRTREE) /usr/local/cantera/lib/*
-	( for ilib in /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/*.lib ; do  \
+	( for ilib in /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/*.lib ; do  \
           /usr/bin/install -c -m 644 $${ilib} /usr/local/cantera/lib ;  done )
 ifeq ($(use_dll),1)
-	( for ilib in /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/*.dll ; do  \
+	( for ilib in /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/*.dll ; do  \
           /usr/bin/install -c -m 644 $${ilib} /usr/local/cantera/lib ;  done )
-	( for ilib in /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/*.exp ; do  \
+	( for ilib in /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/*.exp ; do  \
           /usr/bin/install -c -m 644 $${ilib} /usr/local/cantera/lib ;  done )
 endif
 
@@ -172,8 +172,8 @@ ifeq ($(build_python),2)
             /usr/bin/install -c $${ihhh} /usr/local/cantera/tutorials/python ; \
             echo "/usr/bin/install -c $${ihhh} /usr/local/cantera/tutorials/python" ; \
           done )
-	chown -R groth /usr/local/cantera/demos/python
-	chown -R groth /usr/local/cantera/tutorials/python
+	chown -R charestm /usr/local/cantera/demos/python
+	chown -R charestm /usr/local/cantera/tutorials/python
 else
 	@echo 'NOT installing Python demos or tutorials'
 endif
@@ -207,7 +207,7 @@ finish-install:
 	( for ihhh in Cantera/fortran/f77demos/*.txt ; do  \
           /usr/bin/install -c $${ihhh} /usr/local/cantera/demos/f77 ;  done )
 	/usr/bin/install -c Cantera/fortran/f77demos/f77demos.mak /usr/local/cantera/demos/f77/Makefile
-	chown -R groth /usr/local/cantera/demos/f77
+	chown -R charestm /usr/local/cantera/demos/f77
 
 ifeq ($(os_is_win),0)
 
@@ -230,13 +230,13 @@ ifneq ($(build_python),0)
 ifeq ($(build_python),2)
 	chmod +x /usr/local/cantera/bin/mixmaster
 endif
-	cp -f "/home/groth/setup_cantera" "/usr/local/cantera/bin"
+	cp -f "/nfs/kris/d1/people/charestm/setup_cantera" "/usr/local/cantera/bin"
 endif
 else
 	cd Cantera/fortran/f77demos; sed s'/isentropic/ctlib/g' isentropic.dsp > ctlib.dsp
 	( for ihhh in Cantera/fortran/f77demos/*.dsp ; do  \
           /usr/bin/install -c $${ihhh} /usr/local/cantera/demos/f77 ;  done )
-	( for ihhh in  /home/groth/CFFC/cantera/build/bin/i686-pc-linux-gnu/* ; do  \
+	( for ihhh in  /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/bin/i686-pc-linux-gnu/* ; do  \
           /usr/bin/install -c $${ihhh} /usr/local/cantera/bin ;  done )
 endif
 
@@ -273,7 +273,7 @@ uninstall:
 	cd tools; make uninstall
 
 clean:
-	$(RMDIRTREE) *.*~ /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/*.* build/include/cantera/config.h
+	$(RMDIRTREE) *.*~ /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/*.* build/include/cantera/config.h
 	cd Cantera; make clean
 	cd tools; make clean
 	cd ext; make clean

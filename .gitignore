@@ -15,6 +15,7 @@
 *.plt
 *.e*
 *.o*
+tecplot.phy
 .gm_mpi
 *.core
 
@@ -52,6 +53,7 @@ levelset2D
 navierstokes2D
 embeddedboundaries2D
 gaussian2D
+rte2D
 
 # 3D executables
 cffc3D

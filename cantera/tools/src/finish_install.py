@@ -3,7 +3,7 @@ prefix = '/usr/local/cantera'
 pycmd = '/usr/bin/python2' # sys.argv[2]
 localinst = 0
 
-build_python = 2
+build_python = 0
 build_matlab = 0
 
 bindir = '/usr/local/cantera/bin'
@@ -13,7 +13,7 @@ demodir = '/usr/local/cantera/demos'
 datadir = '/usr/local/cantera/data'
 templdir = '/usr/local/cantera/templates'
 ctdir = '/usr/local/cantera'
-home = '/home/groth'
+home = '/nfs/kris/d1/people/charestm'
 isdarwin = '0'
 numarray_home = ''
 

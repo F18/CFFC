@@ -65,6 +65,10 @@ inline char *ICEMCFD_Version() {
   string_ptr = "ICEMCFD Version, Built using ICEMCFD Version 4.3 Libraries, ICEM CFD Engineering.";
 #elif _ICEMCFD_V50
   string_ptr = "ICEMCFD Version, Built using ANSYS ICEM CFD Version 5.0 Libraries, ANSYS, Inc.";
+#elif _ICEMCFD_V10
+  string_ptr = "ICEMCFD Version, Built using ANSYS ICEM CFD Version 10 Libraries, ANSYS, Inc.";
+#elif _ICEMCFD_V11
+  string_ptr = "ICEMCFD Version, Built using ANSYS ICEM CFD Version 11 Libraries, ANSYS, Inc.";
 #else
   string_ptr = "ICEMCFD Version, Built Incorrectly as not a proper _ICEMCFD_VERSION ";
 #endif

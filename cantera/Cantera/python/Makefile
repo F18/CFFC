@@ -12,7 +12,7 @@
 have_python_site_package_topdir=0
 python_site_package_topdir=/usr/local/cantera
 
-CANTERA_LIBDIR= /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu
+CANTERA_LIBDIR= /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu
 LIB_DEPS = $(CANTERA_LIBDIR)/libcantera.a $(CANTERA_LIBDIR)/libzeroD.a \
            $(CANTERA_LIBDIR)/liboneD.a \
            $(CANTERA_LIBDIR)/libtransport.a \

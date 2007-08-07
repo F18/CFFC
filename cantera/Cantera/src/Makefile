@@ -13,9 +13,9 @@
 
 INCDIR      = ../../build/include/cantera/kernel
 INSTALL_TSC = ../../bin/install_tsc
-CANTERA_LIB = /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/libcantera.a
+CANTERA_LIB = /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/libcantera.a
 #LOCAL_DEFNS=-DDEBUG_PATHS -DDEBUG_MULTIPHASE_EQUIL
-CXX_FLAGS   = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/home/groth/CFFC/sparselib++/include -I/home/groth/CFFC/sparselib++/iml/include -I/home/groth/CFFC/sparselib++/mv/include -I/home/groth/CFFC/bpkit/src  $(CXX_OPT) $(LOCAL_DEFNS)
+CXX_FLAGS   = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D_NO_ICEMCFD_VERSION -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/iml/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/sparselib++/mv/include -I/nfs/kris/d1/people/charestm/Programs/CFFC/bpkit/src  $(CXX_OPT) $(LOCAL_DEFNS)
 EXT         = ../../ext
 do_ranlib = 1
 USE_SUNDIALS = 0
@@ -172,7 +172,7 @@ flow1D:
 
 CXX_LIBS = 
 CXX_INCLUDES =  -I.
-CANTERA_LIB = /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/libcantera.a
+CANTERA_LIB = /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/libcantera.a
 
 DEPENDS = $(ALL_OBJ:.o=.d)
 SRCS = $(ALL_OBJ:.o=.cpp)

@@ -6,7 +6,7 @@
 .SUFFIXES :
 .SUFFIXES : .f .d .o
 
-LIB = /home/groth/CFFC/cantera/build/lib/i686-pc-linux-gnu/librecipes.a
+LIB = /nfs/kris/d1/people/charestm/Programs/CFFC/cantera/build/lib/i686-pc-linux-gnu/librecipes.a
 
 do_ranlib = 1
 

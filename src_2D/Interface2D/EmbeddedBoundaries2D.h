@@ -70,6 +70,16 @@ using namespace std;
 #include "../Math/LinearSystems.h"
 #endif // _LINEARSYSTEMS_INCLUDED
 
+#ifndef _VECTOR2D_INCLUDED
+#include "../Math/Vector2D.h"
+#endif // _VECTOR2D_INCLUDED
+
+// Include the System header file.
+
+#ifndef _SYSTEM_LINUX_INCLUDED
+#include "../System/System_Linux.h"
+#endif // _SYSTEM_LINUX_INCLUDED
+
 // Define various mesh adjustment constants.
 
 #define CELL_TYPE_QUADRILATERAL            0
@@ -86,7 +96,7 @@ using namespace std;
 
 // (Parallel) Debugging option.
 
-#define _EB_PARALLEL_DEBUG_
+//#define _EB_PARALLEL_DEBUG_
 
 /*!
  * class: Adjusted_Mesh_Quad_Block
@@ -1007,6 +1017,17 @@ public:
 				 double &max_norm_cf,
 				 double &area_cf,
 				 int &numberofactivecells_cf);
+  //! Calculate net force.
+  Vector2D Net_Force(void);
+
+  //! Calculate net pressure force.
+  Vector2D Net_Pressure_Force(void);
+
+  //! Output Data for Couette Case.
+  int Output_Couette(void);
+
+  //! Calculate Cl and Cd for cylinder cases.
+  int Output_Cylinder_Drag(void);
 
   //! Determine and write aerodynamic coefficients.
   int Output_Aerodynamic_Coefficients_Tecplot(const int &number_of_time_steps,
@@ -1305,6 +1326,19 @@ Construct_Interface_Component_List(void) {
 
     // Construct the interface component.
     switch(Interface_Component_List[ni].Type) {
+    case INTERFACE_LINE :
+      // Create line
+      Create_Spline_Line(Interface_Component_List[ni].Spline,
+			 IP->Interface_IP.Component_List[ni].Spline.Xp[0]-Vector2D(Interface_Component_List[ni].Length1/2.0,0.0),
+			 IP->Interface_IP.Component_List[ni].Spline.Xp[0]+Vector2D(Interface_Component_List[ni].Length1/2.0,0.0),
+			 2);
+      // Set boundary condition.
+      Interface_Component_List[ni].Spline.setBCtype(Interface_Component_List[ni].BC_Type);
+      // Initialize the interface velocity function.
+      Interface_Component_List[ni].Initialize_Velocity_Function(Interface_Component_List[ni].Motion);
+      // Determine the reference point (centroid) of the interface.
+      //Interface_Component_List[ni].Centroid();
+      break;
     case INTERFACE_CIRCLE :
       // Create circular spline.
       Create_Spline_Circular_Arc(Interface_Component_List[ni].Spline,
@@ -1454,7 +1488,7 @@ Construct_Interface_Component_List(void) {
       Interface_Component_List[ni].Centroid();
       // Set flow-field.
       NASA_Rotor_67.getPstateREL_up(IP->Wo,IP->Rotor_Percent_Span);
-      IP->Pressure = IP->Wo.p;
+      IP->Pressure = IP->Wo.pressure(); //I had to change this because p isn't a double for me. ~james
       IP->Temperature = IP->Wo.T();
       IP->Mach_Number = NASA_Rotor_67.getMachREL_up(IP->Rotor_Percent_Span);
       IP->Flow_Angle = atan2(IP->Wo.v.y,IP->Wo.v.x); 
@@ -2255,6 +2289,9 @@ template <class cState, class pState, class Quad_Soln_Block, class Quad_Soln_Inp
 int EmbeddedBoundaries2D<cState, pState, Quad_Soln_Block, Quad_Soln_Input_Parameters>::
 Mesh_Adjustment_First(const int &nb) {
 
+  double rel_tol;
+  int count;
+
   // Do not adjust if no interfaces have been defined.
   if (!Interface_Union_List.Ni) return 0;
 
@@ -2300,7 +2337,7 @@ Mesh_Adjustment_First(const int &nb) {
 		  } else {
 		    Xm2 = HALF*(Xm1 + Local_SolnBlk[nb].Grid.Node[i][j+1].X);
 		  }
-		  intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp);
+		  intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp,TOLER*abs(Xm2-Xm1));
 		  if (intersect_flag && abs(Xp-Xm1) < abs(Adjustment_Data[nb].Xnorth[i][j]-Xm1)) {
 		    Adjustment_Data[nb].intersect_north[i][j] = intersect_flag;
 		    Adjustment_Data[nb].Xnorth[i][j] = Xp;
@@ -2316,7 +2353,7 @@ Mesh_Adjustment_First(const int &nb) {
 		    } else {
 		      Xm2 = HALF*(Xm1 + Local_SolnBlk[nb].Grid.Node[i][j-1].X);
 		    }
-		    intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp);
+		    intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp,TOLER*abs(Xm2-Xm1));
 		    if (intersect_flag && abs(Xp-Xm1) < abs(Adjustment_Data[nb].Xsouth[i][j]-Xm1)) {
 		      Adjustment_Data[nb].intersect_south[i][j] = intersect_flag;
 		      Adjustment_Data[nb].Xsouth[i][j] = Xp;
@@ -2324,7 +2361,7 @@ Mesh_Adjustment_First(const int &nb) {
 		  }
 		} else {
 		  Xm2 = Xm1 - HALF*(Local_SolnBlk[nb].Grid.Node[i][j+1].X - Xm1);
-		  intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp);
+		  intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp,TOLER*abs(Xm2-Xm1));
 		  if (intersect_flag && abs(Xp-Xm1) < abs(Adjustment_Data[nb].Xsouth[i][j]-Xm1)) {
 		    Adjustment_Data[nb].intersect_south[i][j] = intersect_flag;
 		    Adjustment_Data[nb].Xsouth[i][j] = Xp;
@@ -2339,7 +2376,7 @@ Mesh_Adjustment_First(const int &nb) {
 		  } else {
 		    Xm2 = HALF*(Xm1 + Local_SolnBlk[nb].Grid.Node[i+1][j].X);
 		  }
-		  intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp);
+		  intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp,TOLER*abs(Xm2-Xm1));
 		  if (intersect_flag && abs(Xp-Xm1) < abs(Adjustment_Data[nb].Xeast[i][j]-Xm1)) {
 		    Adjustment_Data[nb].intersect_east[i][j] = intersect_flag;
 		    Adjustment_Data[nb].Xeast[i][j] = Xp;
@@ -2355,7 +2392,7 @@ Mesh_Adjustment_First(const int &nb) {
 		    } else {
 		      Xm2 = HALF*(Xm1 + Local_SolnBlk[nb].Grid.Node[i-1][j].X);
 		    }
-		    intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp);
+		    intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp,TOLER*abs(Xm2-Xm1));
 		    if (intersect_flag && abs(Xp-Xm1) < abs(Adjustment_Data[nb].Xwest[i][j]-Xm1)) {
 		      Adjustment_Data[nb].intersect_west[i][j] = intersect_flag;
 		      Adjustment_Data[nb].Xwest[i][j] = Xp;
@@ -2378,7 +2415,7 @@ Mesh_Adjustment_First(const int &nb) {
 		  } else {
 		    Xm2 = HALF*(Xm1 + Local_SolnBlk[nb].Grid.Node[i+1][j+1].X);
 		  }
-		  intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp);
+		  intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp,TOLER*abs(Xm2-Xm1));
 		  if (intersect_flag && abs(Xp-Xm1) < abs(Adjustment_Data[nb].Xnorth[i+1][j]-Xm1)) {
 		    Adjustment_Data[nb].intersect_north[i+1][j] = intersect_flag;
 		    Adjustment_Data[nb].Xnorth[i+1][j] = Xp;
@@ -2394,7 +2431,7 @@ Mesh_Adjustment_First(const int &nb) {
 		    } else {
 		      Xm2 = HALF*(Xm1 + Local_SolnBlk[nb].Grid.Node[i+1][j-1].X);
 		    }
-		    intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp);
+		    intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp,TOLER*abs(Xm2-Xm1));
 		    if (intersect_flag && abs(Xp-Xm1) < abs(Adjustment_Data[nb].Xsouth[i+1][j]-Xm1)) {
 		      Adjustment_Data[nb].intersect_south[i+1][j] = intersect_flag;
 		      Adjustment_Data[nb].Xsouth[i+1][j] = Xp;
@@ -2410,7 +2447,7 @@ Mesh_Adjustment_First(const int &nb) {
 		  } else {
 		    Xm2 = HALF*(Xm1 + Local_SolnBlk[nb].Grid.Node[i][j].X);
 		  }
-		  intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp);
+		  intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp,TOLER*abs(Xm2-Xm1));
 		  if (intersect_flag && abs(Xp-Xm1) < abs(Adjustment_Data[nb].Xwest[i+1][j]-Xm1)) {
 		    Adjustment_Data[nb].intersect_west[i+1][j] = intersect_flag;
 		    Adjustment_Data[nb].Xwest[i+1][j] = Xp;
@@ -2425,7 +2462,7 @@ Mesh_Adjustment_First(const int &nb) {
 		Xm1 = Local_SolnBlk[nb].Grid.Node[i][j+1].X;
 		// NORTH edge.
 		Xm2 = Xm1 + HALF*(Xm1 - Local_SolnBlk[nb].Grid.Node[i][j].X);
-		intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp);
+		intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp,TOLER*abs(Xm2-Xm1));
 		if (intersect_flag && abs(Xp-Xm1) < abs(Adjustment_Data[nb].Xnorth[i][j+1]-Xm1)) {
 		  Adjustment_Data[nb].intersect_north[i][j+1] = intersect_flag;
 		  Adjustment_Data[nb].Xnorth[i][j+1] = Xp;
@@ -2439,7 +2476,7 @@ Mesh_Adjustment_First(const int &nb) {
 		  } else {
 		    Xm2 = HALF*(Xm1 + Local_SolnBlk[nb].Grid.Node[i][j].X);
 		  }
-		  intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp);
+		  intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp,TOLER*abs(Xm2-Xm1));
 		  if (intersect_flag && abs(Xp-Xm1) < abs(Adjustment_Data[nb].Xsouth[i][j+1]-Xm1)) {
 		    Adjustment_Data[nb].intersect_south[i][j+1] = intersect_flag;
 		    Adjustment_Data[nb].Xsouth[i][j+1] = Xp;
@@ -2454,7 +2491,7 @@ Mesh_Adjustment_First(const int &nb) {
 		  } else {
 		    Xm2 = HALF*(Xm1 + Local_SolnBlk[nb].Grid.Node[i+1][j+1].X);
 		  }
-		  intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp);
+		  intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp,TOLER*abs(Xm2-Xm1));
 		  if (intersect_flag && abs(Xp-Xm1) < abs(Adjustment_Data[nb].Xeast[i][j+1]-Xm1)) {
 		    Adjustment_Data[nb].intersect_east[i][j+1] = intersect_flag;
 		    Adjustment_Data[nb].Xeast[i][j+1] = Xp;
@@ -2470,7 +2507,7 @@ Mesh_Adjustment_First(const int &nb) {
 		    } else {
 		      Xm2 = HALF*(Xm1 + Local_SolnBlk[nb].Grid.Node[i-1][j+1].X);
 		    }
-		    intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp);
+		    intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp,TOLER*abs(Xm2-Xm1));
 		    if (intersect_flag && abs(Xp-Xm1) < abs(Adjustment_Data[nb].Xwest[i][j+1]-Xm1)) {
 		      Adjustment_Data[nb].intersect_west[i][j+1] = intersect_flag;
 		      Adjustment_Data[nb].Xwest[i][j+1] = Xp;
@@ -2487,7 +2524,7 @@ Mesh_Adjustment_First(const int &nb) {
 		Xm1 = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X;
 		// NORTH edge.
 		Xm2 = Xm1 + HALF*(Xm1 - Local_SolnBlk[nb].Grid.Node[i+1][j].X);
-		intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp);
+		intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp,TOLER*abs(Xm2-Xm1));
 		if (intersect_flag && abs(Xp-Xm1) < abs(Adjustment_Data[nb].Xnorth[i+1][j+1]-Xm1)) {
 		  Adjustment_Data[nb].intersect_north[i+1][j+1] = intersect_flag;
 		  Adjustment_Data[nb].Xnorth[i+1][j+1] = Xp;
@@ -2501,7 +2538,7 @@ Mesh_Adjustment_First(const int &nb) {
 		  } else {
 		    Xm2 = HALF*(Xm1 + Local_SolnBlk[nb].Grid.Node[i+1][j].X);
 		  }
-		  intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp);
+		  intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp,TOLER*abs(Xm2-Xm1));
 		  if (intersect_flag && abs(Xp-Xm1) < abs(Adjustment_Data[nb].Xsouth[i+1][j+1]-Xm1)) {
 		    Adjustment_Data[nb].intersect_south[i+1][j+1] = intersect_flag;
 		    Adjustment_Data[nb].Xsouth[i+1][j+1] = Xp;
@@ -2516,7 +2553,7 @@ Mesh_Adjustment_First(const int &nb) {
 		  } else {
 		    Xm2 = HALF*(Xm1 + Local_SolnBlk[nb].Grid.Node[i][j+1].X);
 		  }
-		  intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp);
+		  intersect_flag = Line_Intersection(Xs1,Xs2,Xm1,Xm2,Xp,TOLER*abs(Xm2-Xm1));
 		  if (intersect_flag && abs(Xp-Xm1) < abs(Adjustment_Data[nb].Xwest[i+1][j+1]-Xm1)) {
 		    Adjustment_Data[nb].intersect_west[i+1][j+1] = intersect_flag;
 		    Adjustment_Data[nb].Xwest[i+1][j+1] = Xp;
@@ -2573,15 +2610,37 @@ Mesh_Adjustment_First(const int &nb) {
   // -> Nodes that coincide with their determined pierce-points are
   //    re-tagged as aligned and that node's adjustment flags are reset.
   // -> For nodes that intersect to the NORTH and SOUTH or the EAST and 
-  //    WEST, turn of intersect flags for both competing choices and
+  //    WEST, turn off intersect flags for both competing choices and
   //    adjust the neighbours instead (important for aerofoils).
   for (int j = Local_SolnBlk[nb].Grid.JNl-Local_SolnBlk[nb].Nghost; j <= Local_SolnBlk[nb].Grid.JNu+Local_SolnBlk[nb].Nghost; j++) {
     for (int i = Local_SolnBlk[nb].Grid.INl-Local_SolnBlk[nb].Nghost; i <= Local_SolnBlk[nb].Grid.INu+Local_SolnBlk[nb].Nghost; i++) {
+      //determine relative tolerance
+      count = 0;
+      rel_tol = 0.0;
+      if(j > Local_SolnBlk[nb].Grid.JNl-Local_SolnBlk[nb].Nghost) {
+	rel_tol += abs(Local_SolnBlk[nb].Grid.Node[i][j].X-Local_SolnBlk[nb].Grid.Node[i][j-1].X);
+	++count;
+      }
+      if(j < Local_SolnBlk[nb].Grid.JNu+Local_SolnBlk[nb].Nghost) {
+	rel_tol += abs(Local_SolnBlk[nb].Grid.Node[i][j].X-Local_SolnBlk[nb].Grid.Node[i][j+1].X);
+	++count;
+      }
+      if(i > Local_SolnBlk[nb].Grid.INl-Local_SolnBlk[nb].Nghost) {
+	rel_tol += abs(Local_SolnBlk[nb].Grid.Node[i][j].X-Local_SolnBlk[nb].Grid.Node[i-1][j].X);
+	++count;
+      }
+      if(i < Local_SolnBlk[nb].Grid.INu+Local_SolnBlk[nb].Nghost) {
+	rel_tol += abs(Local_SolnBlk[nb].Grid.Node[i][j].X-Local_SolnBlk[nb].Grid.Node[i+1][j].X);
+	++count;
+      }
+    
+      rel_tol = TOLER*rel_tol/((double)count);
+
       if (Mesh[nb].node_status[i][j] != NODE_STATUS_ALIGNED) {
-	if ((Adjustment_Data[nb].intersect_north[i][j] && abs(Adjustment_Data[nb].Xnorth[i][j]-Local_SolnBlk[nb].Grid.Node[i][j].X) < NANO) ||
-	    (Adjustment_Data[nb].intersect_south[i][j] && abs(Adjustment_Data[nb].Xsouth[i][j]-Local_SolnBlk[nb].Grid.Node[i][j].X) < NANO) ||
-	    (Adjustment_Data[nb].intersect_east[i][j] && abs(Adjustment_Data[nb].Xeast[i][j]-Local_SolnBlk[nb].Grid.Node[i][j].X) < NANO) ||
-	    (Adjustment_Data[nb].intersect_west[i][j] && abs(Adjustment_Data[nb].Xwest[i][j]-Local_SolnBlk[nb].Grid.Node[i][j].X) < NANO)) {
+	if ((Adjustment_Data[nb].intersect_north[i][j] && abs(Adjustment_Data[nb].Xnorth[i][j]-Local_SolnBlk[nb].Grid.Node[i][j].X) < rel_tol) ||
+	    (Adjustment_Data[nb].intersect_south[i][j] && abs(Adjustment_Data[nb].Xsouth[i][j]-Local_SolnBlk[nb].Grid.Node[i][j].X) < rel_tol) ||
+	    (Adjustment_Data[nb].intersect_east[i][j] && abs(Adjustment_Data[nb].Xeast[i][j]-Local_SolnBlk[nb].Grid.Node[i][j].X) < rel_tol) ||
+	    (Adjustment_Data[nb].intersect_west[i][j] && abs(Adjustment_Data[nb].Xwest[i][j]-Local_SolnBlk[nb].Grid.Node[i][j].X) < rel_tol)) {
 	  Mesh[nb].node_status[i][j] = NODE_STATUS_ALIGNED;
 	  Adjustment_Data[nb].intersect_north[i][j] = OFF;
 	  Adjustment_Data[nb].intersect_south[i][j] = OFF;
@@ -2589,25 +2648,25 @@ Mesh_Adjustment_First(const int &nb) {
 	  Adjustment_Data[nb].intersect_west[i][j] = OFF;
 	}
 	if (Adjustment_Data[nb].intersect_north[i][j] && j < Local_SolnBlk[nb].Grid.JNu+Local_SolnBlk[nb].Nghost) {
-	  if (abs(Adjustment_Data[nb].Xnorth[i][j]-Local_SolnBlk[nb].Grid.Node[i][j+1].X) < NANO) {
+	  if (abs(Adjustment_Data[nb].Xnorth[i][j]-Local_SolnBlk[nb].Grid.Node[i][j+1].X) < rel_tol) {
 	    Adjustment_Data[nb].intersect_north[i][j] = OFF;
 	    Mesh[nb].node_status[i][j+1] = NODE_STATUS_ALIGNED;
 	  }
 	}
 	if (Adjustment_Data[nb].intersect_south[i][j] && j > Local_SolnBlk[nb].Grid.JNl-Local_SolnBlk[nb].Nghost) {
-	  if (abs(Adjustment_Data[nb].Xsouth[i][j]-Local_SolnBlk[nb].Grid.Node[i][j-1].X) < NANO) {
+	  if (abs(Adjustment_Data[nb].Xsouth[i][j]-Local_SolnBlk[nb].Grid.Node[i][j-1].X) < rel_tol) {
 	    Adjustment_Data[nb].intersect_south[i][j] = OFF;
 	    Mesh[nb].node_status[i][j-1] = NODE_STATUS_ALIGNED;
 	  }
 	}
 	if (Adjustment_Data[nb].intersect_east[i][j] && i < Local_SolnBlk[nb].Grid.INu+Local_SolnBlk[nb].Nghost) {
-	  if (abs(Adjustment_Data[nb].Xeast[i][j]-Local_SolnBlk[nb].Grid.Node[i+1][j].X) < NANO) {
+	  if (abs(Adjustment_Data[nb].Xeast[i][j]-Local_SolnBlk[nb].Grid.Node[i+1][j].X) < rel_tol) {
 	    Adjustment_Data[nb].intersect_east[i][j] = OFF;
 	    Mesh[nb].node_status[i+1][j] = NODE_STATUS_ALIGNED;
 	  }
 	}
 	if (Adjustment_Data[nb].intersect_west[i][j] && i > Local_SolnBlk[nb].Grid.INl-Local_SolnBlk[nb].Nghost) {
-	  if (abs(Adjustment_Data[nb].Xwest[i][j]-Local_SolnBlk[nb].Grid.Node[i-1][j].X) < NANO) {
+	  if (abs(Adjustment_Data[nb].Xwest[i][j]-Local_SolnBlk[nb].Grid.Node[i-1][j].X) < rel_tol) {
 	    Adjustment_Data[nb].intersect_west[i][j] = OFF;
 	    Mesh[nb].node_status[i-1][j] = NODE_STATUS_ALIGNED;
 	  }
@@ -2653,7 +2712,7 @@ Mesh_Adjustment_First(const int &nb) {
     for (int i = Local_SolnBlk[nb].Grid.INl-Local_SolnBlk[nb].Nghost; i <= Local_SolnBlk[nb].Grid.INu+Local_SolnBlk[nb].Nghost; i++) {
       if (j < Local_SolnBlk[nb].Grid.JNu+Local_SolnBlk[nb].Nghost) {
 	if (Adjustment_Data[nb].intersect_north[i][j] && Adjustment_Data[nb].intersect_south[i][j+1]) {
- 	  if (abs(Adjustment_Data[nb].Xnorth[i][j]-Adjustment_Data[nb].Xsouth[i][j+1]) < NANO) {
+ 	  if (abs(Adjustment_Data[nb].Xnorth[i][j]-Adjustment_Data[nb].Xsouth[i][j+1]) < rel_tol) {
  	    Adjustment_Data[nb].intersect_south[i][j+1] = OFF;
  	    Adjustment_Data[nb].Xsouth[i][j+1] = Vector2D(MILLION,MILLION);
  	  }
@@ -2661,7 +2720,7 @@ Mesh_Adjustment_First(const int &nb) {
       }
       if (i < Local_SolnBlk[nb].Grid.INu+Local_SolnBlk[nb].Nghost) {
 	if (Adjustment_Data[nb].intersect_east[i][j] && Adjustment_Data[nb].intersect_west[i+1][j]) {
- 	  if (abs(Adjustment_Data[nb].Xeast[i][j]-Adjustment_Data[nb].Xwest[i+1][j]) < NANO) {
+ 	  if (abs(Adjustment_Data[nb].Xeast[i][j]-Adjustment_Data[nb].Xwest[i+1][j]) < rel_tol) {
  	    Adjustment_Data[nb].intersect_west[i+1][j] = OFF;
  	    Adjustment_Data[nb].Xwest[i+1][j] = Vector2D(MILLION,MILLION);
  	  }
@@ -4525,31 +4584,46 @@ Mesh_Adjustment_Finalize(const int &nb) {
   // Declare local variables.
   int error_flag;
 
-  // Special case for Ringleb's Flow.
+  int *BC_N(NULL), *BC_S(NULL), *BC_E(NULL), *BC_W(NULL);
+
+  // Special case for Ringleb's Flow and Flat Plate.
+  //    -  Jai says this greatly improves the quality
+  //       of ghost cells near an embedded boundary.
   if (Interface_Union_List[1].Type == INTERFACE_RINGLEB) {
     for (int i = 0; i < Local_SolnBlk[nb].Grid.NCi; i++) {
       Local_SolnBlk[nb].Grid.BCtypeS[i] = BC_REFLECTION;
     }
   } else if (Interface_Union_List[1].Type == INTERFACE_FLAT_PLATE) {
+    BC_N = new int[Local_SolnBlk[nb].Grid.NCi];
+    BC_S = new int[Local_SolnBlk[nb].Grid.NCi];
+    BC_E = new int[Local_SolnBlk[nb].Grid.NCj];
+    BC_W = new int[Local_SolnBlk[nb].Grid.NCj];
     for (int i = 0; i < Local_SolnBlk[nb].Grid.NCi; i++) {
+      BC_N[i] = Local_SolnBlk[nb].Grid.BCtypeN[i];
+      BC_S[i] = Local_SolnBlk[nb].Grid.BCtypeS[i];
       Local_SolnBlk[nb].Grid.BCtypeN[i] = BC_CONSTANT_EXTRAPOLATION;
       Local_SolnBlk[nb].Grid.BCtypeS[i] = BC_CONSTANT_EXTRAPOLATION;
     }
     for (int j = 0; j < Local_SolnBlk[nb].Grid.NCj; j++) {
+      BC_E[j] = Local_SolnBlk[nb].Grid.BCtypeE[j];
+      BC_W[j] = Local_SolnBlk[nb].Grid.BCtypeW[j];
       Local_SolnBlk[nb].Grid.BCtypeE[j] = BC_CONSTANT_EXTRAPOLATION;
       Local_SolnBlk[nb].Grid.BCtypeW[j] = BC_CONSTANT_EXTRAPOLATION;
     }
   }
 
-  // Compute the exterior nodes for the quadrilateral mesh block.
-  Update_Exterior_Nodes(Local_SolnBlk[nb].Grid);
-  //Update_Exterior_Nodes(nb);
+   // Compute the exterior nodes for the quadrilateral mesh block.
+   //Update_Exterior_Nodes(Local_SolnBlk[nb].Grid);
+   //Update_Exterior_Nodes(nb);
+
+  // Compute the cells for the quadrilateral mesh block.
+  Update_Cells(Local_SolnBlk[nb].Grid);
 
   // Update the exterior cell status and types.
   Update_Exterior_Cells(nb);
 
   // Compute the cells for the quadrilateral mesh block.
-  Update_Cells(Local_SolnBlk[nb].Grid);
+  //Update_Cells(Local_SolnBlk[nb].Grid);
 
   // Check to see if all cell areas are positive.
   error_flag = Check_Quad_Block(Local_SolnBlk[nb].Grid);
@@ -4562,14 +4636,21 @@ Mesh_Adjustment_Finalize(const int &nb) {
     }
   } else if (Interface_Union_List[1].Type == INTERFACE_FLAT_PLATE) {
     for (int i = 0; i < Local_SolnBlk[nb].Grid.NCi; i++) {
-      Local_SolnBlk[nb].Grid.BCtypeN[i] = BC_NONE;
-      Local_SolnBlk[nb].Grid.BCtypeS[i] = BC_NONE;
+      Local_SolnBlk[nb].Grid.BCtypeN[i] = BC_N[i];
+      Local_SolnBlk[nb].Grid.BCtypeS[i] = BC_S[i];
     }
     for (int j = 0; j < Local_SolnBlk[nb].Grid.NCj; j++) {
-      Local_SolnBlk[nb].Grid.BCtypeE[j] = BC_NONE;
-      Local_SolnBlk[nb].Grid.BCtypeW[j] = BC_NONE;
+      Local_SolnBlk[nb].Grid.BCtypeE[j] = BC_E[j];
+      Local_SolnBlk[nb].Grid.BCtypeW[j] = BC_W[j];
     }
   }
+
+  //delete arrays if needed
+  if(BC_N != NULL) {delete [] BC_N;}
+  if(BC_S != NULL) {delete [] BC_S;}
+  if(BC_E != NULL) {delete [] BC_E;}
+  if(BC_W != NULL) {delete [] BC_W;}
+
 
   // Mesh adjustment finalized.
   return 0;
@@ -4918,29 +4999,58 @@ Cell_Status_Test(const int &nb, const int &i, const int &j) {
 template <class cState, class pState, class Quad_Soln_Block, class Quad_Soln_Input_Parameters>
 int EmbeddedBoundaries2D<cState, pState, Quad_Soln_Block, Quad_Soln_Input_Parameters>::
 Check_Cell_Areas(const int &nb, const int &i, const int &j) {
+  double rel_tol = fabs(Local_SolnBlk[nb].Grid.area(i,j));
+  //ensure no area is less that TOLER times the area of
+  //its neighbour
   if (i > Local_SolnBlk[nb].ICl-Local_SolnBlk[nb].Nghost) {
     if (j > Local_SolnBlk[nb].JCl-Local_SolnBlk[nb].Nghost) {
-      if (Local_SolnBlk[nb].Grid.area(i-1,j-1) < TOLER*TOLER) return 1;
+      rel_tol = max(rel_tol,fabs(Local_SolnBlk[nb].Grid.area(i-1,j-1)));
     }
-    if (Local_SolnBlk[nb].Grid.area(i-1,j) < TOLER*TOLER) return 1;
+    rel_tol = max(rel_tol,fabs(Local_SolnBlk[nb].Grid.area(i-1,j)));
     if (j < Local_SolnBlk[nb].JCu+Local_SolnBlk[nb].Nghost) {
-      if (Local_SolnBlk[nb].Grid.area(i-1,j+1) < TOLER*TOLER) return 1;
+      rel_tol = max(rel_tol,fabs(Local_SolnBlk[nb].Grid.area(i-1,j+1)));
     }
   }
   if (j > Local_SolnBlk[nb].JCl-Local_SolnBlk[nb].Nghost) {
-    if (Local_SolnBlk[nb].Grid.area(i,j-1) < TOLER*TOLER) return 1;
+    rel_tol = max(rel_tol,fabs(Local_SolnBlk[nb].Grid.area(i,j-1)));
   }
-  if (Local_SolnBlk[nb].Grid.area(i,j) < TOLER*TOLER) return 1;
   if (j < Local_SolnBlk[nb].JCu+Local_SolnBlk[nb].Nghost) {
-    if (Local_SolnBlk[nb].Grid.area(i,j+1) < TOLER*TOLER) return 1;
+    rel_tol = max(rel_tol,fabs(Local_SolnBlk[nb].Grid.area(i,j+1)));
   }
   if (i < Local_SolnBlk[nb].ICu+Local_SolnBlk[nb].Nghost) {
     if (j > Local_SolnBlk[nb].JCl-Local_SolnBlk[nb].Nghost) {
-      if (Local_SolnBlk[nb].Grid.area(i+1,j-1) < TOLER*TOLER) return 1;
+      rel_tol = max(rel_tol,fabs(Local_SolnBlk[nb].Grid.area(i+1,j-1)));
     }
-    if (Local_SolnBlk[nb].Grid.area(i+1,j) < TOLER*TOLER) return 1;
+    rel_tol = max(rel_tol,fabs(Local_SolnBlk[nb].Grid.area(i+1,j)));
     if (j < Local_SolnBlk[nb].JCu+Local_SolnBlk[nb].Nghost) {
-      if (Local_SolnBlk[nb].Grid.area(i+1,j+1) < TOLER*TOLER) return 1;
+      rel_tol = max(rel_tol,fabs(Local_SolnBlk[nb].Grid.area(i+1,j+1)));
+    }
+  }
+  rel_tol = TOLER*rel_tol;
+
+  if (i > Local_SolnBlk[nb].ICl-Local_SolnBlk[nb].Nghost) {
+    if (j > Local_SolnBlk[nb].JCl-Local_SolnBlk[nb].Nghost) {
+      if (Local_SolnBlk[nb].Grid.area(i-1,j-1) < rel_tol) return 1;
+    }
+    if (Local_SolnBlk[nb].Grid.area(i-1,j) < rel_tol) return 1;
+    if (j < Local_SolnBlk[nb].JCu+Local_SolnBlk[nb].Nghost) {
+      if (Local_SolnBlk[nb].Grid.area(i-1,j+1) < rel_tol) return 1;
+    }
+  }
+  if (j > Local_SolnBlk[nb].JCl-Local_SolnBlk[nb].Nghost) {
+    if (Local_SolnBlk[nb].Grid.area(i,j-1) < rel_tol) return 1;
+  }
+  if (Local_SolnBlk[nb].Grid.area(i,j) < rel_tol) return 1;
+  if (j < Local_SolnBlk[nb].JCu+Local_SolnBlk[nb].Nghost) {
+    if (Local_SolnBlk[nb].Grid.area(i,j+1) < rel_tol) return 1;
+  }
+  if (i < Local_SolnBlk[nb].ICu+Local_SolnBlk[nb].Nghost) {
+    if (j > Local_SolnBlk[nb].JCl-Local_SolnBlk[nb].Nghost) {
+      if (Local_SolnBlk[nb].Grid.area(i+1,j-1) < rel_tol) return 1;
+    }
+    if (Local_SolnBlk[nb].Grid.area(i+1,j) < rel_tol) return 1;
+    if (j < Local_SolnBlk[nb].JCu+Local_SolnBlk[nb].Nghost) {
+      if (Local_SolnBlk[nb].Grid.area(i+1,j+1) < rel_tol) return 1;
     }
   }
   // All of the areas are positive.
@@ -5430,6 +5540,7 @@ Compute_Interface_Location(const int &batch_flag,
       // The interface has a constant velocity.
       motion_flag = ON;
       switch(Interface_Component_List[ni].Type) {
+      case INTERFACE_LINE :
       case INTERFACE_CIRCLE :
       case INTERFACE_ELLIPSE :
       case INTERFACE_SQUARE :
@@ -5535,6 +5646,12 @@ Compute_Interface_Location(const int &batch_flag,
 
   // Unadjust the mesh.
   Mesh_Unadjustment();
+
+  //added by ~james
+  error_flag = Send_All_Messages(Local_SolnBlk,
+				 *Local_Solution_Block_List,
+ 				 NUM_COMP_VECTOR2D,
+ 				 ON);
 
   // Conduct mesh adjustment algorithm.
   error_flag = Mesh_Adjustment(OFF,OFF);
@@ -6082,40 +6199,40 @@ Redistribute_Solution_Content(const int &nb, const double &Time) {
 	// Complete solution restriction by dividing the restricted
 	// solution by the total area of intersection.
 	if (A_total < TOLER*Local_SolnBlk[nb].Grid.Cell[i][j].A) {
-	  dout << endl << " time = " << Time; dout.flush();
-	  dout << endl << " X(" << Local_Solution_Block_List->Block[nb].gblknum << ","
-	       << i << "," << j << ") =" << Local_SolnBlk[nb].Grid.Cell[i][j].Xc; dout.flush();
-	  dout << endl << " A(" << Local_Solution_Block_List->Block[nb].gblknum << ","
-	       << i << "," << j << ") = " << Local_SolnBlk[nb].Grid.Cell[i][j].A; dout.flush();
-	  dout << endl << " A_total = " << A_total; dout.flush();
+	  cout << endl << " time = " << Time; cout.flush();
+	  cout << endl << " X(" << Local_Solution_Block_List->Block[nb].gblknum << ","
+	       << i << "," << j << ") =" << Local_SolnBlk[nb].Grid.Cell[i][j].Xc; cout.flush();
+	  cout << endl << " A(" << Local_Solution_Block_List->Block[nb].gblknum << ","
+	       << i << "," << j << ") = " << Local_SolnBlk[nb].Grid.Cell[i][j].A; cout.flush();
+	  cout << endl << " A_total = " << A_total; cout.flush();
 	  A_total = ZERO;
-	  dout << endl << setprecision(24) << Local_SolnBlk[nb].Grid.nodeSW(i,j); dout.flush();
-	  dout << endl << setprecision(24) << Local_SolnBlk[nb].Grid.nodeSE(i,j); dout.flush();
-	  dout << endl << setprecision(24) << Local_SolnBlk[nb].Grid.nodeNE(i,j); dout.flush();
-	  dout << endl << setprecision(24) << Local_SolnBlk[nb].Grid.nodeNW(i,j); dout.flush();
+	  cout << endl << setprecision(24) << Local_SolnBlk[nb].Grid.nodeSW(i,j); cout.flush();
+	  cout << endl << setprecision(24) << Local_SolnBlk[nb].Grid.nodeSE(i,j); cout.flush();
+	  cout << endl << setprecision(24) << Local_SolnBlk[nb].Grid.nodeNE(i,j); cout.flush();
+	  cout << endl << setprecision(24) << Local_SolnBlk[nb].Grid.nodeNW(i,j); cout.flush();
 	  P.convert(Local_SolnBlk[nb].Grid.nodeSW(i,j).X,Local_SolnBlk[nb].Grid.nodeSE(i,j).X,
 		    Local_SolnBlk[nb].Grid.nodeNE(i,j).X,Local_SolnBlk[nb].Grid.nodeNW(i,j).X);
-	  dout << endl << " P =" << setprecision(14) << P; dout.flush();
+	  cout << endl << " P =" << setprecision(14) << P; cout.flush();
 	  Polygon Pt;
 	  for (int jj = j-1; jj < j+2; jj++) {
 	    for (int ii = i-1; ii < i+2; ii++) {
 	      if (AMesh[nb].cell_status[ii][jj] == CELL_STATUS_ACTIVE) {
-		dout << endl;
-		dout << endl << setprecision(24) << AGrid[nb].nodeSW(ii,jj).X; dout.flush();
-		dout << endl << setprecision(24) << AGrid[nb].nodeSE(ii,jj).X; dout.flush();
-		dout << endl << setprecision(24) << AGrid[nb].nodeNE(ii,jj).X; dout.flush();
-		dout << endl << setprecision(24) << AGrid[nb].nodeNW(ii,jj).X; dout.flush();
+		cout << endl;
+		cout << endl << setprecision(24) << AGrid[nb].nodeSW(ii,jj).X; cout.flush();
+		cout << endl << setprecision(24) << AGrid[nb].nodeSE(ii,jj).X; cout.flush();
+		cout << endl << setprecision(24) << AGrid[nb].nodeNE(ii,jj).X; cout.flush();
+		cout << endl << setprecision(24) << AGrid[nb].nodeNW(ii,jj).X; cout.flush();
 		Po.convert(AGrid[nb].nodeSW(ii,jj).X,AGrid[nb].nodeSE(ii,jj).X,
 			   AGrid[nb].nodeNE(ii,jj).X,AGrid[nb].nodeNW(ii,jj).X);
-		dout << endl << " Po =" << setprecision(14) << Po; dout.flush();
+		cout << endl << " Po =" << setprecision(14) << Po; cout.flush();
 		Polygon_Intersection(P,Po,Pt);
-		if (Pt.np) { dout << endl << " Pt =" << setprecision(14) << Pt; dout.flush(); }
+		if (Pt.np) { cout << endl << " Pt =" << setprecision(14) << Pt; cout.flush(); }
 		Pt.deallocate();
 		A = Polygon_Intersection_Area(P,Po);
-		dout << endl << " A = " << setprecision(14) << A; dout.flush();
+		cout << endl << " A = " << setprecision(14) << A; cout.flush();
 		Po.deallocate();
 		A_total += A;
-		dout << endl << " A_total = " << setprecision(14) << A_total; cout.flush();
+		cout << endl << " A_total = " << setprecision(14) << A_total; cout.flush();
 	      }
 	    }
 	  }
@@ -6159,8 +6276,18 @@ Reset_Interface_Motion_Type(void) {
     // Reset the interface motion types to rotate for the pins of the
     // branched duct.
     for (int ni = 1; ni <= Interface_Component_List.Ni; ni++) {
-      Interface_Component_List[ni].Motion = IP->Interface_IP.Component_List[ni].Motion;
-      Interface_Component_List[ni].Speed = IP->Interface_IP.Component_List[ni].Speed;
+      //      Interface_Component_List[ni].Motion = IP->Interface_IP.Component_List[ni].Motion;
+      //      Interface_Component_List[ni].Speed = IP->Interface_IP.Component_List[ni].Speed;
+      if(ni >= 4 && ni <= 8) {
+	Interface_Component_List[ni].Motion = INTERFACE_MOTION_ROTATE;
+	Interface_Component_List[ni].Speed = Vector2D(9.500000e-03,1.000000e-02);
+      }
+      if(ni >= 13 && ni <= 17) {
+	Interface_Component_List[ni].Motion = INTERFACE_MOTION_ROTATE;
+	Interface_Component_List[ni].Speed = Vector2D(-9.500000e-03,1.000000e-02);
+      }
+      Interface_Component_List[ni].Set_Velocity_Function_Type();
+      //      cout << Interface_Component_List[ni].Motion << " " << Interface_Component_List[ni].Speed << endl;
     }
 
   } else if (IP->i_Grid == GRID_ROCKET_MOTOR) {
@@ -8138,10 +8265,13 @@ Flag_Blocks_For_Refinement(void) {
 	    Local_Solution_Block_List->Block[nb].info.level < QuadTree->MaximumRefinementLevel) {
 	  Local_Solution_Block_List->RefineFlag[nb] = ADAPTIVEBLOCK2D_REFINE;
 	} else if (local_block_refinement_criteria[nb][n_criteria] < threshold_coarsening[n_criteria] &&
-		   Local_Solution_Block_List->Block[nb].info.level > QuadTree->MinimumRefinementLevel) {
+		   Local_Solution_Block_List->Block[nb].info.level > QuadTree->MinimumRefinementLevel &&
+		   Local_Solution_Block_List->RefineFlag[nb] != ADAPTIVEBLOCK2D_REFINE) {
 	  Local_Solution_Block_List->RefineFlag[nb] = ADAPTIVEBLOCK2D_COARSEN;
-	}
-//  	dout << endl
+	} else if (Local_Solution_Block_List->RefineFlag[nb] != ADAPTIVEBLOCK2D_REFINE) {
+	  Local_Solution_Block_List->RefineFlag[nb] = ADAPTIVEBLOCK2D_NOCHANGE;
+	}  // if the flag was set to "refine" by another criterion, it will not be changed.
+//  	cout << endl
 // 	     << "REFINEMENT CRITERIA:"
 // 	     << " " << Local_Solution_Block_List->Block[nb].gblknum
 // 	     << " " << n_criteria
@@ -8150,7 +8280,7 @@ Flag_Blocks_For_Refinement(void) {
 // //  	     << " " << global_max_refinement_criteria[n_criteria]
 //  	     << " " << threshold_refinement[n_criteria]
 //  	     << " " << threshold_coarsening[n_criteria]
-//  	     << " " << Local_Solution_Block_List->RefineFlag[nb]; dout.flush();
+//  	     << " " << Local_Solution_Block_List->RefineFlag[nb]; cout.flush();
       }
     }
   }
@@ -8183,6 +8313,8 @@ Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
   int error_flag, number_of_changes,
       *maximum_interface_mesh_refinement_flag,
       *maximum_interface_mesh_refinement_level;
+  int iii, jjj, intersections;
+  Vector2D NE, NW, SE, SW, Xs1, Xs2;
 
   // Calculate the refinement measures for each solution block and flag
   // local solution blocks for refinement or coarsening if required.
@@ -8270,11 +8402,117 @@ Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
 #endif
       if (!number_of_changes) break;
 
+      // Get the global refinement list.
+      Get_Refinement_List(*QuadTree,
+			  *Local_Solution_Block_List);
+
     }
+    if(number_of_changes) {return 121145;}
 
     // Unadjust the mesh.
     Mesh_Unadjustment();
 
+  }
+
+  //Ensure that blocks which are near an embedded boundary but not quite
+  //intersected by it are not coarsened, otherwise their ghost cells
+  //will become larger and they may then be intersected and would 
+  //immediatly be refined during the next AMR.  This is done
+  //by extrapolating an approximation to where the ghost cells 
+  //would be for a coarsened block and multiplying by a safety
+  //factor of 1.85 (the approximation is simply an extrapolation from
+  //the diagonals, it is crude).  Really, I should look
+  //for intersections with each linear element of interface splines. oh well.
+  //                                 ~james
+  for (int nb = 0; nb < Local_Solution_Block_List->Nblk; nb++) {
+    if (Local_Solution_Block_List->Block[nb].used == ADAPTIVEBLOCK2D_USED) {
+      iii = Local_SolnBlk[nb].Grid.INu;
+      jjj = Local_SolnBlk[nb].Grid.JNl;
+      NW = Local_SolnBlk[nb].Grid.Node[iii][jjj].X
+	+1.85*(Local_SolnBlk[nb].Grid.Node[iii][jjj].X-Local_SolnBlk[nb].Grid.Node[iii-4][jjj+4].X);
+      
+      iii = Local_SolnBlk[nb].Grid.INu;
+      jjj = Local_SolnBlk[nb].Grid.JNu;
+      NE = Local_SolnBlk[nb].Grid.Node[iii][jjj].X
+	+1.85*(Local_SolnBlk[nb].Grid.Node[iii][jjj].X-Local_SolnBlk[nb].Grid.Node[iii-4][jjj-4].X);
+      
+      iii = Local_SolnBlk[nb].Grid.INl;
+      jjj = Local_SolnBlk[nb].Grid.JNl;
+      SW = Local_SolnBlk[nb].Grid.Node[iii][jjj].X
+	+1.85*(Local_SolnBlk[nb].Grid.Node[iii][jjj].X-Local_SolnBlk[nb].Grid.Node[iii+4][jjj+4].X);
+      
+      iii = Local_SolnBlk[nb].Grid.INl;
+      jjj = Local_SolnBlk[nb].Grid.JNu;
+      SE = Local_SolnBlk[nb].Grid.Node[iii][jjj].X
+	+1.85*(Local_SolnBlk[nb].Grid.Node[iii][jjj].X-Local_SolnBlk[nb].Grid.Node[iii+4][jjj-4].X);
+
+      for (int ni = 1; ni <= Interface_Union_List.Ni; ni++) {
+	// For each (linear) edge of the interface.
+	intersections = 0;
+
+	for (int np = 0; np < Interface_Union_List[ni].Spline.np-1; np++) {
+	  // Store the (linear) edge of the interface.
+	  Xs1 = Interface_Union_List[ni].Spline.Xp[np  ];
+	  Xs2 = Interface_Union_List[ni].Spline.Xp[np+1];
+	  //check for intersections
+	  intersections += Line_Intersection(Xs1,Xs2,NW,NE);
+	  intersections += Line_Intersection(Xs1,Xs2,NW,SW);
+	  intersections += Line_Intersection(Xs1,Xs2,SW,SE);
+	  intersections += Line_Intersection(Xs1,Xs2,SE,NE);
+	}
+
+	if (intersections && !Adjustment_Data[nb].Interface_Present[ni] &&
+	    Local_Solution_Block_List->RefineFlag[nb] == ADAPTIVEBLOCK2D_COARSEN){
+	  Local_Solution_Block_List->RefineFlag[nb] = ADAPTIVEBLOCK2D_NOCHANGE;
+	}
+      }
+
+      iii = Local_SolnBlk[nb].Grid.INu;
+      jjj = Local_SolnBlk[nb].Grid.JNl;
+      NW = Local_SolnBlk[nb].Grid.Node[iii][jjj].X
+	+1.25*(Local_SolnBlk[nb].Grid.Node[iii][jjj].X-Local_SolnBlk[nb].Grid.Node[iii-2][jjj+2].X);
+      
+      iii = Local_SolnBlk[nb].Grid.INu;
+      jjj = Local_SolnBlk[nb].Grid.JNu;
+      NE = Local_SolnBlk[nb].Grid.Node[iii][jjj].X
+	+1.25*(Local_SolnBlk[nb].Grid.Node[iii][jjj].X-Local_SolnBlk[nb].Grid.Node[iii-2][jjj-2].X);
+      
+      iii = Local_SolnBlk[nb].Grid.INl;
+      jjj = Local_SolnBlk[nb].Grid.JNl;
+      SW = Local_SolnBlk[nb].Grid.Node[iii][jjj].X
+	+1.25*(Local_SolnBlk[nb].Grid.Node[iii][jjj].X-Local_SolnBlk[nb].Grid.Node[iii+2][jjj+2].X);
+      
+      iii = Local_SolnBlk[nb].Grid.INl;
+      jjj = Local_SolnBlk[nb].Grid.JNu;
+      SE = Local_SolnBlk[nb].Grid.Node[iii][jjj].X
+	+1.25*(Local_SolnBlk[nb].Grid.Node[iii][jjj].X-Local_SolnBlk[nb].Grid.Node[iii+2][jjj-2].X);
+
+      for (int ni = 1; ni <= Interface_Union_List.Ni; ni++) {
+	// For each (linear) edge of the interface.
+	intersections = 0;
+
+	for (int np = 0; np < Interface_Union_List[ni].Spline.np-1; np++) {
+	  // Store the (linear) edge of the interface.
+	  Xs1 = Interface_Union_List[ni].Spline.Xp[np  ];
+	  Xs2 = Interface_Union_List[ni].Spline.Xp[np+1];
+	  //check for intersections
+	  intersections += Line_Intersection(Xs1,Xs2,NW,NE);
+	  intersections += Line_Intersection(Xs1,Xs2,NW,SW);
+	  intersections += Line_Intersection(Xs1,Xs2,SW,SE);
+	  intersections += Line_Intersection(Xs1,Xs2,SE,NE);
+	}
+
+	if (intersections && !Adjustment_Data[nb].Interface_Present[ni] &&
+	    Local_Solution_Block_List->Block[nb].info.level + Local_Solution_Block_List->RefineFlag[nb]
+	    < maximum_interface_mesh_refinement_level[ni]) {
+	  Local_Solution_Block_List->RefineFlag[nb] = ADAPTIVEBLOCK2D_REFINE;
+	  //this should ensure that blocks are refined before being crossed by
+	  //moving boundaries (I hope this will avoid AMR problems at boundaries,
+	  //which can happen).
+	  //                    ~james
+	}
+      }
+    }
   }
 
   // Get global refinement list and adjust division and coarsen flags so
@@ -8313,6 +8551,11 @@ Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
 //   Fix_Refined_Block_Boundaries(Local_SolnBlk,
 //     			       *Local_Solution_Block_List);
 
+  // Unadjust the mesh.
+  Mesh_Unadjustment();   //ADDED BY JAMES FOR GHOST CELL TROUBLES WHEN MESH REFINEMENT 
+                         //IS DONE ON BOUNDARIES
+                         //I also changed the lines commented with &*&*&*&*&*&*
+
   // Re-allocate memory for all message passing buffers used to send
   // solution information between neighbouring solution blocks.
   Allocate_Message_Buffers(*Local_Solution_Block_List,
@@ -8333,8 +8576,8 @@ Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
   if (Interface_Component_List.Ni && Perform_Mesh_Adjustment) {
 
     for (int nb = 0; nb < Local_Solution_Block_List->Nblk; nb++) {
-      if (Local_Solution_Block_List->Block[nb].used == ADAPTIVEBLOCK2D_USED &&
-  	  Local_Solution_Block_List->RefineFlag[nb] == ADAPTIVEBLOCK2D_NOCHANGE) {
+      if (Local_Solution_Block_List->Block[nb].used == ADAPTIVEBLOCK2D_USED){// &&         //&*&*&*&*&*&*&*&*&*&*&*&*&*&*
+	//Local_Solution_Block_List->RefineFlag[nb] == ADAPTIVEBLOCK2D_NOCHANGE) {         //&*&*&*&*&*&*&*&*&*&*&*&*&*&*
 	error_flag = Pre_Mesh_Adjustment_Painting(nb);
 	if (!error_flag) Adjustment_Data[nb].Initialize();
 	if (!error_flag) error_flag = Mesh_Adjustment_Sharp_Corners(nb);
@@ -10084,7 +10327,7 @@ Output_Aerodynamic_Coefficients_Tecplot(const int &nb,
   sin_alpha = dot(nhat,ihat);
 
   // Determine the static and dynamic pressures:
-  pinf = IP->Wo.p;
+  pinf = IP->Wo.pressure();
   qinf = HALF*IP->Wo[1]*sqr(IP->Wo.v.abs());
 
   // Output node solution data.  
@@ -10107,7 +10350,7 @@ Output_Aerodynamic_Coefficients_Tecplot(const int &nb,
 	    s2 = Interface_Union_List[1].Spline.sp[Interface_Union_List[1].Spline.np-1];
 	  }
 	  ds = fabs(s2-s1);
-	  Cpi = (Local_SolnBlk[nb].W[i][j+1].p - pinf)/qinf;
+	  Cpi = (Local_SolnBlk[nb].W[i][j+1].pressure() - pinf)/qinf;
 	  if (Local_SolnBlk[nb].Flow_Type == FLOWTYPE_INVISCID) Cfi = ZERO;
 	  else Cfi = ZERO;
 	  Cni = -Cpi*dot(Local_SolnBlk[nb].Grid.nfaceN(i,j),nhat)*ds/c; Cn += Cni;
@@ -10143,7 +10386,7 @@ Output_Aerodynamic_Coefficients_Tecplot(const int &nb,
 	    s2 = Interface_Union_List[1].Spline.sp[Interface_Union_List[1].Spline.np-1];
 	  }
 	  ds = fabs(s2-s1);
-	  Cpi = (Local_SolnBlk[nb].W[i][j-1].p - pinf)/qinf;
+	  Cpi = (Local_SolnBlk[nb].W[i][j-1].pressure() - pinf)/qinf;
 	  if (Local_SolnBlk[nb].Flow_Type == FLOWTYPE_INVISCID) Cfi = ZERO;
 	  else Cfi = ZERO;
 	  Cni = -Cpi*dot(Local_SolnBlk[nb].Grid.nfaceS(i,j),nhat)*ds/c; Cn += Cni;
@@ -10179,7 +10422,7 @@ Output_Aerodynamic_Coefficients_Tecplot(const int &nb,
 	    s2 = Interface_Union_List[1].Spline.sp[Interface_Union_List[1].Spline.np-1];
 	  }
 	  ds = fabs(s2-s1);
-	  Cpi = (Local_SolnBlk[nb].W[i+1][j].p - pinf)/qinf;
+	  Cpi = (Local_SolnBlk[nb].W[i+1][j].pressure() - pinf)/qinf;
 	  if (Local_SolnBlk[nb].Flow_Type == FLOWTYPE_INVISCID) Cfi = ZERO;
 	  else Cfi = ZERO;
 	  Cni = -Cpi*dot(Local_SolnBlk[nb].Grid.nfaceE(i,j),nhat)*ds/c; Cn += Cni;
@@ -10215,7 +10458,7 @@ Output_Aerodynamic_Coefficients_Tecplot(const int &nb,
 	    s2 = Interface_Union_List[1].Spline.sp[Interface_Union_List[1].Spline.np-1];
 	  }
 	  ds = fabs(s2-s1);
-	  Cpi = (Local_SolnBlk[nb].W[i-1][j].p - pinf)/qinf;
+	  Cpi = (Local_SolnBlk[nb].W[i-1][j].pressure() - pinf)/qinf;
 	  if (Local_SolnBlk[nb].Flow_Type == FLOWTYPE_INVISCID) Cfi = ZERO;
 	  else Cfi = ZERO;
 	  Cni = -Cpi*dot(Local_SolnBlk[nb].Grid.nfaceW(i,j),nhat)*ds/c; Cn += Cni;
@@ -10246,6 +10489,53 @@ Output_Aerodynamic_Coefficients_Tecplot(const int &nb,
   }
   Out_File.unsetf(ios::scientific);
 
+}
+
+/**********************************************************************
+ * EmbeddedBoundaries2D::Net_Force --                                 *
+ **********************************************************************/
+template <class cState, class pState, class Quad_Soln_Block, class Quad_Soln_Input_Parameters>
+Vector2D EmbeddedBoundaries2D<cState, pState, Quad_Soln_Block, Quad_Soln_Input_Parameters>::
+Net_Force(void) {
+  cout << endl << " ERROR: Explicit specialization required for the calculation of the";
+  cout << endl << "        net force.";
+  cout.flush();
+  return 1;
+}
+
+/**********************************************************************
+ * EmbeddedBoundaries2D::Net_Pressure_Force --                        *
+ **********************************************************************/
+template <class cState, class pState, class Quad_Soln_Block, class Quad_Soln_Input_Parameters>
+Vector2D EmbeddedBoundaries2D<cState, pState, Quad_Soln_Block, Quad_Soln_Input_Parameters>::
+Net_Pressure_Force(void) {
+  cout << endl << " ERROR: Explicit specialization required for the calculation of the";
+  cout << endl << "        net pressure force.";
+  cout.flush();
+  return 1;
+}
+
+/**********************************************************************
+ * EmbeddedBoundaries2D::Output_Cylinder_Drag --                      *
+ **********************************************************************/
+template <class cState, class pState, class Quad_Soln_Block, class Quad_Soln_Input_Parameters>
+int EmbeddedBoundaries2D<cState, pState, Quad_Soln_Block, Quad_Soln_Input_Parameters>::
+Output_Cylinder_Drag(void) {
+  cout << endl << " ERROR: Explicit specialization required for the calculation of Cl";
+  cout << endl << "        and Cd for the Cylinder Case.";
+  cout.flush();
+  return 1;
+}
+
+/**********************************************************************
+ * EmbeddedBoundaries2D::Output_Couette       --                      *
+ **********************************************************************/
+template <class cState, class pState, class Quad_Soln_Block, class Quad_Soln_Input_Parameters>
+int EmbeddedBoundaries2D<cState, pState, Quad_Soln_Block, Quad_Soln_Input_Parameters>::
+Output_Couette(void) {
+  cout << endl << " ERROR: Explicit specialization required for Ouput_Couette.";
+  cout.flush();
+  return 1;
 }
 
 /**********************************************************************
@@ -10476,6 +10766,9 @@ Linear_Least_Squares_Reconstruction(const int &nb,
   Vector2D dX;
   pState DU, DUDx_ave, DUDy_ave;
   int NUM_VAR = Local_SolnBlk[nb].NumVar();
+  int at_boundary_flag = OFF;  //I was finding that limiting near the boundary
+                               //was giving me very bad results, it may be different
+                               //for you.    ~james
 
   // If the current cell is not an internal cell then exit immediately.
   if (i == Local_SolnBlk[nb].ICl-Local_SolnBlk[nb].Nghost ||
@@ -10496,6 +10789,7 @@ Linear_Least_Squares_Reconstruction(const int &nb,
       if (Mesh[nb].cell_status[ii][jj] == CELL_STATUS_ACTIVE && !(ii == i && jj == j)) {
 	i_index[npts] = ii; j_index[npts] = jj; npts++;
       } else if (Mesh[nb].cell_status[ii][jj] != CELL_STATUS_ACTIVE) {
+	at_boundary_flag = ON;
 	if (Interface_Union_List[Mesh[nb].cell_status[ii][jj]].Motion != INTERFACE_MOTION_STATIONARY) motion_flag = ON;
       }
     }
@@ -10598,30 +10892,33 @@ Linear_Least_Squares_Reconstruction(const int &nb,
 	  npts2++;
 	}
 
-	switch(IP->i_Limiter) {
-	case LIMITER_ONE :
+	if(at_boundary_flag == OFF) {
+	  switch(IP->i_Limiter) {
+	  case LIMITER_ONE :
+	    Local_SolnBlk[nb].phi[i][j][n] = ONE;
+	    break;
+	  case LIMITER_ZERO :
+	    Local_SolnBlk[nb].phi[i][j][n] = ZERO;
+	    break;
+	  case LIMITER_BARTH_JESPERSEN :
+	    Local_SolnBlk[nb].phi[i][j][n] = Limiter_BarthJespersen(uQuad,Local_SolnBlk[nb].W[i][j][n],u0Min,u0Max,npts2);
+	    break;
+	  case LIMITER_VENKATAKRISHNAN :
+	    Local_SolnBlk[nb].phi[i][j][n] = Limiter_Venkatakrishnan(uQuad,Local_SolnBlk[nb].W[i][j][n],u0Min,u0Max,npts2);
+	    break;
+	  case LIMITER_VANLEER :
+	    Local_SolnBlk[nb].phi[i][j][n] = Limiter_VanLeer(uQuad,Local_SolnBlk[nb].W[i][j][n],u0Min,u0Max,npts2);
+	    break;
+	  case LIMITER_VANALBADA :
+	    Local_SolnBlk[nb].phi[i][j][n] = Limiter_VanAlbada(uQuad,Local_SolnBlk[nb].W[i][j][n],u0Min,u0Max,npts2);
+	    break;
+	  default:
+	    Local_SolnBlk[nb].phi[i][j][n] = Limiter_BarthJespersen(uQuad,Local_SolnBlk[nb].W[i][j][n],u0Min,u0Max,npts2);
+	    break;
+	  };
+	} else {
 	  Local_SolnBlk[nb].phi[i][j][n] = ONE;
-	  break;
-	case LIMITER_ZERO :
-	  Local_SolnBlk[nb].phi[i][j][n] = ZERO;
-	  break;
-	case LIMITER_BARTH_JESPERSEN :
-	  Local_SolnBlk[nb].phi[i][j][n] = Limiter_BarthJespersen(uQuad,Local_SolnBlk[nb].W[i][j][n],u0Min,u0Max,npts2);
-	  break;
-	case LIMITER_VENKATAKRISHNAN :
-	  Local_SolnBlk[nb].phi[i][j][n] = Limiter_Venkatakrishnan(uQuad,Local_SolnBlk[nb].W[i][j][n],u0Min,u0Max,npts2);
-	  break;
-	case LIMITER_VANLEER :
-	  Local_SolnBlk[nb].phi[i][j][n] = Limiter_VanLeer(uQuad,Local_SolnBlk[nb].W[i][j][n],u0Min,u0Max,npts2);
-	  break;
-	case LIMITER_VANALBADA :
-	  Local_SolnBlk[nb].phi[i][j][n] = Limiter_VanAlbada(uQuad,Local_SolnBlk[nb].W[i][j][n],u0Min,u0Max,npts2);
-	  break;
-	default:
-	  Local_SolnBlk[nb].phi[i][j][n] = Limiter_BarthJespersen(uQuad,Local_SolnBlk[nb].W[i][j][n],u0Min,u0Max,npts2);
-	  break;
-	};
-
+	}
       }
     }
 
@@ -10848,6 +11145,13 @@ Update_Solution_Multistage_Explicit(const int &i_stage) {
 	    if (IP->Local_Time_Stepping == GLOBAL_TIME_STEPPING ||
 		IP->Local_Time_Stepping == SCALAR_LOCAL_TIME_STEPPING) {
 	      Local_SolnBlk[nb].U[i][j] = Local_SolnBlk[nb].Uo[i][j] + omega*Local_SolnBlk[nb].dUdt[i][j][k_residual];
+	      if(Local_SolnBlk[nb].W[i][j].analytically_inverted_relaxation()) {  //so far this is only used for Gaussian2D
+		Local_SolnBlk[nb].W[i][j] = W(Local_SolnBlk[nb].U[i][j]);
+		Local_SolnBlk[nb].W[i][j].relax(IP->CFL_Number*Local_SolnBlk[nb].dt[i][j],
+						i_stage,W(Local_SolnBlk[nb].Uo[i][j]));
+		Local_SolnBlk[nb].U[i][j] = U(Local_SolnBlk[nb].W[i][j]);	
+	      }
+
 	    }
 
 	    // Point implicit formulation: set up system of equations 
@@ -10922,9 +11226,10 @@ Update_Solution_Multistage_Explicit(const int &i_stage) {
 		   << " Uo   = " << Local_SolnBlk[nb].Uo[i][j]               << endl
 		   << " Wo   = " << W(Local_SolnBlk[nb].Uo[i][j])            << endl
 		   << " dUdt = " << Local_SolnBlk[nb].dUdt[i][j][k_residual] << endl;
-	      cout << endl << Local_SolnBlk[nb].U[i][j].p();
-	      cout << endl << Local_SolnBlk[nb].U[i][j].e();
-	      cout << endl << Local_SolnBlk[nb].U[i][j].T();
+//	      cout << endl << Local_SolnBlk[nb].U[i][j].p();
+//	      cout << endl << Local_SolnBlk[nb].U[i][j].e();
+//	      cout << endl << Local_SolnBlk[nb].U[i][j].T();
+//            I commented these out because they don't exist in my state (Gaussian2D)
 	      cout.flush();
 	      return i;
 	    }
@@ -11114,6 +11419,21 @@ Execute(const int &batch_flag,
 	if (!batch_flag) 
 	  cout << "\n\n  Saving solution to restart data file(s) after"
 	       << " n = " << number_of_time_steps << " steps (iterations).";
+
+	//  Save and delete old restart files in compressed archive (just in case)
+	if (CFDkit_Primary_MPI_Processor()) {
+	  cout << "\n  Creating compressed archive of (and deleting) old restarts.";
+	  System::Compress_Restart();
+	  cout << "\n  Writing new restart files.";
+	  cout.flush();
+	}
+	CFDkit_Barrier_MPI(); // MPI barrier so that other processors do
+	                      // not start over-writing restarts
+
+	if (CFDkit_Primary_MPI_Processor()) {
+	  System::Set_Restart_Flag();  //Set flag to indicate a restart is being saved
+	}
+
 	// Write the quadtree restart file.
 	error_flag = Write_QuadTree(*QuadTree,*IP);
 	if (error_flag) {
@@ -11148,6 +11468,10 @@ Execute(const int &batch_flag,
 	error_flag = CFDkit_OR_MPI(error_flag);
 	if (error_flag) return error_flag;
 	if (!batch_flag) cout << endl;
+
+	if (CFDkit_Primary_MPI_Processor()) {
+	  System::Remove_Restart_Flag();  //Remove flag to indicate the restart is finished
+	}
       }
 
       // Output progress information for the calculation.
