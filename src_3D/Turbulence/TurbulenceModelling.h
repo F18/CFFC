@@ -51,33 +51,38 @@ class Turbulence_Model_k_omega{
    static double yplus_u;
    
    double omega_sublayer_BC(const double &d, const double &mu, const double &y) const;
+
    double f_beta(const Tensor3D &rotation_tensor, const Tensor3D &strain_rate ,
                  const double &omega) const;
+
    double f_betastar(const double &dkdx, const double &dkdy, const double &dkdz, 
                      const double &domegadx, const double &domegady, 
                      const double &domegadz, const double &omega) const;
+
    int wall_function(const double &d, const double &mu, Turbulent3DWallData &wall, 
                      double &dk, double &domega);
+
    int low_Reynolds_number_formulation(const double &d, const double &mu, 
                                        const int i, const int j, const int k,
                                        Turbulent3DWallData &wall,
-                                       Grid3D_Hexa_Block *grid, double &domega);
+                                       Grid3D_Hexa_Block &grid, double &domega);
 
    int automatic_wall_treatment(const double &d, const double &mu, 
                                 const int i, const int j, const int k,
                                 Turbulent3DWallData &wall, 
-                                Grid3D_Hexa_Block *grid, double &dk,
+                                Grid3D_Hexa_Block &grid, double &dk,
                                 double &domega);
 
    int wall_function_residual_evaluation(Turbulent3DWallData &wall, double &dUdt_rhok, double &dUdt_rhoomega);
+
    int low_Reynolds_number_formulation_residual_evaluaton(const int i, const int j, const int k,
                                                           Turbulent3DWallData &wall,
-                                                          Grid3D_Hexa_Block *grid,
+                                                          Grid3D_Hexa_Block &grid,
                                                           double &dUdt_rhoomega);
 
    int  automatic_wall_treatment_residual_evaluaton(const int i, const int j, const int k,
                                                     Turbulent3DWallData &wall,
-                                                    Grid3D_Hexa_Block *grid,
+                                                    Grid3D_Hexa_Block &grid,
                                                     double &dUdt_rhok,
                                                     double &dUdt_rhoomega);
    
@@ -198,115 +203,115 @@ template<class HEXA_BLOCK>
    
    // Check West boundary.
     
-   for ( k = SolnBlk->Grid->KCl- SolnBlk->Grid->Nghost ; k <= SolnBlk->Grid->KCu+ SolnBlk->Grid->Nghost ; ++k) 
-      for ( j =  SolnBlk->Grid->JCl- SolnBlk->Grid->Nghost ; j <=  SolnBlk->Grid->JCu+ SolnBlk->Grid->Nghost ; ++j ) {
-         if (SolnBlk->Grid->BCtypeW[j][k] == BC_WALL_VISCOUS ||
-             SolnBlk->Grid->BCtypeW[j][k] == BC_NO_SLIP  ||
-             SolnBlk->Grid->BCtypeW[j][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
-             SolnBlk->Grid->BCtypeW[j][k] == BC_WALL_VISCOUS_HEATFLUX ||
-             SolnBlk->Grid->BCtypeW[j][k] == BC_ADIABATIC_WALL ||
-             SolnBlk->Grid->BCtypeW[j][k] == BC_BURNING_SURFACE) {
-            if (abs(SolnBlk->Grid->xfaceW(SolnBlk->Grid->ICl,j,k)-X_cell) < y_wall) {
-               y_wall = abs(SolnBlk->Grid->xfaceW(SolnBlk->Grid->ICl,j,k)-X_cell);
-               X_wall = SolnBlk->Grid->xfaceW(SolnBlk->Grid->ICl, j, k);
-               n_wall = -SolnBlk->Grid->nfaceW(SolnBlk->Grid->ICl, j, k);
-               BC_wall = SolnBlk->Grid->BCtypeW[j][k];
+   for ( k = SolnBlk->Grid.KCl- SolnBlk->Grid.Nghost ; k <= SolnBlk->Grid.KCu+ SolnBlk->Grid.Nghost ; ++k) 
+      for ( j =  SolnBlk->Grid.JCl- SolnBlk->Grid.Nghost ; j <=  SolnBlk->Grid.JCu+ SolnBlk->Grid.Nghost ; ++j ) {
+         if (SolnBlk->Grid.BCtypeW[j][k] == BC_WALL_VISCOUS ||
+             SolnBlk->Grid.BCtypeW[j][k] == BC_NO_SLIP  ||
+             SolnBlk->Grid.BCtypeW[j][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
+             SolnBlk->Grid.BCtypeW[j][k] == BC_WALL_VISCOUS_HEATFLUX ||
+             SolnBlk->Grid.BCtypeW[j][k] == BC_ADIABATIC_WALL ||
+             SolnBlk->Grid.BCtypeW[j][k] == BC_BURNING_SURFACE) {
+            if (abs(SolnBlk->Grid.xfaceW(SolnBlk->Grid.ICl,j,k)-X_cell) < y_wall) {
+               y_wall = abs(SolnBlk->Grid.xfaceW(SolnBlk->Grid.ICl,j,k)-X_cell);
+               X_wall = SolnBlk->Grid.xfaceW(SolnBlk->Grid.ICl, j, k);
+               n_wall = -SolnBlk->Grid.nfaceW(SolnBlk->Grid.ICl, j, k);
+               BC_wall = SolnBlk->Grid.BCtypeW[j][k];
             }
          }
       }
   
    
    // Check East boundary.
-   for ( k =  SolnBlk->Grid->KCl- SolnBlk->Grid->Nghost ; k <= SolnBlk->Grid->KCu+ SolnBlk->Grid->Nghost ; ++k) 
-      for ( j =  SolnBlk->Grid->JCl- SolnBlk->Grid->Nghost ; j <=  SolnBlk->Grid->JCu+ SolnBlk->Grid->Nghost ; ++j ) {
+   for ( k =  SolnBlk->Grid.KCl- SolnBlk->Grid.Nghost ; k <= SolnBlk->Grid.KCu+ SolnBlk->Grid.Nghost ; ++k) 
+      for ( j =  SolnBlk->Grid.JCl- SolnBlk->Grid.Nghost ; j <=  SolnBlk->Grid.JCu+ SolnBlk->Grid.Nghost ; ++j ) {
          
-         if (SolnBlk->Grid->BCtypeE[j][k] == BC_WALL_VISCOUS ||
-             SolnBlk->Grid->BCtypeE[j][k] == BC_NO_SLIP  ||
-             SolnBlk->Grid->BCtypeE[j][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
-             SolnBlk->Grid->BCtypeE[j][k] == BC_WALL_VISCOUS_HEATFLUX ||
-             SolnBlk->Grid->BCtypeE[j][k] == BC_ADIABATIC_WALL ||
-             SolnBlk->Grid->BCtypeE[j][k] == BC_BURNING_SURFACE) {
-            if (abs(SolnBlk->Grid->xfaceE(SolnBlk->Grid->ICu,j,k)-X_cell) < y_wall) {
-               y_wall = abs(SolnBlk->Grid->xfaceE(SolnBlk->Grid->ICu,j,k)-X_cell);
-               X_wall = SolnBlk->Grid->xfaceE(SolnBlk->Grid->ICu,j,k);
-               n_wall = -SolnBlk->Grid->nfaceE(SolnBlk->Grid->ICu,j,k);
-               BC_wall = SolnBlk->Grid->BCtypeE[j][k];
+         if (SolnBlk->Grid.BCtypeE[j][k] == BC_WALL_VISCOUS ||
+             SolnBlk->Grid.BCtypeE[j][k] == BC_NO_SLIP  ||
+             SolnBlk->Grid.BCtypeE[j][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
+             SolnBlk->Grid.BCtypeE[j][k] == BC_WALL_VISCOUS_HEATFLUX ||
+             SolnBlk->Grid.BCtypeE[j][k] == BC_ADIABATIC_WALL ||
+             SolnBlk->Grid.BCtypeE[j][k] == BC_BURNING_SURFACE) {
+            if (abs(SolnBlk->Grid.xfaceE(SolnBlk->Grid.ICu,j,k)-X_cell) < y_wall) {
+               y_wall = abs(SolnBlk->Grid.xfaceE(SolnBlk->Grid.ICu,j,k)-X_cell);
+               X_wall = SolnBlk->Grid.xfaceE(SolnBlk->Grid.ICu,j,k);
+               n_wall = -SolnBlk->Grid.nfaceE(SolnBlk->Grid.ICu,j,k);
+               BC_wall = SolnBlk->Grid.BCtypeE[j][k];
             }
          }
       }
 
    // Check South boundary.
    
-   for ( k =  SolnBlk->Grid->KCl- SolnBlk->Grid->Nghost ; k <=  SolnBlk->Grid->KCu+ SolnBlk->Grid->Nghost ; ++k )
-      for ( i =  SolnBlk->Grid->ICl- SolnBlk->Grid->Nghost ; i <=  SolnBlk->Grid->ICu+ SolnBlk->Grid->Nghost ; ++i ) {
+   for ( k =  SolnBlk->Grid.KCl- SolnBlk->Grid.Nghost ; k <=  SolnBlk->Grid.KCu+ SolnBlk->Grid.Nghost ; ++k )
+      for ( i =  SolnBlk->Grid.ICl- SolnBlk->Grid.Nghost ; i <=  SolnBlk->Grid.ICu+ SolnBlk->Grid.Nghost ; ++i ) {
          
-         if (SolnBlk->Grid->BCtypeS[i][k] == BC_WALL_VISCOUS ||
-             SolnBlk->Grid->BCtypeS[i][k] == BC_NO_SLIP  ||
-             SolnBlk->Grid->BCtypeS[i][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
-             SolnBlk->Grid->BCtypeS[i][k] == BC_WALL_VISCOUS_HEATFLUX ||
-             SolnBlk->Grid->BCtypeS[i][k] == BC_ADIABATIC_WALL ||
-             SolnBlk->Grid->BCtypeS[i][k] == BC_BURNING_SURFACE) {
-            if (abs(SolnBlk->Grid->xfaceS(i, SolnBlk->Grid->JCl, k)-X_cell) < y_wall) {
-               y_wall = abs(SolnBlk->Grid->xfaceS(i,SolnBlk->Grid->JCl, k)-X_cell);
-               X_wall =  SolnBlk->Grid->xfaceS(i,SolnBlk->Grid->JCl, k);
-               n_wall = -SolnBlk->Grid->nfaceS(i,SolnBlk->Grid->JCl, k);
-               BC_wall = SolnBlk->Grid->BCtypeS[i][k];
+         if (SolnBlk->Grid.BCtypeS[i][k] == BC_WALL_VISCOUS ||
+             SolnBlk->Grid.BCtypeS[i][k] == BC_NO_SLIP  ||
+             SolnBlk->Grid.BCtypeS[i][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
+             SolnBlk->Grid.BCtypeS[i][k] == BC_WALL_VISCOUS_HEATFLUX ||
+             SolnBlk->Grid.BCtypeS[i][k] == BC_ADIABATIC_WALL ||
+             SolnBlk->Grid.BCtypeS[i][k] == BC_BURNING_SURFACE) {
+            if (abs(SolnBlk->Grid.xfaceS(i, SolnBlk->Grid.JCl, k)-X_cell) < y_wall) {
+               y_wall = abs(SolnBlk->Grid.xfaceS(i,SolnBlk->Grid.JCl, k)-X_cell);
+               X_wall =  SolnBlk->Grid.xfaceS(i,SolnBlk->Grid.JCl, k);
+               n_wall = -SolnBlk->Grid.nfaceS(i,SolnBlk->Grid.JCl, k);
+               BC_wall = SolnBlk->Grid.BCtypeS[i][k];
             }
          }
       }
 
   // Check North boundary.
-   for ( k =  SolnBlk->Grid->KCl- SolnBlk->Grid->Nghost ; k <=  SolnBlk->Grid->KCu+ SolnBlk->Grid->Nghost ; ++k )
-      for ( i =  SolnBlk->Grid->ICl- SolnBlk->Grid->Nghost ; i <=  SolnBlk->Grid->ICu+ SolnBlk->Grid->Nghost ; ++i ) {
+   for ( k =  SolnBlk->Grid.KCl- SolnBlk->Grid.Nghost ; k <=  SolnBlk->Grid.KCu+ SolnBlk->Grid.Nghost ; ++k )
+      for ( i =  SolnBlk->Grid.ICl- SolnBlk->Grid.Nghost ; i <=  SolnBlk->Grid.ICu+ SolnBlk->Grid.Nghost ; ++i ) {
          
-         if (SolnBlk->Grid->BCtypeN[i][k] == BC_WALL_VISCOUS ||
-             SolnBlk->Grid->BCtypeN[i][k] == BC_NO_SLIP  ||
-             SolnBlk->Grid->BCtypeN[i][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
-             SolnBlk->Grid->BCtypeN[i][k] == BC_WALL_VISCOUS_HEATFLUX ||
-             SolnBlk->Grid->BCtypeN[i][k] == BC_ADIABATIC_WALL ||
-             SolnBlk->Grid->BCtypeN[i][k] == BC_BURNING_SURFACE) {
-            if (abs(SolnBlk->Grid->xfaceN(i,SolnBlk->Grid->JCu,k)-X_cell) < y_wall) {
-               y_wall = abs(SolnBlk->Grid->xfaceN(i,SolnBlk->Grid->JCu,k)-X_cell);
-               X_wall = SolnBlk->Grid->xfaceN(i,SolnBlk->Grid->JCu,k);
-               n_wall = -SolnBlk->Grid->nfaceN(i,SolnBlk->Grid->JCu,k);
-               BC_wall = SolnBlk->Grid->BCtypeN[i][k];
+         if (SolnBlk->Grid.BCtypeN[i][k] == BC_WALL_VISCOUS ||
+             SolnBlk->Grid.BCtypeN[i][k] == BC_NO_SLIP  ||
+             SolnBlk->Grid.BCtypeN[i][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
+             SolnBlk->Grid.BCtypeN[i][k] == BC_WALL_VISCOUS_HEATFLUX ||
+             SolnBlk->Grid.BCtypeN[i][k] == BC_ADIABATIC_WALL ||
+             SolnBlk->Grid.BCtypeN[i][k] == BC_BURNING_SURFACE) {
+            if (abs(SolnBlk->Grid.xfaceN(i,SolnBlk->Grid.JCu,k)-X_cell) < y_wall) {
+               y_wall = abs(SolnBlk->Grid.xfaceN(i,SolnBlk->Grid.JCu,k)-X_cell);
+               X_wall = SolnBlk->Grid.xfaceN(i,SolnBlk->Grid.JCu,k);
+               n_wall = -SolnBlk->Grid.nfaceN(i,SolnBlk->Grid.JCu,k);
+               BC_wall = SolnBlk->Grid.BCtypeN[i][k];
             }
          }
       }
 
    // Check Bottom boundary.
-   for ( j =  SolnBlk->Grid->JCl- SolnBlk->Grid->Nghost ; j <=  SolnBlk->Grid->JCu+ SolnBlk->Grid->Nghost ; ++j )
-      for ( i =  SolnBlk->Grid->ICl- SolnBlk->Grid->Nghost ; i <=  SolnBlk->Grid->ICu+ SolnBlk->Grid->Nghost ; ++i ) {
-         if (SolnBlk->Grid->BCtypeB[i][j] == BC_WALL_VISCOUS ||
-             SolnBlk->Grid->BCtypeB[i][j] == BC_NO_SLIP  ||
-             SolnBlk->Grid->BCtypeB[i][j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-             SolnBlk->Grid->BCtypeB[i][j] == BC_WALL_VISCOUS_HEATFLUX ||
-             SolnBlk->Grid->BCtypeB[i][j] == BC_ADIABATIC_WALL ||
-             SolnBlk->Grid->BCtypeB[i][j] == BC_BURNING_SURFACE) {
-            if (abs(SolnBlk->Grid->xfaceBot(i,j,SolnBlk->Grid->KCl)-X_cell) < y_wall) {
-               y_wall = abs(SolnBlk->Grid->xfaceBot(i,j,SolnBlk->Grid->KCl)-X_cell);
-               X_wall = SolnBlk->Grid->xfaceBot(i,j,SolnBlk->Grid->KCl);
-               n_wall = -SolnBlk->Grid->nfaceBot(i,j,SolnBlk->Grid->KCl);
-               BC_wall = SolnBlk->Grid->BCtypeB[i][j];
+   for ( j =  SolnBlk->Grid.JCl- SolnBlk->Grid.Nghost ; j <=  SolnBlk->Grid.JCu+ SolnBlk->Grid.Nghost ; ++j )
+      for ( i =  SolnBlk->Grid.ICl- SolnBlk->Grid.Nghost ; i <=  SolnBlk->Grid.ICu+ SolnBlk->Grid.Nghost ; ++i ) {
+         if (SolnBlk->Grid.BCtypeB[i][j] == BC_WALL_VISCOUS ||
+             SolnBlk->Grid.BCtypeB[i][j] == BC_NO_SLIP  ||
+             SolnBlk->Grid.BCtypeB[i][j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+             SolnBlk->Grid.BCtypeB[i][j] == BC_WALL_VISCOUS_HEATFLUX ||
+             SolnBlk->Grid.BCtypeB[i][j] == BC_ADIABATIC_WALL ||
+             SolnBlk->Grid.BCtypeB[i][j] == BC_BURNING_SURFACE) {
+            if (abs(SolnBlk->Grid.xfaceBot(i,j,SolnBlk->Grid.KCl)-X_cell) < y_wall) {
+               y_wall = abs(SolnBlk->Grid.xfaceBot(i,j,SolnBlk->Grid.KCl)-X_cell);
+               X_wall = SolnBlk->Grid.xfaceBot(i,j,SolnBlk->Grid.KCl);
+               n_wall = -SolnBlk->Grid.nfaceBot(i,j,SolnBlk->Grid.KCl);
+               BC_wall = SolnBlk->Grid.BCtypeB[i][j];
             }
          }
          
       }
 
   // Check Top boundary.
-   for ( j =  SolnBlk->Grid->JCl- SolnBlk->Grid->Nghost ; j <=  SolnBlk->Grid->JCu+ SolnBlk->Grid->Nghost ; ++j )
-      for ( i =  SolnBlk->Grid->ICl- SolnBlk->Grid->Nghost ; i <=  SolnBlk->Grid->ICu+ SolnBlk->Grid->Nghost ; ++i ) {
-         if (SolnBlk->Grid->BCtypeT[i][j] == BC_WALL_VISCOUS ||
-             SolnBlk->Grid->BCtypeT[i][j] == BC_NO_SLIP  ||
-             SolnBlk->Grid->BCtypeT[i][j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-             SolnBlk->Grid->BCtypeT[i][j] == BC_WALL_VISCOUS_HEATFLUX ||
-             SolnBlk->Grid->BCtypeT[i][j] == BC_ADIABATIC_WALL ||
-             SolnBlk->Grid->BCtypeT[i][j] == BC_BURNING_SURFACE) {
-            if (abs(SolnBlk->Grid->xfaceTop(i,j,SolnBlk->Grid->KCu)-X_cell) < y_wall) {
-               y_wall = abs(SolnBlk->Grid->xfaceTop(i,j,SolnBlk->Grid->KCu)-X_cell);
-               X_wall = SolnBlk->Grid->xfaceTop(i,j,SolnBlk->Grid->KCu);
-               n_wall = -SolnBlk->Grid->nfaceTop(i,j,SolnBlk->Grid->KCu);
-               BC_wall = SolnBlk->Grid->BCtypeT[i][j];
+   for ( j =  SolnBlk->Grid.JCl- SolnBlk->Grid.Nghost ; j <=  SolnBlk->Grid.JCu+ SolnBlk->Grid.Nghost ; ++j )
+      for ( i =  SolnBlk->Grid.ICl- SolnBlk->Grid.Nghost ; i <=  SolnBlk->Grid.ICu+ SolnBlk->Grid.Nghost ; ++i ) {
+         if (SolnBlk->Grid.BCtypeT[i][j] == BC_WALL_VISCOUS ||
+             SolnBlk->Grid.BCtypeT[i][j] == BC_NO_SLIP  ||
+             SolnBlk->Grid.BCtypeT[i][j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+             SolnBlk->Grid.BCtypeT[i][j] == BC_WALL_VISCOUS_HEATFLUX ||
+             SolnBlk->Grid.BCtypeT[i][j] == BC_ADIABATIC_WALL ||
+             SolnBlk->Grid.BCtypeT[i][j] == BC_BURNING_SURFACE) {
+            if (abs(SolnBlk->Grid.xfaceTop(i,j,SolnBlk->Grid.KCu)-X_cell) < y_wall) {
+               y_wall = abs(SolnBlk->Grid.xfaceTop(i,j,SolnBlk->Grid.KCu)-X_cell);
+               X_wall = SolnBlk->Grid.xfaceTop(i,j,SolnBlk->Grid.KCu);
+               n_wall = -SolnBlk->Grid.nfaceTop(i,j,SolnBlk->Grid.KCu);
+               BC_wall = SolnBlk->Grid.BCtypeT[i][j];
             }
          }
          

@@ -161,6 +161,29 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
      MeshBlk = NULL;
   } /* endif */
 
+//           error_flag = Output_Tecplot(MeshBlk,
+//                                       Input_Parameters);
+
+  Grid3D_Hexa_Block          ***Mesh3D;
+  int numblk_kdir;
+  Mesh3D = Grid_Bluff_Body_Burner_3D(Mesh3D,
+                                     Input_Parameters.Number_of_Blocks_Idir,
+  	                             Input_Parameters.Number_of_Blocks_Jdir,
+                                     numblk_kdir,
+                                     1.00,
+                                     6.00,
+                                     10.00,
+                                     25.00,
+                                     10.00,
+                                     10,
+                                     10,
+                                     10,
+                                     2);
+  error_flag = Output_Tecplot(Mesh3D,
+                              Input_Parameters,
+		              numblk_kdir);
+  return(0);
+
   // Broadcast the mesh to other MPI processors.
   CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
   CFDkit_Broadcast_MPI(&error_flag, 1); // Broadcast mesh error flag.

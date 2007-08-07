@@ -10,7 +10,7 @@
 #endif //_HEXA_MULTIBLOCK_INCLUDEDT
 
 #ifndef _FANS3D_THERMALLYPERFECT_STATE_INCLUDED
-#include "FANS3DYhermallyPerfectState.h"
+#include "FANS3DThermallyPerfectState.h"
 #endif // FANS3D_THERMALLYPERFECT_STATE_INCLUDED   
 
 
@@ -22,9 +22,9 @@
 /*       if(Block_Used[nblk]){ */
             
 /*          int i, j, k; */
-/*          for ( k =  Hexa_Block_List[nblk]->Grid->KCl- Hexa_Block_List[nblk]->Grid->Nghost ; k <=  Hexa_Block_List[nblk]->Grid->KCu+ Hexa_Block_List[nblk]->Grid->Nghost ; ++k ) */
-/*             for ( j =  Hexa_Block_List[nblk]->Grid->JCl- Hexa_Block_List[nblk]->Grid->Nghost ; j <=  Hexa_Block_List[nblk]->Grid->JCu+ Hexa_Block_List[nblk]->Grid->Nghost ; ++j )  */
-/*                for ( i =  Hexa_Block_List[nblk]->Grid->ICl- Hexa_Block_List[nblk]->Grid->Nghost ; i <=  Hexa_Block_List[nblk]->Grid->ICu+ Hexa_Block_List[nblk]->Grid->Nghost ; ++i ) { */
+/*          for ( k =  Hexa_Block_List[nblk]->Grid.KCl- Hexa_Block_List[nblk]->Grid.Nghost ; k <=  Hexa_Block_List[nblk]->Grid.KCu+ Hexa_Block_List[nblk]->Grid.Nghost ; ++k ) */
+/*             for ( j =  Hexa_Block_List[nblk]->Grid.JCl- Hexa_Block_List[nblk]->Grid.Nghost ; j <=  Hexa_Block_List[nblk]->Grid.JCu+ Hexa_Block_List[nblk]->Grid.Nghost ; ++j )  */
+/*                for ( i =  Hexa_Block_List[nblk]->Grid.ICl- Hexa_Block_List[nblk]->Grid.Nghost ; i <=  Hexa_Block_List[nblk]->Grid.ICu+ Hexa_Block_List[nblk]->Grid.Nghost ; ++i ) { */
             
 /*             // for ghost cells close to solid wall, the ywall is set to be zero, */
 /*             // this is related to the application of wall function (see the logic in the wall fucntion code */
@@ -33,78 +33,78 @@
 /*             // however, it is not over-excessive to have these boundary checks. */
             
 /*             // Check West boundary. */
-/*             if (Hexa_Block_List[nblk]->Grid->BCtypeW[j][k] == BC_WALL_VISCOUS || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeW[j][k] == BC_NO_SLIP  || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeW[j][k] == BC_WALL_VISCOUS_ISOTHERMAL || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeW[j][k] == BC_WALL_VISCOUS_HEATFLUX || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeW[j][k] == BC_ADIABATIC_WALL || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeW[j][k] == BC_BURNING_SURFACE){ */
+/*             if (Hexa_Block_List[nblk]->Grid.BCtypeW[j][k] == BC_WALL_VISCOUS || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeW[j][k] == BC_NO_SLIP  || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeW[j][k] == BC_WALL_VISCOUS_ISOTHERMAL || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeW[j][k] == BC_WALL_VISCOUS_HEATFLUX || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeW[j][k] == BC_ADIABATIC_WALL || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeW[j][k] == BC_BURNING_SURFACE){ */
                
-/*                Hexa_Block_List[nblk]->Wall[ Hexa_Block_List[nblk]->Grid->ICl-2][j][k].ywall = ZERO; */
-/*                Hexa_Block_List[nblk]->Wall[ Hexa_Block_List[nblk]->Grid->ICl-1][j][k].ywall = ZERO; */
+/*                Hexa_Block_List[nblk]->Wall[ Hexa_Block_List[nblk]->Grid.ICl-2][j][k].ywall = ZERO; */
+/*                Hexa_Block_List[nblk]->Wall[ Hexa_Block_List[nblk]->Grid.ICl-1][j][k].ywall = ZERO; */
 /*             } /\* endif *\/ */
             
 /*             // Check East boundary. */
-/*             if (Hexa_Block_List[nblk]->Grid->BCtypeE[j][k] == BC_WALL_VISCOUS || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeE[j][k] == BC_NO_SLIP  || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeE[j][k] == BC_WALL_VISCOUS_ISOTHERMAL || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeE[j][k] == BC_WALL_VISCOUS_HEATFLUX || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeE[j][k] == BC_ADIABATIC_WALL || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeE[j][k] == BC_BURNING_SURFACE) { */
-/*                Hexa_Block_List[nblk]->Wall[ Hexa_Block_List[nblk]->Grid->ICu+1][j][k].ywall = ZERO; */
-/*                Hexa_Block_List[nblk]->Wall[ Hexa_Block_List[nblk]->Grid->ICu+2][j][k].ywall = ZERO; */
+/*             if (Hexa_Block_List[nblk]->Grid.BCtypeE[j][k] == BC_WALL_VISCOUS || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeE[j][k] == BC_NO_SLIP  || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeE[j][k] == BC_WALL_VISCOUS_ISOTHERMAL || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeE[j][k] == BC_WALL_VISCOUS_HEATFLUX || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeE[j][k] == BC_ADIABATIC_WALL || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeE[j][k] == BC_BURNING_SURFACE) { */
+/*                Hexa_Block_List[nblk]->Wall[ Hexa_Block_List[nblk]->Grid.ICu+1][j][k].ywall = ZERO; */
+/*                Hexa_Block_List[nblk]->Wall[ Hexa_Block_List[nblk]->Grid.ICu+2][j][k].ywall = ZERO; */
                
 /*             } /\* endif *\/ */
             
 /*             // Check South boundary. */
-/*             if (Hexa_Block_List[nblk]->Grid->BCtypeS[i][k] == BC_WALL_VISCOUS || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeS[i][k] == BC_NO_SLIP  || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeS[i][k] == BC_WALL_VISCOUS_ISOTHERMAL || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeS[i][k] == BC_WALL_VISCOUS_HEATFLUX || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeS[i][k] == BC_ADIABATIC_WALL || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeS[i][k] == BC_BURNING_SURFACE) { */
+/*             if (Hexa_Block_List[nblk]->Grid.BCtypeS[i][k] == BC_WALL_VISCOUS || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeS[i][k] == BC_NO_SLIP  || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeS[i][k] == BC_WALL_VISCOUS_ISOTHERMAL || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeS[i][k] == BC_WALL_VISCOUS_HEATFLUX || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeS[i][k] == BC_ADIABATIC_WALL || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeS[i][k] == BC_BURNING_SURFACE) { */
                
-/*                Hexa_Block_List[nblk]->Wall[i][ Hexa_Block_List[nblk]->Grid->JCl-2][k].ywall = ZERO; */
-/*                Hexa_Block_List[nblk]->Wall[i][ Hexa_Block_List[nblk]->Grid->JCl-1][k].ywall = ZERO; */
+/*                Hexa_Block_List[nblk]->Wall[i][ Hexa_Block_List[nblk]->Grid.JCl-2][k].ywall = ZERO; */
+/*                Hexa_Block_List[nblk]->Wall[i][ Hexa_Block_List[nblk]->Grid.JCl-1][k].ywall = ZERO; */
 /*             } /\* endif *\/ */
                
                
 /*             // Check North boundary. */
-/*             if (Hexa_Block_List[nblk]->Grid->BCtypeN[i][k] == BC_WALL_VISCOUS || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeN[i][k] == BC_NO_SLIP  || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeN[i][k] == BC_WALL_VISCOUS_ISOTHERMAL || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeN[i][k] == BC_WALL_VISCOUS_HEATFLUX || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeN[i][k] == BC_ADIABATIC_WALL || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeN[i][k] == BC_BURNING_SURFACE) { */
+/*             if (Hexa_Block_List[nblk]->Grid.BCtypeN[i][k] == BC_WALL_VISCOUS || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeN[i][k] == BC_NO_SLIP  || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeN[i][k] == BC_WALL_VISCOUS_ISOTHERMAL || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeN[i][k] == BC_WALL_VISCOUS_HEATFLUX || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeN[i][k] == BC_ADIABATIC_WALL || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeN[i][k] == BC_BURNING_SURFACE) { */
                
-/*                Hexa_Block_List[nblk]->Wall[i][ Hexa_Block_List[nblk]->Grid->JCu+1][k].ywall = ZERO; */
-/*                Hexa_Block_List[nblk]->Wall[i][ Hexa_Block_List[nblk]->Grid->JCu+2][k].ywall = ZERO; */
+/*                Hexa_Block_List[nblk]->Wall[i][ Hexa_Block_List[nblk]->Grid.JCu+1][k].ywall = ZERO; */
+/*                Hexa_Block_List[nblk]->Wall[i][ Hexa_Block_List[nblk]->Grid.JCu+2][k].ywall = ZERO; */
                   
 /*             } /\* endif *\/ */
                
 /*             // Check Bottom boundary. */
             
-/*             if (Hexa_Block_List[nblk]->Grid->BCtypeB[i][j] == BC_WALL_VISCOUS || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeB[i][j] == BC_NO_SLIP  || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeB[i][j] == BC_WALL_VISCOUS_ISOTHERMAL || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeB[i][j] == BC_WALL_VISCOUS_HEATFLUX || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeB[i][j] == BC_ADIABATIC_WALL || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeB[i][j] == BC_BURNING_SURFACE) { */
+/*             if (Hexa_Block_List[nblk]->Grid.BCtypeB[i][j] == BC_WALL_VISCOUS || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeB[i][j] == BC_NO_SLIP  || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeB[i][j] == BC_WALL_VISCOUS_ISOTHERMAL || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeB[i][j] == BC_WALL_VISCOUS_HEATFLUX || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeB[i][j] == BC_ADIABATIC_WALL || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeB[i][j] == BC_BURNING_SURFACE) { */
                
-/*                Hexa_Block_List[nblk]->Wall[i][j][ Hexa_Block_List[nblk]->Grid->KCl-1].ywall = ZERO; */
-/*                Hexa_Block_List[nblk]->Wall[i][j][ Hexa_Block_List[nblk]->Grid->KCl-2].ywall = ZERO; */
+/*                Hexa_Block_List[nblk]->Wall[i][j][ Hexa_Block_List[nblk]->Grid.KCl-1].ywall = ZERO; */
+/*                Hexa_Block_List[nblk]->Wall[i][j][ Hexa_Block_List[nblk]->Grid.KCl-2].ywall = ZERO; */
 /*             } */
             
 /*             // Check Top boundary. */
-/*             if (Hexa_Block_List[nblk]->Grid->BCtypeT[i][j] == BC_WALL_VISCOUS || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeT[i][j] == BC_NO_SLIP  || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeT[i][j] == BC_WALL_VISCOUS_ISOTHERMAL || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeT[i][j] == BC_WALL_VISCOUS_HEATFLUX || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeT[i][j] == BC_ADIABATIC_WALL || */
-/*                 Hexa_Block_List[nblk]->Grid->BCtypeT[i][j] == BC_BURNING_SURFACE) { */
+/*             if (Hexa_Block_List[nblk]->Grid.BCtypeT[i][j] == BC_WALL_VISCOUS || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeT[i][j] == BC_NO_SLIP  || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeT[i][j] == BC_WALL_VISCOUS_ISOTHERMAL || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeT[i][j] == BC_WALL_VISCOUS_HEATFLUX || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeT[i][j] == BC_ADIABATIC_WALL || */
+/*                 Hexa_Block_List[nblk]->Grid.BCtypeT[i][j] == BC_BURNING_SURFACE) { */
                
-/*                Hexa_Block_List[nblk]->Wall[i][j][ Hexa_Block_List[nblk]->Grid->KCu+1].ywall = ZERO; */
-/*                Hexa_Block_List[nblk]->Wall[i][j][ Hexa_Block_List[nblk]->Grid->KCu+2].ywall = ZERO; */
+/*                Hexa_Block_List[nblk]->Wall[i][j][ Hexa_Block_List[nblk]->Grid.KCu+1].ywall = ZERO; */
+/*                Hexa_Block_List[nblk]->Wall[i][j][ Hexa_Block_List[nblk]->Grid.KCu+2].ywall = ZERO; */
                
 /*             } */
                
@@ -150,12 +150,12 @@
 /*          if(Block_Used[nblk]){ */
             
 /*             // compute wall data ... ...  */
-/*             for ( int k = Hexa_Block_List[nblk]->Grid->KCl- Hexa_Block_List[nblk]->Grid->Nghost ; k <=   Hexa_Block_List[nblk]->Grid->KCu+  Hexa_Block_List[nblk]->Grid->Nghost ; ++k ) */
-/*                for ( int j = Hexa_Block_List[nblk]->Grid->JCl- Hexa_Block_List[nblk]->Grid->Nghost ; j <=   Hexa_Block_List[nblk]->Grid->JCu+  Hexa_Block_List[nblk]->Grid->Nghost ; ++j )  */
-/*                   for ( int i = Hexa_Block_List[nblk]->Grid->ICl-  Hexa_Block_List[nblk]->Grid->Nghost ; i <=   Hexa_Block_List[nblk]->Grid->ICu+  Hexa_Block_List[nblk]->Grid->Nghost ; ++i ) { */
+/*             for ( int k = Hexa_Block_List[nblk]->Grid.KCl- Hexa_Block_List[nblk]->Grid.Nghost ; k <=   Hexa_Block_List[nblk]->Grid.KCu+  Hexa_Block_List[nblk]->Grid.Nghost ; ++k ) */
+/*                for ( int j = Hexa_Block_List[nblk]->Grid.JCl- Hexa_Block_List[nblk]->Grid.Nghost ; j <=   Hexa_Block_List[nblk]->Grid.JCu+  Hexa_Block_List[nblk]->Grid.Nghost ; ++j )  */
+/*                   for ( int i = Hexa_Block_List[nblk]->Grid.ICl-  Hexa_Block_List[nblk]->Grid.Nghost ; i <=   Hexa_Block_List[nblk]->Grid.ICu+  Hexa_Block_List[nblk]->Grid.Nghost ; ++i ) { */
 /*                      Hexa_Block_List[nblk]->Wall[i][j][k].ywall =  std::numeric_limits<double>::max(); */
 /*                      error_flag = Wall_Distance(Hexa_Block_List[nblk], */
-/*                                                 Hexa_Block_List[nblk]->Grid->Cell[i][j][k].Xc, */
+/*                                                 Hexa_Block_List[nblk]->Grid.Cell[i][j][k].Xc, */
 /*                                                 X_wall_temp, n_wall_temp, */
 /*                                                 y_wall_temp, BC_wall_temp); */
 /*                      if (y_wall_temp < Hexa_Block_List[nblk]->Wall[i][j][k].ywall ) { */

@@ -39,51 +39,52 @@
  *                                                                *
  ******************************************************************/
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-   int  Create_Initial_Solution_Blocks( Grid3D_Hexa_Multi_Block *InitMeshBlks,
-                                        Hexa_MultiBlock<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Hexa_MultiBlock_List,
-                                        Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>   &InputParameters,
-                                        OcTreeBlock_DataStructure  &OcTree,
-                                        AdaptiveBlock3DResourceList    &GlobalSolnBlockList,
-                                        AdaptiveBlock3D_List         &LocalSolnBlockList) {
+   int  Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block &Initial_Multiblock_Mesh,
+                                       Hexa_MultiBlock<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Hexa_MultiBlock_List,
+                                       Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>   &InputParameters,
+                                       OcTreeBlock_DataStructure &OcTree,
+                                       AdaptiveBlock3DResourceList  &GlobalSolnBlockList,
+                                       AdaptiveBlock3D_List &LocalSolnBlockList) {
    
    int i_blk, j_blk, k_blk, n_cpu, n_blk;
    
-   
+   cout << "\n AMR-A:"; cout.flush();
+
    OcTreeBlock_DataStructure::Create_OcTree_Data_Structure(
       OcTree,
-      InputParameters.IP_Grid.IBlk,
-      InputParameters.IP_Grid.JBlk,
-      InputParameters.IP_Grid.KBlk,
+      InputParameters.IP_Grid.NBlk_Idir,
+      InputParameters.IP_Grid.NBlk_Jdir,
+      InputParameters.IP_Grid.NBlk_Kdir,
       InputParameters.Number_of_Processors,
       InputParameters.Number_of_Blocks_Per_Processor);
 
-   
    OcTree.MaximumRefinementLevel = InputParameters.Maximum_Refinement_Level-1;
    OcTree.MinimumRefinementLevel = InputParameters.Minimum_Refinement_Level-1;
    
-  /*  cout<<"\n/\* Set the thresholds for refinement and coarsening of the mesh. *\/"; */
-/*    cout.flush(); */
+   /* Set the thresholds for refinement and coarsening of the mesh. */
    
    OcTree.RefineThreshold = InputParameters.Threshold_for_Refinement;
    OcTree.CoarsenThreshold = InputParameters.Threshold_for_Coarsening;
    
-  /*  cout<<"\n/\* Create (allocate) array of local 3D hexarilateral solution blocks. *\/"; */
-/*    cout.flush(); */
+   /* Create (allocate) array of local 3D hexarilateral solution blocks. */
    
+   cout << "\n AMR-B:"; cout.flush();
+
    AdaptiveBlock3DResourceList::Create_Block_Resource_List(GlobalSolnBlockList,
                               InputParameters.Number_of_Processors,
                               InputParameters.Number_of_Blocks_Per_Processor);
    LocalSolnBlockList.allocate(InputParameters.Number_of_Blocks_Per_Processor);
    LocalSolnBlockList.ThisCPU = GlobalSolnBlockList.ThisCPU;
    
- /*   cout<<"\n Loop over all initial mesh blocks and assign OcTree root blocks and local solution block information as required. "; */
-/*    cout.flush(); */
+   /* Loop over all initial mesh blocks and assign OcTree root blocks and 
+      local solution block information as required. */
 
+   cout << "\n AMR-C:"; cout.flush();
    int nused=0;
-   for ( k_blk = 0 ; k_blk <= InputParameters.IP_Grid.KBlk-1 ; ++k_blk ) {
-      for ( j_blk = 0 ; j_blk <= InputParameters.IP_Grid.JBlk-1 ; ++j_blk ) {
-         for ( i_blk = 0 ; i_blk <= InputParameters.IP_Grid.IBlk-1 ; ++i_blk ) {
-            if (InitMeshBlks->Grid_ptr[i_blk][j_blk][k_blk]->Node != NULL) { // Mesh block is used!!!!
+   for ( k_blk = 0 ; k_blk <= InputParameters.IP_Grid.NBlk_Kdir-1 ; ++k_blk ) {
+      for ( j_blk = 0 ; j_blk <= InputParameters.IP_Grid.NBlk_Jdir-1 ; ++j_blk ) {
+         for ( i_blk = 0 ; i_blk <= InputParameters.IP_Grid.NBlk_Idir-1 ; ++i_blk ) {
+            if (Initial_Multiblock_Mesh.Grid_Blks[i_blk][j_blk][k_blk].Used) { // Mesh block is used!!!!
 	       // Get next free solution block from list of available
 	       // solution blocks.
                
@@ -108,11 +109,14 @@ template<typename SOLN_pSTATE, typename SOLN_cSTATE>
                OcTree.Roots[i_blk][j_blk][k_blk].block.info.cpu = n_cpu;
                OcTree.Roots[i_blk][j_blk][k_blk].block.info.blknum = n_blk;
                OcTree.Roots[i_blk][j_blk][k_blk].block.info.dimen.i =
-                   InitMeshBlks->Grid_ptr[i_blk][j_blk][k_blk]->NCi-  2*InitMeshBlks->Grid_ptr[i_blk][j_blk][k_blk]->Nghost;
+                   Initial_Multiblock_Mesh.Grid_Blks[i_blk][j_blk][k_blk].NCi -  
+                   2*Initial_Multiblock_Mesh.Grid_Blks[i_blk][j_blk][k_blk].Nghost;
                OcTree.Roots[i_blk][j_blk][k_blk].block.info.dimen.j =
-                   InitMeshBlks->Grid_ptr[i_blk][j_blk][k_blk]->NCj- 2*InitMeshBlks->Grid_ptr[i_blk][j_blk][k_blk]->Nghost;
+                   Initial_Multiblock_Mesh.Grid_Blks[i_blk][j_blk][k_blk].NCj - 
+                   2*Initial_Multiblock_Mesh.Grid_Blks[i_blk][j_blk][k_blk].Nghost;
                OcTree.Roots[i_blk][j_blk][k_blk].block.info.dimen.k =
-                   InitMeshBlks->Grid_ptr[i_blk][j_blk][k_blk]->NCk- 2*InitMeshBlks->Grid_ptr[i_blk][j_blk][k_blk]->Nghost;
+                   Initial_Multiblock_Mesh.Grid_Blks[i_blk][j_blk][k_blk].NCk - 
+                   2*Initial_Multiblock_Mesh.Grid_Blks[i_blk][j_blk][k_blk].Nghost;
                OcTree.Roots[i_blk][j_blk][k_blk].block.info.dimen.ghost = 2;
                OcTree.Roots[i_blk][j_blk][k_blk].block.info.sector = ADAPTIVEBLOCK3D_SECTOR_NONE;
                OcTree.Roots[i_blk][j_blk][k_blk].block.info.level = 0;
@@ -136,79 +140,69 @@ template<typename SOLN_pSTATE, typename SOLN_cSTATE>
                   LocalSolnBlockList.Block[n_blk] = OcTree.Roots[i_blk][j_blk][k_blk].block;
                   
                   Hexa_MultiBlock_List.Hexa_Block_List[n_blk] = 
-                     new Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>(InputParameters.IP_Grid.ICells,
-                                                              InputParameters.IP_Grid.JCells,
-                                                              InputParameters.IP_Grid.KCells,
+                     new Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>(InputParameters.IP_Grid.NCells_Idir,
+                                                              InputParameters.IP_Grid.NCells_Jdir,
+                                                              InputParameters.IP_Grid.NCells_Kdir,
                                                               InputParameters.IP_Grid.Nghost,
                                                               i_blk, j_blk, k_blk,
                                                               InputParameters.i_Flow_Type, 
-                                                              InitMeshBlks->Grid_ptr[i_blk][j_blk][k_blk]);
+                                                              Initial_Multiblock_Mesh.Grid_Blks[i_blk][j_blk][k_blk]);
 
                   Hexa_MultiBlock_List.Block_Used[n_blk] = LocalSolnBlockList.Block[n_blk].used;
                   
-                  //      cout<<"\n AMR3D n_blk "<<n_blk<<"  used=   "<< LocalSolnBlockList.Block[n_blk].used<<endl;
-                  
-
                } /* endif */
 	       
            } /* endif */
 	   else{
 	     OcTree.Roots[i_blk][j_blk][k_blk].block.used = 0;
-	     
 	     nused++;
-             //  cout<<"\n Block ("<<i_blk <<","<<j_blk <<","<<k_blk <<") is not used";
 	   }
         } /* endfor */
       } /* endfor */
-   } /* endfor */
+    } /* endfor */
    
-   // cout<<"\n There are "<<nused<< " unused blocks";
 
-  /*   cout<<"\n/\* Renumber all solution blocks, assigning a unique global block number. *\/"; */
-/*     cout.flush(); */
+    /* Renumber all solution blocks, assigning a unique global block number. */
+
+    cout << "\n AMR-D:"; cout.flush();
 
     OcTreeBlock_DataStructure::Renumber_Solution_Blocks(OcTree,
                              LocalSolnBlockList);
 
-/*     cout<<"\n/\* Find the neighbours of all of the newly assigned root blocks. *\/"; */
-/*     cout.flush(); */
-
+    /* Find the neighbours of all of the newly assigned root blocks. */
  
+    cout << "\n AMR-E:"; cout.flush();
+
     OcTreeBlock_DataStructure::Find_Neighbours_of_Root_Solution_Blocks(OcTree,
                                             LocalSolnBlockList);
 
+    /* Modify block neighbours for grid geometries with periodic boundaries, etc. */
 
-  
-    //cout<<"\n/* Modify block neighbours for grid geometries with
-    //   periodic boundaries, etc. */";
-    //cout.flush();
+    cout << "\n AMR-F:"; cout.flush();
 
     OcTreeBlock_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(OcTree,
-                                              LocalSolnBlockList,
-                                              InputParameters.IP_Grid.i_Grid);
+                                                                         LocalSolnBlockList,
+                                                                         InputParameters.IP_Grid.i_Grid);
 
+    /* Allocates memory for all message passing buffers used to send 
+       solution information between neighbouring solution blocks. */
 
-    //cout<<"\n/* Allocates memory for all message passing buffers used
-    //   to send solution information between neighbouring solution blocks. */";
-    //cout.flush();
+    cout << "\n AMR-G:"; cout.flush();
 
-    AdaptiveBlock3D_List::Allocate_Message_Buffers(
-       LocalSolnBlockList,
-       Hexa_MultiBlock_List.Hexa_Block_List[0]->NumVar()+NUM_COMP_VECTOR3D);
-
+    AdaptiveBlock3D_List::Allocate_Message_Buffers(LocalSolnBlockList,
+                                                   Hexa_MultiBlock_List.Hexa_Block_List[0]->NumVar()+NUM_COMP_VECTOR3D);
  
-    //cout<<"\n/* Solution block allocation and assignment complete.
-    //   Return pointer to local solution blocks. */";
-    //cout.flush();
+    /* Solution block allocation and assignment complete.
+       Return pointer to local solution blocks. */
 
     return(0);
 
 }
 
 /********************************************************
- * Routine: Read_OcTree                               *
+ * Routine: Read_OcTree                                 *
  *                                                      *
- * Reads the OcTree data structure from a file.       *
+ * Reads the OcTree data structure from a file.         *
  *                                                      *
  ********************************************************/
 template <class Hexa_Soln_Input_Parameters>
@@ -337,9 +331,9 @@ int Read_OcTree(OcTreeBlock_DataStructure &OcTree,
 }
 
 /********************************************************
- * Routine: Write_OcTree                              *
+ * Routine: Write_OcTree                                *
  *                                                      *
- * Writes the OcTree data structure to a file for     *
+ * Writes the OcTree data structure to a file for       *
  * later retrieval.                                     *
  *                                                      *
  ********************************************************/
@@ -403,7 +397,7 @@ void Flag_Blocks_For_Refinement(Hexa_Soln_Block             *Soln_ptr,
                                 AdaptiveBlock3DResourceList   &Global_Soln_Block_List,
                                 AdaptiveBlock3D_List        &Local_Soln_Block_List) {
 
-  cout<<"\nError Flag_Blocks_For_Refinement( is not written for 3D";
+  cout<<"\nError Flag_Blocks_For_Refinement is not written for 3D";
 
 }
 
@@ -421,8 +415,7 @@ int Refine_Grid(Hexa_Soln_Block             *Soln_ptr,
                 AdaptiveBlock3DResourceList   &GlobalSolnBlockList,
                 AdaptiveBlock3D_List        &LocalSolnBlockList) {
 
-  cout<<"\nError Refine_Grid( is not written for 3D";
-
+    cout<<"\nError Refine_Grid is not written for 3D";
     return(0);
 
 }
@@ -440,10 +433,8 @@ int Coarsen_Grid(Hexa_Soln_Block             *Soln_ptr,
                  OcTreeBlock_DataStructure &OcTree,
                  AdaptiveBlock3DResourceList   &GlobalSolnBlockList,
                  AdaptiveBlock3D_List        &LocalSolnBlockList) {
-
   
-  cout<<"\nError Coarsen_Grid( is not written for 3D";
-
+    cout<<"\nError Coarsen_Grid is not written for 3D";
     return(0);
 
 }
@@ -462,7 +453,7 @@ template <class Hexa_Soln_Block>
 void Fix_Refined_Block_Boundaries(Hexa_Soln_Block      *Soln_ptr,
                                   AdaptiveBlock3D_List &Soln_Block_List) {
 
-  cout<<"\nError Fix_Refined_Block_Boundaries( is not written for 3D";
+  cout<<"\nError Fix_Refined_Block_Boundaries is not written for 3D";
  
 }
 
@@ -478,7 +469,7 @@ template <class Hexa_Soln_Block>
 void Unfix_Refined_Block_Boundaries(Hexa_Soln_Block      *Soln_ptr,
                                     AdaptiveBlock3D_List &Soln_Block_List) {
 
-  cout<<"\nError Unfix_Refined_Block_Boundaries( is not written for 3D";
+  cout<<"\nError Unfix_Refined_Block_Boundaries is not written for 3D";
  
 }
 
@@ -497,8 +488,7 @@ int AMR(Hexa_Soln_Block             *Soln_ptr,
         AdaptiveBlock3D_List        &LocalSolnBlockList,
         const int                    Set_New_Refinement_Flags) {
 
-  cout<<"\nError AMR( is not written for 3D";
-  
+    cout<<"\nError AMR( is not written for 3D";
     return(0);
 
 }
@@ -518,9 +508,7 @@ int Initial_AMR(Hexa_Soln_Block              *Soln_ptr,
                 AdaptiveBlock3DResourceList    &GlobalSolnBlockList,
                 AdaptiveBlock3D_List         &LocalSolnBlockList) {
 
-
-  cout<<"\nError Initial_AMR( is not written for 3D";
-
+     cout<<"\nError Initial_AMR is not written for 3D";
      return(0);
 
 }
@@ -539,8 +527,8 @@ int Uniform_AMR(Hexa_Soln_Block              *Soln_ptr,
                 OcTreeBlock_DataStructure  &OcTree,
                 AdaptiveBlock3DResourceList    &GlobalSolnBlockList,
                 AdaptiveBlock3D_List         &LocalSolnBlockList) {
-  cout<<"\nError Uniform_AMR( is not written for 3D";
 
+    cout<<"\nError Uniform_AMR is not written for 3D";
     return(0);
  
 }
@@ -561,8 +549,7 @@ int Boundary_AMR(Hexa_Soln_Block              *Soln_ptr,
 		 AdaptiveBlock3DResourceList    &GlobalSolnBlockList,
 		 AdaptiveBlock3D_List         &LocalSolnBlockList) {
 
-   cout<<"\nError Boundary_AMR( is not written for 3D";
- 
+    cout<<"\nError Boundary_AMR is not written for 3D";
     return(0);
 
 }

@@ -15,6 +15,8 @@ Roe
 #HLLE 
 ICs_Type = 
 ShockBox
+#ICs_Type = 
+#Uniform
 Schmidt=
 1.0
 Temperature = 
@@ -22,17 +24,17 @@ Temperature =
 Grid_Type =
 Cube
 Number_of_Cells_Idir = 
-10
+5
 Number_of_Cells_Jdir =
-20
+5
 Number_of_Cells_Kdir =
-10
+5
 Number_of_Blocks_Idir = 
 2
 Number_of_Blocks_Jdir =
 1
 Number_of_Blocks_Kdir =
-2
+1
 ###############################
 # Set time stepping parameters
 ###############################
@@ -43,9 +45,9 @@ Time_Max =
 Maximum_Number_of_Time_Steps =
 0
 Number_of_Blocks_Per_Processor =
-2
+64
 Output_File_Name = 
-multiblock
+test
 #######################
 # Execute program
 #######################
@@ -53,7 +55,7 @@ Execute
 #######################
 # Write output
 #######################
-Write_Output_Cells
+Write_Output_Nodes
 Write_Output
 #Write_Restart
 #######################
