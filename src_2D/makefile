@@ -298,6 +298,7 @@ INC_RTE = $(RTE_DIR)Rte2DState.h \
 	  $(RTE_DIR)Rte2DQuad.h \
 	  $(RTE_DIR)Rte2DQuadMultigrid.h \
 	  $(RTE_DIR)Rte2DQuadNKS.h \
+	  $(RTE_DIR)Rte2DQuadAMR.h \
 	  $(RTE_DIR)SNBCK.h
 INC_MULTIGRID = $(MULTIGRID_DIR)FASMultigrid2D.h \
 	        $(MULTIGRID_DIR)FASMultigrid2DInput.h

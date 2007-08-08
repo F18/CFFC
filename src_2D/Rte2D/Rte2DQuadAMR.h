@@ -1,18 +1,19 @@
-/* AdaptiveBlock2D_MessagePassing.h:  Templated subroutines for adaptive blocks classes
-                                      which load and unload message passing buffers. */
+#ifndef _RTE2D_AMR_INCLUDED
+#define _RTE2D_AMR_INCLUDED
 
-#ifndef _ADAPTIVEBLOCK2D_MESSAGEPASSING_INCLUDED
-#define _ADAPTIVEBLOCK2D_MESSAGEPASSING_INCLUDED
+/****************************************************************/
+/****** AMR REQUIRED SPECIALIZATIONS & FUNCTIONS ****************/
+/****************************************************************/  
 
-/* Include adaptive block and 2D vector header files. */
 
-#ifndef _ADAPTIVBLOCK_INCLUDED
-#include "AdaptiveBlock.h"
-#endif // _ADAPTIVEBLOCK_INCLUDED
+#ifndef _RTE2D_QUAD_INCLUDED
+#include "Rte2DQuad.h"
+#endif // _RTE2D_QUAD_INCLUDED
 
-#ifndef _VECTOR2D_INCLUDED
-#include "Vector2D.h"
-#endif //_VECTOR2D_INCLUDED
+#ifndef _AMR_INCLUDED
+#include "../AMR/AMR.h"
+#endif // _AMR_INCLUDED
+
 
 /*************************************************************
  * AdaptiveBlock2D -- Templated message passing subroutines. *
@@ -28,8 +29,7 @@
  * 2D solution blocks).                                 *
  *                                                      *
  ********************************************************/
-template <class Quad_Soln_Block>
-int Load_Send_Message_Buffers_NoResChange(Quad_Soln_Block *Soln_ptr,
+int Load_Send_Message_Buffers_NoResChange(Rte2D_Quad_Block *Soln_ptr,
                                           AdaptiveBlock2D_List &Soln_Block_List,
                                           const int Number_of_Solution_Variables,
                                           const int Send_Mesh_Geometry_Only,
@@ -1234,8 +1234,7 @@ int Load_Send_Message_Buffers_NoResChange(Quad_Soln_Block *Soln_ptr,
  * blocks).                                                    *
  *                                                             *
  ***************************************************************/
-template <class Quad_Soln_Block>
-int Load_Send_Message_Buffers_ResChange_FineToCoarse(Quad_Soln_Block *Soln_ptr,
+int Load_Send_Message_Buffers_ResChange_FineToCoarse(Rte2D_Quad_Block *Soln_ptr,
                                                      AdaptiveBlock2D_List &Soln_Block_List,
                                                      const int Number_of_Solution_Variables,
                                                      const int Send_Mesh_Geometry_Only,
@@ -2473,8 +2472,7 @@ int Load_Send_Message_Buffers_ResChange_FineToCoarse(Quad_Soln_Block *Soln_ptr,
  * blocks).                                                    *
  *                                                             *
  ***************************************************************/
-template <class Quad_Soln_Block>
-int Load_Send_Message_Buffers_ResChange_CoarseToFine(Quad_Soln_Block *Soln_ptr,
+int Load_Send_Message_Buffers_ResChange_CoarseToFine(Rte2D_Quad_Block *Soln_ptr,
                                                      AdaptiveBlock2D_List &Soln_Block_List,
                                                      const int Number_of_Solution_Variables,
                                                      const int Send_Mesh_Geometry_Only,
@@ -5674,8 +5672,7 @@ int Load_Send_Message_Buffers_ResChange_CoarseToFine(Quad_Soln_Block *Soln_ptr,
  * 2D solution blocks).                                 *
  *                                                      *
  ********************************************************/
-template <class Quad_Soln_Block>
-int Unload_Receive_Message_Buffers_NoResChange(Quad_Soln_Block *Soln_ptr,
+int Unload_Receive_Message_Buffers_NoResChange(Rte2D_Quad_Block *Soln_ptr,
                                                AdaptiveBlock2D_List &Soln_Block_List,
                                                const int Number_of_Solution_Variables,
                                                const int Send_Mesh_Geometry_Only,
@@ -6362,8 +6359,7 @@ int Unload_Receive_Message_Buffers_NoResChange(Quad_Soln_Block *Soln_ptr,
  * 2D solution blocks).                                           *
  *                                                                *
  ******************************************************************/
-template <class Quad_Soln_Block>
-int Unload_Receive_Message_Buffers_ResChange_FineToCoarse(Quad_Soln_Block *Soln_ptr,
+int Unload_Receive_Message_Buffers_ResChange_FineToCoarse(Rte2D_Quad_Block *Soln_ptr,
                                                           AdaptiveBlock2D_List &Soln_Block_List,
                                                           const int Number_of_Solution_Variables,
                                                           const int Send_Mesh_Geometry_Only,
@@ -7255,8 +7251,7 @@ int Unload_Receive_Message_Buffers_ResChange_FineToCoarse(Quad_Soln_Block *Soln_
  * of 2D solution blocks).                                        *
  *                                                                *
  ******************************************************************/
-template <class Quad_Soln_Block>
-int Unload_Receive_Message_Buffers_ResChange_CoarseToFine(Quad_Soln_Block *Soln_ptr,
+int Unload_Receive_Message_Buffers_ResChange_CoarseToFine(Rte2D_Quad_Block *Soln_ptr,
                                                           AdaptiveBlock2D_List &Soln_Block_List,
                                                           const int Number_of_Solution_Variables,
                                                           const int Send_Mesh_Geometry_Only,
@@ -8123,8 +8118,8 @@ int Unload_Receive_Message_Buffers_ResChange_CoarseToFine(Quad_Soln_Block *Soln_
  * blocks).                                             *
  *                                                      *
  ********************************************************/
-template <class Quad_Soln_Block>
-int Send_All_Messages(Quad_Soln_Block *Soln_ptr,
+template <>
+int Send_All_Messages(Rte2D_Quad_Block *Soln_ptr,
                       AdaptiveBlock2D_List &Soln_Block_List,
                       const int Number_of_Solution_Variables,
                       const int Send_Mesh_Geometry_Only) {
@@ -8275,8 +8270,8 @@ int Send_All_Messages(Quad_Soln_Block *Soln_ptr,
  * entire 1D array of 2D solution blocks).              *
  *                                                      *
  ********************************************************/
-template <class Quad_Soln_Block>
-int Send_Conservative_Flux_Corrections(Quad_Soln_Block *Soln_ptr,
+template <>
+int Send_Conservative_Flux_Corrections(Rte2D_Quad_Block *Soln_ptr,
                                        AdaptiveBlock2D_List &Soln_Block_List,
                                        const int Number_of_Solution_Variables) {
 
@@ -8336,8 +8331,7 @@ int Send_Conservative_Flux_Corrections(Quad_Soln_Block *Soln_ptr,
  * neighboring blocks.                                  *
  *                                                      *
  ********************************************************/
-template <class Quad_Soln_Block>
-int Send_Boundary_Ref_States(Quad_Soln_Block *Soln_ptr,
+int Send_Boundary_Ref_States(Rte2D_Quad_Block *Soln_ptr,
 			     AdaptiveBlock2D_List &Soln_Block_List,
 			     const int Number_of_Solution_Variables) {
 
@@ -8472,4 +8466,4 @@ int Send_Boundary_Ref_States(Quad_Soln_Block *Soln_ptr,
 
 
 
-#endif /* _ADAPTIVEBLOCK2D_MESSAGEPASSING_INCLUDED  */
+#endif /* _RTE2D_AMR_INCLUDED  */

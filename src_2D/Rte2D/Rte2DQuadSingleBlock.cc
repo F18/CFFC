@@ -1222,7 +1222,8 @@ void ICs(Rte2D_Quad_Block &SolnBlk,
  * specified quadrilateral solution block.              *
  *                                                      *
  ********************************************************/
-void BCs(Rte2D_Quad_Block &SolnBlk) {
+void BCs(Rte2D_Quad_Block &SolnBlk,
+	 Rte2D_Input_Parameters &IP) {
 
     int i, j;
     double dx_norm;
@@ -1616,7 +1617,8 @@ void BCs(Rte2D_Quad_Block &SolnBlk) {
  * Used for Space Marching                              *
  *                                                      *
  ********************************************************/
-void BCs_Space_March(Rte2D_Quad_Block &SolnBlk) {
+void BCs_Space_March(Rte2D_Quad_Block &SolnBlk,
+		     Rte2D_Input_Parameters &IP) {
 
     int i, j;
     double dx_norm;

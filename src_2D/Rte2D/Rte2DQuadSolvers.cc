@@ -8,15 +8,21 @@
 #endif // _RTE2D_QUAD_INCLUDED
 
 /* Include Rte2D Multigrid Specialization header file. */
-#ifndef _RTE2D_MULTIGRID_SPECIALIZATION_INCLUDED 
+#ifndef _RTE2D_MULTIGRID_INCLUDED 
 #include "Rte2DQuadMultigrid.h"
-#endif // _RTE2D_MULTIGRID_SPECIALIZATION_INCLUDED 
+#endif // _RTE2D_MULTIGRID_INCLUDED 
 
 
 /* Include Rte2D Newton-Krylov-Schwarz Specialization header file. */
-#ifndef _RTE2D_IMPLICIT_SPECIALIZATION_INCLUDED 
+#ifndef _RTE2D_NKS_INCLUDED 
 #include "Rte2DQuadNKS.h"
-#endif // _RTE2D_IMPLICIT_SPECIALIZATION_INCLUDED 
+#endif // _RTE2D_NKS_INCLUDED 
+
+
+/* Include Rte2D AMR Specialization header file. */
+#ifndef _RTE2D_AMR_INCLUDED
+#include "Rte2DQuadAMR.h"
+#endif // _RTE2D_AMR_INCLUDED
 
 
 /********************************************************
@@ -43,7 +49,7 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
   QuadTreeBlock_DataStructure  QuadTree;
   AdaptiveBlockResourceList    List_of_Global_Solution_Blocks;
   AdaptiveBlock2D_List         List_of_Local_Solution_Blocks;
-  Rte2D_Quad_Block          *Local_SolnBlk;
+  Rte2D_Quad_Block            *Local_SolnBlk;
 
   FAS_Multigrid2D_Solver<Rte2D_State, 
                          Rte2D_Quad_Block, 
@@ -269,8 +275,7 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
    ************************* BOUNDARY CONDITIONS *********************************
    *******************************************************************************/
   /* Prescribe boundary data consistent with initial data. */
-  BCs(Local_SolnBlk, 
-      List_of_Local_Solution_Blocks);
+  BCs(Local_SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
 
   /*******************************************************************************
    ******************* ADAPTIVE MESH REFINEMENT (AMR) ****************************
@@ -349,16 +354,41 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
   } /* endif */
 
 
-// Shouldn't this be an option at the bottom and be an output option ????
+  /***********************************************************************	
+   MORTON ORDERING of initial solution blocks 
+  (should be meshed with AMR, ie when Refine_Grid is done call the ordering)
+  ************************************************************************/
+  if (Input_Parameters.Morton) {
+     if (!batch_flag) cout << "\n\n Applying Morton re-ordering algorithm to initial solution blocks.";
 
-//   if (!batch_flag) {
-//      cout << "\n Outputting space filling curve showing block loading for CPUs.\n";
-//      cout.flush();
-//   } /* endif */	
-// 	
-//   Morton_SFC_Output_Tecplot(Local_SolnBlk,
-//                             Input_Parameters,  
-//                             List_of_Local_Solution_Blocks);
+    //NOTES: Issue here with Input_Parameters.Maximum_Number_of_Time_Steps related to reading restart files
+
+     error_flag = Morton_ReOrdering_of_Solution_Blocks(QuadTree, 
+                                                       List_of_Global_Solution_Blocks, 
+                                                       List_of_Local_Solution_Blocks, 
+                                                       Local_SolnBlk, 
+                                                       Input_Parameters, 
+                                                       number_of_time_steps, 
+                                                       Time, 
+                                                       processor_cpu_time); 
+     if (error_flag) {
+        cout <<"\n Euler2D ERROR: Morton re-ordering error on processor "
+	           << List_of_Local_Solution_Blocks.ThisCPU
+	           << ".\n";
+	      cout.flush();
+	      return (error_flag);
+     } /* endif */
+     error_flag = CFDkit_OR_MPI(error_flag);
+     if (error_flag) return (error_flag);
+     //Output space filling curve in Tecplot format
+     if (!batch_flag) {
+        cout << "\n Outputting space filling curve showing block loading for CPUs.\n";
+        cout.flush();
+     } /* endif */
+     Morton_SFC_Output_Tecplot(Local_SolnBlk, 
+                               Input_Parameters, 
+                               List_of_Local_Solution_Blocks);
+  } /* endif */
 
   /****************************************************************************
    *********************** MAIN SOLVER ****************************************
@@ -377,22 +407,32 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
 
   if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
 
-     MGSolver.allocate(batch_flag,
-		      Local_SolnBlk,
-		      &QuadTree,
-		      &List_of_Local_Solution_Blocks,
-		      &Input_Parameters,
-		      NUM_COMP_VECTOR2D);
+    // Allocate memory for multigrid solver.
+    error_flag = MGSolver.allocate(Local_SolnBlk,
+				   &QuadTree,
+				   &List_of_Global_Solution_Blocks,
+				   &List_of_Local_Solution_Blocks,
+				   &Input_Parameters);
+    if (error_flag) {
+      cout << "\n Euler2D ERROR: Unable to allocate memory for multigrid solver.\n";
+      cout.flush();
+    }
+    CFDkit_Broadcast_MPI(&error_flag,1);
+    if (error_flag) return error_flag;
 
-     if(!batch_flag) time(&start_explicit);
-
-    error_flag = MGSolver.Execute(number_of_time_steps,
+    // Execute multigrid solver.
+    error_flag = MGSolver.Execute(batch_flag,
+				  number_of_time_steps,
 				  Time,
 				  processor_cpu_time,
 				  total_cpu_time,
 				  residual_file);
-
-    if(!batch_flag) time(&end_explicit);
+    if (error_flag) {
+      cout << "\n Euler2D ERROR: Error during multigrid solution.\n";
+      cout.flush();
+    }
+    CFDkit_Broadcast_MPI(&error_flag,1);
+    if (error_flag) return error_flag;
 
 
   /**************************************************************************/
@@ -437,10 +477,11 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
       } /* endif */
       
       while (perform_space_marching) {
-	/* Periodically re-order the solution blocks on the processors
-           by applying the Morton ordering space filling curve algorithm. */
-	if (Input_Parameters.Morton &&
-            !first_step &&
+
+        /***********************************************************************	
+	MORTON ORDERING: Periodically re-order the solution blocks on the processors. 
+	************************************************************************/
+	if (Input_Parameters.Morton && !first_step &&
             number_of_time_steps%Input_Parameters.Morton_Reordering_Frequency == 0) {
            if (!batch_flag) cout << "\n\n Applying Morton re-ordering algorithm to solution blocks at n = "
                                  << number_of_time_steps << ".";
@@ -480,10 +521,12 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
               Evaluate_Limiters(Local_SolnBlk, 
                                 List_of_Local_Solution_Blocks);
               error_flag = AMR(Local_SolnBlk,
+			       Input_Parameters,
                                QuadTree,
                                List_of_Global_Solution_Blocks,
                                List_of_Local_Solution_Blocks,
-                               ON);
+                               ON, 
+			       ON);
 	      // need to set non-solution vector components
 	      Prescribe_NonSol(Local_SolnBlk,
 			       List_of_Local_Solution_Blocks,
@@ -647,7 +690,8 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
 	/************* BOUNDARY CONDITIONS *********************************/
 	// 2. Apply boundary conditions for stage.
 	BCs_Space_March(Local_SolnBlk, 
-			List_of_Local_Solution_Blocks);
+			List_of_Local_Solution_Blocks,
+			Input_Parameters);			
 	
 	/*************** UPDATE SOLUTION ************************************/
 	// 3. Determine solution residuals for stage.
@@ -725,7 +769,7 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
 
     
     // use these BCs to fudge the ghost cells properly
-    BCs(Local_SolnBlk, List_of_Local_Solution_Blocks);
+    BCs(Local_SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
     
     /* Close residual file. */
     
@@ -782,8 +826,10 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
       } /* endif */
 
       while (perform_explicit_time_marching) {
-	/* Periodically re-order the solution blocks on the processors
-           by applying the Morton ordering space filling curve algorithm. */
+
+        /***********************************************************************	
+	MORTON ORDERING: Periodically re-order the solution blocks on the processors. 
+	************************************************************************/
 	if (Input_Parameters.Morton &&
             !first_step &&
             number_of_time_steps%Input_Parameters.Morton_Reordering_Frequency == 0) {
@@ -825,10 +871,11 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
               Evaluate_Limiters(Local_SolnBlk, 
                                 List_of_Local_Solution_Blocks);
               error_flag = AMR(Local_SolnBlk,
+			       Input_Parameters,
                                QuadTree,
                                List_of_Global_Solution_Blocks,
                                List_of_Local_Solution_Blocks,
-                               ON);
+                               ON,ON);
 	      // need to set non-solution vector components
 	      Prescribe_NonSol(Local_SolnBlk,
 			       List_of_Local_Solution_Blocks,
@@ -1033,7 +1080,8 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
 	  /************* BOUNDARY CONDITIONS *********************************/
 	  // 2. Apply boundary conditions for stage.
 	  BCs(Local_SolnBlk, 
-	      List_of_Local_Solution_Blocks);
+	      List_of_Local_Solution_Blocks,
+	      Input_Parameters);
 	  
 	  /*************** UPDATE SOLUTION ************************************/
 	  // 3. Determine solution residuals for stage.
@@ -1137,8 +1185,9 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
     if (error_flag) return (error_flag);
     
     BCs(Local_SolnBlk, 
-	List_of_Local_Solution_Blocks);
-    
+	List_of_Local_Solution_Blocks,
+ 	Input_Parameters);
+   
     /* Close residual file. */
     
     if (CFDkit_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file);
@@ -1337,9 +1386,11 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
       Evaluate_Limiters(Local_SolnBlk, 
                         List_of_Local_Solution_Blocks);
       error_flag = AMR(Local_SolnBlk,
+		       Input_Parameters,
 		       QuadTree,
 		       List_of_Global_Solution_Blocks,
 		       List_of_Local_Solution_Blocks,
+		       ON,
 		       ON);
       // need to set non-solution vector components
       Prescribe_NonSol(Local_SolnBlk,

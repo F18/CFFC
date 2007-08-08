@@ -585,7 +585,8 @@ int Output_Mesh_Gnuplot(Rte2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 void BCs(Rte2D_Quad_Block *Soln_ptr,
-         AdaptiveBlock2D_List &Soln_Block_List) {
+         AdaptiveBlock2D_List &Soln_Block_List,
+	 Rte2D_Input_Parameters &IP) {
 
     int i;
 
@@ -593,14 +594,15 @@ void BCs(Rte2D_Quad_Block *Soln_ptr,
 
     for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-          BCs(Soln_ptr[i]);
+	 BCs(Soln_ptr[i], IP);
        } /* endif */
     }  /* endfor */
 
 }
 
 void BCs_Space_March(Rte2D_Quad_Block *Soln_ptr,
-		     AdaptiveBlock2D_List &Soln_Block_List) {
+		     AdaptiveBlock2D_List &Soln_Block_List,
+		     Rte2D_Input_Parameters &IP) {
 
     int i;
 
@@ -608,7 +610,7 @@ void BCs_Space_March(Rte2D_Quad_Block *Soln_ptr,
 
     for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-	 BCs_Space_March(Soln_ptr[i]);
+	 BCs_Space_March(Soln_ptr[i], IP);
        } /* endif */
     }  /* endfor */
 

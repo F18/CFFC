@@ -349,9 +349,15 @@ void Rte2D_State :: DeallocateCosines()
  * Description: Functions to initialize the entire state.             *
  *                                                                    *
  **********************************************************************/
+void Rte2D_State :: Vacuum() 
+{
+  for ( int i=0; i<Ntot; i++ ) I[i] = ZERO;
+  zero_non_sol();
+}
 void Rte2D_State :: Zero() 
 {
   for ( int i=0; i<Ntot; i++ ) I[i] = ZERO;
+  zero_non_sol();
 }
 void Rte2D_State :: zero_non_sol() {
   
@@ -3377,4 +3383,3 @@ void RectangularEnclosure( const double gas_temp,
   qy /= PI;
 
 }
-

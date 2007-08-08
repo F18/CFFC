@@ -201,6 +201,7 @@ class Rte2D_State {
   static void DeallocateCosines();
 
   // Zero the state
+  void Vacuum();
   void Zero();
   void zero_non_sol();
 

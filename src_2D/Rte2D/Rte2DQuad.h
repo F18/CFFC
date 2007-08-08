@@ -37,10 +37,6 @@ class Rte2D_Quad_Block;
 #include "../Grid/Grid2DQuad.h"
 #endif // _GRID2D_QUAD_BLOCK_INCLUDED
 
-#ifndef _QUADTREE_INCLUDED
-#include "../AMR/QuadTree.h"
-#endif // _QUADTREE_INCLUDED
-
 #ifndef _RTE2D_INPUT_INCLUDED
 #include "Rte2DInput.h"
 #endif // _RTE2D_INPUT_INCLUDED
@@ -2460,8 +2456,10 @@ extern void ICs(Rte2D_Quad_Block &SolnBlk,
  	        const int i_ICtype,
                 Rte2D_State *Wo);
 
-extern void BCs(Rte2D_Quad_Block &SolnBlk);
-extern void BCs_Space_March(Rte2D_Quad_Block &SolnBlk);
+extern void BCs(Rte2D_Quad_Block &SolnBlk,
+		Rte2D_Input_Parameters &IP);
+extern void BCs_Space_March(Rte2D_Quad_Block &SolnBlk, 
+			    Rte2D_Input_Parameters &IP);
 
 extern void Prescribe_NonSol(Rte2D_Quad_Block &SolnBlk,
 			     Rte2D_Input_Parameters &Input_Parameters);
@@ -2627,9 +2625,11 @@ extern void Prescribe_NonSol(Rte2D_Quad_Block *Soln_ptr,
 			     Rte2D_Input_Parameters &Input_Parameters);
 
 extern void BCs(Rte2D_Quad_Block *Soln_ptr,
-                AdaptiveBlock2D_List &Soln_Block_List);
+                AdaptiveBlock2D_List &Soln_Block_List,
+		Rte2D_Input_Parameters &IP);
 extern void BCs_Space_March(Rte2D_Quad_Block *Soln_ptr,
-			    AdaptiveBlock2D_List &Soln_Block_List);
+			    AdaptiveBlock2D_List &Soln_Block_List,
+			    Rte2D_Input_Parameters &IP);
 
 
 extern double CFL(Rte2D_Quad_Block *Soln_ptr,
