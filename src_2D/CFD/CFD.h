@@ -134,6 +134,9 @@ inline char *Date_And_Time() {
 
 #define WRITE_OUTPUT_AERODYNAMIC_COEFFICIENTS_CODE       10090
 
+#define WRITE_OUTPUT_BLACK_ENCLOSURE_CODE                10100
+
+
 #define	INVALID_INPUT_CODE                              -10000
 #define	INVALID_INPUT_VALUE                             -10001
 
@@ -319,6 +322,9 @@ inline char *Date_And_Time() {
 
 #define BC_DEVELOPED_CHANNEL            99906   // Developed channel inlet
 #define BC_COUETTE                      99907   // Couette BC, used by ~james
+
+//-- Radiation Boundary Conditions
+#define BC_GRAY_WALL                            20201   //      | CFDKit
 
 /**********************************************************************
  * CFD - BC OPTIONS                                                   *
@@ -512,6 +518,8 @@ inline char *Date_And_Time() {
 #define	TIME_STEPPING_CRANK_NICOLSON                   106
 #define	TIME_STEPPING_ADE                              107
 
+#define TIME_STEPPING_SPACE_MARCH                      110
+
 /**********************************************************************
  * CFD -- Multigrid Cycle Types                                       *
  **********************************************************************/
@@ -645,6 +653,17 @@ inline char *Date_And_Time() {
 #define EIKONAL_SIGN_FUNCTION_DISCRETE               691
 #define EIKONAL_SIGN_FUNCTION_SMEARED                692
 #define EIKONAL_SIGN_FUNCTION_DERIVATIVE             693
+
+
+/********************************************************
+ * CFD -- Space marching schemes.                       *
+ ********************************************************/
+
+#define SPACE_MARCH_UPWIND                            0
+#define SPACE_MARCH_CLAM                              1
+#define SPACE_MARCH_CENTRAL                           2
+#define SPACE_MARCH_GM                                3
+#define SPACE_MARCH_EXPONENTIAL                       4
 
 /**********************************************************************
  * CFD -- Directions.                                                 *
@@ -1288,6 +1307,15 @@ extern void A_Stable_Implicit_Method_Coefficients(double &theta,
 						  double &xi,
 						  double &phi,
 						  const int Time_Integration_Scheme);
+
+extern double CLAM(const double Uu,   // upstream nodal value
+		   const double Uc,   // centroid nodal value
+		   const double Ud,   // downstream nodal value
+		   const double xu,   // x upstream node
+		   const double xc,   // x centroid node
+		   const double xd,   // x downstream node
+		   const double xf);  // x downstream face
+
 
 /**********************************************************************
  * Routine: Bilinear_Interpolation                                    *

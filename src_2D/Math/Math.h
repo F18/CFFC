@@ -23,6 +23,7 @@ using namespace std;
 #define	NINE	9.00
 #define	TEN    10.00
 
+#define	FIFTEEN  15.00
 #define TWENTY   20.00
 #define THIRTY   30.00
 #define FOURTY   40.00

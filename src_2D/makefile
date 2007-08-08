@@ -35,6 +35,7 @@ ICEM_DIR = ICEM/
 INTERFACE_DIR = Interface2D/
 ION_DIR = Ion5Moment2D/
 LEVELSET_DIR = LevelSet2D/
+RTE_DIR = Rte2D/
 MATH_DIR = Math/
 MPI_DIR = MPI/
 MULTIGRID_DIR = FASMultigrid2D/
@@ -172,6 +173,15 @@ SRC_LEVELSET = $(LEVELSET_DIR)LevelSet2DInput.cc \
                $(LEVELSET_DIR)LevelSet2DQuadGrid.cc \
                $(LEVELSET_DIR)LevelSet2DQuadSolvers.cc
 SRC_LEVELSET_EXE = $(LEVELSET_DIR)LevelSet2D.cc
+SRC_RTE = $(RTE_DIR)Rte2DState.cc \
+          $(RTE_DIR)Rte2DInput.cc \
+          $(RTE_DIR)Rte2DQuad.cc \
+          $(RTE_DIR)Rte2DQuadSingleBlock.cc \
+          $(RTE_DIR)Rte2DQuadMultiBlock.cc \
+          $(RTE_DIR)Rte2DQuadGrid.cc \
+          $(RTE_DIR)Rte2DQuadSolvers.cc \
+          $(RTE_DIR)SNBCK.cc 
+SRC_RTE_EXE = $(RTE_DIR)Rte2D.cc
 SRC_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes2DState.cc \
                    $(NAVIERSTOKES_DIR)NavierStokes2DInput.cc \
                    $(NAVIERSTOKES_DIR)NavierStokes2DQuad.cc \
@@ -191,7 +201,7 @@ SRC_BASE =  $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_GRID) $(SRC_AMR) \
 SRC_CFFC = $(SRC_BASE) $(SRC_SCALAR) $(SRC_HEAT) $(SRC_HYPERHEAT) $(SRC_EULER1D) $(SRC_MHD1D) \
            $(SRC_ADVECTDIFFUSE) $(SRC_CHEM) $(SRC_DUSTY) $(SRC_EULER) \
 	   $(SRC_ION) $(SRC_ELECTROSTATIC) $(SRC_INTERFACE) $(SRC_LEVELSET) $(SRC_TURBULENT) \
-	   $(SRC_NAVIERSTOKES) $(SRC_ICEMCFD)  $(SRC_GAUSSIAN)
+	   $(SRC_NAVIERSTOKES) $(SRC_RTE2D) $(SRC_ICEMCFD)  $(SRC_GAUSSIAN)
 SRC_MAIN = cffc2D.cc
 SRC_ICEMCFD_UTIL1 = $(ICEM_DIR)icemcfd2tecplot.cc 
 SRC_ICEMCFD_UTIL2 = $(ICEM_DIR)icemcfd2grid2dquad.cc
@@ -203,11 +213,14 @@ INC_MATH  = $(MATH_DIR)Math.h \
             $(MATH_DIR)Vector3D.h \
             $(MATH_DIR)Tensor2D.h \
             $(MATH_DIR)Tensor3D.h \
+            $(MATH_DIR)Spline1D.h \
             $(MATH_DIR)Spline2D.h \
             $(MATH_DIR)Matrix.h \
             $(MATH_DIR)LinearSystems.h \
 	    $(MATH_DIR)LinkedList.h \
-	    $(MATH_DIR)Polygon.h
+	    $(MATH_DIR)Polygon.h \
+	    $(MATH_DIR)Simpson.h \
+	    $(MATH_DIR)Quadrature.h
 INC_SYSTEM = $(SYSTEM_DIR)System_Linux.h
 INC_CFD = $(CFD_DIR)CFD.h
 INC_MPI = $(MPI_DIR)MPI.h
@@ -280,9 +293,15 @@ INC_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes2DState.h \
 	           $(NAVIERSTOKES_DIR)NavierStokes2DQuadMultigrid.h
 INC_TURBULENT = $(TURBULENT_DIR)Turbulent2DWallData.h \
 	        $(TURBULENT_DIR)TurbulenceModelling.h
+INC_RTE = $(RTE_DIR)Rte2DState.h \
+	  $(RTE_DIR)Rte2DInput.h \
+	  $(RTE_DIR)Rte2DQuad.h \
+	  $(RTE_DIR)Rte2DQuadMultigrid.h \
+	  $(RTE_DIR)Rte2DQuadNKS.h \
+	  $(RTE_DIR)SNBCK.h
 INC_MULTIGRID = $(MULTIGRID_DIR)FASMultigrid2D.h \
 	        $(MULTIGRID_DIR)FASMultigrid2DInput.h
-INV_NKS = $(NKS_DIR)NKS2D.h \
+INC_NKS = $(NKS_DIR)NKS2D.h \
 	  $(NKS_DIR)NKSInput2D.h \
 	  $(NKS_DIR)GMRES2D.h \
 	  $(NKS_DIR)Block_Preconditioner2D.h
@@ -429,6 +448,15 @@ OBJ_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes2DState.o \
                    $(NAVIERSTOKES_DIR)NavierStokes2DQuadGrid.o \
                    $(NAVIERSTOKES_DIR)NavierStokes2DQuadSolvers.o
 OBJ_NAVIERSTOKES_EXE = $(NAVIERSTOKES_DIR)NavierStokes2D.o 
+OBJ_RTE = $(RTE_DIR)Rte2DState.o \
+          $(RTE_DIR)Rte2DInput.o \
+          $(RTE_DIR)Rte2DQuad.o \
+          $(RTE_DIR)Rte2DQuadSingleBlock.o \
+          $(RTE_DIR)Rte2DQuadMultiBlock.o \
+          $(RTE_DIR)Rte2DQuadGrid.o \
+          $(RTE_DIR)Rte2DQuadSolvers.o \
+          $(RTE_DIR)SNBCK.o \
+OBJ_RTE_EXE = $(RTE_DIR)Rte2D.o
 OBJ_ICEMCFD = $(ICEM_DIR)ICEMCFD.o \
 	      $(ICEM_DIR)ICEMCFD_ctype.o
 OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_AMR) \
@@ -456,6 +484,7 @@ EXE_EULER2D = euler2D
 EXE_ION5MOMENT2D = ion5moment2D
 EXE_LEVELSET2D = levelset2D
 EXE_NAVIERSTOKES2D = navierstokes2D
+EXE_RTE2D = rte2D
 EXE_EMBEDDEDBOUNDARIES2D = embeddedboundaries2D
 EXE_GAUSSIAN2D = gaussian2D
 
@@ -485,6 +514,7 @@ help:
 	@echo "|        make navierstokes2D       compile navierstokes2D stand alone program       |"
 	@echo "|        make embeddedboundaries2D compile embeddedboundaries2D stand alone program |"
 	@echo "|        make gaussian2D           compile gaussian2D stand alone program           |"
+	@echo "|        make rte2D                compile rte2D stand alone program                |"
 	@echo "|        make libraries-all        create all supporting libraries                  |"
 	@echo "|        make sparselib            create SparseLib++ library                       |"
 	@echo "|        make bpkit                create BPKIT library                             |"
@@ -513,7 +543,7 @@ help:
 
 all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) $(EXE_CHEM2D) $(EXE_ADVECTDIFFUSE2D) \
      $(EXE_DUSTY2D) $(EXE_EULER2D) $(EXE_ION5MOMENT2D) $(EXE_LEVELSET2D) $(EXE_NAVIERSTOKES2D) \
-     $(EXE_EMBEDDEDBOUNDARIES2D)  $(EXE_GAUSSIAN2D)
+     $(EXE_EMBEDDEDBOUNDARIES2D)  $(EXE_GAUSSIAN2D) $(EXE_RTE2D)
 	@echo ' '
 	@echo All programs have been brought up to date.
 	@echo '------------------------------------------'
@@ -844,6 +874,30 @@ $(GAUSSIAN_DIR)Gaussian2D.depend: $(SRC_GAUSSIAN_EXE)
 	@echo '-------------------------------------------------------------'
 	@echo ' '
 
+$(EXE_RTE2D): $(RTE_DIR)Rte2D.depend $(OBJ_RTE_EXE) $(OBJ_BASE) $(OBJ_RTE) $(OBJ_ICEMCFD)
+	@echo ' '
+	@echo Building program $(EXE_RTE2D) for a $(PLATFORM) platform.
+	@echo '-----------------------------------------------------------'
+	@echo ' '
+	$(LD) -o $(EXE_RTE2D) $(OBJ_RTE_EXE) $(OBJ_BASE) $(OBJ_RTE) $(OBJ_ICEMCFD) $(LDFLAGS)
+	@echo ' '
+	@echo Program $(EXE_RTE2D) has been brought up to date.
+	@echo '---------------------------------------------------'
+	@echo ' '
+
+$(RTE_DIR)Rte2D.depend: $(SRC_RTE_EXE)
+	@echo ' '
+	@echo Determining Euler2D source file dependencies for a $(PLATFORM) platform.
+	@echo '------------------------------------------------------------------------'
+	@echo ' '
+	touch $(RTE_DIR)Rte2D.depend
+	makedepend -f$(RTE_DIR)Rte2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_RTE_EXE) >& /dev/null
+	@echo ' '
+	@echo Rte2D source file dependencies have been brought up to date.
+	@echo '--------------------------------------------------------------'
+	@echo ' '
+
+
 $(EXE_ICEMCFD_UTIL1): CFFC.depend $(ICEM_DIR)icemcfd2tecplot.depend $(OBJ_ICEMCFD_UTIL1)
 	@echo ' '
 	@echo Building program $(EXE_ICEMCFD_UTIL1) for a $(PLATFORM) platform.
@@ -907,7 +961,7 @@ install-all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
 	@for f in $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
 	$(EXE_ADVECTDIFFUSE2D) $(EXE_CHEM2D) $(EXE_DUSTY2D) $(EXE_EULER2D) \
         $(EXE_ION5MOMENT2D) $(EXE_LEVELSET2D) $(EXE_NAVIERSTOKES2D) \
-        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_GAUSSIAN2D); \
+        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_GAUSSIAN2D) $(EXE_RTE2D); \
 	do \
 	  echo "Installing $$f"; \
 	  cp $$f $(CFFC_BIN_DIR); \
@@ -929,7 +983,7 @@ uninstall-all:
 	@for f in $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
 	$(EXE_ADVECTDIFFUSE2D) $(EXE_CHEM2D) $(EXE_DUSTY2D) $(EXE_EULER2D) \
         $(EXE_ION5MOMENT2D) $(EXE_LEVELSET2D) $(EXE_NAVIERSTOKES2D) \
-        $(EXE_EMBEDDEDBOUNDARIES2D); \
+        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_RTE2D) ; \
 	do \
 	  echo "Uninstalling $$f"; \
 	  cd $(CFFC_BIN_DIR); \
@@ -982,6 +1036,7 @@ clean:
 	rm -f $(DUSTY_DIR)*.o $(DUSTY_DIR)*.il $(DUSTY_DIR)*~ $(DUSTY_DIR)*.depend $(DUSTY_DIR)*.bak
 	rm -f $(ELECTROSTATIC_DIR)*.o $(ELECTROSTATIC_DIR)*.il $(ELECTROSTATIC_DIR)*~ $(ELECTROSTATIC_DIR)*.depend $(ELECTROSTATIC_DIR)*.bak
 	rm -f $(EULER_DIR)*.o $(EULER_DIR)*.il $(EULER_DIR)*~ $(EULER_DIR)*.depend $(EULER_DIR)*.bak
+	rm -f $(RTE_DIR)*.o $(RTE_DIR)*.il $(RTE_DIR)*~ $(RTE_DIR)*.depend $(RTE_DIR)*.bak
 	rm -f $(MULTIGRID_DIR)*~
 	rm -f $(GRID_DIR)*.o $(GRID_DIR)*.il $(GRID_DIR)*~
 	rm -f $(ICEM_DIR)*.o $(ICEM_DIR)*.il $(ICEM_DIR)*~ $(ICEM_DIR)*.depend $(ICEM_DIR)*.bak
@@ -1005,6 +1060,7 @@ clean:
 	rm -f $(EXE_EULER2D)
 	rm -f $(EXE_ION5MOMENT2D)
 	rm -f $(EXE_LEVELSET2D)
+	rm -f $(EXE_RTE2D)
 	rm -f $(EXE_NAVIERSTOKES2D)
 	rm -f $(EXE_GAUSSIAN2D)
 	@echo ' '
@@ -1046,6 +1102,7 @@ include $(EULER_DIR)Euler2D.depend
 include $(ION_DIR)Ion5Moment2D.depend
 include $(LEVELSET_DIR)LevelSet2D.depend
 include $(NAVIERSTOKES_DIR)NavierStokes2D.depend
+include $(RTE_DIR)Rte2D.depend
 include $(ICEM_DIR)icemcfd2tecplot.depend
 include $(ICEM_DIR)icemcfd2grid2dquad.depend
 include $(GAUSSIAN_DIR)Gaussian2D.depend
