@@ -870,31 +870,32 @@ void Grid3D_Hexa_Block::Extrude(Grid2D_Quad_Block &Grid2D_XYplane,
 }
 
 /********************************************************
- * Routine: Create                                      *
+ * Routine: Create_Grid_Box                             *
  *                                                      *
- * Create hexahedral grid block for a Cartesian         *
+ * Creates a hexahedral grid block for a Cartesian      *
  * mesh defined on a cube with given length, width,     *
  * and height (origion 0,0,0)                           *
+ *                                                      *
  ********************************************************/
-void Grid3D_Hexa_Block::Create(const double &Length,
-                               const double &Width,
-                               const double &Height,
-                               const double &x_orig,
-                               const double &y_orig,
-                               const double &z_orig,
-                               const double &alpha,
-                               const double &beta,
-                               const double &gamma,
-                               const int BCtype_top,
-                               const int BCtype_bottom,
-                               const int BCtype_north,
-                               const int BCtype_south,
-                               const int BCtype_west,
-                               const int BCtype_east,
-                               const int Number_of_Cells_Idir,
-                               const int Number_of_Cells_Jdir,
-                               const int Number_of_Cells_Kdir,
-                               const int Number_of_Ghost_Cells) {
+void Grid3D_Hexa_Block::Create_Grid_Box(const double &Length,
+                                        const double &Width,
+                                        const double &Height,
+                                        const double &x_orig,
+                                        const double &y_orig,
+                                        const double &z_orig,
+                                        const double &alpha,
+                                        const double &beta,
+                                        const double &gamma,
+                                        const int BCtype_top,
+                                        const int BCtype_bottom,
+                                        const int BCtype_north,
+                                        const int BCtype_south,
+                                        const int BCtype_west,
+                                        const int BCtype_east,
+                                        const int Number_of_Cells_Idir,
+                                        const int Number_of_Cells_Jdir,
+                                        const int Number_of_Cells_Kdir,
+                                        const int Number_of_Ghost_Cells) {
 
    int i, j, k;
    double dx, dy, dz;
