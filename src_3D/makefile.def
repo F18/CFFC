@@ -151,12 +151,8 @@ ifeq ($(PLATFORM),Linux_x86_64)
   BLAS_LD_FLAGS           = -lblas -llapack -lg2c -lgcc
 endif
 
-
 #
 # Set flags associated with cantera
-# 
-
-
 ifeq ($(PLATFORM),Linux_i386)
   CANTERA_ARCH          = $(shell uname -m)-pc-linux-gnu
   CANTERA_LCXX_END_LIBS = -lm
@@ -194,8 +190,6 @@ endif
 #    default   try to do a full installation, but fall back to a minimal
 CANTERA_PYTHON_PACKAGE    = none
 
-
-
 #
 # Set flags for including FFTW libraries
 FFTW           = fftw
@@ -206,7 +200,6 @@ FFTW_INC_DIR   = $(FFTW_DIR)/include
 
 FFTW_CPP_FLAGS = -I$(FFTW_INC_DIR)
 FFTW_LD_FLAGS  = -L$(FFTW_LIB_DIR) -lfftw3
-
 
 #
 # CPPFLAG -D__USE_MALLOC explicitly handles C++ string memory issues, but 

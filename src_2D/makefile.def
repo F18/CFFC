@@ -134,7 +134,6 @@ BPKIT_INC_DIR             = $(BPKIT_DIR)/src
 BPKIT_CPP_FLAGS           = -I$(BPKIT_INC_DIR)
 BPKIT_LD_FLAGS            = -L$(BPKIT_LIB_DIR) -lbpkit
 
-
 BLAS_LD_FLAGS             = -lblas -llapack -lgcc -lg2c
 ifeq ($(PLATFORM),Linux_i386)
   BLAS_LD_FLAGS           = -lblas -llapack -lgcc 
@@ -152,11 +151,8 @@ ifeq ($(PLATFORM),Linux_x86_64)
   BLAS_LD_FLAGS           = -lblas -llapack -lg2c -lgcc
 endif
 
-
 #
 # Set flags associated with cantera
-# 
-
 ifeq ($(PLATFORM),Linux_i386)
   CANTERA_ARCH          = $(shell uname -m)-pc-linux-gnu
   CANTERA_LCXX_END_LIBS = -lm
@@ -185,7 +181,7 @@ ifeq ($(CANTERA_VERSION),NoCANTERA)
   CANTERA_LD_FLAGS        =  
 endif
 ifeq ($(CANTERA_VERSION),V70)
-  CANTERA_CPP_FLAGS       =  -D_CANTERA_VERSION -D_CANTERA_70 -I$(CANTERA_INC_DIR)
+  CANTERA_CPP_FLAGS       =  -D_CANTERA_VERSION -D_CANTERA_V70 -I$(CANTERA_INC_DIR)
   CANTERA_LD_FLAGS        =  -L$(CANTERA_LIB_DIR) -luser -loneD -lzeroD -ltransport -lcantera -lcvode -lctlapack -lctblas -lctmath -ltpx -lg2c -lctcxx
 endif
 
@@ -193,8 +189,6 @@ endif
 #    none      Don't install  or run any Python scripts during the 
 #    default   try to do a full installation, but fall back to a minimal
 CANTERA_PYTHON_PACKAGE    = none
-
-
 
 #
 # Set flags for including FFTW libraries
