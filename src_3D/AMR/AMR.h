@@ -48,8 +48,6 @@ template<typename SOLN_pSTATE, typename SOLN_cSTATE>
    
    int i_blk, j_blk, k_blk, n_cpu, n_blk;
    
-   cout << "\n AMR-A:"; cout.flush();
-
    OcTreeBlock_DataStructure::Create_OcTree_Data_Structure(
       OcTree,
       InputParameters.IP_Grid.NBlk_Idir,
@@ -68,8 +66,6 @@ template<typename SOLN_pSTATE, typename SOLN_cSTATE>
    
    /* Create (allocate) array of local 3D hexarilateral solution blocks. */
    
-   cout << "\n AMR-B:"; cout.flush();
-
    AdaptiveBlock3DResourceList::Create_Block_Resource_List(GlobalSolnBlockList,
                               InputParameters.Number_of_Processors,
                               InputParameters.Number_of_Blocks_Per_Processor);
@@ -79,7 +75,6 @@ template<typename SOLN_pSTATE, typename SOLN_cSTATE>
    /* Loop over all initial mesh blocks and assign OcTree root blocks and 
       local solution block information as required. */
 
-   cout << "\n AMR-C:"; cout.flush();
    int nused=0;
    for ( k_blk = 0 ; k_blk <= InputParameters.IP_Grid.NBlk_Kdir-1 ; ++k_blk ) {
       for ( j_blk = 0 ; j_blk <= InputParameters.IP_Grid.NBlk_Jdir-1 ; ++j_blk ) {
@@ -164,21 +159,15 @@ template<typename SOLN_pSTATE, typename SOLN_cSTATE>
 
     /* Renumber all solution blocks, assigning a unique global block number. */
 
-    cout << "\n AMR-D:"; cout.flush();
-
     OcTreeBlock_DataStructure::Renumber_Solution_Blocks(OcTree,
                              LocalSolnBlockList);
 
     /* Find the neighbours of all of the newly assigned root blocks. */
  
-    cout << "\n AMR-E:"; cout.flush();
-
     OcTreeBlock_DataStructure::Find_Neighbours_of_Root_Solution_Blocks(OcTree,
                                             LocalSolnBlockList);
 
     /* Modify block neighbours for grid geometries with periodic boundaries, etc. */
-
-    cout << "\n AMR-F:"; cout.flush();
 
     OcTreeBlock_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(OcTree,
                                                                          LocalSolnBlockList,
@@ -186,8 +175,6 @@ template<typename SOLN_pSTATE, typename SOLN_cSTATE>
 
     /* Allocates memory for all message passing buffers used to send 
        solution information between neighbouring solution blocks. */
-
-    cout << "\n AMR-G:"; cout.flush();
 
     AdaptiveBlock3D_List::Allocate_Message_Buffers(LocalSolnBlockList,
                                                    Hexa_MultiBlock_List.Hexa_Block_List[0]->NumVar()+NUM_COMP_VECTOR3D);

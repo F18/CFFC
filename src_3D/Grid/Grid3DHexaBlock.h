@@ -338,6 +338,22 @@ class Grid3D_Hexa_Block{
 
     void Update_Cells(void);
 
+    void Set_BCs_Xdir(const int BCtype_east_boundary,
+                      const int BCtype_west_boundary);
+
+    void Set_BCs_Ydir(const int BCtype_north_boundary,
+                      const int BCtype_south_boundary);
+
+    void Set_BCs_Zdir(const int BCtype_top_boundary,
+                      const int BCtype_bottom_boundary);
+
+    void Set_BCs(const int BCtype_east_boundary,
+		 const int BCtype_west_boundary,
+                 const int BCtype_north_boundary,
+		 const int BCtype_south_boundary,
+                 const int BCtype_top_boundary,
+                 const int BCtype_bottom_boundary);
+
     void Rotate(const double &Angle, 
                 const double &Angle1, 
                 const double &Angle2);
@@ -383,12 +399,12 @@ inline void Grid3D_Hexa_Block::allocate(const int Ni,
                                         const int Nk, 
                                         const int Ng) {
    assert( Ni >= 1 && Nj >= 1 && Nk >= 1 && Ng >=1 && !Used);
-   NNi = Ni+(2*Ng)+1; INl = Ng; INu = Ni+Ng; 
-   NNj = Nj+(2*Ng)+1; JNl = Ng; JNu = Nj+Ng; 
-   NNk = Nk+(2*Ng)+1; KNl = Ng; KNu = Nk+Ng; 
-   NCi = Ni+(2*Ng); ICl = Ng; ICu = Ni+(Ng-1); 
-   NCj = Nj+(2*Ng); JCl = Ng; JCu = Nj+(Ng-1); 
-   NCk = Nk+(2*Ng); KCl = Ng; KCu = Nk+(Ng-1);
+   NNi = Ni+2*Ng+1; INl = Ng; INu = Ni+Ng; 
+   NNj = Nj+2*Ng+1; JNl = Ng; JNu = Nj+Ng; 
+   NNk = Nk+2*Ng+1; KNl = Ng; KNu = Nk+Ng; 
+   NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1; 
+   NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1; 
+   NCk = Nk+2*Ng; KCl = Ng; KCu = Nk+Ng-1;
    Nghost = Ng; Used = 1;
    
    Node = new Node3D**[NNi];

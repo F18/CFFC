@@ -89,7 +89,7 @@ class Hexa_Block{
       Iindex=iblk; Jindex=jblk; Kindex=kblk; Flow_Type=flow_type; 
       Freeze_Limiter = OFF;
       Grid.Copy(Grid2);
-   
+
       // allocate all the rest array
       allocate( ); 
    }
@@ -807,9 +807,9 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::ICs(const int i_ICtype,
          Wr = SOLN_pSTATE(DENSITY_STDATM*8.0, Vector3D_ZERO,
                           PRESSURE_STDATM*10.0, 
                           IPs.mass_fractions);
-         for (k = KCl-Nghost; k <= KCu+ Nghost; ++k) {
+         for (k = KCl-Nghost; k <= KCu+Nghost; ++k) {
 	    for (j = JCl-Nghost; j <= JCu+Nghost; ++j) {
-               for (i = ICl- Nghost; i <= ICu+Nghost; ++i) {
+               for (i = ICl-Nghost; i <= ICu+Nghost; ++i) {
 		  if (Grid.Cell[i][j][k].Xc.x <= ZERO &&
                       Grid.Cell[i][j][k].Xc.y <= ZERO &&
                       Grid.Cell[i][j][k].Xc.z <= ZERO) {

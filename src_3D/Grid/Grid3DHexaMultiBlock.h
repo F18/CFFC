@@ -44,11 +44,18 @@ class Grid3D_Hexa_Multi_Block{
         case GRID_CUBE :
           Create_Grid_Cube(Input);
           break;
-        case GRID_CHANNEL :
+        case GRID_CHANNEL_XDIR :
+        case GRID_CHANNEL_YDIR:
+        case GRID_CHANNEL_ZDIR:
           Create_Grid_Channel(Input);
           break;
-        case GRID_COUETTE :
+        case GRID_COUETTE_XDIR :
+        case GRID_COUETTE_YDIR:
+        case GRID_COUETTE_ZDIR:
           Create_Grid_Couette(Input);
+          break;
+        case GRID_PIPE :
+          Create_Grid_Pipe(Input);
           break;
         case GRID_BLUFF_BODY_BURNER :
           Create_Grid_Bluff_Body_Burner(Input);
@@ -89,6 +96,8 @@ class Grid3D_Hexa_Multi_Block{
     void Create_Grid_Channel(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Couette(Grid3D_Input_Parameters &Input);
+
+    void Create_Grid_Pipe(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Bluff_Body_Burner(Grid3D_Input_Parameters &Input);
 

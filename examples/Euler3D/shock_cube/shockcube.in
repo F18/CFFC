@@ -23,25 +23,29 @@ Temperature =
 298
 Grid_Type =
 Cube
+#Grid_Type
+#Bluff_Body_Burner
+#Grid_Type =
+#Pipe
 Number_of_Cells_Idir = 
-5
+10
 Number_of_Cells_Jdir =
-5
+10
 Number_of_Cells_Kdir =
-5
+10
 Number_of_Blocks_Idir = 
 2
 Number_of_Blocks_Jdir =
-1
+2
 Number_of_Blocks_Kdir =
-1
+2
 ###############################
 # Set time stepping parameters
 ###############################
 CFL_Number =
 0.1
 Time_Max = 
-0.
+0.0
 Maximum_Number_of_Time_Steps =
 0
 Number_of_Blocks_Per_Processor =

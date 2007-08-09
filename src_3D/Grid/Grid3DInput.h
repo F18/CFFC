@@ -28,23 +28,34 @@ using namespace std;
 
 struct Grid3D_Input_Parameters{
   public:
-    // number of blocks and cells in each direction
+    // Number of blocks in multiblock mesh in each direction
     int NBlk_Idir, NBlk_Jdir, NBlk_Kdir;
+
+    // Default number of cells in multiblock mesh in each direction
     int NCells_Idir, NCells_Jdir, NCells_Kdir;
     int Nghost;
 
-    // Grid type
+    // Grid type indicator
     int i_Grid;
     char Grid_Type[GRID_INPUT_PARAMETER_LENGTH];
 
-    // demensions for flow geometry
+    // Dimensions for basic flow geometry
     double Box_Length, Box_Width, Box_Height;
+
+    // Mesh stretching parameters
     int Stretching_Type_Idir, Stretching_Type_Jdir, 
         Stretching_Type_Kdir; 
     double Stretching_Factor_Idir, Stretching_Factor_Jdir, 
            Stretching_Factor_Kdir;
-   
-   //constructor : set some default values
+
+   // Pipe mesh parameters
+   double Pipe_Length, Pipe_Radius;
+
+   // Bluff body burner mesh parameters
+   double Radius_Fuel_Line, Radius_Bluff_Body, Radius_Coflow_Inlet_Pipe,
+          Length_Coflow_Inlet_Pipe, Length_Combustor_Tube; 
+
+   // Constructor: set some default values
    Grid3D_Input_Parameters(void){
        NBlk_Idir = 1; NBlk_Jdir = 1; NBlk_Kdir = 1;
        NCells_Idir = 10; NCells_Jdir = 10; NCells_Kdir = 10; 
@@ -54,17 +65,20 @@ struct Grid3D_Input_Parameters{
        Stretching_Type_Idir = STRETCHING_FCN_LINEAR;
        Stretching_Type_Jdir = STRETCHING_FCN_LINEAR; 
        Stretching_Type_Kdir = STRETCHING_FCN_LINEAR;
-       Stretching_Factor_Idir = 1.01;
-       Stretching_Factor_Jdir = 1.01;
-       Stretching_Factor_Kdir = 1.01;
+       Stretching_Factor_Idir = 1.10;
+       Stretching_Factor_Jdir = 1.10;
+       Stretching_Factor_Kdir = 1.10;
+       Pipe_Length = ONE; Pipe_Radius = 0.1;
+       Radius_Fuel_Line = 1.80e-03;
+       Radius_Bluff_Body = 25.04e-03;
+       Radius_Coflow_Inlet_Pipe = 0.1;
+       Length_Coflow_Inlet_Pipe = 0.127; 
+       Length_Combustor_Tube = 0.508;
    }
    
-   //destructor
-   ~Grid3D_Input_Parameters(void){
-      NBlk_Idir = 0; NBlk_Jdir = 0; NBlk_Kdir = 0;
-      NCells_Idir = 0; NCells_Jdir = 0; NCells_Kdir = 0;
-      Nghost = 0;
-   }
+   // Use default destructor
+   //~Grid3D_Input_Parameters(void){
+   //}
 
 };
 

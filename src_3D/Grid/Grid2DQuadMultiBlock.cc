@@ -767,8 +767,8 @@ Grid2D_Quad_Block** Grid_Rectangular_Box(Grid2D_Quad_Block **Grid_ptr,
 			Bnd_Spline_South,
 			Bnd_Spline_East,
 			Bnd_Spline_West,
-			Number_of_Cells_Idir/Number_of_Blocks_Idir,
-			Number_of_Cells_Jdir/Number_of_Blocks_Jdir,
+			Number_of_Cells_Idir,
+			Number_of_Cells_Jdir,
 			Number_of_Ghost_Cells,
 			GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 			Stretch_I,
@@ -6036,6 +6036,7 @@ Grid2D_Quad_Block** Grid_Tube_2D(Grid2D_Quad_Block **Grid_ptr,
     xc_SW = Vector2D(-0.35*Radius, -0.35*Radius);
 
     for ( iBlk = 0; iBlk <= Number_of_Blocks_Idir-1; ++iBlk ) {
+
         /* Create the splines defining the north, south,
            east, and west boundaries of the grid. */
 
@@ -6206,6 +6207,7 @@ Grid2D_Quad_Block** Grid_Annulus_2D(Grid2D_Quad_Block **Grid_ptr,
        the complete grid. */
 
     for ( iBlk = 0; iBlk <= Number_of_Blocks_Idir-1; ++iBlk ) {
+
         /* Create the splines defining the north, south,
            east, and west boundaries of the grid. */
 

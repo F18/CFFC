@@ -333,15 +333,16 @@ Grid3D_Hexa_Block*** Grid_Bluff_Body_Burner_3D(Grid3D_Hexa_Block ***Grid_ptr,
  		                   Number_of_Cells_Idir,
 		                   Number_of_Cells_Jdir,
 		                   Number_of_Ghost_Cells,
-                                   STRETCHING_FCN_MINMAX_CLUSTERING,
+                                   STRETCHING_FCN_MIN_CLUSTERING,
                                    1.10);
 
     /* Create the mesh for each block representing
        the complete grid. */
 
     for ( iBlk = 0; iBlk <= Number_of_Blocks_Idir-1; ++iBlk ) {
-        /* Create the splines defining the north, south,
-           east, and west boundaries of the grid. */
+
+        /* Extrude each of the grid blocks from the
+           corresponding 2D grid in XY-plane. */
 
         if (iBlk <= 4) {
            Extrude_Hexa_Block(Grid_ptr[iBlk][0][0],

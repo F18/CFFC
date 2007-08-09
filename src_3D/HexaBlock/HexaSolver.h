@@ -127,8 +127,6 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
    /* Initialize the conserved and primitive state
       solution variables. */
          
-    cout << "\n HEXA-a:"; cout.flush();
-
    if (!batch_flag) cout << "\n Prescribing initial data.";
    if (IPs.i_ICs == IC_RESTART) {
       
@@ -158,15 +156,11 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
       
    } else {
       
-      cout << "\n HEXA-a1:"; cout.flush();
       Local_SolnBlk.Create_Wall_Data( );
-      cout << "\n HEXA-a2:"; cout.flush();
+
       Local_SolnBlk.ICs(IPs);
       
-            
    } /* endif */
-
-   cout << "\n HEXA-b:"; cout.flush();
 
    Send_All_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Local_SolnBlk.Hexa_Block_List,
                            List_of_Local_Solution_Blocks,
@@ -177,11 +171,9 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
    
    
    /* Prescribe boundary data consistent with initial data. */
-    cout << "\n HEXA-c:"; cout.flush();
 
     Local_SolnBlk.BCs(IPs);
 
-    cout << "\n HEXA-d:"; cout.flush(); 
    
    //    /********************************************************  
 //    * Solve IBVP or BVP for conservation form of 3D Euler  *
@@ -424,7 +416,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
        
       } /* endwhile */
       
-      if (!batch_flag) cout << "\n\n computations complete on " 
+      if (!batch_flag) cout << "\n\n Computations complete on " 
                             << Date_And_Time() << ".\n";
       
       
@@ -461,10 +453,9 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
    while (1) {
       
       if (CFFC_Primary_MPI_Processor()) {    
-      IPs.Get_Next_Input_Control_Parameter();
-      command_flag = IPs.Parse_Next_Input_Control_Parameter();
-      line_number = IPs.Line_Number;
-
+         IPs.Get_Next_Input_Control_Parameter();
+         command_flag = IPs.Parse_Next_Input_Control_Parameter();
+         line_number = IPs.Line_Number;
       }
       
       CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
