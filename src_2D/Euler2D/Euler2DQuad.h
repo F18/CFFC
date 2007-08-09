@@ -2216,6 +2216,10 @@ extern int Output_Nodes_Tecplot(Grid2D_Quad_Block **Grid_ptr,
 extern int Output_Cells_Tecplot(Grid2D_Quad_Block **Grid_ptr,
                                 Euler2D_Input_Parameters &Input_Parameters);
 
+extern int Output_Tecplot(Grid3D_Hexa_Block ***Grid_ptr,
+                          Euler2D_Input_Parameters &Input_Parameters,
+		          const int Number_of_Blocks_Kdir);
+
 /**************************************************************************
  * Euler2D_Quad_Block -- Solvers.                                         *
  **************************************************************************/

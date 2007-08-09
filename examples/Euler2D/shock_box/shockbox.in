@@ -38,6 +38,8 @@ AIR
 # GRID PARAMETERS:
 Grid_Type =
 Square
+Pipe_Radius =
+1.00
 Number_of_Cells_Idir = 
 32
 #64

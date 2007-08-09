@@ -45,32 +45,44 @@ double Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
                         int i, int j, int k);
 
 template< >
+void Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
+	        FANS3D_ThermallyPerfect_KOmega_cState>::
+Output_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
+      		                FANS3D_ThermallyPerfect_KOmega_cState> &IPs,
+               const int Number_of_Time_Steps,
+	       const double &Time,  
+               const int Block_Number,
+	       const int Output_Title,
+	       ostream &Out_File);
+				
+template< >
 void Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
-                   FANS3D_ThermallyPerfect_KOmega_cState>::
-Output_Cells_Tecplot( const int Number_of_Time_Steps,
-                      const double &Time,
-                      const int Block_Number,
-                      const int Output_Title,
-                      ostream &Out_File);
+                FANS3D_ThermallyPerfect_KOmega_cState>::
+Output_Cells_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
+      		                      FANS3D_ThermallyPerfect_KOmega_cState> &IPs, 
+                     const int Number_of_Time_Steps,
+                     const double &Time,
+                     const int Block_Number,
+                     const int Output_Title,
+                     ostream &Out_File);
 
 template< >
-void Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
-	                FANS3D_ThermallyPerfect_KOmega_cState>::
-			Output_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
-		        FANS3D_ThermallyPerfect_KOmega_cState> &IPs,
-		        const int Number_of_Time_Steps,
-		        const double &Time,  
-		        const int Block_Number,
-		        const int Output_Title,
-		        ostream &Out_File);
-				
+void Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
+                FANS3D_ThermallyPerfect_KOmega_cState>::
+Output_Nodes_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
+      		                      FANS3D_ThermallyPerfect_KOmega_cState> &IPs, 
+                     const int Number_of_Time_Steps,
+                     const double &Time,
+                     const int Block_Number,
+                     const int Output_Title,
+                     ostream &Out_File);
 
 template< >
 int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
-                  FANS3D_ThermallyPerfect_KOmega_cState>::ICs(
-                     const int i_ICtype,
-                     Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
-                     FANS3D_ThermallyPerfect_KOmega_cState> &IPs);
+               FANS3D_ThermallyPerfect_KOmega_cState>::
+ICs(const int i_ICtype,
+    Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
+    FANS3D_ThermallyPerfect_KOmega_cState> &IPs);
 
 template< >
 void Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 

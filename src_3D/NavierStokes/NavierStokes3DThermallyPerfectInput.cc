@@ -369,17 +369,17 @@ ostream &operator << (ostream &out_file,
       out_file << "\n  -> Number of Boundary Mesh Refinements : " 
                << IP.Number_of_Boundary_Mesh_Refinements;
    out_file << "\n  -> Number of Blocks i-direction: "
-            << IP.IP_Grid.IBlk;
+            << IP.IP_Grid.NBlk_Idir;
    out_file << "\n  -> Number of Blocks j-direction: " 
-            << IP.IP_Grid.JBlk;
+            << IP.IP_Grid.NBlk_Jdir;
    out_file << "\n  -> Number of Blocks k-direction: "
-            << IP.IP_Grid.KBlk;
+            << IP.IP_Grid.NBlk_Kdir;
    out_file << "\n  -> Number of Cells i-direction: "
-            << IP.IP_Grid.ICells;
+            << IP.IP_Grid.NCells_Idir;
    out_file << "\n  -> Number of Cells j-direction: " 
-            << IP.IP_Grid.JCells;
+            << IP.IP_Grid.NCells_Jdir;
    out_file << "\n  -> Number of Cells k-direction: " 
-            << IP.IP_Grid.KCells;
+            << IP.IP_Grid.NCells_Kdir;
    out_file << "\n  -> CFL Number: " 
             << IP.CFL_Number;
    out_file << "\n  -> Maximum Time (ms): " 

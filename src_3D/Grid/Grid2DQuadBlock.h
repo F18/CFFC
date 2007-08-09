@@ -1,4 +1,4 @@
-/* Grid2DQuad.h:  Header file defining 2D quadrilateral block grid type. */
+/* Grid2DQuadBlock.h:  Header file defining 2D quadrilateral block grid type. */
 
 #ifndef _GRID2D_QUAD_BLOCK_INCLUDED
 #define _GRID2D_QUAD_BLOCK_INCLUDED
@@ -40,12 +40,6 @@ using namespace std;
 #ifndef _MPI_INCLUDED
 #include "../MPI/MPI.h"
 #endif // _MPI_INCLUDED
-
-// Include the linear systems header file.
-
-#ifndef _LINEARSYSTEMS_INCLUDED
-#include "../Math/LinearSystems.h"
-#endif // _LINEARSYSTEMS_INCLUDED
 
 /* Define the following types of 2D quadrilateral block 
    node initialization procedures. */
@@ -434,10 +428,6 @@ class Grid2D_Quad_Block{
     //@{ @name Input-output operators.
     friend ostream &operator << (ostream &out_file, const Grid2D_Quad_Block &G);
     friend istream &operator >> (istream &in_file, Grid2D_Quad_Block &G);
-    //@}
-
-    //@{Change current BC's
-    void set_BCs(const int& FACE, const int& BC);
     //@}
 
 };
@@ -1460,18 +1450,6 @@ extern Grid2D_Quad_Block** Grid_Flat_Plate(Grid2D_Quad_Block **Grid_ptr,
 		                           const int Number_of_Cells_Jdir,
 					   const int Number_of_Ghost_Cells);
 
-Grid2D_Quad_Block** Grid_Flat_Plate_NK(Grid2D_Quad_Block **Grid_ptr,
-				       int &Number_of_Blocks_Idir,
-				       int &Number_of_Blocks_Jdir,
-				       const double &Length,
-				       const int &Stretching_Flag,
-				       const double &Stretching_Factor_Idir,
-				       const double &Stretching_Factor_Jdir,
-				       const int Number_of_Cells_Idir,
-				       const int Number_of_Cells_Jdir,
-				       const int Number_of_Ghost_Cells);
-
-
 extern Grid2D_Quad_Block** Grid_1D_Flame(Grid2D_Quad_Block **Grid_ptr,
 					 int &Number_of_Blocks_Idir,
 					 int &Number_of_Blocks_Jdir,
@@ -1488,8 +1466,7 @@ extern Grid2D_Quad_Block** Grid_2D_Laminar_Flame(Grid2D_Quad_Block **Grid_ptr,
 						 const double &Heigth,
 						 const int Number_of_Cells_Idir,
 						 const int Number_of_Cells_Jdir,
-						 const int Number_of_Ghost_Cells,
-						 const int Flame_Type_Flag); 
+						 const int Number_of_Ghost_Cells); 
 
 extern Grid2D_Quad_Block** Grid_Pipe(Grid2D_Quad_Block **Grid_ptr,
                                      int &Number_of_Blocks_Idir,
@@ -1701,22 +1678,6 @@ extern Grid2D_Quad_Block** Grid_Mixing_Layer(Grid2D_Quad_Block **Grid_ptr,
 					     const int Number_of_Cells_Jdir,
 					     const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_NASA_Rotor_37(Grid2D_Quad_Block **Grid_ptr,
-					      int &Number_of_Blocks_Idir,
-					      int &Number_of_Blocks_Jdir,
-					      const double &Rotor_Percent_Span,
-					      const int Number_of_Cells_Idir,
-					      const int Number_of_Cells_Jdir,
-					      const int Number_of_Ghost_Cells);
-
-extern Grid2D_Quad_Block** Grid_NASA_Rotor_67(Grid2D_Quad_Block **Grid_ptr,
-					      int &Number_of_Blocks_Idir,
-					      int &Number_of_Blocks_Jdir,
-					      const double &Rotor_Percent_Span,
-					      const int Number_of_Cells_Idir,
-					      const int Number_of_Cells_Jdir,
-					      const int Number_of_Ghost_Cells);
-
 extern Grid2D_Quad_Block** Grid_Desolvation_Chamber(Grid2D_Quad_Block **Grid_ptr,
 						    const int &Chamber_BC_Type,
 						    int &Number_of_Blocks_Idir,
@@ -1779,4 +1740,4 @@ extern Grid2D_Quad_Block** Grid_Annulus_2D(Grid2D_Quad_Block **Grid_ptr,
                                            const int i_Stretching_Radial_Dir,
 				           const double &Stretching_Radial_Dir);
 
-#endif /* _GRID2D_QUAD_BLOCK_INCLUDED  */
+#endif // _GRID2D_QUAD_BLOCK_INCLUDED

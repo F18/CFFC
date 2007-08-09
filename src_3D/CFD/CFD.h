@@ -194,14 +194,21 @@ inline char *Date_And_Time() {
 #define GRID_NOZZLE                          20
 #define GRID_NOZZLELESS_ROCKET_MOTOR         21
 #define GRID_DESOLVATION_CHAMBER             22
-#define GRID_CHANNEL                         23
-#define GRID_CUBE                            24
+#define GRID_CUBE                            23
+#define GRID_CHANNEL                         24
+#define GRID_CHANNEL_ZDIR          GRID_CHANNEL
+#define GRID_CHANNEL_XDIR                    25
+#define GRID_CHANNEL_YDIR                    26
+#define GRID_COUETTE                         27
+#define GRID_COUETTE_ZDIR          GRID_COUETTE
+#define GRID_COUETTE_XDIR                    28
+#define GRID_COUETTE_YDIR                    29
+#define GRID_BLUFF_BODY_BURNER               30
 
 #define GRID_ICEMCFD                       1000
 #define GRID_READ_FROM_DEFINITION_FILE    10000
 #define GRID_READ_FROM_GRID_DATA_FILE     10001
 
-#define GRID_COUETTE                         50
 #define GRID_1DFLAME                         51
 #define GRID_LAMINAR_FLAME                   52
 
@@ -257,6 +264,7 @@ inline char *Date_And_Time() {
 #define BC_FARFIELD                      8000   // Core | CGNS
 #define BC_CHARACTERISTIC                8001   //      | CFFC ?
 #define BC_FIXED_PRESSURE                8002   //      | CFFC
+#define BC_CHARACTERISTIC_VELOCITY       8003   //      | CFFC
 
 //--Inflow
 #define BC_INFLOW                        9000   // Core | CGNS

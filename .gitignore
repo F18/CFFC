@@ -13,6 +13,7 @@
 *.log
 *.gplt
 *.plt
+tecplot.phy
 *.e*
 *.o*
 tecplot.phy

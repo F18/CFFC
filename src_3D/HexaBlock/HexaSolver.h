@@ -45,12 +45,12 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
    
  
    Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> IPs;
+   Grid3D_Hexa_Multi_Block        Initial_MultiBlock_Grid;
     
    AdaptiveBlock3DResourceList    List_of_Global_Solution_Blocks;
-   AdaptiveBlock3D_List         List_of_Local_Solution_Blocks; 
-   OcTreeBlock_DataStructure  OcTree;
+   AdaptiveBlock3D_List           List_of_Local_Solution_Blocks; 
+   OcTreeBlock_DataStructure      OcTree;
       
-  
    /********************************************************  
     * Set default values for the input solution parameters *
     * and then read user specified input values from the   *
@@ -87,22 +87,20 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
     * Create initial mesh and allocate solution            *
     * variables for specified IBVP/BVP problem.            *
     ********************************************************/
-  execute_new_calculation: ;
-    // create grids on each processor and then 
+   execute_new_calculation: ;
+   // create grids on each processor and then 
    // delete the unused grid on each processor 
    
-   Grid3D_Hexa_Multi_Block *Create_MultiBlock_Grid =
-      new Grid3D_Hexa_Multi_Block(IPs.IP_Grid);
+   Initial_MultiBlock_Grid.Create_Grid(IPs.IP_Grid);
    
    // create the solution block list on each processor
-   Hexa_MultiBlock<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > 
-      Local_SolnBlk(IPs);
+   Hexa_MultiBlock< Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > Local_SolnBlk(IPs);
       
    if (!batch_flag) cout << "\n Creating multi-block octree data structure and assigning"
                          << "\n  solution blocks corresponding to initial mesh.";
    
    Create_Initial_Solution_Blocks<SOLN_pSTATE, SOLN_cSTATE>(
-      Create_MultiBlock_Grid,
+      Initial_MultiBlock_Grid,
       Local_SolnBlk,
       IPs,
       OcTree,
@@ -113,7 +111,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
    // class will only delete unused grid blocks (used grid blocks have been handed
    // off to the local solution blocks who are now responsible for deleting that
    // memory).
-//    delete Create_MultiBlock_Grid; Create_MultiBlock_Grid = NULL;
+   //    delete Create_MultiBlock_Grid; Create_MultiBlock_Grid = NULL;
   
    /********************************************************  
     * Initialize solution variables.                       *
@@ -134,7 +132,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
       
       Local_SolnBlk.Create_Wall_Data( );
       
-      error_flag =Local_SolnBlk.Read_Restart_Solution
+      error_flag = Local_SolnBlk.Read_Restart_Solution
          (IPs,  List_of_Local_Solution_Blocks,
           number_of_time_steps,
           Time,
@@ -159,9 +157,9 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
    } else {
       
       Local_SolnBlk.Create_Wall_Data( );
+
       Local_SolnBlk.ICs(IPs);
       
-            
    } /* endif */
 
    Send_All_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Local_SolnBlk.Hexa_Block_List,
@@ -173,16 +171,16 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
    
    
    /* Prescribe boundary data consistent with initial data. */
+
     Local_SolnBlk.BCs(IPs);
 
- 
    
    //    /********************************************************  
 //    * Solve IBVP or BVP for conservation form of 3D Euler  *
 //    * equations on multi-block solution-adaptive           *
 //    * hexadedral mesh.                                     *
 //    ********************************************************/
-continue_existing_calculation: ;
+   continue_existing_calculation: ;
    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
  
 // /* Open residual file and reset the CPU time. */
@@ -418,7 +416,7 @@ continue_existing_calculation: ;
        
       } /* endwhile */
       
-      if (!batch_flag) cout << "\n\n computations complete on " 
+      if (!batch_flag) cout << "\n\n Computations complete on " 
                             << Date_And_Time() << ".\n";
       
       
@@ -455,10 +453,9 @@ continue_existing_calculation: ;
    while (1) {
       
       if (CFFC_Primary_MPI_Processor()) {    
-      IPs.Get_Next_Input_Control_Parameter();
-      command_flag = IPs.Parse_Next_Input_Control_Parameter();
-      line_number = IPs.Line_Number;
-
+         IPs.Get_Next_Input_Control_Parameter();
+         command_flag = IPs.Parse_Next_Input_Control_Parameter();
+         line_number = IPs.Line_Number;
       }
       
       CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
@@ -540,6 +537,28 @@ continue_existing_calculation: ;
          if (error_flag) return (error_flag);   
          cout.flush();
          
+      } else if (command_flag == WRITE_OUTPUT_NODES_CODE) {
+         // Output solution data.
+         if (!batch_flag) cout<<"\n Writing nodal solution to " 
+                                "output data file(s).";
+         
+         error_flag =  Local_SolnBlk.Output_Nodes_Tecplot
+                       (IPs, List_of_Local_Solution_Blocks,
+                        number_of_time_steps,
+                        Time);
+         
+         if (error_flag) {
+            cout << "\n  ERROR: Unable to open  cell output "
+               "data file(s) on processor "
+                 << CFFC_MPI::This_Processor_Number
+                 << ".\n";
+            cout.flush();
+         } /* endif */   
+         
+         error_flag = CFFC_OR_MPI(error_flag);
+         if (error_flag) return (error_flag);   
+         cout.flush();
+
       } else if (command_flag == WRITE_RESTART_CODE) {
          // Write restart files.
          if (!batch_flag) cout<<"\n Writing  solution to restart "

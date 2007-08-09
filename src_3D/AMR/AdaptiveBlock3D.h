@@ -74,7 +74,7 @@ using namespace std;
 /* Define the classes. */
 
 /********************************************************
- * Class: AdaptiveBlock3DResourceList                     *
+ * Class: AdaptiveBlock3DResourceList                   *
  *                                                      *
  * Member functions                                     *
  *      ThisCPU   -- Return the global MPI number or    *

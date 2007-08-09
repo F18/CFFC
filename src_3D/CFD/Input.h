@@ -1,19 +1,10 @@
-/* Euler3DInput.h:  Header file defining 
-                    3D Euler Input Parameter Class. */
+/* Input.h:  Header file defining general CFD 
+             solution input parameter class. */
 
 #ifndef _INPUT_INCLUDED
 #define _INPUT_INCLUDED
 
-/* Include 3D Euler state, 3D cell, 3D quadrilateral multiblock 
-   grid, and NASA rotor header files. */
-
-#include <cstdlib> 
-
-using namespace std;
-
-#ifndef _CELL3D_INCLUDED
-#include "../Grid/Cell3D.h"
-#endif // _CELL3D_INCLUDED
+/* Include required CFFC header files. */
 
 #ifndef _CFD_INCLUDED
 #include "../CFD/CFD.h"
@@ -23,9 +14,9 @@ using namespace std;
 #include "../MPI/MPI.h"
 #endif // _MPI_INCLUDED
 
-#ifndef _GRID3D_HEXA_MULTIBLOCK_INCLUDED
-#include "../Grid/Grid3DHexaMultiBlock.h"
-#endif // _GRID3D_HEXA_MULTIBLOCK_INCLUDED
+#ifndef _GRID3D_INPUT_INCLUDED
+#include "../Grid/Grid3DInput.h"
+#endif // _GRID3D_INPUT_INCLUDED
 
 /* Define the structures and classes. */
 
@@ -93,7 +84,6 @@ class Input_Parameters {
   int Morton;
   int Morton_Reordering_Frequency;
 
-  /******************************************/
   /**********  SPECIFIC ***************/
   string react_name;
   char React_Name[INPUT_PARAMETER_LENGTH];
@@ -102,7 +92,6 @@ class Input_Parameters {
   double *mass_fractions; //array of mass fractions
   int num_species;
  
-  
   //Pa, K, m/s, degress from horizontal
   double Pressure, Temperature, Flow_Angle;
   double Mach_Number_Reference,Mach_Number, Re_lid;
@@ -133,25 +122,17 @@ class Input_Parameters {
   //Debug Level 0 for none, 1,2,3... level of verboseness
   int debug_level;
 
-  char NACA_Aerofoil_Type[INPUT_PARAMETER_LENGTH];
-
-  double  Box_Length, Box_Width, Box_Height, Plate_Length, 
-     Pipe_Length, Pipe_Radius, 
-     Blunt_Body_Radius, Blunt_Body_Mach_Number,
-     Grain_Length, Grain_Radius, Grain_To_Throat_Length,
-     Nozzle_Length, Nozzle_Radius_Exit, Nozzle_Radius_Throat,
-     Cylinder_Radius, Ellipse_Length_X_Axis, 
-     Ellipse_Length_Y_Axis, Chord_Length, Orifice_Radius,
-     Wedge_Angle, Wedge_Length;
-  
-  double Length_Shroud,Radius_Shroud,Length_BluffBody,Radius_BluffBody,
-     Radius_Orifice, Length_Inlet_Pipe, Radius_Inlet_Pipe, Length_Combustor_Tube, 
-     Radius_Combustor_Tube;
+  double Box_Length, Box_Width, Box_Height, Plate_Length, 
+         Blunt_Body_Radius, Blunt_Body_Mach_Number,
+         Grain_Length, Grain_Radius, Grain_To_Throat_Length,
+         Nozzle_Length, Nozzle_Radius_Exit, Nozzle_Radius_Throat,
+         Cylinder_Radius, Ellipse_Length_X_Axis, 
+         Ellipse_Length_Y_Axis, Chord_Length, Orifice_Radius,
+         Wedge_Angle, Wedge_Length;
   double BluffBody_Coflow_Air_Velocity, BluffBody_Coflow_Fuel_Velocity;
   int BluffBody_Data_Usage; // 0 no, 1 yes, 
   
   double X_Scale, X_Rotate;
-  
   
   // AMR
   int AMR, AMR_Frequency;
@@ -214,18 +195,24 @@ class Input_Parameters {
      Set_Default_Input_Parameters();
   }
 
-  
   // member functions
+
   void Get_CFFC_Path(void);
+
   void Open_Input_File(void);
+
   void Close_Input_File(void);
+
   void Set_Default_Input_Parameters(void);
+
   void Broadcast_Input_Parameters(void);
+
   void Get_Next_Input_Control_Parameter(void);
+
   int Parse_Next_Input_Control_Parameter(void);
+
   int Process_Input_Control_Parameter_File(char *Input_File_Name_ptr,
                                            int &Command_Flag);
-
 };
 
 /* Input-output operators. */
@@ -269,7 +256,6 @@ void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Deallocate() {
    if(mass_fractions != NULL){
       delete[] mass_fractions; mass_fractions=NULL;
       if( Schmidt != NULL) delete[] Schmidt; Schmidt = NULL;
-      
    }  
    
 } 
@@ -334,9 +320,7 @@ void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Close_Input_File(void) {
  *                                                      *
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
-Set_Default_Input_Parameters(void) {
-
+void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Set_Default_Input_Parameters(void) {
    
    int i;
    char *string_ptr;
@@ -409,8 +393,6 @@ Set_Default_Input_Parameters(void) {
    BluffBody_Data_Usage = 0; 
      
    Plate_Length = ONE;
-   Pipe_Length = ONE;
-   Pipe_Radius = 0.1;
    Blunt_Body_Radius = ONE;
    Blunt_Body_Mach_Number = TWO;
    Grain_Length = 0.835;
@@ -429,15 +411,6 @@ Set_Default_Input_Parameters(void) {
 
    X_Scale = ONE;
    X_Rotate = ZERO;
-   Length_Shroud = 0.1;
-   Radius_Shroud = 0.043;
-   Length_BluffBody = 0.04;
-   Radius_BluffBody = 0.02 ;
-   Radius_Orifice = 0.001;
-   Radius_Inlet_Pipe = 0.0508;
-   Radius_Combustor_Tube = 0.0762;
-   Length_Inlet_Pipe = 0.127;
-   Length_Combustor_Tube = 0.508;
     
    BluffBody_Coflow_Air_Velocity = 20.0;
    BluffBody_Coflow_Fuel_Velocity = 61.0; 
@@ -765,64 +738,81 @@ int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Parse_Next_Input_Control_Paramet
        Get_Next_Input_Control_Parameter();
        strcpy(IP_Grid.Grid_Type, 
               Next_Control_Parameter);
+
        if (strcmp(IP_Grid.Grid_Type, "Cartesian") == 0) {
           IP_Grid.i_Grid = GRID_CARTESIAN_UNIFORM;
           IP_Grid.Box_Length = ONE;
           IP_Grid.Box_Width = ONE;
           IP_Grid.Box_Height = ONE;
+
        } else if (strcmp(IP_Grid.Grid_Type, "Cube") == 0) {
           IP_Grid.i_Grid = GRID_CUBE;
           IP_Grid.Box_Length = ONE;
           IP_Grid.Box_Width = ONE;
           IP_Grid.Box_Height = ONE;
+
        } else if (strcmp(IP_Grid.Grid_Type, "Channel") == 0) {
           IP_Grid.i_Grid = GRID_CHANNEL;
           IP_Grid.Box_Length = 0.2;
           IP_Grid.Box_Width = 0.001;
           IP_Grid.Box_Height = 0.001;
+
        } else if (strcmp(IP_Grid.Grid_Type, "Turbulent_Channel") == 0) {
           IP_Grid.i_Grid = GRID_CHANNEL;
-          
-          if(  Pressure_Gradient.x !=ZERO){
-             IP_Grid.geometry_index = 1;
+          IP_Grid.Box_Length = 1.524;
+          IP_Grid.Box_Width  = 0.127;
+          IP_Grid.Box_Height = 0.127;
+          if (Pressure_Gradient.z !=ZERO) {
              IP_Grid.Box_Length = 1.524;
-             IP_Grid.Box_Width =  0.127;
+             IP_Grid.Box_Width  = 0.127;
              IP_Grid.Box_Height = 0.127;
+             IP_Grid.i_Grid = GRID_CHANNEL_ZDIR;
           }
-          if(  Pressure_Gradient.y !=ZERO){
-             IP_Grid.geometry_index = 2;
-             IP_Grid.Box_Length =  0.127;
-             IP_Grid.Box_Width =  1.524;
-             IP_Grid.Box_Height =  0.127;
+          if (Pressure_Gradient.x !=ZERO) {
+             IP_Grid.Box_Length = 0.127;
+             IP_Grid.Box_Width  = 1.524;
+             IP_Grid.Box_Height = 0.127;
+             IP_Grid.i_Grid = GRID_CHANNEL_XDIR;
           }
-          if(  Pressure_Gradient.z !=ZERO){
-             IP_Grid.geometry_index = 3;
+          if (Pressure_Gradient.y !=ZERO) {
              IP_Grid.Box_Length =  0.127;
-             IP_Grid.Box_Width =  0.127;
+             IP_Grid.Box_Width  =  0.127;
              IP_Grid.Box_Height =  1.524;
+             IP_Grid.i_Grid = GRID_CHANNEL_YDIR;
           }
+
        } else if (strcmp(IP_Grid.Grid_Type, "Couette") == 0) {
           IP_Grid.i_Grid = GRID_COUETTE;
-          if( Moving_wall_velocity.x !=ZERO){
-             IP_Grid.geometry_index = 1;
+          IP_Grid.Box_Length = 0.2;
+          IP_Grid.Box_Width  = 0.001;
+          IP_Grid.Box_Height = 0.001;
+          if (Moving_wall_velocity.z !=ZERO) {
              IP_Grid.Box_Length = 0.2;
-             IP_Grid.Box_Width = 0.001;
+             IP_Grid.Box_Width  = 0.001;
              IP_Grid.Box_Height = 0.001;
+             IP_Grid.i_Grid = GRID_COUETTE_ZDIR;
           }
-          if( Moving_wall_velocity.y !=ZERO){
-             IP_Grid.geometry_index = 2;
+          if (Moving_wall_velocity.x !=ZERO) {
              IP_Grid.Box_Length = 0.001;
-             IP_Grid.Box_Width = 0.2;
+             IP_Grid.Box_Width  = 0.2;
              IP_Grid.Box_Height = 0.001;
+             IP_Grid.i_Grid = GRID_COUETTE_XDIR;
           }
-          if( Moving_wall_velocity.z !=ZERO){
-             IP_Grid.geometry_index = 3;
+          if (Moving_wall_velocity.y !=ZERO) {
              IP_Grid.Box_Length = 0.001;
-             IP_Grid.Box_Width = 0.001;
+             IP_Grid.Box_Width  = 0.001;
              IP_Grid.Box_Height = 0.2;
+             IP_Grid.i_Grid = GRID_COUETTE_YDIR;
           }
+
+       } else if (strcmp(IP_Grid.Grid_Type, "Pipe") == 0) {
+          IP_Grid.i_Grid = GRID_PIPE;
+
+       } else if (strcmp(IP_Grid.Grid_Type, "Bluff_Body_Burner") == 0) {
+          IP_Grid.i_Grid = GRID_BLUFF_BODY_BURNER;
+
        }else {
-          IP_Grid.i_Grid = GRID_SQUARE;
+          IP_Grid.i_Grid = GRID_CUBE;
           IP_Grid.Box_Length = ONE;
           IP_Grid.Box_Width = ONE;
           IP_Grid.Box_Height = ONE;
@@ -867,68 +857,89 @@ int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Parse_Next_Input_Control_Paramet
     } else if (strcmp(Next_Control_Parameter, "Number_of_Cells_Idir") == 0) {
        i_command = 11;
        Line_Number = Line_Number + 1;
-       Input_File >> IP_Grid.ICells;
+       Input_File >> IP_Grid.NCells_Idir;
        Input_File.getline(buffer, sizeof(buffer));
-       if ( IP_Grid.ICells < 1) i_command = INVALID_INPUT_VALUE;
+       if ( IP_Grid.NCells_Idir < 1) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Number_of_Cells_Jdir") == 0) {
        i_command = 12;
        Line_Number = Line_Number + 1;
-       Input_File >> IP_Grid.JCells;
+       Input_File >> IP_Grid.NCells_Jdir;
        Input_File.getline(buffer, sizeof(buffer));
-       if (IP_Grid.JCells <1) i_command = INVALID_INPUT_VALUE;
+       if (IP_Grid.NCells_Jdir <1) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Number_of_Cells_Kdir") == 0) {
        i_command = 13;
        Line_Number = Line_Number + 1;
-       Input_File >> IP_Grid.KCells;
+       Input_File >> IP_Grid.NCells_Kdir;
        Input_File.getline(buffer, sizeof(buffer));
-       if (IP_Grid.KCells < 1) i_command = INVALID_INPUT_VALUE;
+       if (IP_Grid.NCells_Kdir < 1) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Number_of_Blocks_Idir") == 0) {
        i_command = 14;
        Line_Number = Line_Number + 1;
-       Input_File >> IP_Grid.IBlk;
+       Input_File >> IP_Grid.NBlk_Idir;
        Input_File.getline(buffer, sizeof(buffer));
-       if ( IP_Grid.IBlk < 1) i_command = INVALID_INPUT_VALUE;
+       if ( IP_Grid.NBlk_Idir < 1) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Number_of_Blocks_Jdir") == 0) {
        i_command = 15;
        Line_Number = Line_Number + 1;
-       Input_File >> IP_Grid.JBlk;
+       Input_File >> IP_Grid.NBlk_Jdir;
        Input_File.getline(buffer, sizeof(buffer));
-       if ( IP_Grid.JBlk < 1) i_command = INVALID_INPUT_VALUE;
+       if ( IP_Grid.NBlk_Jdir < 1) i_command = INVALID_INPUT_VALUE;
 
-    }else if (strcmp(Next_Control_Parameter, "Number_of_Blocks_Kdir") == 0) {
+    } else if (strcmp(Next_Control_Parameter, "Number_of_Blocks_Kdir") == 0) {
        i_command = 16;
        Line_Number = Line_Number + 1;
-       Input_File >> IP_Grid.KBlk;
+       Input_File >> IP_Grid.NBlk_Kdir;
        Input_File.getline(buffer, sizeof(buffer));
-       if ( IP_Grid.KBlk < 1) i_command = INVALID_INPUT_VALUE;
+       if ( IP_Grid.NBlk_Kdir < 1) i_command = INVALID_INPUT_VALUE;
 
-    } else if (strcmp(Next_Control_Parameter, "Stretching_factor_Idir") == 0) {
+    } else if (strcmp(Next_Control_Parameter, "Stretching_Factor_Idir") == 0) {
        i_command = 17;
        Line_Number = Line_Number + 1;
-       Input_File >> IP_Grid.I_stretching_factor;
+       Input_File >> IP_Grid.Stretching_Factor_Idir;
        Input_File.getline(buffer, sizeof(buffer));
-       if ( IP_Grid.I_stretching_factor < 0) i_command = INVALID_INPUT_VALUE;
+       if ( IP_Grid.Stretching_Factor_Idir < ZERO) i_command = INVALID_INPUT_VALUE;
 
-    } else if (strcmp(Next_Control_Parameter, "Stretching_factor_Jdir") == 0) {
+    } else if (strcmp(Next_Control_Parameter, "Stretching_Factor_Jdir") == 0) {
        i_command = 18;
        Line_Number = Line_Number + 1;
-       Input_File >> IP_Grid.J_stretching_factor;
+       Input_File >> IP_Grid.Stretching_Factor_Jdir;
        Input_File.getline(buffer, sizeof(buffer));
-       if ( IP_Grid.J_stretching_factor < 0) i_command = INVALID_INPUT_VALUE;
+       if ( IP_Grid.Stretching_Factor_Jdir < ZERO) i_command = INVALID_INPUT_VALUE;
 
-    } else if (strcmp(Next_Control_Parameter, "Stretching_factor_Kdir") == 0) {
+    } else if (strcmp(Next_Control_Parameter, "Stretching_Factor_Kdir") == 0) {
        i_command = 19;
        Line_Number = Line_Number + 1;
-       Input_File >> IP_Grid.K_stretching_factor;
+       Input_File >> IP_Grid.Stretching_Factor_Kdir;
        Input_File.getline(buffer, sizeof(buffer));
-       if ( IP_Grid.K_stretching_factor < 0) i_command = INVALID_INPUT_VALUE;
+       if ( IP_Grid.Stretching_Factor_Kdir < ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(Next_Control_Parameter, "Stretching_Type_Idir") == 0) {
+       i_command = 20;
+       Line_Number = Line_Number + 1;
+       Input_File >> IP_Grid.Stretching_Type_Idir;
+       Input_File.getline(buffer, sizeof(buffer));
+       if ( IP_Grid.Stretching_Type_Idir < 0) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(Next_Control_Parameter, "Stretching_Type_Jdir") == 0) {
+       i_command = 21;
+       Line_Number = Line_Number + 1;
+       Input_File >> IP_Grid.Stretching_Type_Jdir;
+       Input_File.getline(buffer, sizeof(buffer));
+       if ( IP_Grid.Stretching_Type_Jdir < 0) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(Next_Control_Parameter, "Stretching_Type_Kdir") == 0) {
+       i_command = 22;
+       Line_Number = Line_Number + 1;
+       Input_File >> IP_Grid.Stretching_Type_Kdir;
+       Input_File.getline(buffer, sizeof(buffer));
+       if ( IP_Grid.Stretching_Type_Kdir < 0) i_command = INVALID_INPUT_VALUE;
 
     }else if (strcmp(Next_Control_Parameter, "Time_Accurate") == 0) {
-       i_command = 20;
+       i_command = 23;
        Line_Number = Line_Number + 1;
        Input_File >> Time_Accurate;
        Input_File.getline(buffer, sizeof(buffer));
@@ -939,7 +950,7 @@ int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Parse_Next_Input_Control_Paramet
        } /* endif */
 
     } else if (strcmp(Next_Control_Parameter, "Local_Time_Stepping") == 0) {
-       i_command = 21;
+       i_command = 24;
        Line_Number = Line_Number + 1;
        Input_File >> Local_Time_Stepping;
        Input_File.getline(buffer, sizeof(buffer));
@@ -957,210 +968,224 @@ int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Parse_Next_Input_Control_Paramet
        }       
 
     } else if (strcmp(Next_Control_Parameter, "Maximum_Number_of_Time_Steps") == 0) {
-       i_command = 22;
+       i_command = 25;
        Line_Number = Line_Number + 1;
        Input_File >> Maximum_Number_of_Time_Steps;
        Input_File.getline(buffer, sizeof(buffer));
        if (Maximum_Number_of_Time_Steps < 0) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "N_Stage") == 0) {
-       i_command = 23;
+       i_command = 26;
        Line_Number = Line_Number + 1;
        Input_File >> N_Stage;
        Input_File.getline(buffer, sizeof(buffer));
        if (N_Stage < 0) i_command = INVALID_INPUT_VALUE;
 
     }else if (strcmp(Next_Control_Parameter, "p_norms") == 0) {
-       i_command = 24;
+       i_command = 27;
        Line_Number = Line_Number + 1;
        Input_File >> p_Norms_Specified_Parameter;
        Input_File.getline(buffer, sizeof(buffer));
        if (N_Stage < 0) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "CFL_Number") == 0) {
-       i_command = 25;
+       i_command = 28;
        Line_Number = Line_Number + 1;
        Input_File >> CFL_Number;
        Input_File.getline(buffer, sizeof(buffer));
        if (CFL_Number <= ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Box_Width") == 0) {
-       i_command = 26;
+       i_command = 29;
        Line_Number = Line_Number + 1;
        Input_File >> Box_Width;
        Input_File.getline(buffer, sizeof(buffer));
        if (Box_Width <= ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Box_Height") == 0) {
-       i_command = 27;
+       i_command = 30;
        Line_Number = Line_Number + 1;
        Input_File >> Box_Height;
        Input_File.getline(buffer, sizeof(buffer));
        if (Box_Height <= ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Plate_Length") == 0) {
-       i_command = 28;
+       i_command = 31;
        Line_Number = Line_Number + 1;
        Input_File >> Plate_Length;
        Input_File.getline(buffer, sizeof(buffer));
        if (Plate_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Pipe_Length") == 0) {
-       i_command = 27;
+       i_command = 32;
        Line_Number = Line_Number + 1;
-       Input_File >> Pipe_Length;
+       Input_File >> IP_Grid.Pipe_Length;
        Input_File.getline(buffer, sizeof(buffer));
-       if (Pipe_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
+       if (IP_Grid.Pipe_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Pipe_Radius") == 0) {
-       i_command = 29;
+       i_command = 33;
        Line_Number = Line_Number + 1;
-       Input_File >> Pipe_Radius;
+       Input_File >> IP_Grid.Pipe_Radius;
        Input_File.getline(buffer, sizeof(buffer));
-       if (Pipe_Radius <= ZERO) i_command = INVALID_INPUT_VALUE;
+       if (IP_Grid.Pipe_Radius <= ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Blunt_Body_Radius") == 0) {
-       i_command = 30;
+       i_command = 34;
        Line_Number = Line_Number + 1;
        Input_File >> Blunt_Body_Radius;
        Input_File.getline(buffer, sizeof(buffer));
        if (Blunt_Body_Radius <= ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Blunt_Body_Mach_Number") == 0) {
-       i_command = 31;
+       i_command = 35;
        Line_Number = Line_Number + 1;
        Input_File >> Blunt_Body_Mach_Number;
        Input_File.getline(buffer, sizeof(buffer));
        if (Blunt_Body_Mach_Number <= ONE) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Cylinder_Radius") == 0) {
-       i_command = 32;
+       i_command = 36;
        Line_Number = Line_Number + 1;
        Input_File >> Cylinder_Radius;
        Input_File.getline(buffer, sizeof(buffer));
        if (Cylinder_Radius <= ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Ellipse_Length_X_Axis") == 0) {
-       i_command = 33;
+       i_command = 37;
        Line_Number = Line_Number + 1;
        Input_File >> Ellipse_Length_X_Axis;
        Input_File.getline(buffer, sizeof(buffer));
        if (Ellipse_Length_X_Axis <= ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Ellipse_Length_Y_Axis") == 0) {
-       i_command = 34;
+       i_command = 38;
        Line_Number = Line_Number + 1;
        Input_File >> Ellipse_Length_Y_Axis;
        Input_File.getline(buffer, sizeof(buffer));
        if (Ellipse_Length_Y_Axis <= ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Chord_Length") == 0) {
-       i_command = 35;
+       i_command = 39;
        Line_Number = Line_Number + 1;
        Input_File >> Chord_Length;
        Input_File.getline(buffer, sizeof(buffer));
        if (Chord_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
 
-    } else if (strcmp(Next_Control_Parameter, "NACA_Aerofoil_Type") == 0) {
-       i_command = 36;
-       Get_Next_Input_Control_Parameter( );
-       strcpy(NACA_Aerofoil_Type, 
-              Next_Control_Parameter);
-       if (strlen(NACA_Aerofoil_Type) != 4 &&
-           strlen(NACA_Aerofoil_Type) != 5) i_command = INVALID_INPUT_VALUE;
-
     } else if (strcmp(Next_Control_Parameter, "Orifice_Radius") == 0) {
-       i_command = 37;
+       i_command = 41;
        Line_Number = Line_Number + 1;
        Input_File >> Orifice_Radius;
        Input_File.getline(buffer, sizeof(buffer));
        if (Orifice_Radius <= ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Wedge_Angle") == 0) {
-       i_command = 38;
+       i_command = 42;
        Line_Number = Line_Number + 1;
        Input_File >> Wedge_Angle;
        Input_File.getline(buffer, sizeof(buffer));
        if (Wedge_Angle <= ZERO) i_command = INVALID_INPUT_VALUE;
     
     } else if (strcmp(Next_Control_Parameter, "Wedge_Length") == 0) {
-       i_command = 39;
+       i_command = 43;
        Line_Number = Line_Number + 1;
        Input_File >> Wedge_Length;
        Input_File.getline(buffer, sizeof(buffer));
        if (Wedge_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
+
     } else if (strcmp(Next_Control_Parameter, "Grain_Length") == 0) {
-       i_command = 40;
+       i_command = 44;
        Line_Number = Line_Number + 1;
        Input_File >> Grain_Length;
        Input_File.getline(buffer, sizeof(buffer));
        if (Grain_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Grain_Radius") == 0) {
-       i_command = 41;
+       i_command = 45;
        Line_Number = Line_Number + 1;
        Input_File >> Grain_Radius;
        Input_File.getline(buffer, sizeof(buffer));
        if (Grain_Radius <= ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Grain_To_Throat_Length") == 0) {
-       i_command = 42;
+       i_command = 46;
        Line_Number = Line_Number + 1;
        Input_File >> Grain_To_Throat_Length;
        Input_File.getline(buffer, sizeof(buffer));
        if (Grain_To_Throat_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Nozzle_Length") == 0) {
-       i_command = 43;
+       i_command = 47;
        Line_Number = Line_Number + 1;
        Input_File >> Nozzle_Length;
        Input_File.getline(buffer, sizeof(buffer));
        if (Nozzle_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Nozzle_Radius_Exit") == 0) {
-       i_command = 44;
+       i_command = 48;
        Line_Number = Line_Number + 1;
        Input_File >> Nozzle_Radius_Exit;
        Input_File.getline(buffer, sizeof(buffer));
        if (Nozzle_Radius_Exit <= ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Nozzle_Radius_Throat") == 0) {
-       i_command = 45;
+       i_command = 49;
        Line_Number = Line_Number + 1;
        Input_File >> Nozzle_Radius_Throat;
        Input_File.getline(buffer, sizeof(buffer));
        if (Nozzle_Radius_Throat <= ZERO) i_command = INVALID_INPUT_VALUE;
 
-    } else if (strcmp(Next_Control_Parameter, "Length_BluffBody") == 0) {
-       i_command = 46;
-       Line_Number = Line_Number + 1;
-       Input_File >> Length_BluffBody;
-       Input_File.getline(buffer, sizeof(buffer));
-       if (Length_BluffBody <ZERO) i_command = INVALID_INPUT_VALUE;
-    } else if (strcmp(Next_Control_Parameter, "Radius_Orifice") == 0) {
-       i_command = 47 ;
-       Line_Number = Line_Number + 1;
-       Input_File >> Radius_Orifice;
-       Input_File.getline(buffer, sizeof(buffer));
-       if (Radius_Orifice <ZERO) i_command = INVALID_INPUT_VALUE;   
-    }else if (strcmp(Next_Control_Parameter, "BluffBody_Coflow_Air_Velocity") == 0) {
+    } else if (strcmp(Next_Control_Parameter, "Radius_Bluff_Body") == 0) {
        i_command = 50 ;
+       Line_Number = Line_Number + 1;
+       Input_File >> IP_Grid.Radius_Bluff_Body;
+       Input_File.getline(buffer, sizeof(buffer));
+       if (IP_Grid.Radius_Bluff_Body <ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(Next_Control_Parameter, "Radius_Fuel_Line") == 0) {
+       i_command = 51 ;
+       Line_Number = Line_Number + 1;
+       Input_File >> IP_Grid.Radius_Fuel_Line;
+       Input_File.getline(buffer, sizeof(buffer));
+       if (IP_Grid.Radius_Fuel_Line <ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(Next_Control_Parameter, "Radius_Coflow_Inlet_Pipe") == 0) {
+       i_command = 52 ;
+       Line_Number = Line_Number + 1;
+       Input_File >> IP_Grid.Radius_Coflow_Inlet_Pipe;
+       Input_File.getline(buffer, sizeof(buffer));
+       if (IP_Grid.Radius_Coflow_Inlet_Pipe <ZERO) i_command = INVALID_INPUT_VALUE;   
+
+    } else if (strcmp(Next_Control_Parameter, "Length_Coflow_Inlet_Pipe") == 0) {
+       i_command = 53 ;
+       Line_Number = Line_Number + 1;
+       Input_File >> IP_Grid.Length_Coflow_Inlet_Pipe;
+       Input_File.getline(buffer, sizeof(buffer));
+       if (IP_Grid.Length_Coflow_Inlet_Pipe <ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(Next_Control_Parameter, "Length_Combustor_Tube") == 0) {
+       i_command = 54 ;
+       Line_Number = Line_Number + 1;
+       Input_File >> IP_Grid.Length_Combustor_Tube;
+       Input_File.getline(buffer, sizeof(buffer));
+       if (IP_Grid.Length_Combustor_Tube <ZERO) i_command = INVALID_INPUT_VALUE;
+
+    }else if (strcmp(Next_Control_Parameter, "BluffBody_Coflow_Air_Velocity") == 0) {
+       i_command = 55;
        Line_Number = Line_Number + 1;
        Input_File >> BluffBody_Coflow_Air_Velocity;
        Input_File.getline(buffer, sizeof(buffer));
        if (BluffBody_Coflow_Air_Velocity <ZERO) i_command = INVALID_INPUT_VALUE;
        
     }else if (strcmp(Next_Control_Parameter, "BluffBody_Coflow_Fuel_Velocity") == 0) {
-       i_command = 51;
+       i_command = 56;
        Line_Number = Line_Number + 1;
        Input_File >> BluffBody_Coflow_Fuel_Velocity;
        Input_File.getline(buffer, sizeof(buffer));
        if (BluffBody_Coflow_Fuel_Velocity <ZERO) i_command = INVALID_INPUT_VALUE;       
-       //Get next line and read in Schmidt numbers else will use defaults
-       Get_Next_Input_Control_Parameter( );
             
     }  else if (strcmp(Next_Control_Parameter, "Time_Max") == 0) {
-       i_command = 53;
+       i_command = 57;
        Line_Number = Line_Number + 1;
        Input_File >> Time_Max;
        Input_File.getline(buffer, sizeof(buffer));
@@ -1168,14 +1193,14 @@ int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Parse_Next_Input_Control_Paramet
        if (Time_Max < ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Number_of_Blocks_Per_Processor") == 0) {
-       i_command = 54;
+       i_command = 58;
        Line_Number = Line_Number + 1;
        Input_File >> Number_of_Blocks_Per_Processor;
        Input_File.getline(buffer, sizeof(buffer));
        if (Number_of_Blocks_Per_Processor < 1) i_command = INVALID_INPUT_VALUE;
  
     } else if (strcmp(Next_Control_Parameter, "Output_Format_Type") == 0) {
-       i_command = 55;
+       i_command = 59;
        Get_Next_Input_Control_Parameter( );
        strcpy(Output_Format_Type, 
               Next_Control_Parameter);
@@ -1199,22 +1224,22 @@ int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Parse_Next_Input_Control_Paramet
           i_Output_Format = IO_TECPLOT;
        } /* endif */
 
-    }  else if (strcmp (Next_Control_Parameter, "Morton") == 0) {
-      i_command = 56;
+    } else if (strcmp (Next_Control_Parameter, "Morton") == 0) {
+      i_command = 60;
       Line_Number = Line_Number + 1;
       Input_File >> Morton;
       Input_File.getline(buffer, sizeof(buffer));
       if (Morton < ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(Next_Control_Parameter, "Morton_Reordering_Frequency") == 0) {
-      i_command = 57;
+      i_command = 61;
       Line_Number = Line_Number + 1;
       Input_File >> Morton_Reordering_Frequency;
       Input_File.getline(buffer, sizeof(buffer));
       if (Morton_Reordering_Frequency < ZERO) i_command = INVALID_INPUT_VALUE;
 
     }else if (strcmp(Next_Control_Parameter, "Flow_Type") == 0) {
-       i_command = 58;
+       i_command = 62;
        Get_Next_Input_Control_Parameter( );
        strcpy(Flow_Type, 
               Next_Control_Parameter);
@@ -1237,24 +1262,24 @@ int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Parse_Next_Input_Control_Paramet
        } /* endif */
 
     } else if (strcmp(Next_Control_Parameter, "Flow_Geometry_Type") == 0) {
-       i_command = 60;
+       i_command = 63;
        Get_Next_Input_Control_Parameter( );
        strcpy(Flow_Geometry_Type, 
               Next_Control_Parameter);
        if (strcmp(Flow_Geometry_Type, "Planar") == 0) {
           Axisymmetric = 0;
        } else if (strcmp(Flow_Geometry_Type, "Axisymmetric") == 0) {
-	 Axisymmetric = 1;
+	  Axisymmetric = 1;
        } else if (strcmp(Flow_Geometry_Type, "Axisymmetric-x") == 0) {
-	 Axisymmetric = 2;
+	  Axisymmetric = 2;
        } else if (strcmp(Flow_Geometry_Type, "Axisymmetric-y") == 0) {
-	 Axisymmetric = 1;
+	  Axisymmetric = 1;
        } else {
           Axisymmetric = 0;
        } /* endif */
 
     } else if (strcmp(Next_Control_Parameter, "Restart_Solution_Save_Frequency") == 0) {
-       i_command = 61;
+       i_command = 64;
        Line_Number = Line_Number + 1;
        Input_File >> Restart_Solution_Save_Frequency;
        Input_File.getline(buffer, sizeof(buffer));
@@ -1480,6 +1505,9 @@ int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Parse_Next_Input_Control_Paramet
     } else if (strcmp(Next_Control_Parameter, "Write_Output_Cells") == 0) {
        i_command = WRITE_OUTPUT_CELLS_CODE;
        
+    } else if (strcmp(Next_Control_Parameter, "Write_Output_Nodes") == 0) {
+       i_command = WRITE_OUTPUT_NODES_CODE;
+
     } else if (strcmp(Next_Control_Parameter, "Write_Restart") == 0) {
        i_command = WRITE_RESTART_CODE;
        
@@ -1819,29 +1847,41 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
                   Broadcast_Input_Parameters(void) {
    
 #ifdef _MPI_VERSION
-   
+
+   // Input file parameters  
    MPI::COMM_WORLD.Bcast(CFFC_Path, 
 			 INPUT_PARAMETER_LENGTH, 
 			 MPI::CHAR, 0);
+   MPI::COMM_WORLD.Bcast(Input_File_Name, 
+                         INPUT_PARAMETER_LENGTH, 
+                         MPI::CHAR, 0);   
+   MPI::COMM_WORLD.Bcast(&(Line_Number), 
+                         1, 
+                         MPI::INT, 0);
+
+   // Grid parameters
+   MPI::COMM_WORLD.Bcast(IP_Grid.Grid_Type, 
+                         INPUT_PARAMETER_LENGTH, 
+                         MPI::CHAR, 0);
    MPI::COMM_WORLD.Bcast(&(IP_Grid.i_Grid), 
                          1, 
                          MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.ICells), 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.NBlk_Idir), 
                          1, 
                          MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.JCells), 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.NBlk_Jdir), 
                          1, 
                          MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.KCells), 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.NBlk_Kdir), 
                          1, 
                          MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.IBlk), 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.NCells_Idir), 
                          1, 
                          MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.JBlk), 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.NCells_Jdir), 
                          1, 
                          MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.KBlk), 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.NCells_Kdir), 
                          1, 
                          MPI::INT, 0);
    MPI::COMM_WORLD.Bcast(&(IP_Grid.Nghost), 
@@ -1856,12 +1896,47 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
    MPI::COMM_WORLD.Bcast(&(IP_Grid.Box_Height), 
                          1, 
                          MPI::DOUBLE, 0);
-   MPI::COMM_WORLD.Bcast(Input_File_Name, 
-                         INPUT_PARAMETER_LENGTH, 
-                         MPI::CHAR, 0);
-   MPI::COMM_WORLD.Bcast(&(Line_Number), 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Stretching_Type_Idir),
+	         	 1,
+			 MPI::INT,0);
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Stretching_Type_Jdir),
+			 1,
+			 MPI::INT,0);
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Stretching_Type_Kdir),
+			 1,
+			 MPI::INT,0);
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Stretching_Factor_Idir),
+			 1,
+			 MPI::DOUBLE,0);
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Stretching_Factor_Jdir),
+			 1,
+			 MPI::DOUBLE,0);
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Stretching_Factor_Kdir),
+			 1,
+			 MPI::DOUBLE,0);
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Pipe_Radius), 
                          1, 
-                         MPI::INT, 0);
+                         MPI::DOUBLE, 0);
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Pipe_Length), 
+                         1, 
+                         MPI::DOUBLE, 0);
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Radius_Fuel_Line), 
+                         1, 
+                         MPI::DOUBLE, 0);
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Radius_Bluff_Body), 
+                          1, 
+                          MPI::DOUBLE, 0);
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Radius_Coflow_Inlet_Pipe), 
+                         1, 
+                         MPI::DOUBLE, 0);
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Length_Coflow_Inlet_Pipe), 
+                         1, 
+                         MPI::DOUBLE, 0);
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Length_Combustor_Tube), 
+                         1, 
+                         MPI::DOUBLE, 0);
+
+   // Solver parameters
    MPI::COMM_WORLD.Bcast(Time_Integration_Type, 
                          INPUT_PARAMETER_LENGTH, 
                          MPI::CHAR, 0);
@@ -1916,6 +1991,8 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
     MPI::COMM_WORLD.Bcast(&(i_Flux_Function), 
                           1, 
                           MPI::INT, 0);
+
+    // Flow solution parameters
     MPI::COMM_WORLD.Bcast(ICs_Type, 
                           INPUT_PARAMETER_LENGTH, 
                           MPI::CHAR, 0);
@@ -1997,23 +2074,12 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
     MPI::COMM_WORLD.Bcast(&(Reynolds_Number), 
                           1, 
 			  MPI::DOUBLE, 0);
-   MPI::COMM_WORLD.Bcast(&(Kinematic_Viscosity_Wall), 
+    MPI::COMM_WORLD.Bcast(&(Kinematic_Viscosity_Wall), 
                           1, 
 			  MPI::DOUBLE, 0);
 
-    MPI::COMM_WORLD.Bcast(IP_Grid.Grid_Type, 
-                          INPUT_PARAMETER_LENGTH, 
-                          MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(NACA_Aerofoil_Type, 
-                          INPUT_PARAMETER_LENGTH, 
-                          MPI::CHAR, 0);
+    // More grid parameters
     MPI::COMM_WORLD.Bcast(&(Plate_Length), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Pipe_Length), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Pipe_Radius), 
                           1, 
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(Blunt_Body_Radius), 
@@ -2040,39 +2106,10 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
     MPI::COMM_WORLD.Bcast(&(Nozzle_Radius_Throat), 
                           1, 
                           MPI::DOUBLE, 0);
-
-    MPI::COMM_WORLD.Bcast(&(Length_Shroud), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Radius_Shroud), 
-                          1, 
-                          MPI::DOUBLE, 0);
-
-    MPI::COMM_WORLD.Bcast(&(Length_BluffBody), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Radius_BluffBody), 
-                          1, 
-                          MPI::DOUBLE, 0);
-
-    MPI::COMM_WORLD.Bcast(&(Radius_Orifice), 
-                          1, 
-                          MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(BluffBody_Coflow_Air_Velocity), 
                           1, 
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(BluffBody_Coflow_Fuel_Velocity), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    
-    MPI::COMM_WORLD.Bcast(&(Radius_Inlet_Pipe), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Radius_Combustor_Tube), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    
-    MPI::COMM_WORLD.Bcast(&(Length_Inlet_Pipe), 
                           1, 
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(Length_Combustor_Tube), 
@@ -2135,6 +2172,14 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
                           1, 
                           MPI::DOUBLE, 0);
 
+    // Morton Ordering Parameters
+    MPI::COMM_WORLD.Bcast(&(IP.Morton), 
+                          1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Morton_Reordering_Frequency),
+                          1,
+                          MPI::INT,0);
+
     // File Names
     MPI::COMM_WORLD.Bcast(Output_File_Name, 
                           INPUT_PARAMETER_LENGTH, 
@@ -2185,11 +2230,11 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
    if(!CFFC_Primary_MPI_Processor()) {   
       Deallocate();
    } 
-   //number of species
+   // Number of species
    MPI::COMM_WORLD.Bcast(&(num_species), 
                          1, 
                          MPI::INT, 0);
-   //set up new dynamic memory
+   // Set up new dynamic memory
    if(!CFFC_Primary_MPI_Processor()) {   
       Allocate();
    } 
@@ -2479,17 +2524,17 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
       out_file << "\n  -> Number of Boundary Mesh Refinements : " 
                << IP.Number_of_Boundary_Mesh_Refinements;
    out_file << "\n  -> Number of Blocks i-direction: "
-            << IP.IP_Grid.IBlk;
+            << IP.IP_Grid.NBlk_Idir;
    out_file << "\n  -> Number of Blocks j-direction: " 
-            << IP.IP_Grid.JBlk;
+            << IP.IP_Grid.NBlk_Jdir;
    out_file << "\n  -> Number of Blocks k-direction: "
-            << IP.IP_Grid.KBlk;
+            << IP.IP_Grid.NBlk_Kdir;
    out_file << "\n  -> Number of Cells i-direction: "
-            << IP.IP_Grid.ICells;
+            << IP.IP_Grid.NCells_Idir;
    out_file << "\n  -> Number of Cells j-direction: " 
-            << IP.IP_Grid.JCells;
+            << IP.IP_Grid.NCells_Jdir;
    out_file << "\n  -> Number of Cells k-direction: " 
-            << IP.IP_Grid.KCells;
+            << IP.IP_Grid.NCells_Kdir;
    out_file << "\n  -> CFL Number: " 
             << IP.CFL_Number;
    out_file << "\n  -> Maximum Time (ms): " 

@@ -1,5 +1,5 @@
-/* Grid3DHexaSingleBlock.cc:  Single-block subroutines for 
-                              3D hexahedral block grid class. */
+/* Grid3DHexaBlock.cc:  Single-block subroutines for 
+                             3D hexahedral block grid class. */
 
 /* Include 3D hexahedral block grid type header file. */
 
@@ -8,43 +8,92 @@
 #endif // _GRID3D_HEXA_BLOCK_INCLUDED
 
 /*************************************************************************
- * Grid3D_Hexa_Block -- External subroutines for single grid block.      *
+ * Grid3D_Hexa_Block -- Member functions for single grid block.          *
  *************************************************************************/
 
 /********************************************************
- * Routine: Write_Hexa_Block                            *
+ * Routine: Copy                                        *
  *                                                      *
- * Writes 3D hexahedral    grid block to the            *
- * specified output stream for retrieval and re-use     *
- * purposes.                                            *
- *                                                      *
- ********************************************************/
-void Grid3D_Hexa_Block::Write_Hexa_Block(Grid3D_Hexa_Block &Grid, 
-                                         ostream &Out_File) {
-
-    Out_File << setprecision(14) << Grid << setprecision(6);
-
-}
-
-
-/********************************************************
- * Routine: Read_Hexa_Block                             *
- *                                                      *
- * Reads 3D hexahedral    grid block from the           *
- * specified input stream.                              *
+ * Copies the node and cell locations of hexahedral     *
+ * mesh block Grid2 to current grid block.              *
  *                                                      *
  ********************************************************/
-void Grid3D_Hexa_Block::Read_Hexa_Block(Grid3D_Hexa_Block &Grid,
-                                        istream &In_File) {
+void Grid3D_Hexa_Block::Copy(Grid3D_Hexa_Block &Grid2) {
 
-    In_File >> Grid;
+    int i, j,k, ni, nj, nk;
+ 
+    if (Grid2.Used) {
+
+       /* Allocate (re-allocate) memory for the cells and nodes 
+          of the hexahedral mesh block as necessary. */
+      
+       if (NNi != Grid2.NNi || NNj != Grid2.NNj ||
+           NNk != Grid2.NNk || NCk != Grid2.NCk ||
+           NCi != Grid2.NCi || NCj != Grid2.NCj ) { 
+          if (Used) { 
+             deallocate();
+          } /* endif */
+
+          allocate(Grid2.NCi-2*Grid2.Nghost, 
+                   Grid2.NCj-2*Grid2.Nghost, 
+                   Grid2.NCk-2*Grid2.Nghost,
+                   Grid2.Nghost);
+       } /* endif */
+
+       /* Copy the node locations of grid block Grid2. */
+
+       for (k = Grid2.KNl-Grid2.Nghost; k <= Grid2.KNu+Grid2.Nghost; ++k) {
+	  for (j = Grid2.JNl-Grid2.Nghost; j <= Grid2.JNu+Grid2.Nghost; ++j) {
+	     for (i = Grid2.INl-Grid2.Nghost; i <= Grid2.INu+Grid2.Nghost; ++i) {
+	        Node[i][j][k].X = Grid2.Node[i][j][k].X;
+	     } /* endfor */
+	  } /* endfor */
+       } /* endfor */
+    
+       /* Copy the cell values of grid block Grid2. */
+
+       for (k = Grid2.KCl-Grid2.Nghost; k <= Grid2.KCu+Grid2.Nghost; ++k) {
+          for (j = Grid2.JCl-Grid2.Nghost; j <= Grid2.JCu+Grid2.Nghost; ++j) {
+	     for (i = Grid2.ICl-Grid2.Nghost; i <= Grid2.ICu+Grid2.Nghost; ++i) {
+	        Cell[i][j][k].I  = Grid2.Cell[i][j][k].I;
+	        Cell[i][j][k].J  = Grid2.Cell[i][j][k].J;
+	        Cell[i][j][k].Xc = Grid2.Cell[i][j][k].Xc;
+	        Cell[i][j][k].V  = Grid2.Cell[i][j][k].V;
+	     } /* endfor */
+          } /* endfor */
+       } /* endfor */
+
+       /* Copy the boundary condition type info of grid block Grid2. */
+
+       for (i = Grid2.ICl-Grid2.Nghost; i <= Grid2.ICu+Grid2.Nghost; ++i) {
+	  for (k = Grid2.KCl-Grid2.Nghost; k <= Grid2.KCu+Grid2.Nghost; ++k) {
+	     BCtypeN[i][k] = Grid2.BCtypeN[i][k];
+	     BCtypeS[i][k] = Grid2.BCtypeS[i][k];
+          } /* endfor */
+       } /* endfor */
+
+       for (j = Grid2.JCl-Grid2.Nghost; j <= Grid2.JCu+Grid2.Nghost; ++j) {
+          for (k = Grid2.KCl-Grid2.Nghost; k <= Grid2.KCu+Grid2.Nghost; ++k) {
+	      BCtypeE[j][k] = Grid2.BCtypeE[j][k];
+	      BCtypeW[j][k] = Grid2.BCtypeW[j][k];
+          } /* endfor */
+       } /* endfor */
+
+       for (i = Grid2.ICl-Grid2.Nghost; i <= Grid2.ICu+Grid2.Nghost; ++i) {
+	   for (j = Grid2.JCl-Grid2.Nghost; j <= Grid2.JCu+Grid2.Nghost; ++j) {
+	     BCtypeT[i][j] = Grid2.BCtypeT[i][j];
+	     BCtypeB[i][j] = Grid2.BCtypeB[i][j];
+	   } /* endfor */
+       } /* endfor */
+
+    } /* endif */
 
 }
 
 /********************************************************
  * Routine: Output_Tecplot                              *
  *                                                      *
- * Writes the nodes of the hexahedral    mesh to the    *
+ * Writes the nodes of the hexahedral mesh to the       *
  * specified output stream in a format suitable for     *
  * plotting the grid with TECPLOT.                      *
  *                                                      *
@@ -148,7 +197,6 @@ void  Grid3D_Hexa_Block::Output_Cells_Tecplot(const int Block_Number,
                                               const int Output_Title,
                                               ostream &Out_File) {
 
-
     Out_File << setprecision(14);
     if (Output_Title) {
        Out_File << "TITLE = \"" << CFFC_Name()
@@ -187,15 +235,14 @@ void  Grid3D_Hexa_Block::Output_Cells_Tecplot(const int Block_Number,
 /********************************************************
  * Routine: Output_Gnuplot                              *
  *                                                      *
- * Writes the nodes of the hexahedral    mesh to the    *
+ * Writes the nodes of the hexahedral mesh to the       *
  * specified output stream in a format suitable for     *
  * plotting the grid with GNUPLOT.                      *
  *                                                      *
  ********************************************************/
 void  Grid3D_Hexa_Block::Output_Gnuplot(const int Block_Number,
-                    const int Output_Title,
-	            ostream &Out_File) {
-
+                                        const int Output_Title,
+	                                ostream &Out_File) {
 
     Out_File << setprecision(14);
     if (Output_Title) {
@@ -227,194 +274,471 @@ void  Grid3D_Hexa_Block::Output_Gnuplot(const int Block_Number,
     
 }
 
-/*****************************************************************
- * Routine: Update Cells
- * 
- * Updates the cell information for the hexahedral mesh block
- *                                                           
- *****************************************************************/
+/**************************************************************
+ * Routine: Update_Exterior_Nodes                             *
+ *                                                            *
+ * Update the exterior nodes for the hexahedral mesh block.   *
+ *                                                            *
+ **************************************************************/
+void Grid3D_Hexa_Block::Update_Exterior_Nodes(){
 
-void  Grid3D_Hexa_Block::Update_Cells(void) {
-  for(int k = KCl-Nghost; k <=KCu +Nghost ; ++k){ 
-    for( int j = JCl-Nghost ; j <= JCu +Nghost; ++j) {
+  Vector3D norm_dir, X_norm, X_tan;
+  Vector3D norm_dir1,X_norm1,X_tan1;
+
+  for (int k = KNl; k <= KNu; ++k){
+    for (int j = JNl; j <= JNu; ++j){
+      for (int z = 1; z <= Nghost; z++) {
+	 //create ghost cells on west side
+	 if (j > JNl && j < JNu && k > KNl && k < KNu) {
+	    norm_dir = - QUARTER*(nfaceW(ICl, j, k) +
+		  	          nfaceW(ICl, j-1, k)+
+                                  nfaceW(ICl, j, k-1)+
+                                  nfaceW(ICl, j-1, k-1));
+	 } else if (j > JNl && j < JNu) {
+	    norm_dir = - HALF*(nfaceW(ICl, j, k) +
+                               nfaceW(ICl, j-1, k));
+	 } else if (k > KNl && k < KNu) {
+	    norm_dir = - HALF*(nfaceW(ICl, j, k) +
+                               nfaceW(ICl, j, k-1));
+         } else {
+            norm_dir = - nfaceW(ICl, j, k);
+	 } /* endif */
+	 X_norm = ((Node[INl+z][j][k].X-
+		    Node[INl][j][k].X)*norm_dir)*norm_dir;
+	 X_tan  = (Node[INl+z][j][k].X - 
+		   Node[INl][j][k].X)-X_norm;
+	 Node[INl-z][j][k].X = Node[INl][j][k].X - X_norm + X_tan; 
+
+	 //create ghost cells on east side
+	 if (j > JNl && j < JNu && k > KNl && k < KNu) {
+	    norm_dir1 = QUARTER*(nfaceE(ICu, j, k) +
+		                 nfaceE(ICu, j-1, k)+
+                                 nfaceE(ICu, j, k-1)+
+                                 nfaceE(ICu, j-1, k-1));
+	 } else if (j > JNl && j < JNu) {
+	    norm_dir1 = HALF*(nfaceE(ICu, j, k) +
+                              nfaceE(ICu, j-1, k));
+	 } else if (k > KNl && k < KNu) {
+	    norm_dir1 = HALF*(nfaceE(ICu, j, k) +
+                              nfaceE(ICu, j, k-1));
+         } else {
+            norm_dir1 = nfaceE(ICu, j, k);
+	 } /* endif */
+	 X_norm1 = ((Node[INu][j][k].X-
+		     Node[INu-z][j][k].X)*norm_dir1)*norm_dir1;
+	 X_tan1  = (Node[INu][j][k].X - 
+		    Node[INu-z][j][k].X)-X_norm1;
+	 Node[INu+z][j][k].X = Node[INu][j][k].X + X_norm1 - X_tan1; 
+      }
+    }
+  }
+  
+  for (int k = KNl; k <= KNu; ++k) {
+    for (int i = INl; i <= INu; ++i) {
+      for (int z = 1; z <= Nghost; z++) {
+ 	 //create ghost cells on south side
+	 if (i > INl && i < INu && k > KNl && k < KNu) {
+	    norm_dir = - QUARTER*(nfaceS(i, JCl, k) +
+		  	          nfaceS(i-1, JCl, k)+
+                                  nfaceS(i, JCl, k-1)+
+                                  nfaceS(i-1, JCl, k-1));
+	 } else if (i > INl && i < INu) {
+	    norm_dir = - HALF*(nfaceS(i, JCl, k) +
+		 	       nfaceS(i-1, JCl, k));
+	 } else if (k > KNl && k < KNu) {
+	    norm_dir = - HALF*(nfaceS(i, JCl, k) +
+			       nfaceS(i, JCl, k-1));
+         } else {
+            norm_dir = - nfaceS(i, JCl, k);
+	 } /* endif */
+	 X_norm = ((Node[i][JNl+z][k].X-
+		    Node[i][JNl][k].X)*norm_dir)*norm_dir;
+	 X_tan  = (Node[i][JNl+z][k].X - 
+	           Node[i][JNl][k].X)-X_norm;
+	 Node[i][JNl-z][k].X = Node[i][JNl][k].X - X_norm + X_tan; 
+
+   	 //create ghost cells on north side
+	 if (i > INl && i < INu && k > KNl && k < KNu) {
+	    norm_dir1 = QUARTER*(nfaceN(i, JCu, k) +
+		  	         nfaceN(i-1, JCu, k)+
+                                 nfaceN(i, JCu, k-1)+
+                                 nfaceN(i-1, JCu, k-1));
+	 } else if (i > INl && i < INu) {
+	    norm_dir1 = HALF*(nfaceN(i, JCu, k) +
+		 	      nfaceN(i-1, JCu, k));
+	 } else if (k > KNl && k < KNu) {
+	    norm_dir1 = HALF*(nfaceN(i, JCu, k) +
+			      nfaceN(i, JCu, k-1));
+         } else {
+            norm_dir1 = nfaceN(i, JCu, k);
+	 } /* endif */
+	 X_norm1 = ((Node[i][JNu][k].X-
+		     Node[i][JNu-z][k].X)*norm_dir1)*norm_dir1;
+	 X_tan1  = (Node[i][JNu][k].X - 
+	            Node[i][JNu-z][k].X)-X_norm1;
+	 Node[i][JNu+z][k].X = Node[i][JNu][k].X + X_norm1 - X_tan1; 
+      }
+    }
+  }
+
+  for (int j = JNl; j <= JNu; ++j) {
+    for (int i = INl; i <= INu; ++i) {
+      for (int z = 1; z <= Nghost; z++) {
+	 //create ghost cells on bottom side
+	 if (i > INl && i < INu && j > JNl && j < JNu) {
+	    norm_dir = - QUARTER*(nfaceBot(i, j, KCl) +
+		  	          nfaceBot(i-1, j, KCl)+
+                                  nfaceBot(i, j-1, KCl)+
+                                  nfaceBot(i-1, j-1, KCl));
+	 } else if (i > INl && i < INu) {
+	    norm_dir = - HALF*(nfaceBot(i, j, KCl) +
+		 	       nfaceBot(i-1, j, KCl));
+	 } else if (j > JNl && j < JNu) {
+	    norm_dir = - HALF*(nfaceBot(i, j, KCl) +
+			       nfaceBot(i, j-1, KCl));
+         } else {
+            norm_dir = - nfaceBot(i, j, KCl);
+	 } /* endif */
+	 X_norm = ((Node[i][j][KNl+z].X-
+		    Node[i][j][KNl].X)*norm_dir)*norm_dir;
+	 X_tan  = (Node[i][j][KNl+z].X - 
+		   Node[i][j][KNl].X)-X_norm;
+	 Node[i][j][KNl-z].X = Node[i][j][KNl].X - X_norm + X_tan; 
+
+	 //create ghost cells on top side
+	 if (i > INl && i < INu && j > JNl && j < JNu) {
+	    norm_dir1 = QUARTER*(nfaceTop(i, j, KCu) +
+		  	         nfaceTop(i-1, j, KCu)+
+                                 nfaceTop(i, j-1, KCu)+
+                                 nfaceTop(i-1, j-1, KCu));
+	 } else if (i > INl && i < INu) {
+	    norm_dir1 = HALF*(nfaceTop(i, j, KCu) +
+		 	      nfaceTop(i-1, j, KCu));
+	 } else if (j > JNl && j < JNu) {
+	    norm_dir1 = HALF*(nfaceTop(i, j, KCu) +
+			      nfaceTop(i, j-1, KCu));
+         } else {
+            norm_dir1 = nfaceTop(i, j, KCu);
+	 } /* endif */
+	 X_norm1 = ((Node[i][j][KNu].X-
+		     Node[i][j][KNu-z].X)*norm_dir1)*norm_dir1;
+	 X_tan1  = (Node[i][j][KNu].X - 
+		    Node[i][j][KNu-z].X)-X_norm1;
+	 Node[i][j][KNu+z].X = Node[i][j][KNu].X + X_norm1 - X_tan1; 
+      }
+    }
+  }
+  
+  //the following code deals with placing ghost cells at the edges and corners
+  for (int k = KNl; k <= KNu; ++k){
+    for (int j = JNu+1; j <= JNu+Nghost; ++j){
+       for (int z = 1; z <= Nghost; ++z){
+	  Node[INu+z][j][k] = (Node[INu][j][k].X +
+		  	      (Node[INu][j][k].X - Node[INu-z][j][k].X));
+	  Node[INl-z][j][k] = (Node[INl][j][k].X +
+			      (Node[INl][j][k].X - Node[INl+z][j][k].X));
+      }
+    }
+  }
+  
+  for (int k = KNl; k <= KNu; ++k){
+    for (int j = JNl-Nghost; j <= JNl-1; ++j){
+       for (int z = 1; z <= Nghost; ++z){
+	  Node[INu+z][j][k] = (Node[INu][j][k].X +
+			      (Node[INu][j][k].X - Node[INu-z][j][k].X));
+	  Node[INl-z][j][k] = (Node[INl][j][k].X +
+			      (Node[INl][j][k].X - Node[INl+z][j][k].X));
+      }
+    }
+  }
+
+  for (int i = INl; i <= INu; ++i){
+     for (int j = JNu+1; j <= JNu+Nghost; ++j){
+        for (int z = 1; z <= Nghost; ++z){
+	   Node[i][j][KNu+z] = (Node[i][j][KNu].X +
+			       (Node[i][j][KNu].X - Node[i][j][KNu-z].X));
+	   Node[i][j][KNl-z] = (Node[i][j][KNl].X +
+			       (Node[i][j][KNl].X - Node[i][j][KNl+z].X));
+      }
+    }
+  }
+  
+  for (int i = INl; i <= INu; ++i){
+     for (int j = JNl-Nghost; j <= JNl-1; ++j){
+        for (int z = 1; z <= Nghost; ++z){
+	   Node[i][j][KNu+z] = (Node[i][j][KNu].X +
+			       (Node[i][j][KNu].X - Node[i][j][KNu-z].X));
+	   Node[i][j][KNl-z] = (Node[i][j][KNl].X +
+			       (Node[i][j][KNl].X - Node[i][j][KNl+z].X));
+      }
+    }
+  }
+  
+  for (int j = JNl-Nghost; j <= JNl-1; ++j){
+    for (int k = KNl-Nghost; k <= KNl-1; ++k){
+      for (int z = 1; z <= Nghost; ++z){
+	  Node[INu+z][j][k] = (Node[INu][j][k].X +
+		 	      (Node[INu][j][k].X - Node[INu-z][j][k].X));
+	  Node[INl-z][j][k] = (Node[INl][j][k].X +
+		  	      (Node[INl][j][k].X - Node[INl+z][j][k].X));
+      }
+    }
+  }
+  
+  for (int j = JNu+1; j <= JNu+Nghost; ++j){
+    for (int k = KNl-Nghost; k <= KNl-1; ++k){
+      for (int z = 1; z <= Nghost; ++z){
+	  Node[INu+z][j][k] = (Node[INu][j][k].X +
+		 	      (Node[INu][j][k].X - Node[INu-z][j][k].X));
+	  Node[INl-z][j][k] = (Node[INl][j][k].X +
+		  	      (Node[INl][j][k].X - Node[INl+z][j][k].X));
+      }
+    }
+  }
+
+  for (int j = JNl-Nghost; j <= JNl-1; ++j){
+     for (int k = KNu+1; k <= KNu+Nghost; ++k){
+        for (int z = 1; z <= Nghost; ++z){
+	   Node[INu+z][j][k] = (Node[INu][j][k].X +
+			       (Node[INu][j][k].X - Node[INu-z][j][k].X));
+	   Node[INl-z][j][k] = (Node[INl][j][k].X +
+			       (Node[INl][j][k].X - Node[INl+z][j][k].X));
+      }
+    }
+  }
+
+  for (int j = JNu+1; j <= JNu+Nghost; ++j){
+     for (int k = KNu+1; k <= KNu+Nghost; ++k){
+        for (int z = 1; z <= Nghost; ++z){
+	   Node[INu+z][j][k] = (Node[INu][j][k].X +
+			       (Node[INu][j][k].X - Node[INu-z][j][k].X));
+	   Node[INl-z][j][k] = (Node[INl][j][k].X +
+			       (Node[INl][j][k].X - Node[INl+z][j][k].X));
+      }
+    }
+  }
+
+//   for (int i = INu+1; i <= INu+Nghost; ++i){
+//     for (int k = KNl-Nghost; k <= KNl-1; ++k){
+//       for (int z = 1; z <= Nghost; ++z){
+// 	  Node[i][JNu+z][k] = (Node[i][JNu][k].X +
+// 			      (Node[i][JNu][k].X - Node[i][JNu-z][k].X));
+// 	  Node[i][JNl-z][k] = (Node[i][JNl][k].X +
+// 		              (Node[i][JNl][k].X - Node[i][JNl+z][k].X));
+//       }
+//     }
+//   }
+  
+//   for (int i = INl-Nghost; i <= INl-1; ++i){
+//      for (int k = KNu+1; k <= KNu+Nghost; ++k){
+//        for (int z = 1; z <= Nghost; ++z){
+// 	  Node[i][JNu+z][k] = (Node[i][JNu][k].X +
+// 			      (Node[i][JNu][k].X - Node[i][JNu-z][k].X));
+// 	  Node[i][JNl-z][k] = (Node[i][JNl][k].X +
+// 			      (Node[i][JNl][k].X - Node[i][JNl+z][k].X));
+//       }
+//     }
+//   }
+  
+}
+
+/**************************************************************
+ * Routine: Update_Exterior_Nodes_Zdir                        *
+ *                                                            *
+ * Update the exterior nodes for the hexahedral mesh block.   *
+ *                                                            *
+ **************************************************************/
+void Grid3D_Hexa_Block::Update_Exterior_Nodes_Zdir(){
+
+  Vector3D norm_dir, X_norm, X_tan;
+
+  for (int j = JNl-Nghost; j <= JNu+Nghost; ++j) {
+    for (int i = INl-Nghost; i <= INu+Nghost; ++i) {
+      for (int z = 1; z <= Nghost; z++) {
+	 //create ghost cells on bottom side
+	 if (i == INu+Nghost && j == JNu+Nghost) {
+            norm_dir = - nfaceBot(i-1, j-1, KCl);
+	 } else if (i == INu+Nghost && j == JNl-Nghost) {
+            norm_dir = - nfaceBot(i-1, j, KCl);
+         } else if (i == INl-Nghost && j == JNu+Nghost) {
+            norm_dir = - nfaceBot(i, j-1, KCl);
+         } else if (i == INl-Nghost && j == JNl-Nghost) {
+            norm_dir = - nfaceBot(i, j, KCl);
+         } else if (i == INu+Nghost) {
+	    norm_dir = - HALF*(nfaceBot(i-1, j, KCl) +
+		 	       nfaceBot(i-1, j-1, KCl));
+         } else if (j == JNu+Nghost) {
+	    norm_dir = - HALF*(nfaceBot(i, j-1, KCl) +
+		 	       nfaceBot(i-1, j-1, KCl));
+         } else if (i == INl-Nghost) {
+	    norm_dir = - HALF*(nfaceBot(i, j, KCl) +
+		 	       nfaceBot(i, j-1, KCl));
+         } else if (j == JNl-Nghost) {
+	    norm_dir = - HALF*(nfaceBot(i, j, KCl) +
+		 	       nfaceBot(i-1, j, KCl));
+         } else {
+	    norm_dir = - QUARTER*(nfaceBot(i, j, KCl) +
+		  	          nfaceBot(i-1, j, KCl)+
+                                  nfaceBot(i, j-1, KCl)+
+                                  nfaceBot(i-1, j-1, KCl));
+         } /* endif */
+	 X_norm = ((Node[i][j][KNl+z].X-
+		    Node[i][j][KNl].X)*norm_dir)*norm_dir;
+	 X_tan  = (Node[i][j][KNl+z].X - 
+		   Node[i][j][KNl].X)-X_norm;
+	 Node[i][j][KNl-z].X = Node[i][j][KNl].X - X_norm + X_tan; 
+
+	 //create ghost cells on top side
+         if (i == INu+Nghost && j == JNu+Nghost) {
+            norm_dir = nfaceTop(i-1, j-1, KCu);
+	 } else if (i == INu+Nghost && j == JNl-Nghost) {
+            norm_dir = nfaceTop(i-1, j, KCu);
+         } else if (i == INl-Nghost && j == JNu+Nghost) {
+            norm_dir = nfaceTop(i, j-1, KCu);
+         } else if (i == INl-Nghost && j == JNl-Nghost) {
+            norm_dir = nfaceTop(i, j, KCu);
+         } else if (i == INu+Nghost) {
+	    norm_dir = HALF*(nfaceTop(i-1, j, KCu) +
+		 	     nfaceTop(i-1, j-1, KCu));
+         } else if (j == JNu+Nghost) {
+	    norm_dir = HALF*(nfaceTop(i, j-1, KCu) +
+		 	     nfaceTop(i-1, j-1, KCu));
+         } else if (i == INl-Nghost) {
+	    norm_dir = HALF*(nfaceTop(i, j, KCu) +
+		 	     nfaceTop(i, j-1, KCu));
+         } else if (j == JNl-Nghost) {
+	    norm_dir = HALF*(nfaceTop(i, j, KCu) +
+		             nfaceTop(i-1, j, KCu));
+         } else {
+	    norm_dir = QUARTER*(nfaceTop(i, j, KCu) +
+		  	        nfaceTop(i-1, j, KCu)+
+                                nfaceTop(i, j-1, KCu)+
+                                nfaceTop(i-1, j-1, KCu));
+	 } /* endif */
+	 X_norm = ((Node[i][j][KNu].X-
+		    Node[i][j][KNu-z].X)*norm_dir)*norm_dir;
+	 X_tan  = (Node[i][j][KNu].X - 
+		   Node[i][j][KNu-z].X)-X_norm;
+	 Node[i][j][KNu+z].X = Node[i][j][KNu].X + X_norm - X_tan; 
+      }
+    }
+  }  
+  
+}
+
+/*****************************************************************
+ * Routine: Update Cells                                         *
+ *                                                               *
+ * Updates the cell information for the hexahedral mesh block.   *
+ *                                                               *
+ *****************************************************************/
+void Grid3D_Hexa_Block::Update_Cells(void) {
+
+  for(int k = KCl-Nghost; k <=KCu+Nghost ; ++k){ 
+    for( int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
       for ( int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
 	Cell[i][j][k].I = i ;
 	Cell[i][j][k].J = j ;
 	Cell[i][j][k].K = k ;
 	Cell[i][j][k].Xc = centroid(i, j, k);
         Cell[i][j][k].V = volume(Cell[i][j][k]);
-
-        
       } /* endfor */
     } /* endfor */
   } /* endfor */
-}
 
-/**************************************************************
-Update exterior nodes
-**************************************************************/
-void Grid3D_Hexa_Block::Update_Exterior_Nodes(){
-  Vector3D norm_dir, X_norm, X_tan;
-  Vector3D norm_dir1,X_norm1,X_tan1;
-  for(int k = KNl; k<=KNu; ++k){
-    for(int j = JNl; j<=JNu; ++j){
-      for(int z=1; z<=Nghost; z++){
-	if(j>JNl && j < JNu){
-	  //create ghost cells on west side
-	  norm_dir = - HALF*(nfaceW(ICl, j, k) +
-			     nfaceW(ICl, j-1, k));
-	  X_norm = ((Node[INl+z][j][k].X-
-		     Node[INl][j][k].X)*norm_dir)*norm_dir;
-	  X_tan  = (Node[INl+z][j][k].X - 
-		    Node[INl][j][k].X)-X_norm;
-	  
-	  Node[INl-z][j][k].X = Node[INl][j][k].X - X_norm + X_tan; 
-	  //create ghost cells on east side
-	  norm_dir1 = - HALF*(nfaceE(ICl, j, k) +
-			     nfaceE(ICl, j-1, k));
-	  X_norm1 = ((Node[INu][j][k].X-
-		     Node[INu-z][j][k].X)*norm_dir1)*norm_dir1;
-	  X_tan1  = (Node[INu][j][k].X - 
-		    Node[INu-z][j][k].X)-X_norm1;
-	  
-	  Node[INu+z][j][k].X = Node[INu][j][k].X + X_norm1 - X_tan1; 
-	}
-      }
-    }
-  }
-  
-  for(int j = JNl; j<=JNu; ++j){
-    for(int i = INl; i<=INu; ++i){
-      for(int z=1; z<=Nghost; z++){
-	if(i>INl && i < INu){
-	  //create ghost cells on bottom side
-	  norm_dir = - HALF*(nfaceBot(i, j, KCl) +
-			     nfaceBot(i-1, j, KCl));
-	  X_norm = ((Node[i][j][KNl+z].X-
-		     Node[i][j][KNl].X)*norm_dir)*norm_dir;
-	  X_tan  = (Node[i][j][KNl+z].X - 
-		    Node[i][j][KNl].X)-X_norm;
-	  
-	  Node[i][j][KNl-z].X = Node[i][j][KNl].X - X_norm + X_tan; 
-	  //create ghost cells on top side
-	  norm_dir1 = - HALF*(nfaceTop(i, j, KCl) +
-			     nfaceTop(i-1, j, KCl));
-	  X_norm1 = ((Node[i][j][KNu].X-
-		     Node[i][j][KNu-z].X)*norm_dir1)*norm_dir1;
-	  X_tan1  = (Node[i][j][KNu].X - 
-		    Node[i][j][KNu-z].X)-X_norm1;
-	  
-	  Node[i][j][KNu+z].X = Node[i][j][KNu].X + X_norm1 - X_tan1; 
-	}	
-      }
-    }
-  }
-  for(int i = INl; i<=INu; ++i){
-    for(int k = KNl; k<=KNu; ++k){
-      for(int z=1; z<=Nghost; z++){
-	if(k >KNl && k < KNu){
-	//create ghost cells on south side
-	  norm_dir = - HALF*(nfaceS(i, JCl, k) +
-			     nfaceS(i, JCl, k-1));
-	  X_norm = ((Node[i][JNl+z][k].X-
-		     Node[i][JNl][k].X)*norm_dir)*norm_dir;
-	  X_tan  = (Node[i][JNl+z][k].X - 
-		    Node[i][JNl][k].X)-X_norm;
-	  
-	  Node[i][JNl-z][k].X = Node[i][JNl][k].X - X_norm + X_tan; 
-	  //create ghost cells on north side
-	  norm_dir1 = - HALF*(nfaceN(i, JCl, k) +
-			     nfaceN(i, JCl, k-1));
-	  X_norm1 = ((Node[i][JNu][k].X-
-		     Node[i][JNu-z][k].X)*norm_dir1)*norm_dir1;
-	  X_tan1  = (Node[i][JNu][k].X - 
-		    Node[i][JNu-z][k].X)-X_norm1;
-	  
-	  Node[i][JNu+z][k].X = Node[i][JNu][k].X + X_norm1 - X_tan1; 
-	}
-      }
-    }
-  }
-  
-  //the following code deals with placing ghost cells at the edges and corners
-  for(int k = KNl-Nghost; k<=KNu+Nghost; ++k){
-    for(int j = JNu+1; j<=JNu+Nghost; ++j){
-      for(int z = 1; z<=Nghost;++z){
-	Node[INu+z][j][k]= (Node[INu][j][k].X +
-				      (Node[INu][j][k].X - Node[INu-z][j][k].X));
-	Node[INl-z][j][k]= (Node[INl][j][k].X +
-				      (Node[INl][j][k].X - Node[INl+z][j][k].X));
-      }
-    }
-  }
-  
-  for(int k = KNl-Nghost; k<=KNu+Nghost; ++k){
-    for(int j = JNl-Nghost; j<=JNu-1; ++j){
-      for(int z = 1; z<=Nghost;++z){
-	Node[INu+z][j][k]= (Node[INu][j][k].X +
-				      (Node[INu][j][k].X - Node[INu-z][j][k].X));
-	Node[INl-z][j][k]= (Node[INl][j][k].X +
-				      (Node[INl][j][k].X - Node[INl+z][j][k].X));
-      }
-    }
-  }
-
-  for(int i = INl; i <=INu; ++i){
-    for(int k = KNl-Nghost; k<=KNu-1; ++k){
-      for(int z=1; z<=Nghost; ++z){
-	Node[i][JNu+z][k]= (Node[i][JNu][k].X +
-				      (Node[i][JNu][k].X - Node[i][JNu-z][k].X));
-	Node[i][KNu-z][k]= (Node[i][JNl][k].X +
-				      (Node[i][JNl][k].X - Node[i][JNl+z][k].X));
-      }
-    }
-  }
-  
-  for(int i = INl; i <=INu; ++i){
-    for(int k = KNu+1; k<=KNu+Nghost; ++k){
-      for(int z=1; z<=Nghost; ++z){
-	Node[i][JNu+z][k]= (Node[i][JNu][k].X +
-				      (Node[i][JNu][k].X - Node[i][JNu-z][k].X));
-	Node[i][KNu-z][k]= (Node[i][JNl][k].X +
-				      (Node[i][JNl][k].X - Node[i][JNl+z][k].X));
-      }
-    }
-  }
-  
-  for(int j = JNl; j <=JNu; ++j){
-    for(int k = KNl-Nghost; k<=KNu-1; ++k){
-      for(int z=1; z<=Nghost; ++z){
-	Node[INu+z][j][k]= (Node[INu][j][k].X +
-				      (Node[INu][j][k].X - Node[INu-z][j][k].X));
-	Node[INu-z][KNu-z][k]= (Node[j][JNl][k].X +
-					       (Node[INl][j][k].X - Node[INl+z][j][k].X));
-      }
-    }
-  }
-  
-  for(int j = JNl; j <=JNu; ++j){
-    for(int k = KNu+1; k<=KNu+Nghost; ++k){
-      for(int z=1; z<=Nghost; ++z){
-	Node[INu+z][j][k]= (Node[INu][j][k].X +
-				      (Node[INu][j][k].X - Node[INu-z][j][k].X));
-	Node[INu-z][KNu-z][k]= (Node[j][JNl][k].X +
-					       (Node[INl][j][k].X - Node[INl+z][j][k].X));
-      }
-    }
-  }
-  
 }
 
 /********************************************************
- * Routine: Rotate_Hexa_Block                           *
+ * Routine: Set_BCs_Xdir                                *
+ *                                                      *
+ * Set boundary conditions for east & west boundaries   *
+ * of hexahedral grid block.                            *
+ *                                                      *
+ ********************************************************/
+void Grid3D_Hexa_Block::Set_BCs_Xdir(const int BCtype_east_boundary,
+                                     const int BCtype_west_boundary) {
+
+    for (int k = KCl-Nghost; k <= KCu+Nghost; ++k) {
+       for (int j = JCl-Nghost; j <= JCu+Nghost; ++j) {
+          BCtypeE[j][k] = BCtype_east_boundary;
+          BCtypeW[j][k] = BCtype_west_boundary;
+       } /* endfor */
+    } /* endfor */
+
+}
+
+/********************************************************
+ * Routine: Set_BCs_Ydir                                *
+ *                                                      *
+ * Set boundary conditions for north & south boundaries *
+ * of hexahedral grid block.                            *
+ *                                                      *
+ ********************************************************/
+void Grid3D_Hexa_Block::Set_BCs_Ydir(const int BCtype_north_boundary,
+                                     const int BCtype_south_boundary) {
+
+    for (int k = KCl-Nghost; k <= KCu+Nghost; ++k) {
+       for (int i = ICl-Nghost; i <= ICu+Nghost; ++i) {
+ 	  BCtypeN[i][k] = BCtype_north_boundary;
+          BCtypeS[i][k] = BCtype_south_boundary;
+       } /* endfor */
+    } /* endfor */
+
+}
+
+/********************************************************
+ * Routine: Set_BCs_Zdir                                *
+ *                                                      *
+ * Set boundary conditions for top & bottom boundaries  *
+ * of hexahedral grid block.                            *
+ *                                                      *
+ ********************************************************/
+void Grid3D_Hexa_Block::Set_BCs_Zdir(const int BCtype_top_boundary,
+                                     const int BCtype_bottom_boundary) {
+
+    for (int j = JCl-Nghost; j <= JCu+Nghost; ++j) {
+       for (int i = ICl-Nghost; i <= ICu+Nghost; ++i) {
+ 	  BCtypeT[i][j] = BCtype_top_boundary;
+          BCtypeB[i][j] = BCtype_bottom_boundary;
+       } /* endfor */
+    } /* endfor */
+
+}
+
+/********************************************************
+ * Routine: Set_BCs                                     *
+ *                                                      *
+ * Set boundary conditions for all six boundaries       *
+ * of hexahedral grid block.                            *
+ *                                                      *
+ ********************************************************/
+void Grid3D_Hexa_Block::Set_BCs(const int BCtype_east_boundary,
+                                const int BCtype_west_boundary,
+                                const int BCtype_north_boundary,
+                                const int BCtype_south_boundary,
+                                const int BCtype_top_boundary,
+                                const int BCtype_bottom_boundary) {
+
+    Set_BCs_Xdir(BCtype_east_boundary,
+                 BCtype_west_boundary);
+    Set_BCs_Ydir(BCtype_north_boundary,
+                 BCtype_south_boundary);
+    Set_BCs_Zdir(BCtype_top_boundary,
+                 BCtype_bottom_boundary);
+
+}
+
+/********************************************************
+ * Routine: Rotate                                      *
  *                                                      *
  * Rotates the hexahedral grid block.                   *
  *                                                      *
  ********************************************************/
-void  Grid3D_Hexa_Block::Rotate_Hexa_Block(const double &Angle, 
-                                           const double &Angle1, 
-                                           const double &Angle2) {
-   double cos_angle, sin_angle; Vector3D X;
+void Grid3D_Hexa_Block::Rotate(const double &Angle, 
+                               const double &Angle1, 
+                               const double &Angle2) {
+
+  double cos_angle, sin_angle; Vector3D X;
   cos_angle = cos(Angle); sin_angle = sin(Angle);
   //rotation about the Z-axis
   for(int k = KNl - Nghost; k <= KNu + Nghost; ++k){
@@ -482,37 +806,95 @@ void  Grid3D_Hexa_Block::Rotate_Hexa_Block(const double &Angle,
  
 }
 
-
-
-/*************************************************************************
- * Grid3D_Hexa_Block -- External subroutines for single grid block.      *
- *************************************************************************/
 /********************************************************
- * Routine: Create_Hexa_Block                           *
+ * Routine: Extrude                                     *
  *                                                      *
- * Create hexa- grid block for a Cartesian              *
- * mesh defined on a cube with given length, width,     *
- *  and height (origion 0,0,0)                          *
+ * Extrudes a 3D hexahedral grid block from 2D          *
+ * quadrilateral grid block.                            *
+ *                                                      *
  ********************************************************/
-void  Grid3D_Hexa_Block::Create_Hexa_Block(const double Length,
-                                           const double Width,
-                                           const double Height,
-                                           const double x_orig,
-                                           const double y_orig,
-                                           const double z_orig,
-                                           const double alpha,
-                                           const double beta,
-                                           const double gamma,
-                                           const int  BCtype_top,
-                                           const int  BCtype_bottom,
-                                           const int  BCtype_north,
-                                           const int  BCtype_south,
-                                           const int  BCtype_west,
-                                           const int  BCtype_east,
-                                           const int Number_of_Cells_Idir,
-                                           const int Number_of_Cells_Jdir,
-                                           const int Number_of_Cells_Kdir,
-                                           const int Number_of_Ghost_Cells) {
+void Grid3D_Hexa_Block::Extrude(Grid2D_Quad_Block &Grid2D_XYplane, 
+           			const int Nk,
+                                const int i_Stretching_Kdir,
+			        const double &Stretching_Kdir,
+                                const double &Z_min,
+                                const double &Z_max) {
+
+  double S_k, Z;
+
+  /* Allocate memory for the grid. */
+ 
+  if (Used) deallocate();
+  allocate(Grid2D_XYplane.NNi-2*Grid2D_XYplane.Nghost-1, 
+           Grid2D_XYplane.NNj-2*Grid2D_XYplane.Nghost-1, 
+           Nk,
+           Grid2D_XYplane.Nghost);
+
+  /* Extrude the grid points from the 2D quadrilateral grid block. */
+
+  for (int k = KNl; k <= KNu; k++) {
+    for (int j =  JNl-Nghost; j <= JNu+Nghost; j++) {
+      for (int i = INl-Nghost; i <= INu+Nghost; i++) {
+        S_k = double(k-KNl)/double(KNu-KNl);
+        S_k = StretchingFcn(S_k, Stretching_Kdir, ZERO, i_Stretching_Kdir);
+        Z = S_k * (Z_max-Z_min) + Z_min;
+        Node[i][j][k].X.x = Grid2D_XYplane.Node[i][j].X.x;
+        Node[i][j][k].X.y = Grid2D_XYplane.Node[i][j].X.y;
+        Node[i][j][k].X.z = Z;
+      } /* endfor */
+    } /* endfor */
+  }/* endfor */
+
+  /* Process the extruded 3D grid. */
+
+  //Update_Exterior_Nodes();
+  Update_Exterior_Nodes_Zdir();
+  Update_Cells();
+
+  /* Assign East, West, North, and South boundary conditions. */
+
+  for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+     for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+        BCtypeW[j][k] = Grid2D_XYplane.BCtypeW[j];
+        BCtypeE[j][k] = Grid2D_XYplane.BCtypeE[j];
+     } /* endfor */
+  } /* endfor */
+
+  for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+     for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+        BCtypeN[i][k] = Grid2D_XYplane.BCtypeN[i];
+        BCtypeS[i][k] = Grid2D_XYplane.BCtypeS[i];
+     } /* endfor */ 
+  } /* endfor */
+
+}
+
+/********************************************************
+ * Routine: Create                                      *
+ *                                                      *
+ * Create hexahedral grid block for a Cartesian         *
+ * mesh defined on a cube with given length, width,     *
+ * and height (origion 0,0,0)                           *
+ ********************************************************/
+void Grid3D_Hexa_Block::Create(const double &Length,
+                               const double &Width,
+                               const double &Height,
+                               const double &x_orig,
+                               const double &y_orig,
+                               const double &z_orig,
+                               const double &alpha,
+                               const double &beta,
+                               const double &gamma,
+                               const int BCtype_top,
+                               const int BCtype_bottom,
+                               const int BCtype_north,
+                               const int BCtype_south,
+                               const int BCtype_west,
+                               const int BCtype_east,
+                               const int Number_of_Cells_Idir,
+                               const int Number_of_Cells_Jdir,
+                               const int Number_of_Cells_Kdir,
+                               const int Number_of_Ghost_Cells) {
 
    int i, j, k;
    double dx, dy, dz;
@@ -531,26 +913,31 @@ void  Grid3D_Hexa_Block::Create_Hexa_Block(const double Length,
             if(alpha > 0.0){
                // stretching to both walls in z direction. overwrite  Node[i][j][k].X.z.
                xx = double(i-INl)/double(INu-INl);
-               Node[i][j][k].X.x = x_orig + Length*StretchingFcn(xx, alpha, ZERO, STRETCHING_FCN_MINMAX_CLUSTERING);
+               Node[i][j][k].X.x = x_orig + Length*
+                                   StretchingFcn(xx, alpha, ZERO, STRETCHING_FCN_MINMAX_CLUSTERING);
 	    }else{
                Node[i][j][k].X.x = x_orig + (i-Nghost)*dx;
                             
 	    }
+
             // stretching to both y ends
             if(beta > 0.0){
                
                // stretching to both walls in z direction. overwrite  Node[i][j][k].X.z.
                xx = double(j-JNl)/double(JNu-JNl);
-               Node[i][j][k].X.y = y_orig + Width*StretchingFcn(xx, beta, ZERO, STRETCHING_FCN_MINMAX_CLUSTERING);
+               Node[i][j][k].X.y = y_orig + Width*
+                                   StretchingFcn(xx, beta, ZERO, STRETCHING_FCN_MINMAX_CLUSTERING);
                
             }else{
                Node[i][j][k].X.y = y_orig + (j-Nghost)*dy;
 	    }
+
             //stretching to both z ends
             if(gamma > 0.0){
                // stretching to both walls in z direction. overwrite  Node[i][j][k].X.z.
                xx = double(k-KNl)/double(KNu-KNl);
-               Node[i][j][k].X.z = z_orig + Height*StretchingFcn(xx, gamma, ZERO, STRETCHING_FCN_MINMAX_CLUSTERING);
+               Node[i][j][k].X.z = z_orig + Height*
+                                   StretchingFcn(xx, gamma, ZERO, STRETCHING_FCN_MINMAX_CLUSTERING);
 	    }else{
                Node[i][j][k].X.z = z_orig + (k-Nghost)*dz;
                
@@ -625,121 +1012,25 @@ void  Grid3D_Hexa_Block::Create_Hexa_Block(const double Length,
    Update_Cells();
    
    //store the boundary conditions
-   for ( j = JCl-Nghost ; j <= JCu+Nghost ; ++j) 
+   for ( j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
       for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
-         
          BCtypeT[i][j] =  BCtype_top;
          BCtypeB[i][j] =  BCtype_bottom;
-         
       }
-   for ( k = KCl-Nghost ; k <= KCu+Nghost ; ++k) 
+   }
+
+   for ( k = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
       for ( j = JCl-Nghost ; j <= JCu+Nghost ; ++j){
          BCtypeW[j][k] =  BCtype_west;
          BCtypeE[j][k] =  BCtype_east;
-               
       }
-   for ( k = KCl-Nghost ; k <= KCu+Nghost ; ++k) 
+   }
+
+   for ( k = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
       for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i){
          BCtypeN[i][k] =  BCtype_north;
          BCtypeS[i][k] =  BCtype_south;
-         
       }
-   
-  
-   
-}
-
-/********************************************************
- * Routine: Copy_Quad_Block                             *
- *                                                      *
- * Copies the node and cell locations of Hexahedral     *
- * mesh block Grid2 to Grid1.                           *
- *                                                      *
- ********************************************************/
-void Grid3D_Hexa_Block::Copy_Hexa_Block(Grid3D_Hexa_Block *Grid1,
-                     Grid3D_Hexa_Block *Grid2) {
-   
-
-       int i, j,k, ni, nj, nk;
- 
-    /* Allocate (re-allocate) memory for the cells and nodes 
-       of the hexarilateral mesh block Grid1 as necessary. */
- 
-      
-    if (Grid1->NNi != Grid2->NNi || Grid1->NNj != Grid2->NNj ||
-        Grid1->NNk != Grid2->NNk || Grid1->NCk != Grid2->NCk ||
-        Grid1->NCi != Grid2->NCi || Grid1->NCj != Grid2->NCj ) { 
- 
-       if (Grid1->Node != NULL && Grid1->Cell != NULL) { 
-          Grid1->deallocate();
-       } else if (Grid1->Node != NULL) {
-          Grid1->deallocateNodes();
-       } else if (Grid1->Cell != NULL) {
-          Grid1->deallocateCells();
-       } /* endif */
-
- 
-       if (Grid2->Node != NULL) Grid1->allocate(Grid2->NCi- 2*Grid2->Nghost, 
-                                              Grid2->NCj-2*Grid2->Nghost, 
-                                              Grid2->NCk-2*Grid2->Nghost,
-                                              Grid2->Nghost);
- 
-
-    } /* endif */
-
-    /* Copy the node locations of grid block Grid2 to Grid1-> */
-
-    if (Grid2->Node != NULL) {
-      for (k  = Grid2->KNl- Grid2->Nghost ; k <= Grid2->KNu+ Grid2->Nghost ; ++k ) 
-	for (j  = Grid2->JNl- Grid2->Nghost ; j <= Grid2->JNu+ Grid2->Nghost ; ++j ) {
-	  for ( i = Grid2->INl- Grid2->Nghost ; i <= Grid2->INu+ Grid2->Nghost ; ++i ) {
-	    Grid1->Node[i][j][k].X = Grid2->Node[i][j][k].X;
-	  } /* endfor */
-	} /* endfor */
-    } /* endif */
-    
-    /* Copy the cell values of grid block Grid2 to Grid1-> */
-
-    if (Grid2->Node != NULL) {
-      for ( k = Grid2->KCl- Grid2->Nghost; k <= Grid2->KCu+ Grid2->Nghost ; ++k) 
-        for ( j = Grid2->JCl- Grid2->Nghost; j <= Grid2->JCu+ Grid2->Nghost ; ++j) {
-	  for ( i = Grid2->ICl- Grid2->Nghost ; i <= Grid2->ICu+ Grid2->Nghost ; ++i) {
-	    Grid1->Cell[i][j][k].I  = Grid2->Cell[i][j][k].I;
-	    Grid1->Cell[i][j][k].J  = Grid2->Cell[i][j][k].J;
-	    Grid1->Cell[i][j][k].Xc = Grid2->Cell[i][j][k].Xc;
-	    Grid1->Cell[i][j][k].V  = Grid2->Cell[i][j][k].V;
-	  } /* endfor */
-        } /* endfor */
-    } /* endif */
-
-    /* Copy the boundary condition type info of grid block 
-       Grid2 to Grid1-> */
-
-    if (Grid2->Node != NULL) {
-      for ( i = Grid2->ICl- Grid2->Nghost ; i <= Grid2->ICu+ Grid2->Nghost ; ++i) 
-	for ( k = Grid2->KCl- Grid2->Nghost ; k <= Grid2->KCu+ Grid2->Nghost ; ++k) {
-	  Grid1->BCtypeN[i][k] = Grid2->BCtypeN[i][k];
-	  Grid1->BCtypeS[i][k] = Grid2->BCtypeS[i][k];
-        } /* endfor */
-      for ( j = Grid2->JCl- Grid2->Nghost ; j <= Grid2->JCu+ Grid2->Nghost ; ++j) {
-        for ( k = Grid2->KCl- Grid2->Nghost ; k <= Grid2->KCu+ Grid2->Nghost ; ++k) {
-	  Grid1->BCtypeE[j][k] = Grid2->BCtypeE[j][k];
-	  Grid1->BCtypeW[j][k] = Grid2->BCtypeW[j][k];
-        } /* endfor */
-        for ( i = Grid2->ICl- Grid2->Nghost ; i <= Grid2->ICu+ Grid2->Nghost ; ++i) 
-	  for ( j = Grid2->JCl- Grid2->Nghost ; j <= Grid2->JCu+ Grid2->Nghost ; ++j) {
-	    Grid1->BCtypeT[i][j] = Grid2->BCtypeT[i][j];
-	    Grid1->BCtypeB[i][j] = Grid2->BCtypeB[i][j];
-	  } /* endfor */
-// 	Grid1->BCs_N = Grid2->BCs_N;
-// 	Grid1->BCs_S = Grid2->BCs_S;
-// 	Grid1->BCs_E = Grid2->BCs_E;
-// 	Grid1->BCs_W = Grid2->BCs_W;
-// 	Grid1->BCs_T = Grid2->BCs_T;
-// 	Grid1->BCs_B = Grid2->BCs_B;
-	
-      } /* endif */
-      
-    }
+   }
 
 }
