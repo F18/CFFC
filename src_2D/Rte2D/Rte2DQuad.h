@@ -2483,6 +2483,7 @@ extern int Restrict_Solution_Block(Rte2D_Quad_Block &SolnBlk_Coarse,
 				   Rte2D_Quad_Block &SolnBlk_Original_NE);
 
 extern void Output_Tecplot(Rte2D_Quad_Block &SolnBlk,
+			   Rte2D_Input_Parameters &IP,
 		           const int Number_of_Time_Steps,
                            const double &Time,
                            const int Block_Number,
@@ -2805,6 +2806,7 @@ extern int Update_Solution_Multistage_Explicit(Rte2D_Quad_Block *Soln_ptr,
    	                                       const int I_Stage);
 
 extern int dUdt_Space_March(Rte2D_Quad_Block *Soln_ptr,
+			    AdaptiveBlockResourceList &Global_Soln_Block_List,
 			    AdaptiveBlock2D_List &Soln_Block_List,
 			    Rte2D_Input_Parameters &Input_Parameters);
 

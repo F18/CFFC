@@ -8,6 +8,11 @@
 #include "Rte2DQuad.h"
 #endif // _RTE2D_QUAD_INCLUDED
 
+#ifndef _RTE2D_AMR_INCLUDED
+#include "Rte2DQuadAMR.h"
+#endif // _RTE2D_AMR_INCLUDED
+
+
 /**************************************************************************
  * Rte2D_Quad_Block -- Multiple Block External Subroutines.             *
  **************************************************************************/
@@ -58,6 +63,35 @@ Rte2D_Quad_Block* Deallocate(Rte2D_Quad_Block *Soln_ptr,
 
 }
 
+/**********************************************************************
+ * Routine: CreateInitialSolutionBlocks                               *
+ *                                                                    *
+ * This routine calls the Create_Initial_Solution_Blocks routine      *
+ * found in AMR.h.                                                    *
+ *                                                                    *
+ **********************************************************************/
+Rte2D_Quad_Block* CreateInitialSolutionBlocks(Grid2D_Quad_Block **InitMeshBlk,
+					      Rte2D_Quad_Block *Soln_ptr,
+					      Rte2D_Input_Parameters &Input_Parameters,
+					      QuadTreeBlock_DataStructure &QuadTree,
+					      AdaptiveBlockResourceList &GlobalSolnBlockList,
+					      AdaptiveBlock2D_List &LocalSolnBlockList) {
+  
+  int error_flag;
+
+  // Create the initial solution blocks.
+  Soln_ptr = Create_Initial_Solution_Blocks(InitMeshBlk,
+					    Soln_ptr,
+					    Input_Parameters,
+					    QuadTree,
+					    GlobalSolnBlockList,
+					    LocalSolnBlockList);
+
+  // Return the solution blocks.
+  return Soln_ptr;
+
+}
+
 /********************************************************
  * Routine: ICs                                         *
  *                                                      *
@@ -98,7 +132,7 @@ void ICs(Rte2D_Quad_Block *Soln_ptr,
 
           // Set initial data.
           ICs(Soln_ptr[i], 
-              Input_Parameters.i_ICs,
+              Input_Parameters,
               Uo);
        } /* endif */
     }  /* endfor */
@@ -338,6 +372,7 @@ int Output_Tecplot(Rte2D_Quad_Block *Soln_ptr,
     for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
           Output_Tecplot(Soln_ptr[i], 
+			 Input_Parameters,
                          Number_of_Time_Steps, 
                          Time,
                          Soln_Block_List.Block[i].gblknum,
@@ -430,6 +465,146 @@ int Output_Cells_Tecplot(Rte2D_Quad_Block *Soln_ptr,
 
 }
 
+/********************************************************
+ * Routine: Output_Nodes_Tecplot                        *
+ *                                                      *
+ * Writes the node values for a 1D array of 2D          *
+ * quadrilateral multi-block solution blocks to the     *
+ * specified output data file(s) in a format suitable   *
+ * for plotting with TECPLOT.  Returns a non-zero value *
+ * if cannot write any of the TECPLOT solution files.   *
+ *                                                      *
+ ********************************************************/
+int Output_Nodes_Tecplot(Rte2D_Quad_Block *Soln_ptr,
+                         AdaptiveBlock2D_List &Soln_Block_List,
+                         Rte2D_Input_Parameters &Input_Parameters,
+                         const int Number_of_Time_Steps,
+                         const double &Time) {
+
+    int i, i_output_title;
+    char prefix[256], extension[256], output_file_name[256];
+    char *output_file_name_ptr;
+    ofstream output_file;    
+
+    /* Determine prefix of output data file names. */
+
+    i = 0;
+    while (1) {
+       if (Input_Parameters.Output_File_Name[i] == ' ' ||
+           Input_Parameters.Output_File_Name[i] == '.') break;
+       prefix[i]=Input_Parameters.Output_File_Name[i];
+       i = i + 1;
+       if (i > strlen(Input_Parameters.Output_File_Name) ) break;
+    } /* endwhile */
+    prefix[i] = '\0';
+    strcat(prefix, "_nodes_cpu");
+
+    /* Determine output data file name for this processor. */
+
+    sprintf(extension, "%.6d", Soln_Block_List.ThisCPU);
+    strcat(extension, ".dat");
+    strcpy(output_file_name, prefix);
+    strcat(output_file_name, extension);
+    output_file_name_ptr = output_file_name;
+
+    /* Open the output data file. */
+
+    output_file.open(output_file_name_ptr, ios::out);
+    if (output_file.bad()) return (1);
+
+    /* Write the solution data for each solution block. */
+
+    i_output_title = 1;
+    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+          Output_Nodes_Tecplot(Soln_ptr[i],
+                               Number_of_Time_Steps,
+                               Time,
+                               Soln_Block_List.Block[i].gblknum,
+                               i_output_title,
+                               output_file);
+	  if (i_output_title) i_output_title = 0;
+       } /* endif */
+    }  /* endfor */
+
+    /* Close the output data file. */
+
+    output_file.close();
+
+    /* Writing of output data files complete.  Return zero value. */
+
+    return(0);
+
+}
+
+/**********************************************************************
+ * Routine: Output_Gradients_Tecplot                                  *
+ *                                                                    *
+ * Writes the gradients of the primitive solution states (as well as  *
+ * the slope limiters) for a 1D array of 2D quadrilateral multi-block *
+ * solution blocks to the specified output data file(s) in a format   *
+ * suitable for plotting with TECPLOT.  Returns a non-zero value if   *
+ * cannot write any of the TECPLOT solution files.                    *
+ *                                                                    *
+ **********************************************************************/
+int Output_Gradients_Tecplot(Rte2D_Quad_Block *Soln_ptr,
+			     AdaptiveBlock2D_List &Soln_Block_List,
+			     Rte2D_Input_Parameters &IP,
+			     const int Number_of_Time_Steps,
+			     const double &Time) {
+  
+  // Only create output file if the number of blocks used by the 
+  // current processor is greater than zero.
+  if (Soln_Block_List.Nused() == 0) return 0;
+  
+  int i, i_output_title;
+  char prefix[256], extension[256], output_file_name[256];
+  char *output_file_name_ptr;
+  ofstream output_file;    
+  // Determine prefix of output data file names.
+  i = 0;
+  while (1) {
+    if (IP.Output_File_Name[i] == ' ' ||
+	IP.Output_File_Name[i] == '.') break;
+    prefix[i] = IP.Output_File_Name[i];
+    i = i + 1;
+    if (i > strlen(IP.Output_File_Name)) break;
+  }
+  prefix[i] = '\0';
+  strcat(prefix,"_gradients_cpu");
+  
+  // Determine output data file name for this processor.
+  sprintf(extension,"%.6d",Soln_Block_List.ThisCPU);
+  strcat(extension,".dat");
+  strcpy(output_file_name,prefix);
+  strcat(output_file_name,extension);
+  output_file_name_ptr = output_file_name;
+  
+  // Open the output data file.
+  output_file.open(output_file_name_ptr,ios::out);
+  if (output_file.bad()) return 1;
+
+  // Write the solution data for each solution block.
+  i_output_title = 1;
+  for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
+    if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
+      Output_Gradients_Tecplot(Soln_ptr[nb],
+			       Number_of_Time_Steps, 
+			       Time,
+			       Soln_Block_List.Block[nb].gblknum,
+			       i_output_title,
+			       output_file);
+      if (i_output_title) i_output_title = 0;
+    }
+  }
+
+  // Close the output data file.
+  output_file.close();
+
+  // Writing of output data files complete.  Return zero value.
+  return 0;
+
+}
 
 /********************************************************
  * Routine: Output_Mesh_Tecplot                         *
@@ -1016,6 +1191,7 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(Rte2D_Quad_Block *Soln_
                                                               Input_Parameters.i_Time_Integration,
                                                               Input_Parameters.i_Reconstruction,
                                                               Input_Parameters.i_Limiter, 
+                                                              Input_Parameters.i_Flux_Function,
                                                               Soln_Block_List.Block[i].nN,
                                                               Soln_Block_List.Block[i].nS,
                                                               Soln_Block_List.Block[i].nE,
@@ -1037,6 +1213,7 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(Rte2D_Quad_Block *Soln_
  *                                                      *
  ********************************************************/
 int dUdt_Multistage_Explicit(Rte2D_Quad_Block *Soln_ptr,
+			     AdaptiveBlockResourceList &Global_Soln_Block_List,
                              AdaptiveBlock2D_List &Soln_Block_List,
                              Rte2D_Input_Parameters &Input_Parameters,
    	                     const int I_Stage) {
@@ -1068,13 +1245,14 @@ int dUdt_Multistage_Explicit(Rte2D_Quad_Block *Soln_ptr,
  *                                                      *
  * This routine evaluates the stage solution residual   *
  * for a 1D array of 2D quadrilateral multi-block       *
- * solution blocks.  A variety of multistage explicit   *
- * time integration and upwind finite-volume spatial    *
+ * solution blocks using a space-marching procedure.  A *
+ * variety of spatial                                   *
  * discretization procedures can be used depending on   *
  * the specified input values.                          *
  *                                                      *
  ********************************************************/
 int dUdt_Space_March(Rte2D_Quad_Block *Soln_ptr,
+		     AdaptiveBlockResourceList &Global_Soln_Block_List,
 		     AdaptiveBlock2D_List &Soln_Block_List,
 		     Rte2D_Input_Parameters &Input_Parameters) {
   

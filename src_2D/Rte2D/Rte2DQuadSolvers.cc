@@ -706,6 +706,7 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
 	}
 
 	error_flag = dUdt_Space_March(Local_SolnBlk, 
+				      List_of_Global_Solution_Blocks,
 				      List_of_Local_Solution_Blocks,
 				      Input_Parameters);
 	if (error_flag) {
