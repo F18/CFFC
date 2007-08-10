@@ -53,12 +53,10 @@ SRC_SYSTEM = $(SYSTEM_DIR)System_Linux.cc
 ifeq ($(MPI_VERSION),NoMPI)
   SRC_AMR = $(AMR_DIR)AdaptiveBlock3D.cc \
 	    $(AMR_DIR)AdaptiveBlock3D_NoMPI.cc \
-	    $(AMR_DIR)AMR.cc \
             $(AMR_DIR)Octree.cc
 else
   SRC_AMR = $(AMR_DIR)AdaptiveBlock3D.cc \
 	    $(AMR_DIR)AdaptiveBlock3D_MPI.cc \
-	    $(AMR_DIR)AMR.cc \
             $(AMR_DIR)Octree.cc
 endif
 SRC_GRID = $(GRID_DIR)Cell2D.cc \
@@ -102,12 +100,10 @@ OBJ_SYSTEM = $(SYSTEM_DIR)System_Linux.o
 ifeq ($(MPI_VERSION),NoMPI)
   OBJ_AMR = $(AMR_DIR)AdaptiveBlock3D.o \
 	    $(AMR_DIR)AdaptiveBlock3D_NoMPI.o \
-	    $(AMR_DIR)AMR.o \
             $(AMR_DIR)Octree.o
 else
   OBJ_AMR = $(AMR_DIR)AdaptiveBlock3D.o \
 	    $(AMR_DIR)AdaptiveBlock3D_MPI.o \
-	    $(AMR_DIR)AMR.o \
             $(AMR_DIR)Octree.o
 endif
 OBJ_GRID = $(GRID_DIR)Cell2D.o \
