@@ -431,9 +431,9 @@ int Wall_Distance(HEXA_BLOCK **SolnBlk,
              for (int k = klow; k <= kup; k++) {
                 for (int j = jlow; j <= jup; j++) {
                    for (int i = ilow; i <= iup; i++) {
-                      x_buffer[buffer_size  ] = SolnBlk[iBLK]->Grid->Cell[i][j][k].Xc.x;
-                      x_buffer[buffer_size+1] = SolnBlk[iBLK]->Grid->Cell[i][j][k].Xc.y;
-                      x_buffer[buffer_size+2] = SolnBlk[iBLK]->Grid->Cell[i][j][k].Xc.z;
+                      x_buffer[buffer_size  ] = SolnBlk[iBLK]->Grid.Cell[i][j][k].Xc.x;
+                      x_buffer[buffer_size+1] = SolnBlk[iBLK]->Grid.Cell[i][j][k].Xc.y;
+                      x_buffer[buffer_size+2] = SolnBlk[iBLK]->Grid.Cell[i][j][k].Xc.z;
                       buffer_size = buffer_size + 3;
                    }
                 }
