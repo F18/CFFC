@@ -210,7 +210,7 @@ class Rte2D_State {
 
   // initialize
   void SetIntensity(double val);
-  void SetAbsorbsion(double val);
+  void SetAbsorption(double val);
   void SetScattering(double val);
   void SetBlackbody(double val);
 

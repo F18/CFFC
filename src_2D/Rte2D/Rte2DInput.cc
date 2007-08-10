@@ -1,4 +1,8 @@
-/* Rte2DInput.cc:  Subroutines for 2D Rte Input Classes. */
+/******************* Rte2DInput.cc ************************************
+
+  Constructors for the Chem2DInput class.
+
+***********************************************************************/
 
 /* Include 2D Rte input parameter header file. */
 
@@ -7,7 +11,7 @@
 #endif // _RTE2D_INPUT_INCLUDED
 
 /*************************************************************
- * Rte2D_Input_Parameters -- External subroutines.         *
+ * Rte2D_Input_Parameters -- External subroutines.           *
  *************************************************************/
 
 /********************************************************
@@ -53,6 +57,7 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     string_ptr = "Rte2D.in";
     strcpy(IP.Input_File_Name, string_ptr);
 
+    // Time-stepping parameters:
     string_ptr = "Explicit_Euler";
     strcpy(IP.Time_Integration_Type, string_ptr);
     IP.i_Time_Integration = TIME_STEPPING_EXPLICIT_EULER;
@@ -61,64 +66,81 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     IP.Maximum_Number_of_Time_Steps = 100;
     IP.N_Stage = 1;
     IP.Time_Max = ZERO;
+    IP.Mr_Min_Factor = ONE;
+
+    // Residual variable:
+    IP.i_Residual_Variable = 1;
 
     IP.Residual_Smoothing = 0;
     IP.Residual_Smoothing_Epsilon = ZERO;
     IP.Residual_Smoothing_Gauss_Seidel_Iterations = 2;
 
+    // Reconstruction type:
     string_ptr = "Least_Squares";
     strcpy(IP.Reconstruction_Type, string_ptr);
     IP.i_Reconstruction = RECONSTRUCTION_LEAST_SQUARES;
 
+    // Limiter type:
     string_ptr = "Barth_Jespersen";
     strcpy(IP.Limiter_Type, string_ptr);
     IP.i_Limiter = LIMITER_BARTH_JESPERSEN;
 
-    string_ptr = "Upwind_Difference";
-    strcpy(IP.SpaceMarch_Scheme, string_ptr);
-    IP.i_Limiter = SPACE_MARCH_UPWIND;
+    // Flux function:
+    string_ptr = "HLLE";
+    strcpy(IP.Flux_Function_Type, string_ptr);
+    IP.i_Flux_Function = FLUX_FUNCTION_HLLE;
 
+    // Initial conditions:
     string_ptr = "Uniform";
     strcpy(IP.ICs_Type, string_ptr);
     IP.i_ICs = IC_UNIFORM;
 
-    string_ptr = "Planar";
-    strcpy(IP.Flow_Geometry_Type, string_ptr);
-    IP.Axisymmetric = 0;
+    /* Directory Path */
+    IP.get_cfdkit_path();
 
-    //------------------------ Rte2D Specific -------------------------//
+    /***********************************************************************
+     *************************** RTE SPECIFIC ******************************/
+    // RTE equation discretization type
     string_ptr = "FVM";
     strcpy(IP.RTE_Solver, string_ptr);
     IP.i_RTE_Solver = RTE2D_SOLVER_FVM;
     IP.Uo.RTE_Type = IP.i_RTE_Solver;
     
+    // DOM angular discretization (quadrature)
     string_ptr = "S2";
     strcpy(IP.DOM_Quadrature, string_ptr);
     IP.i_DOM_Quadrature = DOM_S2;
 
+    // set gas Absorption model
     Rte2D_State::SetGas( );
+
+    // FVM angular discretization
     IP.Number_of_Angles_Mdir = 4;
     IP.Number_of_Angles_Ldir = 4;
     Rte2D_State::SetDirs( IP.Number_of_Angles_Mdir, 
 			  IP.Number_of_Angles_Ldir, 
 			  IP.i_DOM_Quadrature,
 			  IP.Axisymmetric );
+
+    // allocate and zero solution state
     IP.Uo.Allocate();
     IP.Uo.Zero();
 
+    // set scattering phase function
     IP.i_ScatteringFunc = SCATTER_ISO;
     string_ptr = "Isotropic";
     strcpy(IP.ScatteringFunc, string_ptr);
+    Rte2D_State :: SetupPhase( IP.i_ScatteringFunc );
 
-    IP.AbsorbsionCoef = ONE;
+    // set gas constants
+    IP.AbsorptionCoef = ONE;
     IP.ScatteringCoef = ZERO;
     IP.Temperature = THOUSAND;
-    IP.Uo.SetAbsorbsion( IP.AbsorbsionCoef );
+    IP.Uo.SetAbsorption( IP.AbsorptionCoef );
     IP.Uo.SetScattering( IP.ScatteringCoef );
     IP.Uo.SetBlackbody( Ib(IP.Temperature) );
 
-    Rte2D_State :: SetupPhase( IP.i_ScatteringFunc );
-
+    // boundary conditions
     IP.NorthWallTemp = ZERO;
     IP.SouthWallTemp = ZERO;
     IP.EastWallTemp = ZERO;
@@ -128,9 +150,16 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     IP.EastWallEmiss = ZERO;      
     IP.WestWallEmiss = ZERO;     
 
-    //---------------------- End Rte2D Specific -----------------------//
+    /***********************************************************************
+     ***********************************************************************/
 
 
+    /* Flow geometry type */
+    string_ptr = "Planar";
+    strcpy(IP.Flow_Geometry_Type, string_ptr);
+    IP.Axisymmetric = 0;
+
+    /* Grid Parameters */
     string_ptr = "Square";
     strcpy(IP.Grid_Type, string_ptr);
     IP.i_Grid = GRID_SQUARE;
@@ -138,48 +167,92 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     IP.Box_Height = ONE;
     IP.Number_of_Cells_Idir = 100;
     IP.Number_of_Cells_Jdir = 100;
+    IP.Number_of_Ghost_Cells = 2;
     IP.Number_of_Blocks_Idir = 1;
     IP.Number_of_Blocks_Jdir = 1;
-    IP.Number_of_Ghost_Cells = 2;
-
+ 
     IP.Plate_Length = ONE;
     IP.Pipe_Length = ONE;
     IP.Pipe_Radius = HALF;
     IP.Blunt_Body_Radius = ONE;
     IP.Blunt_Body_Mach_Number = TWO;
-    IP.Grain_Length = 0.835;
-    IP.Grain_Radius = 0.020;
-    IP.Grain_To_Throat_Length = 0.05;
+    IP.Chamber_Length = 0.835;
+    IP.Chamber_Radius = 0.020;
+    IP.Chamber_To_Throat_Length = 0.05;
     IP.Nozzle_Length = 0.150;
     IP.Nozzle_Radius_Exit = 0.030;
     IP.Nozzle_Radius_Throat = 0.010;
+    IP.Nozzle_Type = NOZZLE_GOTTLIEB_FUNCTION;
+    IP.Grain_Radius = 0.0;
     IP.Cylinder_Radius = ONE;
+    IP.Cylinder_Radius2 = 32.00;
     IP.Ellipse_Length_X_Axis = TWO;
     IP.Ellipse_Length_Y_Axis = HALF;
     IP.Chord_Length = ONE;
     IP.Orifice_Radius = ONE;
+    IP.Inner_Streamline_Number = 0.80;
+    IP.Outer_Streamline_Number = 0.40;
+    IP.Isotach_Line = 0.30;
     IP.Wedge_Angle = 25.0;
     IP.Wedge_Length = HALF;
+    IP.Smooth_Bump = OFF;
 
     IP.X_Shift = Vector2D_ZERO;
     IP.X_Scale = ONE;
     IP.X_Rotate = ZERO;
 
+    // Mesh stretching factor:
+    IP.i_Mesh_Stretching = OFF;
+    IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_LINEAR;
+    IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_LINEAR;
+    IP.Mesh_Stretching_Factor_Idir = 1.01;
+    IP.Mesh_Stretching_Factor_Jdir = 1.01;
+
+    // Boundary conditions:
+    string_ptr = "Off";
+    strcpy(IP.Boundary_Conditions_Specified,string_ptr);
+    IP.BCs_Specified = OFF;
+    string_ptr = "None";
+    strcpy(IP.BC_North_Type,string_ptr);
+    strcpy(IP.BC_South_Type,string_ptr);
+    strcpy(IP.BC_East_Type,string_ptr);
+    strcpy(IP.BC_West_Type,string_ptr);
+    IP.BC_North = BC_NONE;
+    IP.BC_South = BC_NONE;
+    IP.BC_East  = BC_NONE;
+    IP.BC_West  = BC_NONE;
+
+
+    // ICEM:
     IP.ICEMCFD_FileNames = ICEMCFD_get_filenames();
 
+    // AMR:
     IP.AMR = 0;
     IP.AMR_Frequency = 100;
     IP.Number_of_Initial_Mesh_Refinements = 0;
     IP.Number_of_Uniform_Mesh_Refinements = 0;
     IP.Number_of_Boundary_Mesh_Refinements = 0;
+    IP.Number_of_Interface_Mesh_Refinements = 0;
+    IP.Number_of_Bounding_Box_Mesh_Refinements = 0;
+    IP.Interface_Refinement_Condition = OFF;
     IP.Maximum_Refinement_Level = 100;
     IP.Minimum_Refinement_Level = 1;
-
     IP.Threshold_for_Refinement = 0.50;
     IP.Threshold_for_Coarsening = 0.10;
+    IP.Number_of_Refinement_Criteria = 3;
+    IP.Refinement_Criteria_Gradient_Density = ON;
+    IP.Refinement_Criteria_Divergence_Velocity = ON;
+    IP.Refinement_Criteria_Curl_Velocity = ON;
+    IP.AMR_Xmin = Vector2D_ZERO;
+    IP.AMR_Xmax = Vector2D_ZERO;
+
+    IP.Solver_Type = EXPLICIT;
 
     IP.Morton = 0;
     IP.Morton_Reordering_Frequency = 1000;
+
+    // Smooth quad block flag:
+    IP.i_Smooth_Quad_Block = ON;
 
     string_ptr = "outputfile.dat";
     strcpy(IP.Output_File_Name, string_ptr);
@@ -200,6 +273,9 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     IP.i_Output_Format = IO_TECPLOT;
     IP.Restart_Solution_Save_Frequency = 1000;
 
+    // Default output progress frequency:
+    IP.Output_Progress_Frequency = 50;
+
     string_ptr = " ";
     strcpy(IP.Next_Control_Parameter, string_ptr);
 
@@ -207,14 +283,17 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
 
     IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
     IP.Number_of_Blocks_Per_Processor = 10;
-    
+
     // Freezing_Limiter
     IP.Freeze_Limiter = 0;
 
     // Limiter_switch
     IP.Freeze_Limiter_Residual_Level = 1e-4;
 
+
+
 }
+
 
 /********************************************************
  * Routine: Broadcast_Input_Parameters                  *
@@ -259,6 +338,12 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Time_Max), 
                           1, 
                           MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Mr_Min_Factor), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.i_Residual_Variable),
+			  1,
+			  MPI::DOUBLE,0);
     MPI::COMM_WORLD.Bcast(&(IP.Residual_Smoothing), 
                           1, 
                           MPI::INT, 0);
@@ -280,23 +365,33 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.i_Limiter), 
                           1, 
                           MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(IP.SpaceMarch_Scheme, 
+    MPI::COMM_WORLD.Bcast(IP.Flux_Function_Type, 
                           INPUT_PARAMETER_LENGTH_RTE2D, 
                           MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.i_SpaceMarch_Scheme), 
+    MPI::COMM_WORLD.Bcast(&(IP.i_Flux_Function), 
                           1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(IP.ICs_Type, 
                           INPUT_PARAMETER_LENGTH_RTE2D, 
                           MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(IP.Gas_Type, 
+                          INPUT_PARAMETER_LENGTH_RTE2D, 
+                          MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(&(IP.i_ICs), 
                           1, 
                           MPI::INT, 0);
-    //------------------------ Rte2D Specific -------------------------//
+    /***********************************************************************
+     *************************** RTE SPECIFIC ******************************/
     MPI::COMM_WORLD.Bcast(IP.RTE_Solver, 
                           INPUT_PARAMETER_LENGTH_RTE2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(&(IP.i_RTE_Solver), 
+                          1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(IP.SpaceMarch_Scheme, 
+                          INPUT_PARAMETER_LENGTH_RTE2D, 
+                          MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.i_SpaceMarch_Scheme), 
                           1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(IP.DOM_Quadrature, 
@@ -308,7 +403,7 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Temperature), 
                           1, 
                           MPI::DOUBLE, 0);
-     MPI::COMM_WORLD.Bcast(&(IP.AbsorbsionCoef), 
+     MPI::COMM_WORLD.Bcast(&(IP.AbsorptionCoef), 
                           1, 
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.ScatteringCoef), 
@@ -359,12 +454,13 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
 			   IP.Axisymmetric);
     IP.Uo.Allocate();
     IP.Uo.Zero();
-    IP.Uo.SetAbsorbsion( IP.AbsorbsionCoef );
+    IP.Uo.SetAbsorption( IP.AbsorptionCoef );
     IP.Uo.SetScattering( IP.ScatteringCoef );
     IP.Uo.SetBlackbody( Ib(IP.Temperature) );
     Rte2D_State :: SetupPhase( IP.i_ScatteringFunc );
     } /* endif */
-    //---------------------- End Rte2D Specific -----------------------//
+    /***********************************************************************
+     ***********************************************************************/
     MPI::COMM_WORLD.Bcast(IP.Flow_Geometry_Type, 
                           INPUT_PARAMETER_LENGTH_RTE2D, 
                           MPI::CHAR, 0);
@@ -386,14 +482,14 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Number_of_Cells_Jdir), 
                           1, 
                           MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Number_of_Ghost_Cells), 
+                          1, 
+                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Number_of_Blocks_Idir), 
                           1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Number_of_Blocks_Jdir), 
                           1, 
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Number_of_Ghost_Cells), 
-			  1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Box_Width), 
                           1, 
@@ -416,25 +512,34 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Blunt_Body_Mach_Number), 
                           1, 
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Grain_Length), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Grain_Radius), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Grain_To_Throat_Length), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Nozzle_Length), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Nozzle_Radius_Exit), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Nozzle_Radius_Throat), 
-                          1, 
-                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Chamber_Length),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Chamber_Radius),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Chamber_To_Throat_Length),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Nozzle_Length),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Nozzle_Radius_Exit),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Nozzle_Radius_Throat),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Nozzle_Type),
+			  1,
+			  MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Grain_Radius),
+			  1,
+			  MPI::DOUBLE,0);
     MPI::COMM_WORLD.Bcast(&(IP.Cylinder_Radius), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Cylinder_Radius2), 
                           1, 
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Ellipse_Length_X_Axis), 
@@ -449,12 +554,24 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Orifice_Radius), 
                           1, 
                           MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Inner_Streamline_Number),
+			  1,
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Outer_Streamline_Number),
+			  1,
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Isotach_Line),
+			  1,
+			  MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Wedge_Angle), 
 			  1, 
 			  MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Wedge_Length), 
 			  1, 
 			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Smooth_Bump),
+			  1,
+			  MPI::INT,0);
     MPI::COMM_WORLD.Bcast(&(IP.X_Shift.x), 
                           1, 
                           MPI::DOUBLE, 0);
@@ -465,6 +582,50 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
                           1, 
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.X_Rotate), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    // Boundary Conditions:
+    MPI::COMM_WORLD.Bcast(IP.Boundary_Conditions_Specified,
+			  INPUT_PARAMETER_LENGTH_RTE2D,
+			  MPI::CHAR,0);
+    MPI::COMM_WORLD.Bcast(&(IP.BCs_Specified),
+			  1,
+			  MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(IP.BC_North_Type,
+			  INPUT_PARAMETER_LENGTH_RTE2D,
+			  MPI::CHAR,0);
+    MPI::COMM_WORLD.Bcast(IP.BC_South_Type,
+			  INPUT_PARAMETER_LENGTH_RTE2D,
+			  MPI::CHAR,0);
+    MPI::COMM_WORLD.Bcast(IP.BC_East_Type,
+			  INPUT_PARAMETER_LENGTH_RTE2D,
+			  MPI::CHAR,0);
+    MPI::COMM_WORLD.Bcast(IP.BC_West_Type,
+			  INPUT_PARAMETER_LENGTH_RTE2D,
+			  MPI::CHAR,0);
+    MPI::COMM_WORLD.Bcast(&(IP.BC_North),
+			  1,
+			  MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(&(IP.BC_South),
+			  1,
+			  MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(&(IP.BC_East),
+			  1,
+			  MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(&(IP.BC_West),
+			  1,
+			  MPI::INT,0);
+    // NASA rotors:
+    MPI::COMM_WORLD.Bcast(IP.NASA_Rotor37_Data_Directory, 
+                          INPUT_PARAMETER_LENGTH_RTE2D, 
+                          MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(IP.NASA_Rotor67_Data_Directory, 
+                          INPUT_PARAMETER_LENGTH_RTE2D, 
+                          MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Rotor_Flow_Type), 
+                          1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Rotor_Percent_Span), 
                           1, 
                           MPI::DOUBLE, 0);
     if (!CFDkit_Primary_MPI_Processor()) {
@@ -499,6 +660,15 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Number_of_Boundary_Mesh_Refinements),
                           1,
                           MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Number_of_Interface_Mesh_Refinements),
+			  1,
+			  MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Number_of_Bounding_Box_Mesh_Refinements),
+			  1,
+			  MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Interface_Refinement_Condition),
+			  1,
+			  MPI::INT,0);
     MPI::COMM_WORLD.Bcast(&(IP.Maximum_Refinement_Level),
                           1,
                           MPI::INT,0);
@@ -511,7 +681,55 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Threshold_for_Coarsening), 
                           1, 
                           MPI::DOUBLE, 0);
-
+    MPI::COMM_WORLD.Bcast(&(IP.Number_of_Refinement_Criteria),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Refinement_Criteria_Gradient_Density),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Refinement_Criteria_Divergence_Velocity),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Refinement_Criteria_Curl_Velocity),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.AMR_Xmin.x),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.AMR_Xmin.y),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.AMR_Xmax.x),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.AMR_Xmax.y),
+			  1,
+			  MPI::DOUBLE,0);
+    // Mesh stretching flag:
+    MPI::COMM_WORLD.Bcast(&(IP.i_Mesh_Stretching),
+			  1,
+			  MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Mesh_Stretching_Type_Idir),
+			  1,
+			  MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Mesh_Stretching_Type_Jdir),
+			  1,
+			  MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Mesh_Stretching_Factor_Idir),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Mesh_Stretching_Factor_Jdir),
+			  1,
+			  MPI::DOUBLE,0);
+    // Smooth quad block flag:
+    MPI::COMM_WORLD.Bcast(&(IP.i_Smooth_Quad_Block),
+			  1,
+			  MPI::INT,0);
+    // Interface input parameters:
+    IP.Interface_IP.Broadcast_Input_Parameters();
+    MPI::COMM_WORLD.Bcast(&(IP.Reset_Interface_Motion_Type),
+			  1,
+			  MPI::INT,0);
     // Morton Ordering Parameters
     MPI::COMM_WORLD.Bcast(&(IP.Morton), 
                           1, 
@@ -519,7 +737,6 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Morton_Reordering_Frequency),
                           1,
                           MPI::INT,0);
-
     // File Names
     MPI::COMM_WORLD.Bcast(IP.Output_File_Name, 
                           INPUT_PARAMETER_LENGTH_RTE2D, 
@@ -546,6 +763,10 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
                           1, 
                           MPI::INT, 0);
 
+    // Output progress frequency:
+    MPI::COMM_WORLD.Bcast(&(IP.Output_Progress_Frequency),
+			  1,
+			  MPI::INT,0);
     // Multigrid Related Parameters
     IP.Multigrid_IP.Broadcast_Input_Parameters();
 
@@ -558,7 +779,7 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Number_of_Blocks_Per_Processor), 
                           1, 
                           MPI::INT, 0);
- 
+
     // Freeze_Limiter
     MPI::COMM_WORLD.Bcast(&(IP.Freeze_Limiter), 
 			  1, 
@@ -620,6 +841,12 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Time_Max), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Mr_Min_Factor), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.i_Residual_Variable),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
     Communicator.Bcast(&(IP.Residual_Smoothing), 
                        1, 
                        MPI::INT, Source_Rank);
@@ -641,23 +868,33 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.i_Limiter), 
                        1, 
                        MPI::INT, Source_Rank);
-    Communicator.Bcast(IP.SpaceMarch_Scheme, 
+    Communicator.Bcast(IP.Flux_Function_Type, 
                        INPUT_PARAMETER_LENGTH_RTE2D, 
                        MPI::CHAR, Source_Rank);
-    Communicator.Bcast(&(IP.i_SpaceMarch_Scheme), 
+    Communicator.Bcast(&(IP.i_Flux_Function), 
                        1, 
                        MPI::INT, Source_Rank);
     Communicator.Bcast(IP.ICs_Type, 
                        INPUT_PARAMETER_LENGTH_RTE2D, 
                        MPI::CHAR, Source_Rank);
+    Communicator.Bcast(IP.Gas_Type, 
+                       INPUT_PARAMETER_LENGTH_RTE2D, 
+                       MPI::CHAR, Source_Rank);
     Communicator.Bcast(&(IP.i_ICs), 
                        1, 
                        MPI::INT, Source_Rank);
-    //------------------------ Rte2D Specific -------------------------//
+    /***********************************************************************
+     *************************** RTE SPECIFIC ******************************/
     Communicator.Bcast(IP.RTE_Solver, 
                        INPUT_PARAMETER_LENGTH_RTE2D, 
                        MPI::CHAR, Source_Rank);
     Communicator.Bcast(&(IP.i_RTE_Solver), 
+                       1, 
+                       MPI::INT, Source_Rank);
+    Communicator.Bcast(IP.SpaceMarch_Scheme, 
+                       INPUT_PARAMETER_LENGTH_RTE2D, 
+                       MPI::CHAR, Source_Rank);
+    Communicator.Bcast(&(IP.i_SpaceMarch_Scheme), 
                        1, 
                        MPI::INT, Source_Rank);
     Communicator.Bcast(IP.DOM_Quadrature, 
@@ -669,7 +906,7 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Temperature), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.AbsorbsionCoef), 
+    Communicator.Bcast(&(IP.AbsorptionCoef), 
                           1, 
                           MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.ScatteringCoef), 
@@ -720,12 +957,13 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
 			    IP.Axisymmetric);
       IP.Uo.Allocate();
       IP.Uo.Zero();
-      IP.Uo.SetAbsorbsion( IP.AbsorbsionCoef );
+      IP.Uo.SetAbsorption( IP.AbsorptionCoef );
       IP.Uo.SetScattering( IP.ScatteringCoef );
       IP.Uo.SetBlackbody( Ib(IP.Temperature) );
       Rte2D_State :: SetupPhase( IP.i_ScatteringFunc );
     } /* endif */
-    //---------------------- End Rte2D Specific -----------------------//
+    /***********************************************************************
+     ***********************************************************************/
     Communicator.Bcast(IP.Flow_Geometry_Type, 
                        INPUT_PARAMETER_LENGTH_RTE2D, 
                        MPI::CHAR, Source_Rank);
@@ -747,13 +985,13 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Number_of_Cells_Jdir), 
                        1, 
                        MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.Number_of_Ghost_Cells), 
+                       1, 
+                       MPI::INT, Source_Rank);
     Communicator.Bcast(&(IP.Number_of_Blocks_Idir), 
                        1, 
                        MPI::INT, Source_Rank);
     Communicator.Bcast(&(IP.Number_of_Blocks_Jdir), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Number_of_Ghost_Cells), 
                        1, 
                        MPI::INT, Source_Rank);
     Communicator.Bcast(&(IP.Box_Width), 
@@ -777,25 +1015,34 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Blunt_Body_Mach_Number), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Grain_Length), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Grain_Radius), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Grain_To_Throat_Length), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Nozzle_Length), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Nozzle_Radius_Exit), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Nozzle_Radius_Throat), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Chamber_Length),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Chamber_Radius),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Chamber_To_Throat_Length),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Nozzle_Length),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Nozzle_Radius_Exit),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Nozzle_Radius_Throat),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Nozzle_Type),
+		       1,
+		       MPI::INT,Source_Rank);
+    Communicator.Bcast(&(IP.Grain_Radius),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
     Communicator.Bcast(&(IP.Cylinder_Radius), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Cylinder_Radius2), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.Ellipse_Length_X_Axis), 
@@ -810,12 +1057,24 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Orifice_Radius), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Inner_Streamline_Number),
+		       1,
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Outer_Streamline_Number),
+		       1,
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Isotach_Line),
+		       1,
+		       MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.Wedge_Angle), 
 		       1, 
 		       MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.Wedge_Length), 
 		       1, 
 		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Smooth_Bump),
+		       1,
+		       MPI::INT,Source_Rank);
     Communicator.Bcast(&(IP.X_Shift.x), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
@@ -826,6 +1085,50 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
                        1, 
                        MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.X_Rotate), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    // Boundary Conditions:
+    Communicator.Bcast(IP.Boundary_Conditions_Specified,
+		       INPUT_PARAMETER_LENGTH_RTE2D,
+		       MPI::CHAR,Source_Rank);
+    Communicator.Bcast(&(IP.BCs_Specified),
+		       1,
+		       MPI::INT,Source_Rank);
+    Communicator.Bcast(IP.BC_North_Type,
+		       INPUT_PARAMETER_LENGTH_RTE2D,
+		       MPI::CHAR,Source_Rank);
+    Communicator.Bcast(IP.BC_South_Type,
+		       INPUT_PARAMETER_LENGTH_RTE2D,
+		       MPI::CHAR,Source_Rank);
+    Communicator.Bcast(IP.BC_East_Type,
+		       INPUT_PARAMETER_LENGTH_RTE2D,
+		       MPI::CHAR,Source_Rank);
+    Communicator.Bcast(IP.BC_West_Type,
+		       INPUT_PARAMETER_LENGTH_RTE2D,
+		       MPI::CHAR,Source_Rank);
+    Communicator.Bcast(&(IP.BC_North),
+		       1,
+		       MPI::INT,Source_Rank);
+    Communicator.Bcast(&(IP.BC_South),
+		       1,
+		       MPI::INT,Source_Rank);
+    Communicator.Bcast(&(IP.BC_East),
+		       1,
+		       MPI::INT,Source_Rank);
+    Communicator.Bcast(&(IP.BC_West),
+		       1,
+		       MPI::INT,Source_Rank);
+    // NASA rotors:
+    Communicator.Bcast(IP.NASA_Rotor37_Data_Directory, 
+                       INPUT_PARAMETER_LENGTH_RTE2D, 
+                       MPI::CHAR, Source_Rank);
+    Communicator.Bcast(IP.NASA_Rotor67_Data_Directory, 
+                       INPUT_PARAMETER_LENGTH_RTE2D, 
+                       MPI::CHAR, Source_Rank);
+    Communicator.Bcast(&(IP.Rotor_Flow_Type), 
+                       1, 
+                       MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.Rotor_Percent_Span), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
     if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
@@ -860,6 +1163,15 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Number_of_Boundary_Mesh_Refinements),
                        1,
                        MPI::INT,Source_Rank);
+    Communicator.Bcast(&(IP.Number_of_Interface_Mesh_Refinements),
+		       1,
+		       MPI::INT,Source_Rank);
+    Communicator.Bcast(&(IP.Number_of_Bounding_Box_Mesh_Refinements),
+		       1,
+		       MPI::INT,Source_Rank);
+    Communicator.Bcast(&(IP.Interface_Refinement_Condition),
+		       1,
+		       MPI::INT,Source_Rank);
     Communicator.Bcast(&(IP.Maximum_Refinement_Level),
                        1,
                        MPI::INT,Source_Rank);
@@ -872,7 +1184,56 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Threshold_for_Coarsening), 
 		       1, 
 		       MPI::DOUBLE, Source_Rank);
-
+    Communicator.Bcast(&(IP.Number_of_Refinement_Criteria),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Refinement_Criteria_Gradient_Density),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Refinement_Criteria_Divergence_Velocity),
+		     1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Refinement_Criteria_Curl_Velocity),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.AMR_Xmin.x),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.AMR_Xmin.y),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.AMR_Xmax.x),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.AMR_Xmax.y),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    // Mesh stretching flag:
+    Communicator.Bcast(&(IP.i_Mesh_Stretching),
+		       1,
+		       MPI::INT,Source_Rank);
+    Communicator.Bcast(&(IP.Mesh_Stretching_Type_Idir),
+		       1,
+		       MPI::INT,Source_Rank);
+    Communicator.Bcast(&(IP.Mesh_Stretching_Type_Jdir),		     
+		       1,
+		       MPI::INT,Source_Rank);
+    Communicator.Bcast(&(IP.Mesh_Stretching_Factor_Idir),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Mesh_Stretching_Factor_Jdir),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    // Smooth quad block flag:
+    Communicator.Bcast(&(IP.i_Smooth_Quad_Block),
+		       1,
+		       MPI::INT,Source_Rank);
+    // Interface input parameters:
+    IP.Interface_IP.Broadcast_Input_Parameters(Communicator,
+					       Source_CPU);
+    Communicator.Bcast(&(IP.Reset_Interface_Motion_Type),
+		       1,
+		       MPI::INT,Source_Rank);
    // Morton Ordering Parameters
     Communicator.Bcast(&(IP.Morton), 
                        1, 
@@ -880,7 +1241,6 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Morton_Reordering_Frequency),
                        1,
                        MPI::INT,Source_Rank);
-
     // File Names
     Communicator.Bcast(IP.Output_File_Name, 
                        INPUT_PARAMETER_LENGTH_RTE2D, 
@@ -907,13 +1267,16 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
                        1, 
                        MPI::INT, Source_Rank);
 
+    // Output progress frequency:
+    Communicator.Bcast(&(IP.Output_Progress_Frequency),
+		       1,
+		       MPI::INT,Source_Rank);
     // Multigrid Related Parameters
     IP.Multigrid_IP.Broadcast_Input_Parameters(Communicator,
-					       Source_CPU);   
-    
-    // Multigrid Related Parameters
-    IP.NKS_IP.Broadcast_Input_Parameters(Communicator,
-					 Source_CPU);
+					       Source_CPU);
+
+    // NKS Parameters
+    IP.NKS_IP.Broadcast_Input_Parameters(Communicator, Source_CPU);
 
     if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
        IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
@@ -921,7 +1284,7 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Number_of_Blocks_Per_Processor), 
                        1, 
                        MPI::INT, Source_Rank);
- 
+
     // Freeze_Limiter
     Communicator.Bcast(&(IP.Freeze_Limiter), 
                        1, 
@@ -949,6 +1312,22 @@ void Get_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
 
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File.getline(buffer, sizeof(buffer));
+
+	if (IP.Input_File.gcount() == sizeof(buffer)-1) {
+		// if getline does not find a delimiter before size-1
+		// characters then it sets the ifstream state to not
+		// good. I never knew.
+		IP.Input_File.clear(); 
+
+		IP.Input_File.ignore(10000, '\n');
+		if (buffer[0] != '#') {
+			cout << "\n***\n\nWarning: input file line " << IP.Line_Number;
+			cout << ": Line is more than " << sizeof(buffer) << " characters long. ";
+			cout << "Ignoring rest of line.";
+			cout << "\n\n***\n";
+		}
+	}
+
     i = 0;
     if (buffer[0] != '#') {
        while (1) {
@@ -973,6 +1352,8 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
 
     int i_command;
     char buffer[256];
+    int tpt, bct;
+    Vector2D Xt;
 
     i_command = 0;
 
@@ -982,25 +1363,23 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        strcpy(IP.Time_Integration_Type, 
               IP.Next_Control_Parameter);
        if (strcmp(IP.Time_Integration_Type, "Explicit_Euler") == 0) {
-           IP.i_Time_Integration = TIME_STEPPING_EXPLICIT_EULER;
-           IP.N_Stage = 1;
+          IP.i_Time_Integration = TIME_STEPPING_EXPLICIT_EULER;
+          IP.N_Stage = 1;
        } else if (strcmp(IP.Time_Integration_Type, "Explicit_Predictor_Corrector") == 0) {
-           IP.i_Time_Integration = TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR;
-           IP.N_Stage = 2;
+          IP.i_Time_Integration = TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR;
+          IP.N_Stage = 2;
        } else if (strcmp(IP.Time_Integration_Type, "Explicit_Runge_Kutta") == 0) {
-           IP.i_Time_Integration = TIME_STEPPING_EXPLICIT_RUNGE_KUTTA;
-           IP.N_Stage = 4;
+          IP.i_Time_Integration = TIME_STEPPING_EXPLICIT_RUNGE_KUTTA;
+          IP.N_Stage = 4;
        } else if (strcmp(IP.Time_Integration_Type, "Multistage_Optimal_Smoothing") == 0) {
-           IP.i_Time_Integration = TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING;
-           IP.N_Stage = 4;	   
-	   /* Multigrid */
+          IP.i_Time_Integration = TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING;
+          IP.N_Stage = 4;	   
        } else if (strcmp(IP.Time_Integration_Type, "Multigrid") == 0) {
-	 IP.i_Time_Integration = TIME_STEPPING_MULTIGRID;
+	  IP.i_Time_Integration = TIME_STEPPING_MULTIGRID;
        } else if (strcmp(IP.Time_Integration_Type, "Space_March") == 0) {
 	 IP.i_Time_Integration = TIME_STEPPING_SPACE_MARCH;
        } else {
-           IP.i_Time_Integration = TIME_STEPPING_EXPLICIT_EULER;
-           IP.N_Stage = 1;
+	  i_command = INVALID_INPUT_VALUE;
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Reconstruction_Type") == 0) {
@@ -1013,7 +1392,7 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        } else if (strcmp(IP.Reconstruction_Type, "Least_Squares") == 0) {
           IP.i_Reconstruction = RECONSTRUCTION_LEAST_SQUARES;
        } else {
-          IP.i_Reconstruction = RECONSTRUCTION_GREEN_GAUSS;
+	  i_command = INVALID_INPUT_VALUE;
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Limiter_Type") == 0) {
@@ -1034,9 +1413,47 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        } else if (strcmp(IP.Limiter_Type, "Venkatakrishnan") == 0) {
           IP.i_Limiter = LIMITER_VENKATAKRISHNAN;
        } else {
-          IP.i_Limiter = LIMITER_VANLEER ;
+	  i_command = INVALID_INPUT_VALUE;
        } /* endif */
 
+    } else if (strcmp(IP.Next_Control_Parameter, "Flux_Function_Type") == 0) {
+       i_command = 4;
+       Get_Next_Input_Control_Parameter(IP);
+       strcpy(IP.Flux_Function_Type, 
+              IP.Next_Control_Parameter);
+       if (strcmp(IP.Flux_Function_Type, "Godunov") == 0) {
+          IP.i_Flux_Function = FLUX_FUNCTION_GODUNOV;
+       } else if (strcmp(IP.Flux_Function_Type, "Roe") == 0) {
+          IP.i_Flux_Function = FLUX_FUNCTION_ROE;
+       } else if (strcmp(IP.Flux_Function_Type, "Rusanov") == 0) {
+          IP.i_Flux_Function = FLUX_FUNCTION_RUSANOV;
+       } else if (strcmp(IP.Flux_Function_Type, "HLLE") == 0) {
+          IP.i_Flux_Function = FLUX_FUNCTION_HLLE;
+       } else if (strcmp(IP.Flux_Function_Type, "Linde") == 0) {
+          IP.i_Flux_Function = FLUX_FUNCTION_LINDE;
+       } else if (strcmp(IP.Flux_Function_Type, "HLLC") == 0) {
+          IP.i_Flux_Function = FLUX_FUNCTION_HLLC;
+       } else if (strcmp(IP.Flux_Function_Type, "VanLeer") == 0) {
+	  IP.i_Flux_Function = FLUX_FUNCTION_VANLEER;
+       } else if (strcmp(IP.Flux_Function_Type, "AUSM") == 0) {
+	  IP.i_Flux_Function = FLUX_FUNCTION_AUSM;
+       } else if (strcmp(IP.Flux_Function_Type, "AUSM+") == 0) {
+	  IP.i_Flux_Function = FLUX_FUNCTION_AUSMplus;
+       } else if (strcmp(IP.Flux_Function_Type, "Roe_Precon_WS") == 0) {
+          IP.i_Flux_Function = FLUX_FUNCTION_ROE_PRECON_WS;
+       } else if (strcmp(IP.Flux_Function_Type, "HLLE_Precon_WS") == 0) {
+          IP.i_Flux_Function = FLUX_FUNCTION_HLLE_PRECON_WS;
+       } else if (strcmp(IP.Flux_Function_Type, "Godunov_MB") == 0) {
+	  IP.i_Flux_Function = FLUX_FUNCTION_GODUNOV_MB;
+       } else if (strcmp(IP.Flux_Function_Type, "Roe_MB") == 0) {
+	  IP.i_Flux_Function = FLUX_FUNCTION_ROE_MB;
+       } else if (strcmp(IP.Flux_Function_Type, "HLLE_MB") == 0) {
+	  IP.i_Flux_Function = FLUX_FUNCTION_HLLE_MB;
+       } else if (strcmp(IP.Flux_Function_Type, "VanLeer_MB") == 0) {
+	  IP.i_Flux_Function = FLUX_FUNCTION_VANLEER_MB;
+       } else {
+	  i_command = INVALID_INPUT_VALUE;
+       } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "ICs_Type") == 0) {
        i_command = 5;
@@ -1047,6 +1464,54 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
           IP.i_ICs = IC_CONSTANT;
        } else if (strcmp(IP.ICs_Type, "Uniform") == 0) {
           IP.i_ICs = IC_UNIFORM;
+       } else if (strcmp(IP.ICs_Type, "Sod") == 0) {
+          IP.i_ICs = IC_SOD;
+       } else if (strcmp(IP.ICs_Type, "Sod_Xdir") == 0) {
+          IP.i_ICs = IC_SOD_XDIR;
+       } else if (strcmp(IP.ICs_Type, "Sod_Ydir") == 0) {
+          IP.i_ICs = IC_SOD_YDIR;
+       } else if (strcmp(IP.ICs_Type, "Groth") == 0) {
+          IP.i_ICs = IC_GROTH;
+       } else if (strcmp(IP.ICs_Type, "Groth_Xdir") == 0) {
+          IP.i_ICs = IC_GROTH_XDIR;
+       } else if (strcmp(IP.ICs_Type, "Groth_Ydir") == 0) {
+          IP.i_ICs = IC_GROTH_YDIR;
+       } else if (strcmp(IP.ICs_Type, "Einfeldt") == 0) {
+          IP.i_ICs = IC_EINFELDT;
+       } else if (strcmp(IP.ICs_Type, "Einfeldt_Xdir") == 0) {
+          IP.i_ICs = IC_EINFELDT_XDIR;
+       } else if (strcmp(IP.ICs_Type, "Einfeldt_Ydir") == 0) {
+          IP.i_ICs = IC_EINFELDT_YDIR;
+       } else if (strcmp(IP.ICs_Type, "Shock_Wave_Xdir") == 0) {
+          IP.i_ICs = IC_SHOCK_WAVE_XDIR;
+       } else if (strcmp(IP.ICs_Type, "Shock_Wave_Ydir") == 0) {
+          IP.i_ICs = IC_SHOCK_WAVE_YDIR;
+       } else if (strcmp(IP.ICs_Type, "Contact_Surface_Xdir") == 0) {
+          IP.i_ICs = IC_CONTACT_SURFACE_XDIR;
+       } else if (strcmp(IP.ICs_Type, "Contact_Surface_Ydir") == 0) {
+          IP.i_ICs = IC_CONTACT_SURFACE_YDIR;
+       } else if (strcmp(IP.ICs_Type, "Rarefaction_Wave_Xdir") == 0) {
+          IP.i_ICs = IC_RAREFACTION_WAVE_XDIR;
+       } else if (strcmp(IP.ICs_Type, "Rarefaction_Wave_Ydir") == 0) {
+          IP.i_ICs = IC_RAREFACTION_WAVE_YDIR;
+       } else if (strcmp(IP.ICs_Type, "ShockBox") == 0) {
+          IP.i_ICs = IC_SHOCK_BOX;
+       } else if (strcmp(IP.ICs_Type, "High_Pressure_Reservoir") == 0) {
+          IP.i_ICs = IC_HIGH_PRESSURE_RESERVOIR;
+       } else if (strcmp(IP.ICs_Type, "Low_Pressure_Reservoir") == 0) {
+          IP.i_ICs = IC_LOW_PRESSURE_RESERVOIR;
+       } else if (strcmp(IP.ICs_Type, "Riemann") == 0) {
+          IP.i_ICs = IC_RIEMANN;
+       } else if (strcmp(IP.ICs_Type, "Riemann_Xdir") == 0) {
+          IP.i_ICs = IC_RIEMANN_XDIR;
+       } else if (strcmp(IP.ICs_Type, "Riemann_Ydir") == 0) {
+          IP.i_ICs = IC_RIEMANN_YDIR;
+       } else if (strcmp(IP.ICs_Type,"Ringleb_Flow") == 0) {
+          IP.i_ICs = IC_RINGLEB_FLOW;
+       } else if (strcmp(IP.ICs_Type,"Cylindrical_Explosion") == 0) {
+	  IP.i_ICs = IC_CYLINDRICAL_EXPLOSION;
+       } else if (strcmp(IP.ICs_Type,"Cylindrical_Implosion") == 0) {
+          IP.i_ICs = IC_CYLINDRICAL_IMPLOSION;
        } else if (strcmp(IP.ICs_Type, "Restart") == 0) {
           IP.i_ICs = IC_RESTART;
        } else {
@@ -1073,6 +1538,7 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        } else if (strcmp(IP.Grid_Type, "Flat_Plate") == 0) {
           IP.i_Grid = GRID_FLAT_PLATE;
           IP.Plate_Length = ONE;
+	  IP.BC_South = BC_REFLECTION;
        } else if (strcmp(IP.Grid_Type, "Pipe") == 0) {
           IP.i_Grid = GRID_PIPE;
           IP.Pipe_Length = ONE;
@@ -1083,15 +1549,40 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
           IP.Blunt_Body_Mach_Number = TWO;
        } else if (strcmp(IP.Grid_Type, "Rocket_Motor") == 0) {
           IP.i_Grid = GRID_ROCKET_MOTOR;
-          IP.Grain_Length = 0.835;
-          IP.Grain_Radius = 0.020;
-          IP.Grain_To_Throat_Length = 0.05;
-          IP.Nozzle_Length = 0.150;
-          IP.Nozzle_Radius_Exit = 0.030;
-          IP.Nozzle_Radius_Throat = 0.010;
+	  IP.Chamber_Length = 0.835;
+	  IP.Chamber_Radius = 0.020;
+	  IP.Chamber_To_Throat_Length = 0.05;
+	  IP.Nozzle_Length = 0.150;
+	  IP.Nozzle_Radius_Exit = 0.030;
+	  IP.Nozzle_Radius_Throat = 0.010;
+	  IP.Nozzle_Type = NOZZLE_GOTTLIEB_FUNCTION;
+	  IP.Grain_Radius = 0.0;
+	  IP.BC_North = BC_REFLECTION;
+	  IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_LINEAR;
+	  IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MAX_CLUSTERING;
+	  IP.Mesh_Stretching_Factor_Idir = 1.10;
+	  IP.Mesh_Stretching_Factor_Jdir = 1.01;
+       } else if (strcmp(IP.Grid_Type,"Nozzleless_Rocket_Motor") == 0) {
+	 IP.i_Grid = GRID_NOZZLELESS_ROCKET_MOTOR;
+	 IP.Chamber_Length = 0.48;
+	 IP.Chamber_Radius = 0.01;
+	 IP.Nozzle_Length = 0.032;
+	 IP.Wedge_Angle = 15.0*PI/180.0;
+	 IP.Nozzle_Radius_Exit = IP.Chamber_Radius + IP.Nozzle_Length*tan(IP.Wedge_Angle);
+	 IP.BC_North = BC_WALL_VISCOUS_ISOTHERMAL;
+	 IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_LINEAR;
+	 IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MAX_CLUSTERING;
+	 IP.Mesh_Stretching_Factor_Idir = 1.99;
+	 IP.Mesh_Stretching_Factor_Jdir = 1.01;
        } else if (strcmp(IP.Grid_Type, "Circular_Cylinder") == 0) {
           IP.i_Grid = GRID_CIRCULAR_CYLINDER;
           IP.Cylinder_Radius = ONE;
+          IP.Cylinder_Radius2 = 32.00;
+	  IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
+	  IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
+	  IP.Mesh_Stretching_Factor_Idir = 1.025;
+	  IP.Mesh_Stretching_Factor_Jdir = 1.001;
+	  IP.BC_South = BC_REFLECTION;
        } else if (strcmp(IP.Grid_Type, "Ellipse") == 0) {
           IP.i_Grid = GRID_ELLIPSE;
           IP.Ellipse_Length_X_Axis = TWO;
@@ -1107,12 +1598,24 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
 	  IP.i_Grid = GRID_WEDGE;
 	  IP.Wedge_Angle = 25.0;
 	  IP.Wedge_Length = HALF;
+	  IP.BC_South = BC_REFLECTION;
        } else if (strcmp(IP.Grid_Type, "Unsteady_Blunt_Body") == 0) {
 	  IP.i_Grid = GRID_UNSTEADY_BLUNT_BODY;
 	  IP.Blunt_Body_Radius = ONE;
 	  IP.Blunt_Body_Mach_Number = TWO;
+       } else if (strcmp(IP.Grid_Type,"Ringleb_Flow") == 0) {
+          IP.i_Grid = GRID_RINGLEB_FLOW;
+	  IP.Inner_Streamline_Number = 0.80;
+	  IP.Outer_Streamline_Number = 0.40;
+	  IP.Isotach_Line = 0.30;
        } else if (strcmp(IP.Grid_Type,"Bump_Channel_Flow") == 0) {
           IP.i_Grid = GRID_BUMP_CHANNEL_FLOW;
+       } else if (strcmp(IP.Grid_Type,"Non_Smooth_Bump_Channel_Flow") == 0) {
+	  IP.i_Grid = GRID_BUMP_CHANNEL_FLOW;
+	  IP.Smooth_Bump = OFF;
+       } else if (strcmp(IP.Grid_Type,"Smooth_Bump_Channel_Flow") == 0) {
+	  IP.i_Grid = GRID_BUMP_CHANNEL_FLOW;
+	  IP.Smooth_Bump = ON;
        } else if (strcmp(IP.Grid_Type, "ICEMCFD") == 0) {
           IP.i_Grid = GRID_ICEMCFD;
        } else if (strcmp(IP.Grid_Type, "Read_From_Definition_File") == 0) {
@@ -1175,12 +1678,12 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Number_of_Cells_Jdir < 1) i_command = INVALID_INPUT_VALUE;
 
-   } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Ghost_Cells") == 0) {
-       i_command = 100;
+    } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Ghost_Cells") == 0) {
+       i_command = 12;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.Number_of_Ghost_Cells;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Number_of_Ghost_Cells < 2) i_command = INVALID_INPUT_VALUE;
+       if (IP.Number_of_Ghost_Cells < 1) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Blocks_Idir") == 0) {
        i_command = 12;
@@ -1214,7 +1717,8 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Local_Time_Stepping != GLOBAL_TIME_STEPPING &&
            IP.Local_Time_Stepping != SCALAR_LOCAL_TIME_STEPPING &&
-	   IP.Local_Time_Stepping != MATRIX_LOCAL_TIME_STEPPING ) 
+	   IP.Local_Time_Stepping != MATRIX_LOCAL_TIME_STEPPING &&
+           IP.Local_Time_Stepping != LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER) 
          IP.Local_Time_Stepping = SCALAR_LOCAL_TIME_STEPPING;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Maximum_Number_of_Time_Steps") == 0) {
@@ -1294,6 +1798,14 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Cylinder_Radius <= ZERO) i_command = INVALID_INPUT_VALUE;
 
+    } else if (strcmp(IP.Next_Control_Parameter, "Cylinder_Radius2") == 0) {
+       i_command = 26;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Cylinder_Radius2;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.Cylinder_Radius2 <= ZERO) i_command = INVALID_INPUT_VALUE;
+       if (IP.Cylinder_Radius2 <= IP.Cylinder_Radius) i_command = INVALID_INPUT_VALUE;
+
     } else if (strcmp(IP.Next_Control_Parameter, "Ellipse_Length_X_Axis") == 0) {
        i_command = 27;
        IP.Line_Number = IP.Line_Number + 1;
@@ -1330,6 +1842,27 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Orifice_Radius <= ZERO) i_command = INVALID_INPUT_VALUE;
 
+    } else if (strcmp(IP.Next_Control_Parameter,"Inner_Streamline_Number") == 0) {
+       i_command = 31;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Inner_Streamline_Number;
+       IP.Input_File.getline(buffer,sizeof(buffer));
+       if (IP.Inner_Streamline_Number <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Outer_Streamline_Number") == 0) {
+       i_command = 31;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Outer_Streamline_Number;
+       IP.Input_File.getline(buffer,sizeof(buffer));
+       if (IP.Outer_Streamline_Number <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Isotach_Line") == 0) {
+       i_command = 31;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Isotach_Line;
+       IP.Input_File.getline(buffer,sizeof(buffer));
+       if (IP.Isotach_Line <= ZERO) i_command = INVALID_INPUT_VALUE;
+
     } else if (strcmp(IP.Next_Control_Parameter, "Wedge_Angle") == 0) {
        i_command = 31;
        IP.Line_Number = IP.Line_Number + 1;
@@ -1344,51 +1877,82 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Wedge_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
     
-    } else if (strcmp(IP.Next_Control_Parameter, "Grain_Length") == 0) {
-       i_command = 32;
-       IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.Grain_Length;
-       IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Grain_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
+    } else if (strcmp(IP.Next_Control_Parameter,"Smooth_Bump") == 0) {
+      i_command = 32;
+      Get_Next_Input_Control_Parameter(IP);
+      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+	IP.Smooth_Bump = ON;
+      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+	IP.Smooth_Bump = OFF;
+      } else {
+	i_command = INVALID_INPUT_VALUE;
+      }
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Grain_Radius") == 0) {
-       i_command = 33;
-       IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.Grain_Radius;
-       IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Grain_Radius <= ZERO) i_command = INVALID_INPUT_VALUE;
+    } else if (strcmp(IP.Next_Control_Parameter,"Chamber_Length") == 0) {
+      i_command = 33;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Chamber_Length;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Chamber_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Grain_To_Throat_Length") == 0) {
-       i_command = 34;
-       IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.Grain_To_Throat_Length;
-       IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Grain_To_Throat_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
+    } else if (strcmp(IP.Next_Control_Parameter,"Chamber_Radius") == 0) {
+      i_command = 34;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Chamber_Radius;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Chamber_Radius <= ZERO) i_command = INVALID_INPUT_VALUE;
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Nozzle_Length") == 0) {
-       i_command = 35;
-       IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.Nozzle_Length;
-       IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Nozzle_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
+    } else if (strcmp(IP.Next_Control_Parameter,"Chamber_To_Throat_Length") == 0) {
+      i_command = 35;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Chamber_To_Throat_Length;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Chamber_To_Throat_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Nozzle_Radius_Exit") == 0) {
-       i_command = 36;
-       IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.Nozzle_Radius_Exit;
-       IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Nozzle_Radius_Exit <= ZERO) i_command = INVALID_INPUT_VALUE;
+    } else if (strcmp(IP.Next_Control_Parameter,"Nozzle_Length") == 0) {
+      i_command = 36;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Nozzle_Length;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Nozzle_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Nozzle_Radius_Throat") == 0) {
-       i_command = 37;
-       IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.Nozzle_Radius_Throat;
-       IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Nozzle_Radius_Throat <= ZERO) i_command = INVALID_INPUT_VALUE;
+    } else if (strcmp(IP.Next_Control_Parameter,"Nozzle_Radius_Exit") == 0) {
+      i_command = 37;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Nozzle_Radius_Exit;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Nozzle_Radius_Exit <= ZERO) i_command = INVALID_INPUT_VALUE;
 
+    } else if (strcmp(IP.Next_Control_Parameter,"Nozzle_Radius_Throat") == 0) {
+      i_command = 38;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Nozzle_Radius_Throat;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Nozzle_Radius_Throat <= ZERO) i_command = INVALID_INPUT_VALUE;
 
+    } else if (strcmp(IP.Next_Control_Parameter,"Nozzle_Type") == 0) {
+      i_command = 39;
+      Get_Next_Input_Control_Parameter(IP);
+      if (strcmp(IP.Next_Control_Parameter,"Conical") == 0) {
+	IP.Nozzle_Type = NOZZLE_CONICAL;
+      } else if (strcmp(IP.Next_Control_Parameter,"Gottlieb") == 0) {
+	IP.Nozzle_Type = NOZZLE_GOTTLIEB_FUNCTION;
+      } else if (strcmp(IP.Next_Control_Parameter,"Quartic") == 0) {
+	IP.Nozzle_Type = NOZZLE_QUARTIC_FUNCTION;
+      } else if (strcmp(IP.Next_Control_Parameter,"Hybrid_Conical") == 0) {
+	IP.Nozzle_Type = NOZZLE_HYBRID_CONICAL_FUNCTION;
+      } else {
+	i_command = INVALID_INPUT_VALUE;
+      }
 
-       //------------------------ Rte2D Specific -------------------------//
+    } else if (strcmp(IP.Next_Control_Parameter,"Grain_Radius") == 0) {
+      i_command = 40;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Grain_Radius;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+
+    /***********************************************************************
+     *************************** RTE SPECIFIC ******************************/
 
     } else if (strcmp(IP.Next_Control_Parameter, "Difference_Scheme") == 0) {
        i_command = 4;
@@ -1444,16 +2008,16 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
           IP.i_DOM_Quadrature = DOM_S2;
        } /* endif */
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Absorbsion_Coefficient") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter, "Absorption_Coefficient") == 0) {
 
        i_command = 38;
        IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.AbsorbsionCoef;
+       IP.Input_File >> IP.AbsorptionCoef;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.AbsorbsionCoef < ZERO) {
+       if (IP.AbsorptionCoef < ZERO) {
           i_command = INVALID_INPUT_VALUE;
        } else {
-	 IP.Uo.SetAbsorbsion( IP.AbsorbsionCoef );
+	 IP.Uo.SetAbsorption( IP.AbsorptionCoef );
        } 
 
     } else if (strcmp(IP.Next_Control_Parameter, "Scattering_Coefficient") == 0) {
@@ -1519,7 +2083,7 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
 	 IP.Uo.Allocate();
 	 IP.Uo.Zero();
 	 IP.Uo.SetBlackbody( Ib(IP.Temperature) );
-	 IP.Uo.SetAbsorbsion( IP.AbsorbsionCoef );
+	 IP.Uo.SetAbsorption( IP.AbsorptionCoef );
 	 IP.Uo.SetScattering( IP.ScatteringCoef);
 	 Rte2D_State :: SetupPhase( IP.i_ScatteringFunc );
       } 
@@ -1542,7 +2106,7 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
 	 IP.Uo.Allocate();
 	 IP.Uo.Zero();
 	 IP.Uo.SetBlackbody( Ib(IP.Temperature) );
-	 IP.Uo.SetAbsorbsion( IP.AbsorbsionCoef );
+	 IP.Uo.SetAbsorption( IP.AbsorptionCoef );
 	 IP.Uo.SetScattering( IP.ScatteringCoef );
  	 Rte2D_State :: SetupPhase( IP.i_ScatteringFunc );
       } 
@@ -1569,13 +2133,11 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
       IP.Input_File.getline(buffer, sizeof(buffer));
 
 
-      //---------------------- End Rte2D Specific -----------------------//
-
-
-
+    /***********************************************************************
+     ***********************************************************************/
 
     } else if (strcmp(IP.Next_Control_Parameter, "Time_Max") == 0) {
-       i_command = 43;
+       i_command = 48;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.Time_Max;
        IP.Input_File.getline(buffer, sizeof(buffer));
@@ -1583,14 +2145,14 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        if (IP.Time_Max < ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Blocks_Per_Processor") == 0) {
-       i_command = 44;
+       i_command = 49;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.Number_of_Blocks_Per_Processor;
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Number_of_Blocks_Per_Processor < 1) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Output_Format_Type") == 0) {
-       i_command = 45;
+       i_command = 50;
        Get_Next_Input_Control_Parameter(IP);
        strcpy(IP.Output_Format_Type, 
               IP.Next_Control_Parameter);
@@ -1614,186 +2176,70 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
           IP.i_Output_Format = IO_TECPLOT;
        } /* endif */
 
+
     } else if (strcmp(IP.Next_Control_Parameter, "Flow_Geometry_Type") == 0) {
-       i_command = 50;
+       i_command = 55;
        Get_Next_Input_Control_Parameter(IP);
        strcpy(IP.Flow_Geometry_Type, 
               IP.Next_Control_Parameter);
        if (strcmp(IP.Flow_Geometry_Type, "Planar") == 0) {
           IP.Axisymmetric = 0;
        } else if (strcmp(IP.Flow_Geometry_Type, "Axisymmetric") == 0) {
-	 IP.Axisymmetric = AXISYMMETRIC_Y;
-       } else if (strcmp(IP.Flow_Geometry_Type, "Axisymmetric-x") == 0) {
-	 IP.Axisymmetric = AXISYMMETRIC_X;
-       } else if (strcmp(IP.Flow_Geometry_Type, "Axisymmetric-y") == 0) {
-	 IP.Axisymmetric = AXISYMMETRIC_Y;
+          IP.Axisymmetric = 1;
        } else {
-          IP.Axisymmetric = PLANAR;
+          IP.Axisymmetric = 0;
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Restart_Solution_Save_Frequency") == 0) {
-       i_command = 51;
+       i_command = 56;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.Restart_Solution_Save_Frequency;
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Restart_Solution_Save_Frequency < 1) i_command = INVALID_INPUT_VALUE;
 
+    } else if (strcmp(IP.Next_Control_Parameter,"Output_Progress_Frequency") == 0) {
+       i_command = 57;
+       IP.Line_Number++;
+       IP.Input_File >> IP.Output_Progress_Frequency;
+       IP.Input_File.getline(buffer,sizeof(buffer));
+       if (IP.Output_Progress_Frequency < 1) i_command = INVALID_INPUT_VALUE;
+
     } else if (strcmp(IP.Next_Control_Parameter, "ICEMCFD_Topology_File") == 0) {
-       i_command = 52;
+       i_command = 58;
        Get_Next_Input_Control_Parameter(IP);
        strcpy(IP.ICEMCFD_FileNames[0], IP.Next_Control_Parameter);
 
     } else if (strcmp(IP.Next_Control_Parameter, "ICEMCFD_Family_Boco_File") == 0) {
-       i_command = 53;
+       i_command = 59;
        Get_Next_Input_Control_Parameter(IP);
        strcpy(IP.ICEMCFD_FileNames[1], IP.Next_Control_Parameter);
 
     } else if (strcmp(IP.Next_Control_Parameter, "ICEMCFD_Family_Topo_File") == 0) {
-       i_command = 54;
+       i_command = 60;
        Get_Next_Input_Control_Parameter(IP);
        strcpy(IP.ICEMCFD_FileNames[2], IP.Next_Control_Parameter);
 
     } else if (strcmp(IP.Next_Control_Parameter, "X_Shift") == 0) {
-       i_command = 55;
+       i_command = 61;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.X_Shift;
        IP.Input_File.setf(ios::skipws);
        IP.Input_File.getline(buffer, sizeof(buffer));
 
     } else if (strcmp(IP.Next_Control_Parameter, "X_Scale") == 0) {
-       i_command = 56;
+       i_command = 62;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.X_Scale;
        IP.Input_File.getline(buffer, sizeof(buffer));
 
     } else if (strcmp(IP.Next_Control_Parameter, "X_Rotate") == 0) {
-       i_command = 57;
+       i_command = 63;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.X_Rotate;
        IP.Input_File.getline(buffer, sizeof(buffer));
-
-       /****************************************************************/
-       /***************** NKS PARAMETERS *******************************/  
-       /****************************************************************/
-
-    } else if (strcmp(IP.Next_Control_Parameter, "GMRES_Restart") == 0) {
-      // GMRES restart:
-      i_command = 58;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.NKS_IP.GMRES_Restart;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.NKS_IP.GMRES_Restart < 0) i_command = INVALID_INPUT_VALUE;
-      
-    } else if (strcmp(IP.Next_Control_Parameter, "GMRES_Overlap") == 0) {
-      // GMRES overlap:
-      i_command = 59;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.NKS_IP.GMRES_Overlap;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.NKS_IP.GMRES_Overlap < 0) i_command = INVALID_INPUT_VALUE;
-      
-    } else if (strcmp(IP.Next_Control_Parameter, "GMRES_Tolerance") == 0) {
-      // GMRES tolerance:
-      i_command = 60;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.NKS_IP.GMRES_Tolerance;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.NKS_IP.GMRES_Tolerance <= ZERO) i_command = INVALID_INPUT_VALUE;
-
-    } else if (strcmp(IP.Next_Control_Parameter, "Overall_Tolerance") == 0) {
-      // GMRES tolerance:
-      i_command = 61;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.NKS_IP.Overall_Tolerance;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.NKS_IP.Overall_Tolerance <= ZERO) i_command = INVALID_INPUT_VALUE;
-      
-    } else if (strcmp(IP.Next_Control_Parameter, "GMRES_Block_Preconditioner") == 0) {
-      // GMRES Precondtioner
-      i_command = 62;
-      Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter, "ILUK") == 0) {
-	IP.NKS_IP.GMRES_Block_Preconditioner = Block_ILUK;
-      } else if (strcmp(IP.Next_Control_Parameter, "Diagonal") == 0) {
-	IP.NKS_IP.GMRES_Block_Preconditioner = Block_Jacobi;
-      } else {
-	IP.NKS_IP.GMRES_Block_Preconditioner = Block_ILUK;
-      }
-
-    } else if (strcmp(IP.Next_Control_Parameter, "GMRES_ILUK_Level_of_Fill") == 0) {
-      i_command = 63;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.NKS_IP.GMRES_ILUK_Level_of_Fill;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.NKS_IP.GMRES_ILUK_Level_of_Fill < 0) i_command = INVALID_INPUT_VALUE;
-
-    } else if (strcmp(IP.Next_Control_Parameter, "Jacobian_Order") == 0) {
-      i_command = 631;
-      Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter, "Source_Terms_Only") == 0) {
-	IP.NKS_IP.Jacobian_Order = SOURCE_TERMS_ONLY;
-      } else if (strcmp(IP.Next_Control_Parameter, "First_Order_Inviscid_HLLE") == 0) {
-	IP.NKS_IP.Jacobian_Order = FIRST_ORDER_INVISCID_HLLE;
-      } else if (strcmp(IP.Next_Control_Parameter, "First_Order_Inviscid_Roe") == 0) {
-	IP.NKS_IP.Jacobian_Order = FIRST_ORDER_INVISCID_ROE;
-      } else if (strcmp(IP.Next_Control_Parameter, "Second_Order_Diamond_Path_with_HLLE") == 0) {
-	IP.NKS_IP.Jacobian_Order = SECOND_ORDER_DIAMOND_WITH_HLLE;
-      } else if (strcmp(IP.Next_Control_Parameter, "Second_Order_Diamond_Path_with_Roe") == 0) {
-	IP.NKS_IP.Jacobian_Order = SECOND_ORDER_DIAMOND_WITH_ROE;	
-      } else {
-	IP.NKS_IP.Jacobian_Order = FIRST_ORDER_INVISCID_HLLE;
-      }
-
-    } else if (strcmp(IP.Next_Control_Parameter, "Maximum_Number_of_NKS_Iterations") == 0) {
-      i_command = 64;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.NKS_IP.Maximum_Number_of_NKS_Iterations;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.NKS_IP.Maximum_Number_of_NKS_Iterations < 0) i_command = INVALID_INPUT_VALUE;
-     
-    } else if (strcmp(IP.Next_Control_Parameter, "Maximum_Number_of_GMRES_Iterations") == 0) {
-      i_command = 65;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.NKS_IP.Maximum_Number_of_GMRES_Iterations;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.NKS_IP.Maximum_Number_of_GMRES_Iterations < 0) i_command = INVALID_INPUT_VALUE;
-
-    } else if (strcmp(IP.Next_Control_Parameter, "Finite_Time_Step") == 0) {
-      i_command = 66; 
-      Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter, "ON") == 0) {
-	IP.NKS_IP.Finite_Time_Step = true;
-      } else if (strcmp(IP.Next_Control_Parameter, "OFF") == 0) {
-	IP.NKS_IP.Finite_Time_Step = false;
-      } else {
-	IP.NKS_IP.Finite_Time_Step = true;
-      }
-
-    } else if (strcmp(IP.Next_Control_Parameter, "Normalization") == 0) {
-      i_command = 67;
-      Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter, "ON") == 0) {
-	IP.NKS_IP.Normalization = true;
-      } else if (strcmp(IP.Next_Control_Parameter, "OFF") == 0) {
-	IP.NKS_IP.Normalization = false;
-      } else {
-	IP.NKS_IP.Normalization = true;
-      }
-
-    } else if (strcmp(IP.Next_Control_Parameter, "Finite_Time_Step_Initial_CFL") == 0) {
-      i_command = 70;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.NKS_IP.Finite_Time_Step_Initial_CFL;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.NKS_IP.Finite_Time_Step_Initial_CFL < ZERO) i_command = INVALID_INPUT_VALUE;
-     
-      /****************************************************************/
-      /********************* END OF NKS SPECIFIC **********************/
-      /****************************************************************/
-
     } else if (strcmp(IP.Next_Control_Parameter, "Freeze_Limiter") == 0) {
       // Freeze_Limiter:
-      i_command = 68;
+      i_command = 74;
       IP.Line_Number = IP.Line_Number + 1;
       IP.Input_File >> IP.Freeze_Limiter;
       IP.Input_File.getline(buffer, sizeof(buffer));
@@ -1801,63 +2247,92 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
       
     } else if (strcmp(IP.Next_Control_Parameter, "Freeze_Limiter_Residual_Level") == 0) {
       // Freeze_Limiter_Residual_Level:
-      i_command = 69;
+      i_command = 75;
       IP.Line_Number = IP.Line_Number + 1;
       IP.Input_File >> IP.Freeze_Limiter_Residual_Level;
       IP.Input_File.getline(buffer, sizeof(buffer));
       if (IP.Freeze_Limiter_Residual_Level < ZERO) i_command = INVALID_INPUT_VALUE;
-
+      
     } else if (strcmp(IP.Next_Control_Parameter, "AMR") == 0) {
-      i_command = 71;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.AMR;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.AMR < 0) i_command = INVALID_INPUT_VALUE;
+      i_command = 77;
+      Get_Next_Input_Control_Parameter(IP);
+      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+	IP.AMR = ON;
+      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+	IP.AMR = OFF;
+      } else {
+	i_command = INVALID_INPUT_VALUE;
+      }
 
     } else if (strcmp(IP.Next_Control_Parameter, "AMR_Frequency") == 0) {
-      i_command = 72;
+      i_command = 78;
       IP.Line_Number = IP.Line_Number + 1;
       IP.Input_File >> IP.AMR_Frequency;
       IP.Input_File.getline(buffer, sizeof(buffer));
       if (IP.AMR_Frequency < 0) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Initial_Mesh_Refinements") == 0) {
-      i_command = 73;
+      i_command = 79;
       IP.Line_Number = IP.Line_Number + 1;
       IP.Input_File >> IP.Number_of_Initial_Mesh_Refinements;
       IP.Input_File.getline(buffer, sizeof(buffer));
       if (IP.Number_of_Initial_Mesh_Refinements < 0) IP.Number_of_Initial_Mesh_Refinements = 0;
 
     } else if (strcmp(IP.Next_Control_Parameter,"Number_of_Uniform_Mesh_Refinements") == 0) {
-      i_command = 74;
+      i_command = 80;
       IP.Line_Number = IP.Line_Number + 1;
       IP.Input_File >> IP.Number_of_Uniform_Mesh_Refinements;
       IP.Input_File.getline(buffer,sizeof(buffer));
       if (IP.Number_of_Uniform_Mesh_Refinements < 0) IP.Number_of_Uniform_Mesh_Refinements = 0;
 
     } else if (strcmp(IP.Next_Control_Parameter,"Number_of_Boundary_Mesh_Refinements") == 0) {
-      i_command = 75;
+      i_command = 81;
       IP.Line_Number = IP.Line_Number + 1;
       IP.Input_File >> IP.Number_of_Boundary_Mesh_Refinements;
       IP.Input_File.getline(buffer,sizeof(buffer));
       if (IP.Number_of_Boundary_Mesh_Refinements < 0) IP.Number_of_Boundary_Mesh_Refinements = 0;
 
+    } else if (strcmp(IP.Next_Control_Parameter,"Number_of_Interface_Mesh_Refinements") == 0) {
+      i_command = 82;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Number_of_Interface_Mesh_Refinements;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Number_of_Interface_Mesh_Refinements < 0) IP.Number_of_Interface_Mesh_Refinements = 0;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Number_of_Bounding_Box_Mesh_Refinements") == 0) {
+      i_command = 83;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Number_of_Bounding_Box_Mesh_Refinements;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Number_of_Bounding_Box_Mesh_Refinements < 0) IP.Number_of_Bounding_Box_Mesh_Refinements = 0;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Interface_Refinement_Condition") == 0) {
+      i_command = 84;
+      Get_Next_Input_Control_Parameter(IP);
+      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+	IP.Interface_Refinement_Condition = ON;
+      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+	IP.Interface_Refinement_Condition = OFF;
+      } else {
+	i_command = INVALID_INPUT_VALUE;
+      }
+
     } else if (strcmp(IP.Next_Control_Parameter,"Maximum_Refinement_Level") == 0) {
-      i_command = 76;
+      i_command = 85;
       IP.Line_Number = IP.Line_Number + 1;
       IP.Input_File >> IP.Maximum_Refinement_Level;
       IP.Input_File.getline(buffer,sizeof(buffer));
       if (IP.Maximum_Refinement_Level < 1) IP.Maximum_Refinement_Level = 1;
 
     } else if (strcmp(IP.Next_Control_Parameter,"Minimum_Refinement_Level") == 0) {
-      i_command = 77;
+      i_command = 86;
       IP.Line_Number = IP.Line_Number + 1;
       IP.Input_File >> IP.Minimum_Refinement_Level;
       IP.Input_File.getline(buffer,sizeof(buffer));
       if (IP.Minimum_Refinement_Level < 1) IP.Minimum_Refinement_Level = 1;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Threshold_for_Refinement") == 0) {
-       i_command = 78;
+       i_command = 87;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.Threshold_for_Refinement;
        IP.Input_File.getline(buffer, sizeof(buffer));
@@ -1865,15 +2340,78 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
            IP.Threshold_for_Refinement > ONE) IP.Threshold_for_Refinement = 0.50;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Threshold_for_Coarsening") == 0) {
-       i_command = 79;
+       i_command = 88;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.Threshold_for_Coarsening;
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Threshold_for_Coarsening < ZERO ||
            IP.Threshold_for_Coarsening >= ONE) IP.Threshold_for_Coarsening = 0.10;
 
+    } else if (strcmp(IP.Next_Control_Parameter,"Number_of_Refinement_Criteria") == 0) {
+      i_command = 89;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Number_of_Refinement_Criteria;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Number_of_Refinement_Criteria < 1 || IP.Number_of_Refinement_Criteria > 6) {
+	i_command = INVALID_INPUT_VALUE;
+      }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Gradient_Density") == 0) {
+      i_command = 90;
+      Get_Next_Input_Control_Parameter(IP);
+      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+	IP.Refinement_Criteria_Gradient_Density = ON;
+      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+	IP.Refinement_Criteria_Gradient_Density = OFF;
+      } else {
+	i_command = INVALID_INPUT_VALUE;
+      }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Divergence_Velocity") == 0) {
+      i_command = 91;
+      Get_Next_Input_Control_Parameter(IP);
+      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+	IP.Refinement_Criteria_Divergence_Velocity = ON;
+      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+	IP.Refinement_Criteria_Divergence_Velocity = OFF;
+      } else {
+	i_command = INVALID_INPUT_VALUE;
+      }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Curl_Velocity") == 0) {
+      i_command = 92;
+      Get_Next_Input_Control_Parameter(IP);
+      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+	IP.Refinement_Criteria_Curl_Velocity = ON;
+      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+	IP.Refinement_Criteria_Curl_Velocity = OFF;
+      } else {
+	i_command = INVALID_INPUT_VALUE;
+      }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"AMR_Xmin") == 0) {
+      i_command = 93;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.AMR_Xmin;
+      IP.Input_File.setf(ios::skipws);
+      IP.Input_File.getline(buffer,sizeof(buffer));
+
+    } else if (strcmp(IP.Next_Control_Parameter,"AMR_Xmax") == 0) {
+      i_command = 94;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.AMR_Xmax;
+      IP.Input_File.setf(ios::skipws);
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      
+    } else if (strcmp(IP.Next_Control_Parameter,"Residual_Variable") == 0) {
+      i_command = 95;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.i_Residual_Variable;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.i_Residual_Variable < 1) i_command = INVALID_INPUT_VALUE;
+
     } else if (strcmp(IP.Next_Control_Parameter, "Residual_Smoothing_Epsilon") == 0) {
-      i_command = 80;
+      i_command = 96;
       IP.Line_Number = IP.Line_Number + 1;
       IP.Input_File >> IP.Residual_Smoothing_Epsilon;
       IP.Input_File.getline(buffer, sizeof(buffer));
@@ -1885,7 +2423,7 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
       } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Residual_Smoothing_Gauss_Seidel_Iterations") == 0) {
-      i_command = 81;
+      i_command = 97;
       IP.Line_Number = IP.Line_Number + 1;
       IP.Input_File >> IP.Residual_Smoothing_Gauss_Seidel_Iterations;
       IP.Input_File.getline(buffer, sizeof(buffer));
@@ -1893,30 +2431,89 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
          IP.Residual_Smoothing_Gauss_Seidel_Iterations = 0;
       } /* endif */
 
-//     } else if (strcmp(IP.Next_Control_Parameter, "Mr_Min_Factor") == 0) {
-//       i_command = 82;
-//       IP.Line_Number = IP.Line_Number + 1;
-//       IP.Input_File >> IP.Mr_Min_Factor;
-//       IP.Input_File.getline(buffer, sizeof(buffer));
-//       if (IP.Mr_Min_Factor <= ZERO) {
-//          IP.Mr_Min_Factor = ZERO;
-//       } /* endif */
-//       IP.Wo.Mr_min = IP.Mr_Min_Factor*IP.Mach_Number;
-//       IP.Uo.Mr_min = IP.Mr_Min_Factor*IP.Mach_Number;
+    } else if (strcmp(IP.Next_Control_Parameter,"Mesh_Stretching") == 0) {
+      i_command = 101;
+      Get_Next_Input_Control_Parameter(IP);
+      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+	IP.i_Mesh_Stretching = ON;
+      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+	IP.i_Mesh_Stretching = OFF;
+      } else {
+	i_command = INVALID_INPUT_VALUE;
+      }
 
-//     } else if (strcmp(IP.Next_Control_Parameter, "Morton") == 0) {
-//       i_command = 83;
-//       IP.Line_Number = IP.Line_Number + 1;
-//       IP.Input_File >> IP.Morton;
-//       IP.Input_File.getline(buffer, sizeof(buffer));
-//       if (IP.Morton < 0) i_command = INVALID_INPUT_VALUE;
+    } else if (strcmp(IP.Next_Control_Parameter,"Mesh_Stretching_Type_Idir") == 0) {
+      i_command = 102;
+      Get_Next_Input_Control_Parameter(IP);
+      if (strcmp(IP.Next_Control_Parameter,"Linear") == 0) {
+	IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_LINEAR;
+      } else if (strcmp(IP.Next_Control_Parameter,"Min_Clustering") == 0) {
+	IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MIN_CLUSTERING;
+      } else if (strcmp(IP.Next_Control_Parameter,"Max_Clustering") == 0) {
+	IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MAX_CLUSTERING;
+      } else if (strcmp(IP.Next_Control_Parameter,"MinMax_Clustering") == 0) {
+	IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
+      } else if (strcmp(IP.Next_Control_Parameter,"Midpt_Clustering") == 0) {
+	IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MIDPT_CLUSTERING;
+      } else {
+	i_command = INVALID_INPUT_VALUE;
+      }
 
-//     } else if (strcmp(IP.Next_Control_Parameter, "Morton_Reordering_Frequency") == 0) {
-//       i_command = 84;
-//       IP.Line_Number = IP.Line_Number + 1;
-//       IP.Input_File >> IP.Morton_Reordering_Frequency;
-//       IP.Input_File.getline(buffer, sizeof(buffer));
-//       if (IP.Morton_Reordering_Frequency < 0) i_command = INVALID_INPUT_VALUE;
+    } else if (strcmp(IP.Next_Control_Parameter,"Mesh_Stretching_Type_Jdir") == 0) {
+      i_command = 103;
+      Get_Next_Input_Control_Parameter(IP);
+      if (strcmp(IP.Next_Control_Parameter,"Linear") == 0) {
+	IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_LINEAR;
+      } else if (strcmp(IP.Next_Control_Parameter,"Min_Clustering") == 0) {
+	IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
+      } else if (strcmp(IP.Next_Control_Parameter,"Max_Clustering") == 0) {
+	IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MAX_CLUSTERING;
+      } else if (strcmp(IP.Next_Control_Parameter,"MinMax_Clustering") == 0) {
+	IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MINMAX_CLUSTERING;
+      } else if (strcmp(IP.Next_Control_Parameter,"Midpt_Clustering") == 0) {
+	IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIDPT_CLUSTERING;
+      } else {
+	i_command = INVALID_INPUT_VALUE;
+      }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Mesh_Stretching_Factor_Idir") == 0) {
+      i_command = 104;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Mesh_Stretching_Factor_Idir;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Mesh_Stretching_Factor_Idir < ONE) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Mesh_Stretching_Factor_Jdir") == 0) {
+      i_command = 105;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Mesh_Stretching_Factor_Jdir;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Mesh_Stretching_Factor_Jdir < ONE) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Smooth_Quad_Block") == 0) {
+      i_command = 106;
+      Get_Next_Input_Control_Parameter(IP);
+      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+	IP.i_Smooth_Quad_Block = ON;
+      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+	IP.i_Smooth_Quad_Block = OFF;
+      } else {
+	i_command = INVALID_INPUT_VALUE;
+      }
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Morton") == 0) {
+      i_command = 107;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Morton;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      if (IP.Morton < 0) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Morton_Reordering_Frequency") == 0) {
+      i_command = 108;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Morton_Reordering_Frequency;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      if (IP.Morton_Reordering_Frequency < 0) i_command = INVALID_INPUT_VALUE;
 
     /**************************************
      * Multigrid Related Input Parameters *
@@ -1928,12 +2525,11 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        IP.Input_File >> IP.Multigrid_IP.Levels;
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Multigrid_IP.Levels <= ONE) i_command = INVALID_INPUT_VALUE;
-       
+
     } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Cycle_Type") == 0) {
        i_command = 202;
        Get_Next_Input_Control_Parameter(IP);
-       strcpy(IP.Multigrid_IP.Cycle_Type,
-	      IP.Next_Control_Parameter);
+       strcpy(IP.Multigrid_IP.Cycle_Type,IP.Next_Control_Parameter);
        if (strcmp(IP.Multigrid_IP.Cycle_Type, "V") == 0 ||
 	   strcmp(IP.Multigrid_IP.Cycle_Type, "v") == 0) {
 	 IP.Multigrid_IP.i_Cycle = MULTIGRID_V_CYCLE;
@@ -1943,6 +2539,7 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        } else {
 	 i_command = INVALID_INPUT_VALUE;
        }
+
     } else if (strcmp(IP.Next_Control_Parameter, "Full_Multigrid") == 0) {
        i_command = 203;
        IP.Line_Number = IP.Line_Number + 1;
@@ -1951,46 +2548,119 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        if (IP.Multigrid_IP.Number_of_Cycles_per_Stage_for_Full_Multigrid < 0) 
 	 IP.Multigrid_IP.Number_of_Cycles_per_Stage_for_Full_Multigrid = 0;
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Number_of_Smooths_on_Finest_Level") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter, "Defect_Correction") == 0) {
        i_command = 204;
+       Get_Next_Input_Control_Parameter(IP);
+       if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+	 IP.Multigrid_IP.Defect_Correction = ON;
+       } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+	 IP.Multigrid_IP.Defect_Correction = OFF;
+       } else {
+	 i_command = INVALID_INPUT_VALUE;
+       }
+
+    } else if (strcmp(IP.Next_Control_Parameter, "First_Order_Coarse_Mesh_Reconstruction") == 0) {
+       i_command = 205;
+       IP.Line_Number = IP.Line_Number + 1;
+       Get_Next_Input_Control_Parameter(IP);
+       if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+	 IP.Multigrid_IP.First_Order_Coarse_Mesh_Reconstruction = ON;
+       } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+	 IP.Multigrid_IP.First_Order_Coarse_Mesh_Reconstruction = OFF;
+       } else {
+	 i_command = INVALID_INPUT_VALUE;
+       }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Prolong_Using_Injection") == 0) {
+       i_command = 206;
+       Get_Next_Input_Control_Parameter(IP);
+       if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+	 IP.Multigrid_IP.Prolong_Using_Injection = ON;
+       } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+	 IP.Multigrid_IP.Prolong_Using_Injection = OFF;
+       } else {
+	 i_command = INVALID_INPUT_VALUE;
+       }
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Apply_Coarse_Mesh_Boundary_Conditions") == 0) {
+       i_command = 207;
+       Get_Next_Input_Control_Parameter(IP);
+       if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+	 IP.Multigrid_IP.Apply_Coarse_Mesh_Boundary_Conditions = ON;
+       } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+	 IP.Multigrid_IP.Apply_Coarse_Mesh_Boundary_Conditions = OFF;
+       } else {
+	 i_command = INVALID_INPUT_VALUE;
+       }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Injection_at_Dirichlet_Boundary_Conditions") == 0) {
+       i_command = 208;
+       Get_Next_Input_Control_Parameter(IP);
+       if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+	 IP.Multigrid_IP.Injection_at_Dirichlet_Boundary_Conditions = ON;
+       } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+	 IP.Multigrid_IP.Injection_at_Dirichlet_Boundary_Conditions = OFF;
+       } else {
+	 i_command = INVALID_INPUT_VALUE;
+       }
+      
+    } else if (strcmp(IP.Next_Control_Parameter,"Update_Stability_Switch") == 0) {
+       i_command = 209;
+       Get_Next_Input_Control_Parameter(IP);
+       if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+	 IP.Multigrid_IP.Update_Stability_Switch = ON;
+       } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+	 IP.Multigrid_IP.Update_Stability_Switch = OFF;
+       } else {
+	 i_command = INVALID_INPUT_VALUE;
+       }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Maximum_Number_of_Update_Reductions") == 0) {
+       i_command = 210;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Multigrid_IP.Maximum_Number_of_Update_Reductions;
+       IP.Input_File.getline(buffer,sizeof(buffer));
+       if (IP.Multigrid_IP.Maximum_Number_of_Update_Reductions < 1) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Number_of_Smooths_on_Finest_Level") == 0) {
+       i_command = 211;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.Multigrid_IP.Number_of_Smooths_on_Finest_Level;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Multigrid_IP.Number_of_Smooths_on_Finest_Level < ZERO) i_command = INVALID_INPUT_VALUE;
+       if (IP.Multigrid_IP.Number_of_Smooths_on_Finest_Level < 0) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Number_of_Pre_Smooths") == 0) {
-       i_command = 205;
+       i_command = 211;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.Multigrid_IP.Number_of_Pre_Smooths;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Multigrid_IP.Number_of_Pre_Smooths < ZERO) i_command = INVALID_INPUT_VALUE;
+       if (IP.Multigrid_IP.Number_of_Pre_Smooths < 0) i_command = INVALID_INPUT_VALUE;
        
     } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Number_of_Post_Smooths") == 0) {
-       i_command = 206;
+       i_command = 212;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.Multigrid_IP.Number_of_Post_Smooths;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Multigrid_IP.Number_of_Post_Smooths < ZERO) i_command = INVALID_INPUT_VALUE;
+       if (IP.Multigrid_IP.Number_of_Post_Smooths < 0) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Number_of_Smooths_on_Coarsest_Level") == 0) {
-       i_command = 207;
+       i_command = 213;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.Multigrid_IP.Number_of_Smooths_on_Coarsest_Level;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Multigrid_IP.Number_of_Smooths_on_Coarsest_Level < ZERO) i_command = INVALID_INPUT_VALUE;
+       if (IP.Multigrid_IP.Number_of_Smooths_on_Coarsest_Level < 0) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Convergence_Residual_Level") == 0) {
-       i_command = 208;
+       i_command = 214;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.Multigrid_IP.Convergence_Residual_Level;
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Multigrid_IP.Convergence_Residual_Level < ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Smoothing_Type") == 0) {
-       i_command = 209;
+       i_command = 215;
        Get_Next_Input_Control_Parameter(IP);
-       strcpy(IP.Multigrid_IP.Smoothing_Type, 
-              IP.Next_Control_Parameter);
+       strcpy(IP.Multigrid_IP.Smoothing_Type,IP.Next_Control_Parameter);
        if (strcmp(IP.Multigrid_IP.Smoothing_Type, "Explicit_Euler") == 0) {
            IP.Multigrid_IP.i_Smoothing = TIME_STEPPING_EXPLICIT_EULER;
            IP.N_Stage = 1;
@@ -2004,13 +2674,200 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
            IP.Multigrid_IP.i_Smoothing = TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING;
            IP.N_Stage = 4;
        } else {
-           IP.Multigrid_IP.i_Smoothing = TIME_STEPPING_EXPLICIT_EULER;
-           IP.N_Stage = 1;
-       } /* endif */
+	   i_command = INVALID_INPUT_VALUE;
+       }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Ncycles_Regular_Multigrid") == 0) {
+      i_command = 216;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.Ncycles_Regular_Multigrid;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Multigrid_IP.Ncycles_Regular_Multigrid < 0) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Ncycles_Full_Multigrid") == 0) {
+      i_command = 217;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.Ncycles_Full_Multigrid;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Multigrid_IP.Ncycles_Full_Multigrid < 0) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Physical_Time_Integration_Type") == 0) {
+      i_command = 218;
+      Get_Next_Input_Control_Parameter(IP);
+      strcpy(IP.Multigrid_IP.Physical_Time_Integration_Type,
+	     IP.Next_Control_Parameter);
+      if (strcmp(IP.Multigrid_IP.Physical_Time_Integration_Type,"Implicit_Euler") == 0) {
+	IP.Multigrid_IP.i_Physical_Time_Integration = TIME_STEPPING_IMPLICIT_EULER;
+      } else if (strcmp(IP.Multigrid_IP.Physical_Time_Integration_Type,"Implicit_Trapezoidal") == 0) {
+	IP.Multigrid_IP.i_Physical_Time_Integration = TIME_STEPPING_IMPLICIT_TRAPEZOIDAL;
+	i_command = INVALID_INPUT_VALUE;
+      } else if (strcmp(IP.Multigrid_IP.Physical_Time_Integration_Type,"Second_Order_Backwards") == 0) {
+	IP.Multigrid_IP.i_Physical_Time_Integration = TIME_STEPPING_IMPLICIT_SECOND_ORDER_BACKWARD;
+      } else if (strcmp(IP.Multigrid_IP.Physical_Time_Integration_Type,"Adams_Type") == 0) {
+	IP.Multigrid_IP.i_Physical_Time_Integration = TIME_STEPPING_IMPLICIT_ADAMS_TYPE;
+	i_command = INVALID_INPUT_VALUE;
+      } else if (strcmp(IP.Multigrid_IP.Physical_Time_Integration_Type,"Lees") == 0) {
+	IP.Multigrid_IP.i_Physical_Time_Integration = TIME_STEPPING_IMPLICIT_LEES;
+	i_command = INVALID_INPUT_VALUE;
+      } else if (strcmp(IP.Multigrid_IP.Physical_Time_Integration_Type,"Two_Step_Trapezoidal") == 0) {
+	IP.Multigrid_IP.i_Physical_Time_Integration = TIME_STEPPING_IMPLICIT_TWO_STEP_TRAPEZOIDAL;
+	i_command = INVALID_INPUT_VALUE;
+      } else if (strcmp(IP.Multigrid_IP.Physical_Time_Integration_Type,"A_Contractive") == 0) {
+	IP.Multigrid_IP.i_Physical_Time_Integration = TIME_STEPPING_IMPLICIT_A_CONTRACTIVE;
+	i_command = INVALID_INPUT_VALUE;
+      } else {
+	i_command = INVALID_INPUT_VALUE;
+      }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Physical_Time_CFL_Number") == 0) {
+      i_command = 219;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.Physical_Time_CFL_Number;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Multigrid_IP.Physical_Time_CFL_Number <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Dual_Time_Convergence_Residual_Level") == 0) {
+      i_command = 220;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.Dual_Time_Convergence_Residual_Level;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Multigrid_IP.Dual_Time_Convergence_Residual_Level < ZERO) i_command = INVALID_INPUT_VALUE;
 
     /******************************************
      * End of Multigrid related Input parsing *
      ******************************************/
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Boundary_Conditions_Specified") == 0) {
+      i_command = 500;
+      Get_Next_Input_Control_Parameter(IP);
+      strcpy(IP.Boundary_Conditions_Specified,IP.Next_Control_Parameter);
+      if (strcmp(IP.Boundary_Conditions_Specified,"On") == 0) {
+	IP.BCs_Specified = ON;
+      } else if (strcmp(IP.Boundary_Conditions_Specified,"Off") == 0) {
+	IP.BCs_Specified = OFF;
+      } else {
+	i_command = INVALID_INPUT_VALUE;
+      }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"BC_North") == 0) {
+      i_command = 501;
+      Get_Next_Input_Control_Parameter(IP);
+      strcpy(IP.BC_North_Type,IP.Next_Control_Parameter);
+      if (strcmp(IP.BC_North_Type,"Reflection") == 0) {
+	IP.BC_North = BC_REFLECTION;
+      } else if (strcmp(IP.BC_North_Type,"Burning_Surface") == 0) {
+	IP.BC_North = BC_BURNING_SURFACE;
+      } else if (strcmp(IP.BC_North_Type,"Fixed") == 0) {
+	IP.BC_North = BC_FIXED;
+      } else if (strcmp(IP.BC_North_Type,"Inflow_Subsonic") == 0) {
+	IP.BC_North = BC_INFLOW_SUBSONIC;
+      } else if (strcmp(IP.BC_North_Type,"Outflow_Subsonic") == 0) {
+	IP.BC_North = BC_OUTFLOW_SUBSONIC;
+      } else if (strcmp(IP.BC_North_Type,"Fixed_Pressure") == 0) {
+	IP.BC_North = BC_FIXED_PRESSURE;
+      } else if (strcmp(IP.BC_North_Type,"Constant_Extrapolation") == 0) {
+	IP.BC_North = BC_CONSTANT_EXTRAPOLATION;
+      } else if (strcmp(IP.BC_North_Type,"Linear_Extrapolation") == 0) {
+	IP.BC_North = BC_LINEAR_EXTRAPOLATION;
+      } else if (strcmp(IP.BC_North_Type,"Characteristic") == 0) {
+	IP.BC_North = BC_CHARACTERISTIC;
+      } else if (strcmp(IP.BC_North_Type,"None") == 0) {
+	IP.BC_North = BC_NONE;
+      } else if (strcmp(IP.BC_North_Type,"Ringleb") == 0) {
+	IP.BC_North = BC_RINGLEB_FLOW;
+      } else {
+	i_command = INVALID_INPUT_VALUE;
+      }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"BC_South") == 0) {
+      i_command = 502;
+      Get_Next_Input_Control_Parameter(IP);
+      strcpy(IP.BC_South_Type,IP.Next_Control_Parameter);
+      if (strcmp(IP.BC_South_Type,"Reflection") == 0) {
+	IP.BC_South = BC_REFLECTION;
+      } else if (strcmp(IP.BC_South_Type,"Burning_Surface") == 0) {
+	IP.BC_South = BC_BURNING_SURFACE;
+      } else if (strcmp(IP.BC_South_Type,"Fixed") == 0) {
+	IP.BC_South = BC_FIXED;
+      } else if (strcmp(IP.BC_South_Type,"Inflow_Subsonic") == 0) {
+	IP.BC_South = BC_INFLOW_SUBSONIC;
+      } else if (strcmp(IP.BC_South_Type,"Outflow_Subsonic") == 0) {
+	IP.BC_South = BC_OUTFLOW_SUBSONIC;
+      } else if (strcmp(IP.BC_South_Type,"Fixed_Pressure") == 0) {
+	IP.BC_South = BC_FIXED_PRESSURE;
+      } else if (strcmp(IP.BC_South_Type,"Constant_Extrapolation") == 0) {
+	IP.BC_South = BC_CONSTANT_EXTRAPOLATION;
+      } else if (strcmp(IP.BC_South_Type,"Linear_Extrapolation") == 0) {
+	IP.BC_South = BC_LINEAR_EXTRAPOLATION;
+      } else if (strcmp(IP.BC_South_Type,"Characteristic") == 0) {
+	IP.BC_South = BC_CHARACTERISTIC;
+      } else if (strcmp(IP.BC_South_Type,"None") == 0) {
+	IP.BC_South = BC_NONE;
+      } else if (strcmp(IP.BC_South_Type,"Ringleb") == 0) {
+	IP.BC_South = BC_RINGLEB_FLOW;
+      } else {
+	i_command = INVALID_INPUT_VALUE;
+      }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"BC_East") == 0) {
+      i_command = 503;
+      Get_Next_Input_Control_Parameter(IP);
+      strcpy(IP.BC_East_Type,IP.Next_Control_Parameter);
+      if (strcmp(IP.BC_East_Type,"Reflection") == 0) {
+	IP.BC_East = BC_REFLECTION;
+      } else if (strcmp(IP.BC_East_Type,"Burning_Surface") == 0) {
+	IP.BC_East = BC_BURNING_SURFACE;
+      } else if (strcmp(IP.BC_East_Type,"Fixed") == 0) {
+	IP.BC_East = BC_FIXED;
+      } else if (strcmp(IP.BC_East_Type,"Inflow_Subsonic") == 0) {
+	IP.BC_East = BC_INFLOW_SUBSONIC;
+      } else if (strcmp(IP.BC_East_Type,"Outflow_Subsonic") == 0) {
+	IP.BC_East = BC_OUTFLOW_SUBSONIC;
+      } else if (strcmp(IP.BC_East_Type,"Fixed_Pressure") == 0) {
+	IP.BC_East = BC_FIXED_PRESSURE;
+      } else if (strcmp(IP.BC_East_Type,"Constant_Extrapolation") == 0) {
+	IP.BC_East = BC_CONSTANT_EXTRAPOLATION;
+      } else if (strcmp(IP.BC_East_Type,"Linear_Extrapolation") == 0) {
+	IP.BC_East = BC_LINEAR_EXTRAPOLATION;
+      } else if (strcmp(IP.BC_East_Type,"Characteristic") == 0) {
+	IP.BC_East = BC_CHARACTERISTIC;
+      } else if (strcmp(IP.BC_East_Type,"None") == 0) {
+	IP.BC_East = BC_NONE;
+      } else if (strcmp(IP.BC_East_Type,"Ringleb") == 0) {
+	IP.BC_East = BC_RINGLEB_FLOW;
+      } else {
+	i_command = INVALID_INPUT_VALUE;
+      }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"BC_West") == 0) {
+      i_command = 504;
+      Get_Next_Input_Control_Parameter(IP);
+      strcpy(IP.BC_West_Type,IP.Next_Control_Parameter);
+      if (strcmp(IP.BC_West_Type,"Reflection") == 0) {
+	IP.BC_West = BC_REFLECTION;
+      } else if (strcmp(IP.BC_West_Type,"Burning_Surface") == 0) {
+	IP.BC_West = BC_BURNING_SURFACE;
+      } else if (strcmp(IP.BC_West_Type,"Fixed") == 0) {
+	IP.BC_West = BC_FIXED;
+      } else if (strcmp(IP.BC_West_Type,"Inflow_Subsonic") == 0) {
+	IP.BC_West = BC_INFLOW_SUBSONIC;
+      } else if (strcmp(IP.BC_West_Type,"Outflow_Subsonic") == 0) {
+	IP.BC_West = BC_OUTFLOW_SUBSONIC;
+      } else if (strcmp(IP.BC_West_Type,"Fixed_Pressure") == 0) {
+	IP.BC_West = BC_FIXED_PRESSURE;
+      } else if (strcmp(IP.BC_West_Type,"Constant_Extrapolation") == 0) {
+	IP.BC_West = BC_CONSTANT_EXTRAPOLATION;
+      } else if (strcmp(IP.BC_West_Type,"Linear_Extrapolation") == 0) {
+	IP.BC_West = BC_LINEAR_EXTRAPOLATION;
+      } else if (strcmp(IP.BC_West_Type,"Characteristic") == 0) {
+	IP.BC_West = BC_CHARACTERISTIC;
+      } else if (strcmp(IP.BC_West_Type,"None") == 0) {
+	IP.BC_West = BC_NONE;
+      } else if (strcmp(IP.BC_West_Type,"Ringleb") == 0) {
+	IP.BC_West = BC_RINGLEB_FLOW;
+      } else {
+	i_command = INVALID_INPUT_VALUE;
+      }
 
     } else if (strcmp(IP.Next_Control_Parameter, "Execute") == 0) {
       i_command = EXECUTE_CODE;
@@ -2027,9 +2884,36 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter, "Write_Output_Cells") == 0) {
        i_command = WRITE_OUTPUT_CELLS_CODE;
 
+    } else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Nodes") == 0) {
+      i_command = WRITE_OUTPUT_NODES_CODE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Gradients") == 0) {
+      i_command = WRITE_OUTPUT_GRADIENTS_CODE;
+
     } else if (strcmp(IP.Next_Control_Parameter, "Write_Output_Quasi3D") == 0) {
        i_command = WRITE_OUTPUT_QUASI3D_CODE;
     
+    } else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Elements") == 0) {
+      i_command = WRITE_OUTPUT_ELEMENTS_CODE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Cell_Status") == 0) {
+      i_command = WRITE_OUTPUT_CELL_STATUS_CODE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Interface_Component_List") == 0) {
+      i_command = WRITE_OUTPUT_INTERFACE_COMPONENT_LIST_CODE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Interface_Union_List") == 0) {
+      i_command = WRITE_OUTPUT_INTERFACE_UNION_LIST_CODE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Level_Set") == 0) {
+      i_command = WRITE_OUTPUT_LEVEL_SET_CODE;
+    
+    } else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Level_Set_Cells") == 0) {
+      i_command = WRITE_OUTPUT_LEVEL_SET_CELLS_CODE;
+    
+    } else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Level_Set_Interface_List") == 0) {
+      i_command = WRITE_OUTPUT_LEVEL_SET_INTERFACE_LIST_CODE;
+
     } else if (strcmp(IP.Next_Control_Parameter, "Write_Restart") == 0) {
        i_command = WRITE_RESTART_CODE;
 
@@ -2045,14 +2929,30 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter, "Write_Output_Mesh_Cells") == 0) {
        i_command = WRITE_OUTPUT_GRID_CELLS_CODE;
 
-    } else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Black_Enclosure") == 0) {
-       i_command = WRITE_OUTPUT_BLACK_ENCLOSURE_CODE;
+    } else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Ringleb") == 0) {
+       i_command = WRITE_OUTPUT_RINGLEB_CODE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Aerodynamic_Coefficients") == 0) {
+       i_command = WRITE_OUTPUT_AERODYNAMIC_COEFFICIENTS_CODE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Refine_Grid") == 0) {
        i_command = REFINE_GRID_CODE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Morton_Ordering") == 0) {
        i_command = MORTON_ORDERING_CODE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Bounding_Box_Refine_Grid") == 0) {
+       IP.Number_of_Bounding_Box_Mesh_Refinements = 1;
+       i_command = BOUNDING_BOX_REFINE_GRID_CODE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Determine_Maximum_Surface_Pressure") == 0) {
+       i_command = DETERMINE_MAXIMUM_SURFACE_PRESSURE_CODE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Determine_Mach_Stem_Height") == 0) {
+       i_command = DETERMINE_MACH_STEM_HEIGHT_CODE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Write_Output_Wedge_Solution_Distribution") == 0) {
+       i_command = WRITE_OUTPUT_WEDGE_SOLUTION_DISTRIBUTION_CODE;
 
     } else if (IP.Next_Control_Parameter[0] == '#') {
        i_command = COMMENT_CODE;
@@ -2062,7 +2962,29 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
 
     } /* endif */
 
-    /* Return the parser command type indicator. */
+	if (i_command == INVALID_INPUT_CODE) {
+		// that is, we have an input line which:
+		//  - is not a comment (that's COMMENT_CODE), and,
+		//  - is not a valid code with an invalid value (that's INVALID_INPUT_VALUE), 
+		// and so is an unknown option. Maybe it's an NKS option:
+		strcpy(buffer, IP.Next_Control_Parameter);
+		Get_Next_Input_Control_Parameter(IP);
+		i_command = IP.NKS_IP.Parse_Next_Input_Control_Parameter(buffer, IP.Next_Control_Parameter);
+
+		// If it's still unknown then ignore it. 
+		// This could be a bad idea if it was an unknown command 
+		// as opposed to an unknown code.
+		if (i_command == INVALID_INPUT_CODE) {
+			cout << "\n***\n\nWarning: input file line " << IP.Line_Number << ": ";
+			cout << "ignoring unknown input code:\n";
+			cout << "code: " << buffer;
+			cout << "\nvalue: " << IP.Next_Control_Parameter;
+			cout << "\n\n***\n";
+		}
+		i_command = COMMENT_CODE; // sure why not
+	}
+
+	if (!IP.Input_File.good()) { i_command = INVALID_INPUT_VALUE; }
 
     return (i_command);
 
@@ -2126,10 +3048,11 @@ int Process_Input_Control_Parameter_File(Rte2D_Input_Parameters &Input_Parameter
 
     /* Perform consistency checks on Input_Parameters */
 
-    if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
+    if (!error_flag &&
+	Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
       error_flag = Check_Input_Parameters<Rte2D_Input_Parameters>(Input_Parameters);
       if (error_flag) {
-	cout << "\n AdvectDiffuse2D ERROR: Input Parameters consistency check failure\n";
+	cout << "\n Rte2D ERROR: Input Parameters consistency check failure\n";
 	return (error_flag);
       }
     }
@@ -2140,3 +3063,4 @@ int Process_Input_Control_Parameter_File(Rte2D_Input_Parameters &Input_Parameter
     return (error_flag);
 
 }
+

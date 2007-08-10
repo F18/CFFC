@@ -373,7 +373,7 @@ void Rte2D_State :: SetIntensity(double val)
   for ( int i=0; i<Ntot; i++ ) I[i] = val;
 }
 
-void Rte2D_State :: SetAbsorbsion(double val)
+void Rte2D_State :: SetAbsorption(double val)
 {
   for ( int i=0; i<Nband; i++ ) kappa[i] = val;
 }

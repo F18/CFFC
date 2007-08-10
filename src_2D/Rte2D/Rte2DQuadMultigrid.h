@@ -31,7 +31,7 @@
 /* Include FAS Multigrid header file */
 
 #ifndef _FASMULTIGRID2D_INCLUDED
-#include "../FASMultigrid2D.h"
+#include "../FASMultigrid2D/FASMultigrid2D.h"
 #endif // _FASMULTIGRID2D_INCLUDED
 
 

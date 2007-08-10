@@ -21,7 +21,7 @@
 class Rte2D_Quad_Block;
 
 
-/* Include 2D Euler state, 2D cell, 2D quadrilateral multiblock 
+/* Include 2D Rte state, 2D cell, 2D quadrilateral multiblock 
    grid, quadtree, AMR, and 2D Rte input 
    header files. */
 
@@ -37,399 +37,459 @@ class Rte2D_Quad_Block;
 #include "../Grid/Grid2DQuad.h"
 #endif // _GRID2D_QUAD_BLOCK_INCLUDED
 
+#ifndef _NASA_ROTOR37_INCLUDED
+#include "../Grid/NASARotor37.h"
+#endif // _NASA_ROTOR37_INCLUDED
+
+#ifndef _NASA_ROTOR67_INCLUDED
+#include "../Grid/NASARotor67.h"
+#endif // _NASA_ROTOR67_INCLUDED
+
 #ifndef _RTE2D_INPUT_INCLUDED
 #include "Rte2DInput.h"
 #endif // _RTE2D_INPUT_INCLUDED
 
-/* Also include multigrid and linear systems header files. */
-
-#ifndef _FASMULTIGRID2D_INCLUDED
-#include "../FASMultigrid2D/FASMultigrid2D.h"
-#endif // _FASMULTIGRID2D_INCLUDED
+/* Include the linear systems header file. */
 
 #ifndef _LINEARSYSTEMS_INCLUDED
 #include "../Math/LinearSystems.h"
 #endif // _LINEARSYSTEMS_INCLUDED
+
+/* Include ICEMCFD input header file. */
+
+#ifndef _ICEMCFD_INCLUDED
+#include "../ICEM/ICEMCFD.h"
+#endif // _ICEMCFD_INCLUDED
 
 
 /* Define the structures and classes. */
 
 #define	NUMBER_OF_RESIDUAL_VECTORS_RTE2D    3
 
-/********************************************************
- * Class: Rte2D_Quad_Block                              *
- *                                                      *
- * Member functions                                     *
- *       U      -- Return variable solution             *
- *                 for the block (cell average).        *
- *    Grid      -- Return the solution block            *
- *                 quadrilateral grid or mesh.          *
- *      dt      -- Return local time step for the       *
- *                 solution block.                      *
- *    dUdt      -- Return the solution block residuals. *
- *    dUdx      -- Return the unlimited                 *
- *                 variable solution gradients          *
- *                 (x-direction) for the block.         *
- *    dUdy      -- Return the unlimited                 *
- *                 variable solution gradients          *
- *                 (y-direction) for the block.         *
- *     phi      -- Return the solution slope limiters.  *
- *      Uo      -- Return initial solution state.       *
- *    FluxN     -- Return array of north boundary       *
- *                 solution fluxes.                     *
- *    FluxS     -- Return array of south boundary       *
- *                 solution fluxes.                     *
- *    FluxE     -- Return array of east boundary        *
- *                 solution fluxes.                     *
- *    FluxW     -- Return array of west boundary        *
- *                 solution fluxes.                     *
- *     NCi      -- Return number of cells in            *
- *                 the i-direction (zeta-direction).    *
- *     ICl      -- Return lower index for cells in      *
- *                 the i-direction (zeta-direction).    *
- *     ICu      -- Return upper index for cells in      *
- *                 the i-direction (zeta-direction).    *
- *     NCj      -- Return number of cells in            *
- *                 the j-direction (eta-direction).     *
- *     JCl      -- Return lower index for cells in      *
- *                 the j-direction (eta-direction).     *
- *     JCu      -- Return upper index for cells in      *
- *                 the j-direction (eta-direction).     *
- *     Nghost   -- Return number of ghost (halo or      *
- *                 overlap) cells.                      *
- * Axisymmetric -- Return axisymmetric flow             *
- *                 indicator (=1 for axisymmetric flow, *
- *                            =0 for planar flow).      *
- * Freeze_Limiter -- Return limiter freezing indicator  *
- *                 (=1 for limiter freezing on,         *
- *                 (=0 for limiter freezing off).       * 
- *     UoN      -- Return array of reference states for *
- *                 the application of boundary          *
- *                 conditions at the north boundary of  *
- *                 the solution block.                  *
- *     UoS      -- Return array of reference states for *
- *                 the application of boundary          *
- *                 conditions at the south boundary of  *
- *                 the solution block.                  *
- *     UoE      -- Return array of reference states for *
- *                 the application of boundary          *
- *                 conditions at the east boundary of   *
- *                 the solution block.                  *
- *     UoW      -- Return array of reference states for *
- *                 the application of boundary          *
- *                 conditions at the west boundary of   *
- *                 the solution block.                  *
- *   allocate   -- Allocate memory for structured       *
- *                 quadrilateral solution block.        *
- *   deallocate -- Deallocate memory for structured     *
- *                 quadrilateral solution block.        *
- *      Un      -- Return conserved variable solution   *
- *                 at the specified node.               *
- *    UnNW      -- Return conserved variable solution   *
- *                 at the north-west node.              *
- *    UnNE      -- Return conserved variable solution   *
- *                 at the north-east node.              *
- *    UnSW      -- Return conserved variable solution   *
- *                 at the south-west node.              *
- *    UnSE      -- Return conserved variable solution   *
- *                 at the south-east node.              *
- * evaluate_limiters -- Set flag to evaluate limiters.  *
- * freeze_limiters -- Set flag to freeze limiters.      *
- * Member functions required for message passing.       *
- *    NumVar    -- Returns number of solution variables *
- *                 in primitive and conserved solution  *
- *                 state vectors.                       *
- * LoadSendBuffer -- Loads send buffer.                 *
- * LoadSendBuffer_F2C -- Loads send buffer for fine to  *
- *                        coarse block messages.        *
- * UnloadReceiveBuffer -- Unloads receive buffer.       *
- * UnloadReceiveBuffer_F2C -- Unloads receive buffer    *
- *                            for fine to coarse block  *
- *                            messages.                 *
- * SubcellReconstruction -- Performs subcell solution   *
- *                          reconstruction used in      *
- *                          adaptive mesh refinement.   *
- * LoadSendBuffer_Flux_F2C -- Loads send buffer for     *
- *                            sending conservative flux *
- *                            corrections from fine to  *
- *                            coarse solution blocks.   *
- * UnLoadSendBuffer_Flux_F2C -- Loads send buffer for   *
- *                            sending conservative flux *
- *                            corrections from fine to  *
- *                            coarse solution blocks.   *
- *                                                      *
- * Member operators                                     *
- *      S -- a 2D Rte solution                          *
- *                                                      *
- * S = S;                                               *
- * cout << S; (output function)                         *
- * cin  >> S; (input function)                          *
- *                                                      *
- ********************************************************/
+/*!
+ * Class: Rte2D_Quad_Block
+ *
+ * @brief Class definition of the 2D Rte solution blocks.
+ *
+ * \verbatim
+ * Member functions
+ *       U      -- Return conserved variable solution for the block
+ *                 (cell average).
+ *    Grid      -- Return the solution block quadrilateral grid or mesh.
+ *      dt      -- Return local time step for the solution block.
+ *    dUdt      -- Return the solution block residuals.
+ *    dUdx      -- Return the unlimited conservative variable solution
+ *                 gradients (x-direction) for the block.
+ *    dUdy      -- Return the unlimited conservative variable solution
+ *                 gradients (y-direction) for the block.
+ *     phi      -- Return the solution slope limiters.
+ *      Uo      -- Return initial solution state.
+ *    FluxN     -- Return array of north boundary solution fluxes.
+ *    FluxS     -- Return array of south boundary solution fluxes.
+ *    FluxE     -- Return array of east boundary solution fluxes.
+ *    FluxW     -- Return array of west boundary solution fluxes.
+ *     NCi      -- Return number of cells in the i-direction 
+ *                 (zeta-direction).
+ *     ICl      -- Return lower index for cells in the i-direction 
+ *                 (zeta-direction).
+ *     ICu      -- Return upper index for cells in the i-direction 
+ *                 (zeta-direction).
+ *     NCj      -- Return number of cells in the j-direction 
+ *                 (eta-direction).
+ *     JCl      -- Return lower index for cells in the j-direction 
+ *                 (eta-direction).
+ *     JCu      -- Return upper index for cells in the j-direction 
+ *                 (eta-direction).
+ *  Nghost      -- Number of ghost cells.
+ * Axisymmetric -- Return axisymmetric flow indicator (= 1 for 
+ *                 axisymmetric flow, = 0 for planar flow).
+ * Freeze_Limiter -- Return limiter freezing indicator
+ *                   (=1 for limiter freezing on,
+ *                   (=0 for limiter freezing off).
+ *     UoN      -- Return array of reference states for the
+ *                 application of boundary conditions at the north
+ *                 boundary of the solution block.
+ *     UoS      -- Return array of reference states for the
+ *                 application of boundary conditions at the south
+ *                 boundary of the solution block.
+ *     UoE      -- Return array of reference states for the
+ *                 application of boundary conditions at the east
+ *                 boundary of the solution block.
+ *     UoW      -- Return array of reference states for the
+ *                 application of boundary conditions at the west
+ *                 boundary of the solution block.
+ *   allocate   -- Allocate memory for structured quadrilateral
+ *                 solution block.
+ *   deallocate -- Deallocate memory for structured quadrilateral
+ *                 solution block.
+ *      Un      -- Return conserved variable solution at the
+ *                 specified node.
+ *    WnNW      -- Return primitive variable solution at the
+ *                 north-west node.
+ *    WnNE      -- Return primitive variable solution at the
+ *                 north-east node.
+ *    WnSW      -- Return primitive variable solution at the
+ *                 south-west node.
+ *    WnSE      -- Return primitive variable solution at the
+ *                 south-east node.
+ *    UnNW      -- Return conserved variable solution at the
+ *                 north-west node.
+ *    UnNE      -- Return conserved variable solution at the
+ *                 north-east node.
+ *    UnSW      -- Return conserved variable solution at the
+ *                 south-west node.
+ *    UnSE      -- Return conserved variable solution at the
+ *                 south-east node.
+ * evaluate_limiters -- Set flag to evaluate limiters.
+ * freeze_limiters -- Set flag to freeze limiters.
+ * Member functions required for message passing.
+ *    NumVar    -- Returns number of solution variables in primitive
+ *                 and conserved solution state vectors.
+ * LoadSendBuffer -- Loads send buffer.
+ * LoadSendBuffer_F2C -- Loads send buffer for fine to coarse block 
+ *                       messages.
+ * UnloadReceiveBuffer -- Unloads receive buffer.
+ * UnloadReceiveBuffer_F2C -- Unloads receive buffer for fine to
+ *                            coarse block messages.
+ * SubcellReconstruction -- Performs subcell solution reconstruction
+ *                          used in adaptive mesh refinement.
+ * QuadraticSubcellReconstruction -- Performs quadratic subcell solution
+ *                                   reconstruction used in adaptive
+ *                                   mesh refinement.
+ * LoadSendBuffer_Flux_F2C -- Loads send buffer for sending
+ *                            conservative flux corrections from fine
+ *                            to coarse solution blocks.
+ * UnLoadSendBuffer_Flux_F2C -- Loads send buffer for sending
+ *                              conservative flux corrections from
+ *                              fine to coarse solution blocks.
+ *
+ * Member operators
+ *      S -- a 2D NavierStokes solution
+ *
+ * S = S;
+ * cout << S; (output function)
+ * cin  >> S; (input function)
+ * \endverbatim
+ */
+
 class Rte2D_Quad_Block{
-  private:
-  public:
-    Rte2D_State           **U;  // Conserved solution state.
-    Grid2D_Quad_Block    Grid;  // 2D quadrilateral grid geometry.
-    double               **dt;  // Local time step.
-    Rte2D_State       ***dUdt;  // Solution residual.
-    Rte2D_State        **dUdx;  // Unlimited solution gradient
-                                // (x-direction).
-    Rte2D_State        **dUdy;  // Unlimited solution gradient
-                                // (y-direction).
-    Rte2D_State         **phi;  // Solution slope limiter.
-    Rte2D_State      **dUdpsi;  // Unlimited solution gradient
-                                // (azimuthal-direction).
-    Rte2D_State     **phi_psi;  // Solution slope limiter 
-                                // (azimuthal-direction).
-    Rte2D_State          **Uo;  // Initial solution state.
-    Rte2D_State *FluxN,*FluxS,  // Boundary solution fluxes.
-                *FluxE,*FluxW;
-    int           NCi,ICl,ICu;  // i-direction cell counters.
-    int           NCj,JCl,JCu;  // j-direction cell counters.
-    int                Nghost;  // Number of ghost cells.
-    int          Axisymmetric;  // Axisymmetric flow indicator.
-    int        Freeze_Limiter;  // Limiter freezing indicator.
-    Rte2D_State     *UoN,*UoS,  // Boundary condition reference states for
-                    *UoE,*UoW;  // north, south, east, & west boundaries.
-                                // Made public so can access them.
+private:
+public:
+  //@{ @name Solution state arrays:
+  Rte2D_State             **U; //!< Conserved solution state.
+  //@}
 
-    // Grid scaling parameter (i.e. scale a 2D grid to a quasi-3D grid)
-    double               **Sp;  // scale cell area to volume
-    double              **SpN;  // scale north face length to area
-    double              **SpS;  // scale south face length to area
-    double              **SpE;  // scale east face length to area
-    double              **SpW;  // scale west face length to area
-    
+  //@{ @name Grid block information:
+  int                      NCi, //!< Total number of i-direction cells.
+                           ICl, //!< First i-direction non-ghost cell counter.
+                           ICu; //!< Final i-direction non-ghost cell counter.
+  int                      NCj, //!< Total number of j-direction cells.
+                           JCl, //!< First j-direction non-ghost cell counter.
+                           JCu; //!< Final j-direction non-ghost cell counter.
+  int                   Nghost; //!< Number of ghost cells.
+  Grid2D_Quad_Block       Grid; //!< 2D quadrilateral grid geometry.
+  //@}
 
-    //BC & Input Param
-    double      NorthWallTemp;  // North Wall Temperature
-    double      SouthWallTemp;  // South Wall Temperature
-    double       EastWallTemp;  // East Wall Temperature  
-    double       WestWallTemp;  // West Wall Temperature
-    double     NorthWallEmiss;  // North Wall emissivity
-    double     SouthWallEmiss;  // South Wall emissivity
-    double      EastWallEmiss;  // East Wall emissivity  
-    double      WestWallEmiss;  // West Wall emissivity
-		      
-    /* Creation, copy, and assignment constructors. */
-    Rte2D_Quad_Block(void) {
+  //@{ @name Residual and time-stepping arrays:
+  double                  **dt; //!< Local time step.
+  Rte2D_State         ***dUdt; //!< Solution residual.
+  Rte2D_State            **Uo; //!< Initial solution state.
+  static int residual_variable; //!< Static integer that indicates which variable is used for residual calculations.  
+  static int Number_of_Residual_Norms; //!< How many Residual norms to plot?
+  //@}
+
+  //@{ @name Solution gradient arrays:
+  Rte2D_State           **dUdx; //!< Unlimited solution gradient (x-direction).
+  Rte2D_State           **dUdy; //!< Unlimited solution gradient (y-direction).
+  Rte2D_State            **phi; //!< Solution slope limiter.
+  Rte2D_State        **dUdpsi;  // Unlimited solution gradient
+                                // (azimuthal-direction).
+  Rte2D_State       **phi_psi;  // Solution slope limiter 
+                                // (azimuthal-direction).
+  //@}
+
+  //@{ @name Boundary solution flux arrays:
+  Rte2D_State           *FluxN, //!< North boundary solution flux.
+                        *FluxS, //!< South boundary solution flux.
+                        *FluxE, //!< East boundary solution flux.
+                        *FluxW; //!< West boundary solution flux.
+  //@}
+
+  //@{ @name Problem indicator flags:
+  int             Axisymmetric; //!< Axisymmetric flow indicator.
+  int           Freeze_Limiter; //!< Limiter freezing indicator.
+  static int         Flow_Type; //!< Flow type flag (always inviscid).
+  static char*   solutionTitle; //!< Solution title info
+  //@}
+
+  //@{ @name Boundary condtion reference states:
+  Rte2D_State             *UoN, //!< Boundary condition reference states for north boundary.
+                          *UoS, //!< Boundary condition reference states for south boundary.
+                          *UoE, //!< Boundary condition reference states for east boundary.
+                          *UoW; //!< Boundary condition reference states for west boundary.
+  //@}
+  
+  //@{ @name Grid scaling parameter (i.e. scale a 2D grid to a quasi-3D grid):
+  double               **Sp;  // scale cell area to volume
+  double              **SpN;  // scale north face length to area
+  double              **SpS;  // scale south face length to area
+  double              **SpE;  // scale east face length to area
+  double              **SpW;  // scale west face length to area
+  //@}
+  
+
+  //@{ @name Boundary conditions:
+  double      NorthWallTemp;  // North Wall Temperature
+  double      SouthWallTemp;  // South Wall Temperature
+  double       EastWallTemp;  // East Wall Temperature  
+  double       WestWallTemp;  // West Wall Temperature
+  double     NorthWallEmiss;  // North Wall emissivity
+  double     SouthWallEmiss;  // South Wall emissivity
+  double      EastWallEmiss;  // East Wall emissivity  
+  double      WestWallEmiss;  // West Wall emissivity
+  //@}
+
+
+  //@{ @name Creation, copy, and assignment constructors.
+  //! Creation constructor.
+  Rte2D_Quad_Block(void) {
       NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
-       U = NULL; dt = NULL; dUdt = NULL; 
-       dUdx = NULL; dUdy = NULL; phi = NULL; Uo = NULL;
-       dUdpsi = NULL; phi_psi = NULL;
-       FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
-       UoN = NULL; UoS = NULL; UoE = NULL; UoW = NULL;
-       Axisymmetric = 0; Freeze_Limiter = OFF;
-       Sp = NULL; SpN = NULL; SpS = NULL; SpE = NULL; SpW = NULL; 
-       NorthWallTemp  = ZERO;   SouthWallTemp  = ZERO;  
-       EastWallTemp   = ZERO;   WestWallTemp   = ZERO;  
-       NorthWallEmiss = ZERO;   SouthWallEmiss = ZERO;  
-       EastWallEmiss  = ZERO;   WestWallEmiss  = ZERO;
-    }
+      U = NULL; dt = NULL; dUdt = NULL; 
+      dUdx = NULL; dUdy = NULL; phi = NULL; Uo = NULL;
+      dUdpsi = NULL; phi_psi = NULL;
+      FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
+      UoN = NULL; UoS = NULL; UoE = NULL; UoW = NULL;
+      Axisymmetric = 0; Freeze_Limiter = OFF;
+      Sp = NULL; SpN = NULL; SpS = NULL; SpE = NULL; SpW = NULL; 
+      NorthWallTemp  = ZERO;   SouthWallTemp  = ZERO;  
+      EastWallTemp   = ZERO;   WestWallTemp   = ZERO;  
+      NorthWallEmiss = ZERO;   SouthWallEmiss = ZERO;  
+      EastWallEmiss  = ZERO;   WestWallEmiss  = ZERO;
+  }
 
-    Rte2D_Quad_Block(const Rte2D_Quad_Block &Soln) {
-       NCi = Soln.NCi; ICl = Soln.ICl; ICu = Soln.ICu; 
-       NCj = Soln.NCj; JCl = Soln.JCl; JCu = Soln.JCu; Nghost = Soln.Nghost;
-       Grid = Soln.Grid; U = Soln.U; dt = Soln.dt; dUdt = Soln.dUdt; 
-       dUdx = Soln.dUdx; dUdy = Soln.dUdy; phi = Soln.phi; Uo = Soln.Uo;
-       dUdpsi = Soln.dUdpsi; phi_psi = Soln.phi_psi;
-       FluxN = Soln.FluxN; FluxS = Soln.FluxS; FluxE = Soln.FluxE; FluxW = Soln.FluxW;
-       UoN = Soln.UoN; UoS = Soln.UoS; UoE = Soln.UoE; UoW = Soln.UoW;
-       Axisymmetric = 0; Freeze_Limiter = Soln.Freeze_Limiter;
-       Sp = Soln.Sp; SpN = Soln.SpN; SpS = Soln.SpS; SpE = Soln.SpE; SpW = Soln.SpW; 
-       NorthWallTemp  = Soln.NorthWallTemp;    SouthWallTemp  = Soln.SouthWallTemp;  
-       EastWallTemp   = Soln.EastWallTemp;     WestWallTemp   = Soln.WestWallTemp;  
-       NorthWallEmiss = Soln.NorthWallEmiss;   SouthWallEmiss = Soln.SouthWallEmiss;  
-       EastWallEmiss  = Soln.EastWallEmiss;    WestWallEmiss  = Soln.WestWallEmiss;
-    }
+  //! Copy constructor.
+  Rte2D_Quad_Block(const Rte2D_Quad_Block &Soln) {
+    NCi = Soln.NCi; ICl = Soln.ICl; ICu = Soln.ICu; 
+    NCj = Soln.NCj; JCl = Soln.JCl; JCu = Soln.JCu; Nghost = Soln.Nghost;
+    Grid = Soln.Grid; U = Soln.U; dt = Soln.dt; dUdt = Soln.dUdt; 
+    dUdx = Soln.dUdx; dUdy = Soln.dUdy; phi = Soln.phi; Uo = Soln.Uo;
+    dUdpsi = Soln.dUdpsi; phi_psi = Soln.phi_psi;
+    FluxN = Soln.FluxN; FluxS = Soln.FluxS; FluxE = Soln.FluxE; FluxW = Soln.FluxW;
+    UoN = Soln.UoN; UoS = Soln.UoS; UoE = Soln.UoE; UoW = Soln.UoW;
+    Axisymmetric = 0; Freeze_Limiter = Soln.Freeze_Limiter;
+    Sp = Soln.Sp; SpN = Soln.SpN; SpS = Soln.SpS; SpE = Soln.SpE; SpW = Soln.SpW; 
+    NorthWallTemp  = Soln.NorthWallTemp;    SouthWallTemp  = Soln.SouthWallTemp;  
+    EastWallTemp   = Soln.EastWallTemp;     WestWallTemp   = Soln.WestWallTemp;  
+    NorthWallEmiss = Soln.NorthWallEmiss;   SouthWallEmiss = Soln.SouthWallEmiss;  
+    EastWallEmiss  = Soln.EastWallEmiss;    WestWallEmiss  = Soln.WestWallEmiss;
+  }
 
-    /* Destructor. */
-    // ~Rte2D_Quad_Block(void);
-    // Use automatically generated destructor.
+  /* Destructor. */
+  // ~Rte2D_Quad_Block(void);
+  // Use automatically generated destructor.
+  //@}
 
-    /* Assignment operator. */
-    // Rte2D_Quad_Block operator = (const Rte2D_Quad_Block &Soln);
-    // Use automatically generated assignment operator.
+  /* Assignment operator. */
+  // Rte2D_Quad_Block operator = (const Rte2D_Quad_Block &Soln);
+  // Use automatically generated assignment operator.
 
-    /* Allocate memory for structured quadrilateral solution block. */
-    void allocate(const int Ni, const int Nj, const int Ng);
+  //@{ @name Allocate and deallocate functions.
+  //! Allocate memory for structured quadrilateral solution block.
+  void allocate(const int Ni, const int Nj, const int Ng);
 
-    /* Deallocate memory for structured quadrilateral solution block. */
-    void deallocate(void);
+  //! Deallocate memory for structured quadrilateral solution block.
+  void deallocate(void);
+  //@}
 
-    /* Retern conserverd solution state at specified node. */
-    Rte2D_State Un(const int ii, const int jj);
+  //@{ @name Bilinear interplation (Zingg & Yarrow).
+  //! Return conserverd solution state at specified node.
+  Rte2D_State Un(const int &ii, const int &jj);
 
-    /* Return conserved solution state at cell nodes. */
-    Rte2D_State UnNW(const int ii, const int jj);
-    Rte2D_State UnNE(const int ii, const int jj);
-    Rte2D_State UnSE(const int ii, const int jj);
-    Rte2D_State UnSW(const int ii, const int jj);
+  Rte2D_State UnNW(const int &ii, const int &jj); //!< Return conserved solution state at cell NW node.
+  Rte2D_State UnNE(const int &ii, const int &jj); //!< Return conserved solution state at cell NE node.
+  Rte2D_State UnSE(const int &ii, const int &jj); //!< Return conserved solution state at cell SE node.
+  Rte2D_State UnSW(const int &ii, const int &jj); //!< Return conserved solution state at cell SW node.
+  //@}
 
-    /* Set flags for limiter evaluation. */
-    void evaluate_limiters(void);
-    void freeze_limiters(void);
+  //@{ @name Member functions for limiter freezing.
+  void evaluate_limiters(void); //!< Set flags for limiter evaluation.
+  void freeze_limiters(void);   //!< Set flags for limiter freezing.
+  //@}
 
-    /* Input-output operators. */
-    friend ostream &operator << (ostream &out_file,
-				 const Rte2D_Quad_Block &Soln);
-    friend istream &operator >> (istream &in_file,
-				 Rte2D_Quad_Block &Soln);
+  //@{ @name Input-output operators.
+  friend ostream &operator << (ostream &out_file, const Rte2D_Quad_Block &Soln);
+  friend istream &operator >> (istream &in_file, Rte2D_Quad_Block &Soln);
+  //@}
+
+  //@{ @name Member functions required for message passing.
+  //! Number of solution state variables.
+  int NumVar(void);
+  //! Load send message passing buffer.
+  int LoadSendBuffer(double *buffer,
+		     int &buffer_count,
+		     const int buffer_size,
+		     const int i_min, 
+		     const int i_max,
+		     const int i_inc,
+		     const int j_min, 
+		     const int j_max,
+		     const int j_inc);
+  //! Load F2C send message passing buffer.
+  int LoadSendBuffer_F2C(double *buffer,
+			 int &buffer_count,
+			 const int buffer_size,
+			 const int i_min, 
+			 const int i_max,
+			 const int i_inc,
+			 const int j_min, 
+			 const int j_max,
+			 const int j_inc);
+  //! Load C2F send message passing buffer.
+  int LoadSendBuffer_C2F(double *buffer,
+			 int &buffer_count,
+			 const int buffer_size,
+			 const int i_min, 
+			 const int i_max,
+			 const int i_inc,
+			 const int j_min, 
+			 const int j_max,
+			 const int j_inc,
+			 const int face,
+			 const int sector);
+  //! Unload receive message passing buffer.
+  int UnloadReceiveBuffer(double *buffer,
+			  int &buffer_count,
+			  const int buffer_size,
+			  const int i_min, 
+			  const int i_max,
+			  const int i_inc,
+			  const int j_min, 
+			  const int j_max,
+			  const int j_inc);
+  //! Unload F2C receive message passing buffer.
+  int UnloadReceiveBuffer_F2C(double *buffer,
+			      int &buffer_count,
+			      const int buffer_size,
+			      const int i_min, 
+			      const int i_max,
+			      const int i_inc,
+			      const int j_min, 
+			      const int j_max,
+			      const int j_inc);
+  //! Unload C2F receive message passing buffer.
+  int UnloadReceiveBuffer_C2F(double *buffer,
+			      int &buffer_count,
+			      const int buffer_size,
+			      const int i_min, 
+			      const int i_max,
+			      const int i_inc,
+			      const int j_min, 
+			      const int j_max,
+			      const int j_inc);
+  //! Subcell solution reconstruction within given computational cell.
+  void SubcellReconstruction(const int i,
+			     const int j,
+			     const int Limiter);
+  //! Load F2C conservative flux message passing buffer.
+  int LoadSendBuffer_Flux_F2C(double *buffer,
+			      int &buffer_count,
+			      const int buffer_size,
+			      const int i_min, 
+			      const int i_max,
+			      const int i_inc,
+			      const int j_min, 
+			      const int j_max,
+			      const int j_inc);
+  //! Unload F2C conservative flux message passing buffer.
+  int UnloadReceiveBuffer_Flux_F2C(double *buffer,
+				   int &buffer_count,
+				   const int buffer_size,
+				   const int i_min, 
+				   const int i_max,
+				   const int i_inc,
+				   const int j_min, 
+				   const int j_max,
+				   const int j_inc);
 
 
-    /* MEMBER FUNCTIONS REQUIRED FOR MESSAGE PASSING. */
-    /* Number of solution state variables. */
-    int NumVar(void);
-    /* Load send message passing buffer. */
-    int LoadSendBuffer(double *buffer,
-                       int &buffer_count,
-                       const int buffer_size,
-                       const int i_min, 
-                       const int i_max,
-                       const int i_inc,
-                       const int j_min, 
-                       const int j_max,
-                       const int j_inc);
-    int LoadSendBuffer_F2C(double *buffer,
-                           int &buffer_count,
-                           const int buffer_size,
-                           const int i_min, 
-                           const int i_max,
-                           const int i_inc,
-                           const int j_min, 
-                           const int j_max,
-                           const int j_inc);
-    int LoadSendBuffer_C2F(double *buffer,
-                           int &buffer_count,
-                           const int buffer_size,
-                           const int i_min, 
-                           const int i_max,
-                           const int i_inc,
-                           const int j_min, 
-                           const int j_max,
-                           const int j_inc);
-    /* Unload receive message passing buffer. */
-    int UnloadReceiveBuffer(double *buffer,
-                            int &buffer_count,
-                            const int buffer_size,
-                            const int i_min, 
-                            const int i_max,
-                            const int i_inc,
-                            const int j_min, 
-                            const int j_max,
-                            const int j_inc);
-    int UnloadReceiveBuffer_F2C(double *buffer,
-                                int &buffer_count,
-                                const int buffer_size,
-                                const int i_min, 
-                                const int i_max,
-                                const int i_inc,
-                                const int j_min, 
-                                const int j_max,
-                                const int j_inc);
-    int UnloadReceiveBuffer_C2F(double *buffer,
-                                int &buffer_count,
-                                const int buffer_size,
-                                const int i_min, 
-                                const int i_max,
-                                const int i_inc,
-                                const int j_min, 
-                                const int j_max,
-                                const int j_inc);
-    /* Subcell solution reconstruction within given computational cell. */
-    void SubcellReconstruction(const int i,
-                               const int j,
-                               const int Limiter);
-    /* Load and unload conservative flux message passing buffer. */
-    int LoadSendBuffer_Flux_F2C(double *buffer,
-                                int &buffer_count,
-                                const int buffer_size,
-                                const int i_min, 
-                                const int i_max,
-                                const int i_inc,
-                                const int j_min, 
-                                const int j_max,
-                                const int j_inc);
-    int UnloadReceiveBuffer_Flux_F2C(double *buffer,
-                                     int &buffer_count,
-                                     const int buffer_size,
-                                     const int i_min, 
-                                     const int i_max,
-                                     const int i_inc,
-                                     const int j_min, 
-                                     const int j_max,
-                                     const int j_inc);
-    /* Load and unload conservative boundary state message passing buffer. */
-    int LoadSendBuffer_BC(double *buffer,
-                       int &buffer_count,
-                       const int buffer_size,
-                       const int i_min, 
-                       const int i_max,
-                       const int i_inc,
-                       const int j_min, 
-                       const int j_max,
-                       const int j_inc);
-    int LoadSendBuffer_BC_F2C(double *buffer,
-                           int &buffer_count,
-                           const int buffer_size,
-                           const int i_min, 
-                           const int i_max,
-                           const int i_inc,
-                           const int j_min, 
-                           const int j_max,
-                           const int j_inc);
-    int LoadSendBuffer_BC_C2F(double *buffer,
-                           int &buffer_count,
-                           const int buffer_size,
-                           const int i_min, 
-                           const int i_max,
-                           const int i_inc,
-                           const int j_min, 
-                           const int j_max,
-                           const int j_inc);
-    int UnloadReceiveBuffer_BC(double *buffer,
-                            int &buffer_count,
-                            const int buffer_size,
-                            const int i_min, 
-                            const int i_max,
-                            const int i_inc,
-                            const int j_min, 
-                            const int j_max,
-                            const int j_inc);
-    int UnloadReceiveBuffer_BC_F2C(double *buffer,
-                                int &buffer_count,
-                                const int buffer_size,
-                                const int i_min, 
-                                const int i_max,
-                                const int i_inc,
-                                const int j_min, 
-                                const int j_max,
-                                const int j_inc);
-    int UnloadReceiveBuffer_BC_C2F(double *buffer,
-                                int &buffer_count,
-                                const int buffer_size,
-                                const int i_min, 
-                                const int i_max,
-                                const int i_inc,
-                                const int j_min, 
-                                const int j_max,
-                                const int j_inc);
+  //! Load send boundary ref state message passing buffer.
+  int LoadSendBuffer_BC(double *buffer,
+			int &buffer_count,
+			const int buffer_size,
+			const int i_min, 
+			const int i_max,
+			const int i_inc,
+			const int j_min, 
+			const int j_max,
+			const int j_inc);
+  //! Load F2C send boundary ref state message passing buffer.
+  int LoadSendBuffer_BC_F2C(double *buffer,
+			    int &buffer_count,
+			    const int buffer_size,
+			    const int i_min, 
+			    const int i_max,
+			    const int i_inc,
+			    const int j_min, 
+			    const int j_max,
+			    const int j_inc);
+  //! Load C2F send boundary ref state message passing buffer.
+  int LoadSendBuffer_BC_C2F(double *buffer,
+			    int &buffer_count,
+			    const int buffer_size,
+			    const int i_min, 
+			    const int i_max,
+			    const int i_inc,
+			    const int j_min, 
+			    const int j_max,
+			    const int j_inc);
+  //! Unload receive boundary ref state message passing buffer.
+  int UnloadReceiveBuffer_BC(double *buffer,
+			     int &buffer_count,
+			     const int buffer_size,
+			     const int i_min, 
+			     const int i_max,
+			     const int i_inc,
+			     const int j_min, 
+			     const int j_max,
+			     const int j_inc);
+  //! Unload F2C receive boundary ref state message passing buffer.
+  int UnloadReceiveBuffer_BC_F2C(double *buffer,
+				 int &buffer_count,
+				 const int buffer_size,
+				 const int i_min, 
+				 const int i_max,
+				 const int i_inc,
+				 const int j_min, 
+				 const int j_max,
+				 const int j_inc);
+  //! Unload C2F receive boundary ref state message passing buffer.
+  int UnloadReceiveBuffer_BC_C2F(double *buffer,
+				 int &buffer_count,
+				 const int buffer_size,
+				 const int i_min, 
+				 const int i_max,
+				 const int i_inc,
+				 const int j_min, 
+				 const int j_max,
+				 const int j_inc);
+  //@}
 
-    /* Scale the grid to quasi-3D for axisymmetric case */
-    void ScaleGridTo3D( );
-    void ScaleGridTo3D( const int AxisymmetricFlag );
-
-    /* Compute scaling parameter for centriod (required for quasi-3D axisymmetric) */
-    double Sp_c(const int i, const int j);
+  //@{ @name Member functions required to scale the grid from 2D to quasi-3D for axisymmetric case
+  //! Number of solution
+  void ScaleGridTo3D( );
+  void ScaleGridTo3D( const int AxisymmetricFlag );
+  //! Compute scaling parameter for centriod (required for quasi-3D axisymmetric) */
+  double Sp_c(const int i, const int j);
+  //@}
 
 };
 
+
 /**************************************************************************
- * Rte2D_Quad_Block::allocate -- Allocate memory.                       *
+ * Rte2D_Quad_Block::allocate -- Allocate memory.                         *
  **************************************************************************/
 inline void Rte2D_Quad_Block::allocate(const int Ni, const int Nj, const int Ng) {
-  int i, j, k; /*assert(Ni > 1 && Nj > 1 && Ng > 1);*/ Grid.allocate(Ni, Nj, Ng);
+   int i, j, k; /*assert(Ni > 1 && Nj > 1 && Ng > 1);*/ Grid.allocate(Ni, Nj, Ng);
    NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1; 
    NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1; Nghost = Ng;
    U = new Rte2D_State*[NCi];
@@ -510,12 +570,11 @@ inline void Rte2D_Quad_Block::deallocate(void) {
    NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
 }
 
-
 /**************************************************************************
- * Rte2D_Quad_Block::Un -- Node conserved variable solution state.      *
+ * Rte2D_Quad_Block::Un -- Node conservative solution.                    *
  **************************************************************************/
-inline Rte2D_State Rte2D_Quad_Block::Un(const int ii, const int jj) {
-
+inline Rte2D_State Rte2D_Quad_Block::Un(const int &ii, const int &jj) {
+ 
   double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y,
     eta1, zeta1, eta2, zeta2, eta, zeta;
  
@@ -560,26 +619,25 @@ inline Rte2D_State Rte2D_Quad_Block::Un(const int ii, const int jj) {
 	  (U[ii][jj-1]-U[ii-1][jj-1])*eta + 
 	  (U[ii][jj]+U[ii-1][jj-1]-U[ii-1][jj]-U[ii][jj-1])*zeta*eta);
 
-
 }
 
 
 /**************************************************************************
- * Rte2D_Quad_Block::Un?? -- Get cell node conserved solution states.   *
+ * Rte2D_Quad_Block::Un?? -- Get cell node conserved solution states.     *
  **************************************************************************/
-inline Rte2D_State Rte2D_Quad_Block::UnNW(const int ii, const int jj) {
+inline Rte2D_State Rte2D_Quad_Block::UnNW(const int &ii, const int &jj) {
   return (Un(ii, jj+1));
 }
 
-inline Rte2D_State Rte2D_Quad_Block::UnNE(const int ii, const int jj) {
+inline Rte2D_State Rte2D_Quad_Block::UnNE(const int &ii, const int &jj) {
   return (Un(ii+1, jj+1));
 }
 
-inline Rte2D_State Rte2D_Quad_Block::UnSE(const int ii, const int jj) {
+inline Rte2D_State Rte2D_Quad_Block::UnSE(const int &ii, const int &jj) {
   return (Un(ii+1, jj));
 }
 
-inline Rte2D_State Rte2D_Quad_Block::UnSW(const int ii, const int jj) {
+inline Rte2D_State Rte2D_Quad_Block::UnSW(const int &ii, const int &jj) {
   return (Un(ii, jj));
 }
 
@@ -694,14 +752,14 @@ inline istream &operator >> (istream &in_file,
 
 
 /*******************************************************************************
- * Rte2D_Quad_Block::NumVar -- Returns number of state variables.            *
+ * Rte2D_Quad_Block::NumVar -- Returns number of state variables.              *
  *******************************************************************************/
 inline int Rte2D_Quad_Block::NumVar(void) {
   return (int(U[0][0].NUM_VAR_RTE2D));
 }
 
 /*******************************************************************************
- * Rte2D_Quad_Block::LoadSendBuffer -- Loads send message buffer.            *
+ * Rte2D_Quad_Block::LoadSendBuffer -- Loads send message buffer.              *
  *******************************************************************************/
 inline int Rte2D_Quad_Block::LoadSendBuffer(double *buffer,
                                               int &buffer_count,
@@ -723,16 +781,11 @@ inline int Rte2D_Quad_Block::LoadSendBuffer(double *buffer,
         } /* endfor */
      } /* endfor */
   } /* endfor */
-
-//   cout<<"\n EULER i_min "<<i_min<<" i_max "<<i_max<<" i_inc "<<i_inc
-//       <<" j_min "<<j_min<<" j_max "<<j_max<<" j_inc "<<j_inc
-//       <<" buffersize "<<buffer_size;
-
   return(0);
 }
 
 /*******************************************************************************
- * Rte2D_Quad_Block::LoadSendBuffer_F2C -- Loads send message buffer for     *
+ * Rte2D_Quad_Block::LoadSendBuffer_F2C -- Loads send message buffer for       *
  *                                           fine to coarse block message      *
  *                                           passing.                          *
  *******************************************************************************/
@@ -760,10 +813,6 @@ inline int Rte2D_Quad_Block::LoadSendBuffer_F2C(double *buffer,
                                    Grid.Cell[i+1][j  ].A*Sp[i+1][j  ]+
                                    Grid.Cell[i  ][j+1].A*Sp[i  ][j+1]+
                                    Grid.Cell[i+1][j+1].A*Sp[i+1][j+1]);
-/*            buffer[buffer_count] = (Grid.Cell[i  ][j  ].A*U[i  ][j  ][k]+ */
-/*                                    Grid.Cell[i+1][j  ].A*U[i+1][j  ][k]+ */
-/*                                    Grid.Cell[i  ][j+1].A*U[i  ][j+1][k]+ */
-/*                                    Grid.Cell[i+1][j+1].A*U[i+1][j+1][k]); */
         } /* endfor */
      } /* endfor */
   } /* endfor */
@@ -783,7 +832,9 @@ inline int Rte2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
                                                   const int i_inc,
                                                   const int j_min, 
                                                   const int j_max,
-                                                  const int j_inc) {
+                                                  const int j_inc,
+						  const int face,
+						  const int sector) {
   int NUM_VAR_RTE2D = NumVar();
   int i, j, k;
   Vector2D dX;
@@ -2434,13 +2485,34 @@ extern void Output_Tecplot(Rte2D_Quad_Block &SolnBlk,
                            const int Output_Title,
 	                   ostream &Out_File);
 
-
 extern void Output_Cells_Tecplot(Rte2D_Quad_Block &SolnBlk,
 		                 const int Number_of_Time_Steps,
                                  const double &Time,
                                  const int Block_Number,
                                  const int Output_Title,
 	                         ostream &Out_File);
+
+extern void Output_Nodes_Tecplot(Rte2D_Quad_Block &SolnBlk,
+		                 const int Number_of_Time_Steps,
+                                 const double &Time,
+                                 const int Block_Number,
+                                 const int Output_Title,
+	                         ostream &Out_File);
+
+extern void Output_Gradients_Tecplot(Rte2D_Quad_Block &SolnBlk,
+				     const int Number_of_Time_Steps,
+				     const double &Time,
+				     const int Block_Number,
+				     const int Output_Title,
+				     ostream &Out_File);
+
+extern void Output_Tecplot_Quasi3D(Rte2D_Quad_Block &SolnBlk,
+				   Rte2D_Input_Parameters &IP,
+				   const int Number_of_Time_Steps,
+				   const double &Time,
+				   const int Block_Number,
+				   const int Output_Title,
+				   ostream &Out_File);
 
 extern void Output_Exact(Rte2D_Quad_Block &SolnBlk,
 			 const int Block_Number,
@@ -2458,6 +2530,7 @@ extern void ICs(Rte2D_Quad_Block &SolnBlk,
 
 extern void BCs(Rte2D_Quad_Block &SolnBlk,
 		Rte2D_Input_Parameters &IP);
+
 extern void BCs_Space_March(Rte2D_Quad_Block &SolnBlk, 
 			    Rte2D_Input_Parameters &IP);
 
@@ -2470,11 +2543,11 @@ extern double CFL(Rte2D_Quad_Block &SolnBlk,
 extern void Set_Global_TimeStep(Rte2D_Quad_Block &SolnBlk, 
                                 const double &Dt_min);
 
-extern double L1_Norm_Residual(Rte2D_Quad_Block &SolnBlk);
+extern double L1_Norm_Residual(Rte2D_Quad_Block &SolnBlk, const int &norm);
 
-extern double L2_Norm_Residual(Rte2D_Quad_Block &SolnBlk);
+extern double L2_Norm_Residual(Rte2D_Quad_Block &SolnBlk, const int &norm);
 
-extern double Max_Norm_Residual(Rte2D_Quad_Block &SolnBlk);
+extern double Max_Norm_Residual(Rte2D_Quad_Block &SolnBlk, const int &norm);
 
 extern void Linear_Reconstruction_GreenGauss(Rte2D_Quad_Block &SolnBlk,
                                              const int i,
@@ -2573,6 +2646,13 @@ extern Rte2D_Quad_Block* Allocate(Rte2D_Quad_Block *Soln_ptr,
 extern Rte2D_Quad_Block* Deallocate(Rte2D_Quad_Block *Soln_ptr,
                                       Rte2D_Input_Parameters &Input_Parameters);
 
+extern Rte2D_Quad_Block* CreateInitialSolutionBlocks(Grid2D_Quad_Block **InitMeshBlk,
+						       Rte2D_Quad_Block *Soln_ptr,
+						       Rte2D_Input_Parameters &Input_Parameters,
+						       QuadTreeBlock_DataStructure &QuadTree,
+						       AdaptiveBlockResourceList &GlobalSolnBlockList,
+						       AdaptiveBlock2D_List &LocalSolnBlockList);
+
 extern void ICs(Rte2D_Quad_Block *Soln_ptr,
                 AdaptiveBlock2D_List &Soln_Block_List,
                 Rte2D_Input_Parameters &Input_Parameters);
@@ -2604,6 +2684,24 @@ extern int Output_Cells_Tecplot(Rte2D_Quad_Block *Soln_ptr,
 		                const int Number_of_Time_Steps,
                                 const double &Time);
 
+extern int Output_Nodes_Tecplot(Rte2D_Quad_Block *Soln_ptr,
+                                AdaptiveBlock2D_List &Soln_Block_List,
+                                Rte2D_Input_Parameters &Input_Parameters,
+		                const int Number_of_Time_Steps,
+                                const double &Time);
+
+extern int Output_Gradients_Tecplot(Rte2D_Quad_Block *Soln_ptr,
+				    AdaptiveBlock2D_List &Soln_Block_List,
+				    Rte2D_Input_Parameters &Input_Parameters,
+				    const int Number_of_Time_Steps,
+				    const double &Time);
+
+extern int Output_Tecplot_Quasi3D(Rte2D_Quad_Block *Soln_ptr,
+				  AdaptiveBlock2D_List &Soln_Block_List,
+				  Rte2D_Input_Parameters &Input_Parameters,
+				  const int Number_of_Time_Steps,
+				  const double &Time);
+
 extern int Output_Mesh_Tecplot(Rte2D_Quad_Block *Soln_ptr,
                                AdaptiveBlock2D_List &Soln_Block_List,
                                Rte2D_Input_Parameters &Input_Parameters,
@@ -2627,6 +2725,7 @@ extern void Prescribe_NonSol(Rte2D_Quad_Block *Soln_ptr,
 extern void BCs(Rte2D_Quad_Block *Soln_ptr,
                 AdaptiveBlock2D_List &Soln_Block_List,
 		Rte2D_Input_Parameters &IP);
+
 extern void BCs_Space_March(Rte2D_Quad_Block *Soln_ptr,
 			    AdaptiveBlock2D_List &Soln_Block_List,
 			    Rte2D_Input_Parameters &IP);
@@ -2649,6 +2748,18 @@ extern double L2_Norm_Residual(Rte2D_Quad_Block *Soln_ptr,
 extern double Max_Norm_Residual(Rte2D_Quad_Block *Soln_ptr,
                                 AdaptiveBlock2D_List &Soln_Block_List);
 
+extern void L1_Norm_Residual(Rte2D_Quad_Block *Soln_ptr, 
+			     AdaptiveBlock2D_List &Soln_Block_List,
+			     double *l1_norm);
+
+extern void L2_Norm_Residual(Rte2D_Quad_Block *Soln_ptr,
+			     AdaptiveBlock2D_List &Soln_Block_List,
+			     double *l2_norm);
+
+extern void Max_Norm_Residual(Rte2D_Quad_Block *Soln_ptr,
+			      AdaptiveBlock2D_List &Soln_Block_List,
+			      double *max_norm);
+
 extern void Evaluate_Limiters(Rte2D_Quad_Block *Soln_ptr,
                               AdaptiveBlock2D_List &Soln_Block_List);
 
@@ -2669,6 +2780,7 @@ extern void Apply_Boundary_Flux_Corrections_Multistage_Explicit(Rte2D_Quad_Block
    	                                                        const int I_Stage);
 
 extern int dUdt_Multistage_Explicit(Rte2D_Quad_Block *Soln_ptr,
+				    AdaptiveBlockResourceList &Global_Soln_Block_List,
                                     AdaptiveBlock2D_List &Soln_Block_List,
                                     Rte2D_Input_Parameters &Input_Parameters,
    	                            const int I_Stage);
@@ -2677,6 +2789,7 @@ extern int Update_Solution_Multistage_Explicit(Rte2D_Quad_Block *Soln_ptr,
                                                AdaptiveBlock2D_List &Soln_Block_List,
                                                Rte2D_Input_Parameters &Input_Parameters,
    	                                       const int I_Stage);
+
 extern int dUdt_Space_March(Rte2D_Quad_Block *Soln_ptr,
 			    AdaptiveBlock2D_List &Soln_Block_List,
 			    Rte2D_Input_Parameters &Input_Parameters);
