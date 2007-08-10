@@ -1,22 +1,12 @@
-/****************** FANS3D_ThermallyPerfectState.h **************************************
-  This class defines the state variables and constructors for the euler3d thermally
-  perfect mixtures
-***********************************************************************/
+/****************** TurbulenceModelling.h **************************************
+  This header file defines various classes for various standard turbulence
+  models.  
+********************************************************************************/
+
 #ifndef _TURBULENCE_MODELLING_INCLUDED 
 #define _TURBULENCE_MODELLING_INCLUDED
 
-
-class Turbulent3DWallData;
-class Turbulence_Model_k_omega;
-
-// Required C++ libraries
-#include <cstdio>
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <cassert>
-#include <cstdlib>
-#include <limits>
+/* Include required CFFC header files. */
 
 #ifndef _TENSOR3D_INCLUDED
 #include "../Math/Tensor3D.h"
@@ -30,8 +20,16 @@ class Turbulence_Model_k_omega;
 #include "../Grid/Grid3DHexaBlock.h"
 #endif // _GRID3D_HEXA_BLOCK_INCLUDED
 
-using namespace std;
+#ifndef _ADAPTIVEBLOCK3D_INCLUDED
+#include "../AMR/AdaptiveBlock3D.h"
+#endif // _ADAPTIVEBLOCK3D_INCLUDED
 
+#ifndef _OCTREE_INCLUDED
+#include "../AMR/Octree.h"
+#endif // _OCTREE_INCLUDED
+
+class Turbulent3DWallData;
+class Turbulence_Model_k_omega;
 
 class Turbulence_Model_k_omega{
   public:
@@ -322,5 +320,202 @@ template<class HEXA_BLOCK>
    return 0;
 
 }
- 
-#endif //end TURBULENCE_MODEL_INCLUDED 
+template <class HEXA_BLOCK>
+int Wall_Distance(HEXA_BLOCK **SolnBlk,
+		  AdaptiveBlock3D_List &LocalSolnBlockList,
+		  const Vector3D X_cell,
+		  Vector3D &X_wall,
+		  Vector3D &n_wall,
+		  double &y_wall,
+		  int &BC_wall) {
+   
+  int error_flag;
+  double y_wall_temp;
+  Vector3D X_wall_temp, n_wall_temp;
+  int BC_wall_temp;
+
+  y_wall = 1e70;
+  y_wall_temp = 1e70;
+
+  for (int nb = 0 ; nb < LocalSolnBlockList.Nblk; nb++) {
+    if (LocalSolnBlockList.Block[nb].used == ADAPTIVEBLOCK3D_USED) {
+       error_flag = Wall_Distance(SolnBlk[nb],X_cell,X_wall_temp,
+                                  n_wall_temp,y_wall_temp,BC_wall_temp);
+       if (error_flag) return error_flag;
+       if (y_wall_temp < y_wall) {
+          y_wall = y_wall_temp;
+          X_wall = X_wall_temp;
+          n_wall = n_wall_temp;
+          BC_wall = BC_wall_temp;
+       }
+    }
+  }
+  
+  // Wall distance successfully found.
+  return 0;
+
+}   
+
+/**********************************************************
+ * Routine: Distance_to_Wall                              *
+ *                                                        *
+ * Determines the normal distance to the wall for each    *
+ * cell of a multiblock body-fitted quadrilateral mesh.   *
+ * A direct search is performed.                          *
+ *                                                        *
+ **********************************************************/
+template <class HEXA_BLOCK>
+int Wall_Distance(HEXA_BLOCK **SolnBlk,
+                  OcTreeBlock_DataStructure &OcTree,
+                  AdaptiveBlock3D_List &LocalSolnBlockList) {
+   
+
+
+
+
+  int error_flag;
+  int buffer_size;
+  int ilow, iup, jlow, jup, klow, kup, ni, nj, nk;
+  double y_wall, y_wall_temp;
+  double *x_buffer;
+  Vector3D x_cell, X_wall, n_wall;
+  int BC_wall;
+
+#ifdef _MPI_VERSION
+  int wall_buffer_size, wall_iCPU;
+  double *wall_buffer;
+#endif
+
+#ifdef _MPI_VERSION
+  wall_buffer_size = 7;
+  wall_buffer = new double[wall_buffer_size];
+#endif
+
+  // Compute the distance to the nearest wall for the centroid of
+  // every cell.
+  for (int iCPU = 0; iCPU < OcTree.Ncpu; iCPU++) { // Loop over available processors.
+    for (int iBLK = 0; iBLK < OcTree.Nblk; iBLK++) { // Loop over available blocks.
+      if (OcTree.Blocks[iCPU][iBLK] != NULL) {
+	if (OcTree.Blocks[iCPU][iBLK]->block.used) {
+
+          // Determine dimensions of block of interest.
+     	  ilow = 0;
+	  jlow = 0;
+	  klow = 0;
+
+	  if (LocalSolnBlockList.ThisCPU == iCPU) {
+             iup = 2*LocalSolnBlockList.Block[iBLK].info.dimen.ghost +
+                LocalSolnBlockList.Block[iBLK].info.dimen.i - 1;
+             jup = 2*LocalSolnBlockList.Block[iBLK].info.dimen.ghost +
+                LocalSolnBlockList.Block[iBLK].info.dimen.j - 1;
+             kup = 2*LocalSolnBlockList.Block[iBLK].info.dimen.ghost +
+                LocalSolnBlockList.Block[iBLK].info.dimen.k - 1;
+	  } else {
+             iup = 0;
+             jup = 0;
+             kup = 0;
+	  }
+	  iup = CFFC_Maximum_MPI(iup);
+	  jup = CFFC_Maximum_MPI(jup);
+          kup = CFFC_Maximum_MPI(kup);
+
+	  // Allocate buffer for storing cell centers.
+	  ni = iup - ilow + 1;
+	  nj = jup - jlow + 1;
+          nk = kup - klow + 1;
+	  x_buffer = new double[3*ni*nj*nk];
+          
+	  // Get coordinates of cell centers.
+	  if (LocalSolnBlockList.ThisCPU == iCPU) {
+             buffer_size = 0;
+             for (int k = klow; k <= kup; k++) {
+                for (int j = jlow; j <= jup; j++) {
+                   for (int i = ilow; i <= iup; i++) {
+                      x_buffer[buffer_size  ] = SolnBlk[iBLK]->Grid->Cell[i][j][k].Xc.x;
+                      x_buffer[buffer_size+1] = SolnBlk[iBLK]->Grid->Cell[i][j][k].Xc.y;
+                      x_buffer[buffer_size+2] = SolnBlk[iBLK]->Grid->Cell[i][j][k].Xc.z;
+                      buffer_size = buffer_size + 3;
+                   }
+                }
+             }
+             
+	  }
+              
+#ifdef _MPI_VERSION
+	  buffer_size = 3*ni*nj*nk;
+	  MPI::COMM_WORLD.Bcast(x_buffer,buffer_size,MPI::DOUBLE,iCPU);
+#endif
+     
+	  // Calculate normal distance to the wall.
+	  buffer_size = 0;
+          for (int k = klow; k <= kup; k++) {
+             for (int j = jlow; j <= jup; j++) {
+                for (int i = ilow; i <= iup; i++) {
+                   x_cell.x = x_buffer[buffer_size  ];
+                   x_cell.y = x_buffer[buffer_size+1];
+                   x_cell.z = x_buffer[buffer_size+2];
+                   buffer_size = buffer_size + 3;
+                   error_flag = Wall_Distance(SolnBlk, LocalSolnBlockList, x_cell, X_wall, n_wall, y_wall, BC_wall);
+                   if (error_flag) return error_flag;
+#ifdef _MPI_VERSION
+                   // The following routine will reduce the y_wall variable
+                   // to be the minimum value of y_wall on the p processors.
+                   // It will also ensure that the X_wall variable is
+                   // consistent with that distance.
+                   y_wall_temp = CFFC_Minimum_MPI(y_wall);
+                   if (fabs(y_wall - y_wall_temp) < TOLER) {
+                      wall_buffer[0] = X_wall.x;
+                      wall_buffer[1] = X_wall.y;
+                      wall_buffer[2] = X_wall.z;
+                      wall_buffer[3] = n_wall.x;
+                      wall_buffer[4] = n_wall.y;
+                      wall_buffer[5] = n_wall.z;
+                      wall_buffer[6] = double(BC_wall);
+                      wall_iCPU = LocalSolnBlockList.ThisCPU;
+                   } else {
+                      wall_buffer[0] = ZERO;
+                      wall_buffer[1] = ZERO;
+                      wall_buffer[2] = ZERO;
+                      wall_buffer[3] = ZERO;
+                      wall_buffer[4] = ZERO;
+                      wall_buffer[5] = ZERO;
+                      wall_buffer[6] = ZERO;
+                    
+                      wall_iCPU = 0;
+                   }
+                   wall_iCPU = CFFC_Maximum_MPI(wall_iCPU);
+                   MPI::COMM_WORLD.Bcast(wall_buffer,wall_buffer_size,MPI::DOUBLE,wall_iCPU);
+                   X_wall = Vector3D(wall_buffer[0],wall_buffer[1],wall_buffer[2]);
+                   n_wall = Vector3D(wall_buffer[3],wall_buffer[4],wall_buffer[5]);
+                   y_wall = y_wall_temp;
+                   BC_wall = int(wall_buffer[6]);
+#endif
+                   if (LocalSolnBlockList.ThisCPU == iCPU) {
+                      SolnBlk[iBLK]->Wall[i][j][k].ywall = y_wall;
+                      SolnBlk[iBLK]->Wall[i][j][k].Xwall = X_wall;
+                      SolnBlk[iBLK]->Wall[i][j][k].nwall = n_wall;
+                      SolnBlk[iBLK]->Wall[i][j][k].BCwall = BC_wall;
+                   }
+                }
+             }
+          }
+          
+
+	  // Deallocate buffer for storing cell centers.
+	  delete []x_buffer; x_buffer = NULL;
+          
+	}
+      }
+    }
+  }
+
+#ifdef _MPI_VERSION
+  delete []wall_buffer; wall_buffer = NULL;
+#endif
+
+
+   return(0);
+   
+}
+
+#endif // _TURBULENCE_MODEL_INCLUDED 

@@ -129,7 +129,6 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
          
    if (!batch_flag) cout << "\n Prescribing initial data.";
    if (IPs.i_ICs == IC_RESTART) {
-      
       Local_SolnBlk.Create_Wall_Data( );
       
       error_flag = Local_SolnBlk.Read_Restart_Solution
@@ -155,9 +154,9 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
          CFFC_Maximum_MPI(IPs.Maximum_Number_of_Time_Steps);
       
    } else {
-      
-      Local_SolnBlk.Create_Wall_Data( );
-
+//    Local_SolnBlk.Create_Wall_Data( );
+      Wall_Distance(Local_SolnBlk.Hexa_Block_List,
+                    OcTree, List_of_Local_Solution_Blocks);
       Local_SolnBlk.ICs(IPs);
       
    } /* endif */
@@ -169,21 +168,20 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
 
 //   Local_SolnBlk.Copy_MultiBlk_Boundary_Info( List_of_Local_Solution_Blocks,IPs.IP_Grid);
    
-   
    /* Prescribe boundary data consistent with initial data. */
 
     Local_SolnBlk.BCs(IPs);
 
    
-   //    /********************************************************  
-//    * Solve IBVP or BVP for conservation form of 3D Euler  *
-//    * equations on multi-block solution-adaptive           *
-//    * hexadedral mesh.                                     *
-//    ********************************************************/
+   /********************************************************  
+    * Solve IBVP or BVP for conservation form of 3D Euler  *
+    * equations on multi-block solution-adaptive           *
+    * hexadedral mesh.                                     *
+    ********************************************************/
    continue_existing_calculation: ;
    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
  
-// /* Open residual file and reset the CPU time. */
+   /* Open residual file and reset the CPU time. */
    first_step = 1;
    limiter_freezing_off = ON;
    
@@ -204,8 +202,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
    if (error_flag) return (error_flag);
    processor_cpu_time.reset();
 
-  
-//    /* Perform required number of iterations (time steps). */
+   /* Perform required number of iterations (time steps). */
    if ((!IPs.Time_Accurate &&
         IPs.Maximum_Number_of_Time_Steps > 0 &&
         number_of_time_steps < IPs.Maximum_Number_of_Time_Steps) ||
@@ -260,21 +257,25 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
 
        
           /* Determine the L1, L2, and max norms of the solution residual. */
+
+          // L1 norm for all processors.
           residual_l1_norm =  Local_SolnBlk.L1_Norm_Residual();
           residual_l1_norm = CFFC_Summation_MPI(residual_l1_norm); 
-          // L1 norm for all processors.
+
+          // L2 norm for all processors.
           residual_l2_norm =  Local_SolnBlk.L2_Norm_Residual();
           residual_l2_norm = CFFC_Summation_MPI(residual_l2_norm); 
           
- 	 residual_max_norm =  Local_SolnBlk.Max_Norm_Residual();
-         
- 	 residual_max_norm = CFFC_Maximum_MPI(residual_max_norm);
- 	 // Max norm for all processors.
- 	 /* Update CPU time used for the calculation so far. */
- 	 processor_cpu_time.update();
-         total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput); 
- 	 // Total CPU time for all processors.
-         
+ 	  // Max norm for all processors.  
+  	  residual_max_norm =  Local_SolnBlk.Max_Norm_Residual();
+ 	  residual_max_norm = CFFC_Maximum_MPI(residual_max_norm);
+ 	  
+          /* Update CPU time used for the calculation so far. */
+
+          // Total CPU time for all processors.
+ 	  processor_cpu_time.update();
+          total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput); 
+ 	
           /* Periodically save restart solution files. */
           if (!first_step &&
               number_of_time_steps-IPs.Restart_Solution_Save_Frequency*
@@ -350,7 +351,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
        
  
    
-         /* Update solution for next time step using a multistage
+       /* Update solution for next time step using a multistage
           time stepping scheme. */
        for ( i_stage  = 1 ; i_stage <= IPs.N_Stage ; ++i_stage ) {
        
@@ -424,10 +425,10 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
     	
    } /* endif */
   
-//     Send_All_Boundary_Info(MultiBlock_Connectivity, IPs);
+   // Send_All_Boundary_Info(MultiBlock_Connectivity, IPs);
    // copying boundary information between blocks
 
-   //   Local_SolnBlk.Copy_MultiBlk_Boundary_Info( List_of_Local_Solution_Blocks, IPs.IP_Grid); 
+   // Local_SolnBlk.Copy_MultiBlk_Boundary_Info( List_of_Local_Solution_Blocks, IPs.IP_Grid); 
    
 
    Send_All_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Local_SolnBlk.Hexa_Block_List,
@@ -441,15 +442,13 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
    /* Close residual file. */
    if (CFFC_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file);
 
-//    /********************************************************
-//    * Solution calculations complete.                      *
-//    * Write 3D Euler solution to output and restart files  *
-//    * as required, reset solution parameters, and run      *
-//    * other cases as specified by input parameters.        *
-//    ********************************************************/ 
-   
- 
-  postprocess_current_calculation: ;
+   /********************************************************
+    * Solution calculations complete.                      *
+    * Write 3D Euler solution to output and restart files  *
+    * as required, reset solution parameters, and run      *
+    * other cases as specified by input parameters.        *
+    ********************************************************/ 
+   postprocess_current_calculation: ;
    while (1) {
       
       if (CFFC_Primary_MPI_Processor()) {    
@@ -462,8 +461,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
       IPs.Broadcast_Input_Parameters();
       CFFC_Broadcast_MPI(&command_flag, 1);
       if (command_flag == EXECUTE_CODE) {
-         
-//          Deallocate memory for 3D Euler equation solution.
+         // Deallocate memory for 3D Euler equation solution.
          if (!batch_flag) cout<<"\n Deallocating solution variables.";
          // Destructor of the class: Local_Block_List is automatically
          // called when the scope of the calculation is done...
@@ -475,7 +473,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
             cout.flush();
          } /* endif */
          
-          // Execute new calculation.
+         // Execute new calculation.
          goto execute_new_calculation;
          
       } else if (command_flag == TERMINATE_CODE) {
@@ -483,7 +481,6 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
          // Memory for the list of solution blocks is automatically
          // deallocated at the end execution.
          // Close input data file.
-         
          
          if (!batch_flag) cout<<"\n Closing input data file.";
 
@@ -493,7 +490,6 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
          // if (CFFC_Primary_MPI_Processor()) IPs.Close_Input_File();
          // Terminate calculation
          return (0);
-               
          
       } else if (command_flag == WRITE_OUTPUT_CODE) {
          // Output solution data.

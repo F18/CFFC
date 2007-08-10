@@ -1,11 +1,7 @@
-/* HexaMultiBlock.h:  Header file creating multiblock list. */
+/* HexaMultiBlock.h:  Header file for multi-block solution block lists. */
 
 #ifndef _HEXA_MULTIBLOCK_INCLUDED
 #define _HEXA_MULTIBLOCK_INCLUDED
-
-/* Include required C++ libraries. */
-
-using namespace std;
 
 /* Include various CFFC header files. */
 
@@ -22,8 +18,7 @@ using namespace std;
 #endif //_ADAPTIVEBLOCK3D_INCLUDED
 
 // a list of solution blocks on a processor
-template<class HEXA_BLOCK>
-class Hexa_MultiBlock{
+template<class HEXA_BLOCK> class Hexa_MultiBlock{
    
   private:
   public:
@@ -46,6 +41,8 @@ class Hexa_MultiBlock{
       Hexa_Block_List = NULL;
    }// endofdestructor...
    
+   // Define various member functions. 
+
    int Read_Restart_Solution(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                                               typename HEXA_BLOCK::Soln_cState> &IPs,
                              AdaptiveBlock3D_List &Soln_Block_List,
@@ -105,22 +102,18 @@ class Hexa_MultiBlock{
       (Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
        typename HEXA_BLOCK::Soln_cState> &IPs, 
        const int I_Stage);
-   // flow type dependent memeber functions 
 
-   int Create_Wall_Data(void);
-  
-/* Copy the boundaries of different blocks on on processor */
-/* This was written for testing multiblock serial code, i.e.
+   int Create_Wall_Data(void); // calculate wall data for serial code (all blocks on one processor)
+                               // the other Create wall data template function is in Turbulence.h for 
+                               // parallel version
+
+   /* Copy the boundaries of different blocks on on processor */
+   /* This was written for testing multiblock serial code, i.e.
    running the code with multiblock but on only one processor */
 
    int Copy_MultiBlk_Boundary_Info(AdaptiveBlock3D_List &Soln_Block_List,
                                    Grid3D_Input_Parameters &IPs);
-   
-/*    int Send_All_Boundary_Info(MultiBlk_Connectivity &Multiblock_conn, */
-/*                               Input_Parameters &Input_Parameters); */
-/*    void Message_Passing_Datatype(MultiBlk_Connectivity &MultiBlock_Connectivity, */
-/*                                  Input_Parameters &Input_Parameters); */
-      
+         
 };
 
   
@@ -986,9 +979,10 @@ int Hexa_MultiBlock<HEXA_BLOCK>::Create_Wall_Data(void){
 /* Copy the boundaries of different blocks on on processor */
 /* This was written for testing multiblock serial code, i.e.
    running the code with multiblock but on only one processor */
+
 template<class HEXA_BLOCK>
-int Hexa_MultiBlock<HEXA_BLOCK>::Copy_MultiBlk_Boundary_Info(  AdaptiveBlock3D_List &Soln_Block_List,
-                                                               Grid3D_Input_Parameters &IPs){
+int Hexa_MultiBlock<HEXA_BLOCK>::Copy_MultiBlk_Boundary_Info(AdaptiveBlock3D_List &Soln_Block_List,
+                                                             Grid3D_Input_Parameters &IPs) {
     
    HEXA_BLOCK *SBptr; // pointer - the target solution block
    HEXA_BLOCK *SBptr_n; // neighbor blocks of this target block

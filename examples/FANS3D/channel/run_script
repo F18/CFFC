@@ -1,9 +1,0 @@
-#!/bin/tcsh
-#PBS -N turbulent_channel
-#PBS -q serial_bigmem
-#PBS -l walltime=48:00:00,nodes=1:ppn=1:serial-16G
-#PBS -W group_list=xinfeng
-#
-cd /nfs/fe03/d1/cfd/xinfeng/THREEDCODE/THERMALLYPERFECT/pdes++/examples/FANS/
-/nfs/fe03/d1/cfd/xinfeng/THREEDCODE/THERMALLYPERFECT/exe/pdes++ -f channel.in -pde FANS3D >& out.log
-

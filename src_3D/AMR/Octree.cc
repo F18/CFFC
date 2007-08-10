@@ -446,6 +446,12 @@ void  OcTreeBlock_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(OcTre
       case GRID_CUBE :
 //	cout<<"\nModifications have not been implemented for GRID_CUBE";
         break;
+     case GRID_CHANNEL :
+//	cout<<"\nModifications have not been implemented for GRID_CUBE";
+        break;
+     case GRID_COUETTE :
+//	cout<<"\nModifications have not been implemented for GRID_CUBE";
+     break;
      default:
        break;
      }

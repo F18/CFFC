@@ -4260,9 +4260,9 @@ inline istream &operator >> (istream &in_file,
 
 
 
-#ifndef _MORTON_ORDERING_INCLUDED
-#include "Morton_Ordering.h"
-#endif // _MORTON_ORDERING_INCLUDED
+/* #ifndef _MORTON_ORDERING_INCLUDED */
+/* #include "Morton_Ordering.h" */
+/* #endif // _MORTON_ORDERING_INCLUDED */
 
 #endif /* _OCTREE_INCLUDED  */
 

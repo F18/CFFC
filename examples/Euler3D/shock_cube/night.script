@@ -1,10 +1,10 @@
 #!/bin/tcsh
 #PBS -N euler3d
 #PBS -q qmaster
-#PBS -l walltime=2:00:00,nodes=1:ppn=4:parallel-2G,other=night
+#PBS -l walltime=2:00:00,nodes=2:ppn=4:parallel-2G,other=night
 #PBS -W group_list=xinfeng
 
-cd /nfs/fe03/d1/cfd/xinfeng/THREEDCODE/PARALLELCODE/examples/euler/
-mpirun -np 2 --gm-no-shmem --gm-kill 2 /nfs/fe03/d1/cfd/xinfeng/THREEDCODE/PARALLELCODE/exe/pdes++ -f shockcube.in -pde Euler3D >& out.log 
+cd /nfs/fe03/d1/cfd/xinfeng/CFFC/examples/Euler3D/shock_cube/
+mpirun -np 8 --gm-no-shmem --gm-kill 2 /nfs/fe03/d1/cfd/xinfeng/CFFC/src_3D/cffc3D -f shockcube.in -pde Euler3DThermallyPerfect >& out.log 
 
 

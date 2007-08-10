@@ -13,17 +13,18 @@ Least_Squares
 Limiter_Type = 
 Barth_Jespersen
 Flux_Function_Type =
-HLLE
+Roe
 ICs_Type = 
-Turbulent_Channel_Flow
+Restart
+#Turbulent_Channel_Flow
 Flow_Type = 
 Turbulent-k-omega
 Wall_Boundary_Treatments = 
 2
 Pressure_Gradient_xdir=
-23.13
+1.75
 Reynolds_Number = 
-12300
+61600
 #Species
 #3
 #CH4 N2 O2
@@ -39,15 +40,15 @@ Turbulent_Channel
 Number_of_Cells_Idir = 
 10
 Number_of_Cells_Jdir =
-6
+4
 Number_of_Cells_Kdir =
-30
+4
 Number_of_Blocks_Idir = 
-1
+6
 Number_of_Blocks_Jdir =
-1
+4
 Number_of_Blocks_Kdir =
-1
+4
 ###############################
 # Set time stepping parameters
 ###############################
@@ -60,10 +61,10 @@ Time_Max =
 Maximum_Number_of_Time_Steps =
 10000
 Number_of_Blocks_Per_Processor =
-1
+100
 Output_File_Name = 
-test
-#######################
+test_channel
+######################
 # Execute program
 #######################
 Execute
@@ -71,7 +72,7 @@ Execute
 # Write output
 #######################
 Write_Output_Cells
-#Write_Output
+Write_Output
 Write_Restart
 #######################
 # Terminate program
