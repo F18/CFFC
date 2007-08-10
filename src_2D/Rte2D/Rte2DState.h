@@ -205,14 +205,23 @@ class Rte2D_State {
   void Zero();
   void zero_non_sol();
 
-  // check for negative intensities
-  int NegIntensity();
+  // Check for unphysical state properties.
+  int Unphysical_Properties(void) const;
 
   // initialize
   void SetIntensity(double val);
   void SetAbsorption(double val);
   void SetScattering(double val);
   void SetBlackbody(double val);
+
+  // Copy variables solved by multigrid only.
+  void Copy_Multigrid_State_Variables(const Rte2D_State &Ufine) {
+    Copy(Ufine);
+  }
+
+  // Zero variables not-solved by multigrid.
+  void Zero_Non_Multigrid_State_Variables(void) { }
+
 
   // access intensity using 2D indexes 
   double& In( const int v, const int m, const int l ) const;
@@ -307,6 +316,8 @@ class Rte2D_State {
   // Shortcut arithmetic operators.
   Rte2D_State& operator +=(const Rte2D_State &U);
   Rte2D_State& operator -=(const Rte2D_State &U);
+  Rte2D_State &operator *=(const double &a);
+  Rte2D_State &operator /=(const double &a);
       
   // Unary arithmetic operators. 
   friend Rte2D_State operator -(const Rte2D_State &U);

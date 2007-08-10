@@ -37,6 +37,10 @@ class Rte2D_Quad_Block;
 #include "../Grid/Grid2DQuad.h"
 #endif // _GRID2D_QUAD_BLOCK_INCLUDED
 
+#ifndef _QUADTREE_INCLUDED
+#include "../AMR/QuadTree.h"
+#endif // _QUADTREE_INCLUDED
+
 #ifndef _NASA_ROTOR37_INCLUDED
 #include "../Grid/NASARotor37.h"
 #endif // _NASA_ROTOR37_INCLUDED
@@ -2468,15 +2472,15 @@ extern void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk,
 extern void Copy_Solution_Block(Rte2D_Quad_Block &SolnBlk1,
 		                Rte2D_Quad_Block &SolnBlk2);
 
-extern void Prolong_Solution_Block(Rte2D_Quad_Block &SolnBlk_Fine,
-		                   Rte2D_Quad_Block &SolnBlk_Original,
-                                   const int Sector);
+extern int Prolong_Solution_Block(Rte2D_Quad_Block &SolnBlk_Fine,
+				  Rte2D_Quad_Block &SolnBlk_Original,
+				  const int Sector);
 
-extern void Restrict_Solution_Block(Rte2D_Quad_Block &SolnBlk_Coarse,
-		                    Rte2D_Quad_Block &SolnBlk_Original_SW,
-                                    Rte2D_Quad_Block &SolnBlk_Original_SE,
-                                    Rte2D_Quad_Block &SolnBlk_Original_NW,
-                                    Rte2D_Quad_Block &SolnBlk_Original_NE);
+extern int Restrict_Solution_Block(Rte2D_Quad_Block &SolnBlk_Coarse,
+				   Rte2D_Quad_Block &SolnBlk_Original_SW,
+				   Rte2D_Quad_Block &SolnBlk_Original_SE,
+				   Rte2D_Quad_Block &SolnBlk_Original_NW,
+				   Rte2D_Quad_Block &SolnBlk_Original_NE);
 
 extern void Output_Tecplot(Rte2D_Quad_Block &SolnBlk,
 		           const int Number_of_Time_Steps,
@@ -2525,7 +2529,7 @@ extern void Output_Exact(Rte2D_Quad_Block &SolnBlk,
 
 
 extern void ICs(Rte2D_Quad_Block &SolnBlk,
- 	        const int i_ICtype,
+		Rte2D_Input_Parameters &IP,
                 Rte2D_State *Wo);
 
 extern void BCs(Rte2D_Quad_Block &SolnBlk,
@@ -2594,6 +2598,7 @@ extern void Residual_Smoothing(Rte2D_Quad_Block &SolnBlk,
                                const int number_of_Gauss_Seidel_iterations);
 
 extern void Calculate_Refinement_Criteria(double *refinement_criteria,
+					  Rte2D_Input_Parameters &IP,
                                           int &number_refinement_criteria,
                                           Rte2D_Quad_Block &SolnBlk);
 
@@ -2618,17 +2623,26 @@ extern void Apply_Boundary_Flux_Corrections_Multistage_Explicit(Rte2D_Quad_Block
                                                                 const int Time_Integration_Type,
                                                                 const int Reconstruction_Type,
                                                                 const int Limiter_Type,
+                                                                const int Flux_Function_Type,
                                                                 const int Number_Neighbours_North_Boundary,
                                                                 const int Number_Neighbours_South_Boundary,
                                                                 const int Number_Neighbours_East_Boundary,
                                                                 const int Number_Neighbours_West_Boundary);
 
-extern void dUdt_Residual_Evaluation(Rte2D_Quad_Block &SolnBlk,
-                                     Rte2D_Input_Parameters &Input_Parameters);
+extern int dUdt_Residual_Evaluation(Rte2D_Quad_Block &SolnBlk,
+				    Rte2D_Input_Parameters &Input_Parameters);
 
 extern int dUdt_Multistage_Explicit(Rte2D_Quad_Block &SolnBlk,
    	                            const int i_stage,
                                     Rte2D_Input_Parameters &Input_Parameters);
+
+extern int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
+				      Rte2D_Input_Parameters &Input_Parameters,
+				      const int i, const int j,
+				      const int v, const int m, const int l,
+				      double* &Ix_f, double &Iy_f,
+				      const int xd, const int yd);
+
 extern int dUdt_Space_March(Rte2D_Quad_Block &SolnBlk,
 			    Rte2D_Input_Parameters &Input_Parameters);
 

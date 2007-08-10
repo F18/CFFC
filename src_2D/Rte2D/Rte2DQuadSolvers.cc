@@ -58,7 +58,7 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
   /* Define residual file and cpu time variables. */
 
   ofstream residual_file;
-  CPUTime processor_cpu_time, total_cpu_time;
+  CPUTime processor_cpu_time, total_cpu_time, NKS_total_cpu_time;
   time_t start_explicit, end_explicit;
 
   /* Other local solution variables. */
@@ -83,7 +83,7 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
   if (CFDkit_Primary_MPI_Processor()) {
      if (!batch_flag) {
         cout << "\n Reading Rte2D input data file `"
-             << Input_File_Name_ptr << "'.";
+             << Input_File_Name_ptr << "'." << endl;
      } /* endif */
      error_flag = Process_Input_Control_Parameter_File(Input_Parameters,
                                                        Input_File_Name_ptr,
@@ -185,6 +185,7 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
 
   processor_cpu_time.zero();
   total_cpu_time.zero();
+  NKS_total_cpu_time.zero();
  
   /* Initialize the conserved and primitive state
      solution variables. */
@@ -775,7 +776,6 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
     
     if (CFDkit_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file);
 
-
   /*********************** NON MULTIGRID ***********************************/
   /********************** NON SPACE MARCH **********************************/
 
@@ -1005,8 +1005,10 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
 	  } /* endif */
 	  error_flag = CFDkit_OR_MPI(error_flag);
 	  if (error_flag) return (error_flag);
-	  cout << "\n";
-	  cout.flush();
+	  if (!batch_flag) {
+	    cout << "\n";
+	    cout.flush();
+	  }
 	} /* endif */
 	
 	/************************ PROGRESS *****************************************
@@ -1086,6 +1088,7 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
 	  /*************** UPDATE SOLUTION ************************************/
 	  // 3. Determine solution residuals for stage.
 	  error_flag = dUdt_Multistage_Explicit(Local_SolnBlk, 
+						List_of_Global_Solution_Blocks,
 						List_of_Local_Solution_Blocks,
 						Input_Parameters,
 						i_stage);
@@ -1200,6 +1203,9 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
   /*************************************************************************************************************************/
   if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
     time_t start_NKS, end_NKS;
+    processor_cpu_time.update();
+    total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput);  
+    double temp_t = total_cpu_time.cput;
 
      if (CFDkit_Primary_MPI_Processor()) {
         error_flag = Open_Progress_File(residual_file,
@@ -1241,6 +1247,7 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
      //NKS_total_cpu_time.cput = CFDkit_Summation_MPI(NKS_processor_cpu_time.cput);  
      processor_cpu_time.update();
      total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput);  
+     NKS_total_cpu_time.cput += total_cpu_time.cput - temp_t;
 
      if (error_flag) {
         if (CFDkit_Primary_MPI_Processor()) { 
@@ -1509,6 +1516,46 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
        } /* endif */
        error_flag = CFDkit_OR_MPI(error_flag);
        if (error_flag) return (error_flag);
+
+    } 
+    /*************************************************************************
+     ********************* WRITE OUTPUT NODES ********************************
+     *************************************************************************/
+    else if (command_flag == WRITE_OUTPUT_NODES_CODE) {
+      if (!batch_flag) cout << "\n Writing Euler2D node locations to output data file(s).";
+      error_flag = Output_Nodes_Tecplot(Local_SolnBlk,
+					List_of_Local_Solution_Blocks,
+					Input_Parameters,
+					number_of_time_steps,
+					Time);
+      if (error_flag) {
+	cout << "\n Euler2D ERROR: Unable to open Euler2D nodes output data file(s) "
+	     << "on processor "
+	     << List_of_Local_Solution_Blocks.ThisCPU
+	     << "." << endl;
+      } /* endif */
+      error_flag = CFDkit_OR_MPI(error_flag);
+      if (error_flag) return error_flag;
+      
+    } 
+    /*************************************************************************
+     ********************* WRITE OUTPUT GRADIENTS ****************************
+     *************************************************************************/
+    else if (command_flag == WRITE_OUTPUT_GRADIENTS_CODE) {
+      if (!batch_flag) cout << "\n Writing Euler2D primitive state gradients to output data file(s).";
+      error_flag = Output_Gradients_Tecplot(Local_SolnBlk,
+					    List_of_Local_Solution_Blocks,
+					    Input_Parameters,
+					    number_of_time_steps,
+					    Time);
+      if (error_flag) {
+	cout << "\n Euler2D ERROR: Unable to open Euler2D gradient output data file(s) "
+	     << "on processor "
+	     << List_of_Local_Solution_Blocks.ThisCPU
+	     << "." << endl;
+      } /* endif */
+      error_flag = CFDkit_OR_MPI(error_flag);
+      if (error_flag) return error_flag;
 
 
     }

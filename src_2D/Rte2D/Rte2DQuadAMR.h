@@ -2588,7 +2588,8 @@ int Load_Send_Message_Buffers_ResChange_CoarseToFine(Rte2D_Quad_Block *Soln_ptr,
 	       i = Soln_ptr[i_blk].LoadSendBuffer_C2F(Soln_Block_List.message_reschange_northface_sendbuf[i_blk][0],
 						      l0,buffer_size_neighbour,
 						      i_min0,i_max0,i_inc,
-						      j_min0,j_max0,j_inc);
+						      j_min0,j_max0,j_inc,
+						      NORTH,WEST);
 	       if (i != 0) return(2200);
 	       //
 	       // Second neighbour (solution).
@@ -2596,7 +2597,8 @@ int Load_Send_Message_Buffers_ResChange_CoarseToFine(Rte2D_Quad_Block *Soln_ptr,
 	       i = Soln_ptr[i_blk].LoadSendBuffer_C2F(Soln_Block_List.message_reschange_northface_sendbuf[i_blk][1],
 						      l1,buffer_size_neighbour,
 						      i_min1,i_max1,i_inc,
-						      j_min1,j_max1,j_inc);
+						      j_min1,j_max1,j_inc,
+						      NORTH,EAST);
 	       if (i != 0) return(2201);
 	     } else {
 	       i = Soln_ptr[i_blk].LoadSendBuffer_BC_C2F(Soln_Block_List.message_reschange_northface_sendbuf[i_blk][0],
@@ -3169,7 +3171,8 @@ int Load_Send_Message_Buffers_ResChange_CoarseToFine(Rte2D_Quad_Block *Soln_ptr,
 	       i = Soln_ptr[i_blk].LoadSendBuffer_C2F(Soln_Block_List.message_reschange_southface_sendbuf[i_blk][0],
 						      l0,buffer_size_neighbour,
 						      i_min0,i_max0,i_inc,
-						      j_min0,j_max0,j_inc);
+						      j_min0,j_max0,j_inc,
+						      SOUTH,WEST);
 	       if (i != 0) return(2100);
 	       //
 	       // Second neighbour (solution).
@@ -3177,7 +3180,8 @@ int Load_Send_Message_Buffers_ResChange_CoarseToFine(Rte2D_Quad_Block *Soln_ptr,
 	       i = Soln_ptr[i_blk].LoadSendBuffer_C2F(Soln_Block_List.message_reschange_southface_sendbuf[i_blk][1],
 						      l1,buffer_size_neighbour,
 						      i_min1,i_max1,i_inc,
-						      j_min1,j_max1,j_inc);
+						      j_min1,j_max1,j_inc,
+						      SOUTH,EAST);
 	       if (i != 0) return(2101);
 	     } else {
 	       i = Soln_ptr[i_blk].LoadSendBuffer_BC_C2F(Soln_Block_List.message_reschange_southface_sendbuf[i_blk][0],
@@ -3750,7 +3754,8 @@ int Load_Send_Message_Buffers_ResChange_CoarseToFine(Rte2D_Quad_Block *Soln_ptr,
 	       i = Soln_ptr[i_blk].LoadSendBuffer_C2F(Soln_Block_List.message_reschange_eastface_sendbuf[i_blk][0],
 						      l0,buffer_size_neighbour,
 						      i_min0,i_max0,i_inc,
-						      j_min0,j_max0,j_inc);
+						      j_min0,j_max0,j_inc,
+						      EAST,SOUTH);
 	       if (i != 0) return(1200);
 	       //
 	       // Second neighbour (solution).
@@ -3758,7 +3763,8 @@ int Load_Send_Message_Buffers_ResChange_CoarseToFine(Rte2D_Quad_Block *Soln_ptr,
 	       i = Soln_ptr[i_blk].LoadSendBuffer_C2F(Soln_Block_List.message_reschange_eastface_sendbuf[i_blk][1],
 						      l1,buffer_size_neighbour,
 						      i_min1,i_max1,i_inc,
-						      j_min1,j_max1,j_inc);
+						      j_min1,j_max1,j_inc,
+						      EAST,NORTH);
 	       if (i != 0) return(1201);
 	     } else {
 	       i = Soln_ptr[i_blk].LoadSendBuffer_BC_C2F(Soln_Block_List.message_reschange_eastface_sendbuf[i_blk][0],
@@ -4299,7 +4305,8 @@ int Load_Send_Message_Buffers_ResChange_CoarseToFine(Rte2D_Quad_Block *Soln_ptr,
 	       i = Soln_ptr[i_blk].LoadSendBuffer_C2F(Soln_Block_List.message_reschange_westface_sendbuf[i_blk][0],
 						      l0,buffer_size_neighbour,
 						      i_min0,i_max0,i_inc,
-						      j_min0,j_max0,j_inc);
+						      j_min0,j_max0,j_inc,
+						      WEST,SOUTH);
 	       if (i != 0) return(1100);
 	       //
 	       // Second neighbour (solution).
@@ -4307,7 +4314,8 @@ int Load_Send_Message_Buffers_ResChange_CoarseToFine(Rte2D_Quad_Block *Soln_ptr,
 	       i = Soln_ptr[i_blk].LoadSendBuffer_C2F(Soln_Block_List.message_reschange_westface_sendbuf[i_blk][1],
 						      l1,buffer_size_neighbour,
 						      i_min1,i_max1,i_inc,
-						      j_min1,j_max1,j_inc);
+						      j_min1,j_max1,j_inc,
+						      WEST,NORTH);
 	       if (i != 0) return(1101);
 	     } else {
 	       i = Soln_ptr[i_blk].LoadSendBuffer_BC_C2F(Soln_Block_List.message_reschange_westface_sendbuf[i_blk][0],
@@ -4804,7 +4812,8 @@ int Load_Send_Message_Buffers_ResChange_CoarseToFine(Rte2D_Quad_Block *Soln_ptr,
              i = Soln_ptr[i_blk].LoadSendBuffer_C2F(Soln_Block_List.message_reschange_northwestcorner_sendbuf[i_blk],
                                                     l0,buffer_size_neighbour,
                                                     i_min0,i_max0,i_inc,
-                                                    j_min0,j_max0,j_inc);
+                                                    j_min0,j_max0,j_inc,
+						    NORTH_WEST,NORTH_WEST);
 	     if (i != 0) return(4200);
           } /* endif */
           // Load ghost cell mesh information as required.
@@ -5028,7 +5037,8 @@ int Load_Send_Message_Buffers_ResChange_CoarseToFine(Rte2D_Quad_Block *Soln_ptr,
              i = Soln_ptr[i_blk].LoadSendBuffer_C2F(Soln_Block_List.message_reschange_northeastcorner_sendbuf[i_blk],
                                                     l0,buffer_size_neighbour,
                                                     i_min0,i_max0,i_inc,
-                                                    j_min0,j_max0,j_inc);
+                                                    j_min0,j_max0,j_inc,
+						    NORTH_EAST,NORTH_EAST);
 	     if (i != 0) return(5200);
           } /* endif */
           // Load ghost cell mesh information as required.
@@ -5252,7 +5262,8 @@ int Load_Send_Message_Buffers_ResChange_CoarseToFine(Rte2D_Quad_Block *Soln_ptr,
              i = Soln_ptr[i_blk].LoadSendBuffer_C2F(Soln_Block_List.message_reschange_southeastcorner_sendbuf[i_blk],
                                                     l0,buffer_size_neighbour,
                                                     i_min0,i_max0,i_inc,
-                                                    j_min0,j_max0,j_inc);
+                                                    j_min0,j_max0,j_inc,
+						    SOUTH_EAST,SOUTH_EAST);
 	     if (i != 0) return(4100);
           } /* endif */
           // Load ghost cell mesh information as required.
@@ -5476,7 +5487,8 @@ int Load_Send_Message_Buffers_ResChange_CoarseToFine(Rte2D_Quad_Block *Soln_ptr,
              i = Soln_ptr[i_blk].LoadSendBuffer_C2F(Soln_Block_List.message_reschange_southwestcorner_sendbuf[i_blk],
                                                     l0,buffer_size_neighbour,
                                                     i_min0,i_max0,i_inc,
-                                                    j_min0,j_max0,j_inc);
+                                                    j_min0,j_max0,j_inc,
+						    SOUTH_WEST,SOUTH_WEST);
 	     if (i != 0) return(5100);
           } /* endif */
           // Load ghost cell mesh information as required.

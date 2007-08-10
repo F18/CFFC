@@ -391,20 +391,14 @@ void Rte2D_State :: SetBlackbody(double val)
 
 /**********************************************************************
  *                                                                    *
- * Function: NegIntensity                                             *
+ * Function: Unphysical_Properties                                    *
  *                                                                    *
- * Description: Check for a negative intenstiy.                       *
+ * Description: Check for unphysical state properties.                *
  *                                                                    *
  **********************************************************************/
-int Rte2D_State :: NegIntensity() {
-  bool NegValue = false;
-  for ( int n=0 ; n<Ntot ; n++ ) {
-    if ( I[n]<ZERO || I[n]!=I[n] ) {
-      NegValue = true;
-      break;
-    }
-  }
-  return NegValue;
+int Rte2D_State :: Unphysical_Properties(void) const {
+  for ( int n=0 ; n<Ntot ; n++ ) if ( I[n]<ZERO || I[n]!=I[n] ) return 1;
+  return 0;
 }
 
 /**********************************************************************
@@ -1848,6 +1842,15 @@ Rte2D_State& Rte2D_State :: operator -=(const Rte2D_State &U) {
   return (*this);
 }
 
+Rte2D_State& Rte2D_State::operator *=(const double &a) {
+  for ( int i=0; i<Ntot; i++ ) I[i] *= a;
+  return (*this);
+}
+
+Rte2D_State& Rte2D_State::operator /=(const double &a) {
+  for ( int i=0; i<Ntot; i++ ) I[i] /= a;
+  return (*this);
+}
 
 /**********************************************************************
  *                                                                    *
