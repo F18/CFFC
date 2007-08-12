@@ -299,7 +299,8 @@ INC_RTE = $(RTE_DIR)Rte2DState.h \
 	  $(RTE_DIR)Rte2DQuadMultigrid.h \
 	  $(RTE_DIR)Rte2DQuadNKS.h \
 	  $(RTE_DIR)Rte2DQuadAMR.h \
-	  $(RTE_DIR)SNBCK.h
+	  $(RTE_DIR)SNBCK.h \
+	  $(RTE_DIR)Planck.h 
 INC_MULTIGRID = $(MULTIGRID_DIR)FASMultigrid2D.h \
 	        $(MULTIGRID_DIR)FASMultigrid2DInput.h
 INC_NKS = $(NKS_DIR)NKS2D.h \
@@ -456,7 +457,7 @@ OBJ_RTE = $(RTE_DIR)Rte2DState.o \
           $(RTE_DIR)Rte2DQuadMultiBlock.o \
           $(RTE_DIR)Rte2DQuadGrid.o \
           $(RTE_DIR)Rte2DQuadSolvers.o \
-          $(RTE_DIR)SNBCK.o \
+          $(RTE_DIR)SNBCK.o
 OBJ_RTE_EXE = $(RTE_DIR)Rte2D.o
 OBJ_ICEMCFD = $(ICEM_DIR)ICEMCFD.o \
 	      $(ICEM_DIR)ICEMCFD_ctype.o
@@ -892,7 +893,7 @@ $(RTE_DIR)Rte2D.depend: $(SRC_RTE_EXE)
 	@echo '------------------------------------------------------------------------'
 	@echo ' '
 	touch $(RTE_DIR)Rte2D.depend
-	makedepend -f$(RTE_DIR)Rte2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_RTE_EXE) >& /dev/null
+	makedepend -f$(RTE_DIR)Rte2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_RTE_EXE) $(SRC_RTE) >& /dev/null
 	@echo ' '
 	@echo Rte2D source file dependencies have been brought up to date.
 	@echo '--------------------------------------------------------------'

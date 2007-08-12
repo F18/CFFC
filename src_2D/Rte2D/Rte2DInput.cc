@@ -109,7 +109,7 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     // DOM angular discretization (quadrature)
     string_ptr = "S2";
     strcpy(IP.DOM_Quadrature, string_ptr);
-    IP.i_DOM_Quadrature = DOM_S2;
+    IP.i_DOM_Quadrature = RTE2D_DOM_S2;
 
     // set gas Absorption model
     Rte2D_State::SetGas( );
@@ -127,7 +127,7 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     IP.Uo.Zero();
 
     // set scattering phase function
-    IP.i_ScatteringFunc = SCATTER_ISO;
+    IP.i_ScatteringFunc = RTE2D_SCATTER_ISO;
     string_ptr = "Isotropic";
     strcpy(IP.ScatteringFunc, string_ptr);
     Rte2D_State :: SetupPhase( IP.i_ScatteringFunc );
@@ -1993,19 +1993,19 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        strcpy(IP.DOM_Quadrature, 
               IP.Next_Control_Parameter);
        if (strcmp(IP.DOM_Quadrature, "S2") == 0) {
-          IP.i_DOM_Quadrature = DOM_S2;
+          IP.i_DOM_Quadrature = RTE2D_DOM_S2;
        } else if (strcmp(IP.DOM_Quadrature, "S4") == 0) {
-          IP.i_DOM_Quadrature = DOM_S4;
+          IP.i_DOM_Quadrature = RTE2D_DOM_S4;
        } else if (strcmp(IP.DOM_Quadrature, "S6") == 0) {
-          IP.i_DOM_Quadrature = DOM_S6;
+          IP.i_DOM_Quadrature = RTE2D_DOM_S6;
        } else if (strcmp(IP.DOM_Quadrature, "S8") == 0) {
-          IP.i_DOM_Quadrature = DOM_S8;
+          IP.i_DOM_Quadrature = RTE2D_DOM_S8;
        } else if (strcmp(IP.DOM_Quadrature, "S12") == 0) {
-          IP.i_DOM_Quadrature = DOM_S12;
+          IP.i_DOM_Quadrature = RTE2D_DOM_S12;
        } else if (strcmp(IP.DOM_Quadrature, "T3") == 0) {
-          IP.i_DOM_Quadrature = DOM_T3;
+          IP.i_DOM_Quadrature = RTE2D_DOM_T3;
        } else {
-          IP.i_DOM_Quadrature = DOM_S2;
+          IP.i_DOM_Quadrature = RTE2D_DOM_S2;
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Absorption_Coefficient") == 0) {
@@ -2038,17 +2038,17 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
       Get_Next_Input_Control_Parameter(IP);
       strcpy(IP.ScatteringFunc, IP.Next_Control_Parameter);
        if (strcmp(IP.ScatteringFunc, "Isotropic") == 0) {
-	 IP.i_ScatteringFunc = SCATTER_ISO;
+	 IP.i_ScatteringFunc = RTE2D_SCATTER_ISO;
        } else if (strcmp(IP.ScatteringFunc, "F1") == 0) {
-	 IP.i_ScatteringFunc = SCATTER_F1;
+	 IP.i_ScatteringFunc = RTE2D_SCATTER_F1;
        } else if (strcmp(IP.ScatteringFunc, "F2") == 0) {
-	 IP.i_ScatteringFunc = SCATTER_F2;
+	 IP.i_ScatteringFunc = RTE2D_SCATTER_F2;
        } else if (strcmp(IP.ScatteringFunc, "F3") == 0) {
-	 IP.i_ScatteringFunc = SCATTER_F3;
+	 IP.i_ScatteringFunc = RTE2D_SCATTER_F3;
        } else if (strcmp(IP.ScatteringFunc, "B1") == 0) {
-	 IP.i_ScatteringFunc = SCATTER_B1;
+	 IP.i_ScatteringFunc = RTE2D_SCATTER_B1;
        } else if (strcmp(IP.ScatteringFunc, "B2") == 0) {
-	 IP.i_ScatteringFunc = SCATTER_B2;
+	 IP.i_ScatteringFunc = RTE2D_SCATTER_B2;
        } else {
 	 i_command = INVALID_INPUT_VALUE;
        } /* endif */

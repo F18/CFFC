@@ -43,6 +43,7 @@ using namespace std;
 #define MICRO    0.000001
 #define TOLER    0.0000001
 #define NANO     0.000000001
+#define PICO     0.000000000001
 
 #ifndef PI
 #define	PI	3.14159265358979323846

@@ -8,10 +8,6 @@
 #include "Rte2DQuad.h"
 #endif // _RTE2D_QUAD_INCLUDED
 
-#ifndef _RTE2D_AMR_INCLUDED
-#include "Rte2DQuadAMR.h"
-#endif // _RTE2D_AMR_INCLUDED
-
 
 /**************************************************************************
  * Rte2D_Quad_Block -- Multiple Block External Subroutines.             *

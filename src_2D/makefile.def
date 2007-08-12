@@ -25,6 +25,10 @@ CANTERA_VERSION = NoCANTERA
 # <alpha>  gprof --demangle=compaq cffc2D gmon.out > output.txt
 PROFILING = OFF
 
+# NoFFTW, V32
+FFTW_VERSION = NoFFTW
+
+
 #-----------------------------------------------------------#
 #       Platform Specific Compiler Flags                    #
 #-----------------------------------------------------------#
@@ -201,6 +205,14 @@ FFTW_INC_DIR   = $(FFTW_DIR)/include
 FFTW_CPP_FLAGS = -I$(FFTW_INC_DIR)
 FFTW_LD_FLAGS  = -L$(FFTW_LIB_DIR) -lfftw3
 
+ifeq ($(FFTW_VERSION),NoFFTW)
+  FFTW_CPP_FLAGS = 
+  FFTW_LD_FLAGS  = 
+else
+  FFTW_CPP_FLAGS = -I$(FFTW_INC_DIR)
+  FFTW_LD_FLAGS  = -L$(FFTW_LIB_DIR) -lfftw3
+endif
+
 #
 # CPPFLAG -D__USE_MALLOC explicitly handles C++ string memory issues, but 
 # is only really necessary when using memory checkers, ( ie. valgrind) 
@@ -230,11 +242,11 @@ ifeq ($(PLATFORM),Linux_i386)
        FFLAGS = -O2 -ip
        CFLAGS = -O2
     endif
-    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -lm
+    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -lm -lgfortran
     # Profiling with gprof 
     ifeq ($(PROFILING),ON)
       CXXFLAGS = -g -pg 
-      LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -lm -pg
+      LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -lm -pg -lgfortran
     endif
     LD = $(CXX)
     DEPENDSFLAGS =

@@ -21,38 +21,15 @@
 
 /*  GMRES FUNCTION PROTOTYPES */
 
-template <> 
+template <>
 void GMRES_Block<Rte2D_State,Rte2D_Quad_Block,Rte2D_Input_Parameters>::
-  SubcellReconstruction(const int i, 
+  SubcellReconstruction(const int i,
 			const int j,
 			const int Limiter);
 
 
 
 /*  BLOCK PRECONDITIONER FUNCTION PROTOTYPES */
-
-template <>
-void Block_Preconditioner<Rte2D_State,Rte2D_Quad_Block,Rte2D_Input_Parameters>::
-  Setup_Jacobian_approximation();
-
-template <>
-void Block_Preconditioner<Rte2D_State,Rte2D_Quad_Block,Rte2D_Input_Parameters>::
-  Update_Jacobian_and_Preconditioner();
-
-template <>
-void Block_Preconditioner<Rte2D_State,Rte2D_Quad_Block,Rte2D_Input_Parameters>::
-  Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jacobian);
-
-template<> 
-void Block_Preconditioner<Rte2D_State,Rte2D_Quad_Block,Rte2D_Input_Parameters>::
-  First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index_j, 
-				     DenseMatrix* Jacobian);            
-
-template<> 
-void Block_Preconditioner<Rte2D_State,Rte2D_Quad_Block,Rte2D_Input_Parameters>::
-  First_Order_Inviscid_Jacobian_Roe(const int &cell_index_i,const int &cell_index_j, 
-				    DenseMatrix* Jacobian);          
-
 
 void dFIdU_FD(DenseMatrix& dRdW, Rte2D_Quad_Block &SolnBlk,  
 	      Rte2D_Input_Parameters &Input_Parameters,

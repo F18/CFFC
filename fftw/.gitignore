@@ -1,0 +1,17 @@
+bin
+lib
+.libs
+.deps
+*.pc
+*.[oa]
+*.l[oa]
+*.1
+Makefile
+config.h
+config.status
+stamp-h1
+libtool
+*.1
+fftw-wisdom
+fftw-wisdom-to-conf
+bench

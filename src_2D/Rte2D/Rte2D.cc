@@ -1,6 +1,6 @@
 /*******************************************************************
  *******************************************************************
- **********     Rte2D - Built using CFDkit+caboodle      *********
+ ***********     Rte2D - Built using CFDkit+caboodle      **********
  ******                                                       ******   
  ****                                                           ****
  ******       UTIAS, CFD & Propulsion Group, 1999-2004        ******
@@ -29,8 +29,8 @@ using namespace std;
 // Include CFDkit+caboodle header files.
 
 #include "Rte2DQuad.h"
-#include "../MPI.h"
-#include "../ICEMCFD.h"
+#include "../MPI/MPI.h"
+#include "../ICEM/ICEMCFD.h"
 
 /* Begin Rte2D program. */
 
@@ -49,9 +49,6 @@ int main(int num_arg, char *arg_ptr[]) {
       error_flag,
       mpirun_flag;
 
-  // Other local integer variables:
-  int i;
-
   // Name of program entered on the command line:
   char *command_name_ptr;
 
@@ -61,10 +58,10 @@ int main(int num_arg, char *arg_ptr[]) {
 
   // Version of code:
   char *program_version_ptr = 
-     "Beta Version, UTIAS CFD & Propulsion Group, 1999-2004.";
+     "Version 1.00, UTIAS CFD & Propulsion Group, 1999-2007.";
   
   // Input file name:
-  char *Input_File_Name_ptr = "pdes++.in";
+  char *Input_File_Name_ptr = "rte2D.in";
 
   // Equation type indicator:
   char *Equation_Type_ptr = "Rte2D";
@@ -102,17 +99,17 @@ int main(int num_arg, char *arg_ptr[]) {
   /* Parse and interpret command line arguments.  Note that there
      are several different possible arguments which are:
 
-     1) -v  lists PDES++ version information to standard output,
-     2) -h  lists all possible optional arguments for PDES++,
-     3) -i  execute PDES++ in interactive mode (default mode),
-     4) -b  execute PDES++ in batch mode,
+     1) -v  lists program version information to standard output,
+     2) -h  lists all possible optional arguments for program,
+     3) -i  execute program in interactive mode (default mode),
+     4) -b  execute program in batch mode,
      5) -pde type   sets type of partial differential equation
-                    to be solve to "type" (default is "Rte2D"),
+                    to be solve to "type" (default is "Euler2D"),
      6) -f name  uses "name" as the input data file rather than
-                 the standard input data file "pdes++.in". */
+                 the standard input data file "euler2D.in". */
 
   if (num_arg >= 2) {
-    for (i = 1; i <= num_arg - 1; ++i) {
+    for (int i = 1; i <= num_arg - 1; ++i) {
       if (strcmp(arg_ptr[i], "-v") == 0 ||
           strcmp(arg_ptr[i], "--version") == 0) {
         version_flag = 1;
@@ -174,7 +171,6 @@ int main(int num_arg, char *arg_ptr[]) {
      cout << CFDkit_Version_MPI() << "\n";
      cout << ICEMCFD_Version() << "\n";
      cout << "Built using MV++, SparseLib++, IML++, and BPKIT Libraries\n";
-     cout << "Built using CEA Thermodynamic and Transport Data, NASA Glenn Research Center\n";
      cout.flush();
      if (version_flag) return (0);
   } /* endif */
@@ -185,13 +181,13 @@ int main(int num_arg, char *arg_ptr[]) {
 
   if (CFDkit_Primary_MPI_Processor() && help_flag) {
      cout << "Usage:\n";
-     cout << "ion5moment2D [-v] [-h] [-i] [-b] [-pde type] [-f name]\n";
+     cout << "rte2D [-v] [-h] [-i] [-b] [-pde type] [-f name]\n";
      cout << " -v (--version)  display version information\n";
      cout << " -h (--help)  show this help\n";
      cout << " -i (--inter)  execute in interactive mode (default)\n";
      cout << " -b (--batch)  execute in batch mode\n";
 //      cout << " -pde type  solve `type' PDEs (`Rte2D' is default)\n";
-     cout << " -f name  use `name' input data file (`pdes++.in' is default)\n";
+     cout << " -f name  use `name' input data file (`rte2D.in' is default)\n";
      cout.flush();
      return (0);
   } /* endif */

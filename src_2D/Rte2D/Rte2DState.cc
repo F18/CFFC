@@ -487,32 +487,32 @@ void Rte2D_State :: SetDirsDOM(const int NumPolarDirs,
   switch (Quad_Type) {
     
     // S2 NONSYMMETRIC from LATHROP and CARLSON
-    case DOM_S2:
+    case RTE2D_DOM_S2:
       quad_str = "DOM_S2";    
       break;
 
     // S4 SYMMETRIC from LATHROP and CARLSON
-    case DOM_S4:
+    case RTE2D_DOM_S4:
       quad_str = "DOM_S4";    
       break;
 	
     // S8 SYMMETRIC from LATHROP and CARLSON
-    case DOM_S6:
+    case RTE2D_DOM_S6:
       quad_str = "DOM_S6";    
       break;
 
     // S8 SYMMETRIC from LATHROP and CARLSON
-    case DOM_S8:
+    case RTE2D_DOM_S8:
       quad_str = "DOM_S8";    
       break;
 
     // S12 SYMMETRIC from LATHROP and CARLSON
-    case DOM_S12:
+    case RTE2D_DOM_S12:
       quad_str = "DOM_S12";    
       break;
 
     // T3 SYMMETRIC from Truelove
-    case DOM_T3:
+    case RTE2D_DOM_T3:
       quad_str = "DOM_T3";    
       break;
 
@@ -844,7 +844,7 @@ void Rte2D_State :: SetupPhaseDOM( const int type ) {
 
   // if this is linear isotropic scattering, the phase function
   // is 1 every where.  No need to numerically average it.
-  if ( type == SCATTER_ISO ) {
+  if ( type == RTE2D_SCATTER_ISO ) {
 
     for (v=0; v<Nband; v++) 
       for(int m=0 ; m<Npolar ; m++) 
@@ -1011,7 +1011,7 @@ void Rte2D_State :: SetupPhaseFVM( const int type ) {
 
   // if this is linear isotropic scattering, the phase function
   // is 1 every where.  No need to numerically average it.
-  if ( type == SCATTER_ISO ) {
+  if ( type == RTE2D_SCATTER_ISO ) {
 
     for (v=0; v<Nband; v++) 
       for(int m=0 ; m<Npolar ; m++) 
@@ -1967,64 +1967,6 @@ istream& operator >> (istream &in_file,  Rte2D_State &U)
  *********************************************************************************
  *********************************************************************************/
 
-/********************************************************
- * Blackbody intensity                                  *
- ********************************************************/
-extern double Ib(const double T) { return STEFFAN_BOLTZMANN*pow(T,4.0)/PI; }
-
-/********************************************************
- * Blackbody intensity continained within a finite      *
- * wavelength  band.  Wavelengths lambda1 and lambda2 in*
- * micro-m                                              *
- ********************************************************/
-extern double Ib(const double T, 
-		 const double lambda1,
-		 const double lambda2 ) { 
-  return ( Planck(lambda2*T) - Planck(lambda1*T) )*Ib(T); 
-}
-
-
-/********************************************************
- * This subroutine calculates the fractional blackbody	*
- * emissive power f(n*lambda*T), where n*lambda*T in    *
- * (micro-m*K) and refractive index, n, approx 1.       *
- * See:                                                 *
- *   M.F. Modest, "Radiative Heat Transfer," 2nd ed,    *
- *   New York: Academic Press. 2003.                    *
- ********************************************************/
-extern double Planck(const double lambdaT) { // micro-m K
-
-  // constants
-  double C2 = 1.4388E+04; // [micro-m K]
-  double CC = FIFTEEN/pow(PI,4);
-  double EPS = 1E-16;
-
-
-  // V = C_2/lambdaT = C_2*eta/T
-  double V  = C2/(lambdaT);
-  double EX = exp(V);
-
-  // Evaluation of f(n*lambda*T) in terms of an infinite series
-  // func = f(n*lambda*T)
-  double func = ZERO;
-  double EM = ONE;
-  int M = 0;
-  bool converged = false;
-  double VM, BM;
-  while( !converged ) {
-    M++;
-    VM=M*V;
-    BM=(SIX+VM*(SIX+VM*(THREE+VM)))/pow(double(M),4);
-    EM=EM/EX;
-    func = func + BM*EM;
-    if((pow(VM,3)*EM)<EPS) converged = true;
-  }
-  func *= CC;
-
-  return (func);
-
-}
-
 
 
 /**********************************************************
@@ -2570,7 +2512,7 @@ double* PhaseFunc( const int type, int &n) {
   switch (type) {
 	    
     // for Linear isotropic scattering
-    case (SCATTER_ISO):
+    case (RTE2D_SCATTER_ISO):
     default:
 
       n = 1;
@@ -2580,7 +2522,7 @@ double* PhaseFunc( const int type, int &n) {
      break;
 
     // Forward scattering with the F1 phase function of Kim and Lee (1988)
-    case (SCATTER_F1):
+    case (RTE2D_SCATTER_F1):
       
       // the degree
       n = 13;
@@ -2605,7 +2547,7 @@ double* PhaseFunc( const int type, int &n) {
 
 
     // Forward scattering with the F2 phase function of Kim and Lee (1988)
-    case (SCATTER_F2):
+    case (RTE2D_SCATTER_F2):
       
       // the degree
       n = 9;
@@ -2626,7 +2568,7 @@ double* PhaseFunc( const int type, int &n) {
 
 
     // Forward scattering with the F3 phase function of Kim and Lee (1988)
-    case (SCATTER_F3):
+    case (RTE2D_SCATTER_F3):
       
       // the degree
       n = 3;
@@ -2641,7 +2583,7 @@ double* PhaseFunc( const int type, int &n) {
 
 
     // Backward scattering with the B1 phase function of Kim and Lee (1988)
-    case (SCATTER_B1):
+    case (RTE2D_SCATTER_B1):
       
       // the degree
       n = 6;
@@ -2659,7 +2601,7 @@ double* PhaseFunc( const int type, int &n) {
 
 
     // Backward scattering with the B2 phase function of Kim and Lee (1988)
-    case (SCATTER_B2):
+    case (RTE2D_SCATTER_B2):
       
       // the degree
       n = 3;

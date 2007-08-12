@@ -352,9 +352,9 @@ void EM2C :: ComputeRefSNB( const double p,       // pressure [atm]
       S_CO[i] = k;
       B_CO[i] = TWO*beta/PI;
       
-      // check for infinite pressure broadening
-       if (B_CO[i]>GRAY_GAS_CUTOFF) 
-	cerr << "Gray gas (co) detected at " << WaveNo[i] << " cm^-1" << endl;
+//       // check for infinite pressure broadening
+//        if (B_CO[i]>GRAY_GAS_CUTOFF) 
+// 	cerr << "Gray gas (co) detected at " << WaveNo[i] << " cm^-1" << endl;
 
     }/* endif CO */
 
@@ -380,9 +380,9 @@ void EM2C :: ComputeRefSNB( const double p,       // pressure [atm]
       S_CO2[i] = k;
       B_CO2[i] = TWO*beta/PI;
 
-      // check for infinite pressure broadening
-       if (B_CO2[i]>GRAY_GAS_CUTOFF) 
-	cerr << "Gray gas (co2) detected at " << WaveNo[i] << " cm^-1" << endl;
+//       // check for infinite pressure broadening
+//        if (B_CO2[i]>GRAY_GAS_CUTOFF) 
+// 	cerr << "Gray gas (co2) detected at " << WaveNo[i] << " cm^-1" << endl;
      
     }/* endif CO2 */
 
@@ -411,9 +411,9 @@ void EM2C :: ComputeRefSNB( const double p,       // pressure [atm]
       S_H2O[i] = k;
       B_H2O[i] = TWO*beta/PI;
       
-      // check for infinite pressure broadening
-      if (B_H2O[i]>GRAY_GAS_CUTOFF) 
-	cerr << "Gray gas (h2o) detected at " << WaveNo[i] << " cm^-1" << endl;
+//       // check for infinite pressure broadening
+//       if (B_H2O[i]>GRAY_GAS_CUTOFF) 
+// 	cerr << "Gray gas (h2o) detected at " << WaveNo[i] << " cm^-1" << endl;
 
     }/* endif H2O */
 
@@ -1704,53 +1704,6 @@ double LineOfSightIntens( const double I1, const double Ib,
 
 }
 
-
-/********************************************************
- * Blackbody intensity                                  *
- ********************************************************/
-double Ib(const double T) { return SIGMA*pow(T,4.0)/PI; }
-
-/********************************************************
- * Blackbody spectral intensity at specified wavenumber.*
- * Radiative energy flow / time / area normal to rays / *
- * solid angle / wavelength [cm].                       *
- *                                                      *
- * wavenumber wn in [cm^-1]                             *
- ********************************************************/
-double Ib_v(const double T, 
-	    const double wn ) { 
-  return Planck( T, wn ) * PI;
-
-}
-
-/********************************************************
- * Blackbody emmissive power at specified wavenumber.   *
- * wavenumber wn in [cm^-1]                             *
- ********************************************************/
-double Planck(const double T, 
-	      const double wn ) { 
-
-  // Plancks constants
-  static const double C1 = 1.1909E-08; // [W/(m2 ster cm-4)]
-  static const double C2 = 1.4388E+00; // [cm*K]
-
-  // check for div by zero
-  if (T<NANO) return ZERO;
-
-  // X = eta/T (cm^-1/K)
-  // V = C_2*eta/T
-  // EN = E_beta/nT^3
-  double V=C2*wn/T;
-  double EX=exp(V);
-  double EN=C1*wn*wn*wn/(EX-1.0); // W/m2cm-1K3
-  return EN;                      //W/m2cm-1
-}
-
-
-/********************************************************
- * convert wavenumber to wavelength                     *
- ********************************************************/
-double lambda(const double wn) { return 1/wn; }
 
 /*********************************************************************
  * Convert fortran "D" double notation to cpp "E" notation.  Returns *

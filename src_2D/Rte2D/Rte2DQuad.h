@@ -17,10 +17,6 @@
 #ifndef _RTE2D_QUAD_INCLUDED
 #define _RTE2D_QUAD_INCLUDED
 
-// define early
-class Rte2D_Quad_Block;
-
-
 /* Include 2D Rte state, 2D cell, 2D quadrilateral multiblock 
    grid, quadtree, AMR, and 2D Rte input 
    header files. */
@@ -40,6 +36,10 @@ class Rte2D_Quad_Block;
 #ifndef _QUADTREE_INCLUDED
 #include "../AMR/QuadTree.h"
 #endif // _QUADTREE_INCLUDED
+
+#ifndef _AMR_INCLUDED
+#include "../AMR/AMR.h"
+#endif // _AMR_INCLUDED
 
 #ifndef _NASA_ROTOR37_INCLUDED
 #include "../Grid/NASARotor37.h"

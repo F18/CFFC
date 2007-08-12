@@ -189,6 +189,20 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 		                 Input_Parameters.Number_of_Cells_Jdir,
 				 Input_Parameters.Number_of_Ghost_Cells);
         break;
+      case GRID_WEDGE :
+	Grid_ptr = Grid_Wedge(Grid_ptr,
+                              Input_Parameters.Number_of_Blocks_Idir,
+		              Input_Parameters.Number_of_Blocks_Jdir,
+			      Input_Parameters.Wedge_Angle,
+			      Input_Parameters.Wedge_Length,
+			      Input_Parameters.BC_South,
+			      Input_Parameters.i_Mesh_Stretching,
+			      Input_Parameters.Mesh_Stretching_Factor_Idir,
+			      Input_Parameters.Mesh_Stretching_Factor_Jdir,
+			      Input_Parameters.Number_of_Cells_Idir,
+			      Input_Parameters.Number_of_Cells_Jdir,
+			      Input_Parameters.Number_of_Ghost_Cells);
+	break;
       case GRID_UNSTEADY_BLUNT_BODY :
 	Grid_ptr = Grid_Unsteady_Blunt_Body(Grid_ptr,
                                             Input_Parameters.Number_of_Blocks_Idir,
@@ -199,12 +213,33 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 					    Input_Parameters.Number_of_Cells_Jdir,
 					    Input_Parameters.Number_of_Ghost_Cells);
 	break;
-      case GRID_ICEMCFD :
-        Grid_ptr = ICEMCFD_Read(Input_Parameters.ICEMCFD_FileNames,
-                                Grid_ptr,
-                                &Input_Parameters.Number_of_Blocks_Idir,
-                                &Input_Parameters.Number_of_Blocks_Jdir);
+      case GRID_RINGLEB_FLOW :
+        Grid_ptr = Grid_Ringleb_Flow(Grid_ptr,
+                                     Input_Parameters.Number_of_Blocks_Idir,
+	    	                     Input_Parameters.Number_of_Blocks_Jdir,
+				     Input_Parameters.Inner_Streamline_Number,
+				     Input_Parameters.Outer_Streamline_Number,
+				     Input_Parameters.Isotach_Line,
+                                     Input_Parameters.Number_of_Cells_Idir,
+                                     Input_Parameters.Number_of_Cells_Jdir,
+				     Input_Parameters.Number_of_Ghost_Cells);
         break;
+      case GRID_BUMP_CHANNEL_FLOW :
+        Grid_ptr = Grid_Bump_Channel_Flow(Grid_ptr,
+                                          Input_Parameters.Number_of_Blocks_Idir,
+		                          Input_Parameters.Number_of_Blocks_Jdir,
+                                          Input_Parameters.Cylinder_Radius,
+					  Input_Parameters.Smooth_Bump,
+ 		                          Input_Parameters.Number_of_Cells_Idir,
+		                          Input_Parameters.Number_of_Cells_Jdir,
+					  Input_Parameters.Number_of_Ghost_Cells);
+        break;
+      case GRID_ICEMCFD :
+	Grid_ptr = ICEMCFD_Read(Input_Parameters.ICEMCFD_FileNames,
+				Grid_ptr,
+				&Input_Parameters.Number_of_Blocks_Idir,
+				&Input_Parameters.Number_of_Blocks_Jdir);
+	break;
 
       default:
         Grid_ptr = Grid_Rectangular_Box(Grid_ptr,
@@ -217,6 +252,26 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 					Input_Parameters.Number_of_Ghost_Cells);
         break;
     } /* endswitch */
+
+    /* Reset boundary conditions if required. */
+
+    if (Input_Parameters.BCs_Specified) {
+      for (int jBlk = 0; jBlk < Input_Parameters.Number_of_Blocks_Jdir; jBlk++) {
+	for (int iBlk = 0; iBlk < Input_Parameters.Number_of_Blocks_Idir; iBlk++) {
+	  if (jBlk == Input_Parameters.Number_of_Blocks_Jdir-1)
+	    Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(Input_Parameters.BC_North);
+	  if (jBlk == 0)
+	    Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(Input_Parameters.BC_South);
+	  if (iBlk == Input_Parameters.Number_of_Blocks_Idir-1)
+	    Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(Input_Parameters.BC_East);
+	  if (iBlk == 0)
+	    Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(Input_Parameters.BC_West);
+	  Set_BCs(Grid_ptr[iBlk][jBlk]);
+	  Update_Exterior_Nodes(Grid_ptr[iBlk][jBlk]);
+	  Update_Cells(Grid_ptr[iBlk][jBlk]);
+	}
+      }
+    }
 
     /* First translate quadrilateral mesh as specified by input parameters. */
 

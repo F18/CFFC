@@ -20,19 +20,27 @@
 #ifndef _RTE2D_STATE_INCLUDED
 #define _RTE2D_STATE_INCLUDED 
 
-// Required C++ libraries
+/* Include required C++ libraries. */
+
+#include <cstdio>
 #include <iostream>
+#include <iomanip>
+#include <fstream>
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
+
 using namespace std;
 
-// Required CFDkit+caboodle header files
+/* Required CFDkit+caboodle header files */
 
 #ifndef _MATH_MACROS_INCLUDED
 #include "../Math/Math.h"
 #endif // _MATH_MACROS_INCLUDED
 
-#ifndef _GAS_CONSTANTS_INCLUDED
-#include "../Physics/GasConstants.h"
-#endif // _GAS_CONSTANTS_INCLUDED
+#ifndef _MATRIX_INCLUDED
+#include "../Math/Matrix.h"
+#endif // _MATRIX_INCLUDED
 
 #ifndef _VECTOR2D_INCLUDED
 #include "../Math/Vector2D.h"
@@ -42,53 +50,58 @@ using namespace std;
 #include "../Math/Vector3D.h"
 #endif //_VECTOR3D_INCLUDED
 
-#ifndef _CFD_INCLUDED
-#include "../CFD/CFD.h"
-#endif // _CFD_INCLUDED
-
 #ifndef _SIMPSON_INCLUDED
 #include "../Math/Simpson.h"
 #endif // _SIMPSON_INCLUDED
 
-#ifndef _MATRIX_INCLUDED
-#include "../Math/Matrix.h"
-#endif // _MATRIX_INCLUDED
+#ifndef _CFD_INCLUDED
+#include "../CFD/CFD.h"
+#endif // _CFD_INCLUDED
 
+#ifndef _GAS_CONSTANTS_INCLUDED
+#include "../Physics/GasConstants.h"
+#endif // _GAS_CONSTANTS_INCLUDED
 
-// Constants
+#ifndef _SNBCK_INCLUDED
+#include "SNBCK.h"
+#endif //_SNBCK_INCLUDED
+
+#ifndef _PLANCK_INCLUDED
+#include "Planck.h"
+#endif //_PLANCK_INCLUDED
+
 /********************************************************
- * Gas Type                                             *
+ * Necessary Rte2D Specific Constants                   *
  ********************************************************/
-enum Gas_Models { RTE2D_GAS_TYPE_GRAY };
 
-/********************************************************
- * RTE discretization Type (DOM or FVM)                 *
- ********************************************************/
+// Absorbsion model type 
+enum Gas_Models { RTE2D_ABSORB_GRAY,
+                  RTE2D_ABSORB_SNBCK };
+
+// RTE discretization Type (DOM or FVM)
 enum RTE_Discretization { RTE2D_SOLVER_FVM,
 			  RTE2D_SOLVER_DOM };
 
+// Scatter Phase Functions
+enum Scatter_Models { RTE2D_SCATTER_ISO,  // isotropic scattering
+		      RTE2D_SCATTER_F1,   // Kim and Lee (1988)   
+		      RTE2D_SCATTER_F2,   // Kim and Lee (1988)
+		      RTE2D_SCATTER_F3,   // Kim and Lee (1988) 
+		      RTE2D_SCATTER_B1,   // Kim and Lee (1988)
+		      RTE2D_SCATTER_B2 }; // Kim and Lee (1988)
+
+// DOM quadrature Type 
+enum DOM_Qauad { RTE2D_DOM_S2,   // S2 NONSYMMETRIC from LATHROP and CARLSON
+		 RTE2D_DOM_S4,   // S4 SYMMETRIC from LATHROP and CARLSON
+		 RTE2D_DOM_S6,   // S6 SYMMETRIC from LATHROP and CARLSON
+		 RTE2D_DOM_S8,   // S8 SYMMETRIC from LATHROP and CARLSON
+		 RTE2D_DOM_S12,  // S12 SYMMETRIC from LATHROP and CARLSON
+		 RTE2D_DOM_T3 }; // T3 SYMMETRIC from Truelove
+
+
 /********************************************************
- * Scatter Phase Functions                              *
+ * STRUCTS REQUIRED FOR INTEGRATION                     *
  ********************************************************/
-enum Scatter_Models { SCATTER_ISO,  // isotropic scattering
-		      SCATTER_F1,   // Kim and Lee (1988)   
-		      SCATTER_F2,   // Kim and Lee (1988)
-		      SCATTER_F3,   // Kim and Lee (1988) 
-		      SCATTER_B1,   // Kim and Lee (1988)
-		      SCATTER_B2 }; // Kim and Lee (1988)
-
-/********************************************************
- * DOM quadrature Type                                  *
- ********************************************************/
-enum DOM_Qauad { DOM_S2,   // S2 NONSYMMETRIC from LATHROP and CARLSON
-		 DOM_S4,   // S4 SYMMETRIC from LATHROP and CARLSON
-		 DOM_S6,   // S6 SYMMETRIC from LATHROP and CARLSON
-		 DOM_S8,   // S8 SYMMETRIC from LATHROP and CARLSON
-		 DOM_S12,  // S12 SYMMETRIC from LATHROP and CARLSON
-		 DOM_T3 }; // T3 SYMMETRIC from Truelove
-
-
-//-------------- STRUCTS REQUIRED FOR INTEGRATION -------------------//
 
 // struct needed to integrate the phase function over the solid angle
 // contains information for legendre polynomials
@@ -122,7 +135,6 @@ struct exact_rect_param {
   int coord_flag; // a flag for which coordinate this is for
 };
 
-//-------------- END STRUCTS REQUIRED FOR INTEGRATION ----------------//
 
 
 
@@ -340,14 +352,6 @@ class Rte2D_State {
 /********************************************************
  *                       EXTERNAL FUNCTIONS             *
  ********************************************************/
-
-/********************************************************
- * Blackbody intensity                                  *
- ********************************************************/
-extern double Ib(const double T);
-extern double Ib(const double T, const double lambda1, 
-		 const double lambda2);
-extern double Planck(const double lambdaT);
 
 
 /*******************************************************

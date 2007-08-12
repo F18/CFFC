@@ -968,6 +968,7 @@ int Restrict_Solution_Block(Rte2D_Quad_Block &SolnBlk_Coarse,
  *                                                      *
  ********************************************************/
 void Output_Tecplot(Rte2D_Quad_Block &SolnBlk,
+		    Rte2D_Input_Parameters &IP,
                     const int Number_of_Time_Steps,
                     const double &Time,
                     const int Block_Number,

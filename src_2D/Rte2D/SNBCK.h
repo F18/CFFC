@@ -90,48 +90,31 @@
 using namespace std;
 
 // Required header files
-#ifndef _POLYFIT_INCLUDED
-#include "Polyfit.h"
-#endif //_POLYFIT_INCLUDED
+#ifndef _MATH_MACROS_INCLUDED
+#include "../Math/Math.h"
+#endif // _MATH_MACROS_INCLUDED
 
-#ifndef _NUMQUAD_INCLUDED
-#include "NumQuad.h"
-#endif //_NUMQUAD_INCLUDED
+#ifndef _SPLINE1D_INCLUDED
+#include "../Math/Spline1D.h"
+#endif //_SPLINE1D_INCLUDED
 
+#ifndef _QUADRATURE_INCLUDED
+#include "../Math/Quadrature.h"
+#endif //_QUADRATURE_INCLUDED
+
+#ifndef _PLANCK_INCLUDED
+#include "Planck.h"
+#endif //_PLANCK_INCLUDED
 
 /*********************************************************************
  ***************************** CONSTANTS *****************************
  *********************************************************************/
 
-// physical constants
-#define SIGMA        5.6704E-8  // Stefan-Boltzmann constant  [W/(m^2 K^4)]
-#define PI          3.14159265  // PI
-
-//constant definitions
-#define TOLER             1E-7
-#define PICO             1E-12
-#define NANO              1E-9
-#define MICRO             1E-6
-#define MILLI             1E-3
-#define ZERO              0.00
-#define QUARTER           0.25
-#define HALF              0.50
-#define ONE               1.00
-#define TWO               2.00
-#define THREE             3.00
-#define FOUR              4.00
-#define SIX               6.00
-#define TEN              10.00
-#define FIFTEEN          15.00
-#define MILLION         1.0E+6
-
 // unit conversion
 #define CM_TO_M         1.0E-2
 
-// input file lenght
-#define INPUT_FILE_LENGTH  256
-
-#define GRAY_GAS_CUTOFF  220.0
+// file length
+#define	INPUT_PARAMETER_LENGTH_RTE2D    128
 
 // flags for quadrature type.  quadrature was taken from : 
 // F. Liu, G.J. Smallwood, O.L. Gulder, Int. J. Heat Mass Trans., v43, 2000. pp. 3119-3135.
@@ -183,11 +166,6 @@ double LineOfSightIntens( const double I1, const double Ib,
 			  const double k, const double L );
 double LineOfSightIntens( const double I1, const double Ib, 
 			  const double tau );
-
-// Blackbody intensity 
-double Ib(const double T) ;
-double Ib_v(const double T, const double wn );
-double Planck(const double T, const double wn );
 
 
 // convert fortran "D" notation to "E" notation for scientific notation
@@ -253,10 +231,10 @@ class EM2C{
 
 
   // datafile paths and names
-  char FileSNBCO [INPUT_FILE_LENGTH]; // CO SNB parameter datafile
-  char FileSNBH2O[INPUT_FILE_LENGTH]; // H2O SNB parameter datafile
-  char FileSNBCO2[INPUT_FILE_LENGTH]; // CO2 SNB parameter datafile
-  char FileSNBWN [INPUT_FILE_LENGTH]; // SNB wavenumber datafile
+  char FileSNBCO [INPUT_PARAMETER_LENGTH_RTE2D]; // CO SNB parameter datafile
+  char FileSNBH2O[INPUT_PARAMETER_LENGTH_RTE2D]; // H2O SNB parameter datafile
+  char FileSNBCO2[INPUT_PARAMETER_LENGTH_RTE2D]; // CO2 SNB parameter datafile
+  char FileSNBWN [INPUT_PARAMETER_LENGTH_RTE2D]; // SNB wavenumber datafile
 
   // model parameters ( k [cm^-1 atm^-1] and 1/delta [cm])
   double kCO[NCO][Npoints], kH2O[NH2O][Npoints], kCO2[NCO2][Npoints]; // k
