@@ -2005,7 +2005,7 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
      *************************** RTE SPECIFIC ******************************/
 
     } else if (strcmp(IP.Next_Control_Parameter, "Difference_Scheme") == 0) {
-       i_command = 4;
+       i_command = 41;
        Get_Next_Input_Control_Parameter(IP);
        strcpy(IP.SpaceMarch_Scheme, 
               IP.Next_Control_Parameter);
@@ -2024,7 +2024,7 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "RTE_Solver") == 0) {
-       i_command = 999;
+       i_command = 42;
        Get_Next_Input_Control_Parameter(IP);
        strcpy(IP.RTE_Solver, 
               IP.Next_Control_Parameter);
@@ -2038,7 +2038,7 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        IP.Uo.RTE_Type = IP.i_RTE_Solver;
 
     } else if (strcmp(IP.Next_Control_Parameter, "DOM_Quadrature") == 0) {
-       i_command = 999;
+       i_command = 43;
        Get_Next_Input_Control_Parameter(IP);
        strcpy(IP.DOM_Quadrature, 
               IP.Next_Control_Parameter);
@@ -2058,33 +2058,56 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
           IP.i_DOM_Quadrature = RTE2D_DOM_S2;
        } /* endif */
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Absorption_Coefficient") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Angles_Mdir") == 0) {
+       i_command = 44;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Number_of_Angles_Mdir;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.Number_of_Angles_Mdir <= 0) {
+          i_command = INVALID_INPUT_VALUE;
+       } 
+       
+    } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Angles_Ldir") == 0) {
+       i_command = 45;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Number_of_Angles_Ldir;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.Number_of_Angles_Ldir <= 0) {
+          i_command = INVALID_INPUT_VALUE;
+       } 
 
-       i_command = 38;
+    } else if (strcmp(IP.Next_Control_Parameter, "Absorption_Coefficient") == 0) {
+       i_command = 46;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.AbsorptionCoef;
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.AbsorptionCoef < ZERO) {
           i_command = INVALID_INPUT_VALUE;
+       }  
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Absorption_Model") == 0) {
+      i_command = 47;
+      Get_Next_Input_Control_Parameter(IP);
+      strcpy(IP.AbsorptionModel, IP.Next_Control_Parameter);
+       if (strcmp(IP.AbsorptionModel, "Gray") == 0) {
+	 IP.i_AbsorptionModel = RTE2D_ABSORB_GRAY;
+       } else if (strcmp(IP.AbsorptionModel, "SNBCK") == 0) {
+	 IP.i_AbsorptionModel = RTE2D_ABSORB_SNBCK;
        } else {
-	 IP.Uo.SetAbsorption( IP.AbsorptionCoef );
-       } 
+	 i_command = INVALID_INPUT_VALUE;
+       } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Scattering_Coefficient") == 0) {
-
-       i_command = 39;
+       i_command = 48;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.ScatteringCoef;
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.ScatteringCoef < ZERO) {
           i_command = INVALID_INPUT_VALUE;
-       } else {
-	 IP.Uo.SetScattering( IP.ScatteringCoef );
-       } 
+       }  
 
     } else if (strcmp(IP.Next_Control_Parameter, "Scattering_Function") == 0) {
-
-      i_command = 40;
+      i_command = 49;
       Get_Next_Input_Control_Parameter(IP);
       strcpy(IP.ScatteringFunc, IP.Next_Control_Parameter);
        if (strcmp(IP.ScatteringFunc, "Isotropic") == 0) {
@@ -2105,88 +2128,70 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
 
 
     } else if (strcmp(IP.Next_Control_Parameter, "Gas_Temperature") == 0) {
-
-       i_command = 41;
+       i_command = 50;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.Temperature;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Temperature <= ZERO) {
+       if (IP.Temperature < ZERO) {
           i_command = INVALID_INPUT_VALUE;
-       } else {
-	 IP.Uo.SetBlackbody( Ib(IP.Temperature) );
        } 
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Angles_Mdir") == 0) {
-
-       i_command = 42;
+    } else if (strcmp(IP.Next_Control_Parameter, "Gas_Pressure") == 0) {
+       i_command = 51;
        IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.Number_of_Angles_Mdir;
+       IP.Input_File >> IP.Pressure;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Number_of_Angles_Mdir <= 0) {
+       if (IP.Pressure < ZERO) {
           i_command = INVALID_INPUT_VALUE;
-       } else {
-	 Rte2D_State::SetupAbsorb( IP.i_AbsorptionModel,
-				   IP.SNBCK_IP, 
-				   IP.CFFC_Path  );
-	 Rte2D_State::SetDirs( IP.Number_of_Angles_Mdir, 
-			       IP.Number_of_Angles_Ldir, 
-			       IP.i_DOM_Quadrature,
-			       IP.Axisymmetric,
-			       IP.CFFC_Path );
-	 IP.Uo.Allocate();
-	 IP.Uo.Zero();
-	 IP.Uo.SetBlackbody( Ib(IP.Temperature) );
-	 IP.Uo.SetAbsorption( IP.AbsorptionCoef );
-	 IP.Uo.SetScattering( IP.ScatteringCoef);
-	 Rte2D_State :: SetupPhase( IP.i_ScatteringFunc );
-      } 
+       } 
 
+    } else if (strcmp(IP.Next_Control_Parameter, "Mixture") == 0) {
+       i_command = 52;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.xco;    if (IP.xco   < ZERO) i_command = INVALID_INPUT_VALUE;
+       IP.Input_File >> IP.xco2;   if (IP.xco2  < ZERO) i_command = INVALID_INPUT_VALUE;
+       IP.Input_File >> IP.xh2o;   if (IP.xh2o  < ZERO) i_command = INVALID_INPUT_VALUE;
+       IP.Input_File >> IP.xo2;    if (IP.xo2   < ZERO) i_command = INVALID_INPUT_VALUE;
+       IP.Input_File >> IP.fsoot;  if (IP.fsoot < ZERO) i_command = INVALID_INPUT_VALUE;
+       IP.Input_File.getline(buffer, sizeof(buffer));
        
-    } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Angles_Ldir") == 0) {
-
-       i_command = 43;
-       IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.Number_of_Angles_Ldir;
-       IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Number_of_Angles_Ldir <= 0) {
-          i_command = INVALID_INPUT_VALUE;
-       } else {
-	 Rte2D_State::SetupAbsorb( IP.i_AbsorptionModel,
-				   IP.SNBCK_IP, 
-				   IP.CFFC_Path  );
-	 Rte2D_State::SetDirs( IP.Number_of_Angles_Mdir, 
-			       IP.Number_of_Angles_Ldir, 
-			       IP.i_DOM_Quadrature,
-			       IP.Axisymmetric,
-			       IP.CFFC_Path );
-	 IP.Uo.Allocate();
-	 IP.Uo.Zero();
-	 IP.Uo.SetBlackbody( Ib(IP.Temperature) );
-	 IP.Uo.SetAbsorption( IP.AbsorptionCoef );
-	 IP.Uo.SetScattering( IP.ScatteringCoef );
- 	 Rte2D_State :: SetupPhase( IP.i_ScatteringFunc );
-      } 
-
     } else if (strcmp(IP.Next_Control_Parameter, "Wall_Temperature") == 0) {
-      
-      i_command = 44;
+      i_command = 53;
       IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.NorthWallTemp; if (IP.NorthWallTemp <= ZERO) i_command = INVALID_INPUT_VALUE;
-      IP.Input_File >> IP.SouthWallTemp; if (IP.SouthWallTemp <= ZERO) i_command = INVALID_INPUT_VALUE;
-      IP.Input_File >> IP.EastWallTemp; if (IP.EastWallTemp <= ZERO) i_command = INVALID_INPUT_VALUE;
-      IP.Input_File >> IP.WestWallTemp; if (IP.WestWallTemp <= ZERO) i_command = INVALID_INPUT_VALUE;
+      IP.Input_File >> IP.NorthWallTemp; if (IP.NorthWallTemp < ZERO) i_command = INVALID_INPUT_VALUE;
+      IP.Input_File >> IP.SouthWallTemp; if (IP.SouthWallTemp < ZERO) i_command = INVALID_INPUT_VALUE;
+      IP.Input_File >> IP.EastWallTemp;  if (IP.EastWallTemp < ZERO)  i_command = INVALID_INPUT_VALUE;
+      IP.Input_File >> IP.WestWallTemp;  if (IP.WestWallTemp < ZERO)  i_command = INVALID_INPUT_VALUE;
       IP.Input_File.getline(buffer, sizeof(buffer));
-
 
     } else if (strcmp(IP.Next_Control_Parameter, "Wall_Emissivity") == 0) {
-      
-      i_command = 45;
+      i_command = 54;
       IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.NorthWallEmiss; if (IP.NorthWallEmiss <= ZERO) i_command = INVALID_INPUT_VALUE;
-      IP.Input_File >> IP.SouthWallEmiss; if (IP.SouthWallEmiss <= ZERO) i_command = INVALID_INPUT_VALUE;
-      IP.Input_File >> IP.EastWallEmiss; if (IP.EastWallEmiss <= ZERO) i_command = INVALID_INPUT_VALUE;
-      IP.Input_File >> IP.WestWallEmiss; if (IP.WestWallEmiss <= ZERO) i_command = INVALID_INPUT_VALUE;
+      IP.Input_File >> IP.NorthWallEmiss; if (IP.NorthWallEmiss < ZERO) i_command = INVALID_INPUT_VALUE;
+      IP.Input_File >> IP.SouthWallEmiss; if (IP.SouthWallEmiss < ZERO) i_command = INVALID_INPUT_VALUE;
+      IP.Input_File >> IP.EastWallEmiss;  if (IP.EastWallEmiss < ZERO)  i_command = INVALID_INPUT_VALUE;
+      IP.Input_File >> IP.WestWallEmiss;  if (IP.WestWallEmiss < ZERO)  i_command = INVALID_INPUT_VALUE;
       IP.Input_File.getline(buffer, sizeof(buffer));
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Setup") == 0) {
+      i_command = 55;
+      Rte2D_State::SetupAbsorb( IP.i_AbsorptionModel,
+				IP.SNBCK_IP, 
+				IP.CFFC_Path  );
+      Rte2D_State::SetDirs( IP.Number_of_Angles_Mdir, 
+			    IP.Number_of_Angles_Ldir, 
+			    IP.i_DOM_Quadrature,
+			    IP.Axisymmetric,
+			    IP.CFFC_Path );
+      IP.Uo.Allocate();
+      IP.Uo.Zero();
+      IP.Uo.Initialize_NonSol();
+      IP.Uo.SetBlackbody( Ib(IP.Temperature) );
+      IP.Uo.SetAbsorption( IP.AbsorptionCoef );
+      IP.i_AbsorptionModel = RTE2D_ABSORB_GRAY;
+
+      IP.Uo.SetScattering( IP.ScatteringCoef);
+      Rte2D_State :: SetupPhase( IP.i_ScatteringFunc );
 
 
     /***********************************************************************

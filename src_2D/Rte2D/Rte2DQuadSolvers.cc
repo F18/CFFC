@@ -1700,12 +1700,6 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
    * End of all Rte2DSolver computations and I/O.       *
    ********************************************************/
   
-  // deallocate static dynamic arrays in Rte2D_State
-  Rte2D_State :: DeallocateCosines();
-  Rte2D_State :: DeallocateDirs();
-
-
-
   return (0);
   
 }
