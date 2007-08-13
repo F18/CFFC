@@ -23,419 +23,40 @@
 #endif // _RTE2D_STATE_INCLUDED   
 
 
-/**********************************************************************
- * Static member initialization                                       *
- **********************************************************************/
-int    Rte2D_State :: Npolar = 0;
-int*   Rte2D_State :: Nazim = NULL;
-int    Rte2D_State :: Nband = 0;
-int    Rte2D_State :: Ntot = 0;
-int*** Rte2D_State :: Index = NULL;
-int    Rte2D_State :: NUM_VAR_RTE2D = 0;
-double** Rte2D_State :: mu = NULL;
-double** Rte2D_State :: eta = NULL;
-double** Rte2D_State :: xi = NULL;
-double** Rte2D_State :: omega = NULL;
-double*  Rte2D_State :: theta = NULL;
-double** Rte2D_State :: psi = NULL;
-double*  Rte2D_State :: delta_theta = NULL;
-double** Rte2D_State :: delta_psi = NULL;
-double***** Rte2D_State :: Phi = NULL;
-int  Rte2D_State :: Symmetry_Factor = 1;
-int Rte2D_State :: RTE_Type = RTE2D_SOLVER_FVM;
-
-
-/**********************************************************************
- *                                                                    *
- * Function: Rte2D_State                                              *
- *                                                                    *
- * Description: Class constructors with various implimentations.      *
- *                                                                    *
- **********************************************************************/
-Rte2D_State :: Rte2D_State() : kappa(NULL), sigma(NULL), I(NULL), 
-			       Ib(NULL), alpha(NULL), I_half(NULL)
-{ Allocate(); }
-
-Rte2D_State :: Rte2D_State( const Rte2D_State &U ) : kappa(NULL), 
-						     sigma(NULL),			     
-						     I(NULL), 
-						     Ib(NULL),
-						     alpha(NULL), 
-						     I_half(NULL)
-{ Allocate(); if( this != &U) Copy(U); }
-
-
-
-/**********************************************************************
- *                                                                    *
- * Function: ~Rte2D_State                                             *
- *                                                                    *
- * Description: Class destructor                               .      *
- *                                                                    *
- **********************************************************************/
-Rte2D_State :: ~Rte2D_State() 
-{ Deallocate(); }
-
-
-/**********************************************************************
- *                                                                    *
- * Function: Copy                                                     *
- *                                                                    *
- * Description: Class copy function.                                  *
- *                                                                    *
- **********************************************************************/
-void Rte2D_State :: Copy( const Rte2D_State &U ) 
-{
-  for ( int i=0; i<Nband; i++ )   { 
-    Ib[i] = U.Ib[i];
-    kappa[i] = U.kappa[i];
-    sigma[i] = U.sigma[i];
-  }
-  for ( int i=0; i<Ntot; i++ ) I[i] = U.I[i];
-}
-
-void Rte2D_State :: Copy_NonSol( const Rte2D_State &U ) 
-{
-  for ( int i=0; i<Nband; i++ )   { 
-    Ib[i] = U.Ib[i];
-    kappa[i] = U.kappa[i];
-    sigma[i] = U.sigma[i];
-  }
-}
-
-/**********************************************************************
- *                                                                    *
- * Function: Allocate, Deallocate                                     *
- *                                                                    *
- * Description: Array allocator and deallocator for intensity array.  *
- *                                                                    *
- **********************************************************************/
-void Rte2D_State :: Allocate()
-{
-  // deallocate first
-  Deallocate();
-
-  // create the jagged array
-  if (Ntot>0)  { 
-    I = new double[Ntot]; 
-//     for (int i=0; i<Ntot; i++ ) I[i] = ZERO;
-  }
-  if (Nband>0) {
-    Ib = new double[Nband];
-    kappa = new double[Nband];
-    sigma = new double[Nband];
-//     for (int i=0; i<Nband; i++ ) {
-//       kappa[i] = ZERO;
-//       sigma[i] = ZERO;
-//     }
-  }
-
-}
-
-
-void Rte2D_State :: Deallocate()
-{
-  if (     I != NULL ) { delete[] I;           I = NULL; }
-  if ( kappa != NULL ) { delete[] kappa;   kappa = NULL; }
-  if ( sigma != NULL ) { delete[] sigma;   sigma = NULL; }
-  if (    Ib != NULL ) { delete[] Ib;         Ib = NULL; }
-  if ( alpha != NULL ) { 
-    for (int i=0; i<Npolar; i++ ) delete[] alpha[i];
-    delete[] alpha; 
-    alpha = NULL; 
-  }
-}
-
-
-
-  
-/**********************************************************************
- *                                                                    *
- * Function: AllocateDirs, DeallocateDirs                             *
- *                                                                    *
- * Description: Array allocator and deallocator for directional       *
- *              arrays.                                               *
- *                                                                    *
- **********************************************************************/
-void Rte2D_State :: AllocateDirs()
-{
-  // deallocate first
-  DeallocateDirs();
-
-  // create the array
-  if (Npolar>0)  Nazim = new int[Npolar]; 
-
-}
-
-
-void Rte2D_State :: DeallocateDirs()
-{
-  if ( Nazim != NULL ) { delete[] Nazim; Nazim = NULL; }
-}
-
-
-/**********************************************************************
- *                                                                    *
- * Function: AllocateCosines, DeallocateCosines                       *
- *                                                                    *
- * Description: Array allocator and deallocator for directional       *
- *              arrays.                                               *
- *                                                                    *
- **********************************************************************/
-void Rte2D_State :: AllocateCosines()
-{
-  // declare
-  int cnt;
-
-  // create the array
-  if (Nband>0 && Npolar>0 && Nazim!=NULL) {  
-
-    mu          = new double*[Npolar];
-    eta         = new double*[Npolar];
-    xi          = new double*[Npolar];
-    omega       = new double*[Npolar];
-    if (RTE_Type==RTE2D_SOLVER_FVM) {
-      psi         = new double*[Npolar];
-      delta_psi   = new double*[Npolar];
-      theta       = new double [Npolar+1];
-      delta_theta = new double [Npolar];
-    } /* endif */
-
-    for (int i=0; i<Npolar; i++ ) {
-      mu[i]        = new double[ Nazim[i] ];
-      eta[i]       = new double[ Nazim[i] ];
-      xi[i]        = new double[ Nazim[i] ];
-      omega[i]     = new double[ Nazim[i] ];
-      if (RTE_Type==RTE2D_SOLVER_FVM) {
-	psi[i]       = new double[ Nazim[i]+1 ];
-	delta_psi[i] = new double[ Nazim[i] ];
-      } /* endif */
-    } /* endfor */
-    
-    // set the indexe array
-    cnt = 0;
-    Index = new int**[Nband];
-    for (int v=0; v<Nband; v++ ) {
-
-      Index[v] = new int*[Npolar];
-      for (int m=0; m<Npolar; m++ ) {
-
-	Index[v][m] = new int[ Nazim[m] ];
-	for (int l=0; l<Nazim[m]; l++ ) {
-	  Index[v][m][l] = cnt;
-	  cnt++;
-	} /* endfor */
-
-      } /*endfor*/
-
-    }/* endfor */
-
-
-    // allocate the phase function
-    Phi = new double****[Nband];
-    for (int v=0; v<Nband; v++ ) {
-
-      Phi[v] = new double***[Npolar];
-      for (int m=0; m<Npolar; m++ ) {
-
-	Phi[v][m] = new double**[ Nazim[m] ];
-	for (int l=0; l<Nazim[m]; l++ ) {
-
-	  Phi[v][m][l] = new double*[Npolar];
-	  for (int p=0; p<Npolar; p++ ) {
-	    
-	    Phi[v][m][l][p] = new double[ Nazim[p] ];	    
-
-	  } /* endfor */
-
-	} /* endfor */
-
-      } /*endfor*/
-
-    }/* endfor */
-    
-
-
-  } /* endif */
-
-}
-
-
-void Rte2D_State :: DeallocateCosines()
-{
-
-  if ( mu != NULL ) { 
-    for (int i=0; i<Npolar; i++ ) delete[] mu[i];
-    delete[] mu; 
-    mu = NULL; 
-  }
-
-  if ( eta != NULL ) { 
-    for (int i=0; i<Npolar; i++ ) delete[] eta[i];
-    delete[] eta; 
-    eta = NULL; 
-  }
-
-  if ( xi != NULL ) { 
-    for (int i=0; i<Npolar; i++ ) delete[] xi[i];
-    delete[] xi; 
-    xi = NULL; 
-  }
-
-  if ( omega != NULL ) { 
-    for (int i=0; i<Npolar; i++ ) delete[] omega[i];
-    delete[] omega; 
-    omega = NULL; 
-  }
-
-  if ( psi != NULL ) { 
-    for (int i=0; i<Npolar; i++ ) delete[] psi[i];
-    delete[] psi; 
-    psi = NULL; 
-  }
-
-  if ( delta_psi != NULL ) { 
-    for (int i=0; i<Npolar; i++ ) delete[] delta_psi[i];
-    delete[] delta_psi; 
-    delta_psi = NULL; 
-  }
-
-  if ( theta != NULL ) { 
-    delete[] theta; 
-    theta = NULL; 
-  }
-
-  if ( delta_theta != NULL ) { 
-    delete[] delta_theta; 
-    delta_theta = NULL; 
-  }
-
-  if ( Index != NULL ) { 
-    for (int v=0; v<Nband; v++) {
-      for (int m=0; m<Npolar; m++ ) delete[] Index[v][m];
-      delete[] Index[v];
-    }
-    delete[] Index; 
-    Index = NULL; 
-  }
-
-  if ( Phi != NULL ) { 
-    for (int v=0; v<Nband; v++) {
-      for (int m=0; m<Npolar; m++ ) {
-	for (int l=0; l<Nazim[m]; l++ ) {
-	  for (int p=0; p<Npolar; p++ ) {
-	    delete[] Phi[v][m][l][p];
-	  }
-	  delete[] Phi[v][m][l];
-	}
-	delete[] Phi[v][m];
-      }
-      delete[] Phi[v];
-    }
-    delete[] Phi; 
-    Phi = NULL; 
-  }
-
-
-
-}
-
-
-
-/**********************************************************************
- *                                                                    *
- * Function: Zero, zero_non_sol, SetIntensity                         *
- *                                                                    *
- * Description: Functions to initialize the entire state.             *
- *                                                                    *
- **********************************************************************/
-void Rte2D_State :: Vacuum() 
-{
-  for ( int i=0; i<Ntot; i++ ) I[i] = ZERO;
-  zero_non_sol();
-}
-void Rte2D_State :: Zero() 
-{
-  for ( int i=0; i<Ntot; i++ ) I[i] = ZERO;
-  zero_non_sol();
-}
-void Rte2D_State :: zero_non_sol() {
-  
-  for(int i=0; i<Nband; i++) {
-    kappa[i] = 0;
-    sigma[i] = 0;
-    Ib[i] = 0;  
-  }
-}  
-
-void Rte2D_State :: SetIntensity(double val)
-{
-  for ( int i=0; i<Ntot; i++ ) I[i] = val;
-}
-
-void Rte2D_State :: SetAbsorption(double val)
-{
-  for ( int i=0; i<Nband; i++ ) kappa[i] = val;
-}
-
-void Rte2D_State :: SetScattering(double val)
-{
-  for ( int i=0; i<Nband; i++ ) sigma[i] = val;
-}
-
-void Rte2D_State :: SetBlackbody(double val)
-{
-  for ( int i=0; i<Nband; i++ ) Ib[i] = val;
-}
-
-
-/**********************************************************************
- *                                                                    *
- * Function: Unphysical_Properties                                    *
- *                                                                    *
- * Description: Check for unphysical state properties.                *
- *                                                                    *
- **********************************************************************/
-int Rte2D_State :: Unphysical_Properties(void) const {
-  for ( int n=0 ; n<Ntot ; n++ ) if ( I[n]<ZERO || I[n]!=I[n] ) return 1;
-  return 0;
-}
-
-/**********************************************************************
- *                                                                    *
- * Function: In                                                       *
- *                                                                    *
- * Description: Access intensity array using 2D indexing.             *
- *                                                                    *
- **********************************************************************/
-double &Rte2D_State :: In( const int v, const int m, const int l ) const
-{ return I[ Index[v][m][l] ]; }
-
-double &Rte2D_State :: In( const int v, const int m, const int l )
-{ return I[ Index[v][m][l] ]; }
-
-
-/**********************************************************************
- *                                                                    *
- * Function: beta                                                     *
- *                                                                    *
- * Description: Return extinction coefficient.                        *
- *                                                                    *
- **********************************************************************/
-double Rte2D_State :: beta(const int v) const
-{ return (kappa[v] + sigma[v]); }
-
-
-/**********************************************************************
- *                                                                    *
- * Function: SetDirsDOM                                               *
- *                                                                    *
- * Description: Wrapper function for setting the number of control    *
- *              angles in the polar and                               *
- *              azimuthal directions.  Also loads the direction       *
- *              cosines for use in the DOM formulation of the RTE.    *
- *                                                                    *
- **********************************************************************/
+/********************************************************
+ * Static member initialization                         *
+ ********************************************************/
+int         Rte2D_State :: Npolar          = 0;
+int*        Rte2D_State :: Nazim           = NULL;
+int         Rte2D_State :: Nband           = 0;
+int         Rte2D_State :: Ntot            = 0;
+int***      Rte2D_State :: Index           = NULL;
+int         Rte2D_State :: NUM_VAR_RTE2D   = 0;
+double**    Rte2D_State :: mu              = NULL;
+double**    Rte2D_State :: eta             = NULL;
+double**    Rte2D_State :: xi              = NULL;
+double**    Rte2D_State :: omega           = NULL;
+double*     Rte2D_State :: theta           = NULL;
+double**    Rte2D_State :: psi             = NULL;
+double*     Rte2D_State :: delta_theta     = NULL;
+double**    Rte2D_State :: delta_psi       = NULL;
+double***** Rte2D_State :: Phi             = NULL;
+int         Rte2D_State :: Symmetry_Factor = 1;
+int         Rte2D_State :: RTE_Type        = RTE2D_SOLVER_FVM;
+
+
+/**************************************************************************
+ *********************** RTE2D SETUP DIRS FUNCTIONS  **********************
+ **************************************************************************/
+
+/********************************************************
+ * Function: SetDirs                                    *
+ *                                                      *
+ * Wrapper function for setting the number of control   *
+ * angles in the polar and                              *
+ * azimuthal directions.  Also loads the direction      *
+ * cosines for use in the DOM formulation of the RTE.   *
+ ********************************************************/
 void Rte2D_State :: SetDirs(const int NumPolarDirs, 
 			    const int NumAzimDirs,
 			    const int Quad_Type,
@@ -455,16 +76,14 @@ void Rte2D_State :: SetDirs(const int NumPolarDirs,
   
 }
 
-/**********************************************************************
- *                                                                    *
- * Function: SetDirsDOM                                               *
- *                                                                    *
- * Description: Sets the number of control angles in the polar and    *
- *              azimuthal directions.  Also loads the direction       *
- *              cosines for use in the DOM formulation of the RTE.    *
- *           .  DOM only works for space marching.                    *
- *                                                                    *
- **********************************************************************/
+/********************************************************
+ * Function: SetDirsDOM                                 *
+ *                                                      *
+ * Sets the number of control angles in the polar and   *
+ * azimuthal directions.  Also loads the direction      *
+ * cosines for use in the DOM formulation of the RTE.   *
+ * DOM only works for space marching.                   *
+ ********************************************************/
 void Rte2D_State :: SetDirsDOM(const int NumPolarDirs, 
 			       const int NumAzimDirs,
 			       const int Quad_Type,
@@ -626,16 +245,14 @@ void Rte2D_State :: SetDirsDOM(const int NumPolarDirs,
   in.close();
 }
 
-/**********************************************************************
- *                                                                    *
- * Function: SetDirsFVM                                               *
- *                                                                    *
- * Description: Sets the number of control angles in the polar and    *
- *              azimuthal directions.  Also computes the direction    *
- *              cosines for use in the FVM formulation of the RTE.    *
- *           .  For now, uniform spacing is used.                     *
- *                                                                    *
- **********************************************************************/
+/********************************************************
+ * Function: SetDirsFVM                                 *
+ *                                                      *
+ * Sets the number of control angles in the polar and   *
+ * azimuthal directions.  Also computes the direction   *
+ * cosines for use in the FVM formulation of the RTE.   *
+ * For now, uniform spacing is used.                    *
+ ********************************************************/
 void Rte2D_State :: SetDirsFVM(const int NumPolarDirs, 
 			       const int NumAzimDirs,
 			       const int Quad_Type,
@@ -797,14 +414,17 @@ void Rte2D_State :: SetDirsFVM(const int NumPolarDirs,
 }
 
 
-/**********************************************************************
- *                                                                    *
- * Function: SetupPhase                                               *
- *                                                                    *
- * Description: Wrapper function for setting up the phase function for*
- *              use in the  either formulation of the RTE.            *
- *                                                                    *
- **********************************************************************/
+/**************************************************************************
+ ********************** RTE2D SETUP PHASE FUNCTIONS  **********************
+ **************************************************************************/
+
+
+/********************************************************
+ * Function: SetupPhase                                 *
+ *                                                      *
+ * Wrapper function for setting up the phase function   *
+ * for use in the  either formulation of the RTE.       *
+ ********************************************************/
 void Rte2D_State :: SetupPhase( const int type )
 {
   switch(RTE_Type) {
@@ -823,14 +443,12 @@ void Rte2D_State :: SetupPhase( const int type )
 
 
 
-/**********************************************************************
- *                                                                    *
- * Function: SetupPhaseDOM                                            *
- *                                                                    *
- * Description: Sets up the phase function for                        *
- *              use in the DOM formulation of the RTE.                *
- *                                                                    *
- **********************************************************************/
+/********************************************************
+ * Function: SetupPhaseDOM                              *
+ *                                                      *
+ * Sets up the phase function for                       *
+ * use in the DOM formulation of the RTE.               *
+ ********************************************************/
 void Rte2D_State :: SetupPhaseDOM( const int type ) {
 
   // initialize
@@ -943,15 +561,13 @@ void Rte2D_State :: SetupPhaseDOM( const int type ) {
 }
 
 
-/**********************************************************************
- *                                                                    *
- * Function: func                                                     *
- *                                                                    *
- * Description: This function is needed for integrating the phase     *
- *              function.  It is passed to                            *
- *              SimpsonMultiDim.h:adaptsim()                          *
- *                                                                    *
- **********************************************************************/
+/********************************************************
+ * Function: func                                       *
+ *                                                      *
+ * This function is needed for integrating the phase    *
+ * function.  It is passed to                           *
+ * SimpsonMultiDim.h:adaptsim()                         *
+ ********************************************************/
 double phase_func(int ndim, double *x, void *params) {
 
   // declares
@@ -984,14 +600,12 @@ double phase_func(int ndim, double *x, void *params) {
 }
 
 
-/**********************************************************************
- *                                                                    *
- * Function: SetupPhaseFVM                                            *
- *                                                                    *
- * Description: Sets up the solid angle averaged phase function for   *
- *              use in the FVM formulation of the RTE.                *
- *                                                                    *
- **********************************************************************/
+/********************************************************
+ * Function: SetupPhaseFVM                              *
+ *                                                      *
+ * Sets up the solid angle averaged phase function for  *
+ * use in the FVM formulation of the RTE.               *
+ ********************************************************/
 void Rte2D_State :: SetupPhaseFVM( const int type ) {
 
   // initialize
@@ -1143,16 +757,16 @@ void Rte2D_State :: SetupPhaseFVM( const int type ) {
 
 }
 
+/**************************************************************************
+ ************************* RTE2D SETUP FUNCTIONS  *************************
+ **************************************************************************/
 
-
-/**********************************************************************
- *                                                                    *
- * Function: SetGas                                                   *
- *                                                                    *
- * Description: Sets the number of gas bands to discretize the entire *
- *              spectrum into.                                        *
- *                                                                    *
- **********************************************************************/
+/********************************************************
+ * Function: SetGas                                     *
+ *                                                      *
+ * Sets the number of gas bands to discretize the entire*
+ * spectrum into.                                       *
+ ********************************************************/
 void Rte2D_State :: SetGas(  )
 {
   Nband = 1;
@@ -1160,521 +774,13 @@ void Rte2D_State :: SetGas(  )
 
 
 
-/*************************************************************
- * Rte2D_State::Fn -- Flux in n-direction.                   *
- *************************************************************/
-Rte2D_State Rte2D_State :: Fn( const Vector2D &norm_dir ) const 
-{
-
-  double cos_angle, sin_angle, cosine;
-  Rte2D_State Temp;
-
-  /* Determine the direction cosine's for the frame rotation. */
-  cos_angle = norm_dir.x; 
-  sin_angle = norm_dir.y;
-
-
-  for (int v=0; v<Nband; v++ ) 
-    for (int m=0; m<Npolar; m++) 
-      for (int l=0; l<Nazim[m]; l++) {
-	cosine = mu[m][l]*cos_angle + eta[m][l]*sin_angle;
-	Temp.In(v,m,l) = cosine*In(v,m,l);
-      }
-  
-  return (Temp);
-}
-
-double Rte2D_State :: Fn( const Vector2D &norm_dir, const int v, 
-			  const int m, const int l ) const 
-{
-
-  double cos_angle, sin_angle, cosine;
-  Rte2D_State Temp;
-
-  /* Determine the direction cosine's for the frame rotation. */
-  cos_angle = norm_dir.x; 
-  sin_angle = norm_dir.y;
-  cosine = mu[m][l]*cos_angle + eta[m][l]*sin_angle;
-
-  return (cosine*In(v,m,l));
-}
-
-
-/*************************************************************
- * Rte2D_State::dFdU -- Flux Jacobian in x-direction.        *
- *************************************************************/
-void dFdU(DenseMatrix &dFdU, const Rte2D_State &U) {
-  int index = 0;
-  for (int v=0; v<U.Nband; v++ ) 
-    for (int m=0; m<U.Npolar; m++) 
-      for (int l=0; l<U.Nazim[m]; l++) {
-	dFdU(index,index) += U.mu[m][l];
-	index++;
-      }
-}
-
-void dFdU_n(DenseMatrix &dFdU, const Rte2D_State &U, const Vector2D &norm_dir) {
-
-  double cos_angle, sin_angle, cosine;
-
-  /* Determine the direction cosine's for the frame rotation. */
-  cos_angle = norm_dir.x; 
-  sin_angle = norm_dir.y;
-
-  int index = 0;
-  for (int v=0; v<U.Nband; v++ ) 
-    for (int m=0; m<U.Npolar; m++) 
-      for (int l=0; l<U.Nazim[m]; l++) {
-	cosine = U.mu[m][l]*cos_angle + U.eta[m][l]*sin_angle;
-
-// 	cout.precision(4);
-// 	cout << setw(4) << m+1 
-// 	     << setw(4) << l+1
-// 	     << setw(10) << U.mu[m][l]
-// 	     << setw(10) << U.eta[m][l]
-// 	     << setw(10) << U.mu[m][l]*cos_angle + U.eta[m][l]*sin_angle
-// 	     << endl;
-	if ( cosine < ZERO )
-	  dFdU(index,index) +=  cosine;
-	index++;
-      }
-}
-
-
-double Rte2D_State :: dFdU_n(const Vector2D &norm_dir, 
-			     const int m, const int l)  const {
-
-  double cos_angle, sin_angle, cosine;
-
-  /* Determine the direction cosine's for the frame rotation. */
-  cos_angle = norm_dir.x; 
-  sin_angle = norm_dir.y;
-
-  cosine = mu[m][l]*cos_angle + eta[m][l]*sin_angle;
-
-  return cosine;
-}
-
-Rte2D_State Rte2D_State :: dFdU_n(const Vector2D &norm_dir) const {
-
-  double cos_angle, sin_angle, cosine;
-  Rte2D_State Temp;
-
-  /* Determine the direction cosine's for the frame rotation. */
-  cos_angle = norm_dir.x; 
-  sin_angle = norm_dir.y;
-
-  int index = 0;
-  for (int v=0; v<Nband; v++ ) 
-    for (int m=0; m<Npolar; m++) 
-      for (int l=0; l<Nazim[m]; l++) {
-	cosine = mu[m][l]*cos_angle + eta[m][l]*sin_angle;
-	Temp.In(v,m,l) = cosine;
-      }
-
-  return Temp;
-}
-
-
-
-/*************************************************************
- * Rte2D_State::s -- Regular source term.                    *
- *************************************************************/
-Rte2D_State Rte2D_State :: S(void) const 
-{
-  // declares
-  double temp;
-  double beta;
-  Rte2D_State Temp;
-  Temp.Zero();
-
-  // loop along bands
-  for (int v=0; v<Nband; v++ ) {
-
-    // the extinction coefficient
-    beta = kappa[v] + sigma[v];
-    
-    // loop over directions
-    for (int m=0; m<Npolar; m++) 
-      for (int l=0; l<Nazim[m]; l++) {
-
-	// add blackbody emission
-	Temp.In(v,m,l)  = kappa[v] * Ib[v];
-
-	// subtract absorbsion and out-scattering
-	Temp.In(v,m,l) -= beta * In(v,m,l);
-
-	// add in-scattering
-	if (sigma[v]>TOLER) {
-	  temp = ZERO;
-	  for (int p=0; p<Npolar; p++) 
-	    for (int q=0; q<Nazim[p]; q++) {
-	      temp += In(v,p,q) * Phi[v][p][q][m][l] * omega[p][q];
-	    } /* endfor - in-dirs*/
-	  temp *= sigma[v] / (FOUR * PI);
-	  Temp.In(v,m,l) += temp;
-	} /* endif - in-scat */
-	  
-	// multiply
-	Temp.In(v,m,l) *= omega[m][l];
-
-      } /* endfor - dirs*/
-
-  } /* endfor - bands */
-
-  return (Temp);
-}
-
-
-double Rte2D_State :: S(const int v, const int m, const int l) const 
-{
-  // declares
-  double temp2;
-  double beta;
-  double temp = ZERO;
-
-
-  // the extinction coefficient
-  beta = kappa[v] + sigma[v];
-    
-  // add blackbody emission
-  temp = kappa[v] * Ib[v];
-
-  // add in-scattering
-  if (sigma[v]>TOLER) {
-    temp2 = ZERO;
-    for (int p=0; p<Npolar; p++) 
-      for (int q=0; q<Nazim[p]; q++) {
-	// skip forward scattering, it is acoundted for in dSdU
-	if(p==m && l==q) continue;
-	temp2 += In(v,p,q) * Phi[v][p][q][m][l] * omega[p][q];
-      } /* endfor - in-dirs*/
-    temp2 *= sigma[v] / (FOUR * PI);
-    temp += temp2;
-  } /* endif - in-scat */
-	  
-  // multiply
-  temp *= omega[m][l];
-
-
-  return (temp);
-}
-
-
-/*************************************************************
- * Rte2D_State:: dSdU -- Regular source term jacobian.       *
- *************************************************************/
-void Rte2D_State :: dSdU(DenseMatrix &dSdU) const
-{ 
-  // declares
-  double temp;
-  double beta;
-
-  // loop along bands
-  for (int v=0; v<Nband; v++ ) {
-
-    // the extinction coefficient
-    beta = kappa[v] + sigma[v];
-    
-    // loop over directions
-    for (int m=0; m<Npolar; m++) 
-      for (int l=0; l<Nazim[m]; l++) {
-
-
-	// absorbsion and out-scattering
-	dSdU(Index[v][m][l],Index[v][m][l]) -= omega[m][l] * beta;
-
-	// in-scattering
-	if (sigma[v]>TOLER) {
-
-	  temp = sigma[v] * omega[m][l] / (FOUR * PI);
-	  for (int p=0; p<Npolar; p++) 
-	    for (int q=0; q<Nazim[p]; q++){
-	      dSdU(Index[v][m][l],Index[v][p][q]) += Phi[v][p][q][m][l] * omega[p][q] * temp;
-	    }
-
-	} /* endif - in-scat */
-	  
-      } /* endfor - dirs*/
-
-  } /* endfor - bands */
-
-}
-
-double Rte2D_State :: dSdU(const int v, const int m, const int l) const
-{ 
-  // declares
-  double temp = ZERO;
-  double beta;
-
-  // the extinction coefficient
-  beta = kappa[v] + sigma[v];
-    
-  // absorbsion and out-scattering
-  temp = omega[m][l] * beta;
-
-  // in-scattering
-  if (sigma[v]>TOLER) {
-    
-    // add forward scattering
-    temp -= sigma[v] * omega[m][l] / (FOUR * PI) 
-      * Phi[v][m][l][m][l] * omega[m][l];
-    
-  } /* endif - in-scat */
-  
-  return temp;
-
-}
-
-
-
-/*************************************************************
- * Rte2D_State::s_axi -- Axisymmetric source term.           *
- *************************************************************/
-Rte2D_State Rte2D_State :: Sa(const Rte2D_State &dUdpsi,
-			      const Rte2D_State &phi_psi ) const 
-{
-  int l_m1, l_p1;
-  double It, Ib, Dt, Db;
-  Rte2D_State Temp;  Temp.Zero();
-
-  // assume constant angular spacing
-  // in azimuthal angle
-  
-  // loop along bands and directions
-
-  for (int v=0; v<Nband; v++ ) 
-    for (int m=0; m<Npolar; m++) 
-      for (int l=0; l<Nazim[m]; l++) {
-	
-	// use symmetry to get l-1 and l+1
-	if (l==0) l_m1 = l;
-	else l_m1 = l-1;
-	
-	if (l==Nazim[m]-1) l_p1 = l;
-	else l_p1 = l+1;
-	 
-	// direction cosines
-	Dt = -sin(delta_psi[m][l]/TWO)*mu[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
-	Db = -sin(delta_psi[m][l]/TWO)*mu[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];
-	
-	// upwind
-	if (Dt<ZERO) {
-	  It = In(v,m,l_m1) +
-	    HALF*phi_psi.In(v,m,l_m1)*dUdpsi.In(v,m,l_m1)*delta_psi[m][l_m1];
-	} else {
-	  It = In(v,m,l) - 
-	    HALF*phi_psi.In(v,m,l)*dUdpsi.In(v,m,l)*delta_psi[m][l];
-	}
-	if (Db>ZERO) {
-	  Ib = In(v,m,l) + 
-	    HALF*phi_psi.In(v,m,l)*dUdpsi.In(v,m,l)*delta_psi[m][l];
-	} else {
-	  Ib = In(v,m,l_p1) - 
-	    HALF*phi_psi.In(v,m,l_p1)*dUdpsi.In(v,m,l_p1)*delta_psi[m][l_p1];
-	}
-
-	// compute source term
-	Temp.In(v,m,l) -= ( Dt*It + Db*Ib )/delta_psi[m][l];
-		
-	
-      } /* endfor - dirs*/
-
-  return (Temp);
-}
-
-/* Space March FVM Version */
-double Rte2D_State :: Sa_FVM(const int v, const int m, const int l) const 
-{
-  int l_m1, l_p1;
-  double It, Ib, Dt, Db;
-  double Temp;
-
-  // assume constant angular spacing
-  // in azimuthal angle
-  
-  // use symmetry to get l-1 and l+1
-  if (l==0) l_m1 = l;
-  else l_m1 = l-1;
-  
-  if (l==Nazim[m]-1) l_p1 = l;
-  else l_p1 = l+1;
-  
-  // direction cosines
-  Dt = -sin(delta_psi[m][l]/TWO)*mu[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
-  Db = -sin(delta_psi[m][l]/TWO)*mu[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];
-  
-  // upwind
-  if (Dt<ZERO) {
-    It = In(v,m,l_m1);
-  } else {
-    It = ZERO; // It = In(v,m,l); -> goes into dSadU term
-  }
-  if (Db>ZERO) {
-    Ib = ZERO; // Ib = In(v,m,l); -> goes into dSadU term
-  } else {
-    Ib = In(v,m,l_p1);
-  }
-  
-  // compute source term
-  Temp = -( Dt*It + Db*Ib )/delta_psi[m][l];
-  	
-	
-
-  return (Temp);
-}
-
-
-/* Space March DOM Version */
-double Rte2D_State :: Sa_DOM(const int v, const int m, const int l) const 
-{
-  int l_m1, l_p1;
-  double Temp;
-
-  // use symmetry to get l-1 and l+1
-  if (l==0) l_m1 = l;
-  else l_m1 = l-1;
-  
-  if (l==Nazim[m]-1) l_p1 = l;
-  else l_p1 = l+1;
-  
-  // compute source term
-  Temp = -alpha[m][l]*I_half[m][l];
-  	
-	
-
-  return (Temp);
-}
-
-
-/*************************************************************
- * Rte2D_State::dSadU -- Axisymmetric source term jacobian.  *
- *************************************************************/
-void Rte2D_State :: dSadU(DenseMatrix &dSadU,
-			  const double Sp) const 
-{ 
-
-  int l_m1, l_p1;
-  double Dt, Db;
-
-  // loop along bands
-  for (int v=0; v<Nband; v++ ) {
-
-   
-    // loop over directions
-    for (int m=0; m<Npolar; m++) 
-      for (int l=0; l<Nazim[m]; l++) {
-
-
-	// use symmetry to get l-1 and l+1
-	if (l==0) l_m1 = l;
-	else l_m1 = l-1;
-	
-	if (l==Nazim[m]-1) l_p1 = l;
-	else l_p1 = l+1;
-	 
-	// direction cosines
-	Dt = -sin(delta_psi[m][l]/TWO)*mu[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
-	Db = -sin(delta_psi[m][l]/TWO)*mu[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];
-	
-	// upwind
-	if (Dt<ZERO) {
-	  // It = I[ Index[v][m][l_m1] ];
-	  dSadU(Index[v][m][l],Index[v][m][l_m1]) -= Dt/(delta_psi[m][l]*Sp);
-	} else {
-	  // It = I[ Index[v][m][l] ];
-	  dSadU(Index[v][m][l],Index[v][m][l]) -= Dt/(delta_psi[m][l]*Sp);
-	}
-	if (Db>ZERO) {
-	  // Ib = I[ Index[v][m][l] ];
-	  dSadU(Index[v][m][l],Index[v][m][l]) -= Db/(delta_psi[m][l]*Sp);
-	} else {
-	  // Ib = I[ Index[v][m][l_p1] ];
-	  dSadU(Index[v][m][l],Index[v][m][l_p1]) -= Db/(delta_psi[m][l]*Sp);
-	}
-	
-
-      } /* endfor - dirs*/
-
-  } /* endfor - bands */
-
-
-}
-
-
-/* Space March FVM Version */
-double Rte2D_State :: dSadU_FVM(const int v, const int m, const int l) const 
-{ 
-
-  int l_m1, l_p1;
-  double Dt, Db;
-  double Temp;
-
-
-  // use symmetry to get l-1 and l+1
-  if (l==0) l_m1 = l;
-  else l_m1 = l-1;
-  
-  if (l==Nazim[m]-1) l_p1 = l;
-  else l_p1 = l+1;
-  
-  // direction cosines
-  Dt = -sin(delta_psi[m][l]/TWO)*mu[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
-  Db = -sin(delta_psi[m][l]/TWO)*mu[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];
-  
-  // upwind
-  if (Dt<ZERO) {
-    // It = I[ Index[v][m][l_m1] ];
-    Temp = ZERO;
-  } else {
-    // It = I[ Index[v][m][l] ];
-    Temp = Dt/(delta_psi[m][l]);
-  }
-  if (Db>ZERO) {
-    // Ib = I[ Index[v][m][l] ];
-    Temp += Db/(delta_psi[m][l]);
-  } else {
-    // Ib = I[ Index[v][m][l_p1] ];
-    Temp += ZERO;
-  }
-  
-
-  return Temp;
-
-}
-
-
-/* Space March DOM Version */
-double Rte2D_State :: dSadU_DOM(const int v, const int m, const int l) const 
-{ 
-
-  int l_m1, l_p1;
-  double Temp;
-
-
-  // use symmetry to get l-1 and l+1
-  if (l==0) l_m1 = l;
-  else l_m1 = l-1;
-  
-  if (l==Nazim[m]-1) l_p1 = l;
-  else l_p1 = l+1;
-  
-  
-  // upwind
-  Temp = - alpha[m][l+1];
-
-  return Temp;
-
-}
-
-
-/*************************************************************
- * Rte2D_State::SetupART_DOM -- Setup axisymmetric angular   *
- *                              redistribution coefficients  *
- *                              as proposed by Carlson and   *
- *                              Lathrop (1968).  This is for *
- *                              the DOM space march version  *
- *************************************************************/
+/********************************************************
+ * Rte2D_State::SetupART_DOM                            *
+ *                                                      *
+ * Setup axisymmetric angular redistribution            *
+ * coefficients as proposed by Carlson and Lathrop      *
+ * (1968).  This is for the DOM space march version.    *
+ ********************************************************/
 void Rte2D_State :: SetupART_DOM( const Vector2D nfaceE, const double AfaceE,
 				  const Vector2D nfaceW, const double AfaceW,
 				  const Vector2D nfaceN, const double AfaceN,
@@ -1711,253 +817,6 @@ void Rte2D_State :: SetupART_DOM( const Vector2D nfaceE, const double AfaceE,
 
 
 
-/*************************************************************
- * Rte2D_State::G -- Compute directional integrated intensity*
- *                   in [W/m^2]                              *
- *************************************************************/
-double Rte2D_State :: G( void ) 
-{
-  double sum = 0;
-  for ( int v=0; v<Nband; v++ ) 
-    for ( int m=0; m<Npolar; m++ ) 
-      for ( int l=0; l<Nazim[m]; l++ ) 
-	sum += omega[m][l] * In(v,m,l);
-  return sum;
-}
-
-/*************************************************************
- * Rte2D_State::q -- Compute radiative heat flux vector      *
- *                   in [W/m^2]                              *
- *************************************************************/
-Vector2D Rte2D_State :: q( void )
-{
-  Vector2D Temp(ZERO);
-  for ( int v=0; v<Nband; v++ ) 
-    for ( int m=0; m<Npolar; m++ ) 
-      for ( int l=0; l<Nazim[m]; l++ ) {
-	Temp.x +=  mu[m][l] * In(v,m,l);
-	Temp.y += eta[m][l] * In(v,m,l);
-    }
-  return Temp;  
-}
-
-/**********************************************************************
- *                                                                    *
- * Description: Index operators.  Note, index operator starts at 1 for*
- *              some reason.                                          *
- *                                                                    *
- **********************************************************************/
-double& Rte2D_State :: operator[](int index) { return I[index-1]; }
-
-const double& Rte2D_State ::  operator[](int index) const 
-{ return I[index-1]; }
-
-
-/**********************************************************************
- *                                                                    *
- * Description: Binary Arithmatic operators.                          *
- *                                                                    *
- **********************************************************************/
-// addition
-Rte2D_State Rte2D_State :: operator +(const Rte2D_State &U) const {
-  Rte2D_State Temp(*this);
-  Temp += U;
-  return Temp;
-}
-
-// subtraction
-Rte2D_State Rte2D_State :: operator -(const Rte2D_State &U) const {
-  Rte2D_State Temp(*this);
-  Temp -= U;
-  return Temp;
-}
-
-// scalar multiplication
-Rte2D_State Rte2D_State :: operator *(const double &a) const {
-  Rte2D_State Temp(*this);
-  for ( int i=0; i<Ntot; i++ ) Temp.I[i] = a*I[i];
-  return(Temp);
-}
-
-Rte2D_State operator *(const double &a, const Rte2D_State &U) {
-  Rte2D_State Temp(U);
-  for ( int i=0; i<U.Ntot; i++ ) Temp.I[i] = a*U.I[i];
-  return(Temp);
-}
-
-// scalar division
-Rte2D_State Rte2D_State :: operator /(const double &a) const {
-  Rte2D_State Temp(*this);
-  for ( int i=0; i<Ntot; i++ ) Temp.I[i]= I[i]/a;
-  return(Temp);
-}
-
-// solution state division operator
-Rte2D_State Rte2D_State :: operator /(const Rte2D_State &U) const {
-  Rte2D_State Temp(*this);
-  for ( int i=0; i<Ntot; i++ ) Temp.I[i]= I[i]/U.I[i];
-  return(Temp);
-}
-
-
-// inner product
-double Rte2D_State :: operator   *(const Rte2D_State &U) const {
-  double sum=0.0;
-  for ( int i=0; i<Ntot; i++ ) sum += I[i]*U.I[i];
-  return sum;
-}
-
-// solution state product operator
-Rte2D_State Rte2D_State :: operator ^(const Rte2D_State &U) const {
-  Rte2D_State Temp(*this);
-  for ( int i=0; i<Ntot; i++ ) Temp.I[i] = I[i]*U.I[i];
-  return(Temp);
-}
-
-
-/**********************************************************************
- *                                                                    *
- * Description: Assignment operators.                                 *
- *                                                                    *
- **********************************************************************/
-Rte2D_State& Rte2D_State :: operator =(const Rte2D_State &U) {
-  if( this != &U) Copy(U);
-  return (*this);
-}
-
-/**********************************************************************
- *                                                                    *
- * Description: Shortcut operators.                                   *
- *                                                                    *
- **********************************************************************/
-// Shortcut arithmetic operators.
-Rte2D_State& Rte2D_State :: operator +=(const Rte2D_State &U) {
-  for ( int i=0; i<Ntot; i++ ) I[i] += U.I[i];
-  return (*this);
-}
-
-
-Rte2D_State& Rte2D_State :: operator -=(const Rte2D_State &U) {
-  for ( int i=0; i<Ntot; i++ ) I[i] -= U.I[i];
-  return (*this);
-}
-
-Rte2D_State& Rte2D_State::operator *=(const double &a) {
-  for ( int i=0; i<Ntot; i++ ) I[i] *= a;
-  return (*this);
-}
-
-Rte2D_State& Rte2D_State::operator /=(const double &a) {
-  for ( int i=0; i<Ntot; i++ ) I[i] /= a;
-  return (*this);
-}
-
-/**********************************************************************
- *                                                                    *
- * Description: Shortcut operators.                                   *
- *                                                                    *
- **********************************************************************/
-// Unary arithmetic operators. 
-Rte2D_State operator -(const Rte2D_State &U) {
-  Rte2D_State Temp;
-  for ( int i=0; i<U.Ntot; i++ ) Temp.I[i] = -U.I[i];
-  return(Temp);
-}
-
-/**********************************************************************
- *                                                                    *
- * Description: Relational operators.                                 *
- *                                                                    *
- **********************************************************************/
-int operator ==(const Rte2D_State &U1, const Rte2D_State &U2) {
-
-  bool temp = true;
-  for ( int i=0; i<U1.Ntot; i++ ) {
-    if ( U1.I[i] != U2.I[i] ) { 
-      temp = false; 
-      break; 
-    }
-  }
-
-  return temp;
-}
-
-int operator !=(const Rte2D_State &U1, const Rte2D_State &U2) {
-
-  bool temp = false;
-
-  for ( int i=0; i<U1.Ntot; i++ ) {
-    if ( U1.I[i] != U2.I[i] ) { 
-	  temp = true; 
-	  break; 
-    }
-  }
-
-  return temp;
-}
-
-int operator >(const Rte2D_State &U1, const double d) {
-
-  bool temp = true;
-
-  for ( int i=0; i<U1.Ntot; i++ ) {
-    if ( U1.I[i] <= d ) { 
-	  temp = false; 
-	  break; 
-    }
-  }
-
-  return temp;
-}
-
-int operator <(const Rte2D_State &U1, const double d) {
-
-  bool temp = true;
-
-  for ( int i=0; i<U1.Ntot; i++ ) {
-    if ( U1.I[i] >= d ) { 
-	  temp = false; 
-	  break; 
-    }
-  }
-
-  return temp;
-}
-
-
- 
-/**********************************************************************
- *                                                                    *
- * Description: Input-output operators.                               *
- *                                                                    *
- **********************************************************************/
-ostream& operator << (ostream &out_file, const Rte2D_State &U) 
-{
-  out_file.precision(10);
-  out_file.setf(ios::scientific);
-  for( int i=0; i<U.Nband; i++) out_file<<" "<<U.Ib[i];
-  for( int i=0; i<U.Nband; i++) out_file<<" "<<U.kappa[i];
-  for( int i=0; i<U.Nband; i++) out_file<<" "<<U.sigma[i];
-  for( int i=0; i<U.Ntot; i++)  out_file<<" "<<U.I[i]; 
-  out_file.unsetf(ios::scientific);
-  return (out_file);
-}
-
-
-istream& operator >> (istream &in_file,  Rte2D_State &U) 
-{
-
-  in_file.setf(ios::skipws);
-  for( int i=0; i<U.Nband; i++) in_file >> U.Ib[i];
-  for( int i=0; i<U.Nband; i++) in_file >> U.kappa[i];
-  for( int i=0; i<U.Nband; i++) in_file >> U.sigma[i];
-  for( int i=0; i<U.Ntot; i++)  in_file >> U.I[i]; 
-  in_file.unsetf(ios::skipws);
-  return (in_file);
-
-}
-
-
 
 /*********************************************************************************
  *********************************************************************************
@@ -1967,6 +826,9 @@ istream& operator >> (istream &in_file,  Rte2D_State &U)
  *********************************************************************************
  *********************************************************************************/
 
+ /**************************************************************************
+  *************************** RIEMANN FUNCTIONS  ***************************
+  **************************************************************************/
 
 
 /**********************************************************
@@ -2049,6 +911,9 @@ Rte2D_State Flux_n(const Rte2D_State &Ul,
 
 }
 
+ /**************************************************************************
+  **************************** BC FUNCTIONS  *******************************
+  **************************************************************************/
 
 
 /*********************************************************
@@ -2460,6 +1325,9 @@ void Reflect_Space_March(Rte2D_State &U, const Vector2D &norm_dir) {
 }
 
 
+ /**************************************************************************
+  ************************* SCATTER FUNCTIONS  *****************************
+  **************************************************************************/
 
 /********************************************************
  * Routine: Legendre                                    *
@@ -2496,6 +1364,7 @@ double Legendre( const double x, const int n) {
 
 /********************************************************
  * Routine: PhaseFunc                                   *  
+ *                                                      *
  * Setup the constants for the phase function.          *
  * Currently, 2 forward scattering (F2 and F3) and 2    *
  * backward scattering (B2 and B3) phase functions have *
@@ -2622,126 +1491,18 @@ double* PhaseFunc( const int type, int &n) {
 }
 
 
-/********************************************************
- * Routine: Restrict_NonSol                             *
- *                                                      *
- * This function restricts coefficients that are not    *
- * part of the solution state from a fine grid to a     *
- * coarse one.  This is required for the Multigrid      *
- * specializations.                                     *
- *                                                      *
- ********************************************************/
-void Restrict_NonSol( Rte2D_State &Uc, const double Ac,
-		      const Rte2D_State &Uf_SW, const double Af_SW,
-		      const Rte2D_State &Uf_SE, const double Af_SE,
-		      const Rte2D_State &Uf_NW, const double Af_NW,
-		      const Rte2D_State &Uf_NE, const double Af_NE )
-{
-
-  for ( int v=0; v<Uc.Nband; v++) {
-    
-    Uc.kappa[v] = 
-      ( Uf_SW.kappa[v] * Af_SW + Uf_SE.kappa[v] * Af_SE +
-        Uf_NW.kappa[v] * Af_NW + Uf_NE.kappa[v] * Af_NE ) / Ac;	
-	  
-    Uc.sigma[v] = 
-      ( Uf_SW.sigma[v] * Af_SW + Uf_SE.sigma[v] * Af_SE +
-        Uf_NW.sigma[v] * Af_NW + Uf_NE.sigma[v] * Af_NE ) / Ac;		  
-    
-    Uc.Ib[v] = ( Uf_SW.Ib[v] * Af_SW + Uf_SE.Ib[v] * Af_SE +
-		 Uf_NW.Ib[v] * Af_NW + Uf_NE.Ib[v] * Af_NE ) / Ac;		  
-
-  } /* endfor Nband */
-
-  
-}
+ /**************************************************************************
+  ************************ EXACT SOLN FUNCTIONS  ***************************
+  **************************************************************************/
 
 
 /********************************************************
- * Routine: Restrict_NonSol _Boundary_Ref_States        *
+ * Routine: exact_cyl                                   *  
  *                                                      *
- * This function restricts coefficients that are not    *
- * part of the solution state from a fine grid to a     *
- * coarse one.  This is required for the Multigrid      *
- * specializations.                                     *
- *                                                      *
+ * This function is needed for integrating the exact    *
+ * solution.  It is passed to                           *
+ * SimpsonMultiDim.h:adaptsim().                        *
  ********************************************************/
-void Restrict_NonSol_Boundary_Ref_States( 
-		      Rte2D_State &Uc,
-		      const Rte2D_State &Uf_l, const double Af_l,
-		      const Rte2D_State &Uf_r, const double Af_r )
-{
-  for ( int v=0; v<Uc.Nband; v++) {
-    
-    Uc.kappa[v] = 
-      ( Uf_l.kappa[v] * Af_l + Uf_r.kappa[v] * Af_r ) / ( Af_r+Af_l );	
-	  
-    Uc.sigma[v] = 
-      ( Uf_l.sigma[v] * Af_l + Uf_r.sigma[v] * Af_r ) / ( Af_r+Af_l );	
-    
-    Uc.Ib[v] = ( Uf_l.Ib[v] * Af_l + Uf_r.Ib[v] * Af_r ) / ( Af_r+Af_l );	
-  } /* endfor Nband */
-
-
-}
-
-
-/********************************************************
- * Routine: Prolong_NonSol                              *
- *                                                      *
- * This function prolongs coefficients that are not     *
- * part of the solution state from a fine grid to a     *
- * coarse one.  This is required for the Multigrid      *
- * specializations. Bilinear interpolation is used.     *
- *                                                      *
- ********************************************************/
-int Prolong_NonSol( const Rte2D_State &Uc1, const Vector2D Xc1,
-		    const Rte2D_State &Uc2, const Vector2D Xc2,
-		    const Rte2D_State &Uc3, const Vector2D Xc3,
-		    const Rte2D_State &Uc4, const Vector2D Xc4,
-		    const Vector2D XcP, Rte2D_State &Uf )
-{
-  int tmp;
-  int error_flag = 0;
-
-  for ( int v=0; v<Uf.Nband && error_flag==0; v++) {
-    
-    error_flag = Bilinear_Interpolation( Uc1.kappa[v], Xc1, Uc2.kappa[v], Xc2, 
-					 Uc3.kappa[v], Xc3, Uc4.kappa[v], Xc4,
-					 XcP, Uf.kappa[v] );
-
-    if (error_flag == 0)
-      error_flag = Bilinear_Interpolation( Uc1.sigma[v], Xc1, Uc2.sigma[v], Xc2, 
-					   Uc3.sigma[v], Xc3, Uc4.sigma[v], Xc4,
-					   XcP, Uf.sigma[v] );
-    
-    if (error_flag == 0)
-      error_flag = Bilinear_Interpolation( Uc1.Ib[v], Xc1, Uc2.Ib[v], Xc2, 
-					   Uc3.Ib[v], Xc3, Uc4.Ib[v], Xc4,
-					   XcP, Uf.Ib[v] );
-  } /* endfor Nband */
-
-
-  return error_flag;
-}
-
-
-
-
-
-
-
-
-
-/**********************************************************************
- *                                                                    *
- * Function: func                                                     *
- *                                                                    *
- * Description: This function is needed for integrating the exact     *
- *              solution.  It is passed to                            *
- *              SimpsonMultiDim.h:adaptsim()                          *
- *                                                                    *
- **********************************************************************/
 double exact_cyl(int ndim, double *x, void *params) {
 
   // declares
@@ -2992,15 +1753,13 @@ void CylindricalEnclosure( const double gas_temp,
 
 
 
-/**********************************************************************
- *                                                                    *
- * Function: func                                                     *
- *                                                                    *
- * Description: This function is needed for integrating the exact     *
- *              solution.  It is passed to                            *
- *              SimpsonMultiDim.h:adaptsim()                          *
- *                                                                    *
- **********************************************************************/
+/********************************************************
+ * Routine: exact_rect                                  *  
+ *                                                      *
+ * This function is needed for integrating the exact    *
+ * solution.  It is passed to                           *
+ * SimpsonMultiDim.h:adaptsim().                        *
+ ********************************************************/
 double exact_rect(int ndim, double *x, void *params) {
 
   // declares
