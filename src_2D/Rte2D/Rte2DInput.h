@@ -52,12 +52,17 @@
 #include "../NewtonKrylovSchwarz2D/NKSInput2D.h"
 #endif // _NKS2DINPUT_INCLUDED
 
-// Include ICEMCFD input header file.
+/* Include ICEMCFD input header file.*/
 
 #ifndef _ICEMCFD_INCLUDED
 #include "../ICEM/ICEMCFD.h"
 #endif // _ICEMCFD_INCLUDED
 
+/* Also include SNBCK input header file. */
+
+#ifndef _SNBCK_INCLUDED
+#include "SNBCK.h"
+#endif // _SNBCK_INCLUDED
 
 /* Define the structures and classes. */
 
@@ -65,7 +70,6 @@
 
 //Enviroment Flag 
 #define PATHVAR "CFFC_Path"
-
 
 
 /*!
@@ -86,11 +90,12 @@ class Rte2D_Input_Parameters{
   int Line_Number;
   //@}
 
-  //! Root path of CFDkit+caboodle 
-  char CFDkit_Path[INPUT_PARAMETER_LENGTH_RTE2D];
-  void get_cfdkit_path();
+  //@{ @name CFFC path parameters/functions.
+  //! Root path of CFFC
+  char CFFC_Path[INPUT_PARAMETER_LENGTH_RTE2D];
+  //! Get root path of CFFC
+  void get_cffc_path();
   //@}
-
 
   //@{ @name Time integration type indicator and related input parameters:
   char Time_Integration_Type[INPUT_PARAMETER_LENGTH_RTE2D];
@@ -117,6 +122,11 @@ class Rte2D_Input_Parameters{
   NKS_Input_Parameters  NKS_IP;
   int Solver_Type;
   //@}
+
+  //@{ @name SNBCK related input parameters
+  SNBCK_Input_Parameters SNBCK_IP;
+  //@}
+
 
   //@{ @name RTE equation solver and space-marching related parameters::
   int i_RTE_Solver;
@@ -362,9 +372,11 @@ inline ostream &operator << (ostream &out_file,
 
     /***********************************************************************
      *************************** RTE SPECIFIC ******************************/
+    // DOM quadrature
     if (IP.i_RTE_Solver == RTE2D_SOLVER_DOM) {
       out_file << "\n  -> Quadrature: "
 	       << IP.DOM_Quadrature;      
+    // FVM angular discretization
     } else {
       out_file << "\n  -> Number of CA polar-direction: "
 	       << IP.Number_of_Angles_Mdir;
@@ -372,6 +384,15 @@ inline ostream &operator << (ostream &out_file,
 	       << IP.Number_of_Angles_Ldir;
     }
 
+    // absorbsion model
+    out_file << "\n  -> Absorption Model: " 
+	     << IP.AbsorptionModel;
+      
+    // scattering function
+    out_file << "\n  -> Scattering Function: " 
+	     << IP.ScatteringFunc;
+
+    // ICs
     out_file << "\n  -> Initial Conditions: " 
              << IP.ICs_Type;
     switch(IP.i_ICs) {
@@ -379,18 +400,16 @@ inline ostream &operator << (ostream &out_file,
       case IC_UNIFORM :
         out_file << "\n  -> Temperature (K): " 
                  << IP.Temperature;
-        out_file << "\n  -> Absorption Model: " 
-                 << IP.AbsorptionModel;
         out_file << "\n  -> Absorption Cefficient (m^-1): " 
                  << IP.AbsorptionCoef;
-        out_file << "\n  -> Scattering Function: " 
-                 << IP.ScatteringFunc;
         out_file << "\n  -> Scattering Cefficient (m^-1): " 
                  << IP.ScatteringCoef;
         break;
       default:
         break;
     } /* endswitch */
+
+    // Wall conditions
     out_file << "\n  -> Wall Conditions: ";
     out_file << "\n  -> Wall Temperature (K) [N,S,E,W]: " 
 	     << IP.NorthWallTemp << "  "
@@ -420,6 +439,7 @@ inline ostream &operator << (ostream &out_file,
                  << IP.Box_Width;
         break;
       case GRID_RECTANGULAR_BOX :
+      case GRID_RECTANGULAR_ENCLOSURE :
         out_file << "\n  -> Width of Solution Domain (m): " 
                  << IP.Box_Width;
         out_file << "\n  -> Height of Solution Domain (m): " 
@@ -430,6 +450,7 @@ inline ostream &operator << (ostream &out_file,
                  << IP.Plate_Length;
         break;
       case GRID_PIPE :
+      case GRID_CYLINDRICAL_ENCLOSURE :
         out_file << "\n  -> Pipe Length (m): " 
                  << IP.Pipe_Length;
         out_file << "\n  -> Pipe Radius (m): " 
@@ -603,8 +624,10 @@ inline istream &operator >> (istream &in_file,
     return (in_file);
 }
 
-/****************** Get CFD kit Path *********/
-inline void Rte2D_Input_Parameters::get_cfdkit_path(){
+/*************************************************************
+ * Get CFD kit Path.                                         *
+ *************************************************************/
+inline void Rte2D_Input_Parameters::get_cffc_path(){
  
   // Check to see if environment varible exists.
   if(getenv(PATHVAR) == NULL){
@@ -613,7 +636,7 @@ inline void Rte2D_Input_Parameters::get_cfdkit_path(){
   }
   
   //Set Path
-  strcpy(CFDkit_Path,getenv(PATHVAR));
+  strcpy(CFFC_Path,getenv(PATHVAR));
 }
 
 

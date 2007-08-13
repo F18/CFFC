@@ -87,6 +87,9 @@
  *    dUdy      -- Return the unlimited conservative variable solution
  *                 gradients (y-direction) for the block.
  *     phi      -- Return the solution slope limiters.
+ *   dUdpsi     -- Return the unlimited conservative variable solution
+ *                 gradients (azimythal-direction) for the block.
+ *   phi_psi    -- Return the solution slope limiter for azimuthal direction.
  *      Uo      -- Return initial solution state.
  *    FluxN     -- Return array of north boundary solution fluxes.
  *    FluxS     -- Return array of south boundary solution fluxes.
@@ -128,14 +131,6 @@
  *                 solution block.
  *      Un      -- Return conserved variable solution at the
  *                 specified node.
- *    WnNW      -- Return primitive variable solution at the
- *                 north-west node.
- *    WnNE      -- Return primitive variable solution at the
- *                 north-east node.
- *    WnSW      -- Return primitive variable solution at the
- *                 south-west node.
- *    WnSE      -- Return primitive variable solution at the
- *                 south-east node.
  *    UnNW      -- Return conserved variable solution at the
  *                 north-west node.
  *    UnNE      -- Return conserved variable solution at the

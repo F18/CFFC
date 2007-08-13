@@ -1758,4 +1758,22 @@ extern Grid2D_Quad_Block** Grid_Adiabatic_Couette(Grid2D_Quad_Block **Grid_ptr,
 						  const int Number_of_Cells_Jdir,
 						  const int Number_of_Ghost_Cells);
 
+extern Grid2D_Quad_Block** Grid_Cylindrical_Encl(Grid2D_Quad_Block **Grid_ptr,
+						 int &Number_of_Blocks_Idir,
+						 int &Number_of_Blocks_Jdir,
+						 const double &Length,
+						 const double &Radius,
+						 const int &Axisymmetric,
+						 const int Number_of_Cells_Idir,
+						 const int Number_of_Cells_Jdir,
+						 const int Number_of_Ghost_Cells);
+
+extern Grid2D_Quad_Block** Grid_Rectangular_Encl(Grid2D_Quad_Block **Grid_ptr,
+						 int &Number_of_Blocks_Idir,
+						 int &Number_of_Blocks_Jdir,
+						 const double &Width,
+						 const double &Height,
+						 const int Number_of_Cells_Idir,
+						 const int Number_of_Cells_Jdir,
+						 const int Number_of_Ghost_Cells);
 #endif /* _GRID2D_QUAD_BLOCK_INCLUDED  */

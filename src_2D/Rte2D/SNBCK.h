@@ -106,6 +106,11 @@ using namespace std;
 #include "Planck.h"
 #endif //_PLANCK_INCLUDED
 
+#ifndef _CFD_INCLUDED
+#include "../CFD/CFD.h"
+#endif // _CFD_INCLUDED
+
+
 /*********************************************************************
  ***************************** CONSTANTS *****************************
  *********************************************************************/
@@ -182,6 +187,7 @@ double erfc_exp(const double x1, const double x2);
 
 class SNBCK;
 class EM2C;
+class SNBCK_Input_Parameters;
 
 
 /******************* SNBCK CLASS DEFINTION *********************************
@@ -346,6 +352,7 @@ public:
   
   //the number of quadrature points at each band
   int Nquad;
+  int* nquad;
 
   // the number of wide, lumped narrow, bands
   int Nbands;
@@ -354,7 +361,7 @@ public:
   double* g;
 
   // the quadrature weight array
-  double* w;
+  double *w, **ww;
 
   // the wavenumber center for each wide band [cm^-1]
   double* WaveNo;
@@ -398,32 +405,29 @@ private:
 public:
   
   // Consutructor 1 - components uninitialized
-  SNBCK();
+  SNBCK() : SNB(), Nquad(0), nquad(NULL), Nbands(0),  
+            g(NULL), ww(NULL), w(NULL), k(NULL), WaveNo(NULL), 
+            BandWidth(NULL), istart(NULL), iend(NULL),
+            iCO(NULL), iCO2(NULL), iH2O(NULL), iMix(NULL),
+            Tn(NULL), k_CO(NULL), k_CO2(NULL), k_H2O(NULL), 
+            k2_CO(NULL), k2_CO2(NULL), k2_H2O(NULL), dT(ZERO),
+            Ninterp(0), MixType(SNBCK_OVERLAP_OPTICALLY_THIN),
+	    EvalType(SNBCK_EVAL_ONLINE) {}
   
   // destructor
-  ~SNBCK();  
+  ~SNBCK() {  Deallocate(); }
 
+  // return the total number of variables (bands * quad points)
+  int NumVar() {
+    int sum = 0;
+    for (int v=0; v<Nbands; v++) sum += nquad[v];
+    return (sum);
+  }
 
-  // setup the quadrature and load SNB model parameters - online inversion
-  void Setup( const int quad_type,  // quadrature type
-	      const int quad_points,// number of quadrature points
-	      const int  Nlump,     // number of narrow bands lumped together
-	      const bool optimize,  // attempt to optimize band lumping (Nlump>1)
-	      const char *PATH,     // Current path
-	      const int mix_rule ); // mixture rule
+  // setup the quadrature and load SNB model parameters
+  void Setup( const SNBCK_Input_Parameters &IP,  // input parameters
+	      const char *CFFC_PATH );           // Current path
 
-  // setup the quadrature and load SNB model parameters - precalculated inversion
-  void Setup( const int quad_type,  // quadrature type
-	      const int quad_points,// number of quadrature points
-	      const int Nlump,      // number of narrow bands lumped together
-	      const bool optimize,  // attempt to optimize band lumping (Nlump>1)
-	      const char *PATH,     // Current path
-	      const double p_ref,   // reference pressure [atm]
-	      const double xco_ref, // reference mole fraction oh CO
-	      const double xh2o_ref,// reference mole fraction oh H2O
-	      const double xco2_ref,// reference mole fraction oh CO2
-	      const double xo2_ref, // reference mole fraction of O2
-	      const int Nint );     // number of interpolation points 
 
   // compute SNB model parameters
   void CalculateAbsorb( const double p,        // pressure [atm]
@@ -489,4 +493,81 @@ private:
   void DeallocateAbs();
   void Deallocate();
 
+};
+
+
+
+/******************* SNBCK CLASS DEFINTION *********************************
+ *                                                                         *
+ * Class: SNBCK_Input_Parameters                                           *
+ *                                                                         *
+ * Description:  This class is used to store the input parameters for the  *
+ *               EM2C and SNBCK classes.  This is used in the Rte2D CFFC   *
+ *               module.                                                   *
+ *                                                                         *
+ ***************************************************************************/
+class SNBCK_Input_Parameters{
+ private:
+ public:
+
+  // Evaluation type (precalculated or online inversion)
+  int EvaluationType;
+
+  // Quadrature parameters
+  int QuadType;    // Rule.
+  int QuadPoints;  // Number of points.
+  
+  // narrow band lumping parameters
+  int LumpedBands;       // Number of narrow bands to lump together.
+  bool OptimizedLumping; // Attempt to use the optimized (non-uniform) 
+                         // lumping stragegy.
+
+  // treatment type at overalapping bands
+  int OverlapModel;
+  
+  // Precalculated absorbsion coefficients parameters
+  int IntPoints;   // number of temperature interpolation points (0 for default)
+  double p_ref;    // Reference pressure [atm]
+  double xco_ref;  // Reference mole fraction CO
+  double xh2o_ref; // Reference mole fraction H2O
+  double xco2_ref; // Reference mole fraction CO2
+  double xo2_ref;  // Reference mole fraction O2
+
+  //* Default Constructor */
+  SNBCK_Input_Parameters() {
+    EvaluationType   = SNBCK_EVAL_ONLINE;
+    QuadType         = GAUSS_LEGENDRE;
+    QuadPoints       = 1;
+    LumpedBands      = 1;
+    OptimizedLumping = false;
+    OverlapModel     = SNBCK_OVERLAP_OPTICALLY_THIN;
+    IntPoints        = 0; // use points correspoding to EM2C database (14 points)
+
+    // ref state proposed by Liu and Smallwood (2004).
+    p_ref            = 1.0; //[atm]
+    xco_ref          = 0.0;
+    xh2o_ref         = 0.2;
+    xco2_ref         = 0.1;
+    xo2_ref          = 0.0;
+  };
+
+  // output parameters
+  void Output();
+
+  // input file parser
+  int Parse_Next_Input_Control_Parameter(char *code, char *value);
+
+  // MPI communicators
+  void Broadcast_Input_Parameters();
+#ifdef _MPI_VERSION
+  void Broadcast_Input_Parameters(MPI::Intracomm &Communicator,
+				  const int Source_Rank);
+#endif
+
+
+  // IO operators  
+  friend ostream &operator << (ostream &out_file,
+		               const SNBCK_Input_Parameters &IP);
+  friend istream &operator >> (istream &in_file,
+			       SNBCK_Input_Parameters &IP);
 };

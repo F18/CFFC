@@ -60,7 +60,7 @@ void EM2C :: LoadParams(const char *PATH) {
   //------------------------------------------------
 
   strcpy(FileSNBCO,PATH);
-  strcat(FileSNBCO,"/SNBCO");
+  strcat(FileSNBCO,"/data/SNB/snbco.dat");
 
   // open file 
   in.open(FileSNBCO, ios::in);
@@ -94,7 +94,7 @@ void EM2C :: LoadParams(const char *PATH) {
   //------------------------------------------------
 
   strcpy(FileSNBH2O,PATH);
-  strcat(FileSNBH2O,"/SNBH2O");
+  strcat(FileSNBH2O,"/data/SNB/snbh2o.dat");
 
   // open file 
   in.open(FileSNBH2O, ios::in);
@@ -130,7 +130,7 @@ void EM2C :: LoadParams(const char *PATH) {
   //------------------------------------------------
 
   strcpy(FileSNBCO2,PATH);
-  strcat(FileSNBCO2,"/SNBCO2");
+  strcat(FileSNBCO2,"/data/SNB/snbco2.dat");
 
   // open file 
   in.open(FileSNBCO2, ios::in);
@@ -164,7 +164,7 @@ void EM2C :: LoadParams(const char *PATH) {
   //------------------------------------------------
 
   strcpy(FileSNBWN,PATH);
-  strcat(FileSNBWN,"/SNBWN");
+  strcat(FileSNBWN,"/data/SNB/snbwn.dat");
 
   // open file 
   in.open(FileSNBWN, ios::in);
@@ -352,9 +352,6 @@ void EM2C :: ComputeRefSNB( const double p,       // pressure [atm]
       S_CO[i] = k;
       B_CO[i] = TWO*beta/PI;
       
-//       // check for infinite pressure broadening
-//        if (B_CO[i]>GRAY_GAS_CUTOFF) 
-// 	cerr << "Gray gas (co) detected at " << WaveNo[i] << " cm^-1" << endl;
 
     }/* endif CO */
 
@@ -380,9 +377,6 @@ void EM2C :: ComputeRefSNB( const double p,       // pressure [atm]
       S_CO2[i] = k;
       B_CO2[i] = TWO*beta/PI;
 
-//       // check for infinite pressure broadening
-//        if (B_CO2[i]>GRAY_GAS_CUTOFF) 
-// 	cerr << "Gray gas (co2) detected at " << WaveNo[i] << " cm^-1" << endl;
      
     }/* endif CO2 */
 
@@ -411,9 +405,6 @@ void EM2C :: ComputeRefSNB( const double p,       // pressure [atm]
       S_H2O[i] = k;
       B_H2O[i] = TWO*beta/PI;
       
-//       // check for infinite pressure broadening
-//       if (B_H2O[i]>GRAY_GAS_CUTOFF) 
-// 	cerr << "Gray gas (h2o) detected at " << WaveNo[i] << " cm^-1" << endl;
 
     }/* endif H2O */
 
@@ -528,28 +519,6 @@ double EM2C :: Transmissivity( const double L, const int i ){
 
 
 /*********************************************************************
- * Constructor that initializes without values                       *
- *********************************************************************/
-SNBCK :: SNBCK() :  SNB(), Nquad(0), Nbands(0),  
-		    g(NULL), w(NULL), k(NULL), WaveNo(NULL), 
-		    BandWidth(NULL), istart(NULL), iend(NULL),
-		    iCO(NULL), iCO2(NULL), iH2O(NULL), iMix(NULL),
-		    Tn(NULL), k_CO(NULL), k_CO2(NULL), k_H2O(NULL), 
-		    k2_CO(NULL), k2_CO2(NULL), k2_H2O(NULL), dT(ZERO),
-		    Ninterp(0), MixType(SNBCK_OVERLAP_OPTICALLY_THIN),
-		    EvalType(SNBCK_EVAL_ONLINE)
-{}
-
-
-
-
-/*********************************************************************
- * Destructor                                                        *
- *********************************************************************/
-SNBCK :: ~SNBCK() {  Deallocate(); }
-
-
-/*********************************************************************
  * Array allocators/deallocators                                     *
  *********************************************************************/
 void SNBCK :: AllocateQuad() {
@@ -558,9 +527,15 @@ void SNBCK :: AllocateQuad() {
   DeallocateQuad();
 
   // loop over bands
-  if (Nquad>0) {
-    g = new double [Nquad];
-    w = new double [Nquad];
+  if (Nquad>0 && Nbands>0) {
+    g = new double [Nbands];
+    w = new double [Nbands];
+    if (MixType==SNBCK_OVERLAP_CORRELATED) {
+      ww = new double*[Nbands];
+      for (int i=0; i<Nbands; i++) {
+	ww[i] = new double [nquad[i]];
+      }/* endfor */
+    }
   }
 }
 
@@ -579,6 +554,7 @@ void SNBCK :: AllocateBands() {
     iCO2   = new int[Nbands];
     iH2O   = new int[Nbands];
     iMix   = new int[Nbands];
+    nquad  = new int[Nbands];
   }
 
 }
@@ -598,13 +574,13 @@ void SNBCK :: AllocateInterp() {
     k2_CO2 = new double**[Nbands];
     k2_H2O = new double**[Nbands];
     for (int i=0; i<Nbands; i++) {
-      k_CO[i]   = new double*[Nquad];
-      k_CO2[i]  = new double*[Nquad];
-      k_H2O[i]  = new double*[Nquad];
-      k2_CO[i]  = new double*[Nquad];
-      k2_CO2[i] = new double*[Nquad];
-      k2_H2O[i] = new double*[Nquad];
-      for (int j=0; j<Nquad; j++) {
+      k_CO[i]   = new double*[nquad[i]];
+      k_CO2[i]  = new double*[nquad[i]];
+      k_H2O[i]  = new double*[nquad[i]];
+      k2_CO[i]  = new double*[nquad[i]];
+      k2_CO2[i] = new double*[nquad[i]];
+      k2_H2O[i] = new double*[nquad[i]];
+      for (int j=0; j<nquad[i]; j++) {
 	k_CO[i][j]   = new double[Ninterp];
 	k_CO2[i][j]  = new double[Ninterp];
 	k_H2O[i][j]  = new double[Ninterp];
@@ -625,7 +601,7 @@ void SNBCK :: AllocateAbs() {
   if (Nquad>0 && Nbands>0) {
     k = new double*[Nbands];
     for (int i=0; i<Nbands; i++) {
-      k[i] = new double [Nquad];
+      k[i] = new double [nquad[i]];
     }/* endfor */
   }/* endif */
 
@@ -634,8 +610,12 @@ void SNBCK :: AllocateAbs() {
 
 void SNBCK :: DeallocateQuad() {
 
-  if (g != NULL) delete[] g; g=NULL;
-  if (w != NULL) delete[] w; w=NULL;
+  if (g != NULL)  delete[] g; g = NULL;
+  if (w != NULL)  delete[] w; w = NULL;
+  if (ww != NULL) { 
+    for (int i=0; i<Nbands; i++) delete[] ww[i];
+    delete[] ww; ww=NULL;
+  }
 }
 
 
@@ -649,6 +629,7 @@ void SNBCK :: DeallocateBands() {
   if (iCO2      != NULL)  delete[] iCO2;           iCO2 = NULL;
   if (iH2O      != NULL)  delete[] iH2O;           iH2O = NULL;
   if (iMix      != NULL)  delete[] iMix;           iMix = NULL;
+  if (nquad     != NULL)  delete[] nquad;         nquad = NULL;
 }
 
 
@@ -656,7 +637,7 @@ void SNBCK :: DeallocateInterp() {
   if (k_CO != NULL) { 
 
     for (int i=0; i<Nbands; i++) {
-      for (int j=0; j<Nquad; j++) {
+      for (int j=0; j<nquad[i]; j++) {
 	delete[] k_CO  [i][j];
 	delete[] k_CO2 [i][j];
 	delete[] k_H2O [i][j];
@@ -708,80 +689,31 @@ void SNBCK :: Deallocate() {
  * allocate absorbsion coefficient array.  For precalculated case,   *
  * generate spline interpolants for reference absorbsion coefficient.*
  *********************************************************************/
-//------------------------------------------------
-// for precalculation of cummulative distribution 
-// function 
-//------------------------------------------------
-void SNBCK :: Setup( const int quad_type,  // quadrature type
-		     const int quad_points,// number of quadrature points
-		     const int Nlump,      // number of narrow bands lumped together
-		     const bool optimize,  // attempt to optimize band lumping (Nlump>1)
-		     const char *PATH,     // Current path
-		     const double p_ref,    // pressure [atm]
-		     const double xco_ref,  // mole fraction oh CO
-		     const double xh2o_ref, // mole fraction oh H2O
-		     const double xco2_ref, // mole fraction oh CO2
-		     const double xo2_ref,  // mole fraction of O2
-		     const int Nint )       // number of interpolation points 
-
+void SNBCK :: Setup( const SNBCK_Input_Parameters &IP,  // input parameters
+		     const char *CFFC_PATH )            // Current path
 {
   // deallocate just to be sure
   Deallocate();
 
   // store eval flag
-  EvalType = SNBCK_EVAL_PRECALC;
-
-  // only uncorrelated mixture rule can be used
-  MixType = SNBCK_OVERLAP_UNCORRELATED;
-
-  // get SNB model parameters for gas mixture (units: cm, atm, K)
-  SNB.LoadParams(PATH);
-
-  // lump bands together
-  SetupBands( Nlump, optimize );
-
-  // setup quadrature
-  SetupQuad( quad_type , quad_points );
-
-  // we are precalculating the absorbsion coefficient
-  PreCalculateAbsorb( p_ref, xco_ref, xh2o_ref, xco2_ref, xo2_ref, Nint);
-
-  // allocate absorbsion coefficient
-  AllocateAbs();
-
-}
-
-
-//------------------------------------------------
-// for online inversion of cummulative 
-// distribution function 
-//------------------------------------------------
-void SNBCK :: Setup( const int quad_type,  // quadrature type
-		     const int quad_points,// number of quadrature points
-		     const int Nlump,      // number of narrow bands lumped together
-		     const bool optimize,  // attempt to optimize band lumping (Nlump>1)
-		     const char *PATH,     // Current path
-		     const int mix_rule )  // mixture rule
-
-{
-
-  // deallocate just to be sure
-  Deallocate();
-
-  // store eval flag
-  EvalType = SNBCK_EVAL_ONLINE;
+  EvalType = IP.EvaluationType;
 
   // store mixture rule
-  MixType = mix_rule;
+  MixType = IP.OverlapModel;
 
   // get SNB model parameters for gas mixture (units: cm, atm, K)
-  SNB.LoadParams(PATH);
+  SNB.LoadParams(CFFC_PATH);
 
   // lump bands together
-  SetupBands( Nlump, optimize );
+  SetupBands( IP.LumpedBands, IP.OptimizedLumping );
 
   // setup quadrature
-  SetupQuad( quad_type, quad_points );
+  SetupQuad( IP.QuadType, IP.QuadPoints );
+
+  // we are precalculating the absorbsion coefficient
+  if (IP.EvaluationType == SNBCK_EVAL_PRECALC)
+    PreCalculateAbsorb( IP.p_ref, IP.xco_ref, IP.xh2o_ref, 
+			IP.xco2_ref, IP.xo2_ref, IP.IntPoints);
 
   // allocate absorbsion coefficient
   AllocateAbs();
@@ -798,12 +730,34 @@ void SNBCK :: Setup( const int quad_type,  // quadrature type
 void SNBCK :: SetupQuad( const int quad_type,    // quadrature type
 			 const int quad_points ) // number of quadrature points
 {
-  // declares
-  int cnt;
+  double temp;
+
+  //------------------------------------------------
+  // setup the number of quadrature points
+  //------------------------------------------------
+  Nquad = quad_points;
+
+  for (int v=0; v<Nbands; v++) {
+    
+    // for the general case
+    nquad[v] = quad_points;
+
+    // if this is the full correlated case, then there are NxNxNx...xN points
+    // Note: iMix holds the number of overlapping gases at a particular band
+    if (MixType==SNBCK_OVERLAP_CORRELATED) 
+      for (int i=1; i<iMix[v]; i++) nquad[v] *= quad_points;
+
+  } /* endfor */
+
 
   // allocate necessary arrays
-  Nquad = quad_points;
   AllocateQuad();
+
+
+  //------------------------------------------------
+  // setup the quadrature points
+  //------------------------------------------------
+
 
   // get quadrature (g defined on 0 to 1)
   switch (quad_type) {
@@ -814,7 +768,6 @@ void SNBCK :: SetupQuad( const int quad_type,    // quadrature type
     cerr << "SNBCK::SetupQuad(): Invalid value for quadrature type." << endl;
     exit(-1);
   } /* end switch */
-
 
   
 //------------- Use half of Gauss points defined on [-1,1] -------------//
@@ -1048,6 +1001,9 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
 				      const double xsoot )   // volume fraction of soot  
 {
 
+  // declares
+  int cnt;
+
   // get SNB model parameters for gas mixture (units: cm, atm, K)
   SNB.ComputeSNB( p, T, xco, xh2o, xco2, xo2 );
 
@@ -1069,7 +1025,7 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
     for (int v=0; v<Nbands; v++) {
       
       // loop over quadrature points
-      for (int i=0; i<Nquad; i++) {
+      for (int i=0; i<nquad[v]; i++) {
 
 	// if an absorbing gray band, then compute the absorbsion coeffient,
 	// else its zero
@@ -1095,7 +1051,7 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
     for (int v=0; v<Nbands; v++) {
       
       // loop over quadrature points
-      for (int i=0; i<Nquad; i++) {
+      for (int i=0; i<nquad[v]; i++) {
 
 	// if an absorbing band, then compute the absorbsion coeffient,
 	// else its zero
@@ -1115,7 +1071,6 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
 
   //-----------------------------------------------
   // UNCORRELATED APPROXIMATION proposed by Liu et al. (2001)
-  // Fully CORRELATED see Liu et al. (2001)
   //-----------------------------------------------
   case SNBCK_OVERLAP_UNCORRELATED:
 
@@ -1124,7 +1079,7 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
       
 
       // loop over quadrature points 
-      for (int i=0; i<Nquad; i++) {
+      for (int i=0; i<nquad[v]; i++) {
 
 	// add each active component
 	k[v][i] = ZERO;
@@ -1144,6 +1099,110 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
         
 
   //-----------------------------------------------
+  // Fully CORRELATED see Liu et al. (2001)
+  //-----------------------------------------------
+  case SNBCK_OVERLAP_CORRELATED:
+
+    // loop over each wide band
+    for (int v=0; v<Nbands; v++) {
+      
+      // initialize the k array
+      	for (int i=0; i<nquad[v]; i++) k[v][i] = ZERO;
+      cnt = 0;
+      
+
+      // depending upon which gases are active, compute
+      // the absorbsion coefficients and the combined 
+      // weights
+
+      // only one active gas
+      if ( iMix[v] == 1 ) {
+	for (int i=0; i<nquad[v]; i++) {
+	  if (iH2O[v] && xh2o>MICRO) 
+	    k[v][i] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
+					     SNB.liH2O, istart[v], iend[v] );
+	  if (iCO2[v] && xco2>MICRO) 
+	    k[v][i] += AbsorptionCoeffSNBCK( g[i], SNB.B_CO2, SNB.S_CO2, 
+					     SNB.liCO2, istart[v], iend[v] );
+	  if (iCO[v] && xco>MICRO) 
+	    k[v][i] += AbsorptionCoeffSNBCK( g[i],  SNB.B_CO,  SNB.S_CO,  
+					     SNB.liCO, istart[v], iend[v] );
+	  ww[v][i] = w[i];
+	} 
+	
+      // h2o and co2 active
+      } else if (iMix[v]==2 && iH2O[v] && iCO2[v]) {
+	for (int i=0; i<Nquad; i++) {
+	  for (int j=0; j<Nquad; j++) {
+	    if (xh2o>MICRO) 
+	      k[v][cnt] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
+						 SNB.liH2O, istart[v], iend[v] );
+	    if (xco2>MICRO) 
+	      k[v][cnt] += AbsorptionCoeffSNBCK( g[j], SNB.B_CO2, SNB.S_CO2, 
+						 SNB.liCO2, istart[v], iend[v] );
+	    ww[v][cnt] = w[i]*w[j];
+	    cnt++;
+	  } /* endfor */
+	} /* endfor */
+
+      // h2o and co active
+      } else if (iMix[v]==2 && iH2O[v] && iCO[v]) {
+	for (int i=0; i<Nquad; i++) {
+	  for (int j=0; j<Nquad; j++) {
+	    if (xh2o>MICRO) 
+	      k[v][cnt] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
+						 SNB.liH2O, istart[v], iend[v] );
+	    if (xco>MICRO) 
+	      k[v][cnt] += AbsorptionCoeffSNBCK( g[j],  SNB.B_CO,  SNB.S_CO,  
+						 SNB.liCO, istart[v], iend[v] );
+	    ww[v][cnt] = w[i]*w[j];
+	    cnt++;
+	  } /* endfor */
+	} /* endfor */
+
+      // co2 and co active
+      } else if (iMix[v]==2 && iCO2[v] && iCO[v]) {
+	for (int i=0; i<Nquad; i++) {
+	  for (int j=0; j<Nquad; j++) {
+	    if (xco2>MICRO) 
+	      k[v][cnt] += AbsorptionCoeffSNBCK( g[i], SNB.B_CO2, SNB.S_CO2, 
+						 SNB.liCO2, istart[v], iend[v] );
+	    if (xco>MICRO) 
+	      k[v][cnt] += AbsorptionCoeffSNBCK( g[j],  SNB.B_CO,  SNB.S_CO,  
+						 SNB.liCO, istart[v], iend[v] );
+	    ww[v][cnt] = w[i]*w[j];
+	    cnt++;
+	  } /* endfor */
+	} /* endfor */
+	
+
+      // all three are active
+      } else if ( iMix[v] == 3 ) {
+	for (int i=0; i<Nquad; i++) {
+	  for (int j=0; j<Nquad; j++) {
+	    for (int n=0; n<Nquad; n++) {
+	      if (xh2o>MICRO) 
+		k[v][cnt] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
+						   SNB.liH2O, istart[v], iend[v] );
+	      if (xco2>MICRO) 
+		k[v][cnt] += AbsorptionCoeffSNBCK( g[j], SNB.B_CO2, SNB.S_CO2, 
+						   SNB.liCO2, istart[v], iend[v] );
+	      if (xco>MICRO) 
+		k[v][cnt] += AbsorptionCoeffSNBCK( g[n],  SNB.B_CO,  SNB.S_CO,  
+						   SNB.liCO, istart[v], iend[v] );
+	      ww[v][cnt] = w[i]*w[j]*w[n];
+	      cnt++;
+	    } /* endfor */
+	  } /* endfor */
+	} /* endfor */
+
+
+      } /* endif */
+
+    } /* end for - bands */
+    break;
+
+  //-----------------------------------------------
   // shouldn't get here
   //-----------------------------------------------
   default:
@@ -1161,7 +1220,7 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
 
   // Add soot component to absorbsion coefficient [cm^-1]
   for (int v=0; v<Nbands; v++) {
-    for (int i=0; i<Nquad; i++) {
+    for (int i=0; i<nquad[v]; i++) {
       k[v][i] += 5.5 * xsoot * WaveNo[v];
     } /* end for */
   } /* end for */
@@ -1236,7 +1295,7 @@ void SNBCK :: PreCalculateAbsorb( const double p_ref,    // pressure [atm]
     // cummulative distribution function
     //------------------------------------------------
     for (int v=0; v<Nbands; v++) {
-      for (int i=0; i<Nquad; i++) {
+      for (int i=0; i<nquad[v]; i++) {
 	   
 	// add each active component
 	k_CO[v][i][n] = ZERO; k_CO2[v][i][n] = ZERO; k_H2O[v][i][n] = ZERO;
@@ -1264,7 +1323,7 @@ void SNBCK :: PreCalculateAbsorb( const double p_ref,    // pressure [atm]
 
   // Build a natural cubic spline
   for (int v=0; v<Nbands; v++) 
-    for (int i=0; i<Nquad; i++) {
+    for (int i=0; i<nquad[v]; i++) {
       spline( Tn,  k_CO[v][i], Ninterp, 1.1E30, 1.1E30,  k2_CO[v][i] );
       spline( Tn, k_CO2[v][i], Ninterp, 1.1E30, 1.1E30, k2_CO2[v][i] );
       spline( Tn, k_H2O[v][i], Ninterp, 1.1E30, 1.1E30, k2_H2O[v][i] );
@@ -1316,7 +1375,7 @@ void SNBCK :: CalculateAbsorb_Interp( const double p,        // pressure [atm]
   double kk_CO, kk_CO2, kk_H2O;
 
   for (int v=0; v<Nbands; v++) 
-    for (int i=0; i<Nquad; i++) {
+    for (int i=0; i<nquad[v]; i++) {
 
       // interpolate using the cubic spline
       splint( Tn,  k_CO[v][i],  k2_CO[v][i], dT, Ninterp, T,  kk_CO );
@@ -1345,7 +1404,10 @@ void SNBCK :: CalculateAbsorb_Interp( const double p,        // pressure [atm]
  *********************************************************************/
 double SNBCK :: BandAverage( const double *phi, const int v )  {
   double avg = ZERO;
-  for (int i=0; i<Nquad; i++) avg += w[i]*phi[i];
+  if (MixType==SNBCK_OVERLAP_CORRELATED)
+    for (int i=0; i<nquad[v]; i++) avg += ww[v][i]*phi[i];
+  else 
+    for (int i=0; i<nquad[v]; i++) avg += w[i]*phi[i];
   return avg;
 }
 
@@ -1360,13 +1422,289 @@ double SNBCK :: BandAverage( const double *phi, const int v )  {
 double SNBCK :: Transmissivity( const double L, const int v ){
 
   double tau=ZERO;
-  for (int i=0; i<Nquad; i++) tau += w[i]*exp(-k[v][i]*L);
+  if (MixType==SNBCK_OVERLAP_CORRELATED)
+    for (int i=0; i<nquad[v]; i++) tau += ww[v][i]*exp(-k[v][i]*L);
+  else 
+    for (int i=0; i<nquad[v]; i++) tau += w[i]*exp(-k[v][i]*L);
   return tau;
 
 }
 
 
+/*********************************************************************
+ ********** SNBCK_INPUT_PARAMETERS CLASS MEMBER FUNCTIONS ************
+ *********************************************************************/
 
+/*********************************************************************
+ * SNBCK_Input_Parameters :: Broadcast_Input_Parameters              *
+ *                                                                   *
+ * Broadcast the input parameters variables to all processors        *
+ * involved in the calculation from the primary processor using the  *
+ * MPI broadcast routine.                                            *
+ *********************************************************************/
+void Broadcast_Input_Parameters() {
+#ifdef _MPI_VERSION
+  MPI::COMM_WORLD.Bcast(&(EvaluationType), 
+			1, 
+			MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&(QuadType), 
+			1, 
+			MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&(QuadPoints), 
+			1, 
+			MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&(LumpedBands), 
+			1, 
+			MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&(OptimizedLumping), 
+			1, 
+			MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&(p_ref), 
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(xco_ref), 
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(xh2o_ref), 
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(xco2_ref), 
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(xo2_ref), 
+			1, 
+			MPI::DOUBLE, 0);
+#endif
+}
+
+
+/*********************************************************************
+ * SNBCK_Input_Parameters :: Broadcast_Input_Parameters              *
+ *                                                                   *
+ * Broadcast the input parameters variables to all processors        *
+ * associated with the specified communicator from the specified     *
+ * processor using the MPI broadcast routine.                        *
+ *********************************************************************/
+#ifdef _MPI_VERSION
+void Broadcast_Input_Parameters(MPI::Intracomm &Communicator,
+				const int Source_Rank) {
+  Communicator.Bcast(&(EvaluationType), 
+		     1, 
+		     MPI::INT, Source_Rank);
+  Communicator.Bcast(&(QuadType), 
+		     1, 
+		     MPI::INT, Source_Rank);
+  Communicator.Bcast(&(QuadPoints), 
+		     1, 
+		     MPI::INT, Source_Rank);
+  Communicator.Bcast(&(LumpedBands), 
+		     1, 
+		     MPI::INT, Source_Rank);
+  Communicator.Bcast(&(OptimizedLumping), 
+		     1, 
+		     MPI::INT, Source_Rank);
+  Communicator.Bcast(&(p_ref), 
+		     1, 
+		     MPI::DOUBLE, Source_Rank);
+  Communicator.Bcast(&(xco_ref), 
+		     1, 
+		     MPI::DOUBLE, Source_Rank);
+  Communicator.Bcast(&(xh2o_ref), 
+		     1, 
+		     MPI::DOUBLE, Source_Rank);
+  Communicator.Bcast(&(xco2_ref), 
+		     1, 
+		     MPI::DOUBLE, Source_Rank);
+  Communicator.Bcast(&(xo2_ref), 
+		     1, 
+		     MPI::DOUBLE, Source_Rank);
+}
+#endif
+
+
+
+/*********************************************************************
+ * SNBCK_Input_Parameters :: Parse_Next_Input_Control_Parameter      *
+ *                                                                   *
+ * Get the next input control parameter from the input file.         *
+ * Returns:                                                          *
+ *  - INVALID_INPUT_VALUE if code is valid but value is invalid      *
+ *  - INVALID_INPUT_CODE  if unknown code                            *
+ *********************************************************************/
+int SNBCK_Input_Parameters :: 
+Parse_Next_Input_Control_Parameter(char *code, char *value)
+{
+  int i_command = INVALID_INPUT_CODE;
+  char *ptr = NULL;
+
+  if (strcmp(code, "Evaluation_Type") == 0) {
+    i_command = 8000;
+    if (strcmp(value, "Precalculated") == 0) {
+      EvaluationType = SNBCK_EVAL_PRECALC;
+    } else if (strcmp(value, "Online") == 0) {
+      EvaluationType = SNBCK_EVAL_ONLINE;
+    } else {
+      EvaluationType = SNBCK_EVAL_ONLINE;
+    }
+
+  } else if (strcmp(code, "Quadrature_Type") == 0) {
+    i_command = 8001;
+    if (strcmp(value, "Gauss_Legendre") == 0) {
+      QuadType = GAUSS_LEGENDRE;
+    } else {
+      QuadType = GAUSS_LEGENDRE;
+    }
+    
+  } else if (strcmp(code, "Number_of_Quad_Points") == 0) {
+    i_command = 8002;
+    QuadPoints = static_cast<int>(strtol(value, &ptr, 10));
+    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
+
+  } else if (strcmp(code, "Number_of_Lumped_Bands") == 0) {
+    i_command = 8003;
+    LumpedBands = static_cast<int>(strtol(value, &ptr, 10));
+    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
+
+  } else if (strcmp(code, "Optimized_Lumping") == 0) {
+    i_command = 8004; 
+    if (strcmp(value, "OFF") == 0 || strcmp(value, "0") == 0) {
+      OptimizedLumping = false;
+    } else {
+      OptimizedLumping = true;
+    }
+
+  } else if (strcmp(code, "Overlap_Model") == 0) {
+    i_command = 8005;
+    if (strcmp(value, "Optically_Thin") == 0) {
+      OverlapModel = SNBCK_OVERLAP_OPTICALLY_THIN;
+    } else if (strcmp(value, "Optically_Thick") == 0) {
+      OverlapModel = SNBCK_OVERLAP_OPTICALLY_THICK;
+    } else if (strcmp(value, "Uncorrelated") == 0) {
+      OverlapModel = SNBCK_OVERLAP_UNCORRELATED;
+    } else if (strcmp(value, "Correlated") == 0) {
+      OverlapModel = SNBCK_OVERLAP_CORRELATED;
+    } else {
+      OverlapModel = SNBCK_OVERLAP_OPTICALLY_THIN;
+    }
+
+  } else if (strcmp(code, "Number_of_Interpolation_Points") == 0) {
+    i_command = 8006;
+    IntPoints = static_cast<int>(strtol(value, &ptr, 10));
+    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
+
+  } else if (strcmp(code, "p_ref") == 0) {
+    i_command = 8007;
+    p_ref = strtod(value, &ptr);
+    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
+
+  } else if (strcmp(code, "xco_ref") == 0) {
+    i_command = 8008;
+    xco_ref = strtod(value, &ptr);
+    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
+
+  } else if (strcmp(code, "xh2o_ref") == 0) {
+    i_command = 8009;
+    xh2o_ref = strtod(value, &ptr);
+    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
+
+  } else if (strcmp(code, "xco2_ref") == 0) {
+    i_command = 8010;
+    xco2_ref = strtod(value, &ptr);
+    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
+
+  } else if (strcmp(code, "xo2_ref") == 0) {
+    i_command = 8011;
+    xo2_ref = strtod(value, &ptr);
+    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
+
+  } else {
+    i_command = INVALID_INPUT_CODE;
+  }
+  return i_command;
+  
+}
+
+
+/*********************************************************************
+ * SNBCK_Input_Parameters :: Output                                  *
+ *                                                                   *
+ * Display Output Operator.                                          *
+ *********************************************************************/
+void SNBCK_Input_Parameters::Output(){
+  
+  cout.unsetf(ios::scientific);
+  cout << " " << endl;
+  cout << string(75,'*');
+  cout << "\n********           Statistical Narrow Band Correlated-K          **********" << endl;   
+  cout << string(75,'*');
+
+  cout<< " G-dist Inversion Type   ====>";
+  if( EvaluationType == SNBCK_EVAL_ONLINE ) {
+    cout<<" Online "<<endl;
+  } else if( EvaluationType == SNBCK_EVAL_PRECALC ){
+   cout<<" Precalculated"<<endl;
+  }
+
+  cout<< " Quadrature Type         ====>";
+  if( QuadType == GAUSS_LEGENDRE ) {
+    cout<<" Gauss-Legendre "<<endl;
+  }
+
+  cout<< " Number of Lumped Bands  ====> " << LumpedBands << endl;
+
+  if (OptimizedLumping == ON) {     
+    cout <<" Optimized Band Lumping  ====> ON" << endl;
+  } else {
+    cout <<" Optimized Band Lumping  ====> OFF" << endl; 
+  } /* endif */ 
+
+  cout<< " Overlap Treatment Type  ====>";
+  if( OverlapModel == SNBCK_OVERLAP_OPTICALLY_THIN ) {
+    cout<<" Optimcally Thin "<<endl;
+  } else if( OverlapModel == SNBCK_OVERLAP_OPTICALLY_THICK ){
+    cout<<" Optically Thick"<<endl;
+  } else if( OverlapModel == SNBCK_OVERLAP_UNCORRELATED ){
+    cout<<" Uncorrelated"<<endl;
+  } else if( OverlapModel == SNBCK_OVERLAP_CORRELATED ){
+    cout<<" Correlated"<<endl;
+  }
+
+  if (EvaluationType == SNBCK_EVAL_PRECALC) {     
+    cout <<" No. Interpolation Pts   ====> " << IntPoints << endl;
+    cout <<" Reference P [atm]       ====> " << p_ref << endl;
+    cout <<" Reference xCO           ====> " << xco_ref << endl;
+    cout <<" Reference xH2O          ====> " << xh2o_ref << endl;
+    cout <<" Reference xCO2          ====> " << xco2_ref << endl;
+    cout <<" Reference xO2           ====> " << xo2_ref << endl;
+  }
+ 
+  
+  cout << string(75,'*');
+  cout << endl;
+}
+
+/*********************************************************************
+ * Input-output operators                                            *
+ *********************************************************************/
+ostream &operator << (ostream &out_file,
+		      const SNBCK_Input_Parameters &IP) {    
+  out_file.precision(10);
+  out_file<<" "<<IP.QuadPoints;
+  out_file<<" "<<IP.LumpedBands;
+  out_file<<" "<<IP.OptimizedLumping;
+  return (out_file);
+}
+
+
+istream &operator >> (istream &in_file,
+		      SNBCK_Input_Parameters &IP) {
+  in_file.setf(ios::skipws);
+  in_file>>IP.QuadPoints;
+  in_file>>IP.LumpedBands;
+  in_file>>IP.OptimizedLumping;
+  in_file.unsetf(ios::skipws);
+  return (in_file);
+}
 
 
 /*********************************************************************
@@ -1385,13 +1723,6 @@ double SNBCK :: Transmissivity( const double L, const int v ){
  *      Trans., v43, 2000. pp. 3119-3135.                            *
  *********************************************************************/
 double g( const double k, const double B, const double S ){
-  // check for optically thick case
-  //   if ( B > GRAY_GAS_CUTOFF)  {
-  //     if (k>=S) return ONE;
-  //     else return ZERO;
-  //   } /* endif */
-
-
   // compute g1 using Eq. (7) in Liu et al. (2000)
   double a = HALF*sqrt( PI*B*S ); 
   double b = HALF*sqrt( PI*B/S ); 
@@ -1401,10 +1732,6 @@ double g( const double k, const double B, const double S ){
 }
 
 double g_prime( const double k, const double B, const double S ){
-
-  // check for optically thick case
-  //   if ( B > GRAY_GAS_CUTOFF )  return MILLION;
-
   // compute dg/dk using Eq. (7) in Liu et al. (2000)
   double a = HALF*sqrt( PI*B*S );
   double b = HALF*sqrt( PI*B/S );
@@ -1744,254 +2071,3 @@ double erfc_exp(const double x1, const double x2) {
 
 
 
-
-// /*********************************************************************
-//  * functions to return numerical quadrature data                     *
-//  *                                                                   *
-//  * Given the quadrature type, setup return weights and values at each*
-//  * point. Quadrature taken from :                                    *
-//  *   F. Liu, G.J. Smallwood, O.L. Gulder, Int. J. Heat Mass Trans.,  *
-//  *   v43, 2000. pp. 3119-3135.                                       *
-//  *********************************************************************/
-// /* Total number of quad points */
-// int nquad( const int quad_type ) {
-
-//   switch (quad_type){
-
-//     // 1 Point Gauss-Legendre quadrature scheme
-//     case GAUSS_LEGENDRE_1P:
-//       return 1;
-    
-//     // 2 Point Gauss-Legendre quadrature scheme
-//     case GAUSS_LEGENDRE_2P:
-//       return 2;
-
-//     // 4 Point Gauss-Legendre quadrature scheme
-//     case GAUSS_LEGENDRE_4P:
-//       return 4;
-
-//     // 4 Point Gauss-Lobatto quadrature scheme
-//     case GAUSS_LOBATTO_4P:
-//       return 4;
-
-//     // 5 Point Gauss-Lobatto quadrature scheme
-//     case GAUSS_LOBATTO_5P:
-//       return 5;
-
-//     // 7 Point Gauss-Lobatto quadrature scheme
-//     case GAUSS_LOBATTO_7P:
-//       return 7;
-
-//     // default case, shouldn't get here
-//     default:
-//       cerr << "Nquad(): Invalid quadrature type." << endl;
-//       exit(-1);
-//       break;
-//   }
-
-// }
-
-// /* return value and weight at index i */
-// void quad( const int quad_type, const int i, double &g, double &w  ) {
-
-//   switch (quad_type){
-
-//     // 1 Point Gauss-Legendre quadrature scheme
-//     case GAUSS_LEGENDRE_1P:
-//       switch (i){
-//       case (0):
-//       default:
-// 	g = 0.57735;  w = 1.00000;
-// 	break;
-//       } /* endswitch */
-//       break;
-
-//     // 2 Point Gauss-Legendre quadrature scheme
-//     case GAUSS_LEGENDRE_2P:
-//       switch (i){
-//       case (0):
-// 	g = 0.33998;  w = 0.65215;
-// 	break;
-//       case (1):
-//       default:
-// 	g = 0.86114;  w = 0.34785;
-// 	break;
-//       } /* endswitch */
-//       break;
-
-//     // 4 Point Gauss-Legendre quadrature scheme
-//     case GAUSS_LEGENDRE_4P:
-//       switch (i){
-//       case (0):
-// 	g = 0.18343;  w = 0.36268;
-// 	break;
-//       case (1):
-// 	g = 0.52553;  w = 0.31371;
-// 	break;
-//       case (2):
-// 	g = 0.79667;  w = 0.22238;
-// 	break;
-//       case (3):
-//       default:
-// 	g = 0.96029;  w = 0.10123;
-// 	break;
-//       } /* endswitch */
-//       break;
-
-//     // 4 Point Gauss-Lobatto quadrature scheme
-//     case GAUSS_LOBATTO_4P:
-//       switch (i){
-//       case (0):
-// 	g = 0.20930;  w = 0.41246;
-// 	break;
-//       case (1):
-// 	g = 0.59170;  w = 0.34112;
-// 	break;
-//       case (2):
-// 	g = 0.87174;  w = 0.21070;
-// 	break;
-//       case (3):
-//       default:
-// 	g = 1.00000;   w = 0.03571;
-// 	break;
-//       } /* endswitch */
-//       break;
-
-//     // 5 Point Gauss-Lobatto quadrature scheme
-//     case GAUSS_LOBATTO_5P:
-//       switch (i){
-//       case (0):
-// 	g = 0.16528;  w = 0.32754;
-// 	break;
-//       case (1):
-// 	g = 0.47792;  w = 0.29204;
-// 	break;
-//       case (2):
-// 	g = 0.73877;  w = 0.22489;
-// 	break;
-//       case (3):
-// 	g = 0.91953;  w = 0.13331;
-// 	break;
-//       case (4):
-//       default:
-// 	g = 1.00000;  w = 0.02222;
-// 	break;
-//       } /* endswitch */
-//       break;
-      
-//     // 7 Point Gauss-Lobatto quadrature scheme
-//     case GAUSS_LOBATTO_7P:
-//       switch (i){
-//       case (0):
-// 	g = 0.00000;  w = 0.04500;
-// 	break;
-//       case (1):
-// 	g = 0.15541;  w = 0.24500;
-// 	break;
-//       case (2):
-// 	g = 0.45000;  w = 0.32000;
-// 	break;
-//       case (3):
-// 	g = 0.74459;  w = 0.24500;
-// 	break;
-//       case (4):
-// 	g = 0.90000;  w = 0.05611;
-// 	break;
-//       case (5):
-// 	g = 0.93551;  w = 0.05125;
-// 	break;
-//       case (6):
-//       default:
-// 	g = 0.98449;  w = 0.03764;
-// 	break;
-//       } /* endswitch */
-//       break;
-
-//     // default case, shouldn't get here
-//     default:
-//       cerr << "Quad(): Invalid quadrature type." << endl;
-//       exit(-1);
-
-//   } /* endswitch */
-
-// }
-
-// /* return number of points, and the value and weight arrays */
-// void quad( const int quad_type, int &n, double* (&g), double* (&w)  ) {
-
-//   switch (quad_type){
-
-//     // 1 Point Gauss-Legendre quadrature scheme
-//     case GAUSS_LEGENDRE_1P:
-//       n = 1;
-//       g = new double[n];
-//       w = new double[n];
-//       g[0] = 0.57735;
-//       w[0] = 1.00000;
-//       break;
-    
-//     // 2 Point Gauss-Legendre quadrature scheme
-//     case GAUSS_LEGENDRE_2P:
-//       n = 2;
-//       g = new double[n];
-//       w = new double[n];
-//       g[0] = 0.33998;  w[0] = 0.65215;
-//       g[1] = 0.86114;  w[1] = 0.34785;
-//       break;
-
-//     // 4 Point Gauss-Legendre quadrature scheme
-//     case GAUSS_LEGENDRE_4P:
-//       n = 4;
-//       g = new double[n];
-//       w = new double[n];
-//       g[0] = 0.18343;  w[0] = 0.36268;
-//       g[1] = 0.52553;  w[1] = 0.31371;
-//       g[2] = 0.79667;  w[2] = 0.22238;
-//       g[3] = 0.96029;  w[3] = 0.10123;
-//       break;
-
-//     // 4 Point Gauss-Lobatto quadrature scheme
-//     case GAUSS_LOBATTO_4P:
-//       n = 4;
-//       g = new double[n];
-//       w = new double[n];
-//       g[0] = 0.20930;  w[0] = 0.41246;
-//       g[1] = 0.59170;  w[1] = 0.34112;
-//       g[2] = 0.87174;  w[2] = 0.21070;
-//       g[3] = 1.00000;  w[3] = 0.03571;
-//       break;
-
-//     // 5 Point Gauss-Lobatto quadrature scheme
-//     case GAUSS_LOBATTO_5P:
-//       n = 5;
-//       g = new double[n];
-//       w = new double[n];
-//       g[0] = 0.16528;  w[0] = 0.32754;
-//       g[1] = 0.47792;  w[1] = 0.29204;
-//       g[2] = 0.73877;  w[2] = 0.22489;
-//       g[3] = 0.91953;  w[3] = 0.13331;
-//       g[4] = 1.00000;  w[4] = 0.02222;
-//       break;
-
-//     // 7 Point Gauss-Lobatto quadrature scheme
-//     case GAUSS_LOBATTO_7P:
-//       n = 7;
-//       g = new double[n];
-//       w = new double[n];
-//       g[0] = 0.00000;  w[0] = 0.04500;
-//       g[1] = 0.15541;  w[1] = 0.24500;
-//       g[2] = 0.45000;  w[2] = 0.32000;
-//       g[3] = 0.74459;  w[3] = 0.24500;
-//       g[4] = 0.90000;  w[4] = 0.05611;
-//       g[5] = 0.93551;  w[5] = 0.05125;
-//       g[6] = 0.98449;  w[6] = 0.03764;
-//       break;
-
-//     // default case, shouldn't get here
-//     default:
-//       cerr << "SNBCK::SetupQuadrature: Invalid quadrature type." << endl;
-//       exit(-1);
-//       break;
-//   }
-
-// }

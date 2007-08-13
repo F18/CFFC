@@ -44,73 +44,45 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
  		                        Input_Parameters.Number_of_Cells_Idir,
 		                        Input_Parameters.Number_of_Cells_Jdir,
 					Input_Parameters.Number_of_Ghost_Cells);
-        for ( jBlk = 0; jBlk <= Input_Parameters.Number_of_Blocks_Jdir-1; ++jBlk ) {
-           for ( iBlk = 0; iBlk <= Input_Parameters.Number_of_Blocks_Idir-1; ++iBlk ) {
-              if (jBlk == Input_Parameters.Number_of_Blocks_Jdir-1) {
-		 Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(BC_GRAY_WALL);
-              } else {
-                 Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(BC_NONE);
-              } /* endif */
-              if (jBlk == 0) {
-		 Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_GRAY_WALL);
-              } else {
-                 Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_NONE);
-              } /* endif */
-              if (iBlk == Input_Parameters.Number_of_Blocks_Idir-1) {
-		 Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(BC_GRAY_WALL);
-              } else {
-                 Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(BC_NONE);
-              } /* endif */
-              if (iBlk == 0) {
-		 Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_GRAY_WALL);
-              } else {
-                 Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_NONE);
-              } /* endif */
-              Set_BCs(Grid_ptr[iBlk][jBlk]);
-              Update_Exterior_Nodes(Grid_ptr[iBlk][jBlk]);
-              Update_Cells(Grid_ptr[iBlk][jBlk]);
-           } /* endfor */
-        } /* endfor */
         break;
-
       case GRID_RECTANGULAR_BOX :
-        Grid_ptr = Grid_Rectangular_Box(Grid_ptr,
-                                        Input_Parameters.Number_of_Blocks_Idir,
-		                        Input_Parameters.Number_of_Blocks_Jdir,
-                                        Input_Parameters.Box_Width,
-                                        Input_Parameters.Box_Height,
- 		                        Input_Parameters.Number_of_Cells_Idir,
-		                        Input_Parameters.Number_of_Cells_Jdir,
-					Input_Parameters.Number_of_Ghost_Cells);
-        for ( jBlk = 0; jBlk <= Input_Parameters.Number_of_Blocks_Jdir-1; ++jBlk ) {
-           for ( iBlk = 0; iBlk <= Input_Parameters.Number_of_Blocks_Idir-1; ++iBlk ) {
-              if (jBlk == Input_Parameters.Number_of_Blocks_Jdir-1) {
-		 Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(BC_GRAY_WALL);
-              } else {
-                 Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(BC_NONE);
-              } /* endif */
-              if (jBlk == 0) {
-		 Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_GRAY_WALL);
-// 		 Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_REFLECTION);
-              } else {
-                 Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_NONE);
-              } /* endif */
-              if (iBlk == Input_Parameters.Number_of_Blocks_Idir-1) {
-		 Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(BC_GRAY_WALL);
-              } else {
-                 Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(BC_NONE);
-              } /* endif */
-              if (iBlk == 0) {
-		 Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_GRAY_WALL);
-// 		 Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_REFLECTION);
-              } else {
-                 Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_NONE);
-              } /* endif */
-              Set_BCs(Grid_ptr[iBlk][jBlk]);
-              Update_Exterior_Nodes(Grid_ptr[iBlk][jBlk]);
-              Update_Cells(Grid_ptr[iBlk][jBlk]);
-           } /* endfor */
-        } /* endfor */
+	if (!Input_Parameters.i_Mesh_Stretching) {
+	  Grid_ptr = Grid_Rectangular_Box(Grid_ptr,
+					  Input_Parameters.Number_of_Blocks_Idir,
+					  Input_Parameters.Number_of_Blocks_Jdir,
+					  Input_Parameters.Box_Width,
+					  Input_Parameters.Box_Height,
+					  Input_Parameters.Number_of_Cells_Idir,
+					  Input_Parameters.Number_of_Cells_Jdir,
+					  Input_Parameters.Number_of_Ghost_Cells);
+	} else {
+	  Grid_ptr = Grid_Rectangular_Box(Grid_ptr,
+					  Input_Parameters.Number_of_Blocks_Idir,
+					  Input_Parameters.Number_of_Blocks_Jdir,
+					  Input_Parameters.Box_Width,
+					  Input_Parameters.Box_Height,
+					  Input_Parameters.i_Mesh_Stretching,
+					  Input_Parameters.Mesh_Stretching_Type_Idir,
+					  Input_Parameters.Mesh_Stretching_Type_Jdir,
+					  Input_Parameters.Mesh_Stretching_Factor_Idir,
+					  Input_Parameters.Mesh_Stretching_Factor_Jdir,
+					  Input_Parameters.Number_of_Cells_Idir,
+					  Input_Parameters.Number_of_Cells_Jdir,
+					  Input_Parameters.Number_of_Ghost_Cells);
+	}
+        break;
+      case GRID_FLAT_PLATE :
+	Grid_ptr = Grid_Flat_Plate(Grid_ptr,
+				   Input_Parameters.Number_of_Blocks_Idir,
+ 		                   Input_Parameters.Number_of_Blocks_Jdir,
+				   Input_Parameters.Plate_Length,
+				   Input_Parameters.BC_South,
+				   Input_Parameters.i_Mesh_Stretching,
+				   Input_Parameters.Mesh_Stretching_Factor_Idir,
+				   Input_Parameters.Mesh_Stretching_Factor_Jdir,
+  		                   Input_Parameters.Number_of_Cells_Idir,
+ 		                   Input_Parameters.Number_of_Cells_Jdir,
+ 				   Input_Parameters.Number_of_Ghost_Cells);
         break;
       case GRID_PIPE :
         Grid_ptr = Grid_Pipe(Grid_ptr,
@@ -122,33 +94,6 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
  		             Input_Parameters.Number_of_Cells_Idir,
 		             Input_Parameters.Number_of_Cells_Jdir,
 			     Input_Parameters.Number_of_Ghost_Cells);
-        for ( jBlk = 0; jBlk <= Input_Parameters.Number_of_Blocks_Jdir-1; ++jBlk ) {
-           for ( iBlk = 0; iBlk <= Input_Parameters.Number_of_Blocks_Idir-1; ++iBlk ) {
-              if (jBlk == Input_Parameters.Number_of_Blocks_Jdir-1) {
-		 Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(BC_GRAY_WALL);
-              } else {
-                 Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(BC_NONE);
-              } /* endif */
-              if (jBlk == 0) {
-		 Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_GRAY_WALL);
-              } else {
-                 Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_NONE);
-              } /* endif */
-              if (iBlk == Input_Parameters.Number_of_Blocks_Idir-1) {
-		 Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(BC_GRAY_WALL);
-              } else {
-                 Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(BC_NONE);
-              } /* endif */
-              if (iBlk == 0) {
-		 Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_REFLECTION);
-              } else {
-                 Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_NONE);
-              } /* endif */
-              Set_BCs(Grid_ptr[iBlk][jBlk]);
-              Update_Exterior_Nodes(Grid_ptr[iBlk][jBlk]);
-              Update_Cells(Grid_ptr[iBlk][jBlk]);
-           } /* endfor */
-        } /* endfor */
         break;
       case GRID_BLUNT_BODY :
         Grid_ptr = Grid_Blunt_Body(Grid_ptr,
@@ -240,7 +185,26 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 				&Input_Parameters.Number_of_Blocks_Idir,
 				&Input_Parameters.Number_of_Blocks_Jdir);
 	break;
-
+      case GRID_RECTANGULAR_ENCLOSURE :
+	Grid_ptr = Grid_Rectangular_Encl(Grid_ptr,
+					 Input_Parameters.Number_of_Blocks_Idir,
+					 Input_Parameters.Number_of_Blocks_Jdir,
+					 Input_Parameters.Box_Width,
+					 Input_Parameters.Box_Height,
+					 Input_Parameters.Number_of_Cells_Idir,
+					 Input_Parameters.Number_of_Cells_Jdir,
+					 Input_Parameters.Number_of_Ghost_Cells);
+      case GRID_CYLINDRICAL_ENCLOSURE :
+        Grid_ptr = Grid_Cylindrical_Encl(Grid_ptr,
+					 Input_Parameters.Number_of_Blocks_Idir,
+					 Input_Parameters.Number_of_Blocks_Jdir,
+					 Input_Parameters.Pipe_Length,
+					 Input_Parameters.Pipe_Radius,
+					 Input_Parameters.Axisymmetric,
+					 Input_Parameters.Number_of_Cells_Idir,
+					 Input_Parameters.Number_of_Cells_Jdir,
+					 Input_Parameters.Number_of_Ghost_Cells);
+        break;
       default:
         Grid_ptr = Grid_Rectangular_Box(Grid_ptr,
                                         Input_Parameters.Number_of_Blocks_Idir,

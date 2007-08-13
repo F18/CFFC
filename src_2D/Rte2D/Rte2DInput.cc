@@ -96,7 +96,7 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     IP.i_ICs = IC_UNIFORM;
 
     /* Directory Path */
-    IP.get_cfdkit_path();
+    IP.get_cffc_path();
 
     /***********************************************************************
      *************************** RTE SPECIFIC ******************************/
@@ -105,6 +105,10 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     strcpy(IP.RTE_Solver, string_ptr);
     IP.i_RTE_Solver = RTE2D_SOLVER_FVM;
     IP.Uo.RTE_Type = IP.i_RTE_Solver;
+
+    string_ptr = "Upwind";
+    strcpy(IP.SpaceMarch_Scheme, string_ptr);
+    IP.i_SpaceMarch_Scheme = SPACE_MARCH_UPWIND;
     
     // DOM angular discretization (quadrature)
     string_ptr = "S2";
@@ -112,7 +116,12 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     IP.i_DOM_Quadrature = RTE2D_DOM_S2;
 
     // set gas Absorption model
-    Rte2D_State::SetGas( );
+    IP.i_AbsorptionModel = RTE2D_ABSORB_GRAY;
+    string_ptr = "Gray";
+    strcpy(IP.AbsorptionModel, string_ptr);
+    Rte2D_State::SetupAbsorb( IP.i_AbsorptionModel, 
+			      IP.SNBCK_IP, 
+			      IP.CFFC_Path  );
 
     // FVM angular discretization
     IP.Number_of_Angles_Mdir = 4;
@@ -120,7 +129,8 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     Rte2D_State::SetDirs( IP.Number_of_Angles_Mdir, 
 			  IP.Number_of_Angles_Ldir, 
 			  IP.i_DOM_Quadrature,
-			  IP.Axisymmetric );
+			  IP.Axisymmetric,
+			  IP.CFFC_Path );
 
     // allocate and zero solution state
     IP.Uo.Allocate();
@@ -382,6 +392,9 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
                           MPI::INT, 0);
     /***********************************************************************
      *************************** RTE SPECIFIC ******************************/
+    MPI::COMM_WORLD.Bcast(IP.CFFC_Path, 
+			  INPUT_PARAMETER_LENGTH_RTE2D, 
+			  MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(IP.RTE_Solver, 
                           INPUT_PARAMETER_LENGTH_RTE2D, 
                           MPI::CHAR, 0);
@@ -415,6 +428,12 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.i_ScatteringFunc), 
                           1, 
                           MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(IP.AbsorptionModel, 
+                          INPUT_PARAMETER_LENGTH_RTE2D, 
+                          MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.i_AbsorptionModel), 
+                          1, 
+                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Number_of_Angles_Mdir), 
                           1, 
                           MPI::INT, 0);
@@ -445,13 +464,20 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.WestWallEmiss), 
                           1, 
                           MPI::DOUBLE, 0);
+
+    // SNBCK Parameters
+    IP.SNBCK_IP.Broadcast_Input_Parameters();
+
    if (!CFDkit_Primary_MPI_Processor()) {
      IP.Uo.RTE_Type = IP.i_RTE_Solver;
-     Rte2D_State::SetGas( );
+     Rte2D_State::SetupAbsorb( IP.i_AbsorptionModel,
+			       IP.SNBCK_IP, 
+			       IP.CFFC_Path  );
      Rte2D_State::SetDirs( IP.Number_of_Angles_Mdir, 
 			   IP.Number_of_Angles_Ldir, 
 			   IP.i_DOM_Quadrature,
-			   IP.Axisymmetric);
+			   IP.Axisymmetric,
+			   IP.CFFC_Path );
     IP.Uo.Allocate();
     IP.Uo.Zero();
     IP.Uo.SetAbsorption( IP.AbsorptionCoef );
@@ -885,6 +911,9 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
                        MPI::INT, Source_Rank);
     /***********************************************************************
      *************************** RTE SPECIFIC ******************************/
+    Communicator.Bcast(IP.CFFC_Path, 
+		       INPUT_PARAMETER_LENGTH_RTE2D, 
+		       MPI::CHAR, Source_Rank);
     Communicator.Bcast(IP.RTE_Solver, 
                        INPUT_PARAMETER_LENGTH_RTE2D, 
                        MPI::CHAR, Source_Rank);
@@ -918,6 +947,12 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.i_ScatteringFunc), 
                           1, 
                           MPI::INT, Source_Rank);
+    Communicator.Bcast(IP.AbsorptionModel, 
+                          INPUT_PARAMETER_LENGTH_RTE2D, 
+                          MPI::CHAR, Source_Rank);
+    Communicator.Bcast(&(IP.i_AbsorptionModel), 
+                          1, 
+                          MPI::INT, Source_Rank);
     Communicator.Bcast(&(IP.Number_of_Angles_Mdir), 
                           1, 
                           MPI::INT, Source_Rank);
@@ -948,14 +983,21 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.WestWallEmiss), 
                           1, 
                           MPI::DOUBLE, Source_Rank);
+
+    // SNBCK Parameters
+    IP.SNBCK_IP.Broadcast_Input_Parameters(Communicator, Source_CPU);
+
     if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
       IP.Uo.RTE_Type = IP.i_RTE_Solver;
-      Rte2D_State::SetGas( );
+      Rte2D_State::SetupAbsorb( IP.i_AbsorptionModel,
+				IP.SNBCK_IP, 
+				IP.CFFC_Path  );
       Rte2D_State::SetDirs( IP.Number_of_Angles_Mdir, 
 			    IP.Number_of_Angles_Ldir, 
 			    IP.i_DOM_Quadrature,
-			    IP.Axisymmetric);
-      IP.Uo.Allocate();
+			    IP.Axisymmetric,
+			    IP.CFFC_Path );
+     IP.Uo.Allocate();
       IP.Uo.Zero();
       IP.Uo.SetAbsorption( IP.AbsorptionCoef );
       IP.Uo.SetScattering( IP.ScatteringCoef );
@@ -1616,6 +1658,14 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        } else if (strcmp(IP.Grid_Type,"Smooth_Bump_Channel_Flow") == 0) {
 	  IP.i_Grid = GRID_BUMP_CHANNEL_FLOW;
 	  IP.Smooth_Bump = ON;
+       } else if (strcmp(IP.Grid_Type, "Rectangular_Enclosure") == 0) {
+          IP.i_Grid = GRID_RECTANGULAR_ENCLOSURE;
+          IP.Box_Width = ONE;
+          IP.Box_Height = ONE;
+       } else if (strcmp(IP.Grid_Type, "Cylindrical_Enclosure") == 0) {
+          IP.i_Grid = GRID_CYLINDRICAL_ENCLOSURE;
+          IP.Pipe_Length = ONE;
+          IP.Pipe_Radius = HALF;
        } else if (strcmp(IP.Grid_Type, "ICEMCFD") == 0) {
           IP.i_Grid = GRID_ICEMCFD;
        } else if (strcmp(IP.Grid_Type, "Read_From_Definition_File") == 0) {
@@ -2075,11 +2125,14 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        if (IP.Number_of_Angles_Mdir <= 0) {
           i_command = INVALID_INPUT_VALUE;
        } else {
-	 Rte2D_State::SetGas( );
+	 Rte2D_State::SetupAbsorb( IP.i_AbsorptionModel,
+				   IP.SNBCK_IP, 
+				   IP.CFFC_Path  );
 	 Rte2D_State::SetDirs( IP.Number_of_Angles_Mdir, 
 			       IP.Number_of_Angles_Ldir, 
 			       IP.i_DOM_Quadrature,
-			       IP.Axisymmetric );
+			       IP.Axisymmetric,
+			       IP.CFFC_Path );
 	 IP.Uo.Allocate();
 	 IP.Uo.Zero();
 	 IP.Uo.SetBlackbody( Ib(IP.Temperature) );
@@ -2098,11 +2151,14 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        if (IP.Number_of_Angles_Ldir <= 0) {
           i_command = INVALID_INPUT_VALUE;
        } else {
-	 Rte2D_State::SetGas( );
+	 Rte2D_State::SetupAbsorb( IP.i_AbsorptionModel,
+				   IP.SNBCK_IP, 
+				   IP.CFFC_Path  );
 	 Rte2D_State::SetDirs( IP.Number_of_Angles_Mdir, 
 			       IP.Number_of_Angles_Ldir, 
 			       IP.i_DOM_Quadrature,
-			       IP.Axisymmetric );
+			       IP.Axisymmetric,
+			       IP.CFFC_Path );
 	 IP.Uo.Allocate();
 	 IP.Uo.Zero();
 	 IP.Uo.SetBlackbody( Ib(IP.Temperature) );
@@ -2962,32 +3018,42 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
 
     } /* endif */
 
-	if (i_command == INVALID_INPUT_CODE) {
-		// that is, we have an input line which:
-		//  - is not a comment (that's COMMENT_CODE), and,
-		//  - is not a valid code with an invalid value (that's INVALID_INPUT_VALUE), 
-		// and so is an unknown option. Maybe it's an NKS option:
-		strcpy(buffer, IP.Next_Control_Parameter);
-		Get_Next_Input_Control_Parameter(IP);
-		i_command = IP.NKS_IP.Parse_Next_Input_Control_Parameter(buffer, IP.Next_Control_Parameter);
+    if (i_command == INVALID_INPUT_CODE) {
+      // that is, we have an input line which:
+      //  - is not a comment (that's COMMENT_CODE), and,
+      //  - is not a valid code with an invalid value (that's INVALID_INPUT_VALUE), 
+      // and so is an unknown option. Maybe it's an NKS option:
+      strcpy(buffer, IP.Next_Control_Parameter);
+      Get_Next_Input_Control_Parameter(IP);
+      i_command = IP.NKS_IP.Parse_Next_Input_Control_Parameter(buffer, IP.Next_Control_Parameter);
+    }
+    if (i_command == INVALID_INPUT_CODE) {
+      // that is, we have an input line which:
+      //  - is not a comment (that's COMMENT_CODE), and,
+      //  - is not a valid code with an invalid value (that's INVALID_INPUT_VALUE), 
+      //  - is not a an NKS option
+      // and so is an unknown option. Maybe it's an SNBCK option:
+      strcpy(buffer, IP.Next_Control_Parameter);
+      Get_Next_Input_Control_Parameter(IP);
+      i_command = IP.SNBCK_IP.Parse_Next_Input_Control_Parameter(buffer, IP.Next_Control_Parameter);
+    }
 
-		// If it's still unknown then ignore it. 
-		// This could be a bad idea if it was an unknown command 
-		// as opposed to an unknown code.
-		if (i_command == INVALID_INPUT_CODE) {
-			cout << "\n***\n\nWarning: input file line " << IP.Line_Number << ": ";
-			cout << "ignoring unknown input code:\n";
-			cout << "code: " << buffer;
-			cout << "\nvalue: " << IP.Next_Control_Parameter;
-			cout << "\n\n***\n";
-		}
-		i_command = COMMENT_CODE; // sure why not
-	}
-
-	if (!IP.Input_File.good()) { i_command = INVALID_INPUT_VALUE; }
-
+    // If it's still unknown then ignore it. 
+    // This could be a bad idea if it was an unknown command 
+    // as opposed to an unknown code.
+    if (i_command == INVALID_INPUT_CODE) {
+      cout << "\n***\n\nWarning: input file line " << IP.Line_Number << ": ";
+      cout << "ignoring unknown input code:\n";
+      cout << "code: " << buffer;
+      cout << "\nvalue: " << IP.Next_Control_Parameter;
+      cout << "\n\n***\n";
+      i_command = COMMENT_CODE; // sure why not
+    }
+    
+    if (!IP.Input_File.good()) { i_command = INVALID_INPUT_VALUE; }
+    
     return (i_command);
-
+    
 }
 
 /********************************************************

@@ -174,43 +174,20 @@ struct exact_rect_param {
  *     I_half   -- Returns storage array for intensity in special directions
  *     alpha    -- Returns angular redistribution coefficient (for DOM)
  *     U        -- Return conserved solution state.
- *     F        -- Return x-direction solution flux.
- *     Fx       -- Return x-direction solution flux.
- *     Fy       -- Return y-direction solution flux.
  *     Fn       -- Return n-direction solution flux.
- *     dFdU     -- Return x-direction flux Jacobian.
- *     dFxdU    -- Return x-direction flux Jacobian.
- *     dFydU    -- Return y-direction flux Jacobian.
  *     dFndU    -- Return n-direction flux Jacobian.
- *     lambda   -- Return x-direction eigenvalue(s).
- *     lambda_x -- Return x-direction eigenvalue(s).
- *     lambda_y -- Return y-direction eigenvalue(s).
- *     lambda_precon_WS -- Return x-direction eigenvalue(s) of 
- *                 Weiss-Smith preconditioned system.
- *     rp       -- Return primitive right eigenvector (x-direction).
- *     rp_x     -- Return primitive right eigenvector (x-direction).
- *     rp_y     -- Return primitive right eigenvector (y-direction).
- *     rp_precon_WS -- Return primitive right eigenvector of 
- *                    Weiss-Smith preconditioned system (x-direction).
- *     rc       -- Return conserved right eigenvector (x-direction).
- *     rc_x     -- Return conserved right eigenvector (x-direction).
- *     rc_y     -- Return conserved right eigenvector (y-direction).
- *     rc_precon_WS -- Return conservative right eigenvector of
- *                     Weiss-Smith preconditioned system (x-direction).
- *     lp       -- Return primitive left eigenvector (x-direction).
- *     lp_x     -- Return primitive left eigenvector (x-direction).
- *     lp_y     -- Return primitive left eigenvector (y-direction).
- *     lp_precon_WS -- Return primitive left eigenvector of
- *                     Weiss-Smith preconditioned system (x-direction).
- *     S        -- Return axisymmetric source term vector.
- *     dUdW     -- Return Jacobian of conserved solution variables wrt
- *                 primitive solution variables.
- *     dWdU     -- Return Jacobian of primitive solution variables wrt
- *                 conserved solution variables.
- *     P_U_WS   -- Weiss-Smith preconditioner for the conservative
- *                 solution variables.
- *     P_U_WS_inv -- Inverse of Weiss-Smith preconditioner for the
- *                   conservative solution variables.
+ *     S        -- Return regular source term.
+ *     dSdU     -- Return regular source term jacobian.
+ *     Sa       -- Return axisymmetric source terms (Time-marching case).
+ *     Sa_FVM   -- Return axisymmetric source terms (FVM Space-marching case).
+ *     Sa_DOM   -- Return axisymmetric source terms (DOM Space-marching case).
+ *     dSadU    -- Return axisymmetric source term jacobian (Time-marching case).
+ *     dSadU_FVM-- Return axisymmetric source term jacobian (FVM Space-marching case).
+ *     dSadU_DOM-- Return axisymmetric source term jacobian (DOM Space-marching case).
+ *     In       -- Return intensity at spectral/directional location.
+ *     beta     -- Return extinction coefficient.
+ *     G        -- Return total directional integrated radiation.
+ *     q        -- Return heat flux vector.
  *
  * Member operators
  *      U -- a conserved solution state
@@ -245,12 +222,23 @@ class Rte2D_State {
   double* sigma;              //!< scattering coefficient [m^-1]
   double* Ib;                 //!< blackbody intentsity [W/m^2]
   double* I;                  //!< directional intentsity [W/m^2]
+  //@}
+
+  //@{ @name DOM space marching parameters:
+  double** I_half;            //!< storage for intensity in special directions.  See Carlson and Lathrop (1968)
+  double** alpha;             //!< angular redistribution coefficient (for DOM)
+  //@}
+
+  //@{ @name Static index variables:
   static int  Npolar;         //!< number of polar directions
   static int* Nazim;          //!< number of azimuthal directions
   static int  Nband;          //!< the total number of frequency bands
   static int  Ntot;           //!< total number of intensities
   static int*** Index;        //!< indexing array
   static int NUM_VAR_RTE2D;   //!< total number of Rte2D variables
+  //@}
+
+  //@{ @name Static variables related to angular discretization:
   static double** mu;         //!< (x,r)-direction cosine
   static double** eta;        //!< (y,azimuthal)-direction cosine
   static double** xi;         //!< (z)-direction cosine
@@ -259,11 +247,12 @@ class Rte2D_State {
   static double** psi;        //!< azimuthal angle grid points
   static double* delta_theta; //!< polar angle grid points
   static double** delta_psi;  //!< azimuthal angle grid points
+
+  //@{ @name Miscillaneous static variables:
   static double***** Phi;     //!< scattering phase function
   static int Symmetry_Factor; //!< solid angle range symmetry factor
   static int RTE_Type;        //!< flag for DOM or FVM
-  double** I_half;            //!< storage for intensity in special directions.  See Carlson and Lathrop (1968)
-  double** alpha;             //!< angular redistribution coefficient (for DOM)
+  static SNBCK SNBCKdata;     //!< statistical narrow band model 
   //@}
 
 
@@ -354,22 +343,26 @@ class Rte2D_State {
 		     const Vector2D nfaceW, const double AfaceW,
 		     const Vector2D nfaceN, const double AfaceN,
 		     const Vector2D nfaceS, const double AfaceS );
+  //@}
 
-  //! Initialize gas type.
-  static void SetGas();
+  //@{ @name Functions to setup the absoorption coefficient model.
+  //! Initialize model type.
+  static void SetupAbsorb( const int type, const SNBCK_Input_Parameters &IP, 
+			   const char* CFFC_PATH );
   //@}
 
 
   //@{ @name Functions to set the number of directions and compute the cosines.
   //! Main wrapper
   static void SetDirs(const int NumPolarDirs, const int NumAzimDirs, 
-		      const int Quad_Type, const int Axisymmetric);
+		      const int Quad_Type, const int Axisymmetric,
+		      const char *CFFC_PATH );
   //! For FVM
   static void SetDirsFVM(const int NumPolarDirs, const int NumAzimDirs, 
-			 const int Quad_Type, const int Axisymmetric);
+			 const int Axisymmetric);
   //! For DOM
-  static void SetDirsDOM(const int NumPolarDirs, const int NumAzimDirs, 
-			 const int Quad_Type, const int Axisymmetric);
+  static void SetDirsDOM(const int Quad_Type, const int Axisymmetric,
+			 const char *CFFC_PATH );
   //@}
 
 
@@ -431,10 +424,10 @@ class Rte2D_State {
   double Fn( const Vector2D &norm_dir, const int v, 
 	     const int m, const int l ) const;
   //! Flux Jac. - For time-marching.
-  friend void dFdU_n(DenseMatrix &dFdU, const Rte2D_State &U, 
-		     const Vector2D &norm_dir);
+  friend void dFndU(DenseMatrix &dFdU, const Rte2D_State &U, 
+		    const Vector2D &norm_dir);
   //! Flux Jac. - For space-marching
-  double dFdU_n( const Vector2D &norm_dir, const int m, const int l ) const;
+  double dFndU( const Vector2D &norm_dir, const int m, const int l ) const;
   //@}
 
   //@{ @name Source vector (regular terms).
@@ -1012,7 +1005,7 @@ inline double Rte2D_State :: Fn( const Vector2D &norm_dir, const int v,
  * Rte2D_State::dFdU -- Flux Jacobian in n-direction.        *
  *                      Time-march version.                  *
  *************************************************************/
-inline void dFdU_n(DenseMatrix &dFdU, const Rte2D_State &U, const Vector2D &norm_dir) {
+inline void dFndU(DenseMatrix &dFdU, const Rte2D_State &U, const Vector2D &norm_dir) {
 
   double cos_angle, sin_angle, cosine;
 
@@ -1044,8 +1037,8 @@ inline void dFdU_n(DenseMatrix &dFdU, const Rte2D_State &U, const Vector2D &norm
  * Rte2D_State::dFdU -- Flux Jacobian in n-direction.        *
  *                      Space-march version.                 *
  *************************************************************/
-inline double Rte2D_State :: dFdU_n(const Vector2D &norm_dir, 
-				    const int m, const int l)  const {
+inline double Rte2D_State :: dFndU(const Vector2D &norm_dir, 
+				   const int m, const int l)  const {
 
   double cos_angle, sin_angle, cosine;
 

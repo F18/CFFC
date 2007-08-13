@@ -43,6 +43,7 @@ double**    Rte2D_State :: delta_psi       = NULL;
 double***** Rte2D_State :: Phi             = NULL;
 int         Rte2D_State :: Symmetry_Factor = 1;
 int         Rte2D_State :: RTE_Type        = RTE2D_SOLVER_FVM;
+SNBCK       Rte2D_State :: SNBCKdata;
 
 
 /**************************************************************************
@@ -60,14 +61,15 @@ int         Rte2D_State :: RTE_Type        = RTE2D_SOLVER_FVM;
 void Rte2D_State :: SetDirs(const int NumPolarDirs, 
 			    const int NumAzimDirs,
 			    const int Quad_Type,
-			    const int Axisymmetric )
+			    const int Axisymmetric,
+			    const char *CFFC_PATH )
 {
   switch(RTE_Type) {
   case RTE2D_SOLVER_FVM:
-    SetDirsFVM(NumPolarDirs, NumAzimDirs, Quad_Type, Axisymmetric );
+    SetDirsFVM(NumPolarDirs, NumAzimDirs, Axisymmetric );
     break;
   case RTE2D_SOLVER_DOM:
-    SetDirsDOM(NumPolarDirs, NumAzimDirs, Quad_Type, Axisymmetric );
+    SetDirsDOM(Quad_Type, Axisymmetric, CFFC_PATH );
     break;
   default:
     cerr << "Rte2D_State::SetDirs - Invalid flag for RTE solver\n";
@@ -84,19 +86,23 @@ void Rte2D_State :: SetDirs(const int NumPolarDirs,
  * cosines for use in the DOM formulation of the RTE.   *
  * DOM only works for space marching.                   *
  ********************************************************/
-void Rte2D_State :: SetDirsDOM(const int NumPolarDirs, 
-			       const int NumAzimDirs,
-			       const int Quad_Type,
-			       const int Axisymmetric )
+void Rte2D_State :: SetDirsDOM(const int Quad_Type,
+			       const int Axisymmetric,
+			       const char *CFFC_PATH )
 {
   // declares
   string line;
   double fact;
   string quad_str;
+  char file[INPUT_PARAMETER_LENGTH_RTE2D]; 
+
+  // get file name
+  strcpy(file, CFFC_PATH);
+  strcat(file,"/data/SN_QUAD/quad.dat");
 
   // open the quadrature data file
   ifstream in;
-  in.open("Rte2D/quad.dat", ios::in);
+  in.open(file, ios::in);
   if(in.fail()){ 
     cerr<<"\nRte2D_State::SetDirsDOM(): Error opening file: quad.dat" <<endl;
     exit(-1); 
@@ -255,7 +261,6 @@ void Rte2D_State :: SetDirsDOM(const int NumPolarDirs,
  ********************************************************/
 void Rte2D_State :: SetDirsFVM(const int NumPolarDirs, 
 			       const int NumAzimDirs,
-			       const int Quad_Type,
 			       const int Axisymmetric )
 {
 
@@ -762,13 +767,27 @@ void Rte2D_State :: SetupPhaseFVM( const int type ) {
  **************************************************************************/
 
 /********************************************************
- * Function: SetGas                                     *
+ * Function: SetupAbsorb                                *
  *                                                      *
  * Sets the number of gas bands to discretize the entire*
  * spectrum into.                                       *
  ********************************************************/
-void Rte2D_State :: SetGas(  )
+void Rte2D_State :: SetupAbsorb( const int type, 
+				 const SNBCK_Input_Parameters &IP, 
+				 const char* CFFC_PATH )
 {
+  switch(type) {
+  case RTE2D_ABSORB_GRAY:
+    Nband = 1;
+    break;
+  case RTE2D_ABSORB_SNBCK:
+    SNBCKdata.Setup(IP, CFFC_PATH);
+    Nband = SNBCKdata.NumVar();
+    break;
+  default:
+    cerr << "Rte2D_State::SetupAbsorb - Invalid flag for gas type\n";
+    exit(-1);
+  } /* endswitch */
   Nband = 1;
 }
 

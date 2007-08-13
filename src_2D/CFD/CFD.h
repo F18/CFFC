@@ -194,6 +194,8 @@ inline char *Date_And_Time() {
 #define GRID_ADIABATIC_PIPE                  25
 #define GRID_ADIABATIC_CIRCULAR_CYLINDER     26
 #define GRID_ADIABATIC_COUETTE               27
+#define GRID_RECTANGULAR_ENCLOSURE           28
+#define GRID_CYLINDRICAL_ENCLOSURE           29
 
 #define GRID_ICEMCFD                       1000
 #define GRID_READ_FROM_DEFINITION_FILE    10000

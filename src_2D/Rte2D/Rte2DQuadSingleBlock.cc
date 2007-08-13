@@ -4669,10 +4669,10 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
     As = SolnBlk.Grid.lfaceS(i, j)*SolnBlk.SpS[i][j];
 
     // flux derivatives
-    a_E = SolnBlk.U[i][j].dFdU_n(SolnBlk.Grid.nfaceE(i,j),m,l)*Ae;
-    a_W = SolnBlk.U[i][j].dFdU_n(SolnBlk.Grid.nfaceW(i,j),m,l)*Aw;
-    a_N = SolnBlk.U[i][j].dFdU_n(SolnBlk.Grid.nfaceN(i,j),m,l)*An;
-    a_S = SolnBlk.U[i][j].dFdU_n(SolnBlk.Grid.nfaceS(i,j),m,l)*As;
+    a_E = SolnBlk.U[i][j].dFndU(SolnBlk.Grid.nfaceE(i,j),m,l)*Ae;
+    a_W = SolnBlk.U[i][j].dFndU(SolnBlk.Grid.nfaceW(i,j),m,l)*Aw;
+    a_N = SolnBlk.U[i][j].dFndU(SolnBlk.Grid.nfaceN(i,j),m,l)*An;
+    a_S = SolnBlk.U[i][j].dFndU(SolnBlk.Grid.nfaceS(i,j),m,l)*As;
 
     // perform differencing to predict downstream face values
     // for higher order correction term
@@ -5214,19 +5214,19 @@ DenseMatrix Residual_Jacobian(const int i,
 	 << "not implemented yet!!!!!\n\n";
     
     dFdU.zero();
-    dFdU_n(dFdU, SolnBlk.Uo[i][j], nface_N);
+    dFndU(dFdU, SolnBlk.Uo[i][j], nface_N);
     dRdU = (SolnBlk.Grid.lfaceN(i,j-1)*SolnBlk.SpN[i][j-1]/(SolnBlk.Grid.area(i, j)*SolnBlk.Sp[i][j]))*dFdU;
 
     dFdU.zero();
-    dFdU_n(dFdU, SolnBlk.Uo[i][j], nface_S);
+    dFndU(dFdU, SolnBlk.Uo[i][j], nface_S);
     dRdU += (SolnBlk.Grid.lfaceS(i,j+1)*SolnBlk.SpS[i][j+1]/(SolnBlk.Grid.area(i, j)*SolnBlk.Sp[i][j]))*dFdU;
 
     dFdU.zero();
-    dFdU_n(dFdU, SolnBlk.Uo[i][j], nface_E);
+    dFndU(dFdU, SolnBlk.Uo[i][j], nface_E);
     dRdU += (SolnBlk.Grid.lfaceE(i-1,j)*SolnBlk.SpE[i-1][j]/(SolnBlk.Grid.area(i, j)*SolnBlk.Sp[i][j]))*dFdU;
 
     dFdU.zero();
-    dFdU_n(dFdU, SolnBlk.Uo[i][j], nface_W);
+    dFndU(dFdU, SolnBlk.Uo[i][j], nface_W);
     dRdU += (SolnBlk.Grid.lfaceW(i+1,j)*SolnBlk.SpW[i+1][j]/(SolnBlk.Grid.area(i, j)*SolnBlk.Sp[i][j]))*dFdU;
 
 

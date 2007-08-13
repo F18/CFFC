@@ -55,7 +55,8 @@ int Newton_Update(Rte2D_Quad_Block *SolnBlk,
 		  GMRES_RightPrecon_MatrixFree<Rte2D_State,Rte2D_Quad_Block,Rte2D_Input_Parameters> &GMRES) {
 
   int Num_Var = SolnBlk[0].NumVar();  
-  
+  int error_flag = 0;
+ 
   /* Update Solution. No updates to Ghost Cells, let the BC's take care of it */
   for ( int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks.Nblk ; ++Bcount ) {
     if (List_of_Local_Solution_Blocks.Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
@@ -70,12 +71,23 @@ int Newton_Update(Rte2D_Quad_Block *SolnBlk,
 	  // THIS FUNCTION HAS NO CHECKS FOR INVALID SOLUTIONS, 
 	  // YOU PROBABLY WANT TO CREATE A SPECIALIZATION OF THIS FUNCTION SPECIFIC 
 	  // FOR YOUR EQUATION SYSTEM see Euler2D, Chem2D, etc...
-	 
-	  //Update solution in primitive variables.
 	  /***********************************************************************
 	   *************************** RTE SPECIFIC ******************************/
-	  // removed update primitive variables
-	  // SolnBlk[Bcount].W[i][j] = W(SolnBlk[Bcount].U[i][j]);	  
+ 	  // Apply update reduction while any one of the updated variables is unphysical 
+ 	  if(! SolnBlk[Bcount].U[i][j].Unphysical_Properties()){	   
+ 	    double update_reduction_factor = ONE;	    
+ 	    for (int n_update_reduction = 1; n_update_reduction <= 10; ++n_update_reduction) {		  
+ 	      update_reduction_factor = HALF*update_reduction_factor;		  		  
+ 	      for(int varindex = 1; varindex <= Num_Var; varindex++){		              
+ 		SolnBlk[Bcount].U[i][j][varindex] = SolnBlk[Bcount].Uo[i][j][varindex] 
+ 		  + GMRES.deltaU(Bcount,i,j,varindex-1)*update_reduction_factor;
+ 	      }   
+ 	      cout<<"\n Applying Reduction to solution in NKS "<<n_update_reduction;
+ 	      if( SolnBlk[Bcount].U[i][j].Unphysical_Properties() )  break;	      
+ 	    } 
+ 	  }
+	  // Error Check
+ 	  if(! SolnBlk[Bcount].U[i][j].Unphysical_Properties()) error_flag = 1;
 	  /*************************************************************************
 	   *************************************************************************/
 	} 
@@ -83,9 +95,7 @@ int Newton_Update(Rte2D_Quad_Block *SolnBlk,
     } 
   } 
   
-  cout<<"\n USING GENERIC NEWTON_UPDATE \n";
-
-  return 0; 
+  return (error_flag); 
 }
 
 
@@ -1444,10 +1454,10 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
 
   //! Calculate Jacobian matrix -> blocksizexblocksize matrix in DenseMatrix format
   //Solution Rotate provided in pState 
-  dFdU_n( dFdU_N, SolnBlk->Uo[cell_index_i][cell_index_j], nface_N); 
-  dFdU_n( dFdU_S, SolnBlk->Uo[cell_index_i][cell_index_j], nface_S);
-  dFdU_n( dFdU_E, SolnBlk->Uo[cell_index_i][cell_index_j], nface_E);
-  dFdU_n( dFdU_W, SolnBlk->Uo[cell_index_i][cell_index_j], nface_W);
+  dFndU( dFdU_N, SolnBlk->Uo[cell_index_i][cell_index_j], nface_N); 
+  dFndU( dFdU_S, SolnBlk->Uo[cell_index_i][cell_index_j], nface_S);
+  dFndU( dFdU_E, SolnBlk->Uo[cell_index_i][cell_index_j], nface_E);
+  dFndU( dFdU_W, SolnBlk->Uo[cell_index_i][cell_index_j], nface_W);
 
   //! Calculate Jacobian matrix -> blocksizexblocksize matrix in DenseMatrix format
   //North

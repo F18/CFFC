@@ -201,14 +201,19 @@ int Read_Restart_Solution(Rte2D_Quad_Block *Soln_ptr,
 	  restart_file >> Input_Parameters.Number_of_Angles_Mdir;	    
 	  restart_file >> Input_Parameters.Number_of_Angles_Ldir;	    
 	  restart_file >> Input_Parameters.i_DOM_Quadrature;	    
+	  restart_file >> Input_Parameters.i_AbsorptionModel;	    
+	  restart_file >> Input_Parameters.SNBCK_IP;	    
 	  restart_file >> Input_Parameters.Axisymmetric;	    
           restart_file.unsetf(ios::skipws);
 	  Input_Parameters.Uo.RTE_Type = Input_Parameters.i_RTE_Solver;
-	  Rte2D_State::SetGas( );
+	  Rte2D_State::SetupAbsorb( Input_Parameters.i_AbsorptionModel,
+				    Input_Parameters.SNBCK_IP, 
+				    Input_Parameters.CFFC_Path  );
 	  Rte2D_State::SetDirs( Input_Parameters.Number_of_Angles_Mdir, 
 				Input_Parameters.Number_of_Angles_Ldir, 
 				Input_Parameters.i_DOM_Quadrature, 
-				Input_Parameters.Axisymmetric);
+				Input_Parameters.Axisymmetric,
+				Input_Parameters.CFFC_Path);
 	  Input_Parameters.Uo.Allocate();
 
 	  //---------------------- End Rte2D Specific -----------------------//
@@ -296,6 +301,8 @@ int Write_Restart_Solution(Rte2D_Quad_Block *Soln_ptr,
 	  restart_file << Input_Parameters.Number_of_Angles_Mdir << "\n";	    
 	  restart_file << Input_Parameters.Number_of_Angles_Ldir << "\n";	    
 	  restart_file << Input_Parameters.DOM_Quadrature << "\n";	    
+	  restart_file << Input_Parameters.i_AbsorptionModel << "\n";
+	  restart_file << Input_Parameters.SNBCK_IP << "\n";	    
 	  restart_file << Input_Parameters.Axisymmetric << "\n";	    
 
 	  //---------------------- End Rte2D Specific -----------------------//
