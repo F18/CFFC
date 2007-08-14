@@ -663,7 +663,7 @@ $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.depend: $(SRC_ADVECTDIFFUSE_EXE)
 	@echo '-----------------------------------------------------------------------'
 	@echo ' '
 	touch $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.depend
-	makedepend -f$(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_ADVECTDIFFUSE_EXE) >& /dev/null
+	makedepend -f$(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_ADVECTDIFFUSE_EXE) $(SRC_ADVECTDIFFUSE) >& /dev/null
 	@echo ' '
 	@echo AdvectDiffuse2D source file dependencies have been brought up to date.
 	@echo '-------------------------------------------------------------'
@@ -686,7 +686,7 @@ $(CHEM_DIR)Chem2D.depend: $(SRC_CHEM_EXE)
 	@echo '-----------------------------------------------------------------------'
 	@echo ' '
 	touch $(CHEM_DIR)Chem2D.depend
-	makedepend -f$(CHEM_DIR)Chem2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_CHEM_EXE) >& /dev/null
+	makedepend -f$(CHEM_DIR)Chem2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_CHEM_EXE) $(SRC_CHEM) >& /dev/null
 	@echo ' '
 	@echo Chem2D source file dependencies have been brought up to date.
 	@echo '-------------------------------------------------------------'
@@ -709,7 +709,7 @@ $(DUSTY_DIR)Dusty2D.depend: $(SRC_DUSTY_EXE)
 	@echo '------------------------------------------------------------------------'
 	@echo ' '
 	touch $(DUSTY_DIR)Dusty2D.depend
-	makedepend -f$(DUSTY_DIR)Dusty2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_DUSTY_EXE) >& /dev/null
+	makedepend -f$(DUSTY_DIR)Dusty2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_DUSTY_EXE) $(SRC_DUSTY) >& /dev/null
 	@echo ' '
 	@echo Dusty2D source file dependencies have been brought up to date.
 	@echo '--------------------------------------------------------------'
@@ -732,7 +732,7 @@ $(EULER_DIR)Euler2D.depend: $(SRC_EULER_EXE)
 	@echo '------------------------------------------------------------------------'
 	@echo ' '
 	touch $(EULER_DIR)Euler2D.depend
-	makedepend -f$(EULER_DIR)Euler2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_EULER_EXE) >& /dev/null
+	makedepend -f$(EULER_DIR)Euler2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_EULER_EXE) $(SRC_EULER) >& /dev/null
 	@echo ' '
 	@echo Euler2D source file dependencies have been brought up to date.
 	@echo '--------------------------------------------------------------'
@@ -755,7 +755,7 @@ $(ELECTROSTATIC_DIR)Electrostatic2D.depend: $(SRC_ELECTROSTATIC_EXE)
 	@echo '------------------------------------------------------------------------'
 	@echo ' '
 	touch $(ELECTROSTATIC_DIR)Electrostatic2D.depend
-	makedepend -f$(ELECTROSTATIC_DIR)Electrostatic2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_ELECTROSTATIC_EXE) >& /dev/null
+	makedepend -f$(ELECTROSTATIC_DIR)Electrostatic2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_ELECTROSTATIC_EXE) $(SRC_ELECTROSTATIC) >& /dev/null
 	@echo ' '
 	@echo Electrostatic2D source file dependencies have been brought up to date.
 	@echo '--------------------------------------------------------------'
@@ -778,7 +778,7 @@ $(ION_DIR)Ion5Moment2D.depend: $(SRC_ION_EXE)
 	@echo '-----------------------------------------------------------------------------'
 	@echo ' '
 	touch $(ION_DIR)Ion5Moment2D.depend
-	makedepend -f$(ION_DIR)Ion5Moment2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_ION_EXE) >& /dev/null
+	makedepend -f$(ION_DIR)Ion5Moment2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_ION_EXE) $(SRC_ION) >& /dev/null
 	@echo ' '
 	@echo Ion5Moment2D source file dependencies have been brought up to date.
 	@echo '-------------------------------------------------------------------'
@@ -801,7 +801,7 @@ $(LEVELSET_DIR)LevelSet2D.depend: $(SRC_LEVELSET_EXE)
 	@echo '------------------------------------------------------------------------'
 	@echo ' '
 	touch $(LEVELSET_DIR)LevelSet2D.depend
-	makedepend -f$(LEVELSET_DIR)LevelSet2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_LEVELSET_EXE) >& /dev/null
+	makedepend -f$(LEVELSET_DIR)LevelSet2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_LEVELSET_EXE) $(SRC_LEVELSET) >& /dev/null
 	@echo ' '
 	@echo LevelSet2D source file dependencies have been brought up to date.
 	@echo '------------------------------------------------------------------------'
@@ -824,7 +824,7 @@ $(NAVIERSTOKES_DIR)NavierStokes2D.depend: $(SRC_NAVIERSTOKES_EXE)
 	@echo '-------------------------------------------------------------------------------'
 	@echo ' '
 	touch $(NAVIERSTOKES_DIR)NavierStokes2D.depend
-	makedepend -f$(NAVIERSTOKES_DIR)NavierStokes2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_NAVIERSTOKES_EXE) >& /dev/null
+	makedepend -f$(NAVIERSTOKES_DIR)NavierStokes2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_NAVIERSTOKES_EXE) $(SRC_NAVIERSTOKES) >& /dev/null
 	@echo ' '
 	@echo NavierStokes2D source file dependencies have been brought up to date.
 	@echo '---------------------------------------------------------------------'
@@ -847,7 +847,7 @@ $(INTERFACE_DIR)EmbeddedBoundaries2D.depend: $(SRC_EMBEDDEDBOUNDARIES_EXE)
 	@echo '-------------------------------------------------------------------------------'
 	@echo ' '
 	touch $(INTERFACE_DIR)EmbeddedBoundaries2D.depend
-	makedepend -f$(INTERFACE_DIR)EmbeddedBoundaries2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_EMBEDDEDBOUNDARIES_EXE) >& /dev/null
+	makedepend -f$(INTERFACE_DIR)EmbeddedBoundaries2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_EMBEDDEDBOUNDARIES_EXE) $(SRC_EMBEDDEDBOUNDARIES) >& /dev/null
 	@echo ' '
 	@echo EmbeddedBoundaries2D source file dependencies have been brought up to date.
 	@echo '---------------------------------------------------------------------'
@@ -870,7 +870,7 @@ $(GAUSSIAN_DIR)Gaussian2D.depend: $(SRC_GAUSSIAN_EXE)
 	@echo '-----------------------------------------------------------------------'
 	@echo ' '
 	touch $(GAUSSIAN_DIR)Gaussian2D.depend
-	makedepend -f$(GAUSSIAN_DIR)Gaussian2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_Gaussian_EXE) >& /dev/null
+	makedepend -f$(GAUSSIAN_DIR)Gaussian2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_Gaussian_EXE) $(SRC_Gaussian) >& /dev/null
 	@echo ' '
 	@echo Gaussian2D source file dependencies have been brought up to date.
 	@echo '-------------------------------------------------------------'
