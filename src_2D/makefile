@@ -587,11 +587,9 @@ cantera:
 	@echo Building $(CANTERA) library for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------'
 	@echo ' '
-	cd $(CANTERA_DIR); make -i clean;
 	cd $(CANTERA_DIR); ./preconfig CXX="$(CXX) $(CXXFLAGS)" CC="$(CC)" F77="$(FC)" \
           CXXFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" FFLAGS="$(FFLAGS)" \
 	  LCXX_END_LIBS="$(CANTERA_LCXX_END_LIBS)" PYTHON_PACKAGE="$(CANTERA_PYTHON_PACKAGE)";
-	cd $(CANTERA_DIR); make -i clean;
 	cd $(CANTERA_DIR); make;
 	@echo ' '
 	@echo $(CANTERA) library has been brought up to date.
@@ -1083,7 +1081,7 @@ superclean:
 	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) wipe;
 	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
 	cd $(BPKIT_DIR)/src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
-	cd $(CANTERA_DIR); make -i clean;
+	cd $(CANTERA_DIR); make clean;
 	cd $(FFTW_DIR); make clean; 
 	cd $(FFTW_DIR); make distclean;
 	@echo ' '
