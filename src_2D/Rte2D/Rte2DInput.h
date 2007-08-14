@@ -159,7 +159,9 @@ class Rte2D_Input_Parameters{
   char Gas_Type[INPUT_PARAMETER_LENGTH_RTE2D];
   int i_ICs;
   Rte2D_State Uo;
-  double Temperature, AbsorptionCoef, ScatteringCoef;
+  double Temperature, Pressure;
+  double xco, xco2, xh2o, xo2, fsoot;
+  double AbsorptionCoef, ScatteringCoef;
   int Number_of_Angles_Mdir, Number_of_Angles_Ldir;
   double NorthWallTemp, SouthWallTemp, EastWallTemp, WestWallTemp;
   double NorthWallEmiss, SouthWallEmiss, EastWallEmiss, WestWallEmiss;

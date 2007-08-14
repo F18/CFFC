@@ -43,6 +43,7 @@ double**    Rte2D_State :: delta_psi       = NULL;
 double***** Rte2D_State :: Phi             = NULL;
 int         Rte2D_State :: Symmetry_Factor = 1;
 int         Rte2D_State :: RTE_Type        = RTE2D_SOLVER_FVM;
+int         Rte2D_State :: Absorb_Type     = RTE2D_ABSORB_GRAY;
 SNBCK       Rte2D_State :: SNBCKdata;
 
 
@@ -772,11 +773,10 @@ void Rte2D_State :: SetupPhaseFVM( const int type ) {
  * Sets the number of gas bands to discretize the entire*
  * spectrum into.                                       *
  ********************************************************/
-void Rte2D_State :: SetupAbsorb( const int type, 
-				 const SNBCK_Input_Parameters &IP, 
+void Rte2D_State :: SetupAbsorb( const SNBCK_Input_Parameters &IP, 
 				 const char* CFFC_PATH )
 {
-  switch(type) {
+  switch(Absorb_Type) {
   case RTE2D_ABSORB_GRAY:
     Nband = 1;
     break;

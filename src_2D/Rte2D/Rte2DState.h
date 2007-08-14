@@ -252,6 +252,7 @@ class Rte2D_State {
   static double***** Phi;     //!< scattering phase function
   static int Symmetry_Factor; //!< solid angle range symmetry factor
   static int RTE_Type;        //!< flag for DOM or FVM
+  static int Absorb_Type;     //!< flag for absorbsion model
   static SNBCK SNBCKdata;     //!< statistical narrow band model 
   //@}
 
@@ -347,7 +348,7 @@ class Rte2D_State {
 
   //@{ @name Functions to setup the absoorption coefficient model.
   //! Initialize model type.
-  static void SetupAbsorb( const int type, const SNBCK_Input_Parameters &IP, 
+  static void SetupAbsorb( const SNBCK_Input_Parameters &IP, 
 			   const char* CFFC_PATH );
   //@}
 

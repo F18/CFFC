@@ -470,8 +470,8 @@ private:
 			       const double xco,      // mole fraction oh CO
 			       const double xh2o,     // mole fraction oh H2O
 			       const double xco2,     // mole fraction oh CO2
-			       const double o2,       // mole fraction oh O2
-			       const double xsoot );  // volume fraction oh soot 
+			       const double xo2,      // mole fraction oh O2
+			       const double fsoot );  // volume fraction oh soot 
 
   // compute absorbsion coeffient - precalculated interpolation
   void CalculateAbsorb_Interp( const double p,        // pressure [atm]
@@ -479,8 +479,8 @@ private:
 			       const double xco,      // mole fraction oh CO
 			       const double xh2o,     // mole fraction oh H2O
 			       const double xco2,     // mole fraction oh CO2
-			       const double o2,       // mole fraction oh O2
-			       const double xsoot );  // volume fraction oh soot 
+			       const double xo2,      // mole fraction oh O2
+			       const double fsoot );  // volume fraction oh soot 
 
   // allocate and deallocate the arrays
   void AllocateQuad();
@@ -525,6 +525,15 @@ class SNBCK_Input_Parameters{
   // treatment type at overalapping bands
   int OverlapModel;
   
+  // gas state parameters
+  double T;    // temperature [K]
+  double p;    // pressure [atm]
+  double xco;  // mole fraction CO
+  double xh2o; // mole fraction H2O
+  double xco2; // mole fraction CO2
+  double xo2;  // mole fraction O2
+  double fsoot;// volume fraction soot
+
   // Precalculated absorbsion coefficients parameters
   int IntPoints;   // number of temperature interpolation points (0 for default)
   double p_ref;    // Reference pressure [atm]
@@ -542,6 +551,15 @@ class SNBCK_Input_Parameters{
     OptimizedLumping = false;
     OverlapModel     = SNBCK_OVERLAP_OPTICALLY_THIN;
     IntPoints        = 0; // use points correspoding to EM2C database (14 points)
+
+    // gas state
+    T            = 1000.0; //[K]
+    p            = 1.0;    //[atm]
+    xco          = 0.0;
+    xh2o         = 0.2;
+    xco2         = 0.1;
+    xo2          = 0.0;
+    fsoot        = 0.0;
 
     // ref state proposed by Liu and Smallwood (2004).
     p_ref            = 1.0; //[atm]

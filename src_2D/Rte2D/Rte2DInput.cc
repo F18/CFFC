@@ -416,7 +416,25 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Temperature), 
                           1, 
                           MPI::DOUBLE, 0);
-     MPI::COMM_WORLD.Bcast(&(IP.AbsorptionCoef), 
+    MPI::COMM_WORLD.Bcast(&(IP.Pressure), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.xco), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.xco2), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.xh2o), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.xo2), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.fsoot), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.AbsorptionCoef), 
                           1, 
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.ScatteringCoef), 
@@ -469,9 +487,10 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
     IP.SNBCK_IP.Broadcast_Input_Parameters();
 
    if (!CFDkit_Primary_MPI_Processor()) {
+     IP.get_cffc_path();
      IP.Uo.RTE_Type = IP.i_RTE_Solver;
-     Rte2D_State::SetupAbsorb( IP.i_AbsorptionModel,
-			       IP.SNBCK_IP, 
+     IP.Uo.Absorb_Type = IP.i_AbsorptionModel;
+     Rte2D_State::SetupAbsorb( IP.SNBCK_IP, 
 			       IP.CFFC_Path  );
      Rte2D_State::SetDirs( IP.Number_of_Angles_Mdir, 
 			   IP.Number_of_Angles_Ldir, 
@@ -481,8 +500,8 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
     IP.Uo.Allocate();
     IP.Uo.Zero();
     IP.Uo.SetAbsorption( IP.AbsorptionCoef );
-    IP.Uo.SetScattering( IP.ScatteringCoef );
     IP.Uo.SetBlackbody( Ib(IP.Temperature) );
+    IP.Uo.SetScattering( IP.ScatteringCoef );
     Rte2D_State :: SetupPhase( IP.i_ScatteringFunc );
     } /* endif */
     /***********************************************************************
@@ -935,9 +954,27 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Temperature), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Pressure), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.xco), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.xco2), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.xh2o), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.xo2), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.fsoot), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.AbsorptionCoef), 
-                          1, 
-                          MPI::DOUBLE, Source_Rank);
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.ScatteringCoef), 
                           1, 
                           MPI::DOUBLE, Source_Rank);
