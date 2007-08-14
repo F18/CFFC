@@ -209,14 +209,6 @@ else
   FFTW_LD_FLAGS  = -L$(FFTW_LIB_DIR) -lfftw3
 endif
 
-ifeq ($(FFTW_VERSION),NoFFTW)
-  FFTW_CPP_FLAGS = 
-  FFTW_LD_FLAGS  = 
-else
-  FFTW_CPP_FLAGS = -I$(FFTW_INC_DIR)
-  FFTW_LD_FLAGS  = -L$(FFTW_LIB_DIR) -lfftw3
-endif
-
 #
 # CPPFLAG -D__USE_MALLOC explicitly handles C++ string memory issues, but 
 # is only really necessary when using memory checkers, ( ie. valgrind) 
