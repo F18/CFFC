@@ -129,41 +129,41 @@ int Turbulence_Model_k_omega::low_Reynolds_number_formulation(
    const double &d, const double &mu, 
    const int i, const int j, const int k,
    Turbulent3DWallData &wall,
-   Grid3D_Hexa_Block *grid,
+   Grid3D_Hexa_Block &grid,
    double &domega){
    
    
    if ((wall.yplus <= y_sublayer)
-       ||((i== grid->ICl) &&(grid->BCtypeW[j][k] == BC_WALL_VISCOUS ||
-                             grid->BCtypeW[j][k] == BC_NO_SLIP  ||
-                             grid->BCtypeW[j][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                             grid->BCtypeW[j][k] == BC_WALL_VISCOUS_HEATFLUX ||
-                             grid->BCtypeW[j][k] == BC_ADIABATIC_WALL)) 
-       ||((i==grid->ICu) &&(grid->BCtypeE[j][k] == BC_WALL_VISCOUS ||
-                            grid->BCtypeE[j][k] == BC_NO_SLIP  ||
-                            grid->BCtypeE[j][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                            grid->BCtypeE[j][k] == BC_WALL_VISCOUS_HEATFLUX ||
-                            grid->BCtypeE[j][k] == BC_ADIABATIC_WALL))
-       ||((j == grid->JCl) &&(grid->BCtypeS[i][k] == BC_WALL_VISCOUS ||
-                              grid->BCtypeS[i][k] == BC_NO_SLIP  ||
-                              grid->BCtypeS[i][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                              grid->BCtypeS[i][k] == BC_WALL_VISCOUS_HEATFLUX ||
-                              grid->BCtypeS[i][k] == BC_ADIABATIC_WALL))
-       ||((j ==grid->JCu) &&(grid->BCtypeN[i][k] == BC_WALL_VISCOUS ||
-                             grid->BCtypeN[i][k] == BC_NO_SLIP  ||
-                             grid->BCtypeN[i][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                             grid->BCtypeN[i][k] == BC_WALL_VISCOUS_HEATFLUX ||
-                             grid->BCtypeN[i][k] == BC_ADIABATIC_WALL))  
-       ||((k == grid->KCl) &&(grid->BCtypeB[i][j] == BC_WALL_VISCOUS ||
-                              grid->BCtypeB[i][j] == BC_NO_SLIP  ||
-                              grid->BCtypeB[i][j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                              grid->BCtypeB[i][j] == BC_WALL_VISCOUS_HEATFLUX ||
-                              grid->BCtypeB[i][j] == BC_ADIABATIC_WALL)) 
-       ||((k ==grid->KCu) &&(grid->BCtypeT[i][j] == BC_WALL_VISCOUS ||
-                             grid->BCtypeT[i][j] == BC_NO_SLIP  ||
-                             grid->BCtypeT[i][j]  == BC_WALL_VISCOUS_ISOTHERMAL ||
-                             grid->BCtypeT[i][j] == BC_WALL_VISCOUS_HEATFLUX ||
-                             grid->BCtypeT[i][j] == BC_ADIABATIC_WALL))){
+       ||((i== grid.ICl) &&(grid.BCtypeW[j][k] == BC_WALL_VISCOUS ||
+                             grid.BCtypeW[j][k] == BC_NO_SLIP  ||
+                             grid.BCtypeW[j][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                             grid.BCtypeW[j][k] == BC_WALL_VISCOUS_HEATFLUX ||
+                             grid.BCtypeW[j][k] == BC_ADIABATIC_WALL)) 
+       ||((i==grid.ICu) &&(grid.BCtypeE[j][k] == BC_WALL_VISCOUS ||
+                            grid.BCtypeE[j][k] == BC_NO_SLIP  ||
+                            grid.BCtypeE[j][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                            grid.BCtypeE[j][k] == BC_WALL_VISCOUS_HEATFLUX ||
+                            grid.BCtypeE[j][k] == BC_ADIABATIC_WALL))
+       ||((j == grid.JCl) &&(grid.BCtypeS[i][k] == BC_WALL_VISCOUS ||
+                              grid.BCtypeS[i][k] == BC_NO_SLIP  ||
+                              grid.BCtypeS[i][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                              grid.BCtypeS[i][k] == BC_WALL_VISCOUS_HEATFLUX ||
+                              grid.BCtypeS[i][k] == BC_ADIABATIC_WALL))
+       ||((j ==grid.JCu) &&(grid.BCtypeN[i][k] == BC_WALL_VISCOUS ||
+                             grid.BCtypeN[i][k] == BC_NO_SLIP  ||
+                             grid.BCtypeN[i][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                             grid.BCtypeN[i][k] == BC_WALL_VISCOUS_HEATFLUX ||
+                             grid.BCtypeN[i][k] == BC_ADIABATIC_WALL))  
+       ||((k == grid.KCl) &&(grid.BCtypeB[i][j] == BC_WALL_VISCOUS ||
+                              grid.BCtypeB[i][j] == BC_NO_SLIP  ||
+                              grid.BCtypeB[i][j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                              grid.BCtypeB[i][j] == BC_WALL_VISCOUS_HEATFLUX ||
+                              grid.BCtypeB[i][j] == BC_ADIABATIC_WALL)) 
+       ||((k ==grid.KCu) &&(grid.BCtypeT[i][j] == BC_WALL_VISCOUS ||
+                             grid.BCtypeT[i][j] == BC_NO_SLIP  ||
+                             grid.BCtypeT[i][j]  == BC_WALL_VISCOUS_ISOTHERMAL ||
+                             grid.BCtypeT[i][j] == BC_WALL_VISCOUS_HEATFLUX ||
+                             grid.BCtypeT[i][j] == BC_ADIABATIC_WALL))){
       
       domega =  d*6.0*(mu/d)/(beta*sqr(wall.ywall));
       
@@ -190,40 +190,40 @@ int Turbulence_Model_k_omega::wall_function_residual_evaluation(
 
 int Turbulence_Model_k_omega::low_Reynolds_number_formulation_residual_evaluaton(
    const int i, const int j, const int k, 
-   Turbulent3DWallData &wall,   Grid3D_Hexa_Block *grid,
+   Turbulent3DWallData &wall,   Grid3D_Hexa_Block &grid,
    double &dUdt_rhoomega){
 
    if ((wall.yplus <= y_sublayer)
-       ||((i== grid->ICl) &&(grid->BCtypeW[j][k] == BC_WALL_VISCOUS ||
-                             grid->BCtypeW[j][k] == BC_NO_SLIP  ||
-                             grid->BCtypeW[j][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                             grid->BCtypeW[j][k] == BC_WALL_VISCOUS_HEATFLUX ||
-                             grid->BCtypeW[j][k] == BC_ADIABATIC_WALL)) 
-       ||((i==grid->ICu) &&(grid->BCtypeE[j][k] == BC_WALL_VISCOUS ||
-                            grid->BCtypeE[j][k] == BC_NO_SLIP  ||
-                            grid->BCtypeE[j][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                            grid->BCtypeE[j][k] == BC_WALL_VISCOUS_HEATFLUX ||
-                            grid->BCtypeE[j][k] == BC_ADIABATIC_WALL))
-       ||((j == grid->JCl) &&(grid->BCtypeS[i][k] == BC_WALL_VISCOUS ||
-                              grid->BCtypeS[i][k] == BC_NO_SLIP  ||
-                              grid->BCtypeS[i][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                              grid->BCtypeS[i][k] == BC_WALL_VISCOUS_HEATFLUX ||
-                              grid->BCtypeS[i][k] == BC_ADIABATIC_WALL))
-       ||((j ==grid->JCu) &&(grid->BCtypeN[i][k] == BC_WALL_VISCOUS ||
-                             grid->BCtypeN[i][k] == BC_NO_SLIP  ||
-                             grid->BCtypeN[i][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                             grid->BCtypeN[i][k] == BC_WALL_VISCOUS_HEATFLUX ||
-                             grid->BCtypeN[i][k] == BC_ADIABATIC_WALL))  
-       ||((k == grid->KCl) &&(grid->BCtypeB[i][j] == BC_WALL_VISCOUS ||
-                              grid->BCtypeB[i][j] == BC_NO_SLIP  ||
-                              grid->BCtypeB[i][j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                              grid->BCtypeB[i][j] == BC_WALL_VISCOUS_HEATFLUX ||
-                              grid->BCtypeB[i][j] == BC_ADIABATIC_WALL)) 
-       ||((k ==grid->KCu) &&(grid->BCtypeT[i][j] == BC_WALL_VISCOUS ||
-                             grid->BCtypeT[i][j] == BC_NO_SLIP  ||
-                             grid->BCtypeT[i][j]  == BC_WALL_VISCOUS_ISOTHERMAL ||
-                             grid->BCtypeT[i][j] == BC_WALL_VISCOUS_HEATFLUX ||
-                             grid->BCtypeT[i][j] == BC_ADIABATIC_WALL))){
+       ||((i== grid.ICl) &&(grid.BCtypeW[j][k] == BC_WALL_VISCOUS ||
+                             grid.BCtypeW[j][k] == BC_NO_SLIP  ||
+                             grid.BCtypeW[j][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                             grid.BCtypeW[j][k] == BC_WALL_VISCOUS_HEATFLUX ||
+                             grid.BCtypeW[j][k] == BC_ADIABATIC_WALL)) 
+       ||((i==grid.ICu) &&(grid.BCtypeE[j][k] == BC_WALL_VISCOUS ||
+                            grid.BCtypeE[j][k] == BC_NO_SLIP  ||
+                            grid.BCtypeE[j][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                            grid.BCtypeE[j][k] == BC_WALL_VISCOUS_HEATFLUX ||
+                            grid.BCtypeE[j][k] == BC_ADIABATIC_WALL))
+       ||((j == grid.JCl) &&(grid.BCtypeS[i][k] == BC_WALL_VISCOUS ||
+                              grid.BCtypeS[i][k] == BC_NO_SLIP  ||
+                              grid.BCtypeS[i][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                              grid.BCtypeS[i][k] == BC_WALL_VISCOUS_HEATFLUX ||
+                              grid.BCtypeS[i][k] == BC_ADIABATIC_WALL))
+       ||((j ==grid.JCu) &&(grid.BCtypeN[i][k] == BC_WALL_VISCOUS ||
+                             grid.BCtypeN[i][k] == BC_NO_SLIP  ||
+                             grid.BCtypeN[i][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                             grid.BCtypeN[i][k] == BC_WALL_VISCOUS_HEATFLUX ||
+                             grid.BCtypeN[i][k] == BC_ADIABATIC_WALL))  
+       ||((k == grid.KCl) &&(grid.BCtypeB[i][j] == BC_WALL_VISCOUS ||
+                              grid.BCtypeB[i][j] == BC_NO_SLIP  ||
+                              grid.BCtypeB[i][j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                              grid.BCtypeB[i][j] == BC_WALL_VISCOUS_HEATFLUX ||
+                              grid.BCtypeB[i][j] == BC_ADIABATIC_WALL)) 
+       ||((k ==grid.KCu) &&(grid.BCtypeT[i][j] == BC_WALL_VISCOUS ||
+                             grid.BCtypeT[i][j] == BC_NO_SLIP  ||
+                             grid.BCtypeT[i][j]  == BC_WALL_VISCOUS_ISOTHERMAL ||
+                             grid.BCtypeT[i][j] == BC_WALL_VISCOUS_HEATFLUX ||
+                             grid.BCtypeT[i][j] == BC_ADIABATIC_WALL))){
       
       dUdt_rhoomega =  0.0;
     
@@ -240,7 +240,7 @@ int Turbulence_Model_k_omega::low_Reynolds_number_formulation_residual_evaluaton
 int Turbulence_Model_k_omega::automatic_wall_treatment(const double &d, const double &mu, 
                                                        const int i, const int j, const int k,
                                                        Turbulent3DWallData &wall, 
-                                                       Grid3D_Hexa_Block *grid, double &dk,
+                                                       Grid3D_Hexa_Block &grid, double &dk,
                                                        double &domega){
 
    double omega_viscous_layer, omega_log_layer;
@@ -248,36 +248,36 @@ int Turbulence_Model_k_omega::automatic_wall_treatment(const double &d, const do
    //Check the first cells off wall only, from 2D automatic wall testing
    // it seemed that check more than one cell close to the wall
    // did not make difference numerically. (numerical solutions).
-   if(((i== grid->ICl) &&(grid->BCtypeW[j][k] == BC_WALL_VISCOUS ||
-                          grid->BCtypeW[j][k] == BC_NO_SLIP  ||
-                          grid->BCtypeW[j][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                          grid->BCtypeW[j][k] == BC_WALL_VISCOUS_HEATFLUX ||
-                          grid->BCtypeW[j][k] == BC_ADIABATIC_WALL)) 
-      ||((i==grid->ICu) &&(grid->BCtypeE[j][k] == BC_WALL_VISCOUS ||
-                           grid->BCtypeE[j][k] == BC_NO_SLIP  ||
-                           grid->BCtypeE[j][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                           grid->BCtypeE[j][k] == BC_WALL_VISCOUS_HEATFLUX ||
-                           grid->BCtypeE[j][k] == BC_ADIABATIC_WALL))
-      ||((j == grid->JCl) &&(grid->BCtypeS[i][k] == BC_WALL_VISCOUS ||
-                             grid->BCtypeS[i][k] == BC_NO_SLIP  ||
-                             grid->BCtypeS[i][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                             grid->BCtypeS[i][k] == BC_WALL_VISCOUS_HEATFLUX ||
-                             grid->BCtypeS[i][k] == BC_ADIABATIC_WALL))
-      ||((j ==grid->JCu) &&(grid->BCtypeN[i][k] == BC_WALL_VISCOUS ||
-                            grid->BCtypeN[i][k] == BC_NO_SLIP  ||
-                            grid->BCtypeN[i][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                            grid->BCtypeN[i][k] == BC_WALL_VISCOUS_HEATFLUX ||
-                            grid->BCtypeN[i][k] == BC_ADIABATIC_WALL))  
-      ||((k == grid->KCl) &&(grid->BCtypeB[i][j] == BC_WALL_VISCOUS ||
-                             grid->BCtypeB[i][j] == BC_NO_SLIP  ||
-                             grid->BCtypeB[i][j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                             grid->BCtypeB[i][j] == BC_WALL_VISCOUS_HEATFLUX ||
-                             grid->BCtypeB[i][j] == BC_ADIABATIC_WALL)) 
-      ||((k ==grid->KCu) &&(grid->BCtypeT[i][j] == BC_WALL_VISCOUS ||
-                            grid->BCtypeT[i][j] == BC_NO_SLIP  ||
-                            grid->BCtypeT[i][j]  == BC_WALL_VISCOUS_ISOTHERMAL ||
-                            grid->BCtypeT[i][j] == BC_WALL_VISCOUS_HEATFLUX ||
-                            grid->BCtypeT[i][j] == BC_ADIABATIC_WALL))){
+   if(((i== grid.ICl) &&(grid.BCtypeW[j][k] == BC_WALL_VISCOUS ||
+                          grid.BCtypeW[j][k] == BC_NO_SLIP  ||
+                          grid.BCtypeW[j][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                          grid.BCtypeW[j][k] == BC_WALL_VISCOUS_HEATFLUX ||
+                          grid.BCtypeW[j][k] == BC_ADIABATIC_WALL)) 
+      ||((i==grid.ICu) &&(grid.BCtypeE[j][k] == BC_WALL_VISCOUS ||
+                           grid.BCtypeE[j][k] == BC_NO_SLIP  ||
+                           grid.BCtypeE[j][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                           grid.BCtypeE[j][k] == BC_WALL_VISCOUS_HEATFLUX ||
+                           grid.BCtypeE[j][k] == BC_ADIABATIC_WALL))
+      ||((j == grid.JCl) &&(grid.BCtypeS[i][k] == BC_WALL_VISCOUS ||
+                             grid.BCtypeS[i][k] == BC_NO_SLIP  ||
+                             grid.BCtypeS[i][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                             grid.BCtypeS[i][k] == BC_WALL_VISCOUS_HEATFLUX ||
+                             grid.BCtypeS[i][k] == BC_ADIABATIC_WALL))
+      ||((j ==grid.JCu) &&(grid.BCtypeN[i][k] == BC_WALL_VISCOUS ||
+                            grid.BCtypeN[i][k] == BC_NO_SLIP  ||
+                            grid.BCtypeN[i][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                            grid.BCtypeN[i][k] == BC_WALL_VISCOUS_HEATFLUX ||
+                            grid.BCtypeN[i][k] == BC_ADIABATIC_WALL))  
+      ||((k == grid.KCl) &&(grid.BCtypeB[i][j] == BC_WALL_VISCOUS ||
+                             grid.BCtypeB[i][j] == BC_NO_SLIP  ||
+                             grid.BCtypeB[i][j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                             grid.BCtypeB[i][j] == BC_WALL_VISCOUS_HEATFLUX ||
+                             grid.BCtypeB[i][j] == BC_ADIABATIC_WALL)) 
+      ||((k ==grid.KCu) &&(grid.BCtypeT[i][j] == BC_WALL_VISCOUS ||
+                            grid.BCtypeT[i][j] == BC_NO_SLIP  ||
+                            grid.BCtypeT[i][j]  == BC_WALL_VISCOUS_ISOTHERMAL ||
+                            grid.BCtypeT[i][j] == BC_WALL_VISCOUS_HEATFLUX ||
+                            grid.BCtypeT[i][j] == BC_ADIABATIC_WALL))){
 
        
       /* y+ <2.5 */
@@ -328,41 +328,41 @@ int Turbulence_Model_k_omega::automatic_wall_treatment(const double &d, const do
 int Turbulence_Model_k_omega::automatic_wall_treatment_residual_evaluaton(
    const int i, const int j, const int k,
    Turbulent3DWallData &wall,
-   Grid3D_Hexa_Block *grid,
+   Grid3D_Hexa_Block &grid,
    double &dUdt_rhok,
    double &dUdt_rhoomega){
 
 
-   if(((i== grid->ICl) &&(grid->BCtypeW[j][k] == BC_WALL_VISCOUS ||
-                          grid->BCtypeW[j][k] == BC_NO_SLIP  ||
-                          grid->BCtypeW[j][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                          grid->BCtypeW[j][k] == BC_WALL_VISCOUS_HEATFLUX ||
-                          grid->BCtypeW[j][k] == BC_ADIABATIC_WALL)) 
-      ||((i==grid->ICu) &&(grid->BCtypeE[j][k] == BC_WALL_VISCOUS ||
-                           grid->BCtypeE[j][k] == BC_NO_SLIP  ||
-                           grid->BCtypeE[j][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                           grid->BCtypeE[j][k] == BC_WALL_VISCOUS_HEATFLUX ||
-                           grid->BCtypeE[j][k] == BC_ADIABATIC_WALL))
-      ||((j == grid->JCl) &&(grid->BCtypeS[i][k] == BC_WALL_VISCOUS ||
-                             grid->BCtypeS[i][k] == BC_NO_SLIP  ||
-                             grid->BCtypeS[i][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                             grid->BCtypeS[i][k] == BC_WALL_VISCOUS_HEATFLUX ||
-                             grid->BCtypeS[i][k] == BC_ADIABATIC_WALL))
-      ||((j ==grid->JCu) &&(grid->BCtypeN[i][k] == BC_WALL_VISCOUS ||
-                            grid->BCtypeN[i][k] == BC_NO_SLIP  ||
-                            grid->BCtypeN[i][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                            grid->BCtypeN[i][k] == BC_WALL_VISCOUS_HEATFLUX ||
-                            grid->BCtypeN[i][k] == BC_ADIABATIC_WALL))  
-      ||((k == grid->KCl) &&(grid->BCtypeB[i][j] == BC_WALL_VISCOUS ||
-                             grid->BCtypeB[i][j] == BC_NO_SLIP  ||
-                             grid->BCtypeB[i][j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                             grid->BCtypeB[i][j] == BC_WALL_VISCOUS_HEATFLUX ||
-                             grid->BCtypeB[i][j] == BC_ADIABATIC_WALL)) 
-      ||((k ==grid->KCu) &&(grid->BCtypeT[i][j] == BC_WALL_VISCOUS ||
-                            grid->BCtypeT[i][j] == BC_NO_SLIP  ||
-                            grid->BCtypeT[i][j]  == BC_WALL_VISCOUS_ISOTHERMAL ||
-                            grid->BCtypeT[i][j] == BC_WALL_VISCOUS_HEATFLUX ||
-                            grid->BCtypeT[i][j] == BC_ADIABATIC_WALL))){
+   if(((i== grid.ICl) &&(grid.BCtypeW[j][k] == BC_WALL_VISCOUS ||
+                          grid.BCtypeW[j][k] == BC_NO_SLIP  ||
+                          grid.BCtypeW[j][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                          grid.BCtypeW[j][k] == BC_WALL_VISCOUS_HEATFLUX ||
+                          grid.BCtypeW[j][k] == BC_ADIABATIC_WALL)) 
+      ||((i==grid.ICu) &&(grid.BCtypeE[j][k] == BC_WALL_VISCOUS ||
+                           grid.BCtypeE[j][k] == BC_NO_SLIP  ||
+                           grid.BCtypeE[j][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                           grid.BCtypeE[j][k] == BC_WALL_VISCOUS_HEATFLUX ||
+                           grid.BCtypeE[j][k] == BC_ADIABATIC_WALL))
+      ||((j == grid.JCl) &&(grid.BCtypeS[i][k] == BC_WALL_VISCOUS ||
+                             grid.BCtypeS[i][k] == BC_NO_SLIP  ||
+                             grid.BCtypeS[i][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                             grid.BCtypeS[i][k] == BC_WALL_VISCOUS_HEATFLUX ||
+                             grid.BCtypeS[i][k] == BC_ADIABATIC_WALL))
+      ||((j ==grid.JCu) &&(grid.BCtypeN[i][k] == BC_WALL_VISCOUS ||
+                            grid.BCtypeN[i][k] == BC_NO_SLIP  ||
+                            grid.BCtypeN[i][k] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                            grid.BCtypeN[i][k] == BC_WALL_VISCOUS_HEATFLUX ||
+                            grid.BCtypeN[i][k] == BC_ADIABATIC_WALL))  
+      ||((k == grid.KCl) &&(grid.BCtypeB[i][j] == BC_WALL_VISCOUS ||
+                             grid.BCtypeB[i][j] == BC_NO_SLIP  ||
+                             grid.BCtypeB[i][j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                             grid.BCtypeB[i][j] == BC_WALL_VISCOUS_HEATFLUX ||
+                             grid.BCtypeB[i][j] == BC_ADIABATIC_WALL)) 
+      ||((k ==grid.KCu) &&(grid.BCtypeT[i][j] == BC_WALL_VISCOUS ||
+                            grid.BCtypeT[i][j] == BC_NO_SLIP  ||
+                            grid.BCtypeT[i][j]  == BC_WALL_VISCOUS_ISOTHERMAL ||
+                            grid.BCtypeT[i][j] == BC_WALL_VISCOUS_HEATFLUX ||
+                            grid.BCtypeT[i][j] == BC_ADIABATIC_WALL))){
       /* y+ <2.5 */
       if (wall.yplus <= y_sublayer){
          dUdt_rhoomega =  0.0;

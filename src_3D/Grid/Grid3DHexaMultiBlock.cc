@@ -1,41 +1,129 @@
-/* Grid3DHexaMultiBlock.cc:  Multi-block subroutines for 
-                             3D hexahedral block grid class. */
+/* Grid3DHexaMultiBlock.cc:  Member functions for 
+                             3D hexahedral multiblock grid class. */
 
-/* Include 3D quadrilateral block grid type header file. */
+/* Include 3D hexahedral block grid header file. */
 
 #ifndef GRID3D_HEXA_MULTIBLOCK_INCLUDED
 #include "Grid3DHexaMultiBlock.h"
 #endif //_GRID3D_HEXA_MULTIBLOCK_INCLUDED
 
+/********************************************************
+ * Routine: Allocate_Grid_Blocks                        *
+ *                                                      *
+ * Allocate memory for a 3D array of 3D hexahedral      *
+ * multi-block grids.                                   *
+ *                                                      *
+ ********************************************************/
+void Grid3D_Hexa_Multi_Block::Allocate(const int Ni, 
+                                       const int Nj, 
+                                       const int Nk) {
 
-/*************************************************************************
- * Grid3D_Hexa_Block -- External subroutines for 3D array of grid blocks.*
- *************************************************************************/
+   assert( Ni >= 1 && Nj >= 1 && Nk >= 1 && !Allocated);
 
+   NBlk_Idir = Ni; NBlk_Jdir = Nj; NBlk_Kdir = Nk; Allocated = 1;
+
+   Grid_Blks = new Grid3D_Hexa_Block**[NBlk_Idir];
+   for (int i = 0 ; i < NBlk_Idir ; ++i ) {
+      Grid_Blks[i] = new Grid3D_Hexa_Block*[NBlk_Jdir];
+      for (int j = 0 ; j <NBlk_Jdir ; ++j ) {
+         Grid_Blks[i][j] = new Grid3D_Hexa_Block[NBlk_Kdir];
+      }  /* endfor */
+   }/* endfor */ 
+
+   Allocated = 1;
+
+}
 
 /********************************************************
- * Routine: Write_Multi_Block_Grid                      *
+ * Routine: Deallocate_Multi_Block_Grid                 *
  *                                                      *
- * Writes a 3D array of 3D hexahedral    multi-block    *
+ * Deallocate memory for a 3D array of 3D hexahedral    *
+ * multi-block grids.                                   *
+ *                                                      *
+ ********************************************************/
+void Grid3D_Hexa_Multi_Block::Deallocate(void) {
+
+   assert( NBlk_Idir >= 1 && NBlk_Jdir >= 1 && NBlk_Kdir >= 1 && Allocated); 
+
+   for (int i = 0 ; i <= NBlk_Idir-1 ; ++i ) {
+      for ( int j=0 ; j <= NBlk_Jdir-1 ; ++j ) {
+	 for ( int k = NBlk_Kdir-1 ; k >= 0; --k ) {
+            if (Grid_Blks[i][j][k].Used) Grid_Blks[i][j][k].deallocate();
+	 }/* end for */
+	 delete []Grid_Blks[i][j];
+	 Grid_Blks[i][j]=NULL;
+       }  /* endfor */
+       
+       delete []Grid_Blks[i];
+       Grid_Blks[i] = NULL;
+    }  /* endfor */
+
+    delete []Grid_Blks;
+    Grid_Blks = NULL;
+
+    Allocated = 0;
+
+}
+
+/********************************************************
+ * Routine: Copy                                        *
+ *                                                      *
+ * Make a copy of multiblock hexahedral grid Grid2.     *
+ *                                                      *
+ ********************************************************/
+void Grid3D_Hexa_Multi_Block::Copy(Grid3D_Hexa_Multi_Block &Grid2) {
+
+  if (Grid2.Allocated) {
+
+    /* Ensure multiblock grid arrays have same dimensions. */
+
+    if (Allocated && (NBlk_Idir != Grid2.NBlk_Idir ||
+                      NBlk_Jdir != Grid2.NBlk_Jdir ||
+                      NBlk_Kdir != Grid2.NBlk_Kdir) ) {
+      Deallocate();
+      Allocate(Grid2.NBlk_Idir, Grid2.NBlk_Jdir, Grid2.NBlk_Kdir);
+    } else if (!Allocated) {
+      Allocate(Grid2.NBlk_Idir, Grid2.NBlk_Jdir, Grid2.NBlk_Kdir);
+    } /* endif */
+
+    /* Copy each grid block. */
+
+    for (int  k = 0 ; k < NBlk_Kdir ; ++k ) {
+       for (int  j = 0 ; j < NBlk_Jdir ; ++j ) {
+          for (int  i = 0 ; i < NBlk_Idir ; ++i ) {
+	     if (Grid2.Grid_Blks[i][j][k].Used) 
+                Grid_Blks[i][j][k].Copy(Grid2.Grid_Blks[i][j][k]);
+          } /* endfor */
+       } /* endfor */
+    } /* endfor */
+
+  } /* endif */
+
+}
+
+/********************************************************
+ * Routine: Output                                      *
+ *                                                      *
+ * Writes a 3D array of 3D hexahedral multi-block       *
  * grids to the specified output stream for retrieval   *
  * and re-use purposes.                                 *
  *                                                      *
  ********************************************************/
-void Grid3D_Hexa_Multi_Block::Write_Multi_Block_Grid(ostream &Out_File) {
+void Grid3D_Hexa_Multi_Block::Output(ostream &Out_File) {
    
-   Out_File << NBI << " " 
-            << NBJ << " "
-            << NBK << "\n";
+  Out_File << NBlk_Idir << " " 
+           << NBlk_Jdir << " "
+           << NBlk_Kdir << "\n";
   
-  for (int  k = 0 ; k < NBK ; ++k ) {
-    for (int  j = 0 ; j < NBJ ; ++j ) {
-      for (int  i = 0 ; i < NBI ; ++i ) {
-	Grid_ptr[i][j][k]->Write_Hexa_Block((*Grid_ptr[i][j][k]), Out_File);
-      }  /* endfor */
-    }  /* endfor */
+  for (int  k = 0 ; k < NBlk_Kdir ; ++k ) {
+     for (int  j = 0 ; j < NBlk_Jdir ; ++j ) {
+       for (int  i = 0 ; i < NBlk_Idir ; ++i ) {
+          Out_File << setprecision(14) << Grid_Blks[i][j][k] << setprecision(6);
+       } /* endfor */
+     } /* endfor */
   } /* endfor */
-}
 
+}
 
 /********************************************************
  * Routine: Output_Tecplot                              *
@@ -49,23 +137,22 @@ void Grid3D_Hexa_Multi_Block::Write_Multi_Block_Grid(ostream &Out_File) {
 void Grid3D_Hexa_Multi_Block::Output_Tecplot(ostream &Out_File) {
 
     int block_number, i_output_title;
-
     block_number = 0;
     i_output_title = 1;
     
-    for (int  k = 0 ; k <NBK ; ++k ) {
-      for (int  j = 0; j <NBJ ; ++j ) {
-	for (int i = 0 ; i <NBI ; ++i ) {
-           if (Grid_ptr[i][j][k]->Node != NULL) {
-              Grid_ptr[i][j][k]->Output_Tecplot(block_number,
-                                               i_output_title,
-                                               Out_File);
-	    block_number = block_number + 1;
-             if (i_output_title) i_output_title = 0;
-          } /* endif */
-	}  /* endfor */
-      }  /* endfor */
-    }/* endfor */
+    for (int  k = 0 ; k < NBlk_Kdir ; ++k ) {
+       for (int  j = 0; j < NBlk_Jdir ; ++j ) {
+	  for (int i = 0 ; i < NBlk_Idir ; ++i ) {
+             if (Grid_Blks[i][j][k].Used) {
+                Grid_Blks[i][j][k].Output_Tecplot(block_number,
+                                                  i_output_title,
+                                                  Out_File);
+	        block_number = block_number + 1;
+                if (i_output_title) i_output_title = 0;
+             } /* endif */
+	  } /* endfor */
+       } /* endfor */
+    } /* endfor */
 
 }
 
@@ -79,29 +166,31 @@ void Grid3D_Hexa_Multi_Block::Output_Tecplot(ostream &Out_File) {
  *                                                      *
  ********************************************************/
 void Grid3D_Hexa_Multi_Block::Output_Nodes_Tecplot(ostream &Out_File) {
-  int  block_number = 0;
-  int  i_output_title = 1;
+
+    int block_number, i_output_title;
+    block_number = 0;
+    i_output_title = 1;
   
-  for (int  k = 0 ; k <NBK ; ++k ) {
-    for (int  j = 0; j <NBJ ; ++j ) {
-      for (int i = 0 ; i <NBI ; ++i ) {
-	if (Grid_ptr[i][j][k]->Node != NULL) {
-           Grid_ptr[i][j][k]->Output_Nodes_Tecplot(
-              block_number,
-              i_output_title,
-              Out_File);
-           block_number = block_number + 1;
-           if (i_output_title) i_output_title = 0;
-	} /* endif */
-      }  /* endfor */
-    }  /* endfor */
-  }/* endfor */ 
+    for (int  k = 0 ; k < NBlk_Kdir ; ++k ) {
+       for (int  j = 0; j < NBlk_Jdir ; ++j ) {
+          for (int i = 0 ; i < NBlk_Idir ; ++i ) {
+	     if (Grid_Blks[i][j][k].Used) {
+                Grid_Blks[i][j][k].Output_Nodes_Tecplot(block_number,
+                                                        i_output_title,
+                                                        Out_File);
+                block_number = block_number + 1;
+                if (i_output_title) i_output_title = 0;
+	     } /* endif */
+          } /* endfor */
+       } /* endfor */
+    } /* endfor */ 
+
 }
 
 /********************************************************
  * Routine: Output_Cells_Tecplot                        *
  *                                                      *
- * Writes the cells of a 2D array of 2D quadrilateral   *
+ * Writes the cells of a 3D array of 3D hexahedral      *
  * multi-block grids to the specified output stream in  *
  * a format suitable for plotting the grid with         *
  * TECPLOT.                                             *
@@ -110,23 +199,23 @@ void Grid3D_Hexa_Multi_Block::Output_Nodes_Tecplot(ostream &Out_File) {
 void Grid3D_Hexa_Multi_Block::Output_Cells_Tecplot(ostream &Out_File) {
 
     int block_number, i_output_title;
-
     block_number = 0;
     i_output_title = 1;
-  for (int  k = 0 ; k <NBK ; ++k ) {
-    for (int  j = 0; j <NBJ ; ++j ) {
-      for (int i = 0 ; i <NBI ; ++i ) {
-	if (Grid_ptr[i][j][k]->Node != NULL) {
-           Grid_ptr[i][j][k]->Output_Cells_Tecplot(
-              block_number,
-              i_output_title,
-              Out_File);
-           block_number = block_number + 1;
-           if (i_output_title) i_output_title = 0;
-	} /* endif */
-      }  /* endfor */
-    }  /* endfor */
-  }/* endfor */ 
+
+    for (int  k = 0 ; k <NBlk_Kdir ; ++k ) {
+       for (int  j = 0; j <NBlk_Jdir ; ++j ) {
+          for (int i = 0 ; i <NBlk_Idir ; ++i ) {
+	     if (Grid_Blks[i][j][k].Used) {
+                Grid_Blks[i][j][k].Output_Cells_Tecplot(block_number,
+                                                        i_output_title,
+                                                        Out_File);
+                block_number = block_number + 1;
+                if (i_output_title) i_output_title = 0;
+	     } /* endif */
+          } /* endfor */
+       } /* endfor */
+    }/* endfor */ 
+
 }
 
 /********************************************************
@@ -140,1241 +229,849 @@ void Grid3D_Hexa_Multi_Block::Output_Cells_Tecplot(ostream &Out_File) {
  ********************************************************/
 void Grid3D_Hexa_Multi_Block::Output_Gnuplot(ostream &Out_File) {
   
-  int  block_number, i_output_title;
-
+    int  block_number, i_output_title;
     block_number = 0;
     i_output_title = 1;
     
-    for (int k = 0 ; k <NBK ; ++k ) {
-      for (int j = 0; j <NBJ ; ++j ) {
-	for(int i =0 ; i <NBI ; ++i ) {
-	  if (Grid_ptr[i][j][k]->Node != NULL) {
-	    Grid_ptr[i][j][k]->Output_Gnuplot(block_number,
-			  i_output_title,
-			  Out_File);
-	   block_number = block_number + 1;
-	   if (i_output_title) i_output_title = 0;
-	  } /* endif */
-	}  /* endfor */
-      }  /* endfor */
+    for (int k = 0 ; k < NBlk_Kdir ; ++k ) {
+        for (int j = 0; j < NBlk_Jdir ; ++j ) {
+	   for (int i =0 ; i < NBlk_Idir ; ++i ) {
+	      if (Grid_Blks[i][j][k].Used) {
+	          Grid_Blks[i][j][k].Output_Gnuplot(block_number,
+			                            i_output_title,
+			                            Out_File);
+                 block_number = block_number + 1;
+	         if (i_output_title) i_output_title = 0;
+	      } /* endif */
+	   } /* endfor */
+        } /* endfor */
     } /* endfor */
     
 }
 
 /********************************************************
- * Routine: Grid_Cube                                   *
+ * Routine: Create_Grid                                 *
  *                                                      *
- * Generates a 3D Cartesian mesh for a  cube            *
- *                                                      *
- *                                                      *
- * Usage:   Grid_Cube(Grid_ptr,                         *
- *                                        nblk_i,       *
- *                                        nblk_j,       *
- *                                        nblk_k,       *
- *                                        TEN,          *
- *                                        TEN,          *
- *                                        FIVE,         *
- *   	                                  100,          *
- *   	                                  100,          *
- *  	                                  50);          *
+ * Generates a 3D multiblock mesh depending on          *
+ * input parameters.                                    *
  *                                                      *
  ********************************************************/
-void Grid3D_Hexa_Multi_Block::Grid_Cube
-(const Grid3D_Input_Parameters  &IP){
+void Grid3D_Hexa_Multi_Block::Create_Grid(Grid3D_Input_Parameters &Input){
 
-   int iBlk, jBlk, kBlk, n_cells_i, n_cells_j, n_cells_k;
-   double length, width, height;
-   double x_orig, y_orig, z_orig;
-   int   BCtype_top,   BCtype_bottom,   BCtype_north,
-      BCtype_south,   BCtype_west,   BCtype_east;
-   
+    switch(Input.i_Grid) {
+      case GRID_CUBE :
+        Create_Grid_Cube(Input);
+        break;
+
+      case GRID_CHANNEL_XDIR :
+      case GRID_CHANNEL_YDIR:
+      case GRID_CHANNEL_ZDIR:
+        Create_Grid_Channel(Input);
+        break;
+
+      case GRID_COUETTE_XDIR :
+      case GRID_COUETTE_YDIR:
+      case GRID_COUETTE_ZDIR:
+        Create_Grid_Couette(Input);
+        break;
+
+      case GRID_PIPE :
+        Create_Grid_Pipe(Input);
+        break;
+
+      case GRID_BLUFF_BODY_BURNER :
+        Create_Grid_Bluff_Body_Burner(Input);
+        break;
+
+      default:
+        Create_Grid_Cube(Input);
+        break;
+    } /* endswitch */
+
+}
+
+/********************************************************
+ * Routine: Create_Grid_Cube                            *
+ *                                                      *
+ * Generates a 3D Cartesian multiblock mesh for a cube. *
+ *                                                      *
+ ********************************************************/
+void Grid3D_Hexa_Multi_Block::Create_Grid_Cube(Grid3D_Input_Parameters &Input){
+
+    int BC_top, BC_bottom;
+    Grid2D_Quad_Block **Grid2D_Box_XYplane;
+
+    /* Allocate required memory. */
+
+    Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
+
+    /* Creat 2D cross-section grids from which the 3D grid
+       will be extruded. */
+    
+    Grid2D_Box_XYplane = Grid_Rectangular_Box(Grid2D_Box_XYplane,
+                                              Input.NBlk_Idir, 
+                                              Input.NBlk_Jdir,
+                                              Input.Box_Width,
+                                              Input.Box_Height,
+					      ON,
+					      Input.Stretching_Type_Idir,
+					      Input.Stretching_Type_Jdir,
+					      Input.Stretching_Factor_Idir,
+					      Input.Stretching_Factor_Jdir,
+                                              Input.NCells_Idir,
+                                              Input.NCells_Jdir,
+					      Input.Nghost);
+
+
+    /* Create the mesh for each block representing
+       the complete grid. */
+
+    for (int kBlk = 0; kBlk <= Input.NBlk_Kdir-1; ++kBlk) {
+       for (int jBlk = 0; jBlk <= Input.NBlk_Jdir-1; ++jBlk) {
+          for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
+
+             /* Extrude each of the grid blocks from the
+                appropriate 2D grid in XY-plane. */
+
+             Grid_Blks[iBlk][jBlk][kBlk].Extrude(Grid2D_Box_XYplane[iBlk][jBlk],
+                                                 Input.NCells_Kdir,
+			                         Input.Stretching_Type_Kdir,
+						 Input.Stretching_Factor_Kdir,
+                                                 -HALF*Input.Box_Length+
+                                                 (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,
+                                                 -HALF*Input.Box_Length+
+                                                 (double(kBlk+1)/double(Input.NBlk_Kdir))*Input.Box_Length);
+
+             /* Assign top and bottom boundary conditions. */
+
+	     if (kBlk == Input.NBlk_Kdir-1) {
+                BC_top = BC_REFLECTION;
+             } else {
+                BC_top = BC_NONE;
+             } /* endif */
+             if (kBlk == 0) {
+                BC_bottom = BC_REFLECTION;
+             } else {
+                BC_bottom = BC_NONE;
+             } /* endif */
+
+             Grid_Blks[iBlk][jBlk][kBlk].Set_BCs_Zdir(BC_top, BC_bottom);
+
+	  } /* endfor */
+       } /* endfor */
+    } /* endfor */
+
+    /* Deallocate 2D grid. */
+
+    Grid2D_Box_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Box_XYplane,
+                                                     Input.NBlk_Idir, 
+                                                     Input.NBlk_Jdir);
+
+}
+
+/********************************************************
+ * Routine: Create_Grid_Channel                         *
+ *                                                      *
+ * Generates a 3D Cartesian multiblock mesh for a       *
+ * channel flow.                                        *
+ *                                                      *
+ ********************************************************/
+void Grid3D_Hexa_Multi_Block::Create_Grid_Channel(Grid3D_Input_Parameters &Input){
+
+    int BC_east, BC_west, BC_north, BC_south, BC_top, BC_bottom;
+    Grid2D_Quad_Block **Grid2D_Box_XYplane;
+
+    /* Allocate required memory. */
+
+    Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
+
+    /* Creat 2D cross-section grids from which the 3D grid
+       will be extruded. */
+    
+    Grid2D_Box_XYplane = Grid_Rectangular_Box(Grid2D_Box_XYplane,
+                                              Input.NBlk_Idir, 
+                                              Input.NBlk_Jdir,
+                                              Input.Box_Width,
+                                              Input.Box_Height,
+					      ON,
+					      Input.Stretching_Type_Idir,
+					      Input.Stretching_Type_Jdir,
+					      Input.Stretching_Factor_Idir,
+					      Input.Stretching_Factor_Jdir,
+                                              Input.NCells_Idir,
+                                              Input.NCells_Jdir,
+					      Input.Nghost);
+
+    /* Create the mesh for each block representing
+       the complete grid. */
+
+    for (int kBlk = 0; kBlk <= Input.NBlk_Kdir-1; ++kBlk) {
+       for (int jBlk = 0; jBlk <= Input.NBlk_Jdir-1; ++jBlk) {
+          for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
+
+             /* Extrude each of the grid blocks from the
+                appropriate 2D grid in XY-plane. */
+
+             Grid_Blks[iBlk][jBlk][kBlk].Extrude(Grid2D_Box_XYplane[iBlk][jBlk],
+                                                 Input.NCells_Kdir,
+			                         Input.Stretching_Type_Kdir,
+						 Input.Stretching_Factor_Kdir,
+                                                 (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,
+                                                 (double(kBlk+1)/double(Input.NBlk_Kdir))*Input.Box_Length);
+
+             /* Assign top and bottom boundary conditions. */
+
+             if (Input.i_Grid == GRID_CHANNEL_ZDIR) {
+
+   	        if (iBlk == Input.NBlk_Idir-1) {
+                   BC_east = BC_CONSTANT_EXTRAPOLATION;
+                } else {
+                   BC_east = BC_NONE;
+                } /* endif */
+                if (iBlk == 0) {
+                   BC_west = BC_CONSTANT_EXTRAPOLATION;
+                } else {
+                   BC_west = BC_NONE;
+                } /* endif */
+
+	        if (jBlk == Input.NBlk_Jdir-1) {
+                   BC_north = BC_WALL_VISCOUS;
+                } else {
+                   BC_north = BC_NONE;
+                } /* endif */
+                if (jBlk == 0) {
+                   BC_south = BC_WALL_VISCOUS;
+                } else {
+                   BC_south = BC_NONE;
+                } /* endif */
+
+	        if (kBlk == Input.NBlk_Kdir-1) {
+                   BC_top = BC_CHANNEL_OUTFLOW;
+                } else {
+                   BC_top = BC_NONE;
+                } /* endif */
+                if (kBlk == 0) {
+                   BC_bottom = BC_CHANNEL_INFLOW;
+                } else {
+                   BC_bottom = BC_NONE;
+                } /* endif */
+
+             } else if (Input.i_Grid == GRID_CHANNEL_XDIR) {
+
+    	        if (iBlk == Input.NBlk_Idir-1) {
+                   BC_east = BC_CHANNEL_OUTFLOW;
+                } else {
+                   BC_east = BC_NONE;
+                } /* endif */
+                if (iBlk == 0) {
+                   BC_west = BC_CHANNEL_INFLOW;
+                } else {
+                   BC_west = BC_NONE;
+                } /* endif */
+
+	        if (jBlk == Input.NBlk_Jdir-1) {
+                   BC_north = BC_WALL_VISCOUS;
+                } else {
+                   BC_north = BC_NONE;
+                } /* endif */
+                if (jBlk == 0) {
+                   BC_south = BC_WALL_VISCOUS;
+                } else {
+                   BC_south = BC_NONE;
+                } /* endif */
+
+	        if (kBlk == Input.NBlk_Kdir-1) {
+                   BC_top = BC_CONSTANT_EXTRAPOLATION;
+                } else {
+                   BC_top = BC_NONE;
+                } /* endif */
+                if (kBlk == 0) {
+                   BC_bottom = BC_CONSTANT_EXTRAPOLATION;
+                } else {
+                   BC_bottom = BC_NONE;
+                } /* endif */
+
+             } else if (Input.i_Grid == GRID_CHANNEL_YDIR) {
+
+   	        if (iBlk == Input.NBlk_Idir-1) {
+                   BC_east = BC_CONSTANT_EXTRAPOLATION;
+                } else {
+                   BC_east = BC_NONE;
+                } /* endif */
+                if (iBlk == 0) {
+                   BC_west = BC_CONSTANT_EXTRAPOLATION;
+                } else {
+                   BC_west = BC_NONE;
+                } /* endif */
+
+	        if (jBlk == Input.NBlk_Jdir-1) {
+                   BC_north = BC_CHANNEL_OUTFLOW;
+                } else {
+                   BC_north = BC_NONE;
+                } /* endif */
+                if (jBlk == 0) {
+                   BC_south = BC_CHANNEL_INFLOW;
+                } else {
+                   BC_south = BC_NONE;
+                } /* endif */
+
+	        if (kBlk == Input.NBlk_Kdir-1) {
+                   BC_top = BC_WALL_VISCOUS;
+                } else {
+                   BC_top = BC_NONE;
+                } /* endif */
+                if (kBlk == 0) {
+                   BC_bottom = BC_WALL_VISCOUS;
+                } else {
+                   BC_bottom = BC_NONE;
+                } /* endif */
+	     } /* endif */
+
+             Grid_Blks[iBlk][jBlk][kBlk].Set_BCs(BC_east, 
+                                                 BC_west, 
+                                                 BC_north, 
+                                                 BC_south, 
+                                                 BC_top, 
+                                                 BC_bottom);
  
-   /* Allocate memory for grid block. */
-   if (NBI < 0) NBI = 1;
-   if (NBJ < 0) NBJ = 1;
-   if (NBK < 0) NBK = 1;
-  
-     Grid3D_Hexa_Block *Grid_ptr_orig_blk ;
-      Grid_ptr_orig_blk = new Grid3D_Hexa_Block(
-         NBI*IP.ICells,  NBJ*IP.JCells , NBK*IP.KCells, IP.Nghost);
-      // generate the total mesh in the original geometry
+	  } /* endfor */
+       } /* endfor */
+    } /* endfor */
+
+    /* Deallocate 2D grid. */
+
+    Grid2D_Box_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Box_XYplane,
+                                                     Input.NBlk_Idir, 
+                                                     Input.NBlk_Jdir);
+
+}
+
+/********************************************************
+ * Routine: Create_Grid_Couette                         *
+ *                                                      *
+ * Generates a 3D Cartesian multiblock mesh for a       *
+ * couette flow.                                        *
+ *                                                      *
+ ********************************************************/
+void Grid3D_Hexa_Multi_Block::Create_Grid_Couette(Grid3D_Input_Parameters &Input){
       
-      BCtype_west =  BC_REFLECTION;
-      BCtype_south = BC_REFLECTION;
-      BCtype_bottom  = BC_REFLECTION;
-      BCtype_east = BC_REFLECTION;
-      BCtype_north = BC_REFLECTION;
-      BCtype_top  = BC_REFLECTION;
-      
-      Grid_ptr_orig_blk->Create_Hexa_Block
-         (  IP.Box_Length,
-            IP.Box_Width,
-            IP.Box_Height,
-            0.,
-            0.,
-            0.,
-            IP.I_stretching_factor,
-            IP.J_stretching_factor,
-            IP.K_stretching_factor,
-            BCtype_top ,
-            BCtype_bottom,
-            BCtype_north,
-            BCtype_south,
-            BCtype_west,
-            BCtype_east,
-            NBI*IP.ICells,
-            NBJ*IP.JCells,
-            NBK*IP.KCells,
-            IP.Nghost);
-      // update cell coordinates
-      Grid_ptr_orig_blk->Update_Cells();
+    int BC_east, BC_west, BC_north, BC_south, BC_top, BC_bottom;
+    Grid2D_Quad_Block **Grid2D_Box_XYplane;
 
-  
-   for ( kBlk = 0; kBlk <NBK; ++kBlk ) 
-      for ( jBlk = 0; jBlk <NBJ; ++jBlk ) 
-         for ( iBlk = 0; iBlk <NBI; ++iBlk ) {
+    /* Allocate required memory. */
 
-            x_orig = iBlk*length;
-            y_orig = jBlk*width ;
-            z_orig = kBlk*height;
+    Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
 
-            if (iBlk==0 ){
-               BCtype_west = BC_REFLECTION;
-	    
-                             
-            }else {
-               BCtype_west = BC_NONE;
-            }
-            if (jBlk==0 ){
-               BCtype_south = BC_REFLECTION;
-               
-            }else {
-               BCtype_south = BC_NONE;
-            }
-            if (kBlk==0 ){
-               BCtype_bottom  = BC_REFLECTION;
-               
-	       
-            }else {
-               BCtype_bottom = BC_NONE;
-            }
-            if (iBlk== NBI-1 ){
-               BCtype_east = BC_REFLECTION;
-               
-            }else {
-               BCtype_east = BC_NONE;
-            }
-            if (jBlk== NBJ -1 ){
-               BCtype_north = BC_REFLECTION;
-               
- 	    }else {
-               BCtype_north = BC_NONE;
-            }
-            if (kBlk== NBK-1 ){
-               BCtype_top  = BC_REFLECTION;
-               
-            }else {
-               BCtype_top = BC_NONE;
-            }
-
-            /* copy the cells and nodes information  
-               of the hexa block to the subblocks. */
-            
-            for (int k =  Grid_ptr[iBlk][jBlk][kBlk]->KNl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                 k <=  Grid_ptr[iBlk][jBlk][kBlk]->KNu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++k) 
-               for (int j =  Grid_ptr[iBlk][jBlk][kBlk]->JNl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                    j <=  Grid_ptr[iBlk][jBlk][kBlk]->JNu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++j) 
-                  for (int i =  Grid_ptr[iBlk][jBlk][kBlk]->INl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                       i <=  Grid_ptr[iBlk][jBlk][kBlk]->INu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++i) {
-                     
-                     Grid_ptr[iBlk][jBlk][kBlk]->Node[i][j][k].X.x = 
-                        Grid_ptr_orig_blk->Node[iBlk*IP.ICells + i][jBlk*IP.JCells+ j][kBlk*IP.KCells +k].X.x;
-                     
-                     Grid_ptr[iBlk][jBlk][kBlk]->Node[i][j][k].X.y =  
-                        Grid_ptr_orig_blk->Node[iBlk*IP.ICells + i][jBlk*IP.JCells+ j][kBlk*IP.KCells +k].X.y;
-                     
-                     Grid_ptr[iBlk][jBlk][kBlk]->Node[i][j][k].X.z =  
-                        Grid_ptr_orig_blk->Node[iBlk*IP.ICells + i][jBlk*IP.JCells+ j][kBlk*IP.KCells +k].X.z;
-                     
-                  }
-  
-            Grid_ptr[iBlk][jBlk][kBlk]->Update_Cells();
-               
-            //store the boundary conditions
-            for (int  j =  Grid_ptr[iBlk][jBlk][kBlk]->JCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                 j <=  Grid_ptr[iBlk][jBlk][kBlk]->JCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++j) 
-               for (int  i =  Grid_ptr[iBlk][jBlk][kBlk]->ICl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                    i <=  Grid_ptr[iBlk][jBlk][kBlk]->ICu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++i) {
-                  Grid_ptr[iBlk][jBlk][kBlk]->BCtypeT[i][j] =  BCtype_top;
-                  Grid_ptr[iBlk][jBlk][kBlk]->BCtypeB[i][j] =  BCtype_bottom;
-            
-               }
-            for ( int k =  Grid_ptr[iBlk][jBlk][kBlk]->KCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                  k <=  Grid_ptr[iBlk][jBlk][kBlk]->KCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++k) 
-               for ( int j =  Grid_ptr[iBlk][jBlk][kBlk]->JCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                     j <=  Grid_ptr[iBlk][jBlk][kBlk]->JCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++j){
-                  Grid_ptr[iBlk][jBlk][kBlk]->BCtypeW[j][k] =  BCtype_west;
-                  Grid_ptr[iBlk][jBlk][kBlk]->BCtypeE[j][k] =  BCtype_east;
-                     
-               }
-            for (int  k =  Grid_ptr[iBlk][jBlk][kBlk]->KCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                 k <=  Grid_ptr[iBlk][jBlk][kBlk]->KCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++k) 
-               for ( int i =  Grid_ptr[iBlk][jBlk][kBlk]->ICl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                     i <=  Grid_ptr[iBlk][jBlk][kBlk]->ICu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++i){
-                  Grid_ptr[iBlk][jBlk][kBlk]->BCtypeN[i][k] =  BCtype_north;
-                  Grid_ptr[iBlk][jBlk][kBlk]->BCtypeS[i][k] =  BCtype_south;
-                  
-               }
-         }
-
-
-   delete Grid_ptr_orig_blk;
-            
-         
-
-
-      
-}// cubic box grid
-
-void Grid3D_Hexa_Multi_Block::Grid_Channel
-(const Grid3D_Input_Parameters  &IP){
-
-   int iBlk, jBlk, kBlk, n_cells_i, n_cells_j, n_cells_k;
-   double x_orig, y_orig, z_orig;
-   int   BCtype_top,   BCtype_bottom,   BCtype_north,
-      BCtype_south,   BCtype_west,   BCtype_east;
-   
-   
-   /* Allocate memory for grid block. */
-   if (NBI < 0) NBI = 1;
-   if (NBJ < 0) NBJ = 1;
-   if (NBK < 0) NBK = 1;
-   
-   if(IP.geometry_index == 1){
-
-      Grid3D_Hexa_Block *Grid_ptr_orig_blk ;
-      Grid_ptr_orig_blk = new Grid3D_Hexa_Block(
-         NBI*IP.ICells,  NBJ*IP.JCells , NBK*IP.KCells, IP.Nghost);
-      // generate the total mesh in the original geometry
-      
-      BCtype_west =  BC_CHANNEL_INFLOW;
-      BCtype_south =  BC_NO_SLIP;
-      BCtype_bottom  = BC_PERIODIC;
-      BCtype_east = BC_CHANNEL_OUTFLOW;
-      BCtype_north =  BC_NO_SLIP;
-      BCtype_top  = BC_PERIODIC;
-      
-      Grid_ptr_orig_blk->Create_Hexa_Block
-         (  IP.Box_Length,
-            IP.Box_Width,
-            IP.Box_Height,
-            0.0,
-            - IP.Box_Width/2.0,
-            - IP.Box_Height/2.0,          
-            IP.I_stretching_factor,
-            IP.J_stretching_factor,
-            IP.K_stretching_factor,
-            BCtype_top ,
-            BCtype_bottom,
-            BCtype_north,
-            BCtype_south,
-            BCtype_west,
-            BCtype_east,
-            NBI*IP.ICells,
-            NBJ*IP.JCells,
-            NBK*IP.KCells,
-            IP.Nghost);
-      // update cell coordinates
-      Grid_ptr_orig_blk->Update_Cells();
-
-
-      for ( kBlk = 0; kBlk <NBK; ++kBlk ) 
-         for ( jBlk = 0; jBlk <NBJ; ++jBlk ) 
-            for ( iBlk = 0; iBlk <NBI; ++iBlk ) {
-                
-               if (iBlk==0 ){
-                  BCtype_west = BC_CHANNEL_INFLOW;
-               }else {
-                  BCtype_west = BC_NONE;
-               }
-               if (jBlk==0 ){
-                  BCtype_south = BC_NO_SLIP; //BC_PERIODIC;
-               }else {
-                  BCtype_south = BC_NONE;
-               }
-               if (kBlk==0 ){
-                  BCtype_bottom  = BC_PERIODIC;//BC_NO_SLIP;
-               }else {
-                  BCtype_bottom = BC_NONE;
-               }
-               if (iBlk== NBI-1 ){
-                  BCtype_east = BC_CHANNEL_OUTFLOW;
-               }else {
-                  BCtype_east = BC_NONE;
-               }
-               if (jBlk== NBJ -1 ){
-                  BCtype_north = BC_NO_SLIP; //BC_PERIODIC;
-               }else {
-                  BCtype_north = BC_NONE;
-               }
-               if (kBlk== NBK-1 ){
-                  BCtype_top  = BC_PERIODIC;//BC_NO_SLIP;
-               }else {
-                  BCtype_top = BC_NONE;
-               }
-
-        /* copy the cells and nodes information  
-               of the hexa block to the subblocks. */
-
-               for (int k =  Grid_ptr[iBlk][jBlk][kBlk]->KNl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                    k <=  Grid_ptr[iBlk][jBlk][kBlk]->KNu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++k) 
-                  for (int j =  Grid_ptr[iBlk][jBlk][kBlk]->JNl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                       j <=  Grid_ptr[iBlk][jBlk][kBlk]->JNu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++j) 
-                     for (int i =  Grid_ptr[iBlk][jBlk][kBlk]->INl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                          i <=  Grid_ptr[iBlk][jBlk][kBlk]->INu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++i) {
-                        
-                        Grid_ptr[iBlk][jBlk][kBlk]->Node[i][j][k].X.x = 
-                           Grid_ptr_orig_blk->Node[iBlk*IP.ICells + i][jBlk*IP.JCells+ j][kBlk*IP.KCells +k].X.x;
-                        
-                        Grid_ptr[iBlk][jBlk][kBlk]->Node[i][j][k].X.y =  
-                           Grid_ptr_orig_blk->Node[iBlk*IP.ICells + i][jBlk*IP.JCells+ j][kBlk*IP.KCells +k].X.y;
-                        
-                        Grid_ptr[iBlk][jBlk][kBlk]->Node[i][j][k].X.z =  
-                           Grid_ptr_orig_blk->Node[iBlk*IP.ICells + i][jBlk*IP.JCells+ j][kBlk*IP.KCells +k].X.z;
-                        
-                     }
-  
-               Grid_ptr[iBlk][jBlk][kBlk]->Update_Cells();
-               
-               //store the boundary conditions
-               for (int  j =  Grid_ptr[iBlk][jBlk][kBlk]->JCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                    j <=  Grid_ptr[iBlk][jBlk][kBlk]->JCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++j) 
-                  for (int  i =  Grid_ptr[iBlk][jBlk][kBlk]->ICl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                       i <=  Grid_ptr[iBlk][jBlk][kBlk]->ICu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++i) {
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeT[i][j] =  BCtype_top;
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeB[i][j] =  BCtype_bottom;
-            
-                  }
-               for ( int k =  Grid_ptr[iBlk][jBlk][kBlk]->KCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                     k <=  Grid_ptr[iBlk][jBlk][kBlk]->KCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++k) 
-                  for ( int j =  Grid_ptr[iBlk][jBlk][kBlk]->JCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                        j <=  Grid_ptr[iBlk][jBlk][kBlk]->JCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++j){
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeW[j][k] =  BCtype_west;
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeE[j][k] =  BCtype_east;
-                     
-                  }
-               for (int  k =  Grid_ptr[iBlk][jBlk][kBlk]->KCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                    k <=  Grid_ptr[iBlk][jBlk][kBlk]->KCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++k) 
-                  for ( int i =  Grid_ptr[iBlk][jBlk][kBlk]->ICl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                        i <=  Grid_ptr[iBlk][jBlk][kBlk]->ICu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++i){
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeN[i][k] =  BCtype_north;
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeS[i][k] =  BCtype_south;
-                     
-                  }
-            }
-
-
-      delete Grid_ptr_orig_blk;
-          
-   }
-   
-   if(IP.geometry_index == 2){
-
-      Grid3D_Hexa_Block *Grid_ptr_orig_blk ;
-
-
-      Grid_ptr_orig_blk = new Grid3D_Hexa_Block(
-         NBI*IP.ICells,  NBJ*IP.JCells , NBK*IP.KCells, IP.Nghost);
-      // generate the total mesh in the original geometry
+    /* Creat 2D cross-section grids from which the 3D grid
+       will be extruded. */
     
-      BCtype_west = BC_PERIODIC;
-      BCtype_south = BC_CHANNEL_OUTFLOW;
-      BCtype_bottom  = BC_NO_SLIP;
-      BCtype_east = BC_PERIODIC;
-      BCtype_north = BC_CHANNEL_INFLOW ;
-      BCtype_top  = BC_NO_SLIP;
-      
-      Grid_ptr_orig_blk->Create_Hexa_Block
-         (  IP.Box_Length,
-            IP.Box_Width,
-            IP.Box_Height,
-            - IP.Box_Length/2.0,
-            0.0,
-            - IP.Box_Height/2.0,          
-            IP.I_stretching_factor,
-            IP.J_stretching_factor,
-            IP.K_stretching_factor,
-            BCtype_top ,
-            BCtype_bottom,
-            BCtype_north,
-            BCtype_south,
-            BCtype_west,
-            BCtype_east,
-            NBI*IP.ICells,
-            NBJ*IP.JCells,
-            NBK*IP.KCells,
-            IP.Nghost);
-      // update cell coordinates
-      Grid_ptr_orig_blk->Update_Cells();
+    Grid2D_Box_XYplane = Grid_Rectangular_Box(Grid2D_Box_XYplane,
+                                              Input.NBlk_Idir, 
+                                              Input.NBlk_Jdir,
+                                              Input.Box_Width,
+                                              Input.Box_Height,
+					      ON,
+					      Input.Stretching_Type_Idir,
+					      Input.Stretching_Type_Jdir,
+					      Input.Stretching_Factor_Idir,
+					      Input.Stretching_Factor_Jdir,
+                                              Input.NCells_Idir,
+                                              Input.NCells_Jdir,
+					      Input.Nghost);
 
-      
-      // copying the nodes coordinates from the parent block to 
-      // subblocks.     
-      for ( kBlk = 0; kBlk <NBK; ++kBlk ) 
-         for ( jBlk = 0; jBlk <NBJ; ++jBlk ) 
-            for ( iBlk = 0; iBlk <NBI; ++iBlk ) {
-              
-               if (iBlk==0 ){
-                  BCtype_west = BC_PERIODIC;
-               }else {
-                  BCtype_west = BC_NONE;
-               }
-               if (jBlk==0 ){
-                  BCtype_south = BC_CHANNEL_OUTFLOW;
-               }else {
-                  BCtype_south = BC_NONE;
-               }
-               if (kBlk==0 ){
-                  BCtype_bottom  = BC_NO_SLIP;
-               }else {
-                  BCtype_bottom = BC_NONE;
-               }
-               if (iBlk== NBI-1 ){
-                  BCtype_east = BC_PERIODIC;
-               }else {
-                  BCtype_east = BC_NONE;
-               }
-               if (jBlk== NBJ -1 ){
-                  BCtype_north = BC_CHANNEL_INFLOW ;
-               }else {
-                  BCtype_north = BC_NONE;
-               }
-               if (kBlk== NBK-1 ){
-                  BCtype_top  = BC_NO_SLIP;
-               }else {
-                  BCtype_top = BC_NONE;
-               }
+    /* Create the mesh for each block representing
+       the complete grid. */
 
-            /* copy the cells and nodes information  
-               of the hexa block to the subblocks. */
+    for (int kBlk = 0; kBlk <= Input.NBlk_Kdir-1; ++kBlk) {
+       for (int jBlk = 0; jBlk <= Input.NBlk_Jdir-1; ++jBlk) {
+          for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
 
-               for (int k =  Grid_ptr[iBlk][jBlk][kBlk]->KNl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                    k <=  Grid_ptr[iBlk][jBlk][kBlk]->KNu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++k) 
-                  for (int j =  Grid_ptr[iBlk][jBlk][kBlk]->JNl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                       j <=  Grid_ptr[iBlk][jBlk][kBlk]->JNu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++j) 
-                     for (int i =  Grid_ptr[iBlk][jBlk][kBlk]->INl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                          i <=  Grid_ptr[iBlk][jBlk][kBlk]->INu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++i) {
-                        
-                        Grid_ptr[iBlk][jBlk][kBlk]->Node[i][j][k].X.x = 
-                           Grid_ptr_orig_blk->Node[iBlk*IP.ICells + i][jBlk*IP.JCells+ j][kBlk*IP.KCells +k].X.x;
-                        
-                        Grid_ptr[iBlk][jBlk][kBlk]->Node[i][j][k].X.y =  
-                           Grid_ptr_orig_blk->Node[iBlk*IP.ICells + i][jBlk*IP.JCells+ j][kBlk*IP.KCells +k].X.y;
-                        
-                        Grid_ptr[iBlk][jBlk][kBlk]->Node[i][j][k].X.z =  
-                           Grid_ptr_orig_blk->Node[iBlk*IP.ICells + i][jBlk*IP.JCells+ j][kBlk*IP.KCells +k].X.z;
-                        
-                     }
-  
-               Grid_ptr[iBlk][jBlk][kBlk]->Update_Cells();
-               
-               //store the boundary conditions
-               for (int  j =  Grid_ptr[iBlk][jBlk][kBlk]->JCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                    j <=  Grid_ptr[iBlk][jBlk][kBlk]->JCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++j) 
-                  for (int  i =  Grid_ptr[iBlk][jBlk][kBlk]->ICl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                       i <=  Grid_ptr[iBlk][jBlk][kBlk]->ICu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++i) {
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeT[i][j] =  BCtype_top;
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeB[i][j] =  BCtype_bottom;
-            
-                  }
-               for ( int k =  Grid_ptr[iBlk][jBlk][kBlk]->KCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                     k <=  Grid_ptr[iBlk][jBlk][kBlk]->KCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++k) 
-                  for ( int j =  Grid_ptr[iBlk][jBlk][kBlk]->JCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                        j <=  Grid_ptr[iBlk][jBlk][kBlk]->JCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++j){
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeW[j][k] =  BCtype_west;
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeE[j][k] =  BCtype_east;
-                     
-                  }
-               for (int  k =  Grid_ptr[iBlk][jBlk][kBlk]->KCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                    k <=  Grid_ptr[iBlk][jBlk][kBlk]->KCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++k) 
-                  for ( int i =  Grid_ptr[iBlk][jBlk][kBlk]->ICl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                        i <=  Grid_ptr[iBlk][jBlk][kBlk]->ICu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++i){
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeN[i][k] =  BCtype_north;
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeS[i][k] =  BCtype_south;
-                     
-                  }
-            }
+             /* Extrude each of the grid blocks from the
+                appropriate 2D grid in XY-plane. */
 
+             Grid_Blks[iBlk][jBlk][kBlk].Extrude(Grid2D_Box_XYplane[iBlk][jBlk],
+                                                 Input.NCells_Kdir,
+			                         Input.Stretching_Type_Kdir,
+						 Input.Stretching_Factor_Kdir,
+                                                 (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,
+                                                 (double(kBlk+1)/double(Input.NBlk_Kdir))*Input.Box_Length);
 
-      delete Grid_ptr_orig_blk;
-      
-   }
-   
+             /* Assign top and bottom boundary conditions. */
 
-   if(IP.geometry_index == 3){
+             if (Input.i_Grid == GRID_COUETTE_ZDIR) {
 
-     Grid3D_Hexa_Block *Grid_ptr_orig_blk ;
+   	        if (iBlk == Input.NBlk_Idir-1) {
+                   BC_east = BC_CONSTANT_EXTRAPOLATION;
+                } else {
+                   BC_east = BC_NONE;
+                } /* endif */
+                if (iBlk == 0) {
+                   BC_west = BC_CONSTANT_EXTRAPOLATION;
+                } else {
+                   BC_west = BC_NONE;
+                } /* endif */
 
+	        if (jBlk == Input.NBlk_Jdir-1) {
+		   BC_north = BC_MOVING_WALL;
+                } else {
+                   BC_north = BC_NONE;
+                } /* endif */
+                if (jBlk == 0) {
+                   BC_south = BC_NO_SLIP;
+                } else {
+                   BC_south = BC_NONE;
+                } /* endif */
 
-     Grid_ptr_orig_blk = new Grid3D_Hexa_Block(
-        NBI*IP.ICells,  NBJ*IP.JCells , NBK*IP.KCells, IP.Nghost);
-     // generate the total mesh in the original geometry
-    
-      BCtype_west = BC_PERIODIC;
-      BCtype_south = BC_NO_SLIP;
-      BCtype_bottom  = BC_CHANNEL_INFLOW;
-      BCtype_east = BC_PERIODIC;
-      BCtype_north = BC_NO_SLIP;
-      BCtype_top  = BC_CHANNEL_OUTFLOW;
-      
-      Grid_ptr_orig_blk->Create_Hexa_Block
-         (  IP.Box_Length,
-            IP.Box_Width,
-            IP.Box_Height,
-            - IP.Box_Length/2.0,
-            - IP.Box_Width/2.0,
-            0.0,
-            IP.I_stretching_factor,
-            IP.J_stretching_factor,
-            IP.K_stretching_factor,
-            BCtype_top ,
-            BCtype_bottom,
-            BCtype_north,
-            BCtype_south,
-            BCtype_west,
-            BCtype_east,
-            NBI*IP.ICells,
-            NBJ*IP.JCells,
-            NBK*IP.KCells,
-            IP.Nghost);
-      // update cell coordinates
-      Grid_ptr_orig_blk->Update_Cells();
+	        if (kBlk == Input.NBlk_Kdir-1) {
+                   BC_top = BC_FIXED_PRESSURE;
+                } else {
+                   BC_top = BC_NONE;
+                } /* endif */
+                if (kBlk == 0) {
+                   BC_bottom = BC_FIXED_PRESSURE;
+                } else {
+                   BC_bottom = BC_NONE;
+                } /* endif */
 
+             } else if (Input.i_Grid == GRID_COUETTE_XDIR) {
 
-      
-      for ( kBlk = 0; kBlk <NBK; ++kBlk ) 
-         for ( jBlk = 0; jBlk <NBJ; ++jBlk ) 
-            for ( iBlk = 0; iBlk <NBI; ++iBlk ) {
-                 if (iBlk==0 ){
-                  BCtype_west = BC_PERIODIC;
-               }else {
-                  BCtype_west = BC_NONE;
-               }
-               if (jBlk==0 ){
-                  BCtype_south = BC_NO_SLIP;
-               }else {
-                  BCtype_south = BC_NONE;
-               }
-               if (kBlk==0 ){
-                  BCtype_bottom  = BC_CHANNEL_INFLOW;
-               }else {
-                  BCtype_bottom = BC_NONE;
-               }
-               if (iBlk== NBI-1 ){
-                  BCtype_east = BC_PERIODIC;
-               }else {
-                  BCtype_east = BC_NONE;
-               }
-               if (jBlk== NBJ -1 ){
-                  BCtype_north = BC_NO_SLIP;
-               }else {
-                  BCtype_north = BC_NONE;
-               }
-               if (kBlk== NBK-1 ){
-                  BCtype_top  = BC_CHANNEL_OUTFLOW;
-               }else {
-                  BCtype_top = BC_NONE;
-               }
-              
+   	        if (iBlk == Input.NBlk_Idir-1) {
+                   BC_east = BC_FIXED_PRESSURE;
+                } else {
+                   BC_east = BC_NONE;
+                } /* endif */
+                if (iBlk == 0) {
+                   BC_west = BC_FIXED_PRESSURE;
+                } else {
+                   BC_west = BC_NONE;
+                } /* endif */
 
-            /* copy the cells and nodes information  
-               of the hexa block to the subblocks. */
+	        if (jBlk == Input.NBlk_Jdir-1) {
+                   BC_north = BC_MOVING_WALL;
+                } else {
+                   BC_north = BC_NONE;
+                } /* endif */
+                if (jBlk == 0) {
+                   BC_south = BC_NO_SLIP;
+                } else {
+                   BC_south = BC_NONE;
+                } /* endif */
 
-               for (int k =  Grid_ptr[iBlk][jBlk][kBlk]->KNl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                    k <=  Grid_ptr[iBlk][jBlk][kBlk]->KNu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++k) 
-                  for (int j =  Grid_ptr[iBlk][jBlk][kBlk]->JNl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                       j <=  Grid_ptr[iBlk][jBlk][kBlk]->JNu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++j) 
-                     for (int i =  Grid_ptr[iBlk][jBlk][kBlk]->INl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                          i <=  Grid_ptr[iBlk][jBlk][kBlk]->INu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++i) {
-                        
-                        Grid_ptr[iBlk][jBlk][kBlk]->Node[i][j][k].X.x = 
-                           Grid_ptr_orig_blk->Node[iBlk*IP.ICells + i][jBlk*IP.JCells+ j][kBlk*IP.KCells +k].X.x;
-                        
-                        Grid_ptr[iBlk][jBlk][kBlk]->Node[i][j][k].X.y =  
-                           Grid_ptr_orig_blk->Node[iBlk*IP.ICells + i][jBlk*IP.JCells+ j][kBlk*IP.KCells +k].X.y;
-                        
-                        Grid_ptr[iBlk][jBlk][kBlk]->Node[i][j][k].X.z =  
-                           Grid_ptr_orig_blk->Node[iBlk*IP.ICells + i][jBlk*IP.JCells+ j][kBlk*IP.KCells +k].X.z;
-                        
-                     }
-  
-               Grid_ptr[iBlk][jBlk][kBlk]->Update_Cells();
-               
-               //store the boundary conditions
-               for (int  j =  Grid_ptr[iBlk][jBlk][kBlk]->JCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                    j <=  Grid_ptr[iBlk][jBlk][kBlk]->JCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++j) 
-                  for (int  i =  Grid_ptr[iBlk][jBlk][kBlk]->ICl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                       i <=  Grid_ptr[iBlk][jBlk][kBlk]->ICu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++i) {
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeT[i][j] =  BCtype_top;
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeB[i][j] =  BCtype_bottom;
-            
-                  }
-               for ( int k =  Grid_ptr[iBlk][jBlk][kBlk]->KCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                     k <=  Grid_ptr[iBlk][jBlk][kBlk]->KCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++k) 
-                  for ( int j =  Grid_ptr[iBlk][jBlk][kBlk]->JCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                        j <=  Grid_ptr[iBlk][jBlk][kBlk]->JCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++j){
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeW[j][k] =  BCtype_west;
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeE[j][k] =  BCtype_east;
-                     
-                  }
-               for (int  k =  Grid_ptr[iBlk][jBlk][kBlk]->KCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                    k <=  Grid_ptr[iBlk][jBlk][kBlk]->KCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++k) 
-                  for ( int i =  Grid_ptr[iBlk][jBlk][kBlk]->ICl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                        i <=  Grid_ptr[iBlk][jBlk][kBlk]->ICu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++i){
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeN[i][k] =  BCtype_north;
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeS[i][k] =  BCtype_south;
-                     
-                  }
-            }
+	        if (kBlk == Input.NBlk_Kdir-1) {
+                   BC_top = BC_CONSTANT_EXTRAPOLATION;
+                } else {
+                   BC_top = BC_NONE;
+                } /* endif */
+                if (kBlk == 0) {
+                   BC_bottom = BC_CONSTANT_EXTRAPOLATION;
+                } else {
+                   BC_bottom = BC_NONE;
+                } /* endif */
 
+             } else if (Input.i_Grid == GRID_COUETTE_YDIR) {
 
-      delete Grid_ptr_orig_blk;
+   	        if (iBlk == Input.NBlk_Idir-1) {
+                   BC_east = BC_CONSTANT_EXTRAPOLATION;
+                } else {
+                   BC_east = BC_NONE;
+                } /* endif */
+                if (iBlk == 0) {
+                   BC_west = BC_CONSTANT_EXTRAPOLATION;
+                } else {
+                   BC_west = BC_NONE;
+                } /* endif */
 
-   }
-   
+	        if (jBlk == Input.NBlk_Jdir-1) {
+                   BC_north = BC_FIXED_PRESSURE;
+                } else {
+                   BC_north = BC_NONE;
+                } /* endif */
+                if (jBlk == 0) {
+                   BC_south = BC_FIXED_PRESSURE;
+                } else {
+                   BC_south = BC_NONE;
+                } /* endif */
 
-   
-}// channel grid
-void Grid3D_Hexa_Multi_Block::Grid_Couette
-(const Grid3D_Input_Parameters  &IP){
-   
-   
-   int iBlk, jBlk, kBlk, n_cells_i, n_cells_j, n_cells_k;
-   double length, width, height;
-   double x_orig, y_orig, z_orig;
-   int   BCtype_top,   BCtype_bottom,   BCtype_north,
-         BCtype_south,   BCtype_west,   BCtype_east;
+	        if (kBlk == Input.NBlk_Kdir-1) {
+                   BC_top = BC_MOVING_WALL;
+                } else {
+                   BC_top = BC_NONE;
+                } /* endif */
+                if (kBlk == 0) {
+                   BC_bottom = BC_NO_SLIP;
+                } else {
+                   BC_bottom = BC_NONE;
+                } /* endif */
+	     } /* endif */
 
-   /* Allocate memory for grid block. */
-   if (NBI < 0) NBI = 1;
-   if (NBJ < 0) NBJ = 1;
-   if (NBK < 0) NBK = 1;
+             Grid_Blks[iBlk][jBlk][kBlk].Set_BCs(BC_east, 
+                                                 BC_west, 
+                                                 BC_north, 
+                                                 BC_south, 
+                                                 BC_top, 
+                                                 BC_bottom);
+ 
+	  } /* endfor */
+       } /* endfor */
+    } /* endfor */
 
-  if(IP.geometry_index == 1){
+    /* Deallocate 2D grid. */
 
-      Grid3D_Hexa_Block *Grid_ptr_orig_blk ;
-      Grid_ptr_orig_blk = new Grid3D_Hexa_Block(
-         NBI*IP.ICells,  NBJ*IP.JCells , NBK*IP.KCells, IP.Nghost);
-      // generate the total mesh in the original geometry
-      
-      BCtype_west =  BC_FIXED_PRESSURE;
-      BCtype_south =   BC_PERIODIC;
-      BCtype_bottom  =  BC_NO_SLIP;
-      BCtype_east = BC_FIXED_PRESSURE;
-      BCtype_north =  BC_PERIODIC;
-      BCtype_top  = BC_MOVING_WALL;
-      
-      Grid_ptr_orig_blk->Create_Hexa_Block
-         (  IP.Box_Length,
-            IP.Box_Width,
-            IP.Box_Height,
-            0.0,
-            - IP.Box_Width/2.0,
-            - IP.Box_Height/2.0,          
-            IP.I_stretching_factor,
-            IP.J_stretching_factor,
-            IP.K_stretching_factor,
-            BCtype_top ,
-            BCtype_bottom,
-            BCtype_north,
-            BCtype_south,
-            BCtype_west,
-            BCtype_east,
-            NBI*IP.ICells,
-            NBJ*IP.JCells,
-            NBK*IP.KCells,
-            IP.Nghost);
-      // update cell coordinates
-      Grid_ptr_orig_blk->Update_Cells();
+    Grid2D_Box_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Box_XYplane,
+                                                     Input.NBlk_Idir, 
+                                                     Input.NBlk_Jdir);
 
+}
 
-      for ( kBlk = 0; kBlk <NBK; ++kBlk ) 
-         for ( jBlk = 0; jBlk <NBJ; ++jBlk ) 
-            for ( iBlk = 0; iBlk <NBI; ++iBlk ) {
-         
-               if (iBlk==0 ){
-                  BCtype_west = BC_FIXED_PRESSURE;
-               }else {
-                  BCtype_west = BC_NONE;
-               }
-               if (jBlk==0 ){
-                  BCtype_south = BC_PERIODIC;
-               }else {
-                  BCtype_south = BC_NONE;
-               }
-               if (kBlk==0 ){
-                  BCtype_bottom  = BC_NO_SLIP;
-               }else {
-                  BCtype_bottom = BC_NONE;
-               }
-               if (iBlk== NBI-1 ){
-                  BCtype_east = BC_FIXED_PRESSURE;
-               }else {
-                  BCtype_east = BC_NONE;
-               }
-               if (jBlk== NBJ -1 ){
-                  BCtype_north = BC_PERIODIC;
-               }else {
-                  BCtype_north = BC_NONE;
-               }
-               if (kBlk== NBK-1 ){
-                  BCtype_top  = BC_MOVING_WALL;
-               }else {
-                  BCtype_top = BC_NONE;
-               } 
-              
+/********************************************************
+ * Routine: Create_Grid_Pipe                            *
+ *                                                      *
+ * Generates a 3D multiblock mesh for pipe flows.       *
+ *                                                      *
+ ********************************************************/
+void Grid3D_Hexa_Multi_Block::Create_Grid_Pipe(Grid3D_Input_Parameters &Input){
 
-        /* copy the cells and nodes information  
-               of the hexa block to the subblocks. */
+    int numblk_idir_pipe, numblk_jdir_pipe;
+    Grid2D_Quad_Block **Grid2D_Pipe_XYplane;
 
-               for (int k =  Grid_ptr[iBlk][jBlk][kBlk]->KNl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                    k <=  Grid_ptr[iBlk][jBlk][kBlk]->KNu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++k) 
-                  for (int j =  Grid_ptr[iBlk][jBlk][kBlk]->JNl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                       j <=  Grid_ptr[iBlk][jBlk][kBlk]->JNu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++j) 
-                     for (int i =  Grid_ptr[iBlk][jBlk][kBlk]->INl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                          i <=  Grid_ptr[iBlk][jBlk][kBlk]->INu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++i) {
-                        
-                        Grid_ptr[iBlk][jBlk][kBlk]->Node[i][j][k].X.x = 
-                           Grid_ptr_orig_blk->Node[iBlk*IP.ICells + i][jBlk*IP.JCells+ j][kBlk*IP.KCells +k].X.x;
-                        
-                        Grid_ptr[iBlk][jBlk][kBlk]->Node[i][j][k].X.y =  
-                           Grid_ptr_orig_blk->Node[iBlk*IP.ICells + i][jBlk*IP.JCells+ j][kBlk*IP.KCells +k].X.y;
-                        
-                        Grid_ptr[iBlk][jBlk][kBlk]->Node[i][j][k].X.z =  
-                           Grid_ptr_orig_blk->Node[iBlk*IP.ICells + i][jBlk*IP.JCells+ j][kBlk*IP.KCells +k].X.z;
-                        
-                     }
-  
-               Grid_ptr[iBlk][jBlk][kBlk]->Update_Cells();
-               
-               //store the boundary conditions
-               for (int  j =  Grid_ptr[iBlk][jBlk][kBlk]->JCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                    j <=  Grid_ptr[iBlk][jBlk][kBlk]->JCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++j) 
-                  for (int  i =  Grid_ptr[iBlk][jBlk][kBlk]->ICl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                       i <=  Grid_ptr[iBlk][jBlk][kBlk]->ICu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++i) {
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeT[i][j] =  BCtype_top;
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeB[i][j] =  BCtype_bottom;
-            
-                  }
-               for ( int k =  Grid_ptr[iBlk][jBlk][kBlk]->KCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                     k <=  Grid_ptr[iBlk][jBlk][kBlk]->KCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++k) 
-                  for ( int j =  Grid_ptr[iBlk][jBlk][kBlk]->JCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                        j <=  Grid_ptr[iBlk][jBlk][kBlk]->JCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++j){
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeW[j][k] =  BCtype_west;
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeE[j][k] =  BCtype_east;
-                     
-                  }
-               for (int  k =  Grid_ptr[iBlk][jBlk][kBlk]->KCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                    k <=  Grid_ptr[iBlk][jBlk][kBlk]->KCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++k) 
-                  for ( int i =  Grid_ptr[iBlk][jBlk][kBlk]->ICl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                        i <=  Grid_ptr[iBlk][jBlk][kBlk]->ICu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++i){
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeN[i][k] =  BCtype_north;
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeS[i][k] =  BCtype_south;
-                     
-                  }
-            }
+    /* Allocate required memory. */
 
+    Input.NBlk_Idir = 5;
+    Input.NBlk_Jdir = 1;
+    Input.NBlk_Kdir = 1;
 
-      delete Grid_ptr_orig_blk;
-          
-   }
-   
-   if(IP.geometry_index == 2){
+    Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
 
-      Grid3D_Hexa_Block *Grid_ptr_orig_blk ;
+    /* Creat 2D cross-section grids from which the 3D grid
+       will be extruded. */
 
+    Grid2D_Pipe_XYplane = Grid_Tube_2D(
+                                   Grid2D_Pipe_XYplane,
+                                   numblk_idir_pipe,
+		                   numblk_jdir_pipe,
+                                   Input.Pipe_Radius,
+                                   Input.NCells_Idir,
+                                   Input.NCells_Jdir,
+				   Input.Nghost,
+                                   STRETCHING_FCN_MAX_CLUSTERING,
+                                   1.25);
 
-      Grid_ptr_orig_blk = new Grid3D_Hexa_Block(
-         NBI*IP.ICells,  NBJ*IP.JCells , NBK*IP.KCells, IP.Nghost);
-      // generate the total mesh in the original geometry
-    
-      BCtype_west = BC_PERIODIC;
-      BCtype_south =  BC_FIXED_PRESSURE;
-      BCtype_bottom  = BC_NO_SLIP;
-      BCtype_east = BC_PERIODIC;
-      BCtype_north = BC_FIXED_PRESSURE ;
-      BCtype_top  =  BC_MOVING_WALL;
-      
-      Grid_ptr_orig_blk->Create_Hexa_Block
-         (  IP.Box_Length,
-            IP.Box_Width,
-            IP.Box_Height,
-            - IP.Box_Length/2.0,
-            0.0,
-            - IP.Box_Height/2.0,          
-            IP.I_stretching_factor,
-            IP.J_stretching_factor,
-            IP.K_stretching_factor,
-            BCtype_top ,
-            BCtype_bottom,
-            BCtype_north,
-            BCtype_south,
-            BCtype_west,
-            BCtype_east,
-            NBI*IP.ICells,
-            NBJ*IP.JCells,
-            NBK*IP.KCells,
-            IP.Nghost);
-      // update cell coordinates
-      Grid_ptr_orig_blk->Update_Cells();
+    /* Create the mesh for each block representing
+       the complete grid. */
 
-      
-      // copying the nodes coordinates from the parent block to 
-      // subblocks.     
-      for ( kBlk = 0; kBlk <NBK; ++kBlk ) 
-         for ( jBlk = 0; jBlk <NBJ; ++jBlk ) 
-            for ( iBlk = 0; iBlk <NBI; ++iBlk ) {
-               
-                if (iBlk==0 ){
-                  BCtype_west = BC_PERIODIC;
-               }else {
-                  BCtype_west = BC_NONE;
-               }
-               if (jBlk==0 ){
-                  BCtype_south = BC_FIXED_PRESSURE;
-               }else {
-                  BCtype_south = BC_NONE;
-               }
-               if (kBlk==0 ){
-                  BCtype_bottom  = BC_NO_SLIP;
-               }else {
-                  BCtype_bottom = BC_NONE;
-               }
-               if (iBlk== NBI-1 ){
-                  BCtype_east = BC_PERIODIC;
-               }else {
-                  BCtype_east = BC_NONE;
-               }
-               if (jBlk== NBJ -1 ){
-                  BCtype_north = BC_FIXED_PRESSURE ;
-               }else {
-                  BCtype_north = BC_NONE;
-               }
-               if (kBlk== NBK-1 ){
-                  BCtype_top  = BC_MOVING_WALL;
-               }else {
-                  BCtype_top = BC_NONE;
-               }
+    for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
 
+        /* Extrude each of the grid blocks from the
+           appropriate 2D grid in XY-plane. */
 
-            /* copy the cells and nodes information  
-               of the hexa block to the subblocks. */
+        Grid_Blks[iBlk][0][0].Extrude(Grid2D_Pipe_XYplane[iBlk][0],
+                                      Input.NCells_Kdir,
+       	  	                      Input.Stretching_Type_Kdir,
+				      Input.Stretching_Factor_Kdir,
+                                      ZERO,
+                                      Input.Pipe_Length);
+        if (iBlk == 0) {
+           Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+         	                         BC_NONE,
+                                         BC_NONE,
+       	                                 BC_NONE,
+                                         BC_NONE,
+                                         BC_DIRICHLET);
+        } else {
+           Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+       	                                 BC_NONE,
+					 BC_WALL_VISCOUS,
+       	                                 BC_NONE,
+                                         BC_NONE,
+                                         BC_DIRICHLET);
+        } /* endif */
 
-               for (int k =  Grid_ptr[iBlk][jBlk][kBlk]->KNl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                    k <=  Grid_ptr[iBlk][jBlk][kBlk]->KNu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++k) 
-                  for (int j =  Grid_ptr[iBlk][jBlk][kBlk]->JNl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                       j <=  Grid_ptr[iBlk][jBlk][kBlk]->JNu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++j) 
-                     for (int i =  Grid_ptr[iBlk][jBlk][kBlk]->INl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                          i <=  Grid_ptr[iBlk][jBlk][kBlk]->INu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++i) {
-                        
-                        Grid_ptr[iBlk][jBlk][kBlk]->Node[i][j][k].X.x = 
-                           Grid_ptr_orig_blk->Node[iBlk*IP.ICells + i][jBlk*IP.JCells+ j][kBlk*IP.KCells +k].X.x;
-                        
-                        Grid_ptr[iBlk][jBlk][kBlk]->Node[i][j][k].X.y =  
-                           Grid_ptr_orig_blk->Node[iBlk*IP.ICells + i][jBlk*IP.JCells+ j][kBlk*IP.KCells +k].X.y;
-                        
-                        Grid_ptr[iBlk][jBlk][kBlk]->Node[i][j][k].X.z =  
-                           Grid_ptr_orig_blk->Node[iBlk*IP.ICells + i][jBlk*IP.JCells+ j][kBlk*IP.KCells +k].X.z;
-                        
-                     }
-  
-               Grid_ptr[iBlk][jBlk][kBlk]->Update_Cells();
-               
-               //store the boundary conditions
-               for (int  j =  Grid_ptr[iBlk][jBlk][kBlk]->JCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                    j <=  Grid_ptr[iBlk][jBlk][kBlk]->JCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++j) 
-                  for (int  i =  Grid_ptr[iBlk][jBlk][kBlk]->ICl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                       i <=  Grid_ptr[iBlk][jBlk][kBlk]->ICu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++i) {
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeT[i][j] =  BCtype_top;
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeB[i][j] =  BCtype_bottom;
-            
-                  }
-               for ( int k =  Grid_ptr[iBlk][jBlk][kBlk]->KCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                     k <=  Grid_ptr[iBlk][jBlk][kBlk]->KCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++k) 
-                  for ( int j =  Grid_ptr[iBlk][jBlk][kBlk]->JCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                        j <=  Grid_ptr[iBlk][jBlk][kBlk]->JCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++j){
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeW[j][k] =  BCtype_west;
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeE[j][k] =  BCtype_east;
-                     
-                  }
-               for (int  k =  Grid_ptr[iBlk][jBlk][kBlk]->KCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                    k <=  Grid_ptr[iBlk][jBlk][kBlk]->KCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++k) 
-                  for ( int i =  Grid_ptr[iBlk][jBlk][kBlk]->ICl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                        i <=  Grid_ptr[iBlk][jBlk][kBlk]->ICu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++i){
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeN[i][k] =  BCtype_north;
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeS[i][k] =  BCtype_south;
-                     
-                  }
-            }
+    } /* endfor */
 
+    /* Deallocate 2D grid. */
 
-      delete Grid_ptr_orig_blk;
-      
-   }
-   
+    Grid2D_Pipe_XYplane = Deallocate_Multi_Block_Grid(
+                                   Grid2D_Pipe_XYplane,
+                                   numblk_idir_pipe,
+		                   numblk_jdir_pipe);
 
-   if(IP.geometry_index == 3){
+}
 
-     Grid3D_Hexa_Block *Grid_ptr_orig_blk ;
+/********************************************************
+ * Routine: Create_Grid_Bluff_Body_Burner               *
+ *                                                      *
+ * Generates a 3D multiblock mesh for TNF bluff body    *
+ * burner.                                              *
+ *                                                      *
+ ********************************************************/
+void Grid3D_Hexa_Multi_Block::Create_Grid_Bluff_Body_Burner(Grid3D_Input_Parameters &Input){
 
+    int numblk_idir_fuel, numblk_jdir_fuel,
+        numblk_idir_bluffbody, numblk_jdir_bluffbody,
+        numblk_idir_coflow, numblk_jdir_coflow;
+    Grid2D_Quad_Block **Grid2D_Fuel_Line_XYplane,
+                      **Grid2D_Bluff_Body_Inner_XYplane,
+                      **Grid2D_Bluff_Body_Outer_XYplane,
+                      **Grid2D_Coflow_XYplane;
 
-     Grid_ptr_orig_blk = new Grid3D_Hexa_Block(
-        NBI*IP.ICells,  NBJ*IP.JCells , NBK*IP.KCells, IP.Nghost);
-     // generate the total mesh in the original geometry
-    
-      BCtype_west = BC_PERIODIC;
-      BCtype_south = BC_NO_SLIP;
-      BCtype_bottom  =  BC_FIXED_PRESSURE;
-      BCtype_east = BC_PERIODIC;
-      BCtype_north = BC_MOVING_WALL;
-      BCtype_top  =  BC_FIXED_PRESSURE;
-      
-      Grid_ptr_orig_blk->Create_Hexa_Block
-         (  IP.Box_Length,
-            IP.Box_Width,
-            IP.Box_Height,
-            - IP.Box_Length/2.0,
-            - IP.Box_Width/2.0,
-            0.0,
-            IP.I_stretching_factor,
-            IP.J_stretching_factor,
-            IP.K_stretching_factor,
-            BCtype_top ,
-            BCtype_bottom,
-            BCtype_north,
-            BCtype_south,
-            BCtype_west,
-            BCtype_east,
-            NBI*IP.ICells,
-            NBJ*IP.JCells,
-            NBK*IP.KCells,
-            IP.Nghost);
-      // update cell coordinates
-      Grid_ptr_orig_blk->Update_Cells();
+    /* Allocate required memory. */
 
+    Input.NBlk_Idir = 42;
+    Input.NBlk_Jdir = 1;
+    Input.NBlk_Kdir = 1;
 
-      
-      for ( kBlk = 0; kBlk <NBK; ++kBlk ) 
-         for ( jBlk = 0; jBlk <NBJ; ++jBlk ) 
-            for ( iBlk = 0; iBlk <NBI; ++iBlk ) {
-               
-                              
-               if (iBlk==0 ){
-                  BCtype_west = BC_PERIODIC;
-               }else {
-                  BCtype_west = BC_NONE;
-               }
-               if (jBlk==0 ){
-                  BCtype_south = BC_NO_SLIP;
-               }else {
-                  BCtype_south = BC_NONE;
-               }
-               if (kBlk==0 ){
-                  BCtype_bottom  =  BC_FIXED_PRESSURE;
-               }else {
-                  BCtype_bottom = BC_NONE;
-               }
-               if (iBlk== NBI-1 ){
-                  BCtype_east = BC_PERIODIC;
-               }else {
-                  BCtype_east = BC_NONE;
-               }
-               if (jBlk== NBJ -1 ){
-                  BCtype_north = BC_MOVING_WALL;
-               }else {
-                  BCtype_north = BC_NONE;
-               }
-               if (kBlk== NBK-1 ){
-                  BCtype_top  =  BC_FIXED_PRESSURE;
-               }else {
-                  BCtype_top = BC_NONE;
-               }
+    Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
 
-            /* copy the cells and nodes information  
-               of the hexa block to the subblocks. */
+    /* Creat 2D cross-section grids from which the 3D grid
+       will be extruded. */
 
-               for (int k =  Grid_ptr[iBlk][jBlk][kBlk]->KNl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                    k <=  Grid_ptr[iBlk][jBlk][kBlk]->KNu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++k) 
-                  for (int j =  Grid_ptr[iBlk][jBlk][kBlk]->JNl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                       j <=  Grid_ptr[iBlk][jBlk][kBlk]->JNu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++j) 
-                     for (int i =  Grid_ptr[iBlk][jBlk][kBlk]->INl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                          i <=  Grid_ptr[iBlk][jBlk][kBlk]->INu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++i) {
-                        
-                        Grid_ptr[iBlk][jBlk][kBlk]->Node[i][j][k].X.x = 
-                           Grid_ptr_orig_blk->Node[iBlk*IP.ICells + i][jBlk*IP.JCells+ j][kBlk*IP.KCells +k].X.x;
-                        
-                        Grid_ptr[iBlk][jBlk][kBlk]->Node[i][j][k].X.y =  
-                           Grid_ptr_orig_blk->Node[iBlk*IP.ICells + i][jBlk*IP.JCells+ j][kBlk*IP.KCells +k].X.y;
-                        
-                        Grid_ptr[iBlk][jBlk][kBlk]->Node[i][j][k].X.z =  
-                           Grid_ptr_orig_blk->Node[iBlk*IP.ICells + i][jBlk*IP.JCells+ j][kBlk*IP.KCells +k].X.z;
-                        
-                     }
-  
-               Grid_ptr[iBlk][jBlk][kBlk]->Update_Cells();
-               
-               //store the boundary conditions
-               for (int  j =  Grid_ptr[iBlk][jBlk][kBlk]->JCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                    j <=  Grid_ptr[iBlk][jBlk][kBlk]->JCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++j) 
-                  for (int  i =  Grid_ptr[iBlk][jBlk][kBlk]->ICl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                       i <=  Grid_ptr[iBlk][jBlk][kBlk]->ICu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++i) {
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeT[i][j] =  BCtype_top;
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeB[i][j] =  BCtype_bottom;
-            
-                  }
-               for ( int k =  Grid_ptr[iBlk][jBlk][kBlk]->KCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                     k <=  Grid_ptr[iBlk][jBlk][kBlk]->KCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++k) 
-                  for ( int j =  Grid_ptr[iBlk][jBlk][kBlk]->JCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                        j <=  Grid_ptr[iBlk][jBlk][kBlk]->JCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++j){
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeW[j][k] =  BCtype_west;
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeE[j][k] =  BCtype_east;
-                     
-                  }
-               for (int  k =  Grid_ptr[iBlk][jBlk][kBlk]->KCl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                    k <=  Grid_ptr[iBlk][jBlk][kBlk]->KCu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++k) 
-                  for ( int i =  Grid_ptr[iBlk][jBlk][kBlk]->ICl- Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; 
-                        i <=  Grid_ptr[iBlk][jBlk][kBlk]->ICu+ Grid_ptr[iBlk][jBlk][kBlk]->Nghost ; ++i){
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeN[i][k] =  BCtype_north;
-                     Grid_ptr[iBlk][jBlk][kBlk]->BCtypeS[i][k] =  BCtype_south;
-                     
-                  }
-            }
+    Grid2D_Fuel_Line_XYplane = Grid_Tube_2D(
+                                   Grid2D_Fuel_Line_XYplane,
+                                   numblk_idir_fuel,
+		                   numblk_jdir_fuel,
+                                   Input.Radius_Fuel_Line,
+                                   Input.NCells_Idir,
+                                   Input.NCells_Jdir,
+				   Input.Nghost,
+                                   STRETCHING_FCN_MAX_CLUSTERING,
+                                   1.25);
 
+    Grid2D_Bluff_Body_Inner_XYplane = Grid_Annulus_2D(
+                                   Grid2D_Bluff_Body_Inner_XYplane,
+                                   numblk_idir_bluffbody,
+		                   numblk_jdir_bluffbody,
+                                   Input.Radius_Fuel_Line,
+ 			           HALF*Input.Radius_Bluff_Body,
+                                   Input.NCells_Idir,
+                                   Input.NCells_Jdir,
+				   Input.Nghost,
+                                   STRETCHING_FCN_MIN_CLUSTERING,
+                                   1.10);
 
-      delete Grid_ptr_orig_blk;
+    Grid2D_Bluff_Body_Outer_XYplane = Grid_Annulus_2D(
+                                   Grid2D_Bluff_Body_Outer_XYplane,
+                                   numblk_idir_bluffbody,
+		                   numblk_jdir_bluffbody,
+                                   HALF*Input.Radius_Bluff_Body,
+ 			           Input.Radius_Bluff_Body,
+                                   Input.NCells_Idir,
+                                   Input.NCells_Jdir,
+				   Input.Nghost,
+                                   STRETCHING_FCN_MAX_CLUSTERING,
+                                   1.10);
 
-   }
-   
+    Grid2D_Coflow_XYplane = Grid_Annulus_2D(
+                                   Grid2D_Coflow_XYplane,
+                                   numblk_idir_coflow,
+		                   numblk_jdir_coflow,
+ 			           Input.Radius_Bluff_Body,
+                                   Input.Radius_Coflow_Inlet_Pipe,
+                                   Input.NCells_Idir,
+                                   Input.NCells_Jdir,
+				   Input.Nghost,
+                                   STRETCHING_FCN_MIN_CLUSTERING,
+                                   1.10);
 
-  //  if(IP.geometry_index == 1){
+    /* Create the mesh for each block representing
+       the complete grid. */
 
-//       for ( kBlk = 0; kBlk <NBK; ++kBlk ) {
-//          for ( jBlk = 0; jBlk <NBJ; ++jBlk ) {
-//             for ( iBlk = 0; iBlk <NBI; ++iBlk ) {
-//                x_orig = iBlk*length;
-//                y_orig = jBlk*width - IP.Box_Width/2.0;
-//                z_orig = kBlk*height - IP.Box_Height/2.0;
-               
-//                if (iBlk==0 ){
-//                   BCtype_west = BC_FIXED_PRESSURE;
-//                }else {
-//                   BCtype_west = BC_NONE;
-//                }
-//                if (jBlk==0 ){
-//                   BCtype_south = BC_PERIODIC;
-//                }else {
-//                   BCtype_south = BC_NONE;
-//                }
-//                if (kBlk==0 ){
-//                   BCtype_bottom  = BC_NO_SLIP;
-//                }else {
-//                   BCtype_bottom = BC_NONE;
-//                }
-//                if (iBlk== NBI-1 ){
-//                   BCtype_east = BC_FIXED_PRESSURE;
-//                }else {
-//                   BCtype_east = BC_NONE;
-//                }
-//                if (jBlk== NBJ -1 ){
-//                   BCtype_north = BC_PERIODIC;
-//                }else {
-//                   BCtype_north = BC_NONE;
-//                }
-//                if (kBlk== NBK-1 ){
-//                   BCtype_top  = BC_MOVING_WALL;
-//                }else {
-//                   BCtype_top = BC_NONE;
-//                }
+    for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
 
-//             /* Allocate (re-allocate) memory for the cells and nodes 
-//                of the hexa block. */
-//             Grid_ptr[iBlk][jBlk][kBlk]->Create_Hexa_Block
-//                (length,
-//                 width,
-//                 height,
-//                 x_orig,
-//                 y_orig,
-//                 z_orig,
-//                 IP.I_stretching_factor,
-//                 IP.J_stretching_factor,
-//                 IP.K_stretching_factor,
-//                 BCtype_top,
-//                 BCtype_bottom,
-//                 BCtype_north,
-//                 BCtype_south,
-//                 BCtype_west,
-//                 BCtype_east,
-//                 IP.ICells,
-//                 IP.JCells,
-//                 IP.KCells,
-//                 IP.Nghost);
-            
-//             }
-//          }
-//       }
-//    }
-   
-//    if(IP.geometry_index == 2){
+        /* Extrude each of the grid blocks from the
+           appropriate 2D grid in XY-plane. */
 
-//       for ( kBlk = 0; kBlk <NBK; ++kBlk ) {
-//          for ( jBlk = 0; jBlk <NBJ; ++jBlk ) {
-//             for ( iBlk = 0; iBlk <NBI; ++iBlk ) {
-            
-//                x_orig = iBlk*length - IP.Box_Length/2.0;
-//                y_orig = jBlk*width ;
-//                z_orig = kBlk*height - IP.Box_Height/2.0;
-               
-//                if (iBlk==0 ){
-//                   BCtype_west = BC_PERIODIC;
-//                }else {
-//                   BCtype_west = BC_NONE;
-//                }
-//                if (jBlk==0 ){
-//                   BCtype_south = BC_FIXED_PRESSURE;
-//                }else {
-//                   BCtype_south = BC_NONE;
-//                }
-//                if (kBlk==0 ){
-//                   BCtype_bottom  = BC_NO_SLIP;
-//                }else {
-//                   BCtype_bottom = BC_NONE;
-//                }
-//                if (iBlk== NBI-1 ){
-//                   BCtype_east = BC_PERIODIC;
-//                }else {
-//                   BCtype_east = BC_NONE;
-//                }
-//                if (jBlk== NBJ -1 ){
-//                   BCtype_north = BC_FIXED_PRESSURE ;
-//                }else {
-//                   BCtype_north = BC_NONE;
-//                }
-//                if (kBlk== NBK-1 ){
-//                   BCtype_top  = BC_MOVING_WALL;
-//                }else {
-//                   BCtype_top = BC_NONE;
-//                }
+        if (iBlk <= 4) {
+           Grid_Blks[iBlk][0][0].Extrude(
+                              Grid2D_Fuel_Line_XYplane[iBlk][0],
+                              Input.NCells_Kdir,
+			      STRETCHING_FCN_MIN_CLUSTERING,
+                              1.25,
+                              ZERO,
+                              0.25*Input.Length_Combustor_Tube);
+           if (iBlk == 0) {
+	      Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+		                            BC_NONE,
+                                            BC_NONE,
+		                            BC_NONE,
+                                            BC_NONE,
+                                            BC_DIRICHLET);
+	   } else {
+              Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+		                            BC_NONE,
+                                            BC_NONE,
+		                            BC_NONE,
+                                            BC_NONE,
+                                            BC_DIRICHLET);
+           }  /* endif */
 
-//             /* Allocate (re-allocate) memory for the cells and nodes 
-//                of the hexa block. */
-//             Grid_ptr[iBlk][jBlk][kBlk]->Create_Hexa_Block
-//                (length,
-//                 width,
-//                 height,
-//                 x_orig,
-//                 y_orig,
-//                 z_orig,
-//                 IP.I_stretching_factor,
-//                 IP.J_stretching_factor,
-//                 IP.K_stretching_factor,
-//                 BCtype_top,
-//                 BCtype_bottom,
-//                 BCtype_north,
-//                 BCtype_south,
-//                 BCtype_west,
-//                 BCtype_east,
-//                 IP.ICells,
-//                 IP.JCells,
-//                 IP.KCells,
-//                 IP.Nghost);
-            
-//             }
-//          }
-//       }
-//    }
+        } else if (iBlk >= 5 && iBlk <= 9) {
+           Grid_Blks[iBlk][0][0].Extrude(
+                              Grid2D_Fuel_Line_XYplane[iBlk-5][0],
+                              Input.NCells_Kdir,
+			      STRETCHING_FCN_LINEAR,
+                              ZERO,
+                              0.25*Input.Length_Combustor_Tube,
+                              Input.Length_Combustor_Tube);
+           if (iBlk-5 == 0) {
+	      Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+		                            BC_NONE,
+                                            BC_NONE,
+		                            BC_NONE,
+                                            BC_FIXED_PRESSURE,
+                                            BC_NONE);
+	   } else {
+              Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+		                            BC_NONE,
+                                            BC_NONE,
+		                            BC_NONE,
+                                            BC_FIXED_PRESSURE,
+                                            BC_NONE);
+           } /* endif */
 
-//    if(IP.geometry_index == 3){
-      
-//       for ( kBlk = 0; kBlk <NBK; ++kBlk ) {
-//          for ( jBlk = 0; jBlk <NBJ; ++jBlk ) {
-//             for ( iBlk = 0; iBlk <NBI; ++iBlk ) {
-               
-//                x_orig = iBlk*length - IP.Box_Length/2.0 ;
-//                y_orig = jBlk*width -  IP.Box_Width/2.0 ;
-//                z_orig = kBlk*height ;
-                             
-                              
-//                if (iBlk==0 ){
-//                   BCtype_west = BC_PERIODIC;
-//                }else {
-//                   BCtype_west = BC_NONE;
-//                }
-//                if (jBlk==0 ){
-//                   BCtype_south = BC_NO_SLIP;
-//                }else {
-//                   BCtype_south = BC_NONE;
-//                }
-//                if (kBlk==0 ){
-//                   BCtype_bottom  = BC_CHANNEL_INFLOW;
-//                }else {
-//                   BCtype_bottom = BC_NONE;
-//                }
-//                if (iBlk== NBI-1 ){
-//                   BCtype_east = BC_PERIODIC;
-//                }else {
-//                   BCtype_east = BC_NONE;
-//                }
-//                if (jBlk== NBJ -1 ){
-//                   BCtype_north = BC_MOVING_WALL;
-//                }else {
-//                   BCtype_north = BC_NONE;
-//                }
-//                if (kBlk== NBK-1 ){
-//                   BCtype_top  = BC_CHANNEL_OUTFLOW;
-//                }else {
-//                   BCtype_top = BC_NONE;
-//                }
+        } else if (iBlk >= 10 && iBlk <= 13) {
+           Grid_Blks[iBlk][0][0].Extrude(
+                              Grid2D_Bluff_Body_Inner_XYplane[iBlk-10][0],
+                              Input.NCells_Kdir,
+			      STRETCHING_FCN_MIN_CLUSTERING,
+                              1.25,
+                              ZERO,
+                              0.25*Input.Length_Combustor_Tube);
+	   Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+		                         BC_NONE,
+                                         BC_NONE,
+		                         BC_NONE,
+                                         BC_NONE,
+                                         BC_WALL_VISCOUS);
 
-//             /* Allocate (re-allocate) memory for the cells and nodes 
-//                of the hexa block. */
-//             Grid_ptr[iBlk][jBlk][kBlk]->Create_Hexa_Block
-//                (length,
-//                 width,
-//                 height,
-//                 x_orig,
-//                 y_orig,
-//                 z_orig,
-//                 IP.I_stretching_factor,
-//                 IP.J_stretching_factor,
-//                 IP.K_stretching_factor,
-//                 BCtype_top,
-//                 BCtype_bottom,
-//                 BCtype_north,
-//                 BCtype_south,
-//                 BCtype_west,
-//                 BCtype_east,
-//                 IP.ICells,
-//                 IP.JCells,
-//                 IP.KCells,
-//                 IP.Nghost);
-            
-//             }
-//          }
-//       }
-//    }
-   
-}// Couette
+        } else if (iBlk >= 14 && iBlk <= 17) {
+           Grid_Blks[iBlk][0][0].Extrude(
+                              Grid2D_Bluff_Body_Inner_XYplane[iBlk-14][0],
+                              Input.NCells_Kdir,
+			      STRETCHING_FCN_LINEAR,
+                              ZERO,
+                              0.25*Input.Length_Combustor_Tube,
+                              Input.Length_Combustor_Tube);
+	   Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+		                         BC_NONE,
+                                         BC_NONE,
+		                         BC_NONE,
+                                         BC_FIXED_PRESSURE,
+                                         BC_NONE);
 
-void Grid3D_Hexa_Multi_Block::Deallocate_Unused_Grid_Blocks(void) {
-   
-   
-   for (int i = 0 ; i <NBI ; ++i ) 
-      for (int j = 0 ; j <NBJ ; ++j ) 
-         for (int k = 0 ; k <NBK ; ++k ){
-            
-            if(Grid_ptr[i][j][k]->Used ==0){
-               delete Grid_ptr[i][j][k]; //delete the unused grid block
-            }
-            
-         }
-}//endofdeallocate
+        } else if (iBlk >= 18 && iBlk <= 21) {
+           Grid_Blks[iBlk][0][0].Extrude(
+                              Grid2D_Bluff_Body_Outer_XYplane[iBlk-18][0],
+                              Input.NCells_Kdir,
+			      STRETCHING_FCN_MIN_CLUSTERING,
+                              1.25,
+                              ZERO,
+                              0.25*Input.Length_Combustor_Tube);
+	   Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+		                         BC_NONE,
+                                         BC_NONE,
+		                         BC_NONE,
+                                         BC_NONE,
+                                         BC_WALL_VISCOUS);
+
+        } else if (iBlk >= 22 && iBlk <= 25) {
+           Grid_Blks[iBlk][0][0].Extrude(
+                              Grid2D_Bluff_Body_Outer_XYplane[iBlk-22][0],
+                              Input.NCells_Kdir,
+			      STRETCHING_FCN_LINEAR,
+                              ONE,
+                              0.25*Input.Length_Combustor_Tube,
+                              Input.Length_Combustor_Tube);
+	   Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+		                         BC_NONE,
+                                         BC_NONE,
+		                         BC_NONE,
+                                         BC_FIXED_PRESSURE,
+                                         BC_NONE);
+
+        } else if (iBlk >= 26 && iBlk <= 29) {
+           Grid_Blks[iBlk][0][0].Extrude(
+                              Grid2D_Coflow_XYplane[iBlk-26][0],
+                              Input.NCells_Kdir,
+			      STRETCHING_FCN_MIN_CLUSTERING,
+                              1.25,
+                              ZERO,
+                              0.25*Input.Length_Combustor_Tube);
+	   Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+		                         BC_NONE,
+                                         BC_REFLECTION,
+		                         BC_NONE,
+                                         BC_NONE,
+                                         BC_NONE);
+
+        } else if (iBlk >= 30 && iBlk <= 33) {
+           Grid_Blks[iBlk][0][0].Extrude(
+                              Grid2D_Coflow_XYplane[iBlk-30][0],
+                              Input.NCells_Kdir,
+			      STRETCHING_FCN_LINEAR,
+                              ZERO,
+                              0.25*Input.Length_Combustor_Tube,
+                              Input.Length_Combustor_Tube);
+	   Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+		                         BC_NONE,
+                                         BC_REFLECTION,
+		                         BC_NONE,
+                                         BC_FIXED_PRESSURE,
+                                         BC_NONE);
+
+        } else if (iBlk >= 34 && iBlk <= 37) {
+           Grid_Blks[iBlk][0][0].Extrude(
+                              Grid2D_Coflow_XYplane[iBlk-34][0],
+                              Input.NCells_Kdir,
+			      STRETCHING_FCN_MAX_CLUSTERING,
+                              1.25,
+                              -0.25*Input.Length_Coflow_Inlet_Pipe,
+                              ZERO);
+	   Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+		                         BC_NONE,
+                                         BC_REFLECTION,
+		                         BC_WALL_VISCOUS,
+                                         BC_NONE,
+                                         BC_NONE);
+
+        } else if (iBlk >= 38 && iBlk <= 41) {
+           Grid_Blks[iBlk][0][0].Extrude(
+                              Grid2D_Coflow_XYplane[iBlk-38][0],
+                              Input.NCells_Kdir,
+			      STRETCHING_FCN_LINEAR,
+                              ONE,
+                              -Input.Length_Coflow_Inlet_Pipe,
+                              -0.25*Input.Length_Coflow_Inlet_Pipe);
+	   Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+		                         BC_NONE,
+                                         BC_REFLECTION,
+		                         BC_WALL_VISCOUS,
+                                         BC_DIRICHLET,
+                                         BC_NONE);
+
+        } /* endif */
+
+    } /* endfor */
+
+    /* Deallocate 2D grids. */
+
+    Grid2D_Fuel_Line_XYplane = Deallocate_Multi_Block_Grid(
+                                   Grid2D_Fuel_Line_XYplane,
+                                   numblk_idir_fuel,
+		                   numblk_jdir_fuel);
+
+    Grid2D_Bluff_Body_Inner_XYplane = Deallocate_Multi_Block_Grid(
+                                   Grid2D_Bluff_Body_Inner_XYplane,
+                                   numblk_idir_bluffbody,
+		                   numblk_jdir_bluffbody);
+
+    Grid2D_Bluff_Body_Outer_XYplane = Deallocate_Multi_Block_Grid(
+                                   Grid2D_Bluff_Body_Outer_XYplane,
+                                   numblk_idir_bluffbody,
+		                   numblk_jdir_bluffbody);
+
+    Grid2D_Coflow_XYplane = Deallocate_Multi_Block_Grid(
+                                   Grid2D_Coflow_XYplane,
+                                   numblk_idir_coflow,
+		                   numblk_jdir_coflow);
+
+}

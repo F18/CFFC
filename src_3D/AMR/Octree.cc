@@ -285,8 +285,6 @@ void  OcTreeBlock_DataStructure::Find_Neighbours_of_Root_Solution_Blocks(
                     LocalSolnBlockList.Block[OcTree.Roots[iBLK][jBLK][kBLK].block.info.blknum].infoTN[0] =
                        OcTree.Roots[iBLK][jBLK+1][kBLK+1].block.info;
 
-                    //  if(iBLK==3 && jBLK==0 && kBLK==0)cout<<"\n .infoTN.dimen.i for (3,0,0) and blk num"<<OcTree.Roots[iBLK][jBLK][kBLK].block.info.blknum<<" is "<<LocalSolnBlockList.Block[OcTree.Roots[iBLK][jBLK][kBLK].block.info.blknum].infoTN[0].dimen.i;
-
                  } /* endif */
               } /* endif */
 	   
@@ -448,8 +446,14 @@ void  OcTreeBlock_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(OcTre
       case GRID_CUBE :
 //	cout<<"\nModifications have not been implemented for GRID_CUBE";
         break;
+     case GRID_CHANNEL :
+//	cout<<"\nModifications have not been implemented for GRID_CUBE";
+        break;
+     case GRID_COUETTE :
+//	cout<<"\nModifications have not been implemented for GRID_CUBE";
+     break;
      default:
-       cout<<"\nModify_Neighbours_of_Root_Solution_Blocks() is not defined for OcTree";
+       break;
      }
 }
 

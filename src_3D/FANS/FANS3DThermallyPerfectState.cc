@@ -185,7 +185,7 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Fv(
    
    /*----------------- Thermal Diffusion ---------------------------*/
    for (int index = 0; index<ns; ++index)
-      spec[index].diffusion_coef = mu()/Schmidt[index];
+     spec[index].diffusion_coef = (mu()/rho)/Schmidt[index];
    
    heat_flux = qflux(dWdx, dWdy, dWdz) + qflux_t(dWdx, dWdy, dWdz);
    
@@ -233,7 +233,7 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Gv(
    
    /*----------------- Thermal Diffusion ---------------------------*/
    for (int index = 0; index<ns; ++index)
-      spec[index].diffusion_coef = mu()/Schmidt[index];
+     spec[index].diffusion_coef = (mu()/rho)/Schmidt[index];
    
    heat_flux = qflux(dWdx, dWdy, dWdz) + qflux_t(dWdx, dWdy, dWdz);
    
@@ -285,7 +285,7 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Hv(
    
    /*----------------- Thermal Diffusion ---------------------------*/
    for (int index = 0; index <ns; ++index)
-      spec[index].diffusion_coef = mu()/Schmidt[index];
+     spec[index].diffusion_coef = (mu()/rho)/Schmidt[index];
    
    heat_flux = qflux(dWdx, dWdy, dWdz) + qflux_t(dWdx, dWdy, dWdz);
    

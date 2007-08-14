@@ -142,7 +142,7 @@ NavierStokes3D_ThermallyPerfect_cState NavierStokes3D_ThermallyPerfect_pState::F
    
    /*----------------- Thermal Diffusion ---------------------------*/
    for (int k = 0; k<ns; ++k)
-      spec[k].diffusion_coef = mu()/Schmidt[k];
+     spec[k].diffusion_coef = (mu()/rho)/Schmidt[k];
 
    // q -= rho * sum ( hs * Ds *gradcs)   
    heat_flux -=  rho*thermal_diffusion( );
@@ -182,7 +182,7 @@ NavierStokes3D_ThermallyPerfect_cState NavierStokes3D_ThermallyPerfect_pState::G
    
    /*----------------- Thermal Diffusion ---------------------------*/
    for (int k = 0; k<ns; ++k)
-      spec[k].diffusion_coef = mu()/Schmidt[k];
+     spec[k].diffusion_coef = (mu()/rho)/Schmidt[k];
 
    // q -= rho * sum ( hs * Ds *gradcs)   
    heat_flux -=  rho*thermal_diffusion();
@@ -223,7 +223,7 @@ NavierStokes3D_ThermallyPerfect_cState NavierStokes3D_ThermallyPerfect_pState::H
    
    /*----------------- Thermal Diffusion ---------------------------*/
    for (int k = 0; k<ns; ++k)
-      spec[k].diffusion_coef = mu()/Schmidt[k];
+     spec[k].diffusion_coef = (mu()/rho)/Schmidt[k];
 
    // q -= rho * sum ( hs * Ds *gradcs)   
    heat_flux -=  rho*thermal_diffusion();
