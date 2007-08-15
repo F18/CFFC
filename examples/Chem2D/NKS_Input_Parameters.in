@@ -36,7 +36,9 @@ Maximum_Number_of_NKS_Iterations=
 GMRES_Overlap=
 0
 # Internal GMRES Tolerance to Converge to
-GMRES_Tolerance=
+GMRES_Initial_Tolerance=
+2.0e-01
+GMRES_Final_Tolerance=
 2.0e-01
 # Total number of GMRES iterations allowed 
 Maximum_Number_of_GMRES_Iterations=

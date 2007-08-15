@@ -30,7 +30,9 @@ Local_Time_Stepping =
 ############################
 GMRES_Overlap =
 0
-GMRES_Tolerance =
+GMRES_Initial_Tolerance =
+0.1
+GMRES_Final_Tolerance =
 0.1
 NKS_Overall_Tolerance =
 1.0e-10
@@ -85,7 +87,7 @@ Flat_Plate
 Plate_Length =
 0.002
 Smooth_Quad_Block=
-Off
+OFF
 Number_of_Cells_Idir= 
 16
 #32
@@ -97,7 +99,7 @@ Number_of_Blocks_Idir=
 Number_of_Blocks_Jdir=
 1
 Mesh_Stretching =
-On
+ON
 Mesh_Stretching_Type_Idir =
 Max_Clustering
 Mesh_Stretching_Type_Jdir =
@@ -117,7 +119,7 @@ Mesh_Stretching_Factor_Jdir =
 # AMR PARAMETERS
 #############################
 AMR =
-Off
+OFF
 #AMR_Frequency =
 #0
 Number_of_Initial_Mesh_Refinements =
@@ -189,8 +191,6 @@ Execute
 Refine_Grid
 Maximum_Number_of_Time_Steps =
 0
-#Maximum_Number_of_NKS_Iterations =
-#50
 Output_File_Name=
 flatplate2
 Continue
@@ -198,8 +198,6 @@ Continue
 Refine_Grid
 Maximum_Number_of_Time_Steps =
 0
-#Maximum_Number_of_NKS_Iterations =
-#50
 Output_File_Name=
 flatplate3
 Continue
