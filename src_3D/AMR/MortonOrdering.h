@@ -138,7 +138,6 @@ int Morton_ReOrdering_of_Solution_Blocks(Octree_DataStructure                   
      int CPU = 0;
      int error_flag = 0;
 
-cout <<"\n Morton Ordering"; cout.flush();    
     /********************************************************  
      * Write the restart files                             *
      ********************************************************/
@@ -162,7 +161,6 @@ cout <<"\n Morton Ordering"; cout.flush();
 							      number_of_time_steps,
    					                      Time,
  					                      processor_cpu_time);
-cout <<"\n after write restart"; cout.flush();    
     if (error_flag) {
       cout << "\n  ERROR: Unable to open  restart output data file(s) "
 	   << "on processor "
@@ -188,7 +186,6 @@ cout <<"\n after write restart"; cout.flush();
      ********************************************************/
     Octree_DataStructure_Morton(Octree, morton_array);
 
-cout <<"\n after Octree_DataStructure_Morton"; cout.flush();    
     //Array to determine how many blocks go to each CPU
     int *cpu_array;
     cpu_array = new int[Octree.Ncpu];
@@ -218,7 +215,6 @@ cout <<"\n after Octree_DataStructure_Morton"; cout.flush();
 	  }
 	}
  
-cout <<"\n before assign_block_pointers"; cout.flush();    
     //This reassigns the .Blocks OctreeBlock pointers according to the cpu# and local blk # recorded in .info of each block.
     Octree.assign_block_pointers();
     
@@ -226,16 +222,13 @@ cout <<"\n before assign_block_pointers"; cout.flush();
     
     //********** Need to recall these functions even though they were called within Read_Octree *********
    
-cout <<"\n before Find_Neighbours_of_Root_Solution_Blocks"; cout.flush();    
     // Find the neighbours of the root blocks.
     Octree_DataStructure::Find_Neighbours_of_Root_Solution_Blocks(Octree);
     
-cout <<"\n before Modify_Neighbours_of_Root_Solution_Blocks"; cout.flush();    
     // Modify block neighbours for grid geometries with 
     //periodic boundaries, etc. 
     Octree_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(Octree, IPs.IP_Grid.i_Grid);
   
-cout <<"\n before Find_Neighbours"; cout.flush();    
     // Determine the neighbouring blocks of all used (active)
     //solution blocks in the octree data structure. This will
     //also copy block information to local processor solution block list. 
@@ -247,7 +240,6 @@ cout <<"\n before Find_Neighbours"; cout.flush();
      * to send solution information between neighbouring      *
      * adaptive blocks.  */                                  
     
-cout <<"\n before Allocate_Message_Buffers"; cout.flush();    
 //     AdaptiveBlock3D_List::Allocate_Message_Buffers(Local_Adaptive_Block_List,
 //                                                    Local_Solution_Blocks.Soln_Blks[0].NumVar()+NUM_COMP_VECTOR3D);
 
@@ -258,7 +250,6 @@ cout <<"\n before Allocate_Message_Buffers"; cout.flush();
      * restart solution files.                              */
  
 
-cout <<"\n before Read_Restart_Solution"; cout.flush();    
     error_flag = Local_Solution_Blocks.Read_Restart_Solution(IPs,
                                                              Local_Adaptive_Block_List,
 				                             number_of_time_steps,

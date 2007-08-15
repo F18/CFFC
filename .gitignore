@@ -4,6 +4,7 @@
 # C++ source directories
 *.[oa]
 *~
+.*.swp
 *.il
 *.depend*
 
