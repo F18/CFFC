@@ -53,19 +53,19 @@ SRC_SYSTEM = $(SYSTEM_DIR)System_Linux.cc
 ifeq ($(MPI_VERSION),NoMPI)
   SRC_AMR = $(AMR_DIR)AdaptiveBlock3D.cc \
 	    $(AMR_DIR)AdaptiveBlock3D_NoMPI.cc \
-	    $(AMR_DIR)AMR.cc \
             $(AMR_DIR)Octree.cc
 else
   SRC_AMR = $(AMR_DIR)AdaptiveBlock3D.cc \
 	    $(AMR_DIR)AdaptiveBlock3D_MPI.cc \
-	    $(AMR_DIR)AMR.cc \
             $(AMR_DIR)Octree.cc
 endif
-SRC_GRID = $(GRID_DIR)Grid3DHexaBlock.cc \
+SRC_GRID = $(GRID_DIR)Cell2D.cc \
+           $(GRID_DIR)Grid2DQuadBlock.cc \
+           $(GRID_DIR)Grid2DQuadMultiBlock.cc \
+           $(GRID_DIR)Grid3DHexaBlock.cc \
            $(GRID_DIR)Grid3DHexaMultiBlock.cc
-SRC_ICEMCFD = $(ICEM_DIR)ICEMCFD.cc \
-	      $(ICEM_DIR)ICEMCFD_ctype.c
-SRC_HEXA = $(HEXA_DIR)HexaMultiBlock.cc 
+SRC_ICEM = $(ICEM_DIR)ICEMCFD.cc \
+	   $(ICEM_DIR)ICEMCFD_ctype.c
 SRC_EULER = $(EULER_DIR)Euler3DThermallyPerfectState.cc \
 	    $(EULER_DIR)Euler3DThermallyPerfectInput.cc
 SRC_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectState.cc \
@@ -78,7 +78,7 @@ SRC_SPECIES = $(NASA_DIR)NASARP1311data.cc \
               $(NASA_DIR)Reactions.cc
 SRC_TURBULENCE = $(TURBULENCE_DIR)TurbulenceModelling.cc 
 SRC_BASE = $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_SYSTEM) \
-           $(SRC_AMR) $(SRC_GRID) $(SRC_ICEM) $(SRC_HEXA) \
+           $(SRC_AMR) $(SRC_GRID) $(SRC_ICEM) \
            $(SRC_TURBULENCE)
 SRC_CFFC = $(SRC_BASE) \
            $(SRC_EULER) $(SRC_NAVIERSTOKES) $(SRC_FANS) \
@@ -100,19 +100,19 @@ OBJ_SYSTEM = $(SYSTEM_DIR)System_Linux.o
 ifeq ($(MPI_VERSION),NoMPI)
   OBJ_AMR = $(AMR_DIR)AdaptiveBlock3D.o \
 	    $(AMR_DIR)AdaptiveBlock3D_NoMPI.o \
-	    $(AMR_DIR)AMR.o \
             $(AMR_DIR)Octree.o
 else
   OBJ_AMR = $(AMR_DIR)AdaptiveBlock3D.o \
 	    $(AMR_DIR)AdaptiveBlock3D_MPI.o \
-	    $(AMR_DIR)AMR.o \
             $(AMR_DIR)Octree.o
 endif
-OBJ_GRID = $(GRID_DIR)Grid3DHexaBlock.o \
+OBJ_GRID = $(GRID_DIR)Cell2D.o \
+           $(GRID_DIR)Grid2DQuadBlock.o \
+           $(GRID_DIR)Grid2DQuadMultiBlock.o \
+           $(GRID_DIR)Grid3DHexaBlock.o \
            $(GRID_DIR)Grid3DHexaMultiBlock.o
-OBJ_ICEMCFD = $(ICEM_DIR)ICEMCFD.o \
-	      $(ICEM_DIR)ICEMCFD_ctype.o
-OBJ_HEXA = $(HEXA_DIR)HexaMultiBlock.o 
+OBJ_ICEM = $(ICEM_DIR)ICEMCFD.o \
+	   $(ICEM_DIR)ICEMCFD_ctype.o
 OBJ_EULER = $(EULER_DIR)Euler3DThermallyPerfectState.o \
 	    $(EULER_DIR)Euler3DThermallyPerfectInput.o
 OBJ_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectState.o \
@@ -125,8 +125,8 @@ OBJ_SPECIES = $(NASA_DIR)NASARP1311data.o \
               $(NASA_DIR)Reactions.o
 OBJ_TURBULENCE = $(TURBULENCE_DIR)TurbulenceModelling.o 
 OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_SYSTEM) \
-           $(OBJ_AMR) $(OBJ_GRID) $(OBJ_ICEM) $(OBJ_HEXA) \
-           $(OBJ_TURBULENCE) 
+           $(OBJ_AMR) $(OBJ_GRID) $(OBJ_ICEM) \
+           $(OBJ_TURBULENCE)
 OBJ_CFFC = $(OBJ_BASE) \
            $(OBJ_EULER) $(OBJ_NAVIERSTOKES) $(OBJ_FANS) \
            $(OBJ_SPECIES)
@@ -159,7 +159,7 @@ help:
 	@echo "|        make superclean           clean up documentation and library directories   |"
 	@echo "|        make help                 display makefile usage information               |"
 	@echo "|                                                                                   |"
-	@echo "| Package Options: MPI_VERSION = NoMPI (default), MPICH, MPT (sgi)                  |"
+	@echo "| Package Options: MPI_VERSION = NoMPI (default), MPICH, MPICH2, MPT (sgi)          |"
 	@echo "|                  ICEMCFD_VERSION = NoICEMCFD (default),V41,V42,V43,V50,V10,V11    |"
 	@echo "|                  GCC_VERSION = V296, V3+ (default), ICC                           |"
 	@echo "|                  CANTERA_VERSION = NoCANTERA (default), V70                       |"
@@ -218,11 +218,9 @@ cantera:
 	@echo Building $(CANTERA) library for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------'
 	@echo ' '
-	cd $(CANTERA_DIR); make -i clean;
 	cd $(CANTERA_DIR); ./preconfig CXX="$(CXX) $(CXXFLAGS)" CC="$(CC)" F77="$(FC)" \
           CXXFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" FFLAGS="$(FFLAGS)" \
 	  LCXX_END_LIBS="$(CANTERA_LCXX_END_LIBS)" PYTHON_PACKAGE="$(CANTERA_PYTHON_PACKAGE)";
-	cd $(CANTERA_DIR); make -i clean;
 	cd $(CANTERA_DIR); make;
 	@echo ' '
 	@echo $(CANTERA) library has been brought up to date.

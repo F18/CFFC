@@ -14,7 +14,7 @@
 /********************************************************
  * Routine: Write_Hexa_Block                            *
  *                                                      *
- * Writes 3D hexahedral    grid block to the            *
+ * Writes 3D hexahedral grid block to the               *
  * specified output stream for retrieval and re-use     *
  * purposes.                                            *
  *                                                      *
@@ -29,7 +29,7 @@ void Write_Hexa_Block(Grid3D_Hexa_Block &Grid,
 /********************************************************
  * Routine: Read_Hexa_Block                             *
  *                                                      *
- * Reads 3D hexahedral    grid block from the           *
+ * Reads 3D hexahedral grid block from the              *
  * specified input stream.                              *
  *                                                      *
  ********************************************************/
@@ -43,7 +43,7 @@ void Read_Hexa_Block(Grid3D_Hexa_Block &Grid,
 /********************************************************
  * Routine: Output_Tecplot                              *
  *                                                      *
- * Writes the nodes of the hexahedral    mesh to the    *
+ * Writes the nodes of the hexahedral mesh to the       *
  * specified output stream in a format suitable for     *
  * plotting the grid with TECPLOT.                      *
  *                                                      *
@@ -91,7 +91,7 @@ void Output_Tecplot(Grid3D_Hexa_Block &Grid,
 /********************************************************
  * Routine: Output_Nodes_Tecplot                        *
  *                                                      *
- * Writes the nodes of the quadrilateral mesh to the    *
+ * Writes the nodes of the hexahedral mesh to the       *
  * specified output stream in a format suitable for     *
  * plotting the grid with TECPLOT.  Includes boundary   *
  * nodes.                                               *
@@ -140,7 +140,7 @@ void Output_Nodes_Tecplot(Grid3D_Hexa_Block &Grid,
 /********************************************************
  * Routine: Output_Cells_Tecplot                        *
  *                                                      *
- * Writes the cells of the quadrilateral mesh to the    *
+ * Writes the cells of the hexahedral mesh to the       *
  * specified output stream in a format suitable for     *
  * plotting the grid with TECPLOT.                      *
  *                                                      *
@@ -149,7 +149,6 @@ void Output_Cells_Tecplot(Grid3D_Hexa_Block &Grid,
                           const int Block_Number,
                           const int Output_Title,
 	                  ostream &Out_File) {
-
 
     Out_File << setprecision(14);
     if (Output_Title) {
@@ -199,7 +198,6 @@ void Output_Gnuplot(Grid3D_Hexa_Block &Grid,
                     const int Output_Title,
 	            ostream &Out_File) {
 
-
     Out_File << setprecision(14);
     if (Output_Title) {
        Out_File << "# " << CFDkit_Name()
@@ -231,13 +229,13 @@ void Output_Gnuplot(Grid3D_Hexa_Block &Grid,
 }
 
 /*****************************************************************
- * Routine: Update Cells
- * 
- * Updates the cell information for the quadrilateal mesh block
- *                                                           
+ * Routine: Update Cells                                         *
+ *                                                               *
+ * Updates the cell information for the hexahedral mesh block.   *
+ *                                                               *
  *****************************************************************/
-
 void Update_Cells(Grid3D_Hexa_Block &Grid) {
+
   for(int k = Grid.KCl-Grid.Nghost; k <=Grid.KCu +Grid.Nghost ; ++k){ 
     for( int j = Grid.JCl-Grid.Nghost ; j <= Grid.JCu +Grid.Nghost; ++j) {
       for ( int i = Grid.ICl-Grid.Nghost ; i <= Grid.ICu+Grid.Nghost ; ++i) {
@@ -249,11 +247,15 @@ void Update_Cells(Grid3D_Hexa_Block &Grid) {
       } /* endfor */
     } /* endfor */
   } /* endfor */
+
 }
 
 /**************************************************************
-Update exterior nodes
-**************************************************************/
+ * Routine: Update_Exterior_Nodes                             *
+ *                                                            *
+ * Update the exterior nodes for the hexahedral mesh block.   *
+ *                                                            *
+ **************************************************************/
 void Update_Exterior_Nodes(Grid3D_Hexa_Block &Grid){
   Vector3D norm_dir, X_norm, X_tan;
   Vector3D norm_dir1,X_norm1,X_tan1;
@@ -409,7 +411,7 @@ void Update_Exterior_Nodes(Grid3D_Hexa_Block &Grid){
 /********************************************************
  * Routine: Rotate_Hexa_Block                           *
  *                                                      *
- * Rotates the quadrilateral grid block.                *
+ * Rotates the hexahedral grid block.                   *
  *                                                      *
  ********************************************************/
 void Rotate_Hexa_Block(Grid3D_Hexa_Block &Grid,
@@ -482,4 +484,50 @@ void Rotate_Hexa_Block(Grid3D_Hexa_Block &Grid,
     } /* endfor */
   } /*endfor */ 
  
+}
+
+/********************************************************
+ * Routine: Extrude_Hexa_Block                          *
+ *                                                      *
+ * Extrudes a 3D hexahedral grid block from 2D          *
+ * quadrilateral grid block.                            *
+ *                                                      *
+ ********************************************************/
+void Extrude_Hexa_Block(Grid3D_Hexa_Block &Grid,
+			Grid2D_Quad_Block &Grid2D_XYplane, 
+			const int Nk,
+                        const int i_Stretching_Kdir,
+			const double &Stretching_Kdir,
+                        const double &Z_min,
+                        const double &Z_max) {
+
+  double S_k, Z;
+
+  /* Allocate memory for the grid. */
+ 
+  if (Grid.Node != NULL) Grid.deallocate();
+  Grid.allocate(Grid2D_XYplane.NNi-2*Grid2D_XYplane.Nghost-1, 
+                Grid2D_XYplane.NNi-2*Grid2D_XYplane.Nghost-1, 
+                Nk,
+                Grid2D_XYplane.Nghost);
+
+  /* Extrude the grid points from the 2D quadrilateral grid block. */
+
+  for ( int k = Grid.KNl; k <= Grid.KNu; k++) {
+    for (int j =  Grid.JNl; j <= Grid.JNu; j++) {
+      for (int i = Grid.INl; i <= Grid.INu; i++) {
+        S_k = double(k-Grid.KNl)/double(Grid.KNu-Grid.KNl);
+        S_k = StretchingFcn(S_k, Stretching_Kdir, ZERO, i_Stretching_Kdir);
+        Z = S_k * (Z_max-Z_min) + Z_min;
+        Grid.Node[i][j][k].X.x = Grid2D_XYplane.Node[i][j].X.x;
+        Grid.Node[i][j][k].X.y = Grid2D_XYplane.Node[i][j].X.y;
+        Grid.Node[i][j][k].X.z = Z;
+      } /* endfor */
+    } /* endfor */
+  }/* endfor */
+
+  /* Process the extruded 3D grid. */
+
+  Update_Cells(Grid);
+
 }

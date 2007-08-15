@@ -788,3 +788,65 @@ int Output_Cells_Tecplot(Grid2D_Quad_Block **Grid_ptr,
     return(0);
 
 }
+
+/********************************************************
+ * Routine: Output_Tecplot                              *
+ *                                                      *
+ * Writes the nodes of a multi-block hexahedral mesh    *
+ * in a format suitable for plotting with TECPLOT.      *
+ * Returns a non-zero value if unable to write the      *
+ * TECPLOT file.                                        *
+ *                                                      *
+ ********************************************************/
+int Output_Tecplot(Grid3D_Hexa_Block ***Grid_ptr,
+                   Euler2D_Input_Parameters &Input_Parameters,
+		   const int Number_of_Blocks_Kdir) {
+
+    int i, j;
+    char prefix[256], extension[256], mesh_file_name[256];
+    char *mesh_file_name_ptr;
+    ofstream mesh_file;  
+
+    /* Determine prefix of grid data output file name. */
+
+    i = 0;
+    while (1) {
+       if (Input_Parameters.Output_File_Name[i] == ' ' ||
+           Input_Parameters.Output_File_Name[i] == '.') break;
+       prefix[i]=Input_Parameters.Output_File_Name[i];
+       i = i + 1;
+       if (i > strlen(Input_Parameters.Output_File_Name) ) break;
+    } /* endwhile */
+    prefix[i] = '\0';
+    strcat(prefix, "_mesh");
+
+    /* Determine grid data output file name. */
+
+    strcpy(extension, ".dat");
+    strcpy(mesh_file_name, prefix);
+    strcat(mesh_file_name, extension);
+    mesh_file_name_ptr = mesh_file_name;
+
+    /* Open the grid data output file. */
+
+    mesh_file.open(mesh_file_name_ptr, ios::out);
+    if (mesh_file.bad()) return (1);
+
+    /* Write the node locations for each quadrilateral grid block. */
+
+    Output_Tecplot(Grid_ptr,
+		   Input_Parameters.Number_of_Blocks_Idir,
+                   Input_Parameters.Number_of_Blocks_Jdir,
+                   Number_of_Blocks_Kdir,
+	           mesh_file);
+
+    /* Close the grid data output file. */
+
+    mesh_file.close();
+
+    /* Writing of grid data output file complete.  Return zero value. */
+
+    return(0);
+
+}
+

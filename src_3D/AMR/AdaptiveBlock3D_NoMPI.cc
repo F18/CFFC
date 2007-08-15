@@ -1,6 +1,6 @@
-/* AdaptiveBlock_NoMPI.cc:  Subroutines for adaptive blocks classes
-                            on a single CPU architecture with no 
-                            access to MPI. */
+/* AdaptiveBlock3D_NoMPI.cc:  Subroutines for adaptive blocks classes
+                              on a single CPU architecture with no 
+                              access to MPI. */
 
 /* Include adaptive block header file. */
 

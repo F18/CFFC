@@ -1,4 +1,5 @@
-/* Grid3DHexaBlock.h:  Header file defining 3D hexahedral block grid type. */
+/* Grid3DHexaBlock.h: xsHeader file defining 3D hexahedral block grid type. */
+
 #ifndef _GRID3D_HEXA_BLOCK_INCLUDED
 #define _GRID3D_HEXA_BLOCK_INCLUDED
 
@@ -31,7 +32,22 @@ using namespace std;
 #include "Cell3D.h"
 #endif // _CELL3D_INCLUDED
 
-/* Define the HEXA 3D grid block class. */
+#ifndef _MPI_INCLUDED
+#include "../MPI/MPI.h"
+#endif // _MPI_INCLUDED
+
+/* Include 2D quadrilateral block grid type header file. */
+
+#ifndef _GRID2D_QUAD_BLOCK_INCLUDED
+#include "Grid2DQuadBlock.h"
+#endif // _GRID2D_QUAD_BLOCK_INCLUDED
+
+/* Define the grid block in-use indicators. */
+
+#define	GRID3D_HEXA_BLOCK_USED                 1
+#define	GRID3D_HEXA_BLOCK_NOT_USED             0
+
+/* Define the 3D hexahedral grid block class. */
 
 /********************************************************
  * Class: Grid3D_Hexa_Block                             *
@@ -75,22 +91,12 @@ using namespace std;
  *                    the k-direction                   *
  *      Node       -- Return 3D node geometry.          *
  *      Cell       -- Return 3D cell geometry.          *
+ *      Allocated  -- Indicates whether or not the block*
+ *                    has been allocated.               *
  *      allocate   -- Allocate memory for structured    *
- *                    quadrilateral grid block.         *
+ *                    hexahedral grid block.            *
  *      deallocate -- Deallocate memory for structured  *
- *                    quadrilateral grid block.         *
- *      allocateNodes -- Allocate memory for nodes of   *
- *                       structured quadrilateral grid  *
- *                       block.                         *
- *      deallocateNodes -- Deallocate memory for nodes  *
- *                         of structured quadrilateral  *
- *                         grid block.                  *
- *      allocateCells -- Allocate memory for nodes of   *
- *                       structured quadrilateral grid  *
- *                       block.                         *
- *      deallocateCells -- Deallocate memory for nodes  *
- *                         of structured quadrilateral  *
- *                         grid block.                  *
+ *                    hexahedral grid block.            *
  *      centroid   -- Calculate 3D vector containing    *
  *                    the location of cell center.      *
  *      Volume     -- Calculate the volume for cell.    *
@@ -140,51 +146,55 @@ using namespace std;
  ********************************************************/
 class Grid3D_Hexa_Block{
   public:
-   int           NNi,INl,INu; // i-direction node counters
-   int           NNj,JNl,JNu; // j-direction node counters
-   int           NNk,KNl,KNu; // k-direction node counters
-   int           NCi,ICl,ICu; // i-direction cell counters
-   int           NCj,JCl,JCu; // j-direction cell counters
-   int           NCk,KCl,KCu; // k-direction cell counters
-   int                Nghost; //number of ghost cells
-   Node3D            ***Node; // array of 3D node position vectors
-   Cell3D            ***Cell; // array of 3D cell centre vectors
+    int           NNi,INl,INu; // i-direction node counters
+    int           NNj,JNl,JNu; // j-direction node counters
+    int           NNk,KNl,KNu; // k-direction node counters
+    int           NCi,ICl,ICu; // i-direction cell counters
+    int           NCj,JCl,JCu; // j-direction cell counters
+    int           NCk,KCl,KCu; // k-direction cell counters
+    int                Nghost; //number of ghost cells
+    Node3D            ***Node; // array of 3D node position vectors
+    Cell3D            ***Cell; // array of 3D cell centre vectors
    
-   int     **BCtypeN,**BCtypeS, // boundary condition type specifiers
-           **BCtypeE,**BCtypeW, // for north, south, east, & west boundaries
-           **BCtypeT,**BCtypeB; // for north, south, east, & west boundaries
-   int Used;
+    int   **BCtypeN,**BCtypeS, // boundary condition type specifiers
+          **BCtypeE,**BCtypeW, // for north, south, east, & west boundaries
+          **BCtypeT,**BCtypeB; // for north, south, east, & west boundaries
     
+    int Allocated; // Indicates whether or not the grid block has been allocated.
     
-    /* Creation, copy, and assignment constructors. */
-    Grid3D_Hexa_Block(const int Ni, const int Nj, const int Nk, const int Ng) {
-      
+    /* Constructors. */
+    Grid3D_Hexa_Block(void) {
+       NNi = 0; INl = 0; INu = 0; 
+       NNj = 0; JNl = 0; JNu = 0;
+       NNk = 0; KNl = 0; KNu = 0;
+       NCi = 0; ICl = 0; ICu = 0; 
+       NCj = 0; JCl = 0; JCu = 0;
+       NCk = 0; KCl = 0; KCu = 0;
+       Nghost = 0; Allocated = GRID3D_HEXA_BLOCK_NOT_USED;
+       Node = NULL; Cell = NULL;
+       BCtypeN = NULL; BCtypeS = NULL; 
+       BCtypeE = NULL; BCtypeW = NULL;
+       BCtypeT = NULL; BCtypeB = NULL;
+    }
+
+    Grid3D_Hexa_Block(const int Ni, 
+                      const int Nj, 
+                      const int Nk, 
+                      const int Ng) {
        allocate(Ni, Nj, Nk, Ng);
     }
 
+    /* Destructor. */
     ~Grid3D_Hexa_Block(void) {
-       
        deallocate();
     }
 
-    /* Allocate memory for structured quadrilateral grid block. */
+    /* Allocate memory for structured hexahedral grid block. */
     void allocate(const int Ni, const int Nj, const int Nk, const int Ng);
     
-    /* Deallocate memory for structured quadrilateral grid block. */
+    /* Deallocate memory for structured hexahedral grid block. */
     void deallocate(void);
     
-    /* Allocate memory for nodes of structured quadrilateral grid block. */
-    void allocateNodes(const int Ni, const int Nj, const int Nk, const int Ng);
-    
-    /* Deallocate memory for nodes of structured quadrilateral grid block. */
-    void deallocateNodes(void);
-
-    /* Allocate memory for cells of structured quadrilateral grid block. */
-    void allocateCells(const int Ni, const int Nj, const int Nk, const int Ng);
-
-    /* Deallocate memory for cells of structured quadrilateral grid block. */
-    void deallocateCells(void);
-
     /* Calculate centroid of cell. */
     Vector3D centroid(const Cell3D &Cell);
     Vector3D centroid(const int ii, const int jj, const int kk);
@@ -193,8 +203,8 @@ class Grid3D_Hexa_Block{
     double volume(const Cell3D &Cell);
     double volume(const int ii, const int jj, const int kk);
 
-    /* Calculate vecotrs from a cell center pointing to its east neigbor cell center
-       pointing to its north neigbor cell center, and pointing to its top neibor 
+    /* Calculate vectors from a cell center pointing to its east neigbour cell center
+       pointing to its north neigbour cell center, and pointing to its top neighbour 
        cell center and also calculating the distances */
     
     /*   t
@@ -310,243 +320,186 @@ class Grid3D_Hexa_Block{
 
     /* Input-output operators. */
     friend ostream &operator << (ostream &out_file, const Grid3D_Hexa_Block &G);
-    friend istream &operator >> (istream &in_file, const Grid3D_Hexa_Block &G);
- 
+    friend istream &operator >> (istream &in_file, Grid3D_Hexa_Block &G);
   
-    void Write_Hexa_Block(Grid3D_Hexa_Block &Grid, ostream &Out_File);
-    void Read_Hexa_Block(Grid3D_Hexa_Block &Grid, istream &In_File);
-    static void Copy_Hexa_Block(Grid3D_Hexa_Block *Grid1, Grid3D_Hexa_Block *Grid2);
-    void Output_Tecplot(const int Block_Number, const int Output_Title, 
+    /* Other useful member functions. */
+
+    void Create_Block(const double &Length,
+                      const double &Width,
+                      const double &Height,
+                      const double &x_orig,
+                      const double &y_orig,
+                      const double &z_orig,
+                      const double &alpha,
+                      const double &beta,
+                      const double &gamma,
+                      const int BCtype_top,
+                      const int BCtype_bottom,
+                      const int BCtype_north,
+                      const int BCtype_south,
+                      const int BCtype_west,
+                      const int BCtype_east,
+                      const int Number_of_Cells_Idir,
+                      const int Number_of_Cells_Jdir,
+                      const int Number_of_Cells_Kdir,
+                      const int Number_of_Ghost_Cells);
+
+    void Copy(Grid3D_Hexa_Block &Grid2);
+
+    void Broadcast(void);
+
+#ifdef _MPI_VERSION
+    void Broadcast(MPI::Intracomm &Communicator);
+#endif
+
+    void Output_Tecplot(const int Block_Number, 
+                        const int Output_Title, 
                         ostream &Out_File);
+
     void Output_Nodes_Tecplot(const int Block_Number,
-                              const int Output_Title, ostream &Out_File);
+                              const int Output_Title, 
+                              ostream &Out_File);
+
     void Output_Cells_Tecplot(const int Block_Number,
-                              const int Output_Title, ostream &Out_File);
+                              const int Output_Title, 
+                              ostream &Out_File);
+
     void Output_Gnuplot(const int Block_Number,
-                        const int Output_Title, ostream &Out_File);
+                        const int Output_Title, 
+                        ostream &Out_File);
+
     void Update_Exterior_Nodes(void);
+
+    void Update_Exterior_Nodes_Zdir(void);
+
     void Update_Cells(void);
-    void Rotate_Hexa_Block(const double &Angle, const double &Angle1, 
-                           const double &Angle2);
-    void Create_Hexa_Block(   const double Length,
-                              const double Width,
-                              const double Height,
-                              const double x_orig,
-                              const double y_orig,
-                              const double z_orig,
-                              const double alpha,
-                              const double beta,
-                              const double gamma,
-                              const int  BCtype_top,
-                              const int  BCtype_bottom,
-                              const int  BCtype_north,
-                              const int  BCtype_south,
-                              const int  BCtype_west,
-                              const int  BCtype_east,
-                              const int Number_of_Cells_Idir,
-                              const int Number_of_Cells_Jdir,
-                              const int Number_of_Cells_Kdir,
-                              const int Number_of_Ghost_Cells) ;
+
+    void Set_BCs_Xdir(const int BCtype_east_boundary,
+                      const int BCtype_west_boundary);
+
+    void Set_BCs_Ydir(const int BCtype_north_boundary,
+                      const int BCtype_south_boundary);
+
+    void Set_BCs_Zdir(const int BCtype_top_boundary,
+                      const int BCtype_bottom_boundary);
+
+    void Set_BCs(const int BCtype_east_boundary,
+		 const int BCtype_west_boundary,
+                 const int BCtype_north_boundary,
+		 const int BCtype_south_boundary,
+                 const int BCtype_top_boundary,
+                 const int BCtype_bottom_boundary);
+
+    void Rotate(const double &Angle, 
+                const double &Angle1, 
+                const double &Angle2);
+
+    void Extrude(Grid2D_Quad_Block &Grid2D_XYplane, 
+		 const int Nk,
+                 const int i_Stretching_Kdir,
+		 const double &Stretching_Kdir,
+                 const double &Z_min,
+                 const double &Z_max);
 
   private:
     //copy and assignment are not permitted
     Grid3D_Hexa_Block(const Grid3D_Hexa_Block &G);
     Grid3D_Hexa_Block &operator =(const Grid3D_Hexa_Block &G);
-    
-
-
 };
 
 /*************************************************************************
  * Grid3D_Hexa_Block::allocate -- Allocate memory.                       *
  *************************************************************************/
-inline void Grid3D_Hexa_Block::allocate(
-   const int Ni, const int Nj, const int Nk, const int Ng) {
-   assert( Ni >= 1 && Nj >= 1 && Nk >= 1);
-   NNi = Ni+(2*Ng)+1; INl = Ng; INu = Ni+Ng; 
-   NNj = Nj+(2*Ng)+1; JNl = Ng; JNu = Nj+Ng; 
-   NNk = Nk+(2*Ng)+1; KNl = Ng; KNu = Nk+Ng; 
-   NCi = Ni+(2*Ng); ICl = Ng; ICu = Ni+(Ng-1); 
-   NCj = Nj+(2*Ng); JCl = Ng; JCu = Nj+(Ng-1); 
-   NCk = Nk+(2*Ng); KCl = Ng; KCu = Nk+(Ng-1);
-   Nghost=Ng; Used = 0;
+inline void Grid3D_Hexa_Block::allocate(const int Ni, 
+                                        const int Nj, 
+                                        const int Nk, 
+                                        const int Ng) {
+   assert( Ni >= 1 && Nj >= 1 && Nk >= 1 && Ng >=1 && !Allocated);
+   NNi = Ni+2*Ng+1; INl = Ng; INu = Ni+Ng; 
+   NNj = Nj+2*Ng+1; JNl = Ng; JNu = Nj+Ng; 
+   NNk = Nk+2*Ng+1; KNl = Ng; KNu = Nk+Ng; 
+   NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1; 
+   NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1; 
+   NCk = Nk+2*Ng; KCl = Ng; KCu = Nk+Ng-1;
+   Nghost = Ng; Allocated = GRID3D_HEXA_BLOCK_USED;
    
-   //dynamically create 3x3 array of type node
    Node = new Node3D**[NNi];
-   
    for (int i = 0; i < NNi; ++i ){
       Node[i] = new Node3D*[NNj];
       for (int j = 0; j < NNj; ++j ){
          Node[i][j] = new Node3D[NNk];
-      }
-   }
-   //cout<<"\n gridhexa.h : Node[0][0][0].X =  "<<Node[0][0][0].X.x<<endl;
-     //dynamically create 3x3 array of type cell
+      } /* endfor */
+   } /* endfor */
+
    Cell = new Cell3D**[NCi];
    for (int i = 0; i < NCi ; ++i ){ 
       Cell[i] = new Cell3D*[NCj];
       for (int j = 0; j < NCj ; ++j ){ 
          Cell[i][j] = new Cell3D[NCk];
-      }
-   }
+      } /* endfor */
+   } /* endfor */
  
-   //Boundary faces
    BCtypeW = new int *[NCj];   BCtypeE = new int *[NCj];
    for (int j = 0; j < NCj; ++j ){
       BCtypeW[j] = new int[NCk]; BCtypeE[j] = new int[NCk];
-  }
+   } /* endfor */
+
    BCtypeN = new int *[NCi];   BCtypeS = new int *[NCi];
    BCtypeT = new int *[NCi];   BCtypeB = new int *[NCi];
    for (int i = 0; i < NCi; ++i ){
       BCtypeN[i] = new int[NCk]; BCtypeS[i] = new int[NCk];
       BCtypeT[i] = new int[NCj]; BCtypeB[i] = new int[NCj];
-   }
-  
-   
+   } /* endfor */
 }
 
 /*************************************************************************
  * Grid3D_Hexa_Block::deallocate -- Deallocate memory.                   *
  *************************************************************************/
 inline void Grid3D_Hexa_Block::deallocate(void) {
-   for (int i = 0; i <= NNi-1 ; ++i ) {
-      for ( int j = 0 ; j <= NNj-1 ; ++j) {
-         delete []Node[i][j]; Node[i][j] = NULL;
+   if (Allocated) {
+      assert(NNi >= 1 && NNj >= 1 && NNk >= 1);
+      for (int i = 0; i <= NNi-1 ; ++i ) {
+         for ( int j = 0 ; j <= NNj-1 ; ++j) {
+            delete []Node[i][j]; Node[i][j] = NULL;
+         } /* endfor */
+         delete []Node[i]; Node[i] = NULL;
+      }/*endfor*/
+      delete []Node; Node = NULL;
+  
+      for (int i = 0; i <= NCi-1; ++i ) {
+         for ( int j = 0 ; j <= NCj -1 ; ++j) {
+            delete []Cell[i][j]; Cell[i][j] = NULL;
+         } /* endfor */
+         delete []Cell[i]; Cell[i] = NULL;
+      }/*endfor*/
+      delete []Cell; Cell = NULL;
+
+      for (int j = 0; j <= NCj-1; ++j ){
+         delete []BCtypeW[j]; BCtypeW[j] = NULL;
+         delete []BCtypeE[j]; BCtypeE[j] = NULL;
       } /* endfor */
- 
-      delete []Node[i]; Node[i] = NULL;
-   }/*endfor*/
-   delete []Node; Node = NULL;
+      delete []BCtypeW; BCtypeW = NULL;
+      delete []BCtypeE; BCtypeE = NULL;
   
-  for (int i = 0; i <= NCi-1; ++i ) {
-    for ( int j = 0 ; j <= NCj -1 ; ++j) {
-      delete []Cell[i][j]; Cell[i][j] = NULL;
-    } /* endfor */
-
-    delete []Cell[i]; Cell[i] = NULL;
-  }/*endfor*/
-
-  delete []Cell; Cell = NULL;
-
-
-  //Boundary faces array
-  for (int j = 0; j <= NCj-1; ++j ){
-     delete []BCtypeW[j]; BCtypeW[j] = NULL;
-     delete []BCtypeE[j]; BCtypeE[j] = NULL;
-  }
-  delete []BCtypeW; BCtypeW = NULL;
-  delete []BCtypeE; BCtypeE = NULL;
-  
-  for (int i = 0; i <= NCi-1; ++i ){
-     delete []BCtypeN[i]; BCtypeN[i] = NULL;
-     delete []BCtypeS[i]; BCtypeS[i] = NULL;
-     delete []BCtypeT[i]; BCtypeT[i] = NULL;
-     delete []BCtypeB[i]; BCtypeB[i] = NULL;
-
-  }
+      for (int i = 0; i <= NCi-1; ++i ){
+         delete []BCtypeN[i]; BCtypeN[i] = NULL;
+         delete []BCtypeS[i]; BCtypeS[i] = NULL;
+         delete []BCtypeT[i]; BCtypeT[i] = NULL;
+         delete []BCtypeB[i]; BCtypeB[i] = NULL;
+      } /* endfor */
    
-  delete []BCtypeN; BCtypeN = NULL; delete []BCtypeS; BCtypeS = NULL; 
-  delete []BCtypeE; BCtypeE = NULL; delete []BCtypeW; BCtypeW = NULL;
-  delete []BCtypeT; BCtypeT = NULL; delete []BCtypeB; BCtypeB = NULL;
+      delete []BCtypeN; BCtypeN = NULL; delete []BCtypeS; BCtypeS = NULL; 
+      delete []BCtypeE; BCtypeE = NULL; delete []BCtypeW; BCtypeW = NULL;
+      delete []BCtypeT; BCtypeT = NULL; delete []BCtypeB; BCtypeB = NULL;
   
-  NNi = 0; INl = 0; INu = 0; NNj = 0; JNl = 0; JNu = 0; NNk = 0; KNl = 0; KNu = 0; 
-  NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; NCk = 0; KCl = 0; KCu = 0;
-  Nghost = 0; Used = 0;
-  
-
-}
-
-/*************************************************************************
- * Grid3D_Hexa_Block::allocateNodes -- Allocate nodes.                   *
- *************************************************************************/
-inline void Grid3D_Hexa_Block::allocateNodes(const int Ni, const int Nj, const int Nk, const int Ng) {
-   assert( Ni > 1 && Nj > 1 && Nk  > 1);
-   NNi = Ni+2*Ng+1; INl = Ng; INu = Ni+Ng; 
-   NNj = Nj+2*Ng+1; JNl = Ng; JNu = Nj+Ng; 
-   NNk = Nk+2*Ng+1; KNl = Ng; KNu = Nk+Ng;
-   Nghost=Ng;
-   Node = new Node3D**[NNi];
-   for (int i = 0; i <= NNi-1 ; ++i ){ 
-      Node[i] = new Node3D*[NNj];
-      for (int j = 0; j <= NNj-1 ; ++j ){ 
-         Node[i][j] = new Node3D[NNk];
-      }
-   }
-}
-
-/*************************************************************************
- * Grid3D_Hexa_Block::deallocateNodes -- Deallocate Nodes.               *
- *************************************************************************/
-inline void Grid3D_Hexa_Block::deallocateNodes(void) {
-  for (int i = 0; i <= NNi-1 ; ++i ) {
-    for ( int j = 0 ; j <= NNj -1 ; ++j) {
-      delete []Node[i][j]; Node[i][j] = NULL;
-    } /* endfor */
-  }/*endfor*/ 
-  for( int i = 0 ; i <= NNi -1; ++i ) {
-    delete []Node[i]; Node[i] = NULL;
-  }/*endfor*/
-  delete []Node; Node = NULL;
-  NNi = 0; INl = 0; INu = 0; NNj = 0; JNl = 0; JNu = 0; NNk = 0 ; 
-  KNl = 0 ; KNu = 0 ;
-  Nghost=0;
-
-  for (int j = 0; j <= NCj-1; ++j ){
-     delete []BCtypeW[j];BCtypeW[j] = NULL; 
-     delete []BCtypeE[j];BCtypeE[j] = NULL; 
-  }
-  delete []BCtypeW; BCtypeW = NULL;
-  delete []BCtypeE; BCtypeE = NULL;
-  
-  for (int i = 0; i <= NCi-1; ++i ){
-     delete []BCtypeN[i];BCtypeN[i] = NULL; 
-     delete []BCtypeS[i];BCtypeS[i] = NULL; 
-     delete []BCtypeT[i];BCtypeT[i] = NULL; 
-     delete []BCtypeB[i];BCtypeB[i] = NULL; 
-  }
-
-  delete []BCtypeN;BCtypeN = NULL; 
-  delete []BCtypeS;BCtypeS = NULL; 
-  delete []BCtypeT;BCtypeT = NULL; 
-  delete []BCtypeB;BCtypeB = NULL; 
-}
-
-/*************************************************************************
- * Grid3D_Hexa_Block::allocateCells -- Allocate cells.                   *
- *************************************************************************/
-inline void Grid3D_Hexa_Block::allocateCells(const int Ni, const int Nj, const int Nk, const int Ng) {
-   assert( Ni > 1 && Nj > 1&& Nk >1);
-   NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1; 
-   NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1; 
-   NCk = Nk+2*Ng; KCl = Ng; KCu = Nk+Ng-1;
-   Nghost=Ng;
-   //dynamically create 3x3 array of type cell
-   Cell = new Cell3D**[NCi];
-   for (int i = 0; i <= NCi-1 ; ++i ){ 
-     Cell[i] = new Cell3D*[NCj];
-     for (int j = 0; j <= NCj-1 ; ++j ){ 
-       Cell[i][j] = new Cell3D[NCk];
-     }
-   }
-}
-
-/*************************************************************************
- * Grid3D_Hexa_Block::deallocateCells -- Deallocate Cells.               *
- *************************************************************************/
-inline void Grid3D_Hexa_Block::deallocateCells(void) {
-  for (int i = 0; i <= NCi-1 ; ++i ) {
-    for ( int j = 0 ; j <= NCj -1 ; ++j) {
-      delete []Cell[i][j]; Cell[i][j] = NULL;
-    } /* endfor */
-  }/*endfor*/ 
-  for( int i = 0 ; i <= NCi -1; ++i ) {
-  
-  delete []Cell[i]; Cell[i] = NULL;
-  }/*endfor*/
-  delete []Cell; Cell = NULL;
-  NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0;
-  NCk = 0 ; KCl = 0 ; KCu = 0 ;
-  Nghost=0;
+      NNi = 0; INl = 0; INu = 0; 
+      NNj = 0; JNl = 0; JNu = 0; 
+      NNk = 0; KNl = 0; KNu = 0; 
+      NCi = 0; ICl = 0; ICu = 0; 
+      NCj = 0; JCl = 0; JCu = 0; 
+      NCk = 0; KCl = 0; KCu = 0;
+      Nghost = 0; Allocated = GRID3D_HEXA_BLOCK_NOT_USED;
+   } /* endif */
 }
 
 /*************************************************************************
@@ -554,18 +507,19 @@ inline void Grid3D_Hexa_Block::deallocateCells(void) {
  *************************************************************************/
 inline Vector3D Grid3D_Hexa_Block::centroid(const Cell3D &Cell) {
     return ((Node[Cell.I][Cell.J+1][Cell.K].X+Node[Cell.I+1][Cell.J+1][Cell.K].X+
-             Node[Cell.I+1][Cell.J][Cell.K].X+Node[Cell.I][Cell.J][Cell.K].X+Node[Cell.I][Cell.J+1][Cell.K+1].X+
-	     Node[Cell.I+1][Cell.J+1][Cell.K+1].X+Node[Cell.I+1][Cell.J][Cell.K+1].X+Node[Cell.I][Cell.J][Cell.K+1].X)/8);
+             Node[Cell.I+1][Cell.J][Cell.K].X+Node[Cell.I][Cell.J][Cell.K].X+
+             Node[Cell.I][Cell.J+1][Cell.K+1].X+Node[Cell.I+1][Cell.J+1][Cell.K+1].X+
+             Node[Cell.I+1][Cell.J][Cell.K+1].X+Node[Cell.I][Cell.J][Cell.K+1].X)/8);
 }
 
 inline Vector3D Grid3D_Hexa_Block::centroid(const int ii, const int jj, const int kk) {
-  return ((Node[ii][jj+1][kk].X+Node[ii+1][jj+1][kk].X+Node[ii+1][jj][kk].X+Node[ii][jj][kk].X+Node[ii][jj+1][kk+1].X+
-	   Node[ii+1][jj+1][kk+1].X+Node[ii+1][jj][kk+1].X+Node[ii][jj][kk+1].X)/8);
+  return ((Node[ii][jj+1][kk].X+Node[ii+1][jj+1][kk].X+Node[ii+1][jj][kk].X+
+           Node[ii][jj][kk].X+Node[ii][jj+1][kk+1].X+Node[ii+1][jj+1][kk+1].X+
+           Node[ii+1][jj][kk+1].X+Node[ii][jj][kk+1].X)/8);
 }
 /*************************************************************************
  * Grid3D_Hexa_Block::centroid -- Cell Volume.                           *
  *************************************************************************/
-
 inline double Grid3D_Hexa_Block::volume(const Cell3D &Cell){
   return (tetvolume(centroid(Cell), nodeNWBot(Cell), nodeNEBot(Cell), xfaceBot(Cell))+
 	  tetvolume(centroid(Cell), nodeNWBot(Cell), nodeSWBot(Cell), xfaceBot(Cell))+
@@ -621,25 +575,21 @@ inline double Grid3D_Hexa_Block::volume(const int ii, const int jj, const int kk
 }
 
 inline Vector3D  Grid3D_Hexa_Block::Voe (const int ii, const int jj, const int kk){
-   
    Vector3D vector;
    vector = centroid(ii+1,jj, kk) - centroid(ii,jj, kk);
    return (vector/vector.abs());
-   
 }
 
 inline Vector3D  Grid3D_Hexa_Block::Von (const int ii, const int jj, const int kk){
    Vector3D vector;
    vector = centroid(ii,jj+1, kk) - centroid(ii,jj, kk);
    return (vector/vector.abs());
-  
 }
 
 inline Vector3D  Grid3D_Hexa_Block::Vot (const int ii, const int jj, const int kk){
    Vector3D vector;
    vector = centroid(ii,jj, kk+1) - centroid(ii,jj, kk);
    return (vector/vector.abs());
-   
 }
 
 inline double  Grid3D_Hexa_Block::delta_oe (const int ii, const int jj, const int kk){
@@ -649,14 +599,12 @@ inline double  Grid3D_Hexa_Block::delta_oe (const int ii, const int jj, const in
 }
 
 inline double  Grid3D_Hexa_Block::delta_on (const int ii, const int jj, const int kk){
-   
    Vector3D vector;
    vector = centroid(ii,jj+1, kk) - centroid(ii,jj, kk);
    return (vector.abs());
 }
 
 inline double  Grid3D_Hexa_Block::delta_ot (const int ii, const int jj, const int kk){
-   
    Vector3D vector;
    vector = centroid(ii,jj, kk+1) - centroid(ii,jj, kk);
    return (vector.abs());
@@ -744,7 +692,6 @@ inline Vector3D Grid3D_Hexa_Block::xfaceN(const int ii, const int jj, const int 
   return ((Node[ii][jj+1][kk].X+Node[ii+1][jj+1][kk].X+
 	   Node[ii+1][jj+1][kk+1].X+Node[ii][jj+1][kk+1].X)/FOUR);
 }
-
 
 inline Vector3D Grid3D_Hexa_Block::xfaceS(const Cell3D &Cell) {
   return ((Node[Cell.I][Cell.J][Cell.K].X+Node[Cell.I+1][Cell.J][Cell.K].X+
@@ -1087,8 +1034,6 @@ inline Vector3D Grid3D_Hexa_Block::nfaceTop(const int ii, const int jj, const in
   return normeq;
 }
 
-
-
 inline Vector3D Grid3D_Hexa_Block::nfaceBot(const Cell3D &Cell) {
   Vector3D n1, n2, n3, n4;
   n1 = ((xfaceBot(Cell)-nodeSWBot(Cell).X)^(nodeSWBot(Cell).X-nodeNWBot(Cell).X));
@@ -1144,6 +1089,7 @@ inline Vector3D Grid3D_Hexa_Block::nfaceBot(const int ii, const int jj, const in
     normeq=normeq/abs(normeq); 
   return normeq; 
 }
+
 /********************************************************
  * Grid3D_Hexa_Block -- Get area of each face           *
  ********************************************************/
@@ -1321,7 +1267,7 @@ inline Grid3D_Hexa_Block operator *(Grid3D_Hexa_Block &G, const double &a) {
 }
 
 inline Grid3D_Hexa_Block operator *(const double &a, Grid3D_Hexa_Block &G) {
- for(int k = G.KNl-G.Nghost; k<=G.KNu+G.Nghost; ++k){
+ for(int k = G.KNl-G.Nghost; k<=G.KNu+G.Nghost; ++k) {
     for (int  j = G.JNl-G.Nghost; j <= G.JNu+G.Nghost; ++j ) {
       for (int i = G.INl-G.Nghost ; i <= G.INu+G.Nghost; ++i ) {
 	G.Node[i][j][k].X = G.Node[i][j][k].X*a;
@@ -1329,7 +1275,7 @@ inline Grid3D_Hexa_Block operator *(const double &a, Grid3D_Hexa_Block &G) {
     } /* endfor */
   }/*endfor */
   
-  for(int k = G.KCl - G.Nghost; k<= G.KCu + G.Nghost; ++k){
+  for(int k = G.KCl - G.Nghost; k<= G.KCu + G.Nghost; ++k) {
     for (int j = G.JCl-G.Nghost ; j <= G.JCu+G.Nghost ; ++j) {
       for (int i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i) {
 	G.Cell[i][j][k].Xc = G.centroid(i, j, k);
@@ -1341,7 +1287,7 @@ inline Grid3D_Hexa_Block operator *(const double &a, Grid3D_Hexa_Block &G) {
 }
 
 inline Grid3D_Hexa_Block operator /(Grid3D_Hexa_Block &G, const double &a) {
-  for(int k = G.KNl-G.Nghost; k<=G.KNu+G.Nghost; ++k){
+  for(int k = G.KNl-G.Nghost; k<=G.KNu+G.Nghost; ++k) {
     for (int  j = G.JNl-G.Nghost; j <= G.JNu+G.Nghost; ++j ) {
       for (int i = G.INl-G.Nghost ; i <= G.INu+G.Nghost; ++i ) {
 	G.Node[i][j][k].X = G.Node[i][j][k].X/a;
@@ -1349,7 +1295,7 @@ inline Grid3D_Hexa_Block operator /(Grid3D_Hexa_Block &G, const double &a) {
     } /* endfor */
   }/*endfor */
   
-  for(int k = G.KCl - G.Nghost; k<= G.KCu + G.Nghost; ++k){
+  for(int k = G.KCl - G.Nghost; k<= G.KCu + G.Nghost; ++k) {
     for (int j = G.JCl-G.Nghost ; j <= G.JCu+G.Nghost ; ++j) {
       for (int i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i) {
 	G.Cell[i][j][k].Xc = G.centroid(i, j, k);
@@ -1365,7 +1311,7 @@ inline Grid3D_Hexa_Block operator ^(Grid3D_Hexa_Block &G, const double &a) {
   double cos_angle, sin_angle; Vector3D X;
   cos_angle = cos(a); sin_angle = sin(a);
   //rotation about the Z-axis
-  for(int k = G.KNl - G.Nghost; k <= G.KNu + G.Nghost; ++k){
+  for(int k = G.KNl - G.Nghost; k <= G.KNu + G.Nghost; ++k) {
     for (int j = G.JNl-G.Nghost ; j <= G.JNu+G.Nghost; ++j ) {
       for (int i = G.INl-G.Nghost ; i <= G.INu+G.Nghost; ++i ) {
 	X.x = G.Node[i][j][k].X.x*cos_angle -
@@ -1381,7 +1327,7 @@ inline Grid3D_Hexa_Block operator ^(Grid3D_Hexa_Block &G, const double &a) {
       } /* endfor */
     } /* endfor */
   } /*endfor*/ 
-  for( int k = G.KCl-G.Nghost; k<= G.KCu + G.Nghost; ++k){
+  for( int k = G.KCl-G.Nghost; k<= G.KCu + G.Nghost; ++k) {
     for (int j = G.JCl-G.Nghost ; j <= G.JCu+G.Nghost ; ++j) {
       for (int i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i) {
 	G.Cell[i][j][k].Xc = G.centroid(i, j, k);
@@ -1394,9 +1340,9 @@ inline Grid3D_Hexa_Block operator ^(Grid3D_Hexa_Block &G, const double &a) {
 
 inline Grid3D_Hexa_Block operator &(Grid3D_Hexa_Block &G, const double &a) {  
   Vector3D X;
- double cos_angle=cos(a);double sin_angle= sin(a);
+  double cos_angle=cos(a);double sin_angle= sin(a);
   //rotation about the X-axis
-  for(int k = G.KNl - G.Nghost; k <= G.KNu + G.Nghost; ++k){
+  for(int k = G.KNl - G.Nghost; k <= G.KNu + G.Nghost; ++k) {
     for (int j = G.JNl-G.Nghost ; j <= G.JNu+G.Nghost; ++j ) {
       for (int i = G.INl-G.Nghost ; i <= G.INu+G.Nghost; ++i ) {
 	X.x = G.Node[i][j][k].X.x +
@@ -1413,7 +1359,7 @@ inline Grid3D_Hexa_Block operator &(Grid3D_Hexa_Block &G, const double &a) {
     } /* endfor */
   } /*endfor*/
  
-  for( int k = G.KCl-G.Nghost; k<= G.KCu + G.Nghost; ++k){
+  for( int k = G.KCl-G.Nghost; k<= G.KCu + G.Nghost; ++k) {
     for (int j = G.JCl-G.Nghost ; j <= G.JCu+G.Nghost ; ++j) {
       for (int i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i) {
 	G.Cell[i][j][k].Xc = G.centroid(i, j, k);
@@ -1422,13 +1368,13 @@ inline Grid3D_Hexa_Block operator &(Grid3D_Hexa_Block &G, const double &a) {
   } /*endfor */
 
   return (G);
-  
 }
+
 inline Grid3D_Hexa_Block operator %(Grid3D_Hexa_Block &G, const double &a) {   
   Vector3D X;
   double cos_angle=cos(a);double  sin_angle= sin(a);
   //rotation about the Y-axis
-  for(int k = G.KNl - G.Nghost; k <= G.KNu + G.Nghost; ++k){
+  for(int k = G.KNl - G.Nghost; k <= G.KNu + G.Nghost; ++k) {
     for (int j = G.JNl-G.Nghost ; j <= G.JNu+G.Nghost; ++j ) {
       for (int i = G.INl-G.Nghost ; i <= G.INu+G.Nghost; ++i ) {
 	X.x = G.Node[i][j][k].X.x*cos_angle +
@@ -1445,7 +1391,7 @@ inline Grid3D_Hexa_Block operator %(Grid3D_Hexa_Block &G, const double &a) {
     } /* endfor */
   } /*endfor*/
   
-  for( int k = G.KCl-G.Nghost; k<= G.KCu + G.Nghost; ++k){
+  for( int k = G.KCl-G.Nghost; k<= G.KCu + G.Nghost; ++k) {
     for (int j = G.JCl-G.Nghost ; j <= G.JCu+G.Nghost ; ++j) {
       for (int i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i) {
 	G.Cell[i][j][k].Xc = G.centroid(i, j, k);
@@ -1461,11 +1407,11 @@ inline Grid3D_Hexa_Block operator %(Grid3D_Hexa_Block &G, const double &a) {
  *************************************************************************/
 inline ostream &operator << (ostream &out_file, 
                              const Grid3D_Hexa_Block &G) {
-
   out_file << G.NNi << " " << G.INl << " " << G.INu << "\n";
   out_file << G.NNj << " " << G.JNl << " " << G.JNu << "\n";
   out_file << G.NNk << " " << G.KNl << " " << G.KNu << "\n";
-  if (G.NNi == 0 || G.NNj == 0 || G.NNk == 0 ) return(out_file);
+  out_file << G.Nghost << "\n";
+  if (G.NNi == 0 || G.NNj == 0 || G.NNk == 0 || G.Nghost == 0) return(out_file);
   out_file << G.NCi << " " << G.ICl << " " << G.ICu << "\n";
   out_file << G.NCj << " " << G.JCl << " " << G.JCu << "\n";
   out_file << G.NCk << " " << G.KCl << " " << G.KCu << "\n";
@@ -1476,26 +1422,21 @@ inline ostream &operator << (ostream &out_file,
       } /* endfor */
     } /* endfor */
   }/*endfor*/
- // boundary values
-  for (int k = G.KCl-G.Nghost ; k<= G.KCu+G.Nghost; ++k )
+  for (int k = G.KCl-G.Nghost ; k<= G.KCu+G.Nghost; ++k ) {
      for (int j = G.JCl-G.Nghost ; j<= G.JCu+G.Nghost; ++j ){
         out_file << G.BCtypeW[j][k]<< " " << G.BCtypeE[j][k]<< "\n";
      } /* endfor */
-  
-  for ( int k = G.KCl-G.Nghost ; k <= G.KCu+G.Nghost ; ++k )
+  } /* endfor */
+  for ( int k = G.KCl-G.Nghost ; k <= G.KCu+G.Nghost ; ++k ) {
      for ( int i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i ) {
         out_file << G.BCtypeS[i][k]<< " " << G.BCtypeN[i][k]<< "\n";
-        
      } /* endfor */
-  
-  for ( int j = G.JCl-G.Nghost ; j <= G.JCu+G.Nghost ; ++j )
+  } /* endfor */
+  for ( int j = G.JCl-G.Nghost ; j <= G.JCu+G.Nghost ; ++j ) {
      for ( int i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i ) {
         out_file << G.BCtypeB[i][j]<< " " << G.BCtypeT[i][j]<< "\n" ;
-        
-
      } /* endfor */
-
-
+  } /* endfor */
   return (out_file);
 }
 
@@ -1504,15 +1445,17 @@ inline istream &operator >> (istream &in_file,
    int i, j, k, ni, il, iu, nj, jl, ju, nk, kl, ku;
    int ng;
    in_file.setf(ios::skipws);
-   in_file >> ni >> il >> iu; in_file >> nj >> jl >> ju; in_file >> nk >> kl >> ku;
-   ng = 2;
+   in_file >> ni >> il >> iu; 
+   in_file >> nj >> jl >> ju; 
+   in_file >> nk >> kl >> ku;
+   in_file >> ng;
    in_file.unsetf(ios::skipws);
-   if (ni == 0 || nj == 0|| nk == 0) {
-      if (G.Node != NULL) G.deallocate(); return(in_file);
+   if (ni == 0 || nj == 0|| nk == 0|| ng == 0) {
+      if (G.Allocated) G.deallocate(); return(in_file);
    } /* endif */
-   if (G.Node == NULL || G.Cell == NULL || G.NNi != ni || G.NNj != nj || G.NNk != nk) {
-      if (G.Node != NULL) G.deallocate(); 
-      G.allocate(ni - (2*ng+1), nj - (2*ng+1), nk - (2*ng+1), ng);
+   if (!G.Allocated || G.NNi != ni || G.NNj != nj || G.NNk != nk || G.Nghost != ng) {
+      if (G.Allocated) G.deallocate(); 
+      G.allocate(ni-(2*ng+1), nj-(2*ng+1), nk-(2*ng+1), ng);
    } /* endif */
    in_file.setf(ios::skipws);
    in_file >> ni >> il >> iu; in_file >> nj >> jl >> ju; in_file >> nk >> kl >> ku;
@@ -1535,34 +1478,28 @@ inline istream &operator >> (istream &in_file,
       } /* endfor */
     } /* endfor */
   }/* endfor */
-
- // boundary values
-  for (int k = G.KCl-G.Nghost ; k<= G.KCu+G.Nghost; ++k )
+  for (int k = G.KCl-G.Nghost ; k<= G.KCu+G.Nghost; ++k ) {
      for (int j = G.JCl-G.Nghost ; j<= G.JCu+G.Nghost; ++j ){
         in_file.setf(ios::skipws);
         in_file >> G.BCtypeW[j][k] >> G.BCtypeE[j][k];
         in_file.unsetf(ios::skipws);
       } /* endfor */
-    
-  for ( int k = G.KCl-G.Nghost ; k <= G.KCu+G.Nghost ; ++k )
+  } /* endfor */  
+  for ( int k = G.KCl-G.Nghost ; k <= G.KCu+G.Nghost ; ++k ) {
      for ( int i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i ) {
         in_file.setf(ios::skipws);
         in_file >> G.BCtypeS[i][k] >> G.BCtypeN[i][k];
         in_file.unsetf(ios::skipws);
-        
      } /* endfor */
-
-   for ( int j = G.JCl-G.Nghost ; j <= G.JCu+G.Nghost ; ++j )
-      for ( int i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i ) {
-         in_file.setf(ios::skipws);
-         in_file >> G.BCtypeB[i][j] >> G.BCtypeT[i][j] ;
-         in_file.unsetf(ios::skipws);
-         
-
-      } /* endfor */
-
-
+  } /* endfor */  
+  for ( int j = G.JCl-G.Nghost ; j <= G.JCu+G.Nghost ; ++j ) {
+     for ( int i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i ) {
+        in_file.setf(ios::skipws);
+        in_file >> G.BCtypeB[i][j] >> G.BCtypeT[i][j] ;
+        in_file.unsetf(ios::skipws);
+     } /* endfor */
+  } /* endfor */
   return (in_file);
 }
 
-#endif /* _GRID3D_HEXA_BLOCK_INCLUDED  */
+#endif // _GRID3D_HEXA_BLOCK_INCLUDED

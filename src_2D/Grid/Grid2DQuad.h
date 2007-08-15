@@ -1802,12 +1802,32 @@ extern Grid2D_Quad_Block** Grid_Adiabatic_Couette(Grid2D_Quad_Block **Grid_ptr,
 						  const int Number_of_Cells_Jdir,
 						  const int Number_of_Ghost_Cells);
 
+extern Grid2D_Quad_Block** Grid_Tube_2D(Grid2D_Quad_Block **Grid_ptr,
+				        int &Number_of_Blocks_Idir,
+				        int &Number_of_Blocks_Jdir,
+				        const double &Radius,
+				        const int Number_of_Cells_Idir,
+				        const int Number_of_Cells_Jdir,
+				        const int Number_of_Ghost_Cells,
+                                        const int i_Stretching_Radial_Dir,
+				        const double &Stretching_Radial_Dir);
+
+extern Grid2D_Quad_Block** Grid_Annulus_2D(Grid2D_Quad_Block **Grid_ptr,
+				           int &Number_of_Blocks_Idir,
+				           int &Number_of_Blocks_Jdir,
+				           const double &Radius_Inner,
+				           const double &Radius_Outer,
+				           const int Number_of_Cells_Idir,
+				           const int Number_of_Cells_Jdir,
+				           const int Number_of_Ghost_Cells,
+                                           const int i_Stretching_Radial_Dir,
+				           const double &Stretching_Radial_Dir);
+
 //  The following four functions are used by the Newton-Krylov-Schwarz code.
 //  They are functions of geometry and so Grid2D_Quad_Block only. They are
 //  not templated since they are specific to the Grid2D_Quad_Block but can
 //  be used by any solution block class simply by calling with
 //  SolnBlk.Grid as an argument.
-
 void node_weights(double *LL, double *RR, 
 		int Orient_face, int Rii, int Rjj, int Orient_cell,
 		const Grid2D_Quad_Block &Grid);

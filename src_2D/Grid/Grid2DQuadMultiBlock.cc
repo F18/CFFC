@@ -7956,3 +7956,359 @@ Grid2D_Quad_Block** Grid_Adiabatic_Couette(Grid2D_Quad_Block **Grid_ptr,
 
 }
 
+
+/********************************************************
+ * Routine: Grid_Tube_2D                                *
+ ********************************************************/
+Grid2D_Quad_Block** Grid_Tube_2D(Grid2D_Quad_Block **Grid_ptr,
+                                 int &Number_of_Blocks_Idir,
+                                 int &Number_of_Blocks_Jdir,
+                                 const double &Radius,
+ 		                 const int Number_of_Cells_Idir,
+		                 const int Number_of_Cells_Jdir,
+			         const int Number_of_Ghost_Cells,
+                                 const int i_Stretching_Radial_Dir,
+                                 const double &Stretching_Radial_Dir) {
+
+    int iBlk, Stretch_I, Stretch_J,
+        Orthogonal_North, Orthogonal_South,
+        Orthogonal_East, Orthogonal_West;
+    double Beta_I, Tau_I, Beta_J, Tau_J;
+    Vector2D x1, x2;
+    Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
+    Spline2D Bnd_Spline_North, Bnd_Spline_South,
+             Bnd_Spline_East, Bnd_Spline_West;
+
+    Number_of_Blocks_Idir = 5;
+    Number_of_Blocks_Jdir = 1;
+    Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
+                                         Number_of_Blocks_Idir, 
+                                         Number_of_Blocks_Jdir);
+
+    /* Create the mesh for each block representing
+       the complete grid. */
+
+    xc_NW = Vector2D(-0.35*Radius,  0.35*Radius);
+    xc_NE = Vector2D( 0.35*Radius,  0.35*Radius);
+    xc_SE = Vector2D( 0.35*Radius, -0.35*Radius);
+    xc_SW = Vector2D(-0.35*Radius, -0.35*Radius);
+
+    for ( iBlk = 0; iBlk <= Number_of_Blocks_Idir-1; ++iBlk ) {
+        /* Create the splines defining the north, south,
+           east, and west boundaries of the grid. */
+
+        if (iBlk == 0) {
+           Create_Spline_Line(Bnd_Spline_North, xc_NW, xc_NE, 2);
+           Create_Spline_Line(Bnd_Spline_South, xc_SW, xc_SE, 2);
+           Create_Spline_Line(Bnd_Spline_East, xc_SE, xc_NE, 2);
+           Create_Spline_Line(Bnd_Spline_West, xc_SW, xc_NW, 2);
+
+        } else if (iBlk == 1) {
+           x1 = Vector2D(ZERO,ZERO);
+           Create_Spline_Circular_Arc(Bnd_Spline_North,
+	      		              x1,
+			              Radius,
+                                      135.00,
+			              45.00,
+  	                              181);
+           Create_Spline_Line(Bnd_Spline_South, xc_NW, xc_NE, 2);
+           x2 = Bnd_Spline_North.Xp[0];
+           Create_Spline_Line(Bnd_Spline_West, xc_NW, x2, 2);
+           x2 = Bnd_Spline_North.Xp[Bnd_Spline_North.np-1];
+           Create_Spline_Line(Bnd_Spline_East, xc_NE, x2, 2);
+
+        } else if (iBlk == 2) {
+           x1 = Vector2D(ZERO,ZERO);
+           Create_Spline_Circular_Arc(Bnd_Spline_North,
+	      		              x1,
+			              Radius,
+                                      45.00,
+			              -45.00,
+  	                              181);
+           Create_Spline_Line(Bnd_Spline_South, xc_NE, xc_SE, 2);
+           x2 = Bnd_Spline_North.Xp[0];
+           Create_Spline_Line(Bnd_Spline_West, xc_NE, x2, 2);
+           x2 = Bnd_Spline_North.Xp[Bnd_Spline_North.np-1];
+           Create_Spline_Line(Bnd_Spline_East, xc_SE, x2, 2);
+
+        } else if (iBlk == 3) {
+           x1 = Vector2D(ZERO,ZERO);
+           Create_Spline_Circular_Arc(Bnd_Spline_North,
+	      		              x1,
+			              Radius,
+                                      -45.00,
+			              -135.00,
+  	                              181);
+           Create_Spline_Line(Bnd_Spline_South, xc_SE, xc_SW, 2);
+           x2 = Bnd_Spline_North.Xp[0];
+           Create_Spline_Line(Bnd_Spline_West, xc_SE, x2, 2);
+           x2 = Bnd_Spline_North.Xp[Bnd_Spline_North.np-1];
+           Create_Spline_Line(Bnd_Spline_East, xc_SW, x2, 2);
+
+        } else if (iBlk == 4) {
+           x1 = Vector2D(ZERO,ZERO);
+           Create_Spline_Circular_Arc(Bnd_Spline_North,
+	      		              x1,
+			              Radius,
+                                      -135.00,
+			              -225.00,
+  	                              181);
+           Create_Spline_Line(Bnd_Spline_South, xc_SW, xc_NW, 2);
+           x2 = Bnd_Spline_North.Xp[0];
+           Create_Spline_Line(Bnd_Spline_West, xc_SW, x2, 2);
+           x2 = Bnd_Spline_North.Xp[Bnd_Spline_North.np-1];
+           Create_Spline_Line(Bnd_Spline_East, xc_NW, x2, 2);
+
+        } /* endif */
+
+        /* Set the boundary condition types for each of the
+           boundary splines. */
+
+        Bnd_Spline_North.setBCtype(BC_NONE);
+        Bnd_Spline_South.setBCtype(BC_NONE);
+        Bnd_Spline_East.setBCtype(BC_NONE);
+        Bnd_Spline_West.setBCtype(BC_NONE);
+
+        /* Assign values to the stretching function parameters
+           and boundary grid line orthogonality parameters. */
+
+        if (iBlk == 0) {
+ 	  Stretch_I = STRETCHING_FCN_LINEAR;
+           Beta_I = ZERO;
+           Tau_I = ZERO;
+           Stretch_J = STRETCHING_FCN_LINEAR;
+           Beta_J = ZERO;
+           Tau_J = ZERO;
+
+        } else {
+           Stretch_I = STRETCHING_FCN_LINEAR;
+           Beta_I = ZERO;
+           Tau_I = ZERO;
+           Stretch_J = i_Stretching_Radial_Dir;
+           Beta_J = Stretching_Radial_Dir;
+           Tau_J = ZERO;
+
+        } /* endif */
+
+	Orthogonal_North = 0;
+	Orthogonal_South = 0;
+	Orthogonal_East = 0;
+	Orthogonal_West = 0;
+
+        /* Create the 2D quadrilateral grid block. */
+
+        Create_Quad_Block(Grid_ptr[iBlk][0],
+                          Bnd_Spline_North,
+                          Bnd_Spline_South,
+                          Bnd_Spline_East,
+                          Bnd_Spline_West,
+                          Number_of_Cells_Idir,
+  	                  Number_of_Cells_Jdir,
+			  Number_of_Ghost_Cells,
+                          GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+                          Stretch_I,
+                          Beta_I, 
+                          Tau_I,
+                          Stretch_J,
+                          Beta_J,
+                          Tau_J,
+                          Orthogonal_North,
+		          Orthogonal_South,
+     		          Orthogonal_East,
+                          Orthogonal_West);
+
+        /* Deallocate the memory for the boundary splines. */
+
+        Bnd_Spline_North.deallocate();
+        Bnd_Spline_South.deallocate();
+        Bnd_Spline_East.deallocate();
+        Bnd_Spline_West.deallocate();
+
+    } /* endfor */
+
+    /* Return the grid. */
+
+    return(Grid_ptr);
+
+}
+
+/********************************************************
+ * Routine: Grid_Annulus_2D                             *
+ ********************************************************/
+Grid2D_Quad_Block** Grid_Annulus_2D(Grid2D_Quad_Block **Grid_ptr,
+                                    int &Number_of_Blocks_Idir,
+                                    int &Number_of_Blocks_Jdir,
+                                    const double &Radius_Inner,
+                                    const double &Radius_Outer,
+ 		                    const int Number_of_Cells_Idir,
+		                    const int Number_of_Cells_Jdir,
+			            const int Number_of_Ghost_Cells,
+                                    const int i_Stretching_Radial_Dir,
+				    const double &Stretching_Radial_Dir) {
+
+    int iBlk, Stretch_I, Stretch_J,
+        Orthogonal_North, Orthogonal_South,
+        Orthogonal_East, Orthogonal_West;
+    double Beta_I, Tau_I, Beta_J, Tau_J;
+    Vector2D x1, x2;
+    Spline2D Bnd_Spline_North, Bnd_Spline_South,
+             Bnd_Spline_East, Bnd_Spline_West;
+
+    Number_of_Blocks_Idir = 4;
+    Number_of_Blocks_Jdir = 1;
+    Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
+                                         Number_of_Blocks_Idir, 
+                                         Number_of_Blocks_Jdir);
+
+    /* Create the mesh for each block representing
+       the complete grid. */
+
+    for ( iBlk = 0; iBlk <= Number_of_Blocks_Idir-1; ++iBlk ) {
+        /* Create the splines defining the north, south,
+           east, and west boundaries of the grid. */
+
+        if (iBlk == 0) {
+           x1 = Vector2D(ZERO,ZERO);
+           Create_Spline_Circular_Arc(Bnd_Spline_North,
+	      		              x1,
+			              Radius_Outer,
+                                      135.00,
+			              45.00,
+  	                              181);
+           Create_Spline_Circular_Arc(Bnd_Spline_South,
+	      		              x1,
+			              Radius_Inner,
+                                      135.00,
+			              45.00,
+  	                              181);
+           x1 = Bnd_Spline_South.Xp[0];
+           x2 = Bnd_Spline_North.Xp[0];
+           Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+           x1 = Bnd_Spline_South.Xp[Bnd_Spline_South.np-1];
+           x2 = Bnd_Spline_North.Xp[Bnd_Spline_North.np-1];
+           Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+
+        } else if (iBlk == 1) {
+           x1 = Vector2D(ZERO,ZERO);
+           Create_Spline_Circular_Arc(Bnd_Spline_North,
+	      		              x1,
+			              Radius_Outer,
+                                      45.00,
+			              -45.00,
+  	                              181);
+           Create_Spline_Circular_Arc(Bnd_Spline_South,
+	      		              x1,
+			              Radius_Inner,
+                                      45.00,
+			              -45.00,
+  	                              181);
+           x1 = Bnd_Spline_South.Xp[0];
+           x2 = Bnd_Spline_North.Xp[0];
+           Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+           x1 = Bnd_Spline_South.Xp[Bnd_Spline_South.np-1];
+           x2 = Bnd_Spline_North.Xp[Bnd_Spline_North.np-1];
+           Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+
+        } else if (iBlk == 2) {
+           x1 = Vector2D(ZERO,ZERO);
+           Create_Spline_Circular_Arc(Bnd_Spline_North,
+	      		              x1,
+			              Radius_Outer,
+                                      -45.00,
+			              -135.00,
+  	                              181);
+           Create_Spline_Circular_Arc(Bnd_Spline_South,
+	      		              x1,
+			              Radius_Inner,
+                                      -45.00,
+			              -135.00,
+  	                              181);
+           x1 = Bnd_Spline_South.Xp[0];
+           x2 = Bnd_Spline_North.Xp[0];
+           Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+           x1 = Bnd_Spline_South.Xp[Bnd_Spline_South.np-1];
+           x2 = Bnd_Spline_North.Xp[Bnd_Spline_North.np-1];
+           Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+
+        } else if (iBlk == 3) {
+           x1 = Vector2D(ZERO,ZERO);
+           Create_Spline_Circular_Arc(Bnd_Spline_North,
+	      		              x1,
+			              Radius_Outer,
+                                      -135.00,
+			              -225.00,
+  	                              181);
+           Create_Spline_Circular_Arc(Bnd_Spline_South,
+	      		              x1,
+			              Radius_Inner,
+                                      -135.00,
+			              -225.00,
+  	                              181);
+           x1 = Bnd_Spline_South.Xp[0];
+           x2 = Bnd_Spline_North.Xp[0];
+           Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+           x1 = Bnd_Spline_South.Xp[Bnd_Spline_South.np-1];
+           x2 = Bnd_Spline_North.Xp[Bnd_Spline_North.np-1];
+           Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+
+        } /* endif */
+
+        /* Set the boundary condition types for each of the
+           boundary splines. */
+
+        Bnd_Spline_North.setBCtype(BC_NONE);
+        Bnd_Spline_South.setBCtype(BC_NONE);
+        Bnd_Spline_East.setBCtype(BC_NONE);
+        Bnd_Spline_West.setBCtype(BC_NONE);
+
+        /* Assign values to the stretching function parameters
+           and boundary grid line orthogonality parameters. */
+
+        Stretch_I = STRETCHING_FCN_LINEAR;
+        Beta_I = ZERO;
+        Tau_I = ZERO;
+        Stretch_J = i_Stretching_Radial_Dir;
+        Beta_J = Stretching_Radial_Dir;
+        Tau_J = ZERO;
+
+	Orthogonal_North = 0;
+	Orthogonal_South = 0;
+	Orthogonal_East = 0;
+	Orthogonal_West = 0;
+
+        /* Create the 2D quadrilateral grid block. */
+
+        Create_Quad_Block(Grid_ptr[iBlk][0],
+                          Bnd_Spline_North,
+                          Bnd_Spline_South,
+                          Bnd_Spline_East,
+                          Bnd_Spline_West,
+                          Number_of_Cells_Idir,
+  	                  Number_of_Cells_Jdir,
+			  Number_of_Ghost_Cells,
+                          GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+                          Stretch_I,
+                          Beta_I, 
+                          Tau_I,
+                          Stretch_J,
+                          Beta_J,
+                          Tau_J,
+                          Orthogonal_North,
+		          Orthogonal_South,
+     		          Orthogonal_East,
+                          Orthogonal_West);
+
+        /* Deallocate the memory for the boundary splines. */
+
+        Bnd_Spline_North.deallocate();
+        Bnd_Spline_South.deallocate();
+        Bnd_Spline_East.deallocate();
+        Bnd_Spline_West.deallocate();
+
+    } /* endfor */
+
+    /* Return the grid. */
+
+    return(Grid_ptr);
+
+}

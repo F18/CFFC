@@ -131,68 +131,68 @@ int Hexa_Block<NavierStokes3D_ThermallyPerfect_pState,
             
                
                /* Evaluate the cell interface i-direction fluxes. */
-               if (i ==  ICl-1 &&  (Grid->BCtypeW[j][k] == BC_REFLECTION ||
-                                    Grid->BCtypeW[j][k] == BC_NO_SLIP||
-                                    Grid->BCtypeW[j][k] == BC_MOVING_WALL)  ) {
+               if (i ==  ICl-1 &&  (Grid.BCtypeW[j][k] == BC_REFLECTION ||
+                                    Grid.BCtypeW[j][k] == BC_NO_SLIP||
+                                    Grid.BCtypeW[j][k] == BC_MOVING_WALL)  ) {
                 
                   
                   
-                  dX =  Grid->xfaceW(i+1, j, k)- Grid->Cell[i+1][j][k].Xc;
+                  dX =  Grid.xfaceW(i+1, j, k)- Grid.Cell[i+1][j][k].Xc;
                   
                   Wr =  W[i+1][j][k] + 
                      ( phi[i+1][j][k]^dWdx[i+1][j][k])*dX.x +
                      ( phi[i+1][j][k]^dWdy[i+1][j][k])*dX.y +
                      ( phi[i+1][j][k]^dWdz[i+1][j][k])*dX.z;
                   
-                  if ( Grid->BCtypeW[j][k] == BC_REFLECTION) {
-                     Wl =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wr,  Grid->nfaceW(i+1, j, k));
+                  if ( Grid.BCtypeW[j][k] == BC_REFLECTION) {
+                     Wl =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wr,  Grid.nfaceW(i+1, j, k));
                      
                      
                   }
-                  if ( Grid->BCtypeW[j][k] == BC_NO_SLIP) {
-                     Wl =  NavierStokes3D_ThermallyPerfect_pState::No_Slip(Wr, WoW[j][k], Grid->nfaceW(i+1, j, k), 
+                  if ( Grid.BCtypeW[j][k] == BC_NO_SLIP) {
+                     Wl =  NavierStokes3D_ThermallyPerfect_pState::No_Slip(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k), 
                                                                            IPs.Pressure_Gradient,
                                                                            FIXED_TEMPERATURE_WALL);
                      
                   }
-                  if ( Grid->BCtypeW[j][k] == BC_MOVING_WALL) {
-                     Wl =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wr, WoW[j][k], Grid->nfaceW(i+1, j, k),
+                  if ( Grid.BCtypeW[j][k] == BC_MOVING_WALL) {
+                     Wl =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k),
                                                                                IPs.Moving_wall_velocity,
                                                                                IPs.Pressure_Gradient,
                                                                                FIXED_TEMPERATURE_WALL);
                  
                   }
                } else if (i ==  ICu && 
-                          ( Grid->BCtypeE[j][k] == BC_REFLECTION||
-                            Grid->BCtypeE[j][k] == BC_NO_SLIP||
-                            Grid->BCtypeE[j][k] == BC_MOVING_WALL)) {
+                          ( Grid.BCtypeE[j][k] == BC_REFLECTION||
+                            Grid.BCtypeE[j][k] == BC_NO_SLIP||
+                            Grid.BCtypeE[j][k] == BC_MOVING_WALL)) {
                   
-                  dX =  Grid->xfaceE(i, j, k)- Grid->Cell[i][j][k].Xc;
+                  dX =  Grid.xfaceE(i, j, k)- Grid.Cell[i][j][k].Xc;
                   Wl =  W[i][j][k] + 
                      ( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
                      ( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
                      ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
-                  if ( Grid->BCtypeE[j][k] == BC_REFLECTION) {
-                     Wr =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wl,  Grid->nfaceE(i, j, k));
+                  if ( Grid.BCtypeE[j][k] == BC_REFLECTION) {
+                     Wr =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wl,  Grid.nfaceE(i, j, k));
                   } 
-                  if ( Grid->BCtypeE[j][k] == BC_NO_SLIP) {
-                     Wr =  NavierStokes3D_ThermallyPerfect_pState::No_Slip(Wl, WoE[j][k], Grid->nfaceE(i, j, k),  
+                  if ( Grid.BCtypeE[j][k] == BC_NO_SLIP) {
+                     Wr =  NavierStokes3D_ThermallyPerfect_pState::No_Slip(Wl, WoE[j][k], Grid.nfaceE(i, j, k),  
                                                                            IPs.Pressure_Gradient,
                                                                            FIXED_TEMPERATURE_WALL);
                   } 
-                  if ( Grid->BCtypeE[j][k] == BC_MOVING_WALL) {
-                     Wr =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wl, WoE[j][k], Grid->nfaceE(i, j, k),  
+                  if ( Grid.BCtypeE[j][k] == BC_MOVING_WALL) {
+                     Wr =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wl, WoE[j][k], Grid.nfaceE(i, j, k),  
                                                                                IPs.Moving_wall_velocity,
                                                                                IPs.Pressure_Gradient,
                                                                                FIXED_TEMPERATURE_WALL);
                   } 
                } else {            
-                  dX =  Grid->xfaceE(i, j, k)- Grid->Cell[i][j][k].Xc;
+                  dX =  Grid.xfaceE(i, j, k)- Grid.Cell[i][j][k].Xc;
                   Wl =  W[i][j][k] + 
                      ( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
                      ( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
                      ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
-                  dX =  Grid->xfaceW(i+1, j, k)- Grid->Cell[i+1][j][k].Xc;
+                  dX =  Grid.xfaceW(i+1, j, k)- Grid.Cell[i+1][j][k].Xc;
                   Wr =  W[i+1][j][k] + 
                      ( phi[i+1][j][k]^ dWdx[i+1][j][k])*dX.x +
                      ( phi[i+1][j][k]^ dWdy[i+1][j][k])*dX.y +
@@ -203,13 +203,13 @@ int Hexa_Block<NavierStokes3D_ThermallyPerfect_pState,
                switch(IPs.i_Flux_Function) {
                case FLUX_FUNCTION_HLLE :
                   
-                  Flux =  NavierStokes3D_ThermallyPerfect_pState::FluxHLLE_n(Wl, Wr,  Grid->nfaceE(i, j, k));
+                  Flux =  NavierStokes3D_ThermallyPerfect_pState::FluxHLLE_n(Wl, Wr,  Grid.nfaceE(i, j, k));
                   
                 
                   break;
                case FLUX_FUNCTION_ROE :
                       
-                  Flux =  NavierStokes3D_ThermallyPerfect_pState::FluxRoe_n(Wl, Wr,  Grid->nfaceE(i, j, k));
+                  Flux =  NavierStokes3D_ThermallyPerfect_pState::FluxRoe_n(Wl, Wr,  Grid.nfaceE(i, j, k));
                      
                   break;
                   
@@ -219,29 +219,29 @@ int Hexa_Block<NavierStokes3D_ThermallyPerfect_pState,
                Flux -=  NavierStokes3D_ThermallyPerfect_pState::FluxViscous_n(Wl, Wr,W[i][j][k], W[i+1][j][k], 
                                      dWdx[i][j][k], dWdy[i][j][k],dWdz[i][j][k],
                                      dWdx[i+1][j][k], dWdy[i+1][j][k],dWdz[i+1][j][k],
-                                     Grid->nfaceE(i, j, k), Grid->Voe(i, j, k),  
-                                     Grid->delta_oe(i, j, k),
-                                     Grid->volume(i, j, k), 
-                                     Grid->volume(i+1, j, k));
+                                     Grid.nfaceE(i, j, k), Grid.Voe(i, j, k),  
+                                     Grid.delta_oe(i, j, k),
+                                     Grid.volume(i, j, k), 
+                                     Grid.volume(i+1, j, k));
                
                /* Evaluate cell-averaged solution changes. */
                
                 dUdt[i][j][k][k_residual] -= 
                   (IPs.CFL_Number* dt[i][j][k])*
-                  Flux* Grid->AfaceE(i, j, k)/
-                   Grid->volume(i, j, k);
+                  Flux* Grid.AfaceE(i, j, k)/
+                   Grid.volume(i, j, k);
                  dUdt[i+1][j][k][k_residual] += 
                    (IPs.CFL_Number* dt[i+1][j][k])*
-                   Flux* Grid->AfaceW(i+1, j, k)/
-                    Grid->volume(i+1, j ,k);
+                   Flux* Grid.AfaceW(i+1, j, k)/
+                    Grid.volume(i+1, j ,k);
                 
                             
                 /* Save west and east face boundary flux. */
                 
                 //    if (i ==  ICl-1) {
-//                     FluxW[j] = -Flux* Grid->lfaceW(i+1, j);
+//                     FluxW[j] = -Flux* Grid.lfaceW(i+1, j);
 //                 } else if (i ==  ICu) {
-//                     FluxE[j] = Flux* Grid->lfaceE(i, j);
+//                     FluxE[j] = Flux* Grid.lfaceE(i, j);
 //                 } /* endif */ 
                 
              } /* endif */
@@ -262,61 +262,61 @@ int Hexa_Block<NavierStokes3D_ThermallyPerfect_pState,
              
              /* Evaluate the cell interface j-direction fluxes. */
              if (j ==  JCl-1 && 
-                 ( Grid->BCtypeS[i][k] == BC_REFLECTION ||
-                   Grid->BCtypeS[i][k] == BC_NO_SLIP||
-                   Grid->BCtypeS[i][k] == BC_MOVING_WALL)) {
+                 ( Grid.BCtypeS[i][k] == BC_REFLECTION ||
+                   Grid.BCtypeS[i][k] == BC_NO_SLIP||
+                   Grid.BCtypeS[i][k] == BC_MOVING_WALL)) {
                 
-                dX =  Grid->xfaceS(i, j+1, k)- Grid->Cell[i][j+1][k].Xc;
+                dX =  Grid.xfaceS(i, j+1, k)- Grid.Cell[i][j+1][k].Xc;
                 Wr =  W[i][j+1][k] +
                    ( phi[i][j+1][k]^ dWdx[i][j+1][k])*dX.x +
                    ( phi[i][j+1][k]^ dWdy[i][j+1][k])*dX.y+
                    ( phi[i][j+1][k]^ dWdz[i][j+1][k])*dX.z;
-                if ( Grid->BCtypeS[i][k] == BC_REFLECTION) {
-                   Wl =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wr,  Grid->nfaceS(i, j+1, k));
+                if ( Grid.BCtypeS[i][k] == BC_REFLECTION) {
+                   Wl =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wr,  Grid.nfaceS(i, j+1, k));
                 }
-                if ( Grid->BCtypeS[i][k] == BC_NO_SLIP) {
-                   Wl =  NavierStokes3D_ThermallyPerfect_pState::No_Slip(Wr, WoS[i][k], Grid->nfaceS(i, j+1, k),
+                if ( Grid.BCtypeS[i][k] == BC_NO_SLIP) {
+                   Wl =  NavierStokes3D_ThermallyPerfect_pState::No_Slip(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
                                                                          IPs.Pressure_Gradient,
                                                                          FIXED_TEMPERATURE_WALL);
                 }
-                if ( Grid->BCtypeS[i][k] == BC_MOVING_WALL) {
-                   Wl =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wr, WoS[i][k], Grid->nfaceS(i, j+1, k),
+                if ( Grid.BCtypeS[i][k] == BC_MOVING_WALL) {
+                   Wl =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
                                                                              IPs.Pressure_Gradient,
                                                                              IPs.Moving_wall_velocity,
                                                                              FIXED_TEMPERATURE_WALL);
                 }
 
              } else if (j ==  JCu && 
-                        ( Grid->BCtypeN[i][k] == BC_REFLECTION ||
-                          Grid->BCtypeN[i][k] == BC_NO_SLIP||
-                          Grid->BCtypeN[i][k] == BC_MOVING_WALL)) {
+                        ( Grid.BCtypeN[i][k] == BC_REFLECTION ||
+                          Grid.BCtypeN[i][k] == BC_NO_SLIP||
+                          Grid.BCtypeN[i][k] == BC_MOVING_WALL)) {
                 
-                dX =  Grid->xfaceN(i, j, k)- Grid->Cell[i][j][k].Xc;
+                dX =  Grid.xfaceN(i, j, k)- Grid.Cell[i][j][k].Xc;
                 Wl =  W[i][j][k] + 
                    ( phi[i][j][k]^ dWdx[i][j][k])*dX.x+
                    ( phi[i][j][k]^ dWdy[i][j][k])*dX.y+
                    ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
-                if ( Grid->BCtypeN[i][k] == BC_REFLECTION) {
-                   Wr =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wl,  Grid->nfaceN(i, j, k));
+                if ( Grid.BCtypeN[i][k] == BC_REFLECTION) {
+                   Wr =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wl,  Grid.nfaceN(i, j, k));
                 }
-                if ( Grid->BCtypeN[i][k] == BC_NO_SLIP) {
-                   Wr =  NavierStokes3D_ThermallyPerfect_pState::No_Slip(Wl, WoN[i][k], Grid->nfaceN(i, j, k),
+                if ( Grid.BCtypeN[i][k] == BC_NO_SLIP) {
+                   Wr =  NavierStokes3D_ThermallyPerfect_pState::No_Slip(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
                                                                          IPs.Pressure_Gradient,
                                                                          FIXED_TEMPERATURE_WALL );
                 }
-                if ( Grid->BCtypeN[i][k] == BC_MOVING_WALL) {
-                   Wr =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wl, WoN[i][k], Grid->nfaceN(i, j, k),
+                if ( Grid.BCtypeN[i][k] == BC_MOVING_WALL) {
+                   Wr =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
                                                                              IPs.Moving_wall_velocity,
                                                                              IPs.Pressure_Gradient,
                                                                              FIXED_TEMPERATURE_WALL );
                 }
              } else {
-                dX =  Grid->xfaceN(i, j, k)- Grid->Cell[i][j][k].Xc;
+                dX =  Grid.xfaceN(i, j, k)- Grid.Cell[i][j][k].Xc;
                 Wl =  W[i][j][k] + 
                    ( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
                    ( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
                    ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
-                dX =  Grid->xfaceS(i, j+1, k)- Grid->Cell[i][j+1][k].Xc;
+                dX =  Grid.xfaceS(i, j+1, k)- Grid.Cell[i][j+1][k].Xc;
                 Wr =  W[i][j+1][k] +
                    ( phi[i][j+1][k]^ dWdx[i][j+1][k])*dX.x +
                    ( phi[i][j+1][k]^ dWdy[i][j+1][k])*dX.y +
@@ -325,11 +325,11 @@ int Hexa_Block<NavierStokes3D_ThermallyPerfect_pState,
 
              switch(IPs.i_Flux_Function) {
              case FLUX_FUNCTION_HLLE :
-                Flux =  NavierStokes3D_ThermallyPerfect_pState::FluxHLLE_n(Wl, Wr,  Grid->nfaceN(i, j, k));
+                Flux =  NavierStokes3D_ThermallyPerfect_pState::FluxHLLE_n(Wl, Wr,  Grid.nfaceN(i, j, k));
                 break;
              case FLUX_FUNCTION_ROE :
                             
-                Flux =  NavierStokes3D_ThermallyPerfect_pState::FluxRoe_n(Wl, Wr,  Grid->nfaceN(i, j, k));
+                Flux =  NavierStokes3D_ThermallyPerfect_pState::FluxRoe_n(Wl, Wr,  Grid.nfaceN(i, j, k));
 
                 break;
                 
@@ -340,26 +340,26 @@ int Hexa_Block<NavierStokes3D_ThermallyPerfect_pState,
              Flux -=  NavierStokes3D_ThermallyPerfect_pState::FluxViscous_n(Wl, Wr, W[i][j][k], W[i][j+1][k], 
                                    dWdx[i][j][k], dWdy[i][j][k],dWdz[i][j][k],
                                    dWdx[i][j+1][k], dWdy[i][j+1][k],dWdz[i][j+1][k],
-                                   Grid->nfaceN(i, j, k),  Grid->Von(i, j, k),
-                                   Grid->delta_on(i, j, k), Grid->volume(i, j, k), 
-                                   Grid->volume(i, j+1, k));
+                                   Grid.nfaceN(i, j, k),  Grid.Von(i, j, k),
+                                   Grid.delta_on(i, j, k), Grid.volume(i, j, k), 
+                                   Grid.volume(i, j+1, k));
              
              /* Evaluate cell-averaged solution changes. */
              dUdt[i][j][k][k_residual] -= 
                 (IPs.CFL_Number* dt[i][j][k])*
-                Flux* Grid->AfaceN(i, j, k)/
-                Grid->volume(i, j, k);
+                Flux* Grid.AfaceN(i, j, k)/
+                Grid.volume(i, j, k);
               dUdt[i][j+1][k][k_residual] += 
                 (IPs.CFL_Number* dt[i][j+1][k])*
-                Flux* Grid->AfaceS(i, j+1, k)/
-                 Grid->volume(i, j+1, k);
+                Flux* Grid.AfaceS(i, j+1, k)/
+                 Grid.volume(i, j+1, k);
 
           /* Save south and north face boundary flux. */
 
           // if (j ==  JCl-1) {
-//               FluxS[i] = -Flux* Grid->lfaceS(i, j+1);
+//               FluxS[i] = -Flux* Grid.lfaceS(i, j+1);
 //           } else if (j ==  JCu) {
-//               FluxN[i] = Flux* Grid->lfaceN(i, j);
+//               FluxN[i] = Flux* Grid.lfaceN(i, j);
 //           } /* endif */
 
           } /* endfor */
@@ -375,25 +375,25 @@ int Hexa_Block<NavierStokes3D_ThermallyPerfect_pState,
              
              /* Evaluate the cell interface j-direction fluxes. */
              if (k ==  KCl-1 && 
-                 ( Grid->BCtypeB[i][j] == BC_REFLECTION  || 
-                   Grid->BCtypeB[i][j] == BC_NO_SLIP ||
-                   Grid->BCtypeB[i][j] == BC_MOVING_WALL)) {
+                 ( Grid.BCtypeB[i][j] == BC_REFLECTION  || 
+                   Grid.BCtypeB[i][j] == BC_NO_SLIP ||
+                   Grid.BCtypeB[i][j] == BC_MOVING_WALL)) {
                 
-                dX =  Grid->xfaceBot(i, j, k+1)- Grid->Cell[i][j][k+1].Xc;
+                dX =  Grid.xfaceBot(i, j, k+1)- Grid.Cell[i][j][k+1].Xc;
                 Wr =  W[i][j][k+1] +
                    ( phi[i][j][k+1]^ dWdx[i][j][k+1])*dX.x +
                    ( phi[i][j][k+1]^ dWdy[i][j][k+1])*dX.y+
                    ( phi[i][j][k+1]^ dWdz[i][j][k+1])*dX.z;
-                if ( Grid->BCtypeB[i][j] == BC_REFLECTION) {
-                   Wl =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wr,  Grid->nfaceBot(i, j, k+1));
+                if ( Grid.BCtypeB[i][j] == BC_REFLECTION) {
+                   Wl =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wr,  Grid.nfaceBot(i, j, k+1));
                 }
-                if ( Grid->BCtypeB[i][j] == BC_NO_SLIP) {
-                   Wl =  NavierStokes3D_ThermallyPerfect_pState::No_Slip(Wr, WoB[i][j], Grid->nfaceBot(i, j, k+1), 
+                if ( Grid.BCtypeB[i][j] == BC_NO_SLIP) {
+                   Wl =  NavierStokes3D_ThermallyPerfect_pState::No_Slip(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1), 
                                                                          IPs.Pressure_Gradient,
                                                                          FIXED_TEMPERATURE_WALL);
                 }
-                if ( Grid->BCtypeB[i][j] == BC_MOVING_WALL) {
-                   Wl =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wr, WoB[i][j], Grid->nfaceBot(i, j, k+1),
+                if ( Grid.BCtypeB[i][j] == BC_MOVING_WALL) {
+                   Wl =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1),
                                                                              IPs.Moving_wall_velocity,
                                                                              IPs.Pressure_Gradient,
                                                                              FIXED_TEMPERATURE_WALL);
@@ -401,37 +401,37 @@ int Hexa_Block<NavierStokes3D_ThermallyPerfect_pState,
 
 
              } else if (k ==  KCu && 
-                        ( Grid->BCtypeT[i][j] == BC_REFLECTION ||
-                          Grid->BCtypeT[i][j] == BC_NO_SLIP ||
-                          Grid->BCtypeT[i][j] == BC_MOVING_WALL)) {
+                        ( Grid.BCtypeT[i][j] == BC_REFLECTION ||
+                          Grid.BCtypeT[i][j] == BC_NO_SLIP ||
+                          Grid.BCtypeT[i][j] == BC_MOVING_WALL)) {
                 
-                dX =  Grid->xfaceTop(i, j, k)- Grid->Cell[i][j][k].Xc;
+                dX =  Grid.xfaceTop(i, j, k)- Grid.Cell[i][j][k].Xc;
                 Wl =  W[i][j][k] + 
                    ( phi[i][j][k]^ dWdx[i][j][k])*dX.x+
                    ( phi[i][j][k]^ dWdy[i][j][k])*dX.y+
                    ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
-                if ( Grid->BCtypeT[i][j] == BC_REFLECTION) {
-                   Wr =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wl,  Grid->nfaceTop(i, j, k));
+                if ( Grid.BCtypeT[i][j] == BC_REFLECTION) {
+                   Wr =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wl,  Grid.nfaceTop(i, j, k));
                 }
-                if ( Grid->BCtypeT[i][j] == BC_NO_SLIP) {
-                   Wr =  NavierStokes3D_ThermallyPerfect_pState::No_Slip(Wl, WoT[i][j], Grid->nfaceTop(i, j, k), 
+                if ( Grid.BCtypeT[i][j] == BC_NO_SLIP) {
+                   Wr =  NavierStokes3D_ThermallyPerfect_pState::No_Slip(Wl, WoT[i][j], Grid.nfaceTop(i, j, k), 
                                 
                                                                          IPs.Pressure_Gradient,FIXED_TEMPERATURE_WALL );
                 }
-                if ( Grid->BCtypeT[i][j] == BC_MOVING_WALL) {
-                   Wr =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wl, WoT[i][j], Grid->nfaceTop(i, j, k),
+                if ( Grid.BCtypeT[i][j] == BC_MOVING_WALL) {
+                   Wr =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wl, WoT[i][j], Grid.nfaceTop(i, j, k),
                                                                              IPs.Moving_wall_velocity,  
                                                                              IPs.Pressure_Gradient,
                                                                              FIXED_TEMPERATURE_WALL );
                 }
                 
              } else {
-                dX =  Grid->xfaceTop(i, j, k)- Grid->Cell[i][j][k].Xc;
+                dX =  Grid.xfaceTop(i, j, k)- Grid.Cell[i][j][k].Xc;
                 Wl =  W[i][j][k] + 
                    ( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
                    ( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
                    ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
-                dX =  Grid->xfaceBot(i, j, k+1)- Grid->Cell[i][j][k+1].Xc;
+                dX =  Grid.xfaceBot(i, j, k+1)- Grid.Cell[i][j][k+1].Xc;
                 Wr =  W[i][j][k+1] +
                    ( phi[i][j][k+1]^ dWdx[i][j][k+1])*dX.x +
                    ( phi[i][j][k+1]^ dWdy[i][j][k+1])*dX.y +
@@ -442,11 +442,11 @@ int Hexa_Block<NavierStokes3D_ThermallyPerfect_pState,
              
              switch(IPs.i_Flux_Function) {
              case FLUX_FUNCTION_HLLE :
-                Flux =  NavierStokes3D_ThermallyPerfect_pState::FluxHLLE_n(Wl, Wr,  Grid->nfaceTop(i, j, k));
+                Flux =  NavierStokes3D_ThermallyPerfect_pState::FluxHLLE_n(Wl, Wr,  Grid.nfaceTop(i, j, k));
                 break;
                 
              case FLUX_FUNCTION_ROE :
-                Flux =  NavierStokes3D_ThermallyPerfect_pState::FluxRoe_n(Wl, Wr,  Grid->nfaceTop(i, j, k));
+                Flux =  NavierStokes3D_ThermallyPerfect_pState::FluxRoe_n(Wl, Wr,  Grid.nfaceTop(i, j, k));
                              
                 break;
                 
@@ -456,27 +456,27 @@ int Hexa_Block<NavierStokes3D_ThermallyPerfect_pState,
              Flux -=  NavierStokes3D_ThermallyPerfect_pState::FluxViscous_n(Wl, Wr,W[i][j][k], W[i][j][k+1], 
                                    dWdx[i][j][k], dWdy[i][j][k],dWdz[i][j][k],
                                    dWdx[i][j][k+1], dWdy[i][j][k+1],dWdz[i][j][k+1],
-                                   Grid->nfaceTop(i, j, k), Grid->Vot(i, j, k), 
-                                   Grid->delta_ot(i, j, k), Grid->volume(i, j, k), 
-                                   Grid->volume(i, j, k+1));
+                                   Grid.nfaceTop(i, j, k), Grid.Vot(i, j, k), 
+                                   Grid.delta_ot(i, j, k), Grid.volume(i, j, k), 
+                                   Grid.volume(i, j, k+1));
        
              /* Evaluate cell-averaged solution changes. */
              
              dUdt[i][j][k][k_residual] -= 
                 (IPs.CFL_Number* dt[i][j][k])*
-                Flux* Grid->AfaceTop(i, j, k)/
-                Grid->volume(i, j, k);
+                Flux* Grid.AfaceTop(i, j, k)/
+                Grid.volume(i, j, k);
              dUdt[i][j][k+1][k_residual] += 
                 (IPs.CFL_Number* dt[i][j][k+1])*
-                Flux* Grid->AfaceBot(i, j, k+1)/
-                Grid->volume(i, j, k+1);
+                Flux* Grid.AfaceBot(i, j, k+1)/
+                Grid.volume(i, j, k+1);
              
              /* Save top and bottom face boundary flux. */
 
              // if (j ==  JCl-1) {
-//               FluxS[i] = -Flux* Grid->lfaceS(i, j+1);
+//               FluxS[i] = -Flux* Grid.lfaceS(i, j+1);
 //           } else if (j ==  JCu) {
-//               FluxN[i] = Flux* Grid->lfaceN(i, j);
+//               FluxN[i] = Flux* Grid.lfaceN(i, j);
 //           } /* endif */
              
           } /* endfor */

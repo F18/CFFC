@@ -4,6 +4,7 @@
 # C++ source directories
 *.[oa]
 *~
+.*.swp
 *.il
 *.depend*
 
@@ -13,6 +14,7 @@
 *.log
 *.gplt
 *.plt
+tecplot.phy
 *.e*
 *.o*
 tecplot.phy

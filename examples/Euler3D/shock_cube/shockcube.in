@@ -15,22 +15,28 @@ Roe
 #HLLE 
 ICs_Type = 
 ShockBox
+#ICs_Type = 
+#Uniform
 Schmidt=
 1.0
 Temperature = 
 298
 Grid_Type =
 Cube
+#Grid_Type
+#Bluff_Body_Burner
+#Grid_Type =
+#Pipe
 Number_of_Cells_Idir = 
 10
 Number_of_Cells_Jdir =
-20
+10
 Number_of_Cells_Kdir =
 10
 Number_of_Blocks_Idir = 
 2
 Number_of_Blocks_Jdir =
-1
+2
 Number_of_Blocks_Kdir =
 2
 ###############################
@@ -39,13 +45,13 @@ Number_of_Blocks_Kdir =
 CFL_Number =
 0.1
 Time_Max = 
-0.
+0.1
 Maximum_Number_of_Time_Steps =
 0
 Number_of_Blocks_Per_Processor =
-2
+64
 Output_File_Name = 
-multiblock
+test
 #######################
 # Execute program
 #######################
@@ -53,7 +59,7 @@ Execute
 #######################
 # Write output
 #######################
-Write_Output_Cells
+Write_Output_Nodes
 Write_Output
 #Write_Restart
 #######################

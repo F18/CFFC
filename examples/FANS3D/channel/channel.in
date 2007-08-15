@@ -15,8 +15,7 @@ Barth_Jespersen
 Flux_Function_Type =
 Roe
 ICs_Type = 
-Restart
-#Turbulent_Channel_Flow
+Turbulent_Channel_Flow
 Flow_Type = 
 Turbulent-k-omega
 Wall_Boundary_Treatments = 
@@ -38,17 +37,17 @@ Temperature =
 Grid_Type =
 Turbulent_Channel
 Number_of_Cells_Idir = 
-32
+10
 Number_of_Cells_Jdir =
-24
+4
 Number_of_Cells_Kdir =
 4
 Number_of_Blocks_Idir = 
-1
+4
 Number_of_Blocks_Jdir =
-1
+2
 Number_of_Blocks_Kdir =
-1
+2
 ###############################
 # Set time stepping parameters
 ###############################
@@ -59,9 +58,9 @@ Time_Max =
 #0.20
 # 0.91
 Maximum_Number_of_Time_Steps =
-20000
+1000
 Number_of_Blocks_Per_Processor =
-1
+10
 Output_File_Name = 
 turbulent_channel
 #######################

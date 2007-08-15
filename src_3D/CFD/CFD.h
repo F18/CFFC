@@ -101,14 +101,15 @@ inline char *Date_And_Time() {
 #define WRITE_OUTPUT_GRADIENTS_CODE                      10006
 #define WRITE_OUTPUT_QUASI3D_CODE                        10007
 #define WRITE_RESTART_CODE                               10008
-#define WRITE_OUTPUT_GRID_CODE                           10009
-#define WRITE_GRID_DEFINITION_CODE                       10010
-#define WRITE_OUTPUT_GRID_NODES_CODE                     10011
-#define WRITE_OUTPUT_GRID_CELLS_CODE                     10012
-#define COMMENT_CODE                                     10013
-#define REFINE_GRID_CODE                                 10014
-#define BOUNDING_BOX_REFINE_GRID_CODE                    10015
-#define MORTON_ORDERING_CODE                             10016
+#define READ_RESTART_CODE                                10009
+#define WRITE_OUTPUT_GRID_CODE                           10010
+#define WRITE_GRID_DEFINITION_CODE                       10011
+#define WRITE_OUTPUT_GRID_NODES_CODE                     10012
+#define WRITE_OUTPUT_GRID_CELLS_CODE                     10013
+#define COMMENT_CODE                                     10014
+#define REFINE_GRID_CODE                                 10015
+#define BOUNDING_BOX_REFINE_GRID_CODE                    10016
+#define MORTON_ORDERING_CODE                             10017
 
 #define WRITE_OUTPUT_ELEMENTS_CODE                       10020
 #define WRITE_OUTPUT_CELL_STATUS_CODE                    10022
@@ -194,14 +195,21 @@ inline char *Date_And_Time() {
 #define GRID_NOZZLE                          20
 #define GRID_NOZZLELESS_ROCKET_MOTOR         21
 #define GRID_DESOLVATION_CHAMBER             22
-#define GRID_CHANNEL                         23
-#define GRID_CUBE                            24
+#define GRID_CUBE                            23
+#define GRID_CHANNEL                         24
+#define GRID_CHANNEL_ZDIR          GRID_CHANNEL
+#define GRID_CHANNEL_XDIR                    25
+#define GRID_CHANNEL_YDIR                    26
+#define GRID_COUETTE                         27
+#define GRID_COUETTE_ZDIR          GRID_COUETTE
+#define GRID_COUETTE_XDIR                    28
+#define GRID_COUETTE_YDIR                    29
+#define GRID_BLUFF_BODY_BURNER               30
 
 #define GRID_ICEMCFD                       1000
 #define GRID_READ_FROM_DEFINITION_FILE    10000
 #define GRID_READ_FROM_GRID_DATA_FILE     10001
 
-#define GRID_COUETTE                         50
 #define GRID_1DFLAME                         51
 #define GRID_LAMINAR_FLAME                   52
 
@@ -257,6 +265,7 @@ inline char *Date_And_Time() {
 #define BC_FARFIELD                      8000   // Core | CGNS
 #define BC_CHARACTERISTIC                8001   //      | CFFC ?
 #define BC_FIXED_PRESSURE                8002   //      | CFFC
+#define BC_CHARACTERISTIC_VELOCITY       8003   //      | CFFC
 
 //--Inflow
 #define BC_INFLOW                        9000   // Core | CGNS
@@ -319,6 +328,81 @@ inline char *Date_And_Time() {
 
 #define ADIABATIC_WALL                      1
 #define FIXED_TEMPERATURE_WALL              2
+
+/**********************************************************************
+ * CFD -- Boundary Condition Data Types.                              *
+ **********************************************************************/
+
+#define BCS_SIZE                                        5
+#define NUM_OF_DATA_TYPES   			        68
+#define BC_DATA_UNDEFINED			        0
+#define BC_DATA_POTENTIAL			        1
+#define BC_DATA_STREAMFUNCTION			        2
+#define BC_DATA_DENSITY			                3 
+#define BC_DATA_PRESSURE			        4
+#define BC_DATA_TEMPERATURE			        5
+#define BC_DATA_ENERGYINTERNAL			        6
+#define BC_DATA_ENTHALPY			        7
+#define BC_DATA_ENTROPY			                8
+#define BC_DATA_ENTROPYAPPROX			        9
+#define BC_DATA_DENSITYSTAGNATION			10
+#define BC_DATA_PRESSURESTAGNATION			11
+#define BC_DATA_TEMPERATURESTAGNATION			12
+#define BC_DATA_ENERGYSTAGNATION			13
+#define BC_DATA_ENTHALPYSTAGNATION			14
+#define BC_DATA_ENERGYSTAGNATIONDENSITY			15
+#define BC_DATA_VELOCITYX			        16
+#define BC_DATA_VELOCITYY			        17
+#define BC_DATA_VELOCITYZ			        18
+#define BC_DATA_VELOCITYR			        19
+#define BC_DATA_VELOCITYTHETA			        20
+#define BC_DATA_VELOCITYPHI			        21
+#define BC_DATA_VELOCITYMAGNITUDE			22
+#define BC_DATA_VELOCITYNORMAL			        23
+#define BC_DATA_VELOCITYTANGENTIAL			24
+#define BC_DATA_VELOCITYSOUND			        25
+#define BC_DATA_VELOCITYSOUNDSTAGNATION			26
+#define BC_DATA_MOMENTUMX			        27
+#define BC_DATA_MOMENTUMY			        28
+#define BC_DATA_MOMENTUMZ			        29
+#define BC_DATA_MOMENTUMMAGNITUDE			30
+#define BC_DATA_ENERGYKINETIC			        31
+#define BC_DATA_PRESSUREDYNAMIC			        32
+#define BC_DATA_VORTICITYX			        33
+#define BC_DATA_VORTICITYY			        34
+#define BC_DATA_VORTICITYZ			        35
+#define BC_DATA_VORTICITYMAGNITUDE			36
+#define BC_DATA_SKINFRICTIONX			        37
+#define BC_DATA_SKINFRICTIONY			        38
+#define BC_DATA_SKINFRICTIONZ			        39
+#define BC_DATA_SKINFRICTIONMAGNITUDE			40
+#define BC_DATA_VELOCITYANGLEX			        41
+#define BC_DATA_VELOCITYANGLEY			        42
+#define BC_DATA_VELOCITYANGLEZ			        43
+#define BC_DATA_VELOCITYUNITVECTORX			44
+#define BC_DATA_VELOCITYUNITVECTORY			45
+#define BC_DATA_VELOCITYUNITVECTORZ			46
+#define BC_DATA_MASSFLOW			        47
+#define BC_DATA_VISCOSITYKINEMATIC			48
+#define BC_DATA_VISCOSITYMOLECULAR			49
+#define BC_DATA_VISCOSITYEDDYKINEMATIC			50
+#define BC_DATA_VISCOSITYEDDY			        51 
+#define BC_DATA_THERMALCONDUCTIVITY			52
+#define BC_DATA_POWERLAWEXPONENT			53
+#define BC_DATA_SUTHERLANDLAWCONSTANT			54
+#define BC_DATA_TEMPERATUREREFERENCE			55
+#define BC_DATA_VISCOSITYMOLECULARREFERENCE		56
+#define BC_DATA_THERMALCONDUCTIVITYREFERENCE		57
+#define BC_DATA_IDEALGASCONSTANT			58
+#define BC_DATA_SPECIFICHEATPRESSURE			59
+#define BC_DATA_SPECIFICHEATVOLUME			60
+#define BC_DATA_REYNOLDSSTRESSXX			61
+#define BC_DATA_REYNOLDSSTRESSXY			62
+#define BC_DATA_REYNOLDSSTRESSXZ			63
+#define BC_DATA_REYNOLDSSTRESSYY			64
+#define BC_DATA_REYNOLDSSTRESSYZ			65
+#define BC_DATA_REYNOLDSSTRESSZZ			66
+#define BC_DATA_LENGTHREFERENCE			        67
 
 /**********************************************************************
  * CFD -- Flow Types.                                                 *
@@ -690,6 +774,47 @@ inline double vanalbada(const double &x, const double &y,
 /********************************************************
  * CFD -- Define CFD structures and classes.            *
  ********************************************************/
+
+/*************************************************************
+ * Class: BCinfoCGNS - Used by the Grid Classes to store     *
+ *                 BC info                                   *
+ * Member functions                                          *
+ *      Type       -- Returns the type of boundary condition *
+ *                    As per the CGNS list in CFD.h          *
+ *      Data[]     -- Lists the BC data in the CGNS          *
+ *                    Order in CFD.h                         *
+ *************************************************************/
+class BCinfoCGNS{
+ private:
+ public:
+  int Type;
+  int DataType[5];//**update
+  double DataValue[5];//**update
+
+  BCinfoCGNS(void){
+    for (int i=0;i<5;i++){
+      DataType[i]=BC_DATA_UNDEFINED; DataValue[i]=0.0;}
+    Type = BC_NULL;
+  }
+};
+inline ostream &operator << (ostream &out_file, 
+                             const BCinfoCGNS &G){
+  out_file<<G.Type;
+  for (int i=0;i<BCS_SIZE;i++)
+    out_file<<" "<<G.DataType[i]<<" "<<G.DataValue[i];
+  out_file<<"\n";
+  return (out_file);
+}
+inline istream &operator >> (istream &in_file, 
+                             BCinfoCGNS &G){
+  double d1;
+  int i1;
+  in_file>> G.Type;
+  for (int i=0;i<BCS_SIZE;i++){
+    in_file>>G.DataType[i]>>G.DataValue[i];
+  }
+  return (in_file);
+}
 
 /********************************************************
  * Class: CPUTime (CPU time for a process)              *
