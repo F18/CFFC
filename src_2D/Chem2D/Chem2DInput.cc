@@ -338,9 +338,6 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
 
     // Limiter_switch
     IP.Freeze_Limiter_Residual_Level = 1e-4;
-
-    // Relazation for update stage in NKS
-    IP.Relaxation_multiplier = 1.0;
 }
 
 /********************************************************
@@ -932,9 +929,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     // Freeze_Limiter_Residual_Level
     MPI::COMM_WORLD.Bcast(&(IP.Freeze_Limiter_Residual_Level),
                           1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Relaxation_multiplier),
-			  1, 
                           MPI::DOUBLE, 0);
 
     // Reset the static variables.
@@ -1547,9 +1541,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
 
     // Freeze_Limiter_Residual_Level
     Communicator.Bcast(&(IP.Freeze_Limiter_Residual_Level), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Relaxation_multiplier), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
 
@@ -2764,13 +2755,6 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       IP.Input_File.getline(buffer, sizeof(buffer));
       if (IP.i_Residual_Variable < ZERO) i_command = INVALID_INPUT_VALUE;
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Relaxation_multiplier") == 0) {
-      i_command = 667;
-      IP.Line_Number = IP.Line_Number + 1;                
-      IP.Input_File >> IP.Relaxation_multiplier;               
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.Relaxation_multiplier < ZERO) i_command = INVALID_INPUT_VALUE;
-
     } else if (strcmp(IP.Next_Control_Parameter, "Freeze_Limiter") == 0) {
       // Freeze_Limiter:
       i_command = 68;
@@ -3328,13 +3312,30 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       IP.Input_File >> IP.Multigrid_IP.Number_of_Smooths_on_Coarsest_Level;
       IP.Input_File.getline(buffer,sizeof(buffer));
       if (IP.Multigrid_IP.Number_of_Smooths_on_Coarsest_Level < 0) i_command = INVALID_INPUT_VALUE;
-
-    } else if (strcmp(IP.Next_Control_Parameter,"Convergence_Residual_Level") == 0) {
-      i_command = 215;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.Multigrid_IP.Convergence_Residual_Level;
-      IP.Input_File.getline(buffer,sizeof(buffer));
-      if (IP.Multigrid_IP.Convergence_Residual_Level < ZERO) i_command = INVALID_INPUT_VALUE;
+  
+    } else if (strcmp(IP.Next_Control_Parameter, "MG_Regular_Absolute_Tolerance") == 0) {
+       i_command = 215;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Multigrid_IP.reg_abs_tol;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+  
+    } else if (strcmp(IP.Next_Control_Parameter, "MG_Regular_Relative_Tolerance") == 0) {
+       i_command = 215;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Multigrid_IP.reg_rel_tol;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+  
+    } else if (strcmp(IP.Next_Control_Parameter, "MG_Full_Absolute_Tolerance") == 0) {
+       i_command = 215;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Multigrid_IP.full_abs_tol;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+  
+    } else if (strcmp(IP.Next_Control_Parameter, "MG_Full_Relative_Tolerance") == 0) {
+       i_command = 215;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Multigrid_IP.full_rel_tol;
+       IP.Input_File.getline(buffer, sizeof(buffer));
 
     } else if (strcmp(IP.Next_Control_Parameter,"Multigrid_Smoothing_Type") == 0) {
       i_command = 216;

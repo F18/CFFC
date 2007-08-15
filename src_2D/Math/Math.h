@@ -42,6 +42,15 @@ using namespace std;
 #define MICRO    0.000001
 #define TOLER    0.0000001
 #define NANO     0.000000001
+#define TOLER3     0.20
+
+// For high temperature stuff. HTTOL is variable so 
+// that we can vary it without recompiling.
+// HTTOL is declared here and defined (and initialized) 
+// in HighTemp2DState.cc.
+extern double HTTOL;
+#define HTONEPLUST  (1.0 + HTTOL)
+#define HTONEMINT   (1.0 - HTTOL)
 
 #ifndef PI
 #define	PI	3.14159265358979323846

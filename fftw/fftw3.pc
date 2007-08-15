@@ -1,4 +1,4 @@
-prefix=/home/groth/CFFC/fftw
+prefix=/nfs/fe03/d1/cfd/alistair/compile/CFFC-alpha/CFFC/fftw
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include

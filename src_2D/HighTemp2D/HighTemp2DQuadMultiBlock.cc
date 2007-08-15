@@ -253,7 +253,7 @@ double L1_Norm_Residual(HighTemp2D_Quad_Block *Soln_ptr,
   // Calculate the L1-norm.  Sum the L1-norm for each solution block.
   for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
     if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
-      l1_norm += L1_Norm_Residual(Soln_ptr[nb]);
+      l1_norm += L1_Norm_Residual(Soln_ptr[nb],Soln_ptr[nb].residual_variable);       
     }
   }
 
@@ -278,7 +278,7 @@ double L2_Norm_Residual(HighTemp2D_Quad_Block *Soln_ptr,
   // Sum the square of the L2-norm for each solution block.
   for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
     if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
-      l2_norm += sqr(L2_Norm_Residual(Soln_ptr[nb]));
+      l2_norm += sqr(L2_Norm_Residual(Soln_ptr[nb], Soln_ptr[nb].residual_variable));
     }
   }
 
@@ -306,13 +306,84 @@ double Max_Norm_Residual(HighTemp2D_Quad_Block *Soln_ptr,
   // Find the maximum norm for all solution blocks.
   for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
     if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
-      max_norm = max(max_norm,Max_Norm_Residual(Soln_ptr[nb]));
+      max_norm = max(max_norm,Max_Norm_Residual(Soln_ptr[nb], Soln_ptr[nb].residual_variable));
     }
   }
 
   // Return the maximum norm.
   return max_norm;
 
+}
+
+
+/**********************************************************************
+ * Routine: L1_Norm_Residual                                          *
+ *                                                                    *
+ * Determines the L1-norm of the solution residual for a 1D array of  *
+ * 2D quadrilateral multi-block solution blocks.  Useful for          *
+ * monitoring convergence of the solution for steady state problems.  *
+ *                                                                    *
+ **********************************************************************/
+void L1_Norm_Residual(HighTemp2D_Quad_Block *Soln_ptr,
+                        AdaptiveBlock2D_List &Soln_Block_List,
+												double *l1_norm) {
+
+	/* Calculate the L1-norm. Sum the L1-norm for each solution block. */
+	for( int k = 0; k< Soln_ptr[0].Number_of_Residual_Norms; k++){    
+		l1_norm[k] = ZERO;
+		for ( int i = 0 ; i < Soln_Block_List.Nblk; ++i ) {
+			if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {     
+				l1_norm[k] += L1_Norm_Residual(Soln_ptr[i],k+1);       
+			}
+		}
+	}  
+}
+
+/**********************************************************************
+ * Routine: L2_Norm_Residual                                          *
+ *                                                                    *
+ * Determines the L2-norm of the solution residual for a 1D array of  *
+ * 2D quadrilateral multi-block solution blocks.  Useful for          *
+ * monitoring convergence of the solution for steady state problems.  *
+ *                                                                    *
+ **********************************************************************/
+void L2_Norm_Residual(HighTemp2D_Quad_Block *Soln_ptr,
+                        AdaptiveBlock2D_List &Soln_Block_List,
+												double *l2_norm) {
+
+	/* Sum the square of the L2-norm for each solution block. */
+	for( int k = 0; k< Soln_ptr[0].Number_of_Residual_Norms; k++){
+		l2_norm[k] =ZERO;
+		for ( int i = 0 ; i < Soln_Block_List.Nblk; ++i ) {
+			if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+				l2_norm[k] += sqr(L2_Norm_Residual(Soln_ptr[i],k+1));     
+			} 
+		}  
+		l2_norm[k] = sqrt(l2_norm[k]);
+	}
+}
+
+/**********************************************************************
+ * Routine: Max_Norm_Residual                                         *
+ *                                                                    *
+ * Determines the maximum norm of the solution residual for a 1D      *
+ * array of 2D quadrilateral multi-block solution blocks.  Useful for *
+ * monitoring convergence of the solution for steady state problems.  *
+ *                                                                    *
+ **********************************************************************/
+void Max_Norm_Residual(HighTemp2D_Quad_Block *Soln_ptr,
+                         AdaptiveBlock2D_List &Soln_Block_List,
+												 double *max_norm) {
+  
+	/* Find the maximum norm for all solution blocks. */
+	for( int k = 0; k< Soln_ptr[0].Number_of_Residual_Norms; k++){
+		max_norm[k] = ZERO;
+		for (int i = 0 ; i < Soln_Block_List.Nblk ; ++i ) {
+			if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+				max_norm[k] = max(max_norm[k], Max_Norm_Residual(Soln_ptr[i],k+1));
+			} 
+		} 
+	}
 }
 
 /**********************************************************************

@@ -10,6 +10,5 @@
  *                              variables.                            *
  **********************************************************************/
 int HighTemp2D_Quad_Block::residual_variable = 1;
-
-enum current_solver_types HighTemp2D_Quad_Block::current_solver_type = CST_EXPLICIT;
+int HighTemp2D_Quad_Block::Number_of_Residual_Norms = 4;
 

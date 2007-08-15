@@ -1463,7 +1463,12 @@ inline double HighTemp2D_pState::e(void) const {
 
  switch(eos_type){
   case EOS_TGAS:
-    return Tgas_e(p,Tgas_temp(p,rho));
+// Tgas_h is a straight look-up.
+// Tgas_e is a solve. Please avoid Tgas_e.
+// specific e is [energy/mass]. 
+// pressure is [energy/volume].
+// p/rho is [energy/mass].
+    return Tgas_h(p, rho) - p/rho;
     break;
   case EOS_IDEAL:
     return p/(gm1*rho);
@@ -1476,15 +1481,10 @@ inline double HighTemp2D_pState::e(void) const {
  * HighTemp2D_pState::E -- Gas total energy.                      *
  **********************************************************************/
 inline double HighTemp2D_pState::E(void) const {
-  //double E1, E2,E3;
-  //double temp = Tgas_temp(p,rho);
-  //E1 = rho*(Tgas_e(p,temp));
-  //E2 = p*gm1i + HALF*rho*v.sqr() + dk(); 
-  // E3 = rho*(Tgas_e(p,temp)) + HALF*rho*v.sqr() + dk();  //rho added in middle term
+
   switch(eos_type){
    case EOS_TGAS:
-     // cout<<" in EOS_TGAS pstate, E3 = "<<E3<<endl;
-    return rho*(Tgas_e(p,Tgas_temp(p,rho))) + HALF*rho*v.sqr() + dk();
+    return rho*e() + HALF*rho*v.sqr() + dk();
     break;
    case EOS_IDEAL:
     return p*gm1i + HALF*rho*v.sqr() + dk();
@@ -1498,55 +1498,27 @@ inline double HighTemp2D_pState::E(void) const {
  **********************************************************************/
 inline double HighTemp2D_pState::h(void) const {
   //assert(rho > ZERO);
-
-	return H() / rho;
-
-	// See the comment for HighTemp2D_pState::H().
-	//   -- Alistair Wood Tue Jul 10 2007 
-
-
-//    //double h1, h2;
-//    //h1 = Tgas_h(p,rho) + HALF*v.sqr() + k; 
-//    //h2 = g*gm1i*p/rho + HALF*v.sqr() + k;  
-//  
-//    switch(eos_type){
-//     case EOS_TGAS:
-//       //cout<<" in EOS_TGAS, h1 = "<<h1<<" and h2 = "<<h2<<endl;
-//      return Tgas_h(p,rho) + HALF*v.sqr() + k; 
-//      break;
-//     case EOS_IDEAL:
-//      return  g*gm1i*p/rho + HALF*v.sqr() + k;
-//      break;
-//    };
-//    return g*gm1i*p/rho + HALF*v.sqr() + k;
+  //double h1, h2;
+  //h1 = Tgas_h(p,rho) + HALF*v.sqr() + k; 
+  //h2 = g*gm1i*p/rho + HALF*v.sqr() + k;  
+  
+  switch(eos_type){
+   case EOS_TGAS:
+     //cout<<" in EOS_TGAS, h1 = "<<h1<<" and h2 = "<<h2<<endl;
+    return Tgas_h(p,rho) + HALF*v.sqr() + k; 
+    break;
+   case EOS_IDEAL:
+    return g*gm1i*p/rho + HALF*v.sqr() + k;
+    break;
+  };
+  return g*gm1i*p/rho + HALF*v.sqr() + k;
 }
 
 /**********************************************************************
  * HighTemp2D_pState::H -- Gas total enthalpy.                    *
  **********************************************************************/
 inline double HighTemp2D_pState::H(void) const {
-	return E() + p;
-
-	// Enthalpy is a definition which is not a function of the gas
-	// type: H = E + p [J / m^3]. Below is what we used to do.
-	//   -- Alistair Tue Jul 10 2007 
-  
-//    double h;
-//    h = Tgas_h(p,rho);
-//    // double H1, H2;
-//    //H1 = rho*h + HALF*rho*v.sqr() + dk();
-//    //H2 = g*gm1i*p + HALF*rho*v.sqr() + dk();
-//  
-//    switch(eos_type){
-//     case EOS_TGAS:
-//       //cout<<" in EOS_TGAS, H1 = "<<H1<<" and H2 = "<<H2<<endl;
-//      return  rho*h + HALF*rho*v.sqr() + dk();
-//      break;
-//     case EOS_IDEAL:
-//      return g*gm1i*p + HALF*rho*v.sqr() + dk();
-//      break;
-//    };
-//    return g*gm1i*p + HALF*rho*v.sqr() + dk();
+	return h() * rho;
 }
 
 /**********************************************************************
@@ -1554,21 +1526,9 @@ inline double HighTemp2D_pState::H(void) const {
  **********************************************************************/
 inline double HighTemp2D_pState::a(void) const {
 
-	//  For the conserved state, we call:
-	//
-	//  Tgas_a_from_e_rho(e(), rho);
-	//
-	//  where rho and e() do not require any curve-fit evaluations and
-	//  Tgas_a_from_e_rho is a straight look-up whereas Tgas_a(p,T) runs
-	//  through a Newton's method. However, here, for a primitive state,
-	//  to find internal energy would require calling Tgas_e but Tgas_e
-	//  calls the same Newton's method in TGAS5 as Tgas_a so we might as
-	//  well just call Tgas_a directly. 
-	//    -- Alistair Wood Wed. Jul 18 2007.
-
  switch(eos_type){
    case EOS_TGAS:
-    return Tgas_a(p,Tgas_temp(p,rho));
+    return Tgas_a_from_e_rho(e(), rho);
     break;
    case EOS_IDEAL:
     return sqrt(g*p/rho);
@@ -1586,8 +1546,8 @@ inline double HighTemp2D_pState::a2(void) const {
   switch(eos_type){
    case EOS_TGAS:
 		{
-			double a = Tgas_a(p, Tgas_temp(p, rho));
-			return sqr(a);
+			double ax = a(); // in case someone implemented sqr() as a preprocessor define.
+			return sqr(ax); 
 		 }
     break;
    case EOS_IDEAL:
@@ -1853,11 +1813,11 @@ inline double HighTemp2D_pState::kappaT(void) const {
 inline double HighTemp2D_pState::dpde(void) const {
   
   double elocal, e1, e2; // dppde;
-  elocal = e();
-  e1 = HTONEPLUST*elocal;
-  e2 = HTONEMINT*elocal;
+  double ex = e();
+  e1 = HTONEPLUST*ex;
+  e2 = HTONEMINT*ex;
    
-  return (Tgas_p(e1,rho) - Tgas_p(e2,rho))/(2.0*HTTOL*elocal);
+  return (Tgas_p(e1,rho) - Tgas_p(e2,rho))/(2.0*HTTOL*ex);
 }
 
 /**********************************************************************
@@ -1868,8 +1828,9 @@ inline double HighTemp2D_pState::dpdrho(void) const {
   double rho1, rho2;
   rho1 = HTONEPLUST*rho;
   rho2 = HTONEMINT*rho;
+	double ex = e();
    
-  return (Tgas_p(e(),rho1) - Tgas_p(e(),rho2))/(2.0*HTTOL*rho);
+  return (Tgas_p(ex,rho1) - Tgas_p(ex,rho2))/(2.0*HTTOL*rho);
 }
 
 inline double HighTemp2D_pState::dhdrho(void) const {
@@ -2388,8 +2349,7 @@ inline double HighTemp2D_cState::p(void) const {
   switch(eos_type){
    case EOS_TGAS:
 		 {
-		double inte = (E - HALF*dv.sqr()/rho - dk)/rho;
-    return Tgas_p(inte,rho);
+    return Tgas_p(e(), rho);
 		 }
     break;
    case EOS_IDEAL:
@@ -2442,7 +2402,7 @@ inline double HighTemp2D_cState::e(void) const {
 
 	return (E - HALF*dv.sqr()/rho - dk)/rho;
 
-	// Previously we were jumping hoops (calling two equation-of-
+	// Previously we were jumping hoops (calling three(?) equation-of-
 	// state functions) to determine internal energy. But energy is
 	// a conserved variable so I rewrote this function to simply
 	// return total energy minus kinetic energy. 
@@ -2543,8 +2503,8 @@ inline double HighTemp2D_cState::a2(void) const {
   switch(eos_type){
    case EOS_TGAS:
 		{
-			double a = Tgas_a_from_e_rho(e(), rho);
-			return sqr(a);
+			double ax = a();
+			return sqr(ax);
 		 }
     break;
    case EOS_IDEAL:
@@ -2732,11 +2692,11 @@ inline double HighTemp2D_cState::dpdrho(void) const {
  **********************************************************************/
 inline double HighTemp2D_cState::dTdp(void) const {
   
-  double p1, p2; 
-  p1 = HTONEPLUST*p();
-  p2 = HTONEMINT*p();  
+	double px = p();
+  double p1 = HTONEPLUST*px;
+  double p2 = HTONEMINT*px;
    
-  return (Tgas_temp(p1,rho) - Tgas_temp(p2,rho))/(2.0*HTTOL*p());
+  return (Tgas_temp(p1,rho) - Tgas_temp(p2,rho))/(2.0*HTTOL*px);
 }
 
 /**********************************************************************
@@ -2747,8 +2707,9 @@ inline double HighTemp2D_cState::dTdrho(void) const {
   double rho1, rho2; 
   rho1 = HTONEPLUST*rho;
   rho2 = HTONEMINT*rho;
+	double px = p();
    
-  return (Tgas_temp(p(),rho1) - Tgas_temp(p(),rho2))/(2.0*HTTOL*rho);
+  return (Tgas_temp(px,rho1) - Tgas_temp(px,rho2))/(2.0*HTTOL*rho);
 }
  
 /**********************************************************************
@@ -2757,10 +2718,11 @@ inline double HighTemp2D_cState::dTdrho(void) const {
 inline double HighTemp2D_cState::ddTdp(void) const {
   
   double p1, p2; 
-  p1 = HTONEPLUST*p();
-  p2 = HTONEMINT*p();
+	double px = p();
+  p1 = HTONEPLUST*px;
+  p2 = HTONEMINT*px;
    
-  return (Tgas_temp(p1,rho) -2.0*Tgas_temp(p(),rho)+ Tgas_temp(p2,rho))/(pow(HTTOL*p(),2.0));
+  return (Tgas_temp(p1,rho) -2.0*Tgas_temp(px,rho)+ Tgas_temp(p2,rho))/sqr(HTTOL*px);
 }
 
 /**********************************************************************
@@ -2769,10 +2731,11 @@ inline double HighTemp2D_cState::ddTdp(void) const {
 inline double HighTemp2D_cState::ddTdrho(void) const {
   
   double rho1, rho2; 
+	double px = p();
   rho1 = HTONEPLUST*rho;
   rho2 = HTONEMINT*rho;
    
-  return (Tgas_temp(p(),rho1) -2.0*Tgas_temp(p(),rho)+ Tgas_temp(p(),rho2))/(pow(HTTOL*rho,2.0));
+  return (Tgas_temp(px,rho1) -2.0*Tgas_temp(px,rho)+ Tgas_temp(px,rho2))/sqr(HTTOL*rho);
 }
 
 /**********************************************************************
@@ -2782,15 +2745,16 @@ inline double HighTemp2D_cState::ddTdpdrho(void) const {
   
   double rho1, rho2, p1, p2;
   double dTdrhoP1, dTdrhoP2;
+	double px = p();
   rho1 = HTONEPLUST*rho;
   rho2 = HTONEMINT*rho;
-  p1 = HTONEPLUST*p();
-  p2 = HTONEMINT*p();
+  p1 = HTONEPLUST*px;
+  p2 = HTONEMINT*px;
    
   dTdrhoP1 = (Tgas_temp(p1,rho1) - Tgas_temp(p1,rho2))/(2.0*HTTOL*rho);
   dTdrhoP2 = (Tgas_temp(p2,rho1) - Tgas_temp(p2,rho2))/(2.0*HTTOL*rho);
  
-    return (dTdrhoP1 - dTdrhoP2)/(2.0*HTTOL*p());
+    return (dTdrhoP1 - dTdrhoP2)/(2.0*HTTOL*px);
 }
 
 /**********************************************************************
@@ -2870,9 +2834,9 @@ inline double HighTemp2D_cState::kappaT(void) const {
   switch(eos_type){
    case EOS_TGAS:
 		 {
-			 double p_local_copy = p();
-		double temp = Tgas_temp(p_local_copy, rho);
-		double cpHT = Tgas_cp(p_local_copy, temp); 
+			 double px = p();
+		double temp = Tgas_temp(px, rho);
+		double cpHT = Tgas_cp(px, temp); 
      //cout<<"cp ideal is = "<<cp<<" and cpHT is = "<<cpHT<<endl;
     return muT()*cpHT/PrT;
 		 }
@@ -3158,16 +3122,19 @@ inline void HighTemp2D_pState::dUdW(DenseMatrix &dUdW) const {
       dUdW(5,5) += rho;
     }
     break;
-  case EOS_TGAS :
+  case EOS_TGAS : { 
+    double dpdex = dpde();
+    double dpdrhox = dpdrho();
+    double ex = e();
     dUdW(0,0) += ONE;
     dUdW(1,0) += v.x;
     dUdW(1,1) += rho;
     dUdW(2,0) += v.y;
     dUdW(2,2) += rho;
-    dUdW(3,0) += e() + HALF*v.sqr() - rho*(dpdrho()/dpde());
+    dUdW(3,0) += ex + HALF*v.sqr() - rho*(dpdrhox/dpdex);
     dUdW(3,1) += rho*v.x;
     dUdW(3,2) += rho*v.y;
-    dUdW(3,3) += rho/dpde();
+    dUdW(3,3) += rho/dpdex;
     if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
       dUdW(3,0) += k;
       dUdW(3,4) += rho;
@@ -3176,7 +3143,7 @@ inline void HighTemp2D_pState::dUdW(DenseMatrix &dUdW) const {
       dUdW(5,0) += omega;
       dUdW(5,5) += rho;
     }
-    break;
+	}  break;
   }
 }
 
@@ -3207,24 +3174,27 @@ inline void HighTemp2D_pState::dWdU(DenseMatrix &dWdU) const {
        dWdU(5,5) += ONE/rho;
      }
      break;
-   case EOS_TGAS :
+   case EOS_TGAS : {
+   double dpdex = dpde();
+   double dpdrhox = dpdrho();
+   double ex = e();
     dWdU(0,0) += ONE;
     dWdU(1,0) -= v.x/rho;
     dWdU(1,1) += ONE/rho;
     dWdU(2,0) -= v.y/rho;
     dWdU(2,2) += ONE/rho;
-    dWdU(3,0) += dpde()/rho*HALF*(v.sqr() - 2.0*e()) + dpdrho();
-    dWdU(3,1) -= dpde()*v.x;
-    dWdU(3,2) -= dpde()*v.y;
-    dWdU(3,3) += dpde()/rho;
+    dWdU(3,0) += dpdex/rho*HALF*(v.sqr() - 2.0*ex) + dpdrhox;
+    dWdU(3,1) -= dpdex*v.x;
+    dWdU(3,2) -= dpdex*v.y;
+    dWdU(3,3) += dpdex/rho;
     if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-      dWdU(3,4) -= dpde()/rho;
+      dWdU(3,4) -= dpdex/rho;
       dWdU(4,0) -= k/rho;
       dWdU(4,4) += ONE/rho;
       dWdU(5,0) -= omega/rho;
       dWdU(5,5) += ONE/rho;
     }
-    break;
+    } break;
   }
 }
 
@@ -3285,19 +3255,23 @@ inline void HighTemp2D_pState::dFdU(DenseMatrix &dFdU) const {
      }
    break;
 
-   case EOS_TGAS :
-		 dFdU(0,1) += 1.0;
-		 dFdU(1,0) += -(2.0*dhdp()*rho-3.0)/(dhdp()*rho-1.0)*v.x*v.x/2.0+1/(dhdp()*rho-1.0)*v.y*v.y/2.0-(Tgas_h(p, rho)+rho*dhdrho())/(dhdp()*rho-1.0);
-		 dFdU(1,1) += (2.0*dhdp()*rho-3.0)/(dhdp()*rho-1.0)*v.x;
-		 dFdU(1,2) += -v.y/(dhdp()*rho-1.0);
-		 dFdU(1,3) += 1/(dhdp()*rho-1.0);
-		 dFdU(2,0) += -v.x*v.y;
-		 dFdU(2,1) += v.y;
-		 dFdU(2,2) += v.x;
-		 dFdU(3,0) += -(dhdp()*rho-2.0)/(dhdp()*rho-1.0)*v.x*v.x*v.x/2.0+(-(dhdp()*rho-2.0)/(dhdp()*rho-1.0)*v.y*v.y/2.0-rho*(dhdrho()+dhdp()*Tgas_h(p, rho))/(dhdp()*rho-1.0))*v.x;
-		 dFdU(3,1) += (dhdp()*rho-3.0)/(dhdp()*rho-1.0)*v.x*v.x/2.0+Tgas_h(p, rho)+v.y*v.y/2.0;
-		 dFdU(3,2) += -v.y/(dhdp()*rho-1.0)*v.x;
-		 dFdU(3,3) += rho*v.x*dhdp()/(dhdp()*rho-1.0);
+   case EOS_TGAS : {
+		double dhdpx = dhdp();
+		double dhdrhox = dhdrho();
+		double hx = Tgas_h(p, rho);
+		
+		dFdU(0,1) += 1.0;
+		dFdU(1,0) += -(2.0*dhdpx*rho-3.0)/(dhdpx*rho-1.0)*v.x*v.x/2.0+1/(dhdpx*rho-1.0)*v.y*v.y/2.0-(hx+rho*dhdrhox)/(dhdpx*rho-1.0);
+		dFdU(1,1) += (2.0*dhdpx*rho-3.0)/(dhdpx*rho-1.0)*v.x;
+		dFdU(1,2) += -v.y/(dhdpx*rho-1.0);
+		dFdU(1,3) += 1/(dhdpx*rho-1.0);
+		dFdU(2,0) += -v.x*v.y;
+		dFdU(2,1) += v.y;
+		dFdU(2,2) += v.x;
+		dFdU(3,0) += -(dhdpx*rho-2.0)/(dhdpx*rho-1.0)*v.x*v.x*v.x/2.0+(-(dhdpx*rho-2.0)/(dhdpx*rho-1.0)*v.y*v.y/2.0-rho*(dhdrhox+dhdpx*hx)/(dhdpx*rho-1.0))*v.x;
+		dFdU(3,1) += (dhdpx*rho-3.0)/(dhdpx*rho-1.0)*v.x*v.x/2.0+hx+v.y*v.y/2.0;
+		dFdU(3,2) += -v.y/(dhdpx*rho-1.0)*v.x;
+		dFdU(3,3) += rho*v.x*dhdpx/(dhdpx*rho-1.0);
 
 // Dagmara's take one:
 //       dFdU(0,1) += ONE;
@@ -3313,7 +3287,8 @@ inline void HighTemp2D_pState::dFdU(DenseMatrix &dFdU) const {
 //       dFdU(3,2) -= v.x*v.y*dpde()/rho;
 //       dFdU(3,3) += v.x*dpde()/rho + ONE;
      if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-       dFdU(1,4) += 2.0/3.0 - dpde()/rho;
+     // May not work -- Alistair Wood
+       dFdU(1,4) += 2.0/3.0 - dpde()/rho; 
        dFdU(3,4) -= v.x*(2.0/3.0 - dpde()/rho);
        dFdU(4,0) -= v.x*k;
        dFdU(4,1) += k;
@@ -3322,7 +3297,7 @@ inline void HighTemp2D_pState::dFdU(DenseMatrix &dFdU) const {
        dFdU(5,1) += omega;
        dFdU(5,5) += v.x;
      }
-  break;
+  } break;
   }
   
 }
@@ -3362,7 +3337,7 @@ inline void HighTemp2D_pState::dFdW(DenseMatrix &dFdW) const
 			dFdW(3,2) = rho*v.x*v.y;
 			dFdW(3,3) = v.x*g/gm1;
 			break;
- 		case EOS_TGAS :
+ 		case EOS_TGAS : {
 
 			//  The function h() returns the total enthalpy (i.e.
 			//  including kinetic energy). Here I want internal
@@ -3370,11 +3345,14 @@ inline void HighTemp2D_pState::dFdW(DenseMatrix &dFdW) const
 			//  there is a better way to do this. You think on it.
 			//   -- Alistair Wood Mon Apr 09 2007 
 
-			dFdW(3,0) = v.x*v.x*v.x/2.0+(Tgas_h(p, rho)+v.y*v.y/2.0+rho*dhdrho())*v.x;
-			dFdW(3,1) = 3.0/2.0*rho*v.x*v.x+rho*v.y*v.y/2.0+rho*Tgas_h(p, rho);
+			double dhdpx = dhdp();
+			double dhdrhox = dhdrho();
+			double hx = Tgas_h(p, rho);
+			dFdW(3,0) = v.x*v.x*v.x/2.0+(hx+v.y*v.y/2.0+rho*dhdrhox)*v.x;
+			dFdW(3,1) = 3.0/2.0*rho*v.x*v.x+rho*v.y*v.y/2.0+rho*hx;
 			dFdW(3,2) = rho*v.x*v.y;
-			dFdW(3,3) = rho*v.x*dhdp();
-			break;
+			dFdW(3,3) = rho*v.x*dhdpx;
+			} break;
 	}
 	if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
 		dFdW(1,0) += TWO/THREE*k;
@@ -3514,10 +3492,12 @@ inline void HighTemp2D_pState::ComputeViscousTerms(const HighTemp2D_pState &dWdx
 	//      -- Alistair Wood Thu Mar 15 2007 
 	double kap = kappa() + kappaT();
 	switch (eos_type) {
-		case EOS_TGAS:
-			q.x = -kap*(dWdx.p*dTdp() + dTdrho()*dWdx.rho);
-			q.y = -kap*(dWdy.p*dTdp() + dTdrho()*dWdy.rho);
-			break;
+		case EOS_TGAS: {
+			double dTdp_local = dTdp();
+			double dTdrho_local = dTdrho();
+			q.x = -kap*(dWdx.p*dTdp_local + dWdx.rho*dTdrho_local);
+			q.y = -kap*(dWdy.p*dTdp_local + dWdy.rho*dTdrho_local);
+			} break;
 		case EOS_IDEAL:
 			q.x = -kap*(dWdx.p - (p/rho)*dWdx.rho)/(rho*R);
 			q.y = -kap*(dWdy.p - (p/rho)*dWdy.rho)/(rho*R);
@@ -3837,7 +3817,7 @@ inline void HighTemp2D_pState::Rotate(const HighTemp2D_pState &W, const Vector2D
 }
 
 // Should only be called from the preconditioner. AW. Tue Aug 07 2007.
-HighTemp2D_pState Rotate(const HighTemp2D_pState &W,
+inline HighTemp2D_pState Rotate(const HighTemp2D_pState &W,
 		const Vector2D &norm_dir) 
 {
 	HighTemp2D_pState W_rotated;
@@ -3894,16 +3874,18 @@ inline void HighTemp2D_cState::dUdW(DenseMatrix &dUdW) const {
       dUdW(5,5) += rho;
     }
     break;
-  case EOS_TGAS :
+  case EOS_TGAS : {
+  double dpdex = dpde();
+  double dpdrhox = dpdrho();
     dUdW(0,0) += ONE;
     dUdW(1,0) += v().x;
     dUdW(1,1) += rho;
     dUdW(2,0) += v().y;
     dUdW(2,2) += rho;
-    dUdW(3,0) += e() + HALF*v().sqr() - rho*(dpdrho()/dpde());
+    dUdW(3,0) += e() + HALF*v().sqr() - rho*(dpdrhox/dpdex);
     dUdW(3,1) += rho*v().x;
     dUdW(3,2) += rho*v().y;
-    dUdW(3,3) += rho/dpde();
+    dUdW(3,3) += rho/dpdex;
     if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
       dUdW(3,0) += k();
       dUdW(3,4) += rho;
@@ -3912,7 +3894,7 @@ inline void HighTemp2D_cState::dUdW(DenseMatrix &dUdW) const {
       dUdW(5,0) += omega();
       dUdW(5,5) += rho;
     }
-    break;
+    } break;
   }
 }
 
@@ -3942,24 +3924,26 @@ inline void HighTemp2D_cState::dWdU(DenseMatrix &dWdU) const {
       dWdU(5,5) += ONE/rho;
     }
     break;
-  case EOS_TGAS :
+  case EOS_TGAS : {
+  double dpdex = dpde();
+  double dpdrhox = dpdrho();
     dWdU(0,0) += ONE;
     dWdU(1,0) -= dv.x/(rho*rho);
     dWdU(1,1) += ONE/rho;
     dWdU(2,0) -= dv.y/(rho*rho);
     dWdU(2,2) += ONE/rho;
-    dWdU(3,0) += dpde()/rho*HALF*(dv.sqr()/rho - 2.0*e()) + dpdrho();
-    dWdU(3,1) -= dpde()*dv.x/rho;
-    dWdU(3,2) -= dpde()*dv.y/rho;
-    dWdU(3,3) += dpde()/rho;
+    dWdU(3,0) += dpdex/rho*HALF*(dv.sqr()/rho - 2.0*e()) + dpdrhox;
+    dWdU(3,1) -= dpdex*dv.x/rho;
+    dWdU(3,2) -= dpdex*dv.y/rho;
+    dWdU(3,3) += dpdex/rho;
     if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-      dWdU(3,4) -= dpde()/rho;
+      dWdU(3,4) -= dpdex/rho;
       dWdU(4,0) -= k()/rho;
       dWdU(4,4) += ONE/rho;
       dWdU(5,0) -= omega()/rho;
       dWdU(5,5) += ONE/rho;
     }
-    break;
+    } break;
   }
 }
 
@@ -4123,10 +4107,12 @@ inline void HighTemp2D_cState::ComputeViscousTerms(const HighTemp2D_pState &dWdx
 	//      -- Alistair Wood Thu Mar 15 2007 
 	double kap = kappa() + kappaT();
 	switch (eos_type) {
-		case EOS_TGAS:
-			q.x = -kap*(dWdx.p*dTdp() + dTdrho()*dWdx.rho);
-			q.y = -kap*(dWdy.p*dTdp() + dTdrho()*dWdy.rho);
-			break;
+		case EOS_TGAS: {
+			double dTdp_local = dTdp();
+			double dTdrho_local = dTdrho();
+			q.x = -kap*(dWdx.p*dTdp_local + dWdx.rho*dTdrho_local);
+			q.y = -kap*(dWdy.p*dTdp_local + dWdy.rho*dTdrho_local);
+			} break;
 		case EOS_IDEAL:
 			q.x = -kap*(dWdx.p - (p()/rho)*dWdx.rho)/(rho*R);
 			q.y = -kap*(dWdy.p - (p()/rho)*dWdy.rho)/(rho*R);

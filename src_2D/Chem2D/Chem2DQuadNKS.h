@@ -27,7 +27,8 @@ template <>
 int Newton_Update(Chem2D_Quad_Block *SolnBlk,
 		  AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
 		  Chem2D_Input_Parameters &Input_Parameters,
-		  GMRES_RightPrecon_MatrixFree<Chem2D_pState,Chem2D_Quad_Block,Chem2D_Input_Parameters> &GMRES) {
+		  GMRES_RightPrecon_MatrixFree<Chem2D_pState,Chem2D_Quad_Block,Chem2D_Input_Parameters> &GMRES,
+      double Relaxation_multiplier) {
 
   int Num_Var = SolnBlk[0].NumVar();  	
   int error_flag = 0;
@@ -41,7 +42,7 @@ int Newton_Update(Chem2D_Quad_Block *SolnBlk,
  	  /* Update solutions in conserved variables  U = Uo + RELAXATION*deltaU = Uo + denormalized(x) */	 
  	  for(int varindex =1; varindex < Num_Var; varindex++){	                       
  	    SolnBlk[Bcount].U[i][j][varindex] = SolnBlk[Bcount].Uo[i][j][varindex]  +  
-	      Input_Parameters.Relaxation_multiplier*GMRES.deltaU(Bcount,i,j,varindex-1);
+	      Relaxation_multiplier*GMRES.deltaU(Bcount,i,j,varindex-1);
  	  } 	      	  
  	  //CHEM2D N-1 
  	  SolnBlk[Bcount].U[i][j][Num_Var] = SolnBlk[Bcount].U[i][j].rho*(ONE - SolnBlk[Bcount].U[i][j].sum_species());	   

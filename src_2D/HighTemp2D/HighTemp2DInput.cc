@@ -282,6 +282,9 @@ void Set_Default_Input_Parameters(HighTemp2D_Input_Parameters &IP) {
   // Smooth quad block indicator:
   IP.i_Smooth_Quad_Block = ON;
 
+    // Default Solver Type
+    IP.Solver_Type = EXPLICIT;
+
   // Embedded boundary input parameters:
   IP.Reset_Interface_Motion_Type = OFF;
 
@@ -1623,7 +1626,7 @@ int Parse_Next_Input_Control_Parameter(HighTemp2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Flux_Function_Type,"AUSM+") == 0) {
       IP.i_Flux_Function = FLUX_FUNCTION_AUSMplus;
     } else if (strcmp(IP.Flux_Function_Type,"AUSM+UP") == 0) {
-      IP.i_Flux_Function = FLUX_FUNCTION_AUSMplusUP;
+      IP.i_Flux_Function = FLUX_FUNCTION_AUSM_PLUS_UP;
     } else if (strcmp(IP.Flux_Function_Type,"Godunov_MB") == 0) {
       IP.i_Flux_Function = FLUX_FUNCTION_GODUNOV_MB;
     } else if (strcmp(IP.Flux_Function_Type,"Roe_MB") == 0) {
@@ -1770,6 +1773,9 @@ int Parse_Next_Input_Control_Parameter(HighTemp2D_Input_Parameters &IP) {
       IP.i_Grid = GRID_FLAT_PLATE;
       IP.Plate_Length = ONE;
       IP.BC_South = BC_WALL_VISCOUS_HEATFLUX;
+    } else if (strcmp(IP.Grid_Type,"Flat_Plate_NK") == 0) {
+      IP.i_Grid = GRID_FLAT_PLATE_NK;
+      IP.Plate_Length = ONE;
     } else if (strcmp(IP.Grid_Type,"FPBL_Interaction") == 0 ) {
       IP.i_Grid = GRID_FPBL_INTERACTION;
       IP.Plate_Length = ONE;

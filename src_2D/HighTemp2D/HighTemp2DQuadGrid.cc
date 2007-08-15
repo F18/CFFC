@@ -122,16 +122,28 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
     break;
   case GRID_FLAT_PLATE :
     Grid_ptr = Grid_Flat_Plate(Grid_ptr,
-			       IP.Number_of_Blocks_Idir,
-			       IP.Number_of_Blocks_Jdir,
-			       IP.Plate_Length,
-                               IP.BC_South, 
-			       IP.i_Mesh_Stretching,
-			       IP.Mesh_Stretching_Factor_Idir,
-			       IP.Mesh_Stretching_Factor_Jdir,
-			       IP.Number_of_Cells_Idir,
-			       IP.Number_of_Cells_Jdir,
-			       IP.Number_of_Ghost_Cells);
+				IP.Number_of_Blocks_Idir,
+				IP.Number_of_Blocks_Jdir,
+				IP.Plate_Length,
+				IP.BC_South, 
+				IP.i_Mesh_Stretching,
+				IP.Mesh_Stretching_Factor_Idir,
+				IP.Mesh_Stretching_Factor_Jdir,
+				IP.Number_of_Cells_Idir,
+				IP.Number_of_Cells_Jdir,
+				IP.Number_of_Ghost_Cells);
+    break;
+  case GRID_FLAT_PLATE_NK : 
+        Grid_ptr = Grid_Flat_Plate_NK(Grid_ptr,
+				      IP.Number_of_Blocks_Idir,
+				      IP.Number_of_Blocks_Jdir,
+				      IP.Plate_Length, 
+				      IP.i_Mesh_Stretching,
+				      IP.Mesh_Stretching_Factor_Idir,
+				      IP.Mesh_Stretching_Factor_Jdir,
+				      IP.Number_of_Cells_Idir,
+				      IP.Number_of_Cells_Jdir,
+				      IP.Number_of_Ghost_Cells);
     break;
   case GRID_FPBL_INTERACTION :
     Grid_ptr = Grid_FPBL_Interaction(Grid_ptr,
@@ -333,6 +345,7 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
     Grid_ptr = Grid_Bump_Channel_Flow(Grid_ptr,
 				      IP.Number_of_Blocks_Idir,
 				      IP.Number_of_Blocks_Jdir,
+							IP.Cylinder_Radius,
 				      IP.Smooth_Bump,
 				      IP.Number_of_Cells_Idir,
 				      IP.Number_of_Cells_Jdir,

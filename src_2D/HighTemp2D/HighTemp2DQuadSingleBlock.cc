@@ -2540,6 +2540,74 @@ double Max_Norm_Residual(HighTemp2D_Quad_Block &SolnBlk) {
 }
 
 /**********************************************************************
+ * Routine: L1_Norm_Residual                                          *
+ *                                                                    *
+ * Determines the L1-norm of the solution residual for the specified  *
+ * quadrilateral solution block. Useful for monitoring convergence of *
+ * the solution for steady state problems.                            *
+ *                                                                    *
+ **********************************************************************/
+double L1_Norm_Residual(HighTemp2D_Quad_Block &SolnBlk, int rv) {
+
+  double l1_norm = ZERO;
+
+  for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
+    for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
+      l1_norm += fabs(SolnBlk.dUdt[i][j][0][rv]);
+    }
+  }
+
+  return l1_norm;
+
+}
+
+/**********************************************************************
+ * Routine: L2_Norm_Residual                                          *
+ *                                                                    *
+ * Determines the L2-norm of the solution residual for the specified  *
+ * quadrilateral solution block. Useful for monitoring convergence of *
+ * the solution for steady state problems.                            *
+ *                                                                    *
+ **********************************************************************/
+double L2_Norm_Residual(HighTemp2D_Quad_Block &SolnBlk, int rv) {
+
+  double l2_norm = ZERO;
+
+  for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
+    for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
+      l2_norm += sqr(SolnBlk.dUdt[i][j][0][rv]);
+    }
+  }
+
+  l2_norm = sqrt(l2_norm);
+
+  return l2_norm;
+
+}
+
+/**********************************************************************
+ * Routine: Max_Norm_Residual                                         *
+ *                                                                    *
+ * Determines the maximum norm of the solution residual for the       *
+ * specified quadrilateral solution block.  Useful for monitoring     *
+ * convergence of the solution for steady state problems.             *
+ *                                                                    *
+ **********************************************************************/
+double Max_Norm_Residual(HighTemp2D_Quad_Block &SolnBlk, int rv) {
+
+  double max_norm = ZERO;
+
+  for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
+    for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
+      max_norm = max(max_norm,fabs(SolnBlk.dUdt[i][j][0][rv]));
+    }
+  }
+
+  return max_norm;
+
+}
+
+/**********************************************************************
  * Routine: Linear_Reconstruction_GreenGauss                          *
  *                                                                    *
  * Peforms the reconstruction of a limited piecewise linear solution  *
@@ -4410,7 +4478,7 @@ int dUdt_Residual_Evaluation(HighTemp2D_Quad_Block &SolnBlk,
 	case FLUX_FUNCTION_AUSMplus :
 	  Flux = FluxAUSMplus_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
 	  break;
-	case FLUX_FUNCTION_AUSMplusUP :
+	case FLUX_FUNCTION_AUSM_PLUS_UP :
 	  Flux = FluxAUSMplusUP_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
 	  break;  
 	default:
@@ -4686,7 +4754,7 @@ int dUdt_Residual_Evaluation(HighTemp2D_Quad_Block &SolnBlk,
 		// Compute the i-direction viscous flux.
 		Flux -= ViscousFlux_n(Xface, Wface, dWdx, dWdy, norm_dir, SolnBlk.Axisymmetric);
 
-		if (HighTemp2D_Quad_Block::current_solver_type == CST_IMPLICIT && SolnBlk.face_grad_arrays_allocated) {
+		if (IP.Solver_Type == IMPLICIT && SolnBlk.face_grad_arrays_allocated) {
 			SolnBlk.dWdx_faceE[i][j] = dWdx;
 			SolnBlk.dWdy_faceE[i][j] = dWdy;
 		}
@@ -4869,7 +4937,7 @@ int dUdt_Residual_Evaluation(HighTemp2D_Quad_Block &SolnBlk,
       case FLUX_FUNCTION_AUSMplus :
 	Flux = FluxAUSMplus_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
 	break;
-      case FLUX_FUNCTION_AUSMplusUP :
+      case FLUX_FUNCTION_AUSM_PLUS_UP :
 	Flux = FluxAUSMplusUP_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
 	break;
      default:
@@ -5121,7 +5189,7 @@ int dUdt_Residual_Evaluation(HighTemp2D_Quad_Block &SolnBlk,
 			// Compute the j-direction viscous flux.
 			Flux -= ViscousFlux_n(Xface, Wface, dWdx, dWdy, norm_dir, SolnBlk.Axisymmetric);
 
-			if (HighTemp2D_Quad_Block::current_solver_type == CST_IMPLICIT && SolnBlk.face_grad_arrays_allocated) {
+			if (IP.Solver_Type == IMPLICIT && SolnBlk.face_grad_arrays_allocated) {
 				SolnBlk.dWdx_faceN[i][j] = dWdx;
 				SolnBlk.dWdy_faceN[i][j] = dWdy;
 			}
@@ -5479,7 +5547,7 @@ int dUdt_Multistage_Explicit(HighTemp2D_Quad_Block &SolnBlk,
 	case FLUX_FUNCTION_AUSMplus :
 	  Flux = FluxAUSMplus_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
 	  break;
-	case FLUX_FUNCTION_AUSMplusUP :
+	case FLUX_FUNCTION_AUSM_PLUS_UP :
 	  Flux = FluxAUSMplusUP_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
 	  break;
 	default:
@@ -5923,7 +5991,7 @@ int dUdt_Multistage_Explicit(HighTemp2D_Quad_Block &SolnBlk,
       case FLUX_FUNCTION_AUSMplus :
 	Flux = FluxAUSMplus_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
 	break;
-      case FLUX_FUNCTION_AUSMplusUP :
+      case FLUX_FUNCTION_AUSM_PLUS_UP :
 	Flux = FluxAUSMplusUP_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
 	break;
       default:

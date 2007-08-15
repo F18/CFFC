@@ -473,8 +473,6 @@ int HighTemp2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
   // MPI barrier to ensure processor synchronization.
   CFDkit_Barrier_MPI();
 
-	HighTemp2D_Quad_Block::current_solver_type = CST_EXPLICIT;
-
 	time(&start_explicit);
 
 	start_number_of_time_steps = number_of_time_steps;
@@ -967,7 +965,6 @@ int HighTemp2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	time(&start_NKS); 
 
 	if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
-		HighTemp2D_Quad_Block::current_solver_type = CST_IMPLICIT;
 
 		processor_cpu_time.update();
 		total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput);  

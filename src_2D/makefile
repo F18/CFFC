@@ -29,6 +29,7 @@ CFD_DIR = CFD/
 CHEM_DIR = Chem2D/
 DUSTY_DIR = Dusty2D/
 ELECTROSTATIC_DIR = Electrostatic2D/
+EOS_DIR = EquationOfState/
 EULER_DIR = Euler2D/
 GRID_DIR = Grid/
 HIGHTEMP_DIR = HighTemp2D/
@@ -127,6 +128,10 @@ SRC_HIGHTEMP = \
   $(HIGHTEMP_DIR)HighTemp2DState.cc
 SRC_HIGHTEMP_EXE = $(HIGHTEMP_DIR)HighTemp2D.cc  
 
+SRC_EOS = \
+  $(EOS_DIR)tgas.f  \
+  $(EOS_DIR)ugas.f
+
 SRC_GAUSSIAN = $(GAUSSIAN_DIR)Gaussian2DState.cc $(GAUSSIAN_DIR)Gaussian2DInput.cc \
                $(GAUSSIAN_DIR)Gaussian2DCartesian.cc $(GAUSSIAN_DIR)Gaussian2DCartesianSolvers.cc \
                $(GAUSSIAN_DIR)Gaussian2DQuadGrid.cc $(GAUSSIAN_DIR)Gaussian2DQuadSingleBlock.cc \
@@ -210,7 +215,7 @@ SRC_BASE =  $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_GRID) $(SRC_AMR) \
 SRC_CFFC = $(SRC_BASE) $(SRC_SCALAR) $(SRC_HEAT) $(SRC_HYPERHEAT) $(SRC_EULER1D) $(SRC_MHD1D) \
            $(SRC_ADVECTDIFFUSE) $(SRC_CHEM) $(SRC_HIGHTEMP) $(SRC_DUSTY) $(SRC_EULER) \
 	   $(SRC_ION) $(SRC_ELECTROSTATIC) $(SRC_INTERFACE) $(SRC_LEVELSET) $(SRC_TURBULENT) \
-	   $(SRC_NAVIERSTOKES) $(SRC_ICEMCFD)  $(SRC_GAUSSIAN)
+	   $(SRC_NAVIERSTOKES) $(SRC_ICEMCFD)  $(SRC_GAUSSIAN) $(SRC_EOS)
 SRC_MAIN = cffc2D.cc
 SRC_ICEMCFD_UTIL1 = $(ICEM_DIR)icemcfd2tecplot.cc 
 SRC_ICEMCFD_UTIL2 = $(ICEM_DIR)icemcfd2grid2dquad.cc
@@ -263,6 +268,8 @@ INC_CHEM = $(CHEM_DIR)Chem2DInput.h \
 	   $(CHEM_DIR)Reactions.h \
 	   $(CHEM_DIR)Species.h \
 	   $(CHEM_DIR)Chem2DQuadMultigrid.h
+
+INC_EOS = $(EOS_DIR)EquationOfState.h
 
 # find -name "*.h" | sort | sed "s/^\.\//  \$\(HIGHTEMP_DIR\)/" | sed "s/$/  \\\/"
 INC_HIGHTEMP = \
@@ -383,6 +390,10 @@ OBJ_CHEM = $(CHEM_DIR)NASARP1311dataclass.o \
 	   $(CHEM_DIR)Chem2DQuadSolvers.o 
 OBJ_CHEM_EXE = $(CHEM_DIR)Chem2D.o
 
+OBJ_EOS = \
+  $(EOS_DIR)tgas.o  \
+  $(EOS_DIR)ugas.o
+
 # find -name "*.cc" | sort | sed "s/cc$/o/" | sed "s/^\.\//  \$\(HIGHTEMP_DIR\)/" | sed "s/$/  \\\/"
 # Although 
 # OBJ_HIGHTEMP = $(SRC_HIGHTEMP:.cc=.o)
@@ -487,7 +498,7 @@ OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_AMR) \
 OBJ_CFFC = $(OBJ_BASE) $(OBJ_SCALAR) $(OBJ_HEAT) $(OBJ_HYPERHEAT) $(OBJ_EULER1D) $(OBJ_MHD1D) \
            $(OBJ_ADVECTDIFFUSE) $(OBJ_CHEM) $(OBJ_DUSTY) $(OBJ_EULER) $(OBJ_HIGHTEMP) \
            $(OBJ_ION) $(OBJ_ELECTROSTATIC) $(OBJ_INTERFACE) $(OBJ_LEVELSET) $(OBJ_NAVIERSTOKES) \
-	   $(OBJ_ICEMCFD)  $(OBJ_GAUSSIAN)
+	   $(OBJ_ICEMCFD)  $(OBJ_GAUSSIAN) $(OBJ_EOS)
 OBJ_MAIN = cffc2D.o
 OBJ_ICEMCFD_UTIL1 = $(ICEM_DIR)icemcfd2tecplot.o \
                     $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD)
@@ -532,6 +543,7 @@ help:
 	@echo "|        make dusty2D              compile dusty2D stand alone program              |"
 	@echo "|        make electrostatic2D      compile electrostatic2D stand alone program      |"
 	@echo "|        make euler2D              compile euler2D stand alone program              |"
+	@echo "|        make hightemp2D           compile hightemp2D stand alone program           |"
 	@echo "|        make ion5moment2D         compile ion5moment2D stand alone program         |"
 	@echo "|        make levelset2D           compile levelset2D stand alone program           |"
 	@echo "|        make navierstokes2D       compile navierstokes2D stand alone program       |"
@@ -712,12 +724,12 @@ $(CHEM_DIR)Chem2D.depend: $(SRC_CHEM_EXE)
 	@echo '-------------------------------------------------------------'
 	@echo ' '
 
-$(EXE_HIGHTEMP2D): $(HIGHTEMP_DIR)HighTemp2D.depend $(OBJ_HIGHTEMP_EXE) $(OBJ_BASE) $(OBJ_HIGHTEMP) $(OBJ_ICEMCFD)
+$(EXE_HIGHTEMP2D): $(HIGHTEMP_DIR)HighTemp2D.depend $(OBJ_HIGHTEMP_EXE) $(OBJ_BASE) $(OBJ_INTERFACE) $(OBJ_HIGHTEMP) $(OBJ_ICEMCFD) $(OBJ_EOS)
 	@echo ' '
 	@echo Building program $(EXE_HIGHTEMP2D) for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_HIGHTEMP2D) $(OBJ_HIGHTEMP_EXE) $(OBJ_BASE) $(OBJ_HIGHTEMP) $(OBJ_ICEMCFD) $(LDFLAGS)
+	$(LD) -o $(EXE_HIGHTEMP2D) $(OBJ_HIGHTEMP_EXE) $(OBJ_BASE) $(OBJ_INTERFACE) $(OBJ_HIGHTEMP) $(OBJ_ICEMCFD) $(LDFLAGS) $(OBJ_EOS)
 	@echo ' '
 	@echo Program $(EXE_HIGHTEMP2D) has been brought up to date.
 	@echo '--------------------------------------------------'
@@ -1054,6 +1066,7 @@ clean:
 	rm -f $(AMR_DIR)*.o $(AMR_DIR)*.il $(AMR_DIR)*~
 	rm -f $(CFD_DIR)*.o $(CFD_DIR)*.il $(CFD_DIR)*~
 	rm -f $(CHEM_DIR)*.o $(CHEM_DIR)*.il $(CHEM_DIR)*~ $(CHEM_DIR)*.depend $(CHEM_DIR)*.bak
+	rm -f $(EOS_DIR)*.o 
 	rm -f $(HIGHTEMP_DIR)*.o $(HIGHTEMP_DIR)*.il $(HIGHTEMP_DIR)*~ $(HIGHTEMP_DIR)*.depend $(HIGHTEMP_DIR)*.bak
 	rm -f $(DUSTY_DIR)*.o $(DUSTY_DIR)*.il $(DUSTY_DIR)*~ $(DUSTY_DIR)*.depend $(DUSTY_DIR)*.bak
 	rm -f $(ELECTROSTATIC_DIR)*.o $(ELECTROSTATIC_DIR)*.il $(ELECTROSTATIC_DIR)*~ $(ELECTROSTATIC_DIR)*.depend $(ELECTROSTATIC_DIR)*.bak

@@ -9,7 +9,7 @@
 PLATFORM = generic
 
 # NoMPI, MPICH, MPT (SG)
-MPI_VERSION = NoMPI
+MPI_VERSION = MPICH
 
 # NoICEMCFD, V41, V42. V43, V50, V10, V11
 ICEMCFD_VERSION = NoICEMCFD
@@ -254,6 +254,7 @@ ifeq ($(PLATFORM),Linux_i386)
     LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -lm
     DEPENDSFLAGS = -I/usr/local/mpi/include/mpi2c++
   endif
+  CPPFLAGS += -D_i386
 endif
 
 #
@@ -287,6 +288,7 @@ ifeq ($(PLATFORM),Linux_alpha)
     LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -lm
     DEPENDSFLAGS = -I/usr/local/mpi/include/mpi2c++
   endif
+  CPPFLAGS += -D_ALPHA
 endif
 
 #
@@ -328,6 +330,7 @@ ifeq ($(PLATFORM),Linux_ia64)
     LDFLAGS =  $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -limf
     DEPENDSFLAGS = 
   endif
+  CPPFLAGS += -D_ITANIUM
 endif
 
 #
@@ -388,3 +391,5 @@ ifeq ($(PLATFORM),hpux)
     DEPENDSFLAGS =
   endif
 endif
+
+FFLAGS += -r8

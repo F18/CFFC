@@ -43,11 +43,11 @@ int main(int num_arg, char *arg_ptr[]) {
 
   // Title of code:
   char *program_title_ptr = 
-     "hightemp2D: Numerical Solvers for the NS HighTemp 2D PDEs.";
+     "HighTemp2D: Numerical solver for the Navier-Stokes 2D PDEs with High-Temperature effects.";
 
   // Version of code:
   char *program_version_ptr = 
-     "Beta Version 0.30, UTIAS CFD & Propulsion Group, 1999-2004.";
+     "Version 1.00, UTIAS CFD & Propulsion Group, 1999-2007.";
   
   // Input file name:
   char *Input_File_Name_ptr = "hightemp2D.in";

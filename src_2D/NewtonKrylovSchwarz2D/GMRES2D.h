@@ -112,6 +112,7 @@ public:
   int                      Nghost; // Number of ghost cells.
   Grid2D_Quad_Block          Grid; // dummy pointer.
   SOLN_BLOCK_TYPE  *SolnBlk;      // Pointer to solution block. 
+	double *DTS_Uo;
   INPUT_TYPE *Input_Parameters;
 
   /****************************************************************/
@@ -126,6 +127,7 @@ public:
     vector_switch = 100; NCi = 0;  ICl = 0; ICu = 0; 
     NCj = 0;  JCl = 0; JCu = 0; Nghost = 0;
     SolnBlk = NULL;      
+		DTS_Uo = NULL;
   }
   
   // GMRES_Block(const GMRES_Block &G);                //FIX so that it actually copies, not just passes pointers!!!!!!!!!!!!
@@ -134,7 +136,7 @@ public:
   /* Allocate and deallocate memory for GMRES_Block variables. */
   void allocate( const int m, const int overlap_cells, 
 		 const bool normalize, SOLN_BLOCK_TYPE &Soln_Block_ptr, 
-		 INPUT_TYPE &IP, const int &_blocksize);  
+		 INPUT_TYPE &IP, const int &_blocksize, double *DTS_Uo_ptr);  
   void deallocate();
   ~GMRES_Block() { deallocate(); }
   void Initialize(void);
@@ -151,6 +153,13 @@ public:
   void Output_W(void) { for (int i=0;i< restart*scalar_dim;++i){ cout<<"\n W(i) "<<W[i]; }}
   void Output_V(void) { for (int i=0;i<((restart + 1) * scalar_dim);++i) { cout<<"\n V(i) "<<V[i]; }}
   void Output_U(int what);
+	void Output_GMRES_vars_Tecplot(
+			int Number_of_Time_Steps,
+			int Block_Number,
+			bool print_title,
+			double l2_norm,
+			double l2_norm_rel,
+			ofstream &fout);
 
   //Norm Calculations  and Vector Operations
   double L2_Norm(const double* v);
@@ -286,6 +295,67 @@ Output_U(int what)
   }  
 }
 
+template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE> 
+void GMRES_Block<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
+Output_GMRES_vars_Tecplot (
+		int Number_of_Time_Steps,
+		int Block_Number,
+		bool print_title,
+		double l2_norm,
+		double l2_norm_rel,
+		ofstream &fout)
+{
+	// whether or not to print the ghost cells. Use 1 or 0.
+	int ng = 1;
+
+	int kvar = Input_Parameters->i_Residual_Variable - 1;
+
+	if (print_title) {
+		fout << "TITLE = \"";
+		fout << "GMRES deltaU: Iteration = " << Number_of_Time_Steps
+			<< scientific << setprecision(10) << ", L2-Norm = " << l2_norm
+			<< scientific << setprecision(3) << ", L2-Norm Rel = " << l2_norm_rel << fixed
+			<< setprecision(14);
+		fout << "\"" << "\n"
+			<< "VARIABLES = \"x\" \\ \n"
+			<< "\"y\" \\ \n";
+		fout << "\"b_k" << kvar	<< "\" \\ \n";
+		for (int q = 0; q < blocksize; q++) {
+			fout << "\"deltaU_k" << q << "\" \\ \n";
+		}
+		for (int q = 0; q < blocksize; q++) {
+			fout << "\"V0_" << q << "\" \\ \n";
+		}
+	}
+
+  fout << setprecision(14);
+
+	fout << "ZONE T =  \"Block " << Block_Number << " CPU" << CFDkit_MPI::This_Processor_Number
+		<< "\" \\ \n"
+		<< "I = " << SolnBlk->Grid.ICu - SolnBlk->Grid.ICl + 2*SolnBlk->Nghost*ng + 1 << " \\ \n"
+		<< "J = " << SolnBlk->Grid.JCu - SolnBlk->Grid.JCl + 2*SolnBlk->Nghost*ng + 1 << " \\ \n"
+		<< "F = POINT \n";
+
+	fout.setf(ios::scientific);
+	for (int j = JCl - Nghost*ng; j <= JCu + Nghost*ng; j++) {
+		for (int i = ICl - Nghost*ng; i <= ICu + Nghost*ng; i++) {
+      fout << " " << SolnBlk->Grid.Cell[i][j].Xc;
+			fout << " " << fabs(b[index(i,j,kvar)]); 
+			for (int q = 0; q < blocksize; q++) {
+				fout << " " << fabs(deltaU(i,j,q)); 
+			}
+			for (int q = 0; q < blocksize; q++) {
+				fout << " " << fabs(V[0 + index(i, j, q)]);
+			}
+      fout << endl;
+    }
+  }
+
+  fout << setprecision(6);
+}
+
+
+
 /**************************************************************************
  * GMRES_Block::allocate -- Allocate memory.                              *
  **************************************************************************/
@@ -293,7 +363,7 @@ template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 void GMRES_Block<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
 allocate( const int m, const int overlap_cells, 
 	  const bool normalize, SOLN_BLOCK_TYPE &Soln_Block_ptr, 
-	  INPUT_TYPE &IP, const int &_blocksize)
+	  INPUT_TYPE &IP, const int &_blocksize, double *DTS_Uo_ptr)
 {  
   //set pointer to solution block and set all necessary GMRES information
   SolnBlk = &(Soln_Block_ptr);
@@ -308,9 +378,12 @@ allocate( const int m, const int overlap_cells,
   overlap = overlap_cells;  
   restart = m;
 
+	if (Input_Parameters->NKS_IP.Time_Accurate) {	DTS_Uo = DTS_Uo_ptr; }
+
   //Check if a valid solution block and GMRES parameters
   assert(restart > 1);  assert(NCi > 1);  assert(NCj > 1);
   blocksize = _blocksize; 
+	// scalar_dim could be a static variable, yes...?
   scalar_dim = NCi * NCj * blocksize;
 
   // Allocate Memory
@@ -377,6 +450,25 @@ Initialize(void)
       }    	      
     } 
   }      
+
+	if (Input_Parameters->NKS_IP.Time_Accurate) {
+		for (int i = ICl; i <= ICu; i++) {
+			for (int j = JCl; j <= JCu; j++) {
+				for (int k = 0; k < blocksize; k++) {
+					// there's an assumption that the class index() function
+					// is the same as the DTS_Uo_index() function.
+					//
+					// Note that for time accurate, dt is the same for everyone.
+					// We are applying pure Newton's method to the function arising out
+					// of the implicit Euler time stepping. dt is the same for everyone and
+					// constant over the entire Newton solve (which is one implicit euler time step.)
+					b[index(i,j,k)] += normalizeR(
+							(SolnBlk->U[i][j][k+1] - DTS_Uo[index(i,j,k)]) / SolnBlk->dt[i][j],
+							k);
+				}    	      
+			} 
+		}      
+	}
 }
 
 /**************************************************************************
@@ -1858,6 +1950,8 @@ private:
   SOLN_BLOCK_TYPE  *Soln_ptr;
   AdaptiveBlock2D_List *List_of_Local_Solution_Blocks;
   INPUT_TYPE *Input_Parameters;
+	double **DTS_Uo_ptr;
+
 
   //GMRES LOCAL DYNAMIC DATA
   int Number_of_GMRES_Iterations;
@@ -1874,11 +1968,12 @@ public:
   //default constructor's 
   GMRES_RightPrecon_MatrixFree(void):
     Soln_ptr(NULL), List_of_Local_Solution_Blocks(NULL), Input_Parameters(NULL),
-    G(NULL), Number_of_GMRES_Iterations(0), global_time_step_size(ZERO), relative_residual(ZERO) {}
+    G(NULL), Number_of_GMRES_Iterations(0), global_time_step_size(ZERO), relative_residual(ZERO,
+				DTS_Uo_ptr(NULL)) {}
   
   GMRES_RightPrecon_MatrixFree(SOLN_BLOCK_TYPE *Soln_ptr, 
 			       AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
-			       INPUT_TYPE &Input_Parameters, const int &blocksize);
+			       INPUT_TYPE &Input_Parameters, const int &blocksize, double **DTS_Uo_ptr);
 
   // Proper functions not built yet.
   // GMRES_RightPrecon_MatrixFree(const &GMRES_RightPrecon_MatrixFree) {}  
@@ -1890,7 +1985,9 @@ public:
   ~GMRES_RightPrecon_MatrixFree() { deallocate(); }
 
   // Constructors
-  int solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_precon, const int Number_of_Newton_Steps);
+  int solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_precon, double tol,
+			bool *GMRES_restarted_at_least_once, bool *GMRES_failed, int *GMRES_iters,
+			double *res_cputime, int *res_nevals);
 
   double deltaU(const int Bcount, const int i, const int j, const int k){
     return (G[Bcount].deltaU(i,j,k)); }
@@ -1898,6 +1995,11 @@ public:
     return (G[Bcount].deltaU_test(i,j,k)); }
   double b_test(const int Bcount, const int i, const int j, const int k){
     return (G[Bcount].b_test(i,j,k)); }  
+
+	int Output_GMRES_vars_Tecplot(
+			int Number_of_Time_Steps,
+			double l2_norm,
+			double l2_norm_rel);
 
 };
 
@@ -1908,10 +2010,11 @@ template <typename SOLN_VAR_TYPE,typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 inline GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
 GMRES_RightPrecon_MatrixFree(SOLN_BLOCK_TYPE *SolnBlk, 
 			     AdaptiveBlock2D_List &List_of_Local_Blocks,
-			     INPUT_TYPE &IP,const int &blocksize):
+			     INPUT_TYPE &IP,const int &blocksize, double **DTS_Uo):
   Soln_ptr(SolnBlk), 
   List_of_Local_Solution_Blocks(&List_of_Local_Blocks),   
   Input_Parameters(&IP),
+	DTS_Uo_ptr(DTS_Uo),
   Number_of_GMRES_Iterations(0),
   relative_residual(0)  
 {
@@ -1923,7 +2026,7 @@ GMRES_RightPrecon_MatrixFree(SOLN_BLOCK_TYPE *SolnBlk,
       G[Bcount].allocate(Input_Parameters->NKS_IP.GMRES_Restart,
 			 Input_Parameters->NKS_IP.GMRES_Overlap,
 			 Input_Parameters->NKS_IP.Normalization,
-			 Soln_ptr[Bcount],IP,blocksize);
+			 Soln_ptr[Bcount],IP,blocksize, DTS_Uo_ptr[Bcount]);
     } 
   } 
 }
@@ -1964,19 +2067,31 @@ ApplyPlaneRotation(double &dx, double &dy, const double &cs,const double &sn) {
  ****************************************************************************/
 template <typename SOLN_VAR_TYPE,typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 int GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_precon, const int Number_of_Newton_Steps) {   
-
+solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_precon, double tol,
+		bool *GMRES_restarted_at_least_once, bool *GMRES_failed, int *GMRES_iters,
+		double *res_cputime, int *res_nevals)
+{
   int m1 = Input_Parameters->NKS_IP.GMRES_Restart+1; //restart+1 used in H calculation
   int error_flag(0);  
   double resid0(ZERO);
   double beta(ZERO);
-  double EPSILON_PARAM(1.0e-6);   //  1e0-8 original, 1e-10 fixed minimum, Viscous stable @ 1e-6 
-  double epsilon(EPSILON_PARAM);
+  double epsilon(ZERO);
+
+	int met_tol(0);
+	bool do_one_more_iter_for_check(false);
 
   //FORTRAN NAMES
   integer inc(1);  // vector stride is always 1
   doublereal temp;
   Number_of_GMRES_Iterations = 0;
+
+	clock_t t0;
+
+	// Once GMRES_restarted_at_least_once is set to true, it remains true.
+	// That is, it is for information only (for the caller) and so should 
+	// not be tested anywhere in a logical statement.
+	*GMRES_restarted_at_least_once = false;
+	*GMRES_failed = false;
 
   /**************************************************************************/
   //Setup/Reset GMRES variables
@@ -1991,7 +2106,6 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
   /******************* BEGIN GMRES CALCULATION ******************************/
   /**************************************************************************/
   bool i_first_time_through = true;
-  bool i_restart_flag = false;
 
   do {
 
@@ -2003,10 +2117,17 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
     /**************************************************************************/
     /********** NOT FIRST TIME THROUGH - RESTART APPLIED **********************/
     /**************************************************************************/
-    if(!i_first_time_through) {                                                     
+    if(!i_first_time_through) {
 
-      if (CFDkit_Primary_MPI_Processor() && i_restart_flag){   
-	cout << "\n GMRES Restarted at -> GMRES (Inner Iterations) = " << Number_of_GMRES_Iterations; 	 
+      if (CFDkit_Primary_MPI_Processor() && !do_one_more_iter_for_check){   
+				switch (Input_Parameters->NKS_IP.output_format) {
+					case OF_SCOTT:
+						cout << "\n GMRES Restarted at -> GMRES (Inner Iterations) = " ;
+						cout << Number_of_GMRES_Iterations; 	 
+						break;
+					case OF_ALISTAIR: break; // picked up below
+					default: break;
+				}
       } 
       
       /************************************************************************/
@@ -2045,10 +2166,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	}
       } 
       total_norm_x = sqrt(CFDkit_Summation_MPI(total_norm_x));      
-      epsilon = EPSILON_PARAM/sqrt(total_norm_x);       
-      /**************************************************************************/
-
-
+      epsilon = Input_Parameters->NKS_IP.Epsilon_Naught/sqrt(total_norm_x);       
 
       /**************************************************************************/
       /******* BEGIN MATRIX-FREE FOR RESTART ************************************/
@@ -2059,10 +2177,14 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	  //Calculate R(U+epsilon*(Minv*x(i))) -> Soln_ptr.U =  Soln_ptr.Uo + epsilon * W(i)
 	  G[Bcount].calculate_perturbed_residual_Restart(epsilon);	  
 	  BCs(Soln_ptr[Bcount],*Input_Parameters);
+		t0 = clock();
 	  error_flag = dUdt_Residual_Evaluation(Soln_ptr[Bcount],*Input_Parameters);	  
+		*res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
 	} 
       } 
       /**************************************************************************/
+
+			t0 = clock();
 
       /**************************************************************************/
       // Send boundary flux corrections at block interfaces with resolution changes.
@@ -2079,6 +2201,9 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
       // Apply boundary flux corrections to residual to ensure that method is conservative.
       Apply_Boundary_Flux_Corrections(Soln_ptr, *List_of_Local_Solution_Blocks);
       /**************************************************************************/
+
+			*res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
+      (*res_nevals)++;
       
       /////////////////////////// 2ND /////////////////////////////////// 
       if(Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == SECOND_ORDER) {
@@ -2087,13 +2212,17 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	    //Calculate R(U+epsilon*(Minv*x(i))) -> Soln_ptr.U =  Soln_ptr.Uo + epsilon * W(i)
 	    G[Bcount].calculate_perturbed_residual_2nd_Restart(epsilon);	  
 	    BCs(Soln_ptr[Bcount],*Input_Parameters);
+			t0 = clock();
 	    error_flag = dUdt_Residual_Evaluation(Soln_ptr[Bcount],*Input_Parameters);	  
+			*res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
 	  } 
 	} 
 	/**************************************************************************/
 	
 	/**************************************************************************/
 	// Send boundary flux corrections at block interfaces with resolution changes.
+	t0 = clock();
+
 	error_flag = Send_Conservative_Flux_Corrections(Soln_ptr,
 							*List_of_Local_Solution_Blocks,
 							Soln_ptr[0].NumVar());
@@ -2106,6 +2235,9 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	
 	// Apply boundary flux corrections to residual to ensure that method is conservative.
 	Apply_Boundary_Flux_Corrections(Soln_ptr, *List_of_Local_Solution_Blocks);
+
+			*res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
+      (*res_nevals)++;
 	/**************************************************************************/
       }
       //////////////////////////////////////////////////////////////////////////
@@ -2151,7 +2283,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
     /**************************************************************************/
     //GMRES check compares computed maxtrix-vector products to real Ax by
     //using the "restart" Ax.
-    if(Input_Parameters->NKS_IP.GMRES_CHECK && !i_first_time_through && !i_restart_flag) {    
+    if(Input_Parameters->NKS_IP.GMRES_CHECK && do_one_more_iter_for_check) {
       // is ||beta||/||b|| =  to final relative_residual from GMRES
       break;
     }
@@ -2240,7 +2372,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
  	} 
       }       
       total_norm_z = sqrt(CFDkit_Summation_MPI(total_norm_z));     	                      
-      epsilon = EPSILON_PARAM/sqrt(total_norm_z);            
+      epsilon = Input_Parameters->NKS_IP.Epsilon_Naught/sqrt(total_norm_z);
       /**************************************************************************/
 
 
@@ -2256,11 +2388,15 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
  	  G[Bcount].calculate_perturbed_residual(epsilon);
 	  //Apply Regular Soln_ptr BC'S 
 	  BCs(Soln_ptr[Bcount],*Input_Parameters);
+	  t0 = clock();
 	  //modified to calculate in "overlap" cells as well
 	  error_flag = dUdt_Residual_Evaluation(Soln_ptr[Bcount],*Input_Parameters);	  
+	  *res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
 	 } 
       }
       /**************************************************************************/
+
+			t0 = clock();
     
       /**************************************************************************/
       // Send boundary flux corrections at block interfaces with resolution changes. (changes to dUdt)
@@ -2275,6 +2411,9 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	  
       // Apply boundary flux corrections to residual to ensure that method is conservative.
       Apply_Boundary_Flux_Corrections(Soln_ptr,*List_of_Local_Solution_Blocks);
+
+			*res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
+			(*res_nevals)++;
       
       /**************************************************************************/
 
@@ -2290,13 +2429,16 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	    //Apply Regular Soln_ptr BC'S 
 	    BCs(Soln_ptr[Bcount],*Input_Parameters);
 	    //modified to calculate in "overlap" cells as well
-	    error_flag = dUdt_Residual_Evaluation(Soln_ptr[Bcount],*Input_Parameters);	  
+	  t0 = clock();
+	  error_flag = dUdt_Residual_Evaluation(Soln_ptr[Bcount],*Input_Parameters);	  
+	  *res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
 	  } 
 	}
 	/**************************************************************************/
     
 	/**************************************************************************/
 	// Send boundary flux corrections at block interfaces with resolution changes.
+			t0 = clock();
 	error_flag = Send_Conservative_Flux_Corrections(Soln_ptr,
 							*List_of_Local_Solution_Blocks,
 							Soln_ptr[0].NumVar());
@@ -2308,6 +2450,8 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	
 	// Apply boundary flux corrections to residual to ensure that method is conservative.
 	Apply_Boundary_Flux_Corrections(Soln_ptr,*List_of_Local_Solution_Blocks);
+			*res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
+			(*res_nevals)++;
 	
       }
       ////////////////////////////////////////////////////////////////////////////
@@ -2438,8 +2582,6 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 
       /**************************************************************************/
       
-      
-      /**************************************************************************/
       // Output progress
 
       //Verbose Output for CHECKING
@@ -2452,20 +2594,33 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	     <<"\t"<< total_norm_z << "\t  "<<epsilon;	
       } 
 
-      //Standard Output
-      if (relative_residual <= Input_Parameters->NKS_IP.GMRES_Tolerance || 
-	  Number_of_GMRES_Iterations+1 > Input_Parameters->NKS_IP.Maximum_Number_of_GMRES_Iterations ) {
+			if (relative_residual <= tol) { 
+				met_tol = 1; 
+			}
+			// Now that the tolerance is calculated using math
+			// functions (see the call to GMRES::solve() in NKS2D.h), 
+			// round-off error on different computers
+			// could mean that one CPU meets the tolerance while
+			// another does not. This MPI-OR statement avoids any
+			// such problems.
+			//   -- Alistair Wood Wed Feb 28 2007 
+      met_tol = CFDkit_OR_MPI(met_tol);
 
-	if (CFDkit_Primary_MPI_Processor()) { 
-	  cout << "\n Finished GMRES with (Inner Iterations) = " << Number_of_GMRES_Iterations << " resid0 = " 
-	       << resid0 << " resid = " << relative_residual*resid0 << " relative_residual = " << relative_residual<<endl;
-	} 
-	break;
-      }       
-      /**************************************************************************/
+			if (met_tol) {
+				break;
 
-    } while (search_direction_counter+1 < Input_Parameters->NKS_IP.GMRES_Restart && 
-	     Number_of_GMRES_Iterations+1 <= Input_Parameters->NKS_IP.Maximum_Number_of_GMRES_Iterations);
+			} else if (Number_of_GMRES_Iterations >= 
+					Input_Parameters->NKS_IP.Maximum_Number_of_GMRES_Iterations) {
+				*GMRES_failed = true;
+				break;
+
+			} else if (search_direction_counter >= Input_Parameters->NKS_IP.GMRES_Restart-1) {
+				*GMRES_restarted_at_least_once = true;
+				break;
+			}
+
+    } while (1);
+
     /**************************************************************************/
     /******************* END PRIMARY GMRES LOOP *******************************/
     /**************************************************************************/
@@ -2491,24 +2646,23 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	}   
       } 
     } 
-    /************************************************************************/
 
+
+		if (met_tol || *GMRES_failed) { // We have met the tolerance or failed so we will stop here ...
+			if (Input_Parameters->NKS_IP.GMRES_CHECK) { // ... but if GMRES_CHECK ...
+				do_one_more_iter_for_check = true; // ... then do one more iteration to check GMRES residual. 
+			} else {
+				break;
+			}
+		}
+		// and if we did not meet the tolerance and we have not failed then set:
     i_first_time_through = false;
-
-    // flag for restart
-    if( relative_residual > Input_Parameters->NKS_IP.GMRES_Tolerance && 
-        Number_of_GMRES_Iterations+1 <= Input_Parameters->NKS_IP.Maximum_Number_of_GMRES_Iterations) {
-      i_restart_flag = true;
-    } else {
-      i_restart_flag = false;
-    }
-
-  } while ( i_restart_flag || Input_Parameters->NKS_IP.GMRES_CHECK);
+		// and go back to the start for a restart.
+	} while (1);
  
   /**************************************************************************/
   /********************* END GMRES CALCULATION ******************************/
   /**************************************************************************/
-
 
   /**************************************************************************/
   // Check GMRES for accurate matrix vector products 
@@ -2553,26 +2707,92 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 
     delete[] total_norm_eqn_b; delete[] total_norm_eqn_r; 
   }
-  /**************************************************************************/
 
+	if (CFDkit_Primary_MPI_Processor()) { 
+		switch (Input_Parameters->NKS_IP.output_format) {
+			case OF_SCOTT:
+				cout << "\n Finished GMRES with (Inner Iterations) = " << Number_of_GMRES_Iterations;
+				cout << " resid0 = " << resid0;
+				cout << " resid = " << relative_residual*resid0;
+				cout << " relative_residual = " << relative_residual << endl;
+				if (*GMRES_failed) {
+					cout << "\n GMRES2D - GMRES ERROR: Unable to reach the specified convergence tolerance.";
+					cout << "\n Final gmrestol = " << relative_residual << endl;
+				}
+				break;
+			case OF_ALISTAIR:
+				{
+					int output_width = Input_Parameters->NKS_IP.output_width; 
 
-  /**************************************************************************/
-  if ( Number_of_GMRES_Iterations >= Input_Parameters->NKS_IP.Maximum_Number_of_GMRES_Iterations ) {
-    if (CFDkit_Primary_MPI_Processor()) {  
-      cout << "\n GMRES2D - GMRES ERROR: Unable to reach the specified convergence tolerance.";
-      cout << "\n Final gmrestol = " << relative_residual << endl;
-      cout.flush();
-    }
-  }
-  /**************************************************************************/
+					cout << setw(3) << Number_of_GMRES_Iterations << "  ";
 
+					cout.unsetf(ios::scientific); cout.setf(ios::fixed);
+					cout << setw(output_width) << relative_residual * 1000.0;
 
-  /**************************************************************************/
+					cout.unsetf(ios::fixed); cout.setf(ios::scientific);
+					cout << setw(output_width) << resid0;
+
+					if (*GMRES_restarted_at_least_once) { cout << "  R"; } else { cout << "   "; }
+					if (*GMRES_failed)    { cout << "  F"; } else { cout << "   "; }
+					// endl in NKS2D.h
+				}
+				break;
+			default:
+				break;
+		} 
+	} 
+
+	*GMRES_iters = Number_of_GMRES_Iterations;
   return error_flag;
 
 } /* End of GMRES_RightPrecon_MatrixFree::solve. */ 
 
+template <typename SOLN_VAR_TYPE,typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
+int GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
+Output_GMRES_vars_Tecplot(
+		int Number_of_Time_Steps,
+ 		double l2_norm,
+ 		double l2_norm_rel)
+{
+  if (List_of_Local_Solution_Blocks->Nused() == 0) return 0;
+
+	int i = 0;
+	bool print_title = true;
+	char prefix[256], output_file_name[256];
+	ofstream output_file;    
+
+	for (i = 0; i < strlen(Input_Parameters->Output_File_Name); i++) {
+		if (Input_Parameters->Output_File_Name[i] == ' ' ||
+				Input_Parameters->Output_File_Name[i] == '.') {
+			break;
+		}
+	}
+	strncpy(prefix, Input_Parameters->Output_File_Name, i);
+	prefix[i] = '\0';
+	
+	sprintf(output_file_name, "%s_n1%.4d_gmres_cpu%.3d.dat",
+			prefix, Number_of_Time_Steps, List_of_Local_Solution_Blocks->ThisCPU);
+  
+  output_file.open(output_file_name, ios::out);
+  if (!output_file.good()) { return 1; }
+
+  for (int blk = 0; blk < List_of_Local_Solution_Blocks->Nblk; blk++) {
+    if (List_of_Local_Solution_Blocks->Block[blk].used == ADAPTIVEBLOCK2D_USED) {
+			G[blk].Output_GMRES_vars_Tecplot(
+					Number_of_Time_Steps,
+					blk,
+					print_title,
+					l2_norm,
+					l2_norm_rel,
+					output_file);
+
+      if (print_title) { print_title = false; }
+    }
+  }
+
+  output_file.close();
+  return 0;
+}
 
 #endif // _GMRES2D_INCLUDED
-
 

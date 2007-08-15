@@ -66,7 +66,7 @@ class Multigrid_Input_Parameters{
   int Number_of_Pre_Smooths;
   int Number_of_Post_Smooths;
   int Number_of_Smooths_on_Coarsest_Level;
-  double Convergence_Residual_Level;
+  double reg_abs_tol, reg_rel_tol, full_abs_tol, full_rel_tol;
   //@}
 
   //@{ @name Dual-time-stepping parameters
@@ -79,6 +79,8 @@ class Multigrid_Input_Parameters{
   double Dual_Time_Convergence_Residual_Level;
   int i_Dual_Time_Preconditioning;
   //@}
+
+  int MG_Write_Output_Cells_Freq; // set to zero to turn off
 
   //@{ @name Constructor and desctructor
   //! Constructor (assign default values).
@@ -102,7 +104,10 @@ class Multigrid_Input_Parameters{
     Number_of_Pre_Smooths = 1;
     Number_of_Post_Smooths = 0;
     Number_of_Smooths_on_Coarsest_Level = 3;
-    Convergence_Residual_Level = -1000.0;
+    reg_abs_tol  = -1.0;
+    reg_rel_tol  = -1.0;
+    full_abs_tol = -1.0;
+    full_rel_tol = -1.0;
     // Dual-time-stepping parameters:
     i_Dual_Time_Stepping = OFF;
     Ncycles_Regular_Multigrid = 0;
@@ -112,6 +117,7 @@ class Multigrid_Input_Parameters{
     Physical_Time_CFL_Number = 0.50;
     Dual_Time_Convergence_Residual_Level = -1000.0;
     i_Dual_Time_Preconditioning = SCALAR_LOCAL_TIME_STEPPING;
+    MG_Write_Output_Cells_Freq = 0;
   }
 
   //! Destructor
@@ -176,7 +182,16 @@ class Multigrid_Input_Parameters{
     MPI::COMM_WORLD.Bcast(&(Number_of_Smooths_on_Coarsest_Level),
 			  1,
 			  MPI::INT,0);
-    MPI::COMM_WORLD.Bcast(&(Convergence_Residual_Level),
+    MPI::COMM_WORLD.Bcast(&(reg_abs_tol),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(reg_rel_tol),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(full_abs_tol),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(full_rel_tol),
 			  1,
 			  MPI::DOUBLE,0);
     // Dual-time-stepping parameters:
@@ -202,6 +217,9 @@ class Multigrid_Input_Parameters{
 			  1,
 			  MPI::DOUBLE,0);
     MPI::COMM_WORLD.Bcast(&(i_Dual_Time_Preconditioning),
+			  1,
+			  MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(&(MG_Write_Output_Cells_Freq),
 			  1,
 			  MPI::INT,0);
 #endif
@@ -265,7 +283,16 @@ class Multigrid_Input_Parameters{
     Communicator.Bcast(&(Number_of_Smooths_on_Coarsest_Level),
 		       1,
 		       MPI::INT,Source_CPU);
-    Communicator.Bcast(&(Convergence_Residual_Level),
+    Communicator.Bcast(&(reg_abs_tol),
+		       1,
+		       MPI::DOUBLE,Source_CPU);
+    Communicator.Bcast(&(reg_rel_tol),
+		       1,
+		       MPI::DOUBLE,Source_CPU);
+    Communicator.Bcast(&(full_abs_tol),
+		       1,
+		       MPI::DOUBLE,Source_CPU);
+    Communicator.Bcast(&(full_rel_tol),
 		       1,
 		       MPI::DOUBLE,Source_CPU);
     // Dual-time-stepping parameters:
@@ -291,6 +318,9 @@ class Multigrid_Input_Parameters{
 		       1,
 		       MPI::DOUBLE,Source_CPU);
     Communicator.Bcast(&(i_Dual_Time_Preconditioning),
+		       1,
+		       MPI::INT,Source_CPU);
+    Communicator.Bcast(&(MG_Write_Output_Cells_Freq),
 		       1,
 		       MPI::INT,Source_CPU);
   }
@@ -345,9 +375,29 @@ inline ostream &operator << (ostream &out_file,
 	   << IP.Number_of_Post_Smooths;
   out_file << "\n  -> Number of Smoothing Iterations on the Coarsest Multigrid Level:  "
 	   << IP.Number_of_Smooths_on_Coarsest_Level;
-  if (IP.Convergence_Residual_Level > 0) {
-    out_file << "\n  -> Convergence Residual Level: "
-	     << IP.Convergence_Residual_Level;
+  if (IP.reg_abs_tol > 0) {
+		out_file.setf(ios::scientific);
+    out_file << "\n  -> Absolute Tolerance for Regular MG: "
+	     << IP.reg_abs_tol;
+		out_file.unsetf(ios::scientific);
+  }
+  if (IP.reg_rel_tol > 0) {
+		out_file.setf(ios::scientific);
+    out_file << "\n  -> Relative Tolerance for Regular MG: "
+	     << IP.reg_rel_tol;
+		out_file.unsetf(ios::scientific);
+  }
+  if (IP.Number_of_Cycles_per_Stage_for_Full_Multigrid > 0 && IP.full_abs_tol > 0) {
+		out_file.setf(ios::scientific);
+    out_file << "\n  -> Absolute Tolerance for Full MG: "
+	     << IP.full_abs_tol;
+		out_file.unsetf(ios::scientific);
+  }
+  if (IP.Number_of_Cycles_per_Stage_for_Full_Multigrid > 0 && IP.full_rel_tol > 0) {
+		out_file.setf(ios::scientific);
+    out_file << "\n  -> Relative Tolerance for Full MG: "
+	     << IP.full_rel_tol;
+		out_file.unsetf(ios::scientific);
   }
   // Dual-time-stepping parameters:
   if (IP.i_Dual_Time_Stepping) {
@@ -364,6 +414,10 @@ inline ostream &operator << (ostream &out_file,
     out_file << "\n  -> Dual-time-step type: "
 	     << IP.i_Dual_Time_Preconditioning;
   }
+	if (IP.MG_Write_Output_Cells_Freq > 0) {
+		out_file << "\n  -> Write Output Cells Frequency for Multigrid: "
+			<< IP.MG_Write_Output_Cells_Freq;
+	}
   // Output successful.
   return out_file;
 }

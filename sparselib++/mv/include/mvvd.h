@@ -161,7 +161,7 @@ class MV_Vector_double
 
     MV_Vector_double  operator^(const double&);
 
-    const double norm();  
+    double norm() const;  
 };                                                                     
 
 

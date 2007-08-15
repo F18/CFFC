@@ -1,0 +1,1787 @@
+C===================================================================
+C===================================================================
+C
+C
+C                        TGAS ROUTINES:
+C                        --------------
+C
+C       SUBROUTINES REPRESENTING THE REAL-GAS EQUILIBRIUM
+C       -------------------------------------------------
+C
+C                  EQUATION OF STATE FOR AIR
+C                  -------------------------
+C
+C (by  S. Srinivasan and J.C. Tannehill, Iowa State University, and
+C   K.J. Weilmuenster, NASA Langley Research Center, August, 1987)
+C
+C                (transcribed and modified by
+C           C.P.T. Groth, U.T.I.A.S., February 1989)
+C
+C    Subroutines:
+C
+C       1) TGAS1  - Real-gas equation of state for air,
+C                   returns equilibrium pressure, sound speed, and
+C                   temperature given the specific internal energy
+C                   and density
+C
+C       2) TGAS2  - Real-gas equation of state for air,
+C                   returns equilibrium entropy given the specific
+C                   internal energy and density
+C
+C       3) TGAS3  - Real-gas equation of state for air,
+C                   returns equilibrium temperature given the
+C                   pressure and density
+C
+C       4) TGAS4  - Real-gas equation of state for air,
+C                   returns equilibrium specific enthalpy given the
+C                   pressure and density
+C
+C       5) TGAS5  - Real-gas equation of state for air,
+C                   returns equilibrium density, specific internal
+C                   energy, and sound speed given the pressure and
+C                   temperature
+C
+C       6) TGAS6  - Real-gas equation of state for air,
+C                   returns equilibrium specific heats at constant
+C                   pressure and volume as well as the specific heat
+C                   ratio given the pressure and temperature
+C
+C
+C*******************************************************************
+C
+C
+      SUBROUTINE TGAS1(E,R,P,A,T,MFLAG,IERROR)
+C
+C        Subroutine TGAS1 is a real-gas equation of state for air
+C     that determines the equilibrium pressure, speed of sound, and
+C     temperature given the specific internal energy and density of
+C     the equilibrium state.  This routine uses curve fits 
+C     (Srinivasan, Tannehill, and Weilmuenster, 1987) that are
+C     based on NASA RGAS data (Bailey, 1967, NASA TN D-3921) and
+C     constructed from Grabau-type transition functions and bicubic
+C     polynomials to model the thermodynamic properties of air in a
+C     piecewise manner.
+C
+C     Variable description:
+C
+C     (call statement parameter list)
+C
+C     E     Equilibrium specific internal energy (J/kg or m**2/s**2).
+C
+C     R     Equilibrium density (kg/m**3).
+C
+C     P     Equilibrium pressure (Pa).
+C
+C     A     Equilibrium sound speed (m/s).
+C
+C     T     Equilibrium temperature (K).
+C
+C     MFLAG Thermodynmic property return indicator (if MFLAG=0
+C           return pressure P; if MFLAG=1 return pressure and
+C           sound speed P and A; if MFLAG=2 return pressure and
+C           temperature P and T; and if MFLAG=3 return pressure,
+C           sound speed, and temperature P, A, and T).
+C
+C     IERROR Error indicator:
+C            If value of 0, then no error.
+C            If value of -999 is returned by TGAS1 the
+C            equilibrium state is outside the range of validity
+C            for the curve fits.
+C
+C
+C     Begin subroutine TGAS1.
+C
+      IMPLICIT REAL(A-H,M,O-Z)
+      INTEGER MFLAG
+      DATA E0/78408.4E00/,R0/1.292E00/,P0/1.0133E05/,
+     &     T0/273.15E00/,GASCON/287.06E00/
+      DATA ARGMAX/85.00/,EXMAX/1.00E37/,EXMIN/1.00E-37/,
+     &     POWMAX/33.00/
+C
+      IERROR=0
+C
+      RRATIO=R/R0
+      ERATIO=E/E0
+      Y=LOG10(RRATIO)
+      Z=LOG10(ERATIO)
+      LFLAG=0
+      KFLAG=0
+      IF (MFLAG.GT.1) LFLAG=1
+      IF ((MFLAG.EQ.1).OR.(MFLAG.EQ.3)) KFLAG=1
+      IF (ABS(Y+4.5E00).LT.2.5E-02) GO TO 20
+      IF (ABS(Y+0.5E00).LT.5.0E-03) GO TO 50
+      IFLAG=-1
+      GO TO 90
+C
+   10 IF (LFLAG.EQ.1) GO TO 300
+      RETURN
+   20 IFLAG=0
+      RSAVE=R
+      YM=Y
+      Y=-4.5E00+2.5E-02
+      YHIGH=Y
+      R=R0*(10.0**Y)
+      JFLAG=-1
+      GO TO 90
+   30 PHIGH=P
+      AHIGH=A
+      Y=-4.5E00-2.5E-02
+      YLOW=Y
+      R=R0*(10.0**Y)
+      JFLAG=0
+      GO TO 90
+   40 PLOW=P
+      ALOW=A
+      GO TO 80
+   50 IFLAG=1
+      RSAVE=R
+      YM=Y
+      Y=-0.5E00+0.5E-02
+      YHIGH=Y
+      R=R0*(10.0**Y)
+      JFLAG=-1
+      GO TO 90
+   60 PHIGH=P
+      AHIGH=A
+      Y=-0.5E00-0.5E-02
+      YLOW=Y
+      R=R0*(10.0**Y)
+      JFLAG=0
+      GO TO 90
+   70 PLOW=P
+      ALOW=A
+   80 P=PLOW+(PHIGH-PLOW)/(YHIGH-YLOW)*(YM-YLOW)
+      A=ALOW+(AHIGH-ALOW)/(YHIGH-YLOW)*(YM-YLOW)
+      R=RSAVE
+      IF (LFLAG.EQ.1) GO TO 300
+      RETURN
+   90 CONTINUE
+C
+      IF (Y.GT.-0.5E00) GO TO 200
+      IF (Y.GT.-4.5E00) GO TO 150
+      IF (Z.GT.0.65E00) GO TO 100
+      GAMM=1.3965E00
+      GO TO 250
+C
+  100 IF (Z.GT.1.5E00) GO TO 110
+      GAS1=1.52792E00-1.26953E-02*Y
+      GAS2=(-6.13514E-01-5.08262E-02*Y)*Z
+      GAS3=(-5.49384E-03+4.75120E-05*Z-3.18468E-04*Y)*Y*Y
+      GAS4=(6.31835E-01+3.34012E-02*Y-2.19921E-01*Z)*Z*Z
+      GAS5=-4.96286E01-1.17932E01*Y
+      GAS6=(6.91028E01+4.40405E01*Y)*Z
+      GAS7=(5.09249E00-1.40326E00*Z+2.08988E-01*Y)*Y*Y
+      GAS8=(1.37308E01-1.78726E01*Y-1.86943E01*Z)*Z*Z
+      XXX=24.60452E00-2.0E00*Y-2.093022E01*Z
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      DENO=1.0E00-GAS9
+      GAMM=GAS1+GAS2+GAS3+GAS4+(GAS5+GAS6+GAS7+GAS8)/DENO
+      IF (KFLAG.EQ.0) GO TO 260
+      GAS1R=-1.26953E-02
+      GAS2R=-5.08262E-02*Z
+      GAS3R=(-1.098768E-02-9.50240E-05*Z-9.554040E-04*Y)*Y
+      GAS4R=3.34012E-02*Z*Z
+      GAS5R=-1.17932E01
+      GAS6R=4.40405E01*Z
+      GAS7R=(1.018498E01-2.80652E00*Z+6.269641E-01*Y)*Y
+      GAS8R=-1.78726E01*Z*Z
+      GAS9R=-2.0E00
+      GAS2E=GAS2/Z
+      GAS3E=4.75120E-05*Y*Y
+      GAS4E=(1.26367E00+6.68024E-02*Y-6.59763E-01*Z)*Z
+      GAS6E=GAS6/Z
+      GAS7E=-1.40326E00*Y*Y
+      GAS8E=(2.74616E01-3.57452E01*Y-5.60829E01*Z)*Z
+      GAS9E=-2.093022E01
+      GAMMR=GAS1R+GAS2R+GAS3R+GAS4R+(GAS5R+GAS6R+GAS7R+GAS8R)/DENO
+     &      +(GAS5+GAS6+GAS7+GAS8)*GAS9R*GAS9/(DENO*DENO)
+      GAMME=GAS2E+GAS3E+GAS4E+(GAS6E+GAS7E+GAS8E)/DENO
+     &      +(GAS5+GAS6+GAS7+GAS8)*GAS9E*GAS9/(DENO*DENO)
+      GO TO 260
+C
+  110 IF (Z.GT.2.2E00) GO TO 120
+      GAS1=-1.70333E01-5.08545E-01*Y
+      GAS2=(2.46299E01+4.45617E-01*Y)*Z
+      GAS3=(-8.95298E-03+2.29618E-03*Z-2.89186E-04*Y)*Y*Y
+      GAS4=(-1.10204E01-9.89727E-02*Y+1.62903E00*Z)*Z*Z
+      GAS5=1.86797E01+5.19662E-01*Y
+      GAS6=(-2.41338E01-4.34837E-01*Y)*Z
+      GAS7=(9.16089E-03-1.52082E-03*Z+3.46482E-04*Y)*Y*Y
+      GAS8=(1.02035E01+9.70762E-02*Y-1.39460E00*Z)*Z*Z
+      GAS9=(-1.42762E02-1.647088E00*Y+7.660312E01*Z
+     &      +8.259346E-01*Y*Z)
+      IF (KFLAG.EQ.0) GO TO 240
+      GAS1R=-5.08545E-01
+      GAS2R=4.45617E-01*Z
+      GAS3R=(-1.790596E-02+4.59236E-03*Z-8.67558E-04*Y)*Y
+      GAS4R=-9.89727E-02*Z*Z
+      GAS5R=5.19662E-01
+      GAS6R=-4.34837E-01*Z
+      GAS7R=(1.832178E-02-3.04164E-03*Z+1.039446E-03*Y)*Y
+      GAS8R=9.70762E-02*Z*Z
+      GAS9R=-1.647088E00+8.259346E-01*Z
+      GAS2E=GAS2/Z
+      GAS3E=2.29618E-03*Y*Y
+      GAS4E=(-2.20408E01-1.979454E-01*Y+4.88709E00*Z)*Z
+      GAS6E=GAS6/Z
+      GAS7E=-1.52082E-03*Y*Y
+      GAS8E=(2.0407E01+1.941524E-01*Y-4.1838E00*Z)*Z
+      GAS9E=7.660312E01+8.259346E-01*Y
+      GO TO 240
+C
+  120 IF (Z.GT.3.05E00) GO TO  130
+      GAS1=2.24374E00+1.03073E-01*Y
+      GAS2=(-5.32238E-01-5.59852E-02*Y)*Z
+      GAS3=(3.56484E-03-1.01359E-04*Z+1.59127E-04*Y)*Y*Y
+      GAS4=(-4.80156E-02+1.06794E-02*Y+3.66035E-02*Z)*Z*Z
+      GAS5=-5.70378E00-3.10056E-01*Y
+      GAS6=(5.01094E00+1.80411E-01*Y)*Z
+      GAS7=(-9.49361E-03+1.94839E-03*Z-2.24908E-04*Y)*Y*Y
+      GAS8=(-1.40331E00-2.79718E-02*Y+1.20278E-01*Z)*Z*Z
+      GAS9=(1.139755E02-4.985467E00*Y-4.223833E01*Z
+     &      +2.009706E00*Y*Z)
+      IF (KFLAG.EQ.0) GO TO 240
+      GAS1R=1.03073E-01
+      GAS2R=-5.59852E-02*Z
+      GAS3R=(7.12968E-03-2.0218E-04*Z+4.77381E-04*Y)*Y
+      GAS4R=1.06794E-02*Z*Z
+      GAS5R=-3.10056E-01
+      GAS6R=1.80411E-01*Z
+      GAS7R=(-1.898722E-02+3.89678E-03*Z-6.74724E-04*Y)*Y
+      GAS8R=-2.79718E-02*Z*Z
+      GAS9R=-4.985467E00+2.009706E00*Z
+      GAS2E=GAS2/Z
+      GAS3E=-1.01359E-04*Y*Y
+      GAS4E=(-9.60312E-02+2.13588E-02*Y+1.098105E-01*Z)*Z
+      GAS6E=GAS6/Z
+      GAS7E=1.94839E-03*Y*Y
+      GAS8E=(-2.80662E00-5.59436E-02*Y+3.60834E-01*Z)*Z
+      GAS9E=-4.223833E01+2.009706E00*Y
+      GO TO 240
+C
+  130 IF (Z.GT.3.4E00) GO TO 140
+      GAS1=-0.20807E02+0.40197E00*Y
+      GAS2=(0.22591E02-0.25660E00*Y)*Z
+      GAS3=(-0.95833E-03+0.23966E-02*Z+0.33671E-03*Y)*Y*Y
+      GAS4=(-0.77174E01+0.4606E-01*Y+0.878E00*Z)*Z*Z
+      GAS5=-0.21737E03-0.46927E01*Y
+      GAS6=(0.18101E03+0.26621E01*Y)*Z
+      GAS7=(-0.34759E-01+0.64681E-02*Z-0.70391E-03*Y)*Y*Y
+      GAS8=(-0.50019E02-0.38381E00*Y+0.45795E01*Z)*Z*Z
+      GAS9=(0.4544373E03+0.1250133E02*Y-0.1376001E03*Z-
+     &      0.3641774E01*Y*Z)
+      IF (KFLAG.EQ.0) GO TO 240
+      GAS1R=0.40197E00
+      GAS2R=-0.25660E00*Z
+      GAS3R=(-1.91666E-03+4.7932E-03*Z+1.01013E-03*Y)*Y
+      GAS4R=0.4606E-01*Z*Z
+      GAS5R=-0.46927E01
+      GAS6R=0.26621E01*Z
+      GAS7R=(-6.9518E-02+1.29362E-02*Z-2.11173E-03*Y)*Y
+      GAS8R=-0.38381E00*Z*Z
+      GAS9R=0.1250133E02-0.3641774E01*Z
+      GAS2E=GAS2/Z
+      GAS3E=0.23966E-02*Y*Y
+      GAS4E=(-1.54348E01+9.212E-02*Y+2.634E00*Z)*Z
+      GAS6E=GAS6/Z
+      GAS7E=0.64681E-02*Y*Y
+      GAS8E=(-1.00038E02-7.6762E-01*Y+1.37385E01*Z)*Z
+      GAS9E=-0.1376001E03-0.3641774E01*Y
+      GO TO 240
+C
+  140 IF (Z.GT.3.69E00) IERROR=-999
+      GAS1=-5.22951E01-4.00011E-01*Y
+      GAS2=(4.56439E01+2.24484E-01*Y)*Z
+      GAS3=(-3.73775E-03+2.43161E-03*Z+2.24755E-04*Y)*Y*Y
+      GAS4=(-1.29756E01-2.79517E-02*Y+1.22998E00*Z)*Z*Z
+      GAMM=GAS1+GAS2+GAS3+GAS4
+      IF (KFLAG.EQ.0) GO TO 260
+      GAS1R=-4.00011E-01
+      GAS2R=2.24484E-01*Z
+      GAS3R=(-7.4755E-03+4.86322E-03*Z+6.74265E-04*Y)*Y
+      GAS4R=-2.79517E-02*Z*Z
+      GAS2E=GAS2/Z
+      GAS3E=2.43161E-03*Y*Y
+      GAS4E=(-2.59512E01-5.59034E-02*Y+3.68994E00*Z)*Z
+      GAMMR=GAS1R+GAS2R+GAS3R+GAS4R
+      GAMME=GAS2E+GAS3E+GAS4E
+      GO TO 260
+C
+  150 IF (Z.GT.0.65E00) GO TO 160
+      GAMM=1.398E00
+      GO TO 250
+C
+  160 IF (Z.GT.1.5E00) GO TO 170
+      GAS1=1.39123E00-4.08321E-03*Y
+      GAS2=(1.42545E-02+1.41769E-02*Y)*Z
+      GAS3=(2.57225E-04+6.52912E-04*Z+8.46912E-05*Y)*Y*Y
+      GAS4=(6.2555E-02-7.83637E-03*Y-9.78720E-02*Z)*Z*Z
+      GAS5=5.80955E00-1.82302E-01*Y
+      GAS6=(-9.62396E00+1.79619E-01*Y)*Z
+      GAS7=(-2.30518E-02+1.18720E-02*Z-3.35499E-04*Y)*Y*Y
+      GAS8=(5.27047E00-3.65507E-02*Y-9.19897E-01*Z)*Z*Z
+      GAS9=-10.0E00*Z+14.2E00
+      IF (KFLAG.EQ.0) GO TO 240
+      GAS1R=-4.08321E-03
+      GAS2R=1.41769E-02*Z
+      GAS3R=(5.1445E-04+1.305824E-03*Z+2.540736E-04*Y)*Y
+      GAS4R=-7.83637E-03*Z*Z
+      GAS5R=-1.82302E-01
+      GAS6R=1.79619E-01*Z
+      GAS7R=(-4.61036E-02+2.3744E-02*Z-1.006497E-03*Y)*Y
+      GAS8R=-3.65507E-02*Z*Z
+      GAS9R=0.0E00
+      GAS2E=GAS2/Z
+      GAS3E=6.52912E-04*Y*Y
+      GAS4E=(1.2511E-01-1.567274E-02*Y-2.93616E-01*Z)*Z
+      GAS6E=GAS6/Z
+      GAS7E=1.1872E-02*Y*Y
+      GAS8E=(1.054094E01-7.31014E-02*Y-2.759691E00*Z)*Z
+      GAS9E=-10.0E00
+      GO TO 240
+C
+  170 IF (Z.GT.2.22E00) GO TO 180
+      GAS1=-1.20784E00-2.57909E-01*Y
+      GAS2=(5.02307E00+2.87201E-01*Y)*Z
+      GAS3=(-9.95577E-03+5.23524E-03*Z-1.45574E-04*Y)*Y*Y
+      GAS4=(-3.20619E00-7.50405E-02*Y+6.51564E-01*Z)*Z*Z
+      GAS5=-6.62841E00+2.77112E-02*Y
+      GAS6=(7.30762E00-7.68230E-02*Y)*Z
+      GAS7=(7.19421E-03-3.62463E-03*Z+1.62777E-04*Y)*Y*Y
+      GAS8=(-2.33161E00+3.04767E-02*Y+1.66856E-01*Z)*Z*Z
+      GAS9=(1.255324E02+2.015335E00*Y-6.390747E01*Z-
+     &     6.515225E-01*Y*Z)
+      IF (KFLAG.EQ.0) GO TO 240
+      GAS1R=-2.57909E-01
+      GAS2R=2.87201E-01*Z
+      GAS3R=(-1.991154E-02+1.047048E-02*Z-4.36722E-04*Y)*Y
+      GAS4R=-7.50405E-02*Z*Z
+      GAS5R=2.77112E-02
+      GAS6R=-7.6823E-02*Z
+      GAS7R=(1.438842E-02-7.24926E-03*Z+4.88331E-04*Y)*Y
+      GAS8R=3.04767E-02*Z*Z
+      GAS9R=2.015335E00-6.515225E-01*Z
+      GAS2E=GAS2/Z
+      GAS3E=5.23524E-03*Y*Y
+      GAS4E=(-6.41238E00-1.50081E-01*Y+1.954692E00*Z)*Z
+      GAS6E=GAS6/Z
+      GAS7E=-3.62463E-03*Y*Y
+      GAS8E=(-4.66322E00+6.09534E-02*Y+5.00568E-01*Z)*Z
+      GAS9E=-6.390747E01-6.515225E-01*Y
+      GO TO 240
+C
+  180 IF (Z.GT.2.95E00) GO TO 190
+      GAS1=-2.26460E00-7.82263E-02*Y
+      GAS2=(4.90497E00+7.18096E-02*Y)*Z
+      GAS3=(-3.06443E-03+1.74209E-03*Z+2.84214E-05*Y)*Y*Y
+      GAS4=(-2.24750E00-1.31641E-02*Y+3.33658E-01*Z)*Z*Z
+      GAS5=-1.47904E01-1.76627E-01*Y
+      GAS6=(1.35036E01+8.77280E-02*Y)*Z
+      GAS7=(-2.13327E-03+7.15487E-04*Z+7.30928E-05*Y)*Y*Y
+      GAS8=(-3.95372E00-8.96151E-03*Y+3.63229E-01*Z)*Z*Z
+      GAS9=(1.788542E02+6.317894E00*Y-6.756741E01*Z-
+     &     2.460060E00*Y*Z)
+      IF (KFLAG.EQ.0) GO TO 240
+      GAS1R=-7.82263E-02
+      GAS2R=7.18096E-02*Z
+      GAS3R=(-6.12886E-03+3.48418E-03*Z+8.52642E-05*Y)*Y
+      GAS4R=-1.31641E-02*Z*Z
+      GAS5R=-1.76627E-01
+      GAS6R=8.7728E-02*Z
+      GAS7R=(-4.26654E-03+1.430974E-03*Z+2.192784E-04*Y)*Y
+      GAS8R=-8.96151E-03*Z*Z
+      GAS9R=6.317894E00-2.46006E00*Z
+      GAS2E=GAS2/Z
+      GAS3E=1.74209E-03*Y*Y
+      GAS4E=(-4.495E00-2.63282E-02*Y+1.000974E00*Z)*Z
+      GAS6E=GAS6/Z
+      GAS7E=7.15487E-04*Y*Y
+      GAS8E=(-7.90744E00-1.792302E-02*Y+1.089687E00*Z)*Z
+      GAS9E=-6.756741E01-2.46006E00*Y
+      GO TO 240
+C
+  190 IF (Z.GT.3.4E00) IERROR=-999
+      GAS1=-1.66904E01-2.58318E-01*Y
+      GAS2=(1.78350E01+1.54898E-01*Y)*Z
+      GAS3=(-9.71263E-03+3.97740E-03*Z+9.04300E-05*Y)*Y*Y
+      GAS4=(-5.94108E00-2.01335E-02*Y+6.60432E-01*Z)*Z*Z
+      GAS5=8.54690E01+1.17554E01*Y
+      GAS6=(-7.21760E01-7.15723E00*Y)*Z
+      GAS7=(-4.16150E-02+1.38147E-02*Z+5.45184E-04*Y)*Y*Y
+      GAS8=(2.01758E01+1.08990E00*Y-1.86438E00*Z)*Z*Z
+      GAS9=(2.883262E02+1.248536E01*Y-8.816985E01*Z-
+     &      3.720309E00*Y*Z)
+      IF (KFLAG.EQ.0) GO TO 240
+      GAS1R=-2.58318E-01
+      GAS2R=1.54898E-01*Z
+      GAS3R=(-1.942526E-02+7.9548E-03*Z+2.7129E-04*Y)*Y
+      GAS4R=-2.01335E-02*Z*Z
+      GAS5R=1.17554E01
+      GAS6R=-7.15723E00*Z
+      GAS7R=(-8.323E-02+2.76294E-02*Z+1.635552E-03*Y)*Y
+      GAS8R=1.0899E00*Z*Z
+      GAS9R=1.248536E01-3.720309E00*Z
+      GAS2E=GAS2/Z
+      GAS3E=3.9774E-03*Y*Y
+      GAS4E=(-1.188216E01-4.0267E-02*Y+1.981296E00*Z)*Z
+      GAS6E=GAS6/Z
+      GAS7E=1.38147E-02*Y*Y
+      GAS8E=(4.03516E01+2.1798E00*Y-5.59314E00*Z)*Z
+      GAS9E=-8.816985E01-3.720309E00*Y
+      GO TO 240
+C
+  200 IF (Z.GT.0.65E00) GO TO 210
+      GAMM=1.3988E00
+      GO TO 250
+C
+  210 IF (Z.GT.1.70E00) GO TO 220
+      GAS1=1.37062E00+1.29673E-02*Y
+      GAS2=(1.11418E-01-3.26912E-02*Y)*Z
+      GAS3=(1.06869E-03-2.00286E-03*Z+2.38305E-04*Y)*Y*Y
+      GAS4=(-1.06133E-01+1.90251E-02*Y+3.02210E-03*Z)*Z*Z
+      GAMM=GAS1+GAS2+GAS3+GAS4
+      IF (KFLAG.EQ.0) GO TO 260
+      GAS1R=1.29673E-02
+      GAS2R=-3.26912E-02*Z
+      GAS3R=(2.13738E-03-4.00572E-03*Z+7.14915E-04*Y)*Y
+      GAS4R=1.90251E-02*Z*Z
+      GAS2E=GAS2/Z
+      GAS3E=-2.00286E-03*Y*Y
+      GAS4E=(-2.12266E-01+3.80502E-02*Y+9.0663E-03*Z)*Z
+      GAMMR=GAS1R+GAS2R+GAS3R+GAS4R
+      GAMME=GAS2E+GAS3E+GAS4E
+      GO TO 260
+C
+  220 IF (Z.GT.2.35E00) GO TO 230
+      GAS1=3.43846E-02-2.33584E-01*Y
+      GAS2=(2.85574E00+2.59787E-01*Y)*Z
+      GAS3=(-10.89927E-03+4.23659E-03*Z+3.85712E-04*Y)*Y*Y
+      GAS4=(-1.94785E00-6.73865E-02*Y+4.08518E-01*Z)*Z*Z
+      GAS5=-4.20569E00+1.33139E-01*Y
+      GAS6=(4.51236E00-1.66341E-01*Y)*Z
+      GAS7=(1.67787E-03-1.10022E-03*Z+3.06676E-04*Y)*Y*Y
+      GAS8=(-1.35516E00+4.91716E-02*Y+7.52509E-02*Z)*Z*Z
+      GAS9=(1.757042E02-2.163278E00*Y-8.833702E01*Z+
+     &      1.897543E00*Y*Z)
+      IF (KFLAG.EQ.0) GO TO 240
+      GAS1R=-2.33584E-01
+      GAS2R=2.59787E-01*Z
+      GAS3R=(-2.179854E-02+8.47318E-03*Z+1.157136E-03*Y)*Y
+      GAS4R=-6.73865E-02*Z*Z
+      GAS5R=1.33139E-01
+      GAS6R=-1.66341E-01*Z
+      GAS7R=(3.35574E-03-2.20044E-03*Z+9.20028E-04*Y)*Y
+      GAS8R=4.91716E-02*Z*Z
+      GAS9R=-2.163278E00+1.897543E00*Z
+      GAS2E=GAS2/Z
+      GAS3E=4.23659E-03*Y*Y
+      GAS4E=(-3.8957E00-1.34773E-01*Y+1.225554E00*Z)*Z
+      GAS6E=GAS6/Z
+      GAS7E=-1.10022E-03*Y*Y
+      GAS8E=(-2.71032E00+9.83432E-02*Y+2.257527E-01*Z)*Z
+      GAS9E=-8.833702E01+1.897543E00*Y
+      GO TO 240
+C
+  230 IF (Z.GT.2.9E00) IERROR=-999
+      GAS1=-1.70633E00-1.48403E-01*Y
+      GAS2=(4.23104E00+1.37290E-01*Y)*Z
+      GAS3=(-9.10934E-03+3.85707E-03*Z+2.69026E-04*Y)*Y*Y
+      GAS4=(-1.97292E00-2.81830E-02*Y+2.95882E-01*Z)*Z*Z
+      GAS5=3.41580E01-1.89972E01*Y
+      GAS6=(-4.0858E01+1.30321E01*Y)*Z
+      GAS7=(-8.01272E-01+2.75121E-01*Z-1.77969E-04*Y)*Y*Y
+      GAS8=(1.60826E01-2.23386E00*Y-2.08853E00*Z)*Z*Z
+      GAS9=(2.561323E02+1.737089E02*Y-9.058890E01*Z-
+     &      5.838803E01*Y*Z)
+      IF (GAS9.GT.30.0E00) GAS9=30.0E00
+      IF (GAS9.LT.-30.0E00) GAS9=-30.0E00
+      IF (KFLAG.EQ.0) GO TO 240
+      GAS1R=-1.48403E-01
+      GAS2R=1.3729E-01*Z
+      GAS3R=(-1.821868E-02+7.71414E-03*Z+8.07078E-04*Y)*Y
+      GAS4R=-2.8183E-02*Z*Z
+      GAS5R=-1.89972E01
+      GAS6R=1.30321E01*Z
+      GAS7R=(-1.602544E00+5.50242E-01*Z-5.33907E-04*Y)*Y
+      GAS8R=-2.23386E00*Z*Z
+      GAS9R=1.737089E02-5.838803E01*Z
+      GAS2E=GAS2/Z
+      GAS3E=3.85707E-03*Y*Y
+      GAS4E=(-3.94584E00-5.6366E-02*Y+8.87646E-01*Z)*Z
+      GAS6E=GAS6/Z
+      GAS7E=2.75121E-01*Y*Y
+      GAS8E=(3.21652E01-4.46772E00*Y-6.26559E00*Z)*Z
+      GAS9E=-9.05889E01-5.838803E01*Y
+C
+  240 IF (ABS(GAS9).LT.ARGMAX) THEN
+         GAS9=EXP(GAS9)
+      ELSE IF (GAS9.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GAMM=GAS1+GAS2+GAS3+GAS4+(GAS5+GAS6+GAS7+GAS8)/(1.0+GAS9)
+      IF (KFLAG.EQ.0) GO TO 260
+      GAMMR=GAS1R+GAS2R+GAS3R+GAS4R+(GAS5R+GAS6R+GAS7R+GAS8R)/
+     &      (1.0+GAS9)-(GAS5+GAS6+GAS7+GAS8)*GAS9R*GAS9/
+     &      ((1.0+GAS9)*(1.0+GAS9))
+      GAMME=GAS2E+GAS3E+GAS4E+(GAS6E+GAS7E+GAS8E)/(1.0+GAS9)-
+     &      (GAS5+GAS6+GAS7+GAS8)*GAS9E*GAS9/((1.0+GAS9)*
+     &      (1.0+GAS9))
+      GO TO 260
+C
+  250 IF (KFLAG.EQ.0) GO TO 260
+      GAMMR=0.0E00
+      GAMME=0.0E00
+C
+  260 GAMM=AMAX1(GAMM,1.000001E00)
+      P=(GAMM-1.00E00)*E*R
+      IF (KFLAG.EQ.0) GO TO 270
+      GAMMR=GAMMR/2.302585E00
+      GAMME=GAMME/2.302585E00
+      ASQ=E*((GAMM-1.00E00)*(GAMM+GAMME)+GAMMR)
+      ASQ=AMAX1(ASQ,1.00E-20)
+      A=SQRT(ASQ)
+  270 IF (IFLAG) 10,280,290
+  280 IF (JFLAG) 30,40,10
+  290 IF (JFLAG) 60,70,10
+  300 X=LOG10(P/P0)
+      Y=LOG10(R/R0)
+      Z1=X-Y
+      IF (Y.GT.-0.5E00) GO TO 400
+      IF (Y.GT.-4.5E00) GO TO 350
+      IF (Z1.GT.0.25E00) GO TO 310
+      T=P/(GASCON*R)
+      RETURN
+C
+  310 IF (Z1.GT.0.95E00) GO TO 320
+      GAS1=1.44824E-01+1.36744E-02*Y
+      GAS2=(1.17099E-01-8.22299E-02*Y)*Z1
+      GAS3=(-6.75303E-04-1.47314E-03*Z1-7.90851E-05*Y)*Y*Y
+      GAS4=(1.3937E00+6.83066E-02*Y-6.65673E-01*Z1)*Z1*Z1
+      TNON=GAS1+GAS2+GAS3+GAS4
+      GO TO 450
+C
+  320 IF (Z1.GT.1.4E00) GO TO 330
+      GAS1=-9.325E00-9.32017E-01*Y
+      GAS2=(2.57176E01+1.61292E00*Y)*Z1
+      GAS3=(-3.00242E-02+2.62959E-02*Z1-2.77651E-04*Y)*Y*Y
+      GAS4=(-2.1662E01-6.81431E-01*Y+6.26962E00*Z1)*Z1*Z1
+      GAS5=-3.38534E00+1.82594E-01*Y
+      GAS6=(1.84928E-01-7.01109E-01*Y)*Z1
+      GAS7=(1.10150E-02-1.60570E-02*Z1+1.57701E-05*Y)*Y*Y
+      GAS8=(5.4702E00+4.11624E-01*Y-2.81498E00*Z1)*Z1*Z1
+      XXX=-3.887015E01-2.908228E01*Y+4.070557E01*Z1+
+     &    2.682347E01*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GO TO 440
+C
+  330 IF (Z1.GT.1.95E00) GO TO 340
+      GAS1=-1.93082E01-1.54557E00*Y
+      GAS2=(3.69035E01+1.92214E00*Y)*Z1
+      GAS3=(-3.59027E-02+2.31827E-02*Z1-2.01327E-04*Y)*Y*Y
+      GAS4=(-2.20440E01-5.80935E-01*Y+4.43367E00*Z1)*Z1*Z1
+      GAS5=-3.83069E00+1.32864E-01*Y
+      GAS6=(-3.91902E00-6.79564E-01*Y)*Z1
+      GAS7=(6.06341E-04-8.12997E-03*Z1-1.61012E-04*Y)*Y*Y
+      GAS8=(7.24632E00+3.15461E-01*Y-2.17879E00*Z1)*Z1*Z1
+      XXX=2.08E01-2.56E01*Y+1.0E00*Z1+1.80E01*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GO TO 440
+C
+  340 GAS1=-2.59721E01-1.77419E00*Y
+      GAS2=(3.62495E01+1.55383E00*Y)*Z1
+      GAS3=(-4.51359E-02+2.43648E-02*Z1+1.2804E-04*Y)*Y*Y
+      GAS4=(-1.59988E01-3.17807E-01*Y+2.40584E00*Z1)*Z1*Z1
+      GAS5=-1.81433E01+1.54896E-01*Y
+      GAS6=(1.26582E01-3.66275E-01*Y)*Z1
+      GAS7=(3.24496E-02-1.66385E-02*Z1+3.02177E-04*Y)*Y*Y
+      GAS8=(-1.41759E00+1.11241E-01*Y-3.10983E-01*Z1)*Z1*Z1
+      XXX=1.115884E02-6.452606E00*Y-5.337863E01*Z1+
+     &    2.026986E00*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GO TO 440
+C
+  350 IF (Z1.GT.0.25E00) GO TO 360
+      T=P/(GASCON*R)
+      RETURN
+C
+  360 IF (Z1.GT.0.95E00) GO TO 370
+      GAS1=2.94996E-02+7.24997E-03*Y
+      GAS2=(7.81783E-01-3.27402E-02*Y)*Z1
+      GAS3=(3.23357E-04-9.69989E-04*Z1-8.93240E-06*Y)*Y*Y
+      GAS4=(3.95198E-01+2.92926E-02*Y-2.12182E-01*Z1)*Z1*Z1
+      TNON=GAS1+GAS2+GAS3+GAS4
+      GO TO 450
+C
+  370 IF (Z1.GT.1.4E00) GO TO 380
+      GAS1=-5.53324E00-3.53749E-01*Y
+      GAS2=(1.63638E01+5.87547E-01*Y)*Z1
+      GAS3=(-1.16081E-02+7.99571E-03*Z1-2.79316E-04*Y)*Y*Y
+      GAS4=(-1.41239E01-2.35146E-01*Y+4.28891E00*Z1)*Z1*Z1
+      GAS5=9.07979E00+1.01308E00*Y
+      GAS6=(-2.29428E01-1.52122E00*Y)*Z1
+      GAS7=(3.78390E-02-2.63115E-02*Z1+5.46402E-04*Y)*Y*Y
+      GAS8=(1.95657E01+5.73839E-01*Y-5.63057E00*Z1)*Z1*Z1
+      XXX=7.619803E01-1.501155E01*Y-6.770845E01*Z1+
+     &    1.273147E01*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GO TO 440
+C
+  380 IF (Z1.GT.2.00E00) GO TO 390
+      GAS1=-1.13598E01-1.02049E00*Y
+      GAS2=(2.22793E01+1.24038E00*Y)*Z1
+      GAS3=(-3.10771E-02+1.92551E-02*Z1-2.69140E-04*Y)*Y*Y
+      GAS4=(-1.31512E01-3.62875E-01*Y+2.64544E00*Z1)*Z1*Z1
+      GAS5=8.72852E00+1.27564E00*Y
+      GAS6=(-1.79172E01-1.52051E00*Y)*Z1
+      GAS7=(4.91264E-02-2.81731E-02*Z1+5.23383E-04*Y)*Y*Y
+      GAS8=(1.16719E01+4.45413E-01*Y-2.45584E00*Z1)*Z1*Z1
+      XXX=1.84792E02+9.583443E00*Y-1.020835E02*Z1-
+     &    4.166727E00*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GO TO 440
+C
+  390 GAS1=-1.76079E01-1.26579E00*Y
+      GAS2=(2.48544E01+1.09442E00*Y)*Z1
+      GAS3=(-3.65534E-02+1.54346E-02*Z1-4.59822E-04*Y)*Y*Y
+      GAS4=(-1.08166E01-2.27803E-01*Y+1.60641E00*Z1)*Z1*Z1
+      GAS5=2.60669E01+2.31791E00*Y
+      GAS6=(-3.22433E01-1.82645E00*Y)*Z1
+      GAS7=(4.94621E-02-1.85542E-02*Z1+5.04815E-04*Y)*Y*Y
+      GAS8=(1.33829E01+3.59744E-01*Y-1.86517E00*Z1)*Z1*Z1
+      XXX=3.093755E02+1.875018E01*Y-1.375004E02*Z1-
+     &    8.333418E00*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GO TO 440
+C
+  400 IF (Z1.GT.0.25E00) GO TO 410
+      T=P/(GASCON*R)
+      RETURN
+C
+  410 IF (Z1.GT.0.95E00) GO TO 420
+      GAS1=-2.94081E-03+5.73915E-04*Y
+      GAS2=(9.88883E-01-3.71241E-03*Y)*Z1
+      GAS3=(1.12387E-04-3.76528E-04*Z1+1.76192E-05*Y)*Y*Y
+      GAS4=(2.86656E-02+4.56059E-03*Y-1.99498E-02*Z1)*Z1*Z1
+      TNON=GAS1+GAS2+GAS3+GAS4
+      GO TO 450
+C
+  420 IF (Z1.GT.1.45E00) GO TO 430
+      GAS1=1.32396E00+8.52771E-02*Y
+      GAS2=(-3.24257E00-2.00937E-01*Y)*Z1
+      GAS3=(5.68146E-03-6.85856E-03*Z1+1.98366E-04*Y)*Y*Y
+      GAS4=(4.53823E00+1.18123E-01*Y-1.6246E00*Z1)*Z1*Z1
+      GAS5=-5.26673E-01-1.58691E-01*Y
+      GAS6=(2.61600E00+3.16356E-01*Y)*Z1
+      GAS7=(-1.90755E-02+1.70124E-02*Z1-5.58398E-04*Y)*Y*Y
+      GAS8=(-3.3793E00-1.52212E-01*Y+1.30757E00*Z1)*Z1*Z1
+      XXX=1.442206E02-2.544727E01*Y-1.277055E02*Z1+
+     &    2.236647E01*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GO TO 440
+C
+  430 GAS1=-1.60643E00-5.07368E-02*Y
+      GAS2=(3.95872E00+3.69383E-02*Y)*Z1
+      GAS3=(-1.59378E-03+1.06057E-03*Z1+6.53278E-05*Y)*Y*Y
+      GAS4=(-1.71201E00+9.25124E-03*Y+2.71039E-01*Z1)*Z1*Z1
+      GAS5=1.80476E01+1.62964E00*Y
+      GAS6=(-2.73124E01-1.57430E00*Y)*Z1
+      GAS7=(5.85277E-02-2.77313E-02*Z1+1.16146E-03*Y)*Y*Y
+      GAS8=(1.36342E01+3.70714E-01*Y-2.23787E00*Z1)*Z1*Z1
+      XXX=1.292515E02+1.360552E00*Y-7.07482E01*Z1+
+     &    1.360532E00*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+C
+  440 TNON=GAS1+GAS2+GAS3+GAS4+(GAS5+GAS6+GAS7+GAS8)/(1.0+
+     &     GAS9)
+  450 TNON=AMIN1(TNON,POWMAX)
+      TNON=AMAX1(TNON,-POWMAX)
+      T=(10.0**TNON)*T0
+C
+C     End subroutine TGAS1.
+C
+      RETURN
+      END
+C
+C
+C*******************************************************************
+C
+C
+      SUBROUTINE TGAS2(E,R,S,IERROR)
+C
+C        Subroutine TGAS2 is a real-gas equation of state for air
+C     that determines the equilibrium entropy given the specific
+C     internal energy and density of the equilibrium state.  This
+C     routine uses curve fits (Srinivasan, Tannehill, and
+C     Weilmuenster, 1987) that are based on NASA RGAS data (Bailey,
+C     1967, NASA TN D-3921) and constructed from Grabau-type
+C     transition functions and bicubic polynomials to model the
+C     thermodynamic properties of air in a piecewise manner.
+C
+C     Variable description:
+C
+C     (call statement parameter list)
+C
+C     E     Equilibrium specific internal energy (J/kg or m**2/s**2).
+C
+C     R     Equilibrium density (kg/m**3).
+C
+C     S     Equilibrium entropy (m**2/s**2-K).
+C
+C     IERROR Error indicator:
+C            If value of 0, then no error.
+C            If value of -999 is returned by TGAS2 the
+C            equilibrium state is outside the range of validity
+C            for the curve fits.
+C
+C
+C     Begin subroutine TGAS2.
+C
+      IMPLICIT REAL(A-H,M,O-Z)
+      DATA E0/78408.4E00/,R0/1.292E00/,GASCON/287.06E00/
+      DATA ARGMAX/85.00/,EXMAX/1.00E37/,EXMIN/1.00E-37/
+C
+      IERROR=0
+C
+      Y=LOG10(R/R0)
+      Z=LOG10(E/E0)
+      IF (ABS(Y+4.50E00).LT.2.50E-02) GO TO 10
+      IF (ABS(Y+0.50E00).LT.5.00E-03) GO TO 40
+      IFLAG=-1
+      GO TO 80
+C
+   10 IFLAG=0
+      RSAVE=R
+      YM=Y
+      Y=-4.50E00+2.50E-02
+      YHIGH=Y
+      R=(10.0**Y)*R0
+      JFLAG=-1
+      GO TO 80
+C
+   20 SHIGH=S
+      Y=-4.50E00-2.50E-02
+      YLOW=Y
+      R=(10.0**Y)*R0
+      JFLAG=0
+      GO TO 80
+C
+   30 SLOW=S
+      GO TO 70
+C
+   40 IFLAG=1
+      RSAVE=R
+      YM=Y
+      Y=-0.50E00+0.50E-02
+      YHIGH=Y
+      R=(10.0**Y)*R0
+      JFLAG=-1
+      GO TO 80
+C
+   50 SHIGH=S
+      Y=-0.50E00-0.50E-02
+      YLOW=Y
+      R=(10.0**Y)*R0
+      JFLAG=0
+      GO TO 80
+C
+   60 SLOW=S
+   70 S=SLOW+(SHIGH-SLOW)/(YHIGH-YLOW)*(YM-YLOW)
+      R=RSAVE
+      RETURN
+   80 CONTINUE
+C
+      IF (Z.LE.0.65E00) GO TO 110
+      IF (Y.GT.-4.50E00) GO TO 90
+      IF (Z.GT.3.69E00) IERROR=-999
+      GAS1=-9.91081E-01-5.00277E00*Y
+      GAS2=(5.46521E01+5.10144E00*Y)*Z
+      GAS3=(1.76206E-02+2.12002E-02*Z+1.76358E-03*Y)*Y*Y
+      GAS4=(-2.97001E01-1.84915E00*Y+5.87892E00*Z)*Z*Z
+      GO TO 120
+C
+   90 IF (Y.GT.-0.50E00) GO TO 100
+      IF (Z.GT.3.40E00) IERROR=-999
+      GAS1=1.0836E01-4.55524E00*Y
+      GAS2=(2.96473E01+3.90851E00*Y)*Z
+      GAS3=(-2.05732E-03+3.65982E-02*Z+5.23821E-03*Y)*Y*Y
+      GAS4=(-1.67001E01-1.44623E00*Y+3.98307E00*Z)*Z*Z
+      GO TO 120
+C
+  100 IF (Z.GT.3.00E00) IERROR=-999
+      GAS1=2.01858E01-3.13458E00*Y
+      GAS2=(1.03619E01+1.87767E00*Y)*Z
+      GAS3=(-1.72922E-01+1.12174E-01*Z+1.28626E-02*Y)*Y*Y
+      GAS4=(-5.43557E00-8.71048E-01*Y+2.01789E00*Z)*Z*Z
+      GO TO 120
+C
+  110 DELTZ=Z-0.40E00
+      DELTS=(2.50E00*DELTZ-Y)*GASCON*2.302585E00
+      S=6779.2004E00+DELTS
+      GO TO 130
+C
+  120 SNON=GAS1+GAS2+GAS3+GAS4
+      S=GASCON*SNON
+  130 IF (IFLAG) 160,140,150
+  140 IF (JFLAG) 20,30,160
+  150 IF (JFLAG) 50,60,160
+  160 CONTINUE
+C
+C     End subroutine TGAS2.
+C
+      RETURN
+      END
+C
+C
+C*******************************************************************
+C
+C
+      SUBROUTINE TGAS3(P,RHO,T,IERROR)
+C
+C        Subroutine TGAS3 is a real-gas equation of state for air
+C     that determines the equilibrium temperature given the pressure
+C     and density of the equilibrium state.  This routine uses curve
+C     fits (Srinivasan, Tannehill, and Weilmuenster, 1987) that are
+C     based on NASA RGAS data (Bailey, 1967, NASA TN D-3921) and
+C     constructed from Grabau-type transition functions and bicubic
+C     polynomials to model the thermodynamic properties of air in a
+C     piecewise manner.
+C
+C     Variable description:
+C
+C     (call statement parameter list)
+C
+C     P      Equilibrium pressure (Pa).
+C
+C     RHO    Equilibrium density (kg/m**3).
+C
+C     T      Equilibrium temperature (K).
+C
+C     IERROR Error indicator:
+C            If value of 0, then no error.
+C            If value of -999 is returned by TGAS3 the
+C            equilibrium state is outside the range of validity
+C            for the curve fits.
+C
+C
+C     Begin subroutine TGAS3.
+C
+      IMPLICIT REAL(A-H,M,O-Z)
+      DATA R0/1.292E00/,P0/1.0133E05/,T0/273.15E00/,
+     &     GASCON/287.06E00/
+      DATA ARGMAX/85.00/,EXMAX/1.00E37/,EXMIN/1.00E-37/,
+     &     POWMAX/33.00/
+C
+      IERROR=0
+C
+      Y=LOG10(RHO/R0)
+      X=LOG10(P/P0)
+      IF (ABS(Y+4.50E00).LT.2.50E-02) GO TO 20
+      IF (ABS(Y+0.50E00).LT.5.00E-03) GO TO 50
+      IFLAG=-1
+      GO TO 90
+C
+   10 RETURN
+   20 IFLAG=0
+      RSAVE=RHO
+      YM=Y
+      Y=-4.50E00+2.50E-02
+      YHIGH=Y
+      RHO=(10.0**Y)*R0
+      JFLAG=-1
+      GO TO 90
+C
+   30 THIGH=T
+      Y=-4.50E00-2.50E-02
+      YLOW=Y
+      RHO=(10.0**Y)*R0
+      JFLAG=0
+      GO TO 90
+C
+   40 TLOW=T
+      GO TO 80
+C
+   50 IFLAG=1
+      RSAVE=RHO
+      YM=Y
+      Y=-0.50E00+0.50E-02
+      YHIGH=Y
+      RHO=(10.0**Y)*R0
+      JFLAG=-1
+      GO TO 90
+C
+   60 THIGH=T
+      Y=-0.50E00-0.50E-02
+      YLOW=Y
+      RHO=(10.0**Y)*R0
+      JFLAG=0
+      GO TO 90
+C
+   70 TLOW=T
+   80 T=TLOW+(THIGH-TLOW)/(YHIGH-YLOW)*(YM-YLOW)
+      RHO=RSAVE
+      RETURN
+   90 CONTINUE
+C
+      Z1=X-Y
+      IF (Y.GT.-0.5E00) GO TO 190
+      IF (Y.GT.-4.5E00) GO TO 140
+      IF (Z1.GT.0.25E00) GO TO 100
+      T=P/(RHO*GASCON)
+      GO TO 250
+C
+  100 IF (Z1.GT.0.95E00) GO TO 110
+      GAS1=1.23718E-01+1.08623E-02*Y
+      GAS2=(2.24239E-01-8.24608E-02*Y)*Z1
+      GAS3=(-1.17615E-03-1.87566E-03*Z1-1.19155E-04*Y)*Y*Y
+      GAS4=(1.18397E00+6.48520E-02*Y-5.52634E-01*Z1)*Z1*Z1
+      TNON=GAS1+GAS2+GAS3+GAS4
+      GO TO 240
+C
+  110 IF (Z1.GT.1.4E00) GO TO 120
+      GAS1=-8.12952E00-8.28637E-01*Y
+      GAS2=(2.26904E01+1.41132E00*Y)*Z1
+      GAS3=(-2.98633E-02+2.70066E-02*Z1-2.28103E-04*Y)*Y*Y
+      GAS4=(-1.91806E01-5.78875E-01*Y+5.62580E00*Z1)*Z1*Z1
+      GAS5=-3.99845E00+2.26369E-01*Y
+      GAS6=(2.52876E00-7.28448E-01*Y)*Z1
+      GAS7=(1.09769E-02-1.83819E-02*Z1-1.51380E-04*Y)*Y*Y
+      GAS8=(2.99238E00+3.91440E-01*Y-2.04463E00*Z1)*Z1*Z1
+      XXX=-3.887015E01-2.908228E01*Y+4.070557E01*Z1+
+     &    2.682347E01*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GO TO 230
+C
+  120 IF (Z1.GT.1.95E00) GO TO 130
+      GAS1=-1.98573E01-1.67225E00*Y
+      GAS2=(3.76159E01+2.10964E00*Y)*Z1
+      GAS3=(-3.40174E-02+2.31712E-02*Z1-9.80275E-05*Y)*Y*Y
+      GAS4=(-2.22215E01-6.44596E-01*Y+4.40486E00*Z1)*Z1*Z1
+      GAS5=-5.36809E00+2.41201E-01*Y
+      GAS6=(-1.25881E00-8.62744E-01*Y)*Z1
+      GAS7=(-3.79774E-03-7.81335E-03*Z1-3.80005E-04*Y)*Y*Y
+      GAS8=(5.58609E00+3.78963E-01*Y-1.81566E00*Z1)*Z1*Z1
+      XXX=2.08E01-2.56E01*Y+1.0E00*Z1+1.80E01*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GO TO 230
+C
+  130 IF (Z1.GT.2.60E00) IERROR=-999
+      GAS1=-2.33271E01-1.89958E00*Y
+      GAS2=(3.21440E01+1.68622E00*Y)*Z1
+      GAS3=(-4.42123E-02+2.82629E-02*Z1+6.63272E-04*Y)*Y*Y
+      GAS4=(-1.38645E01-3.40976E-01*Y+2.04466E00*Z1)*Z1*Z1
+      GAS5=8.35474E00+1.71347E00*Y
+      GAS6=(-1.60715E01-1.63139E00*Y)*Z1
+      GAS7=(4.14641E-02-2.30068E-02*Z1+1.53246E-05*Y)*Y*Y
+      GAS8=(8.70275E00+3.60966E-01*Y-1.46166E00*Z1)*Z1*Z1
+      XXX=1.115884E02-6.452606E00*Y-5.337863E01*Z1+
+     &    2.026986E00*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GO TO 230
+C
+  140 IF (Z1.GT.0.25E00) GO TO 150
+      T=P/(RHO*GASCON)
+      GO TO 250
+C
+  150 IF (Z1.GT.0.95E00) GO TO 160
+      GAS1=2.03910E-02+7.67310E-03*Y
+      GAS2=(8.48581E-01-2.93086E-02*Y)*Z1
+      GAS3=(8.40269E-04-1.47701E-03*Z1+3.13687E-05*Y)*Y*Y
+      GAS4=(2.67251E-01+2.37262E-02*Y-1.41973E-01*Z1)*Z1*Z1
+      TNON=GAS1+GAS2+GAS3+GAS4
+      GO TO 240
+C
+  160 IF (Z1.GT.1.45E00) GO TO 170
+      GAS1=-5.12404E00-2.84740E-01*Y
+      GAS2=(1.54532E01+4.52475E-01*Y)*Z1
+      GAS3=(-1.22881E-02+8.56845E-03*Z1-3.25256E-04*Y)*Y*Y
+      GAS4=(-1.35181E01-1.68725E-01*Y+4.18451E00*Z1)*Z1*Z1
+      GAS5=7.52564E00+8.35238E-01*Y
+      GAS6=(-1.95558E01-1.23393E00*Y)*Z1
+      GAS7=(3.34510E-02-2.34269E-02*Z1+4.81788E-04*Y)*Y*Y
+      GAS8=(1.71779E01+4.54628E-01*Y-5.09936E00*Z1)*Z1*Z1
+      XXX=6.148442E01-1.828123E01*Y-5.468755E01*Z1+
+     &    1.562500E01*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GO TO 230
+C
+  170 IF (Z1.GT.2.05E00) GO TO 180
+      GAS1=-1.23779E01-1.14728E00*Y
+      GAS2=(2.41382E01+1.38957E00*Y)*Z1
+      GAS3=(-3.63693E-02+2.24265E-02*Z1-3.23888E-04*Y)*Y*Y
+      GAS4=(-1.42844E01-4.06553E-01*Y+2.87620E00*Z1)*Z1*Z1
+      GAS5=4.40782E00+1.33046E00*Y
+      GAS6=(-1.15405E01-1.59892E00*Y)*Z1
+      GAS7=(5.30580E-02-3.10376E-02*Z1+4.77650E-04*Y)*Y*Y
+      GAS8=(8.57309E00+4.71274E-01*Y-1.96233E00*Z1)*Z1*Z1
+      XXX=1.4075E02-6.499992E00*Y-7.75E01*Z1+5.0E00*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GO TO 230
+C
+  180 IF (Z1.GT.2.50E00) IERROR=-999
+      GAS1=-1.27244E01-1.66684E00*Y
+      GAS2=(1.72708E01+1.45307E00*Y)*Z1
+      GAS3=(-3.64515E-02+1.90463E-02*Z1+4.80787E-04*Y)*Y*Y
+      GAS4=(-6.97208E00-3.04323E-01*Y+9.67524E-01*Z1)*Z1*Z1
+      GAS5=7.71330E00+5.08340E-01*Y
+      GAS6=(-9.82110E00-4.49138E-01*Y)*Z1
+      GAS7=(-9.41787E-04-2.40293E-03*Z1-8.28450E-04*Y)*Y*Y
+      GAS8=(4.16530E00+9.63923E-02*Y-5.88807E-01*Z1)*Z1*Z1
+      XXX=-1.092654E03-3.05312E02*Y+4.656243E02*Z1+
+     &    1.312498E02*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GO TO 230
+C
+  190 IF (Z1.GT.0.25E00) GO TO 200
+      T=P/(RHO*GASCON)
+      GO TO 250
+C
+  200 IF (Z1.GT.1.00E00) GO TO 210
+      GAS1=-1.54141E-03+6.58337E-04*Y
+      GAS2=(9.82201E-01-3.85028E-03*Y)*Z1
+      GAS3=(1.23111E-04-4.08210E-04*Z1+2.13592E-05*Y)*Y*Y
+      GAS4=(3.77441E-02+4.56963E-03*Y-2.35172E-02*Z1)*Z1*Z1
+      TNON=GAS1+GAS2+GAS3+GAS4
+      GO TO 240
+C
+  210 IF (Z1.GT.1.45E00) GO TO 220
+      GAS1=8.06492E-01+9.91293E-02*Y
+      GAS2=(-1.70742E00-2.28264E-01*Y)*Z1
+      GAS3=(5.03500E-03-6.13927E-03*Z1+1.69824E-04*Y)*Y*Y
+      GAS4=(3.02351E00+1.31574E-01*Y-1.12755E00*Z1)*Z1*Z1
+      GAS5=-1.17930E-01-2.12207E-01*Y
+      GAS6=(1.36524E00+4.05886E-01*Y)*Z1
+      GAS7=(-1.88260E-02+1.65486E-02*Z1-5.11400E-04*Y)*Y*Y
+      GAS8=(-2.10926E00-1.89881E-01*Y+8.79806E-01*Z1)*Z1*Z1
+      XXX=1.959604E02-4.269391E01*Y-1.734931E02*Z1+
+     &    3.762898E01*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GO TO 230
+C
+  220 IF (Z1.GT.2.30E00) IERROR=-999
+      GAS1=-1.66249E00-8.91113E-02*Y
+      GAS2=(4.11648E00+8.78093E-02*Y)*Z1
+      GAS3=(-3.09742E-03+1.99879E-03*Z1+6.85472E-05*Y)*Y*Y
+      GAS4=(-1.84445E00-7.50324E-03*Y+3.05784E-01*Z1)*Z1*Z1
+      GAS5=1.11555E01+1.32100E00*Y
+      GAS6=(-1.71236E01-1.29190E00*Y)*Z1
+      GAS7=(6.28124E-02-3.07949E-02*Z1+1.57743E-03*Y)*Y*Y
+      GAS8=(8.63804E00+3.07809E-01*Y-1.42634E00*Z1)*Z1*Z1
+      XXX=1.330611E02+8.979635E00*Y-7.265298E01*Z1-
+     &    2.449009E00*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+C
+  230 TNON=GAS1+GAS2+GAS3+GAS4+(GAS5+GAS6+GAS7+GAS8)/(1.0+
+     &     GAS9)
+  240 TNON=AMIN1(TNON,POWMAX)
+      TNON=AMAX1(TNON,-POWMAX)
+      T=(10.0**TNON)*T0
+  250 IF (IFLAG) 10,260,270
+  260 IF (JFLAG) 30,40,10
+  270 IF (JFLAG) 60,70,10
+C
+C     End subroutine TGAS3.
+C
+      END
+C
+C
+C*******************************************************************
+C
+C
+      SUBROUTINE TGAS4(P,RHO,H,IERROR)
+C
+C        Subroutine TGAS4 is a real-gas equation of state for air
+C     that determines the equilibrium enthalpy given the pressure
+C     and density of the equilibrium state.  This routine uses curve
+C     fits (Srinivasan, Tannehill, and Weilmuenster, 1987) that are
+C     based on NASA RGAS data (Bailey, 1967, NASA TN D-3921) and
+C     constructed from Grabau-type transition functions and bicubic
+C     polynomials to model the thermodynamic properties of air in a
+C     piecewise manner.
+C
+C     Variable description:
+C
+C     (call statement parameter list)
+C
+C     P      Equilibrium pressure (Pa).
+C
+C     RHO    Equilibrium density (kg/m**3).
+C
+C     H      Equilibrium specific enthalpy (m**2/s**2).
+C
+C     IERROR Error indicator:
+C            If value of 0, then no error.
+C            IF value of -999 is returned by TGAS4 the
+C            equilibrium state is outside the range of validity
+C            for the curve fits.
+C
+C
+C     Begin subroutine TGAS4.
+C
+      IMPLICIT REAL(A-H,M,O-Z)
+      DATA R0/1.292E00/,P0/1.0133E05/
+      DATA ARGMAX/85.00/,EXMAX/1.00E37/,EXMIN/1.00E-37/
+C
+      IERROR=0
+C
+      Y=LOG10(RHO/R0)
+      X=LOG10(P/P0)
+      IF (ABS(Y+4.50E00).LT.2.50E-02) GO TO 20
+      IF (ABS(Y+0.50E00).LT.5.00E-03) GO TO 50
+      IFLAG=-1
+      GO TO 90
+C
+   10 RETURN
+   20 IFLAG=0
+      RSAVE=RHO
+      YM=Y
+      Y=-4.50E00+2.50E-02
+      YHIGH=Y
+      RHO=(10.0**Y)*R0
+      JFLAG=-1
+      GO TO 90
+C
+   30 HHIGH=H
+      Y=-4.50E00-2.50E-02
+      YLOW=Y
+      RHO=(10.0**Y)*R0
+      JFLAG=0
+      GO TO 90
+C
+   40 HLOW=H
+      GO TO 80
+C
+   50 IFLAG=1
+      RSAVE=RHO
+      YM=Y
+      Y=-0.50E00+0.50E-02
+      YHIGH=Y
+      RHO=(10.0**Y)*R0
+      JFLAG=-1
+      GO TO 90
+C
+   60 HHIGH=H
+      Y=-0.50E00-0.50E-02
+      YLOW=Y
+      RHO=(10.0**Y)*R0
+      JFLAG=0
+      GO TO 90
+C
+   70 HLOW=H
+   80 H=HLOW+(HHIGH-HLOW)/(YHIGH-YLOW)*(YM-YLOW)
+      RHO=RSAVE
+      GO TO 10
+   90 CONTINUE
+C
+      Z1=X-Y
+      IF (Y.GT.-0.5E00) GO TO 190
+      IF (Y.GT.-4.5E00) GO TO 140
+      IF (Z1.GT.0.10E00) GO TO 100
+      GAMM=1.3986E00
+      GO TO 240
+C
+  100 IF (Z1.GT.0.85E00) GO TO 110
+      GAS1=2.53908E02+1.01491E02*Y
+      GAS2=(-3.87199E02-1.54304E02*Y)*Z1
+      GAS3=(7.28532E00-8.04378E00*Z1-1.82577E-03*Y)*Y*Y
+      GAS4=(9.86233E01+4.63763E01*Y+2.18994E01*Z1)*Z1*Z1
+      GAS5=-2.52423E02-1.01445E02*Y
+      GAS6=(3.87210E02+1.54298E02*Y)*Z1
+      GAS7=(-7.2773E00+8.04277E00*Z1+2.28399E-03*Y)*Y*Y
+      GAS8=(-9.87576E01-4.63883E01*Y-2.19438E01*Z1)*Z1*Z1
+      XXX=-11.0E00+2.0E00*Y+11.0E00*Z1-2.0E00*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GAMM=GAS1+GAS2+GAS3+GAS4+(GAS5+GAS6+GAS7+GAS8)/(1.0-GAS9)
+      GO TO 240
+C
+  110 IF (Z1.GT.1.30E00) GO TO 120
+      GAS1=-1.05745E01-1.93693E00*Y
+      GAS2=(3.07202E01+3.35578E00*Y)*Z1
+      GAS3=(-7.79965E-02+6.68790E-02*Z1-9.86882E-04*Y)*Y*Y
+      GAS4=(-2.60637E01-1.42391E00*Y+7.23223E00*Z1)*Z1*Z1
+      GAS5=-1.86342E01+2.41997E-02*Y
+      GAS6=(3.20880E01-7.46914E-01*Y)*Z1
+      GAS7=(3.75161E-02-4.10125E-02*Z1+5.74637E-04*Y)*Y*Y
+      GAS8=(-1.69985E01+5.39041E-01*Y+2.56253E00*Z1)*Z1*Z1
+      XXX=2.768567E02+2.152383E01*Y-2.164837E02*Z1-
+     &    1.394837E01*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GO TO 230
+C
+  120 IF (Z1.GT.1.95E00) GO TO 130
+      GAS1=6.17584E-01-2.40690E-01*Y
+      GAS2=(1.95904E00+3.41644E-01*Y)*Z1
+      GAS3=(-1.01073E-02+6.77631E-03*Z1-1.15922E-04*Y)*Y*Y
+      GAS4=(-1.68951E00-1.10932E-01*Y+4.26058E-01*Z1)*Z1*Z1
+      GAS5=-1.34222E01-5.43713E-01*Y
+      GAS6=(1.81528E01+3.95928E-01*Y)*Z1
+      GAS7=(-7.41105E-03+1.67768E-03*Z1-3.32714E-06*Y)*Y*Y
+      GAS8=(-7.97425E00-5.80593E-02*Y+1.12448E00*Z1)*Z1*Z1
+      XXX=8.677803E01-8.370349E00*Y-4.074084E01*Z1+
+     &    7.407405E00*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GO TO 230
+C
+  130 IF (Z1.GT.2.60E00) IERROR=-999
+      GAS1=-8.32595E00-3.50219E-01*Y
+      GAS2=(1.36455E01+3.59350E-01*Y)*Z1
+      GAS3=(-3.70109E-03+3.30836E-03*Z1+1.10018E-04*Y)*Y*Y
+      GAS4=(-6.49007E00-8.38594E-02*Y+1.02443E00*Z1)*Z1*Z1
+      GAS5=-3.08441E01-1.49510E00*Y
+      GAS6=(3.00585E01+9.19650E-01*Y)*Z1
+      GAS7=(-3.60024E-02+1.02522E-02*Z1-4.68760E-04*Y)*Y*Y
+      GAS8=(-9.33522E00-1.35228E-01*Y+8.92634E-01*Z1)*Z1*Z1
+      XXX=8.800047E01-1.679356E01*Y-3.333353E01*Z1+
+     &    8.465574E00*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GO TO 230
+C
+  140 IF (Z1.GT.0.10E00) GO TO 150
+      GAMM=1.399E00
+      GO TO 240
+C
+  150 IF (Z1.GT.0.95E00) GO TO 160
+      GAS1=-1.33083E02-9.98707E00*Y
+      GAS2=(3.94734E02+2.35810E01*Y)*Z1
+      GAS3=(1.43957E00-1.43175E00*Z1+1.77068E-05*Y)*Y*Y
+      GAS4=(-3.84712E02-1.36367E01*Y+1.24325E02*Z1)*Z1*Z1
+      GAS5=1.34486E02+9.99122E00*Y
+      GAS6=(-3.94719E02-2.35853E01*Y)*Z1
+      GAS7=(-1.43799E00+1.43039E00*Z1+1.44367E-04*Y)*Y*Y
+      GAS8=(3.84616E02+1.36318E01*Y-1.24348E02*Z1)*Z1*Z1
+      XXX=-2.141444E01+1.381584E00*Y+2.039473E01*Z1-
+     &    1.315789E00*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GAMM=GAS1+GAS2+GAS3+GAS4+(GAS5+GAS6+GAS7+GAS8)/(1.0-GAS9)
+      GO TO 240
+C
+  160 IF (Z1.GT.1.50E00) GO TO 170
+      GAS1=-7.36684E00-1.13247E00*Y
+      GAS2=(2.47879E01+1.99625E00*Y)*Z1
+      GAS3=(-4.91630E-02+4.16673E-02*Z1-6.58149E-04*Y)*Y*Y
+      GAS4=(-2.32990E01-8.59418E-01*Y+7.19016E00*Z1)*Z1*Z1
+      GAS5=-2.42647E00+5.57912E-01*Y
+      GAS6=(-2.03055E00-1.22031E00*Y)*Z1
+      GAS7=(3.74866E-02-3.39278E-02*Z1+5.21042E-04*Y)*Y*Y
+      GAS8=(7.75414E00+6.08488E-01*Y-3.68326E00*Z1)*Z1*Z1
+      XXX=8.077385E01-1.273807E01*Y-6.547623E01*Z1+
+     &    1.190475E01*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GO TO 230
+C
+  170 IF (Z1.GT.2.00E00) GO TO 180
+      GAS1=4.31520E-01-2.83857E-01*Y
+      GAS2=(2.27791E00+3.99159E-01*Y)*Z1
+      GAS3=(-1.29444E-02+8.78724E-03*Z1-1.60583E-04*Y)*Y*Y
+      GAS4=(-1.84314E00-1.28136E-01*Y+4.45362E-01*Z1)*Z1*Z1
+      GAS5=-1.03883E01-3.58718E-01*Y
+      GAS6=(1.35068E01+1.87268E-01*Y)*Z1
+      GAS7=(-4.28184E-03-9.52016E-04*Z1-4.10506E-05*Y)*Y*Y
+      GAS8=(-5.63894E00-1.45626E-03*Y+7.39915E-01*Z1)*Z1*Z1
+      XXX=2.949221E02+1.368660E01*Y-1.559335E02*Z1-
+     &     3.787766E00*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GO TO 230
+C
+  180 IF (Z1.GT.2.50E00) IERROR=-999
+      GAS1=-3.77766E00-5.53738E-01*Y
+      GAS2=(6.60834E00+4.87181E-01*Y)*Z1
+      GAS3=(-2.11045E-02+9.67277E-03*Z1-2.19420E-04*Y)*Y*Y
+      GAS4=(-2.94754E00-1.02365E-01*Y+4.39620E-01*Z1)*Z1*Z1
+      GAS5=4.05813E01+3.25692E00*Y
+      GAS6=(-4.79583E01-2.53660E00*Y)*Z1
+      GAS7=(9.06436E-02-3.47578E-02*Z1+1.00077E-03*Y)*Y*Y
+      GAS8=(1.89040E01+4.94114E-01*Y-2.48554E00*Z1)*Z1*Z1
+      XXX=5.34718E02+7.495657E01*Y-2.219822E02*Z1-
+     &    3.017229E01*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GO TO 230
+C
+  190 IF (Z1.GT.0.10E00) GO TO 200
+      GAMM=1.4017E00
+      GO TO 240
+C
+  200 IF (Z1.GT.1.05E00) GO TO 210
+      GAS1=-9.67488E01+2.05296E-01*Y
+      GAS2=(2.69927E02-1.92887E00*Y)*Z1
+      GAS3=(3.78392E-01-3.24965E-01*Z1-3.61036E-03*Y)*Y*Y
+      GAS4=(-2.46711E02+1.54416E00*Y+7.48760E01*Z1)*Z1*Z1
+      GAS5=9.81502E01-2.05448E-01*Y
+      GAS6=(-2.69913E02+1.93052E00*Y)*Z1
+      GAS7=(-3.78527E-01+3.24832E-01*Z1+3.66182E-03*Y)*Y*Y
+      GAS8=(2.46630E02-1.54646E00*Y-7.48980E01*Z1)*Z1*Z1
+      XXX=-2.659865E01+1.564631E00*Y+2.312926E01*Z1-
+     &    1.360543E00*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GAMM=GAS1+GAS2+GAS3+GAS4+(GAS5+GAS6+GAS7+GAS8)/(1.0-GAS9)
+      GO TO 240
+C
+  210 IF (Z1.GT.1.60E00) GO TO 220
+      GAS1=-2.67593E-01-1.87457E-01*Y
+      GAS2=(5.07693E00+2.72286E-01*Y)*Z1
+      GAS3=(1.04541E-02-1.42211E-02*Z1+6.38962E-04*Y)*Y*Y
+      GAS4=(-5.08520E00-7.81935E-02*Y+1.58711E00*Z1)*Z1*Z1
+      GAS5=2.87969E00+3.9009E-01*Y
+      GAS6=(-8.06179E00-5.51250E-01*Y)*Z1
+      GAS7=(-1.01903E-02+1.35906E-02*Z1-8.97772E-04*Y)*Y*Y
+      GAS8=(7.29592E00+1.83861E-01*Y-2.15153E00*Z1)*Z1*Z1
+      XXX=1.828573E02-3.428596E01*Y-1.51786E02*Z1+
+     &    2.976212E01*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+      GO TO 230
+C
+  220 IF (Z1.GT.2.30E00) IERROR=-999
+      GAS1=9.21537E-01-2.39670E-01*Y
+      GAS2=(1.30714E00+3.42990E-01*Y)*Z1
+      GAS3=(-2.18847E-02+1.36691E-02*Z1-4.90274E-04*Y)*Y*Y
+      GAS4=(-1.20916E00-1.10206E-01*Y+3.087920E-01*Z1)*Z1*Z1
+      GAS5=-6.77089E00-6.90476E-02*Y
+      GAS6=(8.18168E00-9.52708E-02*Y)*Z1
+      GAS7=(2.98487E-02-1.78706E-02*Z1+6.28419E-04*Y)*Y*Y
+      GAS8=(-3.07662E00+6.60408E-02*Y+3.38590E-01*Z1)*Z1*Z1
+      XXX=1.5916669E02+3.976192E01*Y-7.966199E01*Z1-
+     &    1.66667E01*Y*Z1
+      IF (ABS(XXX).LT.ARGMAX) THEN
+         GAS9=EXP(XXX)
+      ELSE IF (XXX.GT.0.00) THEN
+         GAS9=EXMAX
+      ELSE
+         GAS9=EXMIN
+      END IF
+C
+  230 GAMM=GAS1+GAS2+GAS3+GAS4+(GAS5+GAS6+GAS7+GAS8)/(1.00+GAS9)
+  240 GAMM=AMAX1(GAMM,1.000001E00)
+      H=GAMM*P/(RHO*(GAMM-1.00E00))
+      IF (IFLAG) 10,250,260
+  250 IF (JFLAG) 30,40,10
+  260 IF (JFLAG) 60,70,10
+C
+C     End subroutine TGAS4.
+C
+      END
+C
+C
+C*******************************************************************
+C
+C
+      SUBROUTINE TGAS5(PRE,TEMP,DEN,EINT,SSP,IERROR)
+C
+C        This subroutine can be used to prescibe the equilibrium
+C     density, specific internal energy, and speed of sound given
+C     the equilibrium pressure and temperature.  Subroutine TGAS5
+C     uses the real-gas equation of state embodied in subroutine
+C     TGAS1 (where the thermodynamic properties are defined in
+C     terms of the equilibrium internal energy and density) in
+C     conjunction with a damped Newton's method iteration scheme.
+C
+C     Other subroutines required:
+C
+C     TGAS1
+C
+C     Variable description:
+C
+C     (call statement parameter list)
+C
+C     PRE              Equilibrium pressure (Pa).
+C
+C     TEMP             Equilibrium temperature (K).
+C
+C     DEN              Equilibrium density (kg/m**3).
+C
+C     EINT             Equilibrium specific internal
+C                      energy (J/kg or m**2/s**2).
+C
+C     SSP              Equilibrium sound speed (m/s).
+C
+C     IERROR           Error indicator (IERROR=0 no errors).
+C
+C
+C     Begin subroutine TGAS5.
+C
+      IMPLICIT REAL(A-H,M,O-Z)
+      DATA G0/1.3965/,R0/287.06E00/,TOLER1/1.0E-12/,
+     &     TOLER2/1.0E-30/,TOLER3/1.00E-08/
+C
+C     Initialize the error indicator.
+C
+      IERROR=0
+C
+C     Set the initial solution tolerance.
+C
+      TOLER=TOLER1
+C
+C     Check for negative pressure or temperature.
+C
+      IF (PRE.LE.0.00.OR.TEMP.LE.0.00) THEN
+         IERROR=-900
+         RETURN
+      END IF
+C
+C     Determine initial guesses of the internal energy and
+C     density to begin the damped Newtons's method iteration
+C     procedure by using ideal-gas equation of state.
+C
+      DEN0=PRE/(R0*TEMP)
+      EIN0=PRE/(DEN0*(G0-1.00))
+C
+C     Begin the damped Newton's method iteration procedure.
+C
+      ICOUNT=1
+C
+C     Step 1: Evaluate the iteration functions G1 and G2 at 
+C             EIN0 and DEN0 as well as their partial derivatives
+C             with respect to the internal energy and density.
+C
+      CALL TGAS1(EIN0,DEN0,PN0,AN0,TN0,3,IERROR)
+      G1=(PN0-PRE)/PRE
+      G2=(TN0-TEMP)/TEMP
+      IF (ABS(G1).LT.TOLER.AND.ABS(G2).LT.TOLER) THEN
+         DEN=DEN0
+         EINT=EIN0
+         SSP=AN0
+         RETURN
+      END IF
+C
+  300 CALL TGAS1(EIN0,DEN0+TOLER3*DEN0,PN0,AN0,TN0,3,IERROR)
+      DG1=PN0-PRE
+      DG2=TN0-TEMP
+      CALL TGAS1(EIN0,DEN0-TOLER3*DEN0,PN0,AN0,TN0,3,IERROR)
+      DG1=(DG1-(PN0-PRE))/PRE
+      DG2=(DG2-(TN0-TEMP))/TEMP
+      DG1DD=DG1/(2.0*TOLER3*DEN0)
+      DG2DD=DG2/(2.0*TOLER3*DEN0)
+C
+      CALL TGAS1(EIN0+TOLER3*EIN0,DEN0,PN0,AN0,TN0,3,IERROR)
+      DG1=PN0-PRE
+      DG2=TN0-TEMP
+      CALL TGAS1(EIN0-TOLER3*EIN0,DEN0,PN0,AN0,TN0,3,IERROR)
+      DG1=(DG1-(PN0-PRE))/PRE
+      DG2=(DG2-(TN0-TEMP))/TEMP
+      DG1DE=DG1/(2.0*TOLER3*EIN0)
+      DG2DE=DG2/(2.0*TOLER3*EIN0)
+C
+C     Step 2: Solve the pair of equations associated with the
+C             iteration scheme by using Cramer's rule, and obtain
+C             the correction terms DDE AND DEI.  Note that a
+C             relaxation technique is being used to aid
+C             convergence.
+C
+      DETMNT=DG1DD*DG2DE-DG1DE*DG2DD
+      IF (ABS(DETMNT).LT.TOLER2) THEN
+         IERROR=-901
+         RETURN
+      END IF
+      DDE=(DG1DE*G2-DG2DE*G1)/DETMNT
+      DEI=(DG2DD*G1-DG1DD*G2)/DETMNT
+      IF (ICOUNT.GT.25.AND.ICOUNT.LE.50) THEN
+         DDE=0.50*DDE
+         DEI=0.50*DEI
+         TOLER=10.0*TOLER1
+      ELSE IF (ICOUNT.GT.50.AND.ICOUNT.LE.75) THEN
+         DDE=0.10*DDE
+         DEI=0.10*DEI
+         TOLER=50.0*TOLER1
+      ELSE IF (ICOUNT.GT.75.AND.ICOUNT.LE.100) THEN
+         DDE=0.01*DDE
+         DEI=0.01*DEI
+         TOLER=100.0*TOLER1
+      ELSE IF (ICOUNT.GT.100.AND.ICOUNT.LE.125) THEN
+         DDE=0.01*DDE
+         DEI=0.01*DEI
+         TOLER=1000.0*TOLER1
+      ELSE IF (ICOUNT.GT.125) THEN
+         DDE=0.001*DDE
+         DEI=0.001*DEI
+         TOLER=10000.0*TOLER1
+      END IF
+C
+C     Step 3: Update the internal energy and density for
+C             this iteration.  Also determine the new
+C             values of the iteration functions as well
+C             as other thermodynamic properties.
+C
+  350 DEN1=DEN0+DDE
+      EIN1=EIN0+DEI
+      IF (DEN1.LE.0.0.OR.EIN1.LE.0.0) THEN
+         DDE=0.50*DDE
+         DEI=0.50*DEI
+         GO TO 350
+      END IF
+      CALL TGAS1(EIN1,DEN1,PN1,AN1,TN1,3,IERROR)
+      G1=(PN1-PRE)/PRE
+      G2=(TN1-TEMP)/TEMP
+C
+C     Step 4: Check for convergence.
+C
+      IF (ABS(G1).LT.TOLER.AND.ABS(G2).LT.TOLER) THEN
+          GO TO 400
+      ELSE IF (ICOUNT.GT.150) THEN
+         DEN=DEN1
+         EINT=EIN1
+         SSP=AN1
+         IERROR=-902
+         RETURN
+      ELSE
+         ICOUNT=ICOUNT+1
+         DEN0=DEN1
+         EIN0=EIN1
+         GO TO 300
+      END IF
+C
+C     End of iterations.  Assign thermodynamic properties.
+C
+  400 DEN=DEN1
+      EINT=EIN1
+      SSP=AN1
+      IF (ICOUNT.GT.100) IERROR=-999
+C
+C     End subroutine TGAS5.
+C
+      RETURN
+      END
+C
+C
+C*******************************************************************
+C
+C
+      SUBROUTINE TGAS6(PRE,TEMP,CP,CV,GAM,IERROR)
+C
+C        This subroutine can be used to prescibe the equilibrium
+C     specific heats at constant pressure and volume as well as the
+C     specific heat ratio given the equilibrium pressure and
+C     temperature.  Subroutine TGAS6 uses the real-gas equation of
+C     state embodied in subroutine TGAS5 (where the thermodynamic
+C     properties are defined in terms of the equilibrium pressure
+C     and temperature).
+C
+C     Other subroutines required:
+C
+C     TGAS1, TGAS5
+C
+C     Variable description:
+C
+C     (call statement parameter list)
+C
+C     PRE              Equilibrium pressure (Pa).
+C
+C     TEMP             Equilibrium temperature (K).
+C
+C     CP               Specific heat at constant pressure (J/kg-K).
+C
+C     CV               Specific heat at constant volume (J/kg-K).
+C
+C     GAM              Specific heat ratio.
+C
+C     IERROR           Error indicator (IERROR=0 no errors).
+C
+C
+C     Begin subroutine TGAS6.
+C
+      IMPLICIT REAL(A-H,M,O-Z)
+      DATA TOLER/5.00E-03/
+C
+C     Initialize the error indicator.
+C
+      IERROR=0
+C
+C     Check for negative pressure and temperature.
+C
+      IF (PRE.LE.0.00.OR.TEMP.LE.0.00) THEN
+         IERROR=-999
+         RETURN
+      END IF
+C
+C     Determine the specific heats and specific heat ratio.
+C
+      CALL TGAS5(PRE,TEMP+TOLER*TEMP,DEN2,E2,SSP2,IERROR)
+      IF (IERROR.NE.0.AND.IERROR.NE.-999) RETURN
+      H2=E2+PRE/DEN2
+      CALL TGAS5(PRE,TEMP-TOLER*TEMP,DEN1,E1,SSP1,IERROR)
+      IF (IERROR.NE.0.AND.IERROR.NE.-999) RETURN
+      H1=E1+PRE/DEN1
+      CP=(H2-H1)/(2.00*TOLER*TEMP)
+C
+      DDDT=(DEN2-DEN1)/(2.00*TOLER*TEMP)
+      CALL TGAS5(PRE+TOLER*PRE,TEMP,DEN2,E2,SSP2,IERROR)
+      IF (IERROR.NE.0.AND.IERROR.NE.-999) RETURN
+      CALL TGAS5(PRE-TOLER*PRE,TEMP,DEN1,E1,SSP1,IERROR)
+      IF (IERROR.NE.0.AND.IERROR.NE.-999) RETURN
+      DDDP=(DEN2-DEN1)/(2.00*TOLER*PRE)
+      DP=-(DDDT/DDDP)*TOLER*TEMP
+      CALL TGAS5(PRE+DP,TEMP+TOLER*TEMP,DEN2,E2,SSP2,IERROR)
+      IF (IERROR.NE.0.AND.IERROR.NE.-999) RETURN
+      CALL TGAS5(PRE-DP,TEMP-TOLER*TEMP,DEN1,E1,SSP1,IERROR)
+      IF (IERROR.NE.0.AND.IERROR.NE.-999) RETURN
+      CV=(E2-E1)/(2.00*TOLER*TEMP)
+C
+      GAM=CP/CV
+C
+      IERROR=0
+C
+C     End subroutine TGAS6.
+C
+      RETURN
+      END

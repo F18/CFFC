@@ -184,6 +184,7 @@ void Output_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
  *                                                                    *
  **********************************************************************/
 void Output_Cells_Tecplot(const HighTemp2D_Quad_Block &SolnBlk,
+		const HighTemp2D_Input_Parameters &IP,
 		int Number_of_Time_Steps,
 		double Time,
 		int Block_Number,
@@ -192,6 +193,7 @@ void Output_Cells_Tecplot(const HighTemp2D_Quad_Block &SolnBlk,
 {
 	double l2_norm = -1.0, l2_norm_rel = -1.0;
 	Output_Cells_Tecplot(SolnBlk, 
+			IP,
 			Number_of_Time_Steps, 
 			Time, 
 			Block_Number, 
@@ -202,6 +204,7 @@ void Output_Cells_Tecplot(const HighTemp2D_Quad_Block &SolnBlk,
 }
 
 void Output_Cells_Tecplot(const HighTemp2D_Quad_Block &SolnBlk,
+		const HighTemp2D_Input_Parameters &IP,
 		int Number_of_Time_Steps,
 		double Time,
 		int Block_Number,

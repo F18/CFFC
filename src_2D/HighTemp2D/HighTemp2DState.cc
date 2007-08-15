@@ -7,6 +7,15 @@
 
 #include "HighTemp2DState.h"
 
+// The default tolerance for things such as:
+//
+//  inline double HighTemp2D_pState::dhdp(void) const { 
+//    return (Tgas_h(HTONEPLUST*p, rho) - Tgas_h(HTONEMINT*p, rho))/(2.0*HTTOL*p);
+//  }
+//
+// Currently HTTOL is declared in Math.h (and defined here).
+double HTTOL = 1e-3;
+
 /**********************************************************************
  * HighTemp2D_pState -- Create storage and assign gas constants.  *
  **********************************************************************/

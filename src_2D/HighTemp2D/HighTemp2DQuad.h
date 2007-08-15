@@ -152,6 +152,7 @@ public:
   HighTemp2D_cState       ***dUdt; //!< Solution residual.
   HighTemp2D_cState          **Uo; //!< Initial solution state.
   static int        residual_variable; //!< Static integer that indicates which variable is used for residual calculations.
+  static int Number_of_Residual_Norms;   //!< (default 4 )
   //@}
 
   //@{ @name Solution gradient arrays:
@@ -198,10 +199,6 @@ public:
 
   Vector2D                      Vwall;
   double                        Twall;
-
-	//@{ @name Current Solver Type:
-	static enum current_solver_types current_solver_type; //!< Specifies explicit or implicit. This affects things like memory allocation.
-	//@}
 
   //! Creation constructor.
   HighTemp2D_Quad_Block(void) {
@@ -2069,6 +2066,12 @@ extern double L2_Norm_Residual(HighTemp2D_Quad_Block &SolnBlk);
 
 extern double Max_Norm_Residual(HighTemp2D_Quad_Block &SolnBlk);
 
+extern double L1_Norm_Residual(HighTemp2D_Quad_Block &SolnBlk, int res_var);
+
+extern double L2_Norm_Residual(HighTemp2D_Quad_Block &SolnBlk, int res_var);
+
+extern double Max_Norm_Residual(HighTemp2D_Quad_Block &SolnBlk, int res_var);
+
 extern void Linear_Reconstruction_GreenGauss(HighTemp2D_Quad_Block &SolnBlk,
                                              const int i,
                                              const int j,
@@ -2186,6 +2189,15 @@ extern double L2_Norm_Residual(HighTemp2D_Quad_Block *Soln_ptr,
 extern double Max_Norm_Residual(HighTemp2D_Quad_Block *Soln_ptr,
                                 AdaptiveBlock2D_List &Soln_Block_List);
 
+void L1_Norm_Residual(HighTemp2D_Quad_Block *Soln_ptr,
+                               AdaptiveBlock2D_List &Soln_Block_List, double *array);
+
+void L2_Norm_Residual(HighTemp2D_Quad_Block *Soln_ptr,
+                               AdaptiveBlock2D_List &Soln_Block_List, double *array);
+
+void Max_Norm_Residual(HighTemp2D_Quad_Block *Soln_ptr,
+                                AdaptiveBlock2D_List &Soln_Block_List, double *array);
+
 extern void Evaluate_Limiters(HighTemp2D_Quad_Block *Soln_ptr,
                               AdaptiveBlock2D_List &Soln_Block_List);
 
@@ -2292,6 +2304,7 @@ extern void Output_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 		ostream &Out_File);
 
 extern void Output_Cells_Tecplot(const HighTemp2D_Quad_Block &SolnBlk,
+		const HighTemp2D_Input_Parameters &IP,
 		int Number_of_Time_Steps,
 		double Time,
 		int Block_Number,
@@ -2299,6 +2312,7 @@ extern void Output_Cells_Tecplot(const HighTemp2D_Quad_Block &SolnBlk,
 		ostream &Out_File);
 
 extern void Output_Cells_Tecplot(const HighTemp2D_Quad_Block &SolnBlk,
+		const HighTemp2D_Input_Parameters &IP,
 		int Number_of_Time_Steps,
 		double Time,
 		int Block_Number,

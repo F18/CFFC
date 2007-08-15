@@ -64,6 +64,7 @@ public:
 
   // Newton-Krylov-Schwarz related input parameters:
   NKS_Input_Parameters NKS_IP;
+  int Solver_Type; 
 
   // Reconstruction type indicator and related input parameters:
   char Reconstruction_Type[INPUT_PARAMETER_LENGTH_HIGHTEMP2D];

@@ -23,7 +23,7 @@ int Newton_Update(HighTemp2D_Quad_Block *SolnBlk,
 		  GMRES_RightPrecon_MatrixFree<HighTemp2D_pState,
 				HighTemp2D_Quad_Block,
 				HighTemp2D_Input_Parameters> &GMRES,
-				double update_factor) 
+				double Relaxation_multiplier) 
 {
 
 	int Num_Var = SolnBlk[0].NumVar();  
@@ -38,7 +38,7 @@ int Newton_Update(HighTemp2D_Quad_Block *SolnBlk,
 					// U = Uo + deltaU = Uo + denormalized(x)
 					for(int varindex =1; varindex <= Num_Var; varindex++){	
 						SolnBlk[Bcount].U[i][j][varindex] = SolnBlk[Bcount].Uo[i][j][varindex] 
-							+ update_factor * GMRES.deltaU(Bcount,i,j,varindex-1);
+							+ Relaxation_multiplier * GMRES.deltaU(Bcount,i,j,varindex-1);
 					} 	      
 
 					// Apply update reduction while any one of the updated variables is negative. 
@@ -89,6 +89,28 @@ int Newton_Update(HighTemp2D_Quad_Block *SolnBlk,
 	}   
 
 	return 0; 
+}
+
+// HighTemp2D Specific Finite_Time_Step
+template <>
+double Finite_Time_Step(const HighTemp2D_Input_Parameters &Input_Parameters, 
+			const double &L2norm_first,
+			const double &L2norm_current,
+			const double &L2norm_current_n,		
+			const int &Number_of_Newton_Steps) {
+
+	double i = Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL;
+	double f = Input_Parameters.NKS_IP.Finite_Time_Step_Final_CFL;
+	double L = max(Input_Parameters.NKS_IP.Overall_Tolerance, NKS_EPS);
+
+	// Find x such that:
+	// (i) (L)^(x) == f
+	double CFL_Power = log(f/i) / log(L);
+
+	// If L2norm_current_n were a straight line on a semi-log plot 
+	//  then CFL would  also be a straight line on a semi-log plot.
+	return Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL *
+		pow(L2norm_current_n, CFL_Power);
 }
 
 /*!**************************************************************
@@ -291,6 +313,15 @@ inline void Block_Preconditioner<HighTemp2D_pState,
   SolnBlk->W[Wii][Wjj].dWdU(dWdU);
 
   dFvdU += dFvdWc*dWdU;
+}
+
+template <>
+inline void Block_Preconditioner<HighTemp2D_pState,
+			 HighTemp2D_Quad_Block,					    
+			 HighTemp2D_Input_Parameters>::
+First_Order_Inviscid_Jacobian_GHLLE(int ci, int cj, DenseMatrix* J_column_data)
+{
+	First_Order_Inviscid_Jacobian_all_HLLE(ci, cj, J_column_data, GHLLE_wavespeeds);
 }
 
 #endif // _HIGHTEMP2D_QUAD_NKS_INCLUDED 
