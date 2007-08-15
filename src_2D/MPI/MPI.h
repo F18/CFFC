@@ -13,7 +13,14 @@
 /* Include MPI C++ Language Binding header file. */
 
 #ifdef _MPI_VERSION
+#ifdef _MPI_VERSION2
+//#undef SEEK_SET
+//#undef SEEK_CUR
+//#undef SEEK_END
+#include "mpi.h"
+#else
 #include "mpi++.h"
+#endif
 #endif
 
 /* Define the classes. */

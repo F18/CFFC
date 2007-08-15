@@ -23,6 +23,12 @@
 #include "../HexaBlock/HexaMultiBlock.h"
 #endif //_MULTIBLOCK_LIST_INCLUDED
 
+/* Include Morton re-ordering header file. */
+
+#ifndef _MORTON_ORDERING_INCLUDED
+#include "MortonOrdering.h"
+#endif // _MORTON_ORDERING_INCLUDED
+
 /******************************************************************
  * AMR -- Templated subroutines.                                  *
  ******************************************************************/
@@ -39,145 +45,132 @@
  *                                                                *
  ******************************************************************/
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-   int  Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block &Initial_Multiblock_Mesh,
-                                       Hexa_MultiBlock<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Hexa_MultiBlock_List,
-                                       Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>   &InputParameters,
-                                       OcTreeBlock_DataStructure &OcTree,
-                                       AdaptiveBlock3DResourceList  &GlobalSolnBlockList,
-                                       AdaptiveBlock3D_List &LocalSolnBlockList) {
+int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block                                 &Initial_Mesh,
+                                   Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Local_Solution_Blocks,
+                                   Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>              &Input,
+                                   Octree_DataStructure                                    &Octree,
+                                   AdaptiveBlock3D_ResourceList                            &Global_Adaptive_Block_List,
+                                   AdaptiveBlock3D_List                                    &Local_Adaptive_Block_List) {
    
-   int i_blk, j_blk, k_blk, n_cpu, n_blk;
-   
-   OcTreeBlock_DataStructure::Create_OcTree_Data_Structure(
-      OcTree,
-      InputParameters.IP_Grid.NBlk_Idir,
-      InputParameters.IP_Grid.NBlk_Jdir,
-      InputParameters.IP_Grid.NBlk_Kdir,
-      InputParameters.Number_of_Processors,
-      InputParameters.Number_of_Blocks_Per_Processor);
+   int n_cpu, n_blk;
 
-   OcTree.MaximumRefinementLevel = InputParameters.Maximum_Refinement_Level-1;
-   OcTree.MinimumRefinementLevel = InputParameters.Minimum_Refinement_Level-1;
+   /* Create (allocate) octree data structure. */
+   
+   Octree_DataStructure::Create_Octree_Data_Structure(Octree,
+                                                      Input.IP_Grid.NBlk_Idir,
+                                                      Input.IP_Grid.NBlk_Jdir,
+                                                      Input.IP_Grid.NBlk_Kdir,
+                                                      Input.Number_of_Processors,
+                                                      Input.Number_of_Blocks_Per_Processor);
+
+   Octree.MaximumRefinementLevel = Input.Maximum_Refinement_Level-1;
+   Octree.MinimumRefinementLevel = Input.Minimum_Refinement_Level-1;
    
    /* Set the thresholds for refinement and coarsening of the mesh. */
    
-   OcTree.RefineThreshold = InputParameters.Threshold_for_Refinement;
-   OcTree.CoarsenThreshold = InputParameters.Threshold_for_Coarsening;
+   Octree.RefineThreshold = Input.Threshold_for_Refinement;
+   Octree.CoarsenThreshold = Input.Threshold_for_Coarsening;
    
    /* Create (allocate) array of local 3D hexarilateral solution blocks. */
    
-   AdaptiveBlock3DResourceList::Create_Block_Resource_List(GlobalSolnBlockList,
-                              InputParameters.Number_of_Processors,
-                              InputParameters.Number_of_Blocks_Per_Processor);
-   LocalSolnBlockList.allocate(InputParameters.Number_of_Blocks_Per_Processor);
-   LocalSolnBlockList.ThisCPU = GlobalSolnBlockList.ThisCPU;
+   Local_Solution_Blocks.Allocate(Input.Number_of_Blocks_Per_Processor);
+
+   AdaptiveBlock3D_ResourceList::Create_Block_Resource_List(Global_Adaptive_Block_List,
+                                                            Input.Number_of_Processors,
+                                                            Input.Number_of_Blocks_Per_Processor);
+   Local_Adaptive_Block_List.allocate(Input.Number_of_Blocks_Per_Processor);
+   Local_Adaptive_Block_List.ThisCPU = Global_Adaptive_Block_List.ThisCPU;
    
-   /* Loop over all initial mesh blocks and assign OcTree root blocks and 
+   /* Loop over all initial mesh blocks and assign Octree root blocks and 
       local solution block information as required. */
 
    int nused=0;
-   for ( k_blk = 0 ; k_blk <= InputParameters.IP_Grid.NBlk_Kdir-1 ; ++k_blk ) {
-      for ( j_blk = 0 ; j_blk <= InputParameters.IP_Grid.NBlk_Jdir-1 ; ++j_blk ) {
-         for ( i_blk = 0 ; i_blk <= InputParameters.IP_Grid.NBlk_Idir-1 ; ++i_blk ) {
-            if (Initial_Multiblock_Mesh.Grid_Blks[i_blk][j_blk][k_blk].Used) { // Mesh block is used!!!!
+
+   for ( int k_blk = 0 ; k_blk <= Initial_Mesh.NBlk_Kdir-1 ; ++k_blk ) {
+      for ( int j_blk = 0 ; j_blk <= Initial_Mesh.NBlk_Jdir-1 ; ++j_blk ) {
+         for ( int i_blk = 0 ; i_blk <= Initial_Mesh.NBlk_Idir-1 ; ++i_blk ) {
+            if (Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk].Allocated) { // Mesh block is used!!!!
 	       // Get next free solution block from list of available
 	       // solution blocks.
                
-               if (GlobalSolnBlockList.Nfree > 0) {
-                  n_cpu = GlobalSolnBlockList.nextCPU();
-                  n_blk = GlobalSolnBlockList.nextBlock();
-                  
-                  GlobalSolnBlockList.update_next();
-                     
+               if (Global_Adaptive_Block_List.Nfree > 0) {
+                  n_cpu = Global_Adaptive_Block_List.nextCPU();
+                  n_blk = Global_Adaptive_Block_List.nextBlock();
+                  Global_Adaptive_Block_List.update_next();
                } else {
                   cout << "\n" 
                        << " AMR Error: Create_Initial_Solution_Blocks, Insufficient number of hexahedrial solution blocks.\n";
-//                  Soln_ptr ->deallocate( );
-                  //  return (NULL);
                   return (1);
                } /* endif */
 	        
-               // Assign block information to appropriate OcTree root solution block.
-               OcTree.Roots[i_blk][j_blk][k_blk].block.used = ADAPTIVEBLOCK3D_USED;
-               OcTree.Roots[i_blk][j_blk][k_blk].block.gblknum =
-	          GlobalSolnBlockList.Nused-1;
-               OcTree.Roots[i_blk][j_blk][k_blk].block.info.cpu = n_cpu;
-               OcTree.Roots[i_blk][j_blk][k_blk].block.info.blknum = n_blk;
-               OcTree.Roots[i_blk][j_blk][k_blk].block.info.dimen.i =
-                   Initial_Multiblock_Mesh.Grid_Blks[i_blk][j_blk][k_blk].NCi -  
-                   2*Initial_Multiblock_Mesh.Grid_Blks[i_blk][j_blk][k_blk].Nghost;
-               OcTree.Roots[i_blk][j_blk][k_blk].block.info.dimen.j =
-                   Initial_Multiblock_Mesh.Grid_Blks[i_blk][j_blk][k_blk].NCj - 
-                   2*Initial_Multiblock_Mesh.Grid_Blks[i_blk][j_blk][k_blk].Nghost;
-               OcTree.Roots[i_blk][j_blk][k_blk].block.info.dimen.k =
-                   Initial_Multiblock_Mesh.Grid_Blks[i_blk][j_blk][k_blk].NCk - 
-                   2*Initial_Multiblock_Mesh.Grid_Blks[i_blk][j_blk][k_blk].Nghost;
-               OcTree.Roots[i_blk][j_blk][k_blk].block.info.dimen.ghost = 2;
-               OcTree.Roots[i_blk][j_blk][k_blk].block.info.sector = ADAPTIVEBLOCK3D_SECTOR_NONE;
-               OcTree.Roots[i_blk][j_blk][k_blk].block.info.level = 0;
-               OcTree.Roots[i_blk][j_blk][k_blk].parent_ptr = NULL;
-               OcTree.Roots[i_blk][j_blk][k_blk].childTNW_ptr = NULL;
-               OcTree.Roots[i_blk][j_blk][k_blk].childTNE_ptr = NULL;
-               OcTree.Roots[i_blk][j_blk][k_blk].childTSE_ptr = NULL;
-               OcTree.Roots[i_blk][j_blk][k_blk].childTSW_ptr = NULL;
-               OcTree.Roots[i_blk][j_blk][k_blk].childBNW_ptr = NULL;
-               OcTree.Roots[i_blk][j_blk][k_blk].childBNE_ptr = NULL;
-               OcTree.Roots[i_blk][j_blk][k_blk].childBSE_ptr = NULL;
-               OcTree.Roots[i_blk][j_blk][k_blk].childBSW_ptr = NULL;
-               OcTree.Blocks[n_cpu][n_blk] = &(OcTree.Roots[i_blk][j_blk][k_blk]);
+               // Assign block information to appropriate Octree root solution block.
+               Octree.Roots[i_blk][j_blk][k_blk].block.used = ADAPTIVEBLOCK3D_USED;
+               Octree.Roots[i_blk][j_blk][k_blk].block.gblknum =
+	          Global_Adaptive_Block_List.Nused-1;
+               Octree.Roots[i_blk][j_blk][k_blk].block.info.cpu = n_cpu;
+               Octree.Roots[i_blk][j_blk][k_blk].block.info.blknum = n_blk;
+               Octree.Roots[i_blk][j_blk][k_blk].block.info.dimen.i =
+                   Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk].NCi -  
+                   2*Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk].Nghost;
+               Octree.Roots[i_blk][j_blk][k_blk].block.info.dimen.j =
+                   Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk].NCj - 
+                   2*Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk].Nghost;
+               Octree.Roots[i_blk][j_blk][k_blk].block.info.dimen.k =
+                   Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk].NCk - 
+                   2*Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk].Nghost;
+               Octree.Roots[i_blk][j_blk][k_blk].block.info.dimen.ghost = 2;
+               Octree.Roots[i_blk][j_blk][k_blk].block.info.sector = ADAPTIVEBLOCK3D_SECTOR_NONE;
+               Octree.Roots[i_blk][j_blk][k_blk].block.info.level = 0;
+               Octree.Roots[i_blk][j_blk][k_blk].parent_ptr = NULL;
+               Octree.Roots[i_blk][j_blk][k_blk].childTNW_ptr = NULL;
+               Octree.Roots[i_blk][j_blk][k_blk].childTNE_ptr = NULL;
+               Octree.Roots[i_blk][j_blk][k_blk].childTSE_ptr = NULL;
+               Octree.Roots[i_blk][j_blk][k_blk].childTSW_ptr = NULL;
+               Octree.Roots[i_blk][j_blk][k_blk].childBNW_ptr = NULL;
+               Octree.Roots[i_blk][j_blk][k_blk].childBNE_ptr = NULL;
+               Octree.Roots[i_blk][j_blk][k_blk].childBSE_ptr = NULL;
+               Octree.Roots[i_blk][j_blk][k_blk].childBSW_ptr = NULL;
+               Octree.Blocks[n_cpu][n_blk] = &(Octree.Roots[i_blk][j_blk][k_blk]);
                
                // For solution blocks on this processor (or processor
                // element), add block to local list, create the solution
                // block, and copy the appropriate block of the
                // initial hexarilateral mesh to the solution block mesh.
-               if (GlobalSolnBlockList.ThisCPU == n_cpu) {
-                  
-                  LocalSolnBlockList.Block[n_blk] = OcTree.Roots[i_blk][j_blk][k_blk].block;
-                  
-                  Hexa_MultiBlock_List.Hexa_Block_List[n_blk] = 
-                     new Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>(InputParameters.IP_Grid.NCells_Idir,
-                                                              InputParameters.IP_Grid.NCells_Jdir,
-                                                              InputParameters.IP_Grid.NCells_Kdir,
-                                                              InputParameters.IP_Grid.Nghost,
-                                                              i_blk, j_blk, k_blk,
-                                                              InputParameters.i_Flow_Type, 
-                                                              Initial_Multiblock_Mesh.Grid_Blks[i_blk][j_blk][k_blk]);
-
-                  Hexa_MultiBlock_List.Block_Used[n_blk] = LocalSolnBlockList.Block[n_blk].used;
-                  
+               if (Global_Adaptive_Block_List.ThisCPU == n_cpu) {
+                  Local_Adaptive_Block_List.Block[n_blk] = Octree.Roots[i_blk][j_blk][k_blk].block;
+                  Local_Solution_Blocks.Soln_Blks[n_blk].Create_Block(Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk]);
+                  Local_Solution_Blocks.Soln_Blks[n_blk].Flow_Type = Input.i_Flow_Type;
+                  Local_Solution_Blocks.Block_Used[n_blk] = HEXA_BLOCK_USED;
                } /* endif */
-	       
-           } /* endif */
-	   else{
-	     OcTree.Roots[i_blk][j_blk][k_blk].block.used = 0;
-	     nused++;
-	   }
+            } else{
+ 	       Octree.Roots[i_blk][j_blk][k_blk].block.used = 0;
+	       nused++;
+	    } /* endif */
         } /* endfor */
       } /* endfor */
     } /* endfor */
    
-
     /* Renumber all solution blocks, assigning a unique global block number. */
 
-    OcTreeBlock_DataStructure::Renumber_Solution_Blocks(OcTree,
-                             LocalSolnBlockList);
+    Octree_DataStructure::Renumber_Solution_Blocks(Octree,
+                                                   Local_Adaptive_Block_List);
 
     /* Find the neighbours of all of the newly assigned root blocks. */
  
-    OcTreeBlock_DataStructure::Find_Neighbours_of_Root_Solution_Blocks(OcTree,
-                                            LocalSolnBlockList);
+    Octree_DataStructure::Find_Neighbours_of_Root_Solution_Blocks(Octree,
+                                                                  Local_Adaptive_Block_List);
 
     /* Modify block neighbours for grid geometries with periodic boundaries, etc. */
 
-    OcTreeBlock_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(OcTree,
-                                                                         LocalSolnBlockList,
-                                                                         InputParameters.IP_Grid.i_Grid);
+    Octree_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(Octree,
+                                                                    Local_Adaptive_Block_List,
+                                                                    Input.IP_Grid.i_Grid);
 
     /* Allocates memory for all message passing buffers used to send 
        solution information between neighbouring solution blocks. */
 
-    AdaptiveBlock3D_List::Allocate_Message_Buffers(LocalSolnBlockList,
-                                                   Hexa_MultiBlock_List.Hexa_Block_List[0]->NumVar()+NUM_COMP_VECTOR3D);
+    AdaptiveBlock3D_List::Allocate_Message_Buffers(Local_Adaptive_Block_List,
+                                                   Local_Solution_Blocks.Soln_Blks[0].NumVar()+NUM_COMP_VECTOR3D);
  
     /* Solution block allocation and assignment complete.
        Return pointer to local solution blocks. */
@@ -187,184 +180,184 @@ template<typename SOLN_pSTATE, typename SOLN_cSTATE>
 }
 
 /********************************************************
- * Routine: Read_OcTree                                 *
+ * Routine: Read_Octree                                 *
  *                                                      *
- * Reads the OcTree data structure from a file.         *
+ * Reads the Octree data structure from a file.         *
  *                                                      *
  ********************************************************/
-template <class Hexa_Soln_Input_Parameters>
-int Read_OcTree(OcTreeBlock_DataStructure &OcTree,
-                  AdaptiveBlock3DResourceList   &List_of_Available_Blocks,
-                  AdaptiveBlock3D_List        &Local_Soln_Block_List,
-                  Hexa_Soln_Input_Parameters  &Input_Parameters) {
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int Read_Octree(Octree_DataStructure                         &Octree,
+                AdaptiveBlock3D_ResourceList                 &Global_Adaptive_Block_List,
+                AdaptiveBlock3D_List                         &Local_Adaptive_Block_List,
+                Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>   &Input) {
 
     int i, nri, nrj, nrk, ncpu, nblk;
     int iBLK, jBLK, kBLK, iCPU;
-    char OcTree_file_name[256];
-    char *OcTree_file_name_ptr;
-    ifstream OcTree_file;    
+    char Octree_file_name[256];
+    char *Octree_file_name_ptr;
+    ifstream Octree_file;    
 
-    /* On primary processor, determine name of OcTree input data file name. */
+    /* On primary processor, determine name of Octree input data file name. */
 
     if (CFFC_Primary_MPI_Processor()) {
        i = 0;
        while (1) {
-          if (Input_Parameters.Restart_File_Name[i] == ' ' ||
-              Input_Parameters.Restart_File_Name[i] == '.') break;
-          OcTree_file_name[i]=Input_Parameters.Restart_File_Name[i];
+          if (Input.Restart_File_Name[i] == ' ' ||
+              Input.Restart_File_Name[i] == '.') break;
+          Octree_file_name[i]=Input.Restart_File_Name[i];
           i = i + 1;
-          if (i > strlen(Input_Parameters.Restart_File_Name) ) break;
+          if (i > strlen(Input.Restart_File_Name) ) break;
        } /* endwhile */
-       OcTree_file_name[i] = '\0';
-       strcat(OcTree_file_name, "_OcTree.tree");
-       OcTree_file_name_ptr = OcTree_file_name;
+       Octree_file_name[i] = '\0';
+       strcat(Octree_file_name, "_Octree.tree");
+       Octree_file_name_ptr = Octree_file_name;
     } /* endif */
 
-    /* On primary processor, open the OcTree data file. */
+    /* On primary processor, open the Octree data file. */
 
     if (CFFC_Primary_MPI_Processor()) {
-       OcTree_file.open(OcTree_file_name_ptr, ios::in);
-       if (OcTree_file.bad()) return (1);
+       Octree_file.open(Octree_file_name_ptr, ios::in);
+       if (Octree_file.bad()) return (1);
     } /* endif */
 
     /* On primary processor, read in the data structure size parameters and 
        re-allocate memory as required. */
 
     if (CFFC_Primary_MPI_Processor()) {
-       OcTree_file.setf(ios::skipws);
-       OcTree_file >> nri >> nrj >> nrk >> ncpu >> nblk;
+       Octree_file.setf(ios::skipws);
+       Octree_file >> nri >> nrj >> nrk >> ncpu >> nblk;
        
-       OcTree_file.unsetf(ios::skipws);
+       Octree_file.unsetf(ios::skipws);
 
-       cout<<"\n in Read_Octree: Create_OcTree_Data_Structure(OcTree,";
-       Create_OcTree_Data_Structure(OcTree,
-                                      nri,
-  	                              nrj,
-  	                              nrk,
-                                      Input_Parameters.Number_of_Processors,
-                                      Input_Parameters.Number_of_Blocks_Per_Processor);
+       cout<<"\n in Read_Octree: Create_Octree_Data_Structure(Octree,";
+       Create_Octree_Data_Structure(Octree,
+                                    nri,
+  	                            nrj,
+  	                            nrk,
+                                    Input.Number_of_Processors,
+                                    Input.Number_of_Blocks_Per_Processor);
     } /* endif */
 
     /* Re-create and re-initialize the block resource list. */
 
-    Create_Block_Resource_List(List_of_Available_Blocks,
-                               Input_Parameters.Number_of_Processors, 
-	  		       Input_Parameters.Number_of_Blocks_Per_Processor);
+    Create_Block_Resource_List(Global_Adaptive_Block_List,
+                               Input.Number_of_Processors, 
+	  		       Input.Number_of_Blocks_Per_Processor);
 
-    /* On primary processor, read the OcTree data from the file. */
+    /* On primary processor, read the Octree data from the file. */
 
     if (CFFC_Primary_MPI_Processor()) {
-       for ( kBLK = 0 ; kBLK <= OcTree.NRk-1 ; ++kBLK ) {
-	 for ( jBLK = 0 ; jBLK <= OcTree.NRj-1 ; ++jBLK ) {
-           for ( iBLK = 0 ; iBLK <= OcTree.NRi-1 ; ++iBLK ) {
-	      OcTree.Roots[iBLK][jBLK][kBLK].read(OcTree_file,
-                                              List_of_Available_Blocks);
+       for ( kBLK = 0 ; kBLK <= Octree.NRk-1 ; ++kBLK ) {
+	 for ( jBLK = 0 ; jBLK <= Octree.NRj-1 ; ++jBLK ) {
+           for ( iBLK = 0 ; iBLK <= Octree.NRi-1 ; ++iBLK ) {
+	      Octree.Roots[iBLK][jBLK][kBLK].read(Octree_file,
+                                                  Global_Adaptive_Block_List);
            } /* endfor */
            } /* endfor */
        } /* endfor */
     } /* endif */
 
-    /* Broadcast OcTree data structure to all processors. */
+    /* Broadcast Octree data structure to all processors. */
        
-    OcTreeBlock_DataStructure::Broadcast_OcTree_Data_Structure(OcTree,
-                                      List_of_Available_Blocks);
+    Octree_DataStructure::Broadcast_Octree_Data_Structure(Octree,
+                                                          Global_Adaptive_Block_List);
 
     /* Set the maximum and minimum refinement levels. */
 
-    OcTree.MaximumRefinementLevel = Input_Parameters.Maximum_Refinement_Level-1;
-    OcTree.MinimumRefinementLevel = Input_Parameters.Minimum_Refinement_Level-1;
+    Octree.MaximumRefinementLevel = Input.Maximum_Refinement_Level-1;
+    Octree.MinimumRefinementLevel = Input.Minimum_Refinement_Level-1;
 
     /* Set the thresholds for refinement and coarsening of the mesh. */
 
-    OcTree.RefineThreshold = Input_Parameters.Threshold_for_Refinement;
-    OcTree.CoarsenThreshold = Input_Parameters.Threshold_for_Coarsening;
+    Octree.RefineThreshold = Input.Threshold_for_Refinement;
+    Octree.CoarsenThreshold = Input.Threshold_for_Coarsening;
 
-    /* Re-evaluate OcTree block pointers. */
+    /* Re-evaluate Octree block pointers. */
 
-    OcTree.assign_block_pointers();
+    Octree.assign_block_pointers();
 
     /* (Re-)Allocate memory for local processor solution block list. */
 
-    if (Local_Soln_Block_List.Nblk > 0) Local_Soln_Block_List.deallocate();
-    Local_Soln_Block_List.allocate(Input_Parameters.Number_of_Blocks_Per_Processor);
-    Local_Soln_Block_List.ThisCPU = List_of_Available_Blocks.ThisCPU;
+    if (Local_Adaptive_Block_List.Nblk > 0) Local_Adaptive_Block_List.deallocate();
+    Local_Adaptive_Block_List.allocate(Input.Number_of_Blocks_Per_Processor);
+    Local_Adaptive_Block_List.ThisCPU = Global_Adaptive_Block_List.ThisCPU;
 
     /* Find the neighbours of the root blocks. */
 
-     OcTreeBlock_DataStructure::Find_Neighbours_of_Root_Solution_Blocks(OcTree);
+     Octree_DataStructure::Find_Neighbours_of_Root_Solution_Blocks(Octree);
 
     /* Modify block neighbours for grid geometries with 
        periodic boundaries, etc. */
 
-     OcTreeBlock_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(OcTree,
-                                              Input_Parameters.i_Grid);
+    Octree_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(Octree,
+                                                                    Input.i_Grid);
 
     /* Determine the neighbouring blocks of all used (active)
-       solution blocks in the OcTree data structure. This will
+       solution blocks in the Octree data structure. This will
        also copy block information to local processor solution block
        list. */
 
-    OcTreeBlock_DataStructure::Find_Neighbours(OcTree,
-                    Local_Soln_Block_List);
+    Octree_DataStructure::Find_Neighbours(Octree,
+                                          Local_Adaptive_Block_List);
 
-    /* On primary processor, close OcTree data file. */
+    /* On primary processor, close Octree data file. */
 
-    if (CFFC_Primary_MPI_Processor()) OcTree_file.close();
+    if (CFFC_Primary_MPI_Processor()) Octree_file.close();
 
-    /* Reading of OcTree data file complete.  Return zero value. */
+    /* Reading of Octree data file complete.  Return zero value. */
 
     return(0);
 
 }
 
 /********************************************************
- * Routine: Write_OcTree                                *
+ * Routine: Write_Octree                                *
  *                                                      *
- * Writes the OcTree data structure to a file for       *
+ * Writes the Octree data structure to a file for       *
  * later retrieval.                                     *
  *                                                      *
  ********************************************************/
-template <class Hexa_Soln_Input_Parameters>
-int Write_OcTree(OcTreeBlock_DataStructure &OcTree,
-                   Hexa_Soln_Input_Parameters  &Input_Parameters) {
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int Write_Octree(Octree_DataStructure                        &Octree,
+                 Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>  &Input) {
 
     int i;
-    char OcTree_file_name[256];
-    char *OcTree_file_name_ptr;
-    ofstream OcTree_file;    
+    char Octree_file_name[256];
+    char *Octree_file_name_ptr;
+    ofstream Octree_file;    
 
-    /* On primary processor, determine name of OcTree output data file name. */
+    /* On primary processor, determine name of Octree output data file name. */
 
     if (CFFC_Primary_MPI_Processor()) {
        i = 0;
        while (1) {
-          if (Input_Parameters.Restart_File_Name[i] == ' ' ||
-              Input_Parameters.Restart_File_Name[i] == '.') break;
-          OcTree_file_name[i]=Input_Parameters.Restart_File_Name[i];
+          if (Input.Restart_File_Name[i] == ' ' ||
+              Input.Restart_File_Name[i] == '.') break;
+          Octree_file_name[i]=Input.Restart_File_Name[i];
           i = i + 1;
-          if (i > strlen(Input_Parameters.Restart_File_Name) ) break;
+          if (i > strlen(Input.Restart_File_Name) ) break;
        } /* endwhile */
-       OcTree_file_name[i] = '\0';
-       strcat(OcTree_file_name, "_OcTree.tree");
-       OcTree_file_name_ptr = OcTree_file_name;
+       Octree_file_name[i] = '\0';
+       strcat(Octree_file_name, "_Octree.tree");
+       Octree_file_name_ptr = Octree_file_name;
     } /* endif */
-    /* On primary processor, ppen the OcTree data file. */
+    /* On primary processor, ppen the Octree data file. */
 
     if (CFFC_Primary_MPI_Processor()) {
-       OcTree_file.open(OcTree_file_name_ptr, ios::out);
-       if (OcTree_file.bad()) return (1);
+       Octree_file.open(Octree_file_name_ptr, ios::out);
+       if (Octree_file.bad()) return (1);
     } /* endif */
 
-    /* On primary processor, write the OcTree data to the file. */
+    /* On primary processor, write the Octree data to the file. */
 
     if (CFFC_Primary_MPI_Processor()) {
-      OcTree_file << OcTree;
+      Octree_file << Octree;
     }
-    /* On primary processor, close OcTree data file. */
+    /* On primary processor, close Octree data file. */
 
-    if (CFFC_Primary_MPI_Processor()) OcTree_file.close();
+    if (CFFC_Primary_MPI_Processor()) Octree_file.close();
 
-    /* Writing of OcTree data file complete.  Return zero value. */
+    /* Writing of Octree data file complete.  Return zero value. */
 
     return(0);
 
@@ -378,11 +371,11 @@ int Write_OcTree(OcTreeBlock_DataStructure &OcTree,
  * mesh solution blocks.                                  *
  *                                                        *
  **********************************************************/
-template <class Hexa_Soln_Block>
-void Flag_Blocks_For_Refinement(Hexa_Soln_Block             *Soln_ptr,
-                                OcTreeBlock_DataStructure &OcTree,
-                                AdaptiveBlock3DResourceList   &Global_Soln_Block_List,
-                                AdaptiveBlock3D_List        &Local_Soln_Block_List) {
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+void Flag_Blocks_For_Refinement(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  &Local_Solution_Blocks,
+                                Octree_DataStructure                                     &Octree,
+                                AdaptiveBlock3D_ResourceList                             &Global_Adaptive_Block_List,
+                                AdaptiveBlock3D_List                                     &Local_Adaptive_Block_List) {
 
   cout<<"\nError Flag_Blocks_For_Refinement is not written for 3D";
 
@@ -396,11 +389,11 @@ void Flag_Blocks_For_Refinement(Hexa_Soln_Block             *Soln_ptr,
  * refinement precedure occurred.                         *
  *                                                        *
  **********************************************************/
-template <class Hexa_Soln_Block>
-int Refine_Grid(Hexa_Soln_Block             *Soln_ptr,
-                OcTreeBlock_DataStructure &OcTree,
-                AdaptiveBlock3DResourceList   &GlobalSolnBlockList,
-                AdaptiveBlock3D_List        &LocalSolnBlockList) {
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int Refine_Grid(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >    &Local_Solution_Blocks,
+                Octree_DataStructure                                       &Octree,
+                AdaptiveBlock3D_ResourceList                               &Global_Adaptive_Block_List,
+                AdaptiveBlock3D_List                                       &Local_Adaptive_Block_List) {
 
     cout<<"\nError Refine_Grid is not written for 3D";
     return(0);
@@ -415,11 +408,11 @@ int Refine_Grid(Hexa_Soln_Block             *Soln_ptr,
  * coarsening precedure occurred.                         *
  *                                                        *
  **********************************************************/
-template <class Hexa_Soln_Block>
-int Coarsen_Grid(Hexa_Soln_Block             *Soln_ptr,
-                 OcTreeBlock_DataStructure &OcTree,
-                 AdaptiveBlock3DResourceList   &GlobalSolnBlockList,
-                 AdaptiveBlock3D_List        &LocalSolnBlockList) {
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int Coarsen_Grid(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  &Local_Solution_Blocks,
+                 Octree_DataStructure                                     &Octree,
+                 AdaptiveBlock3D_ResourceList                             &Global_Adaptive_Block_List,
+                 AdaptiveBlock3D_List                                     &Local_Adaptive_Block_List) {
   
     cout<<"\nError Coarsen_Grid is not written for 3D";
     return(0);
@@ -436,9 +429,9 @@ int Coarsen_Grid(Hexa_Soln_Block             *Soln_ptr,
  * coarser solution blocks).                            *
  *                                                      *
  ********************************************************/
-template <class Hexa_Soln_Block>
-void Fix_Refined_Block_Boundaries(Hexa_Soln_Block      *Soln_ptr,
-                                  AdaptiveBlock3D_List &Soln_Block_List) {
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+void Fix_Refined_Block_Boundaries(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  &Local_Solution_Blocks,
+                                  AdaptiveBlock3D_List                                     &Soln_Block_List) {
 
   cout<<"\nError Fix_Refined_Block_Boundaries is not written for 3D";
  
@@ -452,9 +445,9 @@ void Fix_Refined_Block_Boundaries(Hexa_Soln_Block      *Soln_ptr,
  * positions.                                           *
  *                                                      *
  ********************************************************/
-template <class Hexa_Soln_Block>
-void Unfix_Refined_Block_Boundaries(Hexa_Soln_Block      *Soln_ptr,
-                                    AdaptiveBlock3D_List &Soln_Block_List) {
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+void Unfix_Refined_Block_Boundaries(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  &Local_Solution_Blocks,
+                                    AdaptiveBlock3D_List                                     &Soln_Block_List) {
 
   cout<<"\nError Unfix_Refined_Block_Boundaries is not written for 3D";
  
@@ -468,12 +461,12 @@ void Unfix_Refined_Block_Boundaries(Hexa_Soln_Block      *Soln_ptr,
  * error in the AMR precedure occurred.                   *
  *                                                        *
  **********************************************************/
-template <class Hexa_Soln_Block>
-int AMR(Hexa_Soln_Block             *Soln_ptr,
-        OcTreeBlock_DataStructure &OcTree,
-        AdaptiveBlock3DResourceList   &GlobalSolnBlockList,
-        AdaptiveBlock3D_List        &LocalSolnBlockList,
-        const int                    Set_New_Refinement_Flags) {
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int AMR(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  &Local_Solution_Blocks,
+        Octree_DataStructure                                     &Octree,
+        AdaptiveBlock3D_ResourceList                             &Global_Adaptive_Block_List,
+        AdaptiveBlock3D_List                                     &Local_Adaptive_Block_List,
+        const int                                                Set_New_Refinement_Flags) {
 
     cout<<"\nError AMR( is not written for 3D";
     return(0);
@@ -488,12 +481,12 @@ int AMR(Hexa_Soln_Block             *Soln_ptr,
  * value if no error in the AMR precedure has occurred.   *
  *                                                        *
  **********************************************************/
-template <class Hexa_Soln_Block, class Hexa_Soln_Input_Parameters>
-int Initial_AMR(Hexa_Soln_Block              *Soln_ptr,
-                Hexa_Soln_Input_Parameters   &InputParameters,
-                OcTreeBlock_DataStructure  &OcTree,
-                AdaptiveBlock3DResourceList    &GlobalSolnBlockList,
-                AdaptiveBlock3D_List         &LocalSolnBlockList) {
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int Initial_AMR(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  &Local_Solution_Blocks,
+                Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>               &Input,
+                Octree_DataStructure                                     &Octree,
+                AdaptiveBlock3D_ResourceList                             &Global_Adaptive_Block_List,
+                AdaptiveBlock3D_List                                     &Local_Adaptive_Block_List) {
 
      cout<<"\nError Initial_AMR is not written for 3D";
      return(0);
@@ -508,12 +501,12 @@ int Initial_AMR(Hexa_Soln_Block              *Soln_ptr,
  * AMR precedure has occurred.                            *
  *                                                        *
  **********************************************************/
-template <class Hexa_Soln_Block, class Hexa_Soln_Input_Parameters>
-int Uniform_AMR(Hexa_Soln_Block              *Soln_ptr,
-                Hexa_Soln_Input_Parameters   &InputParameters,
-                OcTreeBlock_DataStructure  &OcTree,
-                AdaptiveBlock3DResourceList    &GlobalSolnBlockList,
-                AdaptiveBlock3D_List         &LocalSolnBlockList) {
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int Uniform_AMR(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  &Local_Solution_Blocks,
+                Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>               &Input,
+                Octree_DataStructure                                     &Octree,
+                AdaptiveBlock3D_ResourceList                             &Global_Adaptive_Block_List,
+                AdaptiveBlock3D_List                                     &Local_Adaptive_Block_List) {
 
     cout<<"\nError Uniform_AMR is not written for 3D";
     return(0);
@@ -529,16 +522,16 @@ int Uniform_AMR(Hexa_Soln_Block              *Soln_ptr,
  * occurred.                                              *
  *                                                        *
  **********************************************************/
-template <class Hexa_Soln_Block, class Hexa_Soln_Input_Parameters>
-int Boundary_AMR(Hexa_Soln_Block              *Soln_ptr,
-		 Hexa_Soln_Input_Parameters   &InputParameters,
-		 OcTreeBlock_DataStructure  &OcTree,
-		 AdaptiveBlock3DResourceList    &GlobalSolnBlockList,
-		 AdaptiveBlock3D_List         &LocalSolnBlockList) {
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int Boundary_AMR(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  &Local_Solution_Blocks,
+		 Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>               &Input,
+		 Octree_DataStructure                                     &Octree,
+		 AdaptiveBlock3D_ResourceList                             &Global_Adaptive_Block_List,
+		 AdaptiveBlock3D_List                                     &Local_Adaptive_Block_List) {
 
     cout<<"\nError Boundary_AMR is not written for 3D";
     return(0);
 
 }
 
-#endif /* _AMR_INCLUDED  */
+#endif // _AMR_INCLUDED

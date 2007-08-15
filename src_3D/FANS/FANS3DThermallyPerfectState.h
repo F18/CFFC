@@ -25,7 +25,7 @@ using namespace std;
 #include "../NavierStokes/NavierStokes3DThermallyPerfectState.h"
 #endif  //NAVIERSTOKES3D_THERMALLYPERFECT_STATE_INCLUDED
 
-#ifndef  _TURBULENCE_MODELLING_INCLUDED 
+#ifndef _TURBULENCE_MODELLING_INCLUDED
 #include "../Turbulence/TurbulenceModelling.h"
 #endif  //TURBULENCE_MODELLING_INCLUDED
 

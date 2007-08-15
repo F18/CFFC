@@ -91,7 +91,7 @@ Grid2D_Quad_Block** Broadcast_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 #ifdef _MPI_VERSION
     int i, j;
 
-    if (!CFDkit_Primary_MPI_Processor()) {
+    if (!CFFC_Primary_MPI_Processor()) {
        if (Grid_ptr != NULL) Grid_ptr = Deallocate_Multi_Block_Grid(Grid_ptr,
                                                                     Number_of_Blocks_Idir,
                                                                     Number_of_Blocks_Jdir);

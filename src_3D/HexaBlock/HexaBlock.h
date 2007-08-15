@@ -1,5 +1,5 @@
-/* HexaBlock.h:  Header file defining 
-                 3D Hexahedral Mesh Solution Classes. */
+/* HexaBlock.h: Header file defining 
+                3D Hexahedral Mesh Solution Classes. */
 
 #ifndef _HEXA_BLOCK_INCLUDED
 #define _HEXA_BLOCK_INCLUDED
@@ -18,6 +18,10 @@
 #include "../Grid/Cell3D.h"
 #endif // _CELL3D_INCLUDED
 
+#ifndef _MPI_INCLUDED
+#include "../MPI/MPI.h"
+#endif // _MPI_INCLUDED
+
 #ifndef _GRID3D_HEXA_BLOCK_INCLUDED
 #include "../Grid/Grid3DHexaBlock.h"
 #endif // _GRID3D_HEXA_BLOCK_INCLUDED
@@ -29,6 +33,11 @@
 #ifndef _TURBULENCE_MODELLING_INCLUDED
 #include "../Turbulence/TurbulenceModelling.h"
 #endif // TURBULENCE_MODELLING_INCLUDED   
+
+/* Define the solution block in-use indicators. */
+
+#define	HEXA_BLOCK_USED                            1
+#define	HEXA_BLOCK_NOT_USED                        0
 
 /* Define the structures and classes. */
 
@@ -46,9 +55,7 @@ class Hexa_Block{
    int              NCi,ICl,ICu;  // i-direction cell counters.
    int              NCj,JCl,JCu;  // j-direction cell counters.
    int              NCk,KCl,KCu;  // k-direction cell counters.
-   int              Iindex, Jindex, Kindex;
-                    //i,j,k index for the block location
-   int                   Nghost;   // Number of ghost cells.
+   int                   Nghost;  // Number of ghost cells.
    int           Freeze_Limiter;  // Limiter freezing indicator.
    int                Flow_Type;  // Flow type indicator.
    double                 ***dt;  // Local time step.
@@ -63,7 +70,7 @@ class Hexa_Block{
    SOLN_pSTATE          ***dWdy;  // Unlimited solution gradient
                                   // (y-direction).
    SOLN_pSTATE          ***dWdz;  // Unlimited solution gradient
-   // (z-direction).
+                                  // (z-direction).
    SOLN_pSTATE           ***phi;  // Solution slope limiter.
    SOLN_cSTATE            ***Uo;  // Initial solution state.
    //   SOLN_cSTATE **FluxN,**FluxS,  // Boundary solution fluxes.
@@ -74,32 +81,49 @@ class Hexa_Block{
                    **WoE, **WoW,  // north, south, east, west, top
                    **WoT, **WoB;  // bottom boundaries.
    
-   // only allocate for turbulent flow (depending on flow type indicator)
-   Turbulent3DWallData ***Wall;
+   // Only allocate for turbulent flow (depending on flow type indicator)
+   Turbulent3DWallData ***WallData;
 		      
-   /* Creation, copy, and assignment constructors. */
-   Hexa_Block(const int Ni, const int Nj, const int Nk, 
-              const int Ng, const int iblk, const int jblk, 
-              const int kblk, const int flow_type,  
-              Grid3D_Hexa_Block &Grid2){       
-      assert(Ni > 1 && Nj > 1  && Nk > 1 && Ng > 1); 
-      NCi=Ni+2*Ng; ICl=Ng; ICu=Ni+Ng-1; 
-      NCj=Nj+2*Ng; JCl=Ng; JCu=Nj+Ng-1;
-      NCk=Nk+2*Ng; KCl=Ng; KCu=Nk+Ng-1; Nghost=Ng; 
-      Iindex=iblk; Jindex=jblk; Kindex=kblk; Flow_Type=flow_type; 
-      Freeze_Limiter = OFF;
-      Grid.Copy(Grid2);
+   int Allocated; // Indicates whether or not the solution block has been allocated.
 
-      // allocate all the rest array
-      allocate( ); 
+   /* Constructors. */
+
+   Hexa_Block(void) {
+      NCi=0; ICl=0; ICu=0; NCj=0; JCl=0; JCu=0;
+      NCk=0; KCl=0; KCu=0; Nghost=0; 
+      Flow_Type = FLOWTYPE_INVISCID; Freeze_Limiter = OFF;
+      Allocated = HEXA_BLOCK_NOT_USED;
+      dt = NULL; W = NULL; U = NULL; dUdt = NULL;
+      dWdx = NULL; dWdy = NULL; dWdz = NULL;
+      phi = NULL; Uo = NULL;
+      //FluxN = NULL; FluxS = NULL;
+      //FluxE = NULL; FluxW = NULL;
+      //FluxT = NULL; FluxB = NULL;
+      WoN = NULL; WoS = NULL; 
+      WoE = NULL; WoW = NULL;
+      WoT = NULL; WoB = NULL; WallData = NULL;
+   }
+
+   Hexa_Block(const int Ni, const int Nj, const int Nk, 
+              const int Ng) {
+      allocate(Ni, Nj, Nk, Ng);
+   }
+
+   Hexa_Block(const int Ni, const int Nj, const int Nk, 
+              const int Ng, const int flow_type,  
+              Grid3D_Hexa_Block &Grid2) {       
+      allocate(Ni, Nj, Nk, Ng);
+      Grid.Copy(Grid2);
    }
    
+   /* Destructors. */
   ~Hexa_Block() {
-       deallocate(); 
+      deallocate(); 
    }
 
    /* Allocate memory for structured hexahedrial solution block. */
    void allocate(void);
+   void allocate(const int Ni, const int Nj, const int Nk, const int Ng);
  
    /* Deallocate memory for structured hexahedral solution block. */
    void deallocate(void);
@@ -131,32 +155,15 @@ class Hexa_Block{
 
    /* Other important member functions. */
 
-   int ICs(const int i_ICtype, 
-           Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+   void Create_Block(Grid3D_Hexa_Block &Grid2);
 
-   void BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+   void Copy(Hexa_Block &Block2);
 
-   double CFL(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+   void Broadcast(void);
 
-   void Set_Global_TimeStep(const double &Dt_min);
-
-   int dUdt_Multistage_Explicit(const int i_stage, 
-                                Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
-   int Update_Solution_Multistage_Explicit(const int i_stage, 
-                                           Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
-
-   void Linear_Reconstruction_LeastSquares(const int i, 
-                                           const int j, 
-                                           const int k, 
-                                           const int Limiter);
-
-   void Linear_Reconstruction_LeastSquares(const int Limiter);
-
-   double L1_Norm_Residual(void);
-
-   double L2_Norm_Residual(void);
-
-   double Max_Norm_Residual(void);
+#ifdef _MPI_VERSION
+   void Broadcast(MPI::Intracomm &Communicator);
+#endif
 
    void Output_Tecplot(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
                        const int Number_of_Time_Steps,
@@ -179,31 +186,87 @@ class Hexa_Block{
                              const int Output_Title,
                              ostream &Out_File);
 
+   int ICs(const int i_ICtype, 
+           Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+
+   void BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+
+   double CFL(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+
+   void Set_Global_TimeStep(const double &Dt_min);
+
+   double L1_Norm_Residual(void);
+
+   double L2_Norm_Residual(void);
+
+   double Max_Norm_Residual(void);
+
    int WtoU(void);
 
-   double Wall_Friction_Velocity(int i, 
-                                 int j, 
-                                 int k);
+   void Linear_Reconstruction_LeastSquares(const int i, 
+                                           const int j, 
+                                           const int k, 
+                                           const int Limiter);
+
+   void Linear_Reconstruction_LeastSquares(const int Limiter);
 
    int Wall_Shear(void);
    
-    /* MEMBER FUNCTIONS REQUIRED FOR MESSAGE PASSING. */
+   double Wall_Friction_Velocity(const int i, 
+                                 const int j, 
+                                 const int k);
 
-    /* Load send message passing buffer. */
-    int LoadSendBuffer(double *buffer,
-                       int &buffer_count,
-                       const int buffer_size,
-                       const int i_min,
-                       const int i_max,
-                       const int i_inc,
-                       const int j_min,
-                       const int j_max,
-                       const int j_inc,
-                       const int k_min,
-                       const int k_max,
-                       const int k_inc);
+   int dUdt_Multistage_Explicit(const int i_stage, 
+                                Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
 
-    int LoadSendBuffer_F2C(double *buffer,
+   int Update_Solution_Multistage_Explicit(const int i_stage, 
+                                           Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+
+   /* MEMBER FUNCTIONS REQUIRED FOR MESSAGE PASSING. */
+
+   /* Load send message passing buffer. */
+   int LoadSendBuffer(double *buffer,
+                      int &buffer_count,
+                      const int buffer_size,
+                      const int i_min,
+                      const int i_max,
+                      const int i_inc,
+                      const int j_min,
+                      const int j_max,
+                      const int j_inc,
+                      const int k_min,
+                      const int k_max,
+                      const int k_inc);
+
+   int LoadSendBuffer_F2C(double *buffer,
+                          int &buffer_count,
+                          const int buffer_size,
+                          const int i_min,
+                          const int i_max,
+                          const int i_inc,
+                          const int j_min,
+                          const int j_max,
+			  const int j_inc,
+			  const int k_min,
+			  const int k_max,
+			  const int k_inc);
+
+   int LoadSendBuffer_C2F(double *buffer,
+                          int &buffer_count,
+                          const int buffer_size,
+                          const int i_min,
+                          const int i_max,
+                          const int i_inc,
+                          const int j_min,
+                          const int j_max,
+			  const int j_inc,
+			  const int k_min,
+			  const int k_max,
+			  const int k_inc);
+
+   /* Unload receive message passing buffer. */
+
+   int UnloadReceiveBuffer(double *buffer,
                            int &buffer_count,
                            const int buffer_size,
                            const int i_min,
@@ -216,94 +279,66 @@ class Hexa_Block{
 			   const int k_max,
 			   const int k_inc);
 
-    int LoadSendBuffer_C2F(double *buffer,
-                           int &buffer_count,
-                           const int buffer_size,
-                           const int i_min,
-                           const int i_max,
-                           const int i_inc,
-                           const int j_min,
-                           const int j_max,
-			   const int j_inc,
-			   const int k_min,
-			   const int k_max,
-			   const int k_inc);
+   int UnloadReceiveBuffer_F2C(double *buffer,
+                               int &buffer_count,
+                               const int buffer_size,
+                               const int i_min,
+                               const int i_max,
+                               const int i_inc,
+                               const int j_min,
+                               const int j_max,
+                               const int j_inc,
+                               const int k_min,
+			       const int k_max,
+			       const int k_inc);
 
-    /* Unload receive message passing buffer. */
+   int UnloadReceiveBuffer_C2F(double *buffer,
+                               int &buffer_count,
+                               const int buffer_size,
+                               const int i_min,
+                               const int i_max,
+                               const int i_inc,
+                               const int j_min,
+                               const int j_max,
+	  		       const int j_inc,
+			       const int k_min,
+			       const int k_max,
+			       const int k_inc);
 
-    int UnloadReceiveBuffer(double *buffer,
-                            int &buffer_count,
-                            const int buffer_size,
-                            const int i_min,
-                            const int i_max,
-                            const int i_inc,
-                            const int j_min,
-                            const int j_max,
-			    const int j_inc,
-			    const int k_min,
-			    const int k_max,
-			    const int k_inc);
+   /* Subcell solution reconstruction within given computational cell. */
 
-    int UnloadReceiveBuffer_F2C(double *buffer,
-                                int &buffer_count,
-                                const int buffer_size,
-                                const int i_min,
-                                const int i_max,
-                                const int i_inc,
-                                const int j_min,
-                                const int j_max,
-				const int j_inc,
-				const int k_min,
-				const int k_max,
-				const int k_inc);
+   void SubcellReconstruction(const int i,
+                              const int j,
+                              const int k,
+                              const int Limiter);
 
-    int UnloadReceiveBuffer_C2F(double *buffer,
-                                int &buffer_count,
-                                const int buffer_size,
-                                const int i_min,
-                                const int i_max,
-                                const int i_inc,
-                                const int j_min,
-                                const int j_max,
-				const int j_inc,
-				const int k_min,
-				const int k_max,
-				const int k_inc);
+   /* Load and unload conservative flux message passing buffer. */
 
-    /* Subcell solution reconstruction within given computational cell. */
+   int LoadSendBuffer_Flux_F2C(double *buffer,
+                               int &buffer_count,
+                               const int buffer_size,
+                               const int i_min,
+                               const int i_max,
+                               const int i_inc,
+                               const int j_min,
+                               const int j_max,
+			       const int j_inc,
+			       const int k_min,
+			       const int k_max,
+			       const int k_inc);
 
-    void SubcellReconstruction(const int i,
-                               const int j,
-                               const int k,
-                               const int Limiter);
-
-    /* Load and unload conservative flux message passing buffer. */
-
-    int LoadSendBuffer_Flux_F2C(double *buffer,
-                                int &buffer_count,
-                                const int buffer_size,
-                                const int i_min,
-                                const int i_max,
-                                const int i_inc,
-                                const int j_min,
-                                const int j_max,
-				const int j_inc,
-				const int k_min,
-				const int k_max,
-				const int k_inc);
-
-     int UnloadReceiveBuffer_Flux_F2C(double *buffer,
-                                     int &buffer_count,
-                                     const int buffer_size,
-                                     const int i_min,
-                                     const int i_max,
-                                     const int i_inc,
-                                     const int j_min,
-                                     const int j_max,
-				      const int j_inc,
-				      const int k_min,
-				      const int k_max,
-				      const int k_inc);
+   int UnloadReceiveBuffer_Flux_F2C(double *buffer,
+                                    int &buffer_count,
+                                    const int buffer_size,
+                                    const int i_min,
+                                    const int i_max,
+                                    const int i_inc,
+                                    const int j_min,
+                                    const int j_max,
+				    const int j_inc,
+				    const int k_min,
+				    const int k_max,
+				    const int k_inc);
    
   private:
    //copy and assignment are not permitted ...
@@ -313,61 +348,56 @@ class Hexa_Block{
 };
 
  /* Input-output operators. */
+
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 ostream &operator << (ostream &out_file,
-                         const Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> &Soln);
+                      const Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> &Soln);
+
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 istream &operator >> (istream &in_file,
-                         Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> &Soln);
+                      Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> &Soln);
 
 /******************************************************************
  * Hexa_Block::allocate -- Allocate memory.                       *
  ******************************************************************/
+
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
-allocate(void){
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate(void){
      
-   int i, j, k, n; 
-   
-   dUdt = new SOLN_cSTATE***[NCi];
-   
-   dt = new double**[NCi];
    W = new SOLN_pSTATE**[NCi]; 
    U = new SOLN_cSTATE**[NCi];
+   Uo = new SOLN_cSTATE**[NCi];
+   dUdt = new SOLN_cSTATE***[NCi];
    dWdx = new SOLN_pSTATE**[NCi];
    dWdy = new SOLN_pSTATE**[NCi];
    dWdz = new SOLN_pSTATE**[NCi];
    phi = new SOLN_pSTATE**[NCi]; 
-   Uo = new SOLN_cSTATE**[NCi];
+   dt = new double**[NCi];
    
-   for ( i = 0; i <= NCi-1 ; ++i ) {
-      
-      dUdt[i] = new SOLN_cSTATE**[NCj];
-      dt[i] = new double*[NCj];
+   for (int i = 0; i <= NCi-1 ; ++i) {
       W[i] = new SOLN_pSTATE*[NCj]; 
       U[i] = new SOLN_cSTATE*[NCj];
+      Uo[i] = new SOLN_cSTATE*[NCj];
+      dUdt[i] = new SOLN_cSTATE**[NCj];
       dWdx[i] = new SOLN_pSTATE*[NCj];
       dWdy[i] = new SOLN_pSTATE*[NCj];
       dWdz[i] = new SOLN_pSTATE*[NCj];
       phi[i] = new SOLN_pSTATE*[NCj];
-      Uo[i] = new SOLN_cSTATE*[NCj];
-      
-      for ( j = 0; j <= NCj-1 ; ++j ){
-         dUdt[i][j] = new SOLN_cSTATE*[NCk];
-         dt[i][j] = new double [NCk];
+      dt[i] = new double*[NCj];
+      for (int j = 0; j <= NCj-1 ; ++j) {
          W[i][j] = new SOLN_pSTATE[NCk]; 
          U[i][j] = new SOLN_cSTATE[NCk];
+         Uo[i][j] = new SOLN_cSTATE[NCk];
+         dUdt[i][j] = new SOLN_cSTATE*[NCk];
          dWdx[i][j] = new SOLN_pSTATE[NCk]; 
          dWdy[i][j] = new SOLN_pSTATE[NCk];
          dWdz[i][j] = new SOLN_pSTATE[NCk];
          phi[i][j] = new SOLN_pSTATE[NCk]; 
-         Uo[i][j] = new SOLN_cSTATE[NCk];
-         
-         for ( k = 0; k <= NCk-1 ; ++k ){
+         dt[i][j] = new double [NCk];
+         for (int k = 0; k <= NCk-1 ; ++k) {
             dUdt[i][j][k]=new SOLN_cSTATE[NUMBER_OF_RESIDUAL_VECTORS];
-            
-         }
-      }
+         } /* endfor */
+      } /* endfor */
    } /* endfor */
    
    SOLN_cSTATE U_VACUUM;
@@ -376,44 +406,64 @@ allocate(void){
    W_VACUUM.Vacuum();
 
    // Set the solution residuals, gradients, limiters, and other values to zero.
-   for (k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) 
-      for (j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) 
-         for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-            for ( n = 0 ; n <= NUMBER_OF_RESIDUAL_VECTORS-1 ; ++n ) {
+   for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+      for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+         for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+            Uo[i][j][k] = U_VACUUM; 
+            for (int n = 0 ; n <= NUMBER_OF_RESIDUAL_VECTORS-1 ; ++n) {
                dUdt[i][j][k][n] = U_VACUUM;
             } /* endfor */
-            dWdx[i][j][k] = W_VACUUM; dWdy[i][j][k] = W_VACUUM;
-            dWdz[i][j][k] = W_VACUUM; phi[i][j][k] =  W_VACUUM; 
-            Uo[i][j][k] = U_VACUUM; dt[i][j][k] = ZERO;
+            dWdx[i][j][k] = W_VACUUM; 
+            dWdy[i][j][k] = W_VACUUM;
+            dWdz[i][j][k] = W_VACUUM; 
+            phi[i][j][k] =  W_VACUUM; 
+            dt[i][j][k] = ZERO;
          } /* endfor */
-
+      } /* endfor */
+   } /* endfor */
+ 
    //Boundary References
-   WoW = new SOLN_pSTATE *[NCj];   WoE = new SOLN_pSTATE *[NCj];
-   for (int j = 0; j < NCj; ++j ){
+   WoW = new SOLN_pSTATE *[NCj]; WoE = new SOLN_pSTATE *[NCj];
+   for (int j = 0; j < NCj; ++j) {
       WoW[j] = new SOLN_pSTATE[NCk]; WoE[j] = new SOLN_pSTATE[NCk];
-   }
+   } /* endfor */
 
-   WoN = new SOLN_pSTATE *[NCi];   WoS = new SOLN_pSTATE *[NCi];
-   WoT = new SOLN_pSTATE *[NCi];   WoB = new SOLN_pSTATE *[NCi];
-   for (int i = 0; i < NCi; ++i ){
+   WoN = new SOLN_pSTATE *[NCi]; WoS = new SOLN_pSTATE *[NCi];
+   WoT = new SOLN_pSTATE *[NCi]; WoB = new SOLN_pSTATE *[NCi];
+   for (int i = 0; i < NCi; ++i) {
       WoN[i] = new SOLN_pSTATE[NCk]; WoS[i] = new SOLN_pSTATE[NCk];
       WoT[i] = new SOLN_pSTATE[NCj]; WoB[i] = new SOLN_pSTATE[NCj];
-   }
+   } /* endfor */
 
-   if( Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-       Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON){
-      // only allocate for turbulent flow
-      Wall = new Turbulent3DWallData**[NCi]; 
-      for ( int i = 0; i <= NCi-1 ; ++i ) {
-         Wall[i] = new Turbulent3DWallData*[NCj]; 
-         for ( int j = 0; j <= NCj-1 ; ++j ){
-            Wall[i][j] = new Turbulent3DWallData[NCk]; 
-            
-         }
+   // Only allocate for turbulent flows
+   if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
+       Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+      WallData = new Turbulent3DWallData**[NCi]; 
+      for (int i = 0; i <= NCi-1 ; ++i) {
+         WallData[i] = new Turbulent3DWallData*[NCj]; 
+         for (int j = 0; j <= NCj-1 ; ++j) {
+            WallData[i][j] = new Turbulent3DWallData[NCk]; 
+         } /* endfor */
       } /* endfor */
-   }
-   
-     
+   } /* endif */
+
+}
+
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate(const int Ni, 
+                                                    const int Nj, 
+                                                    const int Nk, 
+                                                    const int Ng) {
+
+    assert(Ni > 1 && Nj > 1  && Nk > 1 && Ng > 1 && !Allocated); 
+    NCi=Ni+2*Ng; ICl=Ng; ICu=Ni+Ng-1; 
+    NCj=Nj+2*Ng; JCl=Ng; JCu=Nj+Ng-1;
+    NCk=Nk+2*Ng; KCl=Ng; KCu=Nk+Ng-1; Nghost=Ng;
+    Flow_Type = FLOWTYPE_INVISCID; Freeze_Limiter = OFF;
+    Allocated = HEXA_BLOCK_USED;
+    Grid.allocate(Ni, Nj, Nk, Ng);
+    allocate();
+
 }
 
 /**************************************************************************
@@ -421,105 +471,94 @@ allocate(void){
  **************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::deallocate(void) {
-   
-   Grid.deallocate(); 
-   
-   for ( int i = 0; i <= NCi-1 ; ++i ){
-      for ( int j = 0; j <= NCj-1 ; ++j ){
-         for ( int k = 0; k <= NCk-1 ; ++k ){
-            delete []dUdt[i][j][k]; dUdt[i][j][k] = NULL; 
-         }
-      }
-   }
-   
-   for ( int i = 0; i <= NCi-1 ; ++i ){
-      for ( int j = 0; j <= NCj-1 ; ++j ) {
-         delete []W[i][j];  W[i][j] = NULL; 
-         delete []U[i][j];  U[i][j] = NULL;
-         delete []dt[i][j]; dt[i][j] = NULL; 
-         
-         delete []dUdt[i][j]; dUdt[i][j] = NULL;
-         delete []dWdx[i][j]; dWdx[i][j] = NULL; 
-         delete []dWdy[i][j]; dWdy[i][j] = NULL;
-         delete []dWdz[i][j]; dWdz[i][j] = NULL;
-         delete []phi[i][j]; phi[i][j] = NULL; 
-         delete []Uo[i][j]; Uo[i][j] = NULL;
-      }
 
-      delete []W[i]; W[i] = NULL; 
-      delete []U[i]; U[i] = NULL;
-      delete []dt[i]; dt[i] = NULL; 
-      delete []dUdt[i]; dUdt[i] = NULL;
-      delete []dWdx[i]; dWdx[i] = NULL; 
-      delete []dWdy[i]; dWdy[i] = NULL;
-      delete []dWdz[i]; dWdz[i] = NULL;
-      delete []phi[i]; phi[i] = NULL; 
-      delete []Uo[i]; Uo[i] = NULL;
-      
-   }
+   if (Allocated) {   
+      Grid.deallocate(); 
+    
+      for (int i = 0; i <= NCi-1; ++i) {
+         for (int j = 0; j <= NCj-1 ; ++j) {
+            delete []W[i][j];  W[i][j] = NULL; 
+            delete []U[i][j];  U[i][j] = NULL;
+            delete []Uo[i][j]; Uo[i][j] = NULL;
+            for (int k = 0; k <= NCk-1 ; ++k) {
+               delete []dUdt[i][j][k]; dUdt[i][j][k] = NULL; 
+            } /* endfor */
+            delete []dUdt[i][j]; dUdt[i][j] = NULL;
+            delete []dWdx[i][j]; dWdx[i][j] = NULL; 
+            delete []dWdy[i][j]; dWdy[i][j] = NULL;
+            delete []dWdz[i][j]; dWdz[i][j] = NULL;
+            delete []phi[i][j]; phi[i][j] = NULL; 
+            delete []dt[i][j]; dt[i][j] = NULL; 
+         } /* endfor */
+         delete []W[i]; W[i] = NULL; 
+         delete []U[i]; U[i] = NULL;
+         delete []Uo[i]; Uo[i] = NULL;
+         delete []dUdt[i]; dUdt[i] = NULL;
+         delete []dWdx[i]; dWdx[i] = NULL; 
+         delete []dWdy[i]; dWdy[i] = NULL;
+         delete []dWdz[i]; dWdz[i] = NULL;
+         delete []phi[i]; phi[i] = NULL; 
+         delete []dt[i]; dt[i] = NULL; 
+      } /* endfor */
    
-   delete []W; W = NULL; delete []U; U = NULL;
-   delete []dt; dt = NULL; delete []dUdt; dUdt = NULL;
-   delete []dWdx; dWdx = NULL; delete []dWdy; dWdy = NULL; 
-   delete []dWdz; dWdz = NULL; 
-   delete []phi; phi = NULL; delete []Uo; Uo = NULL;
-   
+      delete []W; W = NULL; delete []U; U = NULL;
+      delete []Uo; Uo = NULL; delete []dUdt; dUdt = NULL;
+      delete []dWdx; dWdx = NULL; delete []dWdy; dWdy = NULL; 
+      delete []dWdz; dWdz = NULL; 
+      delete []phi; phi = NULL; delete []dt; dt = NULL; 
 
-
-  //Boundary references
-   for (int j = 0; j <= NCj-1; ++j ){
-      delete []WoW[j]; WoW[j] = NULL;
-      delete []WoE[j]; WoE[j] = NULL;
-   }
-   delete []WoW; WoW = NULL;
-   delete []WoE; WoE = NULL;
+      //Boundary references
+      for (int j = 0; j <= NCj-1; ++j) {
+         delete []WoW[j]; WoW[j] = NULL;
+         delete []WoE[j]; WoE[j] = NULL;
+      } /* endfor */
+      delete []WoW; WoW = NULL;
+      delete []WoE; WoE = NULL;
    
-   for (int i = 0; i <= NCi-1; ++i ){
-      delete []WoN[i]; WoN[i] = NULL;
-      delete []WoS[i]; WoS[i] = NULL;
-      delete []WoT[i]; WoT[i] = NULL;
-      delete []WoB[i]; WoB[i] = NULL;
-      
-   }
+      for (int i = 0; i <= NCi-1; ++i) {
+         delete []WoN[i]; WoN[i] = NULL;
+         delete []WoS[i]; WoS[i] = NULL;
+         delete []WoT[i]; WoT[i] = NULL;
+         delete []WoB[i]; WoB[i] = NULL;
+      } /* endfor */
    
-   delete []WoN; WoN = NULL; delete []WoS; WoS = NULL; 
-   delete []WoE; WoE = NULL; delete []WoW; WoW = NULL;
-   delete []WoT; WoT = NULL; delete []WoB; WoB = NULL;
+      delete []WoN; WoN = NULL; delete []WoS; WoS = NULL; 
+      delete []WoE; WoE = NULL; delete []WoW; WoW = NULL;
+      delete []WoT; WoT = NULL; delete []WoB; WoB = NULL;
    
-   
-   NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0;
-   NCk = 0; KCl = 0; KCu = 0;  Nghost = 0;
-   Iindex=0; Jindex=0; Kindex = 0; 
+      if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
+          Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+         for (int i = 0; i <= NCi-1 ; ++i) {
+            for (int j = 0; j <= NCj-1 ; ++j) {
+               delete []WallData[i][j];  WallData[i][j] = NULL; 
+            } /* endfor */
+            delete []WallData[i]; WallData[i] = NULL; 
+         } /* endfor */
+         delete []WallData; WallData = NULL; 
+      } /* endif */
 
-   if(Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-      Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON){
+      NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0;
+      NCk = 0; KCl = 0; KCu = 0;  Nghost = 0;
+      Allocated = HEXA_BLOCK_NOT_USED;
+   } /* endif */
 
-      for ( int i = 0; i <= NCi-1 ; ++i ){
-         for ( int j = 0; j <= NCj-1 ; ++j ) {
-            delete []Wall[i][j];  Wall[i][j] = NULL; 
-         }
-         delete []Wall[i]; Wall[i] = NULL; 
-      }
-      delete []Wall; Wall = NULL; 
-      
-   }
-}//end of deallocation
-
+}
 
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-   int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::NumVar(void) {
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::NumVar(void) {
    
    int num=0;
    int NUM_VAR_3D = W[num][num][num].NUM_VAR_3D;    
 
    return (int(NUM_VAR_3D));
+
 }
 
 /* Return primitive solution state at specified node. */
 /* Trilinear interpolation --- in process */
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-   SOLN_pSTATE Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Wn(const int ii, const int jj, 
-                                                        const int kk){
+SOLN_pSTATE Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Wn(const int ii, const int jj, 
+                                                     const int kk){
    return (Trilinear_Interpolation(
            Grid.Cell[ii-1][jj][kk].Xc, W[ii-1][jj][kk],
            Grid.Cell[ii][jj][kk].Xc, W[ii][jj][kk],
@@ -530,97 +569,404 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
            Grid.Cell[ii][jj-1][kk-1].Xc, W[ii][jj-1][kk-1],
            Grid.Cell[ii-1][jj-1][kk-1].Xc, W[ii-1][jj-1][kk-1],
            Grid.Node[ii][jj][kk].X));
+
 }
 
-
 /********************************************************
- * Routine: L1_Norm_Residual                            *
+ * Routine: Create_Block                                *
  *                                                      *
- * Determines the L1-norm of the solution residual for  *
- * the specified hexahedral solution block.          *
- * Useful for monitoring convergence of the solution    *
- * for steady state problems.                           *
+ * Create a new hexahedral solution block.              *
  *                                                      *
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-   double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::L1_Norm_Residual(void) {
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Create_Block(Grid3D_Hexa_Block &Grid2) {
+
+   if (Grid2.Allocated) {
+      if (NCi != Grid2.NCi ||
+          NCj != Grid2.NCj ||
+          NCk != Grid2.NCk ||
+          Nghost != Grid2.Nghost) {
+	 if (Allocated) {
+           deallocate();
+         } /*endif */
+
+         allocate(Grid2.NCi-2*Grid2.Nghost, 
+                  Grid2.NCj-2*Grid2.Nghost, 
+                  Grid2.NCk-2*Grid2.Nghost, 
+                  Grid2.Nghost);
+      } /* endif */
+
+      Grid.Copy(Grid2);
+   } /* endif */
+ 
+}
+
+/********************************************************
+ * Routine: Copy                                        *
+ *                                                      *
+ * Make a copy of solution block contents contained in  *
+ * the hexahedral solution block Block2.                *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Copy(Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> &Block2) {
+
+   if (Block2.Allocated) {
+      //  Allocate memory as required.
+      if (NCi != Block2.NCi ||
+          NCj != Block2.NCj ||
+          NCk != Block2.NCk ||
+          Nghost != Block2.Nghost) {
+	 if (Allocated) {
+           deallocate();
+         } /*endif */
+
+         allocate(Block2.NCi-2*Block2.Nghost, 
+                  Block2.NCj-2*Block2.Nghost, 
+                  Block2.NCk-2*Block2.Nghost, 
+                  Block2.Nghost);
+      } /* endif */
+
+      // Copy the grid.
+      Grid.Copy(Block2.Grid);
+
+      // Assign flow type.
+      Flow_Type = Block2.Flow_Type;
+
+      // Copy the freeze limite indicator.
+      Freeze_Limiter = Block2.Freeze_Limter;
+
+      // Copy the solution, solutioon residuals, gradients, limiters, and 
+      // other stored values.
+      for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+         for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+            for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+               U[i][j][k] = Block2.U[i][j][k];
+               W[i][j][k] = Block2.W[i][j][k];
+               Uo[i][j][k] = Block2.Uo[i][j][k];
+               for (int n = 0 ; n <= NUMBER_OF_RESIDUAL_VECTORS-1 ; ++n) {
+                  dUdt[i][j][k][n] = Block2.dUdt[i][j][k][n];
+               } /* endfor */
+               dWdx[i][j][k] = Block2.dWdx[i][j][k]; 
+               dWdy[i][j][k] = Block2.dWdy[i][j][k];
+               dWdz[i][j][k] = Block2.dWdz[i][j][k]; 
+               phi[i][j][k] = Block2.phi[i][j][k]; 
+               dt[i][j][k] = Block2.dt[i][j][k];
+            } /* endfor */
+         } /* endfor */
+      } /* endfor */
+ 
+      // Copy boundary reference states.
+      for (int k = 0; k < NCk; ++k) {
+         for (int j = 0; j < NCj; ++j) {
+            WoW[j][k] = Block2.WoW[j][k]; 
+            WoE[j][k] = Block2.WoE[j][k];
+         } /* endfor */
+      } /* endfor */
+
+      for (int k = 0; k < NCk; ++k) {
+         for (int i = 0; i < NCi; ++i) {
+            WoN[i][k] = Block2.WoN[i][k]; 
+            WoS[i][k] = Block2.WoS[i][k];
+         } /* endfor */
+      } /* endfor */
+
+      for (int j = 0; j < NCj; ++j) {
+         for (int i = 0; i < NCi; ++i) {
+            WoT[i][j] = Block2.WoT[i][j]; 
+            WoB[i][j] = Block2.WoB[i][j];
+         } /* endfor */
+      } /* endfor */
+
+      // Copy wall data for turbulent flows only.
+      if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
+          Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+         for (int k = 0; k < NCk; ++k) {
+            for (int j = 0; j < NCj; ++j) {
+               for (int i = 0; i < NCi; ++i) {
+                  WallData[i][j][k] = Block2.WallData[i][j][k]; 
+               } /* endfor */
+            } /* endfor */
+         } /* endfor */
+      } /* endif */
+
+   } /* endif */
+
+}
+
+/********************************************************
+ * Routine: Broadcast                                   *
+ *                                                      *
+ * Broadcast the solution information for hexahedral    * 
+ * solution block.                                      *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Broadcast(void) {
+
+#ifdef _MPI_VERSION
+
+#endif
+
+}
+
+#ifdef _MPI_VERSION
+/********************************************************
+ * Routine: Broadcast                                   *
+ *                                                      *
+ * Broadcast the solution information for hexahedral    * 
+ * solution block.                                      *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Broadcast(MPI::Intracomm &Communicator) {
+
+}
+#endif
+
+/********************************************************
+ * Routine: Output_Tecplot                              *
+ *                                                      *
+ * Writes the solution values at the nodes of the       *
+ * specified hexadedral solution block to the           *
+ * specified output stream suitable for plotting with   *
+ * TECPLOT.                                             *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Output_Tecplot(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
+                                                          const int Number_of_Time_Steps,
+                                                          const double &Time,
+                                                          const int Block_Number,
+                                                          const int Output_Title,
+                                                          ostream &Out_File) {
+
+   SOLN_pSTATE W_node;
    
-    int i, j, k;
-    double l1_norm;
+   /* Ensure boundary conditions are updated before
+      evaluating solution at the nodes. */
+   
+   BCs(IPs);
+   
+   /* Output nodal solution data. */
+   
+   Out_File << setprecision(14);
+   if (Output_Title) {
+      Out_File << "TITLE = \"" << CFFC_Name() << ": 3D Solution, "
+               << "Time Step/Iteration Level = " << Number_of_Time_Steps
+               << ", Time = " << Time
+               << "\"" << "\n"
+               << "VARIABLES = \"x\" \\ \n"
+               << "\"y\" \\ \n"
+               << "\"z\" \\ \n"
+               << "\"rho\" \\ \n"
+               << "\"u\" \\ \n"
+               << "\"v\" \\ \n"
+               << "\"w\" \\ \n"
+               << "\"p\" \\ \n";
+      //n species mass fractions names
+      for (int i =0 ;i<W[0][0][0].ns ;i++) {
+         Out_File <<"\"c_"<<W[0][0][0].specdata[i].Speciesname()<<"\" \\ \n";
+      }
+      
+      Out_File <<"\"T\" \\ \n";
+      
+      Out_File<< "ZONE T =  \"Block Number = " << Block_Number
+              << "\" \\ \n"
+              << "I = " << Grid.INu -  Grid.INl + 1 << " \\ \n"
+              << "J = " << Grid.JNu -  Grid.JNl + 1 << " \\ \n"
+              << "K = " << Grid.KNu -  Grid.KNl + 1 << " \\ \n"
+              << "DATAPACKING = POINT \n";
+      
+   } else {
+      Out_File << "ZONE T =  \"Block Number = " << Block_Number
+               << "\" \\ \n"
+               << "I = " << Grid.INu - Grid.INl + 1 << " \\ \n"
+               << "J = " << Grid.JNu - Grid.JNl + 1 << " \\ \n"
+               << "K = " << Grid.KNu - Grid.KNl + 1 << " \\ \n"
+               << "DATAPACKING = POINT \n";              
+   } /* endif */
+   
+   
+   for (int k  =  Grid.KNl ; k <=  Grid.KNu ; ++k) {
+      for (int j  =  Grid.JNl ; j <=  Grid.JNu ; ++j) {
+         for (int i =  Grid.INl ; i <=  Grid.INu ; ++i) {
+            W_node = Wn(i, j, k);
+            Out_File << " "  << Grid.Node[i][j][k].X << W_node;
+            Out_File.setf(ios::scientific);
+            Out_File << " " << W_node.T() << "\n";
+            Out_File.unsetf(ios::scientific);
+         } /* endfor */
+      } /* endfor */
+   } /* endfor */
 
-    l1_norm = ZERO;
-    for ( k  =  KCl ; k <=  KCu ; ++k ) 
-       for ( j  =  JCl ; j <=  JCu ; ++j ) 
-          for ( i =  ICl ; i <=  ICu ; ++i ) {
-             l1_norm += fabs( abs(dUdt[i][j][k][0].rhov));
-             
-          } /* endfor */
-
-    return (l1_norm);
+   Out_File << setprecision(6);
     
 }
 
 /********************************************************
- * Routine: L2_Norm_Residual                            *
+ * Routine: Output_Cells_Tecplot                        *
  *                                                      *
- * Determines the L2-norm of the solution residual for  *
- * the specified hexahedral solution block.             *
- * Useful for monitoring convergence of the solution    *
- * for steady state problems.                           *
+ * Writes the cell centred solution values of the       *
+ * specified hexadedral solution block to the           *
+ * specified output stream suitable for plotting with   *
+ * TECPLOT.                                             *
  *                                                      *
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-   double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::L2_Norm_Residual(void) {
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Output_Cells_Tecplot(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
+                                                                const int Number_of_Time_Steps,
+                                                                const double &Time,
+                                                                const int Block_Number,
+                                                                const int Output_Title,
+                                                                ostream &Out_File) {
 
-   int i, j, k;
-   double l2_norm;
-   
-   l2_norm = ZERO;
-   
-   for ( k  =  KCl ; k <=  KCu ; ++k ) 
-      for ( j  =  JCl ; j <=  JCu ; ++j ) 
-         for ( i =  ICl ; i <=  ICu ; ++i ) {
-            l2_norm += sqr( abs(dUdt[i][j][k][0].rhov));
-            
+   /* Ensure boundary conditions are updated before
+      evaluating solution at the nodes. */
+  
+   BCs(IPs);
+
+   /* Output cell-centred solution data. */
+
+   Out_File << setprecision(14);
+
+   if (Output_Title) {
+      Out_File << "TITLE = \"" << CFFC_Name() << ": 3D Solution, "
+               << "Time Step/Iteration Level = " << Number_of_Time_Steps
+               << ", Time = " << Time
+               << "\"" << "\n"
+               << "VARIABLES = \"x\" \\ \n"
+               << "\"y\" \\ \n"
+               << "\"z\" \\ \n"
+               << "\"rho\" \\ \n"
+               << "\"u\" \\ \n"
+               << "\"v\" \\ \n"
+               << "\"w\" \\ \n"
+               << "\"p\" \\ \n";
+                
+      //n species mass fractions names
+      for (int i =0;i<W[0][0][0].ns ;i++) {
+         Out_File <<"\"c"<<W[0][0][0].specdata[i].Speciesname()<<"\" \\ \n";
+      }
+     
+      Out_File <<"\"T\" \\ \n";
+      Out_File <<"\"R\" \\ \n";
+
+      Out_File << "ZONE T =  \"Block Number = " << Block_Number
+               << "\" \\ \n"
+               << "I = " <<  ICu -  ICl + 2*Nghost +1 << " \\ \n"
+               << "J = " <<  JCu -  JCl + 2*Nghost +1 << " \\ \n"
+               << "K = " <<  KCu -  KCl + 2*Nghost +1 << " \\ \n"
+               << "DATAPACKING = POINT \n";
+   } else {
+      Out_File << "ZONE T =  \"Block Number = " << Block_Number
+               << "\" \\ \n"
+               << "I = " <<  Grid.ICu -  Grid.ICl + 2* Nghost + 1 << " \\ \n"
+               << "J = " <<  Grid.JCu -  Grid.JCl + 2* Nghost + 1 << " \\ \n"
+               << "K = " <<  Grid.KCu -  Grid.KCl + 2* Nghost + 1 << " \\ \n"
+               << "DATAPACKING = POINT \n";
+      
+   } /* endif */
+
+   for (int k =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k) {
+      for (int j  =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j) {
+         for (int i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i) {
+            Out_File << " "  <<  Grid.Cell[i][j][k].Xc << W[i][j][k];
+            Out_File.setf(ios::scientific);
+            Out_File << " " <<  W[i][j][k].T() << " " <<W[i][j][k].Rtot()<< "\n";
+            Out_File.unsetf(ios::scientific);
          } /* endfor */
+      } /* endfor */
+   } /* endfor */
    
-   l2_norm = sqrt(l2_norm);
-   
-   return (l2_norm);
-   
+   Out_File << setprecision(6);
+    
 }
 
 /********************************************************
- * Routine: Max_Norm_Residual                           *
+ * Routine: Output_Nodes_Tecplot                        *
  *                                                      *
- * Determines the maximum norm of the solution residual *
- * for the specified hexahedral solution block.         *
- * Useful for monitoring convergence of the solution    *
- * for steady state problems.                           *
+ * Writes the solution values at the nodes of the       *
+ * specified hexadedral solution block to the           *
+ * specified output stream suitable for plotting with   *
+ * TECPLOT.                                             *
  *                                                      *
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-   double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Max_Norm_Residual(void) {
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Output_Nodes_Tecplot(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
+                                                                const int Number_of_Time_Steps,
+                                                                const double &Time,
+                                                                const int Block_Number,
+                                                                const int Output_Title,
+                                                                ostream &Out_File) {
 
-   int i, j, k;
-   double max_norm;
-
-   max_norm = ZERO;
-   for ( k  =  KCl ; k <=  KCu ; ++k ) 
-      for ( j  =  JCl ; j <=  JCu ; ++j ) 
-         for ( i =  ICl ; i <=  ICu ; ++i ) {
-            max_norm = max(max_norm, fabs( abs(dUdt[i][j][k][0].rhov)));
-            
+   SOLN_pSTATE W_node;
+   
+   /* Ensure boundary conditions are updated before
+      evaluating solution at the nodes. */
+   
+   BCs(IPs);
+   
+   /* Output nodal solution data. */
+   
+   Out_File << setprecision(14);
+   if (Output_Title) {
+      Out_File << "TITLE = \"" << CFFC_Name() << ": 3D Solution, "
+               << "Time Step/Iteration Level = " << Number_of_Time_Steps
+               << ", Time = " << Time
+               << "\"" << "\n"
+               << "VARIABLES = \"x\" \\ \n"
+               << "\"y\" \\ \n"
+               << "\"z\" \\ \n"
+               << "\"rho\" \\ \n"
+               << "\"u\" \\ \n"
+               << "\"v\" \\ \n"
+               << "\"w\" \\ \n"
+               << "\"p\" \\ \n";
+      //n species mass fractions names
+      for (int i =0 ;i<W[0][0][0].ns ;i++) {
+         Out_File <<"\"c_"<<W[0][0][0].specdata[i].Speciesname()<<"\" \\ \n";
+      }
+      
+      Out_File <<"\"T\" \\ \n";
+      
+      Out_File<< "ZONE T =  \"Block Number = " << Block_Number
+              << "\" \\ \n"
+              << "I = " << Grid.INu - Grid.INl + 1 + 2 << " \\ \n"
+              << "J = " << Grid.JNu - Grid.JNl + 1 + 2 << " \\ \n"
+              << "K = " << Grid.KNu - Grid.KNl + 1 + 2 << " \\ \n"
+              << "DATAPACKING = POINT \n";
+      
+   } else {
+      Out_File << "ZONE T =  \"Block Number = " << Block_Number
+               << "\" \\ \n"
+               << "I = " << Grid.INu - Grid.INl + 1 + 2 << " \\ \n"
+               << "J = " << Grid.JNu - Grid.JNl + 1 + 2 << " \\ \n"
+               << "K = " << Grid.KNu - Grid.KNl + 1 + 2 << " \\ \n"
+               << "DATAPACKING = POINT \n";
+   } /* endif */
+   
+   
+   for (int k  = Grid.KNl - 1; k <= Grid.KNu + 1; ++k) {
+      for (int j  = Grid.JNl - 1; j <= Grid.JNu + 1; ++j) {
+         for (int i = Grid.INl - 1; i <= Grid.INu + 1; ++i) {
+	    W_node = Wn(i, j, k);
+            Out_File << " "  << Grid.Node[i][j][k].X << W_node;
+            Out_File.setf(ios::scientific);
+            Out_File << " " << W_node.T() << "\n";
+            Out_File.unsetf(ios::scientific);
          } /* endfor */
-   
-   return (max_norm);
-   
+      } /* endfor */
+   } /* endfor */
+
+   Out_File << setprecision(6);
+    
 }
 
 /********************************************************
  * Routine: ICs                                         *
  *                                                      *
- * Apply initial conditions for the specified hexa      *
+ * Apply initial conditions for the hexahedral          *
  * solution block.                                      *
  *                                                      *
  ********************************************************/
@@ -840,6 +1186,7 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::ICs(const int i_ICtype,
 
    /* Set default values for the boundary conditions
       reference states. */
+
    for ( k = KCl-Nghost ; k<= KCu+Nghost; ++k ) {
       for ( j = JCl-Nghost ; j<= JCu+Nghost; ++j ){
          if ((k >= KCl && k <= KCu) && (j >= JCl && j <= JCu)) {
@@ -951,8 +1298,7 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::ICs(const int i_ICtype,
  *                                                      *
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-   void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::BCs(
-      Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
    
    int i, j, k;
    
@@ -1143,8 +1489,6 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
          
       } /* endfor */
    
-      
-
    for ( k =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k )
       for ( i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i ) {
               
@@ -1451,10 +1795,6 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
          } /* endswitch */
       } /* endfor */
 
-  
-   
- 
-   
 }
 
 /********************************************************
@@ -1467,8 +1807,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
  *                                                      *
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-   double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::CFL(
-      Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
+double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::CFL(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
    
    int i, j, k;
    double dtMin, d_i, d_j, d_k, v_i, v_j, v_k, a, dt_vis, nv, dt_chem;
@@ -1504,22 +1843,16 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
                   nv = W[i][j][k].mu()/W[i][j][k].rho;
                   dt_vis = min(min((d_i*d_i)/(3.0*nv), (d_j*d_j)/(3.0*nv)), (d_k*d_k)/(3.0*nv)); 
                   dt[i][j][k]  = min(dt_vis, dt[i][j][k]);
-                  
-                                
                }
+
                /******** Chemical Source Term deltat calculation ************/   
                if (W[i][j][k].React.reactset_flag != NO_REACTIONS){
                   dt_chem = HALF/W[i][j][k].dSwdU_max_diagonal();
                   dt[i][j][k] = min(dt_chem, dt[i][j][k]);
-                  // cout<<"\n ("<<i<<","<<j<<","<<k<<")= "<<dt[i][j][k]<<endl;
-               }	  
+               } /* endif */
                
                dtMin = min(dtMin,  dt[i][j][k]);
-
-	        
-               
             } /* endif */
-            
          } /* endfor */
    
    for ( k  =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k ) 
@@ -1529,8 +1862,6 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
                 j <  JCl || j >  JCu || 
                 k <  KCl || k >  KCu) {
                dt[i][j][k] = dtMin;
-	       
-	       //cout<<"\n ("<<i<<","<<j<<","<<k<<")= "<<dt[i][j][k]<<endl;
             } /* endif */
          } /* endfor */
    
@@ -1548,8 +1879,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
  *                                                      *
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-   void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Set_Global_TimeStep(
-      const double &Dt_min) {
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Set_Global_TimeStep(const double &Dt_min) {
    
    int i, j, k;
 
@@ -1559,7 +1889,90 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
             dt[i][j][k] = Dt_min;
          } /* endfor */
       } /* endfor */
-   }/*endfor */
+   } /*endfor */
+
+}
+
+/********************************************************
+ * Routine: L1_Norm_Residual                            *
+ *                                                      *
+ * Determines the L1-norm of the solution residual for  *
+ * the specified hexahedral solution block.             *
+ * Useful for monitoring convergence of the solution    *
+ * for steady state problems.                           *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::L1_Norm_Residual(void) {
+   
+    int i, j, k;
+    double l1_norm;
+
+    l1_norm = ZERO;
+    for ( k  =  KCl ; k <=  KCu ; ++k ) 
+       for ( j  =  JCl ; j <=  JCu ; ++j ) 
+          for ( i =  ICl ; i <=  ICu ; ++i ) {
+             l1_norm += fabs( abs(dUdt[i][j][k][0].rhov));
+          } /* endfor */
+
+    return (l1_norm);
+    
+}
+
+/********************************************************
+ * Routine: L2_Norm_Residual                            *
+ *                                                      *
+ * Determines the L2-norm of the solution residual for  *
+ * the specified hexahedral solution block.             *
+ * Useful for monitoring convergence of the solution    *
+ * for steady state problems.                           *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::L2_Norm_Residual(void) {
+
+   int i, j, k;
+   double l2_norm;
+   
+   l2_norm = ZERO;
+   
+   for ( k  =  KCl ; k <=  KCu ; ++k ) 
+      for ( j  =  JCl ; j <=  JCu ; ++j ) 
+         for ( i =  ICl ; i <=  ICu ; ++i ) {
+            l2_norm += sqr( abs(dUdt[i][j][k][0].rhov));
+         } /* endfor */
+   
+   l2_norm = sqrt(l2_norm);
+   
+   return (l2_norm);
+   
+}
+
+/********************************************************
+ * Routine: Max_Norm_Residual                           *
+ *                                                      *
+ * Determines the maximum norm of the solution residual *
+ * for the specified hexahedral solution block.         *
+ * Useful for monitoring convergence of the solution    *
+ * for steady state problems.                           *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Max_Norm_Residual(void) {
+
+   int i, j, k;
+   double max_norm;
+
+   max_norm = ZERO;
+   for ( k  =  KCl ; k <=  KCu ; ++k ) 
+      for ( j  =  JCl ; j <=  JCu ; ++j ) 
+         for ( i =  ICl ; i <=  ICu ; ++i ) {
+            max_norm = max(max_norm, fabs( abs(dUdt[i][j][k][0].rhov)));
+            
+         } /* endfor */
+   
+   return (max_norm);
+   
 }
 
 /********************************************************
@@ -1570,19 +1983,16 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
  *                                                      *
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-   int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::WtoU(void) {
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::WtoU(void) {
    for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) 
       for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) 
          for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-            
             U[i][j][k]= W[i][j][k].U();
-            
          }// convert W to U 
    
    return (0);
    
 }
-
 
 /********************************************************
  * Routine: Linear_Reconstruction_LeastSquares          *
@@ -1596,13 +2006,13 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
  *                                                      *
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-   void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Linear_Reconstruction_LeastSquares
-   (const int Limiter) {
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Linear_Reconstruction_LeastSquares(const int Limiter) {
    
    int i, j, k;
    
    /* Carry out the limited solution reconstruction in
       each cell of the computational mesh. */
+
    for ( k  =  KCl- Nghost+1 ; k <=  KCu+ Nghost-1 ; ++k ) 
       for ( j  =  JCl- Nghost+1 ; j <=  JCu+ Nghost-1 ; ++j ) 
          for ( i =  ICl- Nghost+1 ; i <=  ICu+ Nghost-1 ; ++i ) {
@@ -1610,6 +2020,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
          } /* endfor */
    
 }
+
 /********************************************************
  * Routine: Linear_Reconstruction_LeastSquares          *
  *                                                      *
@@ -1623,12 +2034,10 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
  *                                                      *
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-   void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
-   Linear_Reconstruction_LeastSquares(
-      const int i, 
-      const int j,
-      const int k,
-      const int Limiter) {
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Linear_Reconstruction_LeastSquares(const int i, 
+									      const int j,
+									      const int k,
+									      const int Limiter) {
    
    int n, n2, n_pts, i_index[26], j_index[26], k_index[26];
    double u0Min, u0Max, uHexa[6], PHI;
@@ -1647,13 +2056,10 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
    Vector3D dX_neigbor;
 
    int num=0;
-
    
    if (i ==  ICl- Nghost || i ==  ICu+ Nghost ||
        j ==  JCl- Nghost || j ==  JCu+ Nghost || 
-       k ==  KCl- Nghost || k ==  KCu+ Nghost       
-       
-       ){
+       k ==  KCl- Nghost || k ==  KCu+ Nghost) {
       n_pts = 0;
    } else {
       n_pts = 26;
@@ -1686,10 +2092,8 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
       i_index[23] = i-1; j_index[23] = j+1; k_index[23] = k+1;
       i_index[24] = i  ; j_index[24] = j+1; k_index[24] = k+1;
       i_index[25] = i+1; j_index[25] = j+1; k_index[25] = k+1;
-
-   }    
- 
-    
+   } /* endif */
+     
    if (n_pts > 0) {
       DUDx_ave.Vacuum();
       DUDy_ave.Vacuum();
@@ -1735,21 +2139,21 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
       // (1) Either write a linear solver for 3x3 linear system
       // (2) Or simplely use cramer's rule for this simple system
 
-      D =DxDx_ave*(DyDy_ave* DzDz_ave  -  DyDz_ave*DyDz_ave) + 
-         DxDy_ave*(DxDz_ave*DyDz_ave - DxDy_ave*DzDz_ave)+
-         DxDz_ave*(DxDy_ave*DyDz_ave - DxDz_ave*DyDy_ave);
+      D = DxDx_ave*(DyDy_ave* DzDz_ave - DyDz_ave*DyDz_ave) + 
+          DxDy_ave*(DxDz_ave*DyDz_ave - DxDy_ave*DzDz_ave)+
+          DxDz_ave*(DxDy_ave*DyDz_ave - DxDz_ave*DyDy_ave);
       
-      D1 = DUDx_ave*(DyDy_ave* DzDz_ave  -  DyDz_ave*DyDz_ave) + 
-         DUDy_ave*(DxDz_ave*DyDz_ave - DxDy_ave*DzDz_ave)+
-         DUDz_ave*(DxDy_ave*DyDz_ave - DxDz_ave*DyDy_ave);
+      D1 = DUDx_ave*(DyDy_ave* DzDz_ave - DyDz_ave*DyDz_ave) + 
+           DUDy_ave*(DxDz_ave*DyDz_ave - DxDy_ave*DzDz_ave)+
+           DUDz_ave*(DxDy_ave*DyDz_ave - DxDz_ave*DyDy_ave);
       
-      D2 =DxDx_ave*(DUDy_ave* DzDz_ave  -  DUDz_ave*DyDz_ave) + 
-         DxDy_ave*(DxDz_ave*DUDz_ave - DUDx_ave*DzDz_ave)+
-         DxDz_ave*(DUDx_ave*DyDz_ave - DxDz_ave*DUDy_ave);
+      D2 =DxDx_ave*(DUDy_ave* DzDz_ave - DUDz_ave*DyDz_ave) + 
+          DxDy_ave*(DxDz_ave*DUDz_ave - DUDx_ave*DzDz_ave)+
+          DxDz_ave*(DUDx_ave*DyDz_ave - DxDz_ave*DUDy_ave);
 
-      D3 =DxDx_ave*(DyDy_ave* DUDz_ave  -  DyDz_ave*DUDy_ave) + 
-         DxDy_ave*(DUDx_ave*DyDz_ave - DxDy_ave*DUDz_ave)+
-         DxDz_ave*(DxDy_ave*DUDy_ave - DUDx_ave*DyDy_ave);
+      D3 =DxDx_ave*(DyDy_ave* DUDz_ave - DyDz_ave*DUDy_ave) + 
+          DxDy_ave*(DUDx_ave*DyDz_ave - DxDy_ave*DUDz_ave)+
+          DxDz_ave*(DxDy_ave*DUDy_ave - DUDx_ave*DyDy_ave);
 
       dWdx[i][j][k] = D1/D;
       dWdy[i][j][k] = D2/D;
@@ -1830,7 +2234,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
 	     phi[i][j][k][n] = PHI;
                         
          } /* endfor */
-      }//end limiter if
+      } /* endif */
    } else {
        dWdx[i][j][k].Vacuum();
        dWdy[i][j][k].Vacuum();
@@ -1851,10 +2255,8 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
  *                                                      *
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-   int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::dUdt_Multistage_Explicit(
-      const int i_stage,
-      Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
-
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::dUdt_Multistage_Explicit(const int i_stage,
+                                                                   Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 
    int i, j, k,  k_residual;
    double omega; 
@@ -1905,9 +2307,6 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
       k_residual = 0;
       break;
    } /* endswitch */
-   
-         
-         
 
    /* Perform the linear reconstruction within each cell
       of the computational grid for this stage. */
@@ -1924,8 +2323,6 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
       break;
    } /* endswitch */
 
-
-   
    /* Evaluate the time rate of change of the solution
       (i.e., the solution residuals) using a second-order
       limited upwind scheme with a variety of flux functions. */
@@ -2040,19 +2437,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
                   Wr =  W[i+1][j][k] +
                      ( phi[i+1][j][k]^ dWdx[i+1][j][k])*dX.x +
                      ( phi[i+1][j][k]^ dWdy[i+1][j][k])*dX.y +
-                     ( phi[i+1][j][k]^ dWdz[i+1][j][k])*dX.z;
-
-
-/*                   if(i==2 && j==3 && k==4){ */
-/*                      cout<<"\n ( "<<i<<", "<<j<<", "<<k<<")  Wl = "<<Wl[1]<<"  Wr = "<<Wr[1]<<endl; */
-/*                   } */
-                  
-/*                   if(i==3 && j==3 && k==4){ */
-/*                      cout<<"\n ( "<<i<<", "<<j<<", "<<k<<")  Wl = "<<Wl[1]<<"  Wr = "<<Wr[1]<<endl; */
-/*                   } */
-
-
-                  
+                     ( phi[i+1][j][k]^ dWdz[i+1][j][k])*dX.z;                  
                } /* endif */
                
                
@@ -2112,18 +2497,6 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
       } /* endfor */
    } /* endfor */
 
-
-//   for ( i =  ICl ; i <=  ICu ; ++i ) 
-//      for ( j  =  JCl-1 ; j <=  JCu ; ++j ) 
-   //        for ( k =  KCl ; k <=  KCu ; ++k ){
-        /*     cout.setf(std::ios_base::scientific, std::ios_base::floatfield); */
-/*             cout.precision(std::numeric_limits<double>::digits10);  */
-/*             cout<<"\n I direction dUdt ("<<3<<", "<<3<<","<<4<<")= "<< dUdt[3][3][4][k_residual][1]<<endl;   */
-/*             cout<<"\n I direction dUdt ("<<2<<", "<<3<<","<<3<<")= "<< dUdt[2][3][3][k_residual][1]<<endl;   */
-//            cout<<"\n  norm east face  ("<<3<<", "<<3<<","<<4<<")= "<<Grid.nfaceE(i, j, k)<<endl;
-            
- //      }
-   
    // Add j-direction (eta-direction) fluxes.
    for ( k =  KCl ; k <=  KCu ; ++k ){
       for ( i =  ICl ; i <=  ICu ; ++i ) {
@@ -2142,18 +2515,11 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
                   ( phi[i][j+1][k]^ dWdz[i][j+1][k])*dX.z;
                if ( Grid.BCtypeS[i][k] == BC_REFLECTION) {
                   Wl =  SOLN_pSTATE::Reflect(Wr,  Grid.nfaceS(i, j+1, k));
-
-               /*    if(i==3 && j==4 && k==4){ */
-/*                      cout.setf(std::ios_base::scientific, std::ios_base::floatfield); */
-/*                      cout.precision(std::numeric_limits<double>::digits10);  */
-/*                      cout<<"\n ( "<<i<<", "<<j<<", "<<k<<")  Wl = "<<Wl[1]<<"  Wr = "<<Wr[1]<<endl; */
-/*                   } */
                }
                if ( Grid.BCtypeS[i][k] == BC_NO_SLIP) {
                   Wl =  SOLN_pSTATE::No_Slip(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
                                              IPs.Pressure_Gradient,
                                              FIXED_TEMPERATURE_WALL);
-                  
                }
                if ( Grid.BCtypeS[i][k] == BC_MOVING_WALL) {
                   Wl =  SOLN_pSTATE::Moving_Wall(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
@@ -2166,7 +2532,6 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
                        ( Grid.BCtypeN[i][k] == BC_REFLECTION ||
                          Grid.BCtypeN[i][k] == BC_NO_SLIP||
                          Grid.BCtypeN[i][k] == BC_MOVING_WALL)) {
-               
                dX =  Grid.xfaceN(i, j, k)- Grid.Cell[i][j][k].Xc;
                Wl =  W[i][j][k] +
                   ( phi[i][j][k]^ dWdx[i][j][k])*dX.x+
@@ -2174,14 +2539,6 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
                   ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
                if ( Grid.BCtypeN[i][k] == BC_REFLECTION) {
                   Wr =  SOLN_pSTATE::Reflect(Wl,  Grid.nfaceN(i, j, k));
-
-
-               /*    if(i==3 && j==4 && k==4){ */
-/*                      cout.setf(std::ios_base::scientific, std::ios_base::floatfield); */
-/*                      cout.precision(std::numeric_limits<double>::digits10);  */
-/*                      cout<<"\n ( "<<i<<", "<<j<<", "<<k<<")  Wl = "<<Wl[1]<<"  Wr = "<<Wr[1]<<endl; */
-/*                   } */
-
                }
                if ( Grid.BCtypeN[i][k] == BC_NO_SLIP) {
                   Wr =  SOLN_pSTATE::No_Slip(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
@@ -2206,22 +2563,6 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
                   ( phi[i][j+1][k]^ dWdx[i][j+1][k])*dX.x +
                   ( phi[i][j+1][k]^ dWdy[i][j+1][k])*dX.y +
                   ( phi[i][j+1][k]^ dWdz[i][j+1][k])*dX.z;
-
-
-
-/*                if(i==3 && j==2 && k==4){ */
-/*                   cout.setf(std::ios_base::scientific, std::ios_base::floatfield); */
-/*                   cout.precision(std::numeric_limits<double>::digits10);  */
-/*                   cout<<"\n ( "<<i<<", "<<j<<", "<<k<<")  Wl = "<<Wl[1]<<"  Wr = "<<Wr[1]<<endl; */
-/*                } */
-               
-/*                if(i==3 && j==4 && k==4){ */
-/*                   cout.setf(std::ios_base::scientific, std::ios_base::floatfield); */
-/*                   cout.precision(std::numeric_limits<double>::digits10);  */
-/*                   cout<<"\n else ( "<<i<<", "<<j<<", "<<k<<")  Wl = "<<Wl[1]<<"  Wr = "<<Wr[1]<<endl; */
-/*                } */
-
-
             } /* endif */
             
             switch(IPs.i_Flux_Function) {
@@ -2238,27 +2579,6 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
             
             /* Evaluate cell-averaged solution changes. */
 
-
-
-/*             if(i==3 && j==2 && k==4){ */
-/*                cout.setf(std::ios_base::scientific, std::ios_base::floatfield); */
-/*                cout.precision(std::numeric_limits<double>::digits10);  */
-/*                cout<<"\n ( "<<i<<", "<<j<<", "<<k<<")  Flux = "<<Flux[1]<<endl; */
-
-/*                cout<<"\n constributing to the 3 3 4 cell "<<(IPs.CFL_Number* dt[i][j+1][k])* */
-/*                Flux* Grid.AfaceS(i, j+1, k)/Grid.volume(i, j+1, k); */
-/*             } */
-            
-/*             if(i==3 && j==3 && k==4){ */
-/*                cout.setf(std::ios_base::scientific, std::ios_base::floatfield); */
-/*                cout.precision(std::numeric_limits<double>::digits10);  */
-/*                cout<<"\n  ( "<<i<<", "<<j<<", "<<k<<")  Flux = "<<Flux[1]<<endl; */
-/*                cout<<"\n constributing to itself  cell "<<-(IPs.CFL_Number* dt[i][j][k])*Flux* Grid.AfaceN(i, j, k)/Grid.volume(i, j, k); */
-
-
-/*             } */
-
-            
             dUdt[i][j][k][k_residual] -=
                (IPs.CFL_Number* dt[i][j][k])*
                Flux* Grid.AfaceN(i, j, k)/
@@ -2286,14 +2606,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
  
       } /* endfor */
    }/* endfor */
-   
-        
-/*    cout.setf(std::ios_base::scientific, std::ios_base::floatfield); */
-/*    cout.precision(std::numeric_limits<double>::digits10);  */
-/*    cout<<"\n IJ direction dUdt ("<<3<<", "<<3<<","<<4<<")= "<< dUdt[3][3][4][k_residual][1]<<endl;   */
-/*    cout<<"\n IJ direction dUdt ("<<2<<", "<<3<<","<<3<<")= "<< dUdt[2][3][3][k_residual][1]<<endl;   */
-
-           //      }
+           
    // Add k-direction (gamma-direction) fluxes.
    for ( i =  ICl; i <=  ICu ; ++i ){
       for ( j  =  JCl ; j <=  JCu ; ++j ){
@@ -2401,16 +2714,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
       } /* endfor */
    }/* endfor */
    
- /*   cout.setf(std::ios_base::scientific, std::ios_base::floatfield); */
-/*    cout.precision(std::numeric_limits<double>::digits10);  */
-/*    cout<<"\n IJK direction dUdt ("<<3<<", "<<3<<","<<4<<")= "<< dUdt[3][3][4][k_residual][1]<<endl;   */
-/*    cout<<"\n IJK direction dUdt ("<<2<<", "<<3<<","<<3<<")= "<< dUdt[2][3][3][k_residual][1]<<endl;   */
-/*    /\* Residual for the stage successfully calculated. *\/ */
-   
-  
-          
-
-    return (0);
+   return (0);
     
 }
 
@@ -2423,10 +2727,8 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
  *                                                      *
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-   int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
-Update_Solution_Multistage_Explicit(
-   const int i_stage,
-   Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Update_Solution_Multistage_Explicit(const int i_stage,
+                                                                              Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
    
    int i, j, k,  k_residual;
    double omega;
@@ -2489,14 +2791,6 @@ Update_Solution_Multistage_Explicit(
                              
                //N-1 species
                U[i][j][k][NUM_VAR_3D] = U[i][j][k].rho*(ONE - U[i][j][k].sum_species());
-               // cout<<"\n sum_species = "<<U[i][j][k].sum_species()<<endl;
-      //         if(( i==3 && j==3 && k==4) ||  (i==2 && j==3 &&k==3))    {
-                  
-      //         cout.setf(std::ios_base::scientific, std::ios_base::floatfield);
-      //         cout.precision(std::numeric_limits<double>::digits10);
-      //         cout<<"\n dUdt ("<<i<<", "<<j<<","<<k<<")= "<< dUdt[i][j][k][k_residual][1]<<endl;
-      //         }
-            
             }
             
             Uo[i][j][k].negative_speccheck( Uo[i][j][k], W[i][j][k].React.reactset_flag );
@@ -2515,7 +2809,6 @@ Update_Solution_Multistage_Explicit(
             } 
                           
             W[i][j][k] = U[i][j][k].W();
-            //  cout<<"\n W ("<<i<<", "<<j<<","<<k<<")= "<<W[i][j][k][1]<<endl;
             
          } /* endfor */    	 
       } /* endfor */    
@@ -2523,344 +2816,100 @@ Update_Solution_Multistage_Explicit(
     
     /* Deallocate memory for linear system solver. */
 
- 
    /* Solution successfully updated. */
     
    return (0);   
-}
 
-/********************************************************
- * Routine: Output_Tecplot                              *
- *                                                      *
- * Writes the solution values at the nodes of the       *
- * specified hexadedral solution block to the           *
- * specified output stream suitable for plotting with   *
- * TECPLOT.                                             *
- *                                                      *
- ********************************************************/
-template<class SOLN_pSTATE, class SOLN_cSTATE>
-void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Output_Tecplot(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
-                                                          const int Number_of_Time_Steps,
-                                                          const double &Time,
-                                                          const int Block_Number,
-                                                          const int Output_Title,
-                                                          ostream &Out_File) {
-
-   int i, j, k;
-   SOLN_pSTATE W_node;
-   
-   /* Ensure boundary conditions are updated before
-      evaluating solution at the nodes. */
-   
-   BCs(IPs);
-   
-   /* Output nodal solution data. */
-   
-   Out_File << setprecision(14);
-   if (Output_Title) {
-      Out_File << "TITLE = \"" << CFFC_Name() << ": 3D Solution, "
-               << "Time Step/Iteration Level = " << Number_of_Time_Steps
-               << ", Time = " << Time
-               << "\"" << "\n"
-               << "VARIABLES = \"x\" \\ \n"
-               << "\"y\" \\ \n"
-               << "\"z\" \\ \n"
-               << "\"rho\" \\ \n"
-               << "\"u\" \\ \n"
-               << "\"v\" \\ \n"
-               << "\"w\" \\ \n"
-               << "\"p\" \\ \n";
-      //n species mass fractions names
-      for (int i =0 ;i<W[0][0][0].ns ;i++) {
-         Out_File <<"\"c_"<<W[0][0][0].specdata[i].Speciesname()<<"\" \\ \n";
-      }
-      
-      Out_File <<"\"T\" \\ \n";
-      
-      Out_File<< "ZONE T =  \"Block Number = " << Block_Number
-              << "\" \\ \n"
-              << "I = " << Grid.INu -  Grid.INl + 1 << " \\ \n"
-              << "J = " << Grid.JNu -  Grid.JNl + 1 << " \\ \n"
-              << "K = " << Grid.KNu -  Grid.KNl + 1 << " \\ \n"
-              << "DATAPACKING = POINT \n";
-      
-   } else {
-      Out_File << "ZONE T =  \"Block Number = " << Block_Number
-               << "\" \\ \n"
-               << "I = " << Grid.INu - Grid.INl + 1 << " \\ \n"
-               << "J = " << Grid.JNu - Grid.JNl + 1 << " \\ \n"
-               << "K = " << Grid.KNu - Grid.KNl + 1 << " \\ \n"
-               << "DATAPACKING = POINT \n";              
-   } /* endif */
-   
-   
-   for ( k  =  Grid.KNl ; k <=  Grid.KNu ; ++k ) {
-      for ( j  =  Grid.JNl ; j <=  Grid.JNu ; ++j ) {
-         for ( i =  Grid.INl ; i <=  Grid.INu ; ++i ) {
-            W_node = Wn(i, j, k);
-            Out_File << " "  << Grid.Node[i][j][k].X << W_node;
-            Out_File.setf(ios::scientific);
-            Out_File << " " << W_node.T() << "\n";
-            Out_File.unsetf(ios::scientific);
-         } /* endfor */
-      } /* endfor */
-   } /* endfor */
-
-   Out_File << setprecision(6);
-    
-}
-
-/********************************************************
- * Routine: Output_Cells_Tecplot                        *
- *                                                      *
- * Writes the cell centred solution values of the       *
- * specified hexadedral solution block to the           *
- * specified output stream suitable for plotting with   *
- * TECPLOT.                                             *
- *                                                      *
- ********************************************************/
-template<class SOLN_pSTATE, class SOLN_cSTATE>
-void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Output_Cells_Tecplot(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
-                                                                const int Number_of_Time_Steps,
-                                                                const double &Time,
-                                                                const int Block_Number,
-                                                                const int Output_Title,
-                                                                ostream &Out_File) {
-
-   int i, j, k;
-
-   /* Ensure boundary conditions are updated before
-      evaluating solution at the nodes. */
-  
-   BCs(IPs);
-
-   /* Output cell-centred solution data. */
-
-   Out_File << setprecision(14);
-
-   if (Output_Title) {
-      Out_File << "TITLE = \"" << CFFC_Name() << ": 3D Solution, "
-               << "Time Step/Iteration Level = " << Number_of_Time_Steps
-               << ", Time = " << Time
-               << "\"" << "\n"
-               << "VARIABLES = \"x\" \\ \n"
-               << "\"y\" \\ \n"
-               << "\"z\" \\ \n"
-               << "\"rho\" \\ \n"
-               << "\"u\" \\ \n"
-               << "\"v\" \\ \n"
-               << "\"w\" \\ \n"
-               << "\"p\" \\ \n";
-                
-      //n species mass fractions names
-      for (int i =0;i<W[0][0][0].ns ;i++) {
-         Out_File <<"\"c"<<W[0][0][0].specdata[i].Speciesname()<<"\" \\ \n";
-      }
-     
-      Out_File <<"\"T\" \\ \n";
-      Out_File <<"\"R\" \\ \n";
-
-      Out_File << "ZONE T =  \"Block Number = " << Block_Number
-               << "\" \\ \n"
-               << "I = " <<  ICu -  ICl + 2*Nghost +1 << " \\ \n"
-               << "J = " <<  JCu -  JCl + 2*Nghost +1 << " \\ \n"
-               << "K = " <<  KCu -  KCl + 2*Nghost +1 << " \\ \n"
-               << "DATAPACKING = POINT \n";
-   } else {
-      Out_File << "ZONE T =  \"Block Number = " << Block_Number
-               << "\" \\ \n"
-               << "I = " <<  Grid.ICu -  Grid.ICl + 2* Nghost + 1 << " \\ \n"
-               << "J = " <<  Grid.JCu -  Grid.JCl + 2* Nghost + 1 << " \\ \n"
-               << "K = " <<  Grid.KCu -  Grid.KCl + 2* Nghost + 1 << " \\ \n"
-               << "DATAPACKING = POINT \n";
-      
-   } /* endif */
-
-   for (k =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k) {
-      for (j  =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j ) {
-         for (i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i ) {
-            Out_File << " "  <<  Grid.Cell[i][j][k].Xc
-                     <<  W[i][j][k];
-            Out_File.setf(ios::scientific);
-            Out_File << " " <<  W[i][j][k].T() << " " <<W[i][j][k].Rtot()<< "\n";
-            Out_File.unsetf(ios::scientific);
-         } /* endfor */
-      } /* endfor */
-   } /* endfor */
-   
-   Out_File << setprecision(6);
-    
-}
-
-/********************************************************
- * Routine: Output_Nodes_Tecplot                        *
- *                                                      *
- * Writes the solution values at the nodes of the       *
- * specified hexadedral solution block to the           *
- * specified output stream suitable for plotting with   *
- * TECPLOT.                                             *
- *                                                      *
- ********************************************************/
-template<class SOLN_pSTATE, class SOLN_cSTATE>
-void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Output_Nodes_Tecplot(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
-                                                                const int Number_of_Time_Steps,
-                                                                const double &Time,
-                                                                const int Block_Number,
-                                                                const int Output_Title,
-                                                                ostream &Out_File) {
-
-   int i, j, k;
-   SOLN_pSTATE W_node;
-   
-   /* Ensure boundary conditions are updated before
-      evaluating solution at the nodes. */
-   
-   BCs(IPs);
-   
-   /* Output nodal solution data. */
-   
-   Out_File << setprecision(14);
-   if (Output_Title) {
-      Out_File << "TITLE = \"" << CFFC_Name() << ": 3D Solution, "
-               << "Time Step/Iteration Level = " << Number_of_Time_Steps
-               << ", Time = " << Time
-               << "\"" << "\n"
-               << "VARIABLES = \"x\" \\ \n"
-               << "\"y\" \\ \n"
-               << "\"z\" \\ \n"
-               << "\"rho\" \\ \n"
-               << "\"u\" \\ \n"
-               << "\"v\" \\ \n"
-               << "\"w\" \\ \n"
-               << "\"p\" \\ \n";
-      //n species mass fractions names
-      for (int i =0 ;i<W[0][0][0].ns ;i++) {
-         Out_File <<"\"c_"<<W[0][0][0].specdata[i].Speciesname()<<"\" \\ \n";
-      }
-      
-      Out_File <<"\"T\" \\ \n";
-      
-      Out_File<< "ZONE T =  \"Block Number = " << Block_Number
-              << "\" \\ \n"
-              << "I = " << Grid.INu - Grid.INl + 1 + 2 << " \\ \n"
-              << "J = " << Grid.JNu - Grid.JNl + 1 + 2 << " \\ \n"
-              << "K = " << Grid.KNu - Grid.KNl + 1 + 2 << " \\ \n"
-              << "DATAPACKING = POINT \n";
-      
-   } else {
-      Out_File << "ZONE T =  \"Block Number = " << Block_Number
-               << "\" \\ \n"
-               << "I = " << Grid.INu - Grid.INl + 1 + 2 << " \\ \n"
-               << "J = " << Grid.JNu - Grid.JNl + 1 + 2 << " \\ \n"
-               << "K = " << Grid.KNu - Grid.KNl + 1 + 2 << " \\ \n"
-               << "DATAPACKING = POINT \n";
-   } /* endif */
-   
-   
-   for ( k  = Grid.KNl - 1; k <= Grid.KNu + 1; ++k ) {
-      for ( j  = Grid.JNl - 1; j <= Grid.JNu + 1; ++j ) {
-         for ( i = Grid.INl - 1; i <= Grid.INu + 1; ++i ) {
-	    W_node = Wn(i, j, k);
-            Out_File << " "  << Grid.Node[i][j][k].X << W_node;
-            Out_File.setf(ios::scientific);
-            Out_File << " " << W_node.T() << "\n";
-            Out_File.unsetf(ios::scientific);
-         } /* endfor */
-      } /* endfor */
-   } /* endfor */
-
-   Out_File << setprecision(6);
-    
 }
 
 /**************************************************************************
- * Hexa_Block -- Input-output operators.                          *
+ * Hexa_Block -- Input-output operators.                                  *
  **************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-   ostream &operator << (ostream &out_file,
-                         const Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> &SolnBlk){
+ostream &operator << (ostream &out_file,
+                      const Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> &SolnBlk){
    
-   int i, j, k; 
    out_file << SolnBlk.Grid;
-   out_file << SolnBlk.NCi << " " << SolnBlk.ICl << " "<< SolnBlk.ICu 
-            << " " << SolnBlk.Nghost << "\n";
+   out_file << SolnBlk.NCi << " " << SolnBlk.ICl << " " << SolnBlk.ICu << "\n";
    out_file << SolnBlk.NCj << " " << SolnBlk.JCl << " " << SolnBlk.JCu << "\n";
    out_file << SolnBlk.NCk << " " << SolnBlk.KCl << " " << SolnBlk.KCu << "\n";
+   out_file << SolnBlk.Nghost << "\n";
   
-   if (SolnBlk.NCi == 0 || SolnBlk.NCj == 0 || SolnBlk.NCk == 0) 
+   if (SolnBlk.NCi == 0 || SolnBlk.NCj == 0 || SolnBlk.NCk == 0 || SolnBlk.Nghost == 0) 
       return(out_file);
    
-   for ( k=SolnBlk.KCl-SolnBlk.Nghost; k<= SolnBlk.KCu+SolnBlk.Nghost; ++k){
-      for(j= SolnBlk.JCl-SolnBlk.Nghost;j<= SolnBlk.JCu+SolnBlk.Nghost; ++j){
-         for(i=SolnBlk.ICl-SolnBlk.Nghost; i<= SolnBlk.ICu+SolnBlk.Nghost; ++i){
+   for (int k=SolnBlk.KCl-SolnBlk.Nghost; k<= SolnBlk.KCu+SolnBlk.Nghost; ++k) {
+      for(int j= SolnBlk.JCl-SolnBlk.Nghost; j<= SolnBlk.JCu+SolnBlk.Nghost; ++j) {
+         for(int i=SolnBlk.ICl-SolnBlk.Nghost; i<= SolnBlk.ICu+SolnBlk.Nghost; ++i) {
             out_file << SolnBlk.U[i][j][k] << "\n";
-            
          } /* endfor */
       } /* endfor */
    } /* endfor */
 
    // boundary values
-   for (int k = SolnBlk.KCl-SolnBlk.Nghost ; k<= SolnBlk.KCu+SolnBlk.Nghost; ++k )
-      for (int j = SolnBlk.JCl-SolnBlk.Nghost ; j<= SolnBlk.JCu+SolnBlk.Nghost; ++j ){
+   for (int k = SolnBlk.KCl-SolnBlk.Nghost ; k<= SolnBlk.KCu+SolnBlk.Nghost; ++k ) {
+      for (int j = SolnBlk.JCl-SolnBlk.Nghost ; j<= SolnBlk.JCu+SolnBlk.Nghost; ++j ) {
          out_file << SolnBlk.WoW[j][k] << "\n";
          out_file << SolnBlk.WoE[j][k] << "\n";
-      } /* endfor */ 
+      } /* endfor */
+   } /* endfor */
     
-   for ( int k = SolnBlk.KCl-SolnBlk.Nghost ; k <= SolnBlk.KCu+SolnBlk.Nghost ; ++k ) 
-      for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+   for (int k = SolnBlk.KCl-SolnBlk.Nghost ; k <= SolnBlk.KCu+SolnBlk.Nghost ; ++k ) {
+      for (int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
          out_file << SolnBlk.WoS[i][k] << "\n";
          out_file << SolnBlk.WoN[i][k] << "\n";
-         
       } /* endfor */
+   } /* endfor */
 
-  for ( int j = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) 
+   for ( int j = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
          out_file << SolnBlk.WoB[i][j] << "\n";
-         out_file << SolnBlk.WoT[i][j] << "\n";   
-         
-
+         out_file << SolnBlk.WoT[i][j] << "\n";
       } /* endfor */
+   } /* endfor */
     
-  return (out_file);
-}
+   return (out_file);
 
+}
 
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 istream &operator >> (istream &in_file,
-                         Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> &SolnBlk) {
+                      Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> &SolnBlk) {
    
-   int i, j, k, m, ni, il, iu, nj, jl, ju, nk, kl, ku, ng;
-   
+   int ni, il, iu, nj, jl, ju, nk, kl, ku, ng;
     
    // Grid3D_Hexa_Block New_Grid; in_file >> New_Grid;
    in_file>> SolnBlk.Grid;
    in_file.setf(ios::skipws);
-   in_file >> ni >> il >> iu >> ng; in_file >> nj >> jl >> ju;
+   in_file >> ni >> il >> iu;
+   in_file >> nj >> jl >> ju;
    in_file >> nk >> kl >> ku;
+   in_file >> ng;
    in_file.unsetf(ios::skipws);
    
-   if (ni == 0 || nj == 0 || nk == 0) {
-      SolnBlk.deallocate(); return(in_file);
+   if (ni == 0 || nj == 0 || nk == 0 || ng == 0) {
+      if (SolnBlk.Allocated) SolnBlk.deallocate(); 
+      return(in_file);
    } /* endif */
    
-   if (SolnBlk.U == NULL || SolnBlk.NCi != ni ||SolnBlk.NCj != nj
-       || SolnBlk.Nghost != ng || SolnBlk.NCk != nk) {
-      if (SolnBlk.U != NULL) SolnBlk.deallocate();
-      SolnBlk.allocate();
+   if (!SolnBlk.Allocated || SolnBlk.NCi != ni ||SolnBlk.NCj != nj
+       || SolnBlk.NCk != nk || SolnBlk.Nghost != ng) {
+      if (SolnBlk.Allocated) SolnBlk.deallocate();
+      SolnBlk.allocate(ni, nj, nk, ng);
    } /* endif */
 
    SOLN_cSTATE U_VACUUM;
    U_VACUUM.Vacuum();
    SOLN_pSTATE W_VACUUM;
    W_VACUUM.Vacuum();
-   
+
    // Copy_Hexa_Block(SolnBlk.Grid, New_Grid); New_Grid.deallocate();
-   for(k=SolnBlk.KCl-SolnBlk.Nghost; k<= SolnBlk.KCu+SolnBlk.Nghost ; ++k ){
-      for(j=SolnBlk.JCl-SolnBlk.Nghost; j<= SolnBlk.JCu+SolnBlk.Nghost; ++j) {
-         for(i=SolnBlk.ICl-SolnBlk.Nghost; i<= SolnBlk.ICu+SolnBlk.Nghost; ++i){
+   for (int k=SolnBlk.KCl-SolnBlk.Nghost; k<= SolnBlk.KCu+SolnBlk.Nghost ; ++k ) {
+      for (int j=SolnBlk.JCl-SolnBlk.Nghost; j<= SolnBlk.JCu+SolnBlk.Nghost; ++j) {
+         for (int i=SolnBlk.ICl-SolnBlk.Nghost; i<= SolnBlk.ICu+SolnBlk.Nghost; ++i) {
             in_file >> SolnBlk.U[i][j][k];
             SolnBlk.W[i][j][k] = SolnBlk.U[i][j][k].W();
-            for ( m = 0 ; m <= NUMBER_OF_RESIDUAL_VECTORS-1 ; ++m ) {
+            for (int m = 0 ; m <= NUMBER_OF_RESIDUAL_VECTORS-1 ; ++m ) {
                SolnBlk.dUdt[i][j][k][m] = U_VACUUM;
             } /* endfor */
             SolnBlk.dWdx[i][j][k] = W_VACUUM;
@@ -2874,37 +2923,35 @@ istream &operator >> (istream &in_file,
       } /* endfor */
    } /* endfor */
 
-
- // boundary values
-   for (int k = SolnBlk.KCl-SolnBlk.Nghost ; k<= SolnBlk.KCu+SolnBlk.Nghost; ++k )
-      for (int j = SolnBlk.JCl-SolnBlk.Nghost ; j<= SolnBlk.JCu+SolnBlk.Nghost; ++j ){
+   // boundary values
+   for (int k = SolnBlk.KCl-SolnBlk.Nghost ; k<= SolnBlk.KCu+SolnBlk.Nghost; ++k ) {
+      for (int j = SolnBlk.JCl-SolnBlk.Nghost ; j<= SolnBlk.JCu+SolnBlk.Nghost; ++j ) {
          in_file >> SolnBlk.WoW[j][k];
          in_file >> SolnBlk.WoE[j][k];
       } /* endfor */ 
+   } /* endfor */
     
-   for ( int k = SolnBlk.KCl-SolnBlk.Nghost ; k <= SolnBlk.KCu+SolnBlk.Nghost ; ++k ) 
+   for (int k = SolnBlk.KCl-SolnBlk.Nghost ; k <= SolnBlk.KCu+SolnBlk.Nghost ; ++k) {
       for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
          in_file >> SolnBlk.WoS[i][k];
          in_file >> SolnBlk.WoN[i][k];
-         
       } /* endfor */
+   } /* endfor */
 
-   for ( int j = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) 
+   for ( int j = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
          in_file >> SolnBlk.WoB[i][j] ;
          in_file >> SolnBlk.WoT[i][j] ;   
-         
-
       } /* endfor */
-
+   } /* endfor */
    
    return (in_file);
+
 }
 
-
-
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-   int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Wall_Shear(void){
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Wall_Shear(void) {
+
    // for Euler and NavierStokes ... 
    // do nothing
    return (0);
@@ -2912,21 +2959,21 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
 }
 
 /*******************************************************************************
- * Hexa_Block::LoadSendBuffer -- Loads send message buffer.            *
+ * Hexa_Block::LoadSendBuffer -- Loads send message buffer.                    *
  *******************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::LoadSendBuffer(double *buffer,
-                                              int &buffer_count,
-                                              const int buffer_size,
-                                              const int i_min, 
-                                              const int i_max,
-                                              const int i_inc,
-                                              const int j_min, 
-                                              const int j_max,
-                                                       const int j_inc,
-						       const int k_min, 
-                                                       const int k_max,
-                                                       const int k_inc) {
+                                                         int &buffer_count,
+                                                         const int buffer_size,
+                                                         const int i_min, 
+                                                         const int i_max,
+                                                         const int i_inc,
+                                                         const int j_min, 
+                                                         const int j_max,
+                                                         const int j_inc,
+						         const int k_min, 
+                                                         const int k_max,
+                                                         const int k_inc) {
   int i, j, k,t;
   for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) 
     for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
@@ -2939,56 +2986,61 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::LoadSendBuffer(double *buffer,
         } /* endfor */
      } /* endfor */
   } /* endfor */
+
   return(0);
+
 }
 
 /*******************************************************************************
- * Hexa_Block::LoadSendBuffer_F2C -- Loads send message buffer for     *
- *                                           fine to coarse block message      *
- *                                           passing.                          *
+ * Hexa_Block::LoadSendBuffer_F2C -- Loads send message buffer for             *
+ *                                   fine to coarse block message passing.     *
  *******************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::LoadSendBuffer_F2C(double *buffer,
-                                                  int &buffer_count,
-                                                  const int buffer_size,
-                                                  const int i_min, 
-                                                  const int i_max,
-                                                  const int i_inc,
-                                                  const int j_min, 
-                                                  const int j_max,
-                                                       const int j_inc,
-						       const int k_min, 
-                                                       const int k_max,
-                                                       const int k_inc) {
-   cout<< "\nError: LoadSendBuffer_F2C() is not written for Hexa"; cout.flush();
-return(2); 
+                                                             int &buffer_count,
+                                                             const int buffer_size,
+                                                             const int i_min, 
+                                                             const int i_max,
+                                                             const int i_inc,
+                                                             const int j_min, 
+                                                             const int j_max,
+                                                             const int j_inc,
+					               	     const int k_min, 
+                                                             const int k_max,
+                                                             const int k_inc) {
+
+   cout << "\nError: LoadSendBuffer_F2C() is not written for Hexa"; cout.flush();
+
+   return(2); 
+
 }
 
 /*******************************************************************************
- * Hexa_Block::LoadSendBuffer_C2F -- Loads send message buffer for     *
- *                                           coarse to fine block message      *
- *                                           passing.                          *
+ * Hexa_Block::LoadSendBuffer_C2F -- Loads send message buffer for             *
+ *                                   coarse to fine block message passing.     *
  *******************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::LoadSendBuffer_C2F(double *buffer,
-                                                  int &buffer_count,
-                                                  const int buffer_size,
-                                                  const int i_min, 
-                                                  const int i_max,
-                                                  const int i_inc,
-                                                  const int j_min, 
-                                                  const int j_max,
-                                                       const int j_inc,
-						       const int k_min, 
-                                                       const int k_max,
-                                                       const int k_inc) {
-   cout<< "\nError: LoadSendBuffer_C2F() is not written for Hexa"; cout.flush();
-return(2); 
+                                                             int &buffer_count,
+                                                             const int buffer_size,
+                                                             const int i_min, 
+                                                             const int i_max,
+                                                             const int i_inc,
+                                                             const int j_min, 
+                                                             const int j_max,
+                                                             const int j_inc,
+						             const int k_min, 
+                                                             const int k_max,
+                                                             const int k_inc) {
+
+   cout << "\nError: LoadSendBuffer_C2F() is not written for Hexa"; cout.flush();
+
+   return(2); 
 
 }
 
 /*******************************************************************************
- * Hexa_Block::UnloadReceiveBuffer -- Unloads receive message buffer.  *
+ * Hexa_Block::UnloadReceiveBuffer -- Unloads receive message buffer.          *
  *******************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::UnloadReceiveBuffer(double *buffer,
@@ -3004,110 +3056,112 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::UnloadReceiveBuffer(double *buffer,
                                                        const int k_max,
                                                        const int k_inc) {
 
-   int i, j,k;
-  for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) 
-    for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-     for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-        for ( int nV = 1 ; nV <=NumVar() ; ++ nV) {
-           buffer_count = buffer_count + 1;
-           if (buffer_count >= buffer_size) return(1);    
-           U[i][j][k][nV] = buffer[buffer_count];
-        }
-        W[i][j][k] = U[i][j][k].W();
+  int i, j,k;
+  for (k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc) {
+     for (j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc) {
+        for (i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc) {
+           for (int nV = 1 ; nV <=NumVar() ; ++ nV) {
+              buffer_count = buffer_count + 1;
+              if (buffer_count >= buffer_size) return(1);    
+              U[i][j][k][nV] = buffer[buffer_count];
+           } /* endfor */
+           W[i][j][k] = U[i][j][k].W();
+        } /* endfor */
      } /* endfor */
-  } /* endfor */
-
+  } /* endfor */ 
 
   return(0);
 
 }
 
 /*******************************************************************************
- * Hexa_Block::UnloadReceiveBuffer_F2C -- Unloads receive message      *
- *                                                buffer for fine to coarse    *
- *                                                block message passing.       *
+ * Hexa_Block::UnloadReceiveBuffer_F2C -- Unloads receive message buffer for   *
+ *                                        fine to coarse block message passing.*
  *******************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::UnloadReceiveBuffer_F2C(double *buffer,
-                                                       int &buffer_count,
-                                                       const int buffer_size,
-                                                       const int i_min, 
-                                                       const int i_max,
-                                                       const int i_inc,
-                                                       const int j_min, 
-                                                       const int j_max,
-                                                       const int j_inc,
-						       const int k_min, 
-                                                       const int k_max,
-                                                       const int k_inc) {
+                                                                  int &buffer_count,
+                                                                  const int buffer_size,
+                                                                  const int i_min, 
+                                                                  const int i_max,
+                                                                  const int i_inc,
+                                                                  const int j_min, 
+                                                                  const int j_max,
+                                                                  const int j_inc,
+						                  const int k_min, 
+                                                                  const int k_max,
+                                                                  const int k_inc) {
 
-   cout<< "\nError: UnloadReceiveBuffer_F2C() is not written for Hexa"; cout.flush();
-return(2); 
+   cout << "\nError: UnloadReceiveBuffer_F2C() is not written for Hexa"; cout.flush();
+
+   return(2); 
 
 }
 
 /*******************************************************************************
- * Hexa_Block::UnloadReceiveBuffer_C2F -- Unloads receive message      *
- *                                                buffer for coarse to fine    *
- *                                                block message passing.       *
+ * Hexa_Block::UnloadReceiveBuffer_C2F -- Unloads receive message buffer for   *
+ *                                        coarse to fine block message passing.*
  *******************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::UnloadReceiveBuffer_C2F(double *buffer,
-                                                       int &buffer_count,
-                                                       const int buffer_size,
-                                                       const int i_min, 
-                                                       const int i_max,
-                                                       const int i_inc,
-                                                       const int j_min, 
-                                                       const int j_max,
-                                                       const int j_inc,
-						       const int k_min, 
-                                                       const int k_max,
-                                                       const int k_inc) {
-   cout<< "\nError: UnloadReceiveBuffer_C2F() is not written for Hexa"; cout.flush();
-return(2);
+                                                                  int &buffer_count,
+                                                                  const int buffer_size,
+                                                                  const int i_min, 
+                                                                  const int i_max,
+                                                                  const int i_inc,
+                                                                  const int j_min, 
+                                                                  const int j_max,
+                                                                  const int j_inc,
+						                  const int k_min, 
+                                                                  const int k_max,
+                                                                  const int k_inc) {
+
+   cout << "\nError: UnloadReceiveBuffer_C2F() is not written for Hexa"; cout.flush();
+
+   return(2);
 
 }
 
 /**************************************************************************
- * Hexa_Block::SubcellReconstruction --                           *
- *               Performs the subcell reconstruction of solution state    *
- *               within a given cell (i,j) of the computational mesh for  *
- *               the specified hexarilateral solution block.              *
+ * Hexa_Block::SubcellReconstruction --                                   *
+ *             Performs the subcell reconstruction of solution stat  e    *
+ *             within a given cell (i,j,k) of the computational mesh for  *
+ *             the specified hexahedral solution block.                   *
  **************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::SubcellReconstruction(const int i, 
-                                                      const int j,
-                                                      const int k,
-                                                      const int Limiter) {
+                                                                 const int j,
+                                                                 const int k,
+                                                                 const int Limiter) {
 
-  cout<< "\nError: SubcellReconstruction() is not written for Hexa"; cout.flush();
-return;
+  cout << "\nError: SubcellReconstruction() is not written for Hexa"; cout.flush();
 
+  return;
     
 }
 
 /*******************************************************************************
- * Hexa_Block::LoadSendBuffer_Flux_F2C -- Loads send message buffer for*
- *                                                fine to coarse block message *
- *                                                passing of conservative      *
- *                                                solution fluxes.             *
+ * Hexa_Block::LoadSendBuffer_Flux_F2C -- Loads send message buffer for        *
+ *                                        fine to coarse block message passing *
+ *                                        of conservative solution fluxes.     *
  *******************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::LoadSendBuffer_Flux_F2C(double *buffer,
-                                                       int &buffer_count,
-                                                       const int buffer_size,
-                                                       const int i_min, 
-                                                       const int i_max,
-                                                       const int i_inc,
-                                                       const int j_min, 
-                                                       const int j_max,
-                                                       const int j_inc,
-						       const int k_min, 
-                                                       const int k_max,
-                                                       const int k_inc) {
-   cout<< "\nError: LoadSendBuffer_Flux_F2C() is not written for Hexa"; cout.flush();
-return(2);
+                                                                  int &buffer_count,
+                                                                  const int buffer_size,
+                                                                  const int i_min, 
+                                                                  const int i_max,
+                                                                  const int i_inc,
+                                                                  const int j_min, 
+                                                                  const int j_max,
+                                                                  const int j_inc,
+	       					                  const int k_min, 
+                                                                  const int k_max,
+                                                                  const int k_inc) {
+
+   cout << "\nError: LoadSendBuffer_Flux_F2C() is not written for Hexa"; cout.flush();
+
+   return(2);
 
 
 }
@@ -3120,20 +3174,22 @@ return(2);
  *******************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::UnloadReceiveBuffer_Flux_F2C(double *buffer,
-                                                            int &buffer_count,
-                                                            const int buffer_size,
-                                                            const int i_min, 
-                                                            const int i_max,
-                                                            const int i_inc,
-                                                            const int j_min, 
-                                                            const int j_max,
-                                                       const int j_inc,
-						       const int k_min, 
-                                                       const int k_max,
-                                                       const int k_inc) {
-   cout<< "\nError: UnloadReceiveBuffer_Flux_F2C() is not written for Hexa"; cout.flush();
-return(2);
+                                                                       int &buffer_count,
+                                                                       const int buffer_size,
+                                                                       const int i_min, 
+                                                                       const int i_max,
+                                                                       const int i_inc,
+                                                                       const int j_min, 
+                                                                       const int j_max,
+                                                                       const int j_inc,
+						                       const int k_min, 
+                                                                       const int k_max,
+                                                                       const int k_inc) {
+
+   cout << "\nError: UnloadReceiveBuffer_Flux_F2C() is not written for Hexa"; cout.flush();
+
+   return(2);
 
 }
 
-#endif /* _HEXA_BLOCK_INCLUDED  */
+#endif // _HEXA_BLOCK_INCLUDED

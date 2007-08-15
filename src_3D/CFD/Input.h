@@ -330,7 +330,7 @@ void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Set_Default_Input_Parameters(vo
 
    string_ptr = "Euler3D.in";
    strcpy(Input_File_Name, string_ptr);
- 
+
    string_ptr = "Explicit_Euler";
    strcpy(Time_Integration_Type, string_ptr);
    i_Time_Integration = TIME_STEPPING_EXPLICIT_EULER;
@@ -811,6 +811,10 @@ int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Parse_Next_Input_Control_Paramet
        } else if (strcmp(IP_Grid.Grid_Type, "Bluff_Body_Burner") == 0) {
           IP_Grid.i_Grid = GRID_BLUFF_BODY_BURNER;
 
+       } else if (strcmp(IP_Grid.Grid_Type, "ICEMCFD") == 0) {
+          IP_Grid.i_Grid = GRID_ICEMCFD;
+          IP_Grid.ICEMCFD_FileNames = ICEMCFD_get_filenames();
+
        }else {
           IP_Grid.i_Grid = GRID_CUBE;
           IP_Grid.Box_Length = ONE;
@@ -1284,6 +1288,21 @@ int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Parse_Next_Input_Control_Paramet
        Input_File >> Restart_Solution_Save_Frequency;
        Input_File.getline(buffer, sizeof(buffer));
        if (Restart_Solution_Save_Frequency < 1) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(Next_Control_Parameter, "ICEMCFD_Topology_File") == 0) {
+       i_command = 62;
+       Get_Next_Input_Control_Parameter();
+       strcpy(IP_Grid.ICEMCFD_FileNames[0], Next_Control_Parameter);
+
+    } else if (strcmp(Next_Control_Parameter, "ICEMCFD_Family_Boco_File") == 0) {
+       i_command = 63;
+       Get_Next_Input_Control_Parameter();
+       strcpy(IP_Grid.ICEMCFD_FileNames[1], Next_Control_Parameter);
+
+    } else if (strcmp(Next_Control_Parameter, "ICEMCFD_Family_Topo_File") == 0) {
+       i_command = 64;
+       Get_Next_Input_Control_Parameter();
+       strcpy(IP_Grid.ICEMCFD_FileNames[2], Next_Control_Parameter);
 
    } else if (strcmp(Next_Control_Parameter, "Residual_Smoothing_Epsilon") == 0) {
       i_command = 70;
@@ -1795,7 +1814,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
        Command_Flag = Parse_Next_Input_Control_Parameter();
 
        line_number = Line_Number;
-       
+
        if (Command_Flag == EXECUTE_CODE) {
           
           break;
@@ -1935,6 +1954,17 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
    MPI::COMM_WORLD.Bcast(&(IP_Grid.Length_Combustor_Tube), 
                          1, 
                          MPI::DOUBLE, 0);
+
+   //ICEM Filenames
+   MPI::COMM_WORLD.Bcast(IP_Grid.ICEMCFD_FileNames[0], 
+                         INPUT_PARAMETER_LENGTH, 
+                         MPI::CHAR, 0);
+   MPI::COMM_WORLD.Bcast(IP_Grid.ICEMCFD_FileNames[1], 
+                         INPUT_PARAMETER_LENGTH, 
+                         MPI::CHAR, 0);
+   MPI::COMM_WORLD.Bcast(IP_Grid.ICEMCFD_FileNames[2], 
+                         INPUT_PARAMETER_LENGTH, 
+                         MPI::CHAR, 0);
 
    // Solver parameters
    MPI::COMM_WORLD.Bcast(Time_Integration_Type, 
@@ -2112,9 +2142,6 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
     MPI::COMM_WORLD.Bcast(&(BluffBody_Coflow_Fuel_Velocity), 
                           1, 
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Length_Combustor_Tube), 
-                          1, 
-                          MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(Cylinder_Radius), 
                           1, 
                           MPI::DOUBLE, 0);
@@ -2173,10 +2200,10 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
                           MPI::DOUBLE, 0);
 
     // Morton Ordering Parameters
-    MPI::COMM_WORLD.Bcast(&(IP.Morton), 
+    MPI::COMM_WORLD.Bcast(&(Morton), 
                           1, 
                           MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Morton_Reordering_Frequency),
+    MPI::COMM_WORLD.Bcast(&(Morton_Reordering_Frequency),
                           1,
                           MPI::INT,0);
 
@@ -2480,8 +2507,12 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
    out_file << "\n  -> Grid: "
             << IP.IP_Grid.Grid_Type;
    switch(IP.IP_Grid.i_Grid) {
-
-   case GRID_CUBE :
+ 
+   case GRID_ICEMCFD :
+      out_file <<"\n  -> topology file : "<< IP.IP_Grid.ICEMCFD_FileNames[0];
+      out_file <<"\n  -> family_boco file : "<< IP.IP_Grid.ICEMCFD_FileNames[1];
+      out_file <<"\n  -> family_topo file : "<< IP.IP_Grid.ICEMCFD_FileNames[2];
+   case GRID_CUBE : 
       out_file << "\n  -> Length of Solution Domain (m): "
                << IP.IP_Grid.Box_Length;
       out_file << "\n  -> Width of Solution Domain (m): "

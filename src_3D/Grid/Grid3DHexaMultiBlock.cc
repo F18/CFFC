@@ -8,7 +8,7 @@
 #endif //_GRID3D_HEXA_MULTIBLOCK_INCLUDED
 
 /********************************************************
- * Routine: Allocate_Grid_Blocks                        *
+ * Routine: Allocate                                    *
  *                                                      *
  * Allocate memory for a 3D array of 3D hexahedral      *
  * multi-block grids.                                   *
@@ -18,7 +18,7 @@ void Grid3D_Hexa_Multi_Block::Allocate(const int Ni,
                                        const int Nj, 
                                        const int Nk) {
 
-   assert( Ni >= 1 && Nj >= 1 && Nk >= 1 && !Allocated);
+   assert(Ni >= 1 && Nj >= 1 && Nk >= 1 && !Allocated);
 
    NBlk_Idir = Ni; NBlk_Jdir = Nj; NBlk_Kdir = Nk; Allocated = 1;
 
@@ -35,7 +35,7 @@ void Grid3D_Hexa_Multi_Block::Allocate(const int Ni,
 }
 
 /********************************************************
- * Routine: Deallocate_Multi_Block_Grid                 *
+ * Routine: Deallocate                                  *
  *                                                      *
  * Deallocate memory for a 3D array of 3D hexahedral    *
  * multi-block grids.                                   *
@@ -43,12 +43,12 @@ void Grid3D_Hexa_Multi_Block::Allocate(const int Ni,
  ********************************************************/
 void Grid3D_Hexa_Multi_Block::Deallocate(void) {
 
-   assert( NBlk_Idir >= 1 && NBlk_Jdir >= 1 && NBlk_Kdir >= 1 && Allocated); 
+   assert(NBlk_Idir >= 1 && NBlk_Jdir >= 1 && NBlk_Kdir >= 1 && Allocated); 
 
    for (int i = 0 ; i <= NBlk_Idir-1 ; ++i ) {
       for ( int j=0 ; j <= NBlk_Jdir-1 ; ++j ) {
 	 for ( int k = NBlk_Kdir-1 ; k >= 0; --k ) {
-            if (Grid_Blks[i][j][k].Used) Grid_Blks[i][j][k].deallocate();
+            if (Grid_Blks[i][j][k].Allocated) Grid_Blks[i][j][k].deallocate();
 	 }/* end for */
 	 delete []Grid_Blks[i][j];
 	 Grid_Blks[i][j]=NULL;
@@ -60,6 +60,8 @@ void Grid3D_Hexa_Multi_Block::Deallocate(void) {
 
     delete []Grid_Blks;
     Grid_Blks = NULL;
+
+    NBlk_Idir = 0; NBlk_Jdir = 0; NBlk_Kdir = 0;
 
     Allocated = 0;
 
@@ -91,8 +93,32 @@ void Grid3D_Hexa_Multi_Block::Copy(Grid3D_Hexa_Multi_Block &Grid2) {
     for (int  k = 0 ; k < NBlk_Kdir ; ++k ) {
        for (int  j = 0 ; j < NBlk_Jdir ; ++j ) {
           for (int  i = 0 ; i < NBlk_Idir ; ++i ) {
-	     if (Grid2.Grid_Blks[i][j][k].Used) 
+	     if (Grid2.Grid_Blks[i][j][k].Allocated) 
                 Grid_Blks[i][j][k].Copy(Grid2.Grid_Blks[i][j][k]);
+          } /* endfor */
+       } /* endfor */
+    } /* endfor */
+
+  } /* endif */
+
+}
+
+/********************************************************
+ * Routine: Broadcast                                   *
+ *                                                      *
+ * Broadcast multiblock hexahedral grid.                *
+ *                                                      *
+ ********************************************************/
+void Grid3D_Hexa_Multi_Block::Broadcast(void) {
+
+  if (Allocated) {
+
+    /* Broadcast each of the blocks in the multiblock mesh. */
+
+    for (int  k = 0 ; k < NBlk_Kdir ; ++k ) {
+       for (int  j = 0 ; j < NBlk_Jdir ; ++j ) {
+          for (int  i = 0 ; i < NBlk_Idir ; ++i ) {
+	     if (Grid_Blks[i][j][k].Allocated) Grid_Blks[i][j][k].Broadcast();
           } /* endfor */
        } /* endfor */
     } /* endfor */
@@ -143,7 +169,7 @@ void Grid3D_Hexa_Multi_Block::Output_Tecplot(ostream &Out_File) {
     for (int  k = 0 ; k < NBlk_Kdir ; ++k ) {
        for (int  j = 0; j < NBlk_Jdir ; ++j ) {
 	  for (int i = 0 ; i < NBlk_Idir ; ++i ) {
-             if (Grid_Blks[i][j][k].Used) {
+             if (Grid_Blks[i][j][k].Allocated) {
                 Grid_Blks[i][j][k].Output_Tecplot(block_number,
                                                   i_output_title,
                                                   Out_File);
@@ -174,7 +200,7 @@ void Grid3D_Hexa_Multi_Block::Output_Nodes_Tecplot(ostream &Out_File) {
     for (int  k = 0 ; k < NBlk_Kdir ; ++k ) {
        for (int  j = 0; j < NBlk_Jdir ; ++j ) {
           for (int i = 0 ; i < NBlk_Idir ; ++i ) {
-	     if (Grid_Blks[i][j][k].Used) {
+	     if (Grid_Blks[i][j][k].Allocated) {
                 Grid_Blks[i][j][k].Output_Nodes_Tecplot(block_number,
                                                         i_output_title,
                                                         Out_File);
@@ -205,7 +231,7 @@ void Grid3D_Hexa_Multi_Block::Output_Cells_Tecplot(ostream &Out_File) {
     for (int  k = 0 ; k <NBlk_Kdir ; ++k ) {
        for (int  j = 0; j <NBlk_Jdir ; ++j ) {
           for (int i = 0 ; i <NBlk_Idir ; ++i ) {
-	     if (Grid_Blks[i][j][k].Used) {
+	     if (Grid_Blks[i][j][k].Allocated) {
                 Grid_Blks[i][j][k].Output_Cells_Tecplot(block_number,
                                                         i_output_title,
                                                         Out_File);
@@ -236,7 +262,7 @@ void Grid3D_Hexa_Multi_Block::Output_Gnuplot(ostream &Out_File) {
     for (int k = 0 ; k < NBlk_Kdir ; ++k ) {
         for (int j = 0; j < NBlk_Jdir ; ++j ) {
 	   for (int i =0 ; i < NBlk_Idir ; ++i ) {
-	      if (Grid_Blks[i][j][k].Used) {
+	      if (Grid_Blks[i][j][k].Allocated) {
 	          Grid_Blks[i][j][k].Output_Gnuplot(block_number,
 			                            i_output_title,
 			                            Out_File);
@@ -281,6 +307,10 @@ void Grid3D_Hexa_Multi_Block::Create_Grid(Grid3D_Input_Parameters &Input){
 
       case GRID_BLUFF_BODY_BURNER :
         Create_Grid_Bluff_Body_Burner(Input);
+        break;
+
+      case GRID_ICEMCFD :
+        Create_Grid_ICEMCFD(Input);
         break;
 
       default:
@@ -1075,3 +1105,36 @@ void Grid3D_Hexa_Multi_Block::Create_Grid_Bluff_Body_Burner(Grid3D_Input_Paramet
 		                   numblk_jdir_coflow);
 
 }
+
+/********************************************************
+ * Routine: Create_Grid_ICEMCFD                         *
+ *                                                      *
+ * Read ICEMCFD Mesh                                    *
+ *                                                      *
+ ********************************************************/
+void Grid3D_Hexa_Multi_Block::Create_Grid_ICEMCFD (Grid3D_Input_Parameters &Input){
+    
+   if (Allocated) Deallocate();
+
+   Grid_Blks = Grid_ICEMCFD(Grid_Blks, Input.ICEMCFD_FileNames, 
+                            NBlk_Idir, NBlk_Jdir, NBlk_Kdir);
+   int found = 0;
+   for (int kBlk = 0; kBlk <= NBlk_Kdir-1 && !found; ++kBlk) {
+      for (int jBlk = 0; jBlk <= NBlk_Jdir-1 && !found; ++jBlk) {
+         for (int iBlk = 0; iBlk <= NBlk_Idir-1 && !found; ++iBlk) {
+              if (Grid_Blks[iBlk][jBlk][kBlk].Allocated){
+                  Input.NCells_Idir = Grid_Blks[iBlk][jBlk][kBlk].NCi-2*Grid_Blks[iBlk][jBlk][kBlk].Nghost;
+                  Input.NCells_Jdir = Grid_Blks[iBlk][jBlk][kBlk].NCj-2*Grid_Blks[iBlk][jBlk][kBlk].Nghost;
+                  Input.NCells_Kdir = Grid_Blks[iBlk][jBlk][kBlk].NCk-2*Grid_Blks[iBlk][jBlk][kBlk].Nghost;
+                  found = 1;
+              }/* endif */   
+         } /* endfor */
+      } /* endfor */
+   } /* endfor */
+
+   Input.NBlk_Idir = NBlk_Idir; Input.NBlk_Jdir = NBlk_Jdir; Input.NBlk_Kdir = NBlk_Kdir;
+
+   assert(NBlk_Idir >= 1 && NBlk_Jdir >= 1 && NBlk_Kdir >= 1); 
+   Allocated = 1;
+
+}         

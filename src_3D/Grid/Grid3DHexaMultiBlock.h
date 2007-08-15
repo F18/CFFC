@@ -38,7 +38,7 @@ class Grid3D_Hexa_Multi_Block{
        Allocate(Ni, Nj, Nk);
     }
 
-    Grid3D_Hexa_Multi_Block(Grid3D_Input_Parameters  &Input){
+    Grid3D_Hexa_Multi_Block(Grid3D_Input_Parameters &Input){
       // create various multiblock multiblock grid depending on input parameters
       switch(Input.i_Grid) {
         case GRID_CUBE :
@@ -60,6 +60,9 @@ class Grid3D_Hexa_Multi_Block{
         case GRID_BLUFF_BODY_BURNER :
           Create_Grid_Bluff_Body_Burner(Input);
           break;
+        case GRID_ICEMCFD :
+          Create_Grid_ICEMCFD(Input);
+          break;
         default:
           Create_Grid_Cube(Input);
           break;
@@ -78,6 +81,8 @@ class Grid3D_Hexa_Multi_Block{
     void Deallocate(void);
 
     void Copy(Grid3D_Hexa_Multi_Block &Grid2);
+
+    void Broadcast(void);
 
     void Output(ostream &Out_File);
 
@@ -100,6 +105,8 @@ class Grid3D_Hexa_Multi_Block{
     void Create_Grid_Pipe(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Bluff_Body_Burner(Grid3D_Input_Parameters &Input);
+
+    void Create_Grid_ICEMCFD(Grid3D_Input_Parameters &Input);
 
   private:
     //copy and assignment are not permitted
