@@ -931,10 +931,10 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Perturb_Distance_Function") == 0) {
     i_command = 5;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0 ||
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0 ||
 	strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Perturb_Distance_Function = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0 ||
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0 ||
 	       strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Perturb_Distance_Function = OFF;
     } else {
@@ -1402,9 +1402,9 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter, "AMR") == 0) {
     i_command = 59;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.AMR = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.AMR = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -1477,9 +1477,9 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Curvature") == 0) {
     i_command = 70;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Refinement_Criteria_Curvature = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Refinement_Criteria_Curvature = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -1488,9 +1488,9 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Zero_Level_Set") == 0) {
     i_command = 72;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Refinement_Criteria_Zero_Level_Set = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Refinement_Criteria_Zero_Level_Set = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;

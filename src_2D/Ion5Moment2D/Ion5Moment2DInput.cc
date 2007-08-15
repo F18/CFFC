@@ -178,7 +178,7 @@ void Set_Default_Input_Parameters(Ion5Moment2D_Input_Parameters &IP) {
     IP.Mesh_Stretching_Factor_Jdir = 1.01;
 
     // Boundary conditions:
-    string_ptr = "Off";
+    string_ptr = "OFF";
     strcpy(IP.Boundary_Conditions_Specified,string_ptr);
     IP.BCs_Specified = OFF;
     string_ptr = "None";
@@ -1916,9 +1916,9 @@ int Parse_Next_Input_Control_Parameter(Ion5Moment2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter, "AMR") == 0) {
       i_command = 68;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.AMR = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.AMR = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -1994,9 +1994,9 @@ int Parse_Next_Input_Control_Parameter(Ion5Moment2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Gradient_Density") == 0) {
        i_command = 78;
        Get_Next_Input_Control_Parameter(IP);
-       if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+       if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	 IP.Refinement_Criteria_Gradient_Density = ON;
-       } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+       } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	 IP.Refinement_Criteria_Gradient_Density = OFF;
        } else {
 	 i_command = INVALID_INPUT_VALUE;
@@ -2005,9 +2005,9 @@ int Parse_Next_Input_Control_Parameter(Ion5Moment2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Divergence_Velocity") == 0) {
        i_command = 79;
        Get_Next_Input_Control_Parameter(IP);
-       if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+       if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	 IP.Refinement_Criteria_Divergence_Velocity = ON;
-       } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+       } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	 IP.Refinement_Criteria_Divergence_Velocity = OFF;
        } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -2016,9 +2016,9 @@ int Parse_Next_Input_Control_Parameter(Ion5Moment2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Curl_Velocity") == 0) {
        i_command = 80;
        Get_Next_Input_Control_Parameter(IP);
-       if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+       if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	 IP.Refinement_Criteria_Curl_Velocity = ON;
-       } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+       } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	 IP.Refinement_Criteria_Curl_Velocity = OFF;
        } else {
 	 i_command = INVALID_INPUT_VALUE;
@@ -2055,9 +2055,9 @@ int Parse_Next_Input_Control_Parameter(Ion5Moment2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Mesh_Stretching") == 0) {
       i_command = 101;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.i_Mesh_Stretching = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.i_Mesh_Stretching = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -2210,9 +2210,9 @@ int Parse_Next_Input_Control_Parameter(Ion5Moment2D_Input_Parameters &IP) {
       i_command = 500;
       Get_Next_Input_Control_Parameter(IP);
       strcpy(IP.Boundary_Conditions_Specified,IP.Next_Control_Parameter);
-      if (strcmp(IP.Boundary_Conditions_Specified,"On") == 0) {
+      if (strcmp(IP.Boundary_Conditions_Specified,"ON") == 0) {
 	IP.BCs_Specified = ON;
-      } else if (strcmp(IP.Boundary_Conditions_Specified,"Off") == 0) {
+      } else if (strcmp(IP.Boundary_Conditions_Specified,"OFF") == 0) {
 	IP.BCs_Specified = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;

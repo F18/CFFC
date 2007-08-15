@@ -251,7 +251,7 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.BluffBody_Coflow_Fuel_Velocity = 61.0; 
   
     // Boundary conditions:
-    string_ptr = "Off";
+    string_ptr = "OFF";
     strcpy(IP.Boundary_Conditions_Specified,string_ptr);
     IP.BCs_Specified = OFF;
     string_ptr = "None";
@@ -2177,9 +2177,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Smooth_Bump") == 0) {
        i_command = 32;
        Get_Next_Input_Control_Parameter(IP);
-       if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+       if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	 IP.Smooth_Bump = ON;
-       } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+       } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	 IP.Smooth_Bump = OFF;
        } else {
 	 i_command = INVALID_INPUT_VALUE;
@@ -2825,9 +2825,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Mesh_Stretching") == 0) {
       i_command = 101;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.i_Mesh_Stretching = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.i_Mesh_Stretching = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -2884,9 +2884,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Smooth_Quad_Block") == 0) {
       i_command = 106;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.i_Smooth_Quad_Block = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.i_Smooth_Quad_Block = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -2895,9 +2895,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter, "AMR") == 0) {
       i_command = 72;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.AMR = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.AMR = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -2973,9 +2973,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Gradient_Density") == 0) {
       i_command = 82;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.Refinement_Criteria_Gradient_Density = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.Refinement_Criteria_Gradient_Density = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -2984,9 +2984,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Divergence_Velocity") == 0) {
       i_command = 83;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.Refinement_Criteria_Divergence_Velocity = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.Refinement_Criteria_Divergence_Velocity = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -2995,9 +2995,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Curl_Velocity") == 0) {
       i_command = 84;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.Refinement_Criteria_Curl_Velocity = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.Refinement_Criteria_Curl_Velocity = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -3006,9 +3006,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Gradient_Temperature") == 0) {
       i_command = 85;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.Refinement_Criteria_Gradient_Temperature = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.Refinement_Criteria_Gradient_Temperature = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -3017,9 +3017,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Gradient_CH4") == 0) {
       i_command = 86;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.Refinement_Criteria_Gradient_CH4 = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.Refinement_Criteria_Gradient_CH4 = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -3028,9 +3028,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Gradient_CO2") == 0) {
       i_command = 87;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.Refinement_Criteria_Gradient_CO2 = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.Refinement_Criteria_Gradient_CO2 = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -3058,9 +3058,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Mesh_Stretching") == 0) {
       i_command = 101;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.i_Mesh_Stretching = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.i_Mesh_Stretching = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -3117,9 +3117,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Smooth_Quad_Block") == 0) {
       i_command = 106;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.i_Smooth_Quad_Block = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.i_Smooth_Quad_Block = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -3230,9 +3230,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Defect_Correction") == 0) {
       i_command = 204;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.Multigrid_IP.Defect_Correction = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.Multigrid_IP.Defect_Correction = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -3242,9 +3242,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       i_command = 205;
       IP.Line_Number = IP.Line_Number + 1;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.Multigrid_IP.First_Order_Coarse_Mesh_Reconstruction = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.Multigrid_IP.First_Order_Coarse_Mesh_Reconstruction = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -3253,9 +3253,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Prolong_Using_Injection") == 0) {
       i_command = 206;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.Multigrid_IP.Prolong_Using_Injection = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.Multigrid_IP.Prolong_Using_Injection = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -3264,9 +3264,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Apply_Coarse_Mesh_Boundary_Conditions") == 0) {
       i_command = 207;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.Multigrid_IP.Apply_Coarse_Mesh_Boundary_Conditions = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.Multigrid_IP.Apply_Coarse_Mesh_Boundary_Conditions = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -3275,9 +3275,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Injection_at_Dirichlet_Boundary_Conditions") == 0) {
       i_command = 208;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.Multigrid_IP.Injection_at_Dirichlet_Boundary_Conditions = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.Multigrid_IP.Injection_at_Dirichlet_Boundary_Conditions = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -3286,9 +3286,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Update_Stability_Switch") == 0) {
       i_command = 209;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.Multigrid_IP.Update_Stability_Switch = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.Multigrid_IP.Update_Stability_Switch = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -3420,9 +3420,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       i_command = 500;
       Get_Next_Input_Control_Parameter(IP);
       strcpy(IP.Boundary_Conditions_Specified,IP.Next_Control_Parameter);
-      if (strcmp(IP.Boundary_Conditions_Specified,"On") == 0) {
+      if (strcmp(IP.Boundary_Conditions_Specified,"ON") == 0) {
 	IP.BCs_Specified = ON;
-      } else if (strcmp(IP.Boundary_Conditions_Specified,"Off") == 0) {
+      } else if (strcmp(IP.Boundary_Conditions_Specified,"OFF") == 0) {
 	IP.BCs_Specified = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;

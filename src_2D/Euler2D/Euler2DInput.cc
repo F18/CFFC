@@ -158,7 +158,7 @@ void Set_Default_Input_Parameters(Euler2D_Input_Parameters &IP) {
     IP.Mesh_Stretching_Factor_Jdir = 1.01;
 
     // Boundary conditions:
-    string_ptr = "Off";
+    string_ptr = "OFF";
     strcpy(IP.Boundary_Conditions_Specified,string_ptr);
     IP.BCs_Specified = OFF;
     string_ptr = "None";
@@ -1827,9 +1827,9 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Smooth_Bump") == 0) {
       i_command = 32;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.Smooth_Bump = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.Smooth_Bump = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -2159,9 +2159,9 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter, "AMR") == 0) {
       i_command = 77;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.AMR = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.AMR = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -2212,9 +2212,9 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Interface_Refinement_Condition") == 0) {
       i_command = 84;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.Interface_Refinement_Condition = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.Interface_Refinement_Condition = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -2262,9 +2262,9 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Gradient_Density") == 0) {
       i_command = 90;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.Refinement_Criteria_Gradient_Density = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.Refinement_Criteria_Gradient_Density = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -2273,9 +2273,9 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Divergence_Velocity") == 0) {
       i_command = 91;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.Refinement_Criteria_Divergence_Velocity = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.Refinement_Criteria_Divergence_Velocity = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -2284,9 +2284,9 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Curl_Velocity") == 0) {
       i_command = 92;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.Refinement_Criteria_Curl_Velocity = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.Refinement_Criteria_Curl_Velocity = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -2348,9 +2348,9 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Mesh_Stretching") == 0) {
       i_command = 101;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.i_Mesh_Stretching = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.i_Mesh_Stretching = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -2407,9 +2407,9 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Smooth_Quad_Block") == 0) {
       i_command = 106;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	IP.i_Smooth_Quad_Block = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	IP.i_Smooth_Quad_Block = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -2465,9 +2465,9 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter, "Defect_Correction") == 0) {
        i_command = 204;
        Get_Next_Input_Control_Parameter(IP);
-       if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+       if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	 IP.Multigrid_IP.Defect_Correction = ON;
-       } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+       } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	 IP.Multigrid_IP.Defect_Correction = OFF;
        } else {
 	 i_command = INVALID_INPUT_VALUE;
@@ -2477,9 +2477,9 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
        i_command = 205;
        IP.Line_Number = IP.Line_Number + 1;
        Get_Next_Input_Control_Parameter(IP);
-       if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+       if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	 IP.Multigrid_IP.First_Order_Coarse_Mesh_Reconstruction = ON;
-       } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+       } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	 IP.Multigrid_IP.First_Order_Coarse_Mesh_Reconstruction = OFF;
        } else {
 	 i_command = INVALID_INPUT_VALUE;
@@ -2488,9 +2488,9 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Prolong_Using_Injection") == 0) {
        i_command = 206;
        Get_Next_Input_Control_Parameter(IP);
-       if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+       if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	 IP.Multigrid_IP.Prolong_Using_Injection = ON;
-       } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+       } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	 IP.Multigrid_IP.Prolong_Using_Injection = OFF;
        } else {
 	 i_command = INVALID_INPUT_VALUE;
@@ -2499,9 +2499,9 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter, "Apply_Coarse_Mesh_Boundary_Conditions") == 0) {
        i_command = 207;
        Get_Next_Input_Control_Parameter(IP);
-       if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+       if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	 IP.Multigrid_IP.Apply_Coarse_Mesh_Boundary_Conditions = ON;
-       } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+       } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	 IP.Multigrid_IP.Apply_Coarse_Mesh_Boundary_Conditions = OFF;
        } else {
 	 i_command = INVALID_INPUT_VALUE;
@@ -2510,9 +2510,9 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Injection_at_Dirichlet_Boundary_Conditions") == 0) {
        i_command = 208;
        Get_Next_Input_Control_Parameter(IP);
-       if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+       if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	 IP.Multigrid_IP.Injection_at_Dirichlet_Boundary_Conditions = ON;
-       } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+       } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	 IP.Multigrid_IP.Injection_at_Dirichlet_Boundary_Conditions = OFF;
        } else {
 	 i_command = INVALID_INPUT_VALUE;
@@ -2521,9 +2521,9 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Update_Stability_Switch") == 0) {
        i_command = 209;
        Get_Next_Input_Control_Parameter(IP);
-       if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+       if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
 	 IP.Multigrid_IP.Update_Stability_Switch = ON;
-       } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+       } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
 	 IP.Multigrid_IP.Update_Stability_Switch = OFF;
        } else {
 	 i_command = INVALID_INPUT_VALUE;
@@ -2655,9 +2655,9 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
       i_command = 500;
       Get_Next_Input_Control_Parameter(IP);
       strcpy(IP.Boundary_Conditions_Specified,IP.Next_Control_Parameter);
-      if (strcmp(IP.Boundary_Conditions_Specified,"On") == 0) {
+      if (strcmp(IP.Boundary_Conditions_Specified,"ON") == 0) {
 	IP.BCs_Specified = ON;
-      } else if (strcmp(IP.Boundary_Conditions_Specified,"Off") == 0) {
+      } else if (strcmp(IP.Boundary_Conditions_Specified,"OFF") == 0) {
 	IP.BCs_Specified = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;
@@ -2962,9 +2962,9 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
       i_command = 612;
       Get_Next_Input_Control_Parameter(IP);
       strcpy(IP.Interface_IP.BC_Type,IP.Next_Control_Parameter);
-      if (strcmp(IP.Interface_IP.BC_Type,"On") == 0) {
+      if (strcmp(IP.Interface_IP.BC_Type,"ON") == 0) {
 	IP.Reset_Interface_Motion_Type = ON;
-      } else if (strcmp(IP.Interface_IP.BC_Type,"Off") == 0) {
+      } else if (strcmp(IP.Interface_IP.BC_Type,"OFF") == 0) {
 	IP.Reset_Interface_Motion_Type = OFF;
       } else {
 	i_command = INVALID_INPUT_VALUE;

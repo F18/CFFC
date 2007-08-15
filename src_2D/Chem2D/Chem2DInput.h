@@ -389,6 +389,8 @@ inline void Chem2D_Input_Parameters::Deallocate() {
 inline ostream &operator << (ostream &out_file,
 			     const Chem2D_Input_Parameters &IP) {
     out_file << setprecision(6);
+    out_file << "\n  -> CFFC Path: " 
+	     << IP.CFDkit_Path;
   
     /*********************************************************/
     out_file << "\n\n Solving 2D MulitSpecies";
@@ -552,8 +554,6 @@ inline ostream &operator << (ostream &out_file,
 	out_file << IP.Schmidt[i]<<", ";
       }
     }
-    out_file << "\n  -> CFDkit+caboodle Path: " 
-	     << IP.CFDkit_Path;
     /*********************************************/ 
     out_file << "\n  -> Initial Conditions: " 
              << IP.ICs_Type;
