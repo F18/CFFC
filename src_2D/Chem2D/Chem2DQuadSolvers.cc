@@ -953,7 +953,6 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
      error_flag = Newton_Krylov_Schwarz_Solver<Chem2D_pState,
                                                Chem2D_Quad_Block,                                               
                                                Chem2D_Input_Parameters>(processor_cpu_time,
-									total_cpu_time, 
 									residual_file,
 									number_of_time_steps, // explicit time steps
 									Local_SolnBlk, 

@@ -250,12 +250,16 @@ class FAS_Multigrid2D_Solver {
   void deallocate(void);
 
   //! Output the node-centred value information for each grid level.
-  int Output_Multigrid(int &number_of_time_steps,
-		       double &Time);
+  int Output_Multigrid(int number_of_time_steps,
+		       double Time,
+					 bool writing_intermediate_soln = false, 
+					 double l2_norm = -1.0, double l2_norm_rel = -1.0);
 
   //! Output the cell-centred value information for each grid level.
-  int Output_Multigrid_Cells(int &number_of_time_steps,
-			     double &Time);
+  int Output_Multigrid_Cells(int number_of_time_steps,
+			     double Time, 
+					 bool writing_intermediate_soln = false, 
+					 double l2_norm = -1.0, double l2_norm_rel = -1.0);
 
   //! Output the node information for each grid level.
   int Output_Multigrid_Nodes(int &number_of_time_steps,
@@ -700,13 +704,16 @@ template <class Soln_Var_Type,
 int FAS_Multigrid2D_Solver<Soln_Var_Type,
 			   Quad_Soln_Block,
 			   Quad_Soln_Input_Parameters>::
-Output_Multigrid(int &number_of_time_steps,
-		 double &Time) {
+Output_Multigrid(int number_of_time_steps,
+		double Time,
+		bool writing_intermediate_soln,
+		double l2_norm, double l2_norm_rel) {
 
   int i, i_output_title;
   char prefix[256], extension[256], output_file_name[256];
   char *output_file_name_ptr;
   ofstream output_file;
+	int max_level = (writing_intermediate_soln ? 1 : IP->Multigrid_IP.Levels);
 
   // Determine main prefix of output data file names.
   i = 0;
@@ -721,12 +728,16 @@ Output_Multigrid(int &number_of_time_steps,
   strcat(prefix,"_");
 
   // Output to a seperate file for each multigrid level.
-  for (int level = 0; level < IP->Multigrid_IP.Levels; level++) {
+  for (int level = 0; level < max_level; level++) {
 
     // Determine prefix of output data file names for current grid level.
     strcpy(output_file_name,prefix);
     sprintf(extension,"%.2d",level);
     strcat(output_file_name,extension);
+		if (writing_intermediate_soln) {
+			sprintf(extension,"_n1%.4d",number_of_time_steps);
+			strcat(output_file_name,extension);
+		}
     strcat(output_file_name,"_cpu");
 
     // Determine output data file name for this processor.
@@ -778,13 +789,17 @@ template <class Soln_Var_Type,
 int FAS_Multigrid2D_Solver<Soln_Var_Type,
 			   Quad_Soln_Block,
 			   Quad_Soln_Input_Parameters>::
-Output_Multigrid_Cells(int &number_of_time_steps,
-		       double &Time) {
+Output_Multigrid_Cells(int number_of_time_steps,
+		double Time, 
+		bool writing_intermediate_soln,
+		double l2_norm, double l2_norm_rel) 
+{
 
   int i, i_output_title;
   char prefix[256], extension[256], output_file_name[256];
   char *output_file_name_ptr;
   ofstream output_file;
+	int max_level = (writing_intermediate_soln ? 1 : IP->Multigrid_IP.Levels);
 
   // Determine main prefix of output data file names.
   i = 0;
@@ -799,12 +814,16 @@ Output_Multigrid_Cells(int &number_of_time_steps,
   strcat(prefix,"_cells_");
 
   // Output to a seperate file for each multigrid level.
-  for (int level = 0; level < IP->Multigrid_IP.Levels; level++) {
+  for (int level = 0; level < max_level; level++) {
 
     // Determine prefix of output data file names for current grid level.
     strcpy(output_file_name,prefix);
     sprintf(extension,"%.2d",level);
     strcat(output_file_name,extension);
+		if (writing_intermediate_soln) {
+			sprintf(extension,"_n1%.4d",number_of_time_steps);
+			strcat(output_file_name,extension);
+		}
     strcat(output_file_name,"_cpu");
 
     // Determine output data file name for this processor.
@@ -822,6 +841,7 @@ Output_Multigrid_Cells(int &number_of_time_steps,
     for (int nb = 0; nb < List_of_Local_Solution_Blocks[level].Nblk; nb++) {
       if (List_of_Local_Solution_Blocks[level].Block[nb].used == ADAPTIVEBLOCK2D_USED) {
 	Output_Cells_Tecplot(Local_SolnBlk[level][nb],
+			*IP,
 			     number_of_time_steps,
 			     Time,
 			     List_of_Local_Solution_Blocks[level].Block[nb].gblknum,
@@ -3303,6 +3323,7 @@ Execute(const int &batch_flag,
   int error_flag, command_flag, first_step, line_number, limiter_freezing;
   int initial_top_level;
   double residual_l1_norm, residual_l2_norm, residual_max_norm;
+  double initial_residual_l2_norm = -1.0, ratio_residual_l2_norm = -1.0;
   unsigned long cycles_for_this_level, max_cycles_for_this_level;
 #ifdef _GNU_GCC_V3
   max_cycles_for_this_level = numeric_limits<unsigned long>::max();
@@ -3436,6 +3457,12 @@ Execute(const int &batch_flag,
 					      List_of_Local_Solution_Blocks[top_level]);
 	residual_max_norm = CFDkit_Maximum_MPI(residual_max_norm);
 
+	if (cycles == 2) {
+		initial_residual_l2_norm = residual_l2_norm;
+	} else if (cycles > 2 && fabs(initial_residual_l2_norm) > 1e-10) {
+			ratio_residual_l2_norm = residual_l2_norm / initial_residual_l2_norm;
+	}
+
 	// Update CPU time used for the calculation so far.
 	processor_cpu_time.update();
 	// Total CPU time for all processors. 
@@ -3483,8 +3510,9 @@ Execute(const int &batch_flag,
 						Time*THOUSAND,
 						total_cpu_time,
 						residual_l2_norm,
+						ratio_residual_l2_norm,
 						first_step,
-						50);
+						IP->Output_Progress_Frequency);
 	if (CFDkit_Primary_MPI_Processor() && !first_step) {
 	  Output_Progress_to_File(residual_file,
 				  number_of_time_steps,
@@ -3495,20 +3523,108 @@ Execute(const int &batch_flag,
 				  residual_max_norm);
 	}
 
-	// Check if the maximum number of time steps has been reached or
-	// if the residual has dropped below the prescribed level for a
-	// full multigrid cycle.
-	if (number_of_time_steps >= IP->Maximum_Number_of_Time_Steps ||
-	    (residual_l2_norm < IP->Multigrid_IP.Convergence_Residual_Level && 
-	     cycles > 1 && 
-	     !first_step &&
-	     top_level != FINEST_LEVEL)) {
+	if (IP->Multigrid_IP.MG_Write_Output_Cells_Freq > 0 &&
+			top_level == FINEST_LEVEL &&
+	    (number_of_time_steps % IP->Multigrid_IP.MG_Write_Output_Cells_Freq == 0)) {
+	  if (!batch_flag) { 
+			cout << endl << " Writing out solution in Tecplot format at time step ";
+			cout << number_of_time_steps << "." << endl; 
+		}
+		Output_Multigrid_Cells(number_of_time_steps, Time, true, residual_l2_norm, ratio_residual_l2_norm);
+		Output_Multigrid(      number_of_time_steps, Time, true, residual_l2_norm, ratio_residual_l2_norm);
+	}
+
+	bool please_stop = false;
+	// We stop if:
+	// - we have exceeded the maximum number of time steps (iterations), or,
+	// - the 2-norm of the residual is less than the absolute or
+	//   relative tolerances. For this, let us allow the code run at
+	//   least twice before checking for convergence.
+	// 
+	// Previously (due to Eric Li I believe) the convergence check was
+	// only active for full MG cycles. Now the checks are active for
+	// both full and regular MG cycles. Is this right?
+	//   - Alistair Wood Tue Oct 17 2006 
+	//
+	// Never mind. We now have absolute and relative tests for both full and regular.
+	//   - Alistair Wood Tue Jan 23 2007 
+	if (number_of_time_steps >= IP->Maximum_Number_of_Time_Steps) {
+		please_stop = true;
+	}
+
+	if (cycles > 2) {
+
+		if (top_level == FINEST_LEVEL) {
+
+			if (residual_l2_norm < IP->Multigrid_IP.reg_abs_tol) {
+				please_stop = true;
+				if (!batch_flag) {
+					int tempp = cout.precision(); cout.precision(2); 
+					cout.setf(ios::scientific);
+					cout << endl << "Regular MG: met absolute convergence tolerance";
+					cout << " (" << residual_l2_norm << " < ";
+					cout << IP->Multigrid_IP.reg_abs_tol << ")." << endl;
+					cout.precision(tempp);
+					cout.unsetf(ios::scientific);
+				}
+			}
+
+			if (ratio_residual_l2_norm < IP->Multigrid_IP.reg_rel_tol) {
+				please_stop = true;
+				if (!batch_flag) {
+					int tempp = cout.precision(); cout.precision(2);
+					cout.setf(ios::scientific);
+					cout << endl << "Regular MG: met relative convergence tolerance";
+					cout << " (" << ratio_residual_l2_norm << " < ";
+					cout << IP->Multigrid_IP.reg_rel_tol << ")." << endl;
+					cout.precision(tempp);
+					cout.unsetf(ios::scientific);
+				}
+			}
+
+		} else { // otherwise we are doing full MG.
+
+			if (residual_l2_norm < IP->Multigrid_IP.full_abs_tol) {
+				please_stop = true;
+				if (!batch_flag) {
+					int tempp = cout.precision(); cout.precision(2);
+					cout.setf(ios::scientific);
+					cout << endl << "Top Level: " << top_level;
+					cout << " Finest level: " << FINEST_LEVEL << ".";
+					cout << " Met absolute convergence tolerance";
+					cout << " (" << residual_l2_norm << " < ";
+					cout << IP->Multigrid_IP.full_abs_tol << ")." << endl;
+					cout.precision(tempp);
+					cout.unsetf(ios::scientific);
+				}
+			}
+
+			if (ratio_residual_l2_norm < IP->Multigrid_IP.full_rel_tol) {
+				please_stop = true;
+				if (!batch_flag) {
+					int tempp = cout.precision(); cout.precision(2);
+					cout.setf(ios::scientific);
+					cout << endl << "Top Level: " << top_level;
+					cout << " Finest level: " << FINEST_LEVEL << ".";
+					cout << " Met relative convergence tolerance";
+					cout << " (" << ratio_residual_l2_norm << " < ";
+					cout << IP->Multigrid_IP.full_rel_tol << ")." << endl;
+					cout.precision(tempp);
+					cout.unsetf(ios::scientific);
+				}
+			}
+
+		}
+	} // if (cycles > 2) for convergence test
+
+	if (please_stop) {
 	  // Exit criteria has been met.  Output the final progress
 	  // information for the calculation and exit.
 	  if (!batch_flag) Output_Progress_L2norm(number_of_time_steps,
 						  Time*THOUSAND,
 						  total_cpu_time,
 						  residual_l2_norm,
+							ratio_residual_l2_norm,
 						  first_step,
 						  number_of_time_steps);
 	  break;
@@ -3530,6 +3646,9 @@ Execute(const int &batch_flag,
 	  }
 	  // Set the limiter freezing flag.
 	  limiter_freezing = ON;
+		if (CFDkit_Primary_MPI_Processor()) {
+			cout << "Freezing Gradient Limiters." << endl;
+		}
 	}
 
 	// Update the solution for the next time-step/cylce using the 

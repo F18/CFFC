@@ -348,73 +348,73 @@ class Grid2D_Quad_Block{
     //@}
 
     //@{ @name Calculate centroid of cell.
-    Vector2D centroid(const Cell2D &Cell);
-    Vector2D centroid(const int ii, const int jj);
-    Vector2D centroidSW(const int ii, const int jj);
-    Vector2D centroidSE(const int ii, const int jj);
-    Vector2D centroidNW(const int ii, const int jj);
-    Vector2D centroidNE(const int ii, const int jj);
+    Vector2D centroid(const Cell2D &Cell) const;
+    Vector2D centroid(const int ii, const int jj) const;
+    Vector2D centroidSW(const int ii, const int jj) const;
+    Vector2D centroidSE(const int ii, const int jj) const;
+    Vector2D centroidNW(const int ii, const int jj) const;
+    Vector2D centroidNE(const int ii, const int jj) const;
     //@}
 
     //@{ @name Calculate cell area.
-    double area(const Cell2D &Cell);
-    double area(const int ii, const int jj);
+    double area(const Cell2D &Cell) const;
+    double area(const int ii, const int jj) const;
     //@}
 
     //@{ @name Get cell nodes.
-    Node2D nodeNW(const Cell2D &Cell);
-    Node2D nodeNW(const int ii, const int jj);
+    Node2D nodeNW(const Cell2D &Cell) const;
+    Node2D nodeNW(const int ii, const int jj) const;
 
-    Node2D nodeNE(const Cell2D &Cell);
-    Node2D nodeNE(const int ii, const int jj);
+    Node2D nodeNE(const Cell2D &Cell) const;
+    Node2D nodeNE(const int ii, const int jj) const;
 
-    Node2D nodeSE(const Cell2D &Cell);
-    Node2D nodeSE(const int ii, const int jj);
+    Node2D nodeSE(const Cell2D &Cell) const;
+    Node2D nodeSE(const int ii, const int jj) const;
 
-    Node2D nodeSW(const Cell2D &Cell);
-    Node2D nodeSW(const int ii, const int jj);
+    Node2D nodeSW(const Cell2D &Cell) const;
+    Node2D nodeSW(const int ii, const int jj) const;
     //@}
 
     //@{ @name Get cell face midpoints.
-    Vector2D xfaceN(const Cell2D &Cell);
-    Vector2D xfaceN(const int ii, const int jj);
+    Vector2D xfaceN(const Cell2D &Cell) const;
+    Vector2D xfaceN(const int ii, const int jj) const;
 
-    Vector2D xfaceS(const Cell2D &Cell);
-    Vector2D xfaceS(const int ii, const int jj);
+    Vector2D xfaceS(const Cell2D &Cell) const;
+    Vector2D xfaceS(const int ii, const int jj) const;
 
-    Vector2D xfaceE(const Cell2D &Cell);
-    Vector2D xfaceE(const int ii, const int jj);
+    Vector2D xfaceE(const Cell2D &Cell) const;
+    Vector2D xfaceE(const int ii, const int jj) const;
 
-    Vector2D xfaceW(const Cell2D &Cell);
-    Vector2D xfaceW(const int ii, const int jj);
+    Vector2D xfaceW(const Cell2D &Cell) const;
+    Vector2D xfaceW(const int ii, const int jj) const;
     //@}
 
     //@{ @name Get cell face lengths.
-    double lfaceN(const Cell2D &Cell);
-    double lfaceN(const int ii, const int jj);
+    double lfaceN(const Cell2D &Cell) const;
+    double lfaceN(const int ii, const int jj) const;
 
-    double lfaceS(const Cell2D &Cell);
-    double lfaceS(const int ii, const int jj);
+    double lfaceS(const Cell2D &Cell) const;
+    double lfaceS(const int ii, const int jj) const;
 
-    double lfaceE(const Cell2D &Cell);
-    double lfaceE(const int ii, const int jj);
+    double lfaceE(const Cell2D &Cell) const;
+    double lfaceE(const int ii, const int jj) const;
 
-    double lfaceW(const Cell2D &Cell);
-    double lfaceW(const int ii, const int jj);
+    double lfaceW(const Cell2D &Cell) const;
+    double lfaceW(const int ii, const int jj) const;
     //@}
 
     //@{ @name Get the unit vector normal to the cell faces.
-    Vector2D nfaceN(const Cell2D &Cell);
-    Vector2D nfaceN(const int ii, const int jj);
+    Vector2D nfaceN(const Cell2D &Cell) const;
+    Vector2D nfaceN(const int ii, const int jj) const;
 
-    Vector2D nfaceS(const Cell2D &Cell);
-    Vector2D nfaceS(const int ii, const int jj);
+    Vector2D nfaceS(const Cell2D &Cell) const;
+    Vector2D nfaceS(const int ii, const int jj) const;
 
-    Vector2D nfaceE(const Cell2D &Cell);
-    Vector2D nfaceE(const int ii, const int jj);
+    Vector2D nfaceE(const Cell2D &Cell) const;
+    Vector2D nfaceE(const int ii, const int jj) const;
 
-    Vector2D nfaceW(const Cell2D &Cell);
-    Vector2D nfaceW(const int ii, const int jj);
+    Vector2D nfaceW(const Cell2D &Cell) const;
+    Vector2D nfaceW(const int ii, const int jj) const;
     //@}
 
     /* Assignment operator. */
@@ -545,11 +545,11 @@ inline void Grid2D_Quad_Block::deallocateCells(void) {
  * sub-triangles.                                                     *
  *                                                                    *
  **********************************************************************/
-inline Vector2D Grid2D_Quad_Block::centroid(const Cell2D &Cell) {
+inline Vector2D Grid2D_Quad_Block::centroid(const Cell2D &Cell) const {
   return centroid(Cell.I,Cell.J);
 }
 
-inline Vector2D Grid2D_Quad_Block::centroid(const int ii, const int jj) {
+inline Vector2D Grid2D_Quad_Block::centroid(const int ii, const int jj) const {
   Vector2D X1, X2, X3, X4, Xc1, Xc2, X;
   double A1, A2;
   // Cell nodes in counter-clockwise order.
@@ -570,7 +570,7 @@ inline Vector2D Grid2D_Quad_Block::centroid(const int ii, const int jj) {
   return 0.25*(Node[ii][jj].X + Node[ii+1][jj].X + Node[ii+1][jj+1].X + Node[ii][jj+1].X);
 }
 
-inline Vector2D Grid2D_Quad_Block::centroidSW(const int ii, const int jj) {
+inline Vector2D Grid2D_Quad_Block::centroidSW(const int ii, const int jj) const {
   Vector2D X1, X2, X3, X4, Xc1, Xc2;
   double A1, A2;
   // Cell nodes in counter-clockwise order.
@@ -591,7 +591,7 @@ inline Vector2D Grid2D_Quad_Block::centroidSW(const int ii, const int jj) {
   return (X1 + X2 + X3 + X4)/4.0;
 }
 
-inline Vector2D Grid2D_Quad_Block::centroidSE(const int ii, const int jj) {
+inline Vector2D Grid2D_Quad_Block::centroidSE(const int ii, const int jj) const {
   Vector2D X1, X2, X3, X4, Xc1, Xc2;
   double A1, A2;
   // Cell nodes in counter-clockwise order.
@@ -612,7 +612,7 @@ inline Vector2D Grid2D_Quad_Block::centroidSE(const int ii, const int jj) {
   return (X1 + X2 + X3 + X4)/4.0;
 }
 
-inline Vector2D Grid2D_Quad_Block::centroidNW(const int ii, const int jj) {
+inline Vector2D Grid2D_Quad_Block::centroidNW(const int ii, const int jj) const {
   Vector2D X1, X2, X3, X4, Xc1, Xc2;
   double A1, A2;
   // Cell nodes in counter-clockwise order.
@@ -633,7 +633,7 @@ inline Vector2D Grid2D_Quad_Block::centroidNW(const int ii, const int jj) {
   return (X1 + X2 + X3 + X4)/4.0;
 }
 
-inline Vector2D Grid2D_Quad_Block::centroidNE(const int ii, const int jj) {
+inline Vector2D Grid2D_Quad_Block::centroidNE(const int ii, const int jj) const {
   Vector2D X1, X2, X3, X4, Xc1, Xc2;
   double A1, A2;
   // Cell nodes in counter-clockwise order.
@@ -657,14 +657,14 @@ inline Vector2D Grid2D_Quad_Block::centroidNE(const int ii, const int jj) {
 /*************************************************************************
  * Grid2D_Quad_Block::area -- Cell area.                                 *
  *************************************************************************/
-inline double Grid2D_Quad_Block::area(const Cell2D &Cell) {
+inline double Grid2D_Quad_Block::area(const Cell2D &Cell) const {
     return (HALF*(((Node[Cell.I+1][Cell.J].X-Node[Cell.I][Cell.J].X)^(
                     Node[Cell.I][Cell.J+1].X-Node[Cell.I][Cell.J].X)) +
                   ((Node[Cell.I+1][Cell.J+1].X-Node[Cell.I][Cell.J+1].X)^(
                     Node[Cell.I+1][Cell.J+1].X-Node[Cell.I+1][Cell.J].X))));
 }
 
-inline double Grid2D_Quad_Block::area(const int ii, const int jj) {
+inline double Grid2D_Quad_Block::area(const int ii, const int jj) const {
     return (HALF*(((Node[ii+1][jj].X-Node[ii][jj].X)^(
                     Node[ii][jj+1].X-Node[ii][jj].X)) +
                   ((Node[ii+1][jj+1].X-Node[ii][jj+1].X)^(
@@ -674,237 +674,244 @@ inline double Grid2D_Quad_Block::area(const int ii, const int jj) {
 /*************************************************************************
  * Grid2D_Quad_Block::node?? -- Get cell nodes.                          *
  *************************************************************************/
-inline Node2D Grid2D_Quad_Block::nodeNW(const Cell2D &Cell) {
+inline Node2D Grid2D_Quad_Block::nodeNW(const Cell2D &Cell) const {
     return (Node[Cell.I][Cell.J+1]);
 }
 
-inline Node2D Grid2D_Quad_Block::nodeNW(const int ii, const int jj) {
+inline Node2D Grid2D_Quad_Block::nodeNW(const int ii, const int jj) const {
     return (Node[ii][jj+1]);
 }
 
-inline Node2D Grid2D_Quad_Block::nodeNE(const Cell2D &Cell) {
+inline Node2D Grid2D_Quad_Block::nodeNE(const Cell2D &Cell) const {
     return (Node[Cell.I+1][Cell.J+1]);
 }
 
-inline Node2D Grid2D_Quad_Block::nodeNE(const int ii, const int jj) {
+inline Node2D Grid2D_Quad_Block::nodeNE(const int ii, const int jj) const {
     return (Node[ii+1][jj+1]);
 }
 
-inline Node2D Grid2D_Quad_Block::nodeSE(const Cell2D &Cell) {
+inline Node2D Grid2D_Quad_Block::nodeSE(const Cell2D &Cell) const {
     return (Node[Cell.I+1][Cell.J]);
 }
 
-inline Node2D Grid2D_Quad_Block::nodeSE(const int ii, const int jj) {
+inline Node2D Grid2D_Quad_Block::nodeSE(const int ii, const int jj) const {
     return (Node[ii+1][jj]);
 }
 
-inline Node2D Grid2D_Quad_Block::nodeSW(const Cell2D &Cell) {
+inline Node2D Grid2D_Quad_Block::nodeSW(const Cell2D &Cell) const {
     return (Node[Cell.I][Cell.J]);
 }
 
-inline Node2D Grid2D_Quad_Block::nodeSW(const int ii, const int jj) {
+inline Node2D Grid2D_Quad_Block::nodeSW(const int ii, const int jj) const {
     return (Node[ii][jj]);
 }
 
 /*************************************************************************
  * Grid2D_Quad_Block::xface? -- Get face midpoints.                      *
  *************************************************************************/
-inline Vector2D Grid2D_Quad_Block::xfaceN(const Cell2D &Cell) {
+inline Vector2D Grid2D_Quad_Block::xfaceN(const Cell2D &Cell) const {
     return (HALF*(Node[Cell.I][Cell.J+1].X+Node[Cell.I+1][Cell.J+1].X));
 }
 
-inline Vector2D Grid2D_Quad_Block::xfaceN(const int ii, const int jj) {
+inline Vector2D Grid2D_Quad_Block::xfaceN(const int ii, const int jj) const {
     return (HALF*(Node[ii][jj+1].X+Node[ii+1][jj+1].X));
 }
 
-inline Vector2D Grid2D_Quad_Block::xfaceS(const Cell2D &Cell) {
+inline Vector2D Grid2D_Quad_Block::xfaceS(const Cell2D &Cell) const {
     return (HALF*(Node[Cell.I][Cell.J].X+Node[Cell.I+1][Cell.J].X));
 }
 
-inline Vector2D Grid2D_Quad_Block::xfaceS(const int ii, const int jj) {
+inline Vector2D Grid2D_Quad_Block::xfaceS(const int ii, const int jj) const {
     return (HALF*(Node[ii][jj].X+Node[ii+1][jj].X));
 }
 
-inline Vector2D Grid2D_Quad_Block::xfaceE(const Cell2D &Cell) {
+inline Vector2D Grid2D_Quad_Block::xfaceE(const Cell2D &Cell) const {
     return (HALF*(Node[Cell.I+1][Cell.J].X+Node[Cell.I+1][Cell.J+1].X));
 }
 
-inline Vector2D Grid2D_Quad_Block::xfaceE(const int ii, const int jj) {
+inline Vector2D Grid2D_Quad_Block::xfaceE(const int ii, const int jj) const {
     return (HALF*(Node[ii+1][jj].X+Node[ii+1][jj+1].X));
 }
 
-inline Vector2D Grid2D_Quad_Block::xfaceW(const Cell2D &Cell) {
+inline Vector2D Grid2D_Quad_Block::xfaceW(const Cell2D &Cell) const {
     return (HALF*(Node[Cell.I][Cell.J].X+Node[Cell.I][Cell.J+1].X));
 }
 
-inline Vector2D Grid2D_Quad_Block::xfaceW(const int ii, const int jj) {
+inline Vector2D Grid2D_Quad_Block::xfaceW(const int ii, const int jj) const {
     return (HALF*(Node[ii][jj].X+Node[ii][jj+1].X));
 }
 
 /*************************************************************************
  * Grid2D_Quad_Block::lface? -- Get face lengths.                        *
  *************************************************************************/
-inline double Grid2D_Quad_Block::lfaceN(const Cell2D &Cell) {
+inline double Grid2D_Quad_Block::lfaceN(const Cell2D &Cell) const {
     return (abs(Node[Cell.I][Cell.J+1].X-Node[Cell.I+1][Cell.J+1].X));
 }
 
-inline double Grid2D_Quad_Block::lfaceN(const int ii, const int jj) {
+inline double Grid2D_Quad_Block::lfaceN(const int ii, const int jj) const {
     return (abs(Node[ii][jj+1].X-Node[ii+1][jj+1].X));
 }
 
-inline double Grid2D_Quad_Block::lfaceS(const Cell2D &Cell) {
+inline double Grid2D_Quad_Block::lfaceS(const Cell2D &Cell) const {
     return (abs(Node[Cell.I][Cell.J].X-Node[Cell.I+1][Cell.J].X));
 }
 
-inline double Grid2D_Quad_Block::lfaceS(const int ii, const int jj) {
+inline double Grid2D_Quad_Block::lfaceS(const int ii, const int jj) const {
     return (abs(Node[ii][jj].X-Node[ii+1][jj].X));
 }
 
-inline double Grid2D_Quad_Block::lfaceE(const Cell2D &Cell) {
+inline double Grid2D_Quad_Block::lfaceE(const Cell2D &Cell) const {
     return (abs(Node[Cell.I+1][Cell.J].X-Node[Cell.I+1][Cell.J+1].X));
 }
 
-inline double Grid2D_Quad_Block::lfaceE(const int ii, const int jj) {
+inline double Grid2D_Quad_Block::lfaceE(const int ii, const int jj) const {
     return (abs(Node[ii+1][jj].X-Node[ii+1][jj+1].X));
 }
 
-inline double Grid2D_Quad_Block::lfaceW(const Cell2D &Cell) {
+inline double Grid2D_Quad_Block::lfaceW(const Cell2D &Cell) const {
     return (abs(Node[Cell.I][Cell.J].X-Node[Cell.I][Cell.J+1].X));
 }
 
-inline double Grid2D_Quad_Block::lfaceW(const int ii, const int jj) {
+inline double Grid2D_Quad_Block::lfaceW(const int ii, const int jj) const {
     return (abs(Node[ii][jj].X-Node[ii][jj+1].X));
 }
 
 /*************************************************************************
  * Grid2D_Quad_Block::nface? -- Get cell face normals.                   *
  *************************************************************************/
-inline Vector2D Grid2D_Quad_Block::nfaceN(const Cell2D &Cell) {
+inline Vector2D Grid2D_Quad_Block::nfaceN(const Cell2D &Cell) const {
   return nfaceN(Cell.I,Cell.J);
 }
 
-inline Vector2D Grid2D_Quad_Block::nfaceN(const int ii, const int jj) {
+inline Vector2D Grid2D_Quad_Block::nfaceN(const int ii, const int jj) const {
   return (Vector2D( (Node[ii][jj+1].X.y - Node[ii+1][jj+1].X.y),
 		    -(Node[ii][jj+1].X.x - Node[ii+1][jj+1].X.x))/
 	  abs(Node[ii][jj+1].X - Node[ii+1][jj+1].X));
-  if (lfaceN(ii,jj) > NANO) return (Vector2D( (Node[ii][jj+1].X.y - Node[ii+1][jj+1].X.y),
-					      -(Node[ii][jj+1].X.x - Node[ii+1][jj+1].X.x))/
-				    abs(Node[ii][jj+1].X - Node[ii+1][jj+1].X));
-  if (ii > 0 && ii < NCi-1) {
-    if (lfaceN(ii-1,jj) > ZERO && lfaceN(ii+1,jj) > ZERO) {
-      return HALF*(nfaceN(ii-1,jj) + nfaceN(ii+1,jj));
-    } else if (lfaceN(ii-1,jj) > ZERO) {
-      return nfaceN(ii-1,jj);
-    } else if (lfaceN(ii+1,jj) > ZERO) {
-      return nfaceN(ii+1,jj);
-    } else {
-      assert(1==2);
-    }
-  } else if (ii > 0) {
-    if (lfaceN(ii-1,jj) > ZERO) return nfaceN(ii-1,jj);
-    else assert(1==2);
-  } else if (ii < NCi-1) {
-    if (lfaceN(ii+1,jj) > ZERO) return nfaceN(ii+1,jj);
-    else assert(1==2);
-  } else {
-    assert(1==2);
-  }
+// Why is there all of this code if the first line of this
+// function returns a value? -- Alistair Wood. Fri Jul 20 2007.
+//    if (lfaceN(ii,jj) > NANO) return (Vector2D( (Node[ii][jj+1].X.y - Node[ii+1][jj+1].X.y),
+//  					      -(Node[ii][jj+1].X.x - Node[ii+1][jj+1].X.x))/
+//  				    abs(Node[ii][jj+1].X - Node[ii+1][jj+1].X));
+//    if (ii > 0 && ii < NCi-1) {
+//      if (lfaceN(ii-1,jj) > ZERO && lfaceN(ii+1,jj) > ZERO) {
+//        return HALF*(nfaceN(ii-1,jj) + nfaceN(ii+1,jj));
+//      } else if (lfaceN(ii-1,jj) > ZERO) {
+//        return nfaceN(ii-1,jj);
+//      } else if (lfaceN(ii+1,jj) > ZERO) {
+//        return nfaceN(ii+1,jj);
+//      } else {
+//        assert(1==2);
+//      }
+//    } else if (ii > 0) {
+//      if (lfaceN(ii-1,jj) > ZERO) return nfaceN(ii-1,jj);
+//      else assert(1==2);
+//    } else if (ii < NCi-1) {
+//      if (lfaceN(ii+1,jj) > ZERO) return nfaceN(ii+1,jj);
+//      else assert(1==2);
+//    } else {
+//      assert(1==2);
+//    }
 }
 
-inline Vector2D Grid2D_Quad_Block::nfaceS(const Cell2D &Cell) {
+inline Vector2D Grid2D_Quad_Block::nfaceS(const Cell2D &Cell) const {
   return nfaceS(Cell.I,Cell.J);
 }
 
-inline Vector2D Grid2D_Quad_Block::nfaceS(const int ii, const int jj) {
+inline Vector2D Grid2D_Quad_Block::nfaceS(const int ii, const int jj) const {
   return (Vector2D( (Node[ii+1][jj].X.y - Node[ii][jj].X.y),
 		    -(Node[ii+1][jj].X.x - Node[ii][jj].X.x))/
 	  abs(Node[ii+1][jj].X - Node[ii][jj].X));
-  if (lfaceS(ii,jj) > NANO) return (Vector2D( (Node[ii+1][jj].X.y - Node[ii][jj].X.y),
-					      -(Node[ii+1][jj].X.x - Node[ii][jj].X.x))/
-				    abs(Node[ii+1][jj].X - Node[ii][jj].X));
-  if (ii > 0 && ii < NCi-1) {
-    if (lfaceS(ii-1,jj) > ZERO && lfaceS(ii+1,jj) > ZERO) {
-      return HALF*(nfaceS(ii-1,jj) + nfaceS(ii+1,jj));
-    } else if (lfaceS(ii-1,jj) > ZERO) {
-      return nfaceS(ii-1,jj);
-    } else if (lfaceS(ii+1,jj) > ZERO) {
-      return nfaceS(ii+1,jj);
-    } else {
-      assert(1==2);
-    }
-  } else if (ii > 0) {
-    if (lfaceS(ii-1,jj) > ZERO) return nfaceS(ii-1,jj);
-    else assert(1==2);
-  } else if (ii < NCi-1) {
-    if (lfaceS(ii+1,jj) > ZERO) return nfaceS(ii+1,jj);
-    else assert(1==2);
-  } else {
-    assert(1==2);
-  }
+// Why is there all of this code if the first line of this
+// function returns a value? -- Alistair Wood. Fri Jul 20 2007.
+//    if (lfaceS(ii,jj) > NANO) return (Vector2D( (Node[ii+1][jj].X.y - Node[ii][jj].X.y),
+//  					      -(Node[ii+1][jj].X.x - Node[ii][jj].X.x))/
+//  				    abs(Node[ii+1][jj].X - Node[ii][jj].X));
+//    if (ii > 0 && ii < NCi-1) {
+//      if (lfaceS(ii-1,jj) > ZERO && lfaceS(ii+1,jj) > ZERO) {
+//        return HALF*(nfaceS(ii-1,jj) + nfaceS(ii+1,jj));
+//      } else if (lfaceS(ii-1,jj) > ZERO) {
+//        return nfaceS(ii-1,jj);
+//      } else if (lfaceS(ii+1,jj) > ZERO) {
+//        return nfaceS(ii+1,jj);
+//      } else {
+//        assert(1==2);
+//      }
+//    } else if (ii > 0) {
+//      if (lfaceS(ii-1,jj) > ZERO) return nfaceS(ii-1,jj);
+//      else assert(1==2);
+//    } else if (ii < NCi-1) {
+//      if (lfaceS(ii+1,jj) > ZERO) return nfaceS(ii+1,jj);
+//      else assert(1==2);
+//    } else {
+//      assert(1==2);
+//    }
 }
 
-inline Vector2D Grid2D_Quad_Block::nfaceE(const Cell2D &Cell) {
+inline Vector2D Grid2D_Quad_Block::nfaceE(const Cell2D &Cell) const {
   return nfaceE(Cell.I,Cell.J);
 }
 
-inline Vector2D Grid2D_Quad_Block::nfaceE(const int ii, const int jj) {
+inline Vector2D Grid2D_Quad_Block::nfaceE(const int ii, const int jj) const {
   return (Vector2D( (Node[ii+1][jj+1].X.y - Node[ii+1][jj].X.y),
 		    -(Node[ii+1][jj+1].X.x - Node[ii+1][jj].X.x))/
 	  abs(Node[ii+1][jj+1].X-Node[ii+1][jj].X));
-  if (lfaceE(ii,jj) > NANO) return (Vector2D( (Node[ii+1][jj+1].X.y - Node[ii+1][jj].X.y),
-					      -(Node[ii+1][jj+1].X.x - Node[ii+1][jj].X.x))/
-				    abs(Node[ii+1][jj+1].X-Node[ii+1][jj].X));
-  if (jj > 0 && jj < NCj-1) {
-    if (lfaceE(ii,jj-1) > ZERO && lfaceE(ii,jj+1) > ZERO) {
-      return HALF*(nfaceE(ii,jj-1) + nfaceE(ii,jj+1));
-    } else if (lfaceE(ii,jj-1) > ZERO) {
-      return nfaceE(ii,jj-1);
-    } else if (lfaceE(ii,jj+1) > ZERO) {
-      return nfaceE(ii,jj+1);
-    } else {
-      assert(1==2);
-    }
-  } else if (jj > 0) {
-    if (lfaceE(ii,jj-1) > ZERO) return nfaceE(ii,jj-1);
-    else assert(1==2);
-  } else if (jj < NCj-1) {
-    if (lfaceE(ii,jj+1) > ZERO) return nfaceE(ii,jj+1);
-    else assert(1==2);
-  } else {
-    assert(1==2);
-  }
+
+// Why is there all of this code if the first line of this
+// function returns a value? -- Alistair Wood. Fri Jul 20 2007.
+//    if (lfaceE(ii,jj) > NANO) return (Vector2D( (Node[ii+1][jj+1].X.y - Node[ii+1][jj].X.y),
+//  					      -(Node[ii+1][jj+1].X.x - Node[ii+1][jj].X.x))/
+//  				    abs(Node[ii+1][jj+1].X-Node[ii+1][jj].X));
+//    if (jj > 0 && jj < NCj-1) {
+//      if (lfaceE(ii,jj-1) > ZERO && lfaceE(ii,jj+1) > ZERO) {
+//        return HALF*(nfaceE(ii,jj-1) + nfaceE(ii,jj+1));
+//      } else if (lfaceE(ii,jj-1) > ZERO) {
+//        return nfaceE(ii,jj-1);
+//      } else if (lfaceE(ii,jj+1) > ZERO) {
+//        return nfaceE(ii,jj+1);
+//      } else {
+//        assert(1==2);
+//      }
+//    } else if (jj > 0) {
+//      if (lfaceE(ii,jj-1) > ZERO) return nfaceE(ii,jj-1);
+//      else assert(1==2);
+//    } else if (jj < NCj-1) {
+//      if (lfaceE(ii,jj+1) > ZERO) return nfaceE(ii,jj+1);
+//      else assert(1==2);
+//    } else {
+//      assert(1==2);
+//    }
 }
 
-inline Vector2D Grid2D_Quad_Block::nfaceW(const Cell2D &Cell) {
+inline Vector2D Grid2D_Quad_Block::nfaceW(const Cell2D &Cell) const {
   return nfaceW(Cell.I,Cell.J);
 }
 
-inline Vector2D Grid2D_Quad_Block::nfaceW(const int ii, const int jj) {
+inline Vector2D Grid2D_Quad_Block::nfaceW(const int ii, const int jj) const {
   return (Vector2D( (Node[ii][jj].X.y - Node[ii][jj+1].X.y),
  		    -(Node[ii][jj].X.x - Node[ii][jj+1].X.x))/
  	  abs(Node[ii][jj].X - Node[ii][jj+1].X));
-  if (lfaceW(ii,jj) > NANO) return (Vector2D( (Node[ii][jj].X.y - Node[ii][jj+1].X.y),
-					      -(Node[ii][jj].X.x - Node[ii][jj+1].X.x))/
-				    abs(Node[ii][jj].X - Node[ii][jj+1].X));
-  if (jj > 0 && jj < NCj-1) {
-    if (lfaceW(ii,jj-1) > ZERO && lfaceW(ii,jj+1) > ZERO) {
-      return HALF*(nfaceW(ii,jj-1) + nfaceW(ii,jj+1));
-    } else if (lfaceW(ii,jj-1) > ZERO) {
-      return nfaceW(ii,jj-1);
-    } else if (lfaceW(ii,jj+1) > ZERO) {
-      return nfaceW(ii,jj+1);
-    } else {
-      assert(1==2);
-    }
-  } else if (jj > 0) {
-    if (lfaceW(ii,jj-1) > ZERO) return nfaceW(ii,jj-1);
-    else assert(1==2);
-  } else if (jj < NCj-1) {
-    if (lfaceW(ii,jj+1) > ZERO) return nfaceW(ii,jj+1);
-    else assert(1==2);
-  } else {
-    assert(1==2);
-  }
+//    if (lfaceW(ii,jj) > NANO) return (Vector2D( (Node[ii][jj].X.y - Node[ii][jj+1].X.y),
+//  					      -(Node[ii][jj].X.x - Node[ii][jj+1].X.x))/
+//  				    abs(Node[ii][jj].X - Node[ii][jj+1].X));
+//    if (jj > 0 && jj < NCj-1) {
+//      if (lfaceW(ii,jj-1) > ZERO && lfaceW(ii,jj+1) > ZERO) {
+//        return HALF*(nfaceW(ii,jj-1) + nfaceW(ii,jj+1));
+//      } else if (lfaceW(ii,jj-1) > ZERO) {
+//        return nfaceW(ii,jj-1);
+//      } else if (lfaceW(ii,jj+1) > ZERO) {
+//        return nfaceW(ii,jj+1);
+//      } else {
+//        assert(1==2);
+//      }
+//    } else if (jj > 0) {
+//      if (lfaceW(ii,jj-1) > ZERO) return nfaceW(ii,jj-1);
+//      else assert(1==2);
+//    } else if (jj < NCj-1) {
+//      if (lfaceW(ii,jj+1) > ZERO) return nfaceW(ii,jj+1);
+//      else assert(1==2);
+//    } else {
+//      assert(1==2);
+//    }
 }
 
 /********************************************************
@@ -1448,17 +1455,31 @@ Grid2D_Quad_Block** Grid_Rectangular_Box(Grid2D_Quad_Block **Grid_ptr,
 	                                 const int Number_of_Cells_Jdir,
 					 const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Flat_Plate(Grid2D_Quad_Block **Grid_ptr,
-                                           int &Number_of_Blocks_Idir,
-                                           int &Number_of_Blocks_Jdir,
-                                           const double &Length,
-					   const int &Flat_Plate_BC_Type,
-					   const int &Stretching_Flag,
-					   const double &Stretching_Factor_Idir,
-					   const double &Stretching_Factor_Jdir,
- 		                           const int Number_of_Cells_Idir,
-		                           const int Number_of_Cells_Jdir,
-					   const int Number_of_Ghost_Cells);
+Grid2D_Quad_Block** Grid_Flat_Plate(Grid2D_Quad_Block **Grid_ptr,
+		int &Number_of_Blocks_Idir,
+		int &Number_of_Blocks_Jdir,
+		double Length,
+		int Flat_Plate_BC_Type,
+		int Stretching_Flag,
+		double Stretching_Factor_Idir,
+		double Stretching_Factor_Jdir,
+		int Number_of_Cells_Idir,
+		int Number_of_Cells_Jdir,
+		int Number_of_Ghost_Cells);
+
+Grid2D_Quad_Block** Grid_FPBL_Interaction(Grid2D_Quad_Block **Grid_ptr,
+		int &Number_of_Blocks_Idir,
+		int &Number_of_Blocks_Jdir,
+		double Length,
+		double Height,
+		double Width,		 
+		int Flat_Plate_BC_Type,
+		int Stretching_Flag,
+		double Stretching_Factor_Idir,
+		double Stretching_Factor_Jdir,
+		int Number_of_Cells_Idir,
+		int Number_of_Cells_Jdir,
+		int Number_of_Ghost_Cells);
 
 Grid2D_Quad_Block** Grid_Flat_Plate_NK(Grid2D_Quad_Block **Grid_ptr,
 				       int &Number_of_Blocks_Idir,
@@ -1470,7 +1491,6 @@ Grid2D_Quad_Block** Grid_Flat_Plate_NK(Grid2D_Quad_Block **Grid_ptr,
 				       const int Number_of_Cells_Idir,
 				       const int Number_of_Cells_Jdir,
 				       const int Number_of_Ghost_Cells);
-
 
 extern Grid2D_Quad_Block** Grid_1D_Flame(Grid2D_Quad_Block **Grid_ptr,
 					 int &Number_of_Blocks_Idir,
@@ -1600,6 +1620,19 @@ extern Grid2D_Quad_Block** Grid_Circular_Cylinder(Grid2D_Quad_Block **Grid_ptr,
 		                                  const int Number_of_Cells_Jdir,
 						  const int Number_of_Ghost_Cells);
 
+Grid2D_Quad_Block** Grid_Circular_Cylinder(Grid2D_Quad_Block **Grid_ptr,
+                                           int &Number_of_Blocks_Idir,
+                                           int &Number_of_Blocks_Jdir,
+                                           const double &Inner_Radius,
+                                           const double &Outer_Radius,
+					   const int &Stretching_Type_Idir,
+					   const int &Stretching_Type_Jdir,
+					   const double &Stretching_Factor_Idir,
+					   const double &Stretching_Factor_Jdir,
+ 		                           const int Number_of_Cells_Idir,
+		                           const int Number_of_Cells_Jdir,
+					   const int Number_of_Ghost_Cells);
+
 extern Grid2D_Quad_Block** Grid_Ellipse(Grid2D_Quad_Block **Grid_ptr,
                                         int &Number_of_Blocks_Idir,
                                         int &Number_of_Blocks_Jdir,
@@ -1661,7 +1694,7 @@ extern Grid2D_Quad_Block** Grid_Ringleb_Flow(Grid2D_Quad_Block **Grid_ptr,
 extern Grid2D_Quad_Block** Grid_Bump_Channel_Flow(Grid2D_Quad_Block **Grid_ptr,
 						  int &Number_of_Blocks_Idir,
 						  int &Number_of_Blocks_Jdir,
-						  const double &Radius,
+						  double Radius_is_not_used,
 						  const int Smooth_Bump,
 						  const int Number_of_Cells_Idir,
 						  const int Number_of_Cells_Jdir,
@@ -1685,6 +1718,17 @@ extern Grid2D_Quad_Block** Grid_Backward_Facing_Step(Grid2D_Quad_Block **Grid_pt
 						     int &Number_of_Blocks_Jdir,
 						     const double &Step_Height,
 						     const double &Top_Wall_Deflection,
+						     const double Stretching_Factor_Idir,
+						     const double Stretching_Factor_Jdir,
+						     const int Number_of_Cells_Idir,
+						     const int Number_of_Cells_Jdir,
+						     const int Number_of_Ghost_Cells);
+
+extern Grid2D_Quad_Block** Grid_Forward_Facing_Step(Grid2D_Quad_Block **Grid_ptr,
+						     int &Number_of_Blocks_Idir,
+						     int &Number_of_Blocks_Jdir,
+						     const double &Step_Height,
+						     const double &Channel_Gap,
 						     const double Stretching_Factor_Idir,
 						     const double Stretching_Factor_Jdir,
 						     const int Number_of_Cells_Idir,
@@ -1778,5 +1822,24 @@ extern Grid2D_Quad_Block** Grid_Annulus_2D(Grid2D_Quad_Block **Grid_ptr,
 				           const int Number_of_Ghost_Cells,
                                            const int i_Stretching_Radial_Dir,
 				           const double &Stretching_Radial_Dir);
+
+//  The following four functions are used by the Newton-Krylov-Schwarz code.
+//  They are functions of geometry and so Grid2D_Quad_Block only. They are
+//  not templated since they are specific to the Grid2D_Quad_Block but can
+//  be used by any solution block class simply by calling with
+//  SolnBlk.Grid as an argument.
+void node_weights(double *LL, double *RR, 
+		int Orient_face, int Rii, int Rjj, int Orient_cell,
+		const Grid2D_Quad_Block &Grid);
+
+double dWn_dWc(int ni, int nj, int Orient_cell, const Grid2D_Quad_Block &Grid);
+
+void BilinearInterpolationCoefficients(double *eta, double *zeta, int ii, int jj,
+		const Grid2D_Quad_Block &Grid);
+
+void diamond_gradient_weights(double *d_dWdx_dW, double *d_dWdy_dW, 
+		double LEFT, double RIGHT, 
+		int Orient_face, int Rii, int Rjj, int Orient_cell, 
+		const Grid2D_Quad_Block &Grid);
 
 #endif /* _GRID2D_QUAD_BLOCK_INCLUDED  */

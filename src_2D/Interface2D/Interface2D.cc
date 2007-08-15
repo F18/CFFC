@@ -1314,6 +1314,7 @@ void Broadcast_Interface(Interface2D &I,
 double Intersection_Area(Interface2D &I1, Interface2D &I2) {
 
   cout << endl << " ERROR -- Intersection area calculation.";
+	return 0.0; // for compiler
 
 //   Polygon P1, P2;
 

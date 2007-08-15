@@ -819,6 +819,7 @@ class DenseMatrix: public MV_ColMat_double{               // v_ and lda_
     /* Shortcut arithmetic operators. */
     friend DenseMatrix &operator +=(DenseMatrix &M1, const DenseMatrix &M2);
     friend DenseMatrix &operator -=(DenseMatrix &M1, const DenseMatrix &M2);
+    friend DenseMatrix &operator *=(DenseMatrix &M1, double c);
     
     /* Relational operators. */
     friend int operator ==(const DenseMatrix &M1, const DenseMatrix &M2);
@@ -991,6 +992,12 @@ inline DenseMatrix &operator -=(DenseMatrix &M1, const DenseMatrix &M2) {
    M1.v_ -= M2.v_;
    return (M1);
 }
+
+inline DenseMatrix &operator *=(DenseMatrix &M1, double c) {
+   M1.v_ *= c;
+   return (M1);
+}
+
 
 /********************************************************
  * DenseMatrix -- Relational operators.                 *

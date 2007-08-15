@@ -194,10 +194,6 @@ class Chem2D_Input_Parameters{
   double C_constant, von_Karman_Constant;
   double yplus_sublayer, yplus_buffer_layer, yplus_outer_layer;
   //@}
-  
-  //@{ @name Solution Relaxation Multiplier 
-  double Relaxation_multiplier;
-  //@}
 
   //@{ @name Grid type indicator and related input parameters:
   char Grid_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
@@ -502,9 +498,6 @@ inline ostream &operator << (ostream &out_file,
     } 
 
 
-    if( IP.Relaxation_multiplier != 1.0){
-      out_file <<"\n  -> Update Stage Relaxation Multiplier: "<<IP.Relaxation_multiplier;
-    }
 
     /*********************************************************/
     if (IP.Preconditioning == 1){

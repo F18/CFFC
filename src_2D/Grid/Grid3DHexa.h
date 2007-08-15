@@ -1262,6 +1262,7 @@ inline Grid3D_Hexa_Block operator &(Grid3D_Hexa_Block &G, const double &a) {
       } /* endfor */
     } /* endfor */
   } /*endfor */
+  return (G);
 }
 
 inline Grid3D_Hexa_Block operator %(Grid3D_Hexa_Block &G, const double &a) {   

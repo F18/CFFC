@@ -50,6 +50,7 @@ chem2D
 dusty2D
 electrostatic2D
 euler2D
+hightemp2D
 ion5moment2D
 levelset2D
 navierstokes2D

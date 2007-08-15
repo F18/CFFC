@@ -1220,17 +1220,18 @@ Grid2D_Quad_Block** Grid_Flat_Plate9(Grid2D_Quad_Block **Grid_ptr,
   return Grid_ptr;
 
 }
+
 Grid2D_Quad_Block** Grid_Flat_Plate(Grid2D_Quad_Block **Grid_ptr,
 				    int &Number_of_Blocks_Idir,
 				    int &Number_of_Blocks_Jdir,
-				    const double &Length,
-				    const int &Flat_Plate_BC_Type,
-				    const int &Stretching_Flag,
-				    const double &Stretching_Factor_Idir,
-				    const double &Stretching_Factor_Jdir,
-				    const int Number_of_Cells_Idir,
-				    const int Number_of_Cells_Jdir,
-				    const int Number_of_Ghost_Cells) {
+				    double Length,
+				    int Flat_Plate_BC_Type,
+				    int Stretching_Flag,
+				    double Stretching_Factor_Idir,
+				    double Stretching_Factor_Jdir,
+				    int Number_of_Cells_Idir,
+				    int Number_of_Cells_Jdir,
+				    int Number_of_Ghost_Cells) {
 
   int n_cells_i, n_cells_j, 
       Stretch_I, Stretch_J,
@@ -1368,6 +1369,153 @@ Grid2D_Quad_Block** Grid_Flat_Plate(Grid2D_Quad_Block **Grid_ptr,
   // Return the grid.
   return Grid_ptr;
 
+}
+
+//  Dagmara Biskupska created this boundary-layer interaction
+//  function on the request of Professor Groth. It was to investigate
+//  the interaction of a shock (an oblique shock formed from the
+//  sloping north reflective boundary) with the viscous
+//  boundary-layer on the south boundary. She had (some?) success
+//  with it before Professor Groth allowed her to remove it from her
+//  thesis. It may not work.
+//  
+//    -- Alistair Wood. Tue Aug 14 2007,
+Grid2D_Quad_Block** Grid_FPBL_Interaction(Grid2D_Quad_Block **Grid_ptr,
+				    int &Number_of_Blocks_Idir,
+				    int &Number_of_Blocks_Jdir,
+				    double Length,
+				    double Height,
+				    double Width,	  
+				    int Flat_Plate_BC_Type,
+				    int Stretching_Flag,
+				    double Stretching_Factor_Idir,
+				    double Stretching_Factor_Jdir,
+				    int Number_of_Cells_Idir,
+				    int Number_of_Cells_Jdir,
+				    int Number_of_Ghost_Cells) {
+
+	int n_cells_i, n_cells_j, 
+		Stretch_I, Stretch_J,
+		Orthogonal_North, Orthogonal_South,
+		Orthogonal_East, Orthogonal_West;
+	double Beta_I, Tau_I, Beta_J, Tau_J;
+	Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
+	Spline2D Bnd_Spline_North, Bnd_Spline_South,
+					 Bnd_Spline_East, Bnd_Spline_West;
+
+	Number_of_Blocks_Idir = 3;
+	Number_of_Blocks_Jdir = 1;
+	Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr,
+			Number_of_Blocks_Idir,
+			Number_of_Blocks_Jdir);
+
+	// Create the mesh for each block representing the complete grid.
+  for (int iBlk = 0; iBlk < Number_of_Blocks_Idir; iBlk++) {
+
+		// Assign values to the locations of the corners of the 
+		// rectangular box shaped domain representing each of the 
+		// blocks in the grid.
+		if (iBlk == 0) {  
+			xc_NW = TWO*Vector2D(-Width,Length);
+			xc_NE = TWO*Vector2D(ZERO,Length);
+			xc_SE = TWO*Vector2D(ZERO,ZERO);
+			xc_SW = TWO*Vector2D(-Width,ZERO);
+		} else if (iBlk == 1) {
+			xc_NW = TWO*Vector2D(ZERO,Length);
+			xc_NE = TWO*Vector2D(Length,Height);
+			xc_SE = TWO*Vector2D(Length,ZERO);
+			xc_SW = TWO*Vector2D(ZERO,  ZERO);
+		} else {
+			xc_NW = TWO*Vector2D(Length,Height);
+			xc_NE = TWO*Vector2D(THREE*Length,Height);
+			xc_SE = TWO*Vector2D(THREE*Length,ZERO);
+			xc_SW = TWO*Vector2D(Length,ZERO);
+		}
+
+		Create_Spline_Line(Bnd_Spline_North,xc_NW,xc_NE,2);
+		Create_Spline_Line(Bnd_Spline_South,xc_SW,xc_SE,2);
+		Create_Spline_Line(Bnd_Spline_East,xc_SE,xc_NE,2);
+		Create_Spline_Line(Bnd_Spline_West,xc_SW,xc_NW,2);
+
+		if (iBlk == 0) {
+			Bnd_Spline_North.setBCtype(BC_REFLECTION);
+			Bnd_Spline_South.setBCtype(BC_REFLECTION);
+			Bnd_Spline_East.setBCtype(BC_NONE);
+			Bnd_Spline_West.setBCtype(BC_FIXED);
+		} else if (iBlk == 1) {
+			Bnd_Spline_North.setBCtype(BC_REFLECTION);
+			Bnd_Spline_South.setBCtype(Flat_Plate_BC_Type);
+			Bnd_Spline_West.setBCtype(BC_NONE);
+			Bnd_Spline_East.setBCtype(BC_NONE);
+		} else { 
+			Bnd_Spline_North.setBCtype(BC_CONSTANT_EXTRAPOLATION);
+			Bnd_Spline_South.setBCtype(Flat_Plate_BC_Type);
+			Bnd_Spline_East.setBCtype(BC_CONSTANT_EXTRAPOLATION);
+			Bnd_Spline_West.setBCtype(BC_NONE);
+			break;
+		}
+
+		n_cells_i = Number_of_Cells_Idir;
+		n_cells_j = Number_of_Cells_Jdir;
+
+		// Assign values to the stretching function parameters and boundary
+		// grid line orthogonality parameters.
+		Stretch_I = STRETCHING_FCN_LINEAR;
+		Beta_I = ZERO;
+		Tau_I = ZERO;
+		Stretch_J = STRETCHING_FCN_LINEAR;
+		Beta_J = ZERO;
+		Tau_J = ZERO;
+		if (Stretching_Flag) {
+			if (iBlk == 0) {
+				Stretch_I = STRETCHING_FCN_MAX_CLUSTERING;
+			} else if (iBlk == 1) {
+				if (Flat_Plate_BC_Type != BC_BURNING_SURFACE) {
+					Stretch_I = STRETCHING_FCN_MIN_CLUSTERING;
+				} else {
+					Stretch_I = STRETCHING_FCN_MINMAX_CLUSTERING;
+				}
+			} else {
+				Stretch_I = STRETCHING_FCN_MIN_CLUSTERING;
+			}
+			Beta_I = Stretching_Factor_Idir;
+			Stretch_J = STRETCHING_FCN_MIN_CLUSTERING;
+			Beta_J = Stretching_Factor_Jdir;
+		}
+		Orthogonal_North = 0;
+		Orthogonal_South = 0;
+		Orthogonal_East = 0;
+		Orthogonal_West = 0;
+
+		// Create the 2D quadrilateral grid block.
+		Create_Quad_Block(Grid_ptr[iBlk][0],
+				Bnd_Spline_North,
+				Bnd_Spline_South,
+				Bnd_Spline_East,
+				Bnd_Spline_West,
+				n_cells_i,
+				n_cells_j,
+				Number_of_Ghost_Cells,
+				GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+				Stretch_I,
+				Beta_I,
+				Tau_I,
+				Stretch_J,
+				Beta_J,
+				Tau_J,
+				Orthogonal_North,
+				Orthogonal_South,
+				Orthogonal_East,
+				Orthogonal_West);
+
+		Bnd_Spline_North.deallocate();
+		Bnd_Spline_South.deallocate();
+		Bnd_Spline_East.deallocate();
+		Bnd_Spline_West.deallocate();
+
+	}
+
+	return Grid_ptr;
 }
 
 /********************************************************
@@ -4943,7 +5091,7 @@ Grid2D_Quad_Block** Grid_Ringleb_Flow(Grid2D_Quad_Block **Grid_ptr,
 Grid2D_Quad_Block** Grid_Bump_Channel_Flow(Grid2D_Quad_Block **Grid_ptr,
 					   int &Number_of_Blocks_Idir,
 					   int &Number_of_Blocks_Jdir,
-					   const double &Radius,
+						 double Radius_is_not_used,
 					   const int Smooth_Bump,
 					   const int Number_of_Cells_Idir,
 					   const int Number_of_Cells_Jdir,
@@ -5121,7 +5269,9 @@ Grid2D_Quad_Block** Grid_Bump_Channel_Flow(Grid2D_Quad_Block **Grid_ptr,
       else Bnd_Spline_North.setBCtype(BC_NONE);
       if (iBlk == 0) Bnd_Spline_West.setBCtype(BC_FIXED);
       else Bnd_Spline_West.setBCtype(BC_NONE);
-      if (iBlk == 3) Bnd_Spline_East.setBCtype(BC_FIXED);//BC_CHARACTERISTIC);//BC_CONSTANT_EXTRAPOLATION);
+			// There is some discussion about the east boundary condition. 
+			// Should it be BC_FIXED, BC_CHARACTERISTIC or BC_CONSTANT_EXTRAPOLATION?
+      if (iBlk == 3) Bnd_Spline_East.setBCtype(BC_CONSTANT_EXTRAPOLATION);
       else Bnd_Spline_East.setBCtype(BC_NONE);
 
       // Assign values to the stretching function parameters and boundary 
@@ -5474,6 +5624,122 @@ Grid2D_Quad_Block** Grid_Backward_Facing_Step(Grid2D_Quad_Block **Grid_ptr,
   }
 
   // Return the grid.
+  return Grid_ptr;
+
+}
+
+/**********************************************************************
+ * Routine: Grid_Forward_Facing_Step                                  *
+ *                                                                    *
+ * Generates a quadilateral mesh with clustering consisting of five   *
+ * grid blocks for predicting viscous(?) flow over a forward facing   *
+ * step. (Viscous? Really? Dagmara ran in inviscid -- Alistair)       *
+ *                                                                    *
+ **********************************************************************/
+Grid2D_Quad_Block** Grid_Forward_Facing_Step(Grid2D_Quad_Block **Grid_ptr,
+					      int &Number_of_Blocks_Idir,
+					      int &Number_of_Blocks_Jdir,
+					      const double &Step_Height,
+								const double &Channel_Gap,
+					      const double Stretching_Factor_Idir,
+					      const double Stretching_Factor_Jdir,
+					      const int Number_of_Cells_Idir,
+					      const int Number_of_Cells_Jdir,
+					      const int Number_of_Ghost_Cells) {
+
+  int BCtypeN, BCtypeS, BCtypeE, BCtypeW;
+  Vector2D xNW, xNE, xSE, xSW;
+  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+           Bnd_Spline_East, Bnd_Spline_West;
+
+  int Stretch_I = STRETCHING_FCN_LINEAR,
+      Stretch_J = STRETCHING_FCN_LINEAR,
+      Orthogonal_North = 1,
+      Orthogonal_South = 1,
+      Orthogonal_East = 1,
+      Orthogonal_West = 1;
+  double Beta_I=0.0, Tau_I=0.0, Beta_J=0.0, Tau_J=0.0;
+
+  Number_of_Blocks_Idir = 5;
+  Number_of_Blocks_Jdir = 5;
+  Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr,
+				       Number_of_Blocks_Idir,
+				       Number_of_Blocks_Jdir);
+
+  for (int jBlk = 0; jBlk < Number_of_Blocks_Jdir; jBlk++) {
+    for (int iBlk = 0; iBlk < Number_of_Blocks_Idir; iBlk++) {
+
+			// These blocks are to the east of the step 
+			// and so are not part of the domain.
+			if (iBlk >= 1 && jBlk == 0) { continue; }
+
+      // Determine the block indicator and all boundary splines and
+      // reset all boundary conditions and stretching parameters for the
+      // current block: 
+      xSW = Vector2D(double(iBlk)*Channel_Gap,double(jBlk)*Step_Height);
+      xSE = Vector2D(double(iBlk+1)*Channel_Gap,double(jBlk)*Step_Height);
+      xNW = Vector2D(double(iBlk)*Channel_Gap,double(jBlk+1)*Step_Height);
+      xNE = Vector2D(double(iBlk+1)*Channel_Gap,double(jBlk+1)*Step_Height);
+
+      BCtypeN = BC_NONE;
+      BCtypeS = BC_NONE;
+      BCtypeE = BC_NONE;
+      BCtypeW = BC_NONE;
+
+			if (iBlk == 0) { BCtypeW = BC_FIXED; }
+
+			if (jBlk == 4) { BCtypeN = BC_REFLECTION; }
+
+			if (iBlk == 4) { BCtypeE = BC_CONSTANT_EXTRAPOLATION; }
+
+			if ((iBlk >= 1 && jBlk == 1) ||
+				  (iBlk == 0 && jBlk == 0)) {
+				BCtypeS = BC_REFLECTION; 
+			}
+
+			// The step:
+			if (iBlk == 0 && jBlk == 0) { BCtypeE = BC_REFLECTION; }
+
+	Create_Spline_Line(Bnd_Spline_North,xNW,xNE,2);
+	Create_Spline_Line(Bnd_Spline_South,xSW,xSE,2);
+	Create_Spline_Line(Bnd_Spline_East,xSE,xNE,2);
+	Create_Spline_Line(Bnd_Spline_West,xSW,xNW,2);
+
+	Bnd_Spline_North.setBCtype(BCtypeN);
+	Bnd_Spline_South.setBCtype(BCtypeS);
+	Bnd_Spline_East.setBCtype(BCtypeE);
+	Bnd_Spline_West.setBCtype(BCtypeW);
+    
+	// Create the 2D quadrilateral grid block.
+	Create_Quad_Block(Grid_ptr[iBlk][jBlk],
+			  Bnd_Spline_North,
+			  Bnd_Spline_South,
+			  Bnd_Spline_East,
+			  Bnd_Spline_West,
+			  Number_of_Cells_Idir,
+			  Number_of_Cells_Jdir,
+			  Number_of_Ghost_Cells,
+			  GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+			  Stretch_I,
+			  Beta_I,
+			  Tau_I,
+			  Stretch_J,
+			  Beta_J,
+			  Tau_J,
+			  Orthogonal_North,
+			  Orthogonal_South,
+			  Orthogonal_East,
+			  Orthogonal_West);
+
+	// Deallocate the memory for the boundary splines.
+	Bnd_Spline_North.deallocate();
+	Bnd_Spline_South.deallocate();
+	Bnd_Spline_East.deallocate();
+	Bnd_Spline_West.deallocate();
+
+    }    
+  }
+
   return Grid_ptr;
 
 }
