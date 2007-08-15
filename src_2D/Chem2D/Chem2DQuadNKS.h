@@ -75,7 +75,7 @@ int Newton_Update(Chem2D_Quad_Block *SolnBlk,
       }
       
 // #ifdef _NKS_VERBOSE  
-//       if (CFDkit_Primary_MPI_Processor()) { 
+//       if (CFFC_Primary_MPI_Processor()) { 
 // 	/**************************************************************************/
 // 	//FOR DEBUGGING OUTPUT GMRES deltaU set to "SCALED" residual
 // 	double *norm = new double[Num_Var-1];

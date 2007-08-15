@@ -716,17 +716,17 @@ int Output_Ringleb(Dusty2D_Quad_Block *Soln_ptr,
   output_file.close();
 
 #ifdef _MPI_VERSION
-  l1_norm = CFDkit_Summation_MPI(l1_norm);
-  l2_norm = CFDkit_Summation_MPI(l2_norm);
-  max_norm = CFDkit_Maximum_MPI(max_norm);
-  area = CFDkit_Summation_MPI(area);
+  l1_norm = CFFC_Summation_MPI(l1_norm);
+  l2_norm = CFFC_Summation_MPI(l2_norm);
+  max_norm = CFFC_Maximum_MPI(max_norm);
+  area = CFFC_Summation_MPI(area);
 #endif
 
   // Calculate the L1-norm and L2-norm for all blocks.
   l1_norm /= area;
   l2_norm = sqrt(l2_norm/area);
 
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     cout << endl
 	 << endl
 	 << " ==================================================================== "
@@ -823,10 +823,10 @@ int Output_Viscous_Channel(Dusty2D_Quad_Block *Soln_ptr,
   output_file.close();
   
 #ifdef _MPI_VERSION
-  l1_norm = CFDkit_Summation_MPI(l1_norm);
-  l2_norm = CFDkit_Summation_MPI(l2_norm);
-  max_norm = CFDkit_Maximum_MPI(max_norm);
-  numberofactivecells = CFDkit_Summation_MPI(numberofactivecells);
+  l1_norm = CFFC_Summation_MPI(l1_norm);
+  l2_norm = CFFC_Summation_MPI(l2_norm);
+  max_norm = CFFC_Maximum_MPI(max_norm);
+  numberofactivecells = CFFC_Summation_MPI(numberofactivecells);
 #endif
 
   // Calculate the L1-norm and L2-norm for all blocks.
@@ -835,7 +835,7 @@ int Output_Viscous_Channel(Dusty2D_Quad_Block *Soln_ptr,
     l2_norm = sqrt(l2_norm/double(numberofactivecells));
   }
 
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     cout << endl
 	 << endl
 	 << " ==================================================================== "
@@ -934,10 +934,10 @@ int Output_Viscous_Pipe(Dusty2D_Quad_Block *Soln_ptr,
   output_file.close();
   
 #ifdef _MPI_VERSION
-  l1_norm = CFDkit_Summation_MPI(l1_norm);
-  l2_norm = CFDkit_Summation_MPI(l2_norm);
-  max_norm = CFDkit_Maximum_MPI(max_norm);
-  numberofactivecells = CFDkit_Summation_MPI(numberofactivecells);
+  l1_norm = CFFC_Summation_MPI(l1_norm);
+  l2_norm = CFFC_Summation_MPI(l2_norm);
+  max_norm = CFFC_Maximum_MPI(max_norm);
+  numberofactivecells = CFFC_Summation_MPI(numberofactivecells);
 #endif
 
   // Calculate the L1-norm and L2-norm for all blocks.
@@ -946,7 +946,7 @@ int Output_Viscous_Pipe(Dusty2D_Quad_Block *Soln_ptr,
     l2_norm = sqrt(l2_norm/double(numberofactivecells));
   }
 
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     cout << endl
 	 << endl
 	 << " ==================================================================== "
@@ -1019,7 +1019,7 @@ int Output_Turbulent_Pipe_Tecplot(Dusty2D_Quad_Block *Soln_ptr,
 
     // Write the solution data for each solution block.
     i_output_title = 1;
-    if (CFDkit_Primary_MPI_Processor()) i_output_data = 1;
+    if (CFFC_Primary_MPI_Processor()) i_output_data = 1;
     else i_output_data = 0;
     for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
       if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
@@ -1138,23 +1138,23 @@ int Output_Flat_Plate(Dusty2D_Quad_Block *Soln_ptr,
 
   // Calculate the L1-norm and L2-norm for all blocks.
 #ifdef _MPI_VERSION
-  l1_norm = CFDkit_Summation_MPI(l1_norm);
-  l2_norm = CFDkit_Summation_MPI(l2_norm);
-  max_norm = CFDkit_Maximum_MPI(max_norm);
-  area = CFDkit_Summation_MPI(area);
-  numberofcells = CFDkit_Summation_MPI(numberofcells);
-  l1_norm_cf = CFDkit_Summation_MPI(l1_norm_cf);
-  l2_norm_cf = CFDkit_Summation_MPI(l2_norm_cf);
-  max_norm_cf = CFDkit_Maximum_MPI(max_norm_cf);
-  area_cf = CFDkit_Summation_MPI(area_cf);
-  numberofcells_cf = CFDkit_Summation_MPI(numberofcells_cf);
+  l1_norm = CFFC_Summation_MPI(l1_norm);
+  l2_norm = CFFC_Summation_MPI(l2_norm);
+  max_norm = CFFC_Maximum_MPI(max_norm);
+  area = CFFC_Summation_MPI(area);
+  numberofcells = CFFC_Summation_MPI(numberofcells);
+  l1_norm_cf = CFFC_Summation_MPI(l1_norm_cf);
+  l2_norm_cf = CFFC_Summation_MPI(l2_norm_cf);
+  max_norm_cf = CFFC_Maximum_MPI(max_norm_cf);
+  area_cf = CFFC_Summation_MPI(area_cf);
+  numberofcells_cf = CFFC_Summation_MPI(numberofcells_cf);
 #endif
   l1_norm /= area;//= l1_norm/numberofcells;
   l2_norm = sqrt(l2_norm/area);//sqrt(l2_norm/numberofcells);
   l1_norm_cf /= area_cf;//= l1_norm_cf/numberofcells_cf;
   l2_norm_cf = sqrt(l2_norm_cf/area_cf);//sqrt(l2_norm_cf/numberofcells_cf);
 
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     cout << endl
 	 << endl
 	 << " ==================================================================== "

@@ -84,7 +84,7 @@ Quad_Soln_Block* Create_Initial_Solution_Blocks(Quad_Grid_Block            **Ini
                   n_blk = GlobalSolnBlockList.nextBlock();
                   GlobalSolnBlockList.update_next();
                } else {
-                  cout << "\n" << CFDkit_Version() 
+                  cout << "\n" << CFFC_Version() 
                        << " AMR Error: Create_Initial_Solution_Blocks, Insufficient number of quadrilateral solution blocks.\n";
                   Soln_ptr = Deallocate(Soln_ptr, InputParameters);
                   return (NULL);
@@ -177,7 +177,7 @@ int Read_QuadTree(QuadTreeBlock_DataStructure &QuadTree,
 
     /* On primary processor, determine name of quadtree input data file name. */
 
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
        i = 0;
        while (1) {
           if (Input_Parameters.Restart_File_Name[i] == ' ' ||
@@ -193,7 +193,7 @@ int Read_QuadTree(QuadTreeBlock_DataStructure &QuadTree,
 
     /* On primary processor, open the quadtree data file. */
 
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
        quadtree_file.open(quadtree_file_name_ptr, ios::in);
        if (quadtree_file.bad()) return (1);
     } /* endif */
@@ -201,7 +201,7 @@ int Read_QuadTree(QuadTreeBlock_DataStructure &QuadTree,
     /* On primary processor, read in the data structure size parameters and 
        re-allocate memory as required. */
 
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
        quadtree_file.setf(ios::skipws);
        quadtree_file >> nri >> nrj >> ncpu >> nblk;
        quadtree_file.unsetf(ios::skipws);
@@ -221,7 +221,7 @@ int Read_QuadTree(QuadTreeBlock_DataStructure &QuadTree,
 
     /* On primary processor, read the quadtree data from the file. */
 
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
        for ( jBLK = 0 ; jBLK <= QuadTree.NRj-1 ; ++jBLK ) {
            for ( iBLK = 0 ; iBLK <= QuadTree.NRi-1 ; ++iBLK ) {
 	      QuadTree.Roots[iBLK][jBLK].read(quadtree_file,
@@ -275,7 +275,7 @@ int Read_QuadTree(QuadTreeBlock_DataStructure &QuadTree,
 
     /* On primary processor, close quadtree data file. */
 
-    if (CFDkit_Primary_MPI_Processor()) quadtree_file.close();
+    if (CFFC_Primary_MPI_Processor()) quadtree_file.close();
 
     /* Reading of quadtree data file complete.  Return zero value. */
 
@@ -301,7 +301,7 @@ int Write_QuadTree(QuadTreeBlock_DataStructure &QuadTree,
 
     /* On primary processor, determine name of quadtree output data file name. */
 
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
        i = 0;
        while (1) {
           if (Input_Parameters.Restart_File_Name[i] == ' ' ||
@@ -317,18 +317,18 @@ int Write_QuadTree(QuadTreeBlock_DataStructure &QuadTree,
 
     /* On primary processor, open the quadtree data file. */
 
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
        quadtree_file.open(quadtree_file_name_ptr, ios::out);
        if (quadtree_file.bad()) return (1);
     } /* endif */
 
     /* On primary processor, write the quadtree data to the file. */
 
-    if (CFDkit_Primary_MPI_Processor()) quadtree_file << QuadTree;
+    if (CFFC_Primary_MPI_Processor()) quadtree_file << QuadTree;
 
     /* On primary processor, close quadtree data file. */
 
-    if (CFDkit_Primary_MPI_Processor()) quadtree_file.close();
+    if (CFFC_Primary_MPI_Processor()) quadtree_file.close();
 
     /* Writing of quadtree data file complete.  Return zero value. */
 
@@ -418,7 +418,7 @@ void Flag_Blocks_For_Refinement(Quad_Soln_Block             *Soln_ptr,
 
     // Determine global values of the min and max refinement criteria.
 #ifdef _MPI_VERSION
-    number_refinement_criteria = CFDkit_Maximum_MPI(number_refinement_criteria);
+    number_refinement_criteria = CFFC_Maximum_MPI(number_refinement_criteria);
     MPI::COMM_WORLD.Allreduce(local_min_refinement_criteria, 
                               global_min_refinement_criteria, 
 			      MAX_NUMBER_REFINEMENT_CRITERIA,
@@ -575,7 +575,7 @@ int Refine_Grid(Quad_Soln_Block             *Soln_ptr,
                         new_blocks_SECTOR[iNEW] = ADAPTIVEBLOCK2D_SECTOR_SW + iNEW;
                         GlobalSolnBlockList.update_next();
                      } else {
-	   	        cout << "\n " << CFDkit_Version() 
+	   	        cout << "\n " << CFFC_Version() 
                              << " AMR Error: Refine_Grid, Insufficient number of solution blocks.\n";
 	   	        return(6320);
                      } /* endif */
@@ -644,7 +644,7 @@ int Refine_Grid(Quad_Soln_Block             *Soln_ptr,
                                 (solution_block_to_be_refined.NCi-4 < 4) ||
                                 (solution_block_to_be_refined.NCj-4 < 4) ||
                                 (solution_block_to_be_refined.Grid.Node == NULL) ) {
-                              cout << "\n " << CFDkit_Version() 
+                              cout << "\n " << CFFC_Version() 
                                    << " AMR Error: Refine_Grid, Cannot refine mesh.\n";
                               return(6321);
                            } /* endif */
@@ -693,7 +693,7 @@ int Refine_Grid(Quad_Soln_Block             *Soln_ptr,
 			       //}
 			   }
                            if (Check_Quad_Block(Soln_ptr[new_blocks_BLK[iNEW]].Grid)) { 
-                              cout << "\n " << CFDkit_Version() 
+                              cout << "\n " << CFFC_Version() 
                                    << " AMR Error: Refine_Grid, Invalid refined mesh.\n";
                               return(6322);
                            } /* endif */
@@ -711,7 +711,7 @@ int Refine_Grid(Quad_Soln_Block             *Soln_ptr,
 /*                                 (solution_block_to_be_refined.NCj-2*solution_block_to_be_refined.Nghost < */
 /*                                  2*solution_block_to_be_refined.Nghost) || */
 /*                                 (solution_block_to_be_refined.Grid.Node == NULL) ) { */
-/*                               cout << "\n " << CFDkit_Version()  */
+/*                               cout << "\n " << CFFC_Version()  */
 /*                                    << " AMR Error: Refine_Grid, Cannot refine mesh.\n"; */
 /*                               return(1); */
 /*                            } /\* endif *\/ */
@@ -730,7 +730,7 @@ int Refine_Grid(Quad_Soln_Block             *Soln_ptr,
 /*                                              solution_block_to_be_refined.NCi-2*solution_block_to_be_refined.Nghost, */
 /*                                              solution_block_to_be_refined.NCi-2*solution_block_to_be_refined.Nghost))); */
 /*                            if (Check_Quad_Block(Soln_ptr[new_blocks_BLK[iNEW]].Grid)) {  */
-/*                               cout << "\n " << CFDkit_Version()  */
+/*                               cout << "\n " << CFFC_Version()  */
 /*                                    << " AMR Error: Refine_Grid, Invalid refined mesh.\n"; */
 /*                               return(1); */
 /*                            } /\* endif *\/ */
@@ -967,7 +967,7 @@ int Coarsen_Grid(Quad_Soln_Block             *Soln_ptr,
                                        (solution_block_to_be_coarsened_SW_sibling.NCi-4 < 4) ||
                                        (solution_block_to_be_coarsened_SW_sibling.NCj-4 < 4) ||
                                        (solution_block_to_be_coarsened_SW_sibling.Grid.Node == NULL) ) {
-                                     cout << "\n " << CFDkit_Version()
+                                     cout << "\n " << CFFC_Version()
                                           << " AMR Error: Coarsen_Grid, Cannot coarsen south-west mesh.\n";
                                      return(7480);
                                   } /* endif */
@@ -979,7 +979,7 @@ int Coarsen_Grid(Quad_Soln_Block             *Soln_ptr,
                                        (solution_block_to_be_coarsened_SE_sibling.NCi-4 < 4) ||
                                        (solution_block_to_be_coarsened_SE_sibling.NCj-4 < 4) ||
                                        (solution_block_to_be_coarsened_SE_sibling.Grid.Node == NULL) ) {
-                                     cout << "\n " << CFDkit_Version()
+                                     cout << "\n " << CFFC_Version()
                                           << " AMR Error: Coarsen_Grid, Cannot coarsen south-east mesh.\n";
                                      return(7481);
                                   } /* endif */
@@ -991,7 +991,7 @@ int Coarsen_Grid(Quad_Soln_Block             *Soln_ptr,
                                        (solution_block_to_be_coarsened_NW_sibling.NCi-4 < 4) ||
                                        (solution_block_to_be_coarsened_NW_sibling.NCj-4 < 4) ||
                                        (solution_block_to_be_coarsened_NW_sibling.Grid.Node == NULL) ) {
-                                     cout << "\n " << CFDkit_Version()
+                                     cout << "\n " << CFFC_Version()
                                           << " AMR Error: Coarsen_Grid, Cannot coarsen north-west mesh.\n";
                                      return(7482);
                                   } /* endif */
@@ -1003,7 +1003,7 @@ int Coarsen_Grid(Quad_Soln_Block             *Soln_ptr,
                                        (solution_block_to_be_coarsened_NE_sibling.NCi-4 < 4) ||
                                        (solution_block_to_be_coarsened_NE_sibling.NCj-4 < 4) ||
                                        (solution_block_to_be_coarsened_NE_sibling.Grid.Node == NULL) ) {
-                                     cout << "\n " << CFDkit_Version()
+                                     cout << "\n " << CFFC_Version()
                                           << " AMR Error: Coarsen_Grid, Cannot coarsen north-east mesh.\n";
                                      return(7483);
                                   } /* endif */
@@ -1052,7 +1052,7 @@ int Coarsen_Grid(Quad_Soln_Block             *Soln_ptr,
 				      //}
 				  }
                                   if (Check_Quad_Block(Soln_ptr[old_blocks_BLK[0]].Grid)) { 
-                                     cout << "\n " << CFDkit_Version() 
+                                     cout << "\n " << CFFC_Version() 
                                           << " AMR Error: Coarsen_Grid, Invalid coarsened mesh.\n";
                                      return(7484);
                                   } /* endif */
@@ -1407,7 +1407,7 @@ int Initial_AMR(Quad_Soln_Block              *Soln_ptr,
                                       OFF);
        if (error_flag) return (error_flag);
 
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           cout << "\n Refinement Level #" << number_of_initial_mesh_refinements
                << " : Number of Blocks = " << QuadTree.countUsedBlocks()
                << ", Number of Cells = " << QuadTree.countUsedCells()
@@ -1473,7 +1473,7 @@ int Uniform_AMR(Quad_Soln_Block              *Soln_ptr,
                                       OFF);
        if (error_flag) return (error_flag);
 
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           cout << "\n Refinement Level #" << number_of_uniform_mesh_refinements
                << " : Number of Blocks = " << QuadTree.countUsedBlocks()
                << ", Number of Cells = " << QuadTree.countUsedCells()
@@ -1574,7 +1574,7 @@ int Boundary_AMR(Quad_Soln_Block              *Soln_ptr,
                                       OFF);
        if (error_flag) return (error_flag);
 
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           cout << "\n Refinement Level #" << number_of_boundary_mesh_refinements
                << " : Number of Blocks = " << QuadTree.countUsedBlocks()
                << ", Number of Cells = " << QuadTree.countUsedCells()

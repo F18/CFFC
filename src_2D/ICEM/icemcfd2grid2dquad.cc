@@ -4,7 +4,7 @@
  ******                   icemcfd2grid2dquad                 *******
  ****                                                           ****
  ****               Computer program for converting             ****
- ****    ICEM CFD mesh to CFDkit+caboodle Grid2D_Quad_Block     ****
+ ****    ICEM CFD mesh to CFFC Grid2D_Quad_Block     ****
  ****        format for subsequent reading from input file      ****
  ****                                                           ****
  ****                  Written by Ming Yao Ding                 ****
@@ -114,7 +114,7 @@ main(int num_arg, char *arg_ptr[]){
 
   cout << '\n' << program_title_ptr << '\n';
   cout << program_version_ptr << '\n';
-  cout << "Built using " << CFDkit_Version() << "\n";
+  cout << "Built using " << CFFC_Version() << "\n";
   cout << ICEMCFD_Version() << "\n";
   cout.flush();
   if (version_flag) return (0);
@@ -153,7 +153,7 @@ main(int num_arg, char *arg_ptr[]){
   } /* endif */
 
   // Output the mesh to a data file in a format suitable for reading by
-  // CFDkit+caboodle software.
+  // CFFC software.
   output_file.open(Output_File_Name_ptr,ios::out);
 
   output_file << "ICEMCFD" << "\n" 

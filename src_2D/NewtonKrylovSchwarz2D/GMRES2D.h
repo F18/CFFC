@@ -330,7 +330,7 @@ Output_GMRES_vars_Tecplot (
 
   fout << setprecision(14);
 
-	fout << "ZONE T =  \"Block " << Block_Number << " CPU" << CFDkit_MPI::This_Processor_Number
+	fout << "ZONE T =  \"Block " << Block_Number << " CPU" << CFFC_MPI::This_Processor_Number
 		<< "\" \\ \n"
 		<< "I = " << SolnBlk->Grid.ICu - SolnBlk->Grid.ICl + 2*SolnBlk->Nghost*ng + 1 << " \\ \n"
 		<< "J = " << SolnBlk->Grid.JCu - SolnBlk->Grid.JCl + 2*SolnBlk->Nghost*ng + 1 << " \\ \n"
@@ -2119,7 +2119,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
     /**************************************************************************/
     if(!i_first_time_through) {
 
-      if (CFDkit_Primary_MPI_Processor() && !do_one_more_iter_for_check){   
+      if (CFFC_Primary_MPI_Processor() && !do_one_more_iter_for_check){   
 				switch (Input_Parameters->NKS_IP.output_format) {
 					case OF_SCOTT:
 						cout << "\n GMRES Restarted at -> GMRES (Inner Iterations) = " ;
@@ -2141,7 +2141,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 
       /************************************************************************/
       /* MPI barrier to ensure processor synchronization. */
-      CFDkit_Barrier_MPI();  
+      CFFC_Barrier_MPI();  
       
       /* Send "x" solution information between neighbouring blocks.*/          
       error_flag = Send_All_Messages(G, 
@@ -2154,7 +2154,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	     << ".\n";
 	cout.flush();
       } 
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       /************************************************************************/
 
       /**************************************************************************/
@@ -2165,7 +2165,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	  total_norm_x += sqr( G[Bcount].L2_Norm(G[Bcount].x) );	  
 	}
       } 
-      total_norm_x = sqrt(CFDkit_Summation_MPI(total_norm_x));      
+      total_norm_x = sqrt(CFFC_Summation_MPI(total_norm_x));      
       epsilon = Input_Parameters->NKS_IP.Epsilon_Naught/sqrt(total_norm_x);       
 
       /**************************************************************************/
@@ -2196,7 +2196,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	     << List_of_Local_Solution_Blocks->ThisCPU << ".\n";
 	cout.flush();
       } 
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       
       // Apply boundary flux corrections to residual to ensure that method is conservative.
       Apply_Boundary_Flux_Corrections(Soln_ptr, *List_of_Local_Solution_Blocks);
@@ -2231,7 +2231,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	       << List_of_Local_Solution_Blocks->ThisCPU << ".\n";
 	  cout.flush();
 	} 
-	error_flag = CFDkit_OR_MPI(error_flag);
+	error_flag = CFFC_OR_MPI(error_flag);
 	
 	// Apply boundary flux corrections to residual to ensure that method is conservative.
 	Apply_Boundary_Flux_Corrections(Soln_ptr, *List_of_Local_Solution_Blocks);
@@ -2276,7 +2276,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
       }
     }
 
-    beta = sqrt(CFDkit_Summation_MPI(beta));
+    beta = sqrt(CFFC_Summation_MPI(beta));
     /**************************************************************************/
 
 
@@ -2346,7 +2346,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
     
       /**************************************************************************/
       /* MPI barrier to ensure processor synchronization. */
-      CFDkit_Barrier_MPI();  
+      CFFC_Barrier_MPI();  
       
       /* Send solution information between neighbouring blocks.*/
       /* Passes "W = Minv * V(i) = z"  information in ghost cells */       
@@ -2359,7 +2359,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	     << ".\n";
 	cout.flush();
       } /* endif */
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       /**************************************************************************/
   
 
@@ -2371,7 +2371,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	  total_norm_z += sqr(G[Bcount].L2_Norm(&(G[Bcount].W[(search_direction_counter)*G[Bcount].scalar_dim])));
  	} 
       }       
-      total_norm_z = sqrt(CFDkit_Summation_MPI(total_norm_z));     	                      
+      total_norm_z = sqrt(CFFC_Summation_MPI(total_norm_z));     	                      
       epsilon = Input_Parameters->NKS_IP.Epsilon_Naught/sqrt(total_norm_z);
       /**************************************************************************/
 
@@ -2407,7 +2407,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	cout << "\n GMRES ERROR: Solution flux correction message passing error on processor "
 	     << List_of_Local_Solution_Blocks->ThisCPU << ".\n"; cout.flush();
       } 
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
 	  
       // Apply boundary flux corrections to residual to ensure that method is conservative.
       Apply_Boundary_Flux_Corrections(Soln_ptr,*List_of_Local_Solution_Blocks);
@@ -2446,7 +2446,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	  cout << "\n GMRES ERROR: Solution flux correction message passing error on processor "
 	       << List_of_Local_Solution_Blocks->ThisCPU << ".\n"; cout.flush();
 	} 
-	error_flag = CFDkit_OR_MPI(error_flag);
+	error_flag = CFFC_OR_MPI(error_flag);
 	
 	// Apply boundary flux corrections to residual to ensure that method is conservative.
 	Apply_Boundary_Flux_Corrections(Soln_ptr,*List_of_Local_Solution_Blocks);
@@ -2483,7 +2483,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 						  &(G[Bcount].V[(k)*G[Bcount].scalar_dim]) );
 	  }
 	}	
-	total_norm_H = CFDkit_Summation_MPI(total_norm_H);
+	total_norm_H = CFFC_Summation_MPI(total_norm_H);
 
 	for (int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) {
 	  if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED){
@@ -2501,7 +2501,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
       /**************************************************************************/
 
 #ifdef _NKS_VERBOSE
-      if (CFDkit_Primary_MPI_Processor()) { 
+      if (CFFC_Primary_MPI_Processor()) { 
 	cout << "\n  GMRES (Inner Iterations) = " << Number_of_GMRES_Iterations << " total_norm_H1 " <<   total_norm_H;	 
       } 
 #endif
@@ -2515,11 +2515,11 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	} 
       } 
       	
-      total_norm_H = sqrt(CFDkit_Summation_MPI(total_norm_H)); 
+      total_norm_H = sqrt(CFFC_Summation_MPI(total_norm_H)); 
       /**************************************************************************/
 
 #ifdef _NKS_VERBOSE   
-      if (CFDkit_Primary_MPI_Processor()) { 
+      if (CFFC_Primary_MPI_Processor()) { 
 	cout << "\n  GMRES (Inner Iterations) = " << Number_of_GMRES_Iterations << " total_norm_H2 " <<   total_norm_H;	 
       } 
 #endif
@@ -2578,14 +2578,14 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	}
       }      
       
-      relative_residual = CFDkit_Maximum_MPI(relative_residual)/resid0;    
+      relative_residual = CFFC_Maximum_MPI(relative_residual)/resid0;    
 
       /**************************************************************************/
       
       // Output progress
 
       //Verbose Output for CHECKING
-      if (CFDkit_Primary_MPI_Processor() && Number_of_GMRES_Iterations%5 == 0 && Input_Parameters->NKS_IP.GMRES_CHECK) { 
+      if (CFFC_Primary_MPI_Processor() && Number_of_GMRES_Iterations%5 == 0 && Input_Parameters->NKS_IP.GMRES_CHECK) { 
 	if(Number_of_GMRES_Iterations == 5){	
 	  cout << "\n  GMRES Iter.  \t   resid0 \t   resid \t  rel_resid  \t   L2||z||   \t  epsilon ";
 	} 
@@ -2604,7 +2604,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 			// another does not. This MPI-OR statement avoids any
 			// such problems.
 			//   -- Alistair Wood Wed Feb 28 2007 
-      met_tol = CFDkit_OR_MPI(met_tol);
+      met_tol = CFFC_OR_MPI(met_tol);
 
 			if (met_tol) {
 				break;
@@ -2687,14 +2687,14 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
       }
     } 
      
-    total_norm_b = sqrt(CFDkit_Summation_MPI(total_norm_b));
+    total_norm_b = sqrt(CFFC_Summation_MPI(total_norm_b));
     for(int i=0; i< blocksize; i++){
-      total_norm_eqn_r[i] = sqrt(CFDkit_Summation_MPI(total_norm_eqn_r[i]));
-      total_norm_eqn_b[i] = sqrt(CFDkit_Summation_MPI(total_norm_eqn_b[i]));
+      total_norm_eqn_r[i] = sqrt(CFFC_Summation_MPI(total_norm_eqn_r[i]));
+      total_norm_eqn_b[i] = sqrt(CFFC_Summation_MPI(total_norm_eqn_b[i]));
     }
 
     //Output Reduction for systems & per equation
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
 
       cout<<" GMRES Check total   ||(Ax-b)||/||b|| = "<<beta<<" / "<<total_norm_b<<" = "<<beta/total_norm_b
 	  <<" /relative_residual (ideal 1) -> " <<((beta/total_norm_b)/relative_residual)<<endl;
@@ -2708,7 +2708,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
     delete[] total_norm_eqn_b; delete[] total_norm_eqn_r; 
   }
 
-	if (CFDkit_Primary_MPI_Processor()) { 
+	if (CFFC_Primary_MPI_Processor()) { 
 		switch (Input_Parameters->NKS_IP.output_format) {
 			case OF_SCOTT:
 				cout << "\n Finished GMRES with (Inner Iterations) = " << Number_of_GMRES_Iterations;

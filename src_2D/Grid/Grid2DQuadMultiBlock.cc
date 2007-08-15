@@ -101,7 +101,7 @@ Grid2D_Quad_Block** Broadcast_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 #ifdef _MPI_VERSION
     int i, j;
 
-    if (!CFDkit_Primary_MPI_Processor()) {
+    if (!CFFC_Primary_MPI_Processor()) {
        if (Grid_ptr != NULL) Grid_ptr = Deallocate_Multi_Block_Grid(Grid_ptr,
                                                                     Number_of_Blocks_Idir,
                                                                     Number_of_Blocks_Jdir);
@@ -6144,7 +6144,7 @@ Grid2D_Quad_Block** Grid_NASA_Rotor_37(Grid2D_Quad_Block **Grid_ptr,
   NASARotor37 NASA_Rotor_37;
 
   // Initialize NASA rotor 37 class.
-  strcpy(NASA_Rotor_Data_Directory,"/nfs/fe01/d1/cfd/jai/CFDkit+caboodle/data/NASA_Rotors/R37/");
+  strcpy(NASA_Rotor_Data_Directory,"/nfs/fe01/d1/cfd/jai/CFFC/data/NASA_Rotors/R37/");
   Rotor_Flow_Type = 1;//PEAK_FLOW;
   NASA_Rotor_37.init(Rotor_Flow_Type,NASA_Rotor_Data_Directory);
 
@@ -6844,7 +6844,7 @@ Grid2D_Quad_Block** Grid_NASA_Rotor_67(Grid2D_Quad_Block **Grid_ptr,
   NASARotor67 NASA_Rotor_67;
 
   // Initialize NASA rotor 67 class.
-  strcpy(NASA_Rotor_Data_Directory,"/nfs/fe01/d1/cfd/jai/CFDkit+caboodle/data/NASA_Rotors/R67/");
+  strcpy(NASA_Rotor_Data_Directory,"/nfs/fe01/d1/cfd/jai/CFFC/data/NASA_Rotors/R67/");
   Rotor_Flow_Type = 1;//PEAK_FLOW;
   NASA_Rotor_67.init(Rotor_Flow_Type,NASA_Rotor_Data_Directory);
 

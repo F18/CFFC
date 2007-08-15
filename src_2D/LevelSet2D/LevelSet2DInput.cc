@@ -187,7 +187,7 @@ void Set_Default_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
 
   IP.Line_Number = 0;
   
-  IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+  IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
   IP.Number_of_Blocks_Per_Processor = 10;
 
 }
@@ -485,8 +485,8 @@ void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
 			1,
 			MPI::INT,0);
   // Number of processors:
-  if (!CFDkit_Primary_MPI_Processor()) {
-    IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+  if (!CFFC_Primary_MPI_Processor()) {
+    IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
   }
   MPI::COMM_WORLD.Bcast(&(IP.Number_of_Blocks_Per_Processor),
 			1,
@@ -792,8 +792,8 @@ void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP,
 		     1,
 		     MPI::INT,Source_Rank);
   // Number of blocks per processor:
-  if (!CFDkit_Primary_MPI_Processor()) {
-    IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+  if (!CFFC_Primary_MPI_Processor()) {
+    IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
   }
   Communicator.Bcast(&(IP.Number_of_Blocks_Per_Processor),
 		     1,

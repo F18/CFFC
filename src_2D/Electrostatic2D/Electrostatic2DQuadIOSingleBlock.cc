@@ -72,7 +72,7 @@ void Output_Tecplot(Electrostatic2D_Quad_Block &SolnBlk,
   // Output node solution data.  
   Out_File << setprecision(14);
   if (Output_Title) {
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Electrostatic Solution, "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Electrostatic Solution, "
 	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
 	     << ", Time = " << Time
 	     << "\"" << "\n"
@@ -124,7 +124,7 @@ void Output_Cells_Tecplot(Electrostatic2D_Quad_Block &SolnBlk,
 
   Out_File << setprecision(14);
   if (Output_Title) {
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Electrostatic Solution, "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Electrostatic Solution, "
 	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
 	     << ", Time = " << Time
 	     << "\"" << "\n"
@@ -184,7 +184,7 @@ void Output_Quasi3D_Tecplot(Electrostatic2D_Quad_Block &SolnBlk,
   // Output node solution data.  
   Out_File << setprecision(14);
   if (Output_Title) {
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Electrostatic Solution, "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Electrostatic Solution, "
 	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
 	     << ", Time = " << Time
 	     << "\"" << "\n"

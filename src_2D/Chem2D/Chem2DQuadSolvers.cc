@@ -74,7 +74,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
    *************************************************************************
    *************************************************************************/  
   //The primary MPI processor processes the input parameter file.
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     if (!batch_flag) {
         cout << "\n Reading Chem2D input data file `"
              << Input_File_Name_ptr << "'."; 
@@ -92,10 +92,10 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 
 
   // Broadcast input solution parameters to other MPI processors.
-  CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-  CFDkit_Broadcast_MPI(&error_flag, 1);
+  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+  CFFC_Broadcast_MPI(&error_flag, 1);
   if (error_flag != 0) return (error_flag); 
-  CFDkit_Broadcast_MPI(&command_flag, 1);
+  CFFC_Broadcast_MPI(&command_flag, 1);
   if (command_flag == TERMINATE_CODE) return (0);
 
   Broadcast_Input_Parameters(Input_Parameters);
@@ -115,13 +115,13 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
    *************************************************************************/
 
   execute_new_calculation: ;
-  CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
   
   /* Create initial mesh.  Read mesh from grid definition or data files 
      when specified by input parameters. */
   
   // The primary MPI processor creates the initial mesh.
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     if (!batch_flag) cout << "\n Creating (or reading) initial quadrilateral multi-block mesh.";
     MeshBlk = NULL;
     MeshBlk = Multi_Block_Grid(MeshBlk, Input_Parameters);
@@ -145,8 +145,8 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   } /* endif */
 
   // Broadcast the mesh to other MPI processors.
-  CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-  CFDkit_Broadcast_MPI(&error_flag, 1); // Broadcast mesh error flag.
+  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+  CFFC_Broadcast_MPI(&error_flag, 1); // Broadcast mesh error flag.
 
   if (error_flag) return (error_flag);
   MeshBlk = Broadcast_Multi_Block_Grid(MeshBlk, Input_Parameters);
@@ -208,7 +208,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	   << ".\n";
       cout.flush();
     } /* endif */
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
     Allocate_Message_Buffers(List_of_Local_Solution_Blocks,
 			     Local_SolnBlk[0].NumVar()+NUM_COMP_VECTOR2D);
@@ -226,19 +226,19 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
               << ".\n";
          cout.flush();
     } /* endif */
-    error_flag = CFDkit_OR_MPI(error_flag); 
+    error_flag = CFFC_OR_MPI(error_flag); 
     if (error_flag){ 
       return (error_flag);
     } 
     // Ensure each processor has the correct time and time!!!
-    number_of_time_steps = CFDkit_Maximum_MPI(number_of_time_steps);
-    Time = CFDkit_Maximum_MPI(Time);
-    processor_cpu_time.cput = CFDkit_Maximum_MPI(processor_cpu_time.cput);
-    Input_Parameters.Maximum_Number_of_Time_Steps = CFDkit_Maximum_MPI(Input_Parameters.Maximum_Number_of_Time_Steps);
-    Input_Parameters.Time_Max = CFDkit_Maximum_MPI(Input_Parameters.Time_Max);
+    number_of_time_steps = CFFC_Maximum_MPI(number_of_time_steps);
+    Time = CFFC_Maximum_MPI(Time);
+    processor_cpu_time.cput = CFFC_Maximum_MPI(processor_cpu_time.cput);
+    Input_Parameters.Maximum_Number_of_Time_Steps = CFFC_Maximum_MPI(Input_Parameters.Maximum_Number_of_Time_Steps);
+    Input_Parameters.Time_Max = CFFC_Maximum_MPI(Input_Parameters.Time_Max);
 
     // Send grid information between neighbouring blocks
-    CFDkit_Barrier_MPI(); 
+    CFFC_Barrier_MPI(); 
     error_flag = Send_All_Messages(Local_SolnBlk, 
 				   List_of_Local_Solution_Blocks,
 				   NUM_COMP_VECTOR2D,
@@ -248,7 +248,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   } else {   
 
     // Send grid information between neighbouring blocks BEFORE applying ICs
-    CFDkit_Barrier_MPI(); 
+    CFFC_Barrier_MPI(); 
     error_flag = Send_All_Messages(Local_SolnBlk, 
 				   List_of_Local_Solution_Blocks,
 				   NUM_COMP_VECTOR2D,
@@ -262,7 +262,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     Send solution information between neighbouring blocks to complete
     prescription of initial data. 
   *******************************************************************************/
-  CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
  
   // OLD grid send_all_messages, moved before ICs to help with values used in BCs 
   // set from ICs, ie ghost cell node locations, changed before ICs 
@@ -280,7 +280,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     exit(1);
   } /* endif */ 
 
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return (error_flag);
     
   /*******************************************************************************
@@ -305,7 +305,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	    << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
        cout.flush();
      } /* endif */
-     error_flag = CFDkit_OR_MPI(error_flag);
+     error_flag = CFFC_OR_MPI(error_flag);
      if (error_flag) return error_flag;
 
      ///////////////////////////////////////////////////////////////////////////
@@ -320,7 +320,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	    << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
        cout.flush();
      } /* endif */
-     error_flag = CFDkit_OR_MPI(error_flag);
+     error_flag = CFFC_OR_MPI(error_flag);
      if (error_flag) return error_flag;
 
      ///////////////////////////////////////////////////////////////////////////
@@ -336,7 +336,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
              << ".\n";
         cout.flush();
      } /* endif */
-     error_flag = CFDkit_OR_MPI(error_flag);
+     error_flag = CFFC_OR_MPI(error_flag);
      if (error_flag) return (error_flag);
   } /* endif */
 
@@ -382,7 +382,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       cout.flush();
       return (error_flag);
     } 
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
     //Output space filling curve in Tecplot format
     if (!batch_flag) cout << "\n Outputting space filling curve showing block loading for CPUs.";
@@ -399,7 +399,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
    ****************************************************************************
    ****************************************************************************/  
   continue_existing_calculation: ;
-  CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
  
   /******************* MULTIGRID SETUP ****************************************/
   if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
@@ -434,7 +434,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       Input_Parameters.first_step = first_step;
     }
 
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       error_flag = Open_Progress_File(residual_file,
 				      Input_Parameters.Output_File_Name,
 				      number_of_time_steps,
@@ -453,8 +453,8 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       } /* endif */
     } /* endif */
     
-    CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-    CFDkit_Broadcast_MPI(&error_flag, 1);
+    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+    CFFC_Broadcast_MPI(&error_flag, 1);
     if (error_flag) return (error_flag);
     
     processor_cpu_time.reset();
@@ -500,7 +500,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	   cout.flush();
 	   return (error_flag);
 	 } 
-	 error_flag = CFDkit_OR_MPI(error_flag);
+	 error_flag = CFFC_OR_MPI(error_flag);
 	 if (error_flag) return (error_flag);
 	 //Output space filling curve in Tecplot format
 	 if (!batch_flag) cout << "\n Outputting space filling curve showing block loading for CPUs.";
@@ -533,7 +533,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	              << ".\n";
 	         cout.flush();
               } /* endif */
-              error_flag = CFDkit_OR_MPI(error_flag);
+              error_flag = CFFC_OR_MPI(error_flag);
               if (error_flag) return (error_flag);
               if (!batch_flag) {
 	         cout << "\n New multi-block solution-adaptive quadrilateral mesh statistics: "; 
@@ -565,11 +565,11 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	  dTime = CFL(Local_SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
 	  if (!Input_Parameters.Dual_Time_Stepping) {
 	    // Find global minimum time step for all processors.
-	    dTime = CFDkit_Minimum_MPI(dTime);
+	    dTime = CFFC_Minimum_MPI(dTime);
 	  } else {
             // Assign physical time step for dual time stepping.
             if (n_inner == 0) { 
-	      dTime = Input_Parameters.Physical_CFL_Number*CFDkit_Minimum_MPI(dTime);
+	      dTime = Input_Parameters.Physical_CFL_Number*CFFC_Minimum_MPI(dTime);
               Input_Parameters.dTime = dTime;              
 	    }
             dTime = Input_Parameters.dTime;
@@ -615,17 +615,17 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	  Max_Norm_Residual(Local_SolnBlk, List_of_Local_Solution_Blocks,residual_max_norm);
 	  
 	  for(int q=0; q < Local_SolnBlk[0].Number_of_Residual_Norms; q++){
-	    residual_l1_norm[q] = CFDkit_Summation_MPI(residual_l1_norm[q]); // L1 norm for all processors.
+	    residual_l1_norm[q] = CFFC_Summation_MPI(residual_l1_norm[q]); // L1 norm for all processors.
 	    residual_l2_norm[q] =residual_l2_norm[q]*residual_l2_norm[q];
-	    residual_l2_norm[q] = sqrt(CFDkit_Summation_MPI(residual_l2_norm[q])); // L2 norm for all processors.
-	    residual_max_norm[q] = CFDkit_Maximum_MPI(residual_max_norm[q]); // Max norm for all processors.
+	    residual_l2_norm[q] = sqrt(CFFC_Summation_MPI(residual_l2_norm[q])); // L2 norm for all processors.
+	    residual_max_norm[q] = CFFC_Maximum_MPI(residual_max_norm[q]); // Max norm for all processors.
 	  }
 	  if (n_inner == 1) initial_residual_l2_norm = residual_l2_norm[Local_SolnBlk[0].residual_variable-1];
 	  
 	  /* Update CPU time used for the calculation so far. */
 	  processor_cpu_time.update();
 	  // Total CPU time for all processors.
-	  total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput); 
+	  total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput); 
 	  /************************ RESTART *****************************************
           Periodically save restart solution files. 
 	  ***************************************************************************/ 
@@ -661,7 +661,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 		     << ".\n";
 		cout.flush();
 	      } 
-	      error_flag = CFDkit_OR_MPI(error_flag);
+	      error_flag = CFFC_OR_MPI(error_flag);
 	      if (error_flag) return (error_flag);
 	      cout.flush();
 	    } 
@@ -681,7 +681,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 						    first_step,
 						    50);
 	    //residual to file
-	    if (CFDkit_Primary_MPI_Processor() && !first_step) {
+	    if (CFFC_Primary_MPI_Processor() && !first_step) {
 	      Output_Progress_to_File(residual_file,
 				      number_of_time_steps,
 				      Time*THOUSAND,
@@ -752,7 +752,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	    } /* endif */
 	    
 	    // Reduce message passing error flag to other MPI processors.
-	    error_flag = CFDkit_OR_MPI(error_flag);
+	    error_flag = CFFC_OR_MPI(error_flag);
 	    if (error_flag) return (error_flag);
 	    
 	    
@@ -775,7 +775,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	      cout.flush();
 	    } /* endif */
 	    
-	    error_flag = CFDkit_OR_MPI(error_flag);
+	    error_flag = CFFC_OR_MPI(error_flag);
 	    if (error_flag) return (error_flag);
 	    
 	    // 4. Send boundary flux corrections at block interfaces with resolution changes.
@@ -788,7 +788,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 		   << ".\n";
 	      cout.flush();
 	    } /* endif */
-	    error_flag = CFDkit_OR_MPI(error_flag);
+	    error_flag = CFFC_OR_MPI(error_flag);
 	    if (error_flag) return (error_flag);
 	    
 	
@@ -819,7 +819,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	      cout.flush();
 	    } 
 	    
-	    error_flag = CFDkit_OR_MPI(error_flag);
+	    error_flag = CFFC_OR_MPI(error_flag);
 	    if (error_flag) return (error_flag);
 	    
 	  } /* endfor */
@@ -888,7 +888,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     Update ghostcell information and prescribe boundary conditions to ensure
     that the solution is consistent on each block. 
     *************************************************************************************/
-    CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
     
     error_flag = Send_All_Messages(Local_SolnBlk, 
 				   List_of_Local_Solution_Blocks,
@@ -901,13 +901,13 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	   << ".\n";
       cout.flush();
     } /* endif */
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
     
     BCs(Local_SolnBlk,List_of_Local_Solution_Blocks, Input_Parameters);
     /* Close residual file. */
     
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       error_flag = Close_Progress_File(residual_file);
       error_flag = Close_Time_Accurate_File(time_accurate_data_file);
     } /* endif */
@@ -924,7 +924,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
     time_t start_NKS, end_NKS;
 
-     if (CFDkit_Primary_MPI_Processor()) {
+     if (CFFC_Primary_MPI_Processor()) {
         error_flag = Open_Progress_File(residual_file,
 	 			        Input_Parameters.Output_File_Name,
 				        number_of_time_steps,
@@ -936,8 +936,8 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
         } 
      }
 
-     CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-     CFDkit_Broadcast_MPI(&error_flag, 1);
+     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+     CFFC_Broadcast_MPI(&error_flag, 1);
      if (error_flag) return (error_flag);
 
      //Turn Limiter Freezing OFF for startup
@@ -960,18 +960,18 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 									Input_Parameters);
      
      processor_cpu_time.update();
-     total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput);  
+     total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);  
     
      if (error_flag) {
-        if (CFDkit_Primary_MPI_Processor()) { 
+        if (CFFC_Primary_MPI_Processor()) { 
    	   cout << "\n Chem2D_NKS ERROR: Chem2D solution error on processor " 
                 << List_of_Local_Solution_Blocks.ThisCPU << ".\n";
    	   cout.flush();
    	} /* endif */
      } /* endif */
 
-     CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-     CFDkit_Broadcast_MPI(&error_flag, 1);
+     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+     CFFC_Broadcast_MPI(&error_flag, 1);
      if (error_flag) return (error_flag);
     
      /***********************************************************************/
@@ -993,7 +993,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
      } 
      //Also want to output total GMRES & NKS Iterations, and maybe max memory usage possibly??
 
-     if (CFDkit_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file); 
+     if (CFFC_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file); 
      
   } 
   /*************************************************************************************************************************/
@@ -1009,12 +1009,12 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
    ****************************************************************************/ 
   
   postprocess_current_calculation: ;
-  CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
 
   // To infinity and beyond....
   while (1) {
     
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       Get_Next_Input_Control_Parameter(Input_Parameters);
       command_flag = Parse_Next_Input_Control_Parameter(Input_Parameters);
       line_number = Input_Parameters.Line_Number;
@@ -1024,9 +1024,9 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     //cout<<" \n HERE "<<command_flag;
     //cout.flush();
 
-    CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
     Broadcast_Input_Parameters(Input_Parameters);
-    CFDkit_Broadcast_MPI(&command_flag, 1);
+    CFFC_Broadcast_MPI(&command_flag, 1);
     
     /************************************************************************
      **************** EXECUTE CODE ******************************************
@@ -1080,7 +1080,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
    
       // Close input data file.
       if (!batch_flag) cout << "\n\n Closing Chem2D input data file.";
-      if (CFDkit_Primary_MPI_Processor()) Close_Input_File(Input_Parameters);
+      if (CFFC_Primary_MPI_Processor()) Close_Input_File(Input_Parameters);
       // Terminate calculation.
       return (0);
     }
@@ -1121,7 +1121,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	     << ".\n";
 	cout.flush();
       } /* endif */
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
       // Output multi-block solution-adaptive quadrilateral mesh statistics.
       if (!batch_flag) {
@@ -1140,7 +1140,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
              << QuadTree.efficiencyRefinement() << "\n";
         cout.flush();
       } /* endif */
-      //          if (CFDkit_Primary_MPI_Processor()) {
+      //          if (CFFC_Primary_MPI_Processor()) {
       //             for ( int j_blk = 0 ; j_blk <= QuadTree.Nblk-1 ; ++j_blk ) {
       //                for ( int i_blk = 0 ; i_blk <= QuadTree.Ncpu-1 ; ++i_blk ) {
       // 	          if (QuadTree.Blocks[i_blk][j_blk] != NULL) {
@@ -1181,7 +1181,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
            cout.flush();
            return (error_flag);
         } /* endif */
-        error_flag = CFDkit_OR_MPI(error_flag);
+        error_flag = CFFC_OR_MPI(error_flag);
         if (error_flag) return (error_flag);
         //Output space filling curve in Tecplot format
         if (!batch_flag) cout << "\n Outputting space filling curve showing block loading for CPUs.";
@@ -1209,7 +1209,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	     << ".\n";
 	cout.flush();
       } /* endif */
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
     }
  
@@ -1232,7 +1232,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	     << ".\n";
 	cout.flush();
       } /* endif */
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
       
     }
@@ -1255,7 +1255,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	     << ".\n";
 	cout.flush();
       } /* endif */
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
     }
     /************************************************************************
@@ -1279,7 +1279,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	     << ".\n";
 	cout.flush();
       } /* endif */
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
     }
     /*************************************************************************
@@ -1297,7 +1297,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	     << ".\n";
 	cout.flush();
       } /* endif */
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
       
       error_flag = Write_Restart_Solution(Local_SolnBlk, 
@@ -1313,7 +1313,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	     << ".\n";
 	cout.flush();
       } /* endif */
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
     }
   
@@ -1322,7 +1322,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
      *************************************************************************/
     else if (command_flag == WRITE_OUTPUT_GRID_CODE) {
       // Output multi-block solution-adaptive mesh data file.
-      if (CFDkit_Primary_MPI_Processor()) {
+      if (CFFC_Primary_MPI_Processor()) {
 	if (!batch_flag) cout << "\n Writing Chem2D multi-block mesh to grid data output file.";
 	error_flag = Output_Tecplot(MeshBlk,
 				    Input_Parameters);
@@ -1331,7 +1331,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	  cout.flush();
 	} /* endif */
       } /* endif */
-      CFDkit_Broadcast_MPI(&error_flag, 1);
+      CFFC_Broadcast_MPI(&error_flag, 1);
       if (error_flag) return (error_flag);
     }
 
@@ -1340,7 +1340,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
      *************************************************************************/
     else if (command_flag == WRITE_GRID_DEFINITION_CODE) {
       // Write multi-block solution-adaptive mesh definition files.
-      if (CFDkit_Primary_MPI_Processor()) {
+      if (CFFC_Primary_MPI_Processor()) {
 	if (!batch_flag) cout << "\n Writing Chem2D multi-block mesh to grid definition files.";
 	error_flag = Write_Multi_Block_Grid_Definition(MeshBlk,
 						       Input_Parameters);
@@ -1351,7 +1351,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	  cout.flush();
 	} /* endif */
       } /* endif */
-      CFDkit_Broadcast_MPI(&error_flag, 1);
+      CFFC_Broadcast_MPI(&error_flag, 1);
       if (error_flag) return (error_flag);
     }
     /*************************************************************************
@@ -1359,7 +1359,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
      *************************************************************************/
     else if (command_flag == WRITE_OUTPUT_GRID_NODES_CODE) {
          // Output multi-block solution-adaptive mesh node data file.
-      if (CFDkit_Primary_MPI_Processor()) {
+      if (CFFC_Primary_MPI_Processor()) {
 	if (!batch_flag) cout << "\n Writing Chem2D multi-block mesh to node data output file.";
 	error_flag = Output_Nodes_Tecplot(MeshBlk,
 					  Input_Parameters);
@@ -1368,7 +1368,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	  cout.flush();
 	} /* endif */
       } /* endif */
-      CFDkit_Broadcast_MPI(&error_flag, 1);
+      CFFC_Broadcast_MPI(&error_flag, 1);
       if (error_flag) return (error_flag);
     }
     /*************************************************************************
@@ -1376,7 +1376,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
      *************************************************************************/
     else if (command_flag == WRITE_OUTPUT_GRID_CELLS_CODE) {
       // Output multi-block solution-adaptive mesh cell data file.
-      if (CFDkit_Primary_MPI_Processor()) {
+      if (CFFC_Primary_MPI_Processor()) {
 	if (!batch_flag) cout << "\n Writing Chem2D multi-block mesh to cell data output file.";
 	error_flag = Output_Cells_Tecplot(MeshBlk,
 					  Input_Parameters);
@@ -1385,7 +1385,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	  cout.flush();
 	} /* endif */
       } /* endif */
-      CFDkit_Broadcast_MPI(&error_flag, 1);
+      CFFC_Broadcast_MPI(&error_flag, 1);
       if (error_flag) return (error_flag);
     }
     /*************************************************************************
@@ -1400,7 +1400,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	cout << endl << "\n Chem2D ERROR: Unable to open Chem2D Ringleb's flow output file." << endl;
 	cout.flush();
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
     }
     /*************************************************************************
@@ -1415,7 +1415,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	cout << endl << "\n Chem2D ERROR: Unable to open Chem2D viscous channel flow output file." << endl;
 	cout.flush();
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
     }
     /*************************************************************************
@@ -1430,7 +1430,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	cout << endl << "\n Chem2D ERROR: Unable to open Chem2D flat plate output file." << endl;
 	cout.flush();
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
     } 
     /*************************************************************************
@@ -1445,7 +1445,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	cout << endl << "\n Chem2D ERROR: Unable to open Chem2D driven cavity flow." << endl;
 	cout.flush();
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
       
     } 
@@ -1467,7 +1467,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	     << List_of_Local_Solution_Blocks.ThisCPU
 	     << "." << endl;
       }
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
  
     }
@@ -1500,7 +1500,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	cout << endl << "\n Chem2D ERROR: Problem in Chem2D SWITCH_BCS_TO_FIXED. " << endl;
 	cout.flush();
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;      
     }
     /*************************************************************************

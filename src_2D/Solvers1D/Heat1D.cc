@@ -60,7 +60,7 @@ void Output_Gnuplot(Heat1D_UniformMesh *Soln,
 
     int i;
 
-    out_file << "# " << CFDkit_Name() << ": 1D Heat Equation Solution, "
+    out_file << "# " << CFFC_Name() << ": 1D Heat Equation Solution, "
              << "Time Step/Iteration Level = "
              << Number_of_Time_Steps
              << ", Time = " << Time << "\n"
@@ -89,7 +89,7 @@ void Output_Tecplot(Heat1D_UniformMesh *Soln,
 
     int i;
 
-    out_file << "TITLE = \"" << CFDkit_Name()
+    out_file << "TITLE = \"" << CFFC_Name()
              << ": 1D Heat Equation Solution, "
              << "Time Step/Iteration Level = "
              << Number_of_Time_Steps

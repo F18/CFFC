@@ -139,7 +139,7 @@ void Output_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
 
     Out_File << setprecision(14);
     if (Output_Title) {
-       Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Gaussian Solution, "
+       Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Gaussian Solution, "
                 << "Time Step/Iteration Level = " << Number_of_Time_Steps
                 << ", Time = " << Time
                 << "\"" << "\n"
@@ -211,7 +211,7 @@ void Output_Cells_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
 
     Out_File << setprecision(14);
     if (Output_Title) {
-       Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Gaussian Solution, "
+       Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Gaussian Solution, "
                 << "Time Step/Iteration Level = " << Number_of_Time_Steps
                 << ", Time = " << Time
                 << "\"" << "\n"
@@ -302,7 +302,7 @@ void Output_Flat_Plate(Gaussian2D_Quad_Block &SolnBlk,
   // Output node solution data.  
   Out_File << setprecision(14);
   if (Output_Title) {
-    Out_File      << "TITLE = \"" << CFDkit_Name() << ": 2D Gaussian Solution, "
+    Out_File      << "TITLE = \"" << CFFC_Name() << ": 2D Gaussian Solution, "
                   << "Time Step/Iteration Level = " << Number_of_Time_Steps
                   << ", Time = " << Time
 		  << "\"" << "\n"
@@ -452,7 +452,7 @@ void Output_Cylinder_Free_Molecular(Gaussian2D_Quad_Block &SolnBlk,
 
   Out_File << setprecision(14);
   if (Output_Title) {
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Gaussian Solution, "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Gaussian Solution, "
 	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
 	     << ", Time = " << Time
 	     << "\"" << "\n"

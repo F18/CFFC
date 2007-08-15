@@ -2197,7 +2197,7 @@ Exchange_Solution_Information(const int &Level,
     }
     if (!Num_Var) return 2101;
 
-    CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
 
     error_flag = Send_All_Messages(Local_SolnBlk[Level],
 				   List_of_Local_Solution_Blocks[Level],
@@ -2210,7 +2210,7 @@ Exchange_Solution_Information(const int &Level,
 	 << ".\n";
     cout.flush();
   }
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // Solution information exchanged successfully.
@@ -2822,7 +2822,7 @@ Smooth(const int &Level,
 	
   // Set each cell to the global minimum time-step if required.
 //   if (!IP->Local_Time_Stepping) {
-//      dTime = CFDkit_Minimum_MPI(dTime);
+//      dTime = CFFC_Minimum_MPI(dTime);
 //      Set_Global_TimeStep(Local_SolnBlk[Level],
 // 			 List_of_Local_Solution_Blocks[Level],
 // 			 dTime);
@@ -2853,7 +2853,7 @@ Smooth(const int &Level,
 	   << ".\n";
       cout.flush();
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
     // Step 2. Apply boundary conditions for stage.
@@ -2882,7 +2882,7 @@ Smooth(const int &Level,
 	   << ".\n";
       cout.flush();
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
     // Step 4. Add the physical-time source-term if required.
@@ -2915,7 +2915,7 @@ Smooth(const int &Level,
 	   << ".\n";
       cout.flush();
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
     // Step 6. Apply boundary flux corrections to ensure that method is
@@ -2942,7 +2942,7 @@ Smooth(const int &Level,
 	   << ".\n";
       cout.flush();
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
     // Step 8. Smooth the solution residual using implicit residual smoothing.
@@ -2986,7 +2986,7 @@ Smooth(const int &Level,
 	   << ".\n";
       cout.flush();
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
   }
@@ -3005,7 +3005,7 @@ Smooth(const int &Level,
 	 << ".\n";
     cout.flush();
   }
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // Apply boundary conditions after smoothing is complete.
@@ -3034,7 +3034,7 @@ Smooth(const int &Level,
 	 << ".\n";
     cout.flush();
   }
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // Multigrid smoothing applied successfully.
@@ -3359,12 +3359,12 @@ Execute(const int &batch_flag,
   }
 
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   // Open residual file.  
   first_step = 1;
   limiter_freezing = OFF;
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     error_flag = Open_Progress_File(residual_file,
 				    IP->Output_File_Name,
 				    number_of_time_steps);
@@ -3373,7 +3373,7 @@ Execute(const int &batch_flag,
       cout.flush();
     }
   }
-  CFDkit_Broadcast_MPI(&error_flag,1);
+  CFFC_Broadcast_MPI(&error_flag,1);
   if (error_flag) return error_flag;
 
   // Reset the CPU time.
@@ -3445,17 +3445,17 @@ Execute(const int &batch_flag,
 	// Determine the L1 norm of the solution residual.
 	residual_l1_norm = L1_Norm_Residual(Local_SolnBlk[top_level],
 					    List_of_Local_Solution_Blocks[top_level]);
-	residual_l1_norm = CFDkit_Summation_MPI(residual_l1_norm);	
+	residual_l1_norm = CFFC_Summation_MPI(residual_l1_norm);	
 	// Determine the L2 norm of the solution residual.
 	residual_l2_norm = L2_Norm_Residual(Local_SolnBlk[top_level],
 					    List_of_Local_Solution_Blocks[top_level]);
 	residual_l2_norm = sqr(residual_l2_norm);
-	residual_l2_norm = CFDkit_Summation_MPI(residual_l2_norm);
+	residual_l2_norm = CFFC_Summation_MPI(residual_l2_norm);
 	residual_l2_norm = sqrt(residual_l2_norm);
 	// Determine the max norm of the solution residual.
 	residual_max_norm = Max_Norm_Residual(Local_SolnBlk[top_level],
 					      List_of_Local_Solution_Blocks[top_level]);
-	residual_max_norm = CFDkit_Maximum_MPI(residual_max_norm);
+	residual_max_norm = CFFC_Maximum_MPI(residual_max_norm);
 
 	if (cycles == 2) {
 		initial_residual_l2_norm = residual_l2_norm;
@@ -3466,7 +3466,7 @@ Execute(const int &batch_flag,
 	// Update CPU time used for the calculation so far.
 	processor_cpu_time.update();
 	// Total CPU time for all processors. 
-	total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput);
+	total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);
 
 	// Periodically save restart solution files.
 	if (!first_step &&
@@ -3484,7 +3484,7 @@ Execute(const int &batch_flag,
 		 << ".\n";
 	    cout.flush();
 	  }
-	  error_flag = CFDkit_OR_MPI(error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return error_flag;
 	  // Write the solution block restart files.
 	  error_flag = Write_Restart_Solution(Local_SolnBlk[top_level],
@@ -3500,7 +3500,7 @@ Execute(const int &batch_flag,
 		 << ".\n";
 	    cout.flush();
 	  }
-	  error_flag = CFDkit_OR_MPI(error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return error_flag;
 	  if (!batch_flag) cout << endl;
 	}
@@ -3513,7 +3513,7 @@ Execute(const int &batch_flag,
 						ratio_residual_l2_norm,
 						first_step,
 						IP->Output_Progress_Frequency);
-	if (CFDkit_Primary_MPI_Processor() && !first_step) {
+	if (CFFC_Primary_MPI_Processor() && !first_step) {
 	  Output_Progress_to_File(residual_file,
 				  number_of_time_steps,
 				  Time*THOUSAND,
@@ -3646,7 +3646,7 @@ Execute(const int &batch_flag,
 	  }
 	  // Set the limiter freezing flag.
 	  limiter_freezing = ON;
-		if (CFDkit_Primary_MPI_Processor()) {
+		if (CFFC_Primary_MPI_Processor()) {
 			cout << "Freezing Gradient Limiters." << endl;
 		}
 	}
@@ -4219,7 +4219,7 @@ DTS_Multigrid_Solution(const int &batch_flag,
     // Send solution information between neighbouring blocks to
     // complete the prescription of initial data.
     error_flag = Exchange_Solution_Information(level,ON);
-    CFDkit_Broadcast_MPI(&error_flag,1);
+    CFFC_Broadcast_MPI(&error_flag,1);
     if (error_flag) return error_flag;
     ICs(Local_SolnBlk[level],
 	List_of_Local_Solution_Blocks[level],
@@ -4234,18 +4234,18 @@ DTS_Multigrid_Solution(const int &batch_flag,
     // Send solution information between neighbouring blocks to
     // complete the prescription of initial data.
     error_flag = Exchange_Solution_Information(level,OFF);
-    CFDkit_Broadcast_MPI(&error_flag,1);
+    CFFC_Broadcast_MPI(&error_flag,1);
     if (error_flag) return error_flag;
   }
 
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   ////////////////////////////////////////////////////
   // Open the progress file and reset the CPU time. //
   ////////////////////////////////////////////////////
 
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     error_flag = Open_Progress_File(residual_file,
 				    IP->Output_File_Name,
 				    number_of_time_steps);
@@ -4253,7 +4253,7 @@ DTS_Multigrid_Solution(const int &batch_flag,
       cout << endl << " FASMultigrid ERROR: Unable to open residual file for calculation." << endl;
     }
   }
-  CFDkit_Broadcast_MPI(&error_flag,1);
+  CFFC_Broadcast_MPI(&error_flag,1);
   if (error_flag) return error_flag;
 
   // Set the CPU time to zero.
@@ -4266,7 +4266,7 @@ DTS_Multigrid_Solution(const int &batch_flag,
   if ((!IP->Time_Accurate && IP->Maximum_Number_of_Time_Steps > 0) ||
       (IP->Time_Accurate && IP->Time_Max > ZERO)) {
 
-    if (!batch_flag && CFDkit_Primary_MPI_Processor()) cout << endl << " Beginning FAS Multigrid DTS computations on "
+    if (!batch_flag && CFFC_Primary_MPI_Processor()) cout << endl << " Beginning FAS Multigrid DTS computations on "
 							    << Date_And_Time() << "." << endl << endl;
 
     // Perform required number of iterations (time steps).
@@ -4292,7 +4292,7 @@ DTS_Multigrid_Solution(const int &batch_flag,
 		 << List_of_Local_Solution_Blocks[FINEST_LEVEL].ThisCPU
 		 << "." << endl;
 	  }
-	  error_flag = CFDkit_OR_MPI(error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) {
 	    command_flag = Output_Tecplot(Local_SolnBlk[FINEST_LEVEL],
 					  List_of_Local_Solution_Blocks[FINEST_LEVEL],
@@ -4356,7 +4356,7 @@ DTS_Multigrid_Solution(const int &batch_flag,
 	       << List_of_Local_Solution_Blocks[FINEST_LEVEL].ThisCPU
 	       << "." << endl;
 	}
-	error_flag = CFDkit_OR_MPI(error_flag);
+	error_flag = CFFC_OR_MPI(error_flag);
 	if (error_flag) return error_flag;
 	error_flag = Write_Restart_Solution(Local_SolnBlk[FINEST_LEVEL], 
 					    List_of_Local_Solution_Blocks[FINEST_LEVEL], 
@@ -4370,7 +4370,7 @@ DTS_Multigrid_Solution(const int &batch_flag,
 	       << List_of_Local_Solution_Blocks[FINEST_LEVEL].ThisCPU
 	       << "." << endl;
 	}
-	error_flag = CFDkit_OR_MPI(error_flag);
+	error_flag = CFFC_OR_MPI(error_flag);
 	if (error_flag) return error_flag;
 	if (!batch_flag) cout << endl;
       }
@@ -4387,7 +4387,7 @@ DTS_Multigrid_Solution(const int &batch_flag,
       dTime = CFL(Local_SolnBlk[FINEST_LEVEL],
 		  List_of_Local_Solution_Blocks[FINEST_LEVEL],
 		  *IP);
-      dTime = CFDkit_Minimum_MPI(dTime); // Find global minimum time step for all processors.
+      dTime = CFFC_Minimum_MPI(dTime); // Find global minimum time step for all processors.
 
       if (IP->Time_Accurate) {
 	if (Time + IP->Multigrid_IP.Physical_Time_CFL_Number*dTime > IP->Time_Max) {
@@ -4444,21 +4444,21 @@ DTS_Multigrid_Solution(const int &batch_flag,
 	  // Determine the L1 norm of the solution residual.
 	  residual_l1_norm = L1_Norm_Residual(Local_SolnBlk[top_level],
 					      List_of_Local_Solution_Blocks[top_level]);
-	  residual_l1_norm = CFDkit_Summation_MPI(residual_l1_norm);	
+	  residual_l1_norm = CFFC_Summation_MPI(residual_l1_norm);	
 	  // Determine the L2 norm of the solution residual.
 	  residual_l2_norm = L2_Norm_Residual(Local_SolnBlk[top_level],
 					      List_of_Local_Solution_Blocks[top_level]);
 	  residual_l2_norm = sqr(residual_l2_norm);
-	  residual_l2_norm = CFDkit_Summation_MPI(residual_l2_norm);
+	  residual_l2_norm = CFFC_Summation_MPI(residual_l2_norm);
 	  residual_l2_norm = sqrt(residual_l2_norm);
 	  // Determine the max norm of the solution residual.
 	  residual_max_norm = Max_Norm_Residual(Local_SolnBlk[top_level],
 						List_of_Local_Solution_Blocks[top_level]);
-	  residual_max_norm = CFDkit_Maximum_MPI(residual_max_norm);
+	  residual_max_norm = CFFC_Maximum_MPI(residual_max_norm);
 
 	  // Update CPU time used for the calculation so far.
 	  processor_cpu_time.update();
-	  total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput);
+	  total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);
 
 	  // Output progress information for the calculation.
 	  if (!batch_flag) Output_Progress_L2norm(number_of_time_steps*IP->Multigrid_IP.Ncycles_Regular_Multigrid+cycles,
@@ -4468,7 +4468,7 @@ DTS_Multigrid_Solution(const int &batch_flag,
 						  first_step,
 						  IP->Output_Progress_Frequency,
 						  progress_character);
-	  if (CFDkit_Primary_MPI_Processor() && !first_step) {
+	  if (CFFC_Primary_MPI_Processor() && !first_step) {
 	    Output_Progress_to_File(residual_file,
 				    number_of_time_steps*IP->Multigrid_IP.Ncycles_Regular_Multigrid+cycles,
 				    Time*THOUSAND,
@@ -4543,7 +4543,7 @@ DTS_Multigrid_Solution(const int &batch_flag,
 
     }
 
-    if (!batch_flag && CFDkit_Primary_MPI_Processor()) cout << "\n\n FAS Multigrid DTS computations complete on " 
+    if (!batch_flag && CFFC_Primary_MPI_Processor()) cout << "\n\n FAS Multigrid DTS computations complete on " 
 							    << Date_And_Time() << ".\n";
 
   }
@@ -4559,7 +4559,7 @@ DTS_Multigrid_Solution(const int &batch_flag,
       *IP);
 
   // Close the residual file.
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     error_flag = Close_Progress_File(residual_file);
     if (error_flag) return error_flag;
   }

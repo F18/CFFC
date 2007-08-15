@@ -174,9 +174,9 @@ void Set_Default_Input_Parameters(Euler2D_Input_Parameters &IP) {
     // NASA rotor input variables:
 
     //THIS NEEDS OT BE CLEANED UP
-    string_ptr = "/home/groth/CFDkit+caboodle/data/NASA_Rotors/R37/";
+    string_ptr = "/home/groth/CFFC/data/NASA_Rotors/R37/";
     strcpy(IP.NASA_Rotor37_Data_Directory, string_ptr);
-    string_ptr = "/home/groth/CFDkit+caboodle/data/NASA_Rotors/R67/";
+    string_ptr = "/home/groth/CFFC/data/NASA_Rotors/R67/";
     strcpy(IP.NASA_Rotor67_Data_Directory, string_ptr);
     IP.Rotor_Flow_Type = PEAK_FLOW;
     IP.Rotor_Percent_Span = 50.00;
@@ -242,7 +242,7 @@ void Set_Default_Input_Parameters(Euler2D_Input_Parameters &IP) {
 
     IP.Line_Number = 0;
 
-    IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+    IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
     IP.Number_of_Blocks_Per_Processor = 10;
 
     // Freezing_Limiter
@@ -359,7 +359,7 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Wave_Width),
 			  1,
 			  MPI::DOUBLE,0);
-    if (!CFDkit_Primary_MPI_Processor()) {
+    if (!CFFC_Primary_MPI_Processor()) {
        IP.Wo.setgas(IP.Gas_Type);
        IP.Wo = Euler2D_pState(IP.Pressure/(IP.Wo.R*IP.Temperature), 
                               ZERO, 
@@ -563,7 +563,7 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Rotor_Percent_Span), 
                           1, 
                           MPI::DOUBLE, 0);
-    if (!CFDkit_Primary_MPI_Processor()) {
+    if (!CFFC_Primary_MPI_Processor()) {
        IP.ICEMCFD_FileNames = new char*[3];
        for (i = 0; i < 3; i++) {
           IP.ICEMCFD_FileNames[i] = new char[INPUT_PARAMETER_LENGTH_EULER2D];
@@ -708,8 +708,8 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP) {
     // NKS Parameters
     IP.NKS_IP.Broadcast_Input_Parameters();
 
-    if (!CFDkit_Primary_MPI_Processor()) {
-       IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+    if (!CFFC_Primary_MPI_Processor()) {
+       IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
     } /* endif */
     MPI::COMM_WORLD.Bcast(&(IP.Number_of_Blocks_Per_Processor), 
                           1, 
@@ -839,7 +839,7 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Wave_Width),
 		       1,
 		       MPI::DOUBLE,Source_Rank);
-    if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
        IP.Wo.setgas(IP.Gas_Type);
        IP.Wo = Euler2D_pState(IP.Pressure/(IP.Wo.R*IP.Temperature), 
                               ZERO, 
@@ -1043,7 +1043,7 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Rotor_Percent_Span), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
-    if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
        IP.ICEMCFD_FileNames = new char*[3];
        for (i = 0; i < 3; i++) {
           IP.ICEMCFD_FileNames[i] = new char[INPUT_PARAMETER_LENGTH_EULER2D];
@@ -1190,8 +1190,8 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP,
     // NKS Parameters
     IP.NKS_IP.Broadcast_Input_Parameters(Communicator, Source_CPU);
 
-    if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
-       IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+       IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
     } /* endif */
     Communicator.Bcast(&(IP.Number_of_Blocks_Per_Processor), 
                        1, 

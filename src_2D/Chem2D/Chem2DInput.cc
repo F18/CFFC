@@ -140,9 +140,9 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.Wo.React.set_species(IP.multispecies,IP.num_species);
    
     //Get Species parameters and set default initial values
-    IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFDkit_Path,
+    IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
 			   IP.Mach_Number_Reference,IP.Schmidt); 
-    IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFDkit_Path,
+    IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
 			   IP.Mach_Number_Reference,IP.Schmidt);
 
     //Air at STD_ATM
@@ -328,7 +328,7 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
 
     IP.Line_Number = 0;
    
-    IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+    IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
     IP.Number_of_Blocks_Per_Processor = 10;      
 
     // Freezing_Limiter
@@ -486,7 +486,7 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     /*********************************************************
      ******************* CHEM2D SPECIFIC *********************
      *********************************************************/
-    MPI::COMM_WORLD.Bcast(IP.CFDkit_Path, 
+    MPI::COMM_WORLD.Bcast(IP.CFFC_Path, 
 			  INPUT_PARAMETER_LENGTH_CHEM2D, 
 			  MPI::CHAR, 0);
     //reaction name
@@ -495,7 +495,7 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
 			  MPI::CHAR, 0);
     
     //delete current dynamic memory before changing num_species
-    if(!CFDkit_Primary_MPI_Processor()) {   
+    if(!CFFC_Primary_MPI_Processor()) {   
       IP.Deallocate();
     } 
     //number of species
@@ -503,7 +503,7 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
                           1, 
                           MPI::INT, 0);
     //set up new dynamic memory
-    if(!CFDkit_Primary_MPI_Processor()) {   
+    if(!CFFC_Primary_MPI_Processor()) {   
       IP.Allocate();
     } 
 
@@ -520,7 +520,7 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
 			    MPI::CHAR, 0);
     }
     //set recaction and species parameters
-    if (!CFDkit_Primary_MPI_Processor()) {      
+    if (!CFFC_Primary_MPI_Processor()) {      
       IP.react_name = IP.React_Name;
       for (int i = 0; i < IP.num_species; i++) {
 	IP.multispecies[i] = IP.Multispecies[i];  
@@ -536,9 +536,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
           
       //set the data for each
       IP.get_cfdkit_path();
-      IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFDkit_Path,
+      IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
 			     IP.Mach_Number_Reference,IP.Schmidt); 
-      IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFDkit_Path,
+      IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
 			     IP.Mach_Number_Reference,IP.Schmidt);
       IP.Wo.set_initial_values(IP.mass_fractions);
       IP.Uo.set_initial_values(IP.mass_fractions);
@@ -554,7 +554,7 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
      ******************* CHEM2D END **************************
      *********************************************************/
 
-   if(!CFDkit_Primary_MPI_Processor()) {   
+   if(!CFFC_Primary_MPI_Processor()) {   
       IP.Wo.v.x = IP.Mach_Number*IP.Wo.a()*cos(TWO*PI*IP.Flow_Angle/360.00);
       IP.Wo.v.y = IP.Mach_Number*IP.Wo.a()*sin(TWO*PI*IP.Flow_Angle/360.00);
     }
@@ -783,7 +783,7 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
 			  1,
 			  MPI::INT,0);
     // ICEM:
-    if (!CFDkit_Primary_MPI_Processor()) {
+    if (!CFFC_Primary_MPI_Processor()) {
       IP.ICEMCFD_FileNames = new char*[3];
        for (int i = 0; i < 3; i++) {
           IP.ICEMCFD_FileNames[i] = new char[INPUT_PARAMETER_LENGTH_CHEM2D];
@@ -911,8 +911,8 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     // NKS Parameters
     IP.NKS_IP.Broadcast_Input_Parameters();
 
-    if (!CFDkit_Primary_MPI_Processor()) {
-       IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+    if (!CFFC_Primary_MPI_Processor()) {
+       IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
     } /* endif */
     MPI::COMM_WORLD.Bcast(&(IP.Number_of_Blocks_Per_Processor), 
                           1, 
@@ -1100,7 +1100,7 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     /*********************************************************
      ******************* CHEM2D SPECIFIC *********************
      *********************************************************/
-    Communicator.Bcast(IP.CFDkit_Path, 
+    Communicator.Bcast(IP.CFFC_Path, 
 			  INPUT_PARAMETER_LENGTH_CHEM2D, 
 			  MPI::CHAR, Source_Rank);
     //reaction name
@@ -1108,7 +1108,7 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
                           INPUT_PARAMETER_LENGTH_CHEM2D, 
 			  MPI::CHAR, Source_Rank);
     //delete orginal dynamic memory before changing num_species
-    if(!CFDkit_Primary_MPI_Processor()) {  
+    if(!CFFC_Primary_MPI_Processor()) {  
       IP.Deallocate();  
     } 
     //number of species
@@ -1116,7 +1116,7 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
                           1, 
                           MPI::INT,Source_Rank );
     //set up dynamic memory
-    if(!CFDkit_Primary_MPI_Processor()) {  
+    if(!CFFC_Primary_MPI_Processor()) {  
       IP.Allocate();
     } 
     //species names & mass fractions
@@ -1132,7 +1132,7 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
 			 MPI::CHAR, Source_Rank);
     }
     //set recaction and species parameters
-    if (!CFDkit_Primary_MPI_Processor()) {      
+    if (!CFFC_Primary_MPI_Processor()) {      
       IP.react_name = IP.React_Name;
       for (int i = 0; i < IP.num_species; i++) {
 	IP.multispecies[i] = IP.Multispecies[i];  
@@ -1147,9 +1147,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
 
       //set the data for each
       IP.get_cfdkit_path();
-      IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFDkit_Path,
+      IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
 			     IP.Mach_Number_Reference,IP.Schmidt); 
-      IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFDkit_Path,
+      IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
 			     IP.Mach_Number_Reference,IP.Schmidt);
       IP.Wo.set_initial_values(IP.mass_fractions);
       IP.Uo.set_initial_values(IP.mass_fractions);
@@ -1165,7 +1165,7 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
      ******************* CHEM2D END **************************
      *********************************************************/
    
-    if(!CFDkit_Primary_MPI_Processor()) {   
+    if(!CFFC_Primary_MPI_Processor()) {   
       IP.Wo.v.x = IP.Mach_Number*IP.Wo.a()*cos(TWO*PI*IP.Flow_Angle/360.00);
       IP.Wo.v.y = IP.Mach_Number*IP.Wo.a()*sin(TWO*PI*IP.Flow_Angle/360.00);
     }
@@ -1395,7 +1395,7 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
 		       1,
 		       MPI::INT,Source_Rank);
     // ICEM:
-    if (!(CFDkit_MPI::This_Processor_Number == Source_Rank)) {
+    if (!(CFFC_MPI::This_Processor_Number == Source_Rank)) {
        IP.ICEMCFD_FileNames = new char*[3];
        for (i = 0; i < 3; i++) {
           IP.ICEMCFD_FileNames[i] = new char[INPUT_PARAMETER_LENGTH_CHEM2D];
@@ -1524,8 +1524,8 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     IP.NKS_IP.Broadcast_Input_Parameters(Communicator,
 					 Source_CPU);
 
-    if (!(CFDkit_MPI::This_Processor_Number == Source_Rank)) {
-       IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+    if (!(CFFC_MPI::This_Processor_Number == Source_Rank)) {
+       IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
     } /* endif */
     Communicator.Bcast(&(IP.Number_of_Blocks_Per_Processor), 
                        1, 
@@ -2319,9 +2319,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        }
 
        //Set appropriate species data
-       IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFDkit_Path,
+       IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
 			      IP.Mach_Number_Reference,IP.Schmidt); 
-       IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFDkit_Path,
+       IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
 			      IP.Mach_Number_Reference,IP.Schmidt);
   
        //Get next line and read in mass fractions or set defaults
@@ -2397,9 +2397,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       IP.Wo.React.set_species(IP.multispecies,IP.num_species);
        
       //Setup State class data and find species thermo and transport properties
-      IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFDkit_Path,
+      IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
 			     IP.Mach_Number_Reference,IP.Schmidt); 
-      IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFDkit_Path,
+      IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
 			     IP.Mach_Number_Reference,IP.Schmidt);
     
       //More Fudging of lines 

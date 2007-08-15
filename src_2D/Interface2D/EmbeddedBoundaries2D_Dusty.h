@@ -206,7 +206,7 @@ Output_Flat_Plate_Tecplot(const int &nb,
   // Output node solution data.  
   Out_File_Soln << setprecision(14);
   if (Output_Title_Soln) {
-    Out_File_Soln << "TITLE = \"" << CFDkit_Name() << ": 2D Flat Plate Solution, "
+    Out_File_Soln << "TITLE = \"" << CFFC_Name() << ": 2D Flat Plate Solution, "
 		  << "\"" << "\n"
 		  << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n"
@@ -376,7 +376,7 @@ Output_Flat_Plate_Tecplot(const int &nb,
   }
 
   if (Output_Title_Skin) {
-    Out_File_Skin << "TITLE = \"" << CFDkit_Name() << ": Flat Plate Skin Friction Coefficient, "
+    Out_File_Skin << "TITLE = \"" << CFFC_Name() << ": Flat Plate Skin Friction Coefficient, "
 		  << "\"" << "\n"
 		  << "VARIABLES = \"x\" \\ \n"
 		  << "\"Rex\" \\ \n"

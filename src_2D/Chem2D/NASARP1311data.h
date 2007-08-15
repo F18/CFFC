@@ -338,12 +338,12 @@ class NASARP1311data{
 ***************************************************************************/
 
 /**************** Data file Path Names ***************************/
-inline void NASARP1311data::Set_Path_Names(const char *CFDkit_path){
+inline void NASARP1311data::Set_Path_Names(const char *CFFC_path){
   
   //Set NASA data path 
-  strcpy(datafilename_thermo,CFDkit_path);
+  strcpy(datafilename_thermo,CFFC_path);
   strcat(datafilename_thermo,"/data/NASARP1311/thermo.inp");
-  strcpy(datafilename_trans,CFDkit_path);
+  strcpy(datafilename_trans,CFFC_path);
   strcat(datafilename_trans,"/data/NASARP1311/trans.inp");
 
 }

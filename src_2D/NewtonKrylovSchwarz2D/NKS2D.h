@@ -2,7 +2,7 @@
  *          2D Newton-Krylov-Schwarz Parallel Implicit Solver                    *  
  *                                                                               *
  * These Templated Classes & Functions are designed to work with all (well most) *
- * of the Equation systems built using the CFDkit+caboodle format (ie. Euler2D,  *
+ * of the Equation systems built using the CFFC format (ie. Euler2D,  *
  * Chem2D, Dusty2D etc).                                                         *
  *                                                                               *
  *   Files:  NKS2D.h                                                             *
@@ -145,13 +145,13 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
   for( int i=0; i<Used_blocks_count; i++) {  
     Block_precon[i].Create_Preconditioner(SolnBlk[i], Input_Parameters,blocksize);
   }  
-  //total_Used_blocks = CFDkit_Summation_MPI(Used_blocks_count);  maybe ??      
+  //total_Used_blocks = CFFC_Summation_MPI(Used_blocks_count);  maybe ??      
 
   /**************************************************************************/  
   /********* FINISHED SETTING UP STORAGE AND DATASTRUCTURES *****************/
   /**************************************************************************/  
 
-  if (CFDkit_Primary_MPI_Processor()){
+  if (CFFC_Primary_MPI_Processor()){
     cout << Input_Parameters.NKS_IP; 
     //Input_Parameters.NKS_IP.Memory_Estimates(blocksize,SolnBlk[0].NCi*SolnBlk[0].NCj,Used_blocks_count);
   }
@@ -187,7 +187,7 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 			}
 
 			DTS_dTime = CFL(SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
-			DTS_dTime = CFDkit_Minimum_MPI(DTS_dTime); 
+			DTS_dTime = CFFC_Minimum_MPI(DTS_dTime); 
 			DTS_dTime *= DTS_CFL;
 			Set_Global_TimeStep(SolnBlk, List_of_Local_Solution_Blocks, DTS_dTime);      
 			// and then GMRES will have access to DTS_dTime since every single 
@@ -211,10 +211,10 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 					&real_L2norm_first,
  					&real_L2norm_n);
 			
-			error_flag = CFDkit_OR_MPI(error_flag);
+			error_flag = CFFC_OR_MPI(error_flag);
 			if (error_flag) { break; } // break out of the "for (int DTS_Step = 1; ..." and so exit the solver.
 
-			if (CFDkit_Primary_MPI_Processor()) {
+			if (CFFC_Primary_MPI_Processor()) {
 				cout << "\nEnd of DTS Step " << DTS_Step << ". L2 norm n: " << real_L2norm_n;
 				cout << " Time Step: " << DTS_dTime << " Real Time: " << real_time << "\n";
 			}
@@ -262,7 +262,7 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
   //Reset Solver Type flag
   Input_Parameters.Solver_Type = EXPLICIT;
 
-	return CFDkit_OR_MPI(error_flag); 
+	return CFFC_OR_MPI(error_flag); 
 
 }
 
@@ -333,7 +333,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 			break;
 	}
 
-  if (CFDkit_Primary_MPI_Processor() && 
+  if (CFFC_Primary_MPI_Processor() && 
 			Input_Parameters.NKS_IP.Detect_Convergence_Stall) {
 		dcs_data = new double[Input_Parameters.NKS_IP.DCS_Window];
 	}
@@ -384,7 +384,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
   int Number_of_Newton_Steps = 1;  // FOR RESTART, THIS SHOULD BE SET TO LAST NKS STEP
   int i_limiter = Input_Parameters.i_Limiter;
  
-	if (CFDkit_Primary_MPI_Processor() && Input_Parameters.NKS_IP.output_format == OF_ALISTAIR &&
+	if (CFFC_Primary_MPI_Processor() && Input_Parameters.NKS_IP.output_format == OF_ALISTAIR &&
 			(!Input_Parameters.NKS_IP.Time_Accurate ||
 			 (Input_Parameters.NKS_IP.Time_Accurate && DTS_Step == 1))) {
 
@@ -411,14 +411,14 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 	}
 
 	processor_cpu_time.update();
-	start_total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput); 
+	start_total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput); 
  
   while ( NKS_continue_flag && Number_of_Newton_Steps <= Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations) {
 
     /**************************************************************************/
     // Limiter Switch to use  first order for first "N" newton steps, then switch to requested method 
     if (Number_of_Newton_Steps <= MIN_NUMBER_OF_NEWTON_STEPS_WITH_ZERO_LIMITER) {
-      if (CFDkit_Primary_MPI_Processor()) {  cout<<"\n Setting Limiter to ZERO, ie. Using First Order"; }
+      if (CFFC_Primary_MPI_Processor()) {  cout<<"\n Setting Limiter to ZERO, ie. Using First Order"; }
       Input_Parameters.i_Limiter = LIMITER_ZERO;   
     } else {
       Input_Parameters.i_Limiter = i_limiter;
@@ -447,7 +447,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
             << ".\n";
        cout.flush();
     } /* endif */
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
 	  
     /* Apply boundary flux corrections to residual to ensure that method is conservative. */
@@ -466,16 +466,16 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
     Max_Norm_Residual(SolnBlk, List_of_Local_Solution_Blocks,Max_norm_current);
 
     for(int q=0; q < SolnBlk[0].Number_of_Residual_Norms; q++){
-      L1norm_current[q] = CFDkit_Summation_MPI(L1norm_current[q]);      // L1 norm for all processors.
+      L1norm_current[q] = CFFC_Summation_MPI(L1norm_current[q]);      // L1 norm for all processors.
       L2norm_current[q] = sqr(L2norm_current[q]);
-      L2norm_current[q] = sqrt(CFDkit_Summation_MPI(L2norm_current[q])); // L2 norm for all processors.
-      Max_norm_current[q] = CFDkit_Maximum_MPI(Max_norm_current[q]);     // Max norm for all processors.
+      L2norm_current[q] = sqrt(CFFC_Summation_MPI(L2norm_current[q])); // L2 norm for all processors.
+      Max_norm_current[q] = CFFC_Maximum_MPI(Max_norm_current[q]);     // Max norm for all processors.
     }
 
     processor_cpu_time.update();
-    total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput); 
+    total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput); 
 
-    if (CFDkit_Primary_MPI_Processor() &&
+    if (CFFC_Primary_MPI_Processor() &&
 				(!Input_Parameters.NKS_IP.Time_Accurate ||
 				 (Input_Parameters.NKS_IP.Time_Accurate && Number_of_Newton_Steps == 1)) ) {
 
@@ -546,7 +546,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 			// this L2norm (which now contains the extra term) 
 			// is below our desired "Overall_Tolerance".
 			for (int q = 0; q < SolnBlk[0].Number_of_Residual_Norms; q++) {
-				L2norm_current[q] = sqrt(CFDkit_Summation_MPI(L2norm_current[q]));
+				L2norm_current[q] = sqrt(CFFC_Summation_MPI(L2norm_current[q]));
 			}
 		} // if (Input_Parameters.NKS_IP.Time_Accurate)
 
@@ -581,7 +581,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 //     // NEEDS SOME MODS TO Write and Read Restart_Solution to work properly....
 //     // Periodically save restart solution files  -> !!!!!! SHOULD USE Implicit_Restart_Solution_Save_Frequency ???
 //     if ( (number_of_explicit_time_steps + Number_of_Newton_Steps - 1)%Input_Parameters.Restart_Solution_Save_Frequency == 0 ) {       
-//       if(CFDkit_Primary_MPI_Processor()) cout << "\n\n  Saving solution to restart data file(s) after"
+//       if(CFFC_Primary_MPI_Processor()) cout << "\n\n  Saving solution to restart data file(s) after"
 // 			   << " n = " << number_of_explicit_time_steps << " steps (iterations). \n";      
 //       error_flag = Write_QuadTree(QuadTree,  Input_Parameters);
 //       error_flag = Write_Restart_Solution(SolnBlk, 
@@ -595,7 +595,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 // 	     << List_of_Local_Solution_Blocks.ThisCPU<< ".\n";
 // 	cout.flush();
 //       } 
-//       error_flag = CFDkit_OR_MPI(error_flag);
+//       error_flag = CFFC_OR_MPI(error_flag);
 //       if (error_flag) return (error_flag);  cout.flush();
 //     } 
 
@@ -604,7 +604,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 			if (Number_of_Newton_Steps == 1 ||
 					(Number_of_Newton_Steps-1) % Input_Parameters.NKS_IP.NKS_Write_Output_Cells_Freq == 0) {
 
-				if (CFDkit_Primary_MPI_Processor()) { tell_me_about_output_tecplot = true; }
+				if (CFFC_Primary_MPI_Processor()) { tell_me_about_output_tecplot = true; }
 
 				do { // allows for a break
 
@@ -672,7 +672,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 			}
 		} // if (Input_Parameters.NKS_IP.NKS_Write_Output_Cells_Freq > 0) 
 
-		if (CFDkit_Primary_MPI_Processor() && 
+		if (CFFC_Primary_MPI_Processor() && 
 				Input_Parameters.NKS_IP.Detect_Convergence_Stall) {
 
 			double L2norm_cq = L2norm_current[SolnBlk[0].residual_variable-1]; // looks pretty on the page
@@ -774,10 +774,10 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 
 		} // if (Input_Parameters.NKS_IP.Detect_Convergence_Stall)
 
-		CFDkit_Broadcast_MPI(&dcs_stop_now, 1);
+		CFFC_Broadcast_MPI(&dcs_stop_now, 1);
 		if (dcs_stop_now) { break; }
 
-		CFDkit_Broadcast_MPI(&dcs_freeze_now, 1);
+		CFFC_Broadcast_MPI(&dcs_freeze_now, 1);
 
     if (limiter_check && Number_of_Newton_Steps > 1) {
 			// These two if-statements should really be one but 
@@ -798,7 +798,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 				// This point becomes somewhat moot with the introduction of 
 				// my convergence stall detection algorithm.
 				//  -- Alistair Wood Sun Apr 01 2007
-				if (CFDkit_Primary_MPI_Processor()) {
+				if (CFFC_Primary_MPI_Processor()) {
 					switch (Input_Parameters.NKS_IP.output_format) {
 						case OF_SCOTT:
 							cout << "\n\n ********** Apply Limiter Freezing ********** \n";
@@ -846,7 +846,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 				dTime = CFL(SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
 
 				if (Input_Parameters.Local_Time_Stepping == GLOBAL_TIME_STEPPING) {
-					dTime = CFDkit_Minimum_MPI(dTime); 
+					dTime = CFFC_Minimum_MPI(dTime); 
 					dTime *= CFL_current;           
 					Set_Global_TimeStep(SolnBlk, List_of_Local_Solution_Blocks, dTime);      
 				} else {
@@ -865,7 +865,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 
       /**************************************************************************/
       // Print out Newton Step info at the beginning of the iteration. 
-      if (CFDkit_Primary_MPI_Processor()) {      	
+      if (CFFC_Primary_MPI_Processor()) {      	
 				switch (Input_Parameters.NKS_IP.output_format) {
 					case OF_SCOTT: 
 						cout.precision(10);
@@ -927,7 +927,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       if (Number_of_Newton_Steps < MIN_NUMBER_OF_NEWTON_STEPS_REQUIRING_JACOBIAN_UPDATE
 	   || L2norm_current_n > MIN_L2_NORM_REQUIRING_JACOBIAN_UPDATE ) { 
 	
-				if (CFDkit_Primary_MPI_Processor()) {	
+				if (CFFC_Primary_MPI_Processor()) {	
 					switch (Input_Parameters.NKS_IP.output_format) {
 						case OF_SCOTT: cout << "\n Creating/Updating Jacobian Matrix"; break;
 						case OF_ALISTAIR: cout << "    | "; break;
@@ -945,7 +945,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 	preconditioner_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC);
 	nsetup++;
       } else {
-				if (CFDkit_Primary_MPI_Processor() && Input_Parameters.NKS_IP.output_format == OF_ALISTAIR) {
+				if (CFFC_Primary_MPI_Processor() && Input_Parameters.NKS_IP.output_format == OF_ALISTAIR) {
 					cout << " noJ| "; 
 				}
 			}
@@ -964,7 +964,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       error_flag = GMRES_.solve(Block_precon, linear_tolerance,
 					&GMRES_Restarted, &GMRES_Failed, &GMRES_Iters,
 					&res_cputime, &res_nevals);
-      if (CFDkit_Primary_MPI_Processor() && error_flag) cout << "\n NKS2D: Error in GMRES \n";
+      if (CFFC_Primary_MPI_Processor() && error_flag) cout << "\n NKS2D: Error in GMRES \n";
 			if (GMRES_Restarted) { GMRES_Restarts++; }
 			if (GMRES_Failed)    { GMRES_Failures++; }
 			GMRES_All_Iters[All_Iters_index++] = GMRES_Iters;
@@ -975,7 +975,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       // Solution Update U = Uo + GMRES.deltaU
       error_flag = Newton_Update<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>
 	(SolnBlk,List_of_Local_Solution_Blocks,Input_Parameters,GMRES_, Input_Parameters.NKS_IP.Relaxation_multiplier);
-      if (CFDkit_Primary_MPI_Processor() && error_flag) cout <<  "\n NKS2D: Error in Solution Update \n";
+      if (CFFC_Primary_MPI_Processor() && error_flag) cout <<  "\n NKS2D: Error in Solution Update \n";
       /**************************************************************************/
 
 			if (Input_Parameters.NKS_IP.NKS_Write_Output_Cells_Freq > 0) {
@@ -983,7 +983,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 				if (Number_of_Newton_Steps == 1 ||
 						(Number_of_Newton_Steps-1) % Input_Parameters.NKS_IP.NKS_Write_Output_Cells_Freq == 0) {
 			
-					if (CFDkit_Primary_MPI_Processor()) { tell_me_about_output_gmres = true; }
+					if (CFFC_Primary_MPI_Processor()) { tell_me_about_output_gmres = true; }
 
 					GMRES_.Output_GMRES_vars_Tecplot(Number_of_Newton_Steps-1,
 							L2norm_current[SolnBlk[0].residual_variable-1], L2norm_current_n);
@@ -1003,7 +1003,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 	      << ".\n";
          cout.flush();
       } /* endif */
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
       /**************************************************************************/
 
@@ -1023,7 +1023,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
     } /* endif */
     /**************************************************************************/
  
-		if (CFDkit_Primary_MPI_Processor() && Input_Parameters.NKS_IP.output_format == OF_ALISTAIR) { 
+		if (CFFC_Primary_MPI_Processor() && Input_Parameters.NKS_IP.output_format == OF_ALISTAIR) { 
 			if (tell_me_about_limiter_freeze) {
 				cout << "  Limiter Frozen "; 
 				tell_me_about_limiter_freeze = false;
@@ -1050,10 +1050,10 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
   /**************************************************************************/
  
 	processor_cpu_time.update();
-	total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput); 
+	total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput); 
 
-	double total_preconditioner_cputime = CFDkit_Summation_MPI(preconditioner_cputime);
-	double total_res_cputime = CFDkit_Summation_MPI(res_cputime);
+	double total_preconditioner_cputime = CFFC_Summation_MPI(preconditioner_cputime);
+	double total_res_cputime = CFFC_Summation_MPI(res_cputime);
 
 	int quick_used = 0;
 	for (int blk = 0; blk < List_of_Local_Solution_Blocks.Nblk; ++blk) {
@@ -1061,11 +1061,11 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 			quick_used++;
 		} 
 	} 
-	int quick_total_used = CFDkit_Summation_MPI(quick_used);
+	int quick_total_used = CFFC_Summation_MPI(quick_used);
 
   /**************************************************************************/
   /* Output final 2-norm for all blocks */ 
-  if (CFDkit_Primary_MPI_Processor() && !Input_Parameters.NKS_IP.Time_Accurate) {
+  if (CFFC_Primary_MPI_Processor() && !Input_Parameters.NKS_IP.Time_Accurate) {
 		int ttmmpp = cout.precision();
 		int nns = Number_of_Newton_Steps-1;
     cout << " " << endl;
@@ -1167,7 +1167,7 @@ cout << "One complete precond per cell:   " << setw(gqw) << qq << "  us (" << aa
   // Housekeeping 
   delete[] L2norm_current; delete[] L1norm_current; delete[] Max_norm_current;
 	delete[] GMRES_All_Iters;
-  if (CFDkit_Primary_MPI_Processor() && 
+  if (CFFC_Primary_MPI_Processor() && 
 			Input_Parameters.NKS_IP.Detect_Convergence_Stall) {
 		delete [] dcs_data;
 	}

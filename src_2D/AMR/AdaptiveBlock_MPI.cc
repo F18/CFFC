@@ -2250,7 +2250,7 @@ int Exchange_Messages_ResChange_CoarseToFine(AdaptiveBlock2D_List &Blk_List,
       send_requests[i].Free(); 
     }
 
-    //CFDkit_Barrier_MPI(); // DOES THIS NEED TO BE HERE ??
+    //CFFC_Barrier_MPI(); // DOES THIS NEED TO BE HERE ??
 
     /* Wait for all messages to be received. */
     /* Also deallocates recv buffers memory */

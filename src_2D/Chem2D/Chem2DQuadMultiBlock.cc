@@ -182,11 +182,11 @@ int Read_Restart_Solution(Chem2D_Quad_Block *Soln_ptr,
 	  //setup properties 
 	  Input_Parameters.Wo.set_species_data
 	    (Input_Parameters.Wo.React.num_species,Input_Parameters.Wo.React.species,
-	     Input_Parameters.CFDkit_Path,
+	     Input_Parameters.CFFC_Path,
 	     Input_Parameters.Mach_Number_Reference,Input_Parameters.Schmidt);   
 	  Input_Parameters.Uo.set_species_data
 	    (Input_Parameters.Wo.React.num_species,Input_Parameters.Wo.React.species,
-	     Input_Parameters.CFDkit_Path,
+	     Input_Parameters.CFFC_Path,
 	     Input_Parameters.Mach_Number_Reference,Input_Parameters.Schmidt);    
 	  Input_Parameters.Uo = U(Input_Parameters.Wo);
 
@@ -1410,17 +1410,17 @@ int Output_Ringleb(Chem2D_Quad_Block *Soln_ptr,
   }
 
 #ifdef _MPI_VERSION
-  l1_norm = CFDkit_Summation_MPI(l1_norm);
-  l2_norm = CFDkit_Summation_MPI(l2_norm);
-  max_norm = CFDkit_Maximum_MPI(max_norm);
-  numberofactivecells = CFDkit_Summation_MPI(numberofactivecells);
+  l1_norm = CFFC_Summation_MPI(l1_norm);
+  l2_norm = CFFC_Summation_MPI(l2_norm);
+  max_norm = CFFC_Maximum_MPI(max_norm);
+  numberofactivecells = CFFC_Summation_MPI(numberofactivecells);
 #endif
 
   // Calculate the L1-norm and L2-norm for all blocks.
   l1_norm = l1_norm/numberofactivecells;
   l2_norm = sqrt(l2_norm/numberofactivecells);
 
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     cout << endl
 	 << endl
 	 << " ==================================================================== "
@@ -1518,10 +1518,10 @@ int Output_Viscous_Channel(Chem2D_Quad_Block *Soln_ptr,
   output_file.close();
   
 #ifdef _MPI_VERSION
-  l1_norm = CFDkit_Summation_MPI(l1_norm);
-  l2_norm = CFDkit_Summation_MPI(l2_norm);
-  max_norm = CFDkit_Maximum_MPI(max_norm);
-  numberofactivecells = CFDkit_Summation_MPI(numberofactivecells);
+  l1_norm = CFFC_Summation_MPI(l1_norm);
+  l2_norm = CFFC_Summation_MPI(l2_norm);
+  max_norm = CFFC_Maximum_MPI(max_norm);
+  numberofactivecells = CFFC_Summation_MPI(numberofactivecells);
 #endif
 
   // Calculate the L1-norm and L2-norm for all blocks.
@@ -1530,7 +1530,7 @@ int Output_Viscous_Channel(Chem2D_Quad_Block *Soln_ptr,
     l2_norm = sqrt(l2_norm/double(numberofactivecells));
   }
 
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     cout << endl
 	 << endl
 	 << " ==================================================================== "
@@ -1638,14 +1638,14 @@ int Output_Flat_Plate(Chem2D_Quad_Block *Soln_ptr,
 
   // Calculate the L1-norm and L2-norm for all blocks.
 #ifdef _MPI_VERSION
-  l1_norm = CFDkit_Summation_MPI(l1_norm);
-  l2_norm = CFDkit_Summation_MPI(l2_norm);
-  max_norm = CFDkit_Maximum_MPI(max_norm);
+  l1_norm = CFFC_Summation_MPI(l1_norm);
+  l2_norm = CFFC_Summation_MPI(l2_norm);
+  max_norm = CFFC_Maximum_MPI(max_norm);
 #endif
  
   l2_norm = sqrt(l2_norm);
 
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     cout << endl
 	 << endl
 	 << " ==================================================================== "

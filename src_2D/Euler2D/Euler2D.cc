@@ -26,7 +26,7 @@
 
 using namespace std;
 
-// Include CFDkit+caboodle header files.
+// Include CFFC header files.
 
 #include "Euler2DQuad.h"
 #include "../MPI/MPI.h"
@@ -156,17 +156,17 @@ int main(int num_arg, char *arg_ptr[]) {
   /********************************************************************
    * INITIALIZE MPI                                                   *
    ********************************************************************/
-  CFDkit_Initialize_MPI(num_arg,arg_ptr);
-  if (!CFDkit_Primary_MPI_Processor()) batch_flag = 1;
+  CFFC_Initialize_MPI(num_arg,arg_ptr);
+  if (!CFFC_Primary_MPI_Processor()) batch_flag = 1;
 
   /********************************************************************
    * DISPLAY THE PROGRAM TITLE AND VERSION INFORMATION AS REQUIRED.   *
    ********************************************************************/
-  if (CFDkit_Primary_MPI_Processor() && (version_flag || help_flag || !batch_flag)) {
+  if (CFFC_Primary_MPI_Processor() && (version_flag || help_flag || !batch_flag)) {
      cout << endl << program_title_ptr << endl;
      cout << program_version_ptr << endl;
-     cout << "Built using " << CFDkit_Version() << endl;
-     cout << CFDkit_Version_MPI() << endl;
+     cout << "Built using " << CFFC_Version() << endl;
+     cout << CFFC_Version_MPI() << endl;
      cout << ICEMCFD_Version() << "\n";
      cout << "Built using MV++, SparseLib++, IML++, and BPKIT Libraries\n";
      cout.flush();
@@ -177,7 +177,7 @@ int main(int num_arg, char *arg_ptr[]) {
    * DISPLAY THE PROGRAM HELP INFORMATION AS REQUIRED.                *
    ********************************************************************/
 
-  if (CFDkit_Primary_MPI_Processor() && help_flag) {
+  if (CFFC_Primary_MPI_Processor() && help_flag) {
      cout << "Usage:\n";
      //cout << "euler2D [-v] [-h] [-i] [-b] [-pde type] [-f name]\n";
      cout << "euler2D [-v] [-h] [-i] [-b] [-f name]\n";
@@ -199,7 +199,7 @@ int main(int num_arg, char *arg_ptr[]) {
                                  batch_flag);
 
   if (error_flag) {
-    CFDkit_Finalize_MPI();
+    CFFC_Finalize_MPI();
     return error_flag;
   } /* endif */
 
@@ -207,13 +207,13 @@ int main(int num_arg, char *arg_ptr[]) {
    * FINALIZE MPI                                                     *
    ********************************************************************/
 
-  CFDkit_Finalize_MPI();
+  CFFC_Finalize_MPI();
 
   /********************************************************************
    * TERMINATE PROGRAM EXECUTION                                      *
    ********************************************************************/
 
-  if (CFDkit_Primary_MPI_Processor() && !batch_flag) 
+  if (CFFC_Primary_MPI_Processor() && !batch_flag) 
      cout << "\n\nEuler2D: Execution complete.\n";
 
   //Ending properly

@@ -11,7 +11,7 @@
  This program is a standalone version of of the Gaussian2D Solver that 
  is part of the PDES++ library of solvers.  
 
- The program is built using the CFDkit+caboodle library.
+ The program is built using the CFFC library.
 
  *******************************************************************/
 
@@ -159,18 +159,18 @@ int main(int num_arg, char *arg_ptr[]) {
    * INITIALIZE MPI                                       *
    ********************************************************/
 
-  CFDkit_Initialize_MPI(num_arg, arg_ptr);
-  if (!CFDkit_Primary_MPI_Processor()) batch_flag = 1;
+  CFFC_Initialize_MPI(num_arg, arg_ptr);
+  if (!CFFC_Primary_MPI_Processor()) batch_flag = 1;
 
   /******************************************************************
    * DISPLAY THE PROGRAM TITLE AND VERSION INFORMATION AS REGUIRED. *
    ******************************************************************/
 
-  if (CFDkit_Primary_MPI_Processor() && (version_flag || help_flag || !batch_flag)) {
+  if (CFFC_Primary_MPI_Processor() && (version_flag || help_flag || !batch_flag)) {
      cout << '\n' << program_title_ptr << '\n';
      cout << program_version_ptr << '\n';
-     cout << "Built using " << CFDkit_Version() << "\n";
-     cout << CFDkit_Version_MPI() << "\n";
+     cout << "Built using " << CFFC_Version() << "\n";
+     cout << CFFC_Version_MPI() << "\n";
      cout << ICEMCFD_Version() << "\n";
      cout << "Built using MV++, SparseLib++, IML++, and BPKIT Libraries.\n";
      cout.flush();
@@ -181,7 +181,7 @@ int main(int num_arg, char *arg_ptr[]) {
    * DISPLAY THE PROGRAM HELP INFORMATION AS REQUIRED.              *
    ******************************************************************/
 
-  if (CFDkit_Primary_MPI_Processor() && help_flag) {
+  if (CFFC_Primary_MPI_Processor() && help_flag) {
      cout << "Usage:\n";
      cout << "pdes++ [-v] [-h] [-i] [-b] [-pde type] [-f name]\n";
      cout << " -v (--version)  display version information\n";
@@ -200,11 +200,11 @@ int main(int num_arg, char *arg_ptr[]) {
 
 
   if (strcmp(Equation_Type, "Gaussian2D_Cartesian") == 0){
-      if(CFDkit_Primary_MPI_Processor()) {
+      if(CFFC_Primary_MPI_Processor()) {
         error_flag = Gaussian2DCartesianSolver(Input_File_Name_ptr,
 	  				       batch_flag);
       } /* endif */
-      CFDkit_Broadcast_MPI(&error_flag, 1);
+      CFFC_Broadcast_MPI(&error_flag, 1);
 
   /* Gaussian2D */
   } else if(strcmp(Equation_Type, "Gaussian2D") == 0){
@@ -214,7 +214,7 @@ int main(int num_arg, char *arg_ptr[]) {
 
  
   if (error_flag) {
-     CFDkit_Finalize_MPI();
+     CFFC_Finalize_MPI();
      return (error_flag);
   } /* endif */
 
@@ -222,13 +222,13 @@ int main(int num_arg, char *arg_ptr[]) {
    * FINALIZE MPI                                         *
    ********************************************************/
 
-  CFDkit_Finalize_MPI();
+  CFFC_Finalize_MPI();
 
   /********************************************************  
    * TERMINATE PROGRAM EXECUTION                          *
    ********************************************************/
 
-  if (CFDkit_Primary_MPI_Processor() && !batch_flag) 
+  if (CFFC_Primary_MPI_Processor() && !batch_flag) 
      cout << "\n\nGaussian2D: Execution complete.\n";
   return (0);
 

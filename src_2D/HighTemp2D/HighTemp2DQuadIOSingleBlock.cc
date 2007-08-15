@@ -97,7 +97,7 @@ void Output_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
   if (Output_Title) {
     Out_File << "TITLE = \"";
 		if (l2_norm <= 0.0) {
-			Out_File << CFDkit_Name() << ": 2D HighTemp Solution, "
+			Out_File << CFFC_Name() << ": 2D HighTemp Solution, "
 	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
 	     << ", Time = " << Time;
 		} else {
@@ -134,7 +134,7 @@ void Output_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
     }
   }
 
-    Out_File << "ZONE T =  \"Block " << Block_Number << " CPU" << CFDkit_MPI::This_Processor_Number
+    Out_File << "ZONE T =  \"Block " << Block_Number << " CPU" << CFFC_MPI::This_Processor_Number
 	   << "\" \\ \n"
 	   << "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 2*SolnBlk.Nghost*ng + 1 << " \\ \n"
 	   << "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 2*SolnBlk.Nghost*ng + 1 << " \\ \n"
@@ -220,7 +220,7 @@ void Output_Cells_Tecplot(const HighTemp2D_Quad_Block &SolnBlk,
 	if (Output_Title) {
 		Out_File << "TITLE = \"";
 		if (l2_norm <= 0.0) {
-			Out_File << CFDkit_Name() << ": 2D HighTemp Solution, "
+			Out_File << CFFC_Name() << ": 2D HighTemp Solution, "
 				<< "Time Step/Iteration Level = " << Number_of_Time_Steps
 				<< ", Time = " << Time;
 		} else {
@@ -285,7 +285,7 @@ void Output_Cells_Tecplot(const HighTemp2D_Quad_Block &SolnBlk,
     Out_File << "\"dt\" \\ \n";
     Out_File << "\"A\" \\ \n";
   }
-    Out_File << "ZONE T =  \"Block " << Block_Number << " CPU" << CFDkit_MPI::This_Processor_Number
+    Out_File << "ZONE T =  \"Block " << Block_Number << " CPU" << CFFC_MPI::This_Processor_Number
 	   << "\" \\ \n"
 	   << "I = " << SolnBlk.Grid.ICu - SolnBlk.Grid.ICl + 2*SolnBlk.Nghost*ng + 1 << " \\ \n"
 	   << "J = " << SolnBlk.Grid.JCu - SolnBlk.Grid.JCl + 2*SolnBlk.Nghost*ng + 1 << " \\ \n"
@@ -374,14 +374,14 @@ void Output_Nodes_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 
   Out_File << setprecision(14);
   if (Output_Title) {
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D HighTemp Nodes, "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D HighTemp Nodes, "
 	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
 	     << ", Time = " << Time
 	     << "\"" << "\n"
 	     << "VARIABLES = \"x\" \\ \n"
 	     << "\"y\" \\ \n";
   }
-  Out_File << "ZONE T =  \"Block " << Block_Number << " CPU" << CFDkit_MPI::This_Processor_Number
+  Out_File << "ZONE T =  \"Block " << Block_Number << " CPU" << CFFC_MPI::This_Processor_Number
 	   << "\" \\ \n"
 	   << "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1 + 2*SolnBlk.Nghost << " \\ \n"
 	   << "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1 + 2*SolnBlk.Nghost << " \\ \n"
@@ -415,7 +415,7 @@ void Output_Gradients_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 
   Out_File << setprecision(14);
   if (Output_Title) {
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D HighTemp Solution, "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D HighTemp Solution, "
 	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
 	     << ", Time = " << Time
 	     << "\"" << "\n"
@@ -447,7 +447,7 @@ void Output_Gradients_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 	       << "\"phi_omega\" \\ \n";
     }
   }
-  Out_File << "ZONE T =  \"Block " << Block_Number << " CPU" << CFDkit_MPI::This_Processor_Number
+  Out_File << "ZONE T =  \"Block " << Block_Number << " CPU" << CFFC_MPI::This_Processor_Number
 	   << "\" \\ \n"
 	   << "I = " << SolnBlk.Grid.ICu - SolnBlk.Grid.ICl + 3 << " \\ \n"
 	   << "J = " << SolnBlk.Grid.JCu - SolnBlk.Grid.JCl + 3 << " \\ \n"
@@ -520,7 +520,7 @@ void Output_Quasi3D_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 //   // Output node solution data.  
 //   Out_File << setprecision(14);
 //   if (Output_Title) {
-//     Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D HighTemp Solution, "
+//     Out_File << "TITLE = \"" << CFFC_Name() << ": 2D HighTemp Solution, "
 // 	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
 // 	     << ", Time = " << Time
 // 	     << "\"" << "\n"
@@ -546,7 +546,7 @@ void Output_Quasi3D_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 //   }
 
 //   for (int nr = 0; nr < numberofrotations; nr++) {
-//     Out_File << "ZONE T =  \"Block " << Block_Number << " CPU" << CFDkit_MPI::This_Processor_Number << nr
+//     Out_File << "ZONE T =  \"Block " << Block_Number << " CPU" << CFFC_MPI::This_Processor_Number << nr
 // 	     << "\" \\ \n"
 // 	     << "N = " << 2*numberofnodes << " \\ \n"
 // 	     << "E = " << numberofcells << " \\ \n"
@@ -637,7 +637,7 @@ void Output_Quasi3D_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
   // Output node solution data.  
   Out_File << setprecision(14);
   if (Output_Title) {
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D HighTemp Solution, "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D HighTemp Solution, "
 	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
 	     << ", Time = " << Time
 	     << "\"" << "\n"
@@ -657,7 +657,7 @@ void Output_Quasi3D_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
     }
   }
 
-  Out_File << "ZONE T =  \"Block " << Block_Number << " CPU" << CFDkit_MPI::This_Processor_Number
+  Out_File << "ZONE T =  \"Block " << Block_Number << " CPU" << CFFC_MPI::This_Processor_Number
 	   << "\" \\ \n"
 	   << "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1 << " \\ \n"
 	   << "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1 << " \\ \n"
@@ -714,7 +714,7 @@ void Output_Ringleb_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
   // Output node solution data.  
   Out_File << setprecision(14);
   if (Output_Title)
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D HighTemp Ringleb Flow Solution "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D HighTemp Ringleb Flow Solution "
 	     << "\"" << "\n"
 	     << "VARIABLES = \"x\" \\ \n"
 	     << "\"y\" \\ \n"
@@ -724,7 +724,7 @@ void Output_Ringleb_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 	     << "\"a_exact\" \\ \n"
 	     << "\"rho_error\" \\ \n"
 	     << "\"a_error\" \\ \n";
-  Out_File << "ZONE T =  \"Block " << Block_Number << " CPU" << CFDkit_MPI::This_Processor_Number << "\" \\ \n"
+  Out_File << "ZONE T =  \"Block " << Block_Number << " CPU" << CFFC_MPI::This_Processor_Number << "\" \\ \n"
 	   << "I = " << SolnBlk.Grid.ICu - SolnBlk.Grid.ICl + 1 << " \\ \n"
 	   << "J = " << SolnBlk.Grid.JCu - SolnBlk.Grid.JCl + 1 << " \\ \n"
 	   << "F = POINT \\ \n";
@@ -790,7 +790,7 @@ void Output_Viscous_Channel_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
   // Output node solution data.  
   Out_File << setprecision(14);
   if (Output_Title)
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D HighTemp Viscous Channel Flow Solution "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D HighTemp Viscous Channel Flow Solution "
 	     << "\"" << "\n"
 	     << "VARIABLES = \"x\" \\ \n"
 	     << "\"y\" \\ \n"
@@ -807,7 +807,7 @@ void Output_Viscous_Channel_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 	     << "\"u_error\" \\ \n"
 	     << "\"v_error\" \\ \n"
 	     << "\"p_error\" \\ \n";
-  Out_File << "ZONE T =  \"Block " << Block_Number << " CPU" << CFDkit_MPI::This_Processor_Number
+  Out_File << "ZONE T =  \"Block " << Block_Number << " CPU" << CFFC_MPI::This_Processor_Number
 	   << "\" \\ \n"
 	   << "I = " << SolnBlk.Grid.NCi << " \\ \n"
 	   << "J = " << SolnBlk.Grid.NCj << " \\ \n"
@@ -1050,7 +1050,7 @@ void Output_Viscous_Pipe_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
   // Output node solution data.  
   Out_File << setprecision(14);
   if (Output_Title)
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D HighTemp Viscous Pipe Flow Solution "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D HighTemp Viscous Pipe Flow Solution "
 	     << "\"" << "\n"
 	     << "VARIABLES = \"x\" \\ \n"
 	     << "\"y\" \\ \n"
@@ -1067,7 +1067,7 @@ void Output_Viscous_Pipe_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 	     << "\"u_error\" \\ \n"
 	     << "\"v_error\" \\ \n"
 	     << "\"p_error\" \\ \n";
-  Out_File << "ZONE T =  \"Block " << Block_Number << " CPU" << CFDkit_MPI::This_Processor_Number
+  Out_File << "ZONE T =  \"Block " << Block_Number << " CPU" << CFFC_MPI::This_Processor_Number
 	   << "\" \\ \n"
 	   << "I = " << SolnBlk.Grid.NCi << " \\ \n"
 	   << "J = " << SolnBlk.Grid.NCj << " \\ \n"
@@ -1285,7 +1285,7 @@ void Output_Turbulent_Pipe_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
   if (variable_flag == 1) {
     // Axial velocity output file.
     if (Output_Title) {
-      Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D HighTemp Turbulent Pipe Flow Axial Velocity "
+      Out_File << "TITLE = \"" << CFFC_Name() << ": 2D HighTemp Turbulent Pipe Flow Axial Velocity "
 	       << "\"" << "\n"
 	       << "VARIABLES = \"r/R\" \\ \n"
 	       << "\"r\" \\ \n"
@@ -1330,7 +1330,7 @@ void Output_Turbulent_Pipe_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
   } else if (variable_flag == 2) {
     // Kinetic energy output file.
     if (Output_Title) {
-      Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D HighTemp Turbulent Pipe Flow Kinetic Energy "
+      Out_File << "TITLE = \"" << CFFC_Name() << ": 2D HighTemp Turbulent Pipe Flow Kinetic Energy "
 	       << "\"" << "\n"
 	       << "VARIABLES = \"r/R\" \\ \n"
 	       << "\"r\" \\ \n"
@@ -1382,7 +1382,7 @@ void Output_Turbulent_Pipe_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
   } else if (variable_flag == 3) {
     // Shear stress output file.
     if (Output_Title) {
-      Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D HighTemp Turbulent Pipe Flow uv "
+      Out_File << "TITLE = \"" << CFFC_Name() << ": 2D HighTemp Turbulent Pipe Flow uv "
 	       << "\"" << "\n"
 	       << "VARIABLES = \"r/R\" \\ \n"
 	       << "\"r\" \\ \n"
@@ -1424,7 +1424,7 @@ void Output_Turbulent_Pipe_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
     }
   }
 
-  Out_File << "ZONE T = \"Block " << Block_Number << " CPU" << CFDkit_MPI::This_Processor_Number
+  Out_File << "ZONE T = \"Block " << Block_Number << " CPU" << CFFC_MPI::This_Processor_Number
 	   << "\" \\ \n"
 	   << "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1 << " \\ \n"
 	   << "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1 << " \\ \n"
@@ -1485,7 +1485,7 @@ void Output_Flat_Plate_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
   // Output node solution data.  
   Out_File_Soln << setprecision(14);
   if (Output_Title_Soln) {
-    Out_File_Soln << "TITLE = \"" << CFDkit_Name() << ": 2D HighTemp Solution, "
+    Out_File_Soln << "TITLE = \"" << CFFC_Name() << ": 2D HighTemp Solution, "
 		  << "\"" << "\n"
 		  << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n"
@@ -1509,7 +1509,7 @@ void Output_Flat_Plate_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 		  << "\"phiv_e\" \\ \n"
 		  << "\"phiv - phiv_e\" \\ \n";
   }
-  Out_File_Soln << "ZONE T =  \"Block " << Block_Number << " CPU" << CFDkit_MPI::This_Processor_Number << "\" \\ \n"
+  Out_File_Soln << "ZONE T =  \"Block " << Block_Number << " CPU" << CFFC_MPI::This_Processor_Number << "\" \\ \n"
 		<< "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1 << " \\ \n"
 		<< "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1 << " \\ \n"
 		<< "F = POINT \n";
@@ -1594,7 +1594,7 @@ void Output_Flat_Plate_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
   }
 
   if (Output_Title_Skin) {
-    Out_File_Skin << "TITLE = \"" << CFDkit_Name() << ": 2D HighTemp Solution, "
+    Out_File_Skin << "TITLE = \"" << CFFC_Name() << ": 2D HighTemp Solution, "
 		  << "\"" << "\n"
 		  << "VARIABLES = \"x\" \\ \n"
 		  << "\"Rex\" \\ \n"
@@ -1608,7 +1608,7 @@ void Output_Flat_Plate_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 		  << "\"yplus\" \\ \n";
   }
   if (skin_friction_flag) {
-    Out_File_Skin << "ZONE T =  \"Block " << Block_Number << " CPU" << CFDkit_MPI::This_Processor_Number
+    Out_File_Skin << "ZONE T =  \"Block " << Block_Number << " CPU" << CFFC_MPI::This_Processor_Number
 		  << "\" \\ \n"
 		  << "I = " << numberofactivecells_cf << " \\ \n"
 		  << "J = " << 1 << " \\ \n"
@@ -1694,11 +1694,11 @@ void Output_Driven_Cavity_Flow_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 
   // Output node solution data.  
   if (Output_Title) {
-    Out_File_u << "TITLE = \"" << CFDkit_Name() << ": 2D HighTemp Driven Cavity Flow Solution u-velocity Comparison "
+    Out_File_u << "TITLE = \"" << CFFC_Name() << ": 2D HighTemp Driven Cavity Flow Solution u-velocity Comparison "
 	       << "\"" << "\n"
 	       << "VARIABLES = \"x\" \\ \n"
 	       << "\"u\" \\ \n";
-    Out_File_v << "TITLE = \"" << CFDkit_Name() << ": 2D HighTemp Driven Cavity Flow Solution v-velocity Comparison "
+    Out_File_v << "TITLE = \"" << CFFC_Name() << ": 2D HighTemp Driven Cavity Flow Solution v-velocity Comparison "
 	       << "\"" << "\n"
 	       << "VARIABLES = \"x\" \\ \n"
 	       << "\"v\" \\ \n";
@@ -1707,7 +1707,7 @@ void Output_Driven_Cavity_Flow_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
   // If the output title flag is on (first time the current processor
   // is writing data) and the current processor is the primary processor
   // then write the solution data of Ghia et al. to the output file.
-  if (Output_Title && CFDkit_Primary_MPI_Processor()) {
+  if (Output_Title && CFFC_Primary_MPI_Processor()) {
     // Output a zone corresponding to the u-velocity component at the
     // geometric centre of the cavity.
     Out_File_u << "ZONE T = \"u-velocity"
@@ -1799,7 +1799,7 @@ void Output_Driven_Cavity_Flow_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
   }
 
   if (fabs(SolnBlk.Grid.nodeSE(SolnBlk.ICu,SolnBlk.JCl).X.x) < TOLER*TOLER) {
-    Out_File_u << "ZONE T =  \"u-velocity " << Block_Number << " CPU" << CFDkit_MPI::This_Processor_Number
+    Out_File_u << "ZONE T =  \"u-velocity " << Block_Number << " CPU" << CFFC_MPI::This_Processor_Number
 	       << "\" \\ \n"
 	       << "I = " << (SolnBlk.JCu+1)-(SolnBlk.JCl-1) << " \\ \n"
 	       << "J = " << 1 << " \\ \n"
@@ -1810,7 +1810,7 @@ void Output_Driven_Cavity_Flow_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
     }
   }
   if (fabs(SolnBlk.Grid.nodeSW(SolnBlk.ICl,SolnBlk.JCl).X.y) < TOLER*TOLER) {
-    Out_File_v << "ZONE T =  \"v-velocity " << Block_Number << " CPU" << CFDkit_MPI::This_Processor_Number
+    Out_File_v << "ZONE T =  \"v-velocity " << Block_Number << " CPU" << CFFC_MPI::This_Processor_Number
 	       << "\" \\ \n"
 	       << "I = " << (SolnBlk.ICu+1)-(SolnBlk.ICl-1) << " \\ \n"
 	       << "J = " << 1 << " \\ \n"
@@ -1849,7 +1849,7 @@ void Output_Backward_Facing_Step_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 
 //   // Output node solution data.  
 //   if (Output_Title) {
-//     Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D HighTemp Backward Facing Step \""
+//     Out_File << "TITLE = \"" << CFFC_Name() << ": 2D HighTemp Backward Facing Step \""
 // 	     << endl << "VARIABLES = \"x\" \\"
 // 	     << endl << "\"y\" \\"
 // 	     << endl << "\"u\" \\"
@@ -1863,7 +1863,7 @@ void Output_Backward_Facing_Step_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 //   // is writing data) and the current processor is the primary processor
 //   // then write the solution data of Driver and Seegmiller to the output
 //   // file.
-//   if (Output_Title && CFDkit_Primary_MPI_Processor()) {
+//   if (Output_Title && CFFC_Primary_MPI_Processor()) {
 
 //     Out_File << endl << "ZONE T = \"Station " << 1 << "\" \\"
 // 	     << endl << "I = " << 17 << " \\"
@@ -2483,7 +2483,7 @@ void Output_Backward_Facing_Step_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 //   }
 
 // //   if (fabs(SolnBlk.Grid.nodeSE(SolnBlk.ICu,SolnBlk.JCl).X.x) < TOLER*TOLER) {
-// //     Out_File << "ZONE T =  \"u-velocity " << Block_Number << " CPU" << CFDkit_MPI::This_Processor_Number
+// //     Out_File << "ZONE T =  \"u-velocity " << Block_Number << " CPU" << CFFC_MPI::This_Processor_Number
 // // 	       << "\" \\ \n"
 // // 	       << "I = " << (SolnBlk.JCu+1)-(SolnBlk.JCl-1) << " \\ \n"
 // // 	       << "J = " << 1 << " \\ \n"

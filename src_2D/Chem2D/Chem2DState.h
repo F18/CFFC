@@ -938,7 +938,7 @@ inline void Chem2D_pState::set_turbulence_variables(const double &C_constant,
 //    if ((Flow_Type == FLOWTYPE_INVISCID ||
 //         Flow_Type == FLOWTYPE_LAMINAR) &&
 //        (U.rho <= ZERO ||!U.negative_speccheck(n) ||U.es() <= ZERO)) {
-//     cout << "\n " << CFDkit_Name() 
+//     cout << "\n " << CFFC_Name() 
 // 	 << " Chem2D ERROR: Negative Density || Energy || mass fractions: \n"
 // 	 << U << "\n";
 //     return false;
@@ -948,7 +948,7 @@ inline void Chem2D_pState::set_turbulence_variables(const double &C_constant,
 //        Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) &&
 //       (U.rho <= ZERO || !U.negative_speccheck(n) ||U.es() <= ZERO ||
 //        U.rhok < ZERO ||U.rhoomega < ZERO)) {
-//     cout << "\n " << CFDkit_Name() 
+//     cout << "\n " << CFFC_Name() 
 // 	 << " Chem2D ERROR: Negative Density || Energy || mass fractions || Turbulent kinetic energy || : \n"
 // 	 << " Dissipation rate per unit turbulent kinetic energy || : \n"
 // 	 <<U << "\n";
@@ -1376,7 +1376,7 @@ inline bool Chem2D_cState::Unphysical_Properties_Check(const int Flow_Type, cons
   if ((Flow_Type == FLOWTYPE_INVISCID ||
        Flow_Type == FLOWTYPE_LAMINAR) &&
       (rho <= ZERO ||!negative_speccheck(n) ||es() <= ZERO)) {
-    cout << "\n " << CFDkit_Name() 
+    cout << "\n " << CFFC_Name() 
 	 << " Chem2D ERROR: Negative Density || Energy || mass fractions: \n" << *this <<endl;
     return false;
   }
@@ -1384,7 +1384,7 @@ inline bool Chem2D_cState::Unphysical_Properties_Check(const int Flow_Type, cons
        Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) &&
       (rho <= ZERO || !negative_speccheck(n) ||es() <= ZERO ||
        rhok < ZERO ||rhoomega < ZERO)) {
-    cout << "\n " << CFDkit_Name() 
+    cout << "\n " << CFFC_Name() 
 	 << " Chem2D ERROR: Negative Density || Energy || mass fractions || Turbulent kinetic energy || : \n"
 	 << " Dissipation rate per unit turbulent kinetic energy || : \n" << *this <<endl;
     return false;

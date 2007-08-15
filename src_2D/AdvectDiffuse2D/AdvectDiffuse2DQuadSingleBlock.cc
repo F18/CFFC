@@ -60,7 +60,7 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk) {
 
     /* Broadcast the number of cells in each direction. */
 
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       ni = SolnBlk.NCi;
       nj = SolnBlk.NCj;
       ng = SolnBlk.Nghost;
@@ -79,7 +79,7 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk) {
     /* On non-primary MPI processors, allocate (re-allocate) 
        memory for the quadrilateral solution block as necessary. */
 
-    if (!CFDkit_Primary_MPI_Processor()) {
+    if (!CFFC_Primary_MPI_Processor()) {
        if (SolnBlk.NCi != ni || SolnBlk.NCj != nj || SolnBlk.Nghost != ng) { 
           if (SolnBlk.U != NULL) SolnBlk.deallocate();
           if (block_allocated) SolnBlk.allocate(ni-2*ng, nj-2*ng, ng); 
@@ -101,7 +101,7 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk) {
        nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
        buffer = new double[7*ni*nj];
 
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
               for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
@@ -120,7 +120,7 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk) {
        buffer_size = 7*ni*nj;
        MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
 
-       if (!CFDkit_Primary_MPI_Processor()) {
+       if (!CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
               for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
@@ -143,7 +143,7 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk) {
        nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
        buffer = new double[14*ni*nj];
 
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
  	      buffer[buffer_size   ] = SolnBlk.UoW[j].u;
@@ -167,7 +167,7 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk) {
        buffer_size = 14*ni*nj;
        MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
 
-       if (!CFDkit_Primary_MPI_Processor()) {
+       if (!CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
  	      SolnBlk.UoW[j].u    = buffer[buffer_size   ];
@@ -195,7 +195,7 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk) {
        nj = 1;
        buffer = new double[14*ni*nj];
 
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
           for (i  = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
  	      buffer[buffer_size   ] = SolnBlk.UoS[i].u;
@@ -219,7 +219,7 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk) {
        buffer_size = 14*ni*nj;
        MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
 
-       if (!CFDkit_Primary_MPI_Processor()) {
+       if (!CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
           for (i  = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
  	      SolnBlk.UoS[i].u    = buffer[buffer_size   ];
@@ -267,7 +267,7 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
 
     /* Broadcast the number of cells in each direction. */
 
-    if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+    if (CFFC_MPI::This_Processor_Number == Source_CPU) {
       ni = SolnBlk.NCi;
       nj = SolnBlk.NCj;
       ng = SolnBlk.Nghost;
@@ -286,7 +286,7 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
     /* On non-source MPI processors, allocate (re-allocate) 
        memory for the quadrilateral solution block as necessary. */
 
-    if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
        if (SolnBlk.NCi != ni || SolnBlk.NCj != nj || SolnBlk.Nghost != ng) { 
           if (SolnBlk.U != NULL) SolnBlk.deallocate();
           if (block_allocated) SolnBlk.allocate(ni-2*ng, nj-2*ng, ng); 
@@ -308,7 +308,7 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
        nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
        buffer = new double[7*ni*nj];
 
-       if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+       if (CFFC_MPI::This_Processor_Number == Source_CPU) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
               for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
@@ -327,7 +327,7 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
        buffer_size = 7*ni*nj;
        Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
 
-       if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+       if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
               for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
@@ -350,7 +350,7 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
        nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
        buffer = new double[14*ni*nj];
 
-       if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+       if (CFFC_MPI::This_Processor_Number == Source_CPU) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
 	      buffer[buffer_size   ] = SolnBlk.UoW[j].u;
@@ -374,7 +374,7 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
        buffer_size = 14*ni*nj;
        Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
 
-       if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+       if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
  	      SolnBlk.UoW[j].u    = buffer[buffer_size   ];
@@ -402,7 +402,7 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
        nj = 1;
        buffer = new double[14*ni*nj];
 
-       if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+       if (CFFC_MPI::This_Processor_Number == Source_CPU) {
           buffer_size = 0;
           for (i  = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
  	      buffer[buffer_size   ] = SolnBlk.UoS[i].u;
@@ -426,7 +426,7 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
        buffer_size = 14*ni*nj;
        Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
 
-       if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+       if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
           buffer_size = 0;
           for (i  = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
  	      SolnBlk.UoS[i].u    = buffer[buffer_size   ];
@@ -988,7 +988,7 @@ void Output_Tecplot(AdvectDiffuse2D_Quad_Block &SolnBlk,
 
     Out_File << setprecision(14);
     if (Output_Title) {
-       Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Advection Diffusion Equation Solution, "
+       Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Advection Diffusion Equation Solution, "
                 << "Time Step/Iteration Level = " << Number_of_Time_Steps
                 << ", Time = " << Time
                 << "\"" << "\n"
@@ -1047,7 +1047,7 @@ void Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block &SolnBlk,
 
     Out_File << setprecision(14);
     if (Output_Title) {
-       Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Advection Diffusion Equation Solution, "
+       Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Advection Diffusion Equation Solution, "
                 << "Time Step/Iteration Level = " << Number_of_Time_Steps
                 << ", Time = " << Time
                 << "\"" << "\n"
@@ -1105,7 +1105,7 @@ void Output_Nodes_Tecplot(AdvectDiffuse2D_Quad_Block &SolnBlk,
 
     Out_File << setprecision(14);
     if (Output_Title) {
-       Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Advection Diffusion Node Values, "
+       Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Advection Diffusion Node Values, "
                 << "Time Step/Iteration Level = " << Number_of_Time_Steps
                 << ", Time = " << Time
                 << "\"" << "\n"

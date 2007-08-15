@@ -100,7 +100,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
    ********************************************************************/
 
   // The primary MPI processor processes the input parameter file.
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     if (!batch_flag)
       cout << "\n Reading input data file `"
 	   << Input_File_Name_ptr << "'.";
@@ -118,12 +118,12 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
     error_flag = 0;
   }
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   // Broadcast input solution parameters to other MPI processors.
-  CFDkit_Broadcast_MPI(&error_flag,1);
+  CFFC_Broadcast_MPI(&error_flag,1);
   if (error_flag) return error_flag;
-  CFDkit_Broadcast_MPI(&command_flag,1);
+  CFFC_Broadcast_MPI(&command_flag,1);
   if (command_flag == TERMINATE_CODE) return 0;
   Broadcast_Input_Parameters(Input_Parameters);
 
@@ -135,13 +135,13 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
  execute_new_calculation: ;
 
   // Synchronize processors.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   // Create initial mesh.  Read mesh from grid definition or data  
   // files when specified by input parameters.
 
   // The primary MPI processor creates the initial mesh.
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
 
     if (!batch_flag) 
       cout << "\n Creating (or reading) initial quadrilateral multi-block mesh.";
@@ -171,10 +171,10 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
   }
 
   // Synchronize processors.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   // Broadcast the mesh to other MPI processors.
-  CFDkit_Broadcast_MPI(&error_flag,1);
+  CFFC_Broadcast_MPI(&error_flag,1);
   if (error_flag) return error_flag;
   MeshBlk = Broadcast_Multi_Block_Grid(MeshBlk,Input_Parameters);
 
@@ -229,7 +229,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
     if (!batch_flag) cout << "\n Reading solution from restart data files.";
 
     //Check that restart files are probably not corrupt. //added by ~james
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       if(System::Restart_In_Progress()) {
 	cout << "\n  Restart-in-progress flag detected, assuming data is corrupt."
 	     << "\n  Uncompressing backups.";
@@ -238,7 +238,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	cout << "\n  Backup successfully uncompressed; reading.";
       }
     }
-    CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
 
     // Read the quadtree restart file.
     error_flag = Read_QuadTree(QuadTree,
@@ -250,7 +250,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	   << Local_Solution_Block_List.ThisCPU
 	   << "." << endl;
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
     // Allocate the message buffers.
     Allocate_Message_Buffers(Local_Solution_Block_List,
@@ -267,20 +267,20 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	   << "file(s) on processor "
 	   << Local_Solution_Block_List.ThisCPU << "." << endl;
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
     // Ensure each processor has the correct time and time.
-    number_of_time_steps = CFDkit_Maximum_MPI(number_of_time_steps);
-    Time = CFDkit_Maximum_MPI(Time);
-    processor_cpu_time.cput = CFDkit_Maximum_MPI(processor_cpu_time.cput);
-    Input_Parameters.Maximum_Number_of_Time_Steps = CFDkit_Maximum_MPI(Input_Parameters.Maximum_Number_of_Time_Steps);
+    number_of_time_steps = CFFC_Maximum_MPI(number_of_time_steps);
+    Time = CFFC_Maximum_MPI(Time);
+    processor_cpu_time.cput = CFFC_Maximum_MPI(processor_cpu_time.cput);
+    Input_Parameters.Maximum_Number_of_Time_Steps = CFFC_Maximum_MPI(Input_Parameters.Maximum_Number_of_Time_Steps);
 
     // Synchronize processors.
-    CFDkit_Barrier_MPI();
+    CFFC_Barrier_MPI();
     // Broadcast input solution parameters to other MPI processors.
-    CFDkit_Broadcast_MPI(&error_flag,1);
+    CFFC_Broadcast_MPI(&error_flag,1);
     if (error_flag) return error_flag;
-    CFDkit_Broadcast_MPI(&command_flag,1);
+    CFFC_Broadcast_MPI(&command_flag,1);
     if (command_flag == TERMINATE_CODE) return 0;
     Broadcast_Input_Parameters(Input_Parameters);
 
@@ -300,7 +300,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
     cout << "\n ERROR: Message passing error during solution initialization on "
 	 << "processor " << Local_Solution_Block_List.ThisCPU << "." << endl;
   }
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // Allocate memory for the embedded boundary solution.
@@ -327,7 +327,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	   << endl << " data file(s) on processor " << Local_Solution_Block_List.ThisCPU << "."
 	   << endl;
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
     evolution_counter = number_of_time_steps%Input_Parameters.Interface_IP.Evolution_Frequency;
@@ -343,7 +343,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	   << Local_Solution_Block_List.ThisCPU << ".  Error number = "
 	   << error_flag << "." << endl;
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
     // Construct the interface level set list.
     error_flag = EBSolver.Construct_Interface_Level_Set_List(batch_flag);
@@ -352,7 +352,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	   << Local_Solution_Block_List.ThisCPU << ".  Error number = "
 	   << error_flag << "." << endl;
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
     // Construct the interface union list.
     if (!batch_flag) cout << endl << " Constructing interface union list.";
@@ -362,10 +362,10 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	   << Local_Solution_Block_List.ThisCPU << ".  Error number = "
 	   << error_flag << "." << endl;
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
     // Synchronize processors.
-    CFDkit_Barrier_MPI();
+    CFFC_Barrier_MPI();
     // Initialize grids and mesh data required for the adjustment
     // algorithm.
     EBSolver.Initialize_Adjustment_Grids();
@@ -377,7 +377,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	   << Local_Solution_Block_List.ThisCPU << ".  Error number = " 
 	   << error_flag << "." << endl;
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
     // Apply initial conditions.
     if (!batch_flag) cout << "\n Applying initial conditions.";
@@ -390,12 +390,12 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	   << Local_Solution_Block_List.ThisCPU << ".  Error number = " 
 	   << error_flag << "." << endl;
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
   }
 
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   // Reset the interface motion type if required (used for oscillaring
   // NACA0012 aerofoils).
@@ -403,7 +403,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
     error_flag = EBSolver.Reset_Interface_Motion_Type();
     Time = ZERO;
     if (!error_flag) error_flag = EBSolver.Compute_Interface_Velocity_Function(Time);
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
   }
 
@@ -421,7 +421,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
     cout << "\n ERROR: Message passing error during solution initialization on "
 	 << "processor " << Local_Solution_Block_List.ThisCPU << "." << endl;
   }
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // Prescribe boundary data consistent with initial data.
@@ -437,7 +437,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       cout << "\n ERROR: Uniform AMR error on processor "
 	   << Local_Solution_Block_List.ThisCPU << "." << endl;
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
     // Perform boundary mesh refinement.
@@ -447,7 +447,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       cout << "\n ERROR: Boundary AMR error on processor "
 	   << Local_Solution_Block_List.ThisCPU << "." << endl;
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
     // Perform interface mesh refinement.
@@ -457,7 +457,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       cout << "\n ERROR: Interface AMR error #" << error_flag << " on processor "
 	   << Local_Solution_Block_List.ThisCPU << "." << endl;
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
     // Perform bounding-box mesh refinement.
@@ -467,7 +467,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       cout << "\n ERROR: Bounding-box AMR error #" << error_flag << " on processor "
 	   << Local_Solution_Block_List.ThisCPU << "." << endl;
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
     // Perform initial mesh refinement.
@@ -477,7 +477,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       cout << "\n ERROR: Initial AMR error on processor "
 	   << Local_Solution_Block_List.ThisCPU << "." << endl;
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
     //re-apply ICs after refinement
@@ -492,7 +492,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
     }
 
     // MPI barrier to ensure processor synchronization.
-    CFDkit_Barrier_MPI();
+    CFFC_Barrier_MPI();
 
     // Send solution information between neighbouring blocks to complete
     // prescription of initial data.
@@ -508,7 +508,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       cout << "\n ERROR: Message passing error during solution intialization "
 	   << "on processor " << Local_Solution_Block_List.ThisCPU << "." << endl;
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
     // Determine the interface velocity function on both interface lists.
@@ -519,7 +519,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	   << Local_Solution_Block_List.ThisCPU << ".  Error number = " 
 	   << error_flag << "." << endl;
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
   }
@@ -542,7 +542,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
     cout.flush();
   }
 
-//   if (CFDkit_Primary_MPI_Processor()) {
+//   if (CFFC_Primary_MPI_Processor()) {
 //     for (int j_blk = 0; j_blk < QuadTree.Nblk; j_blk++) {
 //       for (int i_blk = 0; i_blk < QuadTree.Ncpu; i_blk++) {
 // 	if (QuadTree.Blocks[i_blk][j_blk] != NULL) {
@@ -565,7 +565,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
  continue_existing_calculation: ;
 
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   // Allocate memory for multigrid solver if required.
 
@@ -587,7 +587,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       cout << "\n ERROR: Unable to allocate memory for multigrid solver."
 	   << "\n Error number = " << error_flag << endl;
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
   }
 
@@ -607,7 +607,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       cout << "\n ERROR: Multigrid error on processor "
 	   << Local_Solution_Block_List.ThisCPU << "." << endl;
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
   } else if (Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
@@ -628,7 +628,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	   << Local_Solution_Block_List.ThisCPU << ".  Error number = "
 	   << error_flag << "." << endl;
     }
-    CFDkit_Broadcast_MPI(&error_flag,1);
+    CFFC_Broadcast_MPI(&error_flag,1);
     if (error_flag) return error_flag;
 
   } else {
@@ -646,7 +646,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       cout << "\n ERROR: Embedded boundaries error on processor "
 	   << Local_Solution_Block_List.ThisCPU << "." << endl;
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
   }
@@ -660,10 +660,10 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
  postprocess_current_calculation: ;
 
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   while (1) {
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       Get_Next_Input_Control_Parameter(Input_Parameters);
       command_flag = Parse_Next_Input_Control_Parameter(Input_Parameters);
       line_number = Input_Parameters.Line_Number;
@@ -677,9 +677,9 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       //Reinitialize_Reference_State(Input_Parameters);
     }
     // MPI barrier to ensure processor synchronization.
-    CFDkit_Barrier_MPI();
+    CFFC_Barrier_MPI();
     Broadcast_Input_Parameters(Input_Parameters);
-    CFDkit_Broadcast_MPI(&command_flag,1);
+    CFFC_Broadcast_MPI(&command_flag,1);
 
     if (command_flag == EXECUTE_CODE) {
       // Deallocate memory for the solution variables.
@@ -702,7 +702,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 
     } else if (command_flag == TERMINATE_CODE) {
 
-      CFDkit_Barrier_MPI();
+      CFFC_Barrier_MPI();
 
       // Deallocate memory for equation solution.
       if (!batch_flag) cout << "\n Deallocating solution variables.";
@@ -720,7 +720,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 					    Input_Parameters.Number_of_Blocks_Jdir);
       // Close input data file.
       if (!batch_flag) cout << "\n\n Closing input data file.";
-      if (CFDkit_Primary_MPI_Processor()) Close_Input_File(Input_Parameters);
+      if (CFFC_Primary_MPI_Processor()) Close_Input_File(Input_Parameters);
       // Terminate calculation.
       return 0;
 
@@ -748,7 +748,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	     << Local_Solution_Block_List.ThisCPU
 	     << ".  Error number = " << error_flag << "." << endl;
       }
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) {
 	command_flag = Output_Tecplot(Local_SolnBlk,
 				      Local_Solution_Block_List,
@@ -762,7 +762,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	cout << "\n ERROR: Boundary conditions error on processor "
 	     << Local_Solution_Block_List.ThisCPU << "." << endl;
       }
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
 
       // Output multi-block solution-adaptive quadrilateral mesh statistics.
@@ -783,7 +783,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	cout.flush();
       }
 
-//       if (CFDkit_Primary_MPI_Processor()) {
+//       if (CFFC_Primary_MPI_Processor()) {
 //          for (int j_blk = 0; j_blk < QuadTree.Nblk; j_blk++) {
 //             for (int i_blk = 0; i_blk < QuadTree.Ncpu; i_blk++) {
 //                if (QuadTree.Blocks[i_blk][j_blk] != NULL) {
@@ -813,7 +813,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	     << Local_Solution_Block_List.ThisCPU
 	     << ".  Error number = " << error_flag << "." << endl;
       }
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) {
 	command_flag = Output_Tecplot(Local_SolnBlk,
 				      Local_Solution_Block_List,
@@ -827,7 +827,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	cout << "\n ERROR: Boundary conditions error on processor "
 	     << Local_Solution_Block_List.ThisCPU << "." << endl;
       }
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
 
       // Output multi-block solution-adaptive quadrilateral mesh statistics.
@@ -848,7 +848,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	cout.flush();
       }
 
-//       if (CFDkit_Primary_MPI_Processor()) {
+//       if (CFFC_Primary_MPI_Processor()) {
 //          for (int j_blk = 0; j_blk < QuadTree.Nblk; j_blk++) {
 //             for (int i_blk = 0; i_blk < QuadTree.Ncpu; i_blk++) {
 //                if (QuadTree.Blocks[i_blk][j_blk] != NULL) {
@@ -886,7 +886,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	cout << "\n ERROR: Unable to open output data file(s) on processor "
 	     << Local_Solution_Block_List.ThisCPU << "." << endl;
       }
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_CELLS_CODE) {
@@ -907,7 +907,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	cout << "\n ERROR: Unable to open cell output data file(s) on processor "
 	     << Local_Solution_Block_List.ThisCPU << "." << endl;
       }
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_ELEMENTS_CODE) {
@@ -924,7 +924,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	cout << "\n ERROR: Unable to open solution element output file.\n";
 	cout.flush();
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_NODES_CODE) {
@@ -939,7 +939,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       if (error_flag) {
 	cout << "\n ERROR: Unable to open solution nodes output file." << endl;
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_GRADIENTS_CODE) {
@@ -952,7 +952,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       if (error_flag) {
 	cout << "\n ERROR: Unable to open solution gradients output file." << endl;
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_CELL_STATUS_CODE) {
@@ -967,7 +967,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       if (error_flag) {
 	cout << "\n ERROR: Unable to open cell status data output file." << endl;
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_INTERFACE_COMPONENT_LIST_CODE) {
@@ -981,7 +981,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       if (error_flag) {
 	cout << "\n ERROR: Unable to open interface component list output file." << endl;
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_INTERFACE_UNION_LIST_CODE) {
@@ -995,7 +995,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       if (error_flag) {
 	cout << "\n ERROR: Unable to open interface union list output file." << endl;
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_LEVEL_SET_CODE) { 
@@ -1005,7 +1005,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       if (error_flag) {
 	cout << "\n ERROR: Unable to open LevelSet2D output data file(s)." << endl;
       }
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_LEVEL_SET_CELLS_CODE) {
@@ -1015,7 +1015,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       if (error_flag) {
 	cout << "\n ERROR: Unable to open LevelSet2D cell output data file(s)." << endl;
       }
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_LEVEL_SET_INTERFACE_LIST_CODE) {
@@ -1025,7 +1025,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       if (error_flag) {
 	cout << "\n ERROR: Unable to open LevelSet2D interface nodes output data file(s)." << endl;
       }
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_RINGLEB_CODE) {
@@ -1039,7 +1039,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       if (error_flag) {
 	cout << endl << "\n ERROR: Unable to open Ringleb's flow output file." << endl;
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_FLAT_PLATE_CODE) {
@@ -1053,7 +1053,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       if (error_flag) {
 	cout << endl << "\n ERROR: Unable to open flat plate output file." << endl;
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_CYLINDER_DRAG_CODE) {
@@ -1067,7 +1067,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       if (error_flag) {
 	cout << endl << "\n ERROR: Problem calculating Cd and Cl." << endl;
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_COUETTE) {
@@ -1081,7 +1081,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       if (error_flag) {
 	cout << endl << "\n ERROR: Problem calculating Couette info." << endl;
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_AERODYNAMIC_COEFFICIENTS_CODE) {
@@ -1097,23 +1097,23 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
       if (error_flag) {
 	cout << endl << "\n ERROR: Unable to open aerodynamic coefficients output file." << endl;
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_RESTART_CODE) {
       // Write restart files.
       if (!batch_flag) cout << "\n Writing solution to restart data file(s).";
       //  Save and delete old restart files in compressed archive (just in case)
-      if (CFDkit_Primary_MPI_Processor()) {
+      if (CFFC_Primary_MPI_Processor()) {
 	cout << "\n  Creating compressed archive of (and deleting) old restarts.";
 	System::Compress_Restart();
 	cout << "\n  Writing new restart files.";
 	cout.flush();
       }
-      CFDkit_Barrier_MPI(); // MPI barrier so that other processors do
+      CFFC_Barrier_MPI(); // MPI barrier so that other processors do
                             // not start over writing restarts
 
-      if (CFDkit_Primary_MPI_Processor()) {
+      if (CFFC_Primary_MPI_Processor()) {
 	System::Set_Restart_Flag();  //Set flag to indicate a restart is being saved
       }
 
@@ -1124,7 +1124,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	cout << "\n ERROR: Unable to open quadtree data file on processor "
 	     << Local_Solution_Block_List.ThisCPU << "." << endl;
       }
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
       // Write the solution block restart files.
       error_flag = Write_Restart_Solution(Local_SolnBlk,
@@ -1137,7 +1137,7 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	cout << "\n ERROR: Unable to open restart output data file(s) on processor "
 	     << Local_Solution_Block_List.ThisCPU << "." << endl;
       }
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
       // Write out data files for the embedded boundaries.
       if (!(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
@@ -1158,10 +1158,10 @@ int EmbeddedBoundaries2D_Solver(char *Input_File_Name_ptr, int batch_flag) {
 	cout << "\n ERROR: Unable to open restart output data file(s) on processor "
 	     << Local_Solution_Block_List.ThisCPU << "." << endl;
       }
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
 
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
 	 System::Remove_Restart_Flag();  //Remove flag to indicate the restart is finished
        }
 

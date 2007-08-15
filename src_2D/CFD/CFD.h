@@ -46,12 +46,12 @@ using namespace std;
  **********************************************************************/
 
 // Name.
-inline string CFDkit_Name() {
+inline string CFFC_Name() {
   return ("CFFC");
 }
 
 // Version.
-inline string CFDkit_Version() {
+inline string CFFC_Version() {
   return ("CFFC, Version 0.00, UTIAS CFD & Propulsion Group, 1999-2007.");
 }
 

@@ -1367,7 +1367,7 @@ Residual_Evaluation_for_Multigrid(const int &Level,
 	 << ".\n";
     cout.flush();
   } /* endif */
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return (error_flag);
 
   // Apply boundary flux corrections to ensure that method is conservative.
@@ -1462,14 +1462,14 @@ Execute(const int &batch_flag,
    * quadrilateral mesh using Multigrid for time-marching *
    ********************************************************/
 
-  CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
 
   /* Open residual file and reset the CPU time. */
 
   first_step = 1;
   limiter_freezing = OFF;
 
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     error_flag = Open_Progress_File(residual_file,
 				    IP->Output_File_Name,
 				    number_of_time_steps);
@@ -1479,8 +1479,8 @@ Execute(const int &batch_flag,
     } /* endif */
   } /* endif */
 
-  CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-  CFDkit_Broadcast_MPI(&error_flag, 1);
+  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+  CFFC_Broadcast_MPI(&error_flag, 1);
   if (error_flag) return (error_flag);
 
   processor_cpu_time.reset();
@@ -1545,22 +1545,22 @@ Execute(const int &batch_flag,
 	/* Determine the L1, L2, and max norms of the solution residual. */
 	residual_l1_norm = L1_Norm_Residual(Local_SolnBlk[top_level], 
 					    List_of_Local_Solution_Blocks[top_level]);
-	residual_l1_norm = CFDkit_Summation_MPI(residual_l1_norm); // L1 norm for all processors.
+	residual_l1_norm = CFFC_Summation_MPI(residual_l1_norm); // L1 norm for all processors.
 	
 	residual_l2_norm = L2_Norm_Residual(Local_SolnBlk[top_level], 
 					    List_of_Local_Solution_Blocks[top_level]);
 	residual_l2_norm = sqr(residual_l2_norm);
-	residual_l2_norm = CFDkit_Summation_MPI(residual_l2_norm); // L2 norm for all processors.
+	residual_l2_norm = CFFC_Summation_MPI(residual_l2_norm); // L2 norm for all processors.
 	residual_l2_norm = sqrt(residual_l2_norm);
 	
 	residual_max_norm = Max_Norm_Residual(Local_SolnBlk[top_level], 
 					      List_of_Local_Solution_Blocks[top_level]);
-	residual_max_norm = CFDkit_Maximum_MPI(residual_max_norm); // Max norm for all processors.
+	residual_max_norm = CFFC_Maximum_MPI(residual_max_norm); // Max norm for all processors.
 	
 	/* Update CPU time used for the calculation so far. */
 	processor_cpu_time.update();
 	// Total CPU time for all processors. 
-	total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput); 
+	total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput); 
 	/* Periodically save restart solution files. */
 	if (!first_step &&
 	    top_level == FINEST_LEVEL &&
@@ -1581,7 +1581,7 @@ Execute(const int &batch_flag,
 		 << ".\n";
 	    cout.flush();
 	  } /* endif */
-	  error_flag = CFDkit_OR_MPI(error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return (error_flag);
 	  cout << "\n";
 	  cout.flush();
@@ -1601,7 +1601,7 @@ Execute(const int &batch_flag,
 	// 					   residual_l1_norm,
 	// 					   first_step,
 	// 					   50);
-	if (CFDkit_Primary_MPI_Processor() && !first_step) {
+	if (CFFC_Primary_MPI_Processor() && !first_step) {
 	  Output_Progress_to_File(residual_file,
 				  number_of_time_steps,
 				  Time,

@@ -1807,7 +1807,7 @@
 	
 //   // Set each cell to the global minimum time-step if required.
 //   if (!IP->Local_Time_Stepping) {
-//      dTime = CFDkit_Minimum_MPI(dTime);
+//      dTime = CFFC_Minimum_MPI(dTime);
 //      Set_Global_TimeStep(Local_SolnBlk[Level],
 // 			 List_of_Local_Solution_Blocks[Level],
 // 			 dTime);
@@ -1830,7 +1830,7 @@
 // 	   << ".\n";
 //       cout.flush();
 //     }
-//     error_flag = CFDkit_OR_MPI(error_flag);
+//     error_flag = CFFC_OR_MPI(error_flag);
 //     if (error_flag) return error_flag;
 
 //     // 2. Apply boundary conditions for stage.
@@ -1852,7 +1852,7 @@
 // 	   << ".\n";
 //       cout.flush();
 //     }
-//     error_flag = CFDkit_OR_MPI(error_flag);
+//     error_flag = CFFC_OR_MPI(error_flag);
 //     if (error_flag) return error_flag;
 
 //     // 4. Send boundary flux corrections at block interfaces with
@@ -1866,7 +1866,7 @@
 // 	   << ".\n";
 //       cout.flush();
 //     }
-//     error_flag = CFDkit_OR_MPI(error_flag);
+//     error_flag = CFFC_OR_MPI(error_flag);
 //     if (error_flag) return error_flag;
 
 //     // 5. Apply boundary flux corrections to ensure that method is
@@ -1885,7 +1885,7 @@
 // 	   << ".\n";
 //       cout.flush();
 //     }
-//     error_flag = CFDkit_OR_MPI(error_flag);
+//     error_flag = CFFC_OR_MPI(error_flag);
 //     if (error_flag) return error_flag;
 
 //     // 7. Smooth the solution residual using implicit residual smoothing.
@@ -1906,7 +1906,7 @@
 // 	   << ".\n";
 //       cout.flush();
 //     }
-//     error_flag = CFDkit_OR_MPI(error_flag);
+//     error_flag = CFFC_OR_MPI(error_flag);
 //     if (error_flag) return error_flag;
 
 //   }
@@ -1921,7 +1921,7 @@
 // 	 << ".\n";
 //     cout.flush();
 //   }
-//   error_flag = CFDkit_OR_MPI(error_flag);
+//   error_flag = CFFC_OR_MPI(error_flag);
 //   if (error_flag) return error_flag;
 
 //   // Apply boundary conditions after smoothing is complete.
@@ -1943,7 +1943,7 @@
 // 	 << ".\n";
 //     cout.flush();
 //   }
-//   error_flag = CFDkit_OR_MPI(error_flag);
+//   error_flag = CFFC_OR_MPI(error_flag);
 //   if (error_flag) return error_flag;
 
 //   // Multigrid smoothing applied successfully.

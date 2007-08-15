@@ -122,17 +122,17 @@ int Write_Restart_Solution(Gaussian2D_Quad_Block *Soln_ptr,
     ofstream restart_file;
 
 //    //  Save and delete old restart files in compressed archive (just in case)
-//    if (CFDkit_Primary_MPI_Processor()) {
+//    if (CFFC_Primary_MPI_Processor()) {
 //      cout << "\n  Creating compressed archive of (and deleting) old restarts.";
 //      System::Compress_Restart();
 //      cout << "\n  Writing new restart files.";
 //      cout.flush();
 //    }
 //
-//    CFDkit_Barrier_MPI(); // MPI barrier so that other processors do
+//    CFFC_Barrier_MPI(); // MPI barrier so that other processors do
 //                          // not start over writing restarts
 //
-//    if (CFDkit_Primary_MPI_Processor()) {
+//    if (CFFC_Primary_MPI_Processor()) {
 //      System::Set_Restart_Flag();  //Set flag to indicate a restart is being saved
 //    }
 
@@ -178,10 +178,10 @@ int Write_Restart_Solution(Gaussian2D_Quad_Block *Soln_ptr,
        } /* endif */
     }  /* endfor */
 
-    CFDkit_Barrier_MPI(); // MPI barrier so that all processors have completed
+    CFFC_Barrier_MPI(); // MPI barrier so that all processors have completed
                           // writing.
 
-//    if (CFDkit_Primary_MPI_Processor()) {
+//    if (CFFC_Primary_MPI_Processor()) {
 //      System::Remove_Restart_Flag();  //Remove flag to indicate the restart is finished
 //    }
 //
@@ -575,8 +575,8 @@ int Output_Cylinder_Free_Molecular(Gaussian2D_Quad_Block *Soln_ptr,
     }
   }
   
-  total_number_of_boundary_cells = CFDkit_Summation_MPI(number_of_boundary_cells_this_cpu);
-  max_number_of_boundary_cells_per_cpu = CFDkit_Maximum_MPI(number_of_boundary_cells_this_cpu);
+  total_number_of_boundary_cells = CFFC_Summation_MPI(number_of_boundary_cells_this_cpu);
+  max_number_of_boundary_cells_per_cpu = CFFC_Maximum_MPI(number_of_boundary_cells_this_cpu);
 
   //Create buffers and array of nodes
 
@@ -586,9 +586,9 @@ int Output_Cylinder_Free_Molecular(Gaussian2D_Quad_Block *Soln_ptr,
 
   //combine list of nodes from each processor
 
-  for(i = 0; i < CFDkit_MPI::Number_of_Processors; i++) {
+  for(i = 0; i < CFFC_MPI::Number_of_Processors; i++) {
 
-    if(CFDkit_MPI::This_Processor_Number == i) {
+    if(CFFC_MPI::This_Processor_Number == i) {
       //load send buffers
       start = 0;
       number_sent = number_of_boundary_cells_this_cpu;

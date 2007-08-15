@@ -171,7 +171,7 @@ void Broadcast_Solution_Block(Ion5Moment2D_Quad_Block &SolnBlk) {
 
     /* Broadcast the number of cells in each direction. */
 
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       ni = SolnBlk.NCi;
       nj = SolnBlk.NCj;
       ng = SolnBlk.Nghost;
@@ -192,7 +192,7 @@ void Broadcast_Solution_Block(Ion5Moment2D_Quad_Block &SolnBlk) {
     /* On non-primary MPI processors, allocate (re-allocate) 
        memory for the quadrilateral solution block as necessary. */
 
-    if (!CFDkit_Primary_MPI_Processor()) {
+    if (!CFFC_Primary_MPI_Processor()) {
        if (SolnBlk.NCi != ni || SolnBlk.NCj != nj || SolnBlk.Nghost != ng) { 
           if (SolnBlk.U != NULL) SolnBlk.deallocate();
           if (block_allocated) SolnBlk.allocate(ni-2*ng, nj-2*ng, ng); 
@@ -216,7 +216,7 @@ void Broadcast_Solution_Block(Ion5Moment2D_Quad_Block &SolnBlk) {
        nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
        buffer = new double[11*ni*nj];
 
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
               for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
@@ -239,7 +239,7 @@ void Broadcast_Solution_Block(Ion5Moment2D_Quad_Block &SolnBlk) {
        buffer_size = 11*ni*nj;
        MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
 
-       if (!CFDkit_Primary_MPI_Processor()) {
+       if (!CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
               for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
@@ -267,7 +267,7 @@ void Broadcast_Solution_Block(Ion5Moment2D_Quad_Block &SolnBlk) {
        nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
        buffer = new double[8*ni*nj];
 
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
  	      buffer[buffer_size  ] = SolnBlk.WoW[j].d;
@@ -285,7 +285,7 @@ void Broadcast_Solution_Block(Ion5Moment2D_Quad_Block &SolnBlk) {
        buffer_size = 8*ni*nj;
        MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
 
-       if (!CFDkit_Primary_MPI_Processor()) {
+       if (!CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
  	      SolnBlk.WoW[j].d   = buffer[buffer_size];
@@ -307,7 +307,7 @@ void Broadcast_Solution_Block(Ion5Moment2D_Quad_Block &SolnBlk) {
        nj = 1;
        buffer = new double[8*ni*nj];
 
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
           for (i  = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
  	      buffer[buffer_size  ] = SolnBlk.WoS[i].d;
@@ -325,7 +325,7 @@ void Broadcast_Solution_Block(Ion5Moment2D_Quad_Block &SolnBlk) {
        buffer_size = 8*ni*nj;
        MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
 
-       if (!CFDkit_Primary_MPI_Processor()) {
+       if (!CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
           for (i  = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
  	      SolnBlk.WoS[i].d   = buffer[buffer_size];
@@ -367,7 +367,7 @@ void Broadcast_Solution_Block(Ion5Moment2D_Quad_Block &SolnBlk,
 
     /* Broadcast the number of cells in each direction. */
 
-    if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+    if (CFFC_MPI::This_Processor_Number == Source_CPU) {
       ni = SolnBlk.NCi;
       nj = SolnBlk.NCj;
       ng = SolnBlk.Nghost;
@@ -388,7 +388,7 @@ void Broadcast_Solution_Block(Ion5Moment2D_Quad_Block &SolnBlk,
     /* On non-source MPI processors, allocate (re-allocate) 
        memory for the quadrilateral solution block as necessary. */
 
-    if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
        if (SolnBlk.NCi != ni || SolnBlk.NCj != nj || SolnBlk.Nghost != ng) { 
           if (SolnBlk.U != NULL) SolnBlk.deallocate();
           if (block_allocated) SolnBlk.allocate(ni-2*ng, nj-2*ng, ng); 
@@ -412,7 +412,7 @@ void Broadcast_Solution_Block(Ion5Moment2D_Quad_Block &SolnBlk,
        nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
        buffer = new double[11*ni*nj];
 
-       if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+       if (CFFC_MPI::This_Processor_Number == Source_CPU) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
               for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
@@ -435,7 +435,7 @@ void Broadcast_Solution_Block(Ion5Moment2D_Quad_Block &SolnBlk,
        buffer_size = 11*ni*nj;
        Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
 
-       if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+       if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
               for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
@@ -463,7 +463,7 @@ void Broadcast_Solution_Block(Ion5Moment2D_Quad_Block &SolnBlk,
        nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
        buffer = new double[8*ni*nj];
 
-       if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+       if (CFFC_MPI::This_Processor_Number == Source_CPU) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
  	      buffer[buffer_size  ] = SolnBlk.WoW[j].d;
@@ -481,7 +481,7 @@ void Broadcast_Solution_Block(Ion5Moment2D_Quad_Block &SolnBlk,
        buffer_size = 8*ni*nj;
        Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
 
-       if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+       if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
  	      SolnBlk.WoW[j].d   = buffer[buffer_size];
@@ -503,7 +503,7 @@ void Broadcast_Solution_Block(Ion5Moment2D_Quad_Block &SolnBlk,
        nj = 1;
        buffer = new double[8*ni*nj];
 
-       if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+       if (CFFC_MPI::This_Processor_Number == Source_CPU) {
           buffer_size = 0;
           for (i  = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
  	      buffer[buffer_size  ] = SolnBlk.WoS[i].d;
@@ -521,7 +521,7 @@ void Broadcast_Solution_Block(Ion5Moment2D_Quad_Block &SolnBlk,
        buffer_size = 8*ni*nj;
        Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
 
-       if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+       if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
           buffer_size = 0;
           for (i  = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
  	      SolnBlk.WoS[i].d   = buffer[buffer_size];
@@ -1161,7 +1161,7 @@ void Output_Tecplot(Ion5Moment2D_Quad_Block &SolnBlk,
 
     Out_File << setprecision(14);
     if (Output_Title) {
-       Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D 5-Moment Ion Transport Solution, "
+       Out_File << "TITLE = \"" << CFFC_Name() << ": 2D 5-Moment Ion Transport Solution, "
                 << "Time Step/Iteration Level = " << Number_of_Time_Steps
                 << ", Time = " << Time
                 << "\"" << "\n"
@@ -1253,7 +1253,7 @@ void Output_Cells_Tecplot(Ion5Moment2D_Quad_Block &SolnBlk,
 
     Out_File << setprecision(14);
     if (Output_Title) {
-       Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D 5-Moment Ion Transport Solution, "
+       Out_File << "TITLE = \"" << CFFC_Name() << ": 2D 5-Moment Ion Transport Solution, "
                 << "Time Step/Iteration Level = " << Number_of_Time_Steps
                 << ", Time = " << Time
                 << "\"" << "\n"
@@ -5227,7 +5227,7 @@ int Update_Solution_Multistage_Explicit(Ion5Moment2D_Quad_Block &SolnBlk,
           if (SolnBlk.U[i][j].d   <= ZERO ||
               SolnBlk.U[i][j].E   <= ZERO ||
               SolnBlk.U[i][j].e() <= ZERO ) {
-	      cout << "\n " << CFDkit_Name() << " Ion5Moment2D ERROR: Negative Density and/or Energy: \n"
+	      cout << "\n " << CFFC_Name() << " Ion5Moment2D ERROR: Negative Density and/or Energy: \n"
                    << " cell = (" << i << ", " << j << ") "
                    << " X = " << SolnBlk.Grid.Cell[i][j].Xc << "\n U = " 
                    << SolnBlk.U[i][j] << "\n dUdt = " 
@@ -5280,7 +5280,7 @@ void dUdt_Output_Cells_Tecplot(Ion5Moment2D_Quad_Block &SolnBlk,
 
     Out_File << setprecision(14);
     if (Output_Title) {
-       Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D 5-Moment Ion Transport Solution Changes, "
+       Out_File << "TITLE = \"" << CFFC_Name() << ": 2D 5-Moment Ion Transport Solution Changes, "
                 << "Time Step/Iteration Level = " << Number_of_Time_Steps
                 << ", Time = " << Time
                 << "\"" << "\n"

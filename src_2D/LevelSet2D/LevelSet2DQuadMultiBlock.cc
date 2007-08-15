@@ -448,7 +448,7 @@ int Initial_Adaptive_Mesh_Refinement(LevelSet2D_Quad_Block *Soln_ptr,
     if (error_flag) return error_flag;
 
     // Print statistics.
-    if (CFDkit_Primary_MPI_Processor())
+    if (CFFC_Primary_MPI_Processor())
       cout << "\n Refinement Level #"      << number_of_initial_mesh_refinements
 	   << " : Number of Blocks = "     << QuadTree.countUsedBlocks()
 	   << ", Number of Cells = "       << QuadTree.countUsedCells()
@@ -530,7 +530,7 @@ int Initial_Adaptive_Mesh_Refinement(LevelSet2D_Quad_Block *Soln_ptr,
     if (error_flag) return error_flag;
 
     // Print statistics.
-    if (CFDkit_Primary_MPI_Processor())
+    if (CFFC_Primary_MPI_Processor())
       cout << "\n Refinement Level #"      << number_of_initial_mesh_refinements
 	   << " : Number of Blocks = "     << QuadTree.countUsedBlocks()
 	   << ", Number of Cells = "       << QuadTree.countUsedCells()

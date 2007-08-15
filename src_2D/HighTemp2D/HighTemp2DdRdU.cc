@@ -110,7 +110,7 @@ void dFIdW_Inviscid_ROE(DenseMatrix& dRdW, const HighTemp2D_Quad_Block &SolnBlk,
 	 } else {
 		 ali_dump_diffs_global = false;
 	 }
-	 ali_dump_diffs_cpu = CFDkit_MPI::This_Processor_Number;
+	 ali_dump_diffs_cpu = CFFC_MPI::This_Processor_Number;
 #endif
 	 HighTemp2D_pState Wtemp;
 	 Wtemp.Rotate(SolnBlk.Uo[ii][jj].W(), nface);
@@ -726,7 +726,7 @@ Gv_temp := [0, (uy + vx) mu, |- ---- + ----| mu,
 		dump_diffs = false;
 
 		char fname[100];
-		sprintf(fname, "viscous_dump_cpu%.3d.txt", CFDkit_MPI::This_Processor_Number);
+		sprintf(fname, "viscous_dump_cpu%.3d.txt", CFFC_MPI::This_Processor_Number);
 		ofstream fout;
 		fout.open(fname, ios::app);
 

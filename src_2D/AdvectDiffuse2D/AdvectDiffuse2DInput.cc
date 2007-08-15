@@ -198,7 +198,7 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
 
     IP.Line_Number = 0;
 
-    IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+    IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
     IP.Number_of_Blocks_Per_Processor = 10;
 
     // GMRES restart:
@@ -313,7 +313,7 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Tau), 
                           1, 
                           MPI::DOUBLE, 0);
-    if (!CFDkit_Primary_MPI_Processor()) {
+    if (!CFFC_Primary_MPI_Processor()) {
        IP.Uo = AdvectDiffuse2D_State(ONE, 
                                      IP.a, 
                                      IP.b, 
@@ -462,7 +462,7 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
 			  1,
 			  MPI::INT,0);
     // ICEM:
-    if (!CFDkit_Primary_MPI_Processor()) {
+    if (!CFFC_Primary_MPI_Processor()) {
        IP.ICEMCFD_FileNames = new char*[3];
        for (i = 0; i < 3; i++) {
           IP.ICEMCFD_FileNames[i] = new char[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
@@ -557,8 +557,8 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     // Multigrid Related Parameters
     IP.Multigrid_IP.Broadcast_Input_Parameters();
 
-    if (!CFDkit_Primary_MPI_Processor()) {
-       IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+    if (!CFFC_Primary_MPI_Processor()) {
+       IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
     } /* endif */
     MPI::COMM_WORLD.Bcast(&(IP.Number_of_Blocks_Per_Processor), 
                           1, 
@@ -691,7 +691,7 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Tau), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
-    if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
        IP.Uo = AdvectDiffuse2D_State(ONE, 
                                      IP.a, 
                                      IP.b, 
@@ -840,7 +840,7 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
 		       1,
 		       MPI::INT,Source_Rank);
     // ICEM :
-    if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
        IP.ICEMCFD_FileNames = new char*[3];
        for (i = 0; i < 3; i++) {
           IP.ICEMCFD_FileNames[i] = new char[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
@@ -934,8 +934,8 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
     IP.Multigrid_IP.Broadcast_Input_Parameters(Communicator,
 					       Source_CPU);
 
-    if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
-       IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+       IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
     } /* endif */
     Communicator.Bcast(&(IP.Number_of_Blocks_Per_Processor), 
                        1, 

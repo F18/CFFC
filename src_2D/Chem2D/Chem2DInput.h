@@ -157,8 +157,8 @@ class Chem2D_Input_Parameters{
   //! BC Pressure Gradient 
   double Pressure_Gradient;
 
-  //! Root path of CFDkit+caboodle 
-  char CFDkit_Path[INPUT_PARAMETER_LENGTH_CHEM2D];
+  //! Root path of CFFC 
+  char CFFC_Path[INPUT_PARAMETER_LENGTH_CHEM2D];
   void get_cfdkit_path();
   //@}
 
@@ -386,7 +386,7 @@ inline ostream &operator << (ostream &out_file,
 			     const Chem2D_Input_Parameters &IP) {
     out_file << setprecision(6);
     out_file << "\n  -> CFFC Path: " 
-	     << IP.CFDkit_Path;
+	     << IP.CFFC_Path;
   
     /*********************************************************/
     out_file << "\n\n Solving 2D MulitSpecies";
@@ -857,7 +857,7 @@ inline void Chem2D_Input_Parameters::get_cfdkit_path(){
   }
   
   //Set Path
-  strcpy(CFDkit_Path,getenv(PATHVAR));
+  strcpy(CFFC_Path,getenv(PATHVAR));
 }
 
 

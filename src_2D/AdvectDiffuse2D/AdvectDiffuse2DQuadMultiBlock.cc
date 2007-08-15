@@ -1124,7 +1124,7 @@ int Initial_AMR2(AdvectDiffuse2D_Quad_Block       *Soln_ptr,
                                       OFF);
        if (error_flag) return (error_flag);
 
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           cout << "\n Refinement Level #" << number_of_initial_mesh_refinements
                << " : Number of Blocks = " << QuadTree.countUsedBlocks()
                << ", Number of Cells = " << QuadTree.countUsedCells()
@@ -1192,7 +1192,7 @@ int Uniform_AMR2(AdvectDiffuse2D_Quad_Block       *Soln_ptr,
                                       OFF);
        if (error_flag) return (error_flag);
 
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           cout << "\n Refinement Level #" << number_of_uniform_mesh_refinements
                << " : Number of Blocks = " << QuadTree.countUsedBlocks()
                << ", Number of Cells = " << QuadTree.countUsedCells()
@@ -1277,7 +1277,7 @@ int Boundary_AMR2(AdvectDiffuse2D_Quad_Block       *Soln_ptr,
                                       OFF);
        if (error_flag) return (error_flag);
 
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           cout << "\n Refinement Level #" << number_of_boundary_mesh_refinements
                << " : Number of Blocks = " << QuadTree.countUsedBlocks()
                << ", Number of Cells = " << QuadTree.countUsedCells()

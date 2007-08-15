@@ -1210,7 +1210,7 @@ void Broadcast_Quad_Block(Grid2D_Quad_Block &Grid) {
  
     /* Broadcast the number of cells in each direction. */
 
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       ni = Grid.NCi;
       nj = Grid.NCj;
       ng = Grid.Nghost;
@@ -1230,7 +1230,7 @@ void Broadcast_Quad_Block(Grid2D_Quad_Block &Grid) {
        memory for the cells and nodes of the quadrilateral 
        mesh block as necessary. */
 
-    if (!CFDkit_Primary_MPI_Processor()) {
+    if (!CFFC_Primary_MPI_Processor()) {
        if (Grid.NCi != ni || Grid.NCj != nj || Grid.Nghost != ng) { 
           if (Grid.Node != NULL && Grid.Cell != NULL) { 
              Grid.deallocate();
@@ -1283,7 +1283,7 @@ void Broadcast_Quad_Block(Grid2D_Quad_Block &Grid) {
        nj = (Grid.JNu+Grid.Nghost) - (Grid.JNl-Grid.Nghost) + 1;
        buffer = new double[2*ni*nj];
 
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
           for (j  = Grid.JNl-Grid.Nghost; j <= Grid.JNu+Grid.Nghost; ++j ) {
               for ( i = Grid.INl-Grid.Nghost; i <= Grid.INu+Grid.Nghost; ++i ) {
@@ -1297,7 +1297,7 @@ void Broadcast_Quad_Block(Grid2D_Quad_Block &Grid) {
        buffer_size = 2*ni*nj;
        MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
 
-       if (!CFDkit_Primary_MPI_Processor()) {
+       if (!CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
           for (j  = Grid.JNl-Grid.Nghost; j <= Grid.JNu+Grid.Nghost; ++j ) {
               for ( i = Grid.INl-Grid.Nghost; i <= Grid.INu+Grid.Nghost; ++i ) {
@@ -1317,7 +1317,7 @@ void Broadcast_Quad_Block(Grid2D_Quad_Block &Grid) {
         compute the exterior nodes, and compute the cells for the 
         quadrilateral mesh block. */
 
-    if (mesh_allocated && !CFDkit_Primary_MPI_Processor()) {
+    if (mesh_allocated && !CFFC_Primary_MPI_Processor()) {
        Set_BCs(Grid);
        Update_Exterior_Nodes(Grid);
        Update_Cells(Grid);
@@ -1345,7 +1345,7 @@ void Broadcast_Quad_Block(Grid2D_Quad_Block &Grid,
  
     /* Broadcast the number of cells in each direction. */
 
-    if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+    if (CFFC_MPI::This_Processor_Number == Source_CPU) {
       ni = Grid.NCi;
       nj = Grid.NCj;
       ng = Grid.Nghost;
@@ -1365,7 +1365,7 @@ void Broadcast_Quad_Block(Grid2D_Quad_Block &Grid,
        memory for the cells and nodes of the quadrilateral 
        mesh block as necessary. */
 
-    if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
        if (Grid.NCi != ni || Grid.NCj != nj || Grid.Nghost != ng) { 
           if (Grid.Node != NULL && Grid.Cell != NULL) { 
              Grid.deallocate();
@@ -1418,7 +1418,7 @@ void Broadcast_Quad_Block(Grid2D_Quad_Block &Grid,
        nj = (Grid.JNu+Grid.Nghost) - (Grid.JNl-Grid.Nghost) + 1;
        buffer = new double[2*ni*nj];
 
-       if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+       if (CFFC_MPI::This_Processor_Number == Source_CPU) {
           buffer_size = 0;
           for (j  = Grid.JNl-Grid.Nghost ; j <= Grid.JNu+Grid.Nghost ; ++j ) {
               for ( i = Grid.INl-Grid.Nghost ; i <= Grid.INu+Grid.Nghost ; ++i ) {
@@ -1432,7 +1432,7 @@ void Broadcast_Quad_Block(Grid2D_Quad_Block &Grid,
        buffer_size = 2*ni*nj;
        Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
 
-       if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+       if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
           buffer_size = 0;
           for (j  = Grid.JNl-Grid.Nghost; j <= Grid.JNu+Grid.Nghost; ++j ) {
               for ( i = Grid.INl-Grid.Nghost; i <= Grid.INu+Grid.Nghost; ++i ) {
@@ -1453,7 +1453,7 @@ void Broadcast_Quad_Block(Grid2D_Quad_Block &Grid,
         quadrilateral mesh block. */
 
     if (mesh_allocated && 
-        !(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+        !(CFFC_MPI::This_Processor_Number == Source_CPU)) {
        Set_BCs(Grid);
        Update_Exterior_Nodes(Grid);
        Update_Cells(Grid);
@@ -4668,7 +4668,7 @@ void Output_Tecplot(Grid2D_Quad_Block &Grid,
 
     Out_File << setprecision(14);
     if (Output_Title) {
-       Out_File << "TITLE = \"" << CFDkit_Name()
+       Out_File << "TITLE = \"" << CFFC_Name()
                 << ": 2D Structured Curvilinear Grid Block (Node Locations)"
                 << "\"" << "\n"
 	        << "VARIABLES = \"x\" \\ \n"
@@ -4714,7 +4714,7 @@ void Output_Nodes_Tecplot(Grid2D_Quad_Block &Grid,
 
     Out_File << setprecision(14);
     if (Output_Title) {
-       Out_File << "TITLE = \"" << CFDkit_Name()
+       Out_File << "TITLE = \"" << CFFC_Name()
                 << ": 2D Structured Curvilinear Grid Block (Node Locations)"
                 << "\"" << "\n"
 	        << "VARIABLES = \"x\" \\ \n"
@@ -4759,7 +4759,7 @@ void Output_Cells_Tecplot(Grid2D_Quad_Block &Grid,
 
     Out_File << setprecision(14);
     if (Output_Title) {
-       Out_File << "TITLE = \"" << CFDkit_Name()
+       Out_File << "TITLE = \"" << CFFC_Name()
                 << ": 2D Structured Curvilinear Grid Block (Cell Locations)"
                 << "\"" << "\n"
 	        << "VARIABLES = \"x\" \\ \n"
@@ -4804,7 +4804,7 @@ void Output_Gnuplot(Grid2D_Quad_Block &Grid,
 
     Out_File << setprecision(14);
     if (Output_Title) {
-       Out_File << "# " << CFDkit_Name()
+       Out_File << "# " << CFFC_Name()
                 << ": 2D Structured Curvilinear Grid Block (Node Locations)"
                 << "\n"
 	        << "# x(m), y(m)\n";

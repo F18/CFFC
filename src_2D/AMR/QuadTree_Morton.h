@@ -153,7 +153,7 @@ template <class Quad_Soln_Block, class Quad_Soln_Input_Parameters>
 	   << ".\n";
       cout.flush();
     } /* endif */
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
     error_flag = Write_Restart_Solution(Local_SolnBlk, 
 					List_of_Local_Solution_Blocks, 
@@ -168,7 +168,7 @@ template <class Quad_Soln_Block, class Quad_Soln_Input_Parameters>
 	   << ".\n";
       cout.flush();
     } /* endif */
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
     
     
@@ -240,7 +240,7 @@ template <class Quad_Soln_Block, class Quad_Soln_Input_Parameters>
     
     
     
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
     
     /*Allocates memory for all message passing buffers used  *
@@ -248,7 +248,7 @@ template <class Quad_Soln_Block, class Quad_Soln_Input_Parameters>
      * adaptive blocks.  */                                  
     
     Allocate_Message_Buffers(List_of_Local_Solution_Blocks, Local_SolnBlk[0].NumVar()+NUM_COMP_VECTOR2D);
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
     
     
@@ -270,18 +270,18 @@ template <class Quad_Soln_Block, class Quad_Soln_Input_Parameters>
 	   << ".\n";
       cout.flush();
     } // endif 
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
     // Ensure each processor has the correct time and time!!!
-    number_of_time_steps = CFDkit_Maximum_MPI(number_of_time_steps);
-    Time = CFDkit_Maximum_MPI(Time);
-    processor_cpu_time.cput = CFDkit_Maximum_MPI(processor_cpu_time.cput);
+    number_of_time_steps = CFFC_Maximum_MPI(number_of_time_steps);
+    Time = CFFC_Maximum_MPI(Time);
+    processor_cpu_time.cput = CFFC_Maximum_MPI(processor_cpu_time.cput);
     
     
     /* Send solution information between neighbouring blocks to complete
        prescription of initial data. */
     
-    CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
     
     error_flag = Send_All_Messages(Local_SolnBlk, 
 				   List_of_Local_Solution_Blocks,
@@ -299,7 +299,7 @@ template <class Quad_Soln_Block, class Quad_Soln_Input_Parameters>
       cout.flush();
     } /* endif */
   
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
     
     /* Prescribe boundary data consistent with initial data. */

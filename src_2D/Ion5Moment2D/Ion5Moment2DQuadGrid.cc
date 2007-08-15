@@ -31,7 +31,7 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
         Grid_ptr = Read_Multi_Block_Grid_Definition(Grid_ptr,
                                                     Input_Parameters);
         if (Grid_ptr == NULL) {
-	   cout << "\n " << CFDkit_Name() 
+	   cout << "\n " << CFFC_Name() 
                 << " Ion5Moment2D ERROR: Unable to open multi-block mesh definition file "
                 << Input_Parameters.Grid_Definition_File_Name << ".\n";
         } /* endif */
@@ -40,7 +40,7 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
         Grid_ptr = Read_Multi_Block_Grid(Grid_ptr,
                                          Input_Parameters);
         if (Grid_ptr == NULL) {
-	   cout << "\n " << CFDkit_Name() 
+	   cout << "\n " << CFFC_Name() 
                 << " Ion5Moment2D ERROR: Unable to open multi-block mesh data file "
                 << Input_Parameters.Grid_File_Name << ".\n";
         } /* endif */

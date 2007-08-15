@@ -1384,9 +1384,9 @@ int Determine_Maximum_Surface_Pressure(Euler2D_Quad_Block *Soln_ptr,
   }
 
   // Determine the global maximum surface pressure.
-  maximum_pressure = CFDkit_Maximum_MPI(maximum_pressure);
+  maximum_pressure = CFFC_Maximum_MPI(maximum_pressure);
 
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     cout << endl
 	 << endl
 	 << " ==================================================================== "

@@ -140,17 +140,17 @@ int main(int num_arg, char *arg_ptr[]) {
   /********************************************************************
    * INITIALIZE MPI                                                   *
    ********************************************************************/
-  CFDkit_Initialize_MPI(num_arg,arg_ptr);
-  if (!CFDkit_Primary_MPI_Processor()) batch_flag = 1;
+  CFFC_Initialize_MPI(num_arg,arg_ptr);
+  if (!CFFC_Primary_MPI_Processor()) batch_flag = 1;
 
   /********************************************************************
    * DISPLAY THE PROGRAM TITLE AND VERSION INFORMATION AS REQUIRED.   *
    ********************************************************************/
-  if (CFDkit_Primary_MPI_Processor() && (version_flag || help_flag || !batch_flag)) {
+  if (CFFC_Primary_MPI_Processor() && (version_flag || help_flag || !batch_flag)) {
      cout << endl << program_title_ptr << endl;
      cout << program_version_ptr << endl;
-     cout << "Built using " << CFDkit_Version() << endl;
-     cout << CFDkit_Version_MPI() << endl;
+     cout << "Built using " << CFFC_Version() << endl;
+     cout << CFFC_Version_MPI() << endl;
      cout << "Built using MV++, SparseLib++, IML++, and BPKIT Libraries\n";
      cout << "Compiled on " << Architecture() << " architecture.\n";
      cout.flush();
@@ -161,7 +161,7 @@ int main(int num_arg, char *arg_ptr[]) {
    * DISPLAY THE PROGRAM HELP INFORMATION AS REQUIRED.                *
    ********************************************************************/
 
-  if (CFDkit_Primary_MPI_Processor() && help_flag) {
+  if (CFFC_Primary_MPI_Processor() && help_flag) {
      cout << "Usage:\n";
      cout << "pdes++ [-v] [-h] [-i] [-b] [-pde type] [-f name]\n";
      cout << " -v (--version)  display version information\n";
@@ -184,25 +184,25 @@ int main(int num_arg, char *arg_ptr[]) {
   if (strcmp(Equation_Type,"HighTemp2D") == 0) {
     error_flag = HighTemp2DQuadSolver(Input_File_Name_ptr,batch_flag);
   } else {
-    if (CFDkit_Primary_MPI_Processor() && !batch_flag)
+    if (CFFC_Primary_MPI_Processor() && !batch_flag)
       cout << "\n\nHighTemp2D PDES++: Only solves HighTemp2D equations.\n";
     error_flag = 1;
   }
 
   if (error_flag) {
-    CFDkit_Finalize_MPI();
+    CFFC_Finalize_MPI();
     return error_flag;
   }
 
   /********************************************************************
    * FINALIZE MPI                                                     *
    ********************************************************************/
-  CFDkit_Finalize_MPI();
+  CFFC_Finalize_MPI();
 
   /********************************************************************
    * TERMINATE PROGRAM EXECUTION                                      *
    ********************************************************************/
-  if (CFDkit_Primary_MPI_Processor() && !batch_flag) 
+  if (CFFC_Primary_MPI_Processor() && !batch_flag) 
     cout << "\n\nHighTemp2D PDES++: Execution complete.\n";
 
   // HighTemp2D program finished.
