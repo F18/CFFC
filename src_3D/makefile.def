@@ -25,6 +25,9 @@ CANTERA_VERSION = NoCANTERA
 # <alpha>  gprof --demangle=compaq cffc3D gmon.out > output.txt
 PROFILING = OFF
 
+# NoFFTW, V32
+FFTW_VERSION = V32
+
 #-----------------------------------------------------------#
 #       Platform Specific Compiler Flags                    #
 #-----------------------------------------------------------#
@@ -182,7 +185,7 @@ ifeq ($(CANTERA_VERSION),NoCANTERA)
 endif
 ifeq ($(CANTERA_VERSION),V70)
   CANTERA_CPP_FLAGS       =  -D_CANTERA_VERSION -D_CANTERA_V70 -I$(CANTERA_INC_DIR)
-  CANTERA_LD_FLAGS        =  -L$(CANTERA_LIB_DIR) -luser -loneD -lzeroD -ltransport -lcantera -lcvode -lctlapack -lctblas -lctmath -ltpx -lg2c -lctcxx
+  CANTERA_LD_FLAGS        =  -L$(CANTERA_LIB_DIR) -luser -loneD -lzeroD -ltransport -lcantera -lcvode -lctlapack -lctblas -lctmath -ltpx -lctcxx
 endif
 
 # make cantera with python (cantera needs it for some special features)
@@ -198,8 +201,13 @@ FFTW_DIR       = $(CFFC_Path)/fftw
 FFTW_LIB_DIR   = $(FFTW_DIR)/lib
 FFTW_INC_DIR   = $(FFTW_DIR)/include
 
-FFTW_CPP_FLAGS = -I$(FFTW_INC_DIR)
-FFTW_LD_FLAGS  = -L$(FFTW_LIB_DIR) -lfftw3
+ifeq ($(FFTW_VERSION),NoFFTW)
+  FFTW_CPP_FLAGS = 
+  FFTW_LD_FLAGS  = 
+else
+  FFTW_CPP_FLAGS = -I$(FFTW_INC_DIR)
+  FFTW_LD_FLAGS  = -L$(FFTW_LIB_DIR) -lfftw3
+endif
 
 #
 # CPPFLAG -D__USE_MALLOC explicitly handles C++ string memory issues, but 
@@ -211,12 +219,12 @@ ifeq ($(PLATFORM),Linux_i386)
     FC = gfortran
     CC = gcc
     CXX = g++
-    CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_296 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS)
+    CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_296 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
     FFLAGS = -O 
     FLAGS = -O  
     CXXFLAGS = -O 	
     ifeq ($(GCC_VERSION),V3+)
-       CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) 
+       CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
        CFLAGS = -O 
        CXXFLAGS = -O
     endif   
@@ -225,16 +233,16 @@ ifeq ($(PLATFORM),Linux_i386)
        FC = ifort
        CC = icc
        CXX = icpc
-       CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS)
+       CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
        CXXFLAGS = -w0 -O2 -ip
        FFLAGS = -O2 -ip
        CFLAGS = -O2
     endif
-    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -lm
+    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm
     # Profiling with gprof 
     ifeq ($(PROFILING),ON)
       CXXFLAGS = -g -pg 
-      LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -lm -pg
+      LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm -pg
     endif
     LD = $(CXX)
     DEPENDSFLAGS =
@@ -243,15 +251,15 @@ ifeq ($(PLATFORM),Linux_i386)
     FC = /usr/local/mpi/bin/mpif77
     CC = /usr/local/mpi/bin/mpicc
     CXX = /usr/local/mpi/bin/mpiCC
-    CPPFLAGS = -D_MPI_VERSION -D_GNU_GCC_296 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS)
+    CPPFLAGS = -D_MPI_VERSION -D_GNU_GCC_296 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
     ifeq ($(GCC_VERSION),V3+)
-       CPPFLAGS = -D_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS)
+       CPPFLAGS = -D_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
     endif
     FFLAGS = -O
     CFLAGS = -O
     CXXFLAGS = -O
     LD = $(CXX)
-    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -lm
+    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm
     DEPENDSFLAGS = -I/usr/local/mpi/include/mpi2c++
   endif
   ifeq ($(MPI_VERSION),MPICH2)
@@ -275,14 +283,14 @@ ifeq ($(PLATFORM),Linux_alpha)
     FC = fort
     CC = ccc
     CXX = cxx
-    CPPFLAGS = -D_NO_MPI_VERSION -D_NO_ICEMCFD_VERSION -D__USE_STD_IOSTREAM $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS)
+    CPPFLAGS = -D_NO_MPI_VERSION -D_NO_ICEMCFD_VERSION -D__USE_STD_IOSTREAM $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
     FFLAGS = -arch host -tune host -fast -w
     CFLAGS = -arch host -tune host -fast -w 
     CXXFLAGS = -arch host -tune host -fast -w -std gnu
-    LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -lm 
+    LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm 
     ifeq ($(PROFILING),ON)
       CXXFLAGS = -pg -arch host -tune host -fast -w -std gnu 
-      LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -lm -pg 
+      LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm -pg 
     endif
     LD = $(CXX)	
     DEPENDSFLAGS = 
@@ -291,12 +299,12 @@ ifeq ($(PLATFORM),Linux_alpha)
     FC = /usr/local/mpi/bin/mpif77
     CC = /usr/local/mpi/bin/mpicc
     CXX = /usr/local/mpi/bin/mpiCC
-    CPPFLAGS = -D_MPI_VERSION -D_NO_ICEMCFD_VERSION -D__USE_STD_IOSTREAM $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS)
+    CPPFLAGS = -D_MPI_VERSION -D_NO_ICEMCFD_VERSION -D__USE_STD_IOSTREAM $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
     FFLAGS = -arch host -tune host -fast -w
     CFLAGS = -arch host -tune host -fast -w
     CXXFLAGS = -arch host -tune host -fast -w -std gnu
     LD = $(CXX)
-    LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -lm
+    LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm
     DEPENDSFLAGS = -I/usr/local/mpi/include/mpi2c++
   endif
 endif
@@ -308,11 +316,11 @@ ifeq ($(PLATFORM),Linux_ia64)
     FC = ifort
     CC = icc
     CXX = icpc
-    CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS)
+    CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
     CXXFLAGS = -w0 -O2 -mp -ftz 
     FFLAGS = -O2 -mp -ftz 
     CFLAGS = -w0 -O2 -mp -ftz 
-    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -limf
+    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -limf
     LD = $(CXX)
     DEPENDSFLAGS =
   endif
@@ -320,24 +328,24 @@ ifeq ($(PLATFORM),Linux_ia64)
     FC = ifort
     CC = icc
     CXX = icpc
-    CPPFLAGS = -D_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS)
+    CPPFLAGS = -D_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
     CXXFLAGS = -w0 -O2 -mp -ftz
     FFLAGS = -O2 -mp -ftz
     CFLAGS = -w0 -O2 -mp -ftz
     LD = $(CXX)
-    LDFLAGS =  $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -limf -lmpi -lmpi++
+    LDFLAGS =  $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -limf -lmpi -lmpi++
     DEPENDSFLAGS = 
   endif
   ifeq ($(MPI_VERSION),MPICH)
     FC = /usr/local/mpi/bin/mpif77
     CC = /usr/local/mpi/bin/mpicc
     CXX = /usr/local/mpi/bin/mpiCC
-    CPPFLAGS = -D_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) 
+    CPPFLAGS = -D_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
     CXXFLAGS = -w0 -O2 -mp -ftz
     FFLAGS = -w0 -O2 -mp -ftz 
     CFLAGS = -w0 -O2 -mp -ftz 
     LD = $(CXX)
-    LDFLAGS =  $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -limf
+    LDFLAGS =  $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -limf
     DEPENDSFLAGS = 
   endif
 endif
@@ -349,7 +357,7 @@ ifeq ($(PLATFORM),Linux_x86_64)
     FC = gfortran
     CC = gcc
     CXX = g++
-    CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) 
+    CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
     #CXXFLAGS = -march=k8 -mmmx -msse -msse2 -m3dnow -m64 -O3 -pipe -fexpensive-optimizations -mfpmath=sse,387 
     CXXFLAGS = -O2
     FFLAGS = -O2
