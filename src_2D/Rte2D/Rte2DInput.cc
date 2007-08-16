@@ -5,10 +5,7 @@
 ***********************************************************************/
 
 /* Include 2D Rte input parameter header file. */
-
-#ifndef _RTE2D_INPUT_INCLUDED
 #include "Rte2DInput.h"
-#endif // _RTE2D_INPUT_INCLUDED
 
 /*************************************************************
  * Rte2D_Input_Parameters -- External subroutines.           *
@@ -104,8 +101,8 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     string_ptr = "FVM";
     strcpy(IP.RTE_Solver, string_ptr);
     IP.i_RTE_Solver = RTE2D_SOLVER_FVM;
-    IP.Uo.RTE_Type = IP.i_RTE_Solver;
 
+    // space marching parameters
     string_ptr = "Upwind";
     strcpy(IP.SpaceMarch_Scheme, string_ptr);
     IP.i_SpaceMarch_Scheme = SPACE_MARCH_UPWIND;
@@ -115,40 +112,38 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     strcpy(IP.DOM_Quadrature, string_ptr);
     IP.i_DOM_Quadrature = RTE2D_DOM_S2;
 
+    // FVM angular discretization
+    IP.Number_of_Angles_Mdir = 4;
+    IP.Number_of_Angles_Ldir = 4;
+
     // set gas Absorption model
     IP.i_AbsorptionModel = RTE2D_ABSORB_GRAY;
     string_ptr = "Gray";
     strcpy(IP.AbsorptionModel, string_ptr);
-    Rte2D_State::SetupAbsorb( IP.i_AbsorptionModel, 
-			      IP.SNBCK_IP, 
-			      IP.CFFC_Path  );
-
-    // FVM angular discretization
-    IP.Number_of_Angles_Mdir = 4;
-    IP.Number_of_Angles_Ldir = 4;
-    Rte2D_State::SetDirs( IP.Number_of_Angles_Mdir, 
-			  IP.Number_of_Angles_Ldir, 
-			  IP.i_DOM_Quadrature,
-			  IP.Axisymmetric,
-			  IP.CFFC_Path );
-
-    // allocate and zero solution state
-    IP.Uo.Allocate();
-    IP.Uo.Zero();
 
     // set scattering phase function
     IP.i_ScatteringFunc = RTE2D_SCATTER_ISO;
     string_ptr = "Isotropic";
     strcpy(IP.ScatteringFunc, string_ptr);
-    Rte2D_State :: SetupPhase( IP.i_ScatteringFunc );
+
+    // allocate and zero solution state
+    SetupStateStatic( IP );
+    IP.Uo.Allocate();
+    IP.Uo.Zero();
 
     // set gas constants
     IP.AbsorptionCoef = ONE;
     IP.ScatteringCoef = ZERO;
-    IP.Temperature = THOUSAND;
+    IP.Temperature    = THOUSAND;       //[K]
+    IP.Pressure       = PRESSURE_STDATM;//[Pa]
+    IP.xco            = 0.01;
+    IP.xh2o           = 0.2;
+    IP.xco2           = 0.1;
+    IP.xo2            = 0.0;
+    IP.fsoot          = 0.0;
     IP.Uo.SetAbsorption( IP.AbsorptionCoef );
     IP.Uo.SetScattering( IP.ScatteringCoef );
-    IP.Uo.SetBlackbody( Ib(IP.Temperature) );
+    IP.Uo.SetBlackbody( BlackBody(IP.Temperature) );
 
     // boundary conditions
     IP.NorthWallTemp = ZERO;
@@ -488,24 +483,13 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
 
    if (!CFDkit_Primary_MPI_Processor()) {
      IP.get_cffc_path();
-     IP.Uo.RTE_Type = IP.i_RTE_Solver;
-     IP.Uo.Absorb_Type = IP.i_AbsorptionModel;
-     Rte2D_State::SetupAbsorb( IP.SNBCK_IP, 
-			       IP.CFFC_Path  );
-     Rte2D_State::SetDirs( IP.Number_of_Angles_Mdir, 
-			   IP.Number_of_Angles_Ldir, 
-			   IP.i_DOM_Quadrature,
-			   IP.Axisymmetric,
-			   IP.CFFC_Path );
-    IP.Uo.Allocate();
-    IP.Uo.Zero();
-    IP.Uo.SetAbsorption( IP.AbsorptionCoef );
-    IP.Uo.SetBlackbody( Ib(IP.Temperature) );
-    IP.Uo.SetScattering( IP.ScatteringCoef );
-    Rte2D_State :: SetupPhase( IP.i_ScatteringFunc );
-    } /* endif */
-    /***********************************************************************
-     ***********************************************************************/
+     SetupStateStatic( IP );
+     IP.Uo.Allocate();
+     IP.Uo.Zero();
+     SetInitialValues( Ip.Uo, IP );
+   } /* endif */
+   /***********************************************************************
+    ***********************************************************************/
     MPI::COMM_WORLD.Bcast(IP.Flow_Geometry_Type, 
                           INPUT_PARAMETER_LENGTH_RTE2D, 
                           MPI::CHAR, 0);
@@ -1025,21 +1009,10 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     IP.SNBCK_IP.Broadcast_Input_Parameters(Communicator, Source_CPU);
 
     if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
-      IP.Uo.RTE_Type = IP.i_RTE_Solver;
-      Rte2D_State::SetupAbsorb( IP.i_AbsorptionModel,
-				IP.SNBCK_IP, 
-				IP.CFFC_Path  );
-      Rte2D_State::SetDirs( IP.Number_of_Angles_Mdir, 
-			    IP.Number_of_Angles_Ldir, 
-			    IP.i_DOM_Quadrature,
-			    IP.Axisymmetric,
-			    IP.CFFC_Path );
-     IP.Uo.Allocate();
+      SetupStateStatic( IP );
+      IP.Uo.Allocate();
       IP.Uo.Zero();
-      IP.Uo.SetAbsorption( IP.AbsorptionCoef );
-      IP.Uo.SetScattering( IP.ScatteringCoef );
-      IP.Uo.SetBlackbody( Ib(IP.Temperature) );
-      Rte2D_State :: SetupPhase( IP.i_ScatteringFunc );
+      SetInitialValues( IP.Uo, IP );
     } /* endif */
     /***********************************************************************
      ***********************************************************************/
@@ -2072,7 +2045,6 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        } else {
           IP.i_RTE_Solver = RTE2D_SOLVER_FVM;
        } /* endif */
-       IP.Uo.RTE_Type = IP.i_RTE_Solver;
 
     } else if (strcmp(IP.Next_Control_Parameter, "DOM_Quadrature") == 0) {
        i_command = 43;
@@ -2186,8 +2158,8 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        i_command = 52;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.xco;    if (IP.xco   < ZERO) i_command = INVALID_INPUT_VALUE;
-       IP.Input_File >> IP.xco2;   if (IP.xco2  < ZERO) i_command = INVALID_INPUT_VALUE;
        IP.Input_File >> IP.xh2o;   if (IP.xh2o  < ZERO) i_command = INVALID_INPUT_VALUE;
+       IP.Input_File >> IP.xco2;   if (IP.xco2  < ZERO) i_command = INVALID_INPUT_VALUE;
        IP.Input_File >> IP.xo2;    if (IP.xo2   < ZERO) i_command = INVALID_INPUT_VALUE;
        IP.Input_File >> IP.fsoot;  if (IP.fsoot < ZERO) i_command = INVALID_INPUT_VALUE;
        IP.Input_File.getline(buffer, sizeof(buffer));
@@ -2209,27 +2181,6 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
       IP.Input_File >> IP.EastWallEmiss;  if (IP.EastWallEmiss < ZERO)  i_command = INVALID_INPUT_VALUE;
       IP.Input_File >> IP.WestWallEmiss;  if (IP.WestWallEmiss < ZERO)  i_command = INVALID_INPUT_VALUE;
       IP.Input_File.getline(buffer, sizeof(buffer));
-
-    } else if (strcmp(IP.Next_Control_Parameter, "Setup") == 0) {
-      i_command = 55;
-      Rte2D_State::SetupAbsorb( IP.i_AbsorptionModel,
-				IP.SNBCK_IP, 
-				IP.CFFC_Path  );
-      Rte2D_State::SetDirs( IP.Number_of_Angles_Mdir, 
-			    IP.Number_of_Angles_Ldir, 
-			    IP.i_DOM_Quadrature,
-			    IP.Axisymmetric,
-			    IP.CFFC_Path );
-      IP.Uo.Allocate();
-      IP.Uo.Zero();
-      IP.Uo.Initialize_NonSol();
-      IP.Uo.SetBlackbody( Ib(IP.Temperature) );
-      IP.Uo.SetAbsorption( IP.AbsorptionCoef );
-      IP.i_AbsorptionModel = RTE2D_ABSORB_GRAY;
-
-      IP.Uo.SetScattering( IP.ScatteringCoef);
-      Rte2D_State :: SetupPhase( IP.i_ScatteringFunc );
-
 
     /***********************************************************************
      ***********************************************************************/
@@ -3141,7 +3092,14 @@ int Process_Input_Control_Parameter_File(Rte2D_Input_Parameters &Input_Parameter
        Command_Flag = Parse_Next_Input_Control_Parameter(Input_Parameters);
        line_number = Input_Parameters.Line_Number;
        if (Command_Flag == EXECUTE_CODE) {
-          break;
+	 /***********************************************************************
+	  *************************** RTE SPECIFIC ******************************/
+	 // now setup Rte2D_State
+	 SetupStateStatic( Input_Parameters );
+	 SetInitialValues( Input_Parameters.Uo, Input_Parameters );
+	 /***********************************************************************
+	  ***********************************************************************/
+	 break;
        } else if (Command_Flag == TERMINATE_CODE) {
           break;
        } else if (Command_Flag == INVALID_INPUT_CODE ||

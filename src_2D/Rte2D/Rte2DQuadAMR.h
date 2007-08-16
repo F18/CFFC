@@ -4,15 +4,8 @@
 /****************************************************************/
 /****** AMR REQUIRED SPECIALIZATIONS & FUNCTIONS ****************/
 /****************************************************************/  
-
-
-#ifndef _RTE2D_QUAD_INCLUDED
 #include "Rte2DQuad.h"
-#endif // _RTE2D_QUAD_INCLUDED
-
-#ifndef _AMR_INCLUDED
 #include "../AMR/AMR.h"
-#endif // _AMR_INCLUDED
 
 
 /*************************************************************

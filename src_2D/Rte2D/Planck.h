@@ -29,7 +29,7 @@
  * temperature T in [K]                                 *
  ********************************************************/
 inline double Planck(const double T, 
-	      const double wn ) { 
+		     const double wn ) { 
 
   // Plancks constants
   static const double C1 = 1.1909E-08; // [W/(m2 ster cm-4)]
@@ -49,52 +49,11 @@ inline double Planck(const double T,
 
 
 
-
-/********************************************************
- * This subroutine calculates the fractional blackbody	*
- * emissive power f(n*lambda*T), where n*lambda*T in    *
- * (micro-m*K) and refractive index, n, approx 1.       *
- * See:                                                 *
- *   M.F. Modest, "Radiative Heat Transfer," 2nd ed,    *
- *   New York: Academic Press. 2003.                    *
- ********************************************************/
-inline double Planck(const double lambdaT) { // micro-m K
-
-  // constants
-  double C2 = 1.4388E+04; // [micro-m K]
-  double CC = FIFTEEN/pow(PI,4);
-  double EPS = 1E-16;
-
-
-  // V = C_2/lambdaT = C_2*eta/T
-  double V  = C2/(lambdaT);
-  double EX = exp(V);
-
-  // Evaluation of f(n*lambda*T) in terms of an infinite series
-  // func = f(n*lambda*T)
-  double func = ZERO;
-  double EM = ONE;
-  int M = 0;
-  bool converged = false;
-  double VM, BM;
-  while( !converged ) {
-    M++;
-    VM=M*V;
-    BM=(SIX+VM*(SIX+VM*(THREE+VM)))/pow(double(M),4);
-    EM=EM/EX;
-    func = func + BM*EM;
-    if((pow(VM,3)*EM)<EPS) converged = true;
-  }
-  func *= CC;
-
-  return (func);
-
-}
-
 /********************************************************
  * Blackbody intensity                                  *
  ********************************************************/
-inline double Ib(const double T) { return STEFFAN_BOLTZMANN*pow(T,4.0)/PI; }
+inline double BlackBody(const double T) 
+{ return STEFFAN_BOLTZMANN*pow(T,4.0)/PI; }
 
 /********************************************************
  * Blackbody spectral intensity at specified wavenumber.*
@@ -104,11 +63,9 @@ inline double Ib(const double T) { return STEFFAN_BOLTZMANN*pow(T,4.0)/PI; }
  * wavenumber wn in [cm^-1]                             *
  * temperature T in [K]                                 *
  ********************************************************/
-inline double Ib_v(const double T, 
-	    const double wn ) { 
-  return Planck( T, wn ) * PI;
-
-}
+inline double BlackBody(const double T, 
+			const double wn ) 
+{ return Planck( T, wn ) * PI; }
 
 
 #endif //end _PLANCK_INCLUDED 

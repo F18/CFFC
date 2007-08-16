@@ -21,49 +21,21 @@
    grid, quadtree, AMR, and 2D Rte input 
    header files. */
 
-#ifndef _RTE2D_STATE_INCLUDED
 #include "Rte2DState.h"
-#endif // _RTE2D_STATE_INCLUDED
-
-#ifndef _CELL2D_INCLUDED
-#include "../Grid/Cell2D.h"
-#endif // _CELL2D_INCLUDED
-
-#ifndef _GRID2D_QUAD_BLOCK_INCLUDED
-#include "../Grid/Grid2DQuad.h"
-#endif // _GRID2D_QUAD_BLOCK_INCLUDED
-
-#ifndef _QUADTREE_INCLUDED
-#include "../AMR/QuadTree.h"
-#endif // _QUADTREE_INCLUDED
-
-#ifndef _AMR_INCLUDED
-#include "../AMR/AMR.h"
-#endif // _AMR_INCLUDED
-
-#ifndef _NASA_ROTOR37_INCLUDED
-#include "../Grid/NASARotor37.h"
-#endif // _NASA_ROTOR37_INCLUDED
-
-#ifndef _NASA_ROTOR67_INCLUDED
-#include "../Grid/NASARotor67.h"
-#endif // _NASA_ROTOR67_INCLUDED
-
-#ifndef _RTE2D_INPUT_INCLUDED
 #include "Rte2DInput.h"
-#endif // _RTE2D_INPUT_INCLUDED
+#include "Rte2DTools.h"
+#include "../Grid/Cell2D.h"
+#include "../Grid/Grid2DQuad.h"
+#include "../AMR/QuadTree.h"
+#include "../AMR/AMR.h"
+#include "../Grid/NASARotor37.h"
+#include "../Grid/NASARotor67.h"
 
 /* Include the linear systems header file. */
-
-#ifndef _LINEARSYSTEMS_INCLUDED
 #include "../Math/LinearSystems.h"
-#endif // _LINEARSYSTEMS_INCLUDED
 
 /* Include ICEMCFD input header file. */
-
-#ifndef _ICEMCFD_INCLUDED
 #include "../ICEM/ICEMCFD.h"
-#endif // _ICEMCFD_INCLUDED
 
 
 /* Define the structures and classes. */

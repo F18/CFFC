@@ -2,27 +2,16 @@
                            Multi-Block Quadrilateral Mesh Solvers. */
 
 /* Include 2D Rte quadrilateral mesh solution header file. */
-
-#ifndef _RTE2D_QUAD_INCLUDED
 #include "Rte2DQuad.h"
-#endif // _RTE2D_QUAD_INCLUDED
 
 /* Include Rte2D Multigrid Specialization header file. */
-#ifndef _RTE2D_MULTIGRID_INCLUDED 
 #include "Rte2DQuadMultigrid.h"
-#endif // _RTE2D_MULTIGRID_INCLUDED 
-
 
 /* Include Rte2D Newton-Krylov-Schwarz Specialization header file. */
-#ifndef _RTE2D_NKS_INCLUDED 
 #include "Rte2DQuadNKS.h"
-#endif // _RTE2D_NKS_INCLUDED 
-
 
 /* Include Rte2D AMR Specialization header file. */
-#ifndef _RTE2D_AMR_INCLUDED
 #include "Rte2DQuadAMR.h"
-#endif // _RTE2D_AMR_INCLUDED
 
 
 /********************************************************
@@ -1355,6 +1344,12 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
       }
       Local_SolnBlk = Deallocate(Local_SolnBlk, 
 				 Input_Parameters);
+      /***********************************************************************
+       *************************** RTE SPECIFIC ******************************/
+      // Rte2D_State static variables
+      Rte2D_State::DeallocateStatic();
+      /***********************************************************************
+       ***********************************************************************/
       //Deallocate_Message_Buffers(List_of_Local_Solution_Blocks); // Not necessary here!
       List_of_Local_Solution_Blocks.deallocate();
       List_of_Global_Solution_Blocks.deallocate();

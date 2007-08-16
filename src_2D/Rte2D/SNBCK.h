@@ -80,7 +80,6 @@
 
 #ifndef _SNBCK_INCLUDED
 #define _SNBCK_INCLUDED
-#endif //_SNBCK_INCLUDED
 
 // Required C++ libraries
 #include <math.h>
@@ -367,11 +366,6 @@ public:
   double* WaveNo;
   double* BandWidth;
 
-
-  // the absorbsion coefficients for each wide band [cm^-1], 
-  // each quadrature point
-  double** k;
-
   // spectral indexes relating wide bands to narrow bands
   int *istart, *iend;
 
@@ -397,6 +391,8 @@ private:
          ***k2_CO2,
          ***k2_H2O;
 
+  // an index relating a 2D array (v,i) to an unfolded 1D array (n)
+  int **index;
 
   //------------------------------------------------
   // Member Functions
@@ -406,22 +402,20 @@ public:
   
   // Consutructor 1 - components uninitialized
   SNBCK() : SNB(), Nquad(0), nquad(NULL), Nbands(0),  
-            g(NULL), ww(NULL), w(NULL), k(NULL), WaveNo(NULL), 
+            g(NULL), ww(NULL), w(NULL), WaveNo(NULL), 
             BandWidth(NULL), istart(NULL), iend(NULL),
             iCO(NULL), iCO2(NULL), iH2O(NULL), iMix(NULL),
             Tn(NULL), k_CO(NULL), k_CO2(NULL), k_H2O(NULL), 
             k2_CO(NULL), k2_CO2(NULL), k2_H2O(NULL), dT(ZERO),
             Ninterp(0), MixType(SNBCK_OVERLAP_OPTICALLY_THIN),
-	    EvalType(SNBCK_EVAL_ONLINE) {}
+	    EvalType(SNBCK_EVAL_ONLINE), index(NULL) {}
   
   // destructor
   ~SNBCK() {  Deallocate(); }
 
   // return the total number of variables (bands * quad points)
-  int NumVar() {
-    int sum = 0;
-    for (int v=0; v<Nbands; v++) sum += nquad[v];
-    return (sum);
+  int NumVar() { 
+    return ( index[Nbands-1][ nquad[Nbands-1]-1 ] + 1 );  
   }
 
   // setup the quadrature and load SNB model parameters
@@ -436,14 +430,14 @@ public:
 			const double xh2o,     // mole fraction oh H2O
 			const double xco2,     // mole fraction oh CO2
 			const double o2,       // mole fraction oh O2
-			const double xsoot );  // volume fraction oh soot 
+			const double xsoot,    // volume fraction oh soot 
+			double *k );           // absorbsion coefficient array
 			          
   // return band averaged property
   double BandAverage( const double *phi, const int v );
 
-
-  // compute gas transmissivity
-  double Transmissivity( const double L, const int iband );
+  // calculate the planck distribution for the gas
+  double CalculatePlanck( const double T, double* Ib );
 
 private:
 
@@ -471,7 +465,8 @@ private:
 			       const double xh2o,     // mole fraction oh H2O
 			       const double xco2,     // mole fraction oh CO2
 			       const double xo2,      // mole fraction oh O2
-			       const double fsoot );  // volume fraction oh soot 
+			       const double fsoot,    // volume fraction oh soot 
+			       double *k );           // absorbsion coefficient array
 
   // compute absorbsion coeffient - precalculated interpolation
   void CalculateAbsorb_Interp( const double p,        // pressure [atm]
@@ -480,7 +475,8 @@ private:
 			       const double xh2o,     // mole fraction oh H2O
 			       const double xco2,     // mole fraction oh CO2
 			       const double xo2,      // mole fraction oh O2
-			       const double fsoot );  // volume fraction oh soot 
+			       const double fsoot,    // volume fraction oh soot 
+			       double *k );           // absorbsion coefficient array
 
   // allocate and deallocate the arrays
   void AllocateQuad();
@@ -489,8 +485,8 @@ private:
   void DeallocateBands();
   void AllocateInterp();
   void DeallocateInterp();
-  void AllocateAbs();
-  void DeallocateAbs();
+  void AllocateIndex();
+  void DeallocateIndex();
   void Deallocate();
 
 };
@@ -525,15 +521,6 @@ class SNBCK_Input_Parameters{
   // treatment type at overalapping bands
   int OverlapModel;
   
-  // gas state parameters
-  double T;    // temperature [K]
-  double p;    // pressure [atm]
-  double xco;  // mole fraction CO
-  double xh2o; // mole fraction H2O
-  double xco2; // mole fraction CO2
-  double xo2;  // mole fraction O2
-  double fsoot;// volume fraction soot
-
   // Precalculated absorbsion coefficients parameters
   int IntPoints;   // number of temperature interpolation points (0 for default)
   double p_ref;    // Reference pressure [atm]
@@ -551,15 +538,6 @@ class SNBCK_Input_Parameters{
     OptimizedLumping = false;
     OverlapModel     = SNBCK_OVERLAP_OPTICALLY_THIN;
     IntPoints        = 0; // use points correspoding to EM2C database (14 points)
-
-    // gas state
-    T            = 1000.0; //[K]
-    p            = 1.0;    //[atm]
-    xco          = 0.0;
-    xh2o         = 0.2;
-    xco2         = 0.1;
-    xo2          = 0.0;
-    fsoot        = 0.0;
 
     // ref state proposed by Liu and Smallwood (2004).
     p_ref            = 1.0; //[atm]
@@ -589,3 +567,6 @@ class SNBCK_Input_Parameters{
   friend istream &operator >> (istream &in_file,
 			       SNBCK_Input_Parameters &IP);
 };
+
+
+#endif //_SNBCK_INCLUDED

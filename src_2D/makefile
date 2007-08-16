@@ -180,6 +180,7 @@ SRC_RTE = $(RTE_DIR)Rte2DState.cc \
           $(RTE_DIR)Rte2DQuadMultiBlock.cc \
           $(RTE_DIR)Rte2DQuadGrid.cc \
           $(RTE_DIR)Rte2DQuadSolvers.cc \
+          $(RTE_DIR)Rte2DTools.cc \
           $(RTE_DIR)SNBCK.cc 
 SRC_RTE_EXE = $(RTE_DIR)Rte2D.cc
 SRC_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes2DState.cc \
@@ -299,6 +300,7 @@ INC_RTE = $(RTE_DIR)Rte2DState.h \
 	  $(RTE_DIR)Rte2DQuadMultigrid.h \
 	  $(RTE_DIR)Rte2DQuadNKS.h \
 	  $(RTE_DIR)Rte2DQuadAMR.h \
+	  $(RTE_DIR)Rte2DTools.h \
 	  $(RTE_DIR)SNBCK.h \
 	  $(RTE_DIR)Planck.h 
 INC_MULTIGRID = $(MULTIGRID_DIR)FASMultigrid2D.h \
@@ -457,6 +459,7 @@ OBJ_RTE = $(RTE_DIR)Rte2DState.o \
           $(RTE_DIR)Rte2DQuadMultiBlock.o \
           $(RTE_DIR)Rte2DQuadGrid.o \
           $(RTE_DIR)Rte2DQuadSolvers.o \
+	  $(RTE_DIR)Rte2DTools.o \
           $(RTE_DIR)SNBCK.o
 OBJ_RTE_EXE = $(RTE_DIR)Rte2D.o
 OBJ_ICEMCFD = $(ICEM_DIR)ICEMCFD.o \

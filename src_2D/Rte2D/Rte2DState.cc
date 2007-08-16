@@ -17,10 +17,7 @@
  **                                                                  **
  **********************************************************************
  **********************************************************************/
-
-#ifndef _RTE2D_STATE_INCLUDED
 #include "Rte2DState.h"
-#endif // _RTE2D_STATE_INCLUDED   
 
 
 /********************************************************
@@ -42,42 +39,12 @@ double*     Rte2D_State :: delta_theta     = NULL;
 double**    Rte2D_State :: delta_psi       = NULL;
 double***** Rte2D_State :: Phi             = NULL;
 int         Rte2D_State :: Symmetry_Factor = 1;
-int         Rte2D_State :: RTE_Type        = RTE2D_SOLVER_FVM;
-int         Rte2D_State :: Absorb_Type     = RTE2D_ABSORB_GRAY;
-SNBCK       Rte2D_State :: SNBCKdata;
+SNBCK*      Rte2D_State :: SNBCKdata       = NULL;
 
 
 /**************************************************************************
  *********************** RTE2D SETUP DIRS FUNCTIONS  **********************
  **************************************************************************/
-
-/********************************************************
- * Function: SetDirs                                    *
- *                                                      *
- * Wrapper function for setting the number of control   *
- * angles in the polar and                              *
- * azimuthal directions.  Also loads the direction      *
- * cosines for use in the DOM formulation of the RTE.   *
- ********************************************************/
-void Rte2D_State :: SetDirs(const int NumPolarDirs, 
-			    const int NumAzimDirs,
-			    const int Quad_Type,
-			    const int Axisymmetric,
-			    const char *CFFC_PATH )
-{
-  switch(RTE_Type) {
-  case RTE2D_SOLVER_FVM:
-    SetDirsFVM(NumPolarDirs, NumAzimDirs, Axisymmetric );
-    break;
-  case RTE2D_SOLVER_DOM:
-    SetDirsDOM(Quad_Type, Axisymmetric, CFFC_PATH );
-    break;
-  default:
-    cerr << "Rte2D_State::SetDirs - Invalid flag for RTE solver\n";
-    exit(1);
-  } /* endswitch */
-  
-}
 
 /********************************************************
  * Function: SetDirsDOM                                 *
@@ -182,7 +149,7 @@ void Rte2D_State :: SetDirsDOM(const int Quad_Type,
   NUM_VAR_RTE2D = Ntot;
   
   // now allocate the cosine arrays
-  AllocateCosines();
+  AllocateCosines(RTE2D_SOLVER_DOM);
 
   // get the weight multiplication factor
   in >> fact;
@@ -302,7 +269,7 @@ void Rte2D_State :: SetDirsFVM(const int NumPolarDirs,
   NUM_VAR_RTE2D = Ntot;
   
   // now allocate the cosine arrays
-  AllocateCosines();
+  AllocateCosines(RTE2D_SOLVER_FVM);
   
 
 
@@ -423,30 +390,6 @@ void Rte2D_State :: SetDirsFVM(const int NumPolarDirs,
 /**************************************************************************
  ********************** RTE2D SETUP PHASE FUNCTIONS  **********************
  **************************************************************************/
-
-
-/********************************************************
- * Function: SetupPhase                                 *
- *                                                      *
- * Wrapper function for setting up the phase function   *
- * for use in the  either formulation of the RTE.       *
- ********************************************************/
-void Rte2D_State :: SetupPhase( const int type )
-{
-  switch(RTE_Type) {
-  case RTE2D_SOLVER_FVM:
-    SetupPhaseFVM( type );
-    break;
-  case RTE2D_SOLVER_DOM:
-    SetupPhaseDOM( type );
-    break;
-  default:
-    cerr << "Rte2D_State::SetupPhase - Invalid flag for RTE solver\n";
-    exit(1);
-  } /* endswitch */
-  
-}
-
 
 
 /********************************************************
@@ -571,8 +514,8 @@ void Rte2D_State :: SetupPhaseDOM( const int type ) {
  * Function: func                                       *
  *                                                      *
  * This function is needed for integrating the phase    *
- * function.  It is passed to                           *
- * SimpsonMultiDim.h:adaptsim()                         *
+ * function.  In SetupPhaseFVM, it is passed to         *
+ * SimpsonMultiDim.h:adaptsim() and is integrated.      *
  ********************************************************/
 double phase_func(int ndim, double *x, void *params) {
 
@@ -767,31 +710,6 @@ void Rte2D_State :: SetupPhaseFVM( const int type ) {
  ************************* RTE2D SETUP FUNCTIONS  *************************
  **************************************************************************/
 
-/********************************************************
- * Function: SetupAbsorb                                *
- *                                                      *
- * Sets the number of gas bands to discretize the entire*
- * spectrum into.                                       *
- ********************************************************/
-void Rte2D_State :: SetupAbsorb( const SNBCK_Input_Parameters &IP, 
-				 const char* CFFC_PATH )
-{
-  switch(Absorb_Type) {
-  case RTE2D_ABSORB_GRAY:
-    Nband = 1;
-    break;
-  case RTE2D_ABSORB_SNBCK:
-    SNBCKdata.Setup(IP, CFFC_PATH);
-    Nband = SNBCKdata.NumVar();
-    break;
-  default:
-    cerr << "Rte2D_State::SetupAbsorb - Invalid flag for gas type\n";
-    exit(-1);
-  } /* endswitch */
-  Nband = 1;
-}
-
-
 
 /********************************************************
  * Rte2D_State::SetupART_DOM                            *
@@ -844,6 +762,7 @@ void Rte2D_State :: SetupART_DOM( const Vector2D nfaceE, const double AfaceE,
  *********************************************************************************
  *********************************************************************************
  *********************************************************************************/
+
 
  /**************************************************************************
   *************************** RIEMANN FUNCTIONS  ***************************
@@ -960,7 +879,7 @@ Rte2D_State Gray_Wall(const Rte2D_State &U,
   for (int v=0; v<Uwall.Nband; v++) {
     
     // for a black wall
-    In = wall_emissivity * Ib(wall_temperature);
+    In = wall_emissivity * BlackBody(wall_temperature);
 
     // For grey wall.
     if ( fabs(1.0-wall_emissivity)>MICRO ) {
@@ -1040,7 +959,7 @@ void Gray_Wall_Space_March(Rte2D_State &Uwall,
   for (int v=0; v<Uwall.Nband; v++) {
     
     // for a black wall
-    In = wall_emissivity * Ib(wall_temperature);
+    In = wall_emissivity * BlackBody(wall_temperature);
 
     // For grey wall.
     if ( fabs(1.0-wall_emissivity)>MICRO ) {
@@ -1506,603 +1425,5 @@ double* PhaseFunc( const int type, int &n) {
 
   // return the array
   return An;
-
-}
-
-
- /**************************************************************************
-  ************************ EXACT SOLN FUNCTIONS  ***************************
-  **************************************************************************/
-
-
-/********************************************************
- * Routine: exact_cyl                                   *  
- *                                                      *
- * This function is needed for integrating the exact    *
- * solution.  It is passed to                           *
- * SimpsonMultiDim.h:adaptsim().                        *
- ********************************************************/
-double exact_cyl(int ndim, double *x, void *params) {
-
-  // declares
-  exact_cyl_param P = *(exact_cyl_param *)params;
-  double jac;
-  double theta;
-  double theta_min, theta_max;
-  double temp = 0;
-
-  // set out integration parameters
-  double u = x[0];
-  double psi = x[1];
-
-  // compute integration limits
-  double theta_B = atan( ( P.r*cos(psi) + sqrt(ONE-pow(P.r,TWO)*pow(sin(psi),TWO))) 
-			 / (P.z+P.c) );
-  double theta_C =  atan( ( P.r*cos(psi) + sqrt(ONE-pow(P.r,TWO)*pow(sin(psi),TWO))) 
-			  / (P.z-P.c) ) + PI;
-
-  // limit them
-  theta_B = max(theta_B, ZERO);
-  theta_C = min(theta_C, PI);
-  
-  // Depending on the term, compute the main integrand and the integration limits
-  // First, transform the variable x to the variable limit
-  // Transforms the domain 0<=x<=1 to theta_min<=theta<=theta_max
-  // for integrating  over variable areas
-  // Second, compute the main integratand
-
-  switch (P.term_flag) {
-  case 0:
-    theta_min = 0;
-    theta_max = theta_B;
-    theta = (1-u)*theta_min + u*theta_max;
-    jac = theta_max - theta_min;
-    temp = ( ONE - exp( -P.kappa*(P.z+P.c) / cos(theta) ) ) * sin(theta) * jac;
-    break;
-  case 1:
-    theta_min = theta_B;
-    theta_max = theta_C;
-    theta = (1-u)*theta_min + u*theta_max;
-    jac = theta_max - theta_min;
-    // checking for singularities
-    if (theta==0 || theta==PI) temp = ONE; // singularity, but limit=1
-    else temp = ( ONE - exp( -P.kappa*( P.r*cos(psi) + sqrt(ONE-pow(P.r*sin(psi),TWO) ) ) 
-			     / sin(theta) ) );
-    temp *= sin(theta) * jac;
-    break;
-  case 2:
-    theta_min = theta_C;
-    theta_max = PI;
-    theta = (ONE-u)*theta_min + u*theta_max;
-    jac = theta_max - theta_min;
-    temp = ( ONE - exp( -P.kappa*(P.z-P.c) / cos(theta) ) ) * sin(theta) * jac;
-    break;
-  }
-
-
-  // Depending on the coordinate system, 
-  // multiply by the apprpriate direction cosine
-  switch (P.coord_flag) {
-
-    // computing direction integrated intensity
-  case 0: 
-    temp *= ONE;
-    break;
-    // computing r-direction heat flux
-  case 1:
-    temp *= sin(theta)*cos(psi);
-    break;
-    //computing z-direction heat flux
-  case 2:
-    temp *= cos(theta);
-    break;
-  }
-
-  // return the value
-  return temp;
-
-}
-
-
-
-/********************************************************
- * Routine: CylindricalEnclosure                        *
- *                                                      *
- * This function computes the exact solution for a      *
- * emitting-absorbing  isothermal medium with isothermal*
- * bounding cold walls.  See Dua and Cheng (1975)       *
- *                                                      *
- ********************************************************/
-void CylindricalEnclosure( const double gas_temp,
-			   const double c,    // cylinder half-length / Ro
-			   const double tau,  // kappa*Ro
-			   const double rpos, // r/Ro
-			   const double zpos, // z/Ro
-			   double &G, 
-			   double &qr, 
-			   double &qz ){
-
-
-  simp_function F;        // function struct for integration
-  exact_cyl_param params; // function parameters struct for integration
-  simp_state S;           // state struct for integration
-  simp_params P;          // params struct for integration
-  int fevals;             // number of function evaluations
-  double val;             // value of integration
-  int err;                // error flag returned by adaptsim
-
-  // zero
-  G = ZERO;
-  qr = ZERO;
-  qz = ZERO;
-  
-
-  // get the function parameters
-  params.r = rpos;
-  params.z = zpos;
-  params.c = c;
-  params.kappa = tau;
-  params.term_flag = 0;
-  params.coord_flag = 0;
-
-  // setup integration ( allocate memory and set parameters )
-  malloc_simp_struc( 2, F, S );
-  init_simp_struc( F, S );
-  
-  // setup function
-  F.f = exact_cyl;
-  F.params = &params;
-
-  // setup integration parameters
-  P.maxevals = 100000000;
-  P.tol = 1e-6;
-
-
-  //----------------------- Total irradiation -----------------------//  
-  params.coord_flag = 0;
-  
-  // Use an adaptive simpsons quadrature rule 
-  // for multidimensional integration
-
-  // loop over each term
-  for(int i=0 ; i<3 ; i++) {
-
-    // initialize before integration
-    init_simp_struc( F, S );
-    
-    // set new integration limits
-    F.xmin[0] = ZERO; F.xmax[0] = ONE;   // theta - variable
-    F.xmin[1] = ZERO; F.xmax[1] = TWO*PI;// psi
-  
-    // set the term flag
-    params.term_flag = i;
-	  
-    // compute the integrated phase function
-    err = adaptsim( F, S, P, fevals, val );
-    if (err) { 
-      cerr << "RteState.cc::CylindricalEnclosure - "
-	   << "Error integrating G \n";
-      cerr << "Error flag: " << err << endl;
-      exit (-1);
-    }
-
-    // add the contribution
-    G += val;
-
-  } /* endfor term_flag */ 
-
-  // normalize by 4 PI * blackbody intensity
-  G /= FOUR * PI;
-
-
-  //---------------------------- R-dir Flux -------------------------//
-  params.coord_flag = 1;
-  
-  // Use an adaptive simpsons quadrature rule 
-  // for multidimensional integration
-
-  // loop over each term
-  for(int i=0 ; i<3 ; i++) {
-
-    // initialize before integration
-    init_simp_struc( F, S );
-    
-    // set new integration limits
-    F.xmin[0] = ZERO; F.xmax[0] = ONE;   // theta - variable
-    F.xmin[1] = ZERO; F.xmax[1] = TWO*PI;// psi
-  
-    // set the term flag
-    params.term_flag = i;
-	  
-    // compute the integrated phase function
-    err = adaptsim( F, S, P, fevals, val );
-    if (err) { 
-      cerr << "RteState.cc::CylindricalEnclosure - "
-	   << "Error integrating qr \n";
-      cerr << "Error flag: " << err << endl;
-      exit (-1);
-    }
-
-    // add the contribution
-    qr += val;
-
-  } /* endfor term_flag */ 
-
-  // normalize by PI * blackbody intensity
-  qr /= PI;
-
-
-  //---------------------------- Z-dir Flux -------------------------//
-  params.coord_flag = 2;
-  
-  // Use an adaptive simpsons quadrature rule 
-  // for multidimensional integration
-
-  // loop over each term
-  for(int i=0 ; i<3 ; i++) {
-
-    // initialize before integration
-    init_simp_struc( F, S );
-    
-    // set new integration limits
-    F.xmin[0] = ZERO; F.xmax[0] = ONE;   // theta - variable
-    F.xmin[1] = ZERO; F.xmax[1] = TWO*PI;// psi
-  
-    // set the term flag
-    params.term_flag = i;
-	  
-    // compute the integrated phase function
-    err = adaptsim( F, S, P, fevals, val );
-    if (err) { 
-      cerr << "RteState.cc::CylindricalEnclosure - "
-	   << "Error integrating qr \n";
-      cerr << "Error flag: " << err << endl;
-      exit (-1);
-    }
-
-    // add the contribution
-    qz += val;
-
-  } /* endfor term_flag */ 
-
-  // normalize by PI * blackbody intensity
-  qz /= PI;
-
-}
-
-
-
-/********************************************************
- * Routine: exact_rect                                  *  
- *                                                      *
- * This function is needed for integrating the exact    *
- * solution.  It is passed to                           *
- * SimpsonMultiDim.h:adaptsim().                        *
- ********************************************************/
-double exact_rect(int ndim, double *x, void *params) {
-
-  // declares
-  exact_rect_param P = *(exact_rect_param *)params;
-  double jac;
-  double psi, psi_min, psi_max;
-  double s1, s1_star, s1_til;
-  double d, x_star, y_star;
-
-  // set out integration parameters
-  double theta = x[0];
-  double u = x[1];
-
-  // compute integration limits
-  double psi_A = atan( (P.y-P.b2)/(P.x-P.a1) );
-  double psi_B = atan( (P.y-P.b1)/(P.x-P.a1) );
-  double psi_C = atan( (P.y-P.b1)/(P.x-P.a2) );
-  double psi_D = atan( (P.y-P.b2)/(P.x-P.a2) );
-
-
-  // Depending on the term, compute the main integrand 
-  // and the integration limits
-  // 1 -> Transform the variable u to the variable limit psi  
-  //      ( <=u<=1 to theta_min<=theta<=theta_max)
-  // 2 -> rotate the coordinate frame
-  // 3 -> compute the main integrand
-  double temp = 0;
-  switch (P.term_flag) {
-
-  case 0:
-    // variable transformation
-    psi_max = psi_B;
-    psi_min = psi_A;
-    psi = (1-u)*psi_min + u*psi_max;
-    jac = psi_max - psi_min;
-
-    // field point coordinate in rotated frame
-    s1 =   P.x*cos(psi) + P.y*sin(psi);
-
-    // distance to west wall along ray
-    d = ( P.x - P.a1 ) / ( sin(theta) * cos(psi) );
-
-    // ray emission wall point coordinate in rotated frame
-    x_star = P.a1;
-    y_star = P.y - d*sin(theta)*sin(psi); 
-    s1_star = x_star*cos(psi) + y_star*sin(psi);
-    break;
-
-  case 1:
-    // variable transformation
-    psi_max = psi_D+PI;
-    psi_min = psi_C+PI;
-    psi = (1-u)*psi_min + u*psi_max;
-    jac = psi_max - psi_min;
-
-    // rotate our coordinate frame
-    s1 = P.x*cos(psi) + P.y*sin(psi);
-
-    // distance to east wall along ray
-    d = ( P.x - P.a2 ) / ( sin(theta) * cos(psi) );
-
-    // ray emission wall point coordinate in rotated frame
-    x_star = P.a2;
-    y_star = P.y - d*sin(theta)*sin(psi); 
-    s1_star = x_star*cos(psi) + y_star*sin(psi);
-    break;
-
-  case 2:
-    // variable transformation
-    psi_max = psi_C+PI;
-    psi_min = psi_B;
-    psi = (1-u)*psi_min + u*psi_max;
-    jac = psi_max - psi_min;
-
-    // rotate our coordinate frame
-    s1 = P.x*cos(psi) + P.y*sin(psi);
-
-    // distance to south wall along ray
-    d = ( P.y - P.b1 ) / ( sin(theta) * sin(psi) );
-
-    // ray emission wall point coordinate in rotated frame
-    y_star = P.b1;
-    x_star = P.x - d*sin(theta)*cos(psi); 
-    s1_star = x_star*cos(psi) + y_star*sin(psi);
-    break;
-
-  case 3:
-    // variable transformation
-    psi_max = psi_A+2*PI;
-    psi_min = psi_D+PI;
-    psi = (1-u)*psi_min + u*psi_max;
-    jac = psi_max - psi_min;
-
-    // rotate our coordinate frame
-    s1 = P.x*cos(psi) + P.y*sin(psi);
-
-    // distance to north wall along ray
-    d = ( P.y - P.b2 ) / ( sin(theta) * sin(psi) );
-
-    // ray emission wall point coordinate in rotated frame
-    y_star = P.b2;
-    x_star = P.x - d*sin(theta)*cos(psi); 
-    s1_star = x_star*cos(psi) + y_star*sin(psi);
-      
-    break;
-  }
-
-  // some integration constants
-  s1_til = (s1 - s1_star) / sin(theta);
-
-  // compute integrand
-  // first, check if the ray actually originated from a point on the wall
-  if ( x_star>=P.a1 && x_star<=P.a2 && y_star>=P.b1 && y_star<=P.b2) {
-    temp =  exp( P.kappa * (d-s1_til) );
-    temp -= exp( -P.kappa*s1_til );
-  } else {
-    temp = 0;
-  }
-  
-  // multiply by integration parameters
-  temp *= sin(theta) * jac;
-
-
-  // Depending on the coordinate system, 
-  // multiply by the apprpriate direction cosine
-  switch (P.coord_flag) {
-
-    // computing direction integrated intensity
-  case 0: 
-    temp *= ONE;
-    break;
-    // computing x-direction heat flux
-  case 1:
-    temp *= sin(theta)*cos(psi);
-    break;
-    //computing y-direction heat flux
-  case 2:
-    temp *= sin(theta)*sin(psi);
-    break;
-  }
-
-  // return the value
-  return temp;
-
-}
-
-
-
-/********************************************************
- * Routine: RectangularEnclosure                        *
- *                                                      *
- * This function computes the exact solution for a      *
- * emitting-absorbing  isothermal medium with isothermal*
- * bounding cold walls.  See Cheng (1972)       *
- *                                                      *
- ********************************************************/
-void RectangularEnclosure( const double gas_temp,
-			   const double kappa,  // absorbsion coeff
-			   const double left,   // west wall location
-			   const double right,  // east wall location
-			   const double bot,    // south wall location
-			   const double top,    // north wall location
-			   const double xpos,   // x position
-			   const double ypos,   // y position
-			   double &G, 
-			   double &qx, 
-			   double &qy ){
-
-
-  simp_function F;        // function struct for integration
-  exact_rect_param params; // function parameters struct for integration
-  simp_state S;           // state struct for integration
-  simp_params P;          // params struct for integration
-  int fevals;             // number of function evaluations
-  double val;             // value of integration
-  int err;                // error flag returned by adaptsim
-
-  // zero
-  G = ZERO;
-  qx = ZERO;
-  qy = ZERO;
-  
-
-  // get the function parameters
-  params.x = xpos;
-  params.y = ypos;
-  params.a1 = left;
-  params.a2 = right;
-  params.b1 = bot;
-  params.b2 = top;
-  params.kappa = kappa;
-  params.term_flag = 0;
-  params.coord_flag = 0;
-
-  // setup integration ( allocate memory and set parameters )
-  malloc_simp_struc( 2, F, S );
-  init_simp_struc( F, S );
-  
-  // setup function
-  F.f = exact_rect;
-  F.params = &params;
-
-  // setup integration parameters
-  P.maxevals = 100000;
-  P.tol = 1e-6;
-
-
-  //----------------------- Total irradiation -----------------------//  
-  params.coord_flag = 0;
-  
-  // Use an adaptive simpsons quadrature rule 
-  // for multidimensional integration
-
-  // loop over each term
-  for(int i=0 ; i<4 ; i++) {
-
-    // initialize before integration
-    init_simp_struc( F, S );
-    
-    // set new integration limits
-    F.xmin[0] = ZERO; F.xmax[0] = PI;   // theta
-    F.xmin[1] = ZERO; F.xmax[1] = ONE;  // psi - variable
-  
-    // set the term flag
-    params.term_flag = i;
-	  
-    // compute the integrated phase function
-    err = adaptsim( F, S, P, fevals, val );
-    if (err) { 
-      cerr.precision(4);
-      cerr << "RteState.cc::RectangularEnclosure - "
-	   << "Error integrating G \n";
-      cerr << "Error flag: " << err << endl;
-      cerr << "Value:      " << val << endl;
-      cerr << "Point:      (" << xpos << ", " << ypos << ")" << endl;
-      exit (-1);
-    }
-
-    // add the contribution
-    G += val;
-
-  } /* endfor term_flag */ 
-
-  // normalize by 4 PI * blackbody intensity
-  G /= FOUR * PI;
-
-
-  //---------------------------- x-dir Flux -------------------------//
-  params.coord_flag = 1;
-  
-  // Use an adaptive simpsons quadrature rule 
-  // for multidimensional integration
-
-  // loop over each term
-  for(int i=0 ; i<4 ; i++) {
-
-    // initialize before integration
-    init_simp_struc( F, S );
-    
-    // set new integration limits
-    F.xmin[0] = ZERO; F.xmax[0] = PI;   // theta
-    F.xmin[1] = ZERO; F.xmax[1] = ONE;  // psi - variable
-  
-    // set the term flag
-    params.term_flag = i;
-	  
-    // compute the integrated phase function
-    err = adaptsim( F, S, P, fevals, val );
-    if (err) { 
-      cerr.precision(4);
-      cerr << "RteState.cc::RectangularEnclosure - "
-	   << "Error integrating qx \n";
-      cerr << "Error flag: " << err << endl;
-      cerr << "Value:      " << val << endl;
-      cerr << "Point:      (" << xpos << ", " << ypos << ")" << endl;
-      exit (-1);
-    }
-
-    // add the contribution
-    qx += val;
-
-  } /* endfor term_flag */ 
-
-  // normalize by PI * blackbody intensity
-  qx /= PI;
-
-
-  //---------------------------- y-dir Flux -------------------------//
-  params.coord_flag = 2;
-  
-  // Use an adaptive simpsons quadrature rule 
-  // for multidimensional integration
-
-  // loop over each term
-  for(int i=0 ; i<4 ; i++) {
-
-    // initialize before integration
-    init_simp_struc( F, S );
-    
-    // set new integration limits
-    F.xmin[0] = ZERO; F.xmax[0] = PI;   // theta
-    F.xmin[1] = ZERO; F.xmax[1] = ONE;  // psi - variable
-  
-    // set the term flag
-    params.term_flag = i;
-	  
-    // compute the integrated phase function
-    err = adaptsim( F, S, P, fevals, val );
-    if (err) { 
-      cerr.precision(4);
-      cerr << "RteState.cc::RecatngularEnclosure - "
-	   << "Error integrating qy \n";
-      cerr << "Error flag: " << err << endl;
-      cerr << "Value:      " << val << endl;
-      cerr << "Point:      (" << xpos << ", " << ypos << ")" << endl;
-      exit (-1);
-    }
-
-    // add the contribution
-    qy += val;
-
-  } /* endfor term_flag */ 
-
-  // normalize by PI * blackbody intensity
-  qy /= PI;
 
 }

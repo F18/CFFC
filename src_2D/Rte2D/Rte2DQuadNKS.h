@@ -4,16 +4,8 @@
 /****************************************************************/
 /****** NKS REQUIRED SPECIALIZATIONS & FUNCTIONS ****************/
 /****************************************************************/  
-
-
-#ifndef _RTE2D_QUAD_INCLUDED
 #include "Rte2DQuad.h"
-#endif // _RTE2D_QUAD_INCLUDED
-
-#ifndef _NKS_INCLUDED
 #include "../NewtonKrylovSchwarz2D/NKS2D.h"
-#endif // _NKS_INCLUDED
-
 
 
 // Prototypes required for instantiation

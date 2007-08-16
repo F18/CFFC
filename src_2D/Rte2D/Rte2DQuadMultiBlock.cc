@@ -3,10 +3,7 @@
                               Solution Classes. */
 
 /* Include 2D Rte quadrilateral mesh solution header file. */
-
-#ifndef _RTE2D_QUAD_INCLUDED
 #include "Rte2DQuad.h"
-#endif // _RTE2D_QUAD_INCLUDED
 
 
 /**************************************************************************
@@ -205,15 +202,7 @@ int Read_Restart_Solution(Rte2D_Quad_Block *Soln_ptr,
 	  restart_file >> Input_Parameters.SNBCK_IP;	    
 	  restart_file >> Input_Parameters.Axisymmetric;	    
           restart_file.unsetf(ios::skipws);
-	  Input_Parameters.Uo.RTE_Type = Input_Parameters.i_RTE_Solver;
-	  Rte2D_State::SetupAbsorb( Input_Parameters.i_AbsorptionModel,
-				    Input_Parameters.SNBCK_IP, 
-				    Input_Parameters.CFFC_Path  );
-	  Rte2D_State::SetDirs( Input_Parameters.Number_of_Angles_Mdir, 
-				Input_Parameters.Number_of_Angles_Ldir, 
-				Input_Parameters.i_DOM_Quadrature, 
-				Input_Parameters.Axisymmetric,
-				Input_Parameters.CFFC_Path);
+	  SetupStateStatic( Input_Parameters );
 	  Input_Parameters.Uo.Allocate();
 
 	  //---------------------- End Rte2D Specific -----------------------//

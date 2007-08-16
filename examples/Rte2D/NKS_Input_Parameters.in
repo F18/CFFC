@@ -1,0 +1,75 @@
+###############################
+###############################
+#  NKS Available Input
+#  Parameters
+#
+###############################
+###############################
+# 1 rho, 2,3 momentum, 4 energy
+Residual_Variable=
+1
+#
+#Number_of_Residual_Norms
+#
+################################
+# Newton-Krlov (Outer Loop) Parameters
+################################
+# Outer loop convergance tolerance
+NKS_Overall_Tolerance=
+1.0e-10
+# Use Finite Step ON/OFF 
+NKS_Finite_Time_Step=
+ON
+#
+NKS_Finite_Time_Step_Initial_CFL=
+1e4
+NKS_Finite_Time_Step_Max_CFL=
+1e12
+# Number of Total NKS Iterations
+Maximum_Number_of_NKS_Iterations=
+0
+###############################
+# GMRES (Inner Loop) Parameters
+###############################
+# Number of Cells to overlap 
+#  -> Default 0
+GMRES_Overlap=
+0
+# Internal GMRES Tolerance to Converge to
+GMRES_Tolerance=
+2.0e-01
+# Total number of GMRES iterations allowed 
+Maximum_Number_of_GMRES_Iterations=
+80
+# Number of iterations before a GMRES Restart
+GMRES_Restart=
+40
+# Use Normalized values ON/OFF 
+GMRES_Normalization= 
+ON
+# Turn on more GMRES Details, values ON/OFF 
+GMRES_Check=
+OFF
+# Order of Frechet Derivative used
+# -> First Order
+# -> 2nd Order
+GMRES_Frechet_Derivative_Order=
+First_Order
+# GMRES Block Preconditioner 
+# -> ILUK
+# -> Diagonal  (Jacobi)             
+GMRES_Block_Preconditioner=       
+ILUK
+# If using ILUK, level of fill
+GMRES_ILUK_Level_of_Fill= 
+4
+# What Preconditioner Jacobian to use
+# -> Source_Terms_Only
+# -> First_Order_Inviscid_HLLE
+# -> First_Order_Inviscid_Roe 
+# -> First_Order_Inviscid_AUSM_plus_up
+# -> Second_Order_Diamond_Path_with_HLLE
+# -> Second_Order_Diamond_Path_with_Roe
+# -> Second_Order_Diamond_Path_with_AUSM_plus_up
+Jacobian_Order=
+First_Order_Inviscid_HLLE

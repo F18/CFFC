@@ -17,22 +17,13 @@
 #define _RTE2D_MULTIGRID_INCLUDED 
 
 /* Include 2D Rte equation quadrilateral mesh solution header file. */
-
-#ifndef _RTE2D_QUAD_INCLUDED
 #include "Rte2DQuad.h"
-#endif // _RTE2D_QUAD_INCLUDED
 
 /* Include 2D Rte equation input header file. */
-
-#ifndef _RTE2D_INPUT_INCLUDED
-#include "Rte2D/Rte2DInput.h"
-#endif // _RTE2D_INPUT_INCLUDED
+#include "Rte2DInput.h"
 
 /* Include FAS Multigrid header file */
-
-#ifndef _FASMULTIGRID2D_INCLUDED
 #include "../FASMultigrid2D/FASMultigrid2D.h"
-#endif // _FASMULTIGRID2D_INCLUDED
 
 
 

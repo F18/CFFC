@@ -8,10 +8,7 @@
 **********************************************************************/
 
 /* Include 2D Rte quadrilateral mesh solution header file. */
-
-#ifndef _RTE2D_QUAD_INCLUDED
 #include "Rte2DQuad.h"
-#endif // _RTE2D_QUAD_INCLUDED
 
 /**************************************************************************
  * Rte2D_Quad_Block -- Single Block External Subroutines.                 *
@@ -5517,9 +5514,9 @@ void Output_Exact(Rte2D_Quad_Block &SolnBlk,
   for (int j = 0; j < SolnBlk.Grid.NCj; j++) {
    for (int i = 0; i < SolnBlk.Grid.NCi; i++) {
       // values normalized by blackbody intensity
-      G = SolnBlk.U[i][j].G() / ( FOUR*PI*Ib(IP.Temperature) );
-      qx = SolnBlk.U[i][j].q().x / ( PI*Ib(IP.Temperature) );
-      qy = SolnBlk.U[i][j].q().y / ( PI*Ib(IP.Temperature) );
+      G = SolnBlk.U[i][j].G() / ( FOUR*PI*BlackBody(IP.Temperature) );
+      qx = SolnBlk.U[i][j].q().x / ( PI*BlackBody(IP.Temperature) );
+      qy = SolnBlk.U[i][j].q().y / ( PI*BlackBody(IP.Temperature) );
       if (i < SolnBlk.Nghost || i > SolnBlk.ICu ||
 	  j < SolnBlk.Nghost || j > SolnBlk.JCu) {
 	G_e = G;

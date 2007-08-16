@@ -3,10 +3,7 @@
                         Solution Classes. */
 
 /* Include 2D Rte quadrilateral mesh solution header file. */
-
-#ifndef _RTE2D_QUAD_INCLUDED
 #include "Rte2DQuad.h"
-#endif // _RTE2D_QUAD_INCLUDED
 
 /**************************************************************************
  * Rte2D_Quad_Block -- Multiple Block External Subroutines for Mesh.    *

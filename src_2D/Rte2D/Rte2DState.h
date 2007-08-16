@@ -20,8 +20,14 @@
 #ifndef _RTE2D_STATE_INCLUDED
 #define _RTE2D_STATE_INCLUDED 
 
-/* Include required C++ libraries. */
+/********************************************************
+ * Class Declaration                                    *
+ ********************************************************/
+class Rte2D_State;
 
+/********************************************************
+ * Include required C++ libraries                       *
+ ********************************************************/
 #include <cstdio>
 #include <iostream>
 #include <iomanip>
@@ -32,44 +38,19 @@
 
 using namespace std;
 
-/* Required CFDkit+caboodle header files */
+/********************************************************
+ * Required CFDkit+caboodle header files                *
+ ********************************************************/
 
-#ifndef _MATH_MACROS_INCLUDED
 #include "../Math/Math.h"
-#endif // _MATH_MACROS_INCLUDED
-
-#ifndef _MATRIX_INCLUDED
 #include "../Math/Matrix.h"
-#endif // _MATRIX_INCLUDED
-
-#ifndef _VECTOR2D_INCLUDED
 #include "../Math/Vector2D.h"
-#endif //_VECTOR2D_INCLUDED
-
-#ifndef _VECTOR3D_INCLUDED
 #include "../Math/Vector3D.h"
-#endif //_VECTOR3D_INCLUDED
-
-#ifndef _SIMPSON_INCLUDED
 #include "../Math/Simpson.h"
-#endif // _SIMPSON_INCLUDED
-
-#ifndef _CFD_INCLUDED
 #include "../CFD/CFD.h"
-#endif // _CFD_INCLUDED
-
-#ifndef _GAS_CONSTANTS_INCLUDED
 #include "../Physics/GasConstants.h"
-#endif // _GAS_CONSTANTS_INCLUDED
-
-#ifndef _SNBCK_INCLUDED
 #include "SNBCK.h"
-#endif //_SNBCK_INCLUDED
-
-#ifndef _PLANCK_INCLUDED
 #include "Planck.h"
-#endif //_PLANCK_INCLUDED
-
 
 /********************************************************
  * Necessary Rte2D Specific Constants                   *
@@ -251,9 +232,7 @@ class Rte2D_State {
   //@{ @name Miscillaneous static variables:
   static double***** Phi;     //!< scattering phase function
   static int Symmetry_Factor; //!< solid angle range symmetry factor
-  static int RTE_Type;        //!< flag for DOM or FVM
-  static int Absorb_Type;     //!< flag for absorbsion model
-  static SNBCK SNBCKdata;     //!< statistical narrow band model 
+  static SNBCK* SNBCKdata;    //!< statistical narrow band model 
   //@}
 
 
@@ -354,10 +333,6 @@ class Rte2D_State {
 
 
   //@{ @name Functions to set the number of directions and compute the cosines.
-  //! Main wrapper
-  static void SetDirs(const int NumPolarDirs, const int NumAzimDirs, 
-		      const int Quad_Type, const int Axisymmetric,
-		      const char *CFFC_PATH );
   //! For FVM
   static void SetDirsFVM(const int NumPolarDirs, const int NumAzimDirs, 
 			 const int Axisymmetric);
@@ -368,8 +343,6 @@ class Rte2D_State {
 
 
   //@{ @name Functions to setup the phase function.
-  //! Main wrapper
-  static void SetupPhase( const int type );
   //! For FVM
   static void SetupPhaseFVM( const int type );
   //! For DOM
@@ -387,8 +360,17 @@ class Rte2D_State {
   static void DeallocateDirs();
 
   //! memory allocation / deallocation for the cosine arrays
-  static void AllocateCosines( );
+  static void AllocateCosines( const int RTE_Type );
   static void DeallocateCosines();
+
+  //! memory allocation / deallocation for the SNBCKdata object
+  static void AllocateSNBCK();
+  static void DeallocateSNBCK();
+
+  //! deallocate all static objects
+  static void DeallocateStatic() 
+    { DeallocateCosines(); DeallocateDirs(); DeallocateSNBCK(); }
+
   //@}
 
 
@@ -639,7 +621,7 @@ inline void Rte2D_State :: DeallocateDirs()
 /********************************************************
  * Array allocator and deallocator for cosine arrays.   *
  ********************************************************/
-inline void Rte2D_State :: AllocateCosines()
+inline void Rte2D_State :: AllocateCosines(const int RTE_Type)
 {
   // declare
   int cnt;
@@ -778,6 +760,18 @@ inline void Rte2D_State :: DeallocateCosines()
 
 }
 
+/********************************************************
+ * Object allocator and deallocator for SNBCK object.   *
+ ********************************************************/
+inline void Rte2D_State :: AllocateSNBCK()
+{ 
+  if ( SNBCKdata == NULL ) SNBCKdata = new SNBCK; 
+}
+
+inline void Rte2D_State :: DeallocateSNBCK()
+{ 
+  if ( SNBCKdata != NULL ) { delete SNBCKdata; SNBCKdata = NULL;}  
+}
 
  /**************************************************************************
   ************************** OPERATOR OVERLOADS  ***************************
@@ -1508,32 +1502,5 @@ extern void Gray_Wall_Space_March(Rte2D_State &Uwall,
  ********************************************************/
 extern double Legendre( const double x, const int n);
 extern double* PhaseFunc( const int type, int &n);
-
-
-/********************************************************
- * Exact solution functions                             *
- ********************************************************/
-extern void CylindricalEnclosure( const double gas_temp,
-				  const double c,
-				  const double tau,
-				  const double rpos,
-				  const double zpos,
-				  double &G, 
-				  double &qr, 
-				  double &qz );
-
-extern void RectangularEnclosure( const double gas_temp,
-				  const double kappa,
-				  const double left,
-				  const double right,
-				  const double bot,
-				  const double top,
-				  const double xpos,
-				  const double ypos,
-				  double &G, 
-				  double &qx, 
-				  double &qy );
-
-
 
 #endif //end _RTE2D_STATE_INCLUDED 

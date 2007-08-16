@@ -17,52 +17,27 @@
 #ifndef _RTE2D_INPUT_INCLUDED
 #define _RTE2D_INPUT_INCLUDED
 
+/* Class Declaration */
+class Rte2D_Input_Parameters;
+
 /* Include 2D Rte state, 2D cell, 2D quadrilateral multiblock 
    grid, and NASA rotor header files. */
 
-#ifndef _RTE2D_STATE_INCLUDED
 #include "Rte2DState.h"
-#endif // _RTE2D_STATE_INCLUDED
-
-#ifndef _CELL2D_INCLUDED
+#include "Rte2DTools.h"
 #include "../Grid/Cell2D.h"
-#endif // _CELL2D_INCLUDED
-
-#ifndef _GRID2D_QUAD_BLOCK_INCLUDED
 #include "../Grid/Grid2DQuad.h"
-#endif // _GRID2D_QUAD_BLOCK_INCLUDED
-
-#ifndef _NASA_ROTOR37_INCLUDED
 #include "../Grid/NASARotor37.h"
-#endif // _NASA_ROTOR37_INCLUDED
-
-#ifndef _NASA_ROTOR67_INCLUDED
 #include "../Grid/NASARotor67.h"
-#endif // _NASA_ROTOR67_INCLUDED
 
 /* Also include multigrid input header file. */
-
-#ifndef _FASMULTIGRID2DINPUT_INCLUDED
 #include "../FASMultigrid2D/FASMultigrid2DInput.h"
-#endif // _FASMULTIGRID2DINPUT_INCLUDED
 
 /* Also include NKS  input header file. */
-
-#ifndef _NKS2DINPUT_INCLUDED
 #include "../NewtonKrylovSchwarz2D/NKSInput2D.h"
-#endif // _NKS2DINPUT_INCLUDED
 
 /* Include ICEMCFD input header file.*/
-
-#ifndef _ICEMCFD_INCLUDED
 #include "../ICEM/ICEMCFD.h"
-#endif // _ICEMCFD_INCLUDED
-
-/* Also include SNBCK input header file. */
-
-#ifndef _SNBCK_INCLUDED
-#include "SNBCK.h"
-#endif // _SNBCK_INCLUDED
 
 /* Define the structures and classes. */
 
@@ -297,8 +272,6 @@ class Rte2D_Input_Parameters{
   //@}
 
 };
-
-
 
 
 /*************************************************************
