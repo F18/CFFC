@@ -1010,7 +1010,24 @@ clean:
 	@echo '------------------------------------------'
 	@echo ' '
 
-superclean:
+clean-extras:
+	@echo ' '
+	@echo Cleaning cantera and fftw directories.
+	@echo '-----------------------------------------------'
+	@echo ' '
+	@if [ ! -f $(CANTERA_DIR)/Makefile ] ; then \
+	  echo "Cantera already clean."; \
+	else \
+	  cd $(CANTERA_DIR); make -i clean; \
+	fi
+	@if [ ! -f $(FFTW_DIR)/Makefile ] ; then \
+	  echo "fftw already clean."; \
+	else \
+	  cd $(FFTW_DIR); make clean; \
+	  cd $(FFTW_DIR); make distclean; \
+	fi
+
+superclean: clean-extras
 	@echo ' '
 	@echo Cleaning documentation and library directories.
 	@echo '-----------------------------------------------'
@@ -1023,9 +1040,6 @@ superclean:
 	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) wipe;
 	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
 	cd $(BPKIT_DIR)/src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
-	cd $(CANTERA_DIR); make -i clean;
-	cd $(FFTW_DIR); make clean; 
-	cd $(FFTW_DIR); make distclean;
 	@echo ' '
 	@echo All documentation and library directories are now clean.
 	@echo '-------------------------------------------------------'
