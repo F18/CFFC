@@ -297,8 +297,6 @@ inline ostream &operator << (ostream &out_file,
     } else {
        out_file << "\n  -> 2D Planar Flow";
     }
-    out_file << "\n  -> RTE Solver: " 
-             << IP.RTE_Solver;
     out_file << "\n  -> Time Integration: " 
              << IP.Time_Integration_Type;
     out_file << "\n  -> Number of Stages in Multi-Stage Scheme: " 
@@ -347,15 +345,37 @@ inline ostream &operator << (ostream &out_file,
 
     /***********************************************************************
      *************************** RTE SPECIFIC ******************************/
+    // SNBCK parameters
+    if (IP.i_AbsorptionModel == RTE2D_ABSORB_SNBCK) {
+      out_file << endl;
+      IP.SNBCK_IP.Output(out_file);
+    } else {
+      out_file << endl << endl << string(75,'*') << endl;
+    }
+
+    out_file << string(29,'*') << "   RTE SPECIFIC  " << string(29,'*') << endl;
+    out_file << string(75,'*');
+   
+    // space marching ?
+    if (IP.i_Time_Integration == TIME_STEPPING_SPACE_MARCH) {
+      out_file << "\n  -> Space Marching";
+      out_file << "\n      -> Differencing scheme: "
+	       << IP.SpaceMarch_Scheme;
+    }
+
+    // solver type
+    out_file << "\n  -> RTE Solver: " 
+             << IP.RTE_Solver;
+
     // DOM quadrature
     if (IP.i_RTE_Solver == RTE2D_SOLVER_DOM) {
-      out_file << "\n  -> Quadrature: "
+      out_file << "\n      -> Quadrature: "
 	       << IP.DOM_Quadrature;      
     // FVM angular discretization
     } else {
-      out_file << "\n  -> Number of CA polar-direction: "
+      out_file << "\n      -> Number of CA polar-direction: "
 	       << IP.Number_of_Angles_Mdir;
-      out_file << "\n  -> Number of CA azim-direction: " 
+      out_file << "\n      -> Number of CA azim-direction: " 
 	       << IP.Number_of_Angles_Ldir;
     }
 
@@ -370,32 +390,23 @@ inline ostream &operator << (ostream &out_file,
     // ICs
     out_file << "\n  -> Initial Conditions: " 
              << IP.ICs_Type;
-    switch(IP.i_ICs) {
-      case IC_CONSTANT :
-      case IC_UNIFORM :
-        out_file << "\n  -> Temperature (K): " 
-                 << IP.Temperature;
-        out_file << "\n  -> Absorption Cefficient (m^-1): " 
-                 << IP.AbsorptionCoef;
-        out_file << "\n  -> Scattering Cefficient (m^-1): " 
-                 << IP.ScatteringCoef;
-        break;
-      default:
-        break;
-    } /* endswitch */
+    if (IP.i_ICs == IC_CONSTANT || IP.i_ICs == IC_UNIFORM ){
 
-    // Wall conditions
-    out_file << "\n  -> Wall Conditions: ";
-    out_file << "\n  -> Wall Temperature (K) [N,S,E,W]: " 
-	     << IP.NorthWallTemp << "  "
-	     << IP.SouthWallTemp << "  "
-	     << IP.EastWallTemp << "  "
-	     << IP.WestWallTemp;
-    out_file << "\n  -> Wall Emissivity [N,S,E,W]: " 
-	     << IP.NorthWallEmiss << "  "
-	     << IP.SouthWallEmiss << "  "
-	     << IP.EastWallEmiss << "  "
-	     << IP.WestWallEmiss;
+      out_file << "\n      -> Temperature (K): " 
+	       << IP.Temperature;
+      out_file << "\n      -> Pressure (Pa): " 
+	       << IP.Pressure;
+      out_file << "\n      -> Mixture: " 
+	       << "xco = " << IP.xco << ",  "
+	       << "xh2o = " << IP.xh2o << ",  "
+	       << "xco2 = " << IP.xco2 << ",  "
+	       << "xo2 = " << IP.xo2 << ",  "
+	       << "fsoot = " << IP.fsoot;
+      out_file << "\n      -> Absorption Cefficient (m^-1): " 
+	       << IP.AbsorptionCoef;
+      out_file << "\n      -> Scattering Cefficient (m^-1): " 
+	       << IP.ScatteringCoef;
+    } /* endif */
 
     /***********************************************************************
      ***********************************************************************/
@@ -414,7 +425,6 @@ inline ostream &operator << (ostream &out_file,
                  << IP.Box_Width;
         break;
       case GRID_RECTANGULAR_BOX :
-      case GRID_RECTANGULAR_ENCLOSURE :
         out_file << "\n  -> Width of Solution Domain (m): " 
                  << IP.Box_Width;
         out_file << "\n  -> Height of Solution Domain (m): " 
@@ -425,7 +435,6 @@ inline ostream &operator << (ostream &out_file,
                  << IP.Plate_Length;
         break;
       case GRID_PIPE :
-      case GRID_CYLINDRICAL_ENCLOSURE :
         out_file << "\n  -> Pipe Length (m): " 
                  << IP.Pipe_Length;
         out_file << "\n  -> Pipe Radius (m): " 
@@ -500,6 +509,48 @@ inline ostream &operator << (ostream &out_file,
         out_file << "\n  -> Percent Span: " 
                  << IP.Rotor_Percent_Span;
         break;
+	/***********************************************************************
+	 *************************** RTE SPECIFIC ******************************/
+      case GRID_RECTANGULAR_ENCLOSURE :
+        out_file << "\n      -> Width of Solution Domain (m): " 
+                 << IP.Box_Width;
+        out_file << "\n      -> Height of Solution Domain (m): " 
+                 << IP.Box_Height;
+
+	// Wall conditions
+	out_file << "\n      -> Wall Conditions: ";
+	out_file << "\n          -> Wall Temperature (K) [N,S,E,W]: " 
+		 << IP.NorthWallTemp << "  "
+		 << IP.SouthWallTemp << "  "
+		 << IP.EastWallTemp << "  "
+		 << IP.WestWallTemp;
+	out_file << "\n          -> Wall Emissivity [N,S,E,W]: " 
+		 << IP.NorthWallEmiss << "  "
+		 << IP.SouthWallEmiss << "  "
+		 << IP.EastWallEmiss << "  "
+		 << IP.WestWallEmiss;
+        break;
+      case GRID_CYLINDRICAL_ENCLOSURE :
+        out_file << "\n      -> Pipe Length (m): " 
+                 << IP.Pipe_Length;
+        out_file << "\n      -> Pipe Radius (m): " 
+                 << IP.Pipe_Radius;
+
+	// Wall conditions
+	out_file << "\n      -> Wall Conditions: ";
+	out_file << "\n          -> Wall Temperature (K) [N,S,E,W]: " 
+		 << IP.NorthWallTemp << "  "
+		 << IP.SouthWallTemp << "  "
+		 << IP.EastWallTemp << "  "
+		 << IP.WestWallTemp;
+	out_file << "\n          -> Wall Emissivity [N,S,E,W]: " 
+		 << IP.NorthWallEmiss << "  "
+		 << IP.SouthWallEmiss << "  "
+		 << IP.EastWallEmiss << "  "
+		 << IP.WestWallEmiss;
+        break;
+	/***********************************************************************
+	 ***********************************************************************/
       case GRID_ICEMCFD :
         break;
       case GRID_READ_FROM_DEFINITION_FILE :
@@ -520,6 +571,11 @@ inline ostream &operator << (ostream &out_file,
 	       << "\n     -> BC_East = " << IP.BC_East_Type
 	       << "\n     -> BC_West = " << IP.BC_West_Type;
     }
+
+    out_file << endl << string(75,'*');
+    out_file << endl << string(75,'*') << endl;
+
+
     out_file << "\n  -> Mesh shift, scale, and rotate: " 
              << IP.X_Shift << " " << IP.X_Scale << " " << IP.X_Rotate;
     out_file << "\n  -> Number of Blocks i-direction: "

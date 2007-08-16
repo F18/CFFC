@@ -191,6 +191,7 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 					 Input_Parameters.Number_of_Cells_Idir,
 					 Input_Parameters.Number_of_Cells_Jdir,
 					 Input_Parameters.Number_of_Ghost_Cells);
+        break;
       case GRID_CYLINDRICAL_ENCLOSURE :
         Grid_ptr = Grid_Cylindrical_Encl(Grid_ptr,
 					 Input_Parameters.Number_of_Blocks_Idir,

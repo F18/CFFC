@@ -548,7 +548,7 @@ class SNBCK_Input_Parameters{
   };
 
   // output parameters
-  void Output();
+  void Output(ostream &out_file) const;
 
   // input file parser
   int Parse_Next_Input_Control_Parameter(char *code, char *value);

@@ -1616,57 +1616,56 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
  *                                                                   *
  * Display Output Operator.                                          *
  *********************************************************************/
-void SNBCK_Input_Parameters::Output(){
-  
-  cout.unsetf(ios::scientific);
-  cout << " " << endl;
-  cout << string(75,'*');
-  cout << "\n********           Statistical Narrow Band Correlated-K          **********" << endl;   
-  cout << string(75,'*');
+void SNBCK_Input_Parameters::Output(ostream& out) const{
+  out.unsetf(ios::scientific);
+  out << " " << endl;
+  out << string(75,'*');
+  out << "\n********           Statistical Narrow Band Correlated-K          **********" << endl;   
+  out << string(75,'*') << endl;
 
-  cout<< " G-dist Inversion Type   ====>";
+  out<< " G-dist Inversion Type   ====>";
   if( EvaluationType == SNBCK_EVAL_ONLINE ) {
-    cout<<" Online "<<endl;
+    out<<" Online "<<endl;
   } else if( EvaluationType == SNBCK_EVAL_PRECALC ){
-   cout<<" Precalculated"<<endl;
+   out<<" Precalculated"<<endl;
   }
 
-  cout<< " Quadrature Type         ====>";
+  out<< " Quadrature Type         ====>";
   if( QuadType == GAUSS_LEGENDRE ) {
-    cout<<" Gauss-Legendre "<<endl;
+    out<<" Gauss-Legendre "<<endl;
   }
 
-  cout<< " Number of Lumped Bands  ====> " << LumpedBands << endl;
+  out<< " Number of Lumped Bands  ====> " << LumpedBands << endl;
 
   if (OptimizedLumping == ON) {     
-    cout <<" Optimized Band Lumping  ====> ON" << endl;
+    out <<" Optimized Band Lumping  ====> ON" << endl;
   } else {
-    cout <<" Optimized Band Lumping  ====> OFF" << endl; 
+    out <<" Optimized Band Lumping  ====> OFF" << endl; 
   } /* endif */ 
 
-  cout<< " Overlap Treatment Type  ====>";
+  out<< " Overlap Treatment Type  ====>";
   if( OverlapModel == SNBCK_OVERLAP_OPTICALLY_THIN ) {
-    cout<<" Optimcally Thin "<<endl;
+    out<<" Optimcally Thin "<<endl;
   } else if( OverlapModel == SNBCK_OVERLAP_OPTICALLY_THICK ){
-    cout<<" Optically Thick"<<endl;
+    out<<" Optically Thick"<<endl;
   } else if( OverlapModel == SNBCK_OVERLAP_UNCORRELATED ){
-    cout<<" Uncorrelated"<<endl;
+    out<<" Uncorrelated"<<endl;
   } else if( OverlapModel == SNBCK_OVERLAP_CORRELATED ){
-    cout<<" Correlated"<<endl;
+    out<<" Correlated"<<endl;
   }
 
   if (EvaluationType == SNBCK_EVAL_PRECALC) {     
-    cout <<" No. Interpolation Pts   ====> " << IntPoints << endl;
-    cout <<" Reference P [atm]       ====> " << p_ref << endl;
-    cout <<" Reference xCO           ====> " << xco_ref << endl;
-    cout <<" Reference xH2O          ====> " << xh2o_ref << endl;
-    cout <<" Reference xCO2          ====> " << xco2_ref << endl;
-    cout <<" Reference xO2           ====> " << xo2_ref << endl;
+    out <<" No. Interpolation Pts   ====> " << IntPoints << endl;
+    out <<" Reference P [atm]       ====> " << p_ref << endl;
+    out <<" Reference xCO           ====> " << xco_ref << endl;
+    out <<" Reference xH2O          ====> " << xh2o_ref << endl;
+    out <<" Reference xCO2          ====> " << xco2_ref << endl;
+    out <<" Reference xO2           ====> " << xo2_ref << endl;
   }
  
   
-  cout << string(75,'*');
-  cout << endl;
+  out << string(75,'*');
+  out << endl;
 }
 
 /*********************************************************************

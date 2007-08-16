@@ -3003,6 +3003,9 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter, "Write_Output_Wedge_Solution_Distribution") == 0) {
        i_command = WRITE_OUTPUT_WEDGE_SOLUTION_DISTRIBUTION_CODE;
 
+    } else if (strcmp(IP.Next_Control_Parameter, "Write_Output_Black_Enclosure") == 0) {
+       i_command = WRITE_OUTPUT_BLACK_ENCLOSURE_CODE;
+
     } else if (IP.Next_Control_Parameter[0] == '#') {
        i_command = COMMENT_CODE;
 
