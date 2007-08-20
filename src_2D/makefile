@@ -699,7 +699,7 @@ all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
 	@echo '------------------------------------------'
 	@echo ' '
 
-libraries-all: sparselib bpkit fftw
+libraries-all: sparselib bpkit fftw cantera
 	@echo ' '	
 	@echo All libraries have been brought up to date.
 	@echo '-------------------------------------------'
