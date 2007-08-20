@@ -53,6 +53,9 @@
 
 #define	INPUT_PARAMETER_LENGTH_EULER2D    128
 
+// Enviroment flag for CFFC root directory path
+#define PATHVAR_EULER2D "CFFC_Path"
+
 /*!
  * Class: Euler2D_Input_Parameters
  *
@@ -63,6 +66,8 @@ class Euler2D_Input_Parameters{
   private:
   public:
   //@{ @name Input file parameters.
+  //! CFFC root directory path:
+  char CFFC_Path[INPUT_PARAMETER_LENGTH_EULER2D];
   //! Input file name:
   char Input_File_Name[INPUT_PARAMETER_LENGTH_EULER2D];
   //! Input file stream:
@@ -246,6 +251,10 @@ class Euler2D_Input_Parameters{
   int Output_Progress_Frequency;
   //@}
 
+  //@{ @name Obtain the CFFC root directory path:
+  void get_cffc_path();
+  //@}
+
   //@{ @name Multi-block solution-adaption and parallel domain decomposition input parameters:
   int Number_of_Processors, Number_of_Blocks_Per_Processor;
   //@}
@@ -258,11 +267,29 @@ class Euler2D_Input_Parameters{
 };
 
 /*************************************************************
+ * Euler2D_Input_Parameters::get_cffc_path -- Get CFFC path. *
+ *************************************************************/
+inline void Euler2D_Input_Parameters::get_cffc_path(){
+  char *string_ptr;
+  // Check to see if environment varible exists.
+  if (getenv(PATHVAR_EULER2D) == NULL) {
+    //Set default path
+     string_ptr = "CFFC";
+     strcpy(CFFC_Path, string_ptr);
+  } else {
+     //Set path specified by environment variable
+     strcpy(CFFC_Path, getenv(PATHVAR_EULER2D));
+  }
+}
+
+/*************************************************************
  * Euler2D_Input_Parameters -- Input-output operators.       *
  *************************************************************/
 inline ostream &operator << (ostream &out_file,
 			     const Euler2D_Input_Parameters &IP) {
     out_file << setprecision(6);
+    out_file << "\n  -> CFFC Path: " 
+	     << IP.CFFC_Path;
     if (IP.i_Grid == GRID_CARTESIAN_UNIFORM) {
        out_file << "\n\n Solving 2D Euler equations (IBVP/BVP) on uniform Cartesian mesh.";
     } else {

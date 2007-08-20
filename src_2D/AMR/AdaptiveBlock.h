@@ -936,7 +936,7 @@ class AdaptiveBlock2D_List{
     void setRefineAll(const int Flag);
 
     /* Returns the number of blocks used. */
-    int Nused(void) const;
+    int Nused(void);
 
     /* Input-output operators. */
     friend ostream &operator << (ostream &out_file,
@@ -1425,7 +1425,7 @@ inline void AdaptiveBlock2D_List::setRefineAll(const int Flag) {
 /********************************************************************
  * AdaptiveBlock2D_List::Nused -- Return the number of blocks used. *
  ********************************************************************/
-inline int AdaptiveBlock2D_List::Nused(void) const {
+inline int AdaptiveBlock2D_List::Nused(void) {
    int i, n = 0;
    for ( i = 0; i <= Nblk-1 ; ++i ) {
       if (Block[i].used) n++;

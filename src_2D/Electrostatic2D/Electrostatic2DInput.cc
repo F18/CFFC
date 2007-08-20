@@ -53,6 +53,9 @@ void Set_Default_Input_Parameters(Electrostatic2D_Input_Parameters &IP) {
 
   char *string_ptr;
   
+  // CFFC root directory path:
+  IP.get_cffc_path();
+
   string_ptr = "Electrostatic2D.in";
   strcpy(IP.Input_File_Name,string_ptr);
 
@@ -205,6 +208,10 @@ void Broadcast_Input_Parameters(Electrostatic2D_Input_Parameters &IP) {
 
 #ifdef _MPI_VERSION
 
+  // CFFC path:
+  MPI::COMM_WORLD.Bcast(IP.CFFC_Path, 
+ 			INPUT_PARAMETER_LENGTH_ELECTROSTATIC2D, 
+			MPI::CHAR, 0);
   // Input file name and line number:
   MPI::COMM_WORLD.Bcast(IP.Input_File_Name,
 			INPUT_PARAMETER_LENGTH_ELECTROSTATIC2D,
@@ -538,6 +545,10 @@ void Broadcast_Input_Parameters(Electrostatic2D_Input_Parameters &IP,
 
   int Source_Rank = 0;
 
+  // CFFC path:
+  Communicator.Bcast(IP.CFFC_Path, 
+ 		     INPUT_PARAMETER_LENGTH_ELECTROSTATIC2D, 
+		     MPI::CHAR, Source_Rank);
   Communicator.Bcast(IP.Input_File_Name,
 		     INPUT_PARAMETER_LENGTH_ELECTROSTATIC2D,
 		     MPI::CHAR,Source_Rank);
@@ -894,7 +905,12 @@ int Parse_Next_Input_Control_Parameter(Electrostatic2D_Input_Parameters &IP) {
   int tpt, bct;
   Vector2D Xt;
 
-  if (strcmp(IP.Next_Control_Parameter,"Time_Integration_Type") == 0) {
+  if (strcmp(IP.Next_Control_Parameter, "CFFC_Path") == 0) {
+     i_command = 1111;
+     Get_Next_Input_Control_Parameter(IP);
+     strcpy(IP.CFFC_Path, IP.Next_Control_Parameter);
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Time_Integration_Type") == 0) {
     i_command = 1;
     Get_Next_Input_Control_Parameter(IP);
     strcpy(IP.Time_Integration_Type,IP.Next_Control_Parameter);

@@ -1,7 +1,7 @@
 /**********************************************************************
- * HighTemp2DQuadSingleBlock.cc                                   *
+ * HighTemp2DQuadSingleBlock.cc                                       *
  *                                                                    *
- * Single-block versions of subroutines for 2D N-S HighTemp multi-    *
+ * Single-block versions of subroutines for 2D High-temp multi-       *
  * block quadrilateral mesh solution classes.                         *
  *                                                                    *
  **********************************************************************/
@@ -9,7 +9,7 @@
 #include "HighTemp2DQuad.h"
 
 /**********************************************************************
- * HighTemp2D_Quad_Block -- Single Block External Subroutines.    *
+ * HighTemp2D_Quad_Block -- Single Block External Subroutines.        *
  **********************************************************************/
 
 /**********************************************************************
@@ -1480,7 +1480,6 @@ void ICs(HighTemp2D_Quad_Block &SolnBlk,
       for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
 	//Glaister ICs defined in Input.cc file 
 	Wl = Wo[0];
-	//cout<<" ICs set to: Wl.rho = "<<Wl.rho<<" Wl.p = "<<Wl.p<<" Wl.u = "<<Wl.v.x<<" and Wl.v = "<<Wl.v.y<<endl;
 	SolnBlk.W[i][j] = Wo[0];
         SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
       }
@@ -1491,7 +1490,6 @@ void ICs(HighTemp2D_Quad_Block &SolnBlk,
       for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
 	//Glaister ICs defined in Input.cc file 
 	Wl = Wo[0];
-	//cout<<" ICs set to: Wl.rho = "<<Wl.rho<<" Wl.p = "<<Wl.p<<" Wl.u = "<<Wl.v.x<<" and Wl.v = "<<Wl.v.y<<endl;
 	SolnBlk.W[i][j] = Wo[0];
         SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
       }
@@ -1760,10 +1758,10 @@ void BCs(HighTemp2D_Quad_Block &SolnBlk, const HighTemp2D_Input_Parameters &IP) 
 	SolnBlk.U[SolnBlk.ICl-2][j] = U(SolnBlk.W[SolnBlk.ICl-2][j]);
 	break;
       case BC_RINGLEB_FLOW :
-// // 	SolnBlk.W[SolnBlk.ICl-1][j] = Reflect(SolnBlk.W[SolnBlk.ICl][j],SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
-// // 	SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
-// // 	SolnBlk.W[SolnBlk.ICl-2][j] = Reflect(SolnBlk.W[SolnBlk.ICl+1][j],SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
-// // 	SolnBlk.U[SolnBlk.ICl-2][j] = U(SolnBlk.W[SolnBlk.ICl-2][j]);
+// 	SolnBlk.W[SolnBlk.ICl-1][j] = Reflect(SolnBlk.W[SolnBlk.ICl][j],SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
+// 	SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
+// 	SolnBlk.W[SolnBlk.ICl-2][j] = Reflect(SolnBlk.W[SolnBlk.ICl+1][j],SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
+// 	SolnBlk.U[SolnBlk.ICl-2][j] = U(SolnBlk.W[SolnBlk.ICl-2][j]);
 // 	SolnBlk.W[SolnBlk.ICl-1][j] = RinglebFlow(SolnBlk.W[SolnBlk.ICl][j],SolnBlk.Grid.Cell[SolnBlk.ICl-1][j].Xc);
 // 	SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
 // 	SolnBlk.W[SolnBlk.ICl-2][j] = RinglebFlow(SolnBlk.W[SolnBlk.ICl-2][j],SolnBlk.Grid.Cell[SolnBlk.ICl-2][j].Xc);
@@ -1982,10 +1980,6 @@ void BCs(HighTemp2D_Quad_Block &SolnBlk, const HighTemp2D_Input_Parameters &IP) 
 	SolnBlk.U[SolnBlk.ICu+2][j] = U(SolnBlk.W[SolnBlk.ICu+2][j]);
 	break;
       case BC_RINGLEB_FLOW :
-// 	//xxxSolnBlk.W[SolnBlk.ICu+1][j] = Reflect(SolnBlk.W[SolnBlk.ICu][j],SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
-// 	//xxxSolnBlk.U[SolnBlk.ICu+1][j] = U(SolnBlk.W[SolnBlk.ICu+1][j]);
-// 	//xxxSolnBlk.W[SolnBlk.ICu+2][j] = Reflect(SolnBlk.W[SolnBlk.ICu-1][j],SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
-// 	//xxxSolnBlk.U[SolnBlk.ICu+2][j] = U(SolnBlk.W[SolnBlk.ICu+2][j]);
 // 	SolnBlk.W[SolnBlk.ICu+1][j] = RinglebFlow(SolnBlk.W[SolnBlk.ICu-1][j],SolnBlk.Grid.Cell[SolnBlk.ICu+1][j].Xc);
 // 	SolnBlk.U[SolnBlk.ICu+1][j] = U(SolnBlk.W[SolnBlk.ICu+1][j]);
 // 	SolnBlk.W[SolnBlk.ICu+2][j] = RinglebFlow(SolnBlk.W[SolnBlk.ICu-2][j],SolnBlk.Grid.Cell[SolnBlk.ICu+2][j].Xc);
@@ -4300,37 +4294,33 @@ int dUdt_Residual_Evaluation(HighTemp2D_Quad_Block &SolnBlk,
   HighTemp2D_cState HighTemp2D_U_VACUUM; HighTemp2D_U_VACUUM.Vacuum();
   HighTemp2D_pState HighTemp2D_W_STDATM; HighTemp2D_W_STDATM.Standard_Atmosphere();
 
-	HighTemp2D_pState BlankState; BlankState.Vacuum();
-	Vector2D BlankVector; BlankVector.zero();
+  HighTemp2D_pState BlankState; BlankState.Vacuum();
+  Vector2D BlankVector; BlankVector.zero();
 
-	if (IP.i_Limiter == LIMITER_ZERO) {
-
-		// Zeroing phi does not need to be done on every call to
-		// dUdt_Residual_Evaluation(). But the limiter type can change during
-		// the simulation so to be safe we simply zero phi everytime.
-		for (int i = 0; i < SolnBlk.NCi; i++) {
-			for (int j = 0; j < SolnBlk.NCj; j++) {
-				SolnBlk.phi[i][j].Vacuum();
-			}
-		}
-
-	} else {
-
-		// Perform the linear reconstruction within each cell of the
-		// computational grid for this stage.
-		switch(IP.i_Reconstruction) {
-		case RECONSTRUCTION_GREEN_GAUSS :
-			Linear_Reconstruction_GreenGauss(SolnBlk,IP.i_Limiter);
-			break;
-		case RECONSTRUCTION_LINEAR_LEAST_SQUARES :
-			Linear_Reconstruction_LeastSquares(SolnBlk,IP.i_Limiter);
-			break;
-		default:
-			Linear_Reconstruction_LeastSquares(SolnBlk,IP.i_Limiter);
-			break;
-		}
-
+  if (IP.i_Limiter == LIMITER_ZERO) {
+     // Zeroing phi does not need to be done on every call to
+     // dUdt_Residual_Evaluation(). But the limiter type can change during
+     // the simulation so to be safe we simply zero phi everytime.
+     for (int i = 0; i < SolnBlk.NCi; i++) {
+	for (int j = 0; j < SolnBlk.NCj; j++) {
+	    SolnBlk.phi[i][j].Vacuum();
 	}
+     }
+  } else {
+     // Perform the linear reconstruction within each cell of the
+     // computational grid for this stage.
+     switch(IP.i_Reconstruction) {
+	case RECONSTRUCTION_GREEN_GAUSS :
+ 	   Linear_Reconstruction_GreenGauss(SolnBlk,IP.i_Limiter);
+	   break;
+	case RECONSTRUCTION_LINEAR_LEAST_SQUARES :
+	   Linear_Reconstruction_LeastSquares(SolnBlk,IP.i_Limiter);
+	   break;
+	default:
+	   Linear_Reconstruction_LeastSquares(SolnBlk,IP.i_Limiter);
+	   break;
+	}
+  } /* endif */
 
   // Evaluate the time rate of change of the solution (i.e., the
   // solution residuals) using a second-order limited upwind scheme
@@ -4499,147 +4489,130 @@ int dUdt_Residual_Evaluation(HighTemp2D_Quad_Block &SolnBlk,
 	}
 
 	if (SolnBlk.Flow_Type) {
-
-		// Determine the i-direction viscous flux.
-		//
-		// At the end of this viscous flux calculation we will call
-		// 
-		//   Flux -= ViscousFlux_n(Xface, Wface, dWdx, dWdy, 
-		//                         norm_dir, SolnBlk.Axisymmetric);
-		//
-		// Xface and norm_dir are simply:
-		Vector2D Xface = SolnBlk.Grid.xfaceE(i, j);
-		Vector2D norm_dir = SolnBlk.Grid.nfaceE(i, j);
-		// regardless of the gradient reconstruction method and
-		// regardless of whether we are on the boundary. Axisymmetric
-		// clearly does not change over the entire simulation.
-		// 
-		// Thus the only purpose of the code between here and the call
-		// to "ViscousFlux_n()" is to determine just the other three
-		// variables: Wface (the solution on the cell interface) and
-		// dWd[xy] (the two components of the solution gradients also
-		// on the face).
-		// 
-		// For Wface: next to a wall, Wface is influenced only by the
-		// type of boundary condition (and not by the type of gradient
-		// reconstruction). Away from a wall, Wface is found using a
-		// bilinear interpolation if we are using diamond-path
-		// reconstruction for the gradients and is found as a simple
-		// average otherwise.
-		// 
-		// For dWd[xy]: first consider the code for cells away from a
-		// boundary which shows fairly well how dWd[xy] is calculated.
-		// Then consider the assumptions near a wall for the different
-		// gradient reconstruction methods.
-
-		if (i == SolnBlk.ICl-1 && 
-				(SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
-				 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-				 SolnBlk.Grid.BCtypeW[j] == BC_MOVING_WALL_HEATFLUX ||
-				 SolnBlk.Grid.BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL ||
-				 SolnBlk.Grid.BCtypeW[j] == BC_BURNING_SURFACE)) {
-
-			// WEST face of cell (i+1,j) is a normal boundary.
-
-			Xr = SolnBlk.Grid.Cell[i+1][j].Xc; Wr = SolnBlk.W[i+1][j];
-
-			if (SolnBlk.Grid.BCtypeW[j] == BC_BURNING_SURFACE) {
-				Wu = BurningSurface(Wr, norm_dir);
-				Wd = Wu;
-			} else {
-
-				Wu = HALF*(Wr+SolnBlk.W[i+1][j+1]);
-				Wd = HALF*(Wr+SolnBlk.W[i+1][j-1]);
-
-				switch (SolnBlk.Grid.BCtypeW[j]) {
-					case BC_WALL_VISCOUS_HEATFLUX:
-						Wu.v.zero(); Wd.v.zero();
-						break;
-					case BC_WALL_VISCOUS_ISOTHERMAL:
-						Wu.v.zero(); Wd.v.zero();
-						switch (HighTemp2D_cState::eos_type) {
-							case EOS_TGAS:
-								Wu.rho = Tgas_rho(Wu.p, SolnBlk.Twall);
-								Wd.rho = Tgas_rho(Wd.p, SolnBlk.Twall);
-								break;
-							case EOS_IDEAL:
-								Wu.rho = Wu.p / HighTemp2D_cState::R / SolnBlk.Twall;
-								Wd.rho = Wd.p / HighTemp2D_cState::R / SolnBlk.Twall;
-								break;
-						}
-						break;
-					case BC_MOVING_WALL_HEATFLUX:
-						Wu.v = SolnBlk.Vwall; Wd.v = SolnBlk.Vwall;
-						break;
-					case BC_MOVING_WALL_ISOTHERMAL:
-						Wu.v = SolnBlk.Vwall; Wd.v = SolnBlk.Vwall; 
-						switch (HighTemp2D_cState::eos_type) {
-							case EOS_TGAS:
-								Wu.rho = Tgas_rho(Wu.p, SolnBlk.Twall);
-								Wd.rho = Tgas_rho(Wd.p, SolnBlk.Twall);
-								break;
-							case EOS_IDEAL:
-								Wu.rho = Wu.p / HighTemp2D_cState::R / SolnBlk.Twall;
-								Wd.rho = Wd.p / HighTemp2D_cState::R / SolnBlk.Twall;
-								break;
-						}
-						break;
-				}
-			}
-
-			Wface = HALF * (Wu + Wd);
-
-			switch (IP.i_Viscous_Reconstruction) {
-				case VISCOUS_RECONSTRUCTION_CARTESIAN :
-				case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :	
-					{
-						int stencil_flag = DIAMONDPATH_RIGHT_TRIANGLE;
-						Xu = SolnBlk.Grid.Node[i+1][j+1].X;
-						Xd = SolnBlk.Grid.Node[i+1][j  ].X; 
-						DiamondPath_Find_dWdX(dWdx, dWdy,
-								BlankVector, BlankState, 
-								Xd, Wd,
-								Xr, Wr,
-								Xu, Wu,
-								stencil_flag);
-					}
-					break;
-				case VISCOUS_RECONSTRUCTION_HYBRID :
-					dWdxr = SolnBlk.dWdx[i+1][j]; dWdyr = SolnBlk.dWdy[i+1][j];
-
-					Xl = Xface;
-					Wl = Wface;
-					dWdxl = dWdxr; dWdyl = dWdyr; // Hmm. 
-
-					Hybrid_Find_dWdX(dWdx, dWdy, 
-							Xl, Wl, dWdxl, dWdyl,
-							Xr, Wr, dWdxr, dWdyr,
-							norm_dir);
-					break;
-				case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
-					dWdx = SolnBlk.dWdx[i+1][j]; dWdy = SolnBlk.dWdy[i+1][j];
-					break;
-			}
-		} else if (i == SolnBlk.ICu &&
-				(SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
-				 SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-				 SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_HEATFLUX ||
-				 SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL ||
-				 SolnBlk.Grid.BCtypeE[j] == BC_BURNING_SURFACE)) {
-
-			// EAST face of cell (i,j) is a normal boundary.
-
-			Xl = SolnBlk.Grid.Cell[i][j].Xc; Wl = SolnBlk.W[i][j];
-
-			if (SolnBlk.Grid.BCtypeE[j] == BC_BURNING_SURFACE) {
-				Wu = BurningSurface(Wl, norm_dir);
-				Wd = Wu;
-			} else {
-
-				Wu = HALF*(Wl+SolnBlk.W[i][j+1]);
-				Wd = HALF*(Wl+SolnBlk.W[i][j-1]);
-
-				switch (SolnBlk.Grid.BCtypeE[j]) {
+	   // Determine the i-direction viscous flux.
+	   //
+	   // At the end of this viscous flux calculation we will call
+	   // 
+	   //   Flux -= ViscousFlux_n(Xface, Wface, dWdx, dWdy, 
+	   //                         norm_dir, SolnBlk.Axisymmetric);
+	   //
+	   // Xface and norm_dir are simply:
+	   Vector2D Xface = SolnBlk.Grid.xfaceE(i, j);
+	   Vector2D norm_dir = SolnBlk.Grid.nfaceE(i, j);
+	   // regardless of the gradient reconstruction method and
+	   // regardless of whether we are on the boundary. Axisymmetric
+	   // clearly does not change over the entire simulation.
+	   // 
+	   // Thus the only purpose of the code between here and the call
+	   // to "ViscousFlux_n()" is to determine just the other three
+	   // variables: Wface (the solution on the cell interface) and
+	   // dWd[xy] (the two components of the solution gradients also
+	   // on the face).
+	   // 
+	   // For Wface: next to a wall, Wface is influenced only by the
+	   // type of boundary condition (and not by the type of gradient
+	   // reconstruction). Away from a wall, Wface is found using a
+	   // bilinear interpolation if we are using diamond-path
+	   // reconstruction for the gradients and is found as a simple
+	   // average otherwise.
+	   // 
+	   // For dWd[xy]: first consider the code for cells away from a
+	   // boundary which shows fairly well how dWd[xy] is calculated.
+	   // Then consider the assumptions near a wall for the different
+	   // gradient reconstruction methods.
+   	   if (i == SolnBlk.ICl-1 && 
+	       (SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
+		SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+		SolnBlk.Grid.BCtypeW[j] == BC_MOVING_WALL_HEATFLUX ||
+		SolnBlk.Grid.BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL ||
+		SolnBlk.Grid.BCtypeW[j] == BC_BURNING_SURFACE)) {
+	      // WEST face of cell (i+1,j) is a normal boundary.
+	      Xr = SolnBlk.Grid.Cell[i+1][j].Xc; Wr = SolnBlk.W[i+1][j];
+	      if (SolnBlk.Grid.BCtypeW[j] == BC_BURNING_SURFACE) {
+		 Wu = BurningSurface(Wr, norm_dir);
+		 Wd = Wu;
+	      } else {
+ 		 Wu = HALF*(Wr+SolnBlk.W[i+1][j+1]);
+		 Wd = HALF*(Wr+SolnBlk.W[i+1][j-1]);
+  		 switch (SolnBlk.Grid.BCtypeW[j]) {
+		   case BC_WALL_VISCOUS_HEATFLUX:
+		     Wu.v.zero(); Wd.v.zero();
+		     break;
+		   case BC_WALL_VISCOUS_ISOTHERMAL:
+		     Wu.v.zero(); Wd.v.zero();
+		     switch (HighTemp2D_cState::eos_type) {
+			case EOS_TGAS:
+			  Wu.rho = Tgas_rho(Wu.p, SolnBlk.Twall);
+			  Wd.rho = Tgas_rho(Wd.p, SolnBlk.Twall);
+			  break;
+			case EOS_IDEAL:
+			  Wu.rho = Wu.p / HighTemp2D_cState::R / SolnBlk.Twall;
+			  Wd.rho = Wd.p / HighTemp2D_cState::R / SolnBlk.Twall;
+			  break;
+		     }
+		     break;
+		   case BC_MOVING_WALL_HEATFLUX:
+		     Wu.v = SolnBlk.Vwall; Wd.v = SolnBlk.Vwall;
+		     break;
+		   case BC_MOVING_WALL_ISOTHERMAL:
+		     Wu.v = SolnBlk.Vwall; Wd.v = SolnBlk.Vwall; 
+		     switch (HighTemp2D_cState::eos_type) {
+			case EOS_TGAS:
+			  Wu.rho = Tgas_rho(Wu.p, SolnBlk.Twall);
+			  Wd.rho = Tgas_rho(Wd.p, SolnBlk.Twall);
+			  break;
+			case EOS_IDEAL:
+			  Wu.rho = Wu.p / HighTemp2D_cState::R / SolnBlk.Twall;
+			  Wd.rho = Wd.p / HighTemp2D_cState::R / SolnBlk.Twall;
+			  break;
+		     }
+		     break;
+		 }
+	      } /* endif */
+  	      Wface = HALF * (Wu + Wd);
+ 	      switch (IP.i_Viscous_Reconstruction) {
+		case VISCOUS_RECONSTRUCTION_CARTESIAN:
+		case VISCOUS_RECONSTRUCTION_DIAMOND_PATH: {
+		  int stencil_flag = DIAMONDPATH_RIGHT_TRIANGLE;
+		  Xu = SolnBlk.Grid.Node[i+1][j+1].X;
+		  Xd = SolnBlk.Grid.Node[i+1][j  ].X; 
+		  DiamondPath_Find_dWdX(dWdx, dWdy,
+					BlankVector, BlankState, 
+					Xd, Wd,
+					Xr, Wr,
+					Xu, Wu,
+					stencil_flag);
+		  }
+		  break;
+		case VISCOUS_RECONSTRUCTION_HYBRID :
+		  dWdxr = SolnBlk.dWdx[i+1][j]; dWdyr = SolnBlk.dWdy[i+1][j];
+                  Xl = Xface;
+		  Wl = Wface;
+		  dWdxl = dWdxr; dWdyl = dWdyr; // Hmm. 
+ 		  Hybrid_Find_dWdX(dWdx, dWdy, 
+			 	   Xl, Wl, dWdxl, dWdyl,
+				   Xr, Wr, dWdxr, dWdyr,
+				   norm_dir);
+		  break;
+		case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		  dWdx = SolnBlk.dWdx[i+1][j]; dWdy = SolnBlk.dWdy[i+1][j];
+		  break;
+	      }
+	   } else if (i == SolnBlk.ICu &&
+		      (SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
+		       SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+		       SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_HEATFLUX ||
+		       SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL ||
+		       SolnBlk.Grid.BCtypeE[j] == BC_BURNING_SURFACE)) {
+  	      // EAST face of cell (i,j) is a normal boundary.
+	      Xl = SolnBlk.Grid.Cell[i][j].Xc; Wl = SolnBlk.W[i][j];
+	      if (SolnBlk.Grid.BCtypeE[j] == BC_BURNING_SURFACE) {
+		 Wu = BurningSurface(Wl, norm_dir);
+		 Wd = Wu;
+	      } else {
+		 Wu = HALF*(Wl+SolnBlk.W[i][j+1]);
+		 Wd = HALF*(Wl+SolnBlk.W[i][j-1]);
+		 switch (SolnBlk.Grid.BCtypeE[j]) {
 					case BC_WALL_VISCOUS_HEATFLUX:
 						Wu.v.zero(); Wd.v.zero();
 						break;
@@ -5218,64 +5191,6 @@ int dUdt_Residual_Evaluation(HighTemp2D_Quad_Block &SolnBlk,
   error_flag = Turbulence_Zero_Residual(SolnBlk,1,IP);
   if (error_flag) return error_flag; 
 
-  /*
-  if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA &&
-      IP.i_Turbulent_BCs == TURBULENT_BC_STANDARD_WALL_FUNCTION) {
-    // Zero the residuals of the turbulence quantities if the current
-    // cell is within the log layer (yplus is less than the specified
-    // value of yplus_outer_layer).
-    for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
-      for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
-	//if (SolnBlk.Wall[i][j].yplus <= IP.yplus_outer_layer) 
-	if (SolnBlk.Wall[i][j].yplus <= IP.yplus_buffer_layer ||
-	    (SolnBlk.Wall[i][j].yplus <= IP.yplus_outer_layer &&
-	     (SolnBlk.Wall[i+1][j].yplus <= IP.yplus_buffer_layer ||
-	      SolnBlk.Wall[i-1][j].yplus <= IP.yplus_buffer_layer ||
-	      SolnBlk.Wall[i][j+1].yplus <= IP.yplus_buffer_layer ||
-	      SolnBlk.Wall[i][j-1].yplus <= IP.yplus_buffer_layer))) {
-	  SolnBlk.dUdt[i][j][0].dk = ZERO;
-	  SolnBlk.dUdt[i][j][0].domega = ZERO;
-	}
-      }
-    }
-  } else if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA &&
-	     IP.i_Turbulent_BCs == TURBULENT_BC_DIRECT_INTEGRATION) {
-    // Zero the residuals of the specific dissipation if the current
-    // cell is within the viscous sublayer (yplus is less than the
-    // specified value of yplus_sublayer).
-    for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
-      for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
-	if (SolnBlk.Wall[i][j].yplus <= IP.yplus_sublayer) {
-	  SolnBlk.dUdt[i][j][0].domega = ZERO;
-	}
-      }
-			}
-   } else if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA && 
-	      IP.i_Turbulent_BCs == TURBULENT_BC_AUTOMATIC_WALL_TREATMENT) {
-      // Zero the residuals of the turbulence quantities depending on
-      // the automatic wall treatment.
-      for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
-	for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
-	  if (SolnBlk.Wall[i][j].yplus <= IP.yplus_sublayer) {
-	    SolnBlk.dUdt[i][j][0].domega = ZERO;
-	  } else if (SolnBlk.Wall[i][j].yplus <= IP.yplus_buffer_layer) {
-	    SolnBlk.dUdt[i][j][0].dk = ZERO;
-	    SolnBlk.dUdt[i][j][0].domega = ZERO;
-	  } else if (SolnBlk.Wall[i][j].yplus <= IP.yplus_outer_layer &&
-		     (SolnBlk.Wall[i+1][j].yplus <= IP.yplus_buffer_layer ||
-		      SolnBlk.Wall[i-1][j].yplus <= IP.yplus_buffer_layer ||
-		      SolnBlk.Wall[i][j+1].yplus <= IP.yplus_buffer_layer ||
-		      SolnBlk.Wall[i][j-1].yplus <= IP.yplus_buffer_layer)) {
-	    SolnBlk.dUdt[i][j][0].dk = ZERO;
-	    SolnBlk.dUdt[i][j][0].domega = ZERO;
-	  }
-	}
-      }
-   } else {
-      return 1;
-  }
-  */
-
   // Residual successfully evaluated.
   return 0;
 
@@ -5296,17 +5211,17 @@ int dUdt_Multistage_Explicit(HighTemp2D_Quad_Block &SolnBlk,
   int error_flag, k_residual;
   double omega;
  
-	HighTemp2D_pState Wl, Wr, Wu, Wd, Wface;
-	HighTemp2D_pState dWdx, dWdy, dWdxl, dWdyl, dWdxr, dWdyr;
-	HighTemp2D_cState Flux;
+  HighTemp2D_pState Wl, Wr, Wu, Wd, Wface;
+  HighTemp2D_pState dWdx, dWdy, dWdxl, dWdyl, dWdxr, dWdyr;
+  HighTemp2D_cState Flux;
 
-	Vector2D dX, Xl, Xr, Xu, Xd;
+  Vector2D dX, Xl, Xr, Xu, Xd;
 
-	HighTemp2D_cState HighTemp2D_U_VACUUM; HighTemp2D_U_VACUUM.Vacuum();
-	HighTemp2D_pState HighTemp2D_W_STDATM; HighTemp2D_W_STDATM.Standard_Atmosphere();
+  HighTemp2D_cState HighTemp2D_U_VACUUM; HighTemp2D_U_VACUUM.Vacuum();
+  HighTemp2D_pState HighTemp2D_W_STDATM; HighTemp2D_W_STDATM.Standard_Atmosphere();
 
-	HighTemp2D_pState BlankState; BlankState.Vacuum();
-	Vector2D BlankVector; BlankVector.zero();
+  HighTemp2D_pState BlankState; BlankState.Vacuum();
+  Vector2D BlankVector; BlankVector.zero();
   
   // Evaluate the solution residual for stage i_stage of n_stage scheme.
 
@@ -5339,37 +5254,33 @@ int dUdt_Multistage_Explicit(HighTemp2D_Quad_Block &SolnBlk,
     break;
   };
 
-	if (IP.i_Limiter == LIMITER_ZERO) {
-
-		// Zeroing phi does not need to be done on every call to
-		// dUdt_Residual_Evaluation(). But the limiter type can change during
-		// the simulation so to be safe we simply zero phi everytime.
-		for (int i = 0; i < SolnBlk.NCi; i++) {
-			for (int j = 0; j < SolnBlk.NCj; j++) {
-				SolnBlk.phi[i][j].Vacuum();
-			}
-		}
-
-	} else {
-
-		// Perform the linear reconstruction within each cell of the
-		// computational grid for this stage.
-		switch(IP.i_Reconstruction) {
-		case RECONSTRUCTION_GREEN_GAUSS :
-			Linear_Reconstruction_GreenGauss(SolnBlk,IP.i_Limiter);
-			break;
-		case RECONSTRUCTION_LINEAR_LEAST_SQUARES :
-			Linear_Reconstruction_LeastSquares(SolnBlk,IP.i_Limiter);
-			break;
-			//  case RECONSTRUCTION_QUADRATIC_LEAST_SQUARES :
-			//    Quadratic_Reconstruction_LeastSquares(SolnBlk,IP.i_Limiter);
-			//    break;
-		default:
-			Linear_Reconstruction_LeastSquares(SolnBlk,IP.i_Limiter);
-			break;
-		}
-
+  if (IP.i_Limiter == LIMITER_ZERO) {
+    // Zeroing phi does not need to be done on every call to
+    // dUdt_Residual_Evaluation(). But the limiter type can change during
+    // the simulation so to be safe we simply zero phi everytime.
+    for (int i = 0; i < SolnBlk.NCi; i++) {
+	for (int j = 0; j < SolnBlk.NCj; j++) {
+	   SolnBlk.phi[i][j].Vacuum();
 	}
+    }
+  } else {
+    // Perform the linear reconstruction within each cell of the
+    // computational grid for this stage.
+    switch(IP.i_Reconstruction) {
+      case RECONSTRUCTION_GREEN_GAUSS :
+	Linear_Reconstruction_GreenGauss(SolnBlk,IP.i_Limiter);
+	break;
+      case RECONSTRUCTION_LINEAR_LEAST_SQUARES :
+	Linear_Reconstruction_LeastSquares(SolnBlk,IP.i_Limiter);
+	break;
+    //case RECONSTRUCTION_QUADRATIC_LEAST_SQUARES :
+    //  Quadratic_Reconstruction_LeastSquares(SolnBlk,IP.i_Limiter);
+    //  break;
+      default:
+	Linear_Reconstruction_LeastSquares(SolnBlk,IP.i_Limiter);
+	break;
+    }
+  } /* endif */
 
   // Evaluate the time rate of change of the solution (i.e., the
   // solution residuals) using a second-order limited upwind scheme
@@ -6267,42 +6178,6 @@ int dUdt_Multistage_Explicit(HighTemp2D_Quad_Block &SolnBlk,
 
   }
 
-  /* Removed on Jan. 29th, b/c adding Automatic Wall Treatment
-
-  if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA &&
-      IP.i_Turbulent_BCs == TURBULENT_BC_STANDARD_WALL_FUNCTION) {
-    // Zero the residuals of the turbulence quantities if the current
-    // cell is within the log layer (yplus is less than the specified
-    // value of yplus_outer_layer).
-    for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
-      for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
-	//if (SolnBlk.Wall[i][j].yplus <= IP.yplus_outer_layer) {
-	if (SolnBlk.Wall[i][j].yplus <= IP.yplus_buffer_layer ||
-	    (SolnBlk.Wall[i][j].yplus <= IP.yplus_outer_layer &&
-	     (SolnBlk.Wall[i+1][j].yplus <= IP.yplus_buffer_layer ||
-	      SolnBlk.Wall[i-1][j].yplus <= IP.yplus_buffer_layer ||
-	      SolnBlk.Wall[i][j+1].yplus <= IP.yplus_buffer_layer ||
-	      SolnBlk.Wall[i][j-1].yplus <= IP.yplus_buffer_layer))) {
-	  SolnBlk.dUdt[i][j][k_residual].dk = ZERO;
-	  SolnBlk.dUdt[i][j][k_residual].domega = ZERO;
-	}
-      }
-    }
-  } else if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA &&
-	     IP.i_Turbulent_BCs == TURBULENT_BC_DIRECT_INTEGRATION) {
-    // Zero the residuals of the specific dissipation if the current
-    // cell is within the viscous sublayer (yplus is less than the
-    // specified value of yplus_sublayer).
-    for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
-      for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
-	if (SolnBlk.Wall[i][j].yplus <= IP.yplus_sublayer) {
-	  SolnBlk.dUdt[i][j][k_residual].domega = ZERO;
-	}
-      }
-    }
-  }
-  */
-
   // Zero the residuals for the turbulence variables according to
   // the turbulence boundary condition.
   error_flag = Turbulence_Zero_Residual(SolnBlk,i_stage,IP);
@@ -6499,75 +6374,3 @@ int Update_Solution_Multistage_Explicit(HighTemp2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Half_Mesh_Resolution                                      *
- *                                                                    *
- * This routine is called by the multigrid allocation function and in *
- * turn calls the Grid2D_Quad_Block version.  This layer has been     *
- * included to facilitate mesh adjustment for the embedded boundary   *
- * code.                                                              *
- *                                                                    *
- **********************************************************************/
-/*
-int Half_Mesh_Resolution(HighTemp2D_Quad_Block &SolnBlk_Half,
-			 HighTemp2D_Quad_Block &SolnBlk_Original) {
-
-  // Call half mesh resolution routine.
-  Half_Mesh_Resolution(SolnBlk_Half.Grid,SolnBlk_Original.Grid);
-
-  // Half mesh resolution successful.
-  return 0;
-
-}
-*/
-/**********************************************************************
- * Routine: Zero_Residuals_on_Coarse_Grid                             *
- *                                                                    *
- * Zeroes the residuals for the turbulence parameters k and omega of  *
- * the given 2D quadrilateral multi-block solution block.  Used by    *
- * the FAS-multigrid routine so that k and omega are not updated on   *
- * on the coarse grid levels.                                         *
- *                                                                    *
- **********************************************************************/
-/*
-int Zero_Residuals_on_Coarse_Grid(HighTemp2D_Quad_Block &SolnBlk,
-				  HighTemp2D_Input_Parameters &IP,
-				  const int &i_stage) {
-
-  int k_residual;
-
-  switch(IP.i_Time_Integration) {
-  case TIME_STEPPING_EXPLICIT_EULER :
-    k_residual = 0;
-    break;
-  case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
-    k_residual = 0;
-    break;
-  case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
-    k_residual = 0;
-    if (IP.N_Stage == 4) {
-      if (i_stage == 4) k_residual = 0;
-      else k_residual = i_stage - 1;
-    }
-    return 7777777;
-    break;
-  case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
-    k_residual = 0;
-    break;
-  default:
-    k_residual = 0;
-    break;
-  };
-
-  for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
-    for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
-      SolnBlk.dUdt[i][j][k_residual].dk = ZERO;
-      SolnBlk.dUdt[i][j][k_residual].domega = ZERO;
-    }
-  }
-
-  // Residuals for k and omega zeroed.
-  return 0;
-
-}
-*/

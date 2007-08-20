@@ -195,7 +195,7 @@ void Output_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
  *                                                      *
  ********************************************************/
 void Output_Cells_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
-			  //Gaussian2D_Input_Parameters &IP,
+			  Gaussian2D_Input_Parameters &IP,
                           const int Number_of_Time_Steps,
                           const double &Time,
                           const int Block_Number,
@@ -207,7 +207,7 @@ void Output_Cells_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
     /* Ensure boundary conditions are updated before
        outputting solution */
 
-    //BCs(SolnBlk,IP);  //I took this out for now so it would compile with embedded boundaries2D
+    BCs(SolnBlk,IP);
 
     Out_File << setprecision(14);
     if (Output_Title) {

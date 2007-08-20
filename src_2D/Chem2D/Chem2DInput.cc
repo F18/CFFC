@@ -107,7 +107,7 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.i_ICs = IC_UNIFORM;
 
     /* Directory Path */
-    IP.get_cfdkit_path();
+    IP.get_cffc_path();
 
     /* Debug Level */
     IP.debug_level = 0;  //default no debug information
@@ -535,7 +535,7 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
       }  
           
       //set the data for each
-      IP.get_cfdkit_path();
+      IP.get_cffc_path();
       IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
 			     IP.Mach_Number_Reference,IP.Schmidt); 
       IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
@@ -1146,7 +1146,7 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
       }  
 
       //set the data for each
-      IP.get_cfdkit_path();
+      IP.get_cffc_path();
       IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
 			     IP.Mach_Number_Reference,IP.Schmidt); 
       IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
@@ -3313,32 +3313,32 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       IP.Input_File.getline(buffer,sizeof(buffer));
       if (IP.Multigrid_IP.Number_of_Smooths_on_Coarsest_Level < 0) i_command = INVALID_INPUT_VALUE;
   
-    } else if (strcmp(IP.Next_Control_Parameter, "MG_Regular_Absolute_Tolerance") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Absolute_Convergence_Tolerance") == 0) {
        i_command = 215;
        IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.Multigrid_IP.reg_abs_tol;
+       IP.Input_File >> IP.Multigrid_IP.Absolute_Convergence_Tolerance;
        IP.Input_File.getline(buffer, sizeof(buffer));
   
-    } else if (strcmp(IP.Next_Control_Parameter, "MG_Regular_Relative_Tolerance") == 0) {
-       i_command = 215;
+    } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Relative_Convergence_Tolerance") == 0) {
+       i_command = 216;
        IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.Multigrid_IP.reg_rel_tol;
+       IP.Input_File >> IP.Multigrid_IP.Relative_Convergence_Tolerance;
        IP.Input_File.getline(buffer, sizeof(buffer));
   
-    } else if (strcmp(IP.Next_Control_Parameter, "MG_Full_Absolute_Tolerance") == 0) {
-       i_command = 215;
+    } else if (strcmp(IP.Next_Control_Parameter, "FMG_Absolute_Convergence_Tolerance") == 0) {
+       i_command = 217;
        IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.Multigrid_IP.full_abs_tol;
+       IP.Input_File >> IP.Multigrid_IP.FMG_Absolute_Convergence_Tolerance;
        IP.Input_File.getline(buffer, sizeof(buffer));
   
-    } else if (strcmp(IP.Next_Control_Parameter, "MG_Full_Relative_Tolerance") == 0) {
-       i_command = 215;
+    } else if (strcmp(IP.Next_Control_Parameter, "FMG_Relative_Convergence_Tolerance") == 0) {
+       i_command = 218;
        IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.Multigrid_IP.full_rel_tol;
+       IP.Input_File >> IP.Multigrid_IP.FMG_Relative_Convergence_Tolerance;
        IP.Input_File.getline(buffer, sizeof(buffer));
 
     } else if (strcmp(IP.Next_Control_Parameter,"Multigrid_Smoothing_Type") == 0) {
-      i_command = 216;
+      i_command = 219;
       Get_Next_Input_Control_Parameter(IP);
       strcpy(IP.Multigrid_IP.Smoothing_Type,IP.Next_Control_Parameter);
       if (strcmp(IP.Multigrid_IP.Smoothing_Type,"Explicit_Euler") == 0) {
@@ -3358,21 +3358,21 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       }
 
     } else if (strcmp(IP.Next_Control_Parameter,"Ncycles_Regular_Multigrid") == 0) {
-      i_command = 217;
+      i_command = 220;
       IP.Line_Number = IP.Line_Number + 1;
       IP.Input_File >> IP.Multigrid_IP.Ncycles_Regular_Multigrid;
       IP.Input_File.getline(buffer,sizeof(buffer));
       if (IP.Multigrid_IP.Ncycles_Regular_Multigrid < 0) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter,"Ncycles_Full_Multigrid") == 0) {
-      i_command = 218;
+      i_command = 221;
       IP.Line_Number = IP.Line_Number + 1;
       IP.Input_File >> IP.Multigrid_IP.Ncycles_Full_Multigrid;
       IP.Input_File.getline(buffer,sizeof(buffer));
       if (IP.Multigrid_IP.Ncycles_Full_Multigrid < 0) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter,"Physical_Time_Integration_Type") == 0) {
-      i_command = 219;
+      i_command = 222;
       Get_Next_Input_Control_Parameter(IP);
       strcpy(IP.Multigrid_IP.Physical_Time_Integration_Type,
 	     IP.Next_Control_Parameter);
@@ -3400,18 +3400,24 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       }
 
     } else if (strcmp(IP.Next_Control_Parameter,"Physical_Time_CFL_Number") == 0) {
-      i_command = 220;
+      i_command = 223;
       IP.Line_Number = IP.Line_Number + 1;
       IP.Input_File >> IP.Multigrid_IP.Physical_Time_CFL_Number;
       IP.Input_File.getline(buffer,sizeof(buffer));
       if (IP.Multigrid_IP.Physical_Time_CFL_Number <= ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter,"Dual_Time_Convergence_Residual_Level") == 0) {
-      i_command = 221;
+      i_command = 224;
       IP.Line_Number = IP.Line_Number + 1;
       IP.Input_File >> IP.Multigrid_IP.Dual_Time_Convergence_Residual_Level;
       IP.Input_File.getline(buffer,sizeof(buffer));
       if (IP.Multigrid_IP.Dual_Time_Convergence_Residual_Level < ZERO) i_command = INVALID_INPUT_VALUE;
+
+   } else if (strcmp(IP.Next_Control_Parameter,"Multigrid_Write_Output_Cells_Frequency") == 0) {
+      i_command = 225;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.Write_Output_Cells_Frequency;
+      IP.Input_File.getline(buffer,sizeof(buffer));
 
        ////////////////////////////////////////////////////////////////////
        // SPECIFIED BOUNDARY CONDITIONS                                  //

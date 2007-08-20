@@ -917,24 +917,23 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 
   }  //END EXPLICT NON-MULTIGRID
 
- 
   /*************************************************************************************************************************/
   /************************ APPLY Newton_Krylov_Schwarz ********************************************************************/
   /*************************************************************************************************************************/
   if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
-    time_t start_NKS, end_NKS;
+     time_t start_NKS, end_NKS;
 
      if (CFFC_Primary_MPI_Processor()) {
         error_flag = Open_Progress_File(residual_file,
-	 			        Input_Parameters.Output_File_Name,
+	  			        Input_Parameters.Output_File_Name,
 				        number_of_time_steps,
 					Local_SolnBlk[0].residual_variable,
 					Local_SolnBlk[0].Number_of_Residual_Norms);
         if (error_flag) {
            cout << "\n Chem2D ERROR: Unable to open residual file for Chem2D calculation.\n";
            cout.flush();
-        } 
-     }
+        } /* endif */
+     } /* endif */
 
      CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
      CFFC_Broadcast_MPI(&error_flag, 1);

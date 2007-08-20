@@ -250,16 +250,18 @@ class FAS_Multigrid2D_Solver {
   void deallocate(void);
 
   //! Output the node-centred value information for each grid level.
-  int Output_Multigrid(int number_of_time_steps,
-		       double Time,
-					 bool writing_intermediate_soln = false, 
-					 double l2_norm = -1.0, double l2_norm_rel = -1.0);
+  int Output_Multigrid(int &number_of_time_steps,
+		       double &Time,
+		       bool writing_intermediate_soln = false, 
+		       double l2_norm = -1.0, 
+                       double l2_norm_rel = -1.0);
 
   //! Output the cell-centred value information for each grid level.
-  int Output_Multigrid_Cells(int number_of_time_steps,
-			     double Time, 
-					 bool writing_intermediate_soln = false, 
-					 double l2_norm = -1.0, double l2_norm_rel = -1.0);
+  int Output_Multigrid_Cells(int &number_of_time_steps,
+			     double &Time, 
+			     bool writing_intermediate_soln = false, 
+			     double l2_norm = -1.0, 
+                             double l2_norm_rel = -1.0);
 
   //! Output the node information for each grid level.
   int Output_Multigrid_Nodes(int &number_of_time_steps,
@@ -704,16 +706,17 @@ template <class Soln_Var_Type,
 int FAS_Multigrid2D_Solver<Soln_Var_Type,
 			   Quad_Soln_Block,
 			   Quad_Soln_Input_Parameters>::
-Output_Multigrid(int number_of_time_steps,
-		double Time,
-		bool writing_intermediate_soln,
-		double l2_norm, double l2_norm_rel) {
+Output_Multigrid(int &number_of_time_steps,
+		 double &Time,
+		 bool writing_intermediate_soln,
+		 double l2_norm, 
+                 double l2_norm_rel) {
 
   int i, i_output_title;
   char prefix[256], extension[256], output_file_name[256];
   char *output_file_name_ptr;
   ofstream output_file;
-	int max_level = (writing_intermediate_soln ? 1 : IP->Multigrid_IP.Levels);
+  int max_level = (writing_intermediate_soln ? 1 : IP->Multigrid_IP.Levels);
 
   // Determine main prefix of output data file names.
   i = 0;
@@ -734,10 +737,10 @@ Output_Multigrid(int number_of_time_steps,
     strcpy(output_file_name,prefix);
     sprintf(extension,"%.2d",level);
     strcat(output_file_name,extension);
-		if (writing_intermediate_soln) {
-			sprintf(extension,"_n1%.4d",number_of_time_steps);
-			strcat(output_file_name,extension);
-		}
+    if (writing_intermediate_soln) {
+       sprintf(extension,"_n1%.4d",number_of_time_steps);
+       strcat(output_file_name,extension);
+    }
     strcat(output_file_name,"_cpu");
 
     // Determine output data file name for this processor.
@@ -789,17 +792,17 @@ template <class Soln_Var_Type,
 int FAS_Multigrid2D_Solver<Soln_Var_Type,
 			   Quad_Soln_Block,
 			   Quad_Soln_Input_Parameters>::
-Output_Multigrid_Cells(int number_of_time_steps,
-		double Time, 
-		bool writing_intermediate_soln,
-		double l2_norm, double l2_norm_rel) 
-{
+Output_Multigrid_Cells(int &number_of_time_steps,
+		       double &Time, 
+		       bool writing_intermediate_soln,
+		       double l2_norm, 
+                       double l2_norm_rel) {
 
   int i, i_output_title;
   char prefix[256], extension[256], output_file_name[256];
   char *output_file_name_ptr;
   ofstream output_file;
-	int max_level = (writing_intermediate_soln ? 1 : IP->Multigrid_IP.Levels);
+  int max_level = (writing_intermediate_soln ? 1 : IP->Multigrid_IP.Levels);
 
   // Determine main prefix of output data file names.
   i = 0;
@@ -820,10 +823,10 @@ Output_Multigrid_Cells(int number_of_time_steps,
     strcpy(output_file_name,prefix);
     sprintf(extension,"%.2d",level);
     strcat(output_file_name,extension);
-		if (writing_intermediate_soln) {
-			sprintf(extension,"_n1%.4d",number_of_time_steps);
-			strcat(output_file_name,extension);
-		}
+    if (writing_intermediate_soln) {
+       sprintf(extension,"_n1%.4d",number_of_time_steps);
+       strcat(output_file_name,extension);
+    }
     strcat(output_file_name,"_cpu");
 
     // Determine output data file name for this processor.
@@ -841,7 +844,7 @@ Output_Multigrid_Cells(int number_of_time_steps,
     for (int nb = 0; nb < List_of_Local_Solution_Blocks[level].Nblk; nb++) {
       if (List_of_Local_Solution_Blocks[level].Block[nb].used == ADAPTIVEBLOCK2D_USED) {
 	Output_Cells_Tecplot(Local_SolnBlk[level][nb],
-			*IP,
+			     *IP,
 			     number_of_time_steps,
 			     Time,
 			     List_of_Local_Solution_Blocks[level].Block[nb].gblknum,
@@ -1026,8 +1029,10 @@ Restrict_Residuals(const int &Level_Fine) {
       Nghost = Local_SolnBlk[Level_Fine][nb].Nghost;
 
       // Loop through the coarse cells.
-      for (int i_coarse = Local_SolnBlk[Level_Coarse][nb].ICl-nghost; i_coarse <= Local_SolnBlk[Level_Coarse][nb].ICu+nghost; i_coarse++) {
-	for (int j_coarse = Local_SolnBlk[Level_Coarse][nb].JCl-nghost; j_coarse <= Local_SolnBlk[Level_Coarse][nb].JCu+nghost; j_coarse++) {
+      for (int i_coarse = Local_SolnBlk[Level_Coarse][nb].ICl-nghost; 
+               i_coarse <= Local_SolnBlk[Level_Coarse][nb].ICu+nghost; i_coarse++) {
+	for (int j_coarse = Local_SolnBlk[Level_Coarse][nb].JCl-nghost; 
+                 j_coarse <= Local_SolnBlk[Level_Coarse][nb].JCu+nghost; j_coarse++) {
 	  // Determine the (i,j) index of the corresponding SW corner
 	  // fine cell.
 	  i_fine = 2*(i_coarse-Nghost)+Nghost;
@@ -1479,6 +1484,7 @@ Prolong_Solution_Blocks(const int &Level_Coarse) {
 						Local_SolnBlk[Level_Coarse][nb].Grid.Cell[i_coarse][j_coarse].Xc,
 						Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						Ufine);
+
 	    // If fine grid cell-centre falls outside of the NW coarse
 	    // grid interpolants then try the NE coarse grid solution
 	    // states as the interpolants ([i,i+1],[j,j+1]).
@@ -1524,6 +1530,7 @@ Prolong_Solution_Blocks(const int &Level_Coarse) {
 						  Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						  Ufine);
 	    }
+
 	    // If none of the four sets of possible interpolants 
 	    // provide a suitable set of interpolants then restart
 	    // the prolongation associated with the current coarse
@@ -1736,6 +1743,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						  Local_SolnBlk[Level_Coarse][nb].Grid.Cell[i_coarse][j_coarse-1].Xc,
 						  Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						  Uchange);
+
 	      // If fine grid cell-centre falls outside of the SW coarse
 	      // grid interpolants then try the NW coarse grid solution
 	      // states as the interpolants ([i-1,i],[j,j+1]).
@@ -1751,6 +1759,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						    Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						    Uchange);
 	      }
+
 	      // If fine grid cell-centre falls outside of the NW coarse
 	      // grid interpolants then try the SE coarse grid solution
 	      // states as the interpolants ([i,i+1],[j-1,j]).
@@ -1781,6 +1790,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						    Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						    Uchange);
 	      }
+
 	      // If none of the four sets of possible interpolants 
 	      // provide a suitable set of interpolants then restart
 	      // the prolongation associated with the current coarse
@@ -1844,6 +1854,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						  Local_SolnBlk[Level_Coarse][nb].Grid.Cell[i_coarse+1][j_coarse-1].Xc,
 						  Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						  Uchange);
+
 	      // If fine grid cell-centre falls outside of the SE coarse
 	      // grid interpolants then try the NE coarse grid solution
 	      // states as the interpolants ([i,i+1],[j,j+1]).
@@ -1859,6 +1870,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						    Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						    Uchange);
 	      }
+
 	      // If fine grid cell-centre falls outside of the NE coarse
 	      // grid interpolants then try the SW coarse grid solution
 	      // states as the interpolants ([i-1,i],[j-1,j]).
@@ -1874,6 +1886,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						    Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						    Uchange);
 	      }
+
 	      // If fine grid cell-centre falls outside of the SW coarse
 	      // grid interpolants then try the N coarse grid solution
 	      // states as the interpolants ([i-1,i],[j,j+1]).
@@ -1889,6 +1902,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						    Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						    Uchange);
 	      }
+
 	      // If none of the four sets of possible interpolants 
 	      // provide a suitable set of interpolants then restart
 	      // the prolongation associated with the current coarse
@@ -1952,6 +1966,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						  Local_SolnBlk[Level_Coarse][nb].Grid.Cell[i_coarse+1][j_coarse].Xc,
 						  Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						  Uchange);
+
 	      // If fine grid cell-centre falls outside of the NE coarse
 	      // grid interpolants then try the SE coarse grid solution
 	      // states as the interpolants ([i,i+1],[j-1,j]).
@@ -1967,6 +1982,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						  Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						  Uchange);
 	      }
+
 	      // If fine grid cell-centre falls outside of the SE coarse
 	      // grid interpolants then try the NW coarse grid solution
 	      // states as the interpolants ([i-1,i],[j,j+1]).
@@ -1982,6 +1998,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						    Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						    Uchange);
 	      }
+
 	      // If fine grid cell-centre falls outside of the NW coarse
 	      // grid interpolants then try the SW coarse grid solution
 	      // states as the interpolants ([i-1,i],[j-1,j]).
@@ -1997,6 +2014,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						    Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						    Uchange);
 	      }
+
 	      // If none of the four sets of possible interpolants 
 	      // provide a suitable set of interpolants then restart
 	      // the prolongation associated with the current coarse
@@ -2060,6 +2078,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						  Local_SolnBlk[Level_Coarse][nb].Grid.Cell[i_coarse][j_coarse].Xc,
 						  Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						  Uchange);
+
 	      // If fine grid cell-centre falls outside of the NW coarse
 	      // grid interpolants then try the NE coarse grid solution
 	      // states as the interpolants ([i,i+1],[j,j+1]).
@@ -2075,6 +2094,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						    Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						    Uchange);
 	      }
+
 	      // If fine grid cell-centre falls outside of the NE coarse
 	      // grid interpolants then try the SW coarse grid solution
 	      // states as the interpolants ([i-1,i],[j-1,j]).
@@ -2090,6 +2110,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						    Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						    Uchange);
 	      }
+
 	      // If fine grid cell-centre falls outside of the SW coarse
 	      // grid interpolants then try the SE coarse grid solution
 	      // states as the interpolants ([i,i+1],[j-1,j]).
@@ -2105,6 +2126,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						    Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						    Uchange);
 	      }
+
 	      // If none of the four sets of possible interpolants 
 	      // provide a suitable set of interpolants then restart
 	      // the prolongation associated with the current coarse
@@ -2772,7 +2794,6 @@ Residual_Evaluation_for_Multigrid(const int &Level,
       }
     }
   }
-
 
   // Zero the residual for state variables that should not be updated
   // on the coarse meshes.  For example, the turbulent kinetic energy,
@@ -3458,9 +3479,9 @@ Execute(const int &batch_flag,
 	residual_max_norm = CFFC_Maximum_MPI(residual_max_norm);
 
 	if (cycles == 2) {
-		initial_residual_l2_norm = residual_l2_norm;
-	} else if (cycles > 2 && fabs(initial_residual_l2_norm) > 1e-10) {
-			ratio_residual_l2_norm = residual_l2_norm / initial_residual_l2_norm;
+	   initial_residual_l2_norm = residual_l2_norm;
+	} else if (cycles > 2 && fabs(initial_residual_l2_norm) > NANO) {
+	   ratio_residual_l2_norm = residual_l2_norm / initial_residual_l2_norm;
 	}
 
 	// Update CPU time used for the calculation so far.
@@ -3523,98 +3544,86 @@ Execute(const int &batch_flag,
 				  residual_max_norm);
 	}
 
-	if (IP->Multigrid_IP.MG_Write_Output_Cells_Freq > 0 &&
-			top_level == FINEST_LEVEL &&
-	    (number_of_time_steps % IP->Multigrid_IP.MG_Write_Output_Cells_Freq == 0)) {
-	  if (!batch_flag) { 
-			cout << endl << " Writing out solution in Tecplot format at time step ";
-			cout << number_of_time_steps << "." << endl; 
-		}
-		Output_Multigrid_Cells(number_of_time_steps, Time, true, residual_l2_norm, ratio_residual_l2_norm);
-		Output_Multigrid(      number_of_time_steps, Time, true, residual_l2_norm, ratio_residual_l2_norm);
-	}
+        // Periodically write out the nodal and cell solution information.
+	if (IP->Multigrid_IP.Write_Output_Cells_Frequency > 0 &&
+	    top_level == FINEST_LEVEL &&
+	    (number_of_time_steps % IP->Multigrid_IP.Write_Output_Cells_Frequency == 0)) {
+	   if (!batch_flag) { 
+	      cout << endl << " Writing out solution in Tecplot format at iteration level ";
+	      cout << number_of_time_steps << "." << endl; 
+	   }
+	   Output_Multigrid_Cells(number_of_time_steps, Time, true, residual_l2_norm, ratio_residual_l2_norm);
+	   Output_Multigrid(number_of_time_steps, Time, true, residual_l2_norm, ratio_residual_l2_norm);
+	} /* endif */
+
+	/* Check if the maximum number of time steps has been reached 
+	   or if the residual has dropped below the prescribed level for
+	   a FMG cycle */
 
 	bool please_stop = false;
-	// We stop if:
-	// - we have exceeded the maximum number of time steps (iterations), or,
-	// - the 2-norm of the residual is less than the absolute or
-	//   relative tolerances. For this, let us allow the code run at
-	//   least twice before checking for convergence.
-	// 
-	// Previously (due to Eric Li I believe) the convergence check was
-	// only active for full MG cycles. Now the checks are active for
-	// both full and regular MG cycles. Is this right?
-	//   - Alistair Wood Tue Oct 17 2006 
-	//
-	// Never mind. We now have absolute and relative tests for both full and regular.
-	//   - Alistair Wood Tue Jan 23 2007 
 	if (number_of_time_steps >= IP->Maximum_Number_of_Time_Steps) {
-		please_stop = true;
+	  please_stop = true;
 	}
-
 	if (cycles > 2) {
-
-		if (top_level == FINEST_LEVEL) {
-
-			if (residual_l2_norm < IP->Multigrid_IP.reg_abs_tol) {
-				please_stop = true;
-				if (!batch_flag) {
-					int tempp = cout.precision(); cout.precision(2); 
-					cout.setf(ios::scientific);
-					cout << endl << "Regular MG: met absolute convergence tolerance";
-					cout << " (" << residual_l2_norm << " < ";
-					cout << IP->Multigrid_IP.reg_abs_tol << ")." << endl;
-					cout.precision(tempp);
-					cout.unsetf(ios::scientific);
-				}
-			}
-
-			if (ratio_residual_l2_norm < IP->Multigrid_IP.reg_rel_tol) {
-				please_stop = true;
-				if (!batch_flag) {
-					int tempp = cout.precision(); cout.precision(2);
-					cout.setf(ios::scientific);
-					cout << endl << "Regular MG: met relative convergence tolerance";
-					cout << " (" << ratio_residual_l2_norm << " < ";
-					cout << IP->Multigrid_IP.reg_rel_tol << ")." << endl;
-					cout.precision(tempp);
-					cout.unsetf(ios::scientific);
-				}
-			}
-
-		} else { // otherwise we are doing full MG.
-
-			if (residual_l2_norm < IP->Multigrid_IP.full_abs_tol) {
-				please_stop = true;
-				if (!batch_flag) {
-					int tempp = cout.precision(); cout.precision(2);
-					cout.setf(ios::scientific);
-					cout << endl << "Top Level: " << top_level;
-					cout << " Finest level: " << FINEST_LEVEL << ".";
-					cout << " Met absolute convergence tolerance";
-					cout << " (" << residual_l2_norm << " < ";
-					cout << IP->Multigrid_IP.full_abs_tol << ")." << endl;
-					cout.precision(tempp);
-					cout.unsetf(ios::scientific);
-				}
-			}
-
-			if (ratio_residual_l2_norm < IP->Multigrid_IP.full_rel_tol) {
-				please_stop = true;
-				if (!batch_flag) {
-					int tempp = cout.precision(); cout.precision(2);
-					cout.setf(ios::scientific);
-					cout << endl << "Top Level: " << top_level;
-					cout << " Finest level: " << FINEST_LEVEL << ".";
-					cout << " Met relative convergence tolerance";
-					cout << " (" << ratio_residual_l2_norm << " < ";
-					cout << IP->Multigrid_IP.full_rel_tol << ")." << endl;
-					cout.precision(tempp);
-					cout.unsetf(ios::scientific);
-				}
-			}
-
-		}
+	   if (top_level == FINEST_LEVEL) { // regular multigrid cycles
+   	      if (residual_l2_norm < IP->Multigrid_IP.Absolute_Convergence_Tolerance) {
+	         please_stop = true;
+	  	 if (!batch_flag) {
+ 		    int tempp = cout.precision(); 
+                    cout.precision(2); 
+		    cout.setf(ios::scientific);
+ 		    cout << endl << "Regular Multigrid: met absolute convergence tolerance";
+		    cout << " (" << residual_l2_norm << " < ";
+		    cout << IP->Multigrid_IP.Absolute_Convergence_Tolerance << ")." << endl;
+		    cout.precision(tempp);
+		    cout.unsetf(ios::scientific);
+		 } /* endif */
+	      } /* endif */
+  	      if (ratio_residual_l2_norm < IP->Multigrid_IP.Relative_Convergence_Tolerance) {
+ 		 please_stop = true;
+		 if (!batch_flag) {
+		    int tempp = cout.precision(); 
+                    cout.precision(2);
+		    cout.setf(ios::scientific);
+	  	    cout << endl << "Regular Multigrid: met relative convergence tolerance";
+		    cout << " (" << ratio_residual_l2_norm << " < ";
+		    cout << IP->Multigrid_IP.Relative_Convergence_Tolerance << ")." << endl;
+		    cout.precision(tempp);
+		    cout.unsetf(ios::scientific);
+		 } /* endif */
+	      } /* endif */
+	   } else { // otherwise doing full multigrid cycles.
+	      if (residual_l2_norm < IP->Multigrid_IP.FMG_Absolute_Convergence_Tolerance) {
+		 please_stop = true;
+		 if (!batch_flag) {
+		    int tempp = cout.precision(); 
+                    cout.precision(2);
+		    cout.setf(ios::scientific);
+		    cout << endl << "Top Level: " << top_level;
+		    cout << " Finest level: " << FINEST_LEVEL << ".";
+		    cout << " Met absolute convergence tolerance";
+		    cout << " (" << residual_l2_norm << " < ";
+		    cout << IP->Multigrid_IP.FMG_Absolute_Convergence_Tolerance << ")." << endl;
+		    cout.precision(tempp);
+		    cout.unsetf(ios::scientific);
+		 } /* endif */
+	      } /* endif */
+	      if (ratio_residual_l2_norm < IP->Multigrid_IP.FMG_Relative_Convergence_Tolerance) {
+		 please_stop = true;
+		 if (!batch_flag) {
+		    int tempp = cout.precision(); 
+                    cout.precision(2);
+		    cout.setf(ios::scientific);
+		    cout << endl << "Top Level: " << top_level;
+		    cout << " Finest level: " << FINEST_LEVEL << ".";
+		    cout << " Met relative convergence tolerance";
+		    cout << " (" << ratio_residual_l2_norm << " < ";
+		    cout << IP->Multigrid_IP.FMG_Relative_Convergence_Tolerance << ")." << endl;
+		    cout.precision(tempp);
+		    cout.unsetf(ios::scientific);
+		 } /* endif */
+	      } /* endif */
+  	   } /* endif */
 	} // if (cycles > 2) for convergence test
 
 	if (please_stop) {
@@ -3624,7 +3633,7 @@ Execute(const int &batch_flag,
 						  Time*THOUSAND,
 						  total_cpu_time,
 						  residual_l2_norm,
-							ratio_residual_l2_norm,
+						  ratio_residual_l2_norm,
 						  first_step,
 						  number_of_time_steps);
 	  break;
@@ -3646,9 +3655,9 @@ Execute(const int &batch_flag,
 	  }
 	  // Set the limiter freezing flag.
 	  limiter_freezing = ON;
-		if (CFFC_Primary_MPI_Processor()) {
-			cout << "Freezing Gradient Limiters." << endl;
-		}
+  	  if (CFFC_Primary_MPI_Processor()) {
+	     cout << "Freezing Gradient Limiters." << endl;
+	  }
 	}
 
 	// Update the solution for the next time-step/cylce using the 
@@ -4035,14 +4044,14 @@ dUdtau_Multistage_Explicit(const int &Level,
       for (int j = Local_SolnBlk[Level][nb].JCl; j <= Local_SolnBlk[Level][nb].JCu; j++) {
 	for (int i = Local_SolnBlk[Level][nb].ICl; i <= Local_SolnBlk[Level][nb].ICu; i++) {
 	  if (IP->Multigrid_IP.i_Physical_Time_Integration == TIME_STEPPING_IMPLICIT_EULER) {
-	    Local_SolnBlk[Level][nb].dUdt[i][j][k_residual] -= (IP->CFL_Number*Local_SolnBlk[Level][nb].dt[i][j])*(Local_SolnBlk[Level][nb].U[i][j] -
-														   DTS_SolnBlk[Level][nb].Un[i][j])/
-		                                                                                                  (IP->Multigrid_IP.Physical_Time_CFL_Number*dt);
+	    Local_SolnBlk[Level][nb].dUdt[i][j][k_residual] -= 
+              (IP->CFL_Number*Local_SolnBlk[Level][nb].dt[i][j])*(Local_SolnBlk[Level][nb].U[i][j] -
+ 	       DTS_SolnBlk[Level][nb].Un[i][j])/(IP->Multigrid_IP.Physical_Time_CFL_Number*dt);
 	  } else if (IP->Multigrid_IP.i_Physical_Time_Integration == TIME_STEPPING_IMPLICIT_SECOND_ORDER_BACKWARD) {
-	    Local_SolnBlk[Level][nb].dUdt[i][j][k_residual] -= (IP->CFL_Number*Local_SolnBlk[Level][nb].dt[i][j])*(3.0*Local_SolnBlk[Level][nb].U[i][j] -
-														   4.0*DTS_SolnBlk[Level][nb].Un[i][j] +
-														   DTS_SolnBlk[Level][nb].Uo[i][j])/
-		                                                                                                  (TWO*IP->Multigrid_IP.Physical_Time_CFL_Number*dt);
+	    Local_SolnBlk[Level][nb].dUdt[i][j][k_residual] -= 
+              (IP->CFL_Number*Local_SolnBlk[Level][nb].dt[i][j])*(3.0*Local_SolnBlk[Level][nb].U[i][j] -
+	       4.0*DTS_SolnBlk[Level][nb].Un[i][j] + DTS_SolnBlk[Level][nb].Uo[i][j])/
+              (TWO*IP->Multigrid_IP.Physical_Time_CFL_Number*dt);
 	  }
 	}
       }
@@ -4109,9 +4118,11 @@ Apply_Melson_Time_Step(const int &Level,
       for (int j = Local_SolnBlk[Level][nb].JCl; j <= Local_SolnBlk[Level][nb].JCu; j++) {
 	for (int i = Local_SolnBlk[Level][nb].ICl; i <= Local_SolnBlk[Level][nb].ICu; i++) {
 	  if (IP->Multigrid_IP.i_Physical_Time_Integration == TIME_STEPPING_IMPLICIT_EULER) {
- 	    Local_SolnBlk[Level][nb].dUdt[i][j][k_residual] /= ONE + ONE*IP->CFL_Number*Local_SolnBlk[Level][nb].dt[i][j]/(IP->Multigrid_IP.Physical_Time_CFL_Number*dt);
+ 	    Local_SolnBlk[Level][nb].dUdt[i][j][k_residual] /= ONE + 
+               ONE*IP->CFL_Number*Local_SolnBlk[Level][nb].dt[i][j]/(IP->Multigrid_IP.Physical_Time_CFL_Number*dt);
 	  } else if (IP->Multigrid_IP.i_Physical_Time_Integration == TIME_STEPPING_IMPLICIT_SECOND_ORDER_BACKWARD) {
- 	    Local_SolnBlk[Level][nb].dUdt[i][j][k_residual] /= ONE + 1.5*IP->CFL_Number*Local_SolnBlk[Level][nb].dt[i][j]/(IP->Multigrid_IP.Physical_Time_CFL_Number*dt);
+ 	    Local_SolnBlk[Level][nb].dUdt[i][j][k_residual] /= ONE + 
+               1.5*IP->CFL_Number*Local_SolnBlk[Level][nb].dt[i][j]/(IP->Multigrid_IP.Physical_Time_CFL_Number*dt);
 	  }
 	}
       }

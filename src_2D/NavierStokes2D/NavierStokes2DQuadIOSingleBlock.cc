@@ -136,6 +136,7 @@ void Output_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
  *                                                                    *
  **********************************************************************/
 void Output_Cells_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
+		          NavierStokes2D_Input_Parameters &IP,
                           const int Number_of_Time_Steps,
                           const double &Time,
                           const int Block_Number,
@@ -208,8 +209,7 @@ void Output_Cells_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
  	SolnBlk.W[i][j].ComputeViscousTerms(SolnBlk.dWdx[i][j],
  					    SolnBlk.dWdy[i][j],
  					    SolnBlk.Grid.Cell[i][j].Xc,
- 					    SolnBlk.Axisymmetric,
- 					    OFF);
+ 					    SolnBlk.Axisymmetric);
  	SolnBlk.U[i][j].tau = SolnBlk.W[i][j].tau;
  	SolnBlk.U[i][j].q = SolnBlk.W[i][j].q;
       }
@@ -344,8 +344,7 @@ void Output_Nozzleless_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
  	SolnBlk.W[i][j].ComputeViscousTerms(SolnBlk.dWdx[i][j],
  					    SolnBlk.dWdy[i][j],
  					    SolnBlk.Grid.Cell[i][j].Xc,
- 					    SolnBlk.Axisymmetric,
- 					    OFF);
+ 					    SolnBlk.Axisymmetric);
  	SolnBlk.U[i][j].tau = SolnBlk.W[i][j].tau;
  	SolnBlk.U[i][j].q = SolnBlk.W[i][j].q;
       }

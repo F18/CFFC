@@ -62,6 +62,9 @@
 
 #define	INPUT_PARAMETER_LENGTH_DUSTY2D    128
 
+// Enviroment flag for CFFC root directory path
+#define PATHVAR_DUSTY2D "CFFC_Path"
+
 /*!
  * Class:  Dusty2D_Input_Parameters
  *
@@ -72,6 +75,8 @@ class Dusty2D_Input_Parameters{
 private:
 public:
   //@{ @name Input file parameters.
+  //! CFFC root directory path:
+  char CFFC_Path[INPUT_PARAMETER_LENGTH_DUSTY2D];
   //! Input file name:
   char Input_File_Name[INPUT_PARAMETER_LENGTH_DUSTY2D];
   //! Input file stream:
@@ -314,6 +319,10 @@ public:
   int Number_of_Processors, Number_of_Blocks_Per_Processor;
   //@}
 
+  //@{ @name Obtain the CFFC root directory path:
+  void get_cffc_path();
+  //@}
+
   //@{ @name Input-output operators:
   friend ostream &operator << (ostream &out_file, const Dusty2D_Input_Parameters &IP);
   friend istream &operator >> (istream &in_file, Dusty2D_Input_Parameters &IP);
@@ -321,12 +330,30 @@ public:
 
 };
 
+/*************************************************************
+ * Dusty2D_Input_Parameters::get_cffc_path -- Get CFFC path. *
+ *************************************************************/
+inline void Dusty2D_Input_Parameters::get_cffc_path(){
+  char *string_ptr;
+  // Check to see if environment varible exists.
+  if (getenv(PATHVAR_DUSTY2D) == NULL) {
+    //Set default path
+     string_ptr = "CFFC";
+     strcpy(CFFC_Path, string_ptr);
+  } else {
+     //Set path specified by environment variable
+     strcpy(CFFC_Path, getenv(PATHVAR_DUSTY2D));
+  }
+}
+
 /**********************************************************************
  * Dusty2D_Input_Parameters -- Input-output operators.                *
  **********************************************************************/
 inline ostream &operator << (ostream &out_file,
 			     const Dusty2D_Input_Parameters &IP) {
   out_file << setprecision(6);
+  out_file << "\n  -> CFFC Path: " 
+           << IP.CFFC_Path;
   if (IP.i_Grid == GRID_CARTESIAN_UNIFORM) {
     out_file << "\n\n Solving 2D Dusty equations (IBVP/BVP) on uniform Cartesian mesh.";
   } else {

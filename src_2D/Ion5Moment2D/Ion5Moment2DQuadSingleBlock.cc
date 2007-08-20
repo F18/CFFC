@@ -1140,6 +1140,7 @@ int Restrict_Solution_Block(Ion5Moment2D_Quad_Block &SolnBlk_Coarse,
  *                                                      *
  ********************************************************/
 void Output_Tecplot(Ion5Moment2D_Quad_Block &SolnBlk,
+                    Ion5Moment2D_Input_Parameters &Input_Parameters,
                     const int Number_of_Time_Steps,
                     const double &Time,
                     const int Block_Number,
@@ -1243,6 +1244,7 @@ void Output_Tecplot(Ion5Moment2D_Quad_Block &SolnBlk,
  *                                                      *
  ********************************************************/
 void Output_Cells_Tecplot(Ion5Moment2D_Quad_Block &SolnBlk,
+                          Ion5Moment2D_Input_Parameters &Input_Parameters,
                           const int Number_of_Time_Steps,
                           const double &Time,
                           const int Block_Number,

@@ -132,8 +132,8 @@ class HighTemp2D_Quad_Block{
 private:
 public:
   //@{ @name Solution state arrays:
-  HighTemp2D_pState           **W; //!< Primitive solution state.
-  HighTemp2D_cState           **U; //!< Conserved solution state.
+  HighTemp2D_pState               **W; //!< Primitive solution state.
+  HighTemp2D_cState               **U; //!< Conserved solution state.
   //@}
 
   //@{ @name Grid block information:
@@ -156,16 +156,16 @@ public:
   //@}
 
   //@{ @name Solution gradient arrays:
-  HighTemp2D_pState        **dWdx; //!< Unlimited solution gradient (x-direction).
-  HighTemp2D_pState        **dWdy; //!< Unlimited solution gradient (y-direction).
-  //  HighTemp2D_pState     **ddWdxdx; //!< Unlimited solution gradient (x-direction).
-  //  HighTemp2D_pState     **ddWdxdy; //!< Unlimited solution gradient (x-direction).
-  //  HighTemp2D_pState     **ddWdydy; //!< Unlimited solution gradient (x-direction).
-  HighTemp2D_pState         **phi; //!< Solution slope limiter.
+  HighTemp2D_pState             **dWdx; //!< Unlimited solution gradient (x-direction).
+  HighTemp2D_pState             **dWdy; //!< Unlimited solution gradient (y-direction).
+  //HighTemp2D_pState          **ddWdxdx; //!< Unlimited solution gradient (x-direction).
+  //HighTemp2D_pState          **ddWdxdy; //!< Unlimited solution gradient (x-direction).
+  //HighTemp2D_pState          **ddWdydy; //!< Unlimited solution gradient (x-direction).
+  HighTemp2D_pState              **phi; //!< Solution slope limiter.
   //@}
 
   //@{ @name Solution face gradients arrays. For Diamond Path & Jacobian formation.
-	bool face_grad_arrays_allocated;
+  bool      face_grad_arrays_allocated;
   HighTemp2D_pState       **dWdx_faceN;   //!< north cell face(x-direction).
   HighTemp2D_pState       **dWdy_faceN;   //!< north cell face(y-direction).
   HighTemp2D_pState       **dWdx_faceE;   //!< east  cell face(x-direction).
@@ -173,7 +173,7 @@ public:
 	//@}
 
   //@{ @name Boundary solution flux arrays:
-  HighTemp2D_cState        *FluxN, //!< North boundary solution flux.
+  HighTemp2D_cState            *FluxN, //!< North boundary solution flux.
                                *FluxS, //!< South boundary solution flux.
                                *FluxE, //!< East boundary solution flux.
                                *FluxW; //!< West boundary solution flux.
@@ -187,7 +187,7 @@ public:
   //@}
 
   //@{ @name Boundary condtion reference states:
-  HighTemp2D_pState          *WoN, //!< Boundary condition reference states for north boundary.
+  HighTemp2D_pState              *WoN, //!< Boundary condition reference states for north boundary.
                                  *WoS, //!< Boundary condition reference states for south boundary.
                                  *WoE, //!< Boundary condition reference states for east boundary.
                                  *WoW; //!< Boundary condition reference states for west boundary.
@@ -197,8 +197,10 @@ public:
   Turbulent2DWallData          **Wall; //!< Turbulent wall data.
   //@}
 
-  Vector2D                      Vwall;
-  double                        Twall;
+  //@{ @name Flow constants:
+  Vector2D                     Vwall; //!< Specified wall velocity.
+  double                       Twall; //!< Specified wall temperature.
+  //@}
 
   //! Creation constructor.
   HighTemp2D_Quad_Block(void) {
@@ -244,8 +246,7 @@ public:
     dt = Soln.dt; dUdt = Soln.dUdt; Uo = Soln.Uo;
     dWdx = Soln.dWdx; dWdy = Soln.dWdy; phi = Soln.phi;
     //  ddWdxdx = Soln.ddWdxdx; ddWdxdy = Soln.ddWdxdy; ddWdydy = Soln.ddWdydy;
-		
-		face_grad_arrays_allocated = Soln.face_grad_arrays_allocated;
+    face_grad_arrays_allocated = Soln.face_grad_arrays_allocated;
     dWdx_faceN = Soln.dWdx_faceN; dWdy_faceN = Soln.dWdy_faceN;
     dWdx_faceE = Soln.dWdx_faceE; dWdy_faceE = Soln.dWdy_faceE;
     FluxN = Soln.FluxN; FluxS = Soln.FluxS; 
@@ -267,8 +268,8 @@ public:
   //@{ @name Allocate and deallocate functions.
   //! Allocate memory for structured quadrilateral solution block.
   void allocate(const int Ni, const int Nj, const int Ng);
-	//! Allocate the face gradient arrays. These arrays are only necessary for the implicit (NKS) code.
-	void allocate_face_grad_arrays(void);
+  //! Allocate the face gradient arrays. These arrays are only necessary for the implicit (NKS) code.
+  void allocate_face_grad_arrays(void);
   //! Deallocate memory for structured quadrilateral solution block.
   void deallocate(void);
   //@}
@@ -422,7 +423,7 @@ public:
 };
 
 /**********************************************************************
- * HighTemp2D_Quad_Block::allocate -- Allocate memory.            *
+ * HighTemp2D_Quad_Block::allocate -- Allocate memory.                *
  **********************************************************************/
 inline void HighTemp2D_Quad_Block::allocate(const int Ni, const int Nj, const int Ng) {
   assert(Ni > 1 && Nj > 1 && Ng > 1);
@@ -469,12 +470,9 @@ inline void HighTemp2D_Quad_Block::allocate(const int Ni, const int Nj, const in
 }
 
 inline void HighTemp2D_Quad_Block::allocate_face_grad_arrays(void) {
-
 	if (face_grad_arrays_allocated) { return; }
-	
 	// Call allocate() then call this
 	assert(NCi > 0 && NCj > 0);
-
 	dWdx_faceN = new HighTemp2D_pState*[NCi]; dWdy_faceN = new HighTemp2D_pState*[NCi];
 	dWdx_faceE = new HighTemp2D_pState*[NCi]; dWdy_faceE = new HighTemp2D_pState*[NCi];
 	for (int i = 0; i < NCi; i++) {
@@ -486,12 +484,11 @@ inline void HighTemp2D_Quad_Block::allocate_face_grad_arrays(void) {
 			dWdx_faceE[i][j].Vacuum(); dWdy_faceE[i][j].Vacuum();
 		}
 	}
-
 	face_grad_arrays_allocated = true;
 }
 
 /**********************************************************************
- * HighTemp2D_Quad_Block::deallocate -- Deallocate memory.        *
+ * HighTemp2D_Quad_Block::deallocate -- Deallocate memory.            *
  **********************************************************************/
 inline void HighTemp2D_Quad_Block::deallocate(void) {
   Grid.deallocate();
@@ -519,24 +516,21 @@ inline void HighTemp2D_Quad_Block::deallocate(void) {
   delete []FluxE; FluxE = NULL; delete []FluxW; FluxW = NULL;
   delete []WoN; WoN = NULL; delete []WoS; WoS = NULL;
   delete []WoE; WoE = NULL; delete []WoW; WoW = NULL;
-
-	if (face_grad_arrays_allocated) {
-		for (int i = 0; i < NCi; i++) {
-			delete []dWdx_faceN[i]; delete []dWdy_faceN[i]; 
-			delete []dWdx_faceE[i]; delete []dWdy_faceE[i]; 
-		}
-		delete []dWdx_faceN; delete []dWdy_faceN; 
-		delete []dWdx_faceE; delete []dWdy_faceE; 
-
-		face_grad_arrays_allocated = false;
-	}
-
+  if (face_grad_arrays_allocated) {
+     for (int i = 0; i < NCi; i++) {
+	delete []dWdx_faceN[i]; delete []dWdy_faceN[i]; 
+	delete []dWdx_faceE[i]; delete []dWdy_faceE[i]; 
+     }
+     delete []dWdx_faceN; delete []dWdy_faceN; 
+     delete []dWdx_faceE; delete []dWdy_faceE; 
+     face_grad_arrays_allocated = false;
+  }
   NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
 }
 
 /**********************************************************************
- * HighTemp2D_Quad_Block::Wn -- Node primitive variable solution  *
- *                                  state.                            *
+ * HighTemp2D_Quad_Block::Wn -- Node primitive variable solution      *
+ *                              state.                                *
  *                                                                    *
  * Zingg and Yarrow (SIAM J. Sci. Stat. Comput. Vol. 13 No. 3 1992)   *
  *                                                                    *
@@ -614,8 +608,8 @@ inline HighTemp2D_pState HighTemp2D_Quad_Block::Wn(const int ii, const int jj) c
 }
 
 /**********************************************************************
- * HighTemp2D_Quad_Block::Un -- Node conserved variable solution  *
- *                                  state.                            *
+ * HighTemp2D_Quad_Block::Un -- Node conserved variable solution      *
+ *                              state.                                *
  *                                                                    *
  * Zingg and Yarrow (SIAM J. Sci. Stat. Comput. Vol. 13 No. 3 1992)   *
  *                                                                    *
@@ -685,8 +679,8 @@ inline HighTemp2D_cState HighTemp2D_Quad_Block::Un(const int ii, const int jj) c
 }
 
 /**********************************************************************
- * HighTemp2D_Quad_Block::Wn?? -- Cell node primitive solution    *
- *                                    states.                         *
+ * HighTemp2D_Quad_Block::Wn?? -- Cell node primitive solution        *
+ *                                states.                             *
  **********************************************************************/
 inline HighTemp2D_pState HighTemp2D_Quad_Block::WnNW(const int ii, const int jj) const {
   return Wn(ii,jj+1);
@@ -705,8 +699,8 @@ inline HighTemp2D_pState HighTemp2D_Quad_Block::WnSW(const int ii, const int jj)
 }
 
 /**********************************************************************
- * HighTemp2D_Quad_Block::Un?? -- Cell node conserved solution    *
- *                                    states.                         *
+ * HighTemp2D_Quad_Block::Un?? -- Cell node conserved solution        *
+ *                                states.                             *
  **********************************************************************/
 inline HighTemp2D_cState HighTemp2D_Quad_Block::UnNW(const int ii, const int jj) const {
   return Un(ii,jj+1);
@@ -725,8 +719,8 @@ inline HighTemp2D_cState HighTemp2D_Quad_Block::UnSW(const int ii, const int jj)
 }
 
 /**********************************************************************
- * HighTemp2D_Quad_Block::Ww -- Node primitive variable solution  *
- *                                  state.                            *
+ * HighTemp2D_Quad_Block::Ww -- Node primitive variable solution      *
+ *                              state.                                *
  *                                                                    *
  * Holmes and Connell (AIAA Paper 1989-1932-CP)                       *
  *                                                                    *
@@ -760,8 +754,8 @@ inline HighTemp2D_pState HighTemp2D_Quad_Block::Ww(const int ii, const int jj) c
 }
 
 /**********************************************************************
- * HighTemp2D_Quad_Block::Uw -- Node conserved variable solution  *
- *                                  state.                            *
+ * HighTemp2D_Quad_Block::Uw -- Node conserved variable solution      *
+ *                              state.                                *
  *                                                                    *
  * Holmes and Connell (AIAA Paper 1989-1932-CP)                       *
  *                                                                    *
@@ -795,8 +789,8 @@ inline HighTemp2D_cState HighTemp2D_Quad_Block::Uw(const int ii, const int jj) c
 }
 
 /**********************************************************************
- * HighTemp2D_Quad_Block::Ww?? -- Cell node primitive solution    *
- *                                    states.                         *
+ * HighTemp2D_Quad_Block::Ww?? -- Cell node primitive solution        *
+ *                                states.                             *
  **********************************************************************/
 inline HighTemp2D_pState HighTemp2D_Quad_Block::WwNW(const int ii, const int jj) const {
   return Ww(ii,jj+1);
@@ -815,8 +809,8 @@ inline HighTemp2D_pState HighTemp2D_Quad_Block::WwSW(const int ii, const int jj)
 }
 
 /**********************************************************************
- * HighTemp2D_Quad_Block::Uw?? -- Cell node conserved solution    *
- *                                    states.                         *
+ * HighTemp2D_Quad_Block::Uw?? -- Cell node conserved solution        *
+ *                                states.                             *
  **********************************************************************/
 inline HighTemp2D_cState HighTemp2D_Quad_Block::UwNW(const int ii, const int jj) const {
   return Uw(ii,jj+1);
@@ -835,23 +829,23 @@ inline HighTemp2D_cState HighTemp2D_Quad_Block::UwSW(const int ii, const int jj)
 }
 
 /**********************************************************************
- * HighTemp2D_Quad_Block::evaluate_limiters -- Set flag to        *
- *                                                 evaluate limiters. *
+ * HighTemp2D_Quad_Block::evaluate_limiters -- Set flag to            *
+ *                                             evaluate limiters.     *
  **********************************************************************/
 inline void HighTemp2D_Quad_Block::evaluate_limiters(void) {
   Freeze_Limiter = OFF;
 }
 
 /**********************************************************************
- * HighTemp2D_Quad_Block::freeze_limiters -- Set flag to freeze   *
- *                                               limiters.            *
+ * HighTemp2D_Quad_Block::freeze_limiters -- Set flag to freeze       *
+ *                                           limiters.                *
  **********************************************************************/
 inline void HighTemp2D_Quad_Block::freeze_limiters(void) {
   Freeze_Limiter = ON; 
 }
 
 /**********************************************************************
- * HighTemp2D_Quad_Block -- Input-output operators.               *
+ * HighTemp2D_Quad_Block -- Input-output operators.                   *
  **********************************************************************/
 inline ostream &operator << (ostream &out_file,
 			     const HighTemp2D_Quad_Block &SolnBlk) {
@@ -924,16 +918,14 @@ inline istream &operator >> (istream &in_file,
       SolnBlk.dt[i][j] = ZERO;
     }
   }
-
-	if (SolnBlk.face_grad_arrays_allocated) {
-		for (int i = 0; i < SolnBlk.NCi; i++) { 
-			for (int j = 0; j < SolnBlk.NCj; j++) {
-				SolnBlk.dWdx_faceN[i][j].Vacuum(); SolnBlk.dWdy_faceN[i][j].Vacuum();
-				SolnBlk.dWdx_faceE[i][j].Vacuum(); SolnBlk.dWdy_faceE[i][j].Vacuum();
-			}
-		}
-	}
-
+  if (SolnBlk.face_grad_arrays_allocated) {
+    for (int i = 0; i < SolnBlk.NCi; i++) { 
+       for (int j = 0; j < SolnBlk.NCj; j++) {
+	  SolnBlk.dWdx_faceN[i][j].Vacuum(); SolnBlk.dWdy_faceN[i][j].Vacuum();
+	  SolnBlk.dWdx_faceE[i][j].Vacuum(); SolnBlk.dWdy_faceE[i][j].Vacuum();
+       }
+    }
+  }
   for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
     in_file >> SolnBlk.WoW[j];
     in_file >> SolnBlk.WoE[j];
@@ -953,27 +945,26 @@ inline istream &operator >> (istream &in_file,
  **********************************************************************/
 
 /**********************************************************************
- * HighTemp2D_Quad_Block::NumVar -- Returns number of state       *
- *                                      variables.                    *
+ * HighTemp2D_Quad_Block::NumVar -- Returns number of state           *
+ *                                  variables.                        *
  **********************************************************************/
 inline int HighTemp2D_Quad_Block::NumVar(void) {
   return NUM_VAR_HIGHTEMP2D;
 }
 
 /**********************************************************************
- * HighTemp2D_Quad_Block::LoadSendBuffer -- Loads send message    *
- *                                              buffer.               *
+ * HighTemp2D_Quad_Block::LoadSendBuffer -- Loads send message        *
+ *                                          buffer.                   *
  **********************************************************************/
 inline int HighTemp2D_Quad_Block::LoadSendBuffer(double *buffer,
-						     int &buffer_count,
-						     const int buffer_size,
-						     const int i_min,
-						     const int i_max,
-						     const int i_inc,
-						     const int j_min,
-						     const int j_max,
-						     const int j_inc) {
-
+						 int &buffer_count,
+						 const int buffer_size,
+						 const int i_min,
+						 const int i_max,
+						 const int i_inc,
+						 const int j_min,
+						 const int j_max,
+						 const int j_inc) {
   for (int j = j_min; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max); j += j_inc) {
     for (int i = i_min;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max); i += i_inc) {
       for (int k = 1; k <= NUM_VAR_HIGHTEMP2D; k++) {
@@ -987,20 +978,19 @@ inline int HighTemp2D_Quad_Block::LoadSendBuffer(double *buffer,
 }
 
 /**********************************************************************
- * HighTemp2D_Quad_Block::LoadSendBuffer_F2C --                   *
+ * HighTemp2D_Quad_Block::LoadSendBuffer_F2C --                       *
  *                     Loads send message buffer for fine to coarse   *
  *                     block message passing.                         *
  **********************************************************************/
 inline int HighTemp2D_Quad_Block::LoadSendBuffer_F2C(double *buffer,
-							 int &buffer_count,
-							 const int buffer_size,
-							 const int i_min,
-							 const int i_max,
-							 const int i_inc,
-							 const int j_min,
-							 const int j_max,
-							 const int j_inc) {
-
+						     int &buffer_count,
+						     const int buffer_size,
+						     const int i_min,
+						     const int i_max,
+						     const int i_inc,
+						     const int j_min,
+						     const int j_max,
+						     const int j_inc) {
   for (int j = j_min; ((j_inc+2)/4) ? (j < j_max):(j > j_max); j += j_inc) {
     for (int i = i_min; ((i_inc+2)/4) ? (i < i_max):(i > i_max); i += i_inc) {
       for (int k = 1; k <= NUM_VAR_HIGHTEMP2D; k++) {
@@ -1021,27 +1011,25 @@ inline int HighTemp2D_Quad_Block::LoadSendBuffer_F2C(double *buffer,
 }
 
 /**********************************************************************
- * HighTemp2D_Quad_Block::LoadSendBuffer_C2F --                   *
+ * HighTemp2D_Quad_Block::LoadSendBuffer_C2F --                       *
  *                     Loads send message buffer for coarse to fine   *
  *                     block message passing.                         *
  **********************************************************************/
 inline int HighTemp2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
-							 int &buffer_count,
-							 const int buffer_size,
-							 const int i_min,
-							 const int i_max,
-							 const int i_inc,
-							 const int j_min,
-							 const int j_max,
-							 const int j_inc,
-							 const int face,
-							 const int sector) {
-
+						     int &buffer_count,
+						     const int buffer_size,
+						     const int i_min,
+					  	     const int i_max,
+						     const int i_inc,
+						     const int j_min,
+						     const int j_max,
+						     const int j_inc,
+						     const int face,
+						     const int sector) {
   Vector2D dX;
   HighTemp2D_pState Wfine;
   HighTemp2D_cState Ufine;
   int Limiter = LIMITER_VENKATAKRISHNAN;
-
   if (j_inc > 0) {
     if (i_inc > 0) {
       for (int j = j_min; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max); j += j_inc) {
@@ -1132,7 +1120,6 @@ inline int HighTemp2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
 	  }
 	}
       }
-
       return 0;
 
     }
@@ -1513,19 +1500,18 @@ inline int HighTemp2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
 }
 
 /**********************************************************************
- * HighTemp2D_Quad_Block::UnloadReceiveBuffer -- Unloads receive  *
- *                                                   message buffer.  *
+ * HighTemp2D_Quad_Block::UnloadReceiveBuffer -- Unloads receive      *
+ *                                               message buffer.      *
  **********************************************************************/
 inline int HighTemp2D_Quad_Block::UnloadReceiveBuffer(double *buffer,
-							  int &buffer_count,
-							  const int buffer_size,
-							  const int i_min,
-							  const int i_max,
-							  const int i_inc,
-							  const int j_min,
-							  const int j_max,
-							  const int j_inc) {
-
+						      int &buffer_count,
+						      const int buffer_size,
+						      const int i_min,
+						      const int i_max,
+						      const int i_inc,
+						      const int j_min,
+						      const int j_max,
+						      const int j_inc) {
   for (int j = j_min; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max); j += j_inc) {
     for (int i = i_min;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max); i += i_inc) {
       for (int k = 1; k <= NUM_VAR_HIGHTEMP2D; k++) {
@@ -1540,20 +1526,19 @@ inline int HighTemp2D_Quad_Block::UnloadReceiveBuffer(double *buffer,
 }
 
 /**********************************************************************
- * HighTemp2D_Quad_Block::UnloadReceiveBuffer_F2C --              *
+ * HighTemp2D_Quad_Block::UnloadReceiveBuffer_F2C --                  *
  *                     Unloads receive message buffer for fine to     *
  *                     coarse block message passing.                  *
  **********************************************************************/
 inline int HighTemp2D_Quad_Block::UnloadReceiveBuffer_F2C(double *buffer,
-							      int &buffer_count,
-							      const int buffer_size,
-							      const int i_min,
-							      const int i_max,
-							      const int i_inc,
-							      const int j_min,
-							      const int j_max,
-							      const int j_inc) {
-
+							  int &buffer_count,
+							  const int buffer_size,
+							  const int i_min,
+							  const int i_max,
+							  const int i_inc,
+							  const int j_min,
+							  const int j_max,
+							  const int j_inc) {
   for (int j = j_min; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max); j += j_inc) {
     for (int i = i_min; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max); i += i_inc) {
       for (int k = 1; k <= NUM_VAR_HIGHTEMP2D; k++) {
@@ -1568,20 +1553,19 @@ inline int HighTemp2D_Quad_Block::UnloadReceiveBuffer_F2C(double *buffer,
 }
 
 /**********************************************************************
- * HighTemp2D_Quad_Block::UnloadReceiveBuffer_C2F --              *
+ * HighTemp2D_Quad_Block::UnloadReceiveBuffer_C2F --                  *
  *                     Unloads receive message buffer for coarse to   *
  *                     fine block message passing.                    *
  **********************************************************************/
 inline int HighTemp2D_Quad_Block::UnloadReceiveBuffer_C2F(double *buffer,
-							      int &buffer_count,
-							      const int buffer_size,
-							      const int i_min,
-							      const int i_max,
-							      const int i_inc,
-							      const int j_min,
-							      const int j_max,
-							      const int j_inc) {
-
+							  int &buffer_count,
+							  const int buffer_size,
+							  const int i_min,
+							  const int i_max,
+							  const int i_inc,
+							  const int j_min,
+							  const int j_max,
+							  const int j_inc) {
   for (int j = j_min; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max); j += j_inc) {
     for (int i = i_min; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max); i += i_inc) {
       for (int k = 1; k <= NUM_VAR_HIGHTEMP2D; k++) {
@@ -1596,7 +1580,7 @@ inline int HighTemp2D_Quad_Block::UnloadReceiveBuffer_C2F(double *buffer,
 }
 
 /**********************************************************************
- * HighTemp2D_Quad_Block::SubcellReconstruction --          *
+ * HighTemp2D_Quad_Block::SubcellReconstruction --                    *
  *                     Performs the subcell linear reconstruction of  *
  *                     solution state within a given cell (i,j) of    *
  *                     the computational mesh for the specified       *
@@ -1920,20 +1904,19 @@ inline void HighTemp2D_Quad_Block::SubcellReconstruction(const int i,
 }
 
 /*******************************************************************************
- * HighTemp2D_Quad_Block::LoadSendBuffer_Flux_F2C --                       *
+ * HighTemp2D_Quad_Block::LoadSendBuffer_Flux_F2C --                           *
  *                     Loads send message buffer for fine to coarse block      *
  *                     message passing of conservative solution fluxes.        *
  *******************************************************************************/
 inline int HighTemp2D_Quad_Block::LoadSendBuffer_Flux_F2C(double *buffer,
-							      int &buffer_count,
-							      const int buffer_size,
-							      const int i_min,
-							      const int i_max,
-							      const int i_inc,
-							      const int j_min,
-							      const int j_max,
-							      const int j_inc) {
-
+							  int &buffer_count,
+							  const int buffer_size,
+							  const int i_min,
+							  const int i_max,
+							  const int i_inc,
+							  const int j_min,
+							  const int j_max,
+							  const int j_inc) {
   if (j_min == j_max && j_min == JCl) {
     for (int i = i_min;  ((i_inc+2)/4) ? (i < i_max):(i > i_max); i += i_inc) {
       for (int k = 1; k <= NUM_VAR_HIGHTEMP2D; k++) {
@@ -1971,21 +1954,20 @@ inline int HighTemp2D_Quad_Block::LoadSendBuffer_Flux_F2C(double *buffer,
 }
 
 /**********************************************************************
- * HighTemp2D_Quad_Block::UnloadReceiveBuffer_Flux_F2C --         *
+ * HighTemp2D_Quad_Block::UnloadReceiveBuffer_Flux_F2C --             *
  *                     Unloads receive message buffer for fine to     *
  *                     coarse block message passing of conservative   *
  *                     solution fluxes.                               *
  **********************************************************************/
 inline int HighTemp2D_Quad_Block::UnloadReceiveBuffer_Flux_F2C(double *buffer,
-								   int &buffer_count,
-								   const int buffer_size,
-								   const int i_min,
-								   const int i_max,
-								   const int i_inc,
-								   const int j_min,
-								   const int j_max,
-								   const int j_inc) {
-
+							       int &buffer_count,
+							       const int buffer_size,
+							       const int i_min,
+							       const int i_max,
+							       const int i_inc,
+							       const int j_min,
+							       const int j_max,
+							       const int j_inc) {
   if (j_min == j_max && j_min == JCl) {
     for (int i = i_min; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max); i += i_inc) {
       for (int k = 1; k <= NUM_VAR_HIGHTEMP2D; k++) {
@@ -2023,7 +2005,7 @@ inline int HighTemp2D_Quad_Block::UnloadReceiveBuffer_Flux_F2C(double *buffer,
 }
 
 /**********************************************************************
- * HighTemp2D_Quad_Block -- Single Block External Subroutines.    *
+ * HighTemp2D_Quad_Block -- Single Block External Subroutines.        *
  **********************************************************************/
 
 extern void Broadcast_Solution_Block(HighTemp2D_Quad_Block &SolnBlk);
@@ -2136,29 +2118,22 @@ extern int Update_Solution_Multistage_Explicit(HighTemp2D_Quad_Block &SolnBlk,
    	                                       const int i_stage,
 					       HighTemp2D_Input_Parameters &IP);
 
-//extern int Half_Mesh_Resolution(HighTemp2D_Quad_Block &SolnBlk_Half,
-//				HighTemp2D_Quad_Block &SolnBlk_Original);
-
-//extern int Zero_Residuals_on_Coarse_Grid(HighTemp2D_Quad_Block &SolnBlk,
-//					 HighTemp2D_Input_Parameters &IP,
-//					 const int &i_stage);
-
 /**********************************************************************
- * HighTemp2D_Quad_Block -- Multiple Block External Subroutines.  *
+ * HighTemp2D_Quad_Block -- Multiple Block External Subroutines.      *
  **********************************************************************/
 
 extern HighTemp2D_Quad_Block* Allocate(HighTemp2D_Quad_Block *Soln_ptr,
-					   HighTemp2D_Input_Parameters &Input_Parameters);
+				       HighTemp2D_Input_Parameters &Input_Parameters);
 
 extern HighTemp2D_Quad_Block* Deallocate(HighTemp2D_Quad_Block *Soln_ptr,
-					     HighTemp2D_Input_Parameters &Input_Parameters);
+					 HighTemp2D_Input_Parameters &Input_Parameters);
 
 extern HighTemp2D_Quad_Block* CreateInitialSolutionBlocks(Grid2D_Quad_Block **InitMeshBlk,
-							      HighTemp2D_Quad_Block *Soln_ptr,
-							      HighTemp2D_Input_Parameters &Input_Parameters,
-							      QuadTreeBlock_DataStructure &QuadTree,
-							      AdaptiveBlockResourceList &GlobalSolnBlockList,
-							      AdaptiveBlock2D_List &LocalSolnBlockList);
+							  HighTemp2D_Quad_Block *Soln_ptr,
+							  HighTemp2D_Input_Parameters &Input_Parameters,
+							  QuadTreeBlock_DataStructure &QuadTree,
+							  AdaptiveBlockResourceList &GlobalSolnBlockList,
+							  AdaptiveBlock2D_List &LocalSolnBlockList);
 
 extern void ICs(HighTemp2D_Quad_Block *Soln_ptr,
                 AdaptiveBlock2D_List &Soln_Block_List,
@@ -2263,20 +2238,8 @@ extern int Flat_Plate_Adaptive_Mesh_Refinement(HighTemp2D_Quad_Block *Soln_ptr,
 					       AdaptiveBlockResourceList &GlobalSolnBlockList,
 					       AdaptiveBlock2D_List &LocalSolnBlockList);
 
-//extern int Perform_External_Functions_on_Coarse_Grids(HighTemp2D_Quad_Block *Soln_ptr_Coarse,
-//						      HighTemp2D_Quad_Block *Soln_ptr_Fine,
-//						      HighTemp2D_Input_Parameters &Input_Parameters,
-//					      QuadTreeBlock_DataStructure &QuadTree,
-//				      AdaptiveBlockResourceList &GlobalSolnBlockList,
-//					      AdaptiveBlock2D_List &LocalSolnBlockList);
-//
-//extern int Zero_Residuals_on_Coarse_Grid(HighTemp2D_Quad_Block *Soln_ptr,
-//					 AdaptiveBlock2D_List &Soln_Block_List,
-//				 HighTemp2D_Input_Parameters &Input_Parameters,
-//				 const int &I_Stage);
-
 /**********************************************************************
- * HighTemp2D_Quad_Block -- IO Single Block External Subroutines. *
+ * HighTemp2D_Quad_Block -- IO Single Block External Subroutines.     *
  **********************************************************************/
 
 extern void Write_Solution_Block(HighTemp2D_Quad_Block &SolnBlk,
@@ -2286,40 +2249,40 @@ extern void Read_Solution_Block(HighTemp2D_Quad_Block &SolnBlk,
 	                        istream &In_File);
 
 extern void Output_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
-		const HighTemp2D_Input_Parameters &IP,
-		int Number_of_Time_Steps,
-		double Time,
-		int Block_Number,
-		int Output_Title,
-		ostream &Out_File);
+	 	           HighTemp2D_Input_Parameters &IP,
+		           const int Number_of_Time_Steps,
+		           const double &Time,
+		           const int Block_Number,
+		           const int Output_Title,
+		           ostream &Out_File);
 
 extern void Output_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
-		const HighTemp2D_Input_Parameters &IP,
-		int Number_of_Time_Steps,
-		double Time,
-		int Block_Number,
-		int Output_Title,
-		double l2_norm,
-		double l2_norm_rel,
-		ostream &Out_File);
+		           HighTemp2D_Input_Parameters &IP,
+		           const int Number_of_Time_Steps,
+		           const double &Time,
+		           const int Block_Number,
+		           const int Output_Title,
+		           const double &l2_norm,
+		           const double &l2_norm_rel,
+		           ostream &Out_File);
 
-extern void Output_Cells_Tecplot(const HighTemp2D_Quad_Block &SolnBlk,
-		const HighTemp2D_Input_Parameters &IP,
-		int Number_of_Time_Steps,
-		double Time,
-		int Block_Number,
-		int Output_Title,
-		ostream &Out_File);
+extern void Output_Cells_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
+		                 HighTemp2D_Input_Parameters &IP,
+		                 const int Number_of_Time_Steps,
+		                 const double &Time,
+		                 const int Block_Number,
+		                 const int Output_Title,
+		                 ostream &Out_File);
 
-extern void Output_Cells_Tecplot(const HighTemp2D_Quad_Block &SolnBlk,
-		const HighTemp2D_Input_Parameters &IP,
-		int Number_of_Time_Steps,
-		double Time,
-		int Block_Number,
-		int Output_Title,
-		double l2_norm,
-		double l2_norm_rel,
-		ostream &Out_File);
+extern void Output_Cells_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
+ 		                 HighTemp2D_Input_Parameters &IP,
+		                 const int Number_of_Time_Steps,
+		                 const double &Time,
+		                 const int Block_Number,
+		                 const int Output_Title,
+		                 const double &l2_norm,
+		                 const double &l2_norm_rel,
+		                 ostream &Out_File);
 
 extern void Output_Nodes_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 		                 const int Number_of_Time_Steps,
@@ -2428,7 +2391,7 @@ extern void Output_Forward_Facing_Step_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 
 
 /**********************************************************************
- * HighTemp2D_Quad_Block -- IO Multiple Block External Subroutines.*
+ * HighTemp2D_Quad_Block -- IO Multiple Block External Subroutines.   *
  **********************************************************************/
 
 extern int Read_Restart_Solution(HighTemp2D_Quad_Block *Soln_ptr,
@@ -2447,34 +2410,34 @@ extern int Write_Restart_Solution(HighTemp2D_Quad_Block *Soln_ptr,
 
 
 int Output_Tecplot(HighTemp2D_Quad_Block *Soln_ptr,
-                   const AdaptiveBlock2D_List &Soln_Block_List,
-                   const HighTemp2D_Input_Parameters &IP,
-                   int Number_of_Time_Steps,
-                   double Time);
+                   AdaptiveBlock2D_List &Soln_Block_List,
+                   HighTemp2D_Input_Parameters &IP,
+                   const int Number_of_Time_Steps,
+                   const double &Time);
 
 int Output_Tecplot(HighTemp2D_Quad_Block *Soln_ptr,
-                   const AdaptiveBlock2D_List &Soln_Block_List,
-                   const HighTemp2D_Input_Parameters &IP,
-                   int Number_of_Time_Steps,
-                   double Time,
-									 bool writing_intermediate_soln,
-									 double l2_norm,
-									 double l2_norm_rel);
+                   AdaptiveBlock2D_List &Soln_Block_List,
+                   HighTemp2D_Input_Parameters &IP,
+                   const int Number_of_Time_Steps,
+                   const double &Time,
+		   bool writing_intermediate_soln,
+		   const double &l2_norm,
+		   const double &l2_norm_rel);
 
 int Output_Cells_Tecplot(HighTemp2D_Quad_Block *Soln_ptr,
-                         const AdaptiveBlock2D_List &Soln_Block_List,
-                         const HighTemp2D_Input_Parameters &IP,
-                         int Number_of_Time_Steps,
-                         double Time);
+                         AdaptiveBlock2D_List &Soln_Block_List,
+                         HighTemp2D_Input_Parameters &IP,
+                         const int Number_of_Time_Steps,
+                         const double &Time);
 
 int Output_Cells_Tecplot(HighTemp2D_Quad_Block *Soln_ptr,
-                         const AdaptiveBlock2D_List &Soln_Block_List,
-                         const HighTemp2D_Input_Parameters &IP,
-                         int Number_of_Time_Steps,
-                         double Time,
-												 bool writing_intermediate_soln,
-												 double l2_norm,
-												 double l2_norm_rel);
+                         AdaptiveBlock2D_List &Soln_Block_List,
+                         HighTemp2D_Input_Parameters &IP,
+                         const int Number_of_Time_Steps,
+                         const double &Time,
+			 bool writing_intermediate_soln,
+			 const double &l2_norm,
+			 const double &l2_norm_rel);
 
 extern int Output_Nodes_Tecplot(HighTemp2D_Quad_Block *Soln_ptr,
                                 AdaptiveBlock2D_List &Soln_Block_List,
@@ -2539,8 +2502,8 @@ extern int Output_Forward_Facing_Step_Tecplot(HighTemp2D_Quad_Block *Soln_ptr,
 					       HighTemp2D_Input_Parameters &IP);
 
 /**********************************************************************
- * HighTemp2D_Quad_Block -- Grid Multiple Block External          *
- *                              Subroutines.                          *
+ * HighTemp2D_Quad_Block -- Grid Multiple Block External              *
+ *                          Subroutines.                              *
  **********************************************************************/
 
 extern Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
@@ -2571,7 +2534,7 @@ extern int Output_Cells_Tecplot(Grid2D_Quad_Block **Grid_ptr,
                                 HighTemp2D_Input_Parameters &IP);
 
 /**********************************************************************
- * HighTemp2D_Quad_Block -- Turbulence Single Block External      *
+ * HighTemp2D_Quad_Block -- Turbulence Single Block External          *
  *                              Subroutines.                          *
  **********************************************************************/
 
@@ -2599,7 +2562,7 @@ extern int Zero_Turbulence_Residuals(HighTemp2D_Quad_Block &SolnBlk,
 
 
 /**********************************************************************
- * HighTemp2D_Quad_Block -- Turbulence Multiple Block External    *
+ * HighTemp2D_Quad_Block -- Turbulence Multiple Block External        *
  *                              Subroutines.                          *
  **********************************************************************/
 
@@ -2608,7 +2571,7 @@ extern int Turbulent_BCs(HighTemp2D_Quad_Block *Soln_ptr,
 			 const HighTemp2D_Input_Parameters &Input_Parameters);
 
 /**********************************************************************
- * HighTemp2D_Quad_Block -- Solvers.                              *
+ * HighTemp2D_Quad_Block -- Solvers.                                  *
  **********************************************************************/
 
 extern int HighTemp2DQuadSolver(char *Input_File_Name_ptr,

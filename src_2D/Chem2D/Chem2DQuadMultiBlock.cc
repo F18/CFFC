@@ -177,7 +177,7 @@ int Read_Restart_Solution(Chem2D_Quad_Block *Soln_ptr,
 	  }
 	  
 	  //Set Data Path
-	  Input_Parameters.get_cfdkit_path();
+	  Input_Parameters.get_cffc_path();
 
 	  //setup properties 
 	  Input_Parameters.Wo.set_species_data

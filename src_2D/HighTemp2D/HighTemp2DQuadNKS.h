@@ -9,10 +9,10 @@
 #include "../NewtonKrylovSchwarz2D/NKS2D.h"
 #include "HighTemp2DdRdU.h"
 
-/*! *****************************************************************************************
+/********************************************************************************************
  *  Specialization of Newton_Update Function                                                *
  *                                                                                          *
- * This routine updates the previous solution data Uo with the deltaU from the GMRES        *                  
+ * This routine updates the previous solution data Uo with the deltaU from the GMRES        *
  * iterative solver.  U = Uo + GMRES.delatU                                                 *
  *                                                                                          *
  ********************************************************************************************/
@@ -264,11 +264,10 @@ set_normalize_values(void)
  ****************************************************************/
 template<> 
 inline void Block_Preconditioner<HighTemp2D_pState,
-			 HighTemp2D_Quad_Block,					    
-			 HighTemp2D_Input_Parameters>::
+			         HighTemp2D_Quad_Block,					    
+			         HighTemp2D_Input_Parameters>::
 			 Preconditioner_dFVdU(DenseMatrix &dFvdU, int Rii, int Rjj, 
-					 int Wii, int Wjj, int Orient_face, int Orient_cell) 
-{
+					      int Wii, int Wjj, int Orient_face, int Orient_cell) {
 
   double lface;
   Vector2D nface;

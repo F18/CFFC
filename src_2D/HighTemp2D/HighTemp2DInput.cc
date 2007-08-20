@@ -49,10 +49,13 @@ void Set_Default_Input_Parameters(HighTemp2D_Input_Parameters &IP) {
   char *string_ptr;
   double cos_angle, sin_angle;
   
+  // CFFC root directory path:
+  IP.get_cffc_path();
+
   string_ptr = "HighTemp2D.in";
   strcpy(IP.Input_File_Name,string_ptr);
 
-  //Equation of State Parameter
+  //Equation of State Parameter:
   string_ptr = "Tgas";
   strcpy(IP.Equation_Of_State_Type,string_ptr);
   IP.EOSType = EOS_TGAS;
@@ -64,7 +67,7 @@ void Set_Default_Input_Parameters(HighTemp2D_Input_Parameters &IP) {
   IP.Time_Accurate = 0;
   IP.Local_Time_Stepping = SCALAR_LOCAL_TIME_STEPPING;
   IP.Maximum_Number_of_Time_Steps = 100;
-	IP.Explicit_Rel_Tol = -1.0;
+  IP.Explicit_Rel_Tol = -1.0;
   IP.N_Stage = 1;
   IP.CFL_Number = 0.5;
   IP.Time_Max = ZERO;
@@ -89,14 +92,14 @@ void Set_Default_Input_Parameters(HighTemp2D_Input_Parameters &IP) {
   IP.Freeze_Limiter = 0;
   IP.Freeze_Limiter_Residual_Level = 1e-4;
 
-  // Gas-phase flux function:
+  // Flux function:
   /*
   string_ptr = "Roe";
   strcpy(IP.Flux_Function_Type,string_ptr);
   IP.i_Flux_Function = FLUX_FUNCTION_ROE;
   */
 
-  // Gas-phase flux function:
+  // Flux function:
   string_ptr = "Glaister";
   strcpy(IP.Flux_Function_Type,string_ptr);
   IP.i_Flux_Function = FLUX_FUNCTION_GLAISTER;
@@ -138,23 +141,26 @@ void Set_Default_Input_Parameters(HighTemp2D_Input_Parameters &IP) {
   IP.sigmav = 0.035;
   IP.lw = 0.000200;
 
-  // Propellant type:
-  string_ptr = "AP_HTPB";
-  strcpy(IP.Propellant_Type,string_ptr);
-
-  // Gas-phase conditions:
+  // Set various flow parameters:
   string_ptr = "HTAIR";
   strcpy(IP.Gas_Type,string_ptr);
-	HighTemp2D_pState::set_static_variables(IP.Gas_Type,IP.EOSType,IP.FlowType,IP.C_constant,IP.von_Karman_Constant,
-			     IP.yplus_sublayer,IP.yplus_buffer_layer,
-			     IP.yplus_outer_layer,IP.Propellant_Type);
+  HighTemp2D_pState::set_static_variables(IP.Gas_Type,
+                                          IP.EOSType,
+                                          IP.FlowType,
+                                          IP.C_constant,
+                                          IP.von_Karman_Constant,
+			                  IP.yplus_sublayer,
+                                          IP.yplus_buffer_layer,
+			                  IP.yplus_outer_layer);
   IP.Pressure = IP.Wo.p;
   IP.Temperature = IP.Wo.T();
   IP.Mach_Number = 0.80;
   //  IP.Mach_Number2 = ZERO;
   IP.Flow_Angle = ZERO;
-  cos_angle = cos(TWO*PI*IP.Flow_Angle/360.00); if (fabs(cos_angle) < TOLER*TOLER) cos_angle = ZERO;
-  sin_angle = sin(TWO*PI*IP.Flow_Angle/360.00); if (fabs(sin_angle) < TOLER*TOLER) sin_angle = ZERO;
+  cos_angle = cos(TWO*PI*IP.Flow_Angle/360.00); 
+  if (fabs(cos_angle) < TOLER*TOLER) cos_angle = ZERO;
+  sin_angle = sin(TWO*PI*IP.Flow_Angle/360.00); 
+  if (fabs(sin_angle) < TOLER*TOLER) sin_angle = ZERO;
   IP.Wo.v.x = IP.Mach_Number*IP.Wo.a()*cos_angle;
   IP.Wo.v.y = IP.Mach_Number*IP.Wo.a()*sin_angle;
   IP.Reynolds_Number = ZERO;
@@ -164,9 +170,14 @@ void Set_Default_Input_Parameters(HighTemp2D_Input_Parameters &IP) {
   IP.Wave_Width = ZERO;
 
   // State conditions:
-	HighTemp2D_cState::set_static_variables(IP.Gas_Type,IP.EOSType,IP.FlowType,IP.C_constant,IP.von_Karman_Constant,
-			     IP.yplus_sublayer,IP.yplus_buffer_layer,
-			     IP.yplus_outer_layer,IP.Propellant_Type);
+  HighTemp2D_cState::set_static_variables(IP.Gas_Type,
+                                          IP.EOSType,
+                                          IP.FlowType,
+                                          IP.C_constant,
+                                          IP.von_Karman_Constant,
+			                  IP.yplus_sublayer,
+                                          IP.yplus_buffer_layer,
+			                  IP.yplus_outer_layer);
   IP.Uo = U(IP.Wo);
   IP.W1 = IP.Wo;
   IP.W2 = IP.Wo;
@@ -211,9 +222,6 @@ void Set_Default_Input_Parameters(HighTemp2D_Input_Parameters &IP) {
   IP.Step_Height = 0.0127;
   IP.Channel_Gap = 0.6; // This is a fudge to work with GRID_FORWARD_FACING_STEP.
   IP.Top_Wall_Deflection = ZERO;
-	// I observed that a sharp bump can be unstable. 
-	// So I changed the default to Smooth.
-	//   -- Alistair Wood. Sep 15 2006.
   IP.Smooth_Bump = ON;
   IP.X_Shift = Vector2D_ZERO;
   IP.X_Scale = ONE;
@@ -241,10 +249,10 @@ void Set_Default_Input_Parameters(HighTemp2D_Input_Parameters &IP) {
   IP.Mesh_Stretching_Factor_Jdir = 1.01;
 
   // NASA rotor input variables:
-  string_ptr = "/nfs/fe01/d1/cfd/dagmara/CFFC/data/NASA_Rotors/R37/";
-  strcpy(IP.NASA_Rotor37_Data_Directory,string_ptr);
-  string_ptr = "/nfs/fe01/d1/cfd/dagmara/CFFC/data/NASA_Rotors/R67/";
-  strcpy(IP.NASA_Rotor67_Data_Directory,string_ptr);
+  strcpy(IP.NASA_Rotor37_Data_Directory, IP.CFFC_Path);
+  strcpy(IP.NASA_Rotor37_Data_Directory, "/data/NASA_Rotors/R37/");
+  strcpy(IP.NASA_Rotor67_Data_Directory, IP.CFFC_Path);
+  strcpy(IP.NASA_Rotor67_Data_Directory, "/data/NASA_Rotors/R67/");
   IP.Rotor_Flow_Type = PEAK_FLOW;
   IP.Rotor_Percent_Span = 50.00;
 
@@ -276,14 +284,14 @@ void Set_Default_Input_Parameters(HighTemp2D_Input_Parameters &IP) {
   IP.Refinement_Criteria_Gradient_Turbulence_Kinetic_Energy = OFF;
   IP.AMR_Xmin = Vector2D_ZERO;
   IP.AMR_Xmax = Vector2D_ZERO;
-	IP.Morton = 0;
-	IP.Morton_Reordering_Frequency = 0;
+  IP.Morton = 0;
+  IP.Morton_Reordering_Frequency = 0;
 
   // Smooth quad block indicator:
   IP.i_Smooth_Quad_Block = ON;
 
-    // Default Solver Type
-    IP.Solver_Type = EXPLICIT;
+  // Default Solver Type
+  IP.Solver_Type = EXPLICIT;
 
   // Embedded boundary input parameters:
   IP.Reset_Interface_Motion_Type = OFF;
@@ -310,7 +318,7 @@ void Set_Default_Input_Parameters(HighTemp2D_Input_Parameters &IP) {
   IP.Restart_Solution_Save_Frequency = 1000;
 
   IP.Output_Progress_Frequency = 50;
-	IP.Explicit_Write_Output_Freq = 0; // zero turns this off
+  IP.Explicit_Write_Output_Freq = 0; // zero turns this off
 
   // Input_file parameters:
   string_ptr = " ";
@@ -332,9 +340,12 @@ void Set_Default_Input_Parameters(HighTemp2D_Input_Parameters &IP) {
 void Broadcast_Input_Parameters(HighTemp2D_Input_Parameters &IP) {
 
 #ifdef _MPI_VERSION
-
   double cos_angle, sin_angle;
 
+  // CFFC root directory path:
+  MPI::COMM_WORLD.Bcast(IP.CFFC_Path, 
+ 			INPUT_PARAMETER_LENGTH_HIGHTEMP2D, 
+			MPI::CHAR, 0);
   // Input file name and line number:
   MPI::COMM_WORLD.Bcast(IP.Input_File_Name,
 			INPUT_PARAMETER_LENGTH_HIGHTEMP2D,
@@ -379,7 +390,9 @@ void Broadcast_Input_Parameters(HighTemp2D_Input_Parameters &IP) {
   MPI::COMM_WORLD.Bcast(&(IP.Maximum_Number_of_Time_Steps),
 			1,
 			MPI::INT,0);
-  MPI::COMM_WORLD.Bcast(&(IP.Explicit_Rel_Tol), 1, MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(IP.Explicit_Rel_Tol), 
+                        1, 
+                        MPI::DOUBLE, 0);
   MPI::COMM_WORLD.Bcast(&(IP.N_Stage),
 			1,
 			MPI::INT,0);
@@ -403,13 +416,10 @@ void Broadcast_Input_Parameters(HighTemp2D_Input_Parameters &IP) {
   MPI::COMM_WORLD.Bcast(&(IP.Residual_Smoothing_Gauss_Seidel_Iterations),
 			1,
 			MPI::INT,0);
-
   // Multigrid related parameters:
   IP.Multigrid_IP.Broadcast_Input_Parameters();
-
-	// NKS Parameters
-	IP.NKS_IP.Broadcast_Input_Parameters();
-
+  // NKS Parameters
+  IP.NKS_IP.Broadcast_Input_Parameters();
   // Reconstruction:
   MPI::COMM_WORLD.Bcast(IP.Reconstruction_Type,
 			INPUT_PARAMETER_LENGTH_HIGHTEMP2D,
@@ -477,10 +487,6 @@ void Broadcast_Input_Parameters(HighTemp2D_Input_Parameters &IP) {
   MPI::COMM_WORLD.Bcast(&(IP.i_Turbulent_Wall_Injection),
 			1,
 			MPI::INT,0);
-  // Propellant type:
-  MPI::COMM_WORLD.Bcast(IP.Propellant_Type,
-			INPUT_PARAMETER_LENGTH_HIGHTEMP2D,
-			MPI::CHAR,0);
   // Initial conditions:
   MPI::COMM_WORLD.Bcast(IP.ICs_Type,
 			INPUT_PARAMETER_LENGTH_HIGHTEMP2D,
@@ -802,10 +808,12 @@ void Broadcast_Input_Parameters(HighTemp2D_Input_Parameters &IP) {
   MPI::COMM_WORLD.Bcast(&(IP.AMR_Xmax.y),
 			1,
 			MPI::DOUBLE,0);
-
-  MPI::COMM_WORLD.Bcast(&(IP.Morton),                      1, MPI::INT, 0);
-  MPI::COMM_WORLD.Bcast(&(IP.Morton_Reordering_Frequency), 1, MPI::INT, 0);
-
+  MPI::COMM_WORLD.Bcast(&(IP.Morton),
+                        1, 
+                        MPI::INT,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Morton_Reordering_Frequency),
+                        1, 
+                        MPI::INT,0);
   // Mesh stretching flag:
   MPI::COMM_WORLD.Bcast(&(IP.i_Mesh_Stretching),
 			1,
@@ -833,7 +841,6 @@ void Broadcast_Input_Parameters(HighTemp2D_Input_Parameters &IP) {
   // MPI::COMM_WORLD.Bcast(&(IP.i_SubCell_Reconstruction),
   //		1,
   //		MPI::INT,0);
-
   // Interface input parameters:
   IP.Interface_IP.Broadcast_Input_Parameters();
   MPI::COMM_WORLD.Bcast(&(IP.Reset_Interface_Motion_Type),
@@ -876,11 +883,11 @@ void Broadcast_Input_Parameters(HighTemp2D_Input_Parameters &IP) {
   MPI::COMM_WORLD.Bcast(&(IP.Number_of_Blocks_Per_Processor),
 			1,
 			MPI::INT,0);
-  MPI::COMM_WORLD.Bcast(&(HTTOL), 1, MPI::DOUBLE, 0);
-
+  MPI::COMM_WORLD.Bcast(&(HTTOL), 
+                        1, 
+                        MPI::DOUBLE,0);
   // Reinitialize the reference state.
   Reinitialize_Reference_State(IP);
-
 #endif
 
 }
@@ -901,6 +908,11 @@ void Broadcast_Input_Parameters(HighTemp2D_Input_Parameters &IP,
   int Source_Rank = 0;
   double cos_angle, sin_angle;
 
+  // CFFC root directory path:
+  Communicator.Bcast(IP.CFFC_Path, 
+ 		     INPUT_PARAMETER_LENGTH_HIGHTEMP2D, 
+		     MPI::CHAR,Source_Rank);
+  // Input file name and line number:
   Communicator.Bcast(IP.Input_File_Name,
 		     INPUT_PARAMETER_LENGTH_HIGHTEMP2D,
 		     MPI::CHAR,Source_Rank);
@@ -908,12 +920,12 @@ void Broadcast_Input_Parameters(HighTemp2D_Input_Parameters &IP,
 		     1,
 		     MPI::INT,Source_Rank);
   //Equation of State
-  MPI::COMM_WORLD.Bcast(IP.Equation_Of_State_Type, 
-			INPUT_PARAMETER_LENGTH_HIGHTEMP2D,
-			MPI::CHAR,Source_Rank);
-  MPI::COMM_WORLD.Bcast(&(IP.EOSType),
-			1,
-			MPI::INT,Source_Rank);
+  Communicator.Bcast(IP.Equation_Of_State_Type, 
+		     INPUT_PARAMETER_LENGTH_HIGHTEMP2D,
+		     MPI::CHAR,Source_Rank);
+  Communicator.Bcast(&(IP.EOSType),
+		     1,
+		     MPI::INT,Source_Rank);
   // Flow type:
   Communicator.Bcast(IP.Flow_Type,
 		     INPUT_PARAMETER_LENGTH_HIGHTEMP2D,
@@ -944,7 +956,9 @@ void Broadcast_Input_Parameters(HighTemp2D_Input_Parameters &IP,
   Communicator.Bcast(&(IP.Maximum_Number_of_Time_Steps),
 		     1,
 		     MPI::INT,Source_Rank);
-  MPI::COMM_WORLD.Bcast(&(IP.Explicit_Rel_Tol), 1, MPI::DOUBLE, Source_Rank);
+  Communicator.Bcast(&(IP.Explicit_Rel_Tol),
+                     1, 
+                     MPI::DOUBLE,Source_Rank);
   Communicator.Bcast(&(IP.N_Stage),
 		     1,
 		     MPI::INT,Source_Rank);
@@ -972,7 +986,9 @@ void Broadcast_Input_Parameters(HighTemp2D_Input_Parameters &IP,
   IP.Multigrid_IP.Broadcast_Input_Parameters(Communicator,
 					     Source_CPU);
 
-	IP.NKS_IP.Broadcast_Input_Parameters(Communicator, Source_CPU);
+  // NKS parameters:
+  IP.NKS_IP.Broadcast_Input_Parameters(Communicator, 
+                                       Source_CPU);
 
   // Reconstruction:
   Communicator.Bcast(IP.Reconstruction_Type,
@@ -1041,10 +1057,6 @@ void Broadcast_Input_Parameters(HighTemp2D_Input_Parameters &IP,
   Communicator.Bcast(&(IP.i_Turbulent_Wall_Injection),
 		     1,
 		     MPI::INT,Source_Rank);
-  // Propellant type:
-  Communicator.Bcast(IP.Propellant_Type,
-		     INPUT_PARAMETER_LENGTH_HIGHTEMP2D,
-		     MPI::CHAR,Source_Rank);
   // Initial conditions:
   Communicator.Bcast(IP.ICs_Type,
 		     INPUT_PARAMETER_LENGTH_HIGHTEMP2D,
@@ -1366,10 +1378,12 @@ void Broadcast_Input_Parameters(HighTemp2D_Input_Parameters &IP,
   Communicator.Bcast(&(IP.AMR_Xmax.y),
 		     1,
 		     MPI::DOUBLE,Source_Rank);
-
-  MPI::COMM_WORLD.Bcast(&(IP.Morton),                      1, MPI::INT, Source_Rank);
-  MPI::COMM_WORLD.Bcast(&(IP.Morton_Reordering_Frequency), 1, MPI::INT, Source_Rank);
-
+  Communicator.Bcast(&(IP.Morton),
+                     1, 
+                     MPI::INT, Source_Rank);
+  Communicator.Bcast(&(IP.Morton_Reordering_Frequency), 
+                     1, 
+                     MPI::INT, Source_Rank);
   // Mesh stretching flag:
   Communicator.Bcast(&(IP.i_Mesh_Stretching),
 		     1,
@@ -1433,7 +1447,9 @@ void Broadcast_Input_Parameters(HighTemp2D_Input_Parameters &IP,
   Communicator.Bcast(&(IP.Output_Progress_Frequency),
 		     1,
 		     MPI::INT,Source_Rank);
-  MPI::COMM_WORLD.Bcast(&(IP.Explicit_Write_Output_Freq), 1, MPI::INT, Source_Rank);
+  Communicator.Bcast(&(IP.Explicit_Write_Output_Freq), 
+                     1, 
+                     MPI::INT, Source_Rank);
   // Number of blocks per processor:
   if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
     IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
@@ -1441,11 +1457,11 @@ void Broadcast_Input_Parameters(HighTemp2D_Input_Parameters &IP,
   Communicator.Bcast(&(IP.Number_of_Blocks_Per_Processor),
 		     1,
 		     MPI::INT,Source_Rank);
-  MPI::COMM_WORLD.Bcast(&(HTTOL), 1, MPI::DOUBLE, Source_Rank);
-
+  Communicator.Bcast(&(HTTOL), 
+                     1, 
+                     MPI::DOUBLE, Source_Rank);
   // Reinitialize the reference state.
   Reinitialize_Reference_State(IP);
-
 }
 #endif
 
@@ -1463,21 +1479,19 @@ void Get_Next_Input_Control_Parameter(HighTemp2D_Input_Parameters &IP) {
   IP.Line_Number = IP.Line_Number + 1;
   IP.Input_File.getline(buffer,sizeof(buffer));
 
-	if (IP.Input_File.gcount() == sizeof(buffer)-1) {
-		// if getline does not find a delimiter before size-1
-		// characters then it sets the ifstream state to not
-		// good. I never knew. -- Alistair Wood
-		IP.Input_File.clear(); 
-
-		IP.Input_File.ignore(10000, '\n');
-		if (buffer[0] != '#') {
-			cout << "\n***\n\nWarning: input file line " << IP.Line_Number;
-			cout << ": Line is more than " << sizeof(buffer) << " characters long. ";
-			cout << "Ignoring rest of line.";
-			cout << "\n\n***\n";
-		}
-	}
-
+  if (IP.Input_File.gcount() == sizeof(buffer)-1) {
+    // if getline does not find a delimiter before size-1
+    // characters then it sets the ifstream state to not
+    // good. I never knew. -- Alistair Wood
+    IP.Input_File.clear(); 
+    IP.Input_File.ignore(10000, '\n');
+    if (buffer[0] != '#') {
+       cout << "\n***\n\nWarning: input file line " << IP.Line_Number;
+       cout << ": Line is more than " << sizeof(buffer) << " characters long. ";
+       cout << "Ignoring rest of line.";
+       cout << "\n\n***\n";
+    }
+  }
   i = 0;
   if (buffer[0] != '#') {
     while (1) {
@@ -1505,7 +1519,16 @@ int Parse_Next_Input_Control_Parameter(HighTemp2D_Input_Parameters &IP) {
   int tpt, bct;
   Vector2D Xt;
 
-  if (strcmp(IP.Next_Control_Parameter,"Equation_Of_State_Type") == 0) {
+  if (strcmp(IP.Next_Control_Parameter, "CFFC_Path") == 0) {
+    i_command = 1111;
+    Get_Next_Input_Control_Parameter(IP);
+    strcpy(IP.CFFC_Path, IP.Next_Control_Parameter);
+    strcpy(IP.NASA_Rotor37_Data_Directory, IP.CFFC_Path);
+    strcpy(IP.NASA_Rotor37_Data_Directory, "/data/NASA_Rotors/R37/");
+    strcpy(IP.NASA_Rotor67_Data_Directory, IP.CFFC_Path);
+    strcpy(IP.NASA_Rotor67_Data_Directory, "/data/NASA_Rotors/R67/");
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Equation_Of_State_Type") == 0) {
     i_command = 700;
     Get_Next_Input_Control_Parameter(IP);
     strcpy(IP.Equation_Of_State_Type,IP.Next_Control_Parameter);
@@ -1517,7 +1540,7 @@ int Parse_Next_Input_Control_Parameter(HighTemp2D_Input_Parameters &IP) {
      i_command = INVALID_INPUT_VALUE;
    }
 
- } else if (strcmp(IP.Next_Control_Parameter,"Time_Integration_Type") == 0) {
+  } else if (strcmp(IP.Next_Control_Parameter,"Time_Integration_Type") == 0) {
     i_command = 1;
     Get_Next_Input_Control_Parameter(IP);
     strcpy(IP.Time_Integration_Type,IP.Next_Control_Parameter);
@@ -1776,18 +1799,10 @@ int Parse_Next_Input_Control_Parameter(HighTemp2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Grid_Type,"Flat_Plate_NK") == 0) {
       IP.i_Grid = GRID_FLAT_PLATE_NK;
       IP.Plate_Length = ONE;
-    } else if (strcmp(IP.Grid_Type,"FPBL_Interaction") == 0 ) {
-      IP.i_Grid = GRID_FPBL_INTERACTION;
-      IP.Plate_Length = ONE;
-      IP.BC_South = BC_WALL_VISCOUS_HEATFLUX;
     } else if (strcmp(IP.Grid_Type,"Isothermal_Flat_Plate") == 0) {
       IP.i_Grid = GRID_FLAT_PLATE;
       IP.Plate_Length = ONE;
       IP.BC_South = BC_WALL_VISCOUS_ISOTHERMAL;
-     } else if (strcmp(IP.Grid_Type,"Burning_Surface_Flat_Plate") == 0) {
-      IP.i_Grid = GRID_FLAT_PLATE;
-      IP.Plate_Length = ONE;
-      IP.BC_South = BC_BURNING_SURFACE;
     } else if (strcmp(IP.Grid_Type,"Pipe") == 0) {
       IP.i_Grid = GRID_PIPE;
       IP.Pipe_Length = ONE;
@@ -1875,8 +1890,6 @@ int Parse_Next_Input_Control_Parameter(HighTemp2D_Input_Parameters &IP) {
       IP.i_Grid = GRID_BACKWARD_FACING_STEP;
     } else if (strcmp(IP.Grid_Type,"Forward_Facing_Step") == 0) {
       IP.i_Grid = GRID_FORWARD_FACING_STEP;
-    } else if (strcmp(IP.Grid_Type,"FPBL_Interaction") == 0) {
-      IP.i_Grid = GRID_FPBL_INTERACTION;
     }else if (strcmp(IP.Grid_Type,"Nozzle") == 0) {
       IP.i_Grid = GRID_NOZZLE;
     } else if (strcmp(IP.Grid_Type,"Desolvation_Chamber") == 0) {
@@ -1995,37 +2008,36 @@ int Parse_Next_Input_Control_Parameter(HighTemp2D_Input_Parameters &IP) {
     IP.Input_File >> IP.N_Stage;
     IP.Input_File.getline(buffer,sizeof(buffer));
 
-		// This assumes that the time integration type is specified  
-		// first in the input file which is not necessarily a given.
-		switch (IP.i_Time_Integration) {
-			case TIME_STEPPING_EXPLICIT_EULER: 
-				if (IP.N_Stage != 1) {
-					cout << "\n***\n\nWarning: ";
-					cout << "Explicit Euler time stepping requested but N_Stage != 1. Setting N_Stage to 1.";
-					cout << "\n\n***\n";
-					IP.N_Stage = 1;
-				}
-				break;
-			case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR:
-				if (IP.N_Stage != 2) {
-					cout << "\n***\n\nWarning: ";
-					cout << "Explicit Predictor Corrector time stepping requested but N_Stage != 2. Setting N_Stage to 2.";
-					cout << "\n\n***\n";
-					IP.N_Stage = 2;
-				}
-				break;
-			case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA:
-				if (IP.N_Stage != 4) {
-					cout << "\n***\n\nWarning: ";
-					cout << "RK4 time stepping requested but N_Stage != 4. Setting N_Stage to 4.";
-					cout << "\n\n***\n";
-					IP.N_Stage = 4;
-				}
-				break;
-				// and for all other time marching methods, 
-				// trust that the user knows what's going on.
-		}
-				
+    // This assumes that the time integration type is specified  
+    // first in the input file which is not necessarily a given.
+    switch (IP.i_Time_Integration) {
+      case TIME_STEPPING_EXPLICIT_EULER: 
+        if (IP.N_Stage != 1) {
+   	   cout << "\n***\n\nWarning: ";
+	   cout << "Explicit Euler time stepping requested but N_Stage != 1. Setting N_Stage to 1.";
+	   cout << "\n\n***\n";
+	   IP.N_Stage = 1;
+	}
+	break;
+      case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR:
+	if (IP.N_Stage != 2) {
+	   cout << "\n***\n\nWarning: ";
+	   cout << "Explicit Predictor Corrector time stepping requested but N_Stage != 2. Setting N_Stage to 2.";
+	   cout << "\n\n***\n";
+	   IP.N_Stage = 2;
+	}
+	break;
+      case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA:
+	if (IP.N_Stage != 4) {
+	   cout << "\n***\n\nWarning: ";
+	   cout << "RK4 time stepping requested but N_Stage != 4. Setting N_Stage to 4.";
+	   cout << "\n\n***\n";
+	   IP.N_Stage = 4;
+	}
+	break;
+    // and for all other time marching methods, 
+    // trust that the user knows what's going on.
+    }
     if (IP.N_Stage < 0) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(IP.Next_Control_Parameter,"CFL_Number") == 0) {
@@ -2507,21 +2519,20 @@ int Parse_Next_Input_Control_Parameter(HighTemp2D_Input_Parameters &IP) {
     IP.Input_File >> IP.X_Rotate;
     IP.Input_File.getline(buffer,sizeof(buffer));
 
-	} else if (strcmp(IP.Next_Control_Parameter, "AMR") == 0) {
-		i_command = 71;
-		Get_Next_Input_Control_Parameter(IP);
-		strcpy(buffer, IP.Next_Control_Parameter);
-		if (strlen(buffer) > 1) {
-			for (unsigned ii = 0; ii < strlen(buffer); ii++) {
-				buffer[ii] = tolower(buffer[ii]);
-			}
-		}
-
-		if (strcmp(buffer, "off") == 0 | strcmp(buffer, "false") == 0 | strcmp(buffer, "0") == 0) {
-			IP.AMR = OFF;
-		} else {
-			IP.AMR = ON;
-		}
+  } else if (strcmp(IP.Next_Control_Parameter, "AMR") == 0) {
+    i_command = 71;
+    Get_Next_Input_Control_Parameter(IP);
+    strcpy(buffer, IP.Next_Control_Parameter);
+    if (strlen(buffer) > 1) {
+      for (unsigned ii = 0; ii < strlen(buffer); ii++) {
+        buffer[ii] = tolower(buffer[ii]);
+      }
+    }
+    if (strcmp(buffer, "off") == 0 | strcmp(buffer, "false") == 0 | strcmp(buffer, "0") == 0) {
+      IP.AMR = OFF;
+    } else {
+      IP.AMR = ON;
+    }
 
   } else if (strcmp(IP.Next_Control_Parameter,"AMR_Frequency") == 0) {
     i_command = 72;
@@ -2681,35 +2692,35 @@ int Parse_Next_Input_Control_Parameter(HighTemp2D_Input_Parameters &IP) {
     IP.Input_File.getline(buffer,sizeof(buffer));
 
   } else if (strcmp(IP.Next_Control_Parameter, "Morton") == 0) {
-		i_command = 90;
-		Get_Next_Input_Control_Parameter(IP);
-		strcpy(buffer, IP.Next_Control_Parameter);
-		if (strlen(buffer) > 1) {
-			for (unsigned ii = 0; ii < strlen(buffer); ii++) {
-				buffer[ii] = tolower(buffer[ii]);
-			}
-		}
-		if (strcmp(buffer, "on") == 0 | strcmp(buffer, "true") == 0 | strcmp(buffer, "1") == 0) {
-			IP.Morton = 1;
-		} else {
-			IP.Morton = 0;
-		}
+    i_command = 91;
+    Get_Next_Input_Control_Parameter(IP);
+    strcpy(buffer, IP.Next_Control_Parameter);
+    if (strlen(buffer) > 1) {
+       for (unsigned ii = 0; ii < strlen(buffer); ii++) {
+	  buffer[ii] = tolower(buffer[ii]);
+       }
+    }
+    if (strcmp(buffer, "on") == 0 | strcmp(buffer, "true") == 0 | strcmp(buffer, "1") == 0) {
+       IP.Morton = 1;
+    } else {
+       IP.Morton = 0;
+    }
 
   } else if (strcmp(IP.Next_Control_Parameter, "Morton_Reordering_Frequency") == 0) {
-    i_command = 90;
+    i_command = 92;
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File >> IP.Morton_Reordering_Frequency;
     IP.Input_File.getline(buffer,sizeof(buffer));
 
   } else if (strcmp(IP.Next_Control_Parameter,"Residual_Variable") == 0) {
-    i_command = 91;
+    i_command = 93;
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File >> IP.i_Residual_Variable;
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.i_Residual_Variable < 1) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(IP.Next_Control_Parameter,"Residual_Smoothing_Epsilon") == 0) {
-    i_command = 92;
+    i_command = 94;
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File >> IP.Residual_Smoothing_Epsilon;
     IP.Input_File.getline(buffer,sizeof(buffer));
@@ -2721,7 +2732,7 @@ int Parse_Next_Input_Control_Parameter(HighTemp2D_Input_Parameters &IP) {
     }
 
   } else if (strcmp(IP.Next_Control_Parameter,"Residual_Smoothing_Gauss_Seidel_Iterations") == 0) {
-    i_command = 93;
+    i_command = 95;
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File >> IP.Residual_Smoothing_Gauss_Seidel_Iterations;
     IP.Input_File.getline(buffer,sizeof(buffer));
@@ -3041,32 +3052,32 @@ int Parse_Next_Input_Control_Parameter(HighTemp2D_Input_Parameters &IP) {
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Multigrid_IP.Number_of_Smooths_on_Coarsest_Level < 0) i_command = INVALID_INPUT_VALUE;
 
-	} else if (strcmp(IP.Next_Control_Parameter, "MG_Regular_Absolute_Tolerance") == 0) {
-		 i_command = 215;
-		 IP.Line_Number = IP.Line_Number + 1;
-		 IP.Input_File >> IP.Multigrid_IP.reg_abs_tol;
-		 IP.Input_File.getline(buffer, sizeof(buffer));
+  } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Absolute_Convergence_Tolerance") == 0) {
+    i_command = 215;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Multigrid_IP.Absolute_Convergence_Tolerance;
+    IP.Input_File.getline(buffer, sizeof(buffer));
 
-	} else if (strcmp(IP.Next_Control_Parameter, "MG_Regular_Relative_Tolerance") == 0) {
-		 i_command = 215;
-		 IP.Line_Number = IP.Line_Number + 1;
-		 IP.Input_File >> IP.Multigrid_IP.reg_rel_tol;
-		 IP.Input_File.getline(buffer, sizeof(buffer));
+  } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Relative_Convergence_Tolerance") == 0) {
+    i_command = 216;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Multigrid_IP.Relative_Convergence_Tolerance;
+    IP.Input_File.getline(buffer, sizeof(buffer));
 
-	} else if (strcmp(IP.Next_Control_Parameter, "MG_Full_Absolute_Tolerance") == 0) {
-		 i_command = 215;
-		 IP.Line_Number = IP.Line_Number + 1;
-		 IP.Input_File >> IP.Multigrid_IP.full_abs_tol;
-		 IP.Input_File.getline(buffer, sizeof(buffer));
+  } else if (strcmp(IP.Next_Control_Parameter, "FMG_Absolute_Convergence_Tolerance") == 0) {
+    i_command = 217;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Multigrid_IP.FMG_Absolute_Convergence_Tolerance;
+    IP.Input_File.getline(buffer, sizeof(buffer));
 
-	} else if (strcmp(IP.Next_Control_Parameter, "MG_Full_Relative_Tolerance") == 0) {
-		 i_command = 215;
-		 IP.Line_Number = IP.Line_Number + 1;
-		 IP.Input_File >> IP.Multigrid_IP.full_rel_tol;
-		 IP.Input_File.getline(buffer, sizeof(buffer));
+  } else if (strcmp(IP.Next_Control_Parameter, "FMG_Relative_Convergence_Tolerance") == 0) {
+    i_command = 218;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Multigrid_IP.FMG_Relative_Convergence_Tolerance;
+    IP.Input_File.getline(buffer, sizeof(buffer));
 
   } else if (strcmp(IP.Next_Control_Parameter,"Multigrid_Smoothing_Type") == 0) {
-    i_command = 216;
+    i_command = 219;
     Get_Next_Input_Control_Parameter(IP);
     strcpy(IP.Multigrid_IP.Smoothing_Type,IP.Next_Control_Parameter);
     if (strcmp(IP.Multigrid_IP.Smoothing_Type,"Explicit_Euler") == 0) {
@@ -3086,21 +3097,21 @@ int Parse_Next_Input_Control_Parameter(HighTemp2D_Input_Parameters &IP) {
     }
 
   } else if (strcmp(IP.Next_Control_Parameter,"Ncycles_Regular_Multigrid") == 0) {
-    i_command = 217;
+    i_command = 220;
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File >> IP.Multigrid_IP.Ncycles_Regular_Multigrid;
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Multigrid_IP.Ncycles_Regular_Multigrid < 0) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(IP.Next_Control_Parameter,"Ncycles_Full_Multigrid") == 0) {
-    i_command = 218;
+    i_command = 221;
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File >> IP.Multigrid_IP.Ncycles_Full_Multigrid;
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Multigrid_IP.Ncycles_Full_Multigrid < 0) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(IP.Next_Control_Parameter,"Physical_Time_Integration_Type") == 0) {
-    i_command = 219;
+    i_command = 222;
     Get_Next_Input_Control_Parameter(IP);
     strcpy(IP.Multigrid_IP.Physical_Time_Integration_Type,
 	   IP.Next_Control_Parameter);
@@ -3128,24 +3139,24 @@ int Parse_Next_Input_Control_Parameter(HighTemp2D_Input_Parameters &IP) {
     }
 
   } else if (strcmp(IP.Next_Control_Parameter,"Physical_Time_CFL_Number") == 0) {
-    i_command = 220;
+    i_command = 223;
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File >> IP.Multigrid_IP.Physical_Time_CFL_Number;
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Multigrid_IP.Physical_Time_CFL_Number <= ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(IP.Next_Control_Parameter,"Dual_Time_Convergence_Residual_Level") == 0) {
-    i_command = 221;
+    i_command = 224;
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File >> IP.Multigrid_IP.Dual_Time_Convergence_Residual_Level;
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Multigrid_IP.Dual_Time_Convergence_Residual_Level < ZERO) i_command = INVALID_INPUT_VALUE;
 
-	} else if (strcmp(IP.Next_Control_Parameter,"MG_Write_Output_Cells_Freq") == 0) {
-		i_command = 225;
-		IP.Line_Number = IP.Line_Number + 1;
-		IP.Input_File >> IP.Multigrid_IP.MG_Write_Output_Cells_Freq;
-		IP.Input_File.getline(buffer,sizeof(buffer));
+  } else if (strcmp(IP.Next_Control_Parameter,"Multigrid_Write_Output_Cells_Frequency") == 0) {
+    i_command = 225;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Multigrid_IP.Write_Output_Cells_Frequency;
+    IP.Input_File.getline(buffer,sizeof(buffer));
 
     ////////////////////////////////////////////////////////////////////
     // END OF FAS MULTIGRID PARAMETERS                                //
@@ -3155,25 +3166,15 @@ int Parse_Next_Input_Control_Parameter(HighTemp2D_Input_Parameters &IP) {
     // SOLID PROPELLANT TYPE                                          //
     ////////////////////////////////////////////////////////////////////
 
-  } else if (strcmp(IP.Next_Control_Parameter,"Propellant_Type") == 0) {
-    i_command = 450;
-    Get_Next_Input_Control_Parameter(IP);
-    strcpy(IP.Propellant_Type,IP.Next_Control_Parameter);
-    if (strcmp(IP.Propellant_Type,"AP_HTPB") == 0) {
-    } else if (strcmp(IP.Propellant_Type,"QUICK_AP_HTPB") == 0) {
-    } else {
-      i_command = INVALID_INPUT_VALUE;
-    }
-
   } else if (strcmp(IP.Next_Control_Parameter,"Surface_Roughness") == 0) {
-    i_command = 451;
+    i_command = 450;
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File >> IP.sigmav;
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.sigmav < ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(IP.Next_Control_Parameter,"Turbulence_Length_Scale") == 0) {
-    i_command = 452;
+    i_command = 451;
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File >> IP.lw;
     IP.Input_File.getline(buffer,sizeof(buffer));
@@ -3661,29 +3662,30 @@ int Parse_Next_Input_Control_Parameter(HighTemp2D_Input_Parameters &IP) {
 
   }
 
-	if (i_command == INVALID_INPUT_CODE) {
-		// that is, we have an input line which:
-		//  - is not a comment (that's COMMENT_CODE), and,
-		//  - is not a valid code with an invalid value (that's INVALID_INPUT_VALUE), 
-		// and so is an unknown option. Maybe it's an NKS option:
-		strcpy(buffer, IP.Next_Control_Parameter);
-		Get_Next_Input_Control_Parameter(IP);
-		i_command = IP.NKS_IP.Parse_Next_Input_Control_Parameter(buffer, IP.Next_Control_Parameter);
+  if (i_command == INVALID_INPUT_CODE) {
+    // that is, we have an input line which:
+    //  - is not a comment (that's COMMENT_CODE), and,
+    //  - is not a valid code with an invalid value (that's INVALID_INPUT_VALUE), 
+    // and so is an unknown option. Maybe it's an NKS option:
+    strcpy(buffer, IP.Next_Control_Parameter);
+    Get_Next_Input_Control_Parameter(IP);
+    i_command = IP.NKS_IP.Parse_Next_Input_Control_Parameter(buffer, 
+                                                             IP.Next_Control_Parameter);
 
-		// If it's still unknown then ignore it. 
-		// This could be a bad idea if it was an unknown command 
-		// as opposed to an unknown code.
-		if (i_command == INVALID_INPUT_CODE) {
-			cout << "\n***\n\nWarning: input file line " << IP.Line_Number << ": ";
-			cout << "ignoring unknown input code:\n";
-			cout << "code: " << buffer;
-			cout << "\nvalue: " << IP.Next_Control_Parameter;
-			cout << "\n\n***\n";
-		}
-		i_command = COMMENT_CODE; // sure why not
-	}
-
-	if (!IP.Input_File.good()) { i_command = INVALID_INPUT_VALUE; }
+    // If it's still unknown then ignore it. 
+    // This could be a bad idea if it was an unknown command 
+    // as opposed to an unknown code.
+    if (i_command == INVALID_INPUT_CODE) {
+	cout << "\n***\n\nWarning: input file line " << IP.Line_Number << ": ";
+	cout << "ignoring unknown input code:\n";
+	cout << "code: " << buffer;
+	cout << "\nvalue: " << IP.Next_Control_Parameter;
+	cout << "\n\n***\n";
+    }
+    i_command = COMMENT_CODE; // sure why not
+  }
+  
+  if (!IP.Input_File.good()) { i_command = INVALID_INPUT_VALUE; }
 
   return i_command;
 
@@ -3774,24 +3776,22 @@ void Initialize_Reference_State(HighTemp2D_Input_Parameters &IP) {
   double cos_angle, sin_angle, soundspeed;
 
   // Set static variables.
-	HighTemp2D_pState::set_static_variables(IP.Gas_Type,
-			     IP.EOSType,
-			     IP.FlowType,
-			     IP.C_constant,
-			     IP.von_Karman_Constant,
-			     IP.yplus_sublayer,
-			     IP.yplus_buffer_layer,
-			     IP.yplus_outer_layer,
-			     IP.Propellant_Type);
-	HighTemp2D_cState::set_static_variables(IP.Gas_Type,
-			     IP.EOSType,
-			     IP.FlowType,
-			     IP.C_constant,
-			     IP.von_Karman_Constant,
-			     IP.yplus_sublayer,
-			     IP.yplus_buffer_layer,
-			     IP.yplus_outer_layer,
-			     IP.Propellant_Type);
+  HighTemp2D_pState::set_static_variables(IP.Gas_Type,
+	               		          IP.EOSType,
+			                  IP.FlowType,
+			                  IP.C_constant,
+			                  IP.von_Karman_Constant,
+			                  IP.yplus_sublayer,
+			                  IP.yplus_buffer_layer,
+			                  IP.yplus_outer_layer);
+  HighTemp2D_cState::set_static_variables(IP.Gas_Type,
+			                  IP.EOSType,
+			                  IP.FlowType,
+			                  IP.C_constant,
+			                  IP.von_Karman_Constant,
+			                  IP.yplus_sublayer,
+			                  IP.yplus_buffer_layer,
+			                  IP.yplus_outer_layer);
 
   // Initialize gas-phase reference state.
   IP.Wo.rho = IP.Pressure/(IP.Wo.R*IP.Temperature);

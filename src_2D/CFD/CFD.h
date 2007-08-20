@@ -55,18 +55,6 @@ inline string CFFC_Version() {
   return ("CFFC, Version 0.00, UTIAS CFD & Propulsion Group, 1999-2007.");
 }
 
-inline string Architecture() {
-#if defined _ALPHA
-	return ("Alpha");
-#elif defined _ITANIUM
-	return ("Itanium");
-#elif defined _i386
-	return ("i386");
-#else
-	return ("unknown");
-#endif
-}
-
 /**********************************************************************
  * CFD -- Date and time.                                              *
  **********************************************************************/
@@ -182,7 +170,6 @@ inline char *Date_And_Time() {
 #define GRID_RECTANGULAR_BOX                  2
 #define GRID_FLAT_PLATE                       3
 #define GRID_FLAT_PLATE_NK                  165
-#define GRID_FPBL_INTERACTION               168
 #define GRID_PIPE                             4
 #define GRID_BLUNT_BODY                       5
 #define GRID_ROCKET_MOTOR                     6
@@ -198,16 +185,16 @@ inline char *Date_And_Time() {
 #define GRID_BUMP_CHANNEL_FLOW               16
 #define GRID_DRIVEN_CAVITY_FLOW              17
 #define GRID_BACKWARD_FACING_STEP            18
-#define GRID_FORWARD_FACING_STEP            171
-#define GRID_MIXING_LAYER                    19 
-#define GRID_NOZZLE                          20
-#define GRID_NOZZLELESS_ROCKET_MOTOR         21
-#define GRID_DESOLVATION_CHAMBER             22
-#define GRID_FREE_JET_FLAME                  23
-#define GRID_ADIABATIC_FLAT_PLATE            24
-#define GRID_ADIABATIC_PIPE                  25
-#define GRID_ADIABATIC_CIRCULAR_CYLINDER     26
-#define GRID_ADIABATIC_COUETTE               27
+#define GRID_FORWARD_FACING_STEP             19
+#define GRID_MIXING_LAYER                    20 
+#define GRID_NOZZLE                          21
+#define GRID_NOZZLELESS_ROCKET_MOTOR         22
+#define GRID_DESOLVATION_CHAMBER             23
+#define GRID_FREE_JET_FLAME                  24
+#define GRID_ADIABATIC_FLAT_PLATE            25
+#define GRID_ADIABATIC_PIPE                  26
+#define GRID_ADIABATIC_CIRCULAR_CYLINDER     27
+#define GRID_ADIABATIC_COUETTE               28
 
 #define GRID_ICEMCFD                       1000
 #define GRID_READ_FROM_DEFINITION_FILE    10000
@@ -706,12 +693,12 @@ inline char *Date_And_Time() {
 #define EXPLICIT                          0
 #define IMPLICIT                          1
 
-/********************************************************
- *
- * CFD -- Maximum length of codes and values of input parameter strings.
- * Ideally this will be used for all input parameter classes.
- *
- ********************************************************/
+/*************************************************************************
+ *                                                                       *
+ * CFD -- Maximum length of codes and values of input parameter strings. *
+ * Ideally this will be used for all input parameter classes.            *
+ *                                                                       *
+ *************************************************************************/
 #define	INPUT_PARAMETER_MAX_LENGTH    128
 
 /**********************************************************************
@@ -764,6 +751,23 @@ inline float  vanalbada(float x, float y, float epsi)
 inline double vanalbada(const double &x, const double &y,
 		        const double &epsi)
    { return (x*y+sqr(epsi))*(x+y)/(sqr(x)+sqr(y)+TWO*sqr(epsi)); }
+
+// Inline functions for AUSMplusUP flux calculation.
+// M+1
+inline double Mplus_1(double M)
+  { return 0.5*(M + fabs(M)); }
+
+// M-1
+inline double Mminus_1(double M)
+  { return 0.5*(M - fabs(M)); }
+
+// M+2
+inline double Mplus_2(double M)
+  { return 0.25*sqr(M + 1.0); }
+
+// M-2
+inline double Mminus_2(double M)
+  { return -0.25*sqr(M - 1.0); }
 
 /********************************************************
  * CFD -- Define CFD structures and classes.            *
@@ -1688,7 +1692,7 @@ void Hybrid_Find_dWdX(
 }
 
 // for use with qsort
-int compare_ints(const void *p, const void *q);
+int Compare_Ints(const void *p, const void *q);
 
 // Returns the slope of the line of best fit (in the 
 // least-squares sense) where the data sets are:
@@ -1700,6 +1704,6 @@ int compare_ints(const void *p, const void *q);
 //
 // "values" is a circular array so the actual indexing 
 // is the remainder after division by n.
-double least_squares_slope(double *values, int n, int position);
+double Least_Squares_Slope(double *values, int n, int position);
 
 #endif /* _CFD_INCLUDED  */

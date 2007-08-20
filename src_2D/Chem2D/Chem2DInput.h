@@ -159,7 +159,7 @@ class Chem2D_Input_Parameters{
 
   //! Root path of CFFC 
   char CFFC_Path[INPUT_PARAMETER_LENGTH_CHEM2D];
-  void get_cfdkit_path();
+  void get_cffc_path();
   //@}
 
   //@{ @name Flow type indicator and related input parameters:
@@ -325,7 +325,7 @@ class Chem2D_Input_Parameters{
     for (int i = 0; i < 3; i++) {
       delete[] ICEMCFD_FileNames[i]; 
     } /* endfor */
-    delete[]  ICEMCFD_FileNames; ICEMCFD_FileNames=NULL;
+    delete[] ICEMCFD_FileNames; ICEMCFD_FileNames=NULL;
     //State class memory
     Deallocate(); 
   }
@@ -847,15 +847,13 @@ inline istream &operator >> (istream &in_file,
 }
 
 
-/****************** Get CFD kit Path *********/
-inline void Chem2D_Input_Parameters::get_cfdkit_path(){
- 
+/****************** Get CFFC Path *********/
+inline void Chem2D_Input_Parameters::get_cffc_path(){
   // Check to see if environment varible exists.
   if(getenv(PATHVAR) == NULL){
     cerr<<"Missing Environment Variable: "<<PATHVAR<<"\n\n"; 
     exit(1);
   }
-  
   //Set Path
   strcpy(CFFC_Path,getenv(PATHVAR));
 }

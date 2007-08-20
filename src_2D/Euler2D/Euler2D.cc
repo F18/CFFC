@@ -30,7 +30,6 @@ using namespace std;
 
 #include "Euler2DQuad.h"
 #include "../MPI/MPI.h"
-#include "../ICEM/ICEMCFD.h"
 
 /* Begin Euler2D program. */
 

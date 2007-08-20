@@ -1,15 +1,15 @@
 /**********************************************************************
  * HighTemp2DQuadIOSingleBlock.cc: Single-block versions of input     *
- *                                     and output subroutines for 2D  *
- *                                     High-Temp multi-block          *
- *                                     quadrilateral mesh solution    *
- *                                     classes.                       *
+ *                                 and output subroutines for 2D      *
+ *                                 High-Temp multi-block              *
+ *                                 quadrilateral mesh solution        *
+ *                                 classes.                           *
  **********************************************************************/
 
 #include "HighTemp2DQuad.h"
 
 /**********************************************************************
- * HighTemp2D_Quad_Block -- IO Single Block External Subroutines. *
+ * HighTemp2D_Quad_Block -- IO Single Block External Subroutines.     *
  **********************************************************************/
 
 /**********************************************************************
@@ -49,43 +49,42 @@ void Read_Solution_Block(HighTemp2D_Quad_Block &SolnBlk,
  * quadrilateral solution block to the specified output stream        *
  * suitable for plotting with TECPLOT.                                *
  *                                                                    *
- * We evaluate the boundary conditions before writing out the data
- * and so the SolnBlk is modified by this function. Clearly, then,
- * SolnBlk cannot be passed as a constant reference.
+ * We evaluate the boundary conditions before writing out the data    *
+ * and so the SolnBlk is modified by this function. Clearly, then,    *
+ * SolnBlk cannot be passed as a constant reference.                  *
  *                                                                    *
  **********************************************************************/
 void Output_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
-		const HighTemp2D_Input_Parameters &IP,
-		int Number_of_Time_Steps,
-		double Time,
-		int Block_Number,
-		int Output_Title,
-		ostream &Out_File) 
-{
-	double l2_norm = -1.0, l2_norm_rel = -1.0;
-	Output_Tecplot(SolnBlk,
-			IP,
-			Number_of_Time_Steps,
-			Time,
-			Block_Number,
-			Output_Title,
-			l2_norm,
-			l2_norm_rel,
-			Out_File);
+		    HighTemp2D_Input_Parameters &IP,
+		    const int Number_of_Time_Steps,
+		    const double &Time,
+		    const int Block_Number,
+		    const int Output_Title,
+		    ostream &Out_File) {
+  double l2_norm = -1.0, l2_norm_rel = -1.0;
+  Output_Tecplot(SolnBlk,
+	         IP,
+		 Number_of_Time_Steps,
+		 Time,
+		 Block_Number,
+		 Output_Title,
+		 l2_norm,
+		 l2_norm_rel,
+		 Out_File);
 }
 
 void Output_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
-		const HighTemp2D_Input_Parameters &IP,
-		int Number_of_Time_Steps,
-		double Time,
-		int Block_Number,
-		int Output_Title,
-		double l2_norm,
-		double l2_norm_rel,
-		ostream &Out_File) 
-{
+		    HighTemp2D_Input_Parameters &IP,
+		    const int Number_of_Time_Steps,
+		    const double &Time,
+		    const int Block_Number,
+		    const int Output_Title,
+		    const double &l2_norm,
+		    const double &l2_norm_rel,
+		    ostream &Out_File) {
+
   HighTemp2D_pState W_node;
-	// whether or not to print the ghost cells. Use 1 or 0.
+  // whether or not to print the ghost cells. Use 1 or 0.
   int ng = 0;
 
   // Ensure boundary conditions are updated before evaluating
@@ -96,21 +95,21 @@ void Output_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
   Out_File << setprecision(14);
   if (Output_Title) {
     Out_File << "TITLE = \"";
-		if (l2_norm <= 0.0) {
-			Out_File << CFFC_Name() << ": 2D HighTemp Solution, "
-	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
-	     << ", Time = " << Time;
-		} else {
-			Out_File << "HighTemp2D: Iteration = " << Number_of_Time_Steps
-				<< fixed << setprecision(4) << ", L2-Norm = " << l2_norm
-				<< scientific << setprecision(3) << ", L2-Norm Rel = " << l2_norm_rel << fixed
-				<< setprecision(14);
-		}
-	     Out_File << "\"" << "\n"
+    if (l2_norm <= 0.0) {
+       Out_File << CFFC_Name() << ": 2D HighTemp Solution, "
+	        << "Time Step/Iteration Level = " << Number_of_Time_Steps
+	        << ", Time = " << Time;
+    } else {
+       Out_File << "HighTemp2D: Iteration = " << Number_of_Time_Steps
+ 	        << fixed << setprecision(4) << ", L2-Norm = " << l2_norm
+		<< scientific << setprecision(3) << ", L2-Norm Rel = " << l2_norm_rel << fixed
+		<< setprecision(14);
+    } /* endif */
+    Out_File << "\"" << "\n"
 	     << "VARIABLES = \"x\" \\ \n"
 	     << "\"y\" \\ \n";
     if (!ng) {
-      Out_File  << "\"rho\" \\ \n"
+      Out_File << "\"rho\" \\ \n"
 	       << "\"u\" \\ \n"
 	       << "\"v\" \\ \n"
 	       << "\"p\" \\ \n"
@@ -119,22 +118,22 @@ void Output_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 	       << "\"H\" \\ \n"
 	       << "\"s\" \\ \n";
       if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-	Out_File << "\"k\" \\ \n"
-		 << "\"omega\" \\ \n"
-		 << "\"epsilon\" \\ \n"
-		 << "\"ell\" \\ \n"
-		 << "\"BCwall\" \\ \n"
-		 << "\"p_modified\" \\ \n"
-		 << "\"yplus\" \\ \n"
-		 << "\"utau\" \\ \n"
-		 << "\"tauw\" \\ \n"
-		 << "\"vwplus\" \\ \n";
-      }
-		Out_File << "\"Rex\" \\ \n";
-    }
-  }
+	 Out_File << "\"k\" \\ \n"
+		  << "\"omega\" \\ \n"
+		  << "\"epsilon\" \\ \n"
+		  << "\"ell\" \\ \n"
+		  << "\"BCwall\" \\ \n"
+		  << "\"p_modified\" \\ \n"
+		  << "\"yplus\" \\ \n"
+		  << "\"utau\" \\ \n"
+		  << "\"tauw\" \\ \n"
+		  << "\"vwplus\" \\ \n";
+      } /* endif */ 
+      Out_File << "\"Rex\" \\ \n";
+    } /* endif */
+  } /* endif */
 
-    Out_File << "ZONE T =  \"Block " << Block_Number << " CPU" << CFFC_MPI::This_Processor_Number
+  Out_File << "ZONE T =  \"Block " << Block_Number << " CPU" << CFFC_MPI::This_Processor_Number
 	   << "\" \\ \n"
 	   << "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 2*SolnBlk.Nghost*ng + 1 << " \\ \n"
 	   << "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 2*SolnBlk.Nghost*ng + 1 << " \\ \n"
@@ -160,16 +159,16 @@ void Output_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 		   << " " << W_node.ell()
 		   << " " << W_node.pmodified()
 		   << " " << SolnBlk.Wall[i][j].BCwall
-		 << " " << SolnBlk.Wall[i][j].yplus
-		 << " " << SolnBlk.Wall[i][j].utau
-		 << " " << SolnBlk.Wall[i][j].tauw
-		 << " " << SolnBlk.Wall[i][j].vwplus;
-	}
+ 		   << " " << SolnBlk.Wall[i][j].yplus
+		   << " " << SolnBlk.Wall[i][j].utau
+		   << " " << SolnBlk.Wall[i][j].tauw
+		   << " " << SolnBlk.Wall[i][j].vwplus;
+	} /* endif */
       Out_File << " " << IP.Wo.v.x/IP.Wo.nu()*SolnBlk.Grid.Node[i][j].X.x;
-      }
+      } /* endif */
       Out_File << endl;
-    }
-  }
+    } /* endfor */
+  } /* endfor */
 
   Out_File << setprecision(6);
 
@@ -183,177 +182,170 @@ void Output_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
  * suitable for plotting with TECPLOT.                                *
  *                                                                    *
  **********************************************************************/
-void Output_Cells_Tecplot(const HighTemp2D_Quad_Block &SolnBlk,
-		const HighTemp2D_Input_Parameters &IP,
-		int Number_of_Time_Steps,
-		double Time,
-		int Block_Number,
-		int Output_Title,
-		ostream &Out_File)
-{
-	double l2_norm = -1.0, l2_norm_rel = -1.0;
-	Output_Cells_Tecplot(SolnBlk, 
-			IP,
-			Number_of_Time_Steps, 
-			Time, 
-			Block_Number, 
-			Output_Title, 
-			l2_norm, 
-			l2_norm_rel, 
-			Out_File);
+void Output_Cells_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
+		          HighTemp2D_Input_Parameters &IP,
+		          const int Number_of_Time_Steps,
+		          const double &Time,
+		          const int Block_Number,
+		          const int Output_Title,
+		          ostream &Out_File) {
+  double l2_norm = -1.0, l2_norm_rel = -1.0;
+  Output_Cells_Tecplot(SolnBlk, 
+		       IP,
+		       Number_of_Time_Steps, 
+		       Time, 
+		       Block_Number, 
+		       Output_Title, 
+		       l2_norm, 
+		       l2_norm_rel, 
+		       Out_File);
 }
 
-void Output_Cells_Tecplot(const HighTemp2D_Quad_Block &SolnBlk,
-		const HighTemp2D_Input_Parameters &IP,
-		int Number_of_Time_Steps,
-		double Time,
-		int Block_Number,
-		int Output_Title,
-		double l2_norm,
-		double l2_norm_rel,
-		ostream &Out_File) 
-{
-	// whether or not to print the ghost cells. Use 1 or 0.
-	int ng = 1;
+void Output_Cells_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
+		          HighTemp2D_Input_Parameters &IP,
+		          const int Number_of_Time_Steps,
+		          const double &Time,
+		          const int Block_Number,
+		          const int Output_Title,
+		          const double &l2_norm,
+		          const double &l2_norm_rel,
+		          ostream &Out_File) {
 
-	Out_File << setprecision(14);
-	if (Output_Title) {
-		Out_File << "TITLE = \"";
-		if (l2_norm <= 0.0) {
-			Out_File << CFFC_Name() << ": 2D HighTemp Solution, "
-				<< "Time Step/Iteration Level = " << Number_of_Time_Steps
-				<< ", Time = " << Time;
-		} else {
-			Out_File << "HighTemp2D: Iteration = " << Number_of_Time_Steps
-				<< fixed << setprecision(4) << ", L2-Norm = " << l2_norm
-				<< scientific << setprecision(3) << ", L2-Norm Rel = " << l2_norm_rel << fixed
-				<< setprecision(14);
-		}
-		Out_File << "\"" << "\n"
-			<< "VARIABLES = \"x\" \\ \n"
-			<< "\"y\" \\ \n"
-			<< "\"rho\" \\ \n"
-			<< "\"u\" \\ \n"
-			<< "\"v\" \\ \n"
-			<< "\"p\" \\ \n"
-			<< "\"T\" \\ \n"
-			<< "\"M\" \\ \n"
-			<< "\"E\" \\ \n"
-			<< "\"H\" \\ \n"
-			<< "\"s\" \\ \n";
-			for (int q = 0; q < NUM_VAR_HIGHTEMP2D; q++) {
-				Out_File << "\"dUdt_" << q << "\" \\ \n";
-			}
-			if (HighTemp2D_cState::eos_type == EOS_TGAS) {
-				// This is Z in the curve-fit of p = p(e, rho)
-				Out_File << "\"Z\" \\ \n";
-			}
-
-			// Print k and omega for all flow types to ensure that
-			// k and omega stay zero for laminar test cases.
-			Out_File << "\"k\" \\ \n"
-	       << "\"omega\" \\ \n";
-
-    if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-	       Out_File << "\"epsilon\" \\ \n"
-	       << "\"ell\" \\ \n"
-	       << "\"p_modified\" \\ \n"
-	       << "\"Mt\" \\ \n";
-    }
-    if (SolnBlk.Flow_Type) {
-      Out_File << "\"tau_xx\" \\ \n"
-	       << "\"tau_xy\" \\ \n"
-	       << "\"tau_yy\" \\ \n";
-      if (SolnBlk.Axisymmetric)
-	Out_File << "\"tau_zz\" \\ \n";
-      Out_File << "\"qx\" \\ \n"
-	       << "\"qy\" \\ \n";
-    }
-    if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-      Out_File << "\"muT\" \\ \n"
-	       << "\"ywall\" \\ \n"
-	       << "\"Xwall.x\" \\ \n"
-	       << "\"Xwall.y\" \\ \n"
-	       << "\"nwall.x\" \\ \n"
-	       << "\"nwall.y\" \\ \n"
-	       << "\"BCwall\" \\ \n"
-	       << "\"yplus\" \\ \n"
-	       << "\"utau\" \\ \n"
-	       << "\"tauw\" \\ \n"
-	       << "\"vwplus\" \\ \n";
-    }
-    Out_File << "\"dt\" \\ \n";
-    Out_File << "\"A\" \\ \n";
-  }
+    // whether or not to print the ghost cells. Use 1 or 0.
+    int ng = 1;
+    Out_File << setprecision(14);
+    if (Output_Title) {
+   	Out_File << "TITLE = \"";
+	if (l2_norm <= 0.0) {
+	   Out_File << CFFC_Name() << ": 2D HighTemp Solution, "
+	            << "Time Step/Iteration Level = " << Number_of_Time_Steps
+		    << ", Time = " << Time;
+	} else {
+	   Out_File << "HighTemp2D: Iteration = " << Number_of_Time_Steps
+	            << fixed << setprecision(4) << ", L2-Norm = " << l2_norm
+	            << scientific << setprecision(3) << ", L2-Norm Rel = " << l2_norm_rel << fixed
+		    << setprecision(14);
+	} /* endif */
+        Out_File << "\"" << "\n"
+	         << "VARIABLES = \"x\" \\ \n"
+		 << "\"y\" \\ \n"
+		 << "\"rho\" \\ \n"
+		 << "\"u\" \\ \n"
+		 << "\"v\" \\ \n"
+		 << "\"p\" \\ \n"
+		 << "\"T\" \\ \n"
+		 << "\"M\" \\ \n"
+		 << "\"E\" \\ \n"
+		 << "\"H\" \\ \n"
+		 << "\"s\" \\ \n";
+	for (int q = 0; q < NUM_VAR_HIGHTEMP2D; q++) {
+	   Out_File << "\"dUdt_" << q << "\" \\ \n";
+	} /* endfor */
+	if (HighTemp2D_cState::eos_type == EOS_TGAS) {
+	   // This is Z in the curve-fit of p = p(e, rho)
+	   Out_File << "\"Z\" \\ \n";
+	} /* endif */
+        // Print k and omega for all flow types to ensure that
+        // k and omega stay zero for laminar test cases.
+        Out_File << "\"k\" \\ \n"
+	         << "\"omega\" \\ \n";
+        if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+           Out_File << "\"epsilon\" \\ \n"
+	            << "\"ell\" \\ \n"
+	            << "\"p_modified\" \\ \n"
+	            << "\"Mt\" \\ \n";
+        } /* endif */
+        if (SolnBlk.Flow_Type) {
+           Out_File << "\"tau_xx\" \\ \n"
+	           << "\"tau_xy\" \\ \n"
+	           << "\"tau_yy\" \\ \n";
+           if (SolnBlk.Axisymmetric) Out_File << "\"tau_zz\" \\ \n";
+           Out_File << "\"qx\" \\ \n"
+	            << "\"qy\" \\ \n";
+        } /* endif */
+        if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+           Out_File << "\"muT\" \\ \n"
+	            << "\"ywall\" \\ \n"
+	            << "\"Xwall.x\" \\ \n"
+	            << "\"Xwall.y\" \\ \n"
+	            << "\"nwall.x\" \\ \n"
+	            << "\"nwall.y\" \\ \n"
+	            << "\"BCwall\" \\ \n"
+	            << "\"yplus\" \\ \n"
+	            << "\"utau\" \\ \n"
+	            << "\"tauw\" \\ \n"
+	            << "\"vwplus\" \\ \n";
+        } /* endif */
+        Out_File << "\"dt\" \\ \n";
+        Out_File << "\"A\" \\ \n";
+    } /* endif */
     Out_File << "ZONE T =  \"Block " << Block_Number << " CPU" << CFFC_MPI::This_Processor_Number
-	   << "\" \\ \n"
-	   << "I = " << SolnBlk.Grid.ICu - SolnBlk.Grid.ICl + 2*SolnBlk.Nghost*ng + 1 << " \\ \n"
-	   << "J = " << SolnBlk.Grid.JCu - SolnBlk.Grid.JCl + 2*SolnBlk.Nghost*ng + 1 << " \\ \n"
-	   << "F = POINT \n";
+	     << "\" \\ \n"
+	     << "I = " << SolnBlk.Grid.ICu - SolnBlk.Grid.ICl + 2*SolnBlk.Nghost*ng + 1 << " \\ \n"
+	     << "J = " << SolnBlk.Grid.JCu - SolnBlk.Grid.JCl + 2*SolnBlk.Nghost*ng + 1 << " \\ \n"
+	     << "F = POINT \n";
 
-  for (int j = SolnBlk.JCl-SolnBlk.Nghost*ng; j <= SolnBlk.JCu+SolnBlk.Nghost*ng; j++) {
-    for (int i = SolnBlk.ICl-SolnBlk.Nghost*ng; i <= SolnBlk.ICu+SolnBlk.Nghost*ng; i++) {
-      if (SolnBlk.Flow_Type != FLOWTYPE_INVISCID) {
- 	SolnBlk.W[i][j].ComputeViscousTerms(SolnBlk.dWdx[i][j],
- 					    SolnBlk.dWdy[i][j],
- 					    SolnBlk.Grid.Cell[i][j].Xc,
- 					    SolnBlk.Axisymmetric);
- 	SolnBlk.U[i][j].tau = SolnBlk.W[i][j].tau;
- 	SolnBlk.U[i][j].q = SolnBlk.W[i][j].q;
-      }
-      Out_File.setf(ios::scientific);
-      Out_File << " " << SolnBlk.Grid.Cell[i][j].Xc;
-      Out_File << " " << SolnBlk.W[i][j].rho 
-	       << SolnBlk.W[i][j].v
-	       << " " << SolnBlk.W[i][j].p
-	       << " " << SolnBlk.W[i][j].T() 
-	       << " " << SolnBlk.W[i][j].v.abs()/SolnBlk.W[i][j].a() 
-	       << " " << SolnBlk.U[i][j].E
-	       << " " << SolnBlk.W[i][j].H() 
-	       << " " << SolnBlk.U[i][j].s();
-			for (int q = 1; q <= NUM_VAR_HIGHTEMP2D; q++) {
-	       Out_File << " " << fabs(SolnBlk.dUdt[i][j][0][q]);
-			}
-			if (HighTemp2D_cState::eos_type == EOS_TGAS) {
-				// This is Z in the curve-fit of p = p(e, rho)
-				Out_File << " " << log10(SolnBlk.U[i][j].e()/78408.4);
-			}
-
+    for (int j = SolnBlk.JCl-SolnBlk.Nghost*ng; j <= SolnBlk.JCu+SolnBlk.Nghost*ng; j++) {
+      for (int i = SolnBlk.ICl-SolnBlk.Nghost*ng; i <= SolnBlk.ICu+SolnBlk.Nghost*ng; i++) {
+        if (SolnBlk.Flow_Type != FLOWTYPE_INVISCID) {
+ 	  SolnBlk.W[i][j].ComputeViscousTerms(SolnBlk.dWdx[i][j],
+ 		  			      SolnBlk.dWdy[i][j],
+ 					      SolnBlk.Grid.Cell[i][j].Xc,
+ 					      SolnBlk.Axisymmetric);
+ 	  SolnBlk.U[i][j].tau = SolnBlk.W[i][j].tau;
+ 	  SolnBlk.U[i][j].q = SolnBlk.W[i][j].q;
+        } /*endif */
+        Out_File.setf(ios::scientific);
+        Out_File << " " << SolnBlk.Grid.Cell[i][j].Xc;
+        Out_File << " " << SolnBlk.W[i][j].rho 
+	         << SolnBlk.W[i][j].v
+	         << " " << SolnBlk.W[i][j].p
+	         << " " << SolnBlk.W[i][j].T() 
+	         << " " << SolnBlk.W[i][j].v.abs()/SolnBlk.W[i][j].a() 
+	         << " " << SolnBlk.U[i][j].E
+	         << " " << SolnBlk.W[i][j].H() 
+	         << " " << SolnBlk.U[i][j].s();
+	for (int q = 1; q <= NUM_VAR_HIGHTEMP2D; q++) {
+	   Out_File << " " << fabs(SolnBlk.dUdt[i][j][0][q]);
+	} /* endfor */
+	if (HighTemp2D_cState::eos_type == EOS_TGAS) {
+	   // This is Z in the curve-fit of p = p(e, rho)
+	   Out_File << " " << log10(SolnBlk.U[i][j].e()/78408.4);
+	} /* endif */
 	Out_File << " " << SolnBlk.W[i][j].k
 		 << " " << SolnBlk.W[i][j].omega;
-      if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-		 Out_File << " " << SolnBlk.W[i][j].epsilon()
-		 << " " << SolnBlk.W[i][j].ell()
-		 << " " << SolnBlk.W[i][j].pmodified()
-		 << " " << sqrt(SolnBlk.W[i][j].Mt2());
-      }
-      if (SolnBlk.Flow_Type) {
-	Out_File << " " << SolnBlk.W[i][j].tau.xx
-		 << " " << SolnBlk.W[i][j].tau.xy
-		 << " " << SolnBlk.W[i][j].tau.yy;
-	if (SolnBlk.Axisymmetric)
-	  Out_File << " " << SolnBlk.W[i][j].tau.zz;
-	Out_File << " " << SolnBlk.W[i][j].q.x
-		 << " " << SolnBlk.W[i][j].q.y;
-      }
-      Out_File.unsetf(ios::scientific);
-      if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-	Out_File << " " << SolnBlk.W[i][j].muT()
-		 << " " << SolnBlk.Wall[i][j].ywall
-		 << SolnBlk.Wall[i][j].Xwall
-		 << SolnBlk.Wall[i][j].nwall
-		 << " " << SolnBlk.Wall[i][j].BCwall
-		 << " " << SolnBlk.Wall[i][j].yplus
-		 << " " << SolnBlk.Wall[i][j].utau
-		 << " " << SolnBlk.Wall[i][j].tauw
-		 << " " << SolnBlk.Wall[i][j].vwplus;
-      }
-      Out_File << " " << SolnBlk.dt[i][j];
-      Out_File << " " << SolnBlk.Grid.Cell[i][j].A;
-      Out_File << endl;
-    }
-  }
-  Out_File << setprecision(6);
+        if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	   Out_File << " " << SolnBlk.W[i][j].epsilon()
+	            << " " << SolnBlk.W[i][j].ell()
+		    << " " << SolnBlk.W[i][j].pmodified()
+		    << " " << sqrt(SolnBlk.W[i][j].Mt2());
+        } /* endif */
+        if (SolnBlk.Flow_Type) {
+	   Out_File << " " << SolnBlk.W[i][j].tau.xx
+		    << " " << SolnBlk.W[i][j].tau.xy
+		    << " " << SolnBlk.W[i][j].tau.yy;
+	   if (SolnBlk.Axisymmetric) Out_File << " " << SolnBlk.W[i][j].tau.zz;
+	   Out_File << " " << SolnBlk.W[i][j].q.x
+		    << " " << SolnBlk.W[i][j].q.y;
+        } /* endif */
+        Out_File.unsetf(ios::scientific);
+        if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	   Out_File << " " << SolnBlk.W[i][j].muT()
+		    << " " << SolnBlk.Wall[i][j].ywall
+		    << SolnBlk.Wall[i][j].Xwall
+		    << SolnBlk.Wall[i][j].nwall
+		    << " " << SolnBlk.Wall[i][j].BCwall
+		    << " " << SolnBlk.Wall[i][j].yplus
+		    << " " << SolnBlk.Wall[i][j].utau
+		    << " " << SolnBlk.Wall[i][j].tauw
+		    << " " << SolnBlk.Wall[i][j].vwplus;
+        } /* endif */
+        Out_File << " " << SolnBlk.dt[i][j];
+        Out_File << " " << SolnBlk.Grid.Cell[i][j].A;
+        Out_File << endl;
+      } /* endfor */
+    } /* endfor */
+    Out_File << setprecision(6);
 
 }
 
@@ -506,123 +498,6 @@ void Output_Quasi3D_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 			    const int Block_Number,
 			    const int Output_Title,
 			    ostream &Out_File) {
-
-//   HighTemp2D_pState W_node;
-//   int numberofcells = (SolnBlk.JCu-SolnBlk.JCl+1)*(SolnBlk.ICu-SolnBlk.ICl+1);
-//   int nrr, numberofrotations = 360/15;
-//   int numberofnodes = ((SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1)*
-// 		       (SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1));
-
-//   // Ensure boundary conditions are updated before evaluating
-//   // solution at the nodes.
-//   BCs(SolnBlk,IP);
-
-//   // Output node solution data.  
-//   Out_File << setprecision(14);
-//   if (Output_Title) {
-//     Out_File << "TITLE = \"" << CFFC_Name() << ": 2D HighTemp Solution, "
-// 	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
-// 	     << ", Time = " << Time
-// 	     << "\"" << "\n"
-// 	     << "VARIABLES = \"x\" \\ \n"
-// 	     << "\"y\" \\ \n"
-// 	     << "\"z\" \\ \n"
-// 	     << "\"rho\" \\ \n"
-// 	     << "\"u\" \\ \n"
-// 	     << "\"v\" \\ \n"
-// 	     << "\"w\" \\ \n"
-// 	     << "\"p\" \\ \n"
-// 	     << "\"T\" \\ \n"
-// 	     << "\"M\" \\ \n"
-// 	     << "\"H\" \\ \n"
-// 	     << "\"s\" \\ \n";
-//     if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-//       Out_File << "\"k\" \\ \n"
-// 	       << "\"omega\" \\ \n"
-// 	       << "\"epsilon\" \\ \n"
-// 	       << "\"ell\" \\ \n"
-// 	       << "\"p_modified\" \\ \n";
-//     }
-//   }
-
-//   for (int nr = 0; nr < numberofrotations; nr++) {
-//     Out_File << "ZONE T =  \"Block " << Block_Number << " CPU" << CFFC_MPI::This_Processor_Number << nr
-// 	     << "\" \\ \n"
-// 	     << "N = " << 2*numberofnodes << " \\ \n"
-// 	     << "E = " << numberofcells << " \\ \n"
-// 	     << "F = FEPOINT \\ \n"
-// 	     << "ET = BRICK \n";
-//     for (int j = SolnBlk.Grid.JNl; j <= SolnBlk.Grid.JNu; j++) {
-//       for (int i = SolnBlk.Grid.INl; i <= SolnBlk.Grid.INu; i++) {
-// 	W_node = SolnBlk.Wn(i,j);
-// 	Out_File.setf(ios::scientific);
-// 	Out_File << " " << SolnBlk.Grid.Node[i][j].X.x
-// 		 << " " << SolnBlk.Grid.Node[i][j].X.y*sin(TWO*PI*double(nr)/double(numberofrotations))
-// 		 << " " << SolnBlk.Grid.Node[i][j].X.y*cos(TWO*PI*double(nr)/double(numberofrotations))
-// 		 << " " << W_node.rho
-// 		 << " " << W_node.v.x
-// 		 << " " << W_node.v.y*sin(TWO*PI*double(nr)/double(numberofrotations))
-// 		 << " " << W_node.v.y*cos(TWO*PI*double(nr)/double(numberofrotations))
-// 		 << " " << W_node.p
-// 		 << " " << W_node.T()
-// 		 << " " << W_node.v.abs()/W_node.a() 
-// 		 << " " << W_node.H()
-// 		 << " " << W_node.s();
-// 	if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-// 	  Out_File << " " << W_node.k
-// 		   << " " << W_node.omega
-// 		   << " " << W_node.epsilon()
-// 		   << " " << W_node.ell()
-// 		   << " " << W_node.pmodified();
-// 	}
-// 	Out_File << endl;
-//       }
-//     }
-//     if (nr < numberofrotations-1) nrr = nr + 1;
-//     else nrr = 0;
-//     for (int j = SolnBlk.Grid.JNl; j <= SolnBlk.Grid.JNu; j++) {
-//       for (int i = SolnBlk.Grid.INl; i <= SolnBlk.Grid.INu; i++) {
-// 	W_node = SolnBlk.Wn(i,j);
-// 	Out_File.setf(ios::scientific);
-// 	Out_File << " " << SolnBlk.Grid.Node[i][j].X.x
-// 		 << " " << SolnBlk.Grid.Node[i][j].X.y*sin(TWO*PI*double(nrr)/double(numberofrotations))
-// 		 << " " << SolnBlk.Grid.Node[i][j].X.y*cos(TWO*PI*double(nrr)/double(numberofrotations))
-// 		 << " " << W_node.rho
-// 		 << " " << W_node.v.x
-// 		 << " " << W_node.v.y*sin(TWO*PI*double(nrr)/double(numberofrotations))
-// 		 << " " << W_node.v.y*cos(TWO*PI*double(nrr)/double(numberofrotations))
-// 		 << " " << W_node.p
-// 		 << " " << W_node.T()
-// 		 << " " << W_node.v.abs()/W_node.a()
-// 		 << " " << W_node.H()
-// 		 << " " << W_node.s();
-// 	if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-// 	  Out_File << " " << W_node.k
-// 		   << " " << W_node.omega
-// 		   << " " << W_node.epsilon()
-// 		   << " " << W_node.ell()
-// 		   << " " << W_node.pmodified();
-// 	}
-// 	Out_File << endl;
-//       }
-//     }
-
-//     // Connectivity table.
-//     for (int j = SolnBlk.Grid.JCl; j <= SolnBlk.Grid.JCu; j++) {
-//       for (int i = SolnBlk.Grid.ICl; i <= SolnBlk.Grid.ICu; i++) {
-// 	Out_File << (j-2)*(SolnBlk.Grid.INu-1) + i - 1                         << " "
-// 		 << (j-2)*(SolnBlk.Grid.INu-1) + i                             << " "
-// 		 << (j-1)*(SolnBlk.Grid.INu-2) + i + 1 + (j-2)                 << " "
-// 		 << (j-1)*(SolnBlk.Grid.INu-2) + i     + (j-2)                 << " "
-// 		 << (j-2)*(SolnBlk.Grid.INu-1) + i - 1         + numberofnodes << " "
-// 		 << (j-2)*(SolnBlk.Grid.INu-1) + i             + numberofnodes << " "
-// 		 << (j-1)*(SolnBlk.Grid.INu-2) + i + 1 + (j-2) + numberofnodes << " "
-// 		 << (j-1)*(SolnBlk.Grid.INu-2) + i     + (j-2) + numberofnodes << endl;
-//       }
-//     }
-//   }
-
-//   Out_File << setprecision(6);
 
   HighTemp2D_pState W_node;
   int numberofcells = (SolnBlk.JCu-SolnBlk.JCl+1)*(SolnBlk.ICu-SolnBlk.ICl+1);
@@ -1509,7 +1384,8 @@ void Output_Flat_Plate_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 		  << "\"phiv_e\" \\ \n"
 		  << "\"phiv - phiv_e\" \\ \n";
   }
-  Out_File_Soln << "ZONE T =  \"Block " << Block_Number << " CPU" << CFFC_MPI::This_Processor_Number << "\" \\ \n"
+  Out_File_Soln << "ZONE T =  \"Block " << Block_Number 
+                << " CPU" << CFFC_MPI::This_Processor_Number << "\" \\ \n"
 		<< "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1 << " \\ \n"
 		<< "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1 << " \\ \n"
 		<< "F = POINT \n";
@@ -1694,11 +1570,13 @@ void Output_Driven_Cavity_Flow_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 
   // Output node solution data.  
   if (Output_Title) {
-    Out_File_u << "TITLE = \"" << CFFC_Name() << ": 2D HighTemp Driven Cavity Flow Solution u-velocity Comparison "
+    Out_File_u << "TITLE = \"" << CFFC_Name() 
+               << ": 2D HighTemp Driven Cavity Flow Solution u-velocity Comparison "
 	       << "\"" << "\n"
 	       << "VARIABLES = \"x\" \\ \n"
 	       << "\"u\" \\ \n";
-    Out_File_v << "TITLE = \"" << CFFC_Name() << ": 2D HighTemp Driven Cavity Flow Solution v-velocity Comparison "
+    Out_File_v << "TITLE = \"" << CFFC_Name() 
+               << ": 2D HighTemp Driven Cavity Flow Solution v-velocity Comparison "
 	       << "\"" << "\n"
 	       << "VARIABLES = \"x\" \\ \n"
 	       << "\"v\" \\ \n";
@@ -2496,11 +2374,13 @@ void Output_Backward_Facing_Step_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 
 }
 
-//DUMMY function
 void Output_Forward_Facing_Step_Tecplot(HighTemp2D_Quad_Block &SolnBlk,
 					 const int Block_Number,
 					 const int Output_Title,
 					 ostream &Out_File,
 					 const double &step_height,
 					 const double &top_wall_deflection) {
+
+  // This function has not be implemented.  CPTG
+
 }

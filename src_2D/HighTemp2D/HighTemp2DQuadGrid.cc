@@ -145,21 +145,6 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 				      IP.Number_of_Cells_Jdir,
 				      IP.Number_of_Ghost_Cells);
     break;
-  case GRID_FPBL_INTERACTION :
-    Grid_ptr = Grid_FPBL_Interaction(Grid_ptr,
-			       IP.Number_of_Blocks_Idir,
-			       IP.Number_of_Blocks_Jdir,
-			       IP.Plate_Length,
-			       IP.Grid_Height,
-			       IP.Grid_Width,	     
-                               IP.BC_South, 
-			       IP.i_Mesh_Stretching,
-			       IP.Mesh_Stretching_Factor_Idir,
-			       IP.Mesh_Stretching_Factor_Jdir,
-			       IP.Number_of_Cells_Idir,
-			       IP.Number_of_Cells_Jdir,
-			       IP.Number_of_Ghost_Cells);
-    break;
   case GRID_PIPE :
     if (IP.FlowType == FLOWTYPE_LAMINAR) {
       IP.Pipe_Length += IP.Pipe_Length/double(IP.Number_of_Cells_Idir-1);
@@ -234,17 +219,6 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
       }
     }
     break;
-/*  case GRID_ROCKET_MOTOR_COLD_FLOW :
-    Grid_ptr = Grid_Rocket_Motor_Cold_Flow(Grid_ptr,
-					   IP.Number_of_Cells_Idir,
-					   IP.Number_of_Cells_Jdir,
-					   IP.Number_of_Ghost_Cells);
-    if (IP.i_ICs == IC_ROCKET_COLD_FLOW_UNSTEADY) {
-      Grid_ptr[2][0].BndEastSpline.setBCtype(BC_NONE);
-      Grid_ptr[3][0].BndWestSpline.setBCtype(BC_NONE);
-    }
-    break;
-*/
   case GRID_NOZZLE :
     Grid_ptr = Grid_Nozzle(Grid_ptr,
 			   IP.Number_of_Blocks_Idir,
@@ -345,7 +319,6 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
     Grid_ptr = Grid_Bump_Channel_Flow(Grid_ptr,
 				      IP.Number_of_Blocks_Idir,
 				      IP.Number_of_Blocks_Jdir,
-							IP.Cylinder_Radius,
 				      IP.Smooth_Bump,
 				      IP.Number_of_Cells_Idir,
 				      IP.Number_of_Cells_Jdir,

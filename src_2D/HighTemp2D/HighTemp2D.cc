@@ -10,7 +10,7 @@
 
  This program is a standalone version of the HighTemp2D Solver that 
  is part of the CFFC library of 2D solvers.  It currently can handle
- planar flows of air with high-temperature effects accounted for.
+ planar flows of air with high-temperature equation of state.
 
  The program is built using the CFFC library.
 
@@ -43,7 +43,7 @@ int main(int num_arg, char *arg_ptr[]) {
 
   // Title of code:
   char *program_title_ptr = 
-     "HighTemp2D: Numerical solver for the Navier-Stokes 2D PDEs with High-Temperature effects.";
+     "HighTemp2D: Solver for the Navier-Stokes equations in 2 space dimensions with high-temperature EOS.";
 
   // Version of code:
   char *program_version_ptr = 
@@ -64,7 +64,7 @@ int main(int num_arg, char *arg_ptr[]) {
    ********************************************************************/
 
   // Set default equation type.
-  strcpy(Equation_Type,Equation_Type_ptr);
+  strcpy(Equation_Type, Equation_Type_ptr);
 
   /********************************************************************
    * PARSE COMMAND LINE ARGUMENTS                                     *
@@ -84,14 +84,14 @@ int main(int num_arg, char *arg_ptr[]) {
 
   // Parse and interpret command line arguments.  Note that there
   // are several different possible arguments which are:
-  // 1) -v  lists PDES++ version information to standard output,
-  // 2) -h  lists all possible optional arguments for PDES++,
-  // 3) -i  execute PDES++ in interactive mode (default mode),
-  // 4) -b  execute PDES++ in batch mode,
+  // 1) -v  lists program version information to standard output,
+  // 2) -h  lists all possible optional arguments for program,
+  // 3) -i  execute program in interactive mode (default mode),
+  // 4) -b  execute program in batch mode,
   // 5) -pde type   sets type of partial differential equation to
   //                be solve to "type" (default is "HighTemp2D"),
   // 6) -f name  uses "name" as the input data file rather than
-  //             the standard input data file "pdes++.in".
+  //             the standard input data file "hightemp2D.in".
 
   if (num_arg >= 2) {
     for (int i = 1; i < num_arg; i++) {
@@ -109,9 +109,9 @@ int main(int num_arg, char *arg_ptr[]) {
         batch_flag = 1;
       } else if (strcmp(arg_ptr[i],"-pde") == 0) {
         pde_flag = 1;
-      } else if (strcmp(arg_ptr[i-1],"-pde") == 0) {
-        Equation_Type_ptr = arg_ptr[i];
-        strcpy(Equation_Type, Equation_Type_ptr);
+	//} else if (strcmp(arg_ptr[i-1],"-pde") == 0) {
+        //Equation_Type_ptr = arg_ptr[i];
+        //strcpy(Equation_Type, Equation_Type_ptr);
       } else if (strcmp(arg_ptr[i],"-f") == 0) {
         file_flag = 1;
       } else if (strcmp(arg_ptr[i-1],"-f") == 0) {
@@ -133,7 +133,7 @@ int main(int num_arg, char *arg_ptr[]) {
   // Display command line argument error message and terminate the
   // program as required.
   if (error_flag) {
-    cout << "\nHighTemp2D PDES++ ERROR: Invalid command line argument.\n";
+    cout << "\nHighTemp2D ERROR: Invalid command line argument.\n";
     return error_flag;
   }
 
@@ -151,8 +151,8 @@ int main(int num_arg, char *arg_ptr[]) {
      cout << program_version_ptr << endl;
      cout << "Built using " << CFFC_Version() << endl;
      cout << CFFC_Version_MPI() << endl;
-     cout << "Built using MV++, SparseLib++, IML++, and BPKIT Libraries\n";
-     cout << "Compiled on " << Architecture() << " architecture.\n";
+     cout << ICEMCFD_Version() << "\n";
+     cout << "Built using MV++, SparseLib++, IML++, BPKIT, and FFTW Libraries\n";
      cout.flush();
      if (version_flag) return 0;
   }
@@ -163,13 +163,12 @@ int main(int num_arg, char *arg_ptr[]) {
 
   if (CFFC_Primary_MPI_Processor() && help_flag) {
      cout << "Usage:\n";
-     cout << "pdes++ [-v] [-h] [-i] [-b] [-pde type] [-f name]\n";
+     cout << "hightemp2D [-v] [-h] [-i] [-b] [-pde type] [-f name]\n";
      cout << " -v (--version)  display version information\n";
      cout << " -h (--help)  show this help\n";
      cout << " -i (--inter)  execute in interactive mode (default)\n";
      cout << " -b (--batch)  execute in batch mode\n";
-     cout << " -pde type  solve `type' PDEs (`Euler2D' is default)\n";
-     cout << " -f name  use `name' input data file (`pdes++.in' is default)\n";
+     cout << " -f name  use `name' input data file (`hightemp2D.in' is default)\n";
      cout.flush();
      return 0;
   }
@@ -178,16 +177,7 @@ int main(int num_arg, char *arg_ptr[]) {
    * PERFORM REQUIRED CALCULATIONS.                                   *
    ********************************************************************/
 
-  // For the PDE of interest, solve the corresponding initial-boundary
-  // value problem(s)/boundary value problem(s) (IBVP/BVP) using the 
-  // appropriate equation solver.
-  if (strcmp(Equation_Type,"HighTemp2D") == 0) {
-    error_flag = HighTemp2DQuadSolver(Input_File_Name_ptr,batch_flag);
-  } else {
-    if (CFFC_Primary_MPI_Processor() && !batch_flag)
-      cout << "\n\nHighTemp2D PDES++: Only solves HighTemp2D equations.\n";
-    error_flag = 1;
-  }
+  error_flag = HighTemp2DQuadSolver(Input_File_Name_ptr,batch_flag);
 
   if (error_flag) {
     CFFC_Finalize_MPI();
@@ -197,15 +187,18 @@ int main(int num_arg, char *arg_ptr[]) {
   /********************************************************************
    * FINALIZE MPI                                                     *
    ********************************************************************/
+
   CFFC_Finalize_MPI();
 
   /********************************************************************
    * TERMINATE PROGRAM EXECUTION                                      *
    ********************************************************************/
   if (CFFC_Primary_MPI_Processor() && !batch_flag) 
-    cout << "\n\nHighTemp2D PDES++: Execution complete.\n";
+    cout << "\n\nHighTemp2D: Execution complete.\n";
 
   // HighTemp2D program finished.
   return 0;
+
+  /* End HighTemp2D program. */
 
 }

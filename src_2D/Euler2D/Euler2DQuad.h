@@ -1860,24 +1860,9 @@ extern void Output_Tecplot(Euler2D_Quad_Block &SolnBlk,
                            const int Output_Title,
 	                   ostream &Out_File);
 
-extern void Output_Tecplot(Euler2D_Quad_Block &SolnBlk,
-			   Euler2D_Input_Parameters &IP,
-		           const int Number_of_Time_Steps,
-                           const double &Time,
-                           const int Block_Number,
-                           const int Output_Title,
-													 double l2_norm, double l2_norm_rel,
-	                   ostream &Out_File);
-
 extern void Output_Cells_Tecplot(Euler2D_Quad_Block &SolnBlk,
-		                 const int Number_of_Time_Steps,
-                                 const double &Time,
-                                 const int Block_Number,
-                                 const int Output_Title,
-	                         ostream &Out_File);
-
-extern void Output_Cells_Tecplot(Euler2D_Quad_Block &SolnBlk,
-		                 const int Number_of_Time_Steps,
+		                 Euler2D_Input_Parameters &IP,
+                                 const int Number_of_Time_Steps,
                                  const double &Time,
                                  const int Block_Number,
                                  const int Output_Title,

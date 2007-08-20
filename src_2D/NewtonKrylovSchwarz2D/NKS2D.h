@@ -57,7 +57,7 @@ int Newton_Update(SOLN_BLOCK_TYPE *SolnBlk,
 		  AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
 		  INPUT_TYPE &Input_Parameters,
 		  GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> &GMRES,
-			double Relaxation_multiplier);
+		  double Relaxation_multiplier);
 
 template <typename INPUT_TYPE>
 double Finite_Time_Step(const INPUT_TYPE &Input_Parameters, 
@@ -84,11 +84,11 @@ inline int DTS_Uo_index(int i, int j, int k,
  ********************************************************************************************/
 template <typename SOLN_VAR_TYPE,typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
-		ostream &residual_file,   
-		int &number_of_explicit_time_steps,
-		SOLN_BLOCK_TYPE *SolnBlk,
-		AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
-		INPUT_TYPE &Input_Parameters)
+ 		                 ostream &residual_file,   
+		                 int &number_of_explicit_time_steps,
+		                 SOLN_BLOCK_TYPE *SolnBlk,
+		                 AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
+		                 INPUT_TYPE &Input_Parameters)
 {
 	int error_flag = 0;
 
@@ -696,8 +696,8 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 
 			if (dcs_counter >= Input_Parameters.NKS_IP.DCS_Window) {
 
-				// Before calling least_squares_slope(), dcs_data[dcs_position] must be the oldest entry.
-				dcs_slope = least_squares_slope(dcs_data, Input_Parameters.NKS_IP.DCS_Window, dcs_position);
+				// Before calling Least_Squares_Slope(), dcs_data[dcs_position] must be the oldest entry.
+				dcs_slope = Least_Squares_Slope(dcs_data, Input_Parameters.NKS_IP.DCS_Window, dcs_position);
 
 //  The following are four reasons why we should transition from
 //  waiting to freeze the limiters to actually freezing the
@@ -1084,7 +1084,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 		cout << "GMRES Failures: " << GMRES_Failures << endl;
 
 		if (Input_Parameters.NKS_IP.output_format == OF_ALISTAIR) {
-			qsort(GMRES_All_Iters, nns, sizeof(int), compare_ints);
+			qsort(GMRES_All_Iters, nns, sizeof(int), Compare_Ints);
 			cout << "GMRES Iterations:" << endl;
 			for (int iii = 0; iii < nns; iii++) {	
 				cout << " " << setw(3) << GMRES_All_Iters[iii];
@@ -1192,7 +1192,7 @@ int Newton_Update(SOLN_BLOCK_TYPE *SolnBlk,
 		  AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
 		  INPUT_TYPE &Input_Parameters,
 		  GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> &GMRES,
-			double Relaxation_multiplier) {
+		  double Relaxation_multiplier) {
 
   int Num_Var = SolnBlk[0].NumVar();  
   

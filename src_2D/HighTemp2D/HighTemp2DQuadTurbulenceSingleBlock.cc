@@ -1,8 +1,8 @@
 /**********************************************************************
- * HighTemp2DQuadTurbulenceSingleBlock.cc: Single-block versions  *
+ * HighTemp2DQuadTurbulenceSingleBlock.cc: Single-block versions      *
  *                                             of turbulence          *
  *                                             subroutines for 2D     *
- *                                             High-Temp multi-   *
+ *                                             High-Temp multi-       *
  *                                             block quadrilateral    *
  *                                             mesh solution classes. *
  **********************************************************************/
@@ -10,8 +10,8 @@
 #include "HighTemp2DQuad.h"
 
 /**********************************************************************
- * HighTemp2D_Quad_Block -- Turbulence Single Block External      *
- *                              Subroutines.                          *
+ * HighTemp2D_Quad_Block -- Turbulence Single Block External          *
+ *                          Subroutines.                              *
  **********************************************************************/
 
 /**********************************************************************
@@ -78,7 +78,8 @@ int Turbulent_BCs(HighTemp2D_Quad_Block &SolnBlk,
 	    SolnBlk.W[i][j].omega = SIX*SolnBlk.W[i][j].nu()/(SolnBlk.W[i][j].beta_omega_o*
 							      sqr(SolnBlk.Wall[i][j].ywall));
 // 	  } else {
-// 	    SolnBlk.W[i][j].omega = (sqr(SolnBlk.Wall[i][j].utau)/SolnBlk.W[i][j].nu())*25.0/(SolnBlk.Wall[i][j].vwplus*(ONE + FIVE*SolnBlk.Wall[i][j].vwplus));
+// 	    SolnBlk.W[i][j].omega = (sqr(SolnBlk.Wall[i][j].utau)/SolnBlk.W[i][j].nu())*25.0/
+//                                  (SolnBlk.Wall[i][j].vwplus*(ONE + FIVE*SolnBlk.Wall[i][j].vwplus));
 // 	  }
 	  SolnBlk.U[i][j].domega = SolnBlk.W[i][j].domega();
 	}
@@ -110,7 +111,8 @@ int Turbulent_BCs(HighTemp2D_Quad_Block &SolnBlk,
 	} else if (SolnBlk.Wall[i][SolnBlk.JCu].yplus <= IP.yplus_outer_layer) {
 	  Turbulent_BCtype = TURBULENT_BC_STANDARD_WALL_FUNCTION;
 	} else {
-	  cout << endl << " NORTH:" << SolnBlk.Grid.Cell[i][SolnBlk.JCu].Xc << SolnBlk.W[i][SolnBlk.JCu] << " " << SolnBlk.Wall[i][SolnBlk.JCu].yplus; cout.flush();
+	  cout << endl << " NORTH:" << SolnBlk.Grid.Cell[i][SolnBlk.JCu].Xc 
+               << SolnBlk.W[i][SolnBlk.JCu] << " " << SolnBlk.Wall[i][SolnBlk.JCu].yplus; cout.flush();
 	  return 1101;
 	}
 	for (int j = SolnBlk.JCu; j >= SolnBlk.JCl; j--) {
@@ -133,7 +135,8 @@ int Turbulent_BCs(HighTemp2D_Quad_Block &SolnBlk,
 	} else if (SolnBlk.Wall[i][SolnBlk.JCl].yplus <= IP.yplus_outer_layer) {
 	  Turbulent_BCtype = TURBULENT_BC_STANDARD_WALL_FUNCTION;
 	} else {
-	  cout << endl << " SOUTH:" << SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc << " " << SolnBlk.Wall[i][SolnBlk.JCl].yplus; cout.flush();
+	  cout << endl << " SOUTH:" << SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc << " " 
+               << SolnBlk.Wall[i][SolnBlk.JCl].yplus; cout.flush();
 	  return 1102;
 	}
 	for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
@@ -156,7 +159,8 @@ int Turbulent_BCs(HighTemp2D_Quad_Block &SolnBlk,
 	} else if (SolnBlk.Wall[SolnBlk.ICu][j].yplus <= IP.yplus_outer_layer) {
 	  Turbulent_BCtype = TURBULENT_BC_STANDARD_WALL_FUNCTION;
 	} else {
-	  cout << endl << " EAST:" << SolnBlk.Grid.Cell[SolnBlk.ICu][j].Xc << " " << SolnBlk.Wall[SolnBlk.ICu][j].yplus; cout.flush();
+	  cout << endl << " EAST:" << SolnBlk.Grid.Cell[SolnBlk.ICu][j].Xc << " " 
+               << SolnBlk.Wall[SolnBlk.ICu][j].yplus; cout.flush();
 	  return 1103;
 	}
 	for (int i = SolnBlk.ICu; i >= SolnBlk.ICl; i--) {
@@ -179,7 +183,8 @@ int Turbulent_BCs(HighTemp2D_Quad_Block &SolnBlk,
 	} else if (SolnBlk.Wall[SolnBlk.ICl][j].yplus <= IP.yplus_outer_layer) {
 	  Turbulent_BCtype = TURBULENT_BC_STANDARD_WALL_FUNCTION;
 	} else {
-	  cout << endl << " WEST:" << SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc << " " << SolnBlk.Wall[SolnBlk.ICl][j].yplus; cout.flush();
+	  cout << endl << " WEST:" << SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc << " " 
+               << SolnBlk.Wall[SolnBlk.ICl][j].yplus; cout.flush();
 	  return 1104;
 	}
 	for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
@@ -353,7 +358,8 @@ int Turbulence_Zero_Residual(HighTemp2D_Quad_Block &SolnBlk,
 	} else if (SolnBlk.Wall[i][SolnBlk.JCu].yplus <= IP.yplus_outer_layer) {
 	  Turbulent_BCtype = TURBULENT_BC_STANDARD_WALL_FUNCTION;
 	} else {
-	  cout << endl << " NORTH:" << SolnBlk.Grid.Cell[i][SolnBlk.JCu].Xc << " " << SolnBlk.Wall[i][SolnBlk.JCu].yplus; cout.flush();
+	  cout << endl << " NORTH:" << SolnBlk.Grid.Cell[i][SolnBlk.JCu].Xc << " " 
+               << SolnBlk.Wall[i][SolnBlk.JCu].yplus; cout.flush();
 	  return 2101;
 	}
 	for (int j = SolnBlk.JCu; j >= SolnBlk.JCl; j--) {
@@ -376,7 +382,8 @@ int Turbulence_Zero_Residual(HighTemp2D_Quad_Block &SolnBlk,
 	} else if (SolnBlk.Wall[i][SolnBlk.JCl].yplus <= IP.yplus_outer_layer) {
 	  Turbulent_BCtype = TURBULENT_BC_STANDARD_WALL_FUNCTION;
 	} else {
-	  cout << endl << " SOUTH:" << SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc << " " << SolnBlk.Wall[i][SolnBlk.JCl].yplus; cout.flush();
+	  cout << endl << " SOUTH:" << SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc << " " 
+               << SolnBlk.Wall[i][SolnBlk.JCl].yplus; cout.flush();
 	  return 2102;
 	}
 	for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
@@ -399,7 +406,8 @@ int Turbulence_Zero_Residual(HighTemp2D_Quad_Block &SolnBlk,
 	} else if (SolnBlk.Wall[SolnBlk.ICu][j].yplus <= IP.yplus_outer_layer) {
 	  Turbulent_BCtype = TURBULENT_BC_STANDARD_WALL_FUNCTION;
 	} else {
-	  cout << endl << " EAST:" << SolnBlk.Grid.Cell[SolnBlk.ICu][j].Xc << " " << SolnBlk.Wall[SolnBlk.ICu][j].yplus; cout.flush();
+	  cout << endl << " EAST:" << SolnBlk.Grid.Cell[SolnBlk.ICu][j].Xc << " " 
+               << SolnBlk.Wall[SolnBlk.ICu][j].yplus; cout.flush();
 	  return 2103;
 	}
 	for (int i = SolnBlk.ICu; i >= SolnBlk.ICl; i--) {
@@ -422,7 +430,8 @@ int Turbulence_Zero_Residual(HighTemp2D_Quad_Block &SolnBlk,
 	} else if (SolnBlk.Wall[SolnBlk.ICl][j].yplus <= IP.yplus_outer_layer) {
 	  Turbulent_BCtype = TURBULENT_BC_STANDARD_WALL_FUNCTION;
 	} else {
-	  cout << endl << " WEST:" << SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc << " " << SolnBlk.Wall[SolnBlk.ICl][j].yplus; cout.flush();
+	  cout << endl << " WEST:" << SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc << " " 
+               << SolnBlk.Wall[SolnBlk.ICl][j].yplus; cout.flush();
 	  return 2104;
 	}
 	for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
