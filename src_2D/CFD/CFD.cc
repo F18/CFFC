@@ -113,7 +113,6 @@ void Output_Progress_L2norm(const int Number_of_Time_Steps,
 			    const double &Ratio_Residual_L2_Norm,
 			    const int First_Step,
 			    const int Frequency) {
-
    static const int progress_character = 0;
    Output_Progress_L2norm(Number_of_Time_Steps,
 	  		  Time,
@@ -134,19 +133,19 @@ void Output_Progress_L2norm(const int Number_of_Time_Steps,
 			    const int Frequency,
 			    const int progress_character) {
 
-  cout << setprecision(6);
-  if (First_Step || Number_of_Time_Steps % Frequency == 0) {
-    cout << endl
-	 << "  n = " << Number_of_Time_Steps
-	 << "   t = " << Time 
-	 << "   CPU t = " << CPU_Time.min();
-    cout.setf(ios::scientific);
-    cout << "   L2-norm = " << Residual_L2_Norm;
-    if (Ratio_Residual_L2_Norm > 0) {
-       cout << "   L2-norm ratio = " << Ratio_Residual_L2_Norm;
-    } /* endif *
-    cout.unsetf(ios::scientific);
-    cout << endl << "  ";
+    cout << setprecision(6);
+    if (First_Step || Number_of_Time_Steps % Frequency == 0) {
+      cout << endl
+	   << "  n = " << Number_of_Time_Steps
+	   << "   t = " << Time 
+	   << "   CPU t = " << CPU_Time.min();
+      cout.setf(ios::scientific);
+      cout << "   L2-norm = " << Residual_L2_Norm;
+      if (Ratio_Residual_L2_Norm > 0) {
+         cout << "   L2-norm ratio = " << Ratio_Residual_L2_Norm;
+      } /* endif */
+      cout.unsetf(ios::scientific);
+      cout << endl << "  ";
     } /* endif */
 
     switch(progress_character) {
@@ -173,7 +172,6 @@ void Output_Progress_L2norm(const int Number_of_Time_Steps,
          break;
     };
     cout.flush();
-  } /* endif */
 
 }
 
