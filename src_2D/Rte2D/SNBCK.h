@@ -89,25 +89,12 @@
 using namespace std;
 
 // Required header files
-#ifndef _MATH_MACROS_INCLUDED
 #include "../Math/Math.h"
-#endif // _MATH_MACROS_INCLUDED
-
-#ifndef _SPLINE1D_INCLUDED
 #include "../Math/Spline1D.h"
-#endif //_SPLINE1D_INCLUDED
-
-#ifndef _QUADRATURE_INCLUDED
 #include "../Math/Quadrature.h"
-#endif //_QUADRATURE_INCLUDED
-
-#ifndef _PLANCK_INCLUDED
 #include "Planck.h"
-#endif //_PLANCK_INCLUDED
-
-#ifndef _CFD_INCLUDED
 #include "../CFD/CFD.h"
-#endif // _CFD_INCLUDED
+#include "../MPI/MPI.h"
 
 
 /*********************************************************************
@@ -226,14 +213,13 @@ class EM2C{
   //------------------------------------------------
 
   // constants
-  const static int NCO     =  48;  // number of CO bands
-  const static int NH2O    = 367;  // number of H2O bands
-  const static int NCO2    =  96;  // number of CO2 bands
-  const static int Npoints =  14;  // number of temperature points
-  const static int Nbands  = 367;  // number of bands
-  const static double Tmin =    300;  // minimum valid temperature [K]
-  const static double Tmax = 2900.0;  // max valid temperature [K]
-
+  static const int NCO     =  48;  // number of CO bands
+  static const int NH2O    = 367;  // number of H2O bands
+  static const int NCO2    =  96;  // number of CO2 bands
+  static const int Npoints =  14;  // number of temperature points
+  static const int Nbands  = 367;  // number of bands
+  static const double Tmin;        // minimum valid temperature [K]
+  static const double Tmax;        // max valid temperature [K]
 
   // datafile paths and names
   char FileSNBCO [INPUT_PARAMETER_LENGTH_RTE2D]; // CO SNB parameter datafile

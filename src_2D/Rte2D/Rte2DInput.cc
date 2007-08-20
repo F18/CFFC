@@ -486,7 +486,7 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
      SetupStateStatic( IP );
      IP.Uo.Allocate();
      IP.Uo.Zero();
-     SetInitialValues( Ip.Uo, IP );
+     SetInitialValues( IP.Uo, IP );
    } /* endif */
    /***********************************************************************
     ***********************************************************************/
@@ -752,11 +752,6 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
 			  MPI::DOUBLE,0);
     // Smooth quad block flag:
     MPI::COMM_WORLD.Bcast(&(IP.i_Smooth_Quad_Block),
-			  1,
-			  MPI::INT,0);
-    // Interface input parameters:
-    IP.Interface_IP.Broadcast_Input_Parameters();
-    MPI::COMM_WORLD.Bcast(&(IP.Reset_Interface_Motion_Type),
 			  1,
 			  MPI::INT,0);
     // Morton Ordering Parameters
@@ -1278,12 +1273,6 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
 		       MPI::DOUBLE,Source_Rank);
     // Smooth quad block flag:
     Communicator.Bcast(&(IP.i_Smooth_Quad_Block),
-		       1,
-		       MPI::INT,Source_Rank);
-    // Interface input parameters:
-    IP.Interface_IP.Broadcast_Input_Parameters(Communicator,
-					       Source_CPU);
-    Communicator.Bcast(&(IP.Reset_Interface_Motion_Type),
 		       1,
 		       MPI::INT,Source_Rank);
    // Morton Ordering Parameters

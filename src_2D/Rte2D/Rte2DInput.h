@@ -323,7 +323,7 @@ inline ostream &operator << (ostream &out_file,
     } else if (IP.Local_Time_Stepping == LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER) {
       out_file << "\n  -> Low-Mach-Number Local Preconditioning (Weiss-Smith)";
     } /* endif */
-    out_file << "\n  -> L1-, L2-, and max-norms computed on residual variable: " << IP.i_Residual_Variable;
+    // out_file << "\n  -> L1-, L2-, and max-norms computed on residual variable: " << IP.i_Residual_Variable;
     if (IP.Residual_Smoothing) {
       out_file << "\n  -> Residual Smoothing";
       out_file << "\n  -> Epsilon: " 

@@ -24,6 +24,12 @@
  *         temp   - K                                                *
  *********************************************************************/
 
+/*********************************************************************
+ * Static member initialization                                      *
+ *********************************************************************/
+const double EM2C :: Tmin =  300.0; // minimum valid temperature [K]
+const double EM2C :: Tmax = 2900.0; // maximum valid temperature [K]
+
 
 /*********************************************************************
  * EM2C :: LoadParams                                                *
@@ -1428,7 +1434,7 @@ double SNBCK :: CalculatePlanck( const double T, double* Ib ) {
  * involved in the calculation from the primary processor using the  *
  * MPI broadcast routine.                                            *
  *********************************************************************/
-void Broadcast_Input_Parameters() {
+void SNBCK_Input_Parameters :: Broadcast_Input_Parameters() {
 #ifdef _MPI_VERSION
   MPI::COMM_WORLD.Bcast(&(EvaluationType), 
 			1, 
@@ -1472,8 +1478,9 @@ void Broadcast_Input_Parameters() {
  * processor using the MPI broadcast routine.                        *
  *********************************************************************/
 #ifdef _MPI_VERSION
-void Broadcast_Input_Parameters(MPI::Intracomm &Communicator,
-				const int Source_Rank) {
+void SNBCK_Input_Parameters :: Broadcast_Input_Parameters(MPI::Intracomm &Communicator,
+							  const int Source_Rank) 
+{
   Communicator.Bcast(&(EvaluationType), 
 		     1, 
 		     MPI::INT, Source_Rank);
