@@ -4918,14 +4918,9 @@ int dUdt_Space_March(Rte2D_Quad_Block &SolnBlk,
     int varindex;
     int xd, yd;
 
-    // For DOM and axisymetric case, the first direction is for the 
-    // storage of the intensity in the "Special directions" with 
-    // no angular distribution
-    bool Axis_DOM = ( Input_Parameters.i_RTE_Solver==RTE2D_SOLVER_DOM && 
-		      Input_Parameters.Axisymmetric );
-
-    // also, for axisymmetric dom, compute ART terms
-    if (Axis_DOM) {
+    // For axisymmetric dom, compute ART terms
+    if (Input_Parameters.i_RTE_Solver==RTE2D_SOLVER_DOM && 
+	Input_Parameters.Axisymmetric) {
       for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i )
 	for ( j = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) 
 	  SolnBlk.U[i][j].SetupART_DOM( SolnBlk.Grid.nfaceE(i,j), 
