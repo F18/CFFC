@@ -1367,7 +1367,7 @@ int Send_Boundary_Ref_States(Rte2D_Quad_Block *Soln_ptr,
                                                        Soln_Block_List,
                                                        Number_of_Solution_Variables);
     if (error_flag) {
-       cout << "\n " << CFDkit_Version() 
+       cout << "\n " << CFFC_Version() 
             << " Message Passing Error: Load_Send_Message_Buffers_NoResChange, "
             << "flag = " << error_flag << ".\n";
        return(error_flag);
@@ -1379,7 +1379,7 @@ int Send_Boundary_Ref_States(Rte2D_Quad_Block *Soln_ptr,
                                                                   Soln_Block_List,
                                                                   Number_of_Solution_Variables);
    if (error_flag) {
-       cout << "\n " << CFDkit_Version() 
+       cout << "\n " << CFFC_Version() 
             << " Message Passing Error: Load_Send_Message_Buffers_ResChange_FineToCoarse, "
             << "flag = " << error_flag << ".\n";
        return(error_flag);
@@ -1390,7 +1390,7 @@ int Send_Boundary_Ref_States(Rte2D_Quad_Block *Soln_ptr,
     error_flag = Exchange_Messages_NoResChange(Soln_Block_List,
                                                Number_of_Solution_Variables);
     if (error_flag) {
-       cout << "\n " << CFDkit_Version() 
+       cout << "\n " << CFFC_Version() 
             << " Message Passing Error: Exchange_Messages_NoResChange.\n";
        return(error_flag);
     } /* endif */
@@ -1401,7 +1401,7 @@ int Send_Boundary_Ref_States(Rte2D_Quad_Block *Soln_ptr,
     error_flag = Exchange_Messages_ResChange_FineToCoarse(Soln_Block_List,
                                                           Number_of_Solution_Variables);
     if (error_flag) {
-       cout << "\n " << CFDkit_Version() 
+       cout << "\n " << CFFC_Version() 
             << " Message Passing Error: Exchange_Messages_ResChange_FineToCoarse, "
             << "flag = " << error_flag << ".\n";
        return(error_flag);
@@ -1413,7 +1413,7 @@ int Send_Boundary_Ref_States(Rte2D_Quad_Block *Soln_ptr,
                                                             Soln_Block_List,
                                                             Number_of_Solution_Variables);
     if (error_flag) {
-       cout << "\n " << CFDkit_Version() 
+       cout << "\n " << CFFC_Version() 
             << " Message Passing Error: Unload_Receive_Message_Buffers_NoResChange, "
             << "flag = " << error_flag << ".\n";
        return(error_flag);
@@ -1425,7 +1425,7 @@ int Send_Boundary_Ref_States(Rte2D_Quad_Block *Soln_ptr,
                                                                        Soln_Block_List,
                                                                        Number_of_Solution_Variables);
     if (error_flag) {
-       cout << "\n " << CFDkit_Version() 
+       cout << "\n " << CFFC_Version() 
             << " Message Passing Error: Unload_Receive_Message_Buffers_ResChange_FineToCoarse, "
             << "flag = " << error_flag << ".\n";
        return(error_flag);
@@ -1437,7 +1437,7 @@ int Send_Boundary_Ref_States(Rte2D_Quad_Block *Soln_ptr,
                                                                   Soln_Block_List,
                                                                   Number_of_Solution_Variables);
     if (error_flag) {
-       cout << "\n " << CFDkit_Version() 
+       cout << "\n " << CFFC_Version() 
             << " Message Passing Error: Load_Send_Message_Buffers_ResChange_CoarseToFine, "
             << "flag = " << error_flag << ".\n";
        return(error_flag);
@@ -1449,7 +1449,7 @@ int Send_Boundary_Ref_States(Rte2D_Quad_Block *Soln_ptr,
     error_flag = Exchange_Messages_ResChange_CoarseToFine(Soln_Block_List,
                                                           Number_of_Solution_Variables);
     if (error_flag) {
-       cout << "\n " << CFDkit_Version() 
+       cout << "\n " << CFFC_Version() 
             << " Message Passing Error: Exchange_Messages_ResChange_CoarseToFine, "
             << "flag = " << error_flag << ".\n";
        return(error_flag);
@@ -1461,7 +1461,7 @@ int Send_Boundary_Ref_States(Rte2D_Quad_Block *Soln_ptr,
                                                                        Soln_Block_List,
                                                                        Number_of_Solution_Variables);
    if (error_flag) {
-       cout << "\n " << CFDkit_Version() 
+       cout << "\n " << CFFC_Version() 
             << " Message Passing Error: Unload_Receive_Message_Buffers_ResChange_CoarseToFine, "
             << "flag = " << error_flag << ".\n";
        return(error_flag);

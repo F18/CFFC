@@ -62,7 +62,7 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk) {
 
     /* Broadcast the number of cells in each direction. */
 
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       ni = SolnBlk.NCi;
       nj = SolnBlk.NCj;
       ng = SolnBlk.Nghost;
@@ -83,7 +83,7 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk) {
     /* On non-primary MPI processors, allocate (re-allocate) 
        memory for the quadrilateral solution block as necessary. */
 
-    if (!CFDkit_Primary_MPI_Processor()) {
+    if (!CFFC_Primary_MPI_Processor()) {
        if (SolnBlk.NCi != ni || SolnBlk.NCj != nj || SolnBlk.Nghost != ng) { 
           if (SolnBlk.U != NULL) SolnBlk.deallocate();
           if (block_allocated) SolnBlk.allocate(ni-2*ng, nj-2*ng, ng); 
@@ -115,7 +115,7 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk) {
        nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
        buffer = new double[NUM_VAR_RTE2D*ni*nj];
 
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
               for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
@@ -134,7 +134,7 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk) {
        buffer_size = NUM_VAR_RTE2D*ni*nj;
        MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
 
-       if (!CFDkit_Primary_MPI_Processor()) {
+       if (!CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
               for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
@@ -157,7 +157,7 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk) {
        nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
        buffer = new double[2*NUM_VAR_RTE2D*ni*nj];
 
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
  
@@ -178,7 +178,7 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk) {
        buffer_size = 2*NUM_VAR_RTE2D*ni*nj;
        MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
 
-       if (!CFDkit_Primary_MPI_Processor()) {
+       if (!CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
 
@@ -203,7 +203,7 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk) {
        nj = 1;
        buffer = new double[2*NUM_VAR_RTE2D*ni*nj];
 
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
           for (i  = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
 
@@ -224,7 +224,7 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk) {
        buffer_size = 2*NUM_VAR_RTE2D*ni*nj;
        MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
 
-       if (!CFDkit_Primary_MPI_Processor()) {
+       if (!CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
           for (i  = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
 
@@ -270,7 +270,7 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk,
 
     /* Broadcast the number of cells in each direction. */
 
-    if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+    if (CFFC_MPI::This_Processor_Number == Source_CPU) {
       ni = SolnBlk.NCi;
       nj = SolnBlk.NCj;
       ng = SolnBlk.Nghost;
@@ -291,7 +291,7 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk,
     /* On non-source MPI processors, allocate (re-allocate) 
        memory for the quadrilateral solution block as necessary. */
 
-    if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
        if (SolnBlk.NCi != ni || SolnBlk.NCj != nj || SolnBlk.Nghost != ng) { 
           if (SolnBlk.U != NULL) SolnBlk.deallocate();
           if (block_allocated) SolnBlk.allocate(ni-2*ng, nj-2*ng, ng); 
@@ -323,7 +323,7 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk,
        nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
        buffer = new double[NUM_VAR_RTE2D*ni*nj];
 
-       if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+       if (CFFC_MPI::This_Processor_Number == Source_CPU) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
               for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
@@ -342,7 +342,7 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk,
        buffer_size = NUM_VAR_RTE2D*ni*nj;
        Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
 
-       if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+       if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
               for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
@@ -365,7 +365,7 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk,
        nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
        buffer = new double[2*NUM_VAR_RTE2D*ni*nj];
 
-       if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+       if (CFFC_MPI::This_Processor_Number == Source_CPU) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
 
@@ -386,7 +386,7 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk,
        buffer_size = 2*NUM_VAR_RTE2D*ni*nj;
        Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
 
-       if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+       if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
           buffer_size = 0;
           for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
 	    
@@ -411,7 +411,7 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk,
        nj = 1;
        buffer = new double[2*NUM_VAR_RTE2D*ni*nj];
 
-       if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+       if (CFFC_MPI::This_Processor_Number == Source_CPU) {
           buffer_size = 0;
           for (i  = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
 
@@ -432,7 +432,7 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk,
        buffer_size = 2*NUM_VAR_RTE2D*ni*nj;
        Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
 
-       if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+       if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
           buffer_size = 0;
           for (i  = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
 
@@ -980,7 +980,7 @@ void Output_Tecplot(Rte2D_Quad_Block &SolnBlk,
     Out_File << setprecision(14);
     if (Output_Title) {
 
-       Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Rte Solution, "
+       Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Rte Solution, "
                 << "Time Step/Iteration Level = " << Number_of_Time_Steps
                 << ", Time = " << Time
                 << "\"" << "\n"
@@ -1046,6 +1046,7 @@ void Output_Tecplot(Rte2D_Quad_Block &SolnBlk,
  *                                                      *
  ********************************************************/
 void Output_Cells_Tecplot(Rte2D_Quad_Block &SolnBlk,
+			  Rte2D_Input_Parameters &IP,
                           const int Number_of_Time_Steps,
                           const double &Time,
                           const int Block_Number,
@@ -1057,7 +1058,7 @@ void Output_Cells_Tecplot(Rte2D_Quad_Block &SolnBlk,
 
     Out_File << setprecision(14);
     if (Output_Title) {
-       Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Rte Solution, "
+       Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Rte Solution, "
                 << "Time Step/Iteration Level = " << Number_of_Time_Steps
                 << ", Time = " << Time
                 << "\"" << "\n"
@@ -1134,7 +1135,7 @@ void Output_Nodes_Tecplot(Rte2D_Quad_Block &SolnBlk,
 
     Out_File << setprecision(14);
     if (Output_Title) {
-       Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Euler Solution, "
+       Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Euler Solution, "
                 << "Time Step/Iteration Level = " << Number_of_Time_Steps
                 << ", Time = " << Time
                 << "\"" << "\n"
@@ -1178,7 +1179,7 @@ void Output_Gradients_Tecplot(Rte2D_Quad_Block &SolnBlk,
 
   Out_File << setprecision(14);
   if (Output_Title) {
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Euler Solution, "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Euler Solution, "
 	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
 	     << ", Time = " << Time
 	     << "\"" << "\n"
@@ -5324,7 +5325,7 @@ int Update_Solution_Multistage_Explicit(Rte2D_Quad_Block &SolnBlk,
 	 /**********************************************************/   
 	 if (Input_Parameters.Local_Time_Stepping == GLOBAL_TIME_STEPPING && 
 	     SolnBlk.U[i][j].Unphysical_Properties() ) {
-	     cout << "\n " << CFDkit_Name() << " Rte2D ERROR: Negative Value: \n"
+	     cout << "\n " << CFFC_Name() << " Rte2D ERROR: Negative Value: \n"
 		  << " cell = (" << i << ", " << j << ") " 
 		  << " X = " << SolnBlk.Grid.Cell[i][j].Xc << "\n"
 		  << " Uo = " << SolnBlk.Uo[i][j] << "\n"
@@ -5360,7 +5361,7 @@ int Update_Solution_Multistage_Explicit(Rte2D_Quad_Block &SolnBlk,
 	   } /* end for */
 
 	   if (SolnBlk.U[i][j].Unphysical_Properties()) {
-	     cout << "\n " << CFDkit_Name() << " Rte2D ERROR: Negative Intensity: \n"
+	     cout << "\n " << CFFC_Name() << " Rte2D ERROR: Negative Intensity: \n"
 		  << " cell = (" << i << ", " << j << ") " 
 		  << " X = " << SolnBlk.Grid.Cell[i][j].Xc << "\n"
 		  << " Uo = " << SolnBlk.Uo[i][j] << "\n"
@@ -5423,7 +5424,7 @@ int Update_Solution_Multistage_Explicit(Rte2D_Quad_Block &SolnBlk,
 	   } /* endif */
 	   
 	   if (SolnBlk.U[i][j].Unphysical_Properties()) {	     
-	     cout << "\n " << CFDkit_Name() << " Rte2D ERROR: Negative Intensity: \n"
+	     cout << "\n " << CFFC_Name() << " Rte2D ERROR: Negative Intensity: \n"
 		  << " cell = (" << i << ", " << j << ") " 
 		  << " X = " << SolnBlk.Grid.Cell[i][j].Xc << "\n U = " 
 		  << " Uo = " << SolnBlk.Uo[i][j] << "\n"
@@ -5485,7 +5486,7 @@ void Output_Exact(Rte2D_Quad_Block &SolnBlk,
   // Output node solution data header.  
   Out_File << setprecision(14);
   if (Output_Title)
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Rte2D Black Enclosure Solution "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Rte2D Black Enclosure Solution "
 	     << "\"" << "\n"
 	     << "VARIABLES = \"x\" \\ \n"
 	     << "\"y\" \\ \n"

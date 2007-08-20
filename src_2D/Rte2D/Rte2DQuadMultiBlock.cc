@@ -438,6 +438,7 @@ int Output_Cells_Tecplot(Rte2D_Quad_Block *Soln_ptr,
     for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
           Output_Cells_Tecplot(Soln_ptr[i], 
+			       Input_Parameters,
                                Number_of_Time_Steps, 
                                Time,
                                Soln_Block_List.Block[i].gblknum,
@@ -1387,10 +1388,10 @@ int Output_Exact(Rte2D_Quad_Block *Soln_ptr,
   output_file.close();
   
 #ifdef _MPI_VERSION
-  l1_norm = CFDkit_Summation_MPI(l1_norm);
-  l2_norm = CFDkit_Summation_MPI(l2_norm);
-  max_norm = CFDkit_Maximum_MPI(max_norm);
-  numberofactivecells = CFDkit_Summation_MPI(numberofactivecells);
+  l1_norm = CFFC_Summation_MPI(l1_norm);
+  l2_norm = CFFC_Summation_MPI(l2_norm);
+  max_norm = CFFC_Maximum_MPI(max_norm);
+  numberofactivecells = CFFC_Summation_MPI(numberofactivecells);
 #endif
 
   // Calculate the L1-norm and L2-norm for all blocks.
@@ -1399,7 +1400,7 @@ int Output_Exact(Rte2D_Quad_Block *Soln_ptr,
     l2_norm = sqrt(l2_norm/double(numberofactivecells));
   }
 
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     cout << endl
 	 << endl
 	 << " ==================================================================== "

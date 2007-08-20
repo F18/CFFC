@@ -44,7 +44,8 @@ template <>
 int Newton_Update(Rte2D_Quad_Block *SolnBlk,
 		  AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
 		  Rte2D_Input_Parameters &Input_Parameters,
-		  GMRES_RightPrecon_MatrixFree<Rte2D_State,Rte2D_Quad_Block,Rte2D_Input_Parameters> &GMRES) {
+		  GMRES_RightPrecon_MatrixFree<Rte2D_State,Rte2D_Quad_Block,Rte2D_Input_Parameters> &GMRES,
+		  double Relaxation_multiplier) {
 
   int Num_Var = SolnBlk[0].NumVar();  
   int error_flag = 0;
@@ -58,7 +59,7 @@ int Newton_Update(Rte2D_Quad_Block *SolnBlk,
 	  /* Update solutions in conversed variables  U = Uo + deltaU = Uo + denormalized(x) */	 
 	  for(int varindex =1; varindex <= Num_Var; varindex++){  
 	    SolnBlk[Bcount].U[i][j][varindex] = SolnBlk[Bcount].Uo[i][j][varindex] 
-	      +  GMRES.deltaU(Bcount,i,j,varindex-1);
+	      +  Relaxation_multiplier * GMRES.deltaU(Bcount,i,j,varindex-1);
 	  } 	      	  
 	  // THIS FUNCTION HAS NO CHECKS FOR INVALID SOLUTIONS, 
 	  // YOU PROBABLY WANT TO CREATE A SPECIALIZATION OF THIS FUNCTION SPECIFIC 
@@ -1430,7 +1431,8 @@ normalize_Preconditioner_dFdU(DenseMatrix &dFdU) { /*EMPTY - NOT NORMALIZED*/ }
 template<> inline void Block_Preconditioner<Rte2D_State,
 					    Rte2D_Quad_Block,
 					    Rte2D_Input_Parameters>::
-First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index_j, 
+First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,
+				   const int &cell_index_j, 
 				   DenseMatrix* Jacobian){              
   
   //! Caculate normal vectors -> in Vector2D format. 

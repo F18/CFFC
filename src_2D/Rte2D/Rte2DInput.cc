@@ -286,7 +286,7 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
 
     IP.Line_Number = 0;
 
-    IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+    IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
     IP.Number_of_Blocks_Per_Processor = 10;
 
     // Freezing_Limiter
@@ -481,7 +481,7 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
     // SNBCK Parameters
     IP.SNBCK_IP.Broadcast_Input_Parameters();
 
-   if (!CFDkit_Primary_MPI_Processor()) {
+   if (!CFFC_Primary_MPI_Processor()) {
      IP.get_cffc_path();
      SetupStateStatic( IP );
      IP.Uo.Allocate();
@@ -657,7 +657,7 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Rotor_Percent_Span), 
                           1, 
                           MPI::DOUBLE, 0);
-    if (!CFDkit_Primary_MPI_Processor()) {
+    if (!CFFC_Primary_MPI_Processor()) {
        IP.ICEMCFD_FileNames = new char*[3];
        for (i = 0; i < 3; i++) {
           IP.ICEMCFD_FileNames[i] = new char[INPUT_PARAMETER_LENGTH_RTE2D];
@@ -797,8 +797,8 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
     // NKS Parameters
     IP.NKS_IP.Broadcast_Input_Parameters();
 
-    if (!CFDkit_Primary_MPI_Processor()) {
-       IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+    if (!CFFC_Primary_MPI_Processor()) {
+       IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
     } /* endif */
     MPI::COMM_WORLD.Bcast(&(IP.Number_of_Blocks_Per_Processor), 
                           1, 
@@ -1003,7 +1003,7 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     // SNBCK Parameters
     IP.SNBCK_IP.Broadcast_Input_Parameters(Communicator, Source_CPU);
 
-    if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
       SetupStateStatic( IP );
       IP.Uo.Allocate();
       IP.Uo.Zero();
@@ -1178,7 +1178,7 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Rotor_Percent_Span), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
-    if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
        IP.ICEMCFD_FileNames = new char*[3];
        for (i = 0; i < 3; i++) {
           IP.ICEMCFD_FileNames[i] = new char[INPUT_PARAMETER_LENGTH_RTE2D];
@@ -1319,8 +1319,8 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     // NKS Parameters
     IP.NKS_IP.Broadcast_Input_Parameters(Communicator, Source_CPU);
 
-    if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
-       IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+       IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
     } /* endif */
     Communicator.Bcast(&(IP.Number_of_Blocks_Per_Processor), 
                        1, 
@@ -2692,12 +2692,29 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Multigrid_IP.Number_of_Smooths_on_Coarsest_Level < 0) i_command = INVALID_INPUT_VALUE;
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Convergence_Residual_Level") == 0) {
-       i_command = 214;
-       IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.Multigrid_IP.Convergence_Residual_Level;
-       IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Multigrid_IP.Convergence_Residual_Level < ZERO) i_command = INVALID_INPUT_VALUE;
+    } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Absolute_Convergence_Tolerance") == 0) {
+      i_command = 215;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.Absolute_Convergence_Tolerance;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Relative_Convergence_Tolerance") == 0) {
+      i_command = 216;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.Relative_Convergence_Tolerance;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+
+    } else if (strcmp(IP.Next_Control_Parameter, "FMG_Absolute_Convergence_Tolerance") == 0) {
+      i_command = 217;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.FMG_Absolute_Convergence_Tolerance;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+
+    } else if (strcmp(IP.Next_Control_Parameter, "FMG_Relative_Convergence_Tolerance") == 0) {
+      i_command = 218;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.FMG_Relative_Convergence_Tolerance;
+      IP.Input_File.getline(buffer, sizeof(buffer));
 
     } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Smoothing_Type") == 0) {
        i_command = 215;
