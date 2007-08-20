@@ -417,7 +417,7 @@ public:
 			const double xco2,     // mole fraction oh CO2
 			const double o2,       // mole fraction oh O2
 			const double xsoot,    // volume fraction oh soot 
-			double *k );           // absorbsion coefficient array
+			double *k );           // absorbsion coefficient array  [m^-1]
 			          
   // return band averaged property
   double BandAverage( const double *phi, const int v );
@@ -452,7 +452,7 @@ private:
 			       const double xco2,     // mole fraction oh CO2
 			       const double xo2,      // mole fraction oh O2
 			       const double fsoot,    // volume fraction oh soot 
-			       double *k );           // absorbsion coefficient array
+			       double *k );           // absorbsion coefficient array [cm^-1]
 
   // compute absorbsion coeffient - precalculated interpolation
   void CalculateAbsorb_Interp( const double p,        // pressure [atm]
@@ -462,7 +462,7 @@ private:
 			       const double xco2,     // mole fraction oh CO2
 			       const double xo2,      // mole fraction oh O2
 			       const double fsoot,    // volume fraction oh soot 
-			       double *k );           // absorbsion coefficient array
+			       double *k );           // absorbsion coefficient array [cm^-1]
 
   // allocate and deallocate the arrays
   void AllocateQuad();

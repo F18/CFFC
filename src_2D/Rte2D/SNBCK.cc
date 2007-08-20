@@ -936,9 +936,13 @@ void SNBCK :: CalculateAbsorb( const double p,        // pressure [atm]
 			       const double xco2,     // mole fraction oh CO2
 			       const double xo2,      // mole fraction of O2
 			       const double xsoot,    // volume fraction of soot  
-			       double *k )            // absorbsion coefficient array
+			       double *k )            // absorbsion coefficient array [m^-1]
 {
   
+ 
+  //------------------------------------------------
+  // compute absorbsion coefficient in [cm^-1]
+  //------------------------------------------------
   switch (EvalType) {
 
     // if we are doing online inversion
@@ -957,6 +961,12 @@ void SNBCK :: CalculateAbsorb( const double p,        // pressure [atm]
     exit(-1);
 
   }
+
+  //------------------------------------------------
+  // convert absorbsion coefficient to [m^-1]
+  //------------------------------------------------
+  int N = NumVar();
+  for (int i=0; i<N; i++) k[i] /= CM_TO_M;
 
 }
 
@@ -986,7 +996,7 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
 				      const double xco2,     // mole fraction oh CO2
 				      const double xo2,      // mole fraction of O2
 				      const double xsoot,    // volume fraction of soot  
-				      double *k )            // absorbsion coefficient array
+				      double *k )            // absorbsion coefficient array [cm^-1]
 {
 
   // declares
@@ -1357,7 +1367,7 @@ void SNBCK :: CalculateAbsorb_Interp( const double p,        // pressure [atm]
 				      const double xco2,     // mole fraction oh CO2
 				      const double xo2,      // mole fraction of O2
 				      const double xsoot,    // volume fraction of soot  
-				      double *k )            // absorbsion coefficient array
+				      double *k )            // absorbsion coefficient array  [cm^-1]
 {
 
   // check to make sure 
@@ -1652,7 +1662,7 @@ void SNBCK_Input_Parameters::Output(ostream& out) const{
 
   out<< " Overlap Treatment Type  ====>";
   if( OverlapModel == SNBCK_OVERLAP_OPTICALLY_THIN ) {
-    out<<" Optimcally Thin "<<endl;
+    out<<" Optically Thin "<<endl;
   } else if( OverlapModel == SNBCK_OVERLAP_OPTICALLY_THICK ){
     out<<" Optically Thick"<<endl;
   } else if( OverlapModel == SNBCK_OVERLAP_UNCORRELATED ){
