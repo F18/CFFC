@@ -1231,11 +1231,10 @@ inline Grid3D_Hexa_Block operator ^(Grid3D_Hexa_Block &G, const double &a) {
   } /*endfor */
 
   return (G); 
-
 }
 
 inline Grid3D_Hexa_Block operator &(Grid3D_Hexa_Block &G, const double &a) {  
-  Vector3D X;
+ Vector3D X;
  double cos_angle=cos(a);double sin_angle= sin(a);
   //rotation about the X-axis
   for(int k = G.KNl - G.Nghost; k <= G.KNu + G.Nghost; ++k){
@@ -1262,6 +1261,8 @@ inline Grid3D_Hexa_Block operator &(Grid3D_Hexa_Block &G, const double &a) {
       } /* endfor */
     } /* endfor */
   } /*endfor */
+
+  return (G);
 }
 
 inline Grid3D_Hexa_Block operator %(Grid3D_Hexa_Block &G, const double &a) {   

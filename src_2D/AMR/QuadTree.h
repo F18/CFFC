@@ -394,7 +394,7 @@ inline void QuadTreeBlock::read(istream &in_file,
         block.info.blknum = List_of_Available_Blocks.nextBlock();
         List_of_Available_Blocks.update_next();
      } else {
-        cout << "\n " << CFDkit_Version() 
+        cout << "\n " << CFFC_Version() 
              << " Quadtree Read Error: Insufficient number of quadrilateral solution blocks.\n";
      } /* endif */
   } /* endif */
@@ -450,7 +450,7 @@ inline void QuadTreeBlock::broadcast(void) {
 #ifdef _MPI_VERSION
   int number_of_children; 
   Broadcast_Adaptive_Block(block);
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
      if (!block.used && childSW_ptr != NULL) {
        number_of_children = 4;
      } else {
@@ -459,23 +459,23 @@ inline void QuadTreeBlock::broadcast(void) {
   } /* endif */
   MPI::COMM_WORLD.Bcast(&number_of_children, 1, MPI::INT, 0);
   if (!block.used && number_of_children > 0) {
-     if (!CFDkit_Primary_MPI_Processor() && childSW_ptr != NULL) { delete childSW_ptr; childSW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childSW_ptr = new QuadTreeBlock; childSW_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childSW_ptr != NULL) { delete childSW_ptr; childSW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childSW_ptr = new QuadTreeBlock; childSW_ptr->parent_ptr = this; }
      childSW_ptr->broadcast();
-     if (!CFDkit_Primary_MPI_Processor() && childSE_ptr != NULL) { delete childSE_ptr; childSE_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childSE_ptr = new QuadTreeBlock; childSE_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childSE_ptr != NULL) { delete childSE_ptr; childSE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childSE_ptr = new QuadTreeBlock; childSE_ptr->parent_ptr = this; }
      childSE_ptr->broadcast();
-     if (!CFDkit_Primary_MPI_Processor() && childNW_ptr != NULL) { delete childNW_ptr; childNW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childNW_ptr = new QuadTreeBlock; childNW_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childNW_ptr != NULL) { delete childNW_ptr; childNW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childNW_ptr = new QuadTreeBlock; childNW_ptr->parent_ptr = this; }
      childNW_ptr->broadcast();
-     if (!CFDkit_Primary_MPI_Processor() && childNE_ptr != NULL) { delete childNE_ptr; childNE_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childNE_ptr = new QuadTreeBlock; childNE_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childNE_ptr != NULL) { delete childNE_ptr; childNE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childNE_ptr = new QuadTreeBlock; childNE_ptr->parent_ptr = this; }
      childNE_ptr->broadcast();
   } else {
-     if (!CFDkit_Primary_MPI_Processor() && childSW_ptr != NULL) { delete childSW_ptr; childSW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor() && childSE_ptr != NULL) { delete childSE_ptr; childSE_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor() && childNW_ptr != NULL) { delete childNW_ptr; childNW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor() && childNE_ptr != NULL) { delete childNE_ptr; childNE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childSW_ptr != NULL) { delete childSW_ptr; childSW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childSE_ptr != NULL) { delete childSE_ptr; childSE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childNW_ptr != NULL) { delete childNW_ptr; childNW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childNE_ptr != NULL) { delete childNE_ptr; childNE_ptr = NULL; }
   } /* endif */
 #endif
 }
@@ -484,19 +484,19 @@ inline void QuadTreeBlock::broadcast(AdaptiveBlockResourceList &List_of_Availabl
 #ifdef _MPI_VERSION
   int number_of_children; 
   Broadcast_Adaptive_Block(block);
-  if (!CFDkit_Primary_MPI_Processor()) {
+  if (!CFFC_Primary_MPI_Processor()) {
      if (block.used) {
         if (List_of_Available_Blocks.Nfree > 0) {
            block.info.cpu = List_of_Available_Blocks.nextCPU();
            block.info.blknum = List_of_Available_Blocks.nextBlock();
            List_of_Available_Blocks.update_next();
         } else {
-           cout << "\n " << CFDkit_Version() 
+           cout << "\n " << CFFC_Version() 
                 << " Quadtree Broadcast Error: Insufficient number of quadrilateral solution blocks.\n";
         } /* endif */
      } /* endif */
   } /* endif */
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
      if (!block.used && childSW_ptr != NULL) {
        number_of_children = 4;
      } else {
@@ -505,23 +505,23 @@ inline void QuadTreeBlock::broadcast(AdaptiveBlockResourceList &List_of_Availabl
   } /* endif */
   MPI::COMM_WORLD.Bcast(&number_of_children, 1, MPI::INT, 0);
   if (!block.used && number_of_children > 0) {
-     if (!CFDkit_Primary_MPI_Processor() && childSW_ptr != NULL) { delete childSW_ptr; childSW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childSW_ptr = new QuadTreeBlock; childSW_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childSW_ptr != NULL) { delete childSW_ptr; childSW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childSW_ptr = new QuadTreeBlock; childSW_ptr->parent_ptr = this; }
      childSW_ptr->broadcast(List_of_Available_Blocks);
-     if (!CFDkit_Primary_MPI_Processor() && childSE_ptr != NULL) { delete childSE_ptr; childSE_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childSE_ptr = new QuadTreeBlock; childSE_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childSE_ptr != NULL) { delete childSE_ptr; childSE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childSE_ptr = new QuadTreeBlock; childSE_ptr->parent_ptr = this; }
      childSE_ptr->broadcast(List_of_Available_Blocks);
-     if (!CFDkit_Primary_MPI_Processor() && childNW_ptr != NULL) { delete childNW_ptr; childNW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childNW_ptr = new QuadTreeBlock; childNW_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childNW_ptr != NULL) { delete childNW_ptr; childNW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childNW_ptr = new QuadTreeBlock; childNW_ptr->parent_ptr = this; }
      childNW_ptr->broadcast(List_of_Available_Blocks);
-     if (!CFDkit_Primary_MPI_Processor() && childNE_ptr != NULL) { delete childNE_ptr; childNE_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor()) { childNE_ptr = new QuadTreeBlock; childNE_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor() && childNE_ptr != NULL) { delete childNE_ptr; childNE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor()) { childNE_ptr = new QuadTreeBlock; childNE_ptr->parent_ptr = this; }
      childNE_ptr->broadcast(List_of_Available_Blocks);
   } else {
-     if (!CFDkit_Primary_MPI_Processor() && childSW_ptr != NULL) { delete childSW_ptr; childSW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor() && childSE_ptr != NULL) { delete childSE_ptr; childSE_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor() && childNW_ptr != NULL) { delete childNW_ptr; childNW_ptr = NULL; }
-     if (!CFDkit_Primary_MPI_Processor() && childNE_ptr != NULL) { delete childNE_ptr; childNE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childSW_ptr != NULL) { delete childSW_ptr; childSW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childSE_ptr != NULL) { delete childSE_ptr; childSE_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childNW_ptr != NULL) { delete childNW_ptr; childNW_ptr = NULL; }
+     if (!CFFC_Primary_MPI_Processor() && childNE_ptr != NULL) { delete childNE_ptr; childNE_ptr = NULL; }
   } /* endif */
 #endif
 }
@@ -871,7 +871,7 @@ inline void QuadTreeBlock_DataStructure::assign_block_ptr(QuadTreeBlock *Block_P
          iblk = Block_Ptr->block.info.blknum;
          if (icpu < 0 || icpu >= Ncpu ||
              iblk < 0 || iblk >= Nblk) {
-            cout << "\n " << CFDkit_Version() 
+            cout << "\n " << CFFC_Version() 
                  << " Quadtree Block Error: Invalid range for block indices.\n";
          } else {
             Blocks[icpu][iblk] = Block_Ptr;

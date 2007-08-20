@@ -101,14 +101,15 @@ inline char *Date_And_Time() {
 #define WRITE_OUTPUT_GRADIENTS_CODE                      10006
 #define WRITE_OUTPUT_QUASI3D_CODE                        10007
 #define WRITE_RESTART_CODE                               10008
-#define WRITE_OUTPUT_GRID_CODE                           10009
-#define WRITE_GRID_DEFINITION_CODE                       10010
-#define WRITE_OUTPUT_GRID_NODES_CODE                     10011
-#define WRITE_OUTPUT_GRID_CELLS_CODE                     10012
-#define COMMENT_CODE                                     10013
-#define REFINE_GRID_CODE                                 10014
-#define BOUNDING_BOX_REFINE_GRID_CODE                    10015
-#define MORTON_ORDERING_CODE                             10016
+#define READ_RESTART_CODE                                10009
+#define WRITE_OUTPUT_GRID_CODE                           10010
+#define WRITE_GRID_DEFINITION_CODE                       10011
+#define WRITE_OUTPUT_GRID_NODES_CODE                     10012
+#define WRITE_OUTPUT_GRID_CELLS_CODE                     10013
+#define COMMENT_CODE                                     10014
+#define REFINE_GRID_CODE                                 10015
+#define BOUNDING_BOX_REFINE_GRID_CODE                    10016
+#define MORTON_ORDERING_CODE                             10017
 
 #define WRITE_OUTPUT_ELEMENTS_CODE                       10020
 #define WRITE_OUTPUT_CELL_STATUS_CODE                    10022
@@ -769,6 +770,23 @@ inline float  vanalbada(float x, float y, float epsi)
 inline double vanalbada(const double &x, const double &y,
 		        const double &epsi)
    { return (x*y+sqr(epsi))*(x+y)/(sqr(x)+sqr(y)+TWO*sqr(epsi)); }
+
+// Inline functions for AUSMplusUP flux calculation.
+// M+1
+inline double Mplus_1(double M)
+  { return 0.5*(M + fabs(M)); }
+
+// M-1
+inline double Mminus_1(double M)
+  { return 0.5*(M - fabs(M)); }
+
+// M+2
+inline double Mplus_2(double M)
+  { return 0.25*sqr(M + 1.0); }
+
+// M-2
+inline double Mminus_2(double M)
+  { return -0.25*sqr(M - 1.0); }
 
 /********************************************************
  * CFD -- Define CFD structures and classes.            *

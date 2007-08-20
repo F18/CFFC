@@ -49,11 +49,11 @@ using namespace std;
 
 #ifndef _TENSOR2D_INCLUDED
 #include "../Math/Tensor2D.h"
-#endif //_TENSOR2D_INCLUDED
+#endif // _TENSOR2D_INCLUDED
 
 #ifndef _VECTOR2D_INCLUDED
 #include "../Math/Vector2D.h"
-#endif //_VECTOR2D_INCLUDED
+#endif // _VECTOR2D_INCLUDED
 
 #ifndef _GAS_CONSTANTS_INCLUDED
 #include "../Physics/GasConstants.h"
@@ -62,15 +62,15 @@ using namespace std;
 // CHEM2D Specific headers
 #ifndef _SPECIES_INCLUDED
 #include "Species.h"
-#endif //_SPECIES_INCLUDED
+#endif // _SPECIES_INCLUDED
 
 #ifndef _NASARP1311_DATA_INCLUDED
 #include "NASARP1311data.h"
-#endif
+#endif // _NASARP1311_DATA_INCLUDED
 
 #ifndef _REACTIONS_INCLUDED
 #include "Reactions.h"
-#endif 
+#endif // _REACTIONS_INCLUDED
 
 //Temperature convergence tolerance in
 //Chem2D_cState::T(void)
@@ -85,16 +85,6 @@ using namespace std;
 // If you define this variable, the number of species will be
 // predetermined for faster calculations.., however it is not as general 
 #define STATIC_NUMBER_OF_SPECIES 6 //2 AIR, 6 2STEP_CH4
-
-/* Define some functions. */
-// M+1
-inline double Mplus_1(double M) { return 0.5*(M + fabs(M)); }
-// M-1
-inline double Mminus_1(double M) { return 0.5*(M - fabs(M)); }
-// M+2
-inline double Mplus_2(double M) { return 0.25*sqr(M + 1.0); }
-// M-2
-inline double Mminus_2(double M) { return -0.25*sqr(M - 1.0); }
 
 /*!
  * Class: Chem2D_pState
@@ -938,7 +928,7 @@ inline void Chem2D_pState::set_turbulence_variables(const double &C_constant,
 //    if ((Flow_Type == FLOWTYPE_INVISCID ||
 //         Flow_Type == FLOWTYPE_LAMINAR) &&
 //        (U.rho <= ZERO ||!U.negative_speccheck(n) ||U.es() <= ZERO)) {
-//     cout << "\n " << CFDkit_Name() 
+//     cout << "\n " << CFFC_Name() 
 // 	 << " Chem2D ERROR: Negative Density || Energy || mass fractions: \n"
 // 	 << U << "\n";
 //     return false;
@@ -948,7 +938,7 @@ inline void Chem2D_pState::set_turbulence_variables(const double &C_constant,
 //        Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) &&
 //       (U.rho <= ZERO || !U.negative_speccheck(n) ||U.es() <= ZERO ||
 //        U.rhok < ZERO ||U.rhoomega < ZERO)) {
-//     cout << "\n " << CFDkit_Name() 
+//     cout << "\n " << CFFC_Name() 
 // 	 << " Chem2D ERROR: Negative Density || Energy || mass fractions || Turbulent kinetic energy || : \n"
 // 	 << " Dissipation rate per unit turbulent kinetic energy || : \n"
 // 	 <<U << "\n";
@@ -1376,7 +1366,7 @@ inline bool Chem2D_cState::Unphysical_Properties_Check(const int Flow_Type, cons
   if ((Flow_Type == FLOWTYPE_INVISCID ||
        Flow_Type == FLOWTYPE_LAMINAR) &&
       (rho <= ZERO ||!negative_speccheck(n) ||es() <= ZERO)) {
-    cout << "\n " << CFDkit_Name() 
+    cout << "\n " << CFFC_Name() 
 	 << " Chem2D ERROR: Negative Density || Energy || mass fractions: \n" << *this <<endl;
     return false;
   }
@@ -1384,7 +1374,7 @@ inline bool Chem2D_cState::Unphysical_Properties_Check(const int Flow_Type, cons
        Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) &&
       (rho <= ZERO || !negative_speccheck(n) ||es() <= ZERO ||
        rhok < ZERO ||rhoomega < ZERO)) {
-    cout << "\n " << CFDkit_Name() 
+    cout << "\n " << CFFC_Name() 
 	 << " Chem2D ERROR: Negative Density || Energy || mass fractions || Turbulent kinetic energy || : \n"
 	 << " Dissipation rate per unit turbulent kinetic energy || : \n" << *this <<endl;
     return false;

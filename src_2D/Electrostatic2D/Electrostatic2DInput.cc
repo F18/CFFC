@@ -53,6 +53,9 @@ void Set_Default_Input_Parameters(Electrostatic2D_Input_Parameters &IP) {
 
   char *string_ptr;
   
+  // CFFC root directory path:
+  IP.get_cffc_path();
+
   string_ptr = "Electrostatic2D.in";
   strcpy(IP.Input_File_Name,string_ptr);
 
@@ -124,7 +127,7 @@ void Set_Default_Input_Parameters(Electrostatic2D_Input_Parameters &IP) {
   IP.X_Rotate = ZERO;
 
   // Boundary conditions:
-  string_ptr = "Off";
+  string_ptr = "OFF";
   strcpy(IP.Boundary_Conditions_Specified,string_ptr);
   IP.BCs_Specified = OFF;
   string_ptr = "None";
@@ -188,7 +191,7 @@ void Set_Default_Input_Parameters(Electrostatic2D_Input_Parameters &IP) {
   string_ptr = " ";
   strcpy(IP.Next_Control_Parameter,string_ptr);
   IP.Line_Number = 0;
-  IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+  IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
   IP.Number_of_Blocks_Per_Processor = 10;
 
 }
@@ -205,6 +208,10 @@ void Broadcast_Input_Parameters(Electrostatic2D_Input_Parameters &IP) {
 
 #ifdef _MPI_VERSION
 
+  // CFFC path:
+  MPI::COMM_WORLD.Bcast(IP.CFFC_Path, 
+ 			INPUT_PARAMETER_LENGTH_ELECTROSTATIC2D, 
+			MPI::CHAR, 0);
   // Input file name and line number:
   MPI::COMM_WORLD.Bcast(IP.Input_File_Name,
 			INPUT_PARAMETER_LENGTH_ELECTROSTATIC2D,
@@ -285,7 +292,7 @@ void Broadcast_Input_Parameters(Electrostatic2D_Input_Parameters &IP) {
   MPI::COMM_WORLD.Bcast(&(IP.i_ICs),
 			1,
 			MPI::INT,0);
-  if (!CFDkit_Primary_MPI_Processor()) {
+  if (!CFFC_Primary_MPI_Processor()) {
     Initialize_Reference_State(IP);
   }
   for (int nv = 1; nv <= NUM_VAR_ELECTROSTATIC2D; nv++) {
@@ -404,7 +411,7 @@ void Broadcast_Input_Parameters(Electrostatic2D_Input_Parameters &IP) {
 			1,
 			MPI::INT,0);
   // ICEM:
-  if (!CFDkit_Primary_MPI_Processor()) {
+  if (!CFFC_Primary_MPI_Processor()) {
     IP.ICEMCFD_FileNames = new char*[3];
     for (int i = 0; i < 3; i++) {
       IP.ICEMCFD_FileNames[i] = new char[INPUT_PARAMETER_LENGTH_ELECTROSTATIC2D];
@@ -509,8 +516,8 @@ void Broadcast_Input_Parameters(Electrostatic2D_Input_Parameters &IP) {
 			1,
 			MPI::INT,0);
   // Number of processors:
-  if (!CFDkit_Primary_MPI_Processor()) {
-    IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+  if (!CFFC_Primary_MPI_Processor()) {
+    IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
   }
   MPI::COMM_WORLD.Bcast(&(IP.Number_of_Blocks_Per_Processor),
 			1,
@@ -538,6 +545,10 @@ void Broadcast_Input_Parameters(Electrostatic2D_Input_Parameters &IP,
 
   int Source_Rank = 0;
 
+  // CFFC path:
+  Communicator.Bcast(IP.CFFC_Path, 
+ 		     INPUT_PARAMETER_LENGTH_ELECTROSTATIC2D, 
+		     MPI::CHAR, Source_Rank);
   Communicator.Bcast(IP.Input_File_Name,
 		     INPUT_PARAMETER_LENGTH_ELECTROSTATIC2D,
 		     MPI::CHAR,Source_Rank);
@@ -617,7 +628,7 @@ void Broadcast_Input_Parameters(Electrostatic2D_Input_Parameters &IP,
   Communicator.Bcast(&(IP.i_ICs),
 		     1,
 		     MPI::INT,Source_Rank);
-  if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+  if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
     Initialize_Reference_State(IP);
   }
   for (int nv = 1; nv <= NUM_VAR_ELECTROSTATIC2D; nv++) {
@@ -736,7 +747,7 @@ void Broadcast_Input_Parameters(Electrostatic2D_Input_Parameters &IP,
 		     1,
 		     MPI::INT,Source_Rank);
   // ICEM:
-  if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+  if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
     IP.ICEMCFD_FileNames = new char*[3];
     for (int i = 0; i < 3; i++) {
       IP.ICEMCFD_FileNames[i] = new char[INPUT_PARAMETER_LENGTH_ELECTROSTATIC2D];
@@ -837,8 +848,8 @@ void Broadcast_Input_Parameters(Electrostatic2D_Input_Parameters &IP,
 		     1,
 		     MPI::INT,Source_Rank);
   // Number of blocks per processor:
-  if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
-    IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+  if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+    IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
   }
   Communicator.Bcast(&(IP.Number_of_Blocks_Per_Processor),
 		     1,
@@ -894,7 +905,12 @@ int Parse_Next_Input_Control_Parameter(Electrostatic2D_Input_Parameters &IP) {
   int tpt, bct;
   Vector2D Xt;
 
-  if (strcmp(IP.Next_Control_Parameter,"Time_Integration_Type") == 0) {
+  if (strcmp(IP.Next_Control_Parameter, "CFFC_Path") == 0) {
+     i_command = 1111;
+     Get_Next_Input_Control_Parameter(IP);
+     strcpy(IP.CFFC_Path, IP.Next_Control_Parameter);
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Time_Integration_Type") == 0) {
     i_command = 1;
     Get_Next_Input_Control_Parameter(IP);
     strcpy(IP.Time_Integration_Type,IP.Next_Control_Parameter);
@@ -1258,9 +1274,9 @@ int Parse_Next_Input_Control_Parameter(Electrostatic2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"AMR") == 0) {
     i_command = 71;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.AMR = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.AMR = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -1336,9 +1352,9 @@ int Parse_Next_Input_Control_Parameter(Electrostatic2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Gradient_Potential_Field") == 0) {
     i_command = 81;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Refinement_Criteria_Gradient_Potential_Field = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Refinement_Criteria_Gradient_Potential_Field = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -1347,9 +1363,9 @@ int Parse_Next_Input_Control_Parameter(Electrostatic2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Divergence_Electric_Field") == 0) {
     i_command = 82;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Refinement_Criteria_Divergence_Electric_Field = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Refinement_Criteria_Divergence_Electric_Field = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -1358,9 +1374,9 @@ int Parse_Next_Input_Control_Parameter(Electrostatic2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Curl_Electric_Field") == 0) {
     i_command = 83;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Refinement_Criteria_Curl_Electric_Field = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Refinement_Criteria_Curl_Electric_Field = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -1389,9 +1405,9 @@ int Parse_Next_Input_Control_Parameter(Electrostatic2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Mesh_Stretching") == 0) {
     i_command = 101;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.i_Mesh_Stretching = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.i_Mesh_Stretching = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -1448,9 +1464,9 @@ int Parse_Next_Input_Control_Parameter(Electrostatic2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Smooth_Quad_Block") == 0) {
     i_command = 105;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.i_Smooth_Quad_Block = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.i_Smooth_Quad_Block = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -1460,9 +1476,9 @@ int Parse_Next_Input_Control_Parameter(Electrostatic2D_Input_Parameters &IP) {
     i_command = 500;
     Get_Next_Input_Control_Parameter(IP);
     strcpy(IP.Boundary_Conditions_Specified,IP.Next_Control_Parameter);
-    if (strcmp(IP.Boundary_Conditions_Specified,"On") == 0) {
+    if (strcmp(IP.Boundary_Conditions_Specified,"ON") == 0) {
       IP.BCs_Specified = ON;
-    } else if (strcmp(IP.Boundary_Conditions_Specified,"Off") == 0) {
+    } else if (strcmp(IP.Boundary_Conditions_Specified,"OFF") == 0) {
       IP.BCs_Specified = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;

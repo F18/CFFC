@@ -129,7 +129,7 @@ main(int num_arg, char *arg_ptr[]){
 
   cout << '\n' << program_title_ptr << '\n';
   cout << program_version_ptr << '\n';
-  cout << "Built using " << CFDkit_Version() << "\n";
+  cout << "Built using " << CFFC_Version() << "\n";
   cout << ICEMCFD_Version() << "\n";
   cout.flush();
   if (version_flag) return (0);

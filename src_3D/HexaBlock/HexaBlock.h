@@ -2877,33 +2877,28 @@ istream &operator >> (istream &in_file,
                       Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> &SolnBlk) {
    
    int ni, il, iu, nj, jl, ju, nk, kl, ku, ng;
-    
-   // Grid3D_Hexa_Block New_Grid; in_file >> New_Grid;
-   in_file>> SolnBlk.Grid;
+   Grid3D_Hexa_Block New_Grid; in_file >> New_Grid;
    in_file.setf(ios::skipws);
    in_file >> ni >> il >> iu;
    in_file >> nj >> jl >> ju;
    in_file >> nk >> kl >> ku;
    in_file >> ng;
    in_file.unsetf(ios::skipws);
-   
    if (ni == 0 || nj == 0 || nk == 0 || ng == 0) {
       if (SolnBlk.Allocated) SolnBlk.deallocate(); 
       return(in_file);
    } /* endif */
-   
    if (!SolnBlk.Allocated || SolnBlk.NCi != ni ||SolnBlk.NCj != nj
        || SolnBlk.NCk != nk || SolnBlk.Nghost != ng) {
       if (SolnBlk.Allocated) SolnBlk.deallocate();
-      SolnBlk.allocate(ni, nj, nk, ng);
+      SolnBlk.allocate(ni-2*ng, nj-2*ng, nk-2*ng, ng);
    } /* endif */
-
+   SolnBlk.Grid.Copy(New_Grid);
+   New_Grid.deallocate();
    SOLN_cSTATE U_VACUUM;
    U_VACUUM.Vacuum();
    SOLN_pSTATE W_VACUUM;
    W_VACUUM.Vacuum();
-
-   // Copy_Hexa_Block(SolnBlk.Grid, New_Grid); New_Grid.deallocate();
    for (int k=SolnBlk.KCl-SolnBlk.Nghost; k<= SolnBlk.KCu+SolnBlk.Nghost ; ++k ) {
       for (int j=SolnBlk.JCl-SolnBlk.Nghost; j<= SolnBlk.JCu+SolnBlk.Nghost; ++j) {
          for (int i=SolnBlk.ICl-SolnBlk.Nghost; i<= SolnBlk.ICu+SolnBlk.Nghost; ++i) {
@@ -2930,14 +2925,12 @@ istream &operator >> (istream &in_file,
          in_file >> SolnBlk.WoE[j][k];
       } /* endfor */ 
    } /* endfor */
-    
    for (int k = SolnBlk.KCl-SolnBlk.Nghost ; k <= SolnBlk.KCu+SolnBlk.Nghost ; ++k) {
       for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
          in_file >> SolnBlk.WoS[i][k];
          in_file >> SolnBlk.WoN[i][k];
       } /* endfor */
    } /* endfor */
-
    for ( int j = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
          in_file >> SolnBlk.WoB[i][j] ;
@@ -2946,7 +2939,6 @@ istream &operator >> (istream &in_file,
    } /* endfor */
    
    return (in_file);
-
 }
 
 template<class SOLN_pSTATE, class SOLN_cSTATE>

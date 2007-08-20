@@ -20,6 +20,11 @@
 #define	DENSITY_STDATM      1.225
 #define TEMPERATURE_STDATM  288.1600
 
+/* For different equations of state */
+
+#define EOS_TGAS      4  
+#define EOS_IDEAL     5    
+
 /* Define various gas and ion types. */
 
 #define GAS_AIR           1001

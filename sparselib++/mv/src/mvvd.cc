@@ -471,7 +471,7 @@ MV_Vector_double MV_Vector_double::operator^(const double& m)
     return temp;
 }
 
-const double MV_Vector_double::norm()
+double MV_Vector_double::norm() const
 {
   double  norm=0.0;
   int N = dim_;

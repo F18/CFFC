@@ -46,12 +46,12 @@ using namespace std;
  **********************************************************************/
 
 // Name.
-inline string CFDkit_Name() {
+inline string CFFC_Name() {
   return ("CFFC");
 }
 
 // Version.
-inline string CFDkit_Version() {
+inline string CFFC_Version() {
   return ("CFFC, Version 0.00, UTIAS CFD & Propulsion Group, 1999-2007.");
 }
 
@@ -96,6 +96,7 @@ inline char *Date_And_Time() {
 #define BOUNDING_BOX_REFINE_GRID_CODE                    10015
 #define MORTON_ORDERING_CODE                             10016
 #define SWITCH_BCS_TO_FIXED                              10017
+#define EXECUTE_ZERO_STEPS_CODE                          10019 // used for combining AMR with restart files
 
 #define WRITE_OUTPUT_ELEMENTS_CODE                       10020
 #define WRITE_OUTPUT_CELL_STATUS_CODE                    10022
@@ -125,6 +126,7 @@ inline char *Date_And_Time() {
 #define WRITE_OUTPUT_DRIVEN_CAVITY_FLOW_CODE             10055
 #define WRITE_OUTPUT_BACKWARD_FACING_STEP_CODE           10056
 #define WRITE_OUTPUT_MIXING_LAYER_CODE                   10057
+#define WRITE_OUTPUT_FORWARD_FACING_STEP_CODE            10058
 
 #define DETERMINE_MAXIMUM_SURFACE_PRESSURE_CODE          10070
 #define DETERMINE_MACH_STEM_HEIGHT_CODE                  10071
@@ -167,6 +169,7 @@ inline char *Date_And_Time() {
 #define GRID_SQUARE                           1
 #define GRID_RECTANGULAR_BOX                  2
 #define GRID_FLAT_PLATE                       3
+#define GRID_FLAT_PLATE_NK                  165
 #define GRID_PIPE                             4
 #define GRID_BLUNT_BODY                       5
 #define GRID_ROCKET_MOTOR                     6
@@ -182,15 +185,16 @@ inline char *Date_And_Time() {
 #define GRID_BUMP_CHANNEL_FLOW               16
 #define GRID_DRIVEN_CAVITY_FLOW              17
 #define GRID_BACKWARD_FACING_STEP            18
-#define GRID_MIXING_LAYER                    19 
-#define GRID_NOZZLE                          20
-#define GRID_NOZZLELESS_ROCKET_MOTOR         21
-#define GRID_DESOLVATION_CHAMBER             22
-#define GRID_FREE_JET_FLAME                  23
-#define GRID_ADIABATIC_FLAT_PLATE            24
-#define GRID_ADIABATIC_PIPE                  25
-#define GRID_ADIABATIC_CIRCULAR_CYLINDER     26
-#define GRID_ADIABATIC_COUETTE               27
+#define GRID_FORWARD_FACING_STEP             19
+#define GRID_MIXING_LAYER                    20 
+#define GRID_NOZZLE                          21
+#define GRID_NOZZLELESS_ROCKET_MOTOR         22
+#define GRID_DESOLVATION_CHAMBER             23
+#define GRID_FREE_JET_FLAME                  24
+#define GRID_ADIABATIC_FLAT_PLATE            25
+#define GRID_ADIABATIC_PIPE                  26
+#define GRID_ADIABATIC_CIRCULAR_CYLINDER     27
+#define GRID_ADIABATIC_COUETTE               28
 
 #define GRID_ICEMCFD                       1000
 #define GRID_READ_FROM_DEFINITION_FILE    10000
@@ -452,6 +456,7 @@ inline char *Date_And_Time() {
 #define IC_TURBULENT_DUMP_COMBUSTOR            91 
 
 #define IC_FREE_JET_FLAME                      92 
+#define IC_FORWARD_FACING_STEP                 95
 
 #define	IC_RIEMANN                    100
 #define	IC_SQUARE_WAVE                101
@@ -479,6 +484,7 @@ inline char *Date_And_Time() {
 #define IC_SHOCK_STRUCTURE_M10_0      304
 #define IC_PIPE                       305
 #define IC_COUETTE                    306
+#define IC_BLUNT_BODY                 307
 
 /********************************************************
  * CFD -- Time Integration (Time-Stepping) Types.       *
@@ -608,6 +614,10 @@ inline char *Date_And_Time() {
 
 #define FLUX_FUNCTION_GODUNOV_WRS                     99
 
+#define FLUX_FUNCTION_GLAISTER                        50
+#define	FLUX_FUNCTION_GHLLE                           52
+#define FLUX_FUNCTION_GHLLL                           54
+
 #define PARTICLE_PHASE_FLUX_FUNCTION_SAUREL           31
 #define PARTICLE_PHASE_FLUX_FUNCTION_MULTIVELOCITY    32
 #define PARTICLE_PHASE_FLUX_FUNCTION_SAUREL_MB        33
@@ -683,15 +693,12 @@ inline char *Date_And_Time() {
 #define EXPLICIT                          0
 #define IMPLICIT                          1
 
-// and for the stricter among us ...
-enum current_solver_types { CST_EXPLICIT , CST_IMPLICIT };
-
-/********************************************************
- *
- * CFD -- Maximum length of codes and values of input parameter strings.
- * Ideally this will be used for all input parameter classes.
- *
- ********************************************************/
+/*************************************************************************
+ *                                                                       *
+ * CFD -- Maximum length of codes and values of input parameter strings. *
+ * Ideally this will be used for all input parameter classes.            *
+ *                                                                       *
+ *************************************************************************/
 #define	INPUT_PARAMETER_MAX_LENGTH    128
 
 /**********************************************************************
@@ -744,6 +751,23 @@ inline float  vanalbada(float x, float y, float epsi)
 inline double vanalbada(const double &x, const double &y,
 		        const double &epsi)
    { return (x*y+sqr(epsi))*(x+y)/(sqr(x)+sqr(y)+TWO*sqr(epsi)); }
+
+// Inline functions for AUSMplusUP flux calculation.
+// M+1
+inline double Mplus_1(double M)
+  { return 0.5*(M + fabs(M)); }
+
+// M-1
+inline double Mminus_1(double M)
+  { return 0.5*(M - fabs(M)); }
+
+// M+2
+inline double Mplus_2(double M)
+  { return 0.25*sqr(M + 1.0); }
+
+// M-2
+inline double Mminus_2(double M)
+  { return -0.25*sqr(M - 1.0); }
 
 /********************************************************
  * CFD -- Define CFD structures and classes.            *
@@ -1304,11 +1328,11 @@ extern void A_Stable_Implicit_Method_Coefficients(double &theta,
  *                                                                    *
  **********************************************************************/
 template <class T>
-int Bilinear_Interpolation(const T U1, const Vector2D P1,
-			   const T U2, const Vector2D P2,
-			   const T U3, const Vector2D P3,
-			   const T U4, const Vector2D P4,
-			   const Vector2D P0, T &U0) {
+int Bilinear_Interpolation(const T &U1, const Vector2D &P1,
+			   const T &U2, const Vector2D &P2,
+			   const T &U3, const Vector2D &P3,
+			   const T &U4, const Vector2D &P4,
+			   const Vector2D &P0, T &U0) {
   double a0, a1, a2, a3;
   double b0, b1, b2, b3;
   double zeta0, eta0;
@@ -1355,11 +1379,11 @@ int Bilinear_Interpolation(const T U1, const Vector2D P1,
   return 0;
 }
 template <class T>
-int Bilinear_Interpolation_ZY(const T U1, const Vector2D P1,
-			      const T U2, const Vector2D P2,
-			      const T U3, const Vector2D P3,
-			      const T U4, const Vector2D P4,
-			      const Vector2D P0, T &U0) {
+int Bilinear_Interpolation_ZY(const T &U1, const Vector2D &P1,
+			      const T &U2, const Vector2D &P2,
+			      const T &U3, const Vector2D &P3,
+			      const T &U4, const Vector2D &P4,
+			      const Vector2D &P0, T &U0) {
   double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y, 
          eta1, zeta1, eta2, zeta2, eta, zeta;
   T A, B, C, D;
@@ -1612,11 +1636,10 @@ void DiamondPath_Find_dWdX(
   }
 
 	switch (stencil_flag) {
-		case DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION: 
-			double A = Al + Ar;
+		case DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION:
 			// determine the area-averaged gradients
-			dWdx = (Al*dWdxl + Ar*dWdxr)/A;
-			dWdy = (Al*dWdyl + Ar*dWdyr)/A;
+			dWdx = (Al*dWdxl + Ar*dWdxr)/(Al+Ar);
+			dWdy = (Al*dWdyl + Ar*dWdyr)/(Al+Ar);
 			break;
 		case DIAMONDPATH_LEFT_TRIANGLE:
 			dWdx = dWdxl; dWdy = dWdyl;
@@ -1669,6 +1692,18 @@ void Hybrid_Find_dWdX(
 }
 
 // for use with qsort
-int compare_ints(const void *p, const void *q);
+int Compare_Ints(const void *p, const void *q);
+
+// Returns the slope of the line of best fit (in the 
+// least-squares sense) where the data sets are:
+//   ( x, y ) = 
+//   ( 0, values[position] ),
+//   ( 1, values[position+1] ),
+//   ...
+//   (n-1, values[position+n-1] )
+//
+// "values" is a circular array so the actual indexing 
+// is the remainder after division by n.
+double Least_Squares_Slope(double *values, int n, int position);
 
 #endif /* _CFD_INCLUDED  */

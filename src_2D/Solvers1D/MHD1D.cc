@@ -60,7 +60,7 @@ void Output_Gnuplot(MHD1D_UniformMesh *Soln,
 
     int i;
 
-    out_file << "# " << CFDkit_Name() << ": 1D MHD Solution, "
+    out_file << "# " << CFFC_Name() << ": 1D MHD Solution, "
              << "Time Step/Iteration Level = "
              << Number_of_Time_Steps
              << ", Time = " << Time << "\n"
@@ -90,7 +90,7 @@ void Output_Tecplot(MHD1D_UniformMesh *Soln,
 
     int i;
 
-    out_file << "TITLE = \"" << CFDkit_Name() 
+    out_file << "TITLE = \"" << CFFC_Name() 
              << ": 1D MHD Solution, "
              << "Time Step/Iteration Level = "
              << Number_of_Time_Steps
@@ -308,7 +308,7 @@ int dUdt_explicitEuler_upwind(MHD1D_UniformMesh *Soln,
 	if (Soln[i].U.d   <= ZERO ||
 	    Soln[i].U.E1  <= ZERO ||
 	    Soln[i].U.e() <= ZERO ) {
-	    cout << "\n " << CFDkit_Name() << " ERROR: Negative Density and/or Energy: \n"
+	    cout << "\n " << CFFC_Name() << " ERROR: Negative Density and/or Energy: \n"
 	         << " node = " << i << "\n U = " << Soln[i].U << "\n dUdt = "
 	         << Soln[i].dUdt << "\n";
 	    return (i);
@@ -378,7 +378,7 @@ int dUdt_LaxFriedrichs(MHD1D_UniformMesh *Soln,
 	if (Soln[i].U.d   <= ZERO ||
 	    Soln[i].U.E1  <= ZERO ||
 	    Soln[i].U.e() <= ZERO ) {
-	    cout << "\n " << CFDkit_Name() << " ERROR: Negative Density and/or Energy: \n"
+	    cout << "\n " << CFFC_Name() << " ERROR: Negative Density and/or Energy: \n"
 	         << " node = " << i << "\n U = " << Soln[i].U << "\n dUdt = "
 	         << Soln[i].dUdt << "\n";
 	    return (i);

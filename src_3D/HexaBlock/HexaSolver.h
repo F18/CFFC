@@ -155,6 +155,22 @@ int HexaSolver(char *Input_File_Name_ptr,
    } /* endif */
 
    if (Input.i_ICs == IC_RESTART) {
+      if (!batch_flag){ 
+          cout << "\n Reading solution from restart data files."; 
+          cout.flush();
+      }
+      //error_flag = Read_Octree(Octree,
+      //			 Input);
+      if (error_flag) {
+         cout << "\n ERROR: Unable to open Octree data file "
+ 	      << "on processor "
+  	      << Local_Adaptive_Block_List.ThisCPU
+ 	      << ".\n";
+         cout.flush();
+      } // endif 
+      error_flag = CFFC_OR_MPI(error_flag);
+      if (error_flag) return (error_flag);
+
       error_flag = Local_Solution_Blocks.Read_Restart_Solution(Input,  
                                                                Local_Adaptive_Block_List,
                                                                number_of_time_steps,
@@ -580,12 +596,11 @@ int HexaSolver(char *Input_File_Name_ptr,
       } else if (command_flag == WRITE_RESTART_CODE) {
          // Write restart files.
 	 if (!batch_flag) {
-            cout <<"\n Writing  solution to restart data file(s).";
+            cout <<"\n Writing solution to restart data file(s).";
 	    cout.flush();
          } /* endif */
 
-         //error_flag = Write_Octree(Octree, Input);
-         error_flag = 0;
+         error_flag = Write_Octree(Octree, Input);
          if (error_flag) {
             cout << "\n  ERROR: Unable to open  octree data file on processor " 
                  << CFFC_MPI::This_Processor_Number
@@ -608,6 +623,37 @@ int HexaSolver(char *Input_File_Name_ptr,
          } /* endif */
          error_flag = CFFC_OR_MPI(error_flag);
          if (error_flag) return (error_flag);
+
+      }else if (command_flag == READ_RESTART_CODE){
+        //Read restart files.
+        if (!batch_flag){ 
+            cout << "\n Reading solution from restart data files."; 
+            cout.flush();
+        }
+        //error_flag = Read_Octree(Octree,
+   	//		           Input);
+        if (error_flag) {
+           cout << "\n ERROR: Unable to open Octree data file "
+   	        << "on processor "
+  	        << Local_Adaptive_Block_List.ThisCPU
+ 	        << ".\n";
+           cout.flush();
+        } // endif 
+        error_flag = CFFC_OR_MPI(error_flag);
+        if (error_flag) return (error_flag);
+
+        error_flag = Local_Solution_Blocks.Read_Restart_Solution(Input,  
+                                                                 Local_Adaptive_Block_List,
+                                                                 number_of_time_steps,
+                                                                 Time,
+                                                                 processor_cpu_time);
+        if (error_flag) {
+           cout << "\n  ERROR: Unable to open restart input data file(s) on processor "
+                << CFFC_MPI::This_Processor_Number << ".\n";
+           cout.flush();
+        } /* endif */
+        error_flag = CFFC_OR_MPI(error_flag);
+        if (error_flag) return (error_flag);
 
       } else if (command_flag == MORTON_ORDERING_CODE) {
          if (!batch_flag){ 

@@ -415,6 +415,7 @@ int Output_Cells_Tecplot(Euler2D_Quad_Block *Soln_ptr,
     for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
           Output_Cells_Tecplot(Soln_ptr[i], 
+                               Input_Parameters,
                                Number_of_Time_Steps, 
                                Time,
                                Soln_Block_List.Block[i].gblknum,
@@ -1384,9 +1385,9 @@ int Determine_Maximum_Surface_Pressure(Euler2D_Quad_Block *Soln_ptr,
   }
 
   // Determine the global maximum surface pressure.
-  maximum_pressure = CFDkit_Maximum_MPI(maximum_pressure);
+  maximum_pressure = CFFC_Maximum_MPI(maximum_pressure);
 
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     cout << endl
 	 << endl
 	 << " ==================================================================== "

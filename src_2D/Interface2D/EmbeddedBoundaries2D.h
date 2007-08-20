@@ -233,7 +233,7 @@ class Adjusted_Mesh_Quad_Block{
     int ni, nj, block_allocated, buffer_size, *buffer;
 
     // Broadcast the number of cells in each direction.
-    if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+    if (CFFC_MPI::This_Processor_Number == Source_CPU) {
       ni = NCi;
       nj = NCj;
       if (node_status != NULL) block_allocated = 1;
@@ -246,7 +246,7 @@ class Adjusted_Mesh_Quad_Block{
 
     // On non-source MPI processors, allocate (re-allocate) memory for
     // the quadrilateral block as necessary.
-    if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
       if (NCi != ni || NCj != nj) { 
 	if (node_status != NULL) deallocate();
 	if (block_allocated) allocate(ni,nj); 
@@ -258,7 +258,7 @@ class Adjusted_Mesh_Quad_Block{
       // Broadcast the node status array.
       buffer = new int[NNi*NNj];
 
-      if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+      if (CFFC_MPI::This_Processor_Number == Source_CPU) {
 	buffer_size = 0;
 	for (int j = 0; j < NNj; j++) {
 	  for (int i = 0; i < NNi; i++) {
@@ -271,7 +271,7 @@ class Adjusted_Mesh_Quad_Block{
       buffer_size = NNi*NNj;
       Communicator.Bcast(buffer,buffer_size,MPI::INT,Source_Rank);
 
-      if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+      if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
 	buffer_size = 0;
 	for (int j = 0; j < NNj; j++) {
 	  for (int i = 0; i < NNi; i++) {
@@ -286,7 +286,7 @@ class Adjusted_Mesh_Quad_Block{
       // Broadcast the cell status and type arrays.
       buffer = new int[2*NCi*NCj];
 
-      if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+      if (CFFC_MPI::This_Processor_Number == Source_CPU) {
 	buffer_size = 0;
 	for (int j = 0; j < NCj; j++) {
 	  for (int i = 0; i < NCi; i++) {
@@ -300,7 +300,7 @@ class Adjusted_Mesh_Quad_Block{
       buffer_size = 2*NCi*NCj;
       Communicator.Bcast(buffer,buffer_size,MPI::INT,Source_Rank);
 
-      if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+      if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
 	buffer_size = 0;
 	for (int j = 0; j < NCj; j++) {
 	  for (int i = 0; i < NCi; i++) {
@@ -594,9 +594,9 @@ public:
  * can be performed here, however, FAS multigrid solutions can be done
  * as contained in EmbeddedBoundaries2D_FASMultigrid.h.  Block-based
  * adaptive mesh refinement is performed in the same manner as the 
- * individual equation-type solvers in CFDkit+caboodle.  In fact, this
+ * individual equation-type solvers in CFFC.  In fact, this
  * templated class essentially replaces the ****2DQuadSolvers routine
- * used by the individual equation-type solvers in CFDkit+caboodle.  The
+ * used by the individual equation-type solvers in CFFC.  The
  * set-up of the problem and the output of the computed solution is 
  * performd in the routine found in EmbeddedBoundaries_Solvers.h, 
  * however, the explicit solution of the system of equations is found in
@@ -1246,7 +1246,7 @@ deallocate(void) {
 
   // Deallocate memory for level set variables if required.
 //   if (LS_Local_SolnBlk != NULL) {
-//     if (CFDkit_Primary_MPI_Processor()) Close_Input_File(LS_IP);
+//     if (CFFC_Primary_MPI_Processor()) Close_Input_File(LS_IP);
 //     LS_Local_SolnBlk = Deallocate(LS_Local_SolnBlk,LS_IP);
 //     LS_Global_Solution_Block_List.deallocate();
 //     LS_Local_Solution_Block_List.deallocate();
@@ -1462,7 +1462,7 @@ Construct_Interface_Component_List(void) {
     case INTERFACE_NASA_ROTOR_37 :
       // Create NASA Rotor 37 spline.
       // Set default data values.
-      strcpy(NASA_Rotor_Data_Directory,"/nfs/fe01/d1/cfd/jai/CFDkit+caboodle/data/NASA_Rotors/R37/");
+      strcpy(NASA_Rotor_Data_Directory,"/nfs/fe01/d1/cfd/jai/CFFC/data/NASA_Rotors/R37/");
       Rotor_Flow_Type = PEAK_FLOW;
       // Initialize NASA rotor 37 class.
       NASA_Rotor_37.init(Rotor_Flow_Type,NASA_Rotor_Data_Directory);
@@ -1478,7 +1478,7 @@ Construct_Interface_Component_List(void) {
     case INTERFACE_NASA_ROTOR_67 :
       // Create NASA Rotor 67 spline.
       // Set default data values.
-      strcpy(NASA_Rotor_Data_Directory,"/nfs/fe01/d1/cfd/jai/CFDkit+caboodle/data/NASA_Rotors/R67/");
+      strcpy(NASA_Rotor_Data_Directory,"/nfs/fe01/d1/cfd/jai/CFFC/data/NASA_Rotors/R67/");
       Rotor_Flow_Type = PEAK_FLOW;
       // Initialize NASA rotor 67 class.
       NASA_Rotor_67.init(Rotor_Flow_Type,NASA_Rotor_Data_Directory);
@@ -1673,7 +1673,7 @@ Reconstruct_Interface_Component_List(void) {
 
   // Create a 'universal' interface list that contains all of the 
   // interfaces evolved using the level set method.
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     if (LS_Local_Solution_Block_List->Block[0].used == ADAPTIVEBLOCK2D_USED) {
       // Determine the number of interfaces evolved using the level
       // set method.
@@ -1829,7 +1829,7 @@ Output_Interface_Component_List_Tecplot(void) {
   output_file << setprecision(14);
   if (Interface_Component_List.Ni > 0) {
     if (output_file_name)
-      output_file << "TITLE = \"" << CFDkit_Name() << ": Interface Component List, "
+      output_file << "TITLE = \"" << CFFC_Name() << ": Interface Component List, "
 		  << "\"" << "\n"
 		  << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n"
@@ -1907,7 +1907,7 @@ Output_Interface_Union_List_Tecplot(void) {
   output_file << setprecision(14);
   if (Interface_Union_List.Ni > 0) {
     if (output_file_name)
-      output_file << "TITLE = \"" << CFDkit_Name() << ": Interface Union List, "
+      output_file << "TITLE = \"" << CFFC_Name() << ": Interface Union List, "
 		  << "\"" << "\n"
 		  << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n"
@@ -2044,7 +2044,7 @@ Mesh_Unadjustment(void) {
 				     *Local_Solution_Block_List,
 				     NUM_COMP_VECTOR2D,
 				     ON);
-  //CFDkit_Broadcast_MPI(&error_flag,1);
+  //CFFC_Broadcast_MPI(&error_flag,1);
   //if (error_flag) return error_flag;
 }
 
@@ -2084,7 +2084,7 @@ Mesh_Adjustment(const int &copy_flag,
 		const int &statistics_flag) {
 
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   // Exit immediately if no interface components have been specified.
   if (!Interface_Component_List.Ni) return 0;
@@ -2128,25 +2128,25 @@ Mesh_Adjustment(const int &copy_flag,
     }
     //if (error_flag) break;
   }
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) {
     error_flag = Output_Nodes_Tecplot();
     return 1;//error_flag;
   }
 
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   // Update solution information shared between neighbouring blocks.
   error_flag = Send_All_Messages(Local_SolnBlk,
 				 *Local_Solution_Block_List,
  				 NUM_COMP_VECTOR2D,
  				 ON);
-  CFDkit_Broadcast_MPI(&error_flag,1);
+  CFFC_Broadcast_MPI(&error_flag,1);
   if (error_flag) return error_flag;
 
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   // Finalize the mesh adjustment procedure.
   for (int nb = 0; nb < Local_Solution_Block_List->Nblk; nb++) {
@@ -2157,7 +2157,7 @@ Mesh_Adjustment(const int &copy_flag,
   }
 
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   // Update solution information shared between neighbouring blocks.
   error_flag = Send_All_Messages(Local_SolnBlk,
@@ -5089,14 +5089,14 @@ Mesh_Adjustment_Statistics(void) {
   }
 
 #ifdef _MPI_VERSION
-  number_of_adjusted_blocks = CFDkit_Summation_MPI(number_of_adjusted_blocks);
-  number_of_inactive_cells = CFDkit_Summation_MPI(number_of_inactive_cells);
-  total_number_of_cells = CFDkit_Summation_MPI(total_number_of_cells);
-  cell_area_ratio = CFDkit_Minimum_MPI(cell_area_ratio);
+  number_of_adjusted_blocks = CFFC_Summation_MPI(number_of_adjusted_blocks);
+  number_of_inactive_cells = CFFC_Summation_MPI(number_of_inactive_cells);
+  total_number_of_cells = CFFC_Summation_MPI(total_number_of_cells);
+  cell_area_ratio = CFFC_Minimum_MPI(cell_area_ratio);
 #endif
 
   // Primary processor outputs adjustment statistics.
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     cout << "\n  -> Mesh Adjustment Statistics: "
 	 << "\n     -> Number of Adjusted Blocks = "
 	 << number_of_adjusted_blocks << " of " << total_number_of_blocks
@@ -5626,19 +5626,19 @@ Compute_Interface_Location(const int &batch_flag,
 					   level_set_current_time,
 					   maximum_time,
 					   number_of_level_set_time_steps);
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
     // Reconstruct the interface component list.
     error_flag = Reconstruct_Interface_Component_List();
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
   }
 
   // Construct interface union list.
   error_flag = Construct_Interface_Union_List();
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // Store adjusted mesh.
@@ -5655,13 +5655,13 @@ Compute_Interface_Location(const int &batch_flag,
 
   // Conduct mesh adjustment algorithm.
   error_flag = Mesh_Adjustment(OFF,OFF);
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // Redistribute solution content and residual to/from activated/dectivated cells.
   error_flag = Redistribute_Solution_Content(maximum_time);
   if (error_flag) { cout << endl << error_flag; cout.flush(); }
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) {
     error_flag = Output_Tecplot(Local_SolnBlk,
 				*Local_Solution_Block_List,
@@ -5676,7 +5676,7 @@ Compute_Interface_Location(const int &batch_flag,
       error_flag = Output_Level_Set_Cells_Tecplot(0,ZERO);
       error_flag = Output_Level_Set_Interface_Tecplot(0,ZERO);
     }
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       cout << endl << " time = " << current_time; cout.flush();
       cout << endl << " time = " << maximum_time; cout.flush();
     }
@@ -5690,12 +5690,12 @@ Compute_Interface_Location(const int &batch_flag,
 
   // Compute the interface velocity function.
   error_flag = Compute_Interface_Velocity_Function(maximum_time);
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // Apply interface boundary conditions.
   error_flag = Boundary_Conditions(maximum_time);
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // The new interface location has been successfully computed.
@@ -5783,8 +5783,8 @@ Compute_Interface_Velocity_Function(const double &Time) {
   }
 
   // Synchronize flags on all processors.
-  share_flag = CFDkit_Maximum_MPI(share_flag);
-  levelset_flag = CFDkit_Maximum_MPI(levelset_flag);
+  share_flag = CFFC_Maximum_MPI(share_flag);
+  levelset_flag = CFFC_Maximum_MPI(levelset_flag);
 
   // If the share flag has been turned on then one or more of the
   // embedded boundaries involves a motion computed on its local block
@@ -5870,7 +5870,7 @@ Compute_Interface_Velocity_Function(const double &Time) {
   }
 
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   // If the level set flag has been turned on then one or more of the 
   // embedded boundaries are evolved using the level set method.  Update
@@ -5883,7 +5883,7 @@ Compute_Interface_Velocity_Function(const double &Time) {
     // computed.  Form this list on all processors, including processors
     // that do not have any active solution blocks since they may have
     // active level set 2D solution blocks.
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       if (Local_Solution_Block_List->Block[0].used == ADAPTIVEBLOCK2D_USED) {
 	// Determine the number of interfaces evolved using the level
 	// set method.
@@ -5929,11 +5929,11 @@ Compute_Interface_Velocity_Function(const double &Time) {
   }
 
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   // Construct interface union list.
   error_flag = Construct_Interface_Union_List();
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // The new interface speed function has been successfully computed.
@@ -7528,7 +7528,7 @@ Refine_Grid(const int &Perform_Mesh_Adjustment) {
 	      new_blocks_SECTOR[iNEW] = ADAPTIVEBLOCK2D_SECTOR_SW + iNEW;
 	      Global_Solution_Block_List->update_next();
 	    } else {
-	      cout << "\n " << CFDkit_Version() 
+	      cout << "\n " << CFFC_Version() 
 		   << " AMR Error: Refine_Grid, Insufficient number of solution blocks.\n";
 	      return 6320;
 	    }
@@ -7606,7 +7606,7 @@ Refine_Grid(const int &Perform_Mesh_Adjustment) {
 		    (solution_block_to_be_refined.NCi-2*solution_block_to_be_refined.Nghost < 4) ||
 		    (solution_block_to_be_refined.NCj-2*solution_block_to_be_refined.Nghost < 4) ||
 		    (solution_block_to_be_refined.Grid.Node == NULL)) {
-		  cout << "\n " << CFDkit_Version() 
+		  cout << "\n " << CFFC_Version() 
 		       << " AMR Error: Refine_Grid, Cannot refine mesh.\n";
 		  return 6321;
 		}
@@ -7636,7 +7636,7 @@ Refine_Grid(const int &Perform_Mesh_Adjustment) {
 			    solution_block_to_be_refined.Grid,
 			    new_blocks_SECTOR[iNEW]);
 		if (Check_Quad_Block(Local_SolnBlk[new_blocks_BLK[iNEW]].Grid)) { 
-		  cout << "\n " << CFDkit_Version() 
+		  cout << "\n " << CFFC_Version() 
 		       << " AMR Error: Refine_Grid, Invalid refined mesh.\n";
 		  return 6322;
 		}
@@ -7905,7 +7905,7 @@ Coarsen_Grid(const int &Perform_Mesh_Adjustment) {
 			(solution_block_to_be_coarsened_SW_sibling.NCi-2*solution_block_to_be_coarsened_SW_sibling.Nghost < 4) ||
 			(solution_block_to_be_coarsened_SW_sibling.NCj-2*solution_block_to_be_coarsened_SW_sibling.Nghost < 4) ||
 			(solution_block_to_be_coarsened_SW_sibling.Grid.Node == NULL)) {
-		      cout << "\n " << CFDkit_Version()
+		      cout << "\n " << CFFC_Version()
 			   << " AMR Error: Coarsen_Grid, Cannot coarsen south-west mesh.\n";
 		      return 7480;
 		    }
@@ -7917,7 +7917,7 @@ Coarsen_Grid(const int &Perform_Mesh_Adjustment) {
 			(solution_block_to_be_coarsened_SE_sibling.NCi-2*solution_block_to_be_coarsened_SE_sibling.Nghost < 4) ||
 			(solution_block_to_be_coarsened_SE_sibling.NCj-2*solution_block_to_be_coarsened_SE_sibling.Nghost < 4) ||
 			(solution_block_to_be_coarsened_SE_sibling.Grid.Node == NULL)) {
-		      cout << "\n " << CFDkit_Version()
+		      cout << "\n " << CFFC_Version()
 			   << " AMR Error: Coarsen_Grid, Cannot coarsen south-east mesh.\n";
 		      return 7481;
 		    }
@@ -7929,7 +7929,7 @@ Coarsen_Grid(const int &Perform_Mesh_Adjustment) {
 			(solution_block_to_be_coarsened_NW_sibling.NCi-2*solution_block_to_be_coarsened_NW_sibling.Nghost < 4) ||
 			(solution_block_to_be_coarsened_NW_sibling.NCj-2*solution_block_to_be_coarsened_NW_sibling.Nghost < 4) ||
 			(solution_block_to_be_coarsened_NW_sibling.Grid.Node == NULL)) {
-		      cout << "\n " << CFDkit_Version()
+		      cout << "\n " << CFFC_Version()
 			   << " AMR Error: Coarsen_Grid, Cannot coarsen north-west mesh.\n";
 		      return 7482;
 		    }
@@ -7941,7 +7941,7 @@ Coarsen_Grid(const int &Perform_Mesh_Adjustment) {
 			(solution_block_to_be_coarsened_NE_sibling.NCi-2*solution_block_to_be_coarsened_NE_sibling.Nghost < 4) ||
 			(solution_block_to_be_coarsened_NE_sibling.NCj-2*solution_block_to_be_coarsened_NE_sibling.Nghost < 4) ||
 			(solution_block_to_be_coarsened_NE_sibling.Grid.Node == NULL)) {
-		      cout << "\n " << CFDkit_Version()
+		      cout << "\n " << CFFC_Version()
 			   << " AMR Error: Coarsen_Grid, Cannot coarsen north-east mesh.\n";
 		      return 7483;
 		    }
@@ -7973,7 +7973,7 @@ Coarsen_Grid(const int &Perform_Mesh_Adjustment) {
 				 solution_block_to_be_coarsened_NW_sibling.Grid,
 				 solution_block_to_be_coarsened_NE_sibling.Grid);
 		    if (Check_Quad_Block(Local_SolnBlk[old_blocks_BLK[0]].Grid)) { 
-		      cout << "\n " << CFDkit_Version() 
+		      cout << "\n " << CFFC_Version() 
 			   << " AMR Error: Coarsen_Grid, Invalid coarsened mesh.\n";
 		      return 7484;
 		    }
@@ -8367,8 +8367,8 @@ Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
 
 #ifdef _MPI_VERSION
     for (int n = 0; n < Interface_Union_List.Ni+1; n++) {
-      maximum_interface_mesh_refinement_flag[n] = CFDkit_Maximum_MPI(maximum_interface_mesh_refinement_flag[n]);
-      maximum_interface_mesh_refinement_level[n] = CFDkit_Maximum_MPI(maximum_interface_mesh_refinement_level[n]);
+      maximum_interface_mesh_refinement_flag[n] = CFFC_Maximum_MPI(maximum_interface_mesh_refinement_flag[n]);
+      maximum_interface_mesh_refinement_level[n] = CFFC_Maximum_MPI(maximum_interface_mesh_refinement_level[n]);
     }
 #endif
 
@@ -8398,7 +8398,7 @@ Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
       }
 
 #ifdef _MPI_VERSION
-      number_of_changes = CFDkit_Maximum_MPI(number_of_changes);
+      number_of_changes = CFFC_Maximum_MPI(number_of_changes);
 #endif
       if (!number_of_changes) break;
 
@@ -8663,7 +8663,7 @@ Initial_Adaptive_Mesh_Refinement(void) {
     if (error_flag) return error_flag;
 
     // Output the refinement statistics.
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       cout << "\n Refinement Level #" << number_of_initial_mesh_refinements
 	   << " : Number of Blocks = " << QuadTree->countUsedBlocks()
 	   << ", Number of Cells = " << QuadTree->countUsedCells()
@@ -8733,7 +8733,7 @@ Uniform_Adaptive_Mesh_Refinement(void) {
     if (error_flag) return error_flag;
 
     // Output the refinement statistics.
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       cout << "\n Refinement Level #" << number_of_uniform_mesh_refinements
 	   << " : Number of Blocks = " << QuadTree->countUsedBlocks()
 	   << ", Number of Cells = " << QuadTree->countUsedCells()
@@ -8748,7 +8748,7 @@ Uniform_Adaptive_Mesh_Refinement(void) {
 
   // Perform mesh adjustment according to interface location(s).
   error_flag = Mesh_Adjustment(ON,ON);
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // Initial conditions.
@@ -8835,7 +8835,7 @@ Boundary_Adaptive_Mesh_Refinement(void) {
     if (error_flag) return error_flag;
 
     // Output the refinement statistics.
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       cout << "\n Refinement Level #" << number_of_boundary_mesh_refinements
 	   << " : Number of Blocks = " << QuadTree->countUsedBlocks()
 	   << ", Number of Cells = " << QuadTree->countUsedCells()
@@ -8903,7 +8903,7 @@ Interface_Adaptive_Mesh_Refinement(void) {
     if (error_flag) return error_flag;
 
     // Output the refinement statistics.
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       cout << "\n Refinement Level #"      << number_of_interface_mesh_refinements
 	   << " : Number of Blocks = "     << QuadTree->countUsedBlocks()
 	   << ", Number of Cells = "       << QuadTree->countUsedCells()
@@ -8977,7 +8977,7 @@ Bounding_Box_Adaptive_Mesh_Refinement(const int &Apply_ICs) {
     if (error_flag) return error_flag;
 
     // Output the refinement statistics.
-    if (CFDkit_Primary_MPI_Processor() && Apply_ICs) {
+    if (CFFC_Primary_MPI_Processor() && Apply_ICs) {
       cout << "\n Refinement Level #"      << number_of_bounding_box_mesh_refinements
 	   << " : Number of Blocks = "     << QuadTree->countUsedBlocks()
 	   << ", Number of Cells = "       << QuadTree->countUsedCells()
@@ -8999,7 +8999,7 @@ Bounding_Box_Adaptive_Mesh_Refinement(const int &Apply_ICs) {
   // adjustment according to interface location(s) if requried.
   if (!IP->Interface_Refinement_Condition) {
     error_flag = Mesh_Adjustment(ON,ON);
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
   }
 
@@ -9130,7 +9130,7 @@ Read_Level_Set_Restart_Solution(const int &batch_flag,
   // that do not have any active dusty2D solution blocks since they
   // may have active level set 2D solution blocks.
   Ni = 0;
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     // Determine the number of interfaces evolved using the level
     // set method.
     for (int ni = 1; ni <= Interface_Component_List.Ni; ni++) {
@@ -9147,13 +9147,13 @@ Read_Level_Set_Restart_Solution(const int &batch_flag,
   // If there are no interfaces evolved by the solution of the level
   // set method then exit immediately. 
 #ifdef _MPI_VERSION
-  Ni = CFDkit_Maximum_MPI(Ni);
+  Ni = CFFC_Maximum_MPI(Ni);
 #endif
   if (!Ni) return 0;
 
 #ifdef _MPI_VERSION
   // Otherwise create universal interface list.
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     Interface_List.allocate(Ni);
     Ni = 1;
     for (int ni = 1; ni <= Interface_Component_List.Ni; ni++) {
@@ -9304,7 +9304,7 @@ Write_Level_Set_Restart_Solution(int &number_of_level_set_time_steps,
     cout << "\n ERROR: Unable to open LevelSet2D quadtree data file on processor "
 	 << LS_Local_Solution_Block_List->ThisCPU << "." << endl;
   }
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
   // Write the level set solution block restart files.
   error_flag = Write_Restart_Solution(LS_Local_SolnBlk,
@@ -9317,7 +9317,7 @@ Write_Level_Set_Restart_Solution(int &number_of_level_set_time_steps,
     cout << "\n ERROR: Unable to open LevelSet2D restart output data file(s) on processor "
 	 << LS_Local_Solution_Block_List->ThisCPU << "." << endl;
   }
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // Interface level set solution restart files written successfully.
@@ -9419,7 +9419,7 @@ Output_Active_Elements_Tecplot(const int &nb,
   // Output node solution data.  
   Out_File << setprecision(14);
   if (Output_Title) {
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": Solution on Active Elements, "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": Solution on Active Elements, "
 	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
 	     << ", Time = " << Time
 	     << "\"" << "\n"
@@ -9476,7 +9476,7 @@ Output_Inactive_Elements_Tecplot(const int &nb,
 
   Out_File << setprecision(14);
   if (Output_Title) {
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": Inactive Elements, "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": Inactive Elements, "
 	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
 	     << ", Time = " << Time
 	     << "\"" << "\n"
@@ -9584,7 +9584,7 @@ Output_Nodes_Tecplot(const int &nb,
 
   Out_File << setprecision(14);
   if (Output_Title) {
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Nodes\"\n"
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Nodes\"\n"
 	     << "VARIABLES = \"x\" \\ \n"
 	     << "\"y\" \\ \n"
 	     << "\"xo\" \\ \n"
@@ -9680,7 +9680,7 @@ Output_Cell_Status_Tecplot(const int &nb,
 
   Out_File << setprecision(14);
   if (Output_Title) {
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Cell Status\"\n"
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Cell Status\"\n"
 	     << "VARIABLES = \"x\" \\ \n"
 	     << "\"y\" \\ \n"
 	     << "\"status\" \\ \n"
@@ -9791,7 +9791,7 @@ Output_Level_Set_Interface_Tecplot(const int &number_of_time_steps,
   // Retrieve the embedded boundaries from the level set solution.
   error_flag = Retrieve_Interface_Spline(LS_Local_SolnBlk,
 					 *LS_Local_Solution_Block_List);
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // Concatenate interface splines and make the global list of embedded
@@ -9801,7 +9801,7 @@ Output_Level_Set_Interface_Tecplot(const int &number_of_time_steps,
 					   *LS_Global_Solution_Block_List,
 					   *LS_Local_Solution_Block_List,
 					   *LS_IP);
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // Write the interface list to the output data files.
@@ -9810,7 +9810,7 @@ Output_Level_Set_Interface_Tecplot(const int &number_of_time_steps,
 					*LS_IP,
 					number_of_time_steps,
 					Time);
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // Level Set solution data files successfully written.
@@ -9880,18 +9880,18 @@ Output_Ringleb_Tecplot(void) {
   output_file.close();
 
 #ifdef _MPI_VERSION
-  l1_norm = CFDkit_Summation_MPI(l1_norm);
-  l2_norm = CFDkit_Summation_MPI(l2_norm);
-  max_norm = CFDkit_Maximum_MPI(max_norm);
-  area = CFDkit_Summation_MPI(area);
-  number_of_active_cells = CFDkit_Summation_MPI(number_of_active_cells);
+  l1_norm = CFFC_Summation_MPI(l1_norm);
+  l2_norm = CFFC_Summation_MPI(l2_norm);
+  max_norm = CFFC_Maximum_MPI(max_norm);
+  area = CFFC_Summation_MPI(area);
+  number_of_active_cells = CFFC_Summation_MPI(number_of_active_cells);
 #endif
 
   // Calculate the L1-norm and L2-norm for all blocks.
   l1_norm /= area;
   l2_norm = sqrt(l2_norm/area);
 
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     cout << endl
 	 << endl
 	 << " ==================================================================== "
@@ -9932,7 +9932,7 @@ Output_Ringleb_Tecplot(const int &nb,
   // Output node solution data.  
   Out_File << setprecision(14);
   if (Output_Title)
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Ringleb Flow Solution "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Ringleb Flow Solution "
 	     << "\"" << "\n"
 	     << "VARIABLES = \"x\" \\ \n"
 	     << "\"y\" \\ \n"
@@ -10073,23 +10073,23 @@ Output_Flat_Plate_Tecplot(void) {
 
   // Calculate the L1-norm and L2-norm for all blocks.
 #ifdef _MPI_VERSION
-  l1_norm = CFDkit_Summation_MPI(l1_norm);
-  l2_norm = CFDkit_Summation_MPI(l2_norm);
-  max_norm = CFDkit_Maximum_MPI(max_norm);
-  area = CFDkit_Summation_MPI(area);
-  numberofcells = CFDkit_Summation_MPI(numberofcells);
-  l1_norm_cf = CFDkit_Summation_MPI(l1_norm_cf);
-  l2_norm_cf = CFDkit_Summation_MPI(l2_norm_cf);
-  max_norm_cf = CFDkit_Maximum_MPI(max_norm_cf);
-  area_cf = CFDkit_Summation_MPI(area_cf);
-  numberofcells_cf = CFDkit_Summation_MPI(numberofcells_cf);
+  l1_norm = CFFC_Summation_MPI(l1_norm);
+  l2_norm = CFFC_Summation_MPI(l2_norm);
+  max_norm = CFFC_Maximum_MPI(max_norm);
+  area = CFFC_Summation_MPI(area);
+  numberofcells = CFFC_Summation_MPI(numberofcells);
+  l1_norm_cf = CFFC_Summation_MPI(l1_norm_cf);
+  l2_norm_cf = CFFC_Summation_MPI(l2_norm_cf);
+  max_norm_cf = CFFC_Maximum_MPI(max_norm_cf);
+  area_cf = CFFC_Summation_MPI(area_cf);
+  numberofcells_cf = CFFC_Summation_MPI(numberofcells_cf);
 #endif
   l1_norm /= area;
   l2_norm = sqrt(l2_norm/area);
   l1_norm_cf /= area_cf;
   l2_norm_cf = sqrt(l2_norm_cf/area_cf);
 
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     cout << endl
 	 << endl
 	 << " ==================================================================== "
@@ -10213,14 +10213,14 @@ Output_Aerodynamic_Coefficients_Tecplot(const int &number_of_time_steps,
   output_file.close();
 
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
 #ifdef _MPI_VERSION
-  Cn = CFDkit_Summation_MPI(Cn);
-  Ca = CFDkit_Summation_MPI(Ca);
-  Cm = CFDkit_Summation_MPI(Cm);
-  Cnp = CFDkit_Summation_MPI(Cnp);
-  Cmp = CFDkit_Summation_MPI(Cmp);
+  Cn = CFFC_Summation_MPI(Cn);
+  Ca = CFFC_Summation_MPI(Ca);
+  Cm = CFFC_Summation_MPI(Cm);
+  Cnp = CFFC_Summation_MPI(Cnp);
+  Cmp = CFFC_Summation_MPI(Cmp);
 #endif
 
   double cos_alpha, sin_alpha;
@@ -10236,9 +10236,9 @@ Output_Aerodynamic_Coefficients_Tecplot(const int &number_of_time_steps,
   sin_alpha = dot(nhat,ihat);
 
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     cout << endl
 	 << endl
 	 << " ==================================================================== "
@@ -10294,7 +10294,7 @@ Output_Aerodynamic_Coefficients_Tecplot(const int &nb,
   }
 
   if (Output_Title)
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Aerodynamic Coefficients "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Aerodynamic Coefficients "
 	     << "\"" << "\n"
 	     << "VARIABLES = \"x/c\" \\ \n"
 	     << "\"y/c\" \\ \n"
@@ -11287,7 +11287,7 @@ Execute(const int &batch_flag,
   first_step = 1;
   limiter_freezing_flag = OFF;
 
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     error_flag = Open_Progress_File(residual_file,
 				    IP->Output_File_Name,
 				    number_of_time_steps);
@@ -11297,8 +11297,8 @@ Execute(const int &batch_flag,
     }
   }
   // MPI barrier to ensure processor synchronization.  
-  CFDkit_Barrier_MPI();
-  CFDkit_Broadcast_MPI(&error_flag,1);
+  CFFC_Barrier_MPI();
+  CFFC_Broadcast_MPI(&error_flag,1);
   if (error_flag) return error_flag;
   // Reset the CPU time.
   processor_cpu_time.reset();
@@ -11334,7 +11334,7 @@ Execute(const int &batch_flag,
 	    cout << "\n ERROR: AMR error number " << error_flag << " on processor "
 		 << Local_Solution_Block_List->ThisCPU << "." << endl;
 	  }
-	  error_flag = CFDkit_OR_MPI(error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) {
 	    error_flag = Output_Tecplot(Local_SolnBlk,
 					*Local_Solution_Block_List,
@@ -11348,7 +11348,7 @@ Execute(const int &batch_flag,
 	    cout << "\n ERROR: Boundary conditions error on processor "
 		 << Local_Solution_Block_List->ThisCPU << "." << endl;
 	  }
-	  error_flag = CFDkit_OR_MPI(error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return error_flag;
 	  // Re-prescribe boundary data consistent with newly refined and
 	  // coarsened solution blocks.
@@ -11374,7 +11374,7 @@ Execute(const int &batch_flag,
       // Determine local and global time steps.
       dTime = CFL(Time);
       // Find global minimum time step for all processors.
-      dTime = CFDkit_Minimum_MPI(dTime);
+      dTime = CFFC_Minimum_MPI(dTime);
       if (IP->Time_Accurate) {
 	if ((IP->i_Time_Integration != TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING) &&
 	    (Time + IP->CFL_Number*dTime > IP->Time_Max)) {
@@ -11398,19 +11398,19 @@ Execute(const int &batch_flag,
 
       // Determine the L1, L2, and max norms of the solution residual.
       residual_l1_norm = L1_Norm_Residual();
-      residual_l1_norm = CFDkit_Summation_MPI(residual_l1_norm);
+      residual_l1_norm = CFFC_Summation_MPI(residual_l1_norm);
 
       residual_l2_norm = L2_Norm_Residual();
       residual_l2_norm = sqr(residual_l2_norm);
-      residual_l2_norm = CFDkit_Summation_MPI(residual_l2_norm);
+      residual_l2_norm = CFFC_Summation_MPI(residual_l2_norm);
       residual_l2_norm = sqrt(residual_l2_norm);
 
       residual_max_norm = Max_Norm_Residual();
-      residual_max_norm = CFDkit_Maximum_MPI(residual_max_norm);
+      residual_max_norm = CFFC_Maximum_MPI(residual_max_norm);
 
       // Update CPU time used for the calculation so far.
       processor_cpu_time.update();
-      total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput);
+      total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);
 
       // Periodically save restart solution files.
       if (!first_step &&
@@ -11421,16 +11421,16 @@ Execute(const int &batch_flag,
 	       << " n = " << number_of_time_steps << " steps (iterations).";
 
 	//  Save and delete old restart files in compressed archive (just in case)
-	if (CFDkit_Primary_MPI_Processor()) {
+	if (CFFC_Primary_MPI_Processor()) {
 	  cout << "\n  Creating compressed archive of (and deleting) old restarts.";
 	  System::Compress_Restart();
 	  cout << "\n  Writing new restart files.";
 	  cout.flush();
 	}
-	CFDkit_Barrier_MPI(); // MPI barrier so that other processors do
+	CFFC_Barrier_MPI(); // MPI barrier so that other processors do
 	                      // not start over-writing restarts
 
-	if (CFDkit_Primary_MPI_Processor()) {
+	if (CFFC_Primary_MPI_Processor()) {
 	  System::Set_Restart_Flag();  //Set flag to indicate a restart is being saved
 	}
 
@@ -11440,7 +11440,7 @@ Execute(const int &batch_flag,
 	  cout << "\n ERROR: Unable to open quadtree data file on processor "
 	       << Local_Solution_Block_List->ThisCPU << "." << endl;
 	}
-	error_flag = CFDkit_OR_MPI(error_flag);
+	error_flag = CFFC_OR_MPI(error_flag);
 	if (error_flag) return error_flag;
 	// Write the solution block restart files.
 	error_flag = Write_Restart_Solution(Local_SolnBlk,
@@ -11453,7 +11453,7 @@ Execute(const int &batch_flag,
 	  cout << "\n ERROR: Unable to open restart output data file(s) on processor "
 	       << Local_Solution_Block_List->ThisCPU << "." << endl;
 	}
-	error_flag = CFDkit_OR_MPI(error_flag);
+	error_flag = CFFC_OR_MPI(error_flag);
 	if (error_flag) return error_flag;
 	// Write the solution block restart files.
 	error_flag = Write_Restart_Files(number_of_time_steps,
@@ -11465,11 +11465,11 @@ Execute(const int &batch_flag,
 	  cout << "\n ERROR: Unable to open restart output data file(s) "
 	       << "on processor " << Local_Solution_Block_List->ThisCPU << "." << endl;
 	}
-	error_flag = CFDkit_OR_MPI(error_flag);
+	error_flag = CFFC_OR_MPI(error_flag);
 	if (error_flag) return error_flag;
 	if (!batch_flag) cout << endl;
 
-	if (CFDkit_Primary_MPI_Processor()) {
+	if (CFFC_Primary_MPI_Processor()) {
 	  System::Remove_Restart_Flag();  //Remove flag to indicate the restart is finished
 	}
       }
@@ -11481,7 +11481,7 @@ Execute(const int &batch_flag,
 					      residual_l2_norm,
 					      first_step,
 					      IP->Output_Progress_Frequency);
-      if (CFDkit_Primary_MPI_Processor() && !first_step)
+      if (CFFC_Primary_MPI_Processor() && !first_step)
 	Output_Progress_to_File(residual_file,
 				number_of_time_steps,
 				Time*THOUSAND,
@@ -11516,7 +11516,7 @@ Execute(const int &batch_flag,
 	  cout << "\n ERROR: Message passing error on processor "
 	       << Local_Solution_Block_List->ThisCPU << "." << endl;
 	}
-	error_flag = CFDkit_OR_MPI(error_flag);
+	error_flag = CFFC_OR_MPI(error_flag);
 	if (error_flag) return error_flag;
 
 	// Step 2. Apply boundary conditions for stage.
@@ -11525,7 +11525,7 @@ Execute(const int &batch_flag,
 	  cout << "\n ERROR: Boundary conditions error on processor "
 	       << Local_Solution_Block_List->ThisCPU << "." << endl;
 	}
-	error_flag = CFDkit_OR_MPI(error_flag);
+	error_flag = CFFC_OR_MPI(error_flag);
 	if (error_flag) return error_flag;
 
 	// Step 3. Determine solution residuals for stage.
@@ -11534,7 +11534,7 @@ Execute(const int &batch_flag,
 	  cout << "\n ERROR: Solution error on processor "
 	       << Local_Solution_Block_List->ThisCPU << "." << endl;
 	}
-	error_flag = CFDkit_OR_MPI(error_flag);
+	error_flag = CFFC_OR_MPI(error_flag);
 	if (error_flag) return error_flag;
 
 	// Step 4. Send boundary flux corrections at block interfaces with
@@ -11546,7 +11546,7 @@ Execute(const int &batch_flag,
 	  cout << "\n ERROR: Flux correction message passing error on processor "
 	       << Local_Solution_Block_List->ThisCPU << "." << endl;
 	}
-	error_flag = CFDkit_OR_MPI(error_flag);
+	error_flag = CFFC_OR_MPI(error_flag);
 	if (error_flag) return error_flag;
 
 	// Step 5. Apply boundary flux corrections to ensure that method is
@@ -11565,7 +11565,7 @@ Execute(const int &batch_flag,
 	  cout << "\n ERROR: Solution update error on processor "
 	       << Local_Solution_Block_List->ThisCPU << "." << endl;
 	}
-	error_flag = CFDkit_OR_MPI(error_flag);
+	error_flag = CFFC_OR_MPI(error_flag);
 	if (error_flag) return error_flag;
 
       }
@@ -11583,7 +11583,7 @@ Execute(const int &batch_flag,
 	       << Local_Solution_Block_List->ThisCPU 
 	       << ".  Error number = " << error_flag << "." << endl;
 	}
-	error_flag = CFDkit_OR_MPI(error_flag);
+	error_flag = CFFC_OR_MPI(error_flag);
 	if (error_flag) return error_flag;
       }
 
@@ -11605,7 +11605,7 @@ Execute(const int &batch_flag,
   }
 
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   // Update ghostcell information and prescribe boundary conditions to 
   // ensure that the solution is consistent on each block.
@@ -11621,14 +11621,14 @@ Execute(const int &batch_flag,
     cout << "\n ERROR: Message passing error on processor "
 	 << Local_Solution_Block_List->ThisCPU << "." << endl;
   }
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // Apply boundary conditions.
   Boundary_Conditions(Time);
 
   // Close residual file.
-  if (CFDkit_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file);
+  if (CFFC_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file);
 
   // Embedded boundary calculations complete.
   return 0;

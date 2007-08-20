@@ -627,17 +627,17 @@ int Output_Circle_Tecplot(LevelSet2D_Quad_Block *Soln_ptr,
   output_file.close();
 
 #ifdef _MPI_VERSION
-  l1_norm = CFDkit_Summation_MPI(l1_norm);
-  l2_norm = CFDkit_Summation_MPI(l2_norm);
-  max_norm = CFDkit_Maximum_MPI(max_norm);
-  n_cells = CFDkit_Summation_MPI(n_cells);
+  l1_norm = CFFC_Summation_MPI(l1_norm);
+  l2_norm = CFFC_Summation_MPI(l2_norm);
+  max_norm = CFFC_Maximum_MPI(max_norm);
+  n_cells = CFFC_Summation_MPI(n_cells);
 #endif
 
   // Calculate the L1-norm and L2-norm for all blocks.
   l1_norm /= double(n_cells);
   l2_norm = sqrt(l2_norm/double(n_cells));
 
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     cout << endl
 	 << endl
 	 << " ==================================================================== "
@@ -728,17 +728,17 @@ int Output_Ellipse_Tecplot(LevelSet2D_Quad_Block *Soln_ptr,
   output_file.close();
 
 #ifdef _MPI_VERSION
-  l1_norm = CFDkit_Summation_MPI(l1_norm);
-  l2_norm = CFDkit_Summation_MPI(l2_norm);
-  max_norm = CFDkit_Maximum_MPI(max_norm);
-  n_cells = CFDkit_Summation_MPI(n_cells);
+  l1_norm = CFFC_Summation_MPI(l1_norm);
+  l2_norm = CFFC_Summation_MPI(l2_norm);
+  max_norm = CFFC_Maximum_MPI(max_norm);
+  n_cells = CFFC_Summation_MPI(n_cells);
 #endif
 
   // Calculate the L1-norm and L2-norm for all blocks.
   l1_norm /= double(n_cells);
   l2_norm = sqrt(l2_norm/double(n_cells));
 
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     cout << endl
 	 << endl
 	 << " ==================================================================== "
@@ -829,17 +829,17 @@ int Output_Zalesaks_Disk_Tecplot(LevelSet2D_Quad_Block *Soln_ptr,
   output_file.close();
 
 #ifdef _MPI_VERSION
-  l1_norm = CFDkit_Summation_MPI(l1_norm);
-  l2_norm = CFDkit_Summation_MPI(l2_norm);
-  max_norm = CFDkit_Maximum_MPI(max_norm);
-  n_cells = CFDkit_Summation_MPI(n_cells);
+  l1_norm = CFFC_Summation_MPI(l1_norm);
+  l2_norm = CFFC_Summation_MPI(l2_norm);
+  max_norm = CFFC_Maximum_MPI(max_norm);
+  n_cells = CFFC_Summation_MPI(n_cells);
 #endif
 
   // Calculate the L1-norm and L2-norm for all blocks.
   l1_norm /= double(n_cells);
   l2_norm = sqrt(l2_norm/double(n_cells));
 
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     cout << endl
 	 << endl
 	 << " ==================================================================== "

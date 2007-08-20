@@ -74,7 +74,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
    ********************************************************/
 
   // The primary MPI processor processes the input parameter file.
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
      if (!batch_flag) {
         cout << "\n Reading Euler2D input data file `"
              << Input_File_Name_ptr << "'." << endl;
@@ -91,10 +91,10 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
   } /* endif */
 
   // Broadcast input solution parameters to other MPI processors.
-  CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-  CFDkit_Broadcast_MPI(&error_flag, 1);
+  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+  CFFC_Broadcast_MPI(&error_flag, 1);
   if (error_flag != 0) return (error_flag);
-  CFDkit_Broadcast_MPI(&command_flag, 1);
+  CFFC_Broadcast_MPI(&command_flag, 1);
   if (command_flag == TERMINATE_CODE) return (0);
   Broadcast_Input_Parameters(Input_Parameters);
 
@@ -104,13 +104,13 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
    ********************************************************/
 
   execute_new_calculation: ;
-  CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
 
   /* Create initial mesh.  Read mesh from grid definition or data files 
      when specified by input parameters. */
 
   // The primary MPI processor creates the initial mesh.
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
      if (!batch_flag) cout << "\n Creating (or reading) initial quadrilateral multi-block mesh.";
      MeshBlk = NULL;
      MeshBlk = Multi_Block_Grid(MeshBlk, 
@@ -164,8 +164,8 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
   } /* endif */
 
   // Broadcast the mesh to other MPI processors.
-  CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-  CFDkit_Broadcast_MPI(&error_flag, 1); // Broadcast mesh error flag.
+  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+  CFFC_Broadcast_MPI(&error_flag, 1); // Broadcast mesh error flag.
   if (error_flag) return (error_flag);
   MeshBlk = Broadcast_Multi_Block_Grid(MeshBlk, 
                                        Input_Parameters);
@@ -198,7 +198,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 
   processor_cpu_time.zero();
   total_cpu_time.zero();
-	NKS_total_cpu_time.zero();
+  NKS_total_cpu_time.zero();
   
   /* Initialize the conserved and primitive state
      solution variables. */
@@ -217,7 +217,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
              << ".\n";
         cout.flush();
      } /* endif */
-     error_flag = CFDkit_OR_MPI(error_flag);
+     error_flag = CFFC_OR_MPI(error_flag);
      if (error_flag) return (error_flag);
      Allocate_Message_Buffers(List_of_Local_Solution_Blocks,
                               Local_SolnBlk[0].NumVar()+NUM_COMP_VECTOR2D);
@@ -234,12 +234,12 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
              << ".\n";
         cout.flush();
      } /* endif */
-     error_flag = CFDkit_OR_MPI(error_flag);
+     error_flag = CFFC_OR_MPI(error_flag);
      if (error_flag) return (error_flag);
      // Ensure each processor has the correct time and time!!!
-     number_of_time_steps = CFDkit_Maximum_MPI(number_of_time_steps);
-     Time = CFDkit_Maximum_MPI(Time);
-     processor_cpu_time.cput = CFDkit_Maximum_MPI(processor_cpu_time.cput);
+     number_of_time_steps = CFFC_Maximum_MPI(number_of_time_steps);
+     Time = CFFC_Maximum_MPI(Time);
+     processor_cpu_time.cput = CFFC_Maximum_MPI(processor_cpu_time.cput);
   } else {
      ICs(Local_SolnBlk, 
          List_of_Local_Solution_Blocks, 
@@ -249,7 +249,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
   /* Send solution information between neighbouring blocks to complete
      prescription of initial data. */
 
-  CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
 
   error_flag = Send_All_Messages(Local_SolnBlk, 
                                  List_of_Local_Solution_Blocks,
@@ -266,7 +266,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
           << ".\n";
      cout.flush();
   } /* endif */
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return (error_flag);
 
   /* Prescribe boundary data consistent with initial data. */
@@ -289,7 +289,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 	    << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
        cout.flush();
      } /* endif */
-     error_flag = CFDkit_OR_MPI(error_flag);
+     error_flag = CFFC_OR_MPI(error_flag);
      if (error_flag) return error_flag;
 
      if (!batch_flag) cout << "\n Performing Euler2D boundary mesh refinement.";
@@ -303,7 +303,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 	    << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
        cout.flush();
      } /* endif */
-     error_flag = CFDkit_OR_MPI(error_flag);
+     error_flag = CFFC_OR_MPI(error_flag);
      if (error_flag) return error_flag;
 
      if (!batch_flag) cout << "\n Performing Euler2D initial mesh refinement.";
@@ -318,7 +318,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
              << ".\n";
         cout.flush();
      } /* endif */
-     error_flag = CFDkit_OR_MPI(error_flag);
+     error_flag = CFFC_OR_MPI(error_flag);
      if (error_flag) return (error_flag);
   } /* endif */
 
@@ -361,7 +361,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 	      cout.flush();
 	      return (error_flag);
      } /* endif */
-     error_flag = CFDkit_OR_MPI(error_flag);
+     error_flag = CFFC_OR_MPI(error_flag);
      if (error_flag) return (error_flag);
      //Output space filling curve in Tecplot format
      if (!batch_flag) {
@@ -380,7 +380,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
    ********************************************************/
 
   continue_existing_calculation: ;
-  CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
 
   if(!batch_flag) { time(&start_explicit); }
 
@@ -396,7 +396,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
       cout << "\n Euler2D ERROR: Unable to allocate memory for multigrid solver.\n";
       cout.flush();
     }
-    CFDkit_Broadcast_MPI(&error_flag,1);
+    CFFC_Broadcast_MPI(&error_flag,1);
     if (error_flag) return error_flag;
 
     // Execute multigrid solver.
@@ -410,7 +410,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
       cout << "\n Euler2D ERROR: Error during multigrid solution.\n";
       cout.flush();
     }
-    CFDkit_Broadcast_MPI(&error_flag,1);
+    CFFC_Broadcast_MPI(&error_flag,1);
     if (error_flag) return error_flag;
 
   } else if (Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
@@ -425,7 +425,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
       cout << "\n Euler2D ERROR: Unable to allocate memory for DTS multigrid solver.\n";
       cout.flush();
     }
-    CFDkit_Broadcast_MPI(&error_flag,1);
+    CFFC_Broadcast_MPI(&error_flag,1);
     if (error_flag) return error_flag;
 
     // Execute DTS FAS multigrid solver.
@@ -439,7 +439,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
       cout << "\n Euler2D ERROR: Error during DTS multigrid solution.\n";
       cout.flush();
     }
-    CFDkit_Broadcast_MPI(&error_flag,1);
+    CFFC_Broadcast_MPI(&error_flag,1);
     if (error_flag) return error_flag;
 
   } else {
@@ -449,7 +449,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
     first_step = 1;
     limiter_freezing_off = ON;
     
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       error_flag = Open_Progress_File(residual_file,
 				      Input_Parameters.Output_File_Name,
 				      number_of_time_steps);
@@ -459,8 +459,8 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
       } /* endif */
     } /* endif */
     
-    CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-    CFDkit_Broadcast_MPI(&error_flag, 1);
+    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+    CFFC_Broadcast_MPI(&error_flag, 1);
     if (error_flag) return (error_flag);
     
     processor_cpu_time.reset();
@@ -509,7 +509,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 	              << ".\n";
 	         cout.flush();
               } /* endif */
-              error_flag = CFDkit_OR_MPI(error_flag);
+              error_flag = CFFC_OR_MPI(error_flag);
               if (error_flag) {
                  command_flag = Output_Tecplot(Local_SolnBlk,
                                                List_of_Local_Solution_Blocks,
@@ -559,7 +559,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 	      cout.flush();
  	      return (error_flag);
            } /* endif */
-           error_flag = CFDkit_OR_MPI(error_flag);
+           error_flag = CFFC_OR_MPI(error_flag);
            if (error_flag) return (error_flag);
            //Output space filling curve in Tecplot format
            if (!batch_flag) cout << "\n Outputting space filling curve showing block loading for CPUs.";
@@ -572,7 +572,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 	dTime = CFL(Local_SolnBlk, 
 		    List_of_Local_Solution_Blocks,
                     Input_Parameters);
-	dTime = CFDkit_Minimum_MPI(dTime); // Find global minimum time step for all processors.
+	dTime = CFFC_Minimum_MPI(dTime); // Find global minimum time step for all processors.
 
 	if (Input_Parameters.Time_Accurate) {
 	  if ((Input_Parameters.i_Time_Integration != 
@@ -600,20 +600,20 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 	
 	/* Determine the L1, L2, and max norms of the solution residual. */
 	residual_l1_norm = L1_Norm_Residual(Local_SolnBlk, List_of_Local_Solution_Blocks);
-	residual_l1_norm = CFDkit_Summation_MPI(residual_l1_norm); // L1 norm for all processors.
+	residual_l1_norm = CFFC_Summation_MPI(residual_l1_norm); // L1 norm for all processors.
 	
 	residual_l2_norm = L2_Norm_Residual(Local_SolnBlk, List_of_Local_Solution_Blocks);
 	residual_l2_norm = sqr(residual_l2_norm);
-	residual_l2_norm = CFDkit_Summation_MPI(residual_l2_norm); // L2 norm for all processors.
+	residual_l2_norm = CFFC_Summation_MPI(residual_l2_norm); // L2 norm for all processors.
 	residual_l2_norm = sqrt(residual_l2_norm);
 	
 	residual_max_norm = Max_Norm_Residual(Local_SolnBlk, List_of_Local_Solution_Blocks);
-	residual_max_norm = CFDkit_Maximum_MPI(residual_max_norm); // Max norm for all processors.
+	residual_max_norm = CFFC_Maximum_MPI(residual_max_norm); // Max norm for all processors.
 	
 	/* Update CPU time used for the calculation so far. */
 	processor_cpu_time.update();
 	total_cpu_time.cput = 
-	  CFDkit_Summation_MPI(processor_cpu_time.cput); // Total CPU time for all processors.
+	  CFFC_Summation_MPI(processor_cpu_time.cput); // Total CPU time for all processors.
 	
 	/* Periodically save restart solution files. */
 	if (!first_step &&
@@ -630,7 +630,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
                   << ".\n";
              cout.flush();
           } /* endif */
-          error_flag = CFDkit_OR_MPI(error_flag);
+          error_flag = CFFC_OR_MPI(error_flag);
           if (error_flag) return (error_flag);
 	  error_flag = Write_Restart_Solution(Local_SolnBlk, 
 					      List_of_Local_Solution_Blocks, 
@@ -645,7 +645,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 		 << ".\n";
 	    cout.flush();
 	  } /* endif */
-	  error_flag = CFDkit_OR_MPI(error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return (error_flag);
 	  if (!batch_flag) {
 	    cout << "\n";
@@ -666,7 +666,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 //  					 residual_l1_norm,
 //  					 first_step,
 //  					 50);
-	if (CFDkit_Primary_MPI_Processor() && !first_step) {
+	if (CFFC_Primary_MPI_Processor() && !first_step) {
 	  Output_Progress_to_File(residual_file,
 				  number_of_time_steps,
 				  Time*THOUSAND,
@@ -708,7 +708,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 		 << ".\n";
 	    cout.flush();
 	  } /* endif */
-	  error_flag = CFDkit_OR_MPI(error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return (error_flag);
 
 	  // 2. Apply boundary conditions for stage.
@@ -728,7 +728,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 		 << ".\n";
 	    cout.flush();
 	  } /* endif */
-	  error_flag = CFDkit_OR_MPI(error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return (error_flag);
 
 	  // 4. Send boundary flux corrections at block interfaces with resolution changes.
@@ -741,7 +741,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 		 << ".\n";
 	    cout.flush();
 	  } /* endif */
-	  error_flag = CFDkit_OR_MPI(error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return (error_flag);
 
 	  // 5. Apply boundary flux corrections to ensure that method is conservative.
@@ -769,7 +769,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 		 << ".\n";
 	    cout.flush();
 	  } /* endif */
-	  error_flag = CFDkit_OR_MPI(error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return (error_flag);
 	  
 	} /* endfor */
@@ -797,7 +797,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
     /* Update ghostcell information and prescribe boundary conditions to ensure
        that the solution is consistent on each block. */
     
-    CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
     
     error_flag = Send_All_Messages(Local_SolnBlk, 
 				   List_of_Local_Solution_Blocks,
@@ -809,7 +809,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 	   << ".\n";
       cout.flush();
     } /* endif */
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
     
     BCs(Local_SolnBlk, 
@@ -818,32 +818,30 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
     
     /* Close residual file. */
     
-    if (CFDkit_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file);
+    if (CFFC_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file);
 
   } /* endif - Multigrid or Not */
 
   if(!batch_flag) { time(&end_explicit); }
 
-  // Start APPLY Newton_Krylov_Schwarz
-
+  /*************************************************************************************************************************/
+  /************************ APPLY Newton_Krylov_Schwarz ********************************************************************/
+  /*************************************************************************************************************************/\
   if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
-     time_t start_NKS = 0, end_NKS = 0;
-     processor_cpu_time.update();
-     total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput);  
-		double temp_t = total_cpu_time.cput;
+     time_t start_NKS, end_NKS;
 
-     if (CFDkit_Primary_MPI_Processor()) {
+     if (CFFC_Primary_MPI_Processor()) {
         error_flag = Open_Progress_File(residual_file,
 	 			        Input_Parameters.Output_File_Name,
 				        number_of_time_steps);
         if (error_flag) {
            cout << "\n Euler2D ERROR: Unable to open residual file for Euler2D calculation.\n";
            cout.flush();
-        } 
-     }
+        } /* endif */ 
+     } /* endif */
 
-     CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-     CFDkit_Broadcast_MPI(&error_flag, 1);
+     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+     CFFC_Broadcast_MPI(&error_flag, 1);
      if (error_flag) return (error_flag);
 
      //Turn Limiter Freezing OFF for startup 
@@ -851,39 +849,33 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 
      if (!batch_flag){ cout << "\n\n Beginning Euler2D NKS computations on " << Date_And_Time() << ".\n\n"; time(&start_NKS); }
 
-     CPUTime NKS_processor_cpu_time, NKS_total_cpu_time;                 //TRYING TO FIX RESIDUAL PLOT TIMES
-     NKS_processor_cpu_time.zero(); NKS_total_cpu_time.zero();    
-     
-     NKS_processor_cpu_time = processor_cpu_time;
-     NKS_total_cpu_time = total_cpu_time; 
+     //Store Explicit times for output
+     CPUTime Explicit_processor_cpu_time = processor_cpu_time;
+     CPUTime Explicit_total_cpu_time =  total_cpu_time;
     
      //Perform NKS Iterations 
      error_flag = Newton_Krylov_Schwarz_Solver<Euler2D_pState,
                                                Euler2D_Quad_Block,                                               
-                                               Euler2D_Input_Parameters>(processor_cpu_time, //NKS_processor_cpu_time,
-									 total_cpu_time,     //NKS_total_cpu_time, 
+                                               Euler2D_Input_Parameters>(processor_cpu_time,
 									 residual_file,
 									 number_of_time_steps, // explicit time steps
 									 Local_SolnBlk, 
 									 List_of_Local_Solution_Blocks,
 									 Input_Parameters);
-     
-     //NKS_processor_cpu_time.update();
-     //NKS_total_cpu_time.cput = CFDkit_Summation_MPI(NKS_processor_cpu_time.cput);  
+      
      processor_cpu_time.update();
-     total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput);  
-		 NKS_total_cpu_time.cput += total_cpu_time.cput - temp_t;
-    
+     total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput); 
+
      if (error_flag) {
-        if (CFDkit_Primary_MPI_Processor()) { 
+        if (CFFC_Primary_MPI_Processor()) { 
    	   cout << "\n Euler2D_NKS ERROR: Euler2D solution error on processor " 
                 << List_of_Local_Solution_Blocks.ThisCPU << ".\n";
    	   cout.flush();
    	} /* endif */
      } /* endif */
    
-     CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-     CFDkit_Broadcast_MPI(&error_flag, 1);
+     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+     CFFC_Broadcast_MPI(&error_flag, 1);
      if (error_flag) return (error_flag);
 
      /***********************************************************************/
@@ -893,24 +885,21 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
        cout<<"\n ----------------------------------------------------------------";
        cout<<"\n -------- Solution Computations Summary in minutes --------------";
        cout<<"\n ----------------------------------------------------------------";
-       cout<<"\n Total Startup CPU Time\t\t = "<<NKS_total_cpu_time.min();          //total_cpu_time.min();
-       cout<<"\n Total NKS CPU Time \t\t = "<<total_cpu_time.min()-NKS_total_cpu_time.min();
-       cout<<"\n Total CPU Time \t\t = "<<total_cpu_time.min();    //NKS_total_cpu_time.min()+total_cpu_time.min(); 
+       cout<<"\n Total Startup CPU Time\t\t = "<<Explicit_total_cpu_time.min();
+       cout<<"\n Total NKS CPU Time \t\t = "<<total_cpu_time.min()-Explicit_total_cpu_time.min();
+       cout<<"\n Total CPU Time \t\t = "<<total_cpu_time.min(); 
        cout<<"\n Total Startup Clock Time\t = "<<difftime(end_explicit,start_explicit)/60.0;
        cout<<"\n Total NKS Clock Time\t\t = "<<difftime(end_NKS,start_NKS)/60.0;
-       cout<<"\n Total Clock Time\t\t = "<<difftime(end_NKS,start_explicit)/60.0;   
+       cout<<"\n Total Clock Time\t\t = "<<difftime(end_NKS,start_explicit)/60.0;   //if no explicit start_explicit not defined
        cout<<"\n ----------------------------------------------------------------";
        cout<<"\n ----------------------------------------------------------------";
        cout<<"\n ----------------------------------------------------------------\n";
      } 
      //Also want to output total GMRES & NKS Iterations, and maybe max memory usage possibly??
 
-     if (CFDkit_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file); 
+     if (CFFC_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file); 
      
-     //add implicit and explicit times 
-     //total_cpu_time.cput += NKS_total_cpu_time.cput;
   } 
-
   /*************************************************************************************************************************/
   /*************************************************************************************************************************/
   /*************************************************************************************************************************/
@@ -923,17 +912,17 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
    ********************************************************/
   
   postprocess_current_calculation: ;
-  CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
   
   while (1) {
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       Get_Next_Input_Control_Parameter(Input_Parameters);
       command_flag = Parse_Next_Input_Control_Parameter(Input_Parameters);
       line_number = Input_Parameters.Line_Number;
     } /* endif */
-    CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
     Broadcast_Input_Parameters(Input_Parameters);
-    CFDkit_Broadcast_MPI(&command_flag, 1);
+    CFFC_Broadcast_MPI(&command_flag, 1);
     
     if (command_flag == EXECUTE_CODE) {
       // Deallocate memory for 2D Euler equation solution.
@@ -977,7 +966,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 					    Input_Parameters.Number_of_Blocks_Jdir);
       // Close input data file.
       if (!batch_flag) cout << "\n\n Closing Euler2D input data file.";
-      if (CFDkit_Primary_MPI_Processor()) Close_Input_File(Input_Parameters);
+      if (CFFC_Primary_MPI_Processor()) Close_Input_File(Input_Parameters);
       // Terminate calculation.
       return (0);
       
@@ -1010,7 +999,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 	     << ".\n";
 	cout.flush();
       } /* endif */
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
       // Output multi-block solution-adaptive quadrilateral mesh statistics.
       if (!batch_flag) {
@@ -1029,7 +1018,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
              << QuadTree.efficiencyRefinement() << "\n";
         cout.flush();
       } /* endif */
-//       if (CFDkit_Primary_MPI_Processor()) {
+//       if (CFFC_Primary_MPI_Processor()) {
 //          for ( int j_blk = 0 ; j_blk <= QuadTree.Nblk-1 ; ++j_blk ) {
 //             for ( int i_blk = 0 ; i_blk <= QuadTree.Ncpu-1 ; ++i_blk ) {
 //                if (QuadTree.Blocks[i_blk][j_blk] != NULL) {
@@ -1066,7 +1055,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
            cout.flush();
            return (error_flag);
         } /* endif */
-        error_flag = CFDkit_OR_MPI(error_flag);
+        error_flag = CFFC_OR_MPI(error_flag);
         if (error_flag) return (error_flag);
         //Output space filling curve in Tecplot format
         if (!batch_flag) cout << "\n Outputting space filling curve showing block loading for CPUs.";
@@ -1097,7 +1086,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
                << ".\n";
           cout.flush();
        } /* endif */
-       error_flag = CFDkit_OR_MPI(error_flag);
+       error_flag = CFFC_OR_MPI(error_flag);
        if (error_flag) return (error_flag);
 
    } else if (command_flag == WRITE_OUTPUT_CELLS_CODE) {
@@ -1122,7 +1111,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
                << ".\n";
           cout.flush();
        } /* endif */
-       error_flag = CFDkit_OR_MPI(error_flag);
+       error_flag = CFFC_OR_MPI(error_flag);
        if (error_flag) return (error_flag);
 
     } else if (command_flag == WRITE_OUTPUT_NODES_CODE) {
@@ -1145,7 +1134,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 	     << List_of_Local_Solution_Blocks.ThisCPU
 	     << "." << endl;
       } /* endif */
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_GRADIENTS_CODE) {
@@ -1161,7 +1150,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 	     << List_of_Local_Solution_Blocks.ThisCPU
 	     << "." << endl;
       } /* endif */
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_QUASI3D_CODE) {
@@ -1179,7 +1168,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
                << ".\n";
           cout.flush();
        } /* endif */
-       error_flag = CFDkit_OR_MPI(error_flag);
+       error_flag = CFFC_OR_MPI(error_flag);
        if (error_flag) return (error_flag);
 
     } else if (command_flag == WRITE_RESTART_CODE) {
@@ -1194,7 +1183,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
                << ".\n";
           cout.flush();
        } /* endif */
-       error_flag = CFDkit_OR_MPI(error_flag);
+       error_flag = CFFC_OR_MPI(error_flag);
        if (error_flag) return (error_flag);
        error_flag = Write_Restart_Solution(Local_SolnBlk, 
                                            List_of_Local_Solution_Blocks, 
@@ -1209,12 +1198,12 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
                << ".\n";
           cout.flush();
        } /* endif */
-       error_flag = CFDkit_OR_MPI(error_flag);
+       error_flag = CFFC_OR_MPI(error_flag);
        if (error_flag) return (error_flag);
 
     } else if (command_flag == WRITE_OUTPUT_GRID_CODE) {
        // Output multi-block solution-adaptive mesh data file.
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           if (!batch_flag) cout << "\n Writing Euler2D multi-block mesh to grid data output file.";
           error_flag = Output_Tecplot(MeshBlk,
                                       Input_Parameters);
@@ -1223,12 +1212,12 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
              cout.flush();
           } /* endif */
        } /* endif */
-       CFDkit_Broadcast_MPI(&error_flag, 1);
+       CFFC_Broadcast_MPI(&error_flag, 1);
        if (error_flag) return (error_flag);
 
     } else if (command_flag == WRITE_GRID_DEFINITION_CODE) {
        // Write multi-block solution-adaptive mesh definition files.
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           if (!batch_flag) cout << "\n Writing Euler2D multi-block mesh to grid definition files.";
           error_flag = Write_Multi_Block_Grid_Definition(MeshBlk,
                                                          Input_Parameters);
@@ -1239,12 +1228,12 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
              cout.flush();
           } /* endif */
        } /* endif */
-       CFDkit_Broadcast_MPI(&error_flag, 1);
+       CFFC_Broadcast_MPI(&error_flag, 1);
        if (error_flag) return (error_flag);
 
     } else if (command_flag == WRITE_OUTPUT_GRID_NODES_CODE) {
        // Output multi-block solution-adaptive mesh node data file.
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           if (!batch_flag) cout << "\n Writing Euler2D multi-block mesh to node data output file.";
           error_flag = Output_Nodes_Tecplot(MeshBlk,
                                             Input_Parameters);
@@ -1253,12 +1242,12 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
              cout.flush();
           } /* endif */
        } /* endif */
-       CFDkit_Broadcast_MPI(&error_flag, 1);
+       CFFC_Broadcast_MPI(&error_flag, 1);
        if (error_flag) return (error_flag);
 
     } else if (command_flag == WRITE_OUTPUT_GRID_CELLS_CODE) {
        // Output multi-block solution-adaptive mesh cell data file.
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           if (!batch_flag) cout << "\n Writing Euler2D multi-block mesh to cell data output file.";
           error_flag = Output_Cells_Tecplot(MeshBlk,
                                             Input_Parameters);
@@ -1267,12 +1256,12 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
              cout.flush();
           } /* endif */
        } /* endif */
-       CFDkit_Broadcast_MPI(&error_flag, 1);
+       CFFC_Broadcast_MPI(&error_flag, 1);
        if (error_flag) return (error_flag);
 
     } else if (command_flag == WRITE_OUTPUT_RINGLEB_CODE) {
        // Output Ringleb flow solution information.
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           if (!batch_flag) cout << "\n Writing Euler2D Ringleb flow solution data.";
           error_flag = Output_Ringleb_Flow(Local_SolnBlk, 
 					   List_of_Local_Solution_Blocks, 
@@ -1282,7 +1271,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
              cout.flush();
           } /* endif */
        } /* endif */
-       CFDkit_Broadcast_MPI(&error_flag, 1);
+       CFFC_Broadcast_MPI(&error_flag, 1);
        if (error_flag) return (error_flag);
 
     } else if (command_flag == DETERMINE_MACH_STEM_HEIGHT_CODE) {
@@ -1296,7 +1285,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 	cout << "\n Euler2D ERROR: Unable to determine the maximum pressure on the surface of the wedge.\n";
 	cout.flush();
       } /* endif */
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
       error_flag = Determine_Mach_Stem_Height(Local_SolnBlk,
 					      List_of_Local_Solution_Blocks,
@@ -1308,7 +1297,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 	cout << "\n Euler2D ERROR: Unable to determine the Mach stem height.\n";
 	cout.flush();
       } /* endif */
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
 
     } else if (command_flag == WRITE_OUTPUT_WEDGE_SOLUTION_DISTRIBUTION_CODE) {
@@ -1322,7 +1311,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 	cout << "\n Euler2D ERROR: Unable to write the solution on the wedge.\n";
 	cout.flush();
       } /* endif */
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
 
     } else if (command_flag == INVALID_INPUT_CODE ||

@@ -124,7 +124,7 @@ Output_Flat_Plate_Tecplot(const int &nb,
   // Output node solution data.  
   Out_File_Soln << setprecision(14);
   if (Output_Title_Soln) {
-    Out_File_Soln << "TITLE = \"" << CFDkit_Name() << ": 2D Flat Plate Solution, "
+    Out_File_Soln << "TITLE = \"" << CFFC_Name() << ": 2D Flat Plate Solution, "
 		  << "\"" << "\n"
 		  << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n"
@@ -290,7 +290,7 @@ Output_Flat_Plate_Tecplot(const int &nb,
   }
 
   if (Output_Title_Skin) {
-    Out_File_Skin << "TITLE = \"" << CFDkit_Name() << ": Flat Plate Skin Friction Coefficient, "
+    Out_File_Skin << "TITLE = \"" << CFFC_Name() << ": Flat Plate Skin Friction Coefficient, "
 		  << "\"" << "\n"
 		  << "VARIABLES = \"x\" \\ \n"
 		  << "\"Rex\" \\ \n"
@@ -1276,8 +1276,7 @@ dUdt_Residual_Evaluation(const double &Time) {
  	      Local_SolnBlk[nb].W[i][j].ComputeViscousTerms(Local_SolnBlk[nb].dWdx[i][j],
  							    Local_SolnBlk[nb].dWdy[i][j],
  							    Local_SolnBlk[nb].Grid.Cell[i][j].Xc,
- 							    Local_SolnBlk[nb].Axisymmetric,
- 							    OFF);
+ 							    Local_SolnBlk[nb].Axisymmetric);
  	      Local_SolnBlk[nb].U[i][j].tau = Local_SolnBlk[nb].W[i][j].tau;
  	      Local_SolnBlk[nb].U[i][j].q = Local_SolnBlk[nb].W[i][j].q;
  	    }
@@ -1494,11 +1493,11 @@ dUdt_Residual_Evaluation(const double &Time) {
 		  break;
 		case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
 		  Flux -= ViscousFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
-					Local_SolnBlk[nb].Grid.nfaceE(i,j),Local_SolnBlk[nb].Axisymmetric,OFF);
+					Local_SolnBlk[nb].Grid.nfaceE(i,j),Local_SolnBlk[nb].Axisymmetric);
 		  break;
 		case VISCOUS_RECONSTRUCTION_HYBRID :
 		  Flux -= ViscousFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,Xr,Wr,dWdxr,dWdyr,
-					      Local_SolnBlk[nb].Grid.nfaceE(i,j),Local_SolnBlk[nb].Axisymmetric,OFF);
+					      Local_SolnBlk[nb].Grid.nfaceE(i,j),Local_SolnBlk[nb].Axisymmetric);
 		  break;
 		};
 	      }
@@ -1981,12 +1980,12 @@ dUdt_Residual_Evaluation(const double &Time) {
 	      case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
 		Flux -= ViscousFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
 				      Local_SolnBlk[nb].Grid.nfaceN(i,j),
-				      Local_SolnBlk[nb].Axisymmetric,OFF);
+				      Local_SolnBlk[nb].Axisymmetric);
 		break;
 	      case VISCOUS_RECONSTRUCTION_HYBRID :
 		Flux -= ViscousFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,Xr,Wr,dWdxr,dWdyr,
 					    Local_SolnBlk[nb].Grid.nfaceN(i,j),
-					    Local_SolnBlk[nb].Axisymmetric,OFF);
+					    Local_SolnBlk[nb].Axisymmetric);
 		break;
 	      };
 	    }
@@ -2379,8 +2378,7 @@ dUdt_Multistage_Explicit(const int &i_stage, const double &Time) {
  	      Local_SolnBlk[nb].W[i][j].ComputeViscousTerms(Local_SolnBlk[nb].dWdx[i][j],
  							    Local_SolnBlk[nb].dWdy[i][j],
  							    Local_SolnBlk[nb].Grid.Cell[i][j].Xc,
- 							    Local_SolnBlk[nb].Axisymmetric,
- 							    OFF);
+ 							    Local_SolnBlk[nb].Axisymmetric);
  	      Local_SolnBlk[nb].U[i][j].tau = Local_SolnBlk[nb].W[i][j].tau;
  	      Local_SolnBlk[nb].U[i][j].q = Local_SolnBlk[nb].W[i][j].q;
  	    }
@@ -2744,11 +2742,11 @@ dUdt_Multistage_Explicit(const int &i_stage, const double &Time) {
 		  break;
 		case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
 		  Flux -= ViscousFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
-					Local_SolnBlk[nb].Grid.nfaceE(i,j),Local_SolnBlk[nb].Axisymmetric,OFF);
+					Local_SolnBlk[nb].Grid.nfaceE(i,j),Local_SolnBlk[nb].Axisymmetric);
 		  break;
 		case VISCOUS_RECONSTRUCTION_HYBRID :
 		  Flux -= ViscousFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,Xr,Wr,dWdxr,dWdyr,
-					      Local_SolnBlk[nb].Grid.nfaceE(i,j),Local_SolnBlk[nb].Axisymmetric,OFF);
+					      Local_SolnBlk[nb].Grid.nfaceE(i,j),Local_SolnBlk[nb].Axisymmetric);
 		  break;
 		};
 	      }
@@ -3427,12 +3425,12 @@ dUdt_Multistage_Explicit(const int &i_stage, const double &Time) {
 	      case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
 		Flux -= ViscousFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
 				      Local_SolnBlk[nb].Grid.nfaceN(i,j),
-				      Local_SolnBlk[nb].Axisymmetric,OFF);
+				      Local_SolnBlk[nb].Axisymmetric);
 		break;
 	      case VISCOUS_RECONSTRUCTION_HYBRID :
 		Flux -= ViscousFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,Xr,Wr,dWdxr,dWdyr,
 					    Local_SolnBlk[nb].Grid.nfaceN(i,j),
-					    Local_SolnBlk[nb].Axisymmetric,OFF);
+					    Local_SolnBlk[nb].Axisymmetric);
 		break;
 	      };
 	    }

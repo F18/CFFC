@@ -34,6 +34,9 @@
 
 #define	INPUT_PARAMETER_LENGTH_LEVELSET2D  128
 
+// Enviroment flag for CFFC root directory path
+#define PATHVAR_LEVELSET2D "CFFC_Path"
+
 /*!
  * Class: LevelSet2D_Input_Parameters
  *
@@ -45,6 +48,8 @@ class LevelSet2D_Input_Parameters{
 public:
   //@{ @name Input file parameters.
   //! Input file name:
+  //! CFFC root directory path:
+  char CFFC_Path[INPUT_PARAMETER_LENGTH_LEVELSET2D];
   char Input_File_Name[INPUT_PARAMETER_LENGTH_LEVELSET2D];
   //! Input file stream:
   ifstream Input_File;
@@ -188,6 +193,10 @@ public:
   int Number_of_Processors, Number_of_Blocks_Per_Processor;
   //@}
 
+  //@{ @name Obtain the CFFC root directory path:
+  void get_cffc_path();
+  //@}
+
   //@{ @name Input-output operators:
   friend ostream &operator << (ostream &out_file, const LevelSet2D_Input_Parameters &IP);
   friend istream &operator >> (istream &in_file, LevelSet2D_Input_Parameters &IP);
@@ -195,12 +204,30 @@ public:
 
 };
 
+/*****************************************************************
+ *  LevelSet2D_Input_Parameters::get_cffc_path -- Get CFFC path. *
+ *****************************************************************/
+inline void LevelSet2D_Input_Parameters::get_cffc_path(){
+  char *string_ptr;
+  // Check to see if environment varible exists.
+  if (getenv(PATHVAR_LEVELSET2D) == NULL) {
+    //Set default path
+     string_ptr = "CFFC";
+     strcpy(CFFC_Path, string_ptr);
+  } else {
+     //Set path specified by environment variable
+     strcpy(CFFC_Path, getenv(PATHVAR_LEVELSET2D));
+  }
+}
+
 /**********************************************************************
  * LevelSet2D_Input_Parameters -- Input-output operators.             *
  **********************************************************************/
 inline ostream &operator << (ostream &out_file,
 			     const LevelSet2D_Input_Parameters &IP) {
   out_file << setprecision(6);
+  out_file << "\n  -> CFFC Path: " 
+           << IP.CFFC_Path;
   out_file << "\n\n Solving 2D Level Set equations on multi-block solution-adaptive quadrilateral mesh.";
   out_file << "\n  -> Input File Name: " << IP.Input_File_Name;
   out_file << "\n  -> Time Accurate (Unsteady) Solution";

@@ -203,8 +203,8 @@ int Determine_Wall_Distance(Quad_Soln_Block *Soln_ptr,
 	    iup = 0;
 	    jup = 0;
 	  }
-	  iup = CFDkit_Maximum_MPI(iup);
-	  jup = CFDkit_Maximum_MPI(jup);
+	  iup = CFFC_Maximum_MPI(iup);
+	  jup = CFFC_Maximum_MPI(jup);
 
 	  // Allocate buffer for storing cell centers.
 	  ni = iup - ilow + 1;
@@ -242,7 +242,7 @@ int Determine_Wall_Distance(Quad_Soln_Block *Soln_ptr,
 	      // to be the minimum value of y_wall on the p processors.
 	      // It will also ensure that the X_wall variable is
 	      // consistent with that distance.
-	      y_wall_temp = CFDkit_Minimum_MPI(y_wall);
+	      y_wall_temp = CFFC_Minimum_MPI(y_wall);
 	      if (fabs(y_wall - y_wall_temp) < TOLER) {
 		wall_buffer[0] = X_wall.x;
 		wall_buffer[1] = X_wall.y;
@@ -258,7 +258,7 @@ int Determine_Wall_Distance(Quad_Soln_Block *Soln_ptr,
 		wall_buffer[4] = ZERO;
 		wall_iCPU = 0;
 	      }
-	      wall_iCPU = CFDkit_Maximum_MPI(wall_iCPU);
+	      wall_iCPU = CFFC_Maximum_MPI(wall_iCPU);
 	      MPI::COMM_WORLD.Bcast(wall_buffer,wall_buffer_size,MPI::DOUBLE,wall_iCPU);
 	      X_wall = Vector2D(wall_buffer[0],wall_buffer[1]);
 	      n_wall = Vector2D(wall_buffer[2],wall_buffer[3]);
@@ -508,7 +508,7 @@ int Dimensionless_Wall_Distance(Quad_Soln_Block *Soln_ptr,
 // 	}
 //       }
 //       // Create the message buffer based on the maximum buffer size.
-//       buffer_size = CFDkit_Maximum_MPI(buffer_size);
+//       buffer_size = CFFC_Maximum_MPI(buffer_size);
 //       buffer = new double[buffer_size];
 //       // Load message buffer.
 //       if (LocalSolnBlockList.ThisCPU == iCPU) {
@@ -943,7 +943,7 @@ int Pipe_Dimensionless_Wall_Distance(Quad_Soln_Block &SolnBlk,
 //       }
 //     }
 //     // Create the message buffer based on the maximum buffer size.
-//     buffer_size = CFDkit_Maximum_MPI(buffer_size);
+//     buffer_size = CFFC_Maximum_MPI(buffer_size);
 //     buffer = new double[buffer_size];
 //     // Load message buffer.
 //     if (LocalSolnBlockList.ThisCPU == iCPU) {
@@ -1135,7 +1135,7 @@ int Wall_Injection_Speed(Quad_Soln_Block *Soln_ptr,
       }
     }
     // Create the message buffer based on the maximum buffer size.
-    buffer_size = CFDkit_Maximum_MPI(buffer_size);
+    buffer_size = CFFC_Maximum_MPI(buffer_size);
     buffer = new double[buffer_size];
     // Load message buffer.
     if (LocalSolnBlockList.ThisCPU == iCPU) {

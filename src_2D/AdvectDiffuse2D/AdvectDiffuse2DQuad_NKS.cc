@@ -707,7 +707,7 @@ int Newton_Krylov_Schwarz_Solver(ostream &Progress_File,
   /* Switch for preconditioner */
   P_Switch = Input_Parameters.GMRES_P_Switch;
 
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     for (int star=0;star<75;star++){cout <<"*";}
     cout << "\nAdvection  = " << Adv_Switch << "; Diffusion = " << Diff_Switch 
          << "; Source = " << Src_Switch << endl;
@@ -760,7 +760,7 @@ int Newton_Krylov_Schwarz_Solver(ostream &Progress_File,
     for (int star=0;star<75;star++){cout <<"*";}
     cout << "  " << endl;
 
-  } /* endif (CFDkit_Primary_MPI_Processor())  */ 
+  } /* endif (CFFC_Primary_MPI_Processor())  */ 
   
   /*******************************************/
   /* BEGIN NEWTON-KRYLOV-SCHWARZ CALCULATION */
@@ -819,7 +819,7 @@ int Newton_Krylov_Schwarz_Solver(ostream &Progress_File,
             << ".\n";
        cout.flush();
     } /* endif */
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
 	  
     // Apply boundary flux corrections to residual to ensure that method is conservative.
@@ -837,12 +837,12 @@ int Newton_Krylov_Schwarz_Solver(ostream &Progress_File,
 
     /* Calculate norms for all blocks */    
     L2norm_current   = sqr(L2_Norm_Residual(Soln_ptr, Soln_Block_List));
-    L2norm_current   = CFDkit_Summation_MPI(L2norm_current);
+    L2norm_current   = CFFC_Summation_MPI(L2norm_current);
     L2norm_current   = sqrt(L2norm_current);
     L1norm_current   = L1_Norm_Residual(Soln_ptr, Soln_Block_List);
-    L1norm_current   = CFDkit_Summation_MPI(L1norm_current);
+    L1norm_current   = CFFC_Summation_MPI(L1norm_current);
     Max_norm_current = Max_Norm_Residual(Soln_ptr, Soln_Block_List);
-    Max_norm_current = CFDkit_Summation_MPI(Max_norm_current);
+    Max_norm_current = CFFC_Summation_MPI(Max_norm_current);
 
     if (count == 1) {
       L2norm_first   = L2norm_current;
@@ -872,7 +872,7 @@ int Newton_Krylov_Schwarz_Solver(ostream &Progress_File,
     if (Freeze_Limiter == ON) {
      if (L2norm_current_n <= Freeze_Limiter_Residual_Level &&
 	 limiter_check == ON)  {
-       if (CFDkit_Primary_MPI_Processor()) cout << "********** Apply Limiter Freezing **********" << endl;
+       if (CFFC_Primary_MPI_Processor()) cout << "********** Apply Limiter Freezing **********" << endl;
        
        Freeze_Limiters(Soln_ptr, Soln_Block_List);
 
@@ -882,8 +882,8 @@ int Newton_Krylov_Schwarz_Solver(ostream &Progress_File,
    
    /* Calculate delta t */
    dTime = CFL(Soln_ptr, Soln_Block_List, Input_Parameters);
-   dTime = CFDkit_Minimum_MPI(dTime); 
-   if (CFDkit_Primary_MPI_Processor()) cout << "dTime = " << dTime; 
+   dTime = CFFC_Minimum_MPI(dTime); 
+   if (CFFC_Primary_MPI_Processor()) cout << "dTime = " << dTime; 
    if (finite_time_step == ON) {
      dTime = norm_ratio > 1e6 ? 1e200 : min(Input_Parameters.Finite_Time_Step_Initial_CFL* 
 	                                    dTime*sqr(max(ONE,norm_ratio)), 1e200);
@@ -891,12 +891,12 @@ int Newton_Krylov_Schwarz_Solver(ostream &Progress_File,
      dTime = 1e200;
    }
 
-   if (CFDkit_Primary_MPI_Processor()) cout << "->  modified dTime = " << dTime << endl;        
+   if (CFFC_Primary_MPI_Processor()) cout << "->  modified dTime = " << dTime << endl;        
    Set_Global_TimeStep(Soln_ptr, Soln_Block_List, dTime);
 
     if (count <= 1) {
 
-      if (CFDkit_Primary_MPI_Processor()) cout << "  **** Create Jacobian Matrix **** " << endl;  
+      if (CFFC_Primary_MPI_Processor()) cout << "  **** Create Jacobian Matrix **** " << endl;  
 
       for ( Bcount = 0 ; Bcount < NBLK ; ++Bcount ) {
 	if (Soln_Block_List.Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
@@ -924,7 +924,7 @@ int Newton_Krylov_Schwarz_Solver(ostream &Progress_File,
     
     if (L2norm_current_n > tol){   
       
-      if (CFDkit_Primary_MPI_Processor()) {      
+      if (CFFC_Primary_MPI_Processor()) {      
 	cout << "\nBegin Newton Step (Outer Iterations) = "<< setw(3) << count 
             << "   L2norm_normalized = "<< setw(12)<< L2norm_current_n << endl;
       } /* endif */
@@ -997,7 +997,7 @@ int Newton_Krylov_Schwarz_Solver(ostream &Progress_File,
 	       << ".\n";
 	  cout.flush();
 	} /* endif */
-	error_flag = CFDkit_OR_MPI(error_flag);
+	error_flag = CFFC_OR_MPI(error_flag);
 	if (error_flag) return (error_flag);
 	  
 	// Apply boundary conditions for Newton step.
@@ -1030,7 +1030,7 @@ int Newton_Krylov_Schwarz_Solver(ostream &Progress_File,
           << ".\n";
      cout.flush();
   } /* endif */
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return (error_flag);
   	  
   // Apply boundary flux corrections to residual to ensure that method is conservative.
@@ -1049,9 +1049,9 @@ int Newton_Krylov_Schwarz_Solver(ostream &Progress_File,
   /* Calculate L2norm for all blocks */
   double L2norm;   
   L2norm = sqr(L2_Norm_Residual(Soln_ptr, Soln_Block_List));
-  L2norm = sqrt(CFDkit_Summation_MPI(L2norm));
+  L2norm = sqrt(CFFC_Summation_MPI(L2norm));
 
-  if (CFDkit_Primary_MPI_Processor()) {  
+  if (CFFC_Primary_MPI_Processor()) {  
     cout << " " << endl;
     for (int star=0;star<75;star++){cout <<"*";}
     cout.precision(20);

@@ -80,7 +80,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
    ********************************************************************/
 
   // The primary MPI processor processes the input parameter file.
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     if (!batch_flag)
       cout << "\n Reading Dusty2D input data file `"
 	   << Input_File_Name_ptr << "'.";
@@ -98,12 +98,12 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
     error_flag = 0;
   }
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   // Broadcast input solution parameters to other MPI processors.
-  CFDkit_Broadcast_MPI(&error_flag,1);
+  CFFC_Broadcast_MPI(&error_flag,1);
   if (error_flag) return error_flag;
-  CFDkit_Broadcast_MPI(&command_flag,1);
+  CFFC_Broadcast_MPI(&command_flag,1);
   if (command_flag == TERMINATE_CODE) return 0;
   Broadcast_Input_Parameters(Input_Parameters);
 
@@ -117,13 +117,13 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
  execute_new_calculation: ;
 
   // Synchronize processors.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   // Create initial mesh.  Read mesh from grid definition or data  
   // files when specified by input parameters.
 
   // The primary MPI processor creates the initial mesh.
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
 
     if (!batch_flag) 
       cout << "\n Creating (or reading) initial quadrilateral multi-block mesh.";
@@ -164,10 +164,10 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
   }
 
   // Synchronize processors.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   // Broadcast the mesh to other MPI processors.
-  CFDkit_Broadcast_MPI(&error_flag,1);
+  CFFC_Broadcast_MPI(&error_flag,1);
   if (error_flag) return error_flag;
   MeshBlk = Broadcast_Multi_Block_Grid(MeshBlk,Input_Parameters);
 
@@ -208,12 +208,12 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 						 List_of_Global_Solution_Blocks,
 						 List_of_Local_Solution_Blocks);
     error_flag = (ES_Local_SolnBlk == NULL) ? 1 : 0;
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
     error_flag = Copy_Electrostatic_Field_Variables(Local_SolnBlk,
 						    ES_Local_SolnBlk,
 						    List_of_Local_Solution_Blocks);
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
     Allocate_Message_Buffers(List_of_Local_Solution_Blocks,
 			     Local_SolnBlk[0].NumVar()+NUM_COMP_VECTOR2D);
@@ -235,7 +235,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	   << ".\n";
       cout.flush();
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
     // Allocate the message buffers.
     Allocate_Message_Buffers(List_of_Local_Solution_Blocks,
@@ -253,7 +253,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	   << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
       cout.flush();
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
     // Determine the distance to the nearest wall distance.
     error_flag = Determine_Wall_Distance(Local_SolnBlk,
@@ -264,20 +264,20 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       cout << " NavierStokes2D ERROR: During wall distance calculation."
 	   << "  Error #" << error_flag << "." << endl;
     }
-    CFDkit_Broadcast_MPI(&error_flag,1);
+    CFFC_Broadcast_MPI(&error_flag,1);
     if (error_flag) return error_flag;
     // Ensure each processor has the correct time and time.
-    number_of_time_steps = CFDkit_Maximum_MPI(number_of_time_steps);
-    Time = CFDkit_Maximum_MPI(Time);
-    processor_cpu_time.cput = CFDkit_Maximum_MPI(processor_cpu_time.cput);
-    Input_Parameters.Maximum_Number_of_Time_Steps = CFDkit_Maximum_MPI(Input_Parameters.Maximum_Number_of_Time_Steps);
+    number_of_time_steps = CFFC_Maximum_MPI(number_of_time_steps);
+    Time = CFFC_Maximum_MPI(Time);
+    processor_cpu_time.cput = CFFC_Maximum_MPI(processor_cpu_time.cput);
+    Input_Parameters.Maximum_Number_of_Time_Steps = CFFC_Maximum_MPI(Input_Parameters.Maximum_Number_of_Time_Steps);
 
     // Synchronize processors.
-    CFDkit_Barrier_MPI();
+    CFFC_Barrier_MPI();
     // Broadcast input solution parameters to other MPI processors.
-    CFDkit_Broadcast_MPI(&error_flag,1);
+    CFFC_Broadcast_MPI(&error_flag,1);
     if (error_flag != 0) return error_flag;
-    CFDkit_Broadcast_MPI(&command_flag,1);
+    CFFC_Broadcast_MPI(&command_flag,1);
     if (command_flag == TERMINATE_CODE) return 0;
     Broadcast_Input_Parameters(Input_Parameters);
 
@@ -289,7 +289,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
   }
 
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   // Send solution information between neighbouring blocks to complete
   // prescription of initial data.
@@ -307,7 +307,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	 << List_of_Local_Solution_Blocks.ThisCPU
 	 << "." << endl;
   }
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // Prescribe boundary data consistent with initial data.
@@ -328,7 +328,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	   << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
       cout.flush();
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
     // Perform boundary mesh refinement.
@@ -343,7 +343,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	   << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
       cout.flush();
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
     // Perform initial mesh refinement.
@@ -358,11 +358,11 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	   << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
       cout.flush();
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
     // MPI barrier to ensure processor synchronization.
-    CFDkit_Barrier_MPI();
+    CFFC_Barrier_MPI();
 
     // Send solution information between neighbouring blocks to complete
     // prescription of initial data.
@@ -381,7 +381,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	   << ".\n";
       cout.flush();
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
   }
 
@@ -432,7 +432,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
     cout.flush();
   }
 
-//   if (CFDkit_Primary_MPI_Processor()) {
+//   if (CFFC_Primary_MPI_Processor()) {
 //     for (int nblk = 0; nblk < QuadTree.Nblk; nblk++) {
 //       for (int ncpu = 0; ncpu < QuadTree.Ncpu; ncpu++) {
 // 	if (QuadTree.Blocks[ncpu][nblk] != NULL) {
@@ -454,7 +454,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
  continue_existing_calculation: ;
 
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
 
@@ -468,7 +468,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       cout << "\n Dusty2D ERROR: Unable to allocate memory for multigrid solver.\n";
       cout.flush();
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
     // Execute multigrid solver.
@@ -483,7 +483,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	   << List_of_Local_Solution_Blocks.ThisCPU << ".\n";
       cout.flush();
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
   } else if (Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
@@ -498,7 +498,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       cout << "\n Euler2D ERROR: Unable to allocate memory for DTS multigrid solver.\n";
       cout.flush();
     }
-    CFDkit_Broadcast_MPI(&error_flag,1);
+    CFFC_Broadcast_MPI(&error_flag,1);
     if (error_flag) return error_flag;
 
     // Execute DTS FAS multigrid solver.
@@ -512,7 +512,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       cout << "\n Euler2D ERROR: Error during DTS multigrid solution.\n";
       cout.flush();
     }
-    CFDkit_Broadcast_MPI(&error_flag,1);
+    CFFC_Broadcast_MPI(&error_flag,1);
     if (error_flag) return error_flag;
 
   } else {
@@ -521,7 +521,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
     first_step = 1;
     limiter_freezing_flag = OFF;
 
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       error_flag = Open_Progress_File(residual_file,
 				      Input_Parameters.Output_File_Name,
 				      number_of_time_steps);
@@ -531,14 +531,14 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       }
     }
     // MPI barrier to ensure processor synchronization.  
-    CFDkit_Barrier_MPI();
-    CFDkit_Broadcast_MPI(&error_flag,1);
+    CFFC_Barrier_MPI();
+    CFFC_Broadcast_MPI(&error_flag,1);
     if (error_flag) return error_flag;
     // Reset the CPU time.
     processor_cpu_time.reset();
 
     // Open conservation file.
-    if (CFDkit_Primary_MPI_Processor() && Input_Parameters.MeasureConservation) {
+    if (CFFC_Primary_MPI_Processor() && Input_Parameters.MeasureConservation) {
       error_flag = Open_Conservation_File(conservation_file,
 					  Input_Parameters.Output_File_Name,
 					  number_of_time_steps,
@@ -548,8 +548,8 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	cout.flush();
       }
     }
-    CFDkit_Barrier_MPI();
-    CFDkit_Broadcast_MPI(&error_flag,1);
+    CFFC_Barrier_MPI();
+    CFFC_Broadcast_MPI(&error_flag,1);
     if (error_flag) return error_flag;
 
     // Perform required number of iterations (time steps).
@@ -594,7 +594,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 		   << List_of_Local_Solution_Blocks.ThisCPU << ".\n";
 	      cout.flush();
 	    }
-	    error_flag = CFDkit_OR_MPI(error_flag);
+	    error_flag = CFFC_OR_MPI(error_flag);
 	    if (error_flag) {
 	      command_flag = Output_Tecplot(Local_SolnBlk,
 					    List_of_Local_Solution_Blocks,
@@ -625,7 +625,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	// Determine local and global time steps.
 	dTime = CFL(Local_SolnBlk,List_of_Local_Solution_Blocks,Input_Parameters);
 	// Find global minimum time step for all processors.
-	dTime = CFDkit_Minimum_MPI(dTime);
+	dTime = CFFC_Minimum_MPI(dTime);
 	if (Input_Parameters.Time_Accurate) {
 	  if ((Input_Parameters.i_Time_Integration != 
 	       TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING) &&
@@ -653,28 +653,28 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 
 	// Determine the L1, L2, and max norms of the solution residual.
 	residual_l1_norm = L1_Norm_Residual(Local_SolnBlk,List_of_Local_Solution_Blocks);
-	residual_l1_norm = CFDkit_Summation_MPI(residual_l1_norm);
+	residual_l1_norm = CFFC_Summation_MPI(residual_l1_norm);
       
 	residual_l2_norm = L2_Norm_Residual(Local_SolnBlk,List_of_Local_Solution_Blocks);
 	residual_l2_norm = sqr(residual_l2_norm);
-	residual_l2_norm = CFDkit_Summation_MPI(residual_l2_norm);
+	residual_l2_norm = CFFC_Summation_MPI(residual_l2_norm);
 	residual_l2_norm = sqrt(residual_l2_norm);
       
 	residual_max_norm = Max_Norm_Residual(Local_SolnBlk,List_of_Local_Solution_Blocks);
-	residual_max_norm = CFDkit_Maximum_MPI(residual_max_norm);
+	residual_max_norm = CFFC_Maximum_MPI(residual_max_norm);
 
 	// Determine the total mass, momentum, and energy for the gas
 	// and particle-phases.
 	if (Input_Parameters.MeasureConservation) {
 	  error_flag = Determine_Conservation_Properties(Local_SolnBlk,List_of_Local_Solution_Blocks,Umass);
-	  error_flag = CFDkit_OR_MPI(error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return error_flag;
-	  Umass = CFDkit_Summation_MPI(Umass);
+	  Umass = CFFC_Summation_MPI(Umass);
 	}
 
 	// Update CPU time used for the calculation so far.
 	processor_cpu_time.update();
-	total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput);
+	total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);
 
 	// Periodically save restart solution files.
 	if (!first_step &&
@@ -692,7 +692,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 		 << ".\n";
 	    cout.flush();
 	  }
-	  error_flag = CFDkit_OR_MPI(error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return error_flag;
 	  // Write the solution block restart files.
 	  error_flag = Write_Restart_Solution(Local_SolnBlk,
@@ -708,7 +708,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 		 << ".\n";
 	    cout.flush();
 	  }
-	  error_flag = CFDkit_OR_MPI(error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return error_flag;
 	  if (!batch_flag) cout << endl;
 	}
@@ -726,7 +726,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 //					 residual_l1_norm,
 //					 first_step,
 //					 Input_Parameters.Output_Progress_Frequency);
-	if (CFDkit_Primary_MPI_Processor() && !first_step)
+	if (CFFC_Primary_MPI_Processor() && !first_step)
 	  Output_Progress_to_File(residual_file,
 				  number_of_time_steps,
 				  Time*THOUSAND,
@@ -735,7 +735,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 				  residual_l2_norm,
 				  residual_max_norm);
 
-	if (CFDkit_Primary_MPI_Processor() && !first_step && Input_Parameters.MeasureConservation)
+	if (CFFC_Primary_MPI_Processor() && !first_step && Input_Parameters.MeasureConservation)
 	  Output_Conservation_to_File(conservation_file,
 				      number_of_time_steps,
 				      Time*THOUSAND,
@@ -773,7 +773,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 		 << ".\n";
 	    cout.flush();
 	  }
-	  error_flag = CFDkit_OR_MPI(error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return error_flag;
 
 	  // Step 2. Apply boundary conditions for stage.
@@ -791,7 +791,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 		 << ".\n";
 	    cout.flush();
 	  }
-	  error_flag = CFDkit_OR_MPI(error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return error_flag;
 
 	  // Step 4. Send boundary flux corrections at block interfaces with resolution changes.
@@ -804,7 +804,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 		 << ".\n";
 	    cout.flush();
 	  }
-	  error_flag = CFDkit_OR_MPI(error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return error_flag;
 
 	  // Step 5. Apply boundary flux corrections to ensure that method is conservative.
@@ -832,14 +832,14 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 		 << "." << endl;
 	    cout.flush();
 	  }
-	  error_flag = CFDkit_OR_MPI(error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return error_flag;
 
 	  // Step 8. Apply turbulence boundary conditions.
 	  error_flag = Turbulence_BCs(Local_SolnBlk,
 				      List_of_Local_Solution_Blocks,
 				      Input_Parameters);
-	  error_flag = CFDkit_OR_MPI(error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return error_flag;
 
 	}
@@ -874,7 +874,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
     }
 
     // MPI barrier to ensure processor synchronization.
-    CFDkit_Barrier_MPI();
+    CFFC_Barrier_MPI();
 
     // Update ghostcell information and prescribe boundary conditions to 
     // ensure that the solution is consistent on each block.
@@ -892,17 +892,17 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	   << ".\n";
       cout.flush();
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
     // Apply boundary conditions.
     BCs(Local_SolnBlk,List_of_Local_Solution_Blocks,Input_Parameters);
 
     // Close residual file.
-    if (CFDkit_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file);
+    if (CFFC_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file);
 
     // Close conservation file.
-    if (CFDkit_Primary_MPI_Processor() && Input_Parameters.MeasureConservation)
+    if (CFFC_Primary_MPI_Processor() && Input_Parameters.MeasureConservation)
       error_flag = Close_Conservation_File(conservation_file);
 
   }
@@ -917,10 +917,10 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
  postprocess_current_calculation: ;
 
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   while (1) {
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       Get_Next_Input_Control_Parameter(Input_Parameters);
       command_flag = Parse_Next_Input_Control_Parameter(Input_Parameters);
       line_number = Input_Parameters.Line_Number;
@@ -934,9 +934,9 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       Reinitialize_Reference_State(Input_Parameters);
     }
     // MPI barrier to ensure processor synchronization.
-    CFDkit_Barrier_MPI(); 
+    CFFC_Barrier_MPI(); 
     Broadcast_Input_Parameters(Input_Parameters);
-    CFDkit_Broadcast_MPI(&command_flag,1);
+    CFFC_Broadcast_MPI(&command_flag,1);
     for (int nb = 0; nb < List_of_Local_Solution_Blocks.Nblk; nb++) {
       if (List_of_Local_Solution_Blocks.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
 	// Set particle flag (on or off).
@@ -972,7 +972,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 
     } else if (command_flag == TERMINATE_CODE) {
 
-      CFDkit_Barrier_MPI();
+      CFFC_Barrier_MPI();
 
       // Deallocate memory for 2D Dusty equation solution.
       if (!batch_flag) cout << "\n Deallocating Dusty2D solution variables.";
@@ -990,7 +990,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 					    Input_Parameters.Number_of_Blocks_Jdir);
       // Close input data file.
       if (!batch_flag) cout << "\n\n Closing Dusty2D input data file.";
-      if (CFDkit_Primary_MPI_Processor()) Close_Input_File(Input_Parameters);
+      if (CFFC_Primary_MPI_Processor()) Close_Input_File(Input_Parameters);
       // Terminate calculation.
       return 0;
 
@@ -1024,7 +1024,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	     << ".  Error number = " << error_flag << ".\n";
 	cout.flush();
       }
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) {
 	command_flag = Output_Tecplot(Local_SolnBlk,
 				      List_of_Local_Solution_Blocks,
@@ -1052,7 +1052,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	cout.flush();
       }
 
-//       if (CFDkit_Primary_MPI_Processor()) {
+//       if (CFFC_Primary_MPI_Processor()) {
 // 	for (int nblk = 0; nblk < QuadTree.Nblk; nblk++) {
 // 	  for (int ncpu = 0; ncpu < QuadTree.Ncpu; ncpu++) {
 // 	    if (QuadTree.Blocks[ncpu][nblk] != NULL) {
@@ -1088,7 +1088,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	     << List_of_Local_Solution_Blocks.ThisCPU
 	     << "." << endl;
       }
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_CELLS_CODE) {
@@ -1110,7 +1110,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	     << List_of_Local_Solution_Blocks.ThisCPU
 	     << "." << endl;
       }
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_NODES_CODE) {
@@ -1132,7 +1132,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	     << List_of_Local_Solution_Blocks.ThisCPU
 	     << "." << endl;
       }
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_QUASI3D_CODE) {
@@ -1149,7 +1149,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	     << ".\n";
 	cout.flush();
       }
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_RESTART_CODE) {
@@ -1164,7 +1164,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
                << ".\n";
 	cout.flush();
       }
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
       // Write the solution block restart files.
       error_flag = Write_Restart_Solution(Local_SolnBlk,
@@ -1180,12 +1180,12 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	     << ".\n";
 	cout.flush();
       }
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_GRID_CODE) {
       // Output multi-block solution-adaptive mesh data file.
-      if (CFDkit_Primary_MPI_Processor()) {
+      if (CFFC_Primary_MPI_Processor()) {
 	if (!batch_flag) cout << "\n Writing Dusty2D multi-block mesh to grid data output file.";
 	error_flag = Output_Tecplot(MeshBlk,Input_Parameters);
 	if (error_flag) {
@@ -1193,12 +1193,12 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	  cout.flush();
 	}
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
       
     } else if (command_flag == WRITE_GRID_DEFINITION_CODE) {
       // Write multi-block solution-adaptive mesh definition files.
-      if (CFDkit_Primary_MPI_Processor()) {
+      if (CFFC_Primary_MPI_Processor()) {
 	if (!batch_flag) cout << "\n Writing Dusty2D multi-block mesh to grid definition files.";
 	error_flag = Write_Multi_Block_Grid_Definition(MeshBlk,
 						       Input_Parameters);
@@ -1208,12 +1208,12 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	  cout.flush();
 	}
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_GRID_CELLS_CODE) {
       // Output multi-block solution-adaptive mesh cell data file.
-      if (CFDkit_Primary_MPI_Processor()) {
+      if (CFFC_Primary_MPI_Processor()) {
 	if (!batch_flag) cout << "\n Writing Dusty2D multi-block mesh to cell data output file.";
 	error_flag = Output_Cells_Tecplot(MeshBlk,Input_Parameters);
 	if (error_flag) {
@@ -1221,7 +1221,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	  cout.flush();
 	}
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_RINGLEB_CODE) {
@@ -1233,7 +1233,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	cout << endl << "\n Dusty2D ERROR: Unable to open Dusty2D Ringleb's flow output file." << endl;
 	cout.flush();
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_VISCOUS_CHANNEL_CODE) {
@@ -1245,7 +1245,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	cout << endl << "\n Dusty2D ERROR: Unable to open Dusty2D viscous channel flow output file." << endl;
 	cout.flush();
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_VISCOUS_PIPE_CODE) {
@@ -1257,7 +1257,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	cout << endl << "\n Dusty2D ERROR: Unable to open Dusty2D viscous pipe flow output file." << endl;
 	cout.flush();
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_TURBULENT_PIPE_CODE) {
@@ -1268,7 +1268,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       if (error_flag) {
 	cout << endl << "\n NavierStokes2D ERROR: Unable to open NavierStokes2D viscous pipe flow output file." << endl;
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_FLAT_PLATE_CODE) {
@@ -1280,7 +1280,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	cout << endl << "\n Dusty2D ERROR: Unable to open Dusty2D flat plate output file." << endl;
 	cout.flush();
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_DRIVEN_CAVITY_FLOW_CODE) {
@@ -1292,7 +1292,7 @@ int Dusty2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	cout << endl << "\n Dusty2D ERROR: Unable to open Dusty2D driven cavity flow." << endl;
 	cout.flush();
       }
-      CFDkit_Broadcast_MPI(&error_flag,1);
+      CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
 
     } else if (command_flag == INVALID_INPUT_CODE ||

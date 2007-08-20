@@ -157,9 +157,9 @@ class Chem2D_Input_Parameters{
   //! BC Pressure Gradient 
   double Pressure_Gradient;
 
-  //! Root path of CFDkit+caboodle 
-  char CFDkit_Path[INPUT_PARAMETER_LENGTH_CHEM2D];
-  void get_cfdkit_path();
+  //! Root path of CFFC 
+  char CFFC_Path[INPUT_PARAMETER_LENGTH_CHEM2D];
+  void get_cffc_path();
   //@}
 
   //@{ @name Flow type indicator and related input parameters:
@@ -193,10 +193,6 @@ class Chem2D_Input_Parameters{
   int i_Friction_Velocity;
   double C_constant, von_Karman_Constant;
   double yplus_sublayer, yplus_buffer_layer, yplus_outer_layer;
-  //@}
-  
-  //@{ @name Solution Relaxation Multiplier 
-  double Relaxation_multiplier;
   //@}
 
   //@{ @name Grid type indicator and related input parameters:
@@ -329,7 +325,7 @@ class Chem2D_Input_Parameters{
     for (int i = 0; i < 3; i++) {
       delete[] ICEMCFD_FileNames[i]; 
     } /* endfor */
-    delete[]  ICEMCFD_FileNames; ICEMCFD_FileNames=NULL;
+    delete[] ICEMCFD_FileNames; ICEMCFD_FileNames=NULL;
     //State class memory
     Deallocate(); 
   }
@@ -389,6 +385,8 @@ inline void Chem2D_Input_Parameters::Deallocate() {
 inline ostream &operator << (ostream &out_file,
 			     const Chem2D_Input_Parameters &IP) {
     out_file << setprecision(6);
+    out_file << "\n  -> CFFC Path: " 
+	     << IP.CFFC_Path;
   
     /*********************************************************/
     out_file << "\n\n Solving 2D MulitSpecies";
@@ -500,9 +498,6 @@ inline ostream &operator << (ostream &out_file,
     } 
 
 
-    if( IP.Relaxation_multiplier != 1.0){
-      out_file <<"\n  -> Update Stage Relaxation Multiplier: "<<IP.Relaxation_multiplier;
-    }
 
     /*********************************************************/
     if (IP.Preconditioning == 1){
@@ -552,8 +547,6 @@ inline ostream &operator << (ostream &out_file,
 	out_file << IP.Schmidt[i]<<", ";
       }
     }
-    out_file << "\n  -> CFDkit+caboodle Path: " 
-	     << IP.CFDkit_Path;
     /*********************************************/ 
     out_file << "\n  -> Initial Conditions: " 
              << IP.ICs_Type;
@@ -854,17 +847,15 @@ inline istream &operator >> (istream &in_file,
 }
 
 
-/****************** Get CFD kit Path *********/
-inline void Chem2D_Input_Parameters::get_cfdkit_path(){
- 
+/****************** Get CFFC Path *********/
+inline void Chem2D_Input_Parameters::get_cffc_path(){
   // Check to see if environment varible exists.
   if(getenv(PATHVAR) == NULL){
     cerr<<"Missing Environment Variable: "<<PATHVAR<<"\n\n"; 
     exit(1);
   }
-  
   //Set Path
-  strcpy(CFDkit_Path,getenv(PATHVAR));
+  strcpy(CFFC_Path,getenv(PATHVAR));
 }
 
 

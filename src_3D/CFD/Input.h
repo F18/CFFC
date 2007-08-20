@@ -22,7 +22,7 @@
 
 #define	INPUT_PARAMETER_LENGTH    128
 
-//Enviroment Flag 
+// Enviroment flag for CFFC root directory path
 #define PATHVAR "CFFC_Path"
 
 /********************************************************
@@ -32,7 +32,8 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
 class Input_Parameters {
   private:
   public:
-   
+
+  // CFFC root directory path 
   char CFFC_Path[INPUT_PARAMETER_LENGTH];
  
   // Input file name:
@@ -269,7 +270,6 @@ void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Deallocate() {
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Get_CFFC_Path(void){
   char *string_ptr;
- 
   // Check to see if environment varible exists.
   if (getenv(PATHVAR) == NULL) {
     //Set default path
@@ -279,7 +279,6 @@ void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Get_CFFC_Path(void){
      //Set path specified by environment variable
      strcpy(CFFC_Path, getenv(PATHVAR));
   }
-
 }
 
 /********************************************************
@@ -325,7 +324,7 @@ void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Set_Default_Input_Parameters(vo
    int i;
    char *string_ptr;
    
-   /* CFFC Directory Path */
+   // CFFC root directory path:
    Get_CFFC_Path();
 
    string_ptr = "Euler3D.in";
@@ -2009,7 +2008,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
     MPI::COMM_WORLD.Bcast(&(i_Reconstruction), 
                           1, 
                           MPI::INT, 0);   
-     MPI::COMM_WORLD.Bcast(Limiter_Type, 
+    MPI::COMM_WORLD.Bcast(Limiter_Type, 
                           INPUT_PARAMETER_LENGTH, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(&(i_Limiter), 
@@ -2337,9 +2336,9 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
                          const Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IP) {
    
    out_file << setprecision(6);
-   
    out_file << "\n  -> CFFC Path: " << IP.CFFC_Path;
-   out_file << "\n\n Solving 3D MulitSpecies";
+
+   out_file << "\n\n Solving 3D Multi-Species";
    if (IP.i_Flow_Type ==  FLOWTYPE_INVISCID){
       out_file<<" Euler (Inviscid) ";
    } else {

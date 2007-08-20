@@ -29,8 +29,10 @@ CFD_DIR = CFD/
 CHEM_DIR = Chem2D/
 DUSTY_DIR = Dusty2D/
 ELECTROSTATIC_DIR = Electrostatic2D/
+EOS_DIR = EquationOfState/
 EULER_DIR = Euler2D/
 GRID_DIR = Grid/
+HIGHTEMP_DIR = HighTemp2D/
 ICEM_DIR = ICEM/
 INTERFACE_DIR = Interface2D/
 ION_DIR = Ion5Moment2D/
@@ -39,7 +41,7 @@ MATH_DIR = Math/
 MPI_DIR = MPI/
 MULTIGRID_DIR = FASMultigrid2D/
 NAVIERSTOKES_DIR = NavierStokes2D/
-NKS_DIR = NewtonKrylov2D/
+NKS_DIR = NewtonKrylovSchwarz2D/
 PHYSICS_DIR = Physics/
 SOLVERS1D_DIR = Solvers1D/
 SYSTEM_DIR = System/
@@ -108,6 +110,21 @@ SRC_CHEM = $(CHEM_DIR)NASARP1311dataclass.cc \
 	   $(CHEM_DIR)Chem2DQuadSingleBlock.cc \
 	   $(CHEM_DIR)Chem2DQuadSolvers.cc 
 SRC_CHEM_EXE = $(CHEM_DIR)Chem2D.cc  
+SRC_HIGHTEMP = $(HIGHTEMP_DIR)HighTemp2DState.cc \
+               $(HIGHTEMP_DIR)HighTemp2DInput.cc  \
+               $(HIGHTEMP_DIR)HighTemp2DQuad.cc  \
+               $(HIGHTEMP_DIR)HighTemp2DQuadGrid.cc \
+               $(HIGHTEMP_DIR)HighTemp2DQuadMultiBlock.cc  \
+               $(HIGHTEMP_DIR)HighTemp2DQuadSingleBlock.cc  \
+               $(HIGHTEMP_DIR)HighTemp2DQuadIOMultiBlock.cc  \
+               $(HIGHTEMP_DIR)HighTemp2DQuadIOSingleBlock.cc  \
+               $(HIGHTEMP_DIR)HighTemp2DQuadTurbulenceMultiBlock.cc  \
+               $(HIGHTEMP_DIR)HighTemp2DQuadTurbulenceSingleBlock.cc  \
+               $(HIGHTEMP_DIR)HighTemp2DdRdU.cc  \
+               $(HIGHTEMP_DIR)HighTemp2DQuadSolvers.cc
+SRC_HIGHTEMP_EXE = $(HIGHTEMP_DIR)HighTemp2D.cc  
+SRC_EOS = $(EOS_DIR)tgas.f \
+          $(EOS_DIR)ugas.f
 SRC_GAUSSIAN = $(GAUSSIAN_DIR)Gaussian2DState.cc $(GAUSSIAN_DIR)Gaussian2DInput.cc \
                $(GAUSSIAN_DIR)Gaussian2DCartesian.cc $(GAUSSIAN_DIR)Gaussian2DCartesianSolvers.cc \
                $(GAUSSIAN_DIR)Gaussian2DQuadGrid.cc $(GAUSSIAN_DIR)Gaussian2DQuadSingleBlock.cc \
@@ -189,9 +206,9 @@ SRC_ICEMCFD = $(ICEM_DIR)ICEMCFD.cc \
 SRC_BASE =  $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_GRID) $(SRC_AMR) \
             $(SRC_SYSTEM)
 SRC_CFFC = $(SRC_BASE) $(SRC_SCALAR) $(SRC_HEAT) $(SRC_HYPERHEAT) $(SRC_EULER1D) $(SRC_MHD1D) \
-           $(SRC_ADVECTDIFFUSE) $(SRC_CHEM) $(SRC_DUSTY) $(SRC_EULER) \
-	   $(SRC_ION) $(SRC_ELECTROSTATIC) $(SRC_INTERFACE) $(SRC_LEVELSET) $(SRC_TURBULENT) \
-	   $(SRC_NAVIERSTOKES) $(SRC_ICEMCFD)  $(SRC_GAUSSIAN)
+           $(SRC_ADVECTDIFFUSE) $(SRC_CHEM) $(SRC_DUSTY) $(SRC_EULER) $(SRC_HIGHTEMP) \
+	   $(SRC_ION) $(SRC_ELECTROSTATIC) $(SRC_INTERFACE) $(SRC_LEVELSET) $(SRC_NAVIERSTOKES) \
+	   $(SRC_GAUSSIAN) $(SRC_TURBULENT) $(SRC_EOS) $(SRC_ICEMCFD) 
 SRC_MAIN = cffc2D.cc
 SRC_ICEMCFD_UTIL1 = $(ICEM_DIR)icemcfd2tecplot.cc 
 SRC_ICEMCFD_UTIL2 = $(ICEM_DIR)icemcfd2grid2dquad.cc
@@ -244,6 +261,13 @@ INC_CHEM = $(CHEM_DIR)Chem2DInput.h \
 	   $(CHEM_DIR)Reactions.h \
 	   $(CHEM_DIR)Species.h \
 	   $(CHEM_DIR)Chem2DQuadMultigrid.h
+INC_HIGHTEMP = $(HIGHTEMP_DIR)HighTemp2DState.h \
+               $(HIGHTEMP_DIR)HighTemp2DInput.h  \
+               $(HIGHTEMP_DIR)HighTemp2DQuad.h  \
+               $(HIGHTEMP_DIR)HighTemp2DdRdU.h  \
+               $(HIGHTEMP_DIR)HighTemp2DQuadMultigrid.h  \
+               $(HIGHTEMP_DIR)HighTemp2DQuadNKS.h
+INC_EOS = $(EOS_DIR)EquationOfState.h
 INC_GAUSSIAN = $(GAUSSIAN_DIR)Gaussian2DState.h \
 	       $(GAUSSIAN_DIR)Gaussian2DInput.h \
                $(GAUSSIAN_DIR)Gaussian2DCartesian.h \
@@ -282,7 +306,7 @@ INC_TURBULENT = $(TURBULENT_DIR)Turbulent2DWallData.h \
 	        $(TURBULENT_DIR)TurbulenceModelling.h
 INC_MULTIGRID = $(MULTIGRID_DIR)FASMultigrid2D.h \
 	        $(MULTIGRID_DIR)FASMultigrid2DInput.h
-INV_NKS = $(NKS_DIR)NKS2D.h \
+INC_NKS = $(NKS_DIR)NKS2D.h \
 	  $(NKS_DIR)NKSInput2D.h \
 	  $(NKS_DIR)GMRES2D.h \
 	  $(NKS_DIR)Block_Preconditioner2D.h
@@ -353,6 +377,21 @@ OBJ_CHEM = $(CHEM_DIR)NASARP1311dataclass.o \
 	   $(CHEM_DIR)Chem2DQuadSingleBlock.o \
 	   $(CHEM_DIR)Chem2DQuadSolvers.o 
 OBJ_CHEM_EXE = $(CHEM_DIR)Chem2D.o
+OBJ_HIGHTEMP = $(HIGHTEMP_DIR)HighTemp2DState.o \
+               $(HIGHTEMP_DIR)HighTemp2DInput.o  \
+               $(HIGHTEMP_DIR)HighTemp2DQuad.o  \
+               $(HIGHTEMP_DIR)HighTemp2DQuadGrid.o \
+               $(HIGHTEMP_DIR)HighTemp2DQuadMultiBlock.o  \
+               $(HIGHTEMP_DIR)HighTemp2DQuadSingleBlock.o  \
+               $(HIGHTEMP_DIR)HighTemp2DQuadIOMultiBlock.o  \
+               $(HIGHTEMP_DIR)HighTemp2DQuadIOSingleBlock.o  \
+               $(HIGHTEMP_DIR)HighTemp2DQuadTurbulenceMultiBlock.o  \
+               $(HIGHTEMP_DIR)HighTemp2DQuadTurbulenceSingleBlock.o  \
+               $(HIGHTEMP_DIR)HighTemp2DdRdU.o  \
+               $(HIGHTEMP_DIR)HighTemp2DQuadSolvers.o
+OBJ_HIGHTEMP_EXE = $(HIGHTEMP_DIR)HighTemp2D.o
+OBJ_EOS = $(EOS_DIR)tgas.o \
+          $(EOS_DIR)ugas.o
 OBJ_GAUSSIAN = $(GAUSSIAN_DIR)Gaussian2DState.o $(GAUSSIAN_DIR)Gaussian2DInput.o \
                $(GAUSSIAN_DIR)Gaussian2DCartesian.o $(GAUSSIAN_DIR)Gaussian2DCartesianSolvers.o \
                $(GAUSSIAN_DIR)Gaussian2DQuadGrid.o $(GAUSSIAN_DIR)Gaussian2DQuadSingleBlock.o \
@@ -434,9 +473,9 @@ OBJ_ICEMCFD = $(ICEM_DIR)ICEMCFD.o \
 OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_AMR) \
 	   $(OBJ_SYSTEM)
 OBJ_CFFC = $(OBJ_BASE) $(OBJ_SCALAR) $(OBJ_HEAT) $(OBJ_HYPERHEAT) $(OBJ_EULER1D) $(OBJ_MHD1D) \
-           $(OBJ_ADVECTDIFFUSE) $(OBJ_CHEM) $(OBJ_DUSTY) $(OBJ_EULER) \
+           $(OBJ_ADVECTDIFFUSE) $(OBJ_CHEM) $(OBJ_DUSTY) $(OBJ_EULER) $(OBJ_HIGHTEMP) \
            $(OBJ_ION) $(OBJ_ELECTROSTATIC) $(OBJ_INTERFACE) $(OBJ_LEVELSET) $(OBJ_NAVIERSTOKES) \
-	   $(OBJ_ICEMCFD)  $(OBJ_GAUSSIAN)
+	   $(OBJ_GAUSSIAN) $(OBJ_EOS) $(OBJ_ICEMCFD)
 OBJ_MAIN = cffc2D.o
 OBJ_ICEMCFD_UTIL1 = $(ICEM_DIR)icemcfd2tecplot.o \
                     $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD)
@@ -450,6 +489,7 @@ EXE_ICEMCFD_UTIL1 = icemcfd2tecplot
 EXE_ICEMCFD_UTIL2 = icemcfd2grid2dquad
 EXE_ADVECTDIFFUSE2D = advectdiffuse2D
 EXE_CHEM2D = chem2D
+EXE_HIGHTEMP2D = hightemp2D
 EXE_DUSTY2D = dusty2D
 EXE_ELECTROSTATIC2D = electrostatic2D
 EXE_EULER2D = euler2D
@@ -480,6 +520,7 @@ help:
 	@echo "|        make dusty2D              compile dusty2D stand alone program              |"
 	@echo "|        make electrostatic2D      compile electrostatic2D stand alone program      |"
 	@echo "|        make euler2D              compile euler2D stand alone program              |"
+	@echo "|        make hightemp2D           compile hightemp2D stand alone program           |"
 	@echo "|        make ion5moment2D         compile ion5moment2D stand alone program         |"
 	@echo "|        make levelset2D           compile levelset2D stand alone program           |"
 	@echo "|        make navierstokes2D       compile navierstokes2D stand alone program       |"
@@ -500,11 +541,11 @@ help:
 	@echo "|                  CANTERA_VERSION = NoCANTERA (default), V70                       |"
 	@echo "|                  PROFILING = OFF (default), ON                                    |"
 	@echo "|                                                                                   |"
-	@echo "| Ensure that the source directory is clean and the ICEMCFD, SparseLib++,           |"
-	@echo "| BPKIT libraries are up to date before re-making the CFFC from scratch.            |"
+	@echo "| Ensure that the source directory is clean and the ICEMCFD, SparseLib++, BPKIT,    |"
+	@echo "| FFTW, and Cantera libraries are up to date before re-making CFFC from scratch.    |"
 	@echo "|                                                                                   |"
 	@echo "| An environment variable, CFFC_Path, needs to be set to the location               |"
-	@echo "| of the CFFC source directory for chem2D.                                          |"
+	@echo "| of the CFFC source directory.  This can be done as follows:                       |"
 	@echo "|                                                                                   |"
 	@echo "|  bash:   export CFFC_Path=/your/path/here/CFFC                                    |"
 	@echo "|  tcsh:   setenv CFFC_Path /your/path/here/CFFC                                    |"
@@ -513,7 +554,7 @@ help:
 
 all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) $(EXE_CHEM2D) $(EXE_ADVECTDIFFUSE2D) \
      $(EXE_DUSTY2D) $(EXE_EULER2D) $(EXE_ION5MOMENT2D) $(EXE_LEVELSET2D) $(EXE_NAVIERSTOKES2D) \
-     $(EXE_EMBEDDEDBOUNDARIES2D)  $(EXE_GAUSSIAN2D)
+     $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_GAUSSIAN2D) $(EXE_HIGHTEMP2D)
 	@echo ' '
 	@echo All programs have been brought up to date.
 	@echo '------------------------------------------'
@@ -655,6 +696,29 @@ $(CHEM_DIR)Chem2D.depend: $(SRC_CHEM_EXE)
 	makedepend -f$(CHEM_DIR)Chem2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_CHEM_EXE) >& /dev/null
 	@echo ' '
 	@echo Chem2D source file dependencies have been brought up to date.
+	@echo '-------------------------------------------------------------'
+	@echo ' '
+
+$(EXE_HIGHTEMP2D): $(HIGHTEMP_DIR)HighTemp2D.depend $(OBJ_HIGHTEMP_EXE) $(OBJ_BASE) $(OBJ_INTERFACE) $(OBJ_HIGHTEMP) $(OBJ_ICEMCFD) $(OBJ_EOS)
+	@echo ' '
+	@echo Building program $(EXE_HIGHTEMP2D) for a $(PLATFORM) platform.
+	@echo '----------------------------------------------------------'
+	@echo ' '
+	$(LD) -o $(EXE_HIGHTEMP2D) $(OBJ_HIGHTEMP_EXE) $(OBJ_BASE) $(OBJ_INTERFACE) $(OBJ_HIGHTEMP) $(OBJ_ICEMCFD) $(LDFLAGS) $(OBJ_EOS)
+	@echo ' '
+	@echo Program $(EXE_HIGHTEMP2D) has been brought up to date.
+	@echo '--------------------------------------------------'
+	@echo ' '
+
+$(HIGHTEMP_DIR)HighTemp2D.depend: $(SRC_HIGHTEMP_EXE) 
+	@echo ' '
+	@echo Determining HighTemp2D source file dependencies for a $(PLATFORM) platform.
+	@echo '-----------------------------------------------------------------------'
+	@echo ' '
+	touch $(HIGHTEMP_DIR)HighTemp2D.depend
+	makedepend -f$(HIGHTEMP_DIR)HighTemp2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_HIGHTEMP_EXE) >& /dev/null
+	@echo ' '
+	@echo HighTemp2D source file dependencies have been brought up to date.
 	@echo '-------------------------------------------------------------'
 	@echo ' '
 
@@ -901,11 +965,11 @@ install: $(EXE_MAIN)
 install-all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
         $(EXE_ADVECTDIFFUSE2D) $(EXE_CHEM2D) $(EXE_DUSTY2D) $(EXE_EULER2D) \
         $(EXE_ION5MOMENT2D) $(EXE_LEVELSET2D) $(EXE_NAVIERSTOKES2D) \
-        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_GAUSSIAN2D)
+        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_GAUSSIAN2D) $(EXE_HIGHTEMP2D)
 	@for f in $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
 	$(EXE_ADVECTDIFFUSE2D) $(EXE_CHEM2D) $(EXE_DUSTY2D) $(EXE_EULER2D) \
         $(EXE_ION5MOMENT2D) $(EXE_LEVELSET2D) $(EXE_NAVIERSTOKES2D) \
-        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_GAUSSIAN2D); \
+        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_GAUSSIAN2D) $(EXE_HIGHTEMP2D); \
 	do \
 	  echo "Installing $$f"; \
 	  cp $$f $(CFFC_BIN_DIR); \
@@ -927,7 +991,7 @@ uninstall-all:
 	@for f in $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
 	$(EXE_ADVECTDIFFUSE2D) $(EXE_CHEM2D) $(EXE_DUSTY2D) $(EXE_EULER2D) \
         $(EXE_ION5MOMENT2D) $(EXE_LEVELSET2D) $(EXE_NAVIERSTOKES2D) \
-        $(EXE_EMBEDDEDBOUNDARIES2D); \
+        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_HIGHTEMP2D); \
 	do \
 	  echo "Uninstalling $$f"; \
 	  cd $(CFFC_BIN_DIR); \
@@ -977,10 +1041,13 @@ clean:
 	rm -f $(AMR_DIR)*.o $(AMR_DIR)*.il $(AMR_DIR)*~
 	rm -f $(CFD_DIR)*.o $(CFD_DIR)*.il $(CFD_DIR)*~
 	rm -f $(CHEM_DIR)*.o $(CHEM_DIR)*.il $(CHEM_DIR)*~ $(CHEM_DIR)*.depend $(CHEM_DIR)*.bak
+	rm -f $(HIGHTEMP_DIR)*.o $(HIGHTEMP_DIR)*.il $(HIGHTEMP_DIR)*~ $(HIGHTEMP_DIR)*.depend $(HIGHTEMP_DIR)*.bak
+	rm -f $(EOS_DIR)*.o $(EOS_DIR)*~
 	rm -f $(DUSTY_DIR)*.o $(DUSTY_DIR)*.il $(DUSTY_DIR)*~ $(DUSTY_DIR)*.depend $(DUSTY_DIR)*.bak
 	rm -f $(ELECTROSTATIC_DIR)*.o $(ELECTROSTATIC_DIR)*.il $(ELECTROSTATIC_DIR)*~ $(ELECTROSTATIC_DIR)*.depend $(ELECTROSTATIC_DIR)*.bak
 	rm -f $(EULER_DIR)*.o $(EULER_DIR)*.il $(EULER_DIR)*~ $(EULER_DIR)*.depend $(EULER_DIR)*.bak
 	rm -f $(MULTIGRID_DIR)*~
+	rm -f $(NKS_DIR)*~
 	rm -f $(GRID_DIR)*.o $(GRID_DIR)*.il $(GRID_DIR)*~
 	rm -f $(ICEM_DIR)*.o $(ICEM_DIR)*.il $(ICEM_DIR)*~ $(ICEM_DIR)*.depend $(ICEM_DIR)*.bak
 	rm -f $(ION_DIR)*.o $(ION_DIR)*.il $(ION_DIR)*~ $(ION_DIR)*.depend $(ION_DIR)*.bak
@@ -997,6 +1064,7 @@ clean:
 	rm -f $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2)
 	rm -f $(EXE_ADVECTDIFFUSE2D)
 	rm -f $(EXE_CHEM2D)
+	rm -f $(EXE_HIGHTEMP2D)
 	rm -f $(EXE_DUSTY2D)
 	rm -f $(EXE_ELECTROSTATIC2D)
 	rm -f $(EXE_EMBEDDEDBOUNDARIES2D)
@@ -1051,6 +1119,7 @@ include CFFC.depend
 include cffc2D.depend
 include $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.depend
 include $(CHEM_DIR)Chem2D.depend
+include $(HIGHTEMP_DIR)HighTemp2D.depend
 include $(DUSTY_DIR)Dusty2D.depend
 include $(ELECTROSTATIC_DIR)Electrostatic2D.depend
 include $(INTERFACE_DIR)EmbeddedBoundaries2D.depend

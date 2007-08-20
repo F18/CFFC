@@ -63,7 +63,7 @@ void Output_Gnuplot(HyperHeat1D_UniformMesh *Soln,
 
     int i;
 
-    out_file << "# " << CFDkit_Name() 
+    out_file << "# " << CFFC_Name() 
              << ": 1D Hyperbolic Heat Equation Solution, "
              << "Time Step/Iteration Level = "
              << Number_of_Time_Steps
@@ -93,7 +93,7 @@ void Output_Tecplot(HyperHeat1D_UniformMesh *Soln,
 
     int i;
 
-    out_file << "TITLE = \"" << CFDkit_Name() 
+    out_file << "TITLE = \"" << CFFC_Name() 
              << ": 1D Hyperbolic Heat Equation Solution, "
              << "Time Step/Iteration Level = "
              << Number_of_Time_Steps

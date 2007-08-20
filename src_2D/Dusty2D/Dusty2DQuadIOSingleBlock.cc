@@ -75,7 +75,7 @@ void Output_Tecplot(Dusty2D_Quad_Block &SolnBlk,
   // Output node solution data.  
   Out_File << setprecision(14);
   if (Output_Title) {
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Dusty Solution, "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Dusty Solution, "
 	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
 	     << ", Time = " << Time
 	     << "\"" << "\n"
@@ -218,6 +218,7 @@ void Output_Tecplot(Dusty2D_Quad_Block &SolnBlk,
  *                                                                    *
  **********************************************************************/
 void Output_Cells_Tecplot(Dusty2D_Quad_Block &SolnBlk,
+		          Dusty2D_Input_Parameters &IP,
                           const int Number_of_Time_Steps,
                           const double &Time,
                           const int Block_Number,
@@ -229,7 +230,7 @@ void Output_Cells_Tecplot(Dusty2D_Quad_Block &SolnBlk,
 
   Out_File << setprecision(14);
   if (Output_Title) {
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Dusty Solution, "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Dusty Solution, "
 	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
 	     << ", Time = " << Time
 	     << "\"" << "\n"
@@ -434,7 +435,7 @@ void Output_Nodes_Tecplot(Dusty2D_Quad_Block &SolnBlk,
   // Output node solution data.  
   Out_File << setprecision(14);
   if (Output_Title) {
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Dusty Node Values, "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Dusty Node Values, "
 	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
 	     << ", Time = " << Time
 	     << "\"" << "\n"
@@ -477,7 +478,7 @@ void Output_Gradients_Tecplot(Dusty2D_Quad_Block &SolnBlk,
 
   Out_File << setprecision(14);
   if (Output_Title) {
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D NavierStokes Solution, "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D NavierStokes Solution, "
 	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
 	     << ", Time = " << Time
 	     << "\"" << "\n"
@@ -607,7 +608,7 @@ void Output_Quasi3D_Tecplot(Dusty2D_Quad_Block &SolnBlk,
   // Output node solution data.  
   Out_File << setprecision(14);
   if (Output_Title) {
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Dusty Solution, "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Dusty Solution, "
 	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
 	     << ", Time = " << Time
 	     << "\"" << "\n"
@@ -822,7 +823,7 @@ void Output_Ringleb(Dusty2D_Quad_Block &SolnBlk,
   // Output node solution data.  
   Out_File << setprecision(14);
   if (Output_Title)
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Dusty Ringleb Flow Solution "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Dusty Ringleb Flow Solution "
 	     << "\"" << "\n"
 	     << "VARIABLES = \"x\" \\ \n"
 	     << "\"y\" \\ \n"
@@ -898,7 +899,7 @@ void Output_Viscous_Channel(Dusty2D_Quad_Block &SolnBlk,
   // Output node solution data.  
   Out_File << setprecision(14);
   if (Output_Title)
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Dusty Viscous Channel Flow Solution "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Dusty Viscous Channel Flow Solution "
 	     << "\"" << "\n"
 	     << "VARIABLES = \"x\" \\ \n"
 	     << "\"y\" \\ \n"
@@ -1158,7 +1159,7 @@ void Output_Viscous_Pipe(Dusty2D_Quad_Block &SolnBlk,
   // Output node solution data.  
   Out_File << setprecision(14);
   if (Output_Title)
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Dusty Viscous Pipe Flow Solution "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Dusty Viscous Pipe Flow Solution "
 	     << "\"" << "\n"
 	     << "VARIABLES = \"x\" \\ \n"
 	     << "\"y\" \\ \n"
@@ -1393,7 +1394,7 @@ void Output_Turbulent_Pipe_Tecplot(Dusty2D_Quad_Block &SolnBlk,
   if (variable_flag == 1) {
     // Axial velocity output file.
     if (Output_Title) {
-      Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D NavierStokes Turbulent Pipe Flow Axial Velocity "
+      Out_File << "TITLE = \"" << CFFC_Name() << ": 2D NavierStokes Turbulent Pipe Flow Axial Velocity "
 	       << "\"" << "\n"
 	       << "VARIABLES = \"r/R\" \\ \n"
 	       << "\"r\" \\ \n"
@@ -1438,7 +1439,7 @@ void Output_Turbulent_Pipe_Tecplot(Dusty2D_Quad_Block &SolnBlk,
   } else if (variable_flag == 2) {
     // Kinetic energy output file.
     if (Output_Title) {
-      Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D NavierStokes Turbulent Pipe Flow Kinetic Energy "
+      Out_File << "TITLE = \"" << CFFC_Name() << ": 2D NavierStokes Turbulent Pipe Flow Kinetic Energy "
 	       << "\"" << "\n"
 	       << "VARIABLES = \"r/R\" \\ \n"
 	       << "\"r\" \\ \n"
@@ -1490,7 +1491,7 @@ void Output_Turbulent_Pipe_Tecplot(Dusty2D_Quad_Block &SolnBlk,
   } else if (variable_flag == 3) {
     // Shear stress output file.
     if (Output_Title) {
-      Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D NavierStokes Turbulent Pipe Flow uv "
+      Out_File << "TITLE = \"" << CFFC_Name() << ": 2D NavierStokes Turbulent Pipe Flow uv "
 	       << "\"" << "\n"
 	       << "VARIABLES = \"r/R\" \\ \n"
 	       << "\"r\" \\ \n"
@@ -1590,7 +1591,7 @@ void Output_Flat_Plate(Dusty2D_Quad_Block &SolnBlk,
   // Output node solution data.  
   Out_File_Soln << setprecision(14);
   if (Output_Title_Soln) {
-    Out_File_Soln << "TITLE = \"" << CFDkit_Name() << ": 2D Dusty Solution, "
+    Out_File_Soln << "TITLE = \"" << CFFC_Name() << ": 2D Dusty Solution, "
 		  << "\"" << "\n"
 		  << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n"
@@ -1690,7 +1691,7 @@ void Output_Flat_Plate(Dusty2D_Quad_Block &SolnBlk,
   }
 
   if (Output_Title_Skin) {
-    Out_File_Skin << "TITLE = \"" << CFDkit_Name() << ": 2D Dusty Solution, "
+    Out_File_Skin << "TITLE = \"" << CFFC_Name() << ": 2D Dusty Solution, "
 		  << "\"" << "\n"
 		  << "VARIABLES = \"x\" \\ \n"
 		  << "\"Rex\" \\ \n"
@@ -1760,11 +1761,11 @@ void Output_Driven_Cavity_Flow(Dusty2D_Quad_Block &SolnBlk,
 
   // Output node solution data.  
   if (Output_Title) {
-    Out_File_u << "TITLE = \"" << CFDkit_Name() << ": 2D Dusty Driven Cavity Flow Solution u-velocity Comparison "
+    Out_File_u << "TITLE = \"" << CFFC_Name() << ": 2D Dusty Driven Cavity Flow Solution u-velocity Comparison "
 	       << "\"" << "\n"
 	       << "VARIABLES = \"x\" \\ \n"
 	       << "\"u\" \\ \n";
-    Out_File_v << "TITLE = \"" << CFDkit_Name() << ": 2D Dusty Driven Cavity Flow Solution v-velocity Comparison "
+    Out_File_v << "TITLE = \"" << CFFC_Name() << ": 2D Dusty Driven Cavity Flow Solution v-velocity Comparison "
 	       << "\"" << "\n"
 	       << "VARIABLES = \"x\" \\ \n"
 	       << "\"v\" \\ \n";
@@ -1773,7 +1774,7 @@ void Output_Driven_Cavity_Flow(Dusty2D_Quad_Block &SolnBlk,
   // If the output title flag is on (first time the current processor
   // is writing data) and the current processor is the primary processor
   // then write the solution data of Ghia et al. to the output file.
-  if (Output_Title && CFDkit_Primary_MPI_Processor()) {
+  if (Output_Title && CFFC_Primary_MPI_Processor()) {
     // Output a zone corresponding to the u-velocity component at the
     // geometric centre of the cavity.
     Out_File_u << "ZONE T = \"u-velocity"

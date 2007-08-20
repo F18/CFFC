@@ -1769,8 +1769,8 @@ GMRES_RightPrecon_MatrixFree(AdvectDiffuse2D_Quad_Block *Soln_ptr,
     } /* endif */
   } /* endfor */ 
   
-  total_norm_uo = sqrt(CFDkit_Summation_MPI(total_norm_uo));
-  total_norm_b = sqrt(CFDkit_Summation_MPI(total_norm_b));
+  total_norm_uo = sqrt(CFFC_Summation_MPI(total_norm_uo));
+  total_norm_b = sqrt(CFFC_Summation_MPI(total_norm_b));
   total_norm_r = total_norm_b;
   total_beta   = total_norm_r;
 
@@ -1784,7 +1784,7 @@ GMRES_RightPrecon_MatrixFree(AdvectDiffuse2D_Quad_Block *Soln_ptr,
   if (total_residual <= tol) {
     tol = total_residual;
     max_iter = 0;
-    if (CFDkit_Primary_MPI_Processor()) { 
+    if (CFFC_Primary_MPI_Processor()) { 
       cout << "** norm(G.b)=ZERO **" << endl; cout.flush();
     }
     return 0;
@@ -1819,7 +1819,7 @@ GMRES_RightPrecon_MatrixFree(AdvectDiffuse2D_Quad_Block *Soln_ptr,
       ////////////////////////////////////////////////////////////////////
       
       /* MPI barrier to ensure processor synchronization. */
-      CFDkit_Barrier_MPI();  
+      CFFC_Barrier_MPI();  
       
       /* Send solution information between neighbouring blocks.*/
       error_flag = Send_All_Messages(G, 
@@ -1832,7 +1832,7 @@ GMRES_RightPrecon_MatrixFree(AdvectDiffuse2D_Quad_Block *Soln_ptr,
 	     << ".\n";
 	cout.flush();
       } /* endif */
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
       
       ////////////////////////////////////////////////////////////////////
@@ -1857,7 +1857,7 @@ GMRES_RightPrecon_MatrixFree(AdvectDiffuse2D_Quad_Block *Soln_ptr,
 	  
 	} /* endif */
       } /* endfor */
-      total_norm_z = sqrt(CFDkit_Summation_MPI(total_norm_z));
+      total_norm_z = sqrt(CFFC_Summation_MPI(total_norm_z));
       
       /* Determine epsilon based on 2-norm of z. */
       //epsilon = 1.e-08/total_norm_z; 
@@ -1900,7 +1900,7 @@ GMRES_RightPrecon_MatrixFree(AdvectDiffuse2D_Quad_Block *Soln_ptr,
 	     << ".\n";
 	cout.flush();
       } /* endif */
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
 	  
       // Apply boundary flux corrections to residual to ensure that method is conservative.
@@ -1942,7 +1942,7 @@ GMRES_RightPrecon_MatrixFree(AdvectDiffuse2D_Quad_Block *Soln_ptr,
 	    total_H_temp = total_H_temp + dot(G[Bcount].w, G[Bcount].v[k]);
 	  } /* endif */
 	} /* endfor */ 
-	total_H_temp = CFDkit_Summation_MPI(total_H_temp);
+	total_H_temp = CFFC_Summation_MPI(total_H_temp);
 	/***************************************/
 	
 	for ( Bcount = 0 ; Bcount < NBLK ; ++Bcount ) {
@@ -1965,7 +1965,7 @@ GMRES_RightPrecon_MatrixFree(AdvectDiffuse2D_Quad_Block *Soln_ptr,
 	  total_H_temp = total_H_temp + sqr(norm(G[Bcount].w));
 	} /* endif */
       } /* endfor */ 
-      total_H_temp = sqrt(CFDkit_Summation_MPI(total_H_temp));
+      total_H_temp = sqrt(CFFC_Summation_MPI(total_H_temp));
       /*****************************************/
       
       /*******************************************/
@@ -2009,7 +2009,7 @@ GMRES_RightPrecon_MatrixFree(AdvectDiffuse2D_Quad_Block *Soln_ptr,
       } /* endif */
     } /* endfor */
   
-    if (CFDkit_Primary_MPI_Processor()) { 
+    if (CFFC_Primary_MPI_Processor()) { 
       cout <<"###### RESTART " << int(j/m) << " #####" 
            << " total_residual = " << total_residual << " tol = " << tol << endl;
     } /* endif */
@@ -2026,7 +2026,7 @@ GMRES_RightPrecon_MatrixFree(AdvectDiffuse2D_Quad_Block *Soln_ptr,
 	
       } /* endif */
     } /* endfor */ 
-    total_norm_x = sqrt(CFDkit_Summation_MPI(total_norm_x));
+    total_norm_x = sqrt(CFFC_Summation_MPI(total_norm_x));
 
     /*************************/
     /** Matrix-Free Version **/
@@ -2080,7 +2080,7 @@ GMRES_RightPrecon_MatrixFree(AdvectDiffuse2D_Quad_Block *Soln_ptr,
 	      << ".\n";
 	 cout.flush();
       } /* endif */
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
 	  
       // Apply boundary flux corrections to residual to ensure that method is conservative.
@@ -2123,7 +2123,7 @@ GMRES_RightPrecon_MatrixFree(AdvectDiffuse2D_Quad_Block *Soln_ptr,
 	
       } /* endif */
     } /* endfor */ 
-    total_norm_r = sqrt(CFDkit_Summation_MPI(total_norm_r)); 
+    total_norm_r = sqrt(CFFC_Summation_MPI(total_norm_r)); 
     total_beta = total_norm_r;
     
     if ((total_residual = total_beta / total_norm_b) < tol) {
@@ -2194,7 +2194,7 @@ RPMF_Update(AdvectDiffuse2D_Quad_Block *Soln_ptr,
   ////////////////////////////////////////////////////////////////////
   
   /* MPI barrier to ensure processor synchronization. */
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
   
   /* Send solution information between neighbouring blocks. */
   error_flag = Send_All_Messages(G, 
@@ -2207,8 +2207,8 @@ RPMF_Update(AdvectDiffuse2D_Quad_Block *Soln_ptr,
           << ".\n";
      cout.flush();
   } /* endif */
-  error_flag = CFDkit_OR_MPI(error_flag);
-  if (error_flag) cout << " CFDkit_OR_MPI(error_flag) " << endl;
+  error_flag = CFFC_OR_MPI(error_flag);
+  if (error_flag) cout << " CFFC_OR_MPI(error_flag) " << endl;
 
   ////////////////////////////////////////////////////////////////////
   ///////////////////*  END MESSAGE PASSING  *////////////////////////    
@@ -2500,13 +2500,13 @@ GMRES_Algorithm(AdvectDiffuse2D_Quad_Block *Soln_ptr,
 					      gmres_tol); 
   } 
 
-  if (CFDkit_Primary_MPI_Processor()) {  
+  if (CFFC_Primary_MPI_Processor()) {  
     cout << "        GMRES iter = " << setw(5) << max_gmres_iter 
 	 << "  gmrestol = " << setw(10) << gmres_tol << endl;
   } /* endif */
 
   if (error_flag) {
-    if (CFDkit_Primary_MPI_Processor()) {  
+    if (CFFC_Primary_MPI_Processor()) {  
       cout << "\nAdvectDiffuse2D GMRES ERROR: Unable to reach the specified convergence tolerance in the maximum number of iterations in block number " 
            << Bcount << ".\n";
       cout.flush();

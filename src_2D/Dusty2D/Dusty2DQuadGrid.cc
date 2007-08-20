@@ -34,7 +34,7 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
   case GRID_READ_FROM_DEFINITION_FILE :
     Grid_ptr = Read_Multi_Block_Grid_Definition(Grid_ptr,IP);
     if (Grid_ptr == NULL) {
-      cout << "\n " << CFDkit_Name() 
+      cout << "\n " << CFFC_Name() 
 	   << " Dusty2D ERROR: Unable to open multi-block mesh definition file "
 	   << IP.Grid_Definition_File_Name << ".\n";
     }
@@ -63,7 +63,7 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
   case GRID_READ_FROM_GRID_DATA_FILE :
     Grid_ptr = Read_Multi_Block_Grid(Grid_ptr,IP);
     if (Grid_ptr == NULL) {
-      cout << "\n " << CFDkit_Name() 
+      cout << "\n " << CFFC_Name() 
 	   << " Dusty2D ERROR: Unable to open multi-block mesh data file "
 	   << IP.Grid_File_Name << ".\n";
     }
@@ -279,7 +279,6 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
     Grid_ptr = Grid_Bump_Channel_Flow(Grid_ptr,
 				      IP.Number_of_Blocks_Idir,
 				      IP.Number_of_Blocks_Jdir,
-				      IP.Cylinder_Radius,
 				      IP.Smooth_Bump,
 				      IP.Number_of_Cells_Idir,
 				      IP.Number_of_Cells_Jdir,

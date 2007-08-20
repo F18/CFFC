@@ -53,6 +53,9 @@ void Set_Default_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   char *string_ptr;
   double cos_angle, sin_angle;
   
+  // CFFC root directory path:
+  IP.get_cffc_path();
+
   string_ptr = "NavierStokes2D.in";
   strcpy(IP.Input_File_Name,string_ptr);
 
@@ -206,7 +209,7 @@ void Set_Default_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   IP.X_Rotate = ZERO;
 
   // Boundary conditions:
-  string_ptr = "Off";
+  string_ptr = "OFF";
   strcpy(IP.Boundary_Conditions_Specified,string_ptr);
   IP.BCs_Specified = OFF;
   string_ptr = "None";
@@ -227,10 +230,10 @@ void Set_Default_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   IP.Mesh_Stretching_Factor_Jdir = 1.01;
 
   // NASA rotor input variables:
-  string_ptr = "/nfs/fe01/d1/cfd/jai/CFDkit+caboodle/data/NASA_Rotors/R37/";
-  strcpy(IP.NASA_Rotor37_Data_Directory,string_ptr);
-  string_ptr = "/nfs/fe01/d1/cfd/jai/CFDkit+caboodle/data/NASA_Rotors/R67/";
-  strcpy(IP.NASA_Rotor67_Data_Directory,string_ptr);
+  strcpy(IP.NASA_Rotor37_Data_Directory, IP.CFFC_Path);
+  strcpy(IP.NASA_Rotor37_Data_Directory, "/data/NASA_Rotors/R37/");
+  strcpy(IP.NASA_Rotor67_Data_Directory, IP.CFFC_Path);
+  strcpy(IP.NASA_Rotor67_Data_Directory, "/data/NASA_Rotors/R67/");
   IP.Rotor_Flow_Type = PEAK_FLOW;
   IP.Rotor_Percent_Span = 50.00;
 
@@ -292,7 +295,7 @@ void Set_Default_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   string_ptr = " ";
   strcpy(IP.Next_Control_Parameter,string_ptr);
   IP.Line_Number = 0;
-  IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+  IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
   IP.Number_of_Blocks_Per_Processor = 10;
 
 }
@@ -311,6 +314,10 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
 
   double cos_angle, sin_angle;
 
+  // CFFC path:
+  MPI::COMM_WORLD.Bcast(IP.CFFC_Path, 
+ 			INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D,
+			MPI::CHAR, 0);
   // Input file name and line number:
   MPI::COMM_WORLD.Bcast(IP.Input_File_Name,
 			INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D,
@@ -493,7 +500,7 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   MPI::COMM_WORLD.Bcast(&(IP.Wave_Width),
 			1,
 			MPI::DOUBLE,0);
-  if (!CFDkit_Primary_MPI_Processor()) {
+  if (!CFFC_Primary_MPI_Processor()) {
     Initialize_Reference_State(IP);
   }
   for (int nv = 1; nv <= NUM_VAR_NAVIERSTOKES2D; nv++) {
@@ -680,7 +687,7 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
 			1,
 			MPI::DOUBLE,0);
   // ICEM:
-  if (!CFDkit_Primary_MPI_Processor()) {
+  if (!CFFC_Primary_MPI_Processor()) {
     IP.ICEMCFD_FileNames = new char*[3];
     for (int i = 0; i < 3; i++) {
       IP.ICEMCFD_FileNames[i] = new char[INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D];
@@ -817,8 +824,8 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
 			1,
 			MPI::INT,0);
   // Number of processors:
-  if (!CFDkit_Primary_MPI_Processor()) {
-    IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+  if (!CFFC_Primary_MPI_Processor()) {
+    IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
   }
   MPI::COMM_WORLD.Bcast(&(IP.Number_of_Blocks_Per_Processor),
 			1,
@@ -847,6 +854,10 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP,
   int Source_Rank = 0;
   double cos_angle, sin_angle;
 
+  // CFFC path:
+  Communicator.Bcast(IP.CFFC_Path, 
+ 		     INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D,
+		     MPI::CHAR, Source_Rank);
   Communicator.Bcast(IP.Input_File_Name,
 		     INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D,
 		     MPI::CHAR,Source_Rank);
@@ -1029,7 +1040,7 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP,
   Communicator.Bcast(&(IP.Wave_Width),
 		     1,
 		     MPI::DOUBLE,Source_Rank);
-  if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+  if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
     Initialize_Reference_State(IP);
   }
   for (int nv = 1; nv <= NUM_VAR_NAVIERSTOKES2D; nv++) {
@@ -1216,7 +1227,7 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP,
 		     1,
 		     MPI::DOUBLE,Source_Rank);
   // ICEM:
-  if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
+  if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
     IP.ICEMCFD_FileNames = new char*[3];
     for (int i = 0; i < 3; i++) {
       IP.ICEMCFD_FileNames[i] = new char[INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D];
@@ -1354,8 +1365,8 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP,
 		     1,
 		     MPI::INT,Source_Rank);
   // Number of blocks per processor:
-  if (!(CFDkit_MPI::This_Processor_Number == Source_CPU)) {
-    IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+  if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+    IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
   }
   Communicator.Bcast(&(IP.Number_of_Blocks_Per_Processor),
 		     1,
@@ -1407,7 +1418,16 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
   int tpt, bct;
   Vector2D Xt;
 
-  if (strcmp(IP.Next_Control_Parameter,"Time_Integration_Type") == 0) {
+  if (strcmp(IP.Next_Control_Parameter, "CFFC_Path") == 0) {
+    i_command = 1111;
+    Get_Next_Input_Control_Parameter(IP);
+    strcpy(IP.CFFC_Path, IP.Next_Control_Parameter);
+    strcpy(IP.NASA_Rotor37_Data_Directory, IP.CFFC_Path);
+    strcpy(IP.NASA_Rotor37_Data_Directory, "/data/NASA_Rotors/R37/");
+    strcpy(IP.NASA_Rotor67_Data_Directory, IP.CFFC_Path);
+    strcpy(IP.NASA_Rotor67_Data_Directory, "/data/NASA_Rotors/R67/");
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Time_Integration_Type") == 0) {
     i_command = 1;
     Get_Next_Input_Control_Parameter(IP);
     strcpy(IP.Time_Integration_Type,IP.Next_Control_Parameter);
@@ -1997,9 +2017,9 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Smooth_Bump") == 0) {
     i_command = 37;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Smooth_Bump = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Smooth_Bump = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -2319,9 +2339,9 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"AMR") == 0) {
     i_command = 71;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.AMR = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.AMR = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -2379,9 +2399,9 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Interface_Refinement_Condition") == 0) {
     i_command = 79;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Interface_Refinement_Condition = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Interface_Refinement_Condition = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -2429,9 +2449,9 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Gradient_Density") == 0) {
     i_command = 85;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Refinement_Criteria_Gradient_Density = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Refinement_Criteria_Gradient_Density = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -2440,9 +2460,9 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Divergence_Velocity") == 0) {
     i_command = 86;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Refinement_Criteria_Divergence_Velocity = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Refinement_Criteria_Divergence_Velocity = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -2451,9 +2471,9 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Curl_Velocity") == 0) {
     i_command = 87;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Refinement_Criteria_Curl_Velocity = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Refinement_Criteria_Curl_Velocity = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -2462,9 +2482,9 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Gradient_Turbulence_Kinetic_Energy") == 0) {
     i_command = 88;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Refinement_Criteria_Gradient_Turbulence_Kinetic_Energy = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Refinement_Criteria_Gradient_Turbulence_Kinetic_Energy = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -2514,9 +2534,9 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Mesh_Stretching") == 0) {
     i_command = 101;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.i_Mesh_Stretching = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.i_Mesh_Stretching = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -2573,9 +2593,9 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Smooth_Quad_Block") == 0) {
     i_command = 106;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.i_Smooth_Quad_Block = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.i_Smooth_Quad_Block = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -2666,9 +2686,9 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Turbulent_Wall_Injection") == 0) {
     i_command = 169;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.i_Turbulent_Wall_Injection = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.i_Turbulent_Wall_Injection = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -2710,9 +2730,9 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Defect_Correction") == 0) {
     i_command = 204;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Multigrid_IP.Defect_Correction = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Multigrid_IP.Defect_Correction = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -2722,9 +2742,9 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     i_command = 205;
     IP.Line_Number = IP.Line_Number + 1;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Multigrid_IP.First_Order_Coarse_Mesh_Reconstruction = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Multigrid_IP.First_Order_Coarse_Mesh_Reconstruction = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -2733,9 +2753,9 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Prolong_Using_Injection") == 0) {
     i_command = 206;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Multigrid_IP.Prolong_Using_Injection = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Multigrid_IP.Prolong_Using_Injection = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -2744,9 +2764,9 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Apply_Coarse_Mesh_Boundary_Conditions") == 0) {
     i_command = 207;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Multigrid_IP.Apply_Coarse_Mesh_Boundary_Conditions = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Multigrid_IP.Apply_Coarse_Mesh_Boundary_Conditions = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -2755,9 +2775,9 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Injection_at_Dirichlet_Boundary_Conditions") == 0) {
     i_command = 208;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Multigrid_IP.Injection_at_Dirichlet_Boundary_Conditions = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Multigrid_IP.Injection_at_Dirichlet_Boundary_Conditions = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -2766,9 +2786,9 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Update_Stability_Switch") == 0) {
     i_command = 209;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Multigrid_IP.Update_Stability_Switch = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Multigrid_IP.Update_Stability_Switch = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -2809,15 +2829,32 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Multigrid_IP.Number_of_Smooths_on_Coarsest_Level < 0) i_command = INVALID_INPUT_VALUE;
 
-  } else if (strcmp(IP.Next_Control_Parameter,"Convergence_Residual_Level") == 0) {
+  } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Absolute_Convergence_Tolerance") == 0) {
     i_command = 215;
     IP.Line_Number = IP.Line_Number + 1;
-    IP.Input_File >> IP.Multigrid_IP.Convergence_Residual_Level;
-    IP.Input_File.getline(buffer,sizeof(buffer));
-    if (IP.Multigrid_IP.Convergence_Residual_Level < ZERO) i_command = INVALID_INPUT_VALUE;
+    IP.Input_File >> IP.Multigrid_IP.Absolute_Convergence_Tolerance;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Relative_Convergence_Tolerance") == 0) {
+    i_command = 216;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Multigrid_IP.Relative_Convergence_Tolerance;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "FMG_Absolute_Convergence_Tolerance") == 0) {
+    i_command = 217;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Multigrid_IP.FMG_Absolute_Convergence_Tolerance;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "FMG_Relative_Convergence_Tolerance") == 0) {
+    i_command = 218;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Multigrid_IP.FMG_Relative_Convergence_Tolerance;
+    IP.Input_File.getline(buffer, sizeof(buffer));
 
   } else if (strcmp(IP.Next_Control_Parameter,"Multigrid_Smoothing_Type") == 0) {
-    i_command = 216;
+    i_command = 219;
     Get_Next_Input_Control_Parameter(IP);
     strcpy(IP.Multigrid_IP.Smoothing_Type,IP.Next_Control_Parameter);
     if (strcmp(IP.Multigrid_IP.Smoothing_Type,"Explicit_Euler") == 0) {
@@ -2837,21 +2874,21 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     }
 
   } else if (strcmp(IP.Next_Control_Parameter,"Ncycles_Regular_Multigrid") == 0) {
-    i_command = 217;
+    i_command = 220;
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File >> IP.Multigrid_IP.Ncycles_Regular_Multigrid;
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Multigrid_IP.Ncycles_Regular_Multigrid < 0) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(IP.Next_Control_Parameter,"Ncycles_Full_Multigrid") == 0) {
-    i_command = 218;
+    i_command = 221;
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File >> IP.Multigrid_IP.Ncycles_Full_Multigrid;
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Multigrid_IP.Ncycles_Full_Multigrid < 0) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(IP.Next_Control_Parameter,"Physical_Time_Integration_Type") == 0) {
-    i_command = 219;
+    i_command = 222;
     Get_Next_Input_Control_Parameter(IP);
     strcpy(IP.Multigrid_IP.Physical_Time_Integration_Type,
 	   IP.Next_Control_Parameter);
@@ -2879,18 +2916,24 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     }
 
   } else if (strcmp(IP.Next_Control_Parameter,"Physical_Time_CFL_Number") == 0) {
-    i_command = 220;
+    i_command = 223;
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File >> IP.Multigrid_IP.Physical_Time_CFL_Number;
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Multigrid_IP.Physical_Time_CFL_Number <= ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(IP.Next_Control_Parameter,"Dual_Time_Convergence_Residual_Level") == 0) {
-    i_command = 221;
+    i_command = 224;
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File >> IP.Multigrid_IP.Dual_Time_Convergence_Residual_Level;
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Multigrid_IP.Dual_Time_Convergence_Residual_Level < ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Multigrid_Write_Output_Cells_Frequency") == 0) {
+    i_command = 225;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Multigrid_IP.Write_Output_Cells_Frequency;
+    IP.Input_File.getline(buffer,sizeof(buffer));
 
     ////////////////////////////////////////////////////////////////////
     // SOLID PROPELLANT TYPE                                          //
@@ -2928,9 +2971,9 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     i_command = 500;
     Get_Next_Input_Control_Parameter(IP);
     strcpy(IP.Boundary_Conditions_Specified,IP.Next_Control_Parameter);
-    if (strcmp(IP.Boundary_Conditions_Specified,"On") == 0) {
+    if (strcmp(IP.Boundary_Conditions_Specified,"ON") == 0) {
       IP.BCs_Specified = ON;
-    } else if (strcmp(IP.Boundary_Conditions_Specified,"Off") == 0) {
+    } else if (strcmp(IP.Boundary_Conditions_Specified,"OFF") == 0) {
       IP.BCs_Specified = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -3284,9 +3327,9 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     i_command = 612;
     Get_Next_Input_Control_Parameter(IP);
     strcpy(IP.Interface_IP.BC_Type,IP.Next_Control_Parameter);
-    if (strcmp(IP.Interface_IP.BC_Type,"On") == 0) {
+    if (strcmp(IP.Interface_IP.BC_Type,"ON") == 0) {
       IP.Reset_Interface_Motion_Type = ON;
-    } else if (strcmp(IP.Interface_IP.BC_Type,"Off") == 0) {
+    } else if (strcmp(IP.Interface_IP.BC_Type,"OFF") == 0) {
       IP.Reset_Interface_Motion_Type = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
