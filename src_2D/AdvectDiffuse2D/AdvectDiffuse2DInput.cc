@@ -55,6 +55,9 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     int i;
     char *string_ptr;// = new char[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
 
+    // CFFC root directory path:
+    IP.get_cffc_path();
+
     string_ptr = "AdvectDiffuse2D.in";
     strcpy(IP.Input_File_Name, string_ptr);
 
@@ -238,6 +241,9 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
 #ifdef _MPI_VERSION
     int i;
 
+    MPI::COMM_WORLD.Bcast(IP.CFFC_Path, 
+ 			  INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D, 
+			  MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(IP.Input_File_Name, 
                           INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D, 
                           MPI::CHAR, 0);
@@ -616,6 +622,9 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
     int Source_Rank = 0;
     int i;
 
+    Communicator.Bcast(IP.CFFC_Path, 
+ 		       INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D, 
+		       MPI::CHAR, Source_Rank);
     Communicator.Bcast(IP.Input_File_Name, 
                        INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D, 
                        MPI::CHAR, Source_Rank);
@@ -1017,7 +1026,12 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
 
     i_command = 0;
 
-    if (strcmp(IP.Next_Control_Parameter, "Time_Integration_Type") == 0) {
+    if (strcmp(IP.Next_Control_Parameter, "CFFC_Path") == 0) {
+       i_command = 1111;
+       Get_Next_Input_Control_Parameter(IP);
+       strcpy(IP.CFFC_Path, IP.Next_Control_Parameter);
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Time_Integration_Type") == 0) {
        i_command = 1;
        Get_Next_Input_Control_Parameter(IP);
        strcpy(IP.Time_Integration_Type, 
@@ -1902,15 +1916,32 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Multigrid_IP.Number_of_Smooths_on_Coarsest_Level < ZERO) i_command = INVALID_INPUT_VALUE;
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Convergence_Residual_Level") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Absolute_Convergence_Tolerance") == 0) {
        i_command = 208;
        IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.Multigrid_IP.Convergence_Residual_Level;
+       IP.Input_File >> IP.Multigrid_IP.Absolute_Convergence_Tolerance;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Multigrid_IP.Convergence_Residual_Level < ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Relative_Convergence_Tolerance") == 0) {
+       i_command = 209;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Multigrid_IP.Relative_Convergence_Tolerance;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+
+    } else if (strcmp(IP.Next_Control_Parameter, "FMG_Absolute_Convergence_Tolerance") == 0) {
+       i_command = 210;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Multigrid_IP.FMG_Absolute_Convergence_Tolerance;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+
+    } else if (strcmp(IP.Next_Control_Parameter, "FMG_Relative_Convergence_Tolerance") == 0) {
+       i_command = 211;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Multigrid_IP.FMG_Relative_Convergence_Tolerance;
+       IP.Input_File.getline(buffer, sizeof(buffer));
 
     } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Smoothing_Type") == 0) {
-       i_command = 209;
+       i_command = 212;
        Get_Next_Input_Control_Parameter(IP);
        strcpy(IP.Multigrid_IP.Smoothing_Type, 
               IP.Next_Control_Parameter);

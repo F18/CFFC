@@ -766,6 +766,7 @@ Output_Multigrid_Cells(const int &number_of_time_steps,
     for (int nb = 0; nb < List_of_Local_Solution_Blocks[level].Nblk; nb++) {
       if (List_of_Local_Solution_Blocks[level].Block[nb].used == ADAPTIVEBLOCK2D_USED) {
 	Output_Cells_Tecplot(Local_SolnBlk[level][nb],
+                             *IP,
 			     number_of_time_steps,
 			     Time,
 			     List_of_Local_Solution_Blocks[level].Block[nb].gblknum,
@@ -3631,6 +3632,7 @@ Execute(int &batch_flag,
   int error_flag, command_flag, first_step, line_number, limiter_freezing;
   int initial_top_level;
   double residual_l1_norm, residual_l2_norm, residual_max_norm;
+  double initial_residual_l2_norm = -1.0, ratio_residual_l2_norm = -1.0;
   unsigned long cycles_for_this_level, max_cycles_for_this_level;
 #ifdef _GNU_GCC_V3
   max_cycles_for_this_level = numeric_limits<unsigned long>::max();
@@ -3769,6 +3771,12 @@ Execute(int &batch_flag,
 	residual_max_norm = EBSolver[top_level].Max_Norm_Residual();
 	residual_max_norm = CFFC_Maximum_MPI(residual_max_norm);
 
+	if (cycles == 2) {
+	   initial_residual_l2_norm = residual_l2_norm;
+	} else if (cycles > 2 && fabs(initial_residual_l2_norm) > NANO) {
+	   ratio_residual_l2_norm = residual_l2_norm / initial_residual_l2_norm;
+	}
+
 	// Update CPU time used for the calculation so far.
 	processor_cpu_time.update();
 	// Total CPU time for all processors. 
@@ -3821,6 +3829,7 @@ Execute(int &batch_flag,
 						Time*THOUSAND,
 						total_cpu_time,
 						residual_l2_norm,
+						ratio_residual_l2_norm,
 						first_step,
 						IP->Output_Progress_Frequency);
 	if (CFFC_Primary_MPI_Processor() && !first_step) {
@@ -3836,17 +3845,80 @@ Execute(int &batch_flag,
 	// Check if the maximum number of time steps has been reached or
 	// if the residual has dropped below the prescribed level for a
 	// full multigrid cycle.
-	if (number_of_time_steps >= IP->Maximum_Number_of_Time_Steps ||
-	    (residual_l2_norm < IP->Multigrid_IP.Convergence_Residual_Level && 
-	     cycles > 1 && 
-	     !first_step &&
-	     top_level != FINEST_LEVEL)) {
+	bool please_stop = false;
+	if (number_of_time_steps >= IP->Maximum_Number_of_Time_Steps) {
+	  please_stop = true;
+	}
+	if (cycles > 2) {
+	   if (top_level == FINEST_LEVEL) { // regular multigrid cycles
+   	      if (residual_l2_norm < IP->Multigrid_IP.Absolute_Convergence_Tolerance) {
+	         please_stop = true;
+	  	 if (!batch_flag) {
+ 		    int tempp = cout.precision(); 
+                    cout.precision(2); 
+		    cout.setf(ios::scientific);
+ 		    cout << endl << "Regular Multigrid: met absolute convergence tolerance";
+		    cout << " (" << residual_l2_norm << " < ";
+		    cout << IP->Multigrid_IP.Absolute_Convergence_Tolerance << ")." << endl;
+		    cout.precision(tempp);
+		    cout.unsetf(ios::scientific);
+		 } /* endif */
+	      } /* endif */
+  	      if (ratio_residual_l2_norm < IP->Multigrid_IP.Relative_Convergence_Tolerance) {
+ 		 please_stop = true;
+		 if (!batch_flag) {
+		    int tempp = cout.precision(); 
+                    cout.precision(2);
+		    cout.setf(ios::scientific);
+	  	    cout << endl << "Regular Multigrid: met relative convergence tolerance";
+		    cout << " (" << ratio_residual_l2_norm << " < ";
+		    cout << IP->Multigrid_IP.Relative_Convergence_Tolerance << ")." << endl;
+		    cout.precision(tempp);
+		    cout.unsetf(ios::scientific);
+		 } /* endif */
+	      } /* endif */
+	   } else { // otherwise doing full multigrid cycles.
+	      if (residual_l2_norm < IP->Multigrid_IP.FMG_Absolute_Convergence_Tolerance) {
+		 please_stop = true;
+		 if (!batch_flag) {
+		    int tempp = cout.precision(); 
+                    cout.precision(2);
+		    cout.setf(ios::scientific);
+		    cout << endl << "Top Level: " << top_level;
+		    cout << " Finest level: " << FINEST_LEVEL << ".";
+		    cout << " Met absolute convergence tolerance";
+		    cout << " (" << residual_l2_norm << " < ";
+		    cout << IP->Multigrid_IP.FMG_Absolute_Convergence_Tolerance << ")." << endl;
+		    cout.precision(tempp);
+		    cout.unsetf(ios::scientific);
+		 } /* endif */
+	      } /* endif */
+	      if (ratio_residual_l2_norm < IP->Multigrid_IP.FMG_Relative_Convergence_Tolerance) {
+		 please_stop = true;
+		 if (!batch_flag) {
+		    int tempp = cout.precision(); 
+                    cout.precision(2);
+		    cout.setf(ios::scientific);
+		    cout << endl << "Top Level: " << top_level;
+		    cout << " Finest level: " << FINEST_LEVEL << ".";
+		    cout << " Met relative convergence tolerance";
+		    cout << " (" << ratio_residual_l2_norm << " < ";
+		    cout << IP->Multigrid_IP.FMG_Relative_Convergence_Tolerance << ")." << endl;
+		    cout.precision(tempp);
+		    cout.unsetf(ios::scientific);
+		 } /* endif */
+	      } /* endif */
+  	   } /* endif */
+	} // if (cycles > 2) for convergence test
+
+	if (please_stop) {
 	  // Exit criteria has been met.  Output the final progress
 	  // information for the calculation and exit.
 	  if (!batch_flag) Output_Progress_L2norm(number_of_time_steps,
 						  Time*THOUSAND,
 						  total_cpu_time,
 						  residual_l2_norm,
+						  ratio_residual_l2_norm,
 						  first_step,
 						  number_of_time_steps);
 	  break;
@@ -3868,6 +3940,9 @@ Execute(int &batch_flag,
 	  }
 	  // Set the limiter freezing flag.
 	  limiter_freezing = ON;
+  	  if (CFFC_Primary_MPI_Processor()) {
+	     cout << "Freezing Gradient Limiters." << endl;
+	  }
 	}
 
 	// Update the solution for the next time-step/cylce using the 

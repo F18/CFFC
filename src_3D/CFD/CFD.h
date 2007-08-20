@@ -771,6 +771,23 @@ inline double vanalbada(const double &x, const double &y,
 		        const double &epsi)
    { return (x*y+sqr(epsi))*(x+y)/(sqr(x)+sqr(y)+TWO*sqr(epsi)); }
 
+// Inline functions for AUSMplusUP flux calculation.
+// M+1
+inline double Mplus_1(double M)
+  { return 0.5*(M + fabs(M)); }
+
+// M-1
+inline double Mminus_1(double M)
+  { return 0.5*(M - fabs(M)); }
+
+// M+2
+inline double Mplus_2(double M)
+  { return 0.25*sqr(M + 1.0); }
+
+// M-2
+inline double Mminus_2(double M)
+  { return -0.25*sqr(M - 1.0); }
+
 /********************************************************
  * CFD -- Define CFD structures and classes.            *
  ********************************************************/

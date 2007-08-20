@@ -1,6 +1,6 @@
 /**********************************************************************
- * HighTemp2DQuadSolvers.cc: 2D N-S HighTemp  equation multi-     *
- *                               block quadrilateral mesh solvers.    *
+ * HighTemp2DQuadSolvers.cc: 2D High-Temp equation multi-block        *
+ *                           quadrilateral mesh solvers.              *
  **********************************************************************/
 
 #include "HighTemp2DQuad.h"
@@ -11,7 +11,7 @@
 #include "../CFD/EllipticOperatorAnalysis2D.h"
 
 /**********************************************************************
- * Routine: HighTemp2DQuadSolver                                  *
+ * Routine: HighTemp2DQuadSolver                                      *
  *                                                                    *
  * Computes solutions to 2D Navier-Stokes HT  equations on 2D         *
  * quadrilateral multi-block solution-adaptive mesh.                  *
@@ -40,24 +40,24 @@ int HighTemp2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 
   // Define residual file and cpu time variables.
   ofstream residual_file;
-
-	// processor_cpu_time is the real deal whereas total_cpu_time is used
-	// only to print. Whenever total_cpu_time is to be printed, it is
-	// calculated from processor_cpu_time. processor_cpu_time is passed from
-	// solver to solver (FAS, plain time stepping, NKS, etc) and is the only
-	// thing passed. Those solvers who wish to track their own CPU time
-	// should record the value of processor_cpu_time before and after their
-	// execution but should only ever update processor_cpu_time. This is 
-	// especially important for cases with mesh refinements.
+ 
+  // processor_cpu_time is the real deal whereas total_cpu_time is used
+  // only to print. Whenever total_cpu_time is to be printed, it is
+  // calculated from processor_cpu_time. processor_cpu_time is passed from
+  // solver to solver (FAS, plain time stepping, NKS, etc) and is the only
+  // thing passed. Those solvers who wish to track their own CPU time
+  // should record the value of processor_cpu_time before and after their
+  // execution but should only ever update processor_cpu_time. This is 
+  // especially important for cases with mesh refinements.
   CPUTime processor_cpu_time, total_cpu_time;
 
-	// NKS time needs to be allocated here since 
-	// it needs to persist after a mesh refinement. 
-	CPUTime NKS_total_cpu_time;
+  // NKS time needs to be allocated here since 
+  // it needs to persist after a mesh refinement. 
+  CPUTime NKS_total_cpu_time;
 
-	// These are for the current mesh only. Used only to verify CPU times.
-	time_t start_explicit = 0, end_explicit = 0;
-	time_t start_NKS = 0, end_NKS = 0;
+  // These are for the current mesh only. Used only to verify CPU times.
+  time_t start_explicit = 0, end_explicit = 0;
+  time_t start_NKS = 0, end_NKS = 0;
 
   // Other local solution variables.
   int number_of_time_steps, start_number_of_time_steps, first_step,
@@ -65,9 +65,8 @@ int HighTemp2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       perform_explicit_time_marching, limiter_freezing_flag;
   double Time, dTime;
   double residual_l1_norm, residual_l2_norm, residual_max_norm;
-	double first_residual_l2_norm = -1.0, ratio_residual_l2_norm = 1.0;
-
-	bool mgsolver_is_allocated = false;
+  double first_residual_l2_norm = -1.0, ratio_residual_l2_norm = 1.0;
+  bool mgsolver_is_allocated = false;
 
   /********************************************************************  
    * Set default values for the input solution parameters and then    *
@@ -103,7 +102,7 @@ int HighTemp2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
   Broadcast_Input_Parameters(Input_Parameters);
 
   /********************************************************************
-   * Create initial mesh and allocate HighTemp2D solution         *
+   * Create initial mesh and allocate HighTemp2D solution             *
    * variables for the specified IBVP/BVP problem.                    *
    ********************************************************************/
 
@@ -179,7 +178,7 @@ int HighTemp2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
   if (Local_SolnBlk == NULL) return 1;
 
   /********************************************************************
-   * Initialize HighTemp2D solution variables.                    *
+   * Initialize HighTemp2D solution variables.                        *
    ********************************************************************/
 
   // Set the initial time level.
@@ -472,20 +471,17 @@ int HighTemp2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 
   // MPI barrier to ensure processor synchronization.
   CFFC_Barrier_MPI();
-
-	time(&start_explicit);
-
-	start_number_of_time_steps = number_of_time_steps;
+  time(&start_explicit);
+  start_number_of_time_steps = number_of_time_steps;
 
   if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
-
     // Allocate memory for multigrid solver.
     error_flag = MGSolver.allocate(Local_SolnBlk,
 				   &QuadTree,
 				   &List_of_Global_Solution_Blocks,
 				   &List_of_Local_Solution_Blocks,
 				   &Input_Parameters);
-		mgsolver_is_allocated = true;
+    mgsolver_is_allocated = true;
     if (error_flag) {
       cout << "\n HighTemp2D ERROR: Unable to allocate memory for multigrid solver.\n";
       cout.flush();
@@ -635,37 +631,37 @@ int HighTemp2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	  }
         }
 
-		// Periodically re-order the solution blocks on the processors
-		// by applying the Morton ordering space filling curve algorithm.
-		//
-		// Probably this should be coupled with AMR Frequency.
-		if (Input_Parameters.Morton &&
-				!first_step &&
-				number_of_time_steps % Input_Parameters.Morton_Reordering_Frequency == 0) {
-			if (!batch_flag) {
-				cout << "\n\n Applying Morton re-ordering algorithm to solution blocks at n = "
-					<< number_of_time_steps << ".";
-			}
-			error_flag = Morton_ReOrdering_of_Solution_Blocks(QuadTree, 
-					List_of_Global_Solution_Blocks, 
-					List_of_Local_Solution_Blocks, 
-					Local_SolnBlk, 
-					Input_Parameters, 
-					number_of_time_steps, 
-					Time, 
-					processor_cpu_time); 
-			if (error_flag) {
-				cout <<"\n HighTemp2D ERROR: Morton re-ordering error on processor "
-					<< List_of_Local_Solution_Blocks.ThisCPU << ".\n";
-			} 
-			error_flag = CFFC_OR_MPI(error_flag);
-			if (error_flag) { return error_flag; }
+	// Periodically re-order the solution blocks on the processors
+	// by applying the Morton ordering space filling curve algorithm.
+	//
+	// Probably this should be coupled with AMR Frequency.
+	if (Input_Parameters.Morton &&
+  	    !first_step &&
+	    number_of_time_steps % Input_Parameters.Morton_Reordering_Frequency == 0) {
+	   if (!batch_flag) {
+	     cout << "\n\n Applying Morton re-ordering algorithm to solution blocks at n = "
+		  << number_of_time_steps << ".";
+	   }
+	   error_flag = Morton_ReOrdering_of_Solution_Blocks(QuadTree, 
+		 			                     List_of_Global_Solution_Blocks, 
+					                     List_of_Local_Solution_Blocks, 
+					                     Local_SolnBlk, 
+					                     Input_Parameters, 
+					                     number_of_time_steps, 
+					                     Time, 
+					                     processor_cpu_time); 
+	   if (error_flag) {
+	      cout <<"\n HighTemp2D ERROR: Morton re-ordering error on processor "
+		   << List_of_Local_Solution_Blocks.ThisCPU << ".\n";
+	   } 
+	   error_flag = CFFC_OR_MPI(error_flag);
+	   if (error_flag) { return error_flag; }
 
-			if (!batch_flag) { cout << "\n Outputting space filling curve showing block loading for CPUs."; }
-			Morton_SFC_Output_Tecplot(Local_SolnBlk, 
-					Input_Parameters, 
-					List_of_Local_Solution_Blocks);
-		} // End of Morton Re-ordering
+	   if (!batch_flag) { cout << "\n Outputting space filling curve showing block loading for CPUs."; }
+	     Morton_SFC_Output_Tecplot(Local_SolnBlk, 
+		   	               Input_Parameters, 
+				       List_of_Local_Solution_Blocks);
+	} // End of Morton Re-ordering
 
 	// Determine local and global time steps.
 	dTime = CFL(Local_SolnBlk,List_of_Local_Solution_Blocks,Input_Parameters);
@@ -956,164 +952,166 @@ int HighTemp2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
     // Close residual file.
     if (CFFC_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file);
 
-	} // endif - multigrid or not 
+  } // endif - multigrid or not 
 
-	time(&end_explicit);
+  time(&end_explicit);
 
   // Start APPLY Newton_Krylov_Schwarz
 
-	time(&start_NKS); 
+  time(&start_NKS); 
 
-	if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+  if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+     processor_cpu_time.update();
+     total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);  
+     double temp_t = total_cpu_time.cput;
 
-		processor_cpu_time.update();
-		total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);  
-		double temp_t = total_cpu_time.cput;
+     if (Input_Parameters.FlowType) {
+	//  Where should we allocate the face gradient arrays
+	//  dWd[xy]_face[NE]? Well:
+	//    - they are not necessary for all equation types (Euler NKS
+	//      doesn't need them for example), and
+	//    - they are not necessary for High-Temp when using an
+	//      explicit time stepping.
+	//  So this is the best place to allocate them. Note that
+	//  they are deallocated in the general deallocate() call.
+	for (int nb = 0; nb < List_of_Local_Solution_Blocks.Nblk; nb++) {
+	   if (List_of_Local_Solution_Blocks.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
+		Local_SolnBlk[nb].allocate_face_grad_arrays();
+	   }
+	}
+     } else {
+	bool say_it = false;
+	switch (Input_Parameters.NKS_IP.Jacobian_Order) {
+  	  case SECOND_ORDER_DIAMOND_WITH_HLLE:
+	    Input_Parameters.NKS_IP.Jacobian_Order = FIRST_ORDER_INVISCID_HLLE; 
+	    say_it = true;
+	    break;
+	  case SECOND_ORDER_DIAMOND_WITH_GHLLE:
+	    Input_Parameters.NKS_IP.Jacobian_Order = FIRST_ORDER_INVISCID_GHLLE; 
+	    say_it = true;
+	    break;
+	  case SECOND_ORDER_DIAMOND_WITH_ROE:
+	    Input_Parameters.NKS_IP.Jacobian_Order = FIRST_ORDER_INVISCID_ROE;
+	    say_it = true;
+	  break;
+	}
+	if (say_it && CFFC_Primary_MPI_Processor()) {
+	   cout << "\n Warning: viscous preconditioner Jacobian requested even though flow is inviscid.";
+	   cout << "\n Changing Jacobian to only evaluate inviscid terms.";
+	}
+     }
 
-		if (Input_Parameters.FlowType) {
-			//  Where should we allocate the face gradient arrays
-			//  dWd[xy]_face[NE]? Well:
-			//    - they are not necessary for all equation types (Euler NKS
-			//      doesn't need them for example), and
-			//    - they are not necessary for High-Temp when using an
-			//      explicit time stepping.
-			//  So this is the best place to allocate them. Note that
-			//  they are deallocated in the general deallocate() call.
-			for (int nb = 0; nb < List_of_Local_Solution_Blocks.Nblk; nb++) {
-				if (List_of_Local_Solution_Blocks.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
-					Local_SolnBlk[nb].allocate_face_grad_arrays();
-				}
-			}
-		} else {
-
-			bool say_it = false;
-			switch (Input_Parameters.NKS_IP.Jacobian_Order) {
-				case SECOND_ORDER_DIAMOND_WITH_HLLE:
-					Input_Parameters.NKS_IP.Jacobian_Order = FIRST_ORDER_INVISCID_HLLE; 
-					say_it = true;
-					break;
-				case SECOND_ORDER_DIAMOND_WITH_GHLLE:
-					Input_Parameters.NKS_IP.Jacobian_Order = FIRST_ORDER_INVISCID_GHLLE; 
-					say_it = true;
-					break;
-				case SECOND_ORDER_DIAMOND_WITH_ROE:
-					Input_Parameters.NKS_IP.Jacobian_Order = FIRST_ORDER_INVISCID_ROE;
-					say_it = true;
-					break;
-			}
-			if (say_it && CFFC_Primary_MPI_Processor()) {
-				cout << "\n Warning: viscous preconditioner Jacobian requested even though flow is inviscid.";
-				cout << "\n Changing Jacobian to only evaluate inviscid terms.";
-			}
-
-		}
-
-		if (CFFC_Primary_MPI_Processor()) {
-			error_flag = Open_Progress_File(residual_file,
-					Input_Parameters.Output_File_Name,
+     if (CFFC_Primary_MPI_Processor()) {
+	error_flag = Open_Progress_File(residual_file,
+				        Input_Parameters.Output_File_Name,
 					number_of_time_steps);
-			if (error_flag) {
-				cout << "\n HighTemp2D ERROR: Unable to open residual file "
-					<< "for HighTemp2D calculation.\n";
-				cout.flush();
-			} 
-		}
-
-		CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-		CFFC_Broadcast_MPI(&error_flag, 1);
-		if (error_flag) return (error_flag);
-
-		// Turn off limiter freezing.
-		Evaluate_Limiters(Local_SolnBlk, List_of_Local_Solution_Blocks);
-
-		if (!batch_flag) {
-			cout << "\n\n Beginning HighTemp2D NKS computations on ";
-			cout << Date_And_Time() << ".\n\n";
-		}
-
-		error_flag = Newton_Krylov_Schwarz_Solver<HighTemp2D_pState,
-							 HighTemp2D_Quad_Block,
-							 HighTemp2D_Input_Parameters>(
-									 processor_cpu_time,
-									 residual_file,
-									 number_of_time_steps, // For printing. Set to total steps by NKS.
-									 Local_SolnBlk, 
-									 List_of_Local_Solution_Blocks,
-									 Input_Parameters);
-
-		processor_cpu_time.update();
-		total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);  
-		NKS_total_cpu_time.cput += total_cpu_time.cput - temp_t;
-
-		if (error_flag) {
-			if (CFFC_Primary_MPI_Processor()) { 
-				cout << "\n HighTemp2D_NKS ERROR: HighTemp2D solution error on processor " 
-					<< List_of_Local_Solution_Blocks.ThisCPU << ".\n";
-				cout.flush();
-			} 
-		}
-
-		CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-		CFFC_Broadcast_MPI(&error_flag, 1);
-		if (error_flag) return (error_flag);
-
-		/***********************************************************************/
-		if (!batch_flag) { 
-			cout << "\n\n HighTemp2D NKS computations complete on " 
-				<< Date_And_Time() << ".\n"; 
-		}
-		if (CFFC_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file);
+        if (error_flag) {
+  	   cout << "\n HighTemp2D ERROR: Unable to open residual file "
+		<< "for HighTemp2D calculation.\n";
+	   cout.flush();
 	} 
+     }
 
-	time(&end_NKS); 
+     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+     CFFC_Broadcast_MPI(&error_flag, 1);
+     if (error_flag) return (error_flag);
 
-	// End of the Newton-Krylov-Schwarz solver. 
-	// Perhaps we should print the memory usage of the NKS code?
+     // Turn off limiter freezing.
+     Evaluate_Limiters(Local_SolnBlk, List_of_Local_Solution_Blocks);
 
-	if (!batch_flag) { 
-		int tmpp = cout.precision();
-		cout.precision(5);
+     if (!batch_flag) {
+	cout << "\n\n Beginning HighTemp2D NKS computations on ";
+	cout << Date_And_Time() << ".\n\n";
+     }
 
-		cout << "\n |-----------------------------------------------------------";
-		cout << "\n |  ";
-		cout << "\n |   Solution Computational Timings:";
-		cout << "\n |  ";
-		cout << "\n |   The CPU times are summed from all the processors";
-		cout << "\n |   and include all the time spent on this test case";
-		cout << "\n |   including time on pre-refined grids for cases with";
-		cout << "\n |   AMR and time spent before a restart for cases";
-		cout << "\n |   started from a restart file. ";
-		cout << "\n |  ";
-		cout << "\n |   The clock times are for the current mesh and";
-		cout << "\n |   current restart only.";
-		cout << "\n |  ";
-		if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
-			cout << "\n |   The NKS CPU time is the total time spent doing NKS";
-			cout << "\n |   calculations on all the meshes for cases with AMR. ";
-			cout << "\n |  ";
-			cout << "\n |   To do: incorporate NKS CPU time into the restart file.";
-			cout << "\n |  ";
-		}
-		cout << "\n |-----------------------------------------------------------";
+     error_flag = Newton_Krylov_Schwarz_Solver<HighTemp2D_pState,
+					       HighTemp2D_Quad_Block,
+					       HighTemp2D_Input_Parameters>(
+			processor_cpu_time,
+			residual_file,
+			number_of_time_steps, // For printing. Set to total steps by NKS.
+			Local_SolnBlk, 
+			List_of_Local_Solution_Blocks,
+			Input_Parameters);
 
-		if (Input_Parameters.i_ICs != IC_RESTART &&
-				Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
-			cout<<"\n Startup CPU Time  = " << setw(8) << total_cpu_time.min() - NKS_total_cpu_time.min() << "  minutes";
-			cout<<"\n NKS CPU Time      = " << setw(8) << NKS_total_cpu_time.min() << "  minutes";
-		}
-		cout<<"\n Total CPU Time    = " << setw(8) << total_cpu_time.min() << "  minutes";
+     processor_cpu_time.update();
+     total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);  
+     NKS_total_cpu_time.cput += total_cpu_time.cput - temp_t;
 
-		if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
-			cout<<"\n Startup Clock Time= " << setw(8) << difftime(end_explicit,start_explicit)/60.0 << "  minutes";
-			cout<<"\n NKS Clock Time    = " << setw(8) << difftime(end_NKS,start_NKS)/60.0 << "  minutes";
-		}
-		cout<<"\n Total Clock Time  = " << setw(8) << difftime(end_NKS,start_explicit)/60.0 << "  minutes";
-
-		cout<<"\n ----------------------------------------------------------------";
-		cout<<"\n ----------------------------------------------------------------";
-		cout<<"\n ----------------------------------------------------------------\n";
-		cout.precision(tmpp);
+     if (error_flag) {
+        if (CFFC_Primary_MPI_Processor()) { 
+  	   cout << "\n HighTemp2D_NKS ERROR: HighTemp2D solution error on processor " 
+		<< List_of_Local_Solution_Blocks.ThisCPU << ".\n";
+	   cout.flush();
 	} 
+     }
+
+     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+     CFFC_Broadcast_MPI(&error_flag, 1);
+     if (error_flag) return (error_flag);
+
+     /***********************************************************************/
+     if (!batch_flag) { 
+	cout << "\n\n HighTemp2D NKS computations complete on " 
+ 	     << Date_And_Time() << ".\n"; 
+     }
+     if (CFFC_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file);
+  } 
+
+  time(&end_NKS); 
+
+  // End of the Newton-Krylov-Schwarz solver. 
+  // Perhaps we should print the memory usage of the NKS code?
+
+  if (!batch_flag) { 
+     int tmpp = cout.precision();
+     cout.precision(5);
+
+     cout << "\n |-----------------------------------------------------------";
+     cout << "\n |  ";
+     cout << "\n |   Solution Computational Timings:";
+     cout << "\n |  ";
+     cout << "\n |   The CPU times are summed from all the processors";
+     cout << "\n |   and include all the time spent on this test case";
+     cout << "\n |   including time on pre-refined grids for cases with";
+     cout << "\n |   AMR and time spent before a restart for cases";
+     cout << "\n |   started from a restart file. ";
+     cout << "\n |  ";
+     cout << "\n |   The clock times are for the current mesh and";
+     cout << "\n |   current restart only.";
+     cout << "\n |  ";
+     if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+        cout << "\n |   The NKS CPU time is the total time spent doing NKS";
+        cout << "\n |   calculations on all the meshes for cases with AMR. ";
+        cout << "\n |  ";
+        cout << "\n |   To do: incorporate NKS CPU time into the restart file.";
+        cout << "\n |  ";
+     }
+     cout << "\n |-----------------------------------------------------------";
+
+     if (Input_Parameters.i_ICs != IC_RESTART &&
+	 Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+	cout <<"\n Startup CPU Time  = " << setw(8) 
+             << total_cpu_time.min() - NKS_total_cpu_time.min() << "  minutes";
+	cout <<"\n NKS CPU Time      = " << setw(8) 
+             << NKS_total_cpu_time.min() << "  minutes";
+     }
+     cout <<"\n Total CPU Time    = " << setw(8) << total_cpu_time.min() << "  minutes";
+
+     if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+	cout <<"\n Startup Clock Time= " << setw(8) 
+             << difftime(end_explicit,start_explicit)/60.0 << "  minutes";
+	cout <<"\n NKS Clock Time    = " << setw(8) 
+             << difftime(end_NKS,start_NKS)/60.0 << "  minutes";
+     }
+     cout <<"\n Total Clock Time  = " << setw(8) 
+          << difftime(end_NKS,start_explicit)/60.0 << "  minutes";
+
+     cout<<"\n ----------------------------------------------------------------";
+     cout<<"\n ----------------------------------------------------------------";
+     cout<<"\n ----------------------------------------------------------------\n";
+     cout.precision(tmpp);
+  } 
 
   /********************************************************************
    * Solution calculations complete.  Write 2D High-Temp solution *
@@ -1126,8 +1124,8 @@ postprocess_current_calculation: ;
   // MPI barrier to ensure processor synchronization.
   CFFC_Barrier_MPI();
 
-	// the dummy_index is to elminate compiler warnings of "unreachable code".
-	for (int dummy_index = 0, a_big_number = 10000; dummy_index < a_big_number; dummy_index++) {
+  // the dummy_index is to elminate compiler warnings of "unreachable code".
+  for (int dummy_index = 0, a_big_number = 10000; dummy_index < a_big_number; dummy_index++) {
     if (CFFC_Primary_MPI_Processor()) {
       Get_Next_Input_Control_Parameter(Input_Parameters);
       command_flag = Parse_Next_Input_Control_Parameter(Input_Parameters);
@@ -1182,17 +1180,15 @@ postprocess_current_calculation: ;
     } else if (command_flag == TERMINATE_CODE) {
 
       CFFC_Barrier_MPI();
-
       // Deallocate memory for 2D HighTemp equation solution.
       if (!batch_flag) cout << "\n Deallocating HighTemp2D solution variables.";
-
-			if (mgsolver_is_allocated) {
-      if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
-	  Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
-	MGSolver.deallocate();
-		mgsolver_is_allocated = false;
+      if (mgsolver_is_allocated) {
+         if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
+	     Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
+	    MGSolver.deallocate();
+	    mgsolver_is_allocated = false;
+         }
       }
-			}
       Local_SolnBlk = Deallocate(Local_SolnBlk,Input_Parameters);
       //Deallocate_Message_Buffers(List_of_Local_Solution_Blocks); // Not necessary here!
       List_of_Local_Solution_Blocks.deallocate();
@@ -1208,28 +1204,28 @@ postprocess_current_calculation: ;
       return 0;
 
     } else if (command_flag == CONTINUE_CODE) {
-			//  Bump the Max Time Steps by the number of time steps run on the
-			//  previous grid. Think about it. Before starting the previous grid, we
-			//  had run "x" steps and so Maximum_Number_of_Time_Steps was "x" +
-			//  "m0", m0 the max on the first grid. Now suppose that on this
-			//  previous grid we actually ran "y" steps so that now
-			//  number_of_time_steps is "x" + "y". Clearly for the next grid we want
-			//  Maximum_Number_of_Time_Steps to be "x" + "y" + "m0".
-			//
-			//    -- Alistair Wood Thu Mar 29 2007 
-				Input_Parameters.Maximum_Number_of_Time_Steps += 
-				number_of_time_steps - start_number_of_time_steps;
+      //  Bump the Max Time Steps by the number of time steps run on the
+      //  previous grid. Think about it. Before starting the previous grid, we
+      //  had run "x" steps and so Maximum_Number_of_Time_Steps was "x" +
+      //  "m0", m0 the max on the first grid. Now suppose that on this
+      //  previous grid we actually ran "y" steps so that now
+      //  number_of_time_steps is "x" + "y". Clearly for the next grid we want
+      //  Maximum_Number_of_Time_Steps to be "x" + "y" + "m0".
+      //
+      //    -- Alistair Wood Thu Mar 29 2007 
+      Input_Parameters.Maximum_Number_of_Time_Steps += 
+      number_of_time_steps - start_number_of_time_steps;
       // Output input parameters for continuing calculation.
       if (!batch_flag) cout << "\n\n Continuing existing calculation."
 			    << Input_Parameters << "\n";
       // Deallocate multigrid if necessary.
-			if (mgsolver_is_allocated) {
-      if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
-	  Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
-	MGSolver.deallocate();
-		mgsolver_is_allocated = false;
+      if (mgsolver_is_allocated) {
+         if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
+	     Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
+	    MGSolver.deallocate();
+	    mgsolver_is_allocated = false;
+	 }
       }
-			}
       // Reinitialize the initial conditions for a wedge flow.
       error_flag = Reinitialize_Wedge_Initial_Conditions(Local_SolnBlk,
 							 List_of_Local_Solution_Blocks,
@@ -1284,136 +1280,115 @@ postprocess_current_calculation: ;
 	cout << "\n  -> Refinement Efficiency: "
 	     << QuadTree.efficiencyRefinement() << endl;
       }
-
-//       if (CFFC_Primary_MPI_Processor()) {
-//          for (int j_blk = 0; j_blk < QuadTree.Nblk; j_blk++) {
-//             for (int i_blk = 0; i_blk < QuadTree.Ncpu; i_blk++) {
-//                if (QuadTree.Blocks[i_blk][j_blk] != NULL) {
-//                   cout << "\n cpu = " 
-//                        << i_blk
-//                        << " blk = "
-//                        << j_blk
-//                        << " blk = "
-//                        << QuadTree.Blocks[i_blk][j_blk]->block;
-//                } else {
-//                   cout << "\n cpu = " 
-//                        << i_blk
-//                        << " blk = "
-//                        << j_blk;
-//                }
-//             }
-//          }
-//       }
-
       // Apply boundary conditions.
       BCs(Local_SolnBlk,List_of_Local_Solution_Blocks,Input_Parameters);
 
-		} else if (command_flag == MORTON_ORDERING_CODE) {
-			if (!batch_flag) { cout << "\n\n Applying Morton re-ordering algorithm. "; }
-			error_flag = Morton_ReOrdering_of_Solution_Blocks(QuadTree, 
-					List_of_Global_Solution_Blocks, 
-					List_of_Local_Solution_Blocks, 
-					Local_SolnBlk, 
-					Input_Parameters, 
-					number_of_time_steps, 
-					Time, 
-					processor_cpu_time); 
-			if (error_flag) {
-				cout <<"\n HighTemp2D ERROR: Morton re-ordering error on processor "
-					<< List_of_Local_Solution_Blocks.ThisCPU << ".\n";
-			} 
-			error_flag = CFFC_OR_MPI(error_flag);
-			if (error_flag) { return error_flag; }
+    } else if (command_flag == MORTON_ORDERING_CODE) {
+      if (!batch_flag) { cout << "\n\n Applying Morton re-ordering algorithm. "; }
+      error_flag = Morton_ReOrdering_of_Solution_Blocks(QuadTree, 
+					                List_of_Global_Solution_Blocks, 
+					                List_of_Local_Solution_Blocks, 
+					                Local_SolnBlk, 
+					                Input_Parameters, 
+					                number_of_time_steps, 
+					                Time, 
+					                processor_cpu_time); 
+      if (error_flag) {
+	cout <<"\n HighTemp2D ERROR: Morton re-ordering error on processor "
+	     << List_of_Local_Solution_Blocks.ThisCPU << ".\n";
+      } 
+      error_flag = CFFC_OR_MPI(error_flag);
+      if (error_flag) { return error_flag; }
+      //  The Morton Re-ordering writes out and then reads back in the
+      //  solution using restart files. The function which reads the
+      //  restart files makes the assumption that we are starting a new
+      //  calculation with restart initial conditions and so does:
+      //  
+      //    restart_file >> Number_of_Time_Steps;
+      //    IP.Maximum_Number_of_Time_Steps += Number_of_Time_Steps;
+      //  
+      //  which we need to correct here.
+      //  
+      //  Is this maximum number of time steps the best way to do it? Any
+      //  better way would have to keep in mind Morton, steady-state
+      //  problems on one grid with multiple restarts from restart files,
+      //  steady-state problems with successively refined grids, NKS,
+      //  time-accurate problems and so on. Maybe someone else can think
+      //  about this.
+      //     -- Alistair Wood Fri Jun 15 2007 
+      Input_Parameters.Maximum_Number_of_Time_Steps -= number_of_time_steps;
 
-			//  The Morton Re-ordering writes out and then reads back in the
-			//  solution using restart files. The function which reads the
-			//  restart files makes the assumption that we are starting a new
-			//  calculation with restart initial conditions and so does:
-			//  
-			//    restart_file >> Number_of_Time_Steps;
-			//    IP.Maximum_Number_of_Time_Steps += Number_of_Time_Steps;
-			//  
-			//  which we need to correct here.
-			//  
-			//  Is this maximum number of time steps the best way to do it? Any
-			//  better way would have to keep in mind Morton, steady-state
-			//  problems on one grid with multiple restarts from restart files,
-			//  steady-state problems with successively refined grids, NKS,
-			//  time-accurate problems and so on. Maybe someone else can think
-			//  about this.
-			//     -- Alistair Wood Fri Jun 15 2007 
-			Input_Parameters.Maximum_Number_of_Time_Steps -= number_of_time_steps;
-
-			if (!batch_flag) { cout << "\n Outputting space filling curve showing block loading for CPUs."; }
-			Morton_SFC_Output_Tecplot(Local_SolnBlk, 
-					Input_Parameters, 
-					List_of_Local_Solution_Blocks);
+      if (!batch_flag) { cout << "\n Outputting space filling curve showing block loading for CPUs."; }
+      Morton_SFC_Output_Tecplot(Local_SolnBlk, 
+				Input_Parameters, 
+				List_of_Local_Solution_Blocks);
 
     } else if (command_flag == WRITE_OUTPUT_CODE) {
-			bool output_multigrid = false;
-			if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
-					Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
-				output_multigrid = true;
-			}
-			// but if we ran NKS then multigrid was just a startup 
-			// and so we don't care about it.
-			if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
-				output_multigrid = false;
-			}
-			if (!batch_flag) {
-				cout << "\n Writing HighTemp2D solution (at the cell nodes) ";
-				cout << "to output data file(s).";
-			} 
-			if (output_multigrid) {
-				error_flag = MGSolver.Output_Multigrid(number_of_time_steps, Time);
-			} else {
-	error_flag = Output_Tecplot(Local_SolnBlk,
-				    List_of_Local_Solution_Blocks,
-				    Input_Parameters,
-				    number_of_time_steps,
-				    Time);
-      }
-      if (error_flag) {
-				cout << "\n HighTemp2D ERROR: Unable to open HighTemp2D "
-					<< "output data file(s) on processor "
-	     << List_of_Local_Solution_Blocks.ThisCPU
-	     << "." << endl;
-      }
-      error_flag = CFFC_OR_MPI(error_flag);
-      if (error_flag) return error_flag;
+	bool output_multigrid = false;
+	if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
+	    Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
+	   output_multigrid = true;
+	}
+	// but if we ran NKS then multigrid was just a startup 
+	// and so we don't care about it.
+	if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+	   output_multigrid = false;
+	}
+	if (!batch_flag) {
+	   cout << "\n Writing HighTemp2D solution (at the cell nodes) ";
+	   cout << "to output data file(s).";
+	} 
+	if (output_multigrid) {
+	   error_flag = MGSolver.Output_Multigrid(number_of_time_steps, Time);
+	} else {
+	   error_flag = Output_Tecplot(Local_SolnBlk,
+		  		       List_of_Local_Solution_Blocks,
+				       Input_Parameters,
+				       number_of_time_steps,
+				       Time);
+        }
+        if (error_flag) {
+	   cout << "\n HighTemp2D ERROR: Unable to open HighTemp2D "
+		<< "output data file(s) on processor "
+	        << List_of_Local_Solution_Blocks.ThisCPU
+	        << "." << endl;
+        }
+        error_flag = CFFC_OR_MPI(error_flag);
+        if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_CELLS_CODE) {
-			bool output_multigrid = false;
-			if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
-					Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
-				output_multigrid = true;
-			}
-			// but if we ran NKS then multigrid was just a startup 
-			// and so we don't care about it.
-			if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
-				output_multigrid = false;
-			}
-			if (!batch_flag) {
-				cout << "\n Writing cell-centered HighTemp2D solution ";
-				cout << "to output data file(s).";
-			} 
-			if (output_multigrid) {
-				error_flag = MGSolver.Output_Multigrid_Cells(number_of_time_steps, Time);
-			} else {
+	bool output_multigrid = false;
+	if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
+	    Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
+	   output_multigrid = true;
+	}
+	// but if we ran NKS then multigrid was just a startup 
+	// and so we don't care about it.
+	if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+	   output_multigrid = false;
+	}
+	if (!batch_flag) {
+	   cout << "\n Writing cell-centered HighTemp2D solution ";
+	   cout << "to output data file(s).";
+	} 
+	if (output_multigrid) {
+	   error_flag = MGSolver.Output_Multigrid_Cells(number_of_time_steps, Time);
+	} else {
 	error_flag = Output_Cells_Tecplot(Local_SolnBlk,
 					  List_of_Local_Solution_Blocks,
 					  Input_Parameters,
 					  number_of_time_steps,
 					  Time);
-      }
-      if (error_flag) {
-				cout << "\n HighTemp2D ERROR: Unable to open HighTemp2D "
-					<< "output data file(s) on processor "
-	     << List_of_Local_Solution_Blocks.ThisCPU
-	     << "." << endl;
-      }
-      error_flag = CFFC_OR_MPI(error_flag);
-      if (error_flag) return error_flag;
+        }
+        if (error_flag) {
+	   cout << "\n HighTemp2D ERROR: Unable to open HighTemp2D "
+		<< "output data file(s) on processor "
+	        << List_of_Local_Solution_Blocks.ThisCPU
+	        << "." << endl;
+        }
+        error_flag = CFFC_OR_MPI(error_flag);
+        if (error_flag) return error_flag;
+
       /*  
     } else if (command_flag == WRITE_OUTPUT_MULTIGRID_CODE) {
       // Output multi-block solution-adaptive multigrid nodes.
@@ -1446,37 +1421,37 @@ postprocess_current_calculation: ;
       }
       */
     } else if (command_flag == WRITE_OUTPUT_NODES_CODE) {
-			bool output_multigrid = false;
-			if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
-					Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
-				output_multigrid = true;
-			}
-			// but if we ran NKS then multigrid was just a startup 
-			// and so we don't care about it.
-			if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
-				output_multigrid = false;
-			}
-			if (!batch_flag) {
-				cout << "\n Writing HighTemp2D node locations ";
-				cout << "to output data file(s).";
-			} 
-			if (output_multigrid) {
-				error_flag = MGSolver.Output_Multigrid_Nodes(number_of_time_steps, Time);
-			} else {
-	error_flag = Output_Nodes_Tecplot(Local_SolnBlk,
-					  List_of_Local_Solution_Blocks,
-					  Input_Parameters,
-					  number_of_time_steps,
-					  Time);
-      }
-      if (error_flag) {
-				cout << "\n HighTemp2D ERROR: Unable to open HighTemp2D "
-					<< "output data file(s) on processor "
-	     << List_of_Local_Solution_Blocks.ThisCPU
-	     << "." << endl;
-      }
-      error_flag = CFFC_OR_MPI(error_flag);
-      if (error_flag) return error_flag;
+	bool output_multigrid = false;
+	if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
+	    Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
+	   output_multigrid = true;
+	}
+	// but if we ran NKS then multigrid was just a startup 
+	// and so we don't care about it.
+	if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+	   output_multigrid = false;
+	}
+	if (!batch_flag) {
+	   cout << "\n Writing HighTemp2D node locations ";
+	   cout << "to output data file(s).";
+	} 
+	if (output_multigrid) {
+	   error_flag = MGSolver.Output_Multigrid_Nodes(number_of_time_steps, Time);
+	} else {
+	   error_flag = Output_Nodes_Tecplot(Local_SolnBlk,
+		  			     List_of_Local_Solution_Blocks,
+					     Input_Parameters,
+					     number_of_time_steps,
+					     Time);
+        }
+        if (error_flag) {
+	   cout << "\n HighTemp2D ERROR: Unable to open HighTemp2D "
+		<< "output data file(s) on processor "
+	        << List_of_Local_Solution_Blocks.ThisCPU
+	        << "." << endl;
+        }
+        error_flag = CFFC_OR_MPI(error_flag);
+        if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_GRADIENTS_CODE) {
       if (!batch_flag) cout << "\n Writing HighTemp2D node locations to output data file(s).";
@@ -1629,7 +1604,8 @@ postprocess_current_calculation: ;
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_TURBULENT_PIPE_CODE) {
-      if (!batch_flag) cout << endl << " Writing experimental and computed solution data for the turbulent pipe flow.";
+      if (!batch_flag) cout << endl 
+                            << " Writing experimental and computed solution data for the turbulent pipe flow.";
       error_flag = Output_Turbulent_Pipe_Tecplot(Local_SolnBlk,
 						 List_of_Local_Solution_Blocks,
 						 Input_Parameters);
@@ -1763,7 +1739,7 @@ postprocess_current_calculation: ;
   }
   
   /********************************************************************
-   * End of all HighTemp2DSolver computations and I/O.            *
+   * End of all HighTemp2DSolver computations and I/O.                *
    ********************************************************************/
   return 0;
   

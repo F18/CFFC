@@ -49,11 +49,11 @@ using namespace std;
 
 #ifndef _TENSOR2D_INCLUDED
 #include "../Math/Tensor2D.h"
-#endif //_TENSOR2D_INCLUDED
+#endif // _TENSOR2D_INCLUDED
 
 #ifndef _VECTOR2D_INCLUDED
 #include "../Math/Vector2D.h"
-#endif //_VECTOR2D_INCLUDED
+#endif // _VECTOR2D_INCLUDED
 
 #ifndef _GAS_CONSTANTS_INCLUDED
 #include "../Physics/GasConstants.h"
@@ -62,15 +62,15 @@ using namespace std;
 // CHEM2D Specific headers
 #ifndef _SPECIES_INCLUDED
 #include "Species.h"
-#endif //_SPECIES_INCLUDED
+#endif // _SPECIES_INCLUDED
 
 #ifndef _NASARP1311_DATA_INCLUDED
 #include "NASARP1311data.h"
-#endif
+#endif // _NASARP1311_DATA_INCLUDED
 
 #ifndef _REACTIONS_INCLUDED
 #include "Reactions.h"
-#endif 
+#endif // _REACTIONS_INCLUDED
 
 //Temperature convergence tolerance in
 //Chem2D_cState::T(void)
@@ -85,16 +85,6 @@ using namespace std;
 // If you define this variable, the number of species will be
 // predetermined for faster calculations.., however it is not as general 
 #define STATIC_NUMBER_OF_SPECIES 6 //2 AIR, 6 2STEP_CH4
-
-/* Define some functions. */
-// M+1
-inline double Mplus_1(double M) { return 0.5*(M + fabs(M)); }
-// M-1
-inline double Mminus_1(double M) { return 0.5*(M - fabs(M)); }
-// M+2
-inline double Mplus_2(double M) { return 0.25*sqr(M + 1.0); }
-// M-2
-inline double Mminus_2(double M) { return -0.25*sqr(M - 1.0); }
 
 /*!
  * Class: Chem2D_pState

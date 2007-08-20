@@ -67,7 +67,7 @@ void dFIdW_Inviscid_ROE(DenseMatrix& dRdW, const HighTemp2D_Quad_Block &SolnBlk,
      cout<<"\n Hey I am not suppose to be here! \n"; exit(1);
 	}
 
-	DenseMatrix dFidW(NUM_VAR_HIGHTEMP2D, NUM_VAR_HIGHTEMP2D,ZERO);
+	DenseMatrix dFidW(NUM_VAR_HIGHTEMP2D, NUM_VAR_HIGHTEMP2D, ZERO);
 	
 	Vector2D nface,DX; double lface;   
 	HighTemp2D_pState Wa, wavespeeds, Left, Right, Wl, Wr;   
@@ -207,9 +207,6 @@ int Inviscid_Flux_Used_Reconstructed_LeftandRight_States(
 				if (SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION) {
 					Wr = Reflect(Wl,SolnBlk.Grid.nfaceW(i,j));
 
-				} else if (SolnBlk.Grid.BCtypeW[j] == BC_BURNING_SURFACE) {
-					Wr = BurningSurface(Wl,SolnBlk.Grid.nfaceW(i,j));
-
 				} else if (SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX) {
 					Wr = WallViscousHeatFlux(Wl,SolnBlk.Grid.nfaceW(i,j));
 
@@ -253,9 +250,6 @@ int Inviscid_Flux_Used_Reconstructed_LeftandRight_States(
 
 				if (SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION) {
 					Wr = Reflect(Wl,SolnBlk.Grid.nfaceE(i,j));
-
-				} else if (SolnBlk.Grid.BCtypeE[j] == BC_BURNING_SURFACE) {
-					Wr = BurningSurface(Wl,SolnBlk.Grid.nfaceE(i,j));
 
 				} else if (SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX) {
 					Wr = WallViscousHeatFlux(Wl,SolnBlk.Grid.nfaceE(i,j));
@@ -303,9 +297,6 @@ int Inviscid_Flux_Used_Reconstructed_LeftandRight_States(
 				if (SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION) {
 					Wr = Reflect(Wl,SolnBlk.Grid.nfaceS(i,j));
 
-				} else if (SolnBlk.Grid.BCtypeS[i] == BC_BURNING_SURFACE) {
-					Wr = BurningSurface(Wl,SolnBlk.Grid.nfaceS(i,j));
-
 				} else if (SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX) {
 					Wr = WallViscousHeatFlux(Wl,SolnBlk.Grid.nfaceS(i,j));
 
@@ -350,9 +341,6 @@ int Inviscid_Flux_Used_Reconstructed_LeftandRight_States(
 
 				if (SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION) {
 					Wr = Reflect(Wl,SolnBlk.Grid.nfaceN(i,j));
-
-				} else if (SolnBlk.Grid.BCtypeN[i] == BC_BURNING_SURFACE) {
-					Wr = BurningSurface(Wl,SolnBlk.Grid.nfaceN(i,j));
 
 				} else if (SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX) {
 					Wr = WallViscousHeatFlux(Wl,SolnBlk.Grid.nfaceN(i,j));

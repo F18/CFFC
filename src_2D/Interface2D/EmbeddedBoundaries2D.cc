@@ -167,7 +167,7 @@ int main(int num_arg, char *arg_ptr[]) {
      cout << "Built using " << CFFC_Version() << endl;
      cout << CFFC_Version_MPI() << endl;
      cout << ICEMCFD_Version() << "\n";
-     cout << "Built using MV++, SparseLib++, IML++, and BPKIT Libraries\n";
+     cout << "Built using MV++, SparseLib++, IML++, BPKIT, and FFTW Libraries\n";
      cout.flush();
      if (version_flag) return 0;
   }

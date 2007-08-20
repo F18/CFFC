@@ -51,6 +51,9 @@ void Set_Default_Input_Parameters(Ion5Moment2D_Input_Parameters &IP) {
     int i;
     char *string_ptr;
 
+    // CFFC root directory path:
+    IP.get_cffc_path();
+
     string_ptr = "Ion5Moment2D.in";
     strcpy(IP.Input_File_Name, string_ptr);
 
@@ -257,6 +260,10 @@ void Broadcast_Input_Parameters(Ion5Moment2D_Input_Parameters &IP) {
 #ifdef _MPI_VERSION
     int i;
 
+    // CFFC path:
+    MPI::COMM_WORLD.Bcast(IP.CFFC_Path, 
+ 			  INPUT_PARAMETER_LENGTH_ION5MOMENT2D,
+			  MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(IP.Input_File_Name, 
                           INPUT_PARAMETER_LENGTH_ION5MOMENT2D, 
                           MPI::CHAR, 0);
@@ -692,6 +699,10 @@ void Broadcast_Input_Parameters(Ion5Moment2D_Input_Parameters &IP,
     int Source_Rank = 0;
     int i;
 
+    // CFFC path:
+    Communicator.Bcast(IP.CFFC_Path, 
+ 		       INPUT_PARAMETER_LENGTH_ION5MOMENT2D,
+		       MPI::CHAR, Source_Rank);
     Communicator.Bcast(IP.Input_File_Name, 
                        INPUT_PARAMETER_LENGTH_ION5MOMENT2D, 
                        MPI::CHAR, Source_Rank);
@@ -1150,7 +1161,12 @@ int Parse_Next_Input_Control_Parameter(Ion5Moment2D_Input_Parameters &IP) {
 
     i_command = 0;
 
-    if (strcmp(IP.Next_Control_Parameter, "Time_Integration_Type") == 0) {
+    if (strcmp(IP.Next_Control_Parameter, "CFFC_Path") == 0) {
+       i_command = 1111;
+       Get_Next_Input_Control_Parameter(IP);
+       strcpy(IP.CFFC_Path, IP.Next_Control_Parameter);
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Time_Integration_Type") == 0) {
        i_command = 1;
        Get_Next_Input_Control_Parameter(IP);
        strcpy(IP.Time_Integration_Type, 
@@ -2119,87 +2135,248 @@ int Parse_Next_Input_Control_Parameter(Ion5Moment2D_Input_Parameters &IP) {
       if (IP.i_Smooth_Quad_Block < 0 || IP.i_Smooth_Quad_Block > 1) i_command = INVALID_INPUT_VALUE;
 
        /**************************************
-        * Multigrid Related Input Parameters */
-    } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Levels") == 0) {
-       i_command = 201;
-       IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.Multigrid_IP.Levels;
-       IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Multigrid_IP.Levels <= ONE) i_command = INVALID_INPUT_VALUE;
-       
-    } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Cycle_Type") == 0) {
-       i_command = 202;
-       Get_Next_Input_Control_Parameter(IP);
-       strcpy(IP.Multigrid_IP.Cycle_Type,
-	      IP.Next_Control_Parameter);
-       if (strcmp(IP.Multigrid_IP.Cycle_Type, "V") == 0 ||
-	   strcmp(IP.Multigrid_IP.Cycle_Type, "v") == 0) {
-	 IP.Multigrid_IP.i_Cycle = MULTIGRID_V_CYCLE;
-       } else if (strcmp(IP.Multigrid_IP.Cycle_Type, "W") == 0 ||
-		  strcmp(IP.Multigrid_IP.Cycle_Type, "w") == 0) {
-	 IP.Multigrid_IP.i_Cycle = MULTIGRID_W_CYCLE;
-       } else {
-	 i_command = INVALID_INPUT_VALUE;
-       }
-    } else if (strcmp(IP.Next_Control_Parameter, "Full_Multigrid") == 0) {
-       i_command = 203;
-       IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.Multigrid_IP.Number_of_Cycles_per_Stage_for_Full_Multigrid;
-       IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Multigrid_IP.Number_of_Cycles_per_Stage_for_Full_Multigrid < 0) 
-	 IP.Multigrid_IP.Number_of_Cycles_per_Stage_for_Full_Multigrid = 0;
+        * Multigrid Related Input Parameters *
+        **************************************/
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Number_of_Smooths_on_Finest_Level") == 0) {
-       i_command = 204;
-       IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.Multigrid_IP.Number_of_Smooths_on_Finest_Level;
-       IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Multigrid_IP.Number_of_Smooths_on_Finest_Level < ZERO) i_command = INVALID_INPUT_VALUE;
+    } else if (strcmp(IP.Next_Control_Parameter,"Multigrid_Levels") == 0) {
+      i_command = 201;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.Levels;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Multigrid_IP.Levels <= ONE) i_command = INVALID_INPUT_VALUE;
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Number_of_Pre_Smooths") == 0) {
-       i_command = 205;
-       IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.Multigrid_IP.Number_of_Pre_Smooths;
-       IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Multigrid_IP.Number_of_Pre_Smooths < ZERO) i_command = INVALID_INPUT_VALUE;
-       
-    } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Number_of_Post_Smooths") == 0) {
-       i_command = 206;
-       IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.Multigrid_IP.Number_of_Post_Smooths;
-       IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Multigrid_IP.Number_of_Post_Smooths < ZERO) i_command = INVALID_INPUT_VALUE;
+    } else if (strcmp(IP.Next_Control_Parameter,"Multigrid_Cycle_Type") == 0) {
+      i_command = 202;
+      Get_Next_Input_Control_Parameter(IP);
+      strcpy(IP.Multigrid_IP.Cycle_Type,IP.Next_Control_Parameter);
+      if (strcmp(IP.Multigrid_IP.Cycle_Type,"V") == 0 ||
+	  strcmp(IP.Multigrid_IP.Cycle_Type,"v") == 0) {
+        IP.Multigrid_IP.i_Cycle = MULTIGRID_V_CYCLE;
+      } else if (strcmp(IP.Multigrid_IP.Cycle_Type,"W") == 0 ||
+	         strcmp(IP.Multigrid_IP.Cycle_Type,"w") == 0) {
+        IP.Multigrid_IP.i_Cycle = MULTIGRID_W_CYCLE;
+      } else {
+        i_command = INVALID_INPUT_VALUE;
+      }
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Number_of_Smooths_on_Coarsest_Level") == 0) {
-       i_command = 207;
-       IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.Multigrid_IP.Number_of_Smooths_on_Coarsest_Level;
-       IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Multigrid_IP.Number_of_Smooths_on_Coarsest_Level < ZERO) i_command = INVALID_INPUT_VALUE;
+    } else if (strcmp(IP.Next_Control_Parameter,"Full_Multigrid") == 0) {
+      i_command = 203;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.Number_of_Cycles_per_Stage_for_Full_Multigrid;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Multigrid_IP.Number_of_Cycles_per_Stage_for_Full_Multigrid < 0) 
+        IP.Multigrid_IP.Number_of_Cycles_per_Stage_for_Full_Multigrid = 0;
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Smoothing_Type") == 0) {
-       i_command = 208;
-       Get_Next_Input_Control_Parameter(IP);
-       strcpy(IP.Multigrid_IP.Smoothing_Type, 
-              IP.Next_Control_Parameter);
-       if (strcmp(IP.Multigrid_IP.Smoothing_Type, "Explicit_Euler") == 0) {
-           IP.Multigrid_IP.i_Smoothing = TIME_STEPPING_EXPLICIT_EULER;
-           IP.N_Stage = 1;
-       } else if (strcmp(IP.Multigrid_IP.Smoothing_Type, "Explicit_Predictor_Corrector") == 0) {
-           IP.Multigrid_IP.i_Smoothing = TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR;
-           IP.N_Stage = 2;
-       } else if (strcmp(IP.Multigrid_IP.Smoothing_Type, "Explicit_Runge_Kutta") == 0) {
-           IP.Multigrid_IP.i_Smoothing = TIME_STEPPING_EXPLICIT_RUNGE_KUTTA;
-           IP.N_Stage = 5;
-       } else if (strcmp(IP.Multigrid_IP.Smoothing_Type, "Multistage_Optimal_Smoothing") == 0) {
-           IP.Multigrid_IP.i_Smoothing = TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING;
-           IP.N_Stage = 4;
-       } else {
-           IP.Multigrid_IP.i_Smoothing = TIME_STEPPING_EXPLICIT_EULER;
-           IP.N_Stage = 1;
-       } /* endif */
+    } else if (strcmp(IP.Next_Control_Parameter,"Defect_Correction") == 0) {
+      i_command = 204;
+      Get_Next_Input_Control_Parameter(IP);
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
+        IP.Multigrid_IP.Defect_Correction = ON;
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
+        IP.Multigrid_IP.Defect_Correction = OFF;
+      } else {
+        i_command = INVALID_INPUT_VALUE;
+      }
 
-       /* End of Multigrid related Input parsing *
+    } else if (strcmp(IP.Next_Control_Parameter,"First_Order_Coarse_Mesh_Reconstruction") == 0) {
+      i_command = 205;
+      IP.Line_Number = IP.Line_Number + 1;
+      Get_Next_Input_Control_Parameter(IP);
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
+        IP.Multigrid_IP.First_Order_Coarse_Mesh_Reconstruction = ON;
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
+        IP.Multigrid_IP.First_Order_Coarse_Mesh_Reconstruction = OFF;
+      } else {
+        i_command = INVALID_INPUT_VALUE;
+      }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Prolong_Using_Injection") == 0) {
+      i_command = 206;
+      Get_Next_Input_Control_Parameter(IP);
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
+        IP.Multigrid_IP.Prolong_Using_Injection = ON;
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
+        IP.Multigrid_IP.Prolong_Using_Injection = OFF;
+      } else {
+        i_command = INVALID_INPUT_VALUE;
+      }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Apply_Coarse_Mesh_Boundary_Conditions") == 0) {
+      i_command = 207;
+      Get_Next_Input_Control_Parameter(IP);
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
+        IP.Multigrid_IP.Apply_Coarse_Mesh_Boundary_Conditions = ON;
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
+        IP.Multigrid_IP.Apply_Coarse_Mesh_Boundary_Conditions = OFF;
+      } else {
+        i_command = INVALID_INPUT_VALUE;
+      }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Injection_at_Dirichlet_Boundary_Conditions") == 0) {
+      i_command = 208;
+      Get_Next_Input_Control_Parameter(IP);
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
+        IP.Multigrid_IP.Injection_at_Dirichlet_Boundary_Conditions = ON;
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
+        IP.Multigrid_IP.Injection_at_Dirichlet_Boundary_Conditions = OFF;
+      } else {
+        i_command = INVALID_INPUT_VALUE;
+      }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Update_Stability_Switch") == 0) {
+      i_command = 209;
+      Get_Next_Input_Control_Parameter(IP);
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
+        IP.Multigrid_IP.Update_Stability_Switch = ON;
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
+        IP.Multigrid_IP.Update_Stability_Switch = OFF;
+      } else {
+        i_command = INVALID_INPUT_VALUE;
+      }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Maximum_Number_of_Update_Reductions") == 0) {
+      i_command = 210;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.Maximum_Number_of_Update_Reductions;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Multigrid_IP.Maximum_Number_of_Update_Reductions < 1) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Multigrid_Number_of_Smooths_on_Finest_Level") == 0) {
+      i_command = 211;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.Number_of_Smooths_on_Finest_Level;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Multigrid_IP.Number_of_Smooths_on_Finest_Level < 0) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Multigrid_Number_of_Pre_Smooths") == 0) {
+      i_command = 212;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.Number_of_Pre_Smooths;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Multigrid_IP.Number_of_Pre_Smooths < 0) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Multigrid_Number_of_Post_Smooths") == 0) {
+      i_command = 213;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.Number_of_Post_Smooths;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Multigrid_IP.Number_of_Post_Smooths < 0) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Multigrid_Number_of_Smooths_on_Coarsest_Level") == 0) {
+      i_command = 214;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.Number_of_Smooths_on_Coarsest_Level;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Multigrid_IP.Number_of_Smooths_on_Coarsest_Level < 0) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Absolute_Convergence_Tolerance") == 0) {
+      i_command = 215;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.Absolute_Convergence_Tolerance;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Relative_Convergence_Tolerance") == 0) {
+      i_command = 216;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.Relative_Convergence_Tolerance;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+
+    } else if (strcmp(IP.Next_Control_Parameter, "FMG_Absolute_Convergence_Tolerance") == 0) {
+      i_command = 217;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.FMG_Absolute_Convergence_Tolerance;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+
+    } else if (strcmp(IP.Next_Control_Parameter, "FMG_Relative_Convergence_Tolerance") == 0) {
+      i_command = 218;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.FMG_Relative_Convergence_Tolerance;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Multigrid_Smoothing_Type") == 0) {
+      i_command = 219;
+      Get_Next_Input_Control_Parameter(IP);
+      strcpy(IP.Multigrid_IP.Smoothing_Type,IP.Next_Control_Parameter);
+      if (strcmp(IP.Multigrid_IP.Smoothing_Type,"Explicit_Euler") == 0) {
+        IP.Multigrid_IP.i_Smoothing = TIME_STEPPING_EXPLICIT_EULER;
+        IP.N_Stage = 1;
+      } else if (strcmp(IP.Multigrid_IP.Smoothing_Type,"Explicit_Predictor_Corrector") == 0) {
+        IP.Multigrid_IP.i_Smoothing = TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR;
+        IP.N_Stage = 2;
+      } else if (strcmp(IP.Multigrid_IP.Smoothing_Type,"Explicit_Runge_Kutta") == 0) {
+        IP.Multigrid_IP.i_Smoothing = TIME_STEPPING_EXPLICIT_RUNGE_KUTTA;
+        IP.N_Stage = 5;
+      } else if (strcmp(IP.Multigrid_IP.Smoothing_Type,"Multistage_Optimal_Smoothing") == 0) {
+        IP.Multigrid_IP.i_Smoothing = TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING;
+        IP.N_Stage = 4;
+      } else {
+        i_command = INVALID_INPUT_VALUE;
+      }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Ncycles_Regular_Multigrid") == 0) {
+      i_command = 220;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.Ncycles_Regular_Multigrid;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Multigrid_IP.Ncycles_Regular_Multigrid < 0) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Ncycles_Full_Multigrid") == 0) {
+      i_command = 221;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.Ncycles_Full_Multigrid;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Multigrid_IP.Ncycles_Full_Multigrid < 0) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Physical_Time_Integration_Type") == 0) {
+      i_command = 222;
+      Get_Next_Input_Control_Parameter(IP);
+      strcpy(IP.Multigrid_IP.Physical_Time_Integration_Type,
+	     IP.Next_Control_Parameter);
+      if (strcmp(IP.Multigrid_IP.Physical_Time_Integration_Type,"Implicit_Euler") == 0) {
+        IP.Multigrid_IP.i_Physical_Time_Integration = TIME_STEPPING_IMPLICIT_EULER;
+      } else if (strcmp(IP.Multigrid_IP.Physical_Time_Integration_Type,"Implicit_Trapezoidal") == 0) {
+        IP.Multigrid_IP.i_Physical_Time_Integration = TIME_STEPPING_IMPLICIT_TRAPEZOIDAL;
+        i_command = INVALID_INPUT_VALUE;
+      } else if (strcmp(IP.Multigrid_IP.Physical_Time_Integration_Type,"Second_Order_Backwards") == 0) {
+        IP.Multigrid_IP.i_Physical_Time_Integration = TIME_STEPPING_IMPLICIT_SECOND_ORDER_BACKWARD;
+      } else if (strcmp(IP.Multigrid_IP.Physical_Time_Integration_Type,"Adams_Type") == 0) {
+        IP.Multigrid_IP.i_Physical_Time_Integration = TIME_STEPPING_IMPLICIT_ADAMS_TYPE;
+      i_command = INVALID_INPUT_VALUE;
+      } else if (strcmp(IP.Multigrid_IP.Physical_Time_Integration_Type,"Lees") == 0) {
+        IP.Multigrid_IP.i_Physical_Time_Integration = TIME_STEPPING_IMPLICIT_LEES;
+        i_command = INVALID_INPUT_VALUE;
+      } else if (strcmp(IP.Multigrid_IP.Physical_Time_Integration_Type,"Two_Step_Trapezoidal") == 0) {
+        IP.Multigrid_IP.i_Physical_Time_Integration = TIME_STEPPING_IMPLICIT_TWO_STEP_TRAPEZOIDAL;
+        i_command = INVALID_INPUT_VALUE;
+      } else if (strcmp(IP.Multigrid_IP.Physical_Time_Integration_Type,"A_Contractive") == 0) {
+        IP.Multigrid_IP.i_Physical_Time_Integration = TIME_STEPPING_IMPLICIT_A_CONTRACTIVE;
+        i_command = INVALID_INPUT_VALUE;
+      } else {
+        i_command = INVALID_INPUT_VALUE;
+      }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Physical_Time_CFL_Number") == 0) {
+      i_command = 223;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.Physical_Time_CFL_Number;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Multigrid_IP.Physical_Time_CFL_Number <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Dual_Time_Convergence_Residual_Level") == 0) {
+      i_command = 224;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.Dual_Time_Convergence_Residual_Level;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Multigrid_IP.Dual_Time_Convergence_Residual_Level < ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Multigrid_Write_Output_Cells_Frequency") == 0) {
+      i_command = 225;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Multigrid_IP.Write_Output_Cells_Frequency;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+
+       /****************************************** 
+        * End of Multigrid related Input parsing *
         ******************************************/
 
        ////////////////////////////////////////////////////////////////////

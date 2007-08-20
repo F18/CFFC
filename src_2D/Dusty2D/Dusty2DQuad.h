@@ -2734,6 +2734,7 @@ extern void Output_Tecplot(Dusty2D_Quad_Block &SolnBlk,
 	                   ostream &Out_File);
 
 extern void Output_Cells_Tecplot(Dusty2D_Quad_Block &SolnBlk,
+			         Dusty2D_Input_Parameters &IP,
 		                 const int Number_of_Time_Steps,
                                  const double &Time,
                                  const int Block_Number,

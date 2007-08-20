@@ -23,7 +23,9 @@ Freeze_Limiter_Residual_Level =
 #----------- GMRES -------------
 GMRES_Overlap =
 0
-GMRES_Tolerance =
+GMRES_Initial_Tolerance =
+2.0e-02
+GMRES_Final_Tolerance =
 2.0e-02
 GMRES_Block_Preconditioner = 
 ILUK
@@ -78,7 +80,6 @@ Grid_Type=
 1DFlame
 Smooth_Quad_Block =
 OFF
-#Off
 Mach_Number_Reference=
 0.1 0.1 
 Box_Width=

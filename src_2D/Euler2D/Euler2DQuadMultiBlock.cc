@@ -415,6 +415,7 @@ int Output_Cells_Tecplot(Euler2D_Quad_Block *Soln_ptr,
     for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
           Output_Cells_Tecplot(Soln_ptr[i], 
+                               Input_Parameters,
                                Number_of_Time_Steps, 
                                Time,
                                Soln_Block_List.Block[i].gblknum,

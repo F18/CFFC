@@ -56,6 +56,9 @@ void Set_Default_Input_Parameters(Dusty2D_Input_Parameters &IP) {
   char *string_ptr;
   double cos_angle, sin_angle;
   
+  // CFFC root directory path:
+  IP.get_cffc_path();
+
   string_ptr = "Dusty2D.in";
   strcpy(IP.Input_File_Name,string_ptr);
 
@@ -180,8 +183,10 @@ void Set_Default_Input_Parameters(Dusty2D_Input_Parameters &IP) {
   IP.Temperature = IP.Wo.T();
   IP.Mach_Number = 0.80;
   IP.Flow_Angle = ZERO;
-  cos_angle = cos(TWO*PI*IP.Flow_Angle/360.00); if (fabs(cos_angle) < TOLER*TOLER) cos_angle = ZERO;
-  sin_angle = sin(TWO*PI*IP.Flow_Angle/360.00); if (fabs(sin_angle) < TOLER*TOLER) sin_angle = ZERO;
+  cos_angle = cos(TWO*PI*IP.Flow_Angle/360.00); 
+  if (fabs(cos_angle) < TOLER*TOLER) cos_angle = ZERO;
+  sin_angle = sin(TWO*PI*IP.Flow_Angle/360.00); 
+  if (fabs(sin_angle) < TOLER*TOLER) sin_angle = ZERO;
   IP.Wo.v.x = IP.Mach_Number*IP.Wo.a()*cos_angle;
   IP.Wo.v.y = IP.Mach_Number*IP.Wo.a()*sin_angle;
   IP.Reynolds_Number = ZERO;
@@ -280,10 +285,10 @@ void Set_Default_Input_Parameters(Dusty2D_Input_Parameters &IP) {
   IP.BC_West  = BC_NONE;
 
   // NASA rotor input variables:
-  string_ptr = "/nfs/fe01/d1/cfd/jai/CFFC/data/NASA_Rotors/R37/";
-  strcpy(IP.NASA_Rotor37_Data_Directory,string_ptr);
-  string_ptr = "/nfs/fe01/d1/cfd/jai/CFFC/data/NASA_Rotors/R67/";
-  strcpy(IP.NASA_Rotor67_Data_Directory,string_ptr);
+  strcpy(IP.NASA_Rotor37_Data_Directory, IP.CFFC_Path);
+  strcpy(IP.NASA_Rotor37_Data_Directory, "/data/NASA_Rotors/R37/");
+  strcpy(IP.NASA_Rotor67_Data_Directory, IP.CFFC_Path);
+  strcpy(IP.NASA_Rotor67_Data_Directory, "/data/NASA_Rotors/R67/");
   IP.Rotor_Flow_Type = PEAK_FLOW;
   IP.Rotor_Percent_Span = 50.00;
 
@@ -374,6 +379,10 @@ void Broadcast_Input_Parameters(Dusty2D_Input_Parameters &IP) {
   Particle2D_pState Wp;
   double cos_angle, sin_angle;
 
+  // CFFC path:
+  MPI::COMM_WORLD.Bcast(IP.CFFC_Path, 
+ 		        INPUT_PARAMETER_LENGTH_DUSTY2D, 
+			MPI::CHAR, 0);
   // Input file name and line number:
   MPI::COMM_WORLD.Bcast(IP.Input_File_Name,
 			INPUT_PARAMETER_LENGTH_DUSTY2D,
@@ -974,6 +983,10 @@ void Broadcast_Input_Parameters(Dusty2D_Input_Parameters &IP,
   Particle2D_pState Wp;
   double cos_angle, sin_angle;
 
+  // CFFC path:
+  Communicator.Bcast(IP.CFFC_Path, 
+ 		     INPUT_PARAMETER_LENGTH_DUSTY2D, 
+		     MPI::CHAR, Source_Rank);
   Communicator.Bcast(IP.Input_File_Name,
 		     INPUT_PARAMETER_LENGTH_DUSTY2D,
 		     MPI::CHAR,Source_Rank);
@@ -1603,7 +1616,16 @@ int Parse_Next_Input_Control_Parameter(Dusty2D_Input_Parameters &IP) {
   int tpt, bct;
   Vector2D Xt;
 
-  if (strcmp(IP.Next_Control_Parameter,"Time_Integration_Type") == 0) {
+  if (strcmp(IP.Next_Control_Parameter, "CFFC_Path") == 0) {
+    i_command = 1111;
+    Get_Next_Input_Control_Parameter(IP);
+    strcpy(IP.CFFC_Path, IP.Next_Control_Parameter);
+    strcpy(IP.NASA_Rotor37_Data_Directory, IP.CFFC_Path);
+    strcpy(IP.NASA_Rotor37_Data_Directory, "/data/NASA_Rotors/R37/");
+    strcpy(IP.NASA_Rotor67_Data_Directory, IP.CFFC_Path);
+    strcpy(IP.NASA_Rotor67_Data_Directory, "/data/NASA_Rotors/R67/");
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Time_Integration_Type") == 0) {
     i_command = 1;
     Get_Next_Input_Control_Parameter(IP);
     strcpy(IP.Time_Integration_Type,IP.Next_Control_Parameter);
@@ -3075,15 +3097,32 @@ int Parse_Next_Input_Control_Parameter(Dusty2D_Input_Parameters &IP) {
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Multigrid_IP.Number_of_Smooths_on_Coarsest_Level < 0) i_command = INVALID_INPUT_VALUE;
 
-  } else if (strcmp(IP.Next_Control_Parameter,"Convergence_Residual_Level") == 0) {
+  } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Absolute_Convergence_Tolerance") == 0) {
     i_command = 215;
     IP.Line_Number = IP.Line_Number + 1;
-    IP.Input_File >> IP.Multigrid_IP.Convergence_Residual_Level;
-    IP.Input_File.getline(buffer,sizeof(buffer));
-    if (IP.Multigrid_IP.Convergence_Residual_Level < ZERO) i_command = INVALID_INPUT_VALUE;
+    IP.Input_File >> IP.Multigrid_IP.Absolute_Convergence_Tolerance;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Multigrid_Relative_Convergence_Tolerance") == 0) {
+    i_command = 216;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Multigrid_IP.Relative_Convergence_Tolerance;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "FMG_Absolute_Convergence_Tolerance") == 0) {
+    i_command = 217;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Multigrid_IP.FMG_Absolute_Convergence_Tolerance;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "FMG_Relative_Convergence_Tolerance") == 0) {
+    i_command = 218;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Multigrid_IP.FMG_Relative_Convergence_Tolerance;
+    IP.Input_File.getline(buffer, sizeof(buffer));
 
   } else if (strcmp(IP.Next_Control_Parameter,"Multigrid_Smoothing_Type") == 0) {
-    i_command = 216;
+    i_command = 219;
     Get_Next_Input_Control_Parameter(IP);
     strcpy(IP.Multigrid_IP.Smoothing_Type,IP.Next_Control_Parameter);
     if (strcmp(IP.Multigrid_IP.Smoothing_Type,"Explicit_Euler") == 0) {
@@ -3104,21 +3143,21 @@ int Parse_Next_Input_Control_Parameter(Dusty2D_Input_Parameters &IP) {
     }
 
   } else if (strcmp(IP.Next_Control_Parameter,"Ncycles_Regular_Multigrid") == 0) {
-    i_command = 217;
+    i_command = 220;
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File >> IP.Multigrid_IP.Ncycles_Regular_Multigrid;
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Multigrid_IP.Ncycles_Regular_Multigrid < 0) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(IP.Next_Control_Parameter,"Ncycles_Full_Multigrid") == 0) {
-    i_command = 218;
+    i_command = 221;
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File >> IP.Multigrid_IP.Ncycles_Full_Multigrid;
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Multigrid_IP.Ncycles_Full_Multigrid < 0) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(IP.Next_Control_Parameter,"Physical_Time_Integration_Type") == 0) {
-    i_command = 219;
+    i_command = 222;
     Get_Next_Input_Control_Parameter(IP);
     strcpy(IP.Multigrid_IP.Physical_Time_Integration_Type,
 	   IP.Next_Control_Parameter);
@@ -3141,18 +3180,24 @@ int Parse_Next_Input_Control_Parameter(Dusty2D_Input_Parameters &IP) {
     }
 
   } else if (strcmp(IP.Next_Control_Parameter,"Physical_Time_CFL_Number") == 0) {
-    i_command = 220;
+    i_command = 223;
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File >> IP.Multigrid_IP.Physical_Time_CFL_Number;
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Multigrid_IP.Physical_Time_CFL_Number <= ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(IP.Next_Control_Parameter,"Dual_Time_Convergence_Residual_Level") == 0) {
-    i_command = 221;
+    i_command = 224;
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File >> IP.Multigrid_IP.Dual_Time_Convergence_Residual_Level;
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Multigrid_IP.Dual_Time_Convergence_Residual_Level < ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Multigrid_Write_Output_Cells_Frequency") == 0) {
+    i_command = 225;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Multigrid_IP.Write_Output_Cells_Frequency;
+    IP.Input_File.getline(buffer,sizeof(buffer));
 
     ////////////////////////////////////////////////////////////////////
     // PARTICLE-PHASE AND PHASE INTERACTION CHARACTERISTICS           //

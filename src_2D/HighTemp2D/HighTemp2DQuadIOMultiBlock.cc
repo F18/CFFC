@@ -1,7 +1,7 @@
 /**********************************************************************
- * HighTemp2DQuadIOMultiBlock.cc: Multi-block versions of input   *
+ * HighTemp2DQuadIOMultiBlock.cc:     Multi-block versions of input   *
  *                                    and output subroutines for 2D   *
- *                                    High-Temp multi-block       *
+ *                                    High-Temp multi-block           *
  *                                    quadrilateral mesh solution     *
  *                                    classes.                        *
  **********************************************************************/
@@ -9,7 +9,7 @@
 #include "HighTemp2DQuad.h"
 
 /**********************************************************************
- * HighTemp2D_Quad_Block -- IO Multiple Block External            *
+ * HighTemp2D_Quad_Block -- IO Multiple Block External                *
  *                              Subroutines.                          *
  **********************************************************************/
 
@@ -67,22 +67,12 @@ int Read_Restart_Solution(HighTemp2D_Quad_Block *Soln_ptr,
       restart_file.setf(ios::skipws);
       restart_file >> nsteps >> time0 >> cpu_time0;
       restart_file.unsetf(ios::skipws);
-      //restart_file.getline(gas_type,sizeof(gas_type));
-      //restart_file.getline(gas_type,sizeof(gas_type));
       if (!i_new_time_set) {
 
 	Number_of_Time_Steps = nsteps;
 	IP.Maximum_Number_of_Time_Steps += Number_of_Time_Steps;
 	Time = time0;
 	CPU_Time.cput = cpu_time0.cput;
-	//if ((strcmp(gas_type,IP.Gas_Type) != 0) &&
-	//  (strcmp(solid_type,IP.Solid_Type) != 0)) {
-	//strcpy(IP.Gas_Type,gas_type);
-	//strcpy(IP.Particle_Type,particle_type);
-	//IP.Wo.Set_Static_Variables(IP.Gas_Type,IP.FlowType,IP.Electrostatic);
-	//IP.Uo.setgas(IP.Gas_Type);
-	//IP.Uo = U(IP.Wo);
-	//}
 	i_new_time_set = 1;
       }
       restart_file >> Soln_ptr[nb];
@@ -148,8 +138,6 @@ int Write_Restart_Solution(HighTemp2D_Quad_Block *Soln_ptr,
       restart_file << setprecision(14) << Number_of_Time_Steps 
 		   << " " << Time << " " << CPU_Time << "\n";
       restart_file.unsetf(ios::scientific);
-      //restart_file << IP.Gas_Type << "\n";
-      //restart_file << IP.Solid_Type << "\n";
       restart_file << setprecision(14) << Soln_ptr[nb];
       
       // Close restart file.
@@ -173,34 +161,30 @@ int Write_Restart_Solution(HighTemp2D_Quad_Block *Soln_ptr,
  *                                                                    *
  **********************************************************************/
 int Output_Tecplot(HighTemp2D_Quad_Block *Soln_ptr,
-                   const AdaptiveBlock2D_List &Soln_Block_List,
-                   const HighTemp2D_Input_Parameters &IP,
-                   int Number_of_Time_Steps,
-                   double Time) 
-{
-
-	bool writing_intermediate_soln = false;
-	double l2_norm = -1.0, l2_norm_rel = -1.0;
-
-	return Output_Tecplot(Soln_ptr,
-                   Soln_Block_List,
-                   IP,
-                   Number_of_Time_Steps,
-                   Time,
-									 writing_intermediate_soln,
-									 l2_norm,
-									 l2_norm_rel);
+                   AdaptiveBlock2D_List &Soln_Block_List,
+                   HighTemp2D_Input_Parameters &IP,
+                   const int Number_of_Time_Steps,
+                   const double &Time) {
+  bool writing_intermediate_soln = false;
+  double l2_norm = -1.0, l2_norm_rel = -1.0;
+  return Output_Tecplot(Soln_ptr,
+                        Soln_Block_List,
+                        IP,
+                        Number_of_Time_Steps,
+                        Time,
+		        writing_intermediate_soln,
+		        l2_norm,
+		        l2_norm_rel);
 }
 
 int Output_Tecplot(HighTemp2D_Quad_Block *Soln_ptr,
-                   const AdaptiveBlock2D_List &Soln_Block_List,
-                   const HighTemp2D_Input_Parameters &IP,
-                   int Number_of_Time_Steps,
-                   double Time,
-									 bool writing_intermediate_soln,
-									 double l2_norm,
-									 double l2_norm_rel)
-{
+                   AdaptiveBlock2D_List &Soln_Block_List,
+                   HighTemp2D_Input_Parameters &IP,
+                   const int Number_of_Time_Steps,
+                   const double &Time,
+		   bool writing_intermediate_soln,
+		   const double &l2_norm,
+		   const double &l2_norm_rel) {
 
   // Only create output file if the number of blocks used by the 
   // current processor is greater than zero.
@@ -274,34 +258,30 @@ int Output_Tecplot(HighTemp2D_Quad_Block *Soln_ptr,
  *                                                                    *
  **********************************************************************/
 int Output_Cells_Tecplot(HighTemp2D_Quad_Block *Soln_ptr,
-                         const AdaptiveBlock2D_List &Soln_Block_List,
-                         const HighTemp2D_Input_Parameters &IP,
-                         int Number_of_Time_Steps,
-                         double Time) 
-{
-
-	bool writing_intermediate_soln = false;
-	double l2_norm = -1.0, l2_norm_rel = -1.0;
-
-	return Output_Cells_Tecplot(Soln_ptr,
-                         Soln_Block_List,
-                         IP,
-                         Number_of_Time_Steps,
-                         Time,
-												 writing_intermediate_soln,
-												 l2_norm,
-												 l2_norm_rel);
+                         AdaptiveBlock2D_List &Soln_Block_List,
+                         HighTemp2D_Input_Parameters &IP,
+                         const int Number_of_Time_Steps,
+                         const double &Time) {
+  bool writing_intermediate_soln = false;
+  double l2_norm = -1.0, l2_norm_rel = -1.0;
+  return Output_Cells_Tecplot(Soln_ptr,
+                              Soln_Block_List,
+                              IP,
+                              Number_of_Time_Steps,
+                              Time,
+			      writing_intermediate_soln,
+			      l2_norm,
+			      l2_norm_rel);
 }
 
 int Output_Cells_Tecplot(HighTemp2D_Quad_Block *Soln_ptr,
-                         const AdaptiveBlock2D_List &Soln_Block_List,
-                         const HighTemp2D_Input_Parameters &IP,
-                         int Number_of_Time_Steps,
-                         double Time,
-												 bool writing_intermediate_soln,
-												 double l2_norm,
-												 double l2_norm_rel)
-{
+                         AdaptiveBlock2D_List &Soln_Block_List,
+                         HighTemp2D_Input_Parameters &IP,
+                         const int Number_of_Time_Steps,
+                         const double &Time,
+  		         bool writing_intermediate_soln,
+   		         const double &l2_norm,
+			 const double &l2_norm_rel) {
   
   // Only create output file if the number of blocks used by the 
   // current processor is greater than zero.

@@ -417,6 +417,10 @@ class Grid2D_Quad_Block{
     Vector2D nfaceW(const int ii, const int jj) const;
     //@}
 
+    //@{Change current BC's
+    void set_BCs(const int& FACE, const int& BC);
+    //@}
+
     /* Assignment operator. */
     // Grid2D_Quad_Block operator = 
     //    (const Grid2D_Quad_Block &G);
@@ -434,10 +438,6 @@ class Grid2D_Quad_Block{
     //@{ @name Input-output operators.
     friend ostream &operator << (ostream &out_file, const Grid2D_Quad_Block &G);
     friend istream &operator >> (istream &in_file, Grid2D_Quad_Block &G);
-    //@}
-
-    //@{Change current BC's
-    void set_BCs(const int& FACE, const int& BC);
     //@}
 
 };
@@ -787,8 +787,6 @@ inline Vector2D Grid2D_Quad_Block::nfaceN(const int ii, const int jj) const {
   return (Vector2D( (Node[ii][jj+1].X.y - Node[ii+1][jj+1].X.y),
 		    -(Node[ii][jj+1].X.x - Node[ii+1][jj+1].X.x))/
 	  abs(Node[ii][jj+1].X - Node[ii+1][jj+1].X));
-// Why is there all of this code if the first line of this
-// function returns a value? -- Alistair Wood. Fri Jul 20 2007.
 //    if (lfaceN(ii,jj) > NANO) return (Vector2D( (Node[ii][jj+1].X.y - Node[ii+1][jj+1].X.y),
 //  					      -(Node[ii][jj+1].X.x - Node[ii+1][jj+1].X.x))/
 //  				    abs(Node[ii][jj+1].X - Node[ii+1][jj+1].X));
@@ -821,8 +819,6 @@ inline Vector2D Grid2D_Quad_Block::nfaceS(const int ii, const int jj) const {
   return (Vector2D( (Node[ii+1][jj].X.y - Node[ii][jj].X.y),
 		    -(Node[ii+1][jj].X.x - Node[ii][jj].X.x))/
 	  abs(Node[ii+1][jj].X - Node[ii][jj].X));
-// Why is there all of this code if the first line of this
-// function returns a value? -- Alistair Wood. Fri Jul 20 2007.
 //    if (lfaceS(ii,jj) > NANO) return (Vector2D( (Node[ii+1][jj].X.y - Node[ii][jj].X.y),
 //  					      -(Node[ii+1][jj].X.x - Node[ii][jj].X.x))/
 //  				    abs(Node[ii+1][jj].X - Node[ii][jj].X));
@@ -855,9 +851,6 @@ inline Vector2D Grid2D_Quad_Block::nfaceE(const int ii, const int jj) const {
   return (Vector2D( (Node[ii+1][jj+1].X.y - Node[ii+1][jj].X.y),
 		    -(Node[ii+1][jj+1].X.x - Node[ii+1][jj].X.x))/
 	  abs(Node[ii+1][jj+1].X-Node[ii+1][jj].X));
-
-// Why is there all of this code if the first line of this
-// function returns a value? -- Alistair Wood. Fri Jul 20 2007.
 //    if (lfaceE(ii,jj) > NANO) return (Vector2D( (Node[ii+1][jj+1].X.y - Node[ii+1][jj].X.y),
 //  					      -(Node[ii+1][jj+1].X.x - Node[ii+1][jj].X.x))/
 //  				    abs(Node[ii+1][jj+1].X-Node[ii+1][jj].X));
@@ -912,6 +905,38 @@ inline Vector2D Grid2D_Quad_Block::nfaceW(const int ii, const int jj) const {
 //    } else {
 //      assert(1==2);
 //    }
+}
+
+/********************************************************
+ * Grid2D_Quad_Block -- Change a block's BC's.          *
+ ********************************************************/
+inline void Grid2D_Quad_Block::set_BCs(const int& FACE, const int& BC){
+  switch(FACE){
+    case NORTH:
+      for ( int i = ICl - Nghost; i <=  ICu + Nghost; i++) {
+        BCtypeN[i] = BC;
+      } /* endfor */
+      break;
+    case SOUTH:
+      for ( int i = ICl - Nghost; i <=  ICu + Nghost; i++) {
+        BCtypeS[i] = BC;
+      } /* endfor */
+      break;
+    case EAST:
+      for ( int j = JCl - Nghost; j <=  JCu + Nghost; j++) {
+        BCtypeE[j] = BC;
+      } /* endfor */
+      break;
+    case WEST:
+      for ( int j = JCl - Nghost; j <=  JCu + Nghost; j++) {
+        BCtypeW[j] = BC;
+      } /* endfor */
+      break;
+    default:
+      cerr<<"\n WRONG \"FACE\" in set_BCs. \n";
+      exit(1);
+      break;
+    };
 }
 
 /********************************************************
@@ -1441,56 +1466,76 @@ extern Grid2D_Quad_Block** Grid_Rectangular_Box(Grid2D_Quad_Block **Grid_ptr,
 		                                const int Number_of_Cells_Jdir,
 						const int Number_of_Ghost_Cells);
 
-Grid2D_Quad_Block** Grid_Rectangular_Box(Grid2D_Quad_Block **Grid_ptr,
-                                         int &Number_of_Blocks_Idir,
-                                         int &Number_of_Blocks_Jdir,
-                                         const double &Width,
-                                         const double &Height,
-					 const int &Stretching_Flag,
-					 const int &Stretching_Type_Idir,
-					 const int &Stretching_Type_Jdir,
-					 const double &Stretching_Factor_Idir,
-					 const double &Stretching_Factor_Jdir,
- 	                                 const int Number_of_Cells_Idir,
-	                                 const int Number_of_Cells_Jdir,
-					 const int Number_of_Ghost_Cells);
+extern Grid2D_Quad_Block** Grid_Rectangular_Box(Grid2D_Quad_Block **Grid_ptr,
+                                                int &Number_of_Blocks_Idir,
+                                                int &Number_of_Blocks_Jdir,
+                                                const double &Width,
+                                                const double &Height,
+					        const int Stretching_Flag,
+					        const int Stretching_Type_Idir,
+					        const int Stretching_Type_Jdir,
+					        const double &Stretching_Factor_Idir,
+					        const double &Stretching_Factor_Jdir,
+ 	                                        const int Number_of_Cells_Idir,
+	                                        const int Number_of_Cells_Jdir,
+					        const int Number_of_Ghost_Cells);
 
-Grid2D_Quad_Block** Grid_Flat_Plate(Grid2D_Quad_Block **Grid_ptr,
-		int &Number_of_Blocks_Idir,
-		int &Number_of_Blocks_Jdir,
-		double Length,
-		int Flat_Plate_BC_Type,
-		int Stretching_Flag,
-		double Stretching_Factor_Idir,
-		double Stretching_Factor_Jdir,
-		int Number_of_Cells_Idir,
-		int Number_of_Cells_Jdir,
-		int Number_of_Ghost_Cells);
+extern Grid2D_Quad_Block** Grid_Flat_Plate(Grid2D_Quad_Block **Grid_ptr,
+                                           int &Number_of_Blocks_Idir,
+                                           int &Number_of_Blocks_Jdir,
+                                           const double &Length,
+					   const int Flat_Plate_BC_Type,
+					   const int Stretching_Flag,
+					   const double &Stretching_Factor_Idir,
+					   const double &Stretching_Factor_Jdir,
+ 		                           const int Number_of_Cells_Idir,
+		                           const int Number_of_Cells_Jdir,
+					   const int Number_of_Ghost_Cells);
 
-Grid2D_Quad_Block** Grid_FPBL_Interaction(Grid2D_Quad_Block **Grid_ptr,
-		int &Number_of_Blocks_Idir,
-		int &Number_of_Blocks_Jdir,
-		double Length,
-		double Height,
-		double Width,		 
-		int Flat_Plate_BC_Type,
-		int Stretching_Flag,
-		double Stretching_Factor_Idir,
-		double Stretching_Factor_Jdir,
-		int Number_of_Cells_Idir,
-		int Number_of_Cells_Jdir,
-		int Number_of_Ghost_Cells);
+extern Grid2D_Quad_Block** Grid_Flat_Plate_NK(Grid2D_Quad_Block **Grid_ptr,
+	 			              int &Number_of_Blocks_Idir,
+				              int &Number_of_Blocks_Jdir,
+				              const double &Length,
+				              const int Stretching_Flag,
+				              const double &Stretching_Factor_Idir,
+				              const double &Stretching_Factor_Jdir,
+				              const int Number_of_Cells_Idir,
+				              const int Number_of_Cells_Jdir,
+				              const int Number_of_Ghost_Cells);
 
-Grid2D_Quad_Block** Grid_Flat_Plate_NK(Grid2D_Quad_Block **Grid_ptr,
-				       int &Number_of_Blocks_Idir,
-				       int &Number_of_Blocks_Jdir,
-				       const double &Length,
-				       const int &Stretching_Flag,
-				       const double &Stretching_Factor_Idir,
-				       const double &Stretching_Factor_Jdir,
-				       const int Number_of_Cells_Idir,
-				       const int Number_of_Cells_Jdir,
-				       const int Number_of_Ghost_Cells);
+extern Grid2D_Quad_Block** Grid_Flat_Plate3(Grid2D_Quad_Block **Grid_ptr,
+	 			            int &Number_of_Blocks_Idir,
+				            int &Number_of_Blocks_Jdir,
+				            const double &Length,
+				            const int Stretching_Flag,
+				            const double &Stretching_Factor_Idir,
+				            const double &Stretching_Factor_Jdir,
+				            const int Number_of_Cells_Idir,
+				            const int Number_of_Cells_Jdir,
+				            const int Number_of_Ghost_Cells);
+
+extern Grid2D_Quad_Block** Grid_Flat_Plate4(Grid2D_Quad_Block **Grid_ptr,
+				            int &Number_of_Blocks_Idir,
+				            int &Number_of_Blocks_Jdir,
+				            const double &Length,
+				            const int Stretching_Flag,
+				            const double &Stretching_Factor_Idir,
+				            const double &Stretching_Factor_Jdir,
+				            const int Number_of_Cells_Idir,
+				            const int Number_of_Cells_Jdir,
+				            const int Number_of_Ghost_Cells);
+
+extern Grid2D_Quad_Block** Grid_Flat_Plate9(Grid2D_Quad_Block **Grid_ptr,
+ 	 			            int &Number_of_Blocks_Idir,
+				            int &Number_of_Blocks_Jdir,
+				            const double &Length,
+				            const int Flat_Plate_BC_Type,
+				            const int &Stretching_Flag,
+				            const double &Stretching_Factor_Idir,
+				            const double &Stretching_Factor_Jdir,
+				            const int Number_of_Cells_Idir,
+				            const int Number_of_Cells_Jdir,
+				            const int Number_of_Ghost_Cells);
 
 extern Grid2D_Quad_Block** Grid_1D_Flame(Grid2D_Quad_Block **Grid_ptr,
 					 int &Number_of_Blocks_Idir,
@@ -1599,8 +1644,8 @@ extern Grid2D_Quad_Block** Grid_Circular_Cylinder(Grid2D_Quad_Block **Grid_ptr,
                                                   int &Number_of_Blocks_Idir,
                                                   int &Number_of_Blocks_Jdir,
                                                   const double &Radius,
-						  const int &Stretching_Type_Idir,
-						  const int &Stretching_Type_Jdir,
+						  const int Stretching_Type_Idir,
+						  const int Stretching_Type_Jdir,
 						  const double &Stretching_Factor_Idir,
 						  const double &Stretching_Factor_Jdir,
  		                                  const int Number_of_Cells_Idir,
@@ -1612,26 +1657,13 @@ extern Grid2D_Quad_Block** Grid_Circular_Cylinder(Grid2D_Quad_Block **Grid_ptr,
                                                   int &Number_of_Blocks_Jdir,
                                                   const double &Inner_Radius,
                                                   const double &Outer_Radius,
-						  const int &Stretching_Type_Idir,
-						  const int &Stretching_Type_Jdir,
+						  const int Stretching_Type_Idir,
+						  const int Stretching_Type_Jdir,
 						  const double &Stretching_Factor_Idir,
 						  const double &Stretching_Factor_Jdir,
  		                                  const int Number_of_Cells_Idir,
 		                                  const int Number_of_Cells_Jdir,
 						  const int Number_of_Ghost_Cells);
-
-Grid2D_Quad_Block** Grid_Circular_Cylinder(Grid2D_Quad_Block **Grid_ptr,
-                                           int &Number_of_Blocks_Idir,
-                                           int &Number_of_Blocks_Jdir,
-                                           const double &Inner_Radius,
-                                           const double &Outer_Radius,
-					   const int &Stretching_Type_Idir,
-					   const int &Stretching_Type_Jdir,
-					   const double &Stretching_Factor_Idir,
-					   const double &Stretching_Factor_Jdir,
- 		                           const int Number_of_Cells_Idir,
-		                           const int Number_of_Cells_Jdir,
-					   const int Number_of_Ghost_Cells);
 
 extern Grid2D_Quad_Block** Grid_Ellipse(Grid2D_Quad_Block **Grid_ptr,
                                         int &Number_of_Blocks_Idir,
@@ -1694,7 +1726,6 @@ extern Grid2D_Quad_Block** Grid_Ringleb_Flow(Grid2D_Quad_Block **Grid_ptr,
 extern Grid2D_Quad_Block** Grid_Bump_Channel_Flow(Grid2D_Quad_Block **Grid_ptr,
 						  int &Number_of_Blocks_Idir,
 						  int &Number_of_Blocks_Jdir,
-						  double Radius_is_not_used,
 						  const int Smooth_Bump,
 						  const int Number_of_Cells_Idir,
 						  const int Number_of_Cells_Jdir,
@@ -1718,8 +1749,8 @@ extern Grid2D_Quad_Block** Grid_Backward_Facing_Step(Grid2D_Quad_Block **Grid_pt
 						     int &Number_of_Blocks_Jdir,
 						     const double &Step_Height,
 						     const double &Top_Wall_Deflection,
-						     const double Stretching_Factor_Idir,
-						     const double Stretching_Factor_Jdir,
+						     const double &Stretching_Factor_Idir,
+						     const double &Stretching_Factor_Jdir,
 						     const int Number_of_Cells_Idir,
 						     const int Number_of_Cells_Jdir,
 						     const int Number_of_Ghost_Cells);
@@ -1729,8 +1760,8 @@ extern Grid2D_Quad_Block** Grid_Forward_Facing_Step(Grid2D_Quad_Block **Grid_ptr
 						     int &Number_of_Blocks_Jdir,
 						     const double &Step_Height,
 						     const double &Channel_Gap,
-						     const double Stretching_Factor_Idir,
-						     const double Stretching_Factor_Jdir,
+						     const double &Stretching_Factor_Idir,
+						     const double &Stretching_Factor_Jdir,
 						     const int Number_of_Cells_Idir,
 						     const int Number_of_Cells_Jdir,
 						     const int Number_of_Ghost_Cells);
@@ -1829,17 +1860,17 @@ extern Grid2D_Quad_Block** Grid_Annulus_2D(Grid2D_Quad_Block **Grid_ptr,
 //  be used by any solution block class simply by calling with
 //  SolnBlk.Grid as an argument.
 void node_weights(double *LL, double *RR, 
-		int Orient_face, int Rii, int Rjj, int Orient_cell,
-		const Grid2D_Quad_Block &Grid);
+		  int Orient_face, int Rii, int Rjj, int Orient_cell,
+		  const Grid2D_Quad_Block &Grid);
 
 double dWn_dWc(int ni, int nj, int Orient_cell, const Grid2D_Quad_Block &Grid);
 
 void BilinearInterpolationCoefficients(double *eta, double *zeta, int ii, int jj,
-		const Grid2D_Quad_Block &Grid);
+		                       const Grid2D_Quad_Block &Grid);
 
 void diamond_gradient_weights(double *d_dWdx_dW, double *d_dWdy_dW, 
-		double LEFT, double RIGHT, 
-		int Orient_face, int Rii, int Rjj, int Orient_cell, 
-		const Grid2D_Quad_Block &Grid);
+      		              double LEFT, double RIGHT, 
+		              int Orient_face, int Rii, int Rjj, int Orient_cell, 
+		              const Grid2D_Quad_Block &Grid);
 
 #endif /* _GRID2D_QUAD_BLOCK_INCLUDED  */

@@ -8,7 +8,7 @@
 # Set some default platform and version options
 PLATFORM = generic
 
-# NoMPI, MPICH, MPT (SG)
+# NoMPI, MPICH, MPICH2, MPT (SG)
 MPI_VERSION = NoMPI
 
 # NoICEMCFD, V41, V42. V43, V50, V10, V11
@@ -220,7 +220,7 @@ ifeq ($(PLATFORM),Linux_i386)
     CC = gcc
     CXX = g++
     CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_296 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
-    FFLAGS = -O 
+    FFLAGS = -O -w
     FLAGS = -O  
     CXXFLAGS = -O 	
     ifeq ($(GCC_VERSION),V3+)
@@ -235,7 +235,7 @@ ifeq ($(PLATFORM),Linux_i386)
        CXX = icpc
        CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
        CXXFLAGS = -w0 -O2 -ip
-       FFLAGS = -O2 -ip
+       FFLAGS = -w -O2 -ip
        CFLAGS = -O2
     endif
     LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm
@@ -255,7 +255,7 @@ ifeq ($(PLATFORM),Linux_i386)
     ifeq ($(GCC_VERSION),V3+)
        CPPFLAGS = -D_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
     endif
-    FFLAGS = -O
+    FFLAGS = -O -w
     CFLAGS = -O
     CXXFLAGS = -O
     LD = $(CXX)
@@ -267,14 +267,13 @@ ifeq ($(PLATFORM),Linux_i386)
     CC = /usr/local/mpi/bin/mpicc
     CXX = /usr/local/mpi/bin/mpicxx
     CPPFLAGS = -D_MPI_VERSION -D_MPI_VERSION2 -DMPICH_IGNORE_CXX_SEEK -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS)
-    FFLAGS = -O
+    FFLAGS = -O -w
     CFLAGS = -O
     CXXFLAGS = -O
     LD = $(CXX)
     LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -lm
     DEPENDSFLAGS = 
   endif
-  CPPFLAGS += -D_i386
 endif
 
 #
@@ -308,7 +307,6 @@ ifeq ($(PLATFORM),Linux_alpha)
     LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm
     DEPENDSFLAGS = -I/usr/local/mpi/include/mpi2c++
   endif
-  CPPFLAGS += -D_ALPHA
 endif
 
 #
@@ -320,7 +318,7 @@ ifeq ($(PLATFORM),Linux_ia64)
     CXX = icpc
     CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
     CXXFLAGS = -w0 -O2 -mp -ftz 
-    FFLAGS = -O2 -mp -ftz 
+    FFLAGS = -w -O2 -mp -ftz 
     CFLAGS = -w0 -O2 -mp -ftz 
     LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -limf
     LD = $(CXX)
@@ -332,7 +330,7 @@ ifeq ($(PLATFORM),Linux_ia64)
     CXX = icpc
     CPPFLAGS = -D_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
     CXXFLAGS = -w0 -O2 -mp -ftz
-    FFLAGS = -O2 -mp -ftz
+    FFLAGS = -w -O2 -mp -ftz
     CFLAGS = -w0 -O2 -mp -ftz
     LD = $(CXX)
     LDFLAGS =  $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -limf -lmpi -lmpi++
@@ -344,13 +342,12 @@ ifeq ($(PLATFORM),Linux_ia64)
     CXX = /usr/local/mpi/bin/mpiCC
     CPPFLAGS = -D_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
     CXXFLAGS = -w0 -O2 -mp -ftz
-    FFLAGS = -w0 -O2 -mp -ftz 
+    FFLAGS = -w -O2 -mp -ftz 
     CFLAGS = -w0 -O2 -mp -ftz 
     LD = $(CXX)
     LDFLAGS =  $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -limf
     DEPENDSFLAGS = 
   endif
-  CPPFLAGS += -D_ITANIUM
 endif
 
 #
@@ -363,7 +360,7 @@ ifeq ($(PLATFORM),Linux_x86_64)
     CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
     #CXXFLAGS = -march=k8 -mmmx -msse -msse2 -m3dnow -m64 -O3 -pipe -fexpensive-optimizations -mfpmath=sse,387 
     CXXFLAGS = -O2
-    FFLAGS = -O2
+    FFLAGS = -O2 -w
     CFLAGS = -O2 
     LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -lm
     LD = $(CXX)
@@ -375,7 +372,7 @@ ifeq ($(PLATFORM),Linux_x86_64)
     CXX = /usr/local/mpi/bin/mpiCC
     CPPFLAGS = -D_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) 
     CXXFLAGS = -O2
-    FFLAGS = -O2
+    FFLAGS = -O2 -w
     CFLAGS = -O2 
     LD = $(CXX)
     LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -lm
@@ -386,7 +383,7 @@ ifeq ($(PLATFORM),Linux_x86_64)
     CC = /usr/local/mpi/bin/mpicc
     CXX = /usr/local/mpi/bin/mpicxx
     CPPFLAGS = -D_MPI_VERSION -D_MPI_VERSION2 -DMPICH_IGNORE_CXX_SEEK -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS)
-    FFLAGS = -O2
+    FFLAGS = -O2 -w
     CFLAGS = -O2
     CXXFLAGS = -O2
     LD = $(CXX)
@@ -428,5 +425,3 @@ ifeq ($(PLATFORM),hpux)
     DEPENDSFLAGS =
   endif
 endif
-
-FFLAGS += -r8

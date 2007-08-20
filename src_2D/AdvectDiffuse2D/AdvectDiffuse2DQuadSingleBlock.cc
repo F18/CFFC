@@ -970,6 +970,7 @@ int Restrict_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Coarse,
  *                                                      *
  ********************************************************/
 void Output_Tecplot(AdvectDiffuse2D_Quad_Block &SolnBlk,
+                    AdvectDiffuse2D_Input_Parameters &IP,
                     const int Number_of_Time_Steps,
                     const double &Time,
                     const int Block_Number,
@@ -1037,6 +1038,7 @@ void Output_Tecplot(AdvectDiffuse2D_Quad_Block &SolnBlk,
  *                                                      *
  ********************************************************/
 void Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block &SolnBlk,
+                          AdvectDiffuse2D_Input_Parameters &IP,
                           const int Number_of_Time_Steps,
                           const double &Time,
                           const int Block_Number,

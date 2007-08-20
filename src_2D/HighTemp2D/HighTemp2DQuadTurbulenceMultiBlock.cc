@@ -1,16 +1,16 @@
 /**********************************************************************
- * HighTemp2DQuadTurbulenceMultiBlock.cc:                         *
+ * HighTemp2DQuadTurbulenceMultiBlock.cc:                             *
  *                                                                    *
- * Multi-block versions of turbulence subroutines for 2D High-Temp      *
- * multi-block quadrilateral mesh solution classes.            *
+ * Multi-block versions of turbulence subroutines for 2D High-Temp    *
+ * multi-block quadrilateral mesh solution classes.                   *
  *                                                                    *
  **********************************************************************/
 
 #include "HighTemp2DQuad.h"
 
 /**********************************************************************
- * HighTemp2D_Quad_Block -- Turbulence Multiple Block External    *
- *                              Subroutines.                          *
+ * HighTemp2D_Quad_Block -- Turbulence Multiple Block External        *
+ *                          Subroutines.                              *
  **********************************************************************/
 
 /**********************************************************************

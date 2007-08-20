@@ -1008,6 +1008,7 @@ dUdt_Residual_Evaluation(const double &Time) {
 
   NavierStokes2D_pState Wu, Wd, dWdxl, dWdyl, dWdxr, dWdyr;
   Vector2D Xl, Xr, Xu, Xd;
+  int viscous_bc_flag;
 
   int Interface_BC_Type, Ni;
   Vector2D V, Vu, Vd;
@@ -1280,369 +1281,227 @@ dUdt_Residual_Evaluation(const double &Time) {
  	      Local_SolnBlk[nb].U[i][j].q = Local_SolnBlk[nb].W[i][j].q;
  	    }
 
-	    // Determine the i-direction viscous flux.
+	    // Evaluate the cell interface i-direction VISCOUS flux if necessary.
+	    if (Local_SolnBlk[nb].Flow_Type) {
+	      // Determine the EAST face VISCOUS flux.
+	      if (Local_SolnBlk[nb].Grid.lfaceE(i,j) < TOLER) {
+		// EAST face of cell (i,j) has zero length.
+		viscous_bc_flag = DIAMONDPATH_NONE;
 
-			do { // with while (0) to allow jumps to the end of the viscous flux calculation.
-	    	if (Local_SolnBlk[nb].Flow_Type == 0) { break; }
+	      } else if (Mesh[nb].cell_status[i  ][j] != CELL_STATUS_ACTIVE &&
+			 Mesh[nb].cell_status[i+1][j] != CELL_STATUS_ACTIVE) {
+		// EAST face of cell (i,j) is inactive.
+		viscous_bc_flag = DIAMONDPATH_NONE;
 
-				if (Local_SolnBlk[nb].Grid.lfaceE(i,j) < TOLER) { break; }
+	      } else if (Mesh[nb].cell_status[i  ][j] != CELL_STATUS_ACTIVE &&
+			 Mesh[nb].cell_status[i+1][j] == CELL_STATUS_ACTIVE) {
+		// WEST face of cell (i+1,j) corresponds to an embedded boundary.
+		Ni = Mesh[nb].cell_status[i][j];
+		Xr = Local_SolnBlk[nb].Grid.Cell[i+1][j].Xc; Wr = Local_SolnBlk[nb].W[i+1][j];
+		// Determine the boundary condition type.
+		Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceW(i+1,j));
+		// Determine the boundary velocity.
+		//Vu = Interface_Union_List[Ni].Determine_Interface_Velocity(Xu,Time);
+		//Vd = Interface_Union_List[Ni].Determine_Interface_Velocity(Xd,Time);
+		// Determine the wall node primitive states.
+		if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_HEATFLUX) {
+		  // WEST face of cell (i+1,j) is a WALL_VISCOUS_HEATFLUX boundary.
+		  viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
+		  Wu.rho = Wr.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+		} else if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_ISOTHERMAL) {
+		  // WEST face of cell (i+1,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
+		  viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
+		  Wu.rho = Wr.p/(Wr.R*Local_SolnBlk[nb].Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+		} else if (Interface_BC_Type == INTERFACE_BC_BURNING_SURFACE) {
+		  // WEST face of cell (i+1,j) is a BURNING_SURFACE boundary.
+		  viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
+		  Wu = BurningSurface(Wr,Local_SolnBlk[nb].Grid.nfaceW(i+1,j));
+		}
+		switch(IP->i_Viscous_Reconstruction) {
+		case VISCOUS_RECONSTRUCTION_CARTESIAN :
+		case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		  Xu = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X;
+		  Xd = Local_SolnBlk[nb].Grid.Node[i+1][j  ].X; Wd = Wu;
+		  break;
+		case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		case VISCOUS_RECONSTRUCTION_HYBRID :
+		  Xu = Local_SolnBlk[nb].Grid.xfaceW(i+1,j);
+		  Xl = Xu; Wl = Wu;
+		  dWdxr = Local_SolnBlk[nb].dWdx[i+1][j]; dWdxl = dWdxr;
+		  dWdyr = Local_SolnBlk[nb].dWdy[i+1][j]; dWdyl = dWdyr;
+		  break;
+		};
+	      } else if (Mesh[nb].cell_status[i  ][j] == CELL_STATUS_ACTIVE &&
+			 Mesh[nb].cell_status[i+1][j] != CELL_STATUS_ACTIVE) {
+		// EAST face of cell (i,j) corresponds to an embedded boundary.
+		Ni = Mesh[nb].cell_status[i+1][j];
+		Xl = Local_SolnBlk[nb].Grid.Cell[i][j].Xc; Wl = Local_SolnBlk[nb].W[i][j];
+		// Determine the boundary condition type.
+		Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceE(i,j));
+		// Determine the boundary velocity.
+		//Vu = Interface_Union_List[Ni].Determine_Interface_Velocity(Xu);
+		//Vd = Interface_Union_List[Ni].Determine_Interface_Velocity(Xd);
+		// Determine the wall node primitive states.
+		if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_HEATFLUX) {
+		  // EAST face of cell (i,j) is a WALL_VISCOUS_HEATFLUX boundary.
+		  viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
+		  Wu.rho = Wl.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+		} else if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_ISOTHERMAL) {
+		  // EAST face of cell (i,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
+		  viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
+		  //Temperature = Interface_Union_List[Ni].Determine_Interface_Temperature(Local_SolnBlk[nb].Grid.xfaceW(i+1,j));
+		  Wu.rho = Wl.p/(Wl.R*IP->Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+		} else if (Interface_BC_Type == INTERFACE_BC_BURNING_SURFACE) {
+		  // EAST face of cell (i,j) is a BURNING_SURFACE boundary.
+		  viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
+		  Wu = BurningSurface(Wl,Local_SolnBlk[nb].Grid.nfaceE(i,j));
+		}
+		switch(IP->i_Viscous_Reconstruction) {
+		case VISCOUS_RECONSTRUCTION_CARTESIAN :
+		case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		  Xu = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X;
+		  Xd = Local_SolnBlk[nb].Grid.Node[i+1][j  ].X; Wd = Wu;
+		  break;
+		case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		case VISCOUS_RECONSTRUCTION_HYBRID :
+		  Xu = Local_SolnBlk[nb].Grid.xfaceE(i,j);
+		  Xr = Xu; Wr = Wu;
+		  dWdxl = Local_SolnBlk[nb].dWdx[i][j]; dWdxr = dWdxl;
+		  dWdyl = Local_SolnBlk[nb].dWdy[i][j]; dWdyr = dWdyl;
+		  break;
+		};
+	      } else if (Mesh[nb].cell_status[i  ][j] == CELL_STATUS_ACTIVE &&
+			 Mesh[nb].cell_status[i+1][j] == CELL_STATUS_ACTIVE) {
 
-				if (Mesh[nb].cell_status[i  ][j] != CELL_STATUS_ACTIVE &&
-						Mesh[nb].cell_status[i+1][j] != CELL_STATUS_ACTIVE) {
-					break;
-				}
-
-				int adiabatic_flag = OFF;
-				Vector2D Xface = Local_SolnBlk[nb].Grid.xfaceE(i, j);
-				Vector2D norm_dir = Local_SolnBlk[nb].Grid.nfaceE(i, j);
-
-	      if (Mesh[nb].cell_status[i  ][j] != CELL_STATUS_ACTIVE &&
-				    Mesh[nb].cell_status[i+1][j] == CELL_STATUS_ACTIVE) {
-
-					// WEST face of cell (i+1,j) corresponds to an embedded boundary.
-					Xr = Local_SolnBlk[nb].Grid.Cell[i+1][j].Xc; 
-					Wr = Local_SolnBlk[nb].W[i+1][j];
-
-					Ni = Mesh[nb].cell_status[i][j];
-					Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Xface);
-					
-					// No viscous flux for a reflected boundary. Is this true?
-					if (Interface_BC_Type == INTERFACE_BC_REFLECTION) { break; } 
-
-					switch (Interface_BC_Type) {
-						// The face velocity is the same regardless of the BC type 
-						// and is set below.
-						case INTERFACE_BC_WALL_VISCOUS_HEATFLUX:
-							Wface.rho = Wr.rho; 
-							Wface.p = Wr.p; Wface.k = Wr.k; Wface.omega = Wr.omega;
-							break;
-						case INTERFACE_BC_WALL_VISCOUS_ISOTHERMAL:
-							Wface.rho = Wr.p/(Wr.R*Local_SolnBlk[nb].Twall); 
-							Wface.p = Wr.p; Wface.k = Wr.k; Wface.omega = Wr.omega;
-							break;
-						case INTERFACE_BC_BURNING_SURFACE:
-							Wface = BurningSurface(Wr, norm_dir);
-							break;
-					}
-
-					Wface.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xface, Time);
-
-					if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_HEATFLUX) {
-						adiabatic_flag = ON;
-					}
-
-					switch(IP->i_Viscous_Reconstruction) {
-						case VISCOUS_RECONSTRUCTION_CARTESIAN :
-						case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
-							{
-							int stencil_flag = DIAMONDPATH_RIGHT_TRIANGLE;
-							Xd = Local_SolnBlk[nb].Grid.Node[i+1][j  ].X;
-							Wd = Wface;
-							Wd.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xd, Time);
-
-							Xu = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X;
-							Wu = Wface;
-							Wu.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xu, Time);
-
-							DiamondPath_Find_dWdX(dWdx, dWdy,
-									BlankVector, BlankState, 
-									Xd, Wd,
-									Xr, Wr,
-									Xu, Wu,
-									stencil_flag);
-							}
-							break;
-						case VISCOUS_RECONSTRUCTION_HYBRID :
-							dWdxr = Local_SolnBlk[nb].dWdx[i+1][j]; 
-							dWdyr = Local_SolnBlk[nb].dWdy[i+1][j];
-
-							Xl = Xface;
-							Wl = Wface;
-							dWdxl = dWdxr; dWdyl = dWdyr; // Hmm. 
-
-							Hybrid_Find_dWdX(dWdx, dWdy, 
-									Xl, Wl, dWdxl, dWdyl,
-									Xr, Wr, dWdxr, dWdyr,
-									norm_dir);
-							break;
-						case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
-							dWdx = Local_SolnBlk[nb].dWdx[i+1][j]; 
-							dWdy = Local_SolnBlk[nb].dWdy[i+1][j];
-							break;
-					}
-				} else if (Mesh[nb].cell_status[i  ][j] == CELL_STATUS_ACTIVE &&
-				           Mesh[nb].cell_status[i+1][j] != CELL_STATUS_ACTIVE) {
-
-					// EAST face of cell (i,j) corresponds to an embedded boundary.
-					Xl = Local_SolnBlk[nb].Grid.Cell[i][j].Xc; 
-					Wl = Local_SolnBlk[nb].W[i][j];
-
-					Ni = Mesh[nb].cell_status[i+1][j];
-					Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Xface);
-
-					// No viscous flux for a reflected boundary. Is this true?
-					if (Interface_BC_Type == INTERFACE_BC_REFLECTION) { break; } 
-
-					switch (Interface_BC_Type) {
-						// The face velocity is the same regardless of the BC type 
-						// and is set below.
-						case INTERFACE_BC_WALL_VISCOUS_HEATFLUX:
-							Wface.rho = Wl.rho; 
-							Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-							break;
-						case INTERFACE_BC_WALL_VISCOUS_ISOTHERMAL:
-							Wface.rho = Wl.p/(Wl.R*IP->Twall); 
-							Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-							break;
-						case INTERFACE_BC_BURNING_SURFACE:
-							Wface = BurningSurface(Wl, norm_dir);
-							break;
-					}
-
-					Wface.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xface, Time);
-
-					if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_HEATFLUX) {
-						adiabatic_flag = ON;
-					}
-
-					switch(IP->i_Viscous_Reconstruction) {
-						case VISCOUS_RECONSTRUCTION_CARTESIAN :
-						case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
-							{
-							int stencil_flag = DIAMONDPATH_LEFT_TRIANGLE;
-							Xd = Local_SolnBlk[nb].Grid.Node[i+1][j  ].X;
-							Wd = Wface;
-							Wd.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xd, Time);
-
-							Xu = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X;
-							Wu = Wface;
-							Wu.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xu, Time);
-
-							DiamondPath_Find_dWdX(dWdx, dWdy,
-									Xl, Wl,
-									Xd, Wd,
-									BlankVector, BlankState,
-									Xu, Wu,
-									stencil_flag);
-							}
-							break;
-						case VISCOUS_RECONSTRUCTION_HYBRID :
-							dWdxl = Local_SolnBlk[nb].dWdx[i][j]; 
-							dWdyl = Local_SolnBlk[nb].dWdy[i][j]; 
-
-							Xr = Xface;
-							Wr = Wface;
-							dWdxr = dWdxl; dWdyr = dWdyl; // Hmm.
-
-							Hybrid_Find_dWdX(dWdx, dWdy, 
-									Xl, Wl, dWdxl, dWdyl,
-									Xr, Wr, dWdxr, dWdyr,
-									norm_dir);
-							break;
-						case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
-							dWdx = Local_SolnBlk[nb].dWdx[i][j]; 
-							dWdy = Local_SolnBlk[nb].dWdy[i][j];
-							break;
-					}
-
-				} else if (Mesh[nb].cell_status[i  ][j] == CELL_STATUS_ACTIVE &&
-				           Mesh[nb].cell_status[i+1][j] == CELL_STATUS_ACTIVE) {
-
-					if (i == Local_SolnBlk[nb].ICl-1 && 
-							(Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
-							 Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-							 Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_MOVING_WALL_HEATFLUX ||
-							 Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL ||
-							 Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_BURNING_SURFACE)) {
-
-						// WEST face of cell (i+1,j) is a normal boundary.
-
-						Xr = Local_SolnBlk[nb].Grid.Cell[i+1][j].Xc; 
-						Wr = Local_SolnBlk[nb].W[i+1][j];
-
-						if (Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
-								Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_MOVING_WALL_HEATFLUX) {
-							adiabatic_flag = ON;
-						}
-
-						switch (Local_SolnBlk[nb].Grid.BCtypeW[j]) {
-							case BC_WALL_VISCOUS_HEATFLUX:
-								Wface.rho = Wr.rho; Wface.v.x = ZERO; Wface.v.y = ZERO; 
-								Wface.p = Wr.p; Wface.k = Wr.k; Wface.omega =	Wr.omega;
-								break;
-							case BC_WALL_VISCOUS_ISOTHERMAL:
-								Wface.rho = Wr.p/(Wr.R*Local_SolnBlk[nb].Twall); Wface.v.x = ZERO; Wface.v.y = ZERO; 
-								Wface.p = Wr.p; Wface.k = Wr.k; Wface.omega = Wr.omega;
-								break;
-							case BC_MOVING_WALL_HEATFLUX:
-								Wface.rho = Wr.rho; Wface.v.x = Local_SolnBlk[nb].Vwall.x; Wface.v.y = Local_SolnBlk[nb].Vwall.y; 
-								Wface.p = Wr.p; Wface.k = Wr.k; Wface.omrga = Wr.omega;
-								break;
-							case BC_MOVING_WALL_ISOTHERMAL:
-								Wface.rho = Wr.p/(Wr.R*Local_SolnBlk[nb].Twall); Wface.v.x = Local_SolnBlk[nb].Vwall.x; Wface.v.y = Local_SolnBlk[nb].Vwall.y; 
-								Wface.p = Wr.p; Wface.k = Wr.k; Wface.omega = Wr.omega;
-								break;
-							case BC_BURNING_SURFACE:
-								Wface = BurningSurface(Wr, norm_dir);
-								break;
-						}
-
-						switch(IP->i_Viscous_Reconstruction) {
-							case VISCOUS_RECONSTRUCTION_CARTESIAN :
-							case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
-								{
-								int stencil_flag = DIAMONDPATH_RIGHT_TRIANGLE;
-								Xu = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X;
-								Xd = Local_SolnBlk[nb].Grid.Node[i+1][j  ].X; 
-								DiamondPath_Find_dWdX(dWdx, dWdy,
-										BlankVector, BlankState, 
-										Xd, Wface,
-										Xr, Wr,
-										Xu, Wface,
-										stencil_flag);
-								}
-								break;
-							case VISCOUS_RECONSTRUCTION_HYBRID :
-								dWdxr = Local_SolnBlk[nb].dWdx[i+1][j];
-								dWdyr = Local_SolnBlk[nb].dWdy[i+1][j];
-
-								Xl = Xface;
-								Wl = Wface;
-								dWdxl = dWdxr; dWdyl = dWdyr; // Hmm.
-
-								Hybrid_Find_dWdX(dWdx, dWdy, 
-										Xl, Wl, dWdxl, dWdyl,
-										Xr, Wr, dWdxr, dWdyr,
-										norm_dir);
-								break;
-							case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
-								dWdx = Local_SolnBlk[nb].dWdx[i+1][j];
-								dWdy = Local_SolnBlk[nb].dWdy[i+1][j];
-								break;
-						}
-
-					} else if (i == Local_SolnBlk[nb].ICu &&
-							(Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
-							 Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-							 Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_MOVING_WALL_HEATFLUX ||
-							 Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL ||
-							 Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_BURNING_SURFACE)) {
-						
-						// EAST face of cell (i,j) is a normal boundary.
-						
-						Xl = Local_SolnBlk[nb].Grid.Cell[i][j].Xc; 
-						Wl = Local_SolnBlk[nb].W[i][j];
-
-						if (Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
-						    Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_MOVING_WALL_HEATFLUX) {
-							adiabatic_flag = ON;
-						}
-
-						switch (Local_SolnBlk[nb].Grid.BCtypeE[j]) {
-							case BC_WALL_VISCOUS_HEATFLUX:
-								Wface.rho = Wl.rho; Wface.v.x = ZERO; Wface.v.y = ZERO; 
-								Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-								break;
-							case BC_WALL_VISCOUS_ISOTHERMAL:
-								Wface.rho = Wl.p/(Wl.R*Local_SolnBlk[nb].Twall); Wface.v.x = ZERO; Wface.v.y = ZERO; 
-								Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-								break;
-							case BC_MOVING_WALL_HEATFLUX:
-								Wface.rho = Wl.rho; Wface.v.x = Local_SolnBlk[nb].Vwall.x; Wface.v.y = Local_SolnBlk[nb].Vwall.y; 
-								Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-								break;
-							case BC_MOVING_WALL_ISOTHERMAL:
-								Wface.rho = Wl.p/(Wl.R*Local_SolnBlk[nb].Twall); Wface.v.x = Local_SolnBlk[nb].Vwall.x; Wface.v.y = Local_SolnBlk[nb].Vwall.y; 
-								Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-								break;
-							case BC_MOVING_WALL_ISOTHERMAL:
-								Wface = BurningSurface(Wl, norm_dir);
-								break;
-						}
-
-						switch(IP->i_Viscous_Reconstruction) {
-							case VISCOUS_RECONSTRUCTION_CARTESIAN :
-							case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
-								{
-								int stencil_flag = DIAMONDPATH_LEFT_TRIANGLE;
-								Xu = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X;
-								Xd = Local_SolnBlk[nb].Grid.Node[i+1][j  ].X; 
-								DiamondPath_Find_dWdX(dWdx, dWdy,
-										Xl, Wl,
-										Xd, Wface,
-										BlankVector, BlankState,
-										Xu, Wface,
-										stencil_flag);
-								}
-								break;
-							case VISCOUS_RECONSTRUCTION_HYBRID :
-								dWdxl = Local_SolnBlk[nb].dWdx[i][j]; 
-								dWdyl = Local_SolnBlk[nb].dWdy[i][j]; 
-
-								Xr = Xface; 
-								Wr = Wface;
-								dWdxr = dWdxl; dWdyr = dWdyl; 
-
-								Hybrid_Find_dWdX(dWdx, dWdy, 
-										Xl, Wl, dWdxl, dWdyl,
-										Xr, Wr, dWdxr, dWdyr,
-										norm_dir);
-								break;
-							case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
-								dWdx = Local_SolnBlk[nb].dWdx[i][j]; 
-								dWdy = Local_SolnBlk[nb].dWdy[i][j]; 
-								break;
-						}
-
-					} else {
-						// EAST face is either a normal cell or possibly a non-viscous
-						// boundary condition.
-						Xl = Local_SolnBlk[nb].Grid.Cell[i  ][j].Xc; Wl = Local_SolnBlk[nb].W[i  ][j];
-						Xr = Local_SolnBlk[nb].Grid.Cell[i+1][j].Xc; Wr = Local_SolnBlk[nb].W[i+1][j];
-
-						if (IP->i_Viscous_Reconstruction == VISCOUS_RECONSTRUCTION_CARTESIAN ||
-						    IP->i_Viscous_Reconstruction == VISCOUS_RECONSTRUCTION_DIAMOND_PATH) {
-
-							int stencil_flag = DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION;
-
-							Xu = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X; 
-							Xd = Local_SolnBlk[nb].Grid.Node[i+1][j  ].X; 
-
-							// These two (WnNE and WnSE) are what make diamond path so expensive.
-							Wu = Local_SolnBlk[nb].WnNE(i,j);
-							Wd = Local_SolnBlk[nb].WnSE(i,j);
-
-							DiamondPath_Find_dWdX(dWdx, dWdy,
-									Xl, Wl, Xd, Wd, Xr, Wr, Xu, Wu, 
-									stencil_flag);
-
-							// Find Wface:
-							error_flag = Bilinear_Interpolation(Wl, Xl, Wu, Xu, Wr, Xr, Wd, Xd,
-									Xface, Wface);
-							// and if error_flag?
-
-						} else {
-							Wface = HALF*(Wl + Wr);
-
-							dWdxl = Local_SolnBlk[nb].dWdx[i][j]; dWdxr = Local_SolnBlk[nb].dWdy[i+1][j];
-							dWdyl = Local_SolnBlk[nb].dWdy[i][j]; dWdyr = Local_SolnBlk[nb].dWdy[i+1][j];
-
-							if (IP->i_Viscous_Reconstruction == VISCOUS_RECONSTRUCTION_HYBRID) {
-								Hybrid_Find_dWdX(dWdx, dWdy, 
-										Xl, Wl, dWdxl, dWdyl,
-										Xr, Wr, dWdxr, dWdyr,
-										norm_dir);
-							} else if (IP->i_Viscous_Reconstruction == VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE) {
-								dWdx = HALF*(dWdxl + dWdxr);
-								dWdy = HALF*(dWdyl + dWdyr);
-							}
-						}
-					}
-				}
-				// Compute the EAST face viscous flux.
-				Flux -= ViscousFlux_n(Xface, Wface, dWdx, dWdy,
-						norm_dir, Local_SolnBlk[nb].Axisymmetric, adiabatic_flag);
-			} while (0); // end of viscous flux clause.
+		if (i == Local_SolnBlk[nb].ICl-1 && 
+		    (Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
+		     Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+		     Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_MOVING_WALL_HEATFLUX ||
+		     Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL ||
+		     Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_BURNING_SURFACE)) {
+		  // WEST face of cell (i+1,j) is a normal boundary.
+		  Xr = Local_SolnBlk[nb].Grid.Cell[i+1][j].Xc; Wr = Local_SolnBlk[nb].W[i+1][j];
+		  if (Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX) {
+		    // WEST face of cell (i+1,j) is a WALL_VISCOUS_HEATFLUX boundary.
+		    viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
+		    Wu.rho = Wr.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+		  } else if (Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
+		    // WEST face of cell (i+1,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
+		    viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
+		    Wu.rho = Wr.p/(Wr.R*Local_SolnBlk[nb].Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+		  } else if (Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_MOVING_WALL) {
+		    // WEST face of cell (i+1,j) is a MOVINGWALL_HEATFLUX boundary.
+		    viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
+		    Wu.rho = Wr.rho; Wu.v.x = Local_SolnBlk[nb].Vwall.x; Wu.v.y = Local_SolnBlk[nb].Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+		  } else if (Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL) {
+		    // WEST face of cell (i+1,j) is a MOVINGWALL_ISOTHERMAL boundary.
+		    viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
+		    Wu.rho = Wr.p/(Wr.R*Local_SolnBlk[nb].Twall); Wu.v.x = Local_SolnBlk[nb].Vwall.x; Wu.v.y = Local_SolnBlk[nb].Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+		  } else if (Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_BURNING_SURFACE) {
+		    // WEST face of cell (i+1,j) is a BURNING_SURFACE boundary.
+		    viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
+		    Wu = BurningSurface(Wr,Local_SolnBlk[nb].Grid.nfaceW(i+1,j));
+		  }
+		  switch(IP->i_Viscous_Reconstruction) {
+		  case VISCOUS_RECONSTRUCTION_CARTESIAN :
+		  case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		    Xu = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X;
+		    Xd = Local_SolnBlk[nb].Grid.Node[i+1][j  ].X; Wd = Wu;
+		    break;
+		  case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		  case VISCOUS_RECONSTRUCTION_HYBRID :
+		    Xu = Local_SolnBlk[nb].Grid.xfaceW(i+1,j);
+		    Xl = Xu; Wl = Wu;
+		    dWdxr = Local_SolnBlk[nb].dWdx[i+1][j]; dWdxl = dWdxr;
+		    dWdyr = Local_SolnBlk[nb].dWdy[i+1][j]; dWdyl = dWdyr;
+		    break;
+		  };
+		} else if (i == Local_SolnBlk[nb].ICu &&
+			   (Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
+			    Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+			    Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_MOVING_WALL_HEATFLUX ||
+			    Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL ||
+			    Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_BURNING_SURFACE)) {
+		  // EAST face of cell (i,j) is a normal boundary.
+		  Xl = Local_SolnBlk[nb].Grid.Cell[i][j].Xc; Wl = Local_SolnBlk[nb].W[i][j];
+		  if (Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX) {
+		    // EAST face of cell (i,j) is a WALL_VISCOUS_HEATFLUX boundary.
+		    viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
+		    Wu.rho = Wl.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+		  } else if (Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
+		    // EAST face of cell (i,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
+		    viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
+		    Wu.rho = Wl.p/(Wl.R*Local_SolnBlk[nb].Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+		  } else if (Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_MOVING_WALL_HEATFLUX) {
+		    // EAST face of cell (i,j) is a MOVINGWALL_HEATFLUX boundary.
+		    viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
+		    Wu.rho = Wl.rho; Wu.v.x = Local_SolnBlk[nb].Vwall.x; Wu.v.y = Local_SolnBlk[nb].Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+		  } else if (Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL) {
+		    // EAST face of cell (i,j) is a MOVINGWALL_ISOTHERMAL boundary.
+		    viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
+		    Wu.rho = Wl.p/(Wl.R*Local_SolnBlk[nb].Twall); Wu.v.x = Local_SolnBlk[nb].Vwall.x; Wu.v.y = Local_SolnBlk[nb].Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+		  } else if (Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL) {
+		    // EAST face of cell (i,j) is a BURNING_SURFACE boundary.
+		    viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
+		    Wu = BurningSurface(Wr,Local_SolnBlk[nb].Grid.nfaceE(i,j));
+		  }
+		  switch(IP->i_Viscous_Reconstruction) {
+		  case VISCOUS_RECONSTRUCTION_CARTESIAN :
+		  case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		    Xu = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X;
+		    Xd = Local_SolnBlk[nb].Grid.Node[i+1][j  ].X; Wd = Wu;
+		    break;
+		  case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		  case VISCOUS_RECONSTRUCTION_HYBRID :
+		    Xu = Local_SolnBlk[nb].Grid.xfaceE(i,j);
+		    Xr = Xu; Wr = Wu;
+		    dWdxl = Local_SolnBlk[nb].dWdx[i][j]; dWdxr = dWdxl;
+		    dWdyl = Local_SolnBlk[nb].dWdy[i][j]; dWdyr = dWdyl;
+		    break;
+		  };
+		} else {
+		  // EAST face is either a normal cell or possibly a non-
+		  // viscous boundary condition.
+		  viscous_bc_flag = DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION;
+		  Xl = Local_SolnBlk[nb].Grid.Cell[i  ][j].Xc; Wl = Local_SolnBlk[nb].W[i  ][j];
+		  Xr = Local_SolnBlk[nb].Grid.Cell[i+1][j].Xc; Wr = Local_SolnBlk[nb].W[i+1][j];
+		  switch(IP->i_Viscous_Reconstruction) {
+		  case VISCOUS_RECONSTRUCTION_CARTESIAN :
+		  case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		    Xu = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X; Wu = Local_SolnBlk[nb].WnNE(i,j);
+		    Xd = Local_SolnBlk[nb].Grid.Node[i+1][j  ].X; Wd = Local_SolnBlk[nb].WnSE(i,j);
+		    break;
+		  case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		  case VISCOUS_RECONSTRUCTION_HYBRID :
+		    Xu = Local_SolnBlk[nb].Grid.xfaceE(i,j); Wu = HALF*(Wl + Wr);
+		    dWdxl = Local_SolnBlk[nb].dWdx[i][j]; dWdxr = Local_SolnBlk[nb].dWdy[i+1][j];
+		    dWdyl = Local_SolnBlk[nb].dWdy[i][j]; dWdyr = Local_SolnBlk[nb].dWdy[i+1][j];
+		    break;
+		  };
+		}
+	      }
+	      // Compute the EAST face viscous flux.
+	      if (viscous_bc_flag != DIAMONDPATH_NONE) {
+		switch(IP->i_Viscous_Reconstruction) {
+		case VISCOUS_RECONSTRUCTION_CARTESIAN :
+		case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		  Flux -= ViscousFluxDiamondPath_n(Local_SolnBlk[nb].Grid.xfaceE(i,j),
+						   Xl,Wl,Xu,Wu,Xr,Wr,Xd,Wd,
+						   Local_SolnBlk[nb].Grid.nfaceE(i,j),
+						   Local_SolnBlk[nb].Axisymmetric,
+						   viscous_bc_flag);
+		  break;
+		case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		  Flux -= ViscousFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
+					Local_SolnBlk[nb].Grid.nfaceE(i,j),Local_SolnBlk[nb].Axisymmetric);
+		  break;
+		case VISCOUS_RECONSTRUCTION_HYBRID :
+		  Flux -= ViscousFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,Xr,Wr,dWdxr,dWdyr,
+					      Local_SolnBlk[nb].Grid.nfaceE(i,j),Local_SolnBlk[nb].Axisymmetric);
+		  break;
+		};
+	      }
+	    }
 
 	    // Evaluate cell-averaged solution changes.
 	    Local_SolnBlk[nb].dUdt[i  ][j][0] -= Flux*Local_SolnBlk[nb].Grid.lfaceE(i,j)/Local_SolnBlk[nb].Grid.Cell[i][j].A;
@@ -1907,373 +1766,230 @@ dUdt_Residual_Evaluation(const double &Time) {
 	    break;
 	  };
 
-	    // Determine the j-direction viscous flux.
+	  // Evaluate the cell interface j-direction VISCOUS flux if necessary.
+	  if (Local_SolnBlk[nb].Flow_Type) {
+	    // Determine the NORTH face VISCOUS flux.
+	    if (Local_SolnBlk[nb].Grid.lfaceN(i,j) < TOLER) {
+	      // NORTH face of cell (i,j) has zero length.
+	      viscous_bc_flag = DIAMONDPATH_NONE;
 
-			do { // with while (0) to allow jumps to the end of the viscous flux calculation.
-	    	if (Local_SolnBlk[nb].Flow_Type == 0) { break; }
+	    } else if (Mesh[nb].cell_status[i][j  ] != CELL_STATUS_ACTIVE &&
+		       Mesh[nb].cell_status[i][j+1] != CELL_STATUS_ACTIVE) {
+	      // NORTH face of cell (i,j) is inactive.
+	      viscous_bc_flag = DIAMONDPATH_NONE;
 
-				if (Local_SolnBlk[nb].Grid.lfaceN(i,j) < TOLER) { break; }
+	    } else if (Mesh[nb].cell_status[i][j  ] != CELL_STATUS_ACTIVE &&
+		       Mesh[nb].cell_status[i][j+1] == CELL_STATUS_ACTIVE) {
+	      // SOUTH face of cell (i,j+1) corresponds to an embedded boundary.
+	      Ni = Mesh[nb].cell_status[i][j];
+	      Xr = Local_SolnBlk[nb].Grid.Cell[i][j+1].Xc; Wr = Local_SolnBlk[nb].W[i][j+1];
+	      // Determine the boundary condition type.
+	      Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceS(i,j+1));
+	      // Determine the boundary velocity.
+	      //Vu = Interface_Union_List[Ni].Determine_Interface_Velocity(Xu,Time);
+	      //Vd = Interface_Union_List[Ni].Determine_Interface_Velocity(Xd,Time);
+	      if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_HEATFLUX) {
+		// SOUTH face of cell (i,j+1) is a WALL_VISCOUS_HEATFLUX boundary.
+		viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
+		Wu.rho = Wr.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+	      } else if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_ISOTHERMAL) {
+		// SOUTH face of cell (i,j+1) is a WALL_VISCOUS_ISOTHERMAL boundary.
+		viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
+		//Temperature = Interface_Union_List[Ni].Determine_Interface_Temperature(Local_SolnBlk[nb].Grid.xfaceW(i+1,j));
+		Wu.rho = Wr.p/(Wr.R*IP->Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+	      } else if (Interface_BC_Type == INTERFACE_BC_BURNING_SURFACE) {
+		// SOUTH face of cell (i,j+1) is a BURNING_SURFACE boundary.
+		viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
+		Wu = BurningSurface(Wr,Local_SolnBlk[nb].Grid.nfaceS(i,j+1));
+	      }
+	      switch(IP->i_Viscous_Reconstruction) {
+	      case VISCOUS_RECONSTRUCTION_CARTESIAN :
+	      case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		Xu = Local_SolnBlk[nb].Grid.Node[i  ][j+1].X;
+		Xd = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X; Wd = Wu;
+		break;
+	      case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+	      case VISCOUS_RECONSTRUCTION_HYBRID :
+		Xu = Local_SolnBlk[nb].Grid.xfaceS(i,j+1);
+		Xl = Xu; Wl = Wu;
+		dWdxr = Local_SolnBlk[nb].dWdx[i][j+1]; dWdxl = dWdxr;
+		dWdyr = Local_SolnBlk[nb].dWdy[i][j+1]; dWdyl = dWdyr;
+		break;
+	      };
+	    } else if (Mesh[nb].cell_status[i][j  ] == CELL_STATUS_ACTIVE &&
+		       Mesh[nb].cell_status[i][j+1] != CELL_STATUS_ACTIVE) {
+	      // NORTH face of cell (i,j) corresponds to an embedded boundary.
+	      Xl = Local_SolnBlk[nb].Grid.Cell[i][j].Xc; Wl = Local_SolnBlk[nb].W[i][j];
+	      Ni = Mesh[nb].cell_status[i][j+1];
+	      // Determine the boundary condition type.
+	      Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceN(i,j));
+	      // Determine the boundary velocity.
+	      //Vu = Interface_Union_List[Ni].Determine_Interface_Velocity(Xu,Time);
+	      //Vd = Interface_Union_List[Ni].Determine_Interface_Velocity(Xd,Time);
+	      // Determine the wall node primitive states.
+	      if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_HEATFLUX) {
+		// NORTH of cell (i,j) is a WALL_VISCOUS_HEATFLUX boundary.
+		viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
+		Wu.rho = Wl.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+	      } else if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_ISOTHERMAL) {
+		// NORTH face of cell (i,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
+		viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
+		//Temperature = Interface_Union_List[Ni].Determine_Interface_Temperature(Local_SolnBlk[nb].Grid.xfaceW(i+1,j));
+		Wu.rho = Wl.p/(Wl.R*IP->Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+	      } else if (Interface_BC_Type == INTERFACE_BC_BURNING_SURFACE) {
+		// NORTH face of cell (i,j) is a BURNING_SURFACE boundary.
+		viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
+		Wu = BurningSurface(Wl,Local_SolnBlk[nb].Grid.nfaceN(i,j));
+	      }
+	      switch(IP->i_Viscous_Reconstruction) {
+	      case VISCOUS_RECONSTRUCTION_CARTESIAN :
+	      case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		Xu = Local_SolnBlk[nb].Grid.Node[i  ][j+1].X;
+		Xd = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X; Wd = Wu;
+		break;
+	      case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+	      case VISCOUS_RECONSTRUCTION_HYBRID :
+		Xu = Local_SolnBlk[nb].Grid.xfaceN(i,j);
+		Xr = Xu; Wr = Wu;
+		dWdxl = Local_SolnBlk[nb].dWdx[i][j]; dWdxr = dWdxl;
+		dWdyl = Local_SolnBlk[nb].dWdy[i][j]; dWdyr = dWdyl;
+		break;
+	      };
+	    } else if (Mesh[nb].cell_status[i][j  ] == CELL_STATUS_ACTIVE &&
+		       Mesh[nb].cell_status[i][j+1] == CELL_STATUS_ACTIVE) {
 
-				if (Mesh[nb].cell_status[i][j  ] != CELL_STATUS_ACTIVE &&
-						Mesh[nb].cell_status[i][j+1] != CELL_STATUS_ACTIVE) {
-					break;
-				}
+	      if (j == Local_SolnBlk[nb].JCl-1 && 
+		  (Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
+		   Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+		   Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_MOVING_WALL_HEATFLUX ||
+		   Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_MOVING_WALL_ISOTHERMAL ||
+		   Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_BURNING_SURFACE)) {
+		  // SOUTH face of cell (i,j+1) is a normal boundary.
+		Xr = Local_SolnBlk[nb].Grid.Cell[i][j+1].Xc; Wr = Local_SolnBlk[nb].W[i][j+1];
+		if (Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX) {
+		  // SOUTH face of cell (i,j+1) is a WALL_VISCOUS_HEATFLUX boundary.
+		  viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
+		  Wu.rho = Wr.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+		} else if (Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
+		  // SOUTH face of cell (i,j+1) is a WALL_VISCOUS_ISOTHERMAL boundary.
+		  viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
+		  Wu.rho = Wr.p/(Wr.R*Local_SolnBlk[nb].Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+		} else if (Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_MOVING_WALL_HEATFLUX) {
+		  // SOUTH face of cell (i,j+1) is a MOVINGWALL_HEATFLUX boundary.
+		  viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
+		  Wu.rho = Wr.rho; Wu.v.x = Local_SolnBlk[nb].Vwall.x; Wu.v.y = Local_SolnBlk[nb].Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+		} else if (Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_MOVING_WALL_ISOTHERMAL) {
+		  // SOUTH face of cell (i,j+1) is a MOVINGWALL_ISOTHERMAL boundary.
+		  viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
+		  Wu.rho = Wr.p/(Wr.R*Local_SolnBlk[nb].Twall); Wu.v.x = Local_SolnBlk[nb].Vwall.x; Wu.v.y = Local_SolnBlk[nb].Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+		} else if (Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_BURNING_SURFACE) {
+		  // SOUTH face of cell (i,j+1) is a BURNING_SURFACE boundary.
+		  viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
+		  Wu = BurningSurface(Wr,Local_SolnBlk[nb].Grid.nfaceS(i,j+1));
+		}
+		switch(IP->i_Viscous_Reconstruction) {
+		case VISCOUS_RECONSTRUCTION_CARTESIAN :
+		case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		  Xu = Local_SolnBlk[nb].Grid.Node[i  ][j+1].X;
+		  Xd = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X; Wd = Wu;
+		  break;
+		case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		case VISCOUS_RECONSTRUCTION_HYBRID :
+		  Xu = Local_SolnBlk[nb].Grid.xfaceS(i,j+1);
+		  Xl = Xu; Wl = Wu;
+		  dWdxr = Local_SolnBlk[nb].dWdx[i][j+1]; dWdxl = dWdxr;
+		  dWdyr = Local_SolnBlk[nb].dWdy[i][j+1]; dWdyl = dWdyr;
+		  break;
+		};
 
-				// Please rotate your head 90 degrees to the left before
-				// attempting to read this code. For example, Xr is the
-				// position of the cell to the north of the face in
-				// question. This is necessary, for example, for
-				// DiamondPath_Find_dWdX, which only understands "left" and
-				// "right" triangles.
-
-				int adiabatic_flag = OFF;
-				Vector2D Xface = Local_SolnBlk[nb].Grid.xfaceN(i, j);
-				Vector2D norm_dir = Local_SolnBlk[nb].Grid.nfaceN(i, j);
-
-	      if (Mesh[nb].cell_status[i][j  ] != CELL_STATUS_ACTIVE &&
-				    Mesh[nb].cell_status[i][j+1] == CELL_STATUS_ACTIVE) {
-
-					// SOUTH face of cell (i,j+1) corresponds to an embedded boundary.
-					Xr = Local_SolnBlk[nb].Grid.Cell[i][j+1].Xc; 
-					Wr = Local_SolnBlk[nb].W[i][j+1];
-
-					Ni = Mesh[nb].cell_status[i][j];
-					Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Xface);
-					
-					// No viscous flux for a reflected boundary. Is this true?
-					if (Interface_BC_Type == INTERFACE_BC_REFLECTION) { break; } 
-
-					switch (Interface_BC_Type) {
-						// The face velocity is the same regardless of the BC type 
-						// and is set below.
-						case INTERFACE_BC_WALL_VISCOUS_HEATFLUX:
-							Wface.rho = Wr.rho; 
-							Wface.p = Wr.p; Wface.k = Wr.k; Wface.omega = Wr.omega;
-							break;
-						case INTERFACE_BC_WALL_VISCOUS_ISOTHERMAL:
-							Wface.rho = Wr.p/(Wr.R*Local_SolnBlk[nb].Twall); 
-							Wface.p = Wr.p; Wface.k = Wr.k; Wface.omega = Wr.omega;
-							break;
-						case INTERFACE_BC_BURNING_SURFACE:
-							Wface = BurningSurface(Wr, norm_dir);
-							break;
-					}
-
-					Wface.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xface, Time);
-
-					if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_HEATFLUX) {
-						adiabatic_flag = ON;
-					}
-
-					switch(IP->i_Viscous_Reconstruction) {
-						case VISCOUS_RECONSTRUCTION_CARTESIAN :
-						case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
-							{
-							int stencil_flag = DIAMONDPATH_RIGHT_TRIANGLE;
-							Xd = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X;
-							Wd = Wface;
-							Wd.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xd, Time);
-
-							Xu = Local_SolnBlk[nb].Grid.Node[i  ][j+1].X;
-							Wu = Wface;
-							Wu.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xu, Time);
-
-							DiamondPath_Find_dWdX(dWdx, dWdy,
-									BlankVector, BlankState, 
-									Xd, Wd,
-									Xr, Wr,
-									Xu, Wu,
-									stencil_flag);
-							}
-							break;
-						case VISCOUS_RECONSTRUCTION_HYBRID :
-							dWdxr = Local_SolnBlk[nb].dWdx[i][j+1]; 
-							dWdyr = Local_SolnBlk[nb].dWdy[i][j+1];
-
-							Xl = Xface;
-							Wl = Wface;
-							dWdxl = dWdxr; dWdyl = dWdyr; // Hmm. 
-
-							Hybrid_Find_dWdX(dWdx, dWdy, 
-									Xl, Wl, dWdxl, dWdyl,
-									Xr, Wr, dWdxr, dWdyr,
-									norm_dir);
-							break;
-						case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
-							dWdx = Local_SolnBlk[nb].dWdx[i][j+1]; 
-							dWdy = Local_SolnBlk[nb].dWdy[i][j+1];
-							break;
-					}
-				} else if (Mesh[nb].cell_status[i][j  ] == CELL_STATUS_ACTIVE &&
-				           Mesh[nb].cell_status[i][j+1] != CELL_STATUS_ACTIVE) {
-
-					// NORTH face of cell (i,j) corresponds to an embedded boundary.
-					Xl = Local_SolnBlk[nb].Grid.Cell[i][j].Xc; 
-					Wl = Local_SolnBlk[nb].W[i][j];
-
-					Ni = Mesh[nb].cell_status[i][j+1];
-					Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Xface);
-
-					// No viscous flux for a reflected boundary. Is this true?
-					if (Interface_BC_Type == INTERFACE_BC_REFLECTION) { break; } 
-
-					switch (Interface_BC_Type) {
-						// The face velocity is the same regardless of the BC type 
-						// and is set below.
-						case INTERFACE_BC_WALL_VISCOUS_HEATFLUX:
-							Wface.rho = Wl.rho; 
-							Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-							break;
-						case INTERFACE_BC_WALL_VISCOUS_ISOTHERMAL:
-							Wface.rho = Wl.p/(Wl.R*IP->Twall); 
-							Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-							break;
-						case INTERFACE_BC_BURNING_SURFACE:
-							Wface = BurningSurface(Wl, norm_dir);
-							break;
-					}
-
-					Wface.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xface, Time);
-
-					if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_HEATFLUX) {
-						adiabatic_flag = ON;
-					}
-
-					switch(IP->i_Viscous_Reconstruction) {
-						case VISCOUS_RECONSTRUCTION_CARTESIAN :
-						case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
-							{
-							int stencil_flag = DIAMONDPATH_LEFT_TRIANGLE;
-							Xd = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X;
-							Wd = Wface;
-							Wd.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xd, Time);
-
-							Xu = Local_SolnBlk[nb].Grid.Node[i  ][j+1].X;
-							Wu = Wface;
-							Wu.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xu, Time);
-
-							DiamondPath_Find_dWdX(dWdx, dWdy,
-									Xl, Wl,
-									Xd, Wd,
-									BlankVector, BlankState,
-									Xu, Wu,
-									stencil_flag);
-							}
-							break;
-						case VISCOUS_RECONSTRUCTION_HYBRID :
-							dWdxl = Local_SolnBlk[nb].dWdx[i][j]; 
-							dWdyl = Local_SolnBlk[nb].dWdy[i][j]; 
-
-							Xr = Xface;
-							Wr = Wface;
-							dWdxr = dWdxl; dWdyr = dWdyl; // Hmm.
-
-							Hybrid_Find_dWdX(dWdx, dWdy, 
-									Xl, Wl, dWdxl, dWdyl,
-									Xr, Wr, dWdxr, dWdyr,
-									norm_dir);
-							break;
-						case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
-							dWdx = Local_SolnBlk[nb].dWdx[i][j]; 
-							dWdy = Local_SolnBlk[nb].dWdy[i][j];
-							break;
-					}
-				} else if (Mesh[nb].cell_status[i][j  ] == CELL_STATUS_ACTIVE &&
-				           Mesh[nb].cell_status[i][j+1] == CELL_STATUS_ACTIVE) {
-
-					if (j == Local_SolnBlk[nb].JCl-1 && 
-							(Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
-							 Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-							 Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_MOVING_WALL_HEATFLUX ||
-							 Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_MOVING_WALL_ISOTHERMAL ||
-							 Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_BURNING_SURFACE)) {
-
-						// SOUTH face of cell (i,j+1) is a normal boundary.
-
-						Xr = Local_SolnBlk[nb].Grid.Cell[i][j+1].Xc; 
-						Wr = Local_SolnBlk[nb].W[i][j+1];
-
-						if (Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
-								Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_MOVING_WALL_HEATFLUX) {
-							adiabatic_flag = ON;
-						}
-
-						switch (Local_SolnBlk[nb].Grid.BCtypeS[i]) {
-							case BC_WALL_VISCOUS_HEATFLUX:
-								Wface.rho = Wr.rho; Wface.v.x = ZERO; Wface.v.y = ZERO; 
-								Wface.p = Wr.p; Wface.k = Wr.k; Wface.omega =	Wr.omega;
-								break;
-							case BC_WALL_VISCOUS_ISOTHERMAL:
-								Wface.rho = Wr.p/(Wr.R*Local_SolnBlk[nb].Twall); Wface.v.x = ZERO; Wface.v.y = ZERO; 
-								Wface.p = Wr.p; Wface.k = Wr.k; Wface.omega = Wr.omega;
-								break;
-							case BC_MOVING_WALL_HEATFLUX:
-								Wface.rho = Wr.rho; Wface.v.x = Local_SolnBlk[nb].Vwall.x; Wface.v.y = Local_SolnBlk[nb].Vwall.y; 
-								Wface.p = Wr.p; Wface.k = Wr.k; Wface.omrga = Wr.omega;
-								break;
-							case BC_MOVING_WALL_ISOTHERMAL:
-								Wface.rho = Wr.p/(Wr.R*Local_SolnBlk[nb].Twall); Wface.v.x = Local_SolnBlk[nb].Vwall.x; Wface.v.y = Local_SolnBlk[nb].Vwall.y; 
-								Wface.p = Wr.p; Wface.k = Wr.k; Wface.omega = Wr.omega;
-								break;
-							case BC_BURNING_SURFACE:
-								Wface = BurningSurface(Wr, norm_dir);
-								break;
-						}
-
-						switch(IP->i_Viscous_Reconstruction) {
-							case VISCOUS_RECONSTRUCTION_CARTESIAN :
-							case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
-								{
-								int stencil_flag = DIAMONDPATH_RIGHT_TRIANGLE;
-								Xu = Local_SolnBlk[nb].Grid.Node[i  ][j+1].X;
-								Xd = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X; 
-								DiamondPath_Find_dWdX(dWdx, dWdy,
-										BlankVector, BlankState, 
-										Xd, Wface,
-										Xr, Wr,
-										Xu, Wface,
-										stencil_flag);
-								}
-								break;
-							case VISCOUS_RECONSTRUCTION_HYBRID :
-								dWdxr = Local_SolnBlk[nb].dWdx[i][j+1];
-								dWdyr = Local_SolnBlk[nb].dWdy[i][j+1];
-
-								Xl = Xface;
-								Wl = Wface;
-								dWdxl = dWdxr; dWdyl = dWdyr; // Hmm.
-
-								Hybrid_Find_dWdX(dWdx, dWdy, 
-										Xl, Wl, dWdxl, dWdyl,
-										Xr, Wr, dWdxr, dWdyr,
-										norm_dir);
-								break;
-							case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
-								dWdx = Local_SolnBlk[nb].dWdx[i][j+1];
-								dWdy = Local_SolnBlk[nb].dWdy[i][j+1];
-								break;
-						}
-					} else if (j == Local_SolnBlk[nb].JCu &&
-							(Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX ||
-							 Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-							 Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_MOVING_WALL_HEATFLUX ||
-							 Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_MOVING_WALL_ISOTHERMAL ||
-							 Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_BURNING_SURFACE)) {
-						
-						// NORTH face of cell (i,j) is a normal boundary.
-						
-						Xl = Local_SolnBlk[nb].Grid.Cell[i][j].Xc; 
-						Wl = Local_SolnBlk[nb].W[i][j];
-
-						if (Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX ||
-						    Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_MOVING_WALL_HEATFLUX) {
-							adiabatic_flag = ON;
-						}
-
-						switch (Local_SolnBlk[nb].Grid.BCtypeN[i]) {
-							case BC_WALL_VISCOUS_HEATFLUX:
-								Wface.rho = Wl.rho; Wface.v.x = ZERO; Wface.v.y = ZERO; 
-								Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-								break;
-							case BC_WALL_VISCOUS_ISOTHERMAL:
-								Wface.rho = Wl.p/(Wl.R*Local_SolnBlk[nb].Twall); Wface.v.x = ZERO; Wface.v.y = ZERO; 
-								Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-								break;
-							case BC_MOVING_WALL_HEATFLUX:
-								Wface.rho = Wl.rho; Wface.v.x = Local_SolnBlk[nb].Vwall.x; Wface.v.y = Local_SolnBlk[nb].Vwall.y; 
-								Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-								break;
-							case BC_MOVING_WALL_ISOTHERMAL:
-								Wface.rho = Wl.p/(Wl.R*Local_SolnBlk[nb].Twall); Wface.v.x = Local_SolnBlk[nb].Vwall.x; Wface.v.y = Local_SolnBlk[nb].Vwall.y; 
-								Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-								break;
-							case BC_MOVING_WALL_ISOTHERMAL:
-								Wface = BurningSurface(Wl, norm_dir);
-								break;
-						}
-
-						switch(IP->i_Viscous_Reconstruction) {
-							case VISCOUS_RECONSTRUCTION_CARTESIAN :
-							case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
-								{
-								int stencil_flag = DIAMONDPATH_LEFT_TRIANGLE;
-								Xu = Local_SolnBlk[nb].Grid.Node[i  ][j+1].X;
-								Xd = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X; 
-								DiamondPath_Find_dWdX(dWdx, dWdy,
-										Xl, Wl,
-										Xd, Wface,
-										BlankVector, BlankState,
-										Xu, Wface,
-										stencil_flag);
-								}
-								break;
-							case VISCOUS_RECONSTRUCTION_HYBRID :
-								dWdxl = Local_SolnBlk[nb].dWdx[i][j]; 
-								dWdyl = Local_SolnBlk[nb].dWdy[i][j]; 
-
-								Xr = Xface; 
-								Wr = Wface;
-								dWdxr = dWdxl; dWdyr = dWdyl; 
-
-								Hybrid_Find_dWdX(dWdx, dWdy, 
-										Xl, Wl, dWdxl, dWdyl,
-										Xr, Wr, dWdxr, dWdyr,
-										norm_dir);
-								break;
-							case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
-								dWdx = Local_SolnBlk[nb].dWdx[i][j]; 
-								dWdy = Local_SolnBlk[nb].dWdy[i][j]; 
-								break;
-						}
-					} else {
-						// EAST face is either a normal cell or possibly a non-viscous
-						// boundary condition.
-						Xl = Local_SolnBlk[nb].Grid.Cell[i][j  ].Xc; Wl = Local_SolnBlk[nb].W[i][j  ];
-						Xr = Local_SolnBlk[nb].Grid.Cell[i][j+1].Xc; Wr = Local_SolnBlk[nb].W[i][j+1];
-
-						if (IP->i_Viscous_Reconstruction == VISCOUS_RECONSTRUCTION_CARTESIAN ||
-						    IP->i_Viscous_Reconstruction == VISCOUS_RECONSTRUCTION_DIAMOND_PATH) {
-
-							int stencil_flag = DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION;
-
-							Xu = Local_SolnBlk[nb].Grid.Node[i  ][j+1].X; 
-							Xd = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X; 
-
-							// These two (WnNW and WnNE) are what make diamond path so expensive.
-							Wu = Local_SolnBlk[nb].WnNW(i,j);
-							Wd = Local_SolnBlk[nb].WnNE(i,j);
-
-							DiamondPath_Find_dWdX(dWdx, dWdy,
-									Xl, Wl, Xd, Wd, Xr, Wr, Xu, Wu, 
-									stencil_flag);
-
-							// Find Wface:
-							error_flag = Bilinear_Interpolation(Wl, Xl, Wu, Xu, Wr, Xr, Wd, Xd,
-									Xface, Wface);
-							// and if error_flag?
-
-						} else {
-							Wface = HALF*(Wl + Wr);
-
-							dWdxl = Local_SolnBlk[nb].dWdx[i][j]; dWdxr = Local_SolnBlk[nb].dWdy[i][j+1];
-							dWdyl = Local_SolnBlk[nb].dWdy[i][j]; dWdyr = Local_SolnBlk[nb].dWdy[i][j+1];
-
-							if (IP->i_Viscous_Reconstruction == VISCOUS_RECONSTRUCTION_HYBRID) {
-								Hybrid_Find_dWdX(dWdx, dWdy, 
-										Xl, Wl, dWdxl, dWdyl,
-										Xr, Wr, dWdxr, dWdyr,
-										norm_dir);
-							} else if (IP->i_Viscous_Reconstruction == VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE) {
-								dWdx = HALF*(dWdxl + dWdxr);
-								dWdy = HALF*(dWdyl + dWdyr);
-							}
-						}
-					}
-				}
-				// Compute the NORTH face viscous flux.
-				Flux -= ViscousFlux_n(Xface, Wface, dWdx, dWdy,
-						norm_dir, Local_SolnBlk[nb].Axisymmetric, adiabatic_flag);
-			} while (0); // end of viscous flux clause.
+	      } else if (j == Local_SolnBlk[nb].JCu && 
+			 (Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX ||
+			  Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+			  Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_MOVING_WALL_HEATFLUX ||
+			  Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_MOVING_WALL_ISOTHERMAL ||
+			  Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_BURNING_SURFACE)) {
+		// NORTH face of cell (i,j) is a normal boundary.
+		Xl = Local_SolnBlk[nb].Grid.Cell[i][j].Xc; Wl = Local_SolnBlk[nb].W[i][j];
+		if (Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX) {
+		  // NORTH face of cell (i,j) is a WALL_VISCOUS_HEATFLUX boundary.
+		  viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
+		  Wu.rho = Wl.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+		} else if (Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
+		  // NORTH face of cell (i,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
+		  viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
+		  Wu.rho = Wl.p/(Wl.R*Local_SolnBlk[nb].Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+		} else if (Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_MOVING_WALL_HEATFLUX) {
+		  // NORTH face of cell (i,j) is a MOVINGWALL_HEATFLUX boundary.
+		  viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
+		  Wu.rho = Wl.rho; Wu.v.x = Local_SolnBlk[nb].Vwall.x; Wu.v.y = Local_SolnBlk[nb].Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+		} else if (Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_MOVING_WALL_ISOTHERMAL) {
+		  // NORTH face of cell (i,j) is a MOVINGWALL_ISOTHERMAL boundary.
+		  viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
+		  Wu.rho = Wl.p/(Wl.R*Local_SolnBlk[nb].Twall); Wu.v.x = Local_SolnBlk[nb].Vwall.x; Wu.v.y = Local_SolnBlk[nb].Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+		} else if (Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_BURNING_SURFACE) {
+		  // NORTH face of cell (i,j) is a BURNING_SURFACE boundary.
+		  viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
+		  Wu = BurningSurface(Wl,Local_SolnBlk[nb].Grid.nfaceN(i,j));
+		}
+		switch(IP->i_Viscous_Reconstruction) {
+		case VISCOUS_RECONSTRUCTION_CARTESIAN :
+		case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		  Xu = Local_SolnBlk[nb].Grid.Node[i  ][j+1].X;
+		  Xd = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X; Wd = Wu;
+		  break;
+		case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		case VISCOUS_RECONSTRUCTION_HYBRID :
+		  Xu = Local_SolnBlk[nb].Grid.xfaceN(i,j);
+		  Xr = Xu; Wr = Wu;
+		  dWdxl = Local_SolnBlk[nb].dWdx[i][j]; dWdxr = dWdxl;
+		  dWdyl = Local_SolnBlk[nb].dWdy[i][j]; dWdyr = dWdyl;
+		  break;
+		};
+	      } else {
+		// NORTH face is either a normal cell or possibly a non-viscous
+		// boundary condition.
+		viscous_bc_flag = DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION;
+		Xl = Local_SolnBlk[nb].Grid.Cell[i][j  ].Xc; Wl = Local_SolnBlk[nb].W[i][j  ];
+		Xr = Local_SolnBlk[nb].Grid.Cell[i][j+1].Xc; Wr = Local_SolnBlk[nb].W[i][j+1];
+		switch(IP->i_Viscous_Reconstruction) {
+		case VISCOUS_RECONSTRUCTION_CARTESIAN :
+		case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		  Xu = Local_SolnBlk[nb].Grid.Node[i  ][j+1].X; Wu = Local_SolnBlk[nb].WnNW(i,j);
+		  Xd = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X; Wd = Local_SolnBlk[nb].WnNE(i,j);
+		  break;
+		case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		case VISCOUS_RECONSTRUCTION_HYBRID :
+		  Xu = Local_SolnBlk[nb].Grid.xfaceN(i,j); Wu = HALF*(Wl + Wr);
+		  dWdxl = Local_SolnBlk[nb].dWdx[i][j]; dWdxr = Local_SolnBlk[nb].dWdy[i][j+1];
+		  dWdyl = Local_SolnBlk[nb].dWdy[i][j]; dWdyr = Local_SolnBlk[nb].dWdy[i][j+1];
+		  break;
+		};
+	      }
+	    }
+	    // Compute the NORTH face viscous flux.
+	    if (viscous_bc_flag != DIAMONDPATH_NONE) {
+	      switch(IP->i_Viscous_Reconstruction) {
+	      case VISCOUS_RECONSTRUCTION_CARTESIAN :
+	      case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		Flux -= ViscousFluxDiamondPath_n(Local_SolnBlk[nb].Grid.xfaceN(i,j),
+						 Xl,Wl,Xu,Wu,Xr,Wr,Xd,Wd,
+						 Local_SolnBlk[nb].Grid.nfaceN(i,j),
+						 Local_SolnBlk[nb].Axisymmetric,
+						 viscous_bc_flag);
+		break;
+	      case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		Flux -= ViscousFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
+				      Local_SolnBlk[nb].Grid.nfaceN(i,j),
+				      Local_SolnBlk[nb].Axisymmetric);
+		break;
+	      case VISCOUS_RECONSTRUCTION_HYBRID :
+		Flux -= ViscousFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,Xr,Wr,dWdxr,dWdyr,
+					    Local_SolnBlk[nb].Grid.nfaceN(i,j),
+					    Local_SolnBlk[nb].Axisymmetric);
+		break;
+	      };
+	    }
+	  }
 
 	  // Evaluate cell-averaged solution changes.
 	  Local_SolnBlk[nb].dUdt[i][j  ][0] -= Flux*Local_SolnBlk[nb].Grid.lfaceN(i,j)/Local_SolnBlk[nb].Grid.Cell[i][j].A;
@@ -2326,9 +2042,11 @@ dUdt_Multistage_Explicit(const int &i_stage, const double &Time) {
 
   NavierStokes2D_pState Wu, Wd, dWdxl, dWdyl, dWdxr, dWdyr;
   Vector2D Xl, Xr, Xu, Xd;
+  int viscous_bc_flag;
 
   int Interface_BC_Type, Ni;
-  Vector2D V;
+  Vector2D V, Vu, Vd;
+  //double Temperature;
 
   double q1, q2, k;
 
@@ -2665,96 +2383,65 @@ dUdt_Multistage_Explicit(const int &i_stage, const double &Time) {
  	      Local_SolnBlk[nb].U[i][j].q = Local_SolnBlk[nb].W[i][j].q;
  	    }
 
-	    // Determine the i-direction viscous flux.
+	    // Evaluate the cell interface i-direction VISCOUS flux if necessary.
+	    if (Local_SolnBlk[nb].Flow_Type) {
+	      // Determine the EAST face VISCOUS flux.
+	      if (Local_SolnBlk[nb].Grid.lfaceE(i,j) < TOLER) {
+		// EAST face of cell (i,j) has zero length.
+		viscous_bc_flag = DIAMONDPATH_NONE;
 
-			do { // with while (0) to allow jumps to the end of the viscous flux calculation.
-	    	if (Local_SolnBlk[nb].Flow_Type == 0) { break; }
+	      } else if (Mesh[nb].cell_status[i  ][j] != CELL_STATUS_ACTIVE &&
+			 Mesh[nb].cell_status[i+1][j] != CELL_STATUS_ACTIVE) {
+		// EAST face of cell (i,j) is inactive.
+		viscous_bc_flag = DIAMONDPATH_NONE;
 
-				if (Local_SolnBlk[nb].Grid.lfaceE(i,j) < TOLER) { break; }
-
-				if (Mesh[nb].cell_status[i  ][j] != CELL_STATUS_ACTIVE &&
-						Mesh[nb].cell_status[i+1][j] != CELL_STATUS_ACTIVE) {
-					break;
-				}
-
-				int adiabatic_flag = OFF;
-				Vector2D Xface = Local_SolnBlk[nb].Grid.xfaceE(i, j);
-				Vector2D norm_dir = Local_SolnBlk[nb].Grid.nfaceE(i, j);
-
-	      if (Mesh[nb].cell_status[i  ][j] != CELL_STATUS_ACTIVE &&
-				    Mesh[nb].cell_status[i+1][j] == CELL_STATUS_ACTIVE) {
-
-					// WEST face of cell (i+1,j) corresponds to an embedded boundary.
-					Xr = Local_SolnBlk[nb].Grid.Cell[i+1][j].Xc; 
-					Wr = Local_SolnBlk[nb].W[i+1][j];
-
-					Ni = Mesh[nb].cell_status[i][j];
-					Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Xface);
-					
-					// No viscous flux for a reflected boundary. Is this true?
-					if (Interface_BC_Type == INTERFACE_BC_REFLECTION) { break; } 
-
-					switch (Interface_BC_Type) {
-						// The face velocity is the same regardless of the BC type 
-						// and is set below.
-						case INTERFACE_BC_WALL_VISCOUS_HEATFLUX:
-							Wface.rho = Wr.rho; 
-							Wface.p = Wr.p; Wface.k = Wr.k; Wface.omega = Wr.omega;
-							break;
-						case INTERFACE_BC_WALL_VISCOUS_ISOTHERMAL:
-							Wface.rho = Wr.p/(Wr.R*Local_SolnBlk[nb].Twall); 
-							Wface.p = Wr.p; Wface.k = Wr.k; Wface.omega = Wr.omega;
-							break;
-						case INTERFACE_BC_BURNING_SURFACE:
-							Wface = BurningSurface(Wr, norm_dir);
-							break;
-					}
-
-					Wface.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xface, Time);
-
-					if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_HEATFLUX) {
-						adiabatic_flag = ON;
-					}
-
-					switch(IP->i_Viscous_Reconstruction) {
-						case VISCOUS_RECONSTRUCTION_CARTESIAN :
-						case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
-							{
-							int stencil_flag = DIAMONDPATH_RIGHT_TRIANGLE;
-							Xd = Local_SolnBlk[nb].Grid.Node[i+1][j  ].X;
-							Wd = Wface;
-							Wd.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xd, Time);
-
-							Xu = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X;
-							Wu = Wface;
-							Wu.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xu, Time);
-
-							DiamondPath_Find_dWdX(dWdx, dWdy,
-									BlankVector, BlankState, 
-									Xd, Wd,
-									Xr, Wr,
-									Xu, Wu,
-									stencil_flag);
-							}
-							break;
-						case VISCOUS_RECONSTRUCTION_HYBRID :
-							dWdxr = Local_SolnBlk[nb].dWdx[i+1][j]; 
-							dWdyr = Local_SolnBlk[nb].dWdy[i+1][j];
-
-							Xl = Xface;
-							Wl = Wface;
-							dWdxl = dWdxr; dWdyl = dWdyr; // Hmm. 
-
-							Hybrid_Find_dWdX(dWdx, dWdy, 
-									Xl, Wl, dWdxl, dWdyl,
-									Xr, Wr, dWdxr, dWdyr,
-									norm_dir);
-							break;
-						case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
-							dWdx = Local_SolnBlk[nb].dWdx[i+1][j]; 
-							dWdy = Local_SolnBlk[nb].dWdy[i+1][j];
-							break;
-					}
+	      } else if (Mesh[nb].cell_status[i  ][j] != CELL_STATUS_ACTIVE &&
+			 Mesh[nb].cell_status[i+1][j] == CELL_STATUS_ACTIVE) {
+		// WEST face of cell (i+1,j) corresponds to an embedded boundary.
+		Ni = Mesh[nb].cell_status[i][j];
+		Xr = Local_SolnBlk[nb].Grid.Cell[i+1][j].Xc; Wr = Local_SolnBlk[nb].W[i+1][j];
+		// Determine the boundary condition type.
+		Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceW(i+1,j));
+		// Determine the wall node primitive states.
+		if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_HEATFLUX) {
+		  // WEST face of cell (i+1,j) is a WALL_VISCOUS_HEATFLUX boundary.
+		  viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
+		  Wu.rho = Wr.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+		} else if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_ISOTHERMAL) {
+		  // WEST face of cell (i+1,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
+		  viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
+		  Wu.rho = Wr.p/(Wr.R*Local_SolnBlk[nb].Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+		} else if (Interface_BC_Type == INTERFACE_BC_BURNING_SURFACE) {
+		  // WEST face of cell (i+1,j) is a BURNING_SURFACE boundary.
+		  viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
+		  Wu = BurningSurface(Wr,Local_SolnBlk[nb].Grid.nfaceW(i+1,j));
+		} else if (Interface_BC_Type == INTERFACE_BC_REFLECTION) {
+		  // WEST face of cell (i+1,j) is a REFLECTION boundary.
+		  viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
+		  Wu.rho = Wr.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+		  viscous_bc_flag = DIAMONDPATH_NONE;
+		}
+		switch(IP->i_Viscous_Reconstruction) {
+		case VISCOUS_RECONSTRUCTION_CARTESIAN :
+		case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		  Wd = Wu;
+		  Xu = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X;
+		  Vu = Interface_Union_List[Ni].Determine_Interface_Velocity(Xu,Time);
+		  Wu.v = Vu;
+		  Xd = Local_SolnBlk[nb].Grid.Node[i+1][j  ].X;
+		  Vd = Interface_Union_List[Ni].Determine_Interface_Velocity(Xd,Time);
+		  Wd.v = Vd;
+		  break;
+		case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		case VISCOUS_RECONSTRUCTION_HYBRID :
+		  Xu = Local_SolnBlk[nb].Grid.xfaceW(i+1,j);
+		  Vu = Interface_Union_List[Ni].Determine_Interface_Velocity(Xu,Time);
+		  Wu.v = Vu;
+		  Xl = Xu; Wl = Wu;
+		  dWdxr = Local_SolnBlk[nb].dWdx[i+1][j]; dWdxl = dWdxr;
+		  dWdyr = Local_SolnBlk[nb].dWdy[i+1][j]; dWdyl = dWdyr;
+		  break;
+		};
 // #ifdef _EB_PARALLEL_DEBUG_
 // 		dout << endl << " ==========================================================";
 // 		dout << endl << " WEST face of cell (" << i << "," << j << "," << Local_Solution_Block_List->Block[nb].gblknum << ") VISCOUS flux:";
@@ -2775,80 +2462,54 @@ dUdt_Multistage_Explicit(const int &i_stage, const double &Time) {
 // 								   Local_SolnBlk[nb].Axisymmetric,
 // 								   viscous_bc_flag);
 // #endif
-				} else if (Mesh[nb].cell_status[i  ][j] == CELL_STATUS_ACTIVE &&
-				           Mesh[nb].cell_status[i+1][j] != CELL_STATUS_ACTIVE) {
-
-					// EAST face of cell (i,j) corresponds to an embedded boundary.
-					Xl = Local_SolnBlk[nb].Grid.Cell[i][j].Xc; 
-					Wl = Local_SolnBlk[nb].W[i][j];
-
-					Ni = Mesh[nb].cell_status[i+1][j];
-					Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Xface);
-
-					// No viscous flux for a reflected boundary. Is this true?
-					if (Interface_BC_Type == INTERFACE_BC_REFLECTION) { break; } 
-
-					switch (Interface_BC_Type) {
-						// The face velocity is the same regardless of the BC type 
-						// and is set below.
-						case INTERFACE_BC_WALL_VISCOUS_HEATFLUX:
-							Wface.rho = Wl.rho; 
-							Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-							break;
-						case INTERFACE_BC_WALL_VISCOUS_ISOTHERMAL:
-							Wface.rho = Wl.p/(Wl.R*IP->Twall); 
-							Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-							break;
-						case INTERFACE_BC_BURNING_SURFACE:
-							Wface = BurningSurface(Wl, norm_dir);
-							break;
-					}
-
-					Wface.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xface, Time);
-
-					if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_HEATFLUX) {
-						adiabatic_flag = ON;
-					}
-
-					switch(IP->i_Viscous_Reconstruction) {
-						case VISCOUS_RECONSTRUCTION_CARTESIAN :
-						case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
-							{
-							int stencil_flag = DIAMONDPATH_LEFT_TRIANGLE;
-							Xd = Local_SolnBlk[nb].Grid.Node[i+1][j  ].X;
-							Wd = Wface;
-							Wd.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xd, Time);
-
-							Xu = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X;
-							Wu = Wface;
-							Wu.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xu, Time);
-
-							DiamondPath_Find_dWdX(dWdx, dWdy,
-									Xl, Wl,
-									Xd, Wd,
-									BlankVector, BlankState,
-									Xu, Wu,
-									stencil_flag);
-							}
-							break;
-						case VISCOUS_RECONSTRUCTION_HYBRID :
-							dWdxl = Local_SolnBlk[nb].dWdx[i][j]; 
-							dWdyl = Local_SolnBlk[nb].dWdy[i][j]; 
-
-							Xr = Xface;
-							Wr = Wface;
-							dWdxr = dWdxl; dWdyr = dWdyl; // Hmm.
-
-							Hybrid_Find_dWdX(dWdx, dWdy, 
-									Xl, Wl, dWdxl, dWdyl,
-									Xr, Wr, dWdxr, dWdyr,
-									norm_dir);
-							break;
-						case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
-							dWdx = Local_SolnBlk[nb].dWdx[i][j]; 
-							dWdy = Local_SolnBlk[nb].dWdy[i][j];
-							break;
-					}
+	      } else if (Mesh[nb].cell_status[i  ][j] == CELL_STATUS_ACTIVE &&
+			 Mesh[nb].cell_status[i+1][j] != CELL_STATUS_ACTIVE) {
+		// EAST face of cell (i,j) corresponds to an embedded boundary.
+		Ni = Mesh[nb].cell_status[i+1][j];
+		Xl = Local_SolnBlk[nb].Grid.Cell[i][j].Xc; Wl = Local_SolnBlk[nb].W[i][j];
+		// Determine the boundary condition type.
+		Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceE(i,j));
+		// Determine the wall node primitive states.
+		if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_HEATFLUX) {
+		  // EAST face of cell (i,j) is a WALL_VISCOUS_HEATFLUX boundary.
+		  viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
+		  Wu.rho = Wl.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+		} else if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_ISOTHERMAL) {
+		  // EAST face of cell (i,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
+		  viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
+		  //Temperature = Interface_Union_List[Ni].Determine_Interface_Temperature(Local_SolnBlk[nb].Grid.xfaceW(i+1,j));
+		  Wu.rho = Wl.p/(Wl.R*IP->Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+		} else if (Interface_BC_Type == INTERFACE_BC_BURNING_SURFACE) {
+		  // EAST face of cell (i,j) is a BURNING_SURFACE boundary.
+		  viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
+		  Wu = BurningSurface(Wl,Local_SolnBlk[nb].Grid.nfaceE(i,j));
+		} else if (Interface_BC_Type == INTERFACE_BC_REFLECTION) {
+		  // EAST face of cell (i,j) is a REFLECTION boundary.
+		  viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
+		  Wu.rho = Wl.rho; Wu.v.x = ZERO; Wu.v.y = Wl.v.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+		  viscous_bc_flag = DIAMONDPATH_NONE;
+		}
+		switch(IP->i_Viscous_Reconstruction) {
+		case VISCOUS_RECONSTRUCTION_CARTESIAN :
+		case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		  Wd = Wu;
+		  Xu = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X;
+		  Vu = Interface_Union_List[Ni].Determine_Interface_Velocity(Xu,Time);
+		  Wu.v = Vu;
+		  Xd = Local_SolnBlk[nb].Grid.Node[i+1][j  ].X;
+		  Vd = Interface_Union_List[Ni].Determine_Interface_Velocity(Xd,Time);
+		  Wd.v = Vu;
+		  break;
+		case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		case VISCOUS_RECONSTRUCTION_HYBRID :
+		  Xu = Local_SolnBlk[nb].Grid.xfaceE(i,j);
+		  Vu = Interface_Union_List[Ni].Determine_Interface_Velocity(Xu,Time);
+		  Wu.v = Vu;
+		  Xr = Xu; Wr = Wu;
+		  dWdxl = Local_SolnBlk[nb].dWdx[i][j]; dWdxr = dWdxl;
+		  dWdyl = Local_SolnBlk[nb].dWdy[i][j]; dWdyr = dWdyl;
+		  break;
+		};
 // #ifdef _EB_PARALLEL_DEBUG_
 // 		dout << endl << " ==========================================================";
 // 		dout << endl << " EAST face of cell (" << i << "," << j << "," << Local_Solution_Block_List->Block[nb].gblknum << ") VISCOUS flux:";
@@ -2870,81 +2531,54 @@ dUdt_Multistage_Explicit(const int &i_stage, const double &Time) {
 // 								   viscous_bc_flag);
 // #endif
 
-				} else if (Mesh[nb].cell_status[i  ][j] == CELL_STATUS_ACTIVE &&
-				           Mesh[nb].cell_status[i+1][j] == CELL_STATUS_ACTIVE) {
+	      } else if (Mesh[nb].cell_status[i  ][j] == CELL_STATUS_ACTIVE &&
+			 Mesh[nb].cell_status[i+1][j] == CELL_STATUS_ACTIVE) {
 
-					if (i == Local_SolnBlk[nb].ICl-1 && 
-							(Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
-							 Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-							 Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_MOVING_WALL_HEATFLUX ||
-							 Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL ||
-							 Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_BURNING_SURFACE)) {
+		V = Vector2D_ZERO;
 
-						// WEST face of cell (i+1,j) is a normal boundary.
-
-						Xr = Local_SolnBlk[nb].Grid.Cell[i+1][j].Xc; 
-						Wr = Local_SolnBlk[nb].W[i+1][j];
-
-						if (Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
-								Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_MOVING_WALL_HEATFLUX) {
-							adiabatic_flag = ON;
-						}
-
-						switch (Local_SolnBlk[nb].Grid.BCtypeW[j]) {
-							case BC_WALL_VISCOUS_HEATFLUX:
-								Wface.rho = Wr.rho; Wface.v.x = ZERO; Wface.v.y = ZERO; 
-								Wface.p = Wr.p; Wface.k = Wr.k; Wface.omega =	Wr.omega;
-								break;
-							case BC_WALL_VISCOUS_ISOTHERMAL:
-								Wface.rho = Wr.p/(Wr.R*Local_SolnBlk[nb].Twall); Wface.v.x = ZERO; Wface.v.y = ZERO; 
-								Wface.p = Wr.p; Wface.k = Wr.k; Wface.omega = Wr.omega;
-								break;
-							case BC_MOVING_WALL_HEATFLUX:
-								Wface.rho = Wr.rho; Wface.v.x = Local_SolnBlk[nb].Vwall.x; Wface.v.y = Local_SolnBlk[nb].Vwall.y; 
-								Wface.p = Wr.p; Wface.k = Wr.k; Wface.omrga = Wr.omega;
-								break;
-							case BC_MOVING_WALL_ISOTHERMAL:
-								Wface.rho = Wr.p/(Wr.R*Local_SolnBlk[nb].Twall); Wface.v.x = Local_SolnBlk[nb].Vwall.x; Wface.v.y = Local_SolnBlk[nb].Vwall.y; 
-								Wface.p = Wr.p; Wface.k = Wr.k; Wface.omega = Wr.omega;
-								break;
-							case BC_BURNING_SURFACE:
-								Wface = BurningSurface(Wr, norm_dir);
-								break;
-						}
-
-						switch(IP->i_Viscous_Reconstruction) {
-							case VISCOUS_RECONSTRUCTION_CARTESIAN :
-							case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
-								{
-								int stencil_flag = DIAMONDPATH_RIGHT_TRIANGLE;
-								Xu = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X;
-								Xd = Local_SolnBlk[nb].Grid.Node[i+1][j  ].X; 
-								DiamondPath_Find_dWdX(dWdx, dWdy,
-										BlankVector, BlankState, 
-										Xd, Wface,
-										Xr, Wr,
-										Xu, Wface,
-										stencil_flag);
-								}
-								break;
-							case VISCOUS_RECONSTRUCTION_HYBRID :
-								dWdxr = Local_SolnBlk[nb].dWdx[i+1][j];
-								dWdyr = Local_SolnBlk[nb].dWdy[i+1][j];
-
-								Xl = Xface;
-								Wl = Wface;
-								dWdxl = dWdxr; dWdyl = dWdyr; // Hmm.
-
-								Hybrid_Find_dWdX(dWdx, dWdy, 
-										Xl, Wl, dWdxl, dWdyl,
-										Xr, Wr, dWdxr, dWdyr,
-										norm_dir);
-								break;
-							case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
-								dWdx = Local_SolnBlk[nb].dWdx[i+1][j];
-								dWdy = Local_SolnBlk[nb].dWdy[i+1][j];
-								break;
-						}
+		if (i == Local_SolnBlk[nb].ICl-1 && 
+		    (Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
+		     Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+		     Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_MOVING_WALL_HEATFLUX ||
+		     Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL ||
+		     Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_BURNING_SURFACE)) {
+		  // WEST face of cell (i+1,j) is a normal boundary.
+		  Xr = Local_SolnBlk[nb].Grid.Cell[i+1][j].Xc; Wr = Local_SolnBlk[nb].W[i+1][j];
+		  if (Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX) {
+		    // WEST face of cell (i+1,j) is a WALL_VISCOUS_HEATFLUX boundary.
+		    viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
+		    Wu.rho = Wr.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+		  } else if (Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
+		    // WEST face of cell (i+1,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
+		    viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
+		    Wu.rho = Wr.p/(Wr.R*Local_SolnBlk[nb].Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+		  } else if (Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_MOVING_WALL) {
+		    // WEST face of cell (i+1,j) is a MOVINGWALL_HEATFLUX boundary.
+		    viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
+		    Wu.rho = Wr.rho; Wu.v.x = Local_SolnBlk[nb].Vwall.x; Wu.v.y = Local_SolnBlk[nb].Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+		  } else if (Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL) {
+		    // WEST face of cell (i+1,j) is a MOVINGWALL_ISOTHERMAL boundary.
+		    viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
+		    Wu.rho = Wr.p/(Wr.R*Local_SolnBlk[nb].Twall); Wu.v.x = Local_SolnBlk[nb].Vwall.x; Wu.v.y = Local_SolnBlk[nb].Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+		  } else if (Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_BURNING_SURFACE) {
+		    // WEST face of cell (i+1,j) is a BURNING_SURFACE boundary.
+		    viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
+		    Wu = BurningSurface(Wr,Local_SolnBlk[nb].Grid.nfaceW(i+1,j));
+		  }
+		  switch(IP->i_Viscous_Reconstruction) {
+		  case VISCOUS_RECONSTRUCTION_CARTESIAN :
+		  case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		    Xu = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X;
+		    Xd = Local_SolnBlk[nb].Grid.Node[i+1][j  ].X; Wd = Wu;
+		    break;
+		  case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		  case VISCOUS_RECONSTRUCTION_HYBRID :
+		    Xu = Local_SolnBlk[nb].Grid.xfaceW(i+1,j);
+		    Xl = Xu; Wl = Wu;
+		    dWdxr = Local_SolnBlk[nb].dWdx[i+1][j]; dWdxl = dWdxr;
+		    dWdyr = Local_SolnBlk[nb].dWdy[i+1][j]; dWdyl = dWdyr;
+		    break;
+		  };
 // #ifdef _EB_PARALLEL_DEBUG_
 // 		dout << endl << " ==========================================================";
 // 		dout << endl << " WEST face of cell (" << i+1 << "," << j << "," << Local_Solution_Block_List->Block[nb].gblknum << ") VISCOUS flux:";
@@ -2965,79 +2599,49 @@ dUdt_Multistage_Explicit(const int &i_stage, const double &Time) {
 // 								   Local_SolnBlk[nb].Axisymmetric,
 // 								   viscous_bc_flag);
 // #endif
-
-					} else if (i == Local_SolnBlk[nb].ICu &&
-							(Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
-							 Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-							 Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_MOVING_WALL_HEATFLUX ||
-							 Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL ||
-							 Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_BURNING_SURFACE)) {
-						
-						// EAST face of cell (i,j) is a normal boundary.
-						
-						Xl = Local_SolnBlk[nb].Grid.Cell[i][j].Xc; 
-						Wl = Local_SolnBlk[nb].W[i][j];
-
-						if (Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
-						    Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_MOVING_WALL_HEATFLUX) {
-							adiabatic_flag = ON;
-						}
-
-						switch (Local_SolnBlk[nb].Grid.BCtypeE[j]) {
-							case BC_WALL_VISCOUS_HEATFLUX:
-								Wface.rho = Wl.rho; Wface.v.x = ZERO; Wface.v.y = ZERO; 
-								Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-								break;
-							case BC_WALL_VISCOUS_ISOTHERMAL:
-								Wface.rho = Wl.p/(Wl.R*Local_SolnBlk[nb].Twall); Wface.v.x = ZERO; Wface.v.y = ZERO; 
-								Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-								break;
-							case BC_MOVING_WALL_HEATFLUX:
-								Wface.rho = Wl.rho; Wface.v.x = Local_SolnBlk[nb].Vwall.x; Wface.v.y = Local_SolnBlk[nb].Vwall.y; 
-								Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-								break;
-							case BC_MOVING_WALL_ISOTHERMAL:
-								Wface.rho = Wl.p/(Wl.R*Local_SolnBlk[nb].Twall); Wface.v.x = Local_SolnBlk[nb].Vwall.x; Wface.v.y = Local_SolnBlk[nb].Vwall.y; 
-								Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-								break;
-							case BC_MOVING_WALL_ISOTHERMAL:
-								Wface = BurningSurface(Wl, norm_dir);
-								break;
-						}
-
-						switch(IP->i_Viscous_Reconstruction) {
-							case VISCOUS_RECONSTRUCTION_CARTESIAN :
-							case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
-								{
-								int stencil_flag = DIAMONDPATH_LEFT_TRIANGLE;
-								Xu = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X;
-								Xd = Local_SolnBlk[nb].Grid.Node[i+1][j  ].X; 
-								DiamondPath_Find_dWdX(dWdx, dWdy,
-										Xl, Wl,
-										Xd, Wface,
-										BlankVector, BlankState,
-										Xu, Wface,
-										stencil_flag);
-								}
-								break;
-							case VISCOUS_RECONSTRUCTION_HYBRID :
-								dWdxl = Local_SolnBlk[nb].dWdx[i][j]; 
-								dWdyl = Local_SolnBlk[nb].dWdy[i][j]; 
-
-								Xr = Xface; 
-								Wr = Wface;
-								dWdxr = dWdxl; dWdyr = dWdyl; 
-
-								Hybrid_Find_dWdX(dWdx, dWdy, 
-										Xl, Wl, dWdxl, dWdyl,
-										Xr, Wr, dWdxr, dWdyr,
-										norm_dir);
-								break;
-							case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
-								dWdx = Local_SolnBlk[nb].dWdx[i][j]; 
-								dWdy = Local_SolnBlk[nb].dWdy[i][j]; 
-								break;
-						}
+		} else if (i == Local_SolnBlk[nb].ICu &&
+			   (Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
+			    Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+			    Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_MOVING_WALL_HEATFLUX ||
+			    Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL ||
+			    Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_BURNING_SURFACE)) {
+		  // EAST face of cell (i,j) is a normal boundary.
+		  Xl = Local_SolnBlk[nb].Grid.Cell[i][j].Xc; Wl = Local_SolnBlk[nb].W[i][j];
+		  if (Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX) {
+		    // EAST face of cell (i,j) is a WALL_VISCOUS_HEATFLUX boundary.
+		    viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
+		    Wu.rho = Wl.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+		  } else if (Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
+		    // EAST face of cell (i,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
+		    viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
+		    Wu.rho = Wl.p/(Wl.R*Local_SolnBlk[nb].Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+		  } else if (Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_MOVING_WALL_HEATFLUX) {
+		    // EAST face of cell (i,j) is a MOVINGWALL_HEATFLUX boundary.
+		    viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
+		    Wu.rho = Wl.rho; Wu.v.x = Local_SolnBlk[nb].Vwall.x; Wu.v.y = Local_SolnBlk[nb].Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+		  } else if (Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL) {
+		    // EAST face of cell (i,j) is a MOVINGWALL_ISOTHERMAL boundary.
+		    viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
+		    Wu.rho = Wl.p/(Wl.R*Local_SolnBlk[nb].Twall); Wu.v.x = Local_SolnBlk[nb].Vwall.x; Wu.v.y = Local_SolnBlk[nb].Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+		  } else if (Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL) {
+		    // EAST face of cell (i,j) is a BURNING_SURFACE boundary.
+		    viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
+		    Wu = BurningSurface(Wr,Local_SolnBlk[nb].Grid.nfaceE(i,j));
+		  }
+		  switch(IP->i_Viscous_Reconstruction) {
+		  case VISCOUS_RECONSTRUCTION_CARTESIAN :
+		  case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		    Xu = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X;
+		    Xd = Local_SolnBlk[nb].Grid.Node[i+1][j  ].X; Wd = Wu;
+		    break;
+		  case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		  case VISCOUS_RECONSTRUCTION_HYBRID :
+		    Xu = Local_SolnBlk[nb].Grid.xfaceE(i,j);
+		    Xr = Xu; Wr = Wu;
+		    dWdxl = Local_SolnBlk[nb].dWdx[i][j]; dWdxr = dWdxl;
+		    dWdyl = Local_SolnBlk[nb].dWdy[i][j]; dWdyr = dWdyl;
+		    break;
+		  };
 // #ifdef _EB_PARALLEL_DEBUG_
 // 		dout << endl << " ==========================================================";
 // 		dout << endl << " EAST face of cell (" << i << "," << j << "," << Local_Solution_Block_List->Block[nb].gblknum << ") VISCOUS flux:";
@@ -3059,49 +2663,25 @@ dUdt_Multistage_Explicit(const int &i_stage, const double &Time) {
 // 								   viscous_bc_flag);
 // #endif
 
-					} else {
-						// EAST face is either a normal cell or possibly a non-viscous
-						// boundary condition.
-						Xl = Local_SolnBlk[nb].Grid.Cell[i  ][j].Xc; Wl = Local_SolnBlk[nb].W[i  ][j];
-						Xr = Local_SolnBlk[nb].Grid.Cell[i+1][j].Xc; Wr = Local_SolnBlk[nb].W[i+1][j];
-
-						if (IP->i_Viscous_Reconstruction == VISCOUS_RECONSTRUCTION_CARTESIAN ||
-						    IP->i_Viscous_Reconstruction == VISCOUS_RECONSTRUCTION_DIAMOND_PATH) {
-
-							int stencil_flag = DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION;
-
-							Xu = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X; 
-							Xd = Local_SolnBlk[nb].Grid.Node[i+1][j  ].X; 
-
-							// These two (WnNE and WnSE) are what make diamond path so expensive.
-							Wu = Local_SolnBlk[nb].WnNE(i,j);
-							Wd = Local_SolnBlk[nb].WnSE(i,j);
-
-							DiamondPath_Find_dWdX(dWdx, dWdy,
-									Xl, Wl, Xd, Wd, Xr, Wr, Xu, Wu, 
-									stencil_flag);
-
-							// Find Wface:
-							error_flag = Bilinear_Interpolation(Wl, Xl, Wu, Xu, Wr, Xr, Wd, Xd,
-									Xface, Wface);
-							// and if error_flag?
-
-						} else {
-							Wface = HALF*(Wl + Wr);
-
-							dWdxl = Local_SolnBlk[nb].dWdx[i][j]; dWdxr = Local_SolnBlk[nb].dWdy[i+1][j];
-							dWdyl = Local_SolnBlk[nb].dWdy[i][j]; dWdyr = Local_SolnBlk[nb].dWdy[i+1][j];
-
-							if (IP->i_Viscous_Reconstruction == VISCOUS_RECONSTRUCTION_HYBRID) {
-								Hybrid_Find_dWdX(dWdx, dWdy, 
-										Xl, Wl, dWdxl, dWdyl,
-										Xr, Wr, dWdxr, dWdyr,
-										norm_dir);
-							} else if (IP->i_Viscous_Reconstruction == VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE) {
-								dWdx = HALF*(dWdxl + dWdxr);
-								dWdy = HALF*(dWdyl + dWdyr);
-							}
-						}
+		} else {
+		  // EAST face is either a normal cell or possibly a non-
+		  // viscous boundary condition.
+		  viscous_bc_flag = DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION;
+		  Xl = Local_SolnBlk[nb].Grid.Cell[i  ][j].Xc; Wl = Local_SolnBlk[nb].W[i  ][j];
+		  Xr = Local_SolnBlk[nb].Grid.Cell[i+1][j].Xc; Wr = Local_SolnBlk[nb].W[i+1][j];
+		  switch(IP->i_Viscous_Reconstruction) {
+		  case VISCOUS_RECONSTRUCTION_CARTESIAN :
+		  case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		    Xu = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X; Wu = Local_SolnBlk[nb].WnNE(i,j);
+		    Xd = Local_SolnBlk[nb].Grid.Node[i+1][j  ].X; Wd = Local_SolnBlk[nb].WnSE(i,j);
+		    break;
+		  case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		  case VISCOUS_RECONSTRUCTION_HYBRID :
+		    Xu = Local_SolnBlk[nb].Grid.xfaceE(i,j); Wu = HALF*(Wl + Wr);
+		    dWdxl = Local_SolnBlk[nb].dWdx[i][j]; dWdxr = Local_SolnBlk[nb].dWdy[i+1][j];
+		    dWdyl = Local_SolnBlk[nb].dWdy[i][j]; dWdyr = Local_SolnBlk[nb].dWdy[i+1][j];
+		    break;
+		  };
 // #ifdef _EB_PARALLEL_DEBUG_
 // 		dout << endl << " ==========================================================";
 // 		dout << endl << " EAST face of cell (" << i << "," << j <<  "," << Local_Solution_Block_List->Block[nb].gblknum << ") VISCOUS flux:";
@@ -3124,11 +2704,10 @@ dUdt_Multistage_Explicit(const int &i_stage, const double &Time) {
 // 								   viscous_bc_flag);
 // #endif
 
-					}
-				}
-				// Compute the EAST face viscous flux.
-				Flux -= ViscousFlux_n(Xface, Wface, dWdx, dWdy,
-						norm_dir, Local_SolnBlk[nb].Axisymmetric, adiabatic_flag);
+		}
+	      }
+	      // Compute the EAST face viscous flux.
+	      if (viscous_bc_flag != DIAMONDPATH_NONE) {
 // 		dout << endl << " l:" << Xl << Wl;
 // 		dout << endl << " r:" << Xr << Wr;
 // 		dout << endl << " u:" << Xu << Wu;
@@ -3152,7 +2731,26 @@ dUdt_Multistage_Explicit(const int &i_stage, const double &Time) {
 // 								   Local_SolnBlk[nb].Grid.nfaceE(i,j),
 // 								   Local_SolnBlk[nb].Axisymmetric,
 // 								   viscous_bc_flag);
-			} while (0); // end of viscous flux clause.
+		switch(IP->i_Viscous_Reconstruction) {
+		case VISCOUS_RECONSTRUCTION_CARTESIAN :
+		case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		  Flux -= ViscousFluxDiamondPath_n(Local_SolnBlk[nb].Grid.xfaceE(i,j),
+						   Xl,Wl,Xd,Wd,Xr,Wr,Xu,Wu,
+						   Local_SolnBlk[nb].Grid.nfaceE(i,j),
+						   Local_SolnBlk[nb].Axisymmetric,
+						   viscous_bc_flag);
+		  break;
+		case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		  Flux -= ViscousFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
+					Local_SolnBlk[nb].Grid.nfaceE(i,j),Local_SolnBlk[nb].Axisymmetric);
+		  break;
+		case VISCOUS_RECONSTRUCTION_HYBRID :
+		  Flux -= ViscousFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,Xr,Wr,dWdxr,dWdyr,
+					      Local_SolnBlk[nb].Grid.nfaceE(i,j),Local_SolnBlk[nb].Axisymmetric);
+		  break;
+		};
+	      }
+	    }
 
 	    // Evaluate cell-averaged solution changes.
 	    Local_SolnBlk[nb].dUdt[i  ][j][k_residual] -= (IP->CFL_Number*Local_SolnBlk[nb].dt[i][j])*
@@ -3479,103 +3077,64 @@ dUdt_Multistage_Explicit(const int &i_stage, const double &Time) {
 	    break;
 	  };
 
-	    // Determine the j-direction viscous flux.
+	  // Evaluate the cell interface j-direction VISCOUS flux if necessary.
+	  if (Local_SolnBlk[nb].Flow_Type) {
+	    // Determine the NORTH face VISCOUS flux.
+	    if (Local_SolnBlk[nb].Grid.lfaceN(i,j) < TOLER) {
+	      // NORTH face of cell (i,j) has zero length.
+	      viscous_bc_flag = DIAMONDPATH_NONE;
 
-			do { // with while (0) to allow jumps to the end of the viscous flux calculation.
-	    	if (Local_SolnBlk[nb].Flow_Type == 0) { break; }
+	    } else if (Mesh[nb].cell_status[i][j  ] != CELL_STATUS_ACTIVE &&
+		       Mesh[nb].cell_status[i][j+1] != CELL_STATUS_ACTIVE) {
+	      // NORTH face of cell (i,j) is inactive.
+	      viscous_bc_flag = DIAMONDPATH_NONE;
 
-				if (Local_SolnBlk[nb].Grid.lfaceN(i,j) < TOLER) { break; }
-
-				if (Mesh[nb].cell_status[i][j  ] != CELL_STATUS_ACTIVE &&
-						Mesh[nb].cell_status[i][j+1] != CELL_STATUS_ACTIVE) {
-					break;
-				}
-
-				// Please rotate your head 90 degrees to the left before
-				// attempting to read this code. For example, Xr is the
-				// position of the cell to the north of the face in
-				// question. This is necessary, for example, for
-				// DiamondPath_Find_dWdX, which only understands "left" and
-				// "right" triangles.
-
-				int adiabatic_flag = OFF;
-				Vector2D Xface = Local_SolnBlk[nb].Grid.xfaceN(i, j);
-				Vector2D norm_dir = Local_SolnBlk[nb].Grid.nfaceN(i, j);
-
-	      if (Mesh[nb].cell_status[i][j  ] != CELL_STATUS_ACTIVE &&
-				    Mesh[nb].cell_status[i][j+1] == CELL_STATUS_ACTIVE) {
-
-					// SOUTH face of cell (i,j+1) corresponds to an embedded boundary.
-					Xr = Local_SolnBlk[nb].Grid.Cell[i][j+1].Xc; 
-					Wr = Local_SolnBlk[nb].W[i][j+1];
-
-					Ni = Mesh[nb].cell_status[i][j];
-					Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Xface);
-					
-					// No viscous flux for a reflected boundary. Is this true?
-					if (Interface_BC_Type == INTERFACE_BC_REFLECTION) { break; } 
-
-					switch (Interface_BC_Type) {
-						// The face velocity is the same regardless of the BC type 
-						// and is set below.
-						case INTERFACE_BC_WALL_VISCOUS_HEATFLUX:
-							Wface.rho = Wr.rho; 
-							Wface.p = Wr.p; Wface.k = Wr.k; Wface.omega = Wr.omega;
-							break;
-						case INTERFACE_BC_WALL_VISCOUS_ISOTHERMAL:
-							Wface.rho = Wr.p/(Wr.R*Local_SolnBlk[nb].Twall); 
-							Wface.p = Wr.p; Wface.k = Wr.k; Wface.omega = Wr.omega;
-							break;
-						case INTERFACE_BC_BURNING_SURFACE:
-							Wface = BurningSurface(Wr, norm_dir);
-							break;
-					}
-
-					Wface.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xface, Time);
-
-					if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_HEATFLUX) {
-						adiabatic_flag = ON;
-					}
-
-					switch(IP->i_Viscous_Reconstruction) {
-						case VISCOUS_RECONSTRUCTION_CARTESIAN :
-						case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
-							{
-							int stencil_flag = DIAMONDPATH_RIGHT_TRIANGLE;
-							Xd = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X;
-							Wd = Wface;
-							Wd.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xd, Time);
-
-							Xu = Local_SolnBlk[nb].Grid.Node[i  ][j+1].X;
-							Wu = Wface;
-							Wu.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xu, Time);
-
-							DiamondPath_Find_dWdX(dWdx, dWdy,
-									BlankVector, BlankState, 
-									Xd, Wd,
-									Xr, Wr,
-									Xu, Wu,
-									stencil_flag);
-							}
-							break;
-						case VISCOUS_RECONSTRUCTION_HYBRID :
-							dWdxr = Local_SolnBlk[nb].dWdx[i][j+1]; 
-							dWdyr = Local_SolnBlk[nb].dWdy[i][j+1];
-
-							Xl = Xface;
-							Wl = Wface;
-							dWdxl = dWdxr; dWdyl = dWdyr; // Hmm. 
-
-							Hybrid_Find_dWdX(dWdx, dWdy, 
-									Xl, Wl, dWdxl, dWdyl,
-									Xr, Wr, dWdxr, dWdyr,
-									norm_dir);
-							break;
-						case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
-							dWdx = Local_SolnBlk[nb].dWdx[i][j+1]; 
-							dWdy = Local_SolnBlk[nb].dWdy[i][j+1];
-							break;
-					}
+	    } else if (Mesh[nb].cell_status[i][j  ] != CELL_STATUS_ACTIVE &&
+		       Mesh[nb].cell_status[i][j+1] == CELL_STATUS_ACTIVE) {
+	      // SOUTH face of cell (i,j+1) corresponds to an embedded boundary.
+	      Ni = Mesh[nb].cell_status[i][j];
+	      Xr = Local_SolnBlk[nb].Grid.Cell[i][j+1].Xc; Wr = Local_SolnBlk[nb].W[i][j+1];
+	      // Determine the boundary condition type.
+	      Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceS(i,j+1));
+	      if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_HEATFLUX) {
+		// SOUTH face of cell (i,j+1) is a WALL_VISCOUS_HEATFLUX boundary.
+		viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
+		Wu.rho = Wr.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+	      } else if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_ISOTHERMAL) {
+		// SOUTH face of cell (i,j+1) is a WALL_VISCOUS_ISOTHERMAL boundary.
+		viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
+		//Temperature = Interface_Union_List[Ni].Determine_Interface_Temperature(Local_SolnBlk[nb].Grid.xfaceW(i+1,j));
+		Wu.rho = Wr.p/(Wr.R*IP->Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+	      } else if (Interface_BC_Type == INTERFACE_BC_BURNING_SURFACE) {
+		// SOUTH face of cell (i,j+1) is a BURNING_SURFACE boundary.
+		viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
+		Wu = BurningSurface(Wr,Local_SolnBlk[nb].Grid.nfaceS(i,j+1));
+	      } else if (Interface_BC_Type == INTERFACE_BC_REFLECTION) {
+		// SOUTH face of cell (i,j+1) is a REFLECTION boundary.
+		viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
+		Wu.rho = Wr.rho; Wu.v.x = ZERO; Wu.v.y = Wr.v.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+		viscous_bc_flag = DIAMONDPATH_NONE;
+	      }
+	      switch(IP->i_Viscous_Reconstruction) {
+	      case VISCOUS_RECONSTRUCTION_CARTESIAN :
+	      case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		Xu = Local_SolnBlk[nb].Grid.Node[i  ][j+1].X;
+		Vu = Interface_Union_List[Ni].Determine_Interface_Velocity(Xu,Time);
+		Wu.v = V;
+		Xd = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X; Wd = Wu;
+		Vd = Interface_Union_List[Ni].Determine_Interface_Velocity(Xd,Time);
+		Wd.v = V;
+		break;
+	      case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+	      case VISCOUS_RECONSTRUCTION_HYBRID :
+		Xu = Local_SolnBlk[nb].Grid.xfaceS(i,j+1);
+		Vu = Interface_Union_List[Ni].Determine_Interface_Velocity(Xu,Time);
+		Wu.v = V;
+		Xl = Xu; Wl = Wu;
+		dWdxr = Local_SolnBlk[nb].dWdx[i][j+1]; dWdxl = dWdxr;
+		dWdyr = Local_SolnBlk[nb].dWdy[i][j+1]; dWdyl = dWdyr;
+		break;
+	      };
 // #ifdef _EB_PARALLEL_DEBUG_
 // 	      dout << endl << " ==========================================================";
 // 	      dout << endl << " SOUTH face of cell (" << i << "," << j+1 << "," << Local_Solution_Block_List->Block[nb].gblknum << ") VISCOUS flux:";
@@ -3596,80 +3155,57 @@ dUdt_Multistage_Explicit(const int &i_stage, const double &Time) {
 // 								 Local_SolnBlk[nb].Axisymmetric,
 // 								 viscous_bc_flag);
 // #endif
-				} else if (Mesh[nb].cell_status[i][j  ] == CELL_STATUS_ACTIVE &&
-				           Mesh[nb].cell_status[i][j+1] != CELL_STATUS_ACTIVE) {
 
-					// NORTH face of cell (i,j) corresponds to an embedded boundary.
-					Xl = Local_SolnBlk[nb].Grid.Cell[i][j].Xc; 
-					Wl = Local_SolnBlk[nb].W[i][j];
-
-					Ni = Mesh[nb].cell_status[i][j+1];
-					Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Xface);
-
-					// No viscous flux for a reflected boundary. Is this true?
-					if (Interface_BC_Type == INTERFACE_BC_REFLECTION) { break; } 
-
-					switch (Interface_BC_Type) {
-						// The face velocity is the same regardless of the BC type 
-						// and is set below.
-						case INTERFACE_BC_WALL_VISCOUS_HEATFLUX:
-							Wface.rho = Wl.rho; 
-							Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-							break;
-						case INTERFACE_BC_WALL_VISCOUS_ISOTHERMAL:
-							Wface.rho = Wl.p/(Wl.R*IP->Twall); 
-							Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-							break;
-						case INTERFACE_BC_BURNING_SURFACE:
-							Wface = BurningSurface(Wl, norm_dir);
-							break;
-					}
-
-					Wface.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xface, Time);
-
-					if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_HEATFLUX) {
-						adiabatic_flag = ON;
-					}
-
-					switch(IP->i_Viscous_Reconstruction) {
-						case VISCOUS_RECONSTRUCTION_CARTESIAN :
-						case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
-							{
-							int stencil_flag = DIAMONDPATH_LEFT_TRIANGLE;
-							Xd = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X;
-							Wd = Wface;
-							Wd.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xd, Time);
-
-							Xu = Local_SolnBlk[nb].Grid.Node[i  ][j+1].X;
-							Wu = Wface;
-							Wu.v = Interface_Union_List[Ni].Determine_Interface_Velocity(Xu, Time);
-
-							DiamondPath_Find_dWdX(dWdx, dWdy,
-									Xl, Wl,
-									Xd, Wd,
-									BlankVector, BlankState,
-									Xu, Wu,
-									stencil_flag);
-							}
-							break;
-						case VISCOUS_RECONSTRUCTION_HYBRID :
-							dWdxl = Local_SolnBlk[nb].dWdx[i][j]; 
-							dWdyl = Local_SolnBlk[nb].dWdy[i][j]; 
-
-							Xr = Xface;
-							Wr = Wface;
-							dWdxr = dWdxl; dWdyr = dWdyl; // Hmm.
-
-							Hybrid_Find_dWdX(dWdx, dWdy, 
-									Xl, Wl, dWdxl, dWdyl,
-									Xr, Wr, dWdxr, dWdyr,
-									norm_dir);
-							break;
-						case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
-							dWdx = Local_SolnBlk[nb].dWdx[i][j]; 
-							dWdy = Local_SolnBlk[nb].dWdy[i][j];
-							break;
-					}
+	    } else if (Mesh[nb].cell_status[i][j  ] == CELL_STATUS_ACTIVE &&
+		       Mesh[nb].cell_status[i][j+1] != CELL_STATUS_ACTIVE) {
+	      // NORTH face of cell (i,j) corresponds to an embedded boundary.
+	      Xl = Local_SolnBlk[nb].Grid.Cell[i][j].Xc; Wl = Local_SolnBlk[nb].W[i][j];
+	      Ni = Mesh[nb].cell_status[i][j+1];
+	      // Determine the boundary condition type.
+	      Interface_BC_Type = Interface_Union_List[Ni].Determine_Interface_BC_Type(Local_SolnBlk[nb].Grid.xfaceN(i,j));
+	      // Determine the boundary velocity.
+	      //Vu = Interface_Union_List[Ni].Determine_Interface_Velocity(Xu,Time);
+	      //Vd = Interface_Union_List[Ni].Determine_Interface_Velocity(Xd,Time);
+	      // Determine the wall node primitive states.
+	      if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_HEATFLUX) {
+		// NORTH of cell (i,j) is a WALL_VISCOUS_HEATFLUX boundary.
+		viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
+		Wu.rho = Wl.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+	      } else if (Interface_BC_Type == INTERFACE_BC_WALL_VISCOUS_ISOTHERMAL) {
+		// NORTH face of cell (i,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
+		viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
+		//Temperature = Interface_Union_List[Ni].Determine_Interface_Temperature(Local_SolnBlk[nb].Grid.xfaceW(i+1,j));
+		Wu.rho = Wl.p/(Wl.R*IP->Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+	      } else if (Interface_BC_Type == INTERFACE_BC_BURNING_SURFACE) {
+		// NORTH face of cell (i,j) is a BURNING_SURFACE boundary.
+		viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
+		Wu = BurningSurface(Wl,Local_SolnBlk[nb].Grid.nfaceN(i,j));
+	      } else if (Interface_BC_Type == INTERFACE_BC_REFLECTION) {
+		// NORTH face of cell (i,j) is a REFLECTION boundary.
+		viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
+		Wu.rho = Wl.rho; Wu.v.x = ZERO; Wu.v.y = Wl.v.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+		viscous_bc_flag = DIAMONDPATH_NONE;
+	      }
+	      switch(IP->i_Viscous_Reconstruction) {
+	      case VISCOUS_RECONSTRUCTION_CARTESIAN :
+	      case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		Xu = Local_SolnBlk[nb].Grid.Node[i  ][j+1].X;
+		Vu = Interface_Union_List[Ni].Determine_Interface_Velocity(Xu,Time);
+		Wu.v = Vu;
+		Xd = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X; Wd = Wu;
+		Vd = Interface_Union_List[Ni].Determine_Interface_Velocity(Xd,Time);
+		Wd.v = Vd;
+		break;
+	      case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+	      case VISCOUS_RECONSTRUCTION_HYBRID :
+		Xu = Local_SolnBlk[nb].Grid.xfaceN(i,j);
+		Vu = Interface_Union_List[Ni].Determine_Interface_Velocity(Xu,Time);
+		Wu.v = Vu;
+		Xr = Xu; Wr = Wu;
+		dWdxl = Local_SolnBlk[nb].dWdx[i][j]; dWdxr = dWdxl;
+		dWdyl = Local_SolnBlk[nb].dWdy[i][j]; dWdyr = dWdyl;
+		break;
+	      };
 // #ifdef _EB_PARALLEL_DEBUG_
 // 	      dout << endl << " ==========================================================";
 // 	      dout << endl << " NORTH face of cell (" << i << "," << j << "," << Local_Solution_Block_List->Block[nb].gblknum << ") VISCOUS flux:";
@@ -3690,81 +3226,55 @@ dUdt_Multistage_Explicit(const int &i_stage, const double &Time) {
 // 								 Local_SolnBlk[nb].Axisymmetric,
 // 								 viscous_bc_flag);
 // #endif
-				} else if (Mesh[nb].cell_status[i][j  ] == CELL_STATUS_ACTIVE &&
-				           Mesh[nb].cell_status[i][j+1] == CELL_STATUS_ACTIVE) {
 
-					if (j == Local_SolnBlk[nb].JCl-1 && 
-							(Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
-							 Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-							 Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_MOVING_WALL_HEATFLUX ||
-							 Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_MOVING_WALL_ISOTHERMAL ||
-							 Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_BURNING_SURFACE)) {
+	    } else if (Mesh[nb].cell_status[i][j  ] == CELL_STATUS_ACTIVE &&
+		       Mesh[nb].cell_status[i][j+1] == CELL_STATUS_ACTIVE) {
 
-						// SOUTH face of cell (i,j+1) is a normal boundary.
+	      V = Vector2D_ZERO;
 
-						Xr = Local_SolnBlk[nb].Grid.Cell[i][j+1].Xc; 
-						Wr = Local_SolnBlk[nb].W[i][j+1];
-
-						if (Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
-								Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_MOVING_WALL_HEATFLUX) {
-							adiabatic_flag = ON;
-						}
-
-						switch (Local_SolnBlk[nb].Grid.BCtypeS[i]) {
-							case BC_WALL_VISCOUS_HEATFLUX:
-								Wface.rho = Wr.rho; Wface.v.x = ZERO; Wface.v.y = ZERO; 
-								Wface.p = Wr.p; Wface.k = Wr.k; Wface.omega =	Wr.omega;
-								break;
-							case BC_WALL_VISCOUS_ISOTHERMAL:
-								Wface.rho = Wr.p/(Wr.R*Local_SolnBlk[nb].Twall); Wface.v.x = ZERO; Wface.v.y = ZERO; 
-								Wface.p = Wr.p; Wface.k = Wr.k; Wface.omega = Wr.omega;
-								break;
-							case BC_MOVING_WALL_HEATFLUX:
-								Wface.rho = Wr.rho; Wface.v.x = Local_SolnBlk[nb].Vwall.x; Wface.v.y = Local_SolnBlk[nb].Vwall.y; 
-								Wface.p = Wr.p; Wface.k = Wr.k; Wface.omrga = Wr.omega;
-								break;
-							case BC_MOVING_WALL_ISOTHERMAL:
-								Wface.rho = Wr.p/(Wr.R*Local_SolnBlk[nb].Twall); Wface.v.x = Local_SolnBlk[nb].Vwall.x; Wface.v.y = Local_SolnBlk[nb].Vwall.y; 
-								Wface.p = Wr.p; Wface.k = Wr.k; Wface.omega = Wr.omega;
-								break;
-							case BC_BURNING_SURFACE:
-								Wface = BurningSurface(Wr, norm_dir);
-								break;
-						}
-
-						switch(IP->i_Viscous_Reconstruction) {
-							case VISCOUS_RECONSTRUCTION_CARTESIAN :
-							case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
-								{
-								int stencil_flag = DIAMONDPATH_RIGHT_TRIANGLE;
-								Xu = Local_SolnBlk[nb].Grid.Node[i  ][j+1].X;
-								Xd = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X; 
-								DiamondPath_Find_dWdX(dWdx, dWdy,
-										BlankVector, BlankState, 
-										Xd, Wface,
-										Xr, Wr,
-										Xu, Wface,
-										stencil_flag);
-								}
-								break;
-							case VISCOUS_RECONSTRUCTION_HYBRID :
-								dWdxr = Local_SolnBlk[nb].dWdx[i][j+1];
-								dWdyr = Local_SolnBlk[nb].dWdy[i][j+1];
-
-								Xl = Xface;
-								Wl = Wface;
-								dWdxl = dWdxr; dWdyl = dWdyr; // Hmm.
-
-								Hybrid_Find_dWdX(dWdx, dWdy, 
-										Xl, Wl, dWdxl, dWdyl,
-										Xr, Wr, dWdxr, dWdyr,
-										norm_dir);
-								break;
-							case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
-								dWdx = Local_SolnBlk[nb].dWdx[i][j+1];
-								dWdy = Local_SolnBlk[nb].dWdy[i][j+1];
-								break;
-						}
+	      if (j == Local_SolnBlk[nb].JCl-1 && 
+		  (Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
+		   Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+		   Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_MOVING_WALL_HEATFLUX ||
+		   Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_MOVING_WALL_ISOTHERMAL ||
+		   Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_BURNING_SURFACE)) {
+		  // SOUTH face of cell (i,j+1) is a normal boundary.
+		Xr = Local_SolnBlk[nb].Grid.Cell[i][j+1].Xc; Wr = Local_SolnBlk[nb].W[i][j+1];
+		if (Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX) {
+		  // SOUTH face of cell (i,j+1) is a WALL_VISCOUS_HEATFLUX boundary.
+		  viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
+		  Wu.rho = Wr.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+		} else if (Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
+		  // SOUTH face of cell (i,j+1) is a WALL_VISCOUS_ISOTHERMAL boundary.
+		  viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
+		  Wu.rho = Wr.p/(Wr.R*Local_SolnBlk[nb].Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+		} else if (Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_MOVING_WALL_HEATFLUX) {
+		  // SOUTH face of cell (i,j+1) is a MOVINGWALL_HEATFLUX boundary.
+		  viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
+		  Wu.rho = Wr.rho; Wu.v.x = Local_SolnBlk[nb].Vwall.x; Wu.v.y = Local_SolnBlk[nb].Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+		} else if (Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_MOVING_WALL_ISOTHERMAL) {
+		  // SOUTH face of cell (i,j+1) is a MOVINGWALL_ISOTHERMAL boundary.
+		  viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
+		  Wu.rho = Wr.p/(Wr.R*Local_SolnBlk[nb].Twall); Wu.v.x = Local_SolnBlk[nb].Vwall.x; Wu.v.y = Local_SolnBlk[nb].Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+		} else if (Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_BURNING_SURFACE) {
+		  // SOUTH face of cell (i,j+1) is a BURNING_SURFACE boundary.
+		  viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
+		  Wu = BurningSurface(Wr,Local_SolnBlk[nb].Grid.nfaceS(i,j+1));
+		}
+		switch(IP->i_Viscous_Reconstruction) {
+		case VISCOUS_RECONSTRUCTION_CARTESIAN :
+		case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		  Xu = Local_SolnBlk[nb].Grid.Node[i  ][j+1].X;
+		  Xd = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X; Wd = Wu;
+		  break;
+		case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		case VISCOUS_RECONSTRUCTION_HYBRID :
+		  Xu = Local_SolnBlk[nb].Grid.xfaceS(i,j+1);
+		  Xl = Xu; Wl = Wu;
+		  dWdxr = Local_SolnBlk[nb].dWdx[i][j+1]; dWdxl = dWdxr;
+		  dWdyr = Local_SolnBlk[nb].dWdy[i][j+1]; dWdyl = dWdyr;
+		  break;
+		};
 // #ifdef _EB_PARALLEL_DEBUG_
 // 		dout << endl << " ==========================================================";
 // 		dout << endl << " SOUTH face of cell (" << i << "," << j+1 << "," << Local_Solution_Block_List->Block[nb].gblknum << ") VISCOUS flux:";
@@ -3785,78 +3295,50 @@ dUdt_Multistage_Explicit(const int &i_stage, const double &Time) {
 // 								   Local_SolnBlk[nb].Axisymmetric,
 // 								   viscous_bc_flag);
 // #endif
-					} else if (j == Local_SolnBlk[nb].JCu &&
-							(Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX ||
-							 Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-							 Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_MOVING_WALL_HEATFLUX ||
-							 Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_MOVING_WALL_ISOTHERMAL ||
-							 Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_BURNING_SURFACE)) {
-						
-						// NORTH face of cell (i,j) is a normal boundary.
-						
-						Xl = Local_SolnBlk[nb].Grid.Cell[i][j].Xc; 
-						Wl = Local_SolnBlk[nb].W[i][j];
 
-						if (Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX ||
-						    Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_MOVING_WALL_HEATFLUX) {
-							adiabatic_flag = ON;
-						}
-
-						switch (Local_SolnBlk[nb].Grid.BCtypeN[i]) {
-							case BC_WALL_VISCOUS_HEATFLUX:
-								Wface.rho = Wl.rho; Wface.v.x = ZERO; Wface.v.y = ZERO; 
-								Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-								break;
-							case BC_WALL_VISCOUS_ISOTHERMAL:
-								Wface.rho = Wl.p/(Wl.R*Local_SolnBlk[nb].Twall); Wface.v.x = ZERO; Wface.v.y = ZERO; 
-								Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-								break;
-							case BC_MOVING_WALL_HEATFLUX:
-								Wface.rho = Wl.rho; Wface.v.x = Local_SolnBlk[nb].Vwall.x; Wface.v.y = Local_SolnBlk[nb].Vwall.y; 
-								Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-								break;
-							case BC_MOVING_WALL_ISOTHERMAL:
-								Wface.rho = Wl.p/(Wl.R*Local_SolnBlk[nb].Twall); Wface.v.x = Local_SolnBlk[nb].Vwall.x; Wface.v.y = Local_SolnBlk[nb].Vwall.y; 
-								Wface.p = Wl.p; Wface.k = Wl.k; Wface.omega = Wl.omega;
-								break;
-							case BC_MOVING_WALL_ISOTHERMAL:
-								Wface = BurningSurface(Wl, norm_dir);
-								break;
-						}
-
-						switch(IP->i_Viscous_Reconstruction) {
-							case VISCOUS_RECONSTRUCTION_CARTESIAN :
-							case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
-								{
-								int stencil_flag = DIAMONDPATH_LEFT_TRIANGLE;
-								Xu = Local_SolnBlk[nb].Grid.Node[i  ][j+1].X;
-								Xd = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X; 
-								DiamondPath_Find_dWdX(dWdx, dWdy,
-										Xl, Wl,
-										Xd, Wface,
-										BlankVector, BlankState,
-										Xu, Wface,
-										stencil_flag);
-								}
-								break;
-							case VISCOUS_RECONSTRUCTION_HYBRID :
-								dWdxl = Local_SolnBlk[nb].dWdx[i][j]; 
-								dWdyl = Local_SolnBlk[nb].dWdy[i][j]; 
-
-								Xr = Xface; 
-								Wr = Wface;
-								dWdxr = dWdxl; dWdyr = dWdyl; 
-
-								Hybrid_Find_dWdX(dWdx, dWdy, 
-										Xl, Wl, dWdxl, dWdyl,
-										Xr, Wr, dWdxr, dWdyr,
-										norm_dir);
-								break;
-							case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
-								dWdx = Local_SolnBlk[nb].dWdx[i][j]; 
-								dWdy = Local_SolnBlk[nb].dWdy[i][j]; 
-								break;
-						}
+	      } else if (j == Local_SolnBlk[nb].JCu && 
+			 (Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX ||
+			  Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+			  Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_MOVING_WALL_HEATFLUX ||
+			  Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_MOVING_WALL_ISOTHERMAL ||
+			  Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_BURNING_SURFACE)) {
+		// NORTH face of cell (i,j) is a normal boundary.
+		Xl = Local_SolnBlk[nb].Grid.Cell[i][j].Xc; Wl = Local_SolnBlk[nb].W[i][j];
+		if (Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX) {
+		  // NORTH face of cell (i,j) is a WALL_VISCOUS_HEATFLUX boundary.
+		  viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
+		  Wu.rho = Wl.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+		} else if (Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
+		  // NORTH face of cell (i,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
+		  viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
+		  Wu.rho = Wl.p/(Wl.R*Local_SolnBlk[nb].Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+		} else if (Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_MOVING_WALL_HEATFLUX) {
+		  // NORTH face of cell (i,j) is a MOVINGWALL_HEATFLUX boundary.
+		  viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
+		  Wu.rho = Wl.rho; Wu.v.x = Local_SolnBlk[nb].Vwall.x; Wu.v.y = Local_SolnBlk[nb].Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+		} else if (Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_MOVING_WALL_ISOTHERMAL) {
+		  // NORTH face of cell (i,j) is a MOVINGWALL_ISOTHERMAL boundary.
+		  viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
+		  Wu.rho = Wl.p/(Wl.R*Local_SolnBlk[nb].Twall); Wu.v.x = Local_SolnBlk[nb].Vwall.x; Wu.v.y = Local_SolnBlk[nb].Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+		} else if (Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_BURNING_SURFACE) {
+		  // NORTH face of cell (i,j) is a BURNING_SURFACE boundary.
+		  viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
+		  Wu = BurningSurface(Wl,Local_SolnBlk[nb].Grid.nfaceN(i,j));
+		}
+		switch(IP->i_Viscous_Reconstruction) {
+		case VISCOUS_RECONSTRUCTION_CARTESIAN :
+		case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		  Xu = Local_SolnBlk[nb].Grid.Node[i  ][j+1].X;
+		  Xd = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X; Wd = Wu;
+		  break;
+		case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		case VISCOUS_RECONSTRUCTION_HYBRID :
+		  Xu = Local_SolnBlk[nb].Grid.xfaceN(i,j);
+		  Xr = Xu; Wr = Wu;
+		  dWdxl = Local_SolnBlk[nb].dWdx[i][j]; dWdxr = dWdxl;
+		  dWdyl = Local_SolnBlk[nb].dWdy[i][j]; dWdyr = dWdyl;
+		  break;
+		};
 // #ifdef _EB_PARALLEL_DEBUG_
 // 	      dout << endl << " ==========================================================";
 // 	      dout << endl << " NORTH face of cell (" << i << "," << j << "," << Local_Solution_Block_List->Block[nb].gblknum << ") VISCOUS flux:";
@@ -3877,49 +3359,26 @@ dUdt_Multistage_Explicit(const int &i_stage, const double &Time) {
 // 								 Local_SolnBlk[nb].Axisymmetric,
 // 								 viscous_bc_flag);
 // #endif
-					} else {
-						// EAST face is either a normal cell or possibly a non-viscous
-						// boundary condition.
-						Xl = Local_SolnBlk[nb].Grid.Cell[i][j  ].Xc; Wl = Local_SolnBlk[nb].W[i][j  ];
-						Xr = Local_SolnBlk[nb].Grid.Cell[i][j+1].Xc; Wr = Local_SolnBlk[nb].W[i][j+1];
 
-						if (IP->i_Viscous_Reconstruction == VISCOUS_RECONSTRUCTION_CARTESIAN ||
-						    IP->i_Viscous_Reconstruction == VISCOUS_RECONSTRUCTION_DIAMOND_PATH) {
-
-							int stencil_flag = DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION;
-
-							Xu = Local_SolnBlk[nb].Grid.Node[i  ][j+1].X; 
-							Xd = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X; 
-
-							// These two (WnNW and WnNE) are what make diamond path so expensive.
-							Wu = Local_SolnBlk[nb].WnNW(i,j);
-							Wd = Local_SolnBlk[nb].WnNE(i,j);
-
-							DiamondPath_Find_dWdX(dWdx, dWdy,
-									Xl, Wl, Xd, Wd, Xr, Wr, Xu, Wu, 
-									stencil_flag);
-
-							// Find Wface:
-							error_flag = Bilinear_Interpolation(Wl, Xl, Wu, Xu, Wr, Xr, Wd, Xd,
-									Xface, Wface);
-							// and if error_flag?
-
-						} else {
-							Wface = HALF*(Wl + Wr);
-
-							dWdxl = Local_SolnBlk[nb].dWdx[i][j]; dWdxr = Local_SolnBlk[nb].dWdy[i][j+1];
-							dWdyl = Local_SolnBlk[nb].dWdy[i][j]; dWdyr = Local_SolnBlk[nb].dWdy[i][j+1];
-
-							if (IP->i_Viscous_Reconstruction == VISCOUS_RECONSTRUCTION_HYBRID) {
-								Hybrid_Find_dWdX(dWdx, dWdy, 
-										Xl, Wl, dWdxl, dWdyl,
-										Xr, Wr, dWdxr, dWdyr,
-										norm_dir);
-							} else if (IP->i_Viscous_Reconstruction == VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE) {
-								dWdx = HALF*(dWdxl + dWdxr);
-								dWdy = HALF*(dWdyl + dWdyr);
-							}
-						}
+	      } else {
+		// NORTH face is either a normal cell or possibly a non-viscous
+		// boundary condition.
+		viscous_bc_flag = DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION;
+		Xl = Local_SolnBlk[nb].Grid.Cell[i][j  ].Xc; Wl = Local_SolnBlk[nb].W[i][j  ];
+		Xr = Local_SolnBlk[nb].Grid.Cell[i][j+1].Xc; Wr = Local_SolnBlk[nb].W[i][j+1];
+		switch(IP->i_Viscous_Reconstruction) {
+		case VISCOUS_RECONSTRUCTION_CARTESIAN :
+		case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		  Xu = Local_SolnBlk[nb].Grid.Node[i  ][j+1].X; Wu = Local_SolnBlk[nb].WnNW(i,j);
+		  Xd = Local_SolnBlk[nb].Grid.Node[i+1][j+1].X; Wd = Local_SolnBlk[nb].WnNE(i,j);
+		  break;
+		case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		case VISCOUS_RECONSTRUCTION_HYBRID :
+		  Xu = Local_SolnBlk[nb].Grid.xfaceN(i,j); Wu = HALF*(Wl + Wr);
+		  dWdxl = Local_SolnBlk[nb].dWdx[i][j]; dWdxr = Local_SolnBlk[nb].dWdy[i][j+1];
+		  dWdyl = Local_SolnBlk[nb].dWdy[i][j]; dWdyr = Local_SolnBlk[nb].dWdy[i][j+1];
+		  break;
+		};
 // #ifdef _EB_PARALLEL_DEBUG_
 // 		dout << endl << " ==========================================================";
 // 		dout << endl << " NORTH face of cell (" << i << "," << j << "," << Local_Solution_Block_List->Block[nb].gblknum << ") VISCOUS flux:";
@@ -3941,12 +3400,41 @@ dUdt_Multistage_Explicit(const int &i_stage, const double &Time) {
 // 								   Local_SolnBlk[nb].Axisymmetric,
 // 								   viscous_bc_flag);
 // #endif
-					}
-				}
-				// Compute the NORTH face viscous flux.
-				Flux -= ViscousFlux_n(Xface, Wface, dWdx, dWdy,
-						norm_dir, Local_SolnBlk[nb].Axisymmetric, adiabatic_flag);
-			} while (0); // end of viscous flux clause.
+	      }
+	    }
+	    // Compute the NORTH face viscous flux.
+	    if (viscous_bc_flag != DIAMONDPATH_NONE) {
+// 	      dout << endl << Xl << Wl;
+// 	      dout << endl << Xr << Wr;
+// 	      dout << endl << Xu << Wu;
+// 	      dout << endl << Xd << Wd;
+// 	      dout << endl << ViscousFluxDiamondPath_n(Local_SolnBlk[nb].Grid.xfaceN(i,j),
+// 						       Xl,Wl,Xd,Wd,Xr,Wr,Xu,Wu,
+// 						       Local_SolnBlk[nb].Grid.nfaceN(i,j),
+// 						       Local_SolnBlk[nb].Axisymmetric,
+// 						       viscous_bc_flag);
+	      switch(IP->i_Viscous_Reconstruction) {
+	      case VISCOUS_RECONSTRUCTION_CARTESIAN :
+	      case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+		Flux -= ViscousFluxDiamondPath_n(Local_SolnBlk[nb].Grid.xfaceN(i,j),
+						 Xl,Wl,Xd,Wd,Xr,Wr,Xu,Wu,
+						 Local_SolnBlk[nb].Grid.nfaceN(i,j),
+						 Local_SolnBlk[nb].Axisymmetric,
+						 viscous_bc_flag);
+		break;
+	      case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		Flux -= ViscousFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
+				      Local_SolnBlk[nb].Grid.nfaceN(i,j),
+				      Local_SolnBlk[nb].Axisymmetric);
+		break;
+	      case VISCOUS_RECONSTRUCTION_HYBRID :
+		Flux -= ViscousFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,Xr,Wr,dWdxr,dWdyr,
+					    Local_SolnBlk[nb].Grid.nfaceN(i,j),
+					    Local_SolnBlk[nb].Axisymmetric);
+		break;
+	      };
+	    }
+	  }
 
 	  // Evaluate cell-averaged solution changes.
 	  Local_SolnBlk[nb].dUdt[i][j  ][k_residual] -= (IP->CFL_Number*Local_SolnBlk[nb].dt[i][j  ])*

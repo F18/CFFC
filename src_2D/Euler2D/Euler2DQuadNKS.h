@@ -23,7 +23,8 @@ template <>
 int Newton_Update(Euler2D_Quad_Block *SolnBlk,
 		  AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
 		  Euler2D_Input_Parameters &Input_Parameters,
-		  GMRES_RightPrecon_MatrixFree<Euler2D_pState,Euler2D_Quad_Block,Euler2D_Input_Parameters> &GMRES) {
+		  GMRES_RightPrecon_MatrixFree<Euler2D_pState,Euler2D_Quad_Block,Euler2D_Input_Parameters> &GMRES,
+		  double Relaxation_multiplier) {
 
   int Num_Var = SolnBlk[0].NumVar();  
   
@@ -36,7 +37,7 @@ int Newton_Update(Euler2D_Quad_Block *SolnBlk,
 	  /* Update solutions in conversed variables  U = Uo + deltaU = Uo + denormalized(x) */	 
 	  for(int varindex =1; varindex <= Num_Var; varindex++){	
 	    SolnBlk[Bcount].U[i][j][varindex] = SolnBlk[Bcount].Uo[i][j][varindex] 
-	      +  GMRES.deltaU(Bcount,i,j,varindex-1);
+	      +  Relaxation_multiplier * GMRES.deltaU(Bcount,i,j,varindex-1);
 	      } 	      
 	  
 	  /**************************************************************************/

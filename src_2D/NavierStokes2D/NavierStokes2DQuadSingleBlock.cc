@@ -4500,8 +4500,7 @@ int dUdt_Residual_Evaluation(NavierStokes2D_Quad_Block &SolnBlk,
 	  SolnBlk.W[i][j].ComputeViscousTerms(SolnBlk.dWdx[i][j],
 					      SolnBlk.dWdy[i][j],
 					      SolnBlk.Grid.Cell[i][j].Xc,
-					      SolnBlk.Axisymmetric,
-					      OFF);
+					      SolnBlk.Axisymmetric);
 	  SolnBlk.U[i][j].tau = SolnBlk.W[i][j].tau;
 	  SolnBlk.U[i][j].q = SolnBlk.W[i][j].q;
 	}
@@ -4659,11 +4658,11 @@ int dUdt_Residual_Evaluation(NavierStokes2D_Quad_Block &SolnBlk,
 	    break;
 	  case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
 	    Flux -= ViscousFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
-				  SolnBlk.Grid.nfaceE(i,j),SolnBlk.Axisymmetric,OFF);
+				  SolnBlk.Grid.nfaceE(i,j),SolnBlk.Axisymmetric);
 	    break;
 	  case VISCOUS_RECONSTRUCTION_HYBRID :
 	    Flux -= ViscousFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,Xr,Wr,dWdxr,dWdyr,
-					SolnBlk.Grid.nfaceE(i,j),SolnBlk.Axisymmetric,OFF);
+					SolnBlk.Grid.nfaceE(i,j),SolnBlk.Axisymmetric);
 	    break;
 	  };
 	}
@@ -5015,11 +5014,11 @@ int dUdt_Residual_Evaluation(NavierStokes2D_Quad_Block &SolnBlk,
 	  break;
 	case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
 	  Flux -= ViscousFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
-				SolnBlk.Grid.nfaceN(i,j),SolnBlk.Axisymmetric,OFF);
+				SolnBlk.Grid.nfaceN(i,j),SolnBlk.Axisymmetric);
 	  break;
 	case VISCOUS_RECONSTRUCTION_HYBRID :
 	  Flux -= ViscousFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,Xr,Wr,dWdxr,dWdyr,
-				      SolnBlk.Grid.nfaceN(i,j),SolnBlk.Axisymmetric,OFF);
+				      SolnBlk.Grid.nfaceN(i,j),SolnBlk.Axisymmetric);
 	  break;
 	};
       }
@@ -5325,8 +5324,7 @@ int dUdt_Multistage_Explicit(NavierStokes2D_Quad_Block &SolnBlk,
  	  SolnBlk.W[i][j].ComputeViscousTerms(SolnBlk.dWdx[i][j],
  					      SolnBlk.dWdy[i][j],
  					      SolnBlk.Grid.Cell[i][j].Xc,
- 					      SolnBlk.Axisymmetric,
- 					      OFF);
+ 					      SolnBlk.Axisymmetric);
  	  SolnBlk.U[i][j].tau = SolnBlk.W[i][j].tau;
  	  SolnBlk.U[i][j].q = SolnBlk.W[i][j].q;
  	}
@@ -5484,11 +5482,11 @@ int dUdt_Multistage_Explicit(NavierStokes2D_Quad_Block &SolnBlk,
 	    break;
 	  case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
 	    Flux -= ViscousFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
-				  SolnBlk.Grid.nfaceE(i,j),SolnBlk.Axisymmetric,OFF);
+				  SolnBlk.Grid.nfaceE(i,j),SolnBlk.Axisymmetric);
 	    break;
 	  case VISCOUS_RECONSTRUCTION_HYBRID :
 	    Flux -= ViscousFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,Xr,Wr,dWdxr,dWdyr,
-					SolnBlk.Grid.nfaceE(i,j),SolnBlk.Axisymmetric,OFF);
+					SolnBlk.Grid.nfaceE(i,j),SolnBlk.Axisymmetric);
 	    break;
 	  };
 	}
@@ -5845,11 +5843,11 @@ int dUdt_Multistage_Explicit(NavierStokes2D_Quad_Block &SolnBlk,
 	  break;
 	case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
 	  Flux -= ViscousFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
-				SolnBlk.Grid.nfaceN(i,j),SolnBlk.Axisymmetric,OFF);
+				SolnBlk.Grid.nfaceN(i,j),SolnBlk.Axisymmetric);
 	  break;
 	case VISCOUS_RECONSTRUCTION_HYBRID :
 	  Flux -= ViscousFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,Xr,Wr,dWdxr,dWdyr,
-				      SolnBlk.Grid.nfaceN(i,j),SolnBlk.Axisymmetric,OFF);
+				      SolnBlk.Grid.nfaceN(i,j),SolnBlk.Axisymmetric);
 	  break;
 	};
       }

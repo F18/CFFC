@@ -471,8 +471,7 @@ class NavierStokes2D_pState {
   void ComputeViscousTerms(const NavierStokes2D_pState &dWdx,
 			   const NavierStokes2D_pState &dWdy,
 			   const Vector2D &X,
-			   const int &Axisymmetric,
-			   const int &adiabatic_flag);
+			   const int &Axisymmetric);
 
   //@{ @name Eigenstructure.
   //! Eigenvalue(s) (x-direction).
@@ -1057,8 +1056,7 @@ class NavierStokes2D_cState {
   void ComputeViscousTerms(const NavierStokes2D_pState &dWdx,
 			   const NavierStokes2D_pState &dWdy,
 			   const Vector2D &X,
-			   const int &Axisymmetric,
-			   const int &adiabatic_flag);
+			   const int &Axisymmetric);
 
   //@{ @name Eigenstructure.
   //! Eigenvalue(s) (x-direction).
@@ -2507,8 +2505,7 @@ inline NavierStokes2D_cState NavierStokes2D_pState::Gy(const NavierStokes2D_pSta
 inline void NavierStokes2D_pState::ComputeViscousTerms(const NavierStokes2D_pState &dWdx,
 						       const NavierStokes2D_pState &dWdy,
 						       const Vector2D &X,
-						       const int &Axisymmetric,
-						       const int &adiabatic_flag) {
+						       const int &Axisymmetric) {
   double div, radius, mumu, kap;
   mumu = mu() + muT(); kap = kappa() + kappaT();
   if (Axisymmetric) radius = max(X.y,TOLER);
@@ -2521,13 +2518,8 @@ inline void NavierStokes2D_pState::ComputeViscousTerms(const NavierStokes2D_pSta
   tau.yy = 2.0*mumu*(dWdy.v.y - div/3.0);
   if (Axisymmetric) tau.zz = 2.0*mumu*(v.y/radius - div/3.0);
   else tau.zz = ZERO;
-  // Heat flux components.
-  //if (adiabatic_flag) {
-  //q = Vector2D_ZERO;
-  //} else {
   q.x = -kap*(dWdx.p - (p/rho)*dWdx.rho)/(rho*R);
   q.y = -kap*(dWdy.p - (p/rho)*dWdy.rho)/(rho*R);
-  //}
 }
 
 /**********************************************************************
@@ -2880,8 +2872,7 @@ inline NavierStokes2D_cState NavierStokes2D_cState::Gy(const NavierStokes2D_pSta
 inline void NavierStokes2D_cState::ComputeViscousTerms(const NavierStokes2D_pState &dWdx,
 						       const NavierStokes2D_pState &dWdy,
 						       const Vector2D &X,
-						       const int &Axisymmetric,
-						       const int &adiabatic_flag) {
+						       const int &Axisymmetric) {
   double div, radius, mumu, kap;
   mumu = mu() + muT(); kap = kappa() + kappaT();
   if (Axisymmetric) radius = max(X.y,TOLER);
@@ -2894,13 +2885,8 @@ inline void NavierStokes2D_cState::ComputeViscousTerms(const NavierStokes2D_pSta
   tau.yy = 2.0*mumu*(dWdy.v.y - div/3.0);
   if (Axisymmetric) tau.zz = 2.0*mumu*(v().y/radius - div/3.0);
   else tau.zz = ZERO;
-  // Heat flux components.
-  //if (adiabatic_flag) {
-  //q = Vector2D_ZERO;
-  //} else {
   q.x = -kap*(dWdx.p - (p()/rho)*dWdx.rho)/(rho*R);
   q.y = -kap*(dWdy.p - (p()/rho)*dWdy.rho)/(rho*R);
-  //}
 }
 
 /**********************************************************************
@@ -3358,8 +3344,7 @@ extern NavierStokes2D_cState ViscousFlux_n(const Vector2D &X,
 					   const NavierStokes2D_pState &dWdx,
 					   const NavierStokes2D_pState &dWdy,
 					   const Vector2D &norm_dir,
-					   const int &Axisymmetric,
-					   const int &adiabatic_flag);
+					   const int &Axisymmetric);
 
 extern NavierStokes2D_cState ViscousFluxDiamondPath_n(const Vector2D &X,
 						      const Vector2D &Xl, const NavierStokes2D_pState &Wl,
@@ -3381,8 +3366,7 @@ extern NavierStokes2D_cState ViscousFluxHybrid_n(const Vector2D &X,
 						 const NavierStokes2D_pState &dW2dx,
 						 const NavierStokes2D_pState &dW2dy,
 						 const Vector2D &norm_dir,
-						 const int &Axisymmetric,
-						 const int &adiabatic_flag);
+						 const int &Axisymmetric);
 
 extern double ShearStress(const NavierStokes2D_pState &W,
 			  const NavierStokes2D_pState &dWdx,

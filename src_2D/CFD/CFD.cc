@@ -72,18 +72,18 @@ void Output_Progress_L2norm(const int Number_of_Time_Steps,
 			    const double &Residual_L2_Norm,
 			    const int First_Step,
 			    const int Frequency) {
-	static const int progress_character = 0;
-	static const double Ratio_Residual_L2_Norm = -1.0;
-	// Perhaps we could use default arguments but given the global
-	// scope of this function that could lead to confusion.
-	Output_Progress_L2norm(Number_of_Time_Steps,
-			Time,
-			CPU_Time,
-			Residual_L2_Norm,
-			Ratio_Residual_L2_Norm,
-			First_Step,
-			Frequency,
-			progress_character);
+
+   static const int progress_character = 0;
+   static const double Ratio_Residual_L2_Norm = -1.0;
+
+   Output_Progress_L2norm(Number_of_Time_Steps,
+       			  Time,
+			  CPU_Time,
+			  Residual_L2_Norm,
+			  Ratio_Residual_L2_Norm,
+			  First_Step,
+			  Frequency,
+			  progress_character);
 }
 
 void Output_Progress_L2norm(const int Number_of_Time_Steps,
@@ -92,18 +92,18 @@ void Output_Progress_L2norm(const int Number_of_Time_Steps,
 			    const double &Residual_L2_Norm,
 			    const int First_Step,
 			    const int Frequency,
-					const int progress_character) {
-	static const double Ratio_Residual_L2_Norm = -1.0;
-	// Perhaps we could use default arguments but given the global
-	// scope of this function that could lead to confusion.
-	Output_Progress_L2norm(Number_of_Time_Steps,
-			Time,
-			CPU_Time,
-			Residual_L2_Norm,
-			Ratio_Residual_L2_Norm,
-			First_Step,
-			Frequency,
-			progress_character);
+			    const int progress_character) {
+
+   static const double Ratio_Residual_L2_Norm = -1.0;
+
+   Output_Progress_L2norm(Number_of_Time_Steps,
+			  Time,
+	 		  CPU_Time,
+			  Residual_L2_Norm,
+			  Ratio_Residual_L2_Norm,
+			  First_Step,
+			  Frequency,
+			  progress_character);
 }
 
 void Output_Progress_L2norm(const int Number_of_Time_Steps,
@@ -113,53 +113,67 @@ void Output_Progress_L2norm(const int Number_of_Time_Steps,
 			    const double &Ratio_Residual_L2_Norm,
 			    const int First_Step,
 			    const int Frequency) {
-	static const int progress_character = 0;
-	// Perhaps we could use default arguments but given the global
-	// scope of this function that could lead to confusion.
-	Output_Progress_L2norm(Number_of_Time_Steps,
-			Time,
-			CPU_Time,
-			Residual_L2_Norm,
-			Ratio_Residual_L2_Norm,
-			First_Step,
-			Frequency,
-			progress_character);
+
+   static const int progress_character = 0;
+   Output_Progress_L2norm(Number_of_Time_Steps,
+	  		  Time,
+			  CPU_Time,
+			  Residual_L2_Norm,
+			  Ratio_Residual_L2_Norm,
+			  First_Step,
+			  Frequency,
+			  progress_character);
 }
 
 void Output_Progress_L2norm(const int Number_of_Time_Steps,
 			    const double &Time,
 			    const CPUTime &CPU_Time,
 			    const double &Residual_L2_Norm,
-					const double &Ratio_Residual_L2_Norm,
+			    const double &Ratio_Residual_L2_Norm,
 			    const int First_Step,
 			    const int Frequency,
 			    const int progress_character) {
 
   cout << setprecision(6);
-	if (First_Step ||
-			Number_of_Time_Steps % Frequency == 0) {
-		cout << endl
+  if (First_Step || Number_of_Time_Steps % Frequency == 0) {
+    cout << endl
 	 << "  n = " << Number_of_Time_Steps
 	 << "   t = " << Time 
-			<< "   CPU t = " << CPU_Time.min();
-		cout.setf(ios::scientific);
-		cout << "   L2-norm = " << Residual_L2_Norm;
-		if (Ratio_Residual_L2_Norm > 0) {
-			cout << "   L2-norm ratio = " << Ratio_Residual_L2_Norm;
-		}
-		cout.unsetf(ios::scientific);
-		cout << endl << "  ";
-  }
-  switch(progress_character) {
-		case 0: cout << "."; break;
-		case 1: cout << "+"; break;
-		case 2: cout << "-"; break;
-		case 3: cout << "o"; break;
-		case 4: cout << ":"; break;
-		case 5: cout << "~"; break;
-		default: cout << "."; break;
-  };
-  cout.flush();
+	 << "   CPU t = " << CPU_Time.min();
+    cout.setf(ios::scientific);
+    cout << "   L2-norm = " << Residual_L2_Norm;
+    if (Ratio_Residual_L2_Norm > 0) {
+       cout << "   L2-norm ratio = " << Ratio_Residual_L2_Norm;
+    } /* endif *
+    cout.unsetf(ios::scientific);
+    cout << endl << "  ";
+    } /* endif */
+
+    switch(progress_character) {
+       case 0: 
+         cout << "."; 
+         break;
+       case 1: 
+         cout << "+"; 
+         break;
+       case 2: 
+         cout << "-"; 
+         break;
+       case 3: 
+         cout << "o"; 
+         break;
+       case 4: 
+         cout << ":"; 
+         break;
+       case 5: 
+         cout << "~"; 
+         break;
+       default: 
+         cout << "."; 
+         break;
+    };
+    cout.flush();
+  } /* endif */
 
 }
 
@@ -175,18 +189,20 @@ int Open_Progress_File(ofstream &Progress_File,
                        const int Append_to_File) {
 
     char prefix[256], 
-         progress_file_name[256], gnuplot_file_name[256],
-				 eps_output_file_name[256];
+         progress_file_name[256], 
+         gnuplot_file_name[256],
+	 eps_output_file_name[256];
+
     ofstream gnuplot_file;
 
     /* Determine the name of the progress file. */
 
-		strcpy(prefix, File_Name);
+    strcpy(prefix, File_Name);
     for (int i = 0; i < strlen(prefix); i++) {
-			if (prefix[i] == ' ' || prefix[i] == '.') {
-				prefix[i] = '\0'; break;
-			}
-		}
+       if (prefix[i] == ' ' || prefix[i] == '.') {
+	   prefix[i] = '\0'; break;
+       } /* endif */
+    } /* endfor */
 
     strcpy(progress_file_name, prefix);
     strcat(progress_file_name, "_residual.dat");
@@ -197,25 +213,26 @@ int Open_Progress_File(ofstream &Progress_File,
        Progress_File.open(progress_file_name, ios::out|ios::app);
     } else {
        Progress_File.open(progress_file_name, ios::out);
-			 int out_precision = 5;
-			 int out_width = out_precision + 8;
-			 int swidth = 6;
-			 Progress_File << left;
-			Progress_File << "# | Number of Time Steps\n";
-			Progress_File << setw(swidth) << "# |" << "  | Solution Time\n";
-			Progress_File << setw(swidth) << "# |" << setw(out_width) << "  |" << " ";
-			Progress_File << "  | Total CPU Time (minutes) (from all CPUs)\n";
-			Progress_File << setw(swidth) << "# |" << setw(out_width) << "  |" << " " << setw(out_width) << "  |" << " ";
-			Progress_File << "  | Residual L1-Norm (search on residual_variable in the code for more info)\n";
-			Progress_File << setw(swidth) << "# |" << setw(out_width) << "  |" << " " << setw(out_width) << "  |" << " "
-				<< setw(out_width) << "  |" << " ";
-			Progress_File << "  | Residual L2-Norm\n";
-			Progress_File << setw(swidth) << "# |" << setw(out_width) << "  |" << " " << setw(out_width) << "  |" << " "
-				<< setw(out_width) << "  |" << " " << setw(out_width) << "  |" << " ";
-			Progress_File << "  | Residual Max-Norm\n";
-			Progress_File << right;
-			Progress_File.flush();
+       int out_precision = 5;
+       int out_width = out_precision + 8;
+       int swidth = 6;
+       Progress_File << left;
+       Progress_File << "# | Number of Time Steps\n";
+       Progress_File << setw(swidth) << "# |" << "  | Solution Time\n";
+       Progress_File << setw(swidth) << "# |" << setw(out_width) << "  |" << " ";
+       Progress_File << "  | Total CPU Time (minutes) (from all CPUs)\n";
+       Progress_File << setw(swidth) << "# |" << setw(out_width) << "  |" << " " << setw(out_width) << "  |" << " ";
+       Progress_File << "  | Residual L1-Norm (search on residual_variable in the code for more info)\n";
+       Progress_File << setw(swidth) << "# |" << setw(out_width) << "  |" << " " << setw(out_width) << "  |" << " "
+	             << setw(out_width) << "  |" << " ";
+       Progress_File << "  | Residual L2-Norm\n";
+       Progress_File << setw(swidth) << "# |" << setw(out_width) << "  |" << " " << setw(out_width) << "  |" << " "
+	             << setw(out_width) << "  |" << " " << setw(out_width) << "  |" << " ";
+       Progress_File << "  | Residual Max-Norm\n";
+       Progress_File << right;
+       Progress_File.flush();
     } /* endif */
+
     if (!Progress_File.good()) return (1);
 
     /* Write the appropriate GNUPLOT command file for 
@@ -227,8 +244,8 @@ int Open_Progress_File(ofstream &Progress_File,
     gnuplot_file.open(gnuplot_file_name, ios::out);
     if (!gnuplot_file.good()) return(1);
 
-		strcpy(eps_output_file_name, prefix);
-		strcat(eps_output_file_name, "_plot_residual_iter.eps");
+    strcpy(eps_output_file_name, prefix);
+    strcat(eps_output_file_name, "_plot_residual_iter.eps");
 
     gnuplot_file << "set title \"Solution Convergence\"\n"
                  << "set xlabel \"N (iterations)\"\n"
@@ -244,16 +261,15 @@ int Open_Progress_File(ofstream &Progress_File,
                  << "\"" << progress_file_name << "\""
                  << " using 1:2 \"%lf%*lf%*lf%*lf%*lf%lf\" \\\n"
 	         << "     title \"Max-norm\" with lines\n"
-								<< "set terminal postscript eps enhanced color\n"
-								<< "set output \"" << eps_output_file_name << "\"\n"
-								<< "replot\n"
+                 << "set terminal postscript eps enhanced color\n"
+                 << "set output \"" << eps_output_file_name << "\"\n"
+                 << "replot\n"
                  << "pause -1  \"Press return to continue\"\n";
 
     gnuplot_file.close();
 
     strcpy(gnuplot_file_name, prefix);
     strcat(gnuplot_file_name, "_view_residual.gplt");
-
     gnuplot_file.open(gnuplot_file_name, ios::out);
     if (!gnuplot_file.good()) return(1);
 
@@ -282,8 +298,8 @@ int Open_Progress_File(ofstream &Progress_File,
     gnuplot_file.open(gnuplot_file_name, ios::out);
     if (!gnuplot_file.good()) return(1);
 
-		strcpy(eps_output_file_name, prefix);
-		strcat(eps_output_file_name, "_plot_residual_cpu.eps");
+    strcpy(eps_output_file_name, prefix);
+    strcat(eps_output_file_name, "_plot_residual_cpu.eps");
 
     gnuplot_file << "set title \"Solution Convergence\"\n"
                  << "set xlabel \"Total CPU time (minutes)\"\n"
@@ -299,9 +315,9 @@ int Open_Progress_File(ofstream &Progress_File,
                  << "\"" << progress_file_name << "\""
                  << " using 1:2 \"%*lf%*lf%lf%*lf%*lf%lf\" \\\n"
 	         << "     title \"Max-norm\" with linespoints\n"
-								<< "set terminal postscript eps enhanced color\n"
-								<< "set output \"" << eps_output_file_name << "\"\n"
-								<< "replot\n"
+                 << "set terminal postscript eps enhanced color\n"
+                 << "set output \"" << eps_output_file_name << "\"\n"
+                 << "replot\n"
                  << "pause -1  \"Press return to continue\"\n";
 
     gnuplot_file.close();
@@ -313,14 +329,14 @@ int Open_Progress_File(ofstream &Progress_File,
 
 }
 
-/********************************************************
- * Routine: Output_Progress_to_File                     *
- *                                                      *
- * This routine writes out progress information for     *
- * a CFD calculation to a progress file, including      *
+/**********************************************************
+ * Routine: Output_Progress_to_File                       *
+ *                                                        *
+ * This routine writes out progress information for       *
+ * a CFD calculation to a progress file, including        *
  * iteration level, time, CPU time, and residual norm(s). *
- *                                                      *
- ********************************************************/
+ *                                                        *
+ **********************************************************/
 void Output_Progress_to_File(ostream &Progress_File,
                              const int Number_of_Time_Steps,
                              const double &Time,
@@ -337,11 +353,11 @@ void Output_Progress_to_File(ostream &Progress_File,
                   << " " << CPU_Time.min();
     Progress_File.setf(ios::scientific);
 
-    for(int q=0; q < Number_of_Residual_Norms; q++){
+    for(int q=0; q < Number_of_Residual_Norms; q++) {
 	Progress_File << " " << Residual_L1_Norm[q]
 		      << " " << Residual_L2_Norm[q] 
 		      << " " << Residual_Max_Norm[q];
-    }
+    } /* endfor */
 
     Progress_File << "\n";
     Progress_File.unsetf(ios::scientific);
@@ -353,9 +369,10 @@ void Output_Progress_to_File(ostream &Progress_File,
  * Routine: Open_Progress_File                          *
  *                                                      *
  * This routine opens the progress file for a CFD       *
- * calculation and prepares it for I/O.                 *   //CURRENTLY SET TO SHOW FIRST 4 SOLN VARS NORMS
+ * calculation and prepares it for I/O.                 *
  *                                                      *
  ********************************************************/
+ //CURRENTLY SET TO SHOW FIRST 4 SOLN VARS NORMS
 int Open_Progress_File(ofstream &Progress_File,
                        char *File_Name,
                        const int Append_to_File,
@@ -363,8 +380,12 @@ int Open_Progress_File(ofstream &Progress_File,
 		       const int &Number_of_Residual_Norms) {
 
     char prefix[256], extension[256], 
-         progress_file_name[256], gnuplot_file_name[256];
-    char *progress_file_name_ptr, *gnuplot_file_name_ptr;
+         progress_file_name[256], 
+         gnuplot_file_name[256];
+
+    char *progress_file_name_ptr, 
+         *gnuplot_file_name_ptr;
+
     ofstream gnuplot_file;
 
     /* Determine the name of the progress file. */
@@ -486,9 +507,9 @@ void Output_Progress_to_File(ostream &Progress_File,
                              const double &Residual_L2_Norm,
                              const double &Residual_Max_Norm) {
 
-		int out_precision = 5;
-		int out_width = out_precision + 8;
-		int swidth = 6;
+    int out_precision = 5;
+    int out_width = out_precision + 8;
+    int swidth = 6;
     Progress_File << setprecision(out_precision);
     Progress_File << setw(swidth) << Number_of_Time_Steps
                   << " " << setw(out_width) << Time
@@ -1151,7 +1172,6 @@ void Get_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
  ********************************************************/
 int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
 
-
     int i_command;
     char buffer[256];
 
@@ -1518,29 +1538,26 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
 }
 
 // for use with qsort
-int
-compare_ints(const void *p, const void *q)
-{
-	return *(int *)p - *(int *)q;
+int Compare_Ints(const void *p, const void *q) {
+    return *(int *)p - *(int *)q;
 }
 
-double
-least_squares_slope(double *values, int n, int position)
-{
-	double ssxx = 0.0, ssxy = 0.0;
-	double ymean = 0.0, xmean = (n-1.0)/2.0;
+double Least_Squares_Slope(double *values, int n, int position) {
 
-	for (int x = 0; x < n; x++) { 
-		ymean += values[x];
-		ssxx += x * x;
-		ssxy += x * values[ (position+x) % n ];
-	}
+    double ssxx = 0.0, ssxy = 0.0;
+    double ymean = 0.0, xmean = (n-1.0)/2.0;
 
-	ymean *= 1.0 / n;
+    for (int x = 0; x < n; x++) { 
+	ymean += values[x];
+	ssxx += x * x;
+	ssxy += x * values[ (position+x) % n ];
+    }
 
-	ssxx -= n * xmean * xmean;
-	ssxy -= n * xmean * ymean;
+    ymean *= 1.0 / n;
 
-	return ssxy / ssxx;
+    ssxx -= n * xmean * xmean;
+    ssxy -= n * xmean * ymean;
+
+    return ssxy / ssxx;
 }
 

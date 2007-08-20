@@ -290,6 +290,7 @@ int Output_Cells_Tecplot(Dusty2D_Quad_Block *Soln_ptr,
   for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
     if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
       Output_Cells_Tecplot(Soln_ptr[nb],
+                           IP,
 			   Number_of_Time_Steps, 
 			   Time,
 			   Soln_Block_List.Block[nb].gblknum,

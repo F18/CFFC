@@ -305,6 +305,7 @@ int Output_Cells_Tecplot(NavierStokes2D_Quad_Block *Soln_ptr,
     if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
       if (IP.i_Grid != GRID_NOZZLELESS_ROCKET_MOTOR) {
 	Output_Cells_Tecplot(Soln_ptr[nb],
+                             IP,
 			     Number_of_Time_Steps,
 			     Time,
 			     Soln_Block_List.Block[nb].gblknum,

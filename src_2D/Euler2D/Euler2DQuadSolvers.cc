@@ -198,7 +198,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 
   processor_cpu_time.zero();
   total_cpu_time.zero();
-	NKS_total_cpu_time.zero();
+  NKS_total_cpu_time.zero();
   
   /* Initialize the conserved and primitive state
      solution variables. */
@@ -824,13 +824,11 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 
   if(!batch_flag) { time(&end_explicit); }
 
-  // Start APPLY Newton_Krylov_Schwarz
-
+  /*************************************************************************************************************************/
+  /************************ APPLY Newton_Krylov_Schwarz ********************************************************************/
+  /*************************************************************************************************************************/\
   if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
-     time_t start_NKS = 0, end_NKS = 0;
-     processor_cpu_time.update();
-     total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);  
-		double temp_t = total_cpu_time.cput;
+     time_t start_NKS, end_NKS;
 
      if (CFFC_Primary_MPI_Processor()) {
         error_flag = Open_Progress_File(residual_file,
@@ -839,8 +837,8 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
         if (error_flag) {
            cout << "\n Euler2D ERROR: Unable to open residual file for Euler2D calculation.\n";
            cout.flush();
-        } 
-     }
+        } /* endif */ 
+     } /* endif */
 
      CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
      CFFC_Broadcast_MPI(&error_flag, 1);
@@ -851,29 +849,23 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 
      if (!batch_flag){ cout << "\n\n Beginning Euler2D NKS computations on " << Date_And_Time() << ".\n\n"; time(&start_NKS); }
 
-     CPUTime NKS_processor_cpu_time, NKS_total_cpu_time;                 //TRYING TO FIX RESIDUAL PLOT TIMES
-     NKS_processor_cpu_time.zero(); NKS_total_cpu_time.zero();    
-     
-     NKS_processor_cpu_time = processor_cpu_time;
-     NKS_total_cpu_time = total_cpu_time; 
+     //Store Explicit times for output
+     CPUTime Explicit_processor_cpu_time = processor_cpu_time;
+     CPUTime Explicit_total_cpu_time =  total_cpu_time;
     
      //Perform NKS Iterations 
      error_flag = Newton_Krylov_Schwarz_Solver<Euler2D_pState,
                                                Euler2D_Quad_Block,                                               
-                                               Euler2D_Input_Parameters>(processor_cpu_time, //NKS_processor_cpu_time,
-									 total_cpu_time,     //NKS_total_cpu_time, 
+                                               Euler2D_Input_Parameters>(processor_cpu_time,
 									 residual_file,
 									 number_of_time_steps, // explicit time steps
 									 Local_SolnBlk, 
 									 List_of_Local_Solution_Blocks,
 									 Input_Parameters);
-     
-     //NKS_processor_cpu_time.update();
-     //NKS_total_cpu_time.cput = CFFC_Summation_MPI(NKS_processor_cpu_time.cput);  
+      
      processor_cpu_time.update();
-     total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);  
-		 NKS_total_cpu_time.cput += total_cpu_time.cput - temp_t;
-    
+     total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput); 
+
      if (error_flag) {
         if (CFFC_Primary_MPI_Processor()) { 
    	   cout << "\n Euler2D_NKS ERROR: Euler2D solution error on processor " 
@@ -893,12 +885,12 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
        cout<<"\n ----------------------------------------------------------------";
        cout<<"\n -------- Solution Computations Summary in minutes --------------";
        cout<<"\n ----------------------------------------------------------------";
-       cout<<"\n Total Startup CPU Time\t\t = "<<NKS_total_cpu_time.min();          //total_cpu_time.min();
-       cout<<"\n Total NKS CPU Time \t\t = "<<total_cpu_time.min()-NKS_total_cpu_time.min();
-       cout<<"\n Total CPU Time \t\t = "<<total_cpu_time.min();    //NKS_total_cpu_time.min()+total_cpu_time.min(); 
+       cout<<"\n Total Startup CPU Time\t\t = "<<Explicit_total_cpu_time.min();
+       cout<<"\n Total NKS CPU Time \t\t = "<<total_cpu_time.min()-Explicit_total_cpu_time.min();
+       cout<<"\n Total CPU Time \t\t = "<<total_cpu_time.min(); 
        cout<<"\n Total Startup Clock Time\t = "<<difftime(end_explicit,start_explicit)/60.0;
        cout<<"\n Total NKS Clock Time\t\t = "<<difftime(end_NKS,start_NKS)/60.0;
-       cout<<"\n Total Clock Time\t\t = "<<difftime(end_NKS,start_explicit)/60.0;   
+       cout<<"\n Total Clock Time\t\t = "<<difftime(end_NKS,start_explicit)/60.0;   //if no explicit start_explicit not defined
        cout<<"\n ----------------------------------------------------------------";
        cout<<"\n ----------------------------------------------------------------";
        cout<<"\n ----------------------------------------------------------------\n";
@@ -907,10 +899,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 
      if (CFFC_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file); 
      
-     //add implicit and explicit times 
-     //total_cpu_time.cput += NKS_total_cpu_time.cput;
   } 
-
   /*************************************************************************************************************************/
   /*************************************************************************************************************************/
   /*************************************************************************************************************************/

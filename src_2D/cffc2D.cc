@@ -319,6 +319,7 @@ int main(int num_arg, char *arg_ptr[]) {
   } else if (strcmp(Equation_Type, "NavierStokes2D") == 0) {
       error_flag = NavierStokes2DQuadSolver(Input_File_Name_ptr,
 			  	            batch_flag);
+
   /* Gaussian2D_Cartesian */
   if (strcmp(Equation_Type, "Gaussian2D_Cartesian") == 0){
     if(CFFC_Primary_MPI_Processor()) {
@@ -331,11 +332,14 @@ int main(int num_arg, char *arg_ptr[]) {
   /* Gaussian2D */
   } else if(strcmp(Equation_Type, "Gaussian2D") == 0){
       error_flag = Gaussian2DQuadSolver(Input_File_Name_ptr,
-	  				       batch_flag);
+	  			        batch_flag);
 
+  /* HighTemp2D */
   } else if (strcmp(Equation_Type, "HighTemp2D") == 0) {
       error_flag = HighTemp2DQuadSolver(Input_File_Name_ptr,
-			  	    batch_flag);
+			  	        batch_flag);
+
+  } /* endif */
 
   if (error_flag) {
      CFFC_Finalize_MPI();

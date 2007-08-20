@@ -7,25 +7,16 @@
 
 #include "HighTemp2DState.h"
 
-// The default tolerance for things such as:
-//
-//  inline double HighTemp2D_pState::dhdp(void) const { 
-//    return (Tgas_h(HTONEPLUST*p, rho) - Tgas_h(HTONEMINT*p, rho))/(2.0*HTTOL*p);
-//  }
-//
-// Currently HTTOL is declared in Math.h (and defined here).
+// Currently HTTOL is declared in HighTemp2DState.h (and defined here).
 double HTTOL = 1e-3;
 
 /**********************************************************************
- * HighTemp2D_pState -- Create storage and assign gas constants.  *
+ * HighTemp2D_pState -- Create storage and assign gas constants.      *
  **********************************************************************/
 int HighTemp2D_pState::eos_type = EOS_TGAS;
 double HighTemp2D_pState::g    = GAMMA_AIR;
 double HighTemp2D_pState::gm1  = GAMMA_AIR-ONE;
 double HighTemp2D_pState::gm1i = ONE/(GAMMA_AIR-ONE);
-//double HighTemp2D_pState::g    = 0;   
-//double HighTemp2D_pState::gm1  = 0;
-//double HighTemp2D_pState::gm1i = 0;
 double HighTemp2D_pState::R    = R_UNIVERSAL/(MOLE_WT_AIR*MILLI);
 double HighTemp2D_pState::cp   = (GAMMA_AIR*R_UNIVERSAL/(MOLE_WT_AIR*MILLI))/(GAMMA_AIR-ONE);
 double HighTemp2D_pState::cv   = (R_UNIVERSAL/(MOLE_WT_AIR*MILLI))/(GAMMA_AIR-ONE);
@@ -38,15 +29,12 @@ double HighTemp2D_pState::Mref   = 0.5;
 int HighTemp2D_pState::flow_type = FLOWTYPE_LAMINAR;
 
 /**********************************************************************
- * HighTemp2D_cState -- Create storage and assign gas constants.  *
+ * HighTemp2D_cState -- Create storage and assign gas constants.      *
  **********************************************************************/
 int HighTemp2D_cState::eos_type = EOS_TGAS;
 double HighTemp2D_cState::g    = GAMMA_AIR;
 double HighTemp2D_cState::gm1  = GAMMA_AIR-ONE;
 double HighTemp2D_cState::gm1i = ONE/(GAMMA_AIR-ONE);
-//double HighTemp2D_cState::g    = 0;
-//double HighTemp2D_cState::gm1  = 0;
-//double HighTemp2D_cState::gm1i = 0;
 double HighTemp2D_cState::R    = R_UNIVERSAL/(MOLE_WT_AIR*MILLI);
 double HighTemp2D_cState::cp   = (GAMMA_AIR*R_UNIVERSAL/(MOLE_WT_AIR*MILLI))/(GAMMA_AIR-ONE);
 double HighTemp2D_cState::cv   = (R_UNIVERSAL/(MOLE_WT_AIR*MILLI))/(GAMMA_AIR-ONE);
@@ -102,26 +90,6 @@ double HighTemp2D_cState::xi = 1.50;
 double HighTemp2D_cState::Mto = 0.25;
 
 /**********************************************************************
- * HighTemp2D_pState -- Create storage and assign propellant      *
- *                          constants.                                *
- **********************************************************************/
-double HighTemp2D_pState::rhos = RHOS_APHTPB;
-double HighTemp2D_pState::n    = N_APHTPB;
-double HighTemp2D_pState::beta = BETA_APHTPB;
-double HighTemp2D_pState::Tf   = TF_APHTPB;
-double HighTemp2D_pState::Ts   = TS_APHTPB;
-
-/**********************************************************************
- * HighTemp2D_cState -- Create storage and assign propellant      *
- *                          constants.                                *
- **********************************************************************/
-double HighTemp2D_cState::rhos = RHOS_APHTPB;
-double HighTemp2D_cState::n    = N_APHTPB;
-double HighTemp2D_cState::beta = BETA_APHTPB;
-double HighTemp2D_cState::Tf   = TF_APHTPB;
-double HighTemp2D_cState::Ts   = TS_APHTPB;
-
-/**********************************************************************
  * Routine: Riemann (Exact Riemann solver, x-direction)               *
  *                                                                    *
  * This function uses a Newton-Raphson interative procedure to obtain *
@@ -131,7 +99,7 @@ double HighTemp2D_cState::Ts   = TS_APHTPB;
  *                                                                    *
  **********************************************************************/
 HighTemp2D_pState Riemann(const HighTemp2D_pState &Wl,
-			      const HighTemp2D_pState &Wr) {
+			  const HighTemp2D_pState &Wr) {
 
   int number_of_iterations;
   
@@ -248,7 +216,6 @@ HighTemp2D_pState Riemann(const HighTemp2D_pState &Wl,
   pm = HALF*(pml+pmr);
   
   // Return the intermediate state solution.
-  /*
   if (vm >= ZERO) {
     if (vm < Wl.v.x) {
       aml = al*sqrt(((Wl.g+ONE)+Wl.gm1*pm/Wl.p)/
@@ -281,7 +248,6 @@ HighTemp2D_pState Riemann(const HighTemp2D_pState &Wl,
       }
     }
   } else {
-  */
     if (vm > Wr.v.x) {
       amr = ar*sqrt(((Wr.g+ONE)+Wr.gm1*pm/Wr.p)/
 		    ((Wr.g+ONE)+Wr.gm1*Wr.p/pm));
@@ -313,7 +279,7 @@ HighTemp2D_pState Riemann(const HighTemp2D_pState &Wl,
 	return W;
       }
     }
-    //  }
+  }
 
 }
 
@@ -321,43 +287,16 @@ HighTemp2D_pState Riemann(const HighTemp2D_pState &Wl,
  * Routine: RoeAverage (Roe Averages)                                 *
  *                                                                    *
  * This function returns the Roe-averaged primitive solution state    *
- * given left and right primitive solution variables. See Roe (1981). *
+ * given left and right primitive solution variables. See Roe (1981)  *
+ * and Glaister (1987), the latter for a general high-temperature     *
+ * equation of state.                                                 *
  *                                                                    *
  **********************************************************************/
-HighTemp2D_pState RoeAverage(const HighTemp2D_pState &Wl, const HighTemp2D_pState &Wr) {
+HighTemp2D_pState RoeAverage(const HighTemp2D_pState &Wl, 
+                             const HighTemp2D_pState &Wr) {
   
-  double hl, hr, srhol, srhor, aa2, ha;
-  HighTemp2D_pState Wa; Wa.rho = ZERO; Wa.p = ZERO;//Wa.Vacuum();
-
-  // Determine the left and right state specific enthalpies and square
-  // roots of the density.
-  hl    = Wl.h();
-  hr    = Wr.h();
-  srhol = sqrt(Wl.rho);
-  srhor = sqrt(Wr.rho);
-  
-  // Determine the appropriate Roe averages.
-  Wa.rho   = srhol*srhor;
-  Wa.v.x   = (srhol*Wl.v.x + srhor*Wr.v.x)/(srhol+srhor);
-  Wa.v.y   = (srhol*Wl.v.y + srhor*Wr.v.y)/(srhol+srhor);
-  Wa.k     = (srhol*Wl.k + srhor*Wr.k)/(srhol+srhor);
-  Wa.omega = (srhol*Wl.omega + srhor*Wr.omega)/(srhol+srhor);
-  ha  = (srhol*hl + srhor*hr)/(srhol+srhor);
-
-  //added b/c gamma not defined anymore :) - just for testing
-  // Wa.gm1 = GAMMA_AIR-ONE;  
-  // Wa.g = GAMMA_AIR;
-
-  aa2 = Wa.gm1*(ha - HALF*(sqr(Wa.v.x) + sqr(Wa.v.y)) - Wa.k);
-  Wa.p = Wa.rho*aa2/Wa.g;
-
-  double el, er, ea;
-  el = Wl.e();
-  er = Wr.e();
-  ea = (srhol*el + srhor*er)/(srhol+srhor);
-  //cout<<"RoeAverage Wa.rho = "<<Wa.rho<<" Wa.p = "<<Wa.p<<" aa2 = "<<aa2<<endl;
-
-  // Return the Roe-averged state.
+  HighTemp2D_pState Wa; 
+  Wa.RoeAverage(Wl, Wr);
   return Wa;
 
 }
@@ -368,7 +307,8 @@ HighTemp2D_pState RoeAverage(const HighTemp2D_pState &Wl, const HighTemp2D_pStat
  * This function returns the solution in a stationary frame.          *
  *                                                                    *
  **********************************************************************/
-HighTemp2D_pState Translate(const HighTemp2D_pState &W, const Vector2D &V) {
+HighTemp2D_pState Translate(const HighTemp2D_pState &W, 
+                            const Vector2D &V) {
 
   return HighTemp2D_pState(W.rho,W.v.x-V.x,W.v.y-V.y,W.p,W.k,W.omega);
 
@@ -383,7 +323,7 @@ HighTemp2D_pState Translate(const HighTemp2D_pState &W, const Vector2D &V) {
  *                                                                    *
  **********************************************************************/
 HighTemp2D_pState Reflect(const HighTemp2D_pState &W,
-			      const Vector2D &norm_dir) {
+			  const Vector2D &norm_dir) {
 
   HighTemp2D_pState Wr, Wn;
 
@@ -404,6 +344,22 @@ HighTemp2D_pState Reflect(const HighTemp2D_pState &W,
 }
 
 /**********************************************************************
+ * Routine: Rotate                                                    *
+ *                                                                    *
+ * This function returns the solution in a rotated frame.             *
+ *                                                                    *
+ **********************************************************************/
+// Should only be called from the preconditioner. AW. Tue Aug 07 2007.
+HighTemp2D_pState Rotate(const HighTemp2D_pState &W, 
+                         const Vector2D &norm_dir) {
+
+  HighTemp2D_pState W_rotated;
+  W_rotated.Rotate(W, norm_dir);
+  return W_rotated;
+
+}
+
+/**********************************************************************
  * Routine: Mirror                                                    *
  *                                                                    *
  * This function returns the mirrored solution state in a given       *
@@ -411,7 +367,8 @@ HighTemp2D_pState Reflect(const HighTemp2D_pState &W,
  * normal vector in the direction of interest.                        *
  *                                                                    *
  **********************************************************************/
-HighTemp2D_pState Mirror(const HighTemp2D_pState &W, const Vector2D &norm_dir) {
+HighTemp2D_pState Mirror(const HighTemp2D_pState &W, 
+                         const Vector2D &norm_dir) {
   
   HighTemp2D_pState Wr, Wn;
 
@@ -441,7 +398,7 @@ HighTemp2D_pState Mirror(const HighTemp2D_pState &W, const Vector2D &norm_dir) {
  *                                                                    *
  **********************************************************************/
 HighTemp2D_pState WallViscousHeatFlux(const HighTemp2D_pState &W,
-					  const Vector2D &norm_dir) {
+				      const Vector2D &norm_dir) {
 
   HighTemp2D_pState Wr, Wn;
 
@@ -463,7 +420,6 @@ HighTemp2D_pState WallViscousHeatFlux(const HighTemp2D_pState &W,
 
   // Return the moving wall state.
   return Wn;
-//   return MovingWallHeatFlux(W,norm_dir,ZERO);
 
 }
 
@@ -476,10 +432,26 @@ HighTemp2D_pState WallViscousHeatFlux(const HighTemp2D_pState &W,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_pState WallViscousIsothermal(const HighTemp2D_pState &W,
-				     const Vector2D &norm_dir,
-				     const double &Twall) {
+  				        const Vector2D &norm_dir,
+				        const double &Twall) {
 
   return MovingWallIsothermal(W,norm_dir,ZERO,Twall);
+
+}
+
+/**********************************************************************
+ * Routine: BurningSurface                                            *
+ *                                                                    *
+ * This function returns the star state solution in a given direction *
+ * for a burning surface given the primitive solution variables and   *
+ * the unit normal vector in the direction of interest.  Burning rate *
+ * based on Saint Robert's pressure dependent burning law.            *
+ *                                                                    *
+ **********************************************************************/
+HighTemp2D_pState BurningSurface(const HighTemp2D_pState &W,
+				 const Vector2D &norm_dir) {
+
+  //Does nothing.  No burning surface. CPTG
 
 }
 
@@ -492,8 +464,8 @@ HighTemp2D_pState WallViscousIsothermal(const HighTemp2D_pState &W,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_pState MovingWallHeatFlux(const HighTemp2D_pState &W,
-					 const Vector2D &norm_dir,
-					 const double &Vwall) {
+				     const Vector2D &norm_dir,
+				     const double &Vwall) {
 
   HighTemp2D_pState Wr, Wn;
 
@@ -528,9 +500,9 @@ HighTemp2D_pState MovingWallHeatFlux(const HighTemp2D_pState &W,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_pState MovingWallIsothermal(const HighTemp2D_pState &W,
-					   const Vector2D &norm_dir,
-					   const double &Vwall,
-					   const double &Twall) {
+				       const Vector2D &norm_dir,
+				       const double &Vwall,
+				       const double &Twall) {
 
   HighTemp2D_pState Wr, Wn;
 
@@ -546,9 +518,10 @@ HighTemp2D_pState MovingWallIsothermal(const HighTemp2D_pState &W,
   // Apply the specified wall temperature(modified for HighTemp2D cases)
   switch(W.eos_type){
     case EOS_TGAS:
-      Wr.rho = Tgas_rho(W.p,Twall);
+      Wr.rho = Tgas_rho(W.p, Twall);
       break;
     case EOS_IDEAL:
+    default:
       Wr.rho = W.p/(W.R*Twall);
       break;
   }
@@ -566,83 +539,6 @@ HighTemp2D_pState MovingWallIsothermal(const HighTemp2D_pState &W,
 }
 
 /**********************************************************************
- * Routine: BurningSurface                                            *
- *                                                                    *
- * This function returns the star state solution in a given direction *
- * for a burning surface given the primitive solution variables and   *
- * the unit normal vector in the direction of interest.  Burning rate *
- * based on Saint Robert's pressure dependent burning law.            *
- *                                                                    *
- **********************************************************************/
-
-HighTemp2D_pState BurningSurface(const HighTemp2D_pState &W,
-				     const Vector2D &norm_dir) {
-
-  double g = W.g, R = W.R, vxr, vyr, pr, ar; 
-  double rhobs, vxbs, vxbsp, rbs = ZERO, rbsp, vybs, pbs, pbso, ars;
-  double cos_angle, sin_angle, vx, vy, C1, C2;
-  HighTemp2D_pState Wbs;
-  int iteration = 0;
-
-  // Determine the direction cosine's for the frame rotation.
-  cos_angle = norm_dir.x; 
-  sin_angle = norm_dir.y;
-
-  // Apply the frame rotation and calculate the primitive solution 
-  // state variables in the local rotated frame defined by the unit 
-  // normal vector.
-  vxr =   W.v.x*cos_angle + W.v.y*sin_angle;
-  vyr = - W.v.x*sin_angle + W.v.y*cos_angle;
-  pr  = W.p;
-  ar  = W.a();
-  vxr = - vxr; // Required to correct for burning direction.
-
-  // Compute the star state at the burning surface.
-  // initial guess.
-  pbs = pr;
-  iteration = 0;
-  do {
-    pbso = pbs;
-    if (pr > pbso) {
-      // Rarefaction wave.
-      ars   = ar*pow(pbso/pr,(g-ONE)/(TWO*g));
-      vxbs  = vxr + (TWO/(g-ONE))*(ars-ar);
-      vxbsp = ars/(g*pbso);
-    } else if (pr <= pbso) {
-      // Shock wave.
-      C1    = ((g+ONE)/(TWO*g))*pbso/pr + ((g-ONE)/(TWO*g));
-      C2    = ONE - ((g+ONE)/(FOUR*g))*(pbso/pr - ONE)/C1;
-      vxbs  = vxr + ar*(pbso/pr - ONE)/(g*sqrt(C1));
-      vxbsp = (ar*C2/(g*pr))/sqrt(C1);
-    }
-    rbs   = W.beta*pow(pbso,W.n);
-    rbsp  = W.n*rbs/pbso;
-    rhobs = pbso/(R*W.Tf);
-    pbs   = pbso - (W.rhos*rbs - rhobs*vxbs)/(W.rhos*rbsp - rhobs*(vxbs/pbso + vxbsp));
-    if (pbs <= ZERO) pbs = HALF*pbso;
-    iteration++;
-  } while (fabs(ONE - (pbso/pbs)) > TOLER/HUNDRED);
-  vybs = ZERO;
-  vxbs = -vxbs; // Required to correct for burning direction.
-
-  // Rotate back to the original reference frame.
-  Wbs.rho   = rhobs;
-  Wbs.v.x   = vxbs*cos_angle - vybs*sin_angle;
-  Wbs.v.y   = vxbs*sin_angle + vybs*cos_angle;
-  Wbs.p     = pbs;
-  if (Wbs.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-    double sigmav = 0.035;
-    double lw = 0.000200;
-    Wbs.k     = sqr(sigmav)*sqr(vxbs);
-    Wbs.omega = pow(W.Cmu,-0.75)/(lw*Wbs.beta_k_o);
-  }
-
-  // Return the burning surface state.
-  return Wbs;
-
-}
-
-/**********************************************************************
  * Routine: RinglebFlow                                               *
  *                                                                    *
  * This function returns the exact solution to Ringleb's flow for the *
@@ -650,14 +546,16 @@ HighTemp2D_pState BurningSurface(const HighTemp2D_pState &W,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_pState RinglebFlow(const HighTemp2D_pState &Wdum,
-				  const Vector2D &X) {
+			      const Vector2D &X) {
+
   double q, k;
   return RinglebFlow(Wdum,X,q,k);
+
 }
 
 HighTemp2D_pState RinglebFlow(const HighTemp2D_pState &Wdum,
-				  const Vector2D &X,
-				  double &q, double &k) {
+			      const Vector2D &X,
+			      double &q, double &k) {
 
   HighTemp2D_pState W; W.Vacuum();
   double sin_theta, cos_theta, theta;
@@ -672,15 +570,18 @@ HighTemp2D_pState RinglebFlow(const HighTemp2D_pState &Wdum,
   while (fabs(c_a - c_b) > TOLER*TOLER) {
     // Determine f_a.
     rho_a = pow(c_a,TWO/(g-ONE));
-    J_a = ONE/c_a + ONE/(THREE*c_a*c_a*c_a) + ONE/(FIVE*c_a*c_a*c_a*c_a*c_a) - HALF*log((ONE+c_a)/(ONE-c_a));
+    J_a = ONE/c_a + ONE/(THREE*c_a*c_a*c_a) + 
+          ONE/(FIVE*c_a*c_a*c_a*c_a*c_a) - HALF*log((ONE+c_a)/(ONE-c_a));
     q_a = sqrt((TWO/(g-ONE))*(ONE-c_a*c_a));
     f_a = (X.x + HALF*J_a)*(X.x + HALF*J_a) + X.y*X.y - ONE/(FOUR*rho_a*rho_a*q_a*q_a*q_a*q_a);
     // Determine f_ab.
     c_ab = HALF*(c_a + c_b);
     rho_ab = pow(c_ab,TWO/(g-ONE));
-    J_ab = ONE/c_ab + ONE/(THREE*c_ab*c_ab*c_ab) + ONE/(FIVE*c_ab*c_ab*c_ab*c_ab*c_ab) - HALF*log((ONE+c_ab)/(ONE-c_ab));
+    J_ab = ONE/c_ab + ONE/(THREE*c_ab*c_ab*c_ab) + 
+           ONE/(FIVE*c_ab*c_ab*c_ab*c_ab*c_ab) - HALF*log((ONE+c_ab)/(ONE-c_ab));
     q_ab = sqrt((TWO/(g-ONE))*(ONE-c_ab*c_ab));
-    f_ab = (X.x + HALF*J_ab)*(X.x + HALF*J_ab) + X.y*X.y - ONE/(FOUR*rho_ab*rho_ab*q_ab*q_ab*q_ab*q_ab);
+    f_ab = (X.x + HALF*J_ab)*(X.x + HALF*J_ab) + X.y*X.y - 
+           ONE/(FOUR*rho_ab*rho_ab*q_ab*q_ab*q_ab*q_ab);
     // Update the bounds of the bisection search as required.
     if (f_a*f_ab <= ZERO) c_b = HALF*(c_a + c_b);
     else c_a = HALF*(c_a + c_b);
@@ -692,7 +593,6 @@ HighTemp2D_pState RinglebFlow(const HighTemp2D_pState &Wdum,
   W.rho = pow(c,TWO/(g-ONE));
   J = ONE/c + ONE/(THREE*c*c*c) + ONE/(FIVE*c*c*c*c*c) - HALF*log((ONE+c)/(ONE-c));
   k = sqrt(TWO/(TWO*W.rho*(X.x+HALF*J)+ONE/(q*q)));
-  //if (k > 5.0/3.0) cout << "k = " << k << " > 5/3 @ " << X << endl;
   sin_theta = max(ZERO,min(ONE,q/k));
   theta = TWO*PI-asin(sin_theta);
   sin_theta = sin(theta);
@@ -719,10 +619,10 @@ HighTemp2D_pState RinglebFlow(const HighTemp2D_pState &Wdum,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_pState RinglebFlowAverageState(const HighTemp2D_pState &Wdum,
-					      const Vector2D &Y1,
-					      const Vector2D &Y2,
-					      const Vector2D &Y3,
-					      const Vector2D &Y4) {
+					  const Vector2D &Y1,
+					  const Vector2D &Y2,
+					  const Vector2D &Y3,
+					  const Vector2D &Y4) {
 
   Vector2D X, X1, X2, X3, X4;
   double epsilon1 = -ONE, epsilon2 = ONE, epsilon3 = -ONE, epsilon4 = ONE;
@@ -791,8 +691,10 @@ HighTemp2D_pState RinglebFlowAverageState(const HighTemp2D_pState &Wdum,
     double det = d1*b2*a3-d1*a2*b3-d2*b1*a3+d2*a1*b3+d3*b1*a2-d3*a1*b2;
 
     for (int nn = 0; nn < 7; nn++) {
-      X.x = TWO*A*((a2*d3-d2*a3)*upsilon1[nn]+(d1*a3-a1*d3)*upsilon2[nn]+(a1*d2-d1*a2)*upsilon3[nn])/det;
-      X.y = TWO*A*((d2*b3-b2*d3)*upsilon1[nn]+(b1*d3-d1*b3)*upsilon2[nn]+(d1*b2-b1*d2)*upsilon3[nn])/det;
+      X.x = TWO*A*((a2*d3-d2*a3)*upsilon1[nn]+(d1*a3-a1*d3)*upsilon2[nn]+
+            (a1*d2-d1*a2)*upsilon3[nn])/det;
+      X.y = TWO*A*((d2*b3-b2*d3)*upsilon1[nn]+(b1*d3-d1*b3)*upsilon2[nn]+
+            (d1*b2-b1*d2)*upsilon3[nn])/det;
       W += u[nn]*RinglebFlow(W,X);
     }
 
@@ -815,11 +717,12 @@ HighTemp2D_pState RinglebFlowAverageState(const HighTemp2D_pState &Wdum,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_pState ViscousChannelFlow(const HighTemp2D_pState &Wdum,
-					 const Vector2D X,
-					 const Vector2D Vwall,
-					 const double dp,
-					 const double length,
-					 const double height) {
+				     const Vector2D X,
+				     const Vector2D Vwall,
+				     const double dp,
+				     const double length,
+				     const double height) {
+
   HighTemp2D_pState W;
   // Compute the exact laminar channel solution.  Note that the
   // pressure, p, and density, rho, must be set before the x-direction
@@ -831,16 +734,18 @@ HighTemp2D_pState ViscousChannelFlow(const HighTemp2D_pState &Wdum,
   //  W.p   = PRESSURE_STDATM - dp*(ONE - X.x/length);
   W.v.x = (HALF/W.mu())*dp*X.y*(X.y - height)/length + Vwall.x*X.y/height;
   W.v.y = ZERO;
+
   // Return W state.
   return W;
 }
 
 HighTemp2D_pState ViscousChannelFlowVelocity(const HighTemp2D_pState &Wdum,
-						 const Vector2D X,
-						 const Vector2D Vwall,
-						 const double dp,
-						 const double length,
-						 const double height) {
+					     const Vector2D X,
+					     const Vector2D Vwall,
+					     const double dp,
+					     const double length,
+					     const double height) {
+
   HighTemp2D_pState W;
   // Compute the exact laminar channel solution.  Note that the
   // pressure, p, and density, rho, must be set before the x-direction
@@ -850,6 +755,7 @@ HighTemp2D_pState ViscousChannelFlowVelocity(const HighTemp2D_pState &Wdum,
   W.p   = Wdum.p;
   W.v.x = (HALF/W.mu())*dp*X.y*(X.y - height)/length + Vwall.x*X.y/height;
   W.v.y = ZERO;
+
   // Return W state.
   return W;
 }
@@ -863,10 +769,10 @@ HighTemp2D_pState ViscousChannelFlowVelocity(const HighTemp2D_pState &Wdum,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_pState ViscousPipeFlow(const HighTemp2D_pState &Wdum,
-				      const Vector2D X,
-				      const double dp,
-				      const double length,
-				      const double radius) {
+				  const Vector2D X,
+				  const double dp,
+				  const double length,
+				  const double radius) {
 
   HighTemp2D_pState W;
   // Compute the exact laminar pipe solution.  Note that the pressure,
@@ -879,6 +785,7 @@ HighTemp2D_pState ViscousPipeFlow(const HighTemp2D_pState &Wdum,
   // W.p   = PRESSURE_STDATM - (dp*length)*(ONE - X.x/length);
   W.v.x = (X.y*X.y - radius*radius)*dp*length/(FOUR*W.mu());
   W.v.y = ZERO;
+
   // Return W state.
   return W;
 
@@ -894,10 +801,10 @@ HighTemp2D_pState ViscousPipeFlow(const HighTemp2D_pState &Wdum,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_pState TurbulentPipeFlow(const HighTemp2D_pState &Wo,
-					const Vector2D X,
-					const double dp,
-					const double length,
-					const double radius) {
+				    const Vector2D X,
+				    const double dp,
+				    const double length,
+				    const double radius) {
 
   HighTemp2D_pState W;
   double utau, tauw, y;
@@ -914,6 +821,7 @@ HighTemp2D_pState TurbulentPipeFlow(const HighTemp2D_pState &Wo,
   utau = sqrt(tauw/W.rho);
   W.k = sqr(utau)/sqrt(W.beta_k_o);
   W.omega = utau/(sqrt(W.beta_k_o)*W.von_karman*(radius-X.y));
+
   // Return W state.
   return W;
 
@@ -928,12 +836,12 @@ HighTemp2D_pState TurbulentPipeFlow(const HighTemp2D_pState &Wo,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_pState FlatPlate(const HighTemp2D_pState &Winf,
-				const Vector2D &X,
-				const double &plate_length,
-				double &eta,
-				double &f,
-				double &fp,
-				double &fpp) {
+			    const Vector2D &X,
+			    const double &plate_length,
+			    double &eta,
+			    double &f,
+			    double &fp,
+			    double &fpp) {
 
   HighTemp2D_pState W;
   double fo, n, dn, k1, k2, k3, k4;
@@ -1006,77 +914,6 @@ HighTemp2D_pState FlatPlate(const HighTemp2D_pState &Winf,
   return W;
 
 }
-// HighTemp2D_pState FlatPlate(const HighTemp2D_pState &Winf,
-// 				const Vector2D &X,
-// 				const double &plate_length,
-// 				double &eta,
-// 				double &f,
-// 				double &fp,
-// 				double &fpp) {
-
-//   HighTemp2D_pState W;
-//   double fo, dn, k1, k2, k3, k4;
-
-//   // Initialize variables.
-//   W.rho = Winf.rho; W.p = Winf.p;
-//   eta = ZERO; f = ZERO; fo = ZERO; fp = ZERO; fpp = 0.33206;
-//   dn = 0.00001;
-
-//   // Return upstream conditions before flat plate, including the leading edge.
-//   if (X.x < TOLER || X.y > HALF*plate_length) return Winf;
-//   //if (X.x < NANO || X.x > plate_length || X.y > plate_length) return Winf;
-
-//   // Determine the dimensionless similarity coordinate, eta:
-//   eta = X.y*sqrt(Winf.v.x/(X.x*Winf.nu()));
-
-//   // If eta is greater than 8.4, for the sake of expediency, use linear
-//   // extrapolation to determine the value of f (fp = ONE and fpp = ZERO)
-//   // given the tabulated value at 8.4 (note, the analytic solution is 
-//   // linear in this region).
-//   if (eta > 8.4) {
-//     fp = ONE; fpp = ZERO; f = 6.67923 + fp*(eta - 8.4);
-//     W.v.x = fp*Winf.v.x;
-//     W.v.y = HALF*sqrt(Winf.nu()*Winf.v.x/X.x)*(eta*fp-f);
-//     return W;
-//   }
-
-//   // Compute the Blasius solution using a fourth-order Runge-Kutta method.
-//   for (double n = ZERO; n < eta; n += dn) {
-
-//     // Store the solution at the start of the iteration.
-//     fo = f;
-
-//     // Increment f:
-//     k1 = dn*fp;
-//     k2 = dn*(fp + k1/2.0);
-//     k3 = dn*(fp + k2/2.0);
-//     k4 = dn*(fp + k3);
-//     f = f + k1/6.0 + k2/3.0 + k3/3.0 + k4/6.0;
-
-//     // Increment fp:
-//     k1 = dn*fpp;
-//     k2 = dn*(fpp + k1/2.0);
-//     k3 = dn*(fpp + k2/2.0);
-//     k4 = dn*(fpp + k3);
-//     fp = fp + k1/6.0 + k2/3.0 + k3/3.0 + k4/6.0;
-
-//     // Increment fpp:
-//     k1 = -dn*fo*fpp/2.0;
-//     k2 = -dn*(fo + dn/2.0)*(fpp + k1/2.0)/2.0;
-//     k3 = -dn*(fo + dn/2.0)*(fpp + k2/2.0)/2.0;
-//     k4 = -dn*(fo + dn)*(fpp + k3)/2.0;
-//     fpp = fpp + k1/6.0 + k2/3.0 + k3/3.0 + k4/6.0;
-
-//   }
-
-//   // Compute the velocity vector at point X.
-//   W.v.x = fp*Winf.v.x;
-//   W.v.y = HALF*sqrt(Winf.nu()*Winf.v.x/X.x)*(eta*fp-f);
-
-//   // Return the Blasius solution state.
-//   return W;
-
-// }
 
 /**********************************************************************
  * Routine: DrivenCavityFlow                                          *
@@ -1089,8 +926,9 @@ HighTemp2D_pState FlatPlate(const HighTemp2D_pState &Winf,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_pState DrivenCavityFlow(const HighTemp2D_pState &Wo,
-				       const double &l,
-				       const double &Re) {
+				   const double &l,
+				   const double &Re) {
+
   assert(fabs(Re-100.0) < TOLER || fabs(Re-400.0) < TOLER);
   assert(fabs(l-0.001) < TOLER);
   HighTemp2D_pState W;
@@ -1124,8 +962,10 @@ HighTemp2D_pState DrivenCavityFlow(const HighTemp2D_pState &Wo,
   W.p = W.rho*W.R*T;
   // Set the velocity.
   W.v = Vector2D_ZERO;
+
   // Return the solution state.
   return W;
+
 }
 
 /**********************************************************************
@@ -1140,11 +980,12 @@ HighTemp2D_pState DrivenCavityFlow(const HighTemp2D_pState &Wo,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_pState BackwardFacingStep(const HighTemp2D_pState &Wo,
-					 const Vector2D &X,
-					 const double &h,
-					 const double &ho,
-					 const double &Re,
-					 const double &M) {
+				     const Vector2D &X,
+				     const double &h,
+				     const double &ho,
+				     const double &Re,
+				     const double &M) {
+
   assert(fabs(Re-100.0) < TOLER || fabs(Re-389.0) < TOLER || fabs(Re-1000.0) < TOLER);
   assert(fabs(M-0.20) < TOLER);
   HighTemp2D_pState W;
@@ -1177,8 +1018,10 @@ HighTemp2D_pState BackwardFacingStep(const HighTemp2D_pState &Wo,
   W.v.x = W.a()*M*(ONE - eta*eta);
   // Set the y-component of the velocity.
   W.v.y = ZERO;
+
   // Return the solution state.
   return W;
+
 }
 
 /**********************************************************************
@@ -1193,11 +1036,12 @@ HighTemp2D_pState BackwardFacingStep(const HighTemp2D_pState &Wo,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_pState ForwardFacingStep(const HighTemp2D_pState &Wo,
-					 const Vector2D &X,
-					 const double &h,
-					 const double &ho,
-					 const double &Re,
-					 const double &M) {
+				    const Vector2D &X,
+				    const double &h,
+				    const double &ho,
+				    const double &Re,
+				    const double &M) {
+
   assert(fabs(Re-100.0) < TOLER || fabs(Re-389.0) < TOLER || fabs(Re-1000.0) < TOLER);
   assert(fabs(M-0.20) < TOLER);
   HighTemp2D_pState W;
@@ -1232,6 +1076,7 @@ HighTemp2D_pState ForwardFacingStep(const HighTemp2D_pState &Wo,
   W.v.y = ZERO;
   // Return the solution state.
   return W;
+
 }
 
 /**********************************************************************
@@ -1251,10 +1096,9 @@ HighTemp2D_pState ForwardFacingStep(const HighTemp2D_pState &Wo,
  * determined).                                                       *
  *                                                                    *
  **********************************************************************/
-
 HighTemp2D_pState BC_Characteristic(const HighTemp2D_pState &Wi,
-                                 const HighTemp2D_pState &Wo,
-	      	                 const Vector2D &norm_dir) {
+                                    const HighTemp2D_pState &Wo,
+	      	                    const Vector2D &norm_dir) {
 
   HighTemp2D_pState Wi_rotated, Wo_rotated, We, We_rotated;
   char pattern;
@@ -1375,19 +1219,24 @@ HighTemp2D_pState BC_Characteristic(const HighTemp2D_pState &Wi,
     break;        
   case 'b' :
     We_rotated.rho   = Wi_rotated.rho*pow(poi,ONE/Wi_rotated.g);
-    We_rotated.v.x   = Wi_rotated.v.x - TWO*Wi_rotated.a()*Wi_rotated.gm1i*(pow(poi,HALF*Wi_rotated.gm1/Wi_rotated.g)-ONE);
+    We_rotated.v.x   = Wi_rotated.v.x - TWO*Wi_rotated.a()*Wi_rotated.gm1i*
+                       (pow(poi,HALF*Wi_rotated.gm1/Wi_rotated.g)-ONE);
     We_rotated.v.y   = Wi_rotated.v.y;
     We_rotated.p     = Wo_rotated.p;
     break;
   case 'c' :
     We_rotated.rho   = Wo_rotated.rho;
-    We_rotated.v.x   = Wi_rotated.v.x - TWO*Wi_rotated.a()*Wi_rotated.gm1i*(pow(poi,HALF*Wi_rotated.gm1/Wi_rotated.g)-ONE);
+    We_rotated.v.x   = Wi_rotated.v.x - TWO*Wi_rotated.a()*Wi_rotated.gm1i*
+                       (pow(poi,HALF*Wi_rotated.gm1/Wi_rotated.g)-ONE);
     We_rotated.v.y   = Wo_rotated.v.y;
     We_rotated.p     = Wo_rotated.p;
     break;
   case 'd' :
-    We_rotated.p     = Wi_rotated.p*pow((TWO/(Wi_rotated.g+ONE)+(Wi_rotated.gm1/(Wi_rotated.g+ONE))*mi),TWO*Wi_rotated.g*Wi_rotated.gm1i);
-    We_rotated.v.x   = Wi_rotated.v.x - TWO*Wi_rotated.a()*Wi_rotated.gm1i*(pow(We_rotated.p/Wi_rotated.p,HALF*Wi_rotated.gm1/Wi_rotated.g)-ONE);
+    We_rotated.p     = Wi_rotated.p*pow((TWO/(Wi_rotated.g+ONE)+
+                       (Wi_rotated.gm1/(Wi_rotated.g+ONE))*mi),
+                       TWO*Wi_rotated.g*Wi_rotated.gm1i);
+    We_rotated.v.x   = Wi_rotated.v.x - TWO*Wi_rotated.a()*Wi_rotated.gm1i*
+                       (pow(We_rotated.p/Wi_rotated.p,HALF*Wi_rotated.gm1/Wi_rotated.g)-ONE);
     We_rotated.v.y   = Wi_rotated.v.y;
     We_rotated.rho   = Wi_rotated.rho*pow(We_rotated.p/Wi_rotated.p,ONE/Wi_rotated.g);
     break;
@@ -1407,7 +1256,6 @@ HighTemp2D_pState BC_Characteristic(const HighTemp2D_pState &Wi,
   return We;
 
 }
-
 
 /**********************************************************************
  * Routine: BC_Characteristic_Pressure                                *
@@ -1439,10 +1287,9 @@ HighTemp2D_pState BC_Characteristic(const HighTemp2D_pState &Wi,
  *    specify the boundary state.                                     *
  *                                                                    *
  **********************************************************************/
-
 HighTemp2D_pState BC_Characteristic_Pressure(const HighTemp2D_pState &Wi,
-						 const HighTemp2D_pState &Wo,
-						 const Vector2D &norm_dir) {
+					     const HighTemp2D_pState &Wo,
+					     const Vector2D &norm_dir) {
 
   HighTemp2D_pState Wi_rotated, Wo_rotated, Wb, Wb_rotated;
   double mi, ab;
@@ -1535,11 +1382,9 @@ HighTemp2D_pState BC_Characteristic_Pressure(const HighTemp2D_pState &Wi,
  *    specify the boundary state.                                     *
  *                                                                    *
  **********************************************************************/
-
-
 HighTemp2D_pState BC_Characteristic_Mach_Number(const HighTemp2D_pState &Wi,
-                                             const HighTemp2D_pState &Wo,
-	      	                             const Vector2D &norm_dir) {
+                                                const HighTemp2D_pState &Wo,
+	      	                                const Vector2D &norm_dir) {
 
   HighTemp2D_pState Wi_rotated, Wo_rotated, Wb, Wb_rotated;
   double mi, mb, ab;
@@ -1595,7 +1440,6 @@ HighTemp2D_pState BC_Characteristic_Mach_Number(const HighTemp2D_pState &Wi,
 
 }
 
-
 /**********************************************************************
  * Routine: WaveSpeedPos                                              *
  *                                                                    *
@@ -1604,12 +1448,14 @@ HighTemp2D_pState BC_Characteristic_Mach_Number(const HighTemp2D_pState &Wi,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_pState WaveSpeedPos(const HighTemp2D_pState &lambdas_a,
-				   const HighTemp2D_pState &lambdas_l,
-				   const HighTemp2D_pState &lambdas_r) {
+			       const HighTemp2D_pState &lambdas_l,
+			       const HighTemp2D_pState &lambdas_r) {
+
   HighTemp2D_pState Wsp;
   for (int n = 0; n < NUM_VAR_HIGHTEMP2D; n++)
     Wsp[n] = HALF*(lambdas_a[n]+fabs(lambdas_a[n]));
   return Wsp;
+
 }
 
 /**********************************************************************
@@ -1620,12 +1466,14 @@ HighTemp2D_pState WaveSpeedPos(const HighTemp2D_pState &lambdas_a,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_pState WaveSpeedNeg(const HighTemp2D_pState &lambdas_a,
-                            const HighTemp2D_pState &lambdas_l,
-                            const HighTemp2D_pState &lambdas_r) {
+                               const HighTemp2D_pState &lambdas_l,
+                               const HighTemp2D_pState &lambdas_r) {
+
   HighTemp2D_pState Wsn;
   for (int n = 0; n < NUM_VAR_HIGHTEMP2D; n++)
     Wsn[n] = HALF*(lambdas_a[n]-fabs(lambdas_a[n]));
   return Wsn;
+
 }
 
 /**********************************************************************
@@ -1636,14 +1484,16 @@ HighTemp2D_pState WaveSpeedNeg(const HighTemp2D_pState &lambdas_a,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_pState WaveSpeedAbs(const HighTemp2D_pState &lambdas_a,
-				   const HighTemp2D_pState &lambdas_l,
-				   const HighTemp2D_pState &lambdas_r) {
+			       const HighTemp2D_pState &lambdas_l,
+			       const HighTemp2D_pState &lambdas_r) {
+
   return HighTemp2D_pState(fabs(lambdas_a[1]),
-			       fabs(lambdas_a[2]),
-			       fabs(lambdas_a[3]),
-			       fabs(lambdas_a[4]),
-			       fabs(lambdas_a[5]),
-			       fabs(lambdas_a[6]));
+			   fabs(lambdas_a[2]),
+			   fabs(lambdas_a[3]),
+			   fabs(lambdas_a[4]),
+			   fabs(lambdas_a[5]),
+			   fabs(lambdas_a[6]));
+
 }
 
 /**********************************************************************
@@ -1655,14 +1505,16 @@ HighTemp2D_pState WaveSpeedAbs(const HighTemp2D_pState &lambdas_a,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_pState HartenFixPos(const HighTemp2D_pState &lambdas_a,
-				   const HighTemp2D_pState &lambdas_l,
-				   const HighTemp2D_pState &lambdas_r) {
+			       const HighTemp2D_pState &lambdas_l,
+			       const HighTemp2D_pState &lambdas_r) {
+
   return HighTemp2D_pState(HartenFixPos(lambdas_a[1],lambdas_l[1],lambdas_r[1]),
-			       HALF*(lambdas_a[2]+fabs(lambdas_a[2])),
-			       HALF*(lambdas_a[3]+fabs(lambdas_a[3])),
-			       HartenFixPos(lambdas_a[4],lambdas_l[4],lambdas_r[4]),
-			       HALF*(lambdas_a[5]+fabs(lambdas_a[5])),
-			       HALF*(lambdas_a[6]+fabs(lambdas_a[6])));
+			   HALF*(lambdas_a[2]+fabs(lambdas_a[2])),
+			   HALF*(lambdas_a[3]+fabs(lambdas_a[3])),
+			   HartenFixPos(lambdas_a[4],lambdas_l[4],lambdas_r[4]),
+			   HALF*(lambdas_a[5]+fabs(lambdas_a[5])),
+			   HALF*(lambdas_a[6]+fabs(lambdas_a[6])));
+
 }
 
 /**********************************************************************
@@ -1674,14 +1526,16 @@ HighTemp2D_pState HartenFixPos(const HighTemp2D_pState &lambdas_a,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_pState HartenFixNeg(const HighTemp2D_pState &lambdas_a,
-				   const HighTemp2D_pState &lambdas_l,
-				   const HighTemp2D_pState &lambdas_r) {
+			       const HighTemp2D_pState &lambdas_l,
+			       const HighTemp2D_pState &lambdas_r) {
+
   return HighTemp2D_pState(HartenFixNeg(lambdas_a[1],lambdas_l[1],lambdas_r[1]),
-			       HALF*(lambdas_a[2]-fabs(lambdas_a[2])),
-			       HALF*(lambdas_a[3]-fabs(lambdas_a[3])),
-			       HartenFixNeg(lambdas_a[4],lambdas_l[4],lambdas_r[4]),
-			       HALF*(lambdas_a[5]-fabs(lambdas_a[5])),
-			       HALF*(lambdas_a[6]-fabs(lambdas_a[6])));
+			   HALF*(lambdas_a[2]-fabs(lambdas_a[2])),
+			   HALF*(lambdas_a[3]-fabs(lambdas_a[3])),
+			   HartenFixNeg(lambdas_a[4],lambdas_l[4],lambdas_r[4]),
+			   HALF*(lambdas_a[5]-fabs(lambdas_a[5])),
+			   HALF*(lambdas_a[6]-fabs(lambdas_a[6])));
+
 }
 
 /**********************************************************************
@@ -1696,11 +1550,11 @@ HighTemp2D_pState HartenFixAbs(const HighTemp2D_pState &lambdas_a,
 				   const HighTemp2D_pState &lambdas_l,
 				   const HighTemp2D_pState &lambdas_r) {
   return HighTemp2D_pState(HartenFixAbs(lambdas_a[1],lambdas_l[1],lambdas_r[1]),
-			       fabs(lambdas_a[2]),
-			       fabs(lambdas_a[3]),
-			       HartenFixAbs(lambdas_a[4],lambdas_l[4],lambdas_r[4]),
-			       fabs(lambdas_a[5]),
-			       fabs(lambdas_a[6]));
+			   fabs(lambdas_a[2]),
+			   fabs(lambdas_a[3]),
+			   HartenFixAbs(lambdas_a[4],lambdas_l[4],lambdas_r[4]),
+			   fabs(lambdas_a[5]),
+			   fabs(lambdas_a[6]));
 }
 
 /**********************************************************************
@@ -1716,8 +1570,8 @@ HighTemp2D_pState HartenFixAbs(const HighTemp2D_pState &lambdas_a,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxGodunov_n(const HighTemp2D_pState &Wl,
-				    const HighTemp2D_pState &Wr,
-				    const Vector2D &norm_dir) {
+				const HighTemp2D_pState &Wr,
+				const Vector2D &norm_dir) {
 
   HighTemp2D_pState W, Wl_rotated, Wr_rotated;
   HighTemp2D_cState Flux, Flux_rotated;
@@ -1731,7 +1585,6 @@ HighTemp2D_cState FluxGodunov_n(const HighTemp2D_pState &Wl,
   // Solve the Riemann problem in the rotated frame and evaluate the 
   // intermediate solution state and flux.
   W = Riemann(Wl_rotated,Wr_rotated);
-  //THIS IS W.F() in the NS code!
   Flux_rotated = W.Fx();
   
   // Rotate back to the original Cartesian reference frame and return 
@@ -1744,9 +1597,11 @@ HighTemp2D_cState FluxGodunov_n(const HighTemp2D_pState &Wl,
 }
 
 HighTemp2D_cState FluxGodunov_n(const HighTemp2D_cState &Ul,
-				    const HighTemp2D_cState &Ur,
-				    const Vector2D &norm_dir) {
+				const HighTemp2D_cState &Ur,
+				const Vector2D &norm_dir) {
+
   return FluxGodunov_n(Ul.W(),Ur.W(),norm_dir);
+
 }
 
 /**********************************************************************
@@ -1762,9 +1617,9 @@ HighTemp2D_cState FluxGodunov_n(const HighTemp2D_cState &Ul,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxGodunov_MB_n(const HighTemp2D_pState &Wl,
-				       const HighTemp2D_pState &Wr,
-				       const Vector2D &V,
-				       const Vector2D &norm_dir) {
+				   const HighTemp2D_pState &Wr,
+				   const Vector2D &V,
+				   const Vector2D &norm_dir) {
 
   HighTemp2D_pState W_rotated, Wl_rotated, Wr_rotated;
   HighTemp2D_cState Flux, Flux_rotated;
@@ -1785,7 +1640,6 @@ HighTemp2D_cState FluxGodunov_MB_n(const HighTemp2D_pState &Wl,
   W_rotated.v.x += V_rotated.x;
 
   // Evaluate the intermediate state solution flux in the rotated frame.
-  //THIS IS .F(V_rotated) in NS2D code
   Flux_rotated = W_rotated.Fx(V_rotated);
 
   // Rotate back to the original Cartesian reference frame and return 
@@ -1810,8 +1664,8 @@ HighTemp2D_cState FluxGodunov_MB_n(const HighTemp2D_pState &Wl,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_pState StateGodunov_n(const HighTemp2D_pState &Wl,
-				     const HighTemp2D_pState &Wr,
-				     const Vector2D &norm_dir) {
+				 const HighTemp2D_pState &Wr,
+				 const Vector2D &norm_dir) {
 
   HighTemp2D_pState W_rotated, Wl_rotated, Wr_rotated;
 
@@ -1827,8 +1681,8 @@ HighTemp2D_pState StateGodunov_n(const HighTemp2D_pState &Wl,
 
   // Rotate back to the original Cartesian reference frame and return 
   // the solution state.
-	HighTemp2D_pState Wtmp; Wtmp.Rotate(W_rotated,Vector2D(norm_dir.x,-norm_dir.y));
-	return Wtmp;
+  HighTemp2D_pState Wtmp; Wtmp.Rotate(W_rotated,Vector2D(norm_dir.x,-norm_dir.y));
+  return Wtmp;
 
 }
 
@@ -1842,15 +1696,15 @@ HighTemp2D_pState StateGodunov_n(const HighTemp2D_pState &Wl,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxRoe(const HighTemp2D_pState &Wl,
-			      const HighTemp2D_pState &Wr) {
+			  const HighTemp2D_pState &Wr) {
 
-  HighTemp2D_pState Wa, dWrl, wavespeeds, lambdas_l, lambdas_r, lambdas_a;
-  HighTemp2D_cState Flux;
   int NumVar = (Wl.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA)
                ? NUM_VAR_HIGHTEMP2D : NUM_VAR_HIGHTEMP2D-2;
+  HighTemp2D_pState Wa, dWrl, wavespeeds, lambdas_l, lambdas_r, lambdas_a;
+  HighTemp2D_cState Flux;
  
   // Evaluate the Roe-average primitive solution state.
-  Wa = RoeAverage(Wl,Wr);
+  Wa = RoeAverage(Wl, Wr);
 
   // Evaluate the jumps in the primitive solution states.
   dWrl = Wr - Wl;
@@ -1880,13 +1734,15 @@ HighTemp2D_cState FluxRoe(const HighTemp2D_pState &Wl,
   }
 
   // Return the solution flux.
-   return Flux;
+  return Flux;
 
 }
 
 HighTemp2D_cState FluxRoe(const HighTemp2D_cState &Ul,
-			      const HighTemp2D_cState &Ur) {
+			  const HighTemp2D_cState &Ur) {
+
   return FluxRoe(Ul.W(),Ur.W());
+
 }
 
 /**********************************************************************
@@ -1903,8 +1759,8 @@ HighTemp2D_cState FluxRoe(const HighTemp2D_cState &Ul,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxRoe_n(const HighTemp2D_pState &Wl,
-				const HighTemp2D_pState &Wr,
-				const Vector2D &norm_dir) {
+			    const HighTemp2D_pState &Wr,
+			    const Vector2D &norm_dir) {
 
   HighTemp2D_pState Wl_rotated, Wr_rotated;
   HighTemp2D_cState Flux, Flux_rotated;
@@ -1928,205 +1784,11 @@ HighTemp2D_cState FluxRoe_n(const HighTemp2D_pState &Wl,
 }
 
 HighTemp2D_cState FluxRoe_n(const HighTemp2D_cState &Ul,
-				const HighTemp2D_cState &Ur,
-				const Vector2D &norm_dir) {
+			    const HighTemp2D_cState &Ur,
+			    const Vector2D &norm_dir) {
+
   return FluxRoe_n(Ul.W(),Ur.W(),norm_dir);
-}
 
-/**********************************************************************
- * Routine: FluxGlaister (modiefied Roe's flux function)              *
- *  FOR HIGH-TEMPERATURE AIR EFFECTS                                  *
- * This function returns the intermediate state solution flux for the *
- * given left and right solution states by using the "linearized"     *
- * approximate Riemann solver of Roe for the two states.  See Roe     *
- * (1981) and Glaister (1987).                                        *
- *                                                                    *
- **********************************************************************/
-HighTemp2D_cState FluxGlaister(const HighTemp2D_pState &Wl,
-			      const HighTemp2D_pState &Wr) {
-
-  HighTemp2D_pState Wa, dWrl, wavespeeds, lambdas_l, lambdas_r, lambdas_a;
-  HighTemp2D_cState Flux;
-  int NumVar = (Wl.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA)
-               ? NUM_VAR_HIGHTEMP2D : NUM_VAR_HIGHTEMP2D-2;
-
-  //Glaister-algorithm definitions
-  int deltaE, deltaRHO;
-  double pspl, psml, pspr, psmr, prl, plr, plsp, plsm, prsp, prsm;
-  double de, drho, dpde, dpdrho, dpder, dpdel, dpdrhol, dpdrhor;
-  double RHOstarP, RHOstarM, EstarP, EstarM;
-
-  // Evaluate the modified Roe-average (Glaister) primitive solution state.
-  //Wa = RoeAverage(Wl,Wr);
-  double hl, hr, el, er, srhol, srhor, ha, ea, cAvg, cl_local, cr_local;
-  Wa.rho = ZERO; 
-  Wa.p = ZERO; //Wa.Vacuum();
-
-  // Determine the left and right state specific enthalpies and square
-  // roots of the density.
-  el    = Wl.e();
-  er    = Wr.e();
-  hl    = el + Wl.p/Wl.rho;
-  hr    = er + Wr.p/Wr.rho;
-  //el    = Wl.e();
-  // er    = Wr.e();
-  srhol = sqrt(Wl.rho);
-  srhor = sqrt(Wr.rho);
-  
-  // Determine the appropriate Roe averages.
-  Wa.rho   = srhol*srhor;
-  Wa.v.x   = (srhol*Wl.v.x + srhor*Wr.v.x)/(srhol+srhor);
-  Wa.v.y   = (srhol*Wl.v.y + srhor*Wr.v.y)/(srhol+srhor);
-  Wa.k     = (srhol*Wl.k + srhor*Wr.k)/(srhol+srhor);
-  Wa.omega = (srhol*Wl.omega + srhor*Wr.omega)/(srhol+srhor);
-  ha = (srhol*hl + srhor*hr)/(srhol+srhor);
-  // Glaister modification
-  ea = (srhol*el + srhor*er)/(srhol+srhor);
-  Wa.p = Wa.rho*(ha - ea);
-  //Wa.p = Tgas_p(ea,Wa.rho);  
-
-  //calculation of modified sound speed for Average State  
-  RHOstarP = Wa.rho*HTONEPLUST;
-  RHOstarM = Wa.rho*HTONEMINT;
-  EstarP = ea*HTONEPLUST;
-  EstarM = ea*HTONEMINT;
-  de = (er-el);
-  drho = (Wr.rho-Wl.rho);
- 
-  if (abs(de)<(TOLER3*ea))
-    deltaE = 0;
-  else deltaE = 1;
-  
-  if (abs(drho)<(TOLER3*Wa.rho))
-    deltaRHO = 0;
-  else deltaRHO = 1;
-
-  //Find dpde derivative
-  if (deltaE == 1){
-    prl = Tgas_p(er, Wl.rho);
-    plr = Tgas_p(el, Wr.rho);
-    dpde = 0.5*(Wr.p - plr + prl - Wl.p)/de;
-  }else{
-    pspl  = Tgas_p(EstarP,Wl.rho);
-    psml  = Tgas_p(EstarM,Wl.rho);
-    dpdel = (pspl-psml)/(2.00*HTTOL*ea);       
-    pspr  = Tgas_p(EstarP,Wr.rho);
-    psmr  = Tgas_p(EstarM,Wr.rho);
-    dpder = (pspr-psmr)/(2.00*HTTOL*ea);    
-    dpde  = 0.50*(dpdel+dpder);
-  }
-
-  //Find dpdrho derivative
-   if (deltaRHO == 1){
-     if (deltaE == 1)
-       dpdrho = 0.5*(Wr.p - prl + plr - Wl.p)/drho;
-     else {
-       prl = Tgas_p(er, Wl.rho);
-       plr = Tgas_p(el, Wr.rho);
-       dpdrho = 0.5*(Wr.p - prl + plr - Wl.p)/drho;
-     }
-   }else{
-    plsp    = Tgas_p(el,RHOstarP);
-    plsm    = Tgas_p(el,RHOstarM); 
-    dpdrhol = (plsp-plsm)/(2.00*HTTOL*Wa.rho);
-    prsp    = Tgas_p(er,RHOstarP);
-    prsm    = Tgas_p(er,RHOstarM);    
-    dpdrhor = (prsp-prsm)/(2.00*HTTOL*Wa.rho);
-    dpdrho  = 0.50*(dpdrhol + dpdrhor);
-  }
-  //Glaister approximation for Average MODIFIED sound-speed 
-  //aAvg = sqrt(Wa.p*dpde/(Wa.rho*Wa.rho)+dpdrho); 
-   double aa2;
-  aa2 = Wa.p*dpde/(Wa.rho*Wa.rho)+dpdrho + 2.0*Wa.k/3.0 + (2.0*Wa.k*dpde)/(3.0*Wa.rho);   
-  cAvg = sqrt(Wa.p*dpde/(Wa.rho*Wa.rho)+dpdrho + 2.0*Wa.k/3.0 + (2.0*Wa.k*dpde)/(3.0*Wa.rho));   
-
- //added from IDEAL - just for testing
-  // Wa.gm1 = GAMMA_AIR-ONE;  
-  //Wa.g = GAMMA_AIR;
-  //aa2 = Wa.gm1*(ha - HALF*(sqr(Wa.v.x) + sqr(Wa.v.y)) - Wa.k);
-  //Wa.p = Wa.rho*aa2/Wa.g;
-  //cAvg = sqrt(aa2);
-
-  // Evaluate the jumps in the primitive solution states.
-  dWrl = Wr - Wl;
-
-  // Evaluate the left, right, and average state eigenvalues.
-  cl_local = Wl.c();
-  cr_local = Wr.c();
-  lambdas_l = Wl.lambda_x(cl_local);
-  lambdas_r = Wr.lambda_x(cr_local);
-  //using Glaister's computed sound-speed
-  lambdas_a = Wa.lambda_x(cAvg);
- if (Wa.v.x >= ZERO) {
-    Flux = Wl.Fx();
-    wavespeeds = HartenFixNeg(lambdas_a,lambdas_l,lambdas_r);
-    for (int i = 1; i <= NumVar; i++) {
-      if (wavespeeds[i] < ZERO) {
-	Flux += wavespeeds[i]*(Wa.lp_x(i,cAvg)*dWrl)*Wa.rc_x(i,dpde,dpdrho,cAvg);
-      }
-    }
-  } else {
-    Flux = Wr.Fx();
-    wavespeeds = HartenFixPos(lambdas_a,lambdas_l,lambdas_r);
-    for (int i = 1; i <= NumVar; i++) {
-      if (wavespeeds[i] > ZERO) {
-       	Flux -= wavespeeds[i]*(Wa.lp_x(i,cAvg)*dWrl)*Wa.rc_x(i,dpde,dpdrho,cAvg);
-      }
-    }
-  }
-
-  // Return the solution flux.
-  return Flux;
-
-}
-
-HighTemp2D_cState FluxGlaister(const HighTemp2D_cState &Ul,
-			      const HighTemp2D_cState &Ur) {
-  return FluxGlaister(Ul.W(),Ur.W());
-}
-
-/**********************************************************************
- * Routine: Flux_n (Roe's flux function, n-direction)              *
- *                                                                    *
- * This function returns the intermediate state solution flux for an  *
- * arbitrary direction defined by a unit normal vector in the         *
- * direction of interest, given left and right solution states.  The  *
- * problem is solved by first applying a frame rotation to rotate the *
- * problem to a local frame aligned with the unit normal vector and   *
- * then by using the "linearized" approximate Riemann solver of Roe   *
- * to specify the flux in terms of the rotated solution states.  See  *
- * Roe (1981).                                                        *
- *                                                                    *
- **********************************************************************/
-HighTemp2D_cState FluxGlaister_n(const HighTemp2D_pState &Wl,
-				const HighTemp2D_pState &Wr,
-				const Vector2D &norm_dir) {
-
-  HighTemp2D_pState Wl_rotated, Wr_rotated;
-  HighTemp2D_cState Flux, Flux_rotated;
-
-  // Apply the frame rotation and evaluate left and right solution 
-  // states in the local rotated frame defined by the unit normal 
-  // vector.
-  Wl_rotated.Rotate(Wl,norm_dir);
-  Wr_rotated.Rotate(Wr,norm_dir);
-
-  // Evaluate the intermediate state solution flux in the rotated frame.
-  Flux_rotated = FluxGlaister(Wl_rotated,Wr_rotated);
-
-  // Rotate back to the original Cartesian reference frame and return 
-  // the solution flux.
-  Flux.Rotate(Flux_rotated,Vector2D(norm_dir.x,-norm_dir.y));
-
-  // Return the solution flux.
-  return Flux;
-
-}
-
-HighTemp2D_cState FluxGlaister_n(const HighTemp2D_cState &Ul,
-				const HighTemp2D_cState &Ur,
-				const Vector2D &norm_dir) {
-  return FluxGlaister_n(Ul.W(),Ur.W(),norm_dir);
 }
 
 /**********************************************************************
@@ -2139,16 +1801,16 @@ HighTemp2D_cState FluxGlaister_n(const HighTemp2D_cState &Ul,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxRoe_MB(const HighTemp2D_pState &Wl,
-				 const HighTemp2D_pState &Wr,
-				 const Vector2D &V) {
+			     const HighTemp2D_pState &Wr,
+			     const Vector2D &V) {
 
-  HighTemp2D_pState Wa, dWrl, wavespeeds, lambdas_l, lambdas_r, lambdas_a;
-  HighTemp2D_cState Flux;
   int NumVar = (Wl.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA)
                ? NUM_VAR_HIGHTEMP2D : NUM_VAR_HIGHTEMP2D-2;
+  HighTemp2D_pState Wa, dWrl, wavespeeds, lambdas_l, lambdas_r, lambdas_a;
+  HighTemp2D_cState Flux;
 
   // Evaluate the Roe-average primitive solution state.
-  Wa = RoeAverage(Wl,Wr);
+  Wa = RoeAverage(Wl, Wr);
 
   // Evaluate the jumps in the primitive solution states.
   dWrl = Wr - Wl;
@@ -2181,9 +1843,11 @@ HighTemp2D_cState FluxRoe_MB(const HighTemp2D_pState &Wl,
 }
 
 HighTemp2D_cState FluxRoe_MB(const HighTemp2D_cState &Ul,
-				 const HighTemp2D_cState &Ur,
-				 const Vector2D &V) {
+			     const HighTemp2D_cState &Ur,
+			     const Vector2D &V) {
+
   return FluxRoe_MB(Ul.W(),Ur.W(),V);
+
 }
 
 /**********************************************************************
@@ -2200,9 +1864,9 @@ HighTemp2D_cState FluxRoe_MB(const HighTemp2D_cState &Ul,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxRoe_MB_n(const HighTemp2D_pState &Wl,
-				   const HighTemp2D_pState &Wr,
-				   const Vector2D &V,
-				   const Vector2D &norm_dir) {
+			       const HighTemp2D_pState &Wr,
+			       const Vector2D &V,
+			       const Vector2D &norm_dir) {
 
   HighTemp2D_pState Wl_rotated, Wr_rotated;
   HighTemp2D_pState Wl_nonstationary, Wr_nonstationary;
@@ -2233,10 +1897,124 @@ HighTemp2D_cState FluxRoe_MB_n(const HighTemp2D_pState &Wl,
 }
 
 HighTemp2D_cState FluxRoe_MB_n(const HighTemp2D_cState &Ul,
-				   const HighTemp2D_cState &Ur,
-				   const Vector2D &V,
-				   const Vector2D &norm_dir) {
+			       const HighTemp2D_cState &Ur,
+			       const Vector2D &V,
+			       const Vector2D &norm_dir) {
+
   return FluxRoe_MB_n(Ul.W(),Ur.W(),V,norm_dir);
+
+}
+
+/**********************************************************************
+ * Routine: FluxGlaister (modiefied Roe's flux function)              *
+ *  FOR HIGH-TEMPERATURE AIR EFFECTS                                  *
+ * This function returns the intermediate state solution flux for the *
+ * given left and right solution states by using the "linearized"     *
+ * approximate Riemann solver of Roe for the two states.  See Roe     *
+ * (1981) and Glaister (1987).                                        *
+ *                                                                    *
+ **********************************************************************/
+HighTemp2D_cState FluxGlaister(const HighTemp2D_pState &Wl,
+			       const HighTemp2D_pState &Wr) {
+
+  int NumVar = (Wl.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA)
+               ? NUM_VAR_HIGHTEMP2D : NUM_VAR_HIGHTEMP2D-2;
+  double c_Avg, dpdrho_Avg, dpde_Avg;
+  HighTemp2D_pState Wa, dWrl, wavespeeds, lambdas_l, lambdas_r, lambdas_a;
+  HighTemp2D_cState Flux;
+
+  // Evaluate the Roe-average primitive solution state.
+  Wa = RoeAverage(Wl, Wr);
+
+  // Calculate the sound speed for average state using
+  // Glaister's approximation for the Roe-average sound speed.
+  Wa.RoeAverage_SoundSpeed(c_Avg, dpdrho_Avg, dpde_Avg, Wa, Wl, Wr);
+
+  // Evaluate the jumps in the primitive solution states.
+  dWrl = Wr - Wl;
+
+  // Evaluate the left, right, and average state eigenvalues.
+  lambdas_l = Wl.lambda_x();
+  lambdas_r = Wr.lambda_x();
+  lambdas_a = Wa.lambda_x(c_Avg);
+
+  // Evaluate the solution flux.
+  if (Wa.v.x >= ZERO) {
+    Flux = Wl.Fx();
+    wavespeeds = HartenFixNeg(lambdas_a,lambdas_l,lambdas_r);
+    for (int i = 1; i <= NumVar; i++) {
+      if (wavespeeds[i] < ZERO) {
+	Flux += wavespeeds[i]*(Wa.lp_x(i, c_Avg)*dWrl)*
+                Wa.rc_x(i, dpde_Avg, dpdrho_Avg, c_Avg);
+      }
+    }
+  } else {
+    Flux = Wr.Fx();
+    wavespeeds = HartenFixPos(lambdas_a,lambdas_l,lambdas_r);
+    for (int i = 1; i <= NumVar; i++) {
+      if (wavespeeds[i] > ZERO) {
+       	Flux -= wavespeeds[i]*(Wa.lp_x(i, c_Avg)*dWrl)*
+                Wa.rc_x(i, dpde_Avg, dpdrho_Avg, c_Avg);
+      }
+    }
+  }
+
+  // Return the solution flux.
+  return Flux;
+
+}
+
+HighTemp2D_cState FluxGlaister(const HighTemp2D_cState &Ul,
+			       const HighTemp2D_cState &Ur) {
+
+  return FluxGlaister(Ul.W(),Ur.W());
+
+}
+
+/**********************************************************************
+ * Routine: Flux_n (Roe's flux function, n-direction)                 *
+ *                                                                    *
+ * This function returns the intermediate state solution flux for an  *
+ * arbitrary direction defined by a unit normal vector in the         *
+ * direction of interest, given left and right solution states.  The  *
+ * problem is solved by first applying a frame rotation to rotate the *
+ * problem to a local frame aligned with the unit normal vector and   *
+ * then by using the "linearized" approximate Riemann solver of Roe   *
+ * to specify the flux in terms of the rotated solution states.  See  *
+ * Roe (1981).                                                        *
+ *                                                                    *
+ **********************************************************************/
+HighTemp2D_cState FluxGlaister_n(const HighTemp2D_pState &Wl,
+				 const HighTemp2D_pState &Wr,
+				 const Vector2D &norm_dir) {
+
+  HighTemp2D_pState Wl_rotated, Wr_rotated;
+  HighTemp2D_cState Flux, Flux_rotated;
+
+  // Apply the frame rotation and evaluate left and right solution 
+  // states in the local rotated frame defined by the unit normal 
+  // vector.
+  Wl_rotated.Rotate(Wl,norm_dir);
+  Wr_rotated.Rotate(Wr,norm_dir);
+
+  // Evaluate the intermediate state solution flux in the rotated frame.
+  Flux_rotated = FluxGlaister(Wl_rotated,Wr_rotated);
+
+  // Rotate back to the original Cartesian reference frame and return 
+  // the solution flux.
+  Flux.Rotate(Flux_rotated,Vector2D(norm_dir.x,-norm_dir.y));
+
+  // Return the solution flux.
+  return Flux;
+
+}
+
+HighTemp2D_cState FluxGlaister_n(const HighTemp2D_cState &Ul,
+				 const HighTemp2D_cState &Ur,
+				 const Vector2D &norm_dir) {
+
+  return FluxGlaister_n(Ul.W(),Ur.W(),norm_dir);
+
 }
 
 /**********************************************************************
@@ -2248,13 +2026,13 @@ HighTemp2D_cState FluxRoe_MB_n(const HighTemp2D_cState &Ul,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxRusanov(const HighTemp2D_pState &Wl,
-				  const HighTemp2D_pState &Wr) {
+			      const HighTemp2D_pState &Wr) {
 
+  int NumVar = (Wl.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA)
+               ? NUM_VAR_HIGHTEMP2D : NUM_VAR_HIGHTEMP2D-2;
   double wavespeed_max;
   HighTemp2D_pState Wa, wavespeeds, lambdas_l, lambdas_r, lambdas_a;
   HighTemp2D_cState Flux, dUrl;
-  int NumVar = (Wl.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA)
-               ? NUM_VAR_HIGHTEMP2D : NUM_VAR_HIGHTEMP2D-2;
 
   // Evaluate the Roe-average primitive solution state.
   Wa = RoeAverage(Wl,Wr);
@@ -2283,8 +2061,10 @@ HighTemp2D_cState FluxRusanov(const HighTemp2D_pState &Wl,
 }
 
 HighTemp2D_cState FluxRusanov(const HighTemp2D_cState &Ul,
-				  const HighTemp2D_cState &Ur) {
+			      const HighTemp2D_cState &Ur) {
+
   return FluxRusanov(Ul.W(),Ur.W());
+
 }
 
 /**********************************************************************
@@ -2327,7 +2107,9 @@ HighTemp2D_cState FluxRusanov_n(const HighTemp2D_pState &Wl,
 HighTemp2D_cState FluxRusanov_n(const HighTemp2D_cState &Ul,
 				    const HighTemp2D_cState &Ur,
 				    const Vector2D &norm_dir) {
+
   return FluxRusanov_n(Ul.W(),Ur.W(),norm_dir);
+
 }
 
 /**********************************************************************
@@ -2340,14 +2122,14 @@ HighTemp2D_cState FluxRusanov_n(const HighTemp2D_cState &Ul,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxHLLE(const HighTemp2D_pState &Wl,
-			       const HighTemp2D_pState &Wr) {
+			   const HighTemp2D_pState &Wr) {
 
   double wavespeed_l, wavespeed_r;
   HighTemp2D_pState Wa, lambdas_l, lambdas_r, lambdas_a;
   HighTemp2D_cState Flux, dUrl;
 
   // Evaluate the Roe-average primitive solution state.
-  Wa = RoeAverage(Wl,Wr);
+  Wa = RoeAverage(Wl, Wr);
 
   // Evaluate the jumps in the conserved solution states.
   dUrl = Wr.U() - Wl.U();
@@ -2358,12 +2140,9 @@ HighTemp2D_cState FluxHLLE(const HighTemp2D_pState &Wl,
   lambdas_a = Wa.lambda_x();
   
   // Determine the intermediate state flux.
-  wavespeed_l = min(lambdas_l[1],lambdas_a[1]);
-  wavespeed_r = max(lambdas_r[4],lambdas_a[4]);
+  wavespeed_l = min(lambdas_l[1], lambdas_a[1]);
+  wavespeed_r = max(lambdas_r[4], lambdas_a[4]);
   
-  wavespeed_l = min(wavespeed_l,ZERO);
-  wavespeed_r = max(wavespeed_r,ZERO);
-
   if (wavespeed_l >= ZERO) {
     Flux = Wl.Fx();
   } else if (wavespeed_r <= ZERO) {
@@ -2371,7 +2150,7 @@ HighTemp2D_cState FluxHLLE(const HighTemp2D_pState &Wl,
   } else {
     Flux = (((wavespeed_r*Wl.Fx()-wavespeed_l*Wr.Fx())
 	     + (wavespeed_l*wavespeed_r)*dUrl)/
-	    (wavespeed_r-wavespeed_l));
+	       (wavespeed_r-wavespeed_l));
   }
 
   // Return the solution flux.
@@ -2380,8 +2159,10 @@ HighTemp2D_cState FluxHLLE(const HighTemp2D_pState &Wl,
 }
 
 HighTemp2D_cState FluxHLLE(const HighTemp2D_cState &Ul,
-			       const HighTemp2D_cState &Ur) {
+			   const HighTemp2D_cState &Ur) {
+
   return FluxHLLE(Ul.W(),Ur.W());
+
 }
 
 /**********************************************************************
@@ -2399,8 +2180,8 @@ HighTemp2D_cState FluxHLLE(const HighTemp2D_cState &Ul,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxHLLE_n(const HighTemp2D_pState &Wl,
-				 const HighTemp2D_pState &Wr,
-				 const Vector2D &norm_dir) {
+			     const HighTemp2D_pState &Wr,
+			     const Vector2D &norm_dir) {
 
   HighTemp2D_pState Wl_rotated, Wr_rotated;
   HighTemp2D_cState Flux, Flux_rotated;
@@ -2425,14 +2206,16 @@ HighTemp2D_cState FluxHLLE_n(const HighTemp2D_pState &Wl,
 }
 
 HighTemp2D_cState FluxHLLE_n(const HighTemp2D_cState &Ul,
-				 const HighTemp2D_cState &Ur,
-				 const Vector2D &norm_dir) {
+			     const HighTemp2D_cState &Ur,
+			     const Vector2D &norm_dir) {
+
   return FluxHLLE_n(Ul.W(),Ur.W(),norm_dir);
+
 }
 
 /**********************************************************************
  * Routine: FluxGHLLE (Glaister, Harten-Lax-van Leer flux function,   *
- *                                                       x-direction) *
+ *                                                      x-direction)  *
  *                                                                    *
  * This function returns the intermediate state solution flux for the *
  * x-direction given left and right solution states by using the      *
@@ -2442,114 +2225,32 @@ HighTemp2D_cState FluxHLLE_n(const HighTemp2D_cState &Ul,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxGHLLE(const HighTemp2D_pState &Wl,
-			       const HighTemp2D_pState &Wr) {
+			    const HighTemp2D_pState &Wr) {
 
-  double wavespeed_l, wavespeed_r;
+  double c_Avg, dpdrho_Avg, dpde_Avg,
+         wavespeed_l, wavespeed_r;
   HighTemp2D_pState Wa, lambdas_l, lambdas_r, lambdas_a;
-  HighTemp2D_cState Flux, dUrl;
+  HighTemp2D_cState Flux, dUrl;;
 
- //Glaister-algorithm definitions
-  int deltaE, deltaRHO;
-  double pspl, psml, pspr, psmr, prl, plr, plsp, plsm, prsp, prsm;
-  double de, drho, dpde, dpdrho, dpder, dpdel, dpdrhol, dpdrhor;
-  double RHOstarP, RHOstarM, EstarP, EstarM;
-  double hl, hr, el, er, srhol, srhor, ha, ea, cAvg, cl_local, cr_local;
-  Wa.rho = ZERO; 
-  Wa.p = ZERO; //Wa.Vacuum();
- 
-  // Evaluate the modified Roe-average (Glaister) primitive solution state.
+  // Evaluate the Roe-average primitive solution state.
+  Wa = RoeAverage(Wl, Wr);
 
-  // Determine the left and right state specific enthalpies and square
-  // roots of the density.
-  el    = Wl.e();
-  er    = Wr.e();
-  hl    = el + Wl.p/Wl.rho;
-  hr    = er + Wr.p/Wr.rho;
-  srhol = sqrt(Wl.rho);
-  srhor = sqrt(Wr.rho);
-  
-  // Determine the appropriate Roe averages.
-  Wa.rho   = srhol*srhor;
-  Wa.v.x   = (srhol*Wl.v.x + srhor*Wr.v.x)/(srhol+srhor);
-  Wa.v.y   = (srhol*Wl.v.y + srhor*Wr.v.y)/(srhol+srhor);
-  Wa.k     = (srhol*Wl.k + srhor*Wr.k)/(srhol+srhor);
-  Wa.omega = (srhol*Wl.omega + srhor*Wr.omega)/(srhol+srhor);
-  ha = (srhol*hl + srhor*hr)/(srhol+srhor);
-  // Glaister modification
-  ea = (srhol*el + srhor*er)/(srhol+srhor);
-  Wa.p = Wa.rho*(ha - ea);
- 
-  //calculation of modified sound speed for Average State  
-  RHOstarP = Wa.rho*HTONEPLUST;
-  RHOstarM = Wa.rho*HTONEMINT;
-  EstarP = ea*HTONEPLUST;
-  EstarM = ea*HTONEMINT;
-  de = (er-el);
-  drho = (Wr.rho-Wl.rho);
- 
-  if (abs(de)<(TOLER3*ea))
-    deltaE = 0;
-  else deltaE = 1;
-  
-  if (abs(drho)<(TOLER3*Wa.rho))
-    deltaRHO = 0;
-  else deltaRHO = 1;
-
-  //Find dpde derivative
-  if (deltaE == 1){
-    prl = Tgas_p(er, Wl.rho);
-    plr = Tgas_p(el, Wr.rho);
-    dpde = 0.5*(Wr.p - plr + prl - Wl.p)/de;
-  }else{
-    pspl  = Tgas_p(EstarP,Wl.rho);
-    psml  = Tgas_p(EstarM,Wl.rho);
-    dpdel = (pspl-psml)/(2.00*HTTOL*ea);       
-    pspr  = Tgas_p(EstarP,Wr.rho);
-    psmr  = Tgas_p(EstarM,Wr.rho);
-    dpder = (pspr-psmr)/(2.00*HTTOL*ea);    
-    dpde  = 0.50*(dpdel+dpder);
-  }
-
-  //Find dpdrho derivative
-   if (deltaRHO == 1){
-      if (deltaE == 1)
-       dpdrho = 0.5*(Wr.p - prl + plr - Wl.p)/drho;
-     else {
-       prl = Tgas_p(er, Wl.rho);
-       plr = Tgas_p(el, Wr.rho);
-       dpdrho = 0.5*(Wr.p - prl + plr - Wl.p)/drho;
-     }
-  }else{
-    plsp    = Tgas_p(el,RHOstarP);
-    plsm    = Tgas_p(el,RHOstarM); 
-    dpdrhol = (plsp-plsm)/(2.00*HTTOL*Wa.rho);
-    prsp    = Tgas_p(er,RHOstarP);
-    prsm    = Tgas_p(er,RHOstarM);    
-    dpdrhor = (prsp-prsm)/(2.00*HTTOL*Wa.rho);
-    dpdrho  = 0.50*(dpdrhol + dpdrhor);
-  }
-  cAvg = sqrt(Wa.p*dpde/(Wa.rho*Wa.rho)+dpdrho + 2.0*Wa.k/3.0 + (2.0*Wa.k*dpde)/(3.0*Wa.rho));   
+  // Calculate the sound speed for average state using
+  // Glaister's approximation for the Roe-average sound speed.
+  Wa.RoeAverage_SoundSpeed(c_Avg, dpdrho_Avg, dpde_Avg, Wa, Wl, Wr);
 
   // Evaluate the jumps in the conserved solution states.
   dUrl = Wr.U() - Wl.U();
 
   // Evaluate the left, right, and average state eigenvalues.
-  cl_local = Wl.c();
-  cr_local = Wr.c();
-  lambdas_l = Wl.lambda_x(cl_local);
-  lambdas_r = Wr.lambda_x(cr_local);
-  //using Glaister's computed sound-speed
-  lambdas_a = Wa.lambda_x(cAvg);
-  
+  lambdas_l = Wl.lambda_x();
+  lambdas_r = Wr.lambda_x();
+  lambdas_a = Wa.lambda_x(c_Avg);
+
   // Determine the intermediate state flux.
-  wavespeed_l = min(lambdas_l[1],lambdas_a[1]);
-  wavespeed_r = max(lambdas_r[4],lambdas_a[4]);
+  wavespeed_l = min(lambdas_l[1], lambdas_a[1]);
+  wavespeed_r = max(lambdas_r[4], lambdas_a[4]);
   
-  wavespeed_l = min(wavespeed_l,ZERO);
-  wavespeed_r = max(wavespeed_r,ZERO);
-
-  //cout<<"Computing inside GHLLE function :) "<<endl; 
-
   if (wavespeed_l >= ZERO) {
     Flux = Wl.Fx();
   } else if (wavespeed_r <= ZERO) {
@@ -2557,7 +2258,7 @@ HighTemp2D_cState FluxGHLLE(const HighTemp2D_pState &Wl,
   } else {
     Flux = (((wavespeed_r*Wl.Fx()-wavespeed_l*Wr.Fx())
 	     + (wavespeed_l*wavespeed_r)*dUrl)/
-	    (wavespeed_r-wavespeed_l));
+	       (wavespeed_r-wavespeed_l));
   }
 
   // Return the solution flux.
@@ -2566,8 +2267,10 @@ HighTemp2D_cState FluxGHLLE(const HighTemp2D_pState &Wl,
 }
 
 HighTemp2D_cState FluxGHLLE(const HighTemp2D_cState &Ul,
-			       const HighTemp2D_cState &Ur) {
+			    const HighTemp2D_cState &Ur) {
+
   return FluxGHLLE(Ul.W(),Ur.W());
+
 }
 
 /**********************************************************************
@@ -2585,8 +2288,8 @@ HighTemp2D_cState FluxGHLLE(const HighTemp2D_cState &Ul,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxGHLLE_n(const HighTemp2D_pState &Wl,
-				 const HighTemp2D_pState &Wr,
-				 const Vector2D &norm_dir) {
+			      const HighTemp2D_pState &Wr,
+			      const Vector2D &norm_dir) {
 
   HighTemp2D_pState Wl_rotated, Wr_rotated;
   HighTemp2D_cState Flux, Flux_rotated;
@@ -2611,9 +2314,11 @@ HighTemp2D_cState FluxGHLLE_n(const HighTemp2D_pState &Wl,
 }
 
 HighTemp2D_cState FluxGHLLE_n(const HighTemp2D_cState &Ul,
-				 const HighTemp2D_cState &Ur,
-				 const Vector2D &norm_dir) {
+			      const HighTemp2D_cState &Ur,
+			      const Vector2D &norm_dir) {
+
   return FluxGHLLE_n(Ul.W(),Ur.W(),norm_dir);
+
 }
 
 /*********************************************************
@@ -2626,11 +2331,10 @@ HighTemp2D_cState FluxGHLLE_n(const HighTemp2D_cState &Ul,
  *       wavespeed.y = wavespeed_r = lambda plus.        *
  *                                                       *
  *********************************************************/
-Vector2D HLLE_wavespeeds(
-		const HighTemp2D_pState &Wl,
-		const HighTemp2D_pState &Wr,
-		const Vector2D &norm_dir) 
-{
+Vector2D HLLE_wavespeeds(const HighTemp2D_pState &Wl,
+		         const HighTemp2D_pState &Wr,
+		         const Vector2D &norm_dir) {
+
     Vector2D wavespeed;
     HighTemp2D_pState Wa_n, lambdas_l, lambdas_r, lambdas_a, Wl_n, Wr_n;  
 
@@ -2660,116 +2364,38 @@ Vector2D HLLE_wavespeeds(
 }
 
 /*********************************************************
- * Routine: GHLLE_wavespeeds                              *
+ * Routine: GHLLE_wavespeeds                             *
  *                                                       *
  * This function returns lambda plus and lambda minus    *
  * for rotated Riemann problem aligned with norm_dir     *
- * given unrotated solution states Wl and Wr.             *
+ * given unrotated solution states Wl and Wr.            *
  * Note: wavespeed.x = wavespeed_l = lambda minus.       *
  *       wavespeed.y = wavespeed_r = lambda plus.        *
  *                                                       *
  *********************************************************/
-Vector2D GHLLE_wavespeeds(
-		const HighTemp2D_pState &Wl,
-		const HighTemp2D_pState &Wr,
-		const Vector2D &norm_dir) 
-{
+Vector2D GHLLE_wavespeeds(const HighTemp2D_pState &Wl,
+		          const HighTemp2D_pState &Wr,
+		          const Vector2D &norm_dir) {
+
+    double c_Avg, dpdrho_Avg, dpde_Avg;
     Vector2D wavespeed;
     HighTemp2D_pState Wa_n, lambdas_l, lambdas_r, lambdas_a, Wl_n, Wr_n;  
-     //Glaister-algorithm definitions
-    int deltaE, deltaRHO;
-    double pspl, psml, pspr, psmr, prl, plr, plsp, plsm, prsp, prsm;
-    double de, drho, dpde, dpdrho, dpder, dpdel, dpdrhol, dpdrhor;
-    double RHOstarP, RHOstarM, EstarP, EstarM;
-    double hl, hr, el, er, srhol, srhor, ha, ea, cAvg;
 
     /* Use rotated values to calculate eignvalues */
     Wl_n.Rotate(Wl, norm_dir);
     Wr_n.Rotate(Wr, norm_dir);
 
     /* Evaluate the Roe-average primitive solution state. */
-    //Wa_n = RoeAverage(Wl_n, Wr_n);
-  
-    Wa_n.rho = ZERO; 
-    Wa_n.p = ZERO; //Wa.Vacuum();
- 
-  // Evaluate the modified Roe-average (Glaister) primitive solution state.
+    Wa_n = RoeAverage(Wl_n, Wr_n);
+    
+    /* Calculate the sound speed for average state using
+       Glaister's approximation for the Roe-average sound speed. */
+    Wa_n.RoeAverage_SoundSpeed(c_Avg, dpdrho_Avg, dpde_Avg, Wa_n, Wl_n, Wr_n);
 
-  // Determine the left and right state specific enthalpies and square
-  // roots of the density.
-  hl    = Wl_n.e() + Wl_n.p/Wl_n.rho;
-  hr    = Wr_n.e() + Wr_n.p/Wr_n.rho;
-  el    = Wl_n.e();
-  er    = Wr_n.e();
-  srhol = sqrt(Wl_n.rho);
-  srhor = sqrt(Wr_n.rho);
-  
-  // Determine the appropriate Roe averages.
-  Wa_n.rho   = srhol*srhor;
-  Wa_n.v.x   = (srhol*Wl_n.v.x + srhor*Wr_n.v.x)/(srhol+srhor);
-  Wa_n.v.y   = (srhol*Wl_n.v.y + srhor*Wr_n.v.y)/(srhol+srhor);
-  Wa_n.k     = (srhol*Wl_n.k + srhor*Wr_n.k)/(srhol+srhor);
-  Wa_n.omega = (srhol*Wl_n.omega + srhor*Wr_n.omega)/(srhol+srhor);
-  ha = (srhol*hl + srhor*hr)/(srhol+srhor);
-  // Glaister modification
-  ea = (srhol*el + srhor*er)/(srhol+srhor);
-  Wa_n.p = Wa_n.rho*(ha - ea);
- 
-  //calculation of modified sound speed for Average State  
-  RHOstarP = Wa_n.rho*HTONEPLUST;
-  RHOstarM = Wa_n.rho*HTONEMINT;
-  EstarP = ea*HTONEPLUST;
-  EstarM = ea*HTONEMINT;
-  de = (er-el);
-  drho = (Wr_n.rho-Wl_n.rho);
- 
-  if (abs(de)<(TOLER3*ea))
-    deltaE = 0;
-  else deltaE = 1;
-  
-  if (abs(drho)<(TOLER3*Wa_n.rho))
-    deltaRHO = 0;
-  else deltaRHO = 1;
-
-  //Find dpde derivative
-  if (deltaE == 1){
-    prl = Tgas_p(er, Wl_n.rho);
-    plr = Tgas_p(el, Wr_n.rho);
-    dpde = 0.5*(Wr_n.p - plr + prl - Wl_n.p)/de;
-  }else{
-    pspl  = Tgas_p(EstarP,Wl_n.rho);
-    psml  = Tgas_p(EstarM,Wl_n.rho);
-    dpdel = (pspl-psml)/(2.00*HTTOL*ea);       
-    pspr  = Tgas_p(EstarP,Wr_n.rho);
-    psmr  = Tgas_p(EstarM,Wr_n.rho);
-    dpder = (pspr-psmr)/(2.00*HTTOL*ea);    
-    dpde  = 0.50*(dpdel+dpder);
-  }
-
-  //Find dpdrho derivative
-   if (deltaRHO == 1){
-    prl = Tgas_p(er, Wl_n.rho);
-    plr = Tgas_p(el, Wr_n.rho);
-    dpdrho = 0.5*(Wr_n.p - prl + plr - Wl_n.p)/drho;
-  }else{
-    plsp    = Tgas_p(el,RHOstarP);
-    plsm    = Tgas_p(el,RHOstarM); 
-    dpdrhol = (plsp-plsm)/(2.00*HTTOL*Wa_n.rho);
-    prsp    = Tgas_p(er,RHOstarP);
-    prsm    = Tgas_p(er,RHOstarM);    
-    dpdrhor = (prsp-prsm)/(2.00*HTTOL*Wa_n.rho);
-    dpdrho  = 0.50*(dpdrhol + dpdrhor);
-  }
-  cAvg = sqrt(Wa_n.p*dpde/(Wa_n.rho*Wa_n.rho)+dpdrho + 2.0*Wa_n.k/3.0 + (2.0*Wa_n.k*dpde)/(3.0*Wa_n.rho));   
-
-  // Evaluate the left, right, and average state eigenvalues.
-  lambdas_l = Wl_n.lambda_x();
-  lambdas_r = Wr_n.lambda_x();
-  //using Glaister's computed sound-speed
-  lambdas_a = Wa_n.lambda_x(cAvg);
-  //lambdas_a = Wa_n.lambda_x(); - with ROE !!
-
-  //--------------------------end Glaister stuff
+    /* Evaluate the left, right, and average state eigenvalues. */
+    lambdas_l = Wl_n.lambda_x();
+    lambdas_r = Wr_n.lambda_x();
+    lambdas_a = Wa_n.lambda_x(c_Avg);
 
     /* Determine the intermediate state flux. */
 
@@ -2792,14 +2418,14 @@ Vector2D GHLLE_wavespeeds(
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxHLLL(const HighTemp2D_pState &Wl,
-			       const HighTemp2D_pState &Wr) {
+			   const HighTemp2D_pState &Wr) {
 
   double wavespeed_l, wavespeed_r, wavespeed_m, da, ca, dU, alpha;
   HighTemp2D_pState Wa, lambdas_l, lambdas_r, lambdas_a;
   HighTemp2D_cState Flux, dFrl, dUrl, dFwave;
 
   // Evaluate the Roe-average primitive solution state.
-  Wa = RoeAverage(Wl,Wr);
+  Wa = RoeAverage(Wl, Wr);
 
   // Evaluate the left, right, and average state eigenvalues.
   lambdas_l = Wl.lambda_x();
@@ -2849,8 +2475,10 @@ HighTemp2D_cState FluxHLLL(const HighTemp2D_pState &Wl,
 }
 
 HighTemp2D_cState FluxHLLL(const HighTemp2D_cState &Ul,
-			       const HighTemp2D_cState &Ur) {
+			   const HighTemp2D_cState &Ur) {
+
   return FluxHLLL(Ul.W(),Ur.W());
+
 }
 
 /**********************************************************************
@@ -2867,8 +2495,8 @@ HighTemp2D_cState FluxHLLL(const HighTemp2D_cState &Ul,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxHLLL_n(const HighTemp2D_pState &Wl,
-				 const HighTemp2D_pState &Wr,
-				 const Vector2D &norm_dir) {
+			     const HighTemp2D_pState &Wr,
+			     const Vector2D &norm_dir) {
 
   HighTemp2D_pState Wl_rotated, Wr_rotated;
   HighTemp2D_cState Flux, Flux_rotated;
@@ -2892,9 +2520,11 @@ HighTemp2D_cState FluxHLLL_n(const HighTemp2D_pState &Wl,
 }
 
 HighTemp2D_cState FluxHLLL_n(const HighTemp2D_cState &Ul,
-				 const HighTemp2D_cState &Ur,
-				 const Vector2D &norm_dir) {
+			     const HighTemp2D_cState &Ur,
+			     const Vector2D &norm_dir) {
+
   return FluxHLLL_n(Ul.W(),Ur.W(),norm_dir);
+
 }
 
 /**********************************************************************
@@ -2906,85 +2536,24 @@ HighTemp2D_cState FluxHLLL_n(const HighTemp2D_cState &Ul,
  *  *** Modified for HIGHTEMP cases, with Glaister Averages           *
  **********************************************************************/
 HighTemp2D_cState FluxGHLLL(const HighTemp2D_pState &Wl,
-			       const HighTemp2D_pState &Wr) {
+			    const HighTemp2D_pState &Wr) {
 
-  double wavespeed_l, wavespeed_r, wavespeed_m, da, ca, dU, alpha;
+  double c_Avg, dpdrho_Avg, dpde_Avg,
+         wavespeed_l, wavespeed_r, wavespeed_m, da, ca, dU, alpha;
   HighTemp2D_pState Wa, lambdas_l, lambdas_r, lambdas_a;
   HighTemp2D_cState Flux, dFrl, dUrl, dFwave;
-
-   //Glaister-algorithm definitions
-  int deltaE, deltaRHO;
-  double pspl, psml, pspr, psmr, prl, plr, plsp, plsm, prsp, prsm;
-  double de, drho, dpde, dpdrho, dpder, dpdel, dpdrhol, dpdrhor;
-  double RHOstarP, RHOstarM, EstarP, EstarM;
-  double hl, hr, el, er, srhol, srhor, ha, ea, cAvg;
  
-  // Evaluate the modified Roe-average (Glaister) primitive solution state.
+  // Evaluate the Roe-average primitive solution state.
+  Wa = RoeAverage(Wl, Wr);
 
-  // Determine the left and right state specific enthalpies and square
-  // roots of the density.
-  el    = Wl.e();
-  er    = Wr.e();
-  hl    = el + Wl.p/Wl.rho;
-  hr    = er + Wr.p/Wr.rho;
-  srhol = sqrt(Wl.rho);
-  srhor = sqrt(Wr.rho);
-  
-  // Determine the appropriate Roe averages.
-  Wa.rho   = srhol*srhor;
-  Wa.v.x   = (srhol*Wl.v.x + srhor*Wr.v.x)/(srhol+srhor);
-  Wa.v.y   = (srhol*Wl.v.y + srhor*Wr.v.y)/(srhol+srhor);
-  Wa.k     = (srhol*Wl.k + srhor*Wr.k)/(srhol+srhor);
-  Wa.omega = (srhol*Wl.omega + srhor*Wr.omega)/(srhol+srhor);
-  ha = (srhol*hl + srhor*hr)/(srhol+srhor);
-  // Glaister modification
-  ea = (srhol*el + srhor*er)/(srhol+srhor);
-  Wa.p = Wa.rho*(ha - ea);
- 
-  //calculation of modified sound speed for Average State  
-  RHOstarP = Wa.rho*HTONEPLUST;
-  RHOstarM = Wa.rho*HTONEMINT;
-  EstarP = ea*HTONEPLUST;
-  EstarM = ea*HTONEMINT;
-  de = (er-el);
-  drho = (Wr.rho-Wl.rho);
- 
-  //Find dpde derivative
-  if (fabs(de) >= (TOLER3*ea)) {
-    prl = Tgas_p(er, Wl.rho);
-    plr = Tgas_p(el, Wr.rho);
-    dpde = 0.5*(Wr.p - plr + prl - Wl.p)/de;
-  }else{
-    pspl  = Tgas_p(EstarP,Wl.rho);
-    psml  = Tgas_p(EstarM,Wl.rho);
-    dpdel = (pspl-psml)/(2.00*HTTOL*ea);       
-    pspr  = Tgas_p(EstarP,Wr.rho);
-    psmr  = Tgas_p(EstarM,Wr.rho);
-    dpder = (pspr-psmr)/(2.00*HTTOL*ea);    
-    dpde  = 0.50*(dpdel+dpder);
-  }
-
-  //Find dpdrho derivative
-  if (fabs(drho) >= (TOLER3*Wa.rho)) {
-    prl = Tgas_p(er, Wl.rho);
-    plr = Tgas_p(el, Wr.rho);
-    dpdrho = 0.5*(Wr.p - prl + plr - Wl.p)/drho;
-  }else{
-    plsp    = Tgas_p(el,RHOstarP);
-    plsm    = Tgas_p(el,RHOstarM); 
-    dpdrhol = (plsp-plsm)/(2.00*HTTOL*Wa.rho);
-    prsp    = Tgas_p(er,RHOstarP);
-    prsm    = Tgas_p(er,RHOstarM);    
-    dpdrhor = (prsp-prsm)/(2.00*HTTOL*Wa.rho);
-    dpdrho  = 0.50*(dpdrhol + dpdrhor);
-  }
-  cAvg = sqrt(Wa.p*dpde/(Wa.rho*Wa.rho)+dpdrho + 2.0*Wa.k/3.0 + (2.0*Wa.k*dpde)/(3.0*Wa.rho));   
+  // Calculate the sound speed for average state using
+  // Glaister's approximation for the Roe-average sound speed.
+  Wa.RoeAverage_SoundSpeed(c_Avg, dpdrho_Avg, dpde_Avg, Wa, Wl, Wr);
 
   // Evaluate the left, right, and average state eigenvalues.
   lambdas_l = Wl.lambda_x();
   lambdas_r = Wr.lambda_x();
-  //using Glaister's computed sound-speed
-  lambdas_a = Wa.lambda_x(cAvg);
+  lambdas_a = Wa.lambda_x(c_Avg);
 
   // Determine the intermediate state flux.
   wavespeed_l = min(lambdas_l[1],lambdas_a[1]);
@@ -2999,8 +2568,7 @@ HighTemp2D_cState FluxGHLLL(const HighTemp2D_pState &Wl,
     dFrl = Wr.Fx() - Wl.Fx();
     wavespeed_m = Wa.v.x;
     da = Wa.rho;
-    //ca = Wa.c();
-    ca = cAvg;
+    ca = c_Avg;
     dU = (fabs(dUrl.rho)/da + 
 	  fabs(dUrl.dv.x)/(da*ca) + 
 	  fabs(dUrl.dv.y)/(da*ca) + 
@@ -3029,8 +2597,10 @@ HighTemp2D_cState FluxGHLLL(const HighTemp2D_pState &Wl,
 }
 
 HighTemp2D_cState FluxGHLLL(const HighTemp2D_cState &Ul,
-			       const HighTemp2D_cState &Ur) {
+			    const HighTemp2D_cState &Ur) {
+
   return FluxGHLLL(Ul.W(),Ur.W());
+
 }
 
 /**********************************************************************
@@ -3047,8 +2617,8 @@ HighTemp2D_cState FluxGHLLL(const HighTemp2D_cState &Ul,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxGHLLL_n(const HighTemp2D_pState &Wl,
-				 const HighTemp2D_pState &Wr,
-				 const Vector2D &norm_dir) {
+			      const HighTemp2D_pState &Wr,
+			      const Vector2D &norm_dir) {
 
   HighTemp2D_pState Wl_rotated, Wr_rotated;
   HighTemp2D_cState Flux, Flux_rotated;
@@ -3072,9 +2642,11 @@ HighTemp2D_cState FluxGHLLL_n(const HighTemp2D_pState &Wl,
 }
 
 HighTemp2D_cState FluxGHLLL_n(const HighTemp2D_cState &Ul,
-				 const HighTemp2D_cState &Ur,
-				 const Vector2D &norm_dir) {
+			      const HighTemp2D_cState &Ur,
+			      const Vector2D &norm_dir) {
+
   return FluxGHLLL_n(Ul.W(),Ur.W(),norm_dir);
+
 }
 
 /**********************************************************************
@@ -3087,7 +2659,7 @@ HighTemp2D_cState FluxGHLLL_n(const HighTemp2D_cState &Ul,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxHLLC(const HighTemp2D_pState &Wl,
-			       const HighTemp2D_pState &Wr) {
+			   const HighTemp2D_pState &Wr) {
 
   double wavespeed_l, wavespeed_r, wavespeed_m;
   double al, ar, CL, CR, Z, ql, qr;
@@ -3130,17 +2702,19 @@ HighTemp2D_cState FluxHLLC(const HighTemp2D_pState &Wl,
     Flux = Wr.Fx();
   } else  if (wavespeed_m >= ZERO) {
     Uml = HighTemp2D_cState(Wl.rho,
-			 Wl.rho*wavespeed_m,
-			 Wl.rho*Wl.v.y,
-			 Wl.E()+Wl.rho*(wavespeed_m-Wl.v.x)*(wavespeed_m+Wl.p/(Wl.rho*(wavespeed_l-Wl.v.x)))
-			 )*((wavespeed_l-Wl.v.x)/(wavespeed_l-wavespeed_m));
+			    Wl.rho*wavespeed_m,
+			    Wl.rho*Wl.v.y,
+			    Wl.E()+Wl.rho*(wavespeed_m-Wl.v.x)*(wavespeed_m+Wl.p/
+                            (Wl.rho*(wavespeed_l-Wl.v.x))))*
+                            ((wavespeed_l-Wl.v.x)/(wavespeed_l-wavespeed_m));
     Flux = Wl.Fx()+wavespeed_l*(Uml-Wl.U());
   } else {
     Umr = HighTemp2D_cState(Wr.rho,
-			 Wr.rho*wavespeed_m,
-			 Wr.rho*Wr.v.y,
-			 Wr.E()+Wr.rho*(wavespeed_m-Wr.v.x)*(wavespeed_m+Wr.p/(Wr.rho*(wavespeed_r-Wr.v.x)))
-			 )*((wavespeed_r-Wr.v.x)/(wavespeed_r-wavespeed_m));
+			    Wr.rho*wavespeed_m,
+			    Wr.rho*Wr.v.y,
+			    Wr.E()+Wr.rho*(wavespeed_m-Wr.v.x)*(wavespeed_m+Wr.p/
+                            (Wr.rho*(wavespeed_r-Wr.v.x))))*
+                            ((wavespeed_r-Wr.v.x)/(wavespeed_r-wavespeed_m));
     Flux = Wr.Fx()+wavespeed_r*(Umr-Wr.U());
   }
 
@@ -3150,8 +2724,10 @@ HighTemp2D_cState FluxHLLC(const HighTemp2D_pState &Wl,
 }
 
 HighTemp2D_cState FluxHLLC(const HighTemp2D_cState &Ul,
-			       const HighTemp2D_cState &Ur) {
+			   const HighTemp2D_cState &Ur) {
+
   return FluxHLLC(Ul.W(),Ur.W());
+
 }
 
 /**********************************************************************
@@ -3168,8 +2744,8 @@ HighTemp2D_cState FluxHLLC(const HighTemp2D_cState &Ul,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxHLLC_n(const HighTemp2D_pState &Wl,
-				 const HighTemp2D_pState &Wr,
-				 const Vector2D &norm_dir) {
+			     const HighTemp2D_pState &Wr,
+			     const Vector2D &norm_dir) {
 
   HighTemp2D_pState Wl_rotated, Wr_rotated;
   HighTemp2D_cState Flux, Flux_rotated;
@@ -3193,9 +2769,11 @@ HighTemp2D_cState FluxHLLC_n(const HighTemp2D_pState &Wl,
 }
 
 HighTemp2D_cState FluxHLLC_n(const HighTemp2D_cState &Ul,
-				 const HighTemp2D_cState &Ur,
-				 const Vector2D &norm_dir) {
+			     const HighTemp2D_cState &Ur,
+			     const Vector2D &norm_dir) {
+
   return FluxHLLC_n(Ul.W(),Ur.W(),norm_dir);
+
 }
 
 /**********************************************************************
@@ -3208,7 +2786,7 @@ HighTemp2D_cState FluxHLLC_n(const HighTemp2D_cState &Ul,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxVanLeer(const HighTemp2D_pState &Wl,
-				  const HighTemp2D_pState &Wr) {
+			      const HighTemp2D_pState &Wr) {
 
   HighTemp2D_cState F, Fl, Fr;
   double M, Mp, Mn;
@@ -3251,8 +2829,10 @@ HighTemp2D_cState FluxVanLeer(const HighTemp2D_pState &Wl,
 }
 
 HighTemp2D_cState FluxVanLeer(const HighTemp2D_cState &Ul,
-				  const HighTemp2D_cState &Ur) {
+			      const HighTemp2D_cState &Ur) {
+
   return FluxVanLeer(Ul.W(),Ur.W());
+
 }
 
 /**********************************************************************
@@ -3265,8 +2845,8 @@ HighTemp2D_cState FluxVanLeer(const HighTemp2D_cState &Ul,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxVanLeer_n(const HighTemp2D_pState &Wl,
-				    const HighTemp2D_pState &Wr,
-				    const Vector2D &norm_dir) {
+				const HighTemp2D_pState &Wr,
+				const Vector2D &norm_dir) {
 
   HighTemp2D_pState Wl_rotated, Wr_rotated, Vl_rotated, Vr_rotated;
   HighTemp2D_cState Flux, Flux_rotated;
@@ -3292,7 +2872,9 @@ HighTemp2D_cState FluxVanLeer_n(const HighTemp2D_pState &Wl,
 HighTemp2D_cState FluxVanLeer_n(const HighTemp2D_cState &Ul,
 				    const HighTemp2D_cState &Ur,
 				    const Vector2D &norm_dir) {
+
   return FluxVanLeer_n(Ul.W(),Ur.W(),norm_dir);
+
 }
 
 /**********************************************************************
@@ -3307,8 +2889,8 @@ HighTemp2D_cState FluxVanLeer_n(const HighTemp2D_cState &Ul,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxVanLeer_MB(const HighTemp2D_pState &Wl,
-				     const HighTemp2D_pState &Wr,
-				     const Vector2D &V) {
+				 const HighTemp2D_pState &Wr,
+				 const Vector2D &V) {
 
   HighTemp2D_cState Fl, Fr;
   double M, Mp, Mn;
@@ -3362,9 +2944,9 @@ HighTemp2D_cState FluxVanLeer_MB(const HighTemp2D_pState &Wl,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxVanLeer_MB_n(const HighTemp2D_pState &Wl,
-				       const HighTemp2D_pState &Wr,
-				       const Vector2D &V,
-				       const Vector2D &norm_dir) {
+				   const HighTemp2D_pState &Wr,
+				   const Vector2D &V,
+				   const Vector2D &norm_dir) {
 
   HighTemp2D_pState Wl_rotated, Wr_rotated;
   HighTemp2D_pState Wl_nonstationary, Wr_nonstationary;
@@ -3407,7 +2989,7 @@ HighTemp2D_cState FluxVanLeer_MB_n(const HighTemp2D_pState &Wl,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxAUSM(const HighTemp2D_pState &Wl,
-			       const HighTemp2D_pState &Wr) {
+			   const HighTemp2D_pState &Wr) {
 
   HighTemp2D_cState Flux;
   double al, ar, Ml, Mr, Mplus, Mminus, Mhalf, pplus, pminus, phalf;
@@ -3459,8 +3041,10 @@ HighTemp2D_cState FluxAUSM(const HighTemp2D_pState &Wl,
 }
 
 HighTemp2D_cState FluxAUSM(const HighTemp2D_cState &Ul,
-			       const HighTemp2D_cState &Ur) {
+			   const HighTemp2D_cState &Ur) {
+
   return FluxAUSM(Ul.W(),Ur.W());
+
 }
 
 /**********************************************************************
@@ -3479,8 +3063,8 @@ HighTemp2D_cState FluxAUSM(const HighTemp2D_cState &Ul,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxAUSM_n(const HighTemp2D_pState &Wl,
-				 const HighTemp2D_pState &Wr,
-				 const Vector2D &norm_dir) {
+			     const HighTemp2D_pState &Wr,
+			     const Vector2D &norm_dir) {
 
   HighTemp2D_pState Wl_rotated, Wr_rotated;
   HighTemp2D_cState Flux, Flux_rotated;
@@ -3504,9 +3088,11 @@ HighTemp2D_cState FluxAUSM_n(const HighTemp2D_pState &Wl,
 }
 
 HighTemp2D_cState FluxAUSM_n(const HighTemp2D_cState &Ul,
-				 const HighTemp2D_cState &Ur,
-				 const Vector2D &norm_dir) {
+			     const HighTemp2D_cState &Ur,
+			     const Vector2D &norm_dir) {
+
   return FluxAUSM_n(Ul.W(),Ur.W(),norm_dir);
+
 }
 
 
@@ -3521,7 +3107,7 @@ HighTemp2D_cState FluxAUSM_n(const HighTemp2D_cState &Ul,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxAUSMplus(const HighTemp2D_pState &Wl,
-				   const HighTemp2D_pState &Wr) {
+			       const HighTemp2D_pState &Wr) {
 
   HighTemp2D_cState Flux;
   double beta = 0.125, alpha = 0.1875;
@@ -3584,8 +3170,10 @@ HighTemp2D_cState FluxAUSMplus(const HighTemp2D_pState &Wl,
 }
 
 HighTemp2D_cState FluxAUSMplus(const HighTemp2D_cState &Ul,
-				   const HighTemp2D_cState &Ur) {
+			       const HighTemp2D_cState &Ur) {
+
   return FluxAUSMplus(Ul.W(),Ur.W());
+
 }
 
 /**********************************************************************
@@ -3604,8 +3192,8 @@ HighTemp2D_cState FluxAUSMplus(const HighTemp2D_cState &Ul,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxAUSMplus_n(const HighTemp2D_pState &Wl,
-				     const HighTemp2D_pState &Wr,
-				     const Vector2D &norm_dir) {
+				 const HighTemp2D_pState &Wr,
+				 const Vector2D &norm_dir) {
 
   HighTemp2D_pState Wl_rotated, Wr_rotated;
   HighTemp2D_cState Flux, Flux_rotated;
@@ -3629,9 +3217,11 @@ HighTemp2D_cState FluxAUSMplus_n(const HighTemp2D_pState &Wl,
 }
 
 HighTemp2D_cState FluxAUSMplus_n(const HighTemp2D_cState &Ul,
-				     const HighTemp2D_cState &Ur,
-				     const Vector2D &norm_dir) {
+				 const HighTemp2D_cState &Ur,
+				 const Vector2D &norm_dir) {
+
   return FluxAUSMplus_n(Ul.W(),Ur.W(),norm_dir);
+
 }
 
 /**********************************************************************
@@ -3646,7 +3236,7 @@ HighTemp2D_cState FluxAUSMplus_n(const HighTemp2D_cState &Ul,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState FluxAUSMplusUP(const HighTemp2D_pState &Wl,
-			      const HighTemp2D_pState &Wr) {
+			         const HighTemp2D_pState &Wr) {
 
   HighTemp2D_cState Flux; //Convected_Quantities;
   double beta = 0.125, sigma = 1.0, Kp =0.25, Ku = 0.5/*0.75*/;
@@ -3700,7 +3290,6 @@ HighTemp2D_cState FluxAUSMplusUP(const HighTemp2D_pState &Wl,
 
   mass_flux_half = (Mhalf > ZERO) ? ahalf*Mhalf*Wl.rho : ahalf*Mhalf*Wr.rho; 
 
-
   // Determine the intermediate state convective solution flux:
   if (mass_flux_half  > ZERO) {
     Flux[1] = ONE;
@@ -3725,109 +3314,11 @@ HighTemp2D_cState FluxAUSMplusUP(const HighTemp2D_pState &Wl,
 }
 
 HighTemp2D_cState FluxAUSMplusUP(const HighTemp2D_cState &Ul,
-			      const HighTemp2D_cState &Ur) {
+			         const HighTemp2D_cState &Ur) {
+
   return FluxAUSMplusUP(Ul.W(),Ur.W());
+
 }
-
-
-/**********************************************************************
- * Routine: FluxAUSMplusUP (Liou's updated Advection Upstream Splitting *
- *                        Method flux function, x-direction)          *
- *                                                                    *
- * This function returns the intermediate state solution flux for the *
- * x-direction given left and right solution states by using the      *
- * AUSM+ (updated AUSM scheme) approximation for the fluxes.  See     *
- * M.-S. Liou (Journal of Computational Physics, 2005).               *
- *                                                                    *
- **********************************************************************/
-/*
-HighTemp2D_cState FluxAUSMplusUP(const HighTemp2D_pState &Wl,
-				   const HighTemp2D_pState &Wr) {
-
-  HighTemp2D_cState Flux;
-  double beta = 0.125, Kp = 0.25, sigma = 1.0, Ku = 0.75;
-  double alpha, ahalf, rhohalf, Ml, Mr, Mplus, Mminus, Mhalf, pplus, pminus, phalf;
-  double Mbar_sq, Mmax, Mo_sq, fa, MAXval, Mp, Pu, mflux, Mref;
-
-  // Determine the intermediate state sound speed:
-  ahalf = HALF*(Wl.a() + Wr.a());
-  rhohalf = HALF*(Wl.rho + Wr.rho);
-  //ahalf = sqrt(Wl.a()*Wr.a());
-
-  // Determine the left and right state Mach numbers based on the
-  // intermediate state sound speed:
-  Ml = Wl.v.x/ahalf;
-  Mr = Wr.v.x/ahalf;
-
-  ///to be changed:
-  Mref = 0.2;
-
-  Mbar_sq = (sqr(Wl.v.x)+sqr(Wr.v.x))/(2.0*ahalf*ahalf);
-  Mmax = max(Mbar_sq,Mref*Mref);
-  Mo_sq = min(ONE,Mmax);
-  fa = 2.0*sqrt(Mo_sq) - Mo_sq;
-  alpha = 0.1875*(-4.0+5.0*sqr(fa));
-
-  // Determine the left state split Mach number:
-  if (fabs(Ml) < ONE) {
-    Mplus = 0.25*sqr(Ml+ONE) + beta*sqr(Ml*Ml-ONE);
-    pplus = (0.25*sqr(Ml+ONE)*(TWO-Ml) + alpha*Ml*sqr(Ml*Ml-ONE))*Wl.p;
-  } else {
-    Mplus = 0.5*(Ml + fabs(Ml));
-    pplus = 0.5*Wl.p*(ONE+fabs(Ml)/Ml);
-  }
-
-  // Determine the right state split Mach number:
-  if (fabs(Mr) < ONE) {
-    Mminus = -0.25*sqr(Mr-ONE) - beta*sqr(Mr*Mr-ONE);
-    pminus = (0.25*sqr(Mr-ONE)*(TWO+Mr) - alpha*Mr*sqr(Mr*Mr-ONE))*Wr.p;
-  } else {
-    Mminus = 0.5*(Mr - fabs(Mr));
-    pminus = 0.5*Wr.p*(ONE-fabs(Mr)/Mr);
-  }
-
-  //Additional pressure diffusion term to enhance calcs of low Mach flow
-  MAXval = max(ONE - sigma*Mbar_sq, 0.0);
-  Mp = -(Kp/fa)*MAXval*(Wr.p - Wl.p)/(rhohalf*ahalf*ahalf); 
-  
-  //additional diffusion term Pu
-  Pu = -Ku*(pplus/Wl.p)*(pminus/Wr.p)*(Wl.rho+Wr.rho)*fa*ahalf*(Wr.v.x-Wl.v.x);
-  
-  // Determine the intermediate state Mach number and pressure:
-  Mhalf = Mplus + Mminus + Mp;
-  phalf = pplus + pminus + Pu;
-
-  //Define the mass flux
-  if (Mhalf>0.0)
-    mflux = ahalf*Mhalf*Wl.rho;
-  else
-    mflux = ahalf*Mhalf*Wr.rho;
-
-  // Determine the intermediate state solution convective flux:
-  Flux[1] = mflux;
-  if (mflux>0.0) {
-    Flux[2] = mflux*Wl.v.x;
-    Flux[3] = mflux*Wl.v.y;
-    Flux[4] = mflux*Wl.H();
-  }else {
-    Flux[2] = mflux*Wr.v.x;
-    Flux[3] = mflux*Wr.v.y;
-    Flux[4] = mflux*Wr.H();
-  }
-
-  // Add the pressure contribution to the intermediate state solution flux:
-  Flux[2] += phalf;
-
-  // Return solution flux.
-  return Flux;
-}
-
-HighTemp2D_cState FluxAUSMplusUP(const HighTemp2D_cState &Ul,
-				   const HighTemp2D_cState &Ur) {
-  return FluxAUSMplusUP(Ul.W(),Ur.W());
-}
-*/
-
 
 /**********************************************************************
  * Routine: FluxAUSMplus_up_n (M.-S. Liou's Advection Upstream        *
@@ -3844,8 +3335,8 @@ HighTemp2D_cState FluxAUSMplusUP(const HighTemp2D_cState &Ul,
  * See M.-S. Liou (J. Comp. Physics 2006).                            *
  **********************************************************************/
 HighTemp2D_cState FluxAUSMplusUP_n(const HighTemp2D_pState &Wl,
-				     const HighTemp2D_pState &Wr,
-				     const Vector2D &norm_dir) {
+				   const HighTemp2D_pState &Wr,
+				   const Vector2D &norm_dir) {
 
   HighTemp2D_pState Wl_rotated, Wr_rotated;
   HighTemp2D_cState Flux, Flux_rotated;
@@ -3871,7 +3362,9 @@ HighTemp2D_cState FluxAUSMplusUP_n(const HighTemp2D_pState &Wl,
 HighTemp2D_cState FluxAUSMplusUP_n(const HighTemp2D_cState &Ul,
 				     const HighTemp2D_cState &Ur,
 				     const Vector2D &norm_dir) {
+
   return FluxAUSMplusUP_n(Ul.W(),Ur.W(),norm_dir);
+
 }
 
 
@@ -3884,12 +3377,11 @@ HighTemp2D_cState FluxAUSMplusUP_n(const HighTemp2D_cState &Ul,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_cState ViscousFlux_n(const Vector2D &X,
-				    HighTemp2D_pState &W,
-				    const HighTemp2D_pState &dWdx,
-				    const HighTemp2D_pState &dWdy,
-				    const Vector2D &norm_dir,
-				    int Axisymmetric)
-{
+				HighTemp2D_pState &W,
+				const HighTemp2D_pState &dWdx,
+				const HighTemp2D_pState &dWdy,
+				const Vector2D &norm_dir,
+				int Axisymmetric) {
 
   HighTemp2D_cState Gx, Gy, U;
 

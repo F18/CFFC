@@ -21,6 +21,9 @@
 
 #define	INPUT_PARAMETER_LENGTH_HIGHTEMP2D    128
 
+// Enviroment flag for CFFC root directory path
+#define PATHVAR_HIGHTEMP2D "CFFC_Path"
+
 /*!
  * Class:  HighTemp2D_Input_Parameters
  *
@@ -30,6 +33,9 @@
 class HighTemp2D_Input_Parameters{
 private:
 public:
+  // CFFC root directory path:
+  char CFFC_Path[INPUT_PARAMETER_LENGTH_HIGHTEMP2D];
+
   // Input file name:
   char Input_File_Name[INPUT_PARAMETER_LENGTH_HIGHTEMP2D];
 
@@ -48,7 +54,7 @@ public:
   int i_Time_Integration;
   int Time_Accurate, Local_Time_Stepping, 
       Maximum_Number_of_Time_Steps, N_Stage;
-	double Explicit_Rel_Tol;
+  double Explicit_Rel_Tol;
   double CFL_Number, Time_Max;
 
   // Residual variable:
@@ -93,9 +99,6 @@ public:
   double Pressure, Temperature, Mach_Number, Flow_Angle, Reynolds_Number, dp, Re_lid;
   Vector2D Wave_Position;
   double Wave_Width;
-
-  // Propellant parameters:
-  char Propellant_Type[INPUT_PARAMETER_LENGTH_HIGHTEMP2D];
 
   // Viscous or inviscid flag:
   char Flow_Type[INPUT_PARAMETER_LENGTH_HIGHTEMP2D];
@@ -250,20 +253,41 @@ public:
   // decomposition input parameters:
   int Number_of_Processors, Number_of_Blocks_Per_Processor;
 
+  // Obtain the CFFC root directory path:
+  void get_cffc_path();
+
   // Output operator:
   friend ostream &operator << (ostream &out_file, const HighTemp2D_Input_Parameters &IP);
 
-	// Input operator is a TODO.
+  // Input operator is a TODO.
   //friend istream &operator >> (istream &in_file, HighTemp2D_Input_Parameters &IP);
 
 };
 
+/****************************************************************
+ * HighTemp2D_Input_Parameters::get_cffc_path -- Get CFFC path. *
+ ****************************************************************/
+inline void HighTemp2D_Input_Parameters::get_cffc_path(){
+  char *string_ptr;
+  // Check to see if environment varible exists.
+  if (getenv(PATHVAR_HIGHTEMP2D) == NULL) {
+    //Set default path
+     string_ptr = "CFFC";
+     strcpy(CFFC_Path, string_ptr);
+  } else {
+     //Set path specified by environment variable
+     strcpy(CFFC_Path, getenv(PATHVAR_HIGHTEMP2D));
+  }
+}
+
 /**********************************************************************
- *     HighTemp2D_Input_Parameters -- Output operator.
+ * HighTemp2D_Input_Parameters -- Output operator.                    *
  **********************************************************************/
 inline ostream &operator << (ostream &out_file,
 			     const HighTemp2D_Input_Parameters &IP) {
   out_file << setprecision(6);
+  out_file << "\n  -> CFFC Path: " 
+	   << IP.CFFC_Path;
   if (IP.i_Grid == GRID_CARTESIAN_UNIFORM) {
     out_file << "\n\n Solving 2D High-Temp equations (IBVP/BVP) on uniform Cartesian mesh.";
   } else {
@@ -297,14 +321,14 @@ inline ostream &operator << (ostream &out_file,
   }
   if (!IP.Axisymmetric) out_file << "\n  -> 2D Planar Flow";
   else out_file << "\n  -> 2D Axisymmetric Flow";
-	if (IP.Maximum_Number_of_Time_Steps > 0) {
-		out_file << "\n  -> Time Integration: " << IP.Time_Integration_Type;
-		out_file << "\n  -> Number of Stages in Multi-Stage Scheme: " << IP.N_Stage;
-		if (IP.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
-				IP.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
-			out_file << IP.Multigrid_IP;
-		}
-	}
+  if (IP.Maximum_Number_of_Time_Steps > 0) {
+     out_file << "\n  -> Time Integration: " << IP.Time_Integration_Type;
+     out_file << "\n  -> Number of Stages in Multi-Stage Scheme: " << IP.N_Stage;
+     if (IP.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
+	 IP.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
+	out_file << IP.Multigrid_IP;
+     }
+  }
   if (IP.Local_Time_Stepping == GLOBAL_TIME_STEPPING) {
     out_file << "\n  -> Global Time Stepping";
   } else if (IP.Local_Time_Stepping == SCALAR_LOCAL_TIME_STEPPING) {
@@ -329,30 +353,19 @@ inline ostream &operator << (ostream &out_file,
     out_file << "\n  -> Viscous (Elliptic) Gradient Reconstruction: " << IP.Viscous_Reconstruction_Type;
   out_file << "\n  -> Initial Conditions: " << IP.ICs_Type;
   out_file << "\n  -> Gas Type: " << IP.Gas_Type;
-
-	if (strcmp(IP.Gas_Type, "AIR") == 0) {
-		if (IP.EOSType == EOS_IDEAL) {
-			out_file << "\n  -> Equation of State: Ideal";
-		} else {
-			out_file << "\nERROR: Gas type is air but EOS is not ideal.";
-		}
-	} else if (strcmp(IP.Gas_Type, "HTAIR") == 0) {
-		if (IP.EOSType == EOS_TGAS) {
-			out_file << "\n  -> Equation of State: High-Temperature";
-		} else {
-			out_file << "\nERROR: Gas type is HTAIR but EOS is not TGAS.";
-		}
-	}
-
-  if (IP.i_Grid == GRID_ROCKET_MOTOR) {
-    out_file << "\n  -> Solid propellant type: " << IP.Propellant_Type;
-    out_file << "\n     -> Propellant density = " << IP.Wo.rhos;
-    out_file << "\n     -> Propellant burning constant = " << IP.Wo.n;
-    out_file << "\n     -> Propellant burning coefficient = " << IP.Wo.beta;
-    out_file << "\n     -> Propellant flame temperature = " << IP.Wo.Tf;
-    out_file << "\n     -> Propellant surface temperature = " << IP.Wo.Ts;
+  if (strcmp(IP.Gas_Type, "AIR") == 0) {
+    if (IP.EOSType == EOS_IDEAL) {
+      out_file << "\n  -> Equation of State: Ideal";
+    } else {
+      out_file << "\nERROR: Gas type is air but EOS is not ideal.";
+    }
+  } else if (strcmp(IP.Gas_Type, "HTAIR") == 0) {
+    if (IP.EOSType == EOS_TGAS) {
+      out_file << "\n  -> Equation of State: High-Temperature";
+    } else {
+      out_file << "\nERROR: Gas type is HTAIR but EOS is not TGAS.";
+    }
   }
-
   switch(IP.i_ICs) {
   case IC_CONSTANT :
     out_file << "\n  -> Pressure (kPa): " 
@@ -365,16 +378,10 @@ inline ostream &operator << (ostream &out_file,
 	     << IP.Flow_Angle;
     break;
   case IC_UNIFORM :
-		// Some grids (steathily) set their own initial conditions.
-		// So do not print them here.
-		//  out_file << "\n  -> Pressure (kPa): " 
-		//  	 << IP.Pressure/THOUSAND;
-		//  out_file << "\n  -> Temperature (K): " 
-		//  	 << IP.Temperature;
-		out_file << "\n  -> Mach Number: " 
-		  	 << IP.Mach_Number;
-		out_file << "\n  -> Flow Angle (degrees): " 
-			 << IP.Flow_Angle;
+    out_file << "\n  -> Mach Number: " 
+     	     << IP.Mach_Number;
+    out_file << "\n  -> Flow Angle (degrees): " 
+	     << IP.Flow_Angle;
     break;
   case IC_SOD_XDIR :
     break;
@@ -443,42 +450,22 @@ inline ostream &operator << (ostream &out_file,
     break;
   case GRID_FLAT_PLATE :
     out_file << "\n     -> Plate Length (m): " << IP.Plate_Length;
-		out_file << "\n     -> Plate BC: ";
-		switch (IP.BC_South) {
-			case BC_WALL_VISCOUS_HEATFLUX:   
-				out_file << "Adiabatic";  
-				break;
-			case BC_WALL_VISCOUS_ISOTHERMAL: 
-				out_file << "Isothermal; "; 
-				out_file << "Plate T: " << IP.Twall << "K.";
-				break;
-		}
-		out_file << "\n     -> West and North BC are fixed at:";
-		out_file << "\n        -> ";
-		out_file << "p: "   << IP.Wo.p/1000.0 << " kPa, ";
-		out_file << "rho: " << IP.Wo.rho      << " kg/m3, ";
-		out_file << "T: "   << IP.Wo.T()      << " K, ";
-		out_file << "Re: "  << IP.Reynolds_Number << ".";
-    break;
-  case GRID_FPBL_INTERACTION :
-    out_file << "\n     -> Plate Length (m): " << IP.Plate_Length;
-    out_file << "\n     -> Plate Height (m): " << IP.Grid_Height;
     out_file << "\n     -> Plate BC: ";
-		switch (IP.BC_South) {
-			case BC_WALL_VISCOUS_HEATFLUX:   
-				out_file << "Adiabatic";  
-				break;
-			case BC_WALL_VISCOUS_ISOTHERMAL: 
-				out_file << "Isothermal; "; 
-				out_file << "Plate T: " << IP.Twall << "K.";
-				break;
-		}
-		out_file << "\n     -> West and North BC are fixed at:";
-		out_file << "\n        -> ";
-		out_file << "p: "   << IP.Wo.p/1000.0 << " kPa, ";
-		out_file << "rho: " << IP.Wo.rho      << " kg/m3, ";
-		out_file << "T: "   << IP.Wo.T()      << " K, ";
-		out_file << "Re: "  << IP.Reynolds_Number << ".";
+    switch (IP.BC_South) {
+      case BC_WALL_VISCOUS_HEATFLUX:   
+	out_file << "Adiabatic";  
+	break;
+      case BC_WALL_VISCOUS_ISOTHERMAL: 
+	out_file << "Isothermal; "; 
+	out_file << "Plate T: " << IP.Twall << "K.";
+	break;
+    }
+    out_file << "\n     -> West and North BC are fixed at:";
+    out_file << "\n        -> ";
+    out_file << "p: "   << IP.Wo.p/1000.0 << " kPa, ";
+    out_file << "rho: " << IP.Wo.rho      << " kg/m3, ";
+    out_file << "T: "   << IP.Wo.T()      << " K, ";
+    out_file << "Re: "  << IP.Reynolds_Number << ".";
     break;
   case GRID_PIPE :
     out_file << "\n  -> Pipe Length (m): " << IP.Pipe_Length;
@@ -536,11 +523,11 @@ inline ostream &operator << (ostream &out_file,
       if (IP.Smooth_Bump) out_file << " (smooth (sin^2) bump)";
       else out_file << " (sharp (circular) bump)";
     }
-		out_file << "\n     -> West BC are fixed at:";
-		out_file << "\n        -> ";
-		out_file << "p: "   << IP.Wo.p/1000.0 << " kPa, ";
-		out_file << "rho: " << IP.Wo.rho      << " kg/m3, ";
-		out_file << "T: "   << IP.Wo.T()      << " K.";
+    out_file << "\n     -> West BC are fixed at:";
+    out_file << "\n        -> ";
+    out_file << "p: "   << IP.Wo.p/1000.0 << " kPa, ";
+    out_file << "rho: " << IP.Wo.rho      << " kg/m3, ";
+    out_file << "T: "   << IP.Wo.T()      << " K.";
     break;
   case GRID_BACKWARD_FACING_STEP :
     out_file << "\n  -> Step height: " << IP.Step_Height;
@@ -641,37 +628,35 @@ inline ostream &operator << (ostream &out_file,
   //	   << IP.SubCell_Reconstruction;
   out_file << "\n  -> CFL Number: "
 	   << IP.CFL_Number;
-	if (IP.Time_Accurate) { 
-		out_file << "\n  -> Maximum Time (ms): " << IP.Time_Max*THOUSAND;
-	}
-	out_file << "\n  -> Maximum Number of ";
-	if (IP.Time_Accurate) { 
-		out_file << "Time Steps: ";
-	} else { 
-		out_file << "Relaxation (Pseudo-Time) Iterations: ";
-	}
-	out_file << IP.Maximum_Number_of_Time_Steps;
-
-	if (IP.Explicit_Rel_Tol > 0.0) {
-		if (IP.Maximum_Number_of_Time_Steps <= 0) {
-			out_file << "\n  -> WARNING: tolerance specified for TMM even though we will not do time marching. Ignoring tolerance.";
-		} else if (IP.Time_Accurate) {
-			out_file << "\n  -> WARNING: tolerance specified for time-accurate TMM. Ignoring tolerance.";
-		} else if (IP.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
-				       IP.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
-			out_file << "\n  -> WARNING: tolerance specified for TMM even though we will do Multigrid. Ignoring TMM tolerance.";
-		} else {
-			out_file << "\n  -> Relative Tolerance for Time Marching: ";
-			out_file.setf(ios::scientific);
-			out_file << IP.Explicit_Rel_Tol;
-			out_file.unsetf(ios::scientific);
-		}
-	}
-
-	if (IP.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
-	out_file << "\n  -> Maximum Number of NKS Iterations: " 
-						 << IP.NKS_IP.Maximum_Number_of_NKS_Iterations;
-	}
+  if (IP.Time_Accurate) { 
+    out_file << "\n  -> Maximum Time (ms): " << IP.Time_Max*THOUSAND;
+  }
+  out_file << "\n  -> Maximum Number of ";
+  if (IP.Time_Accurate) { 
+    out_file << "Time Steps: ";
+  } else { 
+    out_file << "Relaxation (Pseudo-Time) Iterations: ";
+  }
+  out_file << IP.Maximum_Number_of_Time_Steps;
+  if (IP.Explicit_Rel_Tol > 0.0) {
+     if (IP.Maximum_Number_of_Time_Steps <= 0) {
+       out_file << "\n  -> WARNING: tolerance specified for TMM even though we will not do time marching. Ignoring tolerance.";
+     } else if (IP.Time_Accurate) {
+       out_file << "\n  -> WARNING: tolerance specified for time-accurate TMM. Ignoring tolerance.";
+     } else if (IP.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
+	        IP.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
+       out_file << "\n  -> WARNING: tolerance specified for TMM even though we will do Multigrid. Ignoring TMM tolerance.";
+     } else {
+       out_file << "\n  -> Relative Tolerance for Time Marching: ";
+       out_file.setf(ios::scientific);
+       out_file << IP.Explicit_Rel_Tol;
+       out_file.unsetf(ios::scientific);
+     }
+  }
+  if (IP.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+     out_file << "\n  -> Maximum Number of NKS Iterations: " 
+   	      << IP.NKS_IP.Maximum_Number_of_NKS_Iterations;
+  }
   out_file << "\n  -> Number of Processors: " 
 	   << IP.Number_of_Processors;
   out_file << "\n  -> Number of Blocks Per Processor: " 
@@ -686,19 +671,17 @@ inline ostream &operator << (ostream &out_file,
   out_file << "\n  -> Output Progress Frequency: "
 	   << IP.Output_Progress_Frequency
 	   << " steps (iterations)";
-	if (IP.Explicit_Write_Output_Freq > 0) {
-		out_file << "\n  -> Write Output Frequency for Explicit TMM: "
-			<< IP.Explicit_Write_Output_Freq
-			<< " steps (iterations)";
-	}
+  if (IP.Explicit_Write_Output_Freq > 0) {
+     out_file << "\n  -> Write Output Frequency for Explicit TMM: "
+   	      << IP.Explicit_Write_Output_Freq
+	      << " steps (iterations)";
+  }
   out_file << "\n  -> High Temp Tolerance: " << HTTOL;
-
-	if (IP.Morton) {
-		out_file << "\n  -> Morton Re-Ordering Frequency: "
-			<< IP.Morton_Reordering_Frequency
-			<< " time steps (iterations)";
-	}
-	
+  if (IP.Morton) {
+    out_file << "\n  -> Morton Re-Ordering Frequency: "
+  	     << IP.Morton_Reordering_Frequency
+	     << " time steps (iterations)";
+  }
   return out_file;
 }
 

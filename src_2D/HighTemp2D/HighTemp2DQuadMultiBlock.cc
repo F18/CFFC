@@ -1,14 +1,14 @@
 /**********************************************************************
- * HighTemp2DQuadMultiBlock.cc: Multi-block versions of           *
- *                                  subroutines for the 2D High-    *
- *                                  Temp multi-block quadrilateral  *
+ * HighTemp2DQuadMultiBlock.cc: Multi-block versions of               *
+ *                                  subroutines for the 2D High-      *
+ *                                  Temp multi-block quadrilateral    *
  *                                  mesh solution classes.            *
  **********************************************************************/
 
 #include "HighTemp2DQuad.h"
 
 /**********************************************************************
- * HighTemp2D_Quad_Block -- Multiple Block External Subroutines.  *
+ * HighTemp2D_Quad_Block -- Multiple Block External Subroutines.      *
  **********************************************************************/
 
 /**********************************************************************
@@ -19,7 +19,7 @@
  *                                                                    *
  **********************************************************************/
 HighTemp2D_Quad_Block* Allocate(HighTemp2D_Quad_Block *Soln_ptr,
-				    HighTemp2D_Input_Parameters &Input_Parameters) {
+				HighTemp2D_Input_Parameters &Input_Parameters) {
 
   // Allocate memory.
   Soln_ptr = new HighTemp2D_Quad_Block[Input_Parameters.Number_of_Blocks_Per_Processor];
@@ -40,7 +40,7 @@ HighTemp2D_Quad_Block* Allocate(HighTemp2D_Quad_Block *Soln_ptr,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_Quad_Block* Deallocate(HighTemp2D_Quad_Block *Soln_ptr,
-				      HighTemp2D_Input_Parameters &Input_Parameters) {
+				  HighTemp2D_Input_Parameters &Input_Parameters) {
 
   // Deallocate memory.
   for (int nb = 0 ; nb < Input_Parameters.Number_of_Blocks_Per_Processor; nb++) {
@@ -62,11 +62,11 @@ HighTemp2D_Quad_Block* Deallocate(HighTemp2D_Quad_Block *Soln_ptr,
  *                                                                    *
  **********************************************************************/
 HighTemp2D_Quad_Block* CreateInitialSolutionBlocks(Grid2D_Quad_Block **InitMeshBlk,
-						       HighTemp2D_Quad_Block *Soln_ptr,
-						       HighTemp2D_Input_Parameters &Input_Parameters,
-						       QuadTreeBlock_DataStructure &QuadTree,
-						       AdaptiveBlockResourceList &GlobalSolnBlockList,
-						       AdaptiveBlock2D_List &LocalSolnBlockList) {
+						   HighTemp2D_Quad_Block *Soln_ptr,
+						   HighTemp2D_Input_Parameters &Input_Parameters,
+						   QuadTreeBlock_DataStructure &QuadTree,
+						   AdaptiveBlockResourceList &GlobalSolnBlockList,
+						   AdaptiveBlock2D_List &LocalSolnBlockList) {
 
   int error_flag;
 
@@ -195,7 +195,7 @@ void BCs(HighTemp2D_Quad_Block *Soln_ptr,
  * Routine: CFL                                                       *
  *                                                                    *
  * Determines the allowable global and local time steps (for explicit *
- * N-S HighTemp time stepping scheme) for a 1D array of 2D           *
+ * N-S HighTemp time stepping scheme) for a 1D array of 2D            *
  * quadrilateral multi-block solution blocks according to the         *
  * Courant-Friedrichs-Lewy condition.                                 *
  *                                                                    *
@@ -325,18 +325,20 @@ double Max_Norm_Residual(HighTemp2D_Quad_Block *Soln_ptr,
  *                                                                    *
  **********************************************************************/
 void L1_Norm_Residual(HighTemp2D_Quad_Block *Soln_ptr,
-                        AdaptiveBlock2D_List &Soln_Block_List,
-												double *l1_norm) {
+                      AdaptiveBlock2D_List &Soln_Block_List,
+  		      double *l1_norm) {
 
-	/* Calculate the L1-norm. Sum the L1-norm for each solution block. */
-	for( int k = 0; k< Soln_ptr[0].Number_of_Residual_Norms; k++){    
-		l1_norm[k] = ZERO;
-		for ( int i = 0 ; i < Soln_Block_List.Nblk; ++i ) {
-			if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {     
-				l1_norm[k] += L1_Norm_Residual(Soln_ptr[i],k+1);       
-			}
-		}
-	}  
+  /* Calculate the L1-norm. Sum the L1-norm for each solution block. */
+
+  for ( int k = 0; k< Soln_ptr[0].Number_of_Residual_Norms; k++){    
+     l1_norm[k] = ZERO;
+     for ( int i = 0 ; i < Soln_Block_List.Nblk; ++i ) {
+	if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {     
+  	   l1_norm[k] += L1_Norm_Residual(Soln_ptr[i],k+1);       
+	}
+     }
+  }
+  
 }
 
 /**********************************************************************
@@ -348,19 +350,21 @@ void L1_Norm_Residual(HighTemp2D_Quad_Block *Soln_ptr,
  *                                                                    *
  **********************************************************************/
 void L2_Norm_Residual(HighTemp2D_Quad_Block *Soln_ptr,
-                        AdaptiveBlock2D_List &Soln_Block_List,
-												double *l2_norm) {
+                      AdaptiveBlock2D_List &Soln_Block_List,
+  		      double *l2_norm) {
 
-	/* Sum the square of the L2-norm for each solution block. */
-	for( int k = 0; k< Soln_ptr[0].Number_of_Residual_Norms; k++){
-		l2_norm[k] =ZERO;
-		for ( int i = 0 ; i < Soln_Block_List.Nblk; ++i ) {
-			if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-				l2_norm[k] += sqr(L2_Norm_Residual(Soln_ptr[i],k+1));     
-			} 
-		}  
-		l2_norm[k] = sqrt(l2_norm[k]);
-	}
+  /* Sum the square of the L2-norm for each solution block. */
+  
+  for ( int k = 0; k< Soln_ptr[0].Number_of_Residual_Norms; k++){
+     l2_norm[k] =ZERO;
+     for ( int i = 0 ; i < Soln_Block_List.Nblk; ++i ) {
+        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+	   l2_norm[k] += sqr(L2_Norm_Residual(Soln_ptr[i],k+1));     
+	} 
+     }  
+     l2_norm[k] = sqrt(l2_norm[k]);
+  }
+
 }
 
 /**********************************************************************
@@ -372,18 +376,20 @@ void L2_Norm_Residual(HighTemp2D_Quad_Block *Soln_ptr,
  *                                                                    *
  **********************************************************************/
 void Max_Norm_Residual(HighTemp2D_Quad_Block *Soln_ptr,
-                         AdaptiveBlock2D_List &Soln_Block_List,
-												 double *max_norm) {
+                       AdaptiveBlock2D_List &Soln_Block_List,
+   		       double *max_norm) {
   
-	/* Find the maximum norm for all solution blocks. */
-	for( int k = 0; k< Soln_ptr[0].Number_of_Residual_Norms; k++){
-		max_norm[k] = ZERO;
-		for (int i = 0 ; i < Soln_Block_List.Nblk ; ++i ) {
-			if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-				max_norm[k] = max(max_norm[k], Max_Norm_Residual(Soln_ptr[i],k+1));
-			} 
-		} 
-	}
+  /* Find the maximum norm for all solution blocks. */
+
+  for ( int k = 0; k< Soln_ptr[0].Number_of_Residual_Norms; k++){
+     max_norm[k] = ZERO;
+     for (int i = 0 ; i < Soln_Block_List.Nblk ; ++i ) {
+        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+	   max_norm[k] = max(max_norm[k], Max_Norm_Residual(Soln_ptr[i],k+1));
+	} 
+     } 
+  }
+
 }
 
 /**********************************************************************
@@ -916,71 +922,4 @@ int Flat_Plate_Adaptive_Mesh_Refinement(HighTemp2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Perform_External_Functions_on_Coarse_Grids                *
- *                                                                    *
- * This routine performs and functions required on the coarse grid    *
- * that were already performed on the finest grid.  This routine is   *
- * not included as a templated routine in the multigrid code since    *
- * the functions to be performed are dependent on the system of       *
- * equations that are being solved.  These routines are perfomed on a *
- * 1D array of 2D quadrilateral multi-block solution blocks.          *
- *                                                                    *
- **********************************************************************/
-/*
-int Perform_External_Functions_on_Coarse_Grids(HighTemp2D_Quad_Block *Soln_ptr_Coarse,
-					       HighTemp2D_Quad_Block *Soln_ptr_Fine,
-					       HighTemp2D_Input_Parameters &Input_Parameters,
-					       QuadTreeBlock_DataStructure &QuadTree,
-					       AdaptiveBlockResourceList &GlobalSolnBlockList,
-					       AdaptiveBlock2D_List &LocalSolnBlockList) {
 
-  int error_flag;
-
-  // Determine the wall distance and wall distance location if required.
-  error_flag = Determine_Wall_Distance(Soln_ptr_Coarse,
-				       QuadTree,
-				       LocalSolnBlockList,
-				       Input_Parameters);
-  if (error_flag) return error_flag;
-
-  // All required functions computed successfully.
-  return 0;
-
-}
-*/
-/**********************************************************************
- * Routine: Zero_Residuals_on_Coarse_Grid                             *
- *                                                                    *
- * Zeroes the residuals for the turbulence parameters k and omega of  *
- * a 1D array of 2D quadrilateral multi-block solution blocks.  Used  *
- * by the FAS-multigrid routine so that k and omega are not updated   *
- * on the coarse grid levels.                                         *
- *                                                                    *
- **********************************************************************/
-/*
-int Zero_Residuals_on_Coarse_Grid(HighTemp2D_Quad_Block *Soln_ptr,
-				  AdaptiveBlock2D_List &Soln_Block_List,
-				  HighTemp2D_Input_Parameters &Input_Parameters,
-				  const int &I_Stage) {
-
-  // Exit immediately if not a turbulent flow.
-  if (Input_Parameters.FlowType != FLOWTYPE_TURBULENT_RANS_K_OMEGA) return 0;
-
-  int error_flag;
-
-  // Zero the required residuals on each solution block in use.
-  for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
-    if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
-      error_flag = Zero_Residuals_on_Coarse_Grid(Soln_ptr[nb],
-						 Input_Parameters,
-						 I_Stage);
-      if (error_flag) return error_flag;
-    }
-  }
-
-  // Residuals for k and omega zeroed.
-  return 0;
-
-}
-*/
