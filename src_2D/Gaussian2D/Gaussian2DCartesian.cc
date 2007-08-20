@@ -79,7 +79,7 @@ void Output_Gnuplot(Gaussian2D_Cartesian_Cell **Soln,
 
     int i, j;
 
-    out_file << "# " << CFDkit_Name() << ": 2D Gaussian Solution, "
+    out_file << "# " << CFFC_Name() << ": 2D Gaussian Solution, "
              << "Time Step/Iteration Level = "
              << Number_of_Time_Steps
              << ", Time = " << Time*THOUSAND << " (ms)\n"
@@ -111,7 +111,7 @@ void Output_Tecplot(Gaussian2D_Cartesian_Cell **Soln,
 
     int i, j;
 
-    out_file << "TITLE = \"" << CFDkit_Name() << ": 2D Gaussian Solution, "
+    out_file << "TITLE = \"" << CFFC_Name() << ": 2D Gaussian Solution, "
              << "Time Step/Iteration Level = "
              << Number_of_Time_Steps
              << ", Time = " << Time << "\"" << "\n"
@@ -867,7 +867,7 @@ int dUdt_explicitEuler_upwind(Gaussian2D_Cartesian_Cell **Soln,
 	  if (Soln[i][j].U.d   <= ZERO){ // ||
 	      //Soln[i][j].U.E   <= ZERO ||
 	      //Soln[i][j].U.e() <= ZERO ) {
-	      cout << "\n " << CFDkit_Name() << " Gaussian2D ERROR: Negative Density and/or Energy: \n"
+	      cout << "\n " << CFFC_Name() << " Gaussian2D ERROR: Negative Density and/or Energy: \n"
 	           << " cell = (" << i << ", " << j << ") \n U = " 
                    << Soln[i][j].U << "\n dUdt = " << Soln[i][j].dUdt << "\n";
 	      return (i);
@@ -1176,7 +1176,7 @@ int dUdt_2stage_2ndOrder_upwind(Gaussian2D_Cartesian_Cell **Soln,
   	      if (Soln[i][j].U.d   <= ZERO){// ||
 		//Soln[i][j].U.E   <= ZERO ||
 		//Soln[i][j].U.e() <= ZERO ) {
-		  cout << "\n " << CFDkit_Name() << " Gaussian2D ERROR: Negative Density and/or Energy: \n"
+		  cout << "\n " << CFFC_Name() << " Gaussian2D ERROR: Negative Density and/or Energy: \n"
 	               << " cell = (" << i << ", " << j << ") \n U = " 
                        << Soln[i][j].U << "\n dUdt = " << Soln[i][j].dUdt << "\n";
 	          return (i);

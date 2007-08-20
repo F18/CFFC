@@ -127,7 +127,7 @@ Output_Flat_Plate_Tecplot(const int &nb,
   // Output node solution data.  
   Out_File_Soln << setprecision(14);
   if (Output_Title_Soln) {
-    Out_File_Soln << "TITLE = \"" << CFDkit_Name() << ": 2D Flat Plate Gaussian Solution."
+    Out_File_Soln << "TITLE = \"" << CFFC_Name() << ": 2D Flat Plate Gaussian Solution."
 		  << "\"" << "\n"
 		  << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n"
@@ -189,7 +189,7 @@ Output_Flat_Plate_Tecplot(const int &nb,
   // Output Skin frinction coefficient data
 
   if (Output_Title_Skin) {
-    Out_File_Skin << "TITLE = \"" << CFDkit_Name() << ": Flat Plate Skin Friction Coefficient, "
+    Out_File_Skin << "TITLE = \"" << CFFC_Name() << ": Flat Plate Skin Friction Coefficient, "
 		  << "\"" << "\n"
 		  << "VARIABLES = \"x\" \\ \n"
 		  << "\"y\" \\ \n"
@@ -436,8 +436,8 @@ Net_Force(void) {
 
 
 #ifdef _MPI_VERSION
-  fx = CFDkit_Summation_MPI(fx);
-  fy = CFDkit_Summation_MPI(fy);
+  fx = CFFC_Summation_MPI(fx);
+  fy = CFFC_Summation_MPI(fy);
 #endif
 
   return Vector2D(fx,fy);
@@ -541,8 +541,8 @@ Net_Pressure_Force(void) {
 
 
 #ifdef _MPI_VERSION
-  fx = CFDkit_Summation_MPI(fx);
-  fy = CFDkit_Summation_MPI(fy);
+  fx = CFFC_Summation_MPI(fx);
+  fy = CFFC_Summation_MPI(fy);
 #endif
 
   return Vector2D(fx,fy);
@@ -647,14 +647,14 @@ Output_Couette(void) {
 
 
 #ifdef _MPI_VERSION
-  u_top_wall_ave = CFDkit_Summation_MPI(u_top_wall_ave);
-  u_top_length   = CFDkit_Summation_MPI(u_top_length);
-  u_bottom_wall_ave = CFDkit_Summation_MPI(u_top_wall_ave);
-  u_bottom_length   = CFDkit_Summation_MPI(u_top_length);
-  pxy_ave = CFDkit_Summation_MPI(pxy_ave);
-  pxy_area   = CFDkit_Summation_MPI(pxy_area);
+  u_top_wall_ave = CFFC_Summation_MPI(u_top_wall_ave);
+  u_top_length   = CFFC_Summation_MPI(u_top_length);
+  u_bottom_wall_ave = CFFC_Summation_MPI(u_top_wall_ave);
+  u_bottom_length   = CFFC_Summation_MPI(u_top_length);
+  pxy_ave = CFFC_Summation_MPI(pxy_ave);
+  pxy_area   = CFFC_Summation_MPI(pxy_area);
 #endif
-  if(CFDkit_Primary_MPI_Processor()) {
+  if(CFFC_Primary_MPI_Processor()) {
 
     u_top_wall_ave    = u_top_wall_ave/u_top_length;
     u_bottom_wall_ave = u_bottom_wall_ave/u_bottom_length;
@@ -695,7 +695,7 @@ Output_Cylinder_Drag(void) {
   lift = force.y;
   drag = force.x;
 
-  if(CFDkit_Primary_MPI_Processor()) {
+  if(CFFC_Primary_MPI_Processor()) {
 
   diam = 2.0*Interface_Component_List[1].Length1;
   speed = sqrt(sqr(IP->Wo.v.x)+sqr(IP->Wo.v.y));
@@ -745,7 +745,7 @@ Output_Aerodynamic_Coefficients_Tecplot(const int &number_of_time_steps,
   lift = force.y;
   drag = force.x;
 
-  if(CFDkit_Primary_MPI_Processor()) {
+  if(CFFC_Primary_MPI_Processor()) {
 
   // Determine the axial and normal directions of the aerofoil:
   ahat = (Interface_Union_List[1].Spline.Xp[0] - Interface_Union_List[1].Spline.Xp[(Interface_Union_List[1].Spline.np-1)/2])/

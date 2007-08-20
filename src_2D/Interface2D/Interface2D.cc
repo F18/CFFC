@@ -1119,13 +1119,13 @@ void Broadcast_Interface(Interface2D &I) {
   // Broadcast the interface type, bc_type, and motion type..
   i_buffer_size = 3;
   i_buffer = new int[i_buffer_size];
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     i_buffer[0] = I.Type;
     i_buffer[1] = I.BC_Type;
     i_buffer[2] = I.Motion;
   }
   MPI::COMM_WORLD.Bcast(i_buffer,i_buffer_size,MPI::INT,0);
-  if (!CFDkit_Primary_MPI_Processor()) {
+  if (!CFFC_Primary_MPI_Processor()) {
     I.Type = i_buffer[0];
     I.BC_Type = i_buffer[1];
     I.Motion = i_buffer[2];
@@ -1136,7 +1136,7 @@ void Broadcast_Interface(Interface2D &I) {
   // velocity, and reference point.
   buffer_size = 6;
   buffer = new double[buffer_size];
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     buffer[0] = I.Length1;
     buffer[1] = I.Length2;
     buffer[2] = I.Speed.x;
@@ -1145,7 +1145,7 @@ void Broadcast_Interface(Interface2D &I) {
     buffer[5] = I.Xref.y;
   }
   MPI::COMM_WORLD.Bcast(buffer,buffer_size,MPI::DOUBLE,0);
-  if (!CFDkit_Primary_MPI_Processor()) {
+  if (!CFFC_Primary_MPI_Processor()) {
     I.Length1 = buffer[0];
     I.Length2 = buffer[1];
     I.Speed = Vector2D(buffer[2],buffer[3]);
@@ -1158,7 +1158,7 @@ void Broadcast_Interface(Interface2D &I) {
 
   // On non-primary processors initialize the velocity function type 
   // and the velocity function.
-  if (!CFDkit_Primary_MPI_Processor()) I.Initialize_Velocity_Function(I.Motion);
+  if (!CFFC_Primary_MPI_Processor()) I.Initialize_Velocity_Function(I.Motion);
 
   // Broadcast the velocity function type and the velocity function.
   i_buffer_size = I.Spline.np;
@@ -1166,7 +1166,7 @@ void Broadcast_Interface(Interface2D &I) {
   buffer_size = 2*I.Spline.np;
   buffer = new double[buffer_size];
 
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     buffer_size = 0;
     for (int n = 0; n < I.Spline.np; n++) {
       i_buffer[n] = I.F_Type[n];
@@ -1180,7 +1180,7 @@ void Broadcast_Interface(Interface2D &I) {
   MPI::COMM_WORLD.Bcast(i_buffer,i_buffer_size,MPI::INT,0);
   MPI::COMM_WORLD.Bcast(buffer,buffer_size,MPI::DOUBLE,0);
 
-  if (!CFDkit_Primary_MPI_Processor()) {
+  if (!CFFC_Primary_MPI_Processor()) {
     buffer_size = 0;
     for (int n = 0; n < I.Spline.np; n++) {
       I.F_Type[n] = i_buffer[n];
@@ -1194,7 +1194,7 @@ void Broadcast_Interface(Interface2D &I) {
   delete []buffer; buffer = NULL;
 
   // Compute the bounding box on non-primary processors.
-  //if (!CFDkit_Primary_MPI_Processor()) I.BoundingBox();
+  //if (!CFFC_Primary_MPI_Processor()) I.BoundingBox();
   I.BoundingBox();
 
 #endif
@@ -1222,13 +1222,13 @@ void Broadcast_Interface(Interface2D &I,
   // Broadcast the interface type, bc_type, and motion type..
   i_buffer_size = 3;
   i_buffer = new int[i_buffer_size];
-  if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+  if (CFFC_MPI::This_Processor_Number == Source_CPU) {
     i_buffer[0] = I.Type;
     i_buffer[1] = I.BC_Type;
     i_buffer[2] = I.Motion;
   }
   Communicator.Bcast(i_buffer,i_buffer_size,MPI::INT,Source_Rank);
-  if (CFDkit_MPI::This_Processor_Number != Source_CPU) {
+  if (CFFC_MPI::This_Processor_Number != Source_CPU) {
     I.Type = i_buffer[0];
     I.BC_Type = i_buffer[1];
     I.Motion = i_buffer[2];
@@ -1239,7 +1239,7 @@ void Broadcast_Interface(Interface2D &I,
   // velocity, and reference point.
   buffer_size = 6;
   buffer = new double[buffer_size];
-  if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+  if (CFFC_MPI::This_Processor_Number == Source_CPU) {
     buffer[0] = I.Length1;
     buffer[1] = I.Length2;
     buffer[2] = I.Speed.x;
@@ -1248,7 +1248,7 @@ void Broadcast_Interface(Interface2D &I,
     buffer[5] = I.Xref.y;
   }
   Communicator.Bcast(buffer,buffer_size,MPI::DOUBLE,Source_Rank);
-  if (CFDkit_MPI::This_Processor_Number != Source_CPU) {
+  if (CFFC_MPI::This_Processor_Number != Source_CPU) {
     I.Length1 = buffer[0];
     I.Length2 = buffer[1];
     I.Speed = Vector2D(buffer[2],buffer[3]);
@@ -1261,7 +1261,7 @@ void Broadcast_Interface(Interface2D &I,
 
   // On non-primary processors initialize the velocity function type 
   // and the velocity function.
-  if (CFDkit_MPI::This_Processor_Number != Source_CPU)
+  if (CFFC_MPI::This_Processor_Number != Source_CPU)
     I.Initialize_Velocity_Function();
 
   // Broadcast the velocity function type and the velocity function.
@@ -1270,7 +1270,7 @@ void Broadcast_Interface(Interface2D &I,
   buffer_size = 2*I.Spline.np;
   buffer = new double[buffer_size];
 
-  if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+  if (CFFC_MPI::This_Processor_Number == Source_CPU) {
     buffer_size = 0;
     for (int n = 0; n < I.Spline.np; n++) {
       i_buffer[n] = I.F_Type[n];
@@ -1284,7 +1284,7 @@ void Broadcast_Interface(Interface2D &I,
   Communicator.Bcast(i_buffer,i_buffer_size,MPI::INT,Source_Rank);
   Communicator.Bcast(buffer,buffer_size,MPI::DOUBLE,Source_Rank);
 
-  if (CFDkit_MPI::This_Processor_Number != Source_CPU) {
+  if (CFFC_MPI::This_Processor_Number != Source_CPU) {
     buffer_size = 0;
     for (int n = 0; n < I.Spline.np; n++) {
       I.F_Type[n] = i_buffer[n];
@@ -1298,7 +1298,7 @@ void Broadcast_Interface(Interface2D &I,
   delete []buffer; buffer = NULL;
 
   // Compute the bounding box on non-primary processors.
-  //if (CFDkit_MPI::This_Processor_Number != Source_CPU) I.BoundingBox();
+  //if (CFFC_MPI::This_Processor_Number != Source_CPU) I.BoundingBox();
   I.BoundingBox();
 
 }
@@ -1314,6 +1314,7 @@ void Broadcast_Interface(Interface2D &I,
 double Intersection_Area(Interface2D &I1, Interface2D &I2) {
 
   cout << endl << " ERROR -- Intersection area calculation.";
+  return 0.0; // for compiler
 
 //   Polygon P1, P2;
 
@@ -1343,13 +1344,13 @@ void Broadcast_Interface_List(Interface2D_List &List) {
   int Ni, buffer_size, *buffer;
 
   // Broadcast the number of interfaces in the list.
-  if (CFDkit_Primary_MPI_Processor()) Ni = List.Ni;
+  if (CFFC_Primary_MPI_Processor()) Ni = List.Ni;
   else Ni = 0;
 
   MPI::COMM_WORLD.Bcast(&Ni,1,MPI::INT,0);
 
   // Allocate memory if not the primary CPU.
-  if (!CFDkit_Primary_MPI_Processor()) List.allocate(Ni);
+  if (!CFFC_Primary_MPI_Processor()) List.allocate(Ni);
 
   // Broadcast all of the interfaces in the list.
   for (int n = 0; n < Ni; n++) Broadcast_Interface(List.Interface[n]);
@@ -1357,13 +1358,13 @@ void Broadcast_Interface_List(Interface2D_List &List) {
   // Broadcast the relations linked-lists.
   for (int n = 0; n < Ni; n++) {
     // Broadcast the number of points in the linked-list.
-    if (CFDkit_Primary_MPI_Processor()) buffer_size = List.relations[n].np;
+    if (CFFC_Primary_MPI_Processor()) buffer_size = List.relations[n].np;
     else buffer_size = 0;
     MPI::COMM_WORLD.Bcast(&buffer_size,1,MPI::INT,0);
     // Allocate message buffer.
     buffer = new int[buffer_size];
     // Enter data into the message buffer on the primary processor.
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       for (int i = 0; i < buffer_size; i++) buffer[i] = List.relations[n][i];
     } else {
       for (int i = 0; i < buffer_size; i++) buffer[i] = 0;
@@ -1371,7 +1372,7 @@ void Broadcast_Interface_List(Interface2D_List &List) {
     // Broadcast message buffer.
     MPI::COMM_WORLD.Bcast(buffer,buffer_size,MPI::INT,0);
     // Copy data from the message buffer on the non-primary processors.
-    if (!CFDkit_Primary_MPI_Processor()) {
+    if (!CFFC_Primary_MPI_Processor()) {
       for (int i = 0; i < buffer_size; i++) {
 	List.relations[n].add(buffer[i]);
       }
@@ -1399,13 +1400,13 @@ void Broadcast_Interface_List(Interface2D_List &List,
   int *buffer, buffer_size;
 
   // Broadcast the number of interfaces in the list.
-  if (CFDkit_MPI::This_Processor_Number == Source_CPU) Ni = List.Ni;
+  if (CFFC_MPI::This_Processor_Number == Source_CPU) Ni = List.Ni;
   else Ni = 0;
 
   Communicator.Bcast(&Ni,1,MPI::INT,Source_Rank);
 
   // Allocate memory if not the source CPU.
-  if (CFDkit_MPI::This_Processor_Number != Source_CPU) List.allocate(Ni);
+  if (CFFC_MPI::This_Processor_Number != Source_CPU) List.allocate(Ni);
 
   // Broadcast all of the interfaces in the list.
   for (int n = 0; n < Ni; n++) Broadcast_Interface(List.Interface[n],
@@ -1415,13 +1416,13 @@ void Broadcast_Interface_List(Interface2D_List &List,
   // Broadcast the relations linked-lists.
   for (int n = 0; n < Ni; n++) {
     // Broadcast the number of points in the linked-list.
-    if (CFDkit_MPI::This_Processor_Number == Source_CPU) buffer_size = List.relations[n].np;
+    if (CFFC_MPI::This_Processor_Number == Source_CPU) buffer_size = List.relations[n].np;
     else buffer_size = 0;
     Communicator.Bcast(&buffer_size,1,MPI::INT,Source_Rank);
     // Allocate message buffer.
     buffer = new int[buffer_size];
     // Enter data into the message buffer on the source processor.
-    if (CFDkit_MPI::This_Processor_Number == Source_CPU) {
+    if (CFFC_MPI::This_Processor_Number == Source_CPU) {
       for (int i = 0; i < buffer_size; i++) buffer[i] = List.relations[n][i];
     } else {
       for (int i = 0; i < buffer_size; i++) buffer[i] = 0;
@@ -1429,7 +1430,7 @@ void Broadcast_Interface_List(Interface2D_List &List,
     // Broadcast message buffer.
     Communicator.Bcast(buffer,buffer_size,MPI::INT,Source_Rank);
     // Copy data from the message buffer on the non-source processors.
-    if (CFDkit_MPI::This_Processor_Number != Source_CPU) {
+    if (CFFC_MPI::This_Processor_Number != Source_CPU) {
       for (int i = 0; i < buffer_size; i++) {
 	List.relations[n].add(buffer[i]);
       }

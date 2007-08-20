@@ -30,7 +30,7 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
         Grid_ptr = Read_Multi_Block_Grid_Definition(Grid_ptr,
                                                     Input_Parameters);
         if (Grid_ptr == NULL) {
-	   cout << "\n " << CFDkit_Name() 
+	   cout << "\n " << CFFC_Name() 
                 << " Gaussian2D ERROR: Unable to open multi-block mesh definition file "
                 << Input_Parameters.Grid_Definition_File_Name << ".\n";
         } /* endif */
@@ -39,7 +39,7 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
         Grid_ptr = Read_Multi_Block_Grid(Grid_ptr,
                                          Input_Parameters);
         if (Grid_ptr == NULL) {
-	   cout << "\n " << CFDkit_Name() 
+	   cout << "\n " << CFFC_Name() 
                 << " Gaussian2D ERROR: Unable to open multi-block mesh data file "
                 << Input_Parameters.Grid_File_Name << ".\n";
         } /* endif */
@@ -238,7 +238,6 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
         Grid_ptr = Grid_Bump_Channel_Flow(Grid_ptr,
                                           Input_Parameters.Number_of_Blocks_Idir,
 		                          Input_Parameters.Number_of_Blocks_Jdir,
-                                          Input_Parameters.Cylinder_Radius,
 					  Input_Parameters.Smooth_Bump,
  		                          Input_Parameters.Number_of_Cells_Idir,
 		                          Input_Parameters.Number_of_Cells_Jdir,

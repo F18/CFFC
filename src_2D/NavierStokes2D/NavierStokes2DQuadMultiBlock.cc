@@ -92,7 +92,7 @@ NavierStokes2D_Quad_Block* CreateInitialSolutionBlocks(Grid2D_Quad_Block **InitM
 	 << "  Error #" << error_flag << "." << endl;
     return NULL;
   }
-  CFDkit_Broadcast_MPI(&error_flag,1);
+  CFFC_Broadcast_MPI(&error_flag,1);
   if (error_flag) return NULL;
 
   // Return the solution blocks.
@@ -783,7 +783,7 @@ int Flat_Plate_Adaptive_Mesh_Refinement(NavierStokes2D_Quad_Block *Soln_ptr,
     if (error_flag) return error_flag;
 
     // Output the refinement statistics.
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
       cout << "\n Refinement Level #" << number_of_flat_plate_mesh_refinements
 	   << " : Number of Blocks = " << QuadTree.countUsedBlocks()
 	   << ", Number of Cells = " << QuadTree.countUsedCells()

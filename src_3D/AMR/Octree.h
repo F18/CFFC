@@ -66,46 +66,46 @@ using namespace std;
 /* Define the classes. */
 
 /********************************************************
- * Class: OcTreeBlock                                 *
+ * Class: OctreeBlock                                   *
  *                                                      *
  * Member functions                                     *
- *  block       -- Return octree adaptive block.      *
- *  parent_ptr  -- Return pointer to parent of octree *
+ *  block       -- Return octree adaptive block.        *
+ *  parent_ptr  -- Return pointer to parent of octree   *
  *                 adaptive block.                      *
  *  childNW_ptr -- Return pointer to north-west child   *
- *                 of octree adaptive block.          *
+ *                 of octree adaptive block.            *
  *  childNE_ptr -- Return pointer to north-east child   *
- *                 of octree adaptive block.          *
+ *                 of octree adaptive block.            *
  *  childSW_ptr -- Return pointer to south-west child   *
- *                 of octree adaptive block.          *
+ *                 of octree adaptive block.            *
  *  childSE_ptr -- Return pointer to south-east child   *
- *                 of octree adaptive block.          *
+ *                 of octree adaptive block.            *
  *  child_ptr   -- Return pointer to specified child of *
- *                 octree adaptive block.             *
+ *                 octree adaptive block.               *
  *  search_dir  -- Returns the search direction given   *
  *                 the specified search direction mask. *
  *  sibling     -- Returns flag indicating whether or   *
  *                 not there is a sibling in the        *
  *                 specified search direction.          *
  *  neighbour_ptr -- Returns pointer to neighbouring    *
- *                 octree adaptive block found in the *
+ *                 octree adaptive block found in the   *
  *                 specified search direction.          *
- *  read        -- Reads in the octree block and then *
+ *  read        -- Reads in the octree block and then   *
  *                 recursively descends the subtree and *
  *                 reads siblings and their siblings,   *
  *                 etc...                               *
- *  write       -- Writes out octree block and then   *
+ *  write       -- Writes out octree block and then     *
  *                 recursively descends the subtree and *
  *                 writes out siblings and their        *
  *                 siblings, etc...                     *
- *  broadcast   -- Broadcasts the octree block in a   *
+ *  broadcast   -- Broadcasts the octree block in a     *
  *                 recursive manner.                    *
  *  maxRefinementLevel -- Return the maximum refinement *
  *                        level of all blocks in        *
  *                        subtree.                      *
  *                                                      *
  * Member operators                                     *
- *      B -- element in a octree hierarchical data    *
+ *      B -- element in a octree hierarchical data      *
  *           structure                                  *
  *                                                      *
  * B = B;                                               *
@@ -113,12 +113,12 @@ using namespace std;
  * cin  >> B; (input function)                          *
  *                                                      *
  ********************************************************/
-class OcTreeBlock{
+class OctreeBlock{
   private:
   public:
     AdaptiveBlock3D        block;  // Pointer to octree adaptive block.
-    OcTreeBlock      *parent_ptr;  // Pointer to parent of adaptive block.
-    OcTreeBlock     *childTSW_ptr,  // Pointers to children of
+    OctreeBlock      *parent_ptr;  // Pointer to parent of adaptive block.
+    OctreeBlock     *childTSW_ptr,  // Pointers to children of
                     *childTSE_ptr,  // adaptive block.
                     *childTNW_ptr,  //
                     *childTNE_ptr,  //
@@ -128,7 +128,7 @@ class OcTreeBlock{
                     *childBNE_ptr;  //	                           // Made public so can access them.
 
     /* Creation, copy, and assignment constructors. */
-    OcTreeBlock(void) {
+    OctreeBlock(void) {
       parent_ptr = NULL; 
       childTSW_ptr = NULL;
       childTSE_ptr = NULL;
@@ -139,7 +139,7 @@ class OcTreeBlock{
       childBNW_ptr = NULL;  //
       childBNE_ptr = NULL;  //	
     }
-    OcTreeBlock(const OcTreeBlock &Block) {
+    OctreeBlock(const OctreeBlock &Block) {
        block = Block.block; parent_ptr = Block.parent_ptr; 
        childTSW_ptr = Block.childTSW_ptr;
        childTSE_ptr = Block.childTSE_ptr;
@@ -152,15 +152,15 @@ class OcTreeBlock{
     }
 
     /* Destructor. */
-    // ~OcTreeBlock(void);
+    // ~OctreeBlock(void);
     // Use automatically generated destructor.
 
     /* Assignment operator. */
-    // OcTreeBlock operator = (const OcTreeBlock &Block);
+    // OctreeBlock operator = (const OctreeBlock &Block);
     // Use automatically generated assignment operator.
 
     /* Pointer to child. */
-    OcTreeBlock *child_ptr(const int Sector);
+    OctreeBlock *child_ptr(const int Sector);
 
     /* Search direction. */
     AdaptiveBlock3D_Dimensions search_dir(const int Search_Dir_Mask);
@@ -169,35 +169,35 @@ class OcTreeBlock{
     int sibling(const int Search_Dir_Mask);
 
     /* Pointer to neighbour. */
-    OcTreeBlock *neighbour_ptr(const int Search_Dir_Mask);
+    OctreeBlock *neighbour_ptr(const int Search_Dir_Mask);
 
     /* Read octree block (recursive). */
     void read(istream &in_file);
     void read(istream &in_file,
-              AdaptiveBlock3DResourceList &List_of_Available_Blocks);
+              AdaptiveBlock3D_ResourceList &List_of_Available_Blocks);
 
     /* Write octree block (recursive). */
     void write(ostream &out_file);
 
    /* Broadcast octree block (recursive). */
     void broadcast(void);
-    void broadcast(AdaptiveBlock3DResourceList &List_of_Available_Blocks);
+    void broadcast(AdaptiveBlock3D_ResourceList &List_of_Available_Blocks);
 
     /* Determine maximum refinement level. */
     int maxRefinementLevel(int &Max_Level);
 
     /* Input-output operators. */
     friend ostream &operator << (ostream &out_file,
-				 const OcTreeBlock &Block);
+				 const OctreeBlock &Block);
     friend istream &operator >> (istream &in_file,
-				 OcTreeBlock &Block);
+				 OctreeBlock &Block);
     
 };
 
 /*************************************************************
- * OcTreeBlock::child_ptr -- Return children of block.     *
+ * OctreeBlock::child_ptr -- Return children of block.     *
  *************************************************************/
-inline OcTreeBlock *OcTreeBlock::child_ptr(const int Sector) {
+inline OctreeBlock *OctreeBlock::child_ptr(const int Sector) {
   switch(Sector) {
     case OCTREE_SECTOR_NONE :
       return (NULL);
@@ -231,9 +231,9 @@ inline OcTreeBlock *OcTreeBlock::child_ptr(const int Sector) {
 }
 
 /*************************************************************
- * OcTreeBlock::search_dir -- Determine search direction.  *
+ * OctreeBlock::search_dir -- Determine search direction.  *
  *************************************************************/
-inline AdaptiveBlock3D_Dimensions OcTreeBlock::search_dir(const int Search_Dir_Mask) {
+inline AdaptiveBlock3D_Dimensions OctreeBlock::search_dir(const int Search_Dir_Mask) {
   int i, j, k;
   switch(Search_Dir_Mask) {
     case OCTREE_DIRECTION_MASK_EAST :
@@ -323,9 +323,9 @@ inline AdaptiveBlock3D_Dimensions OcTreeBlock::search_dir(const int Search_Dir_M
 }
 
 /*************************************************************
- * OcTreeBlock::sibling -- Sibling in direction?           *
+ * OctreeBlock::sibling -- Sibling in direction?           *
  *************************************************************/
-inline int OcTreeBlock::sibling(const int Search_Dir_Mask) {
+inline int OctreeBlock::sibling(const int Search_Dir_Mask) {
   int i_sibling, j_sibling, k_sibling;
   AdaptiveBlock3D_Dimensions search_direction;
   if (block.info.sector != ADAPTIVEBLOCK3D_SECTOR_NONE) {
@@ -355,10 +355,10 @@ inline int OcTreeBlock::sibling(const int Search_Dir_Mask) {
 
 
 /*************************************************************
- * OcTreeBlock::neighbour_ptr -- Return neighbouring block.*
+ * OctreeBlock::neighbour_ptr -- Return neighbouring block.*
  *************************************************************/
-inline OcTreeBlock *OcTreeBlock::neighbour_ptr(const int Search_Dir_Mask) {
-  OcTreeBlock *block_ptr; AdaptiveBlock3D_Dimensions search_direction;
+inline OctreeBlock *OctreeBlock::neighbour_ptr(const int Search_Dir_Mask) {
+  OctreeBlock *block_ptr; AdaptiveBlock3D_Dimensions search_direction;
   if (parent_ptr == NULL || block.info.sector == OCTREE_SECTOR_NONE) {
      block_ptr = NULL; // Block has no parent.  Block is a root.  Return null pointer.
  
@@ -764,44 +764,44 @@ inline OcTreeBlock *OcTreeBlock::neighbour_ptr(const int Search_Dir_Mask) {
 }
 
 /*************************************************************
- * OcTreeBlock::read -- Read octree block (recursive).   *
+ * OctreeBlock::read -- Read octree block (recursive).       *
  *************************************************************/
-inline void OcTreeBlock::read(istream &in_file) {
+inline void OctreeBlock::read(istream &in_file) {
   int number_of_children; 
   in_file >> block;
   in_file.setf(ios::skipws);  in_file >> number_of_children;  
   in_file.unsetf(ios::skipws);
   if (!block.used && number_of_children > 0) {
      if (childBSW_ptr != NULL) { delete childBSW_ptr; childBSW_ptr = NULL; }
-     childBSW_ptr = new OcTreeBlock;
+     childBSW_ptr = new OctreeBlock;
      childBSW_ptr->parent_ptr = this;
      childBSW_ptr->read(in_file);
      if (childBSE_ptr != NULL) { delete childBSE_ptr; childBSE_ptr = NULL; }
-     childBSE_ptr = new OcTreeBlock;
+     childBSE_ptr = new OctreeBlock;
      childBSE_ptr->parent_ptr = this;
      childBSE_ptr->read(in_file);
      if (childBNW_ptr != NULL) { delete childBNW_ptr; childBNW_ptr = NULL; }
-     childBNW_ptr = new OcTreeBlock;
+     childBNW_ptr = new OctreeBlock;
      childBNW_ptr->parent_ptr = this;
      childBNW_ptr->read(in_file);
      if (childBNE_ptr != NULL) { delete childBNE_ptr; childBNE_ptr = NULL; }
-     childBNE_ptr = new OcTreeBlock;
+     childBNE_ptr = new OctreeBlock;
      childBNE_ptr->parent_ptr = this;
      childBNE_ptr->read(in_file);
      if (childTSW_ptr != NULL) { delete childTSW_ptr; childTSW_ptr = NULL; }
-     childTSW_ptr = new OcTreeBlock;
+     childTSW_ptr = new OctreeBlock;
      childTSW_ptr->parent_ptr = this;
      childTSW_ptr->read(in_file);
      if (childTSE_ptr != NULL) { delete childTSE_ptr; childTSE_ptr = NULL; }
-     childTSE_ptr = new OcTreeBlock;
+     childTSE_ptr = new OctreeBlock;
      childTSE_ptr->parent_ptr = this;
      childTSE_ptr->read(in_file);
      if (childTNW_ptr != NULL) { delete childTNW_ptr; childTNW_ptr = NULL; }
-     childTNW_ptr = new OcTreeBlock;
+     childTNW_ptr = new OctreeBlock;
      childTNW_ptr->parent_ptr = this;
      childTNW_ptr->read(in_file);
      if (childTNE_ptr != NULL) { delete childTNE_ptr; childTNE_ptr = NULL; }
-     childTNE_ptr = new OcTreeBlock;
+     childTNE_ptr = new OctreeBlock;
      childTNE_ptr->parent_ptr = this;
      childTNE_ptr->read(in_file);
   } else {
@@ -816,8 +816,8 @@ inline void OcTreeBlock::read(istream &in_file) {
   } /* endif */
 }
 
-inline void OcTreeBlock::read(istream &in_file,
-                                AdaptiveBlock3DResourceList &List_of_Available_Blocks) {
+inline void OctreeBlock::read(istream &in_file,
+                                AdaptiveBlock3D_ResourceList &List_of_Available_Blocks) {
   int number_of_children; 
   in_file >> block;
   if (block.used) {
@@ -827,42 +827,42 @@ inline void OcTreeBlock::read(istream &in_file,
         List_of_Available_Blocks.update_next();
      } else {
         cout << "\n " << CFFC_Version() 
-             << " Octree Read Error: Insufficient number of ocrilateral solution blocks.\n";
+             << " Octree Read Error: Insufficient number of hexahedral solution blocks.\n";
      } /* endif */
   } /* endif */
   in_file.setf(ios::skipws);  in_file >> number_of_children;  
   in_file.unsetf(ios::skipws);
   if (!block.used && number_of_children > 0) {
      if (childBSW_ptr != NULL) { delete childBSW_ptr; childBSW_ptr = NULL; }
-     childBSW_ptr = new OcTreeBlock;
+     childBSW_ptr = new OctreeBlock;
      childBSW_ptr->parent_ptr = this;
      childBSW_ptr->read(in_file, List_of_Available_Blocks);
      if (childBSE_ptr != NULL) { delete childBSE_ptr; childBSE_ptr = NULL; }
-     childBSE_ptr = new OcTreeBlock;
+     childBSE_ptr = new OctreeBlock;
      childBSE_ptr->parent_ptr = this;
      childBSE_ptr->read(in_file, List_of_Available_Blocks);
      if (childBNW_ptr != NULL) { delete childBNW_ptr; childBNW_ptr = NULL; }
-     childBNW_ptr = new OcTreeBlock;
+     childBNW_ptr = new OctreeBlock;
      childBNW_ptr->parent_ptr = this;
      childBNW_ptr->read(in_file, List_of_Available_Blocks);
      if (childBNE_ptr != NULL) { delete childBNE_ptr; childBNE_ptr = NULL; }
-     childBNE_ptr = new OcTreeBlock;
+     childBNE_ptr = new OctreeBlock;
      childBNE_ptr->parent_ptr = this;
      childBNE_ptr->read(in_file, List_of_Available_Blocks);
      if (childTSW_ptr != NULL) { delete childTSW_ptr; childTSW_ptr = NULL; }
-     childTSW_ptr = new OcTreeBlock;
+     childTSW_ptr = new OctreeBlock;
      childTSW_ptr->parent_ptr = this;
      childTSW_ptr->read(in_file, List_of_Available_Blocks);
      if (childTSE_ptr != NULL) { delete childTSE_ptr; childTSE_ptr = NULL; }
-     childTSE_ptr = new OcTreeBlock;
+     childTSE_ptr = new OctreeBlock;
      childTSE_ptr->parent_ptr = this;
      childTSE_ptr->read(in_file, List_of_Available_Blocks);
      if (childTNW_ptr != NULL) { delete childTNW_ptr; childTNW_ptr = NULL; }
-     childTNW_ptr = new OcTreeBlock;
+     childTNW_ptr = new OctreeBlock;
      childTNW_ptr->parent_ptr = this;
      childTNW_ptr->read(in_file, List_of_Available_Blocks);
      if (childTNE_ptr != NULL) { delete childTNE_ptr; childTNE_ptr = NULL; }
-     childTNE_ptr = new OcTreeBlock;
+     childTNE_ptr = new OctreeBlock;
      childTNE_ptr->parent_ptr = this;
      childTNE_ptr->read(in_file, List_of_Available_Blocks);
    } else {
@@ -878,9 +878,9 @@ inline void OcTreeBlock::read(istream &in_file,
 }
 
 /*************************************************************
- * OcTreeBlock::write -- Write octree block (recursive). *
+ * OctreeBlock::write -- Write octree block (recursive). *
  *************************************************************/
-inline void OcTreeBlock::write(ostream &out_file) {
+inline void OctreeBlock::write(ostream &out_file) {
   int number_of_children; 
   out_file << block << "\n";
   if (!block.used && childBSW_ptr != NULL) {
@@ -900,9 +900,9 @@ inline void OcTreeBlock::write(ostream &out_file) {
 }
 
 /*************************************************************
- * OcTreeBlock::broadcast -- Broadcast octree block.     *
+ * OctreeBlock::broadcast -- Broadcast octree block.     *
  *************************************************************/
-inline void OcTreeBlock::broadcast(void) {
+inline void OctreeBlock::broadcast(void) {
 #ifdef _MPI_VERSION
   int number_of_children; 
    AdaptiveBlock3D::Broadcast_Adaptive_Block(block);
@@ -916,28 +916,28 @@ inline void OcTreeBlock::broadcast(void) {
   MPI::COMM_WORLD.Bcast(&number_of_children, 1, MPI::INT, 0);
   if (!block.used && number_of_children > 0) {
      if (!CFFC_Primary_MPI_Processor() && childBSW_ptr != NULL) { delete childBSW_ptr; childBSW_ptr = NULL; }
-     if (!CFFC_Primary_MPI_Processor()) { childBSW_ptr = new OcTreeBlock; childBSW_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor()) { childBSW_ptr = new OctreeBlock; childBSW_ptr->parent_ptr = this; }
      childBSW_ptr->broadcast();
      if (!CFFC_Primary_MPI_Processor() && childBSE_ptr != NULL) { delete childBSE_ptr; childBSE_ptr = NULL; }
-     if (!CFFC_Primary_MPI_Processor()) { childBSE_ptr = new OcTreeBlock; childBSE_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor()) { childBSE_ptr = new OctreeBlock; childBSE_ptr->parent_ptr = this; }
      childBSE_ptr->broadcast();
      if (!CFFC_Primary_MPI_Processor() && childBNW_ptr != NULL) { delete childBNW_ptr; childBNW_ptr = NULL; }
-     if (!CFFC_Primary_MPI_Processor()) { childBNW_ptr = new OcTreeBlock; childBNW_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor()) { childBNW_ptr = new OctreeBlock; childBNW_ptr->parent_ptr = this; }
      childBNW_ptr->broadcast();
      if (!CFFC_Primary_MPI_Processor() && childBNE_ptr != NULL) { delete childBNE_ptr; childBNE_ptr = NULL; }
-     if (!CFFC_Primary_MPI_Processor()) { childBNE_ptr = new OcTreeBlock; childBNE_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor()) { childBNE_ptr = new OctreeBlock; childBNE_ptr->parent_ptr = this; }
      childBNE_ptr->broadcast();
      if (!CFFC_Primary_MPI_Processor() && childTSW_ptr != NULL) { delete childTSW_ptr; childTSW_ptr = NULL; }
-     if (!CFFC_Primary_MPI_Processor()) { childTSW_ptr = new OcTreeBlock; childTSW_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor()) { childTSW_ptr = new OctreeBlock; childTSW_ptr->parent_ptr = this; }
      childTSW_ptr->broadcast();
      if (!CFFC_Primary_MPI_Processor() && childTSE_ptr != NULL) { delete childTSE_ptr; childTSE_ptr = NULL; }
-     if (!CFFC_Primary_MPI_Processor()) { childTSE_ptr = new OcTreeBlock; childTSE_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor()) { childTSE_ptr = new OctreeBlock; childTSE_ptr->parent_ptr = this; }
      childTSE_ptr->broadcast();
      if (!CFFC_Primary_MPI_Processor() && childTNW_ptr != NULL) { delete childTNW_ptr; childTNW_ptr = NULL; }
-     if (!CFFC_Primary_MPI_Processor()) { childTNW_ptr = new OcTreeBlock; childTNW_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor()) { childTNW_ptr = new OctreeBlock; childTNW_ptr->parent_ptr = this; }
      childTNW_ptr->broadcast();
      if (!CFFC_Primary_MPI_Processor() && childTNE_ptr != NULL) { delete childTNE_ptr; childTNE_ptr = NULL; }
-     if (!CFFC_Primary_MPI_Processor()) { childTNE_ptr = new OcTreeBlock; childTNE_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor()) { childTNE_ptr = new OctreeBlock; childTNE_ptr->parent_ptr = this; }
      childTNE_ptr->broadcast();
   } else {
      if (!CFFC_Primary_MPI_Processor() && childBSW_ptr != NULL) { delete childBSW_ptr; childBSW_ptr = NULL; }
@@ -952,7 +952,7 @@ inline void OcTreeBlock::broadcast(void) {
 #endif
 }
 
-inline void OcTreeBlock::broadcast(AdaptiveBlock3DResourceList &List_of_Available_Blocks) {
+inline void OctreeBlock::broadcast(AdaptiveBlock3D_ResourceList &List_of_Available_Blocks) {
 #ifdef _MPI_VERSION
   int number_of_children; 
    AdaptiveBlock3D::Broadcast_Adaptive_Block(block);
@@ -978,28 +978,28 @@ inline void OcTreeBlock::broadcast(AdaptiveBlock3DResourceList &List_of_Availabl
   MPI::COMM_WORLD.Bcast(&number_of_children, 1, MPI::INT, 0);
   if (!block.used && number_of_children > 0) {
      if (!CFFC_Primary_MPI_Processor() && childBSW_ptr != NULL) { delete childBSW_ptr; childBSW_ptr = NULL; }
-     if (!CFFC_Primary_MPI_Processor()) { childBSW_ptr = new OcTreeBlock; childBSW_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor()) { childBSW_ptr = new OctreeBlock; childBSW_ptr->parent_ptr = this; }
      childBSW_ptr->broadcast(List_of_Available_Blocks);
      if (!CFFC_Primary_MPI_Processor() && childBSE_ptr != NULL) { delete childBSE_ptr; childBSE_ptr = NULL; }
-     if (!CFFC_Primary_MPI_Processor()) { childBSE_ptr = new OcTreeBlock; childBSE_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor()) { childBSE_ptr = new OctreeBlock; childBSE_ptr->parent_ptr = this; }
      childBSE_ptr->broadcast(List_of_Available_Blocks);
      if (!CFFC_Primary_MPI_Processor() && childBNW_ptr != NULL) { delete childBNW_ptr; childBNW_ptr = NULL; }
-     if (!CFFC_Primary_MPI_Processor()) { childBNW_ptr = new OcTreeBlock; childBNW_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor()) { childBNW_ptr = new OctreeBlock; childBNW_ptr->parent_ptr = this; }
      childBNW_ptr->broadcast(List_of_Available_Blocks);
      if (!CFFC_Primary_MPI_Processor() && childBNE_ptr != NULL) { delete childBNE_ptr; childBNE_ptr = NULL; }
-     if (!CFFC_Primary_MPI_Processor()) { childBNE_ptr = new OcTreeBlock; childBNE_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor()) { childBNE_ptr = new OctreeBlock; childBNE_ptr->parent_ptr = this; }
      childBNE_ptr->broadcast(List_of_Available_Blocks);
      if (!CFFC_Primary_MPI_Processor() && childTSW_ptr != NULL) { delete childTSW_ptr; childTSW_ptr = NULL; }
-     if (!CFFC_Primary_MPI_Processor()) { childTSW_ptr = new OcTreeBlock; childTSW_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor()) { childTSW_ptr = new OctreeBlock; childTSW_ptr->parent_ptr = this; }
      childTSW_ptr->broadcast(List_of_Available_Blocks);
      if (!CFFC_Primary_MPI_Processor() && childTSE_ptr != NULL) { delete childTSE_ptr; childTSE_ptr = NULL; }
-     if (!CFFC_Primary_MPI_Processor()) { childTSE_ptr = new OcTreeBlock; childTSE_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor()) { childTSE_ptr = new OctreeBlock; childTSE_ptr->parent_ptr = this; }
      childTSE_ptr->broadcast(List_of_Available_Blocks);
      if (!CFFC_Primary_MPI_Processor() && childTNW_ptr != NULL) { delete childTNW_ptr; childTNW_ptr = NULL; }
-     if (!CFFC_Primary_MPI_Processor()) { childTNW_ptr = new OcTreeBlock; childTNW_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor()) { childTNW_ptr = new OctreeBlock; childTNW_ptr->parent_ptr = this; }
      childTNW_ptr->broadcast(List_of_Available_Blocks);
      if (!CFFC_Primary_MPI_Processor() && childTNE_ptr != NULL) { delete childTNE_ptr; childTNE_ptr = NULL; }
-     if (!CFFC_Primary_MPI_Processor()) { childTNE_ptr = new OcTreeBlock; childTNE_ptr->parent_ptr = this; }
+     if (!CFFC_Primary_MPI_Processor()) { childTNE_ptr = new OctreeBlock; childTNE_ptr->parent_ptr = this; }
      childTNE_ptr->broadcast(List_of_Available_Blocks);
   } else {
      if (!CFFC_Primary_MPI_Processor() && childTSW_ptr != NULL) { delete childTSW_ptr; childTSW_ptr = NULL; }
@@ -1013,11 +1013,12 @@ inline void OcTreeBlock::broadcast(AdaptiveBlock3DResourceList &List_of_Availabl
   } /* endif */
 #endif
 }
+
 /*************************************************************
- * OcTreeBlock::maxRefinementLevel -- Maximum refinement   *
- *                                      level (recursive).   *
+ * OctreeBlock::maxRefinementLevel -- Maximum refinement     *
+ *                                    level (recursive).     *
  *************************************************************/
-inline int OcTreeBlock::maxRefinementLevel(int &Max_Level) {
+inline int OctreeBlock::maxRefinementLevel(int &Max_Level) {
   if (block.used) {
      Max_Level = max(Max_Level, block.info.level);
   } else if (!block.used && childBSW_ptr != NULL) {
@@ -1034,26 +1035,26 @@ inline int OcTreeBlock::maxRefinementLevel(int &Max_Level) {
 }
 
 /*************************************************************
- * OcTreeBlock -- Input-output operators.                  *
+ * OctreeBlock -- Input-output operators.                    *
  *************************************************************/
 inline ostream &operator << (ostream &out_file,
-			     const OcTreeBlock &Block) {
+			     const OctreeBlock &Block) {
     out_file << Block.block;
   return (out_file);
 }
 
 inline istream &operator >> (istream &in_file,
-			     OcTreeBlock &Block) {
+			     OctreeBlock &Block) {
   in_file >> Block.block;
   return (in_file);
 }
 
 
 /********************************************************
- * Class: OcTreeBlock_DataStructure                   *
+ * Class: Octree_DataStructure                          *
  *                                                      *
  * Member functions                                     *
- *   Roots -- Return roots of octree data structure.  *
+ *   Roots -- Return roots of octree data structure.    *
  *   NRi   -- Return number of root blocks in           *
  *            the i-direction (zeta-direction).         *
  *   NRj   -- Return number of root blocks in           *
@@ -1061,7 +1062,7 @@ inline istream &operator >> (istream &in_file,
  *   NRk   -- Return number of root blocks in           *
  *            the k-direction (???-direction).          *
  *   Blocks -- Return global list of pointers to the    *
- *             blocks in use in the octree data       *
+ *             blocks in use in the octree data         *
  *             structure.                               *
  *   RefineFlags -- Return global list of mesh          *
  *                  refinement flags for blocks in data *
@@ -1076,58 +1077,58 @@ inline istream &operator >> (istream &in_file,
  *   MinimumRefinementLevel -- Return minimum           *
  *            allowable level of refinement for         *
  *            adaptive blocks.                          *
- *   allocate -- Allocate memory for octree data      *
+ *   allocate -- Allocate memory for octree data        *
  *               structure.                             *
- *   deallocate -- Deallocate memory for octree data  *
+ *   deallocate -- Deallocate memory for octree data    *
  *                 structure.                           *
  *   allocateRoots -- Allocate memory for roots of      *
- *                    octree data structure.          *
+ *                    octree data structure.            *
  *   deallocateRoots -- Deallocate memory for roots of  *
- *                      octree data structure.        *
+ *                      octree data structure.          *
  *   allocateBlocks -- Allocate memory for global block *
- *                     list of octree data structure. *
+ *                     list of octree data structure.   *
  *   deallocateBlocks -- Deallocate memory for global   *
- *                       block list of octree data    *
+ *                       block list of octree data      *
  *                       structure.                     *
  *   assign_block_pointers, assign_block_ptr            *
  *                    -- Assign block pointers to       *
  *                       all used blocks.               *
- *   renumber -- Renumbers octree adaptive blocks,    *
+ *   renumber -- Renumbers octree adaptive blocks,      *
  *               assigning global block numbers.        *
  *   countUsedBlocks -- Returns the number of used      *
- *                      blocks in the octree data     *
+ *                      blocks in the octree data       *
  *                      structure.                      *
  *   countUsedCells -- Returns the number of            *
  *                     computational cells in the       *
- *                     octree data structure.         *
+ *                     octree data structure.           *
  *   efficiencyRefinement -- Returns the ratio of the   *
  *                           current number of cells    *
  *                           used to the number of cells*
  *                           that would have been used  *
  *                           with a uniform mesh.       *
- *   getRoot -- Return indices of root octree block.  *
- *   getNeighbour -- Return neighbour of octree block *
+ *   getRoot -- Return indices of root octree block.    *
+ *   getNeighbour -- Return neighbour of octree block   *
  *                   in specified search direction of   *
  *                   interest.                          *
  *   findRootNeighbours -- Find neighbouring blocks of  *
- *                         all octree root blocks.    *
+ *                         all octree root blocks.      *
  *   findNeighbours -- Find neighbouring blocks of      *
- *                     octree block.                  *
- *   refineBlock   -- Refines (divides) a octree      *
+ *                     octree block.                    *
+ *   refineBlock   -- Refines (divides) a octree        *
  *                    block into four offspring.        *
- *   coarsenBlocks -- Coarsens (contracts) four ocree *
+ *   coarsenBlocks -- Coarsens (contracts) four ocree   *
  *                    blocks into a single parent.      *
  *   nochangeAll-- Sets the mesh refinement flags to    *
  *                 force no refinement or coarsening of *
- *                 octree blocks (default).           *
+ *                 octree blocks (default).             *
  *   refineAll  -- Sets the mesh refinement flags to    *
- *                 force refinement of all octree     *
+ *                 force refinement of all octree       *
  *                 blocks.                              *
  *   coarsenAll -- Sets the mesh refinement flags to    *
- *                 force coasening of all octree      *
+ *                 force coasening of all octree        *
  *                 blocks.                              *
  *   setRefineAll -- Sets the mesh refinement flags of  *
- *                   all octree blocks to specified   *
+ *                   all octree blocks to specified     *
  *                   value.                             *
  *   highestRefinementLevel -- Return highest level     *
  *                of block refinement.                  *
@@ -1137,23 +1138,23 @@ inline istream &operator >> (istream &in_file,
  *                be coarsened.                         * 
  *                                                      *
  * Member operators                                     *
- *      QT -- octree hierarchical data structure      *
+ *      QT -- octree hierarchical data structure        *
  *                                                      *
  * QT = QT;                                             *
  * cout << QT; (output function)                        *
  * cin  >> QT; (input function)                         *
  *                                                      *
  ********************************************************/
-class OcTreeBlock_DataStructure{
+class Octree_DataStructure{
   private:
   public:
     int                    NRi; // Number of roots in i-direction.
     int                    NRj; // Number of roots in j-direction.
     int                    NRk; // Number of roots in k-direction.
-    OcTreeBlock      ***Roots; // Roots of octree data structure.
+    OctreeBlock       ***Roots; // Roots of octree data structure.
     int                   Ncpu; // Number of CPUs available.
     int                   Nblk; // Number of local blocks per CPU.
-    OcTreeBlock    ***Blocks; // Global list of pointers to blocks
+    OctreeBlock      ***Blocks; // Global list of pointers to blocks
                                 // in use in octree data structure.
     int          **RefineFlags; // Global list of refinement flags.
     double     RefineThreshold, // Thresholds for refinment and coarsening.
@@ -1164,14 +1165,14 @@ class OcTreeBlock_DataStructure{
 	                        // Made public so can access them.
 
     /* Creation, copy, and assignment constructors. */
-    OcTreeBlock_DataStructure(void) {
+    Octree_DataStructure(void) {
        NRi = 0; NRj = 0;NRk = 0; Roots = NULL;
        Ncpu = 0; Nblk = 0; Blocks = NULL; RefineFlags = NULL;
        MaximumRefinementLevel = 99; MinimumRefinementLevel = 0;
        RefineThreshold = 0.50; CoarsenThreshold = 0.10;
     }
 
-    OcTreeBlock_DataStructure(const OcTreeBlock_DataStructure &QT) {
+    Octree_DataStructure(const Octree_DataStructure &QT) {
        NRi = QT.NRi; NRj = QT.NRj; NRk = QT.NRk; Roots = QT.Roots;
        Ncpu = QT.Ncpu; Nblk = QT.Nblk; Blocks = QT.Blocks;
        RefineFlags = QT.RefineFlags;
@@ -1182,11 +1183,11 @@ class OcTreeBlock_DataStructure{
     }
 
     /* Destructor. */
-    // ~OcTreeBlock_DataStructure(void);
+    // ~Octree_DataStructure(void);
     // Use automatically generated destructor.
 
     /* Assignment operator. */
-    // OcTreeBlock_DataStructure operator = (const OcTreeBlock_DataStructure &QT);
+    // Octree_DataStructure operator = (const Octree_DataStructure &QT);
     // Use automatically generated assignment operator.
 
     /* Allocate memory for octree data structure. */
@@ -1209,7 +1210,7 @@ class OcTreeBlock_DataStructure{
     void deallocateBlocks(void);
 
     /* Assign block pointers to all used blocks. */
-    void assign_block_ptr(OcTreeBlock *Block_Ptr);
+    void assign_block_ptr(OctreeBlock *Block_Ptr);
     void assign_block_pointers(void);
 
     /* Renumber all octree blocks. */
@@ -1222,10 +1223,10 @@ class OcTreeBlock_DataStructure{
     double efficiencyRefinement(void);
 
     /* Octree block root indices. */
-    AdaptiveBlock3D_Dimensions getRoot(OcTreeBlock *Block_Ptr);
+    AdaptiveBlock3D_Dimensions getRoot(OctreeBlock *Block_Ptr);
 
     /* Find neighbour of octree block in specified search direction. */
-    OcTreeBlock *getNeighbour(OcTreeBlock *Block_Ptr,
+    OctreeBlock *getNeighbour(OctreeBlock *Block_Ptr,
                                 const int Search_Dir_Mask);
 
     /* Find neighbouring blocks of all octree root blocks. */
@@ -1254,62 +1255,68 @@ class OcTreeBlock_DataStructure{
     int numberToBeRefined(void);
     int numberToBeCoarsened(void);
 
-
-
-    static void Create_OcTree_Data_Structure(OcTreeBlock_DataStructure &OcTree,
+    static void Create_Octree_Data_Structure(Octree_DataStructure &Octree,
                                              const int Number_of_Roots_Idir,
                                              const int Number_of_Roots_Jdir,
                                              const int Number_of_Roots_Kdir,
                                              const int Number_of_Processors,
                                              const int Number_of_Blocks_per_Processor);
-    static void Broadcast_OcTree_Data_Structure(OcTreeBlock_DataStructure &OcTree,
-                                                AdaptiveBlock3DResourceList   &List_of_Available_Blocks);
+
+    static void Broadcast_Octree_Data_Structure(Octree_DataStructure &Octree,
+                                                AdaptiveBlock3D_ResourceList  &List_of_Available_Blocks);
     
-    static void Renumber_Solution_Blocks(OcTreeBlock_DataStructure &OcTree);
-    static void Renumber_Solution_Blocks(OcTreeBlock_DataStructure &OcTree,
+    static void Renumber_Solution_Blocks(Octree_DataStructure &Octree);
+
+    static void Renumber_Solution_Blocks(Octree_DataStructure &Octree,
                                          AdaptiveBlock3D_List &LocalSolnBlockList);
-    static void Find_Neighbours_of_Root_Solution_Blocks(OcTreeBlock_DataStructure &OcTree);
-    static void Find_Neighbours_of_Root_Solution_Blocks(OcTreeBlock_DataStructure &OcTree,
+
+    static void Find_Neighbours_of_Root_Solution_Blocks(Octree_DataStructure &Octree);
+
+    static void Find_Neighbours_of_Root_Solution_Blocks(Octree_DataStructure &Octree,
                                                         AdaptiveBlock3D_List &LocalSolnBlockList);
-    static void Modify_Neighbours_of_Root_Solution_Blocks(OcTreeBlock_DataStructure &OcTree,
+
+    static void Modify_Neighbours_of_Root_Solution_Blocks(Octree_DataStructure &Octree,
                                                           const int Grid_Type);
-    static void Modify_Neighbours_of_Root_Solution_Blocks(OcTreeBlock_DataStructure &OcTree,
+
+    static void Modify_Neighbours_of_Root_Solution_Blocks(Octree_DataStructure &Octree,
                                                           AdaptiveBlock3D_List &LocalSolnBlockList,
                                                           const int Grid_Type);
-    static void Find_Neighbours(OcTreeBlock_DataStructure &OcTree);
-    static void Find_Neighbours(OcTreeBlock_DataStructure &OcTree,
+
+    static void Find_Neighbours(Octree_DataStructure &Octree);
+
+    static void Find_Neighbours(Octree_DataStructure &Octree,
                                 AdaptiveBlock3D_List &LocalSolnBlockList);
-    static void Get_Refinement_List(OcTreeBlock_DataStructure &OcTree,
-                                    AdaptiveBlock3D_List &LocalSolnBlockList);
-    
+
+    static void Get_Refinement_List(Octree_DataStructure &Octree,
+                                    AdaptiveBlock3D_List &LocalSolnBlockList);    
 
     /* Input-output operators. */
     friend ostream &operator << (ostream &out_file,
-				 const OcTreeBlock_DataStructure &QT);
+				 const Octree_DataStructure &QT);
     friend istream &operator >> (istream &in_file,
-				 OcTreeBlock_DataStructure &QT);
+				 Octree_DataStructure &QT);
     
 };
 
 /*********************************************************************
- * OcTreeBlock_DataStructure::allocate -- Allocate memory.         *
+ * Octree_DataStructure::allocate -- Allocate memory.                *
  *********************************************************************/
-inline void OcTreeBlock_DataStructure::allocate(const int ni, 
-                                                  const int nj, 
-                                                  const int nk, 
-                                                  const int ncpu, 
-                                                  const int nblk) {
+inline void Octree_DataStructure::allocate(const int ni, 
+                                           const int nj, 
+                                           const int nk, 
+                                           const int ncpu, 
+                                           const int nblk) {
    int i, j,k ; 
    assert( ni > 0 && nj > 0 && nk > 0 && ncpu > 0 && nblk > 0 );
    NRi = ni; NRj = nj; NRk = nk; Ncpu = ncpu; Nblk = nblk;
-   Roots = new OcTreeBlock**[NRi];
+   Roots = new OctreeBlock**[NRi];
    for ( i = 0; i <= NRi-1 ; ++i ) {
-     Roots[i] = new OcTreeBlock*[NRj];
-     for ( j = 0; j <= NRj-1 ; ++j ) Roots[i][j] = new OcTreeBlock[NRk];
+     Roots[i] = new OctreeBlock*[NRj];
+     for ( j = 0; j <= NRj-1 ; ++j ) Roots[i][j] = new OctreeBlock[NRk];
    } 
-  Blocks = new OcTreeBlock**[Ncpu];
+  Blocks = new OctreeBlock**[Ncpu];
    for ( i = 0; i <= Ncpu-1 ; ++i ) {
-      Blocks[i] = new OcTreeBlock*[Nblk];
+      Blocks[i] = new OctreeBlock*[Nblk];
       for ( j = 0; j <= Nblk-1; ++j) Blocks[i][j] = NULL; 
    } /* endfor */
    RefineFlags = new int*[Ncpu];
@@ -1317,24 +1324,24 @@ inline void OcTreeBlock_DataStructure::allocate(const int ni,
    nochangeAll();
 }
 
-inline void OcTreeBlock_DataStructure::allocateRoots(const int ni, 
-						     const int nk,
-                                                       const int nj) {
+inline void Octree_DataStructure::allocateRoots(const int ni, 
+						const int nk,
+                                                const int nj) {
    int i,j; assert( ni > 0 && nj > 0 && nk > 0 );
-   NRi = ni; NRj = nj; NRk = nk; Roots = new OcTreeBlock**[NRi];
+   NRi = ni; NRj = nj; NRk = nk; Roots = new OctreeBlock**[NRi];
    for ( i = 0; i <= NRi-1 ; ++i ) {
-     Roots[i] = new OcTreeBlock*[NRj];
+     Roots[i] = new OctreeBlock*[NRj];
      for ( j = 0; j <= NRj-1 ; ++j ) 
-       Roots[i][j] = new OcTreeBlock[NRk];
+       Roots[i][j] = new OctreeBlock[NRk];
    }
 }
 
-inline void OcTreeBlock_DataStructure::allocateBlocks(const int ncpu, 
-                                                        const int nblk) {
+inline void Octree_DataStructure::allocateBlocks(const int ncpu, 
+                                                 const int nblk) {
    int i, j; assert( ncpu > 0 && nblk > 0 );
-   Ncpu = ncpu; Nblk = nblk; Blocks = new OcTreeBlock**[Ncpu];
+   Ncpu = ncpu; Nblk = nblk; Blocks = new OctreeBlock**[Ncpu];
    for ( i = 0; i <= Ncpu-1 ; ++i ) {
-      Blocks[i] = new OcTreeBlock*[Nblk];
+      Blocks[i] = new OctreeBlock*[Nblk];
       for ( j = 0; j <= Nblk-1; ++j) Blocks[i][j] = NULL; 
    } /* endfor */
    RefineFlags = new int*[Ncpu];
@@ -1343,9 +1350,9 @@ inline void OcTreeBlock_DataStructure::allocateBlocks(const int ncpu,
 }
 
 /*********************************************************************
- * OcTreeBlock_DataStructure::deallocate -- Deallocate memory.     *
+ * Octree_DataStructure::deallocate -- Deallocate memory.            *
  *********************************************************************/
-inline void OcTreeBlock_DataStructure::deallocate(void) {
+inline void Octree_DataStructure::deallocate(void) {
    int i, j;
    for ( i = 0; i <= NRi-1 ; ++i ) {
      for ( j = 0; j <= NRj-1 ; ++j ) delete []Roots[i][j]; 
@@ -1365,7 +1372,7 @@ inline void OcTreeBlock_DataStructure::deallocate(void) {
    Ncpu = 0; Nblk = 0;
 }
 
-inline void OcTreeBlock_DataStructure::deallocateRoots(void) {
+inline void Octree_DataStructure::deallocateRoots(void) {
    int i,j;
   for ( i = 0; i <= NRi-1 ; ++i ) {
      for ( j = 0; j <= NRj-1 ; ++j ) delete []Roots[i][j]; 
@@ -1376,7 +1383,7 @@ inline void OcTreeBlock_DataStructure::deallocateRoots(void) {
   NRi = 0; NRj = 0; NRk = 0;
 }
 
-inline void OcTreeBlock_DataStructure::deallocateBlocks(void) {
+inline void Octree_DataStructure::deallocateBlocks(void) {
    int i;
    for ( i = 0; i <= Ncpu-1 ; ++i ) {
       delete []Blocks[i]; Blocks[i] = NULL;
@@ -1390,9 +1397,9 @@ inline void OcTreeBlock_DataStructure::deallocateBlocks(void) {
 }
 
 /****************************************************************************
- * OcTreeBlock_DataStructure::assign_block_ptr -- Assign block ptr.       *
+ * Octree_DataStructure::assign_block_ptr -- Assign block ptr.              *
  ****************************************************************************/
-inline void OcTreeBlock_DataStructure::assign_block_ptr(OcTreeBlock *Block_Ptr) {
+inline void Octree_DataStructure::assign_block_ptr(OctreeBlock *Block_Ptr) {
    int icpu, iblk;
    if (Block_Ptr != NULL) {
       if (Block_Ptr->block.used) {
@@ -1420,7 +1427,7 @@ inline void OcTreeBlock_DataStructure::assign_block_ptr(OcTreeBlock *Block_Ptr) 
    } /* endif */
 }
 
-inline void OcTreeBlock_DataStructure::assign_block_pointers(void) {
+inline void Octree_DataStructure::assign_block_pointers(void) {
    int iBLK, jBLK,kBLK;
    for ( jBLK = 0; jBLK <= Nblk-1; ++jBLK) 
      for ( iBLK = 0; iBLK <= Ncpu-1 ; ++iBLK ) {
@@ -1434,9 +1441,9 @@ inline void OcTreeBlock_DataStructure::assign_block_pointers(void) {
 }
 
 /****************************************************************************
- * OcTreeBlock_DataStructure::renumber -- Renumber octree blocks.       *
+ * Octree_DataStructure::renumber -- Renumber octree blocks.                *
  ****************************************************************************/
-inline void OcTreeBlock_DataStructure::renumber(void) {
+inline void Octree_DataStructure::renumber(void) {
    int iCPU, nBLK, global_block_number;
    global_block_number = 0;
    for ( nBLK = 0 ; nBLK <= Nblk-1 ; ++nBLK ) {
@@ -1453,9 +1460,9 @@ inline void OcTreeBlock_DataStructure::renumber(void) {
 }
 
 /****************************************************************************
- * OcTreeBlock_DataStructure::countUsedBlocks -- Number of used blocks.   *
+ * Octree_DataStructure::countUsedBlocks -- Number of used blocks.          *
  ****************************************************************************/
-inline int OcTreeBlock_DataStructure::countUsedBlocks(void) {
+inline int Octree_DataStructure::countUsedBlocks(void) {
   int iCPU, nBLK, number_of_used_blocks;
   number_of_used_blocks = 0;
   for ( nBLK = 0 ; nBLK <= Nblk-1 ; ++nBLK ) {
@@ -1471,9 +1478,9 @@ inline int OcTreeBlock_DataStructure::countUsedBlocks(void) {
 }
 
 /****************************************************************************
- * OcTreeBlock_DataStructure::countUsedCells -- Number of used cells.     *
+ * Octree_DataStructure::countUsedCells -- Number of used cells.            *
  ****************************************************************************/
-inline int OcTreeBlock_DataStructure::countUsedCells(void) {
+inline int Octree_DataStructure::countUsedCells(void) {
   int iCPU, nBLK, number_of_used_cells;
   number_of_used_cells = 0;
   for ( nBLK = 0 ; nBLK <= Nblk-1 ; ++nBLK ) {
@@ -1491,9 +1498,9 @@ inline int OcTreeBlock_DataStructure::countUsedCells(void) {
 }
 
 /******************************************************************************
- * OcTreeBlock_DataStructure::efficiencyRefinement -- Refinment efficiency. *
+ * Octree_DataStructure::efficiencyRefinement -- Refinment efficiency.        *
  ******************************************************************************/
-inline double OcTreeBlock_DataStructure::efficiencyRefinement(void) {
+inline double Octree_DataStructure::efficiencyRefinement(void) {
   int iCPU, nBLK, number_of_used_cells, number_of_cells_with_uniform_mesh, max_level;
   number_of_used_cells = 0; number_of_cells_with_uniform_mesh = 0;
   max_level = highestRefinementLevel();
@@ -1517,9 +1524,9 @@ inline double OcTreeBlock_DataStructure::efficiencyRefinement(void) {
 }
 
 /****************************************************************************
- * OcTreeBlock_DataStructure::getRoot -- Get root indices.                *
+ * Octree_DataStructure::getRoot -- Get root indices.                       *
  ****************************************************************************/
-inline AdaptiveBlock3D_Dimensions OcTreeBlock_DataStructure::getRoot(OcTreeBlock *Block_Ptr) {
+inline AdaptiveBlock3D_Dimensions Octree_DataStructure::getRoot(OctreeBlock *Block_Ptr) {
   int iBLK, jBLK, kBLK;
   for ( kBLK = 0 ; kBLK <= NRk-1 ; ++kBLK ) 
     for ( jBLK = 0 ; jBLK <= NRj-1 ; ++jBLK ) 
@@ -1532,13 +1539,13 @@ inline AdaptiveBlock3D_Dimensions OcTreeBlock_DataStructure::getRoot(OcTreeBlock
 }
 
 /****************************************************************************
- * OcTreeBlock_DataStructure::getNeighbour -- Return neighbour.           *
+ * Octree_DataStructure::getNeighbour -- Return neighbour.                  *
  ****************************************************************************/
-inline OcTreeBlock *OcTreeBlock_DataStructure::getNeighbour(OcTreeBlock *Block_Ptr,
-                                                                const int Search_Dir_Mask) {
+inline OctreeBlock *Octree_DataStructure::getNeighbour(OctreeBlock *Block_Ptr,
+                                                       const int Search_Dir_Mask) {
   int iBLK, jBLK, kBLK;
   assert(Block_Ptr!=NULL);//used for debugging
-  OcTreeBlock *neighbour_block_ptr; AdaptiveBlock3D_Dimensions index; 
+  OctreeBlock *neighbour_block_ptr; AdaptiveBlock3D_Dimensions index; 
   AdaptiveBlock3D_Dimensions search_direction;
   // if (Block_Ptr->parent_ptr != NULL) cout<<" BLOCK HAS A PARENT"
 
@@ -2411,7 +2418,7 @@ inline OcTreeBlock *OcTreeBlock_DataStructure::getNeighbour(OcTreeBlock *Block_P
         } /* endwhile */
     } /* endif */ // Finally, return resulting neighbour.
   } else { // Block has a parent.  Block is not a root. */
-    cout<<"\nError **** OcTree Roots not yet defined to have children\n";cout.flush();
+    cout<<"\nError **** Octree Roots not yet defined to have children\n";cout.flush();
   }  
 //********************************************************
 //********************************************************
@@ -2723,9 +2730,9 @@ inline OcTreeBlock *OcTreeBlock_DataStructure::getNeighbour(OcTreeBlock *Block_P
 }
 
 /****************************************************************************
- * OcTreeBlock_DataStructure::findRootNeighbours -- Find root neighbours. *
+ * Octree_DataStructure::findRootNeighbours -- Find root neighbours.        *
  ****************************************************************************/
-inline void OcTreeBlock_DataStructure::findRootNeighbours(void) {
+inline void Octree_DataStructure::findRootNeighbours(void) {
   int iBLK, jBLK, kBLK;
   for ( kBLK = 0 ; kBLK <= NRk-1 ; ++kBLK ) 
   for ( jBLK = 0 ; jBLK <= NRj-1 ; ++jBLK ) 
@@ -3408,18 +3415,15 @@ inline void OcTreeBlock_DataStructure::findRootNeighbours(void) {
 	  if (Roots[iBLK][jBLK][kBLK].block.nBSW == 1) {
              Roots[iBLK][jBLK][kBLK].block.infoBSW[0] = Roots[iBLK-1][jBLK-1][kBLK-1].block.info;
           } /* endif */
-
-
-      
   } /* endfor */
 }
 
 /****************************************************************************
- * OcTreeBlock_DataStructure::findNeighbours -- Find block neighbours.    *
+ * Octree_DataStructure::findNeighbours -- Find block neighbours.           *
  ****************************************************************************/
-inline void OcTreeBlock_DataStructure::findNeighbours(void) {
+inline void Octree_DataStructure::findNeighbours(void) {
   int i_blk, j_blk; 
-  OcTreeBlock *neighbour_block_ptr;
+  OctreeBlock *neighbour_block_ptr;
   for ( j_blk = 0 ; j_blk <= Nblk-1 ; ++j_blk ) {
     for ( i_blk = 0 ; i_blk <= Ncpu-1 ; ++i_blk ) {
       if (Blocks[i_blk][j_blk] != NULL) {
@@ -4057,34 +4061,34 @@ inline void OcTreeBlock_DataStructure::findNeighbours(void) {
   } /* endfor */
 }
  
-
-
-
-
 /****************************************************************************
- * OcTreeBlock_DataStructure::refineBlock -- Refine (divide) block.       *
+ * Octree_DataStructure::refineBlock -- Refine (divide) block.              *
  ****************************************************************************/
-inline void OcTreeBlock_DataStructure::refineBlock(int *new_blocks_CPU, 
-                                                     int *new_blocks_BLK,
-                                                     int *new_blocks_SECTOR) {
-cout<<"\nOcTreeBlock_DataStructure::refineBlock() NOT YET IMPLEMENTED\n";
- assert(1==2);
+inline void Octree_DataStructure::refineBlock(int *new_blocks_CPU, 
+                                              int *new_blocks_BLK,
+                                              int *new_blocks_SECTOR) {
+
+  cout << "\nOctree_DataStructure::refineBlock() NOT YET IMPLEMENTED\n";
+  assert(1==2);
+
 }
 
 /****************************************************************************
- * OcTreeBlock_DataStructure::coarsenBlock -- Coarsen (contract) blocks.  *
+ * Octree_DataStructure::coarsenBlock -- Coarsen (contract) blocks.         *
  ****************************************************************************/
-inline void OcTreeBlock_DataStructure::coarsenBlocks(int *old_blocks_CPU, 
-                                                       int *old_blocks_BLK,
-                                                       int *old_blocks_SECTOR) {
-cout<<"\nOcTreeBlock_DataStructure::coarsenBlock() NOT YET IMPLEMENTED\n";
- assert(1==2);
+inline void Octree_DataStructure::coarsenBlocks(int *old_blocks_CPU, 
+                                                int *old_blocks_BLK,
+                                                int *old_blocks_SECTOR) {
+
+  cout << "\nOctree_DataStructure::coarsenBlock() NOT YET IMPLEMENTED\n";
+  assert(1==2);
+
 }
 
 /****************************************************************************
- * OcTreeBlock_DataStructure::nochangeAll -- Set no refinement flags.     *
+ * Octree_DataStructure::nochangeAll -- Set no refinement flags.            *
  ****************************************************************************/
-inline void OcTreeBlock_DataStructure::nochangeAll(void) {
+inline void Octree_DataStructure::nochangeAll(void) {
    int i, j; 
    for ( i = 0; i <= Ncpu-1 ; ++i ) {
       for ( j = 0; j <= Nblk-1 ; ++j ) {
@@ -4094,9 +4098,9 @@ inline void OcTreeBlock_DataStructure::nochangeAll(void) {
 }
 
 /****************************************************************************
- * OcTreeBlock_DataStructure::refineAll -- Set refinement flags.          *
+ * Octree_DataStructure::refineAll -- Set refinement flags.                 *
  ****************************************************************************/
-inline void OcTreeBlock_DataStructure::refineAll(void) {
+inline void Octree_DataStructure::refineAll(void) {
    int i, j; 
    for ( i = 0; i <= Ncpu-1 ; ++i ) {
       for ( j = 0; j <= Nblk-1 ; ++j ) {
@@ -4110,9 +4114,9 @@ inline void OcTreeBlock_DataStructure::refineAll(void) {
 }
 
 /****************************************************************************
- * OcTreeBlock_DataStructure::coarsenAll -- Set coarsening flags.         *
+ * Octree_DataStructure::coarsenAll -- Set coarsening flags.                *
  ****************************************************************************/
-inline void OcTreeBlock_DataStructure::coarsenAll(void) {
+inline void Octree_DataStructure::coarsenAll(void) {
    int i, j; 
    for ( i = 0; i <= Ncpu-1 ; ++i ) {
       for ( j = 0; j <= Nblk-1 ; ++j ) {
@@ -4126,9 +4130,9 @@ inline void OcTreeBlock_DataStructure::coarsenAll(void) {
 }
 
 /****************************************************************************
- * OcTreeBlock_DataStructure::setRefineAll -- Set refinement flags.       *
+ * Octree_DataStructure::setRefineAll -- Set refinement flags.              *
  ****************************************************************************/
-inline void OcTreeBlock_DataStructure::setRefineAll(const int Flag) {
+inline void Octree_DataStructure::setRefineAll(const int Flag) {
    int i, j; 
    for ( i = 0; i <= Ncpu-1 ; ++i ) {
       for ( j = 0; j <= Nblk-1 ; ++j ) {
@@ -4142,10 +4146,10 @@ inline void OcTreeBlock_DataStructure::setRefineAll(const int Flag) {
 }
 
 /****************************************************************************
- * OcTreeBlock_DataStructure::highestRefinementLevel -- Return highest    *
- *                      refinement level of all solution blocks.            *
+ * Octree_DataStructure::highestRefinementLevel -- Return highest           *
+ *                                 refinement level of all solution blocks. *
  ****************************************************************************/
-inline int OcTreeBlock_DataStructure::highestRefinementLevel(void) {
+inline int Octree_DataStructure::highestRefinementLevel(void) {
    int i, j, level = 0;
    for ( i = 0; i <= Ncpu-1 ; ++i ) {
       for ( j = 0; j <= Nblk-1 ; ++j ) {
@@ -4159,7 +4163,7 @@ inline int OcTreeBlock_DataStructure::highestRefinementLevel(void) {
    return (level);
 }
 
-inline int OcTreeBlock_DataStructure::highestRefinementLevel(const int use_tree) {
+inline int Octree_DataStructure::highestRefinementLevel(const int use_tree) {
    int i, j,k, level = 0;
    if (use_tree) {
       for ( k = 0 ; k <= NRk-1 ; ++k ) 
@@ -4182,10 +4186,10 @@ inline int OcTreeBlock_DataStructure::highestRefinementLevel(const int use_tree)
 }
 
 /****************************************************************************
- * OcTreeBlock_DataStructure::numberToBeRefined -- Return number of       *
- *                      octree solution blocks to be refined.             *
+ * Octree_DataStructure::numberToBeRefined -- Return number of              *
+ *                                    octree solution blocks to be refined. *
  ****************************************************************************/
-inline int OcTreeBlock_DataStructure::numberToBeRefined(void) {
+inline int Octree_DataStructure::numberToBeRefined(void) {
    int i, j, number_to_be_refined = 0;
    for ( i = 0; i <= Ncpu-1 ; ++i ) {
       for ( j = 0; j <= Nblk-1 ; ++j ) {
@@ -4202,10 +4206,10 @@ inline int OcTreeBlock_DataStructure::numberToBeRefined(void) {
 }
 
 /****************************************************************************
- * OcTreeBlock_DataStructure::numberToBeCoarsened -- Return number of     *
- *                      octree solution blocks to be coarsened.           *
+ * Octree_DataStructure::numberToBeCoarsened -- Return number of            *
+ *                                  octree solution blocks to be coarsened. *
  ****************************************************************************/
-inline int OcTreeBlock_DataStructure::numberToBeCoarsened(void) {
+inline int Octree_DataStructure::numberToBeCoarsened(void) {
    int i, j, number_to_be_coarsened = 0;
    for ( i = 0; i <= Ncpu-1 ; ++i ) {
       for ( j = 0; j <= Nblk-1 ; ++j ) {
@@ -4222,10 +4226,10 @@ inline int OcTreeBlock_DataStructure::numberToBeCoarsened(void) {
 }
 
 /****************************************************************************
- * OcTreeBlock_DataStructure -- Input-output operators.                   *
+ * Octree_DataStructure -- Input-output operators.                          *
  ****************************************************************************/
 inline ostream &operator << (ostream &out_file,
-			     const OcTreeBlock_DataStructure &QT) {
+			     const Octree_DataStructure &QT) {
    int iBLK, jBLK, kBLK;
    out_file << QT.NRi << " " << QT.NRj << " " << QT.NRk << " " << QT.Ncpu << " " << QT.Nblk << "\n";
    for ( kBLK = 0 ; kBLK <= QT.NRk-1 ; ++kBLK ) 
@@ -4237,7 +4241,7 @@ inline ostream &operator << (ostream &out_file,
 }
 
 inline istream &operator >> (istream &in_file,
-			     OcTreeBlock_DataStructure &QT) {
+			     Octree_DataStructure &QT) {
    int iBLK, jBLK, kBLK, nri, nrj,nrk, ncpu, nblk;
    if (QT.Roots != NULL && QT.Blocks != NULL) {
      QT.deallocate();
@@ -4257,12 +4261,6 @@ inline istream &operator >> (istream &in_file,
        } /* endfor */
    return (in_file);
 }
-
-
-
-/* #ifndef _MORTON_ORDERING_INCLUDED */
-/* #include "Morton_Ordering.h" */
-/* #endif // _MORTON_ORDERING_INCLUDED */
 
 #endif /* _OCTREE_INCLUDED  */
 

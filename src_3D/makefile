@@ -64,8 +64,8 @@ SRC_GRID = $(GRID_DIR)Cell2D.cc \
            $(GRID_DIR)Grid2DQuadMultiBlock.cc \
            $(GRID_DIR)Grid3DHexaBlock.cc \
            $(GRID_DIR)Grid3DHexaMultiBlock.cc
-SRC_ICEMCFD = $(ICEM_DIR)ICEMCFD.cc \
-	      $(ICEM_DIR)ICEMCFD_ctype.c
+SRC_ICEM = $(ICEM_DIR)ICEMCFD.cc \
+	   $(ICEM_DIR)ICEMCFD_ctype.c
 SRC_EULER = $(EULER_DIR)Euler3DThermallyPerfectState.cc \
 	    $(EULER_DIR)Euler3DThermallyPerfectInput.cc
 SRC_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectState.cc \
@@ -111,8 +111,8 @@ OBJ_GRID = $(GRID_DIR)Cell2D.o \
            $(GRID_DIR)Grid2DQuadMultiBlock.o \
            $(GRID_DIR)Grid3DHexaBlock.o \
            $(GRID_DIR)Grid3DHexaMultiBlock.o
-OBJ_ICEMCFD = $(ICEM_DIR)ICEMCFD.o \
-	      $(ICEM_DIR)ICEMCFD_ctype.o
+OBJ_ICEM = $(ICEM_DIR)ICEMCFD.o \
+	   $(ICEM_DIR)ICEMCFD_ctype.o
 OBJ_EULER = $(EULER_DIR)Euler3DThermallyPerfectState.o \
 	    $(EULER_DIR)Euler3DThermallyPerfectInput.o
 OBJ_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectState.o \
@@ -159,17 +159,17 @@ help:
 	@echo "|        make superclean           clean up documentation and library directories   |"
 	@echo "|        make help                 display makefile usage information               |"
 	@echo "|                                                                                   |"
-	@echo "| Package Options: MPI_VERSION = NoMPI (default), MPICH, MPT (sgi)                  |"
+	@echo "| Package Options: MPI_VERSION = NoMPI (default), MPICH, MPICH2, MPT (sgi)          |"
 	@echo "|                  ICEMCFD_VERSION = NoICEMCFD (default),V41,V42,V43,V50,V10,V11    |"
 	@echo "|                  GCC_VERSION = V296, V3+ (default), ICC                           |"
 	@echo "|                  CANTERA_VERSION = NoCANTERA (default), V70                       |"
 	@echo "|                  PROFILING = OFF (default), ON                                    |"
 	@echo "|                                                                                   |"
-	@echo "| Ensure that the source directory is clean and the ICEMCFD, SparseLib++,           |"
-	@echo "| BPKIT libraries are up to date before re-making the CFFC from scratch.            |"
+	@echo "| Ensure that the source directory is clean and the ICEMCFD, SparseLib++, BPKIT,    |"
+	@echo "| FFTW, and Cantera libraries are up to date before re-making CFFC from scratch.    |"
 	@echo "|                                                                                   |"
 	@echo "| An environment variable, CFFC_Path, can to be set to the location                 |"
-	@echo "| of the CFFC source directory.                                                     |"
+	@echo "| of the CFFC source directory.  This can be done as follows:                       |"
 	@echo "|                                                                                   |"
 	@echo "|  bash:   export CFFC_Path=/your/path/here/CFFC                                    |"
 	@echo "|  tcsh:   setenv CFFC_Path /your/path/here/CFFC                                    |"

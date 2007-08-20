@@ -99,7 +99,7 @@ int ICEMCFD_get_boco(char *file_read){
 
 /************
  * 2D STUFF *
-/************/
+ ************/
 
 /****************************************************
 ICEMCFD_get_layout determines the layout of the
@@ -558,7 +558,7 @@ Grid2D_Quad_Block** ICEMCFD_Read(char **filenames,
 
 /************
  * 3D STUFF *
-/************/
+ ************/
 
 void ICEMCFD_get_layout(int ***layout, 
                         int x, 

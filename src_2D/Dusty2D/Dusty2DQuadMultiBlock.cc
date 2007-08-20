@@ -112,7 +112,7 @@ Dusty2D_Quad_Block* CreateInitialSolutionBlocks(Grid2D_Quad_Block **InitMeshBlk,
 	 << "  Error #" << error_flag << "." << endl;
     return NULL;
   }
-  CFDkit_Broadcast_MPI(&error_flag,1);
+  CFFC_Broadcast_MPI(&error_flag,1);
   if (error_flag) return NULL;
 
   // Return the solution blocks.
@@ -687,7 +687,7 @@ int Adaptive_Mesh_Refinement(Dusty2D_Quad_Block *Soln_ptr,
 // 	 << LocalSolnBlockList.ThisCPU
 // 	 << "." << endl;
 //   }
-//   error_flag = CFDkit_OR_MPI(error_flag);
+//   error_flag = CFFC_OR_MPI(error_flag);
 //   if (error_flag) return error_flag;
 
 //   ICs(Soln_ptr,

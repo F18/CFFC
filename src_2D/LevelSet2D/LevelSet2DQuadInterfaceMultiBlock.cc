@@ -278,7 +278,7 @@ int Share_Interface_Information(LevelSet2D_Quad_Block *Soln_ptr,
   } else {
     dx = ZERO;
   }
-  dx = CFDkit_Maximum_MPI(dx);
+  dx = CFFC_Maximum_MPI(dx);
 
 #ifdef _MPI_VERSION
   MPI::Intracomm local_comm;
@@ -358,11 +358,11 @@ int Share_Interface_Information(LevelSet2D_Quad_Block *Soln_ptr,
   }
 
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   // Determine the number of interfaces that currently reside on all
   // of the processors by call MPI_ALLReduce with the SUM operation.
-  Number_of_Interfaces = CFDkit_Summation_MPI(Number_of_Interfaces);
+  Number_of_Interfaces = CFFC_Summation_MPI(Number_of_Interfaces);
 
   // Allocate memory for interface variables for all of the interface 
   // information on all of the processors.
@@ -400,10 +400,10 @@ int Share_Interface_Information(LevelSet2D_Quad_Block *Soln_ptr,
       }
     }
     // All reduce the number of interfaces with the maximum operator.
-    CFDkit_Barrier_MPI();
-    NI = CFDkit_Maximum_MPI(NI);
+    CFFC_Barrier_MPI();
+    NI = CFFC_Maximum_MPI(NI);
 
-    //CFDkit_Barrier_MPI();
+    //CFFC_Barrier_MPI();
 
     // Broadcast the interface list information.
     for (int ni = NO+1; ni <= NI; ni++)
@@ -416,7 +416,7 @@ int Share_Interface_Information(LevelSet2D_Quad_Block *Soln_ptr,
   }
 
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
 #endif
 

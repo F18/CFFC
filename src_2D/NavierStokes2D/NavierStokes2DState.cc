@@ -3330,14 +3330,13 @@ NavierStokes2D_cState ViscousFlux_n(const Vector2D &X,
 				    const NavierStokes2D_pState &dWdx,
 				    const NavierStokes2D_pState &dWdy,
 				    const Vector2D &norm_dir,
-				    const int &Axisymmetric,
-				    const int &adiabatic_flag) {
+				    const int &Axisymmetric) {
 
   NavierStokes2D_cState Gx, Gy, U;
 
   // Compute the intermediate state viscous stress tensor and heat flux
   // vector.
-  W.ComputeViscousTerms(dWdx,dWdy,X,Axisymmetric,adiabatic_flag);
+  W.ComputeViscousTerms(dWdx,dWdy,X,Axisymmetric);
   U = W.U(); U.tau = W.tau; U.q = W.q;
 
   // Compute the Cartesian components of the intermediate state
@@ -3430,24 +3429,24 @@ NavierStokes2D_cState ViscousFluxDiamondPath_n(const Vector2D &X,
     //W_face = (Wl + Wd + Wr + Wu)/FOUR;
     error_flag = Bilinear_Interpolation_ZY(Wl,Xl,Wu,Xu,Wr,Xr,Wd,Xd,X,W_face);
     //if (error_flag) return error_flag;
-    Flux = ViscousFlux_n(X,W_face,dWdx,dWdy,norm_dir,Axisymmetric,OFF);
+    Flux = ViscousFlux_n(X,W_face,dWdx,dWdy,norm_dir,Axisymmetric);
 
   } else if (stencil_flag == DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX ||
 	     stencil_flag == DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL) {
     W_face = Wd;
     if (stencil_flag == DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX) {
-      Flux = ViscousFlux_n(X,W_face,dWdxl,dWdyl,norm_dir,Axisymmetric,ON);
+      Flux = ViscousFlux_n(X,W_face,dWdxl,dWdyl,norm_dir,Axisymmetric);
     } else if (stencil_flag == DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL) {
-      Flux = ViscousFlux_n(X,W_face,dWdxl,dWdyl,norm_dir,Axisymmetric,OFF);
+      Flux = ViscousFlux_n(X,W_face,dWdxl,dWdyl,norm_dir,Axisymmetric);
     }
 
   } else if (stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX ||
 	     stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL) {
     W_face = Wd;
     if (stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX) {
-      Flux = ViscousFlux_n(X,W_face,dWdxr,dWdyr,norm_dir,Axisymmetric,ON);
+      Flux = ViscousFlux_n(X,W_face,dWdxr,dWdyr,norm_dir,Axisymmetric);
     } else if (stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL) {
-      Flux = ViscousFlux_n(X,W_face,dWdxr,dWdyr,norm_dir,Axisymmetric,OFF);
+      Flux = ViscousFlux_n(X,W_face,dWdxr,dWdyr,norm_dir,Axisymmetric);
     }
 
   }
@@ -3476,8 +3475,7 @@ NavierStokes2D_cState ViscousFluxHybrid_n(const Vector2D &X,
 					  const NavierStokes2D_pState &dW2dx,
 					  const NavierStokes2D_pState &dW2dy,
 					  const Vector2D &norm_dir,
-					  const int &Axisymmetric,
-					  const int &adiabatic_flag) {
+					  const int &Axisymmetric) {
 
   NavierStokes2D_pState dWdx_ave, dWdy_ave, dWdx, dWdy, dWds;
   Vector2D dX;
@@ -3496,8 +3494,7 @@ NavierStokes2D_cState ViscousFluxHybrid_n(const Vector2D &X,
   dWdy = dWdy_ave + (dWds - dWdy_ave*dX.y)*norm_dir.y/dot(norm_dir,dX);
 
   // Return the intermediate state solution viscous flux.
-  return ViscousFlux_n(X,W,dWdx,dWdy,norm_dir,Axisymmetric,OFF);
-  //return NavierStokes2D_cState(ZERO,ZERO,ZERO,ZERO,ZERO,ZERO);
+  return ViscousFlux_n(X,W,dWdx,dWdy,norm_dir,Axisymmetric);
 
 }
 

@@ -27,8 +27,6 @@ double Turbulence_Model_k_omega::C_const = 5.0;
 double Turbulence_Model_k_omega::yplus_l = 30.0; 
 double Turbulence_Model_k_omega::yplus_u =250.0; 
 
-
-
 // f_beta and f_betastar (1998 k-omega model coefficient)
 // (Wilcox textbook P121)
 double Turbulence_Model_k_omega::f_beta(const Tensor3D &rotation, 
@@ -95,13 +93,7 @@ int Turbulence_Model_k_omega::wall_function(
 
    double ke, omegae;
    
-   if(wall.yplus <= yplus_l) {
-     
-      
-      //  cout<<wall.yplus<<endl;
-      
-   //   wall.utau = 0.3;// xinfeng notes: this is theexperimental value
-      
+   if (wall.yplus <= yplus_l) {
       // Set k
       ke = sqr(wall.utau)/sqrt(beta_star);
       // Set Omega
@@ -115,15 +107,11 @@ int Turbulence_Model_k_omega::wall_function(
       // Update conserved values
       dk =  d*ke;
       domega = d*omegae;
-
-       
-      // } /* endif */
-      
    } /* endif */
    
    return 0;
    
-} //end of wall function
+}
 
 int Turbulence_Model_k_omega::low_Reynolds_number_formulation(
    const double &d, const double &mu, 
@@ -131,7 +119,6 @@ int Turbulence_Model_k_omega::low_Reynolds_number_formulation(
    Turbulent3DWallData &wall,
    Grid3D_Hexa_Block &grid,
    double &domega){
-   
    
    if ((wall.yplus <= y_sublayer)
        ||((i== grid.ICl) &&(grid.BCtypeW[j][k] == BC_WALL_VISCOUS ||

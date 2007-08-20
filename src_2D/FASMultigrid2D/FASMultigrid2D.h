@@ -251,11 +251,17 @@ class FAS_Multigrid2D_Solver {
 
   //! Output the node-centred value information for each grid level.
   int Output_Multigrid(int &number_of_time_steps,
-		       double &Time);
+		       double &Time,
+		       bool writing_intermediate_soln = false, 
+		       double l2_norm = -1.0, 
+                       double l2_norm_rel = -1.0);
 
   //! Output the cell-centred value information for each grid level.
   int Output_Multigrid_Cells(int &number_of_time_steps,
-			     double &Time);
+			     double &Time, 
+			     bool writing_intermediate_soln = false, 
+			     double l2_norm = -1.0, 
+                             double l2_norm_rel = -1.0);
 
   //! Output the node information for each grid level.
   int Output_Multigrid_Nodes(int &number_of_time_steps,
@@ -701,12 +707,16 @@ int FAS_Multigrid2D_Solver<Soln_Var_Type,
 			   Quad_Soln_Block,
 			   Quad_Soln_Input_Parameters>::
 Output_Multigrid(int &number_of_time_steps,
-		 double &Time) {
+		 double &Time,
+		 bool writing_intermediate_soln,
+		 double l2_norm, 
+                 double l2_norm_rel) {
 
   int i, i_output_title;
   char prefix[256], extension[256], output_file_name[256];
   char *output_file_name_ptr;
   ofstream output_file;
+  int max_level = (writing_intermediate_soln ? 1 : IP->Multigrid_IP.Levels);
 
   // Determine main prefix of output data file names.
   i = 0;
@@ -721,12 +731,16 @@ Output_Multigrid(int &number_of_time_steps,
   strcat(prefix,"_");
 
   // Output to a seperate file for each multigrid level.
-  for (int level = 0; level < IP->Multigrid_IP.Levels; level++) {
+  for (int level = 0; level < max_level; level++) {
 
     // Determine prefix of output data file names for current grid level.
     strcpy(output_file_name,prefix);
     sprintf(extension,"%.2d",level);
     strcat(output_file_name,extension);
+    if (writing_intermediate_soln) {
+       sprintf(extension,"_n1%.4d",number_of_time_steps);
+       strcat(output_file_name,extension);
+    }
     strcat(output_file_name,"_cpu");
 
     // Determine output data file name for this processor.
@@ -779,12 +793,16 @@ int FAS_Multigrid2D_Solver<Soln_Var_Type,
 			   Quad_Soln_Block,
 			   Quad_Soln_Input_Parameters>::
 Output_Multigrid_Cells(int &number_of_time_steps,
-		       double &Time) {
+		       double &Time, 
+		       bool writing_intermediate_soln,
+		       double l2_norm, 
+                       double l2_norm_rel) {
 
   int i, i_output_title;
   char prefix[256], extension[256], output_file_name[256];
   char *output_file_name_ptr;
   ofstream output_file;
+  int max_level = (writing_intermediate_soln ? 1 : IP->Multigrid_IP.Levels);
 
   // Determine main prefix of output data file names.
   i = 0;
@@ -799,12 +817,16 @@ Output_Multigrid_Cells(int &number_of_time_steps,
   strcat(prefix,"_cells_");
 
   // Output to a seperate file for each multigrid level.
-  for (int level = 0; level < IP->Multigrid_IP.Levels; level++) {
+  for (int level = 0; level < max_level; level++) {
 
     // Determine prefix of output data file names for current grid level.
     strcpy(output_file_name,prefix);
     sprintf(extension,"%.2d",level);
     strcat(output_file_name,extension);
+    if (writing_intermediate_soln) {
+       sprintf(extension,"_n1%.4d",number_of_time_steps);
+       strcat(output_file_name,extension);
+    }
     strcat(output_file_name,"_cpu");
 
     // Determine output data file name for this processor.
@@ -822,6 +844,7 @@ Output_Multigrid_Cells(int &number_of_time_steps,
     for (int nb = 0; nb < List_of_Local_Solution_Blocks[level].Nblk; nb++) {
       if (List_of_Local_Solution_Blocks[level].Block[nb].used == ADAPTIVEBLOCK2D_USED) {
 	Output_Cells_Tecplot(Local_SolnBlk[level][nb],
+			     *IP,
 			     number_of_time_steps,
 			     Time,
 			     List_of_Local_Solution_Blocks[level].Block[nb].gblknum,
@@ -1006,8 +1029,10 @@ Restrict_Residuals(const int &Level_Fine) {
       Nghost = Local_SolnBlk[Level_Fine][nb].Nghost;
 
       // Loop through the coarse cells.
-      for (int i_coarse = Local_SolnBlk[Level_Coarse][nb].ICl-nghost; i_coarse <= Local_SolnBlk[Level_Coarse][nb].ICu+nghost; i_coarse++) {
-	for (int j_coarse = Local_SolnBlk[Level_Coarse][nb].JCl-nghost; j_coarse <= Local_SolnBlk[Level_Coarse][nb].JCu+nghost; j_coarse++) {
+      for (int i_coarse = Local_SolnBlk[Level_Coarse][nb].ICl-nghost; 
+               i_coarse <= Local_SolnBlk[Level_Coarse][nb].ICu+nghost; i_coarse++) {
+	for (int j_coarse = Local_SolnBlk[Level_Coarse][nb].JCl-nghost; 
+                 j_coarse <= Local_SolnBlk[Level_Coarse][nb].JCu+nghost; j_coarse++) {
 	  // Determine the (i,j) index of the corresponding SW corner
 	  // fine cell.
 	  i_fine = 2*(i_coarse-Nghost)+Nghost;
@@ -1459,6 +1484,7 @@ Prolong_Solution_Blocks(const int &Level_Coarse) {
 						Local_SolnBlk[Level_Coarse][nb].Grid.Cell[i_coarse][j_coarse].Xc,
 						Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						Ufine);
+
 	    // If fine grid cell-centre falls outside of the NW coarse
 	    // grid interpolants then try the NE coarse grid solution
 	    // states as the interpolants ([i,i+1],[j,j+1]).
@@ -1504,6 +1530,7 @@ Prolong_Solution_Blocks(const int &Level_Coarse) {
 						  Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						  Ufine);
 	    }
+
 	    // If none of the four sets of possible interpolants 
 	    // provide a suitable set of interpolants then restart
 	    // the prolongation associated with the current coarse
@@ -1716,6 +1743,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						  Local_SolnBlk[Level_Coarse][nb].Grid.Cell[i_coarse][j_coarse-1].Xc,
 						  Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						  Uchange);
+
 	      // If fine grid cell-centre falls outside of the SW coarse
 	      // grid interpolants then try the NW coarse grid solution
 	      // states as the interpolants ([i-1,i],[j,j+1]).
@@ -1731,6 +1759,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						    Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						    Uchange);
 	      }
+
 	      // If fine grid cell-centre falls outside of the NW coarse
 	      // grid interpolants then try the SE coarse grid solution
 	      // states as the interpolants ([i,i+1],[j-1,j]).
@@ -1761,6 +1790,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						    Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						    Uchange);
 	      }
+
 	      // If none of the four sets of possible interpolants 
 	      // provide a suitable set of interpolants then restart
 	      // the prolongation associated with the current coarse
@@ -1824,6 +1854,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						  Local_SolnBlk[Level_Coarse][nb].Grid.Cell[i_coarse+1][j_coarse-1].Xc,
 						  Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						  Uchange);
+
 	      // If fine grid cell-centre falls outside of the SE coarse
 	      // grid interpolants then try the NE coarse grid solution
 	      // states as the interpolants ([i,i+1],[j,j+1]).
@@ -1839,6 +1870,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						    Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						    Uchange);
 	      }
+
 	      // If fine grid cell-centre falls outside of the NE coarse
 	      // grid interpolants then try the SW coarse grid solution
 	      // states as the interpolants ([i-1,i],[j-1,j]).
@@ -1854,6 +1886,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						    Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						    Uchange);
 	      }
+
 	      // If fine grid cell-centre falls outside of the SW coarse
 	      // grid interpolants then try the N coarse grid solution
 	      // states as the interpolants ([i-1,i],[j,j+1]).
@@ -1869,6 +1902,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						    Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						    Uchange);
 	      }
+
 	      // If none of the four sets of possible interpolants 
 	      // provide a suitable set of interpolants then restart
 	      // the prolongation associated with the current coarse
@@ -1932,6 +1966,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						  Local_SolnBlk[Level_Coarse][nb].Grid.Cell[i_coarse+1][j_coarse].Xc,
 						  Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						  Uchange);
+
 	      // If fine grid cell-centre falls outside of the NE coarse
 	      // grid interpolants then try the SE coarse grid solution
 	      // states as the interpolants ([i,i+1],[j-1,j]).
@@ -1947,6 +1982,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						  Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						  Uchange);
 	      }
+
 	      // If fine grid cell-centre falls outside of the SE coarse
 	      // grid interpolants then try the NW coarse grid solution
 	      // states as the interpolants ([i-1,i],[j,j+1]).
@@ -1962,6 +1998,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						    Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						    Uchange);
 	      }
+
 	      // If fine grid cell-centre falls outside of the NW coarse
 	      // grid interpolants then try the SW coarse grid solution
 	      // states as the interpolants ([i-1,i],[j-1,j]).
@@ -1977,6 +2014,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						    Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						    Uchange);
 	      }
+
 	      // If none of the four sets of possible interpolants 
 	      // provide a suitable set of interpolants then restart
 	      // the prolongation associated with the current coarse
@@ -2040,6 +2078,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						  Local_SolnBlk[Level_Coarse][nb].Grid.Cell[i_coarse][j_coarse].Xc,
 						  Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						  Uchange);
+
 	      // If fine grid cell-centre falls outside of the NW coarse
 	      // grid interpolants then try the NE coarse grid solution
 	      // states as the interpolants ([i,i+1],[j,j+1]).
@@ -2055,6 +2094,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						    Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						    Uchange);
 	      }
+
 	      // If fine grid cell-centre falls outside of the NE coarse
 	      // grid interpolants then try the SW coarse grid solution
 	      // states as the interpolants ([i-1,i],[j-1,j]).
@@ -2070,6 +2110,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						    Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						    Uchange);
 	      }
+
 	      // If fine grid cell-centre falls outside of the SW coarse
 	      // grid interpolants then try the SE coarse grid solution
 	      // states as the interpolants ([i,i+1],[j-1,j]).
@@ -2085,6 +2126,7 @@ Prolong_and_Update_Solution_Blocks(const int &Level_Coarse) {
 						    Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].Xc,
 						    Uchange);
 	      }
+
 	      // If none of the four sets of possible interpolants 
 	      // provide a suitable set of interpolants then restart
 	      // the prolongation associated with the current coarse
@@ -2177,7 +2219,7 @@ Exchange_Solution_Information(const int &Level,
     }
     if (!Num_Var) return 2101;
 
-    CFDkit_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
 
     error_flag = Send_All_Messages(Local_SolnBlk[Level],
 				   List_of_Local_Solution_Blocks[Level],
@@ -2190,7 +2232,7 @@ Exchange_Solution_Information(const int &Level,
 	 << ".\n";
     cout.flush();
   }
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // Solution information exchanged successfully.
@@ -2753,7 +2795,6 @@ Residual_Evaluation_for_Multigrid(const int &Level,
     }
   }
 
-
   // Zero the residual for state variables that should not be updated
   // on the coarse meshes.  For example, the turbulent kinetic energy,
   // k, and the specific dissipation rate, omega, for the two-equation
@@ -2802,7 +2843,7 @@ Smooth(const int &Level,
 	
   // Set each cell to the global minimum time-step if required.
 //   if (!IP->Local_Time_Stepping) {
-//      dTime = CFDkit_Minimum_MPI(dTime);
+//      dTime = CFFC_Minimum_MPI(dTime);
 //      Set_Global_TimeStep(Local_SolnBlk[Level],
 // 			 List_of_Local_Solution_Blocks[Level],
 // 			 dTime);
@@ -2833,7 +2874,7 @@ Smooth(const int &Level,
 	   << ".\n";
       cout.flush();
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
     // Step 2. Apply boundary conditions for stage.
@@ -2862,7 +2903,7 @@ Smooth(const int &Level,
 	   << ".\n";
       cout.flush();
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
     // Step 4. Add the physical-time source-term if required.
@@ -2895,7 +2936,7 @@ Smooth(const int &Level,
 	   << ".\n";
       cout.flush();
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
     // Step 6. Apply boundary flux corrections to ensure that method is
@@ -2922,7 +2963,7 @@ Smooth(const int &Level,
 	   << ".\n";
       cout.flush();
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
     // Step 8. Smooth the solution residual using implicit residual smoothing.
@@ -2966,7 +3007,7 @@ Smooth(const int &Level,
 	   << ".\n";
       cout.flush();
     }
-    error_flag = CFDkit_OR_MPI(error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
   }
@@ -2985,7 +3026,7 @@ Smooth(const int &Level,
 	 << ".\n";
     cout.flush();
   }
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // Apply boundary conditions after smoothing is complete.
@@ -3014,7 +3055,7 @@ Smooth(const int &Level,
 	 << ".\n";
     cout.flush();
   }
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // Multigrid smoothing applied successfully.
@@ -3303,6 +3344,7 @@ Execute(const int &batch_flag,
   int error_flag, command_flag, first_step, line_number, limiter_freezing;
   int initial_top_level;
   double residual_l1_norm, residual_l2_norm, residual_max_norm;
+  double initial_residual_l2_norm = -1.0, ratio_residual_l2_norm = -1.0;
   unsigned long cycles_for_this_level, max_cycles_for_this_level;
 #ifdef _GNU_GCC_V3
   max_cycles_for_this_level = numeric_limits<unsigned long>::max();
@@ -3338,12 +3380,12 @@ Execute(const int &batch_flag,
   }
 
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   // Open residual file.  
   first_step = 1;
   limiter_freezing = OFF;
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     error_flag = Open_Progress_File(residual_file,
 				    IP->Output_File_Name,
 				    number_of_time_steps);
@@ -3352,7 +3394,7 @@ Execute(const int &batch_flag,
       cout.flush();
     }
   }
-  CFDkit_Broadcast_MPI(&error_flag,1);
+  CFFC_Broadcast_MPI(&error_flag,1);
   if (error_flag) return error_flag;
 
   // Reset the CPU time.
@@ -3424,22 +3466,28 @@ Execute(const int &batch_flag,
 	// Determine the L1 norm of the solution residual.
 	residual_l1_norm = L1_Norm_Residual(Local_SolnBlk[top_level],
 					    List_of_Local_Solution_Blocks[top_level]);
-	residual_l1_norm = CFDkit_Summation_MPI(residual_l1_norm);	
+	residual_l1_norm = CFFC_Summation_MPI(residual_l1_norm);	
 	// Determine the L2 norm of the solution residual.
 	residual_l2_norm = L2_Norm_Residual(Local_SolnBlk[top_level],
 					    List_of_Local_Solution_Blocks[top_level]);
 	residual_l2_norm = sqr(residual_l2_norm);
-	residual_l2_norm = CFDkit_Summation_MPI(residual_l2_norm);
+	residual_l2_norm = CFFC_Summation_MPI(residual_l2_norm);
 	residual_l2_norm = sqrt(residual_l2_norm);
 	// Determine the max norm of the solution residual.
 	residual_max_norm = Max_Norm_Residual(Local_SolnBlk[top_level],
 					      List_of_Local_Solution_Blocks[top_level]);
-	residual_max_norm = CFDkit_Maximum_MPI(residual_max_norm);
+	residual_max_norm = CFFC_Maximum_MPI(residual_max_norm);
+
+	if (cycles == 2) {
+	   initial_residual_l2_norm = residual_l2_norm;
+	} else if (cycles > 2 && fabs(initial_residual_l2_norm) > NANO) {
+	   ratio_residual_l2_norm = residual_l2_norm / initial_residual_l2_norm;
+	}
 
 	// Update CPU time used for the calculation so far.
 	processor_cpu_time.update();
 	// Total CPU time for all processors. 
-	total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput);
+	total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);
 
 	// Periodically save restart solution files.
 	if (!first_step &&
@@ -3457,7 +3505,7 @@ Execute(const int &batch_flag,
 		 << ".\n";
 	    cout.flush();
 	  }
-	  error_flag = CFDkit_OR_MPI(error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return error_flag;
 	  // Write the solution block restart files.
 	  error_flag = Write_Restart_Solution(Local_SolnBlk[top_level],
@@ -3473,7 +3521,7 @@ Execute(const int &batch_flag,
 		 << ".\n";
 	    cout.flush();
 	  }
-	  error_flag = CFDkit_OR_MPI(error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return error_flag;
 	  if (!batch_flag) cout << endl;
 	}
@@ -3483,9 +3531,10 @@ Execute(const int &batch_flag,
 						Time*THOUSAND,
 						total_cpu_time,
 						residual_l2_norm,
+						ratio_residual_l2_norm,
 						first_step,
-						50);
-	if (CFDkit_Primary_MPI_Processor() && !first_step) {
+						IP->Output_Progress_Frequency);
+	if (CFFC_Primary_MPI_Processor() && !first_step) {
 	  Output_Progress_to_File(residual_file,
 				  number_of_time_steps,
 				  Time*THOUSAND,
@@ -3495,20 +3544,96 @@ Execute(const int &batch_flag,
 				  residual_max_norm);
 	}
 
-	// Check if the maximum number of time steps has been reached or
-	// if the residual has dropped below the prescribed level for a
-	// full multigrid cycle.
-	if (number_of_time_steps >= IP->Maximum_Number_of_Time_Steps ||
-	    (residual_l2_norm < IP->Multigrid_IP.Convergence_Residual_Level && 
-	     cycles > 1 && 
-	     !first_step &&
-	     top_level != FINEST_LEVEL)) {
+        // Periodically write out the nodal and cell solution information.
+	if (IP->Multigrid_IP.Write_Output_Cells_Frequency > 0 &&
+	    top_level == FINEST_LEVEL &&
+	    (number_of_time_steps % IP->Multigrid_IP.Write_Output_Cells_Frequency == 0)) {
+	   if (!batch_flag) { 
+	      cout << endl << " Writing out solution in Tecplot format at iteration level ";
+	      cout << number_of_time_steps << "." << endl; 
+	   }
+	   Output_Multigrid_Cells(number_of_time_steps, Time, true, residual_l2_norm, ratio_residual_l2_norm);
+	   Output_Multigrid(number_of_time_steps, Time, true, residual_l2_norm, ratio_residual_l2_norm);
+	} /* endif */
+
+	/* Check if the maximum number of time steps has been reached 
+	   or if the residual has dropped below the prescribed level for
+	   a FMG cycle */
+
+	bool please_stop = false;
+	if (number_of_time_steps >= IP->Maximum_Number_of_Time_Steps) {
+	  please_stop = true;
+	}
+	if (cycles > 2) {
+	   if (top_level == FINEST_LEVEL) { // regular multigrid cycles
+   	      if (residual_l2_norm < IP->Multigrid_IP.Absolute_Convergence_Tolerance) {
+	         please_stop = true;
+	  	 if (!batch_flag) {
+ 		    int tempp = cout.precision(); 
+                    cout.precision(2); 
+		    cout.setf(ios::scientific);
+ 		    cout << endl << "Regular Multigrid: met absolute convergence tolerance";
+		    cout << " (" << residual_l2_norm << " < ";
+		    cout << IP->Multigrid_IP.Absolute_Convergence_Tolerance << ")." << endl;
+		    cout.precision(tempp);
+		    cout.unsetf(ios::scientific);
+		 } /* endif */
+	      } /* endif */
+  	      if (ratio_residual_l2_norm < IP->Multigrid_IP.Relative_Convergence_Tolerance) {
+ 		 please_stop = true;
+		 if (!batch_flag) {
+		    int tempp = cout.precision(); 
+                    cout.precision(2);
+		    cout.setf(ios::scientific);
+	  	    cout << endl << "Regular Multigrid: met relative convergence tolerance";
+		    cout << " (" << ratio_residual_l2_norm << " < ";
+		    cout << IP->Multigrid_IP.Relative_Convergence_Tolerance << ")." << endl;
+		    cout.precision(tempp);
+		    cout.unsetf(ios::scientific);
+		 } /* endif */
+	      } /* endif */
+	   } else { // otherwise doing full multigrid cycles.
+	      if (residual_l2_norm < IP->Multigrid_IP.FMG_Absolute_Convergence_Tolerance) {
+		 please_stop = true;
+		 if (!batch_flag) {
+		    int tempp = cout.precision(); 
+                    cout.precision(2);
+		    cout.setf(ios::scientific);
+		    cout << endl << "Top Level: " << top_level;
+		    cout << " Finest level: " << FINEST_LEVEL << ".";
+		    cout << " Met absolute convergence tolerance";
+		    cout << " (" << residual_l2_norm << " < ";
+		    cout << IP->Multigrid_IP.FMG_Absolute_Convergence_Tolerance << ")." << endl;
+		    cout.precision(tempp);
+		    cout.unsetf(ios::scientific);
+		 } /* endif */
+	      } /* endif */
+	      if (ratio_residual_l2_norm < IP->Multigrid_IP.FMG_Relative_Convergence_Tolerance) {
+		 please_stop = true;
+		 if (!batch_flag) {
+		    int tempp = cout.precision(); 
+                    cout.precision(2);
+		    cout.setf(ios::scientific);
+		    cout << endl << "Top Level: " << top_level;
+		    cout << " Finest level: " << FINEST_LEVEL << ".";
+		    cout << " Met relative convergence tolerance";
+		    cout << " (" << ratio_residual_l2_norm << " < ";
+		    cout << IP->Multigrid_IP.FMG_Relative_Convergence_Tolerance << ")." << endl;
+		    cout.precision(tempp);
+		    cout.unsetf(ios::scientific);
+		 } /* endif */
+	      } /* endif */
+  	   } /* endif */
+	} // if (cycles > 2) for convergence test
+
+	if (please_stop) {
 	  // Exit criteria has been met.  Output the final progress
 	  // information for the calculation and exit.
 	  if (!batch_flag) Output_Progress_L2norm(number_of_time_steps,
 						  Time*THOUSAND,
 						  total_cpu_time,
 						  residual_l2_norm,
+						  ratio_residual_l2_norm,
 						  first_step,
 						  number_of_time_steps);
 	  break;
@@ -3530,6 +3655,9 @@ Execute(const int &batch_flag,
 	  }
 	  // Set the limiter freezing flag.
 	  limiter_freezing = ON;
+  	  if (CFFC_Primary_MPI_Processor()) {
+	     cout << "Freezing Gradient Limiters." << endl;
+	  }
 	}
 
 	// Update the solution for the next time-step/cylce using the 
@@ -3916,14 +4044,14 @@ dUdtau_Multistage_Explicit(const int &Level,
       for (int j = Local_SolnBlk[Level][nb].JCl; j <= Local_SolnBlk[Level][nb].JCu; j++) {
 	for (int i = Local_SolnBlk[Level][nb].ICl; i <= Local_SolnBlk[Level][nb].ICu; i++) {
 	  if (IP->Multigrid_IP.i_Physical_Time_Integration == TIME_STEPPING_IMPLICIT_EULER) {
-	    Local_SolnBlk[Level][nb].dUdt[i][j][k_residual] -= (IP->CFL_Number*Local_SolnBlk[Level][nb].dt[i][j])*(Local_SolnBlk[Level][nb].U[i][j] -
-														   DTS_SolnBlk[Level][nb].Un[i][j])/
-		                                                                                                  (IP->Multigrid_IP.Physical_Time_CFL_Number*dt);
+	    Local_SolnBlk[Level][nb].dUdt[i][j][k_residual] -= 
+              (IP->CFL_Number*Local_SolnBlk[Level][nb].dt[i][j])*(Local_SolnBlk[Level][nb].U[i][j] -
+ 	       DTS_SolnBlk[Level][nb].Un[i][j])/(IP->Multigrid_IP.Physical_Time_CFL_Number*dt);
 	  } else if (IP->Multigrid_IP.i_Physical_Time_Integration == TIME_STEPPING_IMPLICIT_SECOND_ORDER_BACKWARD) {
-	    Local_SolnBlk[Level][nb].dUdt[i][j][k_residual] -= (IP->CFL_Number*Local_SolnBlk[Level][nb].dt[i][j])*(3.0*Local_SolnBlk[Level][nb].U[i][j] -
-														   4.0*DTS_SolnBlk[Level][nb].Un[i][j] +
-														   DTS_SolnBlk[Level][nb].Uo[i][j])/
-		                                                                                                  (TWO*IP->Multigrid_IP.Physical_Time_CFL_Number*dt);
+	    Local_SolnBlk[Level][nb].dUdt[i][j][k_residual] -= 
+              (IP->CFL_Number*Local_SolnBlk[Level][nb].dt[i][j])*(3.0*Local_SolnBlk[Level][nb].U[i][j] -
+	       4.0*DTS_SolnBlk[Level][nb].Un[i][j] + DTS_SolnBlk[Level][nb].Uo[i][j])/
+              (TWO*IP->Multigrid_IP.Physical_Time_CFL_Number*dt);
 	  }
 	}
       }
@@ -3990,9 +4118,11 @@ Apply_Melson_Time_Step(const int &Level,
       for (int j = Local_SolnBlk[Level][nb].JCl; j <= Local_SolnBlk[Level][nb].JCu; j++) {
 	for (int i = Local_SolnBlk[Level][nb].ICl; i <= Local_SolnBlk[Level][nb].ICu; i++) {
 	  if (IP->Multigrid_IP.i_Physical_Time_Integration == TIME_STEPPING_IMPLICIT_EULER) {
- 	    Local_SolnBlk[Level][nb].dUdt[i][j][k_residual] /= ONE + ONE*IP->CFL_Number*Local_SolnBlk[Level][nb].dt[i][j]/(IP->Multigrid_IP.Physical_Time_CFL_Number*dt);
+ 	    Local_SolnBlk[Level][nb].dUdt[i][j][k_residual] /= ONE + 
+               ONE*IP->CFL_Number*Local_SolnBlk[Level][nb].dt[i][j]/(IP->Multigrid_IP.Physical_Time_CFL_Number*dt);
 	  } else if (IP->Multigrid_IP.i_Physical_Time_Integration == TIME_STEPPING_IMPLICIT_SECOND_ORDER_BACKWARD) {
- 	    Local_SolnBlk[Level][nb].dUdt[i][j][k_residual] /= ONE + 1.5*IP->CFL_Number*Local_SolnBlk[Level][nb].dt[i][j]/(IP->Multigrid_IP.Physical_Time_CFL_Number*dt);
+ 	    Local_SolnBlk[Level][nb].dUdt[i][j][k_residual] /= ONE + 
+               1.5*IP->CFL_Number*Local_SolnBlk[Level][nb].dt[i][j]/(IP->Multigrid_IP.Physical_Time_CFL_Number*dt);
 	  }
 	}
       }
@@ -4100,7 +4230,7 @@ DTS_Multigrid_Solution(const int &batch_flag,
     // Send solution information between neighbouring blocks to
     // complete the prescription of initial data.
     error_flag = Exchange_Solution_Information(level,ON);
-    CFDkit_Broadcast_MPI(&error_flag,1);
+    CFFC_Broadcast_MPI(&error_flag,1);
     if (error_flag) return error_flag;
     ICs(Local_SolnBlk[level],
 	List_of_Local_Solution_Blocks[level],
@@ -4115,18 +4245,18 @@ DTS_Multigrid_Solution(const int &batch_flag,
     // Send solution information between neighbouring blocks to
     // complete the prescription of initial data.
     error_flag = Exchange_Solution_Information(level,OFF);
-    CFDkit_Broadcast_MPI(&error_flag,1);
+    CFFC_Broadcast_MPI(&error_flag,1);
     if (error_flag) return error_flag;
   }
 
   // MPI barrier to ensure processor synchronization.
-  CFDkit_Barrier_MPI();
+  CFFC_Barrier_MPI();
 
   ////////////////////////////////////////////////////
   // Open the progress file and reset the CPU time. //
   ////////////////////////////////////////////////////
 
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     error_flag = Open_Progress_File(residual_file,
 				    IP->Output_File_Name,
 				    number_of_time_steps);
@@ -4134,7 +4264,7 @@ DTS_Multigrid_Solution(const int &batch_flag,
       cout << endl << " FASMultigrid ERROR: Unable to open residual file for calculation." << endl;
     }
   }
-  CFDkit_Broadcast_MPI(&error_flag,1);
+  CFFC_Broadcast_MPI(&error_flag,1);
   if (error_flag) return error_flag;
 
   // Set the CPU time to zero.
@@ -4147,7 +4277,7 @@ DTS_Multigrid_Solution(const int &batch_flag,
   if ((!IP->Time_Accurate && IP->Maximum_Number_of_Time_Steps > 0) ||
       (IP->Time_Accurate && IP->Time_Max > ZERO)) {
 
-    if (!batch_flag && CFDkit_Primary_MPI_Processor()) cout << endl << " Beginning FAS Multigrid DTS computations on "
+    if (!batch_flag && CFFC_Primary_MPI_Processor()) cout << endl << " Beginning FAS Multigrid DTS computations on "
 							    << Date_And_Time() << "." << endl << endl;
 
     // Perform required number of iterations (time steps).
@@ -4173,7 +4303,7 @@ DTS_Multigrid_Solution(const int &batch_flag,
 		 << List_of_Local_Solution_Blocks[FINEST_LEVEL].ThisCPU
 		 << "." << endl;
 	  }
-	  error_flag = CFDkit_OR_MPI(error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) {
 	    command_flag = Output_Tecplot(Local_SolnBlk[FINEST_LEVEL],
 					  List_of_Local_Solution_Blocks[FINEST_LEVEL],
@@ -4237,7 +4367,7 @@ DTS_Multigrid_Solution(const int &batch_flag,
 	       << List_of_Local_Solution_Blocks[FINEST_LEVEL].ThisCPU
 	       << "." << endl;
 	}
-	error_flag = CFDkit_OR_MPI(error_flag);
+	error_flag = CFFC_OR_MPI(error_flag);
 	if (error_flag) return error_flag;
 	error_flag = Write_Restart_Solution(Local_SolnBlk[FINEST_LEVEL], 
 					    List_of_Local_Solution_Blocks[FINEST_LEVEL], 
@@ -4251,7 +4381,7 @@ DTS_Multigrid_Solution(const int &batch_flag,
 	       << List_of_Local_Solution_Blocks[FINEST_LEVEL].ThisCPU
 	       << "." << endl;
 	}
-	error_flag = CFDkit_OR_MPI(error_flag);
+	error_flag = CFFC_OR_MPI(error_flag);
 	if (error_flag) return error_flag;
 	if (!batch_flag) cout << endl;
       }
@@ -4268,7 +4398,7 @@ DTS_Multigrid_Solution(const int &batch_flag,
       dTime = CFL(Local_SolnBlk[FINEST_LEVEL],
 		  List_of_Local_Solution_Blocks[FINEST_LEVEL],
 		  *IP);
-      dTime = CFDkit_Minimum_MPI(dTime); // Find global minimum time step for all processors.
+      dTime = CFFC_Minimum_MPI(dTime); // Find global minimum time step for all processors.
 
       if (IP->Time_Accurate) {
 	if (Time + IP->Multigrid_IP.Physical_Time_CFL_Number*dTime > IP->Time_Max) {
@@ -4325,21 +4455,21 @@ DTS_Multigrid_Solution(const int &batch_flag,
 	  // Determine the L1 norm of the solution residual.
 	  residual_l1_norm = L1_Norm_Residual(Local_SolnBlk[top_level],
 					      List_of_Local_Solution_Blocks[top_level]);
-	  residual_l1_norm = CFDkit_Summation_MPI(residual_l1_norm);	
+	  residual_l1_norm = CFFC_Summation_MPI(residual_l1_norm);	
 	  // Determine the L2 norm of the solution residual.
 	  residual_l2_norm = L2_Norm_Residual(Local_SolnBlk[top_level],
 					      List_of_Local_Solution_Blocks[top_level]);
 	  residual_l2_norm = sqr(residual_l2_norm);
-	  residual_l2_norm = CFDkit_Summation_MPI(residual_l2_norm);
+	  residual_l2_norm = CFFC_Summation_MPI(residual_l2_norm);
 	  residual_l2_norm = sqrt(residual_l2_norm);
 	  // Determine the max norm of the solution residual.
 	  residual_max_norm = Max_Norm_Residual(Local_SolnBlk[top_level],
 						List_of_Local_Solution_Blocks[top_level]);
-	  residual_max_norm = CFDkit_Maximum_MPI(residual_max_norm);
+	  residual_max_norm = CFFC_Maximum_MPI(residual_max_norm);
 
 	  // Update CPU time used for the calculation so far.
 	  processor_cpu_time.update();
-	  total_cpu_time.cput = CFDkit_Summation_MPI(processor_cpu_time.cput);
+	  total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);
 
 	  // Output progress information for the calculation.
 	  if (!batch_flag) Output_Progress_L2norm(number_of_time_steps*IP->Multigrid_IP.Ncycles_Regular_Multigrid+cycles,
@@ -4349,7 +4479,7 @@ DTS_Multigrid_Solution(const int &batch_flag,
 						  first_step,
 						  IP->Output_Progress_Frequency,
 						  progress_character);
-	  if (CFDkit_Primary_MPI_Processor() && !first_step) {
+	  if (CFFC_Primary_MPI_Processor() && !first_step) {
 	    Output_Progress_to_File(residual_file,
 				    number_of_time_steps*IP->Multigrid_IP.Ncycles_Regular_Multigrid+cycles,
 				    Time*THOUSAND,
@@ -4424,7 +4554,7 @@ DTS_Multigrid_Solution(const int &batch_flag,
 
     }
 
-    if (!batch_flag && CFDkit_Primary_MPI_Processor()) cout << "\n\n FAS Multigrid DTS computations complete on " 
+    if (!batch_flag && CFFC_Primary_MPI_Processor()) cout << "\n\n FAS Multigrid DTS computations complete on " 
 							    << Date_And_Time() << ".\n";
 
   }
@@ -4440,7 +4570,7 @@ DTS_Multigrid_Solution(const int &batch_flag,
       *IP);
 
   // Close the residual file.
-  if (CFDkit_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor()) {
     error_flag = Close_Progress_File(residual_file);
     if (error_flag) return error_flag;
   }

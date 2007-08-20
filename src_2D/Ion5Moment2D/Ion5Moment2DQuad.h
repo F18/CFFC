@@ -2268,14 +2268,16 @@ extern int Restrict_Solution_Block(Ion5Moment2D_Quad_Block &SolnBlk_Coarse,
 				   Ion5Moment2D_Quad_Block &SolnBlk_Original_NE);
 
 extern void Output_Tecplot(Ion5Moment2D_Quad_Block &SolnBlk,
-		           const int Number_of_Time_Steps,
+		           Ion5Moment2D_Input_Parameters &Input_Parameters,
+                           const int Number_of_Time_Steps,
                            const double &Time,
                            const int Block_Number,
                            const int Output_Title,
 	                   ostream &Out_File);
 
 extern void Output_Cells_Tecplot(Ion5Moment2D_Quad_Block &SolnBlk,
-		                 const int Number_of_Time_Steps,
+		                 Ion5Moment2D_Input_Parameters &Input_Parameters,
+                                 const int Number_of_Time_Steps,
                                  const double &Time,
                                  const int Block_Number,
                                  const int Output_Title,

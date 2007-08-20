@@ -29,10 +29,10 @@
 
 template<>
 int Hexa_Block<NavierStokes3D_ThermallyPerfect_pState, 
-               NavierStokes3D_ThermallyPerfect_cState>::dUdt_Multistage_Explicit(
-                  const int i_stage,
-                  Input_Parameters<NavierStokes3D_ThermallyPerfect_pState, 
-                  NavierStokes3D_ThermallyPerfect_cState> &IPs);
+               NavierStokes3D_ThermallyPerfect_cState>::
+dUdt_Multistage_Explicit(const int i_stage,
+                         Input_Parameters<NavierStokes3D_ThermallyPerfect_pState, 
+                                          NavierStokes3D_ThermallyPerfect_cState> &IPs);
 
 
 #endif // _NAVIERSTOKES3D_THERMALLYPERFECT_HEXA_BLOCK_INCLUDED

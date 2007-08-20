@@ -733,12 +733,12 @@ inline RowVector transpose(const ColumnVector &CVec) {
  * cin  >> M; (input function)                          *
  *                                                      *
  ********************************************************/
-class DenseMatrix: public MV_ColMat_double{               // v_ and lda_ 
+class DenseMatrix: public MV_ColMat_double{
   private:
     static RowVector temp_RVec;
   public:
     /* Creation, copy, and assignment constructors. */
-    DenseMatrix(void) : MV_ColMat_double()  { }
+    DenseMatrix(void) : MV_ColMat_double() { }
     DenseMatrix(unsigned int m, unsigned int n) : 
        MV_ColMat_double(m, n) { /* ... */ } 
     DenseMatrix(unsigned int m, unsigned int n, const double &x) : 
@@ -761,6 +761,8 @@ class DenseMatrix: public MV_ColMat_double{               // v_ and lda_
     /* Destructor. */
     // ~DenseMatrix(void);
     // Use automatically generated destructor.
+
+    /* Obtain the dimensions of the mxn matrix. */
     int get_n(void) {return dim0_;}
     int get_m(void) {return dim1_;}
 
@@ -819,6 +821,7 @@ class DenseMatrix: public MV_ColMat_double{               // v_ and lda_
     /* Shortcut arithmetic operators. */
     friend DenseMatrix &operator +=(DenseMatrix &M1, const DenseMatrix &M2);
     friend DenseMatrix &operator -=(DenseMatrix &M1, const DenseMatrix &M2);
+    friend DenseMatrix &operator *=(DenseMatrix &M1, double c);
     
     /* Relational operators. */
     friend int operator ==(const DenseMatrix &M1, const DenseMatrix &M2);
@@ -989,6 +992,11 @@ inline DenseMatrix &operator +=(DenseMatrix &M1, const DenseMatrix &M2) {
 inline DenseMatrix &operator -=(DenseMatrix &M1, const DenseMatrix &M2) {
    assert(M1.dim0_ == M2.dim0_ && M1.dim1_ == M2.dim1_);
    M1.v_ -= M2.v_;
+   return (M1);
+}
+
+inline DenseMatrix &operator *=(DenseMatrix &M1, double c) {
+   M1.v_ *= c;
    return (M1);
 }
 

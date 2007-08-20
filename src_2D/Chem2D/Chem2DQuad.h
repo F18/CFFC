@@ -2216,14 +2216,14 @@ extern void Copy_Solution_Block(Chem2D_Quad_Block &SolnBlk1,
 		                Chem2D_Quad_Block &SolnBlk2);
 
 extern int Prolong_Solution_Block(Chem2D_Quad_Block &SolnBlk_Fine,
-		                   Chem2D_Quad_Block &SolnBlk_Original,
-                                   const int Sector);
+		                  Chem2D_Quad_Block &SolnBlk_Original,
+                                  const int Sector);
 
 extern int Restrict_Solution_Block(Chem2D_Quad_Block &SolnBlk_Coarse,
-		                    Chem2D_Quad_Block &SolnBlk_Original_SW,
-                                    Chem2D_Quad_Block &SolnBlk_Original_SE,
-                                    Chem2D_Quad_Block &SolnBlk_Original_NW,
-                                    Chem2D_Quad_Block &SolnBlk_Original_NE);
+		                   Chem2D_Quad_Block &SolnBlk_Original_SW,
+                                   Chem2D_Quad_Block &SolnBlk_Original_SE,
+                                   Chem2D_Quad_Block &SolnBlk_Original_NW,
+                                   Chem2D_Quad_Block &SolnBlk_Original_NE);
 
 extern void Output_Tecplot(Chem2D_Quad_Block &SolnBlk,
 			   Chem2D_Input_Parameters &IP,
@@ -2249,12 +2249,11 @@ extern void Output_Nodes_Tecplot(Chem2D_Quad_Block &SolnBlk,
 	                         ostream &Out_File);
 
 extern void Output_RHS(Chem2D_Quad_Block &SolnBlk,
-		                 const int Number_of_Time_Steps,
-                                 const double &Time,
-                                 const int Block_Number,
-                                 const int Output_Title,
-	                         ostream &Out_File);
-
+		       const int Number_of_Time_Steps,
+                       const double &Time,
+                       const int Block_Number,
+                       const int Output_Title,
+	               ostream &Out_File);
 
 extern void ICs(Chem2D_Quad_Block &SolnBlk,
  	        const int i_ICtype,
@@ -2319,8 +2318,6 @@ extern void Linear_Reconstruction_GreenGauss_Diamond(Chem2D_Quad_Block &SolnBlk,
 						     const int j,
 						     const int Limiter);
 
-
-
 extern void Residual_Smoothing(Chem2D_Quad_Block &SolnBlk,
                                const int k_residual,
 			       double &epsilon, 
@@ -2360,7 +2357,6 @@ extern void Apply_Boundary_Flux_Corrections_Multistage_Explicit(Chem2D_Quad_Bloc
 
 extern int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 				    Chem2D_Input_Parameters &Input_Parameters);
-
 
 extern int dUdt_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
    	                            const int i_stage,
@@ -2659,7 +2655,5 @@ extern void Output_Quasi3D_Tecplot(Chem2D_Quad_Block &SolnBlk,
 				   ostream &Out_File);
 
 /*************** END CHEM2D ***************************************/
-
-
 
 #endif /* _CHEM2D_QUAD_INCLUDED  */

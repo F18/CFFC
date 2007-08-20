@@ -55,7 +55,7 @@ void Output_Tecplot(Grid3D_Hexa_Block &Grid,
 
     Out_File << setprecision(14);
     if (Output_Title) {
-       Out_File << "TITLE = \"" << CFDkit_Name()
+       Out_File << "TITLE = \"" << CFFC_Name()
                 << ": 3D Structured Curvilinear Grid Block (Node Locations)"
                 << "\"" << "\n"
 	        << "VARIABLES = \"x\" \\ \n"
@@ -104,7 +104,7 @@ void Output_Nodes_Tecplot(Grid3D_Hexa_Block &Grid,
 
     Out_File << setprecision(14);
     if (Output_Title) {
-       Out_File << "TITLE = \"" << CFDkit_Name()
+       Out_File << "TITLE = \"" << CFFC_Name()
                 << ": 3D Structured Curvilinear Grid Block (Node Locations)"
                 << "\"" << "\n"
 	        << "VARIABLES = \"x\" \\ \n"
@@ -152,7 +152,7 @@ void Output_Cells_Tecplot(Grid3D_Hexa_Block &Grid,
 
     Out_File << setprecision(14);
     if (Output_Title) {
-       Out_File << "TITLE = \"" << CFDkit_Name()
+       Out_File << "TITLE = \"" << CFFC_Name()
                 << ": 3D Structured Curvilinear Grid Block (Cell Locations)"
                 << "\"" << "\n"
 	        << "VARIABLES = \"x\" \\ \n"
@@ -200,7 +200,7 @@ void Output_Gnuplot(Grid3D_Hexa_Block &Grid,
 
     Out_File << setprecision(14);
     if (Output_Title) {
-       Out_File << "# " << CFDkit_Name()
+       Out_File << "# " << CFFC_Name()
                 << ": 3D Structured Curvilinear Grid Block (Node Locations)"
                 << "\n"
 	        << "# x(m), y(m), z(m)\n";

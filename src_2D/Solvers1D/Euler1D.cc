@@ -60,7 +60,7 @@ void Output_Gnuplot(Euler1D_UniformMesh *Soln,
 
     int i;
 
-    out_file << "# " << CFDkit_Name() << ": 1D Euler Solution, "
+    out_file << "# " << CFFC_Name() << ": 1D Euler Solution, "
              << "Time Step/Iteration Level = "
              << Number_of_Time_Steps
              << ", Time = " << Time*THOUSAND << " (ms)\n"
@@ -90,7 +90,7 @@ void Output_Tecplot(Euler1D_UniformMesh *Soln,
 
     int i;
 
-    out_file << "TITLE = \"" << CFDkit_Name() << ": 1D Euler Solution, "
+    out_file << "TITLE = \"" << CFFC_Name() << ": 1D Euler Solution, "
              << "Time Step/Iteration Level = "
              << Number_of_Time_Steps
              << ", Time = " << Time*THOUSAND << " (ms)\"" << "\n"
@@ -680,7 +680,7 @@ int dUdt_explicitEuler_upwind(Euler1D_UniformMesh *Soln,
 	if (Soln[i].U.d   <= ZERO ||
 	    Soln[i].U.E   <= ZERO ||
 	    Soln[i].U.e() <= ZERO ) {
-	    cout << "\n " << CFDkit_Name() << " ERROR: Negative Density and/or Energy: \n"
+	    cout << "\n " << CFFC_Name() << " ERROR: Negative Density and/or Energy: \n"
 	         << " node = " << i << "\n U = " << Soln[i].U << "\n dUdt = "
 	         << Soln[i].dUdt << "\n";
 	    return (i);
@@ -749,7 +749,7 @@ int dUdt_LaxFriedrichs(Euler1D_UniformMesh *Soln,
 	if (Soln[i].U.d   <= ZERO ||
 	    Soln[i].U.E   <= ZERO ||
 	    Soln[i].U.e() <= ZERO ) {
-	    cout << "\n " << CFDkit_Name() << " ERROR: Negative Density and/or Energy: \n"
+	    cout << "\n " << CFFC_Name() << " ERROR: Negative Density and/or Energy: \n"
 	         << " node = " << i << "\n U = " << Soln[i].U << "\n dUdt = "
 	         << Soln[i].dUdt << "\n";
 	    return (i);
@@ -829,7 +829,7 @@ int dUdt_LaxWendroff(Euler1D_UniformMesh *Soln,
 	if (Soln[i].U.d   <= ZERO ||
 	    Soln[i].U.E   <= ZERO ||
 	    Soln[i].U.e() <= ZERO ) {
-	    cout << "\n " << CFDkit_Name() << " ERROR: Negative Density and/or Energy: \n"
+	    cout << "\n " << CFFC_Name() << " ERROR: Negative Density and/or Energy: \n"
 	         << " node = " << i << "\n U = " << Soln[i].U << "\n dUdt = "
 	         << Soln[i].dUdt << "\n";
 	    return (i);
@@ -974,7 +974,7 @@ int dUdt_MacCormack(Euler1D_UniformMesh *Soln,
 	if (Soln[i].U.d   <= ZERO ||
 	    Soln[i].U.E   <= ZERO ||
 	    Soln[i].U.e() <= ZERO ) {
-	    cout << "\n " << CFDkit_Name() << " ERROR: Negative Density and/or Energy: \n"
+	    cout << "\n " << CFFC_Name() << " ERROR: Negative Density and/or Energy: \n"
 	         << " node = " << i << "\n U = " << Soln[i].U << "\n dUdt = "
 	         << Soln[i].dUdt << "\n";
 	    return (i);
@@ -1283,7 +1283,7 @@ int dUdt_2stage_2ndOrder_upwind(Euler1D_UniformMesh *Soln,
   	    if (Soln[i].U.d   <= ZERO ||
 	        Soln[i].U.E   <= ZERO ||
 	        Soln[i].U.e() <= ZERO ) {
-	        cout << "\n " << CFDkit_Name() << " ERROR: Negative Density and/or Energy: \n"
+	        cout << "\n " << CFFC_Name() << " ERROR: Negative Density and/or Energy: \n"
 	             << " node = " << i << "\n U = " << Soln[i].U << "\n dUdt = "
 	             << Soln[i].dUdt << "\n";
 	        return (i);

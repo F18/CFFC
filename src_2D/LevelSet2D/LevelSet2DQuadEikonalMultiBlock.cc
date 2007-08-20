@@ -51,7 +51,7 @@ int Explicit_Eikonal_Equation(LevelSet2D_Quad_Block *Soln_ptr,
   error_flag = Store_Initial_Eikonal_Solution(Soln_ptr,
 					      Soln_Block_List);
 
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // Determine the sign function before starting solution of the
@@ -59,7 +59,7 @@ int Explicit_Eikonal_Equation(LevelSet2D_Quad_Block *Soln_ptr,
   error_flag = Calculate_Sign_Function(Soln_ptr,
 				       Soln_Block_List,
 				       IP);
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // Conduct the explicit solution of the Eikonal equation for the
@@ -72,7 +72,7 @@ int Explicit_Eikonal_Equation(LevelSet2D_Quad_Block *Soln_ptr,
     // Determine the global time step.
     dTime = CFL_Eikonal(Soln_ptr,Soln_Block_List);
     // Find global minimum time step for all processors.
-    dTime = CFDkit_Minimum_MPI(dTime);
+    dTime = CFFC_Minimum_MPI(dTime);
     // Set global time step.
     Set_Global_TimeStep(Soln_ptr,Soln_Block_List,dTime);
 
@@ -85,7 +85,7 @@ int Explicit_Eikonal_Equation(LevelSet2D_Quad_Block *Soln_ptr,
 				     Soln_Block_List,
 				     NUM_VAR_LEVELSET2D,
 				     OFF);
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
 	
       // Step 2. Apply boundary conditions for stage.
@@ -103,7 +103,7 @@ int Explicit_Eikonal_Equation(LevelSet2D_Quad_Block *Soln_ptr,
 					   Soln_Block_List,
 					   IP,
 					   i_stage);
-      //error_flag = CFDkit_OR_MPI(error_flag);
+      //error_flag = CFFC_OR_MPI(error_flag);
       //if (error_flag) return error_flag;
 
       // Step 5. Update solution for stage.
@@ -111,7 +111,7 @@ int Explicit_Eikonal_Equation(LevelSet2D_Quad_Block *Soln_ptr,
 					     Soln_Block_List,
 					     IP,
 					     i_stage);
-      //error_flag = CFDkit_OR_MPI(error_flag);
+      //error_flag = CFFC_OR_MPI(error_flag);
       //if (error_flag) return error_flag;
 
     }
@@ -119,7 +119,7 @@ int Explicit_Eikonal_Equation(LevelSet2D_Quad_Block *Soln_ptr,
     // Determine l2-norm residual.
     l2_norm = L2_Norm_Residual(Soln_ptr,Soln_Block_List,1);
     l2_norm = sqr(l2_norm);
-    l2_norm = CFDkit_Summation_MPI(l2_norm);
+    l2_norm = CFFC_Summation_MPI(l2_norm);
     l2_norm = sqrt(l2_norm);
 
     // Update iteration counter.

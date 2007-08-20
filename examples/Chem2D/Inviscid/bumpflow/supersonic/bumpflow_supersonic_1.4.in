@@ -38,7 +38,9 @@ Freeze_Limiter=
 Freeze_Limiter_Residual_Level= 
 5.0e00
 ###########################
-GMRES_Tolerance=
+GMRES_Initial_Tolerance=
+2.0e-01
+GMRES_Final_Tolerance =
 2.0e-01
 NKS_Overall_Tolerance=
 1.0e-10
@@ -77,7 +79,7 @@ Mach_Number=
 Grid_Type=
 Bump_Channel_Flow
 Smooth_Quad_Block=
-Off
+OFF
 NACA_Aerofoil_Type= 
 0012
 Number_of_Cells_Idir= 
@@ -85,7 +87,7 @@ Number_of_Cells_Idir=
 Number_of_Cells_Jdir=
 16
 AMR=
-Off
+OFF
 AMR_Frequency=
 8
 Number_of_Initial_Mesh_Refinements=
@@ -136,8 +138,8 @@ Execute
 #######################
 # Write output
 #######################
-Write_Output
-Write_Output_Cells
+#Write_Output
+#Write_Output_Cells
 #Write_Output_Mesh
 #Write_Output_Mesh_Cells
 #Write_Output_Mesh_Nodes
@@ -150,25 +152,23 @@ Write_Output_Cells
 # AMR & Continue
 #
 ######################
-#Refine_Grid
-#Morton_Ordering
-#Freeze_Limiter_Residual_Level=
-#20.0e00
-#Maximum_Number_of_Time_Steps=
-#100
-#Continue
+Refine_Grid
+Freeze_Limiter_Residual_Level=
+20.0e00
+Maximum_Number_of_Time_Steps=
+100
+Continue
 ###############
-#Refine_Grid
-#Morton_Ordering
-#Freeze_Limiter_Residual_Level=
-#100.0e00
-#Maximum_Number_of_Time_Steps=
-#300
-#Continue
+Refine_Grid
+Freeze_Limiter_Residual_Level=
+100.0e00
+Maximum_Number_of_Time_Steps=
+300
+Continue
 ###############
-#Write_Output
-#Write_Output_Cells
-#Write_Restart
+Write_Output
+Write_Output_Cells
+Write_Restart
 #######################
 # Terminate program
 #######################

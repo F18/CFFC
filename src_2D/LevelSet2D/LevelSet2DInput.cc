@@ -53,6 +53,9 @@ void Set_Default_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
 
   char *string_ptr;
 
+  // CFFC root directory path:
+  IP.get_cffc_path();
+
   string_ptr = "LevelSet2D.in";
   strcpy(IP.Input_File_Name,string_ptr);
 
@@ -187,7 +190,7 @@ void Set_Default_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
 
   IP.Line_Number = 0;
   
-  IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+  IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
   IP.Number_of_Blocks_Per_Processor = 10;
 
 }
@@ -204,6 +207,10 @@ void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
 
 #ifdef _MPI_VERSION
 
+  // CFFC path:
+  MPI::COMM_WORLD.Bcast(IP.CFFC_Path, 
+ 			INPUT_PARAMETER_LENGTH_LEVELSET2D, 
+			MPI::CHAR, 0);
   MPI::COMM_WORLD.Bcast(IP.Input_File_Name,
 			INPUT_PARAMETER_LENGTH_LEVELSET2D,
 			MPI::CHAR,0);
@@ -485,8 +492,8 @@ void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
 			1,
 			MPI::INT,0);
   // Number of processors:
-  if (!CFDkit_Primary_MPI_Processor()) {
-    IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+  if (!CFFC_Primary_MPI_Processor()) {
+    IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
   }
   MPI::COMM_WORLD.Bcast(&(IP.Number_of_Blocks_Per_Processor),
 			1,
@@ -510,6 +517,10 @@ void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP,
 
   int Source_Rank = 0;
 
+  // CFFC path:
+  Communicator.Bcast(IP.CFFC_Path, 
+ 		     INPUT_PARAMETER_LENGTH_LEVELSET2D, 
+		     MPI::CHAR,Source_Rank);
   Communicator.Bcast(IP.Input_File_Name,
 		     INPUT_PARAMETER_LENGTH_LEVELSET2D,
 		     MPI::CHAR,Source_Rank);
@@ -792,8 +803,8 @@ void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP,
 		     1,
 		     MPI::INT,Source_Rank);
   // Number of blocks per processor:
-  if (!CFDkit_Primary_MPI_Processor()) {
-    IP.Number_of_Processors = CFDkit_MPI::Number_of_Processors;
+  if (!CFFC_Primary_MPI_Processor()) {
+    IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
   }
   Communicator.Bcast(&(IP.Number_of_Blocks_Per_Processor),
 		     1,
@@ -842,7 +853,12 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
   int tpt, bct;
   Vector2D Xt;
 
-  if (strcmp(IP.Next_Control_Parameter,"Time_Integration_Type") == 0) {
+  if (strcmp(IP.Next_Control_Parameter, "CFFC_Path") == 0) {
+    i_command = 1111;
+    Get_Next_Input_Control_Parameter(IP);
+    strcpy(IP.CFFC_Path, IP.Next_Control_Parameter);
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Time_Integration_Type") == 0) {
     i_command = 1;
     Get_Next_Input_Control_Parameter(IP);
     strcpy(IP.Time_Integration_Type,IP.Next_Control_Parameter);
@@ -931,10 +947,10 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Perturb_Distance_Function") == 0) {
     i_command = 5;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0 ||
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0 ||
 	strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Perturb_Distance_Function = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0 ||
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0 ||
 	       strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Perturb_Distance_Function = OFF;
     } else {
@@ -1402,9 +1418,9 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter, "AMR") == 0) {
     i_command = 59;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.AMR = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.AMR = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -1477,9 +1493,9 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Curvature") == 0) {
     i_command = 70;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Refinement_Criteria_Curvature = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Refinement_Criteria_Curvature = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -1488,9 +1504,9 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Refinement_Criteria_Zero_Level_Set") == 0) {
     i_command = 72;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"On") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Refinement_Criteria_Zero_Level_Set = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Refinement_Criteria_Zero_Level_Set = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;

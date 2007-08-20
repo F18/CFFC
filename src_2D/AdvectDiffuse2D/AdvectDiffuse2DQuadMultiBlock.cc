@@ -333,6 +333,7 @@ int Output_Tecplot(AdvectDiffuse2D_Quad_Block *Soln_ptr,
     for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
           Output_Tecplot(Soln_ptr[i], 
+                         Input_Parameters,
                          Number_of_Time_Steps, 
                          Time,
                          Soln_Block_List.Block[i].gblknum,
@@ -406,6 +407,7 @@ int Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block *Soln_ptr,
     for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
           Output_Cells_Tecplot(Soln_ptr[i], 
+                               Input_Parameters,
                                Number_of_Time_Steps, 
                                Time,
                                Soln_Block_List.Block[i].gblknum,
@@ -1124,7 +1126,7 @@ int Initial_AMR2(AdvectDiffuse2D_Quad_Block       *Soln_ptr,
                                       OFF);
        if (error_flag) return (error_flag);
 
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           cout << "\n Refinement Level #" << number_of_initial_mesh_refinements
                << " : Number of Blocks = " << QuadTree.countUsedBlocks()
                << ", Number of Cells = " << QuadTree.countUsedCells()
@@ -1192,7 +1194,7 @@ int Uniform_AMR2(AdvectDiffuse2D_Quad_Block       *Soln_ptr,
                                       OFF);
        if (error_flag) return (error_flag);
 
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           cout << "\n Refinement Level #" << number_of_uniform_mesh_refinements
                << " : Number of Blocks = " << QuadTree.countUsedBlocks()
                << ", Number of Cells = " << QuadTree.countUsedCells()
@@ -1277,7 +1279,7 @@ int Boundary_AMR2(AdvectDiffuse2D_Quad_Block       *Soln_ptr,
                                       OFF);
        if (error_flag) return (error_flag);
 
-       if (CFDkit_Primary_MPI_Processor()) {
+       if (CFFC_Primary_MPI_Processor()) {
           cout << "\n Refinement Level #" << number_of_boundary_mesh_refinements
                << " : Number of Blocks = " << QuadTree.countUsedBlocks()
                << ", Number of Cells = " << QuadTree.countUsedCells()

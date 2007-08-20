@@ -17,9 +17,9 @@
  * mesh refinement.                                       *
  *                                                        *
  **********************************************************/
-void AdaptiveBlock3DResourceList::Create_Block_Resource_List(AdaptiveBlock3DResourceList &List_of_Available_Blocks,
-                                const int Number_of_Processors,
-                                const int Number_of_Blocks_per_Processor) {
+void AdaptiveBlock3D_ResourceList::Create_Block_Resource_List(AdaptiveBlock3D_ResourceList &List_of_Available_Blocks,
+                                                              const int Number_of_Processors,
+                                                              const int Number_of_Blocks_per_Processor) {
 
     /* Allocate (re-allocate) memory for adaptive block 
        resource list. */

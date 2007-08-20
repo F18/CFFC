@@ -13,44 +13,32 @@
 #include "FANS3DThermallyPerfectState.h"
 #endif // _FANS3D_THERMALLYPERFECT_STATE_INCLUDED   
 
-
-/************* set_species_data ***************************/
-
 /****************************************************
   Speed of sound using 
   a^2 = dip/dirho + p/rho^2( die/dip)^-1
   from eigenvalue analysis using e =f(p,rho)
 ****************************************************/
-
 double FANS3D_ThermallyPerfect_KOmega_pState::a(void){
    double sum;
-   
    sum = sqr(Euler3D_ThermallyPerfect_pState::a());
-   
    sum += 2.0/3.0*k*Euler3D_ThermallyPerfect_pState::g();
-   
    return sqrt(sum);
 }
 
 double FANS3D_ThermallyPerfect_KOmega_pState::a(void) const{
    double sum;
-   
    sum = sqr(Euler3D_ThermallyPerfect_pState::a());
-   
    sum += 2.0/3.0*k*Euler3D_ThermallyPerfect_pState::g();
-   
    return sqrt(sum);
 }
 
-
-void FANS3D_ThermallyPerfect_KOmega_pState::set_species_data(
-                FANS3D_ThermallyPerfect_KOmega_pState &Wo,
-                const int &n,
-                const string *S,
-                const char *PATH,
-                const int &debug, 
-                const double &Mr, 
-                const double* Sc){ 
+void FANS3D_ThermallyPerfect_KOmega_pState::set_species_data(FANS3D_ThermallyPerfect_KOmega_pState &Wo,
+                                                             const int &n,
+                                                             const string *S,
+                                                             const char *PATH,
+                                                             const int &debug, 
+                                                             const double &Mr, 
+                                                             const double* Sc){ 
 
    //Deallocate_static();
    Wo.Deallocate(); //Clean up memory before changing ns
@@ -82,14 +70,13 @@ void FANS3D_ThermallyPerfect_KOmega_pState::set_species_data(
    }
 }   
 
-void FANS3D_ThermallyPerfect_KOmega_cState::set_species_data(
-                FANS3D_ThermallyPerfect_KOmega_cState &Uo,
-                const int &n, 
-                const string *S, 
-                const char *PATH,
-                const int &debug, 
-                const double &Mr, 
-                const double* Sc){ 
+void FANS3D_ThermallyPerfect_KOmega_cState::set_species_data(FANS3D_ThermallyPerfect_KOmega_cState &Uo,
+                                                             const int &n, 
+                                                             const string *S, 
+                                                             const char *PATH,
+                                                             const int &debug, 
+                                                             const double &Mr, 
+                                                             const double* Sc){ 
  
    //Deallocate_static();
    Uo.Deallocate(); //Clean up memory before changing ns
@@ -126,7 +113,7 @@ void FANS3D_ThermallyPerfect_KOmega_cState::set_species_data(
  * FANS3D_ThermallyPerfect_KOmega_pState::F -- 
 Inviscid flux (x-direction).   *
 *********************************************************************/
-FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::F(void) {
+FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::F(void){
    
    // call the inviscid flux calculation in Euler3D_ThermallyPerfect_pState class  
    Euler3D_ThermallyPerfect_cState Temp;
@@ -141,9 +128,9 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::F(v
    
    return (FANS3D_ThermallyPerfect_KOmega_cState(
               Temp.rho, Temp.rhov, Temp.E, Temp_rhok, Temp_rhoomega,Temp.rhospec ));
-   
 }
-FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::F(void) const {
+
+FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::F(void) const{
    
    // call the inviscid flux calculation in Euler3D_ThermallyPerfect_pState class  
    Euler3D_ThermallyPerfect_cState Temp;
@@ -158,7 +145,6 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::F(v
  
    return (FANS3D_ThermallyPerfect_KOmega_cState(
               Temp.rho, Temp.rhov, Temp.E, Temp_rhok, Temp_rhoomega,Temp.rhospec ));
- 
 }
 
 /********************************************************
@@ -166,10 +152,9 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::F(v
  Viscous flux (x-direction).   
  ********************************************************/
 
-FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Fv(
-   const FANS3D_ThermallyPerfect_KOmega_pState &dWdx,
-   const FANS3D_ThermallyPerfect_KOmega_pState &dWdy,
-   const FANS3D_ThermallyPerfect_KOmega_pState &dWdz) const{
+FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Fv(const FANS3D_ThermallyPerfect_KOmega_pState &dWdx,
+                                                                                const FANS3D_ThermallyPerfect_KOmega_pState &dWdy,
+                                                                                const FANS3D_ThermallyPerfect_KOmega_pState &dWdz) const{
    
    FANS3D_ThermallyPerfect_KOmega_cState Temp;
    Temp.Vacuum();
@@ -206,19 +191,14 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Fv(
    for (int index = 0; index<ns; ++index){
       Temp.rhospec[index] = rho*(spec[index].diffusion_coef+Dm_t()) *dWdx.spec[index].c;
    }
-     
    return (Temp);
-   
 }
 
 
-FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Gv(
-   const FANS3D_ThermallyPerfect_KOmega_pState &dWdx,
-   const FANS3D_ThermallyPerfect_KOmega_pState &dWdy,
-   const FANS3D_ThermallyPerfect_KOmega_pState &dWdz) const{
+FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Gv(const FANS3D_ThermallyPerfect_KOmega_pState &dWdx,
+                                                                                const FANS3D_ThermallyPerfect_KOmega_pState &dWdy,
+                                                                                const FANS3D_ThermallyPerfect_KOmega_pState &dWdz) const{
 
-
-  
    FANS3D_ThermallyPerfect_KOmega_cState Temp;
    Temp.Vacuum();
    
@@ -237,7 +217,6 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Gv(
    
    heat_flux = qflux(dWdx, dWdy, dWdz) + qflux_t(dWdx, dWdy, dWdz);
    
-   
    // q -= rho * sum ( hs * Ds *gradcs)   
    heat_flux -=  rho*thermal_diffusion( );
    
@@ -255,19 +234,13 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Gv(
    for (int index = 0; index<ns; ++index){
       Temp.rhospec[index] = rho*(spec[index].diffusion_coef+Dm_t()) *dWdy.spec[index].c;
    }
-   
    return (Temp);
-
-   
 }
 
-FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Hv(
-   const FANS3D_ThermallyPerfect_KOmega_pState &dWdx,
-   const FANS3D_ThermallyPerfect_KOmega_pState &dWdy,
-   const FANS3D_ThermallyPerfect_KOmega_pState &dWdz) const{
+FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Hv(const FANS3D_ThermallyPerfect_KOmega_pState &dWdx,
+                                                                                const FANS3D_ThermallyPerfect_KOmega_pState &dWdy,
+                                                                                const FANS3D_ThermallyPerfect_KOmega_pState &dWdz) const{
 
-
-  
    FANS3D_ThermallyPerfect_KOmega_cState Temp;
    Temp.Vacuum();
    
@@ -289,9 +262,8 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Hv(
    
    heat_flux = qflux(dWdx, dWdy, dWdz) + qflux_t(dWdx, dWdy, dWdz);
    
-   
    // q -= rho * sum ( hs * Ds *gradcs)   
-   heat_flux -=  rho*thermal_diffusion( );
+   heat_flux -=  rho*thermal_diffusion();
    
    Temp.rhov.x = molecular_stress.xz + Reynolds_stress.xz;
    Temp.rhov.y = molecular_stress.yz + Reynolds_stress.yz;
@@ -307,16 +279,13 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Hv(
    for (int index = 0; index<ns; ++index){
       Temp.rhospec[index] = rho*(spec[index].diffusion_coef+Dm_t()) *dWdz.spec[index].c;
    }
-   
    return (Temp);
-   
 }
 
 
-Tensor3D FANS3D_ThermallyPerfect_KOmega_pState::rotation_tensor(
-   const FANS3D_ThermallyPerfect_KOmega_pState &dWdx, 
-   const FANS3D_ThermallyPerfect_KOmega_pState &dWdy, 
-   const FANS3D_ThermallyPerfect_KOmega_pState &dWdz) const{
+Tensor3D FANS3D_ThermallyPerfect_KOmega_pState::rotation_tensor(const FANS3D_ThermallyPerfect_KOmega_pState &dWdx, 
+                                                                const FANS3D_ThermallyPerfect_KOmega_pState &dWdy, 
+                                                                const FANS3D_ThermallyPerfect_KOmega_pState &dWdz) const{
    
    Tensor3D rotation;
    rotation.zero();
@@ -326,13 +295,11 @@ Tensor3D FANS3D_ThermallyPerfect_KOmega_pState::rotation_tensor(
    rotation.yz = -1.0/2.0*(dWdy.v.z - dWdz.v.y);
      
    return (rotation);
-   
 }
 
-Tensor3D FANS3D_ThermallyPerfect_KOmega_pState::strain_rate(
-   const FANS3D_ThermallyPerfect_KOmega_pState &dWdx, 
-   const FANS3D_ThermallyPerfect_KOmega_pState &dWdy, 
-   const FANS3D_ThermallyPerfect_KOmega_pState &dWdz) const{
+Tensor3D FANS3D_ThermallyPerfect_KOmega_pState::strain_rate(const FANS3D_ThermallyPerfect_KOmega_pState &dWdx, 
+                                                            const FANS3D_ThermallyPerfect_KOmega_pState &dWdy, 
+                                                            const FANS3D_ThermallyPerfect_KOmega_pState &dWdz) const{
  
    Tensor3D strain_rate;
    strain_rate.zero();
@@ -345,7 +312,6 @@ Tensor3D FANS3D_ThermallyPerfect_KOmega_pState::strain_rate(
    strain_rate.xz = 1.0/2.0*(dWdx.v.z + dWdz.v.x);
    
    return (strain_rate);
-   
 }
 
 double FANS3D_ThermallyPerfect_KOmega_cState::a(void) const{
@@ -357,17 +323,13 @@ double FANS3D_ThermallyPerfect_KOmega_cState::a(void) const{
    
    return sqrt(sum);
 }
-
   
-
-
-
 /***************** EIGENVALUES *************************************
  *******************************************************************/
 
-/************************************************************
+/************************************************************************************
  * FANS3D_ThermallyPerfect_KOmega_pState::lambda -- Eigenvalue(s) (x-direction).    *
- ************************************************************/
+ ************************************************************************************/
 FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::lambda_x(void){
   
    double c = a();
@@ -390,93 +352,72 @@ FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::lam
    
 }
 
-/********************************************************
+/********************************************************************************
  * FANS3D_ThermallyPerfect_KOmega_pState -- Binary arithmetic operators.        *
- ********************************************************/
-FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::operator +(
-   const FANS3D_ThermallyPerfect_KOmega_pState &W) const{ 
+ ********************************************************************************/
+//------------------ Addition ------------------------//
+FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::operator +(const FANS3D_ThermallyPerfect_KOmega_pState &W) const{ 
    
    FANS3D_ThermallyPerfect_KOmega_pState Temp;
-   
    Temp.Copy(*this);
    Temp += W;
    return Temp;
-   
 }
 
 //------------------ Subtraction ------------------------//
-FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::operator -(
-   const FANS3D_ThermallyPerfect_KOmega_pState &W) const{
-   
+FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::operator -(const FANS3D_ThermallyPerfect_KOmega_pState &W) const{
    FANS3D_ThermallyPerfect_KOmega_pState Temp;
    Temp.Copy(*this);
    Temp -= W;
-   
    return Temp;
-   
 }
 
 //---------------- Scalar Multiplication ------------------//
-FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::operator *(
-   const double &a) const{
+FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::operator *(const double &a) const{
    FANS3D_ThermallyPerfect_KOmega_pState Temp;
    Temp.Copy(*this);
    Temp.rho = rho*a;  Temp.v = v*a; Temp.p = p*a;
    Temp.k = k*a; Temp.omega = omega*a;
-     
    for( int i=0; i<ns; i++){
       Temp.spec[i] = spec[i]*a;
    } 
-   
    return(Temp);
 }
 
-FANS3D_ThermallyPerfect_KOmega_pState operator *(
-   const double &a, 
-   const FANS3D_ThermallyPerfect_KOmega_pState &W){
+FANS3D_ThermallyPerfect_KOmega_pState operator *(const double &a, const FANS3D_ThermallyPerfect_KOmega_pState &W){
    FANS3D_ThermallyPerfect_KOmega_pState Temp;
    //Temp.Copy(W);
    Temp.rho = W.rho*a;  Temp.v = W.v*a; Temp.p = W.p*a;
    Temp.k = W.k*a; Temp.omega = W.omega*a;
-   
    for( int i=0; i<W.ns; i++){
       Temp.spec[i] = W.spec[i]*a;
    } 
-
    return(Temp);
 }
 
 //--------------- Scalar Division ------------------------//
-FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::operator /(
-   const double &a) const {
+FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::operator /(const double &a) const {
    FANS3D_ThermallyPerfect_KOmega_pState Temp(rho,v,p, k, omega);
    Temp.Copy(*this);
    Temp.rho = rho/a; Temp.v = v/a; Temp.p = p/a; 
    Temp.k = k/a; Temp.omega = omega/a;
-   
    for(int i=0; i<ns; i++){
       Temp.spec[i] = spec[i]/a; 
    } 
-   
    return(Temp);
 }
 
 //----------------- Inner Product ------------------------//
-double FANS3D_ThermallyPerfect_KOmega_pState::operator *(
-   const FANS3D_ThermallyPerfect_KOmega_pState &W) const{
+double FANS3D_ThermallyPerfect_KOmega_pState::operator *(const FANS3D_ThermallyPerfect_KOmega_pState &W) const{
    double sum=0.0;
-   
    for(int i=0; i<ns; i++){
       sum += spec[i]*W.spec[i];
    }  
    return (rho*W.rho + v*W.v + p*W.p + k*W.k + omega*W.omega + sum);
-   
 }
 
 //----------- solution state product operator ------------//
-FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::operator ^(
-   const FANS3D_ThermallyPerfect_KOmega_pState &W) const{
-   
+FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::operator ^(const FANS3D_ThermallyPerfect_KOmega_pState &W) const{
    FANS3D_ThermallyPerfect_KOmega_pState Temp(rho,v,p, k, omega);
    Temp.Copy(*this);
    Temp.rho = rho*W.rho;
@@ -486,75 +427,64 @@ FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::ope
    Temp.p = p*W.p;
    Temp.k = k*W.k;
    Temp.omega = omega*W.omega;
-   
    for(int i=0; i<ns; i++){
       Temp.spec[i] = spec[i]*W.spec[i];
    }  
    return(Temp);
-   
 }
 
 //----------------- Assignment ----------------------------//
-FANS3D_ThermallyPerfect_KOmega_pState& FANS3D_ThermallyPerfect_KOmega_pState::operator =(
-   const FANS3D_ThermallyPerfect_KOmega_pState &W){
+FANS3D_ThermallyPerfect_KOmega_pState& FANS3D_ThermallyPerfect_KOmega_pState::operator =(const FANS3D_ThermallyPerfect_KOmega_pState &W){
    //self assignment protection
-   if( this != &W){   
+   if (this != &W){   
       //copy assignment
       rho = W.rho;
       v = W.v; 
       p = W.p; 
       k = W.k;
       omega = W.omega;
-      
       if ( ns == W.ns){
          for(int i=0; i<ns; i++){
             spec[i] = W.spec[i];
          }   
-         
       }   
       else {
          cerr<<"\n Mismatch in number of species \n ";
       }  
    }
    return (*this);
-   
 }
-/********************************************************
+
+/*******************************************************************************
  * FANS3D_ThermallyPerfect_KOmega_pState -- Shortcut arithmetic operators.     *
- ********************************************************/
-FANS3D_ThermallyPerfect_KOmega_pState& FANS3D_ThermallyPerfect_KOmega_pState::operator +=(
-   const FANS3D_ThermallyPerfect_KOmega_pState &W){
+ *******************************************************************************/
+FANS3D_ThermallyPerfect_KOmega_pState& FANS3D_ThermallyPerfect_KOmega_pState::operator +=(const FANS3D_ThermallyPerfect_KOmega_pState &W){
    rho += W.rho;
    v += W.v; 
    p += W.p; 
    k += W.k;
    omega += W.omega;
-   
    for( int i=0; i<ns; i++){
       spec[i] += W.spec[i];
    } 
-   
    return (*this);
 }
 
-FANS3D_ThermallyPerfect_KOmega_pState& FANS3D_ThermallyPerfect_KOmega_pState::operator -=(
-   const FANS3D_ThermallyPerfect_KOmega_pState &W) {
+FANS3D_ThermallyPerfect_KOmega_pState& FANS3D_ThermallyPerfect_KOmega_pState::operator -=(const FANS3D_ThermallyPerfect_KOmega_pState &W) {
    rho -= W.rho;
    v -= W.v;
    p -= W.p;
    k -= W.k;
    omega -= W.omega;
-   
    for(int i=0; i<ns; i++){
       spec[i] -= W.spec[i];
    }  
-   
    return (*this); 
 }
 
-/********************************************************
+/********************************************************************************
  * FANS3D_ThermallyPerfect_KOmega_pState -- Relational operators.               *
- ********************************************************/
+ ********************************************************************************/
 int operator ==(const FANS3D_ThermallyPerfect_KOmega_pState &W1, 
                 const FANS3D_ThermallyPerfect_KOmega_pState &W2) {
    if(W1.ns == W2.ns){ //check that species are equal
@@ -622,84 +552,65 @@ istream &operator >> (istream &in_file, FANS3D_ThermallyPerfect_KOmega_pState &W
 
 
 //----------------- Addition -----------------------------//
-FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_cState::operator +(
-   const FANS3D_ThermallyPerfect_KOmega_cState &U) const{ 
-   
+FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_cState::operator +(const FANS3D_ThermallyPerfect_KOmega_cState &U) const{ 
    FANS3D_ThermallyPerfect_KOmega_cState Temp;
    Temp.Copy(*this);
    Temp += U;
    return Temp;
-   
 }
 
 //------------------ Subtraction ------------------------//
-FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_cState::operator -(
-   const FANS3D_ThermallyPerfect_KOmega_cState &U) const{
+FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_cState::operator -(const FANS3D_ThermallyPerfect_KOmega_cState &U) const{
    FANS3D_ThermallyPerfect_KOmega_cState Temp;
    Temp.Copy(*this);
    Temp -= U;
    return Temp;
-
 }
 
 //---------------- Scalar Multiplication ------------------//
-FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_cState::operator *(
-   const double &a) const{
+FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_cState::operator *(const double &a) const{
    FANS3D_ThermallyPerfect_KOmega_cState Temp;
    Temp.Copy(*this);
    Temp.rho = rho*a;  Temp.rhov = rhov*a; Temp.E = E*a;
    Temp.rhok = rhok*a; Temp.rhoomega = rhoomega*a;
-   
    for( int i=0; i<ns; i++){
       Temp.rhospec[i] = rhospec[i]*a;
    } 
-   
    return(Temp);
 }
 
-FANS3D_ThermallyPerfect_KOmega_cState operator *(
-   const double &a, 
-   const FANS3D_ThermallyPerfect_KOmega_cState &U){
+FANS3D_ThermallyPerfect_KOmega_cState operator *(const double &a, const FANS3D_ThermallyPerfect_KOmega_cState &U){
    FANS3D_ThermallyPerfect_KOmega_cState Temp;
    Temp.rho = U.rho*a;  Temp.rhov = U.rhov*a; Temp.E = U.E*a;
    Temp.rhok = U.rhok*a; Temp.rhoomega = U.rhoomega*a;
-   
    for( int i=0; i<U.ns; i++){
       Temp.rhospec[i] = U.rhospec[i]*a;
    } 
    return(Temp);
 }
 //--------------- Scalar Division ------------------------//
-FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_cState::operator /(
-   const double &a) const {
+FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_cState::operator /(const double &a) const {
    FANS3D_ThermallyPerfect_KOmega_cState Temp;
    Temp.Copy(*this);
    Temp.rho = rho/a; Temp.rhov = rhov/a; Temp.E = E/a;
    Temp.rhok = rhok/a; Temp.rhoomega = rhoomega/a;
-   
    for(int i=0; i<ns; i++){
       Temp.rhospec[i] = rhospec[i]/a; 
    } 
-   
    return(Temp);
 }
 
 //----------------- Inner Product ------------------------//
-double FANS3D_ThermallyPerfect_KOmega_cState::operator *(
-   const FANS3D_ThermallyPerfect_KOmega_cState &U) const{
+double FANS3D_ThermallyPerfect_KOmega_cState::operator *(const FANS3D_ThermallyPerfect_KOmega_cState &U) const{
    double sum=0.0;
-   
    for(int i=0; i<ns; i++){
       sum += rhospec[i]*U.rhospec[i];
    }  
    return (rho*U.rho + rhov*U.rhov + E*U.E + rhok*U.rhok + rhoomega*U.rhoomega + sum);
-   
 }
 
 //----------- solution state product operator ------------//
-FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_cState::operator ^(
-   const FANS3D_ThermallyPerfect_KOmega_cState &U) const {
-   
+FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_cState::operator ^(const FANS3D_ThermallyPerfect_KOmega_cState &U) const {
    FANS3D_ThermallyPerfect_KOmega_cState Temp;
    Temp.Copy(*this);
    Temp.rho = rho*U.rho;
@@ -709,12 +620,10 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_cState::ope
    Temp.E = E*U.E;
    Temp.rhok = rhok*U.rhok;
    Temp.rhoomega = rhoomega*U.rhoomega;
-   
    for(int i=0; i<ns; i++){
       Temp.rhospec[i] = rhospec[i]*U.rhospec[i];
    }  
    return(Temp);
-   
 }
 
 //----------------- Assignment ----------------------------//
@@ -728,12 +637,10 @@ FANS3D_ThermallyPerfect_KOmega_cState& FANS3D_ThermallyPerfect_KOmega_cState::op
       E = U.E; 
       rhok = U.rhok;
       rhoomega = U.rhoomega;
-      
       if ( ns == U.ns){
          for(int i=0; i<ns; i++){
             rhospec[i] = U.rhospec[i];
          }
-         
       } else {
          cerr<<"\n Mismatch in number of species \n ";
       }  
@@ -742,55 +649,45 @@ FANS3D_ThermallyPerfect_KOmega_cState& FANS3D_ThermallyPerfect_KOmega_cState::op
 }
 
 
-/********************************************************
+/*******************************************************************************
  * FANS3D_ThermallyPerfect_KOmega_cState -- Shortcut arithmetic operators.     *
- ********************************************************/
-FANS3D_ThermallyPerfect_KOmega_cState& FANS3D_ThermallyPerfect_KOmega_cState::operator +=(
-   const FANS3D_ThermallyPerfect_KOmega_cState &U){
+ *******************************************************************************/
+FANS3D_ThermallyPerfect_KOmega_cState& FANS3D_ThermallyPerfect_KOmega_cState::operator +=(const FANS3D_ThermallyPerfect_KOmega_cState &U){
    rho += U.rho;
    rhov += U.rhov; 
    E += U.E;
    rhok += U.rhok;
    rhoomega += U.rhoomega;
-   
    for( int i=0; i<ns; i++){
       rhospec[i] += U.rhospec[i];
    } 
-
    return (*this);
 }
 
-FANS3D_ThermallyPerfect_KOmega_cState& FANS3D_ThermallyPerfect_KOmega_cState::operator -=(
-   const FANS3D_ThermallyPerfect_KOmega_cState &U) {
-  
+FANS3D_ThermallyPerfect_KOmega_cState& FANS3D_ThermallyPerfect_KOmega_cState::operator -=(const FANS3D_ThermallyPerfect_KOmega_cState &U) {
    rho -= U.rho;
    rhov -= U.rhov;
    E -= U.E;
    rhok -= U.rhok;
    rhoomega -= U.rhoomega;
-   
-  for(int i=0; i<ns; i++){
-    rhospec[i] -= U.rhospec[i];
-  }  
-
-  return (*this); 
+   for(int i=0; i<ns; i++){
+     rhospec[i] -= U.rhospec[i];
+   }  
+   return (*this); 
 }
 
-/********************************************************
+/*******************************************************************************
  * FANS3D_ThermallyPerfect_KOmega_cState -- Unary arithmetic operators.        *
- ********************************************************/
-FANS3D_ThermallyPerfect_KOmega_cState operator -(
-   const FANS3D_ThermallyPerfect_KOmega_cState &U) {
+ *******************************************************************************/
+FANS3D_ThermallyPerfect_KOmega_cState operator -(const FANS3D_ThermallyPerfect_KOmega_cState &U) {
    Species *spt= new Species[U.ns];
    for(int i=0; i<U.ns; i++){
       spt[i] = -U.rhospec[i]; 
    }  
-   
    FANS3D_ThermallyPerfect_KOmega_cState Temp(
       -U.rho,-U.rhov,-U.E, -U.rhok, -U.rhoomega, spt);
-   
-  delete[] spt;
-  return(Temp);
+   delete[] spt;
+   return(Temp);
 }
 
 /********************************************************
@@ -836,10 +733,10 @@ int operator !=(const FANS3D_ThermallyPerfect_KOmega_cState &U1,
    }
 }
 
-/********************************************************
+/*******************************************************************************
  * FANS3D_ThermallyPerfect_KOmega_cState -- Input-output operators.            *
- ********************************************************/
-ostream &operator << (ostream &out_file, const FANS3D_ThermallyPerfect_KOmega_cState &U) {
+ *******************************************************************************/
+ostream &operator << (ostream &out_file, const FANS3D_ThermallyPerfect_KOmega_cState &U){
   //out_file.precision(20);
   out_file.setf(ios::scientific);
   out_file << " " << U.rho  << " " << U.rhov.x << " " << U.rhov.y << " " 
@@ -851,51 +748,43 @@ ostream &operator << (ostream &out_file, const FANS3D_ThermallyPerfect_KOmega_cS
   return (out_file);
 }
 
-istream &operator >> (istream &in_file, FANS3D_ThermallyPerfect_KOmega_cState &U) {
-   
+istream &operator >> (istream &in_file, FANS3D_ThermallyPerfect_KOmega_cState &U){
    in_file.setf(ios::skipws);
    in_file >> U.rho >> U.rhov.x >> U.rhov.y >> U.rhov.z >> U.E >> U.rhok >> U.rhoomega;
   //U.set_initial_values();
-  for( int i=0; i<U.ns; i++){
-    in_file>>U.rhospec[i]; 
-  } 
-
-  in_file.unsetf(ios::skipws);
-  return (in_file);
+   for( int i=0; i<U.ns; i++){
+     in_file>>U.rhospec[i]; 
+   } 
+   in_file.unsetf(ios::skipws);
+   return (in_file);
 }
 
-FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::rc_x(
-   const int &index) const {
-  
+FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::rc_x(const int &index) const {
    switch(index){  
    case 1:
-   
       return (FANS3D_ThermallyPerfect_KOmega_cState(
-                 ONE, v.x-a(), v.y, v.z, (H()+2.0/3.0*rho*k)/rho-v.x*a(), k, omega,spec));
+              ONE, v.x-a(), v.y, v.z, (H()+2.0/3.0*rho*k)/rho-v.x*a(), k, omega,spec));
    case 2:
       return (FANS3D_ThermallyPerfect_KOmega_cState(
-                 ONE, v.x, v.y, v.z, (H() + 2.0/3.0*rho*k)/rho-Cp()*T(), k, omega, spec)); 
+              ONE, v.x, v.y, v.z, (H() + 2.0/3.0*rho*k)/rho-Cp()*T(), k, omega, spec)); 
    case 3:
       return (FANS3D_ThermallyPerfect_KOmega_cState(
-                 ZERO, ZERO, rho, ZERO, rho*v.y, ZERO, ZERO, ZERO));
+              ZERO, ZERO, rho, ZERO, rho*v.y, ZERO, ZERO, ZERO));
    case 4:
       return (FANS3D_ThermallyPerfect_KOmega_cState(
-                 ZERO, ZERO, ZERO, rho, rho*v.z, ZERO, ZERO, ZERO));
+              ZERO, ZERO, ZERO, rho, rho*v.z, ZERO, ZERO, ZERO));
    case 5:
     
       return (FANS3D_ThermallyPerfect_KOmega_cState(
-                 ONE, v.x+a(), v.y, v.z, (H()+2.0/3.0*rho*k)/rho+v.x*a(), k, omega, spec));
+              ONE, v.x+a(), v.y, v.z, (H()+2.0/3.0*rho*k)/rho+v.x*a(), k, omega, spec));
    case 6:
     
       return (FANS3D_ThermallyPerfect_KOmega_cState(
-                 ZERO, ZERO, ZERO, ZERO, rho*(ONE-TWO/THREE*(ONE/(g()-ONE))), rho, ZERO, ZERO));
+              ZERO, ZERO, ZERO, ZERO, rho*(ONE-TWO/THREE*(ONE/(g()-ONE))), rho, ZERO, ZERO));
    case 7:
-    
       return (FANS3D_ThermallyPerfect_KOmega_cState(
-                 ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, rho, ZERO));
-      
+              ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, rho, ZERO));
    default :
-      
       FANS3D_ThermallyPerfect_KOmega_cState NEW(ZERO);
       double RTOT = Rtot();
       double TEMP = p/(rho*RTOT);      
@@ -907,21 +796,15 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::rc_
          (Cp(TEMP) -RTOT)*TEMP*(specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Rs() 
                                 - specdata[NUM_VAR_3D - (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Rs())/RTOT;
       NEW.rhospec[index - (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].c = rho*PHI; 
-      
-  //    cout<<"\n index = "<<index<<endl;
-      
       return NEW;
    };
    
 }
-FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::rc_x(
-   const int &index) {
-  
+FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::rc_x(const int &index) {
    switch(index){  
    case 1:
-   
       return (FANS3D_ThermallyPerfect_KOmega_cState(
-                 ONE, v.x-a(), v.y, v.z, (H()+2.0/3.0*rho*k)/rho-v.x*a(), k, omega,spec));
+              ONE, v.x-a(), v.y, v.z, (H()+2.0/3.0*rho*k)/rho-v.x*a(), k, omega,spec));
    case 2:
       return (FANS3D_ThermallyPerfect_KOmega_cState(
                  ONE, v.x, v.y, v.z, (H() + 2.0/3.0*rho*k)/rho-Cp()*T(), k, omega, spec)); 
@@ -930,22 +813,20 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::rc_
                  ZERO, ZERO, rho, ZERO, rho*v.y, ZERO, ZERO, ZERO));
    case 4:
       return (FANS3D_ThermallyPerfect_KOmega_cState(
-                 ZERO, ZERO, ZERO, rho, rho*v.z, ZERO, ZERO, ZERO));
+              ZERO, ZERO, ZERO, rho, rho*v.z, ZERO, ZERO, ZERO));
    case 5:
     
       return (FANS3D_ThermallyPerfect_KOmega_cState(
-                 ONE, v.x+a(), v.y, v.z, (H()+2.0/3.0*rho*k)/rho+v.x*a(), k, omega, spec));
+              ONE, v.x+a(), v.y, v.z, (H()+2.0/3.0*rho*k)/rho+v.x*a(), k, omega, spec));
    case 6:
     
       return (FANS3D_ThermallyPerfect_KOmega_cState(
-                 ZERO, ZERO, ZERO, ZERO, rho*(ONE-TWO/THREE*(ONE/(g()-ONE))), rho, ZERO, ZERO));
+              ZERO, ZERO, ZERO, ZERO, rho*(ONE-TWO/THREE*(ONE/(g()-ONE))), rho, ZERO, ZERO));
    case 7:
     
       return (FANS3D_ThermallyPerfect_KOmega_cState(
-                 ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, rho, ZERO));
-      
+              ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, rho, ZERO));
    default :
-      
       FANS3D_ThermallyPerfect_KOmega_cState NEW(ZERO);
       double RTOT = Rtot();
       double TEMP = p/(rho*RTOT);      
@@ -954,61 +835,47 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::rc_
       double PHI =specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Enthalpy(TEMP)-specdata[NUM_VAR_3D- (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Enthalpy(TEMP)-
          (Cp(TEMP) -RTOT)*TEMP*(specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Rs() - specdata[NUM_VAR_3D - (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Rs())/RTOT;
       NEW.rhospec[index - (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].c = rho*PHI; 
-//      cout<<"\n index = "<<index<<endl;
       return NEW;
    };
    
 }
 
 // Primitive Left Eigenvector -- (x-direction)
-FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::lp_x(
-   const int &index) const {
-   
+FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::lp_x(const int &index) const {
    switch(index){  
    case 1:
       return (FANS3D_ThermallyPerfect_KOmega_pState(
                k/(THREE*a()*a()), -HALF*rho/a(), ZERO, ZERO, HALF/(a()*a()), rho/(THREE*a()*a()), ZERO, ZERO));
    case 2:
-      
       return (FANS3D_ThermallyPerfect_KOmega_pState(
-                 ONE - TWO*k/(THREE*a()*a()), ZERO, ZERO, ZERO, -ONE/(a()*a()), -TWO*rho/(THREE*a()*a()), ZERO, ZERO));
+              ONE - TWO*k/(THREE*a()*a()), ZERO, ZERO, ZERO, -ONE/(a()*a()), -TWO*rho/(THREE*a()*a()), ZERO, ZERO));
    case 3 :
       return  (FANS3D_ThermallyPerfect_KOmega_pState(ZERO, ZERO, ONE, ZERO, ZERO, ZERO, ZERO, ZERO));
    case 4 :
       return  (FANS3D_ThermallyPerfect_KOmega_pState(ZERO, ZERO, ZERO, ONE, ZERO, ZERO, ZERO, ZERO));
    case 5 :
-   
       return (FANS3D_ThermallyPerfect_KOmega_pState(
-                 k/(THREE*a()*a()), HALF*rho/a(), ZERO, ZERO, HALF/(a()*a()), rho/(THREE*a()*a()), ZERO, ZERO));
+              k/(THREE*a()*a()), HALF*rho/a(), ZERO, ZERO, HALF/(a()*a()), rho/(THREE*a()*a()), ZERO, ZERO));
    case 6 :
-
       return (FANS3D_ThermallyPerfect_KOmega_pState(
-                 ZERO, ZERO, ZERO, ZERO, ZERO, ONE,ZERO, ZERO));
+              ZERO, ZERO, ZERO, ZERO, ZERO, ONE,ZERO, ZERO));
    case 7 :
-
       return (FANS3D_ThermallyPerfect_KOmega_pState(
-                 ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ONE, ZERO));
-      
+              ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ONE, ZERO));
    default :
-      
       FANS3D_ThermallyPerfect_KOmega_pState NEW(ZERO);
       NEW.spec[index-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].c = ONE;
-    
-   //   cout<<"\n index = "<<index<<endl;
       return NEW;
    };
    
 }
 
-FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::lp_x(
-   const int &index) {
-
+FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::lp_x(const int &index) {
    switch(index){  
    case 1:
       return (FANS3D_ThermallyPerfect_KOmega_pState(
                 k/(THREE*a()*a()), -HALF*rho/a(), ZERO, ZERO, HALF/(a()*a()), rho/(THREE*a()*a()), ZERO, ZERO));
    case 2:
-   
       return (FANS3D_ThermallyPerfect_KOmega_pState(
                  ONE - TWO*k/(THREE*a()*a()), ZERO, ZERO, ZERO, -ONE/(a()*a()), -TWO*rho/(THREE*a()*a()), ZERO, ZERO));
    case 3 :
@@ -1016,30 +883,20 @@ FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::lp_
    case 4 :
       return  (FANS3D_ThermallyPerfect_KOmega_pState(ZERO, ZERO, ZERO, ONE, ZERO, ZERO, ZERO, ZERO));
    case 5 :
-   
       return (FANS3D_ThermallyPerfect_KOmega_pState(
                  k/(THREE*a()*a()), HALF*rho/a(), ZERO, ZERO, HALF/(a()*a()), rho/(THREE*a()*a()), ZERO, ZERO));
    case 6 :
-
       return (FANS3D_ThermallyPerfect_KOmega_pState(
                  ZERO, ZERO, ZERO, ZERO, ZERO, ONE,ZERO, ZERO));
    case 7 :
-
       return (FANS3D_ThermallyPerfect_KOmega_pState(
                  ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ONE, ZERO));
-      
    default :
-      
       FANS3D_ThermallyPerfect_KOmega_pState NEW(ZERO);
       NEW.spec[index-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].c = ONE;
-     
-     // cout<<"\n index = "<<index<<endl;
       return NEW;
    };
-   
 }
-
-
 
 double FANS3D_ThermallyPerfect_KOmega_cState::T(void) const{
    double T = ZERO;
@@ -1092,36 +949,30 @@ double FANS3D_ThermallyPerfect_KOmega_cState::T(void) const{
          cout<<" with polytopic Tguess "<<Tguess<<", or lower than Tmin "<<low_temp_range<<" using "<<T;
       }   
    }
-   
    return T;
 } 
 
 double FANS3D_ThermallyPerfect_KOmega_pState::E(void) const {   
    double E_euler = Euler3D_ThermallyPerfect_pState::E();
    return (E_euler + rho*k);
-   
-   
 }
 
 double FANS3D_ThermallyPerfect_KOmega_pState::H(void) const{
-   
    double H_euler = Euler3D_ThermallyPerfect_pState::H();
    return (H_euler + rho*k);
-   
 }
 
 double FANS3D_ThermallyPerfect_KOmega_pState::Hs(void) const{
    // Hs = hs + velocity^2 +k;
    double H_S =  rho*(Euler3D_ThermallyPerfect_pState::hs() + HALF*v.sqr() +k );
-   
    return (H_S);
 }
 
 
 double FANS3D_ThermallyPerfect_KOmega_pState::eddy_viscosity(void) const{
    return (rho*k/max(TOLER,omega));
-   
 }
+
 double FANS3D_ThermallyPerfect_KOmega_pState::Pr_t(void) const{
    return (0.9); 
 }
@@ -1135,7 +986,6 @@ double FANS3D_ThermallyPerfect_KOmega_pState::kappa_t(void) const{
 }
 
 double FANS3D_ThermallyPerfect_KOmega_pState::Dm_t(void) const{
-   
    return (eddy_viscosity()/(rho*Sc_t()));
 }     
 
@@ -1158,9 +1008,11 @@ double FANS3D_ThermallyPerfect_KOmega_cState::Dm_t(void) const{
 double FANS3D_ThermallyPerfect_KOmega_cState::p() const{
    return (rho*Rtot()*T());
 }
+
 double FANS3D_ThermallyPerfect_KOmega_cState::k() const{
    return (rhok/rho);
 }
+
 double FANS3D_ThermallyPerfect_KOmega_cState::omega() const{
    return (rhoomega/rho);
 }
@@ -1173,10 +1025,8 @@ double FANS3D_ThermallyPerfect_KOmega_cState::omega() const{
  * solution variables.  See Roe (1981).                 *
  *                                                      *
  ********************************************************/
-FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::RoeAverage(
-   const FANS3D_ThermallyPerfect_KOmega_pState &Wl,
-   const FANS3D_ThermallyPerfect_KOmega_pState &Wr) {
-
+FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::RoeAverage(const FANS3D_ThermallyPerfect_KOmega_pState &Wl,
+                                                                                        const FANS3D_ThermallyPerfect_KOmega_pState &Wr) {
 
    double Hl, Hr, srhol, srhor;
    double Ha, ha;
@@ -1210,7 +1060,7 @@ FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::Roe
    
    /* Return the Roe-averged state. */
    return (Temp);     
-      
+
 }
 
 /*********************************************************
@@ -1224,19 +1074,16 @@ FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::Roe
  * Lax, van Leer (1983).                                 *
  *                                                       *
  *********************************************************/
-FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::FluxHLLE_x(
-   const FANS3D_ThermallyPerfect_KOmega_pState &Wl,
-   const FANS3D_ThermallyPerfect_KOmega_pState &Wr) {
+FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::FluxHLLE_x(const FANS3D_ThermallyPerfect_KOmega_pState &Wl,
+                                                                                         const FANS3D_ThermallyPerfect_KOmega_pState &Wr) {
    
    double wavespeed_l, wavespeed_r;
-
  
-    /* solnvec in  Wa (lambdas_l, lambdas_r, lambdas_a) 
-       is allocated using new  */ 
    FANS3D_ThermallyPerfect_KOmega_pState Wa, lambdas_l, lambdas_r, lambdas_a;
    FANS3D_ThermallyPerfect_KOmega_cState Flux, dUrl;
    
    int NUM_VAR_3D = Wl.NUM_VAR_3D;
+
    /* Evaluate the Roe-average primitive solution state. */
    
    Wa = RoeAverage(Wl, Wr);
@@ -1250,8 +1097,6 @@ FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::Fl
    lambdas_l = Wl.lambda_x();
    lambdas_r = Wr.lambda_x();
    lambdas_a = Wa.lambda_x();
-
-
 
    /* Determine the intermediate state flux. */
    
@@ -1279,9 +1124,8 @@ FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::Fl
    
 }
 
-FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::FluxHLLE_x(
-   const FANS3D_ThermallyPerfect_KOmega_cState &Ul,
-   const FANS3D_ThermallyPerfect_KOmega_cState &Ur) {
+FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::FluxHLLE_x(const FANS3D_ThermallyPerfect_KOmega_cState &Ul,
+                                                                                         const FANS3D_ThermallyPerfect_KOmega_cState &Ur) {
    return (FluxHLLE_x(Ul.W(), Ur.W()));
 }
 
@@ -1302,12 +1146,11 @@ FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::Fl
  * solution states.  See Harten, Lax, van Leer (1983).   *
  *                                                       *
  *********************************************************/
-FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::FluxHLLE_n(
-   const FANS3D_ThermallyPerfect_KOmega_pState &Wl,
-   const FANS3D_ThermallyPerfect_KOmega_pState &Wr,
-   const Vector3D &norm_dir) {
+FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::FluxHLLE_n(const FANS3D_ThermallyPerfect_KOmega_pState &Wl,
+                                                                                         const FANS3D_ThermallyPerfect_KOmega_pState &Wr,
+                                                                                         const Vector3D &norm_dir) {
 
-    double Wl_ur_norm, Wl_ur_tang;
+   double Wl_ur_norm, Wl_ur_tang;
    double Wr_ur_norm, Wr_ur_tang ;
    double Wr_ur_tang_z;
    
@@ -1316,18 +1159,18 @@ FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::Fl
    Vector3D Wl_ur_tang_unit_vector, Wr_ur_tang_unit_vector;
    Vector3D Wr_ur_tang_z_vector, Wr_ur_tang_z_unit_vector;
    
-   //solnvec in  Wl_rotated (Wr_rotated) is allocated using new 
    FANS3D_ThermallyPerfect_KOmega_pState Wl_rotated, Wr_rotated;
    FANS3D_ThermallyPerfect_KOmega_cState Flux, Flux_rotated;
-   
    
    /* Apply the frame rotation and evaluate left and right
       solution states in the local rotated frame defined
       by the unit normal vector. */
+
    Wl_rotated.Copy(Wl);
    Wr_rotated.Copy(Wr);
  
- // Left state velocity in rotated frame
+   // Left state velocity in rotated frame
+
    Wl_ur_norm = dot(Wl.v, norm_dir);
    Wl_ur_tang = abs(Wl.v - Wl_ur_norm*norm_dir);
    Wl_ur_tang_vector = (Wl.v - Wl_ur_norm*norm_dir);
@@ -1342,6 +1185,7 @@ FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::Fl
    Wl_rotated.v.y = Wl_ur_tang;
    Wl_rotated.v.z = ZERO;
    Wl_rotated.p = Wl.p;
+  
    // Right state velocity in rotated frame
    Wr_ur_norm = dot(Wr.v, norm_dir);
    Wr_ur_tang_vector = Wr.v - Wr_ur_norm*norm_dir;
@@ -1358,17 +1202,14 @@ FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::Fl
    Wr_rotated.v.z = abs( Wr_ur_tang_vector -Wr_rotated.v.y* Wl_ur_tang_unit_vector);
    Wr_rotated.p = Wr.p;
    
-   
    Wr_ur_tang_z = abs(Wr_ur_tang_vector-Wr_rotated.v.y* Wl_ur_tang_unit_vector);
    Wr_ur_tang_z_vector = Wr_ur_tang_vector -Wr_rotated.v.y* Wl_ur_tang_unit_vector;
    if(Wr_ur_tang_z !=ZERO){
       Wr_ur_tang_z_unit_vector = Wr_ur_tang_z_vector /Wr_ur_tang_z ;
    }else{
       Wr_ur_tang_z_unit_vector = Vector3D_ZERO;
-      
    }
  
-
    /* Evaluate the intermediate state solution 
       flux in the rotated frame. */
    
@@ -1379,27 +1220,21 @@ FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::Fl
    
    Flux.Copy(Flux_rotated);
    
-   
-   
    Flux_rotated_x = Flux.rhov.x*norm_dir;
    Flux_rotated_tang_y = Flux.rhov.y* Wl_ur_tang_unit_vector ;
    Flux_rotated_tang_z = Flux.rhov.z* Wr_ur_tang_z_unit_vector;
-   
       
    Flux.rhov =  Flux_rotated_x + Flux_rotated_tang_y+ Flux_rotated_tang_z;
    
    Flux.zero_non_sol();
    
-   
    return (Flux);
-   
-
 
 }
 
 FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::FluxHLLE_n(const FANS3D_ThermallyPerfect_KOmega_cState &Ul,
-	      	          const FANS3D_ThermallyPerfect_KOmega_cState &Ur,
-                          const Vector3D &norm_dir) {
+	      	                                                                         const FANS3D_ThermallyPerfect_KOmega_cState &Ur,
+                                                                                         const Vector3D &norm_dir) {
     return (FluxHLLE_n(Ul.W(), Ur.W(), norm_dir));
 }
 
@@ -1409,12 +1244,11 @@ FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::Fl
  * This function returns the positive parts of the      *
  * corrected elemental wave speeds or eigenvalues       *
  * according to the entropy fix of Harten (1983).       *
- *                                                       *
+ *                                                      *
  ********************************************************/
-FANS3D_ThermallyPerfect_KOmega_pState HartenFixPos(
-   const FANS3D_ThermallyPerfect_KOmega_pState &lambdas_a,
-   const FANS3D_ThermallyPerfect_KOmega_pState &lambdas_l,
-   const FANS3D_ThermallyPerfect_KOmega_pState &lambdas_r) {
+FANS3D_ThermallyPerfect_KOmega_pState HartenFixPos(const FANS3D_ThermallyPerfect_KOmega_pState &lambdas_a,
+                                                   const FANS3D_ThermallyPerfect_KOmega_pState &lambdas_l,
+                                                   const FANS3D_ThermallyPerfect_KOmega_pState &lambdas_r) {
    
    FANS3D_ThermallyPerfect_KOmega_pState NEW;
    NEW.rho = HartenFixPos(lambdas_a[1],lambdas_l[1],lambdas_r[1]);
@@ -1432,6 +1266,7 @@ FANS3D_ThermallyPerfect_KOmega_pState HartenFixPos(
    
    return (NEW);
 }
+
 /********************************************************
  * Routine: HartenFixNeg (Harten Entropy Fix)           *
  *                                                      *
@@ -1440,10 +1275,9 @@ FANS3D_ThermallyPerfect_KOmega_pState HartenFixPos(
  * according to the entropy fix of Harten (1983).       *
  *                                                      *
  ********************************************************/
-FANS3D_ThermallyPerfect_KOmega_pState HartenFixNeg(
-   const FANS3D_ThermallyPerfect_KOmega_pState &lambdas_a,
-   const FANS3D_ThermallyPerfect_KOmega_pState &lambdas_l,
-   const FANS3D_ThermallyPerfect_KOmega_pState &lambdas_r) {
+FANS3D_ThermallyPerfect_KOmega_pState HartenFixNeg(const FANS3D_ThermallyPerfect_KOmega_pState &lambdas_a,
+                                                   const FANS3D_ThermallyPerfect_KOmega_pState &lambdas_l,
+                                                   const FANS3D_ThermallyPerfect_KOmega_pState &lambdas_r) {
   
    FANS3D_ThermallyPerfect_KOmega_pState NEW;
    NEW.rho = HartenFixNeg(lambdas_a[1],lambdas_l[1],lambdas_r[1]);
@@ -1462,19 +1296,16 @@ FANS3D_ThermallyPerfect_KOmega_pState HartenFixNeg(
    return (NEW);
 }
 
-
 // Flux Roe -- based on Harten fix 
-FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::FluxRoe_x(
-   const  FANS3D_ThermallyPerfect_KOmega_pState &Wl,  
-   const  FANS3D_ThermallyPerfect_KOmega_pState &Wr){
+FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::FluxRoe_x(const  FANS3D_ThermallyPerfect_KOmega_pState &Wl,  
+                                                                                        const  FANS3D_ThermallyPerfect_KOmega_pState &Wr){
    
    FANS3D_ThermallyPerfect_KOmega_pState Wa, dWrl, wavespeeds, 
-      lambdas_l, lambdas_r, lambdas_a;
+                                         lambdas_l, lambdas_r, lambdas_a;
    FANS3D_ThermallyPerfect_KOmega_cState Flux;
 
    /* Evaluate the Roe-average primitive solution state. */    
    Wa = RoeAverage(Wl, Wr);
-   
  
    /* Evaluate the jumps in the primitive solution states. */
    dWrl = Wr-Wl;
@@ -1486,59 +1317,36 @@ FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::Fl
 
    /* Determine the intermediate state flux. */
    if (Wa.v.x >= ZERO) {
-      
       Flux = Wl.F();   
-      
-      
       wavespeeds = HartenFixNeg(lambdas_a,
                                 lambdas_l,
                                 lambdas_r);
-      
-      
-      
       for (int i=1 ; i <= Wl.NUM_VAR_3D; i++) {
-                 
          if (wavespeeds[i] < ZERO) {
-      
-            
             Flux += wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i);
-          
          }
       }
-
-      
    } else {
-      
       Flux = Wr.F();
-      
       wavespeeds = HartenFixPos(lambdas_a,
                                 lambdas_l,
                                 lambdas_r);
-      
-      
       for (int i=1; i <= Wl.NUM_VAR_3D; i++) {
          if (wavespeeds[i] > ZERO) {
-            
             Flux -= wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i); 
-  //          cout<<"\n Wa.lp_x(i) = "<<Wa.lp_x(i)<<" wavespeeds[i]= "<<wavespeeds[i]<<endl;
-     
          }
       }
-
-      
    } 
     
    /* Return solution flux. */    
+
    return (Flux);    
-    
    
 }
    
-FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::FluxRoe_n(
-   const FANS3D_ThermallyPerfect_KOmega_pState &Wl,
-   const FANS3D_ThermallyPerfect_KOmega_pState &Wr,
-   const Vector3D &norm_dir){
-   
+FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::FluxRoe_n(const FANS3D_ThermallyPerfect_KOmega_pState &Wl,
+                                                                                        const FANS3D_ThermallyPerfect_KOmega_pState &Wr,
+                                                                                        const Vector3D &norm_dir){
    
    double Wl_ur_norm, Wl_ur_tang;
    double Wr_ur_norm, Wr_ur_tang ;
@@ -1549,18 +1357,18 @@ FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::Fl
    Vector3D Wl_ur_tang_unit_vector, Wr_ur_tang_unit_vector;
    Vector3D Wr_ur_tang_z_vector, Wr_ur_tang_z_unit_vector;
    
-   //solnvec in  Wl_rotated (Wr_rotated) is allocated using new 
    FANS3D_ThermallyPerfect_KOmega_pState Wl_rotated, Wr_rotated;
    FANS3D_ThermallyPerfect_KOmega_cState Flux, Flux_rotated;
-   
    
    /* Apply the frame rotation and evaluate left and right
       solution states in the local rotated frame defined
       by the unit normal vector. */
+
    Wl_rotated.Copy(Wl);
    Wr_rotated.Copy(Wr);
    
    // Left state velocity in rotated frame
+
    Wl_ur_norm = dot(Wl.v, norm_dir);
    Wl_ur_tang = abs(Wl.v - Wl_ur_norm*norm_dir);
    Wl_ur_tang_vector = (Wl.v - Wl_ur_norm*norm_dir);
@@ -1575,7 +1383,9 @@ FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::Fl
    Wl_rotated.v.y = Wl_ur_tang;
    Wl_rotated.v.z = ZERO;
    Wl_rotated.p = Wl.p;
+
    // Right state velocity in rotated frame
+
    Wr_ur_norm = dot(Wr.v, norm_dir);
    Wr_ur_tang_vector = Wr.v - Wr_ur_norm*norm_dir;
    Wr_ur_tang = abs(Wr.v - Wr_ur_norm*norm_dir);
@@ -1598,11 +1408,8 @@ FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::Fl
       Wr_ur_tang_z_unit_vector = Wr_ur_tang_z_vector /Wr_ur_tang_z ;
    }else{
       Wr_ur_tang_z_unit_vector = Vector3D_ZERO;
-      
    }
      
- 
-   
    /* Evaluate the intermediate state solution 
       flux in the rotated frame. */
    
@@ -1617,19 +1424,13 @@ FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::Fl
    Flux_rotated_tang_y = Flux.rhov.y* Wl_ur_tang_unit_vector ;
    Flux_rotated_tang_z = Flux.rhov.z* Wr_ur_tang_z_unit_vector;
    
-   
    Flux.rhov =  Flux_rotated_x + Flux_rotated_tang_y+ Flux_rotated_tang_z;
    
    Flux.zero_non_sol();
- 
    
    return (Flux);
 
-  
-
 }
-
-
 
 /********************************************************
  * Routine: Reflect                                     *
@@ -1640,11 +1441,9 @@ FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::Fl
  * direction of interest.                               *
  *                                                      *
  ********************************************************/
-FANS3D_ThermallyPerfect_KOmega_pState  FANS3D_ThermallyPerfect_KOmega_pState::Reflect(
-   const FANS3D_ThermallyPerfect_KOmega_pState &W,
-   const Vector3D &norm_dir) {
+FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::Reflect(const FANS3D_ThermallyPerfect_KOmega_pState &W,
+                                                                                     const Vector3D &norm_dir) {
    
-
    Vector3D ur_norm, ur_tang, vr_tot;
    
    FANS3D_ThermallyPerfect_KOmega_pState Temp;
@@ -1663,27 +1462,21 @@ FANS3D_ThermallyPerfect_KOmega_pState  FANS3D_ThermallyPerfect_KOmega_pState::Re
 }
 
 
-FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(
-   const FANS3D_ThermallyPerfect_KOmega_pState &Win,
-   const FANS3D_ThermallyPerfect_KOmega_pState &Wout,
-   const Vector3D &norm_dir, 
-   const Vector3D &wall_velocity,
-   const Vector3D &pressure_gradient,
-   const int &TEMPERATURE_BC_FLAG) {
-   
+FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(const FANS3D_ThermallyPerfect_KOmega_pState &Win,
+                                                                                         const FANS3D_ThermallyPerfect_KOmega_pState &Wout,
+                                                                                         const Vector3D &norm_dir, 
+                                                                                         const Vector3D &wall_velocity,
+                                                                                         const Vector3D &pressure_gradient,
+                                                                                         const int &TEMPERATURE_BC_FLAG) {
    
    FANS3D_ThermallyPerfect_KOmega_pState Temp;
    Temp = Win;
    
-  if(wall_velocity == Vector3D_ZERO){
+   if(wall_velocity == Vector3D_ZERO){
      Temp.v = -Win.v;
-     
-  }else{
-
+   }else{
      double  Wall_velocity_tang ;
      Vector3D ur_norm, ur_tang, vr_tot, uw_tang;
-     
-     
      ur_norm = dot(Win.v, norm_dir)*norm_dir;
      ur_tang = Win.v - ur_norm;
      
@@ -1694,24 +1487,18 @@ FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::Mov
      vr_tot = ur_norm + ur_tang;
      
      Temp.v = vr_tot;
-     
-     
   }
   
   Temp.k = ZERO; 
-/* Fixed Wall Temperature or constant extrapolation for Adiabatic */
+  /* Fixed Wall Temperature or constant extrapolation for Adiabatic */
   if(TEMPERATURE_BC_FLAG == FIXED_TEMPERATURE_WALL){
      if (pressure_gradient != Vector3D_ZERO){
         Temp.rho = Wout.p/(Temp.Rtot()*Wout.T());
      }else{
-        
         Temp.rho = Temp.p/(Temp.Rtot()*Wout.T());
      }
-     
   }
-   
   return (Temp);
-   
 }
 
 FANS3D_ThermallyPerfect_KOmega_pState  FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(
@@ -1730,7 +1517,6 @@ Tensor3D FANS3D_ThermallyPerfect_KOmega_pState::lambda(
    const FANS3D_ThermallyPerfect_KOmega_pState &dWdx, 
    const FANS3D_ThermallyPerfect_KOmega_pState &dWdy,
    const FANS3D_ThermallyPerfect_KOmega_pState &dWdz){
-
    
    Tensor3D Reynolds_stress;
    double mu_t = eddy_viscosity();
@@ -1741,10 +1527,8 @@ Tensor3D FANS3D_ThermallyPerfect_KOmega_pState::lambda(
    Reynolds_stress.yy = 1.0/3.0 *mu_t*(4.0*dWdy.v.y - 2.0*dWdx.v.x - 2.0*dWdz.v.z) - 2.0/3.0*rho*k;
    Reynolds_stress.yz = mu_t*(dWdy.v.z + dWdz.v.y);
    Reynolds_stress.zz = 1.0/3.0 *mu_t*(4.0*dWdz.v.z - 2.0*dWdx.v.x - 2.0*dWdy.v.y) - 2.0/3.0*rho*k;
-    
    
    return (Reynolds_stress);
-   
 }
 
 Tensor3D FANS3D_ThermallyPerfect_KOmega_pState::lambda(
@@ -1763,12 +1547,10 @@ Tensor3D FANS3D_ThermallyPerfect_KOmega_pState::lambda(
    Reynolds_stress.zz = 1.0/3.0 *mu_t*(4.0*dWdz.v.z - 2.0*dWdx.v.x - 2.0*dWdy.v.y) - 2.0/3.0*rho*k;
  
    return (Reynolds_stress);
-   
 }
 
 // heat flux: Fourier's law of heat conduction
-
- Vector3D FANS3D_ThermallyPerfect_KOmega_pState::qflux_t(
+Vector3D FANS3D_ThermallyPerfect_KOmega_pState::qflux_t(
     const FANS3D_ThermallyPerfect_KOmega_pState &dWdx, 
     const FANS3D_ThermallyPerfect_KOmega_pState &dWdy,
     const FANS3D_ThermallyPerfect_KOmega_pState &dWdz){
@@ -1777,9 +1559,9 @@ Tensor3D FANS3D_ThermallyPerfect_KOmega_pState::lambda(
     
     Vector3D heat_flux, gradient_T;
     
-  /* Temperature gradients from using the chain rule 
-     with the ideal gas law (P=rho*R*T) 
-     dT/dx = 1/(rho*R) *( dP/dx - P/rho * drho/dx) */
+    /* Temperature gradients from using the chain rule 
+       with the ideal gas law (P=rho*R*T) 
+       dT/dx = 1/(rho*R) *( dP/dx - P/rho * drho/dx) */
      
     gradient_T.x = (1.0/(rho*Rmix)) * (dWdx.p -(p/rho)*dWdx.rho);
     gradient_T.y = (1.0/(rho*Rmix)) * (dWdy.p -(p/rho)*dWdy.rho);
@@ -1788,10 +1570,9 @@ Tensor3D FANS3D_ThermallyPerfect_KOmega_pState::lambda(
     heat_flux = -kappa_t()*gradient_T;
         
     return (heat_flux);
-    
-   
- }
- Vector3D FANS3D_ThermallyPerfect_KOmega_pState::qflux_t(
+}
+
+Vector3D FANS3D_ThermallyPerfect_KOmega_pState::qflux_t(
     const FANS3D_ThermallyPerfect_KOmega_pState &dWdx, 
     const FANS3D_ThermallyPerfect_KOmega_pState &dWdy,
     const FANS3D_ThermallyPerfect_KOmega_pState &dWdz) const{
@@ -1800,9 +1581,9 @@ Tensor3D FANS3D_ThermallyPerfect_KOmega_pState::lambda(
     
     Vector3D heat_flux, gradient_T;
     
-  /* Temperature gradients from using the chain rule 
-     with the ideal gas law (P=rho*R*T) 
-     dT/dx = 1/(rho*R) *( dP/dx - P/rho * drho/dx) */
+    /* Temperature gradients from using the chain rule 
+       with the ideal gas law (P=rho*R*T) 
+       dT/dx = 1/(rho*R) *( dP/dx - P/rho * drho/dx) */
      
     gradient_T.x = (1.0/(rho*Rmix)) * (dWdx.p -(p/rho)*dWdx.rho);
     gradient_T.y = (1.0/(rho*Rmix)) * (dWdy.p -(p/rho)*dWdy.rho);
@@ -1811,9 +1592,7 @@ Tensor3D FANS3D_ThermallyPerfect_KOmega_pState::lambda(
     heat_flux = -kappa_t()*gradient_T;
     
     return (heat_flux);
-    
-   
- }
+}
 
 // viscous flux
 FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::FluxViscous_n(
@@ -1837,7 +1616,6 @@ FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::Fl
 
    // weighted factor based on volume
    double alpha = Volume/(Volume + Volume_Neigbor);
-  
    
    FANS3D_ThermallyPerfect_KOmega_pState dWdx_Weighted, 
       dWdy_Weighted, dWdz_Weighted, dWdx_face, 
@@ -1848,21 +1626,16 @@ FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::Fl
    dWdx_Weighted = alpha*dWdx + (1.0 - alpha)*dWdx_Neigbor;
    dWdy_Weighted = alpha*dWdy + (1.0 - alpha)*dWdy_Neigbor;
    dWdz_Weighted = alpha*dWdz + (1.0 - alpha)*dWdz_Neigbor;
-   
 
- dWdx_face  =dWdx_Weighted ;
- dWdy_face  =dWdy_Weighted ;
- dWdz_face  =dWdz_Weighted ; 
-	 
+   dWdx_face  =dWdx_Weighted ;
+   dWdy_face  =dWdy_Weighted ;
+   dWdz_face  =dWdz_Weighted ; 
    
-//cout<<"\n dWdz = "<<dWdz<<endl;
-//cout<<"\n dWdz_Neigbor = "<<dWdz_Neigbor<<endl;
-//cout<<"\n dWdz_Weighted = "<<dWdz_Weighted<<endl;
    // a weighted term  
- //  Grad_middle_term = dWdx_Weighted*ts.x + dWdy_Weighted*ts.y +
- //     dWdz_Weighted*ts.z;
+   //Grad_middle_term = dWdx_Weighted*ts.x + dWdy_Weighted*ts.y +
+   //                   dWdz_Weighted*ts.z;
       
-   // gradients of primitive variables on the face
+ // gradients of primitive variables on the face
  //  dWdx_face = (Wc_Neigbor - Wc)/deltad *norm.x/dot(norm, ts) + (
  //     dWdx_Weighted -  Grad_middle_term*norm.x/dot(norm, ts));
  //  dWdy_face = (Wc_Neigbor - Wc)/deltad *norm.y/dot(norm, ts) + (
@@ -1870,15 +1643,12 @@ FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::Fl
  //  dWdz_face = (Wc_Neigbor - Wc)/deltad *norm.z/dot(norm, ts) + (
  //     dWdz_Weighted -  Grad_middle_term*norm.z/dot(norm, ts));
    
-  // W_face = HALF*(Wl + Wr);
-  W_face = HALF*(Wc + Wc_Neigbor);
-//cout<<"\n W_face = "<<W_face<<endl;   
+   // W_face = HALF*(Wl + Wr);
+   W_face = HALF*(Wc + Wc_Neigbor);
+
    return (W_face.Fv(dWdx_face, dWdy_face, dWdz_face)*norm.x +
            W_face.Gv(dWdx_face, dWdy_face, dWdz_face)*norm.y +
            W_face.Hv(dWdx_face, dWdy_face, dWdz_face)*norm.z);
-
-  
-   
 }
 
 /* Turbulence model source term */  
@@ -1908,18 +1678,17 @@ FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::Sr
    strain_rate_t = Wc.strain_rate(dWdx, dWdy, dWdz);
    
    Temp.rhok = production - Wc.k_omega_model.beta_star*Wc.k_omega_model.f_betastar(
-      dWdx.k, dWdy.k, dWdz.k, dWdx.omega, dWdy.omega, dWdz.omega, Wc.omega)*
-      Wc.rho*Wc.k*Wc.omega;
+               dWdx.k, dWdy.k, dWdz.k, dWdx.omega, dWdy.omega, dWdz.omega, Wc.omega)*
+               Wc.rho*Wc.k*Wc.omega;
    Temp.rhoomega = Wc.k_omega_model.alpha*(Wc.omega/max(Wc.k, TOLER))*production - 
-      Wc.k_omega_model.beta*Wc.k_omega_model.f_beta(rotation_t, strain_rate_t, Wc.omega)*Wc.rho*Wc.omega*Wc.omega;
-    //(1989)
- //   Temp.rhok = production - Wc.k_omega_model.f_beta_star_const*Wc.k_omega_model.beta_star*Wc.rho*Wc.k*Wc.omega;
-//    Temp.rhoomega = Wc.k_omega_model.alpha*(Wc.omega/max(Wc.k, TOLER))*production -
-//       Wc.k_omega_model.f_beta_const*Wc.k_omega_model.beta*Wc.rho*Wc.omega*Wc.omega;
+                   Wc.k_omega_model.beta*Wc.k_omega_model.f_beta(rotation_t, strain_rate_t, Wc.omega)*
+                   Wc.rho*Wc.omega*Wc.omega;
+   //(1989)
+   //Temp.rhok = production - Wc.k_omega_model.f_beta_star_const*Wc.k_omega_model.beta_star*Wc.rho*Wc.k*Wc.omega;
+   //Temp.rhoomega = Wc.k_omega_model.alpha*(Wc.omega/max(Wc.k, TOLER))*production -
+   //                Wc.k_omega_model.f_beta_const*Wc.k_omega_model.beta*Wc.rho*Wc.omega*Wc.omega;
    
-  return (Temp);
-
-
+   return (Temp);
 } 
 
 int FANS3D_ThermallyPerfect_KOmega_cState::Unphysical_Properties_Check(
@@ -2001,7 +1770,6 @@ int FANS3D_ThermallyPerfect_KOmega_cState::Unphysical_Properties_Check(
       rhoomega = average_omega;
       
    } // end check rhoomega
-    
    
 //    if (rho <= ZERO || !negative_speccheck(n) || es() <= ZERO ||
 //        rhok <= ZERO || rhoomega <= ZERO) {    
@@ -2015,7 +1783,4 @@ int FANS3D_ThermallyPerfect_KOmega_cState::Unphysical_Properties_Check(
 //       return true;
       
 //    }
-   
-   
-   
 } 

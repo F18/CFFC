@@ -21,6 +21,10 @@ using namespace std;
 #include "../CFD/CFD.h"
 #endif // _CFD_INCLUDED
 
+#ifndef _ICEMCFD_INCLUDED
+#include "../ICEM/ICEMCFD.h"
+#endif // _ICEMCFD_INCLUDED
+
 #define GRID_INPUT_PARAMETER_LENGTH 128
 
 /* Define the 3D hexahedral grid input class for controlling
@@ -38,6 +42,9 @@ struct Grid3D_Input_Parameters{
     // Grid type indicator
     int i_Grid;
     char Grid_Type[GRID_INPUT_PARAMETER_LENGTH];
+
+    // ICEMCFD Filenames
+    char **ICEMCFD_FileNames;
 
     // Dimensions for basic flow geometry
     double Box_Length, Box_Width, Box_Height;
@@ -62,6 +69,7 @@ struct Grid3D_Input_Parameters{
        Nghost = 2;
        Box_Length = ONE; Box_Width = ONE; Box_Height = ONE;
        i_Grid = GRID_CUBE; 
+       ICEMCFD_FileNames = ICEMCFD_get_filenames();
        Stretching_Type_Idir = STRETCHING_FCN_LINEAR;
        Stretching_Type_Jdir = STRETCHING_FCN_LINEAR; 
        Stretching_Type_Kdir = STRETCHING_FCN_LINEAR;

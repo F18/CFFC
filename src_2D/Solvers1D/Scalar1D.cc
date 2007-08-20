@@ -62,7 +62,7 @@ void Output_Gnuplot(Scalar1D_UniformMesh *Soln,
 
     int i;
 
-    out_file << "# " << CFDkit_Name() << ": 1D Scalar Advection Solution, "
+    out_file << "# " << CFFC_Name() << ": 1D Scalar Advection Solution, "
              << "Time Step/Iteration Level = "
              << Number_of_Time_Steps
              << ", Time = " << Time << "\n"
@@ -91,7 +91,7 @@ void Output_Tecplot(Scalar1D_UniformMesh *Soln,
 
     int i;
 
-    out_file << "TITLE = \"" << CFDkit_Name() 
+    out_file << "TITLE = \"" << CFFC_Name() 
              << ": 1D Scalar Advection Solution, "
              << "Time Step/Iteration Level = "
              << Number_of_Time_Steps

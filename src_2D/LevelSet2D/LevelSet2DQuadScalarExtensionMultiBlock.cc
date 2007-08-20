@@ -45,7 +45,7 @@ int Explicit_Scalar_Extension_Equation(LevelSet2D_Quad_Block *Soln_ptr,
   error_flag = Calculate_Sign_Function(Soln_ptr,
 				       Soln_Block_List,
 				       Input_Parameters);
-  error_flag = CFDkit_OR_MPI(error_flag);
+  error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
 
   // Conduct explicit solution of the scalar extension equation for the
@@ -56,7 +56,7 @@ int Explicit_Scalar_Extension_Equation(LevelSet2D_Quad_Block *Soln_ptr,
     // Determine global time step.
     dTime = CFL_Scalar_Extension(Soln_ptr,Soln_Block_List);
     // Find global minimum time step for all processors.
-    dTime = CFDkit_Minimum_MPI(dTime);
+    dTime = CFFC_Minimum_MPI(dTime);
     // Set global time step.
     Set_Global_TimeStep(Soln_ptr,Soln_Block_List,dTime);
 
@@ -69,7 +69,7 @@ int Explicit_Scalar_Extension_Equation(LevelSet2D_Quad_Block *Soln_ptr,
 				     Soln_Block_List,
 				     NUM_VAR_LEVELSET2D,
 				     OFF);
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
 
       // Step 2. Apply boundary conditions for stage.
@@ -80,7 +80,7 @@ int Explicit_Scalar_Extension_Equation(LevelSet2D_Quad_Block *Soln_ptr,
 						    Soln_Block_List,
 						    Input_Parameters,
 						    i_stage);
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
 
       // Step 4. Update solution for stage.
@@ -88,7 +88,7 @@ int Explicit_Scalar_Extension_Equation(LevelSet2D_Quad_Block *Soln_ptr,
 						      Soln_Block_List,
 						      Input_Parameters,
 						      i_stage);
-      error_flag = CFDkit_OR_MPI(error_flag);
+      error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
 
     }
@@ -96,7 +96,7 @@ int Explicit_Scalar_Extension_Equation(LevelSet2D_Quad_Block *Soln_ptr,
     // Determine L2-norm residual.
     l2_norm = L2_Norm_Residual(Soln_ptr,Soln_Block_List,2);
     l2_norm = sqr(l2_norm);
-    l2_norm = CFDkit_Summation_MPI(l2_norm);
+    l2_norm = CFFC_Summation_MPI(l2_norm);
     l2_norm = sqrt(l2_norm);
 
     // Update iteration counter.

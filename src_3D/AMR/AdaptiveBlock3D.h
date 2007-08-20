@@ -74,7 +74,7 @@ using namespace std;
 /* Define the classes. */
 
 /********************************************************
- * Class: AdaptiveBlock3DResourceList                   *
+ * Class: AdaptiveBlock3D_ResourceList                  *
  *                                                      *
  * Member functions                                     *
  *      ThisCPU   -- Return the global MPI number or    *
@@ -118,7 +118,7 @@ using namespace std;
  * cin  >> R; (input function)                          *
  *                                                      *
  ********************************************************/
-class AdaptiveBlock3DResourceList{
+class AdaptiveBlock3D_ResourceList{
   private:
   public:
     int    ThisCPU;  // Number or rank of CPU executing the
@@ -133,22 +133,22 @@ class AdaptiveBlock3DResourceList{
                      // Made public so can access them.
 
     /* Creation, copy, and assignment constructors. */
-    AdaptiveBlock3DResourceList(void) {
+    AdaptiveBlock3D_ResourceList(void) {
        ThisCPU = 0; Ncpu = 0; Nblk = 0; Ntotal = 0; Nused = 0; Nfree = 0;
        CPU = NULL; Block = NULL; 
     }
 
-    AdaptiveBlock3DResourceList(const AdaptiveBlock3DResourceList &R) {
+    AdaptiveBlock3D_ResourceList(const AdaptiveBlock3D_ResourceList &R) {
        ThisCPU = R.ThisCPU; Ncpu = R.Ncpu; Nblk = R.Nblk; Ntotal = R.Ntotal; 
        Nused = R.Nused; Nfree = R.Nfree; CPU = R.CPU; Block = R.Block;
     }
 
     /* Destructor. */
-    // ~AdaptiveBlock3DResourceList(void);
+    // ~AdaptiveBlock3D_ResourceList(void);
     // Use automatically generated destructor.
 
     /* Assignment operator. */
-    // AdaptiveBlock3DResourceList operator = (const AdaptiveBlock3DResourceList &R);
+    // AdaptiveBlock3D_ResourceList operator = (const AdaptiveBlock3D_ResourceList &R);
     // Use automatically generated assignment operator.
 
     /* Allocate memory for the resource list. */
@@ -178,43 +178,40 @@ class AdaptiveBlock3DResourceList{
     /* Update returned block. */
     void update_return(void);
 
-
-
-    static void Create_Block_Resource_List(AdaptiveBlock3DResourceList &List_of_Available_Blocks,
+    static void Create_Block_Resource_List(AdaptiveBlock3D_ResourceList &List_of_Available_Blocks,
                                            const int Number_of_Processors,
                                            const int Number_of_Blocks_per_Processor);
 
-
     /* Input-output operators. */
     friend ostream &operator << (ostream &out_file, 
-                                 const AdaptiveBlock3DResourceList &R);
+                                 const AdaptiveBlock3D_ResourceList &R);
     friend istream &operator >> (istream &in_file, 
-                                 AdaptiveBlock3DResourceList &R);
+                                 AdaptiveBlock3D_ResourceList &R);
 
 };
 
-/*******************************************************************
- * AdaptiveBlock3DResourceList::allocate -- Allocate memory.         *
- *******************************************************************/
-inline void AdaptiveBlock3DResourceList::allocate(const int ncpu, 
-                                                const int nblk) {
+/**********************************************************************
+ * AdaptiveBlock3D_ResourceList::allocate -- Allocate memory.         *
+ **********************************************************************/
+inline void AdaptiveBlock3D_ResourceList::allocate(const int ncpu, 
+                                                   const int nblk) {
    assert( ncpu > 0 && nblk > 0); 
    Ncpu = ncpu; Nblk = nblk; Ntotal = ncpu*nblk; Nused = 0; Nfree = Ntotal;
    CPU = new int[Ntotal]; Block = new int[Ntotal];
 }
 
-/*******************************************************************
- * AdaptiveBlock3DResourceList::deallocate -- Deallocate memory.     *
- *******************************************************************/
-inline void AdaptiveBlock3DResourceList::deallocate(void) {
+/**********************************************************************
+ * AdaptiveBlock3D_ResourceList::deallocate -- Deallocate memory.     *
+ **********************************************************************/
+inline void AdaptiveBlock3D_ResourceList::deallocate(void) {
    Ncpu = 0; Nblk = 0; Ntotal = 0; Nused = 0; Nfree = 0;
    delete []CPU; CPU = NULL; delete []Block; Block = NULL; 
 }
 
-/*******************************************************************
- * AdaptiveBlock3DResourceList::initialize -- Initialization.        *
- *******************************************************************/
-inline void AdaptiveBlock3DResourceList::initialize(void) {
+/**********************************************************************
+ * AdaptiveBlock3D_ResourceList::initialize -- Initialization.        *
+ **********************************************************************/
+inline void AdaptiveBlock3D_ResourceList::initialize(void) {
   int i, j;
   Nused = 0;
   for ( j = 0; j <= Nblk-1; ++j ) {
@@ -227,53 +224,53 @@ inline void AdaptiveBlock3DResourceList::initialize(void) {
   Nused = 0;
 }
 
-/*******************************************************************
- * AdaptiveBlock3DResourceList::nextCPU -- Next CPU number.          *
- *******************************************************************/
-inline int AdaptiveBlock3DResourceList::nextCPU(void) {
+/**********************************************************************
+ * AdaptiveBlock3D_ResourceList::nextCPU -- Next CPU number.          *
+ **********************************************************************/
+inline int AdaptiveBlock3D_ResourceList::nextCPU(void) {
    return(CPU[Nused]);
 }
 
-/*******************************************************************
- * AdaptiveBlock3DResourceList::nextBlock -- Next Block number.      *
- *******************************************************************/
-inline int AdaptiveBlock3DResourceList::nextBlock(void) {
+/**********************************************************************
+ * AdaptiveBlock3D_ResourceList::nextBlock -- Next Block number.      *
+ **********************************************************************/
+inline int AdaptiveBlock3D_ResourceList::nextBlock(void) {
    return(Block[Nused]);
 }
 
-/*******************************************************************
- * AdaptiveBlock3DResourceList::update_next -- Update next.          *
- *******************************************************************/
-inline void AdaptiveBlock3DResourceList::update_next(void) {
+/**********************************************************************
+ * AdaptiveBlock3D_ResourceList::update_next -- Update next.          *
+ **********************************************************************/
+inline void AdaptiveBlock3D_ResourceList::update_next(void) {
    Nused += 1; Nfree -= 1;
 }
 
-/*******************************************************************
- * AdaptiveBlock3DResourceList::returnCPU -- Return CPU number.      *
- *******************************************************************/
-inline void AdaptiveBlock3DResourceList::returnCPU(const int cpu) {
+/**********************************************************************
+ * AdaptiveBlock3D_ResourceList::returnCPU -- Return CPU number.      *
+ **********************************************************************/
+inline void AdaptiveBlock3D_ResourceList::returnCPU(const int cpu) {
    CPU[Nused-1] = cpu;
 }
 
-/*******************************************************************
- * AdaptiveBlock3DResourceList::returnBlock -- Return Block number.  *
- *******************************************************************/
-inline void AdaptiveBlock3DResourceList::returnBlock(const int block) {
+/**********************************************************************
+ * AdaptiveBlock3D_ResourceList::returnBlock -- Return Block number.  *
+ **********************************************************************/
+inline void AdaptiveBlock3D_ResourceList::returnBlock(const int block) {
    Block[Nused-1] = block;
 }
 
-/**********************************************************************
- * AdaptiveBlock3DResourceList::update_return -- Update returned block. *
- **********************************************************************/
-inline void AdaptiveBlock3DResourceList::update_return(void) {
+/*************************************************************************
+ * AdaptiveBlock3D_ResourceList::update_return -- Update returned block. *
+ *************************************************************************/
+inline void AdaptiveBlock3D_ResourceList::update_return(void) {
    Nused -= 1; Nfree += 1;
 }
 
 /*******************************************************************
- * AdaptiveBlock3DResourceList -- Input-output operators.            *
+ * AdaptiveBlock3D_ResourceList -- Input-output operators.         *
  *******************************************************************/
 inline ostream &operator << (ostream &out_file, 
-                             const AdaptiveBlock3DResourceList &R) {
+                             const AdaptiveBlock3D_ResourceList &R) {
   int i;
   for ( i = 0; i <= R.Ntotal-1; ++i ) {
       out_file << " " << R.CPU[i] << " " << R.Block[i] << "\n";
@@ -282,7 +279,7 @@ inline ostream &operator << (ostream &out_file,
 }
 
 inline istream &operator >> (istream &in_file, 
-                             AdaptiveBlock3DResourceList &R) {
+                             AdaptiveBlock3D_ResourceList &R) {
   int i;
   for ( i = 0; i <= R.Ntotal-1; ++i ) {
       in_file >> R.CPU[i] >> R.Block[i];
@@ -970,38 +967,38 @@ inline istream &operator >> (istream &in_file,
   return (in_file);
 }
 
-/********************************************************
- * Class: AdaptiveBlock3D_List                          *
- *                                                      *
- * Member functions                                     *
- *     ThisCPU -- Return the global MPI number or       *
- *                rank for the CPU that is executing    *
- *                the task or process.                  *
- *        Nblk -- Return number of local adaptive       *
- *                blocks in the list.                   *
- *       Block -- Return list of adaptive blocks.       *
- *       RefineFlag -- Return list of mesh refinement   *
- *                     flags for the adaptive blocks.   *
- *       message_noreschange_topface_sendbuf            *
- *       message_noreschange_topface_recbuf             *
- *       message_noreschange_bottomface_sendbuf         *
- *       message_noreschange_bottomface_recbuf          *
- *       message_noreschange_northface_sendbuf          *
- *       message_noreschange_northface_recbuf           *
- *       message_noreschange_southface_sendbuf          *
- *       message_noreschange_southface_recbuf           *
- *       message_noreschange_eastface_sendbuf           *
- *       message_noreschange_eastface_recbuf            *
- *       message_noreschange_westface_sendbuf           *
- *       message_noreschange_westface_recbuf            *
- *       message_noreschange_topnorthface_sendbuf          *
- *       message_noreschange_topnorthface_recbuf           *
- *       message_noreschange_topsouthface_sendbuf          *
- *       message_noreschange_topsouthface_recbuf           *
- *       message_noreschange_topeastface_sendbuf           *
- *       message_noreschange_topeastface_recbuf            *
- *       message_noreschange_topwestface_sendbuf           *
- *       message_noreschange_topwestface_recbuf            *
+/**************************************************************
+ * Class: AdaptiveBlock3D_List                                *
+ *                                                            *
+ * Member functions                                           *
+ *     ThisCPU -- Return the global MPI number or             *
+ *                rank for the CPU that is executing          *
+ *                the task or process.                        *
+ *        Nblk -- Return number of local adaptive             *
+ *                blocks in the list.                         *
+ *       Block -- Return list of adaptive blocks.             *
+ *       RefineFlag -- Return list of mesh refinement         *
+ *                     flags for the adaptive blocks.         *
+ *       message_noreschange_topface_sendbuf                  *
+ *       message_noreschange_topface_recbuf                   *
+ *       message_noreschange_bottomface_sendbuf               *
+ *       message_noreschange_bottomface_recbuf                *
+ *       message_noreschange_northface_sendbuf                *
+ *       message_noreschange_northface_recbuf                 *
+ *       message_noreschange_southface_sendbuf                *
+ *       message_noreschange_southface_recbuf                 *
+ *       message_noreschange_eastface_sendbuf                 *
+ *       message_noreschange_eastface_recbuf                  *
+ *       message_noreschange_westface_sendbuf                 *
+ *       message_noreschange_westface_recbuf                  *
+ *       message_noreschange_topnorthface_sendbuf             *
+ *       message_noreschange_topnorthface_recbuf              *
+ *       message_noreschange_topsouthface_sendbuf             *
+ *       message_noreschange_topsouthface_recbuf              *
+ *       message_noreschange_topeastface_sendbuf              *
+ *       message_noreschange_topeastface_recbuf               *
+ *       message_noreschange_topwestface_sendbuf              *
+ *       message_noreschange_topwestface_recbuf               *
  *       message_noreschange_bottomnorthface_sendbuf          *
  *       message_noreschange_bottomnorthface_recbuf           *
  *       message_noreschange_bottomsouthface_sendbuf          *
@@ -1010,22 +1007,22 @@ inline istream &operator >> (istream &in_file,
  *       message_noreschange_bottomeastface_recbuf            *
  *       message_noreschange_bottomwestface_sendbuf           *
  *       message_noreschange_bottomwestface_recbuf            *
- *       message_noreschange_northwestcorner_sendbuf    *
- *       message_noreschange_northwestcorner_recbuf     *
- *       message_noreschange_northeastcorner_sendbuf    *
- *       message_noreschange_northeastcorner_recbuf     *
- *       message_noreschange_southeastcorner_sendbuf    *
- *       message_noreschange_southeastcorner_recbuf     *
- *       message_noreschange_southwestcorner_sendbuf    *
- *       message_noreschange_southwestcorner_recbuf     *
- *       message_noreschange_topnorthwestcorner_sendbuf    *
- *       message_noreschange_topnorthwestcorner_recbuf     *
- *       message_noreschange_topnortheastcorner_sendbuf    *
- *       message_noreschange_topnortheastcorner_recbuf     *
- *       message_noreschange_topsoutheastcorner_sendbuf    *
- *       message_noreschange_topsoutheastcorner_recbuf     *
- *       message_noreschange_topsouthwestcorner_sendbuf    *
- *       message_noreschange_topsouthwestcorner_recbuf     *
+ *       message_noreschange_northwestcorner_sendbuf          *
+ *       message_noreschange_northwestcorner_recbuf           *
+ *       message_noreschange_northeastcorner_sendbuf          *
+ *       message_noreschange_northeastcorner_recbuf           *
+ *       message_noreschange_southeastcorner_sendbuf          *
+ *       message_noreschange_southeastcorner_recbuf           *
+ *       message_noreschange_southwestcorner_sendbuf          *
+ *       message_noreschange_southwestcorner_recbuf           *
+ *       message_noreschange_topnorthwestcorner_sendbuf       *
+ *       message_noreschange_topnorthwestcorner_recbuf        *
+ *       message_noreschange_topnortheastcorner_sendbuf       *
+ *       message_noreschange_topnortheastcorner_recbuf        *
+ *       message_noreschange_topsoutheastcorner_sendbuf       *
+ *       message_noreschange_topsoutheastcorner_recbuf        *
+ *       message_noreschange_topsouthwestcorner_sendbuf       *
+ *       message_noreschange_topsouthwestcorner_recbuf        *
  *       message_noreschange_bottomnorthwestcorner_sendbuf    *
  *       message_noreschange_bottomnorthwestcorner_recbuf     *
  *       message_noreschange_bottomnortheastcorner_sendbuf    *
@@ -1034,31 +1031,31 @@ inline istream &operator >> (istream &in_file,
  *       message_noreschange_bottomsoutheastcorner_recbuf     *
  *       message_noreschange_bottomsouthwestcorner_sendbuf    *
  *       message_noreschange_bottomsouthwestcorner_recbuf     *
- *        -- Return message passing send and receive    *
- *           buffers for block faces and corners with   *
- *           no block resolution (refinement) change.   *
- *    allocate -- Allocate memory for block list.       *
- *  deallocate -- Deallocate memory for block list.     *
- *  nochangeAll-- Sets the mesh refinement flags to     *
- *                force no refinement or coarsening of  *
- *                adaptive blocks (default).            *
- *  refineAll  -- Sets the mesh refinement flags to     *
- *                force refinement of all adaptive      *
- *                blocks.                               *
- *  coarsenAll -- Sets the mesh refinement flags to     *
- *                force coasening of all adaptive       *
- *                blocks.                               *
- *  setRefineAll -- Sets the mesh refinement flags of   *
- *                  all blocks to specified value.      *
- *                                                      *
- * Member operators                                     *
- *      B -- adaptive block list                        *
- *                                                      *
- * B = B;                                               *
- * cout << B; (output function)                         *
- * cin  >> B; (input function)                          *
- *                                                      *
- ********************************************************/
+ *        -- Return message passing send and receive          *
+ *           buffers for block faces and corners with         *
+ *           no block resolution (refinement) change.         *
+ *    allocate -- Allocate memory for block list.             *
+ *  deallocate -- Deallocate memory for block list.           *
+ *  nochangeAll-- Sets the mesh refinement flags to           *
+ *                force no refinement or coarsening of        *
+ *                adaptive blocks (default).                  *
+ *  refineAll  -- Sets the mesh refinement flags to           *
+ *                force refinement of all adaptive            *
+ *                blocks.                                     *
+ *  coarsenAll -- Sets the mesh refinement flags to           *
+ *                force coasening of all adaptive             *
+ *                blocks.                                     *
+ *  setRefineAll -- Sets the mesh refinement flags of         *
+ *                  all blocks to specified value.            *
+ *                                                            *
+ * Member operators                                           *
+ *      B -- adaptive block list                              *
+ *                                                            *
+ * B = B;                                                     *
+ * cout << B; (output function)                               *
+ * cin  >> B; (input function)                                *
+ *                                                            *
+ **************************************************************/
 class AdaptiveBlock3D_List{
   private:
   public:

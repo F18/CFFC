@@ -69,7 +69,7 @@ void Output_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
   // Output node solution data.
   Out_File << setprecision(14);
   if (Output_Title) {
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D LevelSet Solution, "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D LevelSet Solution, "
 	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
 	     << ", Time = " << Time
 	     << "\"" << "\n"
@@ -123,7 +123,7 @@ void Output_Cells_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
 
   Out_File << setprecision(14);
   if (Output_Title) {
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D LevelSet Solution, "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D LevelSet Solution, "
 	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
 	     << ", Time = " << Time
 	     << "\"" << "\n"
@@ -185,7 +185,7 @@ void Output_Nodes_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
 
   Out_File << setprecision(14);
   if (Output_Title) {
-    Out_File << "TITLE = \"" << CFDkit_Name()
+    Out_File << "TITLE = \"" << CFFC_Name()
 	     << ": 2D LevelSet Nodes\"\n"
 	     << "VARIABLES = \"x\" \\ \n"
 	     << "\"y\" \\ \n";
@@ -223,7 +223,7 @@ void Output_Interface_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
   // Output node solution data.
   Out_File << setprecision(14);
   if (Output_Title)
-    Out_File << "TITLE = \"" << CFDkit_Name() << ": 2D Level Set Interface Nodes "
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Level Set Interface Nodes "
 	     << ", Time = " << Time
 	     << "\"" << "\n"
 	     << "VARIABLES = \"x\" \\ \n"
@@ -297,7 +297,7 @@ void Output_Circle_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
   // Determine the error norms and output the solution data.
   Out_File << setprecision(14);
   if (Output_Title)
-    Out_File << "TITLE = \"" << CFDkit_Name()
+    Out_File << "TITLE = \"" << CFFC_Name()
 	     << ": 2D Level Set solution comparison for a circle interface"
 	     << "\"" << "\n"
 	     << "VARIABLES = \"x\" \\ \n"

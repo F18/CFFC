@@ -7,7 +7,7 @@
 #endif // _MPI_INCLUDED
 
 /*********************************************************************
- * CFDkit_MPI -- Create storage and initialize global MPI variables. *
+ * CFFC_MPI -- Create storage and initialize global MPI variables. *
  *********************************************************************/
-int CFDkit_MPI::Number_of_Processors = 0;
-int CFDkit_MPI::This_Processor_Number = 0;
+int CFFC_MPI::Number_of_Processors = 0;
+int CFFC_MPI::This_Processor_Number = 0;

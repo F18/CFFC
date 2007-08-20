@@ -60,7 +60,7 @@ void Broadcast_QuadTree_Data_Structure(QuadTreeBlock_DataStructure &QuadTree,
     /* Broadcast the number of roots, the number of CPUs, and
        the number of local solution blocks. */
 
-    if (CFDkit_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor()) {
        nri = QuadTree.NRi;
        nrj = QuadTree.NRj;
        ncpu = QuadTree.Ncpu;
@@ -75,7 +75,7 @@ void Broadcast_QuadTree_Data_Structure(QuadTreeBlock_DataStructure &QuadTree,
     /* On non-primary MPI processors, allocate (re-allocate) 
        memory for the quadtree data structure as necessary. */
 
-    if (!CFDkit_Primary_MPI_Processor()) {
+    if (!CFFC_Primary_MPI_Processor()) {
        if (QuadTree.NRi != nri ||
            QuadTree.NRj != nrj ||
            QuadTree.Ncpu != ncpu ||
