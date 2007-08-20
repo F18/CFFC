@@ -2221,11 +2221,15 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
        strcpy(IP.Flow_Geometry_Type, 
               IP.Next_Control_Parameter);
        if (strcmp(IP.Flow_Geometry_Type, "Planar") == 0) {
-          IP.Axisymmetric = 0;
+          IP.Axisymmetric = PLANAR;
        } else if (strcmp(IP.Flow_Geometry_Type, "Axisymmetric") == 0) {
-          IP.Axisymmetric = 1;
+	 IP.Axisymmetric = AXISYMMETRIC_X;
+       } else if (strcmp(IP.Flow_Geometry_Type, "Axisymmetric-x") == 0) {
+	 IP.Axisymmetric = AXISYMMETRIC_X;
+       } else if (strcmp(IP.Flow_Geometry_Type, "Axisymmetric-y") == 0) {
+	 IP.Axisymmetric = AXISYMMETRIC_Y;
        } else {
-          IP.Axisymmetric = 0;
+          IP.Axisymmetric = PLANAR;
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Restart_Solution_Save_Frequency") == 0) {

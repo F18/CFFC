@@ -1391,7 +1391,8 @@ Preconditioner_dSdU(int ii, int jj, DenseMatrix &dRdU){
  
   //Add Jacobian for axisymmetric source terms
   if (SolnBlk->Axisymmetric) {
-    SolnBlk->Uo[ii][jj].dSadU(dRdU,SolnBlk->Sp[ii][jj]);
+    SolnBlk->Uo[ii][jj].dSadU(dRdU,SolnBlk->Sp[ii][jj],
+			      SolnBlk->Axisymmetric);
   }  
 
   //Add Jacobian for regular source terms

@@ -285,7 +285,6 @@ class Rte2D_State {
   //! Zero solution operator.
   void Zero() {
     for ( int i=0; i<Ntot; i++ ) I[i] = ZERO;
-    zero_non_sol();
   }
 
   //! Zero non-solution operator.
@@ -427,15 +426,19 @@ class Rte2D_State {
   //@{ @name Source vector (axisymmetric terms).
   //! Source - For time-marching.
   Rte2D_State Sa( const Rte2D_State &dUdpsi,
-		  const Rte2D_State &phi_psi ) const;
+		  const Rte2D_State &phi_psi,
+		  const int Axisymmetric) const;
   //! Source - For space-marching (FVM).
-  double Sa_FVM(const int v, const int m, const int l) const;
+  double Sa_FVM(const int v, const int m, const int l, 
+		const int Axisymmetric) const;
   //! Source - For space-marching (DOM).
   double Sa_DOM(const int v, const int m, const int l) const;
   //! Source Jac. - For time-marching.
-  void dSadU(DenseMatrix &dSadU, const double Sp) const;
+  void dSadU(DenseMatrix &dSadU, const double Sp,
+	     const int Axisymmetric) const;
   //! Source Jac. - For space-marching (FVM).
-  double dSadU_FVM(const int v, const int m, const int l) const;
+  double dSadU_FVM(const int v, const int m, const int l,
+		   const int Axisymmetric) const;
   //! Source Jac. - For space-marching (DOM).
   double dSadU_DOM(const int v, const int m, const int l) const;
   //@}
@@ -1215,7 +1218,8 @@ inline double Rte2D_State :: dSdU(const int v, const int m, const int l) const
  *                       Time-march version.                 *
  *************************************************************/
 inline Rte2D_State Rte2D_State :: Sa(const Rte2D_State &dUdpsi,
-			      const Rte2D_State &phi_psi ) const 
+				     const Rte2D_State &phi_psi,
+				     const int Axisymmetric) const 
 {
   int l_m1, l_p1;
   double It, Ib, Dt, Db;
@@ -1238,8 +1242,13 @@ inline Rte2D_State Rte2D_State :: Sa(const Rte2D_State &dUdpsi,
 	else l_p1 = l+1;
 	 
 	// direction cosines
-	Dt = -sin(delta_psi[m][l]/TWO)*mu[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
-	Db = -sin(delta_psi[m][l]/TWO)*mu[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];
+	if (Axisymmetric == AXISYMMETRIC_Y) {
+	  Dt = -sin(delta_psi[m][l]/TWO)*eta[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
+	  Db = -sin(delta_psi[m][l]/TWO)*eta[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];    
+	} else if (Axisymmetric == AXISYMMETRIC_X) {
+	  Dt = -sin(delta_psi[m][l]/TWO)*mu[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
+	  Db = -sin(delta_psi[m][l]/TWO)*mu[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];
+	} /* endif */
 	
 	// upwind
 	if (Dt<ZERO) {
@@ -1270,7 +1279,8 @@ inline Rte2D_State Rte2D_State :: Sa(const Rte2D_State &dUdpsi,
  * Rte2D_State::s_axi -- Axisymmetric source term.           *
  *                       Space-march FVM version.            *
  *************************************************************/
-inline double Rte2D_State :: Sa_FVM(const int v, const int m, const int l) const 
+inline double Rte2D_State :: Sa_FVM(const int v, const int m, const int l,
+				    const int Axisymmetric) const 
 {
   int l_m1, l_p1;
   double It, Ib, Dt, Db;
@@ -1287,8 +1297,13 @@ inline double Rte2D_State :: Sa_FVM(const int v, const int m, const int l) const
   else l_p1 = l+1;
   
   // direction cosines
-  Dt = -sin(delta_psi[m][l]/TWO)*mu[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
-  Db = -sin(delta_psi[m][l]/TWO)*mu[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];
+  if (Axisymmetric == AXISYMMETRIC_Y) {
+    Dt = -sin(delta_psi[m][l]/TWO)*eta[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
+    Db = -sin(delta_psi[m][l]/TWO)*eta[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];    
+  } else if (Axisymmetric == AXISYMMETRIC_X) {
+    Dt = -sin(delta_psi[m][l]/TWO)*mu[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
+    Db = -sin(delta_psi[m][l]/TWO)*mu[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];
+  } /* endif */
   
   // upwind
   if (Dt<ZERO) {
@@ -1341,7 +1356,8 @@ inline double Rte2D_State :: Sa_DOM(const int v, const int m, const int l) const
  *                       Time-march version.                 *
  *************************************************************/
 inline void Rte2D_State :: dSadU(DenseMatrix &dSadU,
-				 const double Sp) const 
+				 const double Sp,
+				 const int Axisymmetric) const 
 { 
 
   int l_m1, l_p1;
@@ -1364,8 +1380,13 @@ inline void Rte2D_State :: dSadU(DenseMatrix &dSadU,
 	else l_p1 = l+1;
 	 
 	// direction cosines
-	Dt = -sin(delta_psi[m][l]/TWO)*mu[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
-	Db = -sin(delta_psi[m][l]/TWO)*mu[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];
+	if (Axisymmetric == AXISYMMETRIC_Y) {
+	  Dt = -sin(delta_psi[m][l]/TWO)*eta[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
+	  Db = -sin(delta_psi[m][l]/TWO)*eta[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];    
+	} else if (Axisymmetric == AXISYMMETRIC_X) {
+	  Dt = -sin(delta_psi[m][l]/TWO)*mu[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
+	  Db = -sin(delta_psi[m][l]/TWO)*mu[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];
+	} /* endif */
 	
 	// upwind
 	if (Dt<ZERO) {
@@ -1396,7 +1417,8 @@ inline void Rte2D_State :: dSadU(DenseMatrix &dSadU,
  * Rte2D_State::dSadU -- Axisymmetric source term jacobian.  *
  *                       Space-march FVM version.            *
  *************************************************************/
-inline double Rte2D_State :: dSadU_FVM(const int v, const int m, const int l) const 
+inline double Rte2D_State :: dSadU_FVM(const int v, const int m, const int l, 
+				       const int Axisymmetric) const 
 { 
 
   int l_m1, l_p1;
@@ -1412,8 +1434,13 @@ inline double Rte2D_State :: dSadU_FVM(const int v, const int m, const int l) co
   else l_p1 = l+1;
   
   // direction cosines
-  Dt = -sin(delta_psi[m][l]/TWO)*mu[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
-  Db = -sin(delta_psi[m][l]/TWO)*mu[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];
+  if (Axisymmetric == AXISYMMETRIC_Y) {
+    Dt = -sin(delta_psi[m][l]/TWO)*eta[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
+    Db = -sin(delta_psi[m][l]/TWO)*eta[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];
+  } else if (Axisymmetric == AXISYMMETRIC_X) {
+    Dt = -sin(delta_psi[m][l]/TWO)*mu[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
+    Db = -sin(delta_psi[m][l]/TWO)*mu[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];
+  } /* endif */
   
   // upwind
   if (Dt<ZERO) {

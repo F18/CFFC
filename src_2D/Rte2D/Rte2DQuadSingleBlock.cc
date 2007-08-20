@@ -4186,7 +4186,8 @@ int dUdt_Residual_Evaluation(Rte2D_Quad_Block &SolnBlk,
 	  if (SolnBlk.Axisymmetric) {
 	    SolnBlk.dUdt[i][j][0] += 
 	      SolnBlk.U[i][j].Sa( SolnBlk.dUdpsi[i][j], 
-				  SolnBlk.phi_psi[i][j]) / 
+				  SolnBlk.phi_psi[i][j],
+				  SolnBlk.Axisymmetric) / 
 	      SolnBlk.Sp[i][j];
 	  } /* endif */
 
@@ -4480,7 +4481,8 @@ int dUdt_Multistage_Explicit(Rte2D_Quad_Block &SolnBlk,
                SolnBlk.dUdt[i][j][k_residual] += 
 		 (Input_Parameters.CFL_Number*SolnBlk.dt[i][j]) *
 		 SolnBlk.U[i][j].Sa( SolnBlk.dUdpsi[i][j], 
-				     SolnBlk.phi_psi[i][j]) / 
+				     SolnBlk.phi_psi[i][j],
+				     SolnBlk.Axisymmetric ) / 
 		 SolnBlk.Sp[i][j];
              } /* endif */
 
@@ -4809,12 +4811,11 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
     // add the axisymmetric source term
     if (SolnBlk.Axisymmetric && 
 	Input_Parameters.i_RTE_Solver == RTE2D_SOLVER_FVM) {
-      num += SolnBlk.U[i][j].Sa_FVM(v,m,l)*SolnBlk.Grid.Cell[i][j].A;
-      denom += SolnBlk.U[i][j].dSadU_FVM(v,m,l)*SolnBlk.Grid.Cell[i][j].A;
+      num += SolnBlk.U[i][j].Sa_FVM(v,m,l,SolnBlk.Axisymmetric) * 
+	     SolnBlk.Grid.Cell[i][j].A;
+      denom += SolnBlk.U[i][j].dSadU_FVM(v,m,l,SolnBlk.Axisymmetric) * 
+	       SolnBlk.Grid.Cell[i][j].A;
     } else if (SolnBlk.Axisymmetric && 
-					SolnBlk.Grid.lfaceE(i,j)*SolnBlk.SpE[i][j],
-					SolnBlk.Grid.nfaceW(i,j), 
-					SolnBlk.Grid.lfaceW(i,j)*SolnBlk.SpW[i][j],
 	       Input_Parameters.i_RTE_Solver == RTE2D_SOLVER_DOM) {
       num += SolnBlk.U[i][j].Sa_DOM(v,m,l);
       denom += SolnBlk.U[i][j].dSadU_DOM(v,m,l);

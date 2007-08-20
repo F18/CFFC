@@ -7743,8 +7743,8 @@ Grid2D_Quad_Block** Grid_Cylindrical_Encl(Grid2D_Quad_Block **Grid_ptr,
       xc_NE = Vector2D(Length, Radius);
       xc_SE = Vector2D(Length, ZERO);
       xc_SW = Vector2D(ZERO , ZERO);
-    }
-    if(Axisymmetric ==2){
+
+    } else if(Axisymmetric ==2){
       xc_NW = Vector2D(ZERO , Length);
       xc_NE = Vector2D(Radius,Length);
       xc_SE = Vector2D(Radius, ZERO);
@@ -7776,9 +7776,8 @@ Grid2D_Quad_Block** Grid_Cylindrical_Encl(Grid2D_Quad_Block **Grid_ptr,
       Stretch_J = STRETCHING_FCN_LINEAR;
       Beta_J = ZERO;
       Tau_J = ZERO;  //axisymmetric #1
-    }
 
-    if (Axisymmetric == 2) {
+    } else if (Axisymmetric == 2) {
       Bnd_Spline_East.setBCtype(BC_GRAY_WALL);
       Bnd_Spline_West.setBCtype(BC_REFLECTION);
       Bnd_Spline_North.setBCtype(BC_GRAY_WALL);
