@@ -1372,8 +1372,8 @@ inline double HighTemp2D_pState::H(void) const {
 inline double HighTemp2D_pState::a(void) const {
   switch(eos_type) {
     case EOS_TGAS:
-      return sqrt(p*dpde()/sqr(rho)+dpdrho());
-      //return Tgas_a_from_e_rho(e(), rho);
+      //return sqrt(p*dpde()/sqr(rho)+dpdrho());
+      return Tgas_a_from_e_rho(e(), rho);
     case EOS_IDEAL:
     default:
       return sqrt(g*p/rho);
@@ -1386,8 +1386,8 @@ inline double HighTemp2D_pState::a(void) const {
 inline double HighTemp2D_pState::a2(void) const {
   switch(eos_type) {
     case EOS_TGAS:
-      return p*dpde()/sqr(rho)+dpdrho();
-      //return sqr(Tgas_a_from_e_rho(e(), rho));
+      //return p*dpde()/sqr(rho)+dpdrho();
+      return sqr(Tgas_a_from_e_rho(e(), rho));
     case EOS_IDEAL:
     default:
       return g*p/rho;
@@ -1720,14 +1720,14 @@ inline double HighTemp2D_pState::ddTdpdrho(void) const {
   switch(eos_type) {
     case EOS_TGAS: {
       double rho1, rho2, p1, p2;
-      double dTdrho1, dTdrho2;
+      double dTdp1, dTdp2;
       rho1 = rho*(ONE-HTTOL);
       rho2 = rho*(ONE+HTTOL);
       p1 = p*(ONE-HTTOL);
       p2 = p*(ONE+HTTOL);
-      dTdrho1 = (Tgas_temp(p2, rho1) - Tgas_temp(p1, rho1))/(TWO*HTTOL*p);
-      dTdrho2 = (Tgas_temp(p2, rho2) - Tgas_temp(p1, rho2))/(TWO*HTTOL*p);
-      return (dTdrho2 - dTdrho1)/(TWO*HTTOL*rho); }
+      dTdp1 = (Tgas_temp(p2, rho1) - Tgas_temp(p1, rho1))/(TWO*HTTOL*p);
+      dTdp2 = (Tgas_temp(p2, rho2) - Tgas_temp(p1, rho2))/(TWO*HTTOL*p);
+      return (dTdp2 - dTdp1)/(TWO*HTTOL*rho); }
     case EOS_IDEAL:
     default:
       return -ONE/(sqr(rho)*R);
@@ -2154,8 +2154,8 @@ inline double HighTemp2D_cState::H(void) const {
 inline double HighTemp2D_cState::a(void) const {
   switch(eos_type){
     case EOS_TGAS:  
-      return sqrt(p()*dpde()/sqr(rho)+dpdrho());
-      //return Tgas_a_from_e_rho(e(), rho); 
+      //return sqrt(p()*dpde()/sqr(rho)+dpdrho());
+      return Tgas_a_from_e_rho(e(), rho); 
     case EOS_IDEAL: 
     default:
       return sqrt(g*p()/rho);
@@ -2168,8 +2168,8 @@ inline double HighTemp2D_cState::a(void) const {
 inline double HighTemp2D_cState::a2(void) const {
   switch(eos_type){
     case EOS_TGAS:
-      return p()*dpde()/sqr(rho)+dpdrho();
-      //return sqr(Tgas_a_from_e_rho(e(), rho));
+      //return p()*dpde()/sqr(rho)+dpdrho();
+      return sqr(Tgas_a_from_e_rho(e(), rho));
     case EOS_IDEAL:
     default:
       return g*p()/rho;
@@ -2420,16 +2420,16 @@ inline double HighTemp2D_cState::ddTdpdrho(void) const {
   switch(eos_type) {
     case EOS_TGAS: {
       double rho1, rho2, p1, p2;
-      double dTdrho1, dTdrho2; 
+      double dTdp1, dTdp2; 
       double px;
       px = p();
       rho1 = rho*(ONE-HTTOL);
       rho2 = rho*(ONE+HTTOL);
       p1 = px*(ONE-HTTOL);
       p2 = px*(ONE+HTTOL);
-      dTdrho1 = (Tgas_temp(p2, rho1) - Tgas_temp(p1, rho1))/(TWO*HTTOL*px);
-      dTdrho2 = (Tgas_temp(p2, rho2) - Tgas_temp(p1, rho2))/(TWO*HTTOL*px);
-      return (dTdrho2 - dTdrho1)/(TWO*HTTOL*rho); }
+      dTdp1 = (Tgas_temp(p2, rho1) - Tgas_temp(p1, rho1))/(TWO*HTTOL*px);
+      dTdp2 = (Tgas_temp(p2, rho2) - Tgas_temp(p1, rho2))/(TWO*HTTOL*px);
+      return (dTdp2 - dTdp1)/(TWO*HTTOL*rho); }
     case EOS_IDEAL:
     default:
       return -ONE/(sqr(rho)*R);
@@ -2795,7 +2795,7 @@ inline void HighTemp2D_pState::dUdW(DenseMatrix &dUdW) const {
  **********************************************************************/
 inline void HighTemp2D_pState::dWdU(DenseMatrix &dWdU) const {
   switch (eos_type) {
-    case EOS_IDEAL: {
+    case EOS_TGAS: {
       double dpdex; dpdex = dpde();
       double dpdrhox; dpdrhox = dpdrho();
       double ex; ex = e();
@@ -2816,7 +2816,7 @@ inline void HighTemp2D_pState::dWdU(DenseMatrix &dWdU) const {
         dWdU(5,5) += ONE/rho;
       }
       break; }
-    case EOS_TGAS:
+    case EOS_IDEAL:
     default: {
       dWdU(0,0) += ONE;
       dWdU(1,0) -= v.x/rho;
