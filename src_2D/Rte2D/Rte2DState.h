@@ -523,19 +523,40 @@ inline double Rte2D_State :: beta(const int v) const
  *************************************************************/
 inline double Rte2D_State :: G( ) 
 {
-  double sum = 0;
+  double sum = ZERO;
 
+  //------------------------------------------------
+  // Gray 
+  //------------------------------------------------
   if (Absorb_Type == RTE2D_ABSORB_GRAY) {
     for ( int v=0; v<Nband; v++ ) 
       for ( int m=0; m<Npolar; m++ ) 
 	for ( int l=0; l<Nazim[m]; l++ ) 
 	  sum += omega[m][l] * In(v,m,l);
 
+  //------------------------------------------------
+  // SNBCK 
+  //------------------------------------------------
   } else if (Absorb_Type == RTE2D_ABSORB_SNBCK) {
-    for ( int v=0; v<Nband; v++ ) 
+
+    // loop over every quad point of every band
+    double dir_sum;
+    for ( int v=0; v<SNBCKdata->Nbands; v++ ) {
+      for (int i=0; i<SNBCKdata->nquad[v]; i++) {
+      
+      // sum the directional component
+      dir_sum = ZERO;
       for ( int m=0; m<Npolar; m++ ) 
 	for ( int l=0; l<Nazim[m]; l++ ) 
-	  sum += omega[m][l] * In(v,m,l);
+	  dir_sum += omega[m][l] * In(SNBCKdata->index[v][i],m,l);
+
+      // add the total radiation for this quadrature point
+      sum += SNBCKdata->BandWidth[v]*SNBCKdata->Weight(v,i)*dir_sum;
+
+      } /* endfor - points */
+    } /* endfor - bands */
+
+
   } /* endif*/
 
   return sum;
@@ -549,6 +570,9 @@ inline Vector2D Rte2D_State :: q( )
 {
   Vector2D Temp(ZERO);
 
+  //------------------------------------------------
+  // Gray 
+  //------------------------------------------------
   if (Absorb_Type == RTE2D_ABSORB_GRAY) {
     for ( int v=0; v<Nband; v++ ) 
       for ( int m=0; m<Npolar; m++ ) 
@@ -557,17 +581,96 @@ inline Vector2D Rte2D_State :: q( )
 	  Temp.y += eta[m][l] * In(v,m,l);
 	}
 
+  //------------------------------------------------
+  // SNBCK 
+  //------------------------------------------------
   } else if (Absorb_Type == RTE2D_ABSORB_SNBCK) {
-    for ( int v=0; v<Nband; v++ ) 
+
+    // loop over every quad point of every band
+    Vector2D dir_sum(ZERO);
+    for ( int v=0; v<SNBCKdata->Nbands; v++ ) {
+      for (int i=0; i<SNBCKdata->nquad[v]; i++) {
+      
+      // sum the directional component
+      dir_sum = ZERO;
       for ( int m=0; m<Npolar; m++ ) 
 	for ( int l=0; l<Nazim[m]; l++ ) {
-	  Temp.x +=  mu[m][l] * In(v,m,l);
-	  Temp.y += eta[m][l] * In(v,m,l);
+	  dir_sum.x +=  mu[m][l] * In(SNBCKdata->index[v][i],m,l);
+	  dir_sum.y += eta[m][l] * In(SNBCKdata->index[v][i],m,l);
 	}
+
+      // add the total radiation for this quadrature point
+      dir_sum *= SNBCKdata->BandWidth[v]*SNBCKdata->Weight(v,i);
+      Temp += dir_sum;
+
+      } /* endfor - points */
+    } /* endfor - bands */
 
   } /* endif*/
 
   return Temp;  
+}
+
+/*************************************************************
+ * Rte2D_State::Qr -- Compute radiative source term          *
+ *                   in [W/m^3]                              *
+ *************************************************************/
+inline Vector2D Rte2D_State :: Qr( )
+{
+  double source = ZERO;
+  double sum;
+
+  //------------------------------------------------
+  // Gray 
+  //------------------------------------------------
+  if (Absorb_Type == RTE2D_ABSORB_GRAY) {
+
+    // loop over bands
+    for ( int v=0; v<Nband; v++ ) {
+
+      // subtract G()
+      sum = ZERO;
+      for ( int m=0; m<Npolar; m++ ) 
+	for ( int l=0; l<Nazim[m]; l++ ) 
+	  sum -= omega[m][l] * In(v,m,l);
+
+      // add blackbody
+      sum += FOUR*PI*Ib[v];
+
+      // the radiation source term
+      source += sum*kappa[v];
+
+    } /* endfor - bands*/
+
+  //------------------------------------------------
+  // SNBCK 
+  //------------------------------------------------
+  } else if (Absorb_Type == RTE2D_ABSORB_SNBCK) {
+
+    // loop over every quad point of every band
+    for ( int v=0; v<SNBCKdata->Nbands; v++ ) {
+      for (int i=0; i<SNBCKdata->nquad[v]; i++) {
+      
+      // sum the directional component
+      sum = ZERO;
+      for ( int m=0; m<Npolar; m++ ) 
+	for ( int l=0; l<Nazim[m]; l++ ) 
+	  sum -= omega[m][l] * In(SNBCKdata->index[v][i],m,l);
+
+      // add blackbody
+      sum += FOUR*PI*Ib[v];
+      
+      // the contribution of the source term at this point
+      source += SNBCKdata->BandWidth[v]*SNBCKdata->Weight(v,i) * 
+	        kappa[ SNBCKdata->index[v][i] ] * sum;
+
+      } /* endfor - points */
+    } /* endfor - bands */
+
+
+  } /* endif*/
+
+  return source;
 }
 
  /**************************************************************************

@@ -880,8 +880,12 @@ Rte2D_State Gray_Wall(const Rte2D_State &U,
   for (int v=0; v<Uwall.Nband; v++) {
     
     // for a black wall
-    In = wall_emissivity * BlackBody(wall_temperature);
-
+    In = ZERO;
+    if (U.Absorb_Type == RTE2D_ABSORB_GRAY)
+      In = wall_emissivity * BlackBody(wall_temperature);
+    else if (U.Absorb_Type == RTE2D_ABSORB_SNBCK)
+      In = wall_emissivity * U.SNBCKdata->CalculatePlanck(wall_temperature, v);
+      
     // For grey wall.
     if ( fabs(1.0-wall_emissivity)>MICRO ) {
       
@@ -960,8 +964,12 @@ void Gray_Wall_Space_March(Rte2D_State &Uwall,
   for (int v=0; v<Uwall.Nband; v++) {
     
     // for a black wall
-    In = wall_emissivity * BlackBody(wall_temperature);
-
+    In = ZERO;
+    if (Uwall.Absorb_Type == RTE2D_ABSORB_GRAY)
+      In = wall_emissivity * BlackBody(wall_temperature);
+    else if (Uwall.Absorb_Type == RTE2D_ABSORB_SNBCK)
+      In = wall_emissivity * Uwall.SNBCKdata->CalculatePlanck(wall_temperature, v);
+    
     // For grey wall.
     if ( fabs(1.0-wall_emissivity)>MICRO ) {
       

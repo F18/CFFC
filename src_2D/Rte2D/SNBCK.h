@@ -361,6 +361,12 @@ public:
   // flags to indicate if wide band active (>0) or transparent (=0)
   int *iCO, *iCO2, *iH2O, *iMix; 
 
+  // an index relating a 2D array (v,i) to an unfolded 1D array (n)
+  int **index;
+
+  // an index relating an unfolded 1D array (n) to 2D array (v,i)
+  int *band_index;
+  int *quad_index;
 
 private:
   
@@ -377,9 +383,6 @@ private:
          ***k2_CO2,
          ***k2_H2O;
 
-  // an index relating a 2D array (v,i) to an unfolded 1D array (n)
-  int **index;
-
   //------------------------------------------------
   // Member Functions
   //------------------------------------------------
@@ -394,7 +397,8 @@ public:
             Tn(NULL), k_CO(NULL), k_CO2(NULL), k_H2O(NULL), 
             k2_CO(NULL), k2_CO2(NULL), k2_H2O(NULL), dT(ZERO),
             Ninterp(0), MixType(SNBCK_OVERLAP_OPTICALLY_THIN),
-	    EvalType(SNBCK_EVAL_ONLINE), index(NULL) {}
+            EvalType(SNBCK_EVAL_ONLINE), index(NULL),
+            band_index(NULL), quad_index(NULL) {}
   
   // destructor
   ~SNBCK() {  Deallocate(); }
@@ -404,6 +408,12 @@ public:
     return ( index[Nbands-1][ nquad[Nbands-1]-1 ] + 1 );  
   }
 
+  // return the quadrature weight for a certain point, at a specific band
+  double Weight( const int v, const int i ) {
+    if (MixType==SNBCK_OVERLAP_UNCORRELATED) return ww[v][i];
+    else return w[i];
+  }
+  
   // setup the quadrature and load SNB model parameters
   void Setup( const SNBCK_Input_Parameters &IP,  // input parameters
 	      const char *CFFC_PATH );           // Current path
@@ -422,8 +432,12 @@ public:
   // return band averaged property
   double BandAverage( const double *phi, const int v );
 
+  // return total intensity
+  double TotalIntensity( const double *phi, const int v );
+
   // calculate the planck distribution for the gas
-  double CalculatePlanck( const double T, double* Ib );
+  void CalculatePlanck( const double T, double* Ib );
+  double CalculatePlanck( const double T, const int n );
 
 private:
 

@@ -616,6 +616,14 @@ void SNBCK :: AllocateIndex() {
 	cnt++;
       } /* endfor */
     }/* endfor */
+    
+    band_index = new int[cnt];
+    quad_index = new int[cnt];
+    for (int v=0; v<Nbands; v++) 
+      for (int i=0; i<nquad[v]; i++) {
+	band_index[ index[v][i] ] = v;
+	quad_index[ index[v][i] ] = i;
+      } /* endfor */
 
   }/* endif */
 
@@ -634,15 +642,15 @@ void SNBCK :: DeallocateQuad() {
 
 
 void SNBCK :: DeallocateBands() {
-  if (WaveNo    != NULL)  delete[] WaveNo;       WaveNo = NULL;
-  if (BandWidth != NULL)  delete[] BandWidth; BandWidth = NULL;
-  if (istart    != NULL)  delete[] istart;       istart = NULL;
-  if (iend      != NULL)  delete[] iend;           iend = NULL;
-  if (iCO       != NULL)  delete[] iCO;             iCO = NULL;
-  if (iCO2      != NULL)  delete[] iCO2;           iCO2 = NULL;
-  if (iH2O      != NULL)  delete[] iH2O;           iH2O = NULL;
-  if (iMix      != NULL)  delete[] iMix;           iMix = NULL;
-  if (nquad     != NULL)  delete[] nquad;         nquad = NULL;
+  if (WaveNo    != NULL) { delete[] WaveNo;       WaveNo = NULL; }
+  if (BandWidth != NULL) { delete[] BandWidth; BandWidth = NULL; }
+  if (istart    != NULL) { delete[] istart;       istart = NULL; }
+  if (iend      != NULL) { delete[] iend;           iend = NULL; }
+  if (iCO       != NULL) { delete[] iCO;             iCO = NULL; }
+  if (iCO2      != NULL) { delete[] iCO2;           iCO2 = NULL; }
+  if (iH2O      != NULL) { delete[] iH2O;           iH2O = NULL; }
+  if (iMix      != NULL) { delete[] iMix;           iMix = NULL; } 
+  if (nquad     != NULL) { delete[] nquad;         nquad = NULL; }
 }
 
 
@@ -683,6 +691,8 @@ void SNBCK :: DeallocateIndex() {
     for (int i=0; i<Nbands; i++) delete[] index[i];
     delete[] index; index=NULL;
   }
+  if (band_index != NULL) { delete[] band_index; band_index = NULL; }
+  if (quad_index != NULL) { delete[] quad_index; quad_index = NULL; }
 }
 
 
@@ -1410,10 +1420,7 @@ void SNBCK :: CalculateAbsorb_Interp( const double p,        // pressure [atm]
  *********************************************************************/
 double SNBCK :: BandAverage( const double *phi, const int v )  {
   double avg = ZERO;
-  if (MixType==SNBCK_OVERLAP_CORRELATED)
-    for (int i=0; i<nquad[v]; i++) avg += ww[v][i]*phi[i];
-  else 
-    for (int i=0; i<nquad[v]; i++) avg += w[i]*phi[i];
+  for (int i=0; i<nquad[v]; i++) avg += Weight(v,i)*phi[i];
   return avg;
 }
 
@@ -1424,7 +1431,7 @@ double SNBCK :: BandAverage( const double *phi, const int v )  {
  * Calculate the planck distribution for the gas. Remember, we are   *
  * passing a 1D array.                                               *
  *********************************************************************/
-double SNBCK :: CalculatePlanck( const double T, double* Ib ) {
+void SNBCK :: CalculatePlanck( const double T, double* Ib ) {
 
   double Ib_v;
   for (int v=0; v<Nbands; v++) {
@@ -1432,6 +1439,9 @@ double SNBCK :: CalculatePlanck( const double T, double* Ib ) {
     for (int i=0; i<nquad[v]; i++) Ib[ index[v][i] ] = Ib_v;
   }
 }
+double SNBCK :: CalculatePlanck( const double T, const int index1D ) 
+{ return Planck(T, WaveNo[ band_index[index1D] ]); }
+
 
 /*********************************************************************
  ********** SNBCK_INPUT_PARAMETERS CLASS MEMBER FUNCTIONS ************
