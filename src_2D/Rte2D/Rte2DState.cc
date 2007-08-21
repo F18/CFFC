@@ -414,12 +414,12 @@ void Rte2D_State :: SetupPhaseDOM( const int type ) {
   // is 1 every where.  No need to numerically average it.
   if ( type == RTE2D_SCATTER_ISO ) {
 
-    for(int m=0 ; m<Npolar ; m++) 
-      for(int l=0 ; l<Nazim[m] ; l++) 
-	for(int p=0 ; p<Npolar ; p++) 
-	  for(int q=0 ; q<Nazim[p] ; q++) 
-	    for (v=0; v<Nband; v++) 
-	      Phi[m][l][p][q][v] = ONE;
+    for (v=0; v<Nband; v++) 
+      for(int m=0 ; m<Npolar ; m++) 
+	for(int l=0 ; l<Nazim[m] ; l++) 
+	  for(int p=0 ; p<Npolar ; p++) 
+	    for(int q=0 ; q<Nazim[p] ; q++) 
+	      Phi[v][m][l][p][q] = ONE;
     return ;
 
   } /* endif */
@@ -444,7 +444,7 @@ void Rte2D_State :: SetupPhaseDOM( const int type ) {
 	for(int q=0 ; q<Nazim[p] ; q++) {
 	  
 	  // initialize
-	  Phi[m][l][p][q][v] = ZERO;
+	  Phi[v][m][l][p][q] = ZERO;
 
 	  // incoming ray
 	  in_dir = Vector3D( mu[m][l],eta[m][l],xi[m][l] );
@@ -455,7 +455,7 @@ void Rte2D_State :: SetupPhaseDOM( const int type ) {
 
 	  // compute the phase function for the current directions
 	  for (int i=0; i<Mn; i++)
-	    Phi[m][l][p][q][v] += An[i]*Legendre( dprod, i );
+	    Phi[v][m][l][p][q] += An[i]*Legendre( dprod, i );
 
 	  
 	} //end for -q-
@@ -475,7 +475,7 @@ void Rte2D_State :: SetupPhaseDOM( const int type ) {
       // sum
       for(int p=0 ; p<Npolar ; p++)
 	for(int q=0 ; q<Nazim[p] ; q++) 
-	  g += Phi[m][l][p][q][v]*omega[p][q]; 
+	  g += Phi[v][m][l][p][q]*omega[p][q]; 
       
       // if this is zero, don't divide by zero
       if (g<TOLER) continue;
@@ -489,7 +489,7 @@ void Rte2D_State :: SetupPhaseDOM( const int type ) {
       // normalize
       for(int p=0 ; p<Npolar ; p++)
 	for(int q=0 ; q<Nazim[p] ; q++) 
-	  Phi[m][l][p][q][v] = Phi[m][l][p][q][v]/g;
+	  Phi[v][m][l][p][q] = Phi[v][m][l][p][q]/g;
 	
     }  // end for -l-
   } // end for -m-
@@ -500,7 +500,7 @@ void Rte2D_State :: SetupPhaseDOM( const int type ) {
       for(int l=0 ; l<Nazim[m] ; l++) 
 	for(int p=0 ; p<Npolar ; p++) 
 	  for(int q=0 ; q<Nazim[p] ; q++) 
-	    Phi[m][l][p][q][v] = Phi[m][l][p][q][0];
+	    Phi[v][m][l][p][q] = Phi[0][m][l][p][q];
 
 
   // clean up memory
@@ -577,12 +577,12 @@ void Rte2D_State :: SetupPhaseFVM( const int type ) {
   // is 1 every where.  No need to numerically average it.
   if ( type == RTE2D_SCATTER_ISO ) {
 
-    for(int m=0 ; m<Npolar ; m++) 
-      for(int l=0 ; l<Nazim[m] ; l++) 
-	for(int p=0 ; p<Npolar ; p++) 
-	  for(int q=0 ; q<Nazim[p] ; q++) 
-	    for (v=0; v<Nband; v++) 
-	      Phi[m][l][p][q][v] = ONE;
+    for (v=0; v<Nband; v++) 
+      for(int m=0 ; m<Npolar ; m++) 
+	for(int l=0 ; l<Nazim[m] ; l++) 
+	  for(int p=0 ; p<Npolar ; p++) 
+	    for(int q=0 ; q<Nazim[p] ; q++) 
+	      Phi[v][m][l][p][q] = ONE;
     return ;
 
   } /* endif */
@@ -642,7 +642,7 @@ void Rte2D_State :: SetupPhaseFVM( const int type ) {
 	  }
 	  
 	  // set
-	  Phi[m][l][p][q][v] = val 
+	  Phi[v][m][l][p][q] = val 
 	    / (omega[m][l]/double(Symmetry_Factor))
 	    / (omega[p][q]/double(Symmetry_Factor));
 	  // IMPORTANT - THE FACTOR 4 COMES FROM SYMMETRY
@@ -668,7 +668,7 @@ void Rte2D_State :: SetupPhaseFVM( const int type ) {
 	// sum
       for(int p=0 ; p<Npolar ; p++)
 	for(int q=0 ; q<Nazim[p] ; q++) 
-	  g += Phi[m][l][p][q][v]*omega[p][q]; 
+	  g += Phi[v][m][l][p][q]*omega[p][q]; 
       
       // if this is zero, don't divide by zero
       if (g<TOLER) continue;
@@ -682,7 +682,7 @@ void Rte2D_State :: SetupPhaseFVM( const int type ) {
       // normalize
       for(int p=0 ; p<Npolar ; p++)
 	for(int q=0 ; q<Nazim[p] ; q++) 
-	  Phi[m][l][p][q][v] = Phi[m][l][p][q][v]/g;
+	  Phi[v][m][l][p][q] = Phi[v][m][l][p][q]/g;
 	
     }  // end for -l-
   } // end for -m-
@@ -693,7 +693,7 @@ void Rte2D_State :: SetupPhaseFVM( const int type ) {
       for(int l=0 ; l<Nazim[m] ; l++) 
 	for(int p=0 ; p<Npolar ; p++) 
 	  for(int q=0 ; q<Nazim[p] ; q++) 
-	    Phi[m][l][p][q][v] = Phi[m][l][p][q][0];
+	    Phi[v][m][l][p][q] = Phi[0][m][l][p][q];
 
   cout << " norm = " << g << "...done.\n" << flush;
 
@@ -803,24 +803,21 @@ Rte2D_State Riemann_n(const Rte2D_State &Ul,
 
     /* Compute the Rieman state */
     
-    for (int m=0; m<Ul.Npolar; m++) 
-      for (int l=0; l<Ul.Nazim[m]; l++) {
-	
-	// compute the direction cosine
-	cosine = Ul.mu[m][l]*cos_angle + Ul.eta[m][l]*sin_angle;
-	
-	for (int v=0; v<Ul.Nband; v++) {
+    for (int v=0; v<Ul.Nband; v++) 
+      for (int m=0; m<Ul.Npolar; m++) 
+	for (int l=0; l<Ul.Nazim[m]; l++) {
+
+	  // compute the direction cosine
+	  cosine = Ul.mu[m][l]*cos_angle + Ul.eta[m][l]*sin_angle;
 	  
 	  // upwind
 	  if (cosine >= ZERO) {
-	    Um.In(m,l,v) = Ul.In(m,l,v);
+	    Um.In(v,m,l) = Ul.In(v,m,l);
 	  } else {
-	    Um.In(m,l,v) = Ur.In(m,l,v);
+	    Um.In(v,m,l) = Ur.In(v,m,l);
 	  } /* endif */
 
-	} /* endfor */
-
-      } /* endfor*/
+	} /* endfor*/
 
     return (Um);
 
@@ -909,7 +906,7 @@ Rte2D_State Gray_Wall(const Rte2D_State &U,
 	for (int l=0; l<Uwall.Nazim[m]; l++) {
 	  dot = norm_dir.x * Uwall.mu[m][l] + norm_dir.y * Uwall.eta[m][l];
 	  temp = ((1.0-wall_emissivity)/sum);
-	  temp *= Uwall.In(m,l,v) * dot;
+	  temp *= Uwall.In(v,m,l) * dot;
 	  In = In + max( ZERO, temp  );
 	  
 	  // Note that for the DOM method and the FVM, the term sum=PI
@@ -930,7 +927,7 @@ Rte2D_State Gray_Wall(const Rte2D_State &U,
 	
 	// We are only concerned with directions that are leaving the wall and 
 	// entering the domain.  
-	if ( dot < ZERO ) Uwall.In(m,l,v) = In;  
+	if ( dot < ZERO ) Uwall.In(v,m,l) = In;  
 	
       }
     
@@ -989,7 +986,7 @@ void Gray_Wall_Space_March(Rte2D_State &Uwall,
 	for (int l=0; l<Uwall.Nazim[m]; l++) {
 	  dot = norm_dir.x * Uwall.mu[m][l] + norm_dir.y * Uwall.eta[m][l];
 	  temp = ((1.0-wall_emissivity)/sum);
-	  temp *= Uwall.In(m,l,v) * dot;
+	  temp *= Uwall.In(v,m,l) * dot;
 	  In = In + max( ZERO, temp  );
 	  
 	  // Note that for the DOM method and the FVM, the term sum=PI
@@ -1010,7 +1007,7 @@ void Gray_Wall_Space_March(Rte2D_State &Uwall,
 	
 	// We are only concerned with directions that are leaving the wall and 
 	// entering the domain.  
-	if ( dot < ZERO ) Uwall.In(m,l,v) = In;  
+	if ( dot < ZERO ) Uwall.In(v,m,l) = In;  
 	
       }
     
@@ -1142,7 +1139,7 @@ Rte2D_State Reflect(const Rte2D_State &U, const Vector2D &norm_dir) {
 	  // set the reflected intensity
 	  // Remember: directions invarient with wavenumber
 	  for (int v=0; v<U.Nband; v++) 
-	    Temp.In(mm,ll,v) = U.In(m,l,v);
+	    Temp.In(v,mm,ll) = U.In(v,m,l);
 
       
 	} /* endfor */ 
@@ -1259,7 +1256,7 @@ void Reflect_Space_March(Rte2D_State &U, const Vector2D &norm_dir) {
 	  // set the reflected intensity
 	  // Remember: directions invarient with wavenumber
 	  for (int v=0; v<U.Nband; v++) 
-	    U.In(mm,ll,v) = U.In(m,l,v);
+	    U.In(v,mm,ll) = U.In(v,m,l);
 
       
 	} /* endfor */ 

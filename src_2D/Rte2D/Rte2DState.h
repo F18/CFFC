@@ -389,8 +389,8 @@ class Rte2D_State {
 
   //@{ @name State functions.
   //! access intensity using 2D indexes 
-  double& In( const int m, const int l, const int v) const;
-  double& In( const int m, const int l, const int v);
+  double& In( const int v, const int m, const int l ) const;
+  double& In( const int v, const int m, const int l );
 
   //! Return extinction coefficient
   double beta(const int v) const;
@@ -409,8 +409,8 @@ class Rte2D_State {
   //! Flux - For time-marching.
   Rte2D_State Fn( const Vector2D &norm_dir ) const;
   //! Flux - For space-marching
-  double Fn( const Vector2D &norm_dir, const int m, 
-	     const int l, const int v) const;
+  double Fn( const Vector2D &norm_dir, const int v, 
+	     const int m, const int l ) const;
   //! Flux Jac. - For time-marching.
   friend void dFndU(DenseMatrix &dFdU, const Rte2D_State &U, 
 		    const Vector2D &norm_dir);
@@ -422,11 +422,11 @@ class Rte2D_State {
   //! Source - For time-marching.
   Rte2D_State S(void) const;
   //! Source - For space-marching.
-  double S(const int m, const int l, const int v) const;
+  double S(const int v, const int m, const int l) const;
   //! Source Jac. - For time-marching.
   void dSdU(DenseMatrix &dSdU) const;
   //! Source Jac. - For space-marching.
-  double dSdU(const int m, const int l, const int v ) const;
+  double dSdU(const int v, const int m, const int l ) const;
   //@}
 
   //@{ @name Source vector (axisymmetric terms).
@@ -435,18 +435,18 @@ class Rte2D_State {
 		  const Rte2D_State &phi_psi,
 		  const int Axisymmetric) const;
   //! Source - For space-marching (FVM).
-  double Sa_FVM(const int m, const int l, const int v,
+  double Sa_FVM(const int v, const int m, const int l, 
 		const int Axisymmetric) const;
   //! Source - For space-marching (DOM).
-  double Sa_DOM(const int m, const int l, const int v) const;
+  double Sa_DOM(const int v, const int m, const int l) const;
   //! Source Jac. - For time-marching.
   void dSadU(DenseMatrix &dSadU, const double Sp,
 	     const int Axisymmetric) const;
   //! Source Jac. - For space-marching (FVM).
-  double dSadU_FVM(const int m, const int l, const int v,
+  double dSadU_FVM(const int v, const int m, const int l,
 		   const int Axisymmetric) const;
   //! Source Jac. - For space-marching (DOM).
-  double dSadU_DOM(const int m, const int l, const int v) const;
+  double dSadU_DOM(const int v, const int m, const int l) const;
   //@}
 
 
@@ -503,11 +503,11 @@ class Rte2D_State {
 /********************************************************
  * Access intensity array using 3D indexing.            *
  ********************************************************/
-inline double& Rte2D_State :: In( const int m, const int l, const int v ) const
-{ return I[ Index[m][l][v] ]; }
+inline double& Rte2D_State :: In( const int v, const int m, const int l ) const
+{ return I[ Index[v][m][l] ]; }
 
-inline double& Rte2D_State :: In( const int m, const int l, const int v )
-{ return I[ Index[m][l][v] ]; }
+inline double& Rte2D_State :: In( const int v, const int m, const int l )
+{ return I[ Index[v][m][l] ]; }
 
 
 /********************************************************
@@ -526,16 +526,16 @@ inline double Rte2D_State :: G( )
   double sum = 0;
 
   if (Absorb_Type == RTE2D_ABSORB_GRAY) {
-    for ( int m=0; m<Npolar; m++ ) 
-      for ( int l=0; l<Nazim[m]; l++ ) 
-	for ( int v=0; v<Nband; v++ ) 
-	  sum += omega[m][l] * In(m,l,v);
-    
+    for ( int v=0; v<Nband; v++ ) 
+      for ( int m=0; m<Npolar; m++ ) 
+	for ( int l=0; l<Nazim[m]; l++ ) 
+	  sum += omega[m][l] * In(v,m,l);
+
   } else if (Absorb_Type == RTE2D_ABSORB_SNBCK) {
-    for ( int m=0; m<Npolar; m++ ) 
-      for ( int l=0; l<Nazim[m]; l++ ) 
-	for ( int v=0; v<Nband; v++ ) 
-	  sum += omega[m][l] * In(m,l,v);
+    for ( int v=0; v<Nband; v++ ) 
+      for ( int m=0; m<Npolar; m++ ) 
+	for ( int l=0; l<Nazim[m]; l++ ) 
+	  sum += omega[m][l] * In(v,m,l);
   } /* endif*/
 
   return sum;
@@ -550,20 +550,20 @@ inline Vector2D Rte2D_State :: q( )
   Vector2D Temp(ZERO);
 
   if (Absorb_Type == RTE2D_ABSORB_GRAY) {
-    for ( int m=0; m<Npolar; m++ ) 
-      for ( int l=0; l<Nazim[m]; l++ ) 
-	for ( int v=0; v<Nband; v++ ) {
-	  Temp.x +=  mu[m][l] * In(m,l,v);
-	  Temp.y += eta[m][l] * In(m,l,v);
-	}/* endfor */
+    for ( int v=0; v<Nband; v++ ) 
+      for ( int m=0; m<Npolar; m++ ) 
+	for ( int l=0; l<Nazim[m]; l++ ) {
+	  Temp.x +=  mu[m][l] * In(v,m,l);
+	  Temp.y += eta[m][l] * In(v,m,l);
+	}
 
   } else if (Absorb_Type == RTE2D_ABSORB_SNBCK) {
-    for ( int m=0; m<Npolar; m++ ) 
-      for ( int l=0; l<Nazim[m]; l++ ) 
-	for ( int v=0; v<Nband; v++ ) {
-	  Temp.x +=  mu[m][l] * In(m,l,v);
-	  Temp.y += eta[m][l] * In(m,l,v);
-	} /* endfor */
+    for ( int v=0; v<Nband; v++ ) 
+      for ( int m=0; m<Npolar; m++ ) 
+	for ( int l=0; l<Nazim[m]; l++ ) {
+	  Temp.x +=  mu[m][l] * In(v,m,l);
+	  Temp.y += eta[m][l] * In(v,m,l);
+	}
 
   } /* endif*/
 
@@ -685,37 +685,35 @@ inline void Rte2D_State :: AllocateCosines(const int RTE_Type)
     
     // set the indexe array
     cnt = 0;
-    Index = new int**[Npolar];
-    for (int m=0; m<Npolar; m++ ) {
-      
-      Index[m] = new int*[ Nazim[m] ];
-      for (int l=0; l<Nazim[m]; l++ ) {
-	
-	Index[m][l] = new int[Nband];
-	for (int v=0; v<Nband; v++ ) {
+    Index = new int**[Nband];
+    for (int v=0; v<Nband; v++ ) {
 
-	  Index[m][l][v] = cnt;
+      Index[v] = new int*[Npolar];
+      for (int m=0; m<Npolar; m++ ) {
+
+	Index[v][m] = new int[ Nazim[m] ];
+	for (int l=0; l<Nazim[m]; l++ ) {
+	  Index[v][m][l] = cnt;
 	  cnt++;
-
 	} /* endfor */
       } /*endfor*/
     }/* endfor */
 
 
     // allocate the phase function
-    Phi = new double****[Npolar];
-    for (int m=0; m<Npolar; m++ ) {
-      
-      Phi[m] = new double***[ Nazim[m] ];
-      for (int l=0; l<Nazim[m]; l++ ) {
+    Phi = new double****[Nband];
+    for (int v=0; v<Nband; v++ ) {
 
-	Phi[m][l] = new double**[Npolar];
-	for (int p=0; p<Npolar; p++ ) {
+      Phi[v] = new double***[Npolar];
+      for (int m=0; m<Npolar; m++ ) {
+
+	Phi[v][m] = new double**[ Nazim[m] ];
+	for (int l=0; l<Nazim[m]; l++ ) {
+
+	  Phi[v][m][l] = new double*[Npolar];
+	  for (int p=0; p<Npolar; p++ ) {
 	    
-	  Phi[m][l][p] = new double*[ Nazim[p] ];	    
-	  for (int q=0; q<Nazim[p]; q++ ) {
-	  
-	    Phi[m][l][p][q] = new double[Nband];
+	    Phi[v][m][l][p] = new double[ Nazim[p] ];	    
 
 	  } /* endfor */
 	} /* endfor */
@@ -768,27 +766,25 @@ inline void Rte2D_State :: DeallocateCosines()
     delta_theta = NULL; 
   } /* endif */
   if ( Index != NULL ) { 
-    for (int m=0; m<Npolar; m++ ) {
-      for (int l=0; l<Nazim[m]; l++ ) {
-	delete[] Index[m][l];
-      } /* endfor */
-      delete[] Index[m];
+    for (int v=0; v<Nband; v++) {
+      for (int m=0; m<Npolar; m++ ) delete[] Index[v][m];
+      delete[] Index[v];
     } /* endfor */
     delete[] Index; 
     Index = NULL; 
   } /* endif */
   if ( Phi != NULL ) { 
-    for (int m=0; m<Npolar; m++ ) {
-      for (int l=0; l<Nazim[m]; l++ ) {
-	for (int p=0; p<Npolar; p++ ) {
-	  for (int q=0; q<Nazim[p]; q++ ) {
-	    delete[] Phi[m][l][p][q];
+    for (int v=0; v<Nband; v++) {
+      for (int m=0; m<Npolar; m++ ) {
+	for (int l=0; l<Nazim[m]; l++ ) {
+	  for (int p=0; p<Npolar; p++ ) {
+	    delete[] Phi[v][m][l][p];
 	  } /* endfor */
-	  delete[] Phi[m][l][p];
+	  delete[] Phi[v][m][l];
 	} /* endfor */
-	delete[] Phi[m][l];
+	delete[] Phi[v][m];
       } /* endfor */
-      delete[] Phi[m];
+      delete[] Phi[v];
     } /* endfor */
     delete[] Phi; 
     Phi = NULL; 
@@ -1003,13 +999,12 @@ inline Rte2D_State Rte2D_State :: Fn( const Vector2D &norm_dir ) const
   sin_angle = norm_dir.y;
 
 
-  for (int m=0; m<Npolar; m++) 
-    for (int l=0; l<Nazim[m]; l++) {
-      cosine = mu[m][l]*cos_angle + eta[m][l]*sin_angle;
-      for (int v=0; v<Nband; v++ ) {
-	Temp.In(m,l,v) = cosine*In(m,l,v);
-      } /* endfor */
-    } /* endfor */ 
+  for (int v=0; v<Nband; v++ ) 
+    for (int m=0; m<Npolar; m++) 
+      for (int l=0; l<Nazim[m]; l++) {
+	cosine = mu[m][l]*cos_angle + eta[m][l]*sin_angle;
+	Temp.In(v,m,l) = cosine*In(v,m,l);
+      }
   
   return (Temp);
 }
@@ -1017,9 +1012,8 @@ inline Rte2D_State Rte2D_State :: Fn( const Vector2D &norm_dir ) const
 /*************************************************************
  * Rte2D_State::Fn -- Flux in n-direction (Space March).     *
  *************************************************************/
-inline double Rte2D_State :: Fn( const Vector2D &norm_dir,
-				 const int m, const int l,
-				 const int v ) const 
+inline double Rte2D_State :: Fn( const Vector2D &norm_dir, const int v, 
+				 const int m, const int l ) const 
 {
 
   double cos_angle, sin_angle, cosine;
@@ -1030,7 +1024,7 @@ inline double Rte2D_State :: Fn( const Vector2D &norm_dir,
   sin_angle = norm_dir.y;
   cosine = mu[m][l]*cos_angle + eta[m][l]*sin_angle;
 
-  return (cosine*In(m,l,v));
+  return (cosine*In(v,m,l));
 }
 
 
@@ -1046,11 +1040,12 @@ inline void dFndU(DenseMatrix &dFdU, const Rte2D_State &U, const Vector2D &norm_
   cos_angle = norm_dir.x; 
   sin_angle = norm_dir.y;
 
-  int index;
-  for (int m=0; m<U.Npolar; m++) 
-    for (int l=0; l<U.Nazim[m]; l++) {
-      cosine = U.mu[m][l]*cos_angle + U.eta[m][l]*sin_angle;
-      for (int v=0; v<U.Nband; v++ ) {
+  int index = 0;
+  for (int v=0; v<U.Nband; v++ ) 
+    for (int m=0; m<U.Npolar; m++) 
+      for (int l=0; l<U.Nazim[m]; l++) {
+	cosine = U.mu[m][l]*cos_angle + U.eta[m][l]*sin_angle;
+
 // 	cout.precision(4);
 // 	cout << setw(4) << m+1 
 // 	     << setw(4) << l+1
@@ -1058,10 +1053,10 @@ inline void dFndU(DenseMatrix &dFdU, const Rte2D_State &U, const Vector2D &norm_
 // 	     << setw(10) << U.eta[m][l]
 // 	     << setw(10) << U.mu[m][l]*cos_angle + U.eta[m][l]*sin_angle
 // 	     << endl;
-	index = U.Index[m][l][v];
-	if ( cosine < ZERO ) dFdU(index,index) += cosine;
-      } /* endfor - bands*/
-    } /* endfor - dirs*/
+	if ( cosine < ZERO )
+	  dFdU(index,index) +=  cosine;
+	index++;
+      }
 }
 
 
@@ -1107,26 +1102,26 @@ inline Rte2D_State Rte2D_State :: S(void) const
     // loop over directions
     for (int m=0; m<Npolar; m++) 
       for (int l=0; l<Nazim[m]; l++) {
-	
+
 	// add blackbody emission
-	Temp.In(m,l,v)  = kappa[v] * Ib[v];
+	Temp.In(v,m,l)  = kappa[v] * Ib[v];
 
 	// subtract absorbsion and out-scattering
-	Temp.In(m,l,v) -= beta * In(m,l,v);
+	Temp.In(v,m,l) -= beta * In(v,m,l);
 
 	// add in-scattering
 	if (sigma[v]>TOLER) {
 	  temp = ZERO;
 	  for (int p=0; p<Npolar; p++) 
 	    for (int q=0; q<Nazim[p]; q++) {
-	      temp += In(p,q,v) * Phi[p][q][m][l][v] * omega[p][q];
+	      temp += In(v,p,q) * Phi[v][p][q][m][l] * omega[p][q];
 	    } /* endfor - in-dirs*/
 	  temp *= sigma[v] / (FOUR * PI);
-	  Temp.In(m,l,v) += temp;
+	  Temp.In(v,m,l) += temp;
 	} /* endif - in-scat */
 	  
 	// multiply
-	Temp.In(m,l,v) *= omega[m][l];
+	Temp.In(v,m,l) *= omega[m][l];
 
       } /* endfor - dirs*/
 
@@ -1140,7 +1135,7 @@ inline Rte2D_State Rte2D_State :: S(void) const
  * Rte2D_State::s -- Regular source term.                    *
  *                   Space-march version.                    *
  *************************************************************/
-inline double Rte2D_State :: S(const int m, const int l, const int v) const 
+inline double Rte2D_State :: S(const int v, const int m, const int l) const 
 {
   // declares
   double temp2;
@@ -1161,7 +1156,7 @@ inline double Rte2D_State :: S(const int m, const int l, const int v) const
       for (int q=0; q<Nazim[p]; q++) {
 	// skip forward scattering, it is acoundted for in dSdU
 	if(p==m && l==q) continue;
-	temp2 += In(p,q,v) * Phi[p][q][m][l][v] * omega[p][q];
+	temp2 += In(v,p,q) * Phi[v][p][q][m][l] * omega[p][q];
       } /* endfor - in-dirs*/
     temp2 *= sigma[v] / (FOUR * PI);
     temp += temp2;
@@ -1197,7 +1192,7 @@ inline void Rte2D_State :: dSdU(DenseMatrix &dSdU) const
 
 
 	// absorbsion and out-scattering
-	dSdU(Index[m][l][v],Index[m][l][v]) -= omega[m][l] * beta;
+	dSdU(Index[v][m][l],Index[v][m][l]) -= omega[m][l] * beta;
 
 	// in-scattering
 	if (sigma[v]>TOLER) {
@@ -1205,7 +1200,7 @@ inline void Rte2D_State :: dSdU(DenseMatrix &dSdU) const
 	  temp = sigma[v] * omega[m][l] / (FOUR * PI);
 	  for (int p=0; p<Npolar; p++) 
 	    for (int q=0; q<Nazim[p]; q++){
-	      dSdU(Index[m][l][v],Index[p][q][v]) += Phi[p][q][m][l][v] * omega[p][q] * temp;
+	      dSdU(Index[v][m][l],Index[v][p][q]) += Phi[v][p][q][m][l] * omega[p][q] * temp;
 	    }
 
 	} /* endif - in-scat */
@@ -1220,7 +1215,7 @@ inline void Rte2D_State :: dSdU(DenseMatrix &dSdU) const
  * Rte2D_State:: dSdU -- Regular source term jacobian.       *
  *                       Space-march version.                *
  *************************************************************/
-inline double Rte2D_State :: dSdU(const int m, const int l, const int v) const
+inline double Rte2D_State :: dSdU(const int v, const int m, const int l) const
 { 
   // declares
   double temp = ZERO;
@@ -1237,7 +1232,7 @@ inline double Rte2D_State :: dSdU(const int m, const int l, const int v) const
     
     // add forward scattering
     temp -= sigma[v] * omega[m][l] / (FOUR * PI) 
-      * Phi[m][l][m][l][v] * omega[m][l];
+      * Phi[v][m][l][m][l] * omega[m][l];
     
   } /* endif - in-scat */
   
@@ -1264,49 +1259,47 @@ inline Rte2D_State Rte2D_State :: Sa(const Rte2D_State &dUdpsi,
   
   // loop along bands and directions
 
-  for (int m=0; m<Npolar; m++) 
-    for (int l=0; l<Nazim[m]; l++) {
-      
-      // use symmetry to get l-1 and l+1
-      if (l==0) l_m1 = l;
-      else l_m1 = l-1;
-      
-      if (l==Nazim[m]-1) l_p1 = l;
-      else l_p1 = l+1;
-      
-      // direction cosines
-      if (Axisymmetric == AXISYMMETRIC_Y) {
-	Dt = -sin(delta_psi[m][l]/TWO)*eta[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
-	Db = -sin(delta_psi[m][l]/TWO)*eta[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];    
-      } else if (Axisymmetric == AXISYMMETRIC_X) {
-	Dt = -sin(delta_psi[m][l]/TWO)*mu[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
-	Db = -sin(delta_psi[m][l]/TWO)*mu[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];
-      } /* endif */
-      
-      // loop along bands
-      for (int v=0; v<Nband; v++ ) {
-
+  for (int v=0; v<Nband; v++ ) 
+    for (int m=0; m<Npolar; m++) 
+      for (int l=0; l<Nazim[m]; l++) {
+	
+	// use symmetry to get l-1 and l+1
+	if (l==0) l_m1 = l;
+	else l_m1 = l-1;
+	
+	if (l==Nazim[m]-1) l_p1 = l;
+	else l_p1 = l+1;
+	 
+	// direction cosines
+	if (Axisymmetric == AXISYMMETRIC_Y) {
+	  Dt = -sin(delta_psi[m][l]/TWO)*eta[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
+	  Db = -sin(delta_psi[m][l]/TWO)*eta[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];    
+	} else if (Axisymmetric == AXISYMMETRIC_X) {
+	  Dt = -sin(delta_psi[m][l]/TWO)*mu[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
+	  Db = -sin(delta_psi[m][l]/TWO)*mu[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];
+	} /* endif */
+	
 	// upwind
 	if (Dt<ZERO) {
-	  It = In(m,l_m1,v) +
-	    HALF*phi_psi.In(m,l_m1,v)*dUdpsi.In(m,l_m1,v)*delta_psi[m][l_m1];
+	  It = In(v,m,l_m1) +
+	    HALF*phi_psi.In(v,m,l_m1)*dUdpsi.In(v,m,l_m1)*delta_psi[m][l_m1];
 	} else {
-	  It = In(m,l,v) - 
-	    HALF*phi_psi.In(m,l,v)*dUdpsi.In(m,l,v)*delta_psi[m][l];
+	  It = In(v,m,l) - 
+	    HALF*phi_psi.In(v,m,l)*dUdpsi.In(v,m,l)*delta_psi[m][l];
 	}
 	if (Db>ZERO) {
-	  Ib = In(m,l,v) + 
-	    HALF*phi_psi.In(m,l,v)*dUdpsi.In(m,l,v)*delta_psi[m][l];
+	  Ib = In(v,m,l) + 
+	    HALF*phi_psi.In(v,m,l)*dUdpsi.In(v,m,l)*delta_psi[m][l];
 	} else {
-	  Ib = In(m,l_p1,v) - 
-	    HALF*phi_psi.In(m,l_p1,v)*dUdpsi.In(m,l_p1,v)*delta_psi[m][l_p1];
+	  Ib = In(v,m,l_p1) - 
+	    HALF*phi_psi.In(v,m,l_p1)*dUdpsi.In(v,m,l_p1)*delta_psi[m][l_p1];
 	}
 
 	// compute source term
-	Temp.In(m,l,v) -= ( Dt*It + Db*Ib )/delta_psi[m][l];
+	Temp.In(v,m,l) -= ( Dt*It + Db*Ib )/delta_psi[m][l];
 		
-      } /* endfor - bands*/	
-    } /* endfor - dirs*/
+	
+      } /* endfor - dirs*/
 
   return (Temp);
 }
@@ -1315,7 +1308,7 @@ inline Rte2D_State Rte2D_State :: Sa(const Rte2D_State &dUdpsi,
  * Rte2D_State::s_axi -- Axisymmetric source term.           *
  *                       Space-march FVM version.            *
  *************************************************************/
-inline double Rte2D_State :: Sa_FVM(const int m, const int l, const int v,
+inline double Rte2D_State :: Sa_FVM(const int v, const int m, const int l,
 				    const int Axisymmetric) const 
 {
   int l_m1, l_p1;
@@ -1343,14 +1336,14 @@ inline double Rte2D_State :: Sa_FVM(const int m, const int l, const int v,
   
   // upwind
   if (Dt<ZERO) {
-    It = In(m,l_m1,v);
+    It = In(v,m,l_m1);
   } else {
     It = ZERO; // It = In(v,m,l); -> goes into dSadU term
   }
   if (Db>ZERO) {
     Ib = ZERO; // Ib = In(v,m,l); -> goes into dSadU term
   } else {
-    Ib = In(m,l_p1,v);
+    Ib = In(v,m,l_p1);
   }
   
   // compute source term
@@ -1366,7 +1359,7 @@ inline double Rte2D_State :: Sa_FVM(const int m, const int l, const int v,
  * Rte2D_State::s_axi -- Axisymmetric source term.           *
  *                       Space-march DOM version.            *
  *************************************************************/
-inline double Rte2D_State :: Sa_DOM(const int m, const int l, const int v) const 
+inline double Rte2D_State :: Sa_DOM(const int v, const int m, const int l) const 
 {
   int l_m1, l_p1;
   double Temp;
@@ -1399,52 +1392,51 @@ inline void Rte2D_State :: dSadU(DenseMatrix &dSadU,
   int l_m1, l_p1;
   double Dt, Db;
 
+  // loop along bands
+  for (int v=0; v<Nband; v++ ) {
+
    
-  // loop over directions
-  for (int m=0; m<Npolar; m++) 
-    for (int l=0; l<Nazim[m]; l++) {
-      
-      
-      // use symmetry to get l-1 and l+1
-      if (l==0) l_m1 = l;
-      else l_m1 = l-1;
-      
-      if (l==Nazim[m]-1) l_p1 = l;
-      else l_p1 = l+1;
-      
-      // direction cosines
-      if (Axisymmetric == AXISYMMETRIC_Y) {
-	Dt = -sin(delta_psi[m][l]/TWO)*eta[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
-	Db = -sin(delta_psi[m][l]/TWO)*eta[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];    
-      } else if (Axisymmetric == AXISYMMETRIC_X) {
-	Dt = -sin(delta_psi[m][l]/TWO)*mu[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
-	Db = -sin(delta_psi[m][l]/TWO)*mu[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];
-      } /* endif */
-      
-      
-      // loop along bands
-      for (int v=0; v<Nband; v++ ) {
+    // loop over directions
+    for (int m=0; m<Npolar; m++) 
+      for (int l=0; l<Nazim[m]; l++) {
+
+
+	// use symmetry to get l-1 and l+1
+	if (l==0) l_m1 = l;
+	else l_m1 = l-1;
+	
+	if (l==Nazim[m]-1) l_p1 = l;
+	else l_p1 = l+1;
+	 
+	// direction cosines
+	if (Axisymmetric == AXISYMMETRIC_Y) {
+	  Dt = -sin(delta_psi[m][l]/TWO)*eta[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
+	  Db = -sin(delta_psi[m][l]/TWO)*eta[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];    
+	} else if (Axisymmetric == AXISYMMETRIC_X) {
+	  Dt = -sin(delta_psi[m][l]/TWO)*mu[m][l] + cos(delta_psi[m][l]/TWO)*xi[m][l];
+	  Db = -sin(delta_psi[m][l]/TWO)*mu[m][l] - cos(delta_psi[m][l]/TWO)*xi[m][l];
+	} /* endif */
 	
 	// upwind
 	if (Dt<ZERO) {
 	  // It = I[ Index[v][m][l_m1] ];
-	  dSadU(Index[m][l][v],Index[m][l_m1][v]) -= Dt/(delta_psi[m][l]*Sp);
+	  dSadU(Index[v][m][l],Index[v][m][l_m1]) -= Dt/(delta_psi[m][l]*Sp);
 	} else {
 	  // It = I[ Index[v][m][l] ];
-	  dSadU(Index[m][l][v],Index[m][l][v]) -= Dt/(delta_psi[m][l]*Sp);
+	  dSadU(Index[v][m][l],Index[v][m][l]) -= Dt/(delta_psi[m][l]*Sp);
 	}
 	if (Db>ZERO) {
 	  // Ib = I[ Index[v][m][l] ];
-	  dSadU(Index[m][l][v],Index[m][l][v]) -= Db/(delta_psi[m][l]*Sp);
+	  dSadU(Index[v][m][l],Index[v][m][l]) -= Db/(delta_psi[m][l]*Sp);
 	} else {
 	  // Ib = I[ Index[v][m][l_p1] ];
-	  dSadU(Index[m][l][v],Index[m][l_p1][v]) -= Db/(delta_psi[m][l]*Sp);
+	  dSadU(Index[v][m][l],Index[v][m][l_p1]) -= Db/(delta_psi[m][l]*Sp);
 	}
 	
-      } /* endfor - bands */
 
-    } /* endfor - dirs*/
+      } /* endfor - dirs*/
 
+  } /* endfor - bands */
 
 
 }
@@ -1454,7 +1446,7 @@ inline void Rte2D_State :: dSadU(DenseMatrix &dSadU,
  * Rte2D_State::dSadU -- Axisymmetric source term jacobian.  *
  *                       Space-march FVM version.            *
  *************************************************************/
-inline double Rte2D_State :: dSadU_FVM(const int m, const int l, const int v,
+inline double Rte2D_State :: dSadU_FVM(const int v, const int m, const int l, 
 				       const int Axisymmetric) const 
 { 
 
@@ -1505,7 +1497,7 @@ inline double Rte2D_State :: dSadU_FVM(const int m, const int l, const int v,
  * Rte2D_State::dSadU -- Axisymmetric source term jacobian.  *
  *                       Space-march DOM version.            *
  *************************************************************/
-inline double Rte2D_State :: dSadU_DOM(const int m, const int l, const int v) const 
+inline double Rte2D_State :: dSadU_DOM(const int v, const int m, const int l) const 
 { 
 
   int l_m1, l_p1;
