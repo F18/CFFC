@@ -229,7 +229,7 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
 
 
     // ICEM:
-    IP.ICEMCFD_FileNames = ICEMCFD_get_filenames();
+    // IP.ICEMCFD_FileNames = ICEMCFD_get_filenames();
 
     // AMR:
     IP.AMR = 0;
