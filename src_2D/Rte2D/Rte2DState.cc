@@ -40,6 +40,7 @@ double**    Rte2D_State :: delta_psi       = NULL;
 double***** Rte2D_State :: Phi             = NULL;
 int         Rte2D_State :: Symmetry_Factor = 1;
 SNBCK*      Rte2D_State :: SNBCKdata       = NULL;
+double      Rte2D_State :: Absorb_Type     = RTE2D_ABSORB_GRAY;
 
 
 /**************************************************************************
@@ -1041,7 +1042,7 @@ Rte2D_State Reflect(const Rte2D_State &U, const Vector2D &norm_dir) {
     Vector2D int_dir, in_dir;
     double cos_angle, sin_angle;
     double dcn, dct, dot_prod;
-    Rte2D_State Temp(U);  Temp.Zero();
+    Rte2D_State Temp(U);  Temp.zero_sol();
     bool exact_match;
     double arc_len, cos_phi, num, denom;
     int mmm, lll;

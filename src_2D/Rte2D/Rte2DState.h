@@ -233,6 +233,7 @@ class Rte2D_State {
   static double***** Phi;     //!< scattering phase function
   static int Symmetry_Factor; //!< solid angle range symmetry factor
   static SNBCK* SNBCKdata;    //!< statistical narrow band model 
+  static double Absorb_Type;  //!< flag for absorption model
   //@}
 
 
@@ -259,11 +260,7 @@ class Rte2D_State {
   //@{ @name Useful operators.
   //! Copy solution state operator.
   void Copy( const Rte2D_State &U ) {
-    for ( int i=0; i<Nband; i++ ) { 
-      Ib[i] = U.Ib[i];
-      kappa[i] = U.kappa[i];
-      sigma[i] = U.sigma[i];
-    }
+    Copy_NonSol( U );
     for ( int i=0; i<Ntot; i++ ) I[i] = U.I[i];
   }
 
@@ -278,14 +275,19 @@ class Rte2D_State {
 
   //! Vacuum operator.
   void Vacuum() {
-    for ( int i=0; i<Ntot; i++ ) I[i] = ZERO;
+    zero_sol();
     zero_non_sol();
   }
 
-  //! Zero solution operator.
+  //! Zero state operator.
   void Zero() {
-    for ( int i=0; i<Ntot; i++ ) I[i] = ZERO;
+    zero_sol();
     zero_non_sol();
+  }
+
+  //! Zero solution only operator
+  void zero_sol() {
+    for ( int i=0; i<Ntot; i++ ) I[i] = ZERO;
   }
 
   //! Zero non-solution operator.
@@ -398,6 +400,9 @@ class Rte2D_State {
 
   //! Return heat flux vector [W/m^2]
   Vector2D q();
+
+  //! Return radiation source term [W/m^3]
+  Vector2D Qr();
   //@}
 
   //@{ @name Solution flux and Jacobian (n-direction).
@@ -516,13 +521,23 @@ inline double Rte2D_State :: beta(const int v) const
  *Compute directional integrated intensity*
  *                   in [W/m^2]                              *
  *************************************************************/
-inline double Rte2D_State :: G( void ) 
+inline double Rte2D_State :: G( ) 
 {
   double sum = 0;
-  for ( int v=0; v<Nband; v++ ) 
-    for ( int m=0; m<Npolar; m++ ) 
-      for ( int l=0; l<Nazim[m]; l++ ) 
-	sum += omega[m][l] * In(v,m,l);
+
+  if (Absorb_Type == RTE2D_ABSORB_GRAY) {
+    for ( int v=0; v<Nband; v++ ) 
+      for ( int m=0; m<Npolar; m++ ) 
+	for ( int l=0; l<Nazim[m]; l++ ) 
+	  sum += omega[m][l] * In(v,m,l);
+
+  } else if (Absorb_Type == RTE2D_ABSORB_SNBCK) {
+    for ( int v=0; v<Nband; v++ ) 
+      for ( int m=0; m<Npolar; m++ ) 
+	for ( int l=0; l<Nazim[m]; l++ ) 
+	  sum += omega[m][l] * In(v,m,l);
+  } /* endif*/
+
   return sum;
 }
 
@@ -530,15 +545,28 @@ inline double Rte2D_State :: G( void )
  * Rte2D_State::q -- Compute radiative heat flux vector      *
  *                   in [W/m^2]                              *
  *************************************************************/
-inline Vector2D Rte2D_State :: q( void )
+inline Vector2D Rte2D_State :: q( )
 {
   Vector2D Temp(ZERO);
-  for ( int v=0; v<Nband; v++ ) 
-    for ( int m=0; m<Npolar; m++ ) 
-      for ( int l=0; l<Nazim[m]; l++ ) {
-	Temp.x +=  mu[m][l] * In(v,m,l);
-	Temp.y += eta[m][l] * In(v,m,l);
-    }
+
+  if (Absorb_Type == RTE2D_ABSORB_GRAY) {
+    for ( int v=0; v<Nband; v++ ) 
+      for ( int m=0; m<Npolar; m++ ) 
+	for ( int l=0; l<Nazim[m]; l++ ) {
+	  Temp.x +=  mu[m][l] * In(v,m,l);
+	  Temp.y += eta[m][l] * In(v,m,l);
+	}
+
+  } else if (Absorb_Type == RTE2D_ABSORB_SNBCK) {
+    for ( int v=0; v<Nband; v++ ) 
+      for ( int m=0; m<Npolar; m++ ) 
+	for ( int l=0; l<Nazim[m]; l++ ) {
+	  Temp.x +=  mu[m][l] * In(v,m,l);
+	  Temp.y += eta[m][l] * In(v,m,l);
+	}
+
+  } /* endif*/
+
   return Temp;  
 }
 

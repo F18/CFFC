@@ -98,15 +98,6 @@ void ICs(Rte2D_Quad_Block *Soln_ptr,
          Rte2D_Input_Parameters &Input_Parameters) {
 
     int i;
-    Rte2D_State Uo[5];
-
-    /* Assign the gas constants for the gas of interest. */
-
-    //Input_Parameters.Uo.setgas(Input_Parameters.Gas_Type);
-
-    /* Define various reference flow states. */
-
-    Uo[0] = Input_Parameters.Uo;
 
     /* Assign initial data for each solution block. */
 
@@ -125,8 +116,7 @@ void ICs(Rte2D_Quad_Block *Soln_ptr,
 
           // Set initial data.
           ICs(Soln_ptr[i], 
-              Input_Parameters,
-              Uo);
+              Input_Parameters);
        } /* endif */
     }  /* endfor */
 
@@ -205,6 +195,7 @@ int Read_Restart_Solution(Rte2D_Quad_Block *Soln_ptr,
 	  Input_Parameters.Uo.Deallocate();
 	  SetupStateStatic( Input_Parameters );
 	  Input_Parameters.Uo.Allocate();
+	  Input_Parameters.Uo.Zero();
 
 	  //---------------------- End Rte2D Specific -----------------------//
 

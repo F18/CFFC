@@ -3113,6 +3113,7 @@ int Process_Input_Control_Parameter_File(Rte2D_Input_Parameters &Input_Parameter
 	 Input_Parameters.Uo.Deallocate();
 	 SetupStateStatic( Input_Parameters );
 	 Input_Parameters.Uo.Allocate();
+	 Input_Parameters.Uo.Zero();
 	 SetInitialValues( Input_Parameters.Uo, Input_Parameters );
 	 /***********************************************************************
 	  ***********************************************************************/

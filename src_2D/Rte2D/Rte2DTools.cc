@@ -23,6 +23,8 @@ void SetupStateStatic( const Rte2D_Input_Parameters &IP )
   //------------------------------------------------
   // Absorbsion 
   //------------------------------------------------
+  Rte2D_State::Absorb_Type = IP.i_AbsorptionModel;
+
   if (IP.i_AbsorptionModel == RTE2D_ABSORB_GRAY) {
     Rte2D_State::Nband = 1;
 

@@ -520,7 +520,7 @@ class SNBCK_Input_Parameters{
     EvaluationType   = SNBCK_EVAL_ONLINE;
     QuadType         = GAUSS_LEGENDRE;
     QuadPoints       = 1;
-    LumpedBands      = 1;
+    LumpedBands      = 36;
     OptimizedLumping = false;
     OverlapModel     = SNBCK_OVERLAP_OPTICALLY_THIN;
     IntPoints        = 0; // use points correspoding to EM2C database (14 points)

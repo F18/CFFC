@@ -1258,8 +1258,7 @@ void Output_Gradients_Tecplot(Rte2D_Quad_Block &SolnBlk,
  *                                                      *
  ********************************************************/
 void ICs(Rte2D_Quad_Block &SolnBlk,
-         Rte2D_Input_Parameters &IP,
-         Rte2D_State *Wo) {
+         Rte2D_Input_Parameters &IP) {
 
     int i, j, k;
     Rte2D_State Wl, Wr;
@@ -1273,7 +1272,7 @@ void ICs(Rte2D_Quad_Block &SolnBlk,
         // Set the solution state to the initial state Wo[0].
         for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
             for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	      SolnBlk.U[i][j].Vacuum() = Wo[0];
+	      SolnBlk.U[i][j] = IP.Uo;
             } /* endfor */
         } /* endfor */
         break;
@@ -1296,7 +1295,7 @@ void ICs(Rte2D_Quad_Block &SolnBlk,
       default :
         for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
             for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	       SolnBlk.U[i][j] = Wo[0];
+	       SolnBlk.U[i][j] = IP.Uo;
             } /* endfor */
         } /* endfor */
         break;
