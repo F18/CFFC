@@ -41,6 +41,9 @@ images.aux
 images.pl
 labels.pl
 
+# misc
+tags
+
 # 2D executables
 cffc2D
 icemcfd2tecplot
