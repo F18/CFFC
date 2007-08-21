@@ -8,7 +8,7 @@
 #include "HighTemp2DState.h"
 
 // Currently HTTOL is declared in HighTemp2DState.h (and defined here).
-double HTTOL = 1e-3;
+double HTTOL = 5e-3;
 
 /**********************************************************************
  * HighTemp2D_pState -- Create storage and assign gas constants.      *
