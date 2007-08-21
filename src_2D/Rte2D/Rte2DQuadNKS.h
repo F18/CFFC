@@ -67,7 +67,7 @@ int Newton_Update(Rte2D_Quad_Block *SolnBlk,
 	  /***********************************************************************
 	   *************************** RTE SPECIFIC ******************************/
  	  // Apply update reduction while any one of the updated variables is unphysical 
- 	  if(! SolnBlk[Bcount].U[i][j].Unphysical_Properties()){	   
+ 	  if(SolnBlk[Bcount].U[i][j].Unphysical_Properties()){	   
  	    double update_reduction_factor = ONE;	    
  	    for (int n_update_reduction = 1; n_update_reduction <= 10; ++n_update_reduction) {		  
  	      update_reduction_factor = HALF*update_reduction_factor;		  		  
@@ -76,11 +76,11 @@ int Newton_Update(Rte2D_Quad_Block *SolnBlk,
  		  + GMRES.deltaU(Bcount,i,j,varindex-1)*update_reduction_factor;
  	      }   
  	      cout<<"\n Applying Reduction to solution in NKS "<<n_update_reduction;
- 	      if( SolnBlk[Bcount].U[i][j].Unphysical_Properties() )  break;	      
+ 	      if( !SolnBlk[Bcount].U[i][j].Unphysical_Properties() )  break;	      
  	    } 
  	  }
 	  // Error Check
- 	  if(! SolnBlk[Bcount].U[i][j].Unphysical_Properties()) error_flag = 1;
+ 	  if(SolnBlk[Bcount].U[i][j].Unphysical_Properties()) error_flag = 1;
 	  /*************************************************************************
 	   *************************************************************************/
 	} 

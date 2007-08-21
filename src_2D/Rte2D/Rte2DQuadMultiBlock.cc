@@ -785,21 +785,21 @@ void BCs_Space_March(Rte2D_Quad_Block *Soln_ptr,
  * overall solution vector.                             *
  *                                                      *
  ********************************************************/
-void Prescribe_NonSol(Rte2D_Quad_Block *Soln_ptr,
-		      AdaptiveBlock2D_List &Soln_Block_List,
-		      Rte2D_Input_Parameters &Input_Parameters) {
+// void Prescribe_NonSol(Rte2D_Quad_Block *Soln_ptr,
+// 		      AdaptiveBlock2D_List &Soln_Block_List,
+// 		      Rte2D_Input_Parameters &Input_Parameters) {
 
-    int i;
+//     int i;
 
-    /* Prescribe data for each solution block. */
+//     /* Prescribe data for each solution block. */
 
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-	 Prescribe_NonSol(Soln_ptr[i], Input_Parameters);
-       } /* endif */
-    }  /* endfor */
+//     for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+//        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+// 	 Prescribe_NonSol(Soln_ptr[i], Input_Parameters);
+//        } /* endif */
+//     }  /* endfor */
 
-}
+// }
 
 
 /********************************************************

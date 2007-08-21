@@ -2506,8 +2506,8 @@ extern void BCs(Rte2D_Quad_Block &SolnBlk,
 extern void BCs_Space_March(Rte2D_Quad_Block &SolnBlk, 
 			    Rte2D_Input_Parameters &IP);
 
-extern void Prescribe_NonSol(Rte2D_Quad_Block &SolnBlk,
-			     Rte2D_Input_Parameters &Input_Parameters);
+// extern void Prescribe_NonSol(Rte2D_Quad_Block &SolnBlk,
+// 			     Rte2D_Input_Parameters &Input_Parameters);
 
 extern double CFL(Rte2D_Quad_Block &SolnBlk,
                   Rte2D_Input_Parameters &Input_Parameters);
@@ -2700,9 +2700,9 @@ extern int Output_Exact(Rte2D_Quad_Block *Soln_ptr,
 			AdaptiveBlock2D_List &Soln_Block_List,
 			Rte2D_Input_Parameters &IP);
 
-extern void Prescribe_NonSol(Rte2D_Quad_Block *Soln_ptr,
-			     AdaptiveBlock2D_List &Soln_Block_List,
-			     Rte2D_Input_Parameters &Input_Parameters);
+// extern void Prescribe_NonSol(Rte2D_Quad_Block *Soln_ptr,
+// 			     AdaptiveBlock2D_List &Soln_Block_List,
+// 			     Rte2D_Input_Parameters &Input_Parameters);
 
 extern void BCs(Rte2D_Quad_Block *Soln_ptr,
                 AdaptiveBlock2D_List &Soln_Block_List,

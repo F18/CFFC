@@ -1341,37 +1341,37 @@ void ICs(Rte2D_Quad_Block &SolnBlk,
  * overall solution vector.                             *
  *                                                      *
  ********************************************************/
-void Prescribe_NonSol(Rte2D_Quad_Block &SolnBlk,
-		     Rte2D_Input_Parameters &Input_Parameters) {
+// void Prescribe_NonSol(Rte2D_Quad_Block &SolnBlk,
+// 		     Rte2D_Input_Parameters &Input_Parameters) {
 
-    int i, j, k;
+//     int i, j, k;
 
-    /* Assign the initial data for the IVP of interest. */
+//     /* Assign the initial data for the IVP of interest. */
 
-    switch(Input_Parameters.i_ICs) {
+//     switch(Input_Parameters.i_ICs) {
 
-      case IC_CONSTANT :
-      case IC_UNIFORM :
-        // Set the solution state to the initial state Wo[0].
-        for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-            for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	       SolnBlk.U[i][j].Copy_NonSol( Input_Parameters.Uo );
-            } /* endfor */
-        } /* endfor */
-        break;
+//       case IC_CONSTANT :
+//       case IC_UNIFORM :
+//         // Set the solution state to the initial state Wo[0].
+//         for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+//             for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+// 	       SolnBlk.U[i][j].Copy_NonSol( Input_Parameters.Uo );
+//             } /* endfor */
+//         } /* endfor */
+//         break;
 
-      default :
-        // Set the solution state to the initial state Wo[0].
-        for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-            for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	       SolnBlk.U[i][j].Copy_NonSol( Input_Parameters.Uo );
-            } /* endfor */
-        } /* endfor */
-        break;
+//       default :
+//         // Set the solution state to the initial state Wo[0].
+//         for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+//             for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+// 	       SolnBlk.U[i][j].Copy_NonSol( Input_Parameters.Uo );
+//             } /* endfor */
+//         } /* endfor */
+//         break;
 
-    } /* endswitch */
+//     } /* endswitch */
 
-}
+// }
 
 
 /********************************************************
