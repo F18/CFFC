@@ -285,6 +285,7 @@ class Rte2D_State {
   //! Zero solution operator.
   void Zero() {
     for ( int i=0; i<Ntot; i++ ) I[i] = ZERO;
+    zero_non_sol();
   }
 
   //! Zero non-solution operator.

@@ -202,6 +202,7 @@ int Read_Restart_Solution(Rte2D_Quad_Block *Soln_ptr,
 	  restart_file >> Input_Parameters.SNBCK_IP;	    
 	  restart_file >> Input_Parameters.Axisymmetric;	    
           restart_file.unsetf(ios::skipws);
+	  Input_Parameters.Uo.Deallocate();
 	  SetupStateStatic( Input_Parameters );
 	  Input_Parameters.Uo.Allocate();
 

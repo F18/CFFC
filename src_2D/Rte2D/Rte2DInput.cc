@@ -95,6 +95,11 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     /* Directory Path */
     IP.get_cffc_path();
 
+    /* Flow geometry type */
+    string_ptr = "Planar";
+    strcpy(IP.Flow_Geometry_Type, string_ptr);
+    IP.Axisymmetric = 0;
+
     /***********************************************************************
      *************************** RTE SPECIFIC ******************************/
     // RTE equation discretization type
@@ -127,6 +132,7 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     strcpy(IP.ScatteringFunc, string_ptr);
 
     // allocate and zero solution state
+    IP.Uo.Deallocate();
     SetupStateStatic( IP );
     IP.Uo.Allocate();
     IP.Uo.Zero();
@@ -157,12 +163,6 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
 
     /***********************************************************************
      ***********************************************************************/
-
-
-    /* Flow geometry type */
-    string_ptr = "Planar";
-    strcpy(IP.Flow_Geometry_Type, string_ptr);
-    IP.Axisymmetric = 0;
 
     /* Grid Parameters */
     string_ptr = "Square";
@@ -483,6 +483,7 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
 
    if (!CFFC_Primary_MPI_Processor()) {
      IP.get_cffc_path();
+     IP.Uo.Deallocate();
      SetupStateStatic( IP );
      IP.Uo.Allocate();
      IP.Uo.Zero();
@@ -1004,6 +1005,7 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     IP.SNBCK_IP.Broadcast_Input_Parameters(Communicator, Source_CPU);
 
     if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+      IP.Uo.Deallocate();
       SetupStateStatic( IP );
       IP.Uo.Allocate();
       IP.Uo.Zero();
@@ -3108,7 +3110,9 @@ int Process_Input_Control_Parameter_File(Rte2D_Input_Parameters &Input_Parameter
 	 /***********************************************************************
 	  *************************** RTE SPECIFIC ******************************/
 	 // now setup Rte2D_State
+	 Input_Parameters.Uo.Deallocate();
 	 SetupStateStatic( Input_Parameters );
+	 Input_Parameters.Uo.Allocate();
 	 SetInitialValues( Input_Parameters.Uo, Input_Parameters );
 	 /***********************************************************************
 	  ***********************************************************************/

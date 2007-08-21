@@ -1334,12 +1334,6 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
       }
       Local_SolnBlk = Deallocate(Local_SolnBlk, 
 				 Input_Parameters);
-      /***********************************************************************
-       *************************** RTE SPECIFIC ******************************/
-      // Rte2D_State static variables
-      Rte2D_State::DeallocateStatic();
-      /***********************************************************************
-       ***********************************************************************/
       //Deallocate_Message_Buffers(List_of_Local_Solution_Blocks); // Not necessary here!
       List_of_Local_Solution_Blocks.deallocate();
       List_of_Global_Solution_Blocks.deallocate();
@@ -1350,6 +1344,12 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
       // Close input data file.
       if (!batch_flag) cout << "\n\n Closing Rte2D input data file.";
       if (CFFC_Primary_MPI_Processor()) Close_Input_File(Input_Parameters);
+      /***********************************************************************
+       *************************** RTE SPECIFIC ******************************/
+      // Rte2D_State static variables
+      Rte2D_State::DeallocateStatic();
+      /***********************************************************************
+       ***********************************************************************/
       // Terminate calculation.
       return (0);
       
@@ -1684,7 +1684,7 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
   /********************************************************  
    * End of all Rte2DSolver computations and I/O.       *
    ********************************************************/
-  
+
   return (0);
   
 }

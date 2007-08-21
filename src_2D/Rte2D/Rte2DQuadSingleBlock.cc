@@ -1273,7 +1273,7 @@ void ICs(Rte2D_Quad_Block &SolnBlk,
         // Set the solution state to the initial state Wo[0].
         for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
             for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	       SolnBlk.U[i][j] = Wo[0];
+	      SolnBlk.U[i][j].Vacuum() = Wo[0];
             } /* endfor */
         } /* endfor */
         break;
