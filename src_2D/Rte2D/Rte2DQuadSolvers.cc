@@ -47,7 +47,7 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
   /* Define residual file and cpu time variables. */
 
   ofstream residual_file;
-  CPUTime processor_cpu_time, total_cpu_time, NKS_total_cpu_time;
+  CPUTime processor_cpu_time, total_cpu_time;
   time_t start_explicit, end_explicit;
 
   /* Other local solution variables. */
@@ -174,7 +174,6 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
 
   processor_cpu_time.zero();
   total_cpu_time.zero();
-  NKS_total_cpu_time.zero();
  
   /* Initialize the conserved and primitive state
      solution variables. */
@@ -1193,9 +1192,6 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
   /*************************************************************************************************************************/
   if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
     time_t start_NKS, end_NKS;
-    processor_cpu_time.update();
-    total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);  
-    double temp_t = total_cpu_time.cput;
 
      if (CFFC_Primary_MPI_Processor()) {
         error_flag = Open_Progress_File(residual_file,
@@ -1216,11 +1212,9 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
 
      if (!batch_flag){ cout << "\n\n Beginning Rte2D NKS computations on " << Date_And_Time() << ".\n\n"; time(&start_NKS); }
 
-     CPUTime NKS_processor_cpu_time, NKS_total_cpu_time;                 //TRYING TO FIX RESIDUAL PLOT TIMES
-     NKS_processor_cpu_time.zero(); NKS_total_cpu_time.zero();    
-     
-     NKS_processor_cpu_time = processor_cpu_time;
-     NKS_total_cpu_time = total_cpu_time; 
+     //Store Explicit times for output
+     CPUTime Explicit_processor_cpu_time = processor_cpu_time;
+     CPUTime Explicit_total_cpu_time =  total_cpu_time;
     
      //Perform NKS Iterations 
      error_flag = Newton_Krylov_Schwarz_Solver<Rte2D_State,
@@ -1232,11 +1226,8 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
 									 List_of_Local_Solution_Blocks,
 									 Input_Parameters);
      
-     //NKS_processor_cpu_time.update();
-     //NKS_total_cpu_time.cput = CFFC_Summation_MPI(NKS_processor_cpu_time.cput);  
      processor_cpu_time.update();
      total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);  
-     NKS_total_cpu_time.cput += total_cpu_time.cput - temp_t;
 
      if (error_flag) {
         if (CFFC_Primary_MPI_Processor()) { 
@@ -1257,12 +1248,12 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
        cout<<"\n ----------------------------------------------------------------";
        cout<<"\n -------- Solution Computations Summary in minutes --------------";
        cout<<"\n ----------------------------------------------------------------";
-       cout<<"\n Total Startup CPU Time\t\t = "<<NKS_total_cpu_time.min();          //total_cpu_time.min();
-       cout<<"\n Total NKS CPU Time \t\t = "<<total_cpu_time.min()-NKS_total_cpu_time.min();
-       cout<<"\n Total CPU Time \t\t = "<<total_cpu_time.min();    //NKS_total_cpu_time.min()+total_cpu_time.min(); 
+       cout<<"\n Total Startup CPU Time\t\t = "<<Explicit_total_cpu_time.min();
+       cout<<"\n Total NKS CPU Time \t\t = "<<total_cpu_time.min()-Explicit_total_cpu_time.min();
+       cout<<"\n Total CPU Time \t\t = "<<total_cpu_time.min(); 
        cout<<"\n Total Startup Clock Time\t = "<<difftime(end_explicit,start_explicit)/60.0;
        cout<<"\n Total NKS Clock Time\t\t = "<<difftime(end_NKS,start_NKS)/60.0;
-       cout<<"\n Total Clock Time\t\t = "<<difftime(end_NKS,start_explicit)/60.0;   
+       cout<<"\n Total Clock Time\t\t = "<<difftime(end_NKS,start_explicit)/60.0;    //if no explicit start_eplicit not defined...
        cout<<"\n ----------------------------------------------------------------";
        cout<<"\n ----------------------------------------------------------------";
        cout<<"\n ----------------------------------------------------------------\n";
