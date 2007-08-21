@@ -28,13 +28,8 @@ class Block_Preconditioner {
   void Setup_Preconditioner();                  //called from Update_Jacobian
   void Implicit_Euler(const int&,const int&, DenseMatrix*);                     //called from Update_Jacobian       
 
-  void First_Order_Inviscid_Jacobian_HLLE(int ci, int cj, DenseMatrix*); //called from Update_Jacobian
-  void First_Order_Inviscid_Jacobian_GHLLE(int ci, int cj, DenseMatrix*); //called from Update_Jacobian
-  void First_Order_Inviscid_Jacobian_all_HLLE(int ci, int cj, DenseMatrix*,
-		Vector2D (*wavespeed_fcn)(const SOLN_VAR_TYPE&, const SOLN_VAR_TYPE&, const Vector2D&));
-	void xFirst_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index_j, 
-				   DenseMatrix* Jacobian); 
-
+  void First_Order_Inviscid_Jacobian_HLLE(const int&,const int&, DenseMatrix*); //called from Update_Jacobian
+  void First_Order_Inviscid_Jacobian_GHLLE(const int&,const int&, DenseMatrix*);//called from Update_Jacobian
   void First_Order_Inviscid_Jacobian_Roe(const int&,const int&, DenseMatrix*);  //called from Update_Jacobian
   void First_Order_Inviscid_Jacobian_AUSM_plus_up(const int&,const int&, DenseMatrix*);  //called from Update_Jacobian
   void Second_Order_Viscous_Jacobian(const int&,const int&, DenseMatrix*);      //called from Update_Jacobian
@@ -478,114 +473,16 @@ Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jac
 	Jacobian[CENTER] -= Diag;
 }
 
-template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
-inline void Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-First_Order_Inviscid_Jacobian_HLLE(int ci, int cj, DenseMatrix* J_column_data)
-{
-	First_Order_Inviscid_Jacobian_all_HLLE(ci, cj, J_column_data, HLLE_wavespeeds);
-}
 
 template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 inline void Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-First_Order_Inviscid_Jacobian_GHLLE(int ci, int cj, DenseMatrix* J_column_data)
+First_Order_Inviscid_Jacobian_GHLLE(const int &cell_index_i,const int &cell_index_j, 
+				    DenseMatrix* J_column_data)
 {
   cerr<<"\n EXPLICIT SPECIALIZATION OF First_Order_Inviscid_Jacobian_GHLLE for Block_Preconditioner2D.h required \n";
   exit(1);
 }
 
-template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
-inline void Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-First_Order_Inviscid_Jacobian_all_HLLE(int ci, int cj, DenseMatrix* J_column_data,
-		Vector2D (*wavespeed_fcn)(const SOLN_VAR_TYPE&, const SOLN_VAR_TYPE&, const Vector2D&))
-{
-	// Here we determine one column of the (approximate) Jacobian.
-	// Thus the only non-zero (block) entries are for equations that
-	// depend on the solution at cell (ci,cj). 
-
-	Grid2D_Quad_Block *G = &(SolnBlk->Grid);
-	double this_cellA = G->area(ci, cj); // likely need it more than once.
-	SOLN_VAR_TYPE** W = SolnBlk->W; 
-	DenseMatrix I(blocksize, blocksize); I.identity();
-
-	DenseMatrix dFdUtmp(blocksize,blocksize,ZERO);
-	int nci = 0, ncj = 0;
-	double len = 0.0, wsm = 0.0, wsp = 0.0;
-	Vector2D nrml;
-	
-	for (int Jndx = 1; Jndx <= 4; Jndx++) { 
-
-		// Stand in the neighbouring cell. 
-		// Look towards the centre cell. 
-		// You are now facing in the direction given below.
-
-		switch (Jndx) {
-			case NORTH: nci = ci  ; ncj = cj-1; break;
-			case WEST:  nci = ci+1; ncj = cj  ; break;
-			case SOUTH: nci = ci  ; ncj = cj+1; break;
-			case EAST:  nci = ci-1; ncj = cj  ; break;
-		}
-
-		switch (Jndx) {
-			case NORTH: nrml = G->nfaceS(ci,cj); len = G->lfaceS(ci,cj); break;
-			case WEST:  nrml = G->nfaceE(ci,cj); len = G->lfaceE(ci,cj); break;
-			case SOUTH: nrml = G->nfaceN(ci,cj); len = G->lfaceN(ci,cj); break;
-			case EAST:  nrml = G->nfaceW(ci,cj); len = G->lfaceW(ci,cj); break;
-		}
-
-		// HLLE wavespeeds are assumed constant wrt U for this approximate Jacobian.
-		// Note that wavespeed_fcn is a function pointer.
-		Vector2D lms = wavespeed_fcn(W[ci][cj], W[nci][ncj], nrml);
-		wsm = lms.x; wsp = lms.y;
-
-		if (wsp <= ZERO) { // The flux at this side does not depend on this cell.
-			J_column_data[Jndx].zero();
-			continue; 
-		} 
-
-		DenseMatrix RotMat(     Rotation_Matrix(nrml, 1) );
-		DenseMatrix RotMat_inv( Rotation_Matrix(nrml, 0) );
-
-		//  We want (an approximation for) the matrix on the LHS of:
-		//  
-		//  	[ - I/h + dR/dU ] dU = - R
-		//  
-		//  where 
-		//  
-		//  	R = U' = - (len/area) F 
-		//  
-		//  after the dot product with n=(1,0). Since the method is
-		//  conservative, F calculated from the perspective of one cell
-		//  is exactly the negative of F caculated at the neighbouring
-		//  cell. 
-
-		dFdUtmp.zero(); // Ideally this would not be necessary.
-		Preconditioner_dFIdU(dFdUtmp, Rotate(W[ci][cj], nrml));
-		J_column_data[Jndx] = RotMat_inv * dFdUtmp * RotMat; // is this efficient?
-
-		// if wsm is nearly zero, then treat it as zero 
-		// to avoid round-off error in the else clause.
-		if (wsm > -1.0e-2) { 
-
-			J_column_data[Jndx] *= len / this_cellA; 
-			J_column_data[0] -= J_column_data[Jndx];
-			J_column_data[Jndx] *= this_cellA / G->area(nci,ncj);
-
-		} else if (wsp > ZERO) { // could just be an "else" statement but let's not be too slick.
-
-			// Remember that we are determining only one column of the (approximate)
-			// Jacobian. Thus the derivative of the dependence of R(U) for this cell
-			// on the cell to the "right" will be calculated when the cell to the
-			// "right" is processed.
-
-			J_column_data[Jndx] *= 1.0 / wsm;
-			J_column_data[Jndx] -= I; // The identity matrix is invariant under rotation.
-			J_column_data[Jndx] *= len * wsp * wsm / this_cellA / (wsp - wsm);
-			J_column_data[0] -= J_column_data[Jndx];
-			J_column_data[Jndx] *= this_cellA / G->area(nci,ncj);
-		}
-	} // for (int Jndx = 1; Jndx <= 4; Jndx++) 
-
-}
 
 /*****************************************************************************
  *  Calculate First Order Local Jacobian Block(s) Coresponding to Cell(i,j)  *
@@ -593,7 +490,7 @@ First_Order_Inviscid_Jacobian_all_HLLE(int ci, int cj, DenseMatrix* J_column_dat
  *****************************************************************************/ 
 template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 inline void Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-xFirst_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index_j, 
+First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index_j, 
 				   DenseMatrix* Jacobian){              
   
   //! Caculate normal vectors -> in Vector2D format. 

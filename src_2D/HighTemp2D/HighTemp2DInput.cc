@@ -3542,7 +3542,7 @@ int Parse_Next_Input_Control_Parameter(HighTemp2D_Input_Parameters &IP) {
     } else {
       i_command = INVALID_INPUT_VALUE;
     }
-  } else if (strcmp(IP.Next_Control_Parameter,"High_Temp_Tol") == 0) {
+  } else if (strcmp(IP.Next_Control_Parameter,"High_Temp_Tolerance") == 0) {
     i_command = 718;
     (IP.Line_Number)++;
     IP.Input_File >> HTTOL;

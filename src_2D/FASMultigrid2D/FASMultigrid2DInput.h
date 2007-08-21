@@ -380,25 +380,25 @@ inline ostream &operator << (ostream &out_file,
 	   << IP.Number_of_Smooths_on_Coarsest_Level;
   if (IP.Absolute_Convergence_Tolerance > 0) {
     out_file.setf(ios::scientific);
-    out_file << "\n  -> Absolute Tolerance for Regular Multigrid: "
+    out_file << "\n  -> Absolute Convergence Tolerance for Regular Multigrid: "
 	     << IP.Absolute_Convergence_Tolerance;
     out_file.unsetf(ios::scientific);
   }
   if (IP.Relative_Convergence_Tolerance > 0) {
     out_file.setf(ios::scientific);
-    out_file << "\n  -> Relative Tolerance for Regular Multigrid: "
+    out_file << "\n  -> Relative Convergence Tolerance for Regular Multigrid: "
 	     << IP.Relative_Convergence_Tolerance;
     out_file.unsetf(ios::scientific);
   }
   if (IP.Number_of_Cycles_per_Stage_for_Full_Multigrid > 0 && IP.FMG_Absolute_Convergence_Tolerance > 0) {
     out_file.setf(ios::scientific);
-    out_file << "\n  -> Absolute Tolerance for Full Multigrid: "
+    out_file << "\n  -> Absolute Convergence Tolerance for Full Multigrid: "
              << IP.FMG_Absolute_Convergence_Tolerance;
     out_file.unsetf(ios::scientific);
   }
   if (IP.Number_of_Cycles_per_Stage_for_Full_Multigrid > 0 && IP.FMG_Relative_Convergence_Tolerance > 0) {
     out_file.setf(ios::scientific);
-    out_file << "\n  -> Relative Tolerance for Full Multigrid: "
+    out_file << "\n  -> Relative Convergence Tolerance for Full Multigrid: "
 	     << IP.FMG_Relative_Convergence_Tolerance;
     out_file.unsetf(ios::scientific);
   }
@@ -418,7 +418,7 @@ inline ostream &operator << (ostream &out_file,
 	     << IP.i_Dual_Time_Preconditioning;
   }
   if (IP.Write_Output_Cells_Frequency > 0) {
-    out_file << "\n  -> Write Output Cells Frequency for Multigrid: "
+    out_file << "\n  -> Write output cells frequency for multigrid: "
 	     << IP.Write_Output_Cells_Frequency;
   }
   // Output successful.

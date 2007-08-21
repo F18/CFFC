@@ -393,20 +393,30 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 		cout << scientific;
 		cout << left;
 		cout << " | NKS Outer Iteration " << endl;
-		cout << setw(5) << " | " << "  " << " | Residual L2-Norm (Using Entry " << Input_Parameters.i_Residual_Variable 
-			<< " of the State Class)" << endl;
-		cout << setw(5) << " | " << "  " << setw(ww) << " | " << " | Ratio of Current to Initial Residual L2-Norm" << endl;
-		cout << setw(5) << " | " << "  " << setw(ww) << " | " << setw(ww) << " | " << " | CFL (for Continuation Method)" << endl;
-		cout << setw(5) << " | " << "  " << setw(ww) << " | " << setw(ww) << " | " << setw(ww) << " | " <<
-			"    | Number of GMRES (\"Inner\") Iterations " << endl;
-		cout << setw(5) << " | " << "  " << setw(ww) << " | " << setw(ww) << " | " << setw(ww) << " | " << "    | " << setw(5) << " ";
-				cout << " | GMRES End Relative Residual L2-Norm times 1000" << endl;
-		cout << setw(5) << " | " << "  " << setw(ww) << " | " << setw(ww) << " | " << setw(ww) << " | " << "    | " << setw(5) << " " << setw(ww) << " | ";
-				cout << " | GMRES Initial Residual L2-Norm" << endl;
-		cout << setw(5) << " | " << "  " << setw(ww) << " | " << setw(ww) << " | " << setw(ww) << " | " << "    | " << setw(5) << " " << setw(ww) << " | " << setw(ww) << " | ";
-				cout << " | An \"F\" here means GMRES did not converge" << endl;
-		cout << setw(5) << " | " << "  " << setw(ww) << " | " << setw(ww) << " | " << setw(ww) << " | " << "    | " << setw(5) << " " << setw(ww) << " | " << setw(ww) << " | ";
-				cout << " | An \"R\" here means GMRES restarted at least once" << endl;
+		cout << setw(5) << " | " << "  " 
+                     << " | Residual L2-Norm (Using Entry " << Input_Parameters.i_Residual_Variable 
+		     << " of the State Class)" << endl;
+		cout << setw(5) << " | " << "  " << setw(ww) 
+                     << " | " << " | Ratio of Current to Initial Residual L2-Norm" << endl;
+		cout << setw(5) << " | " << "  " << setw(ww) 
+                     << " | " << setw(ww) << " | " << " | CFL (for Continuation Method)" << endl;
+		cout << setw(5) << " | " << "  " << setw(ww) << " | " << setw(ww) << " | " 
+                     << setw(ww) << " | " << "    | Number of GMRES (\"Inner\") Iterations " << endl;
+		cout << setw(5) << " | " << "  " << setw(ww) << " | " 
+                     << setw(ww) << " | " << setw(ww) << " | " << "    | " << setw(5) << " ";
+		cout << " | GMRES End Relative Residual L2-Norm times 1000" << endl;
+		cout << setw(5) << " | " << "  " << setw(ww) << " | " 
+                     << setw(ww) << " | " << setw(ww) << " | " << "    | " << setw(5) 
+                     << " " << setw(ww) << " | ";
+		cout << " | GMRES Initial Residual L2-Norm" << endl;
+		cout << setw(5) << " | " << "  " << setw(ww) << " | " 
+                     << setw(ww) << " | " << setw(ww) << " | " << "    | " 
+                     << setw(5) << " " << setw(ww) << " | " << setw(ww) << " | ";
+		cout << " | An \"F\" here means GMRES did not converge" << endl;
+		cout << setw(5) << " | " << "  " << setw(ww) << " | " << setw(ww) << " | " 
+                     << setw(ww) << " | " << "    | " << setw(5) << " " << setw(ww) 
+                     << " | " << setw(ww) << " | ";
+		cout << " | An \"R\" here means GMRES restarted at least once" << endl;
 		cout << right;
 	}
 
