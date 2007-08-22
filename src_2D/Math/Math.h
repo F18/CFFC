@@ -131,4 +131,34 @@ inline double heaviside(const double &x) {
     return (x > ZERO) ? ONE : ZERO;
 }
 
+// For use with qsort (used for sorting list of integers)
+// e.g., qsort(list, n_list_size, sizeof(int), compare_integers);
+inline int compare_integers(const void *p, const void *q) {
+    return *(int *)p - *(int *)q;
+}
+
+// Returns the slope of the line of best fit (in the 
+// least-squares sense) where the data sets are:
+//   ( x, y ) = 
+//   ( 0, values[position] ),
+//   ( 1, values[position+1] ),
+//   ...
+//   (n-1, values[position+n-1] )
+//
+// "values" is a circular array so the actual indexing 
+// is the remainder after division by n.
+inline double linear_regression_slope(double *values, int n, int position) {
+    double ssxx = ZERO, ssxy = ZERO;
+    double ymean = ZERO, xmean = (n-ONE)/TWO;
+    for (int x = 0; x < n; x++) { 
+	ymean += values[x];
+	ssxx += x * x;
+	ssxy += x * values[ (position+x) % n ];
+    }
+    ymean *= ONE / n;
+    ssxx -= n * xmean * xmean;
+    ssxy -= n * xmean * ymean;
+    return ssxy / ssxx;
+}
+
 #endif // _MATH_MACROS_INCLUDED

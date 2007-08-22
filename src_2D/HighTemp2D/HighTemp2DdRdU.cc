@@ -822,50 +822,46 @@ For example, the first three rows of both Jacobians are:
 */
 																																													 
 void dWfdWc_Diamond(DenseMatrix &dWfdWc_x, DenseMatrix &dWfdWc_y, 
-		const HighTemp2D_Quad_Block &SolnBlk,
-		int Orient_face, int Rii, int Rjj, int Orient_cell) {
+		    const HighTemp2D_Quad_Block &SolnBlk,
+		    int Orient_face, int Rii, int Rjj, int Orient_cell) {
 
-	double intp = 0.0, LL = 0.0, RR = 0.0, dwdx = 0.0, dwdy = 0.0;
+  double intp = 0.0, LL = 0.0, RR = 0.0, dwdx = 0.0, dwdy = 0.0;
 
-	node_weights(&LL, &RR,
-			Orient_face, Rii, Rjj, Orient_cell, 
-			SolnBlk.Grid);
+  // Determine the influence of the cell on the face of interest.
+  SolnBlk.Grid.dFacedC(LL, RR, Rii, Rjj, Orient_face, Orient_cell);
 
-	intp = 0.5 * (LL+RR);
-	for (int i = 0; i < 6; i++) {
-		dWfdWc_x(i, i) = intp;
-		dWfdWc_y(i, i) = intp;
-	} 
+  intp = 0.5 * (LL+RR);
+  for (int i = 0; i < 6; i++) {
+     dWfdWc_x(i, i) = intp;
+     dWfdWc_y(i, i) = intp;
+  } 
 
-	// Find dwdx and dwdy, the geometric weights used to obtain the gradients 
-	// of the face variables from the cell-centred variables.
-	diamond_gradient_weights(&dwdx, &dwdy,
-			LL, RR, 
-			Orient_face, Rii, Rjj, Orient_cell, 
-			SolnBlk.Grid);
+  // Find dwdx and dwdy, the geometric weights used to obtain the 
+  // face solution gradients based on the cell-centred variables.
+  SolnBlk.Grid.dDiamondPathdC(dwdx, dwdy, Rii, Rjj, Orient_face, LL, RR, Orient_cell);
 
-	// The x-direction Jacobian should only use dwdx ...
-	dWfdWc_x( 6,0) = dwdx;
-	dWfdWc_x( 7,1) = dwdx;        
-	dWfdWc_x( 9,2) = dwdx;
-	dWfdWc_x(11,3) = dwdx;
-	dWfdWc_x(12,4) = dwdx;
-	dWfdWc_x(13,5) = dwdx;
+  // The x-direction Jacobian should only use dwdx ...
+  dWfdWc_x( 6,0) = dwdx;
+  dWfdWc_x( 7,1) = dwdx;        
+  dWfdWc_x( 9,2) = dwdx;
+  dWfdWc_x(11,3) = dwdx;
+  dWfdWc_x(12,4) = dwdx;
+  dWfdWc_x(13,5) = dwdx;
 
-	// ... except for the velocity bits.
-	dWfdWc_x( 8,1) = dwdy;
-	dWfdWc_x(10,2) = dwdy;
+  // ... except for the velocity bits.
+  dWfdWc_x( 8,1) = dwdy;
+  dWfdWc_x(10,2) = dwdy;
 
-	// The y-direction Jacobian should only use dwdy ...
-	dWfdWc_y( 6,0) = dwdy;   
-	dWfdWc_y( 8,1) = dwdy;
-	dWfdWc_y(10,2) = dwdy;
-	dWfdWc_y(11,3) = dwdy;
-	dWfdWc_y(12,4) = dwdy;
-	dWfdWc_y(13,5) = dwdy;
+  // The y-direction Jacobian should only use dwdy ...
+  dWfdWc_y( 6,0) = dwdy;   
+  dWfdWc_y( 8,1) = dwdy;
+  dWfdWc_y(10,2) = dwdy;
+  dWfdWc_y(11,3) = dwdy;
+  dWfdWc_y(12,4) = dwdy;
+  dWfdWc_y(13,5) = dwdy;
 
-	// ... except for the velocity bits.
-	dWfdWc_y( 7,1) = dwdx;
-	dWfdWc_y( 9,2) = dwdx;
+  // ... except for the velocity bits.
+  dWfdWc_y( 7,1) = dwdx;
+  dWfdWc_y( 9,2) = dwdx;
 }
 
