@@ -26,7 +26,6 @@
 int         Rte2D_State :: Npolar          = 0;
 int*        Rte2D_State :: Nazim           = NULL;
 int         Rte2D_State :: Nband           = 0;
-int         Rte2D_State :: Ntot            = 0;
 int***      Rte2D_State :: Index           = NULL;
 int         Rte2D_State :: NUM_VAR_RTE2D   = 0;
 double**    Rte2D_State :: mu              = NULL;
@@ -38,7 +37,7 @@ double**    Rte2D_State :: psi             = NULL;
 double*     Rte2D_State :: delta_theta     = NULL;
 double**    Rte2D_State :: delta_psi       = NULL;
 double***** Rte2D_State :: Phi             = NULL;
-int         Rte2D_State :: Symmetry_Factor = 1;
+double      Rte2D_State :: Symmetry_Factor = ONE;
 SNBCK*      Rte2D_State :: SNBCKdata       = NULL;
 double      Rte2D_State :: Absorb_Type     = RTE2D_ABSORB_GRAY;
 
@@ -140,14 +139,11 @@ void Rte2D_State :: SetDirsDOM(const int Quad_Type,
   // get the maximum number of cosines in the azimuthal direction 
   // for each polar direction.  
   AllocateDirs();
-  Ntot = 0;
+  NUM_VAR_RTE2D = 0;
   for (int i=0; i<Npolar; i++) {
     in >> Nazim[i];
-    Ntot += Nazim[i];
+    NUM_VAR_RTE2D += Nazim[i];
   }
-
-  // set the total number of directions x total number of bands
-  NUM_VAR_RTE2D = Ntot;
   
   // now allocate the cosine arrays
   AllocateCosines(RTE2D_SOLVER_DOM);
@@ -266,8 +262,7 @@ void Rte2D_State :: SetDirsFVM(const int NumPolarDirs,
   for (int i=0; i<Npolar; i++ ) Nazim[i] = NumAzimDirs;
 
   // compute the total number of directions x total number of bands
-  Ntot = NumAzimDirs * NumPolarDirs * Nband;
-  NUM_VAR_RTE2D = Ntot;
+  NUM_VAR_RTE2D = NumAzimDirs * NumPolarDirs * Nband;
   
   // now allocate the cosine arrays
   AllocateCosines(RTE2D_SOLVER_FVM);
@@ -295,7 +290,7 @@ void Rte2D_State :: SetDirsFVM(const int NumPolarDirs,
   }
 
   // the symmetry factor
-  Symmetry_Factor = 2;
+  Symmetry_Factor = TWO;
 
 
   // create the angular grid
@@ -643,8 +638,8 @@ void Rte2D_State :: SetupPhaseFVM( const int type ) {
 	  
 	  // set
 	  Phi[v][m][l][p][q] = val 
-	    / (omega[m][l]/double(Symmetry_Factor))
-	    / (omega[p][q]/double(Symmetry_Factor));
+	    / (omega[m][l]/Symmetry_Factor)
+	    / (omega[p][q]/Symmetry_Factor);
 	  // IMPORTANT - THE FACTOR 4 COMES FROM SYMMETRY
 	  // WE ARE ONLY MODELLING HALF THE SOLID ANGLE RANGE,
 	  // THUS OMEGA HAS BEEN MULTIPLIED BY 2.  NEED TO
@@ -719,10 +714,10 @@ void Rte2D_State :: SetupPhaseFVM( const int type ) {
  * coefficients as proposed by Carlson and Lathrop      *
  * (1968).  This is for the DOM space march version.    *
  ********************************************************/
-void Rte2D_State :: SetupART_DOM( const Vector2D nfaceE, const double AfaceE,
-				  const Vector2D nfaceW, const double AfaceW,
-				  const Vector2D nfaceN, const double AfaceN,
-				  const Vector2D nfaceS, const double AfaceS ) {
+void Rte2D_State :: SetupART_DOM( const Vector2D &nfaceE, const double &AfaceE,
+				  const Vector2D &nfaceW, const double &AfaceW,
+				  const Vector2D &nfaceN, const double &AfaceN,
+				  const Vector2D &nfaceS, const double &AfaceS ) {
 
   double temp;
 
@@ -843,7 +838,7 @@ Rte2D_State Flux_n(const Rte2D_State &Ul,
 
   Um = Riemann_n(Ul, Ur, norm_dir);
   Flux = Um.Fn(norm_dir);
-  Flux.zero_non_sol();
+  Flux.ZeroNonSol();
   
   return (Flux);
 
@@ -1050,7 +1045,7 @@ Rte2D_State Reflect(const Rte2D_State &U, const Vector2D &norm_dir) {
     Vector2D int_dir, in_dir;
     double cos_angle, sin_angle;
     double dcn, dct, dot_prod;
-    Rte2D_State Temp(U);  Temp.zero_sol();
+    Rte2D_State Temp(U);  Temp.ZeroIntensity();
     bool exact_match;
     double arc_len, cos_phi, num, denom;
     int mmm, lll;
@@ -1282,7 +1277,7 @@ void Reflect_Space_March(Rte2D_State &U, const Vector2D &norm_dir) {
  * Compute the nth degree legendre polynomial at x      *
  *                                                      *
  ********************************************************/
-double Legendre( const double x, const int n) { 
+double Legendre( const double &x, const int &n) { 
 
   // initialize
   double P0, P1, Pn;
