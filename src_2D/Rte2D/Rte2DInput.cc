@@ -3132,14 +3132,29 @@ int Process_Input_Control_Parameter_File(Rte2D_Input_Parameters &Input_Parameter
 
     /* Perform consistency checks on Input_Parameters */
 
-    if (!error_flag &&
-	Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
-      error_flag = Check_Input_Parameters<Rte2D_Input_Parameters>(Input_Parameters);
+    if (!error_flag) {
+
+      // multigrid checks
+      if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
+	error_flag = Check_Input_Parameters<Rte2D_Input_Parameters>(Input_Parameters);
+      } /* endif - multigrid */
+
+      /***********************************************************************
+       *************************** RTE SPECIFIC ******************************/
+      // make sure we are not using DOM with time-marching
+      if (!Input_Parameters.i_Time_Integration == TIME_STEPPING_SPACE_MARCH &&
+	  Input_Parameters.i_RTE_Solver == RTE2D_SOLVER_DOM) {
+	error_flag = 1;
+      } /* endif - DOM */
+      /***********************************************************************
+       ***********************************************************************/
+
       if (error_flag) {
 	cout << "\n Rte2D ERROR: Input Parameters consistency check failure\n";
 	return (error_flag);
-      }
-    }
+      } /* endif */
+
+    } /* endif - check */
 
     /* Initial processing of input control parameters complete.  
        Return the error indicator flag. */
