@@ -1535,27 +1535,4 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
 
 }
 
-// for use with qsort
-int Compare_Ints(const void *p, const void *q) {
-    return *(int *)p - *(int *)q;
-}
-
-double Least_Squares_Slope(double *values, int n, int position) {
-
-    double ssxx = 0.0, ssxy = 0.0;
-    double ymean = 0.0, xmean = (n-1.0)/2.0;
-
-    for (int x = 0; x < n; x++) { 
-	ymean += values[x];
-	ssxx += x * x;
-	ssxy += x * values[ (position+x) % n ];
-    }
-
-    ymean *= 1.0 / n;
-
-    ssxx -= n * xmean * xmean;
-    ssxy -= n * xmean * ymean;
-
-    return ssxy / ssxx;
-}
 

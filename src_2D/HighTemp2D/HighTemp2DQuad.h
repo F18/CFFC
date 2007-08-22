@@ -132,36 +132,36 @@ class HighTemp2D_Quad_Block{
 private:
 public:
   //@{ @name Solution state arrays:
-  HighTemp2D_pState               **W; //!< Primitive solution state.
-  HighTemp2D_cState               **U; //!< Conserved solution state.
+  HighTemp2D_pState               **W;    //!< Primitive solution state.
+  HighTemp2D_cState               **U;    //!< Conserved solution state.
   //@}
 
   //@{ @name Grid block information:
-  int                             NCi, //!< Total number of i-direction cells.
-                                  ICl, //!< First i-direction non-ghost cell counter.
-                                  ICu; //!< Final i-direction non-ghost cell counter.
-  int                             NCj, //!< Total number of j-direction cells.
-                                  JCl, //!< First j-direction non-ghost cell counter.
-                                  JCu; //!< Final j-direction non-ghost cell counter.
-  int                          Nghost; //!< Number of ghost cells.
-  Grid2D_Quad_Block              Grid; //!< 2D quadrilateral grid geometry.
+  int                             NCi,    //!< Total number of i-direction cells.
+                                  ICl,    //!< First i-direction non-ghost cell counter.
+                                  ICu;    //!< Final i-direction non-ghost cell counter.
+  int                             NCj,    //!< Total number of j-direction cells.
+                                  JCl,    //!< First j-direction non-ghost cell counter.
+                                  JCu;    //!< Final j-direction non-ghost cell counter.
+  int                          Nghost;    //!< Number of ghost cells.
+  Grid2D_Quad_Block              Grid;    //!< 2D quadrilateral grid geometry.
   //@}
 
   //@{ @name Residual and time-stepping arrays:
-  double                         **dt; //!< Local time step.
-  HighTemp2D_cState       ***dUdt; //!< Solution residual.
-  HighTemp2D_cState          **Uo; //!< Initial solution state.
-  static int        residual_variable; //!< Static integer that indicates which variable is used for residual calculations.
-  static int Number_of_Residual_Norms;   //!< (default 4 )
+  double                         **dt;    //!< Local time step.
+  HighTemp2D_cState           ***dUdt;    //!< Solution residual.
+  HighTemp2D_cState              **Uo;    //!< Initial solution state.
+  static int        residual_variable;    //!< Static integer that indicates which variable is used for residual calculations.
+  static int Number_of_Residual_Norms;    //!< (default 4 )
   //@}
 
   //@{ @name Solution gradient arrays:
-  HighTemp2D_pState             **dWdx; //!< Unlimited solution gradient (x-direction).
-  HighTemp2D_pState             **dWdy; //!< Unlimited solution gradient (y-direction).
-  //HighTemp2D_pState          **ddWdxdx; //!< Unlimited solution gradient (x-direction).
-  //HighTemp2D_pState          **ddWdxdy; //!< Unlimited solution gradient (x-direction).
-  //HighTemp2D_pState          **ddWdydy; //!< Unlimited solution gradient (x-direction).
-  HighTemp2D_pState              **phi; //!< Solution slope limiter.
+  HighTemp2D_pState             **dWdx;   //!< Unlimited solution gradient (x-direction).
+  HighTemp2D_pState             **dWdy;   //!< Unlimited solution gradient (y-direction).
+  //HighTemp2D_pState        **ddWdxdx;   //!< Unlimited solution gradient (x-direction).
+  //HighTemp2D_pState        **ddWdxdy;   //!< Unlimited solution gradient (x-direction).
+  //HighTemp2D_pState        **ddWdydy;   //!< Unlimited solution gradient (x-direction).
+  HighTemp2D_pState              **phi;   //!< Solution slope limiter.
   //@}
 
   //@{ @name Solution face gradients arrays. For Diamond Path & Jacobian formation.
@@ -173,33 +173,33 @@ public:
 	//@}
 
   //@{ @name Boundary solution flux arrays:
-  HighTemp2D_cState            *FluxN, //!< North boundary solution flux.
-                               *FluxS, //!< South boundary solution flux.
-                               *FluxE, //!< East boundary solution flux.
-                               *FluxW; //!< West boundary solution flux.
+  HighTemp2D_cState            *FluxN,   //!< North boundary solution flux.
+                               *FluxS,   //!< South boundary solution flux.
+                               *FluxE,   //!< East boundary solution flux.
+                               *FluxW;   //!< West boundary solution flux.
   //@}
 
   //@{ @name Problem indicator flags:
-  int                    Axisymmetric; //!< Axisymmetric flow indicator.
-  int                       Flow_Type; //!< Flow-type flag (inviscid, laminar, or k-omega).
-  //  int          SubCell_Reconstruction; //!< Sub-cell reconstruction indicator.
-  int                  Freeze_Limiter; //!< Limiter freezing indicator.
+  int                    Axisymmetric;   //!< Axisymmetric flow indicator.
+  int                       Flow_Type;   //!< Flow-type flag (inviscid, laminar, or k-omega).
+  //int          SubCell_Reconstruction; //!< Sub-cell reconstruction indicator.
+  int                  Freeze_Limiter;   //!< Limiter freezing indicator.
   //@}
 
   //@{ @name Boundary condtion reference states:
-  HighTemp2D_pState              *WoN, //!< Boundary condition reference states for north boundary.
-                                 *WoS, //!< Boundary condition reference states for south boundary.
-                                 *WoE, //!< Boundary condition reference states for east boundary.
-                                 *WoW; //!< Boundary condition reference states for west boundary.
+  HighTemp2D_pState              *WoN,   //!< Boundary condition reference states for north boundary.
+                                 *WoS,   //!< Boundary condition reference states for south boundary.
+                                 *WoE,   //!< Boundary condition reference states for east boundary.
+                                 *WoW;   //!< Boundary condition reference states for west boundary.
   //@}
 
   //@{ @name Turbulence wall data arrays:
-  Turbulent2DWallData          **Wall; //!< Turbulent wall data.
+  Turbulent2DWallData          **Wall;   //!< Turbulent wall data.
   //@}
 
   //@{ @name Flow constants:
-  Vector2D                     Vwall; //!< Specified wall velocity.
-  double                       Twall; //!< Specified wall temperature.
+  Vector2D                     Vwall;   //!< Specified wall velocity.
+  double                       Twall;   //!< Specified wall temperature.
   //@}
 
   //! Creation constructor.
@@ -233,7 +233,7 @@ public:
     Axisymmetric   = Soln.Axisymmetric;
     Flow_Type      = Soln.Flow_Type;
     Freeze_Limiter = Soln.Freeze_Limiter;
-    //    SubCell_Reconstruction = Soln.SubCell_Reconstruction;
+    // SubCell_Reconstruction = Soln.SubCell_Reconstruction;
     Vwall = Soln.Vwall;
     Twall = Soln.Twall;
     // Grid size and variables:
@@ -470,21 +470,21 @@ inline void HighTemp2D_Quad_Block::allocate(const int Ni, const int Nj, const in
 }
 
 inline void HighTemp2D_Quad_Block::allocate_face_grad_arrays(void) {
-	if (face_grad_arrays_allocated) { return; }
-	// Call allocate() then call this
-	assert(NCi > 0 && NCj > 0);
-	dWdx_faceN = new HighTemp2D_pState*[NCi]; dWdy_faceN = new HighTemp2D_pState*[NCi];
-	dWdx_faceE = new HighTemp2D_pState*[NCi]; dWdy_faceE = new HighTemp2D_pState*[NCi];
-	for (int i = 0; i < NCi; i++) {
-		dWdx_faceN[i] = new HighTemp2D_pState[NCj]; dWdy_faceN[i] = new HighTemp2D_pState[NCj];
-		dWdx_faceE[i] = new HighTemp2D_pState[NCj]; dWdy_faceE[i] = new HighTemp2D_pState[NCj];
+  if (face_grad_arrays_allocated) { return; }
+  // Call allocate() then call this
+  assert(NCi > 0 && NCj > 0);
+  dWdx_faceN = new HighTemp2D_pState*[NCi]; dWdy_faceN = new HighTemp2D_pState*[NCi];
+  dWdx_faceE = new HighTemp2D_pState*[NCi]; dWdy_faceE = new HighTemp2D_pState*[NCi];
+  for (int i = 0; i < NCi; i++) {
+     dWdx_faceN[i] = new HighTemp2D_pState[NCj]; dWdy_faceN[i] = new HighTemp2D_pState[NCj];
+     dWdx_faceE[i] = new HighTemp2D_pState[NCj]; dWdy_faceE[i] = new HighTemp2D_pState[NCj];
 
-		for (int j = 0; j < NCj; j++) {
-			dWdx_faceN[i][j].Vacuum(); dWdy_faceN[i][j].Vacuum();
-			dWdx_faceE[i][j].Vacuum(); dWdy_faceE[i][j].Vacuum();
-		}
-	}
-	face_grad_arrays_allocated = true;
+     for (int j = 0; j < NCj; j++) {
+        dWdx_faceN[i][j].Vacuum(); dWdy_faceN[i][j].Vacuum();
+        dWdx_faceE[i][j].Vacuum(); dWdy_faceE[i][j].Vacuum();
+     }
+  }
+  face_grad_arrays_allocated = true;
 }
 
 /**********************************************************************
