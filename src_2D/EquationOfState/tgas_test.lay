@@ -1,5 +1,5 @@
 #!MC 1100
-$!VarSet |LFDSFN1| = '"test2.dat"'
+$!VarSet |LFDSFN1| = '"tgas_test.dat"'
 $!VarSet |LFDSVL1| = '"V1" "V2" "V3" "V4" "V5" "V6" "V7"'
 $!SETSTYLEBASE FACTORY
 $!PAPER 

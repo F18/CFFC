@@ -14,6 +14,8 @@ HTAIR
 # SOLVER PARAMETERS:
 Maximum_Number_of_Time_Steps=
 50
+#0
+#50
 Time_Accurate=
 0
 Local_Time_Stepping=
@@ -33,9 +35,9 @@ Multigrid_Smoothing_Type=
 Multistage_Optimal_Smoothing
 Full_Multigrid=
 0
-MG_Full_Relative_Tolerance=
+FMG_Relative_Convergence_Tolerance=
 0
-MG_Regular_Relative_Tolerance=
+Multigrid_Relative_Convergence_Tolerance=
 1e-2
 Multigrid_Levels=
 3
@@ -67,16 +69,24 @@ N_Stage=
 5
 Output_Progress_Frequency=
 25
+Multigrid_Write_Output_Cells_Frequency=
+0
 # Explicit_Relative_Tolerance is considered 
 # only when using a non-time-accurate explicit TMM.
 #Explicit_Relative_Tolerance=
 #1e-3
 #
+Explicit_Write_Output_Freq=
+0
+#
 # FLUX PARAMETERS:
 Flux_Function_Type=
-Glai
+HLLL
 #Roe
-#Glaister
+#HLLE
+#HLLL
+High_Temp_Tolerance=
+5.0e-02
 Viscous_Reconstruction_Type=
 Diamond_Path
 Reconstruction_Type=
@@ -90,7 +100,9 @@ Freeze_Limiter=
 0
 # GRID PARAMETERS:
 Grid_Type=
-Adiabatic_Flat_Plate
+Isothermal_Flat_Plate
+#Adiabatic_Flat_Plate
+#Isothermal_Flat_Plate
 Plate_Length = 
 .002143785
 Mesh_Stretching=
@@ -138,7 +150,7 @@ CFL_Number=
 #
 # Misc
 Residual_Variable=
-1
+2
 Number_of_Blocks_Per_Processor=
 256
 Restart_Solution_Save_Frequency= 
@@ -149,14 +161,20 @@ NKS_Overall_Tolerance=
 1e-8
 Maximum_Number_of_NKS_Iterations=
 80
+#0
+#80
 GMRES_Restart=
 70
 Maximum_Number_of_GMRES_Iterations=
 140
+#GMRES_Frechet_Derivative_Order=
+#Second_Order
+#GMRES_Epsilon_Naught=
+#1.0e-7
 GMRES_Initial_Tolerance=
-.3
+0.3
 GMRES_Final_Tolerance=
-.1
+0.1
 GMRES_Overlap=
 0
 GMRES_Block_Preconditioner= 
@@ -165,7 +183,7 @@ ILUK
 GMRES_ILUK_Level_of_Fill= 
 4
 Jacobian_Order=
-Second_Order_Diamond_Path_with_Roe
+Second_Order_Diamond_Path_with_HLLE
 #First_Order_Inviscid_HLLE
 #First_Order_Inviscid_Roe
 #Second_Order_Diamond_with_HLLE
@@ -175,18 +193,14 @@ Second_Order_Diamond_Path_with_Roe
 NKS_Finite_Time_Step=
 ON
 NKS_Finite_Time_Step_Initial_CFL=
-1e4
+1e03
 NKS_Finite_Time_Step_Final_CFL=
 1e12
 NKS_Detect_Convergence_Stall=
-ON
+OFF
 NKS_DCS_Window=
 15
 NKS_Write_Output_Cells_Freq=
-0
-MG_Write_Output_Cells_Freq=
-0
-Explicit_Write_Output_Freq=
 0
 NKS_Output_Format=
 tight
@@ -194,6 +208,8 @@ tight
 # EXECUTE PROGRAM:
 ICs_Type=
 Uniform
+#Uniform
+#Restart
 Output_File_Name=
 plate_g1
 Execute
@@ -201,6 +217,7 @@ Write_Output
 Write_Output_Cells
 Write_Output_Flat_Plate
 Write_Restart
+Terminate
 #######
 Output_File_Name=
 plate_g2

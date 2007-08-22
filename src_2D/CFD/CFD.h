@@ -614,10 +614,6 @@ inline char *Date_And_Time() {
 
 #define FLUX_FUNCTION_GODUNOV_WRS                     99
 
-#define FLUX_FUNCTION_GLAISTER                        50
-#define	FLUX_FUNCTION_GHLLE                           52
-#define FLUX_FUNCTION_GHLLL                           54
-
 #define PARTICLE_PHASE_FLUX_FUNCTION_SAUREL           31
 #define PARTICLE_PHASE_FLUX_FUNCTION_MULTIVELOCITY    32
 #define PARTICLE_PHASE_FLUX_FUNCTION_SAUREL_MB        33
