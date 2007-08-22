@@ -614,10 +614,6 @@ inline char *Date_And_Time() {
 
 #define FLUX_FUNCTION_GODUNOV_WRS                     99
 
-#define FLUX_FUNCTION_GLAISTER                        50
-#define	FLUX_FUNCTION_GHLLE                           52
-#define FLUX_FUNCTION_GHLLL                           54
-
 #define PARTICLE_PHASE_FLUX_FUNCTION_SAUREL           31
 #define PARTICLE_PHASE_FLUX_FUNCTION_MULTIVELOCITY    32
 #define PARTICLE_PHASE_FLUX_FUNCTION_SAUREL_MB        33
@@ -1378,6 +1374,75 @@ int Bilinear_Interpolation(const T &U1, const Vector2D &P1,
   U0 = U1 + (U4 - U1)*zeta0 + (U2 - U1)*eta0 + (U1 + U3 - U2 - U4)*zeta0*eta0;
   return 0;
 }
+
+inline int Bilinear_Interpolation_Coefficients(double &interpolation_coefficient, 
+                                               const int interpolation_node,
+                                               const Vector2D &P1,
+			                       const Vector2D &P2,
+			                       const Vector2D &P3,
+			                       const Vector2D &P4,
+                                               const Vector2D &P0) {
+  double a0, a1, a2, a3;
+  double b0, b1, b2, b3;
+  double zeta0, eta0;
+  double a, b, c;
+
+  a0 = P1.x;
+  a1 = P4.x - P1.x;
+  a2 = P2.x - P1.x;
+  a3 = P1.x + P3.x - P2.x - P4.x;
+
+  b0 = P1.y;
+  b1 = P4.y - P1.y;
+  b2 = P2.y - P1.y;
+  b3 = P1.y + P3.y - P2.y - P4.y;
+
+  a = a1*b3 - a3*b1;
+  b = a0*b3 - b3*P0.x + a1*b2 - a2*b1 + a3*P0.y - a3*b0;
+  c = a0*b2 - b2*P0.x + a2*P0.y - a2*b0;
+
+  if (a > TOLER || a < -TOLER) {
+    // Check for complex roots
+    if (b*b-4*a*c < 0) return(1);
+    zeta0 = (-b + sqrt(b*b - 4*a*c))/(2*a);
+    // Check if zeta0 is within range, if not calculate conjugate
+    if (zeta0 < 0 || zeta0 > 1) {
+      zeta0 = (-b - sqrt(b*b - 4*a*c))/(2*a);
+      // Check if zeta0 is within range
+      if (zeta0 < 0 || zeta0 > 1) return(1);
+    }
+  } else if (b > TOLER || b < -TOLER) { // if (a == 0 AND b != 0)
+    zeta0 = -c/b;
+    // Check if zeta0 is within range
+    if (zeta0 < 0 || zeta0 > 1) return 1;
+  } else { // if (a == 0 AND b == 0)
+    return(1);
+  }
+
+  // check for divide by zero error
+  if (b2 + b3*zeta0 < TOLER && b2 + b3*zeta0 > -TOLER) return(1);
+  eta0 = (P0.y - b0 - b1*zeta0)/(b2 + b3*zeta0);
+
+  // Determine the coefficient or weight for the interpolation node 
+  // of interest.
+  switch(interpolation_node) {
+    case NORTH_EAST : // Node P3
+      interpolation_coefficient = zeta0*eta0;
+      break;
+    case NORTH_WEST : // Node P2
+      interpolation_coefficient = eta0 - zeta0*eta0;
+      break;
+    case SOUTH_EAST : // Node P4
+      interpolation_coefficient = zeta0 - zeta0*eta0;
+      break;
+    case SOUTH_WEST : // Node P1
+      interpolation_coefficient = ONE - zeta0 - eta0 + zeta0*eta0;
+      break;
+    default:
+      return(1);
+  }
+}
+
 template <class T>
 int Bilinear_Interpolation_ZY(const T &U1, const Vector2D &P1,
 			      const T &U2, const Vector2D &P2,
@@ -1578,19 +1643,22 @@ int Green_Gauss_Integration(const Vector2D &X1, const T &U1,
 //  Out:
 //  - dWd[xy]: The solution gradient on the cell interface.
 template <class Soln2D_State>
-void DiamondPath_Find_dWdX(
-		Soln2D_State &dWdx, Soln2D_State &dWdy,
-		const Vector2D &Xl, const Soln2D_State &Wl,
-		const Vector2D &Xd, const Soln2D_State &Wd,
-		const Vector2D &Xr, const Soln2D_State &Wr,
-		const Vector2D &Xu, const Soln2D_State &Wu,
-		int stencil_flag) {
+void DiamondPath_Find_dWdX(Soln2D_State &dWdx, Soln2D_State &dWdy,
+		           const Vector2D &Xl, 
+                           const Soln2D_State &Wl,
+		           const Vector2D &Xd, 
+                           const Soln2D_State &Wd,
+		           const Vector2D &Xr, 
+                           const Soln2D_State &Wr,
+		           const Vector2D &Xu, 
+                           const Soln2D_State &Wu,
+		           int stencil_flag) {
 
   if (stencil_flag == DIAMONDPATH_NONE) { 
-		dWdx.Vacuum();
-		dWdy.Vacuum();
-		return; 
-	}
+     dWdx.Vacuum();
+     dWdy.Vacuum();
+     return; 
+  } /* endif */
 
   Soln2D_State Wtemp, dWdxl, dWdyl, dWdxr, dWdyr;
   double Al, Ar;
@@ -1635,18 +1703,22 @@ void DiamondPath_Find_dWdX(
     dWdyr /= Ar;
   }
 
-	switch (stencil_flag) {
-		case DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION:
-			// determine the area-averaged gradients
-			dWdx = (Al*dWdxl + Ar*dWdxr)/(Al+Ar);
-			dWdy = (Al*dWdyl + Ar*dWdyr)/(Al+Ar);
-			break;
-		case DIAMONDPATH_LEFT_TRIANGLE:
-			dWdx = dWdxl; dWdy = dWdyl;
-			break;
-		case DIAMONDPATH_RIGHT_TRIANGLE: 
-			dWdx = dWdxr; dWdy = dWdyr; 
-			break;
+  switch (stencil_flag) {
+     case DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION:
+       // determine the area-averaged gradients
+       dWdx = (Al*dWdxl + Ar*dWdxr)/(Al+Ar);
+       dWdy = (Al*dWdyl + Ar*dWdyr)/(Al+Ar);
+       break;
+     case DIAMONDPATH_LEFT_TRIANGLE:
+       dWdx = dWdxl; 
+       dWdy = dWdyl;
+       break;
+     case DIAMONDPATH_RIGHT_TRIANGLE: 
+       dWdx = dWdxr; 
+       dWdy = dWdyr; 
+       break;
+     default: 
+       break;
   }
 }
 
@@ -1667,43 +1739,27 @@ void DiamondPath_Find_dWdX(
 //  Out: 
 //  - dWd[xy]: The solution gradient on the cell interface.
 template <class Soln2D_State>
-void Hybrid_Find_dWdX(
-		Soln2D_State &dWdx, Soln2D_State &dWdy, 
-		const Vector2D &X1,
-		const Soln2D_State &W1,
-		const Soln2D_State &dW1dx,
-		const Soln2D_State &dW1dy,
-		const Vector2D &X2,
-		const Soln2D_State &W2,
-		const Soln2D_State &dW2dx,
-		const Soln2D_State &dW2dy,
-		const Vector2D &norm_dir) {
+void Hybrid_Find_dWdX(Soln2D_State &dWdx, Soln2D_State &dWdy, 
+		      const Vector2D &X1,
+		      const Soln2D_State &W1,
+		      const Soln2D_State &dW1dx,
+		      const Soln2D_State &dW1dy,
+		      const Vector2D &X2,
+		      const Soln2D_State &W2,
+		      const Soln2D_State &dW2dx,
+		      const Soln2D_State &dW2dy,
+		      const Vector2D &norm_dir) {
 
   Soln2D_State dWdx_ave = HALF*(dW1dx + dW2dx);
   Soln2D_State dWdy_ave = HALF*(dW1dy + dW2dy);
 
   Vector2D dX = X2-X1; 
-	double ds = dX.abs(); dX /= ds;
+  double ds = dX.abs(); dX /= ds;
 
   Soln2D_State dWds = (W2-W1)/ds;
 
   dWdx = dWdx_ave + (dWds - dWdx_ave*dX.x)*norm_dir.x/dot(norm_dir,dX);
   dWdy = dWdy_ave + (dWds - dWdy_ave*dX.y)*norm_dir.y/dot(norm_dir,dX);
 }
-
-// for use with qsort
-int Compare_Ints(const void *p, const void *q);
-
-// Returns the slope of the line of best fit (in the 
-// least-squares sense) where the data sets are:
-//   ( x, y ) = 
-//   ( 0, values[position] ),
-//   ( 1, values[position+1] ),
-//   ...
-//   (n-1, values[position+n-1] )
-//
-// "values" is a circular array so the actual indexing 
-// is the remainder after division by n.
-double Least_Squares_Slope(double *values, int n, int position);
 
 #endif /* _CFD_INCLUDED  */

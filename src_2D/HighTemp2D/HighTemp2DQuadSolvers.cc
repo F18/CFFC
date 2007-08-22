@@ -986,10 +986,6 @@ int HighTemp2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	    Input_Parameters.NKS_IP.Jacobian_Order = FIRST_ORDER_INVISCID_HLLE; 
 	    say_it = true;
 	    break;
-	  case SECOND_ORDER_DIAMOND_WITH_GHLLE:
-	    Input_Parameters.NKS_IP.Jacobian_Order = FIRST_ORDER_INVISCID_GHLLE; 
-	    say_it = true;
-	    break;
 	  case SECOND_ORDER_DIAMOND_WITH_ROE:
 	    Input_Parameters.NKS_IP.Jacobian_Order = FIRST_ORDER_INVISCID_ROE;
 	    say_it = true;

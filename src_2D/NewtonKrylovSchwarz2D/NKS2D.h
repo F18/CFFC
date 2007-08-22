@@ -1,8 +1,8 @@
-/*! ********************** NKS2D.h ***********************************************
+/*! ************************ NKS2D.h *********************************************
  *          2D Newton-Krylov-Schwarz Parallel Implicit Solver                    *  
  *                                                                               *
  * These Templated Classes & Functions are designed to work with all (well most) *
- * of the Equation systems built using the CFFC format (ie. Euler2D,  *
+ * of the Equation systems built using the CFFC format (ie. Euler2D,             *
  * Chem2D, Dusty2D etc).                                                         *
  *                                                                               *
  *   Files:  NKS2D.h                                                             *
@@ -705,9 +705,11 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 			}
 
 			if (dcs_counter >= Input_Parameters.NKS_IP.DCS_Window) {
-
-				// Before calling Least_Squares_Slope(), dcs_data[dcs_position] must be the oldest entry.
-				dcs_slope = Least_Squares_Slope(dcs_data, Input_Parameters.NKS_IP.DCS_Window, dcs_position);
+ 			   // Before calling Least_Squares_Slope(), dcs_data[dcs_position] must be 
+                           // the oldest entry.
+			   dcs_slope = linear_regression_slope(dcs_data, 
+                                                               Input_Parameters.NKS_IP.DCS_Window, 
+                                                               dcs_position);
 
 //  The following are four reasons why we should transition from
 //  waiting to freeze the limiters to actually freezing the
@@ -824,9 +826,9 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 				Freeze_Limiters(SolnBlk, List_of_Local_Solution_Blocks);	
 				limiter_check = false;	
 			} 
-		} // if (limiter_check && Number_of_Newton_Steps > 1)
+    } // if (limiter_check && Number_of_Newton_Steps > 1)
 
-		if (dcs_freeze_now) { dcs_freeze_now = 0; }
+    if (dcs_freeze_now) { dcs_freeze_now = 0; }
 
     /**************************************************************************/
     /***************** NEWTON STEP ********************************************/
@@ -929,7 +931,6 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       }  
       /**************************************************************************/
 
- 
       /**************************************************************************/
       /************* PRECONDTIONER "BLOCK" JACOBIANS ****************************/      
       /**************************************************************************/
@@ -1080,13 +1081,14 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 		int nns = Number_of_Newton_Steps-1;
     cout << " " << endl;
     for (int star=0;star<75;star++){cout <<"*";}
-		cout.setf(ios::scientific);
-    cout << "\n\nEnd of Newton Steps = " << nns  << " L2norm = "
-	 << L2norm_current[SolnBlk[0].residual_variable-1] << " L2norm_ratio = " << L2norm_current_n << "\n\n";
-		cout.unsetf(ios::scientific);
-		cout.setf(ios::fixed);
+       cout.setf(ios::scientific);
+       cout << "\n\nEnd of Newton Steps = " << nns  << " L2norm = "
+	    << L2norm_current[SolnBlk[0].residual_variable-1] 
+            << " L2norm_ratio = " << L2norm_current_n << "\n\n";
+       cout.unsetf(ios::scientific);
+       cout.setf(ios::fixed);
 
-		int GMRESt = 0;
+       int GMRESt = 0;
 		for (int iii = 0; iii < nns; iii++) { GMRESt += GMRES_All_Iters[iii]; }
 		cout << "GMRES Total Iterations: " << GMRESt << endl;
 
@@ -1094,7 +1096,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 		cout << "GMRES Failures: " << GMRES_Failures << endl;
 
 		if (Input_Parameters.NKS_IP.output_format == OF_ALISTAIR) {
-			qsort(GMRES_All_Iters, nns, sizeof(int), Compare_Ints);
+			qsort(GMRES_All_Iters, nns, sizeof(int), compare_integers);
 			cout << "GMRES Iterations:" << endl;
 			for (int iii = 0; iii < nns; iii++) {	
 				cout << " " << setw(3) << GMRES_All_Iters[iii];
@@ -1257,10 +1259,11 @@ double Finite_Time_Step(const INPUT_TYPE &Input_Parameters,
 	//   -- Alistair Wood. Wed Aug 08 2007.
   if (L2norm_current_n > MIN_FINITE_TIME_STEP_NORM_RATIO ) { 
     CFL_current = Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL*
-      pow( max(ONE, ONE/L2norm_current_n),ONE ); 
+                  pow( max(ONE, ONE/L2norm_current_n),ONE );
       //      pow(min(ONE, max(ONE, ONE/L2norm_current_n)*MIN_FINITE_TIME_STEP_NORM_RATIO),ONE );     
   } else {
-     CFL_current = Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL/MIN_FINITE_TIME_STEP_NORM_RATIO;
+     CFL_current = Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL/
+                   MIN_FINITE_TIME_STEP_NORM_RATIO;
   } 
  
   return CFL_current;

@@ -1700,11 +1700,19 @@ HighTemp2D_cState FluxRoe(const HighTemp2D_pState &Wl,
 
   int NumVar = (Wl.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA)
                ? NUM_VAR_HIGHTEMP2D : NUM_VAR_HIGHTEMP2D-2;
+  double c_Avg, dpdrho_Avg, dpde_Avg;
   HighTemp2D_pState Wa, dWrl, wavespeeds, lambdas_l, lambdas_r, lambdas_a;
   HighTemp2D_cState Flux;
  
   // Evaluate the Roe-average primitive solution state.
   Wa = RoeAverage(Wl, Wr);
+
+  // Calculate the sound speed for average state using
+  // Glaister's approximation for the Roe-average sound speed as
+  // needed.
+  if (Wa.eos_type == EOS_TGAS) {
+     Wa.RoeAverage_SoundSpeed(c_Avg, dpdrho_Avg, dpde_Avg, Wa, Wl, Wr);
+  } /* endif */
 
   // Evaluate the jumps in the primitive solution states.
   dWrl = Wr - Wl;
@@ -1712,7 +1720,11 @@ HighTemp2D_cState FluxRoe(const HighTemp2D_pState &Wl,
   // Evaluate the left, right, and average state eigenvalues.
   lambdas_l = Wl.lambda_x();
   lambdas_r = Wr.lambda_x();
-  lambdas_a = Wa.lambda_x();
+  if (Wa.eos_type == EOS_TGAS) {
+     lambdas_a = Wa.lambda_x(c_Avg);
+  } else {
+     lambdas_a = Wa.lambda_x();
+  } /* endif */
   
   // Determine the intermediate state flux.
   if (Wa.v.x >= ZERO) {
@@ -1720,18 +1732,28 @@ HighTemp2D_cState FluxRoe(const HighTemp2D_pState &Wl,
     wavespeeds = HartenFixNeg(lambdas_a,lambdas_l,lambdas_r);
     for (int i = 1; i <= NumVar; i++) {
       if (wavespeeds[i] < ZERO) {
-	Flux += wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i);
-      }
-    }
+        if (Wa.eos_type == EOS_TGAS) {
+	   Flux += wavespeeds[i]*(Wa.lp_x(i, c_Avg)*dWrl)*
+                   Wa.rc_x(i, dpde_Avg, dpdrho_Avg, c_Avg);
+        } else {
+  	   Flux += wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i);
+        } /* endif */
+      } /* endif */
+    } /* endfor */
   } else {
     Flux = Wr.Fx();
     wavespeeds = HartenFixPos(lambdas_a,lambdas_l,lambdas_r);
     for (int i = 1; i <= NumVar; i++) {
       if (wavespeeds[i] > ZERO) {
-	Flux -= wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i);
-      }
-    }
-  }
+        if (Wa.eos_type == EOS_TGAS) {
+           Flux -= wavespeeds[i]*(Wa.lp_x(i, c_Avg)*dWrl)*
+                   Wa.rc_x(i, dpde_Avg, dpdrho_Avg, c_Avg);
+        } else {
+	   Flux -= wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i);
+        } /* endif */
+      } /* endif */
+    } /* endfor */
+  } /* endif */
 
   // Return the solution flux.
   return Flux;
@@ -1906,118 +1928,6 @@ HighTemp2D_cState FluxRoe_MB_n(const HighTemp2D_cState &Ul,
 }
 
 /**********************************************************************
- * Routine: FluxGlaister (modiefied Roe's flux function)              *
- *  FOR HIGH-TEMPERATURE AIR EFFECTS                                  *
- * This function returns the intermediate state solution flux for the *
- * given left and right solution states by using the "linearized"     *
- * approximate Riemann solver of Roe for the two states.  See Roe     *
- * (1981) and Glaister (1987).                                        *
- *                                                                    *
- **********************************************************************/
-HighTemp2D_cState FluxGlaister(const HighTemp2D_pState &Wl,
-			       const HighTemp2D_pState &Wr) {
-
-  int NumVar = (Wl.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA)
-               ? NUM_VAR_HIGHTEMP2D : NUM_VAR_HIGHTEMP2D-2;
-  double c_Avg, dpdrho_Avg, dpde_Avg;
-  HighTemp2D_pState Wa, dWrl, wavespeeds, lambdas_l, lambdas_r, lambdas_a;
-  HighTemp2D_cState Flux;
-
-  // Evaluate the Roe-average primitive solution state.
-  Wa = RoeAverage(Wl, Wr);
-
-  // Calculate the sound speed for average state using
-  // Glaister's approximation for the Roe-average sound speed.
-  Wa.RoeAverage_SoundSpeed(c_Avg, dpdrho_Avg, dpde_Avg, Wa, Wl, Wr);
-
-  // Evaluate the jumps in the primitive solution states.
-  dWrl = Wr - Wl;
-
-  // Evaluate the left, right, and average state eigenvalues.
-  lambdas_l = Wl.lambda_x();
-  lambdas_r = Wr.lambda_x();
-  lambdas_a = Wa.lambda_x(c_Avg);
-
-  // Evaluate the solution flux.
-  if (Wa.v.x >= ZERO) {
-    Flux = Wl.Fx();
-    wavespeeds = HartenFixNeg(lambdas_a,lambdas_l,lambdas_r);
-    for (int i = 1; i <= NumVar; i++) {
-      if (wavespeeds[i] < ZERO) {
-	Flux += wavespeeds[i]*(Wa.lp_x(i, c_Avg)*dWrl)*
-                Wa.rc_x(i, dpde_Avg, dpdrho_Avg, c_Avg);
-      }
-    }
-  } else {
-    Flux = Wr.Fx();
-    wavespeeds = HartenFixPos(lambdas_a,lambdas_l,lambdas_r);
-    for (int i = 1; i <= NumVar; i++) {
-      if (wavespeeds[i] > ZERO) {
-       	Flux -= wavespeeds[i]*(Wa.lp_x(i, c_Avg)*dWrl)*
-                Wa.rc_x(i, dpde_Avg, dpdrho_Avg, c_Avg);
-      }
-    }
-  }
-
-  // Return the solution flux.
-  return Flux;
-
-}
-
-HighTemp2D_cState FluxGlaister(const HighTemp2D_cState &Ul,
-			       const HighTemp2D_cState &Ur) {
-
-  return FluxGlaister(Ul.W(),Ur.W());
-
-}
-
-/**********************************************************************
- * Routine: Flux_n (Roe's flux function, n-direction)                 *
- *                                                                    *
- * This function returns the intermediate state solution flux for an  *
- * arbitrary direction defined by a unit normal vector in the         *
- * direction of interest, given left and right solution states.  The  *
- * problem is solved by first applying a frame rotation to rotate the *
- * problem to a local frame aligned with the unit normal vector and   *
- * then by using the "linearized" approximate Riemann solver of Roe   *
- * to specify the flux in terms of the rotated solution states.  See  *
- * Roe (1981).                                                        *
- *                                                                    *
- **********************************************************************/
-HighTemp2D_cState FluxGlaister_n(const HighTemp2D_pState &Wl,
-				 const HighTemp2D_pState &Wr,
-				 const Vector2D &norm_dir) {
-
-  HighTemp2D_pState Wl_rotated, Wr_rotated;
-  HighTemp2D_cState Flux, Flux_rotated;
-
-  // Apply the frame rotation and evaluate left and right solution 
-  // states in the local rotated frame defined by the unit normal 
-  // vector.
-  Wl_rotated.Rotate(Wl,norm_dir);
-  Wr_rotated.Rotate(Wr,norm_dir);
-
-  // Evaluate the intermediate state solution flux in the rotated frame.
-  Flux_rotated = FluxGlaister(Wl_rotated,Wr_rotated);
-
-  // Rotate back to the original Cartesian reference frame and return 
-  // the solution flux.
-  Flux.Rotate(Flux_rotated,Vector2D(norm_dir.x,-norm_dir.y));
-
-  // Return the solution flux.
-  return Flux;
-
-}
-
-HighTemp2D_cState FluxGlaister_n(const HighTemp2D_cState &Ul,
-				 const HighTemp2D_cState &Ur,
-				 const Vector2D &norm_dir) {
-
-  return FluxGlaister_n(Ul.W(),Ur.W(),norm_dir);
-
-}
-
-/**********************************************************************
  * Routine: FluxRusanov (Rusanov flux function, x-direction)          *
  *                                                                    *
  * This function returns the intermediate state solution flux for the *
@@ -2124,12 +2034,20 @@ HighTemp2D_cState FluxRusanov_n(const HighTemp2D_cState &Ul,
 HighTemp2D_cState FluxHLLE(const HighTemp2D_pState &Wl,
 			   const HighTemp2D_pState &Wr) {
 
-  double wavespeed_l, wavespeed_r;
+  double c_Avg, dpdrho_Avg, dpde_Avg,
+         wavespeed_l, wavespeed_r;
   HighTemp2D_pState Wa, lambdas_l, lambdas_r, lambdas_a;
   HighTemp2D_cState Flux, dUrl;
 
   // Evaluate the Roe-average primitive solution state.
   Wa = RoeAverage(Wl, Wr);
+
+  // Calculate the sound speed for average state using
+  // Glaister's approximation for the Roe-average sound speed as
+  // needed.
+  if (Wa.eos_type == EOS_TGAS) {
+     Wa.RoeAverage_SoundSpeed(c_Avg, dpdrho_Avg, dpde_Avg, Wa, Wl, Wr);
+  } /* endif */
 
   // Evaluate the jumps in the conserved solution states.
   dUrl = Wr.U() - Wl.U();
@@ -2137,7 +2055,11 @@ HighTemp2D_cState FluxHLLE(const HighTemp2D_pState &Wl,
   // Evaluate the left, right, and average state eigenvalues.
   lambdas_l = Wl.lambda_x();
   lambdas_r = Wr.lambda_x();
-  lambdas_a = Wa.lambda_x();
+  if (Wa.eos_type == EOS_TGAS) {
+     lambdas_a = Wa.lambda_x(c_Avg);
+  } else {
+     lambdas_a = Wa.lambda_x();
+  } /* endif */
   
   // Determine the intermediate state flux.
   wavespeed_l = min(lambdas_l[1], lambdas_a[1]);
@@ -2213,114 +2135,6 @@ HighTemp2D_cState FluxHLLE_n(const HighTemp2D_cState &Ul,
 
 }
 
-/**********************************************************************
- * Routine: FluxGHLLE (Glaister, Harten-Lax-van Leer flux function,   *
- *                                                      x-direction)  *
- *                                                                    *
- * This function returns the intermediate state solution flux for the *
- * x-direction given left and right solution states by using the      *
- * so-called Harten-Lax-van Leer approximation for the fluxes.  See   *
- * Harten, Lax, van Leer (1983). The average state is computed using  *
- * Glaister's modification for high temperature (1988).               *
- *                                                                    *
- **********************************************************************/
-HighTemp2D_cState FluxGHLLE(const HighTemp2D_pState &Wl,
-			    const HighTemp2D_pState &Wr) {
-
-  double c_Avg, dpdrho_Avg, dpde_Avg,
-         wavespeed_l, wavespeed_r;
-  HighTemp2D_pState Wa, lambdas_l, lambdas_r, lambdas_a;
-  HighTemp2D_cState Flux, dUrl;;
-
-  // Evaluate the Roe-average primitive solution state.
-  Wa = RoeAverage(Wl, Wr);
-
-  // Calculate the sound speed for average state using
-  // Glaister's approximation for the Roe-average sound speed.
-  Wa.RoeAverage_SoundSpeed(c_Avg, dpdrho_Avg, dpde_Avg, Wa, Wl, Wr);
-
-  // Evaluate the jumps in the conserved solution states.
-  dUrl = Wr.U() - Wl.U();
-
-  // Evaluate the left, right, and average state eigenvalues.
-  lambdas_l = Wl.lambda_x();
-  lambdas_r = Wr.lambda_x();
-  lambdas_a = Wa.lambda_x(c_Avg);
-
-  // Determine the intermediate state flux.
-  wavespeed_l = min(lambdas_l[1], lambdas_a[1]);
-  wavespeed_r = max(lambdas_r[4], lambdas_a[4]);
-  
-  if (wavespeed_l >= ZERO) {
-    Flux = Wl.Fx();
-  } else if (wavespeed_r <= ZERO) {
-    Flux = Wr.Fx();
-  } else {
-    Flux = (((wavespeed_r*Wl.Fx()-wavespeed_l*Wr.Fx())
-	     + (wavespeed_l*wavespeed_r)*dUrl)/
-	       (wavespeed_r-wavespeed_l));
-  }
-
-  // Return the solution flux.
-  return Flux;
-
-}
-
-HighTemp2D_cState FluxGHLLE(const HighTemp2D_cState &Ul,
-			    const HighTemp2D_cState &Ur) {
-
-  return FluxGHLLE(Ul.W(),Ur.W());
-
-}
-
-/**********************************************************************
- * Routine: FluxHLLE_n (Harten-Lax-van Leer flux function,            *
- *                      n-direction)                                  *
- *                                                                    *
- * This function returns the intermediate state solution flux for an  *
- * arbitrary direction defined by a unit normal vector in the         *
- * direction of interest, given left and right solution states.  The  *
- * problem is solved by first applying a frame rotation to rotate the *
- * problem to a local frame aligned with the unit normal vector and   *
- * then by using the so-called Harten-Lax-van Leer approximation to   *
- * specify the intermediate state fluxes in terms of the rotated      *
- * solution states.  See Harten, Lax, van Leer (1983).                *
- *                                                                    *
- **********************************************************************/
-HighTemp2D_cState FluxGHLLE_n(const HighTemp2D_pState &Wl,
-			      const HighTemp2D_pState &Wr,
-			      const Vector2D &norm_dir) {
-
-  HighTemp2D_pState Wl_rotated, Wr_rotated;
-  HighTemp2D_cState Flux, Flux_rotated;
-  
-  // Apply the frame rotation and evaluate left and right solution
-  // states in the local rotated frame defined by the unit normal
-  // vector.
-  Wl_rotated.Rotate(Wl,norm_dir);
-  Wr_rotated.Rotate(Wr,norm_dir);
-
-  // Evaluate the intermediate state solution flux in the rotated
-  // frame.
-  Flux_rotated = FluxGHLLE(Wl_rotated,Wr_rotated);
-  
-  // Rotate back to the original Cartesian reference frame and
-  // return the solution flux.
-  Flux.Rotate(Flux_rotated,Vector2D(norm_dir.x,-norm_dir.y));
-
-  // Return the solution flux.
-  return Flux;
-
-}
-
-HighTemp2D_cState FluxGHLLE_n(const HighTemp2D_cState &Ul,
-			      const HighTemp2D_cState &Ur,
-			      const Vector2D &norm_dir) {
-
-  return FluxGHLLE_n(Ul.W(),Ur.W(),norm_dir);
-
-}
-
 /*********************************************************
  * Routine: HLLE_wavespeeds                              *
  *                                                       *
@@ -2335,48 +2149,6 @@ Vector2D HLLE_wavespeeds(const HighTemp2D_pState &Wl,
 		         const HighTemp2D_pState &Wr,
 		         const Vector2D &norm_dir) {
 
-    Vector2D wavespeed;
-    HighTemp2D_pState Wa_n, lambdas_l, lambdas_r, lambdas_a, Wl_n, Wr_n;  
-
-    /* Use rotated values to calculate eignvalues */
-    Wl_n.Rotate(Wl, norm_dir);
-    Wr_n.Rotate(Wr, norm_dir);
-
-    /* Evaluate the Roe-average primitive solution state. */
-    Wa_n = RoeAverage(Wl_n, Wr_n);
-    
-    /* Evaluate the left, right, and average state eigenvalues. */
-
-    lambdas_l = Wl_n.lambda_x();
-    lambdas_r = Wr_n.lambda_x();
-    lambdas_a = Wa_n.lambda_x();
-
-    /* Determine the intermediate state flux. */
-
-    wavespeed.x = min(lambdas_l[1], lambdas_a[1]);
-    wavespeed.y = max(lambdas_r[4], lambdas_a[4]);
- 
-    wavespeed.x = min(wavespeed.x, ZERO); //lambda minus
-    wavespeed.y = max(wavespeed.y, ZERO); //lambda plus 
-
-    return (wavespeed);
-
-}
-
-/*********************************************************
- * Routine: GHLLE_wavespeeds                             *
- *                                                       *
- * This function returns lambda plus and lambda minus    *
- * for rotated Riemann problem aligned with norm_dir     *
- * given unrotated solution states Wl and Wr.            *
- * Note: wavespeed.x = wavespeed_l = lambda minus.       *
- *       wavespeed.y = wavespeed_r = lambda plus.        *
- *                                                       *
- *********************************************************/
-Vector2D GHLLE_wavespeeds(const HighTemp2D_pState &Wl,
-		          const HighTemp2D_pState &Wr,
-		          const Vector2D &norm_dir) {
-
     double c_Avg, dpdrho_Avg, dpde_Avg;
     Vector2D wavespeed;
     HighTemp2D_pState Wa_n, lambdas_l, lambdas_r, lambdas_a, Wl_n, Wr_n;  
@@ -2388,14 +2160,22 @@ Vector2D GHLLE_wavespeeds(const HighTemp2D_pState &Wl,
     /* Evaluate the Roe-average primitive solution state. */
     Wa_n = RoeAverage(Wl_n, Wr_n);
     
-    /* Calculate the sound speed for average state using
-       Glaister's approximation for the Roe-average sound speed. */
-    Wa_n.RoeAverage_SoundSpeed(c_Avg, dpdrho_Avg, dpde_Avg, Wa_n, Wl_n, Wr_n);
+    // Calculate the sound speed for average state using
+    // Glaister's approximation for the Roe-average sound speed as
+    // needed.
+    if (Wa_n.eos_type == EOS_TGAS) {
+       Wa_n.RoeAverage_SoundSpeed(c_Avg, dpdrho_Avg, dpde_Avg, Wa_n, Wl_n, Wr_n);
+    } /* endif */
 
     /* Evaluate the left, right, and average state eigenvalues. */
+
     lambdas_l = Wl_n.lambda_x();
     lambdas_r = Wr_n.lambda_x();
-    lambdas_a = Wa_n.lambda_x(c_Avg);
+    if (Wa_n.eos_type == EOS_TGAS) {
+       lambdas_a = Wa_n.lambda_x(c_Avg);
+    } else {
+       lambdas_a = Wa_n.lambda_x();
+    } /* endif */
 
     /* Determine the intermediate state flux. */
 
@@ -2420,17 +2200,29 @@ Vector2D GHLLE_wavespeeds(const HighTemp2D_pState &Wl,
 HighTemp2D_cState FluxHLLL(const HighTemp2D_pState &Wl,
 			   const HighTemp2D_pState &Wr) {
 
-  double wavespeed_l, wavespeed_r, wavespeed_m, da, ca, dU, alpha;
+  double c_Avg, dpdrho_Avg, dpde_Avg,
+         wavespeed_l, wavespeed_r, wavespeed_m, da, ca, dU, alpha;
   HighTemp2D_pState Wa, lambdas_l, lambdas_r, lambdas_a;
   HighTemp2D_cState Flux, dFrl, dUrl, dFwave;
 
   // Evaluate the Roe-average primitive solution state.
   Wa = RoeAverage(Wl, Wr);
 
+  // Calculate the sound speed for average state using
+  // Glaister's approximation for the Roe-average sound speed as
+  // needed.
+  if (Wa.eos_type == EOS_TGAS) {
+     Wa.RoeAverage_SoundSpeed(c_Avg, dpdrho_Avg, dpde_Avg, Wa, Wl, Wr);
+  } /* endif */
+
   // Evaluate the left, right, and average state eigenvalues.
   lambdas_l = Wl.lambda_x();
   lambdas_r = Wr.lambda_x();
-  lambdas_a = Wa.lambda_x();
+  if (Wa.eos_type == EOS_TGAS) {
+     lambdas_a = Wa.lambda_x(c_Avg);
+  } else {
+     lambdas_a = Wa.lambda_x();
+  } /* endif */
 
   // Determine the intermediate state flux.
   wavespeed_l = min(lambdas_l[1],lambdas_a[1]);
@@ -2445,7 +2237,11 @@ HighTemp2D_cState FluxHLLL(const HighTemp2D_pState &Wl,
     dFrl = Wr.Fx() - Wl.Fx();
     wavespeed_m = Wa.v.x;
     da = Wa.rho;
-    ca = Wa.c();
+    if (Wa.eos_type == EOS_TGAS) {
+      ca = c_Avg;
+    } else {
+      ca = Wa.c();
+    } /* endif */
     dU = (fabs(dUrl.rho)/da + 
 	  fabs(dUrl.dv.x)/(da*ca) + 
 	  fabs(dUrl.dv.y)/(da*ca) + 
@@ -2466,7 +2262,7 @@ HighTemp2D_cState FluxHLLL(const HighTemp2D_pState &Wl,
 	    +(wavespeed_l*wavespeed_r)*
 	    (ONE-(ONE-max(wavespeed_m/wavespeed_r,
 			  wavespeed_m/wavespeed_l))*alpha)*dUrl)/
-      (wavespeed_r-wavespeed_l);
+           (wavespeed_r-wavespeed_l);
   }
 
   // Return the solution flux.
@@ -2524,128 +2320,6 @@ HighTemp2D_cState FluxHLLL_n(const HighTemp2D_cState &Ul,
 			     const Vector2D &norm_dir) {
 
   return FluxHLLL_n(Ul.W(),Ur.W(),norm_dir);
-
-}
-
-/**********************************************************************
- * Routine: FluxGHLLL_x (Timur Linde's flux function, x-direction     *
- *                                                                    *
- * This function returns the intermediate state solution flux for the *
- * x-direction given left and right solution states by using the      *
- * Linde approximation for the fluxes.  See Linde (1998).             *
- *  *** Modified for HIGHTEMP cases, with Glaister Averages           *
- **********************************************************************/
-HighTemp2D_cState FluxGHLLL(const HighTemp2D_pState &Wl,
-			    const HighTemp2D_pState &Wr) {
-
-  double c_Avg, dpdrho_Avg, dpde_Avg,
-         wavespeed_l, wavespeed_r, wavespeed_m, da, ca, dU, alpha;
-  HighTemp2D_pState Wa, lambdas_l, lambdas_r, lambdas_a;
-  HighTemp2D_cState Flux, dFrl, dUrl, dFwave;
- 
-  // Evaluate the Roe-average primitive solution state.
-  Wa = RoeAverage(Wl, Wr);
-
-  // Calculate the sound speed for average state using
-  // Glaister's approximation for the Roe-average sound speed.
-  Wa.RoeAverage_SoundSpeed(c_Avg, dpdrho_Avg, dpde_Avg, Wa, Wl, Wr);
-
-  // Evaluate the left, right, and average state eigenvalues.
-  lambdas_l = Wl.lambda_x();
-  lambdas_r = Wr.lambda_x();
-  lambdas_a = Wa.lambda_x(c_Avg);
-
-  // Determine the intermediate state flux.
-  wavespeed_l = min(lambdas_l[1],lambdas_a[1]);
-  wavespeed_r = max(lambdas_r[4],lambdas_a[4]);
-  
-  if (wavespeed_l >= ZERO) {
-    Flux = Wl.Fx();
-  } else if (wavespeed_r <= ZERO) {
-    Flux = Wr.Fx();
-  } else {
-    dUrl = Wr.U() - Wl.U();
-    dFrl = Wr.Fx() - Wl.Fx();
-    wavespeed_m = Wa.v.x;
-    da = Wa.rho;
-    ca = c_Avg;
-    dU = (fabs(dUrl.rho)/da + 
-	  fabs(dUrl.dv.x)/(da*ca) + 
-	  fabs(dUrl.dv.y)/(da*ca) + 
-	  fabs(dUrl.E)/(da*ca*ca));
-    if (dU <= TOLER) {
-      alpha = ZERO;
-    } else {
-      dU = ONE/dU;
-      dFwave = dFrl - wavespeed_m*dUrl;
-      alpha = ONE - (fabs(dFwave.rho)/(da*ca) + 
-		     fabs(dFwave.dv.x)/(da*ca*ca) + 
-		     fabs(dFwave.dv.y)/(da*ca*ca) + 
-		     fabs(dFwave.E)/(da*ca*ca*ca))*dU;
-      alpha = max(ZERO,alpha);
-    }
-    
-    Flux = ((wavespeed_r*Wl.Fx()-wavespeed_l*Wr.Fx())
-	    +(wavespeed_l*wavespeed_r)*
-	    (ONE-(ONE-max(wavespeed_m/wavespeed_r,
-			  wavespeed_m/wavespeed_l))*alpha)*dUrl)/
-      (wavespeed_r-wavespeed_l);
-  }
-
-  // Return the solution flux.
-  return Flux;
-}
-
-HighTemp2D_cState FluxGHLLL(const HighTemp2D_cState &Ul,
-			    const HighTemp2D_cState &Ur) {
-
-  return FluxGHLLL(Ul.W(),Ur.W());
-
-}
-
-/**********************************************************************
- * Routine: FluxGHLLL_n (Timur Linde's flux function, n-direction)    *
- *        *** modified for HighTemp with Glaister's Avgs              *
- * This function returns the intermediate state solution flux for an  *
- * arbitrary direction defined by a unit normal vector in the         *
- * direction of interest, given left and right solution states.  The  *
- * problem is solved by first applying a frame rotation to rotate the *
- * problem to a local frame aligned with the unit normal vector and   *
- * then by using the Linde approximation to specify the intermediate  *
- * state flux in terms of the rotated solution states.  See Linde     *
- * (1998).                                                            *
- *                                                                    *
- **********************************************************************/
-HighTemp2D_cState FluxGHLLL_n(const HighTemp2D_pState &Wl,
-			      const HighTemp2D_pState &Wr,
-			      const Vector2D &norm_dir) {
-
-  HighTemp2D_pState Wl_rotated, Wr_rotated;
-  HighTemp2D_cState Flux, Flux_rotated;
-
-  // Apply the frame rotation and evaluate left and right solution 
-  // states in the local rotated frame defined by the unit normal 
-  // vector.
-  Wl_rotated.Rotate(Wl,norm_dir);
-  Wr_rotated.Rotate(Wr,norm_dir);
-
-  // Evaluate the intermediate state solution flux in the rotated frame.
-  Flux_rotated = FluxGHLLL(Wl_rotated,Wr_rotated);
-
-  // Rotate back to the original Cartesian reference frame and return 
-  // the solution flux.
-  Flux.Rotate(Flux_rotated,Vector2D(norm_dir.x,-norm_dir.y));
-
-  // Return the solution flux.
-  return Flux;
-
-}
-
-HighTemp2D_cState FluxGHLLL_n(const HighTemp2D_cState &Ul,
-			      const HighTemp2D_cState &Ur,
-			      const Vector2D &norm_dir) {
-
-  return FluxGHLLL_n(Ul.W(),Ur.W(),norm_dir);
 
 }
 

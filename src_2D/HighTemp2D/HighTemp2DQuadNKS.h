@@ -110,7 +110,7 @@ double Finite_Time_Step(const HighTemp2D_Input_Parameters &Input_Parameters,
 	// If L2norm_current_n were a straight line on a semi-log plot 
 	//  then CFL would  also be a straight line on a semi-log plot.
 	return Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL *
-		pow(L2norm_current_n, CFL_Power);
+	       pow(L2norm_current_n, CFL_Power);
 }
 
 /*!**************************************************************
@@ -318,7 +318,7 @@ template <>
 inline void Block_Preconditioner<HighTemp2D_pState,
 			         HighTemp2D_Quad_Block,					    
 			         HighTemp2D_Input_Parameters>::
-First_Order_Inviscid_Jacobian_GHLLE(const int &ci, const int &cj, DenseMatrix* J_column_data)
+First_Order_Inviscid_Jacobian_HLLE(const int &ci, const int &cj, DenseMatrix* J_column_data)
 {
 
 	Grid2D_Quad_Block *G = &(SolnBlk->Grid);
@@ -353,7 +353,7 @@ First_Order_Inviscid_Jacobian_GHLLE(const int &ci, const int &cj, DenseMatrix* J
 
 		// HLLE wavespeeds are assumed constant wrt U for this approximate Jacobian.
 		// Note that wavespeed_fcn is a function pointer.
-		Vector2D lms = GHLLE_wavespeeds(W[ci][cj], W[nci][ncj], nrml);
+		Vector2D lms = HLLE_wavespeeds(W[ci][cj], W[nci][ncj], nrml);
 		wsm = lms.x; wsp = lms.y;
 
 		if (wsp <= ZERO) { // The flux at this side does not depend on this cell.
@@ -404,7 +404,6 @@ First_Order_Inviscid_Jacobian_GHLLE(const int &ci, const int &cj, DenseMatrix* J
 		}
 	} // for (int Jndx = 1; Jndx <= 4; Jndx++) 
 
-	//First_Order_Inviscid_Jacobian_all_HLLE(ci, cj, J_column_data, GHLLE_wavespeeds);
 }
 
 #endif // _HIGHTEMP2D_QUAD_NKS_INCLUDED 

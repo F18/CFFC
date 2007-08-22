@@ -9,11 +9,9 @@ enum Block_Preconditioners { Block_ILUK,
 
 enum Jacobian_Orders { SOURCE_TERMS_ONLY,
                        FIRST_ORDER_INVISCID_HLLE,
-                       FIRST_ORDER_INVISCID_GHLLE,
 		       FIRST_ORDER_INVISCID_ROE,
 		       FIRST_ORDER_INVISCID_AUSMPLUSUP,
 		       SECOND_ORDER_DIAMOND_WITH_HLLE,
-		       SECOND_ORDER_DIAMOND_WITH_GHLLE,
 		       SECOND_ORDER_DIAMOND_WITH_ROE,
 		       SECOND_ORDER_DIAMOND_WITH_AUSMPLUSUP,
                        SECOND_ORDER_OTHER };
@@ -318,16 +316,16 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
 
   } else if (strcmp(code, "NKS_Time_Accurate") == 0) {
     i_command = 67;
-		if (strlen(value) > 1) {
-			for (unsigned ii = 0; ii < strlen(value); ii++) {
-				value[ii] = tolower(value[ii]);
-			}
-		}
-		if (strcmp(value, "on") == 0 || strcmp(value, "true") == 0 || strcmp(value, "1") == 0) {
-			Time_Accurate = true;
-		} else {
-			Time_Accurate = false;
-		}
+    if (strlen(value) > 1) {
+	for (unsigned ii = 0; ii < strlen(value); ii++) {
+  	  value[ii] = tolower(value[ii]);
+	}
+    }
+    if (strcmp(value, "on") == 0 || strcmp(value, "true") == 0 || strcmp(value, "1") == 0) {
+	Time_Accurate = true;
+    } else {
+	Time_Accurate = false;
+    }
 
   } else if (strcmp(code, "NKS_DTS_Tolerance") == 0) {
     i_command = 61;
@@ -338,7 +336,6 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
     i_command = 63;
     Max_DTS_Steps = static_cast<int>(strtol(value, &ptr, 10));
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
- 
 
     // FINITE TIME
   } else if (strcmp(code, "NKS_Finite_Time_Step") == 0) {
@@ -368,7 +365,6 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
     i_command = 71;
     Finite_Time_Step_Max_CFL = strtod(value, &ptr);
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
-
 
     // GMRES 
   } else if (strcmp(code, "Maximum_Number_of_GMRES_Iterations") == 0) {
@@ -465,39 +461,35 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
       Jacobian_Order = SOURCE_TERMS_ONLY;
     } else if (strcmp(value, "First_Order_Inviscid_HLLE") == 0) {
       Jacobian_Order = FIRST_ORDER_INVISCID_HLLE;
-    } else if (strcmp(value, "First_Order_Inviscid_GHLLE") == 0) {
-      Jacobian_Order = FIRST_ORDER_INVISCID_GHLLE;
     } else if (strcmp(value, "First_Order_Inviscid_Roe") == 0) {
       Jacobian_Order = FIRST_ORDER_INVISCID_ROE; 
     } else if (strcmp(value, "First_Order_Inviscid_AUSM_plus_up") == 0) {
       Jacobian_Order = FIRST_ORDER_INVISCID_AUSMPLUSUP;   
     } else if (strcmp(value, "Second_Order_Diamond_Path_with_HLLE") == 0) {
       Jacobian_Order = SECOND_ORDER_DIAMOND_WITH_HLLE;
-    } else if (strcmp(value, "Second_Order_Diamond_Path_with_GHLLE") == 0) {
-      Jacobian_Order = SECOND_ORDER_DIAMOND_WITH_GHLLE;
     } else if (strcmp(value, "Second_Order_Diamond_Path_with_Roe") == 0) {
       Jacobian_Order = SECOND_ORDER_DIAMOND_WITH_ROE;	
     } else if (strcmp(value, "Second_Order_Diamond_Path_with_AUSM_plus_up") == 0) {
       Jacobian_Order = SECOND_ORDER_DIAMOND_WITH_AUSMPLUSUP;
     } else {
-			cout << "\n***\n\nWarning: ";
-			cout << "Unknown value given for Jacobian_Order. Defaulting to 1st-order HLLE.";
-			cout << "\n\n***\n";
+      cout << "\n***\n\nWarning: ";
+      cout << "Unknown value given for Jacobian_Order. Defaulting to 1st-order HLLE.";
+      cout << "\n\n***\n";
       Jacobian_Order = FIRST_ORDER_INVISCID_HLLE;
     }
 
-	} else if (strcmp(code, "NKS_Detect_Convergence_Stall") == 0) {
+  } else if (strcmp(code, "NKS_Detect_Convergence_Stall") == 0) {
     i_command = 68;
-		if (strlen(value) > 1) {
-			for (unsigned ii = 0; ii < strlen(value); ii++) {
-				value[ii] = tolower(value[ii]);
-			}
-		}
-		if (strcmp(value, "on") == 0 || strcmp(value, "true") == 0 || strcmp(value, "1") == 0) {
-			Detect_Convergence_Stall = true;
-		} else {
-			Detect_Convergence_Stall = false;
-		}
+    if (strlen(value) > 1) {
+	for (unsigned ii = 0; ii < strlen(value); ii++) {
+	   value[ii] = tolower(value[ii]);
+	}
+    }
+    if (strcmp(value, "on") == 0 || strcmp(value, "true") == 0 || strcmp(value, "1") == 0) {
+	Detect_Convergence_Stall = true;
+    } else {
+	Detect_Convergence_Stall = false;
+    }
 
   } else if (strcmp(code, "NKS_DCS_Window") == 0) {
     i_command = 69;
@@ -506,14 +498,14 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
 
   } else if (strcmp(code, "NKS_Output_Format") == 0) {
     i_command = 73;
-		for (unsigned ii = 0; ii < strlen(value); ii++) {
-			value[ii] = tolower(value[ii]);
-		}
-		if (strcmp(value, "alistair") == 0 || strcmp(value, "tight") == 0) {
-			output_format = OF_ALISTAIR;
-		} else {
-			output_format = OF_SCOTT;
-		}
+    for (unsigned ii = 0; ii < strlen(value); ii++) {
+	value[ii] = tolower(value[ii]);
+    }
+    if (strcmp(value, "alistair") == 0 || strcmp(value, "tight") == 0) {
+	output_format = OF_ALISTAIR;
+    } else {
+	output_format = OF_SCOTT;
+    }
 
   } else if (strcmp(code, "NKS_Output_Precision") == 0) {
     i_command = 74;
@@ -528,12 +520,12 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
   } else if (strcmp(code, "NKS_Freeze_Limiter_Immediately") == 0) {
     i_command = static_cast<int>(strtol(value, &ptr, 10));
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
-		switch (i_command) {
-			case 1: Freeze_Limiter_Immediately = FLI_NO;  break;
-			case 2: Freeze_Limiter_Immediately = FLI_YES; break;
-			default: Freeze_Limiter_Immediately = FLI_NOT_USED; break;
-		}
-		if (i_command != INVALID_INPUT_VALUE) { i_command = 76; }
+    switch (i_command) {
+	case 1: Freeze_Limiter_Immediately = FLI_NO;  break;
+	case 2: Freeze_Limiter_Immediately = FLI_YES; break;
+	default: Freeze_Limiter_Immediately = FLI_NOT_USED; break;
+    }
+    if (i_command != INVALID_INPUT_VALUE) { i_command = 76; }
 
   } else if (strcmp(code, "NKS_Write_Output_Cells_Freq") == 0) {
     i_command = 76;
@@ -560,18 +552,18 @@ inline ostream& NKS_Input_Parameters::Output(ostream& fout) const {
   
   fout <<"\n Overall Tolerance     ====> " << Overall_Tolerance << endl;
 
-	fout << " Relaxation Multiplier ====> " << Relaxation_multiplier << endl;
+  fout << " Relaxation Multiplier ====> " << Relaxation_multiplier << endl;
 
-	fout <<" Time Accurate (DTS)   ====> ";
-	if (Time_Accurate) { 
-		fout << "ON\n"; 
-		fout.setf(ios::scientific);
-		fout <<" DTS Tolerance         ====> " << DTS_Tolerance << endl;
-		fout.unsetf(ios::scientific);
-		fout <<" DTS Max Steps         ====> " << Max_DTS_Steps << endl;
-	} else { 
-		fout << "OFF\n"; 
-	}
+  fout <<" Time Accurate (DTS)   ====> ";
+  if (Time_Accurate) { 
+     fout << "ON\n"; 
+     fout.setf(ios::scientific);
+     fout <<" DTS Tolerance         ====> " << DTS_Tolerance << endl;
+     fout.unsetf(ios::scientific);
+     fout <<" DTS Max Steps         ====> " << Max_DTS_Steps << endl;
+  } else { 
+     fout << "OFF\n"; 
+  }
   
   if (Finite_Time_Step == ON) {     
     fout <<" Finite Time Step      ====> ON" << endl;
@@ -608,7 +600,7 @@ inline ostream& NKS_Input_Parameters::Output(ostream& fout) const {
   } else if ( GMRES_Frechet_Derivative_Order == SECOND_ORDER) {
     fout<<   " Frechet Derivative    ====> Second Order "<< endl;
   }
- fout <<" Matrix Free Epsilon0  ====> " << Epsilon_Naught << endl;
+  fout <<" Matrix Free Epsilon0  ====> " << Epsilon_Naught << endl;
   
   // Precondtioner
   fout<< " Approximate Jacobian  ====>";
@@ -616,16 +608,12 @@ inline ostream& NKS_Input_Parameters::Output(ostream& fout) const {
     fout<<" Source Terms Only "<<endl;
   } else if(Jacobian_Order == FIRST_ORDER_INVISCID_HLLE){
    fout<<" First Order Inviscid HLLE"<<endl;
-  } else if(Jacobian_Order == FIRST_ORDER_INVISCID_GHLLE){
-   fout<<" First Order Inviscid GHLLE"<<endl;
   } else if (Jacobian_Order == FIRST_ORDER_INVISCID_ROE){
     fout<<" First Order Inviscid Roe"<<endl;
   } else if (Jacobian_Order == FIRST_ORDER_INVISCID_AUSMPLUSUP){
     fout<<" First Order Inviscid AUSM plus up"<<endl;   
   } else if (Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_HLLE){
     fout<<" Second Order Diamond Path with HLLE"<<endl;
-  } else if (Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_GHLLE){
-    fout<<" Second Order Diamond Path with GHLLE"<<endl;
   } else if (Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_ROE){
     fout<<" Second Order Diamond Path with Roe"<<endl;   
   } else if (Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_AUSMPLUSUP){
@@ -638,26 +626,25 @@ inline ostream& NKS_Input_Parameters::Output(ostream& fout) const {
     fout << " Local Preconditioner  ====> Diagonal" << endl; 
   } 
 
-	if (Detect_Convergence_Stall) {
-		fout << " Detect Conv. Stall    ====> ON";
-		fout << " (Window: " << DCS_Window << ")" << endl;
-	}
+  if (Detect_Convergence_Stall) {
+    fout << " Detect Conv. Stall    ====> ON";
+    fout << " (Window: " << DCS_Window << ")" << endl;
+  }
+  switch (Freeze_Limiter_Immediately) {
+    case FLI_NO:  fout <<" Freeze Lim Immediately ===> OFF" << endl; break;
+    case FLI_YES: fout <<" Freeze Lim Immediately ===> ON"  << endl; break;
+    default: break;
+  }
 
-	switch (Freeze_Limiter_Immediately) {
-		case FLI_NO:  fout <<" Freeze Lim Immediately ===> OFF" << endl; break;
-		case FLI_YES: fout <<" Freeze Lim Immediately ===> ON"  << endl; break;
-		default: break;
-	}
-
-	if (NKS_Write_Output_Cells_Freq > 0) {
-		fout << " Write Output Freq     ====> " << NKS_Write_Output_Cells_Freq << endl; 
-	}
+  if (NKS_Write_Output_Cells_Freq > 0) {
+    fout << " Write Output Freq     ====> " << NKS_Write_Output_Cells_Freq << endl; 
+  }
   
   //End 
   for (int star=0;star<75;star++){fout<<"*";}
   fout << endl;
 
-	return fout;
+  return fout;
 }
 
 /***************************************************************
