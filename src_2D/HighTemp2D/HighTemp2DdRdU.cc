@@ -54,129 +54,102 @@ DenseMatrix Rotation_Matrix_NS2D(const Vector2D &nface, int Size, int A_matrix)
  ********************************************************/
 void dFIdW_Inviscid_ROE(DenseMatrix& dRdW, const HighTemp2D_Quad_Block &SolnBlk,  
 			const HighTemp2D_Input_Parameters &Input_Parameters,
-			int ii, int jj, int Orient)
-{
+			int ii, int jj, int Orient) {
    
   int overlap = Input_Parameters.NKS_IP.GMRES_Overlap;
   int Ri, Rj;
 
   if (ii < SolnBlk.ICl -overlap || ii > SolnBlk.ICu + overlap ||
       jj < SolnBlk.JCl -overlap || jj > SolnBlk.JCu + overlap) {
-
      // GHOST CELL so do nothing
      cout<<"\n Hey I am not suppose to be here! \n"; exit(1);
-	}
+  } /* endif */
 
-	DenseMatrix dFidW(NUM_VAR_HIGHTEMP2D, NUM_VAR_HIGHTEMP2D, ZERO);
-	
-	Vector2D nface,DX; double lface;   
-	HighTemp2D_pState Wa, wavespeeds, Left, Right, Wl, Wr;   
-	Left.Vacuum();   Right.Vacuum();  Wl.Vacuum();  Wr.Vacuum();
-				
-	 if (Orient == NORTH) {
-		 Ri = ii; Rj=jj-1;
-		 nface = SolnBlk.Grid.nfaceN(Ri, Rj);
-		 lface = SolnBlk.Grid.lfaceN(Ri, Rj);
-	 } else if (Orient == SOUTH) {
-		 Ri = ii; Rj=jj+1;
-		 nface = SolnBlk.Grid.nfaceS(Ri, Rj);
-		 lface = SolnBlk.Grid.lfaceS(Ri, Rj);
-	 } else if (Orient == EAST) { 
-		 Ri = ii-1; Rj=jj;
-		 nface = SolnBlk.Grid.nfaceE(Ri, Rj);     
-		 lface = SolnBlk.Grid.lfaceE(Ri, Rj);
-	 } else if (Orient == WEST) { 
-		 Ri = ii+1; Rj=jj;
-		 nface = SolnBlk.Grid.nfaceW(Ri, Rj);
-		 lface = SolnBlk.Grid.lfaceW(Ri, Rj);
-	 }
+  DenseMatrix dFidW(NUM_VAR_HIGHTEMP2D, NUM_VAR_HIGHTEMP2D, ZERO);
+  
+  Vector2D nface,DX; double lface;   
+  HighTemp2D_pState Wa, wavespeeds, Left, Right, Wl, Wr;
+  double c_Avg, dpdrho_Avg, dpde_Avg;
+  Left.Vacuum(); Right.Vacuum(); Wl.Vacuum(); Wr.Vacuum();
+  			
+  if (Orient == NORTH) {
+     Ri = ii; Rj=jj-1;
+     nface = SolnBlk.Grid.nfaceN(Ri, Rj);
+     lface = SolnBlk.Grid.lfaceN(Ri, Rj);
+  } else if (Orient == SOUTH) {
+     Ri = ii; Rj=jj+1;
+     nface = SolnBlk.Grid.nfaceS(Ri, Rj);
+     lface = SolnBlk.Grid.lfaceS(Ri, Rj);
+  } else if (Orient == EAST) { 
+     Ri = ii-1; Rj=jj;
+     nface = SolnBlk.Grid.nfaceE(Ri, Rj);     
+     lface = SolnBlk.Grid.lfaceE(Ri, Rj);
+  } else if (Orient == WEST) { 
+     Ri = ii+1; Rj=jj;
+     nface = SolnBlk.Grid.nfaceW(Ri, Rj);
+     lface = SolnBlk.Grid.lfaceW(Ri, Rj);
+  } /* endif */
+   
+  DenseMatrix A( Rotation_Matrix_NS2D(nface,NUM_VAR_HIGHTEMP2D, 1));
+  DenseMatrix AI( Rotation_Matrix_NS2D(nface,NUM_VAR_HIGHTEMP2D, 0));
+  
+  //Left and Right States 
+  Inviscid_Flux_Used_Reconstructed_LeftandRight_States(Wl, Wr, SolnBlk, Orient, ii, jj);
+  Left.Rotate(Wl, nface);
+  Right.Rotate(Wr, nface);
+   
+  //Determin Roe Averaged State
+  Wa = RoeAverage(Left, Right);
 	 
-	 DenseMatrix A( Rotation_Matrix_NS2D(nface,NUM_VAR_HIGHTEMP2D, 1));
-	 DenseMatrix AI( Rotation_Matrix_NS2D(nface,NUM_VAR_HIGHTEMP2D, 0));
-	 
-	 //Left and Right States 
-	 Inviscid_Flux_Used_Reconstructed_LeftandRight_States(
-			 Wl, Wr, SolnBlk, Orient, ii, jj);
-	 Left.Rotate(Wl, nface);
-	 Right.Rotate(Wr, nface);
-	 
-	 //Determin Roe Averaged State
-	 Wa = RoeAverage(Left,Right);
-	 
-	 // Jacobian dF/dW         
 #ifdef ALI_CHECK_HIGHTEMP
-	 if (ii == 5 && jj == 5) {
-		 ali_dump_diffs_global = true;
-	 } else {
-		 ali_dump_diffs_global = false;
-	 }
-	 ali_dump_diffs_cpu = CFFC_MPI::This_Processor_Number;
+  if (ii == 5 && jj == 5) {
+     ali_dump_diffs_global = true;
+  } else {
+     ali_dump_diffs_global = false;
+  }
+  ali_dump_diffs_cpu = CFFC_MPI::This_Processor_Number;
 #endif
-	 HighTemp2D_pState Wtemp;
-	 Wtemp.Rotate(SolnBlk.Uo[ii][jj].W(), nface);
-	 Wtemp.dFdW(dFidW);
-	 dFidW = HALF*dFidW;
+
+  // Jacobian dF/dW 
+  HighTemp2D_pState Wtemp;
+  Wtemp.Rotate(SolnBlk.Uo[ii][jj].W(), nface);
+  Wtemp.dFdW(dFidW);
+  dFidW = HALF*dFidW;
 	 
-	 // Scott's code does something different here if he is using low
-	 // Mach number preconditioning. Implementing low Mach number
-	 // preconditioning is a TODO item for the HighTemp code. 
-	 //   -- Alistair Wood Thu Mar 01 2007 
-
-	 // if (Input_Parameters.Preconditioning == OFF){
-
-		 // Determine Wave Speeds
-		 wavespeeds = HartenFixAbs( Wa.lambda_x(),
-				Left.lambda_x(),
-				Right.lambda_x());         
+  // Determine Wave Speeds
+  if (Wa.eos_type == EOS_TGAS) {
+      //wavespeeds = HartenFixAbs(Wa.lambda_x(),
+      //  		       Left.lambda_x(),
+      //		       Right.lambda_x());
+     Wa.RoeAverage_SoundSpeed(c_Avg, dpdrho_Avg, dpde_Avg, Wa, Left, Right);
+     wavespeeds = HartenFixAbs(Wa.lambda_x(c_Avg),
+     	  		       Left.lambda_x(),
+     			       Right.lambda_x());
+  } else {
+     wavespeeds = HartenFixAbs(Wa.lambda_x(),
+	  		       Left.lambda_x(),
+			       Right.lambda_x());
+  } /* endif */
 		 
-		 //Loop through each wavespeed and each element of Jacobian(i,j)        
-		 for (int i=1; i <= NUM_VAR_HIGHTEMP2D; i++) {		   
- for(int irow =0; irow< NUM_VAR_HIGHTEMP2D; irow++){
-	 for(int jcol =0; jcol< NUM_VAR_HIGHTEMP2D; jcol++){
+  //Loop through each wavespeed and each element of Jacobian(i,j)        
+  for (int i=1; i <= NUM_VAR_HIGHTEMP2D; i++) {		   
+     for (int irow =0; irow< NUM_VAR_HIGHTEMP2D; irow++){
+	for (int jcol =0; jcol< NUM_VAR_HIGHTEMP2D; jcol++){
+            if (Wa.eos_type == EOS_TGAS) { 
+	       //dFidW(irow, jcol) -= HALF*wavespeeds[i]*Wa.lp_x(i)[jcol+1]*
+	       //                     Wa.rc_x(i)[irow+1];
+               dFidW(irow, jcol) -= HALF*wavespeeds[i]*Wa.lp_x(i, c_Avg)[jcol+1]*
+	                            Wa.rc_x(i, dpde_Avg, dpdrho_Avg, c_Avg)[irow+1];
+            } else {
+	       dFidW(irow, jcol) -= HALF*wavespeeds[i]*Wa.lp_x(i)[jcol+1]*
+                                    Wa.rc_x(i)[irow+1];
+            } /* endif */
+	} /* endfor */
+     } /* endfor */
+  } /* endfor */
 
-		 dFidW(irow, jcol) -= HALF*wavespeeds[i]*Wa.lp_x(i)[jcol+1]*Wa.rc_x(i)[irow+1];  
-
-	 }
- }
-		 } 
-//        /****************************** LOW MACH NUMBER PRECONDITIONING ************************************/
-//      } else if(Input_Parameters.Preconditioning == ON){
-//        
-//        //THIS MAY NOT BE CONSISTENT !!!!!!!!!!!
-//        double deltax = min(TWO*(SolnBlk.Grid.Cell[ii][jj].A/
-// 				(SolnBlk.Grid.lfaceE(ii, jj)+SolnBlk.Grid.lfaceW(ii, jj))),
-// 			   TWO*(SolnBlk.Grid.Cell[ii][jj].A/
-// 				(SolnBlk.Grid.lfaceN(ii, jj)+SolnBlk.Grid.lfaceS(ii, jj))));
-//        
-//        double MR2a = Wa.Mr2(SolnBlk.Flow_Type,deltax);  
-//        // Determine Preconditioned Wave Speeds                                                                   
-//        wavespeeds = HartenFixAbs( Wa.lambda_preconditioned_x(MR2a),
-// 				  Wl.lambda_preconditioned_x(Wl.Mr2(SolnBlk.Flow_Type,deltax)),
-// 				  Wr.lambda_preconditioned_x(Wr.Mr2(SolnBlk.Flow_Type,deltax)));
-//        
-//        
-//        //Calculate the preconditioned upwind dissipation flux.
-//        DenseMatrix Flux_dissipation(NUM_VAR_HIGHTEMP2D,NUM_VAR_HIGHTEMP2D,ZERO);        
-//        for (int i=1; i <=  NUM_VAR_HIGHTEMP2D; i++) {		   
-// 	 for(int irow =0; irow < NUM_VAR_HIGHTEMP2D; irow++){
-// 	   for(int jcol =0; jcol < NUM_VAR_HIGHTEMP2D; jcol++){	   
-// 	     Flux_dissipation(irow, jcol) -= HALF*wavespeeds[i]*Wa.lp_x_precon(i,MR2a)[jcol+1]*Wa.rc_x_precon(i,MR2a)[irow+1];   
-// 	   }
-// 	 }
-//        }
-//        
-//        // Evaluate the low-Mach-number local preconditioner for the Roe-averaged state.
-//        DenseMatrix P( NUM_VAR_HIGHTEMP2D, NUM_VAR_HIGHTEMP2D,ZERO);          
-//        Wa.Low_Mach_Number_Preconditioner(P,SolnBlk.Flow_Type,deltax);
-//        
-//        // Add preconditioned dissipation to Inviscid Jacobian
-//        dFidW += P*Flux_dissipation;
-//        
-//      } // End of low Mach number preconditioning
-// 
-	 
-	 //Rotate back 
-	 dRdW += lface*AI*dFidW*A;
+  //Rotate back 
+  dRdW += lface*AI*dFidW*A;
         
 }
 

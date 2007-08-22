@@ -27,9 +27,7 @@ class Block_Preconditioner {
   void Setup_Jacobian_approximation();          //called from Create_Preconditioner
   void Setup_Preconditioner();                  //called from Update_Jacobian
   void Implicit_Euler(const int&,const int&, DenseMatrix*);                     //called from Update_Jacobian       
-
   void First_Order_Inviscid_Jacobian_HLLE(const int&,const int&, DenseMatrix*); //called from Update_Jacobian
-  void First_Order_Inviscid_Jacobian_GHLLE(const int&,const int&, DenseMatrix*);//called from Update_Jacobian
   void First_Order_Inviscid_Jacobian_Roe(const int&,const int&, DenseMatrix*);  //called from Update_Jacobian
   void First_Order_Inviscid_Jacobian_AUSM_plus_up(const int&,const int&, DenseMatrix*);  //called from Update_Jacobian
   void Second_Order_Viscous_Jacobian(const int&,const int&, DenseMatrix*);      //called from Update_Jacobian
@@ -256,12 +254,10 @@ Create_Preconditioner( SOLN_BLOCK_TYPE  &Soln_ptr, INPUT_TYPE &IP, const int &_b
 
   if (IP.NKS_IP.Jacobian_Order == SOURCE_TERMS_ONLY ||
       IP.NKS_IP.Jacobian_Order == FIRST_ORDER_INVISCID_HLLE ||
-      IP.NKS_IP.Jacobian_Order == FIRST_ORDER_INVISCID_GHLLE ||
       IP.NKS_IP.Jacobian_Order == FIRST_ORDER_INVISCID_ROE || 
       IP.NKS_IP.Jacobian_Order == FIRST_ORDER_INVISCID_AUSMPLUSUP) {
     Jacobian_stencil_size = 5;
   } else if (IP.NKS_IP.Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_HLLE ||
-             IP.NKS_IP.Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_GHLLE ||
              IP.NKS_IP.Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_ROE ||
              IP.NKS_IP.Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_AUSMPLUSUP) {
     Jacobian_stencil_size = 9;
@@ -383,11 +379,6 @@ Update_Jacobian_and_Preconditioner()
 	First_Order_Inviscid_Jacobian_HLLE(i,j, Jacobian_Data);
 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);                       
 	break;
-      case FIRST_ORDER_INVISCID_GHLLE : 
-	Implicit_Euler(i,j, Jacobian_Data);
-	First_Order_Inviscid_Jacobian_GHLLE(i,j, Jacobian_Data);
-	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);                       
-	break;
       case FIRST_ORDER_INVISCID_ROE : 
 	Implicit_Euler(i,j, Jacobian_Data);
 	First_Order_Inviscid_Jacobian_Roe(i,j, Jacobian_Data);
@@ -401,12 +392,6 @@ Update_Jacobian_and_Preconditioner()
       case SECOND_ORDER_DIAMOND_WITH_HLLE:
 	Implicit_Euler(i,j, Jacobian_Data);
 	First_Order_Inviscid_Jacobian_HLLE(i,j, Jacobian_Data);   
-	Second_Order_Viscous_Jacobian(i,j, Jacobian_Data);    
-	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);   
-	break;
-      case SECOND_ORDER_DIAMOND_WITH_GHLLE:
-	Implicit_Euler(i,j, Jacobian_Data);
-	First_Order_Inviscid_Jacobian_GHLLE(i,j, Jacobian_Data);   
 	Second_Order_Viscous_Jacobian(i,j, Jacobian_Data);    
 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);   
 	break;
@@ -473,17 +458,6 @@ Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jac
 	Jacobian[CENTER] -= Diag;
 }
 
-
-template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
-inline void Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-First_Order_Inviscid_Jacobian_GHLLE(const int &cell_index_i,const int &cell_index_j, 
-				    DenseMatrix* J_column_data)
-{
-  cerr<<"\n EXPLICIT SPECIALIZATION OF First_Order_Inviscid_Jacobian_GHLLE for Block_Preconditioner2D.h required \n";
-  exit(1);
-}
-
-
 /*****************************************************************************
  *  Calculate First Order Local Jacobian Block(s) Coresponding to Cell(i,j)  *
  *  using HLLE                                                               *
@@ -539,10 +513,10 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
   DenseMatrix dFdU_W(blocksize,blocksize,ZERO); 
 
   //Solution Rotate provided in pState 
-  Preconditioner_dFIdU( dFdU_N, Rotate(SolnBlk->W[cell_index_i][cell_index_j], nface_N)); 
-  Preconditioner_dFIdU( dFdU_S, Rotate(SolnBlk->W[cell_index_i][cell_index_j], nface_S));
-  Preconditioner_dFIdU( dFdU_E, Rotate(SolnBlk->W[cell_index_i][cell_index_j], nface_E));
-  Preconditioner_dFIdU( dFdU_W, Rotate(SolnBlk->W[cell_index_i][cell_index_j], nface_W));
+  Preconditioner_dFIdU(dFdU_N, Rotate(SolnBlk->W[cell_index_i][cell_index_j], nface_N)); 
+  Preconditioner_dFIdU(dFdU_S, Rotate(SolnBlk->W[cell_index_i][cell_index_j], nface_S));
+  Preconditioner_dFIdU(dFdU_E, Rotate(SolnBlk->W[cell_index_i][cell_index_j], nface_E));
+  Preconditioner_dFIdU(dFdU_W, Rotate(SolnBlk->W[cell_index_i][cell_index_j], nface_W));
   
   DenseMatrix II(blocksize,blocksize);  II.identity();    
 

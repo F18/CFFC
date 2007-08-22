@@ -1257,10 +1257,11 @@ double Finite_Time_Step(const INPUT_TYPE &Input_Parameters,
 	//   -- Alistair Wood. Wed Aug 08 2007.
   if (L2norm_current_n > MIN_FINITE_TIME_STEP_NORM_RATIO ) { 
     CFL_current = Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL*
-      pow( max(ONE, ONE/L2norm_current_n),ONE ); 
+                  pow( max(ONE, ONE/L2norm_current_n),ONE );
       //      pow(min(ONE, max(ONE, ONE/L2norm_current_n)*MIN_FINITE_TIME_STEP_NORM_RATIO),ONE );     
   } else {
-     CFL_current = Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL/MIN_FINITE_TIME_STEP_NORM_RATIO;
+     CFL_current = Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL/
+                   MIN_FINITE_TIME_STEP_NORM_RATIO;
   } 
  
   return CFL_current;
