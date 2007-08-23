@@ -75,7 +75,6 @@ class NKS_Input_Parameters{
   int    Jacobian_Order;  
   int    GMRES_ILUK_Level_of_Fill;  
 
-	bool   Detect_Convergence_Stall;
   // size of the window for the 
   // detect convergence stall algorithm.
   int    DCS_Window; 
@@ -83,6 +82,8 @@ class NKS_Input_Parameters{
   int    output_format;
   int    output_precision, output_width;
   
+  bool   Detect_Convergence_Stall;
+
   // Hack by Alistair to play with Newton convergence.
   int    Freeze_Limiter_Immediately; 
   
@@ -208,7 +209,7 @@ class NKS_Input_Parameters{
 
 #ifdef _MPI_VERSION
   void Broadcast_Input_Parameters(MPI::Intracomm &Communicator,
-					    const int Source_Rank){
+     			          const int Source_Rank) {
     //Newton 
     Communicator.Bcast(&(Maximum_Number_of_NKS_Iterations), 
                           1, 
@@ -279,15 +280,14 @@ class NKS_Input_Parameters{
   };
 #endif
 
-  /***************************************************************
-   * NKS_Input_Parameters -- Output operator.       *
-   ***************************************************************/
-  friend ostream &operator << (ostream &fout,
-		               const NKS_Input_Parameters &IP) {
-		return IP.Output(fout);
-	}
-};
+/***************************************************************
+ * NKS_Input_Parameters -- Output operator.                    *
+ ***************************************************************/
+ friend ostream &operator << (ostream &fout, const NKS_Input_Parameters &IP) {
+     return IP.Output(fout);
+ }
 
+};
 
 // Returns:
 //  - INVALID_INPUT_VALUE if code is valid but value is invalid
