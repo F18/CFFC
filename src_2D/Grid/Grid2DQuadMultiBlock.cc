@@ -7894,8 +7894,8 @@ Grid2D_Quad_Block** Grid_Cylindrical_Encl(Grid2D_Quad_Block **Grid_ptr,
 
     /* Allocate memory for grid block. */
 
-    Number_of_Blocks_Idir = 1;
-    Number_of_Blocks_Jdir = 1;
+    if (Number_of_Blocks_Idir < 0) Number_of_Blocks_Idir = 1;
+    if (Number_of_Blocks_Jdir < 0) Number_of_Blocks_Jdir = 1;
     Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
                                          Number_of_Blocks_Idir, 
                                          Number_of_Blocks_Jdir);
