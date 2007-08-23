@@ -1531,19 +1531,24 @@ void dFIdU_FD(DenseMatrix& dRdU, Rte2D_Quad_Block &SolnBlk,
 	      const int ii, const int jj, const int Orient)
 {
 
+  //
+  // declares
+  //
   int NUM_VAR_RTE2D = dRdU.get_n();   
   DenseMatrix dFidU(NUM_VAR_RTE2D, NUM_VAR_RTE2D,ZERO);
-  
-  int Ri, Rj;
-  Vector2D nface;
-  double lface;
-  Rte2D_State Ul, Ur;   
-  Rte2D_State UA, UB;   
-  Rte2D_State FluxA, FluxB;   
-  Ul.Zero();  Ur.Zero();
-  double perturb = 5e-6;
+  int Ri, Rj;                 // left face location index
+  Vector2D nface;             // face normal
+  double lface;               // face length
+  Rte2D_State Ul, Ur;         // unperturbed left and right state
+  Rte2D_State UA, UB;         // perturbed right states
+  Rte2D_State FluxA, FluxB;   // perturbed fluxes 
+  Ul.Zero();  Ur.Zero();      // zero states
+  double perturb = 5e-6;      // perturbation parameter
 
   
+  //
+  // Determine left and right states based on orientation
+  //
   switch (Orient) {
 
     // NORTH
@@ -1582,11 +1587,13 @@ void dFIdU_FD(DenseMatrix& dRdU, Rte2D_Quad_Block &SolnBlk,
     Ul = SolnBlk.Uo[Ri][Rj];
     break;
 
-  } /* endswitch */ 
+  } // endswitch 
 
 
-  // compute the derivatives
-  for(int jcol=0; jcol<(NUM_VAR_RTE2D); jcol++){
+  //
+  // compute the derivatives using finite differences
+  //
+ for(int jcol=0; jcol<(NUM_VAR_RTE2D); jcol++){
     UA = Ur;
     UB = Ur;
     UA[jcol+1] += perturb; 	 
@@ -1601,7 +1608,6 @@ void dFIdU_FD(DenseMatrix& dRdU, Rte2D_Quad_Block &SolnBlk,
   } 
 
   // copy over
-
   dRdU += lface*dFidU;
 
 }

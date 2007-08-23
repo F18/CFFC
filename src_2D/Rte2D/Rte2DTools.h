@@ -29,6 +29,9 @@ void SetInitialValues( Rte2D_State &U,
 
 /********************************************************
  * Exact solution functions                             *
+ *                                                      *
+ * These functions are used to compute exact solutions  *
+ * for simple cases and output the results.             *
  ********************************************************/
 void CylindricalEnclosure( const double gas_temp,
 			   const double c,

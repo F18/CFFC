@@ -658,8 +658,8 @@ CFL_Multigrid(const int &Level_Coarse) {
 	  // Determine the coarse grid cell time-step by choosing the 
 	  // minimum of the fine grid cell time-steps.
 	  Local_SolnBlk[Level_Coarse][nb].dt[i_coarse][j_coarse] = 
-                  min(Local_SolnBlk[Level_Coarse][nb].dt[i_coarse][j_coarse],
-                      min(dt_NE,min(dt_SE,min(dt_NW,dt_SW))));
+	    min(Local_SolnBlk[Level_Coarse][nb].dt[i_coarse][j_coarse],
+		min(dt_NE,min(dt_SE,min(dt_NW,dt_SW))) );
 	}
       }
 

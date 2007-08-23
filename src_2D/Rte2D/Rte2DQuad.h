@@ -201,23 +201,23 @@ public:
   //@}
   
   //@{ @name Grid scaling parameter (i.e. scale a 2D grid to a quasi-3D grid):
-  double               **Sp;  // scale cell area to volume
-  double              **SpN;  // scale north face length to area
-  double              **SpS;  // scale south face length to area
-  double              **SpE;  // scale east face length to area
-  double              **SpW;  // scale west face length to area
+  double               **Sp;  //!< scale cell area to volume
+  double              **SpN;  //!< scale north face length to area
+  double              **SpS;  //!< scale south face length to area
+  double              **SpE;  //!< scale east face length to area
+  double              **SpW;  //!< scale west face length to area
   //@}
   
 
   //@{ @name Boundary conditions:
-  double      NorthWallTemp;  // North Wall Temperature
-  double      SouthWallTemp;  // South Wall Temperature
-  double       EastWallTemp;  // East Wall Temperature  
-  double       WestWallTemp;  // West Wall Temperature
-  double     NorthWallEmiss;  // North Wall emissivity
-  double     SouthWallEmiss;  // South Wall emissivity
-  double      EastWallEmiss;  // East Wall emissivity  
-  double      WestWallEmiss;  // West Wall emissivity
+  double      NorthWallTemp;  //!< North Wall Temperature
+  double      SouthWallTemp;  //!< South Wall Temperature
+  double       EastWallTemp;  //!< East Wall Temperature  
+  double       WestWallTemp;  //!< West Wall Temperature
+  double     NorthWallEmiss;  //!< North Wall emissivity
+  double     SouthWallEmiss;  //!< South Wall emissivity
+  double      EastWallEmiss;  //!< East Wall emissivity  
+  double      WestWallEmiss;  //!< West Wall emissivity
   //@}
 
 
@@ -791,7 +791,7 @@ inline int Rte2D_Quad_Block::LoadSendBuffer_F2C(double *buffer,
 }
 
 /*******************************************************************************
- * Rte2D_Quad_Block::LoadSendBuffer_C2F -- Loads send message buffer for     *
+ * Rte2D_Quad_Block::LoadSendBuffer_C2F -- Loads send message buffer for       *
  *                                           coarse to fine block message      *
  *                                           passing.                          *
  *******************************************************************************/

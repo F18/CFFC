@@ -23,41 +23,48 @@ void SetupStateStatic( const Rte2D_Input_Parameters &IP )
   //------------------------------------------------
   // Absorbsion 
   //------------------------------------------------
+  // set the absorption type flag
   Rte2D_State::Absorb_Type = IP.i_AbsorptionModel;
 
+  // GRAY
   if (IP.i_AbsorptionModel == RTE2D_ABSORB_GRAY) {
     Rte2D_State::Nband = 1;
 
+  // SNBCK
   } else if (IP.i_AbsorptionModel == RTE2D_ABSORB_SNBCK) {
     Rte2D_State::AllocateSNBCK();
     Rte2D_State::SNBCKdata->Setup(IP.SNBCK_IP, IP.CFFC_Path);
     Rte2D_State::Nband = Rte2D_State::SNBCKdata->NumVar();
 
+  // ERROR
   } else {
     cerr << "Rte2D_State::SetupState - Invalid flag for gas type\n";
     exit(-1);
-  } /* endif */
+  } // endif
 
 
   //------------------------------------------------
   // Directions, Phase function 
   //------------------------------------------------
+  // FVM
   if (IP.i_RTE_Solver == RTE2D_SOLVER_FVM) {
     Rte2D_State::SetDirsFVM(IP.Number_of_Angles_Mdir, 
 			    IP.Number_of_Angles_Ldir, 
 			    IP.Axisymmetric );
-
     Rte2D_State::SetupPhaseFVM( IP.i_ScatteringFunc );
+
+  // DOM
   } else if (IP.i_RTE_Solver == RTE2D_SOLVER_DOM) {
     Rte2D_State::SetDirsDOM(IP.i_DOM_Quadrature,
 			    IP.Axisymmetric, 
 			    IP.CFFC_Path );
     Rte2D_State::SetupPhaseDOM( IP.i_ScatteringFunc );
 
+  // ERROR
   } else {
     cerr << "SetupStateStatic() - Invalid flag for RTE solver\n";
     exit(1);
-  } /* endif */
+  } // endif
 
 
 }
@@ -116,6 +123,9 @@ void SetInitialValues( Rte2D_State &U,
  * This function is needed for integrating the exact    *
  * solution.  In CylindricalEnclosure, it is passed to  *
  * SimpsonMultiDim.h:adaptsim() and is integrated.      *
+ *                                                      *
+ * See Dua and Cheng (1975)                             *
+ *                                                      *
  ********************************************************/
 double exact_cyl(int ndim, double *x, void *params) {
 
@@ -140,20 +150,28 @@ double exact_cyl(int ndim, double *x, void *params) {
   theta_B = max(theta_B, ZERO);
   theta_C = min(theta_C, PI);
   
-  // Depending on the term, compute the main integrand and the integration limits
-  // First, transform the variable x to the variable limit
-  // Transforms the domain 0<=x<=1 to theta_min<=theta<=theta_max
-  // for integrating  over variable areas
-  // Second, compute the main integratand
+  //------------------------------------------------
+  // Depending on the term, compute the main integrand and the integration limits.
+  // Each parameter that we are computing, G, qr, qz, consists of three integral terms.
+  // They are defined on one of the three intervals:
+  //    0<=theta<theta_B,  theta_B<=theta<theta_C,  theta_C<=theta<PI
+  // P.term_flag is specifies which term we are evaluating.
 
+  // Perform the following
+  // 1. Transform the variable x on the domain 0<=x<=1 to theta_min<=theta<=theta_max.  
+  //    This is required for integrating  over variable areas.
+  // 2. Compute the main integrand term
+  //------------------------------------------------
   switch (P.term_flag) {
-  case 0:
+    // first integral
+  case 0: 
     theta_min = 0;
     theta_max = theta_B;
     theta = (1-u)*theta_min + u*theta_max;
     jac = theta_max - theta_min;
     temp = ( ONE - exp( -P.kappa*(P.z+P.c) / cos(theta) ) ) * sin(theta) * jac;
     break;
+    // second integral
   case 1:
     theta_min = theta_B;
     theta_max = theta_C;
@@ -165,6 +183,7 @@ double exact_cyl(int ndim, double *x, void *params) {
 			     / sin(theta) ) );
     temp *= sin(theta) * jac;
     break;
+    // third integral
   case 2:
     theta_min = theta_C;
     theta_max = PI;
@@ -172,11 +191,13 @@ double exact_cyl(int ndim, double *x, void *params) {
     jac = theta_max - theta_min;
     temp = ( ONE - exp( -P.kappa*(P.z-P.c) / cos(theta) ) ) * sin(theta) * jac;
     break;
-  }
+  } // endswitch
 
 
-  // Depending on the coordinate system, 
+  //------------------------------------------------
+  // Depending on the coordinate system, (denoted by P.coord_flag)
   // multiply by the apprpriate direction cosine
+  //------------------------------------------------
   switch (P.coord_flag) {
 
     // computing direction integrated intensity
@@ -191,7 +212,7 @@ double exact_cyl(int ndim, double *x, void *params) {
   case 2:
     temp *= cos(theta);
     break;
-  }
+  } // endswitch
 
   // return the value
   return temp;
@@ -204,10 +225,16 @@ double exact_cyl(int ndim, double *x, void *params) {
  * Routine: CylindricalEnclosure                        *
  *                                                      *
  * This function computes the exact solution for a      *
- * emitting-absorbing  isothermal medium with isothermal*
- * bounding cold walls.  See Dua and Cheng (1975)       *
+ * emitting-absorbing  isothermal medium within an      *
+ * black, isothermal enclosure with cold walls.  An     *
+ * adaptive simpsons quadrature rule for                *
+ * multidimensional integration is used.                *
+ *                                                      *
+ * See Dua and Cheng (1975)                             *
  *                                                      *
  ********************************************************/
+  // Use an adaptive simpsons quadrature rule for multidimensional 
+  // integration.
 void CylindricalEnclosure( const double gas_temp,
 			   const double c,    // cylinder half-length / Ro
 			   const double tau,  // kappa*Ro
@@ -217,7 +244,7 @@ void CylindricalEnclosure( const double gas_temp,
 			   double &qr, 
 			   double &qz ){
 
-
+  // declares
   simp_function F;        // function struct for integration
   exact_cyl_param params; // function parameters struct for integration
   simp_state S;           // state struct for integration
@@ -240,7 +267,7 @@ void CylindricalEnclosure( const double gas_temp,
   params.term_flag = 0;
   params.coord_flag = 0;
 
-  // setup integration ( allocate memory and set parameters )
+  // Setup integration: allocate memory and set parameters.
   malloc_simp_struc( 2, F, S );
   init_simp_struc( F, S );
   
@@ -253,13 +280,14 @@ void CylindricalEnclosure( const double gas_temp,
   P.tol = 1e-6;
 
 
-  //----------------------- Total irradiation -----------------------//  
+  //------------------------------------------------
+  // Total irradiation   
+  //------------------------------------------------
   params.coord_flag = 0;
   
-  // Use an adaptive simpsons quadrature rule 
-  // for multidimensional integration
-
+  //
   // loop over each term
+  //
   for(int i=0 ; i<3 ; i++) {
 
     // initialize before integration
@@ -284,19 +312,20 @@ void CylindricalEnclosure( const double gas_temp,
     // add the contribution
     G += val;
 
-  } /* endfor term_flag */ 
+  } // endfor term_flag
 
   // normalize by 4 PI * blackbody intensity
   G /= FOUR * PI;
 
 
-  //---------------------------- R-dir Flux -------------------------//
+  //------------------------------------------------
+  // R-dir Flux 
+  //------------------------------------------------
   params.coord_flag = 1;
   
-  // Use an adaptive simpsons quadrature rule 
-  // for multidimensional integration
-
+  //
   // loop over each term
+  //
   for(int i=0 ; i<3 ; i++) {
 
     // initialize before integration
@@ -321,19 +350,20 @@ void CylindricalEnclosure( const double gas_temp,
     // add the contribution
     qr += val;
 
-  } /* endfor term_flag */ 
+  } // endfor term_flag 
 
   // normalize by PI * blackbody intensity
   qr /= PI;
 
 
-  //---------------------------- Z-dir Flux -------------------------//
+  //------------------------------------------------
+  // Z-dir Flux 
+  //------------------------------------------------
   params.coord_flag = 2;
   
-  // Use an adaptive simpsons quadrature rule 
-  // for multidimensional integration
-
+  //
   // loop over each term
+  //
   for(int i=0 ; i<3 ; i++) {
 
     // initialize before integration
@@ -358,7 +388,7 @@ void CylindricalEnclosure( const double gas_temp,
     // add the contribution
     qz += val;
 
-  } /* endfor term_flag */ 
+  } // endfor term_flag 
 
   // normalize by PI * blackbody intensity
   qz /= PI;
@@ -373,6 +403,9 @@ void CylindricalEnclosure( const double gas_temp,
  * This function is needed for integrating the exact    *
  * solution.  In RectangularEnclosure, it is passed to  *
  * SimpsonMultiDim.h:adaptsim() and integrated.         *
+ *                                                      *
+ * See Cheng (1972)                                     *
+ *                                                      *
  ********************************************************/
 double exact_rect(int ndim, double *x, void *params) {
 
@@ -382,6 +415,7 @@ double exact_rect(int ndim, double *x, void *params) {
   double psi, psi_min, psi_max;
   double s1, s1_star, s1_til;
   double d, x_star, y_star;
+  double temp = ZERO;
 
   // set out integration parameters
   double theta = x[0];
@@ -394,15 +428,23 @@ double exact_rect(int ndim, double *x, void *params) {
   double psi_D = atan( (P.y-P.b2)/(P.x-P.a2) );
 
 
-  // Depending on the term, compute the main integrand 
-  // and the integration limits
-  // 1 -> Transform the variable u to the variable limit psi  
-  //      ( <=u<=1 to theta_min<=theta<=theta_max)
-  // 2 -> rotate the coordinate frame
-  // 3 -> compute the main integrand
-  double temp = 0;
+  //------------------------------------------------
+  // Depending on the term, compute the main integrand and the integration limits.
+  // Each parameter that we are computing, G, qx, qy, consists of four integral terms.
+  // They are defined on one of the three intervals:
+  //    0<=theta<theta_B,  theta_B<=theta<theta_C,  theta_C<=theta<PI
+  // P.term_flag is specifies which term we are evaluating.
+
+  // Perform the following
+  // 1. Transform the variable x on the domain 0<=x<=1 to theta_min<=theta<=theta_max.  
+  //    This is required for integrating  over variable areas.
+  // 2. Compute the main integrand term
+  //------------------------------------------------
   switch (P.term_flag) {
 
+  //
+  // first term
+  //
   case 0:
     // variable transformation
     psi_max = psi_B;
@@ -422,6 +464,9 @@ double exact_rect(int ndim, double *x, void *params) {
     s1_star = x_star*cos(psi) + y_star*sin(psi);
     break;
 
+  //
+  // second term
+  //
   case 1:
     // variable transformation
     psi_max = psi_D+PI;
@@ -441,6 +486,9 @@ double exact_rect(int ndim, double *x, void *params) {
     s1_star = x_star*cos(psi) + y_star*sin(psi);
     break;
 
+  //
+  // third term
+  //
   case 2:
     // variable transformation
     psi_max = psi_C+PI;
@@ -460,6 +508,9 @@ double exact_rect(int ndim, double *x, void *params) {
     s1_star = x_star*cos(psi) + y_star*sin(psi);
     break;
 
+  //
+  // fourth term
+  //
   case 3:
     // variable transformation
     psi_max = psi_A+2*PI;
@@ -479,14 +530,15 @@ double exact_rect(int ndim, double *x, void *params) {
     s1_star = x_star*cos(psi) + y_star*sin(psi);
       
     break;
-  }
+  } // endswitch
 
-  // some integration constants
-  s1_til = (s1 - s1_star) / sin(theta);
 
+  //
   // compute integrand
+  //
   // first, check if the ray actually originated from a point on the wall
   if ( x_star>=P.a1 && x_star<=P.a2 && y_star>=P.b1 && y_star<=P.b2) {
+    s1_til = (s1 - s1_star) / sin(theta);
     temp =  exp( P.kappa * (d-s1_til) );
     temp -= exp( -P.kappa*s1_til );
   } else {
@@ -497,10 +549,11 @@ double exact_rect(int ndim, double *x, void *params) {
   temp *= sin(theta) * jac;
 
 
+  //------------------------------------------------
   // Depending on the coordinate system, 
   // multiply by the apprpriate direction cosine
+  //------------------------------------------------
   switch (P.coord_flag) {
-
     // computing direction integrated intensity
   case 0: 
     temp *= ONE;
@@ -526,8 +579,12 @@ double exact_rect(int ndim, double *x, void *params) {
  * Routine: RectangularEnclosure                        *
  *                                                      *
  * This function computes the exact solution for a      *
- * emitting-absorbing  isothermal medium with isothermal*
- * bounding cold walls.  See Cheng (1972)       *
+ * emitting-absorbing  isothermal medium within an      *
+ * black, isothermal enclosure with cold walls.  An     *
+ * adaptive simpsons quadrature rule for                *
+ * multidimensional integration is used.                *
+ *                                                      *
+ * See Cheng (1972)                                     *
  *                                                      *
  ********************************************************/
 void RectangularEnclosure( const double gas_temp,
@@ -542,7 +599,7 @@ void RectangularEnclosure( const double gas_temp,
 			   double &qx, 
 			   double &qy ){
 
-
+  // declines
   simp_function F;        // function struct for integration
   exact_rect_param params; // function parameters struct for integration
   simp_state S;           // state struct for integration
@@ -581,13 +638,14 @@ void RectangularEnclosure( const double gas_temp,
   P.tol = 1e-6;
 
 
-  //----------------------- Total irradiation -----------------------//  
+  //------------------------------------------------
+  // Total irradiation 
+  //------------------------------------------------
   params.coord_flag = 0;
-  
-  // Use an adaptive simpsons quadrature rule 
-  // for multidimensional integration
 
+  //
   // loop over each term
+  //
   for(int i=0 ; i<4 ; i++) {
 
     // initialize before integration
@@ -621,13 +679,14 @@ void RectangularEnclosure( const double gas_temp,
   G /= FOUR * PI;
 
 
-  //---------------------------- x-dir Flux -------------------------//
+  //------------------------------------------------
+  // x-dir Flux 
+  //------------------------------------------------
   params.coord_flag = 1;
   
-  // Use an adaptive simpsons quadrature rule 
-  // for multidimensional integration
-
+  //
   // loop over each term
+  //
   for(int i=0 ; i<4 ; i++) {
 
     // initialize before integration
@@ -661,13 +720,14 @@ void RectangularEnclosure( const double gas_temp,
   qx /= PI;
 
 
-  //---------------------------- y-dir Flux -------------------------//
+  //------------------------------------------------
+  // y-dir Flux 
+  //------------------------------------------------
   params.coord_flag = 2;
   
-  // Use an adaptive simpsons quadrature rule 
-  // for multidimensional integration
-
+  //
   // loop over each term
+  //
   for(int i=0 ; i<4 ; i++) {
 
     // initialize before integration
