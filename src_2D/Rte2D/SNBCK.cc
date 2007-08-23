@@ -324,8 +324,9 @@ void EM2C :: ComputeRefSNB( const double p,       // pressure [atm]
   double T900=900.0/T;
   double xN2 = ONE-xCO-xCO2-xH2O;
 
-
+  //
   // loop over the number of bands
+  //
   for (int i=0; i<Nbands; i++) {
 
     // zero 
@@ -334,7 +335,9 @@ void EM2C :: ComputeRefSNB( const double p,       // pressure [atm]
     S_H2O[i] = ZERO; B_H2O[i] = ZERO;
 
     
-    //-------------------- CO -----------------------//
+    //------------------------------------------------
+    // CO 
+    //------------------------------------------------
     if (liCO[i]) {
 
       // Eq. (2) in Soufiani and Taine (1997)
@@ -359,9 +362,11 @@ void EM2C :: ComputeRefSNB( const double p,       // pressure [atm]
       B_CO[i] = TWO*beta/PI;
       
 
-    }/* endif CO */
+    }// endif CO
 
-    //-------------------- CO2 -----------------------//
+    //------------------------------------------------
+    // CO2
+    //------------------------------------------------
     if (liCO2[i]) {
 
       // Eq. (2) in Soufiani and Taine (1997)
@@ -384,10 +389,11 @@ void EM2C :: ComputeRefSNB( const double p,       // pressure [atm]
       B_CO2[i] = TWO*beta/PI;
 
      
-    }/* endif CO2 */
+    }// endif CO2
 
-
-    //-------------------- H2O -----------------------//
+    //------------------------------------------------
+    // H2O
+    //------------------------------------------------
     if (liH2O[i]) {
 
       // Eq. (2) in Soufiani and Taine (1997)
@@ -412,11 +418,10 @@ void EM2C :: ComputeRefSNB( const double p,       // pressure [atm]
       B_H2O[i] = TWO*beta/PI;
       
 
-    }/* endif H2O */
+    }// endif H2O
 
-    //-----------------------------------------------//
 
-  } /* end for */
+  } // end for - bands
 
 }
 
@@ -437,24 +442,27 @@ void EM2C :: ComputeSNB( const double p,       // pressure [atm]
   // compute normalized parameters
   ComputeRefSNB( p, T, xCO, xH2O, xCO2, xO2 );
 
+  //
   // now multiply by species concentration and pressure
+  //
   for (int i=0; i<Nbands; i++) {
 
-    // ------------- Individual Species ------------//
+    //------------------------------------------------
+    // Individual Species
+    //------------------------------------------------
     S_CO[i]  *=  xCO*p;
     S_CO2[i] *= xCO2*p;
     S_H2O[i] *= xH2O*p;
 
 
-    // ---------- Optically Thin Mixture -----------//
-    // Treat mixture overlapping bands are treated using the 
+    //------------------------------------------------
+    // Optically Thin/ Mixture
+    //------------------------------------------------
+    // Treat mixture overlapping bands using the 
     // optically thin approximation proposed by Liu et al. (2001) 
+    // and the optically thick approximation described by Liu et al. (2001) 
     // by treating the overlapping bands to be an approximate Malkmus band.
-    // ---------- Optically Thick Mixture -----------//
-    // Treat mixture overlapping bands are treated using the 
-    // optically thick approximation proposed by Liu et al. (2001) 
-    // by treating the overlapping bands to be an approximate Malkmus band.
-     S_Thin[i] = ZERO;  B_Thin[i] = ZERO;
+    S_Thin[i] = ZERO;  B_Thin[i] = ZERO;
     S_Thick[i] = ZERO; B_Thick[i] = ZERO;
     flag = false;
     if (liH2O[i] && xH2O>MICRO) {
@@ -486,7 +494,7 @@ void EM2C :: ComputeSNB( const double p,       // pressure [atm]
     }
 
 
-  } /* end for */
+  } // end for 
 
 }
 
@@ -758,7 +766,6 @@ void SNBCK :: SetupQuad( const int quad_type,    // quadrature type
   // setup the number of quadrature points
   //------------------------------------------------
   Nquad = quad_points;
-
   for (int v=0; v<Nbands; v++) {
     
     // for the general case
@@ -769,7 +776,7 @@ void SNBCK :: SetupQuad( const int quad_type,    // quadrature type
     if (MixType==SNBCK_OVERLAP_CORRELATED) 
       for (int i=1; i<iMix[v]; i++) nquad[v] *= quad_points;
 
-  } /* endfor */
+  } // endfor
 
 
   // allocate necessary arrays
@@ -780,16 +787,13 @@ void SNBCK :: SetupQuad( const int quad_type,    // quadrature type
   // setup the quadrature points
   //------------------------------------------------
 
-
   // get quadrature (g defined on 0 to 1)
-  switch (quad_type) {
-  case GAUSS_LEGENDRE:
+  if (quad_type == GAUSS_LEGENDRE)
     gauleg(0, 1, g, w, quad_points);
-    break;
-  default:
+  else {
     cerr << "SNBCK::SetupQuad(): Invalid value for quadrature type." << endl;
     exit(-1);
-  } /* end switch */
+  } // end if
 
 }
 
@@ -890,16 +894,15 @@ void SNBCK :: SetupBands( const int Nlump,      // number of narrow bands lumped
     } /* endfor */
     iend[Nbands-1] = istart[Nbands-1]+Nlump-1;
 
-  } /* endif */ 
-
   //------------------------------------------------
-  // End strategy specific
+  } // endif 
   //------------------------------------------------
 
-
+  //
   // Determine if any wide bands overlap.
   // iMix also holds the total number of overlapping 
   // gases for a particular band.
+  //
   for (int i=0; i<Nbands; i++) {
     iH2O[i] = 0; iCO2[i] = 0; iCO[i] = 0; iMix[i] = 0;
     for (int n=istart[i]; n<=iend[i]; n++) {
@@ -909,12 +912,13 @@ void SNBCK :: SetupBands( const int Nlump,      // number of narrow bands lumped
       iMix[i] += ( iH2O[i]>0 ? 1 : 0 ) + 
 	         ( iCO2[i]>0 ? 1 : 0 ) + 
 	         ( iCO [i]>0 ? 1 : 0 );
-    } /* endfor */
-  } /* endfor - original bands */
+    } // endfor
+  } // endfor - original bands
 
 
-
+  //
   // determine the new bandwidth centers
+  //
   double vmin;
   for (int i=0; i<Nbands; i++) {
 
@@ -928,7 +932,7 @@ void SNBCK :: SetupBands( const int Nlump,      // number of narrow bands lumped
     // compute the new bandwidth center
     WaveNo[i] = vmin + BandWidth[i]/TWO;
 
-  } /* endfor */
+  } // endfor
 
 }
 
@@ -969,8 +973,7 @@ void SNBCK :: CalculateAbsorb( const double p,        // pressure [atm]
     cerr << "Error in SNBCK::CalculateAbsorb() : Invalid "
 	 << "value for evaluation type flag.\n";
     exit(-1);
-
-  }
+  } // endswitch
 
   //------------------------------------------------
   // convert absorbsion coefficient to [m^-1]
@@ -1016,11 +1019,10 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
   SNB.ComputeSNB( p, T, xco, xh2o, xco2, xo2 );
 
  
-  //------------------------------------------------
+  //
   // Compute absorbsion coefficient for each wide  
   // band at each quadrature point
-  //------------------------------------------------
-
+  //
   switch (MixType) {
 
 
@@ -1046,8 +1048,6 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
 
       } /* end for - quadrature */
     } /* end for - band */
-
-
     break;
 
   //-----------------------------------------------
@@ -1072,8 +1072,6 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
 
       } /* end for - quadrature */
     } /* end for - band */
-
-
     break;
 
 
@@ -1111,12 +1109,13 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
   //-----------------------------------------------
   case SNBCK_OVERLAP_CORRELATED:
     
+    //
     // loop over each wide band
+    //
     for (int v=0; v<Nbands; v++) {
           
       // initialize the k array
       for (int i=0; i<nquad[v]; i++) k[index[v][i]] = ZERO;
-      cnt = 0;
 
       // depending upon which gases are active, compute
       // the absorbsion coefficients and the combined 
@@ -1134,36 +1133,36 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
 	  if (iCO[v] && xco>MICRO) 
 	    k[index[v][i]] += AbsorptionCoeffSNBCK( g[i],  SNB.B_CO,  SNB.S_CO,  
 						    SNB.liCO, istart[v], iend[v] );
-	  ww[v][i] = w[i];
+	  ww[v][i] = w[i];          // compute new weight
 	} /* endfor */
 	
       // h2o and co2 active
       } else if (iMix[v]==2 && iH2O[v] && iCO2[v]) {
+	cnt = 0;
 	for (int i=0; i<Nquad; i++) {
 	  for (int j=0; j<Nquad; j++) {
 	    if (xh2o>MICRO) 
-	      k[index[v][i]] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
-						      SNB.liH2O, istart[v], iend[v] );
+	      k[index[v][cnt]] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
+							SNB.liH2O, istart[v], iend[v] );
 	    if (xco2>MICRO) 
-	      k[index[v][i]] += AbsorptionCoeffSNBCK( g[j], SNB.B_CO2, SNB.S_CO2, 
-						      SNB.liCO2, istart[v], iend[v] );
-	    ww[v][cnt] = w[i]*w[j];
-	    
-	    // increment counter
-	    cnt++;
+	      k[index[v][cnt]] += AbsorptionCoeffSNBCK( g[j], SNB.B_CO2, SNB.S_CO2, 
+							SNB.liCO2, istart[v], iend[v] );
+	    ww[v][cnt] = w[i]*w[j]; // compute new weight
+	    cnt++;                  // increment counter
 	  } /* endfor */
 	} /* endfor */
 
       // h2o and co active
       } else if (iMix[v]==2 && iH2O[v] && iCO[v]) {
+	cnt = 0;
 	for (int i=0; i<Nquad; i++) {
 	  for (int j=0; j<Nquad; j++) {
 	    if (xh2o>MICRO) 
-	      k[index[v][i]] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
-						      SNB.liH2O, istart[v], iend[v] );
+	      k[index[v][cnt]] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
+							SNB.liH2O, istart[v], iend[v] );
 	    if (xco>MICRO) 
-	      k[index[v][i]] += AbsorptionCoeffSNBCK( g[j],  SNB.B_CO,  SNB.S_CO,  
-						      SNB.liCO, istart[v], iend[v] );
+	      k[index[v][cnt]] += AbsorptionCoeffSNBCK( g[j],  SNB.B_CO,  SNB.S_CO,  
+							SNB.liCO, istart[v], iend[v] );
 	    ww[v][cnt] = w[i]*w[j];
 
 	    // increment counter
@@ -1173,48 +1172,46 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
 
       // co2 and co active
       } else if (iMix[v]==2 && iCO2[v] && iCO[v]) {
+	cnt = 0;
 	for (int i=0; i<Nquad; i++) {
 	  for (int j=0; j<Nquad; j++) {
 	    if (xco2>MICRO) 
-	      k[index[v][i]] += AbsorptionCoeffSNBCK( g[i], SNB.B_CO2, SNB.S_CO2, 
-						      SNB.liCO2, istart[v], iend[v] );
+	      k[index[v][cnt]] += AbsorptionCoeffSNBCK( g[i], SNB.B_CO2, SNB.S_CO2, 
+							SNB.liCO2, istart[v], iend[v] );
 	    if (xco>MICRO) 
-	      k[index[v][i]] += AbsorptionCoeffSNBCK( g[j],  SNB.B_CO,  SNB.S_CO,  
-						      SNB.liCO, istart[v], iend[v] );
-	    ww[v][cnt] = w[i]*w[j];
-	
-	    // increment counter
-	    cnt++;
+	      k[index[v][cnt]] += AbsorptionCoeffSNBCK( g[j],  SNB.B_CO,  SNB.S_CO,  
+							SNB.liCO, istart[v], iend[v] );
+	    ww[v][cnt] = w[i]*w[j]; // compute new weight
+	    cnt++;                  // increment counter
 	  } /* endfor */
 	} /* endfor */
 	
 
       // all three are active
       } else if ( iMix[v] == 3 ) {
+	cnt = 0;
 	for (int i=0; i<Nquad; i++) {
 	  for (int j=0; j<Nquad; j++) {
 	    for (int n=0; n<Nquad; n++) {
 	      if (xh2o>MICRO) 
-		k[index[v][i]] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
-							SNB.liH2O, istart[v], iend[v] );
+		k[index[v][cnt]] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
+							  SNB.liH2O, istart[v], iend[v] );
 	      if (xco2>MICRO) 
-		k[index[v][i]] += AbsorptionCoeffSNBCK( g[j], SNB.B_CO2, SNB.S_CO2, 
-							SNB.liCO2, istart[v], iend[v] );
+		k[index[v][cnt]] += AbsorptionCoeffSNBCK( g[j], SNB.B_CO2, SNB.S_CO2, 
+							  SNB.liCO2, istart[v], iend[v] );
 	      if (xco>MICRO) 
-		k[index[v][i]] += AbsorptionCoeffSNBCK( g[n],  SNB.B_CO,  SNB.S_CO,  
-							SNB.liCO, istart[v], iend[v] );
-	      ww[v][cnt] = w[i]*w[j]*w[n];
-
-	      // increment counter
-	      cnt++;
+		k[index[v][cnt]] += AbsorptionCoeffSNBCK( g[n],  SNB.B_CO,  SNB.S_CO,  
+							  SNB.liCO, istart[v], iend[v] );
+	      ww[v][cnt] = w[i]*w[j]*w[n]; // compute new weight
+	      cnt++;                       // increment counter
 	    } /* endfor */
 	  } /* endfor */
 	} /* endfor */
 
 
-      } /* endif */
+      } // endif - active bands
 
-    } /* end for - bands */
+    } // end for - bands 
     break;
 
   //-----------------------------------------------
@@ -1225,11 +1222,8 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
     exit(-1);
     break;
     
-  } /* end switch */
-
-
   //-----------------------------------------------
-  // End model specific
+  } // end switch
   //-----------------------------------------------
 
 
@@ -1292,9 +1286,9 @@ void SNBCK :: PreCalculateAbsorb( const double p_ref,    // pressure [atm]
   double Tmax = SNB.Tmax;
   dT = (Tmax-Tmin)/double(Ninterp-1);
 
-  //------------------------------------------------
+  //
   // loop over each temperature point
-  //------------------------------------------------
+  //
   for (int n=0; n<Ninterp; n++) {
 
     // compute temperautre
@@ -1305,11 +1299,11 @@ void SNBCK :: PreCalculateAbsorb( const double p_ref,    // pressure [atm]
     SNB.ComputeRefSNB( p_ref, Tn[n], xco_ref, xh2o_ref, xco2_ref, xo2_ref );
 
       
-    //------------------------------------------------
+    //
     // loop over each wide band, inverting the 
     // cummulative distribution function
-    //------------------------------------------------
-    for (int v=0; v<Nbands; v++) {
+    //
+    for (int v=0; v<Nbands; v++) 
       for (int i=0; i<nquad[v]; i++) {
 	   
 	// add each active component
@@ -1323,17 +1317,10 @@ void SNBCK :: PreCalculateAbsorb( const double p_ref,    // pressure [atm]
 	if (iCO[v])
 	  k_CO[v][i][n] += AbsorptionCoeffSNBCK( g[i],  SNB.B_CO,  SNB.S_CO,  
 						 SNB.liCO, istart[v], iend[v] );
-      } 
-    } 
-    //------------------------------------------------
-    // endfor - bands, quad points
-    //------------------------------------------------
+      }  // endfor - bands, quad points
 
 
-  }
-  //------------------------------------------------
-  // endfor - Temperature
-  //------------------------------------------------
+  } // endfor - Temperature
 
 
   // Build a natural cubic spline
@@ -1390,6 +1377,9 @@ void SNBCK :: CalculateAbsorb_Interp( const double p,        // pressure [atm]
   // declares
   double kk_CO, kk_CO2, kk_H2O;
 
+  //
+  // loop over each wide band, quad point
+  //
   for (int v=0; v<Nbands; v++) 
     for (int i=0; i<nquad[v]; i++) {
 
@@ -1406,7 +1396,7 @@ void SNBCK :: CalculateAbsorb_Interp( const double p,        // pressure [atm]
       // add soot
       k[index[v][i]] += 5.5 * xsoot * WaveNo[v];
 
-    } /* endfo */
+    } // endfor
 
 
 }
@@ -1439,9 +1429,6 @@ void SNBCK :: CalculatePlanck( const double T, double* Ib ) {
     for (int i=0; i<nquad[v]; i++) Ib[ index[v][i] ] = Ib_v;
   }
 }
-double SNBCK :: CalculatePlanck( const double T, const int index1D ) 
-{ return Planck(T, WaveNo[ band_index[index1D] ]); }
-
 
 /*********************************************************************
  ********** SNBCK_INPUT_PARAMETERS CLASS MEMBER FUNCTIONS ************

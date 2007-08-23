@@ -1004,7 +1004,7 @@ Rte2D_State Gray_Wall(const Rte2D_State &U,
 		      const double &wall_temperature,
 		      const double &wall_emissivity ) {
 
-  double In, dot, temp, sum;
+  double In, dot, temp, sum, wn;
   Rte2D_State Uwall(U);
   
   //
@@ -1017,9 +1017,11 @@ Rte2D_State Gray_Wall(const Rte2D_State &U,
     //------------------------------------------------
     if (U.Absorb_Type == RTE2D_ABSORB_GRAY)
       In = wall_emissivity * BlackBody(wall_temperature);
-    else if (U.Absorb_Type == RTE2D_ABSORB_SNBCK)
-      In = wall_emissivity * U.SNBCKdata->CalculatePlanck(wall_temperature, v);
-    else
+    else if (U.Absorb_Type == RTE2D_ABSORB_SNBCK) {
+      wn = U.SNBCKdata->WaveNo[ U.SNBCKdata->band_index[v] ];
+      In = wall_emissivity * Planck(wall_temperature, wn);
+      // Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
+    } else
       In = ZERO; // shouldn't get here
       
     //------------------------------------------------
@@ -1124,7 +1126,7 @@ void Gray_Wall_Space_March(Rte2D_State &Uwall,
 			   const double &wall_temperature,
 			   const double &wall_emissivity ) {
   // declares
-  double In, dot, temp, sum;
+  double In, dot, temp, sum, wn;
 
   //
   // loop over each band
@@ -1136,9 +1138,11 @@ void Gray_Wall_Space_March(Rte2D_State &Uwall,
     //------------------------------------------------
     if (Uwall.Absorb_Type == RTE2D_ABSORB_GRAY)
       In = wall_emissivity * BlackBody(wall_temperature);
-    else if (Uwall.Absorb_Type == RTE2D_ABSORB_SNBCK)
-      In = wall_emissivity * Uwall.SNBCKdata->CalculatePlanck(wall_temperature, v);
-    else 
+    else if (Uwall.Absorb_Type == RTE2D_ABSORB_SNBCK) {
+      wn = Uwall.SNBCKdata->WaveNo[ Uwall.SNBCKdata->band_index[v] ];
+      In = wall_emissivity * Planck(wall_temperature, wn);
+      // Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
+    } else 
       In = ZERO;  // shouldn't get here
 
     //------------------------------------------------

@@ -526,6 +526,7 @@ inline double Rte2D_State :: beta(const int &v) const
 inline double Rte2D_State :: G( ) 
 {
   double sum = ZERO;
+  int vv, ii;
 
   //------------------------------------------------
   // Gray 
@@ -542,28 +543,32 @@ inline double Rte2D_State :: G( )
   // SNBCK 
   //------------------------------------------------
   // See Liu et al. Combust Flame 138 (2004) 136-154
-  //    G = \sum_v {\Delta v} \sum_i w_i \sum_m \sum_l ( {\Delta \Omega}_{m,l} * I_{m,l} )
+  //    G = \sum_v {\Delta v} \sum_i w_i  * 
+  //        \sum_m \sum_l ( {\Delta \Omega}_{m,l} * I_{m,l} )
   } else if (Absorb_Type == RTE2D_ABSORB_SNBCK) {
 
     //
     // loop over every quad point of every band
     //
+    // Note v is 1D Rte2D_State array index, not SNBCK band index
     double dir_sum;
-    for ( int v=0; v<SNBCKdata->Nbands; v++ ) {
-      for (int i=0; i<SNBCKdata->nquad[v]; i++) {
+    for ( int v=0; v<Nband; v++ ) {
       
-	//
-	// sum the directional component
-	//
-	dir_sum = ZERO;
-	for ( int m=0; m<Npolar; m++ ) 
-	  for ( int l=0; l<Nazim[m]; l++ ) 
-	    dir_sum += omega[m][l] * In(SNBCKdata->index[v][i],m,l);
-	
-	// add the total radiation component for this quadrature point
-	sum += SNBCKdata->BandWidth[v]*SNBCKdata->Weight(v,i)*dir_sum;
-	
-      } // endfor - points 
+      //
+      // sum the directional component
+      //
+      dir_sum = ZERO;
+      for ( int m=0; m<Npolar; m++ ) 
+	for ( int l=0; l<Nazim[m]; l++ ) 
+	  dir_sum += omega[m][l] * In(v,m,l);
+      
+      // add the total radiation component for this quadrature point
+      // Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
+      vv = SNBCKdata->band_index[v]; // SNBCK band index
+      ii = SNBCKdata->quad_index[v]; // SNBCK quad index
+      sum += SNBCKdata->BandWidth[vv] * 
+	     SNBCKdata->Weight(vv,ii) * dir_sum;
+      
     } // endfor - bands 
 
   //------------------------------------------------
@@ -582,6 +587,7 @@ inline double Rte2D_State :: G( )
 inline Vector2D Rte2D_State :: q( )
 {
   Vector2D Temp(ZERO);
+  int vv, ii;
 
   //------------------------------------------------
   // Gray 
@@ -607,9 +613,9 @@ inline Vector2D Rte2D_State :: q( )
     //
     // loop over every quad point of every band
     //
+    // Note v is 1D Rte2D_State array index, not SNBCK band index
     Vector2D dir_sum(ZERO);
-    for ( int v=0; v<SNBCKdata->Nbands; v++ ) {
-      for (int i=0; i<SNBCKdata->nquad[v]; i++) {
+    for ( int v=0; v<Nband; v++ ) {
       
 	//
 	// sum the directional component
@@ -617,15 +623,17 @@ inline Vector2D Rte2D_State :: q( )
 	dir_sum = ZERO;
 	for ( int m=0; m<Npolar; m++ ) 
 	  for ( int l=0; l<Nazim[m]; l++ ) {
-	    dir_sum.x +=  mu[m][l] * In(SNBCKdata->index[v][i],m,l);
-	    dir_sum.y += eta[m][l] * In(SNBCKdata->index[v][i],m,l);
+	    dir_sum.x +=  mu[m][l] * In(v,m,l);
+	    dir_sum.y += eta[m][l] * In(v,m,l);
 	  }
 
 	// add the total radiation component for this quadrature point
-	dir_sum *= SNBCKdata->BandWidth[v]*SNBCKdata->Weight(v,i);
+	// Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
+	vv = SNBCKdata->band_index[v]; // SNBCK band index
+	ii = SNBCKdata->quad_index[v]; // SNBCK quad index
+	dir_sum *= SNBCKdata->BandWidth[vv]*SNBCKdata->Weight(vv,ii);
 	Temp += dir_sum;
 
-      } // endfor - points 
     } // endfor - bands 
 
   //------------------------------------------------
@@ -646,6 +654,7 @@ inline Vector2D Rte2D_State :: Qr( )
 {
   double source = ZERO;
   double sum;
+  int vv, ii;
 
   //------------------------------------------------
   // Gray 
@@ -677,29 +686,32 @@ inline Vector2D Rte2D_State :: Qr( )
   // SNBCK 
   //------------------------------------------------
   // See Liu et al. Combust Flame 138 (2004) 136-154
-  //    G = \sum_v {\Delta v} \sum_i w_i \sum_m \sum_l ( 4\pi*Ib - {\Delta \Omega}_{m,l} * I_{m,l} )
+  //    G = \sum_v {\Delta v} \sum_i w_i *
+  //        \sum_m \sum_l ( 4\pi*Ib - {\Delta \Omega}_{m,l} * I_{m,l} )
   } else if (Absorb_Type == RTE2D_ABSORB_SNBCK) {
 
     //
     // loop over every quad point of every band
     //
-    for ( int v=0; v<SNBCKdata->Nbands; v++ ) {
-      for (int i=0; i<SNBCKdata->nquad[v]; i++) {
+    // Note v is 1D Rte2D_State array index, not SNBCK band index
+    for ( int v=0; v<Nband; v++ ) {
       
 	// sum the directional component
 	sum = ZERO;
 	for ( int m=0; m<Npolar; m++ ) 
 	  for ( int l=0; l<Nazim[m]; l++ ) 
-	    sum -= omega[m][l] * In(SNBCKdata->index[v][i],m,l);
+	    sum -= omega[m][l] * In(v,m,l);
 	
 	// add blackbody
 	sum += FOUR*PI*Ib[v];
 	
 	// the contribution of the source term at this point
-	source += SNBCKdata->BandWidth[v]*SNBCKdata->Weight(v,i) * 
-	          kappa[ SNBCKdata->index[v][i] ] * sum;
+	// Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
+	vv = SNBCKdata->band_index[v]; // SNBCK band index
+	ii = SNBCKdata->quad_index[v]; // SNBCK quad index
+	source += SNBCKdata->BandWidth[vv]*SNBCKdata->Weight(vv,ii) * 
+	          kappa[ v ] * sum;
 
-      } // endfor - points 
     } // endfor - bands 
 
 

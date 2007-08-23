@@ -410,7 +410,7 @@ public:
 
   // return the quadrature weight for a certain point, at a specific band
   double Weight( const int v, const int i ) {
-    if (MixType==SNBCK_OVERLAP_UNCORRELATED) return ww[v][i];
+    if (MixType==SNBCK_OVERLAP_CORRELATED) return ww[v][i];
     else return w[i];
   }
   
@@ -437,7 +437,6 @@ public:
 
   // calculate the planck distribution for the gas
   void CalculatePlanck( const double T, double* Ib );
-  double CalculatePlanck( const double T, const int n );
 
 private:
 

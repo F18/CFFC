@@ -38,28 +38,6 @@
 Time_Integration_Type=
 Explicit_Euler
 ###################################################
-# Multigrid Parameters
-#
-###################################################
-Multigrid_Levels=
-4
-Multigrid_Cycle_Type=
-V
-Full_Multigrid=
-20000
-Multigrid_Number_of_Smooths_on_Finest_Level=
-2
-Multigrid_Number_of_Pre_Smooths=
-1
-Multigrid_Number_of_Post_Smooths=
-1
-Multigrid_Number_of_Smooths_on_Coarsest_Level=
-3
-Multigrid_Smoothing_Type=
-Multistage_Optimal_Smoothing
-N_Stage=
-3
-###################################################
 # Local Time Stepping
 # 0 -> for GLOBAL_TIME_STEPPING    
 # 1 -> for SCALAR_LOCAL_TIME_STEPPING 
@@ -76,7 +54,7 @@ Local_Time_Stepping=
 
 ###################################################
 ###################################################
-##  Space_March  Parameters
+##  Space March  Parameters
 ## 
 ###################################################
 ###################################################
@@ -92,7 +70,8 @@ Upwind
 ###################################################
 # RTE solver
 # FVM -> for Finite Volume Method
-# DOM -> for Discrete Ordinames Method
+# DOM -> for Discrete Ordinames Method 
+#        (space march only)
 ###################################################
 RTE_Solver=
 FVM
@@ -139,7 +118,7 @@ Gas_Pressure=
 #   -> [xco] [xh2o] [xco] [xo2] [fsoot]
 ###################################################
 Mixture=
-0.01 0.2 0.1 0.0
+0.01  0.2  0.1  0.0
 ###################################################
 # Scattering Function
 # Isotrpopic and anisotropic scattering functions 
@@ -174,7 +153,87 @@ Absorption_Coefficient=
 ## 
 ###################################################
 ###################################################
-
+# Absorbsion Model
+# Method for the inversion of the cummulative 
+# distribution function for the absorption 
+# coefficient.
+# Online        -> online inversion
+# Precalculated -> precalculate absorption coefficients 
+#                  for a reference mixture as 
+#                  proposed by Liu and Smallwood (2004)
+###################################################
+Evaluation_Type =
+Online
+###################################################
+# Quadrature Type
+# Type of quadrature to use for integration over spectrum 
+# Gauss_Legendre -> only one right now
+###################################################
+Quadrature_Type =
+Gauss_Legendre
+###################################################
+# Quadrature Points
+# The number of quadrature points to use
+###################################################
+Number_of_Quad_Points =
+1
+###################################################
+# Number of Lumped Narrow Bands
+# The number of narrow bands to lump together into
+# a wide band.  
+###################################################
+Number_of_Quad_Points =
+36
+###################################################
+# Optimized_Lumping
+# The strategy used depends on the specified number
+# of bands to lump together.
+# ON  -> Use Optimized Band Lumping Strategy
+# OFF -> Use uniform lumping
+###################################################
+Optimized_Lumping =
+OFF
+###################################################
+# Overlap Model
+# Treatment of SNB data and absorbsion coefficient 
+# for overlapping bands.  See Liu et al. (2001).
+# Optically_Thin  -> Optically thin Malkmus approx.
+# Optically_Thick -> Optically thick Malkmus approx
+# Uncorrelated    -> Presence of other gases uncorrelated (additive)
+# Correlated      -> Presence of other gases fully correlated (multiplicative)
+###################################################
+Overlap_Model =
+Optically_Thin
+###################################################
+# Interpolation Points
+# The number of interpolating points to use for 
+# generating spline interpolants when precalculated 
+# inversion of the cummulative distribution function
+# is specified.  A value of 0 uses the same interpolation
+# points as the SNB model data.
+###################################################
+Number_of_Interpolation_Points =
+0
+###################################################
+# Reference Mixture Composition
+# The reference mixture to use when precalculating
+# the absorbsion coefficient.
+# p_ref    -> pressure in [atm]
+# xco_ref  -> mole fraction co
+# xh2o_ref -> mole fraction h2o
+# xco2_ref -> mole fraction co2
+# xo2_ref  -> mole fraction o2
+###################################################
+p_ref =
+1.0
+xco_ref =
+0.0
+xh2o_ref =
+0.2
+xco2_ref =
+0.1
+xo2_ref =
+0.0
 ###################################################
 ###################################################
 ##     Grid/IC Parameters
@@ -211,13 +270,13 @@ Rectangular_Enclosure
 #   -> [North] [South] [East] [West]
 ###################################################
 Wall_Temperature=
-0 0 0 0
+0.0  0.0  0.0  0.0
 ###################################################
 # Wall emissivity
 #   -> [North] [South] [East] [West]
 ###################################################
 Wall_Emissivity=
-0 0 0 0
+0.0  0.0  0.0  0.0
 
 ###################################################
 ###################################################
