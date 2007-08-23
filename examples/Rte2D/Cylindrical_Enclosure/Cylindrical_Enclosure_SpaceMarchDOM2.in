@@ -1,0 +1,82 @@
+#
+# Radiation test case
+#
+########################
+# Set solver parameters
+########################
+Time_Integration_Type=
+Space_March
+RTE_Solver=
+DOM
+Difference_Scheme=
+Central
+###############################
+# Set time stepping parameters
+###############################
+Maximum_Number_of_Time_Steps =
+100
+Number_of_Blocks_Per_Processor =
+16
+Output_File_Name = 
+Cylindrical_Enclosure_SpaceMarchDOM2
+############################
+# Set angular discretization
+############################
+DOM_Quadrature=
+S8
+#########################
+# Set initial conditions
+#########################
+ICs_Type = 
+Constant
+Grid_Type =
+Cylindrical_Enclosure
+Flow_Geometry_Type =
+Axisymmetric-y
+Pipe_Length = 
+2.0
+Pipe_Radius = 
+1.0
+Number_of_Cells_Idir = 
+10
+Number_of_Cells_Jdir =
+10
+Number_of_Blocks_Idir = 
+2
+Number_of_Blocks_Jdir =
+2
+# Wall temperature [north south east west]
+Wall_Temperature = 
+0.1  0.1  0.1  0.1
+# Wall emissivity [north south east west]
+Wall_Emissivity =
+.99  .99  .99  .99
+Gas_Temperature = 
+1000.0
+Absorption_Coefficient = 
+1.0
+Absorption_Model =
+Gray
+Scattering_Coefficient =
+0.01
+Scattering_Function =
+F1
+#######################
+# Execute program
+#######################
+Execute
+#######################
+# Write output
+#######################
+Write_Output
+Write_Output_Cells
+Write_Output_Mesh
+Write_Output_Mesh_Cells
+Write_Output_Mesh_Nodes
+Write_Restart
+Write_Mesh_Definition
+Write_Output_Black_Enclosure
+#######################
+# Terminate program
+#######################
+Terminate

@@ -1,0 +1,89 @@
+#
+# Radiation test case
+#
+########################
+# Set solver parameters
+########################
+Time_Integration_Type=
+Explicit_Euler
+# 0 for steady, 1 unsteady
+Time_Accurate=
+0
+Local_Time_Stepping=
+0
+Reconstruction_Type=
+Least_Squares
+Limiter_Type=
+Zero
+Freeze_Limiter=
+0
+###############################
+# Set time stepping parameters
+###############################
+CFL_Number =
+0.5
+Time_Max = 
+2
+Maximum_Number_of_Time_Steps =
+500
+Number_of_Blocks_Per_Processor =
+16
+Output_File_Name = 
+Rectangular_Enclosure_Explicit1
+############################
+# Set angular discretization
+############################
+Number_of_Angles_Mdir =
+2
+Number_of_Angles_Ldir =
+4
+#########################
+# Set initial conditions
+#########################
+ICs_Type = 
+Constant
+Grid_Type =
+Rectangular_Enclosure
+Number_of_Cells_Idir = 
+10
+Number_of_Cells_Jdir =
+10
+Number_of_Blocks_Idir = 
+2
+Number_of_Blocks_Jdir =
+2
+# Wall temperature [north south east west]
+Wall_Temperature = 
+0.0  0.0  0.0  0.0
+# Wall emissivity [north south east west]
+Wall_Emissivity =
+1.0  1.0  1.0  1.0
+Gas_Temperature = 
+1000.0
+Absorption_Coefficient = 
+1.0
+Absorption_Model =
+Gray
+Scattering_Coefficient =
+0.0
+Scattering_Function =
+Isotropic
+#######################
+# Execute program
+#######################
+Execute
+#######################
+# Write output
+#######################
+Write_Output
+Write_Output_Cells
+Write_Output_Mesh
+Write_Output_Mesh_Cells
+Write_Output_Mesh_Nodes
+Write_Restart
+Write_Mesh_Definition
+Write_Output_Black_Enclosure
+#######################
+# Terminate program
+#######################
+Terminate

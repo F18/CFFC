@@ -638,7 +638,7 @@ void Rte2D_State :: SetupPhaseFVM( const int type ) {
 
   // setup integration parameters
   P.maxevals = 100000000;
-  P.tol = MICRO;
+  P.tol = MILLI;
 
   //------------------------------------------------
   // linear isotropic scattering

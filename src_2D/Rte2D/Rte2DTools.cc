@@ -393,6 +393,9 @@ void CylindricalEnclosure( const double gas_temp,
   // normalize by PI * blackbody intensity
   qz /= PI;
 
+  // free memory
+  free_simp_struc( F, S );
+
 }
 
 
@@ -759,5 +762,8 @@ void RectangularEnclosure( const double gas_temp,
 
   // normalize by PI * blackbody intensity
   qy /= PI;
+
+  // free memory
+  free_simp_struc( F, S );
 
 }
