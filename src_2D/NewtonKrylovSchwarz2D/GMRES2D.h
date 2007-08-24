@@ -350,8 +350,6 @@ Output_GMRES_vars_Tecplot (const int Number_of_Time_Steps,
   fout << setprecision(6);
 }
 
-
-
 /**************************************************************************
  * GMRES_Block::allocate -- Allocate memory.                              *
  **************************************************************************/
@@ -374,7 +372,7 @@ allocate( const int m, const int overlap_cells,
   overlap = overlap_cells;  
   restart = m;
 
-	if (Input_Parameters->NKS_IP.Time_Accurate) {	DTS_Uo = DTS_Uo_ptr; }
+  if (Input_Parameters->NKS_IP.Time_Accurate) {	DTS_Uo = DTS_Uo_ptr; }
 
   //Check if a valid solution block and GMRES parameters
   assert(restart > 1);  assert(NCi > 1);  assert(NCj > 1);
@@ -655,7 +653,6 @@ L2_Norm(int k, const double* v){
 
 }
 
-
 /********************************************************
  * Routine: Dot_Product                                 *
  ********************************************************/
@@ -665,7 +662,6 @@ Dotproduct(const double *v1, const double *v2) {
   integer inc = 1;
   return (F77NAME(ddot)( &scalar_dim, v1, &inc, v2, &inc));	   
 }
-
 
 /*******************************************************************************
  *                                                                             *
@@ -1920,7 +1916,6 @@ SubcellReconstruction(const int i,
 ///////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-
 /*!*********************************************************
  * Class: GMRES_RightPrecon_MatrixFree                     *
  *                                                         *
@@ -2047,7 +2042,6 @@ ApplyPlaneRotation(double &dx, double &dy, const double &cs,const double &sn) {
   dy = -sn * dx + cs * dy;
   dx =  temp; //cs * dx + sn * dy;
 }
-
 
 /****************************************************************************
  * GMRES_RightPrecon_MatrixFree::solve -- apply right-preconditioned        *
@@ -2260,7 +2254,6 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 
 	/* beta = norm(V(0)) */	
 	beta += sqr(G[Bcount].L2_Norm(&(G[Bcount].V[(0)*G[Bcount].scalar_dim])));
-				       
       }
     }
 
@@ -2282,7 +2275,6 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
     // RESSCALE V(0) USING NORM.
     for (int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) {
       if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
-	
 	/* V(0) = -V(0)/beta */
 	temp = -ONE/beta;
 	F77NAME(dscal)(&G[Bcount].scalar_dim, &temp, &(G[Bcount].V[(0)*G[Bcount].scalar_dim]), &inc);
@@ -2295,7 +2287,6 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	
 	//Set vector switch to pass W 
 	G[Bcount].vector_switch  = 1;  
-
       } 
     } 
     /**************************************************************************/
@@ -2324,8 +2315,10 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	  G[Bcount].search_directions = search_direction_counter;  
 	  
 	  //Apply Block Precondtioner  z = Minv * V(i) -> stored in W(i). 
-	  Block_precon[Bcount].Apply_Preconditioner(G[Bcount].scalar_dim, 1, &(G[Bcount].V[(search_direction_counter)*G[Bcount].scalar_dim]), 
-						    G[Bcount].scalar_dim, &(G[Bcount].W[(search_direction_counter)*G[Bcount].scalar_dim]), 
+	  Block_precon[Bcount].Apply_Preconditioner(G[Bcount].scalar_dim, 1, 
+                                                    &(G[Bcount].V[(search_direction_counter)*G[Bcount].scalar_dim]), 
+						    G[Bcount].scalar_dim, 
+                                                    &(G[Bcount].W[(search_direction_counter)*G[Bcount].scalar_dim]), 
 						    G[Bcount].scalar_dim);	  
 	} 
       } 
@@ -2364,8 +2357,6 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
       epsilon = Input_Parameters->NKS_IP.Epsilon_Naught/sqrt(total_norm_z);
       /**************************************************************************/
 
-
-
       /**************************************************************************/
       /***************** BEGIN MATRIX-FREE FOR PRIMARY GMRES LOOP ***************/
       /**************************************************************************/ 
@@ -2385,7 +2376,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
       }
       /**************************************************************************/
 
-			t0 = clock();
+      t0 = clock();
     
       /**************************************************************************/
       // Send boundary flux corrections at block interfaces with resolution changes. (changes to dUdt)
@@ -2405,7 +2396,6 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 			(*res_nevals)++;
       
       /**************************************************************************/
-
 
       ////////////////// 2nd ORDER ////////////////////////////////////////
       if(Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == SECOND_ORDER) {
@@ -2457,7 +2447,6 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
       /**************************************************************************/
       /******************* END OF MATRIX-FREE ***********************************/
       /**************************************************************************/
-
 
       /**************************************************************************/
       // H norm calculation
@@ -2613,7 +2602,6 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
     /******************* END PRIMARY GMRES LOOP *******************************/
     /**************************************************************************/
 
-
     /************************************************************************/
     // UPDATE SOLUTION. 
     for (int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) {
@@ -2714,8 +2702,16 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	  cout << setw(output_width) << relative_residual * 1000.0;
   	  cout.unsetf(ios::fixed); cout.setf(ios::scientific);
 	  cout << setw(output_width) << resid0;
- 	  if (*GMRES_restarted_at_least_once) { cout << "  R"; } else { cout << "   "; }
-	  if (*GMRES_failed)    { cout << "  F"; } else { cout << "   "; }
+ 	  if (*GMRES_restarted_at_least_once) { 
+             cout << "  R"; 
+          } else { 
+             cout << "   "; 
+          }
+	  if (*GMRES_failed) { 
+             cout << "  F"; 
+          } else { 
+             cout << "   "; 
+          }
 	  }
 	  break;
 	default:
