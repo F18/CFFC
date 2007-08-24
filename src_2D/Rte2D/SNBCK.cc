@@ -705,8 +705,9 @@ void SNBCK :: DeallocateIndex() {
 
 
 void SNBCK :: Deallocate() {  
-  DeallocateQuad();    DeallocateBands(); 
   DeallocateInterp();  DeallocateIndex();
+  DeallocateQuad();    DeallocateBands(); 
+  
 }
 
 

@@ -182,7 +182,7 @@ Number_of_Quad_Points =
 # The number of narrow bands to lump together into
 # a wide band.  
 ###################################################
-Number_of_Quad_Points =
+Number_of_Lumped_Bands =
 36
 ###################################################
 # Optimized_Lumping

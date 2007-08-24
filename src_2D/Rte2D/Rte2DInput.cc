@@ -64,6 +64,7 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     IP.N_Stage = 1;
     IP.Time_Max = ZERO;
     IP.Mr_Min_Factor = ONE;
+    IP.CFL_Number = ONE;
 
     // Residual variable:
     IP.i_Residual_Variable = 1;
@@ -3041,8 +3042,6 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
       //  - is not a valid code with an invalid value (that's INVALID_INPUT_VALUE), 
       //  - is not a an NKS option
       // and so is an unknown option. Maybe it's an SNBCK option:
-      strcpy(buffer, IP.Next_Control_Parameter);
-      Get_Next_Input_Control_Parameter(IP);
       i_command = IP.SNBCK_IP.Parse_Next_Input_Control_Parameter(buffer, IP.Next_Control_Parameter);
     }
 
