@@ -910,10 +910,10 @@ void SNBCK :: SetupBands( const int Nlump,      // number of narrow bands lumped
       iH2O[i] += SNB.liH2O[n];
       iCO2[i] += SNB.liCO2[n];
       iCO[i]  += SNB.liCO[n];
-      iMix[i] += ( iH2O[i]>0 ? 1 : 0 ) + 
-	         ( iCO2[i]>0 ? 1 : 0 ) + 
-	         ( iCO [i]>0 ? 1 : 0 );
     } // endfor
+    iMix[i] += ( iH2O[i]>0 ? 1 : 0 ) + 
+               ( iCO2[i]>0 ? 1 : 0 ) + 
+               ( iCO [i]>0 ? 1 : 0 );
   } // endfor - original bands
 
 

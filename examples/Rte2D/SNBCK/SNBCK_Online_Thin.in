@@ -29,7 +29,7 @@ Maximum_Number_of_Time_Steps =
 Number_of_Blocks_Per_Processor =
 16
 Output_File_Name = 
-SNBCK_Precalculated
+SNBCK_Online_Thin
 ############################
 # Set angular discretization
 ############################
