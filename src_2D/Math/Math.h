@@ -23,6 +23,7 @@ using namespace std;
 #define	NINE	9.00
 #define	TEN    10.00
 
+#define	FIFTEEN  15.00
 #define TWENTY   20.00
 #define THIRTY   30.00
 #define FOURTY   40.00
@@ -42,6 +43,7 @@ using namespace std;
 #define MICRO    0.000001
 #define TOLER    0.0000001
 #define NANO     0.000000001
+#define PICO     0.000000000001
 
 #ifndef PI
 #define	PI	3.14159265358979323846

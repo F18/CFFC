@@ -1,0 +1,359 @@
+###################################################
+###################################################
+##  Rte2D Available Input
+##  Parameters
+##
+##  NOTE: The environment variable
+##  "CFFC_Path" must be set to the 
+##  the location of CFFC directory.
+##  
+##  NOTE: There are basically two 
+##  solvers: time-stepping, and 
+##  space-marching.  For 
+##  space-marching, either the 
+##  DOM or FVM discretization may
+##  be used.  However, only the FVM 
+##  is used for time-stepping.
+##  
+##  ie. setenv CFFC_Path /home/me/CFFC
+##  or  export CFFC_Path=/home/me/CFFC
+## 
+###################################################
+###################################################
+
+
+###################################################
+###################################################
+##   Time Integration Parameters
+## 
+###################################################
+###################################################
+# Time Integration Types
+#  -> Explicit_Predictor_Corrector
+#  -> Multistage_Optimal_Smoothing
+#  -> etc.
+#  -> Multigrid
+#  -> Space_March
+###################################################
+Time_Integration_Type=
+Explicit_Euler
+###################################################
+# Local Time Stepping
+# 0 -> for GLOBAL_TIME_STEPPING    
+# 1 -> for SCALAR_LOCAL_TIME_STEPPING 
+# 2 -> for MATRIX_LOCAL_TIME_STEPPING 
+# 3 -> for LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER  
+# 4 -> for SEMI_IMPLICIT_LOCAL_TIME_STEPPING
+# 5 -> for SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER
+# 7 -> for DUAL_TIME_STEPPING                                 
+# 8 -> for DUAL_LOW_MACH_NUMBER_PRECONDITIONER                 
+# 9 -> for DUAL_SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER   
+###################################################
+Local_Time_Stepping=
+0
+
+###################################################
+###################################################
+##  Space March  Parameters
+## 
+###################################################
+###################################################
+# Spacial Difference Scheme
+# Upwind      -> for upwinding
+# CLAM        -> for CLAM
+# GM          -> for Generalized Multidimensional
+# Central     -> for central differencing
+# Exponential -> for exponential scheme
+###################################################
+Difference_Scheme=
+Upwind
+###################################################
+# RTE solver
+# FVM -> for Finite Volume Method
+# DOM -> for Discrete Ordinames Method 
+#        (space march only)
+###################################################
+RTE_Solver=
+FVM
+
+###################################################
+###################################################
+##  Angular Discretization  Parameters
+## 
+###################################################
+# DOM angular discretization (quadrature)
+# S2, S4, S6, S8 -> for Carlson and Lathrops 'SN' scheme
+# T3             -> for Thurgoods 'TN' scheme
+###################################################
+DOM_Quadrature=
+S2
+###################################################
+# FVM angular discretization
+# Number_of_Angles_Mdir -> polar direction
+# Number_of_Angles_Ldir -> azimuthal direction
+###################################################
+Number_of_Angles_Mdir=
+4
+Number_of_Angles_Ldir=
+4
+
+###################################################
+###################################################
+##     Gas Parameters
+## 
+###################################################
+###################################################
+# Gas Temperature [K]
+###################################################
+Gas_Temperature=
+1000.0
+###################################################
+# Gas Pressure [Pa]
+###################################################
+Gas_Pressure=
+101325.0
+###################################################
+# Radiating Gas Mixture Composition
+# mole fraction co  h2o, co, o2, soot volume fraction
+#   -> [xco] [xh2o] [xco] [xo2] [fsoot]
+###################################################
+Mixture=
+0.01  0.2  0.1  0.0
+###################################################
+# Scattering Function
+# Isotrpopic and anisotropic scattering functions 
+# of Kim and Lee (1988).  Possible values are:
+# Isotropic  -> isotropic scattering
+# F1, F2, F3 -> forward scattering functions
+# B1, B2     -> backward scattering functions
+###################################################
+Scattering_Function=
+Isotropic
+###################################################
+# Scattering Coefficient [m^-1]
+###################################################
+Scattering_Coefficient=
+0.0
+###################################################
+# Absorbsion Model
+# Gray  -> for RTE2D_ABSORB_GRAY
+# SNBCK -> for RTE2D_ABSORB_SNBCK
+###################################################
+Absorption_Model=
+Gray
+###################################################
+# Absorbsion Coefficient [m^-1]
+###################################################
+Absorption_Coefficient=
+1.0
+
+###################################################
+###################################################
+##     SNBCK Parameters
+## 
+###################################################
+###################################################
+# Absorbsion Model
+# Method for the inversion of the cummulative 
+# distribution function for the absorption 
+# coefficient.
+# Online        -> online inversion
+# Precalculated -> precalculate absorption coefficients 
+#                  for a reference mixture as 
+#                  proposed by Liu and Smallwood (2004)
+###################################################
+Evaluation_Type =
+Online
+###################################################
+# Quadrature Type
+# Type of quadrature to use for integration over spectrum 
+# Gauss_Legendre -> only one right now
+###################################################
+Quadrature_Type =
+Gauss_Legendre
+###################################################
+# Quadrature Points
+# The number of quadrature points to use
+###################################################
+Number_of_Quad_Points =
+1
+###################################################
+# Number of Lumped Narrow Bands
+# The number of narrow bands to lump together into
+# a wide band.  
+###################################################
+Number_of_Lumped_Bands =
+36
+###################################################
+# Optimized_Lumping
+# The strategy used depends on the specified number
+# of bands to lump together.
+# ON  -> Use Optimized Band Lumping Strategy
+# OFF -> Use uniform lumping
+###################################################
+Optimized_Lumping =
+OFF
+###################################################
+# Overlap Model
+# Treatment of SNB data and absorbsion coefficient 
+# for overlapping bands.  See Liu et al. (2001).
+# Optically_Thin  -> Optically thin Malkmus approx.
+# Optically_Thick -> Optically thick Malkmus approx
+# Uncorrelated    -> Presence of other gases uncorrelated (additive)
+# Correlated      -> Presence of other gases fully correlated (multiplicative)
+###################################################
+Overlap_Model =
+Optically_Thin
+###################################################
+# Interpolation Points
+# The number of interpolating points to use for 
+# generating spline interpolants when precalculated 
+# inversion of the cummulative distribution function
+# is specified.  A value of 0 uses the same interpolation
+# points as the SNB model data.
+###################################################
+Number_of_Interpolation_Points =
+0
+###################################################
+# Reference Mixture Composition
+# The reference mixture to use when precalculating
+# the absorbsion coefficient.
+# p_ref    -> pressure in [atm]
+# xco_ref  -> mole fraction co
+# xh2o_ref -> mole fraction h2o
+# xco2_ref -> mole fraction co2
+# xo2_ref  -> mole fraction o2
+###################################################
+p_ref =
+1.0
+xco_ref =
+0.0
+xh2o_ref =
+0.2
+xco2_ref =
+0.1
+xo2_ref =
+0.0
+###################################################
+###################################################
+##     Grid/IC Parameters
+## 
+###################################################
+###################################################
+# Flow Geometry Type
+#  -> Planar
+#  -> Axisymmetric-x ( x radial, y axial)
+#  -> Axisymmetric-y ( y radial, x axial)
+###################################################
+Flow_Geometry_Type=
+Planar
+###################################################
+# Initial Conditions Added
+#   -> Uniform
+#   -> Constant
+###################################################
+ICs_Type=
+Uniform
+###################################################
+# Grid Types Added
+#   -> Rectangular_Enclosure:
+#      -- Box_Width 
+#      -- Box_Height
+#   -> Cylindrical_Enclosure:
+#      -- Pipe_Length
+#      -- Pipe_Radius
+###################################################
+Grid_Type=
+Rectangular_Enclosure
+###################################################
+# Wall Temperature [K]
+#   -> [North] [South] [East] [West]
+###################################################
+Wall_Temperature=
+0.0  0.0  0.0  0.0
+###################################################
+# Wall emissivity
+#   -> [North] [South] [East] [West]
+###################################################
+Wall_Emissivity=
+0.0  0.0  0.0  0.0
+
+###################################################
+###################################################
+##     AMR Parameters
+## 
+###################################################
+###################################################
+# Off, On
+AMR =
+On
+# number of iterations between refinements
+AMR_Frequency =
+8
+# Initial refinements based on physics criteria
+Number_of_Initial_Mesh_Refinements =
+4
+# Initial refinements everywhere 
+Number_of_Uniform_Mesh_Refinements =
+2
+#
+Number_of_Boundary_Mesh_Refinements =
+0
+Maximum_Refinement_Level =
+7
+Minimum_Refinement_Level =
+2
+# Physics based refinement and coarseing thresholds
+Threshold_for_Refinement =
+0.50
+Threshold_for_Coarsening =
+0.10
+# Criteria to Use
+Number_of_Refinement_Criteria =
+6
+Refinement_Criteria_Gradient_Density =
+On
+Refinement_Criteria_Divergence_Velocity = On
+On
+Refinement_Criteria_Curl_Velocity = On
+On
+Refinement_Criteria_Gradient_Temperature = On
+On
+Refinement_Criteria_Gradient_CH4 = On
+On
+Refinement_Criteria_Gradient_CO2 = On
+On
+###################################################
+# Another way to perform refinements 
+# by calling "Refine_Grid" before the 
+# "Terminate" command and can be 
+# used in conjunction with the 
+# "Continue" command to perform succesive
+# refinements/coarsenings.
+###################################################
+Refine_Grid
+
+##############################################
+# Morton Ordering
+#
+##############################################
+Morton=
+0
+Morton_Reordering_Frequency=
+100000
+
+##############################################
+# Grid Smoother
+##############################################
+Smooth_Quad_Block=
+Off
+
+##################################################
+# Implicit Residual Smoothing
+##################################################
+Residual_Smoothing_Epsilon=
+0.125
+Residual_Smoothing_Gauss_Seidel_Iterations=
+2
+
+

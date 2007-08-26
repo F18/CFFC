@@ -37,6 +37,7 @@ ICEM_DIR = ICEM/
 INTERFACE_DIR = Interface2D/
 ION_DIR = Ion5Moment2D/
 LEVELSET_DIR = LevelSet2D/
+RTE_DIR = Rte2D/
 MATH_DIR = Math/
 MPI_DIR = MPI/
 MULTIGRID_DIR = FASMultigrid2D/
@@ -189,6 +190,16 @@ SRC_LEVELSET = $(LEVELSET_DIR)LevelSet2DInput.cc \
                $(LEVELSET_DIR)LevelSet2DQuadGrid.cc \
                $(LEVELSET_DIR)LevelSet2DQuadSolvers.cc
 SRC_LEVELSET_EXE = $(LEVELSET_DIR)LevelSet2D.cc
+SRC_RTE = $(RTE_DIR)Rte2DState.cc \
+          $(RTE_DIR)Rte2DInput.cc \
+          $(RTE_DIR)Rte2DQuad.cc \
+          $(RTE_DIR)Rte2DQuadSingleBlock.cc \
+          $(RTE_DIR)Rte2DQuadMultiBlock.cc \
+          $(RTE_DIR)Rte2DQuadGrid.cc \
+          $(RTE_DIR)Rte2DQuadSolvers.cc \
+          $(RTE_DIR)Rte2DTools.cc \
+          $(RTE_DIR)SNBCK.cc 
+SRC_RTE_EXE = $(RTE_DIR)Rte2D.cc
 SRC_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes2DState.cc \
                    $(NAVIERSTOKES_DIR)NavierStokes2DInput.cc \
                    $(NAVIERSTOKES_DIR)NavierStokes2DQuad.cc \
@@ -208,7 +219,7 @@ SRC_BASE =  $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_GRID) $(SRC_AMR) \
 SRC_CFFC = $(SRC_BASE) $(SRC_SCALAR) $(SRC_HEAT) $(SRC_HYPERHEAT) $(SRC_EULER1D) $(SRC_MHD1D) \
            $(SRC_ADVECTDIFFUSE) $(SRC_CHEM) $(SRC_DUSTY) $(SRC_EULER) $(SRC_HIGHTEMP) \
 	   $(SRC_ION) $(SRC_ELECTROSTATIC) $(SRC_INTERFACE) $(SRC_LEVELSET) $(SRC_NAVIERSTOKES) \
-	   $(SRC_GAUSSIAN) $(SRC_TURBULENT) $(SRC_EOS) $(SRC_ICEMCFD) 
+	   $(SRC_GAUSSIAN) $(SRC_TURBULENT) $(SRC_EOS) $(SRC_RTE2D) $(SRC_ICEMCFD) 
 SRC_MAIN = cffc2D.cc
 SRC_ICEMCFD_UTIL1 = $(ICEM_DIR)icemcfd2tecplot.cc 
 SRC_ICEMCFD_UTIL2 = $(ICEM_DIR)icemcfd2grid2dquad.cc
@@ -220,11 +231,14 @@ INC_MATH  = $(MATH_DIR)Math.h \
             $(MATH_DIR)Vector3D.h \
             $(MATH_DIR)Tensor2D.h \
             $(MATH_DIR)Tensor3D.h \
+            $(MATH_DIR)Spline1D.h \
             $(MATH_DIR)Spline2D.h \
             $(MATH_DIR)Matrix.h \
             $(MATH_DIR)LinearSystems.h \
 	    $(MATH_DIR)LinkedList.h \
-	    $(MATH_DIR)Polygon.h
+	    $(MATH_DIR)Polygon.h \
+	    $(MATH_DIR)Simpson.h \
+	    $(MATH_DIR)Quadrature.h
 INC_SYSTEM = $(SYSTEM_DIR)System_Linux.h
 INC_CFD = $(CFD_DIR)CFD.h
 INC_MPI = $(MPI_DIR)MPI.h
@@ -304,6 +318,15 @@ INC_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes2DState.h \
 	           $(NAVIERSTOKES_DIR)NavierStokes2DQuadMultigrid.h
 INC_TURBULENT = $(TURBULENT_DIR)Turbulent2DWallData.h \
 	        $(TURBULENT_DIR)TurbulenceModelling.h
+INC_RTE = $(RTE_DIR)Rte2DState.h \
+	  $(RTE_DIR)Rte2DInput.h \
+	  $(RTE_DIR)Rte2DQuad.h \
+	  $(RTE_DIR)Rte2DQuadMultigrid.h \
+	  $(RTE_DIR)Rte2DQuadNKS.h \
+	  $(RTE_DIR)Rte2DQuadAMR.h \
+	  $(RTE_DIR)Rte2DTools.h \
+	  $(RTE_DIR)SNBCK.h \
+	  $(RTE_DIR)Planck.h 
 INC_MULTIGRID = $(MULTIGRID_DIR)FASMultigrid2D.h \
 	        $(MULTIGRID_DIR)FASMultigrid2DInput.h
 INC_NKS = $(NKS_DIR)NKS2D.h \
@@ -468,6 +491,16 @@ OBJ_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes2DState.o \
                    $(NAVIERSTOKES_DIR)NavierStokes2DQuadGrid.o \
                    $(NAVIERSTOKES_DIR)NavierStokes2DQuadSolvers.o
 OBJ_NAVIERSTOKES_EXE = $(NAVIERSTOKES_DIR)NavierStokes2D.o 
+OBJ_RTE = $(RTE_DIR)Rte2DState.o \
+          $(RTE_DIR)Rte2DInput.o \
+          $(RTE_DIR)Rte2DQuad.o \
+          $(RTE_DIR)Rte2DQuadSingleBlock.o \
+          $(RTE_DIR)Rte2DQuadMultiBlock.o \
+          $(RTE_DIR)Rte2DQuadGrid.o \
+          $(RTE_DIR)Rte2DQuadSolvers.o \
+	  $(RTE_DIR)Rte2DTools.o \
+          $(RTE_DIR)SNBCK.o
+OBJ_RTE_EXE = $(RTE_DIR)Rte2D.o
 OBJ_ICEMCFD = $(ICEM_DIR)ICEMCFD.o \
 	      $(ICEM_DIR)ICEMCFD_ctype.o
 OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_AMR) \
@@ -496,6 +529,7 @@ EXE_EULER2D = euler2D
 EXE_ION5MOMENT2D = ion5moment2D
 EXE_LEVELSET2D = levelset2D
 EXE_NAVIERSTOKES2D = navierstokes2D
+EXE_RTE2D = rte2D
 EXE_EMBEDDEDBOUNDARIES2D = embeddedboundaries2D
 EXE_GAUSSIAN2D = gaussian2D
 
@@ -526,6 +560,7 @@ help:
 	@echo "|        make navierstokes2D       compile navierstokes2D stand alone program       |"
 	@echo "|        make embeddedboundaries2D compile embeddedboundaries2D stand alone program |"
 	@echo "|        make gaussian2D           compile gaussian2D stand alone program           |"
+	@echo "|        make rte2D                compile rte2D stand alone program                |"
 	@echo "|        make libraries-all        create all supporting libraries                  |"
 	@echo "|        make sparselib            create SparseLib++ library                       |"
 	@echo "|        make bpkit                create BPKIT library                             |"
@@ -554,7 +589,7 @@ help:
 
 all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) $(EXE_CHEM2D) $(EXE_ADVECTDIFFUSE2D) \
      $(EXE_DUSTY2D) $(EXE_EULER2D) $(EXE_ION5MOMENT2D) $(EXE_LEVELSET2D) $(EXE_NAVIERSTOKES2D) \
-     $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_GAUSSIAN2D) $(EXE_HIGHTEMP2D)
+     $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_GAUSSIAN2D) $(EXE_HIGHTEMP2D) $(EXE_RTE2D)
 	@echo ' '
 	@echo All programs have been brought up to date.
 	@echo '------------------------------------------'
@@ -670,7 +705,7 @@ $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.depend: $(SRC_ADVECTDIFFUSE_EXE)
 	@echo '-----------------------------------------------------------------------'
 	@echo ' '
 	touch $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.depend
-	makedepend -f$(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_ADVECTDIFFUSE_EXE) >& /dev/null
+	makedepend -f$(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_ADVECTDIFFUSE_EXE) $(SRC_ADVECTDIFFUSE) >& /dev/null
 	@echo ' '
 	@echo AdvectDiffuse2D source file dependencies have been brought up to date.
 	@echo '-------------------------------------------------------------'
@@ -693,7 +728,7 @@ $(CHEM_DIR)Chem2D.depend: $(SRC_CHEM_EXE)
 	@echo '-----------------------------------------------------------------------'
 	@echo ' '
 	touch $(CHEM_DIR)Chem2D.depend
-	makedepend -f$(CHEM_DIR)Chem2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_CHEM_EXE) >& /dev/null
+	makedepend -f$(CHEM_DIR)Chem2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_CHEM_EXE) $(SRC_CHEM) >& /dev/null
 	@echo ' '
 	@echo Chem2D source file dependencies have been brought up to date.
 	@echo '-------------------------------------------------------------'
@@ -739,7 +774,7 @@ $(DUSTY_DIR)Dusty2D.depend: $(SRC_DUSTY_EXE)
 	@echo '------------------------------------------------------------------------'
 	@echo ' '
 	touch $(DUSTY_DIR)Dusty2D.depend
-	makedepend -f$(DUSTY_DIR)Dusty2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_DUSTY_EXE) >& /dev/null
+	makedepend -f$(DUSTY_DIR)Dusty2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_DUSTY_EXE) $(SRC_DUSTY) >& /dev/null
 	@echo ' '
 	@echo Dusty2D source file dependencies have been brought up to date.
 	@echo '--------------------------------------------------------------'
@@ -762,7 +797,7 @@ $(EULER_DIR)Euler2D.depend: $(SRC_EULER_EXE)
 	@echo '------------------------------------------------------------------------'
 	@echo ' '
 	touch $(EULER_DIR)Euler2D.depend
-	makedepend -f$(EULER_DIR)Euler2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_EULER_EXE) >& /dev/null
+	makedepend -f$(EULER_DIR)Euler2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_EULER_EXE) $(SRC_EULER) >& /dev/null
 	@echo ' '
 	@echo Euler2D source file dependencies have been brought up to date.
 	@echo '--------------------------------------------------------------'
@@ -785,7 +820,7 @@ $(ELECTROSTATIC_DIR)Electrostatic2D.depend: $(SRC_ELECTROSTATIC_EXE)
 	@echo '------------------------------------------------------------------------'
 	@echo ' '
 	touch $(ELECTROSTATIC_DIR)Electrostatic2D.depend
-	makedepend -f$(ELECTROSTATIC_DIR)Electrostatic2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_ELECTROSTATIC_EXE) >& /dev/null
+	makedepend -f$(ELECTROSTATIC_DIR)Electrostatic2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_ELECTROSTATIC_EXE) $(SRC_ELECTROSTATIC) >& /dev/null
 	@echo ' '
 	@echo Electrostatic2D source file dependencies have been brought up to date.
 	@echo '--------------------------------------------------------------'
@@ -808,7 +843,7 @@ $(ION_DIR)Ion5Moment2D.depend: $(SRC_ION_EXE)
 	@echo '-----------------------------------------------------------------------------'
 	@echo ' '
 	touch $(ION_DIR)Ion5Moment2D.depend
-	makedepend -f$(ION_DIR)Ion5Moment2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_ION_EXE) >& /dev/null
+	makedepend -f$(ION_DIR)Ion5Moment2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_ION_EXE) $(SRC_ION) >& /dev/null
 	@echo ' '
 	@echo Ion5Moment2D source file dependencies have been brought up to date.
 	@echo '-------------------------------------------------------------------'
@@ -831,7 +866,7 @@ $(LEVELSET_DIR)LevelSet2D.depend: $(SRC_LEVELSET_EXE)
 	@echo '------------------------------------------------------------------------'
 	@echo ' '
 	touch $(LEVELSET_DIR)LevelSet2D.depend
-	makedepend -f$(LEVELSET_DIR)LevelSet2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_LEVELSET_EXE) >& /dev/null
+	makedepend -f$(LEVELSET_DIR)LevelSet2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_LEVELSET_EXE) $(SRC_LEVELSET) >& /dev/null
 	@echo ' '
 	@echo LevelSet2D source file dependencies have been brought up to date.
 	@echo '------------------------------------------------------------------------'
@@ -854,7 +889,7 @@ $(NAVIERSTOKES_DIR)NavierStokes2D.depend: $(SRC_NAVIERSTOKES_EXE)
 	@echo '-------------------------------------------------------------------------------'
 	@echo ' '
 	touch $(NAVIERSTOKES_DIR)NavierStokes2D.depend
-	makedepend -f$(NAVIERSTOKES_DIR)NavierStokes2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_NAVIERSTOKES_EXE) >& /dev/null
+	makedepend -f$(NAVIERSTOKES_DIR)NavierStokes2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_NAVIERSTOKES_EXE) $(SRC_NAVIERSTOKES) >& /dev/null
 	@echo ' '
 	@echo NavierStokes2D source file dependencies have been brought up to date.
 	@echo '---------------------------------------------------------------------'
@@ -877,7 +912,7 @@ $(INTERFACE_DIR)EmbeddedBoundaries2D.depend: $(SRC_EMBEDDEDBOUNDARIES_EXE)
 	@echo '-------------------------------------------------------------------------------'
 	@echo ' '
 	touch $(INTERFACE_DIR)EmbeddedBoundaries2D.depend
-	makedepend -f$(INTERFACE_DIR)EmbeddedBoundaries2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_EMBEDDEDBOUNDARIES_EXE) >& /dev/null
+	makedepend -f$(INTERFACE_DIR)EmbeddedBoundaries2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_EMBEDDEDBOUNDARIES_EXE) $(SRC_EMBEDDEDBOUNDARIES) >& /dev/null
 	@echo ' '
 	@echo EmbeddedBoundaries2D source file dependencies have been brought up to date.
 	@echo '---------------------------------------------------------------------'
@@ -900,11 +935,35 @@ $(GAUSSIAN_DIR)Gaussian2D.depend: $(SRC_GAUSSIAN_EXE)
 	@echo '-----------------------------------------------------------------------'
 	@echo ' '
 	touch $(GAUSSIAN_DIR)Gaussian2D.depend
-	makedepend -f$(GAUSSIAN_DIR)Gaussian2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_Gaussian_EXE) >& /dev/null
+	makedepend -f$(GAUSSIAN_DIR)Gaussian2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_Gaussian_EXE) $(SRC_Gaussian) >& /dev/null
 	@echo ' '
 	@echo Gaussian2D source file dependencies have been brought up to date.
 	@echo '-------------------------------------------------------------'
 	@echo ' '
+
+$(EXE_RTE2D): $(RTE_DIR)Rte2D.depend $(OBJ_RTE_EXE) $(OBJ_BASE) $(OBJ_RTE) $(OBJ_ICEMCFD)
+	@echo ' '
+	@echo Building program $(EXE_RTE2D) for a $(PLATFORM) platform.
+	@echo '-----------------------------------------------------------'
+	@echo ' '
+	$(LD) -o $(EXE_RTE2D) $(OBJ_RTE_EXE) $(OBJ_BASE) $(OBJ_RTE) $(OBJ_ICEMCFD) $(LDFLAGS)
+	@echo ' '
+	@echo Program $(EXE_RTE2D) has been brought up to date.
+	@echo '---------------------------------------------------'
+	@echo ' '
+
+$(RTE_DIR)Rte2D.depend: $(SRC_RTE_EXE)
+	@echo ' '
+	@echo Determining Euler2D source file dependencies for a $(PLATFORM) platform.
+	@echo '------------------------------------------------------------------------'
+	@echo ' '
+	touch $(RTE_DIR)Rte2D.depend
+	makedepend -f$(RTE_DIR)Rte2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_RTE_EXE) $(SRC_RTE) >& /dev/null
+	@echo ' '
+	@echo Rte2D source file dependencies have been brought up to date.
+	@echo '--------------------------------------------------------------'
+	@echo ' '
+
 
 $(EXE_ICEMCFD_UTIL1): CFFC.depend $(ICEM_DIR)icemcfd2tecplot.depend $(OBJ_ICEMCFD_UTIL1)
 	@echo ' '
@@ -969,7 +1028,7 @@ install-all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
 	@for f in $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
 	$(EXE_ADVECTDIFFUSE2D) $(EXE_CHEM2D) $(EXE_DUSTY2D) $(EXE_EULER2D) \
         $(EXE_ION5MOMENT2D) $(EXE_LEVELSET2D) $(EXE_NAVIERSTOKES2D) \
-        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_GAUSSIAN2D) $(EXE_HIGHTEMP2D); \
+        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_GAUSSIAN2D) $(EXE_HIGHTEMP2D) $(EXE_RTE2D); \
 	do \
 	  echo "Installing $$f"; \
 	  cp $$f $(CFFC_BIN_DIR); \
@@ -991,7 +1050,7 @@ uninstall-all:
 	@for f in $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
 	$(EXE_ADVECTDIFFUSE2D) $(EXE_CHEM2D) $(EXE_DUSTY2D) $(EXE_EULER2D) \
         $(EXE_ION5MOMENT2D) $(EXE_LEVELSET2D) $(EXE_NAVIERSTOKES2D) \
-        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_HIGHTEMP2D); \
+        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_HIGHTEMP2D) $(EXE_RTE2D); \
 	do \
 	  echo "Uninstalling $$f"; \
 	  cd $(CFFC_BIN_DIR); \
@@ -1046,6 +1105,7 @@ clean:
 	rm -f $(DUSTY_DIR)*.o $(DUSTY_DIR)*.il $(DUSTY_DIR)*~ $(DUSTY_DIR)*.depend $(DUSTY_DIR)*.bak
 	rm -f $(ELECTROSTATIC_DIR)*.o $(ELECTROSTATIC_DIR)*.il $(ELECTROSTATIC_DIR)*~ $(ELECTROSTATIC_DIR)*.depend $(ELECTROSTATIC_DIR)*.bak
 	rm -f $(EULER_DIR)*.o $(EULER_DIR)*.il $(EULER_DIR)*~ $(EULER_DIR)*.depend $(EULER_DIR)*.bak
+	rm -f $(RTE_DIR)*.o $(RTE_DIR)*.il $(RTE_DIR)*~ $(RTE_DIR)*.depend $(RTE_DIR)*.bak
 	rm -f $(MULTIGRID_DIR)*~
 	rm -f $(NKS_DIR)*~
 	rm -f $(GRID_DIR)*.o $(GRID_DIR)*.il $(GRID_DIR)*~
@@ -1071,6 +1131,7 @@ clean:
 	rm -f $(EXE_EULER2D)
 	rm -f $(EXE_ION5MOMENT2D)
 	rm -f $(EXE_LEVELSET2D)
+	rm -f $(EXE_RTE2D)
 	rm -f $(EXE_NAVIERSTOKES2D)
 	rm -f $(EXE_GAUSSIAN2D)
 	@echo ' '
@@ -1127,6 +1188,7 @@ include $(EULER_DIR)Euler2D.depend
 include $(ION_DIR)Ion5Moment2D.depend
 include $(LEVELSET_DIR)LevelSet2D.depend
 include $(NAVIERSTOKES_DIR)NavierStokes2D.depend
+include $(RTE_DIR)Rte2D.depend
 include $(ICEM_DIR)icemcfd2tecplot.depend
 include $(ICEM_DIR)icemcfd2grid2dquad.depend
 include $(GAUSSIAN_DIR)Gaussian2D.depend
