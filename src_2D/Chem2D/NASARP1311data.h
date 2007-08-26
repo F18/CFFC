@@ -41,6 +41,9 @@ using namespace std;
 
 #define	INPUT_PARAMETER_LENGTH_CHEM2D    128
 
+#define TRANSPORT_NASA                   1000
+#define TRANSPORT_LENNARD_JONES          1001
+
 /*************************************************************************
 ************** THEMOCOEF CLASS DEFINITION ********************************
   This is basically a data class that stores the thermodynamic data for 

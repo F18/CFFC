@@ -6,6 +6,7 @@
 /* Include C++ math library. */
 
 #include <cmath>
+#include <iostream>
 
 using namespace std;
 
@@ -129,6 +130,33 @@ inline float heaviside(float &x) {
 
 inline double heaviside(const double &x) {
     return (x > ZERO) ? ONE : ZERO;
+}
+
+// factorial(x)
+inline int factorial(const int &x) {
+  int factor = 1;
+  if (x<0) {
+    cerr << "\nError in factorial function: No factorial for negative integers! "<<endl;
+    exit(1);
+  } else if (x==0) {
+    return 1;
+  } else {
+    for (int i=1; i<=x; i++) {
+      factor *= i;
+    }
+    return factor;
+  }
+}
+
+template <class T>
+T LinearInterpolation(const double &x1, const double &x2, const double &x,
+		      const T &T1, const T &T2) {
+  return (T1 + (T2-T1)*(x-x1)/(x2-x1));  
+}
+
+template <class T>
+T TwoPointFiniteDifference(const T &T1, const T &T2, const double &d2_d1) {
+  return (T2-T1)/d2_d1;
 }
 
 #endif // _MATH_MACROS_INCLUDED
