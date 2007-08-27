@@ -125,7 +125,10 @@ enum BandTreatment { SNBCK_OVERLAP_OPTICALLY_THIN, // optically thin
 enum Inversion { SNBCK_EVAL_ONLINE,    // direct newton solve
 		 SNBCK_EVAL_PRECALC }; // precalulated and stored in cubic spline
 
-
+// Pressure broadening parameter cutoff.  This is the maximum value
+// of the pressure broadening term, B, so that overflow is avoided when
+// exp(PI*B) is evaluated.
+enum { SNBCK_BROADENING_CUTOFF = 200 };
 
 /*********************************************************************
  ********************* FUNCTION PROTOTYPES ***************************

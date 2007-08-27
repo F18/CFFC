@@ -1723,23 +1723,29 @@ istream &operator >> (istream &in_file,
  *      Trans., v43, 2000. pp. 3119-3135.                            *
  *********************************************************************/
 double g( const double k, const double B, const double S ){
+  // Limit the pressure broadinging term to avoid overflow.
+  double B0 = min( B, double(SNBCK_BROADENING_CUTOFF) );
+
   // compute g1 using Eq. (7) in Liu et al. (2000)
-  double a = HALF*sqrt( PI*B*S ); 
-  double b = HALF*sqrt( PI*B/S ); 
+  double a = HALF*sqrt( PI*B0*S );
+  double b = HALF*sqrt( PI*B0/S );
   double temp = HALF * erfc( a/sqrt(k) - b*sqrt(k) ) +
-                HALF * erfc( a/sqrt(k) + b*sqrt(k) )*exp(PI*B);
+                HALF * erfc( a/sqrt(k) + b*sqrt(k) )*exp(PI*B0);
   return temp;
 }
 
 double g_prime( const double k, const double B, const double S ){
+  // Limit the pressure broadinging term to avoid overflow.
+  double B0 = min( B, double(SNBCK_BROADENING_CUTOFF) );
+
   // compute dg/dk using Eq. (7) in Liu et al. (2000)
-  double a = HALF*sqrt( PI*B*S );
-  double b = HALF*sqrt( PI*B/S );
+  double a = HALF*sqrt( PI*B0*S );
+  double b = HALF*sqrt( PI*B0/S );
   double c1 = -pow( a/sqrt(k)-b*sqrt(k), 2 );
   double c2 = -pow( a/sqrt(k)+b*sqrt(k), 2 );
   double d1 = -HALF*a*pow(k,-THREE/TWO) - HALF*b*pow(k,-HALF);
   double d2 = -HALF*a*pow(k,-THREE/TWO) + HALF*b*pow(k,-HALF);
-  double temp = -HALF*( exp(c1)*d1 + exp(c2+PI*B)*d2 );
+  double temp = -HALF*( exp(c1)*d1 + exp(c2+PI*B0)*d2 );
   temp *= TWO/sqrt(PI);
   return temp;
 }
