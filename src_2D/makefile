@@ -403,8 +403,7 @@ OBJ_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.o \
 	            $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadSolvers.o \
 		    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuad_NKS.o
 OBJ_ADVECTDIFFUSE_EXE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.o
-OBJ_CHEM = $(OBJ_NASARP1311) \
-	   $(CHEM_DIR)Chem2DState.o \
+OBJ_CHEM = $(CHEM_DIR)Chem2DState.o \
 	   $(CHEM_DIR)dRdU.o \
 	   $(CHEM_DIR)Reactions.o \
 	   $(CHEM_DIR)Chem2DTools.o \
@@ -477,8 +476,7 @@ OBJ_ION = $(ION_DIR)Ion5Moment2DState.o \
           $(ION_DIR)Ion5Moment2DQuadGrid.o \
           $(ION_DIR)Ion5Moment2DQuadSolvers.o
 OBJ_ION_EXE = $(ION_DIR)Ion5Moment2D.o
-OBJ_LESPREMIXED = $(OBJ_NASARP1311) \
-	          $(LESPREMIXED_DIR)LESPremixed2DState.o \
+OBJ_LESPREMIXED = $(LESPREMIXED_DIR)LESPremixed2DState.o \
 	          $(LESPREMIXED_DIR)LESPremixed2DInput.o \
 	          $(LESPREMIXED_DIR)LESPremixed2DReactions.o \
 	          $(LESPREMIXED_DIR)LESPremixed2DQuad.o \
@@ -530,7 +528,8 @@ OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_AMR) \
 OBJ_CFFC = $(OBJ_BASE) $(OBJ_SCALAR) $(OBJ_HEAT) $(OBJ_HYPERHEAT) $(OBJ_EULER1D) $(OBJ_MHD1D) \
 	   $(OBJ_ADVECTDIFFUSE) $(OBJ_CHEM) $(OBJ_DUSTY) $(OBJ_EULER) $(OBJ_HIGHTEMP) \
 	   $(OBJ_ION) $(OBJ_ELECTROSTATIC) $(OBJ_INTERFACE) $(OBJ_LESPREMIXED) $(OBJ_LEVELSET) \
-	   $(OBJ_NAVIERSTOKES) $(OBJ_GAUSSIAN) $(OBJ_EOS) $(OBJ_ICEMCFD) $(OBJ_TURBULENT)
+	   $(OBJ_NAVIERSTOKES) $(OBJ_GAUSSIAN) $(OBJ_EOS) $(OBJ_ICEMCFD) $(OBJ_TURBULENT) \
+	   $(OBJ_NASARP1311)
 OBJ_MAIN = cffc2D.o
 OBJ_ICEMCFD_UTIL1 = $(ICEM_DIR)icemcfd2tecplot.o \
                     $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD)
@@ -733,12 +732,12 @@ $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.depend: $(SRC_ADVECTDIFFUSE_EXE)
 	@echo '-------------------------------------------------------------'
 	@echo ' '
 
-$(EXE_CHEM2D): $(CHEM_DIR)Chem2D.depend $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_CHEM) $(OBJ_ICEMCFD)
+$(EXE_CHEM2D): $(CHEM_DIR)Chem2D.depend $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASARP1311) $(OBJ_CHEM) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_CHEM2D) for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_CHEM2D) $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_CHEM) $(OBJ_ICEMCFD) $(LDFLAGS)
+	$(LD) -o $(EXE_CHEM2D) $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASARP1311) $(OBJ_CHEM) $(OBJ_ICEMCFD) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_CHEM2D) has been brought up to date.
 	@echo '--------------------------------------------------'
@@ -871,12 +870,12 @@ $(ION_DIR)Ion5Moment2D.depend: $(SRC_ION_EXE)
 	@echo '-------------------------------------------------------------------'
 	@echo ' '
 
-$(EXE_LESPREMIXED2D): $(LESPREMIXED_DIR)LESPremixed2D.depend $(OBJ_LESPREMIXED_EXE) $(OBJ_BASE) $(OBJ_LESPREMIXED) $(OBJ_TURBULENT) $(OBJ_ICEMCFD) 
+$(EXE_LESPREMIXED2D): $(LESPREMIXED_DIR)LESPremixed2D.depend $(OBJ_LESPREMIXED_EXE) $(OBJ_BASE) $(OBJ_NASARP1311) $(OBJ_LESPREMIXED) $(OBJ_TURBULENT) $(OBJ_ICEMCFD) 
 	@echo ' '
 	@echo Building program $(EXE_LESPREMIXED2D) for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_LESPREMIXED2D) $(OBJ_LESPREMIXED_EXE) $(OBJ_BASE) $(OBJ_LESPREMIXED) $(OBJ_TURBULENT) $(OBJ_ICEMCFD) $(LDFLAGS)
+	$(LD) -o $(EXE_LESPREMIXED2D) $(OBJ_LESPREMIXED_EXE) $(OBJ_BASE) $(OBJ_NASARP1311) $(OBJ_LESPREMIXED) $(OBJ_TURBULENT) $(OBJ_ICEMCFD) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_LESPREMIXED2D) has been brought up to date.
 	@echo '--------------------------------------------------'
@@ -890,7 +889,7 @@ $(LESPREMIXED_DIR)LESPremixed2D.depend: $(SRC_LESPREMIXED_EXE)
 	touch $(LESPREMIXED_DIR)LESPremixed2D.depend
 	makedepend -f$(LESPREMIXED_DIR)LESPremixed2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_LESPREMIXED_EXE) >& /dev/null
 	@echo ' '
-	@echo Chem2D source file dependencies have been brought up to date.
+	@echo LESPremixed2D source file dependencies have been brought up to date.
 	@echo '-------------------------------------------------------------'
 	@echo ' '
 
@@ -1031,9 +1030,6 @@ $(ICEM_DIR)icemcfd2grid2dquad.depend: $(SRC_ICEMCFD_UTIL2)
 	@echo ICEM CFD utility program source file dependencies have been brought up to date.
 	@echo '-------------------------------------------------------------------------------'
 	@echo ' '
-
-##$(OBJ_POLYFIT): $(SRC_POLYFIT)
-##	$(LD) -c $(LDFLAGS)  $(SRC_POLYFIT) 
 
 #
 # Install/Uninstall targets
