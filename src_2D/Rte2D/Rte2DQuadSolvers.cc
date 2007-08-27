@@ -15,9 +15,9 @@
 
 
 /********************************************************
- * Routine: Rte2DQuadSolver                           *
+ * Routine: Rte2DQuadSolver                             *
  *                                                      *
- * Computes solutions to 2D Rte equations on 2D       *
+ * Computes solutions to 2D Rte equations on 2D         *
  * quadrilateral multi-block solution-adaptive mesh.    *
  *                                                      *
  ********************************************************/
@@ -314,12 +314,6 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
      error_flag = CFFC_OR_MPI(error_flag);
      if (error_flag) return (error_flag);
 
-//      // need to set non-solution vector components
-//      Prescribe_NonSol(Local_SolnBlk,
-// 		      List_of_Local_Solution_Blocks,
-// 		      Input_Parameters);
-
-
   } /* endif */
 
   /* Output multi-block solution-adaptive quadrilateral mesh
@@ -516,10 +510,6 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
                                List_of_Local_Solution_Blocks,
                                ON, 
 			       ON);
-// 	      // need to set non-solution vector components
-// 	      Prescribe_NonSol(Local_SolnBlk,
-// 			       List_of_Local_Solution_Blocks,
-// 			       Input_Parameters);
               if (error_flag) {
                  cout << "\n Rte2D ERROR: Rte2D AMR error on processor "
 	              << List_of_Local_Solution_Blocks.ThisCPU
@@ -865,10 +855,6 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
                                List_of_Global_Solution_Blocks,
                                List_of_Local_Solution_Blocks,
                                ON,ON);
-// 	      // need to set non-solution vector components
-// 	      Prescribe_NonSol(Local_SolnBlk,
-// 			       List_of_Local_Solution_Blocks,
-// 			       Input_Parameters);
               if (error_flag) {
                  cout << "\n Rte2D ERROR: Rte2D AMR error on processor "
 	              << List_of_Local_Solution_Blocks.ThisCPU
@@ -1386,10 +1372,6 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
 		       List_of_Local_Solution_Blocks,
 		       ON,
 		       ON);
-//       // need to set non-solution vector components
-//       Prescribe_NonSol(Local_SolnBlk,
-// 		       List_of_Local_Solution_Blocks,
-// 		       Input_Parameters);
       if (error_flag) {
 	cout << "\n Rte2D ERROR: Rte2D AMR error on processor "
 	     << List_of_Local_Solution_Blocks.ThisCPU
