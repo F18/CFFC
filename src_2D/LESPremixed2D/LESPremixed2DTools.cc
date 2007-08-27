@@ -12,7 +12,7 @@
  *                                                      *
  *                                                      *
  ********************************************************/
-int Open_Time_Accurate_File(ofstream &Time_Accurate_File,
+int Open_TimeAccurate_File(ofstream &Time_Accurate_File,
 			    char *File_Name,
 			    const int Append_to_File,
 			    const LESPremixed2D_pState &Soln) {
@@ -104,7 +104,7 @@ int Open_Time_Accurate_File(ofstream &Time_Accurate_File,
  * for a CFD  calculation.                              *
  *                                                      *
  ********************************************************/
-int Close_Time_Accurate_File(ofstream &Time_Accurate_File) {
+int Close_TimeAccurate_File(ofstream &Time_Accurate_File) {
     Time_Accurate_File.close();
     return(0);
 }
@@ -117,7 +117,7 @@ int Close_Time_Accurate_File(ofstream &Time_Accurate_File) {
  * iteration level, time, CPU time, and residual norms. *
  *                                                      *
  ********************************************************/
-void Output_to_Time_Accurate_File(ostream &Time_Accurate_File,
+void Output_to_TimeAccurate_File(ostream &Time_Accurate_File,
 			       const double &Time,
 			       const LESPremixed2D_pState &Soln){
   double Temp=Soln.T();

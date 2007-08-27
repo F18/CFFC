@@ -2676,14 +2676,14 @@ extern int LESPremixed2DQuadSolver(char *Input_File_Name_ptr, int batch_flag);
  * LESPremixed2DTools.cc                                                  *
  **************************************************************************/
 
-extern int Open_Time_Accurate_File(ofstream &Time_Accurate_File,
+extern int Open_TimeAccurate_File(ofstream &Time_Accurate_File,
 				   char *File_Name,
 				   const int Append_to_Fileconst,
 				   const LESPremixed2D_pState &Soln);
 
-extern int Close_Time_Accurate_File(ofstream &Time_Accurate_File);
+extern int Close_TimeAccurate_File(ofstream &Time_Accurate_File);
 
-extern void Output_to_Time_Accurate_File(ostream &Time_Accurate_File,
+extern void Output_to_TimeAccurate_File(ostream &Time_Accurate_File,
 					 const double &Time,
 					 const LESPremixed2D_pState &Soln);
   

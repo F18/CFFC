@@ -154,6 +154,11 @@ class Chem2D_Input_Parameters{
   Chem2D_pState Wo;
   Chem2D_cState Uo;
   
+
+  //! Transport data type
+  char trans_type[INPUT_PARAMETER_LENGTH_CHEM2D];
+  int  i_trans_type; 
+
   //! BC Pressure Gradient 
   double Pressure_Gradient;
 
@@ -547,6 +552,8 @@ inline ostream &operator << (ostream &out_file,
 	out_file << IP.Schmidt[i]<<", ";
       }
     }
+    out_file << "\n  -> Transport Data: "
+             << IP.trans_type;
     /*********************************************/ 
     out_file << "\n  -> Initial Conditions: " 
              << IP.ICs_Type;

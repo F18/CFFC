@@ -471,7 +471,7 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 				      Local_SolnBlk[0].Number_of_Residual_Norms);
       //for unsteady plotting
       if( Input_Parameters.Time_Accurate_Plot_Frequency != 0){
-	error_flag = Open_Time_Accurate_File(time_accurate_data_file,
+	error_flag = Open_TimeAccurate_File(time_accurate_data_file,
 					     Input_Parameters.Output_File_Name,
 					     number_of_time_steps,
 					     Local_SolnBlk[0].W[2][2]);
@@ -785,7 +785,7 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	    //chemical solutions with no flow ie. just nonequilibrium chemistry
 	    if (Input_Parameters.Time_Accurate && Input_Parameters.Time_Accurate_Plot_Frequency != 0){
 	      if ( (number_of_time_steps%Input_Parameters.Time_Accurate_Plot_Frequency) == 0 ){ 
-		Output_to_Time_Accurate_File(time_accurate_data_file,
+		Output_to_TimeAccurate_File(time_accurate_data_file,
 					     Time,
 					     Local_SolnBlk[0].W[2][2]);
 	      }
@@ -1014,7 +1014,7 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     
     if (CFFC_Primary_MPI_Processor()) {
       error_flag = Close_Progress_File(residual_file);
-      error_flag = Close_Time_Accurate_File(time_accurate_data_file);
+      error_flag = Close_TimeAccurate_File(time_accurate_data_file);
       error_flag = Close_Energy_File(energy_file);
       error_flag = Close_Turbulence_Progress_File(energy_file);   
     } /* endif */

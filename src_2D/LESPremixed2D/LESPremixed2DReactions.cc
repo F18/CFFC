@@ -10,7 +10,7 @@
 /***********************************************************************
   Setup reaction data using hardcoded reaction mechanisms.
 ***********************************************************************/
-void Reaction_set::set_reactions(string &react){
+void Reactionset::set_reactions(string &react){
 
   Deallocate();
 
@@ -32,7 +32,7 @@ void Reaction_set::set_reactions(string &react){
     num_species = 5;
     num_react_species = 4;
     //allocate memory 
-    reactions = new React_data[num_reactions];
+    reactions = new Reactdata[num_reactions];
     //set reaction coefficients based on kov formulation
     //reactions[0].set_data("CH4_1step",3.3*6.7e12,0.0,(48400.0*CAL_TO_JOULE),0);    for 0.2,1,3
     reactions[0].set_data("CH4_1step",4.5*2.4e16,0.0,(48400.0*CAL_TO_JOULE),0);     //for 1.0,1.0
@@ -55,7 +55,7 @@ void Reaction_set::set_reactions(string &react){
     num_species = 6;
     num_react_species = 5;
     //allocate memory 
-    reactions = new React_data[num_reactions];
+    reactions = new Reactdata[num_reactions];
     //set reaction coefficients
     reactions[0].set_data("CH4_2step_1",2.6*1.443e13,0.0,(48400.0*CAL_TO_JOULE),0);
     reactions[1].set_data("CH4_2step_2",pow(10.0,14.6),5.0e8,0.0,(40000.0*CAL_TO_JOULE),0);
@@ -189,7 +189,7 @@ void Reaction_set::set_reactions(string &react){
     num_species = 4;
     num_react_species = 3;
     //allocate memory 
-    reactions = new React_data[num_reactions];
+    reactions = new Reactdata[num_reactions];
     //set reaction coefficients
     reactions[0].set_data("H2O2_1step_1",4.0e5,0.0,7.0*R_UNIVERSAL*1000.0,0);
   
@@ -211,7 +211,7 @@ void Reaction_set::set_reactions(string &react){
     num_species = 5;
     num_react_species = 4;
     //allocate memory 
-    reactions = new React_data[num_reactions];
+    reactions = new Reactdata[num_reactions];
     //set reaction coefficients
     reactions[0].set_data("H2O2_2step_1",1.0,-10.0,4865.0*CAL_TO_JOULE,0);
     reactions[1].set_data("H2O2_2step_2",1.0,-13.0,42000.0*CAL_TO_JOULE,1);
@@ -234,7 +234,7 @@ void Reaction_set::set_reactions(string &react){
     num_species = 7;
     num_react_species = 6;
     //allocate memory 
-    reactions = new React_data[num_reactions];
+    reactions = new Reactdata[num_reactions];
     //set reaction coefficients
     reactions[0].set_data("H2O2_8step_1",2.2e14,0   ,16800.0*CAL_TO_JOULE,0);
     reactions[1].set_data("H2O2_8step_2",1.8e10,1.0 ,8900.0*CAL_TO_JOULE ,0);
@@ -273,7 +273,7 @@ void Reaction_set::set_reactions(string &react){
   Setup user defined species.  Basically copy it to a perminant
   storage location so pointers can be used.
 ***********************************************************************/
-void Reaction_set::set_species(string *spec, int num){
+void Reactionset::set_species(string *spec, int num){
   Deallocate();
   num_species=num;
   species = new string[num];
@@ -287,7 +287,7 @@ void Reaction_set::set_species(string *spec, int num){
 
   NOT FINISHED!!!!
 ***********************************************************************/
-void Reaction_set::set_reactions(int &num_react,string* name, double* A,
+void Reactionset::set_reactions(int &num_react,string* name, double* A,
 			   double* b, double* E){  
   
 //   //flag for user defined
@@ -295,7 +295,7 @@ void Reaction_set::set_reactions(int &num_react,string* name, double* A,
 //   //number of reactions in set
 //   num_reactions = num_react;   
 //   //allocate memory 
-//   reactions = new React_data[num_react];    
+//   reactions = new Reactdata[num_react];    
 //   //get each reaction set data
 //   for(int i=0; i<num_react; i++){
 //     reactions[i].set_data(name[i],A[i],b[i],E[i]);
@@ -312,7 +312,7 @@ void Reaction_set::set_reactions(int &num_react,string* name, double* A,
    
    Units:  J/mol
 ***********************************************************************/
-double React_data::deltaG(const LESPremixed2D_pState &W) const{
+double Reactdata::deltaG(const LESPremixed2D_pState &W) const{
 
   //need a general and more efficient system here !!!! SN
   // deltaG = sum (( product Gs) - (react Gs))
@@ -359,7 +359,7 @@ double React_data::deltaG(const LESPremixed2D_pState &W) const{
   Return units are  kg/m^3*s ie. rho*omega (kg/m^3)*(1/s)
 
 ************************************************************************/
-void Reaction_set::omega(LESPremixed2D_cState &U, const LESPremixed2D_pState &W,  const int Flow_Type ) const{
+void Reactionset::omega(LESPremixed2D_cState &U, const LESPremixed2D_pState &W,  const int Flow_Type ) const{
  
   double Temp = W.T();  // K
   double rho= W.rho/THOUSAND; // kg/m^3 -> g/cm^3
@@ -378,7 +378,7 @@ void Reaction_set::omega(LESPremixed2D_cState &U, const LESPremixed2D_pState &W,
 
   switch(reactset_flag){
   case NO_REACTIONS:
-    cerr<<"\n You shouldn't get here, NO_REACTIONS in Reaction_set::omeag(..)";
+    cerr<<"\n You shouldn't get here, NO_REACTIONS in Reactionset::omeag(..)";
     exit(1);
     break;
     //---------------------------------//
@@ -612,7 +612,7 @@ void Reaction_set::omega(LESPremixed2D_cState &U, const LESPremixed2D_pState &W,
         if they go to ZERO, it will cause floating point exceptions
        (ie. Divison by zero);  
 ************************************************************************/
-void Reaction_set::dSwdU(DenseMatrix &dSwdU, const LESPremixed2D_pState &W, 
+void Reactionset::dSwdU(DenseMatrix &dSwdU, const LESPremixed2D_pState &W, 
 			 const bool &CFL_flag, const int Flow_Type,
 			 const int solver_type) const{
 
@@ -991,7 +991,7 @@ void Reaction_set::dSwdU(DenseMatrix &dSwdU, const LESPremixed2D_pState &W,
   
    dSwdU:  Matrix of source terms 
 ************************************************************************/
-void Reaction_set::Finite_Difference_dSwdU(DenseMatrix &dSwdU, 
+void Reactionset::Finite_Difference_dSwdU(DenseMatrix &dSwdU, 
 					   const LESPremixed2D_pState &Wlocal,
 					   const int Flow_Type) const {
   
@@ -1034,7 +1034,7 @@ void Reaction_set::Finite_Difference_dSwdU(DenseMatrix &dSwdU,
   
    dSwdU:  Matrix of source terms 
 ************************************************************************/
-// void Reaction_set::Complex_Step_dSwdU(DenseMatrix &dSwdU, 
+// void Reactionset::Complex_Step_dSwdU(DenseMatrix &dSwdU, 
 // 				      const LESPremixed2D_pState &Wlocal) const {
 
 //   const double TOL = 1.0E-15, eps = 1.0E-100;

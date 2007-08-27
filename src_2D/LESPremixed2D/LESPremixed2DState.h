@@ -173,7 +173,7 @@ class LESPremixed2D_pState {
   static int                      nscal; //!< number of scalars
   static NASARP1311data       *specdata; //!< Global Species Data
   static double                *Schmidt; //!< Schmidt Number for each species
-  static Reaction_set             React; //!< Global Reaction Data
+  static Reactionset              React; //!< Global Reaction Data
   static Set_scalar            Scal_sys; //!< Set the group of scalars to be solved in the model
   static double          low_temp_range; //!< Low temp data range
   static double         high_temp_range; //!< High temp data range
@@ -249,7 +249,7 @@ class LESPremixed2D_pState {
 
    //read in ns species data, call only once as its static
    void set_species_data(const int &, const int &, const string *, const char *,
- 			 const double&, const double *);
+ 			 const double&, const double *, const int &);
 
    //set initial data values predominately used internally !!!
    void set_initial_values();
@@ -633,7 +633,7 @@ class LESPremixed2D_pState {
 
    //read in ns species data, call only once as its static
    void set_species_data(const int &, const int &, const string *, const char *,
-			 const double&, const double *);
+			 const double&, const double *, const int &);
 
    //set initial data values predominately used internally 
    void set_initial_values();

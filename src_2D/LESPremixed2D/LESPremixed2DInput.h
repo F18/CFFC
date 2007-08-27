@@ -996,6 +996,6 @@ extern int Process_Input_Control_Parameter_File(LESPremixed2D_Input_Parameters &
                                                 char *Input_File_Name_ptr,
                                                 int &Command_Flag);
 
-extern void Equivalence_Ratio(const double &phi);
+/* extern void Equivalence_Ratio(const double &phi); */
 
 #endif /* _LESPREMIXED2D_INPUT_INCLUDED  */
