@@ -230,7 +230,7 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
 
 
     // ICEM:
-    // IP.ICEMCFD_FileNames = ICEMCFD_get_filenames();
+    IP.ICEMCFD_FileNames = ICEMCFD_get_filenames();
 
     // AMR:
     IP.AMR = 0;
@@ -314,6 +314,9 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
 #ifdef _MPI_VERSION
     int i;
 
+    MPI::COMM_WORLD.Bcast(IP.CFFC_Path, 
+			  INPUT_PARAMETER_LENGTH_RTE2D, 
+			  MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(IP.Input_File_Name, 
                           INPUT_PARAMETER_LENGTH_RTE2D, 
                           MPI::CHAR, 0);
@@ -388,9 +391,6 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
                           MPI::INT, 0);
     /***********************************************************************
      *************************** RTE SPECIFIC ******************************/
-    MPI::COMM_WORLD.Bcast(IP.CFFC_Path, 
-			  INPUT_PARAMETER_LENGTH_RTE2D, 
-			  MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(IP.RTE_Solver, 
                           INPUT_PARAMETER_LENGTH_RTE2D, 
                           MPI::CHAR, 0);
@@ -479,11 +479,10 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
                           1, 
                           MPI::DOUBLE, 0);
 
-    // SNBCK Parameters
-    IP.SNBCK_IP.Broadcast_Input_Parameters();
+   // SNBCK Parameters
+   IP.SNBCK_IP.Broadcast_Input_Parameters();
 
    if (!CFFC_Primary_MPI_Processor()) {
-     IP.get_cffc_path();
      IP.Uo.Deallocate();
      SetupStateStatic( IP );
      IP.Uo.Allocate();
@@ -837,6 +836,9 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     int Source_Rank = 0;
     int i;
 
+    Communicator.Bcast(IP.CFFC_Path, 
+		       INPUT_PARAMETER_LENGTH_RTE2D, 
+		       MPI::CHAR, Source_Rank);
     Communicator.Bcast(IP.Input_File_Name, 
                        INPUT_PARAMETER_LENGTH_RTE2D, 
                        MPI::CHAR, Source_Rank);
@@ -911,9 +913,6 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
                        MPI::INT, Source_Rank);
     /***********************************************************************
      *************************** RTE SPECIFIC ******************************/
-    Communicator.Bcast(IP.CFFC_Path, 
-		       INPUT_PARAMETER_LENGTH_RTE2D, 
-		       MPI::CHAR, Source_Rank);
     Communicator.Bcast(IP.RTE_Solver, 
                        INPUT_PARAMETER_LENGTH_RTE2D, 
                        MPI::CHAR, Source_Rank);

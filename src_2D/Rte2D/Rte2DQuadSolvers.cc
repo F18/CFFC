@@ -84,7 +84,7 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
   } else {
      error_flag = 0;
   } /* endif */
-
+  
   // Broadcast input solution parameters to other MPI processors.
   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
   CFFC_Broadcast_MPI(&error_flag, 1);

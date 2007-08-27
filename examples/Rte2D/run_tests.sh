@@ -6,7 +6,7 @@ echo "Running Rte2D tests"
 # set some paths
 RTE_EXE="$CFFC_Path/src_2D/rte2D"
 #RTE_EXE="valgrind --leak-check=full $CFFC_Path/src_2D/rte2D"
-#RTE_EXE="mpirun $CFFC_Path/src_2D/rte2D"
+#RTE_EXE="mpirun -np 2 $CFFC_Path/src_2D/rte2D"
 
 #
 # run rectangular coordinate system tests
