@@ -4438,23 +4438,14 @@ int dUdt_Residual_Evaluation(HighTemp2D_Quad_Block &SolnBlk,
 	case FLUX_FUNCTION_ROE :
 	  Flux = FluxRoe_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
 	  break;
-	case FLUX_FUNCTION_GLAISTER :
-	  Flux = FluxGlaister_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
-	  break;
 	case FLUX_FUNCTION_RUSANOV :
 	  Flux = FluxRusanov_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
 	  break;
 	case FLUX_FUNCTION_HLLE :
 	  Flux = FluxHLLE_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
 	  break;
-        case FLUX_FUNCTION_GHLLE :
-	  Flux = FluxGHLLE_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
-	  break;
 	case FLUX_FUNCTION_HLLL :
 	  Flux = FluxHLLL_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
-	  break;
-	case FLUX_FUNCTION_GHLLL :
-	  Flux = FluxGHLLL_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
 	  break;
 	case FLUX_FUNCTION_HLLC :
 	  Flux = FluxHLLC_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
@@ -4472,8 +4463,7 @@ int dUdt_Residual_Evaluation(HighTemp2D_Quad_Block &SolnBlk,
 	  Flux = FluxAUSMplusUP_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
 	  break;  
 	default:
-	  //Flux = FluxRoe_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
-	  Flux = FluxGlaister_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
+	  Flux = FluxRoe_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
 	  break;
 	};
 
@@ -4880,23 +4870,14 @@ int dUdt_Residual_Evaluation(HighTemp2D_Quad_Block &SolnBlk,
       case FLUX_FUNCTION_ROE :
 	Flux = FluxRoe_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
 	break;
-      case FLUX_FUNCTION_GLAISTER :
-	Flux = FluxGlaister_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
-	break;
       case FLUX_FUNCTION_RUSANOV :
 	Flux = FluxRusanov_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
 	break;
       case FLUX_FUNCTION_HLLE :
 	Flux = FluxHLLE_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
 	break;
-      case FLUX_FUNCTION_GHLLE :
-	Flux = FluxGHLLE_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
-	break;	
       case FLUX_FUNCTION_HLLL :
 	Flux = FluxHLLL_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
-	break;
-      case FLUX_FUNCTION_GHLLL :
-	Flux = FluxGHLLL_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
 	break;
       case FLUX_FUNCTION_HLLC :
 	Flux = FluxHLLC_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
@@ -4914,8 +4895,7 @@ int dUdt_Residual_Evaluation(HighTemp2D_Quad_Block &SolnBlk,
 	Flux = FluxAUSMplusUP_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
 	break;
      default:
-       //Flux = FluxRoe_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
-	Flux = FluxGlaister_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
+        Flux = FluxRoe_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
 	break;
       };
 
@@ -5428,23 +5408,14 @@ int dUdt_Multistage_Explicit(HighTemp2D_Quad_Block &SolnBlk,
 	case FLUX_FUNCTION_ROE :
 	  Flux = FluxRoe_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
 	  break;
-	case FLUX_FUNCTION_GLAISTER :
-	  Flux = FluxGlaister_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
-	  break;
 	case FLUX_FUNCTION_RUSANOV :
 	  Flux = FluxRusanov_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
 	  break;
 	case FLUX_FUNCTION_HLLE :
 	  Flux = FluxHLLE_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
 	  break;
-	case FLUX_FUNCTION_GHLLE :
-	  Flux = FluxGHLLE_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
-	  break; 
 	case FLUX_FUNCTION_HLLL :
 	  Flux = FluxHLLL_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
-	  break;
-	case FLUX_FUNCTION_GHLLL :
-	  Flux = FluxGHLLL_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
 	  break;
 	case FLUX_FUNCTION_HLLC :
 	  Flux = FluxHLLC_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
@@ -5462,8 +5433,7 @@ int dUdt_Multistage_Explicit(HighTemp2D_Quad_Block &SolnBlk,
 	  Flux = FluxAUSMplusUP_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
 	  break;
 	default:
-	  //Flux = FluxRoe_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
-	  Flux = FluxGlaister_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
+	  Flux = FluxRoe_n(Wl,Wr,SolnBlk.Grid.nfaceE(i,j));
 	  break;
 	};
 
@@ -5872,24 +5842,15 @@ int dUdt_Multistage_Explicit(HighTemp2D_Quad_Block &SolnBlk,
       case FLUX_FUNCTION_ROE :
 	Flux = FluxRoe_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
 	break;
-      case FLUX_FUNCTION_GLAISTER :
-	Flux = FluxGlaister_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
-	break;
       case FLUX_FUNCTION_RUSANOV :
 	Flux = FluxRusanov_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
 	break;
       case FLUX_FUNCTION_HLLE :
 	Flux = FluxHLLE_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
 	break;
-      case FLUX_FUNCTION_GHLLE :
-	Flux = FluxGHLLE_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
-	break;
       case FLUX_FUNCTION_HLLL :
 	Flux = FluxHLLL_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
 	break;
-      case FLUX_FUNCTION_GHLLL :
-	Flux = FluxGHLLL_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
-	break;	
       case FLUX_FUNCTION_HLLC :
 	Flux = FluxHLLC_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
 	break;
@@ -5906,8 +5867,7 @@ int dUdt_Multistage_Explicit(HighTemp2D_Quad_Block &SolnBlk,
 	Flux = FluxAUSMplusUP_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
 	break;
       default:
-	//Flux = FluxRoe_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
-        Flux = FluxGlaister_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
+	Flux = FluxRoe_n(Wl,Wr,SolnBlk.Grid.nfaceN(i,j));
 	break;
       };
 

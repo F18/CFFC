@@ -100,9 +100,9 @@ void Set_Default_Input_Parameters(HighTemp2D_Input_Parameters &IP) {
   */
 
   // Flux function:
-  string_ptr = "Glaister";
+  string_ptr = "Roe";
   strcpy(IP.Flux_Function_Type,string_ptr);
-  IP.i_Flux_Function = FLUX_FUNCTION_GLAISTER;
+  IP.i_Flux_Function = FLUX_FUNCTION_ROE;
 
   // Viscous gradient reconstruction type:
   string_ptr = "Diamond_Path";
@@ -1624,22 +1624,13 @@ int Parse_Next_Input_Control_Parameter(HighTemp2D_Input_Parameters &IP) {
       IP.i_Flux_Function = FLUX_FUNCTION_GODUNOV;
     } else if (strcmp(IP.Flux_Function_Type,"Roe") == 0) {
       IP.i_Flux_Function = FLUX_FUNCTION_ROE;
-    } else if (strcmp(IP.Flux_Function_Type,"Glaister") == 0) {
-      IP.i_Flux_Function = FLUX_FUNCTION_GLAISTER;
-    } else if (strcmp(IP.Flux_Function_Type,"Glai") == 0) {
-			strcpy(IP.Flux_Function_Type,"Glaister");
-      IP.i_Flux_Function = FLUX_FUNCTION_GLAISTER;
     } else if (strcmp(IP.Flux_Function_Type,"Rusanov") == 0) {
       IP.i_Flux_Function = FLUX_FUNCTION_RUSANOV;
     } else if (strcmp(IP.Flux_Function_Type,"HLLE") == 0) {
       IP.i_Flux_Function = FLUX_FUNCTION_HLLE;
-    } else if (strcmp(IP.Flux_Function_Type,"GHLLE") == 0) {
-      IP.i_Flux_Function = FLUX_FUNCTION_GHLLE;
     } else if (strcmp(IP.Flux_Function_Type,"HLLL") == 0 ||
 	       strcmp(IP.Flux_Function_Type,"Linde") == 0) {
       IP.i_Flux_Function = FLUX_FUNCTION_HLLL;
-    } else if (strcmp(IP.Flux_Function_Type,"GHLLL") == 0) {
-      IP.i_Flux_Function = FLUX_FUNCTION_GHLLL;
     } else if (strcmp(IP.Flux_Function_Type,"HLLC") == 0) {
       IP.i_Flux_Function = FLUX_FUNCTION_HLLC;
     } else if (strcmp(IP.Flux_Function_Type,"VanLeer") == 0) {
@@ -3542,7 +3533,7 @@ int Parse_Next_Input_Control_Parameter(HighTemp2D_Input_Parameters &IP) {
     } else {
       i_command = INVALID_INPUT_VALUE;
     }
-  } else if (strcmp(IP.Next_Control_Parameter,"High_Temp_Tol") == 0) {
+  } else if (strcmp(IP.Next_Control_Parameter,"High_Temp_Tolerance") == 0) {
     i_command = 718;
     (IP.Line_Number)++;
     IP.Input_File >> HTTOL;

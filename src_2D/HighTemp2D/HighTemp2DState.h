@@ -361,25 +361,25 @@ class HighTemp2D_pState {
   //! Prandtl number.
   double Pr(void) const;
 
-  //! dp/drho for high-temperature equation of state.
+  //! dp/drho.
   double dpdrho(void) const;
 
-  //! dp/de for high-temperature EOS.
+  //! dp/de.
   double dpde(void) const;
 
-  //! dh/drho for high-temperature equation of state.
+  //! dh/drho.
   double dhdrho(void) const;
 
-  //! dh/dp for high-temperature equation of state.
+  //! dh/dp.
   double dhdp(void) const;
 
-  //! dT/drho for high-temperature equation of state.
+  //! dT/drho.
   double dTdrho(void) const;
 
-  //! dT/dp for high-temperature equation of state.
+  //! dT/dp.
   double dTdp(void) const;
 
-  //! for high-temperature equation of state.
+  //! dT^2/drho^2, etc.
   double ddTdrho(void) const;
   double ddTdp(void) const;
   double ddTdpdrho(void) const;
@@ -471,7 +471,7 @@ class HighTemp2D_pState {
   HighTemp2D_pState lambda_x(void) const;
 
   //! Eigenvalue(s) (x-direction).
-  HighTemp2D_pState lambda_x(double aAvg) const;
+  HighTemp2D_pState lambda_x(const double &aAvg) const;
 
   //! Eigenvalue(s) (x-direction).
   HighTemp2D_pState lambda_x(const Vector2D &V) const;
@@ -481,18 +481,22 @@ class HighTemp2D_pState {
 
   //! Conserved right eigenvector (x-direction).
   HighTemp2D_cState rc_x(int index) const;
-  HighTemp2D_cState rc_x(int index, double dpde, double dpdrho,double cAvg) const;
+  HighTemp2D_cState rc_x(int index, 
+                         const double &dpde, 
+                         const double &dpdrho, 
+                         const double &cAvg) const;
 
   //! Primitive left eigenvector (x-direction).
   HighTemp2D_pState lp_x(int index) const;
-  HighTemp2D_pState lp_x(int index, double cAvg) const;
+  HighTemp2D_pState lp_x(int index, 
+                         const double &cAvg) const;
   //@}
 
   //@{ @name Include all source vectors and Jacobians.
   HighTemp2D_cState S(const Vector2D &X,
-			  const HighTemp2D_pState &dWdx,
-			  const HighTemp2D_pState &dWdy,
-			  const int &Axisymmetric) const;
+		      const HighTemp2D_pState &dWdx,
+		      const HighTemp2D_pState &dWdy,
+		      const int &Axisymmetric) const;
   void dSdU(DenseMatrix &dSdU,
 	    const Vector2D &X,
 	    const HighTemp2D_pState &dWdx,
@@ -948,25 +952,25 @@ class HighTemp2D_cState {
   //! Prandtl number.
   double Pr(void) const;
 
-  //! dp/drho for high-temperature equation of state.
+  //! dp/drho.
   double dpdrho(void) const;
 
-  //! dp/de for high-temperature equation of state.
+  //! dp/de.
   double dpde(void) const;
 
-  //! dh/drho for high-temperature equation of state.
+  //! dh/drho.
   double dhdrho(void) const;
 
-  //! dh/dp for high-temperature equation of state.
+  //! dh/dp.
   double dhdp(void) const;
 
-  //! dT/drho for high-temperature equation of state.
+  //! dT/drho.
   double dTdrho(void) const;
 
-  //! dT/dp for high-temperature equation of state.
+  //! dT/dp.
   double dTdp(void) const;
 
-  //! for high-temperature equation of state.
+  //! d^2T/drho^2, etc.
   double ddTdrho(void) const;
   double ddTdp(void) const;
   double ddTdpdrho(void) const;
@@ -1059,7 +1063,7 @@ class HighTemp2D_cState {
   HighTemp2D_pState lambda_x(void) const;
  
   //! Eigenvalue(s) (x-direction).
-  HighTemp2D_pState lambda_x(double aAvg) const;
+  HighTemp2D_pState lambda_x(const double &aAvg) const;
 
   //! Eigenvalue(s) (x-direction).
   HighTemp2D_pState lambda_x(const Vector2D &V) const;
@@ -1069,11 +1073,15 @@ class HighTemp2D_cState {
 
   //! Conserved right eigenvector (x-direction).
   HighTemp2D_cState rc_x(int index) const;
-  HighTemp2D_cState rc_x(int index, double dpde, double dpdrho, double cAvg) const;
+  HighTemp2D_cState rc_x(int index, 
+                         const double &dpde, 
+                         const double &dpdrho, 
+                         const double &cAvg) const;
 
   //! Primitive left eigenvector (x-direction).
   HighTemp2D_pState lp_x(int index) const;
-  HighTemp2D_pState lp_x(int index, double cAvg) const;
+  HighTemp2D_pState lp_x(int index, 
+                         const double &cAvg) const;
   //@}
 
   //@{ @name Index operator.
@@ -1372,8 +1380,8 @@ inline double HighTemp2D_pState::H(void) const {
 inline double HighTemp2D_pState::a(void) const {
   switch(eos_type) {
     case EOS_TGAS:
-      return sqrt(p*dpde()/sqr(rho)+dpdrho());
-      //return Tgas_a_from_e_rho(e(), rho);
+      //return sqrt(p*dpde()/sqr(rho)+dpdrho());
+      return Tgas_a_from_e_rho(e(), rho);
     case EOS_IDEAL:
     default:
       return sqrt(g*p/rho);
@@ -1386,8 +1394,8 @@ inline double HighTemp2D_pState::a(void) const {
 inline double HighTemp2D_pState::a2(void) const {
   switch(eos_type) {
     case EOS_TGAS:
-      return p*dpde()/sqr(rho)+dpdrho();
-      //return sqr(Tgas_a_from_e_rho(e(), rho));
+      //return p*dpde()/sqr(rho)+dpdrho();
+      return sqr(Tgas_a_from_e_rho(e(), rho));
     case EOS_IDEAL:
     default:
       return g*p/rho;
@@ -1720,14 +1728,14 @@ inline double HighTemp2D_pState::ddTdpdrho(void) const {
   switch(eos_type) {
     case EOS_TGAS: {
       double rho1, rho2, p1, p2;
-      double dTdrho1, dTdrho2;
+      double dTdp1, dTdp2;
       rho1 = rho*(ONE-HTTOL);
       rho2 = rho*(ONE+HTTOL);
       p1 = p*(ONE-HTTOL);
       p2 = p*(ONE+HTTOL);
-      dTdrho1 = (Tgas_temp(p2, rho1) - Tgas_temp(p1, rho1))/(TWO*HTTOL*p);
-      dTdrho2 = (Tgas_temp(p2, rho2) - Tgas_temp(p1, rho2))/(TWO*HTTOL*p);
-      return (dTdrho2 - dTdrho1)/(TWO*HTTOL*rho); }
+      dTdp1 = (Tgas_temp(p2, rho1) - Tgas_temp(p1, rho1))/(TWO*HTTOL*p);
+      dTdp2 = (Tgas_temp(p2, rho2) - Tgas_temp(p1, rho2))/(TWO*HTTOL*p);
+      return (dTdp2 - dTdp1)/(TWO*HTTOL*rho); }
     case EOS_IDEAL:
     default:
       return -ONE/(sqr(rho)*R);
@@ -1758,7 +1766,7 @@ inline double HighTemp2D_pState::c2(void) const {
  * HighTemp2D_pState::pmodified -- Turbulence modified pressure.      *
  **********************************************************************/
 inline double HighTemp2D_pState::pmodified(void) const {
-  return p + (2.0/3.0)*dk();
+  return p + (TWO/THREE)*dk();
 }
 
 /**********************************************************************
@@ -2154,8 +2162,8 @@ inline double HighTemp2D_cState::H(void) const {
 inline double HighTemp2D_cState::a(void) const {
   switch(eos_type){
     case EOS_TGAS:  
-      return sqrt(p()*dpde()/sqr(rho)+dpdrho());
-      //return Tgas_a_from_e_rho(e(), rho); 
+      //return sqrt(p()*dpde()/sqr(rho)+dpdrho());
+      return Tgas_a_from_e_rho(e(), rho); 
     case EOS_IDEAL: 
     default:
       return sqrt(g*p()/rho);
@@ -2168,8 +2176,8 @@ inline double HighTemp2D_cState::a(void) const {
 inline double HighTemp2D_cState::a2(void) const {
   switch(eos_type){
     case EOS_TGAS:
-      return p()*dpde()/sqr(rho)+dpdrho();
-      //return sqr(Tgas_a_from_e_rho(e(), rho));
+      //return p()*dpde()/sqr(rho)+dpdrho();
+      return sqr(Tgas_a_from_e_rho(e(), rho));
     case EOS_IDEAL:
     default:
       return g*p()/rho;
@@ -2420,16 +2428,16 @@ inline double HighTemp2D_cState::ddTdpdrho(void) const {
   switch(eos_type) {
     case EOS_TGAS: {
       double rho1, rho2, p1, p2;
-      double dTdrho1, dTdrho2; 
+      double dTdp1, dTdp2; 
       double px;
       px = p();
       rho1 = rho*(ONE-HTTOL);
       rho2 = rho*(ONE+HTTOL);
       p1 = px*(ONE-HTTOL);
       p2 = px*(ONE+HTTOL);
-      dTdrho1 = (Tgas_temp(p2, rho1) - Tgas_temp(p1, rho1))/(TWO*HTTOL*px);
-      dTdrho2 = (Tgas_temp(p2, rho2) - Tgas_temp(p1, rho2))/(TWO*HTTOL*px);
-      return (dTdrho2 - dTdrho1)/(TWO*HTTOL*rho); }
+      dTdp1 = (Tgas_temp(p2, rho1) - Tgas_temp(p1, rho1))/(TWO*HTTOL*px);
+      dTdp2 = (Tgas_temp(p2, rho2) - Tgas_temp(p1, rho2))/(TWO*HTTOL*px);
+      return (dTdp2 - dTdp1)/(TWO*HTTOL*rho); }
     case EOS_IDEAL:
     default:
       return -ONE/(sqr(rho)*R);
@@ -2540,7 +2548,7 @@ inline double HighTemp2D_cState::c2(void) const {
  * HighTemp2D_cState::pmodified -- Turbulence modified pressure.      *
  **********************************************************************/
 inline double HighTemp2D_cState::pmodified(void) const {
-  return p() + (2.0/3.0)*dk;
+  return p() + (TWO/THREE)*dk;
 }
 
 /**********************************************************************
@@ -2795,7 +2803,7 @@ inline void HighTemp2D_pState::dUdW(DenseMatrix &dUdW) const {
  **********************************************************************/
 inline void HighTemp2D_pState::dWdU(DenseMatrix &dWdU) const {
   switch (eos_type) {
-    case EOS_IDEAL: {
+    case EOS_TGAS: {
       double dpdex; dpdex = dpde();
       double dpdrhox; dpdrhox = dpdrho();
       double ex; ex = e();
@@ -2804,7 +2812,7 @@ inline void HighTemp2D_pState::dWdU(DenseMatrix &dWdU) const {
       dWdU(1,1) += ONE/rho;
       dWdU(2,0) -= v.y/rho;
       dWdU(2,2) += ONE/rho;
-      dWdU(3,0) += dpdex/rho*HALF*(v.sqr() - 2.0*ex) + dpdrhox;
+      dWdU(3,0) += dpdex/rho*HALF*(v.sqr() - TWO*ex) + dpdrhox;
       dWdU(3,1) -= dpdex*v.x;
       dWdU(3,2) -= dpdex*v.y;
       dWdU(3,3) += dpdex/rho;
@@ -2816,7 +2824,7 @@ inline void HighTemp2D_pState::dWdU(DenseMatrix &dWdU) const {
         dWdU(5,5) += ONE/rho;
       }
       break; }
-    case EOS_TGAS:
+    case EOS_IDEAL:
     default: {
       dWdU(0,0) += ONE;
       dWdU(1,0) -= v.x/rho;
@@ -2842,16 +2850,16 @@ inline void HighTemp2D_pState::dWdU(DenseMatrix &dWdU) const {
  * HighTemp2D_pState::Fx -- Solution inviscid flux (x-direction).     *
  **********************************************************************/
 inline HighTemp2D_cState HighTemp2D_pState::Fx(void) const {
-  return HighTemp2D_cState(rho*v.x,rho*sqr(v.x)+p+(2.0/3.0)*dk(),
-                           rho*v.x*v.y,v.x*H()+v.x*(2.0/3.0)*dk(),
+  return HighTemp2D_cState(rho*v.x,rho*sqr(v.x)+p+(TWO/THREE)*dk(),
+                           rho*v.x*v.y,v.x*H()+v.x*(TWO/THREE)*dk(),
                            rho*v.x*k,rho*v.x*omega);
 }
 
 inline HighTemp2D_cState HighTemp2D_pState::Fx(const Vector2D &V) const {
   return HighTemp2D_cState(rho*(v.x-V.x),
-			   rho*(v.x-V.x)*v.x+p+(2.0/3.0)*dk(),
+			   rho*(v.x-V.x)*v.x+p+(TWO/THREE)*dk(),
 			   rho*(v.x-V.x)*v.y,
-			   (v.x-V.x)*E()+ v.x*(p+(2.0/3.0)*dk()),
+			   (v.x-V.x)*E()+ v.x*(p+(TWO/THREE)*dk()),
 			   rho*(v.x-V.x)*k,
 			   rho*(v.x-V.x)*omega);
 }
@@ -2868,25 +2876,25 @@ inline void HighTemp2D_pState::dFdU(DenseMatrix &dFdU) const {
       double dhdrhox; dhdrhox = dhdrho();
       double hx; hx = Tgas_h(p, rho);
       dFdU(0,1) += 1.0;
-      dFdU(1,0) += -(2.0*dhdpx*rho-3.0)/
-                   (dhdpx*rho-1.0)*v.x*v.x/2.0+1/(dhdpx*rho-1.0)*v.y*v.y/2.0-
+      dFdU(1,0) += -(TWO*dhdpx*rho-THREE)/
+                   (dhdpx*rho-1.0)*v.x*v.x/TWO+1/(dhdpx*rho-1.0)*v.y*v.y/TWO-
                    (hx+rho*dhdrhox)/(dhdpx*rho-1.0);
-      dFdU(1,1) += (2.0*dhdpx*rho-3.0)/(dhdpx*rho-1.0)*v.x;
+      dFdU(1,1) += (TWO*dhdpx*rho-THREE)/(dhdpx*rho-1.0)*v.x;
       dFdU(1,2) += -v.y/(dhdpx*rho-1.0);
       dFdU(1,3) += 1/(dhdpx*rho-1.0);
       dFdU(2,0) += -v.x*v.y;
       dFdU(2,1) += v.y;
       dFdU(2,2) += v.x;
-      dFdU(3,0) += -(dhdpx*rho-2.0)/(dhdpx*rho-1.0)*v.x*v.x*v.x/2.0+
-                  (-(dhdpx*rho-2.0)/(dhdpx*rho-1.0)*v.y*v.y/2.0-
+      dFdU(3,0) += -(dhdpx*rho-TWO)/(dhdpx*rho-1.0)*v.x*v.x*v.x/TWO+
+                  (-(dhdpx*rho-TWO)/(dhdpx*rho-1.0)*v.y*v.y/TWO-
                   rho*(dhdrhox+dhdpx*hx)/(dhdpx*rho-1.0))*v.x;
-      dFdU(3,1) += (dhdpx*rho-3.0)/(dhdpx*rho-1.0)*v.x*v.x/2.0+hx+v.y*v.y/2.0;
+      dFdU(3,1) += (dhdpx*rho-THREE)/(dhdpx*rho-1.0)*v.x*v.x/TWO+hx+v.y*v.y/TWO;
       dFdU(3,2) += -v.y/(dhdpx*rho-1.0)*v.x;
       dFdU(3,3) += rho*v.x*dhdpx/(dhdpx*rho-1.0);
       if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
          // May not work -- Alistair Wood
-         dFdU(1,4) += 2.0/3.0 - dpde()/rho; 
-         dFdU(3,4) -= v.x*(2.0/3.0 - dpde()/rho);
+         dFdU(1,4) += TWO/THREE - dpde()/rho; 
+         dFdU(3,4) -= v.x*(TWO/THREE - dpde()/rho);
          dFdU(4,0) -= v.x*k;
          dFdU(4,1) += k;
          dFdU(4,4) += v.x;
@@ -2899,19 +2907,19 @@ inline void HighTemp2D_pState::dFdU(DenseMatrix &dFdU) const {
     default: {
       dFdU(0,1) += ONE;
       dFdU(1,0) += HALF*gm1*(sqr(v.x) + sqr(v.y)) - sqr(v.x);
-      dFdU(1,1) -= v.x*(g-3.0);
+      dFdU(1,1) -= v.x*(g-THREE);
       dFdU(1,2) -= v.y*gm1;
       dFdU(1,3) += gm1;
       dFdU(2,0) -= v.x*v.y;
       dFdU(2,1) += v.y;
       dFdU(2,2) += v.x;
-      dFdU(3,0) -= (h() - HALF*gm1*(sqr(v.x)+sqr(v.y)))*v.x + (2.0/3.0)*rho*v.x*k;
-      dFdU(3,1) +=  h() - gm1*sqr(v.x) + (2.0/3.0)*k;
+      dFdU(3,0) -= (h() - HALF*gm1*(sqr(v.x)+sqr(v.y)))*v.x + (TWO/THREE)*rho*v.x*k;
+      dFdU(3,1) +=  h() - gm1*sqr(v.x) + (TWO/THREE)*k;
       dFdU(3,2) -= v.x*v.y*gm1;
       dFdU(3,3) += v.x*g;
       if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-         dFdU(1,4) += 5.0/3.0 - g;
-         dFdU(3,4) -= (3.0*g - 5.0)*v.x/3.0;
+         dFdU(1,4) += FIVE/THREE - g;
+         dFdU(3,4) -= (THREE*g - FIVE)*v.x/THREE;
          dFdU(4,0) -= v.x*k;
          dFdU(4,1) += k;
          dFdU(4,4) += v.x;
@@ -2947,8 +2955,8 @@ inline void HighTemp2D_pState::dFdW(DenseMatrix &dFdW) const {
       double dhdpx; dhdpx = dhdp();
       double dhdrhox; dhdrhox = dhdrho();
       double hx; hx = Tgas_h(p, rho);
-      dFdW(3,0) += v.x*v.x*v.x/2.0+(hx+v.y*v.y/2.0+rho*dhdrhox)*v.x;
-      dFdW(3,1) += 3.0/2.0*rho*v.x*v.x+rho*v.y*v.y/2.0+rho*hx;
+      dFdW(3,0) += v.x*v.x*v.x/TWO+(hx+v.y*v.y/TWO+rho*dhdrhox)*v.x;
+      dFdW(3,1) += THREE/TWO*rho*v.x*v.x+rho*v.y*v.y/TWO+rho*hx;
       dFdW(3,2) += rho*v.x*v.y;
       dFdW(3,3) += rho*v.x*dhdpx;
       break; }
@@ -3005,10 +3013,10 @@ inline void HighTemp2D_pState::ComputeViscousTerms(const HighTemp2D_pState &dWdx
 
   // Stress tensor.
   double mumu = mu() + muT(); 
-  tau.xx = 2.0*mumu*(dWdx.v.x - div/3.0);
+  tau.xx = TWO*mumu*(dWdx.v.x - div/THREE);
   tau.xy = mumu*(dWdy.v.x + dWdx.v.y);
-  tau.yy = 2.0*mumu*(dWdy.v.y - div/3.0);
-  if (Axisymmetric) tau.zz = 2.0*mumu*(v.y/radius - div/3.0);
+  tau.yy = TWO*mumu*(dWdy.v.y - div/THREE);
+  if (Axisymmetric) tau.zz = TWO*mumu*(v.y/radius - div/THREE);
   else tau.zz = ZERO;
 
   double kap = kappa() + kappaT();
@@ -3042,7 +3050,7 @@ inline HighTemp2D_pState HighTemp2D_pState::lambda_x(const Vector2D &V) const {
  * HighTemp2D_pState::lambda_x -- Eigenvalue(s) (x-direction).        *
  * For High-Temperature Air, average State only                       *
  **********************************************************************/
-inline HighTemp2D_pState HighTemp2D_pState::lambda_x(double aAvg) const {
+inline HighTemp2D_pState HighTemp2D_pState::lambda_x(const double &aAvg) const {
   return HighTemp2D_pState(v.x-aAvg,v.x,v.x,v.x+aAvg,v.x,v.x);
 }
 
@@ -3054,15 +3062,15 @@ inline HighTemp2D_pState HighTemp2D_pState::rp_x(int index) const {
   assert(index >= 1 && index <= NUM_VAR_HIGHTEMP2D);
   switch(index) {
   case 1 :
-    return HighTemp2D_pState(ONE,-c()/rho,ZERO,c2()-(2.0/3.0)*k,ZERO,ZERO);
+    return HighTemp2D_pState(ONE,-c()/rho,ZERO,c2()-(TWO/THREE)*k,ZERO,ZERO);
   case 2 :
-    return HighTemp2D_pState(ONE,ZERO,ZERO,-(2.0/3.0)*k,ZERO,ZERO);
+    return HighTemp2D_pState(ONE,ZERO,ZERO,-(TWO/THREE)*k,ZERO,ZERO);
   case 3 :
     return HighTemp2D_pState(ZERO,ZERO,ONE,ZERO,ZERO,ZERO);
   case 4 :
-    return HighTemp2D_pState(ONE,c()/rho,ZERO,c2()-(2.0/3.0)*k,ZERO,ZERO);
+    return HighTemp2D_pState(ONE,c()/rho,ZERO,c2()-(TWO/THREE)*k,ZERO,ZERO);
   case 5 :
-    return HighTemp2D_pState(ZERO,ZERO,ZERO,-(2.0/3.0)*rho,ONE,ZERO);
+    return HighTemp2D_pState(ZERO,ZERO,ZERO,-(TWO/THREE)*rho,ONE,ZERO);
   case 6 :
   default:
     return HighTemp2D_pState(ZERO,ZERO,ZERO,ZERO,ZERO,ONE);
@@ -3077,28 +3085,28 @@ inline HighTemp2D_cState HighTemp2D_pState::rc_x(int index) const {
   assert(index >= 1 && index <= NUM_VAR_HIGHTEMP2D);
   switch(index) {
   case 1 :
-    return HighTemp2D_cState(ONE,v.x-c(),v.y,h()-c()*v.x+(2.0/3.0)*k,k,omega);
+    return HighTemp2D_cState(ONE,v.x-c(),v.y,h()-c()*v.x+(TWO/THREE)*k,k,omega);
   case 2 : {
     switch(eos_type) {
       case EOS_TGAS:
-        return HighTemp2D_cState(ONE,v.x,v.y,h()+2.0*k/3.0-rho*c()*c()/dpde(),k,omega);
+        return HighTemp2D_cState(ONE,v.x,v.y,h()+TWO*k/THREE-rho*c()*c()/dpde(),k,omega);
       case EOS_IDEAL:
-        return HighTemp2D_cState(ONE,v.x,v.y,HALF*v.sqr()+gm1i*(g-5.0/3.0)*k,k,omega);
+        return HighTemp2D_cState(ONE,v.x,v.y,HALF*v.sqr()+gm1i*(g-FIVE/THREE)*k,k,omega);
       default:
-        return HighTemp2D_cState(ONE,v.x,v.y,HALF*v.sqr()+gm1i*(g-5.0/3.0)*k,k,omega);
+        return HighTemp2D_cState(ONE,v.x,v.y,HALF*v.sqr()+gm1i*(g-FIVE/THREE)*k,k,omega);
     } }
   case 3 :
     return HighTemp2D_cState(ZERO,ZERO,rho,rho*v.y,ZERO,ZERO);
   case 4 :
-    return HighTemp2D_cState(ONE,v.x+c(),v.y,h()+c()*v.x+(2.0/3.0)*k,k,omega);
+    return HighTemp2D_cState(ONE,v.x+c(),v.y,h()+c()*v.x+(TWO/THREE)*k,k,omega);
   case 5 : {
     switch(eos_type){
       case EOS_TGAS:
-        return HighTemp2D_cState(ZERO,ZERO,ZERO,rho*(-2.0*rho/(3.0*dpde())+ONE),rho,ZERO); 
+        return HighTemp2D_cState(ZERO,ZERO,ZERO,rho*(-TWO*rho/(THREE*dpde())+ONE),rho,ZERO); 
       case EOS_IDEAL:
-        return HighTemp2D_cState(ZERO,ZERO,ZERO,rho*gm1i*(g-5.0/3.0),rho,ZERO);
+        return HighTemp2D_cState(ZERO,ZERO,ZERO,rho*gm1i*(g-FIVE/THREE),rho,ZERO);
       default:
-        return HighTemp2D_cState(ZERO,ZERO,ZERO,rho*gm1i*(g-5.0/3.0),rho,ZERO);
+        return HighTemp2D_cState(ZERO,ZERO,ZERO,rho*gm1i*(g-FIVE/THREE),rho,ZERO);
     } }
   case 6 :
   default:
@@ -3110,19 +3118,22 @@ inline HighTemp2D_cState HighTemp2D_pState::rc_x(int index) const {
  * HighTemp2D_pState::rc_x -- Conserved right eigenvector             *
  *                            (x-direction).                          *
  **********************************************************************/
-inline HighTemp2D_cState HighTemp2D_pState::rc_x(int index,double dpde,double dpdrho,double cAvg) const {
+inline HighTemp2D_cState HighTemp2D_pState::rc_x(int index, 
+                                                 const double &dpde_Avg, 
+                                                 const double &dpdrho_Avg, 
+                                                 const double &c_Avg) const {
   assert(index >= 1 && index <= NUM_VAR_HIGHTEMP2D);
   switch(index) {
   case 1 :
-    return HighTemp2D_cState(ONE,v.x-cAvg,v.y,h()-cAvg*v.x+(2.0/3.0)*k,k,omega);
+    return HighTemp2D_cState(ONE,v.x-c_Avg,v.y,h()-c_Avg*v.x+(TWO/THREE)*k,k,omega);
   case 2 :
-    return HighTemp2D_cState(ONE,v.x,v.y,h()+2.0*k/3.0-rho*cAvg*cAvg/dpde,k,omega);
+    return HighTemp2D_cState(ONE,v.x,v.y,h()+TWO*k/THREE-rho*c_Avg*c_Avg/dpde_Avg,k,omega);
   case 3 :
     return HighTemp2D_cState(ZERO,ZERO,rho,rho*v.y,ZERO,ZERO);
   case 4 :
-    return HighTemp2D_cState(ONE,v.x+cAvg,v.y,h()+cAvg*v.x+(2.0/3.0)*k,k,omega);
+    return HighTemp2D_cState(ONE,v.x+c_Avg,v.y,h()+c_Avg*v.x+(TWO/THREE)*k,k,omega);
   case 5 :
-    return HighTemp2D_cState(ZERO,ZERO,ZERO,rho*(-2.0*rho/(3.0*dpde)+ONE),rho,ZERO);
+    return HighTemp2D_cState(ZERO,ZERO,ZERO,rho*(-TWO*rho/(THREE*dpde_Avg)+ONE),rho,ZERO);
   case 6 :
   default:
     return HighTemp2D_cState(ZERO,ZERO,ZERO,ZERO,ZERO,rho);
@@ -3137,13 +3148,13 @@ inline HighTemp2D_pState HighTemp2D_pState::lp_x(int index) const {
   assert(index >= 1 && index <= NUM_VAR_HIGHTEMP2D);
   switch(index) {
   case 1 :
-    return HighTemp2D_pState(k/(3.0*c2()),-HALF*rho/c(),ZERO,HALF/c2(),rho/(3.0*c2()),ZERO);
+    return HighTemp2D_pState(k/(THREE*c2()),-HALF*rho/c(),ZERO,HALF/c2(),rho/(THREE*c2()),ZERO);
   case 2 :
-    return HighTemp2D_pState(ONE-(2.0/3.0)*k/c2(),ZERO,ZERO,-ONE/c2(),-(2.0/3.0)*rho/c2(),ZERO);
+    return HighTemp2D_pState(ONE-(TWO/THREE)*k/c2(),ZERO,ZERO,-ONE/c2(),-(TWO/THREE)*rho/c2(),ZERO);
   case 3 :
     return HighTemp2D_pState(ZERO,ZERO,ONE,ZERO,ZERO,ZERO);
   case 4 :
-    return HighTemp2D_pState(k/(3.0*c2()),HALF*rho/c(),ZERO,HALF/c2(),rho/(3.0*c2()),ZERO);
+    return HighTemp2D_pState(k/(THREE*c2()),HALF*rho/c(),ZERO,HALF/c2(),rho/(THREE*c2()),ZERO);
   case 5 :
     return HighTemp2D_pState(ZERO,ZERO,ZERO,ZERO,ONE,ZERO);
   case 6 :
@@ -3156,20 +3167,20 @@ inline HighTemp2D_pState HighTemp2D_pState::lp_x(int index) const {
  * HighTemp2D_pState::lp_x -- Primitive left eigenvector              *
  *  ONLY 4 GLAISTER FLUX      (x-direction).                          *
  **********************************************************************/
-inline HighTemp2D_pState HighTemp2D_pState::lp_x(int index, double cAvg) const {
+inline HighTemp2D_pState HighTemp2D_pState::lp_x(int index, const double &cAvg) const {
   assert(index >= 1 && index <= NUM_VAR_HIGHTEMP2D);
   switch(index) {
   case 1 :
-    return HighTemp2D_pState(k/(3.0*cAvg*cAvg),-HALF*rho/cAvg,ZERO,HALF/(cAvg*cAvg),
-                            rho/(3.0*cAvg*cAvg),ZERO);
+    return HighTemp2D_pState(k/(THREE*cAvg*cAvg),-HALF*rho/cAvg,ZERO,HALF/(cAvg*cAvg),
+                            rho/(THREE*cAvg*cAvg),ZERO);
   case 2 :
-    return HighTemp2D_pState(ONE-(2.0/3.0)*k/(cAvg*cAvg),ZERO,ZERO,
-                             -ONE/(cAvg*cAvg),-(2.0/3.0)*rho/(cAvg*cAvg),ZERO);
+    return HighTemp2D_pState(ONE-(TWO/THREE)*k/(cAvg*cAvg),ZERO,ZERO,
+                             -ONE/(cAvg*cAvg),-(TWO/THREE)*rho/(cAvg*cAvg),ZERO);
   case 3 :
     return HighTemp2D_pState(ZERO,ZERO,ONE,ZERO,ZERO,ZERO);
   case 4 :
-    return HighTemp2D_pState(k/(3.0*cAvg*cAvg),HALF*rho/cAvg,ZERO,HALF/(cAvg*cAvg),
-                             rho/(3.0*cAvg*cAvg),ZERO);
+    return HighTemp2D_pState(k/(THREE*cAvg*cAvg),HALF*rho/cAvg,ZERO,HALF/(cAvg*cAvg),
+                             rho/(THREE*cAvg*cAvg),ZERO);
   case 5 :
     return HighTemp2D_pState(ZERO,ZERO,ZERO,ZERO,ONE,ZERO);
   case 6 :
@@ -3218,7 +3229,7 @@ inline void HighTemp2D_pState::dSdU(DenseMatrix &dSdU,
  **********************************************************************/
 inline HighTemp2D_cState HighTemp2D_pState::Si(const Vector2D &X) const {
   return HighTemp2D_cState(-rho*v.y/X.y,-rho*v.x*v.y/X.y,-rho*sqr(v.y)/X.y,
-                           -v.y*(H()+(2.0/3.0)*dk())/X.y,-v.y*dk()/X.y,-v.y*domega()/X.y);
+                           -v.y*(H()+(TWO/THREE)*dk())/X.y,-v.y*dk()/X.y,-v.y*domega()/X.y);
 }
 
 inline void HighTemp2D_pState::dSidU(DenseMatrix &dSidU, const Vector2D &X) const {
@@ -3228,13 +3239,13 @@ inline void HighTemp2D_pState::dSidU(DenseMatrix &dSidU, const Vector2D &X) cons
   dSidU(1,1) -= v.y/X.y;
   dSidU(1,2) -= v.x/X.y;
   dSidU(2,0) += v.y*v.y/X.y;
-  dSidU(2,2) -= 2.0*v.y/X.y;
-  dSidU(3,0) += v.y*(h()+(2.0/3.0)*k)/X.y;
+  dSidU(2,2) -= TWO*v.y/X.y;
+  dSidU(3,0) += v.y*(h()+(TWO/THREE)*k)/X.y;
   dSidU(3,1) += gm1*v.x*v.y/X.y;
-  dSidU(3,2) -= (h() - gm1*v.y*v.y + (2.0/3.0)*k)/X.y;
+  dSidU(3,2) -= (h() - gm1*v.y*v.y + (TWO/THREE)*k)/X.y;
   dSidU(3,3) -= g*v.y/X.y;
   if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-    dSidU(3,4) += (3.0*g-5.0)*v.y/(3.0*X.y);
+    dSidU(3,4) += (THREE*g-FIVE)*v.y/(THREE*X.y);
     dSidU(4,0) += k*v.y/X.y;
     dSidU(4,2) -= k/X.y;
     dSidU(4,4) -= v.y/X.y;
@@ -3276,12 +3287,12 @@ inline HighTemp2D_cState HighTemp2D_pState::St(const Vector2D &X,
   double production, mut;
   Tensor2D lambda;
   mut = muT()/(mu() + muT());
-  lambda.xx = mut*tau.xx - (2.0/3.0)*dk();
+  lambda.xx = mut*tau.xx - (TWO/THREE)*dk();
   lambda.xy = mut*tau.xy;
-  lambda.yy = mut*tau.yy - (2.0/3.0)*dk();
+  lambda.yy = mut*tau.yy - (TWO/THREE)*dk();
   production = lambda.xx*dWdx.v.x + lambda.xy*(dWdy.v.x + dWdx.v.y) + lambda.yy*dWdy.v.y;
   if (Axisymmetric) {
-    lambda.zz = mut*tau.zz - (2.0/3.0)*dk();
+    lambda.zz = mut*tau.zz - (TWO/THREE)*dk();
     production += lambda.zz*v.y/max(X.y,TOLER);
   }
   return HighTemp2D_cState(ZERO,ZERO,ZERO,ZERO,
@@ -3523,7 +3534,7 @@ inline void HighTemp2D_cState::dWdU(DenseMatrix &dWdU) const {
       dWdU(1,1) += ONE/rho;
       dWdU(2,0) -= dv.y/(rho*rho);
       dWdU(2,2) += ONE/rho;
-      dWdU(3,0) += dpdex/rho*HALF*(dv.sqr()/rho - 2.0*e()) + dpdrhox;
+      dWdU(3,0) += dpdex/rho*HALF*(dv.sqr()/rho - TWO*e()) + dpdrhox;
       dWdU(3,1) -= dpdex*dv.x/rho;
       dWdU(3,2) -= dpdex*dv.y/rho;
       dWdU(3,3) += dpdex/rho;
@@ -3558,22 +3569,22 @@ inline void HighTemp2D_cState::dWdU(DenseMatrix &dWdU) const {
 }
 
 /**********************************************************************
- * HighTemp2D_cState::F -- Solution inviscid flux (x-direction).  *
+ * HighTemp2D_cState::F -- Solution inviscid flux (x-direction).      *
  **********************************************************************/
 inline HighTemp2D_cState HighTemp2D_cState::Fx(void) const {
-  return HighTemp2D_cState(dv.x,sqr(dv.x)/rho+p()+(2.0/3.0)*dk,dv.x*dv.y/rho,
-                           dv.x*H()/rho+v().x*(2.0/3.0)*dk,v().x*dk,v().x*domega);
+  return HighTemp2D_cState(dv.x,sqr(dv.x)/rho+p()+(TWO/THREE)*dk,dv.x*dv.y/rho,
+                           dv.x*H()/rho+v().x*(TWO/THREE)*dk,v().x*dk,v().x*domega);
 }
 
 inline HighTemp2D_cState HighTemp2D_cState::Fx(const Vector2D &V) const {
   double vx = v().x;
-  return HighTemp2D_cState(rho*(vx-V.x),(vx-V.x)*dv.x+p()+(2.0/3.0)*dk,
-			       (vx-V.x)*dv.y,(vx-V.x)*E+ vx*(p()+(2.0/3.0)*dk),
+  return HighTemp2D_cState(rho*(vx-V.x),(vx-V.x)*dv.x+p()+(TWO/THREE)*dk,
+			       (vx-V.x)*dv.y,(vx-V.x)*E+ vx*(p()+(TWO/THREE)*dk),
 			       (vx-V.x)*dk,(vx-V.x)*domega);
 }
 
 //  /**********************************************************************
-//   * HighTemp2D_cState::dFdU -- Jacobian of the inviscid solution   *
+//   * HighTemp2D_cState::dFdU -- Jacobian of the inviscid solution       *
 //   *                                flux with respect to the conserved  *
 //   *                                solution variables.                 *
 //   **********************************************************************/
@@ -3584,19 +3595,19 @@ inline HighTemp2D_cState HighTemp2D_cState::Fx(const Vector2D &V) const {
 //     case EOS_IDEAL :
 //       dFdU(0,1) += ONE;
 //       dFdU(1,0) += HALF*gm1*(sqr(v().x) + sqr(v().y)) - sqr(v().x);
-//       dFdU(1,1) -= v().x*(g-3.0);
+//       dFdU(1,1) -= v().x*(g-THREE);
 //       dFdU(1,2) -= v().y*gm1;
 //       dFdU(1,3) += gm1;
 //       dFdU(2,0) -= v().x*v().y;
 //       dFdU(2,1) += v().y;
 //       dFdU(2,2) += v().x;
-//       dFdU(3,0) -= (h() - HALF*gm1*(sqr(v().x)+sqr(v().y)))*v().x + (2.0/3.0)*dv.x*k();
-//       dFdU(3,1) +=  h() - gm1*sqr(v().x) + (2.0/3.0)*k();
+//       dFdU(3,0) -= (h() - HALF*gm1*(sqr(v().x)+sqr(v().y)))*v().x + (TWO/THREE)*dv.x*k();
+//       dFdU(3,1) +=  h() - gm1*sqr(v().x) + (TWO/THREE)*k();
 //       dFdU(3,2) -= v().x*v().y*gm1;
 //       dFdU(3,3) += v().x*g;
 //       if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-//         dFdU(1,4) += 5.0/3.0 - g;
-//         dFdU(3,4) -= (g - 5.0/3.0)*v().x;
+//         dFdU(1,4) += FIVE/THREE - g;
+//         dFdU(3,4) -= (g - FIVE/THREE)*v().x;
 //         dFdU(4,0) -= v().x*k();
 //         dFdU(4,1) += k();
 //         dFdU(4,4) += v().x;
@@ -3607,20 +3618,20 @@ inline HighTemp2D_cState HighTemp2D_cState::Fx(const Vector2D &V) const {
 //     break;
 //     case EOS_TGAS :
 //       dFdU(0,1) += ONE;
-//       dFdU(1,0) += dpde()*(sqr(v().x) + sqr(v().y) - 2.0*e())/(2.0*rho) + dpdrho() - sqr(v().x);     
-//       dFdU(1,1) -= 2.0*v().x - v().x*dpde()/rho;
+//       dFdU(1,0) += dpde()*(sqr(v().x) + sqr(v().y) - TWO*e())/(TWO*rho) + dpdrho() - sqr(v().x);     
+//       dFdU(1,1) -= TWO*v().x - v().x*dpde()/rho;
 //       dFdU(1,2) -= v().y*dpde()/rho;
 //       dFdU(1,3) += dpde()/rho;
 //       dFdU(2,0) -= v().x*v().y;
 //       dFdU(2,1) += v().y;
 //       dFdU(2,2) += v().x;
-//       dFdU(3,0) -= v().x*(h() - dpdrho() - (dpde()*HALF/rho)*(sqr(v().x)+sqr(v().y)-2.0*e())+ (2.0/3.0)*k());
-//       dFdU(3,1) +=  h() - dpde()*sqr(v().x)/rho + (2.0/3.0)*k();
+//       dFdU(3,0) -= v().x*(h() - dpdrho() - (dpde()*HALF/rho)*(sqr(v().x)+sqr(v().y)-TWO*e())+ (TWO/THREE)*k());
+//       dFdU(3,1) +=  h() - dpde()*sqr(v().x)/rho + (TWO/THREE)*k();
 //       dFdU(3,2) -= v().x*v().y*dpde()/rho;
 //       dFdU(3,3) += v().x*dpde()/rho + ONE;
 //       if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-//         dFdU(1,4) += 2.0/3.0 - dpde()/rho;
-//         dFdU(3,4) -= v().x*(2.0/3.0 - dpde()/rho);
+//         dFdU(1,4) += TWO/THREE - dpde()/rho;
+//         dFdU(3,4) -= v().x*(TWO/THREE - dpde()/rho);
 //         dFdU(4,0) -= v().x*k();
 //         dFdU(4,1) += k();
 //         dFdU(4,4) += v().x;
@@ -3665,10 +3676,10 @@ inline void HighTemp2D_cState::ComputeViscousTerms(const HighTemp2D_pState &dWdx
 
   // Stress tensor.
   double mumu = mu() + muT();
-  tau.xx = 2.0*mumu*(dWdx.v.x - div/3.0);
+  tau.xx = TWO*mumu*(dWdx.v.x - div/THREE);
   tau.xy = mumu*(dWdy.v.x + dWdx.v.y);
-  tau.yy = 2.0*mumu*(dWdy.v.y - div/3.0);
-  if (Axisymmetric) tau.zz = 2.0*mumu*(v().y/radius - div/3.0);
+  tau.yy = TWO*mumu*(dWdy.v.y - div/THREE);
+  if (Axisymmetric) tau.zz = TWO*mumu*(v().y/radius - div/THREE);
   else tau.zz = ZERO;
 
   double kap = kappa() + kappaT();
@@ -3704,7 +3715,7 @@ inline HighTemp2D_pState HighTemp2D_cState::lambda_x(const Vector2D &V) const {
  * HighTemp2D_pState::lambda_x -- Eigenvalue(s) (x-direction).        *
  * For High-Temperature Air, average State only                       *
  **********************************************************************/
-inline HighTemp2D_pState HighTemp2D_cState::lambda_x(double aAvg) const {
+inline HighTemp2D_pState HighTemp2D_cState::lambda_x(const double &aAvg) const {
   double vx = v().x;
   return HighTemp2D_pState(vx-aAvg,vx,vx,vx+aAvg,vx,vx);
 }
@@ -3717,15 +3728,15 @@ inline HighTemp2D_pState HighTemp2D_cState::rp_x(int index) const {
   assert(index >= 1 && index <= NUM_VAR_HIGHTEMP2D);
   switch(index) {
   case 1 :
-    return HighTemp2D_pState(ONE,-c()/rho,ZERO,c2()-(2.0/3.0)*k(),ZERO,ZERO);
+    return HighTemp2D_pState(ONE,-c()/rho,ZERO,c2()-(TWO/THREE)*k(),ZERO,ZERO);
   case 2 :
-    return HighTemp2D_pState(ONE,ZERO,ZERO,-(2.0/3.0)*k(),ZERO,ZERO);
+    return HighTemp2D_pState(ONE,ZERO,ZERO,-(TWO/THREE)*k(),ZERO,ZERO);
   case 3 :
     return HighTemp2D_pState(ZERO,ZERO,ONE,ZERO,ZERO,ZERO);
   case 4 :
-    return HighTemp2D_pState(ONE,c()/rho,ZERO,c2()-(2.0/3.0)*k(),ZERO,ZERO);
+    return HighTemp2D_pState(ONE,c()/rho,ZERO,c2()-(TWO/THREE)*k(),ZERO,ZERO);
   case 5 :
-    return HighTemp2D_pState(ZERO,ZERO,ZERO,-(2.0/3.0)*rho,ONE,ZERO);
+    return HighTemp2D_pState(ZERO,ZERO,ZERO,-(TWO/THREE)*rho,ONE,ZERO);
   case 6 :
   default:
     return HighTemp2D_pState(ZERO,ZERO,ZERO,ZERO,ZERO,ONE);
@@ -3740,28 +3751,28 @@ inline HighTemp2D_cState HighTemp2D_cState::rc_x(int index) const {
   assert(index >= 1 && index <= NUM_VAR_HIGHTEMP2D);
   switch(index) {
     case 1 :
-      return HighTemp2D_cState(ONE,v().x-c(),v().y,h()-c()*v().x+(2.0/3.0)*k(),k(),omega());
+      return HighTemp2D_cState(ONE,v().x-c(),v().y,h()-c()*v().x+(TWO/THREE)*k(),k(),omega());
     case 2 : {
       switch(eos_type) {
         case EOS_TGAS:
-          return HighTemp2D_cState(ONE,v().x,v().y,h()+2.0*k()/3.0-rho*c()*c()/dpde(),
+          return HighTemp2D_cState(ONE,v().x,v().y,h()+TWO*k()/THREE-rho*c()*c()/dpde(),
                                    k(),omega()); 
         case EOS_IDEAL:
         default:
-          return HighTemp2D_cState(ONE,v().x,v().y,HALF*v().sqr()+gm1i*(g-5.0/3.0)*k(),
+          return HighTemp2D_cState(ONE,v().x,v().y,HALF*v().sqr()+gm1i*(g-FIVE/THREE)*k(),
                                    k(),omega());
       } }
     case 3 :
       return HighTemp2D_cState(ZERO,ZERO,rho,dv.y,ZERO,ZERO);
     case 4 :
-      return HighTemp2D_cState(ONE,v().x+c(),v().y,h()+c()*v().x+(2.0/3.0)*k(),k(),omega());
+      return HighTemp2D_cState(ONE,v().x+c(),v().y,h()+c()*v().x+(TWO/THREE)*k(),k(),omega());
     case 5 : {
       switch(eos_type) {
         case EOS_TGAS:
-          return HighTemp2D_cState(ZERO,ZERO,ZERO,rho*(-2.0*rho/(3.0*dpde())+ONE),rho,ZERO); 
+          return HighTemp2D_cState(ZERO,ZERO,ZERO,rho*(-TWO*rho/(THREE*dpde())+ONE),rho,ZERO); 
         case EOS_IDEAL:
         default:
-          return HighTemp2D_cState(ZERO,ZERO,ZERO,rho*gm1i*(g-5.0/3.0),rho,ZERO);
+          return HighTemp2D_cState(ZERO,ZERO,ZERO,rho*gm1i*(g-FIVE/THREE),rho,ZERO);
       } }
     case 6 :
     default:
@@ -3773,19 +3784,22 @@ inline HighTemp2D_cState HighTemp2D_cState::rc_x(int index) const {
  * HighTemp2D_cState::rc_x -- Conserved right eigenvector             *
  *           GLAISTER FLUX ONLY!     (x-direction).                   *
  **********************************************************************/
-inline HighTemp2D_cState HighTemp2D_cState::rc_x(int index, double dpde, double dpdrho, double cAvg) const {
+inline HighTemp2D_cState HighTemp2D_cState::rc_x(int index, 
+                                                 const double &dpde, 
+                                                 const double &dpdrho, 
+                                                 const double &cAvg) const {
   assert(index >= 1 && index <= NUM_VAR_HIGHTEMP2D);
   switch(index) {
     case 1 :
-      return HighTemp2D_cState(ONE,v().x-cAvg,v().y,h()-cAvg*v().x+(2.0/3.0)*k(),k(),omega());
+      return HighTemp2D_cState(ONE,v().x-cAvg,v().y,h()-cAvg*v().x+(TWO/THREE)*k(),k(),omega());
     case 2 :
-      return HighTemp2D_cState(ONE,v().x,v().y,h()+2.0*k()/3.0-rho*cAvg*cAvg/dpde,k(),omega());
+      return HighTemp2D_cState(ONE,v().x,v().y,h()+TWO*k()/THREE-rho*cAvg*cAvg/dpde,k(),omega());
     case 3 :
       return HighTemp2D_cState(ZERO,ZERO,rho,rho*v().y,ZERO,ZERO);
     case 4 :
-      return HighTemp2D_cState(ONE,v().x+cAvg,v().y,h()+cAvg*v().x+(2.0/3.0)*k(),k(),omega());
+      return HighTemp2D_cState(ONE,v().x+cAvg,v().y,h()+cAvg*v().x+(TWO/THREE)*k(),k(),omega());
     case 5 :
-      return HighTemp2D_cState(ZERO,ZERO,ZERO,rho*(-2.0*rho/(3.0*dpde)+ONE),rho,ZERO);
+      return HighTemp2D_cState(ZERO,ZERO,ZERO,rho*(-TWO*rho/(THREE*dpde)+ONE),rho,ZERO);
     case 6 :
     default:
       return HighTemp2D_cState(ZERO,ZERO,ZERO,ZERO,ZERO,rho);
@@ -3800,16 +3814,16 @@ inline HighTemp2D_pState HighTemp2D_cState::lp_x(int index) const {
   assert(index >= 1 && index <= NUM_VAR_HIGHTEMP2D);
   switch(index) {
     case 1 :
-      return HighTemp2D_pState(k()/(3.0*c2()),-HALF*rho/c(),ZERO,HALF/c2(),
-                               rho/(3.0*c2()),ZERO);
+      return HighTemp2D_pState(k()/(THREE*c2()),-HALF*rho/c(),ZERO,HALF/c2(),
+                               rho/(THREE*c2()),ZERO);
     case 2 :
-      return HighTemp2D_pState(ONE-(2.0/3.0)*k()/c2(),ZERO,ZERO,-ONE/c2(),
-                               -(2.0/3.0)*rho/c2(),ZERO);
+      return HighTemp2D_pState(ONE-(TWO/THREE)*k()/c2(),ZERO,ZERO,-ONE/c2(),
+                               -(TWO/THREE)*rho/c2(),ZERO);
     case 3 :
       return HighTemp2D_pState(ZERO,ZERO,ONE,ZERO,ZERO,ZERO);
     case 4 :
-      return HighTemp2D_pState(k()/(3.0*c2()),HALF*rho/c(),ZERO,HALF/c2(),
-                               rho/(3.0*c2()),ZERO);
+      return HighTemp2D_pState(k()/(THREE*c2()),HALF*rho/c(),ZERO,HALF/c2(),
+                               rho/(THREE*c2()),ZERO);
     case 5 :
       return HighTemp2D_pState(ZERO,ZERO,ZERO,ZERO,ONE,ZERO);
     case 6 :
@@ -3822,19 +3836,19 @@ inline HighTemp2D_pState HighTemp2D_cState::lp_x(int index) const {
  * HighTemp2D_pState::lp_x -- Primitive left eigenvector              *
  *  ONLY 4 GLAISTER FLUX      (x-direction).                          *
  **********************************************************************/
-inline HighTemp2D_pState HighTemp2D_cState::lp_x(int index, double cAvg) const {
+inline HighTemp2D_pState HighTemp2D_cState::lp_x(int index, const double &cAvg) const {
   assert(index >= 1 && index <= NUM_VAR_HIGHTEMP2D);
   switch(index) {
     case 1 :
-      return HighTemp2D_pState(k()/(3.0*cAvg*cAvg),-HALF*rho/cAvg,ZERO,HALF/(cAvg*cAvg),
-                               rho/(3.0*cAvg*cAvg),ZERO);
+      return HighTemp2D_pState(k()/(THREE*cAvg*cAvg),-HALF*rho/cAvg,ZERO,HALF/(cAvg*cAvg),
+                               rho/(THREE*cAvg*cAvg),ZERO);
     case 2 :
-      return HighTemp2D_pState(ONE-(2.0/3.0)*k()/(cAvg*cAvg),ZERO,ZERO,-ONE/(cAvg*cAvg),                                          -(2.0/3.0)*rho/(cAvg*cAvg),ZERO);
+      return HighTemp2D_pState(ONE-(TWO/THREE)*k()/(cAvg*cAvg),ZERO,ZERO,-ONE/(cAvg*cAvg),                                          -(TWO/THREE)*rho/(cAvg*cAvg),ZERO);
     case 3 :
       return HighTemp2D_pState(ZERO,ZERO,ONE,ZERO,ZERO,ZERO);
     case 4 :
-      return HighTemp2D_pState(k()/(3.0*cAvg*cAvg),HALF*rho/cAvg,ZERO,HALF/(cAvg*cAvg),
-                               rho/(3.0*cAvg*cAvg),ZERO);
+      return HighTemp2D_pState(k()/(THREE*cAvg*cAvg),HALF*rho/cAvg,ZERO,HALF/(cAvg*cAvg),
+                               rho/(THREE*cAvg*cAvg),ZERO);
     case 5 :
       return HighTemp2D_pState(ZERO,ZERO,ZERO,ZERO,ONE,ZERO);
     case 6 :
@@ -4015,34 +4029,6 @@ extern HighTemp2D_cState FluxRoe_n(const HighTemp2D_cState &Ul,
 				   const HighTemp2D_cState &Ur,
 				   const Vector2D &norm_dir);
 
-extern HighTemp2D_cState FluxGlaister(const HighTemp2D_pState &Wl,
-				      const HighTemp2D_pState &Wr);
-
-extern HighTemp2D_cState FluxGlaister(const HighTemp2D_cState &Ul,
-				     const HighTemp2D_cState &Ur);
-
-extern HighTemp2D_cState FluxGlaister_n(const HighTemp2D_pState &Wl,
-				        const HighTemp2D_pState &Wr,
-				        const Vector2D &norm_dir);
-
-extern HighTemp2D_cState FluxGlaister_n(const HighTemp2D_cState &Ul,
-				        const HighTemp2D_cState &Ur,
-				        const Vector2D &norm_dir);
-
-extern HighTemp2D_cState FluxAUSMplusUP(const HighTemp2D_pState &Wl,
-				        const HighTemp2D_pState &Wr);
-
-extern HighTemp2D_cState FluxAUSMplusUP(const HighTemp2D_cState &Ul,
-				        const HighTemp2D_cState &Ur);
-
-extern HighTemp2D_cState FluxAUSMplusUP_n(const HighTemp2D_pState &Wl,
-					  const HighTemp2D_pState &Wr,
-					  const Vector2D &norm_dir);
-
-extern HighTemp2D_cState FluxAUSMplusUP_n(const HighTemp2D_cState &Ul,
-				  	  const HighTemp2D_cState &Ur,
-					  const Vector2D &norm_dir);
-
 
 extern HighTemp2D_cState FluxRoe_MB(const HighTemp2D_pState &Wl,
 				    const HighTemp2D_pState &Wr,
@@ -4090,27 +4076,9 @@ extern HighTemp2D_cState FluxHLLE_n(const HighTemp2D_cState &Ul,
 				    const HighTemp2D_cState &Ur,
 				    const Vector2D &norm_dir);
 
-extern HighTemp2D_cState FluxGHLLE(const HighTemp2D_pState &Wl,
-				   const HighTemp2D_pState &Wr);
-
-extern HighTemp2D_cState FluxGHLLE(const HighTemp2D_cState &Ul,
-				   const HighTemp2D_cState &Ur);
-
-extern HighTemp2D_cState FluxGHLLE_n(const HighTemp2D_pState &Wl,
-				     const HighTemp2D_pState &Wr,
-				     const Vector2D &norm_dir);
-
-extern HighTemp2D_cState FluxGHLLE_n(const HighTemp2D_cState &Ul,
-				     const HighTemp2D_cState &Ur,
-				     const Vector2D &norm_dir);
-
 extern Vector2D HLLE_wavespeeds(const HighTemp2D_pState &Wl,
 		                const HighTemp2D_pState &Wr,
 		                const Vector2D &norm_dir);
-
-extern Vector2D GHLLE_wavespeeds(const HighTemp2D_pState &Wl,
-                                 const HighTemp2D_pState &Wr,
-		                 const Vector2D &norm_dir);
 
 extern HighTemp2D_cState FluxHLLL(const HighTemp2D_pState &Wl,
 				  const HighTemp2D_pState &Wr);
@@ -4125,20 +4093,6 @@ extern HighTemp2D_cState FluxHLLL_n(const HighTemp2D_pState &Wl,
 extern HighTemp2D_cState FluxHLLL_n(const HighTemp2D_cState &Ul,
 				    const HighTemp2D_cState &Ur,
 				    const Vector2D &norm_dir);
-
-extern HighTemp2D_cState FluxGHLLL(const HighTemp2D_pState &Wl,
-				   const HighTemp2D_pState &Wr);
-
-extern HighTemp2D_cState FluxGHLLL(const HighTemp2D_cState &Ul,
-				   const HighTemp2D_cState &Ur);
-
-extern HighTemp2D_cState FluxGHLLL_n(const HighTemp2D_pState &Wl,
-				     const HighTemp2D_pState &Wr,
-				     const Vector2D &norm_dir);
-
-extern HighTemp2D_cState FluxGHLLL_n(const HighTemp2D_cState &Ul,
-				     const HighTemp2D_cState &Ur,
-				     const Vector2D &norm_dir);
 
 extern HighTemp2D_cState FluxHLLC(const HighTemp2D_pState &Wl,
 				  const HighTemp2D_pState &Wr);
@@ -4204,6 +4158,20 @@ extern HighTemp2D_cState FluxAUSMplus_n(const HighTemp2D_pState &Wl,
 extern HighTemp2D_cState FluxAUSMplus_n(const HighTemp2D_cState &Wl,
 					const HighTemp2D_cState &Wr,
 					const Vector2D &norm_dir);
+
+extern HighTemp2D_cState FluxAUSMplusUP(const HighTemp2D_pState &Wl,
+				        const HighTemp2D_pState &Wr);
+
+extern HighTemp2D_cState FluxAUSMplusUP(const HighTemp2D_cState &Ul,
+				        const HighTemp2D_cState &Ur);
+
+extern HighTemp2D_cState FluxAUSMplusUP_n(const HighTemp2D_pState &Wl,
+					  const HighTemp2D_pState &Wr,
+					  const Vector2D &norm_dir);
+
+extern HighTemp2D_cState FluxAUSMplusUP_n(const HighTemp2D_cState &Ul,
+				  	  const HighTemp2D_cState &Ur,
+					  const Vector2D &norm_dir);
 
 extern HighTemp2D_cState ViscousFlux_n(const Vector2D &X,
 				       HighTemp2D_pState &W,
