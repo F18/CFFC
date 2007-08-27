@@ -961,6 +961,11 @@ inline void LESPremixed2D_pState::set_premixed_flame_variables(const double &lam
    return ( p + 2.0*rho*k()/3.0 );
  }
 
+ /************** SFS turbulence kinetic energy *************/
+ inline double LESPremixed2D_pState::k(void) const{
+   return (-lambda.trace())/(TWO*rho);
+ }
+
  /************* Strain rate tensor ***********************************/
  inline Tensor2D LESPremixed2D_pState::Strain_Rate(const LESPremixed2D_pState &dWdx,
 						   const LESPremixed2D_pState &dWdy,
@@ -1347,11 +1352,11 @@ inline double LESPremixed2D_cState::p() const{
 }
 /**************** kinetic energy ***************************/
 inline double LESPremixed2D_cState::k() const{
-  return lambda.trace()/(TWO*rho);
+  return rhok()/rho;
 }
 
 inline double LESPremixed2D_cState::rhok() const{
-  return lambda.trace()/TWO;
+  return (-lambda.trace())/TWO;
 }
 
 /************* Strain rate tensor ***********************************/

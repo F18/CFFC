@@ -627,10 +627,6 @@ double LESPremixed2D_pState::amodified(void) const{
   return sqrt( g()*pmodified()/rho );
 }
 
-//SFS turbulence kinetic energy
-double LESPremixed2D_pState::k(void) const{
-  return lambda.trace()/(TWO*rho);
-}
 
 
 /******************************************************
@@ -1853,6 +1849,10 @@ ostream &operator << (ostream &out_file, const LESPremixed2D_pState &W) {
   if(W.nscal) for(int i=0; i<W.nscal; ++i) out_file <<" "<<W.scalar[i];
 
   for( int i=0; i<W.ns; ++i) out_file<<" "<<W.spec[i];
+ 
+#ifdef THICKENED_FLAME_ON
+  out_file << " " << W.flame;
+#endif
 
   out_file.unsetf(ios::scientific);
   return (out_file);
@@ -1864,8 +1864,11 @@ istream &operator >> (istream &in_file, LESPremixed2D_pState &W) {
 
   if(W.nscal) for(int i=0; i<W.nscal; ++i) in_file >> W.scalar[i];
 
-  //W.set_initial_values();
   for( int i=0; i<W.ns; ++i) in_file>>W.spec[i];
+
+#ifdef THICKENED_FLAME_ON
+  in_file >> W.flame;
+#endif
 
   in_file.unsetf(ios::skipws);
    return (in_file);
@@ -3084,8 +3087,12 @@ ostream &operator << (ostream &out_file, const LESPremixed2D_cState &U) {
   out_file << " " << U.rho  << " " << U.rhov.x << " " << U.rhov.y << " " << U.E;
 
   if(U.nscal) for(int i=0; i<U.nscal; ++i) out_file <<" "<< U.rhoscalar[i];
-  
+
   for( int i=0; i<U.ns; ++i) out_file<<" "<<U.rhospec[i];
+
+#ifdef THICKENED_FLAME_ON
+  out_file << " " << U.flame;
+#endif
 
   out_file.unsetf(ios::scientific);
   return (out_file);
@@ -3096,8 +3103,12 @@ istream &operator >> (istream &in_file, LESPremixed2D_cState &U) {
   in_file >> U.rho >> U.rhov.x >> U.rhov.y >> U.E;
 
   if(U.nscal) for(int i=0; i<U.nscal; ++i) in_file >> U.rhoscalar[i];
- 
+
   for( int i=0; i<U.ns; ++i) in_file >> U.rhospec[i]; 
+
+#ifdef THICKENED_FLAME_ON
+  in_file >> U.flame;
+#endif
 
   in_file.unsetf(ios::skipws);
   return (in_file);

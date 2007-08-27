@@ -189,7 +189,7 @@ public:
 \*----------------------------------------------------------*/
 
 inline void PowerLaw::unphysical_check(const double &TFactor) {
-  if (TF < ONE-NANO) { cout << "\n WARNING: TF smaller than allowed = " << TF << flush; TF = ONE; }
+  if (TF < ONE-NANO) { /* cout << "\n WARNING: TF smaller than allowed = " << TF << flush; */ TF = ONE; }
   if (TF > TFactor+NANO) { cout << "\n WARNING: TF greater than allowed = " << TF << flush; TF = TFactor; }
   if (WF < ONE-NANO) { cout << "\n WARNING: WF smaller than allowed = " << WF << flush; WF = ONE; }
   if (WF > pow(TFactor, 2.0/3.0)) { cout << "\n WARNING: WF greater than allowed = " << WF << flush; WF = pow(TFactor, 2.0/3.0); }

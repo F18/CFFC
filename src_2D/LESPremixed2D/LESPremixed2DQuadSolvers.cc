@@ -1332,6 +1332,15 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 					Input_Parameters,
 					number_of_time_steps,
 					Time);
+
+      if (Input_Parameters.i_ICs == IC_CHEM_1DFLAME ||
+            Input_Parameters.i_Grid == GRID_1DFLAME) {
+	  Write_Slice_Solution(Local_SolnBlk,
+			       List_of_Local_Solution_Blocks,
+			       Input_Parameters, 2);  // 2 is the j-index of the slice
+          
+      }
+
       if (error_flag) {
 	cout << "\n LESPremixed2D ERROR: Unable to open LESPremixed2D cell output data file(s) "
 	     << "on processor "

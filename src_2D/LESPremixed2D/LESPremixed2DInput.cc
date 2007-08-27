@@ -646,18 +646,18 @@ void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP) {
                           MPI::DOUBLE, 0);  
 
     // Reset the static variables.
-    IP.Wo.set_SFSmodel_variables(filter_width,
-				 Smagorinsky_Constant,
-				 Yoshizawa_coefficient);
-    IP.Uo.set_SFSmodel_variables(filter_width,
-				 Smagorinsky_Constant,
-				 Yoshizawa_coefficient);
-    IP.Wo.set_premixed_flame_variables(laminar_flame_thickness,
-				       laminar_flame_speed,
-				       TFactor);
-    IP.Uo.set_premixed_flame_variables(laminar_flame_thickness,
-				       laminar_flame_speed,
-				       TFactor);
+    IP.Wo.set_SFSmodel_variables(IP.filter_width,
+				 IP.Smagorinsky_Constant,
+				 IP.Yoshizawa_coefficient);
+    IP.Uo.set_SFSmodel_variables(IP.filter_width,
+				 IP.Smagorinsky_Constant,
+				 IP.Yoshizawa_coefficient);
+    IP.Wo.set_premixed_flame_variables(IP.laminar_flame_thickness,
+				       IP.laminar_flame_speed,
+				       IP.TFactor);
+    IP.Uo.set_premixed_flame_variables(IP.laminar_flame_thickness,
+				       IP.laminar_flame_speed,
+				       IP.TFactor);
  
     /*********************************************************
      ******************* LESPREMIXED2D END *******************
@@ -1335,18 +1335,18 @@ void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP,
                           MPI::DOUBLE, Source_Rank);  
 
     // Reset the static variables.
-    IP.Wo.set_SFSmodel_variables(filter_width,
-				 Smagorinsky_Constant,
-				 Yoshizawa_coefficient);
-    IP.Uo.set_SFSmodel_variables(filter_width,
-				 Smagorinsky_Constant,
-				 Yoshizawa_coefficient);
-    IP.Wo.set_premixed_flame_variables(laminar_flame_thickness,
-				       laminar_flame_speed,
-				       TFactor);
-    IP.Uo.set_premixed_flame_variables(laminar_flame_thickness,
-				       laminar_flame_speed,
-				       TFactor);
+    IP.Wo.set_SFSmodel_variables(IP.filter_width,
+				 IP.Smagorinsky_Constant,
+				 IP.Yoshizawa_coefficient);
+    IP.Uo.set_SFSmodel_variables(IP.filter_width,
+				 IP.Smagorinsky_Constant,
+				 IP.Yoshizawa_coefficient);
+    IP.Wo.set_premixed_flame_variables(IP.laminar_flame_thickness,
+				       IP.laminar_flame_speed,
+				       IP.TFactor);
+    IP.Uo.set_premixed_flame_variables(IP.laminar_flame_thickness,
+				       IP.laminar_flame_speed,
+				       IP.TFactor);
 
     /*********************************************************
      ******************* LESPREMIXED2D END *******************
@@ -3982,6 +3982,12 @@ int Parse_Next_Input_Control_Parameter(LESPremixed2D_Input_Parameters &IP) {
 
     } else if (strcmp(IP.Next_Control_Parameter, "Fix_BCs") == 0) {
       i_command = SWITCH_BCS_TO_FIXED;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Postprocess_1Dflame") == 0) {
+       i_command = POSTPROCESS_1DFLAME;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Postprocess_Turbulence") == 0) {
+       i_command = POSTPROCESS_TURBULENCE;
 
     } else if (IP.Next_Control_Parameter[0] == '#') {
        i_command = COMMENT_CODE;

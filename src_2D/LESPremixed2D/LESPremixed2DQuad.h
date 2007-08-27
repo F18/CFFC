@@ -7,7 +7,7 @@
 
 #ifndef _LESPREMIXED2D_QUAD_INCLUDED
 #define _LESPREMIXED2D_QUAD_INCLUDED
-
+     
 /* Include 2D LES Premixed state, 2D cell, and 2D quadrilateral block 
    grid, quadtree, and 2D LES Premixed input header files. */
 #ifndef _CELL2D_INCLUDED
@@ -2881,7 +2881,8 @@ extern void Write_Rescaled_Velocity(LESPremixed2D_Quad_Block *Soln_ptr,
 				    AdaptiveBlock2D_List &Soln_Block_List,
 				    LESPremixed2D_Input_Parameters &Input_Parameters);
 
-extern void Write_Initial_Turbulence(LESPremixed2D_Input_Parameters &Input_Parameters,
+extern void Write_Initial_Turbulence(QuadTreeBlock_DataStructure &QuadTree, 
+				     LESPremixed2D_Input_Parameters &Input_Parameters,
                                      double *u, double *v, const int &Ny);
 
 extern void Write_Initial_Turbulence(Grid2D_Quad_Block   **Grid_ptr,
