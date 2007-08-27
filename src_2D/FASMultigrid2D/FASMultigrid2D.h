@@ -740,7 +740,7 @@ Output_Multigrid(int &number_of_time_steps,
     if (writing_intermediate_soln) {
        sprintf(extension,"_n1%.4d",number_of_time_steps);
        strcat(output_file_name,extension);
-    }
+    } /* endif */
     strcat(output_file_name,"_cpu");
 
     // Determine output data file name for this processor.
@@ -826,7 +826,7 @@ Output_Multigrid_Cells(int &number_of_time_steps,
     if (writing_intermediate_soln) {
        sprintf(extension,"_n1%.4d",number_of_time_steps);
        strcat(output_file_name,extension);
-    }
+    } /* endif */
     strcat(output_file_name,"_cpu");
 
     // Determine output data file name for this processor.
