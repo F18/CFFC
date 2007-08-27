@@ -49,6 +49,7 @@ SYSTEM_DIR = System/
 TURBULENT_DIR = Turbulent2D/
 GAUSSIAN_DIR = Gaussian2D/
 NASARP1311_DIR = $(CHEM_DIR)
+CPLXFY_DIR = $(MATH_DIR)Complexify/
 
 #
 # C++ Source files
@@ -60,6 +61,7 @@ SRC_MATH = $(MATH_DIR)Vector2D.cc \
            $(MATH_DIR)LinearSystems.cc \
 	   $(MATH_DIR)LinkedList.cc \
 	   $(MATH_DIR)Polygon.cc
+SRC_CPLXFY = $(CPLXFY_DIR)complexify.f90
 SRC_CFD = $(CFD_DIR)CFD.cc
 SRC_MPI = $(MPI_DIR)MPI.cc
 SRC_SYSTEM = $(SYSTEM_DIR)System_Linux.cc
@@ -185,7 +187,11 @@ SRC_LESPREMIXED = $(LESPREMIXED_DIR)LESPremixed2DState.cc \
 	          $(LESPREMIXED_DIR)LESPremixed2DTurbInit.cc \
 	          $(LESPREMIXED_DIR)LESPremixed2DdRdU.cc \
 	          $(LESPREMIXED_DIR)PowerLaw.cc \
-	          $(LESPREMIXED_DIR)Scalars.cc
+	          $(LESPREMIXED_DIR)Scalars.cc \
+	          $(LESPREMIXED_DIR)15step_GRI211.f \
+	          $(LESPREMIXED_DIR)15step_GRI3.f \
+	          $(LESPREMIXED_DIR)c_15step_GRI211.f90 \
+	          $(LESPREMIXED_DIR)c_15step_GRI3.f90
 SRC_LESPREMIXED_EXE = $(LESPREMIXED_DIR)LESPremixed2D.cc
 SRC_LEVELSET = $(LEVELSET_DIR)LevelSet2DInput.cc \
                $(LEVELSET_DIR)LevelSet2DQuad.cc \
@@ -242,6 +248,7 @@ INC_MATH  = $(MATH_DIR)Math.h \
             $(MATH_DIR)LinearSystems.h \
 	    $(MATH_DIR)LinkedList.h \
 	    $(MATH_DIR)Polygon.h
+INC_CPLXFY = $(CPLXFY_DIR)Complexify.h
 INC_SYSTEM = $(SYSTEM_DIR)System_Linux.h
 INC_CFD = $(CFD_DIR)CFD.h
 INC_MPI = $(MPI_DIR)MPI.h
@@ -353,6 +360,7 @@ OBJ_MATH = $(MATH_DIR)Vector2D.o \
            $(MATH_DIR)LinearSystems.o \
 	   $(MATH_DIR)LinkedList.o \
 	   $(MATH_DIR)Polygon.o
+OBJ_CPLXFY = $(CPLXFY_DIR)complexify.o
 OBJ_CFD = $(CFD_DIR)CFD.o
 OBJ_MPI = $(MPI_DIR)MPI.o
 OBJ_SYSTEM = $(SYSTEM_DIR)System_Linux.o
@@ -480,7 +488,11 @@ OBJ_LESPREMIXED = $(OBJ_NASARP1311) \
 	          $(LESPREMIXED_DIR)LESPremixed2DTurbInit.o \
 	          $(LESPREMIXED_DIR)LESPremixed2DdRdU.o \
 	          $(LESPREMIXED_DIR)PowerLaw.o \
-	          $(LESPREMIXED_DIR)Scalars.o
+	          $(LESPREMIXED_DIR)Scalars.o \
+	          $(LESPREMIXED_DIR)15step_GRI211.o \
+	          $(LESPREMIXED_DIR)15step_GRI3.o \
+	          $(LESPREMIXED_DIR)c_15step_GRI211.o \
+	          $(LESPREMIXED_DIR)c_15step_GRI3.o
 OBJ_LESPREMIXED_EXE = $(LESPREMIXED_DIR)LESPremixed2D.o
 OBJ_LEVELSET = $(LEVELSET_DIR)LevelSet2DInput.o \
                $(LEVELSET_DIR)LevelSet2DQuad.o \
@@ -516,7 +528,7 @@ OBJ_TURBULENT = $(TURBULENT_DIR)SFSModelling.o
 OBJ_ICEMCFD = $(ICEM_DIR)ICEMCFD.o \
 	      $(ICEM_DIR)ICEMCFD_ctype.o
 OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_AMR) \
-	   $(OBJ_SYSTEM)
+	   $(OBJ_SYSTEM) $(OBJ_CPLXFY)
 OBJ_CFFC = $(OBJ_BASE) $(OBJ_SCALAR) $(OBJ_HEAT) $(OBJ_HYPERHEAT) $(OBJ_EULER1D) $(OBJ_MHD1D) \
 	   $(OBJ_ADVECTDIFFUSE) $(OBJ_CHEM) $(OBJ_DUSTY) $(OBJ_EULER) $(OBJ_HIGHTEMP) \
 	   $(OBJ_ION) $(OBJ_ELECTROSTATIC) $(OBJ_INTERFACE) $(OBJ_LESPREMIXED) $(OBJ_LEVELSET) \
@@ -1125,6 +1137,7 @@ clean:
 	rm -f $(LEVELSET_DIR)*.o $(LEVELSET_DIR)*.il $(LEVELSET_DIR)*~ $(LEVELSET_DIR)*.depend $(LEVELSET_DIR)*.bak
 	rm -f $(LESPREMIXED_DIR)*.o $(LESPREMIXED_DIR)*.il $(LESPREMIXED_DIR)*~ $(LESPREMIXED_DIR)*.depend $(LESPREMIXED_DIR)*.bak
 	rm -f $(MATH_DIR)*.o $(MATH_DIR)*.il $(MATH_DIR)*~
+	rm -f $(CPLXFY_DIR)*.mod $(CPLXFY_DIR)*~ 
 	rm -f $(MPI_DIR)*.o $(MPI_DIR)*.il $(MPI_DIR)*~
 	rm -f $(NAVIERSTOKES_DIR)*.o $(NAVIERSTOKES_DIR)*.il $(NAVIERSTOKES_DIR)*~ $(NAVIERSTOKES_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
 	rm -f $(PHYSICS_DIR)*.o $(PHYSICS_DIR)*.il $(PHYSICS_DIR)*~

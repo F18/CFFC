@@ -25,25 +25,25 @@ using namespace std;
 #include "../Physics/GasConstants.h"
 #include "LESPremixed2DState.h"
 
-//#ifndef _COMPLEXIFY_INCLUDED
-//#include "Complexify.h"
-//#endif // _COMPLEXIFY_INCLUDED
+#ifndef _COMPLEXIFY_INCLUDED
+#include "../Math/Complexify/Complexify.h"
+#endif // _COMPLEXIFY_INCLUDED
 
 
 // List of subroutines not written in C/C++ 
-/* extern "C" {  */
-/*   // Reaction rates for CH4-15step mechanism based on GRI2.11 */
-/*   void ckwyp15step211_( double& P, double& T, double* Y, double* Wdot); */
+extern "C" {
+  // Reaction rates for CH4-15step mechanism based on GRI2.11
+  void ckwyp15step211_( double& P, double& T, double* Y, double* Wdot);
   
-/*   // Complexified version of the subroutine above */
-/*   void cplx15step211_( cplx& P, cplx& T, cplx* Y, cplx* Wdot);  */
+  // Complexified version of the subroutine above
+  void cplx15step211_( cplx& P, cplx& T, cplx* Y, cplx* Wdot);
   
-/*   // Reaction rates for CH4-15step mechanism based on GRI3 */
-/*   void ckwyp15step30_( double& P, double& T, double* Y, double* Wdot);  */
+  // Reaction rates for CH4-15step mechanism based on GRI3
+  void ckwyp15step30_( double& P, double& T, double* Y, double* Wdot);
 
-/*   // Complexified version of the subroutine above */
-/*   void cplx15step30_( cplx& P, cplx& T, cplx* Y, cplx* Wdot); */
-/* } */
+  // Complexified version of the subroutine above
+  void cplx15step30_( cplx& P, cplx& T, cplx* Y, cplx* Wdot);
+}
 
 
 //Calorie to Joule conversion
@@ -257,7 +257,7 @@ public:
 
   void Finite_Difference_dSwdU(DenseMatrix &dSwdU, const LESPremixed2D_pState &Wlocal, const int Flow_Type) const;
   
-/*   void Complex_Step_dSwdU(DenseMatrix &dSwdU, const LESPremixed2D_pState &Wlocal) const; */
+  void Complex_Step_dSwdU(DenseMatrix &dSwdU, const LESPremixed2D_pState &Wlocal) const;
 
   void Deallocate();
 
