@@ -52,11 +52,13 @@ electrostatic2D
 euler2D
 hightemp2D
 ion5moment2D
+lespremixed2D
 levelset2D
 navierstokes2D
 embeddedboundaries2D
 gaussian2D
 rte2D
+
 
 # 3D executables
 cffc3D
