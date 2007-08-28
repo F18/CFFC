@@ -156,9 +156,17 @@ int Read_Restart_Solution(Chem2D_Quad_Block *Soln_ptr,
     
 	  /********** CHEM2D SPECIFIC ****************************************/
 	  restart_file.getline(line,sizeof(line)); 
-	  // get reaction set name
+	  // get reaction set name and load the rxn database
 	  restart_file >>Input_Parameters.react_name;
+#ifdef _CANTERA_VERSION
+	  if( Input_Parameters.react_name != "CANTERA")
+	    Input_Parameters.Wo.React.set_reactions(Input_Parameters.react_name);
+	  else
+	    Input_Parameters.Wo.React.ct_load_mechanism(Input_Parameters.ct_mech_file, 
+							Input_Parameters.ct_mech_name);
+#else
 	  Input_Parameters.Wo.React.set_reactions(Input_Parameters.react_name);
+#endif // _CANTERA_VERSION
 
 	  // multispecies but no reactions
 	  if( Input_Parameters.react_name == "NO_REACTIONS"){

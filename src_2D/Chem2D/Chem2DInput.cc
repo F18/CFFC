@@ -163,7 +163,6 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.Heat_Source = ZERO;
     
     // cantera parameters
-    IP.Using_CANTERA = false;
     IP.ct_mech_name = "none";
     IP.ct_mech_file = "none";
 
@@ -505,9 +504,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
 			  MPI::CHAR, 0);
     
     // cantera parameters
-    MPI::COMM_WORLD.Bcast(&(IP.Using_CANTERA),
-                          1,
-                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(IP.ct_Mech_Name,
                           INPUT_PARAMETER_LENGTH_CHEM2D,
 			  MPI::CHAR, 0);
@@ -555,8 +551,11 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
 	IP.multispecies[i] = IP.Multispecies[i];  
       }    
 
-      //load reaction names
-      IP.Wo.React.set_reactions(IP.react_name);
+      //load reaction data
+      if (IP.Wo.React.reactset_flag != CANTERA)
+	IP.Wo.React.set_reactions(IP.react_name);
+      else
+	 IP.Wo.React.ct_load_mechanism(IP.ct_mech_file, IP.ct_mech_name);
       
       //Set species if non-reacting
       if( IP.Wo.React.reactset_flag == NO_REACTIONS){
@@ -1137,9 +1136,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
                           INPUT_PARAMETER_LENGTH_CHEM2D, 
 			  MPI::CHAR, Source_Rank);
     // cantera parameters
-    Communicator.Bcast(&(IP.Using_CANTERA),
-		       1,
-		       MPI::INT, Source_Rank);
     Communicator.Bcast(IP.ct_Mech_Name,
 		       INPUT_PARAMETER_LENGTH_CHEM2D,
 		       MPI::CHAR, Source_Rank);
@@ -1183,8 +1179,12 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
       for (int i = 0; i < IP.num_species; i++) {
 	IP.multispecies[i] = IP.Multispecies[i];  
       }     
-      //load reaction names
-      IP.Wo.React.set_reactions(IP.react_name);
+
+      //load reaction data
+      if (IP.Wo.React.reactset_flag != CANTERA)
+	IP.Wo.React.set_reactions(IP.react_name);
+      else
+	 IP.Wo.React.ct_load_mechanism(IP.ct_mech_file, IP.ct_mech_name);
       
       //Set species if non-reacting
       if( IP.Wo.React.reactset_flag == NO_REACTIONS){
@@ -2430,12 +2430,13 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        int flag =0;
 
        //convert IP to string & define Reaction Mechanism
-       IP.Using_CANTERA = true;
        IP.react_name = "CANTERA";
        IP.ct_mech_name = IP.Next_Control_Parameter;
 
        //get the mechanism file name and load the mechanism
+       Get_Next_Input_Control_Parameter(IP);
        if (strcmp(IP.Next_Control_Parameter, "Mechanism_File") == 0){
+	 Get_Next_Input_Control_Parameter(IP);
 	 IP.ct_mech_file = IP.Next_Control_Parameter;
 	 IP.Wo.React.ct_load_mechanism(IP.ct_mech_file, IP.ct_mech_name);   
 	 IP.num_species = IP.Wo.React.num_species;      
@@ -2447,6 +2448,12 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 
        // allocate storage
        IP.Allocate();
+
+       //Get species and load appropriate data
+       for(int i=0; i<IP.num_species; i++){
+	 IP.multispecies[i] = IP.Wo.React.species[i];
+	 IP.Schmidt[i] = IP.Global_Schmidt;
+       }   
 
        //
        //Get next line and read in Schmidt numbers else will use defaults
@@ -2518,9 +2525,8 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 
 #else
        // _CANTERA_VERSION flag not set
-       cerr <<endl<<IP.Next_Control_Parameter<<"\n CANTERA_VERSION directive not set.\n";
-       i_command = INVALID_INPUT_CODE;
-
+       cerr <<endl<<IP.Next_Control_Parameter<<"\n CANTERA_VERSION compile directive not set.\n";
+       exit(-1);
 #endif // _CANTERA_VERSION
 
       /******************************************/

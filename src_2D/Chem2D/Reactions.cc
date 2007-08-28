@@ -219,7 +219,12 @@ void Reaction_set::ct_load_mechanism(string &mechanism_file_name,
   reactset_flag = CANTERA;
   
   //create a new ideal gas mixture class
-  ct_gas = new IdealGasMix(mechanism_file_name, mechanism_name);
+  try {
+    ct_gas = new IdealGasMix(mechanism_file_name, mechanism_name);
+  }
+  catch (CanteraError) {
+    Cantera::showErrors();
+  }
 
   //get the number of reactions and species
   num_species = ct_gas->nSpecies();
@@ -235,7 +240,7 @@ void Reaction_set::ct_load_mechanism(string &mechanism_file_name,
   //set the reaction system name
   ct_mech_name = ct_gas->name();
   ct_mech_file = mechanism_file_name;
-  Reaction_system = ct_mech_name;
+  Reaction_system = "CANTERA";
 
   // allocate some temporary storage
   set_storage();
@@ -259,7 +264,7 @@ void Reaction_set::ct_parse_mass_string( const string& massFracStr,
   int kk = ct_gas->nSpecies();
   for (int k = 0; k < kk; k++) xx[ct_gas->speciesName(k)] = -1.0;
   parseCompString(massFracStr, xx);
-  ct_gas->setMoleFractionsByName(xx); 
+  ct_gas->setMassFractionsByName(xx);
   for(int index =0; index<num_species; index++){
     massFracs[index] = ct_gas->massFraction(index);
   }
@@ -633,18 +638,23 @@ void Reaction_set::dSwdU(DenseMatrix &dSwdU, const Chem2D_pState &W,
   //////////////////////////////////////////////////////////////////////////////
   if(solver_type == IMPLICIT){ VALUE=TOLER*TOLER; }
 
-  for(int i=0; i<num_react_species; i++){
-    M[i] = W.specdata[i].Mol_mass()*THOUSAND; //kg/mol -> g/mol 
-    c[i] = W.spec[i].c;
-    
-    //For handling ~= ZERO mass fractions that appear in the denominator of dSwdU
-    //by setting a lower tolerance allowed, and if below that set to tolerance 
-    if( c[i] < VALUE){
-      c_denom[i] = VALUE;
-    } else {
-      c_denom[i] = c[i];
+  //
+  // for all cases but cantera case
+  //
+  if (reactset_flag != CANTERA) {
+    for(int i=0; i<num_react_species; i++){
+      M[i] = W.specdata[i].Mol_mass()*THOUSAND; //kg/mol -> g/mol 
+      c[i] = W.spec[i].c;
+      
+      //For handling ~= ZERO mass fractions that appear in the denominator of dSwdU
+      //by setting a lower tolerance allowed, and if below that set to tolerance 
+      if( c[i] < VALUE){
+	c_denom[i] = VALUE;
+      } else {
+	c_denom[i] = c[i];
+      }
     }
-  }
+  } // endif - !CANTERA
 
   int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES;
   /*******************************************
@@ -991,6 +1001,16 @@ void Reaction_set::dSwdU(DenseMatrix &dSwdU, const Chem2D_pState &W,
       
     break;
     
+  //---------------------------------//
+  //------------ CANTERA ------------//
+  //---------------------------------//
+#ifdef _CANTERA_VERSION
+
+  case CANTERA:
+    break;
+
+#endif // _CANTERA_VERSION
+
     //---------------------------------//
     //----- User Specified ------------//
     //---------------------------------//
