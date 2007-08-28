@@ -136,14 +136,19 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.Schmidt[0] = IP.Global_Schmidt;
     IP.Schmidt[1] = IP.Global_Schmidt;
 
+    // transport data 
+    string_ptr = "Transport-NASA";
+    strcpy(IP.trans_type, string_ptr);
+    IP.i_trans_type = TRANSPORT_NASA;
+
     IP.Wo.React.set_reactions(IP.react_name); 
     IP.Wo.React.set_species(IP.multispecies,IP.num_species);
    
     //Get Species parameters and set default initial values
     IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			   IP.Mach_Number_Reference,IP.Schmidt); 
+			   IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type); 
     IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			   IP.Mach_Number_Reference,IP.Schmidt);
+			   IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type);
 
     //Air at STD_ATM
     IP.Pressure = IP.Wo.p;
@@ -498,6 +503,14 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     if(!CFFC_Primary_MPI_Processor()) {   
       IP.Deallocate();
     } 
+
+    //transport data
+    MPI::COMM_WORLD.Bcast(IP.trans_type, 
+			  INPUT_PARAMETER_LENGTH_CHEM2D, 
+			  MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.i_trans_type), 
+			  1, 
+			  MPI::INT, 0);
     //number of species
     MPI::COMM_WORLD.Bcast(&(IP.num_species), 
                           1, 
@@ -537,9 +550,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
       //set the data for each
       IP.get_cffc_path();
       IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			     IP.Mach_Number_Reference,IP.Schmidt); 
+			     IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type); 
       IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			     IP.Mach_Number_Reference,IP.Schmidt);
+			     IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type);
       IP.Wo.set_initial_values(IP.mass_fractions);
       IP.Uo.set_initial_values(IP.mass_fractions);
    
@@ -1111,6 +1124,13 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     if(!CFFC_Primary_MPI_Processor()) {  
       IP.Deallocate();  
     } 
+    //transport data
+    Communicator.Bcast(IP.trans_type, 
+			  INPUT_PARAMETER_LENGTH_CHEM2D, 
+			  MPI::CHAR, Source_Rank);
+    Communicator.Bcast(&(IP.i_trans_type), 
+			  1, 
+			  MPI::INT, Source_Rank);
     //number of species
     Communicator.Bcast(&(IP.num_species), 
                           1, 
@@ -1148,9 +1168,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
       //set the data for each
       IP.get_cffc_path();
       IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			     IP.Mach_Number_Reference,IP.Schmidt); 
+			     IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type); 
       IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			     IP.Mach_Number_Reference,IP.Schmidt);
+			     IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type);
       IP.Wo.set_initial_values(IP.mass_fractions);
       IP.Uo.set_initial_values(IP.mass_fractions);
 
@@ -2320,9 +2340,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 
        //Set appropriate species data
        IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			      IP.Mach_Number_Reference,IP.Schmidt); 
+			      IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type); 
        IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			      IP.Mach_Number_Reference,IP.Schmidt);
+			      IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type);
   
        //Get next line and read in mass fractions or set defaults
        if(flag){
@@ -2398,9 +2418,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        
       //Setup State class data and find species thermo and transport properties
       IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			     IP.Mach_Number_Reference,IP.Schmidt); 
+			     IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type); 
       IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			     IP.Mach_Number_Reference,IP.Schmidt);
+			     IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type);
     
       //More Fudging of lines 
       IP.Line_Number = IP.Line_Number + 1 ;
@@ -2472,6 +2492,18 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        IP.Heat_Source = IP.Wo.rho*(IP.Wo.h(temp+IP.Temperature) - IP.Wo.Rtot()*IP.Temperature);
 
        IP.Input_File.getline(buffer, sizeof(buffer));
+
+       /********** TRANSPORT DATA ***********/
+    } else if (strcmp(IP.Next_Control_Parameter, "Transport_Data_Type") == 0) {
+      i_command = 44;
+      Get_Next_Input_Control_Parameter(IP);
+      strcpy(IP.trans_type, 
+	     IP.Next_Control_Parameter);
+      if (strcmp(IP.trans_type, "Transport-NASA") == 0) {
+	IP.i_trans_type = TRANSPORT_NASA;
+      } else if (strcmp(IP.trans_type, "Transport-Lennard-Jones") == 0) {
+	IP.i_trans_type = TRANSPORT_LENNARD_JONES;
+      } // end if
          
        /***********************************************************************
 	**************** END CHEM2D MODIFICATIONS *****************************

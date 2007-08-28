@@ -136,6 +136,11 @@ inline char *Date_And_Time() {
 
 #define WRITE_OUTPUT_AERODYNAMIC_COEFFICIENTS_CODE       10090
 
+#define POSTPROCESS_TURBULENCE                           10095 
+#define POSTPROCESS_1DFLAME                              10096
+
+#define WRITE_OUTPUT_BLACK_ENCLOSURE_CODE                10100
+
 #define	INVALID_INPUT_CODE                              -10000
 #define	INVALID_INPUT_VALUE                             -10001
 
@@ -195,6 +200,8 @@ inline char *Date_And_Time() {
 #define GRID_ADIABATIC_PIPE                  26
 #define GRID_ADIABATIC_CIRCULAR_CYLINDER     27
 #define GRID_ADIABATIC_COUETTE               28
+#define GRID_RECTANGULAR_ENCLOSURE           28
+#define GRID_CYLINDRICAL_ENCLOSURE           29
 
 #define GRID_ICEMCFD                       1000
 #define GRID_READ_FROM_DEFINITION_FILE    10000
@@ -205,6 +212,10 @@ inline char *Date_And_Time() {
 #define GRID_LAMINAR_FLAME                   52
 #define GRID_BLUFF_BODY                      53
 #define GRID_DUMP_COMBUSTOR                  54
+#define GRID_PERIODIC_BOX                    55
+#define GRID_MIXING_LAYER_BOX                56
+#define GRID_2DTURBULENT_PREMIXED_FLAME      57
+#define GRID_VORTEX_BOX                      58
 
 #define GRID_TEST                         12345
 
@@ -324,6 +335,9 @@ inline char *Date_And_Time() {
 #define BC_DEVELOPED_CHANNEL            99906   // Developed channel inlet
 #define BC_COUETTE                      99907   // Couette BC, used by ~james
 
+//-- Radiation Boundary Conditions
+#define BC_GRAY_WALL                            20201   //      | CFDKit
+
 /**********************************************************************
  * CFD - BC OPTIONS                                                   *
  **********************************************************************/
@@ -344,9 +358,13 @@ inline char *Date_And_Time() {
 #define FLOWTYPE_TURBULENT_RANS_K_OMEGA                6
 #define FLOWTYPE_TURBULENT_RANS_STRESS_OMEGA           7
 #define FLOWTYPE_TURBULENT_LES                         8
-#define FLOWTYPE_TURBULENT_DES                         9
-#define FLOWTYPE_TURBULENT_DES_K_OMEGA                10
-#define FLOWTYPE_TURBULENT_DNS                        11
+#define FLOWTYPE_TURBULENT_LES_NO_MODEL                9
+#define FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY         10
+#define FLOWTYPE_TURBULENT_LES_TF_K                   11
+#define FLOWTYPE_TURBULENT_DES                        12
+#define FLOWTYPE_TURBULENT_DES_K_OMEGA                13
+#define FLOWTYPE_TURBULENT_DNS                        14
+
 
 #define NO_REACTIONS                           0
 
@@ -414,6 +432,8 @@ inline char *Date_And_Time() {
 #define	IC_RINGLEB_FLOW                22
 #define	IC_CYLINDRICAL_EXPLOSION       23
 #define	IC_CYLINDRICAL_IMPLOSION       24
+#define IC_ACOUSTIC_WAVE               25
+#define IC_SLOWLY_IMPACTING_XDIR       26
 
 #define IC_SQUARE_WAVE_XDIR            31
 #define IC_SQUARE_WAVE_YDIR            32
@@ -436,6 +456,11 @@ inline char *Date_And_Time() {
 #define IC_CHEM_1DFLAME                73
 #define IC_PRESSURE_GRADIENT_X         74
 #define IC_PRESSURE_GRADIENT_Y         75
+#define IC_HOMOGENEOUS_TURBULENCE      76
+#define IC_LESPREMIXED_MIXING_LAYER    77
+#define IC_LESPREMIXED_2DFLAME         78
+#define IC_2DWRINKLED_FLAME            79
+#define IC_VORTEX_XDIR                 790
 
 #define IC_VISCOUS_CHANNEL_FLOW                80
 #define IC_VISCOUS_COUETTE                     80 // Duplicate of IC_VISCOUS_CHANNEL_FLOW - TAKE THIS OUT!!!
@@ -517,6 +542,8 @@ inline char *Date_And_Time() {
 #define	TIME_STEPPING_SIMPLE_IMPLICIT                  105
 #define	TIME_STEPPING_CRANK_NICOLSON                   106
 #define	TIME_STEPPING_ADE                              107
+
+#define TIME_STEPPING_SPACE_MARCH                      110
 
 /**********************************************************************
  * CFD -- Multigrid Cycle Types                                       *
@@ -652,6 +679,17 @@ inline char *Date_And_Time() {
 #define EIKONAL_SIGN_FUNCTION_SMEARED                692
 #define EIKONAL_SIGN_FUNCTION_DERIVATIVE             693
 
+
+/********************************************************
+ * CFD -- Space marching schemes.                       *
+ ********************************************************/
+
+#define SPACE_MARCH_UPWIND                            0
+#define SPACE_MARCH_CLAM                              1
+#define SPACE_MARCH_CENTRAL                           2
+#define SPACE_MARCH_GM                                3
+#define SPACE_MARCH_EXPONENTIAL                       4
+
 /**********************************************************************
  * CFD -- Directions.                                                 *
  **********************************************************************/
@@ -674,6 +712,17 @@ inline char *Date_And_Time() {
 #define X_DIRECTION                     0 
 #define Y_DIRECTION                     1
 #define Z_DIRECITON                     2
+
+/********************************************************
+ * CFD -- Turbulence energy spectrum.                   *
+ ********************************************************/
+ 
+#define LEE_REYNOLDS                    0
+#define LAVAL_NAZARENKO                 1
+#define VON_KARMAN_PAO                  2
+#define HAWORTH_POINSOT                 3
+#define CHASNOV                         4
+#define BELL_DAY                        5
 
 /********************************************************
  * CFD -- Flow Geometry                                 *
@@ -1308,6 +1357,15 @@ extern void A_Stable_Implicit_Method_Coefficients(double &theta,
 						  double &xi,
 						  double &phi,
 						  const int Time_Integration_Scheme);
+
+extern double CLAM(const double Uu,   // upstream nodal value
+		   const double Uc,   // centroid nodal value
+		   const double Ud,   // downstream nodal value
+		   const double xu,   // x upstream node
+		   const double xc,   // x centroid node
+		   const double xd,   // x downstream node
+		   const double xf);  // x downstream face
+
 
 /**********************************************************************
  * Routine: Bilinear_Interpolation                                    *
