@@ -136,8 +136,10 @@ inline char *Date_And_Time() {
 
 #define WRITE_OUTPUT_AERODYNAMIC_COEFFICIENTS_CODE       10090
 
-#define WRITE_OUTPUT_BLACK_ENCLOSURE_CODE                10100
+#define POSTPROCESS_TURBULENCE                           10095 
+#define POSTPROCESS_1DFLAME                              10096
 
+#define WRITE_OUTPUT_BLACK_ENCLOSURE_CODE                10100
 
 #define	INVALID_INPUT_CODE                              -10000
 #define	INVALID_INPUT_VALUE                             -10001
@@ -210,6 +212,10 @@ inline char *Date_And_Time() {
 #define GRID_LAMINAR_FLAME                   52
 #define GRID_BLUFF_BODY                      53
 #define GRID_DUMP_COMBUSTOR                  54
+#define GRID_PERIODIC_BOX                    55
+#define GRID_MIXING_LAYER_BOX                56
+#define GRID_2DTURBULENT_PREMIXED_FLAME      57
+#define GRID_VORTEX_BOX                      58
 
 #define GRID_TEST                         12345
 
@@ -352,9 +358,13 @@ inline char *Date_And_Time() {
 #define FLOWTYPE_TURBULENT_RANS_K_OMEGA                6
 #define FLOWTYPE_TURBULENT_RANS_STRESS_OMEGA           7
 #define FLOWTYPE_TURBULENT_LES                         8
-#define FLOWTYPE_TURBULENT_DES                         9
-#define FLOWTYPE_TURBULENT_DES_K_OMEGA                10
-#define FLOWTYPE_TURBULENT_DNS                        11
+#define FLOWTYPE_TURBULENT_LES_NO_MODEL                9
+#define FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY         10
+#define FLOWTYPE_TURBULENT_LES_TF_K                   11
+#define FLOWTYPE_TURBULENT_DES                        12
+#define FLOWTYPE_TURBULENT_DES_K_OMEGA                13
+#define FLOWTYPE_TURBULENT_DNS                        14
+
 
 #define NO_REACTIONS                           0
 
@@ -422,6 +432,8 @@ inline char *Date_And_Time() {
 #define	IC_RINGLEB_FLOW                22
 #define	IC_CYLINDRICAL_EXPLOSION       23
 #define	IC_CYLINDRICAL_IMPLOSION       24
+#define IC_ACOUSTIC_WAVE               25
+#define IC_SLOWLY_IMPACTING_XDIR       26
 
 #define IC_SQUARE_WAVE_XDIR            31
 #define IC_SQUARE_WAVE_YDIR            32
@@ -444,6 +456,11 @@ inline char *Date_And_Time() {
 #define IC_CHEM_1DFLAME                73
 #define IC_PRESSURE_GRADIENT_X         74
 #define IC_PRESSURE_GRADIENT_Y         75
+#define IC_HOMOGENEOUS_TURBULENCE      76
+#define IC_LESPREMIXED_MIXING_LAYER    77
+#define IC_LESPREMIXED_2DFLAME         78
+#define IC_2DWRINKLED_FLAME            79
+#define IC_VORTEX_XDIR                 790
 
 #define IC_VISCOUS_CHANNEL_FLOW                80
 #define IC_VISCOUS_COUETTE                     80 // Duplicate of IC_VISCOUS_CHANNEL_FLOW - TAKE THIS OUT!!!
@@ -695,6 +712,17 @@ inline char *Date_And_Time() {
 #define X_DIRECTION                     0 
 #define Y_DIRECTION                     1
 #define Z_DIRECITON                     2
+
+/********************************************************
+ * CFD -- Turbulence energy spectrum.                   *
+ ********************************************************/
+ 
+#define LEE_REYNOLDS                    0
+#define LAVAL_NAZARENKO                 1
+#define VON_KARMAN_PAO                  2
+#define HAWORTH_POINSOT                 3
+#define CHASNOV                         4
+#define BELL_DAY                        5
 
 /********************************************************
  * CFD -- Flow Geometry                                 *

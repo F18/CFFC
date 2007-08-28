@@ -1,108 +1,100 @@
-/********************** Chem2DState.cc ******************************
-  Constructors for Chem2Dstate which handles all the physical
+/********************** LESPremixed2DState.cc ******************************
+  Constructors for LESPremixed2Dstate which handles all the physical
   variables and mixture rules associated with multi-species
   chemically reacting flows.
 
-   assosicated files:
-           Chem2DState.h    
+   associated files:
+           LESPremixed2DState.h    
 
 *********************************************************************/
 
 //DEBUGGING FLAG FOR FIGUREING OUT proper NS-1 setup.
-#define _NS_MINUS_ONE
+//#define _NS_MINUS_ONE
 
-#ifndef _CHEM2D_STATE_INCLUDED
-#include "Chem2DState.h"
-#endif // _CHEM2D_STATE_INCLUDED   
+#ifndef _LESPREMIXED2D_STATE_INCLUDED 
+#include "LESPremixed2DState.h"
+#endif // _LESPREMIXED2D_STATE_INCLUDED    
 
 /***********************************************************/
 //Static members initialization
 
-int Chem2D_pState::ns =1;
-int Chem2D_pState::NUM_VAR_CHEM2D = NUM_CHEM2D_VAR_SANS_SPECIES; 
-NASARP1311data* Chem2D_pState::specdata=NULL;
-Reaction_set Chem2D_pState::React;
-double Chem2D_pState::low_temp_range = 200.0;
-double Chem2D_pState::high_temp_range = 300.0;
-double Chem2D_pState::Mref=0.5;
-double* Chem2D_pState::Schmidt=NULL;
+int LESPremixed2D_pState::ns = 1;
+int LESPremixed2D_pState::nscal = 0;
+int LESPremixed2D_pState::NUM_VAR_LESPREMIXED2D = NUM_LESPREMIXED2D_VAR_SANS_SPECIES; 
+NASARP1311data* LESPremixed2D_pState::specdata=NULL;
+Reactionset LESPremixed2D_pState::React;
+Set_scalar LESPremixed2D_pState::Scal_sys;
+double LESPremixed2D_pState::low_temp_range = 200.0;
+double LESPremixed2D_pState::high_temp_range = 300.0;
+double LESPremixed2D_pState::Mref=0.5;
+double* LESPremixed2D_pState::Schmidt=NULL;
+SubfilterScaleModels LESPremixed2D_pState::SFSmodel;
+double LESPremixed2D_pState::filter_width = 0.0;
 
-int Chem2D_cState::ns = 1; 
-int Chem2D_cState::NUM_VAR_CHEM2D = NUM_CHEM2D_VAR_SANS_SPECIES;   
-NASARP1311data* Chem2D_cState::specdata=NULL;   
-double Chem2D_cState::low_temp_range = 200.0;
-double Chem2D_cState::high_temp_range = 300.0;
-double Chem2D_cState::Mref=0.5;
-double* Chem2D_cState::Schmidt=NULL;
 
-//k-omega Turbulence model coefficients
-double Chem2D_pState::alpha = FIVE/NINE; //13.0/15.0; 
-double Chem2D_pState::sigma = HALF;
-double Chem2D_pState::sigma_star = HALF;
-double Chem2D_pState::beta = THREE/40.00; //9.0/125.0;
-double Chem2D_pState::f_beta = ONE;
-double Chem2D_pState::beta_star = NINE/100.0;
-double Chem2D_pState::f_beta_star = ONE;
-double Chem2D_pState::Coeff_edm = ZERO;
-double Chem2D_pState::y_sublayer = 2.50;
-double Chem2D_cState::alpha = FIVE/NINE; //13.0/15.0; 
-double Chem2D_cState::sigma = HALF;
-double Chem2D_cState::sigma_star = HALF;
-double Chem2D_cState::beta = THREE/40.00; //9.0/125.0;
-double Chem2D_cState::f_beta = ONE;
-double Chem2D_cState::beta_star = NINE/100.0;
-double Chem2D_cState::f_beta_star = ONE;
-double Chem2D_cState::Coeff_edm = ZERO;
-double Chem2D_cState::y_sublayer = 2.50;
+int LESPremixed2D_cState::ns = 1;
+int LESPremixed2D_cState::nscal = 0; 
+int LESPremixed2D_cState::NUM_VAR_LESPREMIXED2D = NUM_LESPREMIXED2D_VAR_SANS_SPECIES;   
+NASARP1311data* LESPremixed2D_cState::specdata=NULL;   
+double LESPremixed2D_cState::low_temp_range = 200.0;
+double LESPremixed2D_cState::high_temp_range = 300.0;
+double LESPremixed2D_cState::Mref=0.5;
+double* LESPremixed2D_cState::Schmidt=NULL;
+SubfilterScaleModels LESPremixed2D_cState::SFSmodel;
+double LESPremixed2D_cState::filter_width = 0.0;
 
-/**********************************************************************
- * Chem2D_pState -- Create storage and assign turbulence static       *
- *                  variables.                                        *
- **********************************************************************/
-// Turbulent boundary-layer constants:
-double Chem2D_pState::yplus_o = 10.0;
-double Chem2D_pState::C = 5.0;
-double Chem2D_pState::von_karman = 0.41;
-double Chem2D_pState::yplus_sublayer = 2.5;
-double Chem2D_pState::yplus_buffer_layer = 30.0;
-double Chem2D_pState::yplus_outer_layer = 100.0;
 
-/**********************************************************************
- * Chem2D_cState -- Create storage and assign turbulence static       *
- *                  variables.                                        *
- **********************************************************************/
-// Turbulent boundary-layer constants:
-double Chem2D_cState::yplus_o = 10.0;
-double Chem2D_cState::C = 5.0;
-double Chem2D_cState::von_karman = 0.41;
-double Chem2D_cState::yplus_sublayer = 2.5;
-double Chem2D_cState::yplus_buffer_layer = 30.0;
-double Chem2D_cState::yplus_outer_layer = 100.0;
+
+/***********************************************************************
+ * LESPremixed2D_pState -- Create storage and assign premixed flame    *
+ *                         static variables.                           *
+ ***********************************************************************/
+double LESPremixed2D_pState::laminar_speed = 0.38;
+double LESPremixed2D_pState::laminar_thickness = 0.446E-3;
+double LESPremixed2D_pState::TFactor = 1.0;
+
+/***********************************************************************
+ * LESPremixed2D_cState -- Create storage and assign premixed flame    *
+ *                         static variables.                           *
+ ***********************************************************************/
+double LESPremixed2D_cState::laminar_speed = 0.38;
+double LESPremixed2D_cState::laminar_thickness = 0.446E-3;
+double LESPremixed2D_cState::TFactor = 1.0;
+
+
 
 /***********************************************************/
 /************* set_species_data ***************************
 **********************************************************/
-//set Global data for Species (STATIC, ie. so only call once! in Chem2Dinput)
-void Chem2D_pState::set_species_data(const int &n,const string *S,const char *PATH,
-				     const double &Mr, const double* Sc, const int &trans_data){ 
+//set Global data for Species (STATIC, ie. so only call once! in LESPremixed2Dinput)
+void LESPremixed2D_pState::set_species_data(const int &n,
+					    const int &n2,
+					    const string *S,
+					    const char *PATH,
+					    const double &Mr, 
+					    const double* Sc,
+					    const int &trans_data){ 
  
-#ifdef STATIC_NUMBER_OF_SPECIES
-  if( STATIC_NUMBER_OF_SPECIES < n) {                    //fix for mpi as called by each processor!!!!!!
-    cerr<<"\n WARNING USING STATIC CHEM2D BUILT WITH "<<STATIC_NUMBER_OF_SPECIES 
-        <<" SPECIES PREDEFINED, HOWEVER ASKING FOR "<<n<<endl; 
+#ifdef STATIC_LESPREMIXED2D_SPECIES
+  if( STATIC_LESPREMIXED2D_SPECIES < n) {                    //fix for mpi as called by each processor!!!!!!
+    cerr<<"\n WARNING USING STATIC LESPREMIXED2D BUILT WITH "
+	<< STATIC_LESPREMIXED2D_SPECIES 
+        <<" SPECIES PREDEFINED, HOWEVER ASKING FOR "<< n <<endl; 
     exit(1); 
   }
 #else 
   Deallocate(); //Clean up memory before changing ns
 #endif
-  ns = n;
 
-  NUM_VAR_CHEM2D = ns + NUM_CHEM2D_VAR_SANS_SPECIES;
+  ns = n;
+  nscal = n2;
+  NUM_VAR_LESPREMIXED2D = ns + nscal + NUM_LESPREMIXED2D_VAR_SANS_SPECIES;
+
   //read in NASA data for each species to be used  
   Deallocate_static();
   specdata = new NASARP1311data[ns]; 
   Schmidt = new double[ns];
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns; ++i){
     //overwrite default data  
     specdata[i].Getdata(S[i],PATH,trans_data);  
     Schmidt[i] = Sc[i];
@@ -115,31 +107,40 @@ void Chem2D_pState::set_species_data(const int &n,const string *S,const char *PA
   //Preconditioning Reference Mach Number
   Mref = Mr;
 
-  //setup initial array for mass fractions
+  //setup initial arrays for mass fractions and scalars
   set_initial_values(); 
+  set_initial_values_scal();
 }   
 
 //exact same thing with conserved variables, 
 //should just point to pState data but for now duplication will work 
-void Chem2D_cState::set_species_data(const int &n, const string *S, const char *PATH,
-				     const double &Mr, const double* Sc, const int &trans_data){ 
-#ifdef STATIC_NUMBER_OF_SPECIES
-  if( STATIC_NUMBER_OF_SPECIES < n ) { 
-    cerr<<"\n WARNING USING STATIC CHEM2D BUILT WITH "<<STATIC_NUMBER_OF_SPECIES 
-        <<" SPECIES PREDEFINED, HOWEVER ASKING FOR "<<n<<endl; 
+void LESPremixed2D_cState::set_species_data(const int &n,
+					    const int &n2,
+					    const string *S, 
+					    const char *PATH,
+					    const double &Mr, 
+					    const double* Sc,
+					    const int &trans_data){ 
+#ifdef STATIC_LESPREMIXED2D_SPECIES
+  if( STATIC_LESPREMIXED2D_SPECIES < n ) { 
+    cerr<<"\n WARNING USING STATIC LESPREMIXED2D BUILT WITH "
+	<< STATIC_LESPREMIXED2D_SPECIES 
+        <<" SPECIES PREDEFINED, HOWEVER ASKING FOR "<< n <<endl; 
     exit(1); 
   }
 #else 
   Deallocate(); //Clean up memory before changing ns
-#endif  
+#endif 
+ 
   ns = n;
+  nscal = n2;
+  NUM_VAR_LESPREMIXED2D = ns + nscal + NUM_LESPREMIXED2D_VAR_SANS_SPECIES;
 
-  NUM_VAR_CHEM2D = ns + NUM_CHEM2D_VAR_SANS_SPECIES;
   //read in NASA data for each species to be used
   Deallocate_static();
   specdata = new NASARP1311data[ns];
   Schmidt = new double[ns];
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns; ++i){
     //overwrite default data  
     specdata[i].Getdata(S[i],PATH,trans_data);
     Schmidt[i] = Sc[i];  
@@ -152,12 +153,13 @@ void Chem2D_cState::set_species_data(const int &n, const string *S, const char *
   //Preconditioning Reference Mach Number
   Mref = Mr;
   
-  //setup initial array for mass fractions
+  //setup initial arrays for mass fractions and scalars
   set_initial_values();
+  set_initial_values_scal();
 }      
 
 /**************************************************************************
-********************* CHEM2D_PSTATE CONSTRUCTORS **************************
+***************** LESPREMIXED2D_PSTATE CONSTRUCTORS ***********************
 ***************************************************************************/
 
 /***********************************************************
@@ -167,10 +169,10 @@ void Chem2D_cState::set_species_data(const int &n, const string *S, const char *
 /**************************************************
   mixture molecular mass (kg/mol)
 ***************************************************/
-double Chem2D_pState::Mass() const{
+double LESPremixed2D_pState::Mass() const{
   // = 1 / sum(mass fration/mol_mass)
   double sum = 0.0;
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns; ++i){
     sum += spec[i].c/specdata[i].Mol_mass();
   }
   return 1.0/sum;
@@ -179,19 +181,19 @@ double Chem2D_pState::Mass() const{
 /**************************************************
   mixture gas constant  J/(kg*K)
 ***************************************************/
-double Chem2D_pState::Rtot(){
+double LESPremixed2D_pState::Rtot(){
   // = sum ( mass fraction * species gas constant)
   double sum = 0.0;
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns; ++i){
     sum += spec[i].c * specdata[i].Rs();
   }
   return sum;
 }
 
-double Chem2D_pState::Rtot() const{
+double LESPremixed2D_pState::Rtot() const{
   // = sum ( mass fraction * species gas constant)
   double sum = 0.0;
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns; ++i){
     sum += spec[i].c * specdata[i].Rs();
   }
   return sum;
@@ -200,20 +202,20 @@ double Chem2D_pState::Rtot() const{
 /**************************************************
   mixture Heat Capacity (const pressure) J/(kg*K)
 ***************************************************/
-double Chem2D_pState::Cp(void) const{
+double LESPremixed2D_pState::Cp(void) const{
   // = sum ( mass fraction * species Cp) 
   double Temp = T();
   double sum = 0.0;
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns; ++i){
     sum += spec[i].c*specdata[i].HeatCapacity_p(Temp);
   }
   return sum;
 }
 
-double Chem2D_pState::Cp(const double& TEMP) const{
+double LESPremixed2D_pState::Cp(const double& TEMP) const{
   // = sum ( mass fraction * species Cp) 
   double sum = 0.0;
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns; ++i){
     sum += spec[i].c*specdata[i].HeatCapacity_p(TEMP);
   }
   return sum;
@@ -222,11 +224,11 @@ double Chem2D_pState::Cp(const double& TEMP) const{
 /**************************************************
   mixture Heat Capacity (const volume) J/(kg*K)
 ***************************************************/
-double Chem2D_pState::Cv(void) const{
+double LESPremixed2D_pState::Cv(void) const{
   // = sum ( mass fraction * species Cv)  
   double Temp = T();
   double sum = 0.0;
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns; ++i){
     sum += spec[i].c*specdata[i].HeatCapacity_v(Temp);
   }
   return sum;
@@ -235,7 +237,7 @@ double Chem2D_pState::Cv(void) const{
 /**************************************************
   mixture Heat Ratio gamma J/(kg*K)
 ***************************************************/
-double Chem2D_pState::g(void) const{
+double LESPremixed2D_pState::g(void) const{
   // = Cp / Cv  
   return Cp()/Cv();
 }
@@ -244,23 +246,23 @@ double Chem2D_pState::g(void) const{
   Specific Internal Energy
 ***************************************************/
 // etotal = sensible & chemical
-double Chem2D_pState::e(void) const{
+double LESPremixed2D_pState::e(void) const{
   // = sum (mass fraction * species e) 
   double sum = 0.0;
   double Temp = T();
-  for(int i=0; i<ns; i++){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
+  for(int i=0; i<ns; ++i){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
     sum += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform()
     		      - specdata[i].Rs()*Temp);
   }
   return sum;
 }
 
-// double Chem2D_pState::e(void) const{
+// double LESPremixed2D_pState::e(void) const{
 //   // = sum (mass fraction * species e) 
 //   double sum = 0.0;
 //   double cs = 0.0;
 //   double Temp = T();
-//   for(int i=0; i<ns-1; i++){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
+//   for(int i=0; i<ns-1; ++i){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
 //     sum += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform()
 //     		      - specdata[i].Rs()*Temp);
 //     cs += spec[i].c;
@@ -270,11 +272,11 @@ double Chem2D_pState::e(void) const{
 // }
 
 // reference internal energy e + heat of formation - offset
-double Chem2D_pState::eref(void)const{
+double LESPremixed2D_pState::eref(void)const{
   // = sum (mass fraction * species e) 
   double sum = 0.0;
   double Temp = T();
-  for(int i=0; i<ns; i++){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
+  for(int i=0; i<ns; ++i){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
     sum += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform()
 		      	 - specdata[i].DeltaHref() - specdata[i].Rs()*Temp);
   }
@@ -282,11 +284,11 @@ double Chem2D_pState::eref(void)const{
 }
 
 // internal energy with no heat of formation included (sensible)
-double Chem2D_pState::es(void) const{
+double LESPremixed2D_pState::es(void) const{
   // = sum (mass fraction * species e) 
   double sum = 0.0;
   double Temp = T();
-  for(int i=0; i<ns; i++){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
+  for(int i=0; i<ns; ++i){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
     sum += spec[i].c*(specdata[i].Enthalpy(Temp) - specdata[i].Rs()*Temp);
   }
   return sum;
@@ -296,51 +298,51 @@ double Chem2D_pState::es(void) const{
    Specific absolute enthalpy = 
           mass fraction * (hsensible + heatofform)
 ***************************************************/
-double Chem2D_pState::h(void) const{
+double LESPremixed2D_pState::h(void) const{
   // = sum (mass fraction * species h) 
   double sum = 0.0;  
   double Temp = T();
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns; ++i){
     sum += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform());
   }
   return sum;
 }
 
-double Chem2D_pState::h(const double &Temp) const{
+double LESPremixed2D_pState::h(const double &Temp) const{
   // = sum (mass fraction * species h) 
   double sum = 0.0;  
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns; ++i){
     sum += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform());
   }
   return sum;
 }
 
 
-double Chem2D_pState::href(void)const{
+double LESPremixed2D_pState::href(void)const{
   // = sum (mass fraction * species h) 
   double sum = 0.0;  
   double Temp = T();
-  for(int i=0; i<ns; i++){ 
+  for(int i=0; i<ns; ++i){ 
     sum += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform()
 		      - specdata[i].DeltaHref() );
   }
   return sum;
 }
 
-double Chem2D_pState::hs(void) const{
+double LESPremixed2D_pState::hs(void) const{
   // = sum (mass fraction * species h) 
   double sum = 0.0;  
   double Temp = T();
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns; ++i){
     sum += spec[i].c*(specdata[i].Enthalpy(Temp));
   }
   return sum;
 }
 
-double Chem2D_pState::hs(const double &Temp) const{
+double LESPremixed2D_pState::hs(const double &Temp) const{
   // = sum (mass fraction * species h) 
   double sum = 0.0;  
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns; ++i){
     sum += spec[i].c*(specdata[i].Enthalpy(Temp));
   }
   return sum;
@@ -350,18 +352,18 @@ double Chem2D_pState::hs(const double &Temp) const{
    Derivative of specific enthalpy dh/dT
    actually is just Cp as Cp = (dh/dT)_p
 ***************************************************/
-double Chem2D_pState::hprime() const{
+double LESPremixed2D_pState::hprime() const{
  double sum = 0.0; 
  double Temp = T();
- for(int i=0; i<ns; i++){
+ for(int i=0; i<ns; ++i){
    sum += spec[i].c*specdata[i].Enthalpy_prime(Temp);
  }
  return (sum);
 }
 
-double Chem2D_pState::hprime(double &Temp) const{
+double LESPremixed2D_pState::hprime(double &Temp) const{
  double sum = 0.0;  
- for(int i=0; i<ns; i++){
+ for(int i=0; i<ns; ++i){
    sum += spec[i].c*specdata[i].Enthalpy_prime(Temp);
  }
  return (sum);
@@ -370,40 +372,40 @@ double Chem2D_pState::hprime(double &Temp) const{
 /**************************************************
   Total Energy
 ***************************************************/
-double Chem2D_pState::E(void) const{
+double LESPremixed2D_pState::E(void) const{
   // E = rho*(e + velocity^2 +k)  
-  return (rho*(e() + HALF*v.sqr()+ k)); 
+  return (rho * (e() + HALF*v.sqr() + k()) ); 
 }
 
 /**************************************************
   Total Enthalpy
 ***************************************************/
-double Chem2D_pState::H(void) const{
+double LESPremixed2D_pState::H(void) const{
   // H = h + velocity^2 
-  return(rho*(h() + HALF*v.sqr() +k)); 
+  return(rho * (h() + HALF*v.sqr() + 5.0*k()/3.0) ); 
 }
 
-double Chem2D_pState::Hs(void) const{
+double LESPremixed2D_pState::Hs(void) const{
   // H = h + velocity^2+k
-  return (rho*(hs() + HALF*v.sqr() + k));
+  return (rho * (hs() + HALF*v.sqr() + 5.0*k()/3.0) );
 }
 
 /**************************************************
   Viscosity 
   using Wilke [1950] formulation
 ***************************************************/
-double Chem2D_pState::mu() const{
+double LESPremixed2D_pState::mu() const{
   double sum =0.0; 
   double Temp = T();
-#ifdef STATIC_NUMBER_OF_SPECIES
-  double  vis[STATIC_NUMBER_OF_SPECIES];
+#ifdef STATIC_LESPREMIXED2D_SPECIES
+  double  vis[STATIC_LESPREMIXED2D_SPECIES];
 #else
   double  *vis = new double[ns];
 #endif
 
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns; ++i){
     double phi = 0.0;
-    for (int j=0; j<ns; j++){
+    for (int j=0; j<ns; ++j){
       if(i == 0){
 	vis[j] = specdata[j].Viscosity(Temp);
       }
@@ -416,24 +418,27 @@ double Chem2D_pState::mu() const{
       (specdata[i].Mol_mass() * phi);
   }  
 
-#ifndef STATIC_NUMBER_OF_SPECIES  
+#ifndef STATIC_LESPREMIXED2D_SPECIES  
   delete[] vis;
 #endif
 
+#ifdef THICKENED_FLAME_ON
+  return (flame.WF*flame.TF)*sum;
+#else
   return sum;
-
+#endif
 }
 
 /***********************************************************
-Molecular viscosity is function of Temperature
-This derivative is needed by Jacobian
+  Molecular viscosity is function of Temperature
+  This derivative is needed by Jacobian
  ***********************************************************/
-double Chem2D_pState::dmudT(void) const{
+double LESPremixed2D_pState::dmudT(void) const{
   double sum =0.0; 
   double Temp = T();
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns; ++i){
     double phi = 0.0;
-    for (int j=0; j<ns; j++){
+    for (int j=0; j<ns; ++j){
       phi += (spec[j].c / specdata[j].Mol_mass())*
 	pow(1.0 + sqrt(specdata[i].dViscositydT(Temp)/specdata[j].dViscositydT(Temp))*
 	    pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
@@ -441,25 +446,30 @@ double Chem2D_pState::dmudT(void) const{
     }
     sum += (spec[i].c * specdata[i].dViscositydT(Temp) ) / 
       (specdata[i].Mol_mass() * phi);
-  }  
+  }
+
+#ifdef THICKENED_FLAME_ON
+  return (flame.WF*flame.TF)*sum;
+#else  
   return sum;
+#endif
 }
 
 /****************************************************
   Thermal Conductivity - Mason & Saxena (1958)  W/(m*K)
 ****************************************************/
-double Chem2D_pState::kappa(void) const{
+double LESPremixed2D_pState::kappa(void) const{
   double sum = 0.0;  
   double Temp = T();
-#ifdef STATIC_NUMBER_OF_SPECIES
-  double  vis[STATIC_NUMBER_OF_SPECIES];
+#ifdef STATIC_LESPREMIXED2D_SPECIES
+  double  vis[STATIC_LESPREMIXED2D_SPECIES];
 #else
   double  *vis = new double[ns];
 #endif
 
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns; ++i){
     double phi = 0.0;
-    for (int j=0; j<ns; j++){
+    for (int j=0; j<ns; ++j){
       if(i == 0){
 	vis[j] = specdata[j].Viscosity(Temp);
       }
@@ -474,59 +484,64 @@ double Chem2D_pState::kappa(void) const{
     sum += (specdata[i].ThermalConduct(Temp, p)*spec[i].c) / 
       (spec[i].c + (specdata[i].Mol_mass()) * 1.065 * phi);
   }  
-
   
   //or Coffee and Heimerl (1981)
 //   double one =0.0; double two=0.0;
-//   for (int j=0; j<ns; j++){
-//     one += spec[i].c*specdata[i].ThermalConduct(Temp,p);
-//     two += spec[i].c/specdata[i].ThermalConduct(Temp,p);
+//   for (int j=0; j<ns; ++j){
+//     one += spec[i].c*specdata[i].ThermalConduct(Temp);
+//     two += spec[i].c/specdata[i].ThermalConduct(Temp);
 //   }
 //   sum = HALF*(one + ONE/two);
-#ifndef STATIC_NUMBER_OF_SPECIES
+#ifndef STATIC_LESPREMIXED2D_SPECIES
   delete[] vis;
 #endif
 
+#ifdef THICKENED_FLAME_ON
+  return (flame.WF*flame.TF)*sum;
+#else
   return sum;
-
+#endif
 }
 
 /**************************************************
   Turbulence model related parameters
 ***************************************************/
-double Chem2D_pState::eddy_viscosity(void) const{
-  return (rho*k/omega);
+double LESPremixed2D_pState::mu_t(const Tensor2D &strain_rate) const{
+  double mut = rho*SFSmodel.eddy_viscosity_Smagorinsky(strain_rate, filter_width);
+#ifdef THICKENED_FLAME_ON
+  return (flame.WF*flame.TF)*mut;
+#else
+  return mut;
+#endif
 }
 
-double Chem2D_pState::Pr_turb(void) const{
-  return (0.9); 
+double LESPremixed2D_pState::Pr_turb(void) const{
+  return (0.75); 
 }
 
-double Chem2D_pState::Sc_turb(void) const{
-  return (1.1);
+double LESPremixed2D_pState::Sc_turb(void) const{
+  return (0.9);
 }
 
-double Chem2D_pState::Kappa_turb(void) const{
-  return (eddy_viscosity()*Cp()/Pr_turb()); 
+double LESPremixed2D_pState::Kappa_turb(const double &mut) const{
+  return (mut*Cp()/Pr_turb()); 
 }
 
-double Chem2D_pState::Dm_turb(void) const{
-  return (eddy_viscosity()/(rho*Sc_turb()));
+double LESPremixed2D_pState::Dm_turb(const double &mut) const{
+  return (mut/(rho*Sc_turb()));
 }     
 
-double Chem2D_pState::omega_sublayer_BC(const double &y) const {
-  return (SIX*mu()/(rho*beta*y*y));
-}
+
 
 /**************************************************
   polytropic heat ratio mixture gamma J/(kg*K)
   assuming T=200K as the temperature.
 ***************************************************/
-double Chem2D_pState::gamma_guess(void) const{  
+double LESPremixed2D_pState::gamma_guess(void) const{  
   double sum1 = ZERO;     double sum2 = ZERO;
   double gamma_s = ZERO;  double Temp = 200.0;
 
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns; ++i){
     sum1 += spec[i].c*specdata[i].Rs();
     gamma_s = ONE/(ONE - specdata[i].Rs()/ specdata[i].HeatCapacity_p(Temp));
     sum2 += ((spec[i].c*specdata[i].Rs()) / (gamma_s - ONE)); 
@@ -538,7 +553,7 @@ double Chem2D_pState::gamma_guess(void) const{
    Temperature derived from specific sensible
    enthalpy
 ***************************************************/
-double Chem2D_pState::T(double &h_s) const{
+double LESPremixed2D_pState::T(double &h_s) const{
   double T = ZERO;
   //--------- Initial Guess ------------------------------//
   //using a polytropic gas assumption with gamma@200;
@@ -580,7 +595,7 @@ double Chem2D_pState::T(double &h_s) const{
   }
   if (numit>=19 || T <= low_temp_range){
     T = max(Tguess,low_temp_range); 
-    cout<<"\nTemperature didn't converge in Chem2D_cState::T(void)";
+    cout<<"\nTemperature didn't converge in LESPremixed2D_cState::T(void)";
     cout<<" with polytopic Tguess "<<Tguess<<", or lower than Tmin "
 	<<low_temp_range<<" using "<<T;
   }
@@ -592,7 +607,7 @@ double Chem2D_pState::T(double &h_s) const{
   a^2 = dip/dirho + p/rho^2( die/dip)^-1
   from eigenvalue analysis using e =f(p,rho)
 ****************************************************/
-double Chem2D_pState::a(void){
+double LESPremixed2D_pState::a(void){
   double sum;
   double RTOT= Rtot();
  
@@ -601,7 +616,7 @@ double Chem2D_pState::a(void){
   return sqrt(sum);
 }
 
-double Chem2D_pState::a(void) const{
+double LESPremixed2D_pState::a(void) const{
   double sum;
   double RTOT= Rtot();
   sum = (p/rho)*(RTOT/( hprime() - RTOT) + ONE);
@@ -609,19 +624,31 @@ double Chem2D_pState::a(void) const{
   return sqrt(sum);
 }
 
+//turbulence modified  speed of sound
+double LESPremixed2D_pState::amodified(void) const{
+  return sqrt( g()*pmodified()/rho );
+}
+
+
+
 /******************************************************
  Calculating the thermal diffusion component of 
  the heat flux vector (qflux)
   sum( hs * Ds * grad cs)
 *******************************************************/
-Vector2D Chem2D_pState::thermal_diffusion(void) const{
+Vector2D LESPremixed2D_pState::thermal_diffusion(void) const{
   Vector2D sum;
   sum.zero();
   double Temp = T();
   //problems with Species overloaded operators
-  for(int i=0; i<ns; i++){ 
+  for(int i=0; i<ns; ++i){
+#ifdef THICKENED_FLAME_ON
+    sum  +=  (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())
+      * (flame.WF*flame.TF)*spec[i].diffusion_coef * spec[i].gradc;
+#else 
     sum  +=  (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())
       * spec[i].diffusion_coef * spec[i].gradc;
+#endif
   }
   return sum;
 }
@@ -630,22 +657,21 @@ Vector2D Chem2D_pState::thermal_diffusion(void) const{
  *************** INVISCID FLUXES ***********************************
  *******************************************************************/
 
-/********************************************************
- * Chem2D_pState::Fx -- Inviscid flux (x-direction).   *
- ********************************************************/
-Chem2D_cState Chem2D_pState::Fx(void) const{
-  Chem2D_cState Temp;
+/*************************************************************
+ * LESPremixed2D_pState::Fx -- Inviscid flux (x-direction).  *
+ *************************************************************/
+LESPremixed2D_cState LESPremixed2D_pState::Fx(void) const{
+  LESPremixed2D_cState Temp;
   
   Temp.rho = rho*v.x;
-  Temp.rhov.x = rho*sqr(v.x) + p;
+  Temp.rhov.x = rho*sqr(v.x) + pmodified();
   Temp.rhov.y = rho*v.x*v.y;
   Temp.E = v.x*H();
-  
-  Temp.rhok = rho*k*v.x;
-  Temp.rhoomega = rho*omega*v.x;
-  
+
+  if(nscal) for(int i=0; i<nscal; ++i) Temp.rhoscalar[i] = rho*v.x*scalar[i];
+   
   //multispecies transport
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns; ++i){
     Temp.rhospec[i].c = rho*v.x*spec[i].c;
   }
 
@@ -656,23 +682,26 @@ Chem2D_cState Chem2D_pState::Fx(void) const{
  *************** INVISCID FLUX JACOBIANS ***********************
  ***************************************************************/
 
-/********************************************************
- * Chem2D_pState::dFIdU -- Invisicd Flux Jacobian       *
- ********************************************************/
-void dFIdU(DenseMatrix &dFdU, const Chem2D_pState &W, const int Flow_Type) {
+/**********************************************************
+ * LESPremixed2D_pState::dFIdU -- Invisicd Flux Jacobian  * 
+ **********************************************************/
+void dFIdU(DenseMatrix &dFdU, const LESPremixed2D_pState &W, const int Flow_Type) {
   
   //cout<<"\n USING DFIDU \n";
   
-  //int num_species = dFdU.get_n() - NUM_CHEM2D_VAR_SANS_SPECIES; 
+  //int num_species = dFdU.get_n() - NUM_LESPREMIXED2D_VAR_SANS_SPECIES; 
   int num_species=W.ns-1;
 
   double Temp = W.T();
+  double pt = W.pmodified();
   double Rt = W.Rtot();
   double C_p = W.Cp();
   double ht = W.h();
+  double kk = W.k();
   double denominator = (C_p/Rt - ONE);
+
   double phi = ZERO;   
-  for(int i=0; i<num_species; i++){ 
+  for(int i=0; i<num_species; ++i){ 
 #ifdef _NS_MINUS_ONE
     phi += W.spec[i].c*(W.specdata[i].Enthalpy(Temp) + W.specdata[i].Heatofform() - C_p*Temp*W.specdata[i].Rs()/Rt
 			-(W.specdata[W.ns-1].Enthalpy(Temp)+W.specdata[W.ns-1].Heatofform()  -C_p*Temp*W.specdata[W.ns-1].Rs()/Rt));   
@@ -680,88 +709,114 @@ void dFIdU(DenseMatrix &dFdU, const Chem2D_pState &W, const int Flow_Type) {
     phi += W.spec[i].c*(W.specdata[i].Enthalpy(Temp) + W.specdata[i].Heatofform() - C_p*Temp*W.specdata[i].Rs()/Rt);
 #endif 
   }
+
   dFdU(0,1) += ONE;
-  dFdU(1,0) += ( (C_p/Rt)*( - W.v.x*W.v.x) + HALF*(THREE*W.v.x*W.v.x + W.v.y+W.v.y) - ht + C_p*Temp + phi )/denominator;
+  
+  if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY) {
+    dFdU(1,0) += ( (C_p/Rt)*( - W.v.x*W.v.x) + HALF*(THREE*W.v.x*W.v.x + W.v.y*W.v.y) - ht - 5.0*kk/3.0 + C_p*pt/(W.rho*Rt) + phi )/denominator;
+  } else if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
+    dFdU(1,0) += ( (C_p/Rt)*( - W.v.x*W.v.x) + HALF*(THREE*W.v.x*W.v.x + W.v.y*W.v.y) - ht + C_p*pt/(W.rho*Rt) + phi )/denominator;
+  }
+
   dFdU(1,1) += W.v.x*(TWO*C_p/Rt-THREE)/denominator; 
   dFdU(1,2) -= W.v.y/denominator;
   dFdU(1,3) += ONE/denominator;
   dFdU(2,0) -= W.v.x*W.v.y;
   dFdU(2,1) += W.v.y;
   dFdU(2,2) += W.v.x;
-  dFdU(3,0) += W.v.x*( W.v.x*W.v.x + W.v.y+W.v.y + C_p*Temp - (C_p/Rt)*( HALF*(W.v.x*W.v.x + W.v.y+W.v.y) + ht) + phi)/denominator;
-  dFdU(3,1) += ht + HALF*(W.v.x*W.v.x + W.v.y*W.v.y) - W.v.x*W.v.x/denominator;
+
+  if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY) {
+    dFdU(3,0) += W.v.x*( W.v.x*W.v.x + W.v.y*W.v.y + C_p*pt/(W.rho*Rt) - (C_p/Rt)*( HALF*(W.v.x*W.v.x + W.v.y*W.v.y) + 5.0*kk/3.0 + ht) + phi)/denominator;
+  } else if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
+    dFdU(3,0) += W.v.x*( W.v.x*W.v.x + W.v.y*W.v.y + 5.0*kk/3.0 + C_p*pt/(W.rho*Rt) - (C_p/Rt)*( HALF*(W.v.x*W.v.x + W.v.y*W.v.y) + 5.0*kk/3.0 + ht) + phi)/denominator;
+  }
+
+  dFdU(3,1) += ht + HALF*(W.v.x*W.v.x + W.v.y*W.v.y) + 5.0*kk/3.0 - W.v.x*W.v.x/denominator;
   dFdU(3,2) -= W.v.x*W.v.y/denominator;
   dFdU(3,3) += W.v.x*C_p/denominator/Rt;
+
+
+  int NUM_VAR = NUM_LESPREMIXED2D_VAR_SANS_SPECIES + W.nscal;
+
   //Species
-  for(int i = 0; i<num_species; i++){ 
+  for(int i = 0; i<num_species; ++i){ 
 #ifdef _NS_MINUS_ONE
-    dFdU(1,NUM_CHEM2D_VAR_SANS_SPECIES+i) -= (W.specdata[i].Enthalpy(Temp) + W.specdata[i].Heatofform() - C_p*Temp*W.specdata[i].Rs()/Rt
-		  -(W.specdata[W.ns-1].Enthalpy(Temp)+W.specdata[W.ns-1].Heatofform() - C_p*Temp*W.specdata[W.ns-1].Rs()/Rt))/denominator; 
+    dFdU(1,NUM_VAR+i) -= (W.specdata[i].Enthalpy(Temp) + W.specdata[i].Heatofform() - C_p*Temp*W.specdata[i].Rs()/Rt
+			  -(W.specdata[W.ns-1].Enthalpy(Temp)+W.specdata[W.ns-1].Heatofform() - C_p*Temp*W.specdata[W.ns-1].Rs()/Rt))/denominator; 
 #else
-    dFdU(1,NUM_CHEM2D_VAR_SANS_SPECIES+i) -= (W.specdata[i].Enthalpy(Temp) + W.specdata[i].Heatofform() 
-					      - C_p*Temp*W.specdata[i].Rs()/Rt)/denominator;	
+    dFdU(1,NUM_VAR+i) -= (W.specdata[i].Enthalpy(Temp) + W.specdata[i].Heatofform() 
+			  - C_p*Temp*W.specdata[i].Rs()/Rt)/denominator;	
 #endif 
 	
-    dFdU(3,NUM_CHEM2D_VAR_SANS_SPECIES+i) = W.v.x*dFdU(1,NUM_CHEM2D_VAR_SANS_SPECIES+i);    
-    dFdU(NUM_CHEM2D_VAR_SANS_SPECIES+i, 0) -= W.spec[i].c*W.v.x ;
-    dFdU(NUM_CHEM2D_VAR_SANS_SPECIES+i, 1) += W.spec[i].c ;
-    dFdU(NUM_CHEM2D_VAR_SANS_SPECIES+i,NUM_CHEM2D_VAR_SANS_SPECIES+i) += W.v.x ;        
+    dFdU(3,NUM_VAR+i) = W.v.x*dFdU(1,NUM_VAR+i);    
+    dFdU(NUM_VAR+i, 0) -= W.spec[i].c*W.v.x ;
+    dFdU(NUM_VAR+i, 1) += W.spec[i].c ;
+    dFdU(NUM_VAR+i,NUM_VAR+i) += W.v.x ;        
   }
-  //Turbulence 
-  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-      Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON){ 
-    dFdU(4,0) -= W.v.x*W.k;
-    dFdU(4,1) += W.k;  
-    dFdU(5,0) -= W.v.x*W.omega;
-    dFdU(5,1) += W.omega;
+
+  
+  //Scalars
+  NUM_VAR = NUM_LESPREMIXED2D_VAR_SANS_SPECIES;  
+  for(int i = 0; i<W.nscal; ++i){ 
+    // column corresponding to k, I don't know about other scalars...
+    if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
+      dFdU(1,NUM_VAR+i) -= (5.0/3.0)/denominator;
+      dFdU(3,NUM_VAR+i) += W.v.x*dFdU(1,NUM_VAR+i);
+    }
+    
+    // row corresponding to the scalar
+    dFdU(NUM_VAR+i, 0) -= W.scalar[i]*W.v.x;
+    dFdU(NUM_VAR+i, 1) += W.scalar[i];
+    // diagonal
+    dFdU(NUM_VAR+i,NUM_VAR+i) += W.v.x;
   }
-  dFdU(4,4) += W.v.x;
-  dFdU(5,5) += W.v.x;  
  
 }
 
-// Finite differnece check of dFxdU
-void dFIdU_FD(DenseMatrix &dFdU, const Chem2D_pState &WW, const int Flow_Type) {
+// Finite difference check of dFxdU
+void dFIdU_FD(DenseMatrix &dFdU, const LESPremixed2D_pState &WW, const int Flow_Type) {
 
-  Chem2D_cState UU = U(WW);
-  Chem2D_cState A,C;
-  Chem2D_pState B,D;
+  LESPremixed2D_cState UU = U(WW);
+  LESPremixed2D_cState A,C;
+  LESPremixed2D_pState B,D;
   double perturb = 5e-6;
   double a;
 
-  for(int jcol=0; jcol<(dFdU.get_n()); jcol++){    
+  for(int jcol=0; jcol<(dFdU.get_n()); ++jcol){    
     A = UU;  C = UU;
-    if( jcol <NUM_CHEM2D_VAR_SANS_SPECIES) {
+    if( jcol <NUM_LESPREMIXED2D_VAR_SANS_SPECIES) {
       A[jcol+1] += perturb*max(ONE,UU[jcol+1]); 
       C[jcol+1] -= perturb*max(ONE,UU[jcol+1]);
     } else {                                       //enforce sum(ci) = 1;
       a = perturb*max(ONE,UU[jcol+1]); 
       A[jcol+1] += a;
-      A[WW.NUM_VAR_CHEM2D] -= a;      
+      A[WW.NUM_VAR_LESPREMIXED2D] -= a;      
       C[jcol+1] -= a;
-      C[WW.NUM_VAR_CHEM2D] += a;
+      C[WW.NUM_VAR_LESPREMIXED2D] += a;
     }   
     B = W(A);  D = W(C);    
     A = B.Fx();  C = D.Fx();
-    for(int irow=0; irow<(dFdU.get_n()); irow++){
+    for(int irow=0; irow<(dFdU.get_n()); ++irow){
       dFdU(irow,jcol) = ( A[irow+1] - C[irow+1])/(TWO*perturb*max(ONE, UU[jcol+1]));      
     }
   } 
 
 }
 
-/********************************************************
- * Chem2D_pState::dFIdW -- Invisicd Flux Jacobian       *
- ********************************************************/
-void dFIdW(DenseMatrix &dFdW, const Chem2D_pState &W, const int Flow_Type) {
+/*********************************************************
+ * LESPremixed2D_pState::dFIdW -- Invisicd Flux Jacobian *
+ *********************************************************/
+void dFIdW(DenseMatrix &dFdW, const LESPremixed2D_pState &W, const int Flow_Type) {
 
-  //int num_species = dFdW.get_n() - NUM_CHEM2D_VAR_SANS_SPECIES; 
+  //int num_species = dFdW.get_n() - NUM_LESPREMIXED2D_VAR_SANS_SPECIES; 
   int num_species=W.ns-1;
 
   double Temp = W.T();
+  double pt = W.pmodified();
   double Rt = W.Rtot();
   double C_p = W.Cp();
   double ht = W.h();
+  double kk = W.k();
 
   dFdW(0,0) = W.v.x;
   dFdW(0,1) = W.rho;
@@ -771,92 +826,95 @@ void dFIdW(DenseMatrix &dFdW, const Chem2D_pState &W, const int Flow_Type) {
   dFdW(2,0) = W.v.x*W.v.y;
   dFdW(2,1) = W.rho*W.v.y;
   dFdW(2,2) = W.rho*W.v.x;
-  dFdW(3,0) = (HALF*(W.v.x*W.v.x+W.v.y*W.v.y) + ht)*W.v.x - C_p*Temp*W.v.x;
-  dFdW(3,1) = W.rho*W.v.x*W.v.x+ W.rho*(ht + HALF*(W.v.x*W.v.x+W.v.y*W.v.y));
+  dFdW(3,0) = (HALF*(W.v.x*W.v.x+W.v.y*W.v.y) + ht + 5.0*kk/3.0)*W.v.x - C_p*pt/(W.rho*Rt)*W.v.x;
+  dFdW(3,1) = W.rho*W.v.x*W.v.x+ W.rho*(ht + 5.0*kk/3.0 + HALF*(W.v.x*W.v.x+W.v.y*W.v.y));
   dFdW(3,2) = W.rho*W.v.x*W.v.y;
   dFdW(3,3) = W.v.x*C_p/Rt;
 
+  int NUM_VAR = NUM_LESPREMIXED2D_VAR_SANS_SPECIES + W.nscal;
+
   //Species
-  for(int i = 0; i<num_species; i++){ 
+  for(int i = 0; i<num_species; ++i){ 
 #ifdef _NS_MINUS_ONE
-    dFdW(3,NUM_CHEM2D_VAR_SANS_SPECIES+i) = W.rho*W.v.x*( 
-          (W.specdata[i].Enthalpy(Temp) + W.specdata[i].Heatofform() - C_p*Temp*W.specdata[i].Rs()/Rt) - 
-	  (W.specdata[W.ns-1].Enthalpy(Temp) + W.specdata[W.ns-1].Heatofform() - C_p*Temp*W.specdata[W.ns-1].Rs()/Rt));    
+    dFdW(3,NUM_VAR+i) = W.rho*W.v.x*((W.specdata[i].Enthalpy(Temp) + W.specdata[i].Heatofform() - C_p*Temp*W.specdata[i].Rs()/Rt) - 
+				     (W.specdata[W.ns-1].Enthalpy(Temp) + W.specdata[W.ns-1].Heatofform() - C_p*Temp*W.specdata[W.ns-1].Rs()/Rt));    
 #else
-    dFdW(3,NUM_CHEM2D_VAR_SANS_SPECIES+i) =  W.rho*W.v.x*
-      (W.specdata[i].Enthalpy(Temp) + W.specdata[i].Heatofform() - C_p*Temp*W.specdata[i].Rs()/Rt); 
+    dFdW(3,NUM_VAR+i) =  W.rho*W.v.x*(W.specdata[i].Enthalpy(Temp) + W.specdata[i].Heatofform() - C_p*Temp*W.specdata[i].Rs()/Rt); 
 #endif 
 
-     dFdW(NUM_CHEM2D_VAR_SANS_SPECIES+i, 0) = W.spec[i].c*W.v.x ;
-     dFdW(NUM_CHEM2D_VAR_SANS_SPECIES+i, 1) = W.rho*W.spec[i].c ;
-     dFdW(NUM_CHEM2D_VAR_SANS_SPECIES+i,NUM_CHEM2D_VAR_SANS_SPECIES+i) =W.rho*W.v.x ;        
+     dFdW(NUM_VAR+i, 0) = W.spec[i].c*W.v.x ;
+     dFdW(NUM_VAR+i, 1) = W.rho*W.spec[i].c ;
+     dFdW(NUM_VAR+i,NUM_VAR+i) =W.rho*W.v.x ;        
   }
-  //Turbulence 
-  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-      Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON){ 
-     dFdW(1,0) += TWO/THREE*W.k;
-     dFdW(1,4) = TWO/THREE*W.rho;
-     dFdW(3,0) += FIVE/THREE*W.k*W.v.x;
-     dFdW(3,1) += FIVE/THREE*W.rho*W.k; 
-     dFdW(3,4) += FIVE/THREE*W.rho*W.v.x;
-     dFdW(4,0) = W.v.x*W.k;
-     dFdW(4,1) = W.rho*W.k;  
-     dFdW(5,0) = W.v.x*W.omega;
-     dFdW(5,1) = W.rho*W.omega;
+
+  //Scalars
+  NUM_VAR = NUM_LESPREMIXED2D_VAR_SANS_SPECIES;  
+  for(int i = 0; i<W.nscal; ++i){ 
+    // column corresponding to k, I don't know about other scalars...
+    if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
+      dFdW(3,NUM_VAR+i) = (5.0/3.0)*W.rho*W.v.x;
+    }
+    
+    // row corresponding to the scalar
+    dFdW(NUM_VAR+i, 0) = W.scalar[i]*W.v.x;
+    dFdW(NUM_VAR+i, 1) = W.rho*W.scalar[i];
+    // diagonal
+    dFdW(NUM_VAR+i,NUM_VAR+i) = W.rho*W.v.x;
   }  
-  dFdW(4,4) = W.rho*W.v.x;
-  dFdW(5,5) = W.rho*W.v.x;  
   
 }
 
-// Finite differnece check of dFxdW
-void dFIdW_FD(DenseMatrix &dFdW, const Chem2D_pState &W, const int Flow_Type) {
+// Finite difference check of dFxdW
+void dFIdW_FD(DenseMatrix &dFdW, const LESPremixed2D_pState &W, const int Flow_Type) {
 
-  Chem2D_pState A,C;
-  Chem2D_cState B,D;
+  LESPremixed2D_pState A,C;
+  LESPremixed2D_cState B,D;
   double perturb = 5e-6;
   double a;
 
-  for(int jcol=0; jcol<(dFdW.get_n()); jcol++){    
+  for(int jcol=0; jcol<(dFdW.get_n()); ++jcol){    
     A.Copy(W);  C.Copy(W);
-    if( jcol <NUM_CHEM2D_VAR_SANS_SPECIES) {
+    if( jcol <NUM_LESPREMIXED2D_VAR_SANS_SPECIES) {
       A[jcol+1] += perturb*max(ONE,W[jcol+1]); 
       C[jcol+1] -= perturb*max(ONE,W[jcol+1]);
     } else {                                       //enforce sum(ci) = 1;
       a = perturb*max(ONE,W[jcol+1]); 
       A[jcol+1] += a;
-      A[W.NUM_VAR_CHEM2D] -= a;      
+      A[W.NUM_VAR_LESPREMIXED2D] -= a;      
       C[jcol+1] -= a;
-      C[W.NUM_VAR_CHEM2D] += a;
+      C[W.NUM_VAR_LESPREMIXED2D] += a;
     }   
     B = A.Fx();   D = C.Fx();
-    for(int irow=0; irow<(dFdW.get_n()); irow++){
+    for(int irow=0; irow<(dFdW.get_n()); ++irow){
       dFdW(irow,jcol) = ( B[irow+1] - D[irow+1])/(TWO*perturb*max(ONE, W[jcol+1]));      
     }
   } 
 
 }
 
-/************************************************************************
- * Chem2D_pState::dWdU -- Primitive/Conserved transformation Jacobian   *
- ************************************************************************/
-void Chem2D_pState::dWdU(DenseMatrix &dWdQ, const int Flow_Type) const{
+/*****************************************************************************
+ * LESPremixed2D_pState::dWdU -- Primitive/Conserved transformation Jacobian *
+ *****************************************************************************/
+void LESPremixed2D_pState::dWdU(DenseMatrix &dWdQ, const int Flow_Type) const{
 
-  //int num_species = dWdQ.get_n() - NUM_CHEM2D_VAR_SANS_SPECIES; //ns -1 or ns
+  //int num_species = dWdQ.get_n() - NUM_LESPREMIXED2D_VAR_SANS_SPECIES; //ns -1 or ns
   int num_species=ns-1;
 
   double Temp = T();
+  double pt = pmodified();
   double Rt = Rtot();
   double C_p = Cp();
   double denominator = (C_p/Rt - ONE);
+  double kk = k();
 
   dWdQ(0,0) = ONE;
   dWdQ(1,0) = -v.x/rho;
   dWdQ(1,1) = ONE/rho;
   dWdQ(2,0) = -v.y/rho;
   dWdQ(2,2) = ONE/rho; 
+
   double phi = ZERO;   
-  for(int i=0; i<num_species; i++){  
+  for(int i=0; i<num_species; ++i){  
 #ifdef _NS_MINUS_ONE
     phi += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - C_p*Temp*specdata[i].Rs()/Rt
     - (specdata[ns-1].Enthalpy(Temp)+specdata[ns-1].Heatofform() - C_p*Temp*specdata[ns-1].Rs()/Rt));
@@ -865,13 +923,19 @@ void Chem2D_pState::dWdU(DenseMatrix &dWdQ, const int Flow_Type) const{
 #endif
   }
 
-  dWdQ(3,0) = (HALF*(v.x*v.x+v.y*v.y) - h() + C_p*Temp + phi)/denominator;
+  if(Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY) { 
+    dWdQ(3,0) = (HALF*(v.x*v.x+v.y*v.y) - h() - 5.0*kk/3.0 + C_p*pt/(rho*Rt) + phi)/denominator;
+  } else if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
+    dWdQ(3,0) = (HALF*(v.x*v.x+v.y*v.y) - h() + C_p*pt/(rho*Rt) + phi)/denominator;
+  }
   dWdQ(3,1) = -v.x/denominator;
   dWdQ(3,2) = -v.y/denominator;
   dWdQ(3,3) = ONE/denominator;
+
+
   //Species
-  int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES;
-  for(int i=0; i<num_species;i++){  
+  int NUM_VAR = NUM_LESPREMIXED2D_VAR_SANS_SPECIES + nscal;
+  for(int i=0; i<num_species; ++i){  
 #ifdef _NS_MINUS_ONE  
     dWdQ(3, NUM_VAR+i) = - (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - C_p*Temp*specdata[i].Rs()/Rt
 			    -(specdata[ns-1].Enthalpy(Temp)+specdata[ns-1].Heatofform() - C_p*Temp*specdata[ns-1].Rs()/Rt))/denominator;
@@ -881,71 +945,80 @@ void Chem2D_pState::dWdU(DenseMatrix &dWdQ, const int Flow_Type) const{
     dWdQ(NUM_VAR+i, 0) = - spec[i].c/rho;
     dWdQ(NUM_VAR+i, NUM_VAR+i) = ONE/rho;
   }
-  //Turbulence 
-  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-      Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {    
-    dWdQ(4,0) = -k/rho;
-    dWdQ(5,0) = -omega/rho;
-  }  
-  dWdQ(3,4) -= ONE/denominator;
-  dWdQ(4,4) =  ONE/rho;
-  dWdQ(5,5) =  ONE/rho;
+
+  //Scalars
+  NUM_VAR = NUM_LESPREMIXED2D_VAR_SANS_SPECIES;
+  for(int i = 0; i<nscal; ++i){ 
+    // column corresponding to k, I don't know about other scalars...
+    if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
+      dWdQ(3,NUM_VAR+i) = -(5.0/3.0)/denominator;
+    }
+
+    // row corresponding to the scalar
+    dWdQ(NUM_VAR+i, 0) = - scalar[i]/rho;
+    // diagonal
+    dWdQ(NUM_VAR+i,NUM_VAR+i) = ONE/rho;
+  }
+
 }
 
-// Finite differnece check of dWdU
+// Finite difference check of dWdU
 // shows error in (3,0) ie dp/rho due to pertubing rho and cState T() calc.
-void Chem2D_pState::dWdU_FD(DenseMatrix &dWdQ, const int Flow_Type){
+void LESPremixed2D_pState::dWdU_FD(DenseMatrix &dWdQ, const int Flow_Type){
 
-  Chem2D_cState UU = U(*this);
-  Chem2D_cState A,C;
-  Chem2D_pState B,D;
+  LESPremixed2D_cState UU = U(*this);
+  LESPremixed2D_cState A,C;
+  LESPremixed2D_pState B,D;
   double perturb = 5e-6;
   double a;
 
-  for(int jcol=0; jcol<dWdQ.get_n(); jcol++){    
+  for(int jcol=0; jcol<dWdQ.get_n(); ++jcol){    
     A = UU;    C = UU;
-    if( jcol <NUM_CHEM2D_VAR_SANS_SPECIES) {
+    if( jcol <NUM_LESPREMIXED2D_VAR_SANS_SPECIES) {
       A[jcol+1] += perturb*max(ONE,A[jcol+1]); 
       C[jcol+1] -= perturb*max(ONE,C[jcol+1]);
     } else {                                       //enforce sum(ci) = 1;
       a =  perturb*max(ONE,A[jcol+1]); 
       A[jcol+1] += a;
-      A[NUM_VAR_CHEM2D] -= a;      
+      A[NUM_VAR_LESPREMIXED2D] -= a;      
       C[jcol+1] -= a;
-      C[NUM_VAR_CHEM2D] += a;
+      C[NUM_VAR_LESPREMIXED2D] += a;
     }
     B = W(A);    D = W(C);
-    for(int irow=0; irow<(dWdQ.get_n()); irow++){
+    for(int irow=0; irow<(dWdQ.get_n()); ++irow){
       dWdQ(irow,jcol) = ( B[irow+1] - D[irow+1])/(TWO*perturb*max(ONE,UU[jcol+1]));     
     }
   } 
 
 }
 
-/************************************************************************
- * Chem2D_pState::dUdW -- Conserved/Primitive transformation Jacobian   *
- ************************************************************************/
-void Chem2D_pState::dUdW(DenseMatrix &dQdW, const int Flow_Type){
+/*****************************************************************************
+ * LESPremixed2D_pState::dUdW -- Conserved/Primitive transformation Jacobian *
+ *****************************************************************************/
+void LESPremixed2D_pState::dUdW(DenseMatrix &dQdW, const int Flow_Type){
 
-  //int num_species = dQdW.get_n() - NUM_CHEM2D_VAR_SANS_SPECIES; //ns -1 or ns
+  //int num_species = dQdW.get_n() - NUM_LESPREMIXED2D_VAR_SANS_SPECIES; //ns -1 or ns
   int num_species=ns-1;
   
   double Temp = T();
+  double pt = pmodified();
   double Rt = Rtot();
   double C_p = Cp();
+  double kk = k();
 
   dQdW(0,0) =  ONE;
   dQdW(1,0) =  v.x;
   dQdW(1,1) =  rho;  
   dQdW(2,0) =  v.y;
   dQdW(2,2) =  rho;  
-  dQdW(3,0) =  HALF*(v.x*v.x + v.y*v.y) + h() - C_p*Temp;
+  dQdW(3,0) =  HALF*(v.x*v.x + v.y*v.y) + h() + 5.0*kk/3.0 - C_p*pt/(rho*Rt);
   dQdW(3,1) =  rho*v.x;
   dQdW(3,2) =  rho*v.y;
   dQdW(3,3) =  C_p/Rt - ONE;
+
   //Species
-  int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES;
-  for(int i=0; i<(num_species);i++){  
+  int NUM_VAR = NUM_LESPREMIXED2D_VAR_SANS_SPECIES + nscal;
+  for(int i=0; i<(num_species); ++i){  
 #ifdef _NS_MINUS_ONE   
      dQdW(3,NUM_VAR+i) = rho*(specdata[i].Enthalpy(Temp)+specdata[i].Heatofform() - C_p*Temp*specdata[i].Rs()/Rt
 			      - (specdata[ns-1].Enthalpy(Temp)+specdata[ns-1].Heatofform() - C_p*Temp*specdata[ns-1].Rs()/Rt));
@@ -955,40 +1028,46 @@ void Chem2D_pState::dUdW(DenseMatrix &dQdW, const int Flow_Type){
     dQdW(NUM_VAR+i,0) = spec[i].c;
     dQdW(NUM_VAR+i,NUM_VAR+i) =  rho;
   }
-  //Turbulence  
-  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-      Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {    
-    dQdW(4,0) =  k;
-    dQdW(5,0) =  omega; 
-  }   
-  dQdW(3,4) = rho;
-  dQdW(4,4) =  rho;   
-  dQdW(5,5) =  rho;
+
+  //Scalars
+  NUM_VAR = NUM_LESPREMIXED2D_VAR_SANS_SPECIES;
+  for(int i = 0; i<nscal; ++i){
+    // column corresponding to k, I don't know about other scalars...
+    if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
+      dQdW(3,NUM_VAR+i) = (5.0/3.0)*rho;
+    }
+
+    // row corresponding to the scalar
+    dQdW(NUM_VAR+i, 0) = scalar[i];
+    // diagonal
+    dQdW(NUM_VAR+i,NUM_VAR+i) = rho;
+  }
+
 }
 
-// Finite differnece check of dWdU
-void Chem2D_pState::dUdW_FD(DenseMatrix &dUdW, const int Flow_Type){
+// Finite difference check of dWdU
+void LESPremixed2D_pState::dUdW_FD(DenseMatrix &dUdW, const int Flow_Type){
 
-  Chem2D_pState W(*this);
-  Chem2D_pState A,C;
-  Chem2D_cState B,D;
+  LESPremixed2D_pState W(*this);
+  LESPremixed2D_pState A,C;
+  LESPremixed2D_cState B,D;
   double perturb = 5e-6;
   double a;
 
-  for(int jcol=0; jcol<(dUdW.get_n()); jcol++){    
+  for(int jcol=0; jcol<(dUdW.get_n()); ++jcol){    
     A.Copy(*this);  C.Copy(*this);
-    if( jcol <NUM_CHEM2D_VAR_SANS_SPECIES) {
+    if( jcol <NUM_LESPREMIXED2D_VAR_SANS_SPECIES) {
       A[jcol+1] += perturb*max(ONE,A[jcol+1]); 
       C[jcol+1] -= perturb*max(ONE,C[jcol+1]);
     } else {                                       //enforce sum(ci) = 1;
       a =  perturb*max(ONE,A[jcol+1]); 
       A[jcol+1] += a;
-      A[NUM_VAR_CHEM2D] -= a;      
+      A[NUM_VAR_LESPREMIXED2D] -= a;      
       C[jcol+1] -= a;
-      C[NUM_VAR_CHEM2D] += a;
+      C[NUM_VAR_LESPREMIXED2D] += a;
     }   
     B = U(A);   D = U(C);
-    for(int irow=0; irow<(dUdW.get_n()); irow++){
+    for(int irow=0; irow<(dUdW.get_n()); ++irow){
       dUdW(irow,jcol) = ( B[irow+1] - D[irow+1])/(TWO*perturb*max(ONE, W[jcol+1]));      
     }
   } 
@@ -1000,45 +1079,47 @@ void Chem2D_pState::dUdW_FD(DenseMatrix &dUdW, const int Flow_Type){
  ***************** EIGENVALUES *************************************
  *******************************************************************/
 
-/************************************************************
- * Chem2D_pState::lambda -- Eigenvalue(s) (x-direction).    *
- ************************************************************/
-Chem2D_pState Chem2D_pState::lambda_x(void) const {
-  double c = a();
-  Chem2D_pState Temp;
+/****************************************************************
+ * LESPremixed2D_pState::lambda -- Eigenvalue(s) (x-direction). *
+ ****************************************************************/
+LESPremixed2D_pState LESPremixed2D_pState::lambda_x(void) const {
+  double c = amodified();
+  LESPremixed2D_pState Temp;
   Temp.rho = v.x - c;
   Temp.v.x = v.x;
   Temp.v.y = v.x;
   Temp.p = v.x + c;
-  for(int i=0; i<ns; i++){
+  if(nscal) for(int i=0; i<nscal; ++i) Temp.scalar[i] = v.x;
+
+  for(int i=0; i<ns; ++i){
     Temp.spec[i].c = v.x;
   }
-  Temp.k = v.x;
-  Temp.omega = v.x; 
+     
   return (Temp);
 }
 
 
 /************************************************************
  * Low Mach Number Preconditioned Eigenvalue(s)             *
- * Chem2D_pState::lambda_preconditioned_x                   *
+ * LESPremixed2D_pState::lambda_preconditioned_x            *
  ************************************************************/
-Chem2D_pState Chem2D_pState::lambda_preconditioned_x(const double &MR2) const {
+LESPremixed2D_pState LESPremixed2D_pState::lambda_preconditioned_x(const double &MR2) const {
 
-  Chem2D_pState NEW;
+  LESPremixed2D_pState NEW;
   double uprimed, cprimed;
-  double c = a();
+  double c = amodified();
   u_a_precon(MR2*c*c,uprimed,cprimed);
 
   NEW.rho = uprimed - cprimed;
   NEW.v.x = v.x;
   NEW.v.y = v.x;
   NEW.p = uprimed + cprimed;
-  for(int i=0; i<ns; i++){
+  if(nscal) for(int i=0; i<nscal; ++i) NEW.scalar[i] = v.x;
+
+  for(int i=0; i<ns; ++i){
     NEW.spec[i].c = v.x;
   }
-  NEW.k = v.x;
-  NEW.omega = v.x;  
+    
   return (NEW);
 }
 
@@ -1046,29 +1127,37 @@ Chem2D_pState Chem2D_pState::lambda_preconditioned_x(const double &MR2) const {
  ***************** EIGENVECTORS ************************************
  *******************************************************************/
 // Conserved Right Eigenvector -- (x-direction)
-Chem2D_cState Chem2D_pState::rc_x(const int &index) const {
+LESPremixed2D_cState LESPremixed2D_pState::rc_x(const int &index) const {
 
     if(index == 1){
-      double c = a(); 
-      return (Chem2D_cState(ONE, v.x-c, v.y, H()/rho-v.x*c, k, omega, spec));
+      double c = amodified(); 
+      return (LESPremixed2D_cState(ONE, v.x-c, v.y, H()/rho-v.x*c, scalar, spec));
     } else if(index == 2) {
-      return (Chem2D_cState(ONE, v.x, v.y, H()/rho-Cp()*T(), k, omega, spec)); 
+      double c = amodified();
+      return (LESPremixed2D_cState(ONE, v.x, v.y, H()/rho-c*c/(g()-ONE), scalar, spec)); 
     } else if(index == 3) {
-      return (Chem2D_cState(ZERO, ZERO, rho, rho*v.y, ZERO));
+      return (LESPremixed2D_cState(ZERO, ZERO, rho, rho*v.y, ZERO));
     } else if(index == 4) {
-      double c = a(); 
-      return (Chem2D_cState(ONE, v.x+c, v.y, H()/rho+v.x*c, k, omega, spec));
-    } else if(index == 5) { 
-      return (Chem2D_cState(ZERO, ZERO, ZERO, rho, rho, ZERO, ZERO) );
-      //return (Chem2D_cState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO) );
-    } else if(index == 6) {
-      return (Chem2D_cState(ZERO, ZERO, ZERO, ZERO, ZERO, rho, ZERO) ) ;
-      //return (Chem2D_cState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO) ) ;
-    } else{ 
-      Chem2D_cState NEW(ZERO);
+      double c = amodified();
+      return (LESPremixed2D_cState(ONE, v.x+c, v.y, H()/rho+v.x*c, scalar, spec));
+    } else if( nscal  &&  index >=5 && index<=(NUM_VAR_LESPREMIXED2D-ns)){
+      for(int i=5; i<=(NUM_VAR_LESPREMIXED2D-ns); ++i){
+        if(index == 5){
+          LESPremixed2D_cState NEW(ZERO);
+          NEW.E = FIVE*rho/THREE;   // For k equation
+          NEW.rhoscalar[i-5] = rho; //rho*scalar[i-5];
+          return NEW;
+	} else {  
+          LESPremixed2D_cState NEW(ZERO);
+          NEW.rhoscalar[i-5] = rho*scalar[i-5]; // ????
+          return NEW;
+        }
+      }
+    } else { 
+      LESPremixed2D_cState NEW(ZERO);
       double RTOT = Rtot();
-      double TEMP = p/(rho*RTOT);    
-      int count = index-(NUM_CHEM2D_VAR_SANS_SPECIES+1);
+      double TEMP = p/(rho*RTOT);     
+      int count = index-(NUM_VAR_LESPREMIXED2D-ns+1);
 #ifdef _NS_MINUS_ONE
       NEW.E = rho*((specdata[count].Enthalpy(TEMP) + specdata[count].Heatofform() - Cp(TEMP)*TEMP*specdata[count].Rs()/RTOT) -
 		   (specdata[ns-1].Enthalpy(TEMP)  + specdata[ns-1].Heatofform() - Cp(TEMP)*TEMP*specdata[ns-1].Rs()/RTOT)); 
@@ -1081,30 +1170,34 @@ Chem2D_cState Chem2D_pState::rc_x(const int &index) const {
 }
 
 // Primitive Left Eigenvector -- (x-direction)
-Chem2D_pState Chem2D_pState::lp_x(const int &index) const {
+LESPremixed2D_pState LESPremixed2D_pState::lp_x(const int &index) const {
  
    if(index == 1){
-      double c = a(); 
-      return (Chem2D_pState(ZERO, -HALF*rho/c, ZERO, HALF/(c*c), ZERO));
-    } else if(index == 2) {
-      double c = a(); 
-      return (Chem2D_pState(ONE, ZERO, ZERO, -ONE/(c*c), ZERO));
-    } else if(index == 3) {
-      return  (Chem2D_pState(ZERO, ZERO, ONE, ZERO, ZERO));
-    } else if(index == 4) {  
-      double c = a(); 
-      return (Chem2D_pState(ZERO, HALF*rho/c, ZERO, HALF/(c*c), ZERO));
-    }else if(index == 5) {  
-      return (Chem2D_pState(ZERO, ZERO, ZERO, ZERO, ONE,ZERO, ZERO));
-      //return (Chem2D_pState(ZERO, ZERO, ZERO, ZERO, ZERO,ZERO, ZERO));
-    }else if(index == 6) {  
-      return (Chem2D_pState(ZERO, ZERO, ZERO, ZERO, ZERO, ONE, ZERO));
-      //return (Chem2D_pState(ZERO, ZERO, ZERO, ZERO, ZERO,ZERO, ZERO));
-    } else{ 
-      Chem2D_pState NEW(ZERO);
-      NEW.spec[index-(NUM_CHEM2D_VAR_SANS_SPECIES+1)].c = ONE;
-      return NEW;
-    } 
+      double c = amodified(); 
+      return (LESPremixed2D_pState(ZERO, -HALF*rho/c, ZERO, HALF/(c*c), ZERO));
+   } else if(index == 2) {
+      double c = amodified(); 
+      return (LESPremixed2D_pState(ONE, ZERO, ZERO, -ONE/(c*c), ZERO));
+   } else if(index == 3) {
+      return  (LESPremixed2D_pState(ZERO, ZERO, ONE, ZERO, ZERO));
+   } else if(index == 4) {  
+      double c = amodified(); 
+      return (LESPremixed2D_pState(ZERO, HALF*rho/c, ZERO, HALF/(c*c), ZERO));
+
+   } else if(nscal  &&  index >=5  &&  index<=(NUM_VAR_LESPREMIXED2D-ns) ){
+     for(int i=5; i<=(NUM_VAR_LESPREMIXED2D-ns); ++i){
+       if(index == i){
+	 LESPremixed2D_pState NEW(ZERO);
+	 NEW.scalar[i-5] = ONE; 
+	 return NEW;
+       }
+     }
+
+   } else{ 
+     LESPremixed2D_pState NEW(ZERO);
+     NEW.spec[index-(NUM_VAR_LESPREMIXED2D-ns+1)].c = ONE;
+     return NEW;
+   } 
 
 }
 
@@ -1112,43 +1205,54 @@ Chem2D_pState Chem2D_pState::lp_x(const int &index) const {
  ************** PRECONDITIONED EIGENVECTORS *****************
  ************************************************************/
 // Conserved Right Eigenvector -- (x-direction)
-Chem2D_cState Chem2D_pState::rc_x_precon(const int &index, const double &MR2) const {
+LESPremixed2D_cState LESPremixed2D_pState::rc_x_precon(const int &index, const double &MR2) const {
 
   if(index == 1){
-    double c = a(); 
+    double c = amodified(); 
     double uprimed,cprimed;
     u_a_precon(MR2*c*c,uprimed,cprimed);
-    return (Chem2D_cState(ONE, 
-			  (uprimed-cprimed)/MR2,
-			  v.y,			
-			  h()+HALF*(v.sqr()/MR2) - (v.x*cprimed)/MR2, k,omega,
-			  spec));
+    return (LESPremixed2D_cState(ONE, 
+				 (uprimed-cprimed)/MR2,
+				 v.y,
+				 h() + HALF*(v.y*v.y + v.x*v.x/MR2) + FIVE*k()/THREE - (v.x*cprimed)/MR2,
+				 scalar, spec));
    
   } else if(index == 2) {
-    return (Chem2D_cState(ONE, v.x, v.y, (h()-Cp()*T()) + HALF*v.sqr(), k,omega,spec));
+    double c = amodified();
+    return (LESPremixed2D_cState(ONE, v.x, v.y, (H()/rho - c*c/(g()-ONE)), scalar,spec));
   
   } else if(index == 3) {
-    return (Chem2D_cState(ZERO, ZERO, rho, rho*v.y,ZERO));
+    return (LESPremixed2D_cState(ZERO, ZERO, rho, rho*v.y,ZERO));
    
   } else if(index == 4) { 
-    double c = a(); 
+    double c = amodified(); 
     double uprimed,cprimed;
     u_a_precon(MR2*c*c,uprimed,cprimed);
-    return (Chem2D_cState(ONE,
-			  (uprimed+cprimed)/MR2,
-			  v.y, 
-			  h()+HALF*(v.sqr()/MR2) + (v.x*cprimed)/MR2, k, omega,
-			  spec));
-   
-  } else if(index == 5) { 
-    return (Chem2D_cState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO) );
-  } else if(index == 6) {
-    return (Chem2D_cState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO) ) ;
-  } else{ 
-    Chem2D_cState NEW(ZERO);
+    return (LESPremixed2D_cState(ONE,
+				 (uprimed+cprimed)/MR2,
+				 v.y, 
+				 h() + HALF*(v.y*v.y + v.x*v.x/MR2) + FIVE*k()/THREE + (v.x*cprimed)/MR2,
+				 scalar, spec));
+
+  } else if(nscal  && index >=5  && index<=(NUM_VAR_LESPREMIXED2D-ns) ){
+    for(int i=5; i<=(NUM_VAR_LESPREMIXED2D-ns); ++i){
+      if(index == 5){
+	LESPremixed2D_cState NEW(ZERO);
+	NEW.E = FIVE*rho/THREE;   // For k equation
+	NEW.rhoscalar[i-5] = rho; 
+	return NEW;
+      } else {  
+	LESPremixed2D_cState NEW(ZERO);
+	NEW.rhoscalar[i-5] = rho*scalar[i-5]; // ????
+	return NEW;
+      }        
+    }  
+
+  } else { 
+    LESPremixed2D_cState NEW(ZERO);
     double RTOT = Rtot();
     double TEMP = p/(rho*RTOT);    
-    int count = index-(NUM_CHEM2D_VAR_SANS_SPECIES+1);
+    int count = index-(NUM_VAR_LESPREMIXED2D-ns+1);
 #ifdef _NS_MINUS_ONE
     NEW.E = rho*((specdata[count].Enthalpy(TEMP) + specdata[count].Heatofform() - Cp(TEMP)*TEMP*specdata[count].Rs()/RTOT) -
  		 (specdata[ns-1].Enthalpy(TEMP)  + specdata[ns-1].Heatofform()  - Cp(TEMP)*TEMP*specdata[ns-1].Rs()/RTOT)); 
@@ -1158,47 +1262,52 @@ Chem2D_cState Chem2D_pState::rc_x_precon(const int &index, const double &MR2) co
 
     NEW.rhospec[count].c = rho;
     return NEW;    
-   }
+  }
 
 }
 
 // Primitive Left Eigenvector -- (x-direction)
-Chem2D_pState Chem2D_pState::lp_x_precon(const int &index, const double &MR2) const {
+LESPremixed2D_pState LESPremixed2D_pState::lp_x_precon(const int &index, const double &MR2) const {
   
   if(index == 1){
-    double c = a();   
+    double c = amodified();   
     double uprimed,cprimed;
     u_a_precon(MR2*c*c,uprimed,cprimed);
-    return (Chem2D_pState(ZERO, 
-			  -HALF*rho*MR2/cprimed, 
-			  ZERO,
-			  (-uprimed+cprimed + v.x)/(TWO*cprimed*c*c),k,omega,
-			  ZERO));
+    return (LESPremixed2D_pState(ZERO, 
+				 -HALF*rho*MR2/cprimed, 
+				 ZERO,
+				 (-uprimed+cprimed + v.x)/(TWO*cprimed*c*c),
+				 ZERO));
   } else if(index == 2) {
-    double c = a(); 
-    return (Chem2D_pState(ONE, ZERO, ZERO, -ONE/(c*c),k,omega,ZERO));
+    double c = amodified(); 
+    return (LESPremixed2D_pState(ONE, ZERO, ZERO, -ONE/(c*c), ZERO));
   } else if(index == 3) {
-    return  (Chem2D_pState(ZERO, ZERO, ONE, ZERO,ZERO));
+    return  (LESPremixed2D_pState(ZERO, ZERO, ONE, ZERO,ZERO));
   } else if(index == 4) {  
-    double c = a(); 
+    double c = amodified(); 
     double uprimed,cprimed;
     u_a_precon(MR2*c*c,uprimed,cprimed);
-    return (Chem2D_pState(ZERO, 
-			  HALF*rho*MR2/cprimed, 
-			  ZERO,
-			  (uprimed+cprimed - v.x)/(TWO*cprimed*c*c), k, omega,
-			  ZERO));
-  }else if(index == 5) { 
-    return (Chem2D_pState(ZERO, ZERO, ZERO, ZERO, ONE,ZERO, ZERO)); 
-    //return (Chem2D_pState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO));
-  }else if(index == 6) {  
-    return (Chem2D_pState(ZERO, ZERO, ZERO, ZERO,ZERO, ONE, ZERO));
-    //return (Chem2D_pState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO));
-  } else{ 
-    Chem2D_pState NEW(ZERO);
-    NEW.spec[index-(NUM_CHEM2D_VAR_SANS_SPECIES+1)].c = ONE;
+    return (LESPremixed2D_pState(ZERO, 
+				 HALF*rho*MR2/cprimed, 
+				 ZERO,
+				 (uprimed+cprimed - v.x)/(TWO*cprimed*c*c),
+				 ZERO));
+
+  } else if(nscal  &&  index >=5 && index<=(NUM_VAR_LESPREMIXED2D-ns) ){
+    for(int i=5; i<=(NUM_VAR_LESPREMIXED2D-ns); ++i){
+      if(index == i){
+	LESPremixed2D_pState NEW(ZERO);
+	NEW.scalar[i-5] = ONE; // scalar[i-5]; ?????
+	return NEW;
+      }
+    }
+  
+  } else { 
+    LESPremixed2D_pState NEW(ZERO);
+    NEW.spec[index-(NUM_VAR_LESPREMIXED2D-ns+1)].c = ONE;
     return NEW;
-  } 
+  }
+ 
 }
 
 /*******************************************************************
@@ -1208,13 +1317,13 @@ Chem2D_pState Chem2D_pState::lp_x_precon(const int &index, const double &MR2) co
  *******************************************************************
  *******************************************************************/
 // For CFL Calculation
-double Chem2D_pState::u_plus_aprecon(const double &u, 
-				     const int    &flow_type_flag, 
-				     const double &deltax) const {
+double LESPremixed2D_pState::u_plus_aprecon(const double &u, 
+					    const int    &flow_type_flag, 
+					    const double &deltax) const {
   double Temp = T();
-  double c = a();
+  double c = amodified();
   double UR2 = Mr2(flow_type_flag,deltax)*c*c;
-  double alpha = HALF*( ONE - (ONE/(Rtot()*Temp) - ONE/(Cp()*Temp))*UR2);
+  double alpha = HALF*(ONE - ONE/(c*c) * UR2);
   
   // uprime + cprime
   return ( u*(ONE - alpha) + sqrt(alpha*alpha*u*u + UR2) );
@@ -1223,10 +1332,11 @@ double Chem2D_pState::u_plus_aprecon(const double &u,
 /************************************************************/
 // For eignvalues and eigenvectors return preconditioned
 // velocity and soundspeed ie. u' and c'
-void Chem2D_pState::u_a_precon(const double &UR2, double &uprimed, double &cprimed) const{
+void LESPremixed2D_pState::u_a_precon(const double &UR2, double &uprimed, double &cprimed) const{
   
   double Temp = T();
-  double alpha = HALF*( ONE - (ONE/(Rtot()*Temp) - ONE/(Cp()*Temp))*UR2);
+  double c = amodified();
+  double alpha = HALF*(ONE - ONE/(c*c) * UR2);
 
   uprimed = v.x*(ONE - alpha);
   cprimed = sqrt(alpha*alpha*v.x*v.x + UR2); 
@@ -1235,10 +1345,10 @@ void Chem2D_pState::u_a_precon(const double &UR2, double &uprimed, double &cprim
 
 /************************************************************/
 // as defined by E.Turkel (1999)
-double Chem2D_pState::Mr2(const int    &flow_type_flag, 
-                          const double &deltax) const {
+double LESPremixed2D_pState::Mr2(const int    &flow_type_flag, 
+				 const double &deltax) const {
   
-  double c = a();
+  double c = amodified();
   double MR2 = min(max((v.sqr()/(c*c)),Mref*Mref),ONE);
   
   // Need deltax which is based on cell spacing 
@@ -1249,23 +1359,28 @@ double Chem2D_pState::Mr2(const int    &flow_type_flag,
   return (MR2);
 }
 
-/************************************************************/
-/************ ORIGINAL LAMINAR ONLY *************************/
-/* (will be replaced by version commented out below when corrected) */
-/************************************************************/
-void Chem2D_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P,
-						   const int &Viscous_flag, 
-						   const double &deltax ) const{  
+
+/*******************************************************************
+  *******************************************************************
+  *  Low Mach Number Preconditioner Based on Weiss & Smith (1995)   *
+  *  - Includes the SFS turbulence kinetic energy                   *
+  *******************************************************************
+  *******************************************************************/
+void LESPremixed2D_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P,
+							  const int &Viscous_flag, 
+							  const double &deltax) const{
   
   double Temp = T();
+  double pt = pmodified();
   double Rmix = Rtot();
   double enthalpy = h();
   double CP = Cp();
-  double c = a();
-  double theta = (ONE/(Mr2(Viscous_flag,deltax)*c*c) + ONE/(CP*Temp));
+  double c = amodified();
+  double theta = ONE/(Mr2(Viscous_flag,deltax)*c*c) + (g()-ONE)/(c*c);  
+  double kk = k();
  
   double phi = ZERO;   
-  for(int j=0; j<ns-1; j++){   
+  for(int j=0; j<ns-1; ++j){   
 #ifdef _NS_MINUS_ONE
     phi += spec[j].c*(specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix -    
 		      (specdata[ns-1].Enthalpy(Temp) + specdata[ns-1].Heatofform() - CP*Temp*specdata[ns-1].Rs()/Rmix));
@@ -1273,86 +1388,121 @@ void Chem2D_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P,
     phi += spec[j].c*(specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() 
 		      - CP*Temp*specdata[j].Rs()/Rmix);   
 #endif
-  }		      
+  }
 
-  double alpha = theta*p/rho;
-  double alpham1 = alpha - ONE;
-  double Omega = (Rmix - CP)*p/(rho*Rmix);
-  double beta = enthalpy - CP*p/(rho*Rmix) - phi;
   double V = HALF*v.sqr();
-  P.zero();  //RESET MATRIX TO ZERO!!!
+  double alpha = theta*pt/rho;
+  double alpham1 = alpha - ONE;
+  double omega = (Rmix - CP)*pt/(rho*Rmix);
+  double beta = (Scal_sys.scalar_flag == LES_TF_K)  ?  (enthalpy - CP*pt/(rho*Rmix) - phi)
+    : (enthalpy - CP*pt/(rho*Rmix) - phi + 5.0*kk/3.0);
+  
+  P.zero(); //RESET MATRIX TO ZERO!!!
 
-  P(0,0) = (alpha*(beta-V)+V+Rmix*Temp-enthalpy+phi)/Omega;
-  P(0,1) = v.x*alpham1/Omega;
-  P(0,2) = v.y*alpham1/Omega;
-  P(0,3) = -alpham1/Omega;
-  P(1,0) = v.x*(beta-V)*alpham1/Omega;
-  P(1,1) = v.x*v.x*alpham1/Omega+1.0;
-  P(1,2) = v.x*v.y*alpham1/Omega;
-  P(1,3) = -v.x*alpham1/Omega;
-  P(2,0) = v.y*(beta-V)*alpham1/Omega;
-  P(2,1) = v.x*v.y*alpham1/Omega;
-  P(2,2) = v.y*v.y*alpham1/Omega+1.0;
-  P(2,3) = -v.y*alpham1/Omega;
-  P(3,0) = (enthalpy+V)*(beta-V)*alpham1/Omega;
-  P(3,1) = v.x*(enthalpy+V)*alpham1/Omega;
-  P(3,2) = v.y*(enthalpy+V)*alpham1/Omega;
-  P(3,3) = -(alpha*(enthalpy+V)-V-Rmix*Temp-beta-phi)/Omega;
+  if(Scal_sys.scalar_flag == LES_TF_K) {
+    P(0,0) = (alpha*(beta-V) + V + pt/rho - enthalpy + phi)/omega; 
+  } else {
+    P(0,0) = (alpha*(beta-V) + V + pt/rho - enthalpy + phi - 5.0*kk/3.0)/omega; 
+  }
+  P(0,1) = v.x*alpham1/omega;                              
+  P(0,2) = v.y*alpham1/omega;                           
+  P(0,3) = -alpham1/omega;                              
+  P(1,0) = v.x*(beta-V)*alpham1/omega;                  
+  P(1,1) = v.x*v.x*alpham1/omega + 1.0;                 
+  P(1,2) = v.x*v.y*alpham1/omega;                       
+  P(1,3) = -v.x*alpham1/omega;                            
+  P(2,0) = v.y*(beta-V)*alpham1/omega;                     
+  P(2,1) = v.x*v.y*alpham1/omega;                          
+  P(2,2) = v.y*v.y*alpham1/omega + 1.0;                    
+  P(2,3) = -v.y*alpham1/omega;                             
+  P(3,0) = (enthalpy+V+5.0/3.0*kk)*(beta-V)*alpham1/omega; 
+  P(3,1) = v.x*(enthalpy+V+5.0/3.0*kk)*alpham1/omega;      
+  P(3,2) = v.y*(enthalpy+V+5.0/3.0*kk)*alpham1/omega;      
+  if(Scal_sys.scalar_flag == LES_TF_K) {
+    P(3,3) = -(alpha*(enthalpy+V+5.0/3.0*kk) - V - pt/rho - beta - phi - 5.0/3.0*kk)/omega;
+  } else {
+    P(3,3) = -(alpha*(enthalpy+V+5.0/3.0*kk) - V - pt/rho - beta - phi)/omega;
+  }
+      
+  int NUM_VAR = NUM_LESPREMIXED2D_VAR_SANS_SPECIES + nscal;
 
-  //fixes so it can work without Turbulence !!!
-  P(4,4) = ONE;
-  P(5,5) = ONE;
+  // Scalar (SFS turbulence kinetic energy)
+  if (nscal  &&  Scal_sys.scalar_flag == LES_TF_K) {
+    P(0,4) = 5.0/3.0*alpham1/omega;                   
+    P(1,4) = 5.0/3.0*v.x*alpham1/omega;               
+    P(2,4) = 5.0/3.0*v.y*alpham1/omega;               
+    P(3,4) = 5.0/3.0*(enthalpy+V+5.0/3.0*kk)*alpham1/omega;   
 
-  int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES;
+    P(4,0) = kk*(beta-V)*alpham1/omega;   
+    P(4,1) = kk*v.x*alpham1/omega;        
+    P(4,2) = kk*v.y*alpham1/omega;        
+    P(4,3) = -kk*alpham1/omega;           
+    P(4,4) = 5.0/3.0*kk*alpham1/omega + 1.0;
 
-  //Multispecies
-  for(int j=0; j<ns-1; j++){  
+    for (int j=0; j<ns-1; ++j) {
+#ifdef _NS_MINUS_ONE     
+      double enth_j = specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix-
+	( specdata[ns-1].Enthalpy(Temp) + specdata[ns-1].Heatofform() - CP*Temp*specdata[ns-1].Rs()/Rmix);
+#else
+      double enth_j = specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix;
+#endif
+
+      P(NUM_VAR-1, j+NUM_VAR) = kk*enth_j*alpham1/omega;  
+      P(j+NUM_VAR, NUM_VAR-1) = 5.0/3.0*(spec[j].c)*alpham1/omega;   
+    }
+  }
+  
+
+  // Multispecies
+  for (int j=0; j<ns-1; ++j) {
 #ifdef _NS_MINUS_ONE     
     double enth_j = specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix-
       ( specdata[ns-1].Enthalpy(Temp) + specdata[ns-1].Heatofform() - CP*Temp*specdata[ns-1].Rs()/Rmix);
 #else
     double enth_j = specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix;
-#endif
-     
-    P(0,j+NUM_VAR) = enth_j*alpham1/Omega;
-    P(1,j+NUM_VAR) = v.x*enth_j*alpham1/Omega;
-    P(2,j+NUM_VAR) = v.y*enth_j*alpham1/Omega;
-    P(3,j+NUM_VAR) = enth_j*(V+enthalpy)*alpham1/Omega;	
-    for(int i=0; i<ns-1; i++){ 
-      if(i==j){ 
-	P(i+NUM_VAR,0) = (spec[i].c)*(beta-V)*alpham1/Omega;
-	P(i+NUM_VAR,1) = (spec[i].c)*v.x*alpham1/Omega;
-	P(i+NUM_VAR,2) = (spec[i].c)*v.y*alpham1/Omega;
-	P(i+NUM_VAR,3) = -(spec[i].c)*alpham1/Omega;
+#endif       
+    P(0,j+NUM_VAR) = enth_j*alpham1/omega;       
+    P(1,j+NUM_VAR) = v.x*enth_j*alpham1/omega;   
+    P(2,j+NUM_VAR) = v.y*enth_j*alpham1/omega;   
+    P(3,j+NUM_VAR) = enth_j*(enthalpy+V+5.0/3.0*kk)*alpham1/omega; 	
+    for (int i=0; i<ns-1; ++i) { 
+      if (i==j) { 
+	P(i+NUM_VAR,0) = (spec[i].c)*(beta-V)*alpham1/omega;   
+	P(i+NUM_VAR,1) = (spec[i].c)*v.x*alpham1/omega;        
+	P(i+NUM_VAR,2) = (spec[i].c)*v.y*alpham1/omega;        
+	P(i+NUM_VAR,3) = -(spec[i].c)*alpham1/omega;           
 	//diagonal
-	P(i+NUM_VAR,j+NUM_VAR) = spec[i].c*enth_j*alpham1/Omega+ONE;
-      }
-      else {
-	P(i+NUM_VAR,j+NUM_VAR) = spec[i].c*enth_j*alpham1/Omega;
+	P(i+NUM_VAR,j+NUM_VAR) = (spec[i].c)*enth_j*alpham1/omega + ONE;   
+      } else {
+	P(i+NUM_VAR,j+NUM_VAR) = (spec[i].c)*enth_j*alpham1/omega;  
       }
     }       
   }
 
-//   cout<<"\n Pin with Mref \n"<<Mref<<endl<<P;
-
-  //P.zero(); P.identity(); //SET TO Mref=1.0;
+} // end  Low_Mach_Number_Preconditioner
 
 
-}
-
-/************************************************************/
-void Chem2D_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,	
-							   const int &Viscous_flag, 
-							   const double &deltax ) const{  
+/*******************************************************************
+ *******************************************************************
+ *  Inverse of the Low Mach Number Preconditioner                  *
+ *  - Includes the SFS turbulence kinetic energy                   *
+ *******************************************************************
+ *******************************************************************/
+void LESPremixed2D_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,	
+								  const int &Viscous_flag, 
+								  const double &deltax) const{
+  
   double Temp = T();
+  double pt = pmodified();
   double Rmix = Rtot();
   double enthalpy = h();
   double CP = Cp();
-  double c = a();
-  double theta = (ONE/(Mr2(Viscous_flag,deltax)*c*c) + ONE/(CP*Temp));  
+  double c = amodified();  
+  double theta = ONE/(Mr2(Viscous_flag,deltax)*c*c) + (g()-ONE)/(c*c);  
+  double kk = k();
 
   double phi = ZERO;
-  for(int j=0; j<ns-1; j++){ 
+  for(int j=0; j<ns-1; ++j){ 
 #ifdef _NS_MINUS_ONE       
     phi += spec[j].c*(specdata[j].Enthalpy(Temp)+ specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix
 		      - (specdata[ns-1].Enthalpy(Temp)+ specdata[ns-1].Heatofform() - CP*Temp*specdata[ns-1].Rs()/Rmix));
@@ -1360,65 +1510,92 @@ void Chem2D_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,
     phi += spec[j].c*(specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix);   
 #endif
   }
-
-  double AA = p*(rho*Rmix-theta*p*CP);
-  double BB = Rmix*rho*(theta*p-rho);
-  double EE = HALF*v.sqr() - enthalpy + phi;
-  double CC = EE + CP*Temp; 
-  double DD = HALF*v.sqr() + enthalpy;
-  Pinv.zero();   //RESET MATRIX TO ZERO!!! 
   
-  Pinv(0,0) = rho*Rmix/AA*(theta*p*EE-rho*CC+p);
-  Pinv(0,1) = -v.x*BB/AA;
-  Pinv(0,2) = -v.y*BB/AA;
-  Pinv(0,3) = BB/AA;
-  Pinv(1,0) = v.x*CC*BB/AA;
-  Pinv(1,1) = rho*Rmix/AA*(p+rho*v.x*v.x-theta*p*(v.x*v.x+CP*Temp));
-  Pinv(1,2) = -v.x*v.y*BB/AA;
-  Pinv(1,3) = v.x*BB/AA;    
-  Pinv(2,0) = v.y*CC*BB/AA;
-  Pinv(2,1) = -v.x*v.y*BB/AA;
-  Pinv(2,2) = rho*Rmix/AA*(p+v.y*v.y*rho-theta*p*(v.y*v.y+CP*Temp));
-  Pinv(2,3) = v.y*BB/AA;  
-  Pinv(3,0) = DD*CC*BB/AA;
-  Pinv(3,1) = -v.x*DD*BB/AA;
-  Pinv(3,2) = -v.y*DD*BB/AA;
-  Pinv(3,3) = rho*Rmix/AA*(theta*p*(DD-CP*Temp)-rho*DD+p);
+  double AA = pt*(rho*Rmix-theta*pt*CP);
+  double BB = Rmix*rho*(theta*pt-rho);
+  double EE = (Scal_sys.scalar_flag == LES_TF_K)  ?  (HALF*v.sqr() - enthalpy + phi)
+    : (HALF*v.sqr() - enthalpy + phi - 5.0*kk/3.0);
+      
+  double CC = EE + CP*pt/(rho*Rmix); 
+  double DD = HALF*v.sqr() + enthalpy + 5.0*kk/3.0;
 
-  Pinv(4,4) = ONE; //fixes so it can work without Turbulence !!!
-  Pinv(5,5) = ONE;
-  
-  int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES;
-  //Multispecies
-  for(int j=0; j<ns-1; j++){   
+  Pinv.zero();  //RESET MATRIX TO ZERO!!!
+
+  Pinv(0,0) = rho*Rmix/AA*(theta*pt*EE-rho*CC+pt);  
+  Pinv(0,1) = -v.x*BB/AA;                           
+  Pinv(0,2) = -v.y*BB/AA;                           
+  Pinv(0,3) = BB/AA;                                
+  Pinv(1,0) = v.x*CC*BB/AA;                         
+  Pinv(1,1) = rho*Rmix/AA*(pt+rho*v.x*v.x-theta*pt*(v.x*v.x+CP*pt/(rho*Rmix)));  
+  Pinv(1,2) = -v.x*v.y*BB/AA;                      
+  Pinv(1,3) = v.x*BB/AA;                           
+  Pinv(2,0) = v.y*CC*BB/AA;                        
+  Pinv(2,1) = -v.x*v.y*BB/AA;                      
+  Pinv(2,2) = rho*Rmix/AA*(pt+v.y*v.y*rho-theta*pt*(v.y*v.y+CP*pt/(rho*Rmix))); 
+  Pinv(2,3) = v.y*BB/AA;                           
+  Pinv(3,0) = DD*CC*BB/AA;                         
+  Pinv(3,1) = -v.x*DD*BB/AA;                       
+  Pinv(3,2) = -v.y*DD*BB/AA;                       
+  Pinv(3,3) = rho*Rmix/AA*(theta*pt*(DD-CP*pt/(rho*Rmix))-rho*DD+pt); 
+
+  int NUM_VAR = NUM_LESPREMIXED2D_VAR_SANS_SPECIES + nscal;
+
+  // Scalar (SFS turbulence kinetic energy)
+  if (nscal  &&  Scal_sys.scalar_flag == LES_TF_K) {
+    Pinv(0,4) = -5.0/3.0*BB/AA;         
+    Pinv(1,4) = -5.0/3.0*v.x*BB/AA;     
+    Pinv(2,4) = -5.0/3.0*v.y*BB/AA;     
+    Pinv(3,4) = -5.0/3.0*DD*BB/AA;      
+
+    Pinv(4,0) = kk*CC*BB/AA;            
+    Pinv(4,1) = -kk*v.x*BB/AA;          
+    Pinv(4,2) = -kk*v.y*BB/AA;          
+    Pinv(4,3) = kk*BB/AA;               
+    Pinv(4,4) = 1.0 - 5.0/3.0*kk*BB/AA; 
+
+    for (int j=0; j<ns-1; ++j) {
+#ifdef _NS_MINUS_ONE    
+      double enth_j =  specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix -
+	(specdata[ns-1].Enthalpy(Temp) + specdata[ns-1].Heatofform() - CP*Temp*specdata[ns-1].Rs()/Rmix);
+#else
+      double enth_j =  specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix;
+#endif
+
+      Pinv(NUM_VAR-1, j+NUM_VAR) = -kk*enth_j*BB/AA;   
+      Pinv(j+NUM_VAR, NUM_VAR-1) = -5.0/3.0*(spec[j].c)*BB/AA; 
+
+    }    
+  }
+
+
+  // Multispecies
+  for (int j=0; j<ns-1; ++j) {
 #ifdef _NS_MINUS_ONE    
     double enth_j =  specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix -
-      ( specdata[ns-1].Enthalpy(Temp) + specdata[ns-1].Heatofform() - CP*Temp*specdata[ns-1].Rs()/Rmix);
+      (specdata[ns-1].Enthalpy(Temp) + specdata[ns-1].Heatofform() - CP*Temp*specdata[ns-1].Rs()/Rmix);
 #else
     double enth_j =  specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/Rmix;
 #endif
-    Pinv(0,j+NUM_VAR) = -enth_j*BB/AA;
-    Pinv(1,j+NUM_VAR) = -v.x*enth_j*BB/AA;
-    Pinv(2,j+NUM_VAR) = -v.y*enth_j*BB/AA;
-    Pinv(3,j+NUM_VAR) = -enth_j*BB*DD/AA;
-    for(int i=0; i<ns-1; i++){  
-      if(i==j){
-	Pinv(i+NUM_VAR,0) = (spec[i].c)*CC*BB/AA;
-	Pinv(i+NUM_VAR,1) = -(spec[i].c)*v.x*BB/AA;
-	Pinv(i+NUM_VAR,2) = -(spec[i].c)*v.y*BB/AA;
-	Pinv(i+NUM_VAR,3) = (spec[i].c)*BB/AA;
-	//diagonal	
-	Pinv(i+NUM_VAR,j+NUM_VAR) = 1.0 - spec[i].c*enth_j*BB/AA ;
+    Pinv(0,j+NUM_VAR) = -enth_j*BB/AA;         
+    Pinv(1,j+NUM_VAR) = -v.x*enth_j*BB/AA;     
+    Pinv(2,j+NUM_VAR) = -v.y*enth_j*BB/AA;     
+    Pinv(3,j+NUM_VAR) = -enth_j*BB*DD/AA;      	
+    for (int i=0; i<ns-1; ++i) { 
+      if (i==j) { 
+	Pinv(i+NUM_VAR,0) = (spec[i].c)*CC*BB/AA;        
+	Pinv(i+NUM_VAR,1) = -(spec[i].c)*v.x*BB/AA;    
+	Pinv(i+NUM_VAR,2) = -(spec[i].c)*v.y*BB/AA;    
+	Pinv(i+NUM_VAR,3) = (spec[i].c)*BB/AA;            
+	//diagonal
+	Pinv(i+NUM_VAR,j+NUM_VAR) = ONE - spec[i].c*enth_j*BB/AA;    
+      } else {
+	Pinv(i+NUM_VAR,j+NUM_VAR) = -spec[i].c*enth_j*BB/AA;      
       }
-      else {
-	Pinv(i+NUM_VAR,j+NUM_VAR) = -spec[i].c*enth_j*BB/AA;
-      } 
-    }   
-  }  
+    }       
+  }
 
-  //Pinv.zero(); Pinv.identity(); //SET TO Mref=1.0;
+} // end Low_Mach_Number_Preconditioner_Inverse
 
-}
 
 
 /***********************************************************
@@ -1428,82 +1605,96 @@ void Chem2D_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,
  //ie.  if(ns == W.ns)
 
 /********************************************************
- * Chem2D_pState -- Binary arithmetic operators.        *
+ * LESPremixed2D_pState -- Binary arithmetic operators. *
  ********************************************************/
 //----------------- Addition -----------------------------//
-Chem2D_pState Chem2D_pState::operator +(const Chem2D_pState &W) const{    
-  Chem2D_pState Temp(*this);
+LESPremixed2D_pState LESPremixed2D_pState::operator +(const LESPremixed2D_pState &W) const{    
+  LESPremixed2D_pState Temp(*this);
   Temp += W;
   return Temp;
 }
 
 //------------------ Subtraction ------------------------//
-Chem2D_pState Chem2D_pState::operator -(const Chem2D_pState &W) const{
-    Chem2D_pState Temp(*this);
-    Temp -= W;
-    return Temp;
+LESPremixed2D_pState LESPremixed2D_pState::operator -(const LESPremixed2D_pState &W) const{
+  LESPremixed2D_pState Temp(*this);
+  Temp -= W;
+  return Temp;
 }
 
 //---------------- Scalar Multiplication ------------------//
-Chem2D_pState Chem2D_pState::operator *(const double &a) const{
-  Chem2D_pState Temp(*this);
+LESPremixed2D_pState LESPremixed2D_pState::operator *(const double &a) const{
+  LESPremixed2D_pState Temp(*this);
   Temp.rho = rho*a;  Temp.v = v*a; Temp.p = p*a;
-  Temp.k = k*a; Temp.omega = omega*a;
-  for( int i=0; i<ns; i++) Temp.spec[i] = spec[i]*a; 
+  if(nscal) for(int i=0; i<nscal; ++i) Temp.scalar[i] = scalar[i]*a;
+  for( int i=0; i<ns; ++i) Temp.spec[i] = spec[i]*a; 
   Temp.tau = tau*a;
   Temp.qflux = qflux*a;
   Temp.lambda= lambda*a;
   Temp.theta = theta*a;
+#ifdef THICKENED_FLAME_ON
+  Temp.flame = flame*a; 
+#endif
   return(Temp);
 }
 
-Chem2D_pState operator *(const double &a, const Chem2D_pState &W){
-  Chem2D_pState Temp;
+LESPremixed2D_pState operator *(const double &a, const LESPremixed2D_pState &W){
+  LESPremixed2D_pState Temp;
   Temp.rho = W.rho*a;  Temp.v = W.v*a; Temp.p = W.p*a;
-  Temp.k = W.k*a; Temp.omega = W.omega*a;
-  for( int i=0; i<W.ns; i++) Temp.spec[i] = W.spec[i]*a;
+  if(W.nscal) for(int i=0; i<W.nscal; ++i) Temp.scalar[i] = W.scalar[i]*a; 
+  for( int i=0; i<W.ns; ++i) Temp.spec[i] = W.spec[i]*a;
   Temp.tau = W.tau*a;
   Temp.qflux = W.qflux*a;
   Temp.lambda= W.lambda*a;
   Temp.theta = W.theta*a;
+#ifdef THICKENED_FLAME_ON
+  Temp.flame = W.flame*a;
+#endif
   return(Temp);
 }
 
 //--------------- Scalar Division ------------------------//
-Chem2D_pState Chem2D_pState::operator /(const double &a) const {
-  Chem2D_pState Temp(*this);
-  Temp.rho = rho/a; Temp.v = v/a; Temp.p = p/a; 
-  Temp.k = k/a; Temp.omega = omega/a;
-  for(int i=0; i<ns; i++) Temp.spec[i] = spec[i]/a;
+LESPremixed2D_pState LESPremixed2D_pState::operator /(const double &a) const {
+  LESPremixed2D_pState Temp(*this);
+  Temp.rho = rho/a; Temp.v = v/a; Temp.p = p/a;
+  if(nscal) for(int i=0; i<nscal; ++i) Temp.scalar[i] = scalar[i]/a;
+  for(int i=0; i<ns; ++i) Temp.spec[i] = spec[i]/a;
   Temp.tau = tau/a;
   Temp.qflux = qflux/a;
   Temp.lambda= lambda/a;
   Temp.theta = theta/a;
+#ifdef THICKENED_FLAME_ON
+  Temp.flame = flame/a;
+#endif
   return(Temp);
 }
 
 //----------------- Inner Product ------------------------//
-double Chem2D_pState::operator *(const Chem2D_pState &W) const{
+double LESPremixed2D_pState::operator *(const LESPremixed2D_pState &W) const{
   double sum=0.0;
-  for(int i=0; i<ns; i++) sum += spec[i]*W.spec[i];
-  return (rho*W.rho + v*W.v + p*W.p + k*W.k + omega*W.omega + sum);
+  double sumscal=0.0;
+  if(nscal) for(int i=0; i<nscal; ++i) sumscal += scalar[i]*W.scalar[i];
+  for(int i=0; i<ns; ++i) sum += spec[i]*W.spec[i];
+  return (rho*W.rho + v*W.v + p*W.p + sumscal + sum);
 }
 
 //----------- solution state product operator ------------//
-Chem2D_pState Chem2D_pState::operator ^( const Chem2D_pState &W) const {
-    Chem2D_pState Temp(*this);
+LESPremixed2D_pState LESPremixed2D_pState::operator ^( const LESPremixed2D_pState &W) const {
+    LESPremixed2D_pState Temp(*this);
     Temp.rho = rho*W.rho;
     Temp.v.x = v.x*W.v.x;
     Temp.v.y = v.y*W.v.y;
     Temp.p = p*W.p;
-    Temp.k = k*W.k;
-    Temp.omega = omega*W.omega;
-    for(int i=0; i<ns; i++) Temp.spec[i] = spec[i]*W.spec[i];
+    if(nscal) for(int i=0; i<nscal; ++i) Temp.scalar[i] = scalar[i]*W.scalar[i];
+    for(int i=0; i<ns; ++i) Temp.spec[i] = spec[i]*W.spec[i];
+#ifdef THICKENED_FLAME_ON
+  Temp.flame.WF = flame.WF*W.flame.WF;
+  Temp.flame.TF = flame.TF*W.flame.TF;
+#endif
     return(Temp);
 }
 
 //----------------- Assignment ----------------------------//
-Chem2D_pState& Chem2D_pState::operator =(const Chem2D_pState &W){
+LESPremixed2D_pState& LESPremixed2D_pState::operator =(const LESPremixed2D_pState &W){
   //self assignment protection
   if( this != &W){ 
     Copy(W);
@@ -1511,102 +1702,138 @@ Chem2D_pState& Chem2D_pState::operator =(const Chem2D_pState &W){
   return (*this);
 }
 
-/********************************************************
- * Chem2D_pState -- Shortcut arithmetic operators.     *
- ********************************************************/
-Chem2D_pState& Chem2D_pState::operator +=(const Chem2D_pState &W){
+/**********************************************************
+ * LESPremixed2D_pState -- Shortcut arithmetic operators. *
+ **********************************************************/
+LESPremixed2D_pState& LESPremixed2D_pState::operator +=(const LESPremixed2D_pState &W){
   rho += W.rho;
   v += W.v; 
   p += W.p; 
-  k += W.k;
-  omega += W.omega;
-  for( int i=0; i<ns; i++)  spec[i].c += W.spec[i].c;
+  if(nscal) for(int i=0; i<nscal; ++i) scalar[i] += W.scalar[i];
+  for( int i=0; i<ns; ++i)  spec[i].c += W.spec[i].c;
   tau += W.tau;
   qflux += W.qflux;
   lambda += W.lambda;
   theta += W.theta;
+#ifdef THICKENED_FLAME_ON
+  flame += W.flame;
+#endif
   return (*this);
 }
 
-Chem2D_pState& Chem2D_pState::operator -=(const Chem2D_pState &W) {
+LESPremixed2D_pState& LESPremixed2D_pState::operator -=(const LESPremixed2D_pState &W) {
   rho -= W.rho;
   v -= W.v;
   p -= W.p;
-  k -= W.k;
-  omega -= W.omega;
-  for(int i=0; i<ns; i++) spec[i].c -= W.spec[i].c;
+  if(nscal) for(int i=0; i<nscal; ++i) scalar[i] -= W.scalar[i];
+  for(int i=0; i<ns; ++i) spec[i].c -= W.spec[i].c;
   tau -= W.tau;
   qflux -= W.qflux;
   lambda -= W.lambda;
   theta -= W.theta;
+#ifdef THICKENED_FLAME_ON
+  flame -= W.flame;
+#endif
   return (*this); 
 }
 
 /********************************************************
- * Chem2D_pState -- Unary arithmetic operators.         *
+ * LESPremixed2D_pState -- Unary arithmetic operators.  *
  ********************************************************/
-//  Chem2D_pState operator +(const Chem2D_pState &W) {  
-//   return (Chem2D_pState(W.rho,W.v,W.p,W.spec));
+//  LESPremixed2D_pState operator +(const LESPremixed2D_pState &W) {  
+//   return (LESPremixed2D_pState(W.rho,W.v,W.p,W.spec));
 // }
 
-Chem2D_pState operator -(const Chem2D_pState &W) {
-#ifdef STATIC_NUMBER_OF_SPECIES
-  Species spt[STATIC_NUMBER_OF_SPECIES];
+LESPremixed2D_pState operator -(const LESPremixed2D_pState &W) {
+#ifdef STATIC_LESPREMIXED2D_SPECIES
+  Species spt[STATIC_LESPREMIXED2D_SPECIES];
 #else
   Species *spt= new Species[W.ns];
 #endif
 
-  for(int i=0; i<W.ns; i++)  spt[i] = -W.spec[i]; 
-  Chem2D_pState Temp(-W.rho,-W.v,-W.p, -W.k, -W.omega ,spt);
+  double *scalpt = new double[W.nscal];
+  for(int i=0; i<W.nscal; ++i) scalpt[i] = -W.scalar[i];
+
+  for(int i=0; i<W.ns; ++i)  spt[i] = -W.spec[i]; 
+  LESPremixed2D_pState Temp(-W.rho,-W.v,-W.p, scalpt, spt);
   Temp.tau = -W.tau;
   Temp.qflux = -W.qflux;
   Temp.lambda = -W.lambda;
   Temp.theta= -W.theta;
+#ifdef THICKENED_FLAME_ON
+  Temp.flame = -W.flame;
+#endif
 
-#ifndef STATIC_NUMBER_OF_SPECIES
+#ifndef STATIC_LESPREMIXED2D_SPECIES
   delete[] spt;
 #endif
+
+  delete[] scalpt;
 
   return(Temp);
 }
 
 /********************************************************
- * Chem2D_pState -- Relational operators.               *
+ * LESPremixed2D_pState -- Relational operators.        *
  ********************************************************/
-int operator ==(const Chem2D_pState &W1, const Chem2D_pState &W2) {
+int operator ==(const LESPremixed2D_pState &W1, const LESPremixed2D_pState &W2) {
   if(W1.ns == W2.ns){ //check that species are equal
-    bool Temp;
-    for(int i=0; i<W1.ns; i++){
-      if( W1.spec[i] == W2.spec[i] ){
+    bool Temp, Temp2;
+    //species
+    for(int i=0; i<W1.ns; ++i){
+      if( W1.spec[i] == W2.spec[i]){
 	Temp = true;
       } else {
 	Temp = false;
 	break;
-      }  
-      return (W1.rho == W2.rho && W1.v == W2.v && W1.p == W2.p&& W1.k == W2.k && W1.omega == W2.omega
-	      && Temp == true && W1.tau == W2.tau &&
-	      W1.qflux == W2.qflux&& W1.lambda == W2.lambda &&
-	      W1.theta == W2.theta);
+      }
     }
+    //scalars
+    if(W1.nscal){        
+      for(int i=0; i<W1.nscal; ++i){
+	if(W1.scalar[i] == W2.scalar[i]){
+	  Temp2 = true;
+	} else {
+	  Temp2 = false;
+	  break;
+	}
+      }
+    }  
+ 
+    return (W1.rho == W2.rho && W1.v == W2.v && W1.p == W2.p 
+	    && Temp2 == true && Temp == true  && W1.tau == W2.tau &&
+	    W1.qflux == W2.qflux&& W1.lambda == W2.lambda &&
+	    W1.theta == W2.theta);
+    
   } else {
     cerr<<"\n Mismatch in number of species \n";
     exit(1);
   }
 }
 
-int operator !=(const Chem2D_pState &W1, const Chem2D_pState &W2) {
+int operator !=(const LESPremixed2D_pState &W1, const LESPremixed2D_pState &W2) {
    if(W1.ns == W2.ns){ //check that species are equal
-    bool Temp = true;
-    for(int i=0; i<W1.ns; i++){
-      if( W1.spec[i] != W2.spec[i] ){
-	Temp = false;
-	break;
-      } 
-      return (W1.rho != W2.rho || W1.v != W2.v || W1.p != W2.p || W1.k != W2.k || W1.omega != W2.omega
-	      || Temp != true || W1.tau != W2.tau ||
-	      W1.qflux != W2.qflux|| W1.lambda != W2.lambda ||
-	      W1.theta != W2.theta);
-    }
+     bool Temp = true, Temp2 = true;
+     //species
+     for(int i=0; i<W1.ns; ++i){
+       if( W1.spec[i] != W2.spec[i] ){
+	 Temp = false;
+	 break;
+       }
+     }    
+     //scalars
+     for(int i=0; i<W1.nscal; ++i){
+       if( W1.scalar[i] != W2.scalar[i] ){
+	 Temp2 = false;
+	 break;
+       }
+     }
+     
+     return (W1.rho != W2.rho || W1.v != W2.v || W1.p != W2.p 
+	     || Temp2 != true || Temp != true || W1.tau != W2.tau ||
+	     W1.qflux != W2.qflux|| W1.lambda != W2.lambda ||
+	     W1.theta != W2.theta);
+     
   } else {
     cerr<<"\n Mismatch in number of species \n";
     exit(1);
@@ -1614,28 +1841,37 @@ int operator !=(const Chem2D_pState &W1, const Chem2D_pState &W2) {
 }
 
 /********************************************************
- * Chem2D_pState -- Input-output operators.            *
+ * LESPremixed2D_pState -- Input-output operators.      *
  ********************************************************/
-ostream &operator << (ostream &out_file, const Chem2D_pState &W) {
+ostream &operator << (ostream &out_file, const LESPremixed2D_pState &W) {
   out_file.precision(10);
   out_file.setf(ios::scientific);
-  out_file << " " << W.rho  << " " << W.v.x << " " << W.v.y << " " << W.p<< " " << W.k << " " << W.omega;
-  for( int i=0; i<W.ns; i++){
-    out_file<<" "<<W.spec[i];
-  }
-  //out_file << " " << W.qflux << " " <<W.tau << " " << W.theta << " " << W.lambda;
+  out_file << " " << W.rho  << " " << W.v.x << " " << W.v.y << " " << W.p;
+
+  if(W.nscal) for(int i=0; i<W.nscal; ++i) out_file <<" "<<W.scalar[i];
+
+  for( int i=0; i<W.ns; ++i) out_file<<" "<<W.spec[i];
+ 
+#ifdef THICKENED_FLAME_ON
+  out_file << " " << W.flame;
+#endif
+
   out_file.unsetf(ios::scientific);
   return (out_file);
 }
 
-istream &operator >> (istream &in_file, Chem2D_pState &W) {
+istream &operator >> (istream &in_file, LESPremixed2D_pState &W) {
   in_file.setf(ios::skipws);
-  in_file >> W.rho >> W.v.x >> W.v.y >> W.p >> W.k >> W.omega;
-  //W.set_initial_values();
-  for( int i=0; i<W.ns; i++){
-    in_file>>W.spec[i];
-  }
-  //in_file >>W.qflux >>W.tau >>W.theta >>W.lambda;
+  in_file >> W.rho >> W.v.x >> W.v.y >> W.p;
+
+  if(W.nscal) for(int i=0; i<W.nscal; ++i) in_file >> W.scalar[i];
+
+  for( int i=0; i<W.ns; ++i) in_file>>W.spec[i];
+
+#ifdef THICKENED_FLAME_ON
+  in_file >> W.flame;
+#endif
+
   in_file.unsetf(ios::skipws);
    return (in_file);
 }
@@ -1650,11 +1886,11 @@ istream &operator >> (istream &in_file, Chem2D_pState &W) {
 /***************************************************************
  * Axisymmetric flow source terms (Inviscid)                   *
  ***************************************************************/
-Chem2D_cState Chem2D_pState::Sa_inviscid(const Vector2D &X,
-                                         const int Flow_Type,
-                                         const int Axisymmetric) const{
+LESPremixed2D_cState LESPremixed2D_pState::Sa_inviscid(const Vector2D &X,
+						       const int Flow_Type,
+						       const int Axisymmetric) const{
 
-  Chem2D_cState Temp; Temp.Vacuum();
+  LESPremixed2D_cState Temp; Temp.Vacuum();
 
   //x is radial
   if (Axisymmetric == AXISYMMETRIC_X) {
@@ -1663,14 +1899,13 @@ Chem2D_cState Chem2D_pState::Sa_inviscid(const Vector2D &X,
      Temp.rhov.y = -rho*v.x*v.y/X.x;
      Temp.E =  -v.x*H()/X.x;
      //species contributions
-     for(int i=0; i<ns;i++){
+     for(int i=0; i<ns; ++i){
        Temp.rhospec[i].c = -rho*v.x*spec[i].c/X.x;         //correct for ns-1 ????
      }
-     if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-         Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-        Temp.rhok =  -v.x*rho*k/X.x;
-        Temp.rhoomega = -v.x*rho*omega/X.x;
-     } 
+     //scalars contributions
+     if(nscal) for(int i=0; i<nscal; ++i) Temp.rhoscalar[i] =  -v.x*rho*scalar[i]/X.x;
+ 
+
      //y is radial
   } else if (Axisymmetric == AXISYMMETRIC_Y) {
      Temp.rho = -rho*v.y/X.y;
@@ -1678,14 +1913,11 @@ Chem2D_cState Chem2D_pState::Sa_inviscid(const Vector2D &X,
      Temp.rhov.y = -rho*v.y*v.y/X.y;
      Temp.E =  -v.y*H()/X.y;
      //species contributions
-     for(int i=0; i<ns;i++){
+     for(int i=0; i<ns; ++i){
        Temp.rhospec[i].c = -rho*v.y*spec[i].c/X.y;
      }
-     if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-         Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-        Temp.rhok =  -v.y*rho*k/X.y;
-        Temp.rhoomega = -v.y*rho*omega/X.y;
-     }
+     //scalars contributions
+     if(nscal) for(int i=0; i<nscal; ++i) Temp.rhoscalar[i] =  -v.y*rho*scalar[i]/X.y;   
   }
 
   return (Temp);
@@ -1693,30 +1925,33 @@ Chem2D_cState Chem2D_pState::Sa_inviscid(const Vector2D &X,
 }
 
 
-// Finite differnece check of dSa_idU
-void Chem2D_pState::dSa_idU_FD(DenseMatrix &dSa_IdU, const Vector2D &X, const int Flow_Type,const int Axisymmetric ) const {
+// Finite difference check of dSa_idU
+void LESPremixed2D_pState::dSa_idU_FD(DenseMatrix &dSa_IdU, 
+				      const Vector2D &X, 
+				      const int Flow_Type,
+				      const int Axisymmetric ) const {
 
-  Chem2D_cState UU = U(*this);
-  Chem2D_cState A,C;
-  Chem2D_pState B,D;
+  LESPremixed2D_cState UU = U(*this);
+  LESPremixed2D_cState A,C;
+  LESPremixed2D_pState B,D;
   double perturb = 5e-6;
   double a;
 
-  for(int jcol=0; jcol<(dSa_IdU.get_n()); jcol++){    
+  for(int jcol=0; jcol<(dSa_IdU.get_n()); ++jcol){    
     A = UU; C = UU;
-    if( jcol <NUM_CHEM2D_VAR_SANS_SPECIES) {
+    if( jcol <NUM_LESPREMIXED2D_VAR_SANS_SPECIES) {
       A[jcol+1] += perturb*max(ONE,UU[jcol+1]); 
       C[jcol+1] -= perturb*max(ONE,UU[jcol+1]);
     } else {                                       //enforce sum(ci) = 1;
       a =  perturb*max(ONE,UU[jcol+1]); 
       A[jcol+1] += a;
-      A[NUM_VAR_CHEM2D] -= a;      
+      A[NUM_VAR_LESPREMIXED2D] -= a;      
       C[jcol+1] -= a;
-      C[NUM_VAR_CHEM2D] += a;
+      C[NUM_VAR_LESPREMIXED2D] += a;
     }   
     B = W(A);  D = W(C);
     A = B.Sa_inviscid(X,Flow_Type,Axisymmetric);   C = D.Sa_inviscid(X,Flow_Type,Axisymmetric);
-    for(int irow=0; irow<(dSa_IdU.get_n()); irow++){
+    for(int irow=0; irow<(dSa_IdU.get_n()); ++irow){
       dSa_IdU(irow,jcol) = ( A[irow+1] - C[irow+1])/(TWO*perturb*max(ONE, UU[jcol+1]));      
     }
   } 
@@ -1724,9 +1959,12 @@ void Chem2D_pState::dSa_idU_FD(DenseMatrix &dSa_IdU, const Vector2D &X, const in
 }
 
 /****************************************************************
- * Axisymmetric Source Term Jacboian (Inviscid)                 * 
+ * Axisymmetric Source Term Jacobian (Inviscid)                 * 
  ****************************************************************/
-void Chem2D_pState::dSa_idU(DenseMatrix &dSa_IdU, const Vector2D &X, const int Flow_Type,const int Axisymmetric ) const {
+void LESPremixed2D_pState::dSa_idU(DenseMatrix &dSa_IdU, 
+				   const Vector2D &X, 
+				   const int Flow_Type,
+				   const int Axisymmetric ) const {
 
   double enthalpy = h();
   double CP = Cp();
@@ -1734,7 +1972,7 @@ void Chem2D_pState::dSa_idU(DenseMatrix &dSa_IdU, const Vector2D &X, const int F
   double phi = ZERO;
   double Temp = p/(rho*RTOT);
 
-  for(int j=0; j<ns-1; j++){   
+  for(int j=0; j<ns-1; ++j){   
 #ifdef _NS_MINUS_ONE
     phi += spec[j].c*(specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/RTOT
 		      -(specdata[ns-1].Enthalpy(Temp)+specdata[ns-1].Heatofform() - CP*Temp*specdata[ns-1].Rs()/RTOT)); 		      
@@ -1769,8 +2007,8 @@ void Chem2D_pState::dSa_idU(DenseMatrix &dSa_IdU, const Vector2D &X, const int F
     //}//end of laminar case
     
     //Multispecies terms
-    int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES;
-    for(int i=0; i<(ns-1);i++){
+    int NUM_VAR = NUM_LESPREMIXED2D_VAR_SANS_SPECIES + nscal;
+    for(int i=0; i<(ns-1); ++i){
 #ifdef _NS_MINUS_ONE     
       dSa_IdU(3,i+NUM_VAR) += v.x*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - CP*Temp*specdata[i].Rs()/RTOT
 				   -(specdata[ns-1].Enthalpy(Temp)+specdata[ns-1].Heatofform() - CP*Temp*specdata[ns-1].Rs()/RTOT))/(CP/RTOT - ONE)/X.x; 
@@ -1782,21 +2020,11 @@ void Chem2D_pState::dSa_idU(DenseMatrix &dSa_IdU, const Vector2D &X, const int F
       dSa_IdU(NUM_VAR+i,NUM_VAR+i) -= v.x/X.x;
     }
     
-    if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-	Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-      cout<<"\n SCOTT BROKE THE TURBULENCE, dSa_idU ;)";
-//       dSa_IdU(3,0) -= (-(v.x*v.x +v.y*v.y)*v.x+ Gamma*v.x*(v.x*v.x+v.y*v.y+2.0*RTOT*Temp)/2.0-k*v.x -v.x*h())/X.x;
-//       dSa_IdU(3,1) -= (THREE/TWO*v.x*v.x +HALF*v.y*v.y +h() +k -Gamma*v.x*v.x)/X.x;
-//       dSa_IdU(3,2) -= (v.x*v.y- Gamma*v.y*v.x)/X.x;      
-//       dSa_IdU(3,3) -= Gamma*v.x/X.x;
-//       dSa_IdU(3,4) -= (-dSa_IdU(3,3)+v.x)/X.x;    
-//       dSa_IdU(4,0) = k*v.x/X.x;
-//       dSa_IdU(4,1) -= k/X.x;
-//       dSa_IdU(4,4) -= v.x/X.x;
-//       dSa_IdU(5,0) = omega*v.x/X.x;
-//       dSa_IdU(5,1) = omega/X.x;
-//       dSa_IdU(5,5) -= v.x/X.x;  
-    }//end of turbulent case
+
+    if(Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
+       Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
+      cout <<"\nYOU ARE NOT SUPPOSED TO REACH THIS LINE, dSa_idU";
+    }
 
   }//end of axisymmetric case   -- x radial 
 }
@@ -1804,16 +2032,16 @@ void Chem2D_pState::dSa_idU(DenseMatrix &dSa_IdU, const Vector2D &X, const int F
 /***************************************************************
  * Axisymmetric flow source terms (Viscous)                    *  
  ***************************************************************/
-Chem2D_cState Chem2D_pState::Sa_viscous(const Chem2D_pState &dWdx,
-					const Chem2D_pState &dWdy,
-                                        const Vector2D &X,
-                                        const int Flow_Type,
-                                        const int Axisymmetric){
+LESPremixed2D_cState LESPremixed2D_pState::Sa_viscous(const LESPremixed2D_pState &dWdx,
+						      const LESPremixed2D_pState &dWdy,
+						      const Vector2D &X,
+						      const int Flow_Type,
+						      const int Axisymmetric){
   double Mu, Temperature, Rmix;
-  double mu_t, Dm_t;
+  double mut, Dm_t;
   double rhohsDs;
   Vector2D grad_T;
-  Chem2D_cState Temp; Temp.Vacuum();
+  LESPremixed2D_cState Temp; Temp.Vacuum();
 
   //Transport and thermodynamic properties
   Mu = mu();
@@ -1825,14 +2053,18 @@ Chem2D_cState Chem2D_pState::Sa_viscous(const Chem2D_pState &dWdx,
   grad_T.x = (ONE/(rho*Rmix))*(dWdx.p - (p/rho)*dWdx.rho);
   grad_T.y = (ONE/(rho*Rmix))*(dWdy.p - (p/rho)*dWdy.rho);
 
+  
   //Molecular (laminar) stress tensor
-  Laminar_Stress(dWdx,dWdy, Flow_Type,Axisymmetric, X);
+  Tensor2D strain_rate;
+  strain_rate = Strain_Rate(dWdx,dWdy, Flow_Type, Axisymmetric, X);  
+  Laminar_Stress(strain_rate);
+
 
   //Molecular (laminar) heat flux
   //Thermal conduction, q = - kappa * grad(T)
   qflux = - kappa()*grad_T;
   //Thermal diffusion, q -= rho * sum ( hs * Ds *gradcs)
-  for(int i=0; i<ns; i++){ 
+  for(int i=0; i<ns; ++i){ 
     rhohsDs = rho*(Mu/(rho*Schmidt[i]))*(specdata[i].Enthalpy(Temperature) + specdata[i].Heatofform());
     qflux.x -= rhohsDs*dWdx.spec[i].c;
     qflux.y -= rhohsDs*dWdy.spec[i].c;
@@ -1840,19 +2072,23 @@ Chem2D_cState Chem2D_pState::Sa_viscous(const Chem2D_pState &dWdx,
   
   //Turbulent heat flux
   //Thermal conduction, q = - kappa * grad(T)
-  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-      Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-    mu_t = eddy_viscosity();
-    Dm_t = Dm_turb();
+  if(Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
+     Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
 
-    theta = - mu_t*Cp()/Pr_turb()*grad_T;
+    //Turbulence model eddy viscosity
+    mut = mu_t(strain_rate); 
+    Dm_t = Dm_turb(mut);
+
+    theta = - mut*Cp()/Pr_turb()*grad_T;
     //Thermal Diffusion, q -= rho * sum ( hs * Ds *gradcs)  
-    for (int i=0; i<ns; i++) {
-      rhohsDs = rho*Dm_t*(specdata[i].Enthalpy(Temperature)+specdata[i].Heatofform());
+    for (int i=0; i<ns; ++i) {
+      rhohsDs = rho*Dm_t*(/*specdata[i].Enthalpy(Temperature)+*/ specdata[i].Heatofform());
       theta.x -= rhohsDs*dWdx.spec[i].c;
       theta.y -= rhohsDs*dWdy.spec[i].c;
     }
-    Reynolds_Stress(dWdx,dWdy, Flow_Type,Axisymmetric, X);  
+
+    SFS_Stress(strain_rate);
+  
   } 
 
   /////////////////////////////////////////////////////////////
@@ -1862,18 +2098,19 @@ Chem2D_cState Chem2D_pState::Sa_viscous(const Chem2D_pState &dWdx,
     Temp.rhov.x = (tau.xx - tau.zz)/X.x;
     Temp.rhov.y = tau.xy/X.x;
     Temp.E = (- qflux.x + v.x*tau.xx + v.y*tau.xy)/X.x;
-    for(int i=0; i<ns;i++){
+    for(int i=0; i<ns; ++i){
       Temp.rhospec[i].c = rho*(Mu/(rho*Schmidt[i]))*dWdx.spec[i].c/X.x;
     }
-    if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-	Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+    
+    if(Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
+       Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
+
       Temp.rhov.x += (lambda.xx - lambda.zz)/X.x;
       Temp.rhov.y += lambda.xy/X.x;
-      Temp.E += (- theta.x + v.x*lambda.xx + v.y*lambda.xy)/X.x 
-	+(Mu + mu_t*sigma_star)*dWdx.k/X.x;
-      Temp.rhok = (Mu + mu_t*sigma_star)*dWdx.k/X.x;
-      Temp.rhoomega = (Mu + mu_t*sigma)*dWdx.omega/X.x;
-      for(int i=0; i<ns;i++){
+      Temp.E += (- theta.x + v.x*lambda.xx + v.y*lambda.xy)/X.x; // +(Mu + mu_t)*dWdx.k/X.x; ??????
+
+      if (nscal) for(int i=0; i<nscal; ++i) Temp.rhoscalar[i] = (Mu + mut)*dWdx.scalar[i]/X.x;
+      for(int i=0; i<ns; ++i){
 	Temp.rhospec[i].c = rho*Dm_t*dWdx.spec[i].c/X.x;
       }
     }
@@ -1882,18 +2119,18 @@ Chem2D_cState Chem2D_pState::Sa_viscous(const Chem2D_pState &dWdx,
     Temp.rhov.x = tau.xy/X.y;
     Temp.rhov.y = (tau.xx - tau.zz)/X.y;
     Temp.E = (- qflux.y + v.x*tau.xy + v.y*tau.yy)/X.y;
-    for(int i=0; i<ns;i++){
+    for(int i=0; i<ns; ++i){
       Temp.rhospec[i].c = rho*(Mu/(rho*Schmidt[i]))*dWdy.spec[i].c/X.y;
     }
-    if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-	Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+    
+    if(Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
+       Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
       Temp.rhov.x += lambda.xy/X.y;
       Temp.rhov.y += (lambda.xx - lambda.zz)/X.y;
-      Temp.E += (- theta.y + v.x*lambda.xy + v.y*lambda.yy)/X.y 
-	+(Mu + mu_t*sigma_star)*dWdy.k/X.y ;
-      Temp.rhok = (Mu + mu_t*sigma_star)*dWdy.k/X.y;
-      Temp.rhoomega = (Mu + mu_t*sigma)*dWdy.omega/X.y;
-      for(int i=0; i<ns;i++){
+      Temp.E += (- theta.y + v.x*lambda.xy + v.y*lambda.yy)/X.y; //+(Mu + mu_t*sigma_star)*dWdy.k/X.y; ?????
+
+      if (nscal) for(int i=0; i<nscal; ++i) Temp.rhoscalar[i] = (Mu + mut)*dWdy.scalar[i]/X.y;
+      for(int i=0; i<ns; ++i){
 	Temp.rhospec[i].c = rho*Dm_t*dWdy.spec[i].c/X.y;
       }
     }
@@ -1905,15 +2142,15 @@ Chem2D_cState Chem2D_pState::Sa_viscous(const Chem2D_pState &dWdx,
 }
 
 /**************************************************************** 
- * Axisymmetric Source Term Jacboian (Viscous)                  *  
+ * Axisymmetric Source Term Jacobian (Viscous)                  *  
  ****************************************************************/
- void Chem2D_pState::dSa_vdW(DenseMatrix &dSa_VdW,
-			     const Chem2D_pState &dWdx,
-			     const Chem2D_pState &dWdy,const Vector2D &X, 
-			     const int Flow_Type,const int Axisymmetric,
-			     const double d_dWdx_dW, const double d_dWdy_dW) const {
+ void LESPremixed2D_pState::dSa_vdW(DenseMatrix &dSa_VdW,
+				    const LESPremixed2D_pState &dWdx,
+				    const LESPremixed2D_pState &dWdy,const Vector2D &X, 
+				    const int Flow_Type,const int Axisymmetric,
+				    const double d_dWdx_dW, const double d_dWdy_dW) const {
 
-  int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES;
+  int NUM_VAR = NUM_LESPREMIXED2D_VAR_SANS_SPECIES;
   double Rmix = Rtot();
   double Temp = T();
   double Mu = mu();
@@ -1928,7 +2165,7 @@ Chem2D_cState Chem2D_pState::Sa_viscous(const Chem2D_pState &dWdx,
     
     //energy
     double Sum_q(ZERO), Sum_dq(ZERO), Sum_dhi(ZERO);
-    for(int Num = 0; Num<ns; Num++){
+    for(int Num = 0; Num<ns; ++Num){
       Sum_q += specdata[Num].Enthalpy_prime(Temp)*Mu*dWdx.spec[Num].c/(Schmidt[Num]*rho*Rmix);      // - ns-1 ???
       Sum_dq -= specdata[Num].Enthalpy_prime(Temp)*Mu*dWdx.spec[Num].c*Temp/(rho*Schmidt[Num]);
       //Sum_dhi += specdata[Num].Enthalpy_prime(Temp)*Temp*Mu*dWdx.spec[Num].c/(Rmix*Schmidt[Num]); 
@@ -1941,14 +2178,14 @@ Chem2D_cState Chem2D_pState::Sa_viscous(const Chem2D_pState &dWdx,
     dSa_VdW(3,3) += (Kappa*(d_dWdx_dW - dWdx.rho/rho)/(rho*Rmix)+Sum_q)/radius;
    
     //Multispecies
-    for(int Num = 0; Num<(ns-1); Num++){ 
+    for(int Num = 0; Num<(ns-1); ++Num){ 
       dSa_VdW(3,NUM_VAR+Num) += (Mu/Schmidt[Num]*(specdata[Num].Enthalpy(Temp)+specdata[Num].Heatofform())*d_dWdx_dW)/radius;  
       //- specdata[Num].Rs()*Sum_dhi)/radius; 
       dSa_VdW(NUM_VAR+Num,NUM_VAR+Num) += (Mu/Schmidt[Num]*d_dWdx_dW)/radius;
     }
     
-    if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-        Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+    if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
+	Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
       cout<<"\n Missing Turbulent dSa_vdU components for AXISYMMETRIC_X ";
     }
 
@@ -1962,17 +2199,20 @@ Chem2D_cState Chem2D_pState::Sa_viscous(const Chem2D_pState &dWdx,
 /***************************************************************
  * Turbulence model source terms                               *  
  ***************************************************************/
-Chem2D_cState Chem2D_pState::S_turbulence_model(const Chem2D_pState &dWdx,
-					        const Chem2D_pState &dWdy,
-                                                const Vector2D &X,
-                                                const int Flow_Type,
-                                                const int Axisymmetric){
+LESPremixed2D_cState LESPremixed2D_pState::S_turbulence_model(const LESPremixed2D_pState &dWdx,
+							      const LESPremixed2D_pState &dWdy,
+							      const Vector2D &X,
+							      const int Flow_Type,
+							      const int Axisymmetric){
   double radius;
-  double mu_t, production;
-  Chem2D_cState Temp; Temp.Vacuum();
+  double production, dissipation;
+  LESPremixed2D_cState Temp; Temp.Vacuum();
+
+  //Tensor2D strain_rate;
+  //strain_rate = Strain_Rate(dWdx,dWdy, Flow_Type, Axisymmetric, X);
 
   //Turbulence model eddy viscosity
-  mu_t = eddy_viscosity();
+  //mut = mu_t(strain_rate); 
  
   if (Axisymmetric == AXISYMMETRIC_X) {
     if(X.x !=0){
@@ -1984,41 +2224,40 @@ Chem2D_cState Chem2D_pState::S_turbulence_model(const Chem2D_pState &dWdx,
      }
   } /* endif */
   
-  production = lambda.xx*dWdx.v.x + 
-    lambda.xy*(dWdy.v.x + dWdx.v.y) + 
-    lambda.yy*dWdy.v.y;
+
+  //Production of SFS k
+  production = lambda.xx*dWdx.v.x + lambda.xy*(dWdy.v.x + dWdx.v.y) + 
+               lambda.yy*dWdy.v.y;
+
+
   if (Axisymmetric == AXISYMMETRIC_X) {
     production += lambda.zz*v.x/radius;
   } else if (Axisymmetric == AXISYMMETRIC_Y) {
     production += lambda.zz*v.y/radius;    
   } /* endif */
-  
-  cout<<"\n SCOTT BROKE THE TURBULENCE, S_turbulence_model ;)";
-  //Determine axisymmetric source terms (1998)
-//   Temp.rhok = production - F_betastar(dWdx, dWdy)*beta_star*rho*k*omega;
-//   Temp.rhoomega = alpha*(omega/max(k, TOLER))*production - F_beta(dWdx, dWdy)*beta*rho*omega*omega;
-  
-  //  cout<<"\n S_turbulence= "<<Temp.rhok<<endl;  
-  //(1989)
-//   Temp.rhok = production - f_beta_star*beta_star*rho*k*omega;
-//   Temp.rhoomega = alpha*(omega/max(k, TOLER))*production -
-//      f_beta*beta*rho*omega*omega;
+ 
+
+  //Dissipation of SFS K
+  dissipation = rho*(SFSmodel.CEPS_coef)*pow(k(), 1.5)/filter_width;
+ 
+  Temp.rhoscalar[0] = production - dissipation;
   
   return (Temp);
 
 }
 
 
-/*****************************************************************
- *****************************************************************
- ** Chem2D_pState::Sw -- Chemical Reaction Rate Source Terms.   **
- **                                                             **
- ** Using the Reaction class to get the source terms for the    ** 
- ** specific "Reaction_set".                                    ** 
- *****************************************************************
- *****************************************************************/
-Chem2D_cState Chem2D_pState::Sw(int &REACT_SET_FLAG, const int Flow_Type) const {
-  Chem2D_cState NEW;     
+/***********************************************************************
+ ***********************************************************************
+ ** LESPremixed2D_pState::Sw -- Chemical Reaction Rate Source Terms.  **
+ **                                                                   **
+ ** Using the Reaction class to get the source terms for the          ** 
+ ** specific "Reactionset".                                           ** 
+ ***********************************************************************
+ ***********************************************************************/
+LESPremixed2D_cState LESPremixed2D_pState::Sw(int &REACT_SET_FLAG, 
+					      const int Flow_Type) const {
+  LESPremixed2D_cState NEW;     
   NEW.Vacuum();
 
   //Adds concentration rate of change for species 1->N
@@ -2026,64 +2265,79 @@ Chem2D_cState Chem2D_pState::Sw(int &REACT_SET_FLAG, const int Flow_Type) const 
     //bool test = negative_speccheck();            //FOR TESTING 
     React.omega(NEW,*this,Flow_Type );  
   }
-     
-  return NEW;
 
+#ifdef THICKENED_FLAME_ON
+  return (flame.WF/flame.TF)*NEW;
+#else     
+  return NEW;
+#endif
 }
 
 /************* Chemical Source Term Jacobian ****************************/
-void Chem2D_pState::dSwdU(DenseMatrix &dSwdU, const int &Flow_Type,const int &solver_type) const {
+void LESPremixed2D_pState::dSwdU(DenseMatrix &dSwdU, const int &Flow_Type,const int &solver_type) const {
   React.dSwdU(dSwdU,*this,false, Flow_Type,solver_type);
+
+#ifdef THICKENED_FLAME_ON
+  dSwdU = (flame.WF/flame.TF)*dSwdU;
+#endif
 }
 
-void Chem2D_pState::dSwdU_FD(DenseMatrix &dSwdU, const int Flow_Type) const{
+void LESPremixed2D_pState::dSwdU_FD(DenseMatrix &dSwdU, const int Flow_Type) const{
 
-  Chem2D_cState A,C;
-  Chem2D_cState B,D;
+  LESPremixed2D_cState A,C;
+  LESPremixed2D_cState B,D;
   double perturb = 1e-6; //5e-6;
   double a;
 
-  for(int jcol=0; jcol<NUM_VAR_CHEM2D-1; jcol++){    
+  for(int jcol=0; jcol<NUM_VAR_LESPREMIXED2D-1; ++jcol){    
     A =U(*this);  C=U(*this);
     a =  perturb*max(ONE,A[jcol+1]);
 
-    if( jcol <NUM_CHEM2D_VAR_SANS_SPECIES) {
+    if( jcol <NUM_LESPREMIXED2D_VAR_SANS_SPECIES) {
       A[jcol+1] += a;
  //      C[jcol+1] -= perturb*max(ONE,C[jcol+1]);
     } else {                                       //enforce sum(ci) = 1;
       A[jcol+1] += a;
-      A[NUM_VAR_CHEM2D] -= a;            
-//       if(C[jcol+1] - a > ZERO) {  C[jcol+1] -= a; C[NUM_VAR_CHEM2D] += a;}      
+      A[NUM_VAR_LESPREMIXED2D] -= a;            
+//       if(C[jcol+1] - a > ZERO) {  C[jcol+1] -= a; C[NUM_VAR_LESPREMIXED2D] += a;}      
     }   
     B = A.W().Sw(React.reactset_flag,Flow_Type);   D = C.W().Sw(React.reactset_flag,Flow_Type);
-    for(int irow=0; irow<NUM_VAR_CHEM2D-1; irow++){
+    for(int irow=0; irow<NUM_VAR_LESPREMIXED2D-1; ++irow){
       //dSwdU(irow,jcol) += ( B[irow+1] - D[irow+1])/(TWO*perturb*max(ONE, U(*this)[jcol+1]));      
       dSwdU(irow,jcol) += ( B[irow+1] - D[irow+1])/a;      
     }
-  } 
+  }
 
+#ifdef THICKENED_FLAME_ON
+  dSwdU = (flame.WF/flame.TF)*dSwdU;
+#endif
 }
-/************* Max Diagonal of Jacobian for CFL **************************/
-double Chem2D_pState::dSwdU_max_diagonal(const int &Preconditioned,					 
-					 const int &flow_type_flag,
-					 const double &delta_n,
-					 const int &solver_type) const {
 
-  //this is expensive as I am recalculating the whole Jacobain
+/************* Max Diagonal of Jacobian for CFL **************************/
+double LESPremixed2D_pState::dSwdU_max_diagonal(const int &Preconditioned,
+						const int &flow_type_flag,
+						const double &delta_n,
+						const int &solver_type) const {
+
+  //this is expensive as I am recalculating the whole Jacobian
   //as above, but its really easy to setup.
   //should change later to only calculate the diagonal terms!!!!
 
   double max_diagonal =ONE;
-  DenseMatrix dSwdU(NUM_VAR_CHEM2D-1,NUM_VAR_CHEM2D-1,ZERO);
+  DenseMatrix dSwdU(NUM_VAR_LESPREMIXED2D-1,NUM_VAR_LESPREMIXED2D-1,ZERO);
   React.dSwdU(dSwdU,*this,true,flow_type_flag,solver_type);
 
+#ifdef THICKENED_FLAME_ON
+  dSwdU = (flame.WF/flame.TF)*dSwdU;  //???????
+#endif
+
 //   if(Preconditioned){
-//     DenseMatrix Pinv(NUM_VAR_CHEM2D-1,NUM_VAR_CHEM2D-1);
+//     DenseMatrix Pinv(NUM_VAR_LESPREMIXED2D-1,NUM_VAR_LESPREMIXED2D-1);
 //     Low_Mach_Number_Preconditioner_Inverse(Pinv,flow_type_flag,delta_n);
 //     dSwdU = Pinv*dSwdU;
 //   }
 
-  for(int i=0; i < NUM_VAR_CHEM2D-1; i++){
+  for(int i=0; i < NUM_VAR_LESPREMIXED2D-1; ++i){
     max_diagonal = max(max_diagonal,fabs(dSwdU(i,i)));
     // cout<<"\n "<<i<<" "<<dSwdU(i,i);
   }
@@ -2091,15 +2345,15 @@ double Chem2D_pState::dSwdU_max_diagonal(const int &Preconditioned,
 }
 
 
-/*****************************************************************
- *****************************************************************
- ** Chem2D_pState::Sg -- Source Terms for gravitational body    **
- **                      force.                                 **
- **                                                             **
- *****************************************************************
- *****************************************************************/
-Chem2D_cState Chem2D_pState::Sg(void) const {
-  Chem2D_cState NEW;     
+/*********************************************************************
+ *********************************************************************
+ ** LESPremixed2D_pState::Sg -- Source Terms for gravitational body **
+ **                             force.                              **
+ **                                                                 **
+ *********************************************************************
+ *********************************************************************/
+LESPremixed2D_cState LESPremixed2D_pState::Sg(void) const {
+  LESPremixed2D_cState NEW;     
   NEW.Vacuum();
   //Gravity only in the z or axial direction
   //  z|   
@@ -2115,25 +2369,25 @@ Chem2D_cState Chem2D_pState::Sg(void) const {
 }
 
 /************* Gravitational Term Jacobian ****************************/
-void Chem2D_pState::dSgdU(DenseMatrix &dSgdU) const {
+void LESPremixed2D_pState::dSgdU(DenseMatrix &dSgdU) const {
   dSgdU(2,0) += gravity_z;
   dSgdU(3,2) += gravity_z;
 }
 
 /*****************************************************************
  *****************************************************************
- ** Chem2D_pState::S_dual_time_stepping                         **
+ ** LESPremixed2D_pState::S_dual_time_stepping                  **
  **                                                             **
  **                -- Source Terms for dual time stepping.      **
  **                                                             **
  *****************************************************************
  *****************************************************************/
-Chem2D_cState Chem2D_pState::S_dual_time_stepping(const Chem2D_cState &U,
-                                                  const Chem2D_cState &Ut,
-                                                  const Chem2D_cState &Uold,
-                                                  const double &dTime,
-                                                  const int &first_step) const {
-Chem2D_cState NEW;
+LESPremixed2D_cState LESPremixed2D_pState::S_dual_time_stepping(const LESPremixed2D_cState &U,
+								const LESPremixed2D_cState &Ut,
+								const LESPremixed2D_cState &Uold,
+								const double &dTime,
+								const int &first_step) const {
+LESPremixed2D_cState NEW;
  if (first_step) {
    // Implicit Euler
    //cout << "\n First step, Implicit Euler" << endl;
@@ -2149,16 +2403,16 @@ Chem2D_cState NEW;
 
 
 /**************************************************************************
- ********************* CHEM2D_CSTATE CONSTRUCTORS **************************
- ***************************************************************************/
+ **************** LESPREMIXED2D_CSTATE CONSTRUCTORS ***********************
+ **************************************************************************/
 
 /**************************************************
   mixture gas constant  J/(kg*K)
 ***************************************************/
-double Chem2D_cState::Rtot() const{
+double LESPremixed2D_cState::Rtot() const{
   // = sum ( mass fraction * species gas constant)
   double sum = 0.0;
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns; ++i){
     sum += rhospec[i].c * specdata[i].Rs();
   }
   return (sum/rho);
@@ -2167,11 +2421,11 @@ double Chem2D_cState::Rtot() const{
 // /**************************************************
 //   mixture Heat Capacity (const pressure) J/(kg*K)
 // ***************************************************/
-// double Chem2D_cState::Cp(void) const{
+// double LESPremixed2D_cState::Cp(void) const{
 //   // = sum ( mass fraction * species Cp) 
 //   double Temp = T();
 //   double sum = 0.0;
-//   for(int i=0; i<ns; i++){
+//   for(int i=0; i<ns; ++i){
 //     sum += rhospec[i].c*specdata[i].HeatCapacity_p(Temp);
 //   }
 //   return (sum/rho);
@@ -2180,11 +2434,11 @@ double Chem2D_cState::Rtot() const{
 // /**************************************************
 //   mixture Heat Capacity (const volume) J/(kg*K)
 // ***************************************************/
-// double Chem2D_cState::Cv(void) const{
+// double LESPremixed2D_cState::Cv(void) const{
 //   // = sum ( mass fraction * species Cv)  
 //   double Temp = T();
 //   double sum = 0.0;
-//   for(int i=0; i<ns; i++){
+//   for(int i=0; i<ns; ++i){
 //     sum += rhospec[i].c*specdata[i].HeatCapacity_v(Temp);
 //   }
 //   return (sum/rho);
@@ -2193,7 +2447,7 @@ double Chem2D_cState::Rtot() const{
 // /**************************************************
 //   mixture Heat Ratio gamma J/(kg*K)
 // ***************************************************/
-// double Chem2D_cState::g(void) const{
+// double LESPremixed2D_cState::g(void) const{
 //   // = Cp / Cv  
 //   return Cp()/Cv();
 // }
@@ -2201,22 +2455,22 @@ double Chem2D_cState::Rtot() const{
 /**************************************************
   Specific Internal Energy
  ***************************************************/
-double Chem2D_cState::e(void) const{
+double LESPremixed2D_cState::e(void) const{
   // = sum (mass fraction * species e) 
   double sum = 0.0;
   double Temp = T();
-  for(int i=0; i<ns; i++){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
+  for(int i=0; i<ns; ++i){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
     sum += rhospec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() 
 			 - specdata[i].Rs()*Temp);
   }
   return (sum/rho);
 }
 
-double Chem2D_cState::es(void) const{
+double LESPremixed2D_cState::es(void) const{
   // = sum (mass fraction * species e) 
   double sum = 0.0;
   double Temp = T();
-  for(int i=0; i<ns; i++){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
+  for(int i=0; i<ns; ++i){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
     sum += rhospec[i].c*(specdata[i].Enthalpy(Temp) - specdata[i].Rs()*Temp);
   }
   return (sum/rho);
@@ -2225,19 +2479,19 @@ double Chem2D_cState::es(void) const{
 /**************************************************
  Specific Absolute enthalpy
 ***************************************************/
-double Chem2D_cState::h(const double &Temp) const{
+double LESPremixed2D_cState::h(const double &Temp) const{
   // = sum (mass fraction * species h) 
  double sum = 0.0;  
- for(int i=0; i<ns; i++){
+ for(int i=0; i<ns; ++i){
    sum += rhospec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform());
  }
  return (sum/rho);
 }
 
-double Chem2D_cState::hs(const double &Temp) const{
+double LESPremixed2D_cState::hs(const double &Temp) const{
   // = sum (mass fraction * species h) 
  double sum = 0.0;  
- for(int i=0; i<ns; i++){
+ for(int i=0; i<ns; ++i){
    sum += rhospec[i].c*(specdata[i].Enthalpy(Temp));
  }
  return (sum/rho);
@@ -2247,18 +2501,18 @@ double Chem2D_cState::hs(const double &Temp) const{
    Derivative of specific enthalpy dh/dT
    actually is just Cp as Cp = (dh/dT)_p
 ***************************************************/
-double Chem2D_cState::hprime(const double &Temp) const{
+double LESPremixed2D_cState::hprime(const double &Temp) const{
  double sum = 0.0;  
- for(int i=0; i<ns; i++){
+ for(int i=0; i<ns; ++i){
    sum += rhospec[i].c*specdata[i].Enthalpy_prime(Temp);
  }
  return (sum/rho);
 }
 
 /************* Mixture Heats of Formation *********/
-double Chem2D_cState::heatofform(void) const{ 
+double LESPremixed2D_cState::heatofform(void) const{ 
   double sum = 0.0;
-  for(int i=0; i<ns; i++){ 
+  for(int i=0; i<ns; ++i){ 
     sum += rhospec[i].c*specdata[i].Heatofform();
   }
   return (sum);
@@ -2269,10 +2523,10 @@ double Chem2D_cState::heatofform(void) const{
   polytropic heat ratio mixture gamma J/(kg*K)
   assuming T=273K as the temperature.
  **************************************************/
-double Chem2D_cState::gamma_guess(void) const{
+double LESPremixed2D_cState::gamma_guess(void) const{
   double sum1 = ZERO;     double sum2 = ZERO;
   double gamma_s = ZERO;  double Temp = 200.0;
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns; ++i){
     sum1 += (rhospec[i].c/rho)*specdata[i].Rs();
     gamma_s = ONE/(ONE - specdata[i].Rs()/ specdata[i].HeatCapacity_p(Temp));
     sum2 += (((rhospec[i].c/rho)*specdata[i].Rs()) / (gamma_s - ONE)); 
@@ -2297,14 +2551,14 @@ double Chem2D_cState::gamma_guess(void) const{
   converges in less than 5 iterations with "tolerance" which is defined
   in the header.
 **********************************************************************/
-double Chem2D_cState::T(void) const{
+double LESPremixed2D_cState::T(void) const{
   double T = ZERO;
   double RTOT = Rtot();  
   //--------- Initial Guess ------------------------------//
   //using a polytropic gas assumption with gamma@200;
-  double Tguess = (gamma_guess() - ONE)*(E - HALF*rhov.sqr()/rho-rhok)/(rho*RTOT);
+  double Tguess = (gamma_guess() - ONE)*(E - HALF*rhov.sqr()/rho-rhok())/(rho*RTOT);
   //--------- global newtons method to get T ---------------//
-  double A = (E - HALF*rhov*rhov/rho -rhok)/rho;
+  double A = (E - HALF*rhov*rhov/rho -rhok())/rho;
   //Note that there is k (turbulent kinetic energy) in above both variables 
   //Need to set a flag for the choice of laminar and turbulent flow 
   int numit =0;
@@ -2344,7 +2598,7 @@ double Chem2D_cState::T(void) const{
   }  
   if (numit>=19 || T <= low_temp_range){
     T = max(Tguess,low_temp_range); 	
-    cout<<"\nTemperature didn't converge in Chem2D_cState::T(void)";
+    cout<<"\nTemperature didn't converge in LESPremixed2D_cState::T(void)";
     cout<<" with polytopic Tguess "<<Tguess<<", or lower than Tmin "<<low_temp_range<<" using "<<T;
   }
 
@@ -2357,7 +2611,7 @@ double Chem2D_cState::T(void) const{
   a^2 = dip/dirho + p/rho^2( die/dip)^-1
   from eigenvalue analysis using e =f(p,rho)
 ****************************************************/
-double Chem2D_cState::a(void) const{
+double LESPremixed2D_cState::a(void) const{
   double sum;
   double RTOT= Rtot();
   double Temp= T();
@@ -2369,37 +2623,39 @@ double Chem2D_cState::a(void) const{
 /**************************************************
   Turbulence model related parameters
 ***************************************************/
-double Chem2D_cState::eddy_viscosity(void) const{
-  return (rho*rhok/rhoomega);
+double LESPremixed2D_cState::mu_t(const Tensor2D &strain_rate) const{
+  double mut = rho*SFSmodel.eddy_viscosity_Smagorinsky(strain_rate, filter_width);
+#ifdef THICKENED_FLAME_ON
+  return (flame.WF*flame.TF)*mut;
+#else
+  return mut;
+#endif
 }
 
-double Chem2D_cState::Pr_turb(void) const{
+double LESPremixed2D_cState::Pr_turb(void) const{
+  return (0.75);
+}
+
+double LESPremixed2D_cState::Sc_turb(void) const{
   return (0.9);
 }
 
-double Chem2D_cState::Sc_turb(void) const{
-  return (1.01);
+double LESPremixed2D_cState::Dm_turb(const double &mut) const{
+  return (mut/(rho*Sc_turb()));
 }
 
-double Chem2D_cState::Dm_turb(void) const{
-  return (eddy_viscosity()/(rho*Sc_turb()));
-}
-
-double Chem2D_cState::omega_sublayer_BC(const double &y) const {
-  return (SIX*mu()/(rho*beta*y*y));
-}
 
 /**************************************************
   Viscosity 
   using Wilke [1950] formulation
 ***************************************************/
-double Chem2D_cState::mu(void) const{
+double LESPremixed2D_cState::mu(void) const{
   double sum =0.0; 
   double Temp = T();
 
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns; ++i){
     double phi = 0.0;
-    for (int j=0; j<ns; j++){
+    for (int j=0; j<ns; ++j){
       phi += ((rhospec[j].c/rho) / specdata[j].Mol_mass())*
 	pow(1.0 + sqrt(specdata[i].Viscosity(Temp)/specdata[j].Viscosity(Temp))*
 	    pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
@@ -2408,17 +2664,21 @@ double Chem2D_cState::mu(void) const{
     sum += ((rhospec[i].c/rho)* specdata[i].Viscosity(Temp) ) / 
       (specdata[i].Mol_mass() * phi);
   }  
-  
+
+#ifdef THICKENED_FLAME_ON
+  return (flame.WF*flame.TF)*sum;
+#else
   return sum;
+#endif
 }
 
-double Chem2D_cState::dmudT(void) const{
+double LESPremixed2D_cState::dmudT(void) const{
   double sum =0.0; 
   double Temp = T();
 
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns; ++i){
     double phi = 0.0;
-    for (int j=0; j<ns; j++){
+    for (int j=0; j<ns; ++j){
       phi += (rhospec[j].c/rho / specdata[j].Mol_mass())*
 	pow(1.0 + sqrt(specdata[i].dViscositydT(Temp)/specdata[j].dViscositydT(Temp))*
 	    pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
@@ -2426,8 +2686,12 @@ double Chem2D_cState::dmudT(void) const{
     }
     sum += (rhospec[i].c/rho * specdata[i].dViscositydT(Temp) ) / 
       (specdata[i].Mol_mass() * phi);
-  }  
+  }
+#ifdef THICKENED_FLAME_ON
+  return (flame.WF*flame.TF)*sum;
+#else  
   return sum;
+#endif
 }
 
 /******************************************************
@@ -2436,14 +2700,19 @@ double Chem2D_cState::dmudT(void) const{
 
   sum( hs * Ds * grad cs)
 *******************************************************/
-Vector2D Chem2D_cState::thermal_diffusion(const double &Temp) const{
+Vector2D LESPremixed2D_cState::thermal_diffusion(const double &Temp) const{
   Vector2D sum;
   sum.zero();
   //double Temp = T();
   //problems with Species overloaded operators
-  for(int i=0; i<ns; i++){ 
-    sum  +=   (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())
-            * rhospec[i].diffusion_coef*rhospec[i].gradc;
+  for(int i=0; i<ns; ++i){
+#ifdef THICKENED_FLAME_ON
+    sum  += (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())
+      * (flame.WF*flame.TF)*rhospec[i].diffusion_coef * rhospec[i].gradc;
+#else 
+    sum  += (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())
+      * rhospec[i].diffusion_coef*rhospec[i].gradc;
+#endif
   }
   return sum/(rho*rho);
 }
@@ -2452,34 +2721,42 @@ Vector2D Chem2D_cState::thermal_diffusion(const double &Temp) const{
  * Viscous fluxes  (laminar flow)                                * 
  * Viscous fluxes  (turbulent flows) are defined in single block * 
  ****************************************************************/
-Chem2D_cState Chem2D_cState::Viscous_Flux_x(const Chem2D_pState &dWdx, 
-                                            const int Flow_Type) const{
+LESPremixed2D_cState LESPremixed2D_cState::Viscous_Flux_x(const LESPremixed2D_pState &dWdx,
+							  const LESPremixed2D_pState &dWdy,
+							  const int Flow_Type,
+							  const int Axisymmetric,
+							  const Vector2D X) const{
  
-  Chem2D_cState temp;
+  LESPremixed2D_cState temp;
 
   temp[1] = ZERO;
   temp[2] = tau.xx;
   temp[3] = tau.xy;
   temp[4] = - qflux.x + v().x*tau.xx + v().y*tau.xy;		
-
   //rho * Diffusion_Coef * grad cn 
-  for( int i=0; i<ns; i++){
-    temp.rhospec[i].c = (rhospec[i].diffusion_coef * rhospec[i].gradc.x)/rho; 
+  for( int i=0; i<ns; ++i){
+#ifdef THICKENED_FLAME_ON
+    temp.rhospec[i].c = ( (flame.WF*flame.TF)*rhospec[i].diffusion_coef * rhospec[i].gradc.x)/rho;
+#else
+    temp.rhospec[i].c = (rhospec[i].diffusion_coef * rhospec[i].gradc.x)/rho;
+#endif 
   }
 
-  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-      Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+  if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
+      Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
+    Tensor2D strain_rate = Strain_Rate(dWdx,dWdy, Flow_Type, Axisymmetric, X);
+    double mut = mu_t(strain_rate); 
+    double Dm_t = Dm_turb(mut);
     
-    temp[2] += lambda.xx; 
+    temp[2] += lambda.xx + 2.0*rhok()/3.0; 
     temp[3] += lambda.xy;
-    temp[4] += - theta.x + v().x*lambda.xx + v().y*lambda.xy
-      + (mu()+eddy_viscosity()*sigma_star)*dWdx.k;
-    
-    temp[5] = (mu()+eddy_viscosity()*sigma_star)*dWdx.k;
-    temp[6] = (mu()+eddy_viscosity()*sigma_star)*dWdx.omega;
-    
-    double Dm_t = Dm_turb();
-    for( int i=0; i<ns; i++){
+    temp[4] += - theta.x + v().x*(lambda.xx + 2.0*rhok()/3.0) + v().y*lambda.xy;
+    // For the SFS k-equation
+    if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
+      temp.rhoscalar[0] = (mu() + mut)*dWdx.scalar[0];
+    }
+    //species    
+    for(int i=0; i<ns; ++i){
       temp.rhospec[i].c += Dm_t*rhospec[i].gradc.x; 
     }
   }
@@ -2487,31 +2764,45 @@ Chem2D_cState Chem2D_cState::Viscous_Flux_x(const Chem2D_pState &dWdx,
   return(temp);  
 }
 
-Chem2D_cState Chem2D_cState::Viscous_Flux_y(const Chem2D_pState &dWdy, 
-                                            const int Flow_Type) const {
-  Chem2D_cState temp;
+LESPremixed2D_cState LESPremixed2D_cState::Viscous_Flux_y(const LESPremixed2D_pState &dWdx,
+							  const LESPremixed2D_pState &dWdy,
+							  const int Flow_Type,
+							  const int Axisymmetric,
+							  const Vector2D X) const {
+  LESPremixed2D_cState temp;
 
   temp[1] = ZERO;
   temp[2] = tau.xy; 
   temp[3] = tau.yy;
   temp[4] = - qflux.y + v().x*tau.xy + v().y*tau.yy;		
   //rho * Diffusion_Coef * grad cn 
-  for( int i=0; i<ns; i++){
-    temp.rhospec[i].c = (rhospec[i].diffusion_coef * rhospec[i].gradc.y)/rho;     
+  for( int i=0; i<ns; ++i){
+#ifdef THICKENED_FLAME_ON
+    temp.rhospec[i].c = ( (flame.WF*flame.TF)*rhospec[i].diffusion_coef * rhospec[i].gradc.y)/rho;
+#else
+    temp.rhospec[i].c = (rhospec[i].diffusion_coef * rhospec[i].gradc.y)/rho;
+#endif     
   }
 
-  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-      Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-     temp[2] += lambda.xy; 
-     temp[3] += lambda.xy;
-     temp[4] += - theta.y + v().x*lambda.xy + v().y*lambda.yy
-                + (mu()+eddy_viscosity()*sigma_star)*dWdy.k;
-     temp[5] = (mu()+eddy_viscosity()*sigma_star)*dWdy.k;
-     temp[6] = (mu()+eddy_viscosity()*sigma_star)*dWdy.omega;
-     double Dm_t = Dm_turb();
-     for( int i=0; i<ns; i++){
-        temp.rhospec[i].c += Dm_t*rhospec[i].gradc.y; 
-     }
+  if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
+      Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
+    Tensor2D strain_rate = Strain_Rate(dWdx,dWdy, Flow_Type, Axisymmetric, X);
+    double mut = mu_t(strain_rate); 
+    double Dm_t = Dm_turb(mut);
+
+    temp[2] += lambda.xy; 
+    temp[3] += lambda.yy + 2.0*rhok()/3.0;
+    temp[4] += - theta.y + v().x*lambda.xy + v().y*(lambda.yy + 2.0*rhok()/3.0);
+
+    // For the SFS k-equation
+    if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
+      temp.rhoscalar[0] = (mu() + mut)*dWdy.scalar[0];
+    }
+
+    // species
+    for(int i=0; i<ns; ++i){
+      temp.rhospec[i].c += Dm_t*rhospec[i].gradc.y; 
+    }
   }
 
   return(temp);  
@@ -2522,75 +2813,93 @@ Chem2D_cState Chem2D_cState::Viscous_Flux_y(const Chem2D_pState &dWdy,
  *********************************************************************/
 
 //----------------- Addition -----------------------------//
-Chem2D_cState Chem2D_cState::operator +(const Chem2D_cState &U) const{ 
-  Chem2D_cState Temp(*this);
+LESPremixed2D_cState LESPremixed2D_cState::operator +(const LESPremixed2D_cState &U) const{ 
+  LESPremixed2D_cState Temp(*this);
   Temp += U;
   return Temp;
 }
 
 //------------------ Subtraction ------------------------//
-Chem2D_cState Chem2D_cState::operator -(const Chem2D_cState &U) const{
-  Chem2D_cState Temp(*this);
+LESPremixed2D_cState LESPremixed2D_cState::operator -(const LESPremixed2D_cState &U) const{
+  LESPremixed2D_cState Temp(*this);
   Temp -= U;
   return Temp;
 }
 
 //---------------- Scalar Multiplication ------------------//
-Chem2D_cState Chem2D_cState::operator *(const double &a) const{
-  Chem2D_cState Temp(*this);
+LESPremixed2D_cState LESPremixed2D_cState::operator *(const double &a) const{
+  LESPremixed2D_cState Temp(*this);
   Temp.rho = rho*a;  Temp.rhov = rhov*a; Temp.E = E*a;
-  Temp.rhok = rhok*a; Temp.rhoomega = rhoomega*a;
-  for( int i=0; i<ns; i++)Temp.rhospec[i] = rhospec[i]*a;
+  if(nscal) for(int i=0; i<nscal; ++i) Temp.rhoscalar[i] = rhoscalar[i]*a;
+  for( int i=0; i<ns; ++i) Temp.rhospec[i] = rhospec[i]*a;
   Temp.tau = tau*a;
   Temp.qflux = qflux*a;
   Temp.lambda = lambda*a;
   Temp.theta = theta*a;
+#ifdef THICKENED_FLAME_ON
+  Temp.flame = flame*a;
+#endif
   return(Temp);
 }
 
-Chem2D_cState operator *(const double &a, const Chem2D_cState &U){
-  Chem2D_cState Temp;
+LESPremixed2D_cState operator *(const double &a, const LESPremixed2D_cState &U){
+  LESPremixed2D_cState Temp;
   Temp.rho = U.rho*a;  Temp.rhov = U.rhov*a; Temp.E = U.E*a;
-  Temp.rhok = U.rhok*a;Temp.rhoomega = U.rhoomega*a;
-  for( int i=0; i<U.ns; i++) Temp.rhospec[i] = U.rhospec[i]*a;
+  if(U.nscal) for(int i=0; i<U.nscal; ++i) Temp.rhoscalar[i] = U.rhoscalar[i]*a;
+  for(int i=0; i<U.ns; ++i) Temp.rhospec[i] = U.rhospec[i]*a;
+  Temp.tau = U.tau*a;
+  Temp.qflux = U.qflux*a;
+  Temp.lambda = U.lambda*a;
+  Temp.theta = U.theta*a;
+#ifdef THICKENED_FLAME_ON
+  Temp.flame = U.flame*a;
+#endif
   return(Temp);
 }
 
 //--------------- Scalar Division ------------------------//
-Chem2D_cState Chem2D_cState::operator /(const double &a) const {
-  Chem2D_cState Temp(*this);
+LESPremixed2D_cState LESPremixed2D_cState::operator /(const double &a) const {
+  LESPremixed2D_cState Temp(*this);
   Temp.rho = rho/a; Temp.rhov = rhov/a; Temp.E = E/a;
-  Temp.rhok = rhok/a; Temp.rhoomega = rhoomega/a;
-  for(int i=0; i<ns; i++) Temp.rhospec[i] = rhospec[i]/a; 
+  if(nscal) for(int i=0; i<nscal; ++i) Temp.rhoscalar[i] = rhoscalar[i]/a;
+  for(int i=0; i<ns; ++i) Temp.rhospec[i] = rhospec[i]/a; 
   Temp.tau = tau/a;
   Temp.qflux = qflux/a;
   Temp.lambda = lambda/a;
   Temp.theta = theta/a;
+#ifdef THICKENED_FLAME_ON
+  Temp.flame = flame/a;
+#endif
   return(Temp);
 }
 
 //----------------- Inner Product ------------------------//
-double Chem2D_cState::operator *(const Chem2D_cState &U) const{
-  double sum=0.0;
-  for(int i=0; i<ns; i++)  sum += rhospec[i]*U.rhospec[i];
-  return (rho*U.rho + rhov*U.rhov + E*U.E +rhok*U.rhok+rhoomega*U.rhoomega+ sum);
+double LESPremixed2D_cState::operator *(const LESPremixed2D_cState &U) const{
+  double sum=0.0; 
+  double sumscal=0.0;
+  if(nscal) for(int i=0; i<nscal; ++i) sumscal += rhoscalar[i]*U.rhoscalar[i];
+  for(int i=0; i<ns; ++i)  sum += rhospec[i]*U.rhospec[i];
+  return (rho*U.rho + rhov*U.rhov + E*U.E + sumscal + sum);
 }
 
 //----------- solution state product operator ------------//
-Chem2D_cState Chem2D_cState::operator ^( const Chem2D_cState &U) const {
-  Chem2D_cState Temp(*this);
+LESPremixed2D_cState LESPremixed2D_cState::operator ^( const LESPremixed2D_cState &U) const {
+  LESPremixed2D_cState Temp(*this);
   Temp.rho = rho*U.rho;
   Temp.rhov.x = rhov.x*U.rhov.x;
   Temp.rhov.y = rhov.y*U.rhov.y;
   Temp.E = E*U.E;
-  Temp.rhok= rhok*U.rhok;
-  Temp.rhoomega = rhoomega*U.rhoomega;
-  for(int i=0; i<ns; i++) Temp.rhospec[i] = rhospec[i]*U.rhospec[i];
+  if(nscal) for(int i=0;  i<nscal; ++i) Temp.rhoscalar[i] = rhoscalar[i]*U.rhoscalar[i];
+  for(int i=0; i<ns; ++i) Temp.rhospec[i] = rhospec[i]*U.rhospec[i];
+#ifdef THICKENED_FLAME_ON
+  Temp.flame.WF = flame.WF*U.flame.WF;
+  Temp.flame.TF = flame.TF*U.flame.TF;
+#endif
   return(Temp);
 }
 
 //----------------- Assignment ----------------------------//
-Chem2D_cState& Chem2D_cState::operator =(const Chem2D_cState &U){
+LESPremixed2D_cState& LESPremixed2D_cState::operator =(const LESPremixed2D_cState &U){
   //self assignment protection
   if( this != &U){   
     //copy assignment
@@ -2600,156 +2909,209 @@ Chem2D_cState& Chem2D_cState::operator =(const Chem2D_cState &U){
 }
 
 
-/********************************************************
- * Chem2D_cState -- Shortcut arithmetic operators.     *
- ********************************************************/
-Chem2D_cState& Chem2D_cState::operator +=(const Chem2D_cState &U){
+/**********************************************************
+ * LESPremixed2D_cState -- Shortcut arithmetic operators. *
+ **********************************************************/
+LESPremixed2D_cState& LESPremixed2D_cState::operator +=(const LESPremixed2D_cState &U){
   rho += U.rho;
   rhov += U.rhov; 
   E += U.E;
-  rhok += U.rhok;
-  rhoomega += U.rhoomega;
-  for( int i=0; i<ns; i++)  rhospec[i].c += U.rhospec[i].c;
+  if(nscal) for(int i=0; i<nscal; ++i) rhoscalar[i] += U.rhoscalar[i];
+  for( int i=0; i<ns; ++i)  rhospec[i].c += U.rhospec[i].c;
   tau += U.tau;
   qflux += U.qflux; 
   lambda += U.lambda;
-  theta += U.theta; 
+  theta += U.theta;
+#ifdef THICKENED_FLAME_ON
+  flame += U.flame;
+#endif
   return (*this);
 }
 
-Chem2D_cState& Chem2D_cState::operator -=(const Chem2D_cState &U) {
+LESPremixed2D_cState& LESPremixed2D_cState::operator -=(const LESPremixed2D_cState &U) {
   rho -= U.rho;
   rhov -= U.rhov;
   E -= U.E;
-  rhok -= U.rhok;
-  rhoomega -= U.rhoomega;
-  for(int i=0; i<ns; i++)   rhospec[i].c -= U.rhospec[i].c;
+  if(nscal) for(int i=0; i<nscal; ++i) rhoscalar[i] -= U.rhoscalar[i];
+  for(int i=0; i<ns; ++i) rhospec[i].c -= U.rhospec[i].c;
   tau -= U.tau;
   qflux -= U.qflux; 
   lambda -= U.lambda;
   theta -= U.theta; 
+#ifdef THICKENED_FLAME_ON
+  flame -= U.flame;
+#endif
   return (*this); 
 }
 
-Chem2D_cState& Chem2D_cState::operator *=(const double &a) {
+LESPremixed2D_cState& LESPremixed2D_cState::operator *=(const double &a) {
   rho *= a;
   rhov.x *= a;
   rhov.y *= a;
   E *= a;
-  rhok *= a;
-  rhoomega *= a;
-  for (int i = 0; i < ns; i++) rhospec[i] *= a;
+  if(nscal) for(int i=0; i<nscal; ++i) rhoscalar[i] *= a;
+  for (int i = 0; i < ns; ++i) rhospec[i] *= a;
   tau *= a;
   qflux *= a;
   lambda *= a;
   theta *= a;
-  return *this;
+#ifdef THICKENED_FLAME_ON
+  flame.WF *= a;
+  flame.TF *= a;
+#endif
+  return (*this);
 }   
 
-Chem2D_cState& Chem2D_cState::operator /=(const double &a) {
+LESPremixed2D_cState& LESPremixed2D_cState::operator /=(const double &a) {
   rho /= a;
   rhov.x /= a;
   rhov.y /= a;
   E /= a;
-  rhok /= a;
-  rhoomega /= a;
-  for (int i = 0; i < ns; i++) rhospec[i] /= a;
+  if(nscal) for(int i=0; i<nscal; ++i) rhoscalar[i] /= a;
+  for (int i = 0; i < ns; ++i) rhospec[i] /= a;
   tau /= a;
   qflux /= a;
   lambda /= a;
   theta /= a;
-  return *this;
+#ifdef THICKENED_FLAME_ON
+  flame.WF /= a;
+  flame.TF /= a;
+#endif
+  return (*this);
 }
 
 /********************************************************
- * Chem2D_cState -- Unary arithmetic operators.        *
+ * LESPremixed2D_cState -- Unary arithmetic operators.  *
  ********************************************************/
-Chem2D_cState operator -(const Chem2D_cState &U) {
-#ifdef STATIC_NUMBER_OF_SPECIES
-  Species spt[STATIC_NUMBER_OF_SPECIES];
+LESPremixed2D_cState operator -(const LESPremixed2D_cState &U) {
+#ifdef STATIC_LESPREMIXED2D_SPECIES
+  Species spt[STATIC_LESPREMIXED2D_SPECIES];
 #else
   Species *spt= new Species[U.ns];
 #endif
-  for(int i=0; i<U.ns; i++) spt[i] = -U.rhospec[i];
-  Chem2D_cState Temp(-U.rho,-U.rhov, -U.E, -U.rhok, -U.rhoomega, spt);
+  
+  double *scalpt = new double[U.nscal];
+  for(int i=0; i<U.nscal; ++i) scalpt[i] = -U.rhoscalar[i];
+
+  for(int i=0; i<U.ns; ++i) spt[i] = -U.rhospec[i];
+  LESPremixed2D_cState Temp(-U.rho,-U.rhov, -U.E, scalpt, spt);
   Temp.tau = -U.tau;
   Temp.qflux = -U.qflux;
   Temp.lambda = -U.lambda;
   Temp.theta = -U.theta;
-#ifndef STATIC_NUMBER_OF_SPECIES
+#ifdef THICKENED_FLAME_ON
+  Temp.flame = -U.flame;
+#endif
+
+#ifndef STATIC_LESPREMIXED2D_SPECIES
   delete[] spt;
 #endif
+  delete[] scalpt;
+
   return(Temp);
 }
 
 /********************************************************
- * Chem2D_cState -- Relational operators.              *
+ * LESPremixed2D_cState -- Relational operators.        *
  ********************************************************/
-int operator ==(const Chem2D_cState &U1, const Chem2D_cState &U2) {
+int operator ==(const LESPremixed2D_cState &U1, const LESPremixed2D_cState &U2) {
   if(U1.ns == U2.ns){ //check that species are equal
-    bool Temp;
-    for(int i=0; i<U1.ns; i++){
+    bool Temp, Temp2;
+    //species
+    for(int i=0; i<U1.ns; ++i){
       if( U1.rhospec[i] == U2.rhospec[i] ){
 	Temp = true;
       } else {
 	Temp = false;
 	break;
-      }  
-      return (U1.rho == U2.rho && U1.rhov == U2.rhov && U1.E == U2.E 
-	      && U1.rhok == U2.rhok && U1.rhoomega == U2.rhoomega &&
-	      U1.tau == U2.tau && U1.qflux == U2.qflux&&
-	      U1.lambda == U2.lambda && U1.theta == U2.theta
-	      &&Temp == true);
+      }
     }
+    //scalars
+    if(U1.nscal){ 
+      for(int i=0; i<U1.nscal; ++i){      
+	if(U1.rhoscalar[i] == U2.rhoscalar[i] ){
+	  Temp2 = true;
+	} else {
+	  Temp2 = false;
+	  break;
+	}
+      }
+    }
+  
+    return (U1.rho == U2.rho && U1.rhov == U2.rhov && U1.E == U2.E 
+	    && Temp2 == true && Temp == true &&
+	    U1.tau == U2.tau && U1.qflux == U2.qflux&&
+	    U1.lambda == U2.lambda && U1.theta == U2.theta);
+  
   } else {
     cerr<<"\n Mismatch in number of species \n";
     exit(1);
   }
 }
 
-int operator !=(const Chem2D_cState &U1, const Chem2D_cState &U2) {
+int operator !=(const LESPremixed2D_cState &U1, const LESPremixed2D_cState &U2) {
    if(U1.ns == U2.ns){ //check that species are equal
-    bool Temp = true;
-    for(int i=0; i<U1.ns; i++){
+     bool Temp = true, Temp2 = true;
+    // species
+    for(int i=0; i<U1.ns; ++i){
       if( U1.rhospec[i] != U2.rhospec[i] ){
 	Temp = false;
 	break;
-      } 
-     return (U1.rho != U2.rho || U1.rhov != U2.rhov || U1.E != U2.E 
-	     ||  U1.rhok != U2.rhok ||  U1.rhoomega != U2.rhoomega ||
-	     U1.tau != U2.tau || U1.qflux != U2.qflux
-	     ||U1.lambda != U2.lambda || U1.theta != U2.theta
-	     || Temp != true);
+      }
     }
-  } else {
+    // scalars
+    if(U1.nscal){ 
+      for(int i=0; i<U1.nscal; ++i){      
+	if(U1.rhoscalar[i] != U2.rhoscalar[i] ){
+	  Temp2 = false;
+	  break;
+	}
+      }
+    }
+
+    return (U1.rho != U2.rho || U1.rhov != U2.rhov || U1.E != U2.E 
+	    || Temp2 != true || Temp != true ||
+	    U1.tau != U2.tau || U1.qflux != U2.qflux
+	    || U1.lambda != U2.lambda || U1.theta != U2.theta);
+    
+   } else {
     cerr<<"\n Mismatch in number of species \n";
     exit(1);
   }
 }
 
 /********************************************************
- * Chem2D_cState -- Input-output operators.            *
+ * LESPremixed2D_cState -- Input-output operators.      *
  ********************************************************/
-ostream &operator << (ostream &out_file, const Chem2D_cState &U) {
+ostream &operator << (ostream &out_file, const LESPremixed2D_cState &U) {
   //out_file.precision(20);
   out_file.setf(ios::scientific);
-  out_file << " " << U.rho  << " " << U.rhov.x << " " << U.rhov.y << " " << U.E<< " " << U.rhok<< " " << U.rhoomega;
-  for( int i=0; i<U.ns; i++){
-    out_file<<" "<<U.rhospec[i];
-  } 
-  // out_file << " " <<U.qflux<< " " <<U.tau << " " <<U.theta<< " " <<U.lambda;
+  out_file << " " << U.rho  << " " << U.rhov.x << " " << U.rhov.y << " " << U.E;
+
+  if(U.nscal) for(int i=0; i<U.nscal; ++i) out_file <<" "<< U.rhoscalar[i];
+
+  for( int i=0; i<U.ns; ++i) out_file<<" "<<U.rhospec[i];
+
+#ifdef THICKENED_FLAME_ON
+  out_file << " " << U.flame;
+#endif
+
   out_file.unsetf(ios::scientific);
   return (out_file);
 }
 
-istream &operator >> (istream &in_file, Chem2D_cState &U) {
+istream &operator >> (istream &in_file, LESPremixed2D_cState &U) {
   in_file.setf(ios::skipws);
-  in_file >> U.rho >> U.rhov.x >> U.rhov.y >> U.E >> U.rhok >> U.rhoomega;
-  //U.set_initial_values();
-  for( int i=0; i<U.ns; i++){
-    in_file>>U.rhospec[i]; 
-  } 
-  //in_file >>U.qflux>>U.tau >>U.theta>>U.lambda;
+  in_file >> U.rho >> U.rhov.x >> U.rhov.y >> U.E;
+
+  if(U.nscal) for(int i=0; i<U.nscal; ++i) in_file >> U.rhoscalar[i];
+
+  for( int i=0; i<U.ns; ++i) in_file >> U.rhospec[i]; 
+
+#ifdef THICKENED_FLAME_ON
+  in_file >> U.flame;
+#endif
+
   in_file.unsetf(ios::skipws);
   return (in_file);
 }
@@ -2760,18 +3122,18 @@ istream &operator >> (istream &in_file, Chem2D_cState &U) {
  *                                                                 *
  *******************************************************************
  *******************************************************************/
-void Chem2D_cState::Low_Mach_Number_Preconditioner(DenseMatrix  &P,
-						   const int    &flow_type_flag, 
-						   const double &deltax) const {
-  Chem2D_pState NEW = W();
+void LESPremixed2D_cState::Low_Mach_Number_Preconditioner(DenseMatrix  &P,
+							  const int    &flow_type_flag, 
+							  const double &deltax) const {
+  LESPremixed2D_pState NEW = W();
   NEW.Low_Mach_Number_Preconditioner(P,flow_type_flag,deltax);
 }
 
-void Chem2D_cState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix  &Pinv,
-							   const int    &flow_type_flag, 
-							   const double &deltax) const {
+void LESPremixed2D_cState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix  &Pinv,
+								  const int    &flow_type_flag, 
+								  const double &deltax) const {
  
-  Chem2D_pState NEW = W();
+  LESPremixed2D_pState NEW = W();
   NEW.Low_Mach_Number_Preconditioner_Inverse(Pinv,flow_type_flag,deltax);
 }
 
@@ -2794,12 +3156,12 @@ void Chem2D_cState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix  &Pinv,
  * direction of interest.                               *
  *                                                      *
  ********************************************************/
-Chem2D_pState Reflect(const Chem2D_pState &W,
-		      const Vector2D &norm_dir) {
+LESPremixed2D_pState Reflect(const LESPremixed2D_pState &W,
+			     const Vector2D &norm_dir) {
 
     double ur, vr, u, v;
     double cos_angle, sin_angle;
-    Chem2D_pState Temp(W);
+    LESPremixed2D_pState Temp(W);
  
     /* Determine the direction cosine's for the frame
        rotation. */
@@ -2827,17 +3189,17 @@ Chem2D_pState Reflect(const Chem2D_pState &W,
     return (Temp);
 }
 /*********** FREE SLIP  ***********************************/
-Chem2D_pState Free_Slip(const Chem2D_pState &Win,
-			const Chem2D_pState &Wout,
-			const Vector2D &norm_dir,
-			const int &TEMPERATURE_BC_FLAG) { 
+LESPremixed2D_pState Free_Slip(const LESPremixed2D_pState &Win,
+			       const LESPremixed2D_pState &Wout,
+			       const Vector2D &norm_dir,
+			       const int &TEMPERATURE_BC_FLAG) { 
   
   /***** MOHAMMED et al *******/
-  //Chem2D_pState Temp(Wout);
+  //LESPremixed2D_pState Temp(Wout);
   //Temp.v = Win.v;
   
   /**** DAY & BELL ********/
-  Chem2D_pState Temp;
+  LESPremixed2D_pState Temp;
   Temp = Reflect(Win,norm_dir);
  
   //Fixed Temperature
@@ -2849,25 +3211,25 @@ Chem2D_pState Free_Slip(const Chem2D_pState &Win,
 }
 
 /*********** NO SLIP - ************************************/
-Chem2D_pState No_Slip(const Chem2D_pState &Win,
-		      const Chem2D_pState &Wout,
-		      const Vector2D &norm_dir,
-		      const int &TEMPERATURE_BC_FLAG) {  
+LESPremixed2D_pState No_Slip(const LESPremixed2D_pState &Win,
+			     const LESPremixed2D_pState &Wout,
+			     const Vector2D &norm_dir,
+			     const int &TEMPERATURE_BC_FLAG) {  
   
   return(Moving_Wall(Win,Wout,norm_dir,ZERO,TEMPERATURE_BC_FLAG));
 
 }
 
 /************ Moving_Wall **********************************/
-Chem2D_pState Moving_Wall(const Chem2D_pState &Win,
-			  const Chem2D_pState &Wout,
-			  const Vector2D &norm_dir, 
-			  const double &wall_velocity,
-			  const int &TEMPERATURE_BC_FLAG) {
+LESPremixed2D_pState Moving_Wall(const LESPremixed2D_pState &Win,
+				 const LESPremixed2D_pState &Wout,
+				 const Vector2D &norm_dir, 
+				 const double &wall_velocity,
+				 const int &TEMPERATURE_BC_FLAG) {
 
   double ur, vr;
   double cos_angle, sin_angle;
-  Chem2D_pState Temp(Win);
+  LESPremixed2D_pState Temp(Win);
   
   /* Determine the direction cosine's for the frame
      rotation. */
@@ -2907,13 +3269,18 @@ Chem2D_pState Moving_Wall(const Chem2D_pState &Win,
  *        - 1DFlame Inflow conditions                   *
  *                                                      *
  ********************************************************/
-Chem2D_pState BC_1DFlame_Inflow(const Chem2D_pState &Wi,
-				const Chem2D_pState &Wo,
-				const Chem2D_pState &Woutlet,
-				const Vector2D &norm_dir){ 
+LESPremixed2D_pState BC_1DFlame_Inflow(const LESPremixed2D_pState &Wi,
+				       const LESPremixed2D_pState &Wo,
+				       const LESPremixed2D_pState &Woutlet,
+				       const Vector2D &norm_dir){ 
   //fixed Wo
-  Chem2D_pState Wnew(Wo);
+  LESPremixed2D_pState Wnew(Wo);
   Wnew.v.y = ZERO;
+
+  //Constant extrapolate the wrinkling and thickening factor
+#ifdef THICKENED_FLAME_ON
+  Wnew.flame = Wi.flame;
+#endif
 
   //Constant Extrapolate Wi 
   //Calculate upstream velocity to balance flame ie. mass flow rate 
@@ -2936,14 +3303,18 @@ Chem2D_pState BC_1DFlame_Inflow(const Chem2D_pState &Wi,
  *        - 1DFlame outflow conditions                  *
  *                                                      *
  ********************************************************/
-Chem2D_pState BC_1DFlame_Outflow(const Chem2D_pState &Wi,       //ICu
-				 const Chem2D_pState &Wo,       //Ghost
-				 const Chem2D_pState &Winlet,   //ICl
-				 const Vector2D &norm_dir){
+LESPremixed2D_pState BC_1DFlame_Outflow(const LESPremixed2D_pState &Wi,       //ICu
+					const LESPremixed2D_pState &Wo,       //Ghost
+					const LESPremixed2D_pState &Winlet,   //ICl
+					const Vector2D &norm_dir){
 
   //Constant extrapolate ( zero gradient)
-  Chem2D_pState Wnew(Wi);
+  LESPremixed2D_pState Wnew(Wi);
   Wnew.v.y = ZERO;
+
+#ifdef THICKENED_FLAME_ON
+  Wnew.flame = Wi.flame;
+#endif
 
   //Calculate Pressure assuming constant mass flow rate
   //and Wo.p == Winput.p (constant pressure initial condition)
@@ -2967,15 +3338,15 @@ Chem2D_pState BC_1DFlame_Outflow(const Chem2D_pState &Wi,       //ICu
  *        - 2DFlame Inflow conditions                   *
  *                                                      *
  ********************************************************/
-Chem2D_pState BC_2DFlame_Inflow(const Chem2D_pState &Wi,
-				const Chem2D_pState &Wo,
-				const Vector2D &norm_dir){ 
+LESPremixed2D_pState BC_2DFlame_Inflow(const LESPremixed2D_pState &Wi,
+				       const LESPremixed2D_pState &Wo,
+				       const Vector2D &norm_dir){ 
 
   //fixed rho, v, p, and species
-  Chem2D_pState Wnew(Wo);
+  LESPremixed2D_pState Wnew(Wo);
   Wnew.v.x = Wi.v.x;
 
-//   Chem2D_pState Wnew(Wi);  
+//   LESPremixed2D_pState Wnew(Wi);  
 //   Wnew.p = Wo.p;         //fix pressure & V velocity
 //   Wnew.v.y = Wo.v.y;
 
@@ -2988,18 +3359,18 @@ Chem2D_pState BC_2DFlame_Inflow(const Chem2D_pState &Wi,
  *        - 2DFlame outflow conditions                  *
  *                                                      *
  ********************************************************/
-Chem2D_pState BC_2DFlame_Outflow(const Chem2D_pState &Wi, 
-				 const Chem2D_pState &Wo,
- 				 const Vector2D &norm_dir){
+LESPremixed2D_pState BC_2DFlame_Outflow(const LESPremixed2D_pState &Wi, 
+					const LESPremixed2D_pState &Wo,
+					const Vector2D &norm_dir){
   //2D Coreflame OUTFLOW hold pressure
-  Chem2D_pState Wnew(Wi);  
+  LESPremixed2D_pState Wnew(Wi);  
   Wnew.p = Wo.p;  
   if(Wnew.v.y < ZERO){ 
     Wnew.v.y = ZERO;
   }
   return Wnew;
 
-//   Chem2D_pState Wi_rotated(Wi), Wo_rotated(Wo), Wnew;
+//   LESPremixed2D_pState Wi_rotated(Wi), Wo_rotated(Wo), Wnew;
 //   double ab, ub_rotated, vb_rotated;
 //   double cos_angle = norm_dir.x; 
 //   double sin_angle = norm_dir.y;
@@ -3058,12 +3429,12 @@ Chem2D_pState BC_2DFlame_Outflow(const Chem2D_pState &Wi,
  *    is used to specify the boundary state.            *    
  *                                                      *
  ********************************************************/
-Chem2D_pState BC_Characteristic_Pressure(const Chem2D_pState &Wi,
-					 const Chem2D_pState &Wo,
-					 const Vector2D &norm_dir) {
+LESPremixed2D_pState BC_Characteristic_Pressure(const LESPremixed2D_pState &Wi,
+						const LESPremixed2D_pState &Wo,
+						const Vector2D &norm_dir) {
 
   //USED FOR BUMP FLOW EXIT
-  Chem2D_pState Wi_rotated(Wi), Wo_rotated(Wo), Wnew;
+  LESPremixed2D_pState Wi_rotated(Wi), Wo_rotated(Wo), Wnew;
   double mi, ab, ub_rotated, vb_rotated;
   double cos_angle, sin_angle;
   
@@ -3138,10 +3509,10 @@ Chem2D_pState BC_Characteristic_Pressure(const Chem2D_pState &Wi,
  * location X.                                                        *
  *                                                                    *
  **********************************************************************/
-Chem2D_pState RinglebFlow(const Chem2D_pState &Wdum,
-			   const Vector2D X) {
+LESPremixed2D_pState RinglebFlow(const LESPremixed2D_pState &Wdum,
+				 const Vector2D X) {
 
-//   Chem2D_pState W;
+//   LESPremixed2D_pState W;
 //   double sin_theta, cos_theta, theta;
 //   double f_a, f_ab;
 //   double J, J_a, J_ab;
@@ -3204,12 +3575,12 @@ Chem2D_pState RinglebFlow(const Chem2D_pState &Wdum,
  * pressure gradient.                                                 *
  *                                                                    *
  **********************************************************************/
-Chem2D_pState ViscousChannelFlow(const Chem2D_pState &Wdum,
-				  const Vector2D X,
-				  const double Vwall,
-				  const double dp) {
+LESPremixed2D_pState ViscousChannelFlow(const LESPremixed2D_pState &Wdum,
+					const Vector2D X,
+					const double Vwall,
+					const double dp) {
 
-  Chem2D_pState W(Wdum);
+  LESPremixed2D_pState W(Wdum);
   //W.Copy(Wdum);  //use same species and viscosity
 
   // Compute the exact viscous channel solution.
@@ -3236,21 +3607,21 @@ Chem2D_pState ViscousChannelFlow(const Chem2D_pState &Wdum,
  * the freestream flow velocity.                                      *
  *                                                                    *
  **********************************************************************/
-Chem2D_pState FlatPlate(const Chem2D_pState &Winf,
-			const Vector2D X,
-			double &eta,
-			double &f,
-			double &fp,
-			double &fpp) {
+LESPremixed2D_pState FlatPlate(const LESPremixed2D_pState &Winf,
+			       const Vector2D X,
+			       double &eta,
+			       double &f,
+			       double &fp,
+			       double &fpp) {
 
-  Chem2D_pState W(Winf);
+  LESPremixed2D_pState W(Winf);
   double fo, dn, sign, k1, k2, k3, k4;
   
   W.v.zero();
 
   // Initialize variables.
 //   W.Vacuum(); W.rho = Winf.rho; W.p = Winf.p;
-//   for(int i=0; i<W.ns; i++){
+//   for(int i=0; i<W.ns; ++i){
 //     W.spec[i].c = Winf.spec[i].c;
 //   } 
   
@@ -3336,12 +3707,12 @@ Chem2D_pState FlatPlate(const Chem2D_pState &Winf,
  *           causing a energy flux inconsistency when   *
  *           used with the Roe Flux function.           *
  ********************************************************/
-Chem2D_pState RoeAverage(const Chem2D_pState &Wl,
-			 const Chem2D_pState &Wr) {
+LESPremixed2D_pState RoeAverage(const LESPremixed2D_pState &Wl,
+				const LESPremixed2D_pState &Wr) {
 
     double Hl, Hr, srhol, srhor;
     double Ha, ha;
-    Chem2D_pState Temp;
+    LESPremixed2D_pState Temp;
 
     /* Determine the left and right state specific enthalpies
        and square roots of the density. */
@@ -3354,15 +3725,19 @@ Chem2D_pState RoeAverage(const Chem2D_pState &Wl,
     Temp.rho = srhol*srhor;
     Temp.v.x = (srhol*Wl.v.x+srhor*Wr.v.x)/(srhol+srhor);
     Temp.v.y = (srhol*Wl.v.y+srhor*Wr.v.y)/(srhol+srhor);
-    //Turbulence quantities
-    Temp.k = (srhol*Wl.k + srhor*Wr.k)/(srhol+srhor);
-    Temp.omega= (srhol*Wl.omega + srhor*Wr.omega)/(srhol+srhor);
-    for(int i=0; i<Wl.ns; i++){
+
+    // Scalars
+    if(Wl.nscal) { 
+      for(int i=0; i<Wl.nscal; i++) Temp.scalar[i] = (srhol*Wl.scalar[i] + srhor*Wr.scalar[i])/(srhol+srhor);
+    }
+    
+    for(int i=0; i<Wl.ns; ++i){
       Temp.spec[i].c = (srhol*Wl.spec[i].c + srhor*Wr.spec[i].c)/(srhol+srhor);
     }
  
     Ha = (srhol*Hl+srhor*Hr)/(srhol+srhor);
     ha = Ha - HALF*(sqr(Temp.v.x)+sqr(Temp.v.y));
+    ha -= 5.0*Temp.k()/3.0;
 
     //double TEMP = Temp.T(ha);
     Temp.p = Temp.rho*Temp.T(ha)*Temp.Rtot();
@@ -3383,15 +3758,15 @@ Chem2D_pState RoeAverage(const Chem2D_pState &Wl,
  * Lax, van Leer (1983).                                 *
  *                                                       *
  *********************************************************/
-Chem2D_cState FluxHLLE_x(const Chem2D_pState &Wl,
-			 const Chem2D_pState &Wr,
-			 const int &Preconditioning,
-			 const int Flow_Type) {
+LESPremixed2D_cState FluxHLLE_x(const LESPremixed2D_pState &Wl,
+				const LESPremixed2D_pState &Wr,
+				const int &Preconditioning,
+				const int Flow_Type) {
 
     double wavespeed_l, wavespeed_r;
-    Chem2D_pState Wa, lambdas_l, lambdas_r, lambdas_a;
-    Chem2D_cState Flux, dUrl;
-    int NUM_VAR_CHEM2D = Wl.NUM_VAR_CHEM2D;
+    LESPremixed2D_pState Wa, lambdas_l, lambdas_r, lambdas_a;
+    LESPremixed2D_cState Flux, dUrl;
+    int NUM_VAR_LESPREMIXED2D = Wl.NUM_VAR_LESPREMIXED2D;
 
     /* Evaluate the Roe-average primitive solution state. */   
     Wa = RoeAverage(Wl, Wr);
@@ -3407,11 +3782,11 @@ Chem2D_cState FluxHLLE_x(const Chem2D_pState &Wl,
     /* Determine the intermediate state flux. */
     wavespeed_l = min(lambdas_l[1], lambdas_a[1]);
 
-    //wavespeed_r = max(lambdas_r[NUM_VAR_CHEM2D],
-    //                  lambdas_a[NUM_VAR_CHEM2D]);
+    //wavespeed_r = max(lambdas_r[NUM_VAR_LESPREMIXED2D],
+    //                  lambdas_a[NUM_VAR_LESPREMIXED2D]);
     wavespeed_r = max(lambdas_r[4],lambdas_a[4]); //MARKTHIS XINFENG
-    //   wavespeed_r = max(lambdas_r[NUM_VAR_CHEM2D-lambdas_r.ns],
-    //                       lambdas_a[NUM_VAR_CHEM2D-lambdas_a.ns]); 
+    //   wavespeed_r = max(lambdas_r[NUM_VAR_LESPREMIXED2D-lambdas_r.ns],
+    //                       lambdas_a[NUM_VAR_LESPREMIXED2D-lambdas_a.ns]); 
     wavespeed_l = min(wavespeed_l, ZERO);
     wavespeed_r = max(wavespeed_r, ZERO);
   
@@ -3432,10 +3807,10 @@ Chem2D_cState FluxHLLE_x(const Chem2D_pState &Wl,
 
 }
 
-Chem2D_cState FluxHLLE_x(const Chem2D_cState &Ul,
-			 const Chem2D_cState &Ur,
-			 const int &Preconditioning,
-			 const int Flow_Type) {
+LESPremixed2D_cState FluxHLLE_x(const LESPremixed2D_cState &Ul,
+				const LESPremixed2D_cState &Ur,
+				const int &Preconditioning,
+				const int Flow_Type) {
    return (FluxHLLE_x(Ul.W(), Ur.W(),Preconditioning, Flow_Type));
 }
 
@@ -3456,15 +3831,15 @@ Chem2D_cState FluxHLLE_x(const Chem2D_cState &Ul,
  * solution states.  See Harten, Lax, van Leer (1983).   *
  *                                                       *
  *********************************************************/
-Chem2D_cState FluxHLLE_n(const Chem2D_pState &Wl,
-			 const Chem2D_pState &Wr,
-			 const Vector2D &norm_dir,
-			 const int &Preconditioning,
-			 const int Flow_Type) {
+LESPremixed2D_cState FluxHLLE_n(const LESPremixed2D_pState &Wl,
+				const LESPremixed2D_pState &Wr,
+				const Vector2D &norm_dir,
+				const int &Preconditioning,
+				const int Flow_Type) {
 
     double cos_angle, sin_angle;
-    Chem2D_pState Wl_rotated(Wl), Wr_rotated(Wr);
-    Chem2D_cState Flux, Flux_rotated;
+    LESPremixed2D_pState Wl_rotated(Wl), Wr_rotated(Wr);
+    LESPremixed2D_cState Flux, Flux_rotated;
     Flux.Vacuum();
     /* Determine the direction cosine's for the frame
        rotation. */
@@ -3508,11 +3883,11 @@ Chem2D_cState FluxHLLE_n(const Chem2D_pState &Wl,
     return (Flux);
 }
 
-Chem2D_cState FluxHLLE_n(const Chem2D_cState &Ul,
-			 const Chem2D_cState &Ur,
-			 const Vector2D &norm_dir,
-			 const int &Preconditioning,
-			 const int Flow_Type) {
+LESPremixed2D_cState FluxHLLE_n(const LESPremixed2D_cState &Ul,
+				const LESPremixed2D_cState &Ur,
+				const Vector2D &norm_dir,
+				const int &Preconditioning,
+				const int Flow_Type) {
   return (FluxHLLE_n(Ul.W(), Ur.W(),norm_dir,Preconditioning, Flow_Type));
 }
 
@@ -3526,14 +3901,14 @@ Chem2D_cState FluxHLLE_n(const Chem2D_cState &Ul,
  * the fluxes.  See Linde (1998).                        *
  *                                                       *
  *********************************************************/
-Chem2D_cState FluxLinde(const Chem2D_pState &Wl,
-                         const Chem2D_pState &Wr, 
-			const int Flow_Type) {
+LESPremixed2D_cState FluxLinde(const LESPremixed2D_pState &Wl,
+			       const LESPremixed2D_pState &Wr, 
+			       const int Flow_Type) {
 
     double wavespeed_l, wavespeed_r, wavespeed_m, rhoa, ca, dU, alpha;
-    Chem2D_pState Wa, lambdas_l, lambdas_r, lambdas_a;
-    Chem2D_cState Flux, dFrl, dUrl, dFwave;
-    int NUM_VAR_CHEM2D = Wl.NUM_VAR_CHEM2D;
+    LESPremixed2D_pState Wa, lambdas_l, lambdas_r, lambdas_a;
+    LESPremixed2D_cState Flux, dFrl, dUrl, dFwave;
+    int NUM_VAR_LESPREMIXED2D = Wl.NUM_VAR_LESPREMIXED2D;
 
     /* Evaluate the Roe-average primitive solution state. */   
     Wa = RoeAverage(Wl, Wr);
@@ -3546,8 +3921,8 @@ Chem2D_cState FluxLinde(const Chem2D_pState &Wl,
     /* Determine the intermediate state flux. */
     wavespeed_l = min(lambdas_l[1],
                       lambdas_a[1]);
-  //   wavespeed_r = max(lambdas_r[NUM_VAR_CHEM2D-lambdas_r.ns],
-//                       lambdas_a[NUM_VAR_CHEM2D-lambdas_a.ns]);
+  //   wavespeed_r = max(lambdas_r[NUM_VAR_LESPREMIXED2D-lambdas_r.ns],
+//                       lambdas_a[NUM_VAR_LESPREMIXED2D-lambdas_a.ns]);
 
   wavespeed_r = max(lambdas_r[4],lambdas_a[4]);
     if (wavespeed_l >= ZERO) {
@@ -3559,7 +3934,7 @@ Chem2D_cState FluxLinde(const Chem2D_pState &Wl,
         dFrl = Wr.Fx()-Wl.Fx();
         wavespeed_m = Wa.v.x;
         rhoa = Wa.rho;
-        ca = Wa.a();
+        ca = Wa.amodified();  //Wa.a();
         dU = fabs(dUrl.rho)/rhoa+
              fabs(dUrl.rhov.x)/(rhoa*ca)+
              fabs(dUrl.rhov.y)/(rhoa*ca)+
@@ -3589,9 +3964,9 @@ Chem2D_cState FluxLinde(const Chem2D_pState &Wl,
 
 }
 
-Chem2D_cState FluxLinde(const Chem2D_cState &Ul,
-	      	         const Chem2D_cState &Ur,
-			const int Flow_Type) {
+LESPremixed2D_cState FluxLinde(const LESPremixed2D_cState &Ul,
+			       const LESPremixed2D_cState &Ur,
+			       const int Flow_Type) {
    return (FluxLinde(Ul.W(), Ur.W(), Flow_Type));
 }
 
@@ -3611,14 +3986,14 @@ Chem2D_cState FluxLinde(const Chem2D_cState &Ul,
  * (1998).                                               *
  *                                                       *
  *********************************************************/
-Chem2D_cState FluxLinde_n(const Chem2D_pState &Wl,
-	      	           const Chem2D_pState &Wr,
-                           const Vector2D &norm_dir,
-			  const int Flow_Type) {
+LESPremixed2D_cState FluxLinde_n(const LESPremixed2D_pState &Wl,
+				 const LESPremixed2D_pState &Wr,
+				 const Vector2D &norm_dir,
+				 const int Flow_Type) {
 
     double cos_angle, sin_angle;
-    Chem2D_pState Wl_rotated(Wl), Wr_rotated(Wr);
-    Chem2D_cState Flux, Flux_rotated;
+    LESPremixed2D_pState Wl_rotated(Wl), Wr_rotated(Wr);
+    LESPremixed2D_cState Flux, Flux_rotated;
 
     /* Determine the direction cosine's for the frame
        rotation. */
@@ -3662,10 +4037,10 @@ Chem2D_cState FluxLinde_n(const Chem2D_pState &Wl,
 
 }
 
-Chem2D_cState FluxLinde_n(const Chem2D_cState &Ul,
-	      	           const Chem2D_cState &Ur,
-                           const Vector2D &norm_dir,
-			  const int Flow_Type) {
+LESPremixed2D_cState FluxLinde_n(const LESPremixed2D_cState &Ul,
+				 const LESPremixed2D_cState &Ur,
+				 const Vector2D &norm_dir,
+				 const int Flow_Type) {
   return (FluxLinde_n(Ul.W(), Ur.W(), norm_dir, Flow_Type));
 }
 
@@ -3677,10 +4052,10 @@ Chem2D_cState FluxLinde_n(const Chem2D_cState &Ul,
  * rotated frame.                                        *
  *                                                       *
  *********************************************************/
-Chem2D_pState Rotate(const Chem2D_pState &W,
-		     const Vector2D &norm_dir) {
+LESPremixed2D_pState Rotate(const LESPremixed2D_pState &W,
+			    const Vector2D &norm_dir) {
 
-  Chem2D_pState W_rotated(W);
+  LESPremixed2D_pState W_rotated(W);
   W_rotated.v.x =   W.v.x*norm_dir.x + W.v.y*norm_dir.y;
   W_rotated.v.y = - W.v.x*norm_dir.y + W.v.y*norm_dir.x;
   
@@ -3698,13 +4073,13 @@ Chem2D_pState Rotate(const Chem2D_pState &W,
  *       wavespeed.y = wavespeed_r = lambda plus.        *
  *                                                       *
  *********************************************************/
-Vector2D HLLE_wavespeeds(const Chem2D_pState &Wl,
-                         const Chem2D_pState &Wr,
+Vector2D HLLE_wavespeeds(const LESPremixed2D_pState &Wl,
+                         const LESPremixed2D_pState &Wr,
 			 const Vector2D &norm_dir) {
 
     Vector2D wavespeed;
-    Chem2D_pState Wa_n, lambdas_l, lambdas_r, lambdas_a, Wl_n, Wr_n;  
-    int NUM_VAR_CHEM2D = (Wl.NUM_VAR_CHEM2D );
+    LESPremixed2D_pState Wa_n, lambdas_l, lambdas_r, lambdas_a, Wl_n, Wr_n;  
+    int NUM_VAR_LESPREMIXED2D = (Wl.NUM_VAR_LESPREMIXED2D );
     /* Use rotated values to calculate eignvalues */
     Wl_n = Rotate(Wl, norm_dir);
     Wr_n = Rotate(Wr, norm_dir);
@@ -3724,8 +4099,8 @@ Vector2D HLLE_wavespeeds(const Chem2D_pState &Wl,
     wavespeed.y = max(lambdas_r[4],
                       lambdas_a[4]);   //u+a
  
-  //   wavespeed.y = max(lambdas_r[NUM_VAR_CHEM2D],
-//                       lambdas_a[NUM_VAR_CHEM2D]);  //THIS IS u! not u+a WTF!!!
+  //   wavespeed.y = max(lambdas_r[NUM_VAR_LESPREMIXED2D],
+//                       lambdas_a[NUM_VAR_LESPREMIXED2D]);  //THIS IS u! not u+a WTF!!!
  
     wavespeed.x = min(wavespeed.x, ZERO); //lambda minus
     wavespeed.y = max(wavespeed.y, ZERO); //lambda plus 
@@ -3743,11 +4118,11 @@ Vector2D HLLE_wavespeeds(const Chem2D_pState &Wl,
  * elemental wave speeds or eigenvalues.                *
  *                                                      *
  ********************************************************/
-Chem2D_pState WaveSpeedPos(const Chem2D_pState &lambdas_a,
-			   const Chem2D_pState &lambdas_l,
-			   const Chem2D_pState &lambdas_r) {
-   Chem2D_pState NEW;   
-   for(int i=1; i<=lambdas_a.NUM_VAR_CHEM2D; i++){
+LESPremixed2D_pState WaveSpeedPos(const LESPremixed2D_pState &lambdas_a,
+				  const LESPremixed2D_pState &lambdas_l,
+				  const LESPremixed2D_pState &lambdas_r) {
+   LESPremixed2D_pState NEW;   
+   for(int i=1; i<=lambdas_a.NUM_VAR_LESPREMIXED2D; ++i){
      NEW[i] = HALF*(lambdas_a[i]+fabs(lambdas_a[i]));
    }
    return(NEW);
@@ -3760,11 +4135,11 @@ Chem2D_pState WaveSpeedPos(const Chem2D_pState &lambdas_a,
  * elemental wave speeds or eigenvalues.                *
  *                                                      *
  ********************************************************/
-Chem2D_pState WaveSpeedNeg(const Chem2D_pState &lambdas_a,
-			   const Chem2D_pState &lambdas_l,
-			   const Chem2D_pState &lambdas_r) {
-  Chem2D_pState NEW;   
-  for(int i=1; i<=lambdas_a.NUM_VAR_CHEM2D; i++){
+LESPremixed2D_pState WaveSpeedNeg(const LESPremixed2D_pState &lambdas_a,
+				  const LESPremixed2D_pState &lambdas_l,
+				  const LESPremixed2D_pState &lambdas_r) {
+  LESPremixed2D_pState NEW;   
+  for(int i=1; i<=lambdas_a.NUM_VAR_LESPREMIXED2D; ++i){
      NEW[i] = HALF*(lambdas_a[i]-fabs(lambdas_a[i]));
    }
    return(NEW);
@@ -3777,11 +4152,11 @@ Chem2D_pState WaveSpeedNeg(const Chem2D_pState &lambdas_a,
  * elemental wave speeds or eigenvalues.                *
  *                                                      *
  ********************************************************/
-Chem2D_pState WaveSpeedAbs(const Chem2D_pState &lambdas_a,
-			   const Chem2D_pState &lambdas_l,
-			   const Chem2D_pState &lambdas_r) {
-   Chem2D_pState NEW;   
-   for(int i=1; i<=lambdas_a.NUM_VAR_CHEM2D; i++){
+LESPremixed2D_pState WaveSpeedAbs(const LESPremixed2D_pState &lambdas_a,
+				  const LESPremixed2D_pState &lambdas_l,
+				  const LESPremixed2D_pState &lambdas_r) {
+   LESPremixed2D_pState NEW;   
+   for(int i=1; i<=lambdas_a.NUM_VAR_LESPREMIXED2D; ++i){
      NEW[i] = fabs(lambdas_a[i]);
    }
    return(NEW);
@@ -3793,21 +4168,25 @@ Chem2D_pState WaveSpeedAbs(const Chem2D_pState &lambdas_a,
  * This function returns the positive parts of the      *
  * corrected elemental wave speeds or eigenvalues       *
  * according to the entropy fix of Harten (1983).       *
- *                                                       *
+ *                                                      *
  ********************************************************/
-Chem2D_pState HartenFixPos(const Chem2D_pState &lambdas_a,
-			   const Chem2D_pState &lambdas_l,
-			   const Chem2D_pState &lambdas_r) {
-  Chem2D_pState NEW;
+LESPremixed2D_pState HartenFixPos(const LESPremixed2D_pState &lambdas_a,
+				  const LESPremixed2D_pState &lambdas_l,
+				  const LESPremixed2D_pState &lambdas_r) {
+  LESPremixed2D_pState NEW;
   NEW.rho = HartenFixPos(lambdas_a[1],lambdas_l[1],lambdas_r[1]);
   NEW.v.x = HALF*(lambdas_a[2]+fabs(lambdas_a[2]));
   NEW.v.y = HALF*(lambdas_a[3]+fabs(lambdas_a[3]));
   NEW.p = HartenFixPos(lambdas_a[4],lambdas_l[4],lambdas_r[4]);
-  NEW.k = fabs(lambdas_a[5]);
-  NEW.omega = fabs(lambdas_a[6]);
-  
-  for( int i=(NUM_CHEM2D_VAR_SANS_SPECIES+1); i<=NEW.NUM_VAR_CHEM2D; i++){
-    NEW.spec[i-(NUM_CHEM2D_VAR_SANS_SPECIES+1)].c = HALF*(lambdas_a[i]+fabs(lambdas_a[i]));
+
+  if(NEW.nscal){
+    for(int i=5; i<=(NEW.NUM_VAR_LESPREMIXED2D-NEW.ns); ++i){
+      NEW.scalar[i-5] = HALF*(lambdas_a[i]+fabs(lambdas_a[i])); //fabs(lambdas_a[i]); ??????
+    }
+  }
+    
+  for( int i=(NEW.NUM_VAR_LESPREMIXED2D-NEW.ns+1); i<=NEW.NUM_VAR_LESPREMIXED2D; ++i){
+    NEW.spec[i-(NEW.NUM_VAR_LESPREMIXED2D-NEW.ns+1)].c = HALF*(lambdas_a[i]+fabs(lambdas_a[i]));
   }
   
   return (NEW);
@@ -3821,20 +4200,23 @@ Chem2D_pState HartenFixPos(const Chem2D_pState &lambdas_a,
  * according to the entropy fix of Harten (1983).       *
  *                                                      *
  ********************************************************/
-Chem2D_pState HartenFixNeg(const Chem2D_pState &lambdas_a,
-			   const Chem2D_pState &lambdas_l,
-			   const Chem2D_pState &lambdas_r) {
-  Chem2D_pState NEW;
+LESPremixed2D_pState HartenFixNeg(const LESPremixed2D_pState &lambdas_a,
+				  const LESPremixed2D_pState &lambdas_l,
+				  const LESPremixed2D_pState &lambdas_r) {
+  LESPremixed2D_pState NEW;
   NEW.rho = HartenFixNeg(lambdas_a[1],lambdas_l[1],lambdas_r[1]);
   NEW.v.x = HALF*(lambdas_a[2]-fabs(lambdas_a[2]));
   NEW.v.y = HALF*(lambdas_a[3]-fabs(lambdas_a[3]));
   NEW.p = HartenFixNeg(lambdas_a[4],lambdas_l[4],lambdas_r[4]);
- 
-  NEW.k = fabs(lambdas_a[5]);
-  NEW.omega = fabs(lambdas_a[6]);
+
+  if(NEW.nscal){
+    for(int i=5; i<=(NEW.NUM_VAR_LESPREMIXED2D-NEW.ns); ++i){
+      NEW.scalar[i-5] = HALF*(lambdas_a[i]-fabs(lambdas_a[i]));  // fabs(lambdas_a[i]) ???????
+    }
+  }
   
-  for( int i=(NUM_CHEM2D_VAR_SANS_SPECIES+1); i<=NEW.NUM_VAR_CHEM2D; i++){
-    NEW.spec[i-(NUM_CHEM2D_VAR_SANS_SPECIES+1)].c = HALF*(lambdas_a[i]-fabs(lambdas_a[i]));
+  for( int i=(NEW.NUM_VAR_LESPREMIXED2D-NEW.ns+1); i<=NEW.NUM_VAR_LESPREMIXED2D; ++i){
+    NEW.spec[i-(NEW.NUM_VAR_LESPREMIXED2D-NEW.ns+1)].c = HALF*(lambdas_a[i]-fabs(lambdas_a[i]));
   }
   return (NEW);
 }
@@ -3846,20 +4228,23 @@ Chem2D_pState HartenFixNeg(const Chem2D_pState &lambdas_a,
  * according to the entropy fix of Harten (1983).       *
  *                                                      *
  ********************************************************/
-Chem2D_pState HartenFixAbs(const Chem2D_pState &lambdas_a,
-			   const Chem2D_pState &lambdas_l,
-			   const Chem2D_pState &lambdas_r) {
-  Chem2D_pState NEW;
+LESPremixed2D_pState HartenFixAbs(const LESPremixed2D_pState &lambdas_a,
+				  const LESPremixed2D_pState &lambdas_l,
+				  const LESPremixed2D_pState &lambdas_r) {
+  LESPremixed2D_pState NEW;
   NEW.rho = HartenFixAbs(lambdas_a[1],lambdas_l[1],lambdas_r[1]);
   NEW.v.x = fabs(lambdas_a[2]);
   NEW.v.y = fabs(lambdas_a[3]);
   NEW.p = HartenFixAbs(lambdas_a[4],lambdas_l[4],lambdas_r[4]);
- 
-  NEW.k = fabs(lambdas_a[5]);
-  NEW.omega = fabs(lambdas_a[6]);
+
+  if(NEW.nscal){
+    for(int i=5; i<=(NEW.NUM_VAR_LESPREMIXED2D-NEW.ns); ++i){
+      NEW.scalar[i-5] = fabs(lambdas_a[i]);
+    }
+  }
   
-  for( int i=(NUM_CHEM2D_VAR_SANS_SPECIES+1); i<=NEW.NUM_VAR_CHEM2D; i++){
-    NEW.spec[i-(NUM_CHEM2D_VAR_SANS_SPECIES+1)].c = fabs(lambdas_a[i]);
+  for( int i=(NEW.NUM_VAR_LESPREMIXED2D-NEW.ns+1); i<=NEW.NUM_VAR_LESPREMIXED2D; ++i){
+    NEW.spec[i-(NEW.NUM_VAR_LESPREMIXED2D-NEW.ns+1)].c = fabs(lambdas_a[i]);
   }
   return (NEW);
 }
@@ -3873,16 +4258,16 @@ Chem2D_pState HartenFixAbs(const Chem2D_pState &lambdas_a,
  * (1981).                                               *
  *                                                       *
  *********************************************************/
-Chem2D_cState FluxRoe_x(const Chem2D_pState &Wl,
-			const Chem2D_pState &Wr,
-			const int &Preconditioning,
-			const int &flow_type_flag,
-			const double &deltax) {
+LESPremixed2D_cState FluxRoe_x(const LESPremixed2D_pState &Wl,
+			       const LESPremixed2D_pState &Wr,
+			       const int &Preconditioning,
+			       const int &flow_type_flag,
+			       const double &deltax) {
 
 
 
-    Chem2D_pState Wa, dWrl, wavespeeds, lambdas_l, lambdas_r, lambdas_a;
-    Chem2D_cState Flux;
+    LESPremixed2D_pState Wa, dWrl, wavespeeds, lambdas_l, lambdas_r, lambdas_a;
+    LESPremixed2D_cState Flux;
 
      /* Evaluate the Roe-average primitive solution state. */    
     Wa = RoeAverage(Wl, Wr);
@@ -3901,8 +4286,8 @@ Chem2D_cState FluxRoe_x(const Chem2D_pState &Wl,
 // 				lambdas_l,
 // 				lambdas_r);
 //       Flux = HALF*(Wl.Fx()+Wr.Fx()); 
-//       Chem2D_cState Flux_dissipation(ZERO);     
-//       for ( int i = 1 ; i <= Wa.NUM_VAR_CHEM2D ; i++ ) {
+//       LESPremixed2D_cState Flux_dissipation(ZERO);     
+//       for ( int i = 1 ; i <= Wa.NUM_VAR_LESPREMIXED2D ; ++i ) {
 // 	   Flux_dissipation -= HALF*wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i);
 //       }
 //       Flux += Flux_dissipation;
@@ -3915,7 +4300,7 @@ Chem2D_cState FluxRoe_x(const Chem2D_pState &Wl,
                                   lambdas_l,
                                   lambdas_r);
 	
-        for (int i=1 ; i < Wl.NUM_VAR_CHEM2D; i++) {
+        for (int i=1 ; i < Wl.NUM_VAR_LESPREMIXED2D; ++i) {
 	  if (wavespeeds[i] < ZERO) {
  	    Flux += wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i);
 	  }
@@ -3925,7 +4310,7 @@ Chem2D_cState FluxRoe_x(const Chem2D_pState &Wl,
         wavespeeds = HartenFixPos(lambdas_a,
                                   lambdas_l,
                                   lambdas_r);
-        for (int i=1; i < Wl.NUM_VAR_CHEM2D; i++) {
+        for (int i=1; i < Wl.NUM_VAR_LESPREMIXED2D; ++i) {
 	  if (wavespeeds[i] > ZERO) {
 	    Flux -= wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i);
           }
@@ -3952,21 +4337,21 @@ Chem2D_cState FluxRoe_x(const Chem2D_pState &Wl,
 				lambdas_l,
 				lambdas_r);
           
-      DenseMatrix P(Wa.NUM_VAR_CHEM2D-1,Wa.NUM_VAR_CHEM2D-1);     //COULD BE STORED IN CLASS AS STATIC AND REUSED REDUCING OVERHEAD???
+      DenseMatrix P(Wa.NUM_VAR_LESPREMIXED2D-1,Wa.NUM_VAR_LESPREMIXED2D-1);     //COULD BE STORED IN CLASS AS STATIC AND REUSED REDUCING OVERHEAD???
       /* Evaluate the low-Mach-number local preconditioner for the Roe-averaged state. */  
     
       Wa.Low_Mach_Number_Preconditioner(P,flow_type_flag,deltax);
                                                                                      
       /* Determine the intermediate state flux. */                                                
       Flux = HALF*(Wl.Fx()+Wr.Fx()); 
-      Chem2D_cState Flux_dissipation(ZERO);   
+      LESPremixed2D_cState Flux_dissipation(ZERO);   
     
-      for ( int i = 1 ; i < Wa.NUM_VAR_CHEM2D ; i++ ) {
+      for ( int i = 1 ; i < Wa.NUM_VAR_LESPREMIXED2D ; ++i ) {
 	Flux_dissipation -= HALF*wavespeeds[i]*(Wa.lp_x_precon(i,MR2a)*dWrl)*Wa.rc_x_precon(i,MR2a);
       }
   
-      for ( int i = 1 ; i < Wa.NUM_VAR_CHEM2D ; i++ ) {
-	for ( int j = 1 ; j < Wa.NUM_VAR_CHEM2D ; j++ ) {
+      for ( int i = 1 ; i < Wa.NUM_VAR_LESPREMIXED2D ; ++i ) {
+	for ( int j = 1 ; j < Wa.NUM_VAR_LESPREMIXED2D ; ++j ) {
 	  Flux[i] += P(i-1,j-1)*Flux_dissipation[j]; // Add preconditioned upwind dissipation flux.
 	} 
       } 
@@ -3980,11 +4365,11 @@ Chem2D_cState FluxRoe_x(const Chem2D_pState &Wl,
     return (Flux);    
 }
 
-Chem2D_cState FluxRoe_x(const Chem2D_cState &Ul,
-			const Chem2D_cState &Ur,
-			const int &Preconditioning, 
-			const int &flow_type_flag,
-			const double &deltax) {
+LESPremixed2D_cState FluxRoe_x(const LESPremixed2D_cState &Ul,
+			       const LESPremixed2D_cState &Ur,
+			       const int &Preconditioning, 
+			       const int &flow_type_flag,
+			       const double &deltax) {
    return (FluxRoe_x(Ul.W(), Ur.W(),Preconditioning,flow_type_flag,deltax));
 }
 
@@ -4003,17 +4388,17 @@ Chem2D_cState FluxRoe_x(const Chem2D_cState &Ul,
  * (1981).                                               *
  *                                                       *
  *********************************************************/
-Chem2D_cState FluxRoe_n(const Chem2D_pState &Wl,
-			const Chem2D_pState &Wr,
-			const Vector2D &norm_dir,
-			const int &Preconditioning,
-			const int &flow_type_flag,
-			const double &delta_n ) {
+LESPremixed2D_cState FluxRoe_n(const LESPremixed2D_pState &Wl,
+			       const LESPremixed2D_pState &Wr,
+			       const Vector2D &norm_dir,
+			       const int &Preconditioning,
+			       const int &flow_type_flag,
+			       const double &delta_n ) {
 
  
   double cos_angle, sin_angle, delta_rotated;
-  Chem2D_pState Wl_rotated(Wl), Wr_rotated(Wr);
-  Chem2D_cState Flux, Flux_rotated;
+  LESPremixed2D_pState Wl_rotated(Wl), Wr_rotated(Wr);
+  LESPremixed2D_cState Flux, Flux_rotated;
 
   /* Determine the direction cosine's for the frame rotation. */
 
@@ -4049,12 +4434,12 @@ Chem2D_cState FluxRoe_n(const Chem2D_pState &Wl,
   
 }
 
-Chem2D_cState FluxRoe_n(const Chem2D_cState &Ul,
-			const Chem2D_cState &Ur,
-			const Vector2D &norm_dir, 
-			const int &Preconditioning,
-			const int &flow_type_flag,
-			const double &delta_n ) {
+LESPremixed2D_cState FluxRoe_n(const LESPremixed2D_cState &Ul,
+			       const LESPremixed2D_cState &Ur,
+			       const Vector2D &norm_dir, 
+			       const int &Preconditioning,
+			       const int &flow_type_flag,
+			       const double &delta_n ) {
     return (FluxRoe_n(Ul.W(), Ur.W(), norm_dir,
 		      Preconditioning,flow_type_flag,delta_n));
 }
@@ -4071,11 +4456,11 @@ Chem2D_cState FluxRoe_n(const Chem2D_cState &Ul,
  * M.-S. Liou (J. Comp. Physics 2006).                                *
  *                                                                    *
  **********************************************************************/
-Chem2D_cState FluxAUSMplus_up(const Chem2D_pState &Wl,
-			      const Chem2D_pState &Wr) {
+LESPremixed2D_cState FluxAUSMplus_up(const LESPremixed2D_pState &Wl,
+				     const LESPremixed2D_pState &Wr) {
 
-  Chem2D_cState Flux, Convected_Quantities;
-  double beta = 0.125, sigma = 1.0, Kp =0.25, Ku = 0.5/*0.75*/;
+  LESPremixed2D_cState Flux, Convected_Quantities;
+  double beta = 0.125, sigma = 0.75, Kp =0.25, Ku = 0.75;
   double alpha, rhohalf, mass_flux_half;
   double ahalf, Ml, Mr, Mplus, Mminus, Mhalf, pplus, pminus, phalf;
   //double al, ar, atilde_l, atilde_r;
@@ -4087,7 +4472,7 @@ Chem2D_cState FluxAUSMplus_up(const Chem2D_pState &Wl,
 //   atilde_r = sqr(ar)/max(ar, -Wr.v.x);
 //   ahalf = min(atilde_l, atilde_r);
 
-  ahalf = HALF*(Wl.a() + Wr.a());
+  ahalf = HALF*(Wl.amodified() + Wr.amodified());
   rhohalf = HALF*(Wl.rho + Wr.rho); 
   
 
@@ -4100,12 +4485,12 @@ Chem2D_cState FluxAUSMplus_up(const Chem2D_pState &Wl,
   double M2_bar, M2_ref, fa;
   M2_bar = (Wl.v.x*Wl.v.x + Wr.v.x*Wr.v.x)/(TWO*ahalf*ahalf);
   M2_ref = min(ONE, max(M2_bar, Wl.Mref*Wl.Mref));
-  if (M2_ref > ONE || M2_ref < 0.0) cout << "\nM2_ref out of range";
+  if (M2_ref > ONE || M2_ref < 0.0) cout << "\nM2_ref out of range, FluxAUSMplus_up.";
   //fa = sqrt(M2_ref)*(TWO - sqrt(M2_ref));
   fa = sqrt(sqr(ONE - M2_ref)*M2_bar + FOUR*M2_ref)/(ONE + M2_ref);
-  if (fa > ONE || fa <= ZERO) cout << "\nfa out of range";
+  if (fa > ONE || fa <= ZERO) cout << "\nfa out of range, FluxAUSMplus_up.";
   alpha = (3.0/16.0)*(-4.0 + 5.0*fa*fa);
-  if (alpha < (-3.0/4.0)  ||  alpha > (3.0/16.0)) cout << "\nalpha out of range";
+  if (alpha < (-3.0/4.0)  ||  alpha > (3.0/16.0)) cout << "\nalpha out of range, FluxAUSMplus_up.";
 
 
   // Determine the left state split Mach number:
@@ -4130,9 +4515,9 @@ Chem2D_cState FluxAUSMplus_up(const Chem2D_pState &Wl,
 
   // Determine the intermediate state Mach number, pressure and mass flux:
   Mhalf = Mplus + Mminus
-    - (Kp/fa)*max((ONE - sigma*M2_bar), ZERO)*(Wr.p - Wl.p)/(rhohalf*ahalf*ahalf);
+    - (Kp/fa)*max((ONE - sigma*M2_bar), ZERO)*(Wr.pmodified() - Wl.pmodified())/(rhohalf*ahalf*ahalf);
 
-  phalf = pplus*Wl.p + pminus*Wr.p
+  phalf = pplus*Wl.pmodified() + pminus*Wr.pmodified()
     - Ku*pplus*pminus*TWO*rhohalf*(fa*ahalf)*(Wr.v.x - Wl.v.x);
 
   mass_flux_half = (Mhalf > ZERO) ? ahalf*Mhalf*Wl.rho : ahalf*Mhalf*Wr.rho; 
@@ -4145,11 +4530,9 @@ Chem2D_cState FluxAUSMplus_up(const Chem2D_pState &Wl,
     Convected_Quantities.rhov.y = Wl.v.y; 
     Convected_Quantities.E = Wl.H()/Wl.rho;
 
-//     if(Wl.nscal > 0){
-//       for(int i=0; i<Wl.nscal; ++i){
-// 	Convected_Quantities.rhoscalar[i] = Wl.scalar[i];
-//       }
-//     }
+    if(Wl.nscal){
+      for(int i=0; i<Wl.nscal; ++i) Convected_Quantities.rhoscalar[i] = Wl.scalar[i];
+    }
 
     for(int i=0; i<Wl.ns; ++i){
       Convected_Quantities.rhospec[i].c = Wl.spec[i].c;
@@ -4161,11 +4544,9 @@ Chem2D_cState FluxAUSMplus_up(const Chem2D_pState &Wl,
     Convected_Quantities.rhov.y = Wr.v.y; 
     Convected_Quantities.E = Wr.H()/Wr.rho;
 
-//     if(Wr.nscal > 0){
-//       for(int i=0; i<Wr.nscal; ++i){
-// 	Convected_Quantities.rhoscalar[i] = Wr.scalar[i];
-//       }
-//     }
+    if(Wr.nscal){
+      for(int i=0; i<Wr.nscal; ++i) Convected_Quantities.rhoscalar[i] = Wr.scalar[i];
+    }
 
     for(int i=0; i<Wr.ns; ++i){
       Convected_Quantities.rhospec[i].c = Wr.spec[i].c;
@@ -4184,8 +4565,8 @@ Chem2D_cState FluxAUSMplus_up(const Chem2D_pState &Wl,
 
 }
 
-Chem2D_cState FluxAUSMplus_up(const Chem2D_cState &Ul,
-			      const Chem2D_cState &Ur) {
+LESPremixed2D_cState FluxAUSMplus_up(const LESPremixed2D_cState &Ul,
+				     const LESPremixed2D_cState &Ur) {
   return FluxAUSMplus_up(Ul.W(),Ur.W());
 }
 
@@ -4203,12 +4584,12 @@ Chem2D_cState FluxAUSMplus_up(const Chem2D_cState &Ul,
  * intermediate  state in terms of the rotated solution states.       *
  * See M.-S. Liou (J. Comp. Physics 2006).                            *
  **********************************************************************/
-Chem2D_cState FluxAUSMplus_up_n(const Chem2D_pState &Wl,
-				const Chem2D_pState &Wr,
-				const Vector2D &norm_dir) {
+LESPremixed2D_cState FluxAUSMplus_up_n(const LESPremixed2D_pState &Wl,
+				       const LESPremixed2D_pState &Wr,
+				       const Vector2D &norm_dir) {
 
-  Chem2D_pState Wl_rotated(Wl), Wr_rotated(Wr);
-  Chem2D_cState Flux_rotated;
+  LESPremixed2D_pState Wl_rotated(Wl), Wr_rotated(Wr);
+  LESPremixed2D_cState Flux_rotated;
 
   /* Determine the direction cosine's for the frame rotation. */
    double cos_angle = norm_dir.x; 
@@ -4231,7 +4612,7 @@ Chem2D_cState FluxAUSMplus_up_n(const Chem2D_pState &Wl,
 
   // Rotate back to the original Cartesian reference frame and return
   // the solution flux.
-  Chem2D_cState Flux(Flux_rotated);
+  LESPremixed2D_cState Flux(Flux_rotated);
 
   Flux.rhov.x = Flux_rotated.rhov.x*cos_angle - Flux_rotated.rhov.y*sin_angle;
   Flux.rhov.y = Flux_rotated.rhov.x*sin_angle + Flux_rotated.rhov.y*cos_angle;
@@ -4243,9 +4624,9 @@ Chem2D_cState FluxAUSMplus_up_n(const Chem2D_pState &Wl,
 
 }
 
-Chem2D_cState FluxAUSMplus_up_n(const Chem2D_cState &Ul,
-				const Chem2D_cState &Ur,
-				const Vector2D &norm_dir) {
+LESPremixed2D_cState FluxAUSMplus_up_n(const LESPremixed2D_cState &Ul,
+				       const LESPremixed2D_cState &Ur,
+				       const Vector2D &norm_dir) {
   return FluxAUSMplus_up_n(Ul.W(),Ur.W(),norm_dir);
 }
 
@@ -4265,20 +4646,22 @@ Chem2D_cState FluxAUSMplus_up_n(const Chem2D_cState &Ul,
  * of the neighbouring cells.                                         *
  *                                                                    *
  **********************************************************************/
-Chem2D_cState Viscous_FluxArithmetic_n(const Chem2D_cState &Ul,
-   			               const Chem2D_pState &dWdx_l,
-			               const Chem2D_pState &dWdy_l,
-				       const Chem2D_cState &Ur,
-   			               const Chem2D_pState &dWdx_r,
-			               const Chem2D_pState &dWdy_r,
-                                       const int Flow_Type,
-				       const Vector2D &norm_dir) {
+LESPremixed2D_cState Viscous_FluxArithmetic_n(const LESPremixed2D_cState &Ul,
+					      const LESPremixed2D_pState &dWdx_l,
+					      const LESPremixed2D_pState &dWdy_l,
+					      const LESPremixed2D_cState &Ur,
+					      const LESPremixed2D_pState &dWdx_r,
+					      const LESPremixed2D_pState &dWdy_r,
+					      const int Flow_Type,
+					      const int Axisymmetric,
+					      const Vector2D X,
+					      const Vector2D &norm_dir) {
 
-  Chem2D_cState Fx, Fy;
+  LESPremixed2D_cState Fx, Fy;
   Vector2D i = Vector2D(1,0), j = Vector2D(0,1);
 
-  Fx = HALF*(Ul.Viscous_Flux_x(dWdx_l, Flow_Type) + Ur.Viscous_Flux_x(dWdx_r, Flow_Type));
-  Fy = HALF*(Ul.Viscous_Flux_y(dWdy_l, Flow_Type) + Ur.Viscous_Flux_y(dWdy_r, Flow_Type));
+  Fx = HALF*(Ul.Viscous_Flux_x(dWdx_l, dWdy_l, Flow_Type, Axisymmetric, X) + Ur.Viscous_Flux_x(dWdx_r, dWdy_r, Flow_Type, Axisymmetric, X));
+  Fy = HALF*(Ul.Viscous_Flux_y(dWdx_l, dWdy_l, Flow_Type, Axisymmetric, X) + Ur.Viscous_Flux_y(dWdx_r, dWdy_r, Flow_Type, Axisymmetric, X));
 
   return (Fx*dot(i,norm_dir) + Fy*dot(j,norm_dir));
 
@@ -4292,15 +4675,15 @@ Chem2D_cState Viscous_FluxArithmetic_n(const Chem2D_cState &Ul,
  * the primitive variables.                                           *
  *                                                                    *
  **********************************************************************/
-Chem2D_cState Viscous_Flux_n(Chem2D_pState &W,
-			     const Chem2D_pState &dWdx,
-			     const Chem2D_pState &dWdy,
-                             const int Flow_Type,
-			     const int Axisymmetric,
-			     const Vector2D X,
-			     const Vector2D &norm_dir) {
+LESPremixed2D_cState Viscous_Flux_n(LESPremixed2D_pState &W,
+				    const LESPremixed2D_pState &dWdx,
+				    const LESPremixed2D_pState &dWdy,
+				    const int Flow_Type,
+				    const int Axisymmetric,
+				    const Vector2D X,
+				    const Vector2D &norm_dir) {
 
-  Chem2D_cState U;
+  LESPremixed2D_cState U;
   double Temperature, Rmix;
   Vector2D grad_T;
   Vector2D i = Vector2D(1,0), j = Vector2D(0,1);
@@ -4313,9 +4696,9 @@ Chem2D_cState Viscous_Flux_n(Chem2D_pState &W,
   U.rho = W.rho;
   U.rhov = W.rhov();
   U.E = W.E();
-  U.rhok = W.rho*W.k;
-  U.rhoomega = W.rho*W.omega;
-  for(int i=0; i<W.ns; i++){
+  for(int i=0; i<W.nscal; ++i) U.rhoscalar[i] = W.rho*W.scalar[i];
+  
+  for(int i=0; i<W.ns; ++i){
     U.rhospec[i].c = W.rho*W.spec[i].c;
   } 
  
@@ -4326,17 +4709,22 @@ Chem2D_cState Viscous_Flux_n(Chem2D_pState &W,
  
   // Molecular (Laminar) diffusion of species
   // for each of the "n" species
-  for( int k=0; k<U.ns; k++){
+  for( int k=0; k<U.ns; ++k){
     /***************** Diffusion coefficients **********************/
     // using global Schmidt number relation Scs = mu/rho*Ds
+#ifdef THICKENED_FLAME_ON
+    U.rhospec[k].diffusion_coef = (W.mu()/(W.flame.WF*W.flame.TF))/U.Schmidt[k];
+#else
     U.rhospec[k].diffusion_coef = W.mu()/U.Schmidt[k];
+#endif
     /***************** mass fraction gradients *********************/
     U.rhospec[k].gradc.x = U.rho * dWdx.spec[k].c;
     U.rhospec[k].gradc.y = U.rho * dWdy.spec[k].c;
   }
   
   //Molecular (laminar) stress tensor
-  W.Laminar_Stress(dWdx,dWdy, Flow_Type,Axisymmetric, X);
+  Tensor2D strain_rate = W.Strain_Rate(dWdx,dWdy, Flow_Type,Axisymmetric, X); 
+  W.Laminar_Stress(strain_rate);
   U.tau = W.tau;
 
   //Molecular (laminar) heat flux
@@ -4347,24 +4735,27 @@ Chem2D_cState Viscous_Flux_n(Chem2D_pState &W,
   
   //Turbulent heat flux
   //Thermal conduction, q = - kappa * grad(T)
-  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-      Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) { 
-       
-    U.theta = - W.eddy_viscosity()*W.Cp()/W.Pr_turb()*grad_T;
+  if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
+      Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
+ 
+    double mut = W.mu_t(strain_rate);
+    double Dm_t = W.Dm_turb(mut);
+
+    U.theta = - mut*W.Cp()/W.Pr_turb()*grad_T;
     //Thermal Diffusion, q -= rho * sum ( hs * Ds *gradcs)   
-    for (int k=0; k<U.ns; k++) {
-      U.theta -= W.Dm_turb()*U.rhospec[k].gradc*
-	(U.specdata[k].Enthalpy(Temperature)+U.specdata[k].Heatofform());
+    for (int k=0; k<U.ns; ++k) {
+      U.theta -= Dm_t*U.rhospec[k].gradc*
+	(/*U.specdata[k].Enthalpy(Temperature)+*/U.specdata[k].Heatofform());
     }
-    // NOTE: WASTEFUL AS "Strain_Rate" is called in Laminar_Stress as well,
-    //Turbulnent stress 
-    W.Reynolds_Stress(dWdx,dWdy, Flow_Type,Axisymmetric, X); 
+    
+    //SFS stresses 
+    W.SFS_Stress(strain_rate); 
     U.lambda = W.lambda;
 
   } 
 
-  return (U.Viscous_Flux_x(dWdx, Flow_Type)*dot(i,norm_dir) 
-	  + U.Viscous_Flux_y(dWdy, Flow_Type)*dot(j,norm_dir));
+  return (U.Viscous_Flux_x(dWdx, dWdy, Flow_Type, Axisymmetric, X)*dot(i,norm_dir) 
+	  + U.Viscous_Flux_y(dWdx, dWdy, Flow_Type, Axisymmetric, X)*dot(j,norm_dir));
 
 }
 
@@ -4374,7 +4765,7 @@ Chem2D_cState Viscous_Flux_n(Chem2D_pState &W,
  * This routine computes and returns the shear stress at a wall.      *
  *                                                                    *
  **********************************************************************/
-double WallShearStress(const Chem2D_pState &W1,
+double WallShearStress(const LESPremixed2D_pState &W1,
 		       const Vector2D &X1,
 		       const Vector2D &X2,
 		       const Vector2D &X3,
@@ -4382,12 +4773,12 @@ double WallShearStress(const Chem2D_pState &W1,
 
   double l21, l32, l13, A, dWdn;
   Vector2D n21, n32, n13;
-  Chem2D_pState W2, W3, W_face, dWdx, dWdy;
+  LESPremixed2D_pState W2, W3, W_face, dWdx, dWdy;
 
   // Initialze W2 and W3.
   W2.Vacuum(); W2.rho = W1.rho; W2.p = W1.p;
   W3.Vacuum(); W3.rho = W1.rho; W3.p = W1.p;
-  for(int i=0; i<W1.ns; i++){
+  for(int i=0; i<W1.ns; ++i){
     W2.spec[i].c = W1.spec[i].c;
     W3.spec[i].c = W1.spec[i].c;
   }

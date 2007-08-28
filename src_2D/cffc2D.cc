@@ -59,6 +59,7 @@ using namespace std;
 #include "Dusty2D/Dusty2DQuad.h"
 #include "Ion5Moment2D/Ion5Moment2DQuad.h"
 #include "Electrostatic2D/Electrostatic2DQuad.h"
+#include "LESPremixed2D/LESPremixed2DQuad.h"
 #include "LevelSet2D/LevelSet2DQuad.h"
 #include "Chem2D/Chem2DQuad.h"
 #include "NavierStokes2D/NavierStokes2DQuad.h"
@@ -304,6 +305,11 @@ int main(int num_arg, char *arg_ptr[]) {
   } else if (strcmp(Equation_Type, "ElectroStatic2D") == 0) {
       error_flag = Electrostatic2DQuadSolver(Input_File_Name_ptr,
                                           batch_flag);
+
+  /* LESPremixed2D */
+  } else if (strcmp(Equation_Type, "LESPremixed2D") == 0) {
+      error_flag = LESPremixed2DQuadSolver(Input_File_Name_ptr,
+					   batch_flag);
 
   /* LevelSet2D */
   } else if (strcmp(Equation_Type, "LevelSet2D") == 0) {

@@ -1,38 +1,26 @@
-/****************** Chem2DInput.h ************************************
+/****************** LESPremixed2DInput.h ************************************
   This class defines the all the input parameters read from the 
   standard input and the input parameter file.  It is based on 
-  the Euler2DInput class and extended for the Chem2D flow
-  solver.  The main changes are the addition of:
-           
-   -> Mulitple species
-         -User Defined
-   -> Reaction Mechanisms
-         -User Defined
-   -> Thermally Perfect Thermodynamic Properties
-          -P, T, rho, Vel, etc... ie functions of Temperature
-   -> Viscosity
-   -> Gravity
-   -> Low Mach Number Precondtioning 
- 
-NEW
+  the Chem2DInput class and extended for the LESPremixed2D flow
+  solver.
 
-  - based on Euler2DInput.h 
+  - based on Chem2DInput.h 
 ***********************************************************************/
 
 
-#ifndef _CHEM2D_INPUT_INCLUDED
-#define _CHEM2D_INPUT_INCLUDED
+#ifndef _LESPREMIXED2D_INPUT_INCLUDED
+#define _LESPREMIXED2D_INPUT_INCLUDED
 
-/* Include 2D Euler state, 2D cell, 2D quadrilateral multiblock 
+/* Include 2D LES Premixed state, 2D cell, 2D quadrilateral multiblock 
    grid, and NASA rotor header files. */
 
 #include <cstdlib> 
 
 using namespace std;
 
-#ifndef _CHEM2D_STATE_INCLUDED
-#include "Chem2DState.h"
-#endif // _CHEM2D_STATE_INCLUDED
+#ifndef _LESPREMIXED2D_STATE_INCLUDED
+#include "LESPremixed2DState.h"
+#endif // _LESPREMIXED2D_STATE_INCLUDED
 
 #ifndef _CELL2D_INCLUDED
 #include "../Grid/Cell2D.h"
@@ -58,24 +46,24 @@ using namespace std;
 #endif // _ICEMCFD_INCLUDED
 
 /* Define the structures and classes. */
-#define	INPUT_PARAMETER_LENGTH_CHEM2D    128
+#define	INPUT_PARAMETER_LENGTH_LESPREMIXED2D    128
 
 //Enviroment Flag 
 #define PATHVAR "CFFC_Path"
 
 /*!
- * Class:  Chem2D_Input_Parameters
+ * Class:  LESPremixed2D_Input_Parameters
  *
- * @brief Definition and manipulation of 2D chemical reacting gas input
+ * @brief Definition and manipulation of 2D premixed reacting gas input
  *        variables.
  *
  */
-class Chem2D_Input_Parameters{
+class LESPremixed2D_Input_Parameters{
   private:
   public:
   //@{ @name Input file parameters.
   //! Input file name:
-  char Input_File_Name[INPUT_PARAMETER_LENGTH_CHEM2D];
+  char Input_File_Name[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   //! Input file stream:
   ifstream Input_File;
   //! Input file line number:
@@ -86,7 +74,7 @@ class Chem2D_Input_Parameters{
   int Solution_Parameters_Index;
   
   // Time integration type indicator and related input parameters:
-  char Time_Integration_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
+  char Time_Integration_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int i_Time_Integration;
   int Time_Accurate, Local_Time_Stepping, 
       Maximum_Number_of_Time_Steps, N_Stage;
@@ -112,12 +100,12 @@ class Chem2D_Input_Parameters{
   //@}
 
   //@{ @name Reconstruction type indicator and related input parameters:
-  char Reconstruction_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
+  char Reconstruction_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int i_Reconstruction;
   //@}
 
   //@{ @name Limiter type indicator and related input parameters:
-  char Limiter_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
+  char Limiter_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int i_Limiter;
   int  Freeze_Limiter;
   int i_Residual_Variable;
@@ -125,63 +113,98 @@ class Chem2D_Input_Parameters{
   //@}
 
   //@{ @name Flux function type and related input parameters:
-  char Flux_Function_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
+  char Flux_Function_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int i_Flux_Function;
-  char Viscous_Flux_Evaluation_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
+  char Viscous_Flux_Evaluation_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int i_Viscous_Flux_Evaluation;
   //@}
 
   //@{ @name Initial condition type indicator and related input parameters:
-  char ICs_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
+  char ICs_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int i_ICs;
   int i_Grid_Level;
   
   //Pa, K, m/s, degress from horizontal
   double Pressure, Temperature, Flow_Angle;
   double Mach_Number_Reference,Mach_Number_Reference_target,Mach_Number,Re_lid;
-  int Preconditioning,Dual_Time_Stepping;
+  int Preconditioning, Dual_Time_Stepping;
   //@}
 
-  //@{ @name Chemical reacting flow inpput parameters.
+  //@{ @name Reacting flow input parameters.
   string react_name;
-  char React_Name[INPUT_PARAMETER_LENGTH_CHEM2D];
+  char React_Name[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   char **Multispecies;
   //! Array of species names
   string *multispecies;
   //! Array of mass fractions
   double *mass_fractions;
-  int num_species;
-  Chem2D_pState Wo;
-  Chem2D_cState Uo;
   
 
+  string scalar_system_name;
+  char Scalar_system_name[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
+  char **Scalars;
+  //! Array of scalar names
+  string *scalars;
+  //! Array of scalar values
+  double *scalar_values;
+
+  int num_species;
+  int num_scalars;
+  LESPremixed2D_pState Wo;
+  LESPremixed2D_cState Uo;
+  
+ 
   //! Transport data type
-  char trans_type[INPUT_PARAMETER_LENGTH_CHEM2D];
+  char trans_type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int  i_trans_type; 
+
 
   //! BC Pressure Gradient 
   double Pressure_Gradient;
 
   //! Root path of CFFC 
-  char CFFC_Path[INPUT_PARAMETER_LENGTH_CHEM2D];
+  char CFFC_Path[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   void get_cffc_path();
   //@}
 
+
+  //@{ @name Subfilter scale modelling and related parameters:
+  double Smagorinsky_Constant;
+  double Yoshizawa_coefficient;
+  double filter_width;
+  //@}
+
+  //@{ @name Premixed flame parameters:
+  double laminar_flame_speed;
+  double laminar_flame_thickness;
+  double TFactor;
+  double Fresh_Fuel_Mass_Fraction, Burnt_Fuel_Mass_Fraction, 
+         Fresh_Density;
+  //@}
+
+
+  //! Energy Spectrum
+  char Spectrum_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
+  int  i_Spectrum;
+  int  Rescale_Spectrum;
+  int  Read_Fluctuations_From_File;
+  double TKEo;
+  
+
   //@{ @name Flow type indicator and related input parameters:
-  char Flow_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
+  char Flow_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int FlowType;
   //@}
 
   //@{ @name Flow geometry (planar or axisymmetric):
-  char Flow_Geometry_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
+  char Flow_Geometry_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int Axisymmetric; //0 no, 1 yes
   double Global_Schmidt;  //depricated, use each individual Schmidt's
   double *Schmidt;  //individual for each species
   int Wall_Boundary_Treatments; //0, 1,2 , automatic, wall function, low_Reynolds number
-   
+
   double Reynolds_Number;
   double Kinematic_Viscosity_Wall;
-  double Eddy_Viscosity_Limit_Coefficient;
 
   //@{ @Debug Level 0 for none, 1,2,3... level of verboseness  
   int debug_level;
@@ -191,18 +214,10 @@ class Chem2D_Input_Parameters{
   int Gravity;
   //@}
 
-  //@{ @name Turbulence parameters:
-  char Turbulence_BC_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
-  int i_Turbulence_BCs;
-  char Friction_Velocity_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
-  int i_Friction_Velocity;
-  double C_constant, von_Karman_Constant;
-  double yplus_sublayer, yplus_buffer_layer, yplus_outer_layer;
-  //@}
 
   //@{ @name Grid type indicator and related input parameters:
-  char Grid_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
-  char NACA_Aerofoil_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
+  char Grid_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
+  char NACA_Aerofoil_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int i_Grid;
   int Number_of_Cells_Idir, Number_of_Cells_Jdir, Number_of_Ghost_Cells,
       Number_of_Blocks_Idir, Number_of_Blocks_Jdir;
@@ -237,12 +252,12 @@ class Chem2D_Input_Parameters{
   //@}
 
   //@{ @name Boundary conditions:
-  char Boundary_Conditions_Specified[INPUT_PARAMETER_LENGTH_CHEM2D];
+  char Boundary_Conditions_Specified[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int BCs_Specified;
-  char BC_North_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
-  char BC_South_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
-  char BC_East_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
-  char BC_West_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
+  char BC_North_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
+  char BC_South_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
+  char BC_East_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
+  char BC_West_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int BC_North, BC_South, BC_East, BC_West;
   //@}
 
@@ -263,6 +278,8 @@ class Chem2D_Input_Parameters{
   int Number_of_Initial_Mesh_Refinements;
   //! Number of uniform mesh refinements.
   int Number_of_Uniform_Mesh_Refinements;
+  //! Number of uniform mesh coarsenings.
+  int Number_of_Uniform_Mesh_Coarsenings;
   //! Number of boundary mesh refinements.
   int Number_of_Boundary_Mesh_Refinements;
   //! Maximum number of refinement levels.
@@ -293,18 +310,18 @@ class Chem2D_Input_Parameters{
 
   //@{ @name Output parameters:
   //! Output file name:
-  char Output_File_Name[INPUT_PARAMETER_LENGTH_CHEM2D];
+  char Output_File_Name[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   //! Multi-block mesh definition input file names:
-  char Grid_File_Name[INPUT_PARAMETER_LENGTH_CHEM2D];
-  char Grid_Definition_File_Name[INPUT_PARAMETER_LENGTH_CHEM2D];
+  char Grid_File_Name[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
+  char Grid_Definition_File_Name[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   //! Restart file name:
-  char Restart_File_Name[INPUT_PARAMETER_LENGTH_CHEM2D];
+  char Restart_File_Name[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   //! Gnuplot file name:
-  char Gnuplot_File_Name[INPUT_PARAMETER_LENGTH_CHEM2D];
+  char Gnuplot_File_Name[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   //! Next_Control_Parameter:
-  char Next_Control_Parameter[INPUT_PARAMETER_LENGTH_CHEM2D];
+  char Next_Control_Parameter[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   //! Output format type indicator:
-  char Output_Format_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
+  char Output_Format_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int i_Output_Format;
   int Restart_Solution_Save_Frequency;
   int Time_Accurate_Plot_Frequency;
@@ -318,19 +335,22 @@ class Chem2D_Input_Parameters{
 
   //@{ @name Constructor and destructor.
   //! Default constructor.
-  Chem2D_Input_Parameters(){
+  LESPremixed2D_Input_Parameters(){
     Multispecies = NULL;
     multispecies = NULL; 
     mass_fractions = NULL;
+    Scalars = NULL;
+    scalars = NULL;
+    scalar_values = NULL;
     ICEMCFD_FileNames = NULL;
   }
 
   //! Default constructor.
-  ~Chem2D_Input_Parameters(){
+  ~LESPremixed2D_Input_Parameters(){
     for (int i = 0; i < 3; i++) {
       delete[] ICEMCFD_FileNames[i]; 
     } /* endfor */
-    delete[] ICEMCFD_FileNames; ICEMCFD_FileNames=NULL;
+    delete[]  ICEMCFD_FileNames; ICEMCFD_FileNames=NULL;
     //State class memory
     Deallocate(); 
   }
@@ -339,31 +359,58 @@ class Chem2D_Input_Parameters{
   //@{ @name Allocation and deallocation.
   //! Allocate Memory.
   void Allocate();
+  void Allocate_species();
+  void Allocate_scalars();
   //!  Deallocate Memory.
   void Deallocate();
+  void Deallocate_species();
+  void Deallocate_scalars();
   //@}
 
   //@{ @name Input-output operators:
-  friend ostream &operator << (ostream &out_file, const Chem2D_Input_Parameters &IP);
-  friend istream &operator >> (istream &in_file, Chem2D_Input_Parameters &IP);
+  friend ostream &operator << (ostream &out_file, const LESPremixed2D_Input_Parameters &IP);
+  friend istream &operator >> (istream &in_file, LESPremixed2D_Input_Parameters &IP);
   //@}
 
 };
 
 /*************************************************************
- * Chem2D_Input_Parameters -- Memory Management              *
+ * LESPremixed2D_Input_Parameters -- Memory Management       *
  *************************************************************/
-inline void Chem2D_Input_Parameters::Allocate() {
+inline void LESPremixed2D_Input_Parameters::Allocate() {
+  Allocate_species();
+  Allocate_scalars();
+}
+
+inline void LESPremixed2D_Input_Parameters::Deallocate() {
+  Deallocate_species();
+  Deallocate_scalars(); 
+} 
+
+inline void LESPremixed2D_Input_Parameters::Allocate_species() {
   Multispecies = new char*[num_species];
   for (int i = 0; i < num_species; i++) {
-    Multispecies[i] = new char[INPUT_PARAMETER_LENGTH_CHEM2D];
+    Multispecies[i] = new char[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   } 
+     
   multispecies = new string[num_species]; 
   mass_fractions = new double[num_species];
   Schmidt = new double[num_species];
 }
 
-inline void Chem2D_Input_Parameters::Deallocate() {
+
+inline void LESPremixed2D_Input_Parameters::Allocate_scalars() {
+  if(num_scalars > 0){
+    scalars = new string[num_scalars];
+    scalar_values = new double[num_scalars];
+    Scalars = new char*[num_scalars];
+    for (int i = 0; i < num_scalars; i++) {
+      Scalars[i] = new char[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
+    } 
+  }  
+}
+
+inline void LESPremixed2D_Input_Parameters::Deallocate_species() {
   if(Multispecies != NULL ){
     for (int i = 0; i < num_species; i++) {
       delete[] Multispecies[i]; Multispecies[i]=NULL;
@@ -381,14 +428,26 @@ inline void Chem2D_Input_Parameters::Deallocate() {
     Wo.Deallocate_static(); 
     Uo.Deallocate_static();
   }
- 
-} 
+}
+
+inline void LESPremixed2D_Input_Parameters::Deallocate_scalars() {
+  if(scalars != NULL) delete[] scalars; scalars = NULL;
+  if(scalar_values != NULL) delete[] scalar_values; 
+                            scalar_values = NULL;
+
+  if(Scalars != NULL ){
+    for (int i = 0; i < num_scalars; i++) {
+      delete[] Scalars[i]; Scalars[i]=NULL;
+    }
+    delete[] Scalars; Scalars=NULL;
+  }
+}  
 
 /*************************************************************
- * Chem2D_Input_Parameters -- Input-output operators.        *
+ * LESPremixed2D_Input_Parameters -- Input-output operators. *
  *************************************************************/
 inline ostream &operator << (ostream &out_file,
-			     const Chem2D_Input_Parameters &IP) {
+			     const LESPremixed2D_Input_Parameters &IP) {
     out_file << setprecision(6);
     out_file << "\n  -> CFFC Path: " 
 	     << IP.CFFC_Path;
@@ -411,35 +470,19 @@ inline ostream &operator << (ostream &out_file,
     if (IP.FlowType ==  FLOWTYPE_INVISCID) {
     } else if (IP.FlowType == FLOWTYPE_LAMINAR) {
       out_file << "\n  -> Laminar flow";
-    } else if (IP.FlowType == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-      out_file << "\n  -> Turbulent flow: RANS with k-epsilon turbulence model";
-      if (IP.i_Turbulence_BCs){
-         out_file <<" (wall function formulation)";
-      } else {
-         out_file <<" (low-Reynolds-number formulation)";
-      }
-    } else if (IP.FlowType == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-      out_file << "\n  -> Turbulent flow: RANS with k-oemga turbulence model";
-      if (IP.i_Turbulence_BCs) {
-         out_file <<" (wall function formulation)";
-      } else {
-         out_file <<" (low-Reynolds-number formulation)";
-      }
     } else if (IP.FlowType == FLOWTYPE_TURBULENT_LES) {
       out_file << "\n  -> Turbulent flow: LES ";
-    } else if (IP.FlowType == FLOWTYPE_TURBULENT_DES_K_OMEGA) {
-      out_file << "\n  -> Turbulent flow: DES with k-omega SGS turbulence model ";
+    } else if (IP.FlowType == FLOWTYPE_TURBULENT_LES_NO_MODEL) {
+      out_file << "\n  -> Turbulent flow: LES without SFS model";
+      out_file << "\n  -> Spectrum: " << IP.Spectrum_Type; 
+    } else if (IP.FlowType == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY) {    
+      out_file << "\n  -> Turbulent flow: Thickened flame LES with Smagorinsky model ";
+      out_file << "\n  -> Smagorinsky constant " << IP.Smagorinsky_Constant;
+      out_file << "\n  -> Spectrum: " << IP.Spectrum_Type;  
+    } else if (IP.FlowType == FLOWTYPE_TURBULENT_LES_TF_K) {
+      out_file << "\n  -> Turbulent flow: Thickened flame LES with k-equation ";
     } else if (IP.FlowType == FLOWTYPE_TURBULENT_DNS) {
       out_file << "\n  -> Turbulent flow: DNS ";
-    }
-    if (IP.FlowType == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-      out_file << "\n  -> Turbulence boundary condition: " << IP.Turbulence_BC_Type;
-      out_file << "\n  -> Friction velocity evaluation type: " << IP.Friction_Velocity_Type;
-      out_file << "\n  -> Wall surface constant, C: " << IP.C_constant
-	     << "\n  -> von Karman constant, kappa: " << IP.von_Karman_Constant;
-      out_file << "\n  -> yplus sublayer: " << IP.yplus_sublayer
-	       << ", yplus buffer layer: " << IP.yplus_buffer_layer
-	       << ", yplus outer layer: " << IP.yplus_outer_layer;
     }
 
     /*********************************************************/
@@ -536,7 +579,7 @@ inline ostream &operator << (ostream &out_file,
     if (IP.i_Residual_Variable == 4) out_file <<" energy ";
     out_file << "\n  -> Flux Function: " 
              << IP.Flux_Function_Type;
-    /********** CHEM2D ****************************/
+    /********** LESPREMIXED2D ****************************/
     out_file << "\n  -> Reaction Mechanism: " 
 	     << IP.react_name;
     out_file << "\n  -> Species: "<<IP.Wo.ns
@@ -544,7 +587,26 @@ inline ostream &operator << (ostream &out_file,
     for(int i=0; i<IP.Wo.ns; i++){
       out_file  <<"c["<<IP.multispecies[i]<<"]= ";
       out_file  << IP.Wo.spec[i].c<<", ";
-    } 
+    }
+    out_file << "\n  -> Scalar System: "
+             << IP.scalar_system_name;
+    if(IP.Wo.nscal > 0){
+      out_file << "\n  -> Scalars: "<<IP.Wo.nscal
+             << "\n  -> Scalar variables: ";
+      for(int i=0; i<IP.Wo.nscal; i++){
+        out_file << IP.scalars[i] <<" = ";
+        out_file << IP.Wo.scalar[i] <<", ";
+      }
+    }
+    out_file << "\n  -> Transport Data: "
+             << IP.trans_type;
+    out_file << "\n  -> Thickening Factor: "
+             << IP.TFactor;
+
+    if (IP.Read_Fluctuations_From_File) {
+      out_file << "\n  -> Read Turbulent Velocity Fluctuations from File";
+    }
+
     if(IP.FlowType != FLOWTYPE_INVISCID){
       out_file << "\n  -> Schmidt Numbers for Viscous flow: ";
       for(int i=0; i <IP.Wo.ns; i++){
@@ -552,8 +614,6 @@ inline ostream &operator << (ostream &out_file,
 	out_file << IP.Schmidt[i]<<", ";
       }
     }
-    out_file << "\n  -> Transport Data: "
-             << IP.trans_type;
     /*********************************************/ 
     out_file << "\n  -> Initial Conditions: " 
              << IP.ICs_Type;
@@ -616,7 +676,7 @@ inline ostream &operator << (ostream &out_file,
        out_file << "\n  -> Driven cavity flow with lid speed: " << IP.Moving_wall_velocity
                 << " and Reynolds number: " << IP.Re_lid;
        break;
-       /******** CHEM2D ********/
+       /******** LESPREMIXED2D ********/
     case IC_GAS_MIX :
       break;
     case IC_CHEM_CORE_FLAME:
@@ -624,6 +684,10 @@ inline ostream &operator << (ostream &out_file,
     case IC_CHEM_INVERSE_FLAME:
       break;
     case IC_CHEM_1DFLAME:
+      break;
+    case IC_LESPREMIXED_2DFLAME:
+      break;
+    case IC_2DWRINKLED_FLAME:
       break;
     case IC_PRESSURE_GRADIENT_X:
       break;
@@ -636,7 +700,19 @@ inline ostream &operator << (ostream &out_file,
       out_file << "\n  -> Viscous flat plate Reynolds number: "  //<< IP.Reynolds_Number;
 	       <<IP.Wo.rho*IP.Wo.v.abs()*IP.Plate_Length/IP.Wo.mu();
       break;
-      /********** CHEM2D *******/
+    case IC_HOMOGENEOUS_TURBULENCE:
+      break;
+    case IC_MIXING_LAYER:
+      break;
+    case IC_CONTACT_SURFACE_XDIR:
+      break;
+    case IC_ACOUSTIC_WAVE:
+      break;
+    case IC_SLOWLY_IMPACTING_XDIR:
+      break;
+    case IC_VORTEX_XDIR:
+      break;
+      /********** LESPREMIXED2D *******/
     default:
       break;
     } /* endswitch */
@@ -684,6 +760,24 @@ inline ostream &operator << (ostream &out_file,
 		 << IP.Pipe_Length;
 	out_file << "\n  -> Height of Solution Domain (m): " 
 		 << IP.Pipe_Radius;
+	break;
+      case GRID_PERIODIC_BOX :
+	out_file << "\n  -> Width of Solution Domain (m): " 
+		 << IP.Box_Width;
+	out_file << "\n  -> Height of Solution Domain (m): " 
+		 << IP.Box_Height;
+	break;
+      case GRID_MIXING_LAYER_BOX :
+	out_file << "\n  -> Width of Solution Domain (m): " 
+		 << IP.Box_Width;
+	out_file << "\n  -> Height of Solution Domain (m): " 
+		 << IP.Box_Height;
+	break;
+      case GRID_VORTEX_BOX :
+	out_file << "\n  -> Width of Solution Domain (m): " 
+		 << IP.Box_Width;
+	out_file << "\n  -> Height of Solution Domain (m): " 
+		 << IP.Box_Height;
 	break;
       case GRID_FLAT_PLATE :
         out_file << "\n  -> Plate Length (m): " 
@@ -789,6 +883,9 @@ inline ostream &operator << (ostream &out_file,
              << IP.Number_of_Cells_Jdir;
     out_file << "\n  -> Number of Ghost Cells: " 
              << IP.Number_of_Ghost_Cells;
+    if (IP.Number_of_Uniform_Mesh_Coarsenings > 0)
+    out_file << "\n  -> Number of Uniform Mesh Coarsenings : " 
+             << IP.Number_of_Uniform_Mesh_Coarsenings;
     if (IP.Number_of_Initial_Mesh_Refinements > 0)
     out_file << "\n  -> Number of Initial Mesh Refinements : " 
              << IP.Number_of_Initial_Mesh_Refinements;
@@ -849,54 +946,56 @@ inline ostream &operator << (ostream &out_file,
 }
 
 inline istream &operator >> (istream &in_file,
-			     Chem2D_Input_Parameters &IP) {
+			     LESPremixed2D_Input_Parameters &IP) {
     return (in_file);
 }
 
 
 /****************** Get CFFC Path *********/
-inline void Chem2D_Input_Parameters::get_cffc_path(){
+inline void LESPremixed2D_Input_Parameters::get_cffc_path(){
+ 
   // Check to see if environment varible exists.
   if(getenv(PATHVAR) == NULL){
     cerr<<"Missing Environment Variable: "<<PATHVAR<<"\n\n"; 
     exit(1);
   }
+  
   //Set Path
   strcpy(CFFC_Path,getenv(PATHVAR));
 }
 
 
 /**************** DESTRUCTOR ******************/
-//inline Chem2D_Input_Parameters::Chem2D_Input_Parameters(){
+//inline LESPremixed2D_Input_Parameters::LESPremixed2D_Input_Parameters(){
 //  delete[] mass_fractions;
 //}
 
 /*************************************************************
- * Chem2D_Input_Parameters -- External subroutines.         *
+ * LESPremixed2D_Input_Parameters -- External subroutines.   *
  *************************************************************/
 
-extern void Open_Input_File(Chem2D_Input_Parameters &IP);
+extern void Open_Input_File(LESPremixed2D_Input_Parameters &IP);
 
-extern void Close_Input_File(Chem2D_Input_Parameters &IP);
+extern void Close_Input_File(LESPremixed2D_Input_Parameters &IP);
 
-extern void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP);
+extern void Set_Default_Input_Parameters(LESPremixed2D_Input_Parameters &IP);
 
-extern void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP);
+extern void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP);
 
 #ifdef _MPI_VERSION
-extern void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
+extern void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP,
                                        MPI::Intracomm &Communicator, 
                                        const int Source_CPU);
 #endif
 
-extern void Get_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP);
+extern void Get_Next_Input_Control_Parameter(LESPremixed2D_Input_Parameters &IP);
 
-extern int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP);
+extern int Parse_Next_Input_Control_Parameter(LESPremixed2D_Input_Parameters &IP);
 
-extern int Process_Input_Control_Parameter_File(Chem2D_Input_Parameters &Input_Parameters,
+extern int Process_Input_Control_Parameter_File(LESPremixed2D_Input_Parameters &Input_Parameters,
                                                 char *Input_File_Name_ptr,
                                                 int &Command_Flag);
 
-extern void Equivalence_Ratio(const double &phi);
+/* extern void Equivalence_Ratio(const double &phi); */
 
-#endif /* _CHEM2D_INPUT_INCLUDED  */
+#endif /* _LESPREMIXED2D_INPUT_INCLUDED  */

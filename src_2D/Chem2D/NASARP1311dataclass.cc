@@ -30,12 +30,43 @@
 ***************************************************************************/
 
 //NASARP1311data::NASARP1311data(string &spec)
-void NASARP1311data::Getdata(string spec, const char *PATH)
+void NASARP1311data::Getdata(string spec, const char *PATH, const int &trans_data)
 {
+
+  // set transport flag
+  trans_type = trans_data;
+
   //Set Data path for thermo.inp and trans.inp
   Set_Path_Names(PATH);
+
+  // get the thermodynamic data
+  GetThermoData(spec);
+
+  // get the tranport data and initialize function pointers
+  if (trans_type == TRANSPORT_NASA) {
+    pt_Viscosity = &NASARP1311data::Viscosity_NASA;
+    pt_ThermalConduct = &NASARP1311data::ThermalConduct_NASA;
+    pt_dViscositydT = &NASARP1311data::dViscositydT_NASA;
+    GetTransDataNASA(spec);
+  } else if (trans_type == TRANSPORT_LENNARD_JONES) {
+    pt_Viscosity = &NASARP1311data::Viscosity_LJ_Poly;            // fit a polynomial
+    pt_ThermalConduct = &NASARP1311data::ThermalConduct_LJ_Poly;  // fit a polynomial
+    //pt_Viscosity = &NASARP1311data::Viscosity_LJ;
+    //pt_ThermalConduct = &NASARP1311data::ThermalConduct_LJ;
+    pt_dViscositydT = &NASARP1311data::dViscositydT_LJ;
+    GetTransDataLJ(spec);   
+  } else {
+    cerr << "Error - Getdata(): Never heard of this transport dataset!";
+    exit(-1);
+  }
+   
+}
+
+/********************* GET THERMO DATA *******************************/
+void NASARP1311data::GetThermoData(const string spec) {
   
-  if(temp_ranges_thermo != 0) {deallocate();}
+  if(temp_ranges_thermo != 0) { deallocate_thermo_data(); }
+
 
   //------------ READ IN WHAT SPECIES ---------------------//
   species = spec;
@@ -50,7 +81,6 @@ void NASARP1311data::Getdata(string spec, const char *PATH)
 
   //------------- OPEN DATA FILES ------------------------//
   ifstream thermodatafile(datafilename_thermo);
-  ifstream transdatafile(datafilename_trans);
 
   //Check to see if successful
   if(thermodatafile.fail()){ 
@@ -178,10 +208,38 @@ void NASARP1311data::Getdata(string spec, const char *PATH)
   //close thermodynamic data file
   thermodatafile.close();
 
+}
+
+/********************* GET TRANS DATA *******************************/
+void NASARP1311data::GetTransDataNASA(const string spec) {
+
+  if(temp_ranges_V != 0) { deallocate_trans_V(); }
+  if(temp_ranges_C != 0) { deallocate_trans_C(); }
+  
+  //------------ READ IN WHAT SPECIES ---------------------//
+  species = spec;
+  //add a space at the end of the string, necessary for search accuracy
+  species += ' ';
+  
+  //variables
+  string line;
+  int spec_l;
+   
+  spec_l = species.length();
+  
+  
+  //------------- OPEN DATA FILES ------------------------//
+  ifstream transdatafile(datafilename_trans);
+  
+  //Check to see if successful
+  if(transdatafile.fail()){ 
+    cerr<<"\nError opening file: "<<datafilename_trans<<endl;
+    exit(0); 
+  }
+
   //------------------------------------------------------------//
   //-------------- FIND SPECIES TRANSPORT DATA -----------------//
   //------------------------------------------------------------//
-  string line;
 
   //adding 20 spaces to make sure the data is for pure species
   //not binary data which would have another species name 
@@ -218,7 +276,7 @@ void NASARP1311data::Getdata(string spec, const char *PATH)
     temp_ranges_C = stoi(C);
   }
 
-  //container for cofficients of size temp_ranges
+  //container for coefficients of size temp_ranges
    trans_viscosity = new transcoef[temp_ranges_V]; 
    trans_thermconduct = new transcoef[temp_ranges_C];
 
@@ -302,8 +360,156 @@ void NASARP1311data::Getdata(string spec, const char *PATH)
   species = species.replace(species.find("                     "),21,""); //21 spaces
   //close transport data file
   transdatafile.close();
+}
 
-}  //END INPUT
+/********************* GET TRANS DATA *******************************/
+void NASARP1311data::GetTransDataLJ(const string spec) {
+  // declares
+  ifstream in;
+  string species;
+  string line, temp;
+  int species_l;
+  
+  // creat the search string
+  species = spec + ' ';
+  species_l = species.length();
+
+  //---------------------------------
+  // Get transport properties  
+  //---------------------------------
+ 
+  // open the transport data file
+  in.open(datafilename_trans);
+  if(in.fail()){ 
+    cerr<<"\nError opening file: tran.dat" <<endl;
+    exit(0); 
+  }
+	   
+  // search for the species
+  do{
+    getline(in,line);
+  } 
+#ifdef _GNU_GCC_296 //redhat 7.3 gcc-2.96 
+  while( line.compare(species,0,species_l) != 0 && !in.eof() );
+#else //alpha & redhat 9.0 gcc-3.22
+  while( line.compare(0,species_l,species) != 0 && !in.eof() );
+#endif
+
+  // if we reached the end of the file and haven't found the species, error
+  if(in.eof()){
+    cerr<<" Species: "<<species<<" not in tran.dat"<<endl;
+    exit(0);
+  }
+
+  // get the geometry factor
+  g = stoi( line.substr(19,1) );
+  
+  // get the potential well-depth / boltzman constant
+  eps = stof( line.substr(20,10) ) * BOLTZMANN;
+ 
+  // get the collision diameter in Angstroms and convert to m
+  sigma = stof( line.substr(30,10) ) * 1.0E-10;  
+  
+  // get the dipole moment in Debye and convert to m^1.5 J^0.5
+  mu = stof( line.substr(40,10) ) * 1.0E-25*sqrt(10.0); 
+  
+  // get the polarizability in Angstroms^3 and convert to m^3
+  alpha = stof( line.substr(50,10) ) * 1.0E-30; 
+ 
+  // get the rotational relaxation parameter
+  Zrot = stof( line.substr(60,10) );
+  
+  // close the transport data file
+  in.close();
+
+  //cout << "\n Species "<< species <<": g = " << g << "\t eps = " << eps
+  //     << "\t sigma = " << sigma << "\n\t mu = " << mu  
+  //     << "\t alpha = " << alpha << "\t Zrot = " << Zrot;;
+
+
+  //----------------------------------
+  //    Polynomial fitting
+  //----------------------------------
+  ofstream outfile;
+
+  const int np = 100, degree = 3;
+  int ndeg = 0;
+  double dT, T, Tmin = 200.0, Tmax = 3500.0;
+  double *w, *Tlog, *spvisc, *spcond;
+
+  // assume atmospheric pressure   ?????
+  double P = 101325.0;
+
+
+  if(temp_ranges_V != 0) { deallocate_trans_V(); }
+  if(temp_ranges_C != 0) { deallocate_trans_C(); }
+
+  //container for coefficients of size temp_ranges (one range)
+  trans_viscosity = new transcoef[1]; 
+  trans_thermconduct = new transcoef[1];
+  double V_coef[degree+1];  
+  double C_coef[degree+1];
+
+  
+  w = new double[np];
+  Tlog = new double[np];
+  spvisc = new double[np];
+  spcond = new double[np];
+
+  //double Tlog[np], spvisc[np], spcond[np], w[np];
+
+  dT = (Tmax - Tmin)/double(np-1);     
+  // generate array of log(T) values
+  for (int n = 0; n < np; ++n) {
+    T = Tmin + dT*double(n);
+    Tlog[n] = log(T);
+
+    spvisc[n] = log( Viscosity_LJ(T) );
+    spcond[n] = log( ThermalConduct_LJ(T, P) );
+    w[n] = -1.0;
+  }
+  
+  // call the polynomial fitting function
+  polyfit(np, Tlog, spvisc, w, degree, ndeg, 0.0, V_coef);
+  polyfit(np, Tlog, spcond, w, degree, ndeg, 0.0, C_coef);
+
+  // move into transcoef class
+  trans_viscosity[0].Trans_coef_in(V_coef);
+  trans_thermconduct[0].Trans_coef_in(C_coef);
+
+
+  double val, fit, err, relerr;
+  outfile.open("Viscosity.dat", ios::out);
+  // evaluate max fit errors for viscosity
+  for (int n = 0; n < np; ++n) {
+    val = exp(spvisc[n]);
+    fit = exp( poly3(Tlog[n], V_coef) ); 
+    err = fit - val;
+    relerr = err/val;
+    outfile << exp(Tlog[n]) << "  " << val << "  " << fit 
+	    << "  " << relerr << endl;
+  }
+  outfile.close();
+ 
+  outfile.open("Thermal_Conductivity.dat", ios::out);
+  // evaluate max fit errors for conductivity
+  for (int n = 0; n < np; ++n) {
+    val = exp(spcond[n]);
+    fit = exp( poly3(Tlog[n], C_coef) ); 
+    err = fit - val;
+    relerr = err/val;
+    outfile << exp(Tlog[n]) << "  " << val << "  " << fit 
+	    << "  " << relerr << endl;
+  }
+  outfile.close();
+
+  // deallocate memory
+  delete[]  w;
+  delete[]  Tlog;
+  delete[]  spvisc;
+  delete[]  spcond;
+ 
+}
 
 
 /**************** Find coefficient to use *************************************/
@@ -515,7 +721,8 @@ double NASARP1311data::Entropy_mol(double Temp){
 
 
 /********************** Viscosity *********************************************/
-double NASARP1311data::Viscosity(double Temp){
+// compute the viscosity using NASA polynomial
+double NASARP1311data::Viscosity_NASA(double Temp){
   
   //find appropriate coefficients for temperature range
   int i = Which_coef(Temp,trans_viscosity,temp_ranges_V);
@@ -531,8 +738,8 @@ double NASARP1311data::Viscosity(double Temp){
   return exp(eta)*1e-7;
 }
 
-//The derivative of viscosity w.r.t Temperature
-double NASARP1311data::dViscositydT(double Temp){
+//The derivative of viscosity w.r.t Temperature using NASA polynomial
+double NASARP1311data::dViscositydT_NASA(double Temp){
   
   //find appropriate coefficients for temperature range
   int i = Which_coef(Temp,trans_viscosity,temp_ranges_V);
@@ -553,7 +760,7 @@ double NASARP1311data::dViscositydT(double Temp){
 }
 
 /****************** Thermal Conductivity ***************************************/
-double NASARP1311data::ThermalConduct(double Temp){
+double NASARP1311data::ThermalConduct_NASA(double Temp, double Press){
   
   //find appropriate coefficients for temperature range
   int i = Which_coef(Temp,trans_thermconduct,temp_ranges_C);
@@ -775,6 +982,382 @@ double NASARP1311data::ThermalConduct(double Temp){
 
 // } //END Plot_data
 
+
+/**************************************************************************
+********************* LENNARD-JONES TRANPORT PROPS ************************
+***************************************************************************/
+
+// This is an addendum to the NASARP1311 species data class
+// For additional information on the methods used to compute the transport 
+// properties, see the Chemkin 4.0 Theory Manual (2004).
+
+
+/************************************************************
+ * Description: Viscosity computed Chapman-Enskog theory    * 
+ *              See 'The properties of gases and liquids by *
+ *              Reid et al.(1987).  This is Units [N s/m^2] *
+ ************************************************************/
+double NASARP1311data::Viscosity_LJ(double T) {
+  
+  /* Compute */
+  double v = (5.0/16.0) * sqrt( PI * mol_mass  * BOLTZMANN * T / AVOGADRO ) 
+    / ( PI * sigma*sigma * Omega22( T*BOLTZMANN/eps ) );
+  
+  return v;
+}
+
+// Polynomial fit to Viscosity_LJ
+double NASARP1311data::Viscosity_LJ_Poly(double Temp){
+  double logT = log(Temp);
+  return exp( poly3(logT, trans_viscosity[0].trans_coef) );
+}
+
+
+double NASARP1311data::dViscositydT_LJ(double T) {
+  
+  /* Compute */
+  double prefactor = (5.0/16.0) * sqrt( PI * mol_mass  * BOLTZMANN  / AVOGADRO )
+    /( PI * sigma*sigma );
+  double v1 = 1.0/( 2.0 * Omega22( T*BOLTZMANN/eps ) * sqrt(T) );
+  double v2 = - sqrt(T) * dOmega22dT(T,eps) / ( pow(Omega22(T*BOLTZMANN/eps), 2.0) );
+
+  return prefactor*(v1+v2);
+ 
+}
+
+
+
+/************************************************************
+ * Description: Thermal conductivity computed Chapman-Enskog*
+ *              theory.  See 'The properties of gases and   *
+ *              liquids by Reid et al.(1987).               *
+ *              Units [W/(m K)]                             *
+ ************************************************************/
+double NASARP1311data::ThermalConduct_LJ(double T, double P) {
+ 
+  /* Declares */
+  double l;         // thermal conductivity
+  double A, B;      // constants
+  double Cv_trans;  // translational
+  double Cv_rot;    // rotational
+  double Cv_vib;    // vibrational
+  double f_trans;   // translational
+  double f_rot;     // rotational
+  double f_vib;     // vibrational
+  double Dkk;       // self diffusion coefficient
+  double v;         // viscosity
+  double d;         // density
+  double Z;         // rotational relaxation collision number
+  double Tref=298.0;// reference temperature [K]
+  double a;
+  double eta = Viscosity_LJ(T);
+  
+  
+  /* Determine molar heat capacity relationships */
+  
+  Cv_trans = 3.0/2.0;
+  
+  // for a linear  molecule
+  if (g==1) {
+    Cv_rot = 1.0;
+    Cv_vib = HeatCapacity_v(T)*mol_mass/R_UNIVERSAL - 5.0/2.0;
+  }
+  // for a non-linear  molecule
+  else if (g==2) {
+    Cv_rot = 3.0/2.0;
+    Cv_vib = HeatCapacity_v(T)*mol_mass/R_UNIVERSAL - 3.0;  
+  }
+
+  /* Compute thermal conductivity */
+  // for a monatomic gas
+  if (g==0) {
+    f_trans = 5.0/2.0;
+    l = eta * R_UNIVERSAL * f_trans*Cv_trans / mol_mass;
+  // for a non-monatonic
+  } else {
+    Dkk = BinaryDiff(*this,*this,T,P);  // self-diffusion coefficient
+    v = eta;
+    d = P*mol_mass / (R_UNIVERSAL*T);   // density
+    a = d*Dkk/v;
+    
+    Z = Zrot * F(Tref*BOLTZMANN/eps) / F(T*BOLTZMANN/eps);
+    A = 5.0/2.0 - a;
+    B = Z + (2.0/PI)*( 5.0*Cv_rot/3.0 + a );
+    f_trans = (5.0/2.0) * ( 1.0 - (2.0/PI)*(Cv_rot/Cv_trans)*(A/B) );
+    f_rot = a * ( 1.0 + (2/PI)*(A/B) );
+    f_vib = a;
+
+    l = (v*R_UNIVERSAL/mol_mass) * ( f_trans*Cv_trans + f_rot*Cv_rot + f_vib*Cv_vib  );
+  }
+  
+
+  return l;
+  
+}
+
+// Polynomial fit to ThermalConduct_LJ
+double NASARP1311data::ThermalConduct_LJ_Poly(double Temp, double Press){
+  double logT = log(Temp);
+  return exp( poly3(logT, trans_thermconduct[0].trans_coef) );
+}
+
+
+/************************************************************
+ * Function: Omega11                                        *
+ *                                                          *
+ * Description: Collision integral computed using curvefits *
+ *              published by Neufeld (1972).                * 
+ *                                                          *
+ *              T = temperature                             *
+ *              Ts = T*kB/eps                               *
+ *              where kB = bolzman constant and             *
+ *                    eps = potential well-depth [J]        *
+ *                                                          *
+ ************************************************************/
+double Omega11(const double Ts) {
+
+  // constants
+  static double A = 1.06036;
+  static double B = 0.15610;
+  static double C = 0.19300;
+  static double D = 0.47635;
+  static double E = 1.03587;
+  static double F = 1.52996;
+  static double G = 1.76474;
+  static double H = 3.89411;
+  
+  // make sure reduced temperature is within range
+  if ( Ts<0.3 || Ts>100.0 ) {
+    cerr << "Warning: Reduced temperature T*= " << Ts 
+ 	 << " outside applicable range (0.3 < T* < 100)." << endl;
+    //exit(0);
+  }
+ 
+  // compute
+  double a = A*pow(Ts,-B) + C*exp(-D*Ts) + E*exp(-F*Ts)
+    + G*exp(-H*Ts);
+  
+  return a;
+  
+}
+
+
+
+/************************************************************
+ * Function: Omega22                                        * 
+ *                                                          *
+ * Description: Collision integral computed using curvefits *
+ *              published by Neufeld (1972).                * 
+ *                                                          *
+ *              T = temperature                             *
+ *              Ts = T*kB/eps                               *
+ *              where kB = bolzman constant and             *
+ *                    eps = potential well-depth [J]        *
+ *                                                          *
+ ************************************************************/
+double Omega22(const double Ts) {
+
+  // constants
+  static double A =  1.16145;
+  static double B =  0.14874;
+  static double C =  0.52487;
+  static double D =  0.77320;
+  static double E =  2.16178;
+  static double F =  2.43787;
+  static double G =  0.0;
+  static double H =  0.0;
+  static double R = -6.435E-04;
+  static double S =  18.0323;
+  static double W = -0.76830;
+  static double P =  7.27371;
+  
+  // make sure reduced temperature is within range
+  if ( Ts<0.3 || Ts>100.0 ) {
+    cerr << "Warning: Reduced temperature T*= " << Ts 
+ 	 << " outside applicable range (0.3 < T* < 100)." << endl;
+    //exit(0);
+  }
+  
+  // compute
+  double a = A*pow(Ts,-B) + C*exp(-D*Ts) + E*exp(-F*Ts)
+    + G*exp(-H*Ts) + R*pow(Ts,B)*sin( S*pow(Ts,W) - P );
+  
+  return a;
+}
+
+ 
+/************************************************************
+ * Function: dOmega22dT                                     *
+ *                                                          *
+ * Description: Derivative of 2,2 collision integral        *
+ *              w.r.t temperature computed using curvefits  *
+ *              published by Neufeld (1972).                * 
+ *                                                          *
+ *              T = temperature                             *
+ *              Ts = T*kB/eps                               *
+ *              where kB = bolzman constant and             *
+ *                    eps = potential well-depth [J]        *
+ *                                                          *
+ ************************************************************/
+double dOmega22dT(const double T, const double eps) {
+  
+  // constants
+  static double A =  1.16145;
+  static double B =  0.14874;
+  static double C =  0.52487;
+  static double D =  0.77320;
+  static double E =  2.16178;
+  static double F =  2.43787;
+  static double G =  0.0;
+  static double H =  0.0;
+  static double R = -6.435E-04;
+  static double S =  18.0323;
+  static double W = -0.76830;
+  static double P =  7.27371;
+  
+  double ek = eps/BOLTZMANN;
+  double Ts = T/ek;
+  
+  // make sure reduced temperature is within range
+  if ( Ts<0.3 || Ts>100.0 ) {
+    cerr << "Warning: Reduced temperature T*= " << Ts 
+	 << " outside applicable range (0.3 < T* < 100)." << endl;
+    //exit(0);
+  }
+
+  // compute
+  double a = - A*B*pow(Ts,-B-1.0) - C*D*exp(-D*Ts)
+    - E*F*exp(-F*Ts) - G*H*exp(-H*Ts) 
+    + R*B*pow(Ts,B-1.0)*sin( S*pow(Ts,W) - P )
+    + R*S*W*pow(Ts,B+W-1.0)*cos( S*pow(Ts,W) - P );
+ 
+  //  A*B*pow(Ts,-B-1.0)*pow(Ts,-B)  ->  A*B*pow(Ts,-B-1.0)
+
+  return a/ek;
+}
+
+
+ 
+/************************************************************
+ * Function: F                                              *
+ *                                                          *
+ * Description: Rotational relaxation function of Parker    *
+ *              (1959) and Brau and Jonkman (1970). This    *
+ *              function allows for the computation of the  *
+ *              rotational relaxation parameter at a        *
+ *              arbitrary temperature given the value at the*
+ *              reference temperature of 298K.              *
+ *              F = Z/Zref                                  *
+ *                                                          *
+ *              T = temperature                             *
+ *              Ts = T*kB/eps                               *
+ *              where kB = bolzman constant and             *
+ *                    eps = potential well-depth [J]        *
+ *                                                          *
+ ************************************************************/
+double F(const double Ts) {
+  
+  double f = 1.0 + 0.5*pow(PI,1.5)*pow(Ts,-0.5) 
+    + ( 0.25*PI*PI+2.0 )/Ts 
+    + pow(PI,1.5)*pow(Ts,-1.5);
+  
+  return f;
+  
+}
+
+
+ 
+/************************************************************
+ * Function: BinaryDiff                                     *
+ *                                                          *
+ * Description: Diffusivity computed Chapman-Enskog         *
+ *              theory.  See 'The properties of gases and   *
+ *              liquids by Reid et al.(1987).               *
+ *              Units [m^2/s]                               *
+ *                                                          *
+ ************************************************************/
+double BinaryDiff( const NASARP1311data& s1, const NASARP1311data& s2, 
+		   const double T, const double P) {
+  
+  /* Declares*/
+  const double tol = 1.0E-6;
+  double eps;     // effective potential well-depth
+  double Ts;      // effective reduced temperature
+  double sigma;   // effective collision diameter
+  double mu;      // effective dipole moment
+  double M;       // effective molar mass
+  double d;       // diffusion coefficient
+  double alpha_n; // non-polar polarizability
+  double mu_p;    // polar dipole moment
+  double xi;      // polar correction factor
+  double f_eps;   // well depth correction factor
+  double f_sigma; // collision diameter correction factor
+  const NASARP1311data* sp;    // polar species pointer
+  const NASARP1311data* sn;    // non-polar species pointer
+  
+  
+  /* Determine effective properties */
+  
+  // the well depth
+  eps = sqrt(s1.eps*s2.eps);
+  
+  // the reduced temperature
+  Ts = T*BOLTZMANN/eps;
+  
+  // dipole moment
+  mu = sqrt(s1.mu*s2.mu);
+  
+  // collision diameter
+  sigma = 0.5*(s1.sigma + s1.sigma);
+  
+  
+  /* Determine corrections */
+  double delta1, delta2;
+  delta1 = 0.5*s1.mu*s1.mu/(s1.eps*s1.sigma*s1.sigma*s1.sigma);
+  delta2 = 0.5*s2.mu*s2.mu/(s2.eps*s2.sigma*s2.sigma*s2.sigma);
+  //cout << "\n delta1 = " << delta1 << "\t delta2 = " << delta2;
+
+
+  // for both polar or both non-polar
+  if ( ( fabs(delta1) > tol  &&  fabs(delta2) > tol)  ||  
+       ( fabs(delta1) < tol  &&  fabs(delta2) < tol) ) {
+
+    f_eps = f_sigma = 1.0;
+      
+    // for one polar and one non-polar
+  } else {
+    //cout << "\nPOLAR AND NON_POLAR";
+
+    // determine polar one
+    sp = (s1.mu>0.0 ? &s1 : &s2); // polar
+    sn = (s1.mu>0.0 ? &s2 : &s1); // nonpolar
+    
+    // the corrections factors
+    alpha_n = sn->alpha/pow(sn->sigma,3.0);
+    mu_p = sp->mu/sqrt( sp->eps*pow(sp->sigma,3.0) );
+    xi = 1.0 + 0.25*alpha_n*mu_p*sqrt(sp->eps/sn->eps);
+
+    f_eps =  xi*xi;
+    f_sigma = pow(xi, -1.0/6.0);
+
+  }
+  
+  /* apply corrections factors */
+  eps *= f_eps;
+  sigma *= f_sigma;
+  
+  
+  /* Compute diffusivity */
+  
+  // effective molar mass
+  M = s1.mol_mass*s2.mol_mass / ( AVOGADRO * (s1.mol_mass+s2.mol_mass) );
+  
+  d = (3.0/16.0) * sqrt( 2.0 * PI * pow(BOLTZMANN * T, 3.0)/M ) 
+    / ( PI * P * sigma*sigma * Omega11(Ts) );
+  
+  return d;
+  
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 ///////////////////////FUNCTIONS////////////////////////////////////////////////

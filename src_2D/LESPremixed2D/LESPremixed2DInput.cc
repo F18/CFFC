@@ -1,18 +1,18 @@
-/****************** Chem2DInput.cc ************************************
-  Constructors for the Chem2DInput class.
+/****************** LESPremixed2DInput.cc ************************************
+  Constructors for the LESPremixed2DInput class.
 
 NEW
 
-  associated header file:  Chem2DInput.h
+  associated header file:  LESPremixed2DInput.h
 ***********************************************************************/
 
-// CHEM2D Header file
-#ifndef _CHEM2D_INPUT_INCLUDED
-#include "Chem2DInput.h"
-#endif // _CHEM2D_INPUT_INCLUDED
+// LESPREMIXED2D Header file
+#ifndef _LESPREMIXED2D_INPUT_INCLUDED
+#include "LESPremixed2DInput.h"
+#endif // _LESPREMIXED2D_INPUT_INCLUDED
 
 /*************************************************************
- * Chem2D_Input_Parameters -- External subroutines.         *
+ * LESPremixed2D_Input_Parameters -- External subroutines.   *
  *************************************************************/
 
 /********************************************************
@@ -21,7 +21,7 @@ NEW
  * Opens the appropriate input data file.               *
  *                                                      *
  ********************************************************/
-void Open_Input_File(Chem2D_Input_Parameters &IP) {
+void Open_Input_File(LESPremixed2D_Input_Parameters &IP) {
 
     IP.Input_File.open(IP.Input_File_Name, ios::in);
     if (!IP.Input_File.bad()) {
@@ -37,7 +37,7 @@ void Open_Input_File(Chem2D_Input_Parameters &IP) {
  * Closes the appropriate input data file.              *
  *                                                      *
  ********************************************************/
-void Close_Input_File(Chem2D_Input_Parameters &IP) {
+void Close_Input_File(LESPremixed2D_Input_Parameters &IP) {
 
     IP.Input_File.unsetf(ios::skipws);
     IP.Input_File.close();
@@ -50,12 +50,12 @@ void Close_Input_File(Chem2D_Input_Parameters &IP) {
  * Assigns default values to the input parameters.      *
  *                                                      *
  ********************************************************/
-void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
+void Set_Default_Input_Parameters(LESPremixed2D_Input_Parameters &IP) {
 
     int i;
     char *string_ptr;
 
-    string_ptr = "Chem2D.in";
+    string_ptr = "LESPremixed2D.in";
     strcpy(IP.Input_File_Name, string_ptr);
 
     // Time-stepping parameters:
@@ -121,13 +121,33 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.Kinematic_Viscosity_Wall = 1.4590E-5;
     IP.i_Grid_Level = 0;
     
-    /******************************************/
-    /********** CHEM2D SPECIFIC ***************/
+    /*************************************************/
+    /********** LESPREMIXED2D SPECIFIC ***************/
     //define multispecies with no reactions.
     IP.react_name ="NO_REACTIONS";   
-    //strcpy(IP.React_Name,"NO_REACTIONS"); 
+    //define multispecies with no scalars
+    IP.scalar_system_name = "LAMINAR";   
+    
+    IP.Fresh_Fuel_Mass_Fraction = 0.0551;
+    IP.Burnt_Fuel_Mass_Fraction = ZERO;
+    IP.Fresh_Density = 1.1301;
+    IP.TKEo = ZERO;
     //Use air with 79% N2, and 21% 02 by volume.(ie. mol)
     IP.num_species = 2;
+    IP.num_scalars = 0;
+    // Energy spectrum for turbulence
+    string_ptr = "von-Karman-Pao";
+    strcpy(IP.Spectrum_Type, string_ptr);
+    IP.i_Spectrum = VON_KARMAN_PAO;
+    IP.Rescale_Spectrum = 0;
+    IP.Read_Fluctuations_From_File = 0;
+
+    // transport data 
+    string_ptr = "Transport-NASA";
+    strcpy(IP.trans_type, string_ptr);
+    IP.i_trans_type = TRANSPORT_NASA;
+
+
     IP.Allocate();
     IP.multispecies[0] = "N2"; 
     IP.multispecies[1] = "O2"; 
@@ -136,19 +156,21 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.Schmidt[0] = IP.Global_Schmidt;
     IP.Schmidt[1] = IP.Global_Schmidt;
 
-    // transport data 
-    string_ptr = "Transport-NASA";
-    strcpy(IP.trans_type, string_ptr);
-    IP.i_trans_type = TRANSPORT_NASA;
-
     IP.Wo.React.set_reactions(IP.react_name); 
     IP.Wo.React.set_species(IP.multispecies,IP.num_species);
+    IP.Wo.Scal_sys.scalar_set(IP.scalar_system_name);
    
     //Get Species parameters and set default initial values
-    IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			   IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type); 
-    IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			   IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type);
+    IP.Wo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies, 
+			   IP.CFFC_Path,
+			   IP.Mach_Number_Reference,
+			   IP.Schmidt,
+			   IP.i_trans_type); 
+    IP.Uo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies,
+			   IP.CFFC_Path,
+			   IP.Mach_Number_Reference,
+			   IP.Schmidt,
+			   IP.i_trans_type);
 
     //Air at STD_ATM
     IP.Pressure = IP.Wo.p;
@@ -157,13 +179,36 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.Wo.v.y =IP.Mach_Number*IP.Wo.a()*sin(TWO*PI*IP.Flow_Angle/360.00);
     IP.Wo.set_initial_values(IP.mass_fractions);
     IP.Uo.set_initial_values(IP.mass_fractions);
-    IP.Wo.k = ZERO;
-    IP.Wo.omega = ZERO;
     IP.Uo = U(IP.Wo);   
     IP.Heat_Source = ZERO;
+
+
+    IP.Smagorinsky_Constant = 0.18;
+    IP.Yoshizawa_coefficient = 0.005;
+    IP.filter_width = ZERO;
+
+    IP.Wo.set_SFSmodel_variables(IP.filter_width,
+				 IP.Smagorinsky_Constant,
+				 IP.Yoshizawa_coefficient);
+    IP.Uo.set_SFSmodel_variables(IP.filter_width,
+				 IP.Smagorinsky_Constant,
+				 IP.Yoshizawa_coefficient);
+
     
-    /***** END CHEM2D SPECFIC *****************/
-    /******************************************/
+    IP.laminar_flame_thickness = 0.446E-3; // m
+    IP.laminar_flame_speed = 0.38; // m/s
+    IP.TFactor = ONE;
+
+    IP.Wo.set_premixed_flame_variables(IP.laminar_flame_thickness,
+				       IP.laminar_flame_speed,
+				       IP.TFactor);
+    IP.Uo.set_premixed_flame_variables(IP.laminar_flame_thickness,
+				       IP.laminar_flame_speed,
+				       IP.TFactor);
+
+    /***** END LESPREMIXED2D SPECFIC *****************/
+    /*************************************************/
+
     //BC
     IP.Moving_wall_velocity = ZERO; 
     IP.Re_lid = 100.0;
@@ -180,30 +225,8 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.Gravity = 0;  //default sans gravity
 
     IP.BluffBody_Data_Usage = 0; 
-    IP.Wall_Boundary_Treatments = 0; 
+    IP.Wall_Boundary_Treatments = 0;
 
-    // Turbulence parameters:
-    string_ptr = "Direct_Integration";
-    strcpy(IP.Turbulence_BC_Type,string_ptr);
-    IP.i_Turbulence_BCs = TURBULENT_BC_DIRECT_INTEGRATION;
-    string_ptr = "Wall";
-    strcpy(IP.Friction_Velocity_Type,string_ptr);
-    IP.i_Friction_Velocity = FRICTION_VELOCITY_WALL_SHEAR_STRESS;
-    IP.C_constant = 5.0;
-    IP.von_Karman_Constant = 0.41;
-    IP.yplus_sublayer = 5.0;
-    IP.yplus_buffer_layer = 30.0;
-    IP.yplus_outer_layer = 100.0;
-    IP.Wo.set_turbulence_variables(IP.C_constant,
-				   IP.von_Karman_Constant,
-				   IP.yplus_sublayer,
-				   IP.yplus_buffer_layer,
-				   IP.yplus_outer_layer); 
-    IP.Uo.set_turbulence_variables(IP.C_constant,
-				   IP.von_Karman_Constant,
-				   IP.yplus_sublayer,
-				   IP.yplus_buffer_layer,
-				   IP.yplus_outer_layer);
 
     /* Grid Parameters */
     string_ptr = "Square";
@@ -282,6 +305,7 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     // AMR:
     IP.AMR = 0;
     IP.AMR_Frequency = 100;
+    IP.Number_of_Uniform_Mesh_Coarsenings = 0;
     IP.Number_of_Initial_Mesh_Refinements = 0;
     IP.Number_of_Uniform_Mesh_Refinements = 0;
     IP.Number_of_Boundary_Mesh_Refinements = 0;
@@ -325,7 +349,7 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.i_Output_Format = IO_TECPLOT;
     IP.Restart_Solution_Save_Frequency = 1000;
 
-    //CHEM2D
+    //LESPREMIXED2D
     IP.Time_Accurate_Plot_Frequency = 0;
 
     string_ptr = " ";
@@ -353,18 +377,18 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
  * primary processor using the MPI broadcast routine.   *
  *                                                      *
  ********************************************************/
-void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
+void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP) {
 
 #ifdef _MPI_VERSION
 
     MPI::COMM_WORLD.Bcast(IP.Input_File_Name, 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Line_Number), 
                           1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(IP.Time_Integration_Type, 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(&(IP.i_Time_Integration), 
                           1, 
@@ -406,60 +430,32 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
                           1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(IP.Reconstruction_Type, 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(&(IP.i_Reconstruction), 
                           1, 
                           MPI::INT, 0);   
     MPI::COMM_WORLD.Bcast(IP.Viscous_Flux_Evaluation_Type, 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(&(IP.i_Viscous_Flux_Evaluation), 
                           1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(IP.Limiter_Type, 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(&(IP.i_Limiter), 
                           1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(IP.Flux_Function_Type, 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(&(IP.i_Flux_Function), 
                           1, 
                           MPI::INT, 0);
-    // Turbulence parameters:
-    MPI::COMM_WORLD.Bcast(IP.Turbulence_BC_Type,
-			  INPUT_PARAMETER_LENGTH_CHEM2D,
-			  MPI::CHAR,0);
-    MPI::COMM_WORLD.Bcast(&(IP.i_Turbulence_BCs),
-			  1,
-			  MPI::INT,0);
-    MPI::COMM_WORLD.Bcast(IP.Friction_Velocity_Type,
-			  INPUT_PARAMETER_LENGTH_CHEM2D,
-			  MPI::CHAR,0);
-    MPI::COMM_WORLD.Bcast(&(IP.i_Friction_Velocity),
-			  1,
-			  MPI::INT,0);
-    MPI::COMM_WORLD.Bcast(&(IP.C_constant),
-			  1,
-			  MPI::DOUBLE,0);
-    MPI::COMM_WORLD.Bcast(&(IP.von_Karman_Constant),
-			  1,
-			  MPI::DOUBLE,0);
-    MPI::COMM_WORLD.Bcast(&(IP.yplus_sublayer),
-			  1,
-			  MPI::DOUBLE,0);
-    MPI::COMM_WORLD.Bcast(&(IP.yplus_buffer_layer),
-			  1,
-			  MPI::DOUBLE,0);
-    MPI::COMM_WORLD.Bcast(&(IP.yplus_outer_layer),
-			  1,
-			  MPI::DOUBLE,0);
     // Initial conditions:
     MPI::COMM_WORLD.Bcast(IP.ICs_Type,
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(&(IP.i_ICs), 
                           1, 
@@ -489,32 +485,71 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
 			  1,
 			  MPI::DOUBLE,0);
     /*********************************************************
-     ******************* CHEM2D SPECIFIC *********************
+     ******************* LESPREMIXED2D SPECIFIC **************
      *********************************************************/
     MPI::COMM_WORLD.Bcast(IP.CFFC_Path, 
-			  INPUT_PARAMETER_LENGTH_CHEM2D, 
+			  INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
 			  MPI::CHAR, 0);
+    //fresh and burnt fuel mass fraction
+    MPI::COMM_WORLD.Bcast(&(IP.Fresh_Fuel_Mass_Fraction), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Burnt_Fuel_Mass_Fraction), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    //fresh density
+    MPI::COMM_WORLD.Bcast(&(IP.Fresh_Density), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    //Initial turbulence kinetic energy
+    MPI::COMM_WORLD.Bcast(&(IP.TKEo), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    //Spectrum flag
+    MPI::COMM_WORLD.Bcast(IP.Spectrum_Type, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
+                          MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.i_Spectrum), 
+                          1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Rescale_Spectrum), 
+                          1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Read_Fluctuations_From_File), 
+                          1, 
+                          MPI::INT, 0);
+
+
     //reaction name
     MPI::COMM_WORLD.Bcast(IP.React_Name, 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
+			  MPI::CHAR, 0);
+    //scalar system name
+    MPI::COMM_WORLD.Bcast(IP.Scalar_system_name, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
 			  MPI::CHAR, 0);
     
     //delete current dynamic memory before changing num_species
     if(!CFFC_Primary_MPI_Processor()) {   
       IP.Deallocate();
     } 
-
-    //transport data
-    MPI::COMM_WORLD.Bcast(IP.trans_type, 
-			  INPUT_PARAMETER_LENGTH_CHEM2D, 
-			  MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.i_trans_type), 
-			  1, 
-			  MPI::INT, 0);
     //number of species
     MPI::COMM_WORLD.Bcast(&(IP.num_species), 
                           1, 
                           MPI::INT, 0);
+    //number of scalars
+    MPI::COMM_WORLD.Bcast(&(IP.num_scalars), 
+                          1, 
+                          MPI::INT, 0);
+    //transport data
+    MPI::COMM_WORLD.Bcast(IP.trans_type, 
+			  INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
+			  MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.i_trans_type), 
+			  1, 
+			  MPI::INT, 0);
+
+
     //set up new dynamic memory
     if(!CFFC_Primary_MPI_Processor()) {   
       IP.Allocate();
@@ -529,18 +564,37 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
 			    1, 
 			    MPI::DOUBLE, 0);
       MPI::COMM_WORLD.Bcast(IP.Multispecies[i], 
-			    INPUT_PARAMETER_LENGTH_CHEM2D, 
+			    INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
 			    MPI::CHAR, 0);
     }
-    //set recaction and species parameters
+    //scalar names & values
+    if(IP.num_scalars > 0){
+      for(int i=0; i < IP.num_scalars; i++){
+        MPI::COMM_WORLD.Bcast(&(IP.scalar_values[i]), 
+			    1, 
+			    MPI::DOUBLE, 0);
+        MPI::COMM_WORLD.Bcast(IP.Scalars[i], 
+			    INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
+			    MPI::CHAR, 0);
+      }
+    }
+
+    //set reaction and species parameters
     if (!CFFC_Primary_MPI_Processor()) {      
       IP.react_name = IP.React_Name;
       for (int i = 0; i < IP.num_species; i++) {
 	IP.multispecies[i] = IP.Multispecies[i];  
-      }    
+      }
+      IP.scalar_system_name = IP.Scalar_system_name;
+      if(IP.num_scalars > 0){
+        for(int i=0; i<IP.num_scalars; i++){
+          IP.scalars[i] = IP.Scalars[i];
+        }
+      }
 
-      //load reaction names
+      //load reaction and scalar names
       IP.Wo.React.set_reactions(IP.react_name);
+      IP.Wo.Scal_sys.scalar_set(IP.scalar_system_name);
       
       //Set species if non-reacting
       if( IP.Wo.React.reactset_flag == NO_REACTIONS){
@@ -549,12 +603,22 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
           
       //set the data for each
       IP.get_cffc_path();
-      IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			     IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type); 
-      IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			     IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type);
+      IP.Wo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies,
+			     IP.CFFC_Path,
+			     IP.Mach_Number_Reference,
+			     IP.Schmidt,
+			     IP.i_trans_type); 
+      IP.Uo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies,
+			     IP.CFFC_Path,
+			     IP.Mach_Number_Reference,
+			     IP.Schmidt,
+			     IP.i_trans_type);
       IP.Wo.set_initial_values(IP.mass_fractions);
       IP.Uo.set_initial_values(IP.mass_fractions);
+      if(IP.num_scalars > 0){
+        IP.Wo.set_initial_values_scal(IP.scalar_values);   
+        IP.Uo.set_initial_values_scal(IP.scalar_values);
+      }
    
       //set proper Temp & Pressure instead of defaults
       IP.Wo.rho = IP.Pressure/(IP.Wo.Rtot()*IP.Temperature); 
@@ -562,10 +626,47 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
       IP.Wo.v.zero();
 
       IP.Uo = U(IP.Wo);
-    } 
+    }
+    
+    // SFS modelling parameters
+    MPI::COMM_WORLD.Bcast(&(IP.Smagorinsky_Constant), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Yoshizawa_coefficient), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.filter_width), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    // premixed flame parameters
+    MPI::COMM_WORLD.Bcast(&(IP.laminar_flame_thickness), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.laminar_flame_speed), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.TFactor), 
+                          1, 
+                          MPI::DOUBLE, 0);  
+
+    // Reset the static variables.
+    IP.Wo.set_SFSmodel_variables(IP.filter_width,
+				 IP.Smagorinsky_Constant,
+				 IP.Yoshizawa_coefficient);
+    IP.Uo.set_SFSmodel_variables(IP.filter_width,
+				 IP.Smagorinsky_Constant,
+				 IP.Yoshizawa_coefficient);
+    IP.Wo.set_premixed_flame_variables(IP.laminar_flame_thickness,
+				       IP.laminar_flame_speed,
+				       IP.TFactor);
+    IP.Uo.set_premixed_flame_variables(IP.laminar_flame_thickness,
+				       IP.laminar_flame_speed,
+				       IP.TFactor);
+ 
     /*********************************************************
-     ******************* CHEM2D END **************************
+     ******************* LESPREMIXED2D END *******************
      *********************************************************/
+
 
    if(!CFFC_Primary_MPI_Processor()) {   
       IP.Wo.v.x = IP.Mach_Number*IP.Wo.a()*cos(TWO*PI*IP.Flow_Angle/360.00);
@@ -574,7 +675,7 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
 
     /***************************************/
     MPI::COMM_WORLD.Bcast(IP.Flow_Type, 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(&(IP.FlowType), 
                           1, 
@@ -582,7 +683,7 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
 
    /***************************************/
     MPI::COMM_WORLD.Bcast(IP.Flow_Geometry_Type, 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Axisymmetric), 
                           1, 
@@ -618,15 +719,15 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Reynolds_Number), 
                           1, 
 			  MPI::DOUBLE, 0);
-   MPI::COMM_WORLD.Bcast(&(IP.Kinematic_Viscosity_Wall), 
+    MPI::COMM_WORLD.Bcast(&(IP.Kinematic_Viscosity_Wall), 
                           1, 
 			  MPI::DOUBLE, 0);
     /**************************************/
     MPI::COMM_WORLD.Bcast(IP.Grid_Type, 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(IP.NACA_Aerofoil_Type, 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(&(IP.i_Grid), 
                           1, 
@@ -766,22 +867,22 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
                           MPI::DOUBLE, 0);
     // Boundary Conditions:
     MPI::COMM_WORLD.Bcast(IP.Boundary_Conditions_Specified,
-			  INPUT_PARAMETER_LENGTH_CHEM2D,
+			  INPUT_PARAMETER_LENGTH_LESPREMIXED2D,
 			  MPI::CHAR,0);
     MPI::COMM_WORLD.Bcast(&(IP.BCs_Specified),
 			  1,
 			  MPI::INT,0);
     MPI::COMM_WORLD.Bcast(IP.BC_North_Type,
-			  INPUT_PARAMETER_LENGTH_CHEM2D,
+			  INPUT_PARAMETER_LENGTH_LESPREMIXED2D,
 			  MPI::CHAR,0);
     MPI::COMM_WORLD.Bcast(IP.BC_South_Type,
-			  INPUT_PARAMETER_LENGTH_CHEM2D,
+			  INPUT_PARAMETER_LENGTH_LESPREMIXED2D,
 			  MPI::CHAR,0);
     MPI::COMM_WORLD.Bcast(IP.BC_East_Type,
-			  INPUT_PARAMETER_LENGTH_CHEM2D,
+			  INPUT_PARAMETER_LENGTH_LESPREMIXED2D,
 			  MPI::CHAR,0);
     MPI::COMM_WORLD.Bcast(IP.BC_West_Type,
-			  INPUT_PARAMETER_LENGTH_CHEM2D,
+			  INPUT_PARAMETER_LENGTH_LESPREMIXED2D,
 			  MPI::CHAR,0);
     MPI::COMM_WORLD.Bcast(&(IP.BC_North),
 			  1,
@@ -799,17 +900,17 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     if (!CFFC_Primary_MPI_Processor()) {
       IP.ICEMCFD_FileNames = new char*[3];
        for (int i = 0; i < 3; i++) {
-          IP.ICEMCFD_FileNames[i] = new char[INPUT_PARAMETER_LENGTH_CHEM2D];
+          IP.ICEMCFD_FileNames[i] = new char[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
        } /* endfor */
     } /* endif */
     MPI::COMM_WORLD.Bcast(IP.ICEMCFD_FileNames[0], 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(IP.ICEMCFD_FileNames[1], 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(IP.ICEMCFD_FileNames[2], 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                           MPI::CHAR, 0);
 
     // AMR & Refinement Parameters
@@ -819,6 +920,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.AMR_Frequency),
                           1,
                           MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Number_of_Uniform_Mesh_Coarsenings), 
+                          1, 
+                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Number_of_Initial_Mesh_Refinements), 
                           1, 
                           MPI::INT, 0);
@@ -890,22 +994,22 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
                           MPI::INT,0);
     // File Names
     MPI::COMM_WORLD.Bcast(IP.Output_File_Name, 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(IP.Grid_File_Name, 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(IP.Grid_Definition_File_Name, 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(IP.Restart_File_Name, 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(IP.Gnuplot_File_Name, 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(IP.Output_Format_Type, 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(&(IP.i_Output_Format), 
                           1, 
@@ -944,18 +1048,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
                           1, 
                           MPI::DOUBLE, 0);
 
-    // Reset the static variables.
-    IP.Wo.set_turbulence_variables(IP.C_constant,
-				   IP.von_Karman_Constant,
-				   IP.yplus_sublayer,
-				   IP.yplus_buffer_layer,
-				   IP.yplus_outer_layer); 
-    IP.Uo.set_turbulence_variables(IP.C_constant,
-				   IP.von_Karman_Constant,
-				   IP.yplus_sublayer,
-				   IP.yplus_buffer_layer,
-				   IP.yplus_outer_layer);
-
 #endif
 }
 
@@ -969,7 +1061,7 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
  *routine.                                              *
  *                                                      *
  ********************************************************/
-void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
+void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP,
                                 MPI::Intracomm &Communicator, 
                                 const int Source_CPU) {
  
@@ -977,13 +1069,13 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     int i;
    
     Communicator.Bcast(IP.Input_File_Name, 
-                       INPUT_PARAMETER_LENGTH_CHEM2D, 
+                       INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                        MPI::CHAR, Source_Rank);
     Communicator.Bcast(&(IP.Line_Number), 
                        1, 
                        MPI::INT, Source_Rank);
     Communicator.Bcast(IP.Time_Integration_Type, 
-                       INPUT_PARAMETER_LENGTH_CHEM2D, 
+                       INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                        MPI::CHAR, Source_Rank);
     // Time integration:
     Communicator.Bcast(&(IP.i_Time_Integration), 
@@ -1027,61 +1119,33 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
                        MPI::INT, Source_Rank);
     // Reconstruction:
     Communicator.Bcast(IP.Reconstruction_Type, 
-                       INPUT_PARAMETER_LENGTH_CHEM2D, 
+                       INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                        MPI::CHAR, Source_Rank);
     Communicator.Bcast(&(IP.i_Reconstruction), 
                        1, 
                        MPI::INT, Source_Rank);
     // Flux functions:
     Communicator.Bcast(IP.Viscous_Flux_Evaluation_Type, 
-                       INPUT_PARAMETER_LENGTH_CHEM2D, 
+                       INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                        MPI::CHAR, Source_Rank);
     Communicator.Bcast(&(IP.i_Viscous_Flux_Evaluation), 
                        1, 
                        MPI::INT, Source_Rank);
     Communicator.Bcast(IP.Limiter_Type, 
-                       INPUT_PARAMETER_LENGTH_CHEM2D, 
+                       INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                        MPI::CHAR, Source_Rank);
     Communicator.Bcast(&(IP.i_Limiter), 
                        1, 
                        MPI::INT, Source_Rank);
     Communicator.Bcast(IP.Flux_Function_Type, 
-                       INPUT_PARAMETER_LENGTH_CHEM2D, 
+                       INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                        MPI::CHAR, Source_Rank);
     Communicator.Bcast(&(IP.i_Flux_Function), 
                        1, 
                        MPI::INT, Source_Rank);
-    // Turbulence parameters:
-    Communicator.Bcast(IP.Turbulence_BC_Type,
-		       INPUT_PARAMETER_LENGTH_CHEM2D,
-		       MPI::CHAR,Source_Rank);
-    Communicator.Bcast(&(IP.i_Turbulence_BCs),
-		       1,
-		       MPI::INT,Source_Rank);
-    Communicator.Bcast(IP.Friction_Velocity_Type,
-		       INPUT_PARAMETER_LENGTH_CHEM2D,
-		       MPI::CHAR,Source_Rank);
-    Communicator.Bcast(&(IP.i_Friction_Velocity),
-		       1,
-		       MPI::INT,Source_Rank);
-    Communicator.Bcast(&(IP.C_constant),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    Communicator.Bcast(&(IP.von_Karman_Constant),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    Communicator.Bcast(&(IP.yplus_sublayer),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    Communicator.Bcast(&(IP.yplus_buffer_layer),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    Communicator.Bcast(&(IP.yplus_outer_layer),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
     // Initial conditions:
     Communicator.Bcast(IP.ICs_Type, 
-                       INPUT_PARAMETER_LENGTH_CHEM2D, 
+                       INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                        MPI::CHAR, Source_Rank);
     Communicator.Bcast(&(IP.i_ICs), 
                        1, 
@@ -1111,30 +1175,73 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
                        1, 
 		       MPI::DOUBLE,Source_Rank);
     /*********************************************************
-     ******************* CHEM2D SPECIFIC *********************
+     ******************* LESPREMIXED2D SPECIFIC **************
      *********************************************************/
     Communicator.Bcast(IP.CFFC_Path, 
-			  INPUT_PARAMETER_LENGTH_CHEM2D, 
-			  MPI::CHAR, Source_Rank);
+		       INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
+		       MPI::CHAR, Source_Rank);
+    //fresh and burnt fuel mass fraction
+    Communicator.Bcast(&(IP.Fresh_Fuel_Mass_Fraction), 
+                          1, 
+                          MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Burnt_Fuel_Mass_Fraction), 
+                          1, 
+                          MPI::DOUBLE, Source_Rank);
+    //fresh density
+    Communicator.Bcast(&(IP.Fresh_Density), 
+                          1, 
+                          MPI::DOUBLE, Source_Rank);
+    //Initial turbulence kinetic energy
+    Communicator.Bcast(&(IP.TKEo), 
+                          1, 
+                          MPI::DOUBLE, Source_Rank);
+    //Spectrum flag
+    Communicator.Bcast(IP.Spectrum_Type, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
+                          MPI::CHAR, Source_Rank);
+    Communicator.Bcast(&(IP.i_Spectrum), 
+                          1, 
+                          MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.Rescale_Spectrum), 
+                          1, 
+                          MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.Read_Fluctuations_From_File), 
+                          1, 
+                          MPI::INT, Source_Rank);
+
+
+
+
+
     //reaction name
     Communicator.Bcast(IP.React_Name, 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
 			  MPI::CHAR, Source_Rank);
+    //scalar system name
+    Communicator.Bcast(IP.Scalar_system_name, 
+                          INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
+			  MPI::CHAR, Source_Rank);
+
     //delete orginal dynamic memory before changing num_species
     if(!CFFC_Primary_MPI_Processor()) {  
       IP.Deallocate();  
     } 
+    //number of species
+    Communicator.Bcast(&(IP.num_species), 
+                          1, 
+                          MPI::INT, Source_Rank);
+    //number of scalars
+    Communicator.Bcast(&(IP.num_scalars), 
+                          1, 
+                          MPI::INT, Source_Rank);
     //transport data
     Communicator.Bcast(IP.trans_type, 
-			  INPUT_PARAMETER_LENGTH_CHEM2D, 
+			  INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
 			  MPI::CHAR, Source_Rank);
     Communicator.Bcast(&(IP.i_trans_type), 
 			  1, 
 			  MPI::INT, Source_Rank);
-    //number of species
-    Communicator.Bcast(&(IP.num_species), 
-                          1, 
-                          MPI::INT,Source_Rank );
+
     //set up dynamic memory
     if(!CFFC_Primary_MPI_Processor()) {  
       IP.Allocate();
@@ -1148,17 +1255,37 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
 			 1, 
 			 MPI::DOUBLE, Source_Rank);
       Communicator.Bcast(IP.Multispecies[i], 
-			 INPUT_PARAMETER_LENGTH_CHEM2D, 
+			 INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
 			 MPI::CHAR, Source_Rank);
     }
-    //set recaction and species parameters
+    //scalar names & values
+    if(IP.num_scalars > 0){
+      for(int i=0; i < IP.num_scalars; i++){
+        Communicator.Bcast(&(IP.scalar_values[i]), 
+			    1, 
+			    MPI::DOUBLE, Source_Rank);
+        Communicator.Bcast(IP.Scalars[i], 
+			    INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
+			    MPI::CHAR, Source_Rank);
+      }
+    }
+
+    //set reaction and species parameters
     if (!CFFC_Primary_MPI_Processor()) {      
       IP.react_name = IP.React_Name;
       for (int i = 0; i < IP.num_species; i++) {
 	IP.multispecies[i] = IP.Multispecies[i];  
-      }     
+      }
+      IP.scalar_system_name = IP.Scalar_system_name;
+      if(IP.num_scalars > 0){
+        for(int i=0; i<IP.num_scalars; i++){
+          IP.scalars[i] = IP.Scalars[i];
+        }
+      }
+     
       //load reaction names
       IP.Wo.React.set_reactions(IP.react_name);
+      IP.Wo.Scal_sys.scalar_set(IP.scalar_system_name);
       
       //Set species if non-reacting
       if( IP.Wo.React.reactset_flag == NO_REACTIONS){
@@ -1167,12 +1294,22 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
 
       //set the data for each
       IP.get_cffc_path();
-      IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			     IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type); 
-      IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			     IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type);
+      IP.Wo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies,
+			     IP.CFFC_Path,
+			     IP.Mach_Number_Reference,
+			     IP.Schmidt,
+			     IP.i_trans_type); 
+      IP.Uo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies,
+			     IP.CFFC_Path,
+			     IP.Mach_Number_Reference,
+			     IP.Schmidt,
+			     IP.i_trans_type);
       IP.Wo.set_initial_values(IP.mass_fractions);
       IP.Uo.set_initial_values(IP.mass_fractions);
+      if(IP.num_scalars > 0){
+        IP.Wo.set_initial_values_scal(IP.scalar_values);   
+        IP.Uo.set_initial_values_scal(IP.scalar_values);
+      }
 
       //set proper Temp & Pressure instead of defaults
       IP.Wo.rho = IP.Pressure/(IP.Wo.Rtot()*IP.Temperature); 
@@ -1180,9 +1317,45 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
       IP.Wo.v.zero();
 
       IP.Uo = U(IP.Wo);
-    } 
+    }
+
+    // SFS modelling parameters
+    Communicator.Bcast(&(IP.Smagorinsky_Constant), 
+                          1, 
+                          MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Yoshizawa_coefficient), 
+                          1, 
+                          MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.filter_width), 
+                          1, 
+                          MPI::DOUBLE, Source_Rank);
+    // premixed flame parameters
+    Communicator.Bcast(&(IP.laminar_flame_thickness), 
+                          1, 
+                          MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.laminar_flame_speed), 
+                          1, 
+                          MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.TFactor), 
+                          1, 
+                          MPI::DOUBLE, Source_Rank);  
+
+    // Reset the static variables.
+    IP.Wo.set_SFSmodel_variables(IP.filter_width,
+				 IP.Smagorinsky_Constant,
+				 IP.Yoshizawa_coefficient);
+    IP.Uo.set_SFSmodel_variables(IP.filter_width,
+				 IP.Smagorinsky_Constant,
+				 IP.Yoshizawa_coefficient);
+    IP.Wo.set_premixed_flame_variables(IP.laminar_flame_thickness,
+				       IP.laminar_flame_speed,
+				       IP.TFactor);
+    IP.Uo.set_premixed_flame_variables(IP.laminar_flame_thickness,
+				       IP.laminar_flame_speed,
+				       IP.TFactor);
+
     /*********************************************************
-     ******************* CHEM2D END **************************
+     ******************* LESPREMIXED2D END *******************
      *********************************************************/
    
     if(!CFFC_Primary_MPI_Processor()) {   
@@ -1192,7 +1365,7 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
 
     /********************************************/
     Communicator.Bcast(IP.Flow_Type, 
-                       INPUT_PARAMETER_LENGTH_CHEM2D, 
+                       INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                        MPI::CHAR, Source_Rank);
     Communicator.Bcast(&(IP.FlowType), 
                        1, 
@@ -1200,7 +1373,7 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
 
     /********************************************/
     Communicator.Bcast(IP.Flow_Geometry_Type, 
-                       INPUT_PARAMETER_LENGTH_CHEM2D, 
+                       INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                        MPI::CHAR, Source_Rank);
     Communicator.Bcast(&(IP.Axisymmetric), 
                        1, 
@@ -1243,10 +1416,10 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
 		       MPI::DOUBLE, Source_Rank);
     /********************************************/
     Communicator.Bcast(IP.Grid_Type, 
-                       INPUT_PARAMETER_LENGTH_CHEM2D, 
+                       INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                        MPI::CHAR, Source_Rank);
     Communicator.Bcast(IP.NACA_Aerofoil_Type, 
-                       INPUT_PARAMETER_LENGTH_CHEM2D, 
+                       INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                        MPI::CHAR, Source_Rank);
     Communicator.Bcast(&(IP.i_Grid), 
                        1, 
@@ -1385,22 +1558,22 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
                        MPI::DOUBLE, Source_Rank);
     // Boundary Conditions:
     Communicator.Bcast(IP.Boundary_Conditions_Specified,
-		       INPUT_PARAMETER_LENGTH_CHEM2D,
+		       INPUT_PARAMETER_LENGTH_LESPREMIXED2D,
 		       MPI::CHAR,Source_Rank);
     Communicator.Bcast(&(IP.BCs_Specified),
 		       1,
 		       MPI::INT,Source_Rank);
     Communicator.Bcast(IP.BC_North_Type,
-		       INPUT_PARAMETER_LENGTH_CHEM2D,
+		       INPUT_PARAMETER_LENGTH_LESPREMIXED2D,
 		       MPI::CHAR,Source_Rank);
     Communicator.Bcast(IP.BC_South_Type,
-		       INPUT_PARAMETER_LENGTH_CHEM2D,
+		       INPUT_PARAMETER_LENGTH_LESPREMIXED2D,
 		       MPI::CHAR,Source_Rank);
     Communicator.Bcast(IP.BC_East_Type,
-		       INPUT_PARAMETER_LENGTH_CHEM2D,
+		       INPUT_PARAMETER_LENGTH_LESPREMIXED2D,
 		       MPI::CHAR,Source_Rank);
     Communicator.Bcast(IP.BC_West_Type,
-		       INPUT_PARAMETER_LENGTH_CHEM2D,
+		       INPUT_PARAMETER_LENGTH_LESPREMIXED2D,
 		       MPI::CHAR,Source_Rank);
     Communicator.Bcast(&(IP.BC_North),
 		       1,
@@ -1418,17 +1591,17 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     if (!(CFFC_MPI::This_Processor_Number == Source_Rank)) {
        IP.ICEMCFD_FileNames = new char*[3];
        for (i = 0; i < 3; i++) {
-          IP.ICEMCFD_FileNames[i] = new char[INPUT_PARAMETER_LENGTH_CHEM2D];
+          IP.ICEMCFD_FileNames[i] = new char[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
        } /* endfor */
     } /* endif */
     Communicator.Bcast(IP.ICEMCFD_FileNames[0], 
-                       INPUT_PARAMETER_LENGTH_CHEM2D, 
+                       INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                        MPI::CHAR, Source_Rank);
     Communicator.Bcast(IP.ICEMCFD_FileNames[1], 
-                       INPUT_PARAMETER_LENGTH_CHEM2D, 
+                       INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                        MPI::CHAR, Source_Rank);
     Communicator.Bcast(IP.ICEMCFD_FileNames[2], 
-                       INPUT_PARAMETER_LENGTH_CHEM2D, 
+                       INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                        MPI::CHAR, Source_Rank);
 
     // AMR & Refinement Parameters
@@ -1438,6 +1611,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.AMR_Frequency),
                        1,
                        MPI::INT,Source_Rank);
+    Communicator.Bcast(&(IP.Number_of_Uniform_Mesh_Coarsenings), 
+                       1, 
+                       MPI::INT, Source_Rank);
     Communicator.Bcast(&(IP.Number_of_Initial_Mesh_Refinements), 
                        1, 
                        MPI::INT, Source_Rank);
@@ -1510,22 +1686,22 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
                        MPI::INT,Source_Rank);
     // File Names
     Communicator.Bcast(IP.Output_File_Name, 
-                       INPUT_PARAMETER_LENGTH_CHEM2D, 
+                       INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                        MPI::CHAR, Source_Rank);
     Communicator.Bcast(IP.Grid_File_Name, 
-                       INPUT_PARAMETER_LENGTH_CHEM2D, 
+                       INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                        MPI::CHAR, Source_Rank);
     Communicator.Bcast(IP.Grid_Definition_File_Name, 
-                       INPUT_PARAMETER_LENGTH_CHEM2D, 
+                       INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                        MPI::CHAR, Source_Rank);
     Communicator.Bcast(IP.Restart_File_Name, 
-                       INPUT_PARAMETER_LENGTH_CHEM2D, 
+                       INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                        MPI::CHAR, Source_Rank);
     Communicator.Bcast(IP.Gnuplot_File_Name, 
-                       INPUT_PARAMETER_LENGTH_CHEM2D, 
+                       INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                        MPI::CHAR, Source_Rank);
     Communicator.Bcast(IP.Output_Format_Type, 
-                       INPUT_PARAMETER_LENGTH_CHEM2D, 
+                       INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
                        MPI::CHAR, Source_Rank);
     Communicator.Bcast(&(IP.i_Output_Format), 
                        1, 
@@ -1564,18 +1740,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
                        1, 
                        MPI::DOUBLE, Source_Rank);
 
-    // Reset the static variables.
-    IP.Wo.set_turbulence_variables(IP.C_constant,
-				   IP.von_Karman_Constant,
-				   IP.yplus_sublayer,
-				   IP.yplus_buffer_layer,
-				   IP.yplus_outer_layer); 
-    IP.Uo.set_turbulence_variables(IP.C_constant,
-				   IP.von_Karman_Constant,
-				   IP.yplus_sublayer,
-				   IP.yplus_buffer_layer,
-				   IP.yplus_outer_layer);
-
 }
 #endif
 
@@ -1586,7 +1750,7 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
  * file.                                                *
  *                                                      *
  ********************************************************/
-void Get_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
+void Get_Next_Input_Control_Parameter(LESPremixed2D_Input_Parameters &IP) {
 
     int i;
     char buffer[256];
@@ -1616,7 +1780,7 @@ void Get_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
  * from the input file.                                 *
  *                                                      *
  ********************************************************/
-int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
+int Parse_Next_Input_Control_Parameter(LESPremixed2D_Input_Parameters &IP) {
 
     int i_command;
     char buffer[256];
@@ -1769,7 +1933,7 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	 IP.BC_South = BC_WALL_VISCOUS_HEATFLUX;
        } else if (strcmp(IP.ICs_Type, "Couette") == 0 ){
 	 IP.i_ICs = IC_VISCOUS_COUETTE; 
-      /****************** CHEMD2D ******************************/
+      /****************** LESPREMIXEDD2D ******************************/
        } else if (strcmp(IP.ICs_Type, "Mix") == 0) {
 	 IP.i_ICs = IC_GAS_MIX;
        } else if (strcmp(IP.ICs_Type, "Core_Flame") == 0 ){
@@ -1781,7 +1945,21 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        } else if (strcmp(IP.ICs_Type, "Pressure_Gradient_y") == 0 ){
 	 IP.i_ICs = IC_PRESSURE_GRADIENT_Y;
        } else if (strcmp(IP.ICs_Type, "1DPremixedFlame") == 0 ){
-	 IP.i_ICs = IC_CHEM_1DFLAME;  
+	 IP.i_ICs = IC_CHEM_1DFLAME;
+       } else if (strcmp(IP.ICs_Type, "2DPremixedFlame") == 0 ){
+	 IP.i_ICs = IC_LESPREMIXED_2DFLAME;
+       } else if (strcmp(IP.ICs_Type, "2DWrinkledFlame") == 0 ){
+	 IP.i_ICs = IC_2DWRINKLED_FLAME;
+       } else if (strcmp(IP.ICs_Type, "HomogeneousTurbulence") == 0 ){
+	 IP.i_ICs = IC_HOMOGENEOUS_TURBULENCE;
+       } else if (strcmp(IP.ICs_Type, "Mixing_Layer") == 0 ){
+	 IP.i_ICs = IC_MIXING_LAYER;
+       } else if (strcmp(IP.ICs_Type, "Acoustic_Wave") == 0 ){
+	 IP.i_ICs = IC_ACOUSTIC_WAVE;
+       } else if (strcmp(IP.ICs_Type, "Impacting_Flow_Xdir") == 0 ){
+	 IP.i_ICs = IC_SLOWLY_IMPACTING_XDIR ;
+       } else if (strcmp(IP.ICs_Type, "Vortex_Xdir") == 0 ){
+	 IP.i_ICs = IC_VORTEX_XDIR;
        } else if (strcmp(IP.ICs_Type, "Pipe_Flow") == 0) {
           IP.i_ICs = IC_TURBULENT_PIPE_FLOW;
        } else if (strcmp(IP.ICs_Type, "Coflow") == 0) {
@@ -1797,7 +1975,7 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        }else if (strcmp(IP.ICs_Type, "Restart") == 0) {
           IP.i_ICs = IC_RESTART;
        } else {
-	 cerr<<"\n Not a vaild Initial Condition for Chem2D, check Chem2DInput.cc :  "<<IP.ICs_Type; exit(1);
+	 cerr<<"\n Not a vaild Initial Condition for LESPremixed2D, check LESPremixed2DInput.cc :  "<<IP.ICs_Type; exit(1);
        } /* endif */ 
 
     } else if (strcmp(IP.Next_Control_Parameter, "Grid_Type") == 0) {
@@ -1833,7 +2011,22 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
           IP.i_Grid = GRID_LAMINAR_FLAME;
           IP.Pipe_Length = 0.1;
           IP.Pipe_Radius = 0.2;
-
+      } else if (strcmp(IP.Grid_Type, "Periodic_Box") == 0) {
+          IP.i_Grid = GRID_PERIODIC_BOX;
+          IP.Box_Width = 6.283185307;
+          IP.Box_Height = 6.283185307;
+      } else if (strcmp(IP.Grid_Type, "Mixing_Layer_Box") == 0) {
+          IP.i_Grid = GRID_MIXING_LAYER_BOX;
+          IP.Box_Width = TWO;
+          IP.Box_Height = TWO;
+      } else if (strcmp(IP.Grid_Type, "Vortex_Box") == 0) {
+          IP.i_Grid = GRID_VORTEX_BOX;
+          IP.Box_Width = TWO;
+          IP.Box_Height = TWO;
+      } else if (strcmp(IP.Grid_Type, "2DTurbulent_Flame") == 0) {
+          IP.i_Grid = GRID_2DTURBULENT_PREMIXED_FLAME;
+          IP.Box_Width = TWO;
+          IP.Box_Height = TWO;
        } else if (strcmp(IP.Grid_Type, "Flat_Plate") == 0) {
           IP.i_Grid = GRID_FLAT_PLATE;
           IP.Plate_Length = ONE;
@@ -2287,11 +2480,14 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 
 
        /***********************************************************************
-        ************************ CHEM2D SPECIFIC ******************************
-        For Chem2D the following input parameters are added:
-             "Reaction_Mechanism" is 
+        ************************ LESPREMIXED2D SPECIFIC ***********************
+        For LESPremixed2D the following input parameters are added:
 
-             "User_Reaciton_Mechanism"
+             "Scalar_system"
+
+             "Reaction_Mechanism"
+
+             "User_Reaction_Mechanism"
  
              "Species"
 
@@ -2299,12 +2495,66 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        *************************************************************************/
        
        /*************************************/
+       /******   SYSTEM OF SCALARS     ******/
+       /*************************************/
+    } else if (strcmp(IP.Next_Control_Parameter, "Scalar_system") == 0) {
+       i_command = 200;
+       Get_Next_Input_Control_Parameter(IP);
+       IP.Deallocate_scalars();  //DEALLOCATE BEFORE CHANGING num_scalars
+     
+       //convert IP to string & define setup for Scalar System
+       IP.scalar_system_name = IP.Next_Control_Parameter;
+
+       IP.Wo.Scal_sys.scalar_set(IP.scalar_system_name);  
+       IP.num_scalars = IP.Wo.Scal_sys.num_scalars;
+      
+       IP.Allocate_scalars();
+
+       //Get scalars
+       for(int i=0; i<IP.num_scalars; i++){
+	 IP.scalars[i] = IP.Wo.Scal_sys.scalars[i];
+       }   
+       
+       //Get next line and read in scalar values or set defaults
+       Get_Next_Input_Control_Parameter(IP);
+       if (strcmp(IP.Next_Control_Parameter, "Scalar_values") == 0){
+	 //Get Initial scalar values from user	
+	 for(int i=0; i<IP.num_scalars; i++){
+	   IP.Input_File >> IP.scalar_values[i];
+	 }
+	
+	 //Set inital Values;
+         IP.Wo.nscal = IP.num_scalars;
+         IP.Uo.nscal = IP.num_scalars;  
+	 IP.Wo.set_initial_values_scal(IP.scalar_values);  
+	 IP.Uo.set_initial_values_scal(IP.scalar_values);  
+	 IP.Uo = U(IP.Wo);        
+	 
+	 //fudge the line number and istream counters
+	 IP.Input_File.getline(buffer, sizeof(buffer));  
+	 IP.Line_Number = IP.Line_Number + 1; 
+       
+	 //If no scalar values is set to defaults (ZERO) 
+       } else {
+         IP.Wo.nscal = IP.num_scalars;
+         IP.Uo.nscal = IP.num_scalars;  
+         IP.Wo.set_initial_values_scal();  
+	 IP.Uo.set_initial_values_scal();
+	 IP.Uo = U(IP.Wo);
+         for(int i=0; i<IP.num_scalars; i++){
+	   IP.scalar_values[i] = IP.Wo.scalar[i];
+	 }
+	 IP.Line_Number = IP.Line_Number - 1 ;
+       }
+
+
+       /*************************************/
        /**** REACTIONS SET FOR HARDCODED ****/
        /*************************************/
     } else if (strcmp(IP.Next_Control_Parameter, "Reaction_Mechanism") == 0) {
-       i_command = 200;
+       i_command = 201;
        Get_Next_Input_Control_Parameter(IP);
-       IP.Deallocate();  //DEALLOCATE BEFORE CHANGING num_species
+       IP.Deallocate_species();  //DEALLOCATE BEFORE CHANGING num_species
        int flag =0;
 
        //convert IP to string & define setup which Reaction Mechanism
@@ -2312,7 +2562,7 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        IP.Wo.React.set_reactions(IP.react_name);
    
        IP.num_species = IP.Wo.React.num_species;      
-       IP.Allocate();
+       IP.Allocate_species();
 
        //Get species and load appropriate data
        for(int i=0; i<IP.num_species; i++){
@@ -2339,10 +2589,16 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        }
 
        //Set appropriate species data
-       IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			      IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type); 
-       IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			      IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type);
+       IP.Wo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies,
+			      IP.CFFC_Path,
+			      IP.Mach_Number_Reference,
+			      IP.Schmidt,
+			      IP.i_trans_type); 
+       IP.Uo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies,
+			      IP.CFFC_Path,
+			      IP.Mach_Number_Reference,
+			      IP.Schmidt,
+			      IP.i_trans_type);
   
        //Get next line and read in mass fractions or set defaults
        if(flag){
@@ -2360,9 +2616,17 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	   cout<<"\n Mass Fractions summed to "<<temp<<". Should sum to 1\n";
 	   i_command = INVALID_INPUT_VALUE;
 	 }
+
+	 // assign initial fuel mass fraction
+	 IP.Fresh_Fuel_Mass_Fraction = IP.mass_fractions[0];
+
 	 //Set inital Values; 
 	 IP.Wo.set_initial_values(IP.mass_fractions);  
-	 IP.Uo.set_initial_values(IP.mass_fractions);  
+	 IP.Uo.set_initial_values(IP.mass_fractions);
+	 if (IP.Wo.nscal > 0 && IP.scalar_values != NULL) {
+           IP.Wo.set_initial_values_scal(IP.scalar_values);  
+	   IP.Uo.set_initial_values_scal(IP.scalar_values); 
+	 }
 	 IP.Uo = U(IP.Wo);
 	 
 	 //fudge the line number and istream counters
@@ -2370,13 +2634,17 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	 IP.Line_Number = IP.Line_Number + 1; 
         
        //Spit out appropriate mass fractions and exit
-       } else if (strcmp(IP.Next_Control_Parameter, "Equivalence_Ratio") == 0){        
-	 double phi;
-	 IP.Input_File >> phi;
-	 Equivalence_Ratio(phi);
+       // } else if (strcmp(IP.Next_Control_Parameter, "Equivalence_Ratio") == 0){        
+// 	 double phi;
+// 	 IP.Input_File >> phi;
+// 	 Equivalence_Ratio(phi);
 
 	 //If no mass fraction data is set to defaults (all equal to 1/num_species) 
        } else {
+	 if (IP.Wo.nscal > 0  && IP.scalar_values != NULL) {
+           IP.Wo.set_initial_values_scal(IP.scalar_values);  
+	   IP.Uo.set_initial_values_scal(IP.scalar_values); 
+	 }
 	 IP.Uo = U(IP.Wo);
 	 IP.Line_Number = IP.Line_Number - 1 ;
        }
@@ -2387,7 +2655,7 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        /***************************************/
     } else if (strcmp(IP.Next_Control_Parameter, "User_Reaction_Mechanism") == 0) { 
       // this will be added but its not quite yet
-      i_command=201;
+      i_command=202;
       cout<<endl<<IP.Next_Control_Parameter<<"\n not currently available in freeware version :)\n";
       i_command = INVALID_INPUT_VALUE;   
       
@@ -2397,7 +2665,7 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter, "Species") == 0) { 
       i_command = 203;
   
-      IP.Deallocate();  //DEALLOCATE BEFORE CHANGING num_species
+      IP.Deallocate_species();  //DEALLOCATE BEFORE CHANGING num_species
  
       // Non Reaction case so set NO_REACTIONS flag in reactions class
       IP.react_name ="NO_REACTIONS";
@@ -2405,7 +2673,7 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
      
       //read in the number of species (should be first in line) 
       IP.Input_File>>IP.num_species;     
-      IP.Allocate();
+      IP.Allocate_species();
 
       //read in species names
       for(int i=0; i<IP.num_species; i++){
@@ -2417,10 +2685,16 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       IP.Wo.React.set_species(IP.multispecies,IP.num_species);
        
       //Setup State class data and find species thermo and transport properties
-      IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			     IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type); 
-      IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			     IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type);
+      IP.Wo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies,
+			     IP.CFFC_Path,
+			     IP.Mach_Number_Reference,
+			     IP.Schmidt,
+			     IP.i_trans_type); 
+      IP.Uo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies,
+			     IP.CFFC_Path,
+			     IP.Mach_Number_Reference,
+			     IP.Schmidt,
+			     IP.i_trans_type);
     
       //More Fudging of lines 
       IP.Line_Number = IP.Line_Number + 1 ;
@@ -2443,6 +2717,10 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	 //Set inital Values; 
 	 IP.Wo.set_initial_values(IP.mass_fractions);  
 	 IP.Uo.set_initial_values(IP.mass_fractions);
+	 if (IP.Wo.nscal > 0 && IP.scalar_values != NULL) {
+           IP.Wo.set_initial_values_scal(IP.scalar_values);  
+	   IP.Uo.set_initial_values_scal(IP.scalar_values); 
+	 }
 	 IP.Uo = U(IP.Wo);
 	 
 	 //fudge the line number and istream counters
@@ -2450,7 +2728,11 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	 IP.Line_Number = IP.Line_Number + 1; 
        } 
        //If no mass fraction data is set to defaults (all equal to 1/num_species)
-       else{        
+       else{
+	 if (IP.Wo.nscal > 0 && IP.scalar_values != NULL) {
+           IP.Wo.set_initial_values_scal(IP.scalar_values);  
+	   IP.Uo.set_initial_values_scal(IP.scalar_values); 
+	 }
 	 IP.Uo = U(IP.Wo);
 	 IP.Line_Number = IP.Line_Number - 1 ;
        }
@@ -2492,10 +2774,14 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        IP.Heat_Source = IP.Wo.rho*(IP.Wo.h(temp+IP.Temperature) - IP.Wo.Rtot()*IP.Temperature);
 
        IP.Input_File.getline(buffer, sizeof(buffer));
+         
+       /***********************************************************************
+	**************** END LESPREMIXED2D MODIFICATIONS **********************
+	***********************************************************************/
 
        /********** TRANSPORT DATA ***********/
     } else if (strcmp(IP.Next_Control_Parameter, "Transport_Data_Type") == 0) {
-      i_command = 44;
+      i_command = 390;
       Get_Next_Input_Control_Parameter(IP);
       strcpy(IP.trans_type, 
 	     IP.Next_Control_Parameter);
@@ -2504,10 +2790,88 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       } else if (strcmp(IP.trans_type, "Transport-Lennard-Jones") == 0) {
 	IP.i_trans_type = TRANSPORT_LENNARD_JONES;
       } // end if
-         
-       /***********************************************************************
-	**************** END CHEM2D MODIFICATIONS *****************************
-	***********************************************************************/
+
+
+      /********** SFS PARAMETERS ***********/
+    } else if (strcmp(IP.Next_Control_Parameter, "Smagorinsky_Coefficient") == 0) {
+      i_command = 391;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Smagorinsky_Constant;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      if (IP.Smagorinsky_Constant < ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Yoshizawa_Coefficient") == 0) {
+      i_command = 392;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Yoshizawa_coefficient;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      if (IP.Yoshizawa_coefficient < ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Filter_Width") == 0) {
+      i_command = 393;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.filter_width;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      if (IP.filter_width < ZERO) i_command = INVALID_INPUT_VALUE;
+
+       /********** PREMIXED FLAME PARAMETERS  ***********/
+    } else if (strcmp(IP.Next_Control_Parameter, "Laminar_Flame_Thickness") == 0) {
+      i_command = 394;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.laminar_flame_thickness;
+      IP.Input_File.getline(buffer, sizeof(buffer));   	 	 
+      if (IP.laminar_flame_thickness <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Laminar_Flame_Speed") == 0) {
+      i_command = 395;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.laminar_flame_speed;
+      IP.Input_File.getline(buffer, sizeof(buffer));   	 	 
+      if (IP.laminar_flame_speed <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Thickening_Factor") == 0) {
+      i_command = 396;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.TFactor;
+      IP.Input_File.getline(buffer, sizeof(buffer));   	 	 
+      if (IP.TFactor < 1.0) i_command = INVALID_INPUT_VALUE;
+
+      /********** ENERGY SPECTRUM ***********/
+    } else if (strcmp(IP.Next_Control_Parameter, "Energy_Spectrum") == 0) {
+      i_command = 397;
+      Get_Next_Input_Control_Parameter(IP);
+      strcpy(IP.Spectrum_Type, 
+             IP.Next_Control_Parameter);
+       if (strcmp(IP.Spectrum_Type, "Lee-Reynolds") == 0) {
+          IP.i_Spectrum = LEE_REYNOLDS;
+       } else if (strcmp(IP.Spectrum_Type, "Laval-Nazarenko") == 0) {
+          IP.i_Spectrum = LAVAL_NAZARENKO;
+       } else if (strcmp(IP.Spectrum_Type, "von-Karman-Pao") == 0) {
+          IP.i_Spectrum = VON_KARMAN_PAO;
+       } else if (strcmp(IP.Spectrum_Type, "Haworth-Poinsot") == 0) {
+          IP.i_Spectrum = HAWORTH_POINSOT;
+       } else if (strcmp(IP.Spectrum_Type, "Chasnov") == 0) {
+          IP.i_Spectrum = CHASNOV;
+       } else if (strcmp(IP.Spectrum_Type, "Bell-Day") == 0) {
+          IP.i_Spectrum = BELL_DAY;
+       } else {
+          IP.i_Spectrum = VON_KARMAN_PAO; 
+       } /* end if */
+    } else if (strcmp(IP.Next_Control_Parameter, "Rescale_Spectrum") == 0) {
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Rescale_Spectrum;
+      IP.Input_File.getline(buffer, sizeof(buffer));   	 	 
+      if (IP.Rescale_Spectrum < 0  ||  IP.Rescale_Spectrum > 1 ) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Read_Fluctuations_From_File") == 0) {
+      i_command = 398;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Read_Fluctuations_From_File;
+      IP.Input_File.getline(buffer, sizeof(buffer));   	 	 
+      if (IP.Read_Fluctuations_From_File < 0  ||  IP.Read_Fluctuations_From_File > 1 ) {
+	i_command = INVALID_INPUT_VALUE;
+      }
+
 
       /********** MACH NUMBER ***********/
     } else if (strcmp(IP.Next_Control_Parameter, "Mach_Number") == 0) {
@@ -2620,14 +2984,14 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
           IP.FlowType = FLOWTYPE_INVISCID;
        } else if (strcmp(IP.Flow_Type, "Laminar") == 0) {
 	 IP.FlowType = FLOWTYPE_LAMINAR;
-       } else if (strcmp(IP.Flow_Type, "Turbulent-k-epsilon") == 0) {
-	 IP.FlowType = FLOWTYPE_TURBULENT_RANS_K_EPSILON;
-       } else if (strcmp(IP.Flow_Type, "Turbulent-k-omega") == 0) {
-	 IP.FlowType = FLOWTYPE_TURBULENT_RANS_K_OMEGA;
        } else if (strcmp(IP.Flow_Type, "Turbulent-LES") == 0) {
 	 IP.FlowType = FLOWTYPE_TURBULENT_LES;
-       } else if (strcmp(IP.Flow_Type, "Turbulent-DES-k-omega") == 0) {
-	 IP.FlowType = FLOWTYPE_TURBULENT_DES_K_OMEGA;
+       } else if (strcmp(IP.Flow_Type, "Turbulent-LES-No-Model") == 0) {
+	 IP.FlowType = FLOWTYPE_TURBULENT_LES_NO_MODEL;
+       } else if (strcmp(IP.Flow_Type, "Turbulent-LES-TF-Smagorinsky") == 0) {
+         IP.FlowType = FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY;
+       } else if (strcmp(IP.Flow_Type, "Turbulent-LES-TF-k") == 0) {
+         IP.FlowType = FLOWTYPE_TURBULENT_LES_TF_K;
        } else if (strcmp(IP.Flow_Type, "Turbulent-DNS") == 0) {
 	 IP.FlowType = FLOWTYPE_TURBULENT_DNS;
        } else {
@@ -2665,7 +3029,7 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer,sizeof(buffer));
        if (IP.Output_Progress_Frequency < 1) i_command = INVALID_INPUT_VALUE;
 
-       /******* CHEM2D *********/
+       /******* LESPREMIXED2D *********/
     } else if (strcmp(IP.Next_Control_Parameter, "Viscous_Flux_Evaluation_Type") == 0) {
       i_command = 510; 
       Get_Next_Input_Control_Parameter(IP);
@@ -2926,6 +3290,13 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       IP.Input_File.getline(buffer, sizeof(buffer));
       if (IP.AMR_Frequency < 0) i_command = INVALID_INPUT_VALUE;
 
+    } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Uniform_Mesh_Coarsenings") == 0) {
+      i_command = 740;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Number_of_Uniform_Mesh_Coarsenings;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      if (IP.Number_of_Uniform_Mesh_Coarsenings < 0) IP.Number_of_Uniform_Mesh_Coarsenings = 0;
+
     } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Initial_Mesh_Refinements") == 0) {
       i_command = 74;
       IP.Line_Number = IP.Line_Number + 1;
@@ -3140,75 +3511,6 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       } else {
 	i_command = INVALID_INPUT_VALUE;
       }
-
-    } else if (strcmp(IP.Next_Control_Parameter,"Turbulence_BC_Type") == 0) {
-      i_command = 161;
-      Get_Next_Input_Control_Parameter(IP);;
-      strcpy(IP.Turbulence_BC_Type,IP.Next_Control_Parameter);
-      if (strcmp(IP.Turbulence_BC_Type,"Direct_Integration") == 0) {
-	IP.i_Turbulence_BCs = TURBULENT_BC_DIRECT_INTEGRATION;
-      } else if (strcmp(IP.Turbulence_BC_Type,"Standard_Wall_Function") == 0) {
-	IP.i_Turbulence_BCs = TURBULENT_BC_STANDARD_WALL_FUNCTION;
-      } else if (strcmp(IP.Turbulence_BC_Type,"Two_Layer_Wall_Function") == 0) {
-	IP.i_Turbulence_BCs = TURBULENT_BC_TWO_LAYER_WALL_FUNCTION;
-      } else if (strcmp(IP.Turbulence_BC_Type,"Three_Layer_Wall_Function") == 0) {
-	IP.i_Turbulence_BCs = TURBULENT_BC_THREE_LAYER_WALL_FUNCTION;
-      } else if (strcmp(IP.Turbulence_BC_Type,"Automatic_Wall_Treatment") == 0) {
-	IP.i_Turbulence_BCs = TURBULENT_BC_AUTOMATIC_WALL_TREATMENT;
-      } else {
-	i_command = INVALID_INPUT_VALUE;
-      }
-
-    } else if (strcmp(IP.Next_Control_Parameter,"Friction_Velocity_Type") == 0) {
-      i_command = 162;
-      Get_Next_Input_Control_Parameter(IP);;
-      strcpy(IP.Friction_Velocity_Type,IP.Next_Control_Parameter);
-      if (strcmp(IP.Friction_Velocity_Type,"Local") == 0) {
-	IP.i_Friction_Velocity = FRICTION_VELOCITY_LOCAL_SHEAR_STRESS;
-      } else if (strcmp(IP.Friction_Velocity_Type,"Wall") == 0) {
-	IP.i_Friction_Velocity = FRICTION_VELOCITY_WALL_SHEAR_STRESS;
-      } else if (strcmp(IP.Friction_Velocity_Type,"Iterative") == 0) {
-	IP.i_Friction_Velocity = FRICTION_VELOCITY_ITERATIVE;
-      } else if (strcmp(IP.Friction_Velocity_Type,"Pipe") == 0) {
-	IP.i_Friction_Velocity = FRICTION_VELOCITY_PIPE;
-      } else {
-	i_command = INVALID_INPUT_VALUE;
-      }
-
-    } else if (strcmp(IP.Next_Control_Parameter,"C_constant") == 0) {
-      i_command = 163;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.C_constant;
-      IP.Input_File.getline(buffer,sizeof(buffer));
-      if (IP.C_constant < ZERO) i_command = INVALID_INPUT_VALUE;
-
-    } else if (strcmp(IP.Next_Control_Parameter,"von_Karman_Constant") == 0) {
-      i_command = 164;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.von_Karman_Constant;
-      IP.Input_File.getline(buffer,sizeof(buffer));
-      if (IP.von_Karman_Constant < ZERO) i_command = INVALID_INPUT_VALUE;
-
-    } else if (strcmp(IP.Next_Control_Parameter,"yplus_sublayer") == 0) {
-      i_command = 165;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.yplus_sublayer;
-      IP.Input_File.getline(buffer,sizeof(buffer));
-      if (IP.yplus_sublayer < ZERO) i_command = INVALID_INPUT_VALUE;
-
-    } else if (strcmp(IP.Next_Control_Parameter,"yplus_buffer_layer") == 0) {
-      i_command = 166;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.yplus_buffer_layer;
-      IP.Input_File.getline(buffer,sizeof(buffer));
-      if (IP.yplus_buffer_layer < ZERO) i_command = INVALID_INPUT_VALUE;
-
-    } else if (strcmp(IP.Next_Control_Parameter,"yplus_outer_layer") == 0) {
-      i_command = 167;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.yplus_outer_layer;
-      IP.Input_File.getline(buffer,sizeof(buffer));
-      if (IP.yplus_outer_layer < ZERO) i_command = INVALID_INPUT_VALUE;
 
       ////////////////////////////////////////////////////////////////////
       // FAS MULTIGRID PARAMETERS                                       //
@@ -3445,7 +3747,7 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       IP.Input_File.getline(buffer,sizeof(buffer));
       if (IP.Multigrid_IP.Dual_Time_Convergence_Residual_Level < ZERO) i_command = INVALID_INPUT_VALUE;
 
-   } else if (strcmp(IP.Next_Control_Parameter,"Multigrid_Write_Output_Cells_Frequency") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"Multigrid_Write_Output_Cells_Frequency") == 0) {
       i_command = 225;
       IP.Line_Number = IP.Line_Number + 1;
       IP.Input_File >> IP.Multigrid_IP.Write_Output_Cells_Frequency;
@@ -3691,6 +3993,12 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter, "Fix_BCs") == 0) {
       i_command = SWITCH_BCS_TO_FIXED;
 
+    } else if (strcmp(IP.Next_Control_Parameter, "Postprocess_1Dflame") == 0) {
+       i_command = POSTPROCESS_1DFLAME;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Postprocess_Turbulence") == 0) {
+       i_command = POSTPROCESS_TURBULENCE;
+
     } else if (IP.Next_Control_Parameter[0] == '#') {
        i_command = COMMENT_CODE;
     } else {
@@ -3730,7 +4038,7 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
  * control parameters from the standard input file.     *
  *                                                      *
  ********************************************************/
-int Process_Input_Control_Parameter_File(Chem2D_Input_Parameters &Input_Parameters,
+int Process_Input_Control_Parameter_File(LESPremixed2D_Input_Parameters &Input_Parameters,
                                          char *Input_File_Name_ptr,
                                          int &Command_Flag) {
 
@@ -3750,7 +4058,7 @@ int Process_Input_Control_Parameter_File(Chem2D_Input_Parameters &Input_Paramete
     error_flag = Input_Parameters.Input_File.bad();
 
     if (error_flag) {
-       cout << "\n Chem2D ERROR: Unable to open Chem2D input data file.\n";
+       cout << "\n LESPremixed2D ERROR: Unable to open LESPremixed2D input data file.\n";
        return (error_flag);
     } /* endif */
 
@@ -3771,7 +4079,7 @@ int Process_Input_Control_Parameter_File(Chem2D_Input_Parameters &Input_Paramete
        } else if (Command_Flag == INVALID_INPUT_CODE ||
                   Command_Flag == INVALID_INPUT_VALUE) {
           line_number = -line_number;
-          cout << "\n Chem2D ERROR: Error reading Chem2D data at line #"
+          cout << "\n LESPremixed2D ERROR: Error reading LESPremixed2D data at line #"
                << -line_number  << " of input data file.\n";
           error_flag = line_number;
           break;
@@ -3783,25 +4091,34 @@ int Process_Input_Control_Parameter_File(Chem2D_Input_Parameters &Input_Paramete
    
     //Load the C-Type strings from the C++ strings 
     strcpy(Input_Parameters.React_Name,Input_Parameters.react_name.c_str());
+    strcpy(Input_Parameters.Scalar_system_name,Input_Parameters.scalar_system_name.c_str());
     
     for (int i = 0; i < Input_Parameters.num_species; i++) {
       strcpy(Input_Parameters.Multispecies[i],Input_Parameters.multispecies[i].c_str());
+    }
+    if (Input_Parameters.num_scalars > 0) {
+      for (int i = 0; i < Input_Parameters.num_scalars; i++) {
+        strcpy(Input_Parameters.Scalars[i],Input_Parameters.scalars[i].c_str());
+      }
     }
 
     // Proper temperature for display
     Input_Parameters.Temperature = Input_Parameters.Wo.T();
  
     // Reset the static variables.
-    Input_Parameters.Wo.set_turbulence_variables(Input_Parameters.C_constant,
-						 Input_Parameters.von_Karman_Constant,
-						 Input_Parameters.yplus_sublayer,
-						 Input_Parameters.yplus_buffer_layer,
-						 Input_Parameters.yplus_outer_layer);
-    Input_Parameters.Uo.set_turbulence_variables(Input_Parameters.C_constant,
-						 Input_Parameters.von_Karman_Constant,
-						 Input_Parameters.yplus_sublayer,
-						 Input_Parameters.yplus_buffer_layer,
-						 Input_Parameters.yplus_outer_layer);
+    Input_Parameters.Wo.set_SFSmodel_variables(Input_Parameters.filter_width,
+					       Input_Parameters.Smagorinsky_Constant,
+					       Input_Parameters.Yoshizawa_coefficient);
+    Input_Parameters.Uo.set_SFSmodel_variables(Input_Parameters.filter_width,
+					       Input_Parameters.Smagorinsky_Constant,
+					       Input_Parameters.Yoshizawa_coefficient);
+
+    Input_Parameters.Wo.set_premixed_flame_variables(Input_Parameters.laminar_flame_thickness,
+						     Input_Parameters.laminar_flame_speed,
+						     Input_Parameters.TFactor);
+    Input_Parameters.Uo.set_premixed_flame_variables(Input_Parameters.laminar_flame_thickness,
+						     Input_Parameters.laminar_flame_speed,
+						     Input_Parameters.TFactor);
 
     // Perform consitency checks on the refinement criteria.
     Input_Parameters.Number_of_Refinement_Criteria = 0;
@@ -3820,37 +4137,37 @@ int Process_Input_Control_Parameter_File(Chem2D_Input_Parameters &Input_Paramete
 
 /********************************************************
  * Routine: Equivalence_Ratio                           *
- * 
+ *                                                      *
  ********************************************************/
-void Equivalence_Ratio(const double &phi){
+// void Equivalence_Ratio(const double &phi){
 
-  // Methane & Air
-  // CH4 + 2(O2 +3.76N2) -> CO2 + 2H2O 
-  double n = 9.52*(1.0 - phi)/(phi +9.52);
+//   // Methane & Air
+//   // CH4 + 2(O2 +3.76N2) -> CO2 + 2H2O 
+//   double n = 9.52*(1.0 - phi)/(phi +9.52);
 
-  double X_CH4 = ( 1.0 - n)/10.52;
-  double X_O2  = (2.0 + 0.21*n)/10.52;
-  double X_N2  = (7.52 +0.79*n)/10.52;
+//   double X_CH4 = ( 1.0 - n)/10.52;
+//   double X_O2  = (2.0 + 0.21*n)/10.52;
+//   double X_N2  = (7.52 +0.79*n)/10.52;
 
-  double Mtot = X_CH4*(16.0) + X_O2*(32.0) + X_N2*(28.0);
+//   double Mtot = X_CH4*(16.0) + X_O2*(32.0) + X_N2*(28.0);
 
-  double c_CH4 =  X_CH4*(16.0)/Mtot;
-  double c_O2  =  X_O2*(32.0)/Mtot;
-  double c_N2  =  X_N2*(28.0)/Mtot;
+//   double c_CH4 =  X_CH4*(16.0)/Mtot;
+//   double c_O2  =  X_O2*(32.0)/Mtot;
+//   double c_N2  =  X_N2*(28.0)/Mtot;
 
-  cout<<"\n For phi = "<<phi;
-  cout<<"\n c_CH4 "<<c_CH4;
-  cout<<"\n c_O2  "<<c_O2;
-  cout<<"\n c_N2  "<<c_N2;
-  cout<<"\n X_CH4 "<<X_CH4;
-  cout<<"\n X_O2  "<<X_O2;
-  cout<<"\n X_N2  "<<X_N2;
-  cout<<"\n Mtot  "<<Mtot;
+//   cout<<"\n For phi = "<<phi;
+//   cout<<"\n c_CH4 "<<c_CH4;
+//   cout<<"\n c_O2  "<<c_O2;
+//   cout<<"\n c_N2  "<<c_N2;
+//   cout<<"\n X_CH4 "<<X_CH4;
+//   cout<<"\n X_O2  "<<X_O2;
+//   cout<<"\n X_N2  "<<X_N2;
+//   cout<<"\n Mtot  "<<Mtot;
 
-  cout<<endl;
-  cout<<"\n Should pass in equation type, and pass back the appropriate mass fractions ";
-  cout<<endl;
+//   cout<<endl;
+//   cout<<"\n Should pass in equation type, and pass back the appropriate mass fractions ";
+//   cout<<endl;
   
-  exit(0); 
+//   exit(0); 
 
-}
+// }

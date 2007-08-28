@@ -220,7 +220,7 @@ ifeq ($(PLATFORM),Linux_i386)
     CC = gcc
     CXX = g++
     CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_296 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
-    FFLAGS = -O -w
+    FFLAGS = -O -w -fdefault-real-8
     FLAGS = -O  
     CXXFLAGS = -O 	
     ifeq ($(GCC_VERSION),V3+)
@@ -284,7 +284,7 @@ ifeq ($(PLATFORM),Linux_alpha)
     CC = ccc
     CXX = cxx
     CPPFLAGS = -D_NO_MPI_VERSION -D_NO_ICEMCFD_VERSION -D__USE_STD_IOSTREAM $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
-    FFLAGS = -arch host -tune host -fast -w
+    FFLAGS = -arch host -tune host -fast -w -r8
     CFLAGS = -arch host -tune host -fast -w 
     CXXFLAGS = -arch host -tune host -fast -w -std gnu
     LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm 
@@ -318,7 +318,7 @@ ifeq ($(PLATFORM),Linux_ia64)
     CXX = icpc
     CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
     CXXFLAGS = -w0 -O2 -mp -ftz 
-    FFLAGS = -w -O2 -mp -ftz 
+    FFLAGS = -w -O2 -mp -ftz -r8
     CFLAGS = -w0 -O2 -mp -ftz 
     LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -limf
     LD = $(CXX)
@@ -337,12 +337,12 @@ ifeq ($(PLATFORM),Linux_ia64)
     DEPENDSFLAGS = 
   endif
   ifeq ($(MPI_VERSION),MPICH)
-    FC = /usr/local/mpi/bin/mpif77
+    FC = /usr/local/mpi/bin/mpif90
     CC = /usr/local/mpi/bin/mpicc
     CXX = /usr/local/mpi/bin/mpiCC
     CPPFLAGS = -D_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
     CXXFLAGS = -w0 -O2 -mp -ftz
-    FFLAGS = -w -O2 -mp -ftz 
+    FFLAGS = -w -O2 -mp -ftz -r8
     CFLAGS = -w0 -O2 -mp -ftz 
     LD = $(CXX)
     LDFLAGS =  $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -limf

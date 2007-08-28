@@ -1,21 +1,20 @@
-/****************** Chem2DMultiBlock.cc **********************************
+/****************** LESPremixed2DMultiBlock.cc **********************************
     Multi-Block Versions of Subroutines for 2D Multi-Block 
     Quadrilateral Mesh Solution Classes. 
 
     NOTES: - In IC's I currently only use one of the "5" 
              pass in funcitons
                         
-    modified from - Euler2DQuadMultiBlock.cc                   02/08/03
 ************************************************************************/
 
-/* Include 2D Euler quadrilateral mesh solution header file. */
+/* Include 2D LES Premixed quadrilateral mesh solution header file. */
 
-#ifndef _CHEM2D_QUAD_INCLUDED
-#include "Chem2DQuad.h"
-#endif // _CHEM2D_QUAD_INCLUDED
+#ifndef _LESPREMIXED2D_QUAD_INCLUDED
+#include "LESPremixed2DQuad.h"
+#endif // _LESPREMIXED2D_QUAD_INCLUDED
 
 /**************************************************************************
- * Chem2D_Quad_Block -- Multiple Block External Subroutines.             *
+ * LESPremixed2D_Quad_Block -- Multiple Block External Subroutines.       *
  **************************************************************************/
 
 /********************************************************
@@ -25,11 +24,11 @@
  * multi-block solution blocks.                         *
  *                                                      *
  ********************************************************/
-Chem2D_Quad_Block* Allocate(Chem2D_Quad_Block *Soln_ptr,
-                             Chem2D_Input_Parameters &Input_Parameters) {
+LESPremixed2D_Quad_Block* Allocate(LESPremixed2D_Quad_Block *Soln_ptr,
+				   LESPremixed2D_Input_Parameters &Input_Parameters) {
 
     /* Allocate memory. */
-    Soln_ptr = new Chem2D_Quad_Block[Input_Parameters.Number_of_Blocks_Per_Processor];
+    Soln_ptr = new LESPremixed2D_Quad_Block[Input_Parameters.Number_of_Blocks_Per_Processor];
 
     /* Return memory location. */
     return(Soln_ptr);
@@ -42,8 +41,8 @@ Chem2D_Quad_Block* Allocate(Chem2D_Quad_Block *Soln_ptr,
  * multi-block solution blocks.                         *
  *                                                      *
  ********************************************************/
-Chem2D_Quad_Block* Deallocate(Chem2D_Quad_Block *Soln_ptr,
-                               Chem2D_Input_Parameters &Input_Parameters) {
+LESPremixed2D_Quad_Block* Deallocate(LESPremixed2D_Quad_Block *Soln_ptr,
+				     LESPremixed2D_Input_Parameters &Input_Parameters) {
  
     /* Deallocate memory. */
     for (int i = 0 ; i <= Input_Parameters.Number_of_Blocks_Per_Processor-1 ; ++i ) {
@@ -64,11 +63,11 @@ Chem2D_Quad_Block* Deallocate(Chem2D_Quad_Block *Soln_ptr,
  * multi-block solution blocks.                         *
  *                                                      *
  ********************************************************/
-void ICs(Chem2D_Quad_Block *Soln_ptr,
+void ICs(LESPremixed2D_Quad_Block *Soln_ptr,
          AdaptiveBlock2D_List &Soln_Block_List, 
-         Chem2D_Input_Parameters &Input_Parameters) {
+         LESPremixed2D_Input_Parameters &Input_Parameters) {
 
-  Chem2D_pState Wo[5];
+  LESPremixed2D_pState Wo[5];
   
   /* Define various reference flow states. */
   Wo[0] = Input_Parameters.Wo;
@@ -84,8 +83,9 @@ void ICs(Chem2D_Quad_Block *Soln_ptr,
       Soln_ptr[i].debug_level = Input_Parameters.debug_level;
       Soln_ptr[i].Moving_wall_velocity = Input_Parameters.Moving_wall_velocity;
 
-      // Set initial data. (Chem2DQuadSingleBlock.cc)
-      ICs(Soln_ptr[i], Input_Parameters.i_ICs, Wo,Input_Parameters );
+      // Set initial data. (LESPremixed2DQuadSingleBlock.cc)
+      ICs(Soln_ptr[i], Input_Parameters.i_ICs, Wo, Input_Parameters, 
+	  Soln_Block_List.Block[i].gblknum);
     }
   }  /* endfor */
 
@@ -103,9 +103,9 @@ void ICs(Chem2D_Quad_Block *Soln_ptr,
  * restart solution files.                              *
  *                                                      *
  ********************************************************/
-int Read_Restart_Solution(Chem2D_Quad_Block *Soln_ptr,
+int Read_Restart_Solution(LESPremixed2D_Quad_Block *Soln_ptr,
                           AdaptiveBlock2D_List &Soln_Block_List,
-                          Chem2D_Input_Parameters &Input_Parameters,
+                          LESPremixed2D_Input_Parameters &Input_Parameters,
                           int &Number_of_Time_Steps,
                           double &Time,
                           CPUTime &CPU_Time) {
@@ -153,8 +153,15 @@ int Read_Restart_Solution(Chem2D_Quad_Block *Soln_ptr,
           restart_file.setf(ios::skipws);
           restart_file >> nsteps >> time0 >> cpu_time0;
           restart_file.unsetf(ios::skipws);
+
+          // This is for the initialization of the 2D wrinkled premixed flame
+          if (Input_Parameters.i_ICs == IC_2DWRINKLED_FLAME) {
+            nsteps = 0; 
+            time0 = ZERO; 
+            cpu_time0.zero();
+	  } 
     
-	  /********** CHEM2D SPECIFIC ****************************************/
+	  /********** LESPREMIXED2D SPECIFIC ****************************************/
 	  restart_file.getline(line,sizeof(line)); 
 	  // get reaction set name
 	  restart_file >>Input_Parameters.react_name;
@@ -175,24 +182,67 @@ int Read_Restart_Solution(Chem2D_Quad_Block *Soln_ptr,
 	    Input_Parameters.Wo.React.set_species(species,num_species);
 	    delete[] species; 
 	  }
+
+	  //OVERRIDE 2-step CH4 mechanism name for 2D turbulent flame with mesh refinement
+	  if (Input_Parameters.i_ICs == IC_2DWRINKLED_FLAME) {
+            Input_Parameters.react_name = "CH4_2STEP";
+	    Input_Parameters.Wo.React.set_reactions(Input_Parameters.react_name);
+	    //cout << "\n" << Input_Parameters.react_name << flush;
+	  }
+
 	  
+	  // scalar system
+	  restart_file.getline(line,sizeof(line)); 
+	  restart_file >> Input_Parameters.scalar_system_name;
+	  //cout << "\n Scalar_system_name read: " << Input_Parameters.scalar_system_name << flush << endl;
+          Input_Parameters.Wo.Scal_sys.scalar_set(Input_Parameters.scalar_system_name);
+	  
+
 	  //Set Data Path
 	  Input_Parameters.get_cffc_path();
 
 	  //setup properties 
-	  Input_Parameters.Wo.set_species_data
-	    (Input_Parameters.Wo.React.num_species,Input_Parameters.Wo.React.species,
-	     Input_Parameters.CFFC_Path,
-	     Input_Parameters.Mach_Number_Reference,Input_Parameters.Schmidt,
-	     Input_Parameters.i_trans_type);   
-	  Input_Parameters.Uo.set_species_data
-	    (Input_Parameters.Wo.React.num_species,Input_Parameters.Wo.React.species,
-	     Input_Parameters.CFFC_Path,
-	     Input_Parameters.Mach_Number_Reference,Input_Parameters.Schmidt,
-	     Input_Parameters.i_trans_type);    
+	  Input_Parameters.Wo.set_species_data(Input_Parameters.Wo.React.num_species,
+					       Input_Parameters.Wo.Scal_sys.num_scalars,
+					       Input_Parameters.Wo.React.species,
+					       Input_Parameters.CFFC_Path,
+					       Input_Parameters.Mach_Number_Reference,
+					       Input_Parameters.Schmidt,
+					       Input_Parameters.i_trans_type);   
+	  Input_Parameters.Uo.set_species_data(Input_Parameters.Wo.React.num_species,
+					       Input_Parameters.Wo.Scal_sys.num_scalars,
+					       Input_Parameters.Wo.React.species,
+					       Input_Parameters.CFFC_Path,
+					       Input_Parameters.Mach_Number_Reference,
+					       Input_Parameters.Schmidt,
+					       Input_Parameters.i_trans_type);    
 	  Input_Parameters.Uo = U(Input_Parameters.Wo);
 
-	  /********** END CHEM2D SPECIFIC ****************************************/
+	  //Reset  Wo species mass fractions
+          Input_Parameters.Wo.set_initial_values(Input_Parameters.mass_fractions);  
+	  
+          // Update Uo from Wo
+          Input_Parameters.Uo = U(Input_Parameters.Wo);
+
+
+          /********* Turbulent Premixed Reacting Flow ***********************************/
+          if (Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
+	     Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_K) {
+            restart_file.setf(ios::skipws); 
+            restart_file >> Input_Parameters.Fresh_Fuel_Mass_Fraction
+                         >> Input_Parameters.Burnt_Fuel_Mass_Fraction
+                         >> Input_Parameters.Fresh_Density;
+            restart_file.unsetf(ios::skipws);    
+	  }  
+
+	  if (Input_Parameters.i_Grid == GRID_PERIODIC_BOX ||
+              Input_Parameters.i_Grid == GRID_2DTURBULENT_PREMIXED_FLAME) {
+            restart_file.setf(ios::skipws);
+	    restart_file >>  Input_Parameters.TKEo;
+            restart_file.unsetf(ios::skipws);
+	  }
+
+	  /********** END LESPREMIXED2D SPECIFIC ****************************************/
 	  
           if (!i_new_time_set) {
              Number_of_Time_Steps = nsteps;
@@ -234,9 +284,9 @@ int Read_Restart_Solution(Chem2D_Quad_Block *Soln_ptr,
  * restart solution files.                              *
  *                                                      *
  ********************************************************/
-int Write_Restart_Solution(Chem2D_Quad_Block *Soln_ptr,
+int Write_Restart_Solution(LESPremixed2D_Quad_Block *Soln_ptr,
                            AdaptiveBlock2D_List &Soln_Block_List,
-                           Chem2D_Input_Parameters &Input_Parameters,
+                           LESPremixed2D_Input_Parameters &Input_Parameters,
                            const int Number_of_Time_Steps,
                            const double &Time,
                            const CPUTime &CPU_Time) {
@@ -282,7 +332,7 @@ int Write_Restart_Solution(Chem2D_Quad_Block *Soln_ptr,
           restart_file << setprecision(14) << Number_of_Time_Steps 
                        << " " << Time << " " << CPU_Time << "\n";
           restart_file.unsetf(ios::scientific);
-	  /********* CHEM2D SPECIFIC ***********************************/
+	  /********* LESPREMIXED2D SPECIFIC ***********************************/
 	  restart_file << Input_Parameters.react_name << "\n";
 	  if(Input_Parameters.react_name == "NO_REACTIONS"){
 	    restart_file << Input_Parameters.Wo.ns <<" ";
@@ -290,6 +340,23 @@ int Write_Restart_Solution(Chem2D_Quad_Block *Soln_ptr,
 	      restart_file << Input_Parameters.multispecies[k] <<" ";
 	    }
 	    restart_file<<endl;
+	  }
+
+
+	  // scalar system name
+	  restart_file << Input_Parameters.scalar_system_name << "\n";
+ 
+          /********* Turbulent Premixed Reacting Flow ***********************************/
+          if (Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
+	     Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_K) {
+            restart_file << Input_Parameters.Fresh_Fuel_Mass_Fraction << " "
+                         << Input_Parameters.Burnt_Fuel_Mass_Fraction << " "
+                         << Input_Parameters.Fresh_Density << endl;
+	  }
+
+	  if (Input_Parameters.i_Grid == GRID_PERIODIC_BOX ||
+              Input_Parameters.i_Grid == GRID_2DTURBULENT_PREMIXED_FLAME) {
+	    restart_file <<  Input_Parameters.TKEo << endl;
 	  }
  
       	  restart_file << setprecision(14) << Soln_ptr[i];
@@ -314,9 +381,9 @@ int Write_Restart_Solution(Chem2D_Quad_Block *Soln_ptr,
  * TECPLOT solution files.                              *
  *                                                      *
  ********************************************************/
-int Output_Tecplot(Chem2D_Quad_Block *Soln_ptr,
+int Output_Tecplot(LESPremixed2D_Quad_Block *Soln_ptr,
                    AdaptiveBlock2D_List &Soln_Block_List,
-                   Chem2D_Input_Parameters &Input_Parameters,
+                   LESPremixed2D_Input_Parameters &Input_Parameters,
                    const int Number_of_Time_Steps,
                    const double &Time) {
 
@@ -390,9 +457,9 @@ int Output_Tecplot(Chem2D_Quad_Block *Soln_ptr,
  * TECPLOT solution files.                              *
  *                                                      *
  ********************************************************/
-int Output_Cells_Tecplot(Chem2D_Quad_Block *Soln_ptr,
+int Output_Cells_Tecplot(LESPremixed2D_Quad_Block *Soln_ptr,
                          AdaptiveBlock2D_List &Soln_Block_List,
-                         Chem2D_Input_Parameters &Input_Parameters,
+                         LESPremixed2D_Input_Parameters &Input_Parameters,
                          const int Number_of_Time_Steps,
                          const double &Time) {
 
@@ -463,9 +530,9 @@ int Output_Cells_Tecplot(Chem2D_Quad_Block *Soln_ptr,
  * if cannot write any of the TECPLOT solution files.   *
  *                                                      *
  ********************************************************/
-int Output_Nodes_Tecplot(Chem2D_Quad_Block *Soln_ptr,
+int Output_Nodes_Tecplot(LESPremixed2D_Quad_Block *Soln_ptr,
                          AdaptiveBlock2D_List &Soln_Block_List,
-                         Chem2D_Input_Parameters &Input_Parameters,
+                         LESPremixed2D_Input_Parameters &Input_Parameters,
                          const int Number_of_Time_Steps,
                          const double &Time) {
 
@@ -535,9 +602,9 @@ int Output_Nodes_Tecplot(Chem2D_Quad_Block *Soln_ptr,
  * if cannot write any of the TECPLOT solution files.   *
  *                                                      *
  ********************************************************/
-int Output_Mesh_Tecplot(Chem2D_Quad_Block *Soln_ptr,
+int Output_Mesh_Tecplot(LESPremixed2D_Quad_Block *Soln_ptr,
                         AdaptiveBlock2D_List &Soln_Block_List,
-                        Chem2D_Input_Parameters &Input_Parameters,
+                        LESPremixed2D_Input_Parameters &Input_Parameters,
                         const int Number_of_Time_Steps,
                         const double &Time) {
 
@@ -596,16 +663,16 @@ int Output_Mesh_Tecplot(Chem2D_Quad_Block *Soln_ptr,
 }
 
 /********************************************************
- * Routine: Output_RHS                                 *
+ * Routine: Output_RHS                                  *
  * For testing Jacobians                                *
  *                                                      *
  *                                                      *
  ********************************************************/
-int Output_RHS(Chem2D_Quad_Block *Soln_ptr,
-                         AdaptiveBlock2D_List &Soln_Block_List,
-                         Chem2D_Input_Parameters &Input_Parameters,
-                         const int Number_of_Time_Steps,
-                         const double &Time) {
+int Output_RHS(LESPremixed2D_Quad_Block *Soln_ptr,
+	       AdaptiveBlock2D_List &Soln_Block_List,
+	       LESPremixed2D_Input_Parameters &Input_Parameters,
+	       const int Number_of_Time_Steps,
+	       const double &Time) {
 
   
     int i, i_output_title;
@@ -669,12 +736,12 @@ int Output_RHS(Chem2D_Quad_Block *Soln_ptr,
  *                                                      *
  *                                                      *
  ********************************************************/
-int Output_PERTURB(Chem2D_Quad_Block *Soln_ptr,
-                           AdaptiveBlock2D_List &Soln_Block_List,
-                           Chem2D_Input_Parameters &Input_Parameters,
-                           const int Number_of_Time_Steps,
-                           const double &Time,
-                           const CPUTime &CPU_Time) {
+int Output_PERTURB(LESPremixed2D_Quad_Block *Soln_ptr,
+		   AdaptiveBlock2D_List &Soln_Block_List,
+		   LESPremixed2D_Input_Parameters &Input_Parameters,
+		   const int Number_of_Time_Steps,
+		   const double &Time,
+		   const CPUTime &CPU_Time) {
 
     int i;
     char prefix[256], extension[256], restart_file_name[256];
@@ -716,7 +783,7 @@ int Output_PERTURB(Chem2D_Quad_Block *Soln_ptr,
           restart_file << setprecision(14) << Number_of_Time_Steps 
                        << " " << Time << " " << CPU_Time << "\n";
           restart_file.unsetf(ios::scientific);
-	  /********* CHEM2D SPECIFIC ***********************************/
+	  /********* LESPREMIXED2D SPECIFIC ***********************************/
 	  restart_file << Input_Parameters.react_name << "\n";
 	  if(Input_Parameters.react_name == "NO_REACTIONS"){
 	    restart_file << Input_Parameters.Wo.ns <<" ";
@@ -758,9 +825,9 @@ int Output_PERTURB(Chem2D_Quad_Block *Soln_ptr,
  * if cannot write any of the GNUPLOT solution files.   *
  *                                                      *
  ********************************************************/
-int Output_Mesh_Gnuplot(Chem2D_Quad_Block *Soln_ptr,
+int Output_Mesh_Gnuplot(LESPremixed2D_Quad_Block *Soln_ptr,
                         AdaptiveBlock2D_List &Soln_Block_List,
-                        Chem2D_Input_Parameters &Input_Parameters,
+                        LESPremixed2D_Input_Parameters &Input_Parameters,
                         const int Number_of_Time_Steps,
                         const double &Time) {
 
@@ -826,9 +893,9 @@ int Output_Mesh_Gnuplot(Chem2D_Quad_Block *Soln_ptr,
  * blocks.                                              *
  *                                                      *
  ********************************************************/
-void BCs(Chem2D_Quad_Block *Soln_ptr,
+void BCs(LESPremixed2D_Quad_Block *Soln_ptr,
          AdaptiveBlock2D_List &Soln_Block_List,
-	 Chem2D_Input_Parameters &Input_Parameters) {
+	 LESPremixed2D_Input_Parameters &Input_Parameters) {
 
     int i;
 
@@ -851,9 +918,9 @@ void BCs(Chem2D_Quad_Block *Soln_ptr,
  * condition.                                           *
  *                                                      *
  ********************************************************/
-double CFL(Chem2D_Quad_Block *Soln_ptr,
+double CFL(LESPremixed2D_Quad_Block *Soln_ptr,
            AdaptiveBlock2D_List &Soln_Block_List,
-           Chem2D_Input_Parameters &Input_Parameters) {
+           LESPremixed2D_Input_Parameters &Input_Parameters) {
 
     int i;
     double dtMin;
@@ -879,7 +946,7 @@ double CFL(Chem2D_Quad_Block *Soln_ptr,
  * time-accurate calculations.                          *
  *                                                      *
  ********************************************************/
-void Set_Global_TimeStep(Chem2D_Quad_Block *Soln_ptr,
+void Set_Global_TimeStep(LESPremixed2D_Quad_Block *Soln_ptr,
                          AdaptiveBlock2D_List &Soln_Block_List,
                          const double &Dt_min) {
     int i;
@@ -900,7 +967,7 @@ void Set_Global_TimeStep(Chem2D_Quad_Block *Soln_ptr,
  * solution for steady state problems.                  *
  *                                                      *
  ********************************************************/
-double L1_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
+double L1_Norm_Residual(LESPremixed2D_Quad_Block *Soln_ptr,
 		      AdaptiveBlock2D_List &Soln_Block_List) {
 
   /* Calculate the L1-norm. Sum the L1-norm for each solution block. */
@@ -923,7 +990,7 @@ double L1_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
  * solution for steady state problems.                  *
  *                                                      *
  ********************************************************/
-double L2_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
+double L2_Norm_Residual(LESPremixed2D_Quad_Block *Soln_ptr,
 			AdaptiveBlock2D_List &Soln_Block_List) {
 	
   /* Sum the square of the L2-norm for each solution block. */
@@ -946,7 +1013,7 @@ double L2_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
  * of the solution for steady state problems.           *
  *                                                      *
  ********************************************************/
-double Max_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
+double Max_Norm_Residual(LESPremixed2D_Quad_Block *Soln_ptr,
 			 AdaptiveBlock2D_List &Soln_Block_List){	
   
   /* Find the maximum norm for all solution blocks. */
@@ -969,7 +1036,7 @@ double Max_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
  * solution for steady state problems.                  *
  *                                                      *
  ********************************************************/
-void L1_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
+void L1_Norm_Residual(LESPremixed2D_Quad_Block *Soln_ptr,
 		      AdaptiveBlock2D_List &Soln_Block_List,
 		      double *l1_norm) {
 
@@ -995,7 +1062,7 @@ void L1_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
  * solution for steady state problems.                  *
  *                                                      *
  ********************************************************/
-void L2_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
+void L2_Norm_Residual(LESPremixed2D_Quad_Block *Soln_ptr,
 		      AdaptiveBlock2D_List &Soln_Block_List,
 		      double *l2_norm) {
 
@@ -1020,7 +1087,7 @@ void L2_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
  * of the solution for steady state problems.           *
  *                                                      *
  ********************************************************/
-void Max_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
+void Max_Norm_Residual(LESPremixed2D_Quad_Block *Soln_ptr,
 		       AdaptiveBlock2D_List &Soln_Block_List,
 		       double *max_norm) {
   
@@ -1044,7 +1111,7 @@ void Max_Norm_Residual(Chem2D_Quad_Block *Soln_ptr,
  * blocks.                                              *
  *                                                      *
  ********************************************************/
-void Evaluate_Limiters(Chem2D_Quad_Block *Soln_ptr,
+void Evaluate_Limiters(LESPremixed2D_Quad_Block *Soln_ptr,
                        AdaptiveBlock2D_List &Soln_Block_List) {
 
     for (int i = 0 ; i < Soln_Block_List.Nblk ; ++i ) {
@@ -1060,7 +1127,7 @@ void Evaluate_Limiters(Chem2D_Quad_Block *Soln_ptr,
  * blocks.                                              *
  *                                                      *
  ********************************************************/
-void Freeze_Limiters(Chem2D_Quad_Block *Soln_ptr,
+void Freeze_Limiters(LESPremixed2D_Quad_Block *Soln_ptr,
                      AdaptiveBlock2D_List &Soln_Block_List) {
 
     for (int i = 0 ; i < Soln_Block_List.Nblk ; ++i ) {
@@ -1072,7 +1139,7 @@ void Freeze_Limiters(Chem2D_Quad_Block *Soln_ptr,
  * Routine: Change Mref                                 *
  *                                                      *
  ********************************************************/
-void Change_Mref(Chem2D_Quad_Block *Soln_ptr,
+void Change_Mref(LESPremixed2D_Quad_Block *Soln_ptr,
 		 AdaptiveBlock2D_List &Soln_Block_List,
 		 const double &Mr) {
 
@@ -1092,9 +1159,9 @@ void Change_Mref(Chem2D_Quad_Block *Soln_ptr,
  * 2D quadrilateral multi-block  solution blocks.       *
  *                                                      *
  ********************************************************/
-void Residual_Smoothing(Chem2D_Quad_Block *Soln_ptr,
+void Residual_Smoothing(LESPremixed2D_Quad_Block *Soln_ptr,
                         AdaptiveBlock2D_List &Soln_Block_List,
-                        Chem2D_Input_Parameters &Input_Parameters,
+                        LESPremixed2D_Input_Parameters &Input_Parameters,
                         const int I_Stage) {
 
     int i, k_residual;
@@ -1142,7 +1209,7 @@ void Residual_Smoothing(Chem2D_Quad_Block *Soln_ptr,
  * given cell centered location.                        *
  *                                                      *
  ********************************************************/
-double Distance_to_Wall(Chem2D_Quad_Block *Soln_ptr,
+double Distance_to_Wall(LESPremixed2D_Quad_Block *Soln_ptr,
                         AdaptiveBlock2D_List &Soln_Block_List,
                         const Vector2D X_cell) {
 
@@ -1170,7 +1237,7 @@ double Distance_to_Wall(Chem2D_Quad_Block *Soln_ptr,
  * with resolution mesh changes.                                *
  *                                                              *
  ****************************************************************/
-void Apply_Boundary_Flux_Corrections(Chem2D_Quad_Block *Soln_ptr,
+void Apply_Boundary_Flux_Corrections(LESPremixed2D_Quad_Block *Soln_ptr,
                                      AdaptiveBlock2D_List &Soln_Block_List) {
 
     int i;
@@ -1198,9 +1265,9 @@ void Apply_Boundary_Flux_Corrections(Chem2D_Quad_Block *Soln_ptr,
  * with resolution mesh changes.                                *
  *                                                              *
  ****************************************************************/
-void Apply_Boundary_Flux_Corrections_Multistage_Explicit(Chem2D_Quad_Block *Soln_ptr,
+void Apply_Boundary_Flux_Corrections_Multistage_Explicit(LESPremixed2D_Quad_Block *Soln_ptr,
                                                          AdaptiveBlock2D_List &Soln_Block_List,
-                                                         Chem2D_Input_Parameters &Input_Parameters,
+                                                         LESPremixed2D_Input_Parameters &Input_Parameters,
    	                                                 const int I_Stage) {
 
     int i;
@@ -1237,10 +1304,10 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(Chem2D_Quad_Block *Soln
  * the specified input values.                          *
  *                                                      *
  ********************************************************/
-int dUdt_Multistage_Explicit(Chem2D_Quad_Block *Soln_ptr,
+int dUdt_Multistage_Explicit(LESPremixed2D_Quad_Block *Soln_ptr,
 			     AdaptiveBlockResourceList &Global_Soln_Block_List,
                              AdaptiveBlock2D_List &Local_Soln_Block_List,
-                             Chem2D_Input_Parameters &Input_Parameters,
+                             LESPremixed2D_Input_Parameters &Input_Parameters,
    	                     const int I_Stage) {
 
     int i, error_flag;
@@ -1277,9 +1344,9 @@ int dUdt_Multistage_Explicit(Chem2D_Quad_Block *Soln_ptr,
  * input values.                                        *
  *                                                      *
  ********************************************************/
-int Update_Solution_Multistage_Explicit(Chem2D_Quad_Block *Soln_ptr,
+int Update_Solution_Multistage_Explicit(LESPremixed2D_Quad_Block *Soln_ptr,
                                         AdaptiveBlock2D_List &Soln_Block_List,
-                                        Chem2D_Input_Parameters &Input_Parameters,
+                                        LESPremixed2D_Input_Parameters &Input_Parameters,
    	                                const int I_Stage) {
 
     int i, error_flag;
@@ -1312,7 +1379,7 @@ int Update_Solution_Multistage_Explicit(Chem2D_Quad_Block *Soln_ptr,
  * required in the dual time stepping.                  * 
  *                                                      *
  ********************************************************/
-int Update_Dual_Solution_States(Chem2D_Quad_Block *Soln_ptr,
+int Update_Dual_Solution_States(LESPremixed2D_Quad_Block *Soln_ptr,
                                  AdaptiveBlock2D_List &Soln_Block_List) {
     int i, error_flag;
  
@@ -1346,9 +1413,9 @@ int Update_Dual_Solution_States(Chem2D_Quad_Block *Soln_ptr,
  * norms).                                                            *
  *                                                                    *
  **********************************************************************/
-int Output_Ringleb(Chem2D_Quad_Block *Soln_ptr,
+int Output_Ringleb(LESPremixed2D_Quad_Block *Soln_ptr,
 		   AdaptiveBlock2D_List &Soln_Block_List,
-		   Chem2D_Input_Parameters &IP) {
+		   LESPremixed2D_Input_Parameters &IP) {
 
   int i, i_output_title;
   char prefix[256], extension[256], output_file_name[256];
@@ -1458,9 +1525,9 @@ int Output_Ringleb(Chem2D_Quad_Block *Soln_ptr,
  * max norms).                                                        *
  *                                                                    *
  **********************************************************************/
-int Output_Viscous_Channel(Chem2D_Quad_Block *Soln_ptr,
+int Output_Viscous_Channel(LESPremixed2D_Quad_Block *Soln_ptr,
 			   AdaptiveBlock2D_List &Soln_Block_List,
-			   Chem2D_Input_Parameters &IP) {
+			   LESPremixed2D_Input_Parameters &IP) {
 
   int i, i_output_title;
   char prefix[256], extension[256], output_file_name[256];
@@ -1563,9 +1630,9 @@ int Output_Viscous_Channel(Chem2D_Quad_Block *Soln_ptr,
  * solution and the corresponding Blasius solution.                   *
  *                                                                    *
  **********************************************************************/
-int Output_Flat_Plate(Chem2D_Quad_Block *Soln_ptr,
+int Output_Flat_Plate(LESPremixed2D_Quad_Block *Soln_ptr,
 		      AdaptiveBlock2D_List &Soln_Block_List,
-		      Chem2D_Input_Parameters &IP) {
+		      LESPremixed2D_Input_Parameters &IP) {
 
   int i, i_output_title_soln, i_output_title_skin;
   char prefix_soln[256], prefix_skin[256], extension_soln[256], extension_skin[256];
@@ -1681,9 +1748,9 @@ int Output_Flat_Plate(Chem2D_Quad_Block *Soln_ptr,
  * in a format suitable for plotting with tecplot.                    *
  *                                                                    *
  **********************************************************************/
-int Output_Driven_Cavity_Flow(Chem2D_Quad_Block *Soln_ptr,
+int Output_Driven_Cavity_Flow(LESPremixed2D_Quad_Block *Soln_ptr,
 			      AdaptiveBlock2D_List &Soln_Block_List,
-			      Chem2D_Input_Parameters &IP) {
+			      LESPremixed2D_Input_Parameters &IP) {
 
   int i, i_output_title;
   char prefix_u[256], extension_u[256], output_file_name_u[256];
