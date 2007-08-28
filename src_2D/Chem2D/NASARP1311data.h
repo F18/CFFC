@@ -51,6 +51,7 @@ using namespace std;
 #include "../Polyfit/Polyfit.h"
 #endif  
 
+#include "LennardJones.h"
 
 #define	INPUT_PARAMETER_LENGTH_CHEM2D    128
 
@@ -63,22 +64,6 @@ class thermocoef;
 class transcoef;
 class NASARP1311data;
 
-
-/************** MISC. FUNCTIONS *******************************************
-  Some necessary functions required to compute the transport properties 
-  using Champman-Enskog relations
- *************************************************************************/
-// collsion integrals
-double Omega11(const double Ts); 
-double Omega22(const double Ts);
-double dOmega22dT(const double T, const double eps);
-
-// rotational relaxation function
-double F(const double Ts);      
-
-// Binary Diffusion Coefficient
-double BinaryDiff( const NASARP1311data& s1, const NASARP1311data& s2, 
-		   const double T, const double P);
 
 
 /*************************************************************************
@@ -332,19 +317,12 @@ class NASARP1311data{
   // molar mass
   double mol_mass;
 
-  /* Lennard-Jones Specific*/
-  // Lennard-Jones Parameters (only used when tranport_type = TRANSPORT_LENNARD_JONES)
-  int g;         // geometry factor ( 0=monatomic, 1=linear, 2=non-linear)
-  double eps;    // Lennard-Jones potential well depth [J]
-  double sigma;  // Lennard-Jones collision diameter [m]
-  double mu;     // dipole moment [m^1.5 J^0.5]
-  double alpha;  // polarizability [cubic m]
-  double Zrot;   // Rotational relaxation parameter at 298K
-  bool   polar;  // true if polar molecule, false if non-polar
-  /* End Lennard-Jones Specific*/
+  // Lennard-Jones Parameters 
+  // (only used when tranport_type = TRANSPORT_LENNARD_JONES)
+  LennardJonesData LJdata;
 
   //default constructor
-  NASARP1311data(){ 
+ NASARP1311data() : LJdata() { 
     trans_type = TRANSPORT_NASA;
     strcpy(datafilename_thermo,"thermo.inp"); 
     strcpy(datafilename_trans,"trans.inp");
@@ -357,16 +335,6 @@ class NASARP1311data{
     thermo_data=NULL; 
     trans_thermconduct=NULL; 
     trans_viscosity=NULL;   
-
-    /* Lennard-Jones Specific*/
-    g=0;
-    eps=0;
-    sigma=0;
-    mu=0;
-    alpha=0;
-    Zrot=0;
-    polar=false;
-    /* End Lennard-Jones Specific*/
  
     // initialize function pointers to NASA functions
     pt_Viscosity = &NASARP1311data::Viscosity_NASA;         

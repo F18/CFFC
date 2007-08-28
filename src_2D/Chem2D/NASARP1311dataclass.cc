@@ -42,20 +42,27 @@ void NASARP1311data::Getdata(string spec, const char *PATH, const int &trans_dat
   // get the thermodynamic data
   GetThermoData(spec);
 
+  //
   // get the tranport data and initialize function pointers
+  //
   if (trans_type == TRANSPORT_NASA) {
+    // set pointers
     pt_Viscosity = &NASARP1311data::Viscosity_NASA;
     pt_ThermalConduct = &NASARP1311data::ThermalConduct_NASA;
     pt_dViscositydT = &NASARP1311data::dViscositydT_NASA;
+    // get NASA transport data
     GetTransDataNASA(spec);
   } else if (trans_type == TRANSPORT_LENNARD_JONES) {
-    pt_Viscosity = &NASARP1311data::Viscosity_LJ_Poly;            // fit a polynomial
-    pt_ThermalConduct = &NASARP1311data::ThermalConduct_LJ_Poly;  // fit a polynomial
-    pt_dViscositydT = &NASARP1311data::dViscositydT_LJ_Poly;      // fit a polynomial
-    //pt_Viscosity = &NASARP1311data::Viscosity_LJ;
-    //pt_ThermalConduct = &NASARP1311data::ThermalConduct_LJ;
-    //pt_dViscositydT = &NASARP1311data::dViscositydT_LJ;
-    GetTransDataLJ(spec);   
+    // set pointers
+    pt_Viscosity = &NASARP1311data::Viscosity_LJ;            // fit a polynomial
+    pt_ThermalConduct = &NASARP1311data::ThermalConduct_LJ;  // fit a polynomial
+    pt_dViscositydT = &NASARP1311data::dViscositydT_LJ;      // fit a polynomial
+    // get LJ transport data
+    LJdata.GetData(datafilename_trans,spec);   
+    // need to copy molar mass
+    LJdata.mol_mass = mol_mass;
+    // fit data to polynomials
+    FitTransDataLJ();
   } else {
     cerr << "Error - Getdata(): Never heard of this transport dataset!";
     exit(-1);
@@ -361,81 +368,6 @@ void NASARP1311data::GetTransDataNASA(const string spec) {
   species = species.replace(species.find("                     "),21,""); //21 spaces
   //close transport data file
   transdatafile.close();
-}
-
-/********************* GET TRANS DATA *******************************/
-void NASARP1311data::GetTransDataLJ(const string spec) {
-  // declares
-  ifstream in;
-  string species;
-  string line, temp;
-  int species_l;
-  
-  // creat the search string
-  species = spec + ' ';
-  species_l = species.length();
-
-  //---------------------------------
-  // Get transport properties  
-  //---------------------------------
- 
-  // open the transport data file
-  in.open(datafilename_trans);
-  if(in.fail()){ 
-    cerr<<"\nError opening file: tran.dat" <<endl;
-    exit(0); 
-  }
-	   
-  // search for the species
-  do{
-    getline(in,line);
-  } 
-#ifdef _GNU_GCC_296 //redhat 7.3 gcc-2.96 
-  while( line.compare(species,0,species_l) != 0 && !in.eof() );
-#else //alpha & redhat 9.0 gcc-3.22
-  while( line.compare(0,species_l,species) != 0 && !in.eof() );
-#endif
-
-  // if we reached the end of the file and haven't found the species, error
-  if(in.eof()){
-    cerr<<" Species: "<<species<<" not in tran.dat"<<endl;
-    exit(0);
-  }
-
-  // get the geometry factor
-  g = stoi( line.substr(19,1) );
-  
-  // Get the potential well-depth / boltzman constant
-  // and un-normalize it. [well-depth / boltzman] -> well-depth
-  eps = stof( line.substr(20,10) ) * BOLTZMANN;
- 
-  // get the collision diameter in Angstroms and convert to m
-  sigma = stof( line.substr(30,10) ) * 1.0E-10;  
-  
-  // get the dipole moment in [Debye] and convert to [m^1.5 J^0.5]
-  mu = stof( line.substr(40,10) );
-  polar = (mu > TOLER); // true if polar (mu>0), false if non-polar (mu=0)
-  mu *= 1.0E-25*sqrt(10.0); 
-  
-  // get the polarizability in [Angstroms^3] and convert to [m^3]
-  alpha = stof( line.substr(50,10) ) * 1.0E-30; 
- 
-  // get the rotational relaxation parameter
-  Zrot = stof( line.substr(60,10) );
-  
-  // close the transport data file
-  in.close();
-
-  //cout << "\n Species "<< species <<": g = " << g << "\t eps = " << eps
-  //     << "\t sigma = " << sigma << "\n\t mu = " << mu  
-  //     << "\t alpha = " << alpha << "\t Zrot = " << Zrot;;
-
-
-  //----------------------------------
-  //    Polynomial fitting
-  //----------------------------------
-  FitTransDataLJ();
- 
 }
 
 
@@ -924,37 +856,14 @@ double NASARP1311data::ThermalConduct_NASA(double Temp){
  *              See 'The properties of gases and liquids by *
  *              Reid et al.(1987).  This is Units [N s/m^2] *
  ************************************************************/
-double NASARP1311data::Viscosity_LJ(double T) {
-  
-  /* Compute */
-  double v = (5.0/16.0) * sqrt( PI * mol_mass  * BOLTZMANN * T / AVOGADRO ) 
-    / ( PI * sigma*sigma * Omega22( T*BOLTZMANN/eps ) );
-  
-  return v;
-}
-
-// Polynomial fit to Viscosity_LJ
-double NASARP1311data::Viscosity_LJ_Poly(double Temp){
+// Computed from polynomial fit
+double NASARP1311data::Viscosity_LJ(double Temp){
   double logT = log(Temp);
   return exp( poly3(logT, trans_viscosity[0].trans_coef) );
 }
 
-
-//The derivative of viscosity w.r.t Temperature using analytical formulation
-double NASARP1311data::dViscositydT_LJ(double T) {
-  
-  /* Compute */
-  double prefactor = (5.0/16.0) * sqrt( PI * mol_mass  * BOLTZMANN  / AVOGADRO )
-    /( PI * sigma*sigma );
-  double v1 = 1.0/( 2.0 * Omega22( T*BOLTZMANN/eps ) * sqrt(T) );
-  double v2 = - sqrt(T) * dOmega22dT(T,eps) / ( pow(Omega22(T*BOLTZMANN/eps), 2.0) );
-
-  return prefactor*(v1+v2);
- 
-}
-
 //The derivative of viscosity w.r.t Temperature using 3rd order polynomial
-double NASARP1311data::dViscositydT_LJ_Poly(double Temp){
+double NASARP1311data::dViscositydT_LJ(double Temp){
   double logT = log(Temp);
   double eta = exp( poly3(logT, trans_viscosity[0].trans_coef) );
   double prod = ( 3.0*trans_viscosity[0].Trans_coef(3)*logT*logT +
@@ -970,72 +879,8 @@ double NASARP1311data::dViscositydT_LJ_Poly(double Temp){
  *              liquids by Reid et al.(1987).               *
  *              Units [W/(m K)]                             *
  ************************************************************/
-double NASARP1311data::ThermalConduct_LJ(double T) {
- 
-  /* Declares */
-  double l;         // thermal conductivity
-  double A, B;      // constants
-  double Cv_trans;  // translational
-  double Cv_rot;    // rotational
-  double Cv_vib;    // vibrational
-  double f_trans;   // translational
-  double f_rot;     // rotational
-  double f_vib;     // vibrational
-  double Dkk;       // self diffusion coefficient
-  double v;         // viscosity
-  double d;         // density
-  double Z;         // rotational relaxation collision number
-  double Tref=298.0;// reference temperature [K]
-  double a;
-  double eta = Viscosity_LJ(T);
-  double P = 1.0;   // rho=fn(P) * D=fn(1/P) ==> rho*D independant of P
-                    // so we just set it to unity
-  
-  
-  /* Determine molar heat capacity relationships */
-  
-  Cv_trans = 3.0/2.0;
-  
-  // for a linear  molecule
-  if (g==1) {
-    Cv_rot = 1.0;
-    Cv_vib = HeatCapacity_v(T)*mol_mass/R_UNIVERSAL - 5.0/2.0;
-  }
-  // for a non-linear  molecule
-  else if (g==2) {
-    Cv_rot = 3.0/2.0;
-    Cv_vib = HeatCapacity_v(T)*mol_mass/R_UNIVERSAL - 3.0;  
-  }
-
-  /* Compute thermal conductivity */
-  // for a monatomic gas
-  if (g==0) {
-    f_trans = 5.0/2.0;
-    l = eta * R_UNIVERSAL * f_trans*Cv_trans / mol_mass;
-  // for a non-monatonic
-  } else {
-    Dkk = BinaryDiff(*this,*this,T,P);  // self-diffusion coefficient per unity pressure [D~1/P]
-    v = eta;
-    d = P*mol_mass / (R_UNIVERSAL*T);   // density per unit pressure [rho~P]
-    a = d*Dkk/v;                        // [d*rho !~ P]
-    
-    Z = Zrot * F(Tref*BOLTZMANN/eps) / F(T*BOLTZMANN/eps);
-    A = 5.0/2.0 - a;
-    B = Z + (2.0/PI)*( 5.0*Cv_rot/3.0 + a );
-    f_trans = (5.0/2.0) * ( 1.0 - (2.0/PI)*(Cv_rot/Cv_trans)*(A/B) );
-    f_rot = a * ( 1.0 + (2/PI)*(A/B) );
-    f_vib = a;
-
-    l = (v*R_UNIVERSAL/mol_mass) * ( f_trans*Cv_trans + f_rot*Cv_rot + f_vib*Cv_vib  );
-  }
-  
-
-  return l;
-  
-}
-
-// Polynomial fit to ThermalConduct_LJ
-double NASARP1311data::ThermalConduct_LJ_Poly(double Temp){
+// Computed from polynomial fit
+double NASARP1311data::ThermalConduct_LJ(double Temp){
   double logT = log(Temp);
   return exp( poly3(logT, trans_thermconduct[0].trans_coef) );
 }
@@ -1111,8 +956,8 @@ void NASARP1311data::FitTransDataLJ() {
     T = Tmin + dT*double(n);
     Tlog[n] = log(T);
 
-    spvisc[n] = log( Viscosity_LJ(T) );
-    spcond[n] = log( ThermalConduct_LJ(T) );
+    spvisc[n] = log( LJdata.Viscosity(T) );
+    spcond[n] = log( LJdata.ThermalConduct(HeatCapacity_v(T), T) );
     w[n] = -1.0;
   }
   
@@ -1168,261 +1013,6 @@ void NASARP1311data::FitTransDataLJ() {
   delete[]  spvisc;
   delete[]  spcond;
 
-}
-/************************************************************
- * Function: Omega11                                        *
- *                                                          *
- * Description: Collision integral computed using curvefits *
- *              published by Neufeld (1972).                * 
- *                                                          *
- *              T = temperature                             *
- *              Ts = T*kB/eps                               *
- *              where kB = bolzman constant and             *
- *                    eps = potential well-depth [J]        *
- *                                                          *
- ************************************************************/
-double Omega11(const double Ts) {
-
-  // constants
-  static double A = 1.06036;
-  static double B = 0.15610;
-  static double C = 0.19300;
-  static double D = 0.47635;
-  static double E = 1.03587;
-  static double F = 1.52996;
-  static double G = 1.76474;
-  static double H = 3.89411;
-  
-  // make sure reduced temperature is within range
-  if ( Ts<0.3 || Ts>100.0 ) {
-    cerr << "NASARP1311dataclass::Omega11() - Warning: Reduced temperature T*= " 
-	 << Ts << " outside applicable range (0.3 < T* < 100)." << endl;
-    //exit(0);
-  }
- 
-  // compute
-  double a = A*pow(Ts,-B) + C*exp(-D*Ts) + E*exp(-F*Ts)
-    + G*exp(-H*Ts);
-  
-  return a;
-  
-}
-
-
-
-/************************************************************
- * Function: Omega22                                        * 
- *                                                          *
- * Description: Collision integral computed using curvefits *
- *              published by Neufeld (1972).                * 
- *                                                          *
- *              T = temperature                             *
- *              Ts = T*kB/eps                               *
- *              where kB = bolzman constant and             *
- *                    eps = potential well-depth [J]        *
- *                                                          *
- ************************************************************/
-double Omega22(const double Ts) {
-
-  // constants
-  static double A =  1.16145;
-  static double B =  0.14874;
-  static double C =  0.52487;
-  static double D =  0.77320;
-  static double E =  2.16178;
-  static double F =  2.43787;
-  static double G =  0.0;
-  static double H =  0.0;
-  static double R = -6.435E-04;
-  static double S =  18.0323;
-  static double W = -0.76830;
-  static double P =  7.27371;
-  
-  // make sure reduced temperature is within range
-  if ( Ts<0.3 || Ts>100.0 ) {
-    cerr << "NASARP1311dataclass::Omega11() - Warning: Reduced temperature T*= " 
-	 << Ts << " outside applicable range (0.3 < T* < 100)." << endl;
-    //exit(0);
-  }
-  
-  // compute
-  double a = A*pow(Ts,-B) + C*exp(-D*Ts) + E*exp(-F*Ts)
-    + G*exp(-H*Ts) + R*pow(Ts,B)*sin( S*pow(Ts,W) - P );
-  
-  return a;
-}
-
- 
-/************************************************************
- * Function: dOmega22dT                                     *
- *                                                          *
- * Description: Derivative of 2,2 collision integral        *
- *              w.r.t temperature computed using curvefits  *
- *              published by Neufeld (1972).                * 
- *                                                          *
- *              T = temperature                             *
- *              Ts = T*kB/eps                               *
- *              where kB = bolzman constant and             *
- *                    eps = potential well-depth [J]        *
- *                                                          *
- ************************************************************/
-double dOmega22dT(const double T, const double eps) {
-  
-  // constants
-  static double A =  1.16145;
-  static double B =  0.14874;
-  static double C =  0.52487;
-  static double D =  0.77320;
-  static double E =  2.16178;
-  static double F =  2.43787;
-  static double G =  0.0;
-  static double H =  0.0;
-  static double R = -6.435E-04;
-  static double S =  18.0323;
-  static double W = -0.76830;
-  static double P =  7.27371;
-  
-  double ek = eps/BOLTZMANN;
-  double Ts = T/ek;
-  
-  // make sure reduced temperature is within range
-  if ( Ts<0.3 || Ts>100.0 ) {
-    cerr << "Warning: Reduced temperature T*= " << Ts 
-	 << " outside applicable range (0.3 < T* < 100)." << endl;
-    //exit(0);
-  }
-
-  // compute
-  double a = - A*B*pow(Ts,-B-1.0) - C*D*exp(-D*Ts)
-    - E*F*exp(-F*Ts) - G*H*exp(-H*Ts) 
-    + R*B*pow(Ts,B-1.0)*sin( S*pow(Ts,W) - P )
-    + R*S*W*pow(Ts,B+W-1.0)*cos( S*pow(Ts,W) - P );
- 
-  //  A*B*pow(Ts,-B-1.0)*pow(Ts,-B)  ->  A*B*pow(Ts,-B-1.0)
-
-  return a/ek;
-}
-
-
- 
-/************************************************************
- * Function: F                                              *
- *                                                          *
- * Description: Rotational relaxation function of Parker    *
- *              (1959) and Brau and Jonkman (1970). This    *
- *              function allows for the computation of the  *
- *              rotational relaxation parameter at a        *
- *              arbitrary temperature given the value at the*
- *              reference temperature of 298K.              *
- *              F = Z/Zref                                  *
- *                                                          *
- *              T = temperature                             *
- *              Ts = T*kB/eps                               *
- *              where kB = bolzman constant and             *
- *                    eps = potential well-depth [J]        *
- *                                                          *
- ************************************************************/
-double F(const double Ts) {
-  
-  double f = 1.0 + 0.5*pow(PI,1.5)*pow(Ts,-0.5) 
-    + ( 0.25*PI*PI+2.0 )/Ts 
-    + pow(PI,1.5)*pow(Ts,-1.5);
-  
-  return f;
-  
-}
-
-
- 
-/************************************************************
- * Function: BinaryDiff                                     *
- *                                                          *
- * Description: Diffusivity computed Chapman-Enskog         *
- *              theory.  See 'The properties of gases and   *
- *              liquids by Reid et al.(1987).               *
- *              Units [m^2/s]                               *
- *                                                          *
- ************************************************************/
-double BinaryDiff( const NASARP1311data& s1, const NASARP1311data& s2, 
-		   const double T, const double P) {
-  
-  /* Declares*/
-  const double tol = 1.0E-6;
-  double eps;     // effective potential well-depth
-  double Ts;      // effective reduced temperature
-  double sigma;   // effective collision diameter
-  double mu;      // effective dipole moment
-  double M;       // effective molar mass
-  double d;       // diffusion coefficient
-  double alpha_n; // non-polar polarizability
-  double mu_p;    // polar dipole moment
-  double xi;      // polar correction factor
-  double f_eps;   // well depth correction factor
-  double f_sigma; // collision diameter correction factor
-  const NASARP1311data* sp;    // polar species pointer
-  const NASARP1311data* sn;    // non-polar species pointer
-  
-  
-  /* Determine effective properties */
-  
-  // the well depth
-  eps = sqrt(s1.eps*s2.eps);
-  
-  // the reduced temperature
-  Ts = T*BOLTZMANN/eps;
-  
-  // dipole moment
-  mu = sqrt(s1.mu*s2.mu);
-  
-  // collision diameter
-  sigma = 0.5*(s1.sigma + s1.sigma);
-  
-  
-  /* Determine corrections */
-
-  //
-  // for both polar or both non-polar
-  //
-  if ( s1.polar == s2.polar ) {
-    //cout << "\nBOTH POLAR OR BOTH NON_POLAR";
-    
-    f_eps = f_sigma = 1.0;
-    
-  //
-  // for one polar and one non-polar
-  //
-  } else {
-    //cout << "\nPOLAR AND NON_POLAR";
-
-    // determine polar one
-    sp = (s1.mu>0.0 ? &s1 : &s2); // polar
-    sn = (s1.mu>0.0 ? &s2 : &s1); // nonpolar
-    
-    // the corrections factors
-    alpha_n = sn->alpha/pow(sn->sigma,3.0);
-    mu_p = sp->mu/sqrt( sp->eps*pow(sp->sigma,3.0) );
-    xi = 1.0 + 0.25*alpha_n*mu_p*sqrt(sp->eps/sn->eps);
-
-    f_eps =  xi*xi;
-    f_sigma = pow(xi, -1.0/6.0);
-
-  }
-  
-  /* apply corrections factors */
-  eps *= f_eps;
-  sigma *= f_sigma;
-  
-  
-  /* Compute diffusivity */
-  
-  // effective molar mass
-  M = s1.mol_mass*s2.mol_mass / ( AVOGADRO * (s1.mol_mass+s2.mol_mass) );
-  
-  d = (3.0/16.0) * sqrt( 2.0 * PI * pow(BOLTZMANN * T, 3.0)/M ) 
-    / ( PI * P * sigma*sigma * Omega11(Ts) );
-  
-  return d;
-  
 }
 
 ////////////////////////////////////////////////////////////////////////////////
