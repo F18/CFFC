@@ -51,9 +51,10 @@ void NASARP1311data::Getdata(string spec, const char *PATH, const int &trans_dat
   } else if (trans_type == TRANSPORT_LENNARD_JONES) {
     pt_Viscosity = &NASARP1311data::Viscosity_LJ_Poly;            // fit a polynomial
     pt_ThermalConduct = &NASARP1311data::ThermalConduct_LJ_Poly;  // fit a polynomial
+    pt_dViscositydT = &NASARP1311data::dViscositydT_LJ_Poly;      // fit a polynomial
     //pt_Viscosity = &NASARP1311data::Viscosity_LJ;
     //pt_ThermalConduct = &NASARP1311data::ThermalConduct_LJ;
-    pt_dViscositydT = &NASARP1311data::dViscositydT_LJ;
+    //pt_dViscositydT = &NASARP1311data::dViscositydT_LJ;
     GetTransDataLJ(spec);   
   } else {
     cerr << "Error - Getdata(): Never heard of this transport dataset!";
@@ -404,16 +405,19 @@ void NASARP1311data::GetTransDataLJ(const string spec) {
   // get the geometry factor
   g = stoi( line.substr(19,1) );
   
-  // get the potential well-depth / boltzman constant
+  // Get the potential well-depth / boltzman constant
+  // and un-normalize it. [well-depth / boltzman] -> well-depth
   eps = stof( line.substr(20,10) ) * BOLTZMANN;
  
   // get the collision diameter in Angstroms and convert to m
   sigma = stof( line.substr(30,10) ) * 1.0E-10;  
   
-  // get the dipole moment in Debye and convert to m^1.5 J^0.5
-  mu = stof( line.substr(40,10) ) * 1.0E-25*sqrt(10.0); 
+  // get the dipole moment in [Debye] and convert to [m^1.5 J^0.5]
+  mu = stof( line.substr(40,10) );
+  polar = (mu > TOLER); // true if polar (mu>0), false if non-polar (mu=0)
+  mu *= 1.0E-25*sqrt(10.0); 
   
-  // get the polarizability in Angstroms^3 and convert to m^3
+  // get the polarizability in [Angstroms^3] and convert to [m^3]
   alpha = stof( line.substr(50,10) ) * 1.0E-30; 
  
   // get the rotational relaxation parameter
@@ -430,99 +434,7 @@ void NASARP1311data::GetTransDataLJ(const string spec) {
   //----------------------------------
   //    Polynomial fitting
   //----------------------------------
-  ofstream outfile;
-
-  // polynomial parameters
-  const int np = 100,   // number of interpolation points
-            degree = 3; // degree of polynomial
-
-  // counter for term
-  int ndeg = 0;        
-
-  // temperature interval parameters
-  double dT, T,          // stepsize, temperature point
-         Tmin = 200.0,   // min value
-         Tmax = 3500.0;  // max value
-
-  // temporary arrays
-  double *w, *Tlog, *spvisc, *spcond;
-
-  // assume atmospheric pressure   ?????
-  double P = 101325.0;
-
-  // deallocate, just to be sure
-  if(temp_ranges_V != 0) { deallocate_trans_V(); }
-  if(temp_ranges_C != 0) { deallocate_trans_C(); }
-
-  //container for coefficients of size temp_ranges (one range)
-  trans_viscosity = new transcoef[1]; 
-  trans_thermconduct = new transcoef[1];
-  double V_coef[degree+1];  
-  double C_coef[degree+1];
-  
-  // allocate temporary storage
-  w = new double[np];
-  Tlog = new double[np];
-  spvisc = new double[np];
-  spcond = new double[np];
-
-  //double Tlog[np], spvisc[np], spcond[np], w[np];
-
-  //
-  // generate array of log(T) values
-  //
-  dT = (Tmax - Tmin)/double(np-1);     
-  for (int n = 0; n < np; ++n) {
-    T = Tmin + dT*double(n);
-    Tlog[n] = log(T);
-
-    spvisc[n] = log( Viscosity_LJ(T) );
-    spcond[n] = log( ThermalConduct_LJ(T, P) );
-    w[n] = -1.0;
-  }
-  
-  // call the polynomial fitting function
-  polyfit(np, Tlog, spvisc, w, degree, ndeg, 0.0, V_coef);
-  polyfit(np, Tlog, spcond, w, degree, ndeg, 0.0, C_coef);
-
-  // move into transcoef class
-  trans_viscosity[0].Trans_coef_in(V_coef);
-  trans_thermconduct[0].Trans_coef_in(C_coef);
-
-  //
-  // evaluate max fit errors for viscosity
-  //
-  double val, fit, err, relerr;
-  outfile.open("Viscosity.dat", ios::out);
-  for (int n = 0; n < np; ++n) {
-    val = exp(spvisc[n]);
-    fit = exp( poly3(Tlog[n], V_coef) ); 
-    err = fit - val;
-    relerr = err/val;
-    outfile << exp(Tlog[n]) << "  " << val << "  " << fit 
-	    << "  " << relerr << endl;
-  }
-  outfile.close();
- 
-  //
-  // evaluate max fit errors for conductivity
-  //
-  outfile.open("Thermal_Conductivity.dat", ios::out);
-  for (int n = 0; n < np; ++n) {
-    val = exp(spcond[n]);
-    fit = exp( poly3(Tlog[n], C_coef) ); 
-    err = fit - val;
-    relerr = err/val;
-    outfile << exp(Tlog[n]) << "  " << val << "  " << fit 
-	    << "  " << relerr << endl;
-  }
-  outfile.close();
-
-  // deallocate memory
-  delete[]  w;
-  delete[]  Tlog;
-  delete[]  spvisc;
-  delete[]  spcond;
+  FitTransDataLJ();
  
 }
 
@@ -775,7 +687,7 @@ double NASARP1311data::dViscositydT_NASA(double Temp){
 }
 
 /****************** Thermal Conductivity ***************************************/
-double NASARP1311data::ThermalConduct_NASA(double Temp, double Press){
+double NASARP1311data::ThermalConduct_NASA(double Temp){
   
   //find appropriate coefficients for temperature range
   int i = Which_coef(Temp,trans_thermconduct,temp_ranges_C);
@@ -1028,6 +940,7 @@ double NASARP1311data::Viscosity_LJ_Poly(double Temp){
 }
 
 
+//The derivative of viscosity w.r.t Temperature using analytical formulation
 double NASARP1311data::dViscositydT_LJ(double T) {
   
   /* Compute */
@@ -1040,6 +953,15 @@ double NASARP1311data::dViscositydT_LJ(double T) {
  
 }
 
+//The derivative of viscosity w.r.t Temperature using 3rd order polynomial
+double NASARP1311data::dViscositydT_LJ_Poly(double Temp){
+  double logT = log(Temp);
+  double eta = exp( poly3(logT, trans_viscosity[0].trans_coef) );
+  double prod = ( 3.0*trans_viscosity[0].Trans_coef(3)*logT*logT +
+		  2.0*trans_viscosity[0].Trans_coef(2)*logT +
+		      trans_viscosity[0].Trans_coef(1) ) / Temp;
+  return eta*prod;
+}
 
 
 /************************************************************
@@ -1048,7 +970,7 @@ double NASARP1311data::dViscositydT_LJ(double T) {
  *              liquids by Reid et al.(1987).               *
  *              Units [W/(m K)]                             *
  ************************************************************/
-double NASARP1311data::ThermalConduct_LJ(double T, double P) {
+double NASARP1311data::ThermalConduct_LJ(double T) {
  
   /* Declares */
   double l;         // thermal conductivity
@@ -1066,6 +988,8 @@ double NASARP1311data::ThermalConduct_LJ(double T, double P) {
   double Tref=298.0;// reference temperature [K]
   double a;
   double eta = Viscosity_LJ(T);
+  double P = 1.0;   // rho=fn(P) * D=fn(1/P) ==> rho*D independant of P
+                    // so we just set it to unity
   
   
   /* Determine molar heat capacity relationships */
@@ -1090,10 +1014,10 @@ double NASARP1311data::ThermalConduct_LJ(double T, double P) {
     l = eta * R_UNIVERSAL * f_trans*Cv_trans / mol_mass;
   // for a non-monatonic
   } else {
-    Dkk = BinaryDiff(*this,*this,T,P);  // self-diffusion coefficient
+    Dkk = BinaryDiff(*this,*this,T,P);  // self-diffusion coefficient per unity pressure [D~1/P]
     v = eta;
-    d = P*mol_mass / (R_UNIVERSAL*T);   // density
-    a = d*Dkk/v;
+    d = P*mol_mass / (R_UNIVERSAL*T);   // density per unit pressure [rho~P]
+    a = d*Dkk/v;                        // [d*rho !~ P]
     
     Z = Zrot * F(Tref*BOLTZMANN/eps) / F(T*BOLTZMANN/eps);
     A = 5.0/2.0 - a;
@@ -1111,12 +1035,140 @@ double NASARP1311data::ThermalConduct_LJ(double T, double P) {
 }
 
 // Polynomial fit to ThermalConduct_LJ
-double NASARP1311data::ThermalConduct_LJ_Poly(double Temp, double Press){
+double NASARP1311data::ThermalConduct_LJ_Poly(double Temp){
   double logT = log(Temp);
   return exp( poly3(logT, trans_thermconduct[0].trans_coef) );
 }
 
 
+/************************************************************
+ * NASARP1311data::FitTransDataLJ                           
+ *                                                          
+ * Generate polynomial fits for the pure-species viscosities
+ * andfor the binary diffusion coefficients. The fits are of
+ * the form \f[                                             
+ * \log(\eta(i)) = \sum_{n = 0}^3 a_n(i) (\log T)^n         
+ * \f]                             
+ * and \f[
+ * \log(D(i,j)) = \sum_{n = 0}^3 a_n(i,j) (\log T)^n
+ * \f]
+ *
+ * This is copied from CANTERA.
+ ************************************************************/
+void NASARP1311data::FitTransDataLJ() {
+  
+  //------------------------------------------------
+  // Declares
+  //------------------------------------------------
+
+  // polynomial parameters
+  const int np = 100;   // number of interpolation points
+  const int degree = 3; // degree of polynomial
+
+  // counter for term
+  int ndeg = 0;        
+
+  // temperature interval parameters
+  double dT, T;          // stepsize, temperature point
+  double Tmin = Low_range();   // min value (use thermodata value for this species)
+  double Tmax = High_range();  // max value (use thermodata value for this species)
+
+  // temporary arrays
+  double *w, *Tlog, *spvisc, *spcond;
+
+  //------------------------------------------------
+  // Allocate
+  //------------------------------------------------
+
+  // deallocate, just to be sure
+  if(temp_ranges_V != 0) { deallocate_trans_V(); }
+  if(temp_ranges_C != 0) { deallocate_trans_C(); }
+
+  //container for coefficients of size temp_ranges (one range)
+  trans_viscosity = new transcoef[1]; 
+  trans_thermconduct = new transcoef[1];
+  double V_coef[degree+1];  
+  double C_coef[degree+1];
+  
+  // allocate temporary storage
+  w = new double[np];
+  Tlog = new double[np];
+  spvisc = new double[np];
+  spcond = new double[np];
+
+  //double Tlog[np], spvisc[np], spcond[np], w[np];
+
+  //------------------------------------------------
+  // Fit
+  // Note that the viscosity and conductivity are 
+  // independant of pressure.
+  //------------------------------------------------
+  // compute step size
+  dT = (Tmax - Tmin)/double(np-1);     
+
+  // generate array of log(T) values
+  for (int n = 0; n < np; ++n) {
+    T = Tmin + dT*double(n);
+    Tlog[n] = log(T);
+
+    spvisc[n] = log( Viscosity_LJ(T) );
+    spcond[n] = log( ThermalConduct_LJ(T) );
+    w[n] = -1.0;
+  }
+  
+  // call the polynomial fitting function
+  polyfit(np, Tlog, spvisc, w, degree, ndeg, 0.0, V_coef);
+  polyfit(np, Tlog, spcond, w, degree, ndeg, 0.0, C_coef);
+
+  // move into transcoef class
+  trans_viscosity[0].Trans_coef_in(V_coef);
+  trans_thermconduct[0].Trans_coef_in(C_coef);
+
+
+  //------------------------------------------------
+  // DEBUG - write tests to file
+  //------------------------------------------------
+  ofstream outfile;
+
+  //
+  // evaluate max fit errors for viscosity
+  //
+  double val, fit, err, relerr;
+  outfile.open("Viscosity.dat", ios::out);
+  for (int n = 0; n < np; ++n) {
+    val = exp(spvisc[n]);
+    fit = exp( poly3(Tlog[n], V_coef) ); 
+    err = fit - val;
+    relerr = err/val;
+    outfile << exp(Tlog[n]) << "  " << val << "  " << fit 
+	    << "  " << relerr << endl;
+  }
+  outfile.close();
+ 
+  //
+  // evaluate max fit errors for conductivity
+  //
+  outfile.open("Thermal_Conductivity.dat", ios::out);
+  for (int n = 0; n < np; ++n) {
+    val = exp(spcond[n]);
+    fit = exp( poly3(Tlog[n], C_coef) ); 
+    err = fit - val;
+    relerr = err/val;
+    outfile << exp(Tlog[n]) << "  " << val << "  " << fit 
+	    << "  " << relerr << endl;
+  }
+  outfile.close();
+  //------------------------------------------------
+  // END DEBUG
+  //------------------------------------------------
+
+  // deallocate memory
+  delete[]  w;
+  delete[]  Tlog;
+  delete[]  spvisc;
+  delete[]  spcond;
+
+}
 /************************************************************
  * Function: Omega11                                        *
  *                                                          *
@@ -1327,19 +1379,18 @@ double BinaryDiff( const NASARP1311data& s1, const NASARP1311data& s2,
   
   
   /* Determine corrections */
-  double delta1, delta2;
-  delta1 = 0.5*s1.mu*s1.mu/(s1.eps*s1.sigma*s1.sigma*s1.sigma);
-  delta2 = 0.5*s2.mu*s2.mu/(s2.eps*s2.sigma*s2.sigma*s2.sigma);
-  //cout << "\n delta1 = " << delta1 << "\t delta2 = " << delta2;
 
-
+  //
   // for both polar or both non-polar
-  if ( ( fabs(delta1) > tol  &&  fabs(delta2) > tol)  ||  
-       ( fabs(delta1) < tol  &&  fabs(delta2) < tol) ) {
-
+  //
+  if ( s1.polar == s2.polar ) {
+    //cout << "\nBOTH POLAR OR BOTH NON_POLAR";
+    
     f_eps = f_sigma = 1.0;
-      
-    // for one polar and one non-polar
+    
+  //
+  // for one polar and one non-polar
+  //
   } else {
     //cout << "\nPOLAR AND NON_POLAR";
 

@@ -80,6 +80,7 @@ double F(const double Ts);
 double BinaryDiff( const NASARP1311data& s1, const NASARP1311data& s2, 
 		   const double T, const double P);
 
+
 /*************************************************************************
 ************** THEMOCOEF CLASS DEFINITION ********************************
   This is basically a data class that stores the thermodynamic data for 
@@ -323,7 +324,7 @@ class NASARP1311data{
   // function pointers
   double (NASARP1311data::*pt_Viscosity)(double);
   double (NASARP1311data::*pt_dViscositydT)(double);
-  double (NASARP1311data::*pt_ThermalConduct)(double, double);
+  double (NASARP1311data::*pt_ThermalConduct)(double);
 
   //static NASARP1311data default_data;
  public:
@@ -339,6 +340,7 @@ class NASARP1311data{
   double mu;     // dipole moment [m^1.5 J^0.5]
   double alpha;  // polarizability [cubic m]
   double Zrot;   // Rotational relaxation parameter at 298K
+  bool   polar;  // true if polar molecule, false if non-polar
   /* End Lennard-Jones Specific*/
 
   //default constructor
@@ -363,6 +365,7 @@ class NASARP1311data{
     mu=0;
     alpha=0;
     Zrot=0;
+    polar=false;
     /* End Lennard-Jones Specific*/
  
     // initialize function pointers to NASA functions
@@ -403,25 +406,26 @@ class NASARP1311data{
   
   //find transport propteries using coefficients
   double Viscosity(double Temp);
-  double ThermalConduct(double Temp, double Press);
+  double ThermalConduct(double Temp);
   double dViscositydT(double Temp);
 
   double Viscosity_NASA(double Temp);
-  double ThermalConduct_NASA(double Temp, double Press);
+  double ThermalConduct_NASA(double Temp);
   double dViscositydT_NASA(double Temp);
 
   double Viscosity_LJ(double Temp);
-  double ThermalConduct_LJ(double Temp, double Press);
+  double ThermalConduct_LJ(double Temp);
   double dViscositydT_LJ(double Temp);
 
   double Viscosity_LJ_Poly(double Temp);
-  double ThermalConduct_LJ_Poly(double Temp, double Press);
+  double ThermalConduct_LJ_Poly(double Temp);
+  double dViscositydT_LJ_Poly(double Temp);
 
   //further constructors based on data
   double InternalEnergy(double Temp);  //U
   double HeatCapacity_v(double Temp);  //Cp 
   double HeatRatio(double Temp);       //gamma 
-  double Prandtl(double Temp, double Press); //Pr
+  double Prandtl(double Temp);         //Pr
 
   // Input-output operators. 
   friend ostream& operator << (ostream &out_file, const NASARP1311data &W);
@@ -429,6 +433,9 @@ class NASARP1311data{
   
   //plot out curve fits
   //void Plot_data(string type);
+
+  // fit Lennard Jones data to polynomials
+  void FitTransDataLJ();
 
   void deallocate_thermo_data();
   void deallocate_trans_V();
@@ -456,7 +463,7 @@ inline void NASARP1311data::Set_Path_Names(const char *CFFC_path){
   switch (trans_type) {
     // LENNARD-JONES POTENTIALS
   case TRANSPORT_LENNARD_JONES:
-    strcat(datafilename_trans,"/data/tran.dat");    
+    strcat(datafilename_trans,"/data/LENNARD_JONES/tran.dat");    
     break;
     
     // NASA POLYNOMIALS
@@ -496,9 +503,9 @@ inline double NASARP1311data::HeatRatio(double Temp){
   return HeatCapacity_p(Temp)/HeatCapacity_v(Temp);
 }
 
-inline double NASARP1311data::Prandtl(double Temp, double Press){
+inline double NASARP1311data::Prandtl(double Temp){
   //Pr = Cp*mu/k
-  return HeatCapacity_p(Temp)*Viscosity(Temp)/ThermalConduct(Temp, Press);
+  return HeatCapacity_p(Temp)*Viscosity(Temp)/ThermalConduct(Temp);
 }
 
 /**************************** Wrapper Functions************************************/
@@ -508,8 +515,8 @@ inline double NASARP1311data::dViscositydT(double Temp){
 inline double NASARP1311data::Viscosity(double Temp){
   return (*this.*pt_Viscosity)(Temp);
 }
-inline double NASARP1311data::ThermalConduct(double Temp, double Press){
-  return (*this.*pt_ThermalConduct)(Temp, Press);
+inline double NASARP1311data::ThermalConduct(double Temp){
+  return (*this.*pt_ThermalConduct)(Temp);
 }
 
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
