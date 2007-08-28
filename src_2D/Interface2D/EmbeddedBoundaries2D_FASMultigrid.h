@@ -122,11 +122,17 @@ public:
 
   //! Output the node state information for each grid level.
   int Output_Multigrid(const int &number_of_time_steps,
- 		       const double &Time);
+ 		       const double &Time,
+		       bool writing_intermediate_soln = false, 
+		       double l2_norm = -1.0, 
+                       double l2_norm_rel = -1.0);
 
   //! Output the cell-centred state information for each grid level.
   int Output_Multigrid_Cells(const int &number_of_time_steps,
- 			     const double &Time);
+ 			     const double &Time, 
+			     bool writing_intermediate_soln = false, 
+			     double l2_norm = -1.0, 
+                             double l2_norm_rel = -1.0);
 
   //! Output the element state information for each grid level.
   int Output_Multigrid_Elements(const int &number_of_time_steps,
@@ -646,12 +652,16 @@ int EB_FAS_Multigrid2D_Solver<cState, pState,
 			      Quad_Soln_Block,
 			      Quad_Soln_Input_Parameters>::
 Output_Multigrid(const int &number_of_time_steps,
-		 const double &Time) {
+		 const double &Time,
+		 bool writing_intermediate_soln,
+		 double l2_norm, 
+                 double l2_norm_rel) {
 
   int i, i_output_title;
   char prefix[256], extension[256], output_file_name[256];
   char *output_file_name_ptr;
   ofstream output_file;
+  int max_level = (writing_intermediate_soln ? 1 : IP->Multigrid_IP.Levels);
 
   // Determine main prefix of output data file names.
   i = 0;
@@ -672,6 +682,10 @@ Output_Multigrid(const int &number_of_time_steps,
     strcpy(output_file_name,prefix);
     sprintf(extension,"%.2d",level);
     strcat(output_file_name,extension);
+    if (writing_intermediate_soln) {
+       sprintf(extension,"_n1%.4d",number_of_time_steps);
+       strcat(output_file_name,extension);
+    }
     strcat(output_file_name,"_cpu");
 
     // Determine output data file name for this processor.
@@ -724,12 +738,16 @@ int EB_FAS_Multigrid2D_Solver<cState, pState,
 			      Quad_Soln_Block,
 			      Quad_Soln_Input_Parameters>::
 Output_Multigrid_Cells(const int &number_of_time_steps,
-		       const double &Time) {
+		       const double &Time, 
+		       bool writing_intermediate_soln,
+		       double l2_norm, 
+                       double l2_norm_rel) {
 
   int i, i_output_title;
   char prefix[256], extension[256], output_file_name[256];
   char *output_file_name_ptr;
   ofstream output_file;
+  int max_level = (writing_intermediate_soln ? 1 : IP->Multigrid_IP.Levels);
 
   // Determine main prefix of output data file names.
   i = 0;
@@ -741,6 +759,7 @@ Output_Multigrid_Cells(const int &number_of_time_steps,
     if (i > strlen(IP->Output_File_Name)) break;
   }
   prefix[i] = '\0';
+  strcat(prefix,"_cells_");
 
   // Output to a seperate file for each multigrid level.
   for (int level = 0; level < IP->Multigrid_IP.Levels; level++) {
@@ -749,7 +768,11 @@ Output_Multigrid_Cells(const int &number_of_time_steps,
     strcpy(output_file_name,prefix);
     sprintf(extension,"_%.2d",level);
     strcat(output_file_name,extension);
-    strcat(output_file_name,"_cells_cpu");
+    if (writing_intermediate_soln) {
+       sprintf(extension,"_n1%.4d",number_of_time_steps);
+       strcat(output_file_name,extension);
+    }
+    strcat(output_file_name,"_cpu");
 
     // Determine output data file name for this processor.
     sprintf(extension,"%.6d",List_of_Local_Solution_Blocks[level].ThisCPU);

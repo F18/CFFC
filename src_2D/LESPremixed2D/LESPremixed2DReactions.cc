@@ -558,27 +558,27 @@ void Reactionset::omega(LESPremixed2D_cState &U, const LESPremixed2D_pState &W, 
 
     // 15 step CH4 based on GRI 2.11
   case CH4_15STEP_ARM2:
-//     // compute reaction rates calling the subroutine CKWYP15STEP211
-//     // Wdot - mol/(cm^3*s)
-//     ckwyp15step211_(pressure, Temp, c, Wdot);
+    // compute reaction rates calling the subroutine CKWYP15STEP211
+    // Wdot - mol/(cm^3*s)
+    ckwyp15step211_(pressure, Temp, c, Wdot);
 
-//     for (int i=0; i<num_react_species; ++i) {
-//       // in kg/m^3*s   g/mol *(mol/cm^3*s)*1e3             
-//       U.rhospec[i].c = M[i]*Wdot[i]*THOUSAND;
-//     }
+    for (int i=0; i<num_react_species; ++i) {
+      // in kg/m^3*s   g/mol *(mol/cm^3*s)*1e3             
+      U.rhospec[i].c = M[i]*Wdot[i]*THOUSAND;
+    }
     break;
 
 
     // 15 step CH4 based on GRI 3
   case CH4_15STEP_ARM3:
-//     // compute reaction rates calling the subroutine CKWYP15STEP3
-//     // Wdot - mol/(cm^3*s)
-//     ckwyp15step30_(pressure, Temp, c, Wdot);
+    // compute reaction rates calling the subroutine CKWYP15STEP3
+    // Wdot - mol/(cm^3*s)
+    ckwyp15step30_(pressure, Temp, c, Wdot);
 
-//     for (int i=0; i<num_react_species; ++i) {
-//       // in kg/m^3*s   g/mol *(mol/cm^3*s)*1e3             
-//       U.rhospec[i].c = M[i]*Wdot[i]*THOUSAND;
-//     }
+    for (int i=0; i<num_react_species; ++i) {
+      // in kg/m^3*s   g/mol *(mol/cm^3*s)*1e3             
+      U.rhospec[i].c = M[i]*Wdot[i]*THOUSAND;
+    }
     break;
 
     //---------------------------------//
@@ -954,7 +954,8 @@ void Reactionset::dSwdU(DenseMatrix &dSwdU, const LESPremixed2D_pState &W,
 
     // 15 step CH4 based on GRI 2.11
   case CH4_15STEP_ARM2:
-//     Complex_Step_dSwdU(dSwdU, W);
+    Complex_Step_dSwdU(dSwdU, W);
+
 //     //cout << "\n Complex Step dSwdU: " << dSwdU;
 //     //dSwdU.zero();
 //     //Finite_Difference_dSwdU(dSwdU, W, Flow_Type, Simple_Chemistry);
@@ -964,7 +965,7 @@ void Reactionset::dSwdU(DenseMatrix &dSwdU, const LESPremixed2D_pState &W,
 
     // 15 step CH4 based on GRI 3
   case CH4_15STEP_ARM3:
-//     Complex_Step_dSwdU(dSwdU, W);
+    Complex_Step_dSwdU(dSwdU, W);
     break;
 
 
@@ -1034,56 +1035,71 @@ void Reactionset::Finite_Difference_dSwdU(DenseMatrix &dSwdU,
   
    dSwdU:  Matrix of source terms 
 ************************************************************************/
-// void Reactionset::Complex_Step_dSwdU(DenseMatrix &dSwdU, 
-// 				      const LESPremixed2D_pState &Wlocal) const {
+void Reactionset::Complex_Step_dSwdU(DenseMatrix &dSwdU, 
+				     const LESPremixed2D_pState &Wlocal) const {
 
-//   const double TOL = 1.0E-15, eps = 1.0E-100;
-//   cplx *Y, *M, *Wdot_perturbed;
 
-//   //assert(num_species == Wlocal.ns);
+  const double TOL = 1.0E-15, eps = 1.0E-100;
+  cplx *Y, *M, *Wdot_perturbed;
 
-//   // allocate 
-//   Y = new cplx[num_species];  
-//   M = new cplx[num_species];
-//   Wdot_perturbed = new cplx[num_species]; 
+  //assert(num_species == Wlocal.ns);
 
-//   // pressure in dyne/cm^2
-//   cplx pressure(TEN*Wlocal.p);
-//   // temperature in K 
-//   cplx temperature(Wlocal.T());
-//   for (int i=0; i<Wlocal.ns; ++i) {
-//     Y[i] = Wlocal.spec[i].c;    //( Wlocal.spec[i].c < TOL )  ?  TOL : Wlocal.spec[i].c;
-//     M[i] = Wlocal.specdata[i].Mol_mass();  // kg/kg-mol
-//     //Wdot_perturbed[i] = 0.0;
-//   }
+  // allocate 
+  Y = new cplx[num_species];  
+  M = new cplx[num_species];
+  Wdot_perturbed = new cplx[num_species]; 
+
+
+  // pressure in dyne/cm^2
+  cplx pressure(TEN*Wlocal.p, ZERO);
+  // temperature in K 
+  cplx temperature(Wlocal.T(), ZERO);
+
+  for (int i=0; i<Wlocal.ns; ++i) {
+    Y[i] = Wlocal.spec[i].c;    //( Wlocal.spec[i].c < TOL )  ?  TOL : Wlocal.spec[i].c;
+    M[i] = Wlocal.specdata[i].Mol_mass();  // kg/kg-mol
+    //Wdot_perturbed[i] = 0.0;
+  }
+
   
-//   int lower_index = Wlocal.NUM_VAR_LESPREMIXED2D + 1 - Wlocal.ns;
-//   cplx c_eps(0.0, eps);
+  int lower_index = Wlocal.NUM_VAR_LESPREMIXED2D + 1 - Wlocal.ns;
+  cplx c_eps(0.0, eps);
 
-//   for (int j=lower_index; j < Wlocal.NUM_VAR_LESPREMIXED2D; ++j) {
-//     if ( Wlocal.spec[j].c > TOL ) {
+  for (int j=lower_index; j < Wlocal.NUM_VAR_LESPREMIXED2D; ++j) {
+    if ( Wlocal.spec[j].c > TOL ) {
 
-//       Y[j-lower_index] += c_eps;    
-//       // compute the perturbed reaction rates moles/(cm**3*sec)
-//       cplx15step211_(pressure, temperature, Y, Wdot_perturbed);
+      Y[j-lower_index] += c_eps;    
+
+      // compute the perturbed reaction rates moles/(cm**3*sec)
+      switch(reactset_flag) {
+      case CH4_15STEP_ARM2 :
+      	cplx15step211_(pressure, temperature, Y, Wdot_perturbed);
+	break;
+      case CH4_15STEP_ARM3 :
+	cplx15step30_(pressure, temperature, Y, Wdot_perturbed);
+	break;
+      default :
+        cplx15step30_(pressure, temperature, Y, Wdot_perturbed);
+	break;
+      }
   
-//       for (int i=lower_index; i < Wlocal.NUM_VAR_LESPREMIXED2D; ++i) {
-// 	// in kg/m^3*s  ->  (kg/mol)*(mol/cm^3*s)*1e6 
-// 	Wdot_perturbed[i-lower_index] *= M[i-lower_index]*MILLION;
+      for (int i=lower_index; i < Wlocal.NUM_VAR_LESPREMIXED2D; ++i) {
+	// in kg/m^3*s  ->  (kg/mol)*(mol/cm^3*s)*1e6 
+	Wdot_perturbed[i-lower_index] *= M[i-lower_index]*MILLION;
 
-// 	dSwdU(i-1, j-1) = imag( Wdot_perturbed[i-lower_index]/eps )/Wlocal.rho;
-// 	//Wdot_perturbed[i-lower_index] = (0.0, 0.0);
-//       }
+	dSwdU(i-1, j-1) = imag( Wdot_perturbed[i-lower_index]/eps )/Wlocal.rho;
+	//Wdot_perturbed[i-lower_index] = (0.0, 0.0);
+      }
       
-//       // reset Y to its unperturbed value
-//       Y[j-lower_index] -= c_eps;
+      // reset Y to its unperturbed value
+      Y[j-lower_index] -= c_eps;
 
-//     } // end if
-//   } // end for
+    } // end if
+  } // end for
 
-//   // deallocate
-//   delete[]  Y;
-//   delete[]  M;
-//   delete[]  Wdot_perturbed;
+  // deallocate
+  delete[]  Y;
+  delete[]  M;
+  delete[]  Wdot_perturbed;
 
-// }  // end Complex_Step_dSwdU
+}  // end Complex_Step_dSwdU

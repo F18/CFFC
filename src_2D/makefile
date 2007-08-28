@@ -190,7 +190,12 @@ SRC_LESPREMIXED = $(LESPREMIXED_DIR)LESPremixed2DState.cc \
 	          $(LESPREMIXED_DIR)LESPremixed2DTurbInit.cc \
 	          $(LESPREMIXED_DIR)LESPremixed2DdRdU.cc \
 	          $(LESPREMIXED_DIR)PowerLaw.cc \
-	          $(LESPREMIXED_DIR)Scalars.cc
+	          $(LESPREMIXED_DIR)Scalars.cc \
+	          $(LESPREMIXED_DIR)15step_GRI211.f \
+	          $(LESPREMIXED_DIR)15step_GRI3.f
+SRC_LESPREMIXED_F90 = $(LESPREMIXED_DIR)complexify.f90 \
+	              $(LESPREMIXED_DIR)c_15step_GRI211.f90 \
+	              $(LESPREMIXED_DIR)c_15step_GRI3.f90
 SRC_LESPREMIXED_EXE = $(LESPREMIXED_DIR)LESPremixed2D.cc
 SRC_LEVELSET = $(LEVELSET_DIR)LevelSet2DInput.cc \
                $(LEVELSET_DIR)LevelSet2DQuad.cc \
@@ -226,7 +231,7 @@ SRC_TURBULENT = $(TURBULENT_DIR)SFSModelling.cc
 SRC_ICEMCFD = $(ICEM_DIR)ICEMCFD.cc \
 	      $(ICEM_DIR)ICEMCFD_ctype.c
 SRC_BASE =  $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_GRID) $(SRC_AMR) \
-            $(SRC_SYSTEM) $(SRC_POLYFIT)
+            $(SRC_SYSTEM) $(SRC_POLYFIT) 
 SRC_CFFC = $(SRC_BASE) $(SRC_SCALAR) $(SRC_HEAT) $(SRC_HYPERHEAT) $(SRC_EULER1D) $(SRC_MHD1D) \
            $(SRC_ADVECTDIFFUSE) $(SRC_CHEM) $(SRC_DUSTY) $(SRC_EULER) $(SRC_HIGHTEMP) \
 	   $(SRC_ION) $(SRC_ELECTROSTATIC) $(SRC_INTERFACE) $(SRC_LEVELSET) $(SRC_NAVIERSTOKES) \
@@ -329,7 +334,8 @@ INC_LESPREMIXED = $(LESPREMIXED_DIR)LESPremixed2DState.h \
 	          $(LESPREMIXED_DIR)LESPremixed2DQuadNKS.h \
 	          $(LESPREMIXED_DIR)LESPremixed2DTurbInit.h \
 	          $(LESPREMIXED_DIR)PowerLaw.h \
-	          $(LESPREMIXED_DIR)Scalars.h 
+	          $(LESPREMIXED_DIR)Scalars.h \
+	          $(LESPREMIXED_DIR)Complexify.h
 INC_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes2DState.h \
 	           $(NAVIERSTOKES_DIR)NavierStokes2DInput.h \
 	           $(NAVIERSTOKES_DIR)NavierStokes2DQuad.h \
@@ -488,7 +494,13 @@ OBJ_LESPREMIXED = $(LESPREMIXED_DIR)LESPremixed2DState.o \
 	          $(LESPREMIXED_DIR)LESPremixed2DTurbInit.o \
 	          $(LESPREMIXED_DIR)LESPremixed2DdRdU.o \
 	          $(LESPREMIXED_DIR)PowerLaw.o \
-	          $(LESPREMIXED_DIR)Scalars.o
+	          $(LESPREMIXED_DIR)Scalars.o \
+	          $(LESPREMIXED_DIR)15step_GRI211.o \
+	          $(LESPREMIXED_DIR)15step_GRI3.o \
+	          $(OBJ_LESPREMIXED_F90)
+OBJ_LESPREMIXED_F90 = complexify.o \
+	              c_15step_GRI211.o \
+	              c_15step_GRI3.o
 OBJ_LESPREMIXED_EXE = $(LESPREMIXED_DIR)LESPremixed2D.o
 OBJ_LEVELSET = $(LEVELSET_DIR)LevelSet2DInput.o \
                $(LEVELSET_DIR)LevelSet2DQuad.o \
@@ -881,6 +893,9 @@ $(EXE_LESPREMIXED2D): $(LESPREMIXED_DIR)LESPremixed2D.depend $(OBJ_LESPREMIXED_E
 	@echo '--------------------------------------------------'
 	@echo ' '
 
+$(OBJ_LESPREMIXED_F90): $(SRC_LESPREMIXED_F90)
+	$(FC) $(FFLAGS) -c $(SRC_LESPREMIXED_F90)
+
 $(LESPREMIXED_DIR)LESPremixed2D.depend: $(SRC_LESPREMIXED_EXE) 
 	@echo ' '
 	@echo Determining LESPremixed2D source file dependencies for a $(PLATFORM) platform.
@@ -1132,7 +1147,7 @@ clean:
 	rm -f $(ION_DIR)*.o $(ION_DIR)*.il $(ION_DIR)*~ $(ION_DIR)*.depend $(ION_DIR)*.bak
 	rm -f $(INTERFACE_DIR)*.o $(INTERFACE_DIR)*.il $(INTERFACE_DIR)*~ $(INTERFACE_DIR)*.depend $(INTERFACE_DIR)*.bak
 	rm -f $(LEVELSET_DIR)*.o $(LEVELSET_DIR)*.il $(LEVELSET_DIR)*~ $(LEVELSET_DIR)*.depend $(LEVELSET_DIR)*.bak
-	rm -f $(LESPREMIXED_DIR)*.o $(LESPREMIXED_DIR)*.il $(LESPREMIXED_DIR)*~ $(LESPREMIXED_DIR)*.depend $(LESPREMIXED_DIR)*.bak
+	rm -f $(LESPREMIXED_DIR)*.o $(LESPREMIXED_DIR)*.il $(LESPREMIXED_DIR)*~ $(LESPREMIXED_DIR)*.depend $(LESPREMIXED_DIR)*.bak *.mod
 	rm -f $(MATH_DIR)*.o $(MATH_DIR)*.il $(MATH_DIR)*~
 	rm -f $(POLYFIT_DIR)*.o $(POLYFIT_DIR)*.il $(POLYFIT_DIR)*~
 	rm -f $(MPI_DIR)*.o $(MPI_DIR)*.il $(MPI_DIR)*~
