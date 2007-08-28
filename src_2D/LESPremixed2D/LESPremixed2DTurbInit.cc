@@ -510,7 +510,6 @@ void Velocity_Fluctuations(Grid2D_Quad_Block   **InitMeshBlk,
   double          *u, *v;               // Arrays to store the velocity fluctuations in physical space
   fftw_complex    *uu, *vv;             // Arrays to store the velocity fluctuations in Fourier space
   fftw_plan       physical;
-  //rfftwnd_plan  physical;             // Declaration of plan required by FFTW
   
 
   // Allocation of arrays used in the transforms
@@ -518,10 +517,7 @@ void Velocity_Fluctuations(Grid2D_Quad_Block   **InitMeshBlk,
   v = (double *) malloc(Nx*Ny * sizeof(double));
   uu = (fftw_complex *) malloc(Nx*ny * sizeof(fftw_complex));
   vv = (fftw_complex *) malloc(Nx*ny * sizeof(fftw_complex));
-    
-  // Plan required by the FFTW library for the transform
-  //physical = rfftw2d_create_plan(Nx, Ny, FFTW_COMPLEX_TO_REAL, FFTW_ESTIMATE);
-    
+     
  
   int seed = 5;                    // fixed seed for the random number generator
   //int seed = time(NULL);         // assigns the current time to the seed
@@ -588,13 +584,6 @@ void Velocity_Fluctuations(Grid2D_Quad_Block   **InitMeshBlk,
         vv[i*ny][0] = vv[iconj*ny][0];
         vv[i*ny][1] = -vv[iconj*ny][1];
       }
-      // j=Ny/2
-      //if (j==Ny/2 && i>Nx/2) {
-      // uu[i*ny+j][0] = uu[iconj*ny+j][0];
-      // uu[i*ny+j][1] = -uu[iconj*ny+j][1];
-      // vv[i*ny+j][0] = vv[iconj*ny+j][0];
-      // vv[i*ny+j][1] = -vv[iconj*ny+j][1];
-      //}
 
       // corners
       if (i==0   || i==Nx/2) {
@@ -604,12 +593,8 @@ void Velocity_Fluctuations(Grid2D_Quad_Block   **InitMeshBlk,
         vv[i*ny+Ny/2][1] = 0.0;
       }
       
-      //cout <<"("<< vv[i][j][0] <<","<< vv[i][j][1] <<") \t";
-      //cout <<"("<< uu[i*ny+j][0] <<","<< uu[i*ny+j][1] <<") \t";
-      //  cout << "(" << k1*uu[i*ny+j][0] + k2*vv[i*ny+j][0] << ","
-//       	   << k1*uu[i*ny+j][1] + k2*vv[i*ny+j][1] << ") \t";
-      // Compute the divergence of the fluctuations in Fourier space
 
+      // Compute the divergence of the fluctuations in Fourier space
       double div_re, div_im;
       div_re = k1*uu[i*ny+j][0] + k2*vv[i*ny+j][0];
       div_im = k1*uu[i*ny+j][1] + k2*vv[i*ny+j][1];
@@ -736,23 +721,20 @@ void Velocity_Fluctuations(Grid2D_Quad_Block   **InitMeshBlk,
   cout << " ==========================================================================" << endl;
   
   // Complex to real Fourier transforms
-  physical = fftw_plan_dft_c2r_2d(Nx, Ny, uu, u, /*FFTW_BACKWARD,*/ FFTW_ESTIMATE);
+  physical = fftw_plan_dft_c2r_2d(Nx, Ny, uu, u,  FFTW_ESTIMATE);
   fftw_execute(physical); 
   fftw_destroy_plan(physical);
 
-  physical = fftw_plan_dft_c2r_2d(Nx, Ny, vv, v, /*FFTW_BACKWARD,*/ FFTW_ESTIMATE);
+  physical = fftw_plan_dft_c2r_2d(Nx, Ny, vv, v,  FFTW_ESTIMATE);
   fftw_execute(physical); 
   fftw_destroy_plan(physical);
 
-  //rfftwnd_one_complex_to_real(physical, uu, u);
-  //rfftwnd_one_complex_to_real(physical, vv, v);
   
  
   // Output to a data file for initialization of the velocity flow field
-  Write_Initial_Turbulence(InitMeshBlk, 
-			   QuadTree,
-			   Input_Parameters, 
-			   u, v, Ny);
+  Write_Initial_Turbulence(QuadTree, Input_Parameters, u, v, Ny);
+
+  //Write_Initial_Turbulence(InitMeshBlk, QuadTree, Input_Parameters, u, v, Ny);
   
   
   // Deallocations
@@ -788,7 +770,6 @@ void Compute_Spectrum(LESPremixed2D_Quad_Block *Soln_ptr,
   double        *u, *v;               // Arrays to store the velocity fluctuations in physical space
   fftw_complex  *uu, *vv;             // Arrays to store the velocity fluctuations in Fourier space            
   fftw_plan     spectral;
-  //fftwnd_plan   spectral;
 
 
   // Allocation of arrays
@@ -796,11 +777,7 @@ void Compute_Spectrum(LESPremixed2D_Quad_Block *Soln_ptr,
   v = (double *) malloc(Nx*Ny * sizeof(double));
   uu = (fftw_complex *) malloc(Nx*ny * sizeof(fftw_complex));
   vv = (fftw_complex *) malloc(Nx*ny * sizeof(fftw_complex));
-  
-  // Plan required by the FFTW library for the transform
-  //spectral = rfftw2d_create_plan(Nx, Ny, FFTW_REAL_TO_COMPLEX, FFTW_ESTIMATE);
- 
-    
+      
       
   // Mean velocities
   u_ave = u_average;
@@ -810,17 +787,14 @@ void Compute_Spectrum(LESPremixed2D_Quad_Block *Soln_ptr,
   Read_Turbulent_Fluctuations(Input_Parameters, u, v, u_ave, v_ave, Ny, scale);
 
   // Real to complex Fourier transform
-  spectral = fftw_plan_dft_r2c_2d(Nx, Ny, u, uu, /*FFTW_BACKWARD,*/ FFTW_ESTIMATE);
+  spectral = fftw_plan_dft_r2c_2d(Nx, Ny, u, uu, FFTW_ESTIMATE);
   fftw_execute(spectral); 
   fftw_destroy_plan(spectral);
 
-  spectral = fftw_plan_dft_r2c_2d(Nx, Ny, v, vv, /*FFTW_BACKWARD,*/ FFTW_ESTIMATE);
+  spectral = fftw_plan_dft_r2c_2d(Nx, Ny, v, vv,  FFTW_ESTIMATE);
   fftw_execute(spectral); 
   fftw_destroy_plan(spectral);
 
-  //rfftwnd_one_real_to_complex(spectral, u, uu);
-  //rfftwnd_one_real_to_complex(spectral, v, vv);
-  
 
   double k1, k2;                    // wave numbers
   double *EE_x, *EE_y;              // spectra  
@@ -907,7 +881,7 @@ void Compute_Spectrum(LESPremixed2D_Quad_Block *Soln_ptr,
   fftw_free(v);
   fftw_free(uu);
   fftw_free(vv);
-  //rfftwnd_destroy_plan(spectral);  
+
 }
 
 
@@ -965,18 +939,13 @@ void Rescale_Spectrum(// LESPremixed2D_Quad_Block *Soln_ptr,
   double          *u, *v;             // Arrays to store the velocity fluctuations in physical space
   fftw_complex  *uu, *vv;             // Arrays to store the velocity fluctuations in Fourier space
   fftw_plan    spectral, physical;
-  //fftwnd_plan   spectral;
-  //rfftwnd_plan  physical;             
+  
 
   // Allocation of arrays
   u = (double *) malloc(Nx*Ny * sizeof(double));
   v = (double *) malloc(Nx*Ny * sizeof(double));
   uu = (fftw_complex *) malloc(Nx*ny * sizeof(fftw_complex));
   vv = (fftw_complex *) malloc(Nx*ny * sizeof(fftw_complex));
-  
-  // Plans required by the FFTW library for the transforms
-  //spectral = rfftw2d_create_plan(Nx, Ny, FFTW_REAL_TO_COMPLEX, FFTW_ESTIMATE);
-  //physical = rfftw2d_create_plan(Nx, Ny, FFTW_COMPLEX_TO_REAL, FFTW_ESTIMATE);
     
       
   // Mean velocities
@@ -987,16 +956,14 @@ void Rescale_Spectrum(// LESPremixed2D_Quad_Block *Soln_ptr,
   Read_Turbulent_Fluctuations(Input_Parameters, u, v, u_ave, v_ave, Ny, scale);
   
   // Real to complex Fourier transforms
-  spectral = fftw_plan_dft_r2c_2d(Nx, Ny, u, uu, /*FFTW_BACKWARD,*/ FFTW_ESTIMATE);
+  spectral = fftw_plan_dft_r2c_2d(Nx, Ny, u, uu, FFTW_ESTIMATE);
   fftw_execute(spectral); 
   fftw_destroy_plan(spectral);
 
-  spectral = fftw_plan_dft_r2c_2d(Nx, Ny, v, vv, /*FFTW_BACKWARD,*/ FFTW_ESTIMATE);
+  spectral = fftw_plan_dft_r2c_2d(Nx, Ny, v, vv, FFTW_ESTIMATE);
   fftw_execute(spectral); 
   fftw_destroy_plan(spectral);
 
-  //rfftwnd_one_real_to_complex(spectral, u, uu);
-  //rfftwnd_one_real_to_complex(spectral, v, vv);
     
   
   double k1, k2, abs_k;                          // wave numbers
@@ -1152,16 +1119,14 @@ void Rescale_Spectrum(// LESPremixed2D_Quad_Block *Soln_ptr,
 
 
   // Complex to real Fourier transforms
-  physical = fftw_plan_dft_c2r_2d(Nx, Ny, uu, u, /*FFTW_BACKWARD,*/ FFTW_ESTIMATE);
+  physical = fftw_plan_dft_c2r_2d(Nx, Ny, uu, u,  FFTW_ESTIMATE);
   fftw_execute(physical); 
   fftw_destroy_plan(physical);
 
-  physical = fftw_plan_dft_c2r_2d(Nx, Ny, vv, v, /*FFTW_BACKWARD,*/ FFTW_ESTIMATE);
+  physical = fftw_plan_dft_c2r_2d(Nx, Ny, vv, v,  FFTW_ESTIMATE);
   fftw_execute(physical); 
   fftw_destroy_plan(physical);
 
-  //rfftwnd_one_complex_to_real(physical, uu, u);
-  //rfftwnd_one_complex_to_real(physical, vv, v);
 
   // Output the rescaled velocity field to a data file 
   Write_Rescaled_Velocity(Input_Parameters, u, v, Ny);
@@ -1175,8 +1140,7 @@ void Rescale_Spectrum(// LESPremixed2D_Quad_Block *Soln_ptr,
   fftw_free(v);
   fftw_free(uu);
   fftw_free(vv);
-  //rfftwnd_destroy_plan(spectral);
-  //rfftwnd_destroy_plan(physical);
+
 }
 
 
@@ -1191,7 +1155,8 @@ void Rescale_Spectrum(// LESPremixed2D_Quad_Block *Soln_ptr,
 
 // Write the initial turbulent velocity fluctuations for the initialization
 // of a homogenous isotropic turbulent flow field
-void Write_Initial_Turbulence(LESPremixed2D_Input_Parameters &Input_Parameters,
+void Write_Initial_Turbulence(QuadTreeBlock_DataStructure &QuadTree,
+			      LESPremixed2D_Input_Parameters &Input_Parameters,
                               double *u, double *v, const int &Ny) {
 
   int Nblks_i, Nblks_j, ICblk, JCblk, ii, jj;
@@ -1217,7 +1182,7 @@ void Write_Initial_Turbulence(LESPremixed2D_Input_Parameters &Input_Parameters,
     for (int q=0; q<Nblks_j; ++q) {
       filename = "Initial_Turbulence_";
       block = "Block_"; 
-      Block_Number = q*Nblks_i + p;
+      Block_Number = QuadTree.Roots[p][q].block.gblknum; //q*Nblks_i + p;
       sprintf(blk_num, "%.6d", Block_Number);
       block += blk_num;
       filename += block + ".dat";
@@ -1229,7 +1194,7 @@ void Write_Initial_Turbulence(LESPremixed2D_Input_Parameters &Input_Parameters,
 	exit(1);
       }
 
-      turbulencedata_out << block << endl;
+      //turbulencedata_out << block << endl;
       turbulencedata_out.setf(ios::scientific); 
       for (int i=0; i<ICblk; ++i) {
         ii = p*ICblk + i;

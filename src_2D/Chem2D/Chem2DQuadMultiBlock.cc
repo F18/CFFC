@@ -183,11 +183,13 @@ int Read_Restart_Solution(Chem2D_Quad_Block *Soln_ptr,
 	  Input_Parameters.Wo.set_species_data
 	    (Input_Parameters.Wo.React.num_species,Input_Parameters.Wo.React.species,
 	     Input_Parameters.CFFC_Path,
-	     Input_Parameters.Mach_Number_Reference,Input_Parameters.Schmidt);   
+	     Input_Parameters.Mach_Number_Reference,Input_Parameters.Schmidt,
+	     Input_Parameters.i_trans_type);   
 	  Input_Parameters.Uo.set_species_data
 	    (Input_Parameters.Wo.React.num_species,Input_Parameters.Wo.React.species,
 	     Input_Parameters.CFFC_Path,
-	     Input_Parameters.Mach_Number_Reference,Input_Parameters.Schmidt);    
+	     Input_Parameters.Mach_Number_Reference,Input_Parameters.Schmidt,
+	     Input_Parameters.i_trans_type);    
 	  Input_Parameters.Uo = U(Input_Parameters.Wo);
 
 	  /********** END CHEM2D SPECIFIC ****************************************/

@@ -9,8 +9,8 @@
 #ifndef _LESPREMIXED2D_REACTIONS_INCLUDED
 #define _LESPREMIXED2D_REACTIONS_INCLUDED
  
-class React_data;
-class Reaction_set;
+class Reactdata;
+class Reactionset;
 
 // Required C++ libraries
 #include <iostream>
@@ -26,7 +26,7 @@ using namespace std;
 #include "LESPremixed2DState.h"
 
 #ifndef _COMPLEXIFY_INCLUDED
-#include "../Math/Complexify/Complexify.h"
+#include "Complexify.h"
 #endif // _COMPLEXIFY_INCLUDED
 
 
@@ -71,7 +71,7 @@ extern "C" {
 
 ************************************************************************
 ************************************************************************/
-class React_data {
+class Reactdata {
 private: 
   string react; //reaction name
 
@@ -107,22 +107,22 @@ public:
   string react_name()const{ return react;}
 
   /* Input-output operators. */
-  friend ostream& operator << (ostream &out_file, const React_data &W);
-  friend istream& operator >> (istream &in_file,  React_data &W);
+  friend ostream& operator << (ostream &out_file, const Reactdata &W);
+  friend istream& operator >> (istream &in_file,  Reactdata &W);
 };
 
 /*************** forward reaction coef (kf) ****************************/
-inline double React_data::kf(const double &Temp) const{
+inline double Reactdata::kf(const double &Temp) const{
   return A*pow(Temp,n)*exp(-E/(R_UNIVERSAL*Temp));
 }
 
 /****** derivative of forward reaction coef (kf) wrt to Temperature *********/
-inline double React_data::dkf_dT(const double &Temp) const{
+inline double Reactdata::dkf_dT(const double &Temp) const{
   return A*pow(Temp,n-1)*exp(-E/(R_UNIVERSAL*Temp))*(n + E/(R_UNIVERSAL*Temp));
 }
 
 /*************** forward reaction kf for 2Step H2 ***********************/
-inline double React_data::kf(const double &Temp, const double &H2, const double &O2, const double &N2) const{
+inline double Reactdata::kf(const double &Temp, const double &H2, const double &O2, const double &N2) const{
   //equivalence ratio
   double stoich = 4.0/(32.0+3.76*28.0);
   double phi = (H2/(O2+N2))/stoich;
@@ -145,17 +145,17 @@ inline double React_data::kf(const double &Temp, const double &H2, const double 
 }
 
 /*************** backward reaction coef (kb) ****************************/
-inline double React_data::kb(const double &Temp) const{
+inline double Reactdata::kb(const double &Temp) const{
   return Ab*pow(Temp,n)*exp(-E/(R_UNIVERSAL*Temp));
 }
 
 /****** derivative of backward reaction coef (kb) wrt to Temperature *********/
-inline double React_data::dkb_dT(const double &Temp) const{
+inline double Reactdata::dkb_dT(const double &Temp) const{
    return Ab*pow(Temp,n-1)*exp(-E/(R_UNIVERSAL*Temp))*(n + E/(R_UNIVERSAL*Temp));
 }
 
 /***************** equilibrium coef Keq ********************************/
-inline double React_data::keq(const LESPremixed2D_pState &W, const double& Temp) const{
+inline double Reactdata::keq(const LESPremixed2D_pState &W, const double& Temp) const{
   // nu_coef is the stoichiometric coef. sum (Eqn 13.25, 13.26 Anderson)
   // Kp or Keq has units of Pressure Pa( N/m^2) so need to change to 
   // cgs units i.e *1e6
@@ -163,14 +163,14 @@ inline double React_data::keq(const LESPremixed2D_pState &W, const double& Temp)
 }
 
 /**************** I/O Operators ***************************************/
-inline ostream &operator << (ostream &out_file, const React_data &W) {
+inline ostream &operator << (ostream &out_file, const Reactdata &W) {
   out_file.setf(ios::scientific);
   out_file <<"\n "<<W.react<<" A "<<W.A<<" n "<<W.n<<" E "<<W.E;
   out_file.unsetf(ios::scientific);
   return (out_file);
 }
 
-inline istream &operator >> (istream &in_file, React_data &W) {
+inline istream &operator >> (istream &in_file, Reactdata &W) {
   in_file.setf(ios::skipws);
   in_file >> W.react >> W.A >> W.n >> W.E;
   in_file.unsetf(ios::skipws);
@@ -201,7 +201,7 @@ inline istream &operator >> (istream &in_file, React_data &W) {
 // User defined flag
 #define USER 100
 
-class Reaction_set{
+class Reactionset{
 
 private:  
 
@@ -215,14 +215,14 @@ private:
 protected:
 public: 
   int reactset_flag;       //Reaction Set Flag
-  React_data *reactions;   //each reaction rate data
+  Reactdata *reactions;   //each reaction rate data
   int num_reactions;       //number of reactions
   int num_species;         //number of total species
   int num_react_species;   //number of reacting species
   string *species;         //species used in reactions
   string Reaction_system;  //Reaction system name
 
-  Reaction_set(){ reactset_flag=0; num_reactions=0; num_species=0; 
+  Reactionset(){ reactset_flag=0; num_reactions=0; num_species=0; 
   num_react_species=0; reactions = NULL; species = NULL; 
   kf=NULL; kb=NULL; M=NULL; c=NULL; c_denom=NULL;}
                       
@@ -243,11 +243,11 @@ public:
   }
 
   //Operator Overloading 
-  Reaction_set& operator =(const Reaction_set &W);
+  Reactionset& operator =(const Reactionset &W);
 
   /* Input-output operators. */
-  friend ostream& operator << (ostream &out_file, const Reaction_set &W);
-  //friend istream& operator >> (istream &in_file,  Reaction_set &W);
+  friend ostream& operator << (ostream &out_file, const Reactionset &W);
+  //friend istream& operator >> (istream &in_file,  Reactionset &W);
 
   // time rate change of the species concentration 
   void omega(LESPremixed2D_cState &U, const LESPremixed2D_pState &W, const int Flow_Type ) const;
@@ -262,13 +262,13 @@ public:
   void Deallocate();
 
   //destructor
-  ~Reaction_set(){Deallocate();};
+  ~Reactionset(){Deallocate();};
  
 };
 
 
 /**************** Destructor *******************************************/
-inline void Reaction_set::Deallocate(){
+inline void Reactionset::Deallocate(){
   //deallocate memory
   if(reactions != NULL){  delete[] reactions; reactions = NULL;  }
   if(species != NULL){    delete[] species;   species = NULL;  }
@@ -281,7 +281,7 @@ inline void Reaction_set::Deallocate(){
 
 
 /***************** Assignment ****************************************/
-inline Reaction_set& Reaction_set::operator =(const Reaction_set &W){
+inline Reactionset& Reactionset::operator =(const Reactionset &W){
   //self assignment protection
   if( this != &W){   
     string temp = W.Reaction_system;
@@ -292,7 +292,7 @@ inline Reaction_set& Reaction_set::operator =(const Reaction_set &W){
 }
 
 /**************** I/O Operators ***************************************/
-inline ostream &operator << (ostream &out_file, const Reaction_set &W) {
+inline ostream &operator << (ostream &out_file, const Reactionset &W) {
   out_file.setf(ios::scientific);
   out_file <<"\n "<<W.Reaction_system<<" "<<W.num_reactions
 	   <<"  "<<W.num_species<<" "<<W.num_react_species<<endl;  
@@ -310,7 +310,7 @@ inline ostream &operator << (ostream &out_file, const Reaction_set &W) {
   return (out_file);
 }
 
-// istream &operator >> (istream &in_file, Reaction_set &W) {
+// istream &operator >> (istream &in_file, Reactionset &W) {
 //   in_file.setf(ios::skipws);
 //   in_file >> W.react >> W.A >> W.b >> W.E;
 //   in_file.unsetf(ios::skipws);

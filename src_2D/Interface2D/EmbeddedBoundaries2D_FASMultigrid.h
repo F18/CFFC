@@ -3842,6 +3842,18 @@ Execute(int &batch_flag,
 				  residual_max_norm);
 	}
 
+        // Periodically write out the nodal and cell solution information.
+	if (IP->Multigrid_IP.Write_Output_Cells_Frequency > 0 &&
+	    top_level == FINEST_LEVEL &&
+	    (number_of_time_steps % IP->Multigrid_IP.Write_Output_Cells_Frequency == 0)) {
+	   if (!batch_flag) { 
+	      cout << endl << " Writing out solution in Tecplot format at iteration level ";
+	      cout << number_of_time_steps << "." << endl; 
+	   }
+	   //Output_Multigrid_Cells(number_of_time_steps, Time, true, residual_l2_norm, ratio_residual_l2_norm);
+	   //Output_Multigrid(number_of_time_steps, Time, true, residual_l2_norm, ratio_residual_l2_norm);
+	} /* endif */
+
 	// Check if the maximum number of time steps has been reached or
 	// if the residual has dropped below the prescribed level for a
 	// full multigrid cycle.

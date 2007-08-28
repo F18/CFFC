@@ -113,7 +113,6 @@ void Output_Progress_L2norm(const int Number_of_Time_Steps,
 			    const double &Ratio_Residual_L2_Norm,
 			    const int First_Step,
 			    const int Frequency) {
-
    static const int progress_character = 0;
    Output_Progress_L2norm(Number_of_Time_Steps,
 	  		  Time,
@@ -134,19 +133,19 @@ void Output_Progress_L2norm(const int Number_of_Time_Steps,
 			    const int Frequency,
 			    const int progress_character) {
 
-  cout << setprecision(6);
-  if (First_Step || Number_of_Time_Steps % Frequency == 0) {
-    cout << endl
-	 << "  n = " << Number_of_Time_Steps
-	 << "   t = " << Time 
-	 << "   CPU t = " << CPU_Time.min();
-    cout.setf(ios::scientific);
-    cout << "   L2-norm = " << Residual_L2_Norm;
-    if (Ratio_Residual_L2_Norm > 0) {
-       cout << "   L2-norm ratio = " << Ratio_Residual_L2_Norm;
-    } /* endif *
-    cout.unsetf(ios::scientific);
-    cout << endl << "  ";
+    cout << setprecision(6);
+    if (First_Step || Number_of_Time_Steps % Frequency == 0) {
+      cout << endl
+	   << "  n = " << Number_of_Time_Steps
+	   << "   t = " << Time 
+	   << "   CPU t = " << CPU_Time.min();
+      cout.setf(ios::scientific);
+      cout << "   L2-norm = " << Residual_L2_Norm;
+      if (Ratio_Residual_L2_Norm > 0) {
+         cout << "   L2-norm ratio = " << Ratio_Residual_L2_Norm;
+      } /* endif */
+      cout.unsetf(ios::scientific);
+      cout << endl << "  ";
     } /* endif */
 
     switch(progress_character) {
@@ -173,7 +172,6 @@ void Output_Progress_L2norm(const int Number_of_Time_Steps,
          break;
     };
     cout.flush();
-  } /* endif */
 
 }
 
@@ -1537,27 +1535,4 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
 
 }
 
-// for use with qsort
-int Compare_Ints(const void *p, const void *q) {
-    return *(int *)p - *(int *)q;
-}
-
-double Least_Squares_Slope(double *values, int n, int position) {
-
-    double ssxx = 0.0, ssxy = 0.0;
-    double ymean = 0.0, xmean = (n-1.0)/2.0;
-
-    for (int x = 0; x < n; x++) { 
-	ymean += values[x];
-	ssxx += x * x;
-	ssxy += x * values[ (position+x) % n ];
-    }
-
-    ymean *= 1.0 / n;
-
-    ssxx -= n * xmean * xmean;
-    ssxy -= n * xmean * ymean;
-
-    return ssxy / ssxx;
-}
 

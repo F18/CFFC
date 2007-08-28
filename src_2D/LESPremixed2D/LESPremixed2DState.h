@@ -173,7 +173,7 @@ class LESPremixed2D_pState {
   static int                      nscal; //!< number of scalars
   static NASARP1311data       *specdata; //!< Global Species Data
   static double                *Schmidt; //!< Schmidt Number for each species
-  static Reaction_set             React; //!< Global Reaction Data
+  static Reactionset              React; //!< Global Reaction Data
   static Set_scalar            Scal_sys; //!< Set the group of scalars to be solved in the model
   static double          low_temp_range; //!< Low temp data range
   static double         high_temp_range; //!< High temp data range
@@ -249,7 +249,7 @@ class LESPremixed2D_pState {
 
    //read in ns species data, call only once as its static
    void set_species_data(const int &, const int &, const string *, const char *,
- 			 const double&, const double *);
+ 			 const double&, const double *, const int &);
 
    //set initial data values predominately used internally !!!
    void set_initial_values();
@@ -633,7 +633,7 @@ class LESPremixed2D_pState {
 
    //read in ns species data, call only once as its static
    void set_species_data(const int &, const int &, const string *, const char *,
-			 const double&, const double *);
+			 const double&, const double *, const int &);
 
    //set initial data values predominately used internally 
    void set_initial_values();
@@ -959,6 +959,11 @@ inline void LESPremixed2D_pState::set_premixed_flame_variables(const double &lam
  /************* Turbulence modified  pressure **************/
  inline double LESPremixed2D_pState::pmodified(void) const{
    return ( p + 2.0*rho*k()/3.0 );
+ }
+
+ /************** SFS turbulence kinetic energy *************/
+ inline double LESPremixed2D_pState::k(void) const{
+   return (-lambda.trace())/(TWO*rho);
  }
 
  /************* Strain rate tensor ***********************************/
@@ -1347,11 +1352,11 @@ inline double LESPremixed2D_cState::p() const{
 }
 /**************** kinetic energy ***************************/
 inline double LESPremixed2D_cState::k() const{
-  return lambda.trace()/(TWO*rho);
+  return rhok()/rho;
 }
 
 inline double LESPremixed2D_cState::rhok() const{
-  return lambda.trace()/TWO;
+  return (-lambda.trace())/TWO;
 }
 
 /************* Strain rate tensor ***********************************/

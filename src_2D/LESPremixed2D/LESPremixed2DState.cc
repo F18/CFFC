@@ -22,7 +22,7 @@ int LESPremixed2D_pState::ns = 1;
 int LESPremixed2D_pState::nscal = 0;
 int LESPremixed2D_pState::NUM_VAR_LESPREMIXED2D = NUM_LESPREMIXED2D_VAR_SANS_SPECIES; 
 NASARP1311data* LESPremixed2D_pState::specdata=NULL;
-Reaction_set LESPremixed2D_pState::React;
+Reactionset LESPremixed2D_pState::React;
 Set_scalar LESPremixed2D_pState::Scal_sys;
 double LESPremixed2D_pState::low_temp_range = 200.0;
 double LESPremixed2D_pState::high_temp_range = 300.0;
@@ -72,7 +72,8 @@ void LESPremixed2D_pState::set_species_data(const int &n,
 					    const string *S,
 					    const char *PATH,
 					    const double &Mr, 
-					    const double* Sc){ 
+					    const double* Sc,
+					    const int &trans_data){ 
  
 #ifdef STATIC_LESPREMIXED2D_SPECIES
   if( STATIC_LESPREMIXED2D_SPECIES < n) {                    //fix for mpi as called by each processor!!!!!!
@@ -95,7 +96,7 @@ void LESPremixed2D_pState::set_species_data(const int &n,
   Schmidt = new double[ns];
   for(int i=0; i<ns; ++i){
     //overwrite default data  
-    specdata[i].Getdata(S[i],PATH);  
+    specdata[i].Getdata(S[i],PATH,trans_data);  
     Schmidt[i] = Sc[i];
   } 
   
@@ -118,7 +119,8 @@ void LESPremixed2D_cState::set_species_data(const int &n,
 					    const string *S, 
 					    const char *PATH,
 					    const double &Mr, 
-					    const double* Sc){ 
+					    const double* Sc,
+					    const int &trans_data){ 
 #ifdef STATIC_LESPREMIXED2D_SPECIES
   if( STATIC_LESPREMIXED2D_SPECIES < n ) { 
     cerr<<"\n WARNING USING STATIC LESPREMIXED2D BUILT WITH "
@@ -140,7 +142,7 @@ void LESPremixed2D_cState::set_species_data(const int &n,
   Schmidt = new double[ns];
   for(int i=0; i<ns; ++i){
     //overwrite default data  
-    specdata[i].Getdata(S[i],PATH);
+    specdata[i].Getdata(S[i],PATH,trans_data);
     Schmidt[i] = Sc[i];  
   }  
 
@@ -479,7 +481,7 @@ double LESPremixed2D_pState::kappa(void) const{
       }
     }
  
-    sum += (specdata[i].ThermalConduct(Temp)*spec[i].c) / 
+    sum += (specdata[i].ThermalConduct(Temp, p)*spec[i].c) / 
       (spec[i].c + (specdata[i].Mol_mass()) * 1.065 * phi);
   }  
   
@@ -627,10 +629,6 @@ double LESPremixed2D_pState::amodified(void) const{
   return sqrt( g()*pmodified()/rho );
 }
 
-//SFS turbulence kinetic energy
-double LESPremixed2D_pState::k(void) const{
-  return lambda.trace()/(TWO*rho);
-}
 
 
 /******************************************************
@@ -715,9 +713,9 @@ void dFIdU(DenseMatrix &dFdU, const LESPremixed2D_pState &W, const int Flow_Type
   dFdU(0,1) += ONE;
   
   if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY) {
-    dFdU(1,0) += ( (C_p/Rt)*( - W.v.x*W.v.x) + HALF*(THREE*W.v.x*W.v.x + W.v.y+W.v.y) - ht - 5.0*kk/3.0 + C_p*pt/(W.rho*Rt) + phi )/denominator;
+    dFdU(1,0) += ( (C_p/Rt)*( - W.v.x*W.v.x) + HALF*(THREE*W.v.x*W.v.x + W.v.y*W.v.y) - ht - 5.0*kk/3.0 + C_p*pt/(W.rho*Rt) + phi )/denominator;
   } else if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
-    dFdU(1,0) += ( (C_p/Rt)*( - W.v.x*W.v.x) + HALF*(THREE*W.v.x*W.v.x + W.v.y+W.v.y) - ht + C_p*pt/(W.rho*Rt) + phi )/denominator;
+    dFdU(1,0) += ( (C_p/Rt)*( - W.v.x*W.v.x) + HALF*(THREE*W.v.x*W.v.x + W.v.y*W.v.y) - ht + C_p*pt/(W.rho*Rt) + phi )/denominator;
   }
 
   dFdU(1,1) += W.v.x*(TWO*C_p/Rt-THREE)/denominator; 
@@ -728,9 +726,9 @@ void dFIdU(DenseMatrix &dFdU, const LESPremixed2D_pState &W, const int Flow_Type
   dFdU(2,2) += W.v.x;
 
   if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY) {
-    dFdU(3,0) += W.v.x*( W.v.x*W.v.x + W.v.y+W.v.y + C_p*pt/(W.rho*Rt) - (C_p/Rt)*( HALF*(W.v.x*W.v.x + W.v.y+W.v.y) + 5.0*kk/3.0 + ht) + phi)/denominator;
+    dFdU(3,0) += W.v.x*( W.v.x*W.v.x + W.v.y*W.v.y + C_p*pt/(W.rho*Rt) - (C_p/Rt)*( HALF*(W.v.x*W.v.x + W.v.y*W.v.y) + 5.0*kk/3.0 + ht) + phi)/denominator;
   } else if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
-    dFdU(3,0) += W.v.x*( W.v.x*W.v.x + W.v.y+W.v.y + 5.0*kk/3.0 + C_p*pt/(W.rho*Rt) - (C_p/Rt)*( HALF*(W.v.x*W.v.x + W.v.y+W.v.y) + 5.0*kk/3.0 + ht) + phi)/denominator;
+    dFdU(3,0) += W.v.x*( W.v.x*W.v.x + W.v.y*W.v.y + 5.0*kk/3.0 + C_p*pt/(W.rho*Rt) - (C_p/Rt)*( HALF*(W.v.x*W.v.x + W.v.y*W.v.y) + 5.0*kk/3.0 + ht) + phi)/denominator;
   }
 
   dFdU(3,1) += ht + HALF*(W.v.x*W.v.x + W.v.y*W.v.y) + 5.0*kk/3.0 - W.v.x*W.v.x/denominator;
@@ -1853,6 +1851,10 @@ ostream &operator << (ostream &out_file, const LESPremixed2D_pState &W) {
   if(W.nscal) for(int i=0; i<W.nscal; ++i) out_file <<" "<<W.scalar[i];
 
   for( int i=0; i<W.ns; ++i) out_file<<" "<<W.spec[i];
+ 
+#ifdef THICKENED_FLAME_ON
+  out_file << " " << W.flame;
+#endif
 
   out_file.unsetf(ios::scientific);
   return (out_file);
@@ -1864,8 +1866,11 @@ istream &operator >> (istream &in_file, LESPremixed2D_pState &W) {
 
   if(W.nscal) for(int i=0; i<W.nscal; ++i) in_file >> W.scalar[i];
 
-  //W.set_initial_values();
   for( int i=0; i<W.ns; ++i) in_file>>W.spec[i];
+
+#ifdef THICKENED_FLAME_ON
+  in_file >> W.flame;
+#endif
 
   in_file.unsetf(ios::skipws);
    return (in_file);
@@ -2247,7 +2252,7 @@ LESPremixed2D_cState LESPremixed2D_pState::S_turbulence_model(const LESPremixed2
  ** LESPremixed2D_pState::Sw -- Chemical Reaction Rate Source Terms.  **
  **                                                                   **
  ** Using the Reaction class to get the source terms for the          ** 
- ** specific "Reaction_set".                                          ** 
+ ** specific "Reactionset".                                           ** 
  ***********************************************************************
  ***********************************************************************/
 LESPremixed2D_cState LESPremixed2D_pState::Sw(int &REACT_SET_FLAG, 
@@ -3084,8 +3089,12 @@ ostream &operator << (ostream &out_file, const LESPremixed2D_cState &U) {
   out_file << " " << U.rho  << " " << U.rhov.x << " " << U.rhov.y << " " << U.E;
 
   if(U.nscal) for(int i=0; i<U.nscal; ++i) out_file <<" "<< U.rhoscalar[i];
-  
+
   for( int i=0; i<U.ns; ++i) out_file<<" "<<U.rhospec[i];
+
+#ifdef THICKENED_FLAME_ON
+  out_file << " " << U.flame;
+#endif
 
   out_file.unsetf(ios::scientific);
   return (out_file);
@@ -3096,8 +3105,12 @@ istream &operator >> (istream &in_file, LESPremixed2D_cState &U) {
   in_file >> U.rho >> U.rhov.x >> U.rhov.y >> U.E;
 
   if(U.nscal) for(int i=0; i<U.nscal; ++i) in_file >> U.rhoscalar[i];
- 
+
   for( int i=0; i<U.ns; ++i) in_file >> U.rhospec[i]; 
+
+#ifdef THICKENED_FLAME_ON
+  in_file >> U.flame;
+#endif
 
   in_file.unsetf(ios::skipws);
   return (in_file);

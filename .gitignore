@@ -7,6 +7,7 @@
 .*.swp
 *.il
 *.depend*
+*.mod
 
 # example directories
 #*~

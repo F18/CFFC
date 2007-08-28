@@ -164,11 +164,13 @@ void Set_Default_Input_Parameters(LESPremixed2D_Input_Parameters &IP) {
     IP.Wo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies, 
 			   IP.CFFC_Path,
 			   IP.Mach_Number_Reference,
-			   IP.Schmidt); 
+			   IP.Schmidt,
+			   IP.i_trans_type); 
     IP.Uo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies,
 			   IP.CFFC_Path,
 			   IP.Mach_Number_Reference,
-			   IP.Schmidt);
+			   IP.Schmidt,
+			   IP.i_trans_type);
 
     //Air at STD_ATM
     IP.Pressure = IP.Wo.p;
@@ -604,11 +606,13 @@ void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP) {
       IP.Wo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies,
 			     IP.CFFC_Path,
 			     IP.Mach_Number_Reference,
-			     IP.Schmidt); 
+			     IP.Schmidt,
+			     IP.i_trans_type); 
       IP.Uo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies,
 			     IP.CFFC_Path,
 			     IP.Mach_Number_Reference,
-			     IP.Schmidt);
+			     IP.Schmidt,
+			     IP.i_trans_type);
       IP.Wo.set_initial_values(IP.mass_fractions);
       IP.Uo.set_initial_values(IP.mass_fractions);
       if(IP.num_scalars > 0){
@@ -646,18 +650,18 @@ void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP) {
                           MPI::DOUBLE, 0);  
 
     // Reset the static variables.
-    IP.Wo.set_SFSmodel_variables(filter_width,
-				 Smagorinsky_Constant,
-				 Yoshizawa_coefficient);
-    IP.Uo.set_SFSmodel_variables(filter_width,
-				 Smagorinsky_Constant,
-				 Yoshizawa_coefficient);
-    IP.Wo.set_premixed_flame_variables(laminar_flame_thickness,
-				       laminar_flame_speed,
-				       TFactor);
-    IP.Uo.set_premixed_flame_variables(laminar_flame_thickness,
-				       laminar_flame_speed,
-				       TFactor);
+    IP.Wo.set_SFSmodel_variables(IP.filter_width,
+				 IP.Smagorinsky_Constant,
+				 IP.Yoshizawa_coefficient);
+    IP.Uo.set_SFSmodel_variables(IP.filter_width,
+				 IP.Smagorinsky_Constant,
+				 IP.Yoshizawa_coefficient);
+    IP.Wo.set_premixed_flame_variables(IP.laminar_flame_thickness,
+				       IP.laminar_flame_speed,
+				       IP.TFactor);
+    IP.Uo.set_premixed_flame_variables(IP.laminar_flame_thickness,
+				       IP.laminar_flame_speed,
+				       IP.TFactor);
  
     /*********************************************************
      ******************* LESPREMIXED2D END *******************
@@ -1293,11 +1297,13 @@ void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP,
       IP.Wo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies,
 			     IP.CFFC_Path,
 			     IP.Mach_Number_Reference,
-			     IP.Schmidt); 
+			     IP.Schmidt,
+			     IP.i_trans_type); 
       IP.Uo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies,
 			     IP.CFFC_Path,
 			     IP.Mach_Number_Reference,
-			     IP.Schmidt);
+			     IP.Schmidt,
+			     IP.i_trans_type);
       IP.Wo.set_initial_values(IP.mass_fractions);
       IP.Uo.set_initial_values(IP.mass_fractions);
       if(IP.num_scalars > 0){
@@ -1335,18 +1341,18 @@ void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP,
                           MPI::DOUBLE, Source_Rank);  
 
     // Reset the static variables.
-    IP.Wo.set_SFSmodel_variables(filter_width,
-				 Smagorinsky_Constant,
-				 Yoshizawa_coefficient);
-    IP.Uo.set_SFSmodel_variables(filter_width,
-				 Smagorinsky_Constant,
-				 Yoshizawa_coefficient);
-    IP.Wo.set_premixed_flame_variables(laminar_flame_thickness,
-				       laminar_flame_speed,
-				       TFactor);
-    IP.Uo.set_premixed_flame_variables(laminar_flame_thickness,
-				       laminar_flame_speed,
-				       TFactor);
+    IP.Wo.set_SFSmodel_variables(IP.filter_width,
+				 IP.Smagorinsky_Constant,
+				 IP.Yoshizawa_coefficient);
+    IP.Uo.set_SFSmodel_variables(IP.filter_width,
+				 IP.Smagorinsky_Constant,
+				 IP.Yoshizawa_coefficient);
+    IP.Wo.set_premixed_flame_variables(IP.laminar_flame_thickness,
+				       IP.laminar_flame_speed,
+				       IP.TFactor);
+    IP.Uo.set_premixed_flame_variables(IP.laminar_flame_thickness,
+				       IP.laminar_flame_speed,
+				       IP.TFactor);
 
     /*********************************************************
      ******************* LESPREMIXED2D END *******************
@@ -2586,11 +2592,13 @@ int Parse_Next_Input_Control_Parameter(LESPremixed2D_Input_Parameters &IP) {
        IP.Wo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies,
 			      IP.CFFC_Path,
 			      IP.Mach_Number_Reference,
-			      IP.Schmidt); 
+			      IP.Schmidt,
+			      IP.i_trans_type); 
        IP.Uo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies,
 			      IP.CFFC_Path,
 			      IP.Mach_Number_Reference,
-			      IP.Schmidt);
+			      IP.Schmidt,
+			      IP.i_trans_type);
   
        //Get next line and read in mass fractions or set defaults
        if(flag){
@@ -2626,10 +2634,10 @@ int Parse_Next_Input_Control_Parameter(LESPremixed2D_Input_Parameters &IP) {
 	 IP.Line_Number = IP.Line_Number + 1; 
         
        //Spit out appropriate mass fractions and exit
-       } else if (strcmp(IP.Next_Control_Parameter, "Equivalence_Ratio") == 0){        
-	 double phi;
-	 IP.Input_File >> phi;
-	 Equivalence_Ratio(phi);
+       // } else if (strcmp(IP.Next_Control_Parameter, "Equivalence_Ratio") == 0){        
+// 	 double phi;
+// 	 IP.Input_File >> phi;
+// 	 Equivalence_Ratio(phi);
 
 	 //If no mass fraction data is set to defaults (all equal to 1/num_species) 
        } else {
@@ -2680,11 +2688,13 @@ int Parse_Next_Input_Control_Parameter(LESPremixed2D_Input_Parameters &IP) {
       IP.Wo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies,
 			     IP.CFFC_Path,
 			     IP.Mach_Number_Reference,
-			     IP.Schmidt); 
+			     IP.Schmidt,
+			     IP.i_trans_type); 
       IP.Uo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies,
 			     IP.CFFC_Path,
 			     IP.Mach_Number_Reference,
-			     IP.Schmidt);
+			     IP.Schmidt,
+			     IP.i_trans_type);
     
       //More Fudging of lines 
       IP.Line_Number = IP.Line_Number + 1 ;
@@ -3983,6 +3993,12 @@ int Parse_Next_Input_Control_Parameter(LESPremixed2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter, "Fix_BCs") == 0) {
       i_command = SWITCH_BCS_TO_FIXED;
 
+    } else if (strcmp(IP.Next_Control_Parameter, "Postprocess_1Dflame") == 0) {
+       i_command = POSTPROCESS_1DFLAME;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Postprocess_Turbulence") == 0) {
+       i_command = POSTPROCESS_TURBULENCE;
+
     } else if (IP.Next_Control_Parameter[0] == '#') {
        i_command = COMMENT_CODE;
     } else {
@@ -4123,35 +4139,35 @@ int Process_Input_Control_Parameter_File(LESPremixed2D_Input_Parameters &Input_P
  * Routine: Equivalence_Ratio                           *
  *                                                      *
  ********************************************************/
-void Equivalence_Ratio(const double &phi){
+// void Equivalence_Ratio(const double &phi){
 
-  // Methane & Air
-  // CH4 + 2(O2 +3.76N2) -> CO2 + 2H2O 
-  double n = 9.52*(1.0 - phi)/(phi +9.52);
+//   // Methane & Air
+//   // CH4 + 2(O2 +3.76N2) -> CO2 + 2H2O 
+//   double n = 9.52*(1.0 - phi)/(phi +9.52);
 
-  double X_CH4 = ( 1.0 - n)/10.52;
-  double X_O2  = (2.0 + 0.21*n)/10.52;
-  double X_N2  = (7.52 +0.79*n)/10.52;
+//   double X_CH4 = ( 1.0 - n)/10.52;
+//   double X_O2  = (2.0 + 0.21*n)/10.52;
+//   double X_N2  = (7.52 +0.79*n)/10.52;
 
-  double Mtot = X_CH4*(16.0) + X_O2*(32.0) + X_N2*(28.0);
+//   double Mtot = X_CH4*(16.0) + X_O2*(32.0) + X_N2*(28.0);
 
-  double c_CH4 =  X_CH4*(16.0)/Mtot;
-  double c_O2  =  X_O2*(32.0)/Mtot;
-  double c_N2  =  X_N2*(28.0)/Mtot;
+//   double c_CH4 =  X_CH4*(16.0)/Mtot;
+//   double c_O2  =  X_O2*(32.0)/Mtot;
+//   double c_N2  =  X_N2*(28.0)/Mtot;
 
-  cout<<"\n For phi = "<<phi;
-  cout<<"\n c_CH4 "<<c_CH4;
-  cout<<"\n c_O2  "<<c_O2;
-  cout<<"\n c_N2  "<<c_N2;
-  cout<<"\n X_CH4 "<<X_CH4;
-  cout<<"\n X_O2  "<<X_O2;
-  cout<<"\n X_N2  "<<X_N2;
-  cout<<"\n Mtot  "<<Mtot;
+//   cout<<"\n For phi = "<<phi;
+//   cout<<"\n c_CH4 "<<c_CH4;
+//   cout<<"\n c_O2  "<<c_O2;
+//   cout<<"\n c_N2  "<<c_N2;
+//   cout<<"\n X_CH4 "<<X_CH4;
+//   cout<<"\n X_O2  "<<X_O2;
+//   cout<<"\n X_N2  "<<X_N2;
+//   cout<<"\n Mtot  "<<Mtot;
 
-  cout<<endl;
-  cout<<"\n Should pass in equation type, and pass back the appropriate mass fractions ";
-  cout<<endl;
+//   cout<<endl;
+//   cout<<"\n Should pass in equation type, and pass back the appropriate mass fractions ";
+//   cout<<endl;
   
-  exit(0); 
+//   exit(0); 
 
-}
+// }

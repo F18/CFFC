@@ -1174,7 +1174,13 @@ void Output_Tecplot(LESPremixed2D_Quad_Block &SolnBlk,
     //n species mass fractions names
     for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
       Out_File <<"\"c_"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
-    }  
+    }
+
+#ifdef THICKENED_FLAME_ON
+    Out_File <<"\"WF\" \\ \n" 
+	     <<"\"TF\" \\ \n";
+#endif
+  
     //   Viscous Terms 
     Out_File << "\"qflux_x\" \\ \n"  
 	     << "\"qflux_y\" \\  \n"   
@@ -1192,8 +1198,6 @@ void Output_Tecplot(LESPremixed2D_Quad_Block &SolnBlk,
     Out_File<< "\"T\" \\  \n" 
 	    << "\"R\" \\  \n"
 	    << "\"M\" \\  \n"
-	    << "\"Prandtl\" \\  \n"
-	    << "\"Prandtl_turb\" \\  \n"
 	    << "\"rho*H\"  \\ \n"  
 	    <<"\"h\" \\ \n"
 	    <<"\"h_s\" \\ \n"
@@ -1237,8 +1241,6 @@ void Output_Tecplot(LESPremixed2D_Quad_Block &SolnBlk,
 	       << " " << W_node.theta<< " " <<W_node.lambda
 	       << " " << W_node.T()<< " " << W_node.Rtot()
 	       << " " << W_node.v.abs()/W_node.a() 
-	       << " " << W_node.Prandtl()
-	       << " " << W_node.Pr_turb()
 	       << " " << W_node.H() <<" "<< W_node.h() <<" "<< W_node.hs()<<" "<< W_node.href()
 	       << " " << W_node.E() <<" "<< W_node.e() <<" "<< W_node.es()<<" "<< W_node.eref();
 
@@ -1306,6 +1308,12 @@ void Output_Cells_Tecplot(LESPremixed2D_Quad_Block &SolnBlk,
        for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
 	 Out_File <<"\"c"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
        }
+
+#ifdef THICKENED_FLAME_ON
+       Out_File <<"\"WF\" \\ \n" 
+		<<"\"TF\" \\ \n";
+#endif
+
        //Viscous Terms 
        Out_File << "\"qflux_x\" \\ \n"  
 		<< "\"qflux_y\" \\ \n"   
@@ -1332,28 +1340,23 @@ void Output_Cells_Tecplot(LESPremixed2D_Quad_Block &SolnBlk,
 		 <<"\"Le_"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n"; 
        } 
        
-       //Residuals
-       Out_File << "\"dUdt_rho\" \\ \n"
-                << "\"dUdt_rhou\" \\ \n"
-                << "\"dUdt_rhov\" \\ \n"
-		<< "\"dUdt_e\" \\ \n";
-       // scalars 
-       if(SolnBlk.W[0][0].nscal > 0){
-         for(int i =0 ;i<SolnBlk.W[0][0].nscal ;i++){
-           Out_File <<"\"dUdt_rho"<<SolnBlk.W[0][0].Scal_sys.scalars[i]<<"\" \\ \n";
-	 }  
+//        //Residuals
+//        Out_File << "\"dUdt_rho\" \\ \n"
+//                 << "\"dUdt_rhou\" \\ \n"
+//                 << "\"dUdt_rhov\" \\ \n"
+// 		<< "\"dUdt_e\" \\ \n";
+//        // scalars 
+//        if(SolnBlk.W[0][0].nscal > 0){
+//          for(int i =0 ;i<SolnBlk.W[0][0].nscal ;i++){
+//            Out_File <<"\"dUdt_rho"<<SolnBlk.W[0][0].Scal_sys.scalars[i]<<"\" \\ \n";
+// 	 }  
          
-       }
-       //n species mass fractions names
-       for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
-	 Out_File <<"\"dUdt_rhoc"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
-       }
+//        }
+//        //n species mass fractions names
+//        for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
+// 	 Out_File <<"\"dUdt_rhoc"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
+//        }
 
-       //Additional terms
-#ifdef THICKENED_FLAME_ON
-       Out_File <<"\"WF\" \\ \n" 
-		<<"\"TF\" \\ \n";
-#endif
        Out_File	<< "\"k_sfs\" \\ \n"
                 << "\"vorticity\" \\ \n"
                 << "\"enstrophy\" \\ \n"
@@ -1433,14 +1436,9 @@ void Output_Cells_Tecplot(LESPremixed2D_Quad_Block &SolnBlk,
  	       Out_File<<" "<<SolnBlk.W[i][j].Schmidt_No(k) 
 		       <<" "<<SolnBlk.W[i][j].Lewis(k);  
 	   }
-	   //Residuals
-	   Out_File << " " << SolnBlk.dUdt[i][j][0];
 
-	   //Additional terms
-#ifdef THICKENED_FLAME_ON
-	   Out_File << " " << SolnBlk.W[i][j].flame.WF 
-		    << " " << SolnBlk.W[i][j].flame.TF;
-#endif
+	   //Residuals
+	   // Out_File << " " << SolnBlk.dUdt[i][j][0];
 
 	   Out_File << " " << SolnBlk.W[i][j].k() 
 	            << " " << SolnBlk.vorticity(i, j)
@@ -2085,9 +2083,9 @@ void ICs(LESPremixed2D_Quad_Block &SolnBlk,
 	Wl.v.x = 0.4101;
 	Wr.v.x = 3.103;
  	Wr.spec[0] = ZERO;       //CH4
- 	Wr.spec[1] = 0.005;      //O2
-	Wr.spec[2] = 0.1378;     //CO2
-	Wr.spec[3] = 0.1237;     //H2O 
+ 	Wr.spec[1] = 0.0055;      //O2
+	Wr.spec[2] = 0.1368;     //CO2
+	Wr.spec[3] = 0.1242;     //H2O 
 	Wr.spec[4] = 0.0088;     //CO
 
  	Wr.rho = Wr.p/(Wr.Rtot()*2250);
@@ -2719,149 +2717,26 @@ void ICs(LESPremixed2D_Quad_Block &SolnBlk,
          the laminar flame solution without heat release
       \*---------------------------------------------------------------------*/
       
-//       filename = "Initial_Turbulence_Block_";
-//       sprintf(blk_num, "%.6d", Block_Number);
-//       filename = filename + blk_num + ".dat";
+      filename = "Initial_Turbulence_Block_";
+      sprintf(blk_num, "%.6d", Block_Number);
+      filename = filename + blk_num + ".dat";
       
-//       // Open wrinkled flame data file for reading
-//       InFile.open(filename.c_str(), ios::in); 
-//       // Check to see if successful
-//       if (InFile.fail()){ 
-//         cerr<<"\nError opening file: "<< filename <<" to read" << endl;
-//         exit(1); 
-//       } 
-
-
-      
-     // Open data file for reading
-      InFile.open("Initial_Turbulence.dat", ios::in); 
+      // Open wrinkled flame data file for reading
+      InFile.open(filename.c_str(), ios::in); 
       // Check to see if successful
-      if(InFile.fail()){ 
-        cerr<<"\nError opening file: Initial_Turbulence.dat to read" <<endl;
+      if (InFile.fail()){ 
+        cerr<<"\nError opening file: "<< filename <<" to read" << endl;
         exit(1); 
       } 
-           
-      sprintf(blk_num, "%.6d", Block_Number);
-      block += blk_num; 
-         
-      // do {
-//         getline(InFile, block_in_file);
-//       }
-//       while (block.compare(block_in_file)!=0  &&  !InFile.eof());
-        
-//       if(InFile.eof()){
-// 	cerr<< "Block "<< block <<" not in: Initial_turbulence.dat"<<endl;
-//         exit(1);
-//       }
-
-      bool interpolate_flag;
-      double xx, yy, dx, dy, dd;
-      double dSW, dSE, dNW, dNE;
-      //Vector2D xSW, xSE, xNW, xNE, vSW, vSE, vNW, vNE, Vprime;
-      dSW = dSE = dNW = dNE = 1.0E9;
 
       InFile.setf(ios::skipws);
       for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; ++i ) {
         for (int j  = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; ++j ) {
           if ((i>=SolnBlk.ICl && i<=SolnBlk.ICu) && (j>=SolnBlk.JCl && j<=SolnBlk.JCu)) {
-	    
-	    interpolate_flag = true;
-	    		                    
-	    do {
-	      InFile >> xx >> yy >> uprime_x >> uprime_y;
-	      	
-	      if (fabs((xx - SolnBlk.Grid.Cell[i][j].Xc.x)/SolnBlk.Grid.Cell[i][j].Xc.x) < 1.0E-3  &&
-		  fabs((yy - SolnBlk.Grid.Cell[i][j].Xc.y)/SolnBlk.Grid.Cell[i][j].Xc.y) < 1.0E-3) {
-		SolnBlk.W[i][j].v.x += uprime_x;
-		SolnBlk.W[i][j].v.y += uprime_y;
-		interpolate_flag = false;
-		break;
-	      } else {
-		dx = SolnBlk.Grid.Cell[i][j].Xc.x - xx;
-		dy = SolnBlk.Grid.Cell[i][j].Xc.y - yy;
-		dd = sqrt(dx*dx + dy*dy);
-		if ( dd == ZERO ||  dd > sqrt(sqr(Input_Parameters.Box_Width) + sqr(Input_Parameters.Box_Height)) ) {
-		  cout << "\nYOU ARE NOT SUPPOSED TO REACH THIS LINE!!!";
-		} // else {
-// 		  // SW neighbour
-// 		  if (xx < SolnBlk.Grid.Cell[i][j].Xc.x  &&  yy < SolnBlk.Grid.Cell[i][j].Xc.y  &&  dd < dSW ) {
-// 		    xSW.x = xx;         xSW.y = yy;
-// 		    vSW.x = uprime_x;   vSW.y = uprime_y;
-// 		    dSW = dd;  
-// 		  // NW neighbour
-// 		  } else if (xx < SolnBlk.Grid.Cell[i][j].Xc.x  && yy > SolnBlk.Grid.Cell[i][j].Xc.y  &&  dd < dNW) {
-// 		    xNW.x = xx;         xNW.y = yy;
-// 		    vNW.x = uprime_x;   vNW.y = uprime_y;
-// 		    dNW = dd;  
-// 		  // SE neighbour
-// 		  } else if (xx > SolnBlk.Grid.Cell[i][j].Xc.x  &&  yy < SolnBlk.Grid.Cell[i][j].Xc.y  &&  dd < dSE) {
-// 		    xSE.x = xx;         xSE.y = yy;
-// 		    vSE.x = uprime_x;   vSE.y = uprime_y;
-// 		    dSE = dd;  
-// 		  // NE neighbour
-// 		  } else if (xx > SolnBlk.Grid.Cell[i][j].Xc.x  &&  yy > SolnBlk.Grid.Cell[i][j].Xc.y  &&  dd < dNE) {
-// 		    xNE.x = xx;         xNE.y = yy;
-// 		    vNE.x = uprime_x;   vNE.y = uprime_y;
-// 		    dNE = dd;  
-// 		  } 
-// 		}
-	      } // end if
-	    } while ( !InFile.eof() ); // end while
-
-	    // reset EOF flag
-	    if ( InFile.eof() ) {
-	      InFile.clear(); 
-	      // Go to the beginning of the file 
-	      InFile.seekg(0, ios::beg);
-	    } 
-	    
-	   //  if (interpolate_flag == true) {
-// 	      assert(xSW.x < SolnBlk.Grid.Cell[i][j].Xc.x  && xSW.y < SolnBlk.Grid.Cell[i][j].Xc.y);
-// 	      assert(xNW.x < SolnBlk.Grid.Cell[i][j].Xc.x  && xNW.y > SolnBlk.Grid.Cell[i][j].Xc.y);
-// 	      assert(xNE.x > SolnBlk.Grid.Cell[i][j].Xc.x  && xNE.y > SolnBlk.Grid.Cell[i][j].Xc.y);
-// 	      assert(xSE.x > SolnBlk.Grid.Cell[i][j].Xc.x  && xSE.y < SolnBlk.Grid.Cell[i][j].Xc.y);
-	      
-// 	      Bilinear_Interpolation(vSW, xSW,
-// 				     vNW, xNW,
-// 				     vNE, xNE,
-// 				     vSE, xSE,
-// 				     SolnBlk.Grid.Cell[i][j].Xc, Vprime);
-	      
-// 	      //cout << "\nInterpolating initial fluctuations for cell[" << i << "][" << j << "]\tVprime=" << Vprime;
-	      
-// 	      SolnBlk.W[i][j].v.x += Vprime.x;
-// 	      SolnBlk.W[i][j].v.y += Vprime.y; 
-	      
-// 	      dSW = dSE = dNW = dNE = 1.0E9;
-// 	    }
-        
-
-
-	    // Initialize the turbulence kinetic energy k
-	    // if (SolnBlk.W[i][j].Scal_sys.scalar_flag == LES_TF_K  ||  SolnBlk.W[i][j].Scal_sys.scalar_flag == LES_FSD_C_K) {
-// 	      double dudx, dudy, dvdx, dvdy, SS, trace;
-// 	      dudx = (SolnBlk.W[i+1][j].v.x - SolnBlk.W[i-1][j].v.x)/
-// 		(SolnBlk.Grid.Cell[i+1][j].Xc.x - SolnBlk.Grid.Cell[i-1][j].Xc.x);
-// 	      dvdx = (SolnBlk.W[i+1][j].v.y - SolnBlk.W[i-1][j].v.y)/
-// 		(SolnBlk.Grid.Cell[i+1][j].Xc.x - SolnBlk.Grid.Cell[i-1][j].Xc.x);
-	    
-// 	      dudy = (SolnBlk.W[i][j+1].v.x - SolnBlk.W[i][j-1].v.x)/
-// 		(SolnBlk.Grid.Cell[i][j+1].Xc.y - SolnBlk.Grid.Cell[i][j-1].Xc.y);
-
-// 	      dvdy = (SolnBlk.W[i][j+1].v.y - SolnBlk.W[i][j-1].v.y)/
-// 		(SolnBlk.Grid.Cell[i][j+1].Xc.y - SolnBlk.Grid.Cell[i][j-1].Xc.y);
-
-// 	      SS = dudx*dudx + dvdy*dvdy + 0.5*sqr(dvdx + dudy); 
-// 	      SS = sqrt(2.0*SS);
-
-// 	      trace = TWO*CI_CONSTANT*SolnBlk.W[i][j].rho*sqr(SolnBlk.W[i][j].filter_width(SolnBlk.Grid.Cell[i][j].A)*SS);
-// 	      SolnBlk.W[i][j].scalar[0] = trace/(TWO*SolnBlk.W[i][j].rho);
-
-// 	    }
-
-
-
-	  } // end if  
+	    InFile >> uprime_x >> uprime_y;
+	    SolnBlk.W[i][j].v.x += uprime_x;
+	    SolnBlk.W[i][j].v.y += uprime_y;
+	  }
 
 #ifdef THICKENED_FLAME_ON
 	  SolnBlk.W[i][j].flame.unphysical_check(SolnBlk.W[i][j].TFactor);
@@ -2870,14 +2745,160 @@ void ICs(LESPremixed2D_Quad_Block &SolnBlk,
 	  if (SolnBlk.W[i][j].flame.WF < (ONE-NANO)  ||  
 	      SolnBlk.W[i][j].flame.WF > pow(SolnBlk.W[i][j].TFactor, 2.0/3.0)) cout  <<"\nWF out of range in ICs";
 #endif
-
 	  // Update U from W
 	  SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
-	  
 	}
-      } 
+      }
       InFile.unsetf(ios::skipws);
       InFile.close();
+
+      
+//      // Open data file for reading
+//       InFile.open("Initial_Turbulence.dat", ios::in); 
+//       // Check to see if successful
+//       if(InFile.fail()){ 
+//         cerr<<"\nError opening file: Initial_Turbulence.dat to read" <<endl;
+//         exit(1); 
+//       } 
+           
+//       sprintf(blk_num, "%.6d", Block_Number);
+//       block += blk_num; 
+         
+//       // do {
+// //         getline(InFile, block_in_file);
+// //       }
+// //       while (block.compare(block_in_file)!=0  &&  !InFile.eof());
+        
+// //       if(InFile.eof()){
+// // 	cerr<< "Block "<< block <<" not in: Initial_turbulence.dat"<<endl;
+// //         exit(1);
+// //       }
+
+//       bool interpolate_flag;
+//       double xx, yy, dx, dy, dd;
+//       double dSW, dSE, dNW, dNE;
+//       //Vector2D xSW, xSE, xNW, xNE, vSW, vSE, vNW, vNE, Vprime;
+//       dSW = dSE = dNW = dNE = 1.0E9;
+
+//       InFile.setf(ios::skipws);
+//       for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; ++i ) {
+//         for (int j  = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; ++j ) {
+//           if ((i>=SolnBlk.ICl && i<=SolnBlk.ICu) && (j>=SolnBlk.JCl && j<=SolnBlk.JCu)) {
+	    
+// 	    interpolate_flag = true;
+	    		                    
+// 	    do {
+// 	      InFile >> xx >> yy >> uprime_x >> uprime_y;
+	      	
+// 	      if (fabs((xx - SolnBlk.Grid.Cell[i][j].Xc.x)/SolnBlk.Grid.Cell[i][j].Xc.x) < 1.0E-3  &&
+// 		  fabs((yy - SolnBlk.Grid.Cell[i][j].Xc.y)/SolnBlk.Grid.Cell[i][j].Xc.y) < 1.0E-3) {
+// 		SolnBlk.W[i][j].v.x += uprime_x;
+// 		SolnBlk.W[i][j].v.y += uprime_y;
+// 		interpolate_flag = false;
+// 		break;
+// 	      } else {
+// 		dx = SolnBlk.Grid.Cell[i][j].Xc.x - xx;
+// 		dy = SolnBlk.Grid.Cell[i][j].Xc.y - yy;
+// 		dd = sqrt(dx*dx + dy*dy);
+// 		if ( dd == ZERO ||  dd > sqrt(sqr(Input_Parameters.Box_Width) + sqr(Input_Parameters.Box_Height)) ) {
+// 		  cout << "\nYOU ARE NOT SUPPOSED TO REACH THIS LINE!!!";
+// 		} // else {
+// // 		  // SW neighbour
+// // 		  if (xx < SolnBlk.Grid.Cell[i][j].Xc.x  &&  yy < SolnBlk.Grid.Cell[i][j].Xc.y  &&  dd < dSW ) {
+// // 		    xSW.x = xx;         xSW.y = yy;
+// // 		    vSW.x = uprime_x;   vSW.y = uprime_y;
+// // 		    dSW = dd;  
+// // 		  // NW neighbour
+// // 		  } else if (xx < SolnBlk.Grid.Cell[i][j].Xc.x  && yy > SolnBlk.Grid.Cell[i][j].Xc.y  &&  dd < dNW) {
+// // 		    xNW.x = xx;         xNW.y = yy;
+// // 		    vNW.x = uprime_x;   vNW.y = uprime_y;
+// // 		    dNW = dd;  
+// // 		  // SE neighbour
+// // 		  } else if (xx > SolnBlk.Grid.Cell[i][j].Xc.x  &&  yy < SolnBlk.Grid.Cell[i][j].Xc.y  &&  dd < dSE) {
+// // 		    xSE.x = xx;         xSE.y = yy;
+// // 		    vSE.x = uprime_x;   vSE.y = uprime_y;
+// // 		    dSE = dd;  
+// // 		  // NE neighbour
+// // 		  } else if (xx > SolnBlk.Grid.Cell[i][j].Xc.x  &&  yy > SolnBlk.Grid.Cell[i][j].Xc.y  &&  dd < dNE) {
+// // 		    xNE.x = xx;         xNE.y = yy;
+// // 		    vNE.x = uprime_x;   vNE.y = uprime_y;
+// // 		    dNE = dd;  
+// // 		  } 
+// // 		}
+// 	      } // end if
+// 	    } while ( !InFile.eof() ); // end while
+
+// 	    // reset EOF flag
+// 	    if ( InFile.eof() ) {
+// 	      InFile.clear(); 
+// 	      // Go to the beginning of the file 
+// 	      InFile.seekg(0, ios::beg);
+// 	    } 
+	    
+// 	   //  if (interpolate_flag == true) {
+// // 	      assert(xSW.x < SolnBlk.Grid.Cell[i][j].Xc.x  && xSW.y < SolnBlk.Grid.Cell[i][j].Xc.y);
+// // 	      assert(xNW.x < SolnBlk.Grid.Cell[i][j].Xc.x  && xNW.y > SolnBlk.Grid.Cell[i][j].Xc.y);
+// // 	      assert(xNE.x > SolnBlk.Grid.Cell[i][j].Xc.x  && xNE.y > SolnBlk.Grid.Cell[i][j].Xc.y);
+// // 	      assert(xSE.x > SolnBlk.Grid.Cell[i][j].Xc.x  && xSE.y < SolnBlk.Grid.Cell[i][j].Xc.y);
+	      
+// // 	      Bilinear_Interpolation(vSW, xSW,
+// // 				     vNW, xNW,
+// // 				     vNE, xNE,
+// // 				     vSE, xSE,
+// // 				     SolnBlk.Grid.Cell[i][j].Xc, Vprime);
+	      
+// // 	      //cout << "\nInterpolating initial fluctuations for cell[" << i << "][" << j << "]\tVprime=" << Vprime;
+	      
+// // 	      SolnBlk.W[i][j].v.x += Vprime.x;
+// // 	      SolnBlk.W[i][j].v.y += Vprime.y; 
+	      
+// // 	      dSW = dSE = dNW = dNE = 1.0E9;
+// // 	    }
+        
+
+
+
+// 	    // Initialize the turbulence kinetic energy k
+// 	    // if (SolnBlk.W[i][j].Scal_sys.scalar_flag == LES_TF_K  ||  SolnBlk.W[i][j].Scal_sys.scalar_flag == LES_FSD_C_K) {
+// // 	      double dudx, dudy, dvdx, dvdy, SS, trace;
+// // 	      dudx = (SolnBlk.W[i+1][j].v.x - SolnBlk.W[i-1][j].v.x)/
+// // 		(SolnBlk.Grid.Cell[i+1][j].Xc.x - SolnBlk.Grid.Cell[i-1][j].Xc.x);
+// // 	      dvdx = (SolnBlk.W[i+1][j].v.y - SolnBlk.W[i-1][j].v.y)/
+// // 		(SolnBlk.Grid.Cell[i+1][j].Xc.x - SolnBlk.Grid.Cell[i-1][j].Xc.x);
+	    
+// // 	      dudy = (SolnBlk.W[i][j+1].v.x - SolnBlk.W[i][j-1].v.x)/
+// // 		(SolnBlk.Grid.Cell[i][j+1].Xc.y - SolnBlk.Grid.Cell[i][j-1].Xc.y);
+
+// // 	      dvdy = (SolnBlk.W[i][j+1].v.y - SolnBlk.W[i][j-1].v.y)/
+// // 		(SolnBlk.Grid.Cell[i][j+1].Xc.y - SolnBlk.Grid.Cell[i][j-1].Xc.y);
+
+// // 	      SS = dudx*dudx + dvdy*dvdy + 0.5*sqr(dvdx + dudy); 
+// // 	      SS = sqrt(2.0*SS);
+
+// // 	      trace = TWO*CI_CONSTANT*SolnBlk.W[i][j].rho*sqr(SolnBlk.W[i][j].filter_width(SolnBlk.Grid.Cell[i][j].A)*SS);
+// // 	      SolnBlk.W[i][j].scalar[0] = trace/(TWO*SolnBlk.W[i][j].rho);
+
+// // 	    }
+
+
+
+// 	  } // end if  
+
+// #ifdef THICKENED_FLAME_ON
+// 	  SolnBlk.W[i][j].flame.unphysical_check(SolnBlk.W[i][j].TFactor);
+// 	  if (SolnBlk.W[i][j].flame.TF < (ONE-NANO)  || 
+// 	      SolnBlk.W[i][j].flame.TF > (SolnBlk.W[i][j].TFactor+NANO)) cout  <<"\nTF out of range in ICs";
+// 	  if (SolnBlk.W[i][j].flame.WF < (ONE-NANO)  ||  
+// 	      SolnBlk.W[i][j].flame.WF > pow(SolnBlk.W[i][j].TFactor, 2.0/3.0)) cout  <<"\nWF out of range in ICs";
+// #endif
+
+// 	  // Update U from W
+// 	  SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  
+// 	}
+//       } 
+//       InFile.unsetf(ios::skipws);
+//       InFile.close();
       
 
       break;
@@ -3103,7 +3124,7 @@ void ICs(LESPremixed2D_Quad_Block &SolnBlk,
 	SolnBlk.dWdx[i][j].Vacuum();
 	SolnBlk.dWdy[i][j].Vacuum();
 	SolnBlk.phi[i][j].Vacuum();
-	SolnBlk.Uo[i][j].Vacuum();
+	SolnBlk.Uo[i][j] = SolnBlk.U[i][j]; //.Vacuum();
 	SolnBlk.dt[i][j] = ZERO;
 	// Assign initial states required by dual time stepping.
         SolnBlk.Ut[i][j] = SolnBlk.U[i][j];     
@@ -3483,8 +3504,8 @@ void BCs(LESPremixed2D_Quad_Block &SolnBlk,
         break;
        case BC_REFLECTION :
          for( int ghost = 1; ghost <= SolnBlk.Nghost; ghost++){
- 	  SolnBlk.W[SolnBlk.ICu+ghost][j] = Reflect(SolnBlk.W[SolnBlk.ICu-ghost+1][j],
- 						    SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
+	   SolnBlk.W[SolnBlk.ICu+ghost][j] = Reflect(SolnBlk.W[SolnBlk.ICu-ghost+1][j],
+						     SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
  	  SolnBlk.U[SolnBlk.ICu+ghost][j] = U(SolnBlk.W[SolnBlk.ICu+ghost][j]);
  	}
  	break;
@@ -3681,7 +3702,7 @@ void BCs(LESPremixed2D_Quad_Block &SolnBlk,
        break;
      case BC_REFLECTION :  
        for( int ghost = 1; ghost <= SolnBlk.Nghost; ghost++){
- 	SolnBlk.W[i][SolnBlk.JCl-ghost] = Reflect(SolnBlk.W[i][SolnBlk.JCl + ghost-1],      
+	 SolnBlk.W[i][SolnBlk.JCl-ghost] = Reflect(SolnBlk.W[i][SolnBlk.JCl + ghost-1],      
  						  SolnBlk.Grid.nfaceS(i, SolnBlk.JCl));
  	SolnBlk.U[i][SolnBlk.JCl-ghost] = U(SolnBlk.W[i][SolnBlk.JCl-ghost]);
        }
@@ -5642,7 +5663,7 @@ void Linear_Reconstruction_LeastSquares_2(LESPremixed2D_Quad_Block &SolnBlk,
  *                                                      *
  ********************************************************/
 void Linear_Reconstruction_LeastSquares_Diamond(LESPremixed2D_Quad_Block &SolnBlk,
-				        const int Limiter) {
+						const int Limiter) {
  
     /* Carry out the limited solution reconstruction in
        each cell of the computational mesh. */

@@ -351,7 +351,7 @@ Preconditioner_dSdU(int ii, int jj, DenseMatrix &dRdU){
  * Normalizes the dFdU matrix used to generate the approximate  *               
  * Jacobian for the Block Preconditioner.                       *
  ****************************************************************/
-void normalize_Preconditioner(DenseMatrix &dFdU) 
+void normalize_preconditioner(DenseMatrix &dFdU) 
 { 
  
   LESPremixed2D_pState W_STD_ATM;
@@ -393,7 +393,7 @@ template<> inline void Block_Preconditioner<LESPremixed2D_pState,
 					    LESPremixed2D_Input_Parameters>::
 normalize_Preconditioner_dFdU(DenseMatrix &dFdU) 
 { 
-  normalize_Preconditioner(dFdU); 
+  normalize_preconditioner(dFdU); 
 }
 
 

@@ -225,7 +225,7 @@ class Chem2D_pState {
 
    //read in ns species data, call only once as its static
    void set_species_data(const int &,const string *,const char *,
- 			 const double&,const double *);
+ 			 const double&,const double *, const int &);
 
    //set initial data values predominately used internally !!!
    void set_initial_values();
@@ -596,7 +596,7 @@ class Chem2D_pState {
 
    //read in ns species data, call only once as its static
    void set_species_data(const int &,const string *,const char *,
- 			const double&,const double *);
+			 const double&,const double *, const int &);
 
    //set initial data values predominately used internally 
    void set_initial_values();

@@ -1663,8 +1663,8 @@ Grid2D_Quad_Block** Grid_1D_Flame(Grid2D_Quad_Block **Grid_ptr,
 
     //Bnd_Spline_West.setBCtype(BC_FIXED); 
     Bnd_Spline_West.setBCtype(BC_1DFLAME_INFLOW); 
-    Bnd_Spline_North.setBCtype(BC_CONSTANT_EXTRAPOLATION); //BC_REFLECTION 
-    Bnd_Spline_South.setBCtype(BC_CONSTANT_EXTRAPOLATION); //BC_REFLECTION
+    Bnd_Spline_North.setBCtype(BC_CONSTANT_EXTRAPOLATION); // BC_REFLECTION  
+    Bnd_Spline_South.setBCtype(BC_CONSTANT_EXTRAPOLATION); // BC_REFLECTION
     Bnd_Spline_East.setBCtype(BC_1DFLAME_OUTFLOW); 
 
     /* Determine the number of cells for this block. */
