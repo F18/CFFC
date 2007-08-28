@@ -574,6 +574,7 @@ help:
 	@echo "|                  ICEMCFD_VERSION = NoICEMCFD (default),V41,V42,V43,V50,V10,V11    |"
 	@echo "|                  GCC_VERSION = V296, V3+ (default), ICC                           |"
 	@echo "|                  CANTERA_VERSION = NoCANTERA (default), V70                       |"
+	@echo "|                  FFTW_VERSION = V32 (default), NoFFTW                             |"
 	@echo "|                  PROFILING = OFF (default), ON                                    |"
 	@echo "|                                                                                   |"
 	@echo "| Ensure that the source directory is clean and the ICEMCFD, SparseLib++, BPKIT,    |"
@@ -935,7 +936,7 @@ $(GAUSSIAN_DIR)Gaussian2D.depend: $(SRC_GAUSSIAN_EXE)
 	@echo '-----------------------------------------------------------------------'
 	@echo ' '
 	touch $(GAUSSIAN_DIR)Gaussian2D.depend
-	makedepend -f$(GAUSSIAN_DIR)Gaussian2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_Gaussian_EXE) $(SRC_Gaussian) >& /dev/null
+	makedepend -f$(GAUSSIAN_DIR)Gaussian2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_GAUSSIAN_EXE) $(SRC_GAUSSIAN) >& /dev/null
 	@echo ' '
 	@echo Gaussian2D source file dependencies have been brought up to date.
 	@echo '-------------------------------------------------------------'

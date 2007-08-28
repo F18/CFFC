@@ -20,13 +20,13 @@ GCC_VERSION = V3+
 # NoCANTERA, V70
 CANTERA_VERSION = NoCANTERA
 
+# NoFFTW, V32
+FFTW_VERSION = V32
+
 # Set to ON for use with "gprof"
 # <x86  >  gprof cffc2D gmon.out > output.txt
 # <alpha>  gprof --demangle=compaq cffc2D gmon.out > output.txt
 PROFILING = OFF
-
-# NoFFTW, V32
-FFTW_VERSION = V32
 
 #-----------------------------------------------------------#
 #       Platform Specific Compiler Flags                    #
@@ -202,7 +202,7 @@ FFTW_LIB_DIR   = $(FFTW_DIR)/lib
 FFTW_INC_DIR   = $(FFTW_DIR)/include
 
 ifeq ($(FFTW_VERSION),NoFFTW)
-  FFTW_CPP_FLAGS = 
+  FFTW_CPP_FLAGS = -D_NO_FFTW_VERSION
   FFTW_LD_FLAGS  = 
 else
   FFTW_CPP_FLAGS = -I$(FFTW_INC_DIR)

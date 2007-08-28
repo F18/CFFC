@@ -163,6 +163,7 @@ help:
 	@echo "|                  ICEMCFD_VERSION = NoICEMCFD (default),V41,V42,V43,V50,V10,V11    |"
 	@echo "|                  GCC_VERSION = V296, V3+ (default), ICC                           |"
 	@echo "|                  CANTERA_VERSION = NoCANTERA (default), V70                       |"
+	@echo "|                  FFTW_VERSION = V32 (default), NoFFTW                             |"
 	@echo "|                  PROFILING = OFF (default), ON                                    |"
 	@echo "|                                                                                   |"
 	@echo "| Ensure that the source directory is clean and the ICEMCFD, SparseLib++, BPKIT,    |"
