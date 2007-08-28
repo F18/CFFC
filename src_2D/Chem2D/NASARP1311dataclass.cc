@@ -432,15 +432,25 @@ void NASARP1311data::GetTransDataLJ(const string spec) {
   //----------------------------------
   ofstream outfile;
 
-  const int np = 100, degree = 3;
-  int ndeg = 0;
-  double dT, T, Tmin = 200.0, Tmax = 3500.0;
+  // polynomial parameters
+  const int np = 100,   // number of interpolation points
+            degree = 3; // degree of polynomial
+
+  // counter for term
+  int ndeg = 0;        
+
+  // temperature interval parameters
+  double dT, T,          // stepsize, temperature point
+         Tmin = 200.0,   // min value
+         Tmax = 3500.0;  // max value
+
+  // temporary arrays
   double *w, *Tlog, *spvisc, *spcond;
 
   // assume atmospheric pressure   ?????
   double P = 101325.0;
 
-
+  // deallocate, just to be sure
   if(temp_ranges_V != 0) { deallocate_trans_V(); }
   if(temp_ranges_C != 0) { deallocate_trans_C(); }
 
@@ -449,8 +459,8 @@ void NASARP1311data::GetTransDataLJ(const string spec) {
   trans_thermconduct = new transcoef[1];
   double V_coef[degree+1];  
   double C_coef[degree+1];
-
   
+  // allocate temporary storage
   w = new double[np];
   Tlog = new double[np];
   spvisc = new double[np];
@@ -458,8 +468,10 @@ void NASARP1311data::GetTransDataLJ(const string spec) {
 
   //double Tlog[np], spvisc[np], spcond[np], w[np];
 
-  dT = (Tmax - Tmin)/double(np-1);     
+  //
   // generate array of log(T) values
+  //
+  dT = (Tmax - Tmin)/double(np-1);     
   for (int n = 0; n < np; ++n) {
     T = Tmin + dT*double(n);
     Tlog[n] = log(T);
@@ -477,10 +489,11 @@ void NASARP1311data::GetTransDataLJ(const string spec) {
   trans_viscosity[0].Trans_coef_in(V_coef);
   trans_thermconduct[0].Trans_coef_in(C_coef);
 
-
+  //
+  // evaluate max fit errors for viscosity
+  //
   double val, fit, err, relerr;
   outfile.open("Viscosity.dat", ios::out);
-  // evaluate max fit errors for viscosity
   for (int n = 0; n < np; ++n) {
     val = exp(spvisc[n]);
     fit = exp( poly3(Tlog[n], V_coef) ); 
@@ -491,8 +504,10 @@ void NASARP1311data::GetTransDataLJ(const string spec) {
   }
   outfile.close();
  
-  outfile.open("Thermal_Conductivity.dat", ios::out);
+  //
   // evaluate max fit errors for conductivity
+  //
+  outfile.open("Thermal_Conductivity.dat", ios::out);
   for (int n = 0; n < np; ++n) {
     val = exp(spcond[n]);
     fit = exp( poly3(Tlog[n], C_coef) ); 
@@ -1128,8 +1143,8 @@ double Omega11(const double Ts) {
   
   // make sure reduced temperature is within range
   if ( Ts<0.3 || Ts>100.0 ) {
-    cerr << "Warning: Reduced temperature T*= " << Ts 
- 	 << " outside applicable range (0.3 < T* < 100)." << endl;
+    cerr << "NASARP1311dataclass::Omega11() - Warning: Reduced temperature T*= " 
+	 << Ts << " outside applicable range (0.3 < T* < 100)." << endl;
     //exit(0);
   }
  
@@ -1173,8 +1188,8 @@ double Omega22(const double Ts) {
   
   // make sure reduced temperature is within range
   if ( Ts<0.3 || Ts>100.0 ) {
-    cerr << "Warning: Reduced temperature T*= " << Ts 
- 	 << " outside applicable range (0.3 < T* < 100)." << endl;
+    cerr << "NASARP1311dataclass::Omega11() - Warning: Reduced temperature T*= " 
+	 << Ts << " outside applicable range (0.3 < T* < 100)." << endl;
     //exit(0);
   }
   

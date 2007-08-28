@@ -25,6 +25,12 @@ using namespace std;
 #include "../Physics/GasConstants.h"
 #include "Chem2DState.h"
 
+// Cantera libraries
+#ifdef _CANTERA_VERSION
+#include <cantera/Cantera.h>      // main include
+#include <cantera/IdealGasMix.h>  // reacting, ideal gas mixture class
+#endif //_CANTERA_VERSION
+
 //Calorie to Joule conversion
 #define CAL_TO_JOULE 4.1868 // 4.1868 Joules = 1 calorie
 
@@ -178,7 +184,10 @@ inline istream &operator >> (istream &in_file, React_data &W) {
 
 
 // User defined flag
-#define USER 100
+#define USER    100
+
+// cantera flag
+#define CANTERA 200
 
 class Reaction_set{
 
@@ -190,6 +199,7 @@ private:
   double *M; 
   double *c; 
   double *c_denom; 
+  double *r; 
 
 protected:
 public: 
@@ -201,9 +211,21 @@ public:
   string *species;         //species used in reactions
   string Reaction_system;  //Reaction system name
 
-  Reaction_set(){ reactset_flag=0; num_reactions=0; num_species=0; 
-  num_react_species=0; reactions = NULL; species = NULL; 
-  kf=NULL; kb=NULL; M=NULL; c=NULL; c_denom=NULL;}
+  // cantera related objects
+#ifdef _CANTERA_VERSION
+  string ct_mech_name;     //Reaction mechanism file path
+  string ct_mech_file;     //Reaction mechanism file path
+  IdealGasMix* ct_gas;     //the Cantera IdealGasMix object
+#endif
+
+  Reaction_set(){ 
+    reactset_flag=0; num_reactions=0; num_species=0; 
+    num_react_species=0; reactions = NULL; species = NULL; 
+    kf=NULL; kb=NULL; M=NULL; c=NULL; c_denom=NULL; r=NULL;
+#ifdef _CANTERA_VERSION
+    ct_gas=NULL;
+#endif
+  }
                       
   /******** Constructors *******************/
   //for hardcoded reactions
@@ -212,13 +234,27 @@ public:
   void set_species(string *, int);
   void set_reactions(int &,string*,double*,double*,double*);
 
+  // cantera member functions
+#ifdef _CANTERA_VERSION
+  void ct_load_mechanism(string &, string &);
+  void ct_parse_mass_string( const string&, double* );
+#endif // _CANTERA_VERSION
+
   //setup storage after num_reactions & num_species set.
   void set_storage(void){
-    kf = new double[num_reactions];        
-    kb = new double[num_reactions];
-    M  = new double[num_react_species];
-    c  = new double[num_react_species];
-    c_denom = new double[num_react_species]; 
+    // for all cases but cantera case
+    if (reactset_flag != CANTERA) {
+      kf = new double[num_reactions];        
+      kb = new double[num_reactions];
+      M  = new double[num_react_species];
+      c  = new double[num_react_species];
+      c_denom = new double[num_react_species]; 
+    // else, cantera case
+    } else {
+      M  = new double[num_species];
+      c  = new double[num_species];
+      r  = new double[num_species]; 
+    }
   }
 
   //Operator Overloading 
@@ -252,6 +288,10 @@ inline void Reaction_set::Deallocate(){
   if(M != NULL){  delete[] M; M = NULL;}
   if(c != NULL){  delete[] c; c = NULL;}
   if(c_denom != NULL){  delete[] c_denom; c_denom = NULL;}
+  if(r != NULL){  delete[] r; r = NULL;}
+#ifdef _CANTERA_VERSION
+  if(ct_gas != NULL){ delete ct_gas; ct_gas = NULL; }
+#endif // _CANTERA_VERSION
 }
 
 
@@ -259,12 +299,28 @@ inline void Reaction_set::Deallocate(){
 inline Reaction_set& Reaction_set::operator =(const Reaction_set &W){
   //self assignment protection
   if( this != &W){   
-    string temp = W.Reaction_system;
-    //copy assignment
-    set_reactions(temp);
-  }
+
+    // for all hard-coded and user cases
+    if (W.reactset_flag != CANTERA) {
+      string temp = W.Reaction_system;
+      //copy assignment
+      set_reactions(temp);
+    }
+    
+    // for cantera case
+#ifdef _CANTERA_VERSION
+    else {
+      string mechanism_file = W.ct_mech_file;
+      string mechanism_name = W.ct_mech_name;
+      ct_load_mechanism(mechanism_file, mechanism_name);
+    }
+#endif // _CANTERA_VERSION
+
+  } /* endif */
   return (*this);
 }
+
+
 
 /**************** I/O Operators ***************************************/
 inline ostream &operator << (ostream &out_file, const Reaction_set &W) {
