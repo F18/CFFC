@@ -48,7 +48,7 @@ using namespace std;
 #endif // _MATH_MACROS_INCLUDED
 
 #ifndef _POLYFIT_H
-#include "../Polyfit/Polyfit.h"
+#include "../Math/Polyfit.h"
 #endif  
 
 #include "LennardJones.h"

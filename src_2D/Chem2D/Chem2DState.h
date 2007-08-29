@@ -236,6 +236,9 @@ class Chem2D_pState {
    //Copy construtor, cheaper than = operator
    void Copy(const Chem2D_pState &W);
 
+   // return the number of variables
+   int NumVar() const { return NUM_VAR_CHEM2D; }
+
    /*************** VACUUM OPERATOR *********************/
    void Vacuum(){ rho=ZERO; v.zero(); p=ZERO; k=ZERO; omega = ZERO; 
      for(int i=0; i<ns; i++)  spec[i].Vacuum();

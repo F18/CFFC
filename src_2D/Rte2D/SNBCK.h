@@ -90,7 +90,7 @@ using namespace std;
 
 // Required header files
 #include "../Math/Math.h"
-#include "../Math/Spline1D.h"
+#include "../Math/SplineFit.h"
 #include "../Math/Quadrature.h"
 #include "Planck.h"
 #include "../CFD/CFD.h"

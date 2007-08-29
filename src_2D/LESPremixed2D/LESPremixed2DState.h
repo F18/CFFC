@@ -73,9 +73,9 @@ using namespace std;
 
 
 // Other header files
-#ifndef _LESPREMIXED2D_REACTIONS_INCLUDED
-#include "LESPremixed2DReactions.h"
-#endif //_LESPREMIXED2D_REACTIONS_INCLUDED
+#ifndef _REACTIONS_INCLUDED
+#include "../Chem2D/Reactions.h"
+#endif //_REACTIONS_INCLUDED
 
 #ifndef _POWER_LAW_INCLUDED
 #include "PowerLaw.h"
@@ -88,6 +88,7 @@ using namespace std;
 #ifndef _SFS_MODELLING_INCLUDED
 #include "../Turbulent2D/SFSModelling.h"
 #endif // _SFS_MODELLING_INCLUDED
+
 
 
 //Temperature convergence tolerance in
@@ -173,7 +174,7 @@ class LESPremixed2D_pState {
   static int                      nscal; //!< number of scalars
   static NASARP1311data       *specdata; //!< Global Species Data
   static double                *Schmidt; //!< Schmidt Number for each species
-  static Reactionset              React; //!< Global Reaction Data
+  static Reaction_set             React; //!< Global Reaction Data
   static Set_scalar            Scal_sys; //!< Set the group of scalars to be solved in the model
   static double          low_temp_range; //!< Low temp data range
   static double         high_temp_range; //!< High temp data range
@@ -1659,6 +1660,15 @@ inline LESPremixed2D_pState W(const LESPremixed2D_cState &U) {
   return Temp;
 }
 
+/*********************************************************************************
+ *********************************************************************************
+  Inlcude specializations of Reactions class.  This is here as a workarround
+  because of the cross dependancy issues between 'LESPremixed2DState' and 
+  'Reaction_set'.  Enjoy.
+ *********************************************************************************
+ *********************************************************************************/
+#include "LESPremixed2DReactions.h"
+
 
 /*********************************************************************************
  *********************************************************************************
@@ -1667,6 +1677,7 @@ inline LESPremixed2D_pState W(const LESPremixed2D_cState &U) {
  *********************************************************************************
  *********************************************************************************
  *********************************************************************************/
+
 
 /********************************************************
  * External Boundary Conditions Functions               *

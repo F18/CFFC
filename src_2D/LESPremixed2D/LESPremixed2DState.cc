@@ -22,7 +22,7 @@ int LESPremixed2D_pState::ns = 1;
 int LESPremixed2D_pState::nscal = 0;
 int LESPremixed2D_pState::NUM_VAR_LESPREMIXED2D = NUM_LESPREMIXED2D_VAR_SANS_SPECIES; 
 NASARP1311data* LESPremixed2D_pState::specdata=NULL;
-Reactionset LESPremixed2D_pState::React;
+Reaction_set LESPremixed2D_pState::React;
 Set_scalar LESPremixed2D_pState::Scal_sys;
 double LESPremixed2D_pState::low_temp_range = 200.0;
 double LESPremixed2D_pState::high_temp_range = 300.0;
@@ -2263,7 +2263,7 @@ LESPremixed2D_cState LESPremixed2D_pState::Sw(int &REACT_SET_FLAG,
   //Adds concentration rate of change for species 1->N
   if( REACT_SET_FLAG != NO_REACTIONS){
     //bool test = negative_speccheck();            //FOR TESTING 
-    React.omega(NEW,*this,Flow_Type );  
+    React.omega<LESPremixed2D_pState,LESPremixed2D_cState>(NEW,*this,Flow_Type );  
   }
 
 #ifdef THICKENED_FLAME_ON
@@ -2275,7 +2275,7 @@ LESPremixed2D_cState LESPremixed2D_pState::Sw(int &REACT_SET_FLAG,
 
 /************* Chemical Source Term Jacobian ****************************/
 void LESPremixed2D_pState::dSwdU(DenseMatrix &dSwdU, const int &Flow_Type,const int &solver_type) const {
-  React.dSwdU(dSwdU,*this,false, Flow_Type,solver_type);
+  React.dSwdU<LESPremixed2D_pState,LESPremixed2D_cState>(dSwdU,*this,false, Flow_Type,solver_type);
 
 #ifdef THICKENED_FLAME_ON
   dSwdU = (flame.WF/flame.TF)*dSwdU;
@@ -2325,7 +2325,7 @@ double LESPremixed2D_pState::dSwdU_max_diagonal(const int &Preconditioned,
 
   double max_diagonal =ONE;
   DenseMatrix dSwdU(NUM_VAR_LESPREMIXED2D-1,NUM_VAR_LESPREMIXED2D-1,ZERO);
-  React.dSwdU(dSwdU,*this,true,flow_type_flag,solver_type);
+  React.dSwdU<LESPremixed2D_pState,LESPremixed2D_cState>(dSwdU,*this,true,flow_type_flag,solver_type);
 
 #ifdef THICKENED_FLAME_ON
   dSwdU = (flame.WF/flame.TF)*dSwdU;  //???????
@@ -3146,6 +3146,7 @@ void LESPremixed2D_cState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix  &
  *********************************************************************************
  *********************************************************************************
  *********************************************************************************/
+
 
 /********************************************************
  * Routine: Reflect                                     *

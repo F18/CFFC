@@ -1,6 +1,5 @@
 /****************** LESPremixedReactions.h **************************************
-  This class defines the Reaction mechanisms for the 
-  2D LES Premixed class.
+  This class defines the specializations of the Reaction class.
 
   
           - based on Chem2D -> Reactions.h
@@ -8,313 +7,779 @@
 ***********************************************************************/
 #ifndef _LESPREMIXED2D_REACTIONS_INCLUDED
 #define _LESPREMIXED2D_REACTIONS_INCLUDED
- 
-class Reactdata;
-class Reactionset;
-
-// Required C++ libraries
-#include <iostream>
-#include <string>
-#include <cassert>
-
-using namespace std;
-
-#include "../Math/Math.h"
-#include "../Math/Matrix.h"
-#include "../Math/Tensor2D.h"
-#include "../Physics/GasConstants.h"
-#include "LESPremixed2DState.h"
-
-#ifndef _COMPLEXIFY_INCLUDED
-#include "Complexify.h"
-#endif // _COMPLEXIFY_INCLUDED
 
 
-// List of subroutines not written in C/C++ 
-extern "C" {
-  // Reaction rates for CH4-15step mechanism based on GRI2.11
-  void ckwyp15step211_( double& P, double& T, double* Y, double* Wdot);
-  
-  // Complexified version of the subroutine above
-  void cplx15step211_( cplx& P, cplx& T, cplx* Y, cplx* Wdot);
-  
-  // Reaction rates for CH4-15step mechanism based on GRI3
-  void ckwyp15step30_( double& P, double& T, double* Y, double* Wdot);
-
-  // Complexified version of the subroutine above
-  void cplx15step30_( cplx& P, cplx& T, cplx* Y, cplx* Wdot);
-}
-
-
-//Calorie to Joule conversion
-#define CAL_TO_JOULE 4.1868 // 4.1868 Joules = 1 calorie
 
 /************************************************************************
- ***************** REACTION DATA CLASS **********************************
-  This class is another data container used for the Arhenius coefficients
-  used in caluclated the forward (kf) and backward (kb) reaction rates.
+  Calculates the concentration time rate of change of species from
+  primitive state W using the general law of mass action.
+  U is the conserved state container for passing back the 
+  source terms. ie. U.rhospec[i].c 
 
-  kf = A(T^n)exp( -E/RT)
+  W.SpecCon:  is the  species mass fractions concentrations
+              of LESPremixed2D_pState. (c_i*rho/M_i)   mol/m^3
 
-  kov = A(T^n)exp( -E/RT)[Fuel]^a[Oxidizer]^b
+  Return units are  kg/m^3*s ie. rho*omega (kg/m^3)*(1/s)
 
-  Be careful of units, need to get k in (m^3/(mol*s)) for 2 body.
-  and (m^6/(mol*s)) for 3rd body.  Most A coefficients are in terms
-  of cm^3/(mol*s) so be sure to check to units.  Also the 
-  if species concentrations are used, as in the kov, they are 
-  are dimensionalized and that is why in the kov member functions
-  below they are divided by 1e6.  Confusing yes, but that is the
-  way that data is presnted.
- 
-    A : m^3/(mol*s) FYI 1e6cm^3 = 1m^3
-    Ea: J/mol
-
-************************************************************************
 ************************************************************************/
-class Reactdata {
-private: 
-  string react; //reaction name
-
-  double A;  //three Arhenius coefficients
-  double Ab;
-  double n;
-  double E;
-  
-  //for keq formulation
-  double nu_coef; //stoichmetric coefficients for Keq => Kc
-
-protected:
-public:
-  //default constructor
-  // name, A ,b ,E
-  void set_data(string nam,double x,double y ,double z, int nu){
-    react=nam, A=x; n=y; E=z; nu_coef=nu;}
-  
-  void set_data(string nam,double x, double xx, double y, double z, int nu)
-  { react=nam; A=x; Ab=xx; n=y; E=z; nu_coef=nu;}
-  
-  //get reaction rate coefficients
-  double kf(const double &Temp) const;
-  double dkf_dT(const double &Temp) const;
-  double kf(const double &Temp, const double &H2, const  double &O2, const double &N2) const; //for H2&O2
-  double kb(const double &Temp) const;
-  double dkb_dT(const double &Temp) const;
-  double keq(const LESPremixed2D_pState &W, const double &Temp) const;
-
-  //Determine change in Gibbs free energy
-  double deltaG(const LESPremixed2D_pState &W) const;
-
-  string react_name()const{ return react;}
-
-  /* Input-output operators. */
-  friend ostream& operator << (ostream &out_file, const Reactdata &W);
-  friend istream& operator >> (istream &in_file,  Reactdata &W);
-};
-
-/*************** forward reaction coef (kf) ****************************/
-inline double Reactdata::kf(const double &Temp) const{
-  return A*pow(Temp,n)*exp(-E/(R_UNIVERSAL*Temp));
-}
-
-/****** derivative of forward reaction coef (kf) wrt to Temperature *********/
-inline double Reactdata::dkf_dT(const double &Temp) const{
-  return A*pow(Temp,n-1)*exp(-E/(R_UNIVERSAL*Temp))*(n + E/(R_UNIVERSAL*Temp));
-}
-
-/*************** forward reaction kf for 2Step H2 ***********************/
-inline double Reactdata::kf(const double &Temp, const double &H2, const double &O2, const double &N2) const{
-  //equivalence ratio
-  double stoich = 4.0/(32.0+3.76*28.0);
-  double phi = (H2/(O2+N2))/stoich;
-  if( phi < TOLER){
-    phi = TOLER;
-  }
-  double Astar=ZERO;
-
-  //using A for units conversion cm^3/mol*s -> m^3/mol*s;
-  if(react == "H2O2_2step_1"){                          
-    Astar = A*(8.917*phi + (31.433/phi) - 28.950)*1e47; 
-  } else if (react == "H2O2_2step_2"){ 
-    Astar = A*(2.0 + (1.333/phi) - 0.833*phi)*1e64; 
-  }
-
-//   cout<<endl<<phi<<" "<<A<<" "<<(-E/(R_UNIVERSAL*Temp))
-//       <<" "<<R_UNIVERSAL<<" "<<E<<" "<<Temp<<" "<<Astar*pow(Temp,n)*exp(-E/(R_UNIVERSAL*Temp));
-
-  return Astar*pow(Temp,n)*exp(-E/(R_UNIVERSAL*Temp));
-}
-
-/*************** backward reaction coef (kb) ****************************/
-inline double Reactdata::kb(const double &Temp) const{
-  return Ab*pow(Temp,n)*exp(-E/(R_UNIVERSAL*Temp));
-}
-
-/****** derivative of backward reaction coef (kb) wrt to Temperature *********/
-inline double Reactdata::dkb_dT(const double &Temp) const{
-   return Ab*pow(Temp,n-1)*exp(-E/(R_UNIVERSAL*Temp))*(n + E/(R_UNIVERSAL*Temp));
-}
-
-/***************** equilibrium coef Keq ********************************/
-inline double Reactdata::keq(const LESPremixed2D_pState &W, const double& Temp) const{
-  // nu_coef is the stoichiometric coef. sum (Eqn 13.25, 13.26 Anderson)
-  // Kp or Keq has units of Pressure Pa( N/m^2) so need to change to 
-  // cgs units i.e *1e6
-  return pow(R_UNIVERSAL*Temp, nu_coef)*exp(-deltaG(W)/(R_UNIVERSAL*Temp))*1e6;
-}
-
-/**************** I/O Operators ***************************************/
-inline ostream &operator << (ostream &out_file, const Reactdata &W) {
-  out_file.setf(ios::scientific);
-  out_file <<"\n "<<W.react<<" A "<<W.A<<" n "<<W.n<<" E "<<W.E;
-  out_file.unsetf(ios::scientific);
-  return (out_file);
-}
-
-inline istream &operator >> (istream &in_file, Reactdata &W) {
-  in_file.setf(ios::skipws);
-  in_file >> W.react >> W.A >> W.n >> W.E;
-  in_file.unsetf(ios::skipws);
-  return (in_file);
-}
-
-
-/**************************************************************************
-********************* REACTIONS CLASS DEFINTION ***************************
- This class uses the reaction data class as a storage container for
- reading in the reaction mechanism being used and provides constructors
- for performing calculations with the data.  
-
- omega() returns the time rate of change of species c_num 
+template<>
+inline void Reaction_set::omega<LESPremixed2D_pState,LESPremixed2D_cState>
+                               (LESPremixed2D_cState &U,
+			        const LESPremixed2D_pState &W,  
+			        const int Flow_Type ) const {
  
-***************************************************************************
-***************************************************************************/
-#define NO_REACTIONS 0
-//Hardcoded Reaction Systems
-#define CH4_1STEP          1
-#define CH4_2STEP          2
-#define H2O2_1STEP         3
-#define H2O2_2STEP         4
-#define H2O2_8STEP         5
-#define CH4_15STEP_ARM2    6    // CH4 mechanisms based on GRI 2.11
-#define CH4_15STEP_ARM3    7    // CH4 mechanisms based on GRI 3
+  double Temp = W.T();  // K
+  double rho= W.rho/THOUSAND; // kg/m^3 -> g/cm^3
+  double pressure = W.p*TEN;  // N/m^2 -> dyne/cm^2
+  double a,b, ans(ZERO);
 
-// User defined flag
-#define USER 100
-
-class Reactionset{
-
-private:  
-
-  //Temp vectors used during omega & dSwdU
-  double *kf; 
-  double *kb; 
-  double *M; 
-  double *c; 
-  double *c_denom; 
-
-protected:
-public: 
-  int reactset_flag;       //Reaction Set Flag
-  Reactdata *reactions;   //each reaction rate data
-  int num_reactions;       //number of reactions
-  int num_species;         //number of total species
-  int num_react_species;   //number of reacting species
-  string *species;         //species used in reactions
-  string Reaction_system;  //Reaction system name
-
-  Reactionset(){ reactset_flag=0; num_reactions=0; num_species=0; 
-  num_react_species=0; reactions = NULL; species = NULL; 
-  kf=NULL; kb=NULL; M=NULL; c=NULL; c_denom=NULL;}
-                      
-  /******** Constructors *******************/
-  //for hardcoded reactions
-  void set_reactions(string &);
-  //for user defined
-  void set_species(string *, int);
-  void set_reactions(int &,string*,double*,double*,double*);
-
-  //setup storage after num_reactions & num_species set.
-  void set_storage(void){
-    kf = new double[num_reactions];        
-    kb = new double[num_reactions];
-    M  = new double[num_react_species];
-    c  = new double[num_react_species];
-    c_denom = new double[num_react_species]; 
+  double *Wdot = NULL;
+  if (reactset_flag == CH4_15STEP_ARM2  ||  reactset_flag == CH4_15STEP_ARM3) {
+    Wdot = new double[num_species];
   }
 
-  //Operator Overloading 
-  Reactionset& operator =(const Reactionset &W);
+  for(int i=0; i<num_react_species; i++){
+    M[i] = W.specdata[i].Mol_mass()*THOUSAND;  //kg/mol -> g/mol
+    c[i] = W.spec[i].c;                        //unitless
+  }
 
-  /* Input-output operators. */
-  friend ostream& operator << (ostream &out_file, const Reactionset &W);
-  //friend istream& operator >> (istream &in_file,  Reactionset &W);
-
-  // time rate change of the species concentration 
-  void omega(LESPremixed2D_cState &U, const LESPremixed2D_pState &W, const int Flow_Type ) const;
-
-  //Jacobian ( flag true for cfl calc)
-  void dSwdU(DenseMatrix &dSwdU,const LESPremixed2D_pState &W, const bool &CFL_flag, const int Flow_Type, const int Solver_type) const;
-
-  void Finite_Difference_dSwdU(DenseMatrix &dSwdU, const LESPremixed2D_pState &Wlocal, const int Flow_Type) const;
+  switch(reactset_flag){
+  case NO_REACTIONS:
+    cerr<<"\n You shouldn't get here, NO_REACTIONS in Reactionset::omeag(..)";
+    exit(1);
+    break;
+    //---------------------------------//
+    //------ Hardcoded ----------------//
+    //---------------------------------//
+  case CH4_1STEP: 
+    //laminar case     
+    a=1.0;//   a = 0.2; 
+    b=1.0;//     b = 1.3;
+    kf[0] = reactions[0].kf(Temp)*pow((W.SpecCon(0))/MILLION,a)*pow((W.SpecCon(1)/MILLION),b);        
+    for(int index =0; index<num_react_species; index++){
+      switch(index) {
+      case 0 : //CH4
+	ans = - kf[0];
+	break;
+      case 1 : //O2
+	ans = - TWO*kf[0];
+	break;
+      case 2 : //CO2
+	ans = kf[0];
+	break;
+      case 3 : //H2O
+	ans = TWO*kf[0];
+	break;
+      };
+      //ans in kg/m^3*s   g/mol *(mol/cm^3*s)*1e3      
+      U.rhospec[index].c = M[index]*ans*THOUSAND;  
+    }
   
-  void Complex_Step_dSwdU(DenseMatrix &dSwdU, const LESPremixed2D_pState &Wlocal) const;
+    break;
+    
+    //TWO STEP CH4
+  case CH4_2STEP:
+    kf[0] = reactions[0].kf(Temp)*pow(W.SpecCon(0)/MILLION,0.2)*pow(W.SpecCon(1)/MILLION,1.3);
+    kb[0] = ZERO;
+    kf[1] = reactions[1].kf(Temp)*(W.SpecCon(4)/MILLION)*pow(W.SpecCon(3)/MILLION,0.5)*pow(W.SpecCon(1)/MILLION,0.25); 
+    kb[1] = reactions[1].kb(Temp)*(W.SpecCon(2)/MILLION);
+   
+    //cout<<"\n Sw "<<Temp<<" "<<reactions[0].kf(Temp)<<" "<<reactions[1].kf(Temp)<<" "<<reactions[1].kb(Temp);
 
-  void Deallocate();
+    for(int index =0; index<num_react_species; index++){
+      switch(index) {
+      case 0 : //CH4
+	ans = - kf[0];
+	break;
+      case 1:  //O2
+	ans = -1.5*kf[0] - HALF*kf[1] + HALF*kb[1];
+	break;
+      case 2:  //CO2
+	ans = kf[1]  - kb[1];
+	break;
+      case 3:  //H2O
+	ans = TWO*kf[0];
+	break;
+      case 4:  //CO
+	ans = kf[0] - kf[1] + kb[1];
+ 	break;
+      };     
+      //ans in kg/m^3*s     g/mol *(mol/cm^3*s)*1e3       
+      U.rhospec[index].c = M[index]*ans*THOUSAND;
+    }
+    break;
+  
+  case H2O2_1STEP:
+   
+      kf[0] = reactions[0].kf(Temp);
+      
+      for(int index =0; index<num_react_species; index++){
+	switch(index) {
+	case 0 : //H2
+	  ans = - TWO*kf[0]*W.SpecCon(0)*W.SpecCon(0)*W.SpecCon(1);
+	  break;
+	case 1 : //O2
+	  ans = - kf[0]*W.SpecCon(0)*W.SpecCon(0)*W.SpecCon(1);
+	  break;
+	case 2 : //H2O
+	  ans = TWO*kf[0]*W.SpecCon(0)*W.SpecCon(0)*W.SpecCon(1);
+	  break;
+	};
+	//ans in kg/m^3*s   
+	U.rhospec[index].c = M[index]*ans*THOUSAND;
+      }
+      break;
+  
+      //TWO STEP H2&O2
+  case H2O2_2STEP:
+   
+      kf[0] = reactions[0].kf(Temp,W.spec[0].c,W.spec[1].c,W.spec[4].c);
+      kb[0] = kf[0]/(reactions[0].keq(W,Temp));
+      kf[1] = reactions[1].kf(Temp,W.spec[0].c,W.spec[1].c,W.spec[4].c);
+      kb[1] = kf[1]/(reactions[1].keq(W,Temp));
+      //cout<<"\n kf1 "<< kf[0]<<" kb1 "<< kb[0]<<" kf2 "<<kf[1]<<" kb2 "<< kb[1];
+      
+      for(int index =0; index<num_react_species; index++){
+	switch(index) {
+	case 0 : //H2
+	  ans = - kf[0]*W.SpecCon(0)*W.SpecCon(1)*1e-12 + kb[0]*W.SpecCon(2)*W.SpecCon(2)*1e-12
+	    - kf[1]*W.SpecCon(2)*W.SpecCon(2)*W.SpecCon(0)*1e-18 + kb[1]*W.SpecCon(3)*W.SpecCon(3)*1e-12;
+	  break;
+	case 1 : //O2
+	  ans = - kf[0]*W.SpecCon(0)*W.SpecCon(1)*1e-12 + kb[0]*W.SpecCon(2)*W.SpecCon(2)*1e-12;
+	  break;
+	case 2 : //OH
+	  ans = TWO*(kf[0]*W.SpecCon(0)*W.SpecCon(1)*1e-12 - kb[0]*W.SpecCon(2)*W.SpecCon(2)*1e-12)
+	    + TWO*( -kf[1]*W.SpecCon(2)*W.SpecCon(2)*W.SpecCon(0)*1e-18 + kb[1]*W.SpecCon(3)*W.SpecCon(3)*1e-12);
+	  break;
+	case 3 : //H2O
+	  ans = TWO*(kf[1]*W.SpecCon(2)*W.SpecCon(2)*W.SpecCon(0)*1e-18 - kb[1]*W.SpecCon(3)*W.SpecCon(3)*1e-12);      
+	  break;
+	};
+	//ans in kg/m^3*s   
+	U.rhospec[index].c = M[index]*ans*THOUSAND;
+      }
+      break;
 
-  //destructor
-  ~Reactionset(){Deallocate();};
+    // 8 STEP H2 & O2
+  case H2O2_8STEP: 
+    
+    for(int spec =0; spec<num_reactions; spec++){
+      kf[spec] = reactions[spec].kf(Temp);
+      kb[spec] = kf[spec]/reactions[spec].keq(W,Temp);
+    }
  
-};
+    for(int index =0; index<num_react_species; index++){
+      switch(index) {
+      case 0 : //O
+	ans = (kf[0]*rho*rho*c[2]/M[2]*c[1]/M[1]-kb[0]*rho*rho*c[5]/M
+			[5]*c[0]/M[0]-kf[1]*rho*rho*c[0]/M[0]*c[3]/M[3]+kb[1]*rho*rho*c[5]/M[5]*c[2]/M
+			[2]+kf[3]*rho*rho*c[5]*c[5]/(M[5]*M[5])-kb[3]*rho*rho*c[4]/M[4]*c[0]/M[0]-kf[6]
+			*rho*rho*rho*c[0]/M[0]*c[2]/M[2]*c[4]/M[4]+kb[6]*rho*rho*c[5]/M[5]*c[4]/M[4]
+			-2.0*kf[7]*rho*rho*rho*c[0]*c[0]/(M[0]*M[0])*c[4]/M[4]+2.0*kb[7]*rho*rho*c[1]/M
+			[1]*c[4]/M[4]);
+	
+	break;
+      case 1 : //O2
+	ans = (-kf[0]*rho*rho*c[2]/M[2]*c[1]/M[1]+kb[0]*rho*rho*c[5]/M
+			[5]*c[0]/M[0]+kf[7]*rho*rho*rho*c[0]*c[0]/(M[0]*M[0])*c[4]/M[4]-kb[7]*rho*rho*c
+			[1]/M[1]*c[4]/M[4]);
+  
+	break;
+      case 2 : //H
+	ans = (-kf[0]*rho*rho*c[2]/M[2]*c[1]/M[1]+kb[0]*rho*rho*c[5]/M
+			[5]*c[0]/M[0]+kf[1]*rho*rho*c[0]/M[0]*c[3]/M[3]-kb[1]*rho*rho*c[5]/M[5]*c[2]/M
+			[2]+kf[2]*rho*rho*c[5]/M[5]*c[3]/M[3]-kb[2]*rho*rho*c[2]/M[2]*c[4]/M[4]-2.0*kf
+			[4]*rho*rho*rho*c[2]*c[2]/(M[2]*M[2])*c[4]/M[4]+2.0*kb[4]*rho*rho*c[3]/M[3]*c
+			[4]/M[4]-kf[5]*rho*rho*rho*c[2]/M[2]*c[5]/M[5]*c[4]/M[4]+kb[5]*rho*rho*c[4]*c
+			 [4]/(M[4]*M[4])-kf[6]*rho*rho*rho*c[0]/M[0]*c[2]/M[2]*c[4]/M[4]+kb[6]*rho*rho*c
+			[5]/M[5]*c[4]/M[4]);	
+	break;
+      case 3 : //H2
+	ans = (-kf[1]*rho*rho*c[0]/M[0]*c[3]/M[3]+kb[1]*rho*rho*c[5]/M
+			 [5]*c[2]/M[2]-kf[2]*rho*rho*c[5]/M[5]*c[3]/M[3]+kb[2]*rho*rho*c[2]/M[2]*c[4]/M
+			 [4]+kf[4]*rho*rho*rho*c[2]*c[2]/(M[2]*M[2])*c[4]/M[4]-kb[4]*rho*rho*c[3]/M[3]*c
+			 [4]/M[4]);
+	break;
+	
+      case 4 : //H2O
+	ans = (kf[2]*rho*rho*c[5]/M[5]*c[3]/M[3]-kb[2]*rho*rho*c[2]/M
+			[2]*c[4]/M[4]+kf[3]*rho*rho*c[5]*c[5]/(M[5]*M[5])-kb[3]*rho*rho*c[4]/M[4]*c[0]/
+			M[0]+kf[5]*rho*rho*rho*c[2]/M[2]*c[5]/M[5]*c[4]/M[4]-kb[5]*rho*rho*c[4]*c[4]/(M[4]*M[4]));
+	break;
+
+      case 5 : // OH
+	ans = (kf[0]*rho*rho*c[2]/M[2]*c[1]/M[1]-kb[0]*rho*rho*c[5]/M
+			[5]*c[0]/M[0]+kf[1]*rho*rho*c[0]/M[0]*c[3]/M[3]-kb[1]*rho*rho*c[5]/M[5]*c[2]/M
+			[2]-kf[2]*rho*rho*c[5]/M[5]*c[3]/M[3]+kb[2]*rho*rho*c[2]/M[2]*c[4]/M[4]-2.0*kf
+			[3]*rho*rho*c[5]*c[5]/(M[5]*M[5])+2.0*kb[3]*rho*rho*c[4]/M[4]*c[0]/M[0]-kf[5]*
+			rho*rho*rho*c[2]/M[2]*c[5]/M[5]*c[4]/M[4]+kb[5]*rho*rho*c[4]*c[4]/(M[4]*M[4])+
+			kf[6]*rho*rho*rho*c[0]/M[0]*c[2]/M[2]*c[4]/M[4]-kb[6]*rho*rho*c[5]/M[5]*c[4]/M
+			[4]);
+	break;
+      };
+      U.rhospec[index].c = M[index]*ans*THOUSAND;
+    }
+    break;
 
 
-/**************** Destructor *******************************************/
-inline void Reactionset::Deallocate(){
-  //deallocate memory
-  if(reactions != NULL){  delete[] reactions; reactions = NULL;  }
-  if(species != NULL){    delete[] species;   species = NULL;  }
-  if(kf != NULL){  delete[] kf; kf = NULL;}
-  if(kb != NULL){  delete[] kb; kb = NULL;}
-  if(M != NULL){  delete[] M; M = NULL;}
-  if(c != NULL){  delete[] c; c = NULL;}
-  if(c_denom != NULL){  delete[] c_denom; c_denom = NULL;}
-}
+    // 15 step CH4 based on GRI 2.11
+  case CH4_15STEP_ARM2:
+    // compute reaction rates calling the subroutine CKWYP15STEP211
+    // Wdot - mol/(cm^3*s)
+    ckwyp15step211_(pressure, Temp, c, Wdot);
+
+    for (int i=0; i<num_react_species; ++i) {
+      // in kg/m^3*s   g/mol *(mol/cm^3*s)*1e3             
+      U.rhospec[i].c = M[i]*Wdot[i]*THOUSAND;
+    }
+    break;
 
 
-/***************** Assignment ****************************************/
-inline Reactionset& Reactionset::operator =(const Reactionset &W){
-  //self assignment protection
-  if( this != &W){   
-    string temp = W.Reaction_system;
-    //copy assignment
-    set_reactions(temp);
+    // 15 step CH4 based on GRI 3
+  case CH4_15STEP_ARM3:
+    // compute reaction rates calling the subroutine CKWYP15STEP3
+    // Wdot - mol/(cm^3*s)
+    ckwyp15step30_(pressure, Temp, c, Wdot);
+
+    for (int i=0; i<num_react_species; ++i) {
+      // in kg/m^3*s   g/mol *(mol/cm^3*s)*1e3             
+      U.rhospec[i].c = M[i]*Wdot[i]*THOUSAND;
+    }
+    break;
+
+    //---------------------------------//
+    //----- User Specified ------------//
+    //---------------------------------//
+  case USER:
+    cerr<<"\nUser specified not currently available in shareware version";
+    exit(1);
+    break;
+  default:
+    break;
+  };
+
+  //clean up memory
+  if (reactset_flag == CH4_15STEP_ARM2  ||  reactset_flag == CH4_15STEP_ARM3) { 
+    delete[] Wdot; 
   }
-  return (*this);
-}
 
-/**************** I/O Operators ***************************************/
-inline ostream &operator << (ostream &out_file, const Reactionset &W) {
-  out_file.setf(ios::scientific);
-  out_file <<"\n "<<W.Reaction_system<<" "<<W.num_reactions
-	   <<"  "<<W.num_species<<" "<<W.num_react_species<<endl;  
-  //species
-  for(int i=0; i<W.num_species; i++){
-    out_file <<" "<<W.species[i];
+} //end omega()
+
+
+/************************************************************************
+  Calculates the Jacobian of the Chemical Source terms with respect
+  to the conserved variables by using finite difference
+  
+   dSwdU:  Matrix of source terms 
+************************************************************************/
+template<>
+inline void Reaction_set::Finite_Difference_dSwdU<LESPremixed2D_pState>
+                          (DenseMatrix &dSwdU, 
+			   const LESPremixed2D_pState &Wlocal,
+			   const int Flow_Type) const {
+  
+  const double b = numeric_limits<double>::epsilon();  // 1.0E-12;  
+  LESPremixed2D_pState W1;
+  LESPremixed2D_cState S1, S, Ulocal, U1, EPS;
+  
+  int lower_index = Wlocal.NUM_VAR_LESPREMIXED2D + 1 - (Wlocal.ns + Wlocal.nscal);
+  
+  Ulocal = U(Wlocal);
+  S = Wlocal.Sw(Wlocal.React.reactset_flag, Flow_Type);
+
+  // Perturbation parameter (EPSILON)
+  for (int j=lower_index; j < Wlocal.NUM_VAR_LESPREMIXED2D; ++j) {
+    EPS[j] = sqrt( b*fabs(Ulocal[j]) + b )/1000.0;
   }
-  //each reaction systems data
-  if(W.reactset_flag != NO_REACTIONS){ 
-    for(int i=0; i<W.num_reactions; i++){
-      out_file <<"\n "<<W.reactions[i];
+  
+  U1 = Ulocal;
+  S1 = S;
+  for (int j=lower_index; j < Wlocal.NUM_VAR_LESPREMIXED2D; ++j) {
+    if ( EPS[j] != 0.0 ) {
+      U1[j] += EPS[j];
+      W1 = W(U1);
+      S1 = W1.Sw(W1.React.reactset_flag, Flow_Type);    
+      for (int i=lower_index; i < Wlocal.NUM_VAR_LESPREMIXED2D; ++i) {
+	dSwdU(i-1, j-1) = TwoPointFiniteDifference(S[i], S1[i], EPS[j]);
+      }
+      // reset U1 to U
+      U1 = Ulocal;
+    }
+  } // end for
+
+} // end  Finite_Difference_dSwdU
+
+
+
+/************************************************************************
+  Calculates the Jacobian of the Chemical Source terms with respect
+  to the conserved variables by using the complex step method
+  
+   dSwdU:  Matrix of source terms 
+************************************************************************/
+template<>
+inline void Reaction_set::Complex_Step_dSwdU<LESPremixed2D_pState>
+                          (DenseMatrix &dSwdU, 
+			   const LESPremixed2D_pState &Wlocal) const {
+
+  const double TOL = 1.0E-15, eps = 1.0E-100;
+  cplx *Y, *M, *Wdot_perturbed;
+
+  //assert(num_species == Wlocal.ns);
+
+  // allocate 
+  Y = new cplx[num_species];  
+  M = new cplx[num_species];
+  Wdot_perturbed = new cplx[num_species]; 
+
+
+  // pressure in dyne/cm^2
+  cplx pressure(TEN*Wlocal.p, ZERO);
+  // temperature in K 
+  cplx temperature(Wlocal.T(), ZERO);
+
+  for (int i=0; i<Wlocal.ns; ++i) {
+    Y[i] = Wlocal.spec[i].c;    //( Wlocal.spec[i].c < TOL )  ?  TOL : Wlocal.spec[i].c;
+    M[i] = Wlocal.specdata[i].Mol_mass();  // kg/kg-mol
+    //Wdot_perturbed[i] = 0.0;
+  }
+
+  
+  int lower_index = Wlocal.NUM_VAR_LESPREMIXED2D + 1 - Wlocal.ns;
+  cplx c_eps(0.0, eps);
+
+  for (int j=lower_index; j < Wlocal.NUM_VAR_LESPREMIXED2D; ++j) {
+    if ( Wlocal.spec[j].c > TOL ) {
+
+      Y[j-lower_index] += c_eps;    
+
+      // compute the perturbed reaction rates moles/(cm**3*sec)
+      switch(reactset_flag) {
+      case CH4_15STEP_ARM2 :
+      	cplx15step211_(pressure, temperature, Y, Wdot_perturbed);
+	break;
+      case CH4_15STEP_ARM3 :
+	cplx15step30_(pressure, temperature, Y, Wdot_perturbed);
+	break;
+      default :
+        cplx15step30_(pressure, temperature, Y, Wdot_perturbed);
+	break;
+      }
+  
+      for (int i=lower_index; i < Wlocal.NUM_VAR_LESPREMIXED2D; ++i) {
+	// in kg/m^3*s  ->  (kg/mol)*(mol/cm^3*s)*1e6 
+	Wdot_perturbed[i-lower_index] *= M[i-lower_index]*MILLION;
+
+	dSwdU(i-1, j-1) = imag( Wdot_perturbed[i-lower_index]/eps )/Wlocal.rho;
+	//Wdot_perturbed[i-lower_index] = (0.0, 0.0);
+      }
+      
+      // reset Y to its unperturbed value
+      Y[j-lower_index] -= c_eps;
+
+    } // end if
+  } // end for
+
+  // deallocate
+  delete[]  Y;
+  delete[]  M;
+  delete[]  Wdot_perturbed;
+
+}  // end Complex_Step_dSwdU
+
+
+/************************************************************************
+  Calculates the Jacobian of the Chemical Source terms with respect
+  to the conserved variables.  Ie it returns conserved data.
+  
+   dSwdU:  Matrix of source terms 
+   W:      Primitive State data.
+
+  These are added to the RHS so += is used.
+
+  NOTE: Be carful of mass fractions in the denominator as 
+        if they go to ZERO, it will cause floating point exceptions
+       (ie. Divison by zero);  
+************************************************************************/
+template<>
+inline void Reaction_set::dSwdU<LESPremixed2D_pState,LESPremixed2D_cState>
+                               (DenseMatrix &dSwdU,
+				const LESPremixed2D_pState &W, 
+				const bool &CFL_flag, 
+				const int Flow_Type, 
+				const int Solver_type) const {
+
+  /***************** Local Variables *****************/
+  double Temp = W.T();
+  double rho= W.rho/THOUSAND; //kg/m^3 -> g/cm^3
+
+
+//   double Con0, Con1, Rt;
+//   double dkf0_dp, dkf0_drho;
+//   double dkf0_dc1, dkf0_dc2, dkf0_dc3, dkf0_dc4; 
+//   //BEING LAZY INSTEAD OF ANALYTICALY DETERMINING dSdU
+//   DenseMatrix dSwdW(W.NUM_VAR_LESPREMIXED2D-1,W.NUM_VAR_LESPREMIXED2D-1,ZERO);  //SHOULD BE MOVED TO TEMP AS WELL!!!
+//   DenseMatrix dWdQ(W.NUM_VAR_LESPREMIXED2D-1,W.NUM_VAR_LESPREMIXED2D-1,ZERO);
+  
+  double VALUE = TOLER; //sqrt(TOLER);
+  //////////////////////////////////////////////////////////////////////////////
+  // THIS HACK DOESN'T REALLY WORK, ESPECIALLY FOR 2STEP EQUATIONS !!!!!!!!!!!!!
+  //////////////////////////////////////////////////////////////////////////////
+  if(Solver_type == IMPLICIT){ VALUE=TOLER*TOLER; }
+
+  for(int i=0; i<num_react_species; i++){
+    M[i] = W.specdata[i].Mol_mass()*THOUSAND; //kg/mol -> g/mol 
+    c[i] = W.spec[i].c;
+    
+    //For handling ~= ZERO mass fractions that appear in the denominator of dSwdU
+    //by setting a lower tolerance allowed, and if below that set to tolerance 
+    if( c[i] < VALUE){
+      c_denom[i] = VALUE;
+    } else {
+      c_denom[i] = c[i];
     }
   }
-  out_file.unsetf(ios::scientific);
-  return (out_file);
-}
 
-// istream &operator >> (istream &in_file, Reactionset &W) {
-//   in_file.setf(ios::skipws);
-//   in_file >> W.react >> W.A >> W.b >> W.E;
-//   in_file.unsetf(ios::skipws);
-//   return (in_file);
-// }
+  int NUM_VAR = NUM_LESPREMIXED2D_VAR_SANS_SPECIES + W.nscal;
+  /*******************************************
+   *  Reaction Mechanism Jacobians           *
+   *                                         * 
+   *******************************************/
+  switch(reactset_flag){
+  case NO_REACTIONS:
+    //this case shouldn't be called
+    cerr<<" Ummm, this dSwdU shouldn't be called for with NO_REACTIONS, check quad_singleblock.";
+    break;
+    
+    //---------------------------------//
+    //------ Hardcoded ----------------//
+    //---------------------------------//
+    // This is far from an elegant solution, but its easily created using maple.
+    // It can probably be simplified for faster computation.
+
+  case CH4_1STEP:
+    kf[0] = reactions[0].kf(Temp); 
+
+    // One forward reaction ... so only depending on the fuel and oxidize ..  
+    // for coef a=0.2, b=1.3
+ //    dSwdU(NUM_VAR,NUM_VAR) += -0.2*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1);
+//     dSwdU(NUM_VAR+1,NUM_VAR) += -0.4*M[1]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1)/M[0];
+//     dSwdU(NUM_VAR+2,NUM_VAR) += 0.2*M[2]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1)/M[0];
+//     dSwdU(NUM_VAR+3,NUM_VAR) += 0.4*M[3]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1)/M[0];    
+//     dSwdU(NUM_VAR,NUM_VAR+1) += -0.13E1*M[0]*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];
+//     dSwdU(NUM_VAR+1,NUM_VAR+1) += -0.26E1*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3);
+//     dSwdU(NUM_VAR+2,NUM_VAR+1) += 0.13E1*M[2]*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];
+//     dSwdU(NUM_VAR+3,NUM_VAR+1) += 0.26E1*M[3]*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];  
+ 
+    //for coef a=b=1.0
+    dSwdU(NUM_VAR,NUM_VAR) += -1.0*kf[0]*rho*c[1]/M[1];
+    dSwdU(NUM_VAR,NUM_VAR+1) += -1.0*kf[0]*rho*c[0]/M[1];
+    dSwdU(NUM_VAR+1,NUM_VAR) += -2.0*kf[0]*rho*c[1]/M[0];
+    dSwdU(NUM_VAR+1,NUM_VAR+1) += -2.0*kf[0]*rho*c[0]/M[0];    
+    dSwdU(NUM_VAR+2,NUM_VAR) +=  M[2]*kf[0]*rho*c[1]/M[1]/M[0];
+    dSwdU(NUM_VAR+2,NUM_VAR+1) += M[2]*kf[0]*rho*c[0]/M[0]/M[1];
+    dSwdU(NUM_VAR+3,NUM_VAR) += 2.0*M[3]*kf[0]*rho*c[1]/M[1]/M[0];
+    dSwdU(NUM_VAR+3,NUM_VAR+1) += 2.0*M[3]*kf[0]*rho*c[0]/M[0]/M[1];
+
+
+//     /********** dSwdW ***********************/
+//     Con0 = rho*c[0]/M[0];
+//     Con1 = rho*c[1]/M[0];
+    
+//     Rt = W.Rtot(); 
+//     dkf0_dp = reactions[0].dkf_dT(Temp)/(rho*Rt); ///THOUSAND;
+//     dkf0_drho = reactions[0].dkf_dT(Temp)*(-Temp/rho);
+    
+//     //take into account kf(rho,p,and ci)
+//     dkf0_dc1 =  reactions[0].dkf_dT(Temp)*(-Temp/Rt*(W.specdata[0].Rs()-W.specdata[4].Rs()))*Con0*Con1;
+//     dkf0_dc2 =  reactions[0].dkf_dT(Temp)*(-Temp/Rt*(W.specdata[1].Rs()-W.specdata[4].Rs()))*Con0*Con1;
+//     dkf0_dc3 =  reactions[0].dkf_dT(Temp)*(-Temp/Rt*(W.specdata[2].Rs()-W.specdata[4].Rs()))*Con0*Con1;
+//     dkf0_dc4 =  reactions[0].dkf_dT(Temp)*(-Temp/Rt*(W.specdata[3].Rs()-W.specdata[4].Rs()))*Con0*Con1;
+
+//     dSwdW(NUM_VAR,NUM_VAR)  += -M[0]*dkf0_dc1;
+//     dSwdW(NUM_VAR+1,NUM_VAR) += -TWO*M[1]*dkf0_dc1;
+//     dSwdW(NUM_VAR+2,NUM_VAR) += M[2]*dkf0_dc1;
+//     dSwdW(NUM_VAR+3,NUM_VAR) += TWO*M[3]*dkf0_dc1;
+
+//     dSwdW(NUM_VAR,NUM_VAR+1)  += -M[0]*dkf0_dc2;
+//     dSwdW(NUM_VAR+1,NUM_VAR+1) += -TWO*M[1]*dkf0_dc2;
+//     dSwdW(NUM_VAR+2,NUM_VAR+1) += M[2]*dkf0_dc2;
+//     dSwdW(NUM_VAR+3,NUM_VAR+1) += TWO*M[3]*dkf0_dc2;
+    
+//     dSwdW(NUM_VAR,NUM_VAR+2)  += -M[0]*dkf0_dc3;
+//     dSwdW(NUM_VAR+1,NUM_VAR+2) += -TWO*M[1]*dkf0_dc3;
+//     dSwdW(NUM_VAR+2,NUM_VAR+2) += M[2]*dkf0_dc3;
+//     dSwdW(NUM_VAR+3,NUM_VAR+2) += TWO*M[3]*dkf0_dc3;
+
+//     dSwdW(NUM_VAR,NUM_VAR+3)  += -M[0]*dkf0_dc4;
+//     dSwdW(NUM_VAR+1,NUM_VAR+3) += -TWO*M[1]*dkf0_dc4;
+//     dSwdW(NUM_VAR+2,NUM_VAR+3) += M[2]*dkf0_dc4;
+//     dSwdW(NUM_VAR+3,NUM_VAR+3) += TWO*M[3]*dkf0_dc4;
+
+//     dSwdW(NUM_VAR,0) += -M[0]*dkf0_drho*Con0*Con1 - kf[0]*Con1*c[0] - M[0]*kf[0]*Con0*c[1]/M[1];    
+//     dSwdW(NUM_VAR+1,0) += -TWO*M[1]*dkf0_drho*Con0*Con1 - TWO*kf[0]*M[1]*Con1*c[0]/M[0] - TWO*kf[0]*Con0*c[1];    
+//     dSwdW(NUM_VAR+2,0) += M[2]*dkf0_drho*Con0*Con1 + kf[0]*M[2]*Con1*c[0]/M[0] + M[2]*kf[0]*Con0*c[1]/M[1];    
+//     dSwdW(NUM_VAR+3,0) += TWO*M[3]*dkf0_drho*Con0*Con1 + TWO*kf[0]*M[3]*Con1*c[0]/M[0] + TWO*M[3]*kf[0]*Con0*c[1]/M[1];   
+
+//     dSwdW(NUM_VAR,3) += -M[0]*dkf0_dp*Con0*Con1;
+//     dSwdW(NUM_VAR+1,3) += -TWO*M[1]*dkf0_dp*Con0*Con1;
+//     dSwdW(NUM_VAR+2,3) += M[2]*dkf0_dp*Con0*Con1;
+//     dSwdW(NUM_VAR+3,3) += TWO*M[3]*dkf0_dp*Con0*Con1;
+   
+//     dSwdW(NUM_VAR,NUM_VAR)   += -kf[0]*Con1*rho*THOUSAND;
+//     dSwdW(NUM_VAR+1,NUM_VAR) += -TWO*M[1]*kf[0]*Con1*rho/M[0]*THOUSAND;
+//     dSwdW(NUM_VAR+2,NUM_VAR) += M[2]*kf[0]*Con1*rho/M[0]*THOUSAND;
+//     dSwdW(NUM_VAR+3,NUM_VAR) += TWO*M[3]*kf[0]*Con1*rho/M[0]*THOUSAND;
+
+//     dSwdW(NUM_VAR,NUM_VAR+1)   += -M[0]*kf[0]*Con0*rho/M[1]*THOUSAND;
+//     dSwdW(NUM_VAR+1,NUM_VAR+1) += -TWO*kf[0]*Con0*rho*THOUSAND;
+//     dSwdW(NUM_VAR+2,NUM_VAR+1) += M[2]*kf[0]*Con0*rho/M[1]*THOUSAND;
+//     dSwdW(NUM_VAR+3,NUM_VAR+1) += TWO*M[3]*kf[0]*Con0*rho/M[1]*THOUSAND;
+
+//     // LAZY dSwdU = dSwdW * dWdU
+//     W.dWdU(dWdQ,Flow_Type); 
+//     dSwdU += dSwdW*dWdQ;
+//     /***************************************/
+
+    //this is a work around for the delta t calculation using an unesseccarily small value
+    //when c[0] -> ZERO
+    if(c_denom[0] != c[0] && CFL_flag){ dSwdU(NUM_VAR,NUM_VAR)=ZERO; }
+    
+    break;
+
+
+    //TWO STEP CH4   
+  case CH4_2STEP:  
+    /******************** ORIGINAL ****************************************/
+    //still some issues with units ??? ie.  dSwdU(6,6) ??
+    //which is also on the diagonal so messes with CFL???
+    kf[0] = reactions[0].kf(Temp);      
+    kb[0] = ZERO;
+    kf[1] = reactions[1].kf(Temp);  
+    kb[1] = reactions[1].kb(Temp);
+
+    //cout<<"\n dSwdU "<<Temp<<" "<<reactions[0].kf(Temp)<<" "<<reactions[1].kf(Temp)<<" "<<reactions[1].kb(Temp);
+
+    dSwdU(NUM_VAR,NUM_VAR) += -0.2*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*rho*c[1]/M[1]*pow(rho*c[1]/M[1],0.3);
+    dSwdU(NUM_VAR,NUM_VAR+1) += -0.13E1*M[0]*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];      
+    
+    dSwdU(NUM_VAR+1,NUM_VAR) += -0.3*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*rho*c[1]*pow(rho*c[1]/M[1],0.3)/M[0];
+    dSwdU(NUM_VAR+1,NUM_VAR+1) += -rho*(0.195E1*kf[0]*pow(rho*c[0]/M[0],0.2)*c[1]*pow(rho*c[1]/M[1],0.5E-1)
+			*M[4]+0.125*kf[1]*c[4]*sqrt(rho*c[3]/M[3])*M[1])/M[1]/M[4]/pow(rho*c_denom[1]/M[1],0.75);
+    dSwdU(NUM_VAR+1,NUM_VAR+2) += 0.5*M[1]*kb[1]/M[2];
+    dSwdU(NUM_VAR+1,NUM_VAR+3) += -0.25*M[1]*kf[1]*rho*c[4]/M[4]/sqrt(rho*c_denom[3]/M[3])*pow(rho*c[1]/M[1],0.25)/M[3];
+    dSwdU(NUM_VAR+1,NUM_VAR+4) += -0.5*M[1]*kf[1]/M[4]*sqrt(rho*c[3]/M[3])*pow(rho*c[1]/M[1],0.25);      
+   
+    dSwdU(NUM_VAR+2,NUM_VAR+1) += 0.25*M[2]*kf[1]*rho*c[4]/M[4]*sqrt(rho*c[3]/M[3])/pow(rho*c_denom[1]/M[1],0.75)/M[1];
+    dSwdU(NUM_VAR+2,NUM_VAR+2) += -kb[1];
+    dSwdU(NUM_VAR+2,NUM_VAR+3) += 0.5*M[2]*kf[1]*rho*c[4]/M[4]/sqrt(rho*c_denom[3]/M[3])*pow(rho*c[1]/M[1],0.25)/M[3];
+    dSwdU(NUM_VAR+2,NUM_VAR+4) += M[2]*kf[1]/M[4]*sqrt(rho*c[3]/M[3])*pow(rho*c[1]/M[1],0.25);      
+    
+    dSwdU(NUM_VAR+3,NUM_VAR) += 0.4*M[3]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*rho*c[1]/M[1]*pow(rho*c[1]/M[1],0.3)/M[0];
+    dSwdU(NUM_VAR+3,NUM_VAR+1) += 0.26E1*M[3]*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];    
+   
+    dSwdU(NUM_VAR+4,NUM_VAR) += 0.2*M[4]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*rho*c[1]/M[1]*pow(rho*c[1]/M[1],0.3)/M[0];
+    dSwdU(NUM_VAR+4,NUM_VAR+1) += rho*(0.13E1*kf[0]*pow(rho*c[0]/M[0],0.2)*c[1]*pow(rho*c[1]/M[1],0.5E-1)
+		       *M[4]-0.25*kf[1]*c[4]*sqrt(rho*c[3]/M[3])*M[1])/(M[1]*M[1])/pow(rho*c_denom[1]/M[1],0.75);
+    dSwdU(NUM_VAR+4,NUM_VAR+2) += M[4]*kb[1]/M[2];
+    dSwdU(NUM_VAR+4,NUM_VAR+3) += -0.5*kf[1]*rho*c[4]/sqrt(rho*c_denom[3]/M[3])*pow(rho*c[1]/M[1],0.25)/M[3];
+    dSwdU(NUM_VAR+4,NUM_VAR+4) += -1.0*kf[1]*sqrt(rho*c[3]/M[3])*pow(rho*c[1]/M[1],0.25);
+
+//     if(!CFL_flag) cout<<"\n ORIGINAL\n"<<dSwdU;
+//     dSwdU.zero();
+
+//     /******************** MODIFIED ****************************************/   
+//     //with kf(T), kb(T)
+
+//     kf[0] = reactions[0].kf(Temp);      //UNITS ISSUES due to rho and M and kf's
+//     kb[0] = ZERO;
+//     kf[1] = reactions[1].kf(Temp);  
+//     kb[1] = reactions[1].kb(Temp);
+    
+//     double dkf_dT[2], dkb_dT[2];
+//     dkf_dT[0] = reactions[0].dkf_dT(Temp);
+//     dkb_dT[0] = ZERO;
+//     dkf_dT[1] = reactions[1].dkf_dT(Temp);
+//     dkb_dT[1] = reactions[1].dkb_dT(Temp);
+
+//     double T = Temp;
+//     double Cp = W.Cp();      
+//     double u = W.v.x*HUNDRED; 
+//     double v = W.v.y*HUNDRED; 
+//     //double p = W.p;      
+//     double Rtot = W.Rtot();   
+//     double htot = W.h();      
+//     double h[6],Rs[6];
+
+//     for(int i=0; i<num_species; i++){    
+//       h[i] = (W.specdata[i].Enthalpy(Temp)+W.specdata[i].Heatofform());  
+//       Rs[i] = (W.specdata[i].Rs()); 
+//     }    
+
+//       if(!CFL_flag) cout<<"\n NEW\n"<<dSwdU;
+   
+    //this is a work around for the delta t calculation using an unesseccarily small value
+    //when CH4 & O2 -> ZERO
+    //if( (c[0] < TOLER && CFL_flag) || (c[0] < TOLER && CFL_flag)  ){  
+    
+    if( c_denom[0] != c[0] && CFL_flag ){
+      for(int i=0; i<num_react_species; i++){
+	dSwdU(NUM_VAR+i,NUM_VAR+i)=ZERO; 
+      }
+    }
+    break;
+  
+
+  case H2O2_1STEP:  
+    kf[0] = reactions[0].kf(Temp);
+    rho = rho;
+    M[0] = M[0];
+    M[1] = M[1];
+
+    dSwdU(NUM_VAR,NUM_VAR) += -4.0*rho*rho/M[0]*kf[0]*c[0]*c[1]/M[1];
+    dSwdU(NUM_VAR,NUM_VAR+1) = -2.0*rho*rho/M[0]*kf[0]*c[0]*c[0]/M[1];
+    
+    dSwdU(NUM_VAR+1,NUM_VAR) = -2.0*rho*rho*kf[0]*c[0]/(M[0]*M[0])*c[1];
+    dSwdU(NUM_VAR+1,NUM_VAR+1) = -rho*rho*kf[0]*c[0]*c[0]/(M[0]*M[0]);
+    
+    dSwdU(NUM_VAR+2,NUM_VAR) = 4.0*rho*rho*M[2]*kf[0]*c[0]/(M[0]*M[0])*c[1]/M[1];
+    dSwdU(NUM_VAR+2,NUM_VAR+1)= 2.0*rho*rho*M[2]*kf[0]*c[0]*c[0]/(M[0]*M[0])/M[1];
+  
+    break;
+   //TWO STEP H2 and O2
+  case H2O2_2STEP:
+    kf[0] = reactions[0].kf(Temp,c[0],c[1],W.spec[4].c);
+    kb[0] = kf[0]/reactions[0].keq(W,Temp);
+    kf[1] = reactions[1].kf(Temp,c[0],c[1],W.spec[4].c);
+    kb[1] = kf[1]/reactions[1].keq(W,Temp);  
+  
+    dSwdU(NUM_VAR,NUM_VAR) += -rho*(kf[0]*c[1]*M[2]*M[2]+kf[1]*rho*c[2]*c[2]*M[1])/M[1]/(M[2]*M[2]);
+    dSwdU(NUM_VAR,NUM_VAR+1) += -kf[0]*rho*c[0]/M[1];
+    dSwdU(NUM_VAR,NUM_VAR+2) += -2.0*rho*c[2]*(-kb[0]*M[0]+kf[1]*rho*c[0])/(M[2]*M[2]);
+    dSwdU(NUM_VAR,NUM_VAR+3) += 2.0*M[0]*kb[1]*rho*c[3]/(M[3]*M[3]);    
+  
+    dSwdU(NUM_VAR+1,NUM_VAR) += -kf[0]*rho/M[0]*c[1];
+    dSwdU(NUM_VAR+1,NUM_VAR+1) += -kf[0]*rho*c[0]/M[0];
+    dSwdU(NUM_VAR+1,NUM_VAR+2) += 2.0*M[1]*kb[0]*rho*c[2]/(M[2]*M[2]);    
+   
+    dSwdU(NUM_VAR+2,NUM_VAR) += rho*(0.2E1*kf[0]*c[1]*M[2]*M[2]-0.2E1*kf[1]*rho*c[2]*c[2]*M[1])/M[2]/M[0]/M[1];
+    dSwdU(NUM_VAR+2,NUM_VAR+1) += 2.0*M[2]*kf[0]*rho*c[0]/M[0]/M[1];
+    dSwdU(NUM_VAR+2,NUM_VAR+2) += -rho*c[2]*(0.4E1*kb[0]*M[0]+0.4E1*kf[1]*rho*c[0])/M[2]/M[0];
+    dSwdU(NUM_VAR+2,NUM_VAR+3) += 4.0*M[2]*kb[1]*rho*c[3]/(M[3]*M[3]);    
+   
+    dSwdU(NUM_VAR+3,NUM_VAR) += 2.0*M[3]*kf[1]*rho*rho*c[2]*c[2]/(M[2]*M[2])/M[0];
+    dSwdU(NUM_VAR+3,NUM_VAR+2) += 4.0*M[3]*kf[1]*rho*rho*c[2]/(M[2]*M[2])*c[0]/M[0];
+    dSwdU(NUM_VAR+3,NUM_VAR+3) += -4.0/M[3]*kb[1]*rho*c[3];  
+
+    break;
+    // 8 STEP H2 & O2
+  case H2O2_8STEP:  
+
+    for(int spec =0; spec<num_reactions; spec++){
+      kf[spec] = reactions[spec].kf(Temp);
+      kb[spec] = kf[spec]/reactions[spec].keq(W,Temp); 
+    }
+
+    dSwdU(NUM_VAR,NUM_VAR) += -1/M[0]*rho*(kb[0]*c[5]*M[0]*M[3]*M[4]*M[2]+kf[1]*c[3]*M[5]
+					   *M[0]*M[4]*M[2]+kb[3]*c[4]*M[5]*M[0]*M[3]*M[2]+kf[6]*rho*c[2]*c[4]*M[5]*M[0]*M
+			       [3]+4.0*kf[7]*rho*c[0]*c[4]*M[5]*M[3]*M[2])/M[5]/M[3]/M[4]/M[2];
+    dSwdU(NUM_VAR,NUM_VAR+1) += M[0]*rho*(kf[0]*c[2]*M[4]+2.0*kb[7]*c[4]*M[2])/M[2]/M[1]/M[4];
+    dSwdU(NUM_VAR,NUM_VAR+2) += -rho*(-kf[0]*c[1]*M[5]*M[0]*M[4]-kb[1]*c[5]*M[1]*M[0]*M[4]+
+			kf[6]*rho*c[0]*c[4]*M[1]*M[5])/M[2]/M[1]/M[5]/M[4];
+    dSwdU(NUM_VAR,NUM_VAR+3) += -kf[1]*rho*c[0]/M[3];
+    dSwdU(NUM_VAR,NUM_VAR+4) += -1/M[0]*rho*(kb[3]*c[0]*M[0]*M[2]*M[5]*M[1]+kf[6]*rho*c[0]*
+			       c[2]*M[0]*M[5]*M[1]-kb[6]*c[5]*M[0]*M[0]*M[2]*M[1]+2.0*kf[7]*rho*c[0]*c[0]*M[2]
+			       *M[5]*M[1]-2.0*kb[7]*c[1]*M[0]*M[0]*M[2]*M[5])/M[4]/M[2]/M[5]/M[1];
+    dSwdU(NUM_VAR,NUM_VAR+5) += rho*(-kb[0]*c[0]*M[5]*M[2]*M[4]+kb[1]*c[2]*M[5]*M[0]*M[4]+
+		       2.0*kf[3]*c[5]*M[0]*M[2]*M[4]+kb[6]*c[4]*M[5]*M[0]*M[2])/(M[5]*M[5])/M[2]/M[4];
+    dSwdU(NUM_VAR+1,NUM_VAR) += M[1]*rho*(kb[0]*c[5]*M[0]*M[4]+2.0*kf[7]*rho*c[0]*c[4]*M[5])/M[5]/(M[0]*M[0])/M[4];
+    dSwdU(NUM_VAR+1,NUM_VAR+1) += -rho*(kf[0]*c[2]*M[4]+kb[7]*c[4]*M[2])/M[2]/M[4];
+    dSwdU(NUM_VAR+1,NUM_VAR+2) += -kf[0]*rho/M[2]*c[1];
+    dSwdU(NUM_VAR+1,NUM_VAR+4) += rho*(kf[7]*rho*c[0]*c[0]*M[1]-kb[7]*c[1]*M[0]*M[0])/(M[0]*M[0])/M[4];
+    dSwdU(NUM_VAR+1,NUM_VAR+5) += M[1]*kb[0]*rho/M[5]*c[0]/M[0];
+   
+    dSwdU(NUM_VAR+2,NUM_VAR) += -rho*(-kb[0]*c[5]*M[3]*M[4]*M[2]-kf[1]*c[3]*M[5]*M[4]*M[2]+kf[6]*rho*c[2]*c[4]*M[5]*M[3])/M[0]/M[5]/M[3]/M[4];
+    dSwdU(NUM_VAR+2,NUM_VAR+1) += -kf[0]*rho*c[2]/M[1];
+    dSwdU(NUM_VAR+2,NUM_VAR+2) += -1/M[2]*rho*(kf[0]*c[1]*M[2]*M[5]*M[4]*M[0]+kb[1]*c[5]*M[2]
+			       *M[1]*M[4]*M[0]+kb[2]*c[4]*M[2]*M[1]*M[5]*M[0]+4.0*kf[4]*rho*c[2]*c[4]*M[1]*M
+			       [5]*M[0]+kf[5]*rho*c[5]*c[4]*M[2]*M[1]*M[0]+kf[6]*rho*c[0]*c[4]*M[2]*M[1]*M[5])/M[1]/M[5]/M[4]/M[0];
+    dSwdU(NUM_VAR+2,NUM_VAR+3) += M[2]*rho*(kf[1]*c[0]*M[5]*M[4]+kf[2]*c[5]*M[0]*M[4]+2.0*kb
+			    [4]*c[4]*M[0]*M[5])/M[0]/M[3]/M[5]/M[4];
+    dSwdU(NUM_VAR+2,NUM_VAR+4) += -1/M[2]*rho*(kb[2]*c[2]*M[2]*M[4]*M[3]*M[5]*M[0]+2.0*kf[4]*
+			       rho*c[2]*c[2]*M[4]*M[3]*M[5]*M[0]-2.0*kb[4]*c[3]*M[2]*M[2]*M[4]*M[5]*M[0]+kf[5]
+			       *rho*c[2]*c[5]*M[2]*M[4]*M[3]*M[0]-2.0*kb[5]*c[4]*M[2]*M[2]*M[3]*M[5]*M[0]+kf
+			       [6]*rho*c[0]*c[2]*M[2]*M[4]*M[3]*M[5]-kb[6]*c[5]*M[2]*M[2]*M[4]*M[3]*M[0])/(M[4]*M[4])/M[3]/M[5]/M[0];
+    dSwdU(NUM_VAR+2,NUM_VAR+5) += -rho*(-kb[0]*c[0]*M[3]*M[4]*M[2]+kb[1]*c[2]*M[0]*M[3]*M[4]-
+			kf[2]*c[3]*M[0]*M[4]*M[2]+kf[5]*rho*c[2]*c[4]*M[0]*M[3]-kb[6]*c[4]*M[0]*M[3]*M
+			  [2])/M[0]/M[5]/M[3]/M[4]; 
+    dSwdU(NUM_VAR+3,NUM_VAR) += -kf[1]*rho/M[0]*c[3];
+    dSwdU(NUM_VAR+3,NUM_VAR+2) += M[3]*rho*(kb[1]*c[5]*M[2]*M[4]+kb[2]*c[4]*M[5]*M[2]+2.0*kf
+			    [4]*rho*c[2]*c[4]*M[5])/M[5]/(M[2]*M[2])/M[4];
+    dSwdU(NUM_VAR+3,NUM_VAR+3) += -rho*(kf[1]*c[0]*M[5]*M[4]+kf[2]*c[5]*M[0]*M[4]+kb[4]*c[4]*
+			M[0]*M[5])/M[0]/M[5]/M[4];
+    dSwdU(NUM_VAR+3,NUM_VAR+4) += rho*(kb[2]*c[2]*M[2]*M[3]+kf[4]*rho*c[2]*c[2]*M[3]-kb[4]*c
+		       [3]*M[2]*M[2])/(M[2]*M[2])/M[4];
+    dSwdU(NUM_VAR+3,NUM_VAR+5) += -rho*(-kb[1]*c[2]*M[3]+kf[2]*c[3]*M[2])/M[5]/M[2];
+   
+    dSwdU(NUM_VAR+4,NUM_VAR) += -kb[3]*rho*c[4]/M[0];
+    dSwdU(NUM_VAR+4,NUM_VAR+2) += rho*c[4]*(-kb[2]*M[5]+kf[5]*rho*c[5])/M[2]/M[5];
+    dSwdU(NUM_VAR+4,NUM_VAR+3) += M[4]*kf[2]*rho*c[5]/M[5]/M[3];
+    dSwdU(NUM_VAR+4,NUM_VAR+4) += 1/M[4]*rho*(-kb[2]*c[2]*M[4]*M[0]*M[5]-kb[3]*c[0]*M[2]*M[4]
+			      *M[5]+kf[5]*rho*c[2]*c[5]*M[4]*M[0]-2.0*kb[5]*c[4]*M[2]*M[0]*M[5])/M[2]/M[0]/M[5];
+    dSwdU(NUM_VAR+4,NUM_VAR+5) += rho*(kf[2]*c[3]*M[5]*M[2]*M[4]+2.0*kf[3]*c[5]*M[3]*M[2]*M
+		       [4]+kf[5]*rho*c[2]*c[4]*M[5]*M[3])/(M[5]*M[5])/M[3]/M[2];
+    dSwdU(NUM_VAR+5,NUM_VAR) += rho*(-kb[0]*c[5]*M[3]*M[4]*M[2]+kf[1]*c[3]*M[5]*M[4]*M[2]+
+		       2.0*kb[3]*c[4]*M[5]*M[3]*M[2]+kf[6]*rho*c[2]*c[4]*M[5]*M[3])/M[0]/M[3]/M[4]/M[2];
+    dSwdU(NUM_VAR+5,NUM_VAR+1) += M[5]*kf[0]*rho*c[2]/M[2]/M[1];
+    dSwdU(NUM_VAR+5,NUM_VAR+2) += -rho*(-kf[0]*c[1]*M[5]*M[0]*M[4]+kb[1]*c[5]*M[1]*M[0]*M[4]-
+			kb[2]*c[4]*M[1]*M[5]*M[0]+kf[5]*rho*c[5]*c[4]*M[1]*M[0]-kf[6]*rho*c[0]*c[4]*M
+			[1]*M[5])/M[2]/M[1]/M[0]/M[4];
+    dSwdU(NUM_VAR+5,NUM_VAR+3) += -rho*(-kf[1]*c[0]*M[5]+kf[2]*c[5]*M[0])/M[0]/M[3];
+    dSwdU(NUM_VAR+5,NUM_VAR+4) += -rho*(-kb[2]*c[2]*M[4]*M[0]*M[5]-2.0*kb[3]*c[0]*M[2]*M[4]*M
+			[5]+kf[5]*rho*c[2]*c[5]*M[4]*M[0]-2.0*kb[5]*c[4]*M[2]*M[0]*M[5]-kf[6]*rho*c[0]*
+			c[2]*M[4]*M[5]+kb[6]*c[5]*M[2]*M[4]*M[0])/M[2]/(M[4]*M[4])/M[0];
+    dSwdU(NUM_VAR+5,NUM_VAR+5) += -1/M[5]*rho*(kb[0]*c[0]*M[5]*M[2]*M[3]*M[4]+kb[1]*c[2]*M[5]
+			       *M[0]*M[3]*M[4]+kf[2]*c[3]*M[5]*M[0]*M[2]*M[4]+4.0*kf[3]*c[5]*M[0]*M[2]*M[3]*M
+			       [4]+kf[5]*rho*c[2]*c[4]*M[5]*M[0]*M[3]+kb[6]*c[4]*M[5]*M[0]*M[2]*M[3])/M[0]/M[2]/M[3]/M[4];    
+      
+    break;
+    
+
+    // 15 step CH4 based on GRI 2.11
+  case CH4_15STEP_ARM2:
+    Complex_Step_dSwdU(dSwdU, W);
+
+//     //cout << "\n Complex Step dSwdU: " << dSwdU;
+//     //dSwdU.zero();
+//     //Finite_Difference_dSwdU(dSwdU, W, Flow_Type, Simple_Chemistry);
+//     //cout << "\n Finite Difference dSwdU: " << dSwdU;
+    break;
+
+
+    // 15 step CH4 based on GRI 3
+  case CH4_15STEP_ARM3:
+    Complex_Step_dSwdU(dSwdU, W);
+    break;
+
+
+    //---------------------------------//
+    //----- User Specified ------------//
+    //---------------------------------//
+  case USER:
+    cerr<<"\nUser specified not set up yet";
+    exit(1);
+    break;
+  default:
+    //Do nothing (i.e. Jacobian = ZERO)
+    break;
+  };
+
+    
+} //end dSwdU
+
+
+
+
 
 #endif // _LESPREMIXED2D_REACTIONS_INCLUDED

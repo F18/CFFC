@@ -366,8 +366,6 @@ inline char *Date_And_Time() {
 #define FLOWTYPE_TURBULENT_DNS                        14
 
 
-#define NO_REACTIONS                           0
-
 /**********************************************************************
  * CFD -- Particle-phase formulation.                                 *
  **********************************************************************/
