@@ -163,6 +163,7 @@ help:
 	@echo "|                  ICEMCFD_VERSION = NoICEMCFD (default),V41,V42,V43,V50,V10,V11    |"
 	@echo "|                  GCC_VERSION = V296, V3+ (default), ICC                           |"
 	@echo "|                  CANTERA_VERSION = NoCANTERA (default), V70                       |"
+	@echo "|                  FFTW_VERSION = V32 (default), NoFFTW                             |"
 	@echo "|                  PROFILING = OFF (default), ON                                    |"
 	@echo "|                                                                                   |"
 	@echo "| Ensure that the source directory is clean and the ICEMCFD, SparseLib++, BPKIT,    |"
@@ -368,7 +369,24 @@ clean:
 	@echo '------------------------------------------'
 	@echo ' '
 
-superclean:
+clean-extras:
+	@echo ' '
+	@echo Cleaning cantera and fftw directories.
+	@echo '-----------------------------------------------'
+	@echo ' '
+	@if [ ! -f $(CANTERA_DIR)/Makefile ] ; then \
+	  echo "Cantera already clean."; \
+	else \
+	  cd $(CANTERA_DIR); make -i clean; \
+	fi
+	@if [ ! -f $(FFTW_DIR)/Makefile ] ; then \
+	  echo "fftw already clean."; \
+	else \
+	  cd $(FFTW_DIR); make clean; \
+	  cd $(FFTW_DIR); make distclean; \
+	fi
+
+superclean: clean-extras
 	@echo ' '
 	@echo Cleaning documentation and library directories.
 	@echo '-----------------------------------------------'
@@ -381,9 +399,6 @@ superclean:
 	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) wipe;
 	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
 	cd $(BPKIT_DIR)/src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
-	cd $(CANTERA_DIR); make -i clean;
-	cd $(FFTW_DIR); make clean; 
-	cd $(FFTW_DIR); make distclean;
 	@echo ' '
 	@echo All documentation and library directories are now clean.
 	@echo '-------------------------------------------------------'

@@ -12,6 +12,7 @@
 #define ESU_CONSTANT        4.8e-13
 #define GRAVITY_CONSTANT    6.672041e-11
 #define VON_KARMAN_CONSTANT 0.41
+#define STEFFAN_BOLTZMANN   5.670e-08
 
 /* Define standard atmospheric conditions
    (Sea Level US Standard Atmosphere). */

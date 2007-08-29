@@ -84,7 +84,7 @@ double Chem2D_cState::yplus_outer_layer = 100.0;
 **********************************************************/
 //set Global data for Species (STATIC, ie. so only call once! in Chem2Dinput)
 void Chem2D_pState::set_species_data(const int &n,const string *S,const char *PATH,
-				     const double &Mr, const double* Sc){ 
+				     const double &Mr, const double* Sc, const int &trans_data){ 
  
 #ifdef STATIC_NUMBER_OF_SPECIES
   if( STATIC_NUMBER_OF_SPECIES < n) {                    //fix for mpi as called by each processor!!!!!!
@@ -104,7 +104,7 @@ void Chem2D_pState::set_species_data(const int &n,const string *S,const char *PA
   Schmidt = new double[ns];
   for(int i=0; i<ns; i++){
     //overwrite default data  
-    specdata[i].Getdata(S[i],PATH);  
+    specdata[i].Getdata(S[i],PATH,trans_data);  
     Schmidt[i] = Sc[i];
   } 
   
@@ -122,7 +122,7 @@ void Chem2D_pState::set_species_data(const int &n,const string *S,const char *PA
 //exact same thing with conserved variables, 
 //should just point to pState data but for now duplication will work 
 void Chem2D_cState::set_species_data(const int &n, const string *S, const char *PATH,
-				     const double &Mr, const double* Sc){ 
+				     const double &Mr, const double* Sc, const int &trans_data){ 
 #ifdef STATIC_NUMBER_OF_SPECIES
   if( STATIC_NUMBER_OF_SPECIES < n ) { 
     cerr<<"\n WARNING USING STATIC CHEM2D BUILT WITH "<<STATIC_NUMBER_OF_SPECIES 
@@ -141,7 +141,7 @@ void Chem2D_cState::set_species_data(const int &n, const string *S, const char *
   Schmidt = new double[ns];
   for(int i=0; i<ns; i++){
     //overwrite default data  
-    specdata[i].Getdata(S[i],PATH);
+    specdata[i].Getdata(S[i],PATH,trans_data);
     Schmidt[i] = Sc[i];  
   }  
 
@@ -471,7 +471,7 @@ double Chem2D_pState::kappa(void) const{
       }
     }
  
-    sum += (specdata[i].ThermalConduct(Temp)*spec[i].c) / 
+    sum += (specdata[i].ThermalConduct(Temp, p)*spec[i].c) / 
       (spec[i].c + (specdata[i].Mol_mass()) * 1.065 * phi);
   }  
 
@@ -479,8 +479,8 @@ double Chem2D_pState::kappa(void) const{
   //or Coffee and Heimerl (1981)
 //   double one =0.0; double two=0.0;
 //   for (int j=0; j<ns; j++){
-//     one += spec[i].c*specdata[i].ThermalConduct(Temp);
-//     two += spec[i].c/specdata[i].ThermalConduct(Temp);
+//     one += spec[i].c*specdata[i].ThermalConduct(Temp,p);
+//     two += spec[i].c/specdata[i].ThermalConduct(Temp,p);
 //   }
 //   sum = HALF*(one + ONE/two);
 #ifndef STATIC_NUMBER_OF_SPECIES

@@ -6,6 +6,7 @@
 /* Include C++ math library. */
 
 #include <cmath>
+#include <iostream>
 
 using namespace std;
 
@@ -23,6 +24,7 @@ using namespace std;
 #define	NINE	9.00
 #define	TEN    10.00
 
+#define	FIFTEEN  15.00
 #define TWENTY   20.00
 #define THIRTY   30.00
 #define FOURTY   40.00
@@ -42,6 +44,7 @@ using namespace std;
 #define MICRO    0.000001
 #define TOLER    0.0000001
 #define NANO     0.000000001
+#define PICO     0.000000000001
 
 #ifndef PI
 #define	PI	3.14159265358979323846
@@ -159,6 +162,33 @@ inline double linear_regression_slope(double *values, int n, int position) {
     ssxx -= n * xmean * xmean;
     ssxy -= n * xmean * ymean;
     return ssxy / ssxx;
+}
+
+// factorial(x)
+inline int factorial(const int &x) {
+  int factor = 1;
+  if (x<0) {
+    cerr << "\nError in factorial function: No factorial for negative integers! "<<endl;
+    exit(1);
+  } else if (x==0) {
+    return 1;
+  } else {
+    for (int i=1; i<=x; i++) {
+      factor *= i;
+    }
+    return factor;
+  }
+}
+
+template <class T>
+T LinearInterpolation(const double &x1, const double &x2, const double &x,
+		      const T &T1, const T &T2) {
+  return (T1 + (T2-T1)*(x-x1)/(x2-x1));  
+}
+
+template <class T>
+T TwoPointFiniteDifference(const T &T1, const T &T2, const double &d2_d1) {
+  return (T2-T1)/d2_d1;
 }
 
 #endif // _MATH_MACROS_INCLUDED

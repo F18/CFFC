@@ -1035,6 +1035,57 @@ extern void A_Stable_Implicit_Method_Coefficients(double &theta,
 }
 
 /*************************************************************
+ * High resolution schemes -- External subroutines.          *
+ *************************************************************/
+
+/********************************************************
+ * Routine: CLAM                                        *
+ *                                                      *
+ * Bounded high-order resolution differencing scheme of *
+ * B. Van Leer, "Towards the ultimate conservation      *
+ * difference scheme. II. Monotonicity anc conservation *
+ * combined in a second-order scheme," in Journal       *
+ * Computational physics, v14, 1974.                    *
+ *                                                      *
+ ********************************************************/
+double CLAM(const double Uu,   // upstream nodal value
+	    const double Uc,   // centroid nodal value
+	    const double Ud,   // downstream nodal value
+	    const double xu,   // x upstream node
+	    const double xc,   // x centroid node
+	    const double xd,   // x downstream node
+	    const double xf)   // x downstream face
+{
+
+  // check for divide by zero
+  double temp;
+  if ( fabs(Ud - Uu)<TOLER ) temp = MILLI;
+  else temp = Ud - Uu;
+
+  // normalized values
+  double Uc_til = (Uc - Uu) / temp;
+  double xc_til = (xc - xu) / (xd - xu);
+  double xf_til = (xf - xu) / (xd - xu);
+
+  // interpolate the face value
+  double Uf_til;
+  if ( Uc_til<=ZERO || Uc_til>=ONE  ) Uf_til = Uc_til;
+  else {
+    Uf_til = ( sqr(xc_til)-xf_til ) / ( xc_til*(xc_til-ONE) ) * Uc_til + 
+             ( xf_til-xc_til ) / ( xc_til*(xc_til-ONE) ) * sqr(Uc_til);
+
+    // force boundedness
+    Uf_til = min(Uf_til, ONE);
+  }
+
+  
+  // the interpolated face value
+  return Uf_til*(Ud - Uu) + Uu;
+  
+}
+
+
+/*************************************************************
  * CFD1D_Input_Parameters -- External subroutines.           *
  *************************************************************/
 

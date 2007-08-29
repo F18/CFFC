@@ -356,6 +356,224 @@ void Modify_Neighbours_of_Root_Solution_Blocks(QuadTreeBlock_DataStructure
         //QuadTree.Roots[2][1].block.nSW = 0;
         //QuadTree.Roots[2][1].block.infoSW[0].reset();
         break;
+
+      case GRID_PERIODIC_BOX :
+        if (QuadTree.NRi>1  &&  QuadTree.NRj>1) { 
+          for (int i=0; i<QuadTree.NRi; i++) {
+            for (int j=0; j<QuadTree.NRj; j++) {
+              // SW corner
+              if (i==0  &&  j==0) {
+                QuadTree.Roots[i][j].block.nNW = 1;
+                QuadTree.Roots[i][j].block.infoNW[0] = QuadTree.Roots[QuadTree.NRi-1][1].block.info;
+                QuadTree.Roots[i][j].block.nW = 1;
+                QuadTree.Roots[i][j].block.infoW[0] = QuadTree.Roots[QuadTree.NRi-1][0].block.info; 
+                QuadTree.Roots[i][j].block.nS = 1;
+                QuadTree.Roots[i][j].block.infoS[0] = QuadTree.Roots[0][QuadTree.NRj-1].block.info;
+                QuadTree.Roots[i][j].block.nSE = 1;
+                QuadTree.Roots[i][j].block.infoSE[0] = QuadTree.Roots[1][QuadTree.NRj-1].block.info;
+                QuadTree.Roots[i][j].block.nSW = 1;
+                QuadTree.Roots[i][j].block.infoSW[0] = QuadTree.Roots[QuadTree.NRi-1][QuadTree.NRj-1].block.info;
+                // if (QuadTree.NRi==2 && QuadTree.NRj==2) {
+//                   QuadTree.Roots[i][j].block.nN = 0;
+//                   QuadTree.Roots[i][j].block.infoN[0].reset();
+//                   QuadTree.Roots[i][j].block.nE = 0;
+//                   QuadTree.Roots[i][j].block.infoE[0].reset();   
+		  
+// 		}
+              // NW corner                
+	      } else if (i==0  &&  j==QuadTree.NRj-1) { 
+                QuadTree.Roots[i][j].block.nN = 1;
+                QuadTree.Roots[i][j].block.infoN[0] = QuadTree.Roots[0][0].block.info;
+                QuadTree.Roots[i][j].block.nNE = 1;
+                QuadTree.Roots[i][j].block.infoNE[0] = QuadTree.Roots[1][0].block.info;
+                QuadTree.Roots[i][j].block.nW = 1;
+                QuadTree.Roots[i][j].block.infoW[0] = QuadTree.Roots[QuadTree.NRi-1][QuadTree.NRj-1].block.info;
+                QuadTree.Roots[i][j].block.nSW = 1;
+                QuadTree.Roots[i][j].block.infoSW[0] = QuadTree.Roots[QuadTree.NRi-1][QuadTree.NRj-2].block.info;
+                QuadTree.Roots[i][j].block.nNW = 1;
+                QuadTree.Roots[i][j].block.infoNW[0] = QuadTree.Roots[QuadTree.NRi-1][0].block.info;
+                // if (QuadTree.NRi==2 && QuadTree.NRj==2) {
+//                   QuadTree.Roots[i][j].block.nS = 0;
+//                   QuadTree.Roots[i][j].block.infoS[0].reset();
+//                   QuadTree.Roots[i][j].block.nE = 0;
+//                   QuadTree.Roots[i][j].block.infoE[0].reset();  
+// 		}
+              // SE corner     
+	      } else if (i==QuadTree.NRi-1  &&  j==0) {
+                QuadTree.Roots[i][j].block.nNE = 1;
+		QuadTree.Roots[i][j].block.infoNE[0] = QuadTree.Roots[0][1].block.info;
+		QuadTree.Roots[i][j].block.nE = 1;
+		QuadTree.Roots[i][j].block.infoE[0] = QuadTree.Roots[0][0].block.info;
+		QuadTree.Roots[i][j].block.nSW = 1;
+		QuadTree.Roots[i][j].block.infoSW[0] = QuadTree.Roots[QuadTree.NRi-2][QuadTree.NRj-1].block.info;
+		QuadTree.Roots[i][j].block.nS = 1;
+		QuadTree.Roots[i][j].block.infoS[0] = QuadTree.Roots[QuadTree.NRi-1][QuadTree.NRj-1].block.info;
+                QuadTree.Roots[i][j].block.nSE = 1;
+		QuadTree.Roots[i][j].block.infoSE[0] = QuadTree.Roots[0][QuadTree.NRj-1].block.info;
+                // if (QuadTree.NRi==2 && QuadTree.NRj==2) {
+//                   QuadTree.Roots[i][j].block.nN = 0;
+//                   QuadTree.Roots[i][j].block.infoN[0].reset();
+//                   QuadTree.Roots[i][j].block.nW = 0;
+//                   QuadTree.Roots[i][j].block.infoW[0].reset(); 
+  		  
+// 		}
+              // NE corner    
+	      } else if (i==QuadTree.NRi-1  &&  j==QuadTree.NRj-1) {
+                QuadTree.Roots[i][j].block.nNW = 1;
+		QuadTree.Roots[i][j].block.infoNW[0] = QuadTree.Roots[QuadTree.NRi-2][0].block.info;
+		QuadTree.Roots[i][j].block.nN = 1;
+		QuadTree.Roots[i][j].block.infoN[0] = QuadTree.Roots[QuadTree.NRi-1][0].block.info;
+		QuadTree.Roots[i][j].block.nE = 1;
+		QuadTree.Roots[i][j].block.infoE[0] = QuadTree.Roots[0][QuadTree.NRj-1].block.info;
+		QuadTree.Roots[i][j].block.nSE = 1;
+		QuadTree.Roots[i][j].block.infoSE[0] = QuadTree.Roots[0][QuadTree.NRj-2].block.info;
+                QuadTree.Roots[i][j].block.nNE = 1;
+		QuadTree.Roots[i][j].block.infoNE[0] = QuadTree.Roots[0][0].block.info;
+                // if (QuadTree.NRi==2 && QuadTree.NRj==2) {
+//                   QuadTree.Roots[i][j].block.nS = 0;
+//                   QuadTree.Roots[i][j].block.infoS[0].reset();
+//                   QuadTree.Roots[i][j].block.nW = 0;
+//                   QuadTree.Roots[i][j].block.infoW[0].reset(); 	
+		  
+// 		}
+              // West boundary
+	      } else if (i==0  &&  j!=0  &&  j!=QuadTree.NRj-1) {
+                QuadTree.Roots[i][j].block.nNW = 1;
+		QuadTree.Roots[i][j].block.infoNW[0] = QuadTree.Roots[QuadTree.NRi-1][j+1].block.info;
+		QuadTree.Roots[i][j].block.nW = 1;
+		QuadTree.Roots[i][j].block.infoW[0] = QuadTree.Roots[QuadTree.NRi-1][j].block.info;
+		QuadTree.Roots[i][j].block.nSW = 1;
+		QuadTree.Roots[i][j].block.infoSW[0] = QuadTree.Roots[QuadTree.NRi-1][j-1].block.info;
+              // South boundary            
+	      } else if (j==0  &&  i!=0  &&  i!=QuadTree.NRi-1) {  
+                QuadTree.Roots[i][j].block.nSW = 1;
+		QuadTree.Roots[i][j].block.infoSW[0] = QuadTree.Roots[i-1][QuadTree.NRj-1].block.info;
+		QuadTree.Roots[i][j].block.nS = 1;
+		QuadTree.Roots[i][j].block.infoS[0] = QuadTree.Roots[i][QuadTree.NRj-1].block.info;
+		QuadTree.Roots[i][j].block.nSE = 1;
+		QuadTree.Roots[i][j].block.infoSE[0] = QuadTree.Roots[i+1][QuadTree.NRj-1].block.info;
+              // North boundary
+	      } else  if (j==QuadTree.NRj-1  &&  i!=0  &&  i!=QuadTree.NRi-1) {
+                QuadTree.Roots[i][j].block.nNW = 1;
+		QuadTree.Roots[i][j].block.infoNW[0] = QuadTree.Roots[i-1][0].block.info;
+		QuadTree.Roots[i][j].block.nN = 1;
+		QuadTree.Roots[i][j].block.infoN[0] = QuadTree.Roots[i][0].block.info;
+		QuadTree.Roots[i][j].block.nNE = 1;
+		QuadTree.Roots[i][j].block.infoNE[0] = QuadTree.Roots[i+1][0].block.info;
+              // East boundary
+	      } else if (i==QuadTree.NRi-1  &&  j!=0  &&  j!=QuadTree.NRj-1) { 
+                QuadTree.Roots[i][j].block.nNE = 1;
+		QuadTree.Roots[i][j].block.infoNE[0] = QuadTree.Roots[0][j+1].block.info;
+		QuadTree.Roots[i][j].block.nE = 1;
+		QuadTree.Roots[i][j].block.infoE[0] = QuadTree.Roots[0][j].block.info;
+		QuadTree.Roots[i][j].block.nSE = 1;
+		QuadTree.Roots[i][j].block.infoSE[0] = QuadTree.Roots[0][j-1].block.info;   
+	      } /*end if*/
+            } /*end for*/
+	  } /*end for*/
+	} /*end if*/
+        break;
+
+      case GRID_MIXING_LAYER_BOX :
+	if (QuadTree.NRi>1  &&  QuadTree.NRj>1) { 
+	  for (int i=0; i<QuadTree.NRi; i++) {
+	    for (int j=0; j<QuadTree.NRj; j++) {
+              // SW corner
+              if (i==0  &&  j==0) {
+                QuadTree.Roots[i][j].block.nNW = 1;
+                QuadTree.Roots[i][j].block.infoNW[0] = QuadTree.Roots[QuadTree.NRi-1][1].block.info;
+                QuadTree.Roots[i][j].block.nW = 1;
+                QuadTree.Roots[i][j].block.infoW[0] = QuadTree.Roots[QuadTree.NRi-1][0].block.info; 
+              // NW corner                
+	      } else if (i==0  &&  j==QuadTree.NRj-1) { 
+                QuadTree.Roots[i][j].block.nW = 1;
+                QuadTree.Roots[i][j].block.infoW[0] = QuadTree.Roots[QuadTree.NRi-1][QuadTree.NRj-1].block.info;
+                QuadTree.Roots[i][j].block.nSW = 1;
+                QuadTree.Roots[i][j].block.infoSW[0] = QuadTree.Roots[QuadTree.NRi-1][QuadTree.NRj-2].block.info;
+              // SE corner     
+	      } else if (i==QuadTree.NRi-1  &&  j==0) {
+                QuadTree.Roots[i][j].block.nNE = 1;
+		QuadTree.Roots[i][j].block.infoNE[0] = QuadTree.Roots[0][1].block.info;
+		QuadTree.Roots[i][j].block.nE = 1;
+		QuadTree.Roots[i][j].block.infoE[0] = QuadTree.Roots[0][0].block.info;
+              // NE corner    
+	      } else if (i==QuadTree.NRi-1  &&  j==QuadTree.NRj-1) {
+                QuadTree.Roots[i][j].block.nE = 1;
+		QuadTree.Roots[i][j].block.infoE[0] = QuadTree.Roots[0][QuadTree.NRj-1].block.info;
+		QuadTree.Roots[i][j].block.nSE = 1;
+		QuadTree.Roots[i][j].block.infoSE[0] = QuadTree.Roots[0][QuadTree.NRj-2].block.info;
+              // West boundary
+	      } else if (i==0  &&  j!=0  &&  j!=QuadTree.NRj-1) {
+                QuadTree.Roots[i][j].block.nNW = 1;
+		QuadTree.Roots[i][j].block.infoNW[0] = QuadTree.Roots[QuadTree.NRi-1][j+1].block.info;
+		QuadTree.Roots[i][j].block.nW = 1;
+		QuadTree.Roots[i][j].block.infoW[0] = QuadTree.Roots[QuadTree.NRi-1][j].block.info;
+		QuadTree.Roots[i][j].block.nSW = 1;
+		QuadTree.Roots[i][j].block.infoSW[0] = QuadTree.Roots[QuadTree.NRi-1][j-1].block.info;
+              // East boundary
+	      } else if (i==QuadTree.NRi-1  &&  j!=0  &&  j!=QuadTree.NRj-1) { 
+                QuadTree.Roots[i][j].block.nNE = 1;
+		QuadTree.Roots[i][j].block.infoNE[0] = QuadTree.Roots[0][j+1].block.info;
+		QuadTree.Roots[i][j].block.nE = 1;
+		QuadTree.Roots[i][j].block.infoE[0] = QuadTree.Roots[0][j].block.info;
+		QuadTree.Roots[i][j].block.nSE = 1;
+		QuadTree.Roots[i][j].block.infoSE[0] = QuadTree.Roots[0][j-1].block.info;   
+	      } /* end if */
+	    }
+	  }
+	} /* end if */
+	break;
+
+      case GRID_2DTURBULENT_PREMIXED_FLAME :
+        if (QuadTree.NRi>1  &&  QuadTree.NRj>1) { 
+	  for (int i=0; i<QuadTree.NRi; i++) {
+	    for (int j=0; j<QuadTree.NRj; j++) {
+              // SW corner
+              if (i==0  &&  j==0) {
+                QuadTree.Roots[i][j].block.nS = 1;
+                QuadTree.Roots[i][j].block.infoS[0] = QuadTree.Roots[0][QuadTree.NRj-1].block.info;
+                QuadTree.Roots[i][j].block.nSE = 1;
+                QuadTree.Roots[i][j].block.infoSE[0] = QuadTree.Roots[1][QuadTree.NRj-1].block.info;
+              // NW corner                
+	      } else if (i==0  &&  j==QuadTree.NRj-1) { 
+                QuadTree.Roots[i][j].block.nN = 1;
+                QuadTree.Roots[i][j].block.infoN[0] = QuadTree.Roots[0][0].block.info;
+                QuadTree.Roots[i][j].block.nNE = 1;
+                QuadTree.Roots[i][j].block.infoNE[0] = QuadTree.Roots[1][0].block.info;
+              // SE corner     
+	      } else if (i==QuadTree.NRi-1  &&  j==0) {
+                QuadTree.Roots[i][j].block.nSW = 1;
+		QuadTree.Roots[i][j].block.infoSW[0] = QuadTree.Roots[QuadTree.NRi-2][QuadTree.NRj-1].block.info;
+		QuadTree.Roots[i][j].block.nS = 1;
+		QuadTree.Roots[i][j].block.infoS[0] = QuadTree.Roots[QuadTree.NRi-1][QuadTree.NRj-1].block.info;
+              // NE corner    
+	      } else if (i==QuadTree.NRi-1  &&  j==QuadTree.NRj-1) {
+                QuadTree.Roots[i][j].block.nNW = 1;
+		QuadTree.Roots[i][j].block.infoNW[0] = QuadTree.Roots[QuadTree.NRi-2][0].block.info;
+		QuadTree.Roots[i][j].block.nN = 1;
+		QuadTree.Roots[i][j].block.infoN[0] = QuadTree.Roots[QuadTree.NRi-1][0].block.info;
+	      // North boundary
+	      } else  if (j==QuadTree.NRj-1  &&  i!=0  &&  i!=QuadTree.NRi-1) {
+                QuadTree.Roots[i][j].block.nNW = 1;
+		QuadTree.Roots[i][j].block.infoNW[0] = QuadTree.Roots[i-1][0].block.info;
+		QuadTree.Roots[i][j].block.nN = 1;
+		QuadTree.Roots[i][j].block.infoN[0] = QuadTree.Roots[i][0].block.info;
+		QuadTree.Roots[i][j].block.nNE = 1;
+		QuadTree.Roots[i][j].block.infoNE[0] = QuadTree.Roots[i+1][0].block.info;
+              // South boundary
+              } else if (j==0  &&  i!=0  &&  i!=QuadTree.NRi-1) {  
+                QuadTree.Roots[i][j].block.nSW = 1;
+		QuadTree.Roots[i][j].block.infoSW[0] = QuadTree.Roots[i-1][QuadTree.NRj-1].block.info;
+		QuadTree.Roots[i][j].block.nS = 1;
+		QuadTree.Roots[i][j].block.infoS[0] = QuadTree.Roots[i][QuadTree.NRj-1].block.info;
+		QuadTree.Roots[i][j].block.nSE = 1;
+		QuadTree.Roots[i][j].block.infoSE[0] = QuadTree.Roots[i+1][QuadTree.NRj-1].block.info;
+              } /* end if */
+	    }
+	  }
+	} /* end if */
+	break;
+
     } /* endswitch */
 
 }
@@ -428,6 +646,46 @@ void Modify_Neighbours_of_Root_Solution_Blocks(QuadTreeBlock_DataStructure
               QuadTree.Roots[2][1].block;
         } /* endif */
         break;
+
+      case GRID_PERIODIC_BOX :
+        for (int i=0; i<QuadTree.NRi; i++) {
+          for (int j=0; j<QuadTree.NRj; j++) {
+            if (i==0 || i==QuadTree.NRi-1 || j==0 || j==QuadTree.NRj-1) {
+              if (LocalSolnBlockList.ThisCPU == QuadTree.Roots[i][j].block.info.cpu) {
+                LocalSolnBlockList.Block[QuadTree.Roots[i][j].block.info.blknum] = 
+		QuadTree.Roots[i][j].block;
+	      }
+	    } /*end if*/
+	  } /*end for*/
+	} /*end for*/
+	break;
+
+      case GRID_MIXING_LAYER_BOX :
+        for (int i=0; i<QuadTree.NRi; i++) {
+          for (int j=0; j<QuadTree.NRj; j++) {
+            if (i==0 || i==QuadTree.NRi-1) {
+              if (LocalSolnBlockList.ThisCPU == QuadTree.Roots[i][j].block.info.cpu) {
+                LocalSolnBlockList.Block[QuadTree.Roots[i][j].block.info.blknum] = 
+		QuadTree.Roots[i][j].block;
+	      }
+	    } /*end if*/
+	  } /*end for*/
+	} /*end for*/
+	break;
+
+      case GRID_2DTURBULENT_PREMIXED_FLAME :
+        for (int i=0; i<QuadTree.NRi; i++) {
+          for (int j=0; j<QuadTree.NRj; j++) {
+            if (j==0 || j==QuadTree.NRj-1) {
+              if (LocalSolnBlockList.ThisCPU == QuadTree.Roots[i][j].block.info.cpu) {
+                LocalSolnBlockList.Block[QuadTree.Roots[i][j].block.info.blknum] = 
+		QuadTree.Roots[i][j].block;
+	      }
+	    } /*end if*/
+	  } /*end for*/
+	} /*end for*/
+	break;
+
     } /* endswitch */
 
 }
