@@ -542,8 +542,8 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
     // } 
 
     if (L2norm_first <= 0.0) {
-	L2norm_first = L2norm_current[SolnBlk[0].residual_variable-1];
-	L1norm_first = L1norm_current[SolnBlk[0].residual_variable-1];
+      L2norm_first = L2norm_current[SolnBlk[0].residual_variable-1];
+      L1norm_first = L1norm_current[SolnBlk[0].residual_variable-1];
       Max_norm_first = Max_norm_current[SolnBlk[0].residual_variable-1];
     } 
 

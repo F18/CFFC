@@ -2671,7 +2671,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
     //Output Reduction for systems & per equation
     if (CFFC_Primary_MPI_Processor()) {
 
-      cout<<" GMRES Check total   ||(Ax-b)||/||b|| = "<<beta<<" / "<<total_norm_b<<" = "<<beta/total_norm_b
+      cout<<"\n GMRES Check total   ||(Ax-b)||/||b|| = "<<beta<<" / "<<total_norm_b<<" = "<<beta/total_norm_b
 	  <<" /relative_residual (ideal 1) -> " <<((beta/total_norm_b)/relative_residual)<<endl;
 
        for(int i=0; i< blocksize; i++){	
@@ -2684,41 +2684,41 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
   }
 
   if (CFFC_Primary_MPI_Processor()) { 
-     switch (Input_Parameters->NKS_IP.output_format) {
-	case OF_SCOTT:
-	  cout << "\n Finished GMRES with (Inner Iterations) = " << Number_of_GMRES_Iterations;
-	  cout << " resid0 = " << resid0;
-	  cout << " resid = " << relative_residual*resid0;
-	  cout << " relative_residual = " << relative_residual << endl;
-	  if (*GMRES_failed) {
-	    cout << "\n GMRES2D - GMRES ERROR: Unable to reach the specified convergence tolerance.";
-	    cout << "\n Final gmrestol = " << relative_residual << endl;
-	  }
-	  break;
-	case OF_ALISTAIR: {
-	  int output_width = Input_Parameters->NKS_IP.output_width; 
-  	  cout << setw(3) << Number_of_GMRES_Iterations << "  ";
-  	  cout.unsetf(ios::scientific); cout.setf(ios::fixed);
-	  cout << setw(output_width) << relative_residual * 1000.0;
-  	  cout.unsetf(ios::fixed); cout.setf(ios::scientific);
-	  cout << setw(output_width) << resid0;
- 	  if (*GMRES_restarted_at_least_once) { 
-             cout << "  R"; 
-          } else { 
+    switch (Input_Parameters->NKS_IP.output_format) {
+    case OF_SCOTT:
+      cout << "\n Finished GMRES with (Inner Iterations) = " << Number_of_GMRES_Iterations;
+      cout << " resid0 = " << resid0;
+      cout << " resid = " << relative_residual*resid0;
+      cout << " relative_residual = " << relative_residual << endl;
+      if (*GMRES_failed) {
+	cout << "\n GMRES2D - GMRES ERROR: Unable to reach the specified convergence tolerance.";
+	cout << "\n Final gmrestol = " << relative_residual << endl;
+      }
+      break;
+    case OF_ALISTAIR: {
+      int output_width = Input_Parameters->NKS_IP.output_width; 
+      cout << setw(3) << Number_of_GMRES_Iterations << "  ";
+      cout.unsetf(ios::scientific); cout.setf(ios::fixed);
+      cout << setw(output_width) << relative_residual * 1000.0;
+      cout.unsetf(ios::fixed); cout.setf(ios::scientific);
+      cout << setw(output_width) << resid0;
+      if (*GMRES_restarted_at_least_once) { 
+	cout << "  R"; 
+      } else { 
              cout << "   "; 
-          }
-	  if (*GMRES_failed) { 
-             cout << "  F"; 
-          } else { 
-             cout << "   "; 
-          }
-	  }
-	  break;
-	default:
-	  break;
-     } 
+      }
+      if (*GMRES_failed) { 
+	cout << "  F"; 
+      } else { 
+	cout << "   "; 
+      }
+    }
+      break;
+    default:
+      break;
+    } 
   } 
-
+  
   *GMRES_iters = Number_of_GMRES_Iterations;
   return error_flag;
 
