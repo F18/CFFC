@@ -556,6 +556,7 @@ int Gaussian2DQuadSolver(char *Input_File_Name_ptr,
       lift = CFFC_Summation_MPI(lift);
       speed = sqrt(sqr(Input_Parameters.Wo.v.x)+sqr(Input_Parameters.Wo.v.y))
 	+Input_Parameters.Ramp_by_Mach_Number*Input_Parameters.Wo.sound();
+      if(speed < TOLER){speed = TOLER;}
       Cd = drag/(0.5*Input_Parameters.Wo.d*sqr(speed)*2.0*Input_Parameters.Cylinder_Radius);
       Cl = lift/(0.5*Input_Parameters.Wo.d*sqr(speed)*2.0*Input_Parameters.Cylinder_Radius);
       if(!batch_flag){
@@ -1021,6 +1022,21 @@ int Gaussian2DQuadSolver(char *Input_File_Name_ptr,
 					 Time);
           if (error_flag) {
              cout << "\n Gaussian2D ERROR: Unable to open Gaussian2D flat plate data output file.\n";
+             cout.flush();
+       } /* endif */
+       CFFC_Broadcast_MPI(&error_flag, 1);
+       if (error_flag) return (error_flag);
+
+    } else if (command_flag == WRITE_OUTPUT_SHOCK_STRUCTURE_CODE) {
+       // Output shock structure solution
+          if (!batch_flag) cout << "\n Writing Gaussian2D multi-block shock-structure solution.";
+          error_flag = Output_Shock_Structure(Local_SolnBlk,
+					      List_of_Local_Solution_Blocks,
+					      Input_Parameters,
+					      number_of_time_steps,
+					      Time);
+          if (error_flag) {
+             cout << "\n Gaussian2D ERROR: Unable to open Gaussian2D shock-structure data output file.\n";
              cout.flush();
        } /* endif */
        CFFC_Broadcast_MPI(&error_flag, 1);

@@ -641,3 +641,92 @@ void Output_Gradients_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
   //this is here only for compalibility with embedded boundaries
   return;
 }
+
+/********************************************************
+ * Routine: Output_Shock_Structure                      *
+ *                                                      *
+ * Writes 1-D shock structure output.  This function    *
+ * will write the solution for the first cell above the *
+ * x axis.  It is therefore necessary that all blocks   *
+ * be at the same refinement level.                     *
+ *                                                      *
+ ********************************************************/
+
+void Output_Shock_Structure(Gaussian2D_Quad_Block &SolnBlk,
+			    Gaussian2D_Input_Parameters &IP,
+			    const int Number_of_Time_Steps,
+			    const double &Time,
+			    const int Block_Number,
+			    int &Output_Title,
+			    ostream &Out_File,
+			    const double &y,
+			    const double &y_tol) {
+  int i, j, output_flag(0);
+
+    /* Ensure boundary conditions are updated before
+       outputting solution */
+
+    BCs(SolnBlk,IP);
+
+    Out_File << setprecision(14);
+
+    // determine whether to output
+    for ( j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
+      if(fabs(SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc.y-y)<y_tol && 
+	 SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc.y > 0.0) {
+	output_flag = 1;
+	break;
+      }
+    }
+
+    if(output_flag) {
+      if (Output_Title) {
+	Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Gaussian Solution, "
+		 << "Time Step/Iteration Level = " << Number_of_Time_Steps
+		 << ", Time = " << Time
+		 << "\"" << "\n"
+		 << "VARIABLES = \"x\" \\ \n"
+		 << "\"y\" \\ \n"
+		 << "\"Mean Free Path\" \\ \n"
+		 << "\"x/mfp_ref\" \\ \n"
+		 << "\"rho\" \\ \n"
+		 << "\"u\" \\ \n"
+		 << "\"v\" \\ \n"
+		 << "\"pxx\" \\ \n"
+		 << "\"pxy\" \\ \n"
+		 << "\"pyy\" \\ \n"
+		 << "\"pzz\" \\ \n"
+		 << "\"erot\" \\ \n"
+		 << "\"T\" \\ \n"
+		 << "\"DetP\" \\ \n"
+		 << "ZONE T =  \"Block Number = " << Block_Number
+		 << "\" \\ \n"
+		 << "I = " << SolnBlk.Grid.ICu - SolnBlk.Grid.ICl + 1 << " \\ \n"
+		 << "F = POINT \n";
+	Output_Title = 0;
+      } else {
+	Out_File << "ZONE T =  \"Block Number = " << Block_Number
+		 << "\" \\ \n"
+		 << "I = " << SolnBlk.Grid.ICu - SolnBlk.Grid.ICl +1 << " \\ \n"
+		 << "F = POINT \n";
+      } /* endif */
+
+      for ( j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
+	for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
+	  if(fabs(SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc.y-y)<y_tol && 
+	     SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc.y > 0.0) {
+	    Out_File << " "  << SolnBlk.Grid.Cell[i][j].Xc;
+	    Out_File.setf(ios::scientific);
+	    Out_File << " "  << SolnBlk.W[i][j].mfp() 
+		     << " "  << SolnBlk.Grid.Cell[i][j].Xc.x/SolnBlk.WoN[0].mfp(); //I don't use IP.Wo because it is not reset after a restart.
+	    Out_File.unsetf(ios::scientific);
+	    Out_File << SolnBlk.W[i][j];
+	    Out_File.setf(ios::scientific);
+	    Out_File << " " << SolnBlk.W[i][j].T() << " " << SolnBlk.W[i][j].DetP() << "\n";
+	    Out_File.unsetf(ios::scientific);
+	  }
+	} /* endfor */
+      } /* endfor */
+    }
+    Out_File << setprecision(6);
+}

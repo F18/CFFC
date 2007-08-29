@@ -15,6 +15,7 @@ int    Gaussian2D_pState::gas    = GAS_AIR;
 double Gaussian2D_pState::alpha  = ONE;
 double Gaussian2D_pState::omega  = OMEGA_AIR;
 double Gaussian2D_pState::mu_not = MU_NOT_AIR;
+double Gaussian2D_pState::pr     = 0.6666666666666666667;
 /****************************************************************
  * Gaussian2D_cState -- Create storage and assign gas constants.*
  ****************************************************************/
@@ -22,6 +23,7 @@ double Gaussian2D_cState::M     = MOLE_WT_AIR;
 int    Gaussian2D_cState::atoms = GAUSSIAN_DIATOMIC;
 int    Gaussian2D_cState::gas   = GAS_AIR;
 double Gaussian2D_cState::alpha = ONE;
+double Gaussian2D_cState::pr    = 0.6666666666666666667;
 
 /********************************************************
  * Routine: RoeAverage (Roe Averages)                   *
@@ -293,37 +295,13 @@ Gaussian2D_pState Adiabatic_Wall(const Gaussian2D_pState &W,
 				 const Vector2D &V,
 				 const Vector2D &norm_dir) {
 
-    double dr, ur, vr, pxxr, pxyr, pyyr, pzzr, erotr;
-    double ur2, vr2, pxxr2, pxyr2, pyyr2;
-    double u, v, pxx, pxy, pyy;
-    //Tensor2D pr;
-    double uWallr, vWallr;
-    double cos_angle, sin_angle;
+    double vWallr;
+    Gaussian2D_pState W_rot, W_rot2, W2;
 
-    // Determine the direction cosine's for the frame
-    // rotation.
+    vWallr =  - V.x*norm_dir.y + V.y*norm_dir.x;
 
-    cos_angle = norm_dir.x; 
-    sin_angle = norm_dir.y;
-
-    // Apply the frame rotation and calculate the primitive
-    // solution state variables in the local rotated frame
-    // defined by the unit normal vector. 
-
-    dr    = W.d;
-    ur    = W.v.x*cos_angle + W.v.y*sin_angle;
-    vr    = - W.v.x*sin_angle + W.v.y*cos_angle;
-    pxxr  = W.p.xx*cos_angle*cos_angle+W.p.yy*sin_angle*sin_angle
-            +2.0*W.p.xy*cos_angle*sin_angle;
-    pxyr  = W.p.xy*(cos_angle*cos_angle-sin_angle*sin_angle)
-            -(W.p.xx-W.p.yy)*cos_angle*sin_angle;
-    pyyr  = W.p.xx*sin_angle*sin_angle+W.p.yy*cos_angle*cos_angle
-            -2.0*W.p.xy*cos_angle*sin_angle;
-    pzzr  = W.p.zz;
-    erotr = W.erot;
-
-    uWallr =  V.x*cos_angle + V.y*sin_angle;
-    vWallr =  - V.x*sin_angle + V.y*cos_angle;
+    W_rot = Rotate(W,norm_dir);
+    W_rot2 = W_rot;
 
     // Adjust state.
 
@@ -339,19 +317,11 @@ Gaussian2D_pState Adiabatic_Wall(const Gaussian2D_pState &W,
     */
     //  Mine 2
     
-    ur2   = -ur + TWO*V.x; // V != 0 for embeddedboundaries2D calculations
-    vr2   =  vr; 
-    pxxr2 = pxxr;
-    pxyr2 = (W.alpha-1.0)*pxyr+2.0*W.alpha*sqrt(dr*pxxr/(2.0*PI))*(vr-vWallr);
-    pyyr2 = pyyr;
-    
-
-    //FOR NOW...REMEMBER TO GET RID OF THIS!!!!!!!
-    //vr2   = vr+W.alpha*(vWallr-vr)+2.0*(2.0-W.alpha)*pxyr/sqrt(2*PI*dr*pxxr);
-    //pxyr2 = (W.alpha-1.0)*pxyr;
-    //pxyr2 = pxyr;
-    //vr2 = -vr;
-    //////////////////////////////////////////////
+    W_rot2.v.x  = -W_rot.v.x;
+    W_rot2.v.y  = W_rot.v.y;
+    //W_rot2.p.xx = W_rot.p.xx;
+    W_rot2.p.xy = (W.alpha-1.0)*W_rot.p.xy+2.0*W.alpha*sqrt(W_rot.d*W_rot.p.xx/(2.0*PI))*(W_rot.v.y-vWallr);
+    //W_rot2.p.yy = W_rot.p.yy;
 
     //  Dr. Groth's
     /*                
@@ -365,31 +335,193 @@ Gaussian2D_pState Adiabatic_Wall(const Gaussian2D_pState &W,
 
     // Rotate back to the original Cartesian reference frame.
 
-    sin_angle = -sin_angle;
+    W2 = Rotate(W_rot2,Vector2D(norm_dir.x,-norm_dir.y));
 
-    u   = ur2*cos_angle + vr2*sin_angle;
-    v   = - ur2*sin_angle + vr2*cos_angle;
-    pxx = pxxr2*cos_angle*cos_angle+pyyr2*sin_angle*sin_angle
-          +2.0*pxyr2*cos_angle*sin_angle;
-    pxy = pxyr2*(cos_angle*cos_angle-sin_angle*sin_angle)
-          -(pxxr2-pyyr2)*cos_angle*sin_angle;
-    pyy = pxxr2*sin_angle*sin_angle+pyyr2*cos_angle*cos_angle
-          -2.0*pxyr2*cos_angle*sin_angle;
-
-    /*
-    if(Gaussian2D_pState(dr, u, v, pxx, pxy, pyy, pzzr, erotr).invalid()){
-      cout << "Invalid Adiabatic Wall State:" << endl;
-      cout << "W   = " << Gaussian2D_pState(dr, u, v, pxx, pxy, pyy, pzzr, erotr) << endl;
-      cout << "Win =" << W << endl;
-      cout << "Rotated:" << endl;
-      cout << "W   = " << Rotate(Gaussian2D_pState(dr, u, v, pxx, pxy, pyy, pzzr, erotr),norm_dir) << endl;
-      cout << "Win =" << Rotate(W,norm_dir) << endl;
-    }
-    */
     // Return the reflected state for adiabatic wall.
-
-    return (Gaussian2D_pState(dr, u, v, pxx, pxy, pyy, pzzr, erotr));
+    return W2;
        
+}
+
+/********************************************************
+ * Routine: Isothermal_Wall                             *
+ *                                                      *
+ * This function returns the solution state for a wall  *
+ * in a given direction given the primitive solution    *
+ * variables and the unit normal vector in the          *
+ * direction of interest.                               *
+ *                                                      *
+ ********************************************************/
+Gaussian2D_pState Isothermal_Wall(const Gaussian2D_pState &W,
+				  const Gaussian2D_pState &Wo,
+				  const Vector2D &norm_dir) {
+  return Isothermal_Wall(W,Wo.v,Wo.T(),norm_dir);
+}
+
+Gaussian2D_pState Isothermal_Wall(const Gaussian2D_pState &W,
+				  const Vector2D &V,
+				  const double &T,
+				  const Vector2D &norm_dir) {
+    double vWallr;
+    double m = W.M/(THOUSAND*AVOGADRO);  //particle mass
+    double ng, nw, n_temp, pxy_desired, v_temp;
+    Gaussian2D_pState W_rot, W_rot2, W2;
+
+    vWallr =  - V.x*norm_dir.y + V.y*norm_dir.x;
+
+    W_rot = Rotate(W,norm_dir);
+    W_rot2 = W_rot;
+
+    // Adjust state.
+
+    ng = W_rot.d/m;   //number density of "incoming" Gaussian
+    nw = ng*sqrt(W_rot.p.xx/(ng*BOLTZMANN*T));   //number density of reflected Maxwellian to ensure
+                                                 //no mass transfer (thermal equilibrium with wall)
+    n_temp = ng+W.alpha/2.0*(nw-ng);        //"total" number density
+  
+    W_rot2.d = sqr(n_temp*m)/W_rot.d;  //want roe-average state to be n_temp*m
+
+    v_temp = (m*ng*(2.0-W.alpha)*(W_rot.v.y/2.0+W_rot.p.xy/sqrt(2.0*PI*W_rot.d*W_rot.p.xx))
+	      +W.alpha/2.0*m*nw*vWallr)/(n_temp*m);  //combined momentum devided by density
+
+
+    pxy_desired = W.alpha*(W_rot.p.xy/2.0+sqrt(W_rot.d*W_rot.p.xx/(2.0*PI))*(W_rot.v.y-v_temp)
+			   -sqrt(nw*nw*m*BOLTZMANN*T/(2.0*PI))*(vWallr-v_temp));
+
+    W_rot2.v.x  = -W_rot.v.x*sqrt(W_rot.d/W_rot2.d);
+    //W_rot2.v.y  = W_rot.v.y;
+    //W_rot2.p.xx = W_rot.p.xx;
+    W_rot2.p.xy = (pxy_desired*(sqrt(W_rot.d)+sqrt(W_rot2.d))/(n_temp*m)-W_rot.p.xy/sqrt(W_rot.d))*sqrt(W_rot2.d);
+    //W_rot2.p.yy = W_rot.p.yy;
+
+    // Rotate back to the original Cartesian reference frame.
+
+    W2 = Rotate(W_rot2,Vector2D(norm_dir.x,-norm_dir.y));
+
+    return W2;
+}
+
+/********************************************************
+ * Routine: Knudsen_Layer_Adiabatic                     *
+ *                                                      *
+ * This function returns the state inside a knudsen     *
+ * layer.  This is different than the "Adiabatic_Wall"  *
+ * function which returns the state required to give    *
+ * the correct "Roe average" for flux calculations.     *
+ * This is the "adiabatic" version of this function     *
+ * (the emitted Maxwellian is at the same temperature   *
+ * as the normal pressure of the surrounding            *
+ * distribution.  I realize now this is not strictly    *
+ * adiabatic.                                           *
+ *                                                      *
+ ********************************************************/
+Gaussian2D_pState Knudsen_Layer_Adiabatic(const Gaussian2D_pState &W,
+					  const Gaussian2D_pState &Wo,
+					  const Vector2D &norm_dir) {
+  Gaussian2D_pState W_rot, Kn_rot;
+  double v_temp, pxy_temp, pyy_temp;
+
+  double vy_wall_rot = -Wo.v.x*norm_dir.x + Wo.v.y*norm_dir.y;
+
+  W_rot = Rotate(W,norm_dir);
+
+  v_temp = W_rot.v.y+W.alpha/2.0*(vy_wall_rot-W_rot.v.y)
+           +(2.0-W.alpha)*(W_rot.p.xy/sqrt(2*PI*W_rot.d*W_rot.p.xx));
+
+  pxy_temp =  W.alpha*(W_rot.p.xy/2.0
+		       +sqrt(W_rot.d*W_rot.p.xx/(2.0*PI))*(W_rot.v.y-vy_wall_rot));
+
+  pyy_temp = W_rot.p.yy+(2.0-W.alpha)*(W_rot.d/2.0*sqr(W_rot.v.y-v_temp)
+				       +W_rot.p.xy*sqrt(2.0*W_rot.d/(PI*W_rot.p.yy))*(W_rot.v.y-v_temp))
+             +W.alpha*W_rot.d/2.0*sqr(vy_wall_rot-v_temp);
+
+  Kn_rot = Gaussian2D_pState(W_rot.d,
+			     0.0,
+			     v_temp,
+			     W_rot.p.xx,
+			     pxy_temp,
+			     pyy_temp,
+			     W_rot.p.zz,
+			     W_rot.erot);
+
+  return Rotate(Kn_rot,Vector2D(norm_dir.x,-norm_dir.y));
+
+}
+
+/********************************************************
+ * Routine: Knudsen_Layer_Isothermal                    *
+ *                                                      *
+ * This function returns the state inside a knudsen     *
+ * layer.  This is different than the "Adiabatic_Wall"  *
+ * function which returns the state required to give    *
+ * the correct "Roe average" for flux calculations.     *
+ * This is the "isothermal" version of this function    *
+ *                                                      *
+ ********************************************************/
+Gaussian2D_pState Knudsen_Layer_Isothermal(const Gaussian2D_pState &W,
+					   const Gaussian2D_pState &Wo,
+					   const Vector2D &norm_dir) {
+  Gaussian2D_pState W_rot, Kn_rot;
+  double T = Wo.T();  //temperature of wall
+  double m = W.M/(THOUSAND*AVOGADRO);  //particle mass
+  double vy_wall_rot = -Wo.v.x*norm_dir.x + Wo.v.y*norm_dir.y;
+  double ng, nw, n_temp, rho_temp, v_temp, pxx_temp, pxy_temp, pyy_temp, pzz_temp, erot_temp;
+
+  W_rot = Rotate(W,norm_dir);
+
+  ng = W_rot.d/m;   //number density of "incoming" Gaussian
+
+  nw = ng*sqrt(W_rot.p.xx/(ng*BOLTZMANN*T));   //number density of reflected Maxwellian to ensure
+                                               //no mass transfer (thermal equilibrium with wall)
+
+  n_temp = ng+W.alpha/2.0*(nw-ng);           //"total" number density
+
+  rho_temp = n_temp*m;
+
+  v_temp = (m*ng*(2.0-W.alpha)*(W_rot.v.y/2.0+W_rot.p.xy/sqrt(2.0*PI*W_rot.d*W_rot.p.xx))
+	    +W.alpha/2.0*m*nw*vy_wall_rot)/rho_temp;  //combined momentum devided by density
+
+  pxx_temp = W_rot.p.xx+W.alpha/2.0*(nw*BOLTZMANN*T-W_rot.p.xx);
+
+  pxy_temp = W.alpha*(W_rot.p.xy/2.0+sqrt(W_rot.d*W_rot.p.xx/(2.0*PI))*(W_rot.v.y-v_temp)
+		      -sqrt(nw*nw*m*BOLTZMANN*T/(2.0*PI))*(vy_wall_rot-v_temp));
+
+  pyy_temp = (2.0-W.alpha)*(W_rot.p.yy/2.0+W_rot.d*sqr(W_rot.v.y-v_temp)/2.0
+			    +W_rot.p.xy*sqrt(2.0*W_rot.d/PI*W_rot.p.xx)*(W_rot.v.y-v_temp))
+             +W.alpha*(nw*BOLTZMANN*T/2.0 + nw*m/2.0*sqr(vy_wall_rot-v_temp));
+
+  pzz_temp = W_rot.p.zz+W.alpha/2.0*(nw*BOLTZMANN*T-W_rot.p.zz);
+
+  erot_temp = W_rot.erot+W.alpha/2.0*(nw*BOLTZMANN*T-W_rot.erot);
+
+//  rho_temp = W_rot.d*(1.0+W.alpha/2.0*(sqrt(W_rot.p.xx/(n*BOLTZMANN*T))-1.0));
+//
+//
+//  v_temp = (2.0-W.alpha)*(W_rot.v.y/2.0+W_rot.p.xy/(sqrt(2.0*PI*W_rot.d*W_rot.p.xx)))
+//           +W.alpha/2.0*sqrt(W_rot.p.xx/n*BOLTZMANN*T)*vy_wall_rot;
+//
+//  pxx_temp = (2.0-W.alpha)/2.0*W_rot.p.xx+W.alpha/2.0*sqrt(W_rot.p.xx*n*BOLTZMANN*T);
+//
+//
+//  pxy_temp = W.alpha*(W+rot.p.xy/2+sqrt(W_rot.d*W_rot.p.xx/(2.0*PI))*(W_rot.v.y-v_temp)
+//  		      +sqrt(;
+//
+//  pyy_temp = 0.0;
+//
+//  pzz_temp = (2.0-W.alpha)/2.0*W_rot.p.zz+W.alpha/2.0*sqrt(W_rot.p.xx*n*BOLTZMANN*T);
+//
+//  erot_temp = (2.0-W.alpha)/2.0*W_rot.erot+W.alpha/2.0*sqrt(W_rot.p.xx*n*BOLTZMANN*T);
+
+  Kn_rot = Gaussian2D_pState(rho_temp,
+			     0.0,
+			     v_temp,
+			     pxx_temp,
+			     pxy_temp,
+			     pyy_temp,
+			     pzz_temp,
+			     erot_temp);
+
+  return Rotate(Kn_rot,Vector2D(norm_dir.x,-norm_dir.y));
+
 }
 
 /********************************************************
@@ -2060,6 +2192,189 @@ Gaussian2D_cState FluxKinetic_x(const Gaussian2D_pState &W1,
 }
 
 /**********************************************************************
+ * Routine: HeatFlux_n                                                *
+ *                                                                    *
+ * This function returns the intermediate state solution viscous flux *
+ * given the primitive variable solution state and the gradients of   *
+ * the primitive variables.                                           *
+ *                                                                    *
+ **********************************************************************/
+Gaussian2D_cState HeatFlux_n(const Vector2D &X,
+			     Gaussian2D_pState &W,
+			     const Gaussian2D_pState &dWdx,
+			     const Gaussian2D_pState &dWdy,
+			     const Vector2D &norm_dir,
+			     const int &Axisymmetric) {
+
+  Gaussian2D_cState Gx, Gy, U;
+
+  // Compute the intermediate state viscous stress tensor and heat flux
+  // vector.
+  W.ComputeHeatTerms(dWdx,dWdy,X,Axisymmetric);
+  U = W.U(); U.q = W.q;
+
+  // Compute the Cartesian components of the intermediate state
+  // solution viscous flux.
+  Gx = U.Gx(dWdx);
+  Gy = U.Gy(dWdy);
+
+  // Return the intermediate state solution viscous flux.
+  return Gx*norm_dir.x + Gy*norm_dir.y;
+
+}
+
+/**********************************************************************
+ * Routine: HeatFluxDiamondPath_n                                     *
+ *                                                                    *
+ * This routine computes the viscous flux at the specified quadrature *
+ * point, X.  The gradient of the primitive variables is computed on  *
+ * the diamond-path defined by the points X1, X2, X3, and X4.  Only   *
+ * half of the diamond (three points) is used at solid or transpiring *
+ * boundaries.                                                        *
+ *                                                                    *
+ **********************************************************************/
+Gaussian2D_cState HeatFluxDiamondPath_n(const Vector2D &X,
+					const Vector2D &Xl, const Gaussian2D_pState &Wl,
+					const Vector2D &Xd, const Gaussian2D_pState &Wd,
+					const Vector2D &Xr, const Gaussian2D_pState &Wr,
+					const Vector2D &Xu, const Gaussian2D_pState &Wu,
+					const Vector2D &norm_dir,
+					const int &Axisymmetric,
+					const int &stencil_flag) {
+
+  if (stencil_flag == DIAMONDPATH_NONE) return Gaussian2D_cState(ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO);
+
+  Gaussian2D_pState W_face, dWdxl, dWdyl, dWdxr, dWdyr, dWdx, dWdy;
+  Gaussian2D_cState Flux;
+  double A, Al, Ar;
+  Vector2D ndl, nud, nlu, nrd, nur, ndu;
+  int error_flag;
+
+  // Compute Green-Gauss integration on 'left' triangle:
+  if (stencil_flag == DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION ||
+      stencil_flag == DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX ||
+      stencil_flag == DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL) {
+    ndl = Vector2D((Xd.y-Xl.y),-(Xd.x-Xl.x));
+    nud = Vector2D((Xu.y-Xd.y),-(Xu.x-Xd.x));
+    nlu = Vector2D((Xl.y-Xu.y),-(Xl.x-Xu.x));
+    Al = HALF*((Xd-Xl)^(Xu-Xl));
+    W_face = HALF*(Wd+Wl);
+    dWdxl = W_face*ndl.x;
+    dWdyl = W_face*ndl.y;
+    W_face = HALF*(Wu+Wd);
+    dWdxl += W_face*nud.x;
+    dWdyl += W_face*nud.y;
+    W_face = HALF*(Wl+Wu);
+    dWdxl += W_face*nlu.x;
+    dWdyl += W_face*nlu.y;
+    dWdxl /= Al;
+    dWdyl /= Al;
+  }
+
+  // Compute Green-Gauss integration on 'right' triangle:
+  if (stencil_flag == DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION ||
+      stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX ||
+      stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL) {
+    nrd = Vector2D((Xr.y-Xd.y),-(Xr.x-Xd.x));
+    nur = Vector2D((Xu.y-Xr.y),-(Xu.x-Xr.x));
+    ndu = Vector2D((Xd.y-Xu.y),-(Xd.x-Xu.x));
+    Ar = HALF*((Xr-Xu)^(Xr-Xd));
+    W_face = HALF*(Wr+Wd);
+    dWdxr = W_face*nrd.x;
+    dWdyr = W_face*nrd.y;
+    W_face = HALF*(Wu+Wr);
+    dWdxr += W_face*nur.x;
+    dWdyr += W_face*nur.y;
+    W_face = HALF*(Wd+Wu);
+    dWdxr += W_face*ndu.x;
+    dWdyr += W_face*ndu.y;
+    dWdxr /= Ar;
+    dWdyr /= Ar;
+  }
+
+  // Compute the viscous flux.
+  if (stencil_flag == DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION) {
+    // Determine the total area.
+    A = Al + Ar;
+    // Determine the area-averaged gradients of the primitive variables.
+    dWdx = (Al*dWdxl + Ar*dWdxr)/A;
+    dWdy = (Al*dWdyl + Ar*dWdyr)/A;
+    // Determine the primitive state at the quadrature point.
+    //W_face = (Wl + Wd + Wr + Wu)/FOUR;
+    error_flag = Bilinear_Interpolation(Wl,Xl,Wu,Xu,Wr,Xr,Wd,Xd,X,W_face);
+    //if (error_flag) return error_flag;
+    Flux = HeatFlux_n(X,W_face,dWdx,dWdy,norm_dir,Axisymmetric);
+
+  } else if (stencil_flag == DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX ||
+	     stencil_flag == DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL) {
+    W_face = Wd;  //Remember Wd = Wu
+    if (stencil_flag == DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX) {
+      Flux = HeatFlux_n(X,W_face,dWdxl,dWdyl,norm_dir,Axisymmetric);
+    } else if (stencil_flag == DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL) {
+      Flux = HeatFlux_n(X,W_face,dWdxl,dWdyl,norm_dir,Axisymmetric);
+    }
+
+  } else if (stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX ||
+	     stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL) {
+    W_face = Wd;   //Remember Wd = Wu
+    if (stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX) {
+      Flux = HeatFlux_n(X,W_face,dWdxr,dWdyr,norm_dir,Axisymmetric);
+    } else if (stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL) {
+      Flux = HeatFlux_n(X,W_face,dWdxr,dWdyr,norm_dir,Axisymmetric);
+    }
+
+  }
+
+  // Return the viscous flux.
+  return Flux;
+
+}
+
+/**********************************************************************
+ * Routine: HeatFluxHybrid_n                                          *
+ *                                                                    *
+ * This function returns the intermediate state solution viscous flux *
+ * calculated by the arithmetic mean of the cell-centred flux terms   *
+ * of the neighbouring cells.                                         *
+ *                                                                    *
+ **********************************************************************/
+Gaussian2D_cState HeatFluxHybrid_n(const Vector2D &X,
+				   Gaussian2D_pState &W,
+				   const Vector2D &X1,
+				   const Gaussian2D_pState &W1,
+				   const Gaussian2D_pState &dW1dx,
+				   const Gaussian2D_pState &dW1dy,
+				   const Vector2D &X2,
+				   const Gaussian2D_pState &W2,
+				   const Gaussian2D_pState &dW2dx,
+				   const Gaussian2D_pState &dW2dy,
+				   const Vector2D &norm_dir,
+				   const int &Axisymmetric) {
+
+  Gaussian2D_pState dWdx_ave, dWdy_ave, dWdx, dWdy, dWds;
+  Vector2D dX;
+  double ds;
+
+  // Compute the Cartesian components of the intermediate state
+  // solution viscous flux.
+  dWdx_ave = HALF*(dW1dx + dW2dx);
+  dWdy_ave = HALF*(dW1dy + dW2dy);
+
+  dX = X2-X1; ds = dX.abs(); dX /= ds;
+
+  dWds = (W2-W1)/ds;
+
+  dWdx = dWdx_ave + (dWds - dWdx_ave*dX.x)*norm_dir.x/dot(norm_dir,dX);
+  dWdy = dWdy_ave + (dWds - dWdy_ave*dX.y)*norm_dir.y/dot(norm_dir,dX);
+
+  // Return the intermediate state solution viscous flux.
+  return HeatFlux_n(X,W,dWdx,dWdy,norm_dir,Axisymmetric);
+  //return Gaussian2D_cState(ZERO,ZERO,ZERO,ZERO,ZERO,ZERO);
+
+}
+
+
+/**********************************************************************
  * Routine: FlatPlate                                                 *
  *                                                                    *
  * This function returns the exact solution for the flow over a flat  *
@@ -2211,8 +2526,10 @@ void Gaussian2D_pState::relax(double deltat, int stage, const Gaussian2D_pState 
   double implicit_coeff1(0.0), implicit_coeff2(0.0), implicit_coeff3(0.0);
   double implicit_coeff4(0.0), implicit_coeff5(0.0), implicit_coeff6(0.0);
 
-  tau_trans = viscosity()/pressure();
-  tau_rot = 15.0/4.0*bulk_viscosity()/pressure();
+  //tau_trans = viscosity()/pressure();
+  //tau_rot = 15.0/4.0*bulk_viscosity()/pressure();
+  tau_trans = tt();
+  tau_rot   = tr();
 
   if(atoms==GAUSSIAN_MONATOMIC){
     a = 3.0*(double)stage*tau_trans+deltat;
