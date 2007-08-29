@@ -53,6 +53,10 @@ NASARP1311_DIR = $(CHEM_DIR)
 POLYFIT_DIR = Polyfit/
 
 #
+# Set default f90 module directory
+MODULE_DIR = F90_Modules
+
+#
 # C++ Source files
 SRC_MATH = $(MATH_DIR)Vector2D.cc \
            $(MATH_DIR)Tensor2D.cc \
@@ -132,11 +136,16 @@ SRC_HIGHTEMP = $(HIGHTEMP_DIR)HighTemp2DState.cc \
 SRC_HIGHTEMP_EXE = $(HIGHTEMP_DIR)HighTemp2D.cc  
 SRC_EOS = $(EOS_DIR)tgas.f \
           $(EOS_DIR)ugas.f
-SRC_GAUSSIAN = $(GAUSSIAN_DIR)Gaussian2DState.cc $(GAUSSIAN_DIR)Gaussian2DInput.cc \
-               $(GAUSSIAN_DIR)Gaussian2DCartesian.cc $(GAUSSIAN_DIR)Gaussian2DCartesianSolvers.cc \
-               $(GAUSSIAN_DIR)Gaussian2DQuadGrid.cc $(GAUSSIAN_DIR)Gaussian2DQuadSingleBlock.cc \
-               $(GAUSSIAN_DIR)Gaussian2DQuadMultiBlock.cc $(GAUSSIAN_DIR)Gaussian2DQuadSolvers.cc \
-               $(GAUSSIAN_DIR)Gaussian2DQuadIOSingleBlock.cc $(GAUSSIAN_DIR)Gaussian2DQuadIOMultiBlock.cc
+SRC_GAUSSIAN = $(GAUSSIAN_DIR)Gaussian2DState.cc \
+               $(GAUSSIAN_DIR)Gaussian2DInput.cc \
+               $(GAUSSIAN_DIR)Gaussian2DCartesian.cc \
+               $(GAUSSIAN_DIR)Gaussian2DCartesianSolvers.cc \
+               $(GAUSSIAN_DIR)Gaussian2DQuadGrid.cc \
+               $(GAUSSIAN_DIR)Gaussian2DQuadSingleBlock.cc \
+               $(GAUSSIAN_DIR)Gaussian2DQuadMultiBlock.cc \
+               $(GAUSSIAN_DIR)Gaussian2DQuadSolvers.cc \
+               $(GAUSSIAN_DIR)Gaussian2DQuadIOSingleBlock.cc \
+               $(GAUSSIAN_DIR)Gaussian2DQuadIOMultiBlock.cc
 SRC_GAUSSIAN_EXE = $(GAUSSIAN_DIR)Gaussian2D.cc
 SRC_DUSTY = $(DUSTY_DIR)Particle2DComponents.cc \
             $(DUSTY_DIR)Dusty2DState.cc \
@@ -179,6 +188,9 @@ SRC_ION = $(ION_DIR)Ion5Moment2DState.cc \
           $(ION_DIR)Ion5Moment2DQuadGrid.cc \
           $(ION_DIR)Ion5Moment2DQuadSolvers.cc
 SRC_ION_EXE = $(ION_DIR)Ion5Moment2D.cc
+SRC_LESPREMIXED_F90 = $(LESPREMIXED_DIR)complexify.f90 \
+	              $(LESPREMIXED_DIR)c_15step_GRI211.f90 \
+	              $(LESPREMIXED_DIR)c_15step_GRI3.f90
 SRC_LESPREMIXED = $(LESPREMIXED_DIR)LESPremixed2DState.cc \
 	          $(LESPREMIXED_DIR)LESPremixed2DInput.cc \
 	          $(LESPREMIXED_DIR)LESPremixed2DReactions.cc \
@@ -193,10 +205,8 @@ SRC_LESPREMIXED = $(LESPREMIXED_DIR)LESPremixed2DState.cc \
 	          $(LESPREMIXED_DIR)PowerLaw.cc \
 	          $(LESPREMIXED_DIR)Scalars.cc \
 	          $(LESPREMIXED_DIR)15step_GRI211.f \
-	          $(LESPREMIXED_DIR)15step_GRI3.f
-SRC_LESPREMIXED_F90 = $(LESPREMIXED_DIR)complexify.f90 \
-	              $(LESPREMIXED_DIR)c_15step_GRI211.f90 \
-	              $(LESPREMIXED_DIR)c_15step_GRI3.f90
+	          $(LESPREMIXED_DIR)15step_GRI3.f \
+                  $(SRC_LESPREMIXED_F90)
 SRC_LESPREMIXED_EXE = $(LESPREMIXED_DIR)LESPremixed2D.cc
 SRC_LEVELSET = $(LEVELSET_DIR)LevelSet2DInput.cc \
                $(LEVELSET_DIR)LevelSet2DQuad.cc \
@@ -458,11 +468,16 @@ OBJ_HIGHTEMP = $(HIGHTEMP_DIR)HighTemp2DState.o \
 OBJ_HIGHTEMP_EXE = $(HIGHTEMP_DIR)HighTemp2D.o
 OBJ_EOS = $(EOS_DIR)tgas.o \
           $(EOS_DIR)ugas.o
-OBJ_GAUSSIAN = $(GAUSSIAN_DIR)Gaussian2DState.o $(GAUSSIAN_DIR)Gaussian2DInput.o \
-               $(GAUSSIAN_DIR)Gaussian2DCartesian.o $(GAUSSIAN_DIR)Gaussian2DCartesianSolvers.o \
-               $(GAUSSIAN_DIR)Gaussian2DQuadGrid.o $(GAUSSIAN_DIR)Gaussian2DQuadSingleBlock.o \
-               $(GAUSSIAN_DIR)Gaussian2DQuadMultiBlock.o $(GAUSSIAN_DIR)Gaussian2DQuadSolvers.o \
-               $(GAUSSIAN_DIR)Gaussian2DQuadIOSingleBlock.o $(GAUSSIAN_DIR)Gaussian2DQuadIOMultiBlock.o
+OBJ_GAUSSIAN = $(GAUSSIAN_DIR)Gaussian2DState.o \
+               $(GAUSSIAN_DIR)Gaussian2DInput.o \
+               $(GAUSSIAN_DIR)Gaussian2DCartesian.o \
+               $(GAUSSIAN_DIR)Gaussian2DCartesianSolvers.o \
+               $(GAUSSIAN_DIR)Gaussian2DQuadGrid.o \
+               $(GAUSSIAN_DIR)Gaussian2DQuadSingleBlock.o \
+               $(GAUSSIAN_DIR)Gaussian2DQuadMultiBlock.o \
+               $(GAUSSIAN_DIR)Gaussian2DQuadSolvers.o \
+               $(GAUSSIAN_DIR)Gaussian2DQuadIOSingleBlock.o \
+               $(GAUSSIAN_DIR)Gaussian2DQuadIOMultiBlock.o
 OBJ_GAUSSIAN_EXE = $(GAUSSIAN_DIR)Gaussian2D.o
 OBJ_DUSTY = $(DUSTY_DIR)Particle2DComponents.o \
             $(DUSTY_DIR)Dusty2DState.o \
@@ -505,6 +520,10 @@ OBJ_ION = $(ION_DIR)Ion5Moment2DState.o \
           $(ION_DIR)Ion5Moment2DQuadGrid.o \
           $(ION_DIR)Ion5Moment2DQuadSolvers.o
 OBJ_ION_EXE = $(ION_DIR)Ion5Moment2D.o
+OBJ_LESPREMIXED_F90 = $(LESPREMIXED_DIR)complexify.o \
+	              $(LESPREMIXED_DIR)c_15step_GRI211.o \
+	              $(LESPREMIXED_DIR)c_15step_GRI3.o
+MOD_LESPREMIXED_F90 = $(MODULE_DIR)/complexify.mod
 OBJ_LESPREMIXED = $(LESPREMIXED_DIR)LESPremixed2DState.o \
 	          $(LESPREMIXED_DIR)LESPremixed2DInput.o \
 	          $(LESPREMIXED_DIR)LESPremixed2DReactions.o \
@@ -521,9 +540,6 @@ OBJ_LESPREMIXED = $(LESPREMIXED_DIR)LESPremixed2DState.o \
 	          $(LESPREMIXED_DIR)15step_GRI211.o \
 	          $(LESPREMIXED_DIR)15step_GRI3.o \
 	          $(OBJ_LESPREMIXED_F90)
-OBJ_LESPREMIXED_F90 = complexify.o \
-	              c_15step_GRI211.o \
-	              c_15step_GRI3.o
 OBJ_LESPREMIXED_EXE = $(LESPREMIXED_DIR)LESPremixed2D.o
 OBJ_LEVELSET = $(LEVELSET_DIR)LevelSet2DInput.o \
                $(LEVELSET_DIR)LevelSet2DQuad.o \
@@ -918,7 +934,9 @@ $(ION_DIR)Ion5Moment2D.depend: $(SRC_ION_EXE)
 	@echo '-------------------------------------------------------------------'
 	@echo ' '
 
-$(EXE_LESPREMIXED2D): $(LESPREMIXED_DIR)LESPremixed2D.depend $(OBJ_LESPREMIXED_EXE) $(OBJ_BASE) $(OBJ_NASARP1311) $(OBJ_LESPREMIXED) $(OBJ_TURBULENT) $(OBJ_ICEMCFD) 
+$(EXE_LESPREMIXED2D): $(LESPREMIXED_DIR)LESPremixed2D.depend $(MOD_LESPREMIXED_F90) \
+                      $(OBJ_LESPREMIXED_EXE) $(OBJ_BASE) $(OBJ_NASARP1311) $(OBJ_LESPREMIXED) \
+                      $(OBJ_TURBULENT) $(OBJ_ICEMCFD) 
 	@echo ' '
 	@echo Building program $(EXE_LESPREMIXED2D) for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------------'
@@ -929,20 +947,22 @@ $(EXE_LESPREMIXED2D): $(LESPREMIXED_DIR)LESPremixed2D.depend $(OBJ_LESPREMIXED_E
 	@echo '--------------------------------------------------'
 	@echo ' '
 
-$(OBJ_LESPREMIXED_F90): $(SRC_LESPREMIXED_F90)
-	$(FC) $(FFLAGS) -c $(SRC_LESPREMIXED_F90)
-
 $(LESPREMIXED_DIR)LESPremixed2D.depend: $(SRC_LESPREMIXED_EXE) 
 	@echo ' '
 	@echo Determining LESPremixed2D source file dependencies for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------------------'
 	@echo ' '
 	touch $(LESPREMIXED_DIR)LESPremixed2D.depend
-	makedepend -f$(LESPREMIXED_DIR)LESPremixed2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_LESPREMIXED_EXE) >& /dev/null
+	makedepend -f$(LESPREMIXED_DIR)LESPremixed2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_LESPREMIXED_EXE) $(SRC_LESPREMIXED) >& /dev/null
 	@echo ' '
 	@echo LESPremixed2D source file dependencies have been brought up to date.
 	@echo '-------------------------------------------------------------'
 	@echo ' '
+
+$(OBJ_LESPREMIXED_F90): $(MOD_LESPREMIXED_F90)
+
+$(MOD_LESPREMIXED_F90): $(LESPREMIXED_DIR)complexify.f90 $(LESPREMIXED_DIR)Complexify.h
+	$(F90) $(F90FLAGS) -c $(LESPREMIXED_DIR)complexify.f90 -o $(LESPREMIXED_DIR)complexify.o $(MODFLAG) $(MODULE_DIR) -I$(MODULE_DIR) 
 
 $(EXE_LEVELSET2D): $(LEVELSET_DIR)LevelSet2D.depend $(OBJ_LEVELSET_EXE) $(OBJ_BASE) $(OBJ_LEVELSET) $(OBJ_INTERFACE)
 	@echo ' '
@@ -1273,6 +1293,12 @@ superclean: clean-extras
 	@echo All documentation and library directories are now clean.
 	@echo '-------------------------------------------------------'
 	@echo ' '
+
+#
+# Default dependencies for Fortran 90
+.SUFFIXES: .f90
+.f90.o:
+	$(F90) $(F90FLAGS) -c $*.f90 -o $*.o $(MODFLAG) $(MODULE_DIR) -I$(MODULE_DIR) 
 
 #
 # Include header file dependencies
