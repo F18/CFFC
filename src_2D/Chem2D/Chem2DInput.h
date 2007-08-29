@@ -153,7 +153,6 @@ class Chem2D_Input_Parameters{
   int num_species;
   Chem2D_pState Wo;
   Chem2D_cState Uo;
-  
 
   //! Transport data type
   char trans_type[INPUT_PARAMETER_LENGTH_CHEM2D];
@@ -165,6 +164,15 @@ class Chem2D_Input_Parameters{
   //! Root path of CFFC 
   char CFFC_Path[INPUT_PARAMETER_LENGTH_CHEM2D];
   void get_cffc_path();
+  //@}
+
+  //@{ @name Cantera input parameters.
+  //! Mechanism name
+  string ct_mech_name;
+  char ct_Mech_Name[INPUT_PARAMETER_LENGTH_CHEM2D];
+  //! Mechanism file
+  string ct_mech_file;
+  char ct_Mech_File[INPUT_PARAMETER_LENGTH_CHEM2D];
   //@}
 
   //@{ @name Flow type indicator and related input parameters:
@@ -539,6 +547,12 @@ inline ostream &operator << (ostream &out_file,
     /********** CHEM2D ****************************/
     out_file << "\n  -> Reaction Mechanism: " 
 	     << IP.react_name;
+    if (IP.Wo.React.reactset_flag == CANTERA) {
+      out_file << "\n  -> Mechanism Name: "
+               << IP.ct_mech_name
+               << "\n  -> Mechanism File: "
+               << IP.ct_mech_file;
+    }
     out_file << "\n  -> Species: "<<IP.Wo.ns
 	     << "\n  -> Initial mass fractions: ";
     for(int i=0; i<IP.Wo.ns; i++){

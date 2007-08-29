@@ -197,6 +197,82 @@ void Reaction_set::set_reactions(int &num_react,string* name, double* A,
 
 } //end of set_reactions
 
+
+/***********************************************************************
+  Load Cantera mechanisms.  A cantera IdealGasMix object is created
+  from the user supplied mechanism file and specific mechanism name.
+  Basically, Cantera has it's own parser for either chemkin (*.ck), 
+  or cantera (*.cti) formated mechanism files.  The IdealGasMix
+  stores the mechanism data (such as reaction constants, high/low 
+  pressure limits) and has member functions that allow for the 
+  computation of reaction rates.  
+***********************************************************************/
+#ifdef _CANTERA_VERSION
+void Reaction_set::ct_load_mechanism(string &mechanism_file_name, 
+				     string &mechanism_name) 
+{
+
+  // make sure all unused parameters are null
+  Deallocate();
+
+  //flag for cantera
+  reactset_flag = CANTERA;
+  
+  //create a new ideal gas mixture class
+  try {
+    ct_gas = new IdealGasMix(mechanism_file_name, mechanism_name);
+  }
+  catch (CanteraError) {
+    Cantera::showErrors();
+  }
+
+  //get the number of reactions and species
+  num_species = ct_gas->nSpecies();
+  num_react_species = num_species-1;
+  num_reactions = ct_gas->nReactions();
+
+  //set the species names 
+  species = new string[num_species];
+  for(int index =0; index<num_species; index++){
+     species[index] = ct_gas->speciesName(index);
+  }
+
+  //set the reaction system name
+  ct_mech_name = ct_gas->name();
+  ct_mech_file = mechanism_file_name;
+  Reaction_system = "CANTERA";
+
+  // allocate some temporary storage
+  set_storage();
+
+} //end of ct_load_mechanism
+#endif //_CANTERA_VERSION
+
+
+/***********************************************************************
+  Use cantera to parse the input mass fraction string of the form
+      CH4:0.5, O2:0.5
+  All other species will be assumed to have 0 mass fractions.  Cantera
+  also normalizes the mass fractions to sum to unity.  Returns them
+  in an array.
+***********************************************************************/
+#ifdef _CANTERA_VERSION
+void Reaction_set::ct_parse_mass_string( const string& massFracStr, 
+					 double* massFracs) {
+
+  compositionMap xx;
+  int kk = ct_gas->nSpecies();
+  for (int k = 0; k < kk; k++) xx[ct_gas->speciesName(k)] = -1.0;
+  parseCompString(massFracStr, xx);
+  ct_gas->setMassFractionsByName(xx);
+  for(int index =0; index<num_species; index++){
+    massFracs[index] = ct_gas->massFraction(index);
+  }
+
+} // end of ct_parse_mass_string
+#endif //_CANTERA_VERSION
+
+
 /**********************************************************************
    Determine the Gibbs free energy change 
    deltaG = Sum(products) - Sum(reactants)
@@ -253,13 +329,17 @@ double React_data::deltaG(const Chem2D_pState &W) const{
 void Reaction_set::omega(Chem2D_cState &U, const Chem2D_pState &W,  const int Flow_Type ) const{
  
   double Temp = W.T();  //K
+  double Press= W.p;    // [Pa]
   double rho= W.rho/THOUSAND; //kg/m^3 -> g/cm^3 
   double a,b, ans(ZERO);
 
-  for(int i=0; i<num_react_species; i++){
-    M[i] = W.specdata[i].Mol_mass()*THOUSAND;  //kg/mol -> g/mol
-    c[i] = W.spec[i].c;                        //unitless
-  }
+  // for all cases but cantera case
+  if (reactset_flag != CANTERA) {
+    for(int i=0; i<num_react_species; i++){
+      M[i] = W.specdata[i].Mol_mass()*THOUSAND;  //kg/mol -> g/mol
+      c[i] = W.spec[i].c;                        //unitless
+    }
+  } /* endif */
 
   switch(reactset_flag){
   case NO_REACTIONS:
@@ -482,6 +562,33 @@ void Reaction_set::omega(Chem2D_cState &U, const Chem2D_pState &W,  const int Fl
    }
    break;
 
+  //---------------------------------//
+  //------------ CANTERA ------------//
+  //---------------------------------//
+#ifdef _CANTERA_VERSION
+
+  case CANTERA:
+
+    // initialize parameters
+    for(int i=0; i<num_species; i++){
+      M[i] = W.specdata[i].Mol_mass()*THOUSAND;  //kg/mol -> g/mol
+      c[i] = W.spec[i].c;                        //unitless
+    }
+    // set the gas state
+    ct_gas->setState_TPY(Temp, Press, c);
+
+    // get the species net production rates
+    ct_gas->getNetProductionRates(r);
+
+    // set the Chem2D_cState production rates
+    for (int i=0; i<num_species; i++){
+      U.rhospec[i].c = r[i]*M[i];
+    }
+
+    break;
+
+#endif // _CANTERA_VERSION
+
     //---------------------------------//
     //----- User Specified ------------//
     //---------------------------------//
@@ -531,18 +638,23 @@ void Reaction_set::dSwdU(DenseMatrix &dSwdU, const Chem2D_pState &W,
   //////////////////////////////////////////////////////////////////////////////
   if(solver_type == IMPLICIT){ VALUE=TOLER*TOLER; }
 
-  for(int i=0; i<num_react_species; i++){
-    M[i] = W.specdata[i].Mol_mass()*THOUSAND; //kg/mol -> g/mol 
-    c[i] = W.spec[i].c;
-    
-    //For handling ~= ZERO mass fractions that appear in the denominator of dSwdU
-    //by setting a lower tolerance allowed, and if below that set to tolerance 
-    if( c[i] < VALUE){
-      c_denom[i] = VALUE;
-    } else {
-      c_denom[i] = c[i];
+  //
+  // for all cases but cantera case
+  //
+  if (reactset_flag != CANTERA) {
+    for(int i=0; i<num_react_species; i++){
+      M[i] = W.specdata[i].Mol_mass()*THOUSAND; //kg/mol -> g/mol 
+      c[i] = W.spec[i].c;
+      
+      //For handling ~= ZERO mass fractions that appear in the denominator of dSwdU
+      //by setting a lower tolerance allowed, and if below that set to tolerance 
+      if( c[i] < VALUE){
+	c_denom[i] = VALUE;
+      } else {
+	c_denom[i] = c[i];
+      }
     }
-  }
+  } // endif - !CANTERA
 
   int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES;
   /*******************************************
@@ -889,6 +1001,16 @@ void Reaction_set::dSwdU(DenseMatrix &dSwdU, const Chem2D_pState &W,
       
     break;
     
+  //---------------------------------//
+  //------------ CANTERA ------------//
+  //---------------------------------//
+#ifdef _CANTERA_VERSION
+
+  case CANTERA:
+    break;
+
+#endif // _CANTERA_VERSION
+
     //---------------------------------//
     //----- User Specified ------------//
     //---------------------------------//

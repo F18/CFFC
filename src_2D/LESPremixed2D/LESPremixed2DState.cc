@@ -481,7 +481,7 @@ double LESPremixed2D_pState::kappa(void) const{
       }
     }
  
-    sum += (specdata[i].ThermalConduct(Temp, p)*spec[i].c) / 
+    sum += (specdata[i].ThermalConduct(Temp)*spec[i].c) / 
       (spec[i].c + (specdata[i].Mol_mass()) * 1.065 * phi);
   }  
   
