@@ -49,7 +49,8 @@ SOLVERS1D_DIR = Solvers1D/
 SYSTEM_DIR = System/
 TURBULENT_DIR = Turbulent2D/
 GAUSSIAN_DIR = Gaussian2D/
-NASARP1311_DIR = $(CHEM_DIR)
+NASARP1311_DIR = $(PHYSICS_DIR)NASAData/
+REACTIONS_DIR = Reactions/
 
 #
 # C++ Source files
@@ -61,10 +62,11 @@ SRC_MATH = $(MATH_DIR)Vector2D.cc \
            $(MATH_DIR)LinearSystems.cc \
 	   $(MATH_DIR)LinkedList.cc \
 	   $(MATH_DIR)Polygon.cc \
-	   $(MATH_DIR)Polyfit.cc \
-	   $(MATH_DIR)dp1vlu.f \
-	   $(MATH_DIR)dpcoef.f \
-	   $(MATH_DIR)dpolft.f
+	   $(MATH_DIR)Polyfit/Polyfit.cc \
+	   $(MATH_DIR)Polyfit/dp1vlu.f \
+	   $(MATH_DIR)Polyfit/dpcoef.f \
+	   $(MATH_DIR)Polyfit/dpolft.f \
+	   $(MATH_DIR)complexify.f90
 SRC_CFD = $(CFD_DIR)CFD.cc
 SRC_MPI = $(MPI_DIR)MPI.cc
 SRC_SYSTEM = $(SYSTEM_DIR)System_Linux.cc
@@ -106,7 +108,6 @@ SRC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuad_NKS.cc
 SRC_ADVECTDIFFUSE_EXE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.cc
 SRC_CHEM = $(CHEM_DIR)Chem2DState.cc \
-	   $(CHEM_DIR)Reactions.cc \
 	   $(CHEM_DIR)Chem2DTools.cc \
 	   $(CHEM_DIR)Chem2DInput.cc \
 	   $(CHEM_DIR)Chem2DQuad.cc \
@@ -114,12 +115,7 @@ SRC_CHEM = $(CHEM_DIR)Chem2DState.cc \
 	   $(CHEM_DIR)dRdU.cc \
 	   $(CHEM_DIR)Chem2DQuadMultiBlock.cc \
 	   $(CHEM_DIR)Chem2DQuadSingleBlock.cc \
-	   $(CHEM_DIR)Chem2DQuadSolvers.cc \
-	   $(CHEM_DIR)15step_GRI211.f \
-	   $(CHEM_DIR)15step_GRI3.f \
-	   $(CHEM_DIR)complexify.f90 \
-	   $(CHEM_DIR)c_15step_GRI211.f90 \
-	   $(CHEM_DIR)c_15step_GRI3.f90
+	   $(CHEM_DIR)Chem2DQuadSolvers.cc
 SRC_CHEM_EXE = $(CHEM_DIR)Chem2D.cc  
 SRC_HIGHTEMP = $(HIGHTEMP_DIR)HighTemp2DState.cc \
                $(HIGHTEMP_DIR)HighTemp2DInput.cc  \
@@ -194,13 +190,7 @@ SRC_LESPREMIXED = $(LESPREMIXED_DIR)LESPremixed2DState.cc \
 	          $(LESPREMIXED_DIR)LESPremixed2DTurbInit.cc \
 	          $(LESPREMIXED_DIR)LESPremixed2DdRdU.cc \
 	          $(LESPREMIXED_DIR)PowerLaw.cc \
-	          $(LESPREMIXED_DIR)Scalars.cc \
-	          $(CHEM_DIR)Reactions.cc \
-	    	  $(CHEM_DIR)15step_GRI211.f \
-	   	  $(CHEM_DIR)15step_GRI3.f \
-	   	  $(CHEM_DIR)complexify.f90 \
-	   	  $(CHEM_DIR)c_15step_GRI211.f90 \
-	   	  $(CHEM_DIR)c_15step_GRI3.f90
+	          $(LESPREMIXED_DIR)Scalars.cc 
 SRC_LESPREMIXED_EXE = $(LESPREMIXED_DIR)LESPremixed2D.cc
 SRC_LEVELSET = $(LEVELSET_DIR)LevelSet2DInput.cc \
                $(LEVELSET_DIR)LevelSet2DQuad.cc \
@@ -243,6 +233,12 @@ SRC_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes2DState.cc \
 SRC_NAVIERSTOKES_EXE = $(NAVIERSTOKES_DIR)NavierStokes2D.cc
 SRC_NASARP1311 = $(NASARP1311_DIR)NASARP1311dataclass.cc   
 SRC_TURBULENT = $(TURBULENT_DIR)SFSModelling.cc
+SRC_REACTIONS = $(REACTIONS_DIR)Reactions.cc \
+	   	$(REACTIONS_DIR)15step_GRI211.f \
+	  	$(REACTIONS_DIR)15step_GRI3.f \
+	   	$(REACTIONS_DIR)c_15step_GRI211.f90 \
+	   	$(REACTIONS_DIR)c_15step_GRI3.f90
+
 SRC_ICEMCFD = $(ICEM_DIR)ICEMCFD.cc \
 	      $(ICEM_DIR)ICEMCFD_ctype.c
 SRC_BASE =  $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_GRID) $(SRC_AMR) \
@@ -270,12 +266,14 @@ INC_MATH  = $(MATH_DIR)Math.h \
 	    $(MATH_DIR)Polygon.h \
 	    $(MATH_DIR)Simpson.h \
 	    $(MATH_DIR)Quadrature.h \
-	    $(MATH_DIR)Polyfit.h
+	    $(MATH_DIR)Polyfit/Polyfit.h \
+            $(MATH_DIR)Complexify.h
 INC_SYSTEM = $(SYSTEM_DIR)System_Linux.h
 INC_CFD = $(CFD_DIR)CFD.h
 INC_MPI = $(MPI_DIR)MPI.h
 INC_PHYSICS = $(PHYSICS_DIR)GasConstants.h \
-	      $(PHYSICS_DIR)SolidConstants.h
+	      $(PHYSICS_DIR)SolidConstants.h \
+	      $(PHYSICS_DIR)Species.h 
 INC_GRID = $(GRID_DIR)Cell1D.h \
 	   $(GRID_DIR)Cell2D.h \
 	   $(GRID_DIR)Cell3D.h \
@@ -303,11 +301,7 @@ INC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.h \
 INC_CHEM = $(CHEM_DIR)Chem2DInput.h \
 	   $(CHEM_DIR)Chem2DQuad.h \
 	   $(CHEM_DIR)Chem2DState.h \
-	   $(CHEM_DIR)Reactions.h \
-	   $(CHEM_DIR)Species.h \
-	   $(CHEM_DIR)Chem2DQuadMultigrid.h \
-           $(CHEM_DIR)15step.h \
-           $(CHEM_DIR)Complexify.h
+	   $(CHEM_DIR)Chem2DQuadMultigrid.h 
 INC_HIGHTEMP = $(HIGHTEMP_DIR)HighTemp2DState.h \
                $(HIGHTEMP_DIR)HighTemp2DInput.h  \
                $(HIGHTEMP_DIR)HighTemp2DQuad.h  \
@@ -354,15 +348,13 @@ INC_LESPREMIXED = $(LESPREMIXED_DIR)LESPremixed2DState.h \
 	          $(LESPREMIXED_DIR)LESPremixed2DTurbInit.h \
 	          $(LESPREMIXED_DIR)LESPremixed2DReactions.h \
 	          $(LESPREMIXED_DIR)PowerLaw.h \
-	          $(LESPREMIXED_DIR)Scalars.h \
-	          $(CHEM_DIR)Reactions.h \
-	          $(CHEM_DIR)15step.h \
-		  $(CHEM_DIR)Complexify.h
+	          $(LESPREMIXED_DIR)Scalars.h 
 INC_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes2DState.h \
 	           $(NAVIERSTOKES_DIR)NavierStokes2DInput.h \
 	           $(NAVIERSTOKES_DIR)NavierStokes2DQuad.h \
 	           $(NAVIERSTOKES_DIR)NavierStokes2DQuadMultigrid.h
-INC_NASARP1311 = $(NASARP1311_DIR)NASARP1311data.h
+INC_NASARP1311 = $(NASARP1311_DIR)NASARP1311data.h \
+		 $(NASARP1311_DIR)LennardJones.h
 INC_TURBULENT = $(TURBULENT_DIR)Turbulent2DWallData.h \
 	        $(TURBULENT_DIR)TurbulenceModelling.h \
 	        $(TURBULENT_DIR)SFSModelling.h
@@ -385,6 +377,8 @@ INC_ICEMCFD = $(ICEM_DIR)ICEMCFD.h
 INC_NASA_ROTORS = $(GRID_DIR)NASARotor37.h \
 	          $(GRID_DIR)NASARotor67.h
 INC_ELLIPTIC = $(CFD_DIR)EllipticOperatorAnalysis2D.h
+INC_REACTIONS = $(REACTIONS_DIR)Reactions.h \
+		$(REACTIONS_DIR)15step.h \
 
 #
 # Compiled object code files
@@ -396,10 +390,11 @@ OBJ_MATH = $(MATH_DIR)Vector2D.o \
            $(MATH_DIR)LinearSystems.o \
 	   $(MATH_DIR)LinkedList.o \
 	   $(MATH_DIR)Polygon.o \
-	   $(MATH_DIR)Polyfit.o \
-	   $(MATH_DIR)dp1vlu.o \
-	   $(MATH_DIR)dpcoef.o \
-	   $(MATH_DIR)dpolft.o
+	   $(MATH_DIR)Polyfit/Polyfit.o \
+	   $(MATH_DIR)Polyfit/dp1vlu.o \
+	   $(MATH_DIR)Polyfit/dpcoef.o \
+	   $(MATH_DIR)Polyfit/dpolft.o \
+	   $(MATH_DIR)complexify.o 
 OBJ_CFD = $(CFD_DIR)CFD.o
 OBJ_MPI = $(MPI_DIR)MPI.o
 OBJ_SYSTEM = $(SYSTEM_DIR)System_Linux.o
@@ -442,19 +437,13 @@ OBJ_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.o \
 OBJ_ADVECTDIFFUSE_EXE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.o
 OBJ_CHEM = $(CHEM_DIR)Chem2DState.o \
 	   $(CHEM_DIR)dRdU.o \
-	   $(CHEM_DIR)Reactions.o \
 	   $(CHEM_DIR)Chem2DTools.o \
 	   $(CHEM_DIR)Chem2DInput.o \
 	   $(CHEM_DIR)Chem2DQuad.o \
 	   $(CHEM_DIR)Chem2DQuadGrid.o \
 	   $(CHEM_DIR)Chem2DQuadMultiBlock.o \
 	   $(CHEM_DIR)Chem2DQuadSingleBlock.o \
-	   $(CHEM_DIR)Chem2DQuadSolvers.o \
-           $(CHEM_DIR)15step_GRI211.o \
-           $(CHEM_DIR)15step_GRI3.o \
-	   $(CHEM_DIR)complexify.o \
-           $(CHEM_DIR)c_15step_GRI211.o \
-           $(CHEM_DIR)c_15step_GRI3.o
+	   $(CHEM_DIR)Chem2DQuadSolvers.o 
 OBJ_CHEM_EXE = $(CHEM_DIR)Chem2D.o
 OBJ_HIGHTEMP = $(HIGHTEMP_DIR)HighTemp2DState.o \
                $(HIGHTEMP_DIR)HighTemp2DInput.o  \
@@ -529,13 +518,7 @@ OBJ_LESPREMIXED = $(LESPREMIXED_DIR)LESPremixed2DState.o \
 	          $(LESPREMIXED_DIR)LESPremixed2DTurbInit.o \
 	          $(LESPREMIXED_DIR)LESPremixed2DdRdU.o \
 	          $(LESPREMIXED_DIR)PowerLaw.o \
-	          $(LESPREMIXED_DIR)Scalars.o \
-	          $(CHEM_DIR)Reactions.o \
-                  $(CHEM_DIR)15step_GRI211.o \
-                  $(CHEM_DIR)15step_GRI3.o \
-	          $(CHEM_DIR)complexify.o \
-                  $(CHEM_DIR)c_15step_GRI211.o \
-                  $(CHEM_DIR)c_15step_GRI3.o
+	          $(LESPREMIXED_DIR)Scalars.o 
 OBJ_LESPREMIXED_EXE = $(LESPREMIXED_DIR)LESPremixed2D.o
 OBJ_LEVELSET = $(LEVELSET_DIR)LevelSet2DInput.o \
                $(LEVELSET_DIR)LevelSet2DQuad.o \
@@ -580,13 +563,18 @@ OBJ_NASARP1311 = $(NASARP1311_DIR)NASARP1311dataclass.o
 OBJ_TURBULENT = $(TURBULENT_DIR)SFSModelling.o
 OBJ_ICEMCFD = $(ICEM_DIR)ICEMCFD.o \
 	      $(ICEM_DIR)ICEMCFD_ctype.o
+OBJ_REACTIONS = $(REACTIONS_DIR)Reactions.o \
+		$(REACTIONS_DIR)15step_GRI211.o \
+		$(REACTIONS_DIR)15step_GRI3.o \
+		$(REACTIONS_DIR)c_15step_GRI211.o \
+		$(REACTIONS_DIR)c_15step_GRI3.o
 OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_AMR) \
 	   $(OBJ_SYSTEM)
 OBJ_CFFC = $(OBJ_BASE) $(OBJ_SCALAR) $(OBJ_HEAT) $(OBJ_HYPERHEAT) $(OBJ_EULER1D) $(OBJ_MHD1D) \
 	   $(OBJ_ADVECTDIFFUSE) $(OBJ_CHEM) $(OBJ_DUSTY) $(OBJ_EULER) $(OBJ_HIGHTEMP) \
 	   $(OBJ_ION) $(OBJ_ELECTROSTATIC) $(OBJ_INTERFACE) $(OBJ_LESPREMIXED) $(OBJ_LEVELSET) \
 	   $(OBJ_NAVIERSTOKES) $(OBJ_GAUSSIAN) $(OBJ_EOS) $(OBJ_ICEMCFD) $(OBJ_TURBULENT) \
-	   $(OBJ_NASARP1311)
+	   $(OBJ_NASARP1311) $(OBJ_REACTIONS)
 OBJ_MAIN = cffc2D.o
 OBJ_ICEMCFD_UTIL1 = $(ICEM_DIR)icemcfd2tecplot.o \
                     $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD)
@@ -797,12 +785,12 @@ $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.depend: $(SRC_ADVECTDIFFUSE_EXE)
 	@echo '-------------------------------------------------------------'
 	@echo ' '
 
-$(EXE_CHEM2D): $(CHEM_DIR)Chem2D.depend $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASARP1311) $(OBJ_CHEM) $(OBJ_ICEMCFD)
+$(EXE_CHEM2D): $(CHEM_DIR)Chem2D.depend $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASARP1311) $(OBJ_REACTIONS) $(OBJ_CHEM) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_CHEM2D) for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_CHEM2D) $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASARP1311) $(OBJ_CHEM) $(OBJ_ICEMCFD) $(LDFLAGS)
+	$(LD) -o $(EXE_CHEM2D) $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASARP1311) $(OBJ_REACTIONS) $(OBJ_CHEM) $(OBJ_ICEMCFD) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_CHEM2D) has been brought up to date.
 	@echo '--------------------------------------------------'
@@ -935,12 +923,12 @@ $(ION_DIR)Ion5Moment2D.depend: $(SRC_ION_EXE)
 	@echo '-------------------------------------------------------------------'
 	@echo ' '
 
-$(EXE_LESPREMIXED2D): $(LESPREMIXED_DIR)LESPremixed2D.depend $(OBJ_LESPREMIXED_EXE) $(OBJ_BASE) $(OBJ_NASARP1311) $(OBJ_LESPREMIXED) $(OBJ_TURBULENT) $(OBJ_ICEMCFD) 
+$(EXE_LESPREMIXED2D): $(LESPREMIXED_DIR)LESPremixed2D.depend $(OBJ_LESPREMIXED_EXE) $(OBJ_BASE) $(OBJ_NASARP1311) $(OBJ_REACTIONS) $(OBJ_LESPREMIXED) $(OBJ_TURBULENT) $(OBJ_ICEMCFD) 
 	@echo ' '
 	@echo Building program $(EXE_LESPREMIXED2D) for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_LESPREMIXED2D) $(OBJ_LESPREMIXED_EXE) $(OBJ_BASE) $(OBJ_NASARP1311) $(OBJ_LESPREMIXED) $(OBJ_TURBULENT) $(OBJ_ICEMCFD) $(LDFLAGS)
+	$(LD) -o $(EXE_LESPREMIXED2D) $(OBJ_LESPREMIXED_EXE) $(OBJ_BASE) $(OBJ_NASARP1311) $(OBJ_REACTIONS) $(OBJ_LESPREMIXED) $(OBJ_TURBULENT) $(OBJ_ICEMCFD) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_LESPREMIXED2D) has been brought up to date.
 	@echo '--------------------------------------------------'
@@ -1232,6 +1220,8 @@ clean:
 	rm -f $(SYSTEM_DIR)*.o $(SYSTEM_DIR)*.il $(SYSTEM_DIR)*~
 	rm -f $(TURBULENT_DIR)*.o $(TURBULENT_DIR)*.il $(TURBULENT_DIR)*~
 	rm -f $(GAUSSIAN_DIR)*.o $(GAUSSIAN_DIR)*.il $(GAUSSIAN_DIR)*~
+	rm -f $(REACTIONS_DIR)*.o $(REACTIONS_DIR)*.il $(REACTIONS_DIR)*~
+	rm -f $(NASARP1311_DIR)*.o $(NASARP1311_DIR)*.il $(NASARP1311_DIR)*~
 	rm -f $(EXE_MAIN)
 	rm -f $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2)
 	rm -f $(EXE_ADVECTDIFFUSE2D)

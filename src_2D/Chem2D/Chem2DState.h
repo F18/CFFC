@@ -61,15 +61,15 @@ using namespace std;
 
 // CHEM2D Specific headers
 #ifndef _SPECIES_INCLUDED
-#include "Species.h"
+#include "../Physics/Species.h"
 #endif // _SPECIES_INCLUDED
 
 #ifndef _NASARP1311_DATA_INCLUDED
-#include "NASARP1311data.h"
+#include "../Physics/NASAData/NASARP1311data.h"
 #endif // _NASARP1311_DATA_INCLUDED
 
 #ifndef _REACTIONS_INCLUDED
-#include "Reactions.h"
+#include "../Reactions/Reactions.h"
 #endif // _REACTIONS_INCLUDED
 
 //Temperature convergence tolerance in

@@ -24,7 +24,7 @@ using namespace std;
 #include "../Math/Tensor2D.h"
 #include "../Physics/GasConstants.h"
 #include "../CFD/CFD.h"
-#include "Complexify.h"
+#include "../Math/Complexify.h"
 #include "15step.h"
 
 // Cantera libraries

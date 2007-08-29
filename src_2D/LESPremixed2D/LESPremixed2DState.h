@@ -64,17 +64,17 @@ using namespace std;
 
 // CHEM2D Specific headers
 #ifndef _SPECIES_INCLUDED
-#include "../Chem2D/Species.h"
+#include "../Physics/Species.h"
 #endif //_SPECIES_INCLUDED
 
 #ifndef _NASARP1311_DATA_INCLUDED
-#include "../Chem2D/NASARP1311data.h"
+#include "../Physics/NASAData/NASARP1311data.h"
 #endif
 
 
 // Other header files
 #ifndef _REACTIONS_INCLUDED
-#include "../Chem2D/Reactions.h"
+#include "../Reactions/Reactions.h"
 #endif //_REACTIONS_INCLUDED
 
 #ifndef _POWER_LAW_INCLUDED
