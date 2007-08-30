@@ -15,3 +15,4 @@
  **********************************************************************/
 int NavierStokes2D_Quad_Block::residual_variable = 1;
 ofstream NavierStokes2D_Quad_Block::dout;
+int NavierStokes2D_Quad_Block::Number_of_Residual_Norms = 4;

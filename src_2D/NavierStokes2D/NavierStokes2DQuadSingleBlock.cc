@@ -2618,6 +2618,37 @@ double Max_Norm_Residual(NavierStokes2D_Quad_Block &SolnBlk) {
 
 }
 
+double L1_Norm_Residual(NavierStokes2D_Quad_Block &SolnBlk, int rv) {
+  double l1_norm = ZERO;
+  for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
+    for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
+      l1_norm += fabs(SolnBlk.dUdt[i][j][0][rv]);
+    }
+  }
+  return l1_norm;
+}
+
+double L2_Norm_Residual(NavierStokes2D_Quad_Block &SolnBlk, int rv) {
+  double l2_norm = ZERO;
+  for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
+    for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
+      l2_norm += sqr(SolnBlk.dUdt[i][j][0][rv]);
+    }
+  }
+  l2_norm = sqrt(l2_norm);
+  return l2_norm;
+}
+
+double Max_Norm_Residual(NavierStokes2D_Quad_Block &SolnBlk, int rv) {
+  double max_norm = ZERO;
+  for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
+    for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
+      max_norm = max(max_norm, fabs(SolnBlk.dUdt[i][j][0][rv]));
+    }
+  }
+  return max_norm;
+}
+
 /**********************************************************************
  * Routine: Linear_Reconstruction_GreenGauss                          *
  *                                                                    *
@@ -4307,6 +4338,7 @@ int dUdt_Residual_Evaluation(NavierStokes2D_Quad_Block &SolnBlk,
   NavierStokes2D_cState Flux;
 
   NavierStokes2D_pState Wu, Wd, dWdxl, dWdyl, dWdxr, dWdyr;
+  NavierStokes2D_pState dWdx, dWdy;
   Vector2D Xl, Xr, Xu, Xd;
   int viscous_bc_flag;
 
@@ -4654,15 +4686,27 @@ int dUdt_Residual_Evaluation(NavierStokes2D_Quad_Block &SolnBlk,
 					     Xl,Wl,Xd,Wd,Xr,Wr,Xu,Wu,
 					     SolnBlk.Grid.nfaceE(i,j),
 					     SolnBlk.Axisymmetric,
-					     viscous_bc_flag);
+					     viscous_bc_flag,dWdx,dWdy);
+      if (IP.Solver_Type == IMPLICIT && SolnBlk.face_grad_arrays_allocated) {
+        SolnBlk.dWdx_faceE[i][j] = dWdx;
+        SolnBlk.dWdy_faceE[i][j] = dWdy;
+      }
 	    break;
 	  case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
 	    Flux -= ViscousFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
 				  SolnBlk.Grid.nfaceE(i,j),SolnBlk.Axisymmetric);
+      if (IP.Solver_Type == IMPLICIT && SolnBlk.face_grad_arrays_allocated) {
+        SolnBlk.dWdx_faceE[i][j] = HALF*(dWdxl+dWdxr);
+        SolnBlk.dWdy_faceE[i][j] = HALF*(dWdyl+dWdyr);
+      }
 	    break;
 	  case VISCOUS_RECONSTRUCTION_HYBRID :
 	    Flux -= ViscousFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,Xr,Wr,dWdxr,dWdyr,
-					SolnBlk.Grid.nfaceE(i,j),SolnBlk.Axisymmetric);
+					SolnBlk.Grid.nfaceE(i,j),SolnBlk.Axisymmetric,dWdx,dWdy);
+      if (IP.Solver_Type == IMPLICIT && SolnBlk.face_grad_arrays_allocated) {
+        SolnBlk.dWdx_faceE[i][j] = dWdx;
+        SolnBlk.dWdy_faceE[i][j] = dWdy;
+      }
 	    break;
 	  };
 	}
@@ -5010,15 +5054,27 @@ int dUdt_Residual_Evaluation(NavierStokes2D_Quad_Block &SolnBlk,
 					   Xl,Wl,Xd,Wd,Xr,Wr,Xu,Wu,
 					   SolnBlk.Grid.nfaceN(i,j),
 					   SolnBlk.Axisymmetric,
-					   viscous_bc_flag);
+					   viscous_bc_flag,dWdx,dWdy);
+      if (IP.Solver_Type == IMPLICIT && SolnBlk.face_grad_arrays_allocated) {
+        SolnBlk.dWdx_faceN[i][j] = dWdx;
+        SolnBlk.dWdy_faceN[i][j] = dWdy;
+      }
 	  break;
 	case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
 	  Flux -= ViscousFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
 				SolnBlk.Grid.nfaceN(i,j),SolnBlk.Axisymmetric);
+      if (IP.Solver_Type == IMPLICIT && SolnBlk.face_grad_arrays_allocated) {
+        SolnBlk.dWdx_faceN[i][j] = HALF*(dWdxl+dWdxr);
+        SolnBlk.dWdy_faceN[i][j] = HALF*(dWdyl+dWdyr);
+      }
 	  break;
 	case VISCOUS_RECONSTRUCTION_HYBRID :
 	  Flux -= ViscousFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,Xr,Wr,dWdxr,dWdyr,
-				      SolnBlk.Grid.nfaceN(i,j),SolnBlk.Axisymmetric);
+				      SolnBlk.Grid.nfaceN(i,j),SolnBlk.Axisymmetric,dWdx,dWdy);
+      if (IP.Solver_Type == IMPLICIT && SolnBlk.face_grad_arrays_allocated) {
+        SolnBlk.dWdx_faceN[i][j] = dWdx;
+        SolnBlk.dWdy_faceN[i][j] = dWdy;
+      }
 	  break;
 	};
       }

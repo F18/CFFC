@@ -128,6 +128,9 @@ class NavierStokes2D_cState;
  *     dFdU     -- Return the Jacobian of the inviscid solution flux
  *                 vector with respect to the conserved solution
  *                 variables.
+ *     dFdW     -- Return the Jacobian of the inviscid solution flux
+ *                 vector with respect to the primitive solution
+ *                 variables.
  *
  *     Gx       -- Return x-direction viscous solution flux.
  *     Gy       -- Return y-direction viscous solution flux.
@@ -458,6 +461,7 @@ class NavierStokes2D_pState {
   NavierStokes2D_cState F(void) const;
   NavierStokes2D_cState F(const Vector2D &V) const;
   void dFdU(DenseMatrix &dFdU) const;
+  void dFdW(DenseMatrix &dFdW) const;
   //@}
 
   //@{ @name Viscous solution fluxes and Jacobians.
@@ -2487,6 +2491,39 @@ inline void NavierStokes2D_pState::dFdU(DenseMatrix &dFdU) const {
 }
 
 /**********************************************************************
+ * NavierStokes2D_pState::dFdW -- Jacobian of the inviscid solution       *
+ *                            flux with respect to the primitive      *
+ *                            solution variables.                     *
+ **********************************************************************/
+inline void NavierStokes2D_pState::dFdW(DenseMatrix &dFdW) const {
+  dFdW(0,0) += v.x;
+  dFdW(0,1) += rho;
+  dFdW(1,0) += v.x*v.x;
+  dFdW(1,1) += TWO*rho*v.x; 
+  dFdW(1,3) += ONE;
+  dFdW(2,0) += v.x*v.y;
+  dFdW(2,1) += rho*v.y;
+  dFdW(2,2) += rho*v.x;
+  dFdW(3,0) += HALF*(v.x*v.x+v.y*v.y)*v.x;
+  dFdW(3,1) += rho*v.x*v.x+rho*(g*p/rho/gm1+HALF*(v.x*v.x+v.y*v.y));
+  dFdW(3,2) += rho*v.x*v.y;
+  dFdW(3,3) += v.x*g/gm1;
+  if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+    dFdW(1,0) += TWO/THREE*k;
+    dFdW(1,4) += TWO/THREE*rho;
+    dFdW(3,0) += FIVE/THREE*k*v.x;
+    dFdW(3,1) += FIVE/THREE*rho*k; 
+    dFdW(3,4) += FIVE/THREE*rho*v.x;
+    dFdW(4,0) += v.x*k;
+    dFdW(4,1) += rho*k;  
+    dFdW(5,0) += v.x*omega;
+    dFdW(5,1) += rho*omega;
+  }
+  dFdW(4,4) += rho*v.x;
+  dFdW(5,5) += rho*v.x;
+}
+
+/**********************************************************************
  * NavierStokes2D_pState::Gx, Gy -- Solution viscous fluxes.          *
  **********************************************************************/
 inline NavierStokes2D_cState NavierStokes2D_pState::Gx(const NavierStokes2D_pState &dWdx) const {
@@ -2894,7 +2931,7 @@ inline void NavierStokes2D_cState::ComputeViscousTerms(const NavierStokes2D_pSta
  **********************************************************************/
 inline NavierStokes2D_pState NavierStokes2D_cState::lambda_x(void) const {
   double vx = v().x, cc = c();
-  return NavierStokes2D_pState(vx-cc,vx,vx,vx-cc,vx,vx);
+  return NavierStokes2D_pState(vx-cc,vx,vx,vx+cc,vx,vx);
 }
 
 inline NavierStokes2D_pState NavierStokes2D_cState::lambda_x(const Vector2D &V) const {
@@ -3125,6 +3162,10 @@ extern NavierStokes2D_pState BC_Characteristic_Pressure(const NavierStokes2D_pSt
 extern NavierStokes2D_pState BC_Characteristic_Mach_Number(const NavierStokes2D_pState &Wi,
 							   const NavierStokes2D_pState &Wo,
 							   const Vector2D &norm_dir);
+
+Vector2D HLLE_wavespeeds(const NavierStokes2D_pState &Wl,
+    const NavierStokes2D_pState &Wr,
+    const Vector2D &norm_dir);
 
 extern NavierStokes2D_pState WaveSpeedPos(const NavierStokes2D_pState &lambda_a,
 					  const NavierStokes2D_pState &lambda_l,
@@ -3367,6 +3408,30 @@ extern NavierStokes2D_cState ViscousFluxHybrid_n(const Vector2D &X,
 						 const NavierStokes2D_pState &dW2dy,
 						 const Vector2D &norm_dir,
 						 const int &Axisymmetric);
+
+extern NavierStokes2D_cState ViscousFluxDiamondPath_n(const Vector2D &X,
+						      const Vector2D &Xl, const NavierStokes2D_pState &Wl,
+						      const Vector2D &Xd, const NavierStokes2D_pState &Wd,
+						      const Vector2D &Xr, const NavierStokes2D_pState &Wr,
+						      const Vector2D &Xu, const NavierStokes2D_pState &Wu,
+						      const Vector2D &norm_dir,
+						      const int &Axisymmetric,
+						      const int &stencil_flag,
+						      NavierStokes2D_pState &dWdx, NavierStokes2D_pState &dWdy);
+
+extern NavierStokes2D_cState ViscousFluxHybrid_n(const Vector2D &X,
+						 NavierStokes2D_pState &W,
+						 const Vector2D &X1,
+						 const NavierStokes2D_pState &W1,
+						 const NavierStokes2D_pState &dW1dx,
+						 const NavierStokes2D_pState &dW1dy,
+						 const Vector2D &X2,
+						 const NavierStokes2D_pState &W2,
+						 const NavierStokes2D_pState &dW2dx,
+						 const NavierStokes2D_pState &dW2dy,
+						 const Vector2D &norm_dir,
+						 const int &Axisymmetric,
+						 NavierStokes2D_pState &dWdx, NavierStokes2D_pState &dWdy);
 
 extern double ShearStress(const NavierStokes2D_pState &W,
 			  const NavierStokes2D_pState &dWdx,

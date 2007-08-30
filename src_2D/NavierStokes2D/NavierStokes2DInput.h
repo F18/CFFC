@@ -57,6 +57,7 @@
 #ifndef _EMBEDDEDBOUNDARIES2DINPUT_INCLUDED
 #include "../Interface2D/EmbeddedBoundaries2D_Input.h"
 #endif // _EMBEDDEDBOUNDARIES2DINPUT_INCLUDED
+#include "../NewtonKrylovSchwarz2D/NKSInput2D.h"
 
 // Define the structures and classes.
 
@@ -103,6 +104,11 @@ public:
 
   //@{ @name Multigrid related input parameters:
   Multigrid_Input_Parameters Multigrid_IP;
+  //@}
+
+  //@{ Newton-Krylov-Schwarz related input parameters:
+  NKS_Input_Parameters NKS_IP;
+  int Solver_Type; 
   //@}
 
   //@{ @name Reconstruction type indicator and related input parameters:
@@ -255,6 +261,8 @@ public:
   int Refinement_Criteria_Gradient_Turbulence_Kinetic_Energy;
   //! Bounding-box for bounding-box mesh refinement.
   Vector2D AMR_Xmin, AMR_Xmax;
+  //! Morton Re-Ordering
+	int Morton, Morton_Reordering_Frequency;
   //! Smooth quad block flag:
   int i_Smooth_Quad_Block;
   //@}
@@ -484,6 +492,7 @@ inline ostream &operator << (ostream &out_file,
     break;
   case GRID_BLUNT_BODY :
     out_file << "\n  -> Cylinder Radius (m): " << IP.Blunt_Body_Radius;
+    out_file << "\n  -> Blunt Body Mach Number: " << IP.Blunt_Body_Mach_Number;
     break;
   case GRID_ROCKET_MOTOR :
     out_file << "\n  -> Length of Chamber (m): " << IP.Chamber_Length;
@@ -566,6 +575,16 @@ inline ostream &operator << (ostream &out_file,
   }
   out_file << "\n  -> Mesh shift, scale, and rotate: " 
 	   << IP.X_Shift << " " << IP.X_Scale << " " << IP.X_Rotate;
+  out_file << "\n  -> Mesh Stretching: "
+	   << IP.i_Mesh_Stretching;
+  out_file << "\n  -> Mesh Stretching Type Idir: "
+	   << IP.Mesh_Stretching_Type_Idir;
+  out_file << "\n  -> Mesh Stretching Type Jdir: "
+	   << IP.Mesh_Stretching_Type_Jdir;
+  out_file << "\n  -> Mesh Stretching Factor Idir: "
+	   << IP.Mesh_Stretching_Factor_Idir;
+  out_file << "\n  -> Mesh Stretching Factor Jdir: "
+	   << IP.Mesh_Stretching_Factor_Jdir;
   out_file << "\n  -> Number of Blocks i-direction: "
 	   << IP.Number_of_Blocks_Idir;
   out_file << "\n  -> Number of Blocks j-direction: " 
@@ -608,6 +627,10 @@ inline ostream &operator << (ostream &out_file,
 	   << IP.Time_Max*THOUSAND;
   out_file << "\n  -> Maximum Number of Time Steps (Iterations): " 
 	   << IP.Maximum_Number_of_Time_Steps;
+  if (IP.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+  out_file << "\n  -> Maximum Number of NKS Iterations: " 
+             << IP.NKS_IP.Maximum_Number_of_NKS_Iterations;
+  }
   out_file << "\n  -> Number of Processors: " 
 	   << IP.Number_of_Processors;
   out_file << "\n  -> Number of Blocks Per Processor: " 
@@ -622,6 +645,13 @@ inline ostream &operator << (ostream &out_file,
   out_file << "\n  -> Output Progress Frequency: "
 	   << IP.Output_Progress_Frequency
 	   << " steps (iterations)";
+
+  if (IP.Morton) {
+    out_file << "\n  -> Morton Re-Ordering Frequency: "
+      << IP.Morton_Reordering_Frequency
+      << " time steps (iterations)";
+  }
+  
   return out_file;
 }
 

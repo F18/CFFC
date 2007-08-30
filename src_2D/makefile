@@ -235,6 +235,7 @@ SRC_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes2DState.cc \
                    $(NAVIERSTOKES_DIR)NavierStokes2DQuadTurbulenceSingleBlock.cc \
                    $(NAVIERSTOKES_DIR)NavierStokes2DQuadTurbulenceMultiBlock.cc \
                    $(NAVIERSTOKES_DIR)NavierStokes2DQuadGrid.cc \
+                   $(NAVIERSTOKES_DIR)NavierStokes2DdRdU.cc \
                    $(NAVIERSTOKES_DIR)NavierStokes2DQuadSolvers.cc
 SRC_NAVIERSTOKES_EXE = $(NAVIERSTOKES_DIR)NavierStokes2D.cc
 SRC_NASARP1311 = $(NASARP1311_DIR)NASARP1311dataclass.cc   
@@ -552,6 +553,7 @@ OBJ_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes2DState.o \
                    $(NAVIERSTOKES_DIR)NavierStokes2DQuadTurbulenceSingleBlock.o \
                    $(NAVIERSTOKES_DIR)NavierStokes2DQuadTurbulenceMultiBlock.o \
                    $(NAVIERSTOKES_DIR)NavierStokes2DQuadGrid.o \
+                   $(NAVIERSTOKES_DIR)NavierStokes2DdRdU.o \
                    $(NAVIERSTOKES_DIR)NavierStokes2DQuadSolvers.o
 OBJ_NAVIERSTOKES_EXE = $(NAVIERSTOKES_DIR)NavierStokes2D.o 
 OBJ_RTE = $(RTE_DIR)Rte2DState.o \
