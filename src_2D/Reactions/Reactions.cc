@@ -331,7 +331,8 @@ void Reaction_set::ct_load_mechanism(string &mechanism_file_name,
 				     string &mechanism_name) {
 
 #ifdef _CANTERA_VERSION
-  // make sure all unused parameters are null
+ 
+ // make sure all unused parameters are null
   Deallocate();
 
   //flag for cantera
@@ -363,9 +364,11 @@ void Reaction_set::ct_load_mechanism(string &mechanism_file_name,
 
   // allocate some temporary storage
   set_storage();
+
 #else
   cout<<"\n CODE NOT COMPILED WITH CANTERA!";
   cout<<"\n YOU SHOULD NOT BE HERE!";
+
 #endif //_CANTERA_VERSION
 
 } //end of ct_load_mechanism
@@ -381,20 +384,56 @@ void Reaction_set::ct_parse_mass_string(const string& massFracStr,
 					double* massFracs) {
 
 #ifdef _CANTERA_VERSION
-  compositionMap xx;
-  int kk = ct_gas->nSpecies();
-  for (int k = 0; k < kk; k++) xx[ct_gas->speciesName(k)] = -1.0;
-  parseCompString(massFracStr, xx);
-  ct_gas->setMassFractionsByName(xx);
+
+  // set mass fractions and make sure they sum to unity
+  ct_gas->setMassFractionsByName(massFracStr);
   for(int index =0; index<num_species; index++){
     massFracs[index] = ct_gas->massFraction(index);
   }
+
 #else
   cout<<"\n CODE NOT COMPILED WITH CANTERA!";
   cout<<"\n YOU SHOULD NOT BE HERE!";  
+
 #endif //_CANTERA_VERSION
 
 } // end of ct_parse_mass_string
 
 
 
+/***********************************************************************
+  Use cantera to parse the input schmidt number string of the form
+      CH4:0.5, O2:0.5
+  All other species will be assumed to have unity Schmidt number.  
+  Returns them in an array.
+***********************************************************************/
+void Reaction_set::ct_parse_schmidt_string( const string& schmidtStr, 
+					    double* schmidt) {
+
+#ifdef _CANTERA_VERSION
+
+  // declares
+  compositionMap xx;
+  int kk = ct_gas->nSpecies();
+  double s;
+
+  // build composition map and initialize
+  for (int k = 0; k < kk; k++) xx[ct_gas->speciesName(k)] = -1.0;
+
+  // parse map
+  parseCompString(schmidtStr, xx);
+
+  // set schmidt numbers
+  for (int k = 0; k < kk; k++) { 
+    s = xx[ct_gas->speciesName(k)];
+    if (s > 0.0) schmidt[k] = s;
+    else schmidt[k] = ONE;
+  }
+
+#else
+  cout<<"\n CODE NOT COMPILED WITH CANTERA!";
+  cout<<"\n YOU SHOULD NOT BE HERE!";
+
+#endif //_CANTERA_VERSION
+
+} // end of ct_parse_mass_string

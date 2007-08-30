@@ -285,7 +285,8 @@ public:
 
   // cantera member functions
   void ct_load_mechanism(string &, string &);
-  void ct_parse_mass_string(const string&, double*);
+  void ct_parse_mass_string( const string&, double* );
+  void ct_parse_schmidt_string( const string&, double*);
 
   //setup storage after num_reactions & num_species set.
   void set_storage(void){
@@ -462,53 +463,6 @@ inline void Reaction_set::omega(SOLN_cSTATE &U, const SOLN_pSTATE &W,  const int
       //ans in kg/m^3*s   g/mol *(mol/cm^3*s)*1e3      
       U.rhospec[index].c = M[index]*ans*THOUSAND;  
     }
-
-//-----------------------------------------------------------------------------
-//     THIS SHOULD NOT BE HERE.  IT HAS NOTHING TO DO WITH CHEMICAL REACTIONS
-//-----------------------------------------------------------------------------
-//     //turbulent case
-//     if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-//         Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-   
-//       double rhoc_minum =  U.rhospec[0].c; 
-//       for(int index =1; index<num_react_species; index++){
-//         if (U.rhospec[index].c < rhoc_minum)
-//           {
-//             rhoc_minum =U.rhospec[index].c;
-//           }
-//       } // Find the deficit species in terms of concentration
-//       for(int index =0; index<num_react_species; index++){
-//         switch(index) {
-//         case 0 : //CH4
-//           ans = -W.Coeff_edm*U.rhoomega*rhoc_minum/U.rho;
-//           break;
-//         case 1 : //O2
-//           ans = -HALF*W.Coeff_edm*U.rhoomega*rhoc_minum/U.rho;
-//           break;
-//         case 2 : //CO2
-//           ans = W.Coeff_edm*U.rhoomega*rhoc_minum/U.rho;
-//           break;
-//         case 3 : //H2O
-//           ans = TWO*W.Coeff_edm*U.rhoomega*rhoc_minum/U.rho;
-//           break;
-//         };
-//         //Use the minmum reaction rate between laminar and turbulent 
-//         if(index<2){
-//           U.rhospec[index].c = max(ans, U.rhospec[index].c);  
-//         }else{
-//           U.rhospec[index].c = min(ans, U.rhospec[index].c); 
-//           //This will be useful for chemistry source Jacobian because
-//           //the limitting case (finite rate chemisty and turbulent mixing) is the one
-//           //controlling the reaction process ... 
-//           //For forward reaction scheme actually only the fuel and oxidizer concentration (max) 
-//           //are useful, for products (max) which might be reconsidered when considering reversible 
-//         //reaction scheme 
-//         }        
-        
-//       }
-      
-//     }//turbulent case  
-//-----------------------------------------------------------------------------
     break;
     
     //TWO STEP CH4
@@ -876,46 +830,6 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
     //when c[0] -> ZERO
     if(c_denom[0] != c[0] && CFL_flag){ dSwdU(NUM_VAR,NUM_VAR)=ZERO; }
     
-//-----------------------------------------------------------------------------
-//     THIS SHOULD NOT BE HERE.  IT HAS NOTHING TO DO WITH CHEMICAL REACTIONS
-//-----------------------------------------------------------------------------
-//     /******************** TURBULENCE ***********************************************/
-//     //take the minum value between laminar and turbulent concentrations
-//     if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON || Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA){      
-//       double c_min = 0.0;
-//       //fuel and oxidizer [0],[1]
-//       for(int i=0; i<2; i++){
-//         c_min = W.spec[0].c;
-//         if(W.spec[i].c<c_min){
-//           c_min =W.spec[i].c;
-//         }
-        
-//       }//find out the deficient species in fuel and oxidizer (edm)
-//       for(int i=0; i<2; i++){
-//         dSwdU(NUM_VAR+i,0) = -W.Coeff_edm *c_min*W.omega;
-//         dSwdU(NUM_VAR+i,5) = -W.Coeff_edm*W.rho*c_min;
-//       }
- 
-//       //The limiting case has been determined in Sw(...)
-//       Chem2D_cState Sw_LAMINAR;
-//       Chem2D_cState Sw_TURBULENT;
-//       Sw_LAMINAR = W.Sw(W.React.reactset_flag,FLOWTYPE_LAMINAR);
-//       Sw_TURBULENT= W.Sw(W.React.reactset_flag,FLOWTYPE_TURBULENT_RANS_K_OMEGA);//k epsilon such as.
-      
-//       if (Sw_LAMINAR[0]<Sw_TURBULENT[0]){
-//         dSwdU(NUM_VAR,NUM_VAR) =  -W.rho* W.Coeff_edm*W.omega;
-//         dSwdU(NUM_VAR+1,NUM_VAR) = -TWO*dSwdU(NUM_VAR,NUM_VAR);
-//         dSwdU(NUM_VAR+2,NUM_VAR) = dSwdU(NUM_VAR,NUM_VAR);
-//         dSwdU(NUM_VAR+3,NUM_VAR) = TWO*dSwdU(NUM_VAR,NUM_VAR);
-//         dSwdU(NUM_VAR,NUM_VAR+1) =  -W.rho* W.Coeff_edm*W.omega;
-//         dSwdU(NUM_VAR+1,NUM_VAR+1) = -TWO*dSwdU(NUM_VAR,NUM_VAR+1) ;
-//         dSwdU(NUM_VAR+2,NUM_VAR+1) = dSwdU(NUM_VAR,NUM_VAR);
-//         dSwdU(NUM_VAR+3,NUM_VAR+1) = TWO*dSwdU(NUM_VAR,NUM_VAR);        
-//       }
-      
-//     }//end of turbulent case
-//     /*******************************************************************************/
-//-----------------------------------------------------------------------------
     break;
 
 
@@ -1142,6 +1056,7 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
 #ifdef _CANTERA_VERSION
 
   case CANTERA:
+    Finite_Difference_dSwdU<SOLN_pSTATE,SOLN_cSTATE>(dSwdU, W, Flow_Type);
     break;
 
 #endif // _CANTERA_VERSION
@@ -1603,7 +1518,7 @@ inline void Reaction_set::Complex_Step_dSwdU(DenseMatrix &dSwdU,
   //-------------------------------------------//
   case CH4_15STEP_ARM2 :
 
-    for(int j=0; j<num_react_species; j++){
+    for(int j=0; j<num_react_species-1; j++){
       if ( W.spec[j].c > TOL ) {
 
 	// perturb
@@ -1613,7 +1528,7 @@ inline void Reaction_set::Complex_Step_dSwdU(DenseMatrix &dSwdU,
 	cplx15step211_(PressDyne, Temp, cc, rc);
 
 	// set derivative
-	for (int i=0; i < num_react_species; ++i) {
+	for (int i=0; i < num_react_species-1; ++i) {
 	  // in kg/m^3*s  ->  (g/mol)*(mol/cm^3*s)*1e3
 	  rc[i] *= M[i]*THOUSAND;
 	  dSwdU(NUM_VAR+i, NUM_VAR+j) = imag( rc[i]/eps )/W.rho;
@@ -1633,7 +1548,7 @@ inline void Reaction_set::Complex_Step_dSwdU(DenseMatrix &dSwdU,
   //-------------------------------------------//
   case CH4_15STEP_ARM3 :
 
-    for(int j=0; j<num_react_species; j++){
+    for(int j=0; j<num_react_species-1; j++){
       if ( W.spec[j].c > TOL ) {
 	
 	// perturb
@@ -1643,7 +1558,7 @@ inline void Reaction_set::Complex_Step_dSwdU(DenseMatrix &dSwdU,
 	cplx15step30_(PressDyne, Temp, cc, rc);
 
 	// set derivative
-	for (int i=0; i < num_react_species; ++i) {
+	for (int i=0; i < num_react_species-1; ++i) {
 	  // in kg/m^3*s  ->  (g/mol)*(mol/cm^3*s)*1e3
 	  rc[i] *= M[i]*THOUSAND;
 	  dSwdU(NUM_VAR+i, NUM_VAR+j) = imag( rc[i]/eps )/W.rho;
@@ -1672,6 +1587,9 @@ inline void Reaction_set::Complex_Step_dSwdU(DenseMatrix &dSwdU,
 /************************************************************************
   Calculates the Jacobian of the Chemical Source terms with respect
   to the conserved variables by using finite difference
+
+  NOTE:  THis is a general way of doing it, i.e. calling omega(),
+         but this is NOT EFFICIENT!!!!
   
    dSwdU:  Matrix of source terms 
 ************************************************************************/
@@ -1682,44 +1600,51 @@ inline void Reaction_set::Finite_Difference_dSwdU(DenseMatrix &dSwdU,
   
   static const double b = numeric_limits<double>::epsilon();  // 1.0E-12;  
   int NUM_VAR = W.NumVarSansSpecies();
-  int NUM_VAR_REACT_SPECIES = NUM_VAR + num_react_species;
-  SOLN_cSTATE U(W), S, EPS, S1; 
+  SOLN_cSTATE U(W), S, S1, EPS; 
 
+  // if this is one of those cases where num_species == num_reactions,
+  // subtract one, cause dSwdU is (N-1)x(N-1)
+  int ns=num_reactions;
+  if (num_species == num_reactions) ns--;
 
   // get unperturbed reaction rate
-  S.Vacuum();
+  //S.Vacuum();
   omega<SOLN_pSTATE,SOLN_cSTATE>( S, W, Flow_Type );
 
-
   // Perturbation parameter (EPSILON)
-  // remember, the state indexing starts at 1
-  for (int j=NUM_VAR+1; j < NUM_VAR_REACT_SPECIES+1; ++j) {
-    EPS[j+NUM_VAR+1] = sqrt( b*fabs(U[j+NUM_VAR+1]) + b )/1000.0;
+  for (int j=0; j < ns; ++j) {
+    EPS.rhospec[j].c = sqrt( b*fabs(U.rhospec[j].c) + b )/1000.0;
   }
-  
+
   // initialize
-  S1 = S;
+  //S1 = S;
 
   //
   // compute finite differences
   //
-  for (int j=NUM_VAR+1; j < NUM_VAR_REACT_SPECIES+1; ++j) {
-    if ( EPS[j] != 0.0 ) {
+  for (int j=0; j < ns; ++j) {
+    if ( r[j] != 0.0 ) {
 
       // perturb
-      U[j] += EPS[j];
+      // Because we are building the N-1 jacobian, when one species is 
+      // perturbed, species N must be perturbed in the opposite direction
+      // so that sum(mass_fracs)==1
+      U.rhospec[j].c += EPS.rhospec[j].c;
+      U.rhospec[num_species-1].c -= EPS.rhospec[j].c;
 
       // compute perturbed reaction rate
-      omega<SOLN_pSTATE,SOLN_cSTATE>( S1, U /* use auto type conversion */, 
-				      Flow_Type );
+      omega<SOLN_pSTATE,SOLN_cSTATE>( S1, U.W(), Flow_Type );
 
       // set derivative
-      for (int i=NUM_VAR+1; i < NUM_VAR_REACT_SPECIES+1; ++i) {
-	dSwdU(i-1, j-1) = TwoPointFiniteDifference(S[i], S1[i], EPS[j]);
+      for (int i=0; i < ns; ++i) {
+	dSwdU(NUM_VAR+i, NUM_VAR+j) = TwoPointFiniteDifference(S.rhospec[i].c, 
+							       S1.rhospec[i].c, 
+							       EPS.rhospec[j].c);
       }
 
       // un-perturb
-      U[j] -= EPS[j];
+      U.rhospec[j].c -= EPS.rhospec[j].c;
+      U.rhospec[num_species-1].c += EPS.rhospec[j].c;
 
     } // endif
   } // end for

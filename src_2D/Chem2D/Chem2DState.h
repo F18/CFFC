@@ -593,6 +593,20 @@ class Chem2D_pState {
  		const double &domega, const Species *rhomfrac): 
                  rho(d), rhov(V), E(En), rhok(dk), rhoomega(domega)
                  { rhospecnull();   set_initial_values(rhomfrac); }
+		 
+   // WARNING - automatic type conversion
+   Chem2D_cState(const Chem2D_pState &W) :  rho(W.rho), rhov(W.rhov()),
+		   E(W.E()), rhok(W.rho*W.k), rhoomega(W.rho*W.omega),
+		   tau(W.tau), qflux(W.qflux), lambda(W.lambda), theta(W.theta)
+   {   
+     for(int i=0; i<W.ns; i++){
+       rhospec[i].c = W.rho*W.spec[i].c;
+       rhospec[i].gradc = W.rho*W.spec[i].gradc;
+       rhospec[i].diffusion_coef = W.rho*W.spec[i].diffusion_coef;
+     }  
+   }
+
+
 
    //this is needed for the operator overload returns!!!!
    Chem2D_cState(const Chem2D_cState &U): rho(U.rho), rhov(U.rhov), E(U.E), rhok(U.rhok), rhoomega(U.rhoomega),

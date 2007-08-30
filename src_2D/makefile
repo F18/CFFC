@@ -343,7 +343,6 @@ INC_LESPREMIXED = $(LESPREMIXED_DIR)LESPremixed2DState.h \
 	          $(LESPREMIXED_DIR)LESPremixed2DQuadMultigrid.h \
 	          $(LESPREMIXED_DIR)LESPremixed2DQuadNKS.h \
 	          $(LESPREMIXED_DIR)LESPremixed2DTurbInit.h \
-	          $(LESPREMIXED_DIR)LESPremixed2DReactions.h \
 	          $(LESPREMIXED_DIR)PowerLaw.h \
 	          $(LESPREMIXED_DIR)Scalars.h
 INC_GAUSSIAN = $(GAUSSIAN_DIR)Gaussian2DState.h \
