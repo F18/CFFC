@@ -20,7 +20,7 @@
 template< >
 ostream &operator << (ostream &out_file,
                       const Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
-                      FANS3D_ThermallyPerfect_KOmega_cState> &IP) {
+                                             FANS3D_ThermallyPerfect_KOmega_cState> &IP) {
    
    out_file << setprecision(6);
    
@@ -408,6 +408,6 @@ ostream &operator << (ostream &out_file,
 template< >
 istream  &operator >> (istream &in_file,
                        Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
-                       FANS3D_ThermallyPerfect_KOmega_cState> &IP) {
+                                        FANS3D_ThermallyPerfect_KOmega_cState> &IP) {
    return (in_file);
 }

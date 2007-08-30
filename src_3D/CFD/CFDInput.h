@@ -1,5 +1,5 @@
-/* Input.h:  Header file defining general CFD 
-             solution input parameter class. */
+/* CFDInput.h:  Header file defining general CFD 
+                solution input parameter class. */
 
 #ifndef _INPUT_INCLUDED
 #define _INPUT_INCLUDED
@@ -54,7 +54,7 @@ class Input_Parameters {
   int i_Time_Integration;
   int Time_Accurate, Local_Time_Stepping, 
       Maximum_Number_of_Time_Steps, N_Stage;
-  int p_Norms_Specified_Parameter; // 0 density, 1, momentum, 2 k,...
+  int p_Norm_Indicator; // 0 density, 1, momentum, 2 k,...
   double CFL_Number, Time_Max;
 
   // Implicit residual smoothing control parameters:

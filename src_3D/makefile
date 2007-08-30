@@ -38,6 +38,10 @@ PHYSICS_DIR = Physics/
 SYSTEM_DIR = System/
 TURBULENCE_DIR = Turbulence/
 
+#
+# Set default f90 module directory
+MODULE_DIR = F90_Modules
+
 # C++ Source files
 SRC_MATH = $(MATH_DIR)Vector2D.cc \
            $(MATH_DIR)Tensor2D.cc \
@@ -403,6 +407,12 @@ superclean: clean-extras
 	@echo All documentation and library directories are now clean.
 	@echo '-------------------------------------------------------'
 	@echo ' '
+
+#
+# Default dependencies for Fortran 90
+.SUFFIXES: .f90
+.f90.o:
+	$(F90) $(F90FLAGS) -c $*.f90 -o $*.o $(MODFLAG) $(MODULE_DIR) -I$(MODULE_DIR)
 
 #
 # Include header file dependencies
