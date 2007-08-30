@@ -32,6 +32,7 @@ int Read_Restart_Solution(Gaussian2D_Quad_Block *Soln_ptr,
     ifstream restart_file;
     double time0, alpha;
     CPUTime cpu_time0;
+    double pr;
 
     /* Determine prefix of restart file names. */
 
@@ -68,7 +69,10 @@ int Read_Restart_Solution(Gaussian2D_Quad_Block *Soln_ptr,
           restart_file.unsetf(ios::skipws);
           restart_file.getline(gas_type, sizeof(gas_type));
           restart_file.getline(gas_type, sizeof(gas_type));
+          restart_file.setf(ios::skipws);
 	  restart_file >> alpha;
+	  restart_file >> pr;
+          restart_file.unsetf(ios::skipws);
           if (!i_new_time_set) {
              Number_of_Time_Steps = nsteps;
              Input_Parameters.Maximum_Number_of_Time_Steps += Number_of_Time_Steps;
@@ -77,6 +81,9 @@ int Read_Restart_Solution(Gaussian2D_Quad_Block *Soln_ptr,
 	     Input_Parameters.alpha    = alpha;
 	     Input_Parameters.Wo.alpha = alpha;
 	     Input_Parameters.Uo.alpha = alpha;
+	     Input_Parameters.pr    = pr;
+	     Input_Parameters.Wo.pr = pr;
+	     Input_Parameters.Uo.pr = pr;
              if (strcmp(gas_type, Input_Parameters.Gas_Type) != 0) {
                 strcpy(Input_Parameters.Gas_Type, 
                        gas_type);
@@ -170,7 +177,10 @@ int Write_Restart_Solution(Gaussian2D_Quad_Block *Soln_ptr,
                        << " " << Time << " " << CPU_Time << "\n";
           restart_file.unsetf(ios::scientific);
           restart_file << Input_Parameters.Gas_Type << "\n";
+          restart_file.setf(ios::scientific);
 	  restart_file << Input_Parameters.Wo.alpha << "\n";
+	  restart_file << Input_Parameters.Wo.pr << "\n";
+          restart_file.unsetf(ios::scientific);
           restart_file << setprecision(14) << Soln_ptr[i];
 
           // Close restart file.
@@ -737,4 +747,93 @@ int Output_Gradients_Tecplot(Gaussian2D_Quad_Block *Soln_ptr,
 
   //this is here only for compalibility with embedded boundaries
   return 0;
+}
+
+
+/********************************************************
+ * Routine: Output_Shock_Structure                      *
+ *                                                      *
+ * Writes 1-D shock structure output.  This function    *
+ * will write the solution for the first cell above the *
+ * x axis.  It is therefore necessary that all blocks   *
+ * be at the same refinement level.                     *
+ *                                                      *
+ ********************************************************/
+int Output_Shock_Structure(Gaussian2D_Quad_Block *Soln_ptr,
+			   AdaptiveBlock2D_List &Soln_Block_List,
+			   Gaussian2D_Input_Parameters &Input_Parameters,
+			   const int Number_of_Time_Steps,
+			   const double &Time) {
+
+    int i, j, i_output_title;
+    char prefix[256], extension[256], output_file_name[256];
+    char *output_file_name_ptr;
+    ofstream output_file;    
+    double y(MILLION), y_tol(ZERO);
+
+    /* Determine prefix of output data file names. */
+
+    i = 0;
+    while (1) {
+       if (Input_Parameters.Output_File_Name[i] == ' ' ||
+           Input_Parameters.Output_File_Name[i] == '.') break;
+       prefix[i]=Input_Parameters.Output_File_Name[i];
+       i = i + 1;
+       if (i > strlen(Input_Parameters.Output_File_Name) ) break;
+    } /* endwhile */
+    prefix[i] = '\0';
+    strcat(prefix, "_shock_cpu");
+
+    /* Determine output data file name for this processor. */
+
+    sprintf(extension, "%.6d", Soln_Block_List.ThisCPU);
+    strcat(extension, ".dat");
+    strcpy(output_file_name, prefix);
+    strcat(output_file_name, extension);
+    output_file_name_ptr = output_file_name;
+
+    /* Open the output data file. */
+
+    output_file.open(output_file_name_ptr, ios::out);
+    if (output_file.bad()) return (1);
+
+    // Find first cell above x axis (assumes uniform cartesian mesh)
+
+    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+      if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+	for( j = Soln_ptr[i].Grid.JCl; j <= Soln_ptr[i].Grid.JCu; ++j) {
+	  if(Soln_ptr[i].Grid.Cell[Soln_ptr[i].ICl][j].Xc.y < y){
+	    y = Soln_ptr[i].Grid.Cell[Soln_ptr[i].ICl][j].Xc.y;
+	    y_tol = Soln_ptr[i].Grid.lfaceE(Soln_ptr[i].ICl,j)/4.0;
+	  }
+	}
+      }
+    }
+
+    /* Write the solution data for each solution block. */
+
+    i_output_title = 1;
+    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+	 Output_Shock_Structure(Soln_ptr[i],
+				Input_Parameters,
+				Number_of_Time_Steps, 
+				Time,
+				Soln_Block_List.Block[i].gblknum,
+				i_output_title,
+				output_file,
+				y,
+				y_tol);
+	 //if (i_output_title) i_output_title = 0;
+       } /* endif */
+    }  /* endfor */
+
+    /* Close the output data file. */
+
+    output_file.close();
+
+    /* Writing of output data files complete.  Return zero value. */
+
+    return(0);
+
 }

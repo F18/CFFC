@@ -104,6 +104,9 @@ class Gaussian2D_Input_Parameters{
   //Maximum_Number_of_GMRES_Iterations;
   double CFL_Number, Time_Max;
 
+  // Residual variable:
+  int i_Residual_Variable;
+
   // Implicit residual smoothing control parameters:
   int Residual_Smoothing;
   double Residual_Smoothing_Epsilon;
@@ -128,6 +131,9 @@ class Gaussian2D_Input_Parameters{
   char Flux_Function_Type[INPUT_PARAMETER_LENGTH_GAUSSIAN2D];
   int i_Flux_Function;
 
+  char Heat_Reconstruction_Type[INPUT_PARAMETER_LENGTH_GAUSSIAN2D];
+  int i_Heat_Reconstruction;
+
   // Initial condition type indicator and related input parameters:
   char ICs_Type[INPUT_PARAMETER_LENGTH_GAUSSIAN2D];
   char Gas_Type[INPUT_PARAMETER_LENGTH_GAUSSIAN2D];
@@ -139,6 +145,12 @@ class Gaussian2D_Input_Parameters{
   // Flow geometry (planar or axisymmetric):
   char Flow_Geometry_Type[INPUT_PARAMETER_LENGTH_GAUSSIAN2D];
   int Axisymmetric;
+
+  // Heat Transfer (on or off)
+  int Heat_Transfer;
+
+  //Prandtl number
+  double pr;  
 
   // Grid type indicator and related input parameters:
   char Grid_Type[INPUT_PARAMETER_LENGTH_GAUSSIAN2D];
@@ -317,6 +329,11 @@ inline ostream &operator << (ostream &out_file,
     } else {
        out_file << "\n  -> 2D Planar Flow";
     }
+    if(IP.Heat_Transfer) {
+       out_file << "\n  -> Heat Transfer added";
+       out_file << "\n  -> Heat flux evaluation: " << IP.Heat_Reconstruction_Type;
+       out_file << "\n  -> Prandtl number: " << IP.pr;
+    }
     out_file << "\n  -> Time Integration: " 
              << IP.Time_Integration_Type;
     out_file << "\n  -> Number of Stages in Multi-Stage Scheme: " 
@@ -333,6 +350,7 @@ inline ostream &operator << (ostream &out_file,
     } else if (IP.Local_Time_Stepping == SCALAR_LOCAL_TIME_STEPPING) {
       out_file << "\n  -> Scalar Local Time Stepping";
     } /* endif */
+    out_file << "\n  -> L1-, L2-, and max-norms computed on residual variable: " << IP.i_Residual_Variable;
     if (IP.Residual_Smoothing) {
       out_file << "\n  -> Residual Smoothing";
       out_file << "\n  -> Epsilon: " 

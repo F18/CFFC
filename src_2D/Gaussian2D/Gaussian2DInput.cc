@@ -67,6 +67,9 @@ void Set_Default_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
     IP.N_Stage = 1;
     IP.Time_Max = ZERO;
 
+    // Residual variable:
+    IP.i_Residual_Variable = 2; //x-momentum by default
+
     IP.Residual_Smoothing = 0;
     IP.Residual_Smoothing_Epsilon = ZERO;
     IP.Residual_Smoothing_Gauss_Seidel_Iterations = 2;
@@ -82,6 +85,11 @@ void Set_Default_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
     string_ptr = "Roe";
     strcpy(IP.Flux_Function_Type, string_ptr);
     IP.i_Flux_Function = FLUX_FUNCTION_ROE;
+
+    // Heat gradient reconstruction type:
+    string_ptr = "Diamond_Path";
+    strcpy(IP.Heat_Reconstruction_Type,string_ptr);
+    IP.i_Heat_Reconstruction = ELLIPTIC_RECONSTRUCTION_DIAMOND_PATH;
 
     string_ptr = "Uniform";
     strcpy(IP.ICs_Type, string_ptr);
@@ -102,6 +110,9 @@ void Set_Default_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
     IP.W1 = IP.Wo;
     IP.W2 = IP.Wo;
 
+    //heat
+    IP.Heat_Transfer = 0;
+
     string_ptr = "Planar";
     strcpy(IP.Flow_Geometry_Type, string_ptr);
     IP.Axisymmetric = 0;
@@ -116,6 +127,8 @@ void Set_Default_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
     IP.Number_of_Blocks_Idir = 1;
     IP.Number_of_Blocks_Jdir = 1;
     IP.Number_of_Ghost_Cells = 2;
+
+    IP.pr = (2.0)/(3.0);
 
     // Boundary Conditions
     IP.alpha = 1.0;
@@ -326,6 +339,10 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Time_Max), 
                           1, 
                           MPI::DOUBLE, 0);
+    // Residual variable:
+    MPI::COMM_WORLD.Bcast(&(IP.i_Residual_Variable),
+			  1,
+			  MPI::DOUBLE,0);
     MPI::COMM_WORLD.Bcast(&(IP.Residual_Smoothing), 
                           1, 
                           MPI::INT, 0);
@@ -353,6 +370,12 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.i_Flux_Function), 
                           1, 
                           MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(IP.Heat_Reconstruction_Type,
+			  INPUT_PARAMETER_LENGTH_GAUSSIAN2D,
+			  MPI::CHAR,0);
+    MPI::COMM_WORLD.Bcast(&(IP.i_Heat_Reconstruction),
+			  1,
+			  MPI::INT,0);
     MPI::COMM_WORLD.Bcast(IP.ICs_Type, 
                           INPUT_PARAMETER_LENGTH_GAUSSIAN2D, 
                           MPI::CHAR, 0);
@@ -437,6 +460,9 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
                           INPUT_PARAMETER_LENGTH_GAUSSIAN2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Axisymmetric), 
+                          1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Heat_Transfer), 
                           1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(IP.Grid_Type, 
@@ -559,9 +585,13 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.X_Rotate), 
                           1, 
                           MPI::DOUBLE, 0);
-
-    //Boundary infromation
-
+    MPI::COMM_WORLD.Bcast(&(IP.pr), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    if (!CFFC_Primary_MPI_Processor()) {
+      IP.Wo.pr = IP.pr;
+      IP.Uo.pr = IP.pr;
+    } // endif 
     MPI::COMM_WORLD.Bcast(&(IP.alpha), 
                           1, 
                           MPI::DOUBLE, 0);
@@ -865,6 +895,10 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.CFL_Number), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
+    // Residual variable:
+    Communicator.Bcast(&(IP.i_Residual_Variable),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
     Communicator.Bcast(&(IP.Time_Max), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
@@ -895,6 +929,12 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.i_Flux_Function), 
                        1, 
                        MPI::INT, Source_Rank);
+    Communicator.Bcast(IP.Heat_Reconstruction_Type,
+		       INPUT_PARAMETER_LENGTH_GAUSSIAN2D,
+		       MPI::CHAR,Source_Rank);
+    Communicator.Bcast(&(IP.i_Heat_Reconstruction),
+		       1,
+		       MPI::INT,Source_Rank);
     Communicator.Bcast(IP.ICs_Type, 
                        INPUT_PARAMETER_LENGTH_GAUSSIAN2D, 
                        MPI::CHAR, Source_Rank);
@@ -979,6 +1019,9 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP,
                        INPUT_PARAMETER_LENGTH_GAUSSIAN2D, 
                        MPI::CHAR, Source_Rank);
     Communicator.Bcast(&(IP.Axisymmetric), 
+                       1, 
+                       MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.Heat_Transfer), 
                        1, 
                        MPI::INT, Source_Rank);
     Communicator.Bcast(IP.Grid_Type, 
@@ -1101,9 +1144,13 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.X_Rotate), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
-
-    //Boundary information
-
+    Communicator.Bcast(&(IP.pr), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+      IP.Wo.pr = IP.pr;
+      IP.Uo.pr = IP.pr;
+    } // endif
     Communicator.Bcast(&(IP.alpha), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
@@ -1481,6 +1528,19 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
 	  i_command = INVALID_INPUT_VALUE;
        } /* endif */
 
+    } else if (strcmp(IP.Next_Control_Parameter,"Heat_Reconstruction_Type") == 0) {
+      i_command = 4;
+      Get_Next_Input_Control_Parameter(IP);
+      strcpy(IP.Heat_Reconstruction_Type,IP.Next_Control_Parameter);
+      if (strcmp(IP.Heat_Reconstruction_Type,"Arithmetic_Average") == 0) {
+	IP.i_Heat_Reconstruction = ELLIPTIC_RECONSTRUCTION_ARITHMETIC_AVERAGE;
+      } else if (strcmp(IP.Heat_Reconstruction_Type,"Diamond_Path") == 0) {
+	IP.i_Heat_Reconstruction = ELLIPTIC_RECONSTRUCTION_DIAMOND_PATH;
+      } else if (strcmp(IP.Heat_Reconstruction_Type,"Hybrid") == 0) {
+	IP.i_Heat_Reconstruction = ELLIPTIC_RECONSTRUCTION_HYBRID;
+      } else {
+	i_command = INVALID_INPUT_VALUE;
+      }
 
     } else if (strcmp(IP.Next_Control_Parameter, "ICs_Type") == 0) {
        i_command = 5;
@@ -1517,22 +1577,32 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
           IP.i_ICs = IC_SHOCK_STRUCTURE_M1_1;
 	  string_ptr = "A";
 	  strcpy(IP.Gas_Type, string_ptr);
+	  IP.Wo.setgas(IP.Gas_Type);
+	  IP.Wo = Gaussian2D_pState(1.661, 350.7444241833, 0.0, 101325.0);
        } else if (strcmp(IP.ICs_Type, "Shock_Structure_M1_3") == 0) {
           IP.i_ICs = IC_SHOCK_STRUCTURE_M1_3;
 	  string_ptr = "A";
 	  strcpy(IP.Gas_Type, string_ptr);
+	  IP.Wo.setgas(IP.Gas_Type);
+	  IP.Wo = Gaussian2D_pState(1.661, 414.51592216, 0.0, 101325.0);
        } else if (strcmp(IP.ICs_Type, "Shock_Structure_M1_5") == 0) {
           IP.i_ICs = IC_SHOCK_STRUCTURE_M1_5;
 	  string_ptr = "A";
 	  strcpy(IP.Gas_Type, string_ptr);
+	  IP.Wo.setgas(IP.Gas_Type);
+	  IP.Wo = Gaussian2D_pState(1.661, 478.287602499, 0.0, 101325.0);
        } else if (strcmp(IP.ICs_Type, "Shock_Structure_M2_0") == 0) {
           IP.i_ICs = IC_SHOCK_STRUCTURE_M2_0;
 	  string_ptr = "A";
 	  strcpy(IP.Gas_Type, string_ptr);
+	  IP.Wo.setgas(IP.Gas_Type);
+	  IP.Wo = Gaussian2D_pState(1.661, 637.716803332, 0.0, 101325.0);
        } else if (strcmp(IP.ICs_Type, "Shock_Structure_M10_0") == 0) {
           IP.i_ICs = IC_SHOCK_STRUCTURE_M10_0;
 	  string_ptr = "A";
 	  strcpy(IP.Gas_Type, string_ptr);
+	  IP.Wo.setgas(IP.Gas_Type);
+	  IP.Wo = Gaussian2D_pState(1.661, 3188.58401666, 0.0, 101325.0);
        } else if (strcmp(IP.ICs_Type, "Contact_Surface_Xdir") == 0) {
           IP.i_ICs = IC_CONTACT_SURFACE_XDIR;
        } else if (strcmp(IP.ICs_Type, "Contact_Surface_Ydir") == 0) {
@@ -1990,6 +2060,15 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Nozzle_Radius_Throat <= ZERO) i_command = INVALID_INPUT_VALUE;
 
+    } else if (strcmp(IP.Next_Control_Parameter, "Prandtl") == 0) {
+       i_command = 43;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.pr;
+       IP.Wo.pr = IP.pr;
+       IP.Uo.pr = IP.pr;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.pr < ZERO) i_command = INVALID_INPUT_VALUE;
+
     } else if (strcmp(IP.Next_Control_Parameter, "Alpha") == 0) {
        i_command = 43;
        IP.Line_Number = IP.Line_Number + 1;
@@ -2187,6 +2266,14 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
        } else {
           IP.Axisymmetric = 0;
        } /* endif */
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Heat_Transfer") == 0) {
+       i_command = 52;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Heat_Transfer;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.Heat_Transfer != 0 &&
+	   IP.Heat_Transfer != 1 ) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Restart_Solution_Save_Frequency") == 0) {
        i_command = 53;
@@ -2481,6 +2568,13 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
       IP.Input_File.setf(ios::skipws);
       IP.Input_File.getline(buffer,sizeof(buffer));
       
+    } else if (strcmp(IP.Next_Control_Parameter,"Residual_Variable") == 0) {
+      i_command = 90;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.i_Residual_Variable;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.i_Residual_Variable < 1 || IP.i_Residual_Variable > 8) i_command = INVALID_INPUT_VALUE;
+
     } else if (strcmp(IP.Next_Control_Parameter, "Residual_Smoothing_Epsilon") == 0) {
       i_command = 85;
       IP.Line_Number = IP.Line_Number + 1;
@@ -2592,6 +2686,8 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
 	IP.BC_North = BC_REFLECTION;
       } else if (strcmp(IP.BC_North_Type,"Adiabatic_Wall") == 0) {
 	IP.BC_North = BC_ADIABATIC_WALL;
+      } else if (strcmp(IP.BC_North_Type,"Isothermal_Wall") == 0) {
+	IP.BC_North = BC_WALL_VISCOUS_ISOTHERMAL;
       } else if (strcmp(IP.BC_North_Type,"Fixed") == 0) {
 	IP.BC_North = BC_FIXED;
       } else if (strcmp(IP.BC_North_Type,"Constant_Extrapolation") == 0) {
@@ -2620,6 +2716,8 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
 	IP.BC_South = BC_REFLECTION;
       } else if (strcmp(IP.BC_South_Type,"Adiabatic_Wall") == 0) {
 	IP.BC_South = BC_ADIABATIC_WALL;
+      } else if (strcmp(IP.BC_South_Type,"Isothermal_Wall") == 0) {
+	IP.BC_South = BC_WALL_VISCOUS_ISOTHERMAL;
       } else if (strcmp(IP.BC_South_Type,"Fixed") == 0) {
 	IP.BC_South = BC_FIXED;
       } else if (strcmp(IP.BC_South_Type,"Constant_Extrapolation") == 0) {
@@ -2649,6 +2747,8 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
 	IP.BC_East = BC_REFLECTION;
       } else if (strcmp(IP.BC_East_Type,"Adiabatic_Wall") == 0) {
 	IP.BC_East = BC_ADIABATIC_WALL;
+      } else if (strcmp(IP.BC_East_Type,"Isothermal_Wall") == 0) {
+	IP.BC_East = BC_WALL_VISCOUS_ISOTHERMAL;
       } else if (strcmp(IP.BC_East_Type,"Fixed") == 0) {
 	IP.BC_East = BC_FIXED;
       } else if (strcmp(IP.BC_East_Type,"Constant_Extrapolation") == 0) {
@@ -2680,6 +2780,8 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
 	IP.BC_West = BC_REFLECTION;
       } else if (strcmp(IP.BC_West_Type,"Adiabatic_Wall") == 0) {
 	IP.BC_West = BC_ADIABATIC_WALL;
+      } else if (strcmp(IP.BC_West_Type,"Isothermal_Wall") == 0) {
+	IP.BC_West = BC_WALL_VISCOUS_ISOTHERMAL;
       } else if (strcmp(IP.BC_West_Type,"Fixed") == 0) {
 	IP.BC_West = BC_FIXED;
       } else if (strcmp(IP.BC_West_Type,"Constant_Extrapolation") == 0) {
@@ -3187,6 +3289,9 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
 
     } else if (strcmp(IP.Next_Control_Parameter, "Write_Output_Flat_Plate") == 0) {
        i_command = WRITE_OUTPUT_FLAT_PLATE_CODE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Write_Output_Shock_Structure") == 0) {
+       i_command = WRITE_OUTPUT_SHOCK_STRUCTURE_CODE;
 
     } else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Cell_Status") == 0) {
       i_command = WRITE_OUTPUT_CELL_STATUS_CODE;

@@ -12,6 +12,7 @@
  * Gaussian2D_Quad_Block -- Single Block Static Variables.                *
  **************************************************************************/
 int Gaussian2D_Quad_Block::Flow_Type = FLOWTYPE_INVISCID;
+int Gaussian2D_Quad_Block::Heat_Transfer = 0;
 int Gaussian2D_Quad_Block::residual_variable = 2;  //x-momentum
 
 /**************************************************************************
@@ -29,208 +30,211 @@ int Gaussian2D_Quad_Block::residual_variable = 2;  //x-momentum
 void Broadcast_Solution_Block(Gaussian2D_Quad_Block &SolnBlk) {
 
 #ifdef _MPI_VERSION
-    int i, j, ni, nj, ng, nr, block_allocated, buffer_size;
-    double *buffer;
+  int i, j, ni, nj, ng, nr, heat, block_allocated, buffer_size;
+  double *buffer;
 
-    /* Broadcast the number of cells in each direction. */
+  /* Broadcast the number of cells in each direction. */
 
-    if (CFFC_Primary_MPI_Processor()) {
-      ni = SolnBlk.NCi;
-      nj = SolnBlk.NCj;
-      ng = SolnBlk.Nghost;
-      nr = SolnBlk.residual_variable;
-      if (SolnBlk.U != NULL) {
-         block_allocated = 1;
-      } else {
-	 block_allocated = 0;
-      } /* endif */ 
+  if (CFFC_Primary_MPI_Processor()) {
+    ni = SolnBlk.NCi;
+    nj = SolnBlk.NCj;
+    ng = SolnBlk.Nghost;
+    nr = SolnBlk.residual_variable;
+    heat = SolnBlk.Heat_Transfer;
+    if (SolnBlk.U != NULL) {
+      block_allocated = 1;
+    } else {
+      block_allocated = 0;
+    } /* endif */ 
+  } /* endif */
+
+  MPI::COMM_WORLD.Bcast(&ni, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&nj, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&ng, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&nr,1,MPI::INT,0);
+  MPI::COMM_WORLD.Bcast(&heat,1,MPI::INT,0);
+  MPI::COMM_WORLD.Bcast(&block_allocated, 1, MPI::INT, 0);
+
+  /* On non-primary MPI processors, allocate (re-allocate) 
+     memory for the quadrilateral solution block as necessary. */
+
+  if (!CFFC_Primary_MPI_Processor()) {
+    if (SolnBlk.NCi != ni || SolnBlk.NCj != nj || SolnBlk.Nghost != ng) { 
+      if (SolnBlk.U != NULL) SolnBlk.deallocate();
+      if (block_allocated) SolnBlk.allocate(ni-2*ng, nj-2*ng, ng); 
     } /* endif */
-
-    MPI::COMM_WORLD.Bcast(&ni, 1, MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&nj, 1, MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&ng, 1, MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&nr,1,MPI::INT,0);
-    MPI::COMM_WORLD.Bcast(&block_allocated, 1, MPI::INT, 0);
-
-    /* On non-primary MPI processors, allocate (re-allocate) 
-       memory for the quadrilateral solution block as necessary. */
-
-    if (!CFFC_Primary_MPI_Processor()) {
-       if (SolnBlk.NCi != ni || SolnBlk.NCj != nj || SolnBlk.Nghost != ng) { 
-          if (SolnBlk.U != NULL) SolnBlk.deallocate();
-          if (block_allocated) SolnBlk.allocate(ni-2*ng, nj-2*ng, ng); 
-       } /* endif */
-       if (SolnBlk.residual_variable != nr) SolnBlk.residual_variable = nr;
-    } /* endif */
+    if (SolnBlk.residual_variable != nr) SolnBlk.residual_variable = nr;  //do I need to do this?  I copied it from Jai
+    if (SolnBlk.Heat_Transfer != heat) SolnBlk.Heat_Transfer = heat;   
+  } /* endif */
 
     /* Broadcast the axisymmetric/planar flow indicator. */
 
-    MPI::COMM_WORLD.Bcast(&(SolnBlk.Axisymmetric), 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&(SolnBlk.Axisymmetric), 1, MPI::INT, 0);
 
-    /* Broadcast the grid. */
+  /* Broadcast the grid. */
 
-    Broadcast_Quad_Block(SolnBlk.Grid);
+  Broadcast_Quad_Block(SolnBlk.Grid);
 
-    /* Broadcast the solution state variables. */
+  /* Broadcast the solution state variables. */
 
-    if (block_allocated) {
-       ni = (SolnBlk.ICu+SolnBlk.Nghost) - (SolnBlk.ICl-SolnBlk.Nghost) + 1;
-       nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
-       buffer = new double[8*ni*nj];
+  if (block_allocated) {
+    ni = (SolnBlk.ICu+SolnBlk.Nghost) - (SolnBlk.ICl-SolnBlk.Nghost) + 1;
+    nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
+    buffer = new double[8*ni*nj];
 
-       if (CFFC_Primary_MPI_Processor()) {
-          buffer_size = 0;
-          for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-              for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
- 	          buffer[buffer_size  ] = SolnBlk.U[i][j].d;
- 	          buffer[buffer_size+1] = SolnBlk.U[i][j].dv.x;
- 	          buffer[buffer_size+2] = SolnBlk.U[i][j].dv.y;
- 	          buffer[buffer_size+3] = SolnBlk.U[i][j].E.xx;
- 	          buffer[buffer_size+4] = SolnBlk.U[i][j].E.xy;
- 	          buffer[buffer_size+5] = SolnBlk.U[i][j].E.yy;
- 	          buffer[buffer_size+6] = SolnBlk.U[i][j].E.zz;
- 	          buffer[buffer_size+7] = SolnBlk.U[i][j].erot;
-                  buffer_size = buffer_size + 8;
-              } /* endfor */
-          } /* endfor */
-       } /* endif */
-
-       buffer_size = 8*ni*nj;
-       MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
-
-       if (!CFFC_Primary_MPI_Processor()) {
-          buffer_size = 0;
-          for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-              for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
- 	          SolnBlk.U[i][j].d    = buffer[buffer_size];
- 	          SolnBlk.U[i][j].dv.x = buffer[buffer_size+1];
- 	          SolnBlk.U[i][j].dv.y = buffer[buffer_size+2];
- 	          SolnBlk.U[i][j].E.xx = buffer[buffer_size+3];
- 	          SolnBlk.U[i][j].E.xy = buffer[buffer_size+4];
- 	          SolnBlk.U[i][j].E.yy = buffer[buffer_size+5];
- 	          SolnBlk.U[i][j].E.zz = buffer[buffer_size+6];
- 	          SolnBlk.U[i][j].erot = buffer[buffer_size+7];
-                  buffer_size = buffer_size + 8;
- 	          SolnBlk.W[i][j] = W(SolnBlk.U[i][j]);
-              } /* endfor */
-           } /* endfor */
-       } /* endif */
-
-       delete []buffer; 
-       buffer = NULL;
-
-       ni = 1;
-       nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
-       buffer = new double[16*ni*nj];
-
-       if (CFFC_Primary_MPI_Processor()) {
-          buffer_size = 0;
-          for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
- 	      buffer[buffer_size  ]  = SolnBlk.WoW[j].d;
- 	      buffer[buffer_size+1]  = SolnBlk.WoW[j].v.x;
- 	      buffer[buffer_size+2]  = SolnBlk.WoW[j].v.y;
- 	      buffer[buffer_size+3]  = SolnBlk.WoW[j].p.xx;
- 	      buffer[buffer_size+4]  = SolnBlk.WoW[j].p.xy;
- 	      buffer[buffer_size+5]  = SolnBlk.WoW[j].p.yy;
- 	      buffer[buffer_size+6]  = SolnBlk.WoW[j].p.zz;
- 	      buffer[buffer_size+7]  = SolnBlk.WoW[j].erot;
- 	      buffer[buffer_size+8]  = SolnBlk.WoE[j].d;
- 	      buffer[buffer_size+9]  = SolnBlk.WoE[j].v.x;
- 	      buffer[buffer_size+10] = SolnBlk.WoE[j].v.y;
- 	      buffer[buffer_size+11] = SolnBlk.WoE[j].p.xx;
- 	      buffer[buffer_size+12] = SolnBlk.WoE[j].p.xy;
- 	      buffer[buffer_size+13] = SolnBlk.WoE[j].p.yy;
- 	      buffer[buffer_size+14] = SolnBlk.WoE[j].p.zz;
- 	      buffer[buffer_size+15] = SolnBlk.WoE[j].erot;
-              buffer_size = buffer_size + 16;
-          } /* endfor */
-       } /* endif */
-
-       buffer_size = 16*ni*nj;
-       MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
-
-       if (!CFFC_Primary_MPI_Processor()) {
-          buffer_size = 0;
-          for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
- 	      SolnBlk.WoW[j].d    = buffer[buffer_size];
- 	      SolnBlk.WoW[j].v.x  = buffer[buffer_size+1];
- 	      SolnBlk.WoW[j].v.y  = buffer[buffer_size+2];
- 	      SolnBlk.WoW[j].p.xx = buffer[buffer_size+3];
- 	      SolnBlk.WoW[j].p.xy = buffer[buffer_size+4];
- 	      SolnBlk.WoW[j].p.yy = buffer[buffer_size+5];
- 	      SolnBlk.WoW[j].p.zz = buffer[buffer_size+6];
- 	      SolnBlk.WoW[j].erot = buffer[buffer_size+7];
- 	      SolnBlk.WoE[j].d    = buffer[buffer_size+8];
- 	      SolnBlk.WoE[j].v.x  = buffer[buffer_size+9];
- 	      SolnBlk.WoE[j].v.y  = buffer[buffer_size+10];
- 	      SolnBlk.WoE[j].p.xx = buffer[buffer_size+11];
- 	      SolnBlk.WoE[j].p.xy = buffer[buffer_size+12];
- 	      SolnBlk.WoE[j].p.yy = buffer[buffer_size+13];
- 	      SolnBlk.WoE[j].p.zz = buffer[buffer_size+14];
- 	      SolnBlk.WoE[j].erot = buffer[buffer_size+15];
-              buffer_size = buffer_size + 16;
-          } /* endfor */
-       } /* endif */
-
-       delete []buffer; 
-       buffer = NULL;
-
-       ni = (SolnBlk.ICu+SolnBlk.Nghost) - (SolnBlk.ICl-SolnBlk.Nghost) + 1;
-       nj = 1;
-       buffer = new double[16*ni*nj];
-
-       if (CFFC_Primary_MPI_Processor()) {
-          buffer_size = 0;
-          for (i  = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
- 	      buffer[buffer_size  ]  = SolnBlk.WoS[i].d;
- 	      buffer[buffer_size+1]  = SolnBlk.WoS[i].v.x;
- 	      buffer[buffer_size+2]  = SolnBlk.WoS[i].v.y;
- 	      buffer[buffer_size+3]  = SolnBlk.WoS[i].p.xx;
- 	      buffer[buffer_size+4]  = SolnBlk.WoS[i].p.xy;
- 	      buffer[buffer_size+5]  = SolnBlk.WoS[i].p.yy;
- 	      buffer[buffer_size+6]  = SolnBlk.WoS[i].p.zz;
- 	      buffer[buffer_size+7]  = SolnBlk.WoS[i].erot;
- 	      buffer[buffer_size+8]  = SolnBlk.WoN[i].d;
- 	      buffer[buffer_size+9]  = SolnBlk.WoN[i].v.x;
- 	      buffer[buffer_size+10] = SolnBlk.WoN[i].v.y;
- 	      buffer[buffer_size+11] = SolnBlk.WoN[i].p.xx;
- 	      buffer[buffer_size+12] = SolnBlk.WoN[i].p.xy;
- 	      buffer[buffer_size+13] = SolnBlk.WoN[i].p.yy;
- 	      buffer[buffer_size+14] = SolnBlk.WoN[i].p.zz;
- 	      buffer[buffer_size+15] = SolnBlk.WoN[i].erot;
-              buffer_size = buffer_size + 16;
-          } /* endfor */
-       } /* endif */
-
-       buffer_size = 16*ni*nj;
-       MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
-
-       if (!CFFC_Primary_MPI_Processor()) {
-          buffer_size = 0;
-          for (i  = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
- 	      SolnBlk.WoS[i].d    = buffer[buffer_size];
- 	      SolnBlk.WoS[i].v.x  = buffer[buffer_size+1];
- 	      SolnBlk.WoS[i].v.y  = buffer[buffer_size+2];
- 	      SolnBlk.WoS[i].p.xx = buffer[buffer_size+3];
- 	      SolnBlk.WoS[i].p.xy = buffer[buffer_size+3];
- 	      SolnBlk.WoS[i].p.yy = buffer[buffer_size+3];
- 	      SolnBlk.WoS[i].p.zz = buffer[buffer_size+3];
- 	      SolnBlk.WoS[i].erot = buffer[buffer_size+3];
- 	      SolnBlk.WoN[i].d    = buffer[buffer_size+4];
- 	      SolnBlk.WoN[i].v.x  = buffer[buffer_size+5];
- 	      SolnBlk.WoN[i].v.y  = buffer[buffer_size+6];
- 	      SolnBlk.WoN[i].p.xx = buffer[buffer_size+7];
- 	      SolnBlk.WoN[i].p.xy = buffer[buffer_size+7];
- 	      SolnBlk.WoN[i].p.yy = buffer[buffer_size+7];
- 	      SolnBlk.WoN[i].p.zz = buffer[buffer_size+7];
- 	      SolnBlk.WoN[i].erot = buffer[buffer_size+7];
-              buffer_size = buffer_size + 16;
-          } /* endfor */
-       } /* endif */
-
-       delete []buffer; 
-       buffer = NULL;
+    if (CFFC_Primary_MPI_Processor()) {
+      buffer_size = 0;
+      for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+	for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+	  buffer[buffer_size  ] = SolnBlk.U[i][j].d;
+	  buffer[buffer_size+1] = SolnBlk.U[i][j].dv.x;
+	  buffer[buffer_size+2] = SolnBlk.U[i][j].dv.y;
+	  buffer[buffer_size+3] = SolnBlk.U[i][j].E.xx;
+	  buffer[buffer_size+4] = SolnBlk.U[i][j].E.xy;
+	  buffer[buffer_size+5] = SolnBlk.U[i][j].E.yy;
+	  buffer[buffer_size+6] = SolnBlk.U[i][j].E.zz;
+	  buffer[buffer_size+7] = SolnBlk.U[i][j].erot;
+	  buffer_size = buffer_size + 8;
+	} /* endfor */
+      } /* endfor */
     } /* endif */
+
+    buffer_size = 8*ni*nj;
+    MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
+
+    if (!CFFC_Primary_MPI_Processor()) {
+      buffer_size = 0;
+      for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+	for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+	  SolnBlk.U[i][j].d    = buffer[buffer_size];
+	  SolnBlk.U[i][j].dv.x = buffer[buffer_size+1];
+	  SolnBlk.U[i][j].dv.y = buffer[buffer_size+2];
+	  SolnBlk.U[i][j].E.xx = buffer[buffer_size+3];
+	  SolnBlk.U[i][j].E.xy = buffer[buffer_size+4];
+	  SolnBlk.U[i][j].E.yy = buffer[buffer_size+5];
+	  SolnBlk.U[i][j].E.zz = buffer[buffer_size+6];
+	  SolnBlk.U[i][j].erot = buffer[buffer_size+7];
+	  buffer_size = buffer_size + 8;
+	  SolnBlk.W[i][j] = W(SolnBlk.U[i][j]);
+	} /* endfor */
+      } /* endfor */
+    } /* endif */
+
+    delete []buffer; 
+    buffer = NULL;
+
+    ni = 1;
+    nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
+    buffer = new double[16*ni*nj];
+
+    if (CFFC_Primary_MPI_Processor()) {
+      buffer_size = 0;
+      for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+	buffer[buffer_size  ]  = SolnBlk.WoW[j].d;
+	buffer[buffer_size+1]  = SolnBlk.WoW[j].v.x;
+	buffer[buffer_size+2]  = SolnBlk.WoW[j].v.y;
+	buffer[buffer_size+3]  = SolnBlk.WoW[j].p.xx;
+	buffer[buffer_size+4]  = SolnBlk.WoW[j].p.xy;
+	buffer[buffer_size+5]  = SolnBlk.WoW[j].p.yy;
+	buffer[buffer_size+6]  = SolnBlk.WoW[j].p.zz;
+	buffer[buffer_size+7]  = SolnBlk.WoW[j].erot;
+	buffer[buffer_size+8]  = SolnBlk.WoE[j].d;
+	buffer[buffer_size+9]  = SolnBlk.WoE[j].v.x;
+	buffer[buffer_size+10] = SolnBlk.WoE[j].v.y;
+	buffer[buffer_size+11] = SolnBlk.WoE[j].p.xx;
+	buffer[buffer_size+12] = SolnBlk.WoE[j].p.xy;
+	buffer[buffer_size+13] = SolnBlk.WoE[j].p.yy;
+	buffer[buffer_size+14] = SolnBlk.WoE[j].p.zz;
+	buffer[buffer_size+15] = SolnBlk.WoE[j].erot;
+	buffer_size = buffer_size + 16;
+      } /* endfor */
+    } /* endif */
+
+    buffer_size = 16*ni*nj;
+    MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
+
+    if (!CFFC_Primary_MPI_Processor()) {
+      buffer_size = 0;
+      for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+	SolnBlk.WoW[j].d    = buffer[buffer_size];
+	SolnBlk.WoW[j].v.x  = buffer[buffer_size+1];
+	SolnBlk.WoW[j].v.y  = buffer[buffer_size+2];
+	SolnBlk.WoW[j].p.xx = buffer[buffer_size+3];
+	SolnBlk.WoW[j].p.xy = buffer[buffer_size+4];
+	SolnBlk.WoW[j].p.yy = buffer[buffer_size+5];
+	SolnBlk.WoW[j].p.zz = buffer[buffer_size+6];
+	SolnBlk.WoW[j].erot = buffer[buffer_size+7];
+	SolnBlk.WoE[j].d    = buffer[buffer_size+8];
+	SolnBlk.WoE[j].v.x  = buffer[buffer_size+9];
+	SolnBlk.WoE[j].v.y  = buffer[buffer_size+10];
+	SolnBlk.WoE[j].p.xx = buffer[buffer_size+11];
+	SolnBlk.WoE[j].p.xy = buffer[buffer_size+12];
+	SolnBlk.WoE[j].p.yy = buffer[buffer_size+13];
+	SolnBlk.WoE[j].p.zz = buffer[buffer_size+14];
+	SolnBlk.WoE[j].erot = buffer[buffer_size+15];
+	buffer_size = buffer_size + 16;
+      } /* endfor */
+    } /* endif */
+
+    delete []buffer; 
+    buffer = NULL;
+
+    ni = (SolnBlk.ICu+SolnBlk.Nghost) - (SolnBlk.ICl-SolnBlk.Nghost) + 1;
+    nj = 1;
+    buffer = new double[16*ni*nj];
+
+    if (CFFC_Primary_MPI_Processor()) {
+      buffer_size = 0;
+      for (i  = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+	buffer[buffer_size  ]  = SolnBlk.WoS[i].d;
+	buffer[buffer_size+1]  = SolnBlk.WoS[i].v.x;
+	buffer[buffer_size+2]  = SolnBlk.WoS[i].v.y;
+	buffer[buffer_size+3]  = SolnBlk.WoS[i].p.xx;
+	buffer[buffer_size+4]  = SolnBlk.WoS[i].p.xy;
+	buffer[buffer_size+5]  = SolnBlk.WoS[i].p.yy;
+	buffer[buffer_size+6]  = SolnBlk.WoS[i].p.zz;
+	buffer[buffer_size+7]  = SolnBlk.WoS[i].erot;
+	buffer[buffer_size+8]  = SolnBlk.WoN[i].d;
+	buffer[buffer_size+9]  = SolnBlk.WoN[i].v.x;
+	buffer[buffer_size+10] = SolnBlk.WoN[i].v.y;
+	buffer[buffer_size+11] = SolnBlk.WoN[i].p.xx;
+	buffer[buffer_size+12] = SolnBlk.WoN[i].p.xy;
+	buffer[buffer_size+13] = SolnBlk.WoN[i].p.yy;
+	buffer[buffer_size+14] = SolnBlk.WoN[i].p.zz;
+	buffer[buffer_size+15] = SolnBlk.WoN[i].erot;
+	buffer_size = buffer_size + 16;
+      } /* endfor */
+    } /* endif */
+
+    buffer_size = 16*ni*nj;
+    MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
+
+    if (!CFFC_Primary_MPI_Processor()) {
+      buffer_size = 0;
+      for (i  = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+	SolnBlk.WoS[i].d    = buffer[buffer_size];
+	SolnBlk.WoS[i].v.x  = buffer[buffer_size+1];
+	SolnBlk.WoS[i].v.y  = buffer[buffer_size+2];
+	SolnBlk.WoS[i].p.xx = buffer[buffer_size+3];
+	SolnBlk.WoS[i].p.xy = buffer[buffer_size+3];
+	SolnBlk.WoS[i].p.yy = buffer[buffer_size+3];
+	SolnBlk.WoS[i].p.zz = buffer[buffer_size+3];
+	SolnBlk.WoS[i].erot = buffer[buffer_size+3];
+	SolnBlk.WoN[i].d    = buffer[buffer_size+4];
+	SolnBlk.WoN[i].v.x  = buffer[buffer_size+5];
+	SolnBlk.WoN[i].v.y  = buffer[buffer_size+6];
+	SolnBlk.WoN[i].p.xx = buffer[buffer_size+7];
+	SolnBlk.WoN[i].p.xy = buffer[buffer_size+7];
+	SolnBlk.WoN[i].p.yy = buffer[buffer_size+7];
+	SolnBlk.WoN[i].p.zz = buffer[buffer_size+7];
+	SolnBlk.WoN[i].erot = buffer[buffer_size+7];
+	buffer_size = buffer_size + 16;
+      } /* endfor */
+    } /* endif */
+
+    delete []buffer; 
+    buffer = NULL;
+  } /* endif */
 #endif
 
 }
@@ -249,210 +253,213 @@ void Broadcast_Solution_Block(Gaussian2D_Quad_Block &SolnBlk,
                               MPI::Intracomm &Communicator, 
                               const int Source_CPU) {
 
-    int Source_Rank = 0;
-    int i, j, ni, nj, ng, nr, block_allocated, buffer_size;
-    double *buffer;
+  int Source_Rank = 0;
+  int i, j, ni, nj, ng, nr, heat, block_allocated, buffer_size;
+  double *buffer;
 
-    /* Broadcast the number of cells in each direction. */
+  /* Broadcast the number of cells in each direction. */
 
-    if (CFFC_MPI::This_Processor_Number == Source_CPU) {
-      ni = SolnBlk.NCi;
-      nj = SolnBlk.NCj;
-      ng = SolnBlk.Nghost;
-      if (SolnBlk.U != NULL) {
-         block_allocated = 1;
-      } else {
-	 block_allocated = 0;
-      } /* endif */
-      nr = SolnBlk.residual_variable;
+  if (CFFC_MPI::This_Processor_Number == Source_CPU) {
+    ni = SolnBlk.NCi;
+    nj = SolnBlk.NCj;
+    ng = SolnBlk.Nghost;
+    if (SolnBlk.U != NULL) {
+      block_allocated = 1;
+    } else {
+      block_allocated = 0;
     } /* endif */
+    nr = SolnBlk.residual_variable;
+    heat = SolnBlk.Heat_Transfer;
+  } /* endif */
 
-    Communicator.Bcast(&ni, 1, MPI::INT, Source_Rank);
-    Communicator.Bcast(&nj, 1, MPI::INT, Source_Rank);
-    Communicator.Bcast(&ng, 1, MPI::INT, Source_Rank);
-    Communicator.Bcast(&nr,1,MPI::INT,Source_Rank);
-    Communicator.Bcast(&block_allocated, 1, MPI::INT, Source_Rank);
+  Communicator.Bcast(&ni, 1, MPI::INT, Source_Rank);
+  Communicator.Bcast(&nj, 1, MPI::INT, Source_Rank);
+  Communicator.Bcast(&ng, 1, MPI::INT, Source_Rank);
+  Communicator.Bcast(&nr,1,MPI::INT,Source_Rank);
+  Communicator.Bcast(&heat,1,MPI::INT,Source_Rank);
+  Communicator.Bcast(&block_allocated, 1, MPI::INT, Source_Rank);
 
-    /* On non-source MPI processors, allocate (re-allocate) 
-       memory for the quadrilateral solution block as necessary. */
+  /* On non-source MPI processors, allocate (re-allocate) 
+     memory for the quadrilateral solution block as necessary. */
 
-    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
-       if (SolnBlk.NCi != ni || SolnBlk.NCj != nj || SolnBlk.Nghost != ng) { 
-          if (SolnBlk.U != NULL) SolnBlk.deallocate();
-          if (block_allocated) SolnBlk.allocate(ni-2*ng, nj-2*ng, ng); 
-       } /* endif */
-       // Set the block static variables if they were not previously assigned.
-       if (SolnBlk.residual_variable != nr) SolnBlk.residual_variable = nr;
+  if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+    if (SolnBlk.NCi != ni || SolnBlk.NCj != nj || SolnBlk.Nghost != ng) { 
+      if (SolnBlk.U != NULL) SolnBlk.deallocate();
+      if (block_allocated) SolnBlk.allocate(ni-2*ng, nj-2*ng, ng); 
     } /* endif */
+    // Set the block static variables if they were not previously assigned.
+    if (SolnBlk.residual_variable != nr) SolnBlk.residual_variable = nr; //do I need to do this?  I copied it from Jai
+    if (SolnBlk.Heat_Transfer != heat) SolnBlk.Heat_Transfer = heat;
+  } /* endif */
 
     /* Broadcast the axisymmetric/planar flow indicator. */
 
-    Communicator.Bcast(&(SolnBlk.Axisymmetric), 1, MPI::INT, Source_Rank);
+  Communicator.Bcast(&(SolnBlk.Axisymmetric), 1, MPI::INT, Source_Rank);
 
-    /* Broadcast the grid. */
+  /* Broadcast the grid. */
 
-    Broadcast_Quad_Block(SolnBlk.Grid, Communicator, Source_CPU);
+  Broadcast_Quad_Block(SolnBlk.Grid, Communicator, Source_CPU);
 
-    /* Broadcast the solution state variables. */
+  /* Broadcast the solution state variables. */
 
-    if (block_allocated) {
-       ni = (SolnBlk.ICu+SolnBlk.Nghost) - (SolnBlk.ICl-SolnBlk.Nghost) + 1;
-       nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
-       buffer = new double[8*ni*nj];
+  if (block_allocated) {
+    ni = (SolnBlk.ICu+SolnBlk.Nghost) - (SolnBlk.ICl-SolnBlk.Nghost) + 1;
+    nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
+    buffer = new double[8*ni*nj];
 
-       if (CFFC_MPI::This_Processor_Number == Source_CPU) {
-          buffer_size = 0;
-          for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-              for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
- 	          buffer[buffer_size  ] = SolnBlk.U[i][j].d;
- 	          buffer[buffer_size+1] = SolnBlk.U[i][j].dv.x;
- 	          buffer[buffer_size+2] = SolnBlk.U[i][j].dv.y;
- 	          buffer[buffer_size+3] = SolnBlk.U[i][j].E.xx;
- 	          buffer[buffer_size+4] = SolnBlk.U[i][j].E.xy;
- 	          buffer[buffer_size+5] = SolnBlk.U[i][j].E.yy;
- 	          buffer[buffer_size+6] = SolnBlk.U[i][j].E.zz;
- 	          buffer[buffer_size+7] = SolnBlk.U[i][j].erot;
-                  buffer_size = buffer_size + 8;
-              } /* endfor */
-          } /* endfor */
-       } /* endif */
-
-       buffer_size = 8*ni*nj;
-       Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
-
-       if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
-          buffer_size = 0;
-          for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-              for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
- 	          SolnBlk.U[i][j].d    = buffer[buffer_size];
- 	          SolnBlk.U[i][j].dv.x = buffer[buffer_size+1];
- 	          SolnBlk.U[i][j].dv.y = buffer[buffer_size+2];
- 	          SolnBlk.U[i][j].E.xx = buffer[buffer_size+3];
- 	          SolnBlk.U[i][j].E.xy = buffer[buffer_size+4];
- 	          SolnBlk.U[i][j].E.yy = buffer[buffer_size+5];
- 	          SolnBlk.U[i][j].E.zz = buffer[buffer_size+6];
- 	          SolnBlk.U[i][j].erot = buffer[buffer_size+7];
-                  buffer_size = buffer_size + 8;
- 	          SolnBlk.W[i][j] = W(SolnBlk.U[i][j]);
-              } /* endfor */
-           } /* endfor */
-       } /* endif */
-
-       delete []buffer; 
-       buffer = NULL;
-
-       ni = 1;
-       nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
-       buffer = new double[16*ni*nj];
-
-       if (CFFC_MPI::This_Processor_Number == Source_CPU) {
-          buffer_size = 0;
-          for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
- 	      buffer[buffer_size  ]  = SolnBlk.WoW[j].d;
- 	      buffer[buffer_size+1]  = SolnBlk.WoW[j].v.x;
- 	      buffer[buffer_size+2]  = SolnBlk.WoW[j].v.y;
- 	      buffer[buffer_size+3]  = SolnBlk.WoW[j].p.xx;
- 	      buffer[buffer_size+4]  = SolnBlk.WoW[j].p.xy;
- 	      buffer[buffer_size+5]  = SolnBlk.WoW[j].p.yy;
- 	      buffer[buffer_size+6]  = SolnBlk.WoW[j].p.zz;
- 	      buffer[buffer_size+7]  = SolnBlk.WoW[j].erot;
- 	      buffer[buffer_size+8]  = SolnBlk.WoE[j].d;
- 	      buffer[buffer_size+9]  = SolnBlk.WoE[j].v.x;
- 	      buffer[buffer_size+10] = SolnBlk.WoE[j].v.y;
- 	      buffer[buffer_size+11] = SolnBlk.WoE[j].p.xx;
- 	      buffer[buffer_size+12] = SolnBlk.WoE[j].p.xy;
- 	      buffer[buffer_size+13] = SolnBlk.WoE[j].p.yy;
- 	      buffer[buffer_size+14] = SolnBlk.WoE[j].p.zz;
- 	      buffer[buffer_size+15] = SolnBlk.WoE[j].erot;
-              buffer_size = buffer_size + 16;
-          } /* endfor */
-       } /* endif */
-
-       buffer_size = 16*ni*nj;
-       Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
-
-       if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
-          buffer_size = 0;
-          for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
- 	      SolnBlk.WoW[j].d    = buffer[buffer_size];
- 	      SolnBlk.WoW[j].v.x  = buffer[buffer_size+1];
- 	      SolnBlk.WoW[j].v.y  = buffer[buffer_size+2];
- 	      SolnBlk.WoW[j].p.xx = buffer[buffer_size+3];
- 	      SolnBlk.WoW[j].p.xy = buffer[buffer_size+4];
- 	      SolnBlk.WoW[j].p.yy = buffer[buffer_size+5];
- 	      SolnBlk.WoW[j].p.zz = buffer[buffer_size+6];
- 	      SolnBlk.WoW[j].erot = buffer[buffer_size+7];
- 	      SolnBlk.WoE[j].d    = buffer[buffer_size+8];
- 	      SolnBlk.WoE[j].v.x  = buffer[buffer_size+9];
- 	      SolnBlk.WoE[j].v.y  = buffer[buffer_size+10];
- 	      SolnBlk.WoE[j].p.xx = buffer[buffer_size+11];
- 	      SolnBlk.WoE[j].p.xy = buffer[buffer_size+12];
- 	      SolnBlk.WoE[j].p.yy = buffer[buffer_size+13];
- 	      SolnBlk.WoE[j].p.zz = buffer[buffer_size+14];
- 	      SolnBlk.WoE[j].erot = buffer[buffer_size+15];
-              buffer_size = buffer_size + 16;
-          } /* endfor */
-       } /* endif */
-
-       delete []buffer; 
-       buffer = NULL;
-
-       ni = (SolnBlk.ICu+SolnBlk.Nghost) - (SolnBlk.ICl-SolnBlk.Nghost) + 1;
-       nj = 1;
-       buffer = new double[16*ni*nj];
-
-       if (CFFC_MPI::This_Processor_Number == Source_CPU) {
-          buffer_size = 0;
-          for (i  = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
- 	      buffer[buffer_size  ]  = SolnBlk.WoS[i].d;
- 	      buffer[buffer_size+1]  = SolnBlk.WoS[i].v.x;
- 	      buffer[buffer_size+2]  = SolnBlk.WoS[i].v.y;
- 	      buffer[buffer_size+3]  = SolnBlk.WoS[i].p.xx;
- 	      buffer[buffer_size+4]  = SolnBlk.WoS[i].p.xy;
- 	      buffer[buffer_size+5]  = SolnBlk.WoS[i].p.yy;
- 	      buffer[buffer_size+6]  = SolnBlk.WoS[i].p.zz;
- 	      buffer[buffer_size+7]  = SolnBlk.WoS[i].erot;
- 	      buffer[buffer_size+8]  = SolnBlk.WoN[i].d;
- 	      buffer[buffer_size+9]  = SolnBlk.WoN[i].v.x;
- 	      buffer[buffer_size+10] = SolnBlk.WoN[i].v.y;
- 	      buffer[buffer_size+11] = SolnBlk.WoN[i].p.xx;
- 	      buffer[buffer_size+12] = SolnBlk.WoN[i].p.xy;
- 	      buffer[buffer_size+13] = SolnBlk.WoN[i].p.yy;
- 	      buffer[buffer_size+14] = SolnBlk.WoN[i].p.zz;
- 	      buffer[buffer_size+15] = SolnBlk.WoN[i].erot;
-              buffer_size = buffer_size + 16;
-          } /* endfor */
-       } /* endif */
-
-       buffer_size = 16*ni*nj;
-       Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
-
-       if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
-          buffer_size = 0;
-          for (i  = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
- 	      SolnBlk.WoS[i].d    = buffer[buffer_size];
- 	      SolnBlk.WoS[i].v.x  = buffer[buffer_size+1];
- 	      SolnBlk.WoS[i].v.y  = buffer[buffer_size+2];
- 	      SolnBlk.WoS[i].p.xx = buffer[buffer_size+3];
- 	      SolnBlk.WoS[i].p.xy = buffer[buffer_size+4];
- 	      SolnBlk.WoS[i].p.yy = buffer[buffer_size+5];
- 	      SolnBlk.WoS[i].p.zz = buffer[buffer_size+6];
- 	      SolnBlk.WoS[i].erot = buffer[buffer_size+7];
- 	      SolnBlk.WoN[i].d    = buffer[buffer_size+8];
- 	      SolnBlk.WoN[i].v.x  = buffer[buffer_size+9];
- 	      SolnBlk.WoN[i].v.y  = buffer[buffer_size+10];
- 	      SolnBlk.WoN[i].p.xx = buffer[buffer_size+11];
- 	      SolnBlk.WoN[i].p.xy = buffer[buffer_size+12];
- 	      SolnBlk.WoN[i].p.yy = buffer[buffer_size+13];
- 	      SolnBlk.WoN[i].p.zz = buffer[buffer_size+14];
- 	      SolnBlk.WoN[i].erot = buffer[buffer_size+15];
-              buffer_size = buffer_size + 16;
-          } /* endfor */
-       } /* endif */
-
-       delete []buffer; 
-       buffer = NULL;
+    if (CFFC_MPI::This_Processor_Number == Source_CPU) {
+      buffer_size = 0;
+      for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+	for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+	  buffer[buffer_size  ] = SolnBlk.U[i][j].d;
+	  buffer[buffer_size+1] = SolnBlk.U[i][j].dv.x;
+	  buffer[buffer_size+2] = SolnBlk.U[i][j].dv.y;
+	  buffer[buffer_size+3] = SolnBlk.U[i][j].E.xx;
+	  buffer[buffer_size+4] = SolnBlk.U[i][j].E.xy;
+	  buffer[buffer_size+5] = SolnBlk.U[i][j].E.yy;
+	  buffer[buffer_size+6] = SolnBlk.U[i][j].E.zz;
+	  buffer[buffer_size+7] = SolnBlk.U[i][j].erot;
+	  buffer_size = buffer_size + 8;
+	} /* endfor */
+      } /* endfor */
     } /* endif */
+
+    buffer_size = 8*ni*nj;
+    Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
+
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+      buffer_size = 0;
+      for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+	for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+	  SolnBlk.U[i][j].d    = buffer[buffer_size];
+	  SolnBlk.U[i][j].dv.x = buffer[buffer_size+1];
+	  SolnBlk.U[i][j].dv.y = buffer[buffer_size+2];
+	  SolnBlk.U[i][j].E.xx = buffer[buffer_size+3];
+	  SolnBlk.U[i][j].E.xy = buffer[buffer_size+4];
+	  SolnBlk.U[i][j].E.yy = buffer[buffer_size+5];
+	  SolnBlk.U[i][j].E.zz = buffer[buffer_size+6];
+	  SolnBlk.U[i][j].erot = buffer[buffer_size+7];
+	  buffer_size = buffer_size + 8;
+	  SolnBlk.W[i][j] = W(SolnBlk.U[i][j]);
+	} /* endfor */
+      } /* endfor */
+    } /* endif */
+
+    delete []buffer; 
+    buffer = NULL;
+
+    ni = 1;
+    nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
+    buffer = new double[16*ni*nj];
+
+    if (CFFC_MPI::This_Processor_Number == Source_CPU) {
+      buffer_size = 0;
+      for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+	buffer[buffer_size  ]  = SolnBlk.WoW[j].d;
+	buffer[buffer_size+1]  = SolnBlk.WoW[j].v.x;
+	buffer[buffer_size+2]  = SolnBlk.WoW[j].v.y;
+	buffer[buffer_size+3]  = SolnBlk.WoW[j].p.xx;
+	buffer[buffer_size+4]  = SolnBlk.WoW[j].p.xy;
+	buffer[buffer_size+5]  = SolnBlk.WoW[j].p.yy;
+	buffer[buffer_size+6]  = SolnBlk.WoW[j].p.zz;
+	buffer[buffer_size+7]  = SolnBlk.WoW[j].erot;
+	buffer[buffer_size+8]  = SolnBlk.WoE[j].d;
+	buffer[buffer_size+9]  = SolnBlk.WoE[j].v.x;
+	buffer[buffer_size+10] = SolnBlk.WoE[j].v.y;
+	buffer[buffer_size+11] = SolnBlk.WoE[j].p.xx;
+	buffer[buffer_size+12] = SolnBlk.WoE[j].p.xy;
+	buffer[buffer_size+13] = SolnBlk.WoE[j].p.yy;
+	buffer[buffer_size+14] = SolnBlk.WoE[j].p.zz;
+	buffer[buffer_size+15] = SolnBlk.WoE[j].erot;
+	buffer_size = buffer_size + 16;
+      } /* endfor */
+    } /* endif */
+
+    buffer_size = 16*ni*nj;
+    Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
+
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+      buffer_size = 0;
+      for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+	SolnBlk.WoW[j].d    = buffer[buffer_size];
+	SolnBlk.WoW[j].v.x  = buffer[buffer_size+1];
+	SolnBlk.WoW[j].v.y  = buffer[buffer_size+2];
+	SolnBlk.WoW[j].p.xx = buffer[buffer_size+3];
+	SolnBlk.WoW[j].p.xy = buffer[buffer_size+4];
+	SolnBlk.WoW[j].p.yy = buffer[buffer_size+5];
+	SolnBlk.WoW[j].p.zz = buffer[buffer_size+6];
+	SolnBlk.WoW[j].erot = buffer[buffer_size+7];
+	SolnBlk.WoE[j].d    = buffer[buffer_size+8];
+	SolnBlk.WoE[j].v.x  = buffer[buffer_size+9];
+	SolnBlk.WoE[j].v.y  = buffer[buffer_size+10];
+	SolnBlk.WoE[j].p.xx = buffer[buffer_size+11];
+	SolnBlk.WoE[j].p.xy = buffer[buffer_size+12];
+	SolnBlk.WoE[j].p.yy = buffer[buffer_size+13];
+	SolnBlk.WoE[j].p.zz = buffer[buffer_size+14];
+	SolnBlk.WoE[j].erot = buffer[buffer_size+15];
+	buffer_size = buffer_size + 16;
+      } /* endfor */
+    } /* endif */
+
+    delete []buffer; 
+    buffer = NULL;
+
+    ni = (SolnBlk.ICu+SolnBlk.Nghost) - (SolnBlk.ICl-SolnBlk.Nghost) + 1;
+    nj = 1;
+    buffer = new double[16*ni*nj];
+
+    if (CFFC_MPI::This_Processor_Number == Source_CPU) {
+      buffer_size = 0;
+      for (i  = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+	buffer[buffer_size  ]  = SolnBlk.WoS[i].d;
+	buffer[buffer_size+1]  = SolnBlk.WoS[i].v.x;
+	buffer[buffer_size+2]  = SolnBlk.WoS[i].v.y;
+	buffer[buffer_size+3]  = SolnBlk.WoS[i].p.xx;
+	buffer[buffer_size+4]  = SolnBlk.WoS[i].p.xy;
+	buffer[buffer_size+5]  = SolnBlk.WoS[i].p.yy;
+	buffer[buffer_size+6]  = SolnBlk.WoS[i].p.zz;
+	buffer[buffer_size+7]  = SolnBlk.WoS[i].erot;
+	buffer[buffer_size+8]  = SolnBlk.WoN[i].d;
+	buffer[buffer_size+9]  = SolnBlk.WoN[i].v.x;
+	buffer[buffer_size+10] = SolnBlk.WoN[i].v.y;
+	buffer[buffer_size+11] = SolnBlk.WoN[i].p.xx;
+	buffer[buffer_size+12] = SolnBlk.WoN[i].p.xy;
+	buffer[buffer_size+13] = SolnBlk.WoN[i].p.yy;
+	buffer[buffer_size+14] = SolnBlk.WoN[i].p.zz;
+	buffer[buffer_size+15] = SolnBlk.WoN[i].erot;
+	buffer_size = buffer_size + 16;
+      } /* endfor */
+    } /* endif */
+
+    buffer_size = 16*ni*nj;
+    Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
+
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+      buffer_size = 0;
+      for (i  = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+	SolnBlk.WoS[i].d    = buffer[buffer_size];
+	SolnBlk.WoS[i].v.x  = buffer[buffer_size+1];
+	SolnBlk.WoS[i].v.y  = buffer[buffer_size+2];
+	SolnBlk.WoS[i].p.xx = buffer[buffer_size+3];
+	SolnBlk.WoS[i].p.xy = buffer[buffer_size+4];
+	SolnBlk.WoS[i].p.yy = buffer[buffer_size+5];
+	SolnBlk.WoS[i].p.zz = buffer[buffer_size+6];
+	SolnBlk.WoS[i].erot = buffer[buffer_size+7];
+	SolnBlk.WoN[i].d    = buffer[buffer_size+8];
+	SolnBlk.WoN[i].v.x  = buffer[buffer_size+9];
+	SolnBlk.WoN[i].v.y  = buffer[buffer_size+10];
+	SolnBlk.WoN[i].p.xx = buffer[buffer_size+11];
+	SolnBlk.WoN[i].p.xy = buffer[buffer_size+12];
+	SolnBlk.WoN[i].p.yy = buffer[buffer_size+13];
+	SolnBlk.WoN[i].p.zz = buffer[buffer_size+14];
+	SolnBlk.WoN[i].erot = buffer[buffer_size+15];
+	buffer_size = buffer_size + 16;
+      } /* endfor */
+    } /* endif */
+
+    delete []buffer; 
+    buffer = NULL;
+  } /* endif */
 
 }
 #endif
@@ -1097,6 +1104,96 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
             } /* endfor */
         } /* endfor */
         break;
+      case IC_SHOCK_STRUCTURE_M1_1:
+	if(Wo[0].gas != GAS_A) {
+	  cout << "error....don't change gas from \"A\".\n";
+	  assert(1==2);
+	}
+	Wl = Gaussian2D_pState(1.661, 350.7444241833, 0.0, 101325.0);
+	Wr = Gaussian2D_pState(1.90955819477, 305.08951614, 0.0, 127922.8125);
+        for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+            for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+              if (SolnBlk.Grid.Cell[i][j].Xc.x <= ZERO) {
+                 SolnBlk.W[i][j] = Wl;
+              } else {
+                 SolnBlk.W[i][j] = Wr;	     
+              } /* end if */
+              SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+           } /* endfor */
+        } /* endfor */
+        break;
+      case IC_SHOCK_STRUCTURE_M1_3:
+	if(Wo[0].gas != GAS_A) {
+	  cout << "error....don't change gas from \"A\".\n";
+	  assert(1==2);
+	}
+	Wl = Gaussian2D_pState(1.661, 414.51592216, 0.0, 101325.0);
+	Wr = Gaussian2D_pState(2.39410660981, 287.585750733, 0.0, 188717.8125);
+        for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+            for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+              if (SolnBlk.Grid.Cell[i][j].Xc.x <= ZERO) {
+                 SolnBlk.W[i][j] = Wl;
+              } else {
+                 SolnBlk.W[i][j] = Wr;	     
+              } /* end if */
+              SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+           } /* endfor */
+        } /* endfor */
+        break;
+      case IC_SHOCK_STRUCTURE_M1_5:
+	if(Wo[0].gas != GAS_A) {
+	  cout << "error....don't change gas from \"A\".\n";
+	  assert(1==2);
+	}
+	Wl = Gaussian2D_pState(1.661, 478.287602499, 0.0, 101325.0);
+	Wr = Gaussian2D_pState(2.84742857143, 279.001101458, 0.0, 259645.3125);
+        for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+            for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+              if (SolnBlk.Grid.Cell[i][j].Xc.x <= ZERO) {
+                 SolnBlk.W[i][j] = Wl;
+              } else {
+                 SolnBlk.W[i][j] = Wr;	     
+              } /* end if */
+              SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+           } /* endfor */
+        } /* endfor */
+        break;
+      case IC_SHOCK_STRUCTURE_M2_0:
+	if(Wo[0].gas != GAS_A) {
+	  cout << "error....don't change gas from \"A\".\n";
+	  assert(1==2);
+	}
+	Wl = Gaussian2D_pState(1.661, 637.716803332, 0.0, 101325.0);
+	Wr = Gaussian2D_pState(3.79657142857, 279.001101458, 0.0, 481293.75);
+        for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+            for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+              if (SolnBlk.Grid.Cell[i][j].Xc.x <= ZERO) {
+                 SolnBlk.W[i][j] = Wl;
+              } else {
+                 SolnBlk.W[i][j] = Wr;	     
+              } /* end if */
+              SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+           } /* endfor */
+        } /* endfor */
+        break;
+      case IC_SHOCK_STRUCTURE_M10_0:
+	if(Wo[0].gas != GAS_A) {
+	  cout << "error....don't change gas from \"A\".\n";
+	  assert(1==2);
+	}
+	Wl = Gaussian2D_pState(1.661, 3188.58401666, 0.0, 101325.0);
+	Wr = Gaussian2D_pState(6.45048543689, 821.06038429, 0.0, 12640293.75);
+        for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+            for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+              if (SolnBlk.Grid.Cell[i][j].Xc.x <= ZERO) {
+                 SolnBlk.W[i][j] = Wl;
+              } else {
+                 SolnBlk.W[i][j] = Wr;	     
+              } /* end if */
+              SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+           } /* endfor */
+        } /* endfor */
+        break;
       case IC_CONTACT_SURFACE_XDIR :
         // Set initial data for moving contact surface propagating in x-direction.
         Wl = Gaussian2D_pState(1.045, 200.00, ZERO, 300.00e03);
@@ -1399,12 +1496,12 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.WoE[j] = SolnBlk.W[SolnBlk.ICu][SolnBlk.JCu];
        } /* endif */
 
-       //Set Wall velocities for Adiabatic walls
-       if (SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL){
+       //Set Wall velocities for Adiabatic walls or viscous isothermal
+       if (SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL || SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL){
 	 SolnBlk.WoW[j].v.y = 0.0;
 	 SolnBlk.WoW[j].v.x = 0.0;
        } /* endif */
-       if (SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL){
+       if (SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL|| SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL){
 	 SolnBlk.WoE[j].v.y = 0.0;
 	 SolnBlk.WoE[j].v.x = 0.0;
        } /* endif */
@@ -1430,7 +1527,7 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
        } /* endif */
 
        //Set Wall velocities for Adiabatic walls
-       if (SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL){
+       if (SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL || SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL){
 	 SolnBlk.WoS[i].v.y = 0.0;
 	 if (Input_Parameters.i_Grid == GRID_ADIABATIC_COUETTE) {
 	   SolnBlk.WoS[i].v.x =  - Input_Parameters.Couette_Plate_Velocity;
@@ -1438,7 +1535,7 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
 	   SolnBlk.WoS[i].v.x = 0.0;
 	 } /* endif */
        } /* endif */
-       if (SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL){
+       if (SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL || SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL){
 	 SolnBlk.WoN[i].v.y = 0.0;
 	 if (Input_Parameters.i_Grid == GRID_ADIABATIC_COUETTE) {
 	 SolnBlk.WoN[i].v.x = Input_Parameters.Couette_Plate_Velocity;
@@ -1550,6 +1647,14 @@ void BCs(Gaussian2D_Quad_Block &SolnBlk,
 	    SolnBlk.W[SolnBlk.ICl-1][j] = Adiabatic_Wall(SolnBlk.W[SolnBlk.ICl][j],
 							SolnBlk.WoW[j],
 							SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
+            SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
+            SolnBlk.W[SolnBlk.ICl-2][j] = SolnBlk.W[SolnBlk.ICl-1][j];
+            SolnBlk.U[SolnBlk.ICl-2][j] = U(SolnBlk.W[SolnBlk.ICl-2][j]);
+	    break;
+	  case BC_WALL_VISCOUS_ISOTHERMAL :
+	    SolnBlk.W[SolnBlk.ICl-1][j] = Isothermal_Wall(SolnBlk.W[SolnBlk.ICl][j],
+							  SolnBlk.WoW[j],
+							  SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
             SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
             SolnBlk.W[SolnBlk.ICl-2][j] = SolnBlk.W[SolnBlk.ICl-1][j];
             SolnBlk.U[SolnBlk.ICl-2][j] = U(SolnBlk.W[SolnBlk.ICl-2][j]);
@@ -1677,6 +1782,14 @@ void BCs(Gaussian2D_Quad_Block &SolnBlk,
             SolnBlk.W[SolnBlk.ICu+2][j] = SolnBlk.W[SolnBlk.ICu+1][j];
             SolnBlk.U[SolnBlk.ICu+2][j] = U(SolnBlk.W[SolnBlk.ICu+2][j]);
 	    break;
+	  case BC_WALL_VISCOUS_ISOTHERMAL :
+	    SolnBlk.W[SolnBlk.ICu+1][j] = Isothermal_Wall(SolnBlk.W[SolnBlk.ICu][j],
+							  SolnBlk.WoE[j],
+							  SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
+            SolnBlk.U[SolnBlk.ICu+1][j] = U(SolnBlk.W[SolnBlk.ICu+1][j]);
+            SolnBlk.W[SolnBlk.ICu+2][j] = SolnBlk.W[SolnBlk.ICu+1][j];
+            SolnBlk.U[SolnBlk.ICu+2][j] = U(SolnBlk.W[SolnBlk.ICu+2][j]);
+	    break;
  	  case BC_COUETTE :
             Linear_Reconstruction_LeastSquares(SolnBlk, 
                                                  SolnBlk.ICu, j, 
@@ -1785,6 +1898,14 @@ void BCs(Gaussian2D_Quad_Block &SolnBlk,
             SolnBlk.W[i][SolnBlk.JCl-2] = SolnBlk.W[i][SolnBlk.JCl-1];
             SolnBlk.U[i][SolnBlk.JCl-2] = U(SolnBlk.W[i][SolnBlk.JCl-2]);
 	    break;
+	  case BC_WALL_VISCOUS_ISOTHERMAL :
+	    SolnBlk.W[i][SolnBlk.JCl-1] = Isothermal_Wall(SolnBlk.W[i][SolnBlk.JCl],
+							  SolnBlk.WoS[i],
+							  SolnBlk.Grid.nfaceS(i,SolnBlk.JCl));
+            SolnBlk.U[i][SolnBlk.JCl-1] = U(SolnBlk.W[i][SolnBlk.JCl-1]);
+            SolnBlk.W[i][SolnBlk.JCl-2] = SolnBlk.W[i][SolnBlk.JCl-1];
+            SolnBlk.U[i][SolnBlk.JCl-2] = U(SolnBlk.W[i][SolnBlk.JCl-2]);
+	    break;
 	  case BC_COUETTE :
             Linear_Reconstruction_LeastSquares(SolnBlk, 
                                                  i, SolnBlk.JCl, 
@@ -1877,6 +1998,14 @@ void BCs(Gaussian2D_Quad_Block &SolnBlk,
 	    SolnBlk.W[i][SolnBlk.JCu+1] = Adiabatic_Wall(SolnBlk.W[i][SolnBlk.JCu],
 							SolnBlk.WoN[i],
 							SolnBlk.Grid.nfaceN(i,SolnBlk.JCu));
+            SolnBlk.U[i][SolnBlk.JCu+1] = U(SolnBlk.W[i][SolnBlk.JCu+1]);
+            SolnBlk.W[i][SolnBlk.JCu+2] = SolnBlk.W[i][SolnBlk.JCu+1];
+            SolnBlk.U[i][SolnBlk.JCu+2] = U(SolnBlk.W[i][SolnBlk.JCu+2]);
+	    break;
+	  case BC_WALL_VISCOUS_ISOTHERMAL :
+	    SolnBlk.W[i][SolnBlk.JCu+1] = Isothermal_Wall(SolnBlk.W[i][SolnBlk.JCu],
+							  SolnBlk.WoN[i],
+							  SolnBlk.Grid.nfaceN(i,SolnBlk.JCu));
             SolnBlk.U[i][SolnBlk.JCu+1] = U(SolnBlk.W[i][SolnBlk.JCu+1]);
             SolnBlk.W[i][SolnBlk.JCu+2] = SolnBlk.W[i][SolnBlk.JCu+1];
             SolnBlk.U[i][SolnBlk.JCu+2] = U(SolnBlk.W[i][SolnBlk.JCu+2]);
@@ -2143,6 +2272,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
                 SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+                SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
                 SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
 	n_pts = 0;
       } else { //BC's are Periodic or "none"
@@ -2154,6 +2284,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeS[i] == BC_COUETTE              ||
                 SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+                SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
                 SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i-1; j_index[0] = j;
@@ -2169,6 +2300,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                         SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
                         SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
                         SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+                        SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
                         SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i-1; j_index[0] = j;
@@ -2205,6 +2337,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
                 SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+                SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
                 SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
 	n_pts = 0;
       } else { //BC's are Periodic or "none"
@@ -2216,6 +2349,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
                 SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+                SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
                 SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i-1; j_index[0] = j;
@@ -2231,6 +2365,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                         SolnBlk.Grid.BCtypeN[i] == BC_COUETTE              ||
                         SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
                         SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+                        SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
                         SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i-1; j_index[0] = j;
@@ -2262,6 +2397,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeS[i] == BC_COUETTE              ||
          SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+         SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
          SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
 	n_pts = 0;
       } else { //BC's are Periodic or "none"
@@ -2273,6 +2409,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeW[j] == BC_COUETTE              ||
                 SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+                SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
                 SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i;   j_index[0] = j+1;
@@ -2288,6 +2425,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                         SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
                         SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
                         SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+                        SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
                         SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i;   j_index[0] = j+1;
@@ -2319,6 +2457,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
          SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+         SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
          SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
 	n_pts = 0;
       } else { //BC's are Periodic or "none"
@@ -2330,6 +2469,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
                 SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+                SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
                 SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i;   j_index[0] = j+1;
@@ -2345,6 +2485,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                         SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
                         SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
                         SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+                        SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
                         SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i;   j_index[0] = j+1;
@@ -2376,6 +2517,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
           SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+          SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
           SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)
                            &&
          (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
@@ -2383,6 +2525,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
           SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+          SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
           SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
 	n_pts = 3;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -2393,6 +2536,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
                  SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+                 SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
                  SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -2405,6 +2549,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
                  SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+                 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
                  SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -2432,6 +2577,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
           SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+          SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
           SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)
                            &&
          (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
@@ -2439,6 +2585,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
           SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+          SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
           SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
 	n_pts = 3;
 	i_index[0] = i;   j_index[0] = j-1;
@@ -2449,6 +2596,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
                  SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+                 SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
                  SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -2461,6 +2609,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
                  SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+                 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
                  SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -2488,6 +2637,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
           SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+          SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
           SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)
                            &&
          (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
@@ -2495,6 +2645,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
           SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+          SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
           SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
 	n_pts = 3;
 	i_index[0] = i-1; j_index[0] = j;
@@ -2505,6 +2656,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
                  SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+                 SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
                  SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -2517,6 +2669,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
                  SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+                 SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
                  SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -2544,6 +2697,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
           SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+          SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
           SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)
                            &&
          (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
@@ -2551,6 +2705,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
           SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+          SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
           SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
 	n_pts = 3;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -2561,6 +2716,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
                  SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+                 SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
                  SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -2573,6 +2729,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
                  SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+                 SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
                  SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -2600,6 +2757,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
          SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+         SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
          SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -2627,6 +2785,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
          SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+         SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
          SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -2654,6 +2813,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
          SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+         SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
          SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -2681,6 +2841,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
          SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+         SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
          SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -2954,7 +3115,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
 	while((SolnBlk.W[i][j] + 
 	    (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x +
 	    (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y).invalid()) {
-	  //cout << "^";
+	  cout << "^";
 	  SolnBlk.phi[i][j] = SolnBlk.phi[i][j]*0.99;//Gaussian2D_W_VACUUM;
 	}
 	dX = SolnBlk.Grid.xfaceW(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
@@ -2962,21 +3123,21 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
 	    (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x +
 	    (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y).invalid()) {
 	  SolnBlk.phi[i][j] = SolnBlk.phi[i][j]*0.99;//Gaussian2D_W_VACUUM;
-	  //cout << "^";
+	  cout << "^";
 	}
 	dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
 	while((SolnBlk.W[i][j] + 
 	    (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x +
 	    (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y).invalid()) {
 	  SolnBlk.phi[i][j] = SolnBlk.phi[i][j]*0.99;//Gaussian2D_W_VACUUM;
-	  //cout << "^";
+	  cout << "^";
 	}
 	dX = SolnBlk.Grid.xfaceS(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
 	while((SolnBlk.W[i][j] + 
 	    (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x +
 	    (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y).invalid()) {
 	  SolnBlk.phi[i][j] = SolnBlk.phi[i][j]*0.99;//Gaussian2D_W_VACUUM;
-	  //cout << "^";
+	  cout << "^";
 	}
 	
 
@@ -3066,6 +3227,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
                 SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+                SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
                 SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
 	n_pts = 0;
       } else { //BC's are Periodic or "none"
@@ -3077,6 +3239,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeS[i] == BC_COUETTE              ||
                 SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+                SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
                 SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i-1; j_index[0] = j;
@@ -3092,6 +3255,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                         SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
                         SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
                         SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+                        SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
                         SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i-1; j_index[0] = j;
@@ -3128,6 +3292,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
                 SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+                SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
                 SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
 	n_pts = 0;
       } else { //BC's are Periodic or "none"
@@ -3139,6 +3304,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
                 SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+                SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
                 SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i-1; j_index[0] = j;
@@ -3154,6 +3320,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                         SolnBlk.Grid.BCtypeN[i] == BC_COUETTE              ||
                         SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
                         SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+                        SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
                         SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i-1; j_index[0] = j;
@@ -3185,6 +3352,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeS[i] == BC_COUETTE              ||
          SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+         SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
          SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
 	n_pts = 0;
       } else { //BC's are Periodic or "none"
@@ -3196,6 +3364,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeW[j] == BC_COUETTE              ||
                 SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+                SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
                 SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i;   j_index[0] = j+1;
@@ -3211,6 +3380,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                         SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
                         SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
                         SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+                        SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
                         SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i;   j_index[0] = j+1;
@@ -3242,6 +3412,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
          SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+         SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
          SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
 	n_pts = 0;
       } else { //BC's are Periodic or "none"
@@ -3253,6 +3424,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
                 SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+                SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
                 SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i;   j_index[0] = j+1;
@@ -3268,6 +3440,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                         SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
                         SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
                         SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+                        SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
                         SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i;   j_index[0] = j+1;
@@ -3299,6 +3472,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
           SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+          SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
           SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)
                            &&
          (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
@@ -3306,6 +3480,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
           SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+          SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
           SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
 	n_pts = 3;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -3316,6 +3491,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
                  SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+                 SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
                  SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -3328,6 +3504,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
                  SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+                 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
                  SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -3355,6 +3532,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
           SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+          SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
           SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)
                            &&
          (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
@@ -3362,6 +3540,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
           SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+          SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
           SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
 	n_pts = 3;
 	i_index[0] = i;   j_index[0] = j-1;
@@ -3372,6 +3551,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
                  SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+                 SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
                  SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -3384,6 +3564,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
                  SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+                 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
                  SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -3411,6 +3592,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
           SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+          SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
           SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)
                            &&
          (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
@@ -3418,6 +3600,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
           SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+          SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
           SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
 	n_pts = 3;
 	i_index[0] = i-1; j_index[0] = j;
@@ -3428,6 +3611,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
                  SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+                 SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
                  SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -3440,6 +3624,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
                  SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+                 SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
                  SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -3467,6 +3652,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
           SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+	  SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
           SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)
                            &&
          (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
@@ -3474,6 +3660,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
           SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+          SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
           SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
 	n_pts = 3;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -3484,6 +3671,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
                  SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+                 SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
                  SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -3496,6 +3684,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
                  SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+                 SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
                  SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -3523,6 +3712,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
          SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+	 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
          SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -3550,6 +3740,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
          SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+         SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
          SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -3577,6 +3768,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
          SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+         SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
          SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -3604,6 +3796,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
          SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+         SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
          SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -3636,570 +3829,6 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
       i_index[6] = i+1; j_index[6] = j-1;
       i_index[7] = i;   j_index[7] = j-1;
     } //endif
-//    /* Carry out the limited solution reconstruction in
-//       each cell of the computational mesh. */
-//
-//      //If on outside ring of ghost cells, no reconstruction
-//    
-//    if (i == SolnBlk.ICl-SolnBlk.Nghost || i == SolnBlk.ICu+SolnBlk.Nghost ||
-//        j == SolnBlk.JCl-SolnBlk.Nghost || j == SolnBlk.JCu+SolnBlk.Nghost) {
-//      n_pts = 0;
-//
-//      //If on inside ring of ghost cells, reconstruction may be required
-//
-//      /////////////left edge//////////////////
-//
-//    } else if (i == SolnBlk.ICl-SolnBlk.Nghost+1) {
-//        //bottom or top left corner (never used to evaluate fluxes, therefore
-//        //no reconstruction needed
-//      if(j == SolnBlk.JCl-SolnBlk.Nghost+1 || j == SolnBlk.JCu+SolnBlk.Nghost-1){
-//	n_pts = 0;
-//	//left edge, may need reconstruction
-//        //(only for BC_NONE and BC_PERIODIC)???
-//      } else if(SolnBlk.Grid.BCtypeW[j] == BC_FIXED ||
-//                SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
-//                SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
-//                SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
-//                SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
-//                SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
-//	n_pts = 0;
-//      } else { //BC's are Periodic or "none"
-//	  //Bottom left
-//	if(j == SolnBlk.JCl-SolnBlk.Nghost+2 &&
-//               (SolnBlk.Grid.BCtypeS[i] == BC_FIXED ||
-//                SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
-//                SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
-//                SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
-//                SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
-//                SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
-//	  n_pts = 5;
-//	  i_index[0] = i-1; j_index[0] = j;
-//	  i_index[1] = i-1; j_index[1] = j+1;
-//	  i_index[2] = i;   j_index[2] = j+1;
-//	  i_index[3] = i+1; j_index[3] = j+1;
-//	  i_index[4] = i+1; j_index[4] = j;
-//	  //Top Left
-//	} else if (j == SolnBlk.JCu+SolnBlk.Nghost-2 &&
-//                       (SolnBlk.Grid.BCtypeN[i] == BC_FIXED ||
-//                        SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
-//                        SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
-//                        SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
-//                        SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
-//                        SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
-//	  n_pts = 5;
-//	  i_index[0] = i-1; j_index[0] = j;
-//	  i_index[1] = i-1; j_index[1] = j-1;
-//	  i_index[2] = i;   j_index[2] = j-1;
-//	  i_index[3] = i+1; j_index[3] = j-1;
-//	  i_index[4] = i+1; j_index[4] = j;
-//	  //middle left
-//	} else {
-//	  n_pts = 8;
-//	  i_index[0] = i-1; j_index[0] = j-1;
-//	  i_index[1] = i-1; j_index[1] = j;
-//	  i_index[2] = i-1; j_index[2] = j+1;
-//	  i_index[3] = i;   j_index[3] = j+1;
-//	  i_index[4] = i+1; j_index[4] = j+1;
-//	  i_index[5] = i+1; j_index[5] = j;
-//	  i_index[6] = i+1; j_index[6] = j-1;
-//	  i_index[7] = i;   j_index[7] = j-1;
-//	} //endif
-//      } //endif
-//
-//      /////////////Right edge//////////////////
-//
-//    } else if (i == SolnBlk.ICu+SolnBlk.Nghost-1) {
-//        //bottom or top left corner (never used to evaluate fluxes, therefore
-//        //no reconstruction needed
-//      if(j == SolnBlk.JCl-SolnBlk.Nghost+1 || j == SolnBlk.JCu+SolnBlk.Nghost-1){
-//	n_pts = 0;
-//	//right edge, may need reconstruction
-//        //(only for BC_NONE and BC_PERIODIC)???
-//      } else if(SolnBlk.Grid.BCtypeE[j] == BC_FIXED ||
-//                SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
-//                SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
-//                SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
-//                SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
-//                SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
-//	n_pts = 0;
-//      } else { //BC's are Periodic or "none"
-//	  //Bottom right
-//	if(j == SolnBlk.JCl-SolnBlk.Nghost+2 &&
-//               (SolnBlk.Grid.BCtypeS[i] == BC_FIXED ||
-//                SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
-//                SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
-//                SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
-//                SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
-//                SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
-//	  n_pts = 5;
-//	  i_index[0] = i-1; j_index[0] = j;
-//	  i_index[1] = i-1; j_index[1] = j+1;
-//	  i_index[2] = i;   j_index[2] = j+1;
-//	  i_index[3] = i+1; j_index[3] = j+1;
-//	  i_index[4] = i+1; j_index[4] = j;
-//	  //Top right
-//	} else if (j == SolnBlk.JCu+SolnBlk.Nghost-2 &&
-//                       (SolnBlk.Grid.BCtypeN[i] == BC_FIXED ||
-//                        SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
-//                        SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
-//                        SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
-//                        SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
-//                        SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
-//	  n_pts = 5;
-//	  i_index[0] = i-1; j_index[0] = j;
-//	  i_index[1] = i-1; j_index[1] = j-1;
-//	  i_index[2] = i;   j_index[2] = j-1;
-//	  i_index[3] = i+1; j_index[3] = j-1;
-//	  i_index[4] = i+1; j_index[4] = j;
-//	  //middle right or top or bottom with none or priodic bc's
-//	} else {
-//	  n_pts = 8;
-//	  i_index[0] = i-1; j_index[0] = j-1;
-//	  i_index[1] = i-1; j_index[1] = j;
-//	  i_index[2] = i-1; j_index[2] = j+1;
-//	  i_index[3] = i;   j_index[3] = j+1;
-//	  i_index[4] = i+1; j_index[4] = j+1;
-//	  i_index[5] = i+1; j_index[5] = j;
-//	  i_index[6] = i+1; j_index[6] = j-1;
-//	  i_index[7] = i;   j_index[7] = j-1;
-//	} //endif
-//      } //endif
-//
-//      /////////////bottom edge/////////////
-//      // (corners already taken care of) //
-//
-//    } else if (j == SolnBlk.JCl-SolnBlk.Nghost+1) {
-//      if(SolnBlk.Grid.BCtypeS[i] == BC_FIXED ||
-//         SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
-//         SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
-//         SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
-//         SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
-//         SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
-//	n_pts = 0;
-//      } else { //BC's are Periodic or "none"
-//	  //Bottom left
-//	if(i == SolnBlk.ICl-SolnBlk.Nghost+2 &&
-//               (SolnBlk.Grid.BCtypeW[j] == BC_FIXED ||
-//                SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
-//                SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
-//                SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
-//                SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
-//                SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)) {
-//	  n_pts = 5;
-//	  i_index[0] = i;   j_index[0] = j+1;
-//	  i_index[1] = i+1; j_index[1] = j+1;
-//	  i_index[2] = i+1; j_index[2] = j;
-//	  i_index[3] = i+1; j_index[3] = j-1;
-//	  i_index[4] = i;   j_index[4] = j-1;
-//	  //Bottom right
-//	} else if (i == SolnBlk.ICu+SolnBlk.Nghost-2 &&
-//                       (SolnBlk.Grid.BCtypeE[j] == BC_FIXED ||
-//                        SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
-//                        SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
-//                        SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
-//                        SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
-//                        SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)) {
-//	  n_pts = 5;
-//	  i_index[0] = i;   j_index[0] = j+1;
-//	  i_index[1] = i-1; j_index[1] = j+1;
-//	  i_index[2] = i-1; j_index[2] = j;
-//	  i_index[3] = i-1; j_index[3] = j-1;
-//	  i_index[4] = i;   j_index[4] = j-1;
-//	  //middle bottom or left or right with none or priodic bc's
-//	} else {
-//	  n_pts = 8;
-//	  i_index[0] = i-1; j_index[0] = j-1;
-//	  i_index[1] = i-1; j_index[1] = j;
-//	  i_index[2] = i-1; j_index[2] = j+1;
-//	  i_index[3] = i;   j_index[3] = j+1;
-//	  i_index[4] = i+1; j_index[4] = j+1;
-//	  i_index[5] = i+1; j_index[5] = j;
-//	  i_index[6] = i+1; j_index[6] = j-1;
-//	  i_index[7] = i;   j_index[7] = j-1;
-//	} //endif
-//      } //endif
-//
-//      /////////////top edge/////////////
-//      // (corners already taken care of) //
-//
-//    } else if (j == SolnBlk.JCu+SolnBlk.Nghost-1) {
-//      if(SolnBlk.Grid.BCtypeN[i] == BC_FIXED ||
-//         SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
-//         SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
-//         SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
-//         SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
-//         SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
-//	n_pts = 0;
-//      } else { //BC's are Periodic or "none"
-//	  //Top left
-//	if(i == SolnBlk.ICl-SolnBlk.Nghost+2 &&
-//               (SolnBlk.Grid.BCtypeW[j] == BC_FIXED ||
-//                SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
-//                SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
-//                SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
-//                SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
-//                SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)) {
-//	  n_pts = 5;
-//	  i_index[0] = i;   j_index[0] = j+1;
-//	  i_index[1] = i+1; j_index[1] = j+1;
-//	  i_index[2] = i+1; j_index[2] = j;
-//	  i_index[3] = i+1; j_index[3] = j-1;
-//	  i_index[4] = i;   j_index[4] = j-1;
-//	  //Top right
-//	} else if (i == SolnBlk.ICu+SolnBlk.Nghost-2 &&
-//                       (SolnBlk.Grid.BCtypeE[j] == BC_FIXED ||
-//                        SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
-//                        SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
-//                        SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
-//                        SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
-//                        SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)) {
-//	  n_pts = 5;
-//	  i_index[0] = i;   j_index[0] = j+1;
-//	  i_index[1] = i-1; j_index[1] = j+1;
-//	  i_index[2] = i-1; j_index[2] = j;
-//	  i_index[3] = i-1; j_index[3] = j-1;
-//	  i_index[4] = i;   j_index[4] = j-1;
-//	  //top bottom or left or right with none or priodic bc's
-//	} else {
-//	  n_pts = 8;
-//	  i_index[0] = i-1; j_index[0] = j-1;
-//	  i_index[1] = i-1; j_index[1] = j;
-//	  i_index[2] = i-1; j_index[2] = j+1;
-//	  i_index[3] = i;   j_index[3] = j+1;
-//	  i_index[4] = i+1; j_index[4] = j+1;
-//	  i_index[5] = i+1; j_index[5] = j;
-//	  i_index[6] = i+1; j_index[6] = j-1;
-//	  i_index[7] = i;   j_index[7] = j-1;
-//	} //endif
-//      } //endif
-//    
-//      /////////First Cell Inside Computational Domain////////
-//
-//      //bottom left
-//    } else if (i == SolnBlk.ICl-SolnBlk.Nghost+2 && 
-//	       j == SolnBlk.JCl-SolnBlk.Nghost+2) {
-//      if((SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
-//          SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
-//          SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
-//          SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
-//          SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)
-//                           &&
-//         (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
-//          SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
-//          SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
-//          SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
-//          SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
-//	n_pts = 3;
-//	i_index[0] = i;   j_index[0] = j+1;
-//	i_index[1] = i+1; j_index[1] = j+1;
-//	i_index[2] = i+1; j_index[2] = j;
-//      } else if (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
-//                 SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
-//                 SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
-//                 SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
-//                 SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
-//	n_pts = 5;
-//	i_index[0] = i-1; j_index[0] = j;
-//	i_index[1] = i-1; j_index[1] = j+1;
-//	i_index[2] = i;   j_index[2] = j+1;
-//	i_index[3] = i+1; j_index[3] = j+1;
-//	i_index[4] = i+1; j_index[4] = j;
-//      } else if (SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
-//                 SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
-//                 SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
-//                 SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
-//                 SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
-//	n_pts = 5;
-//	i_index[0] = i;   j_index[0] = j+1;
-//	i_index[1] = i+1; j_index[1] = j+1;
-//	i_index[2] = i+1; j_index[2] = j;
-//	i_index[3] = i+1; j_index[3] = j-1;
-//	i_index[4] = i;   j_index[4] = j-1;
-//      } else {
-//        n_pts = 8;
-//	i_index[0] = i-1; j_index[0] = j-1;
-//	i_index[1] = i-1; j_index[1] = j;
-//	i_index[2] = i-1; j_index[2] = j+1;
-//	i_index[3] = i;   j_index[3] = j+1;
-//	i_index[4] = i+1; j_index[4] = j+1;
-//	i_index[5] = i+1; j_index[5] = j;
-//	i_index[6] = i+1; j_index[6] = j-1;
-//	i_index[7] = i;   j_index[7] = j-1;
-//      } //endif
-//
-//      //top left
-//    } else if (i == SolnBlk.ICl-SolnBlk.Nghost+2 && 
-//	       j == SolnBlk.JCu+SolnBlk.Nghost-2) {
-//      if((SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
-//          SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
-//          SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
-//          SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
-//          SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)
-//                           &&
-//         (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
-//          SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
-//          SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
-//          SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
-//          SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
-//	n_pts = 3;
-//	i_index[0] = i;   j_index[0] = j-1;
-//	i_index[1] = i+1; j_index[1] = j-1;
-//	i_index[2] = i+1; j_index[2] = j;
-//      } else if (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
-//                 SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
-//                 SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
-//                 SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
-//                 SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
-//	n_pts = 5;
-//	i_index[0] = i-1; j_index[0] = j;
-//	i_index[1] = i-1; j_index[1] = j-1;
-//	i_index[2] = i;   j_index[2] = j-1;
-//	i_index[3] = i+1; j_index[3] = j-1;
-//	i_index[4] = i+1; j_index[4] = j;
-//      } else if (SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
-//                 SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
-//                 SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
-//                 SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
-//                 SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
-//	n_pts = 5;
-//	i_index[0] = i;   j_index[0] = j+1;
-//	i_index[1] = i+1; j_index[1] = j+1;
-//	i_index[2] = i+1; j_index[2] = j;
-//	i_index[3] = i+1; j_index[3] = j-1;
-//	i_index[4] = i;   j_index[4] = j-1;
-//      } else {
-//        n_pts = 8;
-//	i_index[0] = i-1; j_index[0] = j-1;
-//	i_index[1] = i-1; j_index[1] = j;
-//	i_index[2] = i-1; j_index[2] = j+1;
-//	i_index[3] = i;   j_index[3] = j+1;
-//	i_index[4] = i+1; j_index[4] = j+1;
-//	i_index[5] = i+1; j_index[5] = j;
-//	i_index[6] = i+1; j_index[6] = j-1;
-//	i_index[7] = i;   j_index[7] = j-1;
-//      } //endif
-//
-//      //top right
-//    } else if (i == SolnBlk.ICu+SolnBlk.Nghost-2 && 
-//	       j == SolnBlk.JCu+SolnBlk.Nghost-2) {
-//      if((SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
-//          SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
-//          SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
-//          SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
-//          SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)
-//                           &&
-//         (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
-//          SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
-//          SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
-//          SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
-//          SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
-//	n_pts = 3;
-//	i_index[0] = i-1; j_index[0] = j;
-//	i_index[1] = i-1; j_index[1] = j-1;
-//	i_index[2] = i;   j_index[2] = j-1;
-//      } else if (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
-//                 SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
-//                 SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
-//                 SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
-//                 SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
-//	n_pts = 5;
-//	i_index[0] = i-1; j_index[0] = j;
-//	i_index[1] = i-1; j_index[1] = j-1;
-//	i_index[2] = i;   j_index[2] = j-1;
-//	i_index[3] = i+1; j_index[3] = j-1;
-//	i_index[4] = i+1; j_index[4] = j;
-//      } else if (SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
-//                 SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
-//                 SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
-//                 SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
-//                 SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
-//	n_pts = 5;
-//	i_index[0] = i;   j_index[0] = j+1;
-//	i_index[1] = i-1; j_index[1] = j+1;
-//	i_index[2] = i-1; j_index[2] = j;
-//	i_index[3] = i-1; j_index[3] = j-1;
-//	i_index[4] = i;   j_index[4] = j-1;
-//      } else {
-//        n_pts = 8;
-//	i_index[0] = i-1; j_index[0] = j-1;
-//	i_index[1] = i-1; j_index[1] = j;
-//	i_index[2] = i-1; j_index[2] = j+1;
-//	i_index[3] = i;   j_index[3] = j+1;
-//	i_index[4] = i+1; j_index[4] = j+1;
-//	i_index[5] = i+1; j_index[5] = j;
-//	i_index[6] = i+1; j_index[6] = j-1;
-//	i_index[7] = i;   j_index[7] = j-1;
-//      } //endif
-//
-//      //Bottom right
-//    } else if (i == SolnBlk.ICu+SolnBlk.Nghost-2 && 
-//	       j == SolnBlk.JCl-SolnBlk.Nghost+2) {
-//      if((SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
-//          SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
-//          SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
-//          SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
-//          SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)
-//                           &&
-//         (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
-//          SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
-//          SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
-//          SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
-//          SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
-//	n_pts = 3;
-//	i_index[0] = i;   j_index[0] = j+1;
-//	i_index[1] = i-1; j_index[1] = j+1;
-//	i_index[2] = i-1; j_index[2] = j;
-//      } else if (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
-//                 SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
-//                 SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
-//                 SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
-//                 SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
-//	n_pts = 5;
-//	i_index[0] = i-1; j_index[0] = j;
-//	i_index[1] = i-1; j_index[1] = j+1;
-//	i_index[2] = i;   j_index[2] = j+1;
-//	i_index[3] = i+1; j_index[3] = j+1;
-//	i_index[4] = i+1; j_index[4] = j;
-//      } else if (SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
-//                 SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
-//                 SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
-//                 SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
-//                 SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
-//	n_pts = 5;
-//	i_index[0] = i;   j_index[0] = j+1;
-//	i_index[1] = i-1; j_index[1] = j+1;
-//	i_index[2] = i-1; j_index[2] = j;
-//	i_index[3] = i-1; j_index[3] = j-1;
-//	i_index[4] = i;   j_index[4] = j-1;
-//      } else {
-//        n_pts = 8;
-//	i_index[0] = i-1; j_index[0] = j-1;
-//	i_index[1] = i-1; j_index[1] = j;
-//	i_index[2] = i-1; j_index[2] = j+1;
-//	i_index[3] = i;   j_index[3] = j+1;
-//	i_index[4] = i+1; j_index[4] = j+1;
-//	i_index[5] = i+1; j_index[5] = j;
-//	i_index[6] = i+1; j_index[6] = j-1;
-//	i_index[7] = i;   j_index[7] = j-1;
-//      } //endif
-//
-//      //left
-//    } else if (i == SolnBlk.ICl-SolnBlk.Nghost+2) {
-//
-//      if(SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
-//         SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
-//         SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
-//         SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
-//         SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
-//	n_pts = 5;
-//	i_index[0] = i;   j_index[0] = j+1;
-//	i_index[1] = i+1; j_index[1] = j+1;
-//	i_index[2] = i+1; j_index[2] = j;
-//	i_index[3] = i+1; j_index[3] = j-1;
-//	i_index[4] = i;   j_index[4] = j-1;
-//      } else {
-//        n_pts = 8;
-//	i_index[0] = i-1; j_index[0] = j-1;
-//	i_index[1] = i-1; j_index[1] = j;
-//	i_index[2] = i-1; j_index[2] = j+1;
-//	i_index[3] = i;   j_index[3] = j+1;
-//	i_index[4] = i+1; j_index[4] = j+1;
-//	i_index[5] = i+1; j_index[5] = j;
-//	i_index[6] = i+1; j_index[6] = j-1;
-//	i_index[7] = i;   j_index[7] = j-1;
-//      } //endif
-//
-//      //top
-//    } else if (j == SolnBlk.JCu+SolnBlk.Nghost-2) {
-//
-//      if(SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
-//         SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
-//         SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
-//         SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
-//         SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
-//	n_pts = 5;
-//	i_index[0] = i-1; j_index[0] = j;
-//	i_index[1] = i-1; j_index[1] = j-1;
-//	i_index[2] = i;   j_index[2] = j-1;
-//	i_index[3] = i+1; j_index[3] = j-1;
-//	i_index[4] = i+1; j_index[4] = j;
-//      } else {
-//        n_pts = 8;
-//	i_index[0] = i-1; j_index[0] = j-1;
-//	i_index[1] = i-1; j_index[1] = j;
-//	i_index[2] = i-1; j_index[2] = j+1;
-//	i_index[3] = i;   j_index[3] = j+1;
-//	i_index[4] = i+1; j_index[4] = j+1;
-//	i_index[5] = i+1; j_index[5] = j;
-//	i_index[6] = i+1; j_index[6] = j-1;
-//	i_index[7] = i;   j_index[7] = j-1;
-//      } //endif
-//
-//      //Right
-//    } else if (i == SolnBlk.ICu+SolnBlk.Nghost-2) {
-//
-//      if(SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
-//         SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
-//         SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
-//         SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
-//         SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
-//	n_pts = 5;
-//	i_index[0] = i;   j_index[0] = j+1;
-//	i_index[1] = i-1; j_index[1] = j+1;
-//	i_index[2] = i-1; j_index[2] = j;
-//	i_index[3] = i-1; j_index[3] = j-1;
-//	i_index[4] = i;   j_index[4] = j-1;
-//      } else {
-//        n_pts = 8;
-//	i_index[0] = i-1; j_index[0] = j-1;
-//	i_index[1] = i-1; j_index[1] = j;
-//	i_index[2] = i-1; j_index[2] = j+1;
-//	i_index[3] = i;   j_index[3] = j+1;
-//	i_index[4] = i+1; j_index[4] = j+1;
-//	i_index[5] = i+1; j_index[5] = j;
-//	i_index[6] = i+1; j_index[6] = j-1;
-//	i_index[7] = i;   j_index[7] = j-1;
-//      } //endif
-//
-//      //Bottom
-//    } else if (j == SolnBlk.JCl-SolnBlk.Nghost+2) {
-//
-//      if(SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
-//         SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
-//         SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
-//         SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
-//         SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
-//	n_pts = 5;
-//	i_index[0] = i-1; j_index[0] = j;
-//	i_index[1] = i-1; j_index[1] = j+1;
-//	i_index[2] = i;   j_index[2] = j+1;
-//	i_index[3] = i+1; j_index[3] = j+1;
-//	i_index[4] = i+1; j_index[4] = j;
-//      } else {
-//        n_pts = 8;
-//	i_index[0] = i-1; j_index[0] = j-1;
-//	i_index[1] = i-1; j_index[1] = j;
-//	i_index[2] = i-1; j_index[2] = j+1;
-//	i_index[3] = i;   j_index[3] = j+1;
-//	i_index[4] = i+1; j_index[4] = j+1;
-//	i_index[5] = i+1; j_index[5] = j;
-//	i_index[6] = i+1; j_index[6] = j-1;
-//	i_index[7] = i;   j_index[7] = j-1;
-//      } //endif
-//    
-//      ///////inside computational domain//////////
-//
-//    } else {
-//      n_pts = 8;
-//      i_index[0] = i-1; j_index[0] = j-1;
-//      i_index[1] = i-1; j_index[1] = j;
-//      i_index[2] = i-1; j_index[2] = j+1;
-//      i_index[3] = i;   j_index[3] = j+1;
-//      i_index[4] = i+1; j_index[4] = j+1;
-//      i_index[5] = i+1; j_index[5] = j;
-//      i_index[6] = i+1; j_index[6] = j-1;
-//      i_index[7] = i;   j_index[7] = j-1;
-//    } //endif
 
     if (n_pts > 0) {
         DUDx_ave = Gaussian2D_W_VACUUM;
@@ -5073,7 +4702,11 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
     Vector2D dX;
     Gaussian2D_pState Wl, Wr;
     Gaussian2D_cState Flux;
-    
+
+    Gaussian2D_pState Wu, Wd, dWdxl, dWdyl, dWdxr, dWdyr;
+    Vector2D Xl, Xr, Xu, Xd;
+    int elliptic_bc_flag;
+
     /* Perform the linear reconstruction within each cell
        of the computational grid for this stage. */
     
@@ -5112,7 +4745,7 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 	      (SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
 	       SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
 	       SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC_VELOCITY ||
-	       //SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
+	       SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
 	       SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)) {
 	    dX = SolnBlk.Grid.xfaceW(i+1, j)-SolnBlk.Grid.Cell[i+1][j].Xc;
 	    Wr = SolnBlk.W[i+1][j] + 
@@ -5123,8 +4756,8 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 	    } else if(SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
 	      Wl = Adiabatic_Wall(Wr, SolnBlk.WoW[j],
                                   SolnBlk.Grid.nfaceW(i+1, j));
-	    //} else if(SolnBlk.Grid.BCtypeW[j] == BC_COUETTE) {
-	    //  Wl = BC_Couette(Wr, SolnBlk.WoW[j]);
+	    } else if(SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
+	      Wl = Isothermal_Wall(Wr, SolnBlk.WoW[j],SolnBlk.Grid.nfaceW(i+1, j));
 	    } else if(SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC_VELOCITY) {
 	      Wl = BC_Characteristic_Velocity(Wr, 
 					      SolnBlk.WoW[j], 
@@ -5138,7 +4771,7 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 		     (SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
 		      SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
 		      SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC_VELOCITY ||
-		      //SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
+		      SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
 		      SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)) {
 	    dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
 	    Wl = SolnBlk.W[i][j] + 
@@ -5149,8 +4782,8 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
 	      Wr = Adiabatic_Wall(Wl, SolnBlk.WoE[j], 
 	      			     SolnBlk.Grid.nfaceE(i, j));
-	    //} else if (SolnBlk.Grid.BCtypeE[j] == BC_COUETTE) {
-	    //  Wr = BC_Couette(Wl, SolnBlk.WoE[j]); 
+	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_COUETTE) {
+	      Wr = Isothermal_Wall(Wl, SolnBlk.WoE[j],SolnBlk.Grid.nfaceE(i, j)); 
 	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC_VELOCITY) {
 	      Wr = BC_Characteristic_Velocity(Wl, 
 					      SolnBlk.WoE[j], 
@@ -5195,6 +4828,111 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 	    break;
 	  } /* endswitch */
 
+	  // Evaluate the cell interface i-direction ELLIPTIC flux if necessary.
+	  if (SolnBlk.Heat_Transfer) {
+	    // Determine the EAST face ELLIPTIC flux.
+	    if (i == SolnBlk.ICl-1 && 
+		(SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL ||
+		 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL)) {
+	      // WEST face of cell (i+1,j) is a normal boundary.
+	      Xr = SolnBlk.Grid.Cell[i+1][j].Xc; Wr = SolnBlk.W[i+1][j];
+	      if (SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
+		// WEST face of cell (i+1,j) is a ADIABATIC_WALL boundary.
+		elliptic_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
+		Wu = Knudsen_Layer_Adiabatic(Wr, SolnBlk.WoW[j],
+					     SolnBlk.Grid.nfaceW(i+1, j));
+	      }else if (SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
+		// WEST face of cell (i+1,j) is a ISOTHERMAL_WALL boundary.
+		elliptic_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
+		Wu = Knudsen_Layer_Isothermal(Wr, SolnBlk.WoW[j],
+					      SolnBlk.Grid.nfaceW(i+1, j));
+	      } else {cout << "Error bad BC for elliptic part" << endl;}
+	      switch(Input_Parameters.i_Heat_Reconstruction) {
+	      case ELLIPTIC_RECONSTRUCTION_CARTESIAN :
+	      case ELLIPTIC_RECONSTRUCTION_DIAMOND_PATH :
+		Xu = SolnBlk.Grid.Node[i+1][j+1].X;
+		Xd = SolnBlk.Grid.Node[i+1][j  ].X; Wd = Wu;
+		break;
+	      case ELLIPTIC_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+	      case ELLIPTIC_RECONSTRUCTION_HYBRID :
+		Xu = SolnBlk.Grid.xfaceW(i+1,j);
+		Xl = Xu; Wl = Wu;
+		dWdxr = SolnBlk.dWdx[i+1][j]; dWdxl = dWdxr;
+		dWdyr = SolnBlk.dWdy[i+1][j]; dWdyl = dWdyr;
+		break;
+	      };
+	    } else if (i == SolnBlk.ICu &&
+		       (SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL ||
+			SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL)) {
+	      // EAST face of cell (i,j) is a normal boundary.
+	      Xl = SolnBlk.Grid.Cell[i][j].Xc; Wl = SolnBlk.W[i][j];
+	      if (SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
+		// EAST face of cell (i,j) is an ADIABATIC_WALL boundary.
+		elliptic_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
+		Wu = Knudsen_Layer_Adiabatic(Wl, SolnBlk.WoE[j], 
+					     SolnBlk.Grid.nfaceE(i, j));
+	      } else if (SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
+		// EAST face of cell (i,j) is an ISOTHERMAL_WALL boundary.
+		elliptic_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
+		Wu = Knudsen_Layer_Isothermal(Wl, SolnBlk.WoE[j], 
+					      SolnBlk.Grid.nfaceE(i, j));
+	      } else {cout << "Error bad BC for elliptic part" << endl;}
+
+	      switch(Input_Parameters.i_Heat_Reconstruction) {
+	      case ELLIPTIC_RECONSTRUCTION_CARTESIAN :
+	      case ELLIPTIC_RECONSTRUCTION_DIAMOND_PATH :
+		Xu = SolnBlk.Grid.Node[i+1][j+1].X;
+		Xd = SolnBlk.Grid.Node[i+1][j  ].X; Wd = Wu;
+		break;
+	      case ELLIPTIC_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+	      case ELLIPTIC_RECONSTRUCTION_HYBRID :
+		Xu = SolnBlk.Grid.xfaceE(i,j);
+		Xr = Xu; Wr = Wu;
+		dWdxl = SolnBlk.dWdx[i][j]; dWdxr = dWdxl;
+		dWdyl = SolnBlk.dWdy[i][j]; dWdyr = dWdyl;
+		break;
+	      };
+	    } else {
+	      // EAST face is either a normal cell or possibly a non-
+	      // viscous boundary condition.
+	      Xl = SolnBlk.Grid.Cell[i  ][j].Xc; Wl = SolnBlk.W[i  ][j];
+	      Xr = SolnBlk.Grid.Cell[i+1][j].Xc; Wr = SolnBlk.W[i+1][j];
+	      switch(Input_Parameters.i_Heat_Reconstruction) {
+	      case ELLIPTIC_RECONSTRUCTION_CARTESIAN :
+	      case ELLIPTIC_RECONSTRUCTION_DIAMOND_PATH :
+		elliptic_bc_flag = DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION;
+		Xu = SolnBlk.Grid.Node[i+1][j+1].X; Wu = SolnBlk.WnNE(i,j);
+		Xd = SolnBlk.Grid.Node[i+1][j  ].X; Wd = SolnBlk.WnSE(i,j);
+		break;
+	      case ELLIPTIC_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+	      case ELLIPTIC_RECONSTRUCTION_HYBRID :
+		Xu = SolnBlk.Grid.xfaceE(i,j); Wu = HALF*(Wl + Wr);
+		dWdxl = SolnBlk.dWdx[i][j]; dWdxr = SolnBlk.dWdy[i+1][j];
+		dWdyl = SolnBlk.dWdy[i][j]; dWdyr = SolnBlk.dWdy[i+1][j];
+		break;
+	      };
+	    }
+	    // Compute the EAST face elliptic flux.
+	    switch(Input_Parameters.i_Heat_Reconstruction) {
+	    case ELLIPTIC_RECONSTRUCTION_CARTESIAN :
+	    case ELLIPTIC_RECONSTRUCTION_DIAMOND_PATH :
+	      Flux -= HeatFluxDiamondPath_n(SolnBlk.Grid.xfaceE(i,j),
+					       Xl,Wl,Xd,Wd,Xr,Wr,Xu,Wu,
+					       SolnBlk.Grid.nfaceE(i,j),
+					       SolnBlk.Axisymmetric,
+					       elliptic_bc_flag);
+	      break;
+	    case ELLIPTIC_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+	      Flux -= HeatFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
+				    SolnBlk.Grid.nfaceE(i,j),SolnBlk.Axisymmetric);
+	      break;
+	    case ELLIPTIC_RECONSTRUCTION_HYBRID :
+	      Flux -= HeatFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,Xr,Wr,dWdxr,dWdyr,
+					  SolnBlk.Grid.nfaceE(i,j),SolnBlk.Axisymmetric);
+	      break;
+	    };
+	  }
+
 	  /* Evaluate cell-averaged solution changes. */
 	  
 	  SolnBlk.dUdt[i][j][0] -= 
@@ -5238,7 +4976,7 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 	    (SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
 	     SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
 	     SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC_VELOCITY ||
-	     //SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
+	     SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
 	     SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL )) {
 	  dX = SolnBlk.Grid.xfaceS(i, j+1)-SolnBlk.Grid.Cell[i][j+1].Xc;
 	  Wr = SolnBlk.W[i][j+1] +
@@ -5249,8 +4987,8 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
 	    Wl = Adiabatic_Wall(Wr, SolnBlk.WoS[i], 
 	    			       SolnBlk.Grid.nfaceS(i, j+1));
-	  //} else if (SolnBlk.Grid.BCtypeS[i] == BC_COUETTE) {
-	  //  Wl = BC_Couette(Wr, SolnBlk.WoS[i]);
+	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
+	    Wl = Isothermal_Wall(Wr, SolnBlk.WoS[i],SolnBlk.Grid.nfaceS(i, j+1));
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC_VELOCITY) {
 	    Wl = BC_Characteristic_Velocity(Wr, 
 					    SolnBlk.WoS[i], 
@@ -5264,7 +5002,7 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 		   (SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
 		    SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
 		    SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC_VELOCITY ||
-		    //SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
+		    SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
 		    SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL )) {
 	  dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
 	  Wl = SolnBlk.W[i][j] + 
@@ -5275,8 +5013,8 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 	  } else if (SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
 	    Wr = Adiabatic_Wall(Wl, SolnBlk.WoN[i], 
 	    			       SolnBlk.Grid.nfaceN(i, j));
-	  //} else if (SolnBlk.Grid.BCtypeN[i] == BC_COUETTE) {
-	  //  Wr = BC_Couette(Wl, SolnBlk.WoN[i]);
+	  } else if (SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
+	    Wr = Isothermal_Wall(Wl, SolnBlk.WoN[i],SolnBlk.Grid.nfaceN(i, j));
 	  } else if (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC_VELOCITY) {
 	    Wr = BC_Characteristic_Velocity(Wl, 
 	    				    SolnBlk.WoN[i], 
@@ -5320,6 +5058,111 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 	  Flux = FluxRoe_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
 	  break;
 	} /* endswitch */
+
+
+	// Evaluate the cell interface j-direction ELLIPTIC flux if necessary.
+	if (SolnBlk.Heat_Transfer) {
+	  // Determine the NORTH face ELLIPTIC flux.
+	  if (j == SolnBlk.JCl-1 && 
+	      (SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL  ||
+	       SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL)) {
+	    // SOUTH face of cell (i,j+1) is a normal boundary.
+	    Xr = SolnBlk.Grid.Cell[i][j+1].Xc; Wr = SolnBlk.W[i][j+1];
+	    if (SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
+	      // SOUTH face of cell (i,j+1) is an ADIABATIC_WALL boundary.
+	      elliptic_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
+	      Wu = Knudsen_Layer_Adiabatic(Wr, SolnBlk.WoS[i], 
+					   SolnBlk.Grid.nfaceS(i, j+1));
+	    } else if (SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
+	      // SOUTH face of cell (i,j+1) is an ISOTHERMAL_WALL boundary.
+	      elliptic_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
+	      Wu = Knudsen_Layer_Isothermal(Wr, SolnBlk.WoS[i], 
+					    SolnBlk.Grid.nfaceS(i, j+1));
+	    } else {cout << "Error bad BC for elliptic part" << endl;}
+	    switch(Input_Parameters.i_Heat_Reconstruction) {
+	    case ELLIPTIC_RECONSTRUCTION_CARTESIAN :
+	    case ELLIPTIC_RECONSTRUCTION_DIAMOND_PATH :
+	      Xu = SolnBlk.Grid.Node[i  ][j+1].X;
+	      Xd = SolnBlk.Grid.Node[i+1][j+1].X; Wd = Wu;
+	      break;
+	    case ELLIPTIC_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+	    case ELLIPTIC_RECONSTRUCTION_HYBRID :
+	      Xu = SolnBlk.Grid.xfaceS(i,j+1);
+	      Xl = Xu; Wl = Wu;
+	      dWdxr = SolnBlk.dWdx[i][j+1]; dWdxl = dWdxr;
+	      dWdyr = SolnBlk.dWdy[i][j+1]; dWdyl = dWdyr;
+	      break;
+	    };
+	  } else if (j == SolnBlk.JCu && 
+		     (SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL ||
+		      SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL)) {
+	    // NORTH face of cell (i,j) is a normal boundary.
+	    Xl = SolnBlk.Grid.Cell[i][j].Xc; Wl = SolnBlk.W[i][j];
+	    if (SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
+	      // NORTH face of cell (i,j) is a ADIABATIC_WALL boundary.
+	      elliptic_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
+	      Wu = Knudsen_Layer_Adiabatic(Wl, SolnBlk.WoN[i], 
+					   SolnBlk.Grid.nfaceN(i, j));
+	    } else if (SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
+	      // NORTH face of cell (i,j) is a ISOTHERMAL_WALL boundary.
+	      elliptic_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
+	      Wu = Knudsen_Layer_Isothermal(Wl, SolnBlk.WoN[i], 
+					    SolnBlk.Grid.nfaceN(i, j));
+	    } else {cout << "Error bad BC for elliptic part." << endl;}
+	    switch(Input_Parameters.i_Heat_Reconstruction) {
+	    case ELLIPTIC_RECONSTRUCTION_CARTESIAN :
+	    case ELLIPTIC_RECONSTRUCTION_DIAMOND_PATH :
+	      Xu = SolnBlk.Grid.Node[i  ][j+1].X;
+	      Xd = SolnBlk.Grid.Node[i+1][j+1].X; Wd = Wu;
+	      break;
+	    case ELLIPTIC_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+	    case ELLIPTIC_RECONSTRUCTION_HYBRID :
+	      Xu = SolnBlk.Grid.xfaceN(i,j);
+	      Xr = Xu; Wr = Wu;
+	      dWdxl = SolnBlk.dWdx[i][j]; dWdxr = dWdxl;
+	      dWdyl = SolnBlk.dWdy[i][j]; dWdyr = dWdyl;
+	      break;
+	    };
+	  } else {
+	    // NORTH face is either a normal cell or possibly a non-viscous
+	    // boundary condition.
+	    Xl = SolnBlk.Grid.Cell[i][j  ].Xc; Wl = SolnBlk.W[i][j  ];
+	    Xr = SolnBlk.Grid.Cell[i][j+1].Xc; Wr = SolnBlk.W[i][j+1];
+	    switch(Input_Parameters.i_Heat_Reconstruction) {
+	    case ELLIPTIC_RECONSTRUCTION_CARTESIAN :
+	    case ELLIPTIC_RECONSTRUCTION_DIAMOND_PATH :
+	      elliptic_bc_flag = DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION;
+	      Xu = SolnBlk.Grid.Node[i  ][j+1].X; Wu = SolnBlk.WnNW(i,j);
+	      Xd = SolnBlk.Grid.Node[i+1][j+1].X; Wd = SolnBlk.WnNE(i,j);
+	      break;
+	    case ELLIPTIC_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+	    case ELLIPTIC_RECONSTRUCTION_HYBRID :
+	      Xu = SolnBlk.Grid.xfaceN(i,j); Wu = HALF*(Wl + Wr);
+	      dWdxl = SolnBlk.dWdx[i][j]; dWdxr = SolnBlk.dWdy[i][j+1];
+	      dWdyl = SolnBlk.dWdy[i][j]; dWdyr = SolnBlk.dWdy[i][j+1];
+	      break;
+	    };
+	  }
+	  // Compute the NORTH face elliptic flux.
+	  switch(Input_Parameters.i_Heat_Reconstruction) {
+	  case ELLIPTIC_RECONSTRUCTION_CARTESIAN :
+	  case ELLIPTIC_RECONSTRUCTION_DIAMOND_PATH :
+	    Flux -= HeatFluxDiamondPath_n(SolnBlk.Grid.xfaceN(i,j),
+					  Xl,Wl,Xd,Wd,Xr,Wr,Xu,Wu,
+					  SolnBlk.Grid.nfaceN(i,j),
+					  SolnBlk.Axisymmetric,
+					  elliptic_bc_flag);
+	    break;
+	  case ELLIPTIC_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+	    Flux -= HeatFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
+			       SolnBlk.Grid.nfaceN(i,j),SolnBlk.Axisymmetric);
+	    break;
+	  case ELLIPTIC_RECONSTRUCTION_HYBRID :
+	    Flux -= HeatFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,Xr,Wr,dWdxr,dWdyr,
+				     SolnBlk.Grid.nfaceN(i,j),SolnBlk.Axisymmetric);
+	    break;
+	  };
+	}
 	
           /* Evaluate cell-averaged solution changes. */
 	
@@ -5365,6 +5208,10 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
     Vector2D dX;
     Gaussian2D_pState Wl, Wr;
     Gaussian2D_cState Flux;
+
+    Gaussian2D_pState Wu, Wd, dWdxl, dWdyl, dWdxr, dWdyr, W_temp;
+    Vector2D Xl, Xr, Xu, Xd;
+    int elliptic_bc_flag;
 
     /* Evaluate the solution residual for stage 
        i_stage of n_stage scheme. */
@@ -5474,7 +5321,7 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
                  (SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
                   SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
                   SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC_VELOCITY ||
-                  //SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
+                  SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
                   SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL )) {
 	       dX = SolnBlk.Grid.xfaceW(i+1, j)-SolnBlk.Grid.Cell[i+1][j].Xc;
 	       Wr = SolnBlk.W[i+1][j] + 
@@ -5485,8 +5332,8 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
 	       } else if (SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
 		 Wl = Adiabatic_Wall(Wr, SolnBlk.WoW[j], 
 		 	                 SolnBlk.Grid.nfaceW(i+1, j));
-	       // else if (SolnBlk.Grid.BCtypeW[j] == BC_COUETTE) {
-	       // Wl = BC_Couette(Wr, SolnBlk.WoW[j]);
+	       } else if (SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
+		 Wl = Isothermal_Wall(Wr, SolnBlk.WoW[j],SolnBlk.Grid.nfaceW(i+1, j));
 	       } else if (SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC_VELOCITY) {
 		 Wl = BC_Characteristic_Velocity(Wr, 
 						 SolnBlk.WoW[j], 
@@ -5500,7 +5347,7 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
                         (SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
                          SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
                          SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC_VELOCITY ||
-                         //SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
+                         SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
                          SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL )) {
 	       dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
 	       Wl = SolnBlk.W[i][j] + 
@@ -5511,8 +5358,8 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
                } else if (SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
                  Wr = Adiabatic_Wall(Wl, SolnBlk.WoE[j], 
                                          SolnBlk.Grid.nfaceE(i, j));
-               //} else if (SolnBlk.Grid.BCtypeE[j] == BC_COUETTE) {
-               //  Wr = BC_Couette(Wl, SolnBlk.WoE[j]);
+               } else if (SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
+                 Wr = Isothermal_Wall(Wl, SolnBlk.WoE[j],SolnBlk.Grid.nfaceE(i, j));
                } else if (SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC_VELOCITY) {
                  Wr = BC_Characteristic_Velocity(Wl, 
                                                  SolnBlk.WoE[j], 
@@ -5556,7 +5403,111 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
                  Flux = FluxRoe_n(Wl, Wr, SolnBlk.Grid.nfaceE(i, j));
                  break;
              } /* endswitch */
-    
+
+	     // Evaluate the cell interface i-direction ELLIPTIC flux if necessary.
+	     if (SolnBlk.Heat_Transfer) {
+	       // Determine the EAST face ELLIPTIC flux.
+	       if (i == SolnBlk.ICl-1 && 
+		   (SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL ||
+		    SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL)) {
+		 // WEST face of cell (i+1,j) is a normal boundary.
+		 Xr = SolnBlk.Grid.Cell[i+1][j].Xc; Wr = SolnBlk.W[i+1][j];
+		 if (SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
+		   // WEST face of cell (i+1,j) is a ADIABATIC_WALL boundary.
+		   elliptic_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
+		   Wu = Knudsen_Layer_Adiabatic(Wr, SolnBlk.WoW[j],
+						SolnBlk.Grid.nfaceW(i+1, j));
+		 } else if (SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
+		   // WEST face of cell (i+1,j) is a ISOTHERMAL_WALL boundary.
+		   elliptic_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
+		   Wu = Knudsen_Layer_Isothermal(Wr, SolnBlk.WoW[j],
+						 SolnBlk.Grid.nfaceW(i+1, j));
+		 } else {cout << "Error bad BC for elliptic part" << endl;}
+		 switch(Input_Parameters.i_Heat_Reconstruction) {
+		 case ELLIPTIC_RECONSTRUCTION_CARTESIAN :
+		 case ELLIPTIC_RECONSTRUCTION_DIAMOND_PATH :
+		   Xu = SolnBlk.Grid.Node[i+1][j+1].X;
+		   Xd = SolnBlk.Grid.Node[i+1][j  ].X; Wd = Wu;
+		   break;
+		 case ELLIPTIC_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		 case ELLIPTIC_RECONSTRUCTION_HYBRID :
+		   Xu = SolnBlk.Grid.xfaceW(i+1,j);
+		   Xl = Xu; Wl = Wu;
+		   dWdxr = SolnBlk.dWdx[i+1][j]; dWdxl = dWdxr;
+		   dWdyr = SolnBlk.dWdy[i+1][j]; dWdyl = dWdyr;
+		   break;
+		 };
+	       } else if (i == SolnBlk.ICu &&
+			  (SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL ||
+			   SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL)) {
+		 // EAST face of cell (i,j) is a normal boundary.
+		 Xl = SolnBlk.Grid.Cell[i][j].Xc; Wl = SolnBlk.W[i][j];
+		 if (SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
+		   // EAST face of cell (i,j) is an ADIABATIC_WALL boundary.
+		   elliptic_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
+		   Wu = Knudsen_Layer_Adiabatic(Wl, SolnBlk.WoE[j], 
+						SolnBlk.Grid.nfaceE(i, j));
+		 } else if (SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
+		   // EAST face of cell (i,j) is an ISOTHERMAL_WALL boundary.
+		   elliptic_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
+		   Wu = Knudsen_Layer_Isothermal(Wl, SolnBlk.WoE[j], 
+						 SolnBlk.Grid.nfaceE(i, j));
+		 } else {cout << "Error bad BC for elliptic part" << endl;}
+		 switch(Input_Parameters.i_Heat_Reconstruction) {
+		 case ELLIPTIC_RECONSTRUCTION_CARTESIAN :
+		 case ELLIPTIC_RECONSTRUCTION_DIAMOND_PATH :
+		   Xu = SolnBlk.Grid.Node[i+1][j+1].X;
+		   Xd = SolnBlk.Grid.Node[i+1][j  ].X; Wd = Wu;
+		   break;
+		 case ELLIPTIC_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		 case ELLIPTIC_RECONSTRUCTION_HYBRID :
+		   Xu = SolnBlk.Grid.xfaceE(i,j);
+		   Xr = Xu; Wr = Wu;
+		   dWdxl = SolnBlk.dWdx[i][j]; dWdxr = dWdxl;
+		   dWdyl = SolnBlk.dWdy[i][j]; dWdyr = dWdyl;
+		   break;
+		 };
+	       } else {
+		 // EAST face is either a normal cell or possibly a non-
+		 // viscous boundary condition.
+		 Xl = SolnBlk.Grid.Cell[i  ][j].Xc; Wl = SolnBlk.W[i  ][j];
+		 Xr = SolnBlk.Grid.Cell[i+1][j].Xc; Wr = SolnBlk.W[i+1][j];
+		 switch(Input_Parameters.i_Heat_Reconstruction) {
+		 case ELLIPTIC_RECONSTRUCTION_CARTESIAN :
+		 case ELLIPTIC_RECONSTRUCTION_DIAMOND_PATH :
+		   elliptic_bc_flag = DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION;
+		   Xu = SolnBlk.Grid.Node[i+1][j+1].X; Wu = SolnBlk.WnNE(i,j);
+		   Xd = SolnBlk.Grid.Node[i+1][j  ].X; Wd = SolnBlk.WnSE(i,j);
+		   break;
+		 case ELLIPTIC_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		 case ELLIPTIC_RECONSTRUCTION_HYBRID :
+		   Xu = SolnBlk.Grid.xfaceE(i,j); Wu = HALF*(Wl + Wr);
+		   dWdxl = SolnBlk.dWdx[i][j]; dWdxr = SolnBlk.dWdy[i+1][j];
+		   dWdyl = SolnBlk.dWdy[i][j]; dWdyr = SolnBlk.dWdy[i+1][j];
+		   break;
+		 };
+	       }
+	       // Compute the EAST face elliptic flux.
+	       switch(Input_Parameters.i_Heat_Reconstruction) {
+	       case ELLIPTIC_RECONSTRUCTION_CARTESIAN :
+	       case ELLIPTIC_RECONSTRUCTION_DIAMOND_PATH :
+		 Flux -= HeatFluxDiamondPath_n(SolnBlk.Grid.xfaceE(i,j),
+					       Xl,Wl,Xd,Wd,Xr,Wr,Xu,Wu,
+					       SolnBlk.Grid.nfaceE(i,j),
+					       SolnBlk.Axisymmetric,
+					       elliptic_bc_flag);
+		 break;
+	       case ELLIPTIC_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+		 Flux -= HeatFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
+				    SolnBlk.Grid.nfaceE(i,j),SolnBlk.Axisymmetric);
+		 break;
+	       case ELLIPTIC_RECONSTRUCTION_HYBRID :
+		 Flux -= HeatFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,Xr,Wr,dWdxr,dWdyr,
+					  SolnBlk.Grid.nfaceE(i,j),SolnBlk.Axisymmetric);
+		 break;
+	       };
+	     }
+
              /* Evaluate cell-averaged solution changes. */
 
              SolnBlk.dUdt[i][j][k_residual] -= 
@@ -5603,7 +5554,7 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
               (SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
                SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
                SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC_VELOCITY ||
-               //SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
+               SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
                SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL )) {
 	     dX = SolnBlk.Grid.xfaceS(i, j+1)-SolnBlk.Grid.Cell[i][j+1].Xc;
 	     Wr = SolnBlk.W[i][j+1] +
@@ -5614,8 +5565,8 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
              } else if (SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
 	       Wl = Adiabatic_Wall(Wr, SolnBlk.WoS[i], 
 				   SolnBlk.Grid.nfaceS(i, j+1));
-             //} else if (SolnBlk.Grid.BCtypeS[i] == BC_COUETTE) {
-	     //  Wl = BC_Couette(Wr, SolnBlk.WoS[i]);
+             } else if (SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
+	       Wl = Isothermal_Wall(Wr, SolnBlk.WoS[i],SolnBlk.Grid.nfaceS(i, j+1));
              } else if (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC_VELOCITY) {
                Wl = BC_Characteristic_Velocity(Wr, 
                                                SolnBlk.WoS[i], 
@@ -5629,7 +5580,7 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
                      (SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
                       SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
                       SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC_VELOCITY ||
-                      //SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
+                      SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
                       SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL )) {
 	    dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
 	    Wl = SolnBlk.W[i][j] + 
@@ -5640,8 +5591,8 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
 	    } else if (SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
 	      Wr = Adiabatic_Wall(Wl, SolnBlk.WoN[i], 
 	      			      SolnBlk.Grid.nfaceN(i, j));
-	    //} else if (SolnBlk.Grid.BCtypeN[i] == BC_COUETTE) {
-	    //  Wr = BC_Couette(Wl, SolnBlk.WoN[i]);
+	    } else if (SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
+	      Wr = Isothermal_Wall(Wl, SolnBlk.WoN[i],SolnBlk.Grid.nfaceN(i, j));
 	    } else if (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC_VELOCITY) {
 	      Wr = BC_Characteristic_Velocity(Wl, 
 					      SolnBlk.WoN[i], 
@@ -5686,16 +5637,116 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
               break;
 	  } /* endswitch */
     
-
-	  /* if boundary is Adiabatic Wall....re-evaluate flux */
-	  /*
-	  if((j == SolnBlk.JCl-1) && (SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL )) {
-	    //cout << i << "  " << j << endl;
-	    //cout << SolnBlk.Grid.nfaceN(i, j) << endl;
-	    Flux = Imposed_adiabatic_wall_n(Wr,SolnBlk.WoS[i], SolnBlk.Grid.nfaceN(i, j));
-	    //cout << Flux << endl;
+	  // Evaluate the cell interface j-direction ELLIPTIC flux if necessary.
+	  if (SolnBlk.Heat_Transfer) {
+	    // Determine the NORTH face ELLIPTIC flux.
+	    if (j == SolnBlk.JCl-1 && 
+		(SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL ||
+		 SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL)) {
+	      // SOUTH face of cell (i,j+1) is a normal boundary.
+	      Xr = SolnBlk.Grid.Cell[i][j+1].Xc; Wr = SolnBlk.W[i][j+1];
+	      dX = SolnBlk.Grid.xfaceS(i, j+1)-Xr;
+	      W_temp = Wr + (SolnBlk.phi[i][j+1]^SolnBlk.dWdx[i][j+1])*dX.x +
+	                    (SolnBlk.phi[i][j+1]^SolnBlk.dWdy[i][j+1])*dX.y;
+	      if (SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
+		// SOUTH face of cell (i,j+1) is an ADIABATIC_WALL boundary.
+		elliptic_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
+		Wu = Knudsen_Layer_Adiabatic(W_temp, SolnBlk.WoS[i], 
+					     SolnBlk.Grid.nfaceS(i, j+1));
+	      } else if (SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
+		// SOUTH face of cell (i,j+1) is an ISOTHERMAL_WALL boundary.
+		elliptic_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
+		Wu = Knudsen_Layer_Isothermal(W_temp, SolnBlk.WoS[i], 
+					      SolnBlk.Grid.nfaceS(i, j+1));
+	      } else {cout << "Error bad BC for elliptic part." << endl;}
+	      switch(Input_Parameters.i_Heat_Reconstruction) {
+	      case ELLIPTIC_RECONSTRUCTION_CARTESIAN :
+	      case ELLIPTIC_RECONSTRUCTION_DIAMOND_PATH :
+		Xu = SolnBlk.Grid.Node[i  ][j+1].X;
+		Xd = SolnBlk.Grid.Node[i+1][j+1].X; Wd = Wu;
+		break;
+	      case ELLIPTIC_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+	      case ELLIPTIC_RECONSTRUCTION_HYBRID :
+		Xu = SolnBlk.Grid.xfaceS(i,j+1);
+		Xl = Xu; Wl = Wu;
+		dWdxr = SolnBlk.dWdx[i][j+1]; dWdxl = dWdxr;
+		dWdyr = SolnBlk.dWdy[i][j+1]; dWdyl = dWdyr;
+		break;
+	      };
+	    } else if (j == SolnBlk.JCu && 
+		       (SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL ||
+			SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL)) {
+	      // NORTH face of cell (i,j) is a normal boundary.
+	      Xl = SolnBlk.Grid.Cell[i][j].Xc; Wl = SolnBlk.W[i][j];
+	      dX = SolnBlk.Grid.xfaceN(i, j)- Xl;
+	      W_temp = Wl + (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x +
+		            (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y;
+	      if (SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
+		// NORTH face of cell (i,j) is a ADIABATIC_WALL boundary.
+		elliptic_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
+		Wu = Knudsen_Layer_Adiabatic(W_temp, SolnBlk.WoN[i], 
+					     SolnBlk.Grid.nfaceN(i, j));
+	      } else if (SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
+		// NORTH face of cell (i,j) is a ISOTHERMAL_WALL boundary.
+		elliptic_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
+		Wu = Knudsen_Layer_Isothermal(W_temp, SolnBlk.WoN[i], 
+					      SolnBlk.Grid.nfaceN(i, j));
+	      } else {cout << "Error bad BC for elliptic part." << endl;}
+	      switch(Input_Parameters.i_Heat_Reconstruction) {
+	      case ELLIPTIC_RECONSTRUCTION_CARTESIAN :
+	      case ELLIPTIC_RECONSTRUCTION_DIAMOND_PATH :
+		Xu = SolnBlk.Grid.Node[i  ][j+1].X;
+		Xd = SolnBlk.Grid.Node[i+1][j+1].X; Wd = Wu;
+		break;
+	      case ELLIPTIC_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+	      case ELLIPTIC_RECONSTRUCTION_HYBRID :
+		Xu = SolnBlk.Grid.xfaceN(i,j);
+		Xr = Xu; Wr = Wu;
+		dWdxl = SolnBlk.dWdx[i][j]; dWdxr = dWdxl;
+		dWdyl = SolnBlk.dWdy[i][j]; dWdyr = dWdyl;
+		break;
+	      };
+	    } else {
+	      // NORTH face is either a normal cell or possibly a non-viscous
+	      // boundary condition.
+	      Xl = SolnBlk.Grid.Cell[i][j  ].Xc; Wl = SolnBlk.W[i][j  ];
+	      Xr = SolnBlk.Grid.Cell[i][j+1].Xc; Wr = SolnBlk.W[i][j+1];
+	      switch(Input_Parameters.i_Heat_Reconstruction) {
+	      case ELLIPTIC_RECONSTRUCTION_CARTESIAN :
+	      case ELLIPTIC_RECONSTRUCTION_DIAMOND_PATH :
+		elliptic_bc_flag = DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION;
+		Xu = SolnBlk.Grid.Node[i  ][j+1].X; Wu = SolnBlk.WnNW(i,j);
+		Xd = SolnBlk.Grid.Node[i+1][j+1].X; Wd = SolnBlk.WnNE(i,j);
+		break;
+	      case ELLIPTIC_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+	      case ELLIPTIC_RECONSTRUCTION_HYBRID :
+		Xu = SolnBlk.Grid.xfaceN(i,j); Wu = HALF*(Wl + Wr);
+		dWdxl = SolnBlk.dWdx[i][j]; dWdxr = SolnBlk.dWdy[i][j+1];
+		dWdyl = SolnBlk.dWdy[i][j]; dWdyr = SolnBlk.dWdy[i][j+1];
+		break;
+	      };
+	    }
+	    // Compute the NORTH face elliptic flux.
+	    switch(Input_Parameters.i_Heat_Reconstruction) {
+	    case ELLIPTIC_RECONSTRUCTION_CARTESIAN :
+	    case ELLIPTIC_RECONSTRUCTION_DIAMOND_PATH :
+	      Flux -= HeatFluxDiamondPath_n(SolnBlk.Grid.xfaceN(i,j),
+					    Xl,Wl,Xd,Wd,Xr,Wr,Xu,Wu,
+					    SolnBlk.Grid.nfaceN(i,j),
+					    SolnBlk.Axisymmetric,
+					    elliptic_bc_flag);
+	      break;
+	    case ELLIPTIC_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+	      Flux -= HeatFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
+				 SolnBlk.Grid.nfaceN(i,j),SolnBlk.Axisymmetric);
+	      break;
+	    case ELLIPTIC_RECONSTRUCTION_HYBRID :
+	      Flux -= HeatFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,Xr,Wr,dWdxr,dWdyr,
+				       SolnBlk.Grid.nfaceN(i,j),SolnBlk.Axisymmetric);
+	      break;
+	    };
 	  }
-	  */
+
           /* Evaluate cell-averaged solution changes. */
     
           SolnBlk.dUdt[i][j][k_residual] -= 

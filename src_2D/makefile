@@ -60,6 +60,7 @@ MODULE_DIR = F90_Modules
 # C++ Source files
 SRC_MATH = $(MATH_DIR)Vector2D.cc \
            $(MATH_DIR)Tensor2D.cc \
+           $(MATH_DIR)Third_order_tensor2D.cc \
 	   $(MATH_DIR)Tensor3D.cc \
            $(MATH_DIR)Spline2D.cc \
            $(MATH_DIR)Matrix.cc \
@@ -271,6 +272,7 @@ SRC_ICEMCFD_UTIL2 = $(ICEM_DIR)icemcfd2grid2dquad.cc
 # C++ Header files
 INC_MATH  = $(MATH_DIR)Math.h \
             $(MATH_DIR)Vector2D.h \
+            $(MATH_DIR)Third_order_tensor2D.h \
             $(MATH_DIR)Vector3D.h \
             $(MATH_DIR)Tensor2D.h \
             $(MATH_DIR)Tensor3D.h \
@@ -404,6 +406,7 @@ INC_ELLIPTIC = $(CFD_DIR)EllipticOperatorAnalysis2D.h
 # Compiled object code files
 OBJ_MATH = $(MATH_DIR)Vector2D.o \
            $(MATH_DIR)Tensor2D.o \
+           $(MATH_DIR)Third_order_tensor2D.o \
            $(MATH_DIR)Tensor3D.o \
            $(MATH_DIR)Spline2D.o \
            $(MATH_DIR)Matrix.o \
@@ -699,7 +702,7 @@ all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
 	@echo '------------------------------------------'
 	@echo ' '
 
-libraries-all: sparselib bpkit fftw
+libraries-all: sparselib bpkit fftw cantera
 	@echo ' '	
 	@echo All libraries have been brought up to date.
 	@echo '-------------------------------------------'
