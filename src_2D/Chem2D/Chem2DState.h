@@ -31,7 +31,9 @@ class Chem2D_cState;
 class Chem2D_pState;
 
 // Required C++ libraries
+
 #include <iostream>
+#include <cstdlib> 
 
 using namespace std;
 

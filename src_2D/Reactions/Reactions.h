@@ -9,6 +9,7 @@
 ***********************************************************************/
 #ifndef _REACTIONS_INCLUDED
 #define _REACTIONS_INCLUDED 
+
 class React_data;
 class Reaction_set;
 
@@ -280,10 +281,8 @@ public:
   void set_reactions(int &,string*,double*,double*,double*);
 
   // cantera member functions
-#ifdef _CANTERA_VERSION
   void ct_load_mechanism(string &, string &);
-  void ct_parse_mass_string( const string&, double* );
-#endif // _CANTERA_VERSION
+  void ct_parse_mass_string(const string&, double*);
 
   //setup storage after num_reactions & num_species set.
   void set_storage(void){
@@ -1701,7 +1700,4 @@ inline void Reaction_set::Finite_Difference_dSwdU(DenseMatrix &dSwdU,
 
 } // end  Finite_Difference_dSwdU
 
-
-
-
-#endif //REACTIONS_H
+#endif // _REACTIONS_INCLUDED

@@ -19,16 +19,11 @@ NEW
   - based on Euler2DInput.h 
 ***********************************************************************/
 
-
 #ifndef _CHEM2D_INPUT_INCLUDED
 #define _CHEM2D_INPUT_INCLUDED
 
 /* Include 2D Euler state, 2D cell, 2D quadrilateral multiblock 
    grid, and NASA rotor header files. */
-
-#include <cstdlib> 
-
-using namespace std;
 
 #ifndef _CHEM2D_STATE_INCLUDED
 #include "Chem2DState.h"

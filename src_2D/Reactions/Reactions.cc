@@ -327,11 +327,10 @@ void Reaction_set::set_reactions(int &num_react,string* name, double* A,
   pressure limits) and has member functions that allow for the 
   computation of reaction rates.  
 ***********************************************************************/
-#ifdef _CANTERA_VERSION
 void Reaction_set::ct_load_mechanism(string &mechanism_file_name, 
-				     string &mechanism_name) 
-{
+				     string &mechanism_name) {
 
+#ifdef _CANTERA_VERSION
   // make sure all unused parameters are null
   Deallocate();
 
@@ -364,10 +363,12 @@ void Reaction_set::ct_load_mechanism(string &mechanism_file_name,
 
   // allocate some temporary storage
   set_storage();
-
-} //end of ct_load_mechanism
+#else
+  cout<<"\n CODE NOT COMPILED WITH CANTERA!";
+  cout<<"\n YOU SHOULD NOT BE HERE!";
 #endif //_CANTERA_VERSION
 
+} //end of ct_load_mechanism
 
 /***********************************************************************
   Use cantera to parse the input mass fraction string of the form
@@ -376,10 +377,10 @@ void Reaction_set::ct_load_mechanism(string &mechanism_file_name,
   also normalizes the mass fractions to sum to unity.  Returns them
   in an array.
 ***********************************************************************/
-#ifdef _CANTERA_VERSION
-void Reaction_set::ct_parse_mass_string( const string& massFracStr, 
-					 double* massFracs) {
+void Reaction_set::ct_parse_mass_string(const string& massFracStr, 
+					double* massFracs) {
 
+#ifdef _CANTERA_VERSION
   compositionMap xx;
   int kk = ct_gas->nSpecies();
   for (int k = 0; k < kk; k++) xx[ct_gas->speciesName(k)] = -1.0;
@@ -388,8 +389,12 @@ void Reaction_set::ct_parse_mass_string( const string& massFracStr,
   for(int index =0; index<num_species; index++){
     massFracs[index] = ct_gas->massFraction(index);
   }
+#else
+  cout<<"\n CODE NOT COMPILED WITH CANTERA!";
+  cout<<"\n YOU SHOULD NOT BE HERE!";  
+#endif //_CANTERA_VERSION
 
 } // end of ct_parse_mass_string
-#endif //_CANTERA_VERSION
+
 
 
