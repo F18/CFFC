@@ -63,3 +63,7 @@ rte2D
 
 # 3D executables
 cffc3D
+
+# unit testing directories
+journal.tut
+log.tut

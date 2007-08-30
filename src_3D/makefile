@@ -80,6 +80,17 @@ SRC_TURBULENCE = $(TURBULENCE_DIR)TurbulenceModelling.cc
 SRC_BASE = $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_SYSTEM) \
            $(SRC_AMR) $(SRC_GRID) $(SRC_ICEM) \
            $(SRC_TURBULENCE)
+#
+##################### SRC_TUT (unit testing framework) ############################################
+SRC_TUT    = Test_Run.cc  BasicTestData.cc \
+	     BasicTests/TestSample.cc  BasicTests/test_BasicTestData.cc
+SRC_TUT   := $(addprefix $(UNIT_TESTING_DIR), $(SRC_TUT))
+#--- Add SRC_TUT to SRC_BASE  ----
+ifeq ($(COMPILE_TESTS),ON) 
+  SRC_BASE += $(SRC_TUT)
+endif
+#
+
 SRC_CFFC = $(SRC_BASE) \
            $(SRC_EULER) $(SRC_NAVIERSTOKES) $(SRC_FANS) \
            $(SRC_SPECIES)  
@@ -127,6 +138,12 @@ OBJ_TURBULENCE = $(TURBULENCE_DIR)TurbulenceModelling.o
 OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_SYSTEM) \
            $(OBJ_AMR) $(OBJ_GRID) $(OBJ_ICEM) \
            $(OBJ_TURBULENCE)
+#--- Add OBJ_TUT to OBJ_BASE  ----
+OBJ_TUT := $(SRC_TUT:.cc=.o)
+ifeq ($(COMPILE_TESTS),ON) 
+  OBJ_BASE += $(OBJ_TUT)
+endif
+#
 OBJ_CFFC = $(OBJ_BASE) \
            $(OBJ_EULER) $(OBJ_NAVIERSTOKES) $(OBJ_FANS) \
            $(OBJ_SPECIES)

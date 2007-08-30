@@ -52,6 +52,7 @@ GAUSSIAN_DIR = Gaussian2D/
 NASARP1311_DIR = $(CHEM_DIR)
 POLYFIT_DIR = Polyfit/
 
+
 #
 # C++ Source files
 SRC_MATH = $(MATH_DIR)Vector2D.cc \
@@ -250,6 +251,16 @@ SRC_CFFC = $(SRC_BASE) $(SRC_SCALAR) $(SRC_HEAT) $(SRC_HYPERHEAT) $(SRC_EULER1D)
 SRC_MAIN = cffc2D.cc
 SRC_ICEMCFD_UTIL1 = $(ICEM_DIR)icemcfd2tecplot.cc 
 SRC_ICEMCFD_UTIL2 = $(ICEM_DIR)icemcfd2grid2dquad.cc
+
+#
+##################### SRC_TUT (unit testing framework) #############################################
+SRC_TUT    = Test_Run.cc  BasicTestData.cc \
+	     BasicTests/TestSample.cc  BasicTests/test_BasicTestData.cc
+SRC_TUT   := $(addprefix $(UNIT_TESTING_DIR), $(SRC_TUT))
+#--- Add SRC_TUT to SRC_BASE  ----
+ifeq ($(COMPILE_TESTS),ON) 
+  SRC_BASE += $(SRC_TUT)
+endif
 
 #
 # C++ Header files
@@ -570,6 +581,13 @@ OBJ_ICEMCFD = $(ICEM_DIR)ICEMCFD.o \
 	      $(ICEM_DIR)ICEMCFD_ctype.o
 OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_AMR) \
 	   $(OBJ_SYSTEM) $(OBJ_POLYFIT)
+
+#--- Add OBJ_TUT to OBJ_BASE  ----
+OBJ_TUT := $(SRC_TUT:.cc=.o)
+ifeq ($(COMPILE_TESTS),ON) 
+  OBJ_BASE += $(OBJ_TUT)
+endif
+
 OBJ_CFFC = $(OBJ_BASE) $(OBJ_SCALAR) $(OBJ_HEAT) $(OBJ_HYPERHEAT) $(OBJ_EULER1D) $(OBJ_MHD1D) \
 	   $(OBJ_ADVECTDIFFUSE) $(OBJ_CHEM) $(OBJ_DUSTY) $(OBJ_EULER) $(OBJ_HIGHTEMP) \
 	   $(OBJ_ION) $(OBJ_ELECTROSTATIC) $(OBJ_INTERFACE) $(OBJ_LESPREMIXED) $(OBJ_LEVELSET) \
@@ -580,6 +598,8 @@ OBJ_ICEMCFD_UTIL1 = $(ICEM_DIR)icemcfd2tecplot.o \
                     $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD)
 OBJ_ICEMCFD_UTIL2 = $(ICEM_DIR)icemcfd2grid2dquad.o \
                     $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD) 
+
+
 
 #
 # Define the executables

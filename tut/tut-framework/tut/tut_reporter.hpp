@@ -121,6 +121,9 @@ public:
 
     void run_completed()
     {
+      int TotalNumberOfTests = (ok_count + exceptions_count + failures_count
+				+ terminations_count + warnings_count);
+
         os << std::endl;
 
         if (not_passed.size() > 0)
@@ -181,27 +184,32 @@ public:
             }
         }
 
-        os << std::endl;
+	if (TotalNumberOfTests != 0){
 
-        os << "tests summary:";
-        if (terminations_count > 0)
-        {
-            os << " terminations:" << terminations_count;
-        }
-        if (exceptions_count > 0)
-        {
-            os << " exceptions:" << exceptions_count;
-        }
-        if (failures_count > 0)
-        {
-            os << " failures:" << failures_count;
-        }
-        if (warnings_count > 0)
-        {
-            os << " warnings:" << warnings_count;
-        }
-        os << " ok:" << ok_count;
-        os << std::endl;
+	  os << std::endl;
+	  os << "---------------------------------------------------------------\n";
+	  os << "Tests summary:" << " TotalTests:" << TotalNumberOfTests;
+
+	  if (terminations_count > 0)
+	    {
+	      os << " terminations:" << terminations_count;
+	    }
+	  if (exceptions_count > 0)
+	    {
+	      os << " exceptions:" << exceptions_count;
+	    }
+	  if (failures_count > 0)
+	    {
+	      os << " failures:" << failures_count;
+	    }
+	  if (warnings_count > 0)
+	    {
+	      os << " warnings:" << warnings_count;
+	    }
+	  os << " ok:" << ok_count;
+	  os << std::endl;
+	  os << "Success rate: " << ok_count*100/TotalNumberOfTests << "%" << std::endl;
+	} 
     }
 
     bool all_ok() const

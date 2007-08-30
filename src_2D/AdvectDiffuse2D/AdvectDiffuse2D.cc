@@ -32,6 +32,10 @@ using namespace std;
 #include "AdvectDiffuse2DQuad_NKS.h"
 #include "../MPI/MPI.h"
 #include "../ICEM/ICEMCFD.h"
+#ifndef __NO_UNIT_TESTING__	// Don't compile the tests if this macro is defined
+#include <Test_Run.h>
+#endif
+
 
 /* Begin AdvectDiffuse2D program. */
 
@@ -48,7 +52,8 @@ int main(int num_arg, char *arg_ptr[]) {
       pde_flag,
       file_flag, 
       error_flag,
-      mpirun_flag;
+      mpirun_flag,
+      test_flag;
 
   // Other local integer variables:
   int i;
@@ -74,6 +79,10 @@ int main(int num_arg, char *arg_ptr[]) {
   // Input file stream:
   ifstream Input_File;
 
+  // Testing commands
+  string TestSuit;
+  int TestNumber=0;
+
   /********************************************************  
    * LOCAL VARIABLE INITIALIZATIONS                       *
    ********************************************************/
@@ -95,6 +104,7 @@ int main(int num_arg, char *arg_ptr[]) {
   file_flag = 0;
   error_flag = 0;
   mpirun_flag = 0;
+  test_flag = 0;
 
   /* Save the command line name of the program for future use. */
 
@@ -143,6 +153,24 @@ int main(int num_arg, char *arg_ptr[]) {
         mpirun_flag = 1;
       } else if (strcmp(arg_ptr[i-1], "-p4wd") == 0) {
         //mpirun_flag = 1;
+      } else if (strcmp(arg_ptr[i], "-t") == 0) {
+#ifdef __NO_UNIT_TESTING__	// No unit tests are compiled
+	std::cout << "\nCommand option \"-t\" cannot be used."
+		  << "\nThe tests have not been included in this executable."
+		  << "\nTo include the tests, remake the code with option: "
+		  << "\n  COMPILE_TESTS=ON"
+		  << "\nBye-bye!\n";
+	exit(1);
+#else  // Unit tests are compiled
+	test_flag=1;
+	if (num_arg-1>i){
+	  TestSuit= arg_ptr[i+1];
+	}
+	if (num_arg-1>i+1){
+	  TestNumber = atoi(arg_ptr[i+2]);
+	}
+	break;
+#endif
       } else {
         error_flag = 1;
       } /* endif */
@@ -185,17 +213,34 @@ int main(int num_arg, char *arg_ptr[]) {
 
   if (CFFC_Primary_MPI_Processor() && help_flag) {
      cout << "Usage:\n";
-     //cout << "advectdiffuse2D [-v] [-h] [-i] [-b] [-pde type] [-f name]\n";
-     cout << "advectdiffuse2D [-v] [-h] [-i] [-b] [-f name]\n";
+     cout << "advectdiffuse2D [-v] [-h] [-i] [-b] [-f name] [-t name number]\n";
      cout << " -v (--version)  display version information\n";
-     cout << " -h (--help)  show this help\n";
-     cout << " -i (--inter)  execute in interactive mode (default)\n";
-     cout << " -b (--batch)  execute in batch mode\n";
-     //cout << " -pde type  solve `type' PDEs (`Euler2D' is default)\n";
-     cout << " -f name  use `name' input data file (`advectdiffuse2D.in' is default)\n";
+     cout << " -h (--help)     show this help\n";
+     cout << " -i (--inter)    execute in interactive mode (default)\n";
+     cout << " -b (--batch)    execute in batch mode\n";
+     cout << " -f name         use `name' input data file (`advectdiffuse2D.in' is default)\n";
+     cout << " -t              run all tests\n" 
+	  << " -t list         list all registered test suits\n"
+	  << " -t regression   run all tests in batch mode with segm. fault recovery\n"
+	  << " -t test-suit-name [test-number] \n"
+	  << "                 run all tests in test-suit-name or \n"
+	  << "                 a particular test-number \n"
+	  << "                 example: advectdiffuse2D -t MyTestSuit 3\n";
      cout.flush();
      return (0);
   } /* endif */
+
+
+  /******************************************************
+   * CALL THE TESTS RUNNER (run tests only on 1 CPU)    *
+   *****************************************************/
+#ifndef __NO_UNIT_TESTING__	// Don't compile the tests if this macro is defined
+  if (test_flag && CFFC_Primary_MPI_Processor() && CFFC_MPI::Number_of_Processors == 1) {
+    Test_Run(TestSuit,TestNumber);
+    CFFC_Finalize_MPI();
+    return(0);
+  }
+#endif
 
   /***********************************************************  
    * PERFORM REQUIRED CALCULATIONS.                          *

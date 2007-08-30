@@ -28,6 +28,9 @@ FFTW_VERSION = V32
 # <alpha>  gprof --demangle=compaq cffc2D gmon.out > output.txt
 PROFILING = OFF
 
+# Set to ON in order to run the unit tests
+COMPILE_TESTS             = ON
+
 #-----------------------------------------------------------#
 #       Platform Specific Compiler Flags                    #
 #-----------------------------------------------------------#
@@ -208,6 +211,16 @@ else
   FFTW_CPP_FLAGS = -I$(FFTW_INC_DIR)
   FFTW_LD_FLAGS  = -L$(FFTW_LIB_DIR) -lfftw3
 endif
+
+#
+# Set flags associated with the TUT (Template Unit Testing)
+# testing framework for C++ code:
+
+UNIT_TESTING_DIR = UnitTesting/
+TUT                       = TUT
+TUT_DIR                   = $(CFFC_Path)/tut
+TUT_INC_DIR               = $(TUT_DIR)/tut-framework
+TUT_CPP_FLAGS             = -I$(TUT_INC_DIR) -I$(UNIT_TESTING_DIR)
 
 #
 # CPPFLAG -D__USE_MALLOC explicitly handles C++ string memory issues, but 
@@ -424,4 +437,16 @@ ifeq ($(PLATFORM),hpux)
     LDFLAGS = -lm
     DEPENDSFLAGS =
   endif
+endif
+
+#
+# Add the local source dir to the include path
+CPPFLAGS += -I.
+
+#
+# Add TUT flags
+ifeq ($(COMPILE_TESTS),ON) 
+  CPPFLAGS += $(TUT_CPP_FLAGS)
+else
+  CPPFLAGS += -D__NO_UNIT_TESTING__
 endif
