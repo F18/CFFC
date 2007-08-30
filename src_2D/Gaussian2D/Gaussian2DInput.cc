@@ -2274,6 +2274,13 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Heat_Transfer != 0 &&
 	   IP.Heat_Transfer != 1 ) i_command = INVALID_INPUT_VALUE;
+#ifndef _GAUSSIAN_HEAT_TRANSFER_
+       if (IP.Heat_Transfer != 0) {
+	 cout << "This version of gaussian2D was compiled without heat transfer." << endl
+	      << "Recompile with _GAUSSIAN_HEAT_TRANSFER_ defined" << endl;
+	 i_command = INVALID_INPUT_VALUE;
+       }
+#endif
 
     } else if (strcmp(IP.Next_Control_Parameter, "Restart_Solution_Save_Frequency") == 0) {
        i_command = 53;

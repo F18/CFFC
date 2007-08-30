@@ -2191,6 +2191,7 @@ Gaussian2D_cState FluxKinetic_x(const Gaussian2D_pState &W1,
 
 }
 
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
 /**********************************************************************
  * Routine: HeatFlux_n                                                *
  *                                                                    *
@@ -2372,7 +2373,7 @@ Gaussian2D_cState HeatFluxHybrid_n(const Vector2D &X,
   //return Gaussian2D_cState(ZERO,ZERO,ZERO,ZERO,ZERO,ZERO);
 
 }
-
+#endif
 
 /**********************************************************************
  * Routine: FlatPlate                                                 *

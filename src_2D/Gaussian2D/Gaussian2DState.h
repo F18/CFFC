@@ -55,6 +55,8 @@ using namespace std;
 #define GAUSSIAN_MONATOMIC    1
 #define GAUSSIAN_DIATOMIC     2
 
+#define _GAUSSIAN_HEAT_TRANSFER_
+
 
 class Gaussian2D_cState;
 
@@ -140,7 +142,9 @@ class Gaussian2D_pState{
     Vector2D                  v;   // Flow velocity (2D vector).
     Tensor2D                  p;   // Pressure tensor.
     double                 erot;   // rotational energy
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
     Third_order_tensor2D      q;   // third-order heat tensor
+#endif
     static double             M;   // Molar Weight
     static int            atoms;   // Monatomic or Diatomic
     static int              gas;   // Gas type
@@ -224,14 +228,19 @@ class Gaussian2D_pState{
     /* Vacuum operator. */
     void Vacuum(void) {
        d = ZERO; v = Vector2D_ZERO; p.xx = ZERO;
-       p.xy = ZERO; p.yy = ZERO; p.zz = ZERO; erot = ZERO; q.zero();
+       p.xy = ZERO; p.yy = ZERO; p.zz = ZERO; erot = ZERO;
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
+       q.zero();
+#endif
     }
 
     /* Standard atmosphere operator. */
     void Standard_Atmosphere(void) {
        d = DENSITY_STDATM; v.zero(); p.xx = PRESSURE_STDATM;
        p.xy = ZERO; p.yy = PRESSURE_STDATM; p.zz = PRESSURE_STDATM; erot = PRESSURE_STDATM;
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
        q.zero();
+#endif
     }
 
 
@@ -575,7 +584,9 @@ class Gaussian2D_cState{
     double                   d;   // Density.
     Vector2D                dv;   // Momentum.
     Tensor2D                 E;   // Total Energy.
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
     Third_order_tensor2D     q;   // third-order heat tensor
+#endif
     double                erot;   // Rotational Energy
     static double            M;   // Molar Weight
     static int           atoms;   // Monatomic or Diatomic
@@ -629,14 +640,19 @@ class Gaussian2D_cState{
     /* Vacuum operator. */
     void Vacuum(void) {
        d = ZERO; dv = Vector2D_ZERO; E.xx = ZERO;
-       E.xy = ZERO; E.yy = ZERO; E.zz = ZERO; erot = ZERO; q.zero();
+       E.xy = ZERO; E.yy = ZERO; E.zz = ZERO; erot = ZERO; 
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
+       q.zero();
+#endif
     }
 
     /* Standard atmosphere operator. */
     void Standard_Atmosphere(void) {
        d = DENSITY_STDATM; dv.zero(); E.xx = PRESSURE_STDATM;
        E.xy = ZERO; E.yy = PRESSURE_STDATM; E.zz = PRESSURE_STDATM; erot = PRESSURE_STDATM;
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
        q.zero();
+#endif
     }
 
     /* Set gas constants. */
@@ -1208,7 +1224,10 @@ inline double Gaussian2D_pState::burningrate(void) const {
  * Gaussian2D_pState -- Assignment operator.                          *
  **********************************************************************/
 inline Gaussian2D_pState& Gaussian2D_pState::operator =(const Gaussian2D_pState &W) {
-  d = W.d; v = W.v; p = W.p; erot = W.erot; q = W.q;
+  d = W.d; v = W.v; p = W.p; erot = W.erot; 
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
+  q = W.q;
+#endif
   return *this;
 }
 
@@ -1479,7 +1498,10 @@ inline double Gaussian2D_cState::burningrate(void) const {
  * Gaussian2D_cState -- Assignment operator.                          *
  **********************************************************************/
 inline Gaussian2D_cState& Gaussian2D_cState::operator =(const Gaussian2D_cState &U) {
-  d = U.d; dv = U.dv; E = U.E; erot = U.erot; q = U.q;
+  d = U.d; dv = U.dv; E = U.E; erot = U.erot; 
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
+  q = U.q;
+#endif
   return *this;
 }
 
@@ -1797,6 +1819,7 @@ inline Gaussian2D_cState Fn(const Gaussian2D_pState &W) {
 }
 */
 
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
 /********************************************************
  * Gaussian2D_pState::Gx & Gy -- elliptic (heat) flux.  *
  ********************************************************/
@@ -1854,6 +1877,7 @@ inline void Gaussian2D_pState::ComputeHeatTerms(const Gaussian2D_pState &dWdx,
 
   return;
 }
+#endif
 
 /************************************************************
  * Gaussian2D_pState::lambda -- Eigenvalue(s) (x-direction).*
@@ -3045,6 +3069,7 @@ inline void dFndU(DenseMatrix &dFndU, const Gaussian2D_cState &U) {
 }
 */
 
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
 /********************************************************
  * Gaussian2D_cState::Gx & Gy -- elliptic (heat) flux.  *
  ********************************************************/
@@ -3103,6 +3128,7 @@ inline void Gaussian2D_cState::ComputeHeatTerms(const Gaussian2D_pState &dWdx,
 
   return;
 }
+#endif
 
 /**********************************************************
  * Gaussian2D_cState::S -- Source terms (axisymmetric flow). *

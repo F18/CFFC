@@ -4828,6 +4828,7 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 	    break;
 	  } /* endswitch */
 
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
 	  // Evaluate the cell interface i-direction ELLIPTIC flux if necessary.
 	  if (SolnBlk.Heat_Transfer) {
 	    // Determine the EAST face ELLIPTIC flux.
@@ -4932,7 +4933,7 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 	      break;
 	    };
 	  }
-
+#endif
 	  /* Evaluate cell-averaged solution changes. */
 	  
 	  SolnBlk.dUdt[i][j][0] -= 
@@ -5059,7 +5060,7 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 	  break;
 	} /* endswitch */
 
-
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
 	// Evaluate the cell interface j-direction ELLIPTIC flux if necessary.
 	if (SolnBlk.Heat_Transfer) {
 	  // Determine the NORTH face ELLIPTIC flux.
@@ -5163,7 +5164,7 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 	    break;
 	  };
 	}
-	
+#endif	
           /* Evaluate cell-averaged solution changes. */
 	
 	SolnBlk.dUdt[i][j][0] -= 
@@ -5404,6 +5405,7 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
                  break;
              } /* endswitch */
 
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
 	     // Evaluate the cell interface i-direction ELLIPTIC flux if necessary.
 	     if (SolnBlk.Heat_Transfer) {
 	       // Determine the EAST face ELLIPTIC flux.
@@ -5507,7 +5509,7 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
 		 break;
 	       };
 	     }
-
+#endif
              /* Evaluate cell-averaged solution changes. */
 
              SolnBlk.dUdt[i][j][k_residual] -= 
@@ -5636,7 +5638,8 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
               Flux = FluxRoe_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
               break;
 	  } /* endswitch */
-    
+
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
 	  // Evaluate the cell interface j-direction ELLIPTIC flux if necessary.
 	  if (SolnBlk.Heat_Transfer) {
 	    // Determine the NORTH face ELLIPTIC flux.
@@ -5746,6 +5749,7 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
 	      break;
 	    };
 	  }
+#endif
 
           /* Evaluate cell-averaged solution changes. */
     
