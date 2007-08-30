@@ -518,8 +518,6 @@ void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Read_Fluctuations_From_File), 
                           1, 
                           MPI::INT, 0);
-
-
     //reaction name
     MPI::COMM_WORLD.Bcast(IP.React_Name, 
                           INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
@@ -528,7 +526,6 @@ void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(IP.Scalar_system_name, 
                           INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
 			  MPI::CHAR, 0);
-    
     //delete current dynamic memory before changing num_species
     if(!CFFC_Primary_MPI_Processor()) {   
       IP.Deallocate();
@@ -578,7 +575,6 @@ void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP) {
 			    MPI::CHAR, 0);
       }
     }
-
     //set reaction and species parameters
     if (!CFFC_Primary_MPI_Processor()) {      
       IP.react_name = IP.React_Name;
@@ -1208,11 +1204,6 @@ void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Read_Fluctuations_From_File), 
                           1, 
                           MPI::INT, Source_Rank);
-
-
-
-
-
     //reaction name
     Communicator.Bcast(IP.React_Name, 
                           INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
@@ -1269,7 +1260,6 @@ void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP,
 			    MPI::CHAR, Source_Rank);
       }
     }
-
     //set reaction and species parameters
     if (!CFFC_Primary_MPI_Processor()) {      
       IP.react_name = IP.React_Name;
@@ -2546,7 +2536,6 @@ int Parse_Next_Input_Control_Parameter(LESPremixed2D_Input_Parameters &IP) {
 	 }
 	 IP.Line_Number = IP.Line_Number - 1 ;
        }
-
 
        /*************************************/
        /**** REACTIONS SET FOR HARDCODED ****/
