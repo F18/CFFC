@@ -328,8 +328,10 @@ void Reaction_set::set_reactions(int &num_react,string* name, double* A,
   computation of reaction rates.  
 ***********************************************************************/
 void Reaction_set::ct_load_mechanism(string &mechanism_file_name, 
-				     string &mechanism_name) {
+				     string &mechanism_name) 
+{
 
+// _CANTERA_VERSION flag set
 #ifdef _CANTERA_VERSION
  
  // make sure all unused parameters are null
@@ -365,6 +367,7 @@ void Reaction_set::ct_load_mechanism(string &mechanism_file_name,
   // allocate some temporary storage
   set_storage();
 
+// _CANTERA_VERSION flag not set
 #else
   cout<<"\n CODE NOT COMPILED WITH CANTERA!";
   cout<<"\n YOU SHOULD NOT BE HERE!";

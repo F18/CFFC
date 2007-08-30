@@ -260,9 +260,9 @@ public:
   string Reaction_system;  //Reaction system name
 
   // cantera related objects
-#ifdef _CANTERA_VERSION
   string ct_mech_name;     //Reaction mechanism file path
   string ct_mech_file;     //Reaction mechanism file path
+#ifdef _CANTERA_VERSION
   IdealGasMix* ct_gas;     //the Cantera IdealGasMix object
 #endif
 
@@ -365,13 +365,11 @@ inline Reaction_set& Reaction_set::operator =(const Reaction_set &W){
     }
     
     // for cantera case
-#ifdef _CANTERA_VERSION
     else {
       string mechanism_file = W.ct_mech_file;
       string mechanism_name = W.ct_mech_name;
       ct_load_mechanism(mechanism_file, mechanism_name);
     }
-#endif // _CANTERA_VERSION
 
   } /* endif */
   return (*this);

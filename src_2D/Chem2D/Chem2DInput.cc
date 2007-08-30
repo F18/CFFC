@@ -2423,8 +2423,6 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter, "Cantera_Reaction_Mechanism") == 0) {
        i_command = 202;
 
-#ifdef _CANTERA_VERSION
-
        Get_Next_Input_Control_Parameter(IP);
        IP.Deallocate();  //DEALLOCATE BEFORE CHANGING num_species
        int flag =0;
@@ -2515,12 +2513,6 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	 IP.Uo = U(IP.Wo);
 	 IP.Line_Number = IP.Line_Number - 1 ;
        }
-
-#else
-       // _CANTERA_VERSION flag not set
-       cerr <<endl<<IP.Next_Control_Parameter<<"\n CANTERA_VERSION compile directive not set.\n";
-       exit(-1);
-#endif // _CANTERA_VERSION
 
       /******************************************/
       /**** NON REACTING, BUT MULTIPLE GASES ****/
