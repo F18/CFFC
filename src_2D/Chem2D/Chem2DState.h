@@ -238,8 +238,8 @@ class Chem2D_pState {
    //Copy construtor, cheaper than = operator
    void Copy(const Chem2D_pState &W);
 
-   // return the number of variables
-   int NumVar() const { return NUM_VAR_CHEM2D; }
+   // return the number of variables - number of species
+   int NumVarSansSpecies() const { return NUM_CHEM2D_VAR_SANS_SPECIES; }
 
    /*************** VACUUM OPERATOR *********************/
    void Vacuum(){ rho=ZERO; v.zero(); p=ZERO; k=ZERO; omega = ZERO; 
@@ -1009,6 +1009,11 @@ inline double Chem2D_pState::SpecCon(int i) const{
   Gs = Hs - TS
   Gs(ps=1) = Gs - R_UNIVERSAL*T*ln(ps)  //for data not at 1atm
   ps = cs(M/Ms)*p
+
+  NEVER USE THIS FUNCTION : If you are looping through the
+  species and computing the Gibbs free energy, you do an
+  EXPENSIVE T() calculation for every species !!!! Even 
+  though T() does not change.
 ***********************************************************/
 inline double Chem2D_pState::Gibbs(int species) const{
   double Temp = T(); 

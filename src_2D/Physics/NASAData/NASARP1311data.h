@@ -394,6 +394,7 @@ class NASARP1311data{
   double HeatCapacity_v(double Temp);  //Cp 
   double HeatRatio(double Temp);       //gamma 
   double Prandtl(double Temp);         //Pr
+  double GibbsFree(double Temp);       //G=H-T*S (J/mol)
 
   // Input-output operators. 
   friend ostream& operator << (ostream &out_file, const NASARP1311data &W);
@@ -475,6 +476,17 @@ inline double NASARP1311data::Prandtl(double Temp){
   //Pr = Cp*mu/k
   return HeatCapacity_p(Temp)*Viscosity(Temp)/ThermalConduct(Temp);
 }
+
+/******************* Gibbs Free Energy ****************************************/
+//   Eqn. (10.84) (10.87) Anderson
+//   Gs = Hs - TS
+//   Gs(ps=1) = Gs - R_UNIVERSAL*T*ln(ps)  for data not at 1atm
+//   ps = cs(M/Ms)*p
+inline double NASARP1311data::GibbsFree(double Temp) {
+  //G=H-T*S (J/mol)
+  return ( Enthalpy_mol(Temp) - Temp*Entropy_mol(Temp) );
+}
+
 
 /**************************** Wrapper Functions************************************/
 inline double NASARP1311data::dViscositydT(double Temp){

@@ -347,7 +347,7 @@ void Reaction_set::ct_load_mechanism(string &mechanism_file_name,
 
   //get the number of reactions and species
   num_species = ct_gas->nSpecies();
-  num_react_species = num_species-1;
+  num_react_species = num_species;
   num_reactions = ct_gas->nReactions();
 
   //set the species names 

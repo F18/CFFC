@@ -266,6 +266,9 @@ class LESPremixed2D_pState {
    //Copy constructor, cheaper than = operator
    void Copy(const LESPremixed2D_pState &W);
 
+   // return the number of variables - number of species
+   int NumVarSansSpecies() const { return NUM_VAR_LESPREMIXED2D-ns; }
+
    /*************** VACUUM OPERATOR *********************/
    void Vacuum(){ rho=ZERO; v.zero(); p=ZERO;
      if (nscal) for(int i=0; i<nscal; ++i) scalar[i] = ZERO;
@@ -1659,15 +1662,6 @@ inline LESPremixed2D_pState W(const LESPremixed2D_cState &U) {
 
   return Temp;
 }
-
-/*********************************************************************************
- *********************************************************************************
-  Inlcude specializations of Reactions class.  This is here as a workarround
-  because of the cross dependancy issues between 'LESPremixed2DState' and 
-  'Reaction_set'.  Enjoy.
- *********************************************************************************
- *********************************************************************************/
-#include "LESPremixed2DReactions.h"
 
 
 /*********************************************************************************
