@@ -1,5 +1,5 @@
 /********************************************************************
- * Program:  Spline1D.h                                             *
+ * Program:  SplineFit.h                                            *
  *                                                                  *
  * Description:  This program generates a cubic spline interpolant. *
  *               See:                                               *   
@@ -7,8 +7,8 @@
  *                 Available at http://www.nr.com/                  *
  *                                                                  *
  ********************************************************************/
-#ifndef _SPLINE1D_INCLUDED
-#define _SPLINE1D_INCLUDED
+#ifndef _SPLINEFIT_INCLUDED
+#define _SPLINEFIT_INCLUDED
 
 //--------------------------------------------------//
 // SAMPLE USAGE

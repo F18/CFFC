@@ -1,277 +1,157 @@
-/****************** Reactions.cc ************************************
-  This class defines the Reaction class and for the 
+/****************** Reactions.h **************************************
+  This class defines the Reaction mechanisms for the 
   2D Axisymmertric Navier-Stokes with Multiple Species solution.
+
+  TODO:   - kb constructor's
+          - user defind reaction set constructor
+          - use int's instead of voids for error_flagging
 
 ***********************************************************************/
 #ifndef _REACTIONS_INCLUDED
-#include "Reactions.h"
-#endif // _REACTIONS_INCLUDED
+#define _REACTIONS_INCLUDED 
+class React_data;
+class Reaction_set;
 
-/***********************************************************************
-  Setup reaction data using hardcoded reaction mechanisms.
-***********************************************************************/
-void Reaction_set::set_reactions(string &react){
+// Required C++ libraries
+#include <iostream>
+#include <string>
+#include <cassert>
 
-  Deallocate();
+using namespace std;
 
-  Reaction_system = react;
-  //no reactions
-  if( react == "NO_REACTIONS"){
-    reactset_flag = NO_REACTIONS;
-    reactions = NULL;
-    num_reactions = 0;
-  }
+#include "../Math/Math.h"
+#include "../Math/Matrix.h"
+#include "../Math/Tensor2D.h"
+#include "../Physics/GasConstants.h"
+#include "../CFD/CFD.h"
+#include "../Math/Complexify.h"
+#include "15step.h"
 
-  /****************** METHANE ***********************************/   
-  // 1step CH4 mechanism
-  else if( react == "CH4_1STEP" ){
-    //flag for hadcoded
-    reactset_flag =  CH4_1STEP;
-    //set number of reactions & species
-    num_reactions = 1;
-    num_species = 5;
-    num_react_species = 4;
-    //allocate memory 
-    reactions = new React_data[num_reactions];
-    //set reaction coefficients based on kov formulation
-    //reactions[0].set_data("CH4_1step",3.3*6.7e12,0.0,(48400.0*CAL_TO_JOULE),0);    for 0.2,1,3
-    reactions[0].set_data("CH4_1step",4.5*2.4e16,0.0,(48400.0*CAL_TO_JOULE),0);     //for 1.0,1.0
-      
-    //setup species list 
-    species = new string[num_species];
-    species[0] = "CH4";
-    species[1] = "O2";
-    species[2] = "CO2";
-    species[3] = "H2O";
-    species[4] = "N2";
-  }
-   
-  // 2step CH4 mechanism 
-  else if(react == "CH4_2STEP"){
-    //flag for hardcoded
-    reactset_flag = CH4_2STEP;
-    //set number of reactions & species
-    num_reactions = 2;
-    num_species = 6;
-    num_react_species = 5;
-    //allocate memory 
-    reactions = new React_data[num_reactions];
-    //set reaction coefficients
-    reactions[0].set_data("CH4_2step_1",2.6*1.443e13,0.0,(48400.0*CAL_TO_JOULE),0);
-    reactions[1].set_data("CH4_2step_2",pow(10.0,14.6),5.0e8,0.0,(40000.0*CAL_TO_JOULE),0);
-    
-    //setup species list 
-    species = new string[num_species];
-    species[0] = "CH4";
-    species[1] = "O2";
-    species[2] = "CO2";
-    species[3] = "H2O";
-    species[4] = "CO"; 
-    species[5] = "N2";
-  }
+// Cantera libraries
+#ifdef _CANTERA_VERSION
+#include <cantera/Cantera.h>      // main include
+#include <cantera/IdealGasMix.h>  // reacting, ideal gas mixture class
+#endif //_CANTERA_VERSION
 
-  /****************** HYDROGEN ***********************************/   
-  //1step H2 & O2
-  else if(react == "H2O2_1STEP"){    //UNTESTED !!!!!!!!
-    //flag for hardcoded
-    reactset_flag = H2O2_1STEP;
-    //set number of reactions & species
-    num_reactions = 2;
-    num_species = 4;
-    num_react_species = 3;
-    //allocate memory 
-    reactions = new React_data[num_reactions];
-    //set reaction coefficients
-    reactions[0].set_data("H2O2_1step_1",4.0e5,0.0,7.0*R_UNIVERSAL*1000.0,0);
+//Calorie to Joule conversion
+#define CAL_TO_JOULE 4.1868 // 4.1868 Joules = 1 calorie
+
+/************************************************************************
+ ***************** REACTION DATA CLASS **********************************
+  This class is another data container used for the Arhenius coefficients
+  used in caluclated the forward (kf) and backward (kb) reaction rates.
+
+  kf = A(T^n)exp( -E/RT)
+
+  kov = A(T^n)exp( -E/RT)[Fuel]^a[Oxidizer]^b
+
+  Be careful of units, need to get k in (m^3/(mol*s)) for 2 body.
+  and (m^6/(mol*s)) for 3rd body.  Most A coefficients are in terms
+  of cm^3/(mol*s) so be sure to check to units.  Also the 
+  if species concentrations are used, as in the kov, they are 
+  are dimensionalized and that is why in the kov member functions
+  below they are divided by 1e6.  Confusing yes, but that is the
+  way that data is presnted.
+ 
+    A : m^3/(mol*s) FYI 1e6cm^3 = 1m^3
+    Ea: J/mol
+
+************************************************************************
+************************************************************************/
+class React_data {
+private: 
+  string react; //reaction name
+
+  double A;  //three Arhenius coefficients
+  double Ab;
+  double n;
+  double E;
   
-    //setup species list 
-    species = new string[num_species];
-    species[0] = "H2";
-    species[1] = "O2";
-    species[2] = "H2O"; 
-    species[3] = "N2";
-  }
+  //for keq formulation
+  double nu_coef; //stoichmetric coefficients for Keq => Kc
 
-  /****************** HYDROGEN ***********************************/   
-  //2step H2 & O2
-  else if(react == "H2O2_2STEP"){
-    //flag for hardcoded
-    reactset_flag = H2O2_2STEP;
-    //set number of reactions & species
-    num_reactions = 2;
-    num_species = 5;
-    num_react_species = 4;
-    //allocate memory 
-    reactions = new React_data[num_reactions];
-    //set reaction coefficients
-    reactions[0].set_data("H2O2_2step_1",1.0,-10.0,4865.0*CAL_TO_JOULE,0);
-    reactions[1].set_data("H2O2_2step_2",1.0,-13.0,42000.0*CAL_TO_JOULE,1);
+protected:
+public:
+  //default constructor
+  // name, A ,b ,E
+  void set_data(string nam,double x,double y ,double z, int nu){
+    react=nam, A=x; n=y; E=z; nu_coef=nu;}
   
-    //setup species list 
-    species = new string[num_species];
-    species[0] = "H2";
-    species[1] = "O2";
-    species[2] = "OH";
-    species[3] = "H2O"; 
-    species[4] = "N2";
-  }
+  void set_data(string nam,double x, double xx, double y, double z, int nu)
+  { react=nam; A=x; Ab=xx; n=y; E=z; nu_coef=nu;}
   
-  else if(react == "H2O2_8STEP"){
-    //8Step H2 & O2
-    //flag for hardcoded
-    reactset_flag = H2O2_8STEP;
-    //set number of reactions & species
-    num_reactions = 8;
-    num_species = 7;
-    num_react_species = 6;
-    //allocate memory 
-    reactions = new React_data[num_reactions];
-    //set reaction coefficients
-    reactions[0].set_data("H2O2_8step_1",2.2e14,0   ,16800.0*CAL_TO_JOULE,0);
-    reactions[1].set_data("H2O2_8step_2",1.8e10,1.0 ,8900.0*CAL_TO_JOULE ,0);
-    reactions[2].set_data("H2O2_8step_3",2.2e13,0   ,5150.0*CAL_TO_JOULE ,0);
-    reactions[3].set_data("H2O2_8step_4",6.3e12,0   ,1090.0*CAL_TO_JOULE   ,0);
-    reactions[4].set_data("H2O2_8step_5",6.6e17,-1.0,0.0*CAL_TO_JOULE    ,1);
-    reactions[5].set_data("H2O2_8step_6",2.2e22,-2.0,0.0*CAL_TO_JOULE    ,1);
-    reactions[6].set_data("H2O2_8step_7",6.0e16,-0.6,0.0*CAL_TO_JOULE    ,1);
-    reactions[7].set_data("H2O2_8step_8",6.0e13,0   ,-1000.0*CAL_TO_JOULE  ,1);
+  //get reaction rate coefficients
+  double kf(const double &Temp) const;
+  double dkf_dT(const double &Temp) const;
+  double kf(const double &Temp, const double &H2, const  double &O2, const double &N2)const; //for H2&O2
+  double kb(const double &Temp) const;
+  double dkb_dT(const double &Temp) const;
 
-    species = new string[num_species];
-    species[0] = "O";
-    species[1] = "O2";
-    species[2] = "H";
-    species[3] = "H2"; 
-    species[4] = "H2O";
-    species[5] = "OH";
-    species[6] = "N2";
-  }
-  
-  // else error  
-  else{
-    cerr<<"\nReaction set "<<react<<" is not valid"<<endl;
-    exit(1);
-  }
+  template<class SOLN_pSTATE>  
+  double keq(const SOLN_pSTATE &W, const double &Temp) const;
 
-  //SETUP TEMP STORAGE 
-  if( react != "NO_REACTIONS"){
-    set_storage();
-  }
+  //Determine change in Gibbs free energy
+  template<class SOLN_pSTATE>  
+  double deltaG(const SOLN_pSTATE &W) const;
 
-} //end of set_reactions
+  string react_name()const{ return react;}
 
+  /* Input-output operators. */
+  friend ostream& operator << (ostream &out_file, const React_data &W);
+  friend istream& operator >> (istream &in_file,  React_data &W);
+};
 
-/***********************************************************************
-  Setup user defined species.  Basically copy it to a perminant
-  storage location so pointers can be used.
-***********************************************************************/
-void Reaction_set::set_species(string *spec, int num){
-  Deallocate();
-  num_species=num;
-  species = new string[num];
-  for(int i=0; i<num; i++){
-    species[i] = spec[i];
-  }
+/*************** forward reaction coef (kf) ****************************/
+inline double React_data::kf(const double &Temp) const{
+  return A*pow(Temp,n)*exp(-E/(R_UNIVERSAL*Temp));
 }
 
-/***********************************************************************
-  Setup user defined mechanisms.
+/****** derivative of forward reaction coef (kf) wrt to Temperature *********/
+inline double React_data::dkf_dT(const double &Temp) const{
+  return A*pow(Temp,n-1)*exp(-E/(R_UNIVERSAL*Temp))*(n + E/(R_UNIVERSAL*Temp));
+}
 
-  NOT FINISHED!!!!
-***********************************************************************/
-void Reaction_set::set_reactions(int &num_react,string* name, double* A,
-			   double* b, double* E){  
-  
-//   //flag for user defined
-//   reactset_flag=USER;
-//   //number of reactions in set
-//   num_reactions = num_react;   
-//   //allocate memory 
-//   reactions = new React_data[num_react];    
-//   //get each reaction set data
-//   for(int i=0; i<num_react; i++){
-//     reactions[i].set_data(name[i],A[i],b[i],E[i]);
-//   }
-  cout<<"\n USER REACTIONS NOT AVAILABE YET ";
-  cout<<"\n Please send money ";
-  exit(1);
-
-} //end of set_reactions
-
-
-/***********************************************************************
-  Load Cantera mechanisms.  A cantera IdealGasMix object is created
-  from the user supplied mechanism file and specific mechanism name.
-  Basically, Cantera has it's own parser for either chemkin (*.ck), 
-  or cantera (*.cti) formated mechanism files.  The IdealGasMix
-  stores the mechanism data (such as reaction constants, high/low 
-  pressure limits) and has member functions that allow for the 
-  computation of reaction rates.  
-***********************************************************************/
-#ifdef _CANTERA_VERSION
-void Reaction_set::ct_load_mechanism(string &mechanism_file_name, 
-				     string &mechanism_name) 
-{
-
-  // make sure all unused parameters are null
-  Deallocate();
-
-  //flag for cantera
-  reactset_flag = CANTERA;
-  
-  //create a new ideal gas mixture class
-  try {
-    ct_gas = new IdealGasMix(mechanism_file_name, mechanism_name);
+/*************** forward reaction kf for 2Step H2 ***********************/
+inline double React_data::kf(const double &Temp, const double &H2, const double &O2, const double &N2) const{
+  //equivalence ratio
+  double stoich = 4.0/(32.0+3.76*28.0);
+  double phi = (H2/(O2+N2))/stoich;
+  if( phi < TOLER){
+    phi = TOLER;
   }
-  catch (CanteraError) {
-    Cantera::showErrors();
+  double Astar=ZERO;
+
+  //using A for units conversion cm^3/mol*s -> m^3/mol*s;
+  if(react == "H2O2_2step_1"){                          
+    Astar = A*(8.917*phi + (31.433/phi) - 28.950)*1e47; 
+  } else if (react == "H2O2_2step_2"){ 
+    Astar = A*(2.0 + (1.333/phi) - 0.833*phi)*1e64; 
   }
 
-  //get the number of reactions and species
-  num_species = ct_gas->nSpecies();
-  num_react_species = num_species-1;
-  num_reactions = ct_gas->nReactions();
+//   cout<<endl<<phi<<" "<<A<<" "<<(-E/(R_UNIVERSAL*Temp))
+//       <<" "<<R_UNIVERSAL<<" "<<E<<" "<<Temp<<" "<<Astar*pow(Temp,n)*exp(-E/(R_UNIVERSAL*Temp));
 
-  //set the species names 
-  species = new string[num_species];
-  for(int index =0; index<num_species; index++){
-     species[index] = ct_gas->speciesName(index);
-  }
+  return Astar*pow(Temp,n)*exp(-E/(R_UNIVERSAL*Temp));
+}
 
-  //set the reaction system name
-  ct_mech_name = ct_gas->name();
-  ct_mech_file = mechanism_file_name;
-  Reaction_system = "CANTERA";
+/*************** backward reaction coef (kb) ****************************/
+inline double React_data::kb(const double &Temp) const{
+  return Ab*pow(Temp,n)*exp(-E/(R_UNIVERSAL*Temp));
+}
 
-  // allocate some temporary storage
-  set_storage();
+/****** derivative of backward reaction coef (kb) wrt to Temperature *********/
+inline double React_data::dkb_dT(const double &Temp) const{
+   return Ab*pow(Temp,n-1)*exp(-E/(R_UNIVERSAL*Temp))*(n + E/(R_UNIVERSAL*Temp));
+}
 
-} //end of ct_load_mechanism
-#endif //_CANTERA_VERSION
-
-
-/***********************************************************************
-  Use cantera to parse the input mass fraction string of the form
-      CH4:0.5, O2:0.5
-  All other species will be assumed to have 0 mass fractions.  Cantera
-  also normalizes the mass fractions to sum to unity.  Returns them
-  in an array.
-***********************************************************************/
-#ifdef _CANTERA_VERSION
-void Reaction_set::ct_parse_mass_string( const string& massFracStr, 
-					 double* massFracs) {
-
-  compositionMap xx;
-  int kk = ct_gas->nSpecies();
-  for (int k = 0; k < kk; k++) xx[ct_gas->speciesName(k)] = -1.0;
-  parseCompString(massFracStr, xx);
-  ct_gas->setMassFractionsByName(xx);
-  for(int index =0; index<num_species; index++){
-    massFracs[index] = ct_gas->massFraction(index);
-  }
-
-} // end of ct_parse_mass_string
-#endif //_CANTERA_VERSION
-
+/***************** equilibrium coef Keq ********************************/
+template<class SOLN_pSTATE>  
+inline double React_data::keq(const SOLN_pSTATE &W, const double& Temp) const{
+  // nu_coef is the stoichiometric coef. sum (Eqn 13.25, 13.26 Anderson)
+  // Kp or Keq has units of Pressure Pa( N/m^2) so need to change to 
+  // cgs units i.e *1e6
+  return pow(R_UNIVERSAL*Temp, nu_coef)*exp(-deltaG(W)/(R_UNIVERSAL*Temp))*1e6;
+}
 
 /**********************************************************************
    Determine the Gibbs free energy change 
@@ -279,7 +159,8 @@ void Reaction_set::ct_parse_mass_string( const string& massFracStr,
    
    Units:  J/mol
 ***********************************************************************/
-double React_data::deltaG(const Chem2D_pState &W) const{
+template<class SOLN_pSTATE>  
+inline double React_data::deltaG(const SOLN_pSTATE &W) const{
 
   //need a general and more efficient system here !!!! SN
   // deltaG = sum (( product Gs) - (react Gs))
@@ -314,6 +195,217 @@ double React_data::deltaG(const Chem2D_pState &W) const{
 	     
 }
 
+/**************** I/O Operators ***************************************/
+inline ostream &operator << (ostream &out_file, const React_data &W) {
+  out_file.setf(ios::scientific);
+  out_file <<"\n "<<W.react<<" A "<<W.A<<" n "<<W.n<<" E "<<W.E;
+  out_file.unsetf(ios::scientific);
+  return (out_file);
+}
+
+inline istream &operator >> (istream &in_file, React_data &W) {
+  in_file.setf(ios::skipws);
+  in_file >> W.react >> W.A >> W.n >> W.E;
+  in_file.unsetf(ios::skipws);
+  return (in_file);
+}
+
+
+/**************************************************************************
+********************* REACTIONS CLASS DEFINTION ***************************
+ This class uses the reaction data class as a storage container for
+ reading in the reaction mechanism being used and provides constructors
+ for performing calculations with the data.  
+
+ omega() returns the time rate of change of species c_num 
+ 
+***************************************************************************
+***************************************************************************/
+// Reaction system flags
+enum Reactions {NO_REACTIONS,
+		CH4_1STEP,        // CH4 1 step HARDCODED mechanisms
+		CH4_2STEP,        // CH4 2 step HARDCODED mechanisms
+		H2O2_1STEP,       // H2-O2 1 step HARDCODED mechanisms
+		H2O2_2STEP,       // H2-O2 2 step HARDCODED mechanisms
+		H2O2_8STEP,       // H2-O2 8 step HARDCODED mechanisms
+		CH4_15STEP_ARM2,  // CH4 HARDCODED mechanisms based on GRI 2.11
+		CH4_15STEP_ARM3,  // CH4 HARDCODED mechanisms based on GRI 3
+		USER,             // User defined flag
+		CANTERA };        // cantera flag
+
+
+class Reaction_set{
+
+private:  
+
+  //Temp vectors used during omega & dSwdU
+  double *kf; 
+  double *kb; 
+  double *M; 
+  double *c; 
+  double *c_denom; 
+  double *r; 
+
+protected:
+public: 
+  int reactset_flag;       //Reaction Set Flag
+  React_data *reactions;   //each reaction rate data
+  int num_reactions;       //number of reactions
+  int num_species;         //number of total species
+  int num_react_species;   //number of reacting species
+  string *species;         //species used in reactions
+  string Reaction_system;  //Reaction system name
+
+  // cantera related objects
+#ifdef _CANTERA_VERSION
+  string ct_mech_name;     //Reaction mechanism file path
+  string ct_mech_file;     //Reaction mechanism file path
+  IdealGasMix* ct_gas;     //the Cantera IdealGasMix object
+#endif
+
+  Reaction_set(){ 
+    reactset_flag=0; num_reactions=0; num_species=0; 
+    num_react_species=0; reactions = NULL; species = NULL; 
+    kf=NULL; kb=NULL; M=NULL; c=NULL; c_denom=NULL; r=NULL;
+#ifdef _CANTERA_VERSION
+    ct_gas=NULL;
+#endif
+  }
+                      
+  /******** Constructors *******************/
+  //for hardcoded reactions
+  void set_reactions(string &);
+  //for user defined
+  void set_species(string *, int);
+  void set_reactions(int &,string*,double*,double*,double*);
+
+  // cantera member functions
+#ifdef _CANTERA_VERSION
+  void ct_load_mechanism(string &, string &);
+  void ct_parse_mass_string( const string&, double* );
+#endif // _CANTERA_VERSION
+
+  //setup storage after num_reactions & num_species set.
+  void set_storage(void){
+    // for all cases but cantera case
+    if (reactset_flag != CANTERA) {
+      kf = new double[num_reactions];        
+      kb = new double[num_reactions];
+      M  = new double[num_react_species];
+      c  = new double[num_react_species];
+      c_denom = new double[num_react_species]; 
+    // else, cantera case
+    } else {
+      M  = new double[num_species];
+      c  = new double[num_species];
+      r  = new double[num_species]; 
+    }
+  }
+
+  //Operator Overloading 
+  Reaction_set& operator =(const Reaction_set &W);
+
+  /* Input-output operators. */
+  friend ostream& operator << (ostream &out_file, const Reaction_set &W);
+  //friend istream& operator >> (istream &in_file,  Reaction_set &W);
+
+  // time rate change of the species concentration 
+  template<class SOLN_pSTATE, class SOLN_cSTATE>
+  void omega( SOLN_cSTATE &U, const SOLN_pSTATE &W, const int Flow_Type ) const;
+
+  //Jacobian ( flag true for cfl calc)
+  template<class SOLN_pSTATE, class SOLN_cSTATE>
+  void dSwdU(DenseMatrix &dSwdU,const SOLN_pSTATE &W, const bool &CFL_flag, 
+	     const int Flow_Type, const int Solver_type) const;
+
+  //Jacobian computed using complex step method
+  template<class SOLN_pSTATE>
+  void Complex_Step_dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W) const;
+
+  // jacobian 
+  template<class SOLN_pSTATE>
+  void Finite_Difference_dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
+			       const int Flow_Type) const;
+
+  void Deallocate();
+
+  //destructor
+  ~Reaction_set(){Deallocate();};
+ 
+};
+
+
+/**************** Destructor *******************************************/
+inline void Reaction_set::Deallocate(){
+  //deallocate memory
+  if(reactions != NULL){  delete[] reactions; reactions = NULL;  }
+  if(species != NULL){    delete[] species;   species = NULL;  }
+  if(kf != NULL){  delete[] kf; kf = NULL;}
+  if(kb != NULL){  delete[] kb; kb = NULL;}
+  if(M != NULL){  delete[] M; M = NULL;}
+  if(c != NULL){  delete[] c; c = NULL;}
+  if(c_denom != NULL){  delete[] c_denom; c_denom = NULL;}
+  if(r != NULL){  delete[] r; r = NULL;}
+#ifdef _CANTERA_VERSION
+  if(ct_gas != NULL){ delete ct_gas; ct_gas = NULL; }
+#endif // _CANTERA_VERSION
+}
+
+
+/***************** Assignment ****************************************/
+inline Reaction_set& Reaction_set::operator =(const Reaction_set &W){
+  //self assignment protection
+  if( this != &W){   
+
+    // for all hard-coded and user cases
+    if (W.reactset_flag != CANTERA) {
+      string temp = W.Reaction_system;
+      //copy assignment
+      set_reactions(temp);
+    }
+    
+    // for cantera case
+#ifdef _CANTERA_VERSION
+    else {
+      string mechanism_file = W.ct_mech_file;
+      string mechanism_name = W.ct_mech_name;
+      ct_load_mechanism(mechanism_file, mechanism_name);
+    }
+#endif // _CANTERA_VERSION
+
+  } /* endif */
+  return (*this);
+}
+
+
+
+/**************** I/O Operators ***************************************/
+inline ostream &operator << (ostream &out_file, const Reaction_set &W) {
+  out_file.setf(ios::scientific);
+  out_file <<"\n "<<W.Reaction_system<<" "<<W.num_reactions
+	   <<"  "<<W.num_species<<" "<<W.num_react_species<<endl;  
+  //species
+  for(int i=0; i<W.num_species; i++){
+    out_file <<" "<<W.species[i];
+  }
+  //each reaction systems data
+  if(W.reactset_flag != NO_REACTIONS){ 
+    for(int i=0; i<W.num_reactions; i++){
+      out_file <<"\n "<<W.reactions[i];
+    }
+  }
+  out_file.unsetf(ios::scientific);
+  return (out_file);
+}
+
+// istream &operator >> (istream &in_file, Reaction_set &W) {
+//   in_file.setf(ios::skipws);
+//   in_file >> W.react >> W.A >> W.b >> W.E;
+//   in_file.unsetf(ios::skipws);
+//   return (in_file);
+// }
+
+
 /************************************************************************
   Calculates the concentration time rate of change of species from
   primitive state W using the general law of mass action.
@@ -326,12 +418,15 @@ double React_data::deltaG(const Chem2D_pState &W) const{
   Return units are  kg/m^3*s ie. rho*omega (kg/m^3)*(1/s)
 
 ************************************************************************/
-void Reaction_set::omega(Chem2D_cState &U, const Chem2D_pState &W,  const int Flow_Type ) const{
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+inline void Reaction_set::omega(SOLN_cSTATE &U, const SOLN_pSTATE &W,  const int Flow_Type ) const{
  
   double Temp = W.T();  //K
   double Press= W.p;    // [Pa]
+  double PressDyne = W.p*TEN; // N/m^2 -> dyne/cm^2
   double rho= W.rho/THOUSAND; //kg/m^3 -> g/cm^3 
   double a,b, ans(ZERO);
+  double *Wdot = NULL;
 
   // for all cases but cantera case
   if (reactset_flag != CANTERA) {
@@ -562,6 +657,41 @@ void Reaction_set::omega(Chem2D_cState &U, const Chem2D_pState &W,  const int Fl
    }
    break;
 
+
+    // 15 step CH4 based on GRI 2.11
+  case CH4_15STEP_ARM2:
+    // Wdot - mol/(cm^3*s)
+    Wdot = new double[num_species];
+
+    // compute reaction rates calling the subroutine CKWYP15STEP211
+    ckwyp15step211_(PressDyne, Temp, c, Wdot);
+    for (int i=0; i<num_react_species; ++i) {
+      // in kg/m^3*s   g/mol *(mol/cm^3*s)*1e3             
+      U.rhospec[i].c = M[i]*Wdot[i]*THOUSAND;
+    }
+
+    // clean up
+    delete[] Wdot; 
+    break;
+
+
+    // 15 step CH4 based on GRI 3
+  case CH4_15STEP_ARM3:
+    // Wdot - mol/(cm^3*s)
+    Wdot = new double[num_species];
+
+    // compute reaction rates calling the subroutine CKWYP15STEP3
+    ckwyp15step30_(PressDyne, Temp, c, Wdot);
+    for (int i=0; i<num_react_species; ++i) {
+      // in kg/m^3*s   g/mol *(mol/cm^3*s)*1e3             
+      U.rhospec[i].c = M[i]*Wdot[i]*THOUSAND;
+    }
+
+    // clean up
+    delete[] Wdot; 
+    break;
+
+
   //---------------------------------//
   //------------ CANTERA ------------//
   //---------------------------------//
@@ -616,9 +746,10 @@ void Reaction_set::omega(Chem2D_cState &U, const Chem2D_pState &W,  const int Fl
         if they go to ZERO, it will cause floating point exceptions
        (ie. Divison by zero);  
 ************************************************************************/
-void Reaction_set::dSwdU(DenseMatrix &dSwdU, const Chem2D_pState &W, 
-			 const bool &CFL_flag, const int Flow_Type,
-			 const int solver_type) const{
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W, 
+				const bool &CFL_flag, const int Flow_Type,
+				const int solver_type) const{
 
   /***************** Local Variables *****************/
   double Temp = W.T();
@@ -656,7 +787,7 @@ void Reaction_set::dSwdU(DenseMatrix &dSwdU, const Chem2D_pState &W,
     }
   } // endif - !CANTERA
 
-  int NUM_VAR = NUM_CHEM2D_VAR_SANS_SPECIES;
+  int NUM_VAR = W.NumVar() - W.ns;
   /*******************************************
    *  Reaction Mechanism Jacobians           *
    *                                         * 
@@ -780,8 +911,8 @@ void Reaction_set::dSwdU(DenseMatrix &dSwdU, const Chem2D_pState &W,
       }
  
       //The limiting case has been determined in Sw(...)
-      Chem2D_cState Sw_LAMINAR;
-      Chem2D_cState Sw_TURBULENT;
+      SOLN_cSTATE Sw_LAMINAR;
+      SOLN_cSTATE Sw_TURBULENT;
       Sw_LAMINAR = W.Sw(W.React.reactset_flag,FLOWTYPE_LAMINAR);
       Sw_TURBULENT= W.Sw(W.React.reactset_flag,FLOWTYPE_TURBULENT_RANS_K_OMEGA);//k epsilon such as.
       
@@ -1000,7 +1131,24 @@ void Reaction_set::dSwdU(DenseMatrix &dSwdU, const Chem2D_pState &W,
 			       [4]+kf[5]*rho*c[2]*c[4]*M[5]*M[0]*M[3]+kb[6]*c[4]*M[5]*M[0]*M[2]*M[3])/M[0]/M[2]/M[3]/M[4];    
       
     break;
+
+
+    // 15 step CH4 based on GRI 2.11
+  case CH4_15STEP_ARM2:
+    Complex_Step_dSwdU(dSwdU, W);
     
+    //cout << "\n Complex Step dSwdU: " << dSwdU;
+    //dSwdU.zero();
+    //Finite_Difference_dSwdU(dSwdU, W, Flow_Type, Simple_Chemistry);
+    //cout << "\n Finite Difference dSwdU: " << dSwdU;
+    break;
+
+
+    // 15 step CH4 based on GRI 3
+  case CH4_15STEP_ARM3:
+    Complex_Step_dSwdU(dSwdU, W);
+    break;
+
   //---------------------------------//
   //------------ CANTERA ------------//
   //---------------------------------//
@@ -1432,3 +1580,128 @@ void Reaction_set::dSwdU(DenseMatrix &dSwdU, const Chem2D_pState &W,
 
 //       dSwdU(NUM_VAR+4,NUM_VAR+4) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[4]-Cp*T*R[4]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1-kf[1]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25);
 
+
+/************************************************************************
+  Calculates the Jacobian of the Chemical Source terms with respect
+  to the conserved variables by using the complex step method
+  
+   dSwdU:  Matrix of source terms 
+************************************************************************/
+template<class SOLN_pSTATE>
+inline void Reaction_set::Complex_Step_dSwdU(DenseMatrix &dSwdU, 
+					     const SOLN_pSTATE &W) const {
+  const double TOL = 1.0E-15, eps = 1.0E-100;
+  cplx *Y, *M, *Wdot_perturbed;
+  int NUM_VAR = W.NumVar();
+  
+
+  //assert(num_species == W.ns);
+
+  // allocate 
+  Y = new cplx[num_species];  
+  M = new cplx[num_species];
+  Wdot_perturbed = new cplx[num_species]; 
+
+
+  // pressure in dyne/cm^2
+  cplx pressure(TEN*W.p, ZERO);
+  // temperature in K 
+  cplx temperature(W.T(), ZERO);
+
+  for (int i=0; i<W.ns; ++i) {
+    Y[i] = W.spec[i].c;    //( W.spec[i].c < TOL )  ?  TOL : W.spec[i].c;
+    M[i] = W.specdata[i].Mol_mass();  // kg/kg-mol
+    //Wdot_perturbed[i] = 0.0;
+  }
+
+  
+  int lower_index = NUM_VAR + 1 - W.ns;
+  cplx c_eps(0.0, eps);
+
+  for (int j=lower_index; j < NUM_VAR; ++j) {
+    if ( W.spec[j].c > TOL ) {
+
+      Y[j-lower_index] += c_eps;    
+
+      // compute the perturbed reaction rates moles/(cm**3*sec)
+      switch(reactset_flag) {
+      case CH4_15STEP_ARM2 :
+      	cplx15step211_(pressure, temperature, Y, Wdot_perturbed);
+	break;
+      case CH4_15STEP_ARM3 :
+	cplx15step30_(pressure, temperature, Y, Wdot_perturbed);
+	break;
+      default :
+        cplx15step30_(pressure, temperature, Y, Wdot_perturbed);
+	break;
+      }
+  
+      for (int i=lower_index; i < NUM_VAR; ++i) {
+	// in kg/m^3*s  ->  (kg/mol)*(mol/cm^3*s)*1e6 
+	Wdot_perturbed[i-lower_index] *= M[i-lower_index]*MILLION;
+
+	dSwdU(i-1, j-1) = imag( Wdot_perturbed[i-lower_index]/eps )/W.rho;
+	//Wdot_perturbed[i-lower_index] = (0.0, 0.0);
+      }
+      
+      // reset Y to its unperturbed value
+      Y[j-lower_index] -= c_eps;
+
+    } // end if
+  } // end for
+
+  // deallocate
+  delete[]  Y;
+  delete[]  M;
+  delete[]  Wdot_perturbed;
+
+}  // end Complex_Step_dSwdU
+
+
+/************************************************************************
+  Calculates the Jacobian of the Chemical Source terms with respect
+  to the conserved variables by using finite difference
+  
+   dSwdU:  Matrix of source terms 
+************************************************************************/
+template<class SOLN_pSTATE>
+inline void Reaction_set::Finite_Difference_dSwdU(DenseMatrix &dSwdU, 
+					     const SOLN_pSTATE &W,
+					     const int Flow_Type) const {
+  
+  const double b = numeric_limits<double>::epsilon();  // 1.0E-12;  
+  SOLN_pSTATE W1;
+  SOLN_pSTATE S1, S, Ulocal, U1, EPS;
+  int NUM_VAR = W.NumVar();
+  
+  int lower_index = NUM_VAR + 1 - W.ns;
+  
+  Ulocal = U(W);
+  S = W.Sw(W.React.reactset_flag, Flow_Type);
+
+  // Perturbation parameter (EPSILON)
+  for (int j=lower_index; j < NUM_VAR; ++j) {
+    EPS[j] = sqrt( b*fabs(Ulocal[j]) + b )/1000.0;
+  }
+  
+  U1 = Ulocal;
+  S1 = S;
+  for (int j=lower_index; j < NUM_VAR; ++j) {
+    if ( EPS[j] != 0.0 ) {
+      U1[j] += EPS[j];
+      W1 = W(U1);
+      S1 = W1.Sw(W1.React.reactset_flag, Flow_Type);    
+      for (int i=lower_index; i < NUM_VAR; ++i) {
+	dSwdU(i-1, j-1) = TwoPointFiniteDifference(S[i], S1[i], EPS[j]);
+      }
+      // reset U1 to U
+      U1 = Ulocal;
+    }
+  } // end for
+
+} // end  Finite_Difference_dSwdU
+
+
+
+
+#endif //REACTIONS_H

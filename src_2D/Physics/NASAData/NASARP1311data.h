@@ -40,15 +40,15 @@
 using namespace std;
 
 #ifndef _GAS_CONSTANTS_INCLUDED
-#include "../Physics/GasConstants.h"
+#include "../../Physics/GasConstants.h"
 #endif // _GAS_CONSTANTS_INCLUDED
 
 #ifndef _MATH_MACROS_INCLUDED
-#include "../Math/Math.h"
+#include "../../Math/Math.h"
 #endif // _MATH_MACROS_INCLUDED
 
 #ifndef _POLYFIT_H
-#include "../Polyfit/Polyfit.h"
+#include "../../Math/Polyfit/Polyfit.h"
 #endif  
 
 #include "LennardJones.h"

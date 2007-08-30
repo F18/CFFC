@@ -66,6 +66,7 @@ using namespace std;
 #include "Gaussian2D/Gaussian2DCartesian.h"
 #include "Gaussian2D/Gaussian2DQuad.h"
 #include "HighTemp2D/HighTemp2DQuad.h"
+#include "Rte2D/Rte2DQuad.h"
 #include "MPI/MPI.h"
 #include "ICEM/ICEMCFD.h"
 
@@ -327,16 +328,15 @@ int main(int num_arg, char *arg_ptr[]) {
 			  	            batch_flag);
 
   /* Gaussian2D_Cartesian */
-  if (strcmp(Equation_Type, "Gaussian2D_Cartesian") == 0){
+  } else if (strcmp(Equation_Type, "Gaussian2D_Cartesian") == 0) {
     if(CFFC_Primary_MPI_Processor()) {
       error_flag = Gaussian2DCartesianSolver(Input_File_Name_ptr,
 					     batch_flag);
     } /* endif */
     CFFC_Broadcast_MPI(&error_flag, 1);
-  }
 
   /* Gaussian2D */
-  } else if(strcmp(Equation_Type, "Gaussian2D") == 0){
+  } else if(strcmp(Equation_Type, "Gaussian2D") == 0) {
       error_flag = Gaussian2DQuadSolver(Input_File_Name_ptr,
 	  			        batch_flag);
 
@@ -344,6 +344,11 @@ int main(int num_arg, char *arg_ptr[]) {
   } else if (strcmp(Equation_Type, "HighTemp2D") == 0) {
       error_flag = HighTemp2DQuadSolver(Input_File_Name_ptr,
 			  	        batch_flag);
+
+  /* Rte2D */
+  } else if (strcmp(Equation_Type, "Rte2D") == 0) {
+      error_flag = Rte2DQuadSolver(Input_File_Name_ptr,
+                                   batch_flag);
 
   } /* endif */
 

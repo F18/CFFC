@@ -5229,42 +5229,6 @@ int dUdt_Space_March(Rte2D_Quad_Block &SolnBlk,
 
 }
 
-/*********************************************************
- * Routine: Rotation_Matrix2                             *
- *                                                       *
- * This function returns either the rotation matrix, A,  *
- * or the inverse of A.                                  *
- *                                                       *
- * Note: A_matrix = 1 for returning A.                   *
- *                = 0 for returning inverse of A.        *
- *                                                       *
- *********************************************************/
-DenseMatrix Rotation_Matrix2(Vector2D nface, int A_matrix) 
-{
-  double cos_angle = nface.x; 
-  double sin_angle = nface.y;
-    
-  DenseMatrix mat(4,4);
-  mat.identity();
-
-  if (A_matrix) {
-    // Rotation Matrix, A 
-    mat(1,1) = cos_angle;
-    mat(1,2) = sin_angle;
-    mat(2,1) = -sin_angle;
-    mat(2,2) = cos_angle;
-  } else {
-    // Rotation Matrix, Inv A 
-    mat(1,1) = cos_angle;
-    mat(1,2) = -sin_angle;
-    mat(2,1) = sin_angle;
-    mat(2,2) = cos_angle;
-  } /* endif */
-
-  return mat;
-
-} /* End of Rotation_Matrix. */
-
 /********************************************************
  * Routine: Residual_Jacobian                           *
  *                                                      *
