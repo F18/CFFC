@@ -107,8 +107,14 @@ public:
   //@}
 
   //@{ @name Reconstruction type indicator and related input parameters:
-  char Reconstruction_Type[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
-  int i_Reconstruction;
+  char Reconstruction_Type[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D]; /*!< Spatial reconstruction type. */
+  int i_Reconstruction;		/*!< Index to store the reconstruction type. */
+  int i_ReconstructionMethod;	/*!< Index to store the reconstruction method. */
+  int Space_Accuracy;		/*!< Parameter to show the order of accuracy in space. */
+  double CENO_Cutoff;		/*!< Value used by the CENO reconstruction to differentiate 
+				 between smooth and non-smooth solution content.*/
+  double CENO_RefinementUnits;	/*!< Parameter used in the AMR process when the CENO approach is employed. */
+  int IncludeHighOrderBoundariesRepresentation;	/*!< Flag for including or excluding high-order BCs. */
   //@}
 
   //@{ @name Limiter type indicator and related input parameters:
@@ -126,15 +132,22 @@ public:
   char ICs_Type[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   int i_ICs;
   AdvectDiffuse2D_State Uo, U1, U2;
+  FunctionType2D ExactSolution;
+  int ExactSolution_Flag; 	        /*!< Flag used by MPI and RESTART to set the ExactSolution pointer. */
+  AdvectDiffuse2D_State RefU;		/*!< Reference state, used by CENO to normalize the
+					   variables in the computation of the smoothness indicator. */
   //@}
 
   //@{ @name Diffusion coefficient, advection speeds, and relaxation time:
   double Kappa, a, b, Tau;
+  FunctionType2D KappaVar;          /*!< Function pointer which is set to the diffusion coefficient variation. */
+  FunctionType2D SourceTermVar;	    /*!< Function pointer which is set to the source term variation. */
   //@}
 
   //@{ @name Convection velocity field type parameters:
   char Velocity_Field_Type[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   int i_Velocity_Field;
+  FunctionType2D VelocityField;	    /*!< Function pointer which is set to the velocity field. */
   //@}
 
   //@{ @name Flow geometry (planar or axisymmetric):
@@ -159,6 +172,8 @@ public:
   double X_Scale, X_Rotate;
   Vector2D X_Shift;
   char **ICEMCFD_FileNames;
+  int IterationsOfInteriorNodesDisturbancies; /* <! Number of iterations of disturbing the mesh
+						 (create an unsmooth interior mesh). */
   //@}
 
   //@{ @name Mesh stretching factor.

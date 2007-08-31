@@ -994,22 +994,43 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
  ********************************************************/
 void Get_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
 
-    int i;
-    char buffer[256];
+  int i, LineSize, IndexFirstChar(0);
+  char buffer[256], ControlParameter[256];
+  
+  // Initialize ControlParameter and IP.Next_Control_Parameter
+  ControlParameter[0] = '\0';
+  strcpy(IP.Next_Control_Parameter, ControlParameter);
 
+  while (!IP.Input_File.getline(buffer, sizeof(buffer)).eof() ){
+    
+    // process the line 
     IP.Line_Number = IP.Line_Number + 1;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-    i = 0;
-    if (buffer[0] != '#') {
-       while (1) {
-          if (buffer[i] == ' ' || buffer[i] == '=' ) break;
-          i = i + 1;
-          if (i > strlen(buffer) ) break;
-       } /* endwhile */
-       buffer[i] = '\0';
-    } /* endif */
-    strcpy(IP.Next_Control_Parameter, buffer);
-
+    LineSize = IP.Input_File.gcount(); // The size of the line. Last character is "\0"
+    
+    for (i=0; i<=LineSize; ++i){
+      if (buffer[i] != ' ' && buffer[i] != '\t'){	// determine the index of the first character different than 'space'
+	IndexFirstChar = i;
+	break;
+      }
+    }
+    
+    if ( buffer[IndexFirstChar] != '#' && buffer[IndexFirstChar] != '\0'){
+      // If the first character different than 'space' is also different than '#' or '\n',
+      // then the line is not a comment or empty line.
+      for(i=IndexFirstChar; i<LineSize; ++i){
+	// get the ControlParameter
+	if (buffer[i] == ' ' || buffer[i] == '=' || buffer[i] == '\t'){
+	  ControlParameter[i-IndexFirstChar] = '\0';
+	  break;
+	} else {
+	  ControlParameter[i-IndexFirstChar] = buffer[i];
+	}
+      }
+      
+      strcpy(IP.Next_Control_Parameter, ControlParameter);
+      break;
+    }
+  }//endwhile
 }
 
 /********************************************************
@@ -1469,14 +1490,6 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Kappa < ZERO) {
           i_command = INVALID_INPUT_VALUE;
-       } else {
-          IP.Uo = AdvectDiffuse2D_State(ONE,
- 	                                IP.a,
-                                        IP.b,
-	                                IP.Kappa,
-                                        IP.Tau);
-          IP.U1 = IP.Uo; IP.U1.u = ZERO;
-          IP.U2 = IP.Uo; IP.U2.u = -ONE;
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "a") == 0) {
@@ -1484,26 +1497,12 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.a;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       IP.Uo = AdvectDiffuse2D_State(ONE,
-                                     IP.a,
-                                     IP.b,
-                                     IP.Kappa,
-                                     IP.Tau);
-       IP.U1 = IP.Uo; IP.U1.u = ZERO;
-       IP.U2 = IP.Uo; IP.U2.u = -ONE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "b") == 0) {
        i_command = 42;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.b;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       IP.Uo = AdvectDiffuse2D_State(ONE,
-                                     IP.a,
-                                     IP.b,
-                                     IP.Kappa,
-                                     IP.Tau);
-       IP.U1 = IP.Uo; IP.U1.u = ZERO;
-       IP.U2 = IP.Uo; IP.U2.u = -ONE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Tau") == 0) {
        i_command = 43;
@@ -1512,14 +1511,6 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Tau < ZERO) {
           i_command = INVALID_INPUT_VALUE;
-       } else {
-          IP.Uo = AdvectDiffuse2D_State(ONE,
- 	                                IP.a,
-                                        IP.b,
-	                                IP.Kappa,
-                                        IP.Tau);
-          IP.U1 = IP.Uo; IP.U1.u = ZERO;
-          IP.U2 = IP.Uo; IP.U2.u = -ONE;
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Blocks_Per_Processor") == 0) {
@@ -2074,11 +2065,11 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter, "Write_Output_Mesh_Cells") == 0) {
        i_command = WRITE_OUTPUT_GRID_CELLS_CODE;
 
-    } else if (IP.Next_Control_Parameter[0] == '#') {
-       i_command = COMMENT_CODE;
-
     } else if (strcmp(IP.Next_Control_Parameter, "Refine_Grid") == 0) {
        i_command = REFINE_GRID_CODE;
+
+    } else if (IP.Next_Control_Parameter[0] == '#') {
+       i_command = COMMENT_CODE;
 
     } else {
        i_command = INVALID_INPUT_CODE;
@@ -2119,7 +2110,7 @@ int Process_Input_Control_Parameter_File(AdvectDiffuse2D_Input_Parameters &Input
     /* Open the input file containing the input parameters. */
 
     Open_Input_File(Input_Parameters);
-    error_flag = Input_Parameters.Input_File.bad();
+    error_flag = !Input_Parameters.Input_File.is_open();
 
     if (error_flag) {
        cout << "\n AdvectDiffuse2D ERROR: Unable to open AdvectDiffuse2D input data file.\n";
@@ -2156,6 +2147,21 @@ int Process_Input_Control_Parameter_File(AdvectDiffuse2D_Input_Parameters &Input
 	return (error_flag);
       }
     }
+
+    // Set reference states
+    // Uo state
+    Input_Parameters.Uo = AdvectDiffuse2D_State(ONE,
+						Input_Parameters.a,
+						Input_Parameters.b,
+						Input_Parameters.Kappa,
+						Input_Parameters.Tau);
+    // U1 state
+    Input_Parameters.U1 = Input_Parameters.Uo;
+    Input_Parameters.U1.u = ZERO;
+
+    // U2 state
+    Input_Parameters.U2 = Input_Parameters.Uo;
+    Input_Parameters.U2.u = -ONE;
 
     /* Initial processing of input control parameters complete.  
        Return the error indicator flag. */

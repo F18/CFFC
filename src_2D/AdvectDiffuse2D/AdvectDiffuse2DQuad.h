@@ -38,6 +38,10 @@
 #include "../ICEM/ICEMCFD.h"
 #endif // _ICEMCFD_INCLUDED
 
+#ifndef _SYSTEM_LINUX_INCLUDED
+#include "../System/System_Linux.h"
+#endif // _GAUSSIAN2D_INPUT_INCLUDED
+
 /* Define the structures and classes. */
 
 #define	NUMBER_OF_RESIDUAL_VECTORS_ADVECTDIFFUSE2D    3
