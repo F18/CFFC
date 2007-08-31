@@ -266,6 +266,9 @@ class LESPremixed2D_pState {
    //Copy constructor, cheaper than = operator
    void Copy(const LESPremixed2D_pState &W);
 
+   // return the number of variables - number of species
+   int NumVarSansSpecies() const { return NUM_VAR_LESPREMIXED2D-ns; }
+
    /*************** VACUUM OPERATOR *********************/
    void Vacuum(){ rho=ZERO; v.zero(); p=ZERO;
      if (nscal) for(int i=0; i<nscal; ++i) scalar[i] = ZERO;
@@ -626,11 +629,28 @@ class LESPremixed2D_pState {
                  rho(d), rhov(V), E(En)
                  { rhoscalar = NULL; set_initial_values_scal(rhoscal);  rhospecnull();   set_initial_values(rhomfrac); }
 
+   // WARNING - automatic type conversion
+   LESPremixed2D_cState(const LESPremixed2D_pState &W) : rho(W.rho), rhov(W.rhov()),
+		   E(W.E()), tau(W.tau), qflux(W.qflux), lambda(W.lambda),
+		   theta(W.theta), 
+#ifdef THICKENED_FLAME_ON
+		   flame(W.flame)
+#endif		   
+   {
+     for(int i=0; i<W.ns; ++i){
+       rhospec[i].c = W.rho*W.spec[i].c;
+       rhospec[i].gradc = W.rho*W.spec[i].gradc;
+       rhospec[i].diffusion_coef = W.rho*W.spec[i].diffusion_coef;
+     }
+     if(nscal) for(int i=0; i<nscal; ++i) rhoscalar[i] = W.rho*W.scalar[i];    
+   }
+
    //this is needed for the operator overload returns!!!!
    LESPremixed2D_cState(const LESPremixed2D_cState &U): rho(U.rho), rhov(U.rhov), E(U.E),
 		                  tau(U.tau), qflux(U.qflux), lambda(U.lambda), theta(U.theta)
 		                  { rhoscalar = NULL; set_initial_values_scal(U.rhoscalar); 
 				    rhospecnull(); set_initial_values(U.rhospec); }
+
 
    //read in ns species data, call only once as its static
    void set_species_data(const int &, const int &, const string *, const char *,
@@ -1659,15 +1679,6 @@ inline LESPremixed2D_pState W(const LESPremixed2D_cState &U) {
 
   return Temp;
 }
-
-/*********************************************************************************
- *********************************************************************************
-  Inlcude specializations of Reactions class.  This is here as a workarround
-  because of the cross dependancy issues between 'LESPremixed2DState' and 
-  'Reaction_set'.  Enjoy.
- *********************************************************************************
- *********************************************************************************/
-#include "LESPremixed2DReactions.h"
 
 
 /*********************************************************************************

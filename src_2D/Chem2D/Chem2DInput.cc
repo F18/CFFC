@@ -2423,8 +2423,6 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter, "Cantera_Reaction_Mechanism") == 0) {
        i_command = 202;
 
-#ifdef _CANTERA_VERSION
-
        Get_Next_Input_Control_Parameter(IP);
        IP.Deallocate();  //DEALLOCATE BEFORE CHANGING num_species
        int flag =0;
@@ -2501,13 +2499,6 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	 IP.Line_Number = IP.Line_Number + 1 ;
 	 IP.Wo.React.ct_parse_mass_string(buffer, IP.mass_fractions);
 
-	 //check to make sure it adds to 1 (just in case)
-	 double temp=0.0;
-	 for(int i=0; i<IP.num_species; i++) temp += IP.mass_fractions[i];
-	 if(temp < ONE-MICRO || temp > ONE+MICRO){ 
-	   cout<<"\n Mass Fractions summed to "<<temp<<". Should sum to 1\n";
-	   i_command = INVALID_INPUT_VALUE;
-	 }
 	 //Set inital Values; 
 	 IP.Wo.set_initial_values(IP.mass_fractions);  
 	 IP.Uo.set_initial_values(IP.mass_fractions);  
@@ -2522,12 +2513,6 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	 IP.Uo = U(IP.Wo);
 	 IP.Line_Number = IP.Line_Number - 1 ;
        }
-
-#else
-       // _CANTERA_VERSION flag not set
-       cerr <<endl<<IP.Next_Control_Parameter<<"\n CANTERA_VERSION compile directive not set.\n";
-       exit(-1);
-#endif // _CANTERA_VERSION
 
       /******************************************/
       /**** NON REACTING, BUT MULTIPLE GASES ****/

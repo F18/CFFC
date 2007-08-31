@@ -2,7 +2,6 @@
 # Makefile for CFFC (2D version)
 #
 # Computational Framework for Fluids and Combustion (CFFC)
-#
 
 #
 # Set CFFC directory location which can be overridden by 

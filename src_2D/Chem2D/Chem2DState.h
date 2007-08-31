@@ -238,8 +238,8 @@ class Chem2D_pState {
    //Copy construtor, cheaper than = operator
    void Copy(const Chem2D_pState &W);
 
-   // return the number of variables
-   int NumVar() const { return NUM_VAR_CHEM2D; }
+   // return the number of variables - number of species
+   int NumVarSansSpecies() const { return NUM_CHEM2D_VAR_SANS_SPECIES; }
 
    /*************** VACUUM OPERATOR *********************/
    void Vacuum(){ rho=ZERO; v.zero(); p=ZERO; k=ZERO; omega = ZERO; 
@@ -593,6 +593,20 @@ class Chem2D_pState {
  		const double &domega, const Species *rhomfrac): 
                  rho(d), rhov(V), E(En), rhok(dk), rhoomega(domega)
                  { rhospecnull();   set_initial_values(rhomfrac); }
+		 
+   // WARNING - automatic type conversion
+   Chem2D_cState(const Chem2D_pState &W) :  rho(W.rho), rhov(W.rhov()),
+		   E(W.E()), rhok(W.rho*W.k), rhoomega(W.rho*W.omega),
+		   tau(W.tau), qflux(W.qflux), lambda(W.lambda), theta(W.theta)
+   {   
+     for(int i=0; i<W.ns; i++){
+       rhospec[i].c = W.rho*W.spec[i].c;
+       rhospec[i].gradc = W.rho*W.spec[i].gradc;
+       rhospec[i].diffusion_coef = W.rho*W.spec[i].diffusion_coef;
+     }  
+   }
+
+
 
    //this is needed for the operator overload returns!!!!
    Chem2D_cState(const Chem2D_cState &U): rho(U.rho), rhov(U.rhov), E(U.E), rhok(U.rhok), rhoomega(U.rhoomega),
@@ -1009,6 +1023,11 @@ inline double Chem2D_pState::SpecCon(int i) const{
   Gs = Hs - TS
   Gs(ps=1) = Gs - R_UNIVERSAL*T*ln(ps)  //for data not at 1atm
   ps = cs(M/Ms)*p
+
+  NEVER USE THIS FUNCTION : If you are looping through the
+  species and computing the Gibbs free energy, you do an
+  EXPENSIVE T() calculation for every species !!!! Even 
+  though T() does not change.
 ***********************************************************/
 inline double Chem2D_pState::Gibbs(int species) const{
   double Temp = T(); 
