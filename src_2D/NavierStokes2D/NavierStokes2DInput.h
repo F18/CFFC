@@ -262,7 +262,7 @@ public:
   //! Bounding-box for bounding-box mesh refinement.
   Vector2D AMR_Xmin, AMR_Xmax;
   //! Morton Re-Ordering
-	int Morton, Morton_Reordering_Frequency;
+  int Morton, Morton_Reordering_Frequency;
   //! Smooth quad block flag:
   int i_Smooth_Quad_Block;
   //@}

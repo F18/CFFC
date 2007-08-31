@@ -449,13 +449,13 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
   if (Input_Parameters.Morton) {
     if (!batch_flag) { cout << "\n\n Applying Morton re-ordering algorithm to initial solution blocks. "; }
     error_flag = Morton_ReOrdering_of_Solution_Blocks(QuadTree, 
-        List_of_Global_Solution_Blocks, 
-        List_of_Local_Solution_Blocks, 
-        Local_SolnBlk, 
-        Input_Parameters, 
-        number_of_time_steps, 
-        Time, 
-        processor_cpu_time); 
+                                                      List_of_Global_Solution_Blocks, 
+                                                      List_of_Local_Solution_Blocks, 
+                                                      Local_SolnBlk, 
+                                                      Input_Parameters, 
+                                                      number_of_time_steps, 
+                                                      Time, 
+                                                      processor_cpu_time); 
     if (error_flag) {
       cout <<"\n NavierStokes2D ERROR: Morton re-ordering error on processor "
         << List_of_Local_Solution_Blocks.ThisCPU << ".\n";
@@ -465,8 +465,8 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 
     if (!batch_flag) { cout << "\n Outputting space filling curve showing block loading for CPUs."; }
     Morton_SFC_Output_Tecplot(Local_SolnBlk, 
-        Input_Parameters, 
-        List_of_Local_Solution_Blocks);
+                              Input_Parameters, 
+                              List_of_Local_Solution_Blocks);
   } // End of Morton Re-ordering
 
   if (command_flag == EXECUTE_ZERO_STEPS_CODE) {
@@ -643,35 +643,35 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	  }
         }
 
-    // Periodically re-order the solution blocks on the processors
-    // by applying the Morton ordering space filling curve algorithm.
-    if (Input_Parameters.Morton &&
-        !first_step &&
-        number_of_time_steps % Input_Parameters.Morton_Reordering_Frequency == 0) {
-      if (!batch_flag) {
-        cout << "\n\n Applying Morton re-ordering algorithm to solution blocks at n = "
-          << number_of_time_steps << ".";
-      }
-      error_flag = Morton_ReOrdering_of_Solution_Blocks(QuadTree, 
-          List_of_Global_Solution_Blocks, 
-          List_of_Local_Solution_Blocks, 
-          Local_SolnBlk, 
-          Input_Parameters, 
-          number_of_time_steps, 
-          Time, 
-          processor_cpu_time); 
-      if (error_flag) {
-        cout <<"\n NavierStokes2D ERROR: Morton re-ordering error on processor "
-          << List_of_Local_Solution_Blocks.ThisCPU << ".\n";
-      } 
-      error_flag = CFFC_OR_MPI(error_flag);
-      if (error_flag) { return error_flag; }
+        // Periodically re-order the solution blocks on the processors
+        // by applying the Morton ordering space filling curve algorithm.
+        if (Input_Parameters.Morton &&
+            !first_step &&
+            number_of_time_steps % Input_Parameters.Morton_Reordering_Frequency == 0) {
+          if (!batch_flag) {
+            cout << "\n\n Applying Morton re-ordering algorithm to solution blocks at n = "
+                 << number_of_time_steps << ".";
+          }
+          error_flag = Morton_ReOrdering_of_Solution_Blocks(QuadTree, 
+                                                            List_of_Global_Solution_Blocks, 
+                                                            List_of_Local_Solution_Blocks, 
+                                                            Local_SolnBlk, 
+                                                            Input_Parameters, 
+                                                            number_of_time_steps, 
+                                                            Time, 
+                                                            processor_cpu_time); 
+         if (error_flag) {
+            cout <<"\n NavierStokes2D ERROR: Morton re-ordering error on processor "
+                 << List_of_Local_Solution_Blocks.ThisCPU << ".\n";
+          } 
+          error_flag = CFFC_OR_MPI(error_flag);
+          if (error_flag) { return error_flag; }
 
-      if (!batch_flag) { cout << "\n Outputting space filling curve showing block loading for CPUs."; }
-      Morton_SFC_Output_Tecplot(Local_SolnBlk, 
-          Input_Parameters, 
-          List_of_Local_Solution_Blocks);
-    } // End of Morton Re-ordering
+          if (!batch_flag) { cout << "\n Outputting space filling curve showing block loading for CPUs."; }
+          Morton_SFC_Output_Tecplot(Local_SolnBlk, 
+                                    Input_Parameters, 
+                                    List_of_Local_Solution_Blocks);
+        } // End of Morton Re-ordering
 
 	// Determine local and global time steps.
 	dTime = CFL(Local_SolnBlk,List_of_Local_Solution_Blocks,Input_Parameters);
@@ -1010,7 +1010,6 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 
   if (!batch_flag) { 
     int tmpp = cout.precision(); cout.precision(5);
-
     cout << "\n |-----------------------------------------------------------";
     cout << "\n |  ";
     cout << "\n |   Solution Computational Timings:";
@@ -1030,20 +1029,26 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 
     if (Input_Parameters.i_ICs != IC_RESTART &&
         Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
-      cout<<"\n Startup CPU Time  = " << setw(8) << total_cpu_time.min() - NKS_total_cpu_time.min() << "  minutes";
-      cout<<"\n NKS CPU Time      = " << setw(8) << NKS_total_cpu_time.min() << "  minutes";
+       cout <<"\n Startup CPU Time  = " << setw(8) 
+            << total_cpu_time.min() - NKS_total_cpu_time.min() << "  minutes";
+       cout <<"\n NKS CPU Time      = " << setw(8) 
+            << NKS_total_cpu_time.min() << "  minutes";
     }
-    cout<<"\n Total CPU Time    = " << setw(8) << total_cpu_time.min() << "  minutes";
+    cout <<"\n Total CPU Time    = " << setw(8) 
+         << total_cpu_time.min() << "  minutes";
 
     if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
-      cout<<"\n Startup Clock Time= " << setw(8) << difftime(end_explicit,start_explicit)/60.0 << "  minutes";
-      cout<<"\n NKS Clock Time    = " << setw(8) << difftime(end_NKS,start_NKS)/60.0 << "  minutes";
+        cout <<"\n Startup Clock Time= " << setw(8) 
+             << difftime(end_explicit,start_explicit)/60.0 << "  minutes";
+        cout <<"\n NKS Clock Time    = " << setw(8) 
+             << difftime(end_NKS,start_NKS)/60.0 << "  minutes";
     }
-    cout<<"\n Total Clock Time  = " << setw(8) << difftime(end_NKS,start_explicit)/60.0 << "  minutes";
+    cout <<"\n Total Clock Time  = " << setw(8) 
+         << difftime(end_NKS,start_explicit)/60.0 << "  minutes";
 
-    cout<<"\n ----------------------------------------------------------------";
-    cout<<"\n ----------------------------------------------------------------";
-    cout<<"\n ----------------------------------------------------------------\n";
+    cout <<"\n ----------------------------------------------------------------";
+    cout <<"\n ----------------------------------------------------------------";
+    cout <<"\n ----------------------------------------------------------------\n";
     cout.precision(tmpp);
   } 
 
@@ -1225,16 +1230,16 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
     } else if (command_flag == MORTON_ORDERING_CODE) {
       if (!batch_flag) { cout << "\n\n Applying Morton re-ordering algorithm. "; }
       error_flag = Morton_ReOrdering_of_Solution_Blocks(QuadTree, 
-          List_of_Global_Solution_Blocks, 
-          List_of_Local_Solution_Blocks, 
-          Local_SolnBlk, 
-          Input_Parameters, 
-          number_of_time_steps, 
-          Time, 
-          processor_cpu_time); 
+                                                        List_of_Global_Solution_Blocks, 
+                                                        List_of_Local_Solution_Blocks, 
+                                                        Local_SolnBlk, 
+                                                        Input_Parameters, 
+                                                        number_of_time_steps, 
+                                                        Time, 
+                                                        processor_cpu_time); 
       if (error_flag) {
         cout <<"\n NavierStokes2D ERROR: Morton re-ordering error on processor "
-          << List_of_Local_Solution_Blocks.ThisCPU << ".\n";
+             << List_of_Local_Solution_Blocks.ThisCPU << ".\n";
       } 
       error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) { return error_flag; }
@@ -1244,8 +1249,8 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 
       if (!batch_flag) { cout << "\n Outputting space filling curve showing block loading for CPUs."; }
       Morton_SFC_Output_Tecplot(Local_SolnBlk, 
-          Input_Parameters, 
-          List_of_Local_Solution_Blocks);
+                                Input_Parameters, 
+                                List_of_Local_Solution_Blocks);
 
     } else if (command_flag == WRITE_OUTPUT_CODE) {
       bool output_multigrid = false;
@@ -1269,9 +1274,9 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       }
       if (error_flag) {
         cout << "\n NavierStokes2D ERROR: Unable to open NavierStokes2D output data file(s) "
-           << "on processor "
-           << List_of_Local_Solution_Blocks.ThisCPU
-           << "." << endl;
+             << "on processor "
+             << List_of_Local_Solution_Blocks.ThisCPU
+             << "." << endl;
       }
       error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
@@ -1298,9 +1303,9 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       }
       if (error_flag) {
         cout << "\n NavierStokes2D ERROR: Unable to open NavierStokes2D cell output data file(s) "
-          << "on processor "
-          << List_of_Local_Solution_Blocks.ThisCPU
-          << "." << endl;
+             << "on processor "
+             << List_of_Local_Solution_Blocks.ThisCPU
+             << "." << endl;
       }
       error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;

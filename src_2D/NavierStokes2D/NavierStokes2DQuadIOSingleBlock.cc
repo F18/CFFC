@@ -92,7 +92,7 @@ void Output_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
 	       << "\"ell\" \\ \n"
 	       << "\"p_modified\" \\ \n";
     }
-		Out_File << "\"Rex\" \\ \n";
+    Out_File << "\"Rex\" \\ \n";
   }
 
   Out_File << "ZONE T =  \"Block Number = " << Block_Number

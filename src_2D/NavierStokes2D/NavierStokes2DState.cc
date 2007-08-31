@@ -3420,7 +3420,7 @@ NavierStokes2D_cState ViscousFluxDiamondPath_n(const Vector2D &X,
 					       const Vector2D &norm_dir,
 					       const int &Axisymmetric,
 					       const int &stencil_flag,
-								 NavierStokes2D_pState &dWdx, NavierStokes2D_pState &dWdy) {
+                                               NavierStokes2D_pState &dWdx, NavierStokes2D_pState &dWdy) {
 
   if (stencil_flag == DIAMONDPATH_NONE) return NavierStokes2D_cState(ZERO,ZERO,ZERO,ZERO,ZERO,ZERO);
 
@@ -3505,13 +3505,13 @@ NavierStokes2D_cState ViscousFluxDiamondPath_n(const Vector2D &X,
 
   }
 
-	if (stencil_flag == DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX ||
-			stencil_flag == DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL) {
-		dWdx = dWdxl; dWdy = dWdyl;
-	} else if (stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX ||
-			stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL) {
-		dWdx = dWdxr; dWdy = dWdyr;
-	}
+  if (stencil_flag == DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX ||
+      stencil_flag == DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL) {
+    dWdx = dWdxl; dWdy = dWdyl;
+  } else if (stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX ||
+  	     stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL) {
+    dWdx = dWdxr; dWdy = dWdyr;
+  }
 
   // Return the viscous flux.
   return Flux;
@@ -3541,9 +3541,9 @@ NavierStokes2D_cState ViscousFluxHybrid_n(const Vector2D &X,
 					  const int &Axisymmetric) {
 	NavierStokes2D_pState dWdx, dWdy;
 	return ViscousFluxHybrid_n(X,
-			W, X1, W1, dW1dx, dW1dy, X2, W2, dW2dx, dW2dy, 
-			norm_dir, Axisymmetric,
-			dWdx, dWdy);
+		 	           W, X1, W1, dW1dx, dW1dy, X2, W2, dW2dx, dW2dy, 
+			           norm_dir, Axisymmetric,
+			           dWdx, dWdy);
 }
 
 NavierStokes2D_cState ViscousFluxHybrid_n(const Vector2D &X,
@@ -3705,29 +3705,6 @@ double ShearStress(const NavierStokes2D_pState &W,
   return W.mu()*(dWdt.v.y + dWdn.v.x);
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /**********************************************************************
  * Routine: StateRoe (Roe's flux function)                            *
