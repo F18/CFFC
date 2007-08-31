@@ -218,7 +218,7 @@ int main(int num_arg, char *arg_ptr[]) {
   if (!CFFC_Primary_MPI_Processor()) batch_flag = 1;
 
   /******************************************************************
-   * DISPLAY THE PROGRAM TITLE AND VERSION INFORMATION AS REGUIRED. *
+   * DISPLAY THE PROGRAM TITLE AND VERSION INFORMATION AS REQUIRED. *
    ******************************************************************/
 
   if (CFFC_Primary_MPI_Processor() && (version_flag || help_flag || !batch_flag)) {
@@ -226,6 +226,7 @@ int main(int num_arg, char *arg_ptr[]) {
      cout << program_version_ptr << '\n';
      cout << "Built using " << CFFC_Version() << "\n";
      cout << CFFC_Version_MPI() << "\n";
+     cout << Cantera_Version() << "\n";
      cout << ICEMCFD_Version() << "\n";
      cout << "Built using MV++, SparseLib++, IML++, BPKIT, and FFTW Libraries\n";
      cout << "Built using CEA Thermodynamic and Transport Data, NASA Glenn Research Center\n";

@@ -55,6 +55,19 @@ inline string CFFC_Version() {
   return ("CFFC, Version 0.00, UTIAS CFD & Propulsion Group, 1999-2007.");
 }
 
+// Cantera Version.
+inline string Cantera_Version() {
+#ifdef _CANTERA_VERSION
+#ifdef _CANTERA_V70
+  return ("Cantera Version, Built using Cantera Release 1.7, California Institute of Technology, 2001-2006.");
+#else
+  return ("Cantera Version, Built using Cantera, California Institute of Technology.");
+#endif // _CANTERA_V70
+#else
+  return ("No Cantera Version.");
+#endif //_CANTERA_VERSION
+}
+
 /**********************************************************************
  * CFD -- Date and time.                                              *
  **********************************************************************/
