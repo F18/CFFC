@@ -43,7 +43,7 @@ class Rte2D_State;
 using namespace std;
 
 /********************************************************
- * Required CFDkit+caboodle header files                *
+ * Required CFFC header files                           *
  ********************************************************/
 
 #include "../Math/Math.h"

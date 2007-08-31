@@ -1,0 +1,8 @@
+CXX=cxx
+CXXOPTS=-arch host -tune host -fast -w -pending_instantiations 100 -I$(TUT) -O2 -c -D__USE_STD_IOSTREAM 
+LNK=cxx
+LNKOPTS=-o
+SFX=_cxx_unix
+OFX=.o
+RM=rm -f
+

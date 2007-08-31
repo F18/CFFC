@@ -393,7 +393,7 @@ class ColumnVector: public MV_Vector_double{
   private:
   public:
     /* Creation, copy, and assignment constructors. */
-    ColumnVector(void) { }
+    ColumnVector(void)                                              : MV_Vector_double() { }
     ColumnVector(unsigned int i)                                    : MV_Vector_double(i)       { /* ... */ }
     ColumnVector(unsigned int i, const double &xval)                : MV_Vector_double(i, xval) { /* ... */ }
     ColumnVector(double *xval, unsigned int i)                      : MV_Vector_double(xval, i) { /* ... */ }
@@ -762,6 +762,10 @@ class DenseMatrix: public MV_ColMat_double{
     // ~DenseMatrix(void);
     // Use automatically generated destructor.
 
+    /* Obtain the dimensions of the mxn matrix. */
+    int get_n(void) {return dim0_;}
+    int get_m(void) {return dim1_;}
+
     /* Assign the zero matrix. */
     void zero(void);
 
@@ -817,6 +821,7 @@ class DenseMatrix: public MV_ColMat_double{
     /* Shortcut arithmetic operators. */
     friend DenseMatrix &operator +=(DenseMatrix &M1, const DenseMatrix &M2);
     friend DenseMatrix &operator -=(DenseMatrix &M1, const DenseMatrix &M2);
+    friend DenseMatrix &operator *=(DenseMatrix &M1, double c);
     
     /* Relational operators. */
     friend int operator ==(const DenseMatrix &M1, const DenseMatrix &M2);
@@ -987,6 +992,11 @@ inline DenseMatrix &operator +=(DenseMatrix &M1, const DenseMatrix &M2) {
 inline DenseMatrix &operator -=(DenseMatrix &M1, const DenseMatrix &M2) {
    assert(M1.dim0_ == M2.dim0_ && M1.dim1_ == M2.dim1_);
    M1.v_ -= M2.v_;
+   return (M1);
+}
+
+inline DenseMatrix &operator *=(DenseMatrix &M1, double c) {
+   M1.v_ *= c;
    return (M1);
 }
 

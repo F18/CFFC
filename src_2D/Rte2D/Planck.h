@@ -16,11 +16,10 @@
 #ifndef _PLANCK_INCLUDED
 #define _PLANCK_INCLUDED 
 
-/* Required CFDkit header files */
+/* Required CFFC header files */
 #ifndef _GAS_CONSTANTS_INCLUDED
 #include "../Physics/GasConstants.h"
 #endif // _GAS_CONSTANTS_INCLUDED
-
 
 /********************************************************
  * Blackbody emmissive power at specified wavenumber.   *

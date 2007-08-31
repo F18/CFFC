@@ -56,19 +56,20 @@ using namespace std;
 #include "AdvectDiffuse2D/AdvectDiffuse2DQuad.h"
 #include "AdvectDiffuse2D/AdvectDiffuse2DQuad_NKS.h"
 #include "Euler2D/Euler2DQuad.h"
-#include "Dusty2D/Dusty2DQuad.h"
-#include "Ion5Moment2D/Ion5Moment2DQuad.h"
-#include "Electrostatic2D/Electrostatic2DQuad.h"
-#include "LESPremixed2D/LESPremixed2DQuad.h"
-#include "LevelSet2D/LevelSet2DQuad.h"
-#include "Chem2D/Chem2DQuad.h"
 #include "NavierStokes2D/NavierStokes2DQuad.h"
+#include "Chem2D/Chem2DQuad.h"
+#include "HighTemp2D/HighTemp2DQuad.h"
+#include "Dusty2D/Dusty2DQuad.h"
+#include "LESPremixed2D/LESPremixed2DQuad.h"
 #include "Gaussian2D/Gaussian2DCartesian.h"
 #include "Gaussian2D/Gaussian2DQuad.h"
-#include "HighTemp2D/HighTemp2DQuad.h"
+#include "Ion5Moment2D/Ion5Moment2DQuad.h"
+#include "Electrostatic2D/Electrostatic2DQuad.h"
 #include "Rte2D/Rte2DQuad.h"
+#include "LevelSet2D/LevelSet2DQuad.h"
 #include "MPI/MPI.h"
 #include "ICEM/ICEMCFD.h"
+#include "UnitTesting/UnitTesting.h"
 
 /* Begin CFFC2D program. */
 
@@ -85,7 +86,8 @@ int main(int num_arg, char *arg_ptr[]) {
       pde_flag,
       file_flag, 
       error_flag,
-      mpirun_flag;
+      mpirun_flag,
+      test_flag;
 
   // Other local integer variables:
   int i;
@@ -111,6 +113,10 @@ int main(int num_arg, char *arg_ptr[]) {
   // Input file stream:
   ifstream Input_File;
 
+  // Unit testing flags:
+  string TestSuite;
+  int TestNumber=0;
+
   /********************************************************  
    * LOCAL VARIABLE INITIALIZATIONS                       *
    ********************************************************/
@@ -132,6 +138,7 @@ int main(int num_arg, char *arg_ptr[]) {
   file_flag = 0;
   error_flag = 0;
   mpirun_flag = 0;
+  test_flag = 0;
 
   /* Save the command line name of the program for future use. */
 
@@ -180,6 +187,15 @@ int main(int num_arg, char *arg_ptr[]) {
         mpirun_flag = 1;
       } else if (strcmp(arg_ptr[i-1], "-p4wd") == 0) {
         //mpirun_flag = 1;
+      } else if (strcmp(arg_ptr[i], "-t") == 0) {
+	test_flag=1;
+	if (num_arg-1>i){
+	  TestSuite = arg_ptr[i+1];
+	} /* endif */
+	if (num_arg-1>i+1){
+	  TestNumber = atoi(arg_ptr[i+2]);
+	} /* endif */
+	break;
       } else {
         error_flag = 1;
       } /* endif */
@@ -214,7 +230,10 @@ int main(int num_arg, char *arg_ptr[]) {
      cout << "Built using MV++, SparseLib++, IML++, BPKIT, and FFTW Libraries\n";
      cout << "Built using CEA Thermodynamic and Transport Data, NASA Glenn Research Center\n";
      cout.flush();
-     if (version_flag) return (0);
+  } /* endif */
+  if (version_flag) {
+     CFFC_Finalize_MPI();
+     return (0);
   } /* endif */
 
   /******************************************************************
@@ -223,15 +242,35 @@ int main(int num_arg, char *arg_ptr[]) {
 
   if (CFFC_Primary_MPI_Processor() && help_flag) {
      cout << "Usage:\n";
-     cout << "cffc2d [-v] [-h] [-i] [-b] [-pde type] [-f name]\n";
+     cout << "cffc2d [-v] [-h] [-i] [-b] [-pde type] [-f name] [-t name number]\n";
      cout << " -v (--version)  display version information\n";
      cout << " -h (--help)  show this help\n";
      cout << " -i (--inter)  execute in interactive mode (default)\n";
      cout << " -b (--batch)  execute in batch mode\n";
      cout << " -pde type  solve `type' PDEs (`Euler2D' is default)\n";
      cout << " -f name  use `name' input data file (`cffc2d.in' is default)\n";
+     cout << " -t              run all available test suites\n" 
+	  << " -t list         list available test suites\n"
+	  << " -t regression   run all tests in batch mode with fault recovery\n"
+	  << " -t test-suite-name [test-number] \n"
+	  << "                 run all tests in test-suite-name or \n"
+	  << "                 a particular test-number \n"
+ 	  << "                 example: cffc2D -t MyTestSuit 3\n";
      cout.flush();
+  } /* endif */
+  if (help_flag) {
+     CFFC_Finalize_MPI();
      return (0);
+  } /* endif */
+
+  /*********************************************************************
+   * RUN UNIT TESTS AS REQUIRED AND STOP (tests run using only 1 CPU). *
+   *********************************************************************/
+
+  if (test_flag) {
+     error_flag = Perform_UnitTesting(TestSuite, TestNumber);
+     CFFC_Finalize_MPI();
+     return (error_flag);
   } /* endif */
 
   /***********************************************************  
