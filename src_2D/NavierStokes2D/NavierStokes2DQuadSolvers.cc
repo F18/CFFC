@@ -20,6 +20,8 @@
 #ifndef _NAVIERSTOKES2D_QUAD_MULTIGRID_INCLUDED
 #include "NavierStokes2DQuadMultigrid.h"
 #endif // _NAVIERSTOKES2D_QUAD_MULTIGRID_INCLUDED
+#include "../NewtonKrylovSchwarz2D/NKS2D.h"
+#include "NavierStokes2DQuadNKS.h"
 
 // Include the elliptic operator analysis header file.
 
@@ -58,14 +60,19 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
   // Define residual file and cpu time variables.
   ofstream residual_file;
   CPUTime processor_cpu_time, total_cpu_time;
+  CPUTime NKS_total_cpu_time;
+  time_t start_explicit = 0, end_explicit = 0;
+  time_t start_NKS = 0, end_NKS = 0;
 
   // Other local solution variables.
   int number_of_time_steps, first_step,
       command_flag, error_flag, line_number,
       perform_explicit_time_marching, limiter_freezing_flag;
+  int start_number_of_time_steps;
   double Time, dTime;
   double residual_l2norm_first, residual_ratio;
   double residual_l1_norm, residual_l2_norm, residual_max_norm;
+  bool mgsolver_is_allocated = false;
 
   /********************************************************************  
    * Set default values for the input solution parameters and then    *
@@ -81,7 +88,7 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
     error_flag = Process_Input_Control_Parameter_File(Input_Parameters,
 						      Input_File_Name_ptr,
 						      command_flag);
-    if (!batch_flag && !error_flag) {
+    if (!batch_flag && !error_flag && command_flag != EXECUTE_ZERO_STEPS_CODE) {
       cout << Input_Parameters << endl;
       cout.flush();
     } else if (error_flag) {
@@ -193,6 +200,7 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
   // Set the CPU time to zero.
   processor_cpu_time.zero();
   total_cpu_time.zero();
+  NKS_total_cpu_time.zero();
 
   // Initialize the conserved and primitive state solution variables.
   if (!batch_flag) cout << "\n Prescribing NavierStokes2D initial data.";
@@ -438,10 +446,44 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
    * equations on multi-block solution-adaptive quadrilateral mesh.   *
    ********************************************************************/
 
+  if (Input_Parameters.Morton) {
+    if (!batch_flag) { cout << "\n\n Applying Morton re-ordering algorithm to initial solution blocks. "; }
+    error_flag = Morton_ReOrdering_of_Solution_Blocks(QuadTree, 
+        List_of_Global_Solution_Blocks, 
+        List_of_Local_Solution_Blocks, 
+        Local_SolnBlk, 
+        Input_Parameters, 
+        number_of_time_steps, 
+        Time, 
+        processor_cpu_time); 
+    if (error_flag) {
+      cout <<"\n NavierStokes2D ERROR: Morton re-ordering error on processor "
+        << List_of_Local_Solution_Blocks.ThisCPU << ".\n";
+    } 
+    error_flag = CFFC_OR_MPI(error_flag);
+    if (error_flag) { return error_flag; }
+
+    if (!batch_flag) { cout << "\n Outputting space filling curve showing block loading for CPUs."; }
+    Morton_SFC_Output_Tecplot(Local_SolnBlk, 
+        Input_Parameters, 
+        List_of_Local_Solution_Blocks);
+  } // End of Morton Re-ordering
+
+  if (command_flag == EXECUTE_ZERO_STEPS_CODE) {
+    // Initial_AMR does not coarsen.
+    start_number_of_time_steps = number_of_time_steps;
+    if (!batch_flag) { 
+      cout << "\n NavierStokes2DQuadSolver: EXECUTE_ZERO_STEPS_CODE: jumping to postprocess."; 
+    }
+    goto postprocess_current_calculation;
+  }
+
  continue_existing_calculation: ;
 
   // MPI barrier to ensure processor synchronization.
   CFFC_Barrier_MPI();
+  time(&start_explicit);
+  start_number_of_time_steps = number_of_time_steps;
 
   if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
 
@@ -457,6 +499,7 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
     }
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
+    mgsolver_is_allocated = true;
 
     // Execute multigrid solver.
     error_flag = MGSolver.Execute(batch_flag,
@@ -487,6 +530,7 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
     }
     CFFC_Broadcast_MPI(&error_flag,1);
     if (error_flag) return error_flag;
+    mgsolver_is_allocated = true;
 
     // Execute DTS FAS multigrid solver.
     error_flag = MGSolver.DTS_Multigrid_Solution(batch_flag,
@@ -598,6 +642,36 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	    }
 	  }
         }
+
+    // Periodically re-order the solution blocks on the processors
+    // by applying the Morton ordering space filling curve algorithm.
+    if (Input_Parameters.Morton &&
+        !first_step &&
+        number_of_time_steps % Input_Parameters.Morton_Reordering_Frequency == 0) {
+      if (!batch_flag) {
+        cout << "\n\n Applying Morton re-ordering algorithm to solution blocks at n = "
+          << number_of_time_steps << ".";
+      }
+      error_flag = Morton_ReOrdering_of_Solution_Blocks(QuadTree, 
+          List_of_Global_Solution_Blocks, 
+          List_of_Local_Solution_Blocks, 
+          Local_SolnBlk, 
+          Input_Parameters, 
+          number_of_time_steps, 
+          Time, 
+          processor_cpu_time); 
+      if (error_flag) {
+        cout <<"\n NavierStokes2D ERROR: Morton re-ordering error on processor "
+          << List_of_Local_Solution_Blocks.ThisCPU << ".\n";
+      } 
+      error_flag = CFFC_OR_MPI(error_flag);
+      if (error_flag) { return error_flag; }
+
+      if (!batch_flag) { cout << "\n Outputting space filling curve showing block loading for CPUs."; }
+      Morton_SFC_Output_Tecplot(Local_SolnBlk, 
+          Input_Parameters, 
+          List_of_Local_Solution_Blocks);
+    } // End of Morton Re-ordering
 
 	// Determine local and global time steps.
 	dTime = CFL(Local_SolnBlk,List_of_Local_Solution_Blocks,Input_Parameters);
@@ -844,6 +918,135 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 
   }
 
+  time(&end_explicit);
+
+  // Start APPLY Newton_Krylov_Schwarz
+
+  time(&start_NKS); 
+
+  if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+
+    processor_cpu_time.update();
+    total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);  
+    double temp_t = total_cpu_time.cput;
+
+    if (Input_Parameters.FlowType) {
+      for (int nb = 0; nb < List_of_Local_Solution_Blocks.Nblk; nb++) {
+        if (List_of_Local_Solution_Blocks.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
+          Local_SolnBlk[nb].allocate_face_grad_arrays();
+        }
+      }
+    } else {
+
+      switch (Input_Parameters.NKS_IP.Jacobian_Order) {
+        case SECOND_ORDER_DIAMOND_WITH_HLLE:
+          Input_Parameters.NKS_IP.Jacobian_Order = FIRST_ORDER_INVISCID_HLLE; 
+          break;
+        case SECOND_ORDER_DIAMOND_WITH_ROE:
+          Input_Parameters.NKS_IP.Jacobian_Order = FIRST_ORDER_INVISCID_ROE;
+          break;
+        case SECOND_ORDER_DIAMOND_WITH_AUSMPLUSUP:
+          Input_Parameters.NKS_IP.Jacobian_Order = FIRST_ORDER_INVISCID_AUSMPLUSUP;
+          break;
+      }
+
+    }
+
+    if (CFFC_Primary_MPI_Processor()) {
+      error_flag = Open_Progress_File(residual_file,
+          Input_Parameters.Output_File_Name,
+          number_of_time_steps);
+      if (error_flag) {
+        cout << "\n NavierStokes2D ERROR: Unable to open residual file "
+          << "for NavierStokes2D calculation.\n";
+        cout.flush();
+      } 
+    }
+
+    CFFC_Broadcast_MPI(&error_flag, 1);
+    if (error_flag) { return error_flag; }
+
+    // Turn off limiter freezing.
+    Evaluate_Limiters(Local_SolnBlk, List_of_Local_Solution_Blocks);
+
+    if (!batch_flag) {
+      cout << "\n\n Beginning NavierStokes2D NKS computations on ";
+      cout << Date_And_Time() << ".\n\n";
+    }
+
+    error_flag = Newton_Krylov_Schwarz_Solver<NavierStokes2D_pState,
+               NavierStokes2D_Quad_Block,
+               NavierStokes2D_Input_Parameters>(
+                   processor_cpu_time,
+                   residual_file,
+                   number_of_time_steps,
+                   Local_SolnBlk, 
+                   List_of_Local_Solution_Blocks,
+                   Input_Parameters);
+
+    if (error_flag) {
+      cout << "\n NavierStokes2D_NKS ERROR: NavierStokes2D solution error on processor " 
+        << List_of_Local_Solution_Blocks.ThisCPU << ".\n";
+      cout.flush();
+    }
+
+    CFFC_Broadcast_MPI(&error_flag, 1);
+    if (error_flag) { return error_flag; }
+
+    processor_cpu_time.update();
+    total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);  
+    NKS_total_cpu_time.cput += total_cpu_time.cput - temp_t;
+
+    if (!batch_flag) { 
+      cout << "\n\n NavierStokes2D NKS computations complete on " 
+        << Date_And_Time() << ".\n"; 
+    }
+    if (CFFC_Primary_MPI_Processor()) {
+      error_flag = Close_Progress_File(residual_file);
+    }
+  } // if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) 
+
+  time(&end_NKS); 
+
+  if (!batch_flag) { 
+    int tmpp = cout.precision(); cout.precision(5);
+
+    cout << "\n |-----------------------------------------------------------";
+    cout << "\n |  ";
+    cout << "\n |   Solution Computational Timings:";
+    cout << "\n |  ";
+    cout << "\n |   The CPU times are summed from all the processors and";
+    cout << "\n |   for cases with AMR includes time on all the meshes.";
+    cout << "\n |  ";
+    cout << "\n |   For cases with AMR the clock times are for the";
+    cout << "\n |   current mesh only.";
+    cout << "\n |  ";
+    if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+      cout << "\n |   For cases with AMR the NKS CPU time is the total time";
+      cout << "\n |   spent doing NKS on all the meshes.";
+      cout << "\n |  ";
+    }
+    cout << "\n |-----------------------------------------------------------";
+
+    if (Input_Parameters.i_ICs != IC_RESTART &&
+        Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+      cout<<"\n Startup CPU Time  = " << setw(8) << total_cpu_time.min() - NKS_total_cpu_time.min() << "  minutes";
+      cout<<"\n NKS CPU Time      = " << setw(8) << NKS_total_cpu_time.min() << "  minutes";
+    }
+    cout<<"\n Total CPU Time    = " << setw(8) << total_cpu_time.min() << "  minutes";
+
+    if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+      cout<<"\n Startup Clock Time= " << setw(8) << difftime(end_explicit,start_explicit)/60.0 << "  minutes";
+      cout<<"\n NKS Clock Time    = " << setw(8) << difftime(end_NKS,start_NKS)/60.0 << "  minutes";
+    }
+    cout<<"\n Total Clock Time  = " << setw(8) << difftime(end_NKS,start_explicit)/60.0 << "  minutes";
+
+    cout<<"\n ----------------------------------------------------------------";
+    cout<<"\n ----------------------------------------------------------------";
+    cout<<"\n ----------------------------------------------------------------\n";
+    cout.precision(tmpp);
+  } 
+
   /********************************************************************
    * Solution calculations complete.  Write 2D Navier-Stokes solution *
    * to output and restart files as required, reset solution          *
@@ -887,7 +1090,10 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       if (!batch_flag) cout << "\n Deallocating NavierStokes2D solution variables.";
       if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
 	  Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
+			if (mgsolver_is_allocated) {
 	MGSolver.deallocate();
+		mgsolver_is_allocated = false;
+			}
       }
       Local_SolnBlk = Deallocate(Local_SolnBlk,Input_Parameters);
       //Deallocate_Message_Buffers(List_of_Local_Solution_Blocks); // Not necessary here!
@@ -910,7 +1116,10 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       if (!batch_flag) cout << "\n Deallocating NavierStokes2D solution variables.";
       if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
 	  Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
+			if (mgsolver_is_allocated) {
 	MGSolver.deallocate();
+		mgsolver_is_allocated = false;
+			}
       }
       Local_SolnBlk = Deallocate(Local_SolnBlk,Input_Parameters);
       //Deallocate_Message_Buffers(List_of_Local_Solution_Blocks); // Not necessary here!
@@ -933,14 +1142,18 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 
     } else if (command_flag == CONTINUE_CODE) {
       // Reset maximum time step counter.
-      Input_Parameters.Maximum_Number_of_Time_Steps += number_of_time_steps;
+        Input_Parameters.Maximum_Number_of_Time_Steps += 
+        number_of_time_steps - start_number_of_time_steps;
       // Output input parameters for continuing calculation.
       if (!batch_flag) cout << "\n\n Continuing existing calculation."
 			    << Input_Parameters << "\n";
       // Deallocate multigrid if necessary.
       if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
 	  Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
+			if (mgsolver_is_allocated) {
 	MGSolver.deallocate();
+		mgsolver_is_allocated = false;
+			}
       }
       // Continue existing calculation.
       goto continue_existing_calculation;
@@ -1009,46 +1222,85 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       // Apply boundary conditions.
       BCs(Local_SolnBlk,List_of_Local_Solution_Blocks,Input_Parameters);
 
+    } else if (command_flag == MORTON_ORDERING_CODE) {
+      if (!batch_flag) { cout << "\n\n Applying Morton re-ordering algorithm. "; }
+      error_flag = Morton_ReOrdering_of_Solution_Blocks(QuadTree, 
+          List_of_Global_Solution_Blocks, 
+          List_of_Local_Solution_Blocks, 
+          Local_SolnBlk, 
+          Input_Parameters, 
+          number_of_time_steps, 
+          Time, 
+          processor_cpu_time); 
+      if (error_flag) {
+        cout <<"\n NavierStokes2D ERROR: Morton re-ordering error on processor "
+          << List_of_Local_Solution_Blocks.ThisCPU << ".\n";
+      } 
+      error_flag = CFFC_OR_MPI(error_flag);
+      if (error_flag) { return error_flag; }
+
+      // Fix time step due to write/read of restart file in Morton code.
+      Input_Parameters.Maximum_Number_of_Time_Steps -= number_of_time_steps;
+
+      if (!batch_flag) { cout << "\n Outputting space filling curve showing block loading for CPUs."; }
+      Morton_SFC_Output_Tecplot(Local_SolnBlk, 
+          Input_Parameters, 
+          List_of_Local_Solution_Blocks);
+
     } else if (command_flag == WRITE_OUTPUT_CODE) {
+      bool output_multigrid = false;
+      if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
+          Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
+        output_multigrid = true;
+      }
+      // but if we ran NKS then multigrid was just a startup 
+      if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+        output_multigrid = false;
+      }
       if (!batch_flag) cout << "\n Writing NavierStokes2D solution to output data file(s).";
-      if (!(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
-	    Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING)) {
-	error_flag = Output_Tecplot(Local_SolnBlk,
-				    List_of_Local_Solution_Blocks,
-				    Input_Parameters,
-				    number_of_time_steps,
-				    Time);
+      if (output_multigrid) {
+        error_flag = MGSolver.Output_Multigrid(number_of_time_steps, Time);
       } else {
-	error_flag = MGSolver.Output_Multigrid(number_of_time_steps,
-					       Time);
+        error_flag = Output_Tecplot(Local_SolnBlk,
+            List_of_Local_Solution_Blocks,
+            Input_Parameters,
+            number_of_time_steps,
+            Time);
       }
       if (error_flag) {
-	cout << "\n NavierStokes2D ERROR: Unable to open NavierStokes2D output data file(s) "
-	     << "on processor "
-	     << List_of_Local_Solution_Blocks.ThisCPU
-	     << "." << endl;
+        cout << "\n NavierStokes2D ERROR: Unable to open NavierStokes2D output data file(s) "
+           << "on processor "
+           << List_of_Local_Solution_Blocks.ThisCPU
+           << "." << endl;
       }
       error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_CELLS_CODE) {
+      bool output_multigrid = false;
+      if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
+          Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
+        output_multigrid = true;
+      }
+      // but if we ran NKS then multigrid was just a startup 
+      if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+        output_multigrid = false;
+      }
       if (!batch_flag) cout << "\n Writing cell-centered NavierStokes2D solution to output data file(s).";
-      if (!(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
-	    Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING)) {
-	error_flag = Output_Cells_Tecplot(Local_SolnBlk,
-					  List_of_Local_Solution_Blocks,
-					  Input_Parameters,
-					  number_of_time_steps,
-					  Time);
+      if (output_multigrid) {
+        error_flag = MGSolver.Output_Multigrid_Cells(number_of_time_steps, Time);
       } else {
-	error_flag = MGSolver.Output_Multigrid_Cells(number_of_time_steps,
-						     Time);
+        error_flag = Output_Cells_Tecplot(Local_SolnBlk,
+            List_of_Local_Solution_Blocks,
+            Input_Parameters,
+            number_of_time_steps,
+            Time);
       }
       if (error_flag) {
-	cout << "\n NavierStokes2D ERROR: Unable to open NavierStokes2D cell output data file(s) "
-	     << "on processor "
-	     << List_of_Local_Solution_Blocks.ThisCPU
-	     << "." << endl;
+        cout << "\n NavierStokes2D ERROR: Unable to open NavierStokes2D cell output data file(s) "
+          << "on processor "
+          << List_of_Local_Solution_Blocks.ThisCPU
+          << "." << endl;
       }
       error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;

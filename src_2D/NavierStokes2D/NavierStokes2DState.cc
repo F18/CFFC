@@ -1887,6 +1887,41 @@ NavierStokes2D_pState BC_Characteristic_Mach_Number(const NavierStokes2D_pState 
 
 }
 
+/*********************************************************
+ * Routine: HLLE_wavespeeds                              *
+ *                                                       *
+ * This function returns lambda plus and lambda minus    *
+ * for a rotated Riemann problem aligned with norm_dir   *
+ * given unrotated solution states Wl and Wr.            *
+ * Note: wavespeed.x = wavespeed_l = lambda minus.       *
+ *       wavespeed.y = wavespeed_r = lambda plus.        *
+ *                                                       *
+ *********************************************************/
+Vector2D HLLE_wavespeeds(const NavierStokes2D_pState &Wl,
+    const NavierStokes2D_pState &Wr,
+    const Vector2D &norm_dir) {
+
+  Vector2D wavespeed;
+  NavierStokes2D_pState Wl_n = Rotate(Wl, norm_dir);
+  NavierStokes2D_pState Wr_n = Rotate(Wr, norm_dir);
+
+  NavierStokes2D_pState Wa_n = RoeAverage(Wl_n, Wr_n);
+
+  // Evaluate the left, right, and average state eigenvalues.
+  NavierStokes2D_pState lambdas_l = Wl_n.lambda_x();
+  NavierStokes2D_pState lambdas_r = Wr_n.lambda_x();
+  NavierStokes2D_pState lambdas_a = Wa_n.lambda_x();
+
+  // Determine the intermediate state flux.
+  wavespeed.x = min(lambdas_l[1], lambdas_a[1]); // u-a
+  wavespeed.y = max(lambdas_r[4], lambdas_a[4]); // u+a
+
+  wavespeed.x = min(wavespeed.x, ZERO); // lambda minus
+  wavespeed.y = max(wavespeed.y, ZERO); // lambda plus 
+
+  return wavespeed;
+}
+
 /**********************************************************************
  * Routine: WaveSpeedPos                                              *
  *                                                                    *
@@ -3357,6 +3392,7 @@ NavierStokes2D_cState ViscousFlux_n(const Vector2D &X,
  * the diamond-path defined by the points X1, X2, X3, and X4.  Only   *
  * half of the diamond (three points) is used at solid or transpiring *
  * boundaries.                                                        *
+ * Also returns the face gradients in dWd[xy] (passed by reference)   *
  *                                                                    *
  **********************************************************************/
 NavierStokes2D_cState ViscousFluxDiamondPath_n(const Vector2D &X,
@@ -3367,10 +3403,28 @@ NavierStokes2D_cState ViscousFluxDiamondPath_n(const Vector2D &X,
 					       const Vector2D &norm_dir,
 					       const int &Axisymmetric,
 					       const int &stencil_flag) {
+	NavierStokes2D_pState dWdx, dWdy;
+	return ViscousFluxDiamondPath_n(X,
+			Xl,Wl,Xd,Wd,Xr,Wr,Xu,Wu,
+			norm_dir,
+			Axisymmetric,
+			stencil_flag,
+			dWdx, dWdy);
+}
+
+NavierStokes2D_cState ViscousFluxDiamondPath_n(const Vector2D &X,
+					       const Vector2D &Xl, const NavierStokes2D_pState &Wl,
+					       const Vector2D &Xd, const NavierStokes2D_pState &Wd,
+					       const Vector2D &Xr, const NavierStokes2D_pState &Wr,
+					       const Vector2D &Xu, const NavierStokes2D_pState &Wu,
+					       const Vector2D &norm_dir,
+					       const int &Axisymmetric,
+					       const int &stencil_flag,
+								 NavierStokes2D_pState &dWdx, NavierStokes2D_pState &dWdy) {
 
   if (stencil_flag == DIAMONDPATH_NONE) return NavierStokes2D_cState(ZERO,ZERO,ZERO,ZERO,ZERO,ZERO);
 
-  NavierStokes2D_pState W_face, dWdxl, dWdyl, dWdxr, dWdyr, dWdx, dWdy;
+  NavierStokes2D_pState W_face, dWdxl, dWdyl, dWdxr, dWdyr;
   NavierStokes2D_cState Flux;
   double A, Al, Ar;
   Vector2D ndl, nud, nlu, nrd, nur, ndu;
@@ -3451,6 +3505,14 @@ NavierStokes2D_cState ViscousFluxDiamondPath_n(const Vector2D &X,
 
   }
 
+	if (stencil_flag == DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX ||
+			stencil_flag == DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL) {
+		dWdx = dWdxl; dWdy = dWdyl;
+	} else if (stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX ||
+			stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL) {
+		dWdx = dWdxr; dWdy = dWdyr;
+	}
+
   // Return the viscous flux.
   return Flux;
 
@@ -3462,6 +3524,7 @@ NavierStokes2D_cState ViscousFluxDiamondPath_n(const Vector2D &X,
  * This function returns the intermediate state solution viscous flux *
  * calculated by the arithmetic mean of the cell-centred flux terms   *
  * of the neighbouring cells.                                         *
+ * Also returns the face gradients in dWd[xy] (passed by reference)   *
  *                                                                    *
  **********************************************************************/
 NavierStokes2D_cState ViscousFluxHybrid_n(const Vector2D &X,
@@ -3476,8 +3539,27 @@ NavierStokes2D_cState ViscousFluxHybrid_n(const Vector2D &X,
 					  const NavierStokes2D_pState &dW2dy,
 					  const Vector2D &norm_dir,
 					  const int &Axisymmetric) {
+	NavierStokes2D_pState dWdx, dWdy;
+	return ViscousFluxHybrid_n(X,
+			W, X1, W1, dW1dx, dW1dy, X2, W2, dW2dx, dW2dy, 
+			norm_dir, Axisymmetric,
+			dWdx, dWdy);
+}
 
-  NavierStokes2D_pState dWdx_ave, dWdy_ave, dWdx, dWdy, dWds;
+NavierStokes2D_cState ViscousFluxHybrid_n(const Vector2D &X,
+					  NavierStokes2D_pState &W,
+					  const Vector2D &X1,
+					  const NavierStokes2D_pState &W1,
+					  const NavierStokes2D_pState &dW1dx,
+					  const NavierStokes2D_pState &dW1dy,
+					  const Vector2D &X2,
+					  const NavierStokes2D_pState &W2,
+					  const NavierStokes2D_pState &dW2dx,
+					  const NavierStokes2D_pState &dW2dy,
+					  const Vector2D &norm_dir,
+					  const int &Axisymmetric,
+					  NavierStokes2D_pState &dWdx, NavierStokes2D_pState &dWdy) {
+  NavierStokes2D_pState dWdx_ave, dWdy_ave, dWds;
   Vector2D dX;
   double ds;
 

@@ -200,12 +200,21 @@ public:
   NavierStokes2D_cState ***dUdt; //!< Solution residual.
   NavierStokes2D_cState    **Uo; //!< Initial solution state.
   static int  residual_variable; //!< Static integer that indicates which variable is used for residual calculations.
+  static int Number_of_Residual_Norms;   //!< (default 4 )
   //@}
 
   //@{ @name Solution gradient arrays:
   NavierStokes2D_pState  **dWdx; //!< Unlimited solution gradient (x-direction).
   NavierStokes2D_pState  **dWdy; //!< Unlimited solution gradient (y-direction).
   NavierStokes2D_pState   **phi; //!< Solution slope limiter.
+  //@}
+
+  //@{ @name Solution face gradients arrays. For use in viscous NKS preconditioner. Not used in explicit time stepping.
+  bool face_grad_arrays_allocated;
+  NavierStokes2D_pState       **dWdx_faceN;   //!< north cell face(x-direction).
+  NavierStokes2D_pState       **dWdy_faceN;   //!< north cell face(y-direction).
+  NavierStokes2D_pState       **dWdx_faceE;   //!< east  cell face(x-direction).
+  NavierStokes2D_pState       **dWdy_faceE;   //!< east  cell face(y-direction).
   //@}
 
   //@{ @name Boundary solution flux arrays:
@@ -252,6 +261,9 @@ public:
     W = NULL; U = NULL;
     dt = NULL; dUdt = NULL; Uo = NULL;
     dWdx = NULL; dWdy = NULL; phi = NULL;
+    face_grad_arrays_allocated = false;
+    dWdx_faceN = NULL; dWdy_faceN = NULL;
+    dWdx_faceE = NULL; dWdy_faceE = NULL;
     FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
     WoN = NULL; WoS = NULL; WoE = NULL; WoW = NULL;
     // Turbulent wall data:
@@ -275,6 +287,9 @@ public:
     W = Soln.W; U = Soln.U;
     dt = Soln.dt; dUdt = Soln.dUdt; Uo = Soln.Uo;
     dWdx = Soln.dWdx; dWdy = Soln.dWdy; phi = Soln.phi;
+    face_grad_arrays_allocated = Soln.face_grad_arrays_allocated;
+    dWdx_faceN = Soln.dWdx_faceN; dWdy_faceN = Soln.dWdy_faceN;
+    dWdx_faceE = Soln.dWdx_faceE; dWdy_faceE = Soln.dWdy_faceE;
     FluxN = Soln.FluxN; FluxS = Soln.FluxS; 
     FluxE = Soln.FluxE; FluxW = Soln.FluxW;
     WoN   = Soln.WoN;   WoS   = Soln.WoS;
@@ -295,6 +310,8 @@ public:
   //@{ @name Allocate and deallocate functions.
   //! Allocate memory for structured quadrilateral solution block.
   void allocate(const int Ni, const int Nj, const int Ng);
+  //! Allocate the face gradient arrays. These arrays are only necessary for the implicit (NKS) code.
+  void allocate_face_grad_arrays(void);
   //! Deallocate memory for structured quadrilateral solution block.
   void deallocate(void);
   //@}
@@ -500,6 +517,27 @@ inline void NavierStokes2D_Quad_Block::allocate(const int Ni, const int Nj, cons
   }
 }
 
+inline void NavierStokes2D_Quad_Block::allocate_face_grad_arrays(void) {
+  if (face_grad_arrays_allocated) { return; }
+  
+  // call allocate() then call this
+  assert(NCi > 0 && NCj > 0);
+
+  dWdx_faceN = new NavierStokes2D_pState*[NCi]; dWdy_faceN = new NavierStokes2D_pState*[NCi];
+  dWdx_faceE = new NavierStokes2D_pState*[NCi]; dWdy_faceE = new NavierStokes2D_pState*[NCi];
+  for (int i = 0; i < NCi; i++) {
+    dWdx_faceN[i] = new NavierStokes2D_pState[NCj]; dWdy_faceN[i] = new NavierStokes2D_pState[NCj];
+    dWdx_faceE[i] = new NavierStokes2D_pState[NCj]; dWdy_faceE[i] = new NavierStokes2D_pState[NCj];
+
+    for (int j = 0; j < NCj; j++) {
+      dWdx_faceN[i][j].Vacuum(); dWdy_faceN[i][j].Vacuum();
+      dWdx_faceE[i][j].Vacuum(); dWdy_faceE[i][j].Vacuum();
+    }
+  }
+
+  face_grad_arrays_allocated = true;
+}
+
 /**********************************************************************
  * NavierStokes2D_Quad_Block::deallocate -- Deallocate memory.        *
  **********************************************************************/
@@ -523,6 +561,16 @@ inline void NavierStokes2D_Quad_Block::deallocate(void) {
   delete []FluxE; FluxE = NULL; delete []FluxW; FluxW = NULL;
   delete []WoN; WoN = NULL; delete []WoS; WoS = NULL;
   delete []WoE; WoE = NULL; delete []WoW; WoW = NULL;
+  if (face_grad_arrays_allocated) {
+    for (int i = 0; i < NCi; i++) {
+      delete []dWdx_faceN[i]; delete []dWdy_faceN[i]; 
+      delete []dWdx_faceE[i]; delete []dWdy_faceE[i]; 
+    }
+    delete []dWdx_faceN; delete []dWdy_faceN; 
+    delete []dWdx_faceE; delete []dWdy_faceE; 
+
+    face_grad_arrays_allocated = false;
+  }
   NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
 }
 
@@ -909,6 +957,14 @@ inline istream &operator >> (istream &in_file,
       SolnBlk.phi[i][j].Vacuum();
       SolnBlk.Uo[i][j].Vacuum();
       SolnBlk.dt[i][j] = ZERO;
+    }
+  }
+  if (SolnBlk.face_grad_arrays_allocated) {
+    for (int i = 0; i < SolnBlk.NCi; i++) { 
+      for (int j = 0; j < SolnBlk.NCj; j++) {
+        SolnBlk.dWdx_faceN[i][j].Vacuum(); SolnBlk.dWdy_faceN[i][j].Vacuum();
+        SolnBlk.dWdx_faceE[i][j].Vacuum(); SolnBlk.dWdy_faceE[i][j].Vacuum();
+      }
     }
   }
   for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
@@ -2042,6 +2098,12 @@ extern double L1_Norm_Residual(NavierStokes2D_Quad_Block &SolnBlk);
 extern double L2_Norm_Residual(NavierStokes2D_Quad_Block &SolnBlk);
 
 extern double Max_Norm_Residual(NavierStokes2D_Quad_Block &SolnBlk);
+ 
+extern double L1_Norm_Residual(NavierStokes2D_Quad_Block &SolnBlk, int residual_var);
+
+extern double L2_Norm_Residual(NavierStokes2D_Quad_Block &SolnBlk, int residual_var);
+
+extern double Max_Norm_Residual(NavierStokes2D_Quad_Block &SolnBlk, int residual_var);
 
 extern void Linear_Reconstruction_GreenGauss(NavierStokes2D_Quad_Block &SolnBlk,
                                              const int i,
@@ -2148,6 +2210,15 @@ extern double L2_Norm_Residual(NavierStokes2D_Quad_Block *Soln_ptr,
 
 extern double Max_Norm_Residual(NavierStokes2D_Quad_Block *Soln_ptr,
                                 AdaptiveBlock2D_List &Soln_Block_List);
+
+void L1_Norm_Residual(NavierStokes2D_Quad_Block *Soln_ptr,
+                               AdaptiveBlock2D_List &Soln_Block_List, double *array);
+
+void L2_Norm_Residual(NavierStokes2D_Quad_Block *Soln_ptr,
+                               AdaptiveBlock2D_List &Soln_Block_List, double *array);
+
+void Max_Norm_Residual(NavierStokes2D_Quad_Block *Soln_ptr,
+                                AdaptiveBlock2D_List &Soln_Block_List, double *array);
 
 extern void Evaluate_Limiters(NavierStokes2D_Quad_Block *Soln_ptr,
                               AdaptiveBlock2D_List &Soln_Block_List);
