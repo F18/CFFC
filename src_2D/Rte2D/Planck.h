@@ -17,10 +17,7 @@
 #define _PLANCK_INCLUDED 
 
 /* Required CFDkit header files */
-#ifndef _GAS_CONSTANTS_INCLUDED
 #include "../Physics/GasConstants.h"
-#endif // _GAS_CONSTANTS_INCLUDED
-
 
 /********************************************************
  * Blackbody emmissive power at specified wavenumber.   *
@@ -28,8 +25,8 @@
  * wavenumber wn in [cm^-1]                             *
  * temperature T in [K]                                 *
  ********************************************************/
-inline double Planck(const double T, 
-		     const double wn ) { 
+inline double BlackBody(const double T, 
+		        const double wn ) { 
 
   // Plancks constants
   static const double C1 = 1.1909E-08; // [W/(m2 ster cm-4)]
@@ -54,18 +51,6 @@ inline double Planck(const double T,
  ********************************************************/
 inline double BlackBody(const double T) 
 { return STEFFAN_BOLTZMANN*pow(T,4.0)/PI; }
-
-/********************************************************
- * Blackbody spectral intensity at specified wavenumber.*
- * Radiative energy flow / time / area normal to rays / *
- * solid angle / wavelength [cm].                       *
- *                                                      *
- * wavenumber wn in [cm^-1]                             *
- * temperature T in [K]                                 *
- ********************************************************/
-inline double BlackBody(const double T, 
-			const double wn ) 
-{ return Planck( T, wn ) * PI; }
 
 
 #endif //end _PLANCK_INCLUDED 
