@@ -41,12 +41,8 @@ inline int Perform_UnitTesting(string TestSuite, int TestNumber) {
 
 #ifndef _NO_TUT_TESTING
   if (CFFC_Primary_MPI_Processor() ) {
-    if (CFFC_MPI::Number_of_Processors == 1) {
-       Test_Run(TestSuite, TestNumber);
-       error_flag = 0;
-    } else {
-       error_flag = 1;
-    } /* endif */
+    Test_Run(TestSuite, TestNumber);
+    error_flag = 0;
   } /* endif */
   CFFC_Broadcast_MPI(&error_flag, 1);
 #else
