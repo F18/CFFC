@@ -4,7 +4,7 @@
 #include "HighTemp2DQuad.h"
 #include "../Math/Matrix.h"
 
-DenseMatrix Rotation_Matrix_NS2D(const Vector2D &nface, int Size, int A_matrix);
+DenseMatrix Rotation_Matrix_HT2D(const Vector2D &nface, int Size, int A_matrix);
 
 void dFIdW_Inviscid_ROE(DenseMatrix& dRdW, const HighTemp2D_Quad_Block &SolnBlk,  
 			const HighTemp2D_Input_Parameters &Input_Parameters,
