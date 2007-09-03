@@ -1,0 +1,119 @@
+******************************************************
+* These notes track the modifications brought to     *
+* the TUT (Template Unit Testing) framework in order *
+* to accommodate specific needs of CFFC developers.   *
+******************************************************
+
+--> Documentation for how to use TUT is provided in "tut-framework/README"
+
+=========================================
+Tue Aug 28 12:15:16 EDT 2007
+Author: L. Ivan, UTIAS
+=========================================
+--> Instruction to make "selftest" and "examples":
+       make -f "makefile"
+    where "makefile" must be selected based on platform and compiler.
+
+--> Add "Makefile.cxx-unix" files to allow "selftest" 
+    and "examples" tests to be compiled on
+    alpha platform with the cxx compiler.
+
+--> Move the "declaration" of the test suit after the 
+    tests have been created for the tests in "selftest" and "examples".
+    The problem with the original implementation is that
+    the cxx compiler gives errors of the following type:
+
+	Error example:
+	--------------
+
+	cxx: Error: ensure.cpp, line 30: explicit specialization of function
+        	  "tut::test_object<Data>::test<n>() [with Data=tut::ensure_test, n=1]"
+	          must precede its first use
+	  void object::test<1>()
+	---------------^
+
+
+	Solution:  Move the instantiation of the test "ensure_test"
+	---------  after all the tests have been declared (specialized).
+
+	e.g. 
+	<<<<<<<<<<<<<<
+	  typedef test_group<ensure_test> tf;
+	  typedef tf::object object;
+    	  tf ensure_test("ensure()");                 <-- this line
+
+	  /**
+	   * Checks positive ensure
+	   */
+	  template<>
+	  template<>
+	  void object::test<1>()
+	  {
+	    set_test_name("checks positive ensure");
+	    
+	    ensure("OK", 1==1);
+	    ensure(1==1);
+	  }
+
+	  ........
+
+	  more tests, etc.
+
+	===============
+
+	  typedef test_group<ensure_test> tf;
+	  typedef tf::object object;
+
+	  /**
+	   * Checks positive ensure
+	   */
+	  template<>
+	  template<>
+	  void object::test<1>()
+	  {
+	    set_test_name("checks positive ensure");
+	    
+	    ensure("OK", 1==1);
+	    ensure(1==1);
+	  }
+
+	  ........
+
+	  more tests, etc.
+
+          ........ 
+	
+	  last test
+
+
+   	  tut::tf ensure_test("ensure()");                 <-- move it at the end
+
+	>>>>>>>>>>>>>>
+
+
+--> Modify the implementation of the "ensure_distance()" member function
+    in tut/tut.hpp and accordingly the tests in "selftest".
+    This function verifies that the actual value is within the vicinity
+    of the expected value defined by a distance.
+    The original implementation doesn't include the ends of the interval.
+    In the current implementation the function was modified to also consider
+    the ends of the interval as 
+    
+    
+    Example: 
+    --------
+ 	actual = 2; expected = 1; tolerance = 1;
+	ensure_distance(actual, expected, tolerance);
+
+    Original implementation result:
+    -------------------------------
+        --> Test doesn't pass. 
+
+    New implementation result:
+    --------------------------
+        --> Test passes.  (expected + tolerance = actual)
+          
+--> Add ensure_equals(const std::string & msg, const Q& actual, const T& expected)
+    function in tut.hpp, in order to allow for messages of string type.
+    It is much easier to create messages of this type!
+

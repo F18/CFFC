@@ -1426,7 +1426,7 @@ void SNBCK :: CalculatePlanck( const double T, double* Ib ) {
 
   double Ib_v;
   for (int v=0; v<Nbands; v++) {
-    Ib_v = Planck(T, WaveNo[v]);
+    Ib_v = BlackBody(T, WaveNo[v]);
     for (int i=0; i<nquad[v]; i++) Ib[ index[v][i] ] = Ib_v;
   }
 }

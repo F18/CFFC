@@ -133,6 +133,9 @@
  *    UnSE      -- Return conserved variable solution   *
  *                 at the south-east node.              *
  * evaluate_limiters -- Set flag to evaluate limiters.  *
+ * Heat_Transfer-- Return whether elliptic heat transfer*
+ *                 is present (=1 for heat transfer,    *
+ *                             =0 for basic 10-moments) *
  * freeze_limiters -- Set flag to freeze limiters.      *
  * Member functions required for message passing.       *
  *    NumVar    -- Returns number of solution variables *
@@ -189,6 +192,7 @@ class Gaussian2D_Quad_Block{
     Gaussian2D_pState     *WoN,*WoS,  // Boundary condition reference states for
                           *WoE,*WoW;  // north, south, east, & west boundaries.
     static int    residual_variable;  // Static integer that indicates which variable is used for residual calculations.
+    static int        Heat_Transfer;  // Heat transfer flag
     static int            Flow_Type;  // Static integer identifying the flow type (inviscid?)
                                       // Made public so can access them.
 		      
@@ -199,7 +203,8 @@ class Gaussian2D_Quad_Block{
        dWdx = NULL; dWdy = NULL; phi = NULL; Uo = NULL;
        FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
        WoN = NULL; WoS = NULL; WoE = NULL; WoW = NULL;
-       Axisymmetric = 0; Freeze_Limiter = OFF;
+       Axisymmetric = 0; Heat_Transfer = 0;
+       Freeze_Limiter = OFF;
     }
 
     Gaussian2D_Quad_Block(const Gaussian2D_Quad_Block &Soln) {
@@ -209,7 +214,8 @@ class Gaussian2D_Quad_Block{
        dWdx = Soln.dWdx; dWdy = Soln.dWdy; phi = Soln.phi; Uo = Soln.Uo;
        FluxN = Soln.FluxN; FluxS = Soln.FluxS; FluxE = Soln.FluxE; FluxW = Soln.FluxW;
        WoN = Soln.WoN; WoS = Soln.WoS; WoE = Soln.WoE; WoW = Soln.WoW;
-       Axisymmetric = 0; Freeze_Limiter = Soln.Freeze_Limiter;
+       Axisymmetric = Soln.Axisymmetric; Heat_Transfer = Soln.Heat_Transfer; 
+       Freeze_Limiter = Soln.Freeze_Limiter;
     }
 
     /* Destructor. */
@@ -627,6 +633,7 @@ inline ostream &operator << (ostream &out_file,
 	   << SolnBlk.ICu << " " << SolnBlk.Nghost << "\n";
   out_file << SolnBlk.NCj << " " << SolnBlk.JCl << " " << SolnBlk.JCu << "\n";
   out_file << SolnBlk.Axisymmetric << "\n";
+  out_file << SolnBlk.Heat_Transfer << "\n";
   if (SolnBlk.NCi == 0 || SolnBlk.NCj == 0) return(out_file);
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
@@ -651,6 +658,7 @@ inline istream &operator >> (istream &in_file,
   in_file.setf(ios::skipws);
   in_file >> ni >> il >> iu >> ng; in_file >> nj >> jl >> ju;
   in_file >> SolnBlk.Axisymmetric;
+  in_file >> SolnBlk.Heat_Transfer;
   in_file.unsetf(ios::skipws);
   if (ni == 0 || nj == 0) {
       SolnBlk.deallocate(); return(in_file);
@@ -2889,6 +2897,16 @@ extern void Append_nodes_to_send_buffer(Gaussian2D_Quad_Block &SolnBlk,
 extern void Output_Drag(Gaussian2D_Quad_Block &SolnBlk,
 			double &drag, double &lift);
 
+extern void Output_Shock_Structure(Gaussian2D_Quad_Block &SolnBlk,
+				   Gaussian2D_Input_Parameters &IP,
+				   const int Number_of_Time_Steps,
+				   const double &Time,
+				   const int Block_Number,
+				   int &Output_Title,
+				   ostream &Out_File,
+				   const double &y,
+				   const double &y_tol);
+
 extern void ICs(Gaussian2D_Quad_Block &SolnBlk,
  	        Gaussian2D_Input_Parameters &Input_Parameters,
                 Gaussian2D_pState *Wo);
@@ -3053,6 +3071,11 @@ extern void Output_Drag(Gaussian2D_Quad_Block *Soln_ptr,
 			AdaptiveBlock2D_List &Soln_Block_List,
 			double &drag, double &lift);
 
+extern int Output_Shock_Structure(Gaussian2D_Quad_Block *Soln_ptr,
+				  AdaptiveBlock2D_List &Soln_Block_List,
+				  Gaussian2D_Input_Parameters &Input_Parameters,
+				  const int Number_of_Time_Steps,
+				  const double &Time);
 
 extern void BCs(Gaussian2D_Quad_Block *Soln_ptr,
                 AdaptiveBlock2D_List &Soln_Block_List,

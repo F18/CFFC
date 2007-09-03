@@ -265,9 +265,13 @@ void Set_Default_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   IP.Refinement_Criteria_Gradient_Turbulence_Kinetic_Energy = OFF;
   IP.AMR_Xmin = Vector2D_ZERO;
   IP.AMR_Xmax = Vector2D_ZERO;
+  IP.Morton = 0;
+  IP.Morton_Reordering_Frequency = 0;
 
   // Smooth quad block indicator:
   IP.i_Smooth_Quad_Block = ON;
+
+  IP.Solver_Type = EXPLICIT;
 
   // Embedded boundary input parameters:
   IP.Reset_Interface_Motion_Type = OFF;
@@ -380,6 +384,7 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
 			MPI::INT,0);
   // Multigrid related parameters:
   IP.Multigrid_IP.Broadcast_Input_Parameters();
+  IP.NKS_IP.Broadcast_Input_Parameters();
   // Reconstruction:
   MPI::COMM_WORLD.Bcast(IP.Reconstruction_Type,
 			INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D,
@@ -769,6 +774,12 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   MPI::COMM_WORLD.Bcast(&(IP.AMR_Xmax.y),
 			1,
 			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Morton),
+			1,
+			MPI::INT,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Morton_Reordering_Frequency),
+			1,
+			MPI::INT,0);
   // Mesh stretching flag:
   MPI::COMM_WORLD.Bcast(&(IP.i_Mesh_Stretching),
 			1,
@@ -920,6 +931,7 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP,
   // Multigrid related parameters:
   IP.Multigrid_IP.Broadcast_Input_Parameters(Communicator,
 					     Source_CPU);
+  IP.NKS_IP.Broadcast_Input_Parameters(Communicator, Source_CPU);
   // Reconstruction:
   Communicator.Bcast(IP.Reconstruction_Type,
 		     INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D,
@@ -1309,6 +1321,12 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP,
   Communicator.Bcast(&(IP.AMR_Xmax.y),
 		     1,
 		     MPI::DOUBLE,Source_Rank);
+  MPI::COMM_WORLD.Bcast(&(IP.Morton),
+		     1,
+		     MPI::INT,Source_Rank);
+  MPI::COMM_WORLD.Bcast(&(IP.Morton_Reordering_Frequency),
+		     1,
+		     MPI::INT,Source_Rank);
   // Mesh stretching flag:
   Communicator.Bcast(&(IP.i_Mesh_Stretching),
 		     1,
@@ -2504,6 +2522,23 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     IP.Input_File.setf(ios::skipws);
     IP.Input_File.getline(buffer,sizeof(buffer));
 
+  } else if (strcmp(IP.Next_Control_Parameter, "Morton") == 0) {
+    i_command = 90;
+    Get_Next_Input_Control_Parameter(IP);
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
+      IP.Morton = ON;
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
+      IP.Morton = OFF;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+    }
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Morton_Reordering_Frequency") == 0) {
+    i_command = 90;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Morton_Reordering_Frequency;
+    IP.Input_File.getline(buffer,sizeof(buffer));
+
   } else if (strcmp(IP.Next_Control_Parameter,"Residual_Variable") == 0) {
     i_command = 91;
     IP.Line_Number = IP.Line_Number + 1;
@@ -3337,6 +3372,9 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
 
   } else if (strcmp(IP.Next_Control_Parameter,"Execute") == 0) {
     i_command = EXECUTE_CODE;
+ 
+  } else if (strcmp(IP.Next_Control_Parameter,"Execute_Zero_Steps") == 0) {
+    i_command = EXECUTE_ZERO_STEPS_CODE;
 
   } else if (strcmp(IP.Next_Control_Parameter,"Terminate") == 0) {
     i_command = TERMINATE_CODE;
@@ -3425,6 +3463,9 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Refine_Grid") == 0) {
     i_command = REFINE_GRID_CODE;
 
+  } else if (strcmp(IP.Next_Control_Parameter, "Morton_Ordering") == 0) {
+     i_command = MORTON_ORDERING_CODE;
+
   } else if (strcmp(IP.Next_Control_Parameter, "Bounding_Box_Refine_Grid") == 0) {
     IP.Number_of_Bounding_Box_Mesh_Refinements = 1;
     i_command = BOUNDING_BOX_REFINE_GRID_CODE;
@@ -3436,6 +3477,23 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     i_command = INVALID_INPUT_CODE;
 
   }
+
+  if (i_command == INVALID_INPUT_CODE) {
+    strcpy(buffer, IP.Next_Control_Parameter);
+    Get_Next_Input_Control_Parameter(IP);
+    i_command = IP.NKS_IP.Parse_Next_Input_Control_Parameter(buffer, IP.Next_Control_Parameter);
+
+    if (i_command == INVALID_INPUT_CODE) {
+      cout << "\n***\n\nWarning: input file line " << IP.Line_Number << ": ";
+      cout << "ignoring unknown input code:\n";
+      cout << "code: " << buffer;
+      cout << "\nvalue: " << IP.Next_Control_Parameter;
+      cout << "\n\n***\n";
+    }
+    i_command = COMMENT_CODE;
+  }
+
+  if (!IP.Input_File.good()) { i_command = INVALID_INPUT_VALUE; }
 
   // Return the parser command type indicator.
   return i_command;
@@ -3475,7 +3533,7 @@ int Process_Input_Control_Parameter_File(NavierStokes2D_Input_Parameters &IP,
     Get_Next_Input_Control_Parameter(IP);
     Command_Flag = Parse_Next_Input_Control_Parameter(IP);
     line_number = IP.Line_Number;
-    if (Command_Flag == EXECUTE_CODE) {
+    if (Command_Flag == EXECUTE_CODE || Command_Flag == EXECUTE_ZERO_STEPS_CODE) {
       break;
     } else if (Command_Flag == TERMINATE_CODE) {
       break;

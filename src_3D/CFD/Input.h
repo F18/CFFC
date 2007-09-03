@@ -176,27 +176,40 @@ class Input_Parameters {
   int Time_Accurate_Plot_Freq;
 
   // Multi-block solution-adaption and parallel domain
-  // decomposition input parameters
-
+  // decomposition input parameters:
   int Number_of_Processors, Number_of_Blocks_Per_Processor;
 
-  void Allocate();
-  void Deallocate();
-  
+  // Solution reference states:
   SOLN_pSTATE Wo;
   SOLN_cSTATE Uo;
- 
-  // constructor ...set some default parameters
+
+  // Variable allocation indicator for input parameters:
+  int Allocated; 
+
+  /* Creation constructors. */
   Input_Parameters(void){
-   
      Multispecies=NULL;
      multispecies=NULL;
      mass_fractions=NULL;
-     
-     Set_Default_Input_Parameters();
+     Schmidt = NULL;
+     num_species = 0;
+     Allocated = 0;
   }
 
-  // member functions
+  Input_Parameters(const int Ns){
+     Allocate(Ns);    
+  }
+
+  /* Destructor. */
+  ~Input_Parameters(void){
+     Deallocate();
+  }
+
+  /* Other member functions. */
+
+  void Allocate(const int Ns);
+
+  void Deallocate(void);
 
   void Get_CFFC_Path(void);
 
@@ -204,9 +217,9 @@ class Input_Parameters {
 
   void Close_Input_File(void);
 
-  void Set_Default_Input_Parameters(void);
+  void Set_Defaults(void);
 
-  void Broadcast_Input_Parameters(void);
+  void Broadcast(void);
 
   void Get_Next_Input_Control_Parameter(void);
 
@@ -218,47 +231,51 @@ class Input_Parameters {
 
 /* Input-output operators. */
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-istream &operator >> (istream &in_file,
-                             Input_Parameters<SOLN_pSTATE, 
-                             SOLN_cSTATE> &IP);
+istream &operator >> (istream &in_file, 
+                      Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IP);
 
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 ostream &operator << (ostream &out_file,
-                               const Input_Parameters<SOLN_pSTATE,
-                               SOLN_cSTATE> &IP);
+                      const Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IP);
 
 /*************************************************************
  * Input_Parameters -- Memory Management                     *
  *************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Allocate() {
+void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Allocate(const int Ns) {
+
+   assert(Ns >= 1 && !Allocated);
+   num_species = Ns;
+
    Multispecies = new char*[num_species];
    for (int i = 0; i < num_species; i++) {
       Multispecies[i] = new char[INPUT_PARAMETER_LENGTH];
-   } 
+   } /* endfor */
    multispecies = new string[num_species]; 
    mass_fractions = new double[num_species];
    Schmidt = new double[num_species];
+
+   Allocated = 1;
+
 }
 
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Deallocate() {
-   if(Multispecies != NULL ){
-      for (int i = 0; i < num_species; i++) {
-         delete[] Multispecies[i]; Multispecies[i]=NULL;
-      }
-      delete[] Multispecies; Multispecies=NULL;
-   }
-  
-   if(multispecies != NULL){
-      delete[] multispecies; multispecies=NULL;
-   }
+void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Deallocate(void) {
+
+   assert(num_species >= 1 && Allocated); 
+
+   for (int i = 0; i < num_species; i++) {
+      delete[] Multispecies[i]; Multispecies[i]=NULL;
+   } /* endfor */
+   delete[] Multispecies; Multispecies=NULL;
+   delete[] multispecies; multispecies=NULL;
+   delete[] mass_fractions; mass_fractions=NULL;
+   delete[] Schmidt; Schmidt = NULL;
    
-   if(mass_fractions != NULL){
-      delete[] mass_fractions; mass_fractions=NULL;
-      if( Schmidt != NULL) delete[] Schmidt; Schmidt = NULL;
-   }  
-   
+   num_species = 0;
+
+   Allocated = 0;
+
 } 
 
 /********************************************************
@@ -269,6 +286,7 @@ void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Deallocate() {
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Get_CFFC_Path(void){
+
   char *string_ptr;
   // Check to see if environment varible exists.
   if (getenv(PATHVAR) == NULL) {
@@ -278,7 +296,8 @@ void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Get_CFFC_Path(void){
   } else {
      //Set path specified by environment variable
      strcpy(CFFC_Path, getenv(PATHVAR));
-  }
+  } /* endif */
+
 }
 
 /********************************************************
@@ -313,13 +332,13 @@ void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Close_Input_File(void) {
 }
 
 /********************************************************
- * Routine: Set_Default_Input_Parameters                *
+ * Routine: Set_Defaults                                *
  *                                                      *
  * Assigns default values to the input parameters.      *
  *                                                      *
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Set_Default_Input_Parameters(void) {
+void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Set_Defaults(void) {
    
    int i;
    char *string_ptr;
@@ -365,17 +384,6 @@ void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Set_Default_Input_Parameters(vo
    Kinematic_Viscosity_Wall = 1.4590E-5;
    i_Grid_Level = 0;
    
-   react_name ="NO_REACTIONS";   
-   //Use air with 79% N2, and 21% 02 by volume.(ie. mol)
-   num_species = 2;
-   Allocate();
-   multispecies[0] = "N2"; 
-   multispecies[1] = "O2"; 
-   mass_fractions[0] = 0.765; 
-   mass_fractions[1] = 0.235;
-   Schmidt[0] = Global_Schmidt;
-   Schmidt[1] = Global_Schmidt;
-    
    Moving_wall_velocity.zero(); 
    Re_lid = 100.0;
    Pressure_Gradient.zero(); 
@@ -454,7 +462,6 @@ void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Set_Default_Input_Parameters(vo
    Line_Number = 0;
    
    Number_of_Processors = CFFC_MPI::Number_of_Processors;
-   //  Number_of_Processors = 1;
    Number_of_Blocks_Per_Processor = 100;      
 
    Freeze_Limiter = 0;
@@ -463,8 +470,7 @@ void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Set_Default_Input_Parameters(vo
    //define multispecies with no reactions.
    react_name ="NO_REACTIONS";   
    //Use air with 79% N2, and 21% 02 by volume.(ie. mol)
-   num_species = 2;
-   Allocate();
+   Allocate(2);
    multispecies[0] = "N2"; 
    multispecies[1] = "O2"; 
    mass_fractions[0] = 0.765; 
@@ -503,8 +509,7 @@ void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Set_Default_Input_Parameters(vo
    Uo.set_initial_values(mass_fractions);
  
    Uo = Wo.U();  
- 
-     
+
 }
 
 /********************************************************
@@ -515,8 +520,8 @@ void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Set_Default_Input_Parameters(vo
  *                                                      *
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-   void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
-   Get_Next_Input_Control_Parameter(void) {
+void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
+Get_Next_Input_Control_Parameter(void) {
 
     int i;
     char buffer[256];
@@ -535,8 +540,6 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
     } /* endif */
     strcpy(Next_Control_Parameter, buffer);
 
-    //    cout<<"\n "<<Next_Control_Parameter<<endl; cout.flush();
-
 }
 
 /********************************************************
@@ -547,7 +550,8 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
  *                                                      *
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Parse_Next_Input_Control_Parameter(void) {
+int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
+Parse_Next_Input_Control_Parameter(void) {
 
     int i_command;
     char buffer[256];
@@ -1557,7 +1561,6 @@ int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Parse_Next_Input_Control_Paramet
        i_command = REFINE_GRID_CODE;
        
     } else if (strcmp(Next_Control_Parameter, "Reaction_Mechanism") == 0) {
-       
        i_command = 89;
        Get_Next_Input_Control_Parameter( );
        Deallocate();  //DEALLOCATE BEFORE CHANGING num_species
@@ -1567,8 +1570,7 @@ int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Parse_Next_Input_Control_Paramet
        react_name = Next_Control_Parameter;
        Wo.React.set_reactions(react_name);
        
-       num_species = Wo.React.num_species;      
-       Allocate();
+       Allocate(Wo.React.num_species);
        
        //Get species and load appropriate data
        for(int i=0; i<num_species; i++){
@@ -1610,25 +1612,22 @@ int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Parse_Next_Input_Control_Paramet
                                      Schmidt);
            
        //Get next line and read in mass fractions or set defaults
-       if(flag){
+       if (flag) {
           Get_Next_Input_Control_Parameter( );
-       }
-       if (strcmp(Next_Control_Parameter, "Mass_Fractions") == 0){
-         
+       } /* endif */
+       if (strcmp(Next_Control_Parameter, "Mass_Fractions") == 0) {
 	 //Get Initial Mass Fractions from user	
           double temp=0.0;
           for(int i=0; i<num_species; i++){
-                      
              Input_File >> mass_fractions[i];
              temp += mass_fractions[i];
-                      
-          }
+          } /*endfor */
           
           //check to make sure it adds to 1
-          if(temp < ONE-MICRO || temp > ONE+MICRO){ 
+          if (temp < ONE-MICRO || temp > ONE+MICRO) { 
              cout<<"\n Mass Fractions summed to "<<temp<<". Should sum to 1\n";
              i_command = INVALID_INPUT_VALUE;
-          }
+          } /* endif */
 	 
           //Set inital Values; 
           Wo.set_initial_values(mass_fractions);  
@@ -1641,7 +1640,7 @@ int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Parse_Next_Input_Control_Paramet
           Line_Number = Line_Number + 1; 
           
           //Spit out appropriate mass fractions and exit
-       } 
+       } /* endif */
        
     } else if (strcmp(Next_Control_Parameter, "User_Reaction_Mechanism") == 0) { 
        // this will be added but its not quite yet
@@ -1650,9 +1649,7 @@ int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Parse_Next_Input_Control_Paramet
        i_command = INVALID_INPUT_VALUE;   
        
     } else if (strcmp(Next_Control_Parameter, "Species") == 0) { 
-          
        i_command = 91;
-       
        Deallocate();  //DEALLOCATE BEFORE CHANGING num_species
        
        // Non Reaction case so set NO_REACTIONS flag in reactions class
@@ -1660,19 +1657,18 @@ int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Parse_Next_Input_Control_Paramet
        Wo.React.set_reactions(react_name);
        
        //read in the number of species (should be first in line) 
-       Input_File>>num_species;   
-             
-       Allocate();
+       int ns;
+       Input_File >> ns;   
+       Allocate(ns);
        
        //read in species names
-       for(int i=0; i<num_species; i++){
+       for (int i=0; i<num_species; i++){
           Input_File >> multispecies[i];
           Schmidt[i] = Global_Schmidt;
-         
-       }
+       } /* endfor */
        
        //copy names into Reaction class for storage
-       Wo.React.set_species(multispecies,num_species);
+       Wo.React.set_species(multispecies, num_species);
        
        //Setup State class data and find species thermo and transport properties
        SOLN_pSTATE::set_species_data(Wo,
@@ -1697,7 +1693,7 @@ int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Parse_Next_Input_Control_Paramet
        //Get next line and read in mass fractions or set defaults
        Get_Next_Input_Control_Parameter();
        
-       if (strcmp(Next_Control_Parameter, "Mass_Fractions") == 0){
+       if (strcmp(Next_Control_Parameter, "Mass_Fractions") == 0) {
           //Get Initial Mass Fractions from user 
           double temp=0.0;
           for(int i=0; i<num_species; i++){
@@ -1717,15 +1713,13 @@ int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Parse_Next_Input_Control_Paramet
           //fudge the line number and istream counters
           Input_File.getline(buffer, sizeof(buffer));  
           Line_Number = Line_Number + 1; 
-       } 
-       //If no mass fraction data is set to defaults (all equal to 1/num_species)
-       else{        
+       } else { 
+          //If no mass fraction data is set to defaults (all equal to 1/num_species)
           Uo = Wo.U();
           Line_Number = Line_Number - 1 ;
        }
        
     } else if (strcmp(Next_Control_Parameter, "Temperature") == 0) {
-       
        i_command = 92;
        Line_Number = Line_Number + 1;
        Input_File >> Temperature;
@@ -1733,9 +1727,7 @@ int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Parse_Next_Input_Control_Paramet
        if (Temperature <= ZERO) {
           i_command = INVALID_INPUT_VALUE;
        } else {
-          
           Wo.rho = Pressure/(Wo.Rtot()*Temperature); 	
-          
        } /* endif */
             
     } else if (strcmp(Next_Control_Parameter, "Pressure") == 0) {
@@ -1778,10 +1770,9 @@ int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Parse_Next_Input_Control_Paramet
  *                                                      *
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-   int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
-   Process_Input_Control_Parameter_File(
-      char *Input_File_Name_ptr,
-      int &Command_Flag) {
+int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
+Process_Input_Control_Parameter_File(char *Input_File_Name_ptr,
+                                     int &Command_Flag) {
    
    int error_flag, line_number;
    
@@ -1789,7 +1780,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
    error_flag = 0;
    
    /* Assign default values to the input parameters. */
-   Set_Default_Input_Parameters();
+   Set_Defaults();
    
    /* Copy input file name (a string) to appropriate input parameter variable. */
    if (Input_File_Name_ptr != NULL) strcpy(Input_File_Name, Input_File_Name_ptr);
@@ -1803,56 +1794,50 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
       return (error_flag);
    } /* endif */
     
-   
    /* Read and parse control parameters contained in
       the input file. */
    while (1) {
-      
       Get_Next_Input_Control_Parameter();
      
-       Command_Flag = Parse_Next_Input_Control_Parameter();
+      Command_Flag = Parse_Next_Input_Control_Parameter();
 
-       line_number = Line_Number;
+      line_number = Line_Number;
 
-       if (Command_Flag == EXECUTE_CODE) {
-          
-          break;
-       } else if (Command_Flag == TERMINATE_CODE) {
-          
-          break;
-       } else if (Command_Flag == INVALID_INPUT_CODE ||
-                  Command_Flag == INVALID_INPUT_VALUE) {
-          line_number = -line_number;
-          cout << "\n ERROR: Error reading data at line #"
-               << -line_number  << " of input data file.\n";
-          error_flag = line_number;
-          break;
-          
-       } /* endif */
-     
-       
-    } /* endwhile */
+      if (Command_Flag == EXECUTE_CODE) {
+         break;
+      } else if (Command_Flag == TERMINATE_CODE) {
+         break;
+      } else if (Command_Flag == INVALID_INPUT_CODE ||
+                 Command_Flag == INVALID_INPUT_VALUE) {
+         line_number = -line_number;
+         cout << "\n ERROR: Error reading data at line #"
+              << -line_number  << " of input data file.\n";
+         error_flag = line_number;
+         break;
+      } /* endif */
+   } /* endwhile */
 
-    /* Initial processing of input control parameters complete.  
-       Return the error indicator flag. */
+   /* Initial processing of input control parameters complete.  
+      Return the error indicator flag. */
     
-    //Load the C-Type strings from the C++ strings 
-    strcpy(React_Name,react_name.c_str());
+   //Load the C-Type strings from the C++ strings 
+   strcpy(React_Name,react_name.c_str());
     
-    for (int i = 0; i < num_species; i++) {
-       strcpy(Multispecies[i],multispecies[i].c_str());
-    } 
+   for (int i = 0; i < num_species; i++) {
+      strcpy(Multispecies[i],multispecies[i].c_str());
+   } /* endfor */
  
-    //Proper temperature 
-    Temperature = Wo.T();
-   
+   //Set temperature 
+   Temperature = Wo.T();
+ 
+   /* Return after processing input file. */
 
-    return (error_flag);
+   return (error_flag);
 
 }
 
 /********************************************************
- * Routine: Broadcast_Input_Parameters                  *
+ * Routine: Broadcast                                   *
  *                                                      *
  * Broadcast the input parameters variables to all      *
  * processors involved in the calculation from the      *
@@ -1860,59 +1845,61 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
  *                                                      *
 *********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-                  void Input_Parameters<SOLN_pSTATE, 
-                                        SOLN_cSTATE>::
-                  Broadcast_Input_Parameters(void) {
+void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
+Broadcast(void) {
    
-#ifdef _MPI_VERSION
+  cout << "\n B0: "; cout.flush();
 
-   // Input file parameters  
-   MPI::COMM_WORLD.Bcast(CFFC_Path, 
-			 INPUT_PARAMETER_LENGTH, 
+#ifdef _MPI_VERSION
+   // Input file parameters
+  cout << "\n B1: "; cout.flush();
+   MPI::COMM_WORLD.Bcast(CFFC_Path,
+			 INPUT_PARAMETER_LENGTH,
 			 MPI::CHAR, 0);
-   MPI::COMM_WORLD.Bcast(Input_File_Name, 
-                         INPUT_PARAMETER_LENGTH, 
-                         MPI::CHAR, 0);   
-   MPI::COMM_WORLD.Bcast(&(Line_Number), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(Input_File_Name,
+                         INPUT_PARAMETER_LENGTH,
+                         MPI::CHAR, 0);
+   MPI::COMM_WORLD.Bcast(&(Line_Number),
+                         1,
                          MPI::INT, 0);
 
    // Grid parameters
-   MPI::COMM_WORLD.Bcast(IP_Grid.Grid_Type, 
-                         INPUT_PARAMETER_LENGTH, 
+  cout << "\n B2: "; cout.flush();
+   MPI::COMM_WORLD.Bcast(IP_Grid.Grid_Type,
+                         INPUT_PARAMETER_LENGTH,
                          MPI::CHAR, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.i_Grid), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.i_Grid),
+                         1,
                          MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.NBlk_Idir), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.NBlk_Idir),
+                         1,
                          MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.NBlk_Jdir), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.NBlk_Jdir),
+                         1,
                          MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.NBlk_Kdir), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.NBlk_Kdir),
+                         1,
                          MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.NCells_Idir), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.NCells_Idir),
+                         1,
                          MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.NCells_Jdir), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.NCells_Jdir),
+                         1,
                          MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.NCells_Kdir), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.NCells_Kdir),
+                         1,
                          MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.Nghost), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Nghost),
+                         1,
                          MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.Box_Length), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Box_Length),
+                         1,
                          MPI::DOUBLE, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.Box_Width), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Box_Width),
+                         1,
                          MPI::DOUBLE, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.Box_Height), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Box_Height),
+                         1,
                          MPI::DOUBLE, 0);
    MPI::COMM_WORLD.Bcast(&(IP_Grid.Stretching_Type_Idir),
 	         	 1,
@@ -1932,252 +1919,257 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
    MPI::COMM_WORLD.Bcast(&(IP_Grid.Stretching_Factor_Kdir),
 			 1,
 			 MPI::DOUBLE,0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.Pipe_Radius), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Pipe_Radius),
+                         1,
                          MPI::DOUBLE, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.Pipe_Length), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Pipe_Length),
+                         1,
                          MPI::DOUBLE, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.Radius_Fuel_Line), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Radius_Fuel_Line),
+                         1,
                          MPI::DOUBLE, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.Radius_Bluff_Body), 
-                          1, 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Radius_Bluff_Body),
+                          1,
                           MPI::DOUBLE, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.Radius_Coflow_Inlet_Pipe), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Radius_Coflow_Inlet_Pipe),
+                         1,
                          MPI::DOUBLE, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.Length_Coflow_Inlet_Pipe), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Length_Coflow_Inlet_Pipe),
+                         1,
                          MPI::DOUBLE, 0);
-   MPI::COMM_WORLD.Bcast(&(IP_Grid.Length_Combustor_Tube), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(&(IP_Grid.Length_Combustor_Tube),
+                         1,
                          MPI::DOUBLE, 0);
 
    //ICEM Filenames
-   MPI::COMM_WORLD.Bcast(IP_Grid.ICEMCFD_FileNames[0], 
-                         INPUT_PARAMETER_LENGTH, 
+  cout << "\n B3: "; cout.flush();
+   MPI::COMM_WORLD.Bcast(IP_Grid.ICEMCFD_FileNames[0],
+                         INPUT_PARAMETER_LENGTH,
                          MPI::CHAR, 0);
-   MPI::COMM_WORLD.Bcast(IP_Grid.ICEMCFD_FileNames[1], 
-                         INPUT_PARAMETER_LENGTH, 
+   MPI::COMM_WORLD.Bcast(IP_Grid.ICEMCFD_FileNames[1],
+                         INPUT_PARAMETER_LENGTH,
                          MPI::CHAR, 0);
-   MPI::COMM_WORLD.Bcast(IP_Grid.ICEMCFD_FileNames[2], 
-                         INPUT_PARAMETER_LENGTH, 
+   MPI::COMM_WORLD.Bcast(IP_Grid.ICEMCFD_FileNames[2],
+                         INPUT_PARAMETER_LENGTH,
                          MPI::CHAR, 0);
 
    // Solver parameters
-   MPI::COMM_WORLD.Bcast(Time_Integration_Type, 
-                         INPUT_PARAMETER_LENGTH, 
+  cout << "\n B4: "; cout.flush();
+   MPI::COMM_WORLD.Bcast(Time_Integration_Type,
+                         INPUT_PARAMETER_LENGTH,
                          MPI::CHAR, 0);
-   MPI::COMM_WORLD.Bcast(&(i_Time_Integration), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(&(i_Time_Integration),
+                         1,
                          MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(Time_Accurate), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(&(Time_Accurate),
+                         1,
                          MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(Local_Time_Stepping), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(&(Local_Time_Stepping),
+                         1,
                          MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(Maximum_Number_of_Time_Steps), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(&(Maximum_Number_of_Time_Steps),
+                         1,
                          MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(N_Stage), 
-                         1, 
+   MPI::COMM_WORLD.Bcast(&(N_Stage),
+                         1,
                          MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(CFL_Number), 
-                          1, 
+   MPI::COMM_WORLD.Bcast(&(CFL_Number),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Time_Max), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Time_Max),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Residual_Smoothing), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Residual_Smoothing),
+                          1,
                           MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(p_Norms_Specified_Parameter), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(p_Norms_Specified_Parameter),
+                          1,
                           MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(Residual_Smoothing_Epsilon), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Residual_Smoothing_Epsilon),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Residual_Smoothing_Gauss_Seidel_Iterations), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Residual_Smoothing_Gauss_Seidel_Iterations),
+                          1,
                           MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(Reconstruction_Type, 
-                          INPUT_PARAMETER_LENGTH, 
+    MPI::COMM_WORLD.Bcast(Reconstruction_Type,
+                          INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(&(i_Reconstruction), 
-                          1, 
-                          MPI::INT, 0);   
-    MPI::COMM_WORLD.Bcast(Limiter_Type, 
-                          INPUT_PARAMETER_LENGTH, 
-                          MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(&(i_Limiter), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(i_Reconstruction),
+                          1,
                           MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(Flux_Function_Type, 
-                          INPUT_PARAMETER_LENGTH, 
+    MPI::COMM_WORLD.Bcast(Limiter_Type,
+                          INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(&(i_Flux_Function), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(i_Limiter),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(Flux_Function_Type,
+                          INPUT_PARAMETER_LENGTH,
+                          MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(&(i_Flux_Function),
+                          1,
                           MPI::INT, 0);
 
     // Flow solution parameters
-    MPI::COMM_WORLD.Bcast(ICs_Type, 
-                          INPUT_PARAMETER_LENGTH, 
+  cout << "\n B5: "; cout.flush();
+    MPI::COMM_WORLD.Bcast(ICs_Type,
+                          INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(&(i_ICs), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(i_ICs),
+                          1,
                           MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(i_Grid_Level), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(i_Grid_Level),
+                          1,
                           MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(Pressure), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Pressure),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Temperature), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Temperature),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Mach_Number), 
-			  1, 
+    MPI::COMM_WORLD.Bcast(&(Mach_Number),
+			  1,
 			  MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Mach_Number_Reference), 
-			  1, 
+    MPI::COMM_WORLD.Bcast(&(Mach_Number_Reference),
+			  1,
 			  MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Flow_Angle), 
-                          1, 
-                          MPI::DOUBLE, 0);   
+    MPI::COMM_WORLD.Bcast(&(Flow_Angle),
+                          1,
+                          MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(Re_lid),
 			  1,
 			  MPI::DOUBLE,0);
-     MPI::COMM_WORLD.Bcast(Flow_Type, 
-                          INPUT_PARAMETER_LENGTH, 
+     MPI::COMM_WORLD.Bcast(Flow_Type,
+                          INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(&(i_Flow_Type), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(i_Flow_Type),
+                          1,
                           MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(Flow_Geometry_Type, 
-                          INPUT_PARAMETER_LENGTH, 
+    MPI::COMM_WORLD.Bcast(Flow_Geometry_Type,
+                          INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(&(Axisymmetric), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Axisymmetric),
+                          1,
                           MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(Wall_Boundary_Treatments), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Wall_Boundary_Treatments),
+                          1,
                           MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(Stretch_Level), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Stretch_Level),
+                          1,
                           MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(Global_Schmidt), 
-                          1, 
-                          MPI::INT, 0); 
-    MPI::COMM_WORLD.Bcast(&(Gravity), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Global_Schmidt),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(Gravity),
+                          1,
 			  MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(debug_level), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(debug_level),
+                          1,
 			  MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(Preconditioning), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Preconditioning),
+                          1,
 			  MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(BluffBody_Data_Usage), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(BluffBody_Data_Usage),
+                          1,
                           MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(Moving_wall_velocity.x), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Moving_wall_velocity.x),
+                          1,
 			  MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Moving_wall_velocity.y), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Moving_wall_velocity.y),
+                          1,
 			  MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Moving_wall_velocity.z), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Moving_wall_velocity.z),
+                          1,
 			  MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Pressure_Gradient.x), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Pressure_Gradient.x),
+                          1,
 			  MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Pressure_Gradient.y), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Pressure_Gradient.y),
+                          1,
 			  MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Pressure_Gradient.z), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Pressure_Gradient.z),
+                          1,
 			  MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Reynolds_Number), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Reynolds_Number),
+                          1,
 			  MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Kinematic_Viscosity_Wall), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Kinematic_Viscosity_Wall),
+                          1,
 			  MPI::DOUBLE, 0);
 
     // More grid parameters
-    MPI::COMM_WORLD.Bcast(&(Plate_Length), 
-                          1, 
+  cout << "\n B6: "; cout.flush();
+    MPI::COMM_WORLD.Bcast(&(Plate_Length),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Blunt_Body_Radius), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Blunt_Body_Radius),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Blunt_Body_Mach_Number), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Blunt_Body_Mach_Number),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Grain_Length), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Grain_Length),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Grain_Radius), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Grain_Radius),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Grain_To_Throat_Length), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Grain_To_Throat_Length),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Nozzle_Length), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Nozzle_Length),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Nozzle_Radius_Exit), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Nozzle_Radius_Exit),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Nozzle_Radius_Throat), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Nozzle_Radius_Throat),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(BluffBody_Coflow_Air_Velocity), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(BluffBody_Coflow_Air_Velocity),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(BluffBody_Coflow_Fuel_Velocity), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(BluffBody_Coflow_Fuel_Velocity),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Cylinder_Radius), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Cylinder_Radius),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Ellipse_Length_X_Axis), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Ellipse_Length_X_Axis),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Ellipse_Length_Y_Axis), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Ellipse_Length_Y_Axis),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Chord_Length), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Chord_Length),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Orifice_Radius), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Orifice_Radius),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Wedge_Angle), 
-			  1, 
+    MPI::COMM_WORLD.Bcast(&(Wedge_Angle),
+			  1,
 			  MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Wedge_Length), 
-			  1, 
+    MPI::COMM_WORLD.Bcast(&(Wedge_Length),
+			  1,
 			  MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(X_Scale), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(X_Scale),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(X_Rotate), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(X_Rotate),
+                          1,
                           MPI::DOUBLE, 0);
    
     // AMR & Refinement Parameters
-    MPI::COMM_WORLD.Bcast(&(AMR), 
-                          1, 
+  cout << "\n B7: "; cout.flush();
+    MPI::COMM_WORLD.Bcast(&(AMR),
+                          1,
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(AMR_Frequency),
                           1,
                           MPI::INT,0);
-    MPI::COMM_WORLD.Bcast(&(Number_of_Initial_Mesh_Refinements), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Number_of_Initial_Mesh_Refinements),
+                          1,
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(Number_of_Uniform_Mesh_Refinements),
                           1,
@@ -2191,106 +2183,117 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
     MPI::COMM_WORLD.Bcast(&(Minimum_Refinement_Level),
                           1,
                           MPI::INT,0);
-    MPI::COMM_WORLD.Bcast(&(Threshold_for_Refinement), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Threshold_for_Refinement),
+                          1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Threshold_for_Coarsening), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(Threshold_for_Coarsening),
+                          1,
                           MPI::DOUBLE, 0);
 
     // Morton Ordering Parameters
-    MPI::COMM_WORLD.Bcast(&(Morton), 
-                          1, 
+  cout << "\n B8: "; cout.flush();
+    MPI::COMM_WORLD.Bcast(&(Morton),
+                          1,
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(Morton_Reordering_Frequency),
                           1,
                           MPI::INT,0);
 
     // File Names
-    MPI::COMM_WORLD.Bcast(Output_File_Name, 
-                          INPUT_PARAMETER_LENGTH, 
+  cout << "\n B9: "; cout.flush();
+    MPI::COMM_WORLD.Bcast(Output_File_Name,
+                          INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(Grid_File_Name, 
-                          INPUT_PARAMETER_LENGTH, 
+    MPI::COMM_WORLD.Bcast(Grid_File_Name,
+                          INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(Grid_Definition_File_Name, 
-                          INPUT_PARAMETER_LENGTH, 
+    MPI::COMM_WORLD.Bcast(Grid_Definition_File_Name,
+                          INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(Restart_File_Name, 
-                          INPUT_PARAMETER_LENGTH, 
+    MPI::COMM_WORLD.Bcast(Restart_File_Name,
+                          INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(Gnuplot_File_Name, 
-                          INPUT_PARAMETER_LENGTH, 
+    MPI::COMM_WORLD.Bcast(Gnuplot_File_Name,
+                          INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(Output_Format_Type, 
-                          INPUT_PARAMETER_LENGTH, 
+    MPI::COMM_WORLD.Bcast(Output_Format_Type,
+                          INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(&(i_Output_Format), 
-                          1, 
+    MPI::COMM_WORLD.Bcast(&(i_Output_Format),
+                          1,
                           MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(Restart_Solution_Save_Frequency), 
-                          1, 
-                          MPI::INT, 0); 
+    MPI::COMM_WORLD.Bcast(&(Restart_Solution_Save_Frequency),
+                          1,
+                          MPI::INT, 0);
 
     if (!CFFC_Primary_MPI_Processor()) {
        Number_of_Processors = CFFC_MPI::Number_of_Processors;
     } /* endif */
-    MPI::COMM_WORLD.Bcast(&(Number_of_Blocks_Per_Processor), 
-                          1, 
-                          MPI::INT, 0); 
+    MPI::COMM_WORLD.Bcast(&(Number_of_Blocks_Per_Processor),
+                          1,
+                          MPI::INT, 0);
     // Freeze_Limiter
-    MPI::COMM_WORLD.Bcast(&(Freeze_Limiter), 
-			  1, 
+    MPI::COMM_WORLD.Bcast(&(Freeze_Limiter),
+			  1,
 			  MPI::INT, 0);
     // Freeze_Limiter_Residual_Level
     MPI::COMM_WORLD.Bcast(&(Freeze_Limiter_Residual_Level),
-                          1, 
+                          1,
                           MPI::DOUBLE, 0);
 
-   //reaction name
-   MPI::COMM_WORLD.Bcast(React_Name, 
-                         INPUT_PARAMETER_LENGTH, 
+   // Reaction Name
+   MPI::COMM_WORLD.Bcast(React_Name,
+                         INPUT_PARAMETER_LENGTH,
                          MPI::CHAR, 0);
     
-   //delete current dynamic memory before changing num_species
-   if(!CFFC_Primary_MPI_Processor()) {   
+   // Delete current dynamic memory before changing num_species
+  cout << "\n B10: "; cout.flush();
+   if (!CFFC_Primary_MPI_Processor()) {
       Deallocate();
-   } 
-   // Number of species
-   MPI::COMM_WORLD.Bcast(&(num_species), 
-                         1, 
-                         MPI::INT, 0);
-   // Set up new dynamic memory
-   if(!CFFC_Primary_MPI_Processor()) {   
-      Allocate();
-   } 
+   } /* endif */
 
-   //species names & mass fractions
-   for(int i =0; i < num_species; i++){
-      MPI::COMM_WORLD.Bcast(&(mass_fractions[i]), 
-			    1, 
+   // Number of Species
+   int ns;
+   if (CFFC_Primary_MPI_Processor()) {
+      ns=num_species;
+   } /* endif */
+   MPI::COMM_WORLD.Bcast(&(ns),
+                         1,
+                         MPI::INT, 0);
+
+   // Allocate required dynamic memory for species data
+   if(!CFFC_Primary_MPI_Processor()) {
+      Allocate(ns);
+   } /* endif */
+
+   // Species names & mass fractions
+   for (int i =0; i < num_species; i++) {
+      MPI::COMM_WORLD.Bcast(&(mass_fractions[i]),
+			    1,
 			    MPI::DOUBLE, 0);
-      MPI::COMM_WORLD.Bcast(&(Schmidt[i]), 
-			    1, 
+      MPI::COMM_WORLD.Bcast(&(Schmidt[i]),
+			    1,
 			    MPI::DOUBLE, 0);
-      MPI::COMM_WORLD.Bcast(Multispecies[i], 
-			    INPUT_PARAMETER_LENGTH, 
+      MPI::COMM_WORLD.Bcast(Multispecies[i],
+			    INPUT_PARAMETER_LENGTH,
 			    MPI::CHAR, 0);
-    }
-   //set recaction and species parameters
-   if (!CFFC_Primary_MPI_Processor()) {      
+   } /* endfor*/
+
+   // Set reaction and species parameters
+  cout << "\n B11: "; cout.flush();
+   if (!CFFC_Primary_MPI_Processor()) {
       react_name = React_Name;
       for (int i = 0; i < num_species; i++) {
-         multispecies[i] = Multispecies[i];  
-      }    
+         multispecies[i] = Multispecies[i];
+      }
       
-      //load reaction names
+      // Load reaction names
       Wo.React.set_reactions(react_name);
       
-      //Set species if non-reacting
-      if( Wo.React.reactset_flag == NO_REACTIONS){
+      // Set species if non-reacting
+      if (Wo.React.reactset_flag == NO_REACTIONS) {
          Wo.React.set_species(multispecies,num_species);
-      }  
+      } /* endif */
       
       SOLN_pSTATE::set_species_data(Wo,
                                     num_species,
@@ -2298,7 +2301,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
                                     CFFC_Path,
                                     debug_level,
                                     Mach_Number_Reference,
-                                    Schmidt); 
+                                    Schmidt);
       SOLN_cSTATE::set_species_data(Uo,
                                     num_species,
                                     multispecies,
@@ -2310,21 +2313,24 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
       Wo.set_initial_values(mass_fractions);
       Uo.set_initial_values(mass_fractions);
       
-      //set proper Temp & Pressure instead of defaults
-      Wo.rho = Pressure/(Wo.Rtot()*Temperature); 
-      Wo.p = Pressure;	
+      // Set the correct temperature & pressure of reference states.
+      Wo.rho = Pressure/(Wo.Rtot()*Temperature);
+      Wo.p = Pressure;
       Wo.v.zero();
 
       Uo = Wo.U();
-   } 
+   }
    
-   if(!CFFC_Primary_MPI_Processor()) {   
+  cout << "\n B12: "; cout.flush();
+   if(!CFFC_Primary_MPI_Processor()) {
       Wo.v.x = Mach_Number*Wo.a()*cos(TWO*PI*Flow_Angle/360.00);
       Wo.v.y = Mach_Number*Wo.a()*sin(TWO*PI*Flow_Angle/360.00);
       Wo.v.z = Mach_Number*Wo.a()*sin(TWO*PI*Flow_Angle/360.00);
-    }
-
+   } /* endif */
+  cout << "\n B13: "; cout.flush();
 #endif
+
+  cout << "\n B14: "; cout.flush();
 
 }
 
@@ -2332,8 +2338,8 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
  * Input_Parameters -- Input-output operators.               *
  *************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-   ostream &operator << (ostream &out_file,
-                         const Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IP) {
+ostream &operator << (ostream &out_file,
+                      const Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IP) {
    
    out_file << setprecision(6);
    out_file << "\n  -> CFFC Path: " << IP.CFFC_Path;
@@ -2343,7 +2349,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
       out_file<<" Euler (Inviscid) ";
    } else {
       out_file<<" Navier-Stokes (Viscous) ";
-   }
+   } /* endif */
    out_file<<"equations (IBVP/BVP) "; 
    if (IP.i_Flow_Type ==  FLOWTYPE_INVISCID) {
    } else if (IP.i_Flow_Type == FLOWTYPE_LAMINAR) {
@@ -2508,9 +2514,9 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
    switch(IP.IP_Grid.i_Grid) {
  
    case GRID_ICEMCFD :
-      out_file <<"\n  -> topology file : "<< IP.IP_Grid.ICEMCFD_FileNames[0];
-      out_file <<"\n  -> family_boco file : "<< IP.IP_Grid.ICEMCFD_FileNames[1];
-      out_file <<"\n  -> family_topo file : "<< IP.IP_Grid.ICEMCFD_FileNames[2];
+      out_file <<"\n  -> topology file : " << IP.IP_Grid.ICEMCFD_FileNames[0];
+      out_file <<"\n  -> family_boco file : " << IP.IP_Grid.ICEMCFD_FileNames[1];
+      out_file <<"\n  -> family_topo file : " << IP.IP_Grid.ICEMCFD_FileNames[2];
    case GRID_CUBE : 
       out_file << "\n  -> Length of Solution Domain (m): "
                << IP.IP_Grid.Box_Length;

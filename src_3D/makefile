@@ -38,18 +38,44 @@ PHYSICS_DIR = Physics/
 SYSTEM_DIR = System/
 TURBULENCE_DIR = Turbulence/
 
-# C++ Source files
+#
+# Set default f90 module directory
+MODULE_DIR = F90_Modules
+
+###############################################################################
+# C++, C, and Fortran Source Files
+###############################################################################
+# Math:
 SRC_MATH = $(MATH_DIR)Vector2D.cc \
            $(MATH_DIR)Tensor2D.cc \
+           $(MATH_DIR)Third_order_tensor2D.cc \
 	   $(MATH_DIR)Tensor3D.cc \
            $(MATH_DIR)Spline2D.cc \
            $(MATH_DIR)Matrix.cc \
            $(MATH_DIR)LinearSystems.cc \
 	   $(MATH_DIR)LinkedList.cc \
-	   $(MATH_DIR)Polygon.cc
+	   $(MATH_DIR)Polygon.cc \
+	   $(MATH_DIR)Polyfit/Polyfit.cc \
+	   $(MATH_DIR)Polyfit/dp1vlu.f \
+	   $(MATH_DIR)Polyfit/dpcoef.f \
+	   $(MATH_DIR)Polyfit/dpolft.f
+SRC_MATH_F90 = $(MATH_DIR)complexify.f90
+SRC_MATH += $(SRC_MATH_F90)
+
+# CFD and MPI:
 SRC_CFD = $(CFD_DIR)CFD.cc
 SRC_MPI	= $(MPI_DIR)MPI.cc
-SRC_SYSTEM = $(SYSTEM_DIR)System_Linux.cc
+
+# Grid:
+SRC_GRID = $(GRID_DIR)Cell2D.cc \
+           $(GRID_DIR)Grid2DQuadBlock.cc \
+           $(GRID_DIR)Grid2DQuadMultiBlock.cc \
+           $(GRID_DIR)Grid3DHexaBlock.cc \
+           $(GRID_DIR)Grid3DHexaMultiBlock.cc
+SRC_ICEM = $(ICEM_DIR)ICEMCFD.cc \
+	   $(ICEM_DIR)ICEMCFD_ctype.c
+
+# AMR:
 ifeq ($(MPI_VERSION),NoMPI)
   SRC_AMR = $(AMR_DIR)AdaptiveBlock3D.cc \
 	    $(AMR_DIR)AdaptiveBlock3D_NoMPI.cc \
@@ -59,44 +85,85 @@ else
 	    $(AMR_DIR)AdaptiveBlock3D_MPI.cc \
             $(AMR_DIR)Octree.cc
 endif
-SRC_GRID = $(GRID_DIR)Cell2D.cc \
-           $(GRID_DIR)Grid2DQuadBlock.cc \
-           $(GRID_DIR)Grid2DQuadMultiBlock.cc \
-           $(GRID_DIR)Grid3DHexaBlock.cc \
-           $(GRID_DIR)Grid3DHexaMultiBlock.cc
-SRC_ICEM = $(ICEM_DIR)ICEMCFD.cc \
-	   $(ICEM_DIR)ICEMCFD_ctype.c
+
+# Euler3D:
 SRC_EULER = $(EULER_DIR)Euler3DThermallyPerfectState.cc \
 	    $(EULER_DIR)Euler3DThermallyPerfectInput.cc
+
+# NavierStokes3D:
 SRC_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectState.cc \
                    $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectHexaBlock.cc \
                    $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectInput.cc
+
+# FANS3D:
 SRC_FANS = $(FANS_DIR)FANS3DThermallyPerfectState.cc \
            $(FANS_DIR)FANS3DThermallyPerfectHexaBlock.cc \
            $(FANS_DIR)FANS3DThermallyPerfectInput.cc
+
+# Physics, Turbulence, Thermodynamics, and Chemistry:
 SRC_SPECIES = $(NASA_DIR)NASARP1311data.cc \
               $(NASA_DIR)Reactions.cc
 SRC_TURBULENCE = $(TURBULENCE_DIR)TurbulenceModelling.cc 
+
+# TUT testing:
+SRC_TUT = TestRun.cc \
+          TestData.cc \
+	  BasicTests/Sample_Test.cc \
+          BasicTests/test_TestData.cc
+SRC_TUT := $(addprefix $(UNIT_TESTING_DIR), $(SRC_TUT))
+
+# System:
+SRC_SYSTEM = $(SYSTEM_DIR)System_Linux.cc
+
+# Base and CFFC sources:
 SRC_BASE = $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_SYSTEM) \
            $(SRC_AMR) $(SRC_GRID) $(SRC_ICEM) \
            $(SRC_TURBULENCE)
+ifeq ($(TUT_TESTING),ON) 
+  SRC_BASE += $(SRC_TUT)
+endif
 SRC_CFFC = $(SRC_BASE) \
            $(SRC_EULER) $(SRC_NAVIERSTOKES) $(SRC_FANS) \
            $(SRC_SPECIES)  
+
+# Executable sources:
 SRC_MAIN = cffc3D.cc
 
-#Compiled object code files
+###############################################################################
+# Compiled object code files
+###############################################################################
+# Math:
 OBJ_MATH = $(MATH_DIR)Vector2D.o \
            $(MATH_DIR)Tensor2D.o \
-	   $(MATH_DIR)Tensor3D.o \
+           $(MATH_DIR)Third_order_tensor2D.o \
+           $(MATH_DIR)Tensor3D.o \
            $(MATH_DIR)Spline2D.o \
            $(MATH_DIR)Matrix.o \
            $(MATH_DIR)LinearSystems.o \
 	   $(MATH_DIR)LinkedList.o \
-	   $(MATH_DIR)Polygon.o
+	   $(MATH_DIR)Polygon.o \
+	   $(MATH_DIR)Polyfit/Polyfit.o \
+	   $(MATH_DIR)Polyfit/dp1vlu.o \
+	   $(MATH_DIR)Polyfit/dpcoef.o \
+	   $(MATH_DIR)Polyfit/dpolft.o
+OBJ_MATH_F90 = $(MATH_DIR)complexify.o 
+OBJ_MATH += $(OBJ_MATH_F90)
+MOD_MATH_F90 = $(MODULE_DIR)/complexify.mod
+
+# CFD and MPI:
 OBJ_CFD = $(CFD_DIR)CFD.o
 OBJ_MPI	= $(MPI_DIR)MPI.o
-OBJ_SYSTEM = $(SYSTEM_DIR)System_Linux.o
+
+# Grid:
+OBJ_GRID = $(GRID_DIR)Cell2D.o \
+           $(GRID_DIR)Grid2DQuadBlock.o \
+           $(GRID_DIR)Grid2DQuadMultiBlock.o \
+           $(GRID_DIR)Grid3DHexaBlock.o \
+           $(GRID_DIR)Grid3DHexaMultiBlock.o
+OBJ_ICEM = $(ICEM_DIR)ICEMCFD.o \
+	   $(ICEM_DIR)ICEMCFD_ctype.o
+
+# AMR:
 ifeq ($(MPI_VERSION),NoMPI)
   OBJ_AMR = $(AMR_DIR)AdaptiveBlock3D.o \
 	    $(AMR_DIR)AdaptiveBlock3D_NoMPI.o \
@@ -106,38 +173,54 @@ else
 	    $(AMR_DIR)AdaptiveBlock3D_MPI.o \
             $(AMR_DIR)Octree.o
 endif
-OBJ_GRID = $(GRID_DIR)Cell2D.o \
-           $(GRID_DIR)Grid2DQuadBlock.o \
-           $(GRID_DIR)Grid2DQuadMultiBlock.o \
-           $(GRID_DIR)Grid3DHexaBlock.o \
-           $(GRID_DIR)Grid3DHexaMultiBlock.o
-OBJ_ICEM = $(ICEM_DIR)ICEMCFD.o \
-	   $(ICEM_DIR)ICEMCFD_ctype.o
+
+# Euler3D:
 OBJ_EULER = $(EULER_DIR)Euler3DThermallyPerfectState.o \
 	    $(EULER_DIR)Euler3DThermallyPerfectInput.o
+
+# NavierStokes3D:
 OBJ_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectState.o \
                    $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectHexaBlock.o \
                    $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectInput.o
+
+# FANS3D:
 OBJ_FANS = $(FANS_DIR)FANS3DThermallyPerfectState.o \
            $(FANS_DIR)FANS3DThermallyPerfectHexaBlock.o \
            $(FANS_DIR)FANS3DThermallyPerfectInput.o
+
+# Physics, Turbulence, Thermodynamics, and Chemistry:
 OBJ_SPECIES = $(NASA_DIR)NASARP1311data.o \
               $(NASA_DIR)Reactions.o
 OBJ_TURBULENCE = $(TURBULENCE_DIR)TurbulenceModelling.o 
+
+# TUT testing:
+OBJ_TUT := $(SRC_TUT:.cc=.o)
+
+# System:
+OBJ_SYSTEM = $(SYSTEM_DIR)System_Linux.o
+
+# Base and CFFC objects:
 OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_SYSTEM) \
            $(OBJ_AMR) $(OBJ_GRID) $(OBJ_ICEM) \
            $(OBJ_TURBULENCE)
+ifeq ($(TUT_TESTING),ON)
+  OBJ_BASE += $(OBJ_TUT)
+endif
 OBJ_CFFC = $(OBJ_BASE) \
            $(OBJ_EULER) $(OBJ_NAVIERSTOKES) $(OBJ_FANS) \
            $(OBJ_SPECIES)
+
+# Executable objects:
 OBJ_MAIN = cffc3D.o
 
-#
+###############################################################################
 # Define the executables
+###############################################################################
 EXE_MAIN = cffc3D
 
-#
+###############################################################################
 # Define dependencies
+###############################################################################
 help:
 	@echo "+-----------------------------------------------------------------------------------+"
 	@echo "|                                                                                   |"
@@ -164,6 +247,7 @@ help:
 	@echo "|                  GCC_VERSION = V296, V3+ (default), ICC                           |"
 	@echo "|                  CANTERA_VERSION = NoCANTERA (default), V70                       |"
 	@echo "|                  FFTW_VERSION = V32 (default), NoFFTW                             |"
+	@echo "|                  TUT_TESTING = ON (default), OFF                                  |"
 	@echo "|                  PROFILING = OFF (default), ON                                    |"
 	@echo "|                                                                                   |"
 	@echo "| Ensure that the source directory is clean and the ICEMCFD, SparseLib++, BPKIT,    |"
@@ -349,20 +433,23 @@ clean:
 	@echo '---------------------------------'
 	@echo ' '
 	rm -f *.depend *.o *.bak *.il *~
-	rm -f $(AMR_DIR)*.o $(AMR_DIR)*.il $(AMR_DIR)*~
-	rm -f $(CFD_DIR)*.o $(CFD_DIR)*.il $(CFD_DIR)*~
-	rm -f $(EULER_DIR)*.o $(EULER_DIR)*.il $(EULER_DIR)*~ $(EULER_DIR)*.depend $(EULER_DIR)*.bak
-	rm -f $(FANS_DIR)*.o $(FANS_DIR)*.il $(FANS_DIR)*~ $(FANS_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
-	rm -f $(GRID_DIR)*.o $(GRID_DIR)*.il $(GRID_DIR)*~
-	rm -f $(HEXA_DIR)*.o $(HEXA_DIR)*.il $(HEXA_DIR)*~
-	rm -f $(ICEM_DIR)*.o $(ICEM_DIR)*.il $(ICEM_DIR)*~ $(ICEM_DIR)*.depend $(ICEM_DIR)*.bak
 	rm -f $(MATH_DIR)*.o $(MATH_DIR)*.il $(MATH_DIR)*~
+	rm -f $(MATH_DIR)Polyfit/*.o $(MATH_DIR)Polyfit/*.il $(MATH_DIR)Polyfit/*~
+	rm -f $(CFD_DIR)*.o $(CFD_DIR)*.il $(CFD_DIR)*~
 	rm -f $(MPI_DIR)*.o $(MPI_DIR)*.il $(MPI_DIR)*~
-	rm -f $(NASA_DIR)*.o $(NASA_DIR)*.il $(NASA_DIR)*~
+	rm -f $(GRID_DIR)*.o $(GRID_DIR)*.il $(GRID_DIR)*~
+	rm -f $(ICEM_DIR)*.o $(ICEM_DIR)*.il $(ICEM_DIR)*~ $(ICEM_DIR)*.depend $(ICEM_DIR)*.bak
+	rm -f $(AMR_DIR)*.o $(AMR_DIR)*.il $(AMR_DIR)*~
+	rm -f $(EULER_DIR)*.o $(EULER_DIR)*.il $(EULER_DIR)*~ $(EULER_DIR)*.depend $(EULER_DIR)*.bak
 	rm -f $(NAVIERSTOKES_DIR)*.o $(NAVIERSTOKES_DIR)*.il $(NAVIERSTOKES_DIR)*~ $(NAVIERSTOKES_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
+	rm -f $(FANS_DIR)*.o $(FANS_DIR)*.il $(FANS_DIR)*~ $(FANS_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
+	rm -f $(HEXA_DIR)*.o $(HEXA_DIR)*.il $(HEXA_DIR)*~
 	rm -f $(PHYSICS_DIR)*.o $(PHYSICS_DIR)*.il $(PHYSICS_DIR)*~
-	rm -f $(SYSTEM_DIR)*.o $(SYSTEM_DIR)*.il $(SYSTEM_DIR)*~
 	rm -f $(TURBULENCE_DIR)*.o $(TURBULENCE_DIR)*.il $(TURBULENCE_DIR)*~
+	rm -f $(NASA_DIR)*.o $(NASA_DIR)*.il $(NASA_DIR)*~
+	rm -f $(UNIT_TESTING_DIR)*.o $(UNIT_TESTING_DIR)*.il $(UNIT_TESTING_DIR)*~
+	rm -f $(UNIT_TESTING_DIR)BasicTests/*.o $(UNIT_TESTING_DIR)BasicTests/*.il $(UNIT_TESTING_DIR)BasicTests/*~
+	rm -f $(SYSTEM_DIR)*.o $(SYSTEM_DIR)*.il $(SYSTEM_DIR)*~
 	rm -f $(EXE_MAIN)
 	@echo ' '
 	@echo All source file directories are now clean.
@@ -403,6 +490,17 @@ superclean: clean-extras
 	@echo All documentation and library directories are now clean.
 	@echo '-------------------------------------------------------'
 	@echo ' '
+
+#
+# Dependencies for Fortran 90 objects/modules
+$(MOD_MATH_F90): $(MATH_DIR)complexify.f90 $(MATH_DIR)Complexify.h
+	$(F90) $(F90FLAGS) $(MODFLAG) $(MODULE_DIR) -I$(MODULE_DIR) -c -o $(MATH_DIR)complexify.o $(MATH_DIR)complexify.f90
+
+#
+# Default dependencies for Fortran 90 objects
+.SUFFIXES: .f90
+.f90.o:
+	$(F90) $(F90FLAGS) $(MODFLAG) $(MODULE_DIR) -I$(MODULE_DIR) -c -o $*.o $*.f90
 
 #
 # Include header file dependencies

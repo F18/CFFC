@@ -21,15 +21,16 @@
 template<>
 void Input_Parameters<Euler3D_ThermallyPerfect_pState, 
                       Euler3D_ThermallyPerfect_cState>::
-Broadcast_Input_Parameters(void) {
+Broadcast(void) {
 
    //call the default broadcast input parameters
-   Input_Parameters<Euler3D_ThermallyPerfect_pState, 
-      Euler3D_ThermallyPerfect_cState>::Broadcast_Input_Parameters();
-   
-   
-#ifdef _MPI_VERSION
+  cout << "\n A1: "; cout.flush();
+  cout << "\n CC: "; cout.flush();
+  // Input_Parameters<Euler3D_ThermallyPerfect_pState, Euler3D_ThermallyPerfect_cState>::Broadcast();
+  Input_Parameters::Broadcast();
+  cout << "\n A2: "; cout.flush();
 
+#ifdef _MPI_VERSION
    MPI::COMM_WORLD.Bcast(&(Wo.rho), 
                          1, 
                          MPI::INT, 0);
@@ -45,7 +46,6 @@ Broadcast_Input_Parameters(void) {
    MPI::COMM_WORLD.Bcast(&(Wo.p), 
                          1, 
                          MPI::INT, 0);
-
 #endif
 
 }

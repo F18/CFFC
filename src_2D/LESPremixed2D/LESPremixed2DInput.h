@@ -158,7 +158,6 @@ class LESPremixed2D_Input_Parameters{
   char trans_type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int  i_trans_type; 
 
-
   //! BC Pressure Gradient 
   double Pressure_Gradient;
 
@@ -167,6 +166,13 @@ class LESPremixed2D_Input_Parameters{
   void get_cffc_path();
   //@}
 
+  //! Mechanism name
+  string ct_mech_name;
+  char ct_Mech_Name[INPUT_PARAMETER_LENGTH_CHEM2D];
+  //! Mechanism file
+  string ct_mech_file;
+  char ct_Mech_File[INPUT_PARAMETER_LENGTH_CHEM2D];
+  //@}
 
   //@{ @name Subfilter scale modelling and related parameters:
   double Smagorinsky_Constant;
@@ -182,14 +188,12 @@ class LESPremixed2D_Input_Parameters{
          Fresh_Density;
   //@}
 
-
   //! Energy Spectrum
   char Spectrum_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int  i_Spectrum;
   int  Rescale_Spectrum;
   int  Read_Fluctuations_From_File;
   double TKEo;
-  
 
   //@{ @name Flow type indicator and related input parameters:
   char Flow_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
@@ -202,7 +206,6 @@ class LESPremixed2D_Input_Parameters{
   double Global_Schmidt;  //depricated, use each individual Schmidt's
   double *Schmidt;  //individual for each species
   int Wall_Boundary_Treatments; //0, 1,2 , automatic, wall function, low_Reynolds number
-
   double Reynolds_Number;
   double Kinematic_Viscosity_Wall;
 
@@ -213,7 +216,6 @@ class LESPremixed2D_Input_Parameters{
   //@{ @name Gravity indicator (yes/no) = (1,0).
   int Gravity;
   //@}
-
 
   //@{ @name Grid type indicator and related input parameters:
   char Grid_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
@@ -582,6 +584,12 @@ inline ostream &operator << (ostream &out_file,
     /********** LESPREMIXED2D ****************************/
     out_file << "\n  -> Reaction Mechanism: " 
 	     << IP.react_name;
+    if (IP.Wo.React.reactset_flag == CANTERA) {
+      out_file << "\n  -> Mechanism Name: "
+               << IP.ct_mech_name
+               << "\n  -> Mechanism File: "
+               << IP.ct_mech_file;
+    }
     out_file << "\n  -> Species: "<<IP.Wo.ns
 	     << "\n  -> Initial mass fractions: ";
     for(int i=0; i<IP.Wo.ns; i++){

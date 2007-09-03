@@ -86,7 +86,7 @@ int HexaSolver(char *Input_File_Name_ptr,
    CFFC_Broadcast_MPI(&command_flag, 1);
    if (command_flag == TERMINATE_CODE) return (0);
    cout << "\n aaaa"; cout.flush();
-   Input.Broadcast_Input_Parameters();
+   Input.Broadcast();
    cout << "\n bbbb"; cout.flush();
 
    /********************************************************  
@@ -479,7 +479,7 @@ int HexaSolver(char *Input_File_Name_ptr,
          line_number = Input.Line_Number;
       } /* endif */
       CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-      Input.Broadcast_Input_Parameters();
+      Input.Broadcast();
       CFFC_Broadcast_MPI(&command_flag, 1);
 
       if (command_flag == EXECUTE_CODE) {

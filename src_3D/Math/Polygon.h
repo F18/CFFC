@@ -355,6 +355,21 @@ inline int Polygon::point_in_polygon(const Vector2D &Xt) const {
   return (number_of_left_intersections%2 +
 	  number_of_right_intersections%2)/2;
 
+  //When I ran my test cases I used this implementation of pnpoly from
+  //http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+  //     ~james
+//  int i, j, c = 0;
+//
+//  for (i = 0, j = np-1; i < np; j = i++) {
+//    if ((((X[i].y<=Xt.y) && (Xt.y<X[j].y)) ||
+//	 ((X[j].y<=Xt.y) && (Xt.y<X[i].y))) &&
+//	(Xt.x < (X[j].x - X[i].x) * (Xt.y - X[i].y) / (X[j].y - X[i].y) + X[i].x))
+//
+//      c = !c;
+//  }
+//
+//  return c;
+
 }
 
 /**********************************************************************

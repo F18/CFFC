@@ -2175,6 +2175,18 @@ void ICs(LESPremixed2D_Quad_Block &SolnBlk,
 	Wr.rho = Wr.p/(Wr.Rtot()*3000.0); 
 	Wr.v.x = 6.0;
 	
+      } else if (Wo[0].React.reactset_flag == CANTERA) {
+	//set to phi=1.0 values from CHEMKIN
+	Wl.v.x = 0.4101;	
+	Wr.v.x = 3.103; 
+
+	//phi = 1.0
+	Wr.spec[0] = ZERO;       //CH4
+	Wr.spec[1] = 0.0000;     //O2
+	Wr.spec[2] = 0.1511;     //CO2
+	Wr.spec[3] = 0.1242;     //H2O 
+	Wr.rho = Wr.p/(Wr.Rtot()*2320); //2234
+
       } else {
 	cout<<"\n No 1D_Premixed Flame Initial Conditions for "<<Wo[0].React.Reaction_system; exit(1);
       }

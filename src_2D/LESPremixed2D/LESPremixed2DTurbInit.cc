@@ -1497,11 +1497,9 @@ int Longitudinal_Correlation(QuadTreeBlock_DataStructure &QuadTree,
   Vector2D Vcorr, Xcorr;
   Vcorr.zero();  Xcorr.zero();
   bool correlated_flag, flag = false;
-  unsigned int count = 0, count1 = 0;
+  int count = 0, count1 = 0;
   r = ZERO;
   L11 = ZERO;
-
-   
 
   if (Input_Parameters.i_Grid == GRID_PERIODIC_BOX &&
       Input_Parameters.react_name == "NO_REACTIONS") {

@@ -147,7 +147,6 @@ void Set_Default_Input_Parameters(LESPremixed2D_Input_Parameters &IP) {
     strcpy(IP.trans_type, string_ptr);
     IP.i_trans_type = TRANSPORT_NASA;
 
-
     IP.Allocate();
     IP.multispecies[0] = "N2"; 
     IP.multispecies[1] = "O2"; 
@@ -182,6 +181,9 @@ void Set_Default_Input_Parameters(LESPremixed2D_Input_Parameters &IP) {
     IP.Uo = U(IP.Wo);   
     IP.Heat_Source = ZERO;
 
+    // cantera parameters
+    IP.ct_mech_name = "none";
+    IP.ct_mech_file = "none";
 
     IP.Smagorinsky_Constant = 0.18;
     IP.Yoshizawa_coefficient = 0.005;
@@ -194,7 +196,6 @@ void Set_Default_Input_Parameters(LESPremixed2D_Input_Parameters &IP) {
 				 IP.Smagorinsky_Constant,
 				 IP.Yoshizawa_coefficient);
 
-    
     IP.laminar_flame_thickness = 0.446E-3; // m
     IP.laminar_flame_speed = 0.38; // m/s
     IP.TFactor = ONE;
@@ -518,17 +519,21 @@ void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Read_Fluctuations_From_File), 
                           1, 
                           MPI::INT, 0);
-
-
     //reaction name
     MPI::COMM_WORLD.Bcast(IP.React_Name, 
                           INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
+			  MPI::CHAR, 0);
+    // cantera parameters
+    MPI::COMM_WORLD.Bcast(IP.ct_Mech_Name,
+                          INPUT_PARAMETER_LENGTH_CHEM2D,
+			  MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(IP.ct_Mech_File,
+                          INPUT_PARAMETER_LENGTH_CHEM2D,
 			  MPI::CHAR, 0);
     //scalar system name
     MPI::COMM_WORLD.Bcast(IP.Scalar_system_name, 
                           INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
 			  MPI::CHAR, 0);
-    
     //delete current dynamic memory before changing num_species
     if(!CFFC_Primary_MPI_Processor()) {   
       IP.Deallocate();
@@ -578,7 +583,6 @@ void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP) {
 			    MPI::CHAR, 0);
       }
     }
-
     //set reaction and species parameters
     if (!CFFC_Primary_MPI_Processor()) {      
       IP.react_name = IP.React_Name;
@@ -593,7 +597,10 @@ void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP) {
       }
 
       //load reaction and scalar names
-      IP.Wo.React.set_reactions(IP.react_name);
+      if (IP.Wo.React.reactset_flag != CANTERA)
+	IP.Wo.React.set_reactions(IP.react_name);
+      else
+	 IP.Wo.React.ct_load_mechanism(IP.ct_mech_file, IP.ct_mech_name);
       IP.Wo.Scal_sys.scalar_set(IP.scalar_system_name);
       
       //Set species if non-reacting
@@ -1208,15 +1215,17 @@ void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Read_Fluctuations_From_File), 
                           1, 
                           MPI::INT, Source_Rank);
-
-
-
-
-
     //reaction name
     Communicator.Bcast(IP.React_Name, 
                           INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
 			  MPI::CHAR, Source_Rank);
+    // cantera parameters
+    Communicator.Bcast(IP.ct_Mech_Name,
+		       INPUT_PARAMETER_LENGTH_CHEM2D,
+		       MPI::CHAR, Source_Rank);
+    Communicator.Bcast(IP.ct_Mech_File,
+		       INPUT_PARAMETER_LENGTH_CHEM2D,
+		       MPI::CHAR, Source_Rank);
     //scalar system name
     Communicator.Bcast(IP.Scalar_system_name, 
                           INPUT_PARAMETER_LENGTH_LESPREMIXED2D, 
@@ -1269,7 +1278,6 @@ void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP,
 			    MPI::CHAR, Source_Rank);
       }
     }
-
     //set reaction and species parameters
     if (!CFFC_Primary_MPI_Processor()) {      
       IP.react_name = IP.React_Name;
@@ -1283,8 +1291,11 @@ void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP,
         }
       }
      
-      //load reaction names
-      IP.Wo.React.set_reactions(IP.react_name);
+      //load reaction and scalar names
+      if (IP.Wo.React.reactset_flag != CANTERA)
+	IP.Wo.React.set_reactions(IP.react_name);
+      else
+	 IP.Wo.React.ct_load_mechanism(IP.ct_mech_file, IP.ct_mech_name);
       IP.Wo.Scal_sys.scalar_set(IP.scalar_system_name);
       
       //Set species if non-reacting
@@ -2547,7 +2558,6 @@ int Parse_Next_Input_Control_Parameter(LESPremixed2D_Input_Parameters &IP) {
 	 IP.Line_Number = IP.Line_Number - 1 ;
        }
 
-
        /*************************************/
        /**** REACTIONS SET FOR HARDCODED ****/
        /*************************************/
@@ -2655,15 +2665,118 @@ int Parse_Next_Input_Control_Parameter(LESPremixed2D_Input_Parameters &IP) {
        /***************************************/
     } else if (strcmp(IP.Next_Control_Parameter, "User_Reaction_Mechanism") == 0) { 
       // this will be added but its not quite yet
-      i_command=202;
+      i_command = 202;
       cout<<endl<<IP.Next_Control_Parameter<<"\n not currently available in freeware version :)\n";
       i_command = INVALID_INPUT_VALUE;   
       
+       /*************************************/
+       /***** REACTIONS SET FOR CANTERA *****/
+       /*************************************/
+    } else if (strcmp(IP.Next_Control_Parameter, "Cantera_Reaction_Mechanism") == 0) {
+       i_command = 203;
+
+       Get_Next_Input_Control_Parameter(IP);
+       IP.Deallocate();  //DEALLOCATE BEFORE CHANGING num_species
+       int flag =0;
+
+       //convert IP to string & define Reaction Mechanism
+       IP.react_name = "CANTERA";
+       IP.ct_mech_name = IP.Next_Control_Parameter;
+
+       //get the mechanism file name and load the mechanism
+       Get_Next_Input_Control_Parameter(IP);
+       if (strcmp(IP.Next_Control_Parameter, "Mechanism_File") == 0){
+	 Get_Next_Input_Control_Parameter(IP);
+	 IP.ct_mech_file = IP.Next_Control_Parameter;
+	 IP.Wo.React.ct_load_mechanism(IP.ct_mech_file, IP.ct_mech_name);   
+	 IP.num_species = IP.Wo.React.num_species;      
+       // if no reaction file was given, return in error
+       } else {
+	 IP.num_species = 0;
+	 i_command = INVALID_INPUT_CODE;
+       }
+
+       // allocate storage
+       IP.Allocate();
+
+       //Get species and load appropriate data
+       for(int i=0; i<IP.num_species; i++){
+	 IP.multispecies[i] = IP.Wo.React.species[i];
+	 IP.Schmidt[i] = IP.Global_Schmidt;
+       }   
+
+       //
+       //Get next line and read in Schmidt numbers else will use defaults
+       //
+       Get_Next_Input_Control_Parameter(IP);
+       if (strcmp(IP.Next_Control_Parameter, "Schmidt_Numbers") == 0){
+	 for(int i=0; i<IP.num_species; i++){
+	   IP.Input_File >> IP.Schmidt[i];	 	 
+	 }	 
+	 //fudge the line number and istream counters
+	 IP.Input_File.getline(buffer, sizeof(buffer)); 
+	 IP.Line_Number = IP.Line_Number + 1 ;
+	 flag = 1;
+       } else { //Set to one value ~1
+	 for(int i=0; i<IP.num_species; i++){
+	   IP.Schmidt[i] = IP.Global_Schmidt;	 	 
+	 }
+	 //To fix up line numbers
+	 IP.Line_Number = IP.Line_Number - 1 ;
+       }
+
+       //
+       //Set appropriate species data
+       //
+       IP.Wo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies,
+	 		      IP.CFFC_Path,
+			      IP.Mach_Number_Reference,
+			      IP.Schmidt,
+			      IP.i_trans_type); 
+       IP.Uo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies,
+			      IP.CFFC_Path,
+			      IP.Mach_Number_Reference,
+			      IP.Schmidt,
+			      IP.i_trans_type);
+  
+       //
+       //Get next line and read in mass fractions or set defaults
+       //
+       if(flag){
+	 Get_Next_Input_Control_Parameter(IP);
+       }
+       if (strcmp(IP.Next_Control_Parameter, "Mass_Fractions") == 0){
+
+	 // Get Initial Mass Fractions from user 
+	 // Here we use Cantera to parse the string of the form:
+	 //       CH4:0.5, O2:0.5
+	 // All other species will be assumed to have 0 mass fractions.  
+	 // Cantera also normalizes the mass fractions to sum to unity.  
+	 // Returns them in an array.
+	 IP.Input_File.getline(buffer, sizeof(buffer)); 
+	 IP.Line_Number = IP.Line_Number + 1 ;
+	 IP.Wo.React.ct_parse_mass_string(buffer, IP.mass_fractions);
+
+	 //Set inital Values; 
+	 IP.Wo.set_initial_values(IP.mass_fractions);  
+	 IP.Uo.set_initial_values(IP.mass_fractions);  
+	 IP.Uo = U(IP.Wo);
+	 
+	 //fudge the line number and istream counters
+	 IP.Input_File.getline(buffer, sizeof(buffer));  
+	 IP.Line_Number = IP.Line_Number + 1; 
+        
+       //If no mass fraction data is set to defaults (all equal to 1/num_species) 
+       } else {
+	 IP.Uo = U(IP.Wo);
+	 IP.Line_Number = IP.Line_Number - 1 ;
+       }
+
       /******************************************/
       /**** NON REACTING, BUT MULTIPLE GASES ****/
       /******************************************/
     } else if (strcmp(IP.Next_Control_Parameter, "Species") == 0) { 
-      i_command = 203;
+      i_command = 204;
   
       IP.Deallocate_species();  //DEALLOCATE BEFORE CHANGING num_species
  
@@ -4091,6 +4204,8 @@ int Process_Input_Control_Parameter_File(LESPremixed2D_Input_Parameters &Input_P
    
     //Load the C-Type strings from the C++ strings 
     strcpy(Input_Parameters.React_Name,Input_Parameters.react_name.c_str());
+    strcpy(Input_Parameters.ct_Mech_Name,Input_Parameters.ct_mech_name.c_str());
+    strcpy(Input_Parameters.ct_Mech_File,Input_Parameters.ct_mech_file.c_str());
     strcpy(Input_Parameters.Scalar_system_name,Input_Parameters.scalar_system_name.c_str());
     
     for (int i = 0; i < Input_Parameters.num_species; i++) {

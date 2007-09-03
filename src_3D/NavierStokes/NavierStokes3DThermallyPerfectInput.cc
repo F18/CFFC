@@ -20,7 +20,7 @@
 template< >
 ostream &operator << (ostream &out_file,
                       const Input_Parameters<NavierStokes3D_ThermallyPerfect_pState,
-                      NavierStokes3D_ThermallyPerfect_cState> &IP) {
+                                             NavierStokes3D_ThermallyPerfect_cState> &IP) {
    
    out_file << setprecision(6);
    
@@ -407,7 +407,7 @@ ostream &operator << (ostream &out_file,
 
 istream  &operator >> (istream &in_file,
                        Input_Parameters<NavierStokes3D_ThermallyPerfect_pState, 
-                       NavierStokes3D_ThermallyPerfect_cState> &IP) {
+                                        NavierStokes3D_ThermallyPerfect_cState> &IP) {
    return (in_file);
 }
 

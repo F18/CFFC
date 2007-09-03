@@ -64,7 +64,6 @@ Vector2D Interpolate(const Vector2D X1, const double f1,
 
 }
 
-
 /**********************************************************************
  * Routine: Line_Intersection                                         *
  *                                                                    *
@@ -100,34 +99,15 @@ int Line_Intersection(const Vector2D Xa1,
 		      const Vector2D Xb1,
 		      const Vector2D Xb3,
 		      Vector2D &Xp) {
-
-  double det, s, t;
-  Vector2D Xa2(Xa3 - Xa1);
-  Vector2D Xb2(Xb3 - Xb1);
-
-  det = Xa2.y*Xb2.x - Xa2.x*Xb2.y;
-
-  //if (fabs(det)/min(abs(Xa2),abs(Xb2)) < NANO) return 0;
-  if (fabs(det)/min(sqr(Xa2),sqr(Xb2)) < NANO) return 0;
-
-  s = ((Xb1.y - Xa1.y)*Xb2.x - (Xb1.x - Xa1.x)*Xb2.y)/det;
-  t = ((Xb1.y - Xa1.y)*Xa2.x - (Xb1.x - Xa1.x)*Xa2.y)/det;
-
-  if (s < ZERO-NANO || s > ONE+NANO || t < ZERO-NANO || t > ONE+NANO) return 0;
-
-  Xp = Xa1 + s*Xa2;
-
-  // Return the intersection point.
-  return 1;
-
+  return Line_Intersection(Xa1,Xa3,Xb1,Xb3,Xp,NANO);
 }
 
 int Line_Intersection(const Vector2D Xa1,
 		      const Vector2D Xa3,
 		      const Vector2D Xb1,
 		      const Vector2D Xb3,
-		      const double &eps,
-		      Vector2D &Xp) {
+		      Vector2D &Xp,
+		      const double eps) {
 
   double det, s, t;
   Vector2D Xa2(Xa3 - Xa1);
@@ -137,13 +117,14 @@ int Line_Intersection(const Vector2D Xa1,
 
   det = Xa2.y*Xb2.x - Xa2.x*Xb2.y;
 
-  //if (fabs(det)/min(abs(Xa2),abs(Xb2)) < eps) return 0;
-  if (fabs(det)/min(sqr(Xa2),sqr(Xb2)) < eps) return 0;
+  if (fabs(det)/min(Xa2*Xa2,Xb2*Xb2) < NANO) return 0;
 
   s = ((Xb1.y - Xa1.y)*Xb2.x - (Xb1.x - Xa1.x)*Xb2.y)/det;
   t = ((Xb1.y - Xa1.y)*Xa2.x - (Xb1.x - Xa1.x)*Xa2.y)/det;
 
-  if (s < ZERO-eps || s > ONE+eps || t < ZERO-eps || t > ONE+eps) return 0;
+  if (s*abs(Xa2) < -eps || (s-1.0)*abs(Xa2) > eps || t*abs(Xb2) < -eps || (t-1.0)*abs(Xb2) > eps) return 0;
+  //if (s < ZERO-NANO || s > ONE+NANO || t < ZERO-NANO || t > ONE+NANO) return 0;
+  //if (s <= ZERO || s >= ONE || t <= ZERO || t >= ONE) return 0;
 
   Xp = Xa1 + s*Xa2;
 
@@ -164,8 +145,7 @@ int Line_Intersection(const Vector2D Xa1,
   //if (abs(Xa2) < NANO || abs(Xb2) < NANO) return 1;
 
   det = Xa2.y*Xb2.x - Xa2.x*Xb2.y;
-  //if (fabs(det)/min(abs(Xa2),abs(Xb2)) < NANO) return 0;
-  if (fabs(det)/min(sqr(Xa2),sqr(Xb2)) < NANO) return 0;
+  if (fabs(det)/min(Xa2*Xa2,Xb2*Xb2) < NANO) return 0;
 
   s = ((Xb1.y - Xa1.y)*Xb2.x - (Xb1.x - Xa1.x)*Xb2.y)/det;
   t = ((Xb1.y - Xa1.y)*Xa2.x - (Xb1.x - Xa1.x)*Xa2.y)/det;

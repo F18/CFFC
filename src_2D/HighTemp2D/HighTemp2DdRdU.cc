@@ -5,7 +5,7 @@
 #include "HighTemp2DdRdU.h"
 
 /*********************************************************
- * Routine: Rotation_Matrix_NS2D                           *
+ * Routine: Rotation_Matrix_HT2D                           *
  *                                                       *
  * This function returns either the rotation matrix, A,  *
  * or the inverse of A.                                  *
@@ -18,7 +18,7 @@
 // assumption about the position of the velocity vector. But doesn't almost
 // every other physical class (Euler, Chem, etc) also have velocity right after
 // density? But to make a "physical" super-class does seem complicated.
-DenseMatrix Rotation_Matrix_NS2D(const Vector2D &nface, int Size, int A_matrix) 
+DenseMatrix Rotation_Matrix_HT2D(const Vector2D &nface, int Size, int A_matrix) 
 {
   double cos_angle = nface.x; 
   double sin_angle = nface.y;
@@ -90,8 +90,8 @@ void dFIdW_Inviscid_ROE(DenseMatrix& dRdW, const HighTemp2D_Quad_Block &SolnBlk,
      lface = SolnBlk.Grid.lfaceW(Ri, Rj);
   } /* endif */
    
-  DenseMatrix A( Rotation_Matrix_NS2D(nface,NUM_VAR_HIGHTEMP2D, 1));
-  DenseMatrix AI( Rotation_Matrix_NS2D(nface,NUM_VAR_HIGHTEMP2D, 0));
+  DenseMatrix A( Rotation_Matrix_HT2D(nface,NUM_VAR_HIGHTEMP2D, 1));
+  DenseMatrix AI( Rotation_Matrix_HT2D(nface,NUM_VAR_HIGHTEMP2D, 0));
   
   //Left and Right States 
   Inviscid_Flux_Used_Reconstructed_LeftandRight_States(Wl, Wr, SolnBlk, Orient, ii, jj);

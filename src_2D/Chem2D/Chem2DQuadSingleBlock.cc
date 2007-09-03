@@ -1808,6 +1808,76 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 	Wl.v.x = 0.79625;
 	Wr.rho = Wr.p/(Wr.Rtot()*3000.0); 
 	Wr.v.x = 6.0;
+
+      }	else if (Wo[0].React.reactset_flag == CH4_15STEP_ARM2  || Wo[0].React.reactset_flag == CH4_15STEP_ARM3){
+	//phi = 1.0
+	Wl.v.x = 0.38;
+	//Wr.v.x = 2.86;
+     
+	Wr.spec[18] = 1.0;          // N2
+
+	Wr.spec[0]  =  0.29E-3;     // H2
+	Wr.spec[18] -= Wr.spec[0];
+
+	Wr.spec[1]  =  1.8E-5;      // H              
+	Wr.spec[18] -= Wr.spec[1];
+
+	Wr.spec[2]  =  6.91E-3;     // O2              
+	Wr.spec[18] -= Wr.spec[2];
+
+	Wr.spec[3]  =  2.07E-3;     // OH               
+	Wr.spec[18] -= Wr.spec[3];
+
+	Wr.spec[4]  =  0.12102;     // H2O              
+	Wr.spec[18] -= Wr.spec[4];
+
+	Wr.spec[5]  =  7.9E-7;      // HO2              
+	Wr.spec[18] -= Wr.spec[5];
+
+	Wr.spec[6]  =  6.9E-8;      // H2O2            
+	Wr.spec[18] -= Wr.spec[6];
+
+	Wr.spec[7]  =  0.0;         // CH3            
+	Wr.spec[8]  =  0.0;         // CH4             
+
+	Wr.spec[9]  =  9.71E-3;     // CO              
+	Wr.spec[18] -= Wr.spec[9];
+
+	Wr.spec[10] =  0.1348;      // CO2              
+	Wr.spec[18] -= Wr.spec[10];
+
+	Wr.spec[11] =  1.6E-11;     // CH2O            
+	Wr.spec[18] -= Wr.spec[11];
+
+	Wr.spec[12] =  0.0;         // C2H2            
+	Wr.spec[13] =  0.0;         // C2H4             
+	Wr.spec[14] =  0.0;         // C2H6            
+
+	Wr.spec[15] =  2.7E-10;     // NH3              
+	Wr.spec[18] -= Wr.spec[15];
+
+	Wr.spec[16] =  0.11E-3;     // NO               
+	Wr.spec[18] -= Wr.spec[16];
+
+	Wr.spec[17] =  3.8E-12;     // HCN              
+	Wr.spec[18] -= Wr.spec[17];
+
+	// density and velocity
+	Wr.rho = Wr.p/(Wr.Rtot()*2218.0);
+	Wr.v.x = Wl.rho*Wl.v.x/Wr.rho;
+
+
+      } else if (Wo[0].React.reactset_flag == CANTERA) {
+	//set to phi=1.0 values from CHEMKIN
+	Wl.v.x = 0.4101;	
+	Wr.v.x = 3.103; 
+
+	//phi = 1.0
+	Wr.spec[0] = ZERO;       //CH4
+	Wr.spec[1] = 0.0000;     //O2
+	Wr.spec[2] = 0.1511;     //CO2
+	Wr.spec[3] = 0.1242;     //H2O 
+	Wr.rho = Wr.p/(Wr.Rtot()*2320); //2234
 	
       } else {
 	cout<<"\n No 1D_Premixed Flame Initial Conditions for "<<Wo[0].React.Reaction_system; exit(1);

@@ -92,6 +92,7 @@ void Output_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
 	       << "\"ell\" \\ \n"
 	       << "\"p_modified\" \\ \n";
     }
+    Out_File << "\"Rex\" \\ \n";
   }
 
   Out_File << "ZONE T =  \"Block Number = " << Block_Number
@@ -119,6 +120,7 @@ void Output_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
 		 << " " << W_node.ell()
 		 << " " << W_node.pmodified();
       }
+      Out_File << " " << IP.Wo.v.x/IP.Wo.nu()*SolnBlk.Grid.Node[i][j].X.x;
       Out_File << endl;
     }
   }

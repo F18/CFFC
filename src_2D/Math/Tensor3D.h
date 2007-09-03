@@ -57,6 +57,7 @@ using namespace std;
  * T = a * T;                                           *
  * T = T * a;                                           *
  * V = T * V;                                           *
+ * V = T * T;                                           *
  * T = T / a;                                           *
  * T = +T;                                              *
  * T = -T;                                              *
@@ -170,6 +171,7 @@ class Tensor3D{
     friend Tensor3D operator *(const Tensor3D &T, const double &a);
     friend Tensor3D operator *(const double &a, const Tensor3D &T);
     friend Vector3D operator *(const Tensor3D &T, const Vector3D &V);
+    friend Tensor3D operator *(const Tensor3D &T1, const Tensor3D &T2);
     friend Tensor3D operator /(const Tensor3D &T, const double &a);
 
     /* Unary arithmetic operators. */
@@ -314,6 +316,15 @@ inline Vector3D operator *(const Tensor3D &T, const Vector3D &V) {
   return (Vector3D(T.xx*V.x+T.xy*V.y+T.xz*V.z,
                    T.xy*V.x+T.yy*V.y+T.yz*V.z,
                    T.xz*V.x+T.yz*V.y+T.zz*V.z));
+}
+
+inline Tensor3D operator *(const Tensor3D &T1, const Tensor3D &T2) {
+   return (Tensor3D(T1.xx*T2.xx+T1.xy*T2.xy+T1.xz*T2.xz, 
+                    T1.xx*T2.xy+T1.xy*T2.yy+T1.xz*T2.yz,
+                    T1.xx*T2.xz+T1.xy*T2.yz+T1.xz*T2.zz,
+                    T1.xy*T2.xy+T1.yy*T2.yy+T1.yz*T2.yz,
+                    T1.xy*T2.xz+T1.yy*T2.yz+T1.yz*T2.zz,
+                    T1.xz*T2.xz+T1.yz*T2.yz+T1.zz*T2.zz ));
 }
 
 inline Tensor3D operator /(const Tensor3D &T, const double &a) {

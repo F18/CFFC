@@ -26,6 +26,12 @@ Gaussian2D_Quad_Block* Allocate(Gaussian2D_Quad_Block *Soln_ptr,
 
     Soln_ptr = new Gaussian2D_Quad_Block[Input_Parameters.Number_of_Blocks_Per_Processor];
 
+    // Assign the residual variable.
+    Soln_ptr[0].residual_variable = Input_Parameters.i_Residual_Variable;
+
+    // Set heat transfer flag.
+    Soln_ptr[0].Heat_Transfer = Input_Parameters.Heat_Transfer;
+
     /* Return memory location. */
 
     return(Soln_ptr);

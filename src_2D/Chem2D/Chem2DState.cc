@@ -471,7 +471,7 @@ double Chem2D_pState::kappa(void) const{
       }
     }
  
-    sum += (specdata[i].ThermalConduct(Temp, p)*spec[i].c) / 
+    sum += (specdata[i].ThermalConduct(Temp)*spec[i].c) / 
       (spec[i].c + (specdata[i].Mol_mass()) * 1.065 * phi);
   }  
 
@@ -2024,7 +2024,7 @@ Chem2D_cState Chem2D_pState::Sw(int &REACT_SET_FLAG, const int Flow_Type) const 
   //Adds concentration rate of change for species 1->N
   if( REACT_SET_FLAG != NO_REACTIONS){
     //bool test = negative_speccheck();            //FOR TESTING 
-    React.omega(NEW,*this,Flow_Type );  
+    React.omega<Chem2D_pState,Chem2D_cState>(NEW,*this,Flow_Type );  
   }
      
   return NEW;
@@ -2033,7 +2033,7 @@ Chem2D_cState Chem2D_pState::Sw(int &REACT_SET_FLAG, const int Flow_Type) const 
 
 /************* Chemical Source Term Jacobian ****************************/
 void Chem2D_pState::dSwdU(DenseMatrix &dSwdU, const int &Flow_Type,const int &solver_type) const {
-  React.dSwdU(dSwdU,*this,false, Flow_Type,solver_type);
+  React.dSwdU<Chem2D_pState,Chem2D_cState>(dSwdU,*this,false, Flow_Type,solver_type);
 }
 
 void Chem2D_pState::dSwdU_FD(DenseMatrix &dSwdU, const int Flow_Type) const{
@@ -2075,7 +2075,7 @@ double Chem2D_pState::dSwdU_max_diagonal(const int &Preconditioned,
 
   double max_diagonal =ONE;
   DenseMatrix dSwdU(NUM_VAR_CHEM2D-1,NUM_VAR_CHEM2D-1,ZERO);
-  React.dSwdU(dSwdU,*this,true,flow_type_flag,solver_type);
+  React.dSwdU<Chem2D_pState,Chem2D_cState>(dSwdU,*this,true,flow_type_flag,solver_type);
 
 //   if(Preconditioned){
 //     DenseMatrix Pinv(NUM_VAR_CHEM2D-1,NUM_VAR_CHEM2D-1);

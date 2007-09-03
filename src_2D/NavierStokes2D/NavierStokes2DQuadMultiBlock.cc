@@ -284,6 +284,46 @@ double Max_Norm_Residual(NavierStokes2D_Quad_Block *Soln_ptr,
 
 }
 
+void L1_Norm_Residual(NavierStokes2D_Quad_Block *Soln_ptr,
+    AdaptiveBlock2D_List &Soln_Block_List,
+    double *l1_norm) {
+  for (int k = 0; k < Soln_ptr[0].Number_of_Residual_Norms; k++) {
+    l1_norm[k] = ZERO;
+    for (int i = 0; i < Soln_Block_List.Nblk; ++i) {
+      if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {     
+        l1_norm[k] += L1_Norm_Residual(Soln_ptr[i], k+1);       
+      }
+    }
+  }  
+}
+
+void L2_Norm_Residual(NavierStokes2D_Quad_Block *Soln_ptr,
+    AdaptiveBlock2D_List &Soln_Block_List,
+    double *l2_norm) {
+  for (int k = 0; k< Soln_ptr[0].Number_of_Residual_Norms; k++) {
+    l2_norm[k] =ZERO;
+    for (int i = 0; i < Soln_Block_List.Nblk; ++i) {
+      if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+        l2_norm[k] += sqr(L2_Norm_Residual(Soln_ptr[i],k+1));     
+      } 
+    }  
+    l2_norm[k] = sqrt(l2_norm[k]);
+  }
+}
+
+void Max_Norm_Residual(NavierStokes2D_Quad_Block *Soln_ptr,
+    AdaptiveBlock2D_List &Soln_Block_List,
+    double *max_norm) {
+  for (int k = 0; k< Soln_ptr[0].Number_of_Residual_Norms; k++) {
+    max_norm[k] = ZERO;
+    for (int i = 0; i < Soln_Block_List.Nblk; ++i) {
+      if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+        max_norm[k] = max(max_norm[k], Max_Norm_Residual(Soln_ptr[i],k+1));
+      } 
+    } 
+  }
+}
+
 /**********************************************************************
  * Routine: Evaluate_Limiters                                         *
  *                                                                    *
