@@ -69,9 +69,8 @@ double Finite_Time_Step(const INPUT_TYPE &Input_Parameters,
 template <typename SOLN_BLOCK_TYPE>
 int set_blocksize(SOLN_BLOCK_TYPE &SolnBlk){ return (SolnBlk.NumVar()); }
 
-inline int DTS_Uo_index(int i, int j, int k,
-		        int NCi, int NCj, int blocksize) {
-   return ((j*NCi+i)*blocksize+k);
+inline int DTS_Uo_index(int i, int j, int k, int NCi, int NCj, int blocksize) {
+  return ((j*NCi+i)*blocksize+k);
 }
 
 /********************************************************************************************
