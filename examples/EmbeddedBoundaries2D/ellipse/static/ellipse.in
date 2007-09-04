@@ -58,7 +58,7 @@ Number_of_Blocks_Idir =
 Number_of_Blocks_Jdir =
 4
 Boundary_Conditions_Specified =
-On
+ON
 BC_North =
 Reflection
 BC_South =
@@ -102,7 +102,7 @@ Number_of_Interface_Mesh_Refinements =
 #
 # UNSTEADY AMR PARAMETERS:
 AMR =
-On
+ON
 AMR_Frequency =
 9
 #
@@ -117,11 +117,11 @@ Threshold_for_Refinement =
 Threshold_for_Coarsening =
 0.05
 Refinement_Criteria_Gradient_Density =
-On
+ON
 Refinement_Criteria_Divergence_Velocity =
-Off
+OFF
 Refinement_Criteria_Curl_Velocity =
-Off
+OFF
 Number_of_Blocks_Per_Processor =
 128
 #

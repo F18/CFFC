@@ -52,7 +52,7 @@ X_Shift =
 X_Scale =
 9.00
 Boundary_Conditions_Specified =
-On
+ON
 BC_North =
 None
 BC_South =
@@ -90,7 +90,7 @@ Number_of_Interface_Mesh_Refinements =
 #
 # UNSTEADY AMR PARAMETERS:
 AMR =
-Off
+OFF
 #
 # I/O PARAMETERS:
 Output_File_Name =

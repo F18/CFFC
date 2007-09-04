@@ -10,7 +10,7 @@ Turbulent_k_omega
 Flow_Geometry_Type =
 Axisymmetric
 Particle_Phase =
-Off
+OFF
 #
 # TIME-STEPPING PARAMETERS:
 Time_Integration_Type =
@@ -74,11 +74,11 @@ Number_of_Blocks_Idir =
 Number_of_Blocks_Jdir =
 1
 Mesh_Stretching =
-On
+ON
 Mesh_Stretching_Factor_Jdir =
 1.0001
 Boundary_Conditions_Specified =
-On
+ON
 BC_North =
 Wall_Viscous_Heatflux
 BC_South =
@@ -110,7 +110,7 @@ Number_of_Initial_Mesh_Refinements =
 #
 # UNSTEADY AMR PARAMETERS:
 AMR =
-Off
+OFF
 #
 # AMR PARAMETERS:
 Maximum_Refinement_Level =
@@ -122,7 +122,7 @@ Threshold_for_Refinement =
 Threshold_for_Coarsening =
 0.01
 Smooth_Quad_Block =
-Off
+OFF
 Number_of_Blocks_Per_Processor =
 16
 #

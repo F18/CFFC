@@ -89,7 +89,7 @@ Number_of_Cells_Jdir =
 #64
 #128
 AMR =
-Off
+OFF
 #AMR_Frequency =
 #8
 Number_of_Initial_Mesh_Refinements =

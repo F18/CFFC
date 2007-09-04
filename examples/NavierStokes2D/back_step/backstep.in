@@ -65,11 +65,11 @@ Threshold_for_Refinement =
 Threshold_for_Coarsening =
 0.01
 Refinement_Criteria_Gradient_Density =
-Off
+OFF
 Refinement_Criteria_Divergence_Velocity =
-Off
+OFF
 Refinement_Criteria_Curl_Velocity =
-On
+ON
 #
 # INITIAL AMR PARAMETERS:
 Number_of_Initial_Mesh_Refinements =

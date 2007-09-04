@@ -77,7 +77,7 @@ Mach_Number=
 Grid_Type=
 Bump_Channel_Flow
 Smooth_Quad_Block=
-Off
+OFF
 NACA_Aerofoil_Type= 
 0012
 Number_of_Cells_Idir= 
@@ -85,7 +85,7 @@ Number_of_Cells_Idir=
 Number_of_Cells_Jdir=
 16
 AMR=
-Off
+OFF
 AMR_Frequency=
 8
 Number_of_Initial_Mesh_Refinements=

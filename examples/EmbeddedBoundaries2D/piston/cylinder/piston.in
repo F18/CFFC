@@ -75,7 +75,7 @@ Mesh_Stretching_Factor_Jdir =
 #Number_of_Blocks_Jdir =
 #1
 Boundary_Conditions_Specified =
-On
+ON
 BC_North =
 Constant_Extrapolation
 BC_South =

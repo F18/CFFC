@@ -65,7 +65,7 @@ Box_Width =
 Box_Height =
 0.0010
 Mesh_Stretching =
-On
+ON
 Mesh_Stretching_Type_Idir =
 MinMax_Clustering
 Mesh_Stretching_Type_Jdir =
@@ -93,13 +93,13 @@ Threshold_for_Refinement =
 Threshold_for_Coarsening =
 0.01
 Refinement_Criteria_Gradient_Density =
-Off
+OFF
 Refinement_Criteria_Divergence_Velocity =
-Off
+OFF
 Refinement_Criteria_Curl_Velocity =
-On
+ON
 Smooth_Quad_Block =
-Off
+OFF
 Number_of_Blocks_Per_Processor =
 16
 #
@@ -113,7 +113,7 @@ Number_of_Boundary_Mesh_Refinements =
 #
 # UNSTEADY AMR PARAMETERS:
 AMR =
-Off
+OFF
 #
 # I/O PARAMETERS:
 Output_File_Name =

@@ -44,7 +44,7 @@ X_Shift =
 X_Scale =
 9.00
 Boundary_Conditions_Specified =
-On
+ON
 BC_North =
 None
 BC_South =

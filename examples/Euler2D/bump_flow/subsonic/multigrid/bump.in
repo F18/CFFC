@@ -34,17 +34,17 @@ Multigrid_Number_of_Smooths_on_Coarsest_Level =
 Full_Multigrid =
 500
 Defect_Correction =
-On
+ON
 Prolong_Using_Injection =
-Off
+OFF
 First_Order_Coarse_Mesh_Reconstruction =
-On
+ON
 Apply_Coarse_Mesh_Boundary_Conditions =
-On
+ON
 Injection_at_Dirichlet_Boundary_Conditions =
-On
+ON
 Update_Stability_Switch =
-On
+ON
 Maximum_Number_of_Update_Reductions =
 5
 Multigrid_Smoothing_Type =
@@ -82,7 +82,7 @@ AIR
 Grid_Type =
 Bump_Channel_Flow
 Smooth_Bump =
-On
+ON
 Number_of_Cells_Idir =
 32
 Number_of_Cells_Jdir =
@@ -98,7 +98,7 @@ Number_of_Boundary_Mesh_Refinements =
 #
 # UNSTEADY AMR PARAMETERS:
 AMR =
-Off
+OFF
 #
 # AMR PARAMETERS:
 Maximum_Refinement_Level =

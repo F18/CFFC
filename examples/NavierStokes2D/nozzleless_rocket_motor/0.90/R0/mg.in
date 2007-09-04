@@ -38,17 +38,17 @@ Multigrid_Number_of_Smooths_on_Coarsest_Level =
 Full_Multigrid =
 0
 Defect_Correction =
-On
+ON
 Prolong_Using_Injection =
-Off
+OFF
 First_Order_Coarse_Mesh_Reconstruction =
-Off
+OFF
 Apply_Coarse_Mesh_Boundary_Conditions =
-On
+ON
 Injection_at_Dirichlet_Boundary_Conditions =
-On
+ON
 Update_Stability_Switch =
-On
+ON
 Maximum_Number_of_Update_Reductions =
 5
 Multigrid_Smoothing_Type =
@@ -92,7 +92,7 @@ Automatic_Wall_Treatment
 Friction_Velocity_Type =
 Iterative
 Turbulent_Wall_Injection =
-Off
+OFF
 yplus_sublayer =
 2.5
 yplus_buffer_layer =
@@ -110,7 +110,7 @@ Turbulence_Length_Scale =
 Grid_Type =
 Nozzleless_Rocket_Motor
 Mesh_Stretching =
-On
+ON
 Mesh_Stretching_Type_Jdir =
 Max_Clustering
 Mesh_Stretching_Factor_Idir =
@@ -136,7 +136,7 @@ Number_of_Initial_Mesh_Refinements =
 #
 # UNSTEADY AMR PARAMETERS:
 AMR =
-Off
+OFF
 AMR_Frequency =
 1000
 #
@@ -150,13 +150,13 @@ Threshold_for_Refinement =
 Threshold_for_Coarsening =
 0.01
 Refinement_Criteria_Gradient_Density =
-Off
+OFF
 Refinement_Criteria_Divergence_Velocity =
-On
+ON
 Refinement_Criteria_Curl_Velocity =
-On
+ON
 Smooth_Quad_Block =
-Off
+OFF
 Number_of_Blocks_Per_Processor =
 128
 #
