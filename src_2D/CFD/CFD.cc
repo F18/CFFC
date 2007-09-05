@@ -1052,13 +1052,13 @@ extern void A_Stable_Implicit_Method_Coefficients(double &theta,
  * Computational physics, v14, 1974.                    *
  *                                                      *
  ********************************************************/
-double CLAM(const double Uu,   // upstream nodal value
-	    const double Uc,   // centroid nodal value
-	    const double Ud,   // downstream nodal value
-	    const double xu,   // x upstream node
-	    const double xc,   // x centroid node
-	    const double xd,   // x downstream node
-	    const double xf)   // x downstream face
+double CLAM(const double &Uu,   // upstream nodal value
+	    const double &Uc,   // centroid nodal value
+	    const double &Ud,   // downstream nodal value
+	    const double &xu,   // x upstream node
+	    const double &xc,   // x centroid node
+	    const double &xd,   // x downstream node
+	    const double &xf)   // x downstream face
 {
 
   // check for divide by zero

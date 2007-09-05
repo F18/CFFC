@@ -1397,7 +1397,7 @@ Preconditioner_dSdU(int ii, int jj, DenseMatrix &dRdU){
   }  
 
   //Add Jacobian for regular source terms
-  SolnBlk->Uo[ii][jj].dSdU(dRdU);
+  SolnBlk->Uo[ii][jj].dSdU(dRdU, SolnBlk->M[ii][jj]);
 
 
 }

@@ -148,6 +148,7 @@ private:
 public:
   //@{ @name Solution state arrays:
   Rte2D_State             **U; //!< Conserved solution state.
+  Medium2D_State            **M; //!< Participating medium state.
   //@}
 
   //@{ @name Grid block information:
@@ -225,7 +226,7 @@ public:
   //! Creation constructor.
   Rte2D_Quad_Block(void) {
       NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
-      U = NULL; dt = NULL; dUdt = NULL; 
+      U = NULL; M = NULL; dt = NULL; dUdt = NULL; 
       dUdx = NULL; dUdy = NULL; phi = NULL; Uo = NULL;
       dUdpsi = NULL; phi_psi = NULL;
       FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
@@ -242,7 +243,7 @@ public:
   Rte2D_Quad_Block(const Rte2D_Quad_Block &Soln) {
     NCi = Soln.NCi; ICl = Soln.ICl; ICu = Soln.ICu; 
     NCj = Soln.NCj; JCl = Soln.JCl; JCu = Soln.JCu; Nghost = Soln.Nghost;
-    Grid = Soln.Grid; U = Soln.U; dt = Soln.dt; dUdt = Soln.dUdt; 
+    Grid = Soln.Grid; U = Soln.U; M = Soln.M; dt = Soln.dt; dUdt = Soln.dUdt; 
     dUdx = Soln.dUdx; dUdy = Soln.dUdy; phi = Soln.phi; Uo = Soln.Uo;
     dUdpsi = Soln.dUdpsi; phi_psi = Soln.phi_psi;
     FluxN = Soln.FluxN; FluxS = Soln.FluxS; FluxE = Soln.FluxE; FluxW = Soln.FluxW;
@@ -464,6 +465,7 @@ inline void Rte2D_Quad_Block::allocate(const int Ni, const int Nj, const int Ng)
    NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1; 
    NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1; Nghost = Ng;
    U = new Rte2D_State*[NCi];
+   M = new Medium2D_State*[NCi];
    dt = new double*[NCi]; dUdt = new Rte2D_State**[NCi];
    dUdx = new Rte2D_State*[NCi]; dUdy = new Rte2D_State*[NCi];
    phi = new Rte2D_State*[NCi]; Uo = new Rte2D_State*[NCi];
@@ -473,6 +475,7 @@ inline void Rte2D_Quad_Block::allocate(const int Ni, const int Nj, const int Ng)
    SpE = new double*[NCi]; SpW = new double*[NCi]; 
    for ( i = 0; i <= NCi-1 ; ++i ) {
       U[i] = new Rte2D_State[NCj];
+      M[i] = new Medium2D_State[NCj];
       dt[i] = new double[NCj]; dUdt[i] = new Rte2D_State*[NCj];
       for ( j = 0; j <= NCj-1 ; ++j ) 
         { dUdt[i][j] = new Rte2D_State[NUMBER_OF_RESIDUAL_VECTORS_RTE2D]; }
@@ -512,6 +515,7 @@ inline void Rte2D_Quad_Block::deallocate(void) {
    int i, j; Grid.deallocate(); 
    for ( i = 0; i <= NCi-1 ; ++i ) {
       delete []U[i]; U[i] = NULL;
+      delete []M[i]; M[i] = NULL;
       delete []dt[i]; dt[i] = NULL; 
       for ( j = 0; j <= NCj-1 ; ++j ) { delete []dUdt[i][j]; dUdt[i][j] = NULL; }
       delete []dUdt[i]; dUdt[i] = NULL;
@@ -525,6 +529,7 @@ inline void Rte2D_Quad_Block::deallocate(void) {
       delete[] SpW[i]; SpW[i] = NULL; 
    } /* endfor */
    delete []U; U = NULL;
+   delete []M; M = NULL;
    delete []dt; dt = NULL; delete []dUdt; dUdt = NULL;
    delete []dUdx; dUdx = NULL; delete []dUdy; dUdy = NULL; 
    delete []phi; phi = NULL; delete []Uo; Uo = NULL;

@@ -132,12 +132,6 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     string_ptr = "Isotropic";
     strcpy(IP.ScatteringFunc, string_ptr);
 
-    // allocate and zero solution state
-    IP.Uo.Deallocate();
-    SetupStateStatic( IP );
-    IP.Uo.Allocate();
-    IP.Uo.Zero();
-
     // set gas constants
     IP.AbsorptionCoef = ONE;
     IP.ScatteringCoef = ZERO;
@@ -148,9 +142,12 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     IP.xco2           = 0.1;
     IP.xo2            = 0.0;
     IP.fsoot          = 0.0;
-    IP.Uo.SetAbsorption( IP.AbsorptionCoef );
-    IP.Uo.SetScattering( IP.ScatteringCoef );
-    IP.Uo.SetBlackbody( BlackBody(IP.Temperature) );
+
+    // Set medium state
+    // NOT COMPLETE
+    // IP.Uo.SetAbsorption( IP.AbsorptionCoef );
+    // IP.Uo.SetScattering( IP.ScatteringCoef );
+    // IP.Uo.SetBlackbody( BlackBody(IP.Temperature) );
 
     // boundary conditions
     IP.NorthWallTemp = ZERO;
@@ -160,7 +157,13 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     IP.NorthWallEmiss = ZERO;      
     IP.SouthWallEmiss = ZERO;      
     IP.EastWallEmiss = ZERO;      
-    IP.WestWallEmiss = ZERO;     
+    IP.WestWallEmiss = ZERO;  
+
+    // allocate and zero solution state
+    IP.Uo.Deallocate();
+    SetupStateStatic( IP );
+    IP.Uo.Allocate();
+    IP.Uo.Zero();
 
     /***********************************************************************
      ***********************************************************************/

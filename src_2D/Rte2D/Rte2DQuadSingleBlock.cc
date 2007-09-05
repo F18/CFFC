@@ -1327,7 +1327,7 @@ void ICs(Rte2D_Quad_Block &SolnBlk,
       default :
         for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
             for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	       SolnBlk.U[i][j] = IP.Uo;
+	      SolnBlk.U[i][j] = IP.Uo;
             } /* endfor */
         } /* endfor */
         break;
@@ -1339,27 +1339,27 @@ void ICs(Rte2D_Quad_Block &SolnBlk,
 
     for (j = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
        if (j >= SolnBlk.JCl && j <= SolnBlk.JCu) {
-          SolnBlk.UoW[j] = SolnBlk.U[SolnBlk.ICl][j];
-          SolnBlk.UoE[j] = SolnBlk.U[SolnBlk.ICu][j];
+	 SolnBlk.UoW[j] = SolnBlk.U[SolnBlk.ICl][j];
+	 SolnBlk.UoE[j] = SolnBlk.U[SolnBlk.ICu][j];
        } else if (j < SolnBlk.JCl) {
-          SolnBlk.UoW[j] = SolnBlk.U[SolnBlk.ICl][SolnBlk.JCl];
-          SolnBlk.UoE[j] = SolnBlk.U[SolnBlk.ICu][SolnBlk.JCl];
+	 SolnBlk.UoW[j] = SolnBlk.U[SolnBlk.ICl][SolnBlk.JCl];
+	 SolnBlk.UoE[j] = SolnBlk.U[SolnBlk.ICu][SolnBlk.JCl];
        } else {
-          SolnBlk.UoW[j] = SolnBlk.U[SolnBlk.ICl][SolnBlk.JCu];
-          SolnBlk.UoE[j] = SolnBlk.U[SolnBlk.ICu][SolnBlk.JCu];
+	 SolnBlk.UoW[j] = SolnBlk.U[SolnBlk.ICl][SolnBlk.JCu];
+	 SolnBlk.UoE[j] = SolnBlk.U[SolnBlk.ICu][SolnBlk.JCu];
        } /* endif */
     } /* endfor */
 
     for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
        if (i >= SolnBlk.ICl && i <= SolnBlk.ICu) {
-          SolnBlk.UoS[i] = SolnBlk.U[i][SolnBlk.JCl];
-          SolnBlk.UoN[i] = SolnBlk.U[i][SolnBlk.JCu];
+	 SolnBlk.UoS[i] = SolnBlk.U[i][SolnBlk.JCl];
+	 SolnBlk.UoN[i] = SolnBlk.U[i][SolnBlk.JCu];
        } else if (i < SolnBlk.ICl) {
-          SolnBlk.UoS[i] = SolnBlk.U[SolnBlk.ICl][SolnBlk.JCl];
-          SolnBlk.UoN[i] = SolnBlk.U[SolnBlk.ICl][SolnBlk.JCu];
+	 SolnBlk.UoS[i] = SolnBlk.U[SolnBlk.ICl][SolnBlk.JCl];
+	 SolnBlk.UoN[i] = SolnBlk.U[SolnBlk.ICl][SolnBlk.JCu];
        } else {
-          SolnBlk.UoS[i] = SolnBlk.U[SolnBlk.ICu][SolnBlk.JCl];
-          SolnBlk.UoN[i] = SolnBlk.U[SolnBlk.ICu][SolnBlk.JCu];
+	 SolnBlk.UoS[i] = SolnBlk.U[SolnBlk.ICu][SolnBlk.JCl];
+	 SolnBlk.UoN[i] = SolnBlk.U[SolnBlk.ICu][SolnBlk.JCu];
        } /* endif */
     } /* endfor */
 
@@ -1923,7 +1923,7 @@ double CFL(Rte2D_Quad_Block &SolnBlk,
 	       
 	       // source contribution
 	       for (int v=0; v<SolnBlk.U[i][j].Nband; v++ ) {
-		 beta = SolnBlk.U[i][j].kappa[v] + SolnBlk.U[i][j].sigma[v];
+		 beta = SolnBlk.M[i][j].beta(v);
 		 temp = HALF / (beta*SolnBlk.U[i][j].omega[m][l]);
 		 dt_src = min( temp, dt_src );
 	       } // endfor - bands
@@ -4197,7 +4197,7 @@ int dUdt_Residual_Evaluation(Rte2D_Quad_Block &SolnBlk,
 
 	  /* Include general source term */
 	  
-	  SolnBlk.dUdt[i][j][0] += SolnBlk.U[i][j].S();
+	  SolnBlk.dUdt[i][j][0] += SolnBlk.U[i][j].S(SolnBlk.M[i][j]);
 
 	  /* Include axisymmetric source terms as required. */
 
@@ -4490,7 +4490,7 @@ int dUdt_Multistage_Explicit(Rte2D_Quad_Block &SolnBlk,
 
 	     SolnBlk.dUdt[i][j][k_residual] += 
 	       (Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*
-	       SolnBlk.U[i][j].S();
+	       SolnBlk.U[i][j].S(SolnBlk.M[i][j]);
 
              /* Include axisymmetric source terms as required. */
 
@@ -4642,11 +4642,13 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
          wpsi, wwpsi;               //  -> value = w*value_upstream + (1-w)*value_downstream
   double tau_x, tau_y;              // optical thicknesses
   double dx, dy;                    // average face length
+  double vx, vy;                    // convective velocity
+  double S;                         // source term (for GM scheme)
   double a, b;                      // GM coefficients
   int i_SpaceMarch_Scheme;          // temporary space marching scheme flag
 
   // variable index
-  int varindex = U.Index[v][m][l]+1;
+  int index = U.Index[v][m][l];
 
   //
   // for high res methods, use the upwind scheme at the boundaries
@@ -4675,7 +4677,7 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
       Input_Parameters.i_RTE_Solver == RTE2D_SOLVER_DOM ) {
     
     // initialization
-    if (l==0) SolnBlk.U[i][j].I_half[m][l] = SolnBlk.U[i][j][varindex];
+    if (l==0) SolnBlk.U[i][j].I_half[m][l] = SolnBlk.U[i][j].I[index];
     
     // set diff parameter
     if (Input_Parameters.i_SpaceMarch_Scheme==SPACE_MARCH_UPWIND) 
@@ -4725,9 +4727,9 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
     case SPACE_MARCH_CLAM:
       xf = SolnBlk.Grid.Cell[i][j].Xc.x + 
 	   xd*QUARTER*(SolnBlk.Grid.lfaceN(i,j)+SolnBlk.Grid.lfaceS(i,j));
-      Ix_out = CLAM(SolnBlk.Uo[i-xd][j][varindex],   // I upstream node
-		    SolnBlk.Uo[i   ][j][varindex],   // I centroid node
-		    SolnBlk.Uo[i+xd][j][varindex],   // I downstream node
+      Ix_out = CLAM(SolnBlk.Uo[i-xd][j].I[index],   // I upstream node
+		    SolnBlk.Uo[i   ][j].I[index],   // I centroid node
+		    SolnBlk.Uo[i+xd][j].I[index],   // I downstream node
 		    SolnBlk.Grid.Cell[i-xd][j].Xc.x, // x upstream node
 		    SolnBlk.Grid.Cell[i   ][j].Xc.x, // x centroid node
 		    SolnBlk.Grid.Cell[i+xd][j].Xc.x, // x downstream node
@@ -4735,17 +4737,17 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
 
       yf = SolnBlk.Grid.Cell[i][j].Xc.y + 
 	   yd*QUARTER*(SolnBlk.Grid.lfaceE(i,j)+SolnBlk.Grid.lfaceW(i,j));
-      Iy_out = CLAM(SolnBlk.Uo[i][j-yd][varindex],   // I upstream node
-		    SolnBlk.Uo[i][j   ][varindex],   // I centroid node
-		    SolnBlk.Uo[i][j+yd][varindex],   // I downstream node
+      Iy_out = CLAM(SolnBlk.Uo[i][j-yd].I[index],   // I upstream node
+		    SolnBlk.Uo[i][j   ].I[index],   // I centroid node
+		    SolnBlk.Uo[i][j+yd].I[index],   // I downstream node
 		    SolnBlk.Grid.Cell[i][j-yd].Xc.y, // y upstream node
 		    SolnBlk.Grid.Cell[i][j   ].Xc.y, // y centroid node
 		    SolnBlk.Grid.Cell[i][j+yd].Xc.y, // y downstream node
 		    yf);                             // y downstream face
 
       // high order correction term
-      corr = ( max(a_E, 0.0) + max(a_W, 0.0) ) * ( SolnBlk.U[i][j][varindex] - Ix_out ) +
-             ( max(a_N, 0.0) + max(a_S, 0.0) ) * ( SolnBlk.U[i][j][varindex] - Iy_out );
+      corr = ( max(a_E, 0.0) + max(a_W, 0.0) ) * ( SolnBlk.U[i][j].I[index] - Ix_out ) +
+             ( max(a_N, 0.0) + max(a_S, 0.0) ) * ( SolnBlk.U[i][j].I[index] - Iy_out );
       
       // solve upwind solution with correction term
       wx = ONE;
@@ -4764,26 +4766,28 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
 
       dx = HALF * (SolnBlk.Grid.lfaceN(i,j) + SolnBlk.Grid.lfaceS(i,j) );
       dy = HALF * (SolnBlk.Grid.lfaceE(i,j) + SolnBlk.Grid.lfaceW(i,j) );
-      if ( fabs(U.mu[m][l])/dx <= fabs(U.eta[m][l])/dy ) {
-	a = fabs(U.mu[m][l]) * ( SolnBlk.Uo[i+xd][j][varindex] - SolnBlk.Uo[i][j-yd][varindex] )
-	  - dx * (SolnBlk.Uo[i+xd][j].S(v,m,l) - SolnBlk.Uo[i+xd][j].dSdU(v,m,l)*SolnBlk.Uo[i+xd][j][varindex]);
-	b = ( fabs(U.mu[m][l]) - fabs(U.eta[m][l])*dx/dy ) * 
-	    ( SolnBlk.Uo[i][j][varindex] - SolnBlk.Uo[i][j-yd][varindex] );
-	Ix_out = SolnBlk.Uo[i][j-yd][varindex] + 0.5*vanalbada(a,b,0.10)/fabs(U.mu[m][l]);
-	Iy_out = SolnBlk.Uo[i][j][varindex];
+      vx = fabs(U.mu[m][l]);
+      vy = fabs(U.eta[m][l]);
+      if ( vx/dx <= vy/dy ) {
+	S = SolnBlk.Uo[i+xd][j].S(SolnBlk.M[i+xd][j],v,m,l) - 
+	    SolnBlk.Uo[i+xd][j].dSdU(SolnBlk.M[i+xd][j],v,m,l)*SolnBlk.Uo[i+xd][j].I[index];
+	a = vx*(SolnBlk.Uo[i+xd][j].I[index]-SolnBlk.Uo[i][j-yd].I[index]) - dx*S;
+	b = (vx-vy*dx/dy) * (SolnBlk.Uo[i][j].I[index] - SolnBlk.Uo[i][j-yd].I[index]);
+	Ix_out = SolnBlk.Uo[i][j-yd].I[index] + 0.5*vanalbada(a,b,0.10)/vx;
+	Iy_out = SolnBlk.Uo[i][j].I[index];
 
       } else {
-	a = fabs(U.eta[m][l]) * ( SolnBlk.Uo[i][j+yd][varindex] - SolnBlk.Uo[i-xd][j][varindex] )
-	  - dy * (SolnBlk.Uo[i][j+yd].S(v,m,l) - SolnBlk.Uo[i][j+yd].dSdU(v,m,l)*SolnBlk.Uo[i][j+yd][varindex]);
-	b = ( fabs(U.eta[m][l]) - fabs(U.mu[m][l])*dy/dx ) * 
-	    ( SolnBlk.Uo[i][j][varindex] - SolnBlk.Uo[i-xd][j][varindex] );
-	Ix_out = SolnBlk.Uo[i][j][varindex];
-	Iy_out = SolnBlk.Uo[i-xd][j][varindex] + 0.5*vanalbada(a,b,0.10)/fabs(U.eta[m][l]);
+	S = SolnBlk.Uo[i][j+yd].S(SolnBlk.M[i][j+yd],v,m,l) - 
+	    SolnBlk.Uo[i][j+yd].dSdU(SolnBlk.M[i][j+yd],v,m,l)*SolnBlk.Uo[i][j+yd][index];
+	a = vy*(SolnBlk.Uo[i][j+yd].I[index] - SolnBlk.Uo[i-xd][j].I[index]) - dy*S;
+	b = (vy-vx*dy/dx )*(SolnBlk.Uo[i][j].I[index] - SolnBlk.Uo[i-xd][j].I[index]);
+	Ix_out = SolnBlk.Uo[i][j].I[index];
+	Iy_out = SolnBlk.Uo[i-xd][j].I[index] + 0.5*vanalbada(a,b,0.10)/vy;
       }
 
       // high order correction term
-      corr = ( max(a_E, 0.0) + max(a_W, 0.0) ) * ( SolnBlk.U[i][j][varindex] - Ix_out ) +
-             ( max(a_N, 0.0) + max(a_S, 0.0) ) * ( SolnBlk.U[i][j][varindex] - Iy_out );
+      corr = ( max(a_E, 0.0) + max(a_W, 0.0) ) * ( SolnBlk.U[i][j].I[index] - Ix_out ) +
+             ( max(a_N, 0.0) + max(a_S, 0.0) ) * ( SolnBlk.U[i][j].I[index] - Iy_out );
       
       // solve upwind solution with correction term
       wx = ONE;
@@ -4802,8 +4806,8 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
       dx = HALF * (SolnBlk.Grid.lfaceN(i,j) + SolnBlk.Grid.lfaceS(i,j) );
       dy = HALF * (SolnBlk.Grid.lfaceE(i,j) + SolnBlk.Grid.lfaceW(i,j) );
       // optical thickness in each dir
-      tau_x = SolnBlk.U[i][j].beta(v) * dx / fabs(U.mu[m][l]/U.omega[m][l]);  // (mu/omega cause weighting worked into mu)
-      tau_y = SolnBlk.U[i][j].beta(v) * dy / fabs(U.eta[m][l]/U.omega[m][l]); // (eta/omega cause weighting worked into mu)
+      tau_x = SolnBlk.M[i][j].beta(v) * dx / fabs(U.mu[m][l]/U.omega[m][l]);  // (mu/omega cause weighting worked into mu)
+      tau_y = SolnBlk.M[i][j].beta(v) * dy / fabs(U.eta[m][l]/U.omega[m][l]); // (eta/omega cause weighting worked into mu)
       // weights
       wx = ONE / (ONE - exp(-tau_x)) - ONE/tau_x;
       wy = ONE / (ONE - exp(-tau_y)) - ONE/tau_y;
@@ -4839,12 +4843,12 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
     //
     wwx = ( ONE - wx ) / wx;
     wwy = ( ONE - wy ) / wy;
-    num = SolnBlk.U[i][j].S(v,m,l) * V + corr
+    num = SolnBlk.U[i][j].S(SolnBlk.M[i][j],v,m,l) * V + corr
       + ( max( -a_W, 0.0) + max( a_E, 0.0)*wwx ) * Ix_f[j]
       + ( max( -a_E, 0.0) + max( a_W, 0.0)*wwx ) * Ix_f[j]
       + ( max( -a_S, 0.0) + max( a_N, 0.0)*wwy ) * Iy_f
       + ( max( -a_N, 0.0) + max( a_S, 0.0)*wwy ) * Iy_f;    
-    denom = SolnBlk.U[i][j].dSdU(v,m,l) * V
+    denom = SolnBlk.U[i][j].dSdU(SolnBlk.M[i][j],v,m,l) * V
       + max( a_E, 0.0)/wx
       + max( a_W, 0.0)/wx
       + max( a_N, 0.0)/wy
@@ -4865,7 +4869,7 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
       denom += SolnBlk.U[i][j].dSadU_DOM(v,m,l);
     }
     
-    SolnBlk.U[i][j][varindex] = num/denom; //max(num/denom, ZERO);
+    SolnBlk.U[i][j].I[index] = num/denom; //max(num/denom, ZERO);
 
 
     //
@@ -4880,9 +4884,9 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
     case SPACE_MARCH_CLAM:
       xf = SolnBlk.Grid.Cell[i][j].Xc.x + 
 	xd*QUARTER*(SolnBlk.Grid.lfaceN(i,j)+SolnBlk.Grid.lfaceS(i,j));
-      Ix_f[j] = CLAM(SolnBlk.U[i-xd][j][varindex],   // I upstream node
-		     SolnBlk.U[i   ][j][varindex],    // I centroid node
-		     SolnBlk.U[i+xd][j][varindex],    // I downstream node
+      Ix_f[j] = CLAM(SolnBlk.U[i-xd][j].I[index],   // I upstream node
+		     SolnBlk.U[i   ][j].I[index],    // I centroid node
+		     SolnBlk.U[i+xd][j].I[index],    // I downstream node
 		     SolnBlk.Grid.Cell[i-xd][j].Xc.x, // x upstream node
 		     SolnBlk.Grid.Cell[i   ][j].Xc.x, // x centroid node
 		     SolnBlk.Grid.Cell[i+xd][j].Xc.x, // x downstream node
@@ -4890,9 +4894,9 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
       
       yf = SolnBlk.Grid.Cell[i][j].Xc.y + 
 	yd*QUARTER*(SolnBlk.Grid.lfaceE(i,j)+SolnBlk.Grid.lfaceW(i,j));
-      Iy_f = CLAM(SolnBlk.U[i][j-yd][varindex],      // I upstream node
-		  SolnBlk.U[i][j   ][varindex],    // I centroid node
-		  SolnBlk.U[i][j+yd][varindex],    // I downstream node
+      Iy_f = CLAM(SolnBlk.U[i][j-yd].I[index],      // I upstream node
+		  SolnBlk.U[i][j   ].I[index],    // I centroid node
+		  SolnBlk.U[i][j+yd].I[index],    // I downstream node
 		  SolnBlk.Grid.Cell[i][j-yd].Xc.y, // y upstream node
 		  SolnBlk.Grid.Cell[i][j   ].Xc.y, // y centroid node
 		  SolnBlk.Grid.Cell[i][j+yd].Xc.y, // y downstream node
@@ -4903,23 +4907,22 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
     // General Multidimensional
     //------------------------------------------------
     case SPACE_MARCH_GM:
-      dx = HALF * (SolnBlk.Grid.lfaceN(i,j) + SolnBlk.Grid.lfaceS(i,j) );
-      dy = HALF * (SolnBlk.Grid.lfaceE(i,j) + SolnBlk.Grid.lfaceW(i,j) );
-      if ( fabs(U.mu[m][l])/dx <= fabs(U.eta[m][l])/dy ) {
-	a = fabs(U.mu[m][l]) * ( SolnBlk.U[i+xd][j][varindex] - SolnBlk.U[i][j-yd][varindex] )
-	  - dx * (SolnBlk.U[i+xd][j].S(v,m,l) - SolnBlk.U[i+xd][j].dSdU(v,m,l)*SolnBlk.U[i+xd][j][varindex]);
-	b = ( fabs(U.mu[m][l]) - fabs(U.eta[m][l])*dx/dy ) * 
-	    ( SolnBlk.U[i][j][varindex] - SolnBlk.U[i][j-yd][varindex] );
-	Ix_f[j] = SolnBlk.U[i][j-yd][varindex] + 0.5*vanalbada(a,b,0.10)/fabs(U.mu[m][l]);
-	Iy_f = SolnBlk.U[i][j][varindex];
+      // vx, vy, dx, dy are already computed
+      if ( vx/dx <= vy/dy ) {
+	S = SolnBlk.U[i+xd][j].S(SolnBlk.M[i+xd][j],v,m,l) - 
+	    SolnBlk.U[i+xd][j].dSdU(SolnBlk.M[i+xd][j],v,m,l)*SolnBlk.U[i+xd][j].I[index];
+	a = vx*(SolnBlk.U[i+xd][j].I[index] - SolnBlk.U[i][j-yd].I[index]) - dx*S;
+	b = (vx-vy*dx/dy) * (SolnBlk.U[i][j].I[index] - SolnBlk.U[i][j-yd].I[index]);
+	Ix_f[j] = SolnBlk.U[i][j-yd].I[index] + 0.5*vanalbada(a,b,0.10)/vx;
+	Iy_f = SolnBlk.U[i][j].I[index];
 
       } else {
-	a = fabs(U.eta[m][l]) * ( SolnBlk.U[i][j+yd][varindex] - SolnBlk.U[i-xd][j][varindex] )
-	  - dy * (SolnBlk.U[i][j+yd].S(v,m,l) - SolnBlk.U[i][j+yd].dSdU(v,m,l)*SolnBlk.U[i][j+yd][varindex]);
-	b = ( fabs(U.eta[m][l]) - fabs(U.mu[m][l])*dy/dx ) * 
-	    ( SolnBlk.U[i][j][varindex] - SolnBlk.U[i-xd][j][varindex] );
-	Ix_f[j] = SolnBlk.U[i][j][varindex];
-	Iy_f = SolnBlk.U[i-xd][j][varindex] + 0.5*vanalbada(a,b,0.10)/fabs(U.eta[m][l]);
+	S = SolnBlk.U[i][j+yd].S(SolnBlk.M[i][j+yd],v,m,l) - 
+	    SolnBlk.U[i][j+yd].dSdU(SolnBlk.M[i][j+yd],v,m,l)*SolnBlk.U[i][j+yd].I[index];
+	a = vy*(SolnBlk.U[i][j+yd].I[index] - SolnBlk.U[i-xd][j].I[index]) - dy*S;
+	b = (vy-vx*dy/dx ) * (SolnBlk.U[i][j].I[index] - SolnBlk.U[i-xd][j].I[index]);
+	Ix_f[j] = SolnBlk.U[i][j].I[index];
+	Iy_f = SolnBlk.U[i-xd][j].I[index] + 0.5*vanalbada(a,b,0.10)/vy;
       }
       break;
 
@@ -4930,8 +4933,8 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
     case SPACE_MARCH_CENTRAL:
     case SPACE_MARCH_UPWIND:
     default:
-      Ix_f[j] = SolnBlk.U[i][j][varindex]/wx - wwx*Ix_f[j];
-      Iy_f = SolnBlk.U[i][j][varindex]/wy - wwy*Iy_f;
+      Ix_f[j] = SolnBlk.U[i][j].I[index]/wx - wwx*Ix_f[j];
+      Iy_f = SolnBlk.U[i][j].I[index]/wy - wwy*Iy_f;
       break;
 
     //------------------------------------------------
@@ -4943,7 +4946,7 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
     //
     if (SolnBlk.Axisymmetric && 
 	Input_Parameters.i_RTE_Solver == RTE2D_SOLVER_DOM) {
-      SolnBlk.U[i][j].I_half[m][l+1] = SolnBlk.U[i][j][varindex]/wpsi - 
+      SolnBlk.U[i][j].I_half[m][l+1] = SolnBlk.U[i][j].I[index]/wpsi - 
 	                               wwpsi*SolnBlk.U[i][j].I_half[m][l];
     }
 

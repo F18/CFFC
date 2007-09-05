@@ -23,6 +23,16 @@
 /********************************************************
  * Static member initialization                         *
  ********************************************************/
+// Medium2D_State
+int         Medium2D_State :: Nband          = 0;   // number of bands (& quad pts)
+FieldData*  Medium2D_State :: AbsorptionData = NULL;// container class for absorbsion data
+FieldData*  Medium2D_State :: ScatterData    = NULL;// container class for scatter data
+FieldData*  Medium2D_State :: BlackbodyData  = NULL;// container class for blackbody data
+TFunctor**  Medium2D_State :: fptr_kappa     = NULL;// function pointer to return absorption coef
+TFunctor**  Medium2D_State :: fptr_sigma     = NULL;// function pointer to return scatter coef
+TFunctor**  Medium2D_State :: fptr_Ib        = NULL;// function pointer to return blackbody
+
+// Rte2D_State
 int         Rte2D_State :: Npolar          = 0;     // number of polar elements
 int*        Rte2D_State :: Nazim           = NULL;  // number of azimuthal elements
 int         Rte2D_State :: Nband           = 0;     // number of bands (& quad pts)
@@ -160,7 +170,8 @@ void Rte2D_State :: SetDirsDOM(const int Quad_Type,
     in >> Nazim[i];
     NUM_VAR_RTE2D += Nazim[i];
   }
-  
+  NUM_VAR_RTE2D *= Nband;
+
   // now allocate the cosine arrays
   AllocateCosines(RTE2D_SOLVER_DOM);
 
@@ -286,7 +297,7 @@ void Rte2D_State :: SetDirsFVM(const int NumPolarDirs,
 
   // compute the total number of directions x total number of bands
   NUM_VAR_RTE2D = NumAzimDirs * NumPolarDirs * Nband;
-  
+
   // now allocate the cosine arrays
   AllocateCosines(RTE2D_SOLVER_FVM);
   
@@ -896,14 +907,6 @@ Rte2D_State Riemann_n(const Rte2D_State &Ul,
   cos_angle = norm_dir.x; 
   sin_angle = norm_dir.y;
 
-  // average the state properties
-  for (int v=0; v<Ul.Nband; v++) {
-    Um.Ib[v] = HALF*(Ul.Ib[v]+Ur.Ib[v]);
-    Um.kappa[v] = HALF*(Ul.kappa[v]+Ur.kappa[v]);
-    Um.sigma[v] = HALF*(Ul.sigma[v]+Ur.sigma[v]);
-  }
-
-
   //
   // Compute the Rieman state
   //
@@ -946,7 +949,6 @@ Rte2D_State Flux_n(const Rte2D_State &Ul,
   Rte2D_State Um, Flux;
   Um = Riemann_n(Ul, Ur, norm_dir);
   Flux = Um.Fn(norm_dir);
-  Flux.ZeroNonSol();
   return (Flux);
 
 }
@@ -1241,7 +1243,7 @@ Rte2D_State Reflect(const Rte2D_State &U, const Vector2D &norm_dir) {
   Vector3D out_dir, dir, in_dir;
   double cos_angle, sin_angle;
   double dcn, dct;
-  Rte2D_State Temp(U);  Temp.ZeroIntensity();
+  Rte2D_State Temp(U);  Temp.Zero();
   bool exact_match;
   double cos_phi, dotp;
   int mm, ll;
@@ -1470,6 +1472,140 @@ void Reflect_Space_March(Rte2D_State &U, const Vector2D &norm_dir) {
   //------------------------------------------------
 
 }
+
+
+/**************************************************************************
+ ******************** RESTRICT/PROLONG FUNCTIONS  *************************
+ **************************************************************************/
+
+
+/********************************************************
+ * Routine: Restrict_NonSol                             *
+ *                                                      *
+ * This function restricts coefficients that are not    *
+ * part of the solution state from a fine grid to a     *
+ * coarse one.  This is required for the Multigrid      *
+ * specializations.                                     *
+ *                                                      *
+ ********************************************************/
+/********************************************************
+COMMENTED OUT FOR NOW
+
+void Restrict_NonSol( Rte2D_State &Uc, const double &Ac,          // coarse cell state, volume
+		      const Rte2D_State &Uf1, const double &Af1,  // fine cell state, volume
+		      const Rte2D_State &Uf2, const double &Af2,  // fine cell state, volume
+		      const Rte2D_State &Uf3, const double &Af3,  // fine cell state, volume
+		      const Rte2D_State &Uf4, const double &Af4 ) // fine cell state, volume
+{
+  //
+  // Loop over each band
+  //
+  for ( int v=0; v<Uc.Nband; v++) {
+    
+    Uc.kappa[v] = 
+      ( Uf1.kappa[v] * Af1 + Uf2.kappa[v] * Af2 +
+        Uf3.kappa[v] * Af3 + Uf4.kappa[v] * Af4 ) / Ac;	
+	  
+    Uc.sigma[v] = 
+      ( Uf1.sigma[v] * Af1 + Uf2.sigma[v] * Af2 +
+        Uf3.sigma[v] * Af3 + Uf4.sigma[v] * Af4 ) / Ac;		  
+    
+    Uc.Ib[v] = ( Uf1.Ib[v] * Af1 + Uf2.Ib[v] * Af2 +
+		 Uf3.Ib[v] * Af3 + Uf4.Ib[v] * Af4 ) / Ac;		  
+
+  } // endfor Nband 
+
+  
+}
+
+********************************************************/
+
+
+/********************************************************
+ * Routine: Restrict_NonSol _Boundary_Ref_States        *
+ *                                                      *
+ * This function restricts coefficients that are not    *
+ * part of the solution state from a fine grid to a     *
+ * coarse one.  This is required for the Multigrid      *
+ * specializations.                                     *
+ *                                                      *
+ ********************************************************/
+/********************************************************
+COMMENTED OUT FOR NOW
+
+void Restrict_NonSol_Boundary_Ref_States( 
+		      Rte2D_State &Uc,                              // coarse cell state, volume
+		      const Rte2D_State &Uf_l, const double &Af_l,  // left fine cell state, volume
+		      const Rte2D_State &Uf_r, const double &Af_r ) // right fine cell state, volume
+{
+  //
+  // Loop over each band
+  //
+  for ( int v=0; v<Uc.Nband; v++) {
+    
+    Uc.kappa[v] = 
+      ( Uf_l.kappa[v] * Af_l + Uf_r.kappa[v] * Af_r ) / ( Af_r+Af_l );	
+	  
+    Uc.sigma[v] = 
+      ( Uf_l.sigma[v] * Af_l + Uf_r.sigma[v] * Af_r ) / ( Af_r+Af_l );	
+    
+    Uc.Ib[v] = ( Uf_l.Ib[v] * Af_l + Uf_r.Ib[v] * Af_r ) / ( Af_r+Af_l );
+	
+  } // endfor Nband 
+
+
+}
+
+********************************************************/
+
+
+/********************************************************
+ * Routine: Prolong_NonSol                              *
+ *                                                      *
+ * This function prolongs coefficients that are not     *
+ * part of the solution state from a fine grid to a     *
+ * coarse one.  This is required for the Multigrid      *
+ * specializations. Bilinear interpolation is used.     *
+ *                                                      *
+ ********************************************************/
+/********************************************************
+COMMENTED OUT FOR NOW
+
+int Prolong_NonSol( const Rte2D_State &Uc1, const Vector2D &Xc1,  // fine cell state, cell center
+		    const Rte2D_State &Uc2, const Vector2D &Xc2,  // fine cell state, cell center
+		    const Rte2D_State &Uc3, const Vector2D &Xc3,  // fine cell state, cell center
+		    const Rte2D_State &Uc4, const Vector2D &Xc4,  // fine cell state, cell center
+		    const Vector2D XcP, Rte2D_State &Uf )         // coarse cell state, cell center
+{
+  int tmp;
+  int error_flag = 0;
+
+  //
+  // Loop over each band
+  //
+  for ( int v=0; v<Uf.Nband && error_flag==0; v++) {
+    
+    error_flag = Bilinear_Interpolation( Uc1.kappa[v], Xc1, Uc2.kappa[v], Xc2, 
+					 Uc3.kappa[v], Xc3, Uc4.kappa[v], Xc4,
+					 XcP, Uf.kappa[v] );
+
+    if (error_flag == 0)
+      error_flag = Bilinear_Interpolation( Uc1.sigma[v], Xc1, Uc2.sigma[v], Xc2, 
+					   Uc3.sigma[v], Xc3, Uc4.sigma[v], Xc4,
+					   XcP, Uf.sigma[v] );
+    
+    if (error_flag == 0)
+      error_flag = Bilinear_Interpolation( Uc1.Ib[v], Xc1, Uc2.Ib[v], Xc2, 
+					   Uc3.Ib[v], Xc3, Uc4.Ib[v], Xc4,
+					   XcP, Uf.Ib[v] );
+  } // endfor Nband 
+
+
+  return error_flag;
+}
+
+
+********************************************************/
 
 
  /**************************************************************************

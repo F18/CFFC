@@ -82,20 +82,20 @@ void SetInitialValues( Rte2D_State &U,
   //------------------------------------------------
   // Use SNBCK
   if (IP.i_AbsorptionModel == RTE2D_ABSORB_SNBCK) {
-    U.SNBCKdata->CalculateAbsorb( IP.Pressure/PRESSURE_STDATM, //[atm]
-				  IP.Temperature,              //[K]
-				  IP.xco,
-				  IP.xh2o,
-				  IP.xco2,
-				  IP.xo2,
-				  IP.fsoot,
-				  U.kappa );
-    U.SNBCKdata->CalculatePlanck( IP.Temperature, U.Ib );
+//     U.SNBCKdata->CalculateAbsorb( IP.Pressure/PRESSURE_STDATM, //[atm]
+// 				  IP.Temperature,              //[K]
+// 				  IP.xco,
+// 				  IP.xh2o,
+// 				  IP.xco2,
+// 				  IP.xo2,
+// 				  IP.fsoot,
+// 				  U.kappa );
+//     U.SNBCKdata->CalculatePlanck( IP.Temperature, U.Ib );
 
   // Use Gray Gas (ie. constant)
   } else if (IP.i_AbsorptionModel == RTE2D_ABSORB_GRAY) {
-    U.SetAbsorption( IP.AbsorptionCoef );
-    U.SetBlackbody( BlackBody(IP.Temperature) );
+    // U.SetAbsorption( IP.AbsorptionCoef );
+    // U.SetBlackbody( BlackBody(IP.Temperature) );
 
   // error
   } else{
@@ -107,7 +107,7 @@ void SetInitialValues( Rte2D_State &U,
   // Scattering coefficient 
   //------------------------------------------------
   // scattering coefficient always assumed gray
-  U.SetScattering( IP.ScatteringCoef );
+  // U.SetScattering( IP.ScatteringCoef );
   
 }
 
