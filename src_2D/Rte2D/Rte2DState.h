@@ -28,6 +28,7 @@
  * Class Declaration                                    *
  ********************************************************/
 class Rte2D_State;
+class Medium2D_State;
 
 /********************************************************
  * Include required C++ libraries                       *
@@ -89,7 +90,6 @@ enum DOM_Qauad { RTE2D_DOM_S2,   // S2 NONSYMMETRIC from LATHROP and CARLSON
 /********************************************************
  * STRUCTS REQUIRED FOR INTEGRATION                     *
  ********************************************************/
-
 // Struct needed to integrate the phase function over the solid angle.
 // Contains information for legendre polynomials.
 struct legendre_param {
@@ -97,30 +97,6 @@ struct legendre_param {
   int Mn;     // degree of Legendre polynomial 
 };
 
-// Struct needed to integrate the exact solution for radiative
-// heat transfer in a cylindrical enclosure.
-struct exact_cyl_param {
-  double z;       // the non-dimensional axial distance
-  double r;       // the non-dimensional radial distance 
-  double c;       // the half length divided by the outer radius
-  double kappa;   // non-dimensional absorbsion coefficient
-  int term_flag;  // a flag for which parameter we are computing
-  int coord_flag; // a flag for which coordinate this is for
-};
-
-// Struct needed to integrate the exact solution for radiative
-// heat transfer in a rectangular enclosure.
-struct exact_rect_param {
-  double x;       // the dimensional x location
-  double y;       // the dimensional y location 
-  double a1;      // west wall location
-  double a2;      // east wall location
-  double b1;      // south wall location
-  double b2;      // north wall location
-  double kappa;   // absorbsion coefficient
-  int term_flag;  // a flag for which parameter we are computing
-  int coord_flag; // a flag for which coordinate this is for
-};
 
 
 /***********************************************************************/
@@ -158,16 +134,18 @@ class Medium2D_State {
   static FieldData* AbsorptionData;  //!< container class for absorbsion data
   static FieldData* ScatterData;     //!< container class for scatter data
   static FieldData* BlackbodyData;   //!< container class for blackbody data
-  static TFunctor** fptr_kappa;      //!< function pointer to return absorption coef
-  static TFunctor** fptr_sigma;      //!< function pointer to return scatter coef
-  static TFunctor** fptr_Ib;         //!< function pointer to return blackbody
+  static TSpecificFunctor<FieldData>* func_kappa; //!< functor to return absorption coef
+  static TSpecificFunctor<FieldData>* func_sigma; //!< functor to return scatter coef
+  static TSpecificFunctor<FieldData>* func_Ib;    //!< functor to return blackbody
   //@}
 
 
  public:
 
   //@{ @name Public objects:
-  static int Nband;     //!< the total number of frequency bands (and quadrature points for SNBCK)
+  static int Nband;          //!< the total number of frequency bands (and quadrature points for SNBCK)
+  static SNBCK* SNBCKdata;   //!< statistical narrow band model 
+  static double Absorb_Type; //!< flag for absorption model
   //@}
 
 
@@ -191,6 +169,17 @@ class Medium2D_State {
 
   //! Zero operator.
   void Zero();  
+
+  //! Initialer
+  void SetInitialValues( const double &Pressure,
+			 const double &Temperature,
+			 const double &xco,
+			 const double &xh2o,
+			 const double &xco2,
+			 const double &xo2,
+			 const double &fsoot,
+			 const double &AbsorptionCoef,
+			 const double &ScatteringCoef);
   //@}
 
   //@{ @name Allocators and deallocators
@@ -200,6 +189,11 @@ class Medium2D_State {
   //! memory allocation / deallocation for the field data arrays
   static void AllocateStatic();
   static void DeallocateStatic();
+  //! memory allocation / deallocation for the SNBCK data object
+  static void AllocateSNBCK();
+  static void DeallocateSNBCK();
+  //! deallocate all static variables
+  static void DeallocateAllStatic() { DeallocateSNBCK(); DeallocateStatic(); }
   //@}
 
   //@{ @name State functions.
@@ -211,13 +205,28 @@ class Medium2D_State {
   double Ib(const int &v) const { return Ib_[v]; };
   //! Return extinction coefficient
   double beta(const int &v) const { return (kappa_[v] + sigma_[v]); }
+  //@}
 
-  static double AbsorptionField(const Vector2D & r, const int &v)
-  { return (*fptr_kappa[v])(r); }
-  static double ScatterField(const Vector2D & r, const int &v) 
-  { return (*fptr_sigma[v])(r); }
-  static double BlackbodyField(const Vector2D & r, const int &v) 
-  { return (*fptr_Ib[v])(r); }
+  //@{ @name Static functions
+  //! Setup function
+  static void SetupStatic( const int &i_Absorb_Type, 
+			   const SNBCK_Input_Parameters &SNBCK_IP,
+			   const char* PATH);
+
+  //! Set all all fields to the same function
+  static void SetAllFields(double (FieldData::*_fpt)(const Vector2D &r));
+
+  //! Return the state field
+  double AbsorptionField(const Vector2D & r, const int &v)
+  { return func_kappa[v](r); }
+  double ScatterField(const Vector2D & r, const int &v)
+  { return func_sigma[v](r); }
+  double BlackbodyField(const Vector2D & r, const int &v)
+  { return func_Ib[v](r); }
+  
+  //! Compute medium state at location
+  friend void GetState(Medium2D_State &M, const Vector2D &r);
+  Medium2D_State GetState(const Vector2D &r);
   //@}
 
   //@{ @name Input-output operators.
@@ -284,9 +293,9 @@ inline void Medium2D_State :: AllocateStatic()
   AbsorptionData = new FieldData[Nband];
   ScatterData    = new FieldData[Nband];
   BlackbodyData  = new FieldData[Nband];
-  fptr_kappa     = new  TFunctor*[Nband];
-  fptr_sigma     = new  TFunctor*[Nband];
-  fptr_Ib        = new  TFunctor*[Nband];
+  func_kappa     = new TSpecificFunctor<FieldData>[Nband];
+  func_sigma     = new TSpecificFunctor<FieldData>[Nband];
+  func_Ib        = new TSpecificFunctor<FieldData>[Nband];
 }
 
 inline void Medium2D_State :: DeallocateStatic()
@@ -294,11 +303,154 @@ inline void Medium2D_State :: DeallocateStatic()
   if ( AbsorptionData != NULL ) { delete[] AbsorptionData; AbsorptionData = NULL; }
   if ( ScatterData    != NULL ) { delete[] ScatterData;    ScatterData    = NULL; }
   if ( BlackbodyData  != NULL ) { delete[] BlackbodyData;  BlackbodyData  = NULL; }
-  if ( fptr_kappa     != NULL ) { delete[] fptr_kappa;     fptr_kappa     = NULL; }
-  if ( fptr_sigma     != NULL ) { delete[] fptr_sigma;     fptr_sigma     = NULL; }
-  if ( fptr_Ib        != NULL ) { delete[] fptr_Ib;        fptr_Ib        = NULL; }
+  if ( func_kappa     != NULL ) { delete[] func_kappa;     func_kappa     = NULL; }
+  if ( func_sigma     != NULL ) { delete[] func_sigma;     func_sigma     = NULL; }
+  if ( func_Ib        != NULL ) { delete[] func_Ib;        func_Ib        = NULL; }
 }
 
+inline void Medium2D_State :: AllocateSNBCK()
+{ 
+  DeallocateSNBCK();
+  SNBCKdata = new SNBCK; 
+}
+
+inline void Medium2D_State :: DeallocateSNBCK()
+{ 
+  if ( SNBCKdata != NULL ) { delete SNBCKdata; SNBCKdata = NULL;}  
+}
+
+
+/********************************************************
+ * Compute values and initialize state.                 *
+ ********************************************************/
+inline void Medium2D_State :: SetInitialValues( const double &Pressure,
+						const double &Temperature,
+						const double &xco,
+						const double &xh2o,
+						const double &xco2,
+						const double &xo2,
+						const double &fsoot,
+						const double &AbsorptionCoef,
+						const double &ScatteringCoef)
+{
+
+  //------------------------------------------------
+  // Absorbsion coefficient, Blackbody intensity 
+  //------------------------------------------------
+  // Use SNBCK
+  if (Absorb_Type == RTE2D_ABSORB_SNBCK) {
+    SNBCKdata->CalculateAbsorb( Pressure/PRESSURE_STDATM, //[atm]
+				Temperature,              //[K]
+				xco,
+				xh2o,
+				xco2,
+				xo2,
+				fsoot,
+				kappa_ );
+    SNBCKdata->CalculatePlanck( Temperature, Ib_ );
+
+  // Use Gray Gas (ie. constant)
+  } else if (Absorb_Type == RTE2D_ABSORB_GRAY) {
+    for (int v=0; v<Nband; v++) {
+      kappa_[v] = AbsorptionCoef;
+      Ib_   [v] = BlackBody(Temperature);
+    } // endfor
+
+  // error
+  } else{
+    cerr << "Medium2D_State::SetInitialValues() - Invalid flag for Absorbsion model\n";
+    exit(1);
+  }
+
+  //------------------------------------------------
+  // Scattering coefficient 
+  //------------------------------------------------
+  // scattering coefficient always assumed gray
+  for (int v=0; v<Nband; v++) { sigma_[v] = ScatteringCoef; }
+
+}
+
+
+
+/********************************************************
+ * Setup Static variables.                              *
+ ********************************************************/
+inline void Medium2D_State :: SetupStatic( const int &i_Absorb_Type, 
+					   const SNBCK_Input_Parameters &SNBCK_IP,
+					   const char* PATH) {
+
+  //------------------------------------------------
+  // Absorbsion model 
+  //------------------------------------------------
+  // set the absorption type flag
+  Absorb_Type = i_Absorb_Type;
+  
+  // GRAY
+  if (Absorb_Type == RTE2D_ABSORB_GRAY) {
+    Nband = 1;
+
+  // SNBCK
+  } else if (Absorb_Type == RTE2D_ABSORB_SNBCK) {
+    AllocateSNBCK();
+    SNBCKdata->Setup(SNBCK_IP, PATH);
+    Nband = SNBCKdata->NumVar();
+
+  // ERROR
+  } else {
+    cerr << "Medium2D_State::SetupState - Invalid flag for gas type\n";
+    exit(-1);
+  } // endif
+
+
+  //------------------------------------------------
+  // Allocate Scalar fields 
+  //------------------------------------------------
+  Medium2D_State::AllocateStatic();
+
+}
+
+
+/********************************************************
+ * Set all scalar fields to the same function.          *
+ ********************************************************/
+inline void Medium2D_State :: SetAllFields(double (FieldData::*func)(const Vector2D &r))
+{
+  for (int i=0; i<Nband; i++) {
+    func_kappa[i].Set(&AbsorptionData[i], func);
+    func_sigma[i].Set(&ScatterData[i], func);
+    func_Ib[i].Set(&BlackbodyData[i], func);
+  }
+}
+
+
+/********************************************************
+ * Compute medium state at location.                    *
+ ********************************************************/
+inline void GetState(Medium2D_State &M, const Vector2D &r) 
+{
+  // compute
+  for (int i=0; i<M.Nband; i++){
+    M.kappa_[i] = M.AbsorptionField(r,i);  
+    M.sigma_[i] = M.ScatterField(r,i);
+    M.Ib_[i]    = M.BlackbodyField(r,i);
+  } // endfor
+}
+
+inline Medium2D_State Medium2D_State :: GetState(const Vector2D &r) 
+{
+  // declares
+  Medium2D_State M;
+  
+  // compute
+  for (int i=0; i<Nband; i++){
+    M.kappa_[i] = AbsorptionField(r,i);
+    M.sigma_[i] = ScatterField(r,i);
+    M.Ib_[i]    = BlackbodyField(r,i);
+  } // endfor
+
+  // return result
+  return M;
+}
 
 /********************************************************
  * Input/Output operators.                              *
@@ -431,8 +583,6 @@ class Rte2D_State {
   //@{ @name Miscillaneous static variables:
   static double***** Phi;        //!< scattering phase function
   static double Symmetry_Factor; //!< solid angle range symmetry factor
-  static SNBCK* SNBCKdata;       //!< statistical narrow band model 
-  static double Absorb_Type;     //!< flag for absorption model
   //@}
 
 
@@ -477,7 +627,7 @@ class Rte2D_State {
 
   //@{ @name Initialization functions
   //! Set the spectral/directional intensity to a constant value.
-  void SetIntensity(const double &val);
+  void SetInitialValues(const double &val);
 
   //! Compute DOM angular redistribution coefficients
   void SetupART_DOM( const Vector2D &nfaceE, const double &AfaceE,
@@ -486,10 +636,15 @@ class Rte2D_State {
 		     const Vector2D &nfaceS, const double &AfaceS );
   //@}
 
-  //@{ @name Functions to setup the absoorption coefficient model.
-  //! Initialize model type.
-  static void SetupAbsorb( const SNBCK_Input_Parameters &IP, 
-			   const char* CFFC_PATH );
+  //@{ @name Setup state static variables
+  static void SetupStatic( const int &Solver_Type, 
+			   const int &Number_of_Bands,
+			   const int &Number_of_Angles_Mdir, 
+			   const int &Number_of_Angles_Ldir,
+			   const int &DOM_Quadrature,
+			   const int &Axisymmetric,
+			   const int &ScatteringFunc,
+			   const char* PATH );
   //@}
 
 
@@ -524,13 +679,9 @@ class Rte2D_State {
   static void AllocateCosines( const int RTE_Type );
   static void DeallocateCosines();
 
-  //! memory allocation / deallocation for the SNBCKdata object
-  static void AllocateSNBCK();
-  static void DeallocateSNBCK();
-
   //! deallocate all static objects
   static void DeallocateStatic() 
-    { DeallocateCosines(); DeallocateDirs(); DeallocateSNBCK(); }
+    { DeallocateCosines(); DeallocateDirs(); }
 
   //@}
 
@@ -552,10 +703,10 @@ class Rte2D_State {
   double& In( const int &v, const int &m, const int &l );
 
   //! Return directional integrated intensity [W/m^2]
-  double G();        
+  double G(const Medium2D_State &M);        
 
   //! Return heat flux vector [W/m^2]
-  Vector2D q();
+  Vector2D q(const Medium2D_State &M);
 
   //! Return radiation source term [W/m^3]
   Vector2D Qr(const Medium2D_State &M);
@@ -673,7 +824,7 @@ inline double& Rte2D_State :: In( const int &v, const int &m, const int &l )
  * (2003) for a definition of this term.                     *
  *    G = \int_{4\pi} I(r,s) {d\Omega}                       *
  *************************************************************/
-inline double Rte2D_State :: G( ) 
+inline double Rte2D_State :: G( const Medium2D_State &M ) 
 {
   double sum = ZERO;
   int vv, ii;
@@ -683,7 +834,7 @@ inline double Rte2D_State :: G( )
   //------------------------------------------------
   // Absorbsion coefficient is constant -> easy
   // Nband should be = 1 for gray
-  if (Absorb_Type == RTE2D_ABSORB_GRAY) {
+  if (M.Absorb_Type == RTE2D_ABSORB_GRAY) {
     for ( int v=0; v<Nband; v++ )
       for ( int m=0; m<Npolar; m++ ) 
 	for ( int l=0; l<Nazim[m]; l++ ) 
@@ -695,7 +846,7 @@ inline double Rte2D_State :: G( )
   // See Liu et al. Combust Flame 138 (2004) 136-154
   //    G = \sum_v {\Delta v} \sum_i w_i  * 
   //        \sum_m \sum_l ( {\Delta \Omega}_{m,l} * I_{m,l} )
-  } else if (Absorb_Type == RTE2D_ABSORB_SNBCK) {
+  } else if (M.Absorb_Type == RTE2D_ABSORB_SNBCK) {
 
     //
     // loop over every quad point of every band
@@ -714,10 +865,10 @@ inline double Rte2D_State :: G( )
       
       // add the total radiation component for this quadrature point
       // Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
-      vv = SNBCKdata->band_index[v]; // SNBCK band index
-      ii = SNBCKdata->quad_index[v]; // SNBCK quad index
-      sum += SNBCKdata->BandWidth[vv] * 
-	     SNBCKdata->Weight(vv,ii) * dir_sum;
+      vv = M.SNBCKdata->band_index[v]; // SNBCK band index
+      ii = M.SNBCKdata->quad_index[v]; // SNBCK quad index
+      sum += M.SNBCKdata->BandWidth[vv] * 
+	     M.SNBCKdata->Weight(vv,ii) * dir_sum;
       
     } // endfor - bands 
 
@@ -734,7 +885,7 @@ inline double Rte2D_State :: G( )
  * (2003) for a definition of this term.                     *
  *    \vec{q} = \int_{4\pi} \vec{s} I(r,s) {d\Omega}         *
  *************************************************************/
-inline Vector2D Rte2D_State :: q( )
+inline Vector2D Rte2D_State :: q( const Medium2D_State &M )
 {
   Vector2D Temp(ZERO);
   int vv, ii;
@@ -744,7 +895,7 @@ inline Vector2D Rte2D_State :: q( )
   //------------------------------------------------
   // Absorbsion coefficient is constant -> easy
   // Nband should be = 1 for gray
-  if (Absorb_Type == RTE2D_ABSORB_GRAY) {
+  if (M.Absorb_Type == RTE2D_ABSORB_GRAY) {
     for ( int v=0; v<Nband; v++ ) 
       for ( int m=0; m<Npolar; m++ ) 
 	for ( int l=0; l<Nazim[m]; l++ ) {
@@ -758,7 +909,7 @@ inline Vector2D Rte2D_State :: q( )
   // See Liu et al. Combust Flame 138 (2004) 136-154
   //    q.x = \sum_v {\Delta v} \sum_i w_i \sum_m \sum_l (  \mu_{m,l} * I_{m,l} )
   //    q.y = \sum_v {\Delta v} \sum_i w_i \sum_m \sum_l ( \eta_{m,l} * I_{m,l} )
-  } else if (Absorb_Type == RTE2D_ABSORB_SNBCK) {
+  } else if (M.Absorb_Type == RTE2D_ABSORB_SNBCK) {
 
     //
     // loop over every quad point of every band
@@ -779,9 +930,9 @@ inline Vector2D Rte2D_State :: q( )
 
 	// add the total radiation component for this quadrature point
 	// Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
-	vv = SNBCKdata->band_index[v]; // SNBCK band index
-	ii = SNBCKdata->quad_index[v]; // SNBCK quad index
-	dir_sum *= SNBCKdata->BandWidth[vv]*SNBCKdata->Weight(vv,ii);
+	vv = M.SNBCKdata->band_index[v]; // SNBCK band index
+	ii = M.SNBCKdata->quad_index[v]; // SNBCK quad index
+	dir_sum *= M.SNBCKdata->BandWidth[vv]*M.SNBCKdata->Weight(vv,ii);
 	Temp += dir_sum;
 
     } // endfor - bands 
@@ -811,7 +962,7 @@ inline Vector2D Rte2D_State :: Qr( const Medium2D_State &M )
   //------------------------------------------------
   // Absorbsion coefficient is constant -> easy
   // Nband should be = 1 for gray
-  if (Absorb_Type == RTE2D_ABSORB_GRAY) {
+  if (M.Absorb_Type == RTE2D_ABSORB_GRAY) {
 
     //
     // loop over bands 
@@ -838,7 +989,7 @@ inline Vector2D Rte2D_State :: Qr( const Medium2D_State &M )
   // See Liu et al. Combust Flame 138 (2004) 136-154
   //    G = \sum_v {\Delta v} \sum_i w_i *
   //        \sum_m \sum_l ( 4\pi*Ib - {\Delta \Omega}_{m,l} * I_{m,l} )
-  } else if (Absorb_Type == RTE2D_ABSORB_SNBCK) {
+  } else if (M.Absorb_Type == RTE2D_ABSORB_SNBCK) {
 
     //
     // loop over every quad point of every band
@@ -857,9 +1008,9 @@ inline Vector2D Rte2D_State :: Qr( const Medium2D_State &M )
 	
 	// the contribution of the source term at this point
 	// Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
-	vv = SNBCKdata->band_index[v]; // SNBCK band index
-	ii = SNBCKdata->quad_index[v]; // SNBCK quad index
-	source += SNBCKdata->BandWidth[vv]*SNBCKdata->Weight(vv,ii) * 
+	vv = M.SNBCKdata->band_index[v]; // SNBCK band index
+	ii = M.SNBCKdata->quad_index[v]; // SNBCK quad index
+	source += M.SNBCKdata->BandWidth[vv]*M.SNBCKdata->Weight(vv,ii) * 
 	          M.kappa( v)* sum;
 
     } // endfor - bands 
@@ -879,8 +1030,7 @@ inline Vector2D Rte2D_State :: Qr( const Medium2D_State &M )
 /********************************************************
  * Set initial values.                                  *
  ********************************************************/
-
-inline void Rte2D_State :: SetIntensity(const double &val) {
+inline void Rte2D_State :: SetInitialValues(const double &val) {
   for ( int i=0; i<NUM_VAR_RTE2D; i++ ) I[i] = val;
 }
 
@@ -1078,18 +1228,53 @@ inline void Rte2D_State :: DeallocateCosines()
 
 }
 
-/********************************************************
- * Object allocator and deallocator for SNBCK object.   *
- ********************************************************/
-inline void Rte2D_State :: AllocateSNBCK()
-{ 
-  if ( SNBCKdata == NULL ) SNBCKdata = new SNBCK; 
-}
 
-inline void Rte2D_State :: DeallocateSNBCK()
-{ 
-  if ( SNBCKdata != NULL ) { delete SNBCKdata; SNBCKdata = NULL;}  
+/********************************************************
+ * Setup static variables                               *
+ ********************************************************/
+inline void Rte2D_State :: SetupStatic( const int &Solver_Type, 
+					const int &Number_of_Bands,
+					const int &Number_of_Angles_Mdir, 
+					const int &Number_of_Angles_Ldir,
+					const int &DOM_Quadrature,
+					const int &Axisymmetric,
+					const int &ScatteringFunc,
+					const char* PATH ) 
+{
+
+  // deallocate static vars first, just to be safe
+  Rte2D_State::DeallocateStatic();
+  Rte2D_State::Nband = Number_of_Bands;
+
+
+  //------------------------------------------------
+  // Set Directions, Phase function 
+  //------------------------------------------------
+  // FVM
+  if (Solver_Type == RTE2D_SOLVER_FVM) {
+    SetDirsFVM(Number_of_Angles_Mdir, 
+			    Number_of_Angles_Ldir, 
+			    Axisymmetric );
+    SetupPhaseFVM( ScatteringFunc );
+
+  // DOM
+  } else if (Solver_Type == RTE2D_SOLVER_DOM) {
+    Rte2D_State::SetDirsDOM(DOM_Quadrature,
+			    Axisymmetric, 
+			    PATH );
+    SetupPhaseDOM( ScatteringFunc );
+
+  // ERROR
+  } else {
+    cerr << "SetupStateStatic() - Invalid flag for RTE solver\n";
+    exit(1);
+  } // endif
+
+
+  
 }
+  
+
 
  /**************************************************************************
   ************************** OPERATOR OVERLOADS  ***************************
@@ -1888,13 +2073,15 @@ extern void Reflect_Space_March(Rte2D_State &U,
 				const Vector2D &norm_dir);
 
 extern Rte2D_State Gray_Wall(const Rte2D_State &U, 
-		      const Vector2D &norm_dir, 
-		      const double &wall_temperature,
-		      const double &wall_emissivity );
+			     const Medium2D_State &M, 
+			     const Vector2D &norm_dir, 
+			     const double &wall_temperature,
+			     const double &wall_emissivity );
 extern void Gray_Wall_Space_March(Rte2D_State &Uwall, 
-		      const Vector2D &norm_dir, 
-		      const double &wall_temperature,
-		      const double &wall_emissivity );
+				  const Medium2D_State &M, 
+				  const Vector2D &norm_dir, 
+				  const double &wall_temperature,
+				  const double &wall_emissivity );
 
 /********************************************************
  * External Restriction/Prolongation Functions          *

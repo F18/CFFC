@@ -700,6 +700,7 @@ inline istream &operator >> (istream &in_file,
          for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_RTE2D-1 ; ++k ) {
 	   SolnBlk.dUdt[i][j][k].Zero();
          } /* endfor */
+	 SolnBlk.M[i][j].Zero();
 	 SolnBlk.dUdx[i][j].Zero();
 	 SolnBlk.dUdy[i][j].Zero();
 	 SolnBlk.phi[i][j].Zero();
@@ -2504,6 +2505,9 @@ extern void Output_Exact(Rte2D_Quad_Block &SolnBlk,
 
 extern void ICs(Rte2D_Quad_Block &SolnBlk,
 		Rte2D_Input_Parameters &IP);
+
+extern void ICs_Medium(Rte2D_Quad_Block &SolnBlk,
+		       Rte2D_Input_Parameters &IP);
 
 extern void BCs(Rte2D_Quad_Block &SolnBlk,
 		Rte2D_Input_Parameters &IP);

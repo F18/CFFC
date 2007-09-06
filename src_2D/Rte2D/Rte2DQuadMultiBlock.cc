@@ -115,8 +115,11 @@ void ICs(Rte2D_Quad_Block *Soln_ptr,
 	  Soln_ptr[i].WestWallEmiss  = Input_Parameters.WestWallEmiss;
 
           // Set initial data.
-          ICs(Soln_ptr[i], 
-              Input_Parameters);
+          ICs(Soln_ptr[i], Input_Parameters);
+
+          // Set initial data.
+          ICs_Medium(Soln_ptr[i], Input_Parameters);
+
        } /* endif */
     }  /* endfor */
 
@@ -192,11 +195,10 @@ int Read_Restart_Solution(Rte2D_Quad_Block *Soln_ptr,
 	  restart_file >> Input_Parameters.SNBCK_IP;	    
 	  restart_file >> Input_Parameters.Axisymmetric;	    
           restart_file.unsetf(ios::skipws);
-	  Input_Parameters.Uo.Deallocate();
-	  SetupStateStatic( Input_Parameters );
-	  Input_Parameters.Uo.Allocate();
-	  Input_Parameters.Uo.Zero();
 
+	  // Setup conserved and medium state
+	  Input_Parameters.SetupInputState();
+	 
 	  //---------------------- End Rte2D Specific -----------------------//
 
           if (!i_new_time_set) {

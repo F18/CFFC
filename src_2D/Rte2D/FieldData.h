@@ -74,15 +74,23 @@ class TFunctor {
 template <class TClass> class TSpecificFunctor : public TFunctor {
  private:
   double (TClass::*fpt)(const Vector2D &);   // pointer to member function
-  TClass* pt2Object;                          // pointer to object
+  TClass* pt2Object;                         // pointer to object
   
  public:
   
+  // constructor - uninitialized
+  TSpecificFunctor() : pt2Object(NULL), fpt(NULL) {}
+
   // constructor - takes pointer to an object and pointer to a member and stores
   // them in two private variables
   TSpecificFunctor(TClass* _pt2Object, double (TClass::*_fpt)(const Vector2D &r))
   { pt2Object = _pt2Object;  fpt=_fpt; };
-  
+
+  // initializer
+  void Set(TClass* _pt2Object, double (TClass::*_fpt)(const Vector2D &r))
+  { pt2Object = _pt2Object;  fpt=_fpt; };
+
+
   // override operator "()"
   virtual double operator()(const Vector2D &r)
   { (*pt2Object.*fpt)(r);};              // execute member function
@@ -114,21 +122,19 @@ template <class TClass> class TSpecificFunctor : public TFunctor {
 class FieldData {
 
  private:
+
+  //objects
   double val; // constant Value
 
+
  public:
+
+  // constructors
   FieldData():val(0) {};
   FieldData(const int &x):val(x) {};
+
+  // Functions to describe the field
   double Constant(const Vector2D &r) { return val; };
 };
 
 #endif //_FIELD_DATA_INCLUDED
-
-// void test (void) {
-//       FieldData objA;
-//       TSpecificFunctor<FieldData> specFuncA(&objA, &FieldData::Constant);
-//       TFunctor* vTable = { &specFuncA };
-
-//       Vector2D temp;
-//       (*vTable)(temp);
-// }

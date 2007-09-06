@@ -24,13 +24,15 @@
  * Static member initialization                         *
  ********************************************************/
 // Medium2D_State
-int         Medium2D_State :: Nband          = 0;   // number of bands (& quad pts)
-FieldData*  Medium2D_State :: AbsorptionData = NULL;// container class for absorbsion data
-FieldData*  Medium2D_State :: ScatterData    = NULL;// container class for scatter data
-FieldData*  Medium2D_State :: BlackbodyData  = NULL;// container class for blackbody data
-TFunctor**  Medium2D_State :: fptr_kappa     = NULL;// function pointer to return absorption coef
-TFunctor**  Medium2D_State :: fptr_sigma     = NULL;// function pointer to return scatter coef
-TFunctor**  Medium2D_State :: fptr_Ib        = NULL;// function pointer to return blackbody
+int         Medium2D_State :: Nband          = 0;     // number of bands (& quad pts)
+SNBCK*      Medium2D_State :: SNBCKdata      = NULL;  // SNBCK data object
+double      Medium2D_State :: Absorb_Type    = RTE2D_ABSORB_GRAY; // absorbsion model
+FieldData*  Medium2D_State :: AbsorptionData = NULL;  // container class for absorbsion data
+FieldData*  Medium2D_State :: ScatterData    = NULL;  // container class for scatter data
+FieldData*  Medium2D_State :: BlackbodyData  = NULL;  // container class for blackbody data
+TSpecificFunctor<FieldData>* Medium2D_State :: func_kappa = NULL;// function pointer to return absorption coef
+TSpecificFunctor<FieldData>* Medium2D_State :: func_sigma = NULL;// function pointer to return scatter coef
+TSpecificFunctor<FieldData>* Medium2D_State :: func_Ib    = NULL;// function pointer to return blackbody
 
 // Rte2D_State
 int         Rte2D_State :: Npolar          = 0;     // number of polar elements
@@ -48,8 +50,6 @@ double*     Rte2D_State :: delta_theta     = NULL;  // polar angle grid size
 double**    Rte2D_State :: delta_psi       = NULL;  // azimuthal angle grid size
 double***** Rte2D_State :: Phi             = NULL;  // phase function
 double      Rte2D_State :: Symmetry_Factor = ONE;   // symmetry multiplyer
-SNBCK*      Rte2D_State :: SNBCKdata       = NULL;  // SNBCK data object
-double      Rte2D_State :: Absorb_Type     = RTE2D_ABSORB_GRAY; // absorbsion model
 
 
 /**************************************************************************
@@ -1002,6 +1002,7 @@ Rte2D_State Flux_n(const Rte2D_State &Ul,
  * TODO: Implement pixelation                            *
  *********************************************************/
 Rte2D_State Gray_Wall(const Rte2D_State &U, 
+		      const Medium2D_State &M, 
 		      const Vector2D &norm_dir, 
 		      const double &wall_temperature,
 		      const double &wall_emissivity ) {
@@ -1017,10 +1018,10 @@ Rte2D_State Gray_Wall(const Rte2D_State &U,
     //------------------------------------------------
     // For a black wall, the blackbody intensity
     //------------------------------------------------
-    if (U.Absorb_Type == RTE2D_ABSORB_GRAY)
+    if (M.Absorb_Type == RTE2D_ABSORB_GRAY)
       In = wall_emissivity * BlackBody(wall_temperature);
-    else if (U.Absorb_Type == RTE2D_ABSORB_SNBCK) {
-      wn = U.SNBCKdata->WaveNo[ U.SNBCKdata->band_index[v] ];
+    else if (M.Absorb_Type == RTE2D_ABSORB_SNBCK) {
+      wn = M.SNBCKdata->WaveNo[ M.SNBCKdata->band_index[v] ];
       In = wall_emissivity * BlackBody(wall_temperature, wn);
       // Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
     } else
@@ -1124,6 +1125,7 @@ Rte2D_State Gray_Wall(const Rte2D_State &U,
  * TODO: Implement pixelation                           *
  *********************************************************/
 void Gray_Wall_Space_March(Rte2D_State &Uwall, 
+			   const Medium2D_State &M, 
 			   const Vector2D &norm_dir, 
 			   const double &wall_temperature,
 			   const double &wall_emissivity ) {
@@ -1138,10 +1140,10 @@ void Gray_Wall_Space_March(Rte2D_State &Uwall,
     //------------------------------------------------
     // for a black wall
     //------------------------------------------------
-    if (Uwall.Absorb_Type == RTE2D_ABSORB_GRAY)
+    if (M.Absorb_Type == RTE2D_ABSORB_GRAY)
       In = wall_emissivity * BlackBody(wall_temperature);
-    else if (Uwall.Absorb_Type == RTE2D_ABSORB_SNBCK) {
-      wn = Uwall.SNBCKdata->WaveNo[ Uwall.SNBCKdata->band_index[v] ];
+    else if (M.Absorb_Type == RTE2D_ABSORB_SNBCK) {
+      wn = M.SNBCKdata->WaveNo[ M.SNBCKdata->band_index[v] ];
       In = wall_emissivity * BlackBody(wall_temperature, wn);
       // Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
     } else 

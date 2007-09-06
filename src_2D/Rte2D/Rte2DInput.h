@@ -135,6 +135,7 @@ class Rte2D_Input_Parameters{
   int i_ICs;
   Rte2D_State Uo;
   Medium2D_State Mo;
+  double Intensity;
   double Temperature, Pressure;
   double xco, xco2, xh2o, xo2, fsoot;
   double AbsorptionCoef, ScatteringCoef;
@@ -145,6 +146,8 @@ class Rte2D_Input_Parameters{
   char ScatteringFunc[INPUT_PARAMETER_LENGTH_RTE2D];
   int i_AbsorptionModel;
   char AbsorptionModel[INPUT_PARAMETER_LENGTH_RTE2D];
+  char ICs_Medium[INPUT_PARAMETER_LENGTH_RTE2D];
+  int i_ICs_Medium;
   //@}
 
   //@{ @name Flow geometry (planar or axisymmetric):
@@ -267,12 +270,59 @@ class Rte2D_Input_Parameters{
   int Number_of_Processors, Number_of_Blocks_Per_Processor;
   //@}
 
+
+  //@{ @name Member function to setup conserved state Uo and medium state Mo
+  void SetupInputState();
+
+
   //@{ @name Input-output operators:
   friend ostream &operator << (ostream &out_file, const Rte2D_Input_Parameters &IP);
   friend istream &operator >> (istream &in_file, Rte2D_Input_Parameters &IP);
   //@}
 
 };
+
+/*******************************************************
+ * Main function to setup the Rte2D_State and          *
+ * Medium2D_State static parameters.  This function is *
+ * called everytime input parameters are changed.      *
+ *******************************************************/  
+inline void Rte2D_Input_Parameters::SetupInputState() 
+{
+
+  // deallocate
+  Mo.Deallocate();
+  Uo.Deallocate();
+  
+  // Setup static state variables
+  Medium2D_State:: SetupStatic( i_AbsorptionModel, 
+				SNBCK_IP,
+				CFFC_Path );
+  Rte2D_State::SetupStatic( i_RTE_Solver, 
+			    Medium2D_State::Nband,
+			    Number_of_Angles_Mdir,
+			    Number_of_Angles_Ldir,
+			    i_DOM_Quadrature,
+			    Axisymmetric,
+			    i_ScatteringFunc,
+			    CFFC_Path );
+
+  // allocate
+  Mo.Allocate();
+  Uo.Allocate();
+  
+  // initialize
+  Mo.SetInitialValues(Pressure,
+		      Temperature,
+		      xco,
+		      xh2o,
+		      xco2,
+		      xo2,
+		      fsoot,
+		      AbsorptionCoef,
+		      ScatteringCoef);
+  Uo.SetInitialValues(Intensity);
+}
 
 
 /*************************************************************
@@ -392,7 +442,8 @@ inline ostream &operator << (ostream &out_file,
     out_file << "\n  -> Initial Conditions: " 
              << IP.ICs_Type;
     if (IP.i_ICs == IC_CONSTANT || IP.i_ICs == IC_UNIFORM ){
-
+      out_file << "\n      -> Intensity (K): " 
+	       << IP.Intensity;
       out_file << "\n      -> Temperature (K): " 
 	       << IP.Temperature;
       out_file << "\n      -> Pressure (Pa): " 
@@ -409,6 +460,9 @@ inline ostream &operator << (ostream &out_file,
 	       << IP.ScatteringCoef;
     } /* endif */
 
+    // Medium ICs
+    out_file << "\n  -> Medium Initial Conditions: " 
+             << IP.ICs_Medium;
     /***********************************************************************
      ***********************************************************************/
 
