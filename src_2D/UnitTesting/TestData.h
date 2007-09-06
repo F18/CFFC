@@ -1,4 +1,11 @@
-// Define the basic test data class.
+/*!\file TestData.h
+  \brief Define the basic test data class.
+
+  This test data class provides basic functionality
+  that can be used to simplify the testing process. 
+  It is recommended that every test suite data 
+  inherit from this class.
+*/
 
 /* Include required C++ libraries. */
 #include <cmath>

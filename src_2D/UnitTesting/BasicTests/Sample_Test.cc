@@ -24,7 +24,7 @@ namespace tut
   /**
    * This group of declarations is just to register
    * test group in test-application-wide singleton.
-   * Name of test group object (LinearSystems_TestGroup) shall
+   * Name of test group object (e.g. TestGroup) shall
    * be unique in tut:: namespace. Alternatively, you
    * you may put it into anonymous namespace.
    */

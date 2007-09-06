@@ -1,5 +1,5 @@
-/* AdvectDiffuse2DInput.h:  Header file defining 
-                            2D Advection Diffusion Equation Input Parameter Class. */
+/*!\file AdvectDiffuse2DInput.h
+  \brief Header file defining 2D Advection Diffusion Equation Input Parameter Class. */
 
 #ifndef _ADVECTDIFFUSE2D_INPUT_INCLUDED
 #define _ADVECTDIFFUSE2D_INPUT_INCLUDED
@@ -30,6 +30,9 @@
 #ifndef _ICEMCFD_INCLUDED
 #include "../ICEM/ICEMCFD.h"
 #endif // _ICEMCFD_INCLUDED
+
+// Include TypeDefinition header file.
+#include "../Utilities/TypeDefinition.h"
 
 /* Define the structures and classes. */
 
@@ -140,8 +143,8 @@ public:
 
   //@{ @name Diffusion coefficient, advection speeds, and relaxation time:
   double Kappa, a, b, Tau;
-  FunctionType2D KappaVar;          /*!< Function pointer which is set to the diffusion coefficient variation. */
-  FunctionType2D SourceTermVar;	    /*!< Function pointer which is set to the source term variation. */
+  FunctionType2D KappaVariation;          /*!< Function pointer which is set to the diffusion coefficient variation. */
+  FunctionType2D SourceTermVariation;	    /*!< Function pointer which is set to the source term variation. */
   //@}
 
   //@{ @name Convection velocity field type parameters:
@@ -166,14 +169,15 @@ public:
          Blunt_Body_Radius, Blunt_Body_Mach_Number,
          Chamber_Length, Chamber_Radius, Chamber_To_Throat_Length,
          Nozzle_Length, Nozzle_Radius_Exit, Nozzle_Radius_Throat, Grain_Radius,
-         Cylinder_Radius, Ellipse_Length_X_Axis, 
+         Cylinder_Radius, Cylinder_Radius2, Ellipse_Length_X_Axis, 
          Ellipse_Length_Y_Axis, Chord_Length, Orifice_Radius;
   int Nozzle_Type;
   double X_Scale, X_Rotate;
   Vector2D X_Shift;
   char **ICEMCFD_FileNames;
-  int IterationsOfInteriorNodesDisturbancies; /* <! Number of iterations of disturbing the mesh
+  int IterationsOfInteriorNodesDisturbancies; /*<! Number of iterations of disturbing the mesh
 						 (create an unsmooth interior mesh). */
+  int Num_Of_Spline_Control_Points;  /*<! Number of points used to define the spline curve. */
   //@}
 
   //@{ @name Mesh stretching factor.
@@ -199,6 +203,11 @@ public:
   int AMR;
   //! Unsteady AMR frequency.
   int AMR_Frequency;
+  //! \brief Unsteady AMR global reference --> set the time reference for unsteady AMR 
+  //
+  //!  --> Set to OFF, the reference is the start of the current simulation/restart <br>
+  //!  --> Set to ON,  the reference is the absolute beginning of the simulation
+  int AMR_Global_Reference;
   //! Number of initial mesh refinements.
   int Number_of_Initial_Mesh_Refinements;
   //! Number of uniform mesh refinements.
@@ -241,8 +250,28 @@ public:
   int Number_of_Processors, Number_of_Blocks_Per_Processor;
   //@}
 
+  //@{ @name Default Constructor
+  AdvectDiffuse2D_Input_Parameters(void);
+  //@}
+
+  //@{ @name Destructor
+  ~AdvectDiffuse2D_Input_Parameters(void);
+  //@}
+
   //@{ @name Obtain the CFFC root directory path:
   void get_cffc_path();
+  //@}
+
+  //@{ @name Field access to the high-order variables:
+  int ReconstructionOrder(void) {return (Space_Accuracy-1);} //!< return order of reconstruction based on Space_Accuracy
+  int & Limiter(void) {return i_Limiter;}                    //!< write/read selected limiter
+  const int & Limiter(void) const {return i_Limiter;}        //!< return selected limiter (read only)
+  double & FitTolerance(void) {return CENO_Cutoff;}          //!< write/read CENO tolerance
+  const double & FitTolerance(void) const {return CENO_Cutoff;}  //!< return CENO tolerance (read only)
+  //@}
+
+  //@{ @name Member function to set the exact solution pointer.
+  void SetExactSolutionPointer(void); //!< set the pointer to the exact solution if it exists. Otherwise, the pointer is NULL
   //@}
 
   //@{ @name Input-output operators:
@@ -253,6 +282,27 @@ public:
   //@}
 
 };
+
+/************************************************************************
+ * AdvectDiffuse2D_Input_Parameters::AdvectDiffuse2D_Input_Parameters() *
+ * -->  Default Constructor                                             *
+ ***********************************************************************/
+inline AdvectDiffuse2D_Input_Parameters::AdvectDiffuse2D_Input_Parameters(void){
+  ICEMCFD_FileNames = NULL;
+}
+
+/************************************************************************
+ * AdvectDiffuse2D_Input_Parameters::~AdvectDiffuse2D_Input_Parameters()*
+ * -->  Default Constructor                                             *
+ ***********************************************************************/
+inline AdvectDiffuse2D_Input_Parameters::~AdvectDiffuse2D_Input_Parameters(void){
+  if (ICEMCFD_FileNames != NULL){
+    for (int i = 0 ; i < 3 ; ++i){
+      delete [] ICEMCFD_FileNames[i]; ICEMCFD_FileNames[i] = NULL;
+    }
+    delete [] ICEMCFD_FileNames; ICEMCFD_FileNames = NULL;
+  }
+}
 
 /*********************************************************************
  * AdvectDiffuse2D_Input_Parameters::get_cffc_path -- Get CFFC path. *
@@ -269,6 +319,9 @@ inline void AdvectDiffuse2D_Input_Parameters::get_cffc_path(){
      strcpy(CFFC_Path, getenv(PATHVAR_ADVECTDIFFUSE2D));
   }
 }
+
+
+
 
 /***************************************************************
  * AdvectDiffuse2D_Input_Parameters -- Input-output operators. *
@@ -315,12 +368,49 @@ inline ostream &operator << (ostream &out_file,
     } /* endif */
     out_file << "\n  -> Reconstruction: " 
              << IP.Reconstruction_Type;
+    if (IP.i_ReconstructionMethod == RECONSTRUCTION_CENO){
+      out_file << "\n  -> Fit Tolerance: "
+	       << IP.FitTolerance();
+      out_file << "\n  -> Reference State: "
+	       << IP.RefU;
+    }
+    out_file << "\n  -> Boundary Accuracy: ";
+    if (IP.IncludeHighOrderBoundariesRepresentation == OFF){
+      out_file << "2nd-Order";
+    } else {
+      out_file << "High-Order";
+    }
     out_file << "\n  -> Limiter: " 
              << IP.Limiter_Type;
     if (IP.Limiter_Type != LIMITER_ZERO && IP.Freeze_Limiter) {
       out_file << "\n  -> Freeze Limiter when L2-norm of residual is < "
 	       << IP.Freeze_Limiter_Residual_Level;
     } /* endif */
+    if (IP.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+      out_file << "\n  -> Space Accuracy : ";
+      switch(IP.Space_Accuracy){
+      case 1: 
+	out_file << "1st order";
+	break;
+      case 2:
+	out_file << "2nd order";
+	break;
+      case 3:
+	out_file << "3rd order";
+	break;
+      case 4:
+	out_file << "4th order";
+	break;
+      case 5:
+	out_file << "5th order";
+	break;
+      case 6:
+	out_file << "6th order";
+	break;
+      default:
+	out_file << "bigger than 6th order";
+      }
+    }
     out_file << "\n  -> Initial Conditions: " 
              << IP.ICs_Type;
     out_file << "\n  -> Flow Velocity Field: " 
@@ -411,6 +501,16 @@ inline ostream &operator << (ostream &out_file,
                  << IP.Box_Height;
         break;
     } /* endswitch */
+    out_file << "\n  -> Smooth Quad Block: ";
+    if (IP.i_Smooth_Quad_Block){
+      out_file << "Yes";
+    } else {
+      out_file << "No";
+    }
+    if (IP.IterationsOfInteriorNodesDisturbancies > 0){
+      out_file << "\n  -> Disturbed Interior Quad Block Nodes: "
+	       << IP.IterationsOfInteriorNodesDisturbancies << " iterations.";
+    }
     if (IP.BCs_Specified) {
       out_file << "\n  -> Boundary conditions specified as: "
 	       << "\n     -> BC_North = " << IP.BC_North_Type
@@ -460,6 +560,30 @@ inline ostream &operator << (ostream &out_file,
     out_file << "\n  -> Restart Solution Save Frequency: "
              << IP.Restart_Solution_Save_Frequency
              << " steps (iterations)"; 
+    if (IP.AMR) {
+      out_file << "\n  -> AMR Frequency: "
+	       << IP.AMR_Frequency
+	       << " steps (iterations)";
+      if(IP.AMR_Global_Reference == ON){
+	out_file << "\n  -> AMR Reference: Absolute Simulation Start";
+      } else {
+	out_file << "\n  -> AMR Reference: Current Simulation Start";
+      }
+      
+      out_file << "\n  -> Threshold for Refinement: "
+	       << IP.Threshold_for_Refinement
+	       << "\n  -> Threshold for Coarsening: "
+	       << IP.Threshold_for_Coarsening
+	       << "\n  -> Maximum Refinement Level: "
+	       << IP.Maximum_Refinement_Level
+	       << "\n  -> Minimum Refinement Level: "
+	       << IP.Minimum_Refinement_Level;
+      
+      if (IP.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+	out_file << "\n  -> Refinement Smoothness Units: "
+		 << IP.CENO_RefinementUnits;
+      }
+    }
     return (out_file);
 }
 

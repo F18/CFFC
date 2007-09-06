@@ -298,7 +298,7 @@ inline int operator ==(const RowVector &RVec1, const RowVector &RVec2) {
    if (RVec1.size() != RVec2.size()) equal = 0;
    while (equal) {
       if (RVec1(i) != RVec2(i)) equal = 0;
-      if (i == RVec1.size()-1) break;
+      if (i == (int)RVec1.size()-1) break;
       i = i + 1;
    } /* endwhile */
    return (equal);
@@ -310,7 +310,7 @@ inline int operator !=(const RowVector &RVec1, const RowVector &RVec2) {
    if (RVec1.size() == RVec2.size()) {
       while (not_equal) {
          if (RVec1(i) == RVec2(i)) not_equal = 0;
-         if (i == RVec1.size()-1) break;
+         if (i ==  (int)RVec1.size()-1) break;
          i = i + 1;
       } /* endwhile */
    } /* endif */
@@ -453,6 +453,7 @@ class ColumnVector: public MV_Vector_double{
     friend ColumnVector operator /(const ColumnVector &CVec1, const double &a);
     friend double operator *(const ColumnVector &CVec1, const ColumnVector &CVec2);
     friend double operator *(const RowVector &RVec, const ColumnVector &CVec);
+    friend ColumnVector operator *(const double &a, const ColumnVector &CVec1);
 
     /* Relational operators. */
     friend int operator ==(const ColumnVector &CVec1, const ColumnVector &CVec2);
@@ -596,6 +597,14 @@ inline ColumnVector operator /(const ColumnVector &CVec, const double &a) {
    return (cv);
 }
 
+inline ColumnVector operator *(const double &a, const ColumnVector &CVec) {
+   int i, m; m = CVec.size(); ColumnVector cv(m);
+   for ( i = 0; i <= m-1; ++i ) {
+      cv(i) = a*CVec(i);
+   } /* endfor */
+   return (cv);
+}
+
 inline double operator *(const ColumnVector &CVec1, const ColumnVector &CVec2) {
    return (dot(CVec1, CVec2));
 }
@@ -609,7 +618,7 @@ inline int operator ==(const ColumnVector &CVec1, const ColumnVector &CVec2) {
    if (CVec1.size() != CVec2.size()) equal = 0;
    while (equal) {
       if (CVec1(i) != CVec2(i)) equal = 0;
-      if (i == CVec1.size()-1) break;
+      if (i ==  (int)CVec1.size()-1) break;
       i = i + 1;
    } /* endwhile */
    return (equal);
@@ -621,7 +630,7 @@ inline int operator !=(const ColumnVector &CVec1, const ColumnVector &CVec2) {
    if (CVec1.size() == CVec2.size()) {
       while (not_equal) {
          if (CVec1(i) == CVec2(i)) not_equal = 0;
-         if (i == CVec1.size()-1) break;
+         if (i ==  (int)CVec1.size()-1) break;
          i = i + 1;
       } /* endwhile */
    } /* endif */
@@ -705,6 +714,18 @@ inline RowVector transpose(const ColumnVector &CVec) {
  *      identity   -- Assign identity matrix.           *
  *      trace      -- Return the trace of matrix.       *
  *      transpose  -- Return the transpose of matrix.   *
+ *      permute_col-- Return the matrix having the      *
+ *                    col_1 permuted with col_2         *
+ *      permute_row-- Return the matrix having the      *
+ *                    row_1 permuted with row_2         *
+ * pseudo_inverse_override -- Computes the              *
+ *                        pseudo-inverse of             *
+ *                        a dense matrix MxN and writes *
+ *                        it on top of the initial      *
+ *                        matrix.                       *
+ *                                                      *
+ * pseudo_inverse -- Returns the pseudo-inverse of      *
+ *                   a dense matrix MxN.                *
  *                                                      *
  * Member operators                                     *
  *      M  -- a regular mxn dense matrix                *
@@ -720,6 +741,7 @@ inline RowVector transpose(const ColumnVector &CVec) {
  * M = M - M;                                           *
  * M = M * M;                                           *
  * CV = M * CV;                                         *
+ * M = CV*RV;                                           *
  * M = a * M;                                           *
  * M = M * a;                                           *
  * M = M / a;                                           *
@@ -782,6 +804,27 @@ class DenseMatrix: public MV_ColMat_double{
     DenseMatrix transpose(void) const;
     friend DenseMatrix transpose(const DenseMatrix &M);
     
+    /* Get the pseudo-inverse for an over/under-determined matrix */
+    DenseMatrix pseudo_inverse(void) const;
+    friend DenseMatrix pseudo_inverse(const DenseMatrix &A);
+    void pseudo_inverse_override(void);
+    friend void pseudo_inverse_override(DenseMatrix &A);
+
+    /* Compute the Frobenious norm of the matrix ||A|| = sqrt(SUM_i SUM_j (A(i,j)^2) ) */
+    double NormFro (void) const;
+
+    /* Return the matrix having row1_ permuted with row2_ */
+    void permute_row(const int col1_, const int col2_);
+    DenseMatrix permute_row(const int row1_, const int row2_) const;
+    friend DenseMatrix permute_row(const DenseMatrix &M, const int row1_,
+				   const int row2_);
+
+    /* Return the matrix having col1_ permuted with col2_ */
+    void permute_col(const int col1_, const int col2_);
+    DenseMatrix permute_col(const int col1_, const int col2_) const;
+    friend DenseMatrix permute_col(const DenseMatrix &M, const int col1_,
+				   const int col2_);
+    
     /* Assignment operator. */
     // DenseMatrix operator = (const DenseMatrix &M1);
     // Use automatically generated assignment operator.
@@ -814,6 +857,7 @@ class DenseMatrix: public MV_ColMat_double{
     friend DenseMatrix operator -(const DenseMatrix &M1, const DenseMatrix &M2);
     friend DenseMatrix operator *(const DenseMatrix &M1, const DenseMatrix &M2);
     friend ColumnVector operator *(const DenseMatrix &M, const ColumnVector &CVec);
+    friend DenseMatrix operator *(const ColumnVector &CVec, const RowVector &RVec);
     friend DenseMatrix operator *(const DenseMatrix &M, const double &a);
     friend DenseMatrix operator *(const double &a, const DenseMatrix &M);
     friend DenseMatrix operator /(const DenseMatrix &M, const double &a);
@@ -918,6 +962,102 @@ inline DenseMatrix transpose(const DenseMatrix &M) {
    return (MT);
 }
 
+/*********************************************************************
+ * pseudo_inverse() -- Return the pseudo-inverse of the imput matrix *
+ *******************************************************************/
+inline DenseMatrix DenseMatrix::pseudo_inverse(void) const{
+  DenseMatrix Copy(*this);
+  Copy.pseudo_inverse_override(); /* compute pseudo-inverse for the Copy */
+  return Copy;
+}
+
+/****************************************************************************
+ * friend pseudo_inverse() -- Return the pseudo-inverse of the imput matrix *
+ ***************************************************************************/
+inline DenseMatrix pseudo_inverse(const DenseMatrix &A){
+  return A.pseudo_inverse();
+}
+
+/*******************************************************************
+ * friend pseudo_inverse_override() -- Compute the pseudo-inverse  *
+ *                                     and write it on top of the  *
+ *                                     original matrix.            *
+ *******************************************************************/
+inline void pseudo_inverse_override(DenseMatrix &A){
+  return A.pseudo_inverse_override();
+}
+
+/****************************************************************
+ * DenseMatrix::NormFro -- Permutation of row1_ with row2_. *
+ ***************************************************************/
+
+inline double DenseMatrix::NormFro(void) const{
+  double Norm(0.0);
+  int i,j,k;
+
+  for ( j = 0; j <=  (int)dim(1)-1; ++j ) {
+    for ( i = 0; i <=  (int)dim(0)-1; ++i ) {
+      k=j*lda()+i;
+      Norm += v_(k)*v_(k);
+    } // endfor
+  } // endfor
+  
+  return sqrt(Norm);
+}
+
+/****************************************************************
+ * DenseMatrix::permute_row -- Permutation of row1_ with row2_. *
+ ***************************************************************/
+inline void DenseMatrix::permute_row(const int row1_, const int row2_)
+{
+  double temp;
+  for (int j=0; j< (int)dim(1); ++j){
+    temp = operator()(row1_,j);
+    operator()(row1_,j) = operator()(row2_,j);
+    operator()(row2_,j) = temp;
+  }
+}
+
+inline DenseMatrix DenseMatrix::permute_row(const int row1_, const int row2_) const {
+  DenseMatrix MT;
+
+  MT = *this;
+  MT.permute_row(row1_,row2_);
+  return MT;
+}
+
+inline DenseMatrix permute_row(const DenseMatrix &M, const int row1_,
+			       const int row2_) {
+  return M.permute_row(row1_,row2_);
+}
+
+/****************************************************************
+ * DenseMatrix::permute_col -- Permutation of col1_ with col2_. *
+ ***************************************************************/
+inline void DenseMatrix::permute_col(const int col1_, const int col2_)
+{
+  double temp;
+  for (int i=0; i< (int)dim(0); ++i){
+    temp = operator()(i,col1_);
+    operator()(i,col1_) = operator()(i,col2_);
+    operator()(i,col2_) = temp;
+  }
+}
+
+inline DenseMatrix DenseMatrix::permute_col(const int col1_, const int col2_) const {
+  DenseMatrix MT;
+
+  MT = *this;
+  MT.permute_col(col1_,col2_);
+  return MT;
+}
+
+inline DenseMatrix permute_col(const DenseMatrix &M, const int col1_,
+			       const int col2_) {
+
+  return M.permute_col(col1_,col2_);
+}
+
 /********************************************************
  * DenseMatrix -- Unary arithmetic operators.           *
  ********************************************************/
@@ -946,7 +1086,7 @@ inline DenseMatrix operator -(const DenseMatrix &M1, const DenseMatrix &M2) {
 }
 
 inline DenseMatrix operator *(const DenseMatrix &M1, const DenseMatrix &M2) {
-   assert(M1.dim1_ == M2.dim0_ && M1.dim0_ == M2.dim1_);
+  assert(M1.dim1_ == M2.dim0_);
    int i, j, k; DenseMatrix MP(M1.dim0_,M2.dim1_,ZERO);
    for ( i = 0; i <= MP.dim0_-1; ++i ) {
       for ( j = 0 ; j <= MP.dim1_-1; ++j ) {
@@ -957,13 +1097,23 @@ inline DenseMatrix operator *(const DenseMatrix &M1, const DenseMatrix &M2) {
 }
 
 inline ColumnVector operator *(const DenseMatrix &M, const ColumnVector &CVec) {
-   assert(M.dim1_ == CVec.size());
+   assert(M.dim1_ ==  (int)CVec.size());
    int i, j; ColumnVector cv(M.dim0_, ZERO);
    for ( i = 0; i <= M.dim0_-1; ++i ) {
       for ( j = 0 ; j <= M.dim1_-1; ++j ) cv(i)+=M(i,j)*CVec(j);
    } /* endfor */
    return (cv);
 }
+
+inline DenseMatrix operator *(const ColumnVector &CVec, const RowVector &RVec){
+   int i, j; DenseMatrix M(CVec.size(), RVec.size());
+   for ( i = 0; i <= M.dim0_-1; i++ ) {
+      for ( j = 0 ; j <= M.dim1_-1; j++ )
+	M(i,j) = CVec(i)*RVec(j);
+   } /* endfor */
+   return (M);
+}
+
 
 inline DenseMatrix operator *(const DenseMatrix &M, const double &a) {
    DenseMatrix Ma(M.dim0_,M.dim1_); Ma.v_ = a*M.v_;
@@ -1293,7 +1443,7 @@ inline TriDiagonalMatrix operator -(const TriDiagonalMatrix &M1, const TriDiagon
 }
 
 inline ColumnVector operator *(const TriDiagonalMatrix &M, const ColumnVector &CVec) {
-   assert( M.n >= 1 && M.n == CVec.size());   
+   assert( M.n >= 1 && M.n ==  (int)CVec.size());   
    int i; ColumnVector cv(M.n, ZERO);
    for ( i = 0; i <= M.n-1; ++i ) {
       if (i < M.n-1) cv(i)+=M.A(i)*CVec(i+1);

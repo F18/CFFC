@@ -1,4 +1,5 @@
-/* test_TestData.cc:  Regression tests for the TestData class. */
+/*!\file test_TestData.cc
+  \brief Regression tests for the TestData class. */
 
 /* Include required C++ libraries. */
 // None
@@ -6,7 +7,7 @@
 /* Using std namespace functions */
 // None
 
-/* Include CFDkit+caboodle header files */
+/* Include CFFC header files */
 #include "TestData.h"
 
 

@@ -1,5 +1,5 @@
-/* AdvectDiffuse2DQuad.h:  Header file defining 
-                           2D Advection Diffusion Equation Quadrilateral Mesh Solution Classes. */
+/*!\file AdvectDiffuse2DQuad.h
+  \brief Header file defining 2D Advection Diffusion Equation Quadrilateral Mesh Solution Classes. */
 
 #ifndef _ADVECTDIFFUSE2D_QUAD_INCLUDED
 #define _ADVECTDIFFUSE2D_QUAD_INCLUDED
@@ -193,6 +193,12 @@ public:
                           *UoS, //!< Boundary condition reference states for south boundary.
                           *UoE, //!< Boundary condition reference states for east boundary.
                           *UoW; //!< Boundary condition reference states for west boundary.
+  //@}
+
+  //@{ @name Pointers to exact solutions
+  typedef Vector2D (* Exact_Gradient_Function) (const double, const double);
+  static Exact_Gradient_Function ExactGrad; /* Exact gradient for equations with analytic solution */
+  static FunctionType2D ExactSoln;          /* Exact solution for equations with analytic solution */
   //@}
 	      
   //@{ @name Creation, copy, and assignment constructors.
