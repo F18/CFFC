@@ -1,0 +1,15 @@
+#!/bin/tcsh
+#
+#PBS -N translate
+#PBS -q iqmaster
+#PBS -l walltime=0:10:00,nodes=1:ppn=4:itanium-8G,other=day
+#PBS -W group_list=jai
+
+cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/LevelSet2D/circle/translate/
+mpirun -np 4 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/levelset2D -f circle.in -pde LevelSet2D >& circle.log
+cat circle_cpu*.dat > points.dat
+cat circle_cells_cpu*.dat > cells.dat
+cat circle_circle_cpu*.dat > circle.dat
+cat circle_interface_list_cpu*.dat > interface_list.dat
+rm circle_*cpu*.dat
+rm translate.e* translate.o*
