@@ -100,6 +100,7 @@ int main(int num_arg, char *arg_ptr[]) {
   file_flag = 0;
   error_flag = 0;
   mpirun_flag = 0;
+  test_flag = 0;
 
   /* Save the command line name of the program for future use. */
 
