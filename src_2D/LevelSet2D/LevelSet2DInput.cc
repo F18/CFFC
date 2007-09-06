@@ -80,6 +80,9 @@ void Set_Default_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
   IP.Extension_Distance = MILLION;
 
   // Eikonal equation parameters:
+  string_ptr = "Frequency";
+  strcpy(IP.Redistance_Criteria,string_ptr);
+  IP.i_Redistance_Criteria = EIKONAL_CRITERIA_FREQUENCY;
   IP.Redistance_Frequency = 1;
   IP.Redistance_Tolerance = 0.001;
   IP.Number_of_Initial_Redistance_Iterations = 200;
@@ -87,12 +90,10 @@ void Set_Default_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
   string_ptr = "Sussman";
   strcpy(IP.Eikonal_Scheme,string_ptr);
   IP.i_Eikonal_Scheme = EIKONAL_SCHEME_SUSSMAN;
-  string_ptr = "Godunov";
-  strcpy(IP.Eikonal_Selection,string_ptr);
-  IP.i_Eikonal_Selection = EIKONAL_SELECTION_GODUNOV;
   string_ptr = "Derivative";
   strcpy(IP.Eikonal_Sign_Function,string_ptr);
   IP.i_Eikonal_Sign_Function = EIKONAL_SIGN_FUNCTION_DERIVATIVE;
+  IP.Eikonal_Threshold = HALF;
 
   // Scalar extension equation parameters:
   IP.Scalar_Extension_CFL_Number = HALF;
@@ -112,6 +113,9 @@ void Set_Default_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
   string_ptr = "Constant_Extrapolation";
   strcpy(IP.BC_Type,string_ptr);
   IP.i_BC_Type = BC_CONSTANT_EXTRAPOLATION;
+
+  // Curvature driven flow default value.
+  IP.Curvature_Motion = ZERO;
 
   // Bulk flow field default values.
   string_ptr = "None";
@@ -280,6 +284,9 @@ void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
 			1,
 			MPI::DOUBLE,0);
   // Eikonal equation parameters.
+  MPI::COMM_WORLD.Bcast(&(IP.i_Redistance_Criteria),
+			1,
+			MPI::INT,0);
   MPI::COMM_WORLD.Bcast(&(IP.Redistance_Frequency),
 			1,
 			MPI::INT,0);
@@ -301,18 +308,15 @@ void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
   MPI::COMM_WORLD.Bcast(&(IP.i_Eikonal_Scheme),
 			1,
 			MPI::INT,0);
-  MPI::COMM_WORLD.Bcast(IP.Eikonal_Selection,
-			INPUT_PARAMETER_LENGTH_LEVELSET2D,
-			MPI::CHAR,0);
-  MPI::COMM_WORLD.Bcast(&(IP.i_Eikonal_Selection),
-			1,
-			MPI::INT,0);
   MPI::COMM_WORLD.Bcast(IP.Eikonal_Sign_Function,
 			INPUT_PARAMETER_LENGTH_LEVELSET2D,
 			MPI::CHAR,0);
   MPI::COMM_WORLD.Bcast(&(IP.i_Eikonal_Sign_Function),
 			1,
 			MPI::INT,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Eikonal_Threshold),
+			1,
+			MPI::DOUBLE,0);
   // Scalar (front speed) extension equation parameters.
   MPI::COMM_WORLD.Bcast(&(IP.Scalar_Extension_CFL_Number),
 			1,
@@ -320,6 +324,10 @@ void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
   MPI::COMM_WORLD.Bcast(&(IP.Number_of_Scalar_Extension_Iterations),
 			1,
 			MPI::INT,0);
+  // Pass the curvature motion parameter.
+  MPI::COMM_WORLD.Bcast(&(IP.Curvature_Motion),
+			1,
+			MPI::DOUBLE,0);
   // Pass the bulk flowfield type.
   MPI::COMM_WORLD.Bcast(IP.BulkFlowField_Type,
 			INPUT_PARAMETER_LENGTH_LEVELSET2D,
@@ -591,6 +599,9 @@ void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP,
 		     1,
 		     MPI::DOUBLE,Source_Rank);
   // Eikonal equation parameters:
+  Communicator.Bcast(&(IP.i_Redistance_Criteria),
+		     1,
+		     MPI::INT,Source_Rank);
   Communicator.Bcast(&(IP.Redistance_Frequency),
 		     1,
 		     MPI::INT,Source_Rank);
@@ -612,18 +623,15 @@ void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP,
   Communicator.Bcast(&(IP.i_Eikonal_Scheme),
 		     1,
 		     MPI::INT,Source_Rank);
-  Communicator.Bcast(IP.Eikonal_Selection,
-		     INPUT_PARAMETER_LENGTH_LEVELSET2D,
-		     MPI::CHAR,Source_Rank);
-  Communicator.Bcast(&(IP.i_Eikonal_Selection),
-		     1,
-		     MPI::INT,Source_Rank);
   Communicator.Bcast(IP.Eikonal_Sign_Function,
 		     INPUT_PARAMETER_LENGTH_LEVELSET2D,
 		     MPI::CHAR,Source_Rank);
   Communicator.Bcast(&(IP.i_Eikonal_Sign_Function),
 		     1,
 		     MPI::INT,Source_Rank);
+  Communicator.Bcast(&(IP.Eikonal_Threshold),
+		     1,
+		     MPI::DOUBLE,Source_Rank);
   // Scalar (front speed) extension equation parameters:
   Communicator.Bcast(&(IP.Scalar_Extension_CFL_Number),
 		     1,
@@ -631,6 +639,10 @@ void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP,
   Communicator.Bcast(&(IP.Number_of_Scalar_Extension_Iterations),
 		     1,
 		     MPI::INT,Source_Rank);
+  // Pass the curvature driven flow parameter:
+  Communicator.Bcast(&(IP.Curvature_Motion),
+		     1,
+		     MPI::DOUBLE,Source_Rank);
   // Pass the bulk flowfield type:
   Communicator.Bcast(IP.BulkFlowField_Type,
 		     INPUT_PARAMETER_LENGTH_LEVELSET2D,
@@ -947,11 +959,9 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Perturb_Distance_Function") == 0) {
     i_command = 5;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"ON") == 0 ||
-	strcmp(IP.Next_Control_Parameter,"ON") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Perturb_Distance_Function = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0 ||
-	       strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Perturb_Distance_Function = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -963,6 +973,19 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
     IP.Input_File >> IP.Extension_Distance;
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Extension_Distance <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Redistance_Criteria") == 0) {
+    i_command = 5;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Redistance_Criteria;
+    IP.Input_File.getline(buffer,sizeof(buffer));
+    if (strcmp(IP.Redistance_Criteria,"Threshold") == 0) {
+      IP.i_Redistance_Criteria = EIKONAL_CRITERIA_THRESHOLD;
+    } else if (strcmp(IP.Redistance_Criteria,"Frequency") == 0) {
+      IP.i_Redistance_Criteria = EIKONAL_CRITERIA_FREQUENCY;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+    }
 
   } else if (strcmp(IP.Next_Control_Parameter,"Redistance_Frequency") == 0) {
     i_command = 5;
@@ -1005,18 +1028,6 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
       i_command = INVALID_INPUT_VALUE;
     }
 
-  } else if (strcmp(IP.Next_Control_Parameter,"Eikonal_Selection") == 0) {
-    i_command = 5;
-    Get_Next_Input_Control_Parameter(IP);
-    strcpy(IP.Eikonal_Selection,IP.Next_Control_Parameter);
-    if (strcmp(IP.Eikonal_Selection,"Godunov") == 0) {
-      IP.i_Eikonal_Selection = EIKONAL_SELECTION_GODUNOV;
-    } else if (strcmp(IP.Eikonal_Selection,"Original") == 0) {
-      IP.i_Eikonal_Selection = EIKONAL_SELECTION_ORIGINAL;
-    } else {
-      i_command = INVALID_INPUT_VALUE;
-    }
-
   } else if (strcmp(IP.Next_Control_Parameter,"Eikonal_Sign_Function") == 0) {
     i_command = 5;
     Get_Next_Input_Control_Parameter(IP);
@@ -1025,11 +1036,22 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
       IP.i_Eikonal_Sign_Function = EIKONAL_SIGN_FUNCTION_DISCRETE;
     } else if (strcmp(IP.Eikonal_Sign_Function,"Smeared") == 0) {
       IP.i_Eikonal_Sign_Function = EIKONAL_SIGN_FUNCTION_SMEARED;
+    } else if (strcmp(IP.Eikonal_Sign_Function,"Smeared_New") == 0) {
+      IP.i_Eikonal_Sign_Function = EIKONAL_SIGN_FUNCTION_SMEARED_NEW;
     } else if (strcmp(IP.Eikonal_Sign_Function,"Derivative") == 0) {
       IP.i_Eikonal_Sign_Function = EIKONAL_SIGN_FUNCTION_DERIVATIVE;
+    } else if (strcmp(IP.Eikonal_Sign_Function,"Derivative_New") == 0) {
+      IP.i_Eikonal_Sign_Function = EIKONAL_SIGN_FUNCTION_DERIVATIVE_NEW;
     } else {
       i_command = INVALID_INPUT_VALUE;
     }
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Eikonal_Threshold") == 0) {
+    i_command = 5;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Eikonal_Threshold;
+    IP.Input_File.getline(buffer,sizeof(buffer));
+    if (IP.Eikonal_Threshold < ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(IP.Next_Control_Parameter,"Number_of_Scalar_Extension_Iterations") == 0) {
     i_command = 5;
@@ -1037,6 +1059,13 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
     IP.Input_File >> IP.Number_of_Scalar_Extension_Iterations;
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Number_of_Scalar_Extension_Iterations < 0) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Curvature_Motion") == 0) {
+    i_command = 5;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Curvature_Motion;
+    IP.Input_File.getline(buffer,sizeof(buffer));
+    if (IP.Curvature_Motion < ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(IP.Next_Control_Parameter,"Bulk_Flow_Field_Type") == 0) {
     i_command = 6;

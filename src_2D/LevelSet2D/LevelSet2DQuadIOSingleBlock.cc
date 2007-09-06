@@ -112,7 +112,7 @@ void Output_Cells_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
                           const int Output_Title,
 	                  ostream &Out_File) {
 
-  int ng = ON;
+  int ng = OFF;  // Turn ON to print ghost cells.
   double ddU;
 
   // Ensure boundary conditions are updated before evaluating
@@ -136,6 +136,7 @@ void Output_Cells_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
 	     << "\"sign\" \\ \n"
 	     << "\"dpsidx\" \\ \n"
 	     << "\"dpsidy\" \\ \n"
+	     << "\"kappa\" \\ \n"
 	     << "\"dFdx\" \\ \n"
 	     << "\"dFdy\" \\ \n"
 	     << "\"ddpsi\" \\ \n"
@@ -159,9 +160,14 @@ void Output_Cells_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
 	       << " " << SolnBlk.sign[i][j]
 	       << " " << SolnBlk.dUdx[i][j].psi
 	       << " " << SolnBlk.dUdy[i][j].psi
+ 	       << " " << SolnBlk.kappa[i][j].psi
 	       << " " << SolnBlk.dUdx[i][j].F
 	       << " " << SolnBlk.dUdy[i][j].F
-	       << " " << sqrt(sqr(SolnBlk.dUdx[i][j].psi) + sqr(SolnBlk.dUdy[i][j].psi)) - ONE
+// 	       << " " << sqrt(sqr(SolnBlk.dUdx[i][j].psi) + sqr(SolnBlk.dUdy[i][j].psi)) - ONE
+	       << " " << abs( sqrt(max(sqr(max(SolnBlk.dUdxm[i][j].psi,ZERO)),
+				       sqr(min(SolnBlk.dUdxp[i][j].psi,ZERO))) +
+				   max(sqr(max(SolnBlk.dUdym[i][j].psi,ZERO)),
+				       sqr(min(SolnBlk.dUdyp[i][j].psi,ZERO)))) - ONE )
 	       << " " << ddU
 	       << endl;
     }
@@ -281,8 +287,7 @@ void Output_Circle_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
   b = SolnBlk.Interface_List[1].Xref.y;
   r = SolnBlk.Interface_List[1].Length1;
 
-  if (SolnBlk.Interface_List[1].Motion == INTERFACE_MOTION_CONSTANT ||
-      SolnBlk.Interface_List[1].Motion == INTERFACE_MOTION_EXPAND) {
+  if (SolnBlk.Interface_List[1].Motion == INTERFACE_MOTION_LEVELSET_EXPAND) {
     r += Time*SolnBlk.Interface_List[1].Speed.x;
   }
 

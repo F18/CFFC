@@ -106,8 +106,8 @@ int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
     break;
   };
 
-  // Perform the reconstruction within each cell of the
-  // computational grid for this stage.
+  /* Perform the biased reconstruction within each cell of the
+     computational grid for this stage. */
   switch(IP.i_Reconstruction) {
   case RECONSTRUCTION_LINEAR_ESSENTIALLY_NON_OSCILLATORY :
   case RECONSTRUCTION_QUADRATIC_ESSENTIALLY_NON_OSCILLATORY :
@@ -122,8 +122,12 @@ int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
     break;
   };
 
-  // Evaluate the time rate of change of the solution (i.e., the 
-  // solution residuals).
+  /* Perform the reconstruction of the curvature within each cell of the
+     computational grid for this stage. */
+  Reconstruction_Curvature(SolnBlk,1);
+
+  /* Evaluate the time rate of change of the solution (i.e., the 
+     solution residuals). */
 
   for (int j = SolnBlk.JCl-1; j <= SolnBlk.JCu+1; j++) {
 
@@ -178,6 +182,7 @@ int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
  	SolnBlk.dUdt[i][j][k_residual].psi -= (IP.Hamilton_Jacobi_CFL_Number*SolnBlk.dt[i][j])*
 	                                      (max(SolnBlk.U[i][j].F,ZERO)*SolnBlk.dUdx[i][j].psi + 
 					       min(SolnBlk.U[i][j].F,ZERO)*SolnBlk.dUdy[i][j].psi);
+
 	// Add the convective/bulk-velocity flow contribution to the
 	// level set function solution residual.
  	SolnBlk.dUdt[i][j][k_residual].psi -= (IP.Hamilton_Jacobi_CFL_Number*SolnBlk.dt[i][j])*
@@ -186,6 +191,11 @@ int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
  					       max(SolnBlk.U[i][j].V.y,ZERO)*SolnBlk.dUdym[i][j].psi +
  					       min(SolnBlk.U[i][j].V.y,ZERO)*SolnBlk.dUdyp[i][j].psi);
 
+	// Add the curvature-based flow contribution to the
+	// level set function solution residual.
+	SolnBlk.dUdt[i][j][k_residual].psi += (IP.Hamilton_Jacobi_CFL_Number*SolnBlk.dt[i][j])*
+	                                      IP.Curvature_Motion*SolnBlk.kappa[i][j].psi;
+	
       }
 
       SolnBlk.dUdt[i][SolnBlk.JCl-1][k_residual] = LevelSet2D_ZERO;

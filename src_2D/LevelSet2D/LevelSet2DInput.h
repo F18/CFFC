@@ -75,14 +75,15 @@ public:
   //@}
 
   //@{ @name Redistance type indicator and related input parameters:
+  char Redistance_Criteria[INPUT_PARAMETER_LENGTH_LEVELSET2D];
+  int i_Redistance_Criteria;
+  double Eikonal_Threshold;
   int Redistance_Frequency;
   double Redistance_Tolerance;
   int Number_of_Initial_Redistance_Iterations, Number_of_Redistance_Iterations;
   double Eikonal_CFL_Number;
   char Eikonal_Scheme[INPUT_PARAMETER_LENGTH_LEVELSET2D];
   int i_Eikonal_Scheme;
-  char Eikonal_Selection[INPUT_PARAMETER_LENGTH_LEVELSET2D];
-  int i_Eikonal_Selection;
   char Eikonal_Sign_Function[INPUT_PARAMETER_LENGTH_LEVELSET2D];
   int i_Eikonal_Sign_Function;
   //@}
@@ -109,6 +110,10 @@ public:
 
   //@{ @name Embedded boundary input parameters:
   EmbeddedBoundaries2D_Input_Parameters Interface_IP;
+  //@}
+
+  //@{ @name Curvature driven flow parameter:
+  double Curvature_Motion;
   //@}
 
   //@{ @name Bullk flowfield.
@@ -295,14 +300,21 @@ inline ostream &operator << (ostream &out_file,
   out_file << "\n     -> Redistance Tolerance: " << IP.Redistance_Tolerance;
   out_file << "\n     -> Number of Initial Redistance Iterations: " << IP.Number_of_Initial_Redistance_Iterations;
   out_file << "\n     -> Number of Redistance Iterations: " << IP.Number_of_Redistance_Iterations;
-  out_file << "\n     -> Redistance Frequency: " << IP.Redistance_Frequency;
+  out_file << "\n     -> Redistance Criteria: " << IP.Redistance_Criteria;
+  if (IP.i_Redistance_Criteria == EIKONAL_CRITERIA_THRESHOLD) {
+    out_file << "\n     -> Redistance Threshold: " << IP.Eikonal_Threshold;
+  } else {
+    out_file << "\n     -> Redistance Frequency: " << IP.Redistance_Frequency;
+  }
   out_file << "\n     -> Eikonal scheme: " << IP.Eikonal_Scheme;
-  out_file << "\n     -> Eikonal selection: " << IP.Eikonal_Selection;
   out_file << "\n     -> Eikonal sign function: " << IP.Eikonal_Sign_Function;
   // Scalar extension parameters:
   out_file << "\n  -> Scalar (front speed) extension parameters: ";
   out_file << "\n     -> CFL Number: " << IP.Scalar_Extension_CFL_Number;
   out_file << "\n     -> Number of Iterations: " << IP.Number_of_Scalar_Extension_Iterations;
+  // Curvature driven flow parameter:
+  out_file << "\n  -> Curvature driven flow parameter: ";
+  out_file << "\n     -> Curvature_Motion: " << IP.Curvature_Motion;
   // Bulk flow-field parameters:
   out_file << "\n  -> Bulk flow-field parameters: ";
   switch(IP.i_BulkFlowField_Type) {

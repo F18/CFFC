@@ -19,6 +19,46 @@
  **********************************************************************/
 
 /**********************************************************************
+ * Routine: Eikonal_Error                                             *
+ *                                                                    *
+ * This routine calculates the local area-weighted error in the       *
+ * Eikonal equation solution.                                         *
+ *                                                                    *
+ **********************************************************************/
+int Eikonal_Error(LevelSet2D_Quad_Block *Soln_ptr,
+		  LevelSet2D_Input_Parameters &IP,
+		  AdaptiveBlock2D_List &Soln_Block_List,
+		  double &global_error,
+		  double &global_area) {
+
+  int error_flag;
+  global_error = ZERO;
+  global_area = ZERO;
+
+  // Variables for each block:
+  double block_error, block_area;
+
+  // Compute the area-weighted error for each block.
+  for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
+    if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
+      block_error = ZERO;
+      block_area = ZERO;
+      error_flag = Eikonal_Error(Soln_ptr[nb],
+				 IP,
+				 block_error,
+				 block_area);
+      if (error_flag) return error_flag;
+      global_error = global_error + block_error;
+      global_area = global_area + block_area;
+    }
+  }
+
+  // Eikonal error calculation is successful.
+  return 0;
+
+}
+
+/**********************************************************************
  * Routine: Explicit_Eikonal_Equation                                 *
  *                                                                    *
  * This routine manages the explicit solution of the Eikonal equation *

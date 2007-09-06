@@ -589,7 +589,7 @@ int Output_Circle_Tecplot(LevelSet2D_Quad_Block *Soln_ptr,
     if (i > strlen(Input_Parameters.Output_File_Name)) break;
   }
   prefix[i] = '\0';
-  strcat(prefix,"_circle_cpu");
+  strcat(prefix,"_compare_cpu");
   
   // Determine output data file name for this processor.
   sprintf(extension,"%.6d",Soln_Block_List.ThisCPU);

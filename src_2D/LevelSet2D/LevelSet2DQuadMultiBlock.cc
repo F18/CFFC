@@ -216,6 +216,33 @@ int Reconstruction_WeightedEssentiallyNonOscillatory(LevelSet2D_Quad_Block *Soln
 }
 
 /**********************************************************************
+ * Routine: Reconstruction_Curvature                                  *
+ *                                                                    *
+ * This routine determines the curvature of a given variable, n, for  *
+ * a 1D array of 2D Cartesian solution blocks using one of three      *
+ * methods.                                                           *
+ *                                                                    *
+ **********************************************************************/
+int Reconstruction_Curvature(LevelSet2D_Quad_Block *Soln_ptr,
+			     AdaptiveBlock2D_List &Soln_Block_List,
+			     const int n) {
+  int error_flag = 0;
+
+  /* Perform the reconstruction of the curvature of the specified
+     state variable, n, within each block of the block list. */
+  for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
+    if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
+      Reconstruction_Curvature(Soln_ptr[nb],
+			       n);
+    }
+  }
+
+  // Cartesian multi-block solution blocks successfully updated.
+  return error_flag;
+
+}
+
+/**********************************************************************
  * Routine: Set_Global_TimeStep                                       *
  *                                                                    *
  * Assigns global time step to a 1D array of 2D quadrilateral         *
@@ -668,7 +695,7 @@ int Uniform_Adaptive_Mesh_Refinement(LevelSet2D_Quad_Block *Soln_ptr,
 				 OFF);
   if (error_flag) return error_flag;
 
-  // Uniform mesh refinement was successfull.
+  // Uniform mesh refinement was successful.
   return 0;
 
 }
