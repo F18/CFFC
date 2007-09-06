@@ -24,7 +24,7 @@
  *                                                                    *
  **********************************************************************/
 Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
-					      LevelSet2D_Input_Parameters &Input_Parameters) {
+				     LevelSet2D_Input_Parameters &Input_Parameters) {
 
   
   // Generate appropriate mesh.

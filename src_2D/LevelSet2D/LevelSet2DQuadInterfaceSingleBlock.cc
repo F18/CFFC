@@ -534,8 +534,11 @@ int Scalar_Geometric_Extension_Problem(LevelSet2D_Quad_Block &SolnBlk,
 	    if (abs(p2 - p3) < epsilon) break;
 
 	    // Determine the front speeds at the interface points.
-	    f2 = SolnBlk.Interface_List[ni].Fn(np);//,norm_dir);
-	    f3 = SolnBlk.Interface_List[ni].Fn(np+1);//,norm_dir);
+	    f2 = SolnBlk.Interface_List[ni].Speed.x;
+	    f3 = SolnBlk.Interface_List[ni].Speed.x;
+
+	    //  f2 = SolnBlk.Interface_List[ni].Fn(np);//,norm_dir);
+	    //  f3 = SolnBlk.Interface_List[ni].Fn(np+1);//,norm_dir);
 
 	    // Calculate the lengths of the sides of the triangle.
 	    d12 = abs(p1-p2);

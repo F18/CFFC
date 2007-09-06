@@ -142,12 +142,17 @@ class Trace_Data {
  *                 (x-direction, right-biased stencil) for the block.
  *      dUdxm   -- Return the unlimited variable solution gradients
  *                 (x-direction, left-biased stencil) for the block.
+ *     ddUdxx   -- Return the second-derivative of the variable solution
+ *                 (x-direction) for the block.
  *       dUdy   -- Return the unlimited variable solution gradients 
  *                 (y-direction) for the block.
  *      dUdyp   -- Return the unlimited variable solution gradients
  *                 (y-direction, right-biased stencil) for the block.
  *      dUdym   -- Return the unlimited variable solution gradients
  *                 (y-direction, left-biased stencil) for the block.
+ *     ddUdyy   -- Return the second-derivative of the variable solution
+ *                 (y-direction) for the block.
+ *      kappa   -- Return the curvature of the variable solution for the block.
  *        phi   -- Return the solution slope limiters.
  *         Uo   -- Return initial solution state.
  *        Uoo   -- Return initial solution state (before Eikonal iterations).
@@ -231,6 +236,9 @@ public:
                           **dUdxm, //!< Unlimited solution gradient (x-direction, left-biased stencil).
                           **dUdyp, //!< Unlimited solution gradient (y-direction, right-biased stencil).
                           **dUdym; //!< Unlimited solution gradient (y-direction, left-biased stencil).
+  LevelSet2DState        **ddUdxx, //!< Second-derivative of the solution (x-direction).
+                         **ddUdyy, //!< Second-derivative of the solution (y-direction).
+                          **kappa; //!< Curvature of the solution.
   LevelSet2DState           **phi; //!< Solution slope limiter.
   //@}
 
@@ -255,13 +263,14 @@ public:
     NCj = 0; JCl = 0; JCu = 0;
     Nghost = 0;
     // Solution variables.
-    U     = NULL; Uo    = NULL; Uoo = NULL;
-    dUdt  = NULL; dt    = NULL;
-    dUdx  = NULL; dUdy  = NULL;
-    dUdxp = NULL; dUdyp = NULL; dUdxm = NULL; dUdym = NULL;
-    phi   = NULL;
-    sign  = NULL;
-    FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
+    U      = NULL; Uo     = NULL; Uoo = NULL;
+    dUdt   = NULL; dt     = NULL;
+    dUdx   = NULL; dUdy   = NULL;
+    dUdxp  = NULL; dUdyp  = NULL; dUdxm = NULL; dUdym = NULL;
+    ddUdxx = NULL; ddUdyy = NULL; kappa = NULL;
+    phi    = NULL;
+    sign   = NULL;
+    FluxN  = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
     // Interfaces variables.
     //Interface_List = NULL;
     // Cut class.
@@ -277,11 +286,12 @@ public:
     Nghost = Soln.Nghost;
     Grid = Soln.Grid;
     // Solution variables.
-    U     = Soln.U;     Uo    = Soln.Uo;    Uoo   = Soln.Uoo;
-    dUdt  = Soln.dUdt;  dt    = Soln.dt;
-    dUdx  = Soln.dUdx;  dUdy  = Soln.dUdy;
-    dUdxp = Soln.dUdxp; dUdyp = Soln.dUdyp;
-    dUdxm = Soln.dUdxm; dUdym = Soln.dUdym;
+    U     = Soln.U;       Uo    = Soln.Uo;    Uoo   = Soln.Uoo;
+    dUdt  = Soln.dUdt;    dt    = Soln.dt;
+    dUdx  = Soln.dUdx;    dUdy  = Soln.dUdy;
+    dUdxp = Soln.dUdxp;   dUdyp = Soln.dUdyp;
+    dUdxm = Soln.dUdxm;   dUdym = Soln.dUdym;
+    ddUdxx = Soln.ddUdxx; ddUdyy = Soln.ddUdyy; kappa = Soln.kappa;
     phi   = Soln.phi;
     sign  = Soln.sign;
     FluxN = Soln.FluxN; FluxS = Soln.FluxS; FluxE = Soln.FluxE; FluxW = Soln.FluxW;
@@ -465,6 +475,9 @@ inline void LevelSet2D_Quad_Block::allocate(const int Ni, const int Nj, const in
   dUdxp = new LevelSet2DState*[NCi];
   dUdym = new LevelSet2DState*[NCi];
   dUdyp = new LevelSet2DState*[NCi];
+  ddUdxx = new LevelSet2DState*[NCi];
+  ddUdyy = new LevelSet2DState*[NCi];
+  kappa = new LevelSet2DState*[NCi];
   phi  = new LevelSet2DState*[NCi];
   sign = new double*[NCi];
   Uo   = new LevelSet2DState*[NCi];
@@ -482,6 +495,9 @@ inline void LevelSet2D_Quad_Block::allocate(const int Ni, const int Nj, const in
     dUdxp[i] = new LevelSet2DState[NCj];
     dUdym[i] = new LevelSet2DState[NCj];
     dUdyp[i] = new LevelSet2DState[NCj];
+    ddUdxx[i] = new LevelSet2DState[NCj];
+    ddUdyy[i] = new LevelSet2DState[NCj];
+    kappa[i] = new LevelSet2DState[NCj];
     phi[i]  = new LevelSet2DState[NCj];
     sign[i] = new double[NCj];
     Uo[i]   = new LevelSet2DState[NCj];
@@ -495,6 +511,9 @@ inline void LevelSet2D_Quad_Block::allocate(const int Ni, const int Nj, const in
       dUdxp[i][j] = LevelSet2D_ZERO;
       dUdym[i][j] = LevelSet2D_ZERO;
       dUdyp[i][j] = LevelSet2D_ZERO;
+      ddUdxx[i][j] = LevelSet2D_ZERO;
+      ddUdyy[i][j] = LevelSet2D_ZERO;
+      kappa[i][j] = LevelSet2D_ZERO;
       phi[i][j]  = LevelSet2D_ZERO;
       sign[i][j] = ZERO;
       Uo[i][j]   = LevelSet2D_ZERO;
@@ -528,6 +547,9 @@ inline void LevelSet2D_Quad_Block::deallocate(void) {
     delete []dUdxp[i]; dUdxp[i] = NULL;
     delete []dUdym[i]; dUdym[i] = NULL;
     delete []dUdyp[i]; dUdyp[i] = NULL;
+    delete []ddUdxx[i]; ddUdxx[i] = NULL;
+    delete []ddUdyy[i]; ddUdyy[i] = NULL;
+    delete []kappa[i]; kappa[i] = NULL;
     delete []phi[i];   phi[i]  = NULL;
     delete []sign[i];  sign[i] = NULL;
     delete []Uo[i];    Uo[i]   = NULL;
@@ -543,6 +565,9 @@ inline void LevelSet2D_Quad_Block::deallocate(void) {
   delete []dUdxp; dUdxp = NULL;
   delete []dUdym; dUdym = NULL;
   delete []dUdyp; dUdyp = NULL;
+  delete []ddUdxx; ddUdxx = NULL;
+  delete []ddUdyy; ddUdyy = NULL;
+  delete []kappa; kappa = NULL;
   delete []phi;   phi  = NULL; 
   delete []sign;  sign = NULL; 
   delete []Uo;    Uo   = NULL;
@@ -1914,6 +1939,24 @@ extern double Reconstruction_WeightedEssentiallyNonOscillatory(const double v1,
 extern void Reconstruction_WeightedEssentiallyNonOscillatory(LevelSet2D_Quad_Block &SolnBlk,
 							     const int n);
 
+extern void Reconstruction_Curvature(LevelSet2D_Quad_Block &SolnBlk,
+				     const int n);
+
+extern void Reconstruction_Curvature_Laplacian(LevelSet2D_Quad_Block &SolnBlk,
+					       const int i,
+					       const int j,
+					       const int n);
+
+extern void Reconstruction_Curvature_Green_Gauss(LevelSet2D_Quad_Block &SolnBlk,
+						 const int i,
+						 const int j,
+						 const int n);
+
+extern void Reconstruction_Curvature_Expanded(LevelSet2D_Quad_Block &SolnBlk,
+					      const int i,
+					      const int j,
+					      const int n);
+
 extern void Calculate_Refinement_Criteria(double *refinement_criteria,
 					  LevelSet2D_Input_Parameters &IP,
 					  int &number_refinement_criteria,
@@ -1961,6 +2004,10 @@ extern int Reconstruction_EssentiallyNonOscillatory(LevelSet2D_Quad_Block *Soln_
 extern int Reconstruction_WeightedEssentiallyNonOscillatory(LevelSet2D_Quad_Block *Soln_ptr,
 							    AdaptiveBlock2D_List &Soln_Block_List,
 							    const int n);
+
+extern int Reconstruction_Curvature(LevelSet2D_Quad_Block *Soln_ptr,
+				    AdaptiveBlock2D_List &Soln_Block_List,
+				    const int n);
 
 extern void Set_Global_TimeStep(LevelSet2D_Quad_Block *Soln_ptr,
                                 AdaptiveBlock2D_List &Soln_Block_List,
@@ -2150,6 +2197,11 @@ extern int Update_Solution_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block *Sol
  * LevelSet2D_Quad_Block -- Eikonal Single Block External Subroutines *
  **********************************************************************/
 
+extern int Eikonal_Error(LevelSet2D_Quad_Block &SolnBlk,
+			 LevelSet2D_Input_Parameters &IP,
+			 double &block_error,
+			 double &block_area);
+
 extern double CFL_Eikonal(LevelSet2D_Quad_Block &SolnBlk);
 
 extern int dUdt_Multistage_Eikonal(LevelSet2D_Quad_Block &SolnBlk,
@@ -2163,6 +2215,12 @@ extern int Update_Multistage_Eikonal(LevelSet2D_Quad_Block &SolnBlk,
 /**********************************************************************
  * LevelSet2D_Quad_Block -- Eikonal Multi Block External Subroutines  *
  **********************************************************************/
+
+extern int Eikonal_Error(LevelSet2D_Quad_Block *Soln_ptr,
+			 LevelSet2D_Input_Parameters &IP,
+			 AdaptiveBlock2D_List &Soln_Block_List,
+			 double &global_error,
+			 double &global_area);
 
 extern double CFL_Eikonal(LevelSet2D_Quad_Block *Soln_ptr,
 			  AdaptiveBlock2D_List &Soln_Block_List);

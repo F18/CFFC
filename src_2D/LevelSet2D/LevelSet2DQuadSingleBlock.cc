@@ -749,7 +749,7 @@ double Max_Norm_Residual(LevelSet2D_Quad_Block &SolnBlk,
  **********************************************************************/
 int Store_Initial_Eikonal_Solution(LevelSet2D_Quad_Block &SolnBlk) {
 
-  // Stire the initial signed-distance function.
+  // Store the initial signed-distance function.
   for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
     for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
       SolnBlk.Uoo[i][j].psi = SolnBlk.U[i][j].psi;
@@ -799,12 +799,28 @@ int Calculate_Sign_Function(LevelSet2D_Quad_Block &SolnBlk,
       }
     }
     break;
+  case EIKONAL_SIGN_FUNCTION_SMEARED_NEW :
+    for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+      for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+	SolnBlk.sign[i][j] = SolnBlk.U[i][j].psi/sqrt(sqr(SolnBlk.U[i][j].psi)+dx);  // suggested by Banff guy
+      }
+    }
+    break;
   case EIKONAL_SIGN_FUNCTION_DERIVATIVE :
     for (int j = SolnBlk.JCl-SolnBlk.Nghost+1; j <= SolnBlk.JCu+SolnBlk.Nghost-1; j++) {
       for (int i = SolnBlk.ICl-SolnBlk.Nghost+1; i <= SolnBlk.ICu+SolnBlk.Nghost-1; i++) {
 	dU = sqrt(sqr((SolnBlk.U[i+1][j].psi-SolnBlk.U[i][j].psi)/dx) + 
 		  sqr((SolnBlk.U[i][j+1].psi-SolnBlk.U[i][j].psi)/dx));
 	SolnBlk.sign[i][j] = SolnBlk.U[i][j].psi/sqrt(sqr(SolnBlk.U[i][j].psi) + sqr(dU*dx));
+      }
+    }
+    break;
+  case EIKONAL_SIGN_FUNCTION_DERIVATIVE_NEW :
+    for (int j = SolnBlk.JCl-SolnBlk.Nghost+1; j <= SolnBlk.JCu+SolnBlk.Nghost-1; j++) {
+      for (int i = SolnBlk.ICl-SolnBlk.Nghost+1; i <= SolnBlk.ICu+SolnBlk.Nghost-1; i++) {
+	dU = sqrt(sqr((SolnBlk.U[i+1][j].psi-SolnBlk.U[i][j].psi)/dx) + 
+		  sqr((SolnBlk.U[i][j+1].psi-SolnBlk.U[i][j].psi)/dx));
+	SolnBlk.sign[i][j] = SolnBlk.U[i][j].psi/sqrt(sqr(SolnBlk.U[i][j].psi) + sqr(dU)*dx); // as suggested by Banff guy
       }
     }
     break;
@@ -1341,7 +1357,7 @@ void Reconstruction_EssentiallyNonOscillatory(LevelSet2D_Quad_Block &SolnBlk,
 /**********************************************************************
  * Routine: Reconstruction_WeightedEssentiallyNonOscillatory          *
  *                                                                    *
- * Calculates the 5th order accurate WENO gradient given a 5 finite   *
+ * Calculates the 5th order accurate WENO gradient given 5 finite     *
  * difference stencils.                                               *
  *                                                                    *
  **********************************************************************/
@@ -1477,6 +1493,131 @@ void Reconstruction_WeightedEssentiallyNonOscillatory(LevelSet2D_Quad_Block &Sol
     }
   }
 
+}
+
+/**********************************************************************
+ * Routine: Reconstruction_Curvature                                  *
+ *                                                                    *
+ * Performs the reconstruction of the curvature of the specified      *
+ * variable, n, within each cell of the computational mesh for the    *
+ * specified Cartesian solution block. One of three methods is used.  *
+ *                                                                    *
+ **********************************************************************/
+void Reconstruction_Curvature(LevelSet2D_Quad_Block &SolnBlk,
+			      const int n) {
+
+  int calculation_method = 1;
+
+  /* Carry out the reconstruction of the curvature in each cell of
+     the computational mesh. */
+  switch(calculation_method) {
+  case 1:
+    for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
+      for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
+	Reconstruction_Curvature_Laplacian(SolnBlk,i,j,n);
+      }
+    }
+    break;
+  case 2:
+    for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
+      for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
+	Reconstruction_Curvature_Green_Gauss(SolnBlk,i,j,n);
+      }
+    }
+    break;
+  case 3:
+    for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
+      for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
+	Reconstruction_Curvature_Expanded(SolnBlk,i,j,n);
+      }
+    }
+    break;
+  default:
+    for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
+      for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
+	Reconstruction_Curvature_Laplacian(SolnBlk,i,j,n);
+      }
+    }
+    break;
+  };
+
+}
+
+/**********************************************************************
+ * Routine: Reconstruction_Curvature_Laplacian                        *
+ *                                                                    *
+ * Performs the reconstruction of the Laplacian of variable n, for    *
+ * use in curvature driven motion of the level set function. N must   *
+ * be a signed distance function. See: Osher p.43.                    *
+ *                                                                    *
+ **********************************************************************/
+void Reconstruction_Curvature_Laplacian(LevelSet2D_Quad_Block &SolnBlk,
+					const int i,
+					const int j,
+					const int n) {
+
+  double dx, dy, laplacian;
+
+  // Carry out the reconstruction of the Laplacian in each cell.
+  dx = SolnBlk.Grid.Cell[i][j].Xc.x - SolnBlk.Grid.Cell[i-1][j].Xc.x;
+  dy = SolnBlk.Grid.Cell[i][j].Xc.y - SolnBlk.Grid.Cell[i][j-1].Xc.y;
+  laplacian = ZERO;
+  
+  SolnBlk.ddUdxx[i][j].psi = (SolnBlk.U[i+1][j].psi - TWO*SolnBlk.U[i][j].psi + SolnBlk.U[i-1][j].psi)/sqr(dx);
+  SolnBlk.ddUdyy[i][j].psi = (SolnBlk.U[i][j+1].psi - TWO*SolnBlk.U[i][j].psi + SolnBlk.U[i][j-1].psi)/sqr(dy);
+  laplacian = SolnBlk.ddUdxx[i][j].psi + SolnBlk.ddUdyy[i][j].psi;
+  
+  if ( laplacian > (ONE/max(dx,dy)) ) {
+    SolnBlk.kappa[i][j].psi = ONE/max(dx,dy);
+  } else if ( laplacian < (-ONE/max(dx,dy)) ) {
+    SolnBlk.kappa[i][j].psi = -ONE/max(dx,dy);
+  } else {
+    SolnBlk.kappa[i][j].psi = laplacian;
+  }
+
+}
+
+/**********************************************************************
+ * Routine: Reconstruction_Curvature_Green_Gauss                      *
+ *                                                                    *
+ * Performs the reconstruction of the curvature of the level set for  *
+ * use in curvature driven flow. A Green Gauss reconstruction method  *
+ * is used to reconstruct the curvature.                              *
+ *                                                                    *
+ **********************************************************************/
+void Reconstruction_Curvature_Green_Gauss(LevelSet2D_Quad_Block &SolnBlk,
+					  const int i,
+					  const int j,
+					  const int n) {
+  
+  double curvature_psi, ddpsidd;
+  Vector2D dpsid;
+
+  // Determine the local gradient of the level set function.
+  Linear_Reconstruction_LeastSquares(SolnBlk,i,j,LIMITER_ONE);
+  dpsid = Vector2D(SolnBlk.dUdx[i][j].psi,SolnBlk.dUdy[i][j].psi);
+  // Deteremine the local Laplacian of the signed distance function.
+  Laplacian_Reconstruction_GreenGauss(SolnBlk,i,j,1,ddpsidd);
+  // Determine the local curvature.
+  curvature_psi = ddpsidd/dpsid.abs();
+
+  SolnBlk.kappa[i][j].psi = curvature_psi;
+
+}
+
+/**********************************************************************
+ * Routine: Reconstruction_Curvature_Expanded                         *
+ *                                                                    *
+ * Performs the reconstruction of the curvature of the level set for  *
+ * use in curvature driven motion. The curvature is calculated using  *
+ * an expanded expression of single, double, and mixed partial        *
+ * derivatives in the x and y directions.                             *
+ *                                                                    *
+ **********************************************************************/
+void Reconstruction_Curvature_Expanded(LevelSet2D_Quad_Block &SolnBlk,
+				       const int i,
+				       const int j) {
+  
 }
 
 /**********************************************************************
