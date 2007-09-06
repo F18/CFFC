@@ -58,7 +58,7 @@ Number_of_Blocks_Idir =
 Number_of_Blocks_Jdir =
 1
 Mesh_Stretching =
-On
+ON
 Mesh_Stretching_Type_Idir =
 Linear
 Mesh_Stretching_Type_Jdir =
@@ -66,7 +66,7 @@ Min_Clustering
 Mesh_Stretching_Factor_Jdir =
 1.10
 Boundary_Conditions_Specified =
-On
+ON
 BC_North =
 Reflection
 BC_South =
@@ -104,13 +104,13 @@ Threshold_for_Refinement =
 Threshold_for_Coarsening =
 0.10
 Refinement_Criteria_Gradient_Density =
-On
+ON
 Refinement_Criteria_Divergence_Velocity =
-Off
+OFF
 Refinement_Criteria_Curl_Velocity =
-Off
+OFF
 Smooth_Quad_Block =
-Off
+OFF
 Number_of_Blocks_Per_Processor =
 128
 #
@@ -126,7 +126,7 @@ Number_of_Interface_Mesh_Refinements =
 #
 # UNSTEADY AMR PARAMETERS:
 AMR =
-Off
+OFF
 #
 # I/O PARAMETERS:
 Output_File_Name =

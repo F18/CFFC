@@ -86,7 +86,7 @@ Pipe_Radius=
 Pipe_Length=
 0.10
 Smooth_Quad_Block =
-Off
+OFF
 # x=r, y=z
 Flow_Geometry_Type=
 Axisymmetric-x
@@ -110,7 +110,7 @@ Morton_Reordering_Frequency =
 # AMR
 ##########################
 AMR=
-Off
+OFF
 AMR_Frequency =
 0
 Number_of_Initial_Mesh_Refinements =

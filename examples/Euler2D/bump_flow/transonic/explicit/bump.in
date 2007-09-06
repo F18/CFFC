@@ -50,7 +50,7 @@ AIR
 Grid_Type =
 Bump_Channel_Flow
 Smooth_Bump =
-Off
+OFF
 Number_of_Cells_Idir =
 32
 Number_of_Cells_Jdir =
@@ -66,7 +66,7 @@ Number_of_Boundary_Mesh_Refinements =
 #
 # UNSTEADY AMR PARAMETERS:
 AMR =
-Off
+OFF
 #
 # AMR PARAMETERS:
 Maximum_Refinement_Level =

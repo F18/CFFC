@@ -34,17 +34,17 @@ Multigrid_Number_of_Smooths_on_Coarsest_Level =
 Full_Multigrid =
 500
 Defect_Correction =
-On
+ON
 Prolong_Using_Injection =
-Off
+OFF
 First_Order_Coarse_Mesh_Reconstruction =
-On
+ON
 Apply_Coarse_Mesh_Boundary_Conditions =
-On
+ON
 Injection_at_Dirichlet_Boundary_Conditions =
-On
+ON
 Update_Stability_Switch =
-On
+ON
 Maximum_Number_of_Update_Reductions =
 5
 Multigrid_Smoothing_Type =
@@ -96,7 +96,7 @@ Number_of_Blocks_Idir =
 Number_of_Blocks_Jdir =
 1
 Mesh_Stretching =
-On
+ON
 Mesh_Stretching_Type_Idir =
 Linear
 Mesh_Stretching_Type_Jdir =
@@ -104,7 +104,7 @@ Min_Clustering
 Mesh_Stretching_Factor_Jdir =
 1.10
 Boundary_Conditions_Specified =
-On
+ON
 BC_North =
 Reflection
 BC_South =
@@ -142,13 +142,13 @@ Threshold_for_Refinement =
 Threshold_for_Coarsening =
 0.10
 Refinement_Criteria_Gradient_Density =
-On
+ON
 Refinement_Criteria_Divergence_Velocity =
-Off
+OFF
 Refinement_Criteria_Curl_Velocity =
-Off
+OFF
 Smooth_Quad_Block =
-Off
+OFF
 Number_of_Blocks_Per_Processor =
 128
 #
@@ -164,7 +164,7 @@ Number_of_Interface_Mesh_Refinements =
 #
 # UNSTEADY AMR PARAMETERS:
 AMR =
-Off
+OFF
 #
 # I/O PARAMETERS:
 Output_File_Name =

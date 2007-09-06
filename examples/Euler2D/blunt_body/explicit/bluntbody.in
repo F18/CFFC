@@ -62,7 +62,7 @@ Number_of_Initial_Mesh_Refinements =
 #
 # UNSTEADY AMR PARAMETERS:
 AMR =
-Off
+OFF
 #
 # AMR PARAMETERS:
 Maximum_Refinement_Level =
@@ -74,13 +74,13 @@ Threshold_for_Refinement =
 Threshold_for_Coarsening =
 0.10
 Refinement_Criteria_Gradient_Density =
-On
+ON
 Refinement_Criteria_Divergence_Velocity =
-On
+ON
 Refinement_Criteria_Curl_Velocity =
-On
+ON
 Smooth_Quad_Block =
-On
+ON
 Number_of_Blocks_Per_Processor =
 128
 #

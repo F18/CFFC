@@ -8,11 +8,11 @@ Inviscid
 Flow_Geometry_Type =
 Planar
 Particle_Phase = 
-On
+ON
 Phase_Interaction =
-On
+ON
 Measure_Conservation_Properties =
-On
+ON
 #
 # TIME-STEPPING PARAMETERS:
 Time_Integration_Type =
@@ -79,7 +79,7 @@ Number_of_Cells_Idir =
 Number_of_Cells_Jdir =
 4
 Boundary_Conditions_Specified =
-On
+ON
 BC_North =
 Reflection
 BC_South =
@@ -89,7 +89,7 @@ Constant_Extrapolation
 BC_West =
 Constant_Extrapolation
 Smooth_Quad_Block =
-Off
+OFF
 #
 # INITIAL AMR PARAMETERS:
 Number_of_Uniform_Mesh_Refinements =
@@ -101,7 +101,7 @@ Number_of_Initial_Mesh_Refinements =
 #
 # UNSTEADY AMR PARAMETERS:
 AMR =
-Off
+OFF
 #
 # AMR PARAMETERS:
 Maximum_Refinement_Level =

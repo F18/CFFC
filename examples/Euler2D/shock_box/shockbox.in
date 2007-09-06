@@ -53,7 +53,7 @@ Number_of_Blocks_Jdir =
 1
 #4
 Boundary_Conditions_Specified =
-On
+ON
 BC_North =
 Reflection
 BC_South =

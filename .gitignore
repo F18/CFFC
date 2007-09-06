@@ -18,7 +18,6 @@
 tecplot.phy
 *.e*
 *.o*
-tecplot.phy
 .gm_mpi
 *.core
 

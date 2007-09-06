@@ -51,7 +51,7 @@ Number_of_Cells_Idir =
 Number_of_Cells_Jdir =
 32
 Mesh_Stretching =
-On
+ON
 Mesh_Stretching_Factor_Idir =
 1.050
 Mesh_Stretching_Factor_Jdir =
@@ -67,13 +67,13 @@ Threshold_for_Refinement =
 Threshold_for_Coarsening =
 0.01
 Refinement_Criteria_Gradient_Density =
-On
+ON
 Refinement_Criteria_Divergence_Velocity =
-Off
+OFF
 Refinement_Criteria_Curl_Velocity =
-Off
+OFF
 Smooth_Quad_Block =
-Off
+OFF
 #
 # INITIAL AMR PARAMETERS:
 Number_of_Uniform_Mesh_Refinements =
@@ -86,7 +86,7 @@ Number_of_Boundary_Mesh_Refinements =
 #
 # UNSTEADY AMR PARAMETERS:
 AMR =
-Off
+OFF
 AMR_Frequency =
 30
 #

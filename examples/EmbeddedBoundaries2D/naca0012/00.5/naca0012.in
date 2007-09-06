@@ -68,7 +68,7 @@ Number_of_Blocks_Idir =
 Number_of_Blocks_Jdir =
 1
 Boundary_Conditions_Specified =
-On
+ON
 BC_North =
 Fixed
 BC_South =
@@ -118,7 +118,7 @@ AMR_Xmax =
 #
 # UNSTEADY AMR PARAMETERS:
 AMR =
-Off
+OFF
 #
 # AMR PARAMETERS:
 Maximum_Refinement_Level =
@@ -130,13 +130,13 @@ Threshold_for_Refinement =
 Threshold_for_Coarsening =
 0.05
 Refinement_Criteria_Gradient_Density =
-On
+ON
 Refinement_Criteria_Divergence_Velocity =
-Off
+OFF
 Refinement_Criteria_Curl_Velocity =
-Off
+OFF
 Smooth_Quad_Block =
-On
+ON
 Number_of_Blocks_Per_Processor =
 128
 #

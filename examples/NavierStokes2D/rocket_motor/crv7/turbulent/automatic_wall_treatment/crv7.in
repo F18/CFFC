@@ -54,7 +54,7 @@ Automatic_Wall_Treatment
 Friction_Velocity_Type =
 Iterative
 Turbulent_Wall_Injection =
-Off
+OFF
 yplus_sublayer =
 2.5
 yplus_buffer_layer =
@@ -86,7 +86,7 @@ Gottlieb
 #Gottlieb
 #Quartic
 Mesh_Stretching =
-On
+ON
 Mesh_Stretching_Type_Jdir =
 Max_Clustering
 #MinMax_Clustering
@@ -114,7 +114,7 @@ Number_of_Initial_Mesh_Refinements =
 #
 # UNSTEADY AMR PARAMETERS:
 AMR =
-Off
+OFF
 AMR_Frequency =
 1000
 #
@@ -128,15 +128,15 @@ Threshold_for_Refinement =
 Threshold_for_Coarsening =
 0.01
 Refinement_Criteria_Gradient_Density =
-Off
+OFF
 Refinement_Criteria_Divergence_Velocity =
-On
+ON
 Refinement_Criteria_Curl_Velocity =
-On
+ON
 Refinement_Criteria_Gradient_Turbulence_Kinetic_Energy =
-Off
+OFF
 Smooth_Quad_Block =
-On
+ON
 Number_of_Blocks_Per_Processor =
 128
 #

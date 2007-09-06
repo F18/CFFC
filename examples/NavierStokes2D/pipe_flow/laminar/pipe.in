@@ -61,7 +61,7 @@ Number_of_Blocks_Idir =
 Number_of_Blocks_Jdir =
 1
 Boundary_Conditions_Specified =
-On
+ON
 BC_North =
 Wall_Viscous_Heatflux
 BC_South =
@@ -71,7 +71,7 @@ Outflow_Subsonic
 BC_West =
 Inflow_Subsonic
 Mesh_Stretching =
-Off
+OFF
 #
 # I/O PARAMETERS:
 Output_File_Name = 

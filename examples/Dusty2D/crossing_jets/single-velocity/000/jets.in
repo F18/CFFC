@@ -10,9 +10,9 @@ Planar
 Particle_Phase = 
 Eulerian
 Phase_Interaction =
-Off
+OFF
 Electrostatic_Force =
-Off
+OFF
 #
 # TIME-STEPPING PARAMETERS:
 Time_Integration_Type =
@@ -71,7 +71,7 @@ Number_of_Blocks_Jdir =
 X_Shift =
 0.750  0.500
 Boundary_Conditions_Specified =
-On
+ON
 BC_North =
 Reflection
 BC_South =
