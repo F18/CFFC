@@ -212,26 +212,38 @@ int Read_Restart_Solution(LESPremixed2D_Quad_Block *Soln_ptr,
 					       Input_Parameters.CFFC_Path,
 					       Input_Parameters.Mach_Number_Reference,
 					       Input_Parameters.Schmidt,
-					       Input_Parameters.i_trans_type);   
+	    			               Input_Parameters.i_trans_type);   
 	  Input_Parameters.Uo.set_species_data(Input_Parameters.Wo.React.num_species,
 					       Input_Parameters.Wo.Scal_sys.num_scalars,
 					       Input_Parameters.Wo.React.species,
 					       Input_Parameters.CFFC_Path,
 					       Input_Parameters.Mach_Number_Reference,
 					       Input_Parameters.Schmidt,
-					       Input_Parameters.i_trans_type);    
-	  Input_Parameters.Uo = U(Input_Parameters.Wo);
+	  				       Input_Parameters.i_trans_type);    
+          Input_Parameters.Wo.set_premixed_flame_variables(Input_Parameters.Wo.laminar_thickness,
+				                           Input_Parameters.Wo.laminar_speed,
+				                           Input_Parameters.Wo.TFactor,
+                                                           Input_Parameters.Wo.adiabatic_temp,
+                                                           Input_Parameters.Wo.equivalence_ratio,
+                                                           Input_Parameters.Wo.reactants_den);
+          Input_Parameters.Uo.set_premixed_flame_variables(Input_Parameters.Wo.laminar_thickness,
+				                           Input_Parameters.Wo.laminar_speed,
+				                           Input_Parameters.Wo.TFactor,
+                                                           Input_Parameters.Wo.adiabatic_temp,
+                                                           Input_Parameters.Wo.equivalence_ratio,
+                                                           Input_Parameters.Wo.reactants_den);
 
+	  
 	  //Reset  Wo species mass fractions
           Input_Parameters.Wo.set_initial_values(Input_Parameters.mass_fractions);  
-	  
           // Update Uo from Wo
           Input_Parameters.Uo = U(Input_Parameters.Wo);
 
-
           /********* Turbulent Premixed Reacting Flow ***********************************/
           if (Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
-	     Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_K) {
+	      Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_K ||
+              Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
+	      Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_FSD_K) {
             restart_file.setf(ios::skipws); 
             restart_file >> Input_Parameters.Fresh_Fuel_Mass_Fraction
                          >> Input_Parameters.Burnt_Fuel_Mass_Fraction
@@ -352,7 +364,9 @@ int Write_Restart_Solution(LESPremixed2D_Quad_Block *Soln_ptr,
  
           /********* Turbulent Premixed Reacting Flow ***********************************/
           if (Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
-	     Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_K) {
+	     Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_K ||
+              Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
+	      Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_FSD_K) {
             restart_file << Input_Parameters.Fresh_Fuel_Mass_Fraction << " "
                          << Input_Parameters.Burnt_Fuel_Mass_Fraction << " "
                          << Input_Parameters.Fresh_Density << endl;

@@ -361,6 +361,24 @@ class LESPremixed2D_Quad_Block{
   double enstrophy(const int &i,const int &j);        
     /****************************************************************************/   
 
+    double M_x_n(const int &ii, const int &jj);
+    double M_y_n(const int &ii, const int &jj);
+    double Reaction_Rate_Fsd_n(const int &ii, const int &jj);
+    double Resolved_Strain_n(const int &ii, const int &jj);
+    double Resolved_Propagation_Curvature_n(const int &ii, const int &jj);
+/*     double Resolved_Curvature_n(const int &ii, const int &jj); */
+/*     double Resolved_Propagation_n(const int &ii, const int &jj); */
+    double SFS_Strain_n(const int &ii, const int &jj, const int &Flow_Type);
+    double SFS_Curvature_n(const int &ii, const int &jj, const int &Flow_Type);
+/*     double Resolved_Convection_Progvar_n(const int &ii, const int &jj); */
+/*     double Resolved_Convection_Fsd_n(const int &ii, const int &jj); */
+/*     double NGT_Progvar_n(const int &ii, const int &jj); */
+/*     double NGT_Fsd_n(const int &ii, const int &jj); */
+/*     double SFS_Diffusion_Progvar_n(const int &ii, const int &jj, const int &Flow_Type); */
+/*     double SFS_Diffusion_Fsd_n(const int &ii, const int &jj, const int &Flow_Type); */
+/*     double Heat_Release_Strain_n(const int &ii, const int &jj); */
+/*     double Net_Rate_Change_Progvar_n(const int &ii, const int &jj, const int &Flow_Type); */
+/*     double Net_Rate_Change_Fsd_n(const int &ii, const int &jj, const int &Flow_Type); */
   
   /* Set flags for limiter evaluation. */
   void evaluate_limiters(void) {Freeze_Limiter = OFF; } 
@@ -693,6 +711,329 @@ inline double LESPremixed2D_Quad_Block::enstrophy_n(const int &ii,const int &jj)
   return (0.5*w*w);
 }
 
+inline double LESPremixed2D_Quad_Block::M_x_n(const int &ii, const int &jj) {
+  double eta, zeta;
+  eta = ZERO;
+  zeta = ZERO;
+  
+  BiLinearInterpolationCoefficients(eta, zeta, ii, jj);
+      
+    double h1, h2, h3, h4;
+
+    h1 = W[ii-1][jj-1].M_x(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1]);
+    h2 = W[ii-1][jj].M_x(dWdx[ii-1][jj],dWdy[ii-1][jj]);
+    h3 = W[ii][jj-1].M_x(dWdx[ii][jj-1],dWdy[ii][jj-1]);
+    h4 = W[ii][jj].M_x(dWdx[ii][jj],dWdy[ii][jj]);
+
+  return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta); 
+
+}
+
+inline double LESPremixed2D_Quad_Block::M_y_n(const int &ii, const int &jj) {
+  double eta, zeta;
+  eta = ZERO;
+  zeta = ZERO;
+  
+  BiLinearInterpolationCoefficients(eta, zeta, ii, jj);
+      
+    double h1, h2, h3, h4;
+
+    h1 = W[ii-1][jj-1].M_y(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1]);
+    h2 = W[ii-1][jj].M_y(dWdx[ii-1][jj],dWdy[ii-1][jj]);
+    h3 = W[ii][jj-1].M_y(dWdx[ii][jj-1],dWdy[ii][jj-1]);
+    h4 = W[ii][jj].M_y(dWdx[ii][jj],dWdy[ii][jj]);
+
+  return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta); 
+
+}
+
+inline double LESPremixed2D_Quad_Block::Reaction_Rate_Fsd_n(const int &ii, const int &jj) {
+  double eta, zeta;
+  eta = ZERO;
+  zeta = ZERO;
+  
+  BiLinearInterpolationCoefficients(eta, zeta, ii, jj);
+      
+    double h1, h2, h3, h4;
+
+    h1 = W[ii-1][jj-1].Reaction_Rate_Fsd(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1]);
+    h2 = W[ii-1][jj].Reaction_Rate_Fsd(dWdx[ii-1][jj],dWdy[ii-1][jj]);
+    h3 = W[ii][jj-1].Reaction_Rate_Fsd(dWdx[ii][jj-1],dWdy[ii][jj-1]);
+    h4 = W[ii][jj].Reaction_Rate_Fsd(dWdx[ii][jj],dWdy[ii][jj]);
+
+  return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta); 
+
+}
+
+inline double LESPremixed2D_Quad_Block::Resolved_Strain_n(const int &ii, const int &jj) {
+  double eta, zeta;
+  eta = ZERO;
+  zeta = ZERO;
+  
+  BiLinearInterpolationCoefficients(eta, zeta, ii, jj);
+      
+    double h1, h2, h3, h4;
+
+    h1 = W[ii-1][jj-1].Resolved_Strain(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1]);
+    h2 = W[ii-1][jj].Resolved_Strain(dWdx[ii-1][jj],dWdy[ii-1][jj]);
+    h3 = W[ii][jj-1].Resolved_Strain(dWdx[ii][jj-1],dWdy[ii][jj-1]);
+    h4 = W[ii][jj].Resolved_Strain(dWdx[ii][jj],dWdy[ii][jj]);
+
+  return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta); 
+
+}
+
+inline double LESPremixed2D_Quad_Block::Resolved_Propagation_Curvature_n(const int &ii, const int &jj) {
+  double eta, zeta;
+  eta = ZERO;
+  zeta = ZERO;
+  
+  BiLinearInterpolationCoefficients(eta, zeta, ii, jj);
+      
+    double h1, h2, h3, h4;
+
+    h1 = W[ii-1][jj-1].Resolved_Propagation_Curvature(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1]);
+    h2 = W[ii-1][jj].Resolved_Propagation_Curvature(dWdx[ii-1][jj],dWdy[ii-1][jj]);
+    h3 = W[ii][jj-1].Resolved_Propagation_Curvature(dWdx[ii][jj-1],dWdy[ii][jj-1]);
+    h4 = W[ii][jj].Resolved_Propagation_Curvature(dWdx[ii][jj],dWdy[ii][jj]);
+
+  return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta); 
+
+}
+
+/* inline double LESPremixed2D_Quad_Block::Resolved_Curvature_n(const int &ii, const int &jj) { */
+/*   double eta, zeta; */
+/*   eta = ZERO; */
+/*   zeta = ZERO; */
+  
+/*   BiLinearInterpolationCoefficients(eta, zeta, ii, jj); */
+      
+/*     double h1, h2, h3, h4; */
+
+/*     h1 = W[ii-1][jj-1].Resolved_Curvature(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1],d_dWdx_dx[ii-1][jj-1],d_dWdx_dy[ii-1][jj-1],d_dWdy_dy[ii-1][jj-1]); */
+/*     h2 = W[ii-1][jj].Resolved_Curvature(dWdx[ii-1][jj],dWdy[ii-1][jj],d_dWdx_dx[ii-1][jj],d_dWdx_dy[ii-1][jj],d_dWdy_dy[ii-1][jj]); */
+/*     h3 = W[ii][jj-1].Resolved_Curvature(dWdx[ii][jj-1],dWdy[ii][jj-1],d_dWdx_dx[ii][jj-1],d_dWdx_dy[ii][jj-1],d_dWdy_dy[ii][jj-1]); */
+/*     h4 = W[ii][jj].Resolved_Curvature(dWdx[ii][jj],dWdy[ii][jj],d_dWdx_dx[ii][jj],d_dWdx_dy[ii][jj],d_dWdy_dy[ii][jj]); */
+
+/*   return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta);  */
+
+/* } */
+
+/* inline double LESPremixed2D_Quad_Block::Resolved_Propagation_n(const int &ii, const int &jj) { */
+/*   double eta, zeta; */
+/*   eta = ZERO; */
+/*   zeta = ZERO; */
+  
+/*   BiLinearInterpolationCoefficients(eta, zeta, ii, jj); */
+      
+/*     double h1, h2, h3, h4; */
+
+/*     h1 = W[ii-1][jj-1].Resolved_Propagation(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1],d_dWdx_dx[ii-1][jj-1],d_dWdx_dy[ii-1][jj-1],d_dWdy_dy[ii-1][jj-1]); */
+/*     h2 = W[ii-1][jj].Resolved_Propagation(dWdx[ii-1][jj],dWdy[ii-1][jj],d_dWdx_dx[ii-1][jj],d_dWdx_dy[ii-1][jj],d_dWdy_dy[ii-1][jj]); */
+/*     h3 = W[ii][jj-1].Resolved_Propagation(dWdx[ii][jj-1],dWdy[ii][jj-1],d_dWdx_dx[ii][jj-1],d_dWdx_dy[ii][jj-1],d_dWdy_dy[ii][jj-1]); */
+/*     h4 = W[ii][jj].Resolved_Propagation(dWdx[ii][jj],dWdy[ii][jj],d_dWdx_dx[ii][jj],d_dWdx_dy[ii][jj],d_dWdy_dy[ii][jj]); */
+
+/*   return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta);  */
+
+/* } */
+
+inline double LESPremixed2D_Quad_Block::SFS_Strain_n(const int &ii, const int &jj, const int &Flow_Type) {
+  double eta, zeta;
+  eta = ZERO;
+  zeta = ZERO;
+  
+  BiLinearInterpolationCoefficients(eta, zeta, ii, jj);
+      
+    double h1, h2, h3, h4;
+
+    h1 = W[ii-1][jj-1].SFS_Strain(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1],Flow_Type);
+    h2 = W[ii-1][jj].SFS_Strain(dWdx[ii-1][jj],dWdy[ii-1][jj],Flow_Type);
+    h3 = W[ii][jj-1].SFS_Strain(dWdx[ii][jj-1],dWdy[ii][jj-1],Flow_Type);
+    h4 = W[ii][jj].SFS_Strain(dWdx[ii][jj],dWdy[ii][jj],Flow_Type);
+
+  return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta); 
+
+}
+
+inline double LESPremixed2D_Quad_Block::SFS_Curvature_n(const int &ii, const int &jj, const int &Flow_Type) {
+  double eta, zeta;
+  eta = ZERO;
+  zeta = ZERO;
+  
+  BiLinearInterpolationCoefficients(eta, zeta, ii, jj);
+      
+    double h1, h2, h3, h4;
+
+    h1 = W[ii-1][jj-1].SFS_Curvature(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1],Flow_Type);
+    h2 = W[ii-1][jj].SFS_Curvature(dWdx[ii-1][jj],dWdy[ii-1][jj],Flow_Type);
+    h3 = W[ii][jj-1].SFS_Curvature(dWdx[ii][jj-1],dWdy[ii][jj-1],Flow_Type);
+    h4 = W[ii][jj].SFS_Curvature(dWdx[ii][jj],dWdy[ii][jj],Flow_Type);
+
+  return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta); 
+
+}
+
+/* inline double LESPremixed2D_Quad_Block::Resolved_Convection_Progvar_n(const int &ii, const int &jj) { */
+/*   double eta, zeta; */
+/*   eta = ZERO; */
+/*   zeta = ZERO; */
+  
+/*   BiLinearInterpolationCoefficients(eta, zeta, ii, jj); */
+      
+/*     double h1, h2, h3, h4; */
+
+/*     h1 = W[ii-1][jj-1].Resolved_Convection_Progvar(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1]); */
+/*     h2 = W[ii-1][jj].Resolved_Convection_Progvar(dWdx[ii-1][jj],dWdy[ii-1][jj]); */
+/*     h3 = W[ii][jj-1].Resolved_Convection_Progvar(dWdx[ii][jj-1],dWdy[ii][jj-1]); */
+/*     h4 = W[ii][jj].Resolved_Convection_Progvar(dWdx[ii][jj],dWdy[ii][jj]); */
+
+/*   return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta);  */
+
+/* } */
+
+/* inline double LESPremixed2D_Quad_Block::Resolved_Convection_Fsd_n(const int &ii, const int &jj) { */
+/*   double eta, zeta; */
+/*   eta = ZERO; */
+/*   zeta = ZERO; */
+  
+/*   BiLinearInterpolationCoefficients(eta, zeta, ii, jj); */
+      
+/*     double h1, h2, h3, h4; */
+
+/*     h1 = W[ii-1][jj-1].Resolved_Convection_Fsd(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1]); */
+/*     h2 = W[ii-1][jj].Resolved_Convection_Fsd(dWdx[ii-1][jj],dWdy[ii-1][jj]); */
+/*     h3 = W[ii][jj-1].Resolved_Convection_Fsd(dWdx[ii][jj-1],dWdy[ii][jj-1]); */
+/*     h4 = W[ii][jj].Resolved_Convection_Fsd(dWdx[ii][jj],dWdy[ii][jj]); */
+
+/*   return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta);  */
+
+/* } */
+
+/* inline double LESPremixed2D_Quad_Block::NGT_Progvar_n(const int &ii, const int &jj) { */
+/*   double eta, zeta; */
+/*   eta = ZERO; */
+/*   zeta = ZERO; */
+  
+/*   BiLinearInterpolationCoefficients(eta, zeta, ii, jj); */
+      
+/*     double h1, h2, h3, h4; */
+
+/*     h1 = W[ii-1][jj-1].NGT_Progvar(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1]); */
+/*     h2 = W[ii-1][jj].NGT_Progvar(dWdx[ii-1][jj],dWdy[ii-1][jj]); */
+/*     h3 = W[ii][jj-1].NGT_Progvar(dWdx[ii][jj-1],dWdy[ii][jj-1]); */
+/*     h4 = W[ii][jj].NGT_Progvar(dWdx[ii][jj],dWdy[ii][jj]); */
+
+/*   return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta);  */
+
+/* } */
+
+/* inline double LESPremixed2D_Quad_Block::NGT_Fsd_n(const int &ii, const int &jj) { */
+/*   double eta, zeta; */
+/*   eta = ZERO; */
+/*   zeta = ZERO; */
+  
+/*   BiLinearInterpolationCoefficients(eta, zeta, ii, jj); */
+      
+/*     double h1, h2, h3, h4; */
+
+/*     h1 = W[ii-1][jj-1].NGT_Fsd(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1],d_dWdx_dx[ii-1][jj-1],d_dWdx_dy[ii-1][jj-1],d_dWdy_dy[ii-1][jj-1]); */
+/*     h2 = W[ii-1][jj].NGT_Fsd(dWdx[ii-1][jj],dWdy[ii-1][jj],d_dWdx_dx[ii-1][jj],d_dWdx_dy[ii-1][jj],d_dWdy_dy[ii-1][jj]); */
+/*     h3 = W[ii][jj-1].NGT_Fsd(dWdx[ii][jj-1],dWdy[ii][jj-1],d_dWdx_dx[ii][jj-1],d_dWdx_dy[ii][jj-1],d_dWdy_dy[ii][jj-1]); */
+/*     h4 = W[ii][jj].NGT_Fsd(dWdx[ii][jj],dWdy[ii][jj],d_dWdx_dx[ii][jj],d_dWdx_dy[ii][jj],d_dWdy_dy[ii][jj]); */
+
+/*   return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta);  */
+
+/* }  */
+
+/* inline double LESPremixed2D_Quad_Block::SFS_Diffusion_Progvar_n(const int &ii, const int &jj, const int &Flow_Type) { */
+/*   double eta, zeta; */
+/*   eta = ZERO; */
+/*   zeta = ZERO; */
+  
+/*   BiLinearInterpolationCoefficients(eta, zeta, ii, jj); */
+      
+/*     double h1, h2, h3, h4; */
+
+/*     h1 = W[ii-1][jj-1].SFS_Diffusion_Progvar(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1],d_dWdx_dx[ii-1][jj-1],d_dWdx_dy[ii-1][jj-1],d_dWdy_dy[ii-1][jj-1],Flow_Type); */
+/*     h2 = W[ii-1][jj].SFS_Diffusion_Progvar(dWdx[ii-1][jj],dWdy[ii-1][jj],d_dWdx_dx[ii-1][jj],d_dWdx_dy[ii-1][jj],d_dWdy_dy[ii-1][jj],Flow_Type); */
+/*     h3 = W[ii][jj-1].SFS_Diffusion_Progvar(dWdx[ii][jj-1],dWdy[ii][jj-1],d_dWdx_dx[ii][jj-1],d_dWdx_dy[ii][jj-1],d_dWdy_dy[ii][jj-1],Flow_Type); */
+/*     h4 = W[ii][jj].SFS_Diffusion_Progvar(dWdx[ii][jj],dWdy[ii][jj],d_dWdx_dx[ii][jj],d_dWdx_dy[ii][jj],d_dWdy_dy[ii][jj],Flow_Type); */
+
+/*   return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta);  */
+
+/* } */
+
+/* inline double LESPremixed2D_Quad_Block::SFS_Diffusion_Fsd_n(const int &ii, const int &jj, const int &Flow_Type) { */
+/*   double eta, zeta; */
+/*   eta = ZERO; */
+/*   zeta = ZERO; */
+  
+/*   BiLinearInterpolationCoefficients(eta, zeta, ii, jj); */
+      
+/*     double h1, h2, h3, h4; */
+
+/*     h1 = W[ii-1][jj-1].SFS_Diffusion_Fsd(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1],d_dWdx_dx[ii-1][jj-1],d_dWdx_dy[ii-1][jj-1],d_dWdy_dy[ii-1][jj-1],Flow_Type); */
+/*     h2 = W[ii-1][jj].SFS_Diffusion_Fsd(dWdx[ii-1][jj],dWdy[ii-1][jj],d_dWdx_dx[ii-1][jj],d_dWdx_dy[ii-1][jj],d_dWdy_dy[ii-1][jj],Flow_Type); */
+/*     h3 = W[ii][jj-1].SFS_Diffusion_Fsd(dWdx[ii][jj-1],dWdy[ii][jj-1],d_dWdx_dx[ii][jj-1],d_dWdx_dy[ii][jj-1],d_dWdy_dy[ii][jj-1],Flow_Type); */
+/*     h4 = W[ii][jj].SFS_Diffusion_Fsd(dWdx[ii][jj],dWdy[ii][jj],d_dWdx_dx[ii][jj],d_dWdx_dy[ii][jj],d_dWdy_dy[ii][jj],Flow_Type); */
+
+/*   return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta);  */
+
+/* } */
+
+/* inline double LESPremixed2D_Quad_Block::Heat_Release_Strain_n(const int &ii, const int &jj) { */
+/*   double eta, zeta; */
+/*   eta = ZERO; */
+/*   zeta = ZERO; */
+  
+/*   BiLinearInterpolationCoefficients(eta, zeta, ii, jj); */
+      
+/*     double h1, h2, h3, h4; */
+
+/*     h1 = W[ii-1][jj-1].Heat_Release_Strain(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1],d_dWdx_dx[ii-1][jj-1],d_dWdx_dy[ii-1][jj-1],d_dWdy_dy[ii-1][jj-1]); */
+/*     h2 = W[ii-1][jj].Heat_Release_Strain(dWdx[ii-1][jj],dWdy[ii-1][jj],d_dWdx_dx[ii-1][jj],d_dWdx_dy[ii-1][jj],d_dWdy_dy[ii-1][jj]); */
+/*     h3 = W[ii][jj-1].Heat_Release_Strain(dWdx[ii][jj-1],dWdy[ii][jj-1],d_dWdx_dx[ii][jj-1],d_dWdx_dy[ii][jj-1],d_dWdy_dy[ii][jj-1]); */
+/*     h4 = W[ii][jj].Heat_Release_Strain(dWdx[ii][jj],dWdy[ii][jj],d_dWdx_dx[ii][jj],d_dWdx_dy[ii][jj],d_dWdy_dy[ii][jj]); */
+
+/*   return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta);  */
+
+/* } */
+
+/* inline double LESPremixed2D_Quad_Block::Net_Rate_Change_Progvar_n(const int &ii, const int &jj, const int &Flow_Type) { */
+/*   double eta, zeta; */
+/*   eta = ZERO; */
+/*   zeta = ZERO; */
+  
+/*   BiLinearInterpolationCoefficients(eta, zeta, ii, jj); */
+      
+/*     double h1, h2, h3, h4; */
+
+/*     h1 = W[ii-1][jj-1].Net_Rate_Change_Progvar(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1],d_dWdx_dx[ii-1][jj-1],d_dWdx_dy[ii-1][jj-1],d_dWdy_dy[ii-1][jj-1],Flow_Type); */
+/*     h2 = W[ii-1][jj].Net_Rate_Change_Progvar(dWdx[ii-1][jj],dWdy[ii-1][jj],d_dWdx_dx[ii-1][jj],d_dWdx_dy[ii-1][jj],d_dWdy_dy[ii-1][jj],Flow_Type); */
+/*     h3 = W[ii][jj-1].Net_Rate_Change_Progvar(dWdx[ii][jj-1],dWdy[ii][jj-1],d_dWdx_dx[ii][jj-1],d_dWdx_dy[ii][jj-1],d_dWdy_dy[ii][jj-1],Flow_Type); */
+/*     h4 = W[ii][jj].Net_Rate_Change_Progvar(dWdx[ii][jj],dWdy[ii][jj],d_dWdx_dx[ii][jj],d_dWdx_dy[ii][jj],d_dWdy_dy[ii][jj],Flow_Type); */
+
+/*   return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta);  */
+
+/* } */
+
+/* inline double LESPremixed2D_Quad_Block::Net_Rate_Change_Fsd_n(const int &ii, const int &jj, const int &Flow_Type) { */
+/*   double eta, zeta; */
+/*   eta = ZERO; */
+/*   zeta = ZERO; */
+  
+/*   BiLinearInterpolationCoefficients(eta, zeta, ii, jj); */
+      
+/*     double h1, h2, h3, h4; */
+
+/*     h1 = W[ii-1][jj-1].Net_Rate_Change_Fsd(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1],d_dWdx_dx[ii-1][jj-1],d_dWdx_dy[ii-1][jj-1],d_dWdy_dy[ii-1][jj-1],Flow_Type); */
+/*     h2 = W[ii-1][jj].Net_Rate_Change_Fsd(dWdx[ii-1][jj],dWdy[ii-1][jj],d_dWdx_dx[ii-1][jj],d_dWdx_dy[ii-1][jj],d_dWdy_dy[ii-1][jj],Flow_Type); */
+/*     h3 = W[ii][jj-1].Net_Rate_Change_Fsd(dWdx[ii][jj-1],dWdy[ii][jj-1],d_dWdx_dx[ii][jj-1],d_dWdx_dy[ii][jj-1],d_dWdy_dy[ii][jj-1],Flow_Type); */
+/*     h4 = W[ii][jj].Net_Rate_Change_Fsd(dWdx[ii][jj],dWdy[ii][jj],d_dWdx_dx[ii][jj],d_dWdx_dy[ii][jj],d_dWdy_dy[ii][jj],Flow_Type); */
+
+/*   return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta);  */
+
+/* } */
 
 
 
@@ -1025,8 +1366,8 @@ inline istream &operator >> (istream &in_file,
 			     LESPremixed2D_Quad_Block &SolnBlk) {
 
   int i, j, k, ni, il, iu, nj, jl, ju, ng;
-  LESPremixed2D_pState LESPremixed2D_W_VACUUM(ZERO, Vector2D_ZERO, ZERO, ZERO);
-  LESPremixed2D_cState LESPremixed2D_U_VACUUM(ZERO, Vector2D_ZERO, ZERO, ZERO);
+  LESPremixed2D_pState LESPremixed2D_W_VACUUM(ZERO, Vector2D_ZERO, ZERO);
+  LESPremixed2D_cState LESPremixed2D_U_VACUUM(ZERO, Vector2D_ZERO, ZERO);
   Grid2D_Quad_Block New_Grid; in_file >> New_Grid;
   in_file.setf(ios::skipws);
   in_file >> ni >> il >> iu >> ng; in_file >> nj >> jl >> ju;

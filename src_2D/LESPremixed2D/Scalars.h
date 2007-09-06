@@ -78,7 +78,7 @@ inline void Set_scalar::scalar_set(string &scal_sys) {
     // set up scalar list
     scalars = new string[num_scalars];
     scalars[0] = "C";
-    scalars[1] = "FSD";
+    scalars[1] = "FSD/rho";
   }
 
   // FSD & Progress variable with SGS k  model
@@ -89,7 +89,7 @@ inline void Set_scalar::scalar_set(string &scal_sys) {
     scalars = new string[num_scalars];
     scalars[0] = "K";
     scalars[1] = "C";
-    scalars[2] = "FSD";
+    scalars[2] = "FSD/rho";
   }
 
   // Thickened flame  model

@@ -184,6 +184,9 @@ class LESPremixed2D_Input_Parameters{
   double laminar_flame_speed;
   double laminar_flame_thickness;
   double TFactor;
+  double adiabatic_temp;
+  double equivalence_ratio;
+  double reactants_den;
   double Fresh_Fuel_Mass_Fraction, Burnt_Fuel_Mass_Fraction, 
          Fresh_Density;
   //@}
@@ -483,6 +486,14 @@ inline ostream &operator << (ostream &out_file,
       out_file << "\n  -> Spectrum: " << IP.Spectrum_Type;  
     } else if (IP.FlowType == FLOWTYPE_TURBULENT_LES_TF_K) {
       out_file << "\n  -> Turbulent flow: Thickened flame LES with k-equation ";
+    } else if (IP.FlowType == FLOWTYPE_LAMINAR_FSD) {
+      out_file << "\n  -> Laminar flow: flame surface density model ";
+    } else if (IP.FlowType == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY) {    
+      out_file << "\n  -> Turbulent flow: LES with flame surface density model and Smagorinsky model ";
+      out_file << "\n  -> Smagorinsky constant " << IP.Smagorinsky_Constant;
+      out_file << "\n  -> Spectrum: " << IP.Spectrum_Type; 
+    } else if (IP.FlowType == FLOWTYPE_TURBULENT_LES_FSD_K) {
+      out_file << "\n  -> Turbulent flow: LES with flame surface density model and k-equation ";
     } else if (IP.FlowType == FLOWTYPE_TURBULENT_DNS) {
       out_file << "\n  -> Turbulent flow: DNS ";
     }

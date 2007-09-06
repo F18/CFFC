@@ -88,8 +88,8 @@ extern void d_dWd_dW_Center(double &d_dWdx_dW_C, double &d_dWdy_dW_C, LESPremixe
 
 /*****************************************************************************/
 //Turbulence source Jacobian k-omega
-/* extern int dS_tdW(DenseMatrix &dStdW,  LESPremixed2D_Quad_Block &SolnBlk,  */
-/* 		  double &d_dWdx_dW, double &d_dWdy_dW, const int &ii, const int &jj);  */
+extern int dS_tdW(DenseMatrix &dStdW,  LESPremixed2D_Quad_Block &SolnBlk,
+		  double &d_dWdx_dW, double &d_dWdy_dW, const int &ii, const int &jj);
 
 
 
