@@ -74,7 +74,7 @@ Hybrid_Conical
 #Gottlieb
 #Quartic
 Mesh_Stretching =
-On
+ON
 Mesh_Stretching_Type_Jdir =
 MinMax_Clustering
 Mesh_Stretching_Factor_Idir =
@@ -127,7 +127,7 @@ Number_of_Interface_Mesh_Refinements =
 #
 # UNSTEADY AMR PARAMETERS:
 AMR =
-On
+ON
 AMR_Frequency =
 2500
 #
@@ -141,13 +141,13 @@ Threshold_for_Refinement =
 Threshold_for_Coarsening =
 0.05
 Refinement_Criteria_Gradient_Density =
-Off
+OFF
 Refinement_Criteria_Divergence_Velocity =
-Off
+OFF
 Refinement_Criteria_Curl_Velocity =
-On
+ON
 Smooth_Quad_Block =
-On
+ON
 Number_of_Blocks_Per_Processor =
 128
 #

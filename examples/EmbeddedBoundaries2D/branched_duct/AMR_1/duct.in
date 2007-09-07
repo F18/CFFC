@@ -64,7 +64,7 @@ Number_of_Blocks_Idir =
 Number_of_Blocks_Jdir =
 2
 Boundary_Conditions_Specified =
-On
+ON
 BC_North =
 Wall_Viscous_Isothermal
 BC_South =
@@ -405,13 +405,13 @@ Threshold_for_Refinement =
 Threshold_for_Coarsening =
 0.10
 Refinement_Criteria_Gradient_Density =
-On
+ON
 Refinement_Criteria_Divergence_Velocity =
-On
+ON
 Refinement_Criteria_Curl_Velocity =
-On
+ON
 Smooth_Quad_Block =
-Off
+OFF
 Number_of_Blocks_Per_Processor =
 256
 #
@@ -431,11 +431,11 @@ AMR_Xmin =
 AMR_Xmax =
  0.225  0.120
 Interface_Refinement_Condition =
-On
+ON
 #
 # UNSTEADY AMR PARAMETERS:
 AMR =
-Off
+OFF
 #
 # I/O PARAMETERS:
 Output_File_Name =

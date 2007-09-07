@@ -46,17 +46,17 @@ Multigrid_Number_of_Smooths_on_Coarsest_Level =
 Full_Multigrid =
 1000
 Defect_Correction =
-On
+ON
 Prolong_Using_Injection =
-Off
+OFF
 First_Order_Coarse_Mesh_Reconstruction =
-Off
+OFF
 Apply_Coarse_Mesh_Boundary_Conditions =
-On
+ON
 Injection_at_Dirichlet_Boundary_Conditions =
-On
+ON
 Update_Stability_Switch =
-On
+ON
 Maximum_Number_of_Update_Reductions =
 5
 Multigrid_Smoothing_Type = 
@@ -130,7 +130,7 @@ Number_of_Initial_Mesh_Refinements =
 #
 # UNSTEADY AMR PARAMETERS:
 AMR =
-Off
+OFF
 #
 # AMR PARAMETERS:
 Maximum_Refinement_Level =
@@ -142,7 +142,7 @@ Threshold_for_Refinement =
 Threshold_for_Coarsening =
 0.01
 Smooth_Quad_Block =
-Off
+OFF
 Number_of_Blocks_Per_Processor =
 128
 #

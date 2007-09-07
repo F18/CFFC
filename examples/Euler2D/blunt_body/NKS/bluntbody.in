@@ -77,9 +77,9 @@ Number_of_Cells_Idir =
 Number_of_Cells_Jdir =
 32
 Smooth_Quad_Block =
-On
+ON
 AMR =
-Off
+OFF
 #AMR_Frequency =
 #8
 Number_of_Initial_Mesh_Refinements =

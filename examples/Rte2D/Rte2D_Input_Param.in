@@ -286,7 +286,7 @@ Wall_Emissivity=
 ###################################################
 # Off, On
 AMR =
-On
+ON
 # number of iterations between refinements
 AMR_Frequency =
 8
@@ -312,17 +312,17 @@ Threshold_for_Coarsening =
 Number_of_Refinement_Criteria =
 6
 Refinement_Criteria_Gradient_Density =
-On
+ON
 Refinement_Criteria_Divergence_Velocity = On
-On
+ON
 Refinement_Criteria_Curl_Velocity = On
-On
+ON
 Refinement_Criteria_Gradient_Temperature = On
-On
+ON
 Refinement_Criteria_Gradient_CH4 = On
-On
+ON
 Refinement_Criteria_Gradient_CO2 = On
-On
+ON
 ###################################################
 # Another way to perform refinements 
 # by calling "Refine_Grid" before the 
@@ -346,7 +346,7 @@ Morton_Reordering_Frequency=
 # Grid Smoother
 ##############################################
 Smooth_Quad_Block=
-Off
+OFF
 
 ##################################################
 # Implicit Residual Smoothing

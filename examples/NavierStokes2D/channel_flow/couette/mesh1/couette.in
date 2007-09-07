@@ -64,7 +64,7 @@ Number_of_Blocks_Jdir =
 X_Shift =
 0.10  0.0005
 Boundary_Conditions_Specified =
-On
+ON
 BC_North =
 Moving_Wall_Heatflux
 BC_South =

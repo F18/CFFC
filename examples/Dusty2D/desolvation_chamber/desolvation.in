@@ -9,11 +9,11 @@ Inviscid
 Flow_Geometry_Type =
 Axisymmetric
 Particle_Phase =
-Off
+OFF
 #Phase_Interaction =
 #On
 Electrostatic_Force =
-On
+ON
 #
 # TIME-STEPPING PARAMETERS:
 Time_Integration_Type =

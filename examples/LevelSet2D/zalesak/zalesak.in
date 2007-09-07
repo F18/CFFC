@@ -108,7 +108,7 @@ Number_of_Initial_Mesh_Refinements =
 #
 # UNSTEADY AMR PARAMETERS:
 AMR =
-On
+ON
 AMR_Frequency =
 9
 #
