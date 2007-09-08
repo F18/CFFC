@@ -1794,6 +1794,10 @@ extern void Rotate_Quad_Block(Grid2D_Quad_Block &Grid,
 
 extern void Reflect_Quad_Block(Grid2D_Quad_Block &Grid);
 
+extern int Search_Single_Block_Grid(const Grid2D_Quad_Block &Grid_ptr,
+				    const Vector2D Xpos,
+				    int &i, int &j);
+
 extern void Output_Tecplot(Grid2D_Quad_Block &Grid,
                            const int Block_Number,
                            const int Output_Title,
@@ -1896,6 +1900,12 @@ extern void Reflect_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 extern int Check_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
                                   const int Number_of_Blocks_Idir,
                                   const int Number_of_Blocks_Jdir);
+
+extern int Search_Multi_Block_Grid(const Grid2D_Quad_Block **Grid_ptr,
+				   const int &Number_of_Blocks_Idir,
+				   const int &Number_of_Blocks_Jdir,
+				   const Vector2D Xpos,
+				   int &i, int &j);
 
 extern void Output_Tecplot(Grid2D_Quad_Block **Grid_ptr,
 			   const int Number_of_Blocks_Idir,
