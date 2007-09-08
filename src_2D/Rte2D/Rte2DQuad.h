@@ -2506,8 +2506,7 @@ extern void Output_Exact(Rte2D_Quad_Block &SolnBlk,
 extern void ICs(Rte2D_Quad_Block &SolnBlk,
 		Rte2D_Input_Parameters &IP);
 
-extern void ICs_Medium(Rte2D_Quad_Block &SolnBlk,
-		       Rte2D_Input_Parameters &IP);
+extern void PrescribeFields(Rte2D_Quad_Block &SolnBlk);
 
 extern void BCs(Rte2D_Quad_Block &SolnBlk,
 		Rte2D_Input_Parameters &IP);

@@ -28,7 +28,6 @@
  * Class Declaration                                    *
  ********************************************************/
 class Rte2D_State;
-class Medium2D_State;
 
 /********************************************************
  * Include required C++ libraries                       *
@@ -54,29 +53,17 @@ using namespace std;
 #include "../Math/Simpson.h"
 #include "../CFD/CFD.h"
 #include "../Physics/GasConstants.h"
-#include "SNBCK.h"
+#include "Medium2DState.h"
 #include "Planck.h"
-#include "FieldData.h"
+#include "Scatter.h"
 
 /********************************************************
  * Necessary Rte2D Specific Constants                   *
  ********************************************************/
 
-// Absorbsion model type 
-enum Gas_Models { RTE2D_ABSORB_GRAY,
-                  RTE2D_ABSORB_SNBCK };
-
 // RTE discretization Type (DOM or FVM)
 enum RTE_Discretization { RTE2D_SOLVER_FVM,
 			  RTE2D_SOLVER_DOM };
-
-// Scatter Phase Functions
-enum Scatter_Models { RTE2D_SCATTER_ISO,  // isotropic scattering
-		      RTE2D_SCATTER_F1,   // Kim and Lee (1988)   
-		      RTE2D_SCATTER_F2,   // Kim and Lee (1988)
-		      RTE2D_SCATTER_F3,   // Kim and Lee (1988) 
-		      RTE2D_SCATTER_B1,   // Kim and Lee (1988)
-		      RTE2D_SCATTER_B2 }; // Kim and Lee (1988)
 
 // DOM quadrature Type 
 enum DOM_Qauad { RTE2D_DOM_S2,   // S2 NONSYMMETRIC from LATHROP and CARLSON
@@ -85,396 +72,6 @@ enum DOM_Qauad { RTE2D_DOM_S2,   // S2 NONSYMMETRIC from LATHROP and CARLSON
 		 RTE2D_DOM_S8,   // S8 SYMMETRIC from LATHROP and CARLSON
 		 RTE2D_DOM_S12,  // S12 SYMMETRIC from LATHROP and CARLSON
 		 RTE2D_DOM_T3 }; // T3 SYMMETRIC from Truelove
-
-
-/********************************************************
- * STRUCTS REQUIRED FOR INTEGRATION                     *
- ********************************************************/
-// Struct needed to integrate the phase function over the solid angle.
-// Contains information for legendre polynomials.
-struct legendre_param {
-  double *An; // the expansion coefficient array
-  int Mn;     // degree of Legendre polynomial 
-};
-
-
-
-/***********************************************************************/
-/*!
- * Class: Medium_State
- *
- * @brief Gas state class definition for a absorbing, scattering 
- *        participating medium.
- *
- * Gas state class definition for a absorbing, scattering participating
- * medium.  This is a container for prescirbed field data required by
- * the Rte2D class.
- *
- * \verbatim
- * Member functions
- *     kappa    -- Return array of spectral absorbsion coefficient
- *     sigma    -- Return array of spectral scattering coefficient
- *     Ib       -- Return array of spectral blackbody intensity.
- *     beta     -- Return extinction coefficient.
- *     Nbands   -- Return the number of spectral frequency bands.
- * \endverbatim
- */
-/***********************************************************************/
-class Medium2D_State {
-
- private:
-
-  //@{ @name medium state:
-  double* kappa_;        //!< absorbsion coefficient [m^-1]
-  double* sigma_;        //!< scattering coefficient [m^-1]
-  double* Ib_;           //!< blackbody intentsity [W/m^2 or W/(m^2 cm)]
-  //@}
-
-  //@{ @name Field data:
-  static FieldData* AbsorptionData;  //!< container class for absorbsion data
-  static FieldData* ScatterData;     //!< container class for scatter data
-  static FieldData* BlackbodyData;   //!< container class for blackbody data
-  static TSpecificFunctor<FieldData>* func_kappa; //!< functor to return absorption coef
-  static TSpecificFunctor<FieldData>* func_sigma; //!< functor to return scatter coef
-  static TSpecificFunctor<FieldData>* func_Ib;    //!< functor to return blackbody
-  //@}
-
-
- public:
-
-  //@{ @name Public objects:
-  static int Nband;          //!< the total number of frequency bands (and quadrature points for SNBCK)
-  static SNBCK* SNBCKdata;   //!< statistical narrow band model 
-  static double Absorb_Type; //!< flag for absorption model
-  //@}
-
-
-  //@{ @name Creation, copy, and assignment constructors.
-  //! Creation constructor.
-  Medium2D_State() : kappa_(NULL), sigma_(NULL), Ib_(NULL)
-    { Allocate(); }
-
-  //! Copy constructor.
-  Medium2D_State( const Medium2D_State &U ) : kappa_(NULL), sigma_(NULL), 
-					      Ib_(NULL)
-    { Allocate(); if( this != &U) Copy(U); }
-  
-  //! Destructor.
-  ~Medium2D_State() { Deallocate(); }
-  //@}
-
-  //@{ @name Useful operators.
-  //! Copy non solution state operator.
-  void Copy( const Medium2D_State &U );
-
-  //! Zero operator.
-  void Zero();  
-
-  //! Initialer
-  void SetInitialValues( const double &Pressure,
-			 const double &Temperature,
-			 const double &xco,
-			 const double &xh2o,
-			 const double &xco2,
-			 const double &xo2,
-			 const double &fsoot,
-			 const double &AbsorptionCoef,
-			 const double &ScatteringCoef);
-  //@}
-
-  //@{ @name Allocators and deallocators
-  //! memory allocation / deallocation for the private arrays
-  void Allocate();
-  void Deallocate();
-  //! memory allocation / deallocation for the field data arrays
-  static void AllocateStatic();
-  static void DeallocateStatic();
-  //! memory allocation / deallocation for the SNBCK data object
-  static void AllocateSNBCK();
-  static void DeallocateSNBCK();
-  //! deallocate all static variables
-  static void DeallocateAllStatic() { DeallocateSNBCK(); DeallocateStatic(); }
-  //@}
-
-  //@{ @name State functions.
-  //! Return absorbsion coefficient
-  double kappa(const int &v) const { return kappa_[v]; };
-  //! Return scatter coefficient
-  double sigma(const int &v) const { return sigma_[v]; };
-  //! Return blackbody intensity
-  double Ib(const int &v) const { return Ib_[v]; };
-  //! Return extinction coefficient
-  double beta(const int &v) const { return (kappa_[v] + sigma_[v]); }
-  //@}
-
-  //@{ @name Static functions
-  //! Setup function
-  static void SetupStatic( const int &i_Absorb_Type, 
-			   const SNBCK_Input_Parameters &SNBCK_IP,
-			   const char* PATH);
-
-  //! Set all all fields to the same function
-  static void SetAllFields(double (FieldData::*_fpt)(const Vector2D &r));
-
-  //! Return the state field
-  double AbsorptionField(const Vector2D & r, const int &v)
-  { return func_kappa[v](r); }
-  double ScatterField(const Vector2D & r, const int &v)
-  { return func_sigma[v](r); }
-  double BlackbodyField(const Vector2D & r, const int &v)
-  { return func_Ib[v](r); }
-  
-  //! Compute medium state at location
-  friend void GetState(Medium2D_State &M, const Vector2D &r);
-  Medium2D_State GetState(const Vector2D &r);
-  //@}
-
-  //@{ @name Input-output operators.
-  friend ostream& operator << (ostream &out_file, const Medium2D_State &U);
-  friend istream& operator >> (istream &in_file,  Medium2D_State &U);
- //@}
-
-
-
-};
-
-/********************************************************
- * Copy function.                                       *
- ********************************************************/
-inline void Medium2D_State :: Copy( const Medium2D_State &U ) {
-  for ( int i=0; i<Nband; i++ )   { 
-    Ib_[i] = U.Ib_[i];
-    kappa_[i] = U.kappa_[i];
-    sigma_[i] = U.sigma_[i];
-  }
-}
-
-/********************************************************
- * Zero operator.                                       *
- ********************************************************/
-inline void Medium2D_State :: Zero() {
-  for(int i=0; i<Nband; i++) {
-    kappa_[i] = ZERO;  
-    sigma_[i] = ZERO;
-    Ib_[i]    = ZERO;  
-  }
-}  
-
-/********************************************************
- * Array allocator and deallocator for dynamic arrays.  *
- ********************************************************/
-inline void Medium2D_State :: Allocate()
-{
-  // deallocate first
-  Deallocate();
-
-  // create the arrays
-  if (Nband>0) {
-    Ib_ = new double[Nband];
-    kappa_ = new double[Nband];
-    sigma_ = new double[Nband];
-  }
-}
-
-inline void Medium2D_State :: Deallocate()
-{
-  if ( kappa_ != NULL ) { delete[] kappa_;   kappa_ = NULL; }
-  if ( sigma_ != NULL ) { delete[] sigma_;   sigma_ = NULL; }
-  if (    Ib_ != NULL ) { delete[] Ib_;         Ib_ = NULL; }
-}
-
-
-inline void Medium2D_State :: AllocateStatic()
-{
-  // deallocate first
-  DeallocateStatic();
-
-  // allocate
-  AbsorptionData = new FieldData[Nband];
-  ScatterData    = new FieldData[Nband];
-  BlackbodyData  = new FieldData[Nband];
-  func_kappa     = new TSpecificFunctor<FieldData>[Nband];
-  func_sigma     = new TSpecificFunctor<FieldData>[Nband];
-  func_Ib        = new TSpecificFunctor<FieldData>[Nband];
-}
-
-inline void Medium2D_State :: DeallocateStatic()
-{
-  if ( AbsorptionData != NULL ) { delete[] AbsorptionData; AbsorptionData = NULL; }
-  if ( ScatterData    != NULL ) { delete[] ScatterData;    ScatterData    = NULL; }
-  if ( BlackbodyData  != NULL ) { delete[] BlackbodyData;  BlackbodyData  = NULL; }
-  if ( func_kappa     != NULL ) { delete[] func_kappa;     func_kappa     = NULL; }
-  if ( func_sigma     != NULL ) { delete[] func_sigma;     func_sigma     = NULL; }
-  if ( func_Ib        != NULL ) { delete[] func_Ib;        func_Ib        = NULL; }
-}
-
-inline void Medium2D_State :: AllocateSNBCK()
-{ 
-  DeallocateSNBCK();
-  SNBCKdata = new SNBCK; 
-}
-
-inline void Medium2D_State :: DeallocateSNBCK()
-{ 
-  if ( SNBCKdata != NULL ) { delete SNBCKdata; SNBCKdata = NULL;}  
-}
-
-
-/********************************************************
- * Compute values and initialize state.                 *
- ********************************************************/
-inline void Medium2D_State :: SetInitialValues( const double &Pressure,
-						const double &Temperature,
-						const double &xco,
-						const double &xh2o,
-						const double &xco2,
-						const double &xo2,
-						const double &fsoot,
-						const double &AbsorptionCoef,
-						const double &ScatteringCoef)
-{
-
-  //------------------------------------------------
-  // Absorbsion coefficient, Blackbody intensity 
-  //------------------------------------------------
-  // Use SNBCK
-  if (Absorb_Type == RTE2D_ABSORB_SNBCK) {
-    SNBCKdata->CalculateAbsorb( Pressure/PRESSURE_STDATM, //[atm]
-				Temperature,              //[K]
-				xco,
-				xh2o,
-				xco2,
-				xo2,
-				fsoot,
-				kappa_ );
-    SNBCKdata->CalculatePlanck( Temperature, Ib_ );
-
-  // Use Gray Gas (ie. constant)
-  } else if (Absorb_Type == RTE2D_ABSORB_GRAY) {
-    for (int v=0; v<Nband; v++) {
-      kappa_[v] = AbsorptionCoef;
-      Ib_   [v] = BlackBody(Temperature);
-    } // endfor
-
-  // error
-  } else{
-    cerr << "Medium2D_State::SetInitialValues() - Invalid flag for Absorbsion model\n";
-    exit(1);
-  }
-
-  //------------------------------------------------
-  // Scattering coefficient 
-  //------------------------------------------------
-  // scattering coefficient always assumed gray
-  for (int v=0; v<Nband; v++) { sigma_[v] = ScatteringCoef; }
-
-}
-
-
-
-/********************************************************
- * Setup Static variables.                              *
- ********************************************************/
-inline void Medium2D_State :: SetupStatic( const int &i_Absorb_Type, 
-					   const SNBCK_Input_Parameters &SNBCK_IP,
-					   const char* PATH) {
-
-  //------------------------------------------------
-  // Absorbsion model 
-  //------------------------------------------------
-  // set the absorption type flag
-  Absorb_Type = i_Absorb_Type;
-  
-  // GRAY
-  if (Absorb_Type == RTE2D_ABSORB_GRAY) {
-    Nband = 1;
-
-  // SNBCK
-  } else if (Absorb_Type == RTE2D_ABSORB_SNBCK) {
-    AllocateSNBCK();
-    SNBCKdata->Setup(SNBCK_IP, PATH);
-    Nband = SNBCKdata->NumVar();
-
-  // ERROR
-  } else {
-    cerr << "Medium2D_State::SetupState - Invalid flag for gas type\n";
-    exit(-1);
-  } // endif
-
-
-  //------------------------------------------------
-  // Allocate Scalar fields 
-  //------------------------------------------------
-  Medium2D_State::AllocateStatic();
-
-}
-
-
-/********************************************************
- * Set all scalar fields to the same function.          *
- ********************************************************/
-inline void Medium2D_State :: SetAllFields(double (FieldData::*func)(const Vector2D &r))
-{
-  for (int i=0; i<Nband; i++) {
-    func_kappa[i].Set(&AbsorptionData[i], func);
-    func_sigma[i].Set(&ScatterData[i], func);
-    func_Ib[i].Set(&BlackbodyData[i], func);
-  }
-}
-
-
-/********************************************************
- * Compute medium state at location.                    *
- ********************************************************/
-inline void GetState(Medium2D_State &M, const Vector2D &r) 
-{
-  // compute
-  for (int i=0; i<M.Nband; i++){
-    M.kappa_[i] = M.AbsorptionField(r,i);  
-    M.sigma_[i] = M.ScatterField(r,i);
-    M.Ib_[i]    = M.BlackbodyField(r,i);
-  } // endfor
-}
-
-inline Medium2D_State Medium2D_State :: GetState(const Vector2D &r) 
-{
-  // declares
-  Medium2D_State M;
-  
-  // compute
-  for (int i=0; i<Nband; i++){
-    M.kappa_[i] = AbsorptionField(r,i);
-    M.sigma_[i] = ScatterField(r,i);
-    M.Ib_[i]    = BlackbodyField(r,i);
-  } // endfor
-
-  // return result
-  return M;
-}
-
-/********************************************************
- * Input/Output operators.                              *
- ********************************************************/
-inline ostream& operator << (ostream &out_file, const Medium2D_State &U) 
-{
-  out_file.precision(10);
-  out_file.setf(ios::scientific);
-  for( int i=0; i<U.Nband; i++) out_file<<" "<<U.Ib_[i];
-  for( int i=0; i<U.Nband; i++) out_file<<" "<<U.kappa_[i];
-  for( int i=0; i<U.Nband; i++) out_file<<" "<<U.sigma_[i];
-  out_file.unsetf(ios::scientific);
-  return (out_file);
-}
-
-inline istream& operator >> (istream &in_file,  Medium2D_State &U) 
-{
-  in_file.setf(ios::skipws);
-  for( int i=0; i<U.Nband; i++) in_file >> U.Ib_[i];
-  for( int i=0; i<U.Nband; i++) in_file >> U.kappa_[i];
-  for( int i=0; i<U.Nband; i++) in_file >> U.sigma_[i];
-  in_file.unsetf(ios::skipws);
-  return (in_file);
-}
 
 
 /***********************************************************************/
@@ -976,10 +573,10 @@ inline Vector2D Rte2D_State :: Qr( const Medium2D_State &M )
 	  sum -= omega[m][l] * In(v,m,l);
 
       // add blackbody
-      sum += FOUR*PI*M.Ib(v);
+      sum += FOUR*PI*M.Ib[v];
 
       // the radiation source term
-      source += sum*M.kappa(v);
+      source += sum*M.kappa[v];
 
     } // endfor - bands
 
@@ -1004,14 +601,14 @@ inline Vector2D Rte2D_State :: Qr( const Medium2D_State &M )
 	    sum -= omega[m][l] * In(v,m,l);
 	
 	// add blackbody
-	sum += FOUR*PI*M.Ib(v);
+	sum += FOUR*PI*M.Ib[v];
 	
 	// the contribution of the source term at this point
 	// Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
 	vv = M.SNBCKdata->band_index[v]; // SNBCK band index
 	ii = M.SNBCKdata->quad_index[v]; // SNBCK quad index
 	source += M.SNBCKdata->BandWidth[vv]*M.SNBCKdata->Weight(vv,ii) * 
-	          M.kappa( v)* sum;
+	          M.kappa[v]* sum;
 
     } // endfor - bands 
 
@@ -1601,7 +1198,7 @@ inline Rte2D_State Rte2D_State :: S(const Medium2D_State &M) const
       for (int l=0; l<Nazim[m]; l++) {
 
 	// add blackbody emission
-	Temp.In(v,m,l)  = M.kappa(v) * M.Ib(v);
+	Temp.In(v,m,l)  = M.kappa[v] * M.Ib[v];
 
 	// subtract absorbsion and out-scattering
 	Temp.In(v,m,l) -= beta * In(v,m,l);
@@ -1609,13 +1206,13 @@ inline Rte2D_State Rte2D_State :: S(const Medium2D_State &M) const
 	//
 	// add in-scattering (loop over incoming dirs)
 	//
-	if (M.sigma(v)>TOLER) {
+	if (M.sigma[v]>TOLER) {
 	  temp = ZERO;
 	  for (int p=0; p<Npolar; p++) 
 	    for (int q=0; q<Nazim[p]; q++) {
 	      temp += In(v,p,q) * Phi[v][p][q][m][l] * omega[p][q];
 	    } // endfor - in-dirs
-	  temp *= M.sigma(v) / (FOUR * PI);
+	  temp *= M.sigma[v] / (FOUR * PI);
 	  Temp.In(v,m,l) += temp;
 	} // endif - in-scat 
 	  
@@ -1649,10 +1246,10 @@ inline double Rte2D_State :: S(const Medium2D_State &M,
   double temp, sum;
 
   // add blackbody emission
-  temp = M.kappa(v) * M.Ib(v);
+  temp = M.kappa[v] * M.Ib[v];
 
   // add in-scattering
-  if (M.sigma(v)>TOLER) {
+  if (M.sigma[v]>TOLER) {
 
     //
     // loop over incoming directions
@@ -1668,7 +1265,7 @@ inline double Rte2D_State :: S(const Medium2D_State &M,
       } // endfor - in-dirs
 
     // compute
-    sum *= M.sigma(v) / (FOUR * PI);
+    sum *= M.sigma[v] / (FOUR * PI);
     temp += sum;
 
   } // endif - in-scat
@@ -1710,8 +1307,8 @@ inline void Rte2D_State :: dSdU(DenseMatrix &dSdU,
 	//
 	// in-scattering (loop over incoming directions)
 	//
-	if (M.sigma(v)>TOLER) {
-	  temp = M.sigma(v) * omega[m][l] / (FOUR * PI);
+	if (M.sigma[v]>TOLER) {
+	  temp = M.sigma[v] * omega[m][l] / (FOUR * PI);
 	  for (int p=0; p<Npolar; p++) 
 	    for (int q=0; q<Nazim[p]; q++){
 	      dSdU(Index[v][m][l],Index[v][p][q]) += Phi[v][p][q][m][l] * omega[p][q] * temp;
@@ -1745,10 +1342,10 @@ inline double Rte2D_State :: dSdU(const Medium2D_State &M,
   //
   // in-scattering
   //
-  if (M.sigma(v)>TOLER) {
+  if (M.sigma[v]>TOLER) {
     
     // add forward scattering
-    temp -= M.sigma(v) * omega[m][l] / (FOUR * PI) *
+    temp -= M.sigma[v] * omega[m][l] / (FOUR * PI) *
             Phi[v][m][l][m][l] * omega[m][l];
     
   } /* endif - in-scat */
@@ -2100,13 +1697,5 @@ extern int Prolong_NonSol( const Rte2D_State &Uc1, const Vector2D &Xc1,
 			   const Rte2D_State &Uc3, const Vector2D &Xc3,
 			   const Rte2D_State &Uc4, const Vector2D &Xc4,
 			   const Vector2D XcP, Rte2D_State &Uf );
-
-  
-
-/********************************************************
- * Miscellaneous Scattering Functions                   *
- ********************************************************/
-extern double Legendre( const double &x, const int &n);
-extern double* PhaseFunc( const int type, int &n);
 
 #endif //end _RTE2D_STATE_INCLUDED 

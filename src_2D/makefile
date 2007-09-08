@@ -299,6 +299,7 @@ SRC_ELECTROSTATIC_EXE = $(ELECTROSTATIC_DIR)Electrostatic2D.cc
 
 # Rte2D:
 SRC_RTE = $(RTE_DIR)Rte2DState.cc \
+	  $(RTE_DIR)Medium2DState.cc \
           $(RTE_DIR)Rte2DInput.cc \
           $(RTE_DIR)Rte2DQuad.cc \
           $(RTE_DIR)Rte2DQuadSingleBlock.cc \

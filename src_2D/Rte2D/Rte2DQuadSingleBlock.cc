@@ -57,6 +57,8 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk) {
 
 #ifdef _MPI_VERSION
     int NUM_VAR_RTE2D = SolnBlk.NumVar(); 
+    int NUM_VAR_MEDIUM2D = Medium2D_State::NUM_VAR_MEDIUM2D; 
+    int NUM_VAR = NUM_VAR_RTE2D + NUM_VAR_MEDIUM2D;
     int i, j, ni, nj, ng, nr, block_allocated, buffer_size;
     double *buffer;
 
@@ -108,12 +110,18 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk) {
 
     Broadcast_Quad_Block(SolnBlk.Grid);
 
+    /* Set the grid 2D to quasi-3D scaling parameters*/
+
+    if (block_allocated && CFFC_MPI::This_Processor_Number != Source_CPU) {
+      SolnBlk.ScaleGridTo3D();
+    } /* endif */
+
     /* Broadcast the solution state variables. */
 
     if (block_allocated) {
        ni = (SolnBlk.ICu+SolnBlk.Nghost) - (SolnBlk.ICl-SolnBlk.Nghost) + 1;
        nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
-       buffer = new double[NUM_VAR_RTE2D*ni*nj];
+       buffer = new double[NUM_VAR*ni*nj];
 
        if (CFFC_Primary_MPI_Processor()) {
           buffer_size = 0;
@@ -125,13 +133,17 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk) {
 		  buffer[buffer_size] = SolnBlk.U[i][j][k+1];
 		  buffer_size = buffer_size + 1;
 		}	      
+		for ( int k = 0; k < NUM_VAR_MEDIUM2D; ++k) {	
+		  buffer[buffer_size] = SolnBlk.M[i][j][k+1];
+		  buffer_size = buffer_size + 1;
+		}	      
 		/* End Rte2D Specific */
 
               } /* endfor */
           } /* endfor */
        } /* endif */
 
-       buffer_size = NUM_VAR_RTE2D*ni*nj;
+       buffer_size = NUM_VAR*ni*nj;
        MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
 
        if (!CFFC_Primary_MPI_Processor()) {
@@ -142,6 +154,10 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk) {
 		/* Rte2D Specific */
 		for ( int k = 0 ; k < NUM_VAR_RTE2D; ++ k) {	
 		  SolnBlk.U[i][j][k+1]= buffer[buffer_size];
+		  buffer_size = buffer_size + 1;
+		}
+		for ( int k = 0 ; k < NUM_VAR_MEDIUM2D; ++ k) {	
+		  SolnBlk.M[i][j][k+1]= buffer[buffer_size];
 		  buffer_size = buffer_size + 1;
 		}
 		/* End Rte2D Specific */
@@ -264,6 +280,8 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk,
                               const int Source_CPU) {
 
     int NUM_VAR_RTE2D = SolnBlk.NumVar(); 
+    int NUM_VAR_MEDIUM2D = Medium2D_State::NUM_VAR_MEDIUM2D; 
+    int NUM_VAR = NUM_VAR_RTE2D + NUM_VAR_MEDIUM2D;
     int Source_Rank = 0;
     int i, j, ni, nj, ng, nr, block_allocated, buffer_size;
     double *buffer;
@@ -316,12 +334,19 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk,
 
     Broadcast_Quad_Block(SolnBlk.Grid, Communicator, Source_CPU);
 
+    /* Set the grid 2D to quasi-3D scaling parameters*/
+
+    if (block_allocated && CFFC_MPI::This_Processor_Number != Source_CPU) {
+      SolnBlk.ScaleGridTo3D();
+    } /* endif */
+
+
     /* Broadcast the solution state variables. */
 
     if (block_allocated) {
        ni = (SolnBlk.ICu+SolnBlk.Nghost) - (SolnBlk.ICl-SolnBlk.Nghost) + 1;
        nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
-       buffer = new double[NUM_VAR_RTE2D*ni*nj];
+       buffer = new double[NUM_VAR*ni*nj];
 
        if (CFFC_MPI::This_Processor_Number == Source_CPU) {
           buffer_size = 0;
@@ -333,13 +358,17 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk,
 		  buffer[buffer_size] = SolnBlk.U[i][j][k+1]; 
 		  buffer_size = buffer_size + 1;
 		}
+		for ( int k=0; k<NUM_VAR_MEDIUM2D; ++k) {	
+		  buffer[buffer_size] = SolnBlk.M[i][j][k+1]; 
+		  buffer_size = buffer_size + 1;
+		}
 		/* End Rte2D Specific */
 
               } /* endfor */
           } /* endfor */
        } /* endif */
 
-       buffer_size = NUM_VAR_RTE2D*ni*nj;
+       buffer_size = NUM_VAR*ni*nj;
        Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
 
        if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
@@ -350,6 +379,10 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk,
 		/* Rte2D Specific */
 		for ( int k=0; k<NUM_VAR_RTE2D; ++k) {	       
 		  SolnBlk.U[i][j][k+1]= buffer[buffer_size];
+		  buffer_size = buffer_size + 1;
+		}
+		for ( int k=0; k<NUM_VAR_MEDIUM2D; ++k) {	       
+		  SolnBlk.M[i][j][k+1]= buffer[buffer_size];
 		  buffer_size = buffer_size + 1;
 		}
 		/* End Rte2D Specific */
@@ -452,7 +485,9 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk,
 
        delete []buffer; 
        buffer = NULL;
+
     } /* endif */
+
 
 }
 #endif
@@ -498,12 +533,17 @@ void Copy_Solution_Block(Rte2D_Quad_Block &SolnBlk1,
 
     Copy_Quad_Block(SolnBlk1.Grid, SolnBlk2.Grid);
 
+    /* Set the grid 2D to quasi-3D scaling parameters*/
+      
+    SolnBlk1.ScaleGridTo3D();
+
     /* Copy the solution information from SolnBlk2 to SolnBlk1. */
 
     if (SolnBlk2.U != NULL) {
        for ( j  = SolnBlk1.JCl-SolnBlk1.Nghost ; j <= SolnBlk1.JCu+SolnBlk1.Nghost ; ++j ) {
           for ( i = SolnBlk1.ICl-SolnBlk1.Nghost ; i <= SolnBlk1.ICu+SolnBlk1.Nghost ; ++i ) {
              SolnBlk1.U[i][j] = SolnBlk2.U[i][j];
+             SolnBlk1.M[i][j] = SolnBlk2.M[i][j];
              for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_RTE2D-1 ; ++k ) {
 	        SolnBlk1.dUdt[i][j][k] = SolnBlk2.dUdt[i][j][k];
              } /* endfor */
@@ -668,6 +708,10 @@ int Prolong_Solution_Block(Rte2D_Quad_Block &SolnBlk_Fine,
            } /* endfor */
        } /* endfor */
 
+       // and the medium state
+       PrescribeFields(SolnBlk_Fine);
+
+      // boundary ref states
        for ( j  = j_min-SolnBlk_Original.Nghost/2; j <= j_max+SolnBlk_Original.Nghost/2 ; ++j ) {
            SolnBlk_Fine.UoW[2*(j-j_min)+SolnBlk_Fine.JCl  ]
               = SolnBlk_Original.UoW[j];
@@ -959,6 +1003,9 @@ int Restrict_Solution_Block(Rte2D_Quad_Block &SolnBlk_Coarse,
 	                                             //SolnBlk_Coarse.Grid.Cell[i_coarse][j_coarse].A;
           } /* endfor */
       } /* endfor */
+
+      // and the medium state
+      PrescribeFields(SolnBlk_Coarse);
 
       for ( j = SolnBlk_Original_NE.JCl-SolnBlk_Original_NE.Nghost; 
             j <= SolnBlk_Original_NE.JCu+SolnBlk_Original_NE.Nghost ; j += 2 ) {
@@ -1358,19 +1405,18 @@ void ICs(Rte2D_Quad_Block &SolnBlk,
 }
 
 /********************************************************
- * Routine: ICs_Medium                                  *
+ * Routine: PrescribeFields                             *
  *                                                      *
  * Assigns initial conditions and data to the           *
  * solution variables of the specified quadrilateral    *
  * solution block.  This is for the Medium state.       *
  *                                                      *
  ********************************************************/
-void ICs_Medium(Rte2D_Quad_Block &SolnBlk,
-		Rte2D_Input_Parameters &IP) 
+void PrescribeFields(Rte2D_Quad_Block &SolnBlk) 
 {
     for (int j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for (int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	//GetState(SolnBlk.M[i][j]);
+	SolnBlk.M[i][j].GetState(SolnBlk.Grid.Cell[i][j].Xc);
       } // endfor
     } // endfor 
 }
@@ -3714,6 +3760,7 @@ void Fix_Refined_Block_Boundaries(Rte2D_Quad_Block SolnBlk,
 	    (SolnBlk.Grid.Cell[i][SolnBlk.JCu].A*SolnBlk.Sp[i][SolnBlk.JCu] /
 	     (SolnBlk.Grid.area(i, SolnBlk.JCu)*SolnBlk.Sp_c(i, SolnBlk.JCu))) *
 	    SolnBlk.U[i][SolnBlk.JCu];
+	  SolnBlk.M[i][SolnBlk.JCu].GetState(SolnBlk.Grid.centroid(i,SolnBlk.JCu));
        } /* endfor */
     } /* endif */
 
@@ -3736,6 +3783,7 @@ void Fix_Refined_Block_Boundaries(Rte2D_Quad_Block SolnBlk,
 	    (SolnBlk.Grid.Cell[i][SolnBlk.JCl].A*SolnBlk.Sp[i][SolnBlk.JCl] /
              (SolnBlk.Grid.area(i, SolnBlk.JCl)*SolnBlk.Sp_c(i, SolnBlk.JCl))) * 
 	    SolnBlk.U[i][SolnBlk.JCl];
+	  SolnBlk.M[i][SolnBlk.JCl].GetState(SolnBlk.Grid.centroid(i,SolnBlk.JCl));
        } /* endfor */
     } /* endif */
 
@@ -3758,6 +3806,7 @@ void Fix_Refined_Block_Boundaries(Rte2D_Quad_Block SolnBlk,
 	    (SolnBlk.Grid.Cell[SolnBlk.ICu][j].A*SolnBlk.Sp[SolnBlk.ICu][j] /
              (SolnBlk.Grid.area(SolnBlk.ICu, j)*SolnBlk.Sp_c(SolnBlk.ICu, j))) * 
 	    SolnBlk.U[SolnBlk.ICu][j];
+	  SolnBlk.M[SolnBlk.ICu][j].GetState(SolnBlk.Grid.centroid(SolnBlk.ICu,j));
        } /* endfor */
     } /* endif */
 
@@ -3780,6 +3829,7 @@ void Fix_Refined_Block_Boundaries(Rte2D_Quad_Block SolnBlk,
 	    (SolnBlk.Grid.Cell[SolnBlk.ICl][j].A*SolnBlk.Sp[SolnBlk.ICl][j] /
              (SolnBlk.Grid.area(SolnBlk.ICl, j)*SolnBlk.Sp_c(SolnBlk.ICl, j))) * 
 	    SolnBlk.U[SolnBlk.ICl][j];
+	  SolnBlk.M[SolnBlk.ICl][j].GetState(SolnBlk.Grid.centroid(SolnBlk.ICl,j));
        } /* endfor */
     } /* endif */
 
@@ -3836,6 +3886,7 @@ void Unfix_Refined_Block_Boundaries(Rte2D_Quad_Block SolnBlk) {
 	    (SolnBlk.Grid.Cell[i][SolnBlk.JCu].A*SolnBlk.Sp[i][SolnBlk.JCu] /
              (SolnBlk.Grid.area(i, SolnBlk.JCu)*SolnBlk.Sp_c(i, SolnBlk.JCu))) *
 	    SolnBlk.U[i][SolnBlk.JCu];
+	  SolnBlk.M[i][SolnBlk.JCu].GetState(SolnBlk.Grid.centroid(i,SolnBlk.JCu));
        } /* endfor */
     } /* endif */
 
@@ -3861,6 +3912,7 @@ void Unfix_Refined_Block_Boundaries(Rte2D_Quad_Block SolnBlk) {
 	    (SolnBlk.Grid.Cell[i][SolnBlk.JCl].A*SolnBlk.Sp[i][SolnBlk.JCl] /
              (SolnBlk.Grid.area(i, SolnBlk.JCl)*SolnBlk.Sp_c(i, SolnBlk.JCl))) *
 	    SolnBlk.U[i][SolnBlk.JCl];
+	  SolnBlk.M[i][SolnBlk.JCl].GetState(SolnBlk.Grid.centroid(i,SolnBlk.JCl));
        } /* endfor */
     } /* endif */
 
@@ -3886,6 +3938,7 @@ void Unfix_Refined_Block_Boundaries(Rte2D_Quad_Block SolnBlk) {
 	    (SolnBlk.Grid.Cell[SolnBlk.ICu][j].A*SolnBlk.Sp[SolnBlk.ICu][j] /
              (SolnBlk.Grid.area(SolnBlk.ICu, j)*SolnBlk.Sp_c(SolnBlk.ICu, j))) *
 	    SolnBlk.U[SolnBlk.ICu][j];
+	  SolnBlk.M[SolnBlk.ICu][j].GetState(SolnBlk.Grid.centroid(SolnBlk.ICu,j));
        } /* endfor */
     } /* endif */
 
@@ -3911,6 +3964,7 @@ void Unfix_Refined_Block_Boundaries(Rte2D_Quad_Block SolnBlk) {
 	    (SolnBlk.Grid.Cell[SolnBlk.ICl][j].A*SolnBlk.Sp[SolnBlk.ICl][j] /
              (SolnBlk.Grid.area(SolnBlk.ICl, j)*SolnBlk.Sp_c(SolnBlk.ICl, j))) *
 	    SolnBlk.U[SolnBlk.ICl][j];
+	  SolnBlk.M[SolnBlk.ICl][j].GetState(SolnBlk.Grid.centroid(SolnBlk.ICl,j));
        } /* endfor */
     } /* endif */
 

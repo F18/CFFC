@@ -393,6 +393,14 @@ class FAS_Multigrid2D_Solver {
 			     CPUTime &total_cpu_time,
 			     ofstream &residual_file);
 
+  /////////////////////////////////////////////////
+  // Extra routines for specialization.          //
+  /////////////////////////////////////////////////
+  //! perform some additional block setup during FAS_Multigrid2D_Solver::allocate
+  void Additional_Solution_Block_Setup(Quad_Soln_Block &SolnBlk,
+				       Quad_Soln_Input_Parameters *ip) 
+  { /* EMPTY */ }
+
 };
 
 /**********************************************************************
@@ -607,6 +615,9 @@ allocate(Quad_Soln_Block *FinestBlks,
 	// Create the coarse grid mesh.
 	Half_Mesh_Resolution(Local_SolnBlk[level][nb].Grid,
 			     Local_SolnBlk[level-1][nb].Grid);
+
+	// perform additional setup on Local Solution Block
+	Additional_Solution_Block_Setup(Local_SolnBlk[level][nb],ip);
 
 	// Allocate the coarse grid FAS multigrid solution block.
 	MG_SolnBlk[level][nb].allocate(Local_SolnBlk[level][nb].NCi,

@@ -322,6 +322,20 @@ inline void Rte2D_Input_Parameters::SetupInputState()
 		      AbsorptionCoef,
 		      ScatteringCoef);
   Uo.SetInitialValues(Intensity);
+
+  //
+  // setup Medium2D fields
+  //
+  // CONSTANT
+  if (i_ICs_Medium == IC_UNIFORM  || i_ICs_Medium == IC_CONSTANT) {
+    Medium2D_State::SetAllFieldsConstant( Mo );
+    
+  // ERROR
+  } else {
+    cerr << "Rte2D_Input_Parameters::SetupInputState - Invalid flag for field type\n";
+    exit(-1);
+  } // endif
+
 }
 
 

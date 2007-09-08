@@ -93,11 +93,11 @@ template <class TClass> class TSpecificFunctor : public TFunctor {
 
   // override operator "()"
   virtual double operator()(const Vector2D &r)
-  { (*pt2Object.*fpt)(r);};              // execute member function
+  { return (*pt2Object.*fpt)(r);};              // execute member function
   
   // override function "Call"
   virtual double Call(const Vector2D &r)
-  { (*pt2Object.*fpt)(r);};             // execute member function
+  { return (*pt2Object.*fpt)(r);};             // execute member function
 
 };
 
@@ -121,13 +121,10 @@ template <class TClass> class TSpecificFunctor : public TFunctor {
 /***********************************************************************/
 class FieldData {
 
- private:
+ public:
 
   //objects
   double val; // constant Value
-
-
- public:
 
   // constructors
   FieldData():val(0) {};

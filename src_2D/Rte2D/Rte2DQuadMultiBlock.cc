@@ -118,7 +118,7 @@ void ICs(Rte2D_Quad_Block *Soln_ptr,
           ICs(Soln_ptr[i], Input_Parameters);
 
           // Set initial data.
-          ICs_Medium(Soln_ptr[i], Input_Parameters);
+          PrescribeFields(Soln_ptr[i]);
 
        } /* endif */
     }  /* endfor */
@@ -185,7 +185,6 @@ int Read_Restart_Solution(Rte2D_Quad_Block *Soln_ptr,
           restart_file.unsetf(ios::skipws);
 
 	  //------------------------ Rte2D Specific -------------------------//
-
           restart_file.setf(ios::skipws);
 	  restart_file >> Input_Parameters.i_RTE_Solver;	    
 	  restart_file >> Input_Parameters.Number_of_Angles_Mdir;	    
@@ -198,7 +197,6 @@ int Read_Restart_Solution(Rte2D_Quad_Block *Soln_ptr,
 
 	  // Setup conserved and medium state
 	  Input_Parameters.SetupInputState();
-	 
 	  //---------------------- End Rte2D Specific -----------------------//
 
           if (!i_new_time_set) {
@@ -215,6 +213,12 @@ int Read_Restart_Solution(Rte2D_Quad_Block *Soln_ptr,
 
           // Close restart file.
           restart_file.close();
+
+	  //------------------------ Rte2D Specific -------------------------//
+	  // prescribe the medium field data
+	  PrescribeFields(Soln_ptr[i]);
+	  //---------------------- End Rte2D Specific -----------------------//
+
        } /* endif */
     }  /* endfor */
 
