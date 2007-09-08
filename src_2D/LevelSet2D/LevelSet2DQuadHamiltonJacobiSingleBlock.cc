@@ -177,11 +177,14 @@ int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
 	SolnBlk.dUdy[i][j].psi = sqrt(max(sqr(min(SolnBlk.dUdxm[i][j].psi,ZERO)),sqr(max(SolnBlk.dUdxp[i][j].psi,ZERO))) +
 				      max(sqr(min(SolnBlk.dUdym[i][j].psi,ZERO)),sqr(max(SolnBlk.dUdyp[i][j].psi,ZERO))));
 
-	// Add the front propagation contribution to the level set
- 	// function solution residual:
+	// Add the front propagation contribution to the level set function solution residual.
  	SolnBlk.dUdt[i][j][k_residual].psi -= (IP.Hamilton_Jacobi_CFL_Number*SolnBlk.dt[i][j])*
 	                                      (max(SolnBlk.U[i][j].F,ZERO)*SolnBlk.dUdx[i][j].psi + 
 					       min(SolnBlk.U[i][j].F,ZERO)*SolnBlk.dUdy[i][j].psi);
+
+	// Add the curvature-based flow contribution to the level set function solution residual.
+	SolnBlk.dUdt[i][j][k_residual].psi -= (IP.Hamilton_Jacobi_CFL_Number*SolnBlk.dt[i][j])*
+	  (max(-IP.Curvature_Motion*SolnBlk.kappa[i][j].psi,ZERO)*SolnBlk.dUdx[i][j].psi + min(-IP.Curvature_Motion*SolnBlk.kappa[i][j].psi,ZERO)*SolnBlk.dUdy[i][j].psi);
 
 	// Add the convective/bulk-velocity flow contribution to the
 	// level set function solution residual.
@@ -193,8 +196,8 @@ int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
 
 	// Add the curvature-based flow contribution to the
 	// level set function solution residual.
-	SolnBlk.dUdt[i][j][k_residual].psi += (IP.Hamilton_Jacobi_CFL_Number*SolnBlk.dt[i][j])*
-	                                      IP.Curvature_Motion*SolnBlk.kappa[i][j].psi;
+// 	SolnBlk.dUdt[i][j][k_residual].psi += (IP.Hamilton_Jacobi_CFL_Number*SolnBlk.dt[i][j])*
+// 	                                      IP.Curvature_Motion*SolnBlk.kappa[i][j].psi*
 	
       }
 

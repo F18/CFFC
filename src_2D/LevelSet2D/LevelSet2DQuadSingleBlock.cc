@@ -793,34 +793,28 @@ int Calculate_Sign_Function(LevelSet2D_Quad_Block &SolnBlk,
     }
     break;
   case EIKONAL_SIGN_FUNCTION_SMEARED :
+    // Sussman, Smereka, Osher. J. comput. Phys. 114, 146-159 (1994).
     for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
       for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
 	SolnBlk.sign[i][j] = SolnBlk.U[i][j].psi/sqrt(sqr(SolnBlk.U[i][j].psi) + sqr(dx));
       }
     }
     break;
-  case EIKONAL_SIGN_FUNCTION_SMEARED_NEW :
+  case EIKONAL_SIGN_FUNCTION_SMEARED_RUUTH :
+    // Colin Macdonald and Steven J. Ruuth.
     for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
       for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
-	SolnBlk.sign[i][j] = SolnBlk.U[i][j].psi/sqrt(sqr(SolnBlk.U[i][j].psi)+dx);  // suggested by Banff guy
+	SolnBlk.sign[i][j] = SolnBlk.U[i][j].psi/sqrt(sqr(SolnBlk.Uo[i][j].psi)+dx);
       }
     }
     break;
   case EIKONAL_SIGN_FUNCTION_DERIVATIVE :
+    // Peng, Merriman, Osher, Zhao and Kang
     for (int j = SolnBlk.JCl-SolnBlk.Nghost+1; j <= SolnBlk.JCu+SolnBlk.Nghost-1; j++) {
       for (int i = SolnBlk.ICl-SolnBlk.Nghost+1; i <= SolnBlk.ICu+SolnBlk.Nghost-1; i++) {
 	dU = sqrt(sqr((SolnBlk.U[i+1][j].psi-SolnBlk.U[i][j].psi)/dx) + 
 		  sqr((SolnBlk.U[i][j+1].psi-SolnBlk.U[i][j].psi)/dx));
 	SolnBlk.sign[i][j] = SolnBlk.U[i][j].psi/sqrt(sqr(SolnBlk.U[i][j].psi) + sqr(dU*dx));
-      }
-    }
-    break;
-  case EIKONAL_SIGN_FUNCTION_DERIVATIVE_NEW :
-    for (int j = SolnBlk.JCl-SolnBlk.Nghost+1; j <= SolnBlk.JCu+SolnBlk.Nghost-1; j++) {
-      for (int i = SolnBlk.ICl-SolnBlk.Nghost+1; i <= SolnBlk.ICu+SolnBlk.Nghost-1; i++) {
-	dU = sqrt(sqr((SolnBlk.U[i+1][j].psi-SolnBlk.U[i][j].psi)/dx) + 
-		  sqr((SolnBlk.U[i][j+1].psi-SolnBlk.U[i][j].psi)/dx));
-	SolnBlk.sign[i][j] = SolnBlk.U[i][j].psi/sqrt(sqr(SolnBlk.U[i][j].psi) + sqr(dU)*dx); // as suggested by Banff guy
       }
     }
     break;
@@ -1506,7 +1500,7 @@ void Reconstruction_WeightedEssentiallyNonOscillatory(LevelSet2D_Quad_Block &Sol
 void Reconstruction_Curvature(LevelSet2D_Quad_Block &SolnBlk,
 			      const int n) {
 
-  int calculation_method = 1;
+  int calculation_method = 2;
 
   /* Carry out the reconstruction of the curvature in each cell of
      the computational mesh. */

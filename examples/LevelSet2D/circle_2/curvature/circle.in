@@ -11,7 +11,7 @@ Explicit_Runge_Kutta
 N_Stage =
 2
 Time_Accurate = 
-0
+1
 BC_Type =
 Linear_Extrapolation
 #Constant_Extrapolation
@@ -27,7 +27,7 @@ Number_of_Interface_Components =
 Interface_Spline_Type =
 Circle
 Interface_Characteristic_Length = 
-0.20
+0.60
 Number_of_Specified_Interface_Points =
 1
 Interface_Points =
@@ -39,9 +39,9 @@ Stationary
 Interface_Characteristic_Velocity = 
 0.0  0.0
 #
-# CURVATURE DRIVEN FLOW PARAMETER:
+# CURVATURE FLOW PARAMETER:
 Curvature_Motion =
-0.01
+1.00
 #
 # BULK FLOW PARAMETERS:
 Bulk_Flow_Field_Type =
@@ -50,8 +50,11 @@ Bulk_Flow_Characteristic_Speed =
 0.000  0.000
 #
 # GRID PARAMETERS:
+# GRID PARAMETERS:
 Grid_Type =
 Square
+Box_Width =
+1.6
 Number_of_Cells_Idir =
 100
 Number_of_Cells_Jdir =
@@ -69,13 +72,14 @@ Number_of_Blocks_Per_Processor =
 Hamilton_Jacobi_CFL_Number =
 0.25
 Time_Max =
-500.0
+100.0
 Maximum_Number_of_Time_Steps =
 200
 #
 # EIKONAL EQUATION PARAMETERS:
 Redistance_Criteria =
 Frequency
+#Threhold
 Redistance_Frequency =
 1
 Eikonal_Threshold =

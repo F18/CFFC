@@ -1037,11 +1037,9 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Eikonal_Sign_Function,"Smeared") == 0) {
       IP.i_Eikonal_Sign_Function = EIKONAL_SIGN_FUNCTION_SMEARED;
     } else if (strcmp(IP.Eikonal_Sign_Function,"Smeared_New") == 0) {
-      IP.i_Eikonal_Sign_Function = EIKONAL_SIGN_FUNCTION_SMEARED_NEW;
+      IP.i_Eikonal_Sign_Function = EIKONAL_SIGN_FUNCTION_SMEARED_RUUTH;
     } else if (strcmp(IP.Eikonal_Sign_Function,"Derivative") == 0) {
       IP.i_Eikonal_Sign_Function = EIKONAL_SIGN_FUNCTION_DERIVATIVE;
-    } else if (strcmp(IP.Eikonal_Sign_Function,"Derivative_New") == 0) {
-      IP.i_Eikonal_Sign_Function = EIKONAL_SIGN_FUNCTION_DERIVATIVE_NEW;
     } else {
       i_command = INVALID_INPUT_VALUE;
     }

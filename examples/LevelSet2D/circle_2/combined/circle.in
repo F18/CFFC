@@ -42,6 +42,10 @@ Uniform
 Bulk_Flow_Characteristic_Speed =
 1.000  1.000
 #
+# CURVATURE FLOW PARAMETER:
+Curvature_Motion =
+0.00
+#
 # GRID PARAMETERS:
 Grid_Type =
 Square
@@ -72,6 +76,9 @@ Sussman
 #Russo_Smereka
 Eikonal_Sign_Function =
 Derivative
+Redistance_Criteria =
+Frequency
+#Threshold
 Redistance_Frequency =
 1
 Eikonal_CFL_Number =
