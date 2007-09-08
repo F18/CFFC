@@ -47,9 +47,9 @@ Number_of_Cells_Jdir =
 Number_of_Ghost_Cells =
 3
 Number_of_Blocks_Idir = 
-1
+4
 Number_of_Blocks_Jdir =
-1
+4
 Number_of_Blocks_Per_Processor =
 128
 #
@@ -57,7 +57,7 @@ Number_of_Blocks_Per_Processor =
 Hamilton_Jacobi_CFL_Number =
 0.25
 Time_Max =
-1000.000
+2000.000
 #1333.333
 #2000.000
 #666.666
@@ -68,7 +68,6 @@ Maximum_Number_of_Time_Steps =
 # EIKONAL EQUATION PARAMETERS:
 Redistance_Criteria =
 Frequency
-#Frequency
 #Threshold
 Eikonal_Threshold =
 100.0
@@ -119,7 +118,7 @@ Number_of_Initial_Mesh_Refinements =
 #
 # UNSTEADY AMR PARAMETERS:
 AMR =
-Off
+OFF
 AMR_Frequency =
 9
 #
