@@ -112,7 +112,7 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk) {
 
     /* Set the grid 2D to quasi-3D scaling parameters*/
 
-    if (block_allocated && CFFC_MPI::This_Processor_Number != Source_CPU) {
+    if (block_allocated && !CFFC_Primary_MPI_Processor()) {
       SolnBlk.ScaleGridTo3D();
     } /* endif */
 
