@@ -1901,7 +1901,7 @@ extern int Check_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
                                   const int Number_of_Blocks_Idir,
                                   const int Number_of_Blocks_Jdir);
 
-extern int Search_Multi_Block_Grid(const Grid2D_Quad_Block **Grid_ptr,
+extern int Search_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 				   const int &Number_of_Blocks_Idir,
 				   const int &Number_of_Blocks_Jdir,
 				   const Vector2D Xpos,

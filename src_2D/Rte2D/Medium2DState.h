@@ -178,6 +178,12 @@ class Medium2D_State {
 
   //! Set all all fields to the same function
   static void SetAllFieldsConstant(const Medium2D_State &M);
+  static void SetDiscreteField(Grid2D_Quad_Block **Grid_ptr,     // grid block pointer
+			       const int &Number_of_Blocks_Idir, // number blocks in i-dir
+			       const int &Number_of_Blocks_Jdir, // number blocks in j-dir
+			       double *** kappa_,                // 3D array abs coeffs (band, i-index, j-index)
+			       double *** Ib_,                   // 3D array Ib (band, i-index, j-index)
+			       const double *sigma_ );           // 1D array sigma (band)
   //@}
 
   //@{ @name Index operator.
@@ -373,13 +379,16 @@ inline void Medium2D_State :: SetupStatic( const int &i_Absorb_Type,
  ********************************************************/
 inline void Medium2D_State :: SetAllFieldsConstant(const Medium2D_State &M)
 {
+  // decalares
+  ConstantFieldParams P;
+
   // assign all the fields
   for (int i=0; i<Nband; i++) {
 
     // set constnat value
-    AbsorptionData[i].val = M.kappa[i];
-    ScatterData[i].val = M.sigma[i];
-    BlackbodyData[i].val = M.Ib[i];
+    P.val = M.kappa[i]; AbsorptionData[i].SetConstantParams(P);
+    P.val = M.sigma[i]; ScatterData[i].SetConstantParams(P);
+    P.val = M.Ib[i];    BlackbodyData[i].SetConstantParams(P);
 
     // set field descriptor
     func_kappa[i].Set(&AbsorptionData[i], &FieldData::Constant);
@@ -389,6 +398,52 @@ inline void Medium2D_State :: SetAllFieldsConstant(const Medium2D_State &M)
 }
 
 
+/********************************************************
+ * Setup a discrete field for the absorbsion coefficient*
+ * and the blackbody intensity.  The scattering         *
+ * coefficient is always assumed constant !!!           *
+ *                                                      *
+ * NOT FINISHED - WILL NOT WORK!!!!                     *
+ ********************************************************/
+inline void Medium2D_State :: SetDiscreteField(Grid2D_Quad_Block **Grid_ptr,     // grid block pointer
+					       const int &Number_of_Blocks_Idir, // number blocks in i-dir
+					       const int &Number_of_Blocks_Jdir, // number blocks in j-dir
+					       double *** kappa_,                // 3D array abs coeffs (band, i-index, j-index)
+					       double *** Ib_,                   // 3D array Ib (band, i-index, j-index)
+					       const double *sigma_ )            // 1D array sigma (band)
+{
+  // decalares
+  ConstantFieldParams CF;
+  DiscreteFieldParams DF;
+
+  //
+  // assign all the fields
+  //
+  for (int i=0; i<Nband; i++) {
+
+    // set discrete field grid params
+    DF.Grid = Grid_ptr; 
+    DF.Number_of_Blocks_Idir = Number_of_Blocks_Idir;
+    DF.Number_of_Blocks_Jdir =Number_of_Blocks_Jdir;
+
+    // set discrete absorption field params
+    DF.valarray = kappa_[i]; 
+    AbsorptionData[i].SetDiscreteParams(DF);
+
+    // set discrete blackbody field params
+    DF.valarray = Ib_[i]; 
+    BlackbodyData[i].SetDiscreteParams(DF);
+
+    // set constnat value
+    CF.val = sigma_[i]; 
+    ScatterData[i].SetConstantParams(CF);
+
+    // set field descriptor
+    func_kappa[i].Set(&AbsorptionData[i], &FieldData::Interpolate);
+    func_sigma[i].Set(&ScatterData[i], &FieldData::Constant);
+    func_Ib[i].Set(&BlackbodyData[i], &FieldData::Interpolate);
+  }
+}
 
 /********************************************************
  * Compute medium state at location.                    *

@@ -28,6 +28,25 @@
 
 // required includes
 #include "../Math/Vector2D.h"
+#include "../Grid/Grid2DQuad.h"
+#include "../CFD/CFD.h"
+
+/********************************************************
+ * Struct definitions                                   *
+ ********************************************************/
+struct ConstantFieldParams { double val; };
+static const ConstantFieldParams cfDefValues = { 0 };
+
+struct DiscreteFieldParams {   
+  Grid2D_Quad_Block** Grid; // pointer to multiblock grid object
+  int Number_of_Blocks_Idir;// number of blocks in i-dir
+  int Number_of_Blocks_Jdir;// number of blocks in j-dir
+  double** valarray;        // values corresponding to grid cell centers
+  // bool isNodalValues;       // a flag, true if valarray is defined at the 'Grid' nodes
+  //                           // or false if defined at cell centers.
+};
+static const DiscreteFieldParams dfDefValues = { NULL, 0, 0, NULL };
+
 
 
 /***********************************************************************/
@@ -121,17 +140,97 @@ template <class TClass> class TSpecificFunctor : public TFunctor {
 /***********************************************************************/
 class FieldData {
 
+ private:
+
+  //
+  //objects
+  //
+  ConstantFieldParams CF;
+  DiscreteFieldParams DF;
+
  public:
 
-  //objects
-  double val; // constant Value
-
+  //
   // constructors
-  FieldData():val(0) {};
-  FieldData(const int &x):val(x) {};
+  //
+  FieldData() : CF(cfDefValues), DF(dfDefValues) {};
+  void SetConstantParams( const struct ConstantFieldParams params ) { CF = params; };
+  void SetDiscreteParams( const struct DiscreteFieldParams params ) { DF = params; };
 
+  //
   // Functions to describe the field
-  double Constant(const Vector2D &r) { return val; };
+  //
+  // return a constant field
+  double Constant(const Vector2D &r) { return CF.val; };
+  // return a value interpolated from a 2d grid
+  double Interpolate(const Vector2D &r);
 };
+
+
+/********************************************************
+ * Compute the value at the specified location by       *
+ * interpolating from an existing grid.                 *
+ ********************************************************/
+inline double FieldData :: Interpolate(const Vector2D &r) 
+{
+  // declares
+  int err;
+  int ib, jb;   // block indices
+  int ic, jc;   // cell indices
+  double value; // the value we are looking for!!!!
+  
+  // check to make sure parameter pointers have been properly defined
+  if (DF.Grid==NULL || DF.valarray==NULL) {
+    cerr << "FieldData::Interpolate() - Need to define grid/valarray.\n";
+    exit(-1);
+  } // endif
+
+
+  //
+  // search the multi-block grid to determine the containing block
+  //
+  err =  Search_Multi_Block_Grid(DF.Grid,
+				 DF.Number_of_Blocks_Idir,
+				 DF.Number_of_Blocks_Jdir,
+				 r,
+				 ib, jb);
+  // if there was an error, exit
+  if (err) {
+    cerr << "FieldData::Interpolate() - Error searching multiblock grid.\n";
+    exit(-1);
+  } // endif
+
+  
+  //
+  // search the known block for the cell in which the location falls
+  //
+  err =  Search_Single_Block_Grid(DF.Grid[ib][jb],
+				  r,
+				  ic, jc);
+  // if there was an error, exit
+  if (err) {
+    cerr << "FieldData::Interpolate() - Error searching multiblock grid.\n";
+    exit(-1);
+  } // endif
+
+
+  //
+  // interpolate
+  //
+  err = Bilinear_Interpolation(DF.valarray[ic  ][jc  ], DF.Grid[ib][jb].Node[ic  ][jc  ].X,
+			       DF.valarray[ic  ][jc+1], DF.Grid[ib][jb].Node[ic  ][jc+1].X,
+			       DF.valarray[ic+1][jc+1], DF.Grid[ib][jb].Node[ic+1][jc+1].X,
+			       DF.valarray[ic+1][jc  ], DF.Grid[ib][jb].Node[ic+1][jc  ].X,
+			       r, value);
+   // if there was an error, exit
+  if (err) {
+    cerr << "FieldData::Interpolate() - Error interpolating.\n";
+    exit(-1);
+  } // endif
+ 
+
+  // return the value
+  return value;
+}
 
 #endif //_FIELD_DATA_INCLUDED
