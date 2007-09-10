@@ -124,7 +124,7 @@ int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
 
   /* Perform the reconstruction of the curvature within each cell of the
      computational grid for this stage. */
-  Reconstruction_Curvature(SolnBlk,1);
+  Reconstruction_Curvature(SolnBlk,IP,1);
 
   /* Evaluate the time rate of change of the solution (i.e., the 
      solution residuals). */
@@ -182,10 +182,6 @@ int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
 	                                      (max(SolnBlk.U[i][j].F,ZERO)*SolnBlk.dUdx[i][j].psi + 
 					       min(SolnBlk.U[i][j].F,ZERO)*SolnBlk.dUdy[i][j].psi);
 
-	// Add the curvature-based flow contribution to the level set function solution residual.
-	SolnBlk.dUdt[i][j][k_residual].psi -= (IP.Hamilton_Jacobi_CFL_Number*SolnBlk.dt[i][j])*
-	  (max(-IP.Curvature_Motion*SolnBlk.kappa[i][j].psi,ZERO)*SolnBlk.dUdx[i][j].psi + min(-IP.Curvature_Motion*SolnBlk.kappa[i][j].psi,ZERO)*SolnBlk.dUdy[i][j].psi);
-
 	// Add the convective/bulk-velocity flow contribution to the
 	// level set function solution residual.
  	SolnBlk.dUdt[i][j][k_residual].psi -= (IP.Hamilton_Jacobi_CFL_Number*SolnBlk.dt[i][j])*
@@ -196,8 +192,8 @@ int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
 
 	// Add the curvature-based flow contribution to the
 	// level set function solution residual.
-// 	SolnBlk.dUdt[i][j][k_residual].psi += (IP.Hamilton_Jacobi_CFL_Number*SolnBlk.dt[i][j])*
-// 	                                      IP.Curvature_Motion*SolnBlk.kappa[i][j].psi*
+	SolnBlk.dUdt[i][j][k_residual].psi += (IP.Hamilton_Jacobi_CFL_Number*SolnBlk.dt[i][j])*
+	                                      IP.Curvature_Speed*SolnBlk.kappa[i][j].psi*SolnBlk.gradMag[i][j].psi;
 	
       }
 

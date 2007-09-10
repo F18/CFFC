@@ -153,6 +153,8 @@ class Trace_Data {
  *     ddUdyy   -- Return the second-derivative of the variable solution
  *                 (y-direction) for the block.
  *      kappa   -- Return the curvature of the variable solution for the block.
+ *    gradMag   -- Return the centered magnitude of the gradient of the
+ *                 variable solution for the block.
  *        phi   -- Return the solution slope limiters.
  *         Uo   -- Return initial solution state.
  *        Uoo   -- Return initial solution state (before Eikonal iterations).
@@ -238,7 +240,8 @@ public:
                           **dUdym; //!< Unlimited solution gradient (y-direction, left-biased stencil).
   LevelSet2DState        **ddUdxx, //!< Second-derivative of the solution (x-direction).
                          **ddUdyy, //!< Second-derivative of the solution (y-direction).
-                          **kappa; //!< Curvature of the solution.
+                          **kappa, //!< Curvature of the solution.
+                        **gradMag; //!< Magnitude of the centered gradient of the solution.
   LevelSet2DState           **phi; //!< Solution slope limiter.
   //@}
 
@@ -267,7 +270,7 @@ public:
     dUdt   = NULL; dt     = NULL;
     dUdx   = NULL; dUdy   = NULL;
     dUdxp  = NULL; dUdyp  = NULL; dUdxm = NULL; dUdym = NULL;
-    ddUdxx = NULL; ddUdyy = NULL; kappa = NULL;
+    ddUdxx = NULL; ddUdyy = NULL; kappa = NULL; gradMag = NULL;
     phi    = NULL;
     sign   = NULL;
     FluxN  = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
@@ -291,7 +294,7 @@ public:
     dUdx  = Soln.dUdx;    dUdy  = Soln.dUdy;
     dUdxp = Soln.dUdxp;   dUdyp = Soln.dUdyp;
     dUdxm = Soln.dUdxm;   dUdym = Soln.dUdym;
-    ddUdxx = Soln.ddUdxx; ddUdyy = Soln.ddUdyy; kappa = Soln.kappa;
+    ddUdxx = Soln.ddUdxx; ddUdyy = Soln.ddUdyy; kappa = Soln.kappa; gradMag = Soln.gradMag;
     phi   = Soln.phi;
     sign  = Soln.sign;
     FluxN = Soln.FluxN; FluxS = Soln.FluxS; FluxE = Soln.FluxE; FluxW = Soln.FluxW;
@@ -478,6 +481,7 @@ inline void LevelSet2D_Quad_Block::allocate(const int Ni, const int Nj, const in
   ddUdxx = new LevelSet2DState*[NCi];
   ddUdyy = new LevelSet2DState*[NCi];
   kappa = new LevelSet2DState*[NCi];
+  gradMag = new LevelSet2DState*[NCi];
   phi  = new LevelSet2DState*[NCi];
   sign = new double*[NCi];
   Uo   = new LevelSet2DState*[NCi];
@@ -498,6 +502,7 @@ inline void LevelSet2D_Quad_Block::allocate(const int Ni, const int Nj, const in
     ddUdxx[i] = new LevelSet2DState[NCj];
     ddUdyy[i] = new LevelSet2DState[NCj];
     kappa[i] = new LevelSet2DState[NCj];
+    gradMag[i] = new LevelSet2DState[NCj];
     phi[i]  = new LevelSet2DState[NCj];
     sign[i] = new double[NCj];
     Uo[i]   = new LevelSet2DState[NCj];
@@ -514,6 +519,7 @@ inline void LevelSet2D_Quad_Block::allocate(const int Ni, const int Nj, const in
       ddUdxx[i][j] = LevelSet2D_ZERO;
       ddUdyy[i][j] = LevelSet2D_ZERO;
       kappa[i][j] = LevelSet2D_ZERO;
+      gradMag[i][j] = LevelSet2D_ZERO;
       phi[i][j]  = LevelSet2D_ZERO;
       sign[i][j] = ZERO;
       Uo[i][j]   = LevelSet2D_ZERO;
@@ -550,6 +556,7 @@ inline void LevelSet2D_Quad_Block::deallocate(void) {
     delete []ddUdxx[i]; ddUdxx[i] = NULL;
     delete []ddUdyy[i]; ddUdyy[i] = NULL;
     delete []kappa[i]; kappa[i] = NULL;
+    delete []gradMag[i]; gradMag[i] = NULL;
     delete []phi[i];   phi[i]  = NULL;
     delete []sign[i];  sign[i] = NULL;
     delete []Uo[i];    Uo[i]   = NULL;
@@ -568,6 +575,7 @@ inline void LevelSet2D_Quad_Block::deallocate(void) {
   delete []ddUdxx; ddUdxx = NULL;
   delete []ddUdyy; ddUdyy = NULL;
   delete []kappa; kappa = NULL;
+  delete []gradMag; gradMag = NULL;
   delete []phi;   phi  = NULL; 
   delete []sign;  sign = NULL; 
   delete []Uo;    Uo   = NULL;
@@ -1940,6 +1948,7 @@ extern void Reconstruction_WeightedEssentiallyNonOscillatory(LevelSet2D_Quad_Blo
 							     const int n);
 
 extern void Reconstruction_Curvature(LevelSet2D_Quad_Block &SolnBlk,
+				     LevelSet2D_Input_Parameters &IP,
 				     const int n);
 
 extern void Reconstruction_Curvature_Laplacian(LevelSet2D_Quad_Block &SolnBlk,
@@ -1947,15 +1956,10 @@ extern void Reconstruction_Curvature_Laplacian(LevelSet2D_Quad_Block &SolnBlk,
 					       const int j,
 					       const int n);
 
-extern void Reconstruction_Curvature_Green_Gauss(LevelSet2D_Quad_Block &SolnBlk,
-						 const int i,
-						 const int j,
-						 const int n);
-
-extern void Reconstruction_Curvature_Expanded(LevelSet2D_Quad_Block &SolnBlk,
-					      const int i,
-					      const int j,
-					      const int n);
+extern void Reconstruction_Curvature_Regular(LevelSet2D_Quad_Block &SolnBlk,
+					     const int i,
+					     const int j,
+					     const int n);
 
 extern void Calculate_Refinement_Criteria(double *refinement_criteria,
 					  LevelSet2D_Input_Parameters &IP,
@@ -2007,6 +2011,7 @@ extern int Reconstruction_WeightedEssentiallyNonOscillatory(LevelSet2D_Quad_Bloc
 
 extern int Reconstruction_Curvature(LevelSet2D_Quad_Block *Soln_ptr,
 				    AdaptiveBlock2D_List &Soln_Block_List,
+				    LevelSet2D_Input_Parameters &Input_Parameters,
 				    const int n);
 
 extern void Set_Global_TimeStep(LevelSet2D_Quad_Block *Soln_ptr,

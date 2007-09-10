@@ -1494,35 +1494,27 @@ void Reconstruction_WeightedEssentiallyNonOscillatory(LevelSet2D_Quad_Block &Sol
  *                                                                    *
  * Performs the reconstruction of the curvature of the specified      *
  * variable, n, within each cell of the computational mesh for the    *
- * specified Cartesian solution block. One of three methods is used.  *
+ * specified Cartesian solution block.                                *
  *                                                                    *
  **********************************************************************/
 void Reconstruction_Curvature(LevelSet2D_Quad_Block &SolnBlk,
+			      LevelSet2D_Input_Parameters &IP,
 			      const int n) {
-
-  int calculation_method = 2;
 
   /* Carry out the reconstruction of the curvature in each cell of
      the computational mesh. */
-  switch(calculation_method) {
-  case 1:
+  switch(IP.i_Curvature_Scheme) {
+  case CURVATURE_SCHEME_LAPLACIAN:
     for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
       for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
 	Reconstruction_Curvature_Laplacian(SolnBlk,i,j,n);
       }
     }
     break;
-  case 2:
+  case CURVATURE_SCHEME_REGULAR:
     for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
       for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
-	Reconstruction_Curvature_Green_Gauss(SolnBlk,i,j,n);
-      }
-    }
-    break;
-  case 3:
-    for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
-      for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
-	Reconstruction_Curvature_Expanded(SolnBlk,i,j,n);
+	Reconstruction_Curvature_Regular(SolnBlk,i,j,n);
       }
     }
     break;
@@ -1542,7 +1534,9 @@ void Reconstruction_Curvature(LevelSet2D_Quad_Block &SolnBlk,
  *                                                                    *
  * Performs the reconstruction of the Laplacian of variable n, for    *
  * use in curvature driven motion of the level set function. N must   *
- * be a signed distance function. See: Osher p.43.                    *
+ * close to a signed distance function for accurate approximation.    *
+ *                                                                    *
+ * See: Osher p.43. Eqn. (4.6).                                        *
  *                                                                    *
  **********************************************************************/
 void Reconstruction_Curvature_Laplacian(LevelSet2D_Quad_Block &SolnBlk,
@@ -1569,49 +1563,60 @@ void Reconstruction_Curvature_Laplacian(LevelSet2D_Quad_Block &SolnBlk,
     SolnBlk.kappa[i][j].psi = laplacian;
   }
 
-}
-
-/**********************************************************************
- * Routine: Reconstruction_Curvature_Green_Gauss                      *
- *                                                                    *
- * Performs the reconstruction of the curvature of the level set for  *
- * use in curvature driven flow. A Green Gauss reconstruction method  *
- * is used to reconstruct the curvature.                              *
- *                                                                    *
- **********************************************************************/
-void Reconstruction_Curvature_Green_Gauss(LevelSet2D_Quad_Block &SolnBlk,
-					  const int i,
-					  const int j,
-					  const int n) {
-  
-  double curvature_psi, ddpsidd;
-  Vector2D dpsid;
-
-  // Determine the local gradient of the level set function.
-  Linear_Reconstruction_LeastSquares(SolnBlk,i,j,LIMITER_ONE);
-  dpsid = Vector2D(SolnBlk.dUdx[i][j].psi,SolnBlk.dUdy[i][j].psi);
-  // Deteremine the local Laplacian of the signed distance function.
-  Laplacian_Reconstruction_GreenGauss(SolnBlk,i,j,1,ddpsidd);
-  // Determine the local curvature.
-  curvature_psi = ddpsidd/dpsid.abs();
-
-  SolnBlk.kappa[i][j].psi = curvature_psi;
+  // Set gradient magnitude.
+  // Note: The magnitude of the gradient is obviously not 1,
+  // but for the approximation, we set it to 1.
+  SolnBlk.gradMag[i][j].psi = ONE;
 
 }
 
 /**********************************************************************
- * Routine: Reconstruction_Curvature_Expanded                         *
+ * Routine: Reconstruction_Curvature_Regular                          *
  *                                                                    *
  * Performs the reconstruction of the curvature of the level set for  *
  * use in curvature driven motion. The curvature is calculated using  *
- * an expanded expression of single, double, and mixed partial        *
+ * the regular expression composed of single and double partial       *
  * derivatives in the x and y directions.                             *
  *                                                                    *
+ * See: Osher, pp. 12. Eqn (1.8) and accompanying notes.
+ *                                                                    *
  **********************************************************************/
-void Reconstruction_Curvature_Expanded(LevelSet2D_Quad_Block &SolnBlk,
-				       const int i,
-				       const int j) {
+void Reconstruction_Curvature_Regular(LevelSet2D_Quad_Block &SolnBlk,
+				      const int i,
+				      const int j,
+				      const int n) {
   
+  double phix, phiy;            // centered, first derivatives
+  double phixx, phiyy, phixy;   // centered, second derivatives
+  double dx, dy;
+
+  dx = fabs(SolnBlk.Grid.Cell[i][j].Xc.x - SolnBlk.Grid.Cell[i+1][j].Xc.x);
+  dy = fabs(SolnBlk.Grid.Cell[i][j].Xc.y - SolnBlk.Grid.Cell[i][j+1].Xc.y);
+
+  // Get the first and second deratives.
+  phix = HALF*(SolnBlk.U[i+1][j].psi - SolnBlk.U[i-1][j].psi)/dx;
+  phiy = HALF*(SolnBlk.U[i][j+1].psi - SolnBlk.U[i][j-1].psi)/dy;
+  phixx = (SolnBlk.U[i+1][j].psi - TWO*SolnBlk.U[i][j].psi + SolnBlk.U[i-1][j].psi) / sqr(dx);
+  phiyy = (SolnBlk.U[i][j+1].psi - TWO*SolnBlk.U[i][j].psi + SolnBlk.U[i][j-1].psi) / sqr(dy);
+  phixy = ((SolnBlk.U[i+1][j+1].psi-SolnBlk.U[i-1][j+1].psi)-(SolnBlk.U[i+1][j-1].psi-SolnBlk.U[i-1][j-1].psi)) / (FOUR*dx*dy);
+
+  // Get the gradient magnitude.
+  SolnBlk.gradMag[i][j].psi = sqrt( sqr(phix)+sqr(phiy) );
+
+  // Get the curvature.
+  if (SolnBlk.gradMag[i][j].psi < 1e-3) {
+    // Catch the divide by zero case.
+    SolnBlk.kappa[i][j].psi = ZERO;
+  } else {
+    // Regular expression.
+    SolnBlk.kappa[i][j].psi = (sqr(phix)*phiyy - TWO*phix*phiy*phixy + sqr(phiy)*phixx) / (SolnBlk.gradMag[i][j].psi*SolnBlk.gradMag[i][j].psi*SolnBlk.gradMag[i][j].psi);
+    if (SolnBlk.kappa[i][j].psi > (ONE/dx)) {
+      SolnBlk.kappa[i][j].psi = ONE/dx;
+    } else if (SolnBlk.kappa[i][j].psi < (-ONE/dx)) {
+      SolnBlk.kappa[i][j].psi = -ONE/dx;
+    }
+  }
+
 }
 
 /**********************************************************************

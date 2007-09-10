@@ -39,9 +39,12 @@ Stationary
 Interface_Characteristic_Velocity = 
 0.0  0.0
 #
-# CURVATURE FLOW PARAMETER:
-Curvature_Motion =
+# CURVATURE FLOW PARAMETERS:
+Curvature_Speed =
 1.00
+Curvature_Scheme =
+Laplacian
+# Regular
 #
 # BULK FLOW PARAMETERS:
 Bulk_Flow_Field_Type =
@@ -49,7 +52,6 @@ None
 Bulk_Flow_Characteristic_Speed =
 0.000  0.000
 #
-# GRID PARAMETERS:
 # GRID PARAMETERS:
 Grid_Type =
 Square
@@ -62,19 +64,19 @@ Number_of_Cells_Jdir =
 Number_of_Ghost_Cells =
 3
 Number_of_Blocks_Idir =
-1
+4
 Number_of_Blocks_Jdir =
-1
+4
 Number_of_Blocks_Per_Processor =
 16
 #
 # HAMILTON-JACOBI EQUATION PARAMETERS:
 Hamilton_Jacobi_CFL_Number =
-0.25
+0.0001
 Time_Max =
-100.0
+140.0
 Maximum_Number_of_Time_Steps =
-200
+10
 #
 # EIKONAL EQUATION PARAMETERS:
 Redistance_Criteria =

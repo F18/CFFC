@@ -112,7 +112,7 @@ void Output_Cells_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
                           const int Output_Title,
 	                  ostream &Out_File) {
 
-  int ng = OFF;  // Turn ON to print ghost cells.
+  int ng = ON;  // Turn ON to print ghost cells.
   double ddU;
 
   // Ensure boundary conditions are updated before evaluating
@@ -137,6 +137,7 @@ void Output_Cells_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
 	     << "\"dpsidx\" \\ \n"
 	     << "\"dpsidy\" \\ \n"
 	     << "\"kappa\" \\ \n"
+	     << "\"gradMag\" \\ \n"
 	     << "\"dFdx\" \\ \n"
 	     << "\"dFdy\" \\ \n"
 	     << "\"ddpsi\" \\ \n"
@@ -161,6 +162,7 @@ void Output_Cells_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
 	       << " " << SolnBlk.dUdx[i][j].psi
 	       << " " << SolnBlk.dUdy[i][j].psi
  	       << " " << SolnBlk.kappa[i][j].psi
+	       << " " << SolnBlk.gradMag[i][j].psi
 	       << " " << SolnBlk.dUdx[i][j].F
 	       << " " << SolnBlk.dUdy[i][j].F
 // 	       << " " << sqrt(sqr(SolnBlk.dUdx[i][j].psi) + sqr(SolnBlk.dUdy[i][j].psi)) - ONE

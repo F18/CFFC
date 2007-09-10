@@ -225,6 +225,7 @@ int Reconstruction_WeightedEssentiallyNonOscillatory(LevelSet2D_Quad_Block *Soln
  **********************************************************************/
 int Reconstruction_Curvature(LevelSet2D_Quad_Block *Soln_ptr,
 			     AdaptiveBlock2D_List &Soln_Block_List,
+			     LevelSet2D_Input_Parameters &Input_Parameters,
 			     const int n) {
   int error_flag = 0;
 
@@ -233,6 +234,7 @@ int Reconstruction_Curvature(LevelSet2D_Quad_Block *Soln_ptr,
   for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
     if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
       Reconstruction_Curvature(Soln_ptr[nb],
+			       Input_Parameters,
 			       n);
     }
   }

@@ -778,6 +778,9 @@ inline char *Date_And_Time() {
 #define EIKONAL_CRITERIA_THRESHOLD                   695
 #define EIKONAL_CRITERIA_FREQUENCY                   696
 
+#define CURVATURE_SCHEME_LAPLACIAN                   697
+#define CURVATURE_SCHEME_REGULAR                     698
+
 /********************************************************
  * CFD -- Space marching schemes.                       *
  ********************************************************/
