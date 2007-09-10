@@ -115,7 +115,10 @@ void Set_Default_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
   IP.i_BC_Type = BC_CONSTANT_EXTRAPOLATION;
 
   // Curvature driven flow default value.
-  IP.Curvature_Motion = ZERO;
+  IP.Curvature_Speed = ZERO;
+  string_ptr = "Laplacian";
+  strcpy(IP.Curvature_Scheme,string_ptr);
+  IP.i_Curvature_Scheme = CURVATURE_SCHEME_LAPLACIAN;
 
   // Bulk flow field default values.
   string_ptr = "None";
@@ -324,10 +327,16 @@ void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
   MPI::COMM_WORLD.Bcast(&(IP.Number_of_Scalar_Extension_Iterations),
 			1,
 			MPI::INT,0);
-  // Pass the curvature motion parameter.
-  MPI::COMM_WORLD.Bcast(&(IP.Curvature_Motion),
+  // Pass the curvature motion parameters.
+  MPI::COMM_WORLD.Bcast(&(IP.Curvature_Speed),
 			1,
 			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(IP.Curvature_Scheme,
+			INPUT_PARAMETER_LENGTH_LEVELSET2D,
+			MPI::CHAR,0);
+  MPI::COMM_WORLD.Bcast(&(IP.i_Curvature_Scheme),
+			1,
+			MPI::INT,0);
   // Pass the bulk flowfield type.
   MPI::COMM_WORLD.Bcast(IP.BulkFlowField_Type,
 			INPUT_PARAMETER_LENGTH_LEVELSET2D,
@@ -639,10 +648,16 @@ void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP,
   Communicator.Bcast(&(IP.Number_of_Scalar_Extension_Iterations),
 		     1,
 		     MPI::INT,Source_Rank);
-  // Pass the curvature driven flow parameter:
-  Communicator.Bcast(&(IP.Curvature_Motion),
+  // Pass the curvature motion parameters:
+  Communicator.Bcast(&(IP.Curvature_Speed),
 		     1,
 		     MPI::DOUBLE,Source_Rank);
+  Communicator.Bcast(IP.Curvature_Scheme,
+		     INPUT_PARAMETER_LENGTH_LEVELSET2D,
+		     MPI::CHAR,Source_Rank);
+  Communicator.Bcast(&(IP.i_Curvature_Scheme),
+		     1,
+		     MPI::INT,Source_Rank);
   // Pass the bulk flowfield type:
   Communicator.Bcast(IP.BulkFlowField_Type,
 		     INPUT_PARAMETER_LENGTH_LEVELSET2D,
@@ -1058,12 +1073,24 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Number_of_Scalar_Extension_Iterations < 0) i_command = INVALID_INPUT_VALUE;
 
-  } else if (strcmp(IP.Next_Control_Parameter,"Curvature_Motion") == 0) {
+  } else if (strcmp(IP.Next_Control_Parameter,"Curvature_Speed") == 0) {
     i_command = 5;
     IP.Line_Number = IP.Line_Number + 1;
-    IP.Input_File >> IP.Curvature_Motion;
+    IP.Input_File >> IP.Curvature_Speed;
     IP.Input_File.getline(buffer,sizeof(buffer));
-    if (IP.Curvature_Motion < ZERO) i_command = INVALID_INPUT_VALUE;
+    if (IP.Curvature_Speed < ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Curvature_Scheme") == 0) {
+    i_command = 5;
+    Get_Next_Input_Control_Parameter(IP);
+    strcpy(IP.Curvature_Scheme,IP.Next_Control_Parameter);
+    if (strcmp(IP.Curvature_Scheme,"Laplacian") == 0) {
+      IP.i_Curvature_Scheme = CURVATURE_SCHEME_LAPLACIAN;
+    } else if (strcmp(IP.Curvature_Scheme,"Regular") == 0) {
+      IP.i_Curvature_Scheme = CURVATURE_SCHEME_REGULAR;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+    }
 
   } else if (strcmp(IP.Next_Control_Parameter,"Bulk_Flow_Field_Type") == 0) {
     i_command = 6;
@@ -1777,7 +1804,7 @@ int Process_Input_Control_Parameter_File(LevelSet2D_Input_Parameters &Input_Para
     }
   }
 
-  // Perform consitency checks on the refinement criteria.
+  // Perform consistency checks on the refinement criteria.
   Input_Parameters.Number_of_Refinement_Criteria = 0;
   if (Input_Parameters.Refinement_Criteria_Curvature) Input_Parameters.Number_of_Refinement_Criteria++;
   if (Input_Parameters.Refinement_Criteria_Zero_Level_Set) {

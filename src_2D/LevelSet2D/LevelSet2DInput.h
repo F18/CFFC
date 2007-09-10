@@ -112,8 +112,10 @@ public:
   EmbeddedBoundaries2D_Input_Parameters Interface_IP;
   //@}
 
-  //@{ @name Curvature driven flow parameter:
-  double Curvature_Motion;
+  //@{ @name Curvature driven flow parameters:
+  double Curvature_Speed;
+  char Curvature_Scheme[INPUT_PARAMETER_LENGTH_LEVELSET2D];
+  int i_Curvature_Scheme;
   //@}
 
   //@{ @name Bullk flowfield.
@@ -313,8 +315,9 @@ inline ostream &operator << (ostream &out_file,
   out_file << "\n     -> CFL Number: " << IP.Scalar_Extension_CFL_Number;
   out_file << "\n     -> Number of Iterations: " << IP.Number_of_Scalar_Extension_Iterations;
   // Curvature driven flow parameter:
-  out_file << "\n  -> Curvature driven flow parameter: ";
-  out_file << "\n     -> Curvature_Motion: " << IP.Curvature_Motion;
+  out_file << "\n  -> Curvature driven flow parameters: ";
+  out_file << "\n     -> Curvature_Speed: " << IP.Curvature_Speed;
+  out_file << "\n     -> Curvature_Scheme: " << IP.Curvature_Scheme;
   // Bulk flow-field parameters:
   out_file << "\n  -> Bulk flow-field parameters: ";
   switch(IP.i_BulkFlowField_Type) {
