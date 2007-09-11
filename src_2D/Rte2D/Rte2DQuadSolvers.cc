@@ -15,8 +15,8 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
 		    int batch_flag) {
 
   // create a solver object
-  Rte2DSolver SolverObj(Input_File_Name_ptr, batch_flag);
+  Rte2DSolver SolverObj;
 
   // execute solver
-  return SolverObj.StandAloneSolve();
+  return SolverObj.StandAloneSolve(batch_flag, Input_File_Name_ptr);
 }

@@ -38,11 +38,7 @@ class Rte2DSolver {
 
   /********************************************************  
    * Object Declarations                                  *
-   ********************************************************/
-  // main parameters being passed from 'outside'
-  char *Input_File_Name_ptr;
-  int batch_flag;
-    
+   ********************************************************/   
   // Rte2D input variables and parameters:
   Rte2D_Input_Parameters Input_Parameters;
 
@@ -70,18 +66,12 @@ class Rte2DSolver {
   int number_of_time_steps;
   bool first_step;
   double Time;
-  double residual_l1_norm, residual_l2_norm, residual_max_norm;
   int NUM_VAR_RTE2D;
 
-  // global command flag
-  int command_flag;
-
   /********************************************************  
-   * Constructors                                         *
+   * Constructors/Destructors                             *
    ********************************************************/
-  Rte2DSolver () : Input_File_Name_ptr(NULL), 
-		   batch_flag(0), command_flag(0),
-		   Input_Parameters(), 
+  Rte2DSolver () : Input_Parameters(), 
 		   MeshBlk(NULL), QuadTree(),
                    List_of_Global_Solution_Blocks(),
 		   List_of_Local_Solution_Blocks(),
@@ -89,24 +79,8 @@ class Rte2DSolver {
 		   processor_cpu_time(), total_cpu_time(),
 		   start_explicit(), end_explicit(), 
 		   number_of_time_steps(0), Time(0),
-		   first_step(true), residual_l1_norm(0), 
-		   residual_l2_norm(0), residual_max_norm(0),
-		   NUM_VAR_RTE2D(0) {}
-
-  Rte2DSolver (char *infile, int batch_flag_) : Input_File_Name_ptr(infile), 
-						batch_flag(batch_flag_), 
-						command_flag(0),
-						Input_Parameters(), 
-						MeshBlk(NULL), QuadTree(),
-						List_of_Global_Solution_Blocks(),
-						List_of_Local_Solution_Blocks(),
-						Local_SolnBlk(NULL), MGSolver(),
-						processor_cpu_time(), total_cpu_time(),
-						start_explicit(), end_explicit(), 
-						number_of_time_steps(0), Time(0),
-						first_step(true), residual_l1_norm(0), 
-						residual_l2_norm(0), residual_max_norm(0),
-						NUM_VAR_RTE2D(0) {}
+		   first_step(true), NUM_VAR_RTE2D(0) {}
+  ~Rte2DSolver() { DeallocateSoln(); }
 
   /********************************************************  
    * Member functions                                     *
@@ -115,44 +89,84 @@ class Rte2DSolver {
    * several modular components.  This allows one to      *
    * enter/exit the solution process whenever they want.  *
    ********************************************************/
-  int ReadInputFile();
-  int SetupMesh();
-  int SetICs();
+  void DeallocateSoln();
+  int ReadInputFile(char *Input_File_Name_ptr, 
+		    const int batch_flag,
+		    int &command_flag);
+  int SetupMesh(const int batch_flag);
+  int SetICs(const int batch_flag);
   int BroadcastSolution();
-  int PerformAMR();
-  int PerformPeriodicAMR();
-  int PerformMortonOrdering();
-  int PerformMortonReOrdering();
-  void ComputeNormsAndUpdateCPU();
-  int WritePeriodicRestart();
+  int PerformAMR(const int batch_flag);
+  int PerformPeriodicAMR(const int batch_flag);
+  int PerformMortonOrdering(const int batch_flag);
+  int PerformMortonReOrdering(const int batch_flag);
+  void ComputeNorms(double &residual_l1_norm, 
+		    double &residual_l2_norm, 
+		    double &residual_max_norm);
+  int WritePeriodicRestart(const int batch_flag);
   int OpenResidualFile(ofstream &);
-  void OutputProgress(ofstream &);
-  int SolveMultigrid();
-  int SolveExplicitTimeStep();
-  int SolveSpaceMarch();
-  int SolveNKS();
-  int PostProcess();
-  int StandAloneSolve();
+  void OutputProgress(const int batch_flag, 
+		      const double residual_l1_norm, 
+		      const double residual_l2_norm, 
+		      const double residual_max_norm,
+		      ofstream &);
+  int SolveMultigrid(const int batch_flag);
+  int SolveExplicitTimeStep(const int batch_flag);
+  int SolveSpaceMarch(const int batch_flag);
+  int SolveNKS(const int batch_flag);
+  int PostProcess(const int batch_flag,int &command_flag);
+  int StandAloneSolve(const int batch_flag, char *Input_File_Name_ptr);
 
 };
 
 
+/********************************************************  
+ * Rte2DSolver :: Deallocate                            *
+ *                                                      *
+ * Deallocate all solution variables and objects.       *
+ ********************************************************/
+inline void Rte2DSolver::DeallocateSoln() {
+
+  // multigrid
+  if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
+    MGSolver.deallocate();
+  }
+
+  // local solution blocks
+  Local_SolnBlk = Deallocate(Local_SolnBlk, 
+			     Input_Parameters);
+  
+  // message buffers (Not necessary here!)
+  //Deallocate_Message_Buffers(List_of_Local_Solution_Blocks);
+  
+  // solution block lists, quadtree, meshblock
+  List_of_Local_Solution_Blocks.deallocate();
+  List_of_Global_Solution_Blocks.deallocate();
+  QuadTree.deallocate();
+  MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk, 
+					Input_Parameters.Number_of_Blocks_Idir, 
+					Input_Parameters.Number_of_Blocks_Jdir);
+  
+}
+  
 /********************************************************  
  * Rte2DSolver :: StandAloneSolve                       *
  *                                                      *
  * The main control function which performs the stand-  *
  * alone version of the solve.                          *
  ********************************************************/
-inline int Rte2DSolver::StandAloneSolve() {
+inline int Rte2DSolver::StandAloneSolve(const int batch_flag, 
+					char *Input_File_Name_ptr) {
 
   // Declares
   int error_flag;
-  command_flag = EXECUTE_CODE;
+  int command_flag(EXECUTE_CODE);
 
   //--------------------------------------------------
   // Setup default input parameters
   //--------------------------------------------------
-  error_flag = ReadInputFile();
+  error_flag = ReadInputFile(Input_File_Name_ptr,
+			     batch_flag,command_flag);
   if (error_flag) {
     cout << "\n Rte2D ERROR: Unable to set default inputs.\n"
 	 << flush;
@@ -173,7 +187,7 @@ inline int Rte2DSolver::StandAloneSolve() {
   //--------------------------------------------------
   // Setup mesh
   //--------------------------------------------------
-  error_flag = SetupMesh();
+  error_flag = SetupMesh(batch_flag);
   if (error_flag) {
     cout << "\n Rte2D ERROR: Unable to setup mesh.\n"
 	 << flush;
@@ -197,7 +211,7 @@ inline int Rte2DSolver::StandAloneSolve() {
   //--------------------------------------------------
   // Setup ICs
   //--------------------------------------------------
-  error_flag = SetICs();
+  error_flag = SetICs(batch_flag);
   if (error_flag) {
     cout << "\n Rte2D ERROR: Unable to setup ICs.\n"
 	 << flush;
@@ -226,7 +240,7 @@ inline int Rte2DSolver::StandAloneSolve() {
   //--------------------------------------------------
   // AMR
   //--------------------------------------------------
-  error_flag = PerformAMR();
+  error_flag = PerformAMR(batch_flag);
   if (error_flag) {
     cout << "\n Rte2D ERROR: Unable to perform AMR.\n"
 	 << flush;
@@ -237,7 +251,7 @@ inline int Rte2DSolver::StandAloneSolve() {
   //--------------------------------------------------
   // Morton Ordering
   //--------------------------------------------------
-  error_flag = PerformMortonOrdering();
+  error_flag = PerformMortonOrdering(batch_flag);
   if (error_flag) {
     cout << "\n Rte2D ERROR: Unable to perform Morton Ordering.\n"
 	 << flush;
@@ -264,7 +278,7 @@ inline int Rte2DSolver::StandAloneSolve() {
   // Multigrid
   //
   if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
-    error_flag = SolveMultigrid();
+    error_flag = SolveMultigrid(batch_flag);
     if (error_flag) {
       cout << "\n Rte2D ERROR: Unable to perform multigrid computations.\n"
 	   << flush;
@@ -275,7 +289,7 @@ inline int Rte2DSolver::StandAloneSolve() {
   // Space marching
   //
   } else if (Input_Parameters.i_Time_Integration == TIME_STEPPING_SPACE_MARCH) {
-    error_flag = SolveSpaceMarch();
+    error_flag = SolveSpaceMarch(batch_flag);
     if (error_flag) {
       cout << "\n Rte2D ERROR: Unable to perform space-marching computations.\n"
 	   << flush;
@@ -286,7 +300,7 @@ inline int Rte2DSolver::StandAloneSolve() {
   // Non-multigrid, explicit time marching
   //
   } else {
-    error_flag = SolveExplicitTimeStep();
+    error_flag = SolveExplicitTimeStep(batch_flag);
     if (error_flag) {
       cout << "\n Rte2D ERROR: Unable to perform explicit time-stepping computations.\n"
 	   << flush;
@@ -299,7 +313,7 @@ inline int Rte2DSolver::StandAloneSolve() {
   // NKS time marching
   //
   if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
-    error_flag = SolveNKS();
+    error_flag = SolveNKS(batch_flag);
     if (error_flag) {
       cout << "\n Rte2D ERROR: Unable to perform implicit NKS computations.\n"
 	   << flush;
@@ -311,7 +325,7 @@ inline int Rte2DSolver::StandAloneSolve() {
   //--------------------------------------------------
   // Postprocess
   //--------------------------------------------------
-  error_flag = PostProcess();
+  error_flag = PostProcess(batch_flag,command_flag);
   if (error_flag) {
     cout << "\n Rte2D ERROR: Unable to perform postprocessing.\n"
 	 << flush;
@@ -338,7 +352,9 @@ inline int Rte2DSolver::StandAloneSolve() {
  * and then read user specified input values from the   *
  * specified input parameter file.                      *
  ********************************************************/
-inline int Rte2DSolver::ReadInputFile() {
+inline int Rte2DSolver::ReadInputFile(char *Input_File_Name_ptr, 
+				      const int batch_flag,
+				      int &command_flag) {
   
   // declares
   int error_flag(0);
@@ -387,7 +403,7 @@ inline int Rte2DSolver::ReadInputFile() {
  * equation solution blocks corresponding to the initial*
  * mesh.                                                *
  ********************************************************/
-inline int Rte2DSolver::SetupMesh() {
+inline int Rte2DSolver::SetupMesh(const int batch_flag) {
 
   // declares
   int error_flag(0);
@@ -463,7 +479,7 @@ inline int Rte2DSolver::SetupMesh() {
  * Prescribe the inial Rte2D solution data.  We either  *
  * read from a RESTART file or set the ICs manually.    *
  ********************************************************/
-inline int Rte2DSolver::SetICs() {
+inline int Rte2DSolver::SetICs(const int batch_flag) {
 
   // declares
   int error_flag(0);
@@ -589,7 +605,7 @@ inline int Rte2DSolver::BroadcastSolution() {
  * Perform uniform, boundary, and initial mesh          *
  * refinement.                                          *
  ********************************************************/
-inline int Rte2DSolver::PerformAMR() {
+inline int Rte2DSolver::PerformAMR(const int batch_flag) {
 
   // declares
   int error_flag(0);
@@ -687,7 +703,7 @@ inline int Rte2DSolver::PerformAMR() {
  * Perform uniform, boundary, and initial mesh          *
  * refinement.                                          *
  ********************************************************/
-inline int Rte2DSolver::PerformPeriodicAMR() {
+inline int Rte2DSolver::PerformPeriodicAMR(const int batch_flag) {
 
   // declares
   int error_flag(0);
@@ -718,11 +734,11 @@ inline int Rte2DSolver::PerformPeriodicAMR() {
     
     // output to tecplot if there is an error
     if (error_flag) {
-      command_flag = Output_Tecplot(Local_SolnBlk,
-				    List_of_Local_Solution_Blocks,
-				    Input_Parameters,
-				    number_of_time_steps,
-				    Time);
+      Output_Tecplot(Local_SolnBlk,
+		     List_of_Local_Solution_Blocks,
+		     Input_Parameters,
+		     number_of_time_steps,
+		     Time);
       return (error_flag);
     } // endif
     
@@ -757,7 +773,7 @@ inline int Rte2DSolver::PerformPeriodicAMR() {
  * should be meshed with AMR, ie. when Refine_Grid      *
  * is done, call the ordering process.                  *
  ********************************************************/
-inline int Rte2DSolver::PerformMortonOrdering() {
+inline int Rte2DSolver::PerformMortonOrdering(const int batch_flag) {
 
   // declares
   int error_flag(0);
@@ -808,7 +824,7 @@ inline int Rte2DSolver::PerformMortonOrdering() {
  * Periodically re-order the solution blocks on the     *
  * processors.                                          *
  ********************************************************/
-inline int Rte2DSolver::PerformMortonReOrdering() {
+inline int Rte2DSolver::PerformMortonReOrdering(const int batch_flag) {
 
   // declares
   int error_flag(0);
@@ -883,7 +899,11 @@ inline int Rte2DSolver::OpenResidualFile(ofstream &residual_file) {
  *                                                      *
  * Output progress to screen and file.                  *
  ********************************************************/
-inline void Rte2DSolver::OutputProgress(ofstream &residual_file) {
+inline void Rte2DSolver::OutputProgress(const int batch_flag, 
+					const double residual_l1_norm, 
+					const double residual_l2_norm, 
+					const double residual_max_norm,
+					ofstream &residual_file) {
 
     //screen
     if (!batch_flag) Output_Progress_L2norm(number_of_time_steps,
@@ -911,12 +931,14 @@ inline void Rte2DSolver::OutputProgress(ofstream &residual_file) {
 }
 
 /********************************************************  
- * Rte2DSolver :: ComputeNormsAndUpdateCPU              *
+ * Rte2DSolver :: ComputeNorms                          *
  *                                                      *
  * Determine the L1, L2, and max norms of the solution  *
  * residual and update the CPU time for all processesors*
  ********************************************************/
-inline void Rte2DSolver::ComputeNormsAndUpdateCPU() {
+inline void Rte2DSolver::ComputeNorms(double &residual_l1_norm, 
+				      double &residual_l2_norm, 
+				      double &residual_max_norm) {
 
   // L1 norm for all processors.
   residual_l1_norm = L1_Norm_Residual(Local_SolnBlk, 
@@ -934,13 +956,7 @@ inline void Rte2DSolver::ComputeNormsAndUpdateCPU() {
   residual_max_norm = Max_Norm_Residual(Local_SolnBlk, 
 					List_of_Local_Solution_Blocks);
   residual_max_norm = CFFC_Maximum_MPI(residual_max_norm);
-  
-  // Update CPU time used for the calculation so far.
-  processor_cpu_time.update();
-  
-  // Total CPU time for all processors.
-  total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);
-  
+   
 }
 
 /********************************************************  
@@ -948,7 +964,7 @@ inline void Rte2DSolver::ComputeNormsAndUpdateCPU() {
  *                                                      *
  * Periodically save restart solution files.            *
  ********************************************************/
-inline int Rte2DSolver::WritePeriodicRestart() {
+inline int Rte2DSolver::WritePeriodicRestart(const int batch_flag) {
 
   // declares
   int error_flag(0);
@@ -1006,7 +1022,7 @@ inline int Rte2DSolver::WritePeriodicRestart() {
    non-gray media on multi-block solution-adaptive quadrilateral mesh.                                  
  ****************************************************************************
  ****************************************************************************/  
-inline int Rte2DSolver::SolveMultigrid() {
+inline int Rte2DSolver::SolveMultigrid(const int batch_flag) {
 
   // declares
   int error_flag(0);
@@ -1054,11 +1070,12 @@ inline int Rte2DSolver::SolveMultigrid() {
    non-gray media on multi-block solution-adaptive quadrilateral mesh.                                  
  ****************************************************************************
  ****************************************************************************/  
-inline int Rte2DSolver::SolveSpaceMarch() {
+inline int Rte2DSolver::SolveSpaceMarch(const int batch_flag) {
 
   // declares
   int error_flag(0);
   int i_SpaceMarch_Scheme;
+  double residual_l1_norm, residual_l2_norm, residual_max_norm;
   ofstream residual_file;
 
   //--------------------------------------------------
@@ -1091,31 +1108,41 @@ inline int Rte2DSolver::SolveSpaceMarch() {
     // MORTON ORDERING: Periodically re-order the solution 
     // blocks on the processors.
     //--------------------------------------------------
-    PerformMortonReOrdering();
+    PerformMortonReOrdering(batch_flag);
     if (error_flag) return (error_flag);
 
     //--------------------------------------------------
     // MESH REFINEMENT: Periodically refine the mesh (AMR). 
     //--------------------------------------------------
-    PerformPeriodicAMR();
+    PerformPeriodicAMR(batch_flag);
     if (error_flag) return (error_flag);
 
     //--------------------------------------------------
     // NORMS: Determine the L1, L2, and max norms of the
     // solution residual. 
     //--------------------------------------------------
-    ComputeNormsAndUpdateCPU();
+    ComputeNorms(residual_l1_norm, residual_l2_norm, residual_max_norm);
+
+    //--------------------------------------------------
+    // UPDATE CPU
+    //--------------------------------------------------
+    // Update CPU time used for the calculation so far.
+    processor_cpu_time.update();
+  
+    // Total CPU time for all processors.
+    total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);
 
     //--------------------------------------------------
     // RESTART: Periodically save restart solution files.
     //--------------------------------------------------
-    WritePeriodicRestart();
+    WritePeriodicRestart(batch_flag);
     if (error_flag) return (error_flag);
 
     //--------------------------------------------------
     // PROGRESS: Output progress information for the calculation.
     //--------------------------------------------------
-    OutputProgress(residual_file);
+    OutputProgress(batch_flag, residual_l1_norm, residual_l2_norm, 
+		   residual_max_norm, residual_file);
       
     //--------------------------------------------------
     // CALCULATION CHECK: Check to see if calculations are 
@@ -1269,11 +1296,12 @@ inline int Rte2DSolver::SolveSpaceMarch() {
    non-gray media on multi-block solution-adaptive quadrilateral mesh.                                  
  ****************************************************************************
  ****************************************************************************/  
-inline int Rte2DSolver::SolveExplicitTimeStep() {
+inline int Rte2DSolver::SolveExplicitTimeStep(const int batch_flag) {
   
   // declares
   int error_flag(0);
   double dTime;
+  double residual_l1_norm, residual_l2_norm, residual_max_norm;
   ofstream residual_file;
 
   //--------------------------------------------------
@@ -1309,13 +1337,13 @@ inline int Rte2DSolver::SolveExplicitTimeStep() {
     // MORTON ORDERING: Periodically re-order the solution 
     // blocks on the processors.
     //--------------------------------------------------
-    PerformMortonReOrdering();
+    PerformMortonReOrdering(batch_flag);
     if (error_flag) return (error_flag);
 
     //--------------------------------------------------
     // MESH REFINEMENT: Periodically refine the mesh (AMR). 
     //--------------------------------------------------
-    PerformPeriodicAMR();
+    PerformPeriodicAMR(batch_flag);
     if (error_flag) return (error_flag);
 
     //--------------------------------------------------
@@ -1367,18 +1395,28 @@ inline int Rte2DSolver::SolveExplicitTimeStep() {
     // NORMS: Determine the L1, L2, and max norms of the
     // solution residual. 
     //--------------------------------------------------
-    ComputeNormsAndUpdateCPU();
+    ComputeNorms(residual_l1_norm, residual_l2_norm, residual_max_norm);
+
+    //--------------------------------------------------
+    // UPDATE CPU
+    //--------------------------------------------------
+    // Update CPU time used for the calculation so far.
+    processor_cpu_time.update();
+  
+    // Total CPU time for all processors.
+    total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);
 
     //--------------------------------------------------
     // RESTART: Periodically save restart solution files.
     //--------------------------------------------------
-    WritePeriodicRestart();
+    WritePeriodicRestart(batch_flag);
     if (error_flag) return (error_flag);
 	
     //--------------------------------------------------
     // PROGRESS: Output progress information for the calculation.
     //--------------------------------------------------
-    OutputProgress(residual_file);
+    OutputProgress(batch_flag, residual_l1_norm, residual_l2_norm, 
+		   residual_max_norm, residual_file);
 	
     //--------------------------------------------------
     // CALCULATION CHECK: Check to see if calculations are 
@@ -1569,7 +1607,7 @@ inline int Rte2DSolver::SolveExplicitTimeStep() {
    non-gray media on multi-block solution-adaptive quadrilateral mesh.                                  
  ****************************************************************************
  ****************************************************************************/  
-inline int Rte2DSolver::SolveNKS() {
+inline int Rte2DSolver::SolveNKS(const int batch_flag) {
 
   // declares
   int error_flag(0);
@@ -1668,7 +1706,7 @@ inline int Rte2DSolver::SolveNKS() {
    by input parameters.        
  *************************************************************************** 
  ****************************************************************************/ 
-inline int Rte2DSolver::PostProcess() {
+inline int Rte2DSolver::PostProcess(const int batch_flag,int &command_flag) {
 
   // declares
   int error_flag(0);
@@ -1710,26 +1748,7 @@ inline int Rte2DSolver::PostProcess() {
       // Deallocate memory for 2D Rte equation solution.
       //
       if (!batch_flag) cout << "\n Deallocating Rte2D solution variables.";
-
-      // multigrid
-      if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
-	MGSolver.deallocate();
-      }
-
-      // local solution blocks
-      Local_SolnBlk = Deallocate(Local_SolnBlk, 
-				 Input_Parameters);
-      
-      // message buffers (Not necessary here!)
-      //Deallocate_Message_Buffers(List_of_Local_Solution_Blocks);
-
-      // solution block lists, quadtree, meshblock
-      List_of_Local_Solution_Blocks.deallocate();
-      List_of_Global_Solution_Blocks.deallocate();
-      QuadTree.deallocate();
-      MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk, 
-					    Input_Parameters.Number_of_Blocks_Idir, 
-					    Input_Parameters.Number_of_Blocks_Jdir);
+      DeallocateSoln();
 
       // Output input parameters for new caluculation.
       if (!batch_flag)  {
@@ -1751,26 +1770,8 @@ inline int Rte2DSolver::PostProcess() {
       // Deallocate memory for 2D Rte equation solution.
       //
       if (!batch_flag) cout << "\n Deallocating Rte2D solution variables.";
-
-      // multigrid
-      if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
-	MGSolver.deallocate();
-      }
-
-      // local solution blocks
-      Local_SolnBlk = Deallocate(Local_SolnBlk, 
-				 Input_Parameters);
-
-      // message buffers (Not necessary here!)
-      //Deallocate_Message_Buffers(List_of_Local_Solution_Blocks);
-
-      // solution block lists, quadtree, meshblock
-      List_of_Local_Solution_Blocks.deallocate();
-      List_of_Global_Solution_Blocks.deallocate();
-      QuadTree.deallocate();
-      MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk, 
-					    Input_Parameters.Number_of_Blocks_Idir, 
-					    Input_Parameters.Number_of_Blocks_Jdir);
+      DeallocateSoln();
+      
 
       // Close input data file.
       if (!batch_flag) cout << "\n\n Closing Rte2D input data file.";
