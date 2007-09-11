@@ -6,6 +6,10 @@
 #include "Gaussian2DState.h"
 #endif // _Gaussian2D_STATE_INCLUDED
 
+#ifndef _GAUSSIAN2D_INPUT_INCLUDED
+#include "Gaussian2DInput.h"
+#endif // _GAUSSIAN2D_INPUT_INCLUDED
+
 /****************************************************************
  * Gaussian2D_pState -- Create storage and assign gas constants.*
  ****************************************************************/
@@ -24,6 +28,17 @@ int    Gaussian2D_cState::atoms = GAUSSIAN_DIATOMIC;
 int    Gaussian2D_cState::gas   = GAS_AIR;
 double Gaussian2D_cState::alpha = ONE;
 double Gaussian2D_cState::pr    = 0.6666666666666666667;
+
+/*************************************************************
+ * Gaussian2D_pState -- set_state_from_ips                   *
+ *************************************************************/
+void Gaussian2D_pState::set_state_from_ips(Gaussian2D_Input_Parameters &IP) {
+  setgas(IP.Gas_Type);
+  set_temperature_d(IP.Temperature);
+  v.x = IP.Mach_Number*sound()*cos(TWO*PI*IP.Flow_Angle/360.00);
+  v.y = IP.Mach_Number*sound()*sin(TWO*PI*IP.Flow_Angle/360.00);
+  return;
+}
 
 /********************************************************
  * Routine: RoeAverage (Roe Averages)                   *

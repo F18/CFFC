@@ -59,6 +59,7 @@ using namespace std;
 
 
 class Gaussian2D_cState;
+class Gaussian2D_Input_Parameters;
 
 /********************************************************
  * Class: Gaussian2D_pState                             *
@@ -111,6 +112,12 @@ class Gaussian2D_cState;
  *     tr       -- rotational relaxation time           *
  *     relax    -- relaxes state towards thermodynamic  *
  *                 equilibrium (BGK source terms)       *
+ *     set_temperature_d                                *
+ *              -- change density so that the state has *
+ *                 the desired temperature              *
+ *     set_state_from_ips                               *
+ *              -- set ics relating to temperature and  *
+ *                 mach number etc.                     *
  *                                                      *
  * Member operators                                     *
  *      W -- a primitive solution state                 *
@@ -241,13 +248,6 @@ class Gaussian2D_pState{
 #ifdef _GAUSSIAN_HEAT_TRANSFER_
        q.zero();
 #endif
-    }
-
-
-    /* Source terms */
-    void relax(double deltat, int stage, const Gaussian2D_pState &W);
-    int analytically_inverted_relaxation() { //this is needed for embeddedboundaries with gaussian2D
-      return 1;
     }
 
 
@@ -409,9 +409,19 @@ class Gaussian2D_pState{
     Gaussian2D_pState lp_y(int index) const;
     friend Gaussian2D_pState lp_y(const Gaussian2D_pState &W, int index);
 
+    /* Source terms */
+    void relax(double deltat, int stage, const Gaussian2D_pState &W);
+    int analytically_inverted_relaxation() { //this is needed for embeddedboundaries with gaussian2D
+      return 1;
+    }
+
     //translational and rotational relaxation times
     double tt() const;
     double tr() const;
+
+    //set temperature and set state from ics
+    void set_temperature_d(double temperature);
+    void set_state_from_ips(Gaussian2D_Input_Parameters &IP); //in Gaussian2D_State.cc
 
     /* Source vector (axisymmetric terms). */
     Gaussian2D_cState S(const Vector2D &X);
@@ -2833,6 +2843,16 @@ inline double Gaussian2D_pState::tt() const {
 
 inline double Gaussian2D_pState::tr() const {
   return 15.0/4.0*bulk_viscosity()/pressure();
+}
+
+/*************************************************************
+ * Gaussian2D_pState -- set_temperatur_d                     *
+ *************************************************************/
+inline void Gaussian2D_pState::set_temperature_d(double temperature) {
+  //This uses the "thermodynamic" pressure and does not change
+  //velocities, therefore it implicitly changes Mach numbers.
+  d = pressure()*M/(AVOGADRO*BOLTZMANN*temperature)/THOUSAND;
+  return;
 }
 
 /********************************************************

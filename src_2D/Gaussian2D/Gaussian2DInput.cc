@@ -147,6 +147,10 @@ void Set_Default_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
     IP.BC_East  = BC_NONE;
     IP.BC_West  = BC_NONE;
 
+    IP.Temperature_North_BC = IP.Temperature;
+    IP.Temperature_South_BC = IP.Temperature;
+    IP.Temperature_East_BC = IP.Temperature;
+    IP.Temperature_West_BC = IP.Temperature;
 
     IP.Plate_Length = ONE;
     IP.Pipe_Length = ONE;
@@ -398,15 +402,9 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
                           1, 
                           MPI::DOUBLE, 0);
     if (!CFFC_Primary_MPI_Processor()) {
-       IP.Wo.setgas(IP.Gas_Type);
-       IP.Wo = Gaussian2D_pState(IP.Pressure*IP.Wo.M/(AVOGADRO*BOLTZMANN*IP.Temperature)/THOUSAND, 
-                              ZERO, 
-                              ZERO, 
-                              IP.Pressure);
-       IP.Wo.v.x = IP.Mach_Number*IP.Wo.sound()*cos(TWO*PI*IP.Flow_Angle/360.00);
-       IP.Wo.v.y = IP.Mach_Number*IP.Wo.sound()*sin(TWO*PI*IP.Flow_Angle/360.00);
-       IP.Uo.setgas(IP.Gas_Type);
-       IP.Uo = U(IP.Wo);
+      IP.Wo.set_state_from_ips(IP);
+      IP.Uo.setgas(IP.Gas_Type);
+      IP.Uo = U(IP.Wo);
     } // endif 
     MPI::COMM_WORLD.Bcast(&(IP.W1.d), 
                           1, 
@@ -635,6 +633,18 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.BC_West),
 			  1,
 			  MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Temperature_North_BC), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Temperature_South_BC), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Temperature_East_BC), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Temperature_West_BC), 
+                          1, 
+                          MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(IP.NASA_Rotor37_Data_Directory, 
                           INPUT_PARAMETER_LENGTH_GAUSSIAN2D, 
                           MPI::CHAR, 0);
@@ -957,15 +967,9 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP,
                        1, 
                        MPI::DOUBLE, Source_Rank);
     if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
-       IP.Wo.setgas(IP.Gas_Type);
-       IP.Wo = Gaussian2D_pState(IP.Pressure*IP.Wo.M/(AVOGADRO*BOLTZMANN*IP.Temperature)/THOUSAND, 
-                              ZERO, 
-                              ZERO, 
-                              IP.Pressure);
-       IP.Wo.v.x = IP.Mach_Number*IP.Wo.sound()*cos(TWO*PI*IP.Flow_Angle/360.00);
-       IP.Wo.v.y = IP.Mach_Number*IP.Wo.sound()*sin(TWO*PI*IP.Flow_Angle/360.00);
-       IP.Uo.setgas(IP.Gas_Type);
-       IP.Uo = U(IP.Wo);
+      IP.Wo.set_state_from_ips(IP);
+      IP.Uo.setgas(IP.Gas_Type);
+      IP.Uo = U(IP.Wo);
     } // endif
     Communicator.Bcast(&(IP.W1.d), 
                        1, 
@@ -1194,6 +1198,18 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.BC_West),
 		       1,
 		       MPI::INT,Source_Rank);
+    Communicator.Bcast(&(IP.Temperature_North_BC), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Temperature_South_BC), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Temperature_East_BC), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Temperature_West_BC), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(IP.NASA_Rotor37_Data_Directory, 
                      INPUT_PARAMETER_LENGTH_GAUSSIAN2D, 
                      MPI::CHAR, Source_Rank);
@@ -2096,13 +2112,7 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
        Get_Next_Input_Control_Parameter(IP);
        strcpy(IP.Gas_Type, 
               IP.Next_Control_Parameter);
-       IP.Wo.setgas(IP.Gas_Type);
-       IP.Wo = Gaussian2D_pState(IP.Pressure*IP.Wo.M/(AVOGADRO*BOLTZMANN*IP.Temperature)/THOUSAND, 
-                              ZERO, 
-                              ZERO, 
-                              IP.Pressure);
-       IP.Wo.v.x = IP.Mach_Number*IP.Wo.sound()*cos(TWO*PI*IP.Flow_Angle/360.00);
-       IP.Wo.v.y = IP.Mach_Number*IP.Wo.sound()*sin(TWO*PI*IP.Flow_Angle/360.00);
+       IP.Wo.set_state_from_ips(IP);
        IP.Uo.setgas(IP.Gas_Type);
        IP.Uo = U(IP.Wo);
 
@@ -2116,6 +2126,7 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
        } else {
           IP.Wo.v.x = IP.Mach_Number*IP.Wo.sound()*cos(TWO*PI*IP.Flow_Angle/360.00);
           IP.Wo.v.y = IP.Mach_Number*IP.Wo.sound()*sin(TWO*PI*IP.Flow_Angle/360.00);
+	  IP.Uo = U(IP.Wo);
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Flow_Angle") == 0) {
@@ -2125,6 +2136,7 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        IP.Wo.v.x = IP.Mach_Number*IP.Wo.sound()*cos(TWO*PI*IP.Flow_Angle/360.00);
        IP.Wo.v.y = IP.Mach_Number*IP.Wo.sound()*sin(TWO*PI*IP.Flow_Angle/360.00);
+       IP.Uo = U(IP.Wo);
 
     } else if (strcmp(IP.Next_Control_Parameter, "Pressure") == 0) {
        i_command = 47;
@@ -2135,12 +2147,8 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
        if (IP.Pressure <= ZERO) {
           i_command = INVALID_INPUT_VALUE;
        } else {
-          IP.Wo = Gaussian2D_pState(IP.Pressure*IP.Wo.M/(AVOGADRO*BOLTZMANN*IP.Temperature)/THOUSAND, 
-                                 ZERO, 
-                                 ZERO, 
-                                 IP.Pressure);
-          IP.Wo.v.x = IP.Mach_Number*IP.Wo.sound()*cos(TWO*PI*IP.Flow_Angle/360.00);
-          IP.Wo.v.y = IP.Mach_Number*IP.Wo.sound()*sin(TWO*PI*IP.Flow_Angle/360.00);
+	 IP.Wo.set_state_from_ips(IP);
+	 IP.Uo = U(IP.Wo);
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Temperature") == 0) {
@@ -2151,12 +2159,8 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
        if (IP.Temperature <= ZERO) {
           i_command = INVALID_INPUT_VALUE;
        } else {
-          IP.Wo = Gaussian2D_pState(IP.Pressure*IP.Wo.M/(AVOGADRO*BOLTZMANN*IP.Temperature)/THOUSAND, 
-                                 ZERO, 
-                                 ZERO, 
-                                 IP.Pressure);
-          IP.Wo.v.x = IP.Mach_Number*IP.Wo.sound()*cos(TWO*PI*IP.Flow_Angle/360.00);
-          IP.Wo.v.y = IP.Mach_Number*IP.Wo.sound()*sin(TWO*PI*IP.Flow_Angle/360.00);
+	 IP.Wo.set_state_from_ips(IP);
+	 IP.Uo = U(IP.Wo);
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Time_Max") == 0) {
@@ -2810,6 +2814,34 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
       } else {
 	i_command = INVALID_INPUT_VALUE;
       }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Temperature_North_BC") == 0) {
+      i_command = 505;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Temperature_North_BC;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Temperature_North_BC < ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Temperature_South_BC") == 0) {
+      i_command = 506;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Temperature_South_BC;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Temperature_South_BC < ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Temperature_East_BC") == 0) {
+      i_command = 505;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Temperature_East_BC;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Temperature_East_BC < ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Temperature_West_BC") == 0) {
+      i_command = 505;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Temperature_West_BC;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Temperature_West_BC < ZERO) i_command = INVALID_INPUT_VALUE;
 
     ////////////////////////////////////////////////////////////////////
     // INTERFACE PARAMETERS                                           //
