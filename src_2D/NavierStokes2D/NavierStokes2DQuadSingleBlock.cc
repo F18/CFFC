@@ -66,6 +66,15 @@ void Broadcast_Solution_Block(NavierStokes2D_Quad_Block &SolnBlk) {
   // Broadcast the axisymmetric/planar flow indicator.
   MPI::COMM_WORLD.Bcast(&(SolnBlk.Axisymmetric),1,MPI::INT,0);
 
+  // Broadcast the compressibility effect correction indicator.
+  MPI::COMM_WORLD.Bcast(&(SolnBlk.Compressibility_Effect),1,MPI::INT,0);
+
+  // Broadcast the transition model correction indicator.
+  MPI::COMM_WORLD.Bcast(&(SolnBlk.Transition_Model),1,MPI::INT,0);
+
+  // Broadcast the variable Prandtl number indicator.
+  MPI::COMM_WORLD.Bcast(&(SolnBlk.Variable_Prandtl),1,MPI::INT,0);
+
   // Broadcast the wall velocity.
   MPI::COMM_WORLD.Bcast(&(SolnBlk.Vwall.x),1,MPI::DOUBLE,0);
   MPI::COMM_WORLD.Bcast(&(SolnBlk.Vwall.y),1,MPI::DOUBLE,0);
@@ -245,6 +254,15 @@ void Broadcast_Solution_Block(NavierStokes2D_Quad_Block &SolnBlk,
   // Broadcast the axisymmetric/planar flow indicator.
   Communicator.Bcast(&(SolnBlk.Axisymmetric),1,MPI::INT,Source_Rank);
 
+  // Broadcast the compressibility effect correction indicator.
+  Communicator.Bcast(&(SolnBlk.Compressibility_Effect),1,MPI::INT,Source_Rank);
+
+  // Broadcast the transition model correction indicator.
+  Communicator.Bcast(&(SolnBlk.Transition_Model),1,MPI::INT,Source_Rank);
+
+  // Broadcast the variable Prandtl number indicator.
+  Communicator.Bcast(&(SolnBlk.Variable_Prandtl),1,MPI::INT,Source_Rank);
+
   // Broadcast the wall velocity.
   Communicator.Bcast(&(SolnBlk.Vwall.x),1,MPI::DOUBLE,Source_Rank);
   Communicator.Bcast(&(SolnBlk.Vwall.y),1,MPI::DOUBLE,Source_Rank);
@@ -397,6 +415,15 @@ void Copy_Solution_Block(NavierStokes2D_Quad_Block &SolnBlk1,
   // Copy the axisymmetric/planar flow indicator.
   SolnBlk1.Axisymmetric = SolnBlk2.Axisymmetric;
 
+  // Copy the compressibility effect correction indicator.
+  SolnBlk1.Compressibility_Effect = SolnBlk2.Compressibility_Effect;
+
+  // Copy the transition model correction indicator.
+  SolnBlk1.Transition_Model = SolnBlk2.Transition_Model;
+
+  // Copy the variable Prandtl number indicator.
+  SolnBlk1.Variable_Prandtl = SolnBlk2.Variable_Prandtl;
+
   // Copy the wall velocity.
   SolnBlk1.Vwall = SolnBlk2.Vwall;
 
@@ -417,6 +444,8 @@ void Copy_Solution_Block(NavierStokes2D_Quad_Block &SolnBlk1,
 	  SolnBlk1.dUdt[i][j][k] = SolnBlk2.dUdt[i][j][k];
 	SolnBlk1.dWdx[i][j] = SolnBlk2.dWdx[i][j];
 	SolnBlk1.dWdy[i][j] = SolnBlk2.dWdy[i][j];
+	SolnBlk1.d_dWdx_dW[i][j] = SolnBlk2.d_dWdx_dW[i][j];
+	SolnBlk1.d_dWdy_dW[i][j] = SolnBlk2.d_dWdy_dW[i][j];
 	SolnBlk1.phi[i][j]  = SolnBlk2.phi[i][j];
 	SolnBlk1.Uo[i][j]   = SolnBlk2.Uo[i][j];
 	SolnBlk1.dt[i][j]   = SolnBlk2.dt[i][j];
@@ -487,6 +516,15 @@ int Prolong_Solution_Block(NavierStokes2D_Quad_Block &SolnBlk_Fine,
 
     // Copy the axisymmetric/planar flow indicator.
     SolnBlk_Fine.Axisymmetric = SolnBlk_Original.Axisymmetric;
+
+    // Copy the compressibility effect correction indicator.
+    SolnBlk_Fine.Compressibility_Effect = SolnBlk_Original.Compressibility_Effect;
+
+    // Copy the transition model correction indicator.
+    SolnBlk_Fine.Transition_Model = SolnBlk_Original.Transition_Model;
+    
+    // Copy the variable Prandtl number indicator.
+    SolnBlk_Fine.Variable_Prandtl = SolnBlk_Original.Variable_Prandtl;
 
     // Copy the wall velocity.
     SolnBlk_Fine.Vwall = SolnBlk_Original.Vwall;
@@ -699,6 +737,15 @@ int Restrict_Solution_Block(NavierStokes2D_Quad_Block &SolnBlk_Coarse,
 
     // Copy the axisymmetric/planar flow indicator.
     SolnBlk_Coarse.Axisymmetric = SolnBlk_Original_SW.Axisymmetric;
+
+    // Copy the compressibility effect correction indicator.
+    SolnBlk_Coarse.Compressibility_Effect = SolnBlk_Original_SW.Compressibility_Effect;
+
+    // Copy the transition model correction indicator.
+    SolnBlk_Coarse.Transition_Model = SolnBlk_Original_SW.Transition_Model;
+    
+    // Copy the variable Prandtl number indicator.
+    SolnBlk_Coarse.Variable_Prandtl = SolnBlk_Original_SW.Variable_Prandtl;
 
     // Copy the wall velocity.
     SolnBlk_Coarse.Vwall = SolnBlk_Original_SW.Vwall;
@@ -918,7 +965,7 @@ void ICs(NavierStokes2D_Quad_Block &SolnBlk,
   double eta, f, fp, fpp;
   double utau, tauw;
   NavierStokes2D_pState NavierStokes2D_W_STDATM; NavierStokes2D_W_STDATM.Standard_Atmosphere();
-
+  ifstream indata, comparedata; 
   // Assign the initial data for the IVP of interest.
   switch(IP.i_ICs) {
   case IC_CONSTANT :
@@ -927,10 +974,27 @@ void ICs(NavierStokes2D_Quad_Block &SolnBlk,
     for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
       for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
 	SolnBlk.W[i][j] = Wo[0];
+ 	if (SolnBlk.Grid.Cell[i][j].Xc.x<ZERO){
+ 	  SolnBlk.W[i][j].p = SolnBlk.W[i][j].p*1.3;
+	  SolnBlk.W[i][j].v.y = IP.Mach_Number* SolnBlk.W[i][j].a();
+	   SolnBlk.W[i][j].v.x = ZERO; 
+	}else {
+	  //SolnBlk.W[i][j].p = SolnBlk.W[i][j].p*(1.4-0.4/0.005*SolnBlk.Grid.Cell[i][j].Xc.x);
+	  SolnBlk.W[i][j].v.x = ZERO;
+	}
 	if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
 	  //SolnBlk.W[i][j].k = max(ONE,0.00005*(sqr(SolnBlk.W[i][j].v.x) + sqr(SolnBlk.W[i][j].v.y)));
 	  SolnBlk.W[i][j].k = 0.00005*(sqr(SolnBlk.W[i][j].v.x) + sqr(SolnBlk.W[i][j].v.y));
 	  SolnBlk.W[i][j].omega = SolnBlk.W[i][j].k/0.000001;
+	}
+	if (SolnBlk.Variable_Prandtl == ON) {
+	  //SolnBlk.W[i][j].ke = 100.0;
+	  //SolnBlk.W[i][j].ee = 0.1;
+	  SolnBlk.W[i][j].ke = sqr(0.0001*SolnBlk.W[i][j].p/(IP.Wo.gm1*SolnBlk.W[i][j].rho));
+	  //For the inital guess of 'ee' we fix the Prandtl number (0.7 in the present case) and calculate all 'ee' accordingly.
+	  double CmuFmu = SolnBlk.W[i][j].muT()*SolnBlk.W[i][j].epsilon()/SolnBlk.W[i][j].rho/max(sqr(SolnBlk.W[i][j].k),sqr(TOLER));
+	  double Coeff = sqr(0.7*0.14*SolnBlk.W[i][j].f_lambda(SolnBlk.Wall[i][j].ywall)/max(CmuFmu,sqr(TOLER)));
+	  SolnBlk.W[i][j].ee = Coeff*SolnBlk.W[i][j].epsilon()* SolnBlk.W[i][j].ke/ max(SolnBlk.W[i][j].k,TOLER);
 	}
 	SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
       }
@@ -945,7 +1009,8 @@ void ICs(NavierStokes2D_Quad_Block &SolnBlk,
 					      SolnBlk.Grid.Cell[i][j].Xc,
 					      IP.dp,
 					      length,
-					      SolnBlk.Wall[i][j].Xwall.y);
+					      SolnBlk.Wall[i][j].Xwall.y,
+					      IP.Reynolds_Number);
     //    //SolnBlk.W[i][j].p = IP.Wo.p - (2.0/3.0)*SolnBlk.W[i][j].rho*SolnBlk.W[i][j].k;
     //    SolnBlk.W[i][j].p += (2.0/3.0)*SolnBlk.W[i][j].rho*SolnBlk.W[i][j].k;
     //    SolnBlk.W[i][j].omega *= 100.0;
@@ -1461,7 +1526,7 @@ void ICs(NavierStokes2D_Quad_Block &SolnBlk,
       for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
 	for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
 	  SolnBlk.W[i][j] = TurbulentPipeFlow(Wo[0],SolnBlk.Grid.Cell[i][j].Xc,
-					      IP.dp,IP.Pipe_Length,IP.Pipe_Radius);
+					      IP.dp,IP.Pipe_Length,IP.Pipe_Radius,IP.Reynolds_Number);
 	  SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
 	}
       }
@@ -1508,25 +1573,366 @@ void ICs(NavierStokes2D_Quad_Block &SolnBlk,
       }
     }
     break;
-  case IC_MIXING_LAYER:
+  case IC_JET_FLOW:
+    if (IP.Mach_Number > 1.0){
+      double sample_Ke, sample_Ee;
+      for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+	for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+	  SolnBlk.W[i][j] = Wo[0];	
+	  SolnBlk.W[i][j].rho = Wo[0].p/(300.0*IP.Wo.R);
+	  SolnBlk.W[i][j].v.x = ZERO;
+	  SolnBlk.W[i][j].v.y = ZERO;
+	  
+	  if (SolnBlk.Grid.Cell[i][j].Xc.y <IP.Pipe_Radius){
+	    SolnBlk.W[i][j].rho = SolnBlk.W[i][j].p/IP.Wo.R/419.4;
+	    //SolnBlk.W[i][j].rho = SolnBlk.W[i][j].p/IP.Wo.R/620.4;
+	    SolnBlk.W[i][j].v.x = IP.Mach_Number* SolnBlk.W[i][j].a();
+	    SolnBlk.W[i][j].v.y = ZERO;
+	    SolnBlk.W[i][j].k = sqr(0.1* SolnBlk.W[i][j].v.x);
+	    SolnBlk.W[i][j].omega = IP.Step_Height*SolnBlk.W[i][j].k;
+	    sample_Ke = sqr(0.001*SolnBlk.W[i][j].p/(IP.Wo.gm1*SolnBlk.W[i][j].rho));
+	    double CmuFmu = SolnBlk.W[i][j].muT()*SolnBlk.W[i][j].epsilon()/SolnBlk.W[i][j].rho/max(sqr(SolnBlk.W[i][j].k),sqr(TOLER));
+	    double Coeff = sqr(0.7*0.14*SolnBlk.W[i][j].f_lambda(SolnBlk.Wall[i][j].ywall)/max(CmuFmu,sqr(TOLER)));
+	    sample_Ee = Coeff*SolnBlk.W[i][j].epsilon()*sample_Ke/ max(SolnBlk.W[i][j].k,TOLER);
+	  }// else if (SolnBlk.Grid.Cell[i][j].Xc.y < TWO*IP.Pipe_Radius && SolnBlk.Grid.Cell[i][j].Xc.x > IP.Pipe_Radius/10.0){
+// 	    double temper = 419.0-119.0*(SolnBlk.Grid.Cell[i][j].Xc.y-IP.Pipe_Radius)/FOUR/IP.Pipe_Radius;
+// 	    SolnBlk.W[i][j].rho = Wo[0].p/(temper*IP.Wo.R);
+// 	  }
+	  if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	    if (SolnBlk.W[i][j].k == ZERO){
+	      //Wedge lenth != physical wedge length -> its just used as an input parameter to give intial K level 
+	      SolnBlk.W[i][j].k = IP.Wedge_Length;//*exp(-(SolnBlk.Grid.Cell[i][j].Xc.y-IP.Pipe_Radius)/IP.Pipe_Radius/10.0); 
+	    }
+	    if (SolnBlk.W[i][j].omega == ZERO){
+	      //step height != physical step_height -> its just used as an input parameter to give intial Omega level
+	      //Omega is assumed to be propotional to K
+	      SolnBlk.W[i][j].omega = IP.Wedge_Length;
+	    }
+	  }
+          
+	  /********************************************************************************************
+           * THE NEXT IF STATEMENT IS NEVER USED. REMOVE IT SOMETIME.                                 *
+	   * The initial guess of Ke is taken to be a small fraction of the specific internal energy  *
+	   * at a point and the dissipation rate, ee, calcualted so that the intital value of PrT=0.7 *
+	   ********************************************************************************************/	
+	  if (SolnBlk.Variable_Prandtl == ON){ 
+	    SolnBlk.W[i][j].ke = sample_Ke;
+	    SolnBlk.W[i][j].ee = sample_Ee;
+	    if (SolnBlk.Grid.Cell[i][j].Xc.y >= IP.Pipe_Radius){
+	      SolnBlk.W[i][j].ke = sqr(0.0001*SolnBlk.W[i][j].p/(IP.Wo.gm1*SolnBlk.W[i][j].rho)); 
+	      double CmuFmu = SolnBlk.W[i][j].muT()*SolnBlk.W[i][j].epsilon()/SolnBlk.W[i][j].rho/max(sqr(SolnBlk.W[i][j].k),sqr(TOLER));
+	      double Coeff = sqr(0.7*0.14*SolnBlk.W[i][j].f_lambda(SolnBlk.Wall[i][j].ywall)/max(CmuFmu,sqr(TOLER)));
+	      SolnBlk.W[i][j].ee = Coeff*SolnBlk.W[i][j].epsilon()* SolnBlk.W[i][j].ke/max(SolnBlk.W[i][j].k,TOLER);
+//  	      double CmuFmu = SolnBlk.W[i][j].muT()*SolnBlk.W[i][j].epsilon()/SolnBlk.W[i][j].rho/max(sqr(SolnBlk.W[i][j].k),sqr(TOLER));
+//  	      double Coeff = sqr(CmuFmu/0.14/max(SolnBlk.W[i][j].f_lambda(SolnBlk.Wall[i][j].ywall),TOLER));
+//  	      SolnBlk.W[i][j].ke = Coeff* SolnBlk.W[i][j].ee* SolnBlk.W[i][j].k/ max(SolnBlk.W[i][j].epsilon(),TOLER)/0.7/0.7;
+	    }
+	  }
+	  SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	}
+      }
+
+    }else {
+      
+    // We are using the exit solution of a pipe stored in a file called "exit.dat"
+    // which has 'y' values in the first column and the other 6 primitive variables
+    // in the following 6 colums in the ascending order of 'y', making the 
+    // total number of columns (variables) to be 7.
+
+//       /*****************************************
+//        *Reading solution from the exit.dat file*
+//        *****************************************/
+
+//       int numColumn; // the number of columns(variables) in the file pipe exit file.
+//       if (SolnBlk.Variable_Prandtl == ON){
+// 	numColumn = 9;
+//       }else numColumn = 7;
+//       int numRows=0; // number of rows in the file
+//       double num;
+//       if (SolnBlk.Variable_Prandtl == ON){
+// 	indata.open("exit_vp.dat"); //opens the file
+//       }else{
+// 	indata.open("exit.dat"); //opens the file
+//       };
+//       if(!indata) { // file couldn't be opened
+// 	cerr << "\n Error: The exit.dat file could not be opened" << endl;
+// 	exit(1);
+//       }
+      
+//       //Lets find how many rows are there in the file
+//       int columnCounter=0;
+//       indata >> num;
+//       while ( !indata.eof() ) { 
+// 	columnCounter++;
+// 	indata >>num;
+// 	if(columnCounter == numColumn){
+// 	  numRows++;
+// 	  columnCounter = 0;
+// 	}  
+//       }
+//       indata.close();
+
+//       // allocate a double array of numColumn*numRows
+//       double** storedColumn;
+//       int j,k=0;
+//       storedColumn = (double **) malloc(sizeof(double *) * numColumn);
+//       for(k=0; k<numColumn; k++)
+// 	storedColumn[k] = (double *) malloc(sizeof(double)*numRows);
+   
+//       // allocate the file data in the double array.
+//       columnCounter=0;
+//       int currentRow = 0;  
+//       if (SolnBlk.Variable_Prandtl == ON){
+// 	comparedata.open("exit_vp.dat"); //opens the file
+//       }else{
+// 	comparedata.open("exit.dat"); //opens the file
+//       };
+//       if(!comparedata) { // file couldn't be opened
+// 	cerr << "\n Error: The exit.dat file could not be opened" << endl;
+// 	exit(1);
+//       }
+
+//       comparedata >> num;
+//       while ( !comparedata.eof() ) { // keep reading until end-of-file
+// 	storedColumn[columnCounter][currentRow] = num;
+// 	//Increase the downstream pipe pressure equal to the 
+// 	//atmospheric pressure.
+// // 	if (columnCounter==4){
+// // 	  storedColumn[columnCounter][currentRow]=Wo[0].p;
+// // 	}
+// 	columnCounter++;
+// 	if(columnCounter == numColumn){
+// 	  columnCounter = 0;
+// 	  currentRow ++;
+// 	}
+// 	comparedata >> num; // sets EOF flag if no value found
+//       }
+//       comparedata.close();
+
+//       /**************************************
+//       Reading done from the exit.dat file
+//       ****************************************/
+//       //Finding the maximum value of K and Omega in the Pipe
+//       double maxK = ZERO, maxOmega = ZERO;
+//       for(k=0; k<numRows; k++){
+// 	if (maxK < storedColumn[5][k])
+// 	  maxK = storedColumn[5][k];
+// 	if (maxOmega < storedColumn[6][k])
+// 	  maxOmega = storedColumn[6][k];
+//       }
+
+//       double interpol; //stores the interpolation factor between two points
+//       int foundYval; // a flag to see that whether or not we need to go ahead 
+//       for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+// 	for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+// 	  SolnBlk.W[i][j] = Wo[0];
+// 	  SolnBlk.W[i][j].rho = Wo[0].p/IP.Wo.R/295.0; 
+// 	  SolnBlk.W[i][j].v.x = ZERO;
+// 	  SolnBlk.W[i][j].v.y = ZERO;
+// 	  //Adjust the freestream pressure is there is a pressure gradient.
+// 	  SolnBlk.W[i][j].p = Wo[0].p + SolnBlk.Grid.Cell[i][j].Xc.x/100.0/IP.Pipe_Radius*IP.dp; 
+// 	  double dist = SolnBlk.Grid.Cell[i][j].Xc.y/FIVE/IP.Pipe_Radius;
+// 	  // If the Y value is greater than pipe radius we simply use the STDATM conditions 
+// 	  // otherwise we interpolate the solutions to get the pipe profile at the exit. 
+// 	  if (abs(SolnBlk.Grid.Cell[i][j].Xc.y) < IP.Pipe_Radius && SolnBlk.Grid.Cell[i][j].Xc.x<50.0*IP.Pipe_Radius*(1.0-abs(SolnBlk.Grid.Cell[i][j].Xc.y)/IP.Pipe_Radius)){//if 1 begins
+// 	    //if (abs(SolnBlk.Grid.Cell[i][j].Xc.y) < IP.Pipe_Radius && abs(SolnBlk.Grid.Cell[i][j].Xc.x) < 20.0*IP.Pipe_Radius){
+// 	    //if (abs(SolnBlk.Grid.Cell[i][j].Xc.y) < IP.Pipe_Radius ){
+// 	    foundYval = 0; 
+// 	    for(k=0;(k<numRows) && (foundYval == 0);k++){//'for loop' begins
+// 	      if( (SolnBlk.Grid.Cell[i][j].Xc.y < storedColumn[0][k]) && foundYval == 0 ){//if 2 begins
+// 		foundYval = 1;
+// 		if (k==0){
+// 		  interpol = 0.0;
+// 		  k = 1;
+// 		}else{ 
+// 		  if (storedColumn[0][k] != storedColumn[0][k-1]){
+// 		    interpol = (SolnBlk.Grid.Cell[i][j].Xc.y-storedColumn[0][k-1])/(storedColumn[0][k]-storedColumn[0][k-1]);
+// 		  }else interpol = 0.0;
+// 		  //Linear interpolation is performed in order to match the values of the exit profile and the grid points
+// 		  SolnBlk.W[i][j].rho = storedColumn[1][k-1] + interpol*(storedColumn[1][k]-storedColumn[1][k-1]);
+// 		  SolnBlk.W[i][j].v.x = storedColumn[2][k-1] + interpol*(storedColumn[2][k]-storedColumn[2][k-1]);
+// 		  SolnBlk.W[i][j].v.y = storedColumn[3][k-1] + interpol*(storedColumn[3][k]-storedColumn[3][k-1]);
+// 		  SolnBlk.W[i][j].p = storedColumn[4][k-1] + interpol*(storedColumn[4][k]-storedColumn[4][k-1]);
+// 		  SolnBlk.W[i][j].k = storedColumn[5][k-1] + interpol*(storedColumn[5][k]-storedColumn[5][k-1]);	      
+// 		  SolnBlk.W[i][j].omega = storedColumn[6][k-1] + interpol*(storedColumn[6][k]-storedColumn[6][k-1]);
+// 		  if (SolnBlk.Variable_Prandtl == ON){
+// 		    SolnBlk.W[i][j].ke = storedColumn[7][k-1] + interpol*(storedColumn[7][k]-storedColumn[7][k-1]);
+// 		    SolnBlk.W[i][j].ee = storedColumn[8][k-1] + interpol*(storedColumn[8][k]-storedColumn[8][k-1]);
+// 		  }
+// 		}   
+// 	      }//if 2 ends
+// 	    }//for ends
+// 	  }//if 1 ends
+	  
+      double maxK, maxOmega;
+      for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+	for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+	  SolnBlk.W[i][j] = Wo[0];	
+	  SolnBlk.W[i][j].rho = Wo[0].p/(288.8*IP.Wo.R);
+	  SolnBlk.W[i][j].v.x = ZERO;
+	  SolnBlk.W[i][j].v.y = ZERO;
+	  
+	  if (SolnBlk.Grid.Cell[i][j].Xc.y <IP.Pipe_Radius){
+	    SolnBlk.W[i][j].rho = SolnBlk.W[i][j].p/IP.Wo.R/551.2;
+	    SolnBlk.W[i][j].v.x = IP.Mach_Number* SolnBlk.W[i][j].a();
+	    SolnBlk.W[i][j].v.y = ZERO;
+	    SolnBlk.W[i][j].k = sqr(0.1* SolnBlk.W[i][j].v.x);
+	    maxK = SolnBlk.W[i][j].k;
+	    SolnBlk.W[i][j].omega = IP.Step_Height*SolnBlk.W[i][j].k;
+	    maxOmega = SolnBlk.W[i][j].omega;
+	  }
+	  
+	  /********************************************************************************************
+	   * For the K-Omega initial guess we are introducing a damping function for both K and omega *
+	   * which introduces some turbulent kinetic energy near the shear layer and damps out to     *
+	   * extremely small values in the free stream.                                               *
+	   ********************************************************************************************/
+	  double dist = SolnBlk.Grid.Cell[i][j].Xc.y/TEN/IP.Pipe_Radius;
+	  if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	    if (SolnBlk.W[i][j].k == ZERO)
+	      SolnBlk.W[i][j].k = maxK*exp(-dist);
+	    if (SolnBlk.W[i][j].omega == ZERO)
+	      SolnBlk.W[i][j].omega = maxOmega*exp(-dist/IP.Step_Height);
+	  }
+
+	  /********************************************************************************************
+	   * The initial guess of Ke is taken to be a small fraction of the specific internal energy  *
+	   * at a point and the dissipation rate, ee, calcualted so that the intital value of PrT=0.7 *
+	   ********************************************************************************************/	
+	  if (SolnBlk.Variable_Prandtl == ON){ 
+	    if (SolnBlk.W[i][j].ke == ZERO)
+	      SolnBlk.W[i][j].ke = sqr(0.001*SolnBlk.W[i][j].p/(IP.Wo.gm1*SolnBlk.W[i][j].rho));
+	    if (SolnBlk.W[i][j].ee == ZERO){
+	      double CmuFmu = SolnBlk.W[i][j].muT()*SolnBlk.W[i][j].epsilon()/SolnBlk.W[i][j].rho/max(sqr(SolnBlk.W[i][j].k),sqr(TOLER));
+	      double Coeff = sqr(0.7*0.14*SolnBlk.W[i][j].f_lambda(SolnBlk.Wall[i][j].ywall)/max(CmuFmu,sqr(TOLER)));
+	      SolnBlk.W[i][j].ee = Coeff*SolnBlk.W[i][j].epsilon()* SolnBlk.W[i][j].ke/max(SolnBlk.W[i][j].k,TOLER);
+	    }
+	  }
+	  
+	  SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	}
+      }
+      //      delete storedColumn, columnCounter, numRows, numColumn, foundYval;
+    }
+    break;
+    
+//   case IC_MIXING_LAYER:
+//     if (IP.Mach_Number > ONE){
+//       for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+// 	for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+	  
+// 	  SolnBlk.W[i][j] = Wo[0];
+// // 	  if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) 
+// // 	    SolnBlk.W[i][j].k = 0.01*(SolnBlk.W[i][j].v.x);
+   
+// 	  if (SolnBlk.Grid.Cell[i][j].Xc.y >= ZERO) {
+// 	    SolnBlk.W[i][j].v.y = ZERO;
+// 	  } else{ 
+// 	    SolnBlk.W[i][j].rho = SolnBlk.W[i][j].rho * pow( ONE + IP.Wo.gm1/TWO*sqr(IP.Mach_Number), -ONE);
+// // 	    SolnBlk.W[i][j].k = Wo[0].rho*SolnBlk.W[i][j].k/SolnBlk.W[i][j].rho;
+// 	    SolnBlk.W[i][j].v.x = SolnBlk.W[i][j].v.y;
+// 	    SolnBlk.W[i][j].v.y = ZERO;
+// 	  }
+// // 	  SolnBlk.W[i][j].omega = SolnBlk.W[i][j].rho * SolnBlk.W[i][j].k/ SolnBlk.W[i][j].mu()*100.0;
+
+// 	 /********************************************************************************************
+//           * For the K-Omega initial guess we are introducing a damping function for both K and omega *
+//           * which introduces some turbulent kinetic energy near the shear layer and damps out to     *
+//           * extremely small values in the free stream.                                               *
+//           ********************************************************************************************/
+// 	  //We are using "Step_Height" as an input variable just to set and test different initial values of Omega
+// 	  if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+// 	    SolnBlk.W[i][j].k = IP.Step_Height*(-90.0*abs(SolnBlk.Grid.Cell[i][j].Xc.y)/IP.Plate_Length+90.0)*pow(cos(atan(1.0)*TWO*SolnBlk.Grid.Cell[i][j].Xc.y/IP.Plate_Length),2.0);
+// 	    SolnBlk.W[i][j].omega = IP.Wedge_Length*SolnBlk.W[i][j].k;
+// 	    //IP.Wedge_Length*(-90.0*abs(SolnBlk.Grid.Cell[i][j].Xc.y)/IP.Plate_Length*TWO+90.0)*pow(cos(atan(1.0)*TWO*SolnBlk.Grid.Cell[i][j].Xc.y/IP.Plate_Length*TWO),2.0); 
+// 	  }
+	  
+// 	  SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+// 	}
+//       }
+//     }else{
+//       for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+// 	for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+// 	  SolnBlk.W[i][j] = Wo[0];
+	  
+// // 	  if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+// // 	    SolnBlk.W[i][j].k = 0.01*(SolnBlk.W[i][j].v.x);
+// // 	    SolnBlk.W[i][j].omega = SolnBlk.W[i][j].rho * SolnBlk.W[i][j].k/ SolnBlk.W[i][j].mu()*100.0;
+// // 	  }
+	  
+// 	  if (SolnBlk.Grid.Cell[i][j].Xc.y >= ZERO) {
+// 	    SolnBlk.W[i][j].v.y = ZERO;
+// 	  } else{ 
+// 	      SolnBlk.W[i][j].rho = SolnBlk.W[i][j].rho * pow( ONE + IP.Wo.gm1/TWO*sqr(IP.Mach_Number), -ONE);
+// 	      // SolnBlk.W[i][j].rho = DENSITY_STDATM * pow( ONE + (IP.Wo.g-ONE)/TWO*sqr(IP.Mach_Number),-IP.Wo.g*(IP.Wo.g-ONE));
+// 	      SolnBlk.W[i][j].v.x = SolnBlk.W[i][j].v.y;
+// 	      SolnBlk.W[i][j].v.y = ZERO;
+// 	  }
+	  
+// 	 /********************************************************************************************
+//           * For the K-Omega initial guess we are introducing a damping function for both K and omega *
+//           * which introduces some turbulent kinetic energy near the shear layer and damps out to     *
+//           * extremely small values in the free stream.                                               *
+//            ********************************************************************************************/
+// 	  //We are using "Step_Height" as an input variable just to set and test different initial values of Omega
+// 	  if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+// 	    SolnBlk.W[i][j].k=IP.Step_Height*(-20.0*abs(SolnBlk.Grid.Cell[i][j].Xc.y)/IP.Plate_Length+20.0)*pow(cos(atan(1.0)*TWO*SolnBlk.Grid.Cell[i][j].Xc.y/IP.Plate_Length),2.0);
+// 	    SolnBlk.W[i][j].omega = IP.Wedge_Length*SolnBlk.W[i][j].k;
+
+// 	    //IP.Wedge_Length*(-90.0*abs(SolnBlk.Grid.Cell[i][j].Xc.y)/IP.Plate_Length*TWO+90.0)*pow(cos(atan(1.0)*TWO*SolnBlk.Grid.Cell[i][j].Xc.y/IP.Plate_Length*TWO),2.0);
+// 	  }
+
+// 	  SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+// 	}
+//       }
+//     }
+//     break;
+  case IC_MIXING_LAYER :
     for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
       for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
-	SolnBlk.W[i][j] = Wo[0];    
-	if (SolnBlk.Grid.Cell[i][j].Xc.y >= ZERO) {
-	  SolnBlk.W[i][j].v.y = ZERO;
-	} else{ 
-          SolnBlk.W[i][j].rho = DENSITY_STDATM;
-          SolnBlk.W[i][j].v.x = SolnBlk.W[i][j].v.y;
-          SolnBlk.W[i][j].v.y = ZERO;
+	SolnBlk.W[i][j] = Wo[0];
+	double fac = ONE + IP.Wo.gm1/TWO*sqr(IP.Mach_Number);
+	double fac1 = ONE + IP.Wo.gm1/TWO*sqr(IP.Mach_Number2);
+	double high = 1.0, high_dens = 1.0;
+	// This is in order to increase the stagnation pressure and temperature for high mach numbers
+	// otherwise the value of temperature were becoming extremely low.
+	if (IP.Mach_Number > 2.0){
+	  high = 40.0;
+	  high_dens = 15.0;
 	}
-	if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-	  SolnBlk.W[i][j].k = 0.05*(SolnBlk.W[i][j].v.x);
-	  SolnBlk.W[i][j].omega = SolnBlk.W[i][j].rho*SolnBlk.W[i][j].k/(0.000001*SolnBlk.W[i][j].mu());
+
+	SolnBlk.W[i][j].p = high*PRESSURE_STDATM * pow(fac,-IP.Wo.g*IP.Wo.gm1i);
+	SolnBlk.W[i][j].rho = high_dens*DENSITY_STDATM * pow(fac,-IP.Wo.gm1i) ;
+// 	while (SolnBlk.W[i][j].p/IP.Wo.R/SolnBlk.W[i][j].rho < 110.0){
+// 	  high = high+0.2;
+// 	  high_dens = high_dens-0.1;
+// 	  SolnBlk.W[i][j].p = high*PRESSURE_STDATM * pow(fac,-IP.Wo.g*IP.Wo.gm1i);
+// 	  SolnBlk.W[i][j].rho = high_dens*DENSITY_STDATM * pow(fac,-IP.Wo.gm1i) ;
+// 	}
+
+	double mu = 1.0e-06;
+	if (SolnBlk.Grid.Cell[i][j].Xc.y > ZERO) {
+	  SolnBlk.W[i][j].v.x = sqrt(IP.Wo.g*SolnBlk.W[i][j].p/SolnBlk.W[i][j].rho)*IP.Mach_Number;
+	  SolnBlk.W[i][j].k = 1.2*sqr(0.01*SolnBlk.W[i][j].v.x)/2.0;
+	  SolnBlk.W[i][j].omega = 0.09*IP.Wedge_Length*SolnBlk.W[i][j].rho*sqr(SolnBlk.W[i][j].k)/mu;
+	}else{
+	  SolnBlk.W[i][j].rho = SolnBlk.W[i][j].rho*fac1/fac ;
+	  SolnBlk.W[i][j].v.x = sqrt(IP.Wo.g*SolnBlk.W[i][j].p/SolnBlk.W[i][j].rho)*IP.Mach_Number2;
+	  SolnBlk.W[i][j].k = 1.2*sqr(0.01*SolnBlk.W[i][j].v.x)/2.0;
+	  SolnBlk.W[i][j].omega = 0.09*IP.Wedge_Length*SolnBlk.W[i][j].rho*sqr(SolnBlk.W[i][j].k)/mu;
 	}
+	//We are using "Step_Height" as an input variable just to set and test different initial values of Omega
+// 	if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+// 	  SolnBlk.W[i][j].k = IP.Step_Height*(-abs(SolnBlk.Grid.Cell[i][j].Xc.y)+2.001)*pow(cos(atan(1.0)*SolnBlk.Grid.Cell[i][j].Xc.y),4.0);
+// 	  SolnBlk.W[i][j].omega = IP.Wedge_Length*SolnBlk.W[i][j].k;
+	  //IP.Wedge_Length*(-90.0*abs(SolnBlk.Grid.Cell[i][j].Xc.y)/IP.Plate_Length*TWO+90.0)*pow(cos(atan(1.0)*TWO*SolnBlk.Grid.Cell[i][j].Xc.y/IP.Plate_Length*TWO),2.// 0);
+// 	}
+	  
 	SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
       }
     }
     break;
+
   case IC_VISCOUS_BRANCHED_DUCT :
     for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
       for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
@@ -1671,12 +2077,16 @@ void BCs(NavierStokes2D_Quad_Block &SolnBlk, NavierStokes2D_Input_Parameters &IP
 	  SolnBlk.W[SolnBlk.ICl-1][j].p = SolnBlk.WoW[j].p - (TWO/THREE)*SolnBlk.W[SolnBlk.ICl][j].dk() + dX.x*IP.dp/IP.Pipe_Length;
 	  SolnBlk.W[SolnBlk.ICl-1][j].k = SolnBlk.W[SolnBlk.ICl][j].k;
 	  SolnBlk.W[SolnBlk.ICl-1][j].omega = SolnBlk.W[SolnBlk.ICl][j].omega;
+	  SolnBlk.W[SolnBlk.ICl-1][j].ke = SolnBlk.W[SolnBlk.ICl][j].ke;
+	  SolnBlk.W[SolnBlk.ICl-1][j].ee = SolnBlk.W[SolnBlk.ICl][j].ee;	  
 	  SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
  	  dX = SolnBlk.Grid.Cell[SolnBlk.ICl-2][j].Xc - SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc;
  	  SolnBlk.W[SolnBlk.ICl-2][j] = SolnBlk.WoW[j];
 	  SolnBlk.W[SolnBlk.ICl-2][j].p = SolnBlk.WoW[j].p - (TWO/THREE)*SolnBlk.W[SolnBlk.ICl][j].dk() + dX.x*IP.dp/IP.Pipe_Length;
 	  SolnBlk.W[SolnBlk.ICl-2][j].k = SolnBlk.W[SolnBlk.ICl][j].k;
 	  SolnBlk.W[SolnBlk.ICl-2][j].omega = SolnBlk.W[SolnBlk.ICl][j].omega;
+	  SolnBlk.W[SolnBlk.ICl-2][j].ke = SolnBlk.W[SolnBlk.ICl][j].ke;
+	  SolnBlk.W[SolnBlk.ICl-2][j].ee = SolnBlk.W[SolnBlk.ICl][j].ee;	  
 	  SolnBlk.U[SolnBlk.ICl-2][j] = U(SolnBlk.W[SolnBlk.ICl-2][j]);
  	} else {
 	  //// Constant extrapolation with fixed v.x and u.x.
@@ -1930,6 +2340,15 @@ void BCs(NavierStokes2D_Quad_Block &SolnBlk, NavierStokes2D_Input_Parameters &IP
 	SolnBlk.W[SolnBlk.ICu+2][j]   = SolnBlk.W[SolnBlk.ICu][j];
 	SolnBlk.W[SolnBlk.ICu+2][j].p = SolnBlk.WoE[j].p;
 	SolnBlk.U[SolnBlk.ICu+2][j]   = U(SolnBlk.W[SolnBlk.ICu+2][j]);
+
+	//Fixed Temperature Outflow (constant extrapoltaion of pressure)
+// 	SolnBlk.W[SolnBlk.ICu+1][j]   = SolnBlk.W[SolnBlk.ICu][j]; 
+// 	SolnBlk.W[SolnBlk.ICu+1][j].rho = SolnBlk.W[SolnBlk.ICu][j].rho*SolnBlk.W[SolnBlk.ICu][j].T()/(310.0);
+// 	SolnBlk.U[SolnBlk.ICu+1][j]   = U(SolnBlk.W[SolnBlk.ICu+1][j]);
+// 	SolnBlk.W[SolnBlk.ICu+2][j]   = SolnBlk.W[SolnBlk.ICu][j];
+// 	SolnBlk.W[SolnBlk.ICu+2][j].rho = SolnBlk.W[SolnBlk.ICu][j].rho*SolnBlk.W[SolnBlk.ICu][j].T()/(310.0);
+// 	SolnBlk.U[SolnBlk.ICu+2][j]   = U(SolnBlk.W[SolnBlk.ICu+2][j]);
+
 	break;	  
       case BC_LINEAR_EXTRAPOLATION :
 	Linear_Reconstruction_LeastSquares_2(SolnBlk,SolnBlk.ICu,j,LIMITER_BARTH_JESPERSEN);
@@ -2123,6 +2542,8 @@ void BCs(NavierStokes2D_Quad_Block &SolnBlk, NavierStokes2D_Input_Parameters &IP
       if (IP.Axisymmetric && IP.FlowType == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
 	SolnBlk.W[i][SolnBlk.JCl-2].k = SolnBlk.W[i][SolnBlk.JCl].k;
 	SolnBlk.W[i][SolnBlk.JCl-2].omega = SolnBlk.W[i][SolnBlk.JCl].omega;
+ 	SolnBlk.W[i][SolnBlk.JCl-2].ke = SolnBlk.W[i][SolnBlk.JCl].ke;
+	SolnBlk.W[i][SolnBlk.JCl-2].ee = SolnBlk.W[i][SolnBlk.JCl].ee;
       }
       SolnBlk.U[i][SolnBlk.JCl-2] = U(SolnBlk.W[i][SolnBlk.JCl-2]);
       break;
@@ -2248,6 +2669,14 @@ void BCs(NavierStokes2D_Quad_Block &SolnBlk, NavierStokes2D_Input_Parameters &IP
       SolnBlk.W[i][SolnBlk.JCu+2]   = SolnBlk.W[i][SolnBlk.JCu];
       SolnBlk.W[i][SolnBlk.JCu+2].p = SolnBlk.WoN[i].p;
       SolnBlk.U[i][SolnBlk.JCu+2]   = U(SolnBlk.W[i][SolnBlk.JCu+2]);
+
+      //Fixed Temperature Outflow  (constant extrapoltaion of pressure)
+//       SolnBlk.W[i][SolnBlk.JCu+1]   = SolnBlk.W[i][SolnBlk.JCu]; 
+//       SolnBlk.W[i][SolnBlk.JCu+1].rho = SolnBlk.W[i][SolnBlk.JCu].rho*SolnBlk.W[i][SolnBlk.JCu].T()/(SolnBlk.WoN[i].T());
+//       SolnBlk.U[i][SolnBlk.JCu+1]   = U(SolnBlk.W[i][SolnBlk.JCu+1]);
+//       SolnBlk.W[i][SolnBlk.JCu+2]   = SolnBlk.W[i][SolnBlk.JCu];
+//       SolnBlk.W[i][SolnBlk.JCu+2].rho = SolnBlk.W[i][SolnBlk.JCu].rho*SolnBlk.W[i][SolnBlk.JCu].T()/(SolnBlk.WoN[i].T());
+//       SolnBlk.U[i][SolnBlk.JCu+2]   = U(SolnBlk.W[i][SolnBlk.JCu+2]);
       break;
     case BC_LINEAR_EXTRAPOLATION :
       Linear_Reconstruction_LeastSquares_2(SolnBlk,i,SolnBlk.JCu,LIMITER_BARTH_JESPERSEN);
@@ -3093,7 +3522,7 @@ void Linear_Reconstruction_LeastSquares(NavierStokes2D_Quad_Block &SolnBlk,
 
   int n_pts, i_index[8], j_index[8], motion_flag = OFF, n_pts_temp;
   double u0Min, u0Max, uQuad[4], phi;
-  double DxDx_ave, DxDy_ave, DyDy_ave;
+  double DxDx_ave, DxDy_ave, DyDy_ave, Dx_ave, Dy_ave;
   Vector2D dX;
   NavierStokes2D_pState DU, DUDx_ave, DUDy_ave;
   NavierStokes2D_pState NavierStokes2D_W_VACUUM; NavierStokes2D_W_VACUUM.Vacuum();
@@ -3347,7 +3776,9 @@ void Linear_Reconstruction_LeastSquares(NavierStokes2D_Quad_Block &SolnBlk,
     DxDx_ave = ZERO;
     DxDy_ave = ZERO;
     DyDy_ave = ZERO;
-
+    Dx_ave = ZERO;
+    Dy_ave = ZERO;
+    
     for (int n2 = 0; n2 < n_pts; n2++) {
       dX = SolnBlk.Grid.Cell[i_index[n2]][j_index[n2]].Xc - SolnBlk.Grid.Cell[i][j].Xc;
       DU = SolnBlk.W[i_index[n2]][j_index[n2]] - SolnBlk.W[i][j];
@@ -3356,6 +3787,8 @@ void Linear_Reconstruction_LeastSquares(NavierStokes2D_Quad_Block &SolnBlk,
       DxDx_ave += dX.x*dX.x;
       DxDy_ave += dX.x*dX.y;
       DyDy_ave += dX.y*dX.y;
+      Dx_ave += dX.x;
+      Dy_ave += dX.y;
     }
 
     DUDx_ave /= double(n_pts);
@@ -3363,10 +3796,39 @@ void Linear_Reconstruction_LeastSquares(NavierStokes2D_Quad_Block &SolnBlk,
     DxDx_ave /= double(n_pts);
     DxDy_ave /= double(n_pts);
     DyDy_ave /= double(n_pts);
+    Dx_ave /= double(n_pts);
+    Dy_ave /= double(n_pts);
     SolnBlk.dWdx[i][j] = (DUDx_ave*DyDy_ave-DUDy_ave*DxDy_ave)/
                          (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
     SolnBlk.dWdy[i][j] = (DUDy_ave*DxDx_ave-DUDx_ave*DxDy_ave)/
                          (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
+
+    /************************************************************************
+     * Edited by Pradeep: 21st July, 2007                                   *
+     * -----------------------------------                                  *
+     *             d  / dW \                                                * 
+     * d_dWdx_dW = -- | -- |  It returns the gradients of dw/dx w.r.t       *
+     *             dW \ dx /  primitive variables for the solution block.   *
+     *                                                                      *
+     * Derivation in a nutshell:                                            * 
+     * -------------------------                                            *
+     *         ---                                                          * 
+     * dW/dx = \   Coefficients*W_neighbours + Coeff_cell_centre*W_cell_cen * 
+     *         /                                                            *  
+     *         ---                                                          *  
+     *  Therefore, d (dW/dx) =  Coeff_cell_center                           *   
+     *             --                                                       *   
+     *             dW => [remember, its cell centre W]                      *
+     *                                                                      * 
+     * For calculating the final expression for the Coeff_cell_center,      *
+     * use the Least Square expression for dWdX and express DU=(U_ngbor-U_c)*
+     * and the final expression can be derived.                             *
+     ************************************************************************/ 
+    
+    SolnBlk.d_dWdx_dW[i][j][0] = (-Dx_ave*DyDy_ave+Dy_ave*DxDy_ave)/
+                                 (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave); 
+    SolnBlk.d_dWdy_dW[i][j][0] = (-Dy_ave*DxDx_ave+Dx_ave*DxDy_ave)/
+                                 (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave); 
 
     // Calculate slope limiters.
     if (!SolnBlk.Freeze_Limiter) {
@@ -4532,7 +4994,10 @@ int dUdt_Residual_Evaluation(NavierStokes2D_Quad_Block &SolnBlk,
 	  SolnBlk.W[i][j].ComputeViscousTerms(SolnBlk.dWdx[i][j],
 					      SolnBlk.dWdy[i][j],
 					      SolnBlk.Grid.Cell[i][j].Xc,
-					      SolnBlk.Axisymmetric);
+					      SolnBlk.Axisymmetric,
+					      OFF,
+					      SolnBlk.Wall[i][j].ywall,
+					      SolnBlk.Wall[i][j].yplus);
 	  SolnBlk.U[i][j].tau = SolnBlk.W[i][j].tau;
 	  SolnBlk.U[i][j].q = SolnBlk.W[i][j].q;
 	}
@@ -4552,25 +5017,25 @@ int dUdt_Residual_Evaluation(NavierStokes2D_Quad_Block &SolnBlk,
 	    if (SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX) {
 	      // WEST face of cell (i+1,j) is a WALL_VISCOUS_HEATFLUX boundary.
 	      viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
-	      //Wu.rho = Wr.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+	      //Wu.rho = Wr.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	      Wu = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wu.v = Vector2D_ZERO;
 	      Wd = HALF*(Wr+SolnBlk.W[i+1][j-1]); Wd.v = Vector2D_ZERO;
 	    } else if (SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
 	      // WEST face of cell (i+1,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
 	      viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
-	      //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+	      //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	      Wu = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wu.v = Vector2D_ZERO; Wu.rho = Wu.p/(Wr.R*SolnBlk.Twall);
 	      Wd = HALF*(Wr+SolnBlk.W[i+1][j-1]); Wd.v = Vector2D_ZERO; Wd.rho = Wd.p/(Wr.R*SolnBlk.Twall);
 	    } else if (SolnBlk.Grid.BCtypeW[j] == BC_MOVING_WALL) {
 	      // WEST face of cell (i+1,j) is a MOVINGWALL_HEATFLUX boundary.
 	      viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
-	      //Wu.rho = Wr.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+	      //Wu.rho = Wr.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	      Wu = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wu.v = SolnBlk.Vwall;
 	      Wd = HALF*(Wr+SolnBlk.W[i+1][j-1]); Wd.v = SolnBlk.Vwall;
 	    } else if (SolnBlk.Grid.BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL) {
 	      // WEST face of cell (i+1,j) is a MOVINGWALL_ISOTHERMAL boundary.
 	      viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
-	      //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+	      //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	      Wu = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wu.v = SolnBlk.Vwall; Wu.rho = Wu.p/(Wr.R*SolnBlk.Twall);
 	      Wd = HALF*(Wr+SolnBlk.W[i+1][j-1]); Wd.v = SolnBlk.Vwall; Wd.rho = Wd.p/(Wr.R*SolnBlk.Twall);
 	    } else if (SolnBlk.Grid.BCtypeW[j] == BC_BURNING_SURFACE) {
@@ -4611,25 +5076,25 @@ int dUdt_Residual_Evaluation(NavierStokes2D_Quad_Block &SolnBlk,
 	    if (SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX) {
 	      // EAST face of cell (i,j) is a WALL_VISCOUS_HEATFLUX boundary.
 	      viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
-	      //Wu.rho = Wl.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+	      //Wu.rho = Wl.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	      Wu = HALF*(Wl+SolnBlk.W[i][j+1]); Wu.v = Vector2D_ZERO;
 	      Wd = HALF*(Wl+SolnBlk.W[i][j-1]); Wd.v = Vector2D_ZERO;
 	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
 	      // EAST face of cell (i,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
 	      viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
-	      //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+	      //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	      Wu = HALF*(Wl+SolnBlk.W[i][j+1]); Wu.v = Vector2D_ZERO; Wu.rho = Wu.p/(Wl.R*SolnBlk.Twall);
 	      Wd = HALF*(Wl+SolnBlk.W[i][j-1]); Wd.v = Vector2D_ZERO; Wd.rho = Wd.p/(Wl.R*SolnBlk.Twall);
 	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_HEATFLUX) {
 	      // EAST face of cell (i,j) is a MOVINGWALL_HEATFLUX boundary.
 	      viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
-	      //Wu.rho = Wl.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+	      //Wu.rho = Wl.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	      Wu = HALF*(Wl+SolnBlk.W[i][j+1]); Wu.v = SolnBlk.Vwall;
 	      Wd = HALF*(Wl+SolnBlk.W[i][j-1]); Wd.v = SolnBlk.Vwall;
 	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL) {
 	      // EAST face of cell (i,j) is a MOVINGWALL_ISOTHERMAL boundary.
 	      viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
-	      //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+	      //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	      Wu = HALF*(Wl+SolnBlk.W[i][j+1]); Wu.v = SolnBlk.Vwall; Wu.rho = Wu.p/(Wl.R*SolnBlk.Twall);
 	      Wd = HALF*(Wl+SolnBlk.W[i][j-1]); Wd.v = SolnBlk.Vwall; Wd.rho = Wd.p/(Wl.R*SolnBlk.Twall);
 	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL) {
@@ -4686,7 +5151,10 @@ int dUdt_Residual_Evaluation(NavierStokes2D_Quad_Block &SolnBlk,
 					     Xl,Wl,Xd,Wd,Xr,Wr,Xu,Wu,
 					     SolnBlk.Grid.nfaceE(i,j),
 					     SolnBlk.Axisymmetric,
-					     viscous_bc_flag,dWdx,dWdy);
+					     viscous_bc_flag,
+					     SolnBlk.Wall[i][j].ywall, 
+					     SolnBlk.Wall[i][j].yplus,
+					     dWdx,dWdy);
       if (IP.Solver_Type == IMPLICIT && SolnBlk.face_grad_arrays_allocated) {
         SolnBlk.dWdx_faceE[i][j] = dWdx;
         SolnBlk.dWdy_faceE[i][j] = dWdy;
@@ -4694,15 +5162,23 @@ int dUdt_Residual_Evaluation(NavierStokes2D_Quad_Block &SolnBlk,
 	    break;
 	  case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
 	    Flux -= ViscousFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
-				  SolnBlk.Grid.nfaceE(i,j),SolnBlk.Axisymmetric);
+				  SolnBlk.Grid.nfaceE(i,j),SolnBlk.Axisymmetric,OFF,
+				  viscous_bc_flag,
+				  SolnBlk.Wall[i][j].ywall, 
+				  SolnBlk.Wall[i][j].yplus);
       if (IP.Solver_Type == IMPLICIT && SolnBlk.face_grad_arrays_allocated) {
         SolnBlk.dWdx_faceE[i][j] = HALF*(dWdxl+dWdxr);
         SolnBlk.dWdy_faceE[i][j] = HALF*(dWdyl+dWdyr);
       }
 	    break;
 	  case VISCOUS_RECONSTRUCTION_HYBRID :
-	    Flux -= ViscousFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,Xr,Wr,dWdxr,dWdyr,
-					SolnBlk.Grid.nfaceE(i,j),SolnBlk.Axisymmetric,dWdx,dWdy);
+ 	    Flux -= ViscousFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,
+ 					Xr,Wr,dWdxr,dWdyr,
+ 					SolnBlk.Grid.nfaceE(i,j),
+ 					SolnBlk.Axisymmetric,
+ 					SolnBlk.Wall[i][j].ywall,
+ 					SolnBlk.Wall[i][j].yplus,
+ 					dWdx,dWdy);
       if (IP.Solver_Type == IMPLICIT && SolnBlk.face_grad_arrays_allocated) {
         SolnBlk.dWdx_faceE[i][j] = dWdx;
         SolnBlk.dWdy_faceE[i][j] = dWdy;
@@ -4720,15 +5196,20 @@ int dUdt_Residual_Evaluation(NavierStokes2D_Quad_Block &SolnBlk,
 	  SolnBlk.dUdt[i][j][0] += SolnBlk.W[i][j].Si(SolnBlk.Grid.Cell[i][j].Xc);
 	  if (SolnBlk.Flow_Type)
 	    SolnBlk.dUdt[i][j][0] += SolnBlk.W[i][j].Sv(SolnBlk.Grid.Cell[i][j].Xc,
-							SolnBlk.dWdy[i][j]);
+							SolnBlk.dWdy[i][j],
+							SolnBlk.Wall[i][j].ywall,
+							SolnBlk.Wall[i][j].yplus);
 	}
 
 	// Include turbulent production and destruction source term.
 	if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
 	  SolnBlk.dUdt[i][j][0] += SolnBlk.W[i][j].St(SolnBlk.Grid.Cell[i][j].Xc,
+						      SolnBlk.W[i][j],
 						      SolnBlk.dWdx[i][j],
 						      SolnBlk.dWdy[i][j],
-						      SolnBlk.Axisymmetric);
+						      SolnBlk.Axisymmetric,
+						      SolnBlk.Wall[i][j].ywall,
+						      SolnBlk.Wall[i][j].yplus);
 	}
 
 	// Save west and east face boundary flux.
@@ -4920,25 +5401,25 @@ int dUdt_Residual_Evaluation(NavierStokes2D_Quad_Block &SolnBlk,
 	  if (SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX) {
 	    // SOUTH face of cell (i,j+1) is a WALL_VISCOUS_HEATFLUX boundary.
 	    viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
-	    //Wu.rho = Wr.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+	    //Wu.rho = Wr.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	    Wu = HALF*(Wr+SolnBlk.W[i-1][j+1]); Wu.v = Vector2D_ZERO;
 	    Wd = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wd.v = Vector2D_ZERO;
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
 	    // SOUTH face of cell (i,j+1) is a WALL_VISCOUS_ISOTHERMAL boundary.
 	    viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
-	    //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+	    //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	    Wu = HALF*(Wr+SolnBlk.W[i-1][j+1]); Wu.v = Vector2D_ZERO; Wu.rho = Wu.p/(Wr.R*SolnBlk.Twall);
 	    Wd = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wd.v = Vector2D_ZERO; Wd.rho = Wd.p/(Wr.R*SolnBlk.Twall);
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_MOVING_WALL_HEATFLUX) {
 	    // SOUTH face of cell (i,j+1) is a MOVINGWALL_HEATFLUX boundary.
 	    viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
-	    //Wu.rho = Wr.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+	    //Wu.rho = Wr.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	    Wu = HALF*(Wr+SolnBlk.W[i-1][j+1]); Wu.v = SolnBlk.Vwall;
 	    Wd = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wd.v = SolnBlk.Vwall;
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_MOVING_WALL_ISOTHERMAL) {
 	    // SOUTH face of cell (i,j+1) is a MOVINGWALL_ISOTHERMAL boundary.
 	    viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
-	    //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+	    //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	    Wu = HALF*(Wr+SolnBlk.W[i-1][j+1]); Wu.v = SolnBlk.Vwall; Wu.rho = Wu.p/(Wr.R*SolnBlk.Twall);
 	    Wd = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wd.v = SolnBlk.Vwall; Wd.rho = Wd.p/(Wr.R*SolnBlk.Twall);
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_BURNING_SURFACE) {
@@ -4979,25 +5460,25 @@ int dUdt_Residual_Evaluation(NavierStokes2D_Quad_Block &SolnBlk,
 	  if (SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX) {
 	    // NORTH face of cell (i,j) is a WALL_VISCOUS_HEATFLUX boundary.
 	    viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
-	    //Wu.rho = Wl.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+	    //Wu.rho = Wl.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	    Wu = HALF*(Wl+SolnBlk.W[i-1][j]); Wu.v = Vector2D_ZERO;
 	    Wd = HALF*(Wl+SolnBlk.W[i+1][j]); Wd.v = Vector2D_ZERO;
 	  } else if (SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
 	    // NORTH face of cell (i,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
 	    viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
-	    //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+	    //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	    Wu = HALF*(Wl+SolnBlk.W[i-1][j]); Wu.v = Vector2D_ZERO; Wu.rho = Wu.p/(Wl.R*SolnBlk.Twall);
 	    Wd = HALF*(Wl+SolnBlk.W[i+1][j]); Wd.v = Vector2D_ZERO; Wd.rho = Wd.p/(Wl.R*SolnBlk.Twall);
 	  } else if (SolnBlk.Grid.BCtypeN[i] == BC_MOVING_WALL_HEATFLUX) {
 	    // NORTH face of cell (i,j) is a MOVINGWALL_HEATFLUX boundary.
 	    viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
-	    //Wu.rho = Wl.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+	    //Wu.rho = Wl.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	    Wu = HALF*(Wl+SolnBlk.W[i-1][j]); Wu.v = SolnBlk.Vwall;
 	    Wd = HALF*(Wl+SolnBlk.W[i+1][j]); Wd.v = SolnBlk.Vwall;
 	  } else if (SolnBlk.Grid.BCtypeN[i] == BC_MOVING_WALL_ISOTHERMAL) {
 	    // NORTH face of cell (i,j) is a MOVINGWALL_ISOTHERMAL boundary.
 	    viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
-	    //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+	    //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	    Wu = HALF*(Wl+SolnBlk.W[i-1][j]); Wu.v = SolnBlk.Vwall; Wu.rho = Wu.p/(Wl.R*SolnBlk.Twall);
 	    Wd = HALF*(Wl+SolnBlk.W[i+1][j]); Wd.v = SolnBlk.Vwall; Wd.rho = Wd.p/(Wl.R*SolnBlk.Twall);
 	  } else if (SolnBlk.Grid.BCtypeN[i] == BC_BURNING_SURFACE) {
@@ -5054,7 +5535,10 @@ int dUdt_Residual_Evaluation(NavierStokes2D_Quad_Block &SolnBlk,
 					   Xl,Wl,Xd,Wd,Xr,Wr,Xu,Wu,
 					   SolnBlk.Grid.nfaceN(i,j),
 					   SolnBlk.Axisymmetric,
-					   viscous_bc_flag,dWdx,dWdy);
+					   viscous_bc_flag,
+					   SolnBlk.Wall[i][j].ywall,
+					   SolnBlk.Wall[i][j].yplus,
+					   dWdx,dWdy);
       if (IP.Solver_Type == IMPLICIT && SolnBlk.face_grad_arrays_allocated) {
         SolnBlk.dWdx_faceN[i][j] = dWdx;
         SolnBlk.dWdy_faceN[i][j] = dWdy;
@@ -5062,15 +5546,22 @@ int dUdt_Residual_Evaluation(NavierStokes2D_Quad_Block &SolnBlk,
 	  break;
 	case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
 	  Flux -= ViscousFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
-				SolnBlk.Grid.nfaceN(i,j),SolnBlk.Axisymmetric);
+				SolnBlk.Grid.nfaceN(i,j),SolnBlk.Axisymmetric,OFF,
+				SolnBlk.Wall[i][j].ywall,
+				SolnBlk.Wall[i][j].yplus);
       if (IP.Solver_Type == IMPLICIT && SolnBlk.face_grad_arrays_allocated) {
         SolnBlk.dWdx_faceN[i][j] = HALF*(dWdxl+dWdxr);
         SolnBlk.dWdy_faceN[i][j] = HALF*(dWdyl+dWdyr);
       }
 	  break;
 	case VISCOUS_RECONSTRUCTION_HYBRID :
-	  Flux -= ViscousFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,Xr,Wr,dWdxr,dWdyr,
-				      SolnBlk.Grid.nfaceN(i,j),SolnBlk.Axisymmetric,dWdx,dWdy);
+ 	  Flux -= ViscousFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,
+ 				      Xr,Wr,dWdxr,dWdyr,
+ 				      SolnBlk.Grid.nfaceN(i,j),
+ 				      SolnBlk.Axisymmetric,
+ 				      SolnBlk.Wall[i][j].ywall,
+ 				      SolnBlk.Wall[i][j].yplus,
+ 				      dWdx,dWdy);
       if (IP.Solver_Type == IMPLICIT && SolnBlk.face_grad_arrays_allocated) {
         SolnBlk.dWdx_faceN[i][j] = dWdx;
         SolnBlk.dWdy_faceN[i][j] = dWdy;
@@ -5380,7 +5871,10 @@ int dUdt_Multistage_Explicit(NavierStokes2D_Quad_Block &SolnBlk,
  	  SolnBlk.W[i][j].ComputeViscousTerms(SolnBlk.dWdx[i][j],
  					      SolnBlk.dWdy[i][j],
  					      SolnBlk.Grid.Cell[i][j].Xc,
- 					      SolnBlk.Axisymmetric);
+ 					      SolnBlk.Axisymmetric,
+ 					      OFF,
+					      SolnBlk.Wall[i][j].ywall,
+					      SolnBlk.Wall[i][j].yplus);
  	  SolnBlk.U[i][j].tau = SolnBlk.W[i][j].tau;
  	  SolnBlk.U[i][j].q = SolnBlk.W[i][j].q;
  	}
@@ -5400,25 +5894,25 @@ int dUdt_Multistage_Explicit(NavierStokes2D_Quad_Block &SolnBlk,
 	    if (SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX) {
 	      // WEST face of cell (i+1,j) is a WALL_VISCOUS_HEATFLUX boundary.
 	      viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
-	      //Wu.rho = Wr.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+	      //Wu.rho = Wr.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	      Wu = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wu.v = Vector2D_ZERO;
 	      Wd = HALF*(Wr+SolnBlk.W[i+1][j-1]); Wd.v = Vector2D_ZERO;
 	    } else if (SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
 	      // WEST face of cell (i+1,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
 	      viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
-	      //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+	      //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	      Wu = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wu.v = Vector2D_ZERO; Wu.rho = Wu.p/(Wr.R*SolnBlk.Twall);
 	      Wd = HALF*(Wr+SolnBlk.W[i+1][j-1]); Wd.v = Vector2D_ZERO; Wd.rho = Wd.p/(Wr.R*SolnBlk.Twall);
 	    } else if (SolnBlk.Grid.BCtypeW[j] == BC_MOVING_WALL) {
 	      // WEST face of cell (i+1,j) is a MOVINGWALL_HEATFLUX boundary.
 	      viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
-	      //Wu.rho = Wr.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+	      //Wu.rho = Wr.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	      Wu = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wu.v = SolnBlk.Vwall;
 	      Wd = HALF*(Wr+SolnBlk.W[i+1][j-1]); Wd.v = SolnBlk.Vwall;
 	    } else if (SolnBlk.Grid.BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL) {
 	      // WEST face of cell (i+1,j) is a MOVINGWALL_ISOTHERMAL boundary.
 	      viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
-	      //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+	      //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	      Wu = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wu.v = SolnBlk.Vwall; Wu.rho = Wu.p/(Wr.R*SolnBlk.Twall);
 	      Wd = HALF*(Wr+SolnBlk.W[i+1][j-1]); Wd.v = SolnBlk.Vwall; Wd.rho = Wd.p/(Wr.R*SolnBlk.Twall);
 	    } else if (SolnBlk.Grid.BCtypeW[j] == BC_BURNING_SURFACE) {
@@ -5459,25 +5953,25 @@ int dUdt_Multistage_Explicit(NavierStokes2D_Quad_Block &SolnBlk,
 	    if (SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX) {
 	      // EAST face of cell (i,j) is a WALL_VISCOUS_HEATFLUX boundary.
 	      viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
-	      //Wu.rho = Wl.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+	      //Wu.rho = Wl.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	      Wu = HALF*(Wl+SolnBlk.W[i][j+1]); Wu.v = Vector2D_ZERO;
 	      Wd = HALF*(Wl+SolnBlk.W[i][j-1]); Wd.v = Vector2D_ZERO;
 	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
 	      // EAST face of cell (i,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
 	      viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
-	      //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+	      //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	      Wu = HALF*(Wl+SolnBlk.W[i][j+1]); Wu.v = Vector2D_ZERO; Wu.rho = Wu.p/(Wl.R*SolnBlk.Twall);
 	      Wd = HALF*(Wl+SolnBlk.W[i][j-1]); Wd.v = Vector2D_ZERO; Wd.rho = Wd.p/(Wl.R*SolnBlk.Twall);
 	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_HEATFLUX) {
 	      // EAST face of cell (i,j) is a MOVINGWALL_HEATFLUX boundary.
 	      viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
-	      //Wu.rho = Wl.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+	      //Wu.rho = Wl.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	      Wu = HALF*(Wl+SolnBlk.W[i][j+1]); Wu.v = SolnBlk.Vwall;
 	      Wd = HALF*(Wl+SolnBlk.W[i][j-1]); Wd.v = SolnBlk.Vwall;
 	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL) {
 	      // EAST face of cell (i,j) is a MOVINGWALL_ISOTHERMAL boundary.
 	      viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
-	      //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+	      //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	      Wu = HALF*(Wl+SolnBlk.W[i][j+1]); Wu.v = SolnBlk.Vwall; Wu.rho = Wu.p/(Wl.R*SolnBlk.Twall);
 	      Wd = HALF*(Wl+SolnBlk.W[i][j-1]); Wd.v = SolnBlk.Vwall; Wd.rho = Wd.p/(Wl.R*SolnBlk.Twall);
 	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL) {
@@ -5534,15 +6028,25 @@ int dUdt_Multistage_Explicit(NavierStokes2D_Quad_Block &SolnBlk,
 					     Xl,Wl,Xd,Wd,Xr,Wr,Xu,Wu,
 					     SolnBlk.Grid.nfaceE(i,j),
 					     SolnBlk.Axisymmetric,
-					     viscous_bc_flag);
+					     viscous_bc_flag,
+					     SolnBlk.Wall[i][j].ywall,
+					     SolnBlk.Wall[i][j].yplus);
 	    break;
 	  case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
-	    Flux -= ViscousFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
-				  SolnBlk.Grid.nfaceE(i,j),SolnBlk.Axisymmetric);
+	    Flux -= ViscousFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),
+				  HALF*(dWdyl+dWdyr),
+				  SolnBlk.Grid.nfaceE(i,j),
+				  SolnBlk.Axisymmetric,OFF,
+				  SolnBlk.Wall[i][j].ywall,
+				  SolnBlk.Wall[i][j].yplus);
 	    break;
 	  case VISCOUS_RECONSTRUCTION_HYBRID :
-	    Flux -= ViscousFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,Xr,Wr,dWdxr,dWdyr,
-					SolnBlk.Grid.nfaceE(i,j),SolnBlk.Axisymmetric);
+ 	    Flux -= ViscousFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,
+ 					Xr,Wr,dWdxr,dWdyr,
+ 					SolnBlk.Grid.nfaceE(i,j),
+ 					SolnBlk.Axisymmetric,
+ 					SolnBlk.Wall[i][j].ywall,
+ 					SolnBlk.Wall[i][j].yplus);
 	    break;
 	  };
 	}
@@ -5560,16 +6064,21 @@ int dUdt_Multistage_Explicit(NavierStokes2D_Quad_Block &SolnBlk,
 	  if (SolnBlk.Flow_Type)
   	    SolnBlk.dUdt[i][j][k_residual] += (IP.CFL_Number*SolnBlk.dt[i][j])*
   	                                      SolnBlk.W[i][j].Sv(SolnBlk.Grid.Cell[i][j].Xc,
-								 SolnBlk.dWdy[i][j]);
+								 SolnBlk.dWdy[i][j],
+								 SolnBlk.Wall[i][j].ywall,
+								 SolnBlk.Wall[i][j].yplus);
  	}
 
  	// Include turbulent production and destruction source term if required.
  	if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
  	  SolnBlk.dUdt[i][j][k_residual] += (IP.CFL_Number*SolnBlk.dt[i][j])*
  	                                    SolnBlk.W[i][j].St(SolnBlk.Grid.Cell[i][j].Xc,
+							       SolnBlk.W[i][j],
 							       SolnBlk.dWdx[i][j],
 							       SolnBlk.dWdy[i][j],
- 							       SolnBlk.Axisymmetric);
+ 							       SolnBlk.Axisymmetric,
+							       SolnBlk.Wall[i][j].ywall,
+							       SolnBlk.Wall[i][j].yplus);
 	}
 
 	// Save west and east face boundary flux.
@@ -5761,25 +6270,25 @@ int dUdt_Multistage_Explicit(NavierStokes2D_Quad_Block &SolnBlk,
 	  if (SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX) {
 	    // SOUTH face of cell (i,j+1) is a WALL_VISCOUS_HEATFLUX boundary.
 	    viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
-	    //Wu.rho = Wr.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+	    //Wu.rho = Wr.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	    Wu = HALF*(Wr+SolnBlk.W[i-1][j+1]); Wu.v = Vector2D_ZERO;
 	    Wd = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wd.v = Vector2D_ZERO;
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
 	    // SOUTH face of cell (i,j+1) is a WALL_VISCOUS_ISOTHERMAL boundary.
 	    viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
-	    //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+	    //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	    Wu = HALF*(Wr+SolnBlk.W[i-1][j+1]); Wu.v = Vector2D_ZERO; Wu.rho = Wu.p/(Wr.R*SolnBlk.Twall);
 	    Wd = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wd.v = Vector2D_ZERO; Wd.rho = Wd.p/(Wr.R*SolnBlk.Twall);
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_MOVING_WALL_HEATFLUX) {
 	    // SOUTH face of cell (i,j+1) is a MOVINGWALL_HEATFLUX boundary.
 	    viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
-	    //Wu.rho = Wr.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+	    //Wu.rho = Wr.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	    Wu = HALF*(Wr+SolnBlk.W[i-1][j+1]); Wu.v = SolnBlk.Vwall;
 	    Wd = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wd.v = SolnBlk.Vwall;
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_MOVING_WALL_ISOTHERMAL) {
 	    // SOUTH face of cell (i,j+1) is a MOVINGWALL_ISOTHERMAL boundary.
 	    viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
-	    //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;
+	    //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	    Wu = HALF*(Wr+SolnBlk.W[i-1][j+1]); Wu.v = SolnBlk.Vwall; Wu.rho = Wu.p/(Wr.R*SolnBlk.Twall);
 	    Wd = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wd.v = SolnBlk.Vwall; Wd.rho = Wd.p/(Wr.R*SolnBlk.Twall);
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_BURNING_SURFACE) {
@@ -5820,25 +6329,25 @@ int dUdt_Multistage_Explicit(NavierStokes2D_Quad_Block &SolnBlk,
 	  if (SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX) {
 	    // NORTH face of cell (i,j) is a WALL_VISCOUS_HEATFLUX boundary.
 	    viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
-	    //Wu.rho = Wl.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+	    //Wu.rho = Wl.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	    Wu = HALF*(Wl+SolnBlk.W[i-1][j]); Wu.v = Vector2D_ZERO;
 	    Wd = HALF*(Wl+SolnBlk.W[i+1][j]); Wd.v = Vector2D_ZERO;
 	  } else if (SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
 	    // NORTH face of cell (i,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
 	    viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
-	    //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+	    //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	    Wu = HALF*(Wl+SolnBlk.W[i-1][j]); Wu.v = Vector2D_ZERO; Wu.rho = Wu.p/(Wl.R*SolnBlk.Twall);
 	    Wd = HALF*(Wl+SolnBlk.W[i+1][j]); Wd.v = Vector2D_ZERO; Wd.rho = Wd.p/(Wl.R*SolnBlk.Twall);
 	  } else if (SolnBlk.Grid.BCtypeN[i] == BC_MOVING_WALL_HEATFLUX) {
 	    // NORTH face of cell (i,j) is a MOVINGWALL_HEATFLUX boundary.
 	    viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
-	    //Wu.rho = Wl.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+	    //Wu.rho = Wl.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	    Wu = HALF*(Wl+SolnBlk.W[i-1][j]); Wu.v = SolnBlk.Vwall;
 	    Wd = HALF*(Wl+SolnBlk.W[i+1][j]); Wd.v = SolnBlk.Vwall;
 	  } else if (SolnBlk.Grid.BCtypeN[i] == BC_MOVING_WALL_ISOTHERMAL) {
 	    // NORTH face of cell (i,j) is a MOVINGWALL_ISOTHERMAL boundary.
 	    viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
-	    //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;
+	    //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	    Wu = HALF*(Wl+SolnBlk.W[i-1][j]); Wu.v = SolnBlk.Vwall; Wu.rho = Wu.p/(Wl.R*SolnBlk.Twall);
 	    Wd = HALF*(Wl+SolnBlk.W[i+1][j]); Wd.v = SolnBlk.Vwall; Wd.rho = Wd.p/(Wl.R*SolnBlk.Twall);
 	  } else if (SolnBlk.Grid.BCtypeN[i] == BC_BURNING_SURFACE) {
@@ -5895,15 +6404,25 @@ int dUdt_Multistage_Explicit(NavierStokes2D_Quad_Block &SolnBlk,
 					   Xl,Wl,Xd,Wd,Xr,Wr,Xu,Wu,
 					   SolnBlk.Grid.nfaceN(i,j),
 					   SolnBlk.Axisymmetric,
-					   viscous_bc_flag);
+					   viscous_bc_flag,
+					   SolnBlk.Wall[i][j].ywall,
+					   SolnBlk.Wall[i][j].yplus);
 	  break;
 	case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
-	  Flux -= ViscousFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
-				SolnBlk.Grid.nfaceN(i,j),SolnBlk.Axisymmetric);
+	  Flux -= ViscousFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),
+				HALF*(dWdyl+dWdyr),
+				SolnBlk.Grid.nfaceN(i,j),
+				SolnBlk.Axisymmetric,OFF,
+				SolnBlk.Wall[i][j].ywall,
+				SolnBlk.Wall[i][j].yplus);
 	  break;
 	case VISCOUS_RECONSTRUCTION_HYBRID :
-	  Flux -= ViscousFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,Xr,Wr,dWdxr,dWdyr,
-				      SolnBlk.Grid.nfaceN(i,j),SolnBlk.Axisymmetric);
+	  Flux -= ViscousFluxHybrid_n(Xu,Wu,Xl,Wl,dWdxl,dWdyl,
+				      Xr,Wr,dWdxr,dWdyr,
+				      SolnBlk.Grid.nfaceN(i,j),
+				      SolnBlk.Axisymmetric,
+				      SolnBlk.Wall[i][j].ywall,
+ 				      SolnBlk.Wall[i][j].yplus);
 	  break;
 	};
       }
@@ -6017,8 +6536,19 @@ int Update_Solution_Multistage_Explicit(NavierStokes2D_Quad_Block &SolnBlk,
 	    SolnBlk.U[i][j].domega = SolnBlk.Uo[i][j].domega + 0.249*omega*SolnBlk.dUdt[i][j][k_residual].domega;
 	  }
 	}
+	if (SolnBlk.Variable_Prandtl == ON) {
+	  if (SolnBlk.Uo[i][j].dke > ZERO) {
+	    if (fabs(SolnBlk.U[i][j].dke-SolnBlk.Uo[i][j].dke)/SolnBlk.Uo[i][j].dke > 0.25) {
+	      SolnBlk.U[i][j].dke = SolnBlk.Uo[i][j].dke + 0.249*omega*SolnBlk.dUdt[i][j][k_residual].dke;
+	    }
+	  }
+	  if (SolnBlk.Uo[i][j].dee > ZERO) {
+	    if (fabs(SolnBlk.U[i][j].dee-SolnBlk.Uo[i][j].dee)/SolnBlk.Uo[i][j].dee > 0.25) {
+	      SolnBlk.U[i][j].dee = SolnBlk.Uo[i][j].dee + 0.249*omega*SolnBlk.dUdt[i][j][k_residual].dee;
+	    }
+	  }
+	}
       }
-
       // Point implicit formulation: set up system of equations 
       // and include source Jacobian in the LHS matrix.
       if (IP.Local_Time_Stepping == SEMI_IMPLICIT_LOCAL_TIME_STEPPING) {
@@ -6042,6 +6572,19 @@ int Update_Solution_Multistage_Explicit(NavierStokes2D_Quad_Block &SolnBlk,
 				SolnBlk.dWdx[i][j],
 				SolnBlk.dWdy[i][j],
 				SolnBlk.Axisymmetric);
+	}
+
+	// Calculate the source Jacobian for the Variable Prandtl dissipation term if required.
+	if (SolnBlk.Variable_Prandtl == ON) {
+	  SolnBlk.W[i][j].dSvpdU(dRdU,
+				 SolnBlk.Grid.Cell[i][j].Xc,
+				 SolnBlk.dWdx[i][j],
+				 SolnBlk.dWdy[i][j],
+				 SolnBlk.Axisymmetric,
+				 SolnBlk.d_dWdx_dW[i][j][0],
+				 SolnBlk.d_dWdy_dW[i][j][0],
+				 SolnBlk.Wall[i][j].ywall,
+				 SolnBlk.Wall[i][j].yplus);
 	}
 
 	// Include source Jacobian in the LHS matrix.
@@ -6096,6 +6639,15 @@ int Update_Solution_Multistage_Explicit(NavierStokes2D_Quad_Block &SolnBlk,
       if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
 	if (SolnBlk.U[i][j].dk < TOLER) SolnBlk.U[i][j].dk = TOLER;
 	if (SolnBlk.U[i][j].domega < TOLER) SolnBlk.U[i][j].domega = TOLER;
+      }
+      // Reset unphysical turbulence state properties.
+      if (SolnBlk.Variable_Prandtl == ON) {
+	if (SolnBlk.U[i][j].dke < TOLER*TOLER){
+	  SolnBlk.U[i][j].dke = TOLER;
+	}
+	if (SolnBlk.U[i][j].dee < TOLER*TOLER){
+	  SolnBlk.U[i][j].dee = TOLER;
+	}
       }
 
       // Check for unphysical state properties.

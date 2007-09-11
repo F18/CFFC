@@ -549,7 +549,7 @@ public:
 	     << "\"s\" \\ \n";
   }
 
-  void output_data(ostream &out_file) {
+  void output_data(ostream &out_file, double dummy1, double dummy2) {  //dummies needed for compatibility with NS turbulent
     out_file << " " << d << " " << v.x << " " << v.y << " " << p
 	     << " " << T() << " " << M() << " " << H() << " " << s();
   }

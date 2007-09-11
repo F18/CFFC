@@ -1040,6 +1040,12 @@ public:
 					       double &Cn, double &Ca, double &Cm,
 					       double &Cnp, double &Cmp);
 
+  //! Ywall
+  double Ywall(const int &nb, const int &i, const int &j);
+
+  //! Yplus
+  double Yplus(const int &nb, const int &i, const int &j);
+
   //////////////////////////////////////////////////////////////////////
   // Solution routines.                                               //
   //////////////////////////////////////////////////////////////////////
@@ -9411,7 +9417,7 @@ Output_Active_Elements_Tecplot(const int &nb,
 			       ostream &Out_File) {
 
   pState W_node;
-
+  double yplus, ywall;
   // Ensure boundary conditions are updated before evaluating
   // solution at the nodes.
   //BCs(SolnBlk,IP);
@@ -9440,8 +9446,10 @@ Output_Active_Elements_Tecplot(const int &nb,
     for (int j = Local_SolnBlk[nb].Grid.JNl; j <= Local_SolnBlk[nb].Grid.JNu; j++) {
       for (int i = Local_SolnBlk[nb].Grid.INl; i <= Local_SolnBlk[nb].Grid.INu; i++) {
 	W_node = Wn(nb,i,j);
+	yplus = Yplus(nb,i,j);
+	ywall = Ywall(nb,i,j);
 	Out_File << " " << Local_SolnBlk[nb].Grid.Node[i][j].X;
-	W_node.output_data(Out_File);
+	W_node.output_data(Out_File, ywall, yplus);
 	Out_File << endl;
       }
     }
@@ -10537,6 +10545,28 @@ Output_Couette(void) {
   cout.flush();
   return 1;
 }
+
+/**********************************************************************
+ * EmbeddedBoundaries2D::Ywall       --                               *
+ **********************************************************************/
+template <class cState, class pState, class Quad_Soln_Block, class Quad_Soln_Input_Parameters>
+double EmbeddedBoundaries2D<cState, pState, Quad_Soln_Block, Quad_Soln_Input_Parameters>::
+Ywall(const int &nb, const int &i, const int &j) {
+  //This is used by everything that does not specialize this function
+  return 0.0;
+}
+
+/**********************************************************************
+ * EmbeddedBoundaries2D::plus        --                               *
+ **********************************************************************/
+template <class cState, class pState, class Quad_Soln_Block, class Quad_Soln_Input_Parameters>
+double EmbeddedBoundaries2D<cState, pState, Quad_Soln_Block, Quad_Soln_Input_Parameters>::
+Yplus(const int &nb, const int &i, const int &j) {
+  //This is used by everything that does not specialize this function
+  return 0.0;
+}
+
+
 
 /**********************************************************************
  **********************************************************************

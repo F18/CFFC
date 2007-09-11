@@ -152,6 +152,22 @@ public:
   int FlowType;
   //@}
 
+  //@{ @name Compressibility effect flag
+  char Compressibility_Effect[INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D];
+  int i_Compressibility_Effect;
+  //@}
+
+  //@{ @name Transition Model flag
+  char Transition_Model[INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D];
+  int i_Transition_Model;  
+  //@} 
+
+  //@{ @name Variable Prandtl number
+  char Variable_Prandtl[INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D];
+  int i_Variable_Prandtl;
+  double C_lambda,Cd1,Cd4,Cd5;
+  //@}
+
   //@{ @name Flow geometry (planar or axisymmetric):
   char Flow_Geometry_Type[INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D];
   int Axisymmetric;
@@ -359,6 +375,9 @@ inline ostream &operator << (ostream &out_file,
     out_file << "\n  -> yplus sublayer: " << IP.yplus_sublayer
 	     << ", yplus buffer layer: " << IP.yplus_buffer_layer
 	     << ", yplus outer layer: " << IP.yplus_outer_layer;
+    out_file << "\n  -> Compressibility correction: " << IP.Compressibility_Effect;
+    out_file << "\n  -> Variable Prandtl model switch: " << IP.Variable_Prandtl;
+    out_file << "\n  -> C_lambda: " << IP.C_lambda <<" Cd1: " << IP.Cd1<<" Cd4: " << IP.Cd4<<" Cd5: " << IP.Cd5;
     if (IP.i_Turbulent_Wall_Injection)
       out_file << "\n  -> Turbulence wall injection is on.";
   }
@@ -493,6 +512,8 @@ inline ostream &operator << (ostream &out_file,
   case GRID_BLUNT_BODY :
     out_file << "\n  -> Cylinder Radius (m): " << IP.Blunt_Body_Radius;
     out_file << "\n  -> Blunt Body Mach Number: " << IP.Blunt_Body_Mach_Number;
+    break;
+  case GRID_JET_FLOW:
     break;
   case GRID_ROCKET_MOTOR :
     out_file << "\n  -> Length of Chamber (m): " << IP.Chamber_Length;

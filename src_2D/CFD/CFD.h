@@ -141,6 +141,9 @@ inline char *Date_And_Time() {
 #define WRITE_OUTPUT_MIXING_LAYER_CODE                   10057
 #define WRITE_OUTPUT_FORWARD_FACING_STEP_CODE            10058
 #define WRITE_OUTPUT_SHOCK_STRUCTURE_CODE                10059
+#define WRITE_OUTPUT_JET_FLOW                            10060 
+#define WRITE_OUTPUT_SUPERSONIC_HOT_JET_CODE             10061
+#define WRITE_OUTPUT_SUBSONIC_HOT_JET_CODE               10062
 
 #define DETERMINE_MAXIMUM_SURFACE_PRESSURE_CODE          10070
 #define DETERMINE_MACH_STEM_HEIGHT_CODE                  10071
@@ -216,6 +219,7 @@ inline char *Date_And_Time() {
 #define GRID_ADIABATIC_COUETTE               28
 #define GRID_RECTANGULAR_ENCLOSURE           28
 #define GRID_CYLINDRICAL_ENCLOSURE           29
+#define GRID_JET_FLOW                        30
 
 #define GRID_ICEMCFD                       1000
 #define GRID_READ_FROM_DEFINITION_FILE    10000
@@ -399,6 +403,21 @@ inline char *Date_And_Time() {
 #define TURBULENT_BC_AUTOMATIC_WALL_TREATMENT     954
 
 /**********************************************************************
+ * CFD -- Compressibility correction types.                           *
+ **********************************************************************/
+
+#define COMPRESSIBILITY_CORRECTION_SARKAR           980
+#define COMPRESSIBILITY_CORRECTION_ZEMAN            981
+#define COMPRESSIBILITY_CORRECTION_WILCOX           982
+
+/**********************************************************************
+ * CFD -- Transition Model types.                                     *
+ **********************************************************************/
+
+#define TRANSITION_WILCOX                           983
+#define TRANSITION_MENTER                           984
+
+/**********************************************************************
  * CFD -- Turbulent flow friction velocity evaluation types.          *
  **********************************************************************/
 
@@ -486,13 +505,14 @@ inline char *Date_And_Time() {
 #define IC_VISCOUS_BACKWARD_FACING_STEP        85
 #define IC_VISCOUS_BRANCHED_DUCT               86
 #define IC_MIXING_LAYER                        87
+#define IC_JET_FLOW                            88
 
-#define IC_TURBULENT_PIPE_FLOW                 88
-#define IC_TURBULENT_COFLOW                    89 
-#define IC_TURBULENT_DIFFUSION_FLAME           90 
-#define IC_TURBULENT_DUMP_COMBUSTOR            91 
+#define IC_TURBULENT_PIPE_FLOW                 89
+#define IC_TURBULENT_COFLOW                    90 
+#define IC_TURBULENT_DIFFUSION_FLAME           91 
+#define IC_TURBULENT_DUMP_COMBUSTOR            92 
 
-#define IC_FREE_JET_FLAME                      92 
+#define IC_FREE_JET_FLAME                      93 
 #define IC_FORWARD_FACING_STEP                 95
 
 #define	IC_RIEMANN                    100
