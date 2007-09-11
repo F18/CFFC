@@ -7,6 +7,7 @@
 
 /* Include 2D Rte quadrilateral mesh solution header file. */
 #include "Rte2DQuad.h"
+#include "Medium2DQuad.h"
 
 /* Include Rte2D Multigrid Specialization header file. */
 #include "Rte2DQuadMultigrid.h"
@@ -43,15 +44,27 @@ class Rte2DSolver {
   Rte2D_Input_Parameters Input_Parameters;
 
 
+  //
   // Multi-block solution-adaptive quadrilateral mesh 
   // solution variables.
- 
+  //
+
+  // For Rte2D State (beam transport)
   Grid2D_Quad_Block          **MeshBlk;
   QuadTreeBlock_DataStructure  QuadTree;
   AdaptiveBlockResourceList    List_of_Global_Solution_Blocks;
   AdaptiveBlock2D_List         List_of_Local_Solution_Blocks;
   Rte2D_Quad_Block            *Local_SolnBlk;
 
+  // For Medium2D Field (participating medium description)
+  Grid2D_Quad_Block          **MF_MeshBlk;
+  QuadTreeBlock_DataStructure  MF_QuadTree;
+  AdaptiveBlockResourceList    MF_List_of_Global_Solution_Blocks;
+  AdaptiveBlock2D_List         MF_List_of_Local_Solution_Blocks;
+  Rte2D_Quad_Block            *MF_Local_SolnBlk;
+
+
+  // Multigrid declaration.
   FAS_Multigrid2D_Solver<Rte2D_State, 
                          Rte2D_Quad_Block, 
                          Rte2D_Input_Parameters> MGSolver;
@@ -75,12 +88,17 @@ class Rte2DSolver {
 		   MeshBlk(NULL), QuadTree(),
                    List_of_Global_Solution_Blocks(),
 		   List_of_Local_Solution_Blocks(),
-		   Local_SolnBlk(NULL), MGSolver(),
+		   Local_SolnBlk(NULL), 
+		   MF_MeshBlk(NULL), MF_QuadTree(),
+                   MF_List_of_Global_Solution_Blocks(),
+		   MF_List_of_Local_Solution_Blocks(),
+		   MF_Local_SolnBlk(NULL), 
+		   MGSolver(),
 		   processor_cpu_time(), total_cpu_time(),
 		   start_explicit(), end_explicit(), 
 		   number_of_time_steps(0), Time(0),
 		   first_step(true), NUM_VAR_RTE2D(0) {}
-  ~Rte2DSolver() { DeallocateSoln(); }
+  //~Rte2DSolver() { DeallocateSoln(); }
 
   /********************************************************  
    * Member functions                                     *

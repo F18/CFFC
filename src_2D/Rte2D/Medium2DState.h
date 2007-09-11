@@ -21,7 +21,7 @@
 /********************************************************
  * Class Declaration                                    *
  ********************************************************/
-class Medium2D_State;
+class Medium2D_Quad_Block;
 
 /********************************************************
  * Include required C++ libraries                       *
@@ -81,12 +81,12 @@ class Medium2D_State {
  private:
   
   //@{ @name Field data:
-  static FieldData* AbsorptionData;  //!< container class for absorbsion data
-  static FieldData* ScatterData;     //!< container class for scatter data
-  static FieldData* BlackbodyData;   //!< container class for blackbody data
-  static TSpecificFunctor<FieldData>* func_kappa; //!< functor to return absorption coef
-  static TSpecificFunctor<FieldData>* func_sigma; //!< functor to return scatter coef
-  static TSpecificFunctor<FieldData>* func_Ib;    //!< functor to return blackbody
+  static FieldData<Medium2D_Quad_Block> *AbsorptionData;  //!< container class for absorbsion data
+  static FieldData<Medium2D_Quad_Block> *ScatterData;     //!< container class for scatter data
+  static FieldData<Medium2D_Quad_Block> *BlackbodyData;   //!< container class for blackbody data
+  static TSpecificFunctor< FieldData<Medium2D_Quad_Block> > *func_kappa; //!< functor to return absorption coef
+  static TSpecificFunctor< FieldData<Medium2D_Quad_Block> > *func_sigma; //!< functor to return scatter coef
+  static TSpecificFunctor< FieldData<Medium2D_Quad_Block> > *func_Ib;    //!< functor to return blackbody
   //@}
 
 
@@ -252,12 +252,12 @@ inline void Medium2D_State :: AllocateStatic()
   DeallocateStatic();
 
   // allocate
-  AbsorptionData = new FieldData[Nband];
-  ScatterData    = new FieldData[Nband];
-  BlackbodyData  = new FieldData[Nband];
-  func_kappa     = new TSpecificFunctor<FieldData>[Nband];
-  func_sigma     = new TSpecificFunctor<FieldData>[Nband];
-  func_Ib        = new TSpecificFunctor<FieldData>[Nband];
+  AbsorptionData = new FieldData<Medium2D_Quad_Block>[Nband];
+  ScatterData    = new FieldData<Medium2D_Quad_Block>[Nband];
+  BlackbodyData  = new FieldData<Medium2D_Quad_Block>[Nband];
+  func_kappa     = new TSpecificFunctor< FieldData<Medium2D_Quad_Block> >[Nband];
+  func_sigma     = new TSpecificFunctor< FieldData<Medium2D_Quad_Block> >[Nband];
+  func_Ib        = new TSpecificFunctor< FieldData<Medium2D_Quad_Block> >[Nband];
 }
 
 inline void Medium2D_State :: DeallocateStatic()
@@ -391,9 +391,9 @@ inline void Medium2D_State :: SetAllFieldsConstant(const Medium2D_State &M)
     P.val = M.Ib[i];    BlackbodyData[i].SetConstantParams(P);
 
     // set field descriptor
-    func_kappa[i].Set(&AbsorptionData[i], &FieldData::Constant);
-    func_sigma[i].Set(&ScatterData[i], &FieldData::Constant);
-    func_Ib[i].Set(&BlackbodyData[i], &FieldData::Constant);
+    func_kappa[i].Set(&AbsorptionData[i], &FieldData<Medium2D_Quad_Block>::Constant);
+    func_sigma[i].Set(&ScatterData[i], &FieldData<Medium2D_Quad_Block>::Constant);
+    func_Ib[i].Set(&BlackbodyData[i], &FieldData<Medium2D_Quad_Block>::Constant);
   }
 }
 
@@ -405,7 +405,14 @@ inline void Medium2D_State :: SetAllFieldsConstant(const Medium2D_State &M)
  *                                                      *
  * NOT FINISHED - WILL NOT WORK!!!!                     *
  ********************************************************/
-inline void Medium2D_State :: SetDiscreteField(Grid2D_Quad_Block **Grid_ptr,     // grid block pointer
+inline void Medium2D_State :: SetDiscreteField(
+  Grid2D_Quad_Block          ***MeshBlk;
+  AdaptiveBlockResourceList    *List_of_Global_Solution_Blocks;
+  AdaptiveBlock2D_List         *List_of_Local_Solution_Blocks;
+  Rte2D_Quad_Block            **Local_SolnBlk;
+
+
+Grid2D_Quad_Block **Grid_ptr,     // grid block pointer
 					       const int &Number_of_Blocks_Idir, // number blocks in i-dir
 					       const int &Number_of_Blocks_Jdir, // number blocks in j-dir
 					       double *** kappa_,                // 3D array abs coeffs (band, i-index, j-index)
@@ -414,7 +421,7 @@ inline void Medium2D_State :: SetDiscreteField(Grid2D_Quad_Block **Grid_ptr,    
 {
   // decalares
   ConstantFieldParams CF;
-  DiscreteFieldParams DF;
+  DiscreteFieldParams<Medium2D_Quad_Block> DF;
 
   //
   // assign all the fields
@@ -439,9 +446,9 @@ inline void Medium2D_State :: SetDiscreteField(Grid2D_Quad_Block **Grid_ptr,    
     ScatterData[i].SetConstantParams(CF);
 
     // set field descriptor
-    func_kappa[i].Set(&AbsorptionData[i], &FieldData::Interpolate);
-    func_sigma[i].Set(&ScatterData[i], &FieldData::Constant);
-    func_Ib[i].Set(&BlackbodyData[i], &FieldData::Interpolate);
+    func_kappa[i].Set(&AbsorptionData[i], &FieldData<Medium2D_Quad_Block>::Interpolate);
+    func_sigma[i].Set(&ScatterData[i], &FieldData<Medium2D_Quad_Block>::Constant);
+    func_Ib[i].Set(&BlackbodyData[i], &FieldData<Medium2D_Quad_Block>::Interpolate);
   }
 }
 
@@ -518,5 +525,12 @@ inline istream& operator >> (istream &in_file,  Medium2D_State &U)
   return (in_file);
 }
 
+
+
+
+/********************************************************
+ * Required CFFC header files                           *
+ ********************************************************/
+#include "Medium2DQuad.h"
 
 #endif // _Medium2D_STATE_INCLUDED 

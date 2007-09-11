@@ -30,6 +30,8 @@
 #include "../Math/Vector2D.h"
 #include "../Grid/Grid2DQuad.h"
 #include "../CFD/CFD.h"
+#include "../AMR/AdaptiveBlock.h"
+#include "../AMR/QuadTree.h"
 
 /********************************************************
  * Struct definitions                                   *
@@ -37,15 +39,17 @@
 struct ConstantFieldParams { double val; };
 static const ConstantFieldParams cfDefValues = { 0 };
 
+template<class Quad_Soln_Block> 
 struct DiscreteFieldParams {   
-  Grid2D_Quad_Block** Grid; // pointer to multiblock grid object
-  int Number_of_Blocks_Idir;// number of blocks in i-dir
-  int Number_of_Blocks_Jdir;// number of blocks in j-dir
-  double** valarray;        // values corresponding to grid cell centers
+  AdaptiveBlockResourceList    *List_of_Global_Solution_Blocks;
+  AdaptiveBlock2D_List         *List_of_Local_Solution_Blocks;
+  Quad_Soln_Block             **Local_SolnBlk;
+  int Number_of_Blocks_Idir;   // number of blocks in i-dir
+  int Number_of_Blocks_Jdir;   // number of blocks in j-dir
   // bool isNodalValues;       // a flag, true if valarray is defined at the 'Grid' nodes
   //                           // or false if defined at cell centers.
 };
-static const DiscreteFieldParams dfDefValues = { NULL, 0, 0, NULL };
+static const DiscreteFieldParams<class Quad_Soln_Block> dfDefValues = { NULL, NULL, NULL, NULL, 0, 0 };
 
 
 
@@ -138,6 +142,7 @@ template <class TClass> class TSpecificFunctor : public TFunctor {
  * \endverbatim
  */
 /***********************************************************************/
+template<class Quad_Soln_Block> 
 class FieldData {
 
  private:
@@ -146,7 +151,7 @@ class FieldData {
   //objects
   //
   ConstantFieldParams CF;
-  DiscreteFieldParams DF;
+  DiscreteFieldParams<Quad_Soln_Block> DF;
 
  public:
 
@@ -154,9 +159,14 @@ class FieldData {
   // constructors
   //
   FieldData() : CF(cfDefValues), DF(dfDefValues) {};
-  void SetConstantParams( const struct ConstantFieldParams params ) { CF = params; };
-  void SetDiscreteParams( const struct DiscreteFieldParams params ) { DF = params; };
+  
+  void SetConstantParams( const struct ConstantFieldParams params ) 
+  { CF = params; };
+  
+  void SetDiscreteParams( const struct DiscreteFieldParams<Quad_Soln_Block> params ) 
+  { DF = params; };
 
+  
   //
   // Functions to describe the field
   //
@@ -171,8 +181,10 @@ class FieldData {
  * Compute the value at the specified location by       *
  * interpolating from an existing grid.                 *
  ********************************************************/
-inline double FieldData :: Interpolate(const Vector2D &r) 
+template <class Quad_Soln_Block>
+inline double FieldData<Quad_Soln_Block> :: Interpolate(const Vector2D &r) 
 {
+  /*
   // declares
   int err;
   int ib, jb;   // block indices
@@ -231,6 +243,8 @@ inline double FieldData :: Interpolate(const Vector2D &r)
 
   // return the value
   return value;
+
+  */
 }
 
 #endif //_FIELD_DATA_INCLUDED
