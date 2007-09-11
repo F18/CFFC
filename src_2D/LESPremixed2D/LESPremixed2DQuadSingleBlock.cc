@@ -63,7 +63,7 @@ void Broadcast_Solution_Block(LESPremixed2D_Quad_Block &SolnBlk) {
     double *buffer;
 
     int NUM_VAR_LESPREMIXED2D = SolnBlk.NumVar(); 
-
+    cout<<"nn_broad=    "<<NUM_VAR_LESPREMIXED2D<<endl;
     /* Broadcast the number of cells in each direction. */
     if (CFFC_Primary_MPI_Processor()) {
       ni = SolnBlk.NCi;
@@ -269,6 +269,7 @@ void Broadcast_Solution_Block(LESPremixed2D_Quad_Block &SolnBlk,
   double *buffer;
 
   int NUM_VAR_LESPREMIXED2D = SolnBlk.NumVar();
+    cout<<"nn_broad2=    "<<NUM_VAR_LESPREMIXED2D<<endl;
 
   /* Broadcast the number of cells in each direction. */
 
@@ -1141,6 +1142,12 @@ void Output_Tecplot(LESPremixed2D_Quad_Block &SolnBlk,
     }
   }
    
+    for (int j  = SolnBlk.JCl; j <= SolnBlk.JCu; ++j ) {
+      for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; ++i ) {
+         Reconstruction_Second_Derivative(SolnBlk,i,j);	 
+      }
+    }
+
   /* Cell centered shear and qflux */
   if (SolnBlk.Flow_Type != FLOWTYPE_INVISCID) {
     Viscous_Calculations(SolnBlk);
@@ -1210,9 +1217,9 @@ void Output_Tecplot(LESPremixed2D_Quad_Block &SolnBlk,
     Out_File << "\"k_sfs\" \\ \n"
 	     << "\"vorticity\" \\ \n"
 	     << "\"enstrophy\" \\ \n";
-     if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) {
+     if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
      Out_File <<"\"FSD\" \\ \n"
               <<"\"Reaction Rate\" \\ \n"
               <<"\"FSD Total Source\" \\ \n"
@@ -1220,19 +1227,15 @@ void Output_Tecplot(LESPremixed2D_Quad_Block &SolnBlk,
               <<"\"M_y\" \\ \n"
               <<"\"Resolved Strain\" \\ \n"
               <<"\"Resolved Propagation_Curvature\" \\ \n"
-//               <<"\"Resolved Propagation\" \\ \n"
-//               <<"\"Resolved Curvature\" \\ \n"
+              <<"\"Resolved Propagation\" \\ \n"
+              <<"\"Resolved Curvature\" \\ \n"
               <<"\"SFS Strain\" \\ \n"
-              <<"\"SFS Curvature\" \\ \n";
-//               <<"\"Resolved_Convection_Progvar\" \\ \n"
-//               <<"\"Resolved_Convection_Fsd\" \\ \n"
-//               <<"\"NGT_Progvar\" \\ \n"
-//               <<"\"NGT_Fsd\" \\ \n"
-//               <<"\"SFS Diffusion_Progvar\" \\ \n"
-//               <<"\"SFS Diffusion_Fsd\" \\ \n"
-//               <<"\"Heat_Release_Strain\" \\ \n"
-//               <<"\"Net_Rate_Change_Progvar\" \\ \n"
-//               <<"\"Net_Rate_Change_Fsd\" \\ \n"
+              <<"\"SFS Curvature\" \\ \n"
+              <<"\"Resolved_Convection_Progvar\" \\ \n"
+              <<"\"Resolved_Convection_Fsd\" \\ \n"
+              <<"\"NGT_Progvar\" \\ \n"
+              <<"\"NGT_Fsd\" \\ \n"
+              <<"\"Heat_Release_Strain\" \\ \n";
     }
       // Zone details
    Out_File << "ZONE T =  \"Block Number = " << Block_Number
@@ -1271,9 +1274,9 @@ void Output_Tecplot(LESPremixed2D_Quad_Block &SolnBlk,
       Out_File << " " << W_node.k() 
 	       << " " << SolnBlk.vorticity_n(i, j)
 	       << " " << SolnBlk.enstrophy_n(i, j); 
-     if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) {
+     if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
        Out_File<< " " << W_node.scalar[1]*W_node.rho
                << " " << SolnBlk.Reaction_Rate_Fsd_n(i,j)
                << " " << W_node.S_turbulence_model( SolnBlk.dWdx[i][j],
@@ -1285,19 +1288,15 @@ void Output_Tecplot(LESPremixed2D_Quad_Block &SolnBlk,
 	       << " " << SolnBlk.M_y_n(i,j)
                << " " << SolnBlk.Resolved_Strain_n(i,j)
 	       << " " << SolnBlk.Resolved_Propagation_Curvature_n(i,j)
-// 	       << " " << SolnBlk.Resolved_Propagation_n(i,j)
-// 	       << " " << SolnBlk.Resolved_Curvature_n(i,j)
+ 	       << " " << SolnBlk.Resolved_Propagation_n(i,j)
+ 	       << " " << SolnBlk.Resolved_Curvature_n(i,j)
 	       << " " << SolnBlk.SFS_Strain_n(i,j,SolnBlk.Flow_Type)
-	       << " " << SolnBlk.SFS_Curvature_n(i,j,SolnBlk.Flow_Type);
-// 	       << " " << SolnBlk.Resolved_Convection_Progvar_n(i,j)
-// 	       << " " << SolnBlk.Resolved_Convection_Fsd_n(i,j)
-// 	       << " " << SolnBlk.NGT_Progvar_n(i,j)
-// 	       << " " << SolnBlk.NGT_Fsd_n(i,j)
-//  	       << " " << SolnBlk.SFS_Diffusion_Progvar_n(i,j,SolnBlk.Flow_Type)
-//  	       << " " << SolnBlk.SFS_Diffusion_Fsd_n(i,j,SolnBlk.Flow_Type)
-// 	       << " " << SolnBlk.Heat_Release_Strain_n(i,j)
-//  	       << " " << SolnBlk.Net_Rate_Change_Progvar_n(i,j,SolnBlk.Flow_Type)
-//  	       << " " << SolnBlk.Net_Rate_Change_Fsd_n(i,j,SolnBlk.Flow_Type);
+	       << " " << SolnBlk.SFS_Curvature_n(i,j,SolnBlk.Flow_Type)
+ 	       << " " << SolnBlk.Resolved_Convection_Progvar_n(i,j)
+ 	       << " " << SolnBlk.Resolved_Convection_Fsd_n(i,j)
+ 	       << " " << SolnBlk.NGT_Progvar_n(i,j)
+ 	       << " " << SolnBlk.NGT_Fsd_n(i,j)
+ 	       << " " << SolnBlk.Heat_Release_Strain_n(i,j);
     }
   
       Out_File.unsetf(ios::scientific);
@@ -1327,6 +1326,12 @@ void Output_Cells_Tecplot(LESPremixed2D_Quad_Block &SolnBlk,
 	                  ostream &Out_File) {
 
     int i, j;
+
+    for (int j  = SolnBlk.JCl; j <= SolnBlk.JCu; ++j ) {
+      for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; ++i ) {
+         Reconstruction_Second_Derivative(SolnBlk,i,j);	 
+      }
+    }
 
     /* Cell centered shear and qflux */
     if (SolnBlk.Flow_Type != FLOWTYPE_INVISCID) {
@@ -1412,9 +1417,9 @@ void Output_Cells_Tecplot(LESPremixed2D_Quad_Block &SolnBlk,
                 << "\"vorticity\" \\ \n"
                 << "\"enstrophy\" \\ \n"
                 << "\"laplacian_vort\" \\ \n";
-     if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) {
+     if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
       Out_File<<"\"FSD\" \\ \n"
               <<"\"Reaction Rate\" \\ \n"
               <<"\"FSD Total Source\" \\ \n"
@@ -1422,19 +1427,15 @@ void Output_Cells_Tecplot(LESPremixed2D_Quad_Block &SolnBlk,
               <<"\"M_y\" \\ \n"
               <<"\"Resolved Strain\" \\ \n"
               <<"\"Resolved Propagation\" \\ \n"
-//               <<"\"Total_Resolved Propagation\" \\ \n"
-//               <<"\"Total_Resolved Curvature\" \\ \n"
+              <<"\"Total_Resolved Propagation\" \\ \n"
+              <<"\"Total_Resolved Curvature\" \\ \n"
               <<"\"SFS Strain\" \\ \n"
-              <<"\"SFS Curvature\" \\ \n";
-//               <<"\"Resolved_Convection_Progvar\" \\ \n"
-//               <<"\"Resolved_Convection_Fsd\" \\ \n"
-//               <<"\"NGT_Progvar\" \\ \n"
-//               <<"\"NGT_Fsd\" \\ \n"
-//               <<"\"SFS Diffusion_Progvar\" \\ \n"
-//               <<"\"SFS Diffusion_Fsd\" \\ \n"
-//               <<"\"Heat_Release_Strain\" \\ \n"
-//               <<"\"Net_Rate_Change_Progvar\" \\ \n"
-//               <<"\"Net_Rate_Change_Fsd\" \\ \n";
+              <<"\"SFS Curvature\" \\ \n"
+              <<"\"Resolved_Convection_Progvar\" \\ \n"
+              <<"\"Resolved_Convection_Fsd\" \\ \n"
+              <<"\"NGT_Progvar\" \\ \n"
+              <<"\"NGT_Fsd\" \\ \n"
+              <<"\"Heat_Release_Strain\" \\ \n";
      }
 
                    
@@ -1519,9 +1520,9 @@ void Output_Cells_Tecplot(LESPremixed2D_Quad_Block &SolnBlk,
 	            << " " << SolnBlk.vorticity(i, j)
                     << " " << SolnBlk.enstrophy(i, j) 
 	            << " " << Laplacian_of_Vorticity(SolnBlk, i, j);
-     if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) {
+     if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
        Out_File<< " " << SolnBlk.W[i][j].scalar[1]*SolnBlk.W[i][j].rho
                << " " << SolnBlk.W[i][j].Reaction_Rate_Fsd(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j])
 	       << " " << SolnBlk.W[i][j].S_turbulence_model(SolnBlk.dWdx[i][j],
@@ -1533,19 +1534,15 @@ void Output_Cells_Tecplot(LESPremixed2D_Quad_Block &SolnBlk,
 	       << " " << SolnBlk.W[i][j].M_y(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j])
 	       << " " << SolnBlk.W[i][j].Resolved_Strain(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j])
 	       << " " << SolnBlk.W[i][j].Resolved_Propagation_Curvature(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j])
-// 	       << " " << SolnBlk.W[i][j].Resolved_Propagation(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],SolnBlk.d_dWdx_dx[i][j],SolnBlk.d_dWdx_dy[i][j],SolnBlk.d_dWdy_dy[i][j])
-// 	       << " " << SolnBlk.W[i][j].Resolved_Curvature(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],SolnBlk.d_dWdx_dx[i][j],SolnBlk.d_dWdx_dy[i][j],SolnBlk.d_dWdy_dy[i][j])
+ 	       << " " << SolnBlk.W[i][j].Resolved_Propagation(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],SolnBlk.d_dWdx_dx[i][j],SolnBlk.d_dWdx_dy[i][j],SolnBlk.d_dWdy_dy[i][j])
+ 	       << " " << SolnBlk.W[i][j].Resolved_Curvature(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],SolnBlk.d_dWdx_dx[i][j],SolnBlk.d_dWdx_dy[i][j],SolnBlk.d_dWdy_dy[i][j])
 	       << " " << SolnBlk.W[i][j].SFS_Strain(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],SolnBlk.Flow_Type)
-	       << " " << SolnBlk.W[i][j].SFS_Curvature(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],SolnBlk.Flow_Type);
-// 	       << " " << SolnBlk.W[i][j].Resolved_Convection_Progvar(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j])
-// 	       << " " << SolnBlk.W[i][j].Resolved_Convection_Fsd(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j])
-// 	       << " " << SolnBlk.W[i][j].NGT_Progvar(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j])
-// 	       << " " << SolnBlk.W[i][j].NGT_Fsd(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],SolnBlk.d_dWdx_dx[i][j],SolnBlk.d_dWdx_dy[i][j],SolnBlk.d_dWdy_dy[i][j])
-//  	       << " " << SolnBlk.W[i][j].SFS_Diffusion_Progvar(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],SolnBlk.d_dWdx_dx[i][j],SolnBlk.d_dWdx_dy[i][j],SolnBlk.d_dWdy_dy[i][j],SolnBlk.Flow_Type)
-//  	       << " " << SolnBlk.W[i][j].SFS_Diffusion_Fsd(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],SolnBlk.d_dWdx_dx[i][j],SolnBlk.d_dWdx_dy[i][j],SolnBlk.d_dWdy_dy[i][j],SolnBlk.Flow_Type)
-// 	       << " " << SolnBlk.W[i][j].Heat_Release_Strain(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],SolnBlk.d_dWdx_dx[i][j],SolnBlk.d_dWdx_dy[i][j],SolnBlk.d_dWdy_dy[i][j])
-//  	       << " " << SolnBlk.W[i][j].Net_Rate_Change_Progvar(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],SolnBlk.d_dWdx_dx[i][j],SolnBlk.d_dWdx_dy[i][j],SolnBlk.d_dWdy_dy[i][j],SolnBlk.Flow_Type)
-//  	       << " " << SolnBlk.W[i][j].Net_Rate_Change_Fsd(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],SolnBlk.d_dWdx_dx[i][j],SolnBlk.d_dWdx_dy[i][j],SolnBlk.d_dWdy_dy[i][j],SolnBlk.Flow_Type);
+	       << " " << SolnBlk.W[i][j].SFS_Curvature(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],SolnBlk.Flow_Type)
+ 	       << " " << SolnBlk.W[i][j].Resolved_Convection_Progvar(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j])
+ 	       << " " << SolnBlk.W[i][j].Resolved_Convection_Fsd(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j])
+ 	       << " " << SolnBlk.W[i][j].NGT_Progvar(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j])
+ 	       << " " << SolnBlk.W[i][j].NGT_Fsd(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],SolnBlk.d_dWdx_dx[i][j],SolnBlk.d_dWdx_dy[i][j],SolnBlk.d_dWdy_dy[i][j])
+ 	       << " " << SolnBlk.W[i][j].Heat_Release_Strain(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],SolnBlk.d_dWdx_dx[i][j],SolnBlk.d_dWdx_dy[i][j],SolnBlk.d_dWdy_dy[i][j]);
        }
 	 
 //	   //limiters
@@ -2297,14 +2294,13 @@ void ICs(LESPremixed2D_Quad_Block &SolnBlk,
       // Set Initial condtions on 1D grid
       for (int j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
 	for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+         if ( SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_C_FSD ) {
 	  if (SolnBlk.Grid.Cell[i][j].Xc.x <= 0.01){ //spatial relation, grid independent 
 	    SolnBlk.W[i][j] = Wl;  
 	  } else {
  	    SolnBlk.W[i][j] = Wr;	     
  	  } /* end if */
-     if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) {
+	 }else{
             double xx = SolnBlk.Grid.Cell[i][j].Xc.x-0.01;
 	    double tau_fsd = SolnBlk.W[i][j].HeatRelease_Parameter();
        	  SolnBlk.W[i][j].scalar[0] = (erf(xx*4000.0)+1.0)/2.0;
@@ -2313,10 +2309,7 @@ void ICs(LESPremixed2D_Quad_Block &SolnBlk,
        	  SolnBlk.W[i][j].rho = SolnBlk.W[i][j].reactants_den*SolnBlk.W[2][j].Rtot()/SolnBlk.W[i][j].Rtot()/(1.0+tau_fsd*SolnBlk.W[i][j].scalar[0]);
        	  SolnBlk.W[i][j].v.x = SolnBlk.W[i][j].reactants_den*SolnBlk.W[i][j].laminar_speed/SolnBlk.W[i][j].rho;
        	  SolnBlk.W[i][j].scalar[1] = 4000.0*exp(-sqr(xx*4000.0))/sqrt(3.1415926)/SolnBlk.W[i][j].rho;
-  	  if (  SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) {
-  	    SolnBlk.W[i][j].scalar[2] = SolnBlk.W[i][j].k();
-	  }
-     }
+	 }
 	  SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
 	} 
       } 
@@ -2867,7 +2860,15 @@ void ICs(LESPremixed2D_Quad_Block &SolnBlk,
 	    SolnBlk.W[i][j].v.x += uprime_x;
 	    SolnBlk.W[i][j].v.y += uprime_y;
 	  }
-
+  if (  SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
+      Linear_Reconstruction_LeastSquares_2(SolnBlk, i, j, LIMITER_VENKATAKRISHNAN);
+      Tensor2D strain_rate = SolnBlk.W[i][j].Strain_Rate(SolnBlk.dWdx[i][j], 
+							 SolnBlk.dWdy[i][j], 
+							 SolnBlk.Flow_Type, 
+							 SolnBlk.Axisymmetric, 
+							 SolnBlk.Grid.Cell[i][j].Xc);  
+      SolnBlk.W[i][j].scalar[2] = SolnBlk.W[i][j].SFSmodel.sfs_k_Yoshizawa(strain_rate,SolnBlk.W[i][j].filter_width);
+  }
 #ifdef THICKENED_FLAME_ON
 	  SolnBlk.W[i][j].flame.unphysical_check(SolnBlk.W[i][j].TFactor);
 	  if (SolnBlk.W[i][j].flame.TF < (ONE-NANO)  || 
@@ -2877,8 +2878,9 @@ void ICs(LESPremixed2D_Quad_Block &SolnBlk,
 #endif
 	  // Update U from W
 	  SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
-	}
       }
+  }
+
       InFile.unsetf(ios::skipws);
       InFile.close();
 
@@ -2989,7 +2991,7 @@ void ICs(LESPremixed2D_Quad_Block &SolnBlk,
 
 
 // 	    // Initialize the turbulence kinetic energy k
-// 	    // if (SolnBlk.W[i][j].Scal_sys.scalar_flag == LES_TF_K  ||  SolnBlk.W[i][j].Scal_sys.scalar_flag == LES_FSD_C_K) {
+// 	    // if (SolnBlk.W[i][j].Scal_sys.scalar_flag == LES_TF_K  ||  SolnBlk.W[i][j].Scal_sys.scalar_flag == LES_C_FSD_C_K) {
 // // 	      double dudx, dudy, dvdx, dvdy, SS, trace;
 // // 	      dudx = (SolnBlk.W[i+1][j].v.x - SolnBlk.W[i-1][j].v.x)/
 // // 		(SolnBlk.Grid.Cell[i+1][j].Xc.x - SolnBlk.Grid.Cell[i-1][j].Xc.x);
@@ -4271,15 +4273,14 @@ double CFL(LESPremixed2D_Quad_Block &SolnBlk,
 	  rhomu = SolnBlk.W[i][j].mu()/SolnBlk.W[i][j].rho;
 	  if(SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY || 
 	     SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K || 
-	     SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_FSD || 
-	     SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY || 
-	     SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K) {
+	     SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	     SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
 	    Tensor2D strain_rate;
 	    strain_rate = SolnBlk.W[i][j].Strain_Rate(SolnBlk.dWdx[i][j], SolnBlk.dWdy[i][j], 
 						      SolnBlk.Flow_Type, SolnBlk.Axisymmetric, 
 						      SolnBlk.Grid.Cell[i][j].Xc);  
 	    
-	    rhomut = SolnBlk.W[i][j].mu_t(strain_rate)/SolnBlk.W[i][j].rho; 
+	    rhomut = SolnBlk.W[i][j].mu_t(strain_rate,SolnBlk.Flow_Type)/SolnBlk.W[i][j].rho; 
 	    rhomu = max(rhomu, rhomut);
 	  }
 	  
@@ -4289,42 +4290,43 @@ double CFL(LESPremixed2D_Quad_Block &SolnBlk,
 	
 	/******** Chemical Source Term deltat calculation ************/   
 	if (SolnBlk.W[i][j].React.reactset_flag != NO_REACTIONS &&
-	     SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_FSD && 
-	     SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY && 
-	     SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_FSD_K ){
+	     SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_C_FSD && 
+	     SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY && 
+	     SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_C_FSD_K ){
 	  dt_chem = HALF/SolnBlk.W[i][j].dSwdU_max_diagonal(Input_Parameters.Preconditioning,
 							    SolnBlk.Flow_Type,
 							    delta_n,Input_Parameters.Solver_Type); 
 	  SolnBlk.dt[i][j] = min(dt_chem, SolnBlk.dt[i][j]);	  
 	}
 	
-	if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_FSD || 
-	     SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY || 
-	     SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K) {
-	
-	     int nn = SolnBlk.NumVar() - SolnBlk.W[0][0].ns;
-             DenseMatrix dSdU(nn,nn);
-             dSdU.zero();
+	if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+	     SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	     SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
+  	     int NN = SolnBlk.NumVar() - SolnBlk.W[0][0].ns;
+             DenseMatrix dSdW(NN,NN);
+             dSdW.zero();
              double max_diagonal = ONE;
-	     SemiImplicitBlockJacobi(dSdU,SolnBlk,EXPLICIT,i, j);
+             SemiImplicitBlockJacobi_dSdW(dSdW,SolnBlk,EXPLICIT,i, j);
+
              if(Input_Parameters.Preconditioning == 1){
- 	      DenseMatrix Pinv(nn,nn);
+ 	      DenseMatrix Pinv(NN,NN);
  	      Pinv.zero();
  	      SolnBlk.U[i][j].Low_Mach_Number_Preconditioner_Inverse(Pinv,
    		  			           	             SolnBlk.Flow_Type,
  				 			             delta_n);	 
- 	      dSdU = Pinv*dSdU;
+ 	      dSdW = Pinv*dSdW;
            
              }
-             for(int ii=0; ii<nn; ii++){
-              max_diagonal = max(max_diagonal,fabs(dSdU(ii,ii)));
+	     
+             for(int ii=0; ii<NN; ii++){
+              max_diagonal = max(max_diagonal,fabs(dSdW(ii,ii)));
              }
 
  	       SolnBlk.dt[i][j] = min(HALF/max_diagonal, SolnBlk.dt[i][j]);
 	       //	       cout<<"\nFsd=   "<<SolnBlk.dt[i][j]<<endl;
 	       //	       if ( SolnBlk.dt[i][j] < 1.0e-08 ) { SolnBlk.dt[i][j] = 1.0e-08; }
  	     }
-
+	
 	/************ Global Minimum ********************************/
 	dtMin = min(dtMin, SolnBlk.dt[i][j]);
 	
@@ -6782,6 +6784,84 @@ double Laplacian_of_Vorticity(LESPremixed2D_Quad_Block &SolnBlk,
   return laplacian;
 }
 
+ void Reconstruction_Second_Derivative(LESPremixed2D_Quad_Block &SolnBlk,
+                                       const int i,const int j ) {
+   double DX, DY;
+
+	  if (i == SolnBlk.ICu || j == SolnBlk.JCu) {
+	    //BFW
+	  DX = SolnBlk.Grid.Cell[i][j].Xc.x - SolnBlk.Grid.Cell[i-1][j].Xc.x;
+	  DY = SolnBlk.Grid.Cell[i][j].Xc.y - SolnBlk.Grid.Cell[i][j-1].Xc.y;
+	  SolnBlk.d_dWdx_dx[i][j] = ( SolnBlk.dWdx[i][j] - SolnBlk.dWdx[i-1][j] )/ DX;
+	  SolnBlk.d_dWdx_dy[i][j] = ( SolnBlk.dWdx[i][j] - SolnBlk.dWdx[i][j-1] )/ DY;
+	  SolnBlk.d_dWdy_dy[i][j] = ( SolnBlk.dWdy[i][j] - SolnBlk.dWdy[i][j-1] )/ DY;
+
+	  }else if (i == SolnBlk.ICl || j == SolnBlk.JCl){
+	    //FFW
+	  DX = SolnBlk.Grid.Cell[i+1][j].Xc.x - SolnBlk.Grid.Cell[i][j].Xc.x;
+	  DY = SolnBlk.Grid.Cell[i][j+1].Xc.y - SolnBlk.Grid.Cell[i][j].Xc.y;
+	  SolnBlk.d_dWdx_dx[i][j] = ( SolnBlk.dWdx[i+1][j] - SolnBlk.dWdx[i][j] )/ DX;
+	  SolnBlk.d_dWdx_dy[i][j] = ( SolnBlk.dWdx[i][j+1] - SolnBlk.dWdx[i][j] )/ DY;
+	  SolnBlk.d_dWdy_dy[i][j] = ( SolnBlk.dWdy[i][j+1] - SolnBlk.dWdy[i][j] )/ DY;
+
+	  }else{
+
+	  DX = SolnBlk.Grid.Cell[i+1][j].Xc.x - SolnBlk.Grid.Cell[i-1][j].Xc.x;
+	  DY = SolnBlk.Grid.Cell[i][j+1].Xc.y - SolnBlk.Grid.Cell[i][j-1].Xc.y;
+	  SolnBlk.d_dWdx_dx[i][j] = ( SolnBlk.dWdx[i+1][j] - SolnBlk.dWdx[i-1][j] )/ DX;
+	  SolnBlk.d_dWdx_dy[i][j] = ( SolnBlk.dWdx[i][j+1] - SolnBlk.dWdx[i][j-1] )/ DY;
+	  SolnBlk.d_dWdy_dy[i][j] = ( SolnBlk.dWdy[i][j+1] - SolnBlk.dWdy[i][j-1] )/ DY;
+
+	  }
+
+//   Vector2D  n_north, n_south, n_east, n_west;
+//   double l_north, l_south, l_east, l_west;
+//   double dCdx_N, dCdx_S, dCdx_E, dCdx_W;
+//   double dCdy_N, dCdy_S, dCdy_E, dCdy_W;
+
+//   l_north = SolnBlk.Grid.lfaceN(i, j);
+//   l_south = SolnBlk.Grid.lfaceS(i, j);
+//   l_east = SolnBlk.Grid.lfaceE(i, j);
+//   l_west = SolnBlk.Grid.lfaceW(i, j);
+
+//   n_north = SolnBlk.Grid.nfaceN(i, j);
+//   n_south = SolnBlk.Grid.nfaceS(i, j);
+//   n_east = SolnBlk.Grid.nfaceE(i, j);
+//   n_west = SolnBlk.Grid.nfaceW(i, j);
+
+//   dCdx_N = SolnBlk.dWdx_faceN[i][j].scalar[0];
+//   dCdx_S = SolnBlk.dWdx_faceS[i][j].scalar[0];
+//   dCdx_E = SolnBlk.dWdx_faceE[i][j].scalar[0];
+//   dCdx_W = SolnBlk.dWdx_faceW[i][j].scalar[0];  
+
+//   dCdy_N = SolnBlk.dWdy_faceN[i][j].scalar[0];
+//   dCdy_S = SolnBlk.dWdy_faceS[i][j].scalar[0];
+//   dCdy_E = SolnBlk.dWdy_faceE[i][j].scalar[0];
+//   dCdy_W = SolnBlk.dWdy_faceW[i][j].scalar[0];
+
+//   /* North face of the cell */
+//   SolnBlk.d_dWdx_dx[i][j] = l_north*dCdx_N*n_north.x 
+//   SolnBlk.d_dWdy_dy[i][j] = l_north*dCdy_N*n_north.y; 
+
+//   /* West face of the cell */
+//   SolnBlk.d_dWdx_dx[i][j] += l_west*dCdx_W*n_west.x;
+//   SolnBlk.d_dWdy_dy[i][j] += l_west*dCdy_W*n_west.y;
+
+//   /* South face of the cell */
+//   SolnBlk.d_dWdx_dx[i][j] += l_south*dCdx_S*n_south.x;
+//   SolnBlk.d_dWdy_dy[i][j] += l_south*dCdy_S*n_south.y;
+
+//   /* East face of the cell */
+//   SolnBlk.d_dWdx_dx[i][j] += l_east*dCdx_E*n_east.x; 
+//   SolnBlk.d_dWdy_dy[i][j] += l_east*dCdy_E*n_east.y;
+
+
+//   /* Componentes of the average laplacian of the velocity 
+//      in the cell (i,j) */
+//   SolnBlk.d_dWdx_dx[i][j] = SolnBlk.d_dWdx_dx[i][j]/SolnBlk.Grid.Cell[i][j].A;
+//   SolnBlk.d_dWdy_dy[i][j] = SolnBlk.d_dWdy_dy[i][j]/SolnBlk.Grid.Cell[i][j].A;
+
+ }
 
 /********************************************************
  * Routine: Residual_Smoothing                          *
@@ -7002,8 +7082,8 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
 	     grad_CO2_criteria = sqrt(SolnBlk.Grid.Cell[i][j].A)*grad_CO2_abs;
              grad_CO2_criteria_max = max(grad_CO2_criteria_max, grad_CO2_criteria);
 
-	     if ( SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-                  SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) {
+	     if ( SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+                  SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
 	     fsd_x = SolnBlk.W[i][j].scalar[1];
              fsd_y = SolnBlk.W[i][j].scalar[1];
              fsd_abs = sqrt(sqr(fsd_x) + sqr(fsd_y));
@@ -7784,9 +7864,9 @@ int dUdt_Residual_Evaluation(LESPremixed2D_Quad_Block &SolnBlk,
 	if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
 	    SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON ||
 	    SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K ||
-	    SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-	    SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-	    SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K) {
+	    SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+	    SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+	    SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
 	  SolnBlk.dUdt[i][j][0] += SolnBlk.W[i][j].S_turbulence_model(SolnBlk.dWdx[i][j],
 								      SolnBlk.dWdy[i][j],
 								      SolnBlk.Grid.Cell[i][j].Xc,
@@ -8150,7 +8230,6 @@ int dUdt_Multistage_Explicit(LESPremixed2D_Quad_Block &SolnBlk,
 #else
     int NUM_VAR_LESPREMIXED2D = SolnBlk.NumVar();
 #endif
-
     double delta_n;
 
     /* Additional variables for dual time stepping. */
@@ -8188,7 +8267,6 @@ int dUdt_Multistage_Explicit(LESPremixed2D_Quad_Block &SolnBlk,
                                                Input_Parameters.N_Stage,
                                                Input_Parameters.i_Limiter);
         k_residual = 0;
-
         break;
       default:
         omega = Runge_Kutta(i_stage, Input_Parameters.N_Stage);
@@ -8218,7 +8296,6 @@ int dUdt_Multistage_Explicit(LESPremixed2D_Quad_Block &SolnBlk,
        Linear_Reconstruction_LeastSquares(SolnBlk,Input_Parameters.i_Limiter);
        break;
     } /* endswitch */
-
     /********************************************************/
     /********************************************************/
   
@@ -8227,7 +8304,6 @@ int dUdt_Multistage_Explicit(LESPremixed2D_Quad_Block &SolnBlk,
         Input_Parameters.i_Viscous_Flux_Evaluation == VISCOUS_RECONSTRUCTION_ARITHMETIC) {
        Viscous_Calculations(SolnBlk);
     }
-  
     /********************************************************/
     /********************************************************/
 
@@ -8529,9 +8605,9 @@ int dUdt_Multistage_Explicit(LESPremixed2D_Quad_Block &SolnBlk,
           if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
               SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON ||
 	      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K ||
-	      SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-	      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
- 	      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K) {
+	      SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+	      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+ 	      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
 	    SolnBlk.dUdt[i][j][k_residual] += 
 	      (Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*
 	      SolnBlk.W[i][j].S_turbulence_model(SolnBlk.dWdx[i][j],
@@ -8543,9 +8619,9 @@ int dUdt_Multistage_Explicit(LESPremixed2D_Quad_Block &SolnBlk,
 	  /* Include source terms associated with the finite-rate chemistry and 
              turbulence/chemistry interactions */ 
 	  if (SolnBlk.W[i][j].React.reactset_flag != NO_REACTIONS &&
-	    SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_FSD &&
-    	    SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY &&
-	    SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_FSD_K) {	 
+	    SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_C_FSD &&
+	    SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY &&
+	    SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_C_FSD_K) {	 
 	    //rho*omega_dot
 	    //
 	    SolnBlk.dUdt[i][j][k_residual] += (Input_Parameters.CFL_Number*SolnBlk.dt[i][j])* 
@@ -8900,12 +8976,11 @@ int Update_Solution_Multistage_Explicit(LESPremixed2D_Quad_Block &SolnBlk,
   double dTime(ZERO);          // Physical time step
   if (Input_Parameters.Dual_Time_Stepping) dTime = Input_Parameters.dTime;
  
-   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-        SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-        SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ){
+  if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ){
     NUM_VAR_LESPREMIXED2D = SolnBlk.NumVar()-Input_Parameters.Wo.ns+1; 
-   }
-  
+  }
 
   // Memory for linear system solver. 
   DenseSystemLinEqs LinSys;
@@ -8963,9 +9038,9 @@ int Update_Solution_Multistage_Explicit(LESPremixed2D_Quad_Block &SolnBlk,
 	  Input_Parameters.Local_Time_Stepping == SCALAR_LOCAL_TIME_STEPPING ) {
 	//Update
 	SolnBlk.U[i][j] = SolnBlk.Uo[i][j] + omega*SolnBlk.dUdt[i][j][k_residual];
-        if(SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) {
+        if(SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
 	  SolnBlk.U[i][j] = SolnBlk.U[i][j].premixed_mfrac(Input_Parameters.Wo);
 	} else {
 	//N-1 species
@@ -9001,9 +9076,9 @@ int Update_Solution_Multistage_Explicit(LESPremixed2D_Quad_Block &SolnBlk,
 	    
 	    //Update
 	    SolnBlk.U[i][j] = SolnBlk.Uo[i][j] + omega*SolnBlk.dUdt[i][j][k_residual];
-        if(SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) {
+        if(SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
 	  SolnBlk.U[i][j] = SolnBlk.U[i][j].premixed_mfrac(Input_Parameters.Wo);
 	} else {
 	    //N-1 species
@@ -9174,7 +9249,6 @@ int Update_Solution_Multistage_Explicit(LESPremixed2D_Quad_Block &SolnBlk,
 	}
 
 	
-	
 	/******************************************************************
 	 ******************* EVALUATE RHS *********************************
 	 ******************************************************************/
@@ -9190,9 +9264,9 @@ int Update_Solution_Multistage_Explicit(LESPremixed2D_Quad_Block &SolnBlk,
 	  SolnBlk.U[i][j][k+1] = SolnBlk.Uo[i][j][k+1] + LinSys.x(k);
 	} 
 
-        if(SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) {
+        if(SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
 	  SolnBlk.U[i][j] = SolnBlk.U[i][j].premixed_mfrac(Input_Parameters.Wo);
 	} else {
 	/*********************************************************
@@ -9256,9 +9330,9 @@ int Update_Solution_Multistage_Explicit(LESPremixed2D_Quad_Block &SolnBlk,
 	      SolnBlk.U[i][j][k+1] = SolnBlk.Uo[i][j][k+1] + LinSys.x(k);
 	    } 
 	    
-        if(SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) {
+        if(SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
 	  SolnBlk.U[i][j] = SolnBlk.U[i][j].premixed_mfrac(Input_Parameters.Wo);
 	} else {
 	    SolnBlk.U[i][j][NUM_VAR_LESPREMIXED2D] = SolnBlk.U[i][j].rho*(ONE - SolnBlk.U[i][j].sum_species());
@@ -9416,10 +9490,10 @@ void Viscous_Calculations(LESPremixed2D_Quad_Block &SolnBlk) {
       /* Determine the turbulent transport properties. */
       if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K ||
-          SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K) {
-         mut = SolnBlk.W[i][j].mu_t(strain_rate);
+          SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
+	mut = SolnBlk.W[i][j].mu_t(strain_rate,SolnBlk.Flow_Type);
          kappa_t =  SolnBlk.W[i][j].Kappa_turb(mut);
          Dm_t = SolnBlk.W[i][j].Dm_turb(mut);
       } /* endif */
@@ -9457,10 +9531,10 @@ void Viscous_Calculations(LESPremixed2D_Quad_Block &SolnBlk) {
       /********************** Turbulent Stresses ***********************/
       if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K ||
-          SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) { 
-	SolnBlk.W[i][j].SFS_Stress(strain_rate);          
+          SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) { 
+	SolnBlk.W[i][j].SFS_Stress(strain_rate,SolnBlk.Flow_Type);          
 	SolnBlk.U[i][j].lambda = SolnBlk.W[i][j].lambda;
       } /* endif */
 
@@ -9477,9 +9551,9 @@ void Viscous_Calculations(LESPremixed2D_Quad_Block &SolnBlk) {
          q = - kappa * grad(T)                                         */
       if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K ||
-          SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K) {
+          SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
         SolnBlk.U[i][j].theta = - kappa_t*grad_T;
       /****************** Thermal Diffusion ****************************/
       // q -= rho * sum ( hs * Ds *gradcs)   

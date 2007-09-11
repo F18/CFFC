@@ -217,7 +217,7 @@ class LESPremixed2D_pState {
 
    LESPremixed2D_pState(const double &d, const Vector2D &V, const double &pre, const double *scal):
 		rho(d), v(V), p(pre) 
- 		{ scalar = NULL; set_initial_values_scal(scal);  specnull();  set_initial_values(); } 
+     { scalar = NULL; set_initial_values_scal(scal);  specnull();  set_initial_values(); } 
 
    LESPremixed2D_pState(const double &d, const Vector2D &V, const double &pre, const double &value):
 		rho(d), v(V), p(pre) 
@@ -225,7 +225,7 @@ class LESPremixed2D_pState {
 
    LESPremixed2D_pState(const double &d, const double &vx, const double &vy, const double &pre, const double *scal):
                  rho(d), v(vx,vy), p(pre) 
- 		{ scalar = NULL; set_initial_values_scal(scal);  specnull();  set_initial_values(); }
+     { scalar = NULL; set_initial_values_scal(scal);  specnull();  set_initial_values(); }
 
    LESPremixed2D_pState(const double &d, const double &vx, const double &vy, const double &pre, const double &value):
                  rho(d), v(vx,vy), p(pre)                
@@ -249,7 +249,11 @@ class LESPremixed2D_pState {
    //this is needed for the operator overload returns!!!!
    LESPremixed2D_pState(const LESPremixed2D_pState &W): rho(W.rho), v(W.v), p(W.p),
  				 tau(W.tau), qflux(W.qflux), lambda(W.lambda), theta(W.theta) 
-                                 { scalar = NULL; set_initial_values_scal(W.scalar); specnull(); set_initial_values(W.spec); }      
+#ifdef THICKENED_FLAME_ON
+		   ,flame(W.flame)
+#endif 
+		   { scalar = NULL; set_initial_values_scal(W.scalar); 
+		     specnull(); set_initial_values(W.spec); }            
   //@}
 
    //read in ns species data, call only once as its static
@@ -351,7 +355,7 @@ class LESPremixed2D_pState {
    double Gibbs(int species) const; //Gibbs Free Energy (H-TS) for species
 
    /**************** turbulence model related parameters*********/
-   double mu_t(const Tensor2D &strain_rate) const;      
+   double mu_t(const Tensor2D &strain_rate, const int &Flow_Type) const;      
    double Pr_turb(void) const;      
    double Sc_turb(void) const;      
    double Kappa_turb(const double &mut) const;      
@@ -377,7 +381,7 @@ class LESPremixed2D_pState {
 
    void Laminar_Stress(const Tensor2D &strain_rate);
 
-   void SFS_Stress(const Tensor2D &strain_rate);
+   void SFS_Stress(const Tensor2D &strain_rate, const int &Flow_Type);
 
    /************ Heat Flux vector thermal Diffusion ***********/
    Vector2D thermal_diffusion(void) const;
@@ -500,74 +504,48 @@ class LESPremixed2D_pState {
   double SFS_Curvature(const LESPremixed2D_pState &dWdx,
                        const LESPremixed2D_pState &dWdy,
                        const int &Flow_Type) const;
-/*   double M_xx(const LESPremixed2D_pState &dWdx, */
-/*               const LESPremixed2D_pState &dWdy, */
-/*               const LESPremixed2D_pState &d_dWdx_dx, */
-/*               const LESPremixed2D_pState &d_dWdx_dy, */
-/* 	      const LESPremixed2D_pState &d_dWdy_dy) const; */
-/*   double M_xy(const LESPremixed2D_pState &dWdx, */
-/*               const LESPremixed2D_pState &dWdy, */
-/*               const LESPremixed2D_pState &d_dWdx_dx, */
-/*               const LESPremixed2D_pState &d_dWdx_dy, */
-/* 	      const LESPremixed2D_pState &d_dWdy_dy) const; */
-/*   double M_yy(const LESPremixed2D_pState &dWdx, */
-/*               const LESPremixed2D_pState &dWdy, */
-/*               const LESPremixed2D_pState &d_dWdx_dx, */
-/*               const LESPremixed2D_pState &d_dWdx_dy, */
-/* 	      const LESPremixed2D_pState &d_dWdy_dy) const; */
-/*   double Resolved_Curvature(const LESPremixed2D_pState &dWdx, */
-/*                             const LESPremixed2D_pState &dWdy, */
-/*                             const LESPremixed2D_pState &d_dWdx_dx, */
-/*                             const LESPremixed2D_pState &d_dWdx_dy, */
-/*                             const LESPremixed2D_pState &d_dWdy_dy) const; */
-/*   double Resolved_Propagation(const LESPremixed2D_pState &dWdx, */
-/*                               const LESPremixed2D_pState &dWdy, */
-/*                               const LESPremixed2D_pState &d_dWdx_dx, */
-/*                               const LESPremixed2D_pState &d_dWdx_dy, */
-/*                               const LESPremixed2D_pState &d_dWdy_dy) const; */
-/*   double Resolved_Convection_Progvar (const LESPremixed2D_pState &dWdx, */
-/*                                       const LESPremixed2D_pState &dWdy) const; */
-/*   double Resolved_Convection_Fsd (const LESPremixed2D_pState &dWdx, */
-/*                                   const LESPremixed2D_pState &dWdy) const; */
-/*   double NGT_Progvar (const LESPremixed2D_pState &dWdx, */
-/*                       const LESPremixed2D_pState &dWdy) const; */
-/*   double NGT_Fsd (const LESPremixed2D_pState &dWdx, */
-/*                   const LESPremixed2D_pState &dWdy, */
-/*                   const LESPremixed2D_pState &d_dWdx_dx, */
-/*                   const LESPremixed2D_pState &d_dWdx_dy, */
-/*                   const LESPremixed2D_pState &d_dWdx_dy) const; */
-/*   double SFS_Diffusion_Progvar (const LESPremixed2D_pState &dWdx, */
-/*                                 const LESPremixed2D_pState &dWdy, */
-/*                                 const LESPremixed2D_pState &d_dWdx_dx, */
-/*                                 const LESPremixed2D_pState &d_dWdx_dy, */
-/*                                 const LESPremixed2D_pState &d_dWdy_dy, */
-/*                                 const int &Flow_Type) const; */
-/*   double SFS_Diffusion_Fsd (const LESPremixed2D_pState &dWdx, */
-/*                             const LESPremixed2D_pState &dWdy, */
-/*                             const LESPremixed2D_pState &d_dWdx_dx, */
-/*                             const LESPremixed2D_pState &d_dWdx_dy, */
-/*                             const LESPremixed2D_pState &d_dWdy_dy, */
-/*                             const int &Flow_Type) const; */
-/*   double Heat_Release_Strain (const LESPremixed2D_pState &dWdx, */
-/*                               const LESPremixed2D_pState &dWdy, */
-/*                               const LESPremixed2D_pState &d_dWdx_dx, */
-/*                               const LESPremixed2D_pState &d_dWdx_dy, */
-/*                               const LESPremixed2D_pState &d_dWdy_dy) const; */
-/*   double Net_Rate_Change_Progvar (const LESPremixed2D_pState &dWdx, */
-/*                                   const LESPremixed2D_pState &dWdy, */
-/*                                   const LESPremixed2D_pState &d_dWdx_dx, */
-/*                                   const LESPremixed2D_pState &d_dWdx_dy, */
-/*                                   const LESPremixed2D_pState &d_dWdy_dy, */
-/*                                   const int &Flow_Type) const; */
-/*   double Net_Rate_Change_Fsd (const LESPremixed2D_pState &dWdx, */
-/*                               const LESPremixed2D_pState &dWdy, */
-/*                               const LESPremixed2D_pState &d_dWdx_dx, */
-/*                               const LESPremixed2D_pState &d_dWdx_dy, */
-/*                               const LESPremixed2D_pState &d_dWdy_dy, */
-/*                               const int &Flow_Type) const; */
-  double K_equ_sources(const LESPremixed2D_pState &dWdx,
-                       const LESPremixed2D_pState &dWdy,
-                       const int &Flow_Type) const;
+  double M_xx(const LESPremixed2D_pState &dWdx,
+              const LESPremixed2D_pState &dWdy,
+              const LESPremixed2D_pState &d_dWdx_dx,
+              const LESPremixed2D_pState &d_dWdx_dy,
+	      const LESPremixed2D_pState &d_dWdy_dy) const;
+  double M_xy(const LESPremixed2D_pState &dWdx,
+              const LESPremixed2D_pState &dWdy,
+              const LESPremixed2D_pState &d_dWdx_dx,
+              const LESPremixed2D_pState &d_dWdx_dy,
+	      const LESPremixed2D_pState &d_dWdy_dy) const;
+  double M_yy(const LESPremixed2D_pState &dWdx,
+              const LESPremixed2D_pState &dWdy,
+              const LESPremixed2D_pState &d_dWdx_dx,
+              const LESPremixed2D_pState &d_dWdx_dy,
+	      const LESPremixed2D_pState &d_dWdy_dy) const;
+  double Resolved_Curvature(const LESPremixed2D_pState &dWdx,
+                            const LESPremixed2D_pState &dWdy,
+                            const LESPremixed2D_pState &d_dWdx_dx,
+                            const LESPremixed2D_pState &d_dWdx_dy,
+                            const LESPremixed2D_pState &d_dWdy_dy) const;
+  double Resolved_Propagation(const LESPremixed2D_pState &dWdx,
+                              const LESPremixed2D_pState &dWdy,
+                              const LESPremixed2D_pState &d_dWdx_dx,
+                              const LESPremixed2D_pState &d_dWdx_dy,
+                              const LESPremixed2D_pState &d_dWdy_dy) const;
+  double Resolved_Convection_Progvar (const LESPremixed2D_pState &dWdx,
+                                      const LESPremixed2D_pState &dWdy) const;
+  double Resolved_Convection_Fsd (const LESPremixed2D_pState &dWdx,
+                                  const LESPremixed2D_pState &dWdy) const;
+  double NGT_Progvar (const LESPremixed2D_pState &dWdx,
+                      const LESPremixed2D_pState &dWdy) const;
+  double NGT_Fsd (const LESPremixed2D_pState &dWdx,
+                  const LESPremixed2D_pState &dWdy,
+                  const LESPremixed2D_pState &d_dWdx_dx,
+                  const LESPremixed2D_pState &d_dWdx_dy,
+                  const LESPremixed2D_pState &d_dWdy_dy) const;
+  double Heat_Release_Strain (const LESPremixed2D_pState &dWdx,
+                              const LESPremixed2D_pState &dWdy,
+                              const LESPremixed2D_pState &d_dWdx_dx,
+                              const LESPremixed2D_pState &d_dWdx_dy,
+                              const LESPremixed2D_pState &d_dWdy_dy) const;
+
    /**************** Operators Overloading ********************/
    /* Index operator */
    double &operator[](int index);
@@ -669,6 +647,7 @@ class LESPremixed2D_pState {
    static int                      nscal; //!< number of scalars
    static NASARP1311data       *specdata; //!< Global species data 
    static double                *Schmidt; //!< Schmidt Number for each species
+   static Set_scalar            Scal_sys; //!< Set the group of scalars to be solved in the model
    static double          low_temp_range; //!< Low temp data range
    static double         high_temp_range; //!< High temp data range
    static int      NUM_VAR_LESPREMIXED2D; //!< Number of LESPremixed2D variables (4+ns)
@@ -715,7 +694,7 @@ class LESPremixed2D_pState {
    LESPremixed2D_cState(const double &d, const double &vx, const double &vy, const double &En, 
 		 const double *rhoscal):
                  rho(d), rhov(vx,vy), E(En)
- 		{ rhoscalar = NULL; set_initial_values_scal(rhoscal);  rhospecnull();   set_initial_values(); }
+     { rhoscalar = NULL; set_initial_values_scal(rhoscal);  rhospecnull();   set_initial_values(); }
 
    LESPremixed2D_cState(const double &d, const double &vx, const double &vy, const double &En, const double &value): 
                  rho(d), rhov(vx,vy), E(En)
@@ -733,7 +712,22 @@ class LESPremixed2D_pState {
 
    LESPremixed2D_cState(const double d, const Vector2D &V, const double &En, const double *rhoscal, const Species *rhomfrac): 
                  rho(d), rhov(V), E(En)
-                 { rhoscalar = NULL; set_initial_values_scal(rhoscal);  rhospecnull();   set_initial_values(rhomfrac); }
+     { rhoscalar = NULL; set_initial_values_scal(rhoscal);  rhospecnull();   set_initial_values(rhomfrac); }
+
+   // WARNING - automatic type conversion
+   LESPremixed2D_cState(const LESPremixed2D_pState &W) : rho(W.rho), rhov(W.rhov()), E(W.E()), 
+		   tau(W.tau), qflux(W.qflux), lambda(W.lambda), theta(W.theta) 
+#ifdef THICKENED_FLAME_ON
+		   ,flame(W.flame)
+#endif		   
+   {
+     for(int i=0; i<W.ns; ++i){
+       rhospec[i].c = W.rho*W.spec[i].c;
+       rhospec[i].gradc = W.rho*W.spec[i].gradc;
+       rhospec[i].diffusion_coef = W.rho*W.spec[i].diffusion_coef;
+     }
+     if(nscal) for(int i=0; i<nscal; ++i) rhoscalar[i] = W.rho*W.scalar[i];    
+   }
 
    // WARNING - automatic type conversion
    LESPremixed2D_cState(const LESPremixed2D_pState &W) : rho(W.rho), rhov(W.rhov()),
@@ -754,6 +748,9 @@ class LESPremixed2D_pState {
    //this is needed for the operator overload returns!!!!
    LESPremixed2D_cState(const LESPremixed2D_cState &U): rho(U.rho), rhov(U.rhov), E(U.E),
 		                  tau(U.tau), qflux(U.qflux), lambda(U.lambda), theta(U.theta)
+#ifdef THICKENED_FLAME_ON
+		   ,flame(U.flame)
+#endif
 		                  { rhoscalar = NULL; set_initial_values_scal(U.rhoscalar); 
 				    rhospecnull(); set_initial_values(U.rhospec); }
 
@@ -877,7 +874,7 @@ class LESPremixed2D_pState {
    friend LESPremixed2D_pState W(const LESPremixed2D_cState &U);
 
    /**************** turbulence model related parameters*********/
-   double mu_t(const Tensor2D &strain_rate) const;      
+   double mu_t(const Tensor2D &strain_rate, const int &Flow_Type) const;      
    double Pr_turb(void) const;      
    double Sc_turb(void) const;      
    double Dm_turb(const double &mut) const;  
@@ -986,7 +983,7 @@ class LESPremixed2D_pState {
 
  inline void  LESPremixed2D_pState::set_initial_values(const double &value){
    spec_memory();
-   for(int i=0; i<ns; ++i) spec[i].c = value;
+   for(int i=0; i<ns; ++i) spec[i].c = value; 
  }
 
  //user specified
@@ -1150,11 +1147,12 @@ inline void LESPremixed2D_pState::set_premixed_flame_variables(const double &lam
  }
 
  /***************** Turbulent SFS stress ******************************/
-inline void LESPremixed2D_pState::SFS_Stress(const Tensor2D &strain_rate){
+inline void LESPremixed2D_pState::SFS_Stress(const Tensor2D &strain_rate,
+                                             const int &Flow_Type){
 
-   double kk = SFSmodel.sfs_k_Yoshizawa(strain_rate, filter_width);
+  double kk = SFSmodel.sfs_k_Yoshizawa(strain_rate, filter_width);
 
-   lambda = TWO * mu_t(strain_rate) * strain_rate;
+   lambda = TWO * mu_t(strain_rate,Flow_Type) * strain_rate;
    lambda.xx -= (TWO/THREE)*rho*kk;
    lambda.yy -= (TWO/THREE)*rho*kk;
    lambda.zz -= (TWO/THREE)*rho*kk;
@@ -1270,6 +1268,7 @@ inline void LESPremixed2D_pState::Copy(const LESPremixed2D_pState &W){
 //**************** Index Operators *************************/
 inline double& LESPremixed2D_pState::operator[](int index) {  
   //  assert( index >= 1 && index <= NUM_VAR_LESPREMIXED2D );
+
   switch(index){  
   case 1:
     return rho;    
@@ -1280,11 +1279,11 @@ inline double& LESPremixed2D_pState::operator[](int index) {
   case 4:
     return p;
   default :
-    if(index <= NUM_VAR_LESPREMIXED2D-ns) {
+  if(index <= NUM_VAR_LESPREMIXED2D-ns) {
       return scalar[index-NUM_LESPREMIXED2D_VAR_SANS_SPECIES-1];
-    } else if(index <= NUM_VAR_LESPREMIXED2D) {
+  } else if(index <= NUM_VAR_LESPREMIXED2D) {
       return spec[index-(NUM_VAR_LESPREMIXED2D-ns)-1].c;
-    } else {
+  }
 #ifdef THICKENED_FLAME_ON
       if(index == NUM_VAR_LESPREMIXED2D+1) {
 	return flame.WF;
@@ -1292,12 +1291,12 @@ inline double& LESPremixed2D_pState::operator[](int index) {
 	return flame.TF;
       }
 #endif
-    }
-  };
-}
+   } 
+};
 
 inline const double& LESPremixed2D_pState::operator[](int index) const {  
-  //   assert( index >= 1 && index <= NUM_VAR_LESPREMIXED2D );
+  //  assert( index >= 1 && index <= NUM_VAR_LESPREMIXED2D );
+
   switch(index){  
   case 1:
     return rho;    
@@ -1308,11 +1307,11 @@ inline const double& LESPremixed2D_pState::operator[](int index) const {
   case 4:
     return p;
   default :
-    if(index <= NUM_VAR_LESPREMIXED2D-ns) {
+  if(index <= NUM_VAR_LESPREMIXED2D-ns) {
       return scalar[index-NUM_LESPREMIXED2D_VAR_SANS_SPECIES-1];
-    } else if(index <= NUM_VAR_LESPREMIXED2D) {
+  } else if(index <= NUM_VAR_LESPREMIXED2D) {
       return spec[index-(NUM_VAR_LESPREMIXED2D-ns)-1].c;
-    } else {
+  }
 #ifdef THICKENED_FLAME_ON
       if (index == NUM_VAR_LESPREMIXED2D+1) {
 	return flame.WF;
@@ -1321,9 +1320,8 @@ inline const double& LESPremixed2D_pState::operator[](int index) const {
       }
 #endif
     }      
-  };
+};
 
-}
 /**************************************************************
   Get max of the min temperature of the lowest region
   and min of the max temperature of the highest region
@@ -1575,11 +1573,11 @@ inline double& LESPremixed2D_cState::operator[](int index) {
   case 4:
     return (E);
   default :
-    if(index <= NUM_VAR_LESPREMIXED2D-ns) {
+  if(index <= NUM_VAR_LESPREMIXED2D-ns) {
       return rhoscalar[index-NUM_LESPREMIXED2D_VAR_SANS_SPECIES-1];
-    } else if(index <= NUM_VAR_LESPREMIXED2D) {
+  } else if(index <= NUM_VAR_LESPREMIXED2D) {
       return rhospec[index-(NUM_VAR_LESPREMIXED2D-ns)-1].c;
-    } else {
+  }
 #ifdef THICKENED_FLAME_ON
       if (index == NUM_VAR_LESPREMIXED2D+1) {
 	return flame.WF;
@@ -1588,8 +1586,7 @@ inline double& LESPremixed2D_cState::operator[](int index) {
       }
 #endif
     }
-  };
-}
+};
 
 inline const double& LESPremixed2D_cState::operator[](int index) const{
   //  assert( index >= 1 && index <= NUM_VAR_LESPREMIXED2D ); 
@@ -1603,11 +1600,11 @@ inline const double& LESPremixed2D_cState::operator[](int index) const{
   case 4:
     return (E);
   default :
-    if(index <= NUM_VAR_LESPREMIXED2D-ns) {
+   if(index <= NUM_VAR_LESPREMIXED2D-ns) {
       return rhoscalar[index-NUM_LESPREMIXED2D_VAR_SANS_SPECIES-1];
-    } else if(index <= NUM_VAR_LESPREMIXED2D) {
+  } else if(index <= NUM_VAR_LESPREMIXED2D) {
       return rhospec[index-(NUM_VAR_LESPREMIXED2D-ns)-1].c;
-    } else {
+  }
 #ifdef THICKENED_FLAME_ON
       if (index == NUM_VAR_LESPREMIXED2D+1) {
 	return flame.WF;
@@ -1616,8 +1613,7 @@ inline const double& LESPremixed2D_cState::operator[](int index) const{
       }
 #endif
     }
-  };
-}
+};
 
 /**************************************************************
   Check for -ve mass fractions and set small -ve values
@@ -1703,11 +1699,11 @@ inline bool LESPremixed2D_cState::negative_scalarcheck(void) const{
       rhoscalar[i] = ZERO;
     }
   }
-     if ( nscal > 1 ) {
-       if ( rhoscalar[0]/rho > 0.99 || rhoscalar[0]/rho < 0.01 ) {
-       rhoscalar[1] = ZERO;
-     }
-     }
+      if ( nscal > 1 ) {
+        if ( rhoscalar[0]/rho > 0.9905 || rhoscalar[0]/rho < 0.001 ) {
+        rhoscalar[1] = ZERO;
+      }
+      }
   return (1);
 }
 
@@ -1738,9 +1734,9 @@ inline bool LESPremixed2D_cState::Unphysical_Properties_Check(const int Flow_Typ
 	 << *this <<endl;
     return false;
   }
- if ((Flow_Type == FLOWTYPE_LAMINAR_FSD || 
-       Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY || 
-       Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K) &&
+ if ((Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+       Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+       Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) &&
       (rho <= ZERO || !negative_speccheck(n) || es() <= ZERO || !negative_scalarcheck() )) {
     cout << "\n " << CFFC_Name() 
 	 << " LESPremixed2D ERROR: Negative Density || Energy || Mass Fractions || Progress Variable || Flame Surface Density : \n"
@@ -1815,7 +1811,6 @@ inline LESPremixed2D_pState LESPremixed2D_cState::W(const LESPremixed2D_cState &
       Temp.spec[i].gradc = U.rhospec[i].gradc/U.rho;
       Temp.spec[i].diffusion_coef = U.rhospec[i].diffusion_coef/U.rho;
     }   
-
     Temp.p = U.p();
     if(nscal) for(int i=0; i<nscal; ++i) Temp.scalar[i] = U.rhoscalar[i]/U.rho;
     

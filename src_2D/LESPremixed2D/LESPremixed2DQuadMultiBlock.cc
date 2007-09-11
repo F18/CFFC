@@ -232,18 +232,20 @@ int Read_Restart_Solution(LESPremixed2D_Quad_Block *Soln_ptr,
                                                            Input_Parameters.Wo.adiabatic_temp,
                                                            Input_Parameters.Wo.equivalence_ratio,
                                                            Input_Parameters.Wo.reactants_den);
+	  Input_Parameters.Uo = U(Input_Parameters.Wo);
 
-	  
 	  //Reset  Wo species mass fractions
           Input_Parameters.Wo.set_initial_values(Input_Parameters.mass_fractions);  
+	  
           // Update Uo from Wo
           Input_Parameters.Uo = U(Input_Parameters.Wo);
+
 
           /********* Turbulent Premixed Reacting Flow ***********************************/
           if (Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
 	      Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_K ||
-              Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-	      Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_FSD_K) {
+              Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+	      Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
             restart_file.setf(ios::skipws); 
             restart_file >> Input_Parameters.Fresh_Fuel_Mass_Fraction
                          >> Input_Parameters.Burnt_Fuel_Mass_Fraction
@@ -365,8 +367,8 @@ int Write_Restart_Solution(LESPremixed2D_Quad_Block *Soln_ptr,
           /********* Turbulent Premixed Reacting Flow ***********************************/
           if (Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
 	     Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_K ||
-              Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-	      Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_FSD_K) {
+              Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+	      Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
             restart_file << Input_Parameters.Fresh_Fuel_Mass_Fraction << " "
                          << Input_Parameters.Burnt_Fuel_Mass_Fraction << " "
                          << Input_Parameters.Fresh_Density << endl;

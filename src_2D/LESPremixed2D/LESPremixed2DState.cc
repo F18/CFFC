@@ -94,6 +94,7 @@ void LESPremixed2D_pState::set_species_data(const int &n,
 
   ns = n;
   nscal = n2;
+
   NUM_VAR_LESPREMIXED2D = ns + nscal + NUM_LESPREMIXED2D_VAR_SANS_SPECIES;
 
   //read in NASA data for each species to be used  
@@ -140,8 +141,9 @@ void LESPremixed2D_cState::set_species_data(const int &n,
  
   ns = n;
   nscal = n2;
-  NUM_VAR_LESPREMIXED2D = ns + nscal + NUM_LESPREMIXED2D_VAR_SANS_SPECIES;
 
+  NUM_VAR_LESPREMIXED2D = ns + nscal + NUM_LESPREMIXED2D_VAR_SANS_SPECIES;
+ 
   //read in NASA data for each species to be used
   Deallocate_static();
   specdata = new NASARP1311data[ns];
@@ -512,8 +514,16 @@ double LESPremixed2D_pState::kappa(void) const{
 /**************************************************
   Turbulence model related parameters
 ***************************************************/
-double LESPremixed2D_pState::mu_t(const Tensor2D &strain_rate) const{
-  double mut = rho*SFSmodel.eddy_viscosity_Smagorinsky(strain_rate, filter_width);
+double LESPremixed2D_pState::mu_t(const Tensor2D &strain_rate,
+                                  const int &Flow_Type) const{
+  double mut;
+  if(Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
+     Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ) {
+  mut = rho*SFSmodel.eddy_viscosity_Smagorinsky(strain_rate, filter_width);
+  }else if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K ||
+            Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
+    mut = rho*SFSmodel.eddy_viscosity_k(k(), filter_width);
+  }
 #ifdef THICKENED_FLAME_ON
   return (flame.WF*flame.TF)*mut;
 #else
@@ -600,7 +610,7 @@ double LESPremixed2D_pState::T(double &h_s) const{
     numit++;
   }
   if (numit>=19 || T <= low_temp_range){
-    T = max(Tguess,low_temp_range);
+    T = max(Tguess,low_temp_range); 
     cout<<"\nTemperature didn't converge in LESPremixed2D_cState::T(void)";
     cout<<" with polytopic Tguess "<<Tguess<<", or lower than Tmin "
 	<<low_temp_range<<" using "<<T;
@@ -676,13 +686,13 @@ LESPremixed2D_cState LESPremixed2D_pState::Fx(void) const{
 
   if(nscal) for(int i=0; i<nscal; ++i) Temp.rhoscalar[i] = rho*v.x*scalar[i];
    
-   if(Scal_sys.scalar_flag != LES_FSD_C &&
-      Scal_sys.scalar_flag != LES_FSD_C_K) {
+//   if(Scal_sys.scalar_flag != LES_C_FSD &&
+//      Scal_sys.scalar_flag != LES_C_FSD_K) {
   //multispecies transport
   for(int i=0; i<ns; ++i){
     Temp.rhospec[i].c = rho*v.x*spec[i].c;
   }
-   }
+  // }
   return (Temp);
 }
 
@@ -708,12 +718,13 @@ void dFIdU(DenseMatrix &dFdU, const LESPremixed2D_pState &W, const int Flow_Type
   double kk = W.k();
   double denominator = (C_p/Rt - ONE);
 
-  if ( Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-       Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-       Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) {
+  if ( Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+       Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+       Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
+
     double eta_fsd = W.Progvar_Species_Grad();
     dFdU(0,1) = ONE;
-    dFdU(1,0) = (HALF*W.v.sqr()-W.v.x*W.v.x*denominator-ht-5.0*kk/3.0+C_p*Temp+W.scalar[0]*eta_fsd)/denominator;
+    dFdU(1,0) = (HALF*W.v.sqr()+W.v.x*W.v.x*denominator-ht-5.0*kk/3.0+C_p*pt/(W.rho*Rt)+W.scalar[0]*eta_fsd)/denominator;
     dFdU(1,1) = W.v.x*(TWO-ONE/denominator); 
     dFdU(1,2) = -W.v.y/denominator;
     dFdU(1,3) = ONE/denominator;
@@ -721,7 +732,7 @@ void dFIdU(DenseMatrix &dFdU, const LESPremixed2D_pState &W, const int Flow_Type
     dFdU(2,0) = -W.v.x*W.v.y;
     dFdU(2,1) = W.v.y;
     dFdU(2,2) = W.v.x;
-    dFdU(3,0) = (W.v.sqr()+C_p*Temp+W.scalar[0]*eta_fsd-C_p/Rt*(HALF*W.v.sqr()+ht+5.0*kk/3.0))*W.v.x/denominator;
+    dFdU(3,0) = (W.v.sqr()+C_p*pt/(W.rho*Rt)+W.scalar[0]*eta_fsd-C_p/Rt*(HALF*W.v.sqr()+ht+5.0*kk/3.0))*W.v.x/denominator;
     dFdU(3,1) = ht+HALF*W.v.sqr()+5.0*kk/3.0-W.v.x*W.v.x/denominator;
     dFdU(3,2) = -W.v.x*W.v.y/denominator;
     dFdU(3,3) = W.v.x*C_p/Rt/denominator;
@@ -733,12 +744,14 @@ void dFIdU(DenseMatrix &dFdU, const LESPremixed2D_pState &W, const int Flow_Type
     dFdU(5,1) = W.scalar[1];
     dFdU(5,5) = W.v.x;
 
-    if ( Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) {
-      dFdU(3,0) = (W.v.sqr()+5.0*kk/3.0+C_p*Temp+W.scalar[0]*eta_fsd-C_p/Rt*(HALF*W.v.sqr()+ht+5.0*kk/3.0))*W.v.x/denominator;
+    if ( Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
+      dFdU(1,0) = (HALF*W.v.sqr()+W.v.x*W.v.x*denominator-ht+C_p*pt/(W.rho*Rt)+W.scalar[0]*eta_fsd)/denominator;
+      dFdU(3,0) = (W.v.sqr()+5.0*kk/3.0+C_p*pt/(W.rho*Rt)+W.scalar[0]*eta_fsd-C_p/Rt*(HALF*W.v.sqr()+ht+5.0*kk/3.0))*W.v.x/denominator;
+      dFdU(6,0) = -W.v.x*W.scalar[2];
+      dFdU(6,1) = W.scalar[2];
       dFdU(1,6) = -5.0/3.0/denominator;
       dFdU(3,6) = -5.0/3.0/denominator;
-      dFdU(0,6) = -W.v.x*W.scalar[2];
-      dFdU(1,6) = W.scalar[2];
+      dFdU(6,6) = W.v.x;
     }
 
   }else{
@@ -874,9 +887,9 @@ void dFIdW(DenseMatrix &dFdW, const LESPremixed2D_pState &W, const int Flow_Type
   dFdW(3,2) = W.rho*W.v.x*W.v.y;
   dFdW(3,3) = W.v.x*C_p/Rt;
 
-  if ( Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-       Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-       Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) {
+  if ( Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+       Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+       Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
     double eta_fsd = W.Progvar_Species_Grad();
     dFdW(3,4) = W.rho*W.v.x*eta_fsd;
     dFdW(4,0) = W.v.x*W.scalar[0];
@@ -885,7 +898,7 @@ void dFIdW(DenseMatrix &dFdW, const LESPremixed2D_pState &W, const int Flow_Type
     dFdW(5,0) = W.v.x*W.scalar[1];
     dFdW(5,1) = W.rho*W.scalar[1];
     dFdW(5,5) = W.rho*W.v.x;
-    if ( Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) {
+    if ( Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
       dFdW(3,6) = 5.0*W.rho*W.v.x/3.0;
       dFdW(6,0) = W.v.x*W.scalar[2];
       dFdW(6,1) = W.rho*W.scalar[2];
@@ -976,11 +989,11 @@ void LESPremixed2D_pState::dWdU(DenseMatrix &dWdQ, const int Flow_Type) const{
   dWdQ(2,0) = -v.y/rho;
   dWdQ(2,2) = ONE/rho; 
 
-  if ( Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-       Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-       Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) {
+  if ( Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+       Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+       Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
     double eta_fsd = Progvar_Species_Grad();
-    dWdQ(3,0) = HALF*v.sqr()-ht+C_p*Temp+scalar[0]*eta_fsd;
+    dWdQ(3,0) = HALF*v.sqr()-ht-5.0*kk/3.0+C_p*pt/(rho*Rt)+scalar[0]*eta_fsd;
     dWdQ(3,1) = -v.x/denominator;
     dWdQ(3,2) = -v.y/denominator;
     dWdQ(3,3) = ONE/denominator;
@@ -989,7 +1002,8 @@ void LESPremixed2D_pState::dWdU(DenseMatrix &dWdQ, const int Flow_Type) const{
     dWdQ(4,4) = ONE/rho;
     dWdQ(5,0) = -scalar[1]/rho;;
     dWdQ(5,5) = ONE/rho;
-    if ( Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) {
+    if ( Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
+      dWdQ(3,0) = HALF*v.sqr()-ht+C_p*pt/(rho*Rt)+scalar[0]*eta_fsd;
       dWdQ(3,6) = -5.0/3.0/denominator;
       dWdQ(6,0) = -scalar[2]/rho;
       dWdQ(6,6) = ONE/rho;
@@ -1099,16 +1113,16 @@ void LESPremixed2D_pState::dUdW(DenseMatrix &dQdW, const int Flow_Type){
   dQdW(3,2) =  rho*v.y;
   dQdW(3,3) =  C_p/Rt - ONE;
 
-  if ( Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-       Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-       Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) {
+  if ( Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+       Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+       Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
     double eta_fsd = Progvar_Species_Grad();
     dQdW(3,4) = rho*eta_fsd;
     dQdW(4,0) = scalar[0];
     dQdW(4,4) = rho;
     dQdW(5,0) = scalar[1];
     dQdW(5,5) = rho;
-    if ( Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) {
+    if ( Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
       dQdW(3,6) = 5.0*rho/3.0;
       dQdW(6,0) = scalar[2];
       dQdW(6,6) = rho;
@@ -1190,11 +1204,11 @@ LESPremixed2D_pState LESPremixed2D_pState::lambda_x(void) const {
   Temp.p = v.x + c;
   if(nscal) for(int i=0; i<nscal; ++i) Temp.scalar[i] = v.x;
 
-   if(Scal_sys.scalar_flag != LES_FSD_C &&
-      Scal_sys.scalar_flag != LES_FSD_C_K) {
+   if(Scal_sys.scalar_flag != LES_C_FSD &&
+      Scal_sys.scalar_flag != LES_C_FSD_K) {
   for(int i=0; i<ns; ++i){
     Temp.spec[i].c = v.x;
-   }
+  }
   }     
   return (Temp);
 }
@@ -1217,12 +1231,12 @@ LESPremixed2D_pState LESPremixed2D_pState::lambda_preconditioned_x(const double 
   NEW.p = uprimed + cprimed;
   if(nscal) for(int i=0; i<nscal; ++i) NEW.scalar[i] = v.x;
 
-   if(Scal_sys.scalar_flag != LES_FSD_C &&
-      Scal_sys.scalar_flag != LES_FSD_C_K) {
+    if(Scal_sys.scalar_flag != LES_C_FSD &&
+       Scal_sys.scalar_flag != LES_C_FSD_K) {
   for(int i=0; i<ns; ++i){
     NEW.spec[i].c = v.x;
-   }
-  }    
+  }
+ }    
   return (NEW);
 }
 
@@ -1232,33 +1246,36 @@ LESPremixed2D_pState LESPremixed2D_pState::lambda_preconditioned_x(const double 
 // Conserved Right Eigenvector -- (x-direction)
 LESPremixed2D_cState LESPremixed2D_pState::rc_x(const int &index) const {
 
-  if(Scal_sys.scalar_flag == LES_FSD_C ||
-     Scal_sys.scalar_flag == LES_FSD_C_K) {
+  if(Scal_sys.scalar_flag == LES_C_FSD ||
+     Scal_sys.scalar_flag == LES_C_FSD_K) {
       double c = amodified(); 
       double eta_fsd = Progvar_Species_Grad();
+    assert( index >= 1 && index <= (NUM_VAR_LESPREMIXED2D) );
     if(index == 1){
       return (LESPremixed2D_cState(ONE, v.x-c, v.y, H()/rho-v.x*c, scalar));
     } else if(index == 2) {
+      cout<<"index=   "<<index<<LESPremixed2D_cState(ONE, v.x, v.y, H()/rho-c*c/(g()-ONE), scalar)<<endl;
       return (LESPremixed2D_cState(ONE, v.x, v.y, H()/rho-c*c/(g()-ONE), scalar)); 
     } else if(index == 3) {
       return (LESPremixed2D_cState(ZERO, ZERO, rho, rho*v.y, ZERO));
     } else if(index == 4) {
       return (LESPremixed2D_cState(ONE, v.x+c, v.y, H()/rho+v.x*c, scalar));
-    } else if( nscal  &&  index >=5 && index<=(NUM_VAR_LESPREMIXED2D-ns)){
-      for(int i=5; i<=(NUM_VAR_LESPREMIXED2D-ns); ++i){
-        if(index == 5){
-          LESPremixed2D_cState NEW(ZERO);
-          NEW.E = eta_fsd;//FIVE*rho/THREE;   // For k equation
-          NEW.rhoscalar[i-5] = rho; //rho*scalar[i-5];
-          return NEW;
-	} else {  
-          LESPremixed2D_cState NEW(ZERO);
-          NEW.rhoscalar[i-5] = rho*scalar[i-5]; // ????
-          return NEW;
-        }
-      }
+    } else if( nscal  &&  index >=5 && index<=NUM_VAR_LESPREMIXED2D-ns){
+      //       for(int i=5; i<=NUM_VAR_LESPREMIXED2D; ++i){
+         if(index == 5){
+           LESPremixed2D_cState NEW(ZERO);
+           NEW.E = rho*eta_fsd;//FIVE*rho/THREE;   // For k equation
+           NEW.rhoscalar[index-5] = rho;
+           return NEW;
+ 	} else {  
+           LESPremixed2D_cState NEW(ZERO);
+           NEW.rhoscalar[index-5] = rho; // ????
+           return NEW;
+	   //         }
+       }
     }
   }else{
+
     if(index == 1){
       double c = amodified(); 
       return (LESPremixed2D_cState(ONE, v.x-c, v.y, H()/rho-v.x*c, scalar, spec));
@@ -1270,8 +1287,8 @@ LESPremixed2D_cState LESPremixed2D_pState::rc_x(const int &index) const {
     } else if(index == 4) {
       double c = amodified();
       return (LESPremixed2D_cState(ONE, v.x+c, v.y, H()/rho+v.x*c, scalar, spec));
-    } else if( nscal  &&  index >=5 && index<=(NUM_VAR_LESPREMIXED2D-ns)){
-      for(int i=5; i<=(NUM_VAR_LESPREMIXED2D-ns); ++i){
+    } else if( nscal  &&  index >=5 && index<=NUM_VAR_LESPREMIXED2D-ns){
+      for(int i=5; i<=NUM_VAR_LESPREMIXED2D-ns; ++i){
         if(index == 5){
           LESPremixed2D_cState NEW(ZERO);
           NEW.E = FIVE*rho/THREE;   // For k equation
@@ -1297,40 +1314,41 @@ LESPremixed2D_cState LESPremixed2D_pState::rc_x(const int &index) const {
       NEW.rhospec[count].c = rho;
       return NEW;
     }
-}
+ }
 }
 // Primitive Left Eigenvector -- (x-direction)
 LESPremixed2D_pState LESPremixed2D_pState::lp_x(const int &index) const {
  
+  if(Scal_sys.scalar_flag == LES_C_FSD ||
+     Scal_sys.scalar_flag == LES_C_FSD_K) {
+    assert( index >= 1 && index <= (NUM_VAR_LESPREMIXED2D) );
+  }
+      double c = amodified(); 
    if(index == 1){
-      double c = amodified(); 
       return (LESPremixed2D_pState(ZERO, -HALF*rho/c, ZERO, HALF/(c*c), ZERO));
+      cout<<"lpx=  "<<LESPremixed2D_pState(ZERO, -HALF*rho/c, ZERO, HALF/(c*c), ZERO)<<endl;
    } else if(index == 2) {
-      double c = amodified(); 
       return (LESPremixed2D_pState(ONE, ZERO, ZERO, -ONE/(c*c), ZERO));
    } else if(index == 3) {
       return  (LESPremixed2D_pState(ZERO, ZERO, ONE, ZERO, ZERO));
    } else if(index == 4) {  
-      double c = amodified(); 
       return (LESPremixed2D_pState(ZERO, HALF*rho/c, ZERO, HALF/(c*c), ZERO));
-
    } else if(nscal  &&  index >=5  &&  index<=(NUM_VAR_LESPREMIXED2D-ns) ){
      for(int i=5; i<=(NUM_VAR_LESPREMIXED2D-ns); ++i){
        if(index == i){
 	 LESPremixed2D_pState NEW(ZERO);
-	 NEW.scalar[i-5] = ONE; 
+	 NEW.scalar[i-5] = ONE;//scalar[i-5];//ONE; 
 	 return NEW;
        }
      }
-
-   } else{ 
-  if(Scal_sys.scalar_flag != LES_FSD_C &&
-     Scal_sys.scalar_flag != LES_FSD_C_K) {
+     } else{
+     if(Scal_sys.scalar_flag != LES_C_FSD &&
+        Scal_sys.scalar_flag != LES_C_FSD_K) {
      LESPremixed2D_pState NEW(ZERO);
      NEW.spec[index-(NUM_VAR_LESPREMIXED2D-ns+1)].c = ONE;
      return NEW;
+     }
    } 
-   }
 }
 
 /************************************************************
@@ -1338,13 +1356,14 @@ LESPremixed2D_pState LESPremixed2D_pState::lp_x(const int &index) const {
  ************************************************************/
 // Conserved Right Eigenvector -- (x-direction)
 LESPremixed2D_cState LESPremixed2D_pState::rc_x_precon(const int &index, const double &MR2) const {
-
-  if(Scal_sys.scalar_flag == LES_FSD_C ||
-     Scal_sys.scalar_flag == LES_FSD_C_K) {
+  
+  if(Scal_sys.scalar_flag == LES_C_FSD ||
+     Scal_sys.scalar_flag == LES_C_FSD_K) {
        double c = amodified(); 
        double uprimed,cprimed;
        u_a_precon(MR2*c*c,uprimed,cprimed);
        double eta_fsd = Progvar_Species_Grad();
+       assert( index >= 1 && index <= (NUM_VAR_LESPREMIXED2D-ns) );
 
   if(index == 1){
     return (LESPremixed2D_cState(ONE, 
@@ -1353,7 +1372,7 @@ LESPremixed2D_cState LESPremixed2D_pState::rc_x_precon(const int &index, const d
 				 h()+HALF*(v.y*v.y+v.x*v.x/MR2)+FIVE*k()/THREE-(v.x*cprimed)/MR2,
 				 scalar));
   } else if(index == 2) {
-    return (LESPremixed2D_cState(ONE, v.x, v.y, (H()/rho-c*c/(g()-ONE)), scalar));
+    return (LESPremixed2D_cState(ONE, v.x, v.y, h()-Cp()*T()+ HALF*v.sqr()-scalar[0]*eta_fsd, scalar));
   } else if(index == 3) {
     return (LESPremixed2D_cState(ZERO, ZERO, rho, rho*v.y, ZERO));
   } else if(index == 4) { 
@@ -1362,21 +1381,22 @@ LESPremixed2D_cState LESPremixed2D_pState::rc_x_precon(const int &index, const d
 				 v.y, 
 				 h()+HALF*(v.y*v.y+v.x*v.x/MR2)+FIVE*k()/THREE+(v.x*cprimed)/MR2,
 				 scalar));
-  } else if(nscal  && index >=5  && index<=(NUM_VAR_LESPREMIXED2D-ns) ){
-    for(int i=5; i<=(NUM_VAR_LESPREMIXED2D-ns); ++i){
+  } else if(nscal  && index >=5  && index<=NUM_VAR_LESPREMIXED2D-ns ){
+    //    for( int i=5; i<=NUM_VAR_LESPREMIXED2D-ns; ++i){
       if(index == 5){
 	LESPremixed2D_cState NEW(ZERO);
-	NEW.E = eta_fsd;//FIVE*rho/THREE;   // For k equation
-	NEW.rhoscalar[i-5] = rho; 
+	NEW.E = rho*eta_fsd;//FIVE*rho/THREE;   // For k equation
+	NEW.rhoscalar[index-5] = rho; 
 	return NEW;
       } else {  
 	LESPremixed2D_cState NEW(ZERO);
-	NEW.rhoscalar[i-5] = rho*scalar[i-5]; // ????
+	NEW.rhoscalar[index-5] = rho; // ????
 	return NEW;
-      }        
+	//      }        
     }  
   }
   }else{
+  
   if(index == 1){
     double c = amodified(); 
     double uprimed,cprimed;
@@ -1433,62 +1453,30 @@ LESPremixed2D_cState LESPremixed2D_pState::rc_x_precon(const int &index, const d
     NEW.rhospec[count].c = rho;
     return NEW;    
   }
-  }
+ }
 }
 
 // Primitive Left Eigenvector -- (x-direction)
 LESPremixed2D_pState LESPremixed2D_pState::lp_x_precon(const int &index, const double &MR2) const {
-  
-  if(Scal_sys.scalar_flag == LES_FSD_C ||
-     Scal_sys.scalar_flag == LES_FSD_C_K) {
-       double c = amodified(); 
-       double uprimed,cprimed;
-       u_a_precon(MR2*c*c,uprimed,cprimed);
-       double eta_fsd = Progvar_Species_Grad();
-  if(index == 1){
-    return (LESPremixed2D_pState(ZERO, 
-				 -HALF*rho*MR2/cprimed, 
-				 ZERO,
-				 (-uprimed+cprimed + v.x)/(TWO*cprimed*c*c),
-				 ZERO));
-  } else if(index == 2) {
-    return (LESPremixed2D_pState(ONE, ZERO, ZERO, -ONE/(c*c), ZERO));
-  } else if(index == 3) {
-    return  (LESPremixed2D_pState(ZERO, ZERO, ONE, ZERO,ZERO));
-  } else if(index == 4) {  
-    return (LESPremixed2D_pState(ZERO, 
-				 HALF*rho*MR2/cprimed, 
-				 ZERO,
-				 (uprimed+cprimed - v.x)/(TWO*cprimed*c*c),
-				 ZERO));
-  } else if(nscal  &&  index >=5 && index<=(NUM_VAR_LESPREMIXED2D-ns) ){
-    for(int i=5; i<=(NUM_VAR_LESPREMIXED2D-ns); ++i){
-      if(index == i){
-	LESPremixed2D_pState NEW(ZERO);
-	NEW.scalar[i-5] = ONE; // scalar[i-5]; ?????
-	return NEW;
-      }
-    }
+
+  if(Scal_sys.scalar_flag == LES_C_FSD ||
+     Scal_sys.scalar_flag == LES_C_FSD_K) {
+       assert( index >= 1 && index <= (NUM_VAR_LESPREMIXED2D-ns) );
   }
-  }else{
-  if(index == 1){
     double c = amodified();   
     double uprimed,cprimed;
     u_a_precon(MR2*c*c,uprimed,cprimed);
+  if(index == 1){
     return (LESPremixed2D_pState(ZERO, 
 				 -HALF*rho*MR2/cprimed, 
 				 ZERO,
 				 (-uprimed+cprimed + v.x)/(TWO*cprimed*c*c),
 				 ZERO));
   } else if(index == 2) {
-    double c = amodified(); 
     return (LESPremixed2D_pState(ONE, ZERO, ZERO, -ONE/(c*c), ZERO));
   } else if(index == 3) {
     return  (LESPremixed2D_pState(ZERO, ZERO, ONE, ZERO,ZERO));
   } else if(index == 4) {  
-    double c = amodified(); 
-    double uprimed,cprimed;
-    u_a_precon(MR2*c*c,uprimed,cprimed);
     return (LESPremixed2D_pState(ZERO, 
 				 HALF*rho*MR2/cprimed, 
 				 ZERO,
@@ -1496,19 +1484,21 @@ LESPremixed2D_pState LESPremixed2D_pState::lp_x_precon(const int &index, const d
 				 ZERO));
 
   } else if(nscal  &&  index >=5 && index<=(NUM_VAR_LESPREMIXED2D-ns) ){
-    for(int i=5; i<=(NUM_VAR_LESPREMIXED2D-ns); ++i){
+    for( int i=5; i<=(NUM_VAR_LESPREMIXED2D-ns); ++i){
       if(index == i){
 	LESPremixed2D_pState NEW(ZERO);
-	NEW.scalar[i-5] = ONE; // scalar[i-5]; ?????
+	NEW.scalar[i-5] = ONE;//scalar[index-5];// ?????
 	return NEW;
       }
     }
   
   } else { 
+    if(Scal_sys.scalar_flag != LES_C_FSD &&
+       Scal_sys.scalar_flag != LES_C_FSD_K) {
     LESPremixed2D_pState NEW(ZERO);
     NEW.spec[index-(NUM_VAR_LESPREMIXED2D-ns+1)].c = ONE;
     return NEW;
-  }
+    }
   } 
 }
 
@@ -1581,62 +1571,65 @@ void LESPremixed2D_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P,
   double theta = ONE/(Mr2(Viscous_flag,deltax)*c*c) + (g()-ONE)/(c*c);  
   double kk = k();
  
-  if ( Viscous_flag == FLOWTYPE_LAMINAR_FSD || 
-       Viscous_flag == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-       Viscous_flag == FLOWTYPE_TURBULENT_LES_FSD_K )  {
+  if ( Viscous_flag == FLOWTYPE_LAMINAR_C_FSD || 
+       Viscous_flag == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+       Viscous_flag == FLOWTYPE_TURBULENT_LES_C_FSD_K )  {
 
   double eta_fsd = Progvar_Species_Grad();
   double phi = scalar[0]*eta_fsd;
-  double alpha = theta*p/rho;
+  double alpha = theta*pt/rho;
   double alpham1 = alpha - ONE;
-  double Omega = (Rmix - CP)*p/(rho*Rmix);
-  double beta = enthalpy - CP*p/(rho*Rmix) - phi;
+  double Omega = (Rmix - CP)*pt/(rho*Rmix);
+  double beta = enthalpy - CP*p/(rho*Rmix) - phi + 5.0*kk/3.0;
   double V = HALF*v.sqr();
+  P(NUM_VAR_LESPREMIXED2D-ns,NUM_VAR_LESPREMIXED2D-ns);
   P.zero();
-
-  P(0,0) = (alpha*(beta-V)+V+Rmix*Temp-enthalpy+phi)/Omega;
+  P(0,0) = (alpha*(beta-V)+V+pt/rho-enthalpy+phi-FIVE*kk/THREE)/Omega;
   P(0,1) = v.x*alpham1/Omega;
   P(0,2) = v.y*alpham1/Omega;
   P(0,3) = -alpham1/Omega;
+  P(0,4) = eta_fsd*alpham1/Omega;
   P(1,0) = v.x*(beta-V)*alpham1/Omega;
-  P(1,1) = v.x*v.x*alpham1/Omega+1.0;
+  P(1,1) = v.x*v.x*alpham1/Omega+ONE;
   P(1,2) = v.x*v.y*alpham1/Omega;
   P(1,3) = -v.x*alpham1/Omega;
+  P(1,4) = v.x*eta_fsd*alpham1/Omega;
   P(2,0) = v.y*(beta-V)*alpham1/Omega;
   P(2,1) = v.x*v.y*alpham1/Omega;
-  P(2,2) = v.y*v.y*alpham1/Omega+1.0;
+  P(2,2) = v.y*v.y*alpham1/Omega+ONE;
   P(2,3) = -v.y*alpham1/Omega;
-  P(3,0) = (enthalpy+V)*(beta-V)*alpham1/Omega;
-  P(3,1) = v.x*(enthalpy+V)*alpham1/Omega;
-  P(3,2) = v.y*(enthalpy+V)*alpham1/Omega;
-  P(3,3) = -(alpha*(enthalpy+V)-V-Rmix*Temp-beta-phi)/Omega;
-  P(0,4) = eta_fsd*alpham1/Omega;
-  P(1,4) = v.x*eta_fsd*alpham1/Omega;
   P(2,4) = v.y*eta_fsd*alpham1/Omega;
-  P(3,4) = eta_fsd*(enthalpy+V)*alpham1/Omega;
+  P(3,0) = (enthalpy+V+FIVE*kk/THREE)*(beta-V)*alpham1/Omega;
+  P(3,1) = v.x*(enthalpy+V+FIVE*kk/THREE)*alpham1/Omega;
+  P(3,2) = v.y*(enthalpy+V+FIVE*kk/THREE)*alpham1/Omega;
+  P(3,3) = -(alpha*(enthalpy+V+FIVE*kk/THREE)-V-pt/rho-beta-phi)/Omega;
+  P(3,4) = eta_fsd*(enthalpy+V+FIVE*kk/THREE)*alpham1/Omega;
   P(4,0) = scalar[0]*(beta-V)*alpham1/Omega;
   P(4,1) = scalar[0]*v.x*alpham1/Omega;
   P(4,2) = scalar[0]*v.y*alpham1/Omega;
   P(4,3) = -scalar[0]*alpham1/Omega;
-  P(4,4) = scalar[0]*eta_fsd*alpham1/Omega+1.0;
+  P(4,4) = scalar[0]*eta_fsd*alpham1/Omega+ONE;
   P(5,0) = scalar[1]*(beta-V)*alpham1/Omega;
   P(5,1) = scalar[1]*v.x*alpham1/Omega;
   P(5,2) = scalar[1]*v.y*alpham1/Omega;
   P(5,3) = -scalar[1]*alpham1/Omega;
   P(5,4) = scalar[1]*eta_fsd*alpham1/Omega;
   P(5,5) = ONE;
-//   P(0,5) = scalar[1]*alpham1/Omega;
-//   P(1,5) = scalar[1]*v.x*alpham1/Omega;
-//   P(2,5) = scalar[1]*v.y*alpham1/Omega;
-//   P(3,5) = scalar[1]*(enthalpy+V)*alpham1/Omega;
-//   P(4,5) = scalar[1]*scalar[0]*alpham1/Omega; 
-      if ( Viscous_flag == FLOWTYPE_TURBULENT_LES_FSD_K ){
+      if ( Viscous_flag == FLOWTYPE_TURBULENT_LES_C_FSD_K ){
+  P(0,0) = (alpha*(beta-V)+V+pt/rho-enthalpy+phi)/Omega;
+  P(3,3) = -(alpha*(enthalpy+V+FIVE*kk/THREE)-V-pt/rho-beta-phi-FIVE*kk/THREE)/Omega;
   P(6,0) = scalar[2]*(beta-V)*alpham1/Omega;
   P(6,1) = scalar[2]*v.x*alpham1/Omega;
   P(6,2) = scalar[2]*v.y*alpham1/Omega;
   P(6,3) = -scalar[2]*alpham1/Omega;
   P(6,4) = scalar[2]*eta_fsd*alpham1/Omega;
-  P(6,6) = ONE;
+  P(0,6) = 5.0/3.0*alpham1/Omega;
+  P(1,6) = 5.0/3.0*v.x*alpham1/Omega;
+  P(2,6) = 5.0/3.0*v.y*alpham1/Omega;
+  P(3,6) = 5.0/3.0*(enthalpy+V+5.0/3.0*kk)*alpham1/Omega;
+  P(4,6) = 5.0/3.0*scalar[0]*alpham1/Omega;
+  P(5,6) = 5.0/3.0*scalar[1]*alpham1/Omega;
+  P(6,6) = 5.0/3.0*kk*alpham1/Omega + 1.0;
       }
     }else{
 
@@ -1762,64 +1755,65 @@ void LESPremixed2D_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &P
   double theta = ONE/(Mr2(Viscous_flag,deltax)*c*c) + (g()-ONE)/(c*c);  
   double kk = k();
 
-  if ( Viscous_flag == FLOWTYPE_LAMINAR_FSD || 
-       Viscous_flag == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-       Viscous_flag == FLOWTYPE_TURBULENT_LES_FSD_K )  {
+  if ( Viscous_flag == FLOWTYPE_LAMINAR_C_FSD || 
+       Viscous_flag == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+       Viscous_flag == FLOWTYPE_TURBULENT_LES_C_FSD_K )  {
 
   double eta_fsd = Progvar_Species_Grad();
   double phi = scalar[0]*eta_fsd;
-  double AA = p*(rho*Rmix-theta*p*CP);
-  double BB = Rmix*rho*(theta*p-rho);
-  double EE = HALF*v.sqr() - enthalpy + phi;
-  double CC = EE + CP*Temp; 
-  double DD = HALF*v.sqr() + enthalpy;
+  double AA = pt*(rho*Rmix-theta*pt*CP);
+  double BB = Rmix*rho*(theta*pt-rho);
+  double EE = HALF*v.sqr() - enthalpy + phi - FIVE*kk/THREE;
+  double CC = EE + CP*pt/(rho*Rmix); 
+  double DD = HALF*v.sqr() + enthalpy + FIVE*kk/THREE;
+  Pinv(NUM_VAR_LESPREMIXED2D-ns,NUM_VAR_LESPREMIXED2D-ns);
   Pinv.zero();    
 
-  Pinv(0,0) = rho*Rmix/AA*(theta*p*EE-rho*CC+p);
+  Pinv(0,0) = rho*Rmix/AA*(theta*pt*EE-rho*CC+pt);
   Pinv(0,1) = -v.x*BB/AA;
   Pinv(0,2) = -v.y*BB/AA;
   Pinv(0,3) = BB/AA;
+  Pinv(0,4) = -eta_fsd*BB/AA;
   Pinv(1,0) = v.x*CC*BB/AA;
-  Pinv(1,1) = rho*Rmix/AA*(p+rho*v.x*v.x-theta*p*(v.x*v.x+CP*Temp));
+  Pinv(1,1) = rho*Rmix/AA*(pt+rho*v.x*v.x-theta*pt*(v.x*v.x+CP*pt/(rho*Rmix)));
   Pinv(1,2) = -v.x*v.y*BB/AA;
   Pinv(1,3) = v.x*BB/AA;    
+  Pinv(1,4) = -v.x*eta_fsd*BB/AA;
   Pinv(2,0) = v.y*CC*BB/AA;
   Pinv(2,1) = -v.x*v.y*BB/AA;
-  Pinv(2,2) = rho*Rmix/AA*(p+v.y*v.y*rho-theta*p*(v.y*v.y+CP*Temp));
+  Pinv(2,2) = rho*Rmix/AA*(pt+rho*v.y*v.y-theta*pt*(v.y*v.y+CP*pt/(rho*Rmix)));
   Pinv(2,3) = v.y*BB/AA;  
+  Pinv(2,4) = -v.y*eta_fsd*BB/AA;
   Pinv(3,0) = DD*CC*BB/AA;
   Pinv(3,1) = -v.x*DD*BB/AA;
   Pinv(3,2) = -v.y*DD*BB/AA;
-  Pinv(3,3) = rho*Rmix/AA*(theta*p*(DD-CP*Temp)-rho*DD+p);
-  Pinv(0,4) = -eta_fsd*BB/AA;
-  Pinv(1,4) = -v.x*eta_fsd*BB/AA;
-  Pinv(2,4) = -v.y*eta_fsd*BB/AA;
+  Pinv(3,3) = rho*Rmix/AA*(theta*pt*(DD-CP*pt/(rho*Rmix))-rho*DD+pt);
   Pinv(3,4) = -eta_fsd*BB*DD/AA;
   Pinv(4,0) = scalar[0]*CC*BB/AA;
   Pinv(4,1) = -scalar[0]*v.x*BB/AA;
   Pinv(4,2) = -scalar[0]*v.y*BB/AA;
   Pinv(4,3) = scalar[0]*BB/AA;
-  Pinv(4,4) = 1.0 - scalar[0]*eta_fsd*BB/AA;
+  Pinv(4,4) = ONE-scalar[0]*eta_fsd*BB/AA;
   Pinv(5,0) = scalar[1]*CC*BB/AA;
   Pinv(5,1) = -scalar[1]*v.x*BB/AA;
   Pinv(5,2) = -scalar[1]*v.y*BB/AA;
   Pinv(5,3) = scalar[1]*BB/AA;
   Pinv(5,4) = -scalar[1]*eta_fsd*BB/AA;
   Pinv(5,5) = ONE;
-//   Pinv(0,5) = -scalar[1]*BB/AA;
-//   Pinv(1,5) = -scalar[1]*v.x*BB/AA;
-//   Pinv(2,5) = -scalar[1]*v.y*BB/AA;
-//   Pinv(3,5) = -scalar[1]*DD*BB/AA;
-//   Pinv(4,5) = -scalar[1]*scalar[0]*BB/AA;
-      if ( Viscous_flag == FLOWTYPE_TURBULENT_LES_FSD_K ) {
+      if ( Viscous_flag == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
   Pinv(6,0) = scalar[2]*CC*BB/AA;
   Pinv(6,1) = -scalar[2]*v.x*BB/AA;
   Pinv(6,2) = -scalar[2]*v.y*BB/AA;
   Pinv(6,3) = scalar[2]*BB/AA;
   Pinv(6,4) = -scalar[2]*eta_fsd*BB/AA;
-  Pinv(6,6) = ONE;
+  Pinv(0,6) = -5.0/3.0*BB/AA;
+  Pinv(1,6) = -5.0/3.0*v.x*BB/AA;
+  Pinv(2,6) = -5.0/3.0*v.y*BB/AA;
+  Pinv(3,6) = -5.0/3.0*DD*BB/AA;
+  Pinv(4,6) = -5.0/3.0*scalar[0]*BB/AA;
+  Pinv(5,6) = -5.0/3.0*scalar[1]*BB/AA;
+  Pinv(6,6) = 1.0-5.0/3.0*scalar[2]*BB/AA;
       }
-
 }else{
 
   double phi = ZERO;
@@ -1921,23 +1915,12 @@ double LESPremixed2D_pState::HeatRelease_Parameter(void) const {
     return (adiabatic_temp/298.0-1.0);
 }
 
-double LESPremixed2D_pState::SFS_Kinetic_Energy_Fsd(const LESPremixed2D_pState &dWdx,
-                                                    const LESPremixed2D_pState &dWdy,
-                                                    const int &Flow_Type) const {
-  double u_ratio = 1.0;
-  if ( Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ) {
-    return (k());
-  } else if ( Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) {
-    return (k());
-  }
-}
-
 double LESPremixed2D_pState::Efficiency_Function_Fsd(const LESPremixed2D_pState &dWdx,
                                                      const LESPremixed2D_pState &dWdy,
                                                      const int &Flow_Type) const {
   double k_fsd, kappa_fsd;
-  k_fsd = SFS_Kinetic_Energy_Fsd(dWdx,dWdy,Flow_Type);
-  kappa_fsd = 0.75*exp(-1.2/pow(sqrt(k_fsd)/laminar_speed,0.3))*pow(filter_width/laminar_thickness,2.0/3.0);
+  //  k_fsd = SFS_Kinetic_Energy_Fsd(dWdx,dWdy,Flow_Type);
+  kappa_fsd = 0.75*exp(-1.2/pow(sqrt(k())/laminar_speed,0.3))*pow(filter_width/laminar_thickness,2.0/3.0);
   return(kappa_fsd);
 }
 
@@ -1973,7 +1956,7 @@ double LESPremixed2D_pState::Reaction_Rate_Fsd(const LESPremixed2D_pState &dWdx,
                                                const LESPremixed2D_pState &dWdy) const {
      double tau_fsd = HeatRelease_Parameter();
      if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) {
-     return ( reactants_den*laminar_speed*scalar[1]*rho-tau_fsd*laminar_speed*(rho*(1-2*scalar[0])*(dWdx.scalar[0]+dWdy.scalar[0])+scalar[0]*(1-scalar[0])*(dWdx.rho+dWdy.rho)) );
+       return ( reactants_den*laminar_speed*scalar[1]*rho);//-tau_fsd*laminar_speed*(rho*(1-2*scalar[0])*(dWdx.scalar[0]+dWdy.scalar[0])+scalar[0]*(1-scalar[0])*(dWdx.rho+dWdy.rho)) );
     }else{
      return ( 0.0 );
     }
@@ -2052,13 +2035,13 @@ double LESPremixed2D_pState::SFS_Strain(const LESPremixed2D_pState &dWdx,
                                         const int &Flow_Type) const {
 
     double k_fsd, kappa_fsd;
-    k_fsd = SFS_Kinetic_Energy_Fsd(dWdx,dWdy,Flow_Type);
+    //    k_fsd = SFS_Kinetic_Energy_Fsd(dWdx,dWdy,Flow_Type);
     kappa_fsd = Efficiency_Function_Fsd(dWdx,dWdy,Flow_Type);   
-    if ( Flow_Type == FLOWTYPE_LAMINAR_FSD ){
+    if ( Flow_Type == FLOWTYPE_LAMINAR_C_FSD ){
     return ( 0.0 );
     }else {
     if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO) {
-    return ( kappa_fsd*sqrt(k_fsd)*scalar[1]*rho/filter_width );
+      return ( kappa_fsd*sqrt(k())*scalar[1]*rho/filter_width );
    }else{
     return (0.0);
    }
@@ -2074,14 +2057,14 @@ double LESPremixed2D_pState::SFS_Curvature(const LESPremixed2D_pState &dWdx,
     Mx = M_x(dWdx,dWdy);
     My = M_y(dWdx,dWdy);
     alpha_fsd = ONE - sqr(Mx) - sqr(My);
-    if ( Flow_Type == FLOWTYPE_LAMINAR_FSD ){
+    if ( Flow_Type == FLOWTYPE_LAMINAR_C_FSD ){
     return ( 0.0 );
     }else{
     if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO && scalar[1] != ZERO) {
-      //    if ( Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ){
+      //    if ( Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ){
     return ( -beta_fsd*laminar_speed*sqr(scalar[1]*rho)/(ONE-scalar[0]) );
     //    }
-//     if ( Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE ){
+//     if ( Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSDHARLETTE ){
 //     double tau_fsd = HeatRelease_Parameter();
 //     double c_bar = (1.0+tau_fsd)*scalar[0]/(1.0+tau_fsd*scalar[0]);
 //     return(-beta_fsd*laminar_speed*(scalar[1]-(1+tau_fsd)*sqrt(sqr(dWdx.scalar[0])+sqr(dWdy.scalar[0]))/sqr(1+tau_fsd*scalar[0]))*scalar[1]/c_bar/(1-c_bar));
@@ -2092,243 +2075,149 @@ double LESPremixed2D_pState::SFS_Curvature(const LESPremixed2D_pState &dWdx,
    }
 }
 
-// double LESPremixed2D_pState::M_xx(const LESPremixed2D_pState &dWdx,
-//                                   const LESPremixed2D_pState &dWdy,
-//                                   const LESPremixed2D_pState &d_dWdx_dx,
-//                                   const LESPremixed2D_pState &d_dWdx_dy,
-//                                   const LESPremixed2D_pState &d_dWdy_dy) const {
-//     double Mxx, magnitude_C;
-//     magnitude_C = sqrt(sqr(dWdx.scalar[0])+sqr(dWdy.scalar[0]));
-//     if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) { 
-//     Mxx = -d_dWdx_dx.scalar[0]/magnitude_C+dWdx.scalar[0]*(dWdx.scalar[0]*d_dWdx_dx.scalar[0]+dWdy.scalar[0]*d_dWdx_dy.scalar[0])/pow(magnitude_C,3);
-//     return ( Mxx );
-//    }else{
-//     return (0.0);
-//    }
-// }
-
-// double LESPremixed2D_pState::M_yy(const LESPremixed2D_pState &dWdx,
-//                                   const LESPremixed2D_pState &dWdy,
-//                                   const LESPremixed2D_pState &d_dWdx_dx,
-//                                   const LESPremixed2D_pState &d_dWdx_dy,
-//                                   const LESPremixed2D_pState &d_dWdy_dy) const {
-//      double Myy, magnitude_C;
-//      magnitude_C = sqrt(sqr(dWdx.scalar[0])+sqr(dWdy.scalar[0]));
-//      if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) {
-//      Myy = -d_dWdy_dy.scalar[0]/magnitude_C+dWdy.scalar[0]*(dWdx.scalar[0]*d_dWdx_dy.scalar[0]+dWdy.scalar[0]*d_dWdy_dy.scalar[0])/pow(magnitude_C,3);
-//      return ( Myy );
-//      }else{
-//      return (0.0);
-//    }
-// }
-
-// double LESPremixed2D_pState::Resolved_Curvature(const LESPremixed2D_pState &dWdx,
-//                                                 const LESPremixed2D_pState &dWdy,
-//                                                 const LESPremixed2D_pState &d_dWdx_dx,
-//                                                 const LESPremixed2D_pState &d_dWdx_dy,
-//                                                 const LESPremixed2D_pState &d_dWdy_dy) const {
-//    double tau_fsd, Mxx, Myy, resolved_curvature_xx, resolved_curvature_yy;
-//    tau_fsd = HeatRelease_Parameter();
-//    Mxx = M_xx(dWdx,dWdy,d_dWdx_dx,d_dWdx_dy,d_dWdy_dy);
-//    Myy = M_yy(dWdx,dWdy,d_dWdx_dx,d_dWdx_dy,d_dWdy_dy);
-
-//    if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) {
-//    resolved_curvature_xx = laminar_speed*(1.0+tau_fsd*scalar[0])*scalar[1]*rho*Mxx;
-//    resolved_curvature_yy = laminar_speed*(1.0+tau_fsd*scalar[0])*scalar[1]*rho*Myy;
-//    return ( resolved_curvature_xx + resolved_curvature_yy );
-//   }else{
-//    return (0.0);
-//   }
-// }
-
-// double LESPremixed2D_pState::Resolved_Propagation(const LESPremixed2D_pState &dWdx,
-//                                                   const LESPremixed2D_pState &dWdy,
-//                                                   const LESPremixed2D_pState &d_dWdx_dx,
-//                                                   const LESPremixed2D_pState &d_dWdx_dy,
-//                                                   const LESPremixed2D_pState &d_dWdy_dy) const {
-
-//    if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) {
-//    return ( Resolved_Propagation_Curvature(dWdx,dWdy)-Resolved_Curvature(dWdx,dWdy,d_dWdx_dx,d_dWdx_dy,d_dWdy_dy) );
-//   }else{
-//    return (0.0);
-//   }
-// }
-
-// double LESPremixed2D_pState::Resolved_Convection_Progvar (const LESPremixed2D_pState &dWdx,
-//                                                           const LESPremixed2D_pState &dWdy) const {
-
-//     double resolved_convection_progvar_x, resolved_convection_progvar_y;
-//     if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) {
-//     resolved_convection_progvar_x = -(dWdx.rho*v.x*scalar[0]+rho*dWdx.v.x*scalar[0]+rho*v.x*dWdx.scalar[0]);
-//     resolved_convection_progvar_y = -(dWdy.rho*v.y*scalar[0]+rho*dWdy.v.y*scalar[0]+rho*v.y*dWdy.scalar[0]);
-//     return( resolved_convection_progvar_x+resolved_convection_progvar_y );
-//    }else{
-//     return (0.0);
-//    }
-// }
-
-// double LESPremixed2D_pState::Resolved_Convection_Fsd (const LESPremixed2D_pState &dWdx,
-//                                                       const LESPremixed2D_pState &dWdy) const {
-
-//     double resolved_convection_fsd_x, resolved_convection_fsd_y;
-//     if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) {
-//     resolved_convection_fsd_x = -(dWdx.rho*v.x*scalar[1]+rho*dWdx.v.x*scalar[1]+rho*v.x*dWdx.scalar[1]);
-//     resolved_convection_fsd_y = -(dWdy.rho*v.y*scalar[1]+rho*dWdy.v.y*scalar[1]+rho*v.y*dWdy.scalar[1]);
-//     return( resolved_convection_fsd_x+resolved_convection_fsd_y );
-//    }else{
-//     return (0.0);
-//    }
-// }
-
-// double LESPremixed2D_pState::NGT_Progvar (const LESPremixed2D_pState &dWdx,
-//                                           const LESPremixed2D_pState &dWdy) const {
-
-//     double tau_fsd, NGT_progvar_x, NGT_progvar_y;
-//     tau_fsd = HeatRelease_Parameter();
-//     if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) {
-//     NGT_progvar_x = -tau_fsd*laminar_speed*(rho*(1-2*scalar[0])*dWdx.scalar[0]+scalar[0]*(1-scalar[0])*dWdx.rho);
-//     NGT_progvar_y = -tau_fsd*laminar_speed*(rho*(1-2*scalar[0])*dWdy.scalar[0]+scalar[0]*(1-scalar[0])*dWdy.rho);
-//     return ( NGT_progvar_x+NGT_progvar_y );
-//    }else{
-//     return (0.0);
-//    }
-// }
-
-// double LESPremixed2D_pState::NGT_Fsd (const LESPremixed2D_pState &dWdx,
-//                                       const LESPremixed2D_pState &dWdy,
-//                                       const LESPremixed2D_pState &d_dWdx_dx,
-//                                       const LESPremixed2D_pState &d_dWdx_dy,
-//                                       const LESPremixed2D_pState &d_dWdy_dy) const {
-
-//     double tau_fsd, Mx, My, Mxx, Myy, NGT_fsd_x, NGT_fsd_y;
-//     tau_fsd = HeatRelease_Parameter();
-//     Mx = M_x(dWdx,dWdy);
-//     My = M_y(dWdx,dWdy);
-//     Mxx = M_xx(dWdx,dWdy,d_dWdx_dx,d_dWdx_dy,d_dWdy_dy);
-//     Myy = M_yy(dWdx,dWdy,d_dWdx_dx,d_dWdx_dy,d_dWdy_dy);
-//     if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) {
-//     NGT_fsd_x = -tau_fsd*laminar_speed*((0.5-scalar[0])*(scalar[1]*Mx*dWdx.rho+rho*Mx*dWdx.scalar[1]+rho*scalar[1]*Mxx)-rho*scalar[1]*Mx*dWdx.scalar[0]);
-//     NGT_fsd_y = -tau_fsd*laminar_speed*((0.5-scalar[0])*(scalar[1]*My*dWdy.rho+rho*My*dWdy.scalar[1]+rho*scalar[1]*Myy)-rho*scalar[1]*My*dWdy.scalar[0]);
-//     return ( NGT_fsd_x+NGT_fsd_y );
-//    }else{
-//     return (0.0);
-//    } 
-// }
-
-// double LESPremixed2D_pState::SFS_Diffusion_Progvar (const LESPremixed2D_pState &dWdx,
-//                                                     const LESPremixed2D_pState &dWdy,
-//                                                     const LESPremixed2D_pState &d_dWdx_dx,
-//                                                     const LESPremixed2D_pState &d_dWdx_dy,
-//                                                     const LESPremixed2D_pState &d_dWdy_dy,
-//                                                     const int &Flow_Type) const {
-//     double grad_mu_x, grad_mu_y, sfs_diffusion_progvar_x, sfs_diffusion_progvar_y, Schmidt_sfs = 1.0;
-//     grad_mu_x = sqr(CS_constant*filter_width))*sqrt(2)*(d_dWdx_dx.v.x+0.5*(d_dWdx_dy.v.x+d_dWdx_dx.v.y)+d_dWdx_dy.v.y);
-//     grad_mu_y = sqr(CS_constant*filter_width)*sqrt(2)*(d_dWdx_dy.v.x+0.5*(d_dWdy_dy.v.x+d_dWdx_dy.v.y)+d_dWdy_dy.v.y);
-//     if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) {
-//     sfs_diffusion_progvar_x = (eddy_viscosity(dWdx,dWdy,Flow_Type)*dWdx.scalar[0]*dWdx.rho+rho*dWdx.scalar[0]*grad_mu_x+rho*eddy_viscosity(dWdx,dWdy,Flow_Type)*d_dWdx_dx.scalar[0])/Schmidt_sfs;
-//     sfs_diffusion_progvar_y = (eddy_viscosity(dWdx,dWdy,Flow_Type)*dWdy.scalar[0]*dWdy.rho+rho*dWdy.scalar[0]*grad_mu_y+rho*eddy_viscosity(dWdx,dWdy,Flow_Type)*d_dWdy_dy.scalar[0])/Schmidt_sfs;
-//     return ( sfs_diffusion_progvar_x+sfs_diffusion_progvar_y );
-//    }else{
-//     return (0.0);
-//    }
-//  }
-
-// double LESPremixed2D_pState::SFS_Diffusion_Fsd (const LESPremixed2D_pState &dWdx,
-//                                                 const LESPremixed2D_pState &dWdy,
-//                                                 const LESPremixed2D_pState &d_dWdx_dx,
-//                                                 const LESPremixed2D_pState &d_dWdx_dy,
-//                                                 const LESPremixed2D_pState &d_dWdy_dy,
-//                                                 const int &Flow_Type) const {
-//      double grad_mu_x, grad_mu_y, sfs_diffusion_fsd_x, sfs_diffusion_fsd_y, Schmidt_sfs = 1.0;
-//      grad_mu_x = sqr(CS_constant*filter_width)*sqrt(2)*(d_dWdx_dx.v.x+0.5*(d_dWdx_dy.v.x+d_dWdx_dx.v.y)+d_dWdx_dy.v.y);
-//      grad_mu_y = sqr(CS_constant*filter_width)*sqrt(2)*(d_dWdx_dy.v.x+0.5*(d_dWdy_dy.v.x+d_dWdx_dy.v.y)+d_dWdy_dy.v.y);
-//      if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) {
-//        sfs_diffusion_fsd_x = (eddy_viscosity(dWdx,dWdy,Flow_Type)*dWdx.scalar[1]*dWdx.rho+rho*dWdx.scalar[1]*grad_mu_x+rho*eddy_viscosity(dWdx,dWdy,Flow_Type)*d_dWdx_dx.scalar[1])/Schmidt_sfs;
-//      sfs_diffusion_fsd_y = (eddy_viscosity(dWdx,dWdy,Flow_Type)*dWdy.scalar[1]*dWdy.rho+rho*dWdy.scalar[1]*grad_mu_y+rho*eddy_viscosity(dWdx,dWdy,Flow_Type)*d_dWdy_dy.scalar[1])/Schmidt_sfs;
-//      return ( sfs_diffusion_fsd_x+sfs_diffusion_fsd_y );
-//     }else{
-//      return (0.0);
-//     }
-//  }
-
-// double LESPremixed2D_pState::Heat_Release_Strain (const LESPremixed2D_pState &dWdx,
-//                                                   const LESPremixed2D_pState &dWdy,
-//                                                   const LESPremixed2D_pState &d_dWdx_dx,
-//                                                   const LESPremixed2D_pState &d_dWdx_dy,
-//                                                   const LESPremixed2D_pState &d_dWdy_dy) const {
-//      double tau_fsd, Mx, My, Mxx, Myy, heat_release_strain_xx, heat_release_strain_yy;
-//      tau_fsd = HeatRelease_Parameter();
-//      Mx = M_x(dWdx,dWdy);
-//      My = M_y(dWdx,dWdy);
-//      Mxx = M_xx(dWdx,dWdy,d_dWdx_dx,d_dWdx_dy,d_dWdy_dy);
-//      Myy = M_yy(dWdx,dWdy,d_dWdx_dx,d_dWdx_dy,d_dWdy_dy);
-//      if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) {
-//      heat_release_strain_xx = (0.5-scalar[0])*tau_fsd*laminar_speed*scalar[1]*rho*Mxx;
-//      heat_release_strain_yy = (0.5-scalar[0])*tau_fsd*laminar_speed*scalar[1]*rho*Myy;
-//      return ( heat_release_strain_xx + heat_release_strain_yy );
-//     }else{
-//      return (0.0);
-//     }
-// }
-
-// double LESPremixed2D_pState::Net_Rate_Change_Progvar (const LESPremixed2D_pState &dWdx,
-//                                                       const LESPremixed2D_pState &dWdy,
-//                                                       const LESPremixed2D_pState &d_dWdx_dx,
-//                                                       const LESPremixed2D_pState &d_dWdx_dy,
-//                                                       const LESPremixed2D_pState &d_dWdy_dy,
-//                                                       const int &Flow_Type) const {
-//      return(  Resolved_Convection_Progvar(dWdx,dWdy)
-//               +SFS_Diffusion_Progvar(dWdx,dWdy,d_dWdx_dx,d_dWdx_dy,d_dWdy_dy,Flow_Type)
-//               +Reaction_Rate_Fsd(dWdx,dWdy) );
-// }
-           
-
-// double LESPremixed2D_pState::Net_Rate_Change_Fsd (const LESPremixed2D_pState &dWdx,
-//                                                   const LESPremixed2D_pState &dWdy,
-//                                                   const LESPremixed2D_pState &d_dWdx_dx,
-//                                                   const LESPremixed2D_pState &d_dWdx_dy,
-//                                                   const LESPremixed2D_pState &d_dWdy_dy,
-//                                                   const int &Flow_Type) const {
-//     return(  Resolved_Convection_Fsd(dWdx,dWdy)
-//             +SFS_Diffusion_Fsd(dWdx,dWdy,d_dWdx_dx,d_dWdx_dy,d_dWdy_dy,Flow_Type)
-//             +Resolved_Strain(dWdx,dWdy)
-//             +Resolved_Propagation_Curvature(dWdx,dWdy)
-//             +SFS_Strain(dWdx,dWdy,Flow_Type)
-//             +SFS_Curvature(dWdx,dWdy,Flow_Type) );
-// }
-
-double LESPremixed2D_pState::K_equ_sources(const LESPremixed2D_pState &dWdx,
-                                           const LESPremixed2D_pState &dWdy,
-                                           const int &Flow_Type) const {
-
-  double production, dissipation, source;
-  double div_v, sfs_stress_trace;
-  Tensor2D strain_rate;
-  Tensor2D lambda;
-  
-  /***************** Strain rate (+ dilatation) **********************/ 
-//   div_v = dWdx.v.x + dWdy.v.y;
-//   strain_rate.xx = dWdx.v.x - div_v/THREE;
-//   strain_rate.xy = HALF*(dWdx.v.y + dWdy.v.x);
-//   strain_rate.yy = dWdy.v.y - div_v/THREE;
-//   strain_rate.zz = -(strain_rate.xx + strain_rate.yy);
-    
-//   sfs_stress_trace = TWO*rho*k();
-     
-//   lambda.xx = TWO*eddy_viscosity(dWdx,dWdy,Flow_Type)*strain_rate.xx 
-//               - sfs_stress_trace/THREE;
-//   lambda.yy = TWO*eddy_viscosity(dWdx,dWdy,Flow_Type)*strain_rate.yy
-//               - sfs_stress_trace/THREE;
-//   lambda.xy = TWO*eddy_viscosity(dWdx,dWdy,Flow_Type)*strain_rate.xy;
-//   lambda.zz = TWO*eddy_viscosity(dWdx,dWdy,Flow_Type)*strain_rate.zz 
-//               - sfs_stress_trace/THREE;
-//   production = lambda.xx*strain_rate.xx + 
-//                lambda.xy*strain_rate.xy + 
-//                lambda.yy*strain_rate.yy;
-//   dissipation = CEPS_CONSTANT*rho*pow(k(), 3.0/2.0)/filter_width;
-//   source = production - dissipation;
-//   return(source);
+double LESPremixed2D_pState::M_xx(const LESPremixed2D_pState &dWdx,
+                                  const LESPremixed2D_pState &dWdy,
+                                  const LESPremixed2D_pState &d_dWdx_dx,
+                                  const LESPremixed2D_pState &d_dWdx_dy,
+                                  const LESPremixed2D_pState &d_dWdy_dy) const {
+    double Mxx, magnitude_C;
+    magnitude_C = sqrt(sqr(dWdx.scalar[0])+sqr(dWdy.scalar[0]));
+    if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) { 
+    Mxx = -d_dWdx_dx.scalar[0]/magnitude_C+dWdx.scalar[0]*(dWdx.scalar[0]*d_dWdx_dx.scalar[0]+dWdy.scalar[0]*d_dWdx_dy.scalar[0])/pow(magnitude_C,3);
+    return ( Mxx );
+   }else{
+    return (0.0);
+   }
 }
+
+double LESPremixed2D_pState::M_yy(const LESPremixed2D_pState &dWdx,
+                                  const LESPremixed2D_pState &dWdy,
+                                  const LESPremixed2D_pState &d_dWdx_dx,
+                                  const LESPremixed2D_pState &d_dWdx_dy,
+                                  const LESPremixed2D_pState &d_dWdy_dy) const {
+     double Myy, magnitude_C;
+     magnitude_C = sqrt(sqr(dWdx.scalar[0])+sqr(dWdy.scalar[0]));
+     if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) {
+     Myy = -d_dWdy_dy.scalar[0]/magnitude_C+dWdy.scalar[0]*(dWdx.scalar[0]*d_dWdx_dy.scalar[0]+dWdy.scalar[0]*d_dWdy_dy.scalar[0])/pow(magnitude_C,3);
+     return ( Myy );
+     }else{
+     return (0.0);
+   }
+}
+
+double LESPremixed2D_pState::Resolved_Curvature(const LESPremixed2D_pState &dWdx,
+                                                const LESPremixed2D_pState &dWdy,
+                                                const LESPremixed2D_pState &d_dWdx_dx,
+                                                const LESPremixed2D_pState &d_dWdx_dy,
+                                                const LESPremixed2D_pState &d_dWdy_dy) const {
+   double tau_fsd, Mxx, Myy, resolved_curvature_xx, resolved_curvature_yy;
+   tau_fsd = HeatRelease_Parameter();
+   Mxx = M_xx(dWdx,dWdy,d_dWdx_dx,d_dWdx_dy,d_dWdy_dy);
+   Myy = M_yy(dWdx,dWdy,d_dWdx_dx,d_dWdx_dy,d_dWdy_dy);
+
+   if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) {
+   resolved_curvature_xx = laminar_speed*(1.0+tau_fsd*scalar[0])*scalar[1]*rho*Mxx;
+   resolved_curvature_yy = laminar_speed*(1.0+tau_fsd*scalar[0])*scalar[1]*rho*Myy;
+   return ( resolved_curvature_xx + resolved_curvature_yy );
+  }else{
+   return (0.0);
+  }
+}
+
+double LESPremixed2D_pState::Resolved_Propagation(const LESPremixed2D_pState &dWdx,
+                                                  const LESPremixed2D_pState &dWdy,
+                                                  const LESPremixed2D_pState &d_dWdx_dx,
+                                                  const LESPremixed2D_pState &d_dWdx_dy,
+                                                  const LESPremixed2D_pState &d_dWdy_dy) const {
+
+   if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) {
+   return ( Resolved_Propagation_Curvature(dWdx,dWdy)-Resolved_Curvature(dWdx,dWdy,d_dWdx_dx,d_dWdx_dy,d_dWdy_dy) );
+  }else{
+   return (0.0);
+  }
+}
+
+double LESPremixed2D_pState::Resolved_Convection_Progvar (const LESPremixed2D_pState &dWdx,
+                                                          const LESPremixed2D_pState &dWdy) const {
+
+    double resolved_convection_progvar_x, resolved_convection_progvar_y;
+    if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) {
+    resolved_convection_progvar_x = -(dWdx.rho*v.x*scalar[0]+rho*dWdx.v.x*scalar[0]+rho*v.x*dWdx.scalar[0]);
+    resolved_convection_progvar_y = -(dWdy.rho*v.y*scalar[0]+rho*dWdy.v.y*scalar[0]+rho*v.y*dWdy.scalar[0]);
+    return( resolved_convection_progvar_x+resolved_convection_progvar_y );
+   }else{
+    return (0.0);
+   }
+}
+
+double LESPremixed2D_pState::Resolved_Convection_Fsd (const LESPremixed2D_pState &dWdx,
+                                                      const LESPremixed2D_pState &dWdy) const {
+
+    double resolved_convection_fsd_x, resolved_convection_fsd_y;
+    if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) {
+    resolved_convection_fsd_x = -(dWdx.rho*v.x*scalar[1]+rho*dWdx.v.x*scalar[1]+rho*v.x*dWdx.scalar[1]);
+    resolved_convection_fsd_y = -(dWdy.rho*v.y*scalar[1]+rho*dWdy.v.y*scalar[1]+rho*v.y*dWdy.scalar[1]);
+    return( resolved_convection_fsd_x+resolved_convection_fsd_y );
+   }else{
+    return (0.0);
+   }
+}
+
+double LESPremixed2D_pState::NGT_Progvar (const LESPremixed2D_pState &dWdx,
+                                          const LESPremixed2D_pState &dWdy) const {
+
+    double tau_fsd, NGT_progvar_x, NGT_progvar_y;
+    tau_fsd = HeatRelease_Parameter();
+    if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) {
+    NGT_progvar_x = -tau_fsd*laminar_speed*(rho*(1-2*scalar[0])*dWdx.scalar[0]+scalar[0]*(1-scalar[0])*dWdx.rho);
+    NGT_progvar_y = -tau_fsd*laminar_speed*(rho*(1-2*scalar[0])*dWdy.scalar[0]+scalar[0]*(1-scalar[0])*dWdy.rho);
+    return ( NGT_progvar_x+NGT_progvar_y );
+   }else{
+    return (0.0);
+   }
+}
+
+double LESPremixed2D_pState::NGT_Fsd (const LESPremixed2D_pState &dWdx,
+                                      const LESPremixed2D_pState &dWdy,
+                                      const LESPremixed2D_pState &d_dWdx_dx,
+                                      const LESPremixed2D_pState &d_dWdx_dy,
+                                      const LESPremixed2D_pState &d_dWdy_dy) const {
+
+    double tau_fsd, Mx, My, Mxx, Myy, NGT_fsd_x, NGT_fsd_y;
+    tau_fsd = HeatRelease_Parameter();
+    Mx = M_x(dWdx,dWdy);
+    My = M_y(dWdx,dWdy);
+    Mxx = M_xx(dWdx,dWdy,d_dWdx_dx,d_dWdx_dy,d_dWdy_dy);
+    Myy = M_yy(dWdx,dWdy,d_dWdx_dx,d_dWdx_dy,d_dWdy_dy);
+    if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) {
+    NGT_fsd_x = -tau_fsd*laminar_speed*((0.5-scalar[0])*(scalar[1]*Mx*dWdx.rho+rho*Mx*dWdx.scalar[1]+rho*scalar[1]*Mxx)-rho*scalar[1]*Mx*dWdx.scalar[0]);
+    NGT_fsd_y = -tau_fsd*laminar_speed*((0.5-scalar[0])*(scalar[1]*My*dWdy.rho+rho*My*dWdy.scalar[1]+rho*scalar[1]*Myy)-rho*scalar[1]*My*dWdy.scalar[0]);
+    return ( NGT_fsd_x+NGT_fsd_y );
+   }else{
+    return (0.0);
+   } 
+}
+
+double LESPremixed2D_pState::Heat_Release_Strain (const LESPremixed2D_pState &dWdx,
+                                                  const LESPremixed2D_pState &dWdy,
+                                                  const LESPremixed2D_pState &d_dWdx_dx,
+                                                  const LESPremixed2D_pState &d_dWdx_dy,
+                                                  const LESPremixed2D_pState &d_dWdy_dy) const {
+     double tau_fsd, Mx, My, Mxx, Myy, heat_release_strain_xx, heat_release_strain_yy;
+     tau_fsd = HeatRelease_Parameter();
+     Mx = M_x(dWdx,dWdy);
+     My = M_y(dWdx,dWdy);
+     Mxx = M_xx(dWdx,dWdy,d_dWdx_dx,d_dWdx_dy,d_dWdy_dy);
+     Myy = M_yy(dWdx,dWdy,d_dWdx_dx,d_dWdx_dy,d_dWdy_dy);
+     if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) {
+     heat_release_strain_xx = (0.5-scalar[0])*tau_fsd*laminar_speed*scalar[1]*rho*Mxx;
+     heat_release_strain_yy = (0.5-scalar[0])*tau_fsd*laminar_speed*scalar[1]*rho*Myy;
+     return ( heat_release_strain_xx + heat_release_strain_yy );
+    }else{
+     return (0.0);
+    }
+}
+
 
 /*************************************************
          Premixed combustion
@@ -2922,7 +2811,7 @@ LESPremixed2D_cState LESPremixed2D_pState::Sa_viscous(const LESPremixed2D_pState
      Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
 
     //Turbulence model eddy viscosity
-    mut = mu_t(strain_rate); 
+    mut = mu_t(strain_rate,Flow_Type); 
     Dm_t = Dm_turb(mut);
 
     theta = - mut*Cp()/Pr_turb()*grad_T;
@@ -2933,7 +2822,7 @@ LESPremixed2D_cState LESPremixed2D_pState::Sa_viscous(const LESPremixed2D_pState
       theta.y -= rhohsDs*dWdy.spec[i].c;
     }
 
-    SFS_Stress(strain_rate);
+    SFS_Stress(strain_rate,Flow_Type);
   
   } 
 
@@ -3054,9 +2943,9 @@ LESPremixed2D_cState LESPremixed2D_pState::S_turbulence_model(const LESPremixed2
   double production, dissipation;
   LESPremixed2D_cState Temp; Temp.Vacuum();
 
-  if ( Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-       Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-       Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K) {
+  if ( Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+       Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+       Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
 
     if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO) {
 
@@ -3081,9 +2970,14 @@ LESPremixed2D_cState LESPremixed2D_pState::S_turbulence_model(const LESPremixed2
    if (Temp.rhoscalar[0] < ZERO ) { Temp.rhoscalar[0] = ZERO; }
    if (Temp.rhoscalar[1] < ZERO ) { Temp.rhoscalar[1] = ZERO; }
 
-   if ( Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) {
+   if ( Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
 
-    Temp.rhoscalar[2] = K_equ_sources(dWdx,dWdy,Flow_Type);
+  production = lambda.xx*dWdx.v.x + lambda.xy*(dWdy.v.x + dWdx.v.y) + 
+               lambda.yy*dWdy.v.y;
+
+  dissipation = rho*(SFSmodel.CEPS_coef)*pow(k(), 1.5)/filter_width;
+ 
+  Temp.rhoscalar[2] = production - dissipation;
 
       }
      }
@@ -3504,8 +3398,16 @@ double LESPremixed2D_cState::a(void) const{
 /**************************************************
   Turbulence model related parameters
 ***************************************************/
-double LESPremixed2D_cState::mu_t(const Tensor2D &strain_rate) const{
-  double mut = rho*SFSmodel.eddy_viscosity_Smagorinsky(strain_rate, filter_width);
+double LESPremixed2D_cState::mu_t(const Tensor2D &strain_rate,
+                                  const int &Flow_Type) const{
+  double mut;
+  if(Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
+     Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) { 
+  mut = rho*SFSmodel.eddy_viscosity_Smagorinsky(strain_rate, filter_width);
+  }else if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K ||
+            Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
+    mut = rho*SFSmodel.eddy_viscosity_k(k(), filter_width);
+  }
 #ifdef THICKENED_FLAME_ON
   return (flame.WF*flame.TF)*mut;
 #else
@@ -3746,7 +3648,7 @@ LESPremixed2D_cState LESPremixed2D_cState::Viscous_Flux_x(const LESPremixed2D_pS
   if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
       Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
     Tensor2D strain_rate = Strain_Rate(dWdx,dWdy, Flow_Type, Axisymmetric, X);
-    double mut = mu_t(strain_rate); 
+    double mut = mu_t(strain_rate,Flow_Type); 
     double Dm_t = Dm_turb(mut);
     
     temp[2] += lambda.xx + 2.0*rhok()/3.0; 
@@ -3762,10 +3664,10 @@ LESPremixed2D_cState LESPremixed2D_cState::Viscous_Flux_x(const LESPremixed2D_pS
     }
   }
  
-  if (Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-      Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K) {
+  if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+      Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
     Tensor2D strain_rate = Strain_Rate(dWdx,dWdy, Flow_Type, Axisymmetric, X);
-    double mut = mu_t(strain_rate); 
+    double mut = mu_t(strain_rate,Flow_Type); 
     double Dm_t = Dm_turb(mut);
     double Schmidt_sfs = ONE ;
     
@@ -3775,8 +3677,8 @@ LESPremixed2D_cState LESPremixed2D_cState::Viscous_Flux_x(const LESPremixed2D_pS
     temp[5] = mut*dWdx.scalar[0]/Schmidt_sfs;
     temp[6] = mut*dWdx.scalar[1]/Schmidt_sfs;
 
-      if (Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K) {
-	temp[7] = (mu()+mut)*dWdx.scalar[2]/Pr_turb();
+      if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
+	temp.rhoscalar[2] = (mu()+mut)*dWdx.scalar[2]/Pr_turb();
       }
   }
 
@@ -3806,7 +3708,7 @@ LESPremixed2D_cState LESPremixed2D_cState::Viscous_Flux_y(const LESPremixed2D_pS
   if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
       Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
     Tensor2D strain_rate = Strain_Rate(dWdx,dWdy, Flow_Type, Axisymmetric, X);
-    double mut = mu_t(strain_rate); 
+    double mut = mu_t(strain_rate,Flow_Type); 
     double Dm_t = Dm_turb(mut);
 
     temp[2] += lambda.xy; 
@@ -3824,10 +3726,10 @@ LESPremixed2D_cState LESPremixed2D_cState::Viscous_Flux_y(const LESPremixed2D_pS
     }
   }
 
-  if (Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-      Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K) {
+  if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+      Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
     Tensor2D strain_rate = Strain_Rate(dWdx,dWdy, Flow_Type, Axisymmetric, X);
-    double mut = mu_t(strain_rate); 
+    double mut = mu_t(strain_rate,Flow_Type); 
     double Dm_t = Dm_turb(mut);
     double Schmidt_sfs = ONE ;
     
@@ -3837,8 +3739,8 @@ LESPremixed2D_cState LESPremixed2D_cState::Viscous_Flux_y(const LESPremixed2D_pS
     temp[5] = mut*dWdy.scalar[0]/Schmidt_sfs;
     temp[6] = mut*dWdy.scalar[1]/Schmidt_sfs;
 
-      if (Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K) {
-	temp[7] = (mu()+mut)*dWdy.scalar[2]/Pr_turb();
+      if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
+	temp.rhoscalar[2] = (mu()+mut)*dWdy.scalar[2]/Pr_turb();
       }
   }
 
@@ -4769,12 +4671,13 @@ LESPremixed2D_pState RoeAverage(const LESPremixed2D_pState &Wl,
       for(int i=0; i<Wl.nscal; i++) Temp.scalar[i] = (srhol*Wl.scalar[i] + srhor*Wr.scalar[i])/(srhol+srhor);
     }
     
-//    if(Temp.Scal_sys.scalar_flag != LES_FSD_C &&
-//       Temp.Scal_sys.scalar_flag != LES_FSD_C_K) {
+//     if(Temp.Scal_sys.scalar_flag != LES_C_FSD &&
+//        Temp.Scal_sys.scalar_flag != LES_C_FSD_K) {
     for(int i=0; i<Wl.ns; ++i){
       Temp.spec[i].c = (srhol*Wl.spec[i].c + srhor*Wr.spec[i].c)/(srhol+srhor);
     }
-    //   }
+    //    }
+
     Ha = (srhol*Hl+srhor*Hr)/(srhol+srhor);
     ha = Ha - HALF*(sqr(Temp.v.x)+sqr(Temp.v.y));
     ha -= 5.0*Temp.k()/3.0;
@@ -4806,12 +4709,7 @@ LESPremixed2D_cState FluxHLLE_x(const LESPremixed2D_pState &Wl,
     double wavespeed_l, wavespeed_r;
     LESPremixed2D_pState Wa, lambdas_l, lambdas_r, lambdas_a;
     LESPremixed2D_cState Flux, dUrl;
-   if(Wa.Scal_sys.scalar_flag != LES_FSD_C &&
-      Wa.Scal_sys.scalar_flag != LES_FSD_C_K) {
-    int NUM_VAR_LESPREMIXED2D = Wa.NUM_VAR_LESPREMIXED2D;
-   }else{
-    int NUM_VAR_LESPREMIXED2D = Wa.NUM_VAR_LESPREMIXED2D - Wa.ns;
-   }
+    int NUM_VAR_LESPREMIXED2D = Wl.NUM_VAR_LESPREMIXED2D;
 
     /* Evaluate the Roe-average primitive solution state. */   
     Wa = RoeAverage(Wl, Wr);
@@ -4953,12 +4851,7 @@ LESPremixed2D_cState FluxLinde(const LESPremixed2D_pState &Wl,
     double wavespeed_l, wavespeed_r, wavespeed_m, rhoa, ca, dU, alpha;
     LESPremixed2D_pState Wa, lambdas_l, lambdas_r, lambdas_a;
     LESPremixed2D_cState Flux, dFrl, dUrl, dFwave;
-   if(Wa.Scal_sys.scalar_flag != LES_FSD_C &&
-      Wa.Scal_sys.scalar_flag != LES_FSD_C_K) {
-    int NUM_VAR_LESPREMIXED2D = Wa.NUM_VAR_LESPREMIXED2D;
-   }else{
-    int NUM_VAR_LESPREMIXED2D = Wa.NUM_VAR_LESPREMIXED2D - Wa.ns;
-   }
+    int NUM_VAR_LESPREMIXED2D = Wl.NUM_VAR_LESPREMIXED2D;
 
     /* Evaluate the Roe-average primitive solution state. */   
     Wa = RoeAverage(Wl, Wr);
@@ -5129,13 +5022,7 @@ Vector2D HLLE_wavespeeds(const LESPremixed2D_pState &Wl,
 
     Vector2D wavespeed;
     LESPremixed2D_pState Wa_n, lambdas_l, lambdas_r, lambdas_a, Wl_n, Wr_n;  
-   if(Wl_n.Scal_sys.scalar_flag != LES_FSD_C &&
-      Wl_n.Scal_sys.scalar_flag != LES_FSD_C_K) {
-    int NUM_VAR_LESPREMIXED2D = Wl_n.NUM_VAR_LESPREMIXED2D;
-   }else{
-    int NUM_VAR_LESPREMIXED2D = Wl_n.NUM_VAR_LESPREMIXED2D - Wl_n.ns;
-   }
-
+    int NUM_VAR_LESPREMIXED2D = (Wl.NUM_VAR_LESPREMIXED2D );
     /* Use rotated values to calculate eignvalues */
     Wl_n = Rotate(Wl, norm_dir);
     Wr_n = Rotate(Wr, norm_dir);
@@ -5195,14 +5082,7 @@ LESPremixed2D_pState WaveSpeedNeg(const LESPremixed2D_pState &lambdas_a,
 				  const LESPremixed2D_pState &lambdas_l,
 				  const LESPremixed2D_pState &lambdas_r) {
   LESPremixed2D_pState NEW;   
-  int NUM_VAR_LESPREMIXED2D;
-   if(NEW.Scal_sys.scalar_flag != LES_FSD_C &&
-      NEW.Scal_sys.scalar_flag != LES_FSD_C_K) {
-    NUM_VAR_LESPREMIXED2D = lambdas_a.NUM_VAR_LESPREMIXED2D;
-   }else{
-    NUM_VAR_LESPREMIXED2D = lambdas_a.NUM_VAR_LESPREMIXED2D - lambdas_a.ns;
-   }
-  for(int i=1; i<=NUM_VAR_LESPREMIXED2D; ++i){
+  for(int i=1; i<=lambdas_a.NUM_VAR_LESPREMIXED2D; ++i){
      NEW[i] = HALF*(lambdas_a[i]-fabs(lambdas_a[i]));
    }
    return(NEW);
@@ -5219,14 +5099,7 @@ LESPremixed2D_pState WaveSpeedAbs(const LESPremixed2D_pState &lambdas_a,
 				  const LESPremixed2D_pState &lambdas_l,
 				  const LESPremixed2D_pState &lambdas_r) {
    LESPremixed2D_pState NEW;   
-   int NUM_VAR_LESPREMIXED2D;
-   if(NEW.Scal_sys.scalar_flag != LES_FSD_C &&
-      NEW.Scal_sys.scalar_flag != LES_FSD_C_K) {
-      NUM_VAR_LESPREMIXED2D = lambdas_a.NUM_VAR_LESPREMIXED2D;
-   }else{
-      NUM_VAR_LESPREMIXED2D = lambdas_a.NUM_VAR_LESPREMIXED2D - lambdas_a.ns;
-   }
-   for(int i=1; i<=NUM_VAR_LESPREMIXED2D; ++i){
+   for(int i=1; i<=lambdas_a.NUM_VAR_LESPREMIXED2D; ++i){
      NEW[i] = fabs(lambdas_a[i]);
    }
    return(NEW);
@@ -5254,13 +5127,13 @@ LESPremixed2D_pState HartenFixPos(const LESPremixed2D_pState &lambdas_a,
       NEW.scalar[i-5] = HALF*(lambdas_a[i]+fabs(lambdas_a[i])); //fabs(lambdas_a[i]); ??????
     }
   }
-    
-   if(NEW.Scal_sys.scalar_flag != LES_FSD_C &&
-      NEW.Scal_sys.scalar_flag != LES_FSD_C_K) {
+
+//     if(NEW.Scal_sys.scalar_flag != LES_C_FSD &&
+//        NEW.Scal_sys.scalar_flag != LES_C_FSD_K) {
   for( int i=(NEW.NUM_VAR_LESPREMIXED2D-NEW.ns+1); i<=NEW.NUM_VAR_LESPREMIXED2D; ++i){
     NEW.spec[i-(NEW.NUM_VAR_LESPREMIXED2D-NEW.ns+1)].c = HALF*(lambdas_a[i]+fabs(lambdas_a[i]));
   }
- }  
+  //    }
   return (NEW);
 }
 
@@ -5280,19 +5153,17 @@ LESPremixed2D_pState HartenFixNeg(const LESPremixed2D_pState &lambdas_a,
   NEW.v.x = HALF*(lambdas_a[2]-fabs(lambdas_a[2]));
   NEW.v.y = HALF*(lambdas_a[3]-fabs(lambdas_a[3]));
   NEW.p = HartenFixNeg(lambdas_a[4],lambdas_l[4],lambdas_r[4]);
-
   if(NEW.nscal){
     for(int i=5; i<=(NEW.NUM_VAR_LESPREMIXED2D-NEW.ns); ++i){
       NEW.scalar[i-5] = HALF*(lambdas_a[i]-fabs(lambdas_a[i]));  // fabs(lambdas_a[i]) ???????
     }
   }
-  
-   if(NEW.Scal_sys.scalar_flag != LES_FSD_C &&
-      NEW.Scal_sys.scalar_flag != LES_FSD_C_K) {
+//     if(NEW.Scal_sys.scalar_flag != LES_C_FSD &&
+//        NEW.Scal_sys.scalar_flag != LES_C_FSD_K) {
   for( int i=(NEW.NUM_VAR_LESPREMIXED2D-NEW.ns+1); i<=NEW.NUM_VAR_LESPREMIXED2D; ++i){
     NEW.spec[i-(NEW.NUM_VAR_LESPREMIXED2D-NEW.ns+1)].c = HALF*(lambdas_a[i]-fabs(lambdas_a[i]));
   }
-   }
+  //    }
   return (NEW);
 }
 /********************************************************
@@ -5318,12 +5189,12 @@ LESPremixed2D_pState HartenFixAbs(const LESPremixed2D_pState &lambdas_a,
     }
   }
   
-   if(NEW.Scal_sys.scalar_flag != LES_FSD_C &&
-      NEW.Scal_sys.scalar_flag != LES_FSD_C_K) {
+//     if(NEW.Scal_sys.scalar_flag != LES_C_FSD &&
+//        NEW.Scal_sys.scalar_flag != LES_C_FSD_K) {
   for( int i=(NEW.NUM_VAR_LESPREMIXED2D-NEW.ns+1); i<=NEW.NUM_VAR_LESPREMIXED2D; ++i){
     NEW.spec[i-(NEW.NUM_VAR_LESPREMIXED2D-NEW.ns+1)].c = fabs(lambdas_a[i]);
   }
-   }
+  //    }
   return (NEW);
 }
 /*********************************************************
@@ -5371,14 +5242,14 @@ LESPremixed2D_cState FluxRoe_x(const LESPremixed2D_pState &Wl,
 //       Flux += Flux_dissipation;
 //       /////////////////////////////////
 
-     int NUM;
-     if(flow_type_flag == FLOWTYPE_LAMINAR_FSD ||
-        flow_type_flag == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-        flow_type_flag == FLOWTYPE_TURBULENT_LES_FSD_K ) {
- 	NUM = Wl.NUM_VAR_LESPREMIXED2D-Wl.ns;
-      }else{
-        NUM = Wl.NUM_VAR_LESPREMIXED2D;
-      }
+      int NN;
+  if(flow_type_flag == FLOWTYPE_LAMINAR_C_FSD ||
+     flow_type_flag == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+     flow_type_flag == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
+	NN = Wl.NUM_VAR_LESPREMIXED2D-Wl.ns+1;
+  }else{
+        NN = Wl.NUM_VAR_LESPREMIXED2D;
+  }
 
       /* Determine the intermediate state flux. */
       if (Wa.v.x >= ZERO) {
@@ -5386,8 +5257,7 @@ LESPremixed2D_cState FluxRoe_x(const LESPremixed2D_pState &Wl,
         wavespeeds = HartenFixNeg(lambdas_a,
                                   lambdas_l,
                                   lambdas_r);
-	
-        for (int i=1 ; i < NUM; ++i) {
+        for (int i=1 ; i < NN; ++i) {
 	  if (wavespeeds[i] < ZERO) {
  	    Flux += wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i);
 	  }
@@ -5397,13 +5267,12 @@ LESPremixed2D_cState FluxRoe_x(const LESPremixed2D_pState &Wl,
         wavespeeds = HartenFixPos(lambdas_a,
                                   lambdas_l,
                                   lambdas_r);
-        for (int i=1; i < NUM; ++i) {
+       for (int i=1; i < NN; ++i) {
 	  if (wavespeeds[i] > ZERO) {
 	    Flux -= wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i);
           }
         } 
       } 
-   
       /******* LOW MACH NUMBER PRECONDITIONING ********************/
       /* Evaluate the left, right, and average state eigenvalues. */
     } else if(Preconditioning){
@@ -5423,31 +5292,31 @@ LESPremixed2D_cState FluxRoe_x(const LESPremixed2D_pState &Wl,
       wavespeeds = HartenFixAbs(lambdas_a,
 				lambdas_l,
 				lambdas_r);
-          
-     int NUM;
-     if(flow_type_flag == FLOWTYPE_LAMINAR_FSD ||
-        flow_type_flag == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-        flow_type_flag == FLOWTYPE_TURBULENT_LES_FSD_K ) {
- 	NUM = Wl.NUM_VAR_LESPREMIXED2D-Wl.ns;
+                
+      int NN;
+  if(flow_type_flag == FLOWTYPE_LAMINAR_C_FSD ||
+     flow_type_flag == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+     flow_type_flag == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
+	NN = Wa.NUM_VAR_LESPREMIXED2D-Wa.ns+1;
       }else{
-        NUM = Wl.NUM_VAR_LESPREMIXED2D;
-      }
-
-      DenseMatrix P(NUM,NUM);     //COULD BE STORED IN CLASS AS STATIC AND REUSED REDUCING OVERHEAD???
+        NN = Wa.NUM_VAR_LESPREMIXED2D;
+     }
+      
+      DenseMatrix P(NN-1,NN-1);     //COULD BE STORED IN CLASS AS STATIC AND REUSED REDUCING OVERHEAD???
       /* Evaluate the low-Mach-number local preconditioner for the Roe-averaged state. */  
     
       Wa.Low_Mach_Number_Preconditioner(P,flow_type_flag,deltax);
-                                                                                     
+      
       /* Determine the intermediate state flux. */                                                
       Flux = HALF*(Wl.Fx()+Wr.Fx()); 
       LESPremixed2D_cState Flux_dissipation(ZERO);   
-    
-      for ( int i = 1 ; i < NUM ; ++i ) {
+
+      for ( int i = 1 ; i < NN ; ++i ) {
 	Flux_dissipation -= HALF*wavespeeds[i]*(Wa.lp_x_precon(i,MR2a)*dWrl)*Wa.rc_x_precon(i,MR2a);
       }
   
-      for ( int i = 1 ; i < NUM ; ++i ) {
-	for ( int j = 1 ; j < NUM ; ++j ) {
+      for ( int i = 1 ; i < NN ; ++i ) {
+	for ( int j = 1 ; j < NN ; ++j ) {
 	  Flux[i] += P(i-1,j-1)*Flux_dissipation[j]; // Add preconditioned upwind dissipation flux.
 	} 
       } 
@@ -5630,10 +5499,12 @@ LESPremixed2D_cState FluxAUSMplus_up(const LESPremixed2D_pState &Wl,
       for(int i=0; i<Wl.nscal; ++i) Convected_Quantities.rhoscalar[i] = Wl.scalar[i];
     }
 
+    if(Wl.Scal_sys.scalar_flag != LES_C_FSD &&
+       Wl.Scal_sys.scalar_flag != LES_C_FSD_K) {
     for(int i=0; i<Wl.ns; ++i){
       Convected_Quantities.rhospec[i].c = Wl.spec[i].c;
     }
-    
+    }    
   } else {
     Convected_Quantities.rho = ONE;
     Convected_Quantities.rhov.x = Wr.v.x; 
@@ -5647,7 +5518,6 @@ LESPremixed2D_cState FluxAUSMplus_up(const LESPremixed2D_pState &Wl,
     for(int i=0; i<Wr.ns; ++i){
       Convected_Quantities.rhospec[i].c = Wr.spec[i].c;
     }
-
   } //end if
 
   Flux = mass_flux_half*Convected_Quantities;
@@ -5833,10 +5703,10 @@ LESPremixed2D_cState Viscous_Flux_n(LESPremixed2D_pState &W,
   //Thermal conduction, q = - kappa * grad(T)
   if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
       Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K ||
-      Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-      Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K) {
+      Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+      Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
  
-    double mut = W.mu_t(strain_rate);
+    double mut = W.mu_t(strain_rate,Flow_Type);
     double Dm_t = W.Dm_turb(mut);
 
     U.theta = - mut*W.Cp()/W.Pr_turb()*grad_T;
@@ -5847,7 +5717,7 @@ LESPremixed2D_cState Viscous_Flux_n(LESPremixed2D_pState &W,
     }
     
     //SFS stresses 
-    W.SFS_Stress(strain_rate); 
+    W.SFS_Stress(strain_rate,Flow_Type); 
     U.lambda = W.lambda;
 
   } 

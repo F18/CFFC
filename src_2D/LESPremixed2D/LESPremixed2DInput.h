@@ -486,14 +486,12 @@ inline ostream &operator << (ostream &out_file,
       out_file << "\n  -> Spectrum: " << IP.Spectrum_Type;  
     } else if (IP.FlowType == FLOWTYPE_TURBULENT_LES_TF_K) {
       out_file << "\n  -> Turbulent flow: Thickened flame LES with k-equation ";
-    } else if (IP.FlowType == FLOWTYPE_LAMINAR_FSD) {
-      out_file << "\n  -> Laminar flow: flame surface density model ";
-    } else if (IP.FlowType == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY) {    
-      out_file << "\n  -> Turbulent flow: LES with flame surface density model and Smagorinsky model ";
-      out_file << "\n  -> Smagorinsky constant " << IP.Smagorinsky_Constant;
-      out_file << "\n  -> Spectrum: " << IP.Spectrum_Type; 
-    } else if (IP.FlowType == FLOWTYPE_TURBULENT_LES_FSD_K) {
-      out_file << "\n  -> Turbulent flow: LES with flame surface density model and k-equation ";
+    } else if (IP.FlowType == FLOWTYPE_LAMINAR_C_FSD) {
+      out_file << "\n  -> Laminar flow: progress variable and flame surface density ";
+    } else if (IP.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) {
+      out_file << "\n  -> Turbulent flow: progress variable and flame surface density with Smagorinsky model";
+    } else if (IP.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
+      out_file << "\n  -> Turbulent flow: progress variable, flame surface density with k equation ";
     } else if (IP.FlowType == FLOWTYPE_TURBULENT_DNS) {
       out_file << "\n  -> Turbulent flow: DNS ";
     }

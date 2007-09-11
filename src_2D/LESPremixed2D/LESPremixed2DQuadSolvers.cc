@@ -181,6 +181,7 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 						 List_of_Global_Solution_Blocks,
 						 List_of_Local_Solution_Blocks);
 
+ 
   
   if (Local_SolnBlk == NULL){ return (1); }
 
@@ -385,7 +386,7 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
           << QuadTree.efficiencyRefinement() << "\n"; 
      cout.flush();
   } /* endif */
-
+ 
   /***********************************************************************	
    MORTON ORDERING of initial solution blocks 
   (should be meshed with AMR, ie when Refine_Grid is done call the ordering)
@@ -418,7 +419,7 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 			      Input_Parameters, 
 			      List_of_Local_Solution_Blocks);
   } 
-
+  
   /****************************************************************************
    *********************** MAIN SOLVER ****************************************
    Solve IBVP or BVP for conservation form of 2D Axisymmetric multispecies 
@@ -461,7 +462,6 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     if (Input_Parameters.i_ICs != IC_RESTART) {
       Input_Parameters.first_step = first_step;
     }
-
     if (CFFC_Primary_MPI_Processor()) {
       error_flag = Open_Progress_File(residual_file,
 				      Input_Parameters.Output_File_Name,
@@ -479,8 +479,8 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       if( Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
           Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_K ||
           Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_NO_MODEL ||
-          Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-          Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_FSD_K ||
+          Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+          Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
           Input_Parameters.i_ICs == IC_HOMOGENEOUS_TURBULENCE ){
 
 	error_flag = Open_Energy_File(energy_file,
@@ -500,8 +500,8 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
     CFFC_Broadcast_MPI(&error_flag, 1);
     if (error_flag) return (error_flag);
-    processor_cpu_time.reset();
     
+    processor_cpu_time.reset();
     /**************************************************************************
      Perform required number of iterations (time steps). 
     **************************************************************************/ 
@@ -606,6 +606,7 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	  *************************************************************************/
 
 	  dTime = CFL(Local_SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
+
 	  if (!Input_Parameters.Dual_Time_Stepping) {
 	    // Find global minimum time step for all processors.
 	    dTime = CFFC_Minimum_MPI(dTime);
@@ -727,8 +728,8 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	    //calculate the turbulence kinetic energy and enstrophy for unsteady turbulent flows
 	    if (Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
 		Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_K ||
-                Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-                Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_FSD_K ||
+                Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+                Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
                 Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_NO_MODEL ||
 		Input_Parameters.i_ICs == IC_HOMOGENEOUS_TURBULENCE) {
 
@@ -760,8 +761,8 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 
 	      if (Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
 		  Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_K ||
-                  Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-                  Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_FSD_K ||
+                  Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+                  Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
                   Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_NO_MODEL ||
                   Input_Parameters.i_ICs == IC_HOMOGENEOUS_TURBULENCE ){
             
@@ -830,7 +831,6 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
             Update solution for next time step using a multistage
             time stepping scheme. 
 	  ***************************************************************************/
-
 	  for ( i_stage  = 1 ; i_stage <= Input_Parameters.N_Stage ; ++i_stage ) {
 	    // 1. Exchange solution information between neighbouring blocks.
 	    error_flag = Send_All_Messages(Local_SolnBlk, 
@@ -843,7 +843,6 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 		   << ".\n";
 	      cout.flush();
 	    } /* endif */
-
 	    // Reduce message passing error flag to other MPI processors.
 	    error_flag = CFFC_OR_MPI(error_flag);
 	    if (error_flag) return (error_flag);
@@ -852,10 +851,9 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	    /************* BOUNDARY CONDITIONS *********************************/
 	    // 2. Apply boundary conditions for stage.
 	    BCs(Local_SolnBlk, List_of_Local_Solution_Blocks,Input_Parameters);
-	    
 	    /*************** UPDATE SOLUTION ************************************/
 	    // 3. Determine solution residuals for stage.
-	    
+
 	    error_flag = dUdt_Multistage_Explicit(Local_SolnBlk,
 						  List_of_Global_Solution_Blocks,
 						  List_of_Local_Solution_Blocks,
@@ -870,7 +868,7 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	    
 	    error_flag = CFFC_OR_MPI(error_flag);
 	    if (error_flag) return (error_flag);
-	    
+
 	    // 4. Send boundary flux corrections at block interfaces with resolution changes.
 	    error_flag = Send_Conservative_Flux_Corrections(Local_SolnBlk, 
 							    List_of_Local_Solution_Blocks,
@@ -883,14 +881,11 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	    } /* endif */
 	    error_flag = CFFC_OR_MPI(error_flag);
 	    if (error_flag) return (error_flag);
-	    
-	
 	    // 5. Apply boundary flux corrections to ensure that method is conservative.
 	    Apply_Boundary_Flux_Corrections_Multistage_Explicit(Local_SolnBlk, 
 								List_of_Local_Solution_Blocks,
 								Input_Parameters,
 								i_stage);
-	 
 	    // 6. Smooth the solution residual using implicit residual smoothing. */
 	    if (Input_Parameters.Residual_Smoothing) {
               Residual_Smoothing(Local_SolnBlk,
@@ -898,13 +893,11 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
                                  Input_Parameters,
                                  i_stage);
 	    } 
-	    
 	    // 7. Update solution for stage.
 	    error_flag = Update_Solution_Multistage_Explicit(Local_SolnBlk, 
 							     List_of_Local_Solution_Blocks,
 							     Input_Parameters,
 							     i_stage);
-	    
 	    if (error_flag) {
 	      cout << "\n LESPremixed2D ERROR: LESPremixed2D solution update error on processor "
 		   << List_of_Local_Solution_Blocks.ThisCPU
@@ -970,8 +963,8 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
         if (Input_Parameters.Dual_Time_Stepping ||
             (Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
 	     Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_K ||
-             Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-             Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_FSD_K ||
+             Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+             Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
 	     Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_NO_MODEL)) {
 
 	  TKEold = energy;
@@ -983,8 +976,8 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 
      if (Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
 	  Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_K ||
-          Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-          Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_FSD_K ||
+          Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+          Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
 	  Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_NO_MODEL) {
 
 	flame_x = Average_Flame_Position(Local_SolnBlk, 

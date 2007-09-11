@@ -62,9 +62,9 @@ void SemiImplicitBlockJacobi(DenseMatrix &dSdU,
   
   if( (SolnBlk.Axisymmetric && SolnBlk.Flow_Type != FLOWTYPE_INVISCID) ||
       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K ||
-      SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K) { 
+      SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) { 
 
 #ifdef THICKENED_FLAME_ON
     int NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-3; 
@@ -72,11 +72,12 @@ void SemiImplicitBlockJacobi(DenseMatrix &dSdU,
     int NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-1;
 #endif
 
-    if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-         SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-         SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ){
-    NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-SolnBlk.W[0][0].ns;
+    if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+         SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+         SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ){
+      NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-SolnBlk.W[0][0].ns;
     }
+
     DenseMatrix dRdW(NUM_VAR_LESPREMIXED2D,NUM_VAR_LESPREMIXED2D,ZERO);  
     
     // Add Source Jacobians (viscous axisymmetric, turbulence)
@@ -84,12 +85,13 @@ void SemiImplicitBlockJacobi(DenseMatrix &dSdU,
     
     DenseMatrix dWdU(NUM_VAR_LESPREMIXED2D,NUM_VAR_LESPREMIXED2D,ZERO);     
     // Transformation Jacobian 
-    SolnBlk.W[ii][jj].dWdU(dWdU, SolnBlk.Flow_Type); 
-    //    SolnBlk.Uo[ii][jj].W().dWdU(dWdU, SolnBlk.Flow_Type); 
+    SolnBlk.Uo[ii][jj].W().dWdU(dWdU, SolnBlk.Flow_Type); 
     dSdU += dRdW*dWdU;
   }
+
   // Add Source Jacobians (inviscid axisymmetric, chemistry, gravity)
   SemiImplicitBlockJacobi_dSdU(dSdU,SolnBlk,EXPLICIT,ii,jj);                 
+
 }
 
 void SemiImplicitBlockJacobi_dSdW(DenseMatrix &dSdW,
@@ -118,9 +120,9 @@ void SemiImplicitBlockJacobi_dSdW(DenseMatrix &dSdW,
   //
   ////////////////////////////////////////////////////////////////
 
-   if(SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_FSD ||
-      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ){    
+   if(SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ){    
      dS_tdW(dSdW,SolnBlk, d_dWdx_dW_C, d_dWdy_dW_C, ii,jj);
    }
   
@@ -148,9 +150,9 @@ void SemiImplicitBlockJacobi_dSdU(DenseMatrix &dSdU,
   
   //Add Jacobian for finite-rate chemistry source terms  
   if (SolnBlk.W[ii][jj].React.reactset_flag != NO_REACTIONS &&
-      SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_FSD &&
-      SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY &&
-      SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_FSD_K){    
+      SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_C_FSD &&
+      SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY &&
+      SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_C_FSD_K){    
     SolnBlk.W[ii][jj].dSwdU(dSdU, SolnBlk.Flow_Type,solver_type);
   }  
 
@@ -1673,11 +1675,29 @@ void d_dWd_dW_Center(double &d_dWdx_dW_C, double &d_dWdy_dW_C,
 int dS_tdW(DenseMatrix &dStdW,  LESPremixed2D_Quad_Block &SolnBlk,
 	   double &d_dWdx_dW_C, double &d_dWdy_dW_C,
 	   const int &ii, const int &jj){
+  dStdW.zero();
   if ( SolnBlk.W[ii][jj].scalar[0]<0.99 && SolnBlk.W[ii][jj].scalar[0]>0.01 &&  
        SolnBlk.dWdx[ii][jj].scalar[0] !=ZERO && SolnBlk.dWdy[ii][jj].scalar[0] != ZERO ) {
 
-  if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_FSD ){
+  if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ){
+    
+    double t3,t4,t5,t6,t7,t9,t12,t13,t16,t18;
+    double tau_fsd = SolnBlk.W[ii][jj].HeatRelease_Parameter();
 
+      t3 = SolnBlk.W[ii][jj].reactants_den*SolnBlk.W[ii][jj].laminar_speed*(1.0+tau_fsd);
+      t4 = SolnBlk.dWdx[ii][jj].scalar[0];//cx(c);
+      t5 = t4*t4;
+      t6 = SolnBlk.dWdy[ii][jj].scalar[0];//cy(c);
+      t7 = t6*t6;
+      t9 = sqrt(t5+t7);
+      t12 = 1.0+tau_fsd*SolnBlk.W[ii][jj].scalar[0];//c;
+      t13 = t12*t12;
+      t16 = d_dWdx_dW_C;//diff(cx(c),c);
+      t18 = d_dWdy_dW_C;//diff(cy(c),c);
+
+      dStdW(4,4) = t3/t9/t13*(t4*t16+t6*t18)-2.0*t3*t9/t13/t12*tau_fsd;
+  
+      /*
     //counter-gradient in C
     double t1,t3,t4,t6,t7;
     double t11,t12,t13,t14,t19;
@@ -1756,10 +1776,97 @@ t59*t123-t64*t127)-t56*(-t27*t58*t123+t12*t134*t123*t100-t28*t58*t127+t13*t134*
 t127*t100)-t3*SolnBlk.W[ii][jj].rho*SolnBlk.W[ii][jj].scalar[1]*(-2.0*t59*t27+t34*t134*t100-2.0*t64*t28+t35*t134*t100);
       dStdW(5,5) = t52*SolnBlk.W[ii][jj].rho-t56*(-t59*(t163*SolnBlk.W[ii][jj].rho+t19)-t64*(t167*SolnBlk.W[ii][jj].rho+t20))-t3*SolnBlk.W[ii][jj].rho
 *t73;
+*/
+  }else if ( SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY  ) {
 
-  }else if ( SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY ||
-             SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K  ) {
+    double t1,t4,t5,t6,t7,t8,t9;
+    double t10,t12,t14,t15,t17,t18,t19;
+    double t20,t21,t25,t26,t28;
+    double t32,t33,t34,t35,t36,t37;
+    double t41,t42,t43,t49;
+    double t52,t55,t56,t57;
+    double t60,t61,t63,t64,t69;
+    double t71,t77;
+    double t80,t85,t86,t88,t89;
+    double t92,t94,t95,t98;
+    double t101,t122,t124,t127,t129;
+    double t136,t163,t165,t171,t175;
 
+    double tau_fsd = SolnBlk.W[ii][jj].HeatRelease_Parameter();
+    //    double k_fsd = SolnBlk.W[ii][jj].SFS_Kinetic_Energy_Fsd(SolnBlk.dWdx[ii][jj],SolnBlk.dWdy[ii][jj],SolnBlk.Flow_Type,SolnBlk.Grid.Cell[ii][jj].A);
+    double filter = SolnBlk.W[ii][jj].filter_width;
+    double kappa_fsd = SolnBlk.W[ii][jj].Efficiency_Function_Fsd(SolnBlk.dWdx[ii][jj],SolnBlk.dWdy[ii][jj],SolnBlk.Flow_Type,SolnBlk.Grid.Cell[ii][jj].A); 
+    double beta_fsd=1.0;
+
+      t1 = SolnBlk.W[ii][jj].reactants_den*SolnBlk.W[ii][jj].laminar_speed;
+      t4 = SolnBlk.dWdx[ii][jj].scalar[0];//cx(c);
+      t5 = t4*t4;
+      t6 = SolnBlk.dWdy[ii][jj].scalar[0];//cy(c);
+      t7 = t6*t6;
+      t8 = t5+t7;
+      t9 = 1/t8;
+      t10 = t5*t9;
+      t12 = t7*t9;
+      t14 = 2.0/3.0-2.0/3.0*t10+t12/3.0;
+      t15 = SolnBlk.dWdx[ii][jj].v.x;//Ux(U);
+      t17 = t4*t9;
+      t18 = SolnBlk.dWdy[ii][jj].v.x;//Uy(U);
+      t19 = SolnBlk.dWdx[ii][jj].v.y;//Vx(V);
+      t20 = t18+t19;
+      t21 = t6*t20;
+      t25 = 2.0/3.0-2.0/3.0*t12+t10/3.0;
+      t26 = SolnBlk.dWdy[ii][jj].v.y;//Vy(V);
+      t28 = t14*t15-t17*t21+t25*t26;
+      t32 = SolnBlk.W[ii][jj].laminar_speed*(1.0+tau_fsd*SolnBlk.W[ii][jj].scalar[0]);//c);
+      t33 = sqrt(t8);
+      t34 = 1/t33;
+      t35 = t4*t34;
+      t36 = SolnBlk.dWdx[ii][jj].scalar[1];//Fsdx(Fsd);
+      t37 = d_dWdx_dW_C;//diff(rhox(rho),rho);
+      t41 = t6*t34;
+      t42 = SolnBlk.dWdy[ii][jj].scalar[1];//Fsdy(Fsd);
+      t43 = d_dWdy_dW_C;//diff(rhoy(rho),rho);
+      t49 = SolnBlk.W[ii][jj].laminar_speed*tau_fsd;
+      t52 = -t5*t34-t7*t34;
+      t55 = sqrt(SolnBlk.W[ii][jj].k());
+      t56 = kappa_fsd*t55;
+      t57 = 1/filter;
+      t60 = beta_fsd*SolnBlk.W[ii][jj].laminar_speed;
+      t61 = SolnBlk.W[ii][jj].scalar[1]*SolnBlk.W[ii][jj].scalar[1];//Fsd*Fsd;
+      t63 = 1.0-SolnBlk.W[ii][jj].scalar[0];//c;
+      t64 = 1/t63;
+      t69 = d_dWdx_dW_C;//diff(Ux(U),U);
+      t71 = d_dWdy_dW_C;//diff(Uy(U),U);
+      t77 = d_dWdx_dW_C;//diff(Vx(V),V);
+      t80 = d_dWdy_dW_C;//diff(Vy(V),V);
+      t85 = d_dWdx_dW_C;//diff(cx(c),c);
+      t86 = t17*t85;
+      t88 = t8*t8;
+      t89 = 1/t88;
+      t92 = d_dWdy_dW_C;//diff(cy(c),c);
+      t94 = t4*t85+t6*t92;
+      t95 = 2.0*t5*t89*t94;
+      t98 = t6*t9*t92;
+      t101 = 2.0*t7*t89*t94;
+      t122 = SolnBlk.dWdx[ii][jj].rho;//rhox(rho);
+      t124 = t36*SolnBlk.W[ii][jj].rho+t122*SolnBlk.W[ii][jj].scalar[1];
+      t127 = SolnBlk.dWdy[ii][jj].rho;//rhoy(rho);
+      t129 = t42*SolnBlk.W[ii][jj].rho+t127*SolnBlk.W[ii][jj].scalar[1];
+      t136 = 1/t33/t8;
+      t163 = SolnBlk.W[ii][jj].rho*SolnBlk.W[ii][jj].rho;
+      t165 = t63*t63;
+      t171 = d_dWdx_dW_C;//diff(Fsdx(Fsd),Fsd);
+      t175 = d_dWdy_dW_C;//diff(Fsdy(Fsd),Fsd);
+      dStdW(4,0) = t1*SolnBlk.W[ii][jj].scalar[1];
+      dStdW(4,5) = t1*SolnBlk.W[ii][jj].rho;
+      dStdW(5,0) = t28*SolnBlk.W[ii][jj].scalar[1]-t32*(-t35*(t36+t37*SolnBlk.W[ii][jj].scalar[1])-t41*(t42+t43*SolnBlk.W[ii][jj].scalar[1]))-t49*SolnBlk.W[ii][jj].scalar[1]*t52+t56*SolnBlk.W[ii][jj].scalar[1]*t57-2.0*t60*t61*SolnBlk.W[ii][jj].rho*t64;
+      dStdW(5,1) = (t14*t69-t17*t6*t71)*SolnBlk.W[ii][jj].scalar[1]*SolnBlk.W[ii][jj].rho;
+      dStdW(5,2) = (-t17*t6*t77+t25*t80)*SolnBlk.W[ii][jj].scalar[1]*SolnBlk.W[ii][jj].rho;
+      dStdW(5,4) = ((-4.0/3.0*t86+2.0/3.0*t95+2.0/3.0*t98-t101/3.0)*t15-t85*t9
+*t21+2.0*t4*t89*t21*t94-t17*t92*t20+(-4.0/3.0*t98+2.0/3.0*t101+2.0/3.0*t86-t95/3.0)*t26)*SolnBlk.W[ii][jj].scalar[1]*SolnBlk.W[ii][jj].rho-t49*(-t35*t124-t41*t129)-t32*(-t85*t34*t124+t4*t136*t124*t94-t92*t34*t129+t6*t136*t129*t94)-t49*SolnBlk.W[ii][jj].rho*SolnBlk.W[ii][jj].scalar[1]*(-2.0*t35*t85+t5*t136*t94-2.0*t41*t92+t7*t136*t94)-t60*t61*t163/t165;
+      dStdW(5,5) = t28*SolnBlk.W[ii][jj].rho-t32*(-t35*(t171*SolnBlk.W[ii][jj].rho+t122)-t41*(t175*SolnBlk.W[ii][jj].rho+t127))-t49*SolnBlk.W[ii][jj].rho*t52+t56*SolnBlk.W[ii][jj].rho*t57-2.0*t60*SolnBlk.W[ii][jj].scalar[1]*t163*t64;
+
+  /*
     //counter-gradient in C
     double t1,t3,t4,t6,t7;
     double t11,t12,t13,t14,t19;
@@ -1779,7 +1886,7 @@ t127*t100)-t3*SolnBlk.W[ii][jj].rho*SolnBlk.W[ii][jj].scalar[1]*(-2.0*t59*t27+t3
     double tau_fsd = SolnBlk.W[ii][jj].HeatRelease_Parameter();
     double lam_speed_fsd = SolnBlk.W[ii][jj].laminar_speed;
     double rho_r = SolnBlk.W[ii][jj].reactants_den;
-    double k_fsd = SolnBlk.W[ii][jj].SFS_Kinetic_Energy_Fsd(SolnBlk.dWdx[ii][jj],SolnBlk.dWdy[ii][jj],SolnBlk.Flow_Type);
+    //    double k_fsd = SolnBlk.W[ii][jj].SFS_Kinetic_Energy_Fsd(SolnBlk.dWdx[ii][jj],SolnBlk.dWdy[ii][jj],SolnBlk.Flow_Type);
     double filter = SolnBlk.W[ii][jj].filter_width;
     double kappa_fsd = SolnBlk.W[ii][jj].Efficiency_Function_Fsd(SolnBlk.dWdx[ii][jj],SolnBlk.dWdy[ii][jj],SolnBlk.Flow_Type); 
     double beta_fsd=1.0;
@@ -1822,7 +1929,7 @@ t127*t100)-t3*SolnBlk.W[ii][jj].rho*SolnBlk.W[ii][jj].scalar[1]*(-2.0*t59*t27+t3
       t68 = t13*t62;
       t69 = SolnBlk.dWdy[ii][jj].scalar[1];//Fsdy(Fsd);
       t77 = -t34*t62-t35*t62;
-      t80 = sqrt(k_fsd);
+      t80 = sqrt(SolnBlk.W[ii][jj].k());
       t81 = kappa_fsd*t80;
       t82 = 1/filter;
       t85 = beta_fsd*lam_speed_fsd;
@@ -1860,8 +1967,8 @@ t109-t117/3.0)*t54)*SolnBlk.W[ii][jj].scalar[1]*SolnBlk.W[ii][jj].rho-t3*(-t63*t
 t116-2.0*t68*t28+t35*t156*t116)-t85*t86*t183/t185;
       dStdW(5,5) = t56*SolnBlk.W[ii][jj].rho-t60*(-t63*(t191*SolnBlk.W[ii][jj].rho+t19)-t68*(t195*SolnBlk.W[ii][jj].rho+t20))-t3*SolnBlk.W[ii][jj].rho
 *t77+t81*SolnBlk.W[ii][jj].rho*t82-2.0*t85*SolnBlk.W[ii][jj].scalar[1]*t183*t88;
-
-  }else if ( SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_FSD_K ) {
+*/
+  }else if ( SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
 
     //Simplified M with rho
  
@@ -1880,7 +1987,7 @@ t116-2.0*t68*t28+t35*t156*t116)-t85*t86*t183/t185;
     double t206,t211,t214,t216,t219,t225,t226,t236,t255,t258,t264;
 
     double tau_fsd = SolnBlk.W[ii][jj].HeatRelease_Parameter();
-    double k_fsd = SolnBlk.W[ii][jj].SFS_Kinetic_Energy_Fsd(SolnBlk.dWdx[ii][jj],SolnBlk.dWdy[ii][jj],SolnBlk.Flow_Type);
+    //    double k_fsd = SolnBlk.W[ii][jj].SFS_Kinetic_Energy_Fsd(SolnBlk.dWdx[ii][jj],SolnBlk.dWdy[ii][jj],SolnBlk.Flow_Type);
     double filter = SolnBlk.W[ii][jj].filter_width;
     double kappa_fsd = SolnBlk.W[ii][jj].Efficiency_Function_Fsd(SolnBlk.dWdx[ii][jj],SolnBlk.dWdy[ii][jj],SolnBlk.Flow_Type); 
     double beta_fsd=1.0;

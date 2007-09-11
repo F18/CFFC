@@ -3162,12 +3162,12 @@ int Parse_Next_Input_Control_Parameter(LESPremixed2D_Input_Parameters &IP) {
          IP.FlowType = FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY;
        } else if (strcmp(IP.Flow_Type, "Turbulent-LES-TF-k") == 0) {
          IP.FlowType = FLOWTYPE_TURBULENT_LES_TF_K;
-       } else if (strcmp(IP.Flow_Type, "Laminar-FSD") == 0) {
-         IP.FlowType = FLOWTYPE_LAMINAR_FSD;
-       } else if (strcmp(IP.Flow_Type, "Turbulent-LES-FSD-Smagorinsky") == 0) {
-         IP.FlowType = FLOWTYPE_TURBULENT_LES_FSD_SMAGORINSKY;
-       } else if (strcmp(IP.Flow_Type, "Turbulent-LES-FSD-k") == 0) {
-         IP.FlowType = FLOWTYPE_TURBULENT_LES_FSD_K;
+       } else if (strcmp(IP.Flow_Type, "Laminar-C-FSD") == 0) {
+         IP.FlowType = FLOWTYPE_LAMINAR_C_FSD;
+       } else if (strcmp(IP.Flow_Type, "Turbulent-LES-C-FSD-Smagorinsky") == 0) {
+         IP.FlowType = FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY;
+       } else if (strcmp(IP.Flow_Type, "Turbulent-LES-C-FSD-K") == 0) {
+         IP.FlowType = FLOWTYPE_TURBULENT_LES_C_FSD_K;
        } else if (strcmp(IP.Flow_Type, "Turbulent-DNS") == 0) {
 	 IP.FlowType = FLOWTYPE_TURBULENT_DNS;
        } else {
