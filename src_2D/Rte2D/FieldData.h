@@ -36,92 +36,14 @@
 /********************************************************
  * Struct definitions                                   *
  ********************************************************/
-struct ConstantFieldParams { double val; };
-static const ConstantFieldParams cfDefValues = { 0 };
+template<class Soln_State> 
+struct ConstantFieldParams { Soln_State U; };
 
 template<class Quad_Soln_Block> 
 struct DiscreteFieldParams {   
-  AdaptiveBlockResourceList    *List_of_Global_Solution_Blocks;
-  AdaptiveBlock2D_List         *List_of_Local_Solution_Blocks;
-  Quad_Soln_Block             **Local_SolnBlk;
-  int Number_of_Blocks_Idir;   // number of blocks in i-dir
-  int Number_of_Blocks_Jdir;   // number of blocks in j-dir
-  // bool isNodalValues;       // a flag, true if valarray is defined at the 'Grid' nodes
-  //                           // or false if defined at cell centers.
-};
-static const DiscreteFieldParams<class Quad_Soln_Block> dfDefValues = { NULL, NULL, NULL, NULL, 0, 0 };
-
-
-
-/***********************************************************************/
-/*!
- * Class: TFunctor
- *
- * @brief Abstract Base Class.
- *
- * \verbatim
- * Member functions
- *     operator() -- Return field data at specific position
- *     Call()     -- Return field data at specific position
- * \endverbatim
- */
-/***********************************************************************/
-class TFunctor {
- public:
-
-  // two possible functions to call member function. virtual cause derived
-  // classes will use a pointer to an object and a pointer to a member function
-  // to make the function call
-  virtual double operator()(const Vector2D &r)=0;  // call using operator
-  virtual double Call(const Vector2D &r)=0;        // call using function
-};
-
-
-/***********************************************************************/
-/*!
- * Class: TSpecificFunctor
- *
- * @brief Derived template class.
- *
- * \verbatim
- * Objects
- *     fpt        -- function pointer
- *     pt2Object  -- pointer to object
- *
- * Member functions
- *     operator() -- Return field data at specific position
- *     Call()     -- Return field data at specific position
- * \endverbatim
- */
-/***********************************************************************/
-template <class TClass> class TSpecificFunctor : public TFunctor {
- private:
-  double (TClass::*fpt)(const Vector2D &);   // pointer to member function
-  TClass* pt2Object;                         // pointer to object
-  
- public:
-  
-  // constructor - uninitialized
-  TSpecificFunctor() : pt2Object(NULL), fpt(NULL) {}
-
-  // constructor - takes pointer to an object and pointer to a member and stores
-  // them in two private variables
-  TSpecificFunctor(TClass* _pt2Object, double (TClass::*_fpt)(const Vector2D &r))
-  { pt2Object = _pt2Object;  fpt=_fpt; };
-
-  // initializer
-  void Set(TClass* _pt2Object, double (TClass::*_fpt)(const Vector2D &r))
-  { pt2Object = _pt2Object;  fpt=_fpt; };
-
-
-  // override operator "()"
-  virtual double operator()(const Vector2D &r)
-  { return (*pt2Object.*fpt)(r);};              // execute member function
-  
-  // override function "Call"
-  virtual double Call(const Vector2D &r)
-  { return (*pt2Object.*fpt)(r);};             // execute member function
-
+  AdaptiveBlockResourceList const *List_of_Global_Solution_Blocks;
+  AdaptiveBlock2D_List const      *List_of_Local_Solution_Blocks;
+  Quad_Soln_Block const          **Local_SolnBlk;
 };
 
 
@@ -142,7 +64,7 @@ template <class TClass> class TSpecificFunctor : public TFunctor {
  * \endverbatim
  */
 /***********************************************************************/
-template<class Quad_Soln_Block> 
+template<class Soln_State, class Quad_Soln_Block> 
 class FieldData {
 
  private:
@@ -150,30 +72,56 @@ class FieldData {
   //
   //objects
   //
-  ConstantFieldParams CF;
+  // data structs
+  ConstantFieldParams<Soln_State> CF;
   DiscreteFieldParams<Quad_Soln_Block> DF;
+
+  // pointer to member function
+  Soln_State (FieldData::*fpt)(const Vector2D &);
+
 
  public:
 
   //
   // constructors
   //
-  FieldData() : CF(cfDefValues), DF(dfDefValues) {};
+  FieldData() {
+    CF.U.Zero();
+    DF.List_of_Global_Solution_Blocks = NULL;
+    DF.List_of_Local_Solution_Blocks = NULL; 
+    DF.Local_SolnBlk = NULL; 
+  };
   
-  void SetConstantParams( const struct ConstantFieldParams params ) 
-  { CF = params; };
+  void SetConstantParams( const struct ConstantFieldParams<Soln_State> params ) 
+  { 
+    CF = params; 
+    fpt = &FieldData<Soln_State,Medium2D_Quad_Block>::Constant;
+  };
   
   void SetDiscreteParams( const struct DiscreteFieldParams<Quad_Soln_Block> params ) 
-  { DF = params; };
+  { 
+    DF = params; 
+    fpt = &FieldData<Soln_State,Medium2D_Quad_Block>::Interpolate;
+  };
+
+  //
+  // Functor overloads
+  //
+  // Two possible functions to call member function:
+  // 1. call using operator
+  Soln_State operator()(const Vector2D &r) { return (*this.*fpt)(r); };   
+
+  // 2. call using function
+  Soln_State Call(const Vector2D &r) { return (*this.*fpt)(r); };   
 
   
   //
   // Functions to describe the field
   //
   // return a constant field
-  double Constant(const Vector2D &r) { return CF.val; };
+  Soln_State Constant(const Vector2D &r) { return CF.U; };
   // return a value interpolated from a 2d grid
-  double Interpolate(const Vector2D &r);
+  Soln_State Interpolate(const Vector2D &r);
 };
 
 
@@ -181,29 +129,30 @@ class FieldData {
  * Compute the value at the specified location by       *
  * interpolating from an existing grid.                 *
  ********************************************************/
-template <class Quad_Soln_Block>
-inline double FieldData<Quad_Soln_Block> :: Interpolate(const Vector2D &r) 
+template <class Soln_State, class Quad_Soln_Block>
+inline Soln_State FieldData<Soln_State,Quad_Soln_Block> :: Interpolate(const Vector2D &r) 
 {
-  /*
+
   // declares
   int err;
-  int ib, jb;   // block indices
+  int nb;       // block index
   int ic, jc;   // cell indices
   double value; // the value we are looking for!!!!
   
   // check to make sure parameter pointers have been properly defined
-  if (DF.Grid==NULL || DF.valarray==NULL) {
-    cerr << "FieldData::Interpolate() - Need to define grid/valarray.\n";
+  if ( DF.List_of_Global_Solution_Blocks == NULL || 
+       DF.List_of_Local_Solution_Blocks == NULL ||
+       DF.Local_SolnBlk ==NULL ) {
+    cerr << "FieldData::Interpolate() - Need to define parameter pointers.\n";
     exit(-1);
   } // endif
-
 
   //
   // search the multi-block grid to determine the containing block
   //
-  err =  Search_Multi_Block_Grid(DF.Grid,
-				 DF.Number_of_Blocks_Idir,
-				 DF.Number_of_Blocks_Jdir,
+  err =  Search_Multi_Block_Grid(DF.List_of_Global_Solution_Blocks,
+				 DF.List_of_Local_Solution_Blocks,
+				 ,
 				 r,
 				 ib, jb);
   // if there was an error, exit
@@ -243,8 +192,7 @@ inline double FieldData<Quad_Soln_Block> :: Interpolate(const Vector2D &r)
 
   // return the value
   return value;
-
-  */
+*/
 }
 
 #endif //_FIELD_DATA_INCLUDED

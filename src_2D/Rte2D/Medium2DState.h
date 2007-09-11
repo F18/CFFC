@@ -81,12 +81,7 @@ class Medium2D_State {
  private:
   
   //@{ @name Field data:
-  static FieldData<Medium2D_Quad_Block> *AbsorptionData;  //!< container class for absorbsion data
-  static FieldData<Medium2D_Quad_Block> *ScatterData;     //!< container class for scatter data
-  static FieldData<Medium2D_Quad_Block> *BlackbodyData;   //!< container class for blackbody data
-  static TSpecificFunctor< FieldData<Medium2D_Quad_Block> > *func_kappa; //!< functor to return absorption coef
-  static TSpecificFunctor< FieldData<Medium2D_Quad_Block> > *func_sigma; //!< functor to return scatter coef
-  static TSpecificFunctor< FieldData<Medium2D_Quad_Block> > *func_Ib;    //!< functor to return blackbody
+  static FieldData<Medium2D_State, Medium2D_Quad_Block> *Field;  //!< container class for field data
   //@}
 
 
@@ -156,14 +151,6 @@ class Medium2D_State {
   //! Return extinction coefficient
   double beta(const int &v) const { return (kappa[v] + sigma[v]); }
 
-  //! Return the state field
-  double AbsorptionField(const Vector2D & r, const int &v)
-  { return func_kappa[v](r); }
-  double ScatterField(const Vector2D & r, const int &v)
-  { return func_sigma[v](r); }
-  double BlackbodyField(const Vector2D & r, const int &v)
-  { return func_Ib[v](r); }
-
   //! Compute medium state at location
   friend void GetState(Medium2D_State &M, const Vector2D &r);
   void GetState(const Vector2D &r);
@@ -178,13 +165,18 @@ class Medium2D_State {
 
   //! Set all all fields to the same function
   static void SetAllFieldsConstant(const Medium2D_State &M);
-  static void SetDiscreteField(Grid2D_Quad_Block **Grid_ptr,     // grid block pointer
-			       const int &Number_of_Blocks_Idir, // number blocks in i-dir
-			       const int &Number_of_Blocks_Jdir, // number blocks in j-dir
-			       double *** kappa_,                // 3D array abs coeffs (band, i-index, j-index)
-			       double *** Ib_,                   // 3D array Ib (band, i-index, j-index)
-			       const double *sigma_ );           // 1D array sigma (band)
+  static void SetDiscreteField( AdaptiveBlockResourceList const &List_of_Global_Solution_Blocks,
+			        AdaptiveBlock2D_List const &List_of_Local_Solution_Blocks,
+			        Medium2D_Quad_Block const *&Local_SolnBlk );
   //@}
+
+  //@{ @name Assignment operator.
+  Medium2D_State& operator =(const Medium2D_State &U) {
+    if( this != &U) Copy(U);
+    return (*this);
+  }
+  //@}
+
 
   //@{ @name Index operator.
   double& operator[](int index);
@@ -252,22 +244,12 @@ inline void Medium2D_State :: AllocateStatic()
   DeallocateStatic();
 
   // allocate
-  AbsorptionData = new FieldData<Medium2D_Quad_Block>[Nband];
-  ScatterData    = new FieldData<Medium2D_Quad_Block>[Nband];
-  BlackbodyData  = new FieldData<Medium2D_Quad_Block>[Nband];
-  func_kappa     = new TSpecificFunctor< FieldData<Medium2D_Quad_Block> >[Nband];
-  func_sigma     = new TSpecificFunctor< FieldData<Medium2D_Quad_Block> >[Nband];
-  func_Ib        = new TSpecificFunctor< FieldData<Medium2D_Quad_Block> >[Nband];
+  Field = new FieldData<Medium2D_State,Medium2D_Quad_Block>[Nband];
 }
 
 inline void Medium2D_State :: DeallocateStatic()
 {
-  if ( AbsorptionData != NULL ) { delete[] AbsorptionData; AbsorptionData = NULL; }
-  if ( ScatterData    != NULL ) { delete[] ScatterData;    ScatterData    = NULL; }
-  if ( BlackbodyData  != NULL ) { delete[] BlackbodyData;  BlackbodyData  = NULL; }
-  if ( func_kappa     != NULL ) { delete[] func_kappa;     func_kappa     = NULL; }
-  if ( func_sigma     != NULL ) { delete[] func_sigma;     func_sigma     = NULL; }
-  if ( func_Ib        != NULL ) { delete[] func_Ib;        func_Ib        = NULL; }
+  if ( Field != NULL ) { delete[] Field; Field = NULL; }
 }
 
 inline void Medium2D_State :: AllocateSNBCK()
@@ -380,21 +362,11 @@ inline void Medium2D_State :: SetupStatic( const int &i_Absorb_Type,
 inline void Medium2D_State :: SetAllFieldsConstant(const Medium2D_State &M)
 {
   // decalares
-  ConstantFieldParams P;
+  ConstantFieldParams<Medium2D_State> P = {M};
 
   // assign all the fields
-  for (int i=0; i<Nband; i++) {
-
-    // set constnat value
-    P.val = M.kappa[i]; AbsorptionData[i].SetConstantParams(P);
-    P.val = M.sigma[i]; ScatterData[i].SetConstantParams(P);
-    P.val = M.Ib[i];    BlackbodyData[i].SetConstantParams(P);
-
-    // set field descriptor
-    func_kappa[i].Set(&AbsorptionData[i], &FieldData<Medium2D_Quad_Block>::Constant);
-    func_sigma[i].Set(&ScatterData[i], &FieldData<Medium2D_Quad_Block>::Constant);
-    func_Ib[i].Set(&BlackbodyData[i], &FieldData<Medium2D_Quad_Block>::Constant);
-  }
+  for (int i=0; i<Nband; i++)
+    Field[i].SetConstantParams(P);
 }
 
 
@@ -405,22 +377,11 @@ inline void Medium2D_State :: SetAllFieldsConstant(const Medium2D_State &M)
  *                                                      *
  * NOT FINISHED - WILL NOT WORK!!!!                     *
  ********************************************************/
-inline void Medium2D_State :: SetDiscreteField(
-  Grid2D_Quad_Block          ***MeshBlk;
-  AdaptiveBlockResourceList    *List_of_Global_Solution_Blocks;
-  AdaptiveBlock2D_List         *List_of_Local_Solution_Blocks;
-  Rte2D_Quad_Block            **Local_SolnBlk;
-
-
-Grid2D_Quad_Block **Grid_ptr,     // grid block pointer
-					       const int &Number_of_Blocks_Idir, // number blocks in i-dir
-					       const int &Number_of_Blocks_Jdir, // number blocks in j-dir
-					       double *** kappa_,                // 3D array abs coeffs (band, i-index, j-index)
-					       double *** Ib_,                   // 3D array Ib (band, i-index, j-index)
-					       const double *sigma_ )            // 1D array sigma (band)
+inline void Medium2D_State :: SetDiscreteField( AdaptiveBlockResourceList const &List_of_Global_Solution_Blocks,
+						AdaptiveBlock2D_List const &List_of_Local_Solution_Blocks,
+						Medium2D_Quad_Block const *&Local_SolnBlk )
 {
   // decalares
-  ConstantFieldParams CF;
   DiscreteFieldParams<Medium2D_Quad_Block> DF;
 
   //
@@ -429,51 +390,24 @@ Grid2D_Quad_Block **Grid_ptr,     // grid block pointer
   for (int i=0; i<Nband; i++) {
 
     // set discrete field grid params
-    DF.Grid = Grid_ptr; 
-    DF.Number_of_Blocks_Idir = Number_of_Blocks_Idir;
-    DF.Number_of_Blocks_Jdir =Number_of_Blocks_Jdir;
+    DF.List_of_Global_Solution_Blocks = &List_of_Global_Solution_Blocks; 
+    DF.List_of_Local_Solution_Blocks = &List_of_Local_Solution_Blocks; 
+    DF.Local_SolnBlk = &Local_SolnBlk; 
 
-    // set discrete absorption field params
-    DF.valarray = kappa_[i]; 
-    AbsorptionData[i].SetDiscreteParams(DF);
-
-    // set discrete blackbody field params
-    DF.valarray = Ib_[i]; 
-    BlackbodyData[i].SetDiscreteParams(DF);
-
-    // set constnat value
-    CF.val = sigma_[i]; 
-    ScatterData[i].SetConstantParams(CF);
-
-    // set field descriptor
-    func_kappa[i].Set(&AbsorptionData[i], &FieldData<Medium2D_Quad_Block>::Interpolate);
-    func_sigma[i].Set(&ScatterData[i], &FieldData<Medium2D_Quad_Block>::Constant);
-    func_Ib[i].Set(&BlackbodyData[i], &FieldData<Medium2D_Quad_Block>::Interpolate);
+    // set discrete field params
+    Field[i].SetDiscreteParams(DF);
   }
 }
 
 /********************************************************
  * Compute medium state at location.                    *
  ********************************************************/
-inline void GetState(Medium2D_State &M, const Vector2D &r) 
-{
-
-
-  // compute
-  for (int i=0; i<M.Nband; i++){
-    M.kappa[i] = M.AbsorptionField(r,i);
-    M.sigma[i] = M.ScatterField(r,i);
-    M.Ib[i]    = M.BlackbodyField(r,i);
-  } // endfor
+inline void GetState(Medium2D_State &M, const Vector2D &r) {
+  for (int i=0; i<M.Nband; i++) M = Medium2D_State::Field[i](r);
 }
 
-inline void Medium2D_State :: GetState(const Vector2D &r) 
-{
-  for (int i=0; i<Nband; i++){
-    kappa[i] = AbsorptionField(r,i);
-    sigma[i] = ScatterField(r,i);
-    Ib[i]    = BlackbodyField(r,i);
-  } // endfor
+inline void Medium2D_State :: GetState(const Vector2D &r) {
+  for (int i=0; i<Nband; i++)  *this = Field[i](r);
 }
 
 
