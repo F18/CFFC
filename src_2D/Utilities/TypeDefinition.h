@@ -49,40 +49,91 @@ typedef double (* SuperFunctionType1D) (const double, const FunctionType1D, cons
 
 /***************** Exception Definitions *************/
 /**
- * Exception to throw when the number of iteration
- * exceeds the maximum value
+ * The base for all CFFC exceptions.
  */
-struct maximum_exceeded : public std::logic_error
+struct cffc_error : public std::exception
 {
-  maximum_exceeded() : std::logic_error("maximum number of iteration exceeded") {};
+    cffc_error(const std::string& msg)
+        : err_msg(msg)
+    {
+    }
+    
+    ~cffc_error() throw()
+    {
+    }
+    
+    const char* what() const throw()
+    {
+        return err_msg.c_str();
+    }
+    
+private:
+
+    std::string err_msg;
 };
 
 /**
- * Exception to throw when the required accuracy is
- * less than the machine accuracy
+ * Exception to be thrown when the number of iteration
+ * exceeds the maximum allowed value
  */
-struct machine_accuracy_exceeded : public std::logic_error
+struct MaximumIterationsExceeded : public cffc_error
 {
-  machine_accuracy_exceeded(): std::logic_error("the values are beyond the accuracy of the machine") {};
+  MaximumIterationsExceeded(const std::string& msg = "maximum number of iteration exceeded")
+    : cffc_error(msg)
+  {
+  }
+
+  ~MaximumIterationsExceeded() throw()
+  {
+  }
 };
 
 /**
- * Exception to throw when the relative length of the interval for integration is
- * less than the machine accuracy
+ * Exception to be thrown when the required accuracy is
+ * less than machine accuracy
  */
-struct too_short_interval : public std::logic_error
+struct MachineAccuracyExceeded : public cffc_error
 {
-  too_short_interval(): std::logic_error("the dimension of the interval for integration is less than the machine accuracy") {};
+  MachineAccuracyExceeded(const std::string& msg = "machine accuracy exceeded")
+    : cffc_error(msg)
+  {
+  }
+
+  ~MachineAccuracyExceeded() throw()
+  {
+  }
 };
 
 /**
- * Exception to throw when a NULL pointer is not expected
+ * Exception to be thrown when the interval length 
+ * (i.e. distance between 2 points) is less than 
+ * machine accuracy
  */
-
-struct NullPointerException : public std::logic_error
+struct TooShortInterval : public cffc_error
 {
- public:
-   NullPointerException() : std::logic_error("Error: NULL pointer passed -> invalid argument"){ };
+  TooShortInterval(const std::string& msg = "interval length shorter than machine accuracy")
+    : cffc_error(msg)
+  {
+  }
+
+  ~TooShortInterval() throw()
+  {
+  }
+};
+
+/**
+ * Exception to be thrown when a not expected NULL is encountered
+ */
+struct ArgumentNullException : public cffc_error
+{
+  ArgumentNullException(const std::string& msg = "NULL pointer encountered => invalid argument")
+    : cffc_error(msg)
+  {
+  }
+
+  ~ArgumentNullException() throw()
+  {
+  }
 };
 
 

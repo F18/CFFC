@@ -15,9 +15,13 @@
 
 
 namespace tut
-
 {
+
+  // **********************************************
+  //                 TEST SUITE: GLQ_TestSuite
+  // **********************************************
   // Data used for testing
+  // **********************
   class Data_GaussLobattoQuadrature: public TestData {
   public:
     FunctionType1D func;        // Use 1D function for integration
@@ -721,13 +725,12 @@ namespace tut
     ensure_distance("GLQ: Change limits", NumericResultA, -NumericResultB, tol*fabs(NumericResultA));
   }
 
-}
 
-
-namespace tut
-
-{
+  // **********************************************
+  //                 TEST SUITE: AGQ_TestSuite
+  // **********************************************
   // Data used for testing
+  // **********************
   class Data_AdaptiveGaussianQuadrature: public TestData {
   public:
     FunctionType1D func;        // Use 1D function for integration
@@ -740,13 +743,6 @@ namespace tut
     double DummyParam;
   };
 
-  /**
-   * This group of declarations is just to register
-   * test group in test-application-wide singleton.
-   * Name of test group object (LinearSystems_TestSuite) shall
-   * be unique in tut:: namespace. Alternatively, you
-   * you may put it into anonymous namespace.
-   */
   typedef test_group<Data_AdaptiveGaussianQuadrature> AGQ_TestSuite;
   typedef AGQ_TestSuite::object AGQ_Object;
 
@@ -1237,15 +1233,15 @@ namespace tut
   {
     // Initialize variables
     func = Test_Default1D;
-    SuperFunctionType1D super_func = Error1D;
     FunctionType1D func2 = Test_Example6;
+    ErrorFunc<double,FunctionType1D> Error1D = error_function(func,func2,NumericResultA);
     MatlabResult = 9.639642857142857;
 
     // Pozitive interval
     StartPoint = -2.0;
     EndPoint = -1.0;
 
-    NumericResultA = AdaptiveGaussianQuadrature(super_func,func,func2,StartPoint,EndPoint,digits);
+    NumericResultA = AdaptiveGaussianQuadrature(Error1D,StartPoint,EndPoint,DummyParam,digits);
 
     // Check
     ensure_distance("ADG: Matlab Value", NumericResultA, MatlabResult, tol*MatlabResult);
@@ -1428,15 +1424,17 @@ namespace tut
     ensure_distance("ADG: Maple Value", NumericResultA, MapleResult, tol*MapleResult);
   }
 
-}
 
-namespace tut
 
-{
+
+  // **********************************************
+  //                 TEST SUITE: AGQ2_TestSuite
+  // **********************************************
   // Data used for testing
+  // **********************
   class Data_AdaptiveGaussianQuadrature2D: public TestData{
   public:
-    FunctionType2D func;        // Use 1D function for integration
+    FunctionType2D func;        // Use 2D function for integration
     double TheoreticResult;	// Result obtained with the exact integration
     double NumericResultA, NumericResultB, NumericResult;
     double StartPointX;		// One end of the interval (X dir)
@@ -1471,13 +1469,6 @@ namespace tut
     ensure_distance("AGQ2D: Integral Value", NumericResult, Result, AcceptError);
   }
 
-  /**
-   * This group of declarations is just to register
-   * test group in test-application-wide singleton.
-   * Name of test group object (LinearSystems_TestSuite) shall
-   * be unique in tut:: namespace. Alternatively, you
-   * you may put it into anonymous namespace.
-   */
   typedef test_group<Data_AdaptiveGaussianQuadrature2D> AGQ2D_TestSuite;
   typedef AGQ2D_TestSuite::object  AGQ2D_Object;
 
@@ -1755,15 +1746,44 @@ namespace tut
 
   }
 
-}
+  /* Test 12:*/
+  template<>
+  template<>
+  void AGQ2D_Object::test<12>()
+  {
+    // Initialize variables
+    func = Test_Example11;
+    FunctionType2D func2 = Test_Example6;
+    ErrorFunc<double,FunctionType2D> Error2D(func,func2);
 
-namespace tut
+    // Interval close to zero
+    StartPointX = -1.6;
+    EndPointX = 2.4;
+    // Interval close to zero
+    StartPointY = -1.15E-14;
+    EndPointY = 0.24;
 
-{
+    MapleResult = 0.963948258480793;
+
+    // Numerical Integration 
+    NumericResult = AdaptiveGaussianQuadrature(Error2D,StartPointX,EndPointX,StartPointY,EndPointY,
+					       digits,NumericResult);
+
+    // Check solution against Maple result
+    CheckSolution(MapleResult);
+
+  }
+
+
+
+  // *************************************************
+  //                 TEST SUITE: quad2dAGQ_TestSuite
+  // *************************************************
   // Data used for testing
+  // **********************
   class Data_quad2dAdaptiveGaussianQuadrature: public TestData{
   public:
-    FunctionType2D func;        // Use 1D function for integration
+    FunctionType2D func;        // Use 2D function for integration
     double TheoreticResult;	// Result obtained with the exact integration
     double NumericResultA, NumericResultB, NumericResult;
     double StartPointX;		// One end of the interval (X dir)
@@ -1795,13 +1815,6 @@ namespace tut
     ensure_distance("AGQ2D: Integral Value", NumericResult, Result, AcceptError);
   }
 
-  /**
-   * This group of declarations is just to register
-   * test group in test-application-wide singleton.
-   * Name of test group object (LinearSystems_TestSuite) shall
-   * be unique in tut:: namespace. Alternatively, you
-   * you may put it into anonymous namespace.
-   */
   typedef test_group<Data_quad2dAdaptiveGaussianQuadrature> quad2dAGQ_TestSuite;
   typedef quad2dAGQ_TestSuite::object  quad2dAGQ_Object;
 
@@ -2091,11 +2104,14 @@ namespace tut
     CheckSolution(MapleResult);
   }
 
-}
 
-namespace tut
-{
+
+
+  // **********************************************
+  //                 TEST SUITE: AGQ3D_TestSuite
+  // **********************************************
   // Data used for testing
+  // **********************
   class Data_AdaptiveGaussianQuadrature3D: public TestData{
   public:
     FunctionType3D func;        // Use 3D function for integration
@@ -2195,19 +2211,366 @@ namespace tut
     CheckSolution(TheoreticResult);
   }
 
+
+
+  // ******************************************************
+  //                 TEST SUITE: ErrorSubroutines_TestSuite
+  // ******************************************************
+  // Data used for testing
+  // **********************
+  class Data_ErrorSubroutines: public TestData{
+  public:
+    double TheoreticResult;	// Result obtained with the exact integration
+    double NumericResultA, NumericResultB, NumericResult;
+    double StartPointX;		// One end of the interval (X dir)
+    double EndPointX;		// The other end of the interval (X dir)
+    double StartPointY;		// One end of the interval (Y dir)
+    double EndPointY;		// The other end of the interval (Y dir)
+    double AcceptError;	        // Acceptable error
+    double MapleResult;		// Result obtained with Maple
+    double DummyParam;
+
+
+    class TestClass{
+    private:
+      TestClass();
+      double val;
+
+    public:
+      typedef double (TestClass::*MemberFunctionType1D)(const double &);
+      typedef double (TestClass::*MemberFunctionType2D)(const double &, const double &);
+      typedef double (TestClass::*MemberFunctionType3D)(const double &, const double &, const double &);
+
+      TestClass(double _val_): val(_val_){}
+
+      // member functions
+      double SolutionAtCoordinate(const double &coord){return val*coord;}
+      double SquareSolutionAtCoordinate(const double &coord){return val*val*coord*coord;}
+
+      double SolutionAtCoordinate(const double &coord, const double & coord2){return val*coord*coord2;}
+      double SquareSolutionAtCoordinate(const double &coord, const double &coord2){return val*val*coord2*coord2;}
+      
+      double SolutionAtCoordinate(const double &coord, const double &coord2, const double &coord3){
+	return val*coord*coord2*coord3;
+      }
+      double SquareSolutionAtCoordinate(const double &coord, const double &coord2, const double &coord3){
+	return val*val*coord2*coord2*coord3*coord3;
+      }
+    };
+
+  };
+
+  typedef test_group<Data_ErrorSubroutines> ErrorSubroutines_TestSuite;
+  typedef ErrorSubroutines_TestSuite::object  ErrorSub_Object;
+
+  /******************************************************************************************************
+   ******************************************************************************************************
+   *                      ********    *******        ***       ********        ***                      *
+   *                         **       **           **   **        **         **   **                    *
+   *                         **       **          **              **        **                          *
+   *                         **       *******      *****          **          *****                     *
+   *                         **       **                **        **               **                   *
+   *                         **       **            *    **       **          *   **                    *
+   *                         **       *******        ****         **           ****                     *
+   ******************************************************************************************************
+   ******************************************************************************************************/
+
+  /* Test 1:*/
+  template<>
+  template<>
+  void ErrorSub_Object::test<1>()
+  {
+    set_test_name("check _Mapped_Function_Wrapper_");
+
+    FunctionType1D func = Test_Example1;
+    _Mapped_Function_Wrapper_<FunctionType1D,double> MappedFunction(func,-100.0, -50.0, -1.0, 1.0);
+
+    ensure_equals("Evaluate funct at the upper bound", MappedFunction(-50), func(1));
+    ensure_equals("Evaluate funct at the lower bound", MappedFunction(-100), func(-1));
+    ensure_equals("Evaluate funct in the middle", MappedFunction(-75), func(0));
+  }
+
+  /* Test 2:*/
+  template<>
+  template<>
+  void ErrorSub_Object::test<2>()
+  {
+    set_test_name("check _Member_Function_Wrapper_ in 1D");
+
+    TestClass Obj(3.5);		// create object
+
+    // First wrapper
+    _Member_Function_Wrapper_<TestClass,
+      TestClass::MemberFunctionType1D,double> WrappedMemberFunction(&Obj,
+								    &TestClass::SolutionAtCoordinate);
+
+    // Second wrapper
+    _Member_Function_Wrapper_<TestClass,
+      TestClass::MemberFunctionType1D,double> WrappedMemberFunctionSquare(&Obj,
+									  &TestClass::SquareSolutionAtCoordinate);
+
+    ensure_equals("Evaluate SolutionAtCoordinate() at 6.0", WrappedMemberFunction(6.0), Obj.SolutionAtCoordinate(6.0));
+    ensure_equals("Evaluate SquareSolutionAtCoordinate() at 6.0",
+		  WrappedMemberFunctionSquare(6.0),
+		  Obj.SquareSolutionAtCoordinate(6.0));
+  }
+
+  /* Test 3:*/
+  template<>
+  template<>
+  void ErrorSub_Object::test<3>()
+  {
+    set_test_name("check _Member_Function_Wrapper_ in 2D");
+
+    TestClass Obj(5.55);		// create object
+
+    // First wrapper
+    _Member_Function_Wrapper_<TestClass,
+      TestClass::MemberFunctionType2D,double> WrappedMemberFunction(&Obj,
+								    &TestClass::SolutionAtCoordinate);
+
+    // Second wrapper
+    _Member_Function_Wrapper_<TestClass,
+      TestClass::MemberFunctionType2D,double> WrappedMemberFunctionSquare(&Obj,
+									  &TestClass::SquareSolutionAtCoordinate);
+
+    ensure_equals("Evaluate SolutionAtCoordinate() at (6.0,1.23)",
+		  WrappedMemberFunction(6.0,1.23),
+		  Obj.SolutionAtCoordinate(6.0,1.23));
+    ensure_equals("Evaluate SquareSolutionAtCoordinate() at (6.0,1.23)",
+		  WrappedMemberFunctionSquare(6.0,1.23),
+		  Obj.SquareSolutionAtCoordinate(6.0,1.23));
+  }
+
+  /* Test 4:*/
+  template<>
+  template<>
+  void ErrorSub_Object::test<4>()
+  {
+    set_test_name("check _Member_Function_Wrapper_ in 3D");
+
+    TestClass Obj(-83.5);		// create object
+
+    // First wrapper
+    _Member_Function_Wrapper_<TestClass,
+      TestClass::MemberFunctionType3D,double> WrappedMemberFunction(&Obj,
+								    &TestClass::SolutionAtCoordinate);
+
+    // Second wrapper
+    _Member_Function_Wrapper_<TestClass,
+      TestClass::MemberFunctionType3D,double> WrappedMemberFunctionSquare(&Obj,
+									  &TestClass::SquareSolutionAtCoordinate);
+
+    ensure_equals("Evaluate SolutionAtCoordinate() at (1.1,2.2,-3.3)",
+		  WrappedMemberFunction(1.1,2.2,-3.3),
+		  Obj.SolutionAtCoordinate(1.1,2.2,-3.3));
+    ensure_equals("Evaluate SquareSolutionAtCoordinate() at (1.1,2.2,-3.3)",
+		  WrappedMemberFunctionSquare(1.1,2.2,-3.3),
+		  Obj.SquareSolutionAtCoordinate(1.1,2.2,-3.3));
+  }
+
+  /* Test 5:*/
+  template<>
+  template<>
+  void ErrorSub_Object::test<5>()
+  {
+    set_test_name("integrate with _Member_Function_Wrapper_ in 1D");
+
+    TestClass Obj(-3.5);		// create object
+
+    // First wrapper
+    _Member_Function_Wrapper_<TestClass,
+      TestClass::MemberFunctionType1D,double> WrappedMemberFunction(&Obj,
+								    &TestClass::SolutionAtCoordinate);
+
+    // Second wrapper
+    _Member_Function_Wrapper_<TestClass,
+      TestClass::MemberFunctionType1D,double> WrappedMemberFunctionSquare(&Obj,
+									  &TestClass::SquareSolutionAtCoordinate);
+
+    // Integrate wrapper
+
+    // Define interval
+    StartPointX = -5.00;
+    EndPointX = 0.0;
+
+    // AdaptiveGaussianQuadrature
+    NumericResultA = AdaptiveGaussianQuadrature(WrappedMemberFunction,StartPointX,EndPointX,DummyParam);
+    NumericResultB = AdaptiveGaussianQuadrature(WrappedMemberFunctionSquare,StartPointX,EndPointX,DummyParam);
+
+    ensure_equals("NumericResultA", NumericResultA, 43.75);
+    ensure_distance("NumericResultB", NumericResultB, 510.4166666666667, 1.0e-13);
+  }
+
+  /* Test 6:*/
+  template<>
+  template<>
+  void ErrorSub_Object::test<6>()
+  {
+    set_test_name("integrate error with _Member_Function_Wrapper_ in 1D");
+
+    TestClass Obj(-3.5);		// create object
+
+    // First wrapper
+    _Member_Function_Wrapper_<TestClass,
+      TestClass::MemberFunctionType1D,double> WrappedMemberFunction(&Obj,
+								    &TestClass::SolutionAtCoordinate);
+
+    // Second wrapper
+    _Member_Function_Wrapper_<TestClass,
+      TestClass::MemberFunctionType1D,double> WrappedMemberFunctionSquare(&Obj,
+									  &TestClass::SquareSolutionAtCoordinate);
+
+    ErrorFunc<double,FunctionType1D,_Member_Function_Wrapper_<TestClass,TestClass::MemberFunctionType1D,double> >
+      error(Test_Example1,
+	    WrappedMemberFunction);
+
+    // Integrate wrapper
+
+    // Define interval
+    StartPointX = -5.00;
+    EndPointX = 0.0;
+
+    // AdaptiveGaussianQuadrature
+
+    // Use error_function
+    NumericResultA = AdaptiveGaussianQuadrature(error_function(WrappedMemberFunction,
+							       WrappedMemberFunctionSquare,
+							       NumericResultA),
+					       StartPointX,EndPointX,DummyParam);
+    
+    // Use error object
+    NumericResultB = AdaptiveGaussianQuadrature(error,StartPointX,EndPointX,DummyParam);
+
+    ensure_distance("NumericResultA", NumericResultA, 466.7619047619047619, 1.0e-13);
+    ensure_distance("NumericResultB", NumericResultB, 47.2950836148489, 1.0e-13);
+  }
+
+
+  /* Test 7:*/
+  template<>
+  template<>
+  void ErrorSub_Object::test<7>()
+  {
+    set_test_name("error_function with wrapped_member_function and mapped_function");
+
+    TestClass Obj(-3.5);		// create object
+
+    FunctionType1D func = Test_Example1;
+    TestClass::MemberFunctionType1D mem_func = &TestClass::SquareSolutionAtCoordinate;
+    double Coord = -2.5;
+    TheoreticResult = 74.5625;
+
+    ensure_distance("error_function",
+		    error_function(mapped_function(func,NumericResult,-5.0,0.0,-1.0,1.0), // first function
+				   wrapped_member_function(&Obj,                          // second function
+							   mem_func,
+							   NumericResult), 
+				   NumericResult)(Coord),                                 // solution type and the X coordinate 
+		    TheoreticResult,
+		    1.0e-13);
+  }
+
+  /* Test 8:*/
+  template<>
+  template<>
+  void ErrorSub_Object::test<8>()
+  {
+    set_test_name("integrate error with _Member_Function_Wrapper_ and _Mapped_Function_Wrapper_ in 1D");
+
+    TestClass Obj(-3.5);		// create object
+
+    // Wrap member function
+    _Member_Function_Wrapper_<TestClass,
+      TestClass::MemberFunctionType1D,double> WrappedMemberFunctionSquare(&Obj,
+									  &TestClass::SquareSolutionAtCoordinate);
+
+    FunctionType1D func = Test_Example1;
+
+    // Integrate wrapper
+
+    // Define interval
+    StartPointX = -5.00;
+    EndPointX = 0.0;
+
+    NumericResultA = AdaptiveGaussianQuadrature(error_function(mapped_function(func,NumericResult,-5.0,0.0,-1.0,1.0),
+							       WrappedMemberFunctionSquare,
+							       NumericResult),
+						StartPointX,EndPointX,DummyParam);
+    
+    ensure_distance("Result", NumericResultA, 503.2298836292962, 1.0e-12);
+  }
+
+  /* Test 9:*/
+  template<>
+  template<>
+  void ErrorSub_Object::test<9>()
+  {
+    set_test_name("integrate with wrapped_member_function");
+
+    TestClass Obj(-3.5);		// create object
+
+    // Integrate member function
+
+    // Define interval
+    StartPointX = -5.00;
+    EndPointX = 0.0;
+
+    TestClass::MemberFunctionType1D func = &TestClass::SolutionAtCoordinate;
+
+    // Use wrapped_member_function
+    NumericResultA = AdaptiveGaussianQuadrature(wrapped_member_function(&Obj,
+									func,
+									NumericResult),
+						StartPointX,EndPointX,DummyParam);
+    
+    // Test result
+    ensure_distance("NumericResultA", NumericResultA, 43.75, 1.0e-13);
+  }
+
+  /* Test 10:*/
+  template<>
+  template<>
+  void ErrorSub_Object::test<10>()
+  {
+    set_test_name("integrate square_error_function with wrapped_memeber_function in 1D");
+
+    TestClass Obj(-3.5);		// create object
+
+    TestClass::MemberFunctionType1D func = &TestClass::SolutionAtCoordinate;
+    FunctionType1D func1D = Test_Example1;
+
+    // Define interval
+    StartPointX = -5.00;
+    EndPointX = 0.0;
+
+    // Use square_error_function
+    NumericResultA = AdaptiveGaussianQuadrature(square_error_function(func1D,
+								      wrapped_member_function(&Obj,func,NumericResultA),
+								      NumericResultA),
+						StartPointX,EndPointX,DummyParam);
+
+    // Test result
+    ensure_distance("Result", NumericResultA, 610.53786993983962760, 1.0e-13);
+  }
+
 }
 
-namespace tut
-{
-  // 1D
-  GLQ_TestSuite GLQ1D_Test("Integration:GaussLobattoQuadrature() in 1D");
-  AGQ_TestSuite AGQ1D_Test("Integration:AdaptiveGaussianQuadrature() in 1D");
 
-  // 2D
-  AGQ2D_TestSuite AGQ2D_Test("Integration:AdaptiveGaussianQuadrature() in 2D");
-  quad2dAGQ_TestSuite quad2dAGQ_Test("Integration:quad2DAdaptiveGaussianQuadrature() in 2D");
+/************************
+ *  CREATE TEST SUITES  *
+ ************************/
 
-  // 3D
-  AGQ3D_TestSuite AGQ3D_Test("Integration:AdaptiveGaussianQuadrature() in 3D");
+// 1D
+tut::GLQ_TestSuite GLQ1D_Test("Integration:GaussLobattoQuadrature() in 1D");
+tut::AGQ_TestSuite AGQ1D_Test("Integration:AdaptiveGaussianQuadrature() in 1D");
 
-}
+// 2D
+tut::AGQ2D_TestSuite AGQ2D_Test("Integration:AdaptiveGaussianQuadrature() in 2D");
+tut::quad2dAGQ_TestSuite quad2dAGQ_Test("Integration:quad2DAdaptiveGaussianQuadrature() in 2D");
+
+// 3D
+tut::AGQ3D_TestSuite AGQ3D_Test("Integration:AdaptiveGaussianQuadrature() in 3D");
+
+// ErrorSubroutines
+tut::ErrorSubroutines_TestSuite ErrorSubroutines_Test("Numerical Library:Error functors & wrappers");

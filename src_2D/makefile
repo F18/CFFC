@@ -50,6 +50,7 @@ TURBULENT_DIR = Turbulent2D/
 GAUSSIAN_DIR = Gaussian2D/
 NASADATA_DIR = $(PHYSICS_DIR)NASAData/
 REACTIONS_DIR = Reactions/
+HIGH_ORDER_RECONSTRUCTION_DIR = HighOrderReconstruction/
 
 #
 # Set default f90 module directory
@@ -128,6 +129,10 @@ SRC_EULER1D = $(SOLVERS1D_DIR)Euler1DState.cc \
 SRC_MHD1D = $(SOLVERS1D_DIR)MHD1DState.cc \
             $(SOLVERS1D_DIR)MHD1D.cc \
             $(SOLVERS1D_DIR)MHD1DSolvers.cc
+
+# HighOrderReconstruction
+SRC_HIGH_ORDER_RECONSTRUCTION = ReconstructionHelpers.cc
+SRC_HIGH_ORDER_RECONSTRUCTION := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR), $(SRC_HIGH_ORDER_RECONSTRUCTION))
 
 # Advectdiffuse2D:
 SRC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.cc \
@@ -318,7 +323,7 @@ SRC_SYSTEM = $(SYSTEM_DIR)System_Linux.cc
 
 # Base and CFFC sources:
 SRC_BASE = $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_GRID) $(SRC_AMR) \
-           $(SRC_SYSTEM)
+           $(SRC_SYSTEM) $(SRC_HIGH_ORDER_RECONSTRUCTION)
 ifeq ($(TUT_TESTING),ON) 
   SRC_BASE += $(SRC_TUT)
 endif
@@ -403,6 +408,9 @@ OBJ_EULER1D = $(SOLVERS1D_DIR)Euler1DState.o \
 OBJ_MHD1D = $(SOLVERS1D_DIR)MHD1DState.o \
             $(SOLVERS1D_DIR)MHD1D.o \
             $(SOLVERS1D_DIR)MHD1DSolvers.o
+
+# HighOrderReconstruction
+OBJ_HIGH_ORDER_RECONSTRUCTION := $(SRC_HIGH_ORDER_RECONSTRUCTION:.cc=.o)
 
 # Advectdiffuse2D:
 OBJ_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.o \
@@ -588,7 +596,7 @@ OBJ_SYSTEM = $(SYSTEM_DIR)System_Linux.o
 
 # Base and CFFC objects:
 OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_AMR) \
-	   $(OBJ_SYSTEM)
+	   $(OBJ_SYSTEM) $(OBJ_HIGH_ORDER_RECONSTRUCTION)
 ifeq ($(TUT_TESTING),ON) 
   OBJ_BASE += $(OBJ_TUT)
 endif
