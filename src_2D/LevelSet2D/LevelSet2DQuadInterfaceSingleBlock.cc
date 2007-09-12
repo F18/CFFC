@@ -157,6 +157,14 @@ int Initialize_Interfaces(LevelSet2D_Quad_Block &SolnBlk,
       // Determine the reference point (centroid) of the interface.
       SolnBlk.Interface_List[ni].Xref = IP.Interface_IP.Component_List[ni].Xref;
       break;
+    case INTERFACE_STAR:
+      // Create multi-point star.
+      SolnBlk.Interface_List[ni].Star(IP.Interface_IP.Component_List[ni].Spline.Xp[0],
+				      SolnBlk.Interface_List[ni].Length1,
+				      7);
+      // Determine the reference point (centroid) of the interface.
+      SolnBlk.Interface_List[ni].Xref = IP.Interface_IP.Component_List[ni].Xref;
+      break;
     case INTERFACE_USER_SPECIFIED :
       // Create user specified spline.
       // Allocate memory for the circular arc spline. 
