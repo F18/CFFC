@@ -61,6 +61,7 @@ using namespace std;
 #define INTERFACE_FLAT_PLATE                      514
 #define INTERFACE_USER_SPECIFIED                  515
 #define INTERFACE_UNION                           516
+#define INTERFACE_STAR                            517
 #define INTERFACE_RESTART                         599
 
 #define INTERFACE_BC_REFLECTION               BC_REFLECTION
@@ -286,6 +287,11 @@ class Interface2D{
   //! Create Zalesak's disk interface spline.
   void Zalesak(const Vector2D &Origin,
 	       const double &Radius);
+
+  //! Create multi-point star interface spline.
+  void Star(const Vector2D &Origin,
+	    const double &Radius,
+	    const int &Num_Ext_Pts);
 
   //! Create Ringleb's flow interface spline.
   void Ringleb(const double &Inner_Streamline_Number,

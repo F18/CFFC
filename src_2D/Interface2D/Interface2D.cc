@@ -231,6 +231,62 @@ void Interface2D::Zalesak(const Vector2D &Origin,
 }
 
 /**********************************************************************
+ * Interface2D::Star -- This routine calculates and returns an        *
+ *                      interface representing a multi-point star.    *
+ **********************************************************************/
+void Interface2D::Star(const Vector2D &Origin,
+		       const double &Radius,
+		       const int &Num_Ext_Pts) {
+
+  int npts;               // total number of points in spline
+  double theta, dtheta;
+
+  // Set the number of spline points.
+  npts = TWO*Num_Ext_Pts + 1;
+
+  // Set angles.
+  theta = 0.0;
+  dtheta = 360.0/double(Num_Ext_Pts);
+
+  // Allocate memory for the spline.
+  if (Spline.np != 0) Spline.deallocate();
+  Spline.allocate(npts);
+
+  // Set the spline type.
+  Spline.settype(SPLINE2D_LINEAR);
+
+  // Compute the locations of the spline points on the 
+  // spline and the point and boundary condition types.
+  for (int i = 0; i < Num_Ext_Pts; i++) {
+    // Outer point.
+    theta = double(i)*dtheta;
+    theta = TWO*PI*theta/360.0;
+    Spline.Xp[2*i].x = Radius*cos(theta);
+    Spline.Xp[2*i].y = Radius*sin(theta);
+    Spline.bc[2*i]   = BC_NONE;
+    Spline.tp[2*i]   = SPLINE2D_POINT_NORMAL;
+    // Inner point.
+    theta = double(i)*dtheta + dtheta/TWO;
+    theta = TWO*PI*theta/360.0;
+    Spline.Xp[2*i+1].x = Radius/THREE*cos(theta);
+    Spline.Xp[2*i+1].y = Radius/THREE*sin(theta);
+    Spline.bc[2*i+1]   = BC_NONE;
+    Spline.tp[2*i+1]   = SPLINE2D_POINT_SHARP_CORNER;
+  }
+
+  // Last point must be the same as the first point.
+  Spline.Xp[npts-1] = Spline.Xp[0];
+  Spline.bc[npts-1] = Spline.bc[0];
+  Spline.tp[npts-1] = Spline.tp[0];
+
+  // Calculate the spline pathlengths.
+  Spline.pathlength();
+
+  // Translate the spline.
+  Translate_Spline(Spline,Origin);
+}
+
+/**********************************************************************
  * Interface2D::Ringleb -- This routine calculates and returns an     *
  *                         interface representing Ringleb's flow      *
  *                         domain.                                    *

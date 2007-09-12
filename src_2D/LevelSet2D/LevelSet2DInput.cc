@@ -1617,6 +1617,8 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
       IP.Interface_IP.Component_List[IP.Interface_IP.ci].Type = INTERFACE_NACA0015_AEROFOIL;
     } else if (strcmp(IP.Interface_IP.Type,"Zalesaks_Disk") == 0) {
       IP.Interface_IP.Component_List[IP.Interface_IP.ci].Type = INTERFACE_ZALESAK;
+    } else if (strcmp(IP.Interface_IP.Type,"Star") == 0) {
+      IP.Interface_IP.Component_List[IP.Interface_IP.ci].Type = INTERFACE_STAR;
     } else if (strcmp(IP.Interface_IP.Type,"User_Specified") == 0) {
       IP.Interface_IP.Component_List[IP.Interface_IP.ci].Type = INTERFACE_USER_SPECIFIED;
     } else if (strcmp(IP.Interface_IP.Type,"Restart") == 0) {
