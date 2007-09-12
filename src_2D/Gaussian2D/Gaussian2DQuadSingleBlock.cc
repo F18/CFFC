@@ -1498,10 +1498,12 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
 
        //Set Wall velocities for Adiabatic walls or viscous isothermal
        if (SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL || SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL){
+	 SolnBlk.WoW[j].set_temperature_d(Input_Parameters.Temperature_West_BC);
 	 SolnBlk.WoW[j].v.y = 0.0;
 	 SolnBlk.WoW[j].v.x = 0.0;
        } /* endif */
        if (SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL|| SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL){
+	 SolnBlk.WoE[j].set_temperature_d(Input_Parameters.Temperature_East_BC);
 	 SolnBlk.WoE[j].v.y = 0.0;
 	 SolnBlk.WoE[j].v.x = 0.0;
        } /* endif */
@@ -1528,6 +1530,7 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
 
        //Set Wall velocities for Adiabatic walls
        if (SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL || SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL){
+	 SolnBlk.WoS[i].set_temperature_d(Input_Parameters.Temperature_South_BC);
 	 SolnBlk.WoS[i].v.y = 0.0;
 	 if (Input_Parameters.i_Grid == GRID_ADIABATIC_COUETTE) {
 	   SolnBlk.WoS[i].v.x =  - Input_Parameters.Couette_Plate_Velocity;
@@ -1536,6 +1539,7 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
 	 } /* endif */
        } /* endif */
        if (SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL || SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL){
+	 SolnBlk.WoN[j].set_temperature_d(Input_Parameters.Temperature_North_BC);
 	 SolnBlk.WoN[i].v.y = 0.0;
 	 if (Input_Parameters.i_Grid == GRID_ADIABATIC_COUETTE) {
 	 SolnBlk.WoN[i].v.x = Input_Parameters.Couette_Plate_Velocity;
