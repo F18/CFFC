@@ -81,7 +81,7 @@ class Medium2D_State {
  private:
   
   //@{ @name Field data:
-  static FieldData<Medium2D_State, Medium2D_Quad_Block> *Field;  //!< container class for field data
+  static FieldData<Medium2D_State, Medium2D_Quad_Block> Field;  //!< container class for field data
   //@}
 
 
@@ -137,14 +137,11 @@ class Medium2D_State {
   //! memory allocation / deallocation for the private arrays
   void Allocate();
   void Deallocate();
-  //! memory allocation / deallocation for the field data arrays
-  static void AllocateStatic();
-  static void DeallocateStatic();
   //! memory allocation / deallocation for the SNBCK data object
   static void AllocateSNBCK();
   static void DeallocateSNBCK();
   //! deallocate all static variables
-  static void DeallocateAllStatic() { DeallocateSNBCK(); DeallocateStatic(); }
+  static void DeallocateAllStatic() { DeallocateSNBCK(); }
   //@}
 
   //@{ @name State functions.
@@ -152,7 +149,6 @@ class Medium2D_State {
   double beta(const int &v) const { return (kappa[v] + sigma[v]); }
 
   //! Compute medium state at location
-  friend void GetState(Medium2D_State &M, const Vector2D &r);
   void GetState(const Vector2D &r);
   //@}
 
@@ -165,9 +161,10 @@ class Medium2D_State {
 
   //! Set all all fields to the same function
   static void SetAllFieldsConstant(const Medium2D_State &M);
-  static void SetDiscreteField( AdaptiveBlockResourceList const &List_of_Global_Solution_Blocks,
-			        AdaptiveBlock2D_List const &List_of_Local_Solution_Blocks,
-			        Medium2D_Quad_Block const *&Local_SolnBlk );
+  static void SetDiscreteField( QuadTreeBlock_DataStructure &QuadTree,
+				AdaptiveBlockResourceList &List_of_Global_Solution_Blocks,
+			        AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
+			        Medium2D_Quad_Block *&Local_SolnBlk );
   //@}
 
   //@{ @name Assignment operator.
@@ -182,6 +179,18 @@ class Medium2D_State {
   double& operator[](int index);
   const double& operator[](int index) const;
   //@}
+
+  //@{ @name Arithmatic operators.
+  //! Binary arimatic operators
+  Medium2D_State operator -(const Medium2D_State &U) const;
+  Medium2D_State operator +(const Medium2D_State &U) const;
+  Medium2D_State operator *(const double &a) const;
+ //!Shortcut operators
+  Medium2D_State& operator -=(const Medium2D_State &U);
+  Medium2D_State& operator +=(const Medium2D_State &U);
+  Medium2D_State& operator *=(const double &a);
+  //@}
+
 
   //@{ @name Input-output operators.
   friend ostream& operator << (ostream &out_file, const Medium2D_State &U);
@@ -237,20 +246,6 @@ inline void Medium2D_State :: Deallocate()
   if (    Ib != NULL ) { delete[] Ib;         Ib = NULL; }
 }
 
-
-inline void Medium2D_State :: AllocateStatic()
-{
-  // deallocate first
-  DeallocateStatic();
-
-  // allocate
-  Field = new FieldData<Medium2D_State,Medium2D_Quad_Block>[Nband];
-}
-
-inline void Medium2D_State :: DeallocateStatic()
-{
-  if ( Field != NULL ) { delete[] Field; Field = NULL; }
-}
 
 inline void Medium2D_State :: AllocateSNBCK()
 { 
@@ -348,11 +343,6 @@ inline void Medium2D_State :: SetupStatic( const int &i_Absorb_Type,
   // set number of variables
   NUM_VAR_MEDIUM2D = 3*Nband;
 
-  //------------------------------------------------
-  // Allocate Scalar fields 
-  //------------------------------------------------
-  Medium2D_State::AllocateStatic();
-
 }
 
 
@@ -365,8 +355,7 @@ inline void Medium2D_State :: SetAllFieldsConstant(const Medium2D_State &M)
   ConstantFieldParams<Medium2D_State> P = {M};
 
   // assign all the fields
-  for (int i=0; i<Nband; i++)
-    Field[i].SetConstantParams(P);
+  Field.SetConstantParams(P);
 }
 
 
@@ -377,37 +366,28 @@ inline void Medium2D_State :: SetAllFieldsConstant(const Medium2D_State &M)
  *                                                      *
  * NOT FINISHED - WILL NOT WORK!!!!                     *
  ********************************************************/
-inline void Medium2D_State :: SetDiscreteField( AdaptiveBlockResourceList const &List_of_Global_Solution_Blocks,
-						AdaptiveBlock2D_List const &List_of_Local_Solution_Blocks,
-						Medium2D_Quad_Block const *&Local_SolnBlk )
+inline void Medium2D_State :: SetDiscreteField( QuadTreeBlock_DataStructure &QuadTree,
+						AdaptiveBlockResourceList &List_of_Global_Solution_Blocks,
+						AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
+						Medium2D_Quad_Block *&Local_SolnBlk )
 {
   // decalares
   DiscreteFieldParams<Medium2D_Quad_Block> DF;
 
-  //
-  // assign all the fields
-  //
-  for (int i=0; i<Nband; i++) {
-
-    // set discrete field grid params
-    DF.List_of_Global_Solution_Blocks = &List_of_Global_Solution_Blocks; 
-    DF.List_of_Local_Solution_Blocks = &List_of_Local_Solution_Blocks; 
-    DF.Local_SolnBlk = &Local_SolnBlk; 
-
-    // set discrete field params
-    Field[i].SetDiscreteParams(DF);
-  }
+  // set discrete field params
+  DF.QuadTree = &QuadTree; 
+  DF.List_of_Global_Solution_Blocks = &List_of_Global_Solution_Blocks; 
+  DF.List_of_Local_Solution_Blocks = &List_of_Local_Solution_Blocks; 
+  DF.Local_SolnBlk = &Local_SolnBlk; 
+  
+  Field.SetDiscreteParams(DF);
 }
 
 /********************************************************
  * Compute medium state at location.                    *
  ********************************************************/
-inline void GetState(Medium2D_State &M, const Vector2D &r) {
-  for (int i=0; i<M.Nband; i++) M = Medium2D_State::Field[i](r);
-}
-
 inline void Medium2D_State :: GetState(const Vector2D &r) {
-  for (int i=0; i<Nband; i++)  *this = Field[i](r);
+  *this = Field(r);
 }
 
 
@@ -435,6 +415,59 @@ inline const double& Medium2D_State :: operator[](int index) const {
   }
 }
 
+
+/********************************************************
+ * Binary arithmetic operators                          *
+ ********************************************************/
+inline Medium2D_State Medium2D_State::operator -(const Medium2D_State &U) const{
+  Medium2D_State Temp(*this);
+  Temp -= U;
+  return Temp;
+}
+
+inline Medium2D_State Medium2D_State::operator +(const Medium2D_State &U) const{
+  Medium2D_State Temp(*this);
+  Temp += U;
+  return Temp;
+}
+
+inline Medium2D_State Medium2D_State::operator *(const double &a) const{
+  Medium2D_State Temp(*this);
+  Temp *= a;
+  return Temp;
+}
+
+
+/********************************************************
+ * Shortcut arithmetic operators                        *
+ ********************************************************/
+inline Medium2D_State& Medium2D_State::operator +=(const Medium2D_State &U){
+  for(int i=0; i<Nband; i++) {
+    kappa[i] += U.kappa[i];  
+    sigma[i] += U.sigma[i];
+    Ib[i]    += U.Ib[i];  
+  }
+  return (*this);
+}
+
+inline Medium2D_State& Medium2D_State::operator -=(const Medium2D_State &U) {
+  for(int i=0; i<Nband; i++) {
+    kappa[i] -= U.kappa[i];  
+    sigma[i] -= U.sigma[i];
+    Ib[i]    -= U.Ib[i];  
+  }
+  return (*this);
+}
+
+inline Medium2D_State& Medium2D_State::operator *=(const double &a) {
+  for(int i=0; i<Nband; i++) {
+    kappa[i] *= a;  
+    sigma[i] *= a;
+    Ib[i]    *= a;  
+  }
+  return (*this);
+}
+
 /********************************************************
  * Input/Output operators.                              *
  ********************************************************/
@@ -458,8 +491,6 @@ inline istream& operator >> (istream &in_file,  Medium2D_State &U)
   in_file.unsetf(ios::skipws);
   return (in_file);
 }
-
-
 
 
 /********************************************************

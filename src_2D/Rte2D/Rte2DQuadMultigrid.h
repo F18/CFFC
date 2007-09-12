@@ -36,10 +36,9 @@
 template <> void FAS_Multigrid2D_Solver<Rte2D_State,
                                         Rte2D_Quad_Block,
                                         Rte2D_Input_Parameters>::
-Additional_Solution_Block_Setup(Rte2D_Quad_Block &SolnBlk,
-				Rte2D_Input_Parameters *ip) 
+Additional_Solution_Block_Setup(Rte2D_Quad_Block &SolnBlk) 
 {
-  SolnBlk.ScaleGridTo3D(ip->Axisymmetric);
+  SolnBlk.ScaleGridTo3D(IP->Axisymmetric);
 }
 
 

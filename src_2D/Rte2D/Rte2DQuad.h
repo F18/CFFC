@@ -148,7 +148,7 @@ private:
 public:
   //@{ @name Solution state arrays:
   Rte2D_State             **U; //!< Conserved solution state.
-  Medium2D_State            **M; //!< Participating medium state.
+  Medium2D_State          **M; //!< Participating medium state.
   //@}
 
   //@{ @name Grid block information:
@@ -174,9 +174,9 @@ public:
   Rte2D_State           **dUdx; //!< Unlimited solution gradient (x-direction).
   Rte2D_State           **dUdy; //!< Unlimited solution gradient (y-direction).
   Rte2D_State            **phi; //!< Solution slope limiter.
-  Rte2D_State        **dUdpsi;  // Unlimited solution gradient
+  Rte2D_State         **dUdpsi; // Unlimited solution gradient
                                 // (azimuthal-direction).
-  Rte2D_State       **phi_psi;  // Solution slope limiter 
+  Rte2D_State        **phi_psi; // Solution slope limiter 
                                 // (azimuthal-direction).
   //@}
 

@@ -1838,6 +1838,10 @@ extern void Fix_Refined_Mesh_Boundaries(Grid2D_Quad_Block &Grid,
 
 extern void Unfix_Refined_Mesh_Boundaries(Grid2D_Quad_Block &Grid);
 
+extern int Seach_Mesh(Grid2D_Quad_Block &Grid,
+		      const Vector2D &X,
+		      int &ii, int &jj );
+
 /*************************************************************************
  * Grid2D_Quad_Block -- External subroutines for 2D array of grid blocks.*
  *************************************************************************/

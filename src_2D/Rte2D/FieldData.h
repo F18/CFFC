@@ -41,9 +41,10 @@ struct ConstantFieldParams { Soln_State U; };
 
 template<class Quad_Soln_Block> 
 struct DiscreteFieldParams {   
-  AdaptiveBlockResourceList const *List_of_Global_Solution_Blocks;
-  AdaptiveBlock2D_List const      *List_of_Local_Solution_Blocks;
-  Quad_Soln_Block const          **Local_SolnBlk;
+  QuadTreeBlock_DataStructure *QuadTree;
+  AdaptiveBlockResourceList   *List_of_Global_Solution_Blocks;
+  AdaptiveBlock2D_List        *List_of_Local_Solution_Blocks;
+  Quad_Soln_Block            **Local_SolnBlk;
 };
 
 
@@ -59,7 +60,7 @@ struct DiscreteFieldParams {
  *     pt2Object  -- pointer to object
  *
  * Member functions
- *     operator() -- Return field data at specific position
+ *     operator() -- Return figecific position
  *     Call()     -- Return field data at specific position
  * \endverbatim
  */
@@ -77,7 +78,7 @@ class FieldData {
   DiscreteFieldParams<Quad_Soln_Block> DF;
 
   // pointer to member function
-  Soln_State (FieldData::*fpt)(const Vector2D &);
+  Soln_State (FieldData::*fpt)(const void *);
 
 
  public:
@@ -87,6 +88,7 @@ class FieldData {
   //
   FieldData() {
     CF.U.Zero();
+    DF.QuadTree = NULL;
     DF.List_of_Global_Solution_Blocks = NULL;
     DF.List_of_Local_Solution_Blocks = NULL; 
     DF.Local_SolnBlk = NULL; 
@@ -98,6 +100,12 @@ class FieldData {
     fpt = &FieldData<Soln_State,Medium2D_Quad_Block>::Constant;
   };
   
+  void SetDiscreteParams( const struct DiscreteFieldParams<Quad_Soln_Block> params ) 
+  { 
+    DF = params; 
+    fpt = &FieldData<Soln_State,Medium2D_Quad_Block>::Interpolate;
+  };
+
   void SetDiscreteParams( const struct DiscreteFieldParams<Quad_Soln_Block> params ) 
   { 
     DF = params; 
@@ -135,13 +143,18 @@ inline Soln_State FieldData<Soln_State,Quad_Soln_Block> :: Interpolate(const Vec
 
   // declares
   int err;
-  int nb;           // block index
-  int i, j;       // cell indices
+  int i, j, nb;     //  cell indexes, block index
   Polygon P;        // polygon
   Soln_State value; // interpolated result
+  LinkedList<Vector2D> pdata;  // linked list object for polygon
+  int foundIt(0);   // bool, true if block containing point is found
+  int iFoundIt(0);  // bool, true if this processor found it
+  int buffer_size;  // buffer size 
+  int* buffer(NULL);// buffer
 
   // check to make sure parameter pointers have been properly defined
-  if ( DF.List_of_Global_Solution_Blocks == NULL || 
+  if ( DF.QuadTree == NULL || 
+       DF.List_of_Global_Solution_Blocks == NULL || 
        DF.List_of_Local_Solution_Blocks == NULL ||
        DF.Local_SolnBlk ==NULL ) {
     cerr << "FieldData::Interpolate() - Need to define parameter pointers.\n";
@@ -152,78 +165,163 @@ inline Soln_State FieldData<Soln_State,Quad_Soln_Block> :: Interpolate(const Vec
   //------------------------------------------------
   // search the multi-block grid to determine the containing block
   //------------------------------------------------
-  bool block_found(false); // bool, true if block containing point is found
-  for (nb=0; nb<DF.List_of_Local_Solution_Blocks->Nblk; nb++) {
-    
-    // build a polygon
-    P.convert(DF.Local_SolnBlk[nb]->Grid.nodeSW(i,j).X,
-	      DF.Local_SolnBlk[nb]->Grid.nodeSE(i,j).X,
-	      DF.Local_SolnBlk[nb]->Grid.nodeNE(i,j).X,
-	      DF.Local_SolnBlk[nb]->Grid.nodeNW(i,j).X);
 
-    // is the point in the polygon, get out
-    if (P.point_in_polygon(r)) { 
-      block_found = true; 
-      break;
+  //
+  // Loop over available processors, and all available blocks
+  //
+  for ( int iCPU=0; iCPU<DF.QuadTree->Ncpu && !foundIt; iCPU++ ) {
+    for ( nb=0; nb<DF.QuadTree->Nblk && !foundIt; nb++ ) {
+
+      // don't look at unallocated blocks
+      if (DF.QuadTree->Blocks[iCPU][nb] == NULL) break;
+      
+      // only look at used blocks
+      if ( !DF.QuadTree->Blocks[iCPU][nb]->block.used ) break;
+      
+      // if this block belongs to this processor
+      if ( DF.List_of_Local_Solution_Blocks->ThisCPU == iCPU ) {
+
+	//
+	// Build a polygon.  Use each node point along the outside of the block.
+	// Remmeber that we build the polygon in a counter-clockwise rotation
+	//
+	// south boudnary
+	for (i = DF.Local_SolnBlk[nb]->Grid.INl - DF.Local_SolnBlk[nb]->Grid.Nghost; 
+	     i <= DF.Local_SolnBlk[nb]->Grid.INu + DF.Local_SolnBlk[nb]->Grid.Nghost; 
+	     i++) {
+	  j = DF.Local_SolnBlk[nb]->Grid.JNl - DF.Local_SolnBlk[nb]->Grid.Nghost;
+	  pdata.add( DF.Local_SolnBlk[nb]->Grid.Node[i][j].X );
+	} // endfor - south
+	
+	// east boundary ( skip the first node on this side )
+	for (j = DF.Local_SolnBlk[nb]->Grid.JNl - DF.Local_SolnBlk[nb]->Grid.Nghost + 1; 
+	     j <= DF.Local_SolnBlk[nb]->Grid.JNu + DF.Local_SolnBlk[nb]->Grid.Nghost; 
+	     j++) {
+	  i = DF.Local_SolnBlk[nb]->Grid.JNu + DF.Local_SolnBlk[nb]->Grid.Nghost;
+	  pdata.add( DF.Local_SolnBlk[nb]->Grid.Node[i][j].X );
+	} // endfor - east
+	
+	// north boudnary ( skip the first node on this side )
+	for (i = DF.Local_SolnBlk[nb]->Grid.INu + DF.Local_SolnBlk[nb]->Grid.Nghost - 1; 
+	     i >= DF.Local_SolnBlk[nb]->Grid.INl - DF.Local_SolnBlk[nb]->Grid.Nghost; 
+	     i++) {
+	  j = DF.Local_SolnBlk[nb]->Grid.JNu + DF.Local_SolnBlk[nb]->Grid.Nghost;
+	  pdata.add( DF.Local_SolnBlk[nb]->Grid.Node[i][j].X );
+	} // endfor - south
+
+	// west boundary ( skip the first & last node on this side )
+	for (j = DF.Local_SolnBlk[nb]->Grid.JNu + DF.Local_SolnBlk[nb]->Grid.Nghost - 1; 
+	     j >= DF.Local_SolnBlk[nb]->Grid.JNl - DF.Local_SolnBlk[nb]->Grid.Nghost + 1; 
+	     j++) {
+	  i = DF.Local_SolnBlk[nb]->Grid.JNl - DF.Local_SolnBlk[nb]->Grid.Nghost;
+	  pdata.add( DF.Local_SolnBlk[nb]->Grid.Node[i][j].X );
+	} // endfor - east
+
+	// convert polynomial
+	P.convert(pdata);
+	
+	// is the point in the polygon
+	if (P.point_in_polygon(r)) iFoundIt = iCPU+1;  // offset by 1
+
+	// Broadcast the result to everyone, taking the max value.
+	// This will be the processor with the lowest rank 
+	// (ensures only one processor can find it!!).
+#ifdef _MPI_VERSION
+	MPI::COMM_WORLD.Allreduce(/*snd*/&iFoundIt, /*rcv*/&foundIt, /*size*/1, 
+				  /*typ*/MPI::INT, /*mx vlu*/MPI::MAX);
+#endif
+
+	// if somebody found it, exit
+	if (foundIt) break;
+
+      } // endif - ThisCPU
+
+    } // endfor - block
+  } // endfor - iCPU
+
+
+  //
+  // did we find it?
+  //
+  if (!foundIt) {
+    cerr << "FieldData::Interpolate() - error searching for point.\n";
+    exit(-1);
+  } // endif
+
+
+  // un offset the cpu index (makes it easier to read)
+  iFoundIt -= 1;
+
+
+  //------------------------------------------------
+  // Search block && Interpolate
+  //------------------------------------------------
+  // if we got this far, someone must have found the containing block
+  if (iFoundIt==DF.List_of_Local_Solution_Blocks->ThisCPU) {
+
+    //
+    // search block
+    //
+    err = Seach_Mesh(DF.Local_SolnBlk[nb]->Grid, r, i, j );
+    if (err) {
+      cerr << "FieldData::Interpolate() - No containing cell found.\n";
+      exit(-1);
     } // endif
 
-  } // endfor
 
-  // did we find it?
-  if (!block_found) {
-    cerr << "FieldData::Interpolate() - No containing block found.\n";
-    exit(-1);
-  } // endif
-
-  
-  //------------------------------------------------
-  // search the sinlge-block grid to determine the containing cell
-  //------------------------------------------------
-  bool cell_found(false); // bool, true if cell containing point is found
-  for (j = DF.Local_SolnBlk[nb]->Grid.JCl - DF.Local_SolnBlk[nb]->Grid.Nghost; 
-       j <= DF.Local_SolnBlk[nb]->Grid.JCu + DF.Local_SolnBlk[nb]->Grid.Nghost && !cell_found; 
-       j++) {
-    for (i = DF.Local_SolnBlk[nb]->Grid.ICl - DF.Local_SolnBlk[nb]->Grid.Nghost; 
-	 i <= DF.Local_SolnBlk[nb]->Grid.ICu + DF.Local_SolnBlk[nb]->Grid.Nghost; 
-	 i++) {
-
-    // build a polygon
-    P.convert(DF.Local_SolnBlk[nb]->Grid.nodeSW(i,j).X,
-	      DF.Local_SolnBlk[nb]->Grid.nodeSE(i,j).X,
-	      DF.Local_SolnBlk[nb]->Grid.nodeNE(i,j).X,
-	      DF.Local_SolnBlk[nb]->Grid.nodeNW(i,j).X);
-
-    // is the point in the polygon, get out
-    if (P.point_in_polygon(r)) { 
-      cell_found = true; 
-      break;
+    //
+    // Interpolate
+    //
+    err = Bilinear_Interpolation(DF.Local_SolnBlk[nb]->UnSW(i,j), 
+				 DF.Local_SolnBlk[nb]->Grid.nodeSW(i,j).X,
+				 DF.Local_SolnBlk[nb]->UnNW(i,j), 
+				 DF.Local_SolnBlk[nb]->Grid.nodeNW(i,j).X,
+				 DF.Local_SolnBlk[nb]->UnNE(i,j), 
+				 DF.Local_SolnBlk[nb]->Grid.nodeNE(i,j).X,
+				 DF.Local_SolnBlk[nb]->UnSE(i,j), 
+				 DF.Local_SolnBlk[nb]->Grid.nodeSE(i,j).X,
+				 r, value);
+    if (err) {
+      cerr << "FieldData::Interpolate() - Error interpolating.\n";
+      exit(-1);
     } // endif
 
-
-    } // endfor
-  } // endfor
-  
-  // did we find it?
-  if (!cell_found) {
-    cerr << "FieldData::Interpolate() - No containing cell found.\n";
-    exit(-1);
-  } // endif
+  } // endif - iFoundIt
 
 
   //------------------------------------------------
-  // interpolate
+  // broadcast result
   //------------------------------------------------
-  err = Bilinear_Interpolation(DF.Local_SolnBlk[nb]->UnSW(i,j), DF.Local_SolnBlk[nb]->Grid.nodeSW(i,j).X,
-                               DF.Local_SolnBlk[nb]->UnNW(i,j), DF.Local_SolnBlk[nb]->Grid.nodeNW(i,j).X,
-                               DF.Local_SolnBlk[nb]->UnNE(i,j), DF.Local_SolnBlk[nb]->Grid.nodeNE(i,j).X,
-                               DF.Local_SolnBlk[nb]->UnSE(i,j), DF.Local_SolnBlk[nb].Grid.nodeSE(i,j).X,
-                               r, value);
-  if (err) {
-    cerr << "FieldData::Interpolate() - Error interpolating.\n";
-    exit(-1);
-  } // endif
+  // if we got this far, we must have found the containing cell
+#ifdef _MPI_VERSION
 
+  // set the buffer size for the state variables
+  buffer_size = DF.Local_SolnBlk[nb]->NumVar();
+
+  // if this cpu is the one sending it, load the buffer
+  if (iFoundIt == DF.List_of_Local_Solution_Blocks->ThisCPU) {
+    buffer = new double[buffer_size];
+    for (int k=0; k<buffer_size; k++) buffer[k] = value[k];
+  }
+
+  // send
+  MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, iFoundIt);
+
+  // for all the other processors, unload the buffer
+  if (iFoundIt != DF.List_of_Local_Solution_Blocks->ThisCPU) {
+    buffer = new double[buffer_size];
+    for (int k=0; k<buffer_size; k++) value[k] = buffer[k];
+  }
+
+  // clean up memory
+  if (buffer!=NULL) { delete[] buffer; buffer = NULL; }
+
+#endif
+
+
+  //------------------------------------------------
   // return the value
+  //------------------------------------------------
   return value;
 
 }

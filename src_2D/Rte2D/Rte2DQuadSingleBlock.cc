@@ -1105,7 +1105,7 @@ void Output_Tecplot(Rte2D_Quad_Block &SolnBlk,
     for ( j  = SolnBlk.Grid.JNl ; j <= SolnBlk.Grid.JNu ; ++j ) {
        for ( i = SolnBlk.Grid.INl ; i <= SolnBlk.Grid.INu ; ++i ) {       
 	   U_node = SolnBlk.Un(i, j);
-	   GetState(M_node, SolnBlk.Grid.Node[i][j].X);
+	   M_node.GetState(SolnBlk.Grid.Node[i][j].X);
 	   q_node = U_node.q(M_node);
            Out_File << " " << SolnBlk.Grid.Node[i][j].X 
 		    << " " << U_node.G(M_node)   // /(FOUR*PI*U_node.Ib)

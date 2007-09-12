@@ -53,6 +53,16 @@ class Medium2D_State;
  *                 solution block.
  *   deallocate -- Deallocate memory for structured quadrilateral
  *                 solution block.
+ *      Un      -- Return conserved variable solution 
+ *                 at the specified node.              
+ *    UnNW      -- Return conserved variable solution   
+ *                 at the north-west node.              
+ *    UnNE      -- Return conserved variable solution   
+ *                 at the north-east node.              
+ *    UnSW      -- Return conserved variable solution   
+ *                 at the south-west node.              
+ *    UnSE      -- Return conserved variable solution   
+ *                 at the south-east node.              
  * \endverbatim
  */
 /***********************************************************************/
@@ -96,6 +106,21 @@ public:
   //! Deallocate memory for structured quadrilateral solution block.
   void deallocate(void);
   //@}
+
+  //@{ @name Bilinear interplation (Zingg & Yarrow).
+  //! Return conserverd solution state at specified nodes.
+  Medium2D_State Un(const int &ii, const int &jj);
+  Medium2D_State UnNW(const int &ii, const int &jj);
+  Medium2D_State UnNE(const int &ii, const int &jj);
+  Medium2D_State UnSE(const int &ii, const int &jj);
+  Medium2D_State UnSW(const int &ii, const int &jj);
+  //@}
+
+  //@{ @name Member functions required for message passing.
+  //! Number of solution state variables.
+  int NumVar(void) { return U[0][0].NUM_VAR_MEDIUM2D; }
+  //@}
+
 
 };
 
@@ -142,6 +167,77 @@ inline void Medium2D_Quad_Block::deallocate(void) {
   if (ownsGrid) Grid.deallocate(); 
   for ( int i = 0; i <= Grid.NCi-1 ; ++i ) delete[] U[i];
   delete[] U; U = NULL;
+}
+
+
+/**************************************************************************
+ * Medium2D_Quad_Block::Un -- Node conservative solution.                 *
+ **************************************************************************/
+inline Medium2D_State Medium2D_Quad_Block::Un(const int &ii, const int &jj) {
+ 
+  double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y,
+    eta1, zeta1, eta2, zeta2, eta, zeta;
+ 
+  x=Grid.Node[ii][jj].X.x; y=Grid.Node[ii][jj].X.y;
+  ax=Grid.Cell[ii-1][jj-1].Xc.x;
+  bx=Grid.Cell[ii-1][jj].Xc.x-Grid.Cell[ii-1][jj-1].Xc.x;
+  cx=Grid.Cell[ii][jj-1].Xc.x-Grid.Cell[ii-1][jj-1].Xc.x;
+  dx=Grid.Cell[ii][jj].Xc.x+Grid.Cell[ii-1][jj-1].Xc.x-
+    Grid.Cell[ii-1][jj].Xc.x-Grid.Cell[ii][jj-1].Xc.x;
+  ay=Grid.Cell[ii-1][jj-1].Xc.y;
+  by=Grid.Cell[ii-1][jj].Xc.y-Grid.Cell[ii-1][jj-1].Xc.y;
+  cy=Grid.Cell[ii][jj-1].Xc.y-Grid.Cell[ii-1][jj-1].Xc.y;
+  dy=Grid.Cell[ii][jj].Xc.y+Grid.Cell[ii-1][jj-1].Xc.y-
+    Grid.Cell[ii-1][jj].Xc.y-Grid.Cell[ii][jj-1].Xc.y;
+  aa=bx*dy-dx*by; bb=dy*(ax-x)+bx*cy-cx*by+dx*(y-ay); cc=cy*(ax-x)+cx*(y-ay);
+  if (fabs(aa) < TOLER*TOLER) {
+    if (fabs(bb) >= TOLER*TOLER) { zeta1=-cc/bb; }
+    else { zeta1 = -cc/sgn(bb)*(TOLER*TOLER); }
+    if (fabs(cy+dy*zeta1) >= TOLER*TOLER) { eta1=(y-ay-by*zeta1)/(cy+dy*zeta1); }
+    else { eta1 = HALF; } zeta2=zeta1; eta2=eta1;
+  } else {
+    if (bb*bb-FOUR*aa*cc >= TOLER*TOLER) { zeta1=HALF*(-bb+sqrt(bb*bb-FOUR*aa*cc))/aa; }
+    else { zeta1 = -HALF*bb/aa; }
+    if (fabs(cy+dy*zeta1) < TOLER*TOLER) { eta1=-ONE; }
+    else { eta1=(y-ay-by*zeta1)/(cy+dy*zeta1); }
+    if (bb*bb-FOUR*aa*cc >= TOLER*TOLER) { zeta2=HALF*(-bb-sqrt(bb*bb-FOUR*aa*cc))/aa; }
+    else { zeta2 = -HALF*bb/aa; }
+    if (fabs(cy+dy*zeta2) < TOLER*TOLER) { eta2=-ONE; }
+    else { eta2=(y-ay-by*zeta2)/(cy+dy*zeta2); }
+  } /* end if */
+  if (zeta1 > -TOLER && zeta1 < ONE + TOLER &&
+      eta1  > -TOLER && eta1  < ONE + TOLER) {
+    zeta=zeta1; eta=eta1;
+  } else if (zeta2 > -TOLER && zeta2 < ONE + TOLER &&
+	     eta2  > -TOLER && eta2  < ONE + TOLER) {
+    zeta=zeta2; eta=eta2;
+  } else {
+    zeta=HALF; eta=HALF;
+  } /* endif */
+  
+  return (U[ii-1][jj-1] +(U[ii-1][jj]-U[ii-1][jj-1])*zeta+  
+	  (U[ii][jj-1]-U[ii-1][jj-1])*eta + 
+	  (U[ii][jj]+U[ii-1][jj-1]-U[ii-1][jj]-U[ii][jj-1])*zeta*eta);
+
+}
+
+/**************************************************************************
+ * Medium2D_Quad_Block::Un -- Get cell node conserved solution states.    *
+ **************************************************************************/
+inline Medium2D_State Medium2D_Quad_Block::UnNW(const int &ii, const int &jj) {
+  return (Un(ii, jj+1));
+}
+
+inline Medium2D_State Medium2D_Quad_Block::UnNE(const int &ii, const int &jj) {
+  return (Un(ii+1, jj+1));
+}
+
+inline Medium2D_State Medium2D_Quad_Block::UnSE(const int &ii, const int &jj) {
+  return (Un(ii+1, jj));
+}
+
+inline Medium2D_State Medium2D_Quad_Block::UnSW(const int &ii, const int &jj) {
+  return (Un(ii, jj));
 }
 
 
