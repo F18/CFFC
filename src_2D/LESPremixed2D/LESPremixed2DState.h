@@ -483,11 +483,21 @@ class LESPremixed2D_pState {
   double HeatRelease_Parameter(void)const;
   double SFS_Kinetic_Energy_Fsd(const LESPremixed2D_pState &dWdx,
                                 const LESPremixed2D_pState &dWdy,
-                                const int &Flow_Type)const;
+                                const int &Flow_Type,
+                                const Tensor2D &strain_rate)const;
   double Efficiency_Function_Fsd(const LESPremixed2D_pState &dWdx,
                                  const LESPremixed2D_pState &dWdy,
-                                 const int &Flow_Type) const; 
+                                 const int &Flow_Type,
+                                 const Tensor2D &strain_rate) const; 
   double Progvar_Species_Grad(void) const;
+  double Reaction_Rate_Progvar(const LESPremixed2D_pState &dWdx,
+                               const LESPremixed2D_pState &dWdy) const;
+  double Reaction_Rate_Algebraic(const LESPremixed2D_pState &dWdx,
+                                 const LESPremixed2D_pState &dWdy,
+                                 const int &Flow_Type,
+                                 const Tensor2D &strain_rate) const;
+  double Reaction_Rate_NGT_C_Fsd(const LESPremixed2D_pState &dWdx,
+                                 const LESPremixed2D_pState &dWdy) const;
   double Reaction_Rate_Fsd(const LESPremixed2D_pState &dWdx,
                            const LESPremixed2D_pState &dWdy) const;
   double M_x(const LESPremixed2D_pState &dWdx,
@@ -500,7 +510,8 @@ class LESPremixed2D_pState {
                                         const LESPremixed2D_pState &dWdy) const;
   double SFS_Strain(const LESPremixed2D_pState &dWdx,
                     const LESPremixed2D_pState &dWdy,
-                    const int &Flow_Type) const;
+                    const int &Flow_Type,
+                    const Tensor2D &strain_rate) const;
   double SFS_Curvature(const LESPremixed2D_pState &dWdx,
                        const LESPremixed2D_pState &dWdy,
                        const int &Flow_Type) const;
@@ -719,22 +730,6 @@ class LESPremixed2D_pState {
 		   tau(W.tau), qflux(W.qflux), lambda(W.lambda), theta(W.theta) 
 #ifdef THICKENED_FLAME_ON
 		   ,flame(W.flame)
-#endif		   
-   {
-     for(int i=0; i<W.ns; ++i){
-       rhospec[i].c = W.rho*W.spec[i].c;
-       rhospec[i].gradc = W.rho*W.spec[i].gradc;
-       rhospec[i].diffusion_coef = W.rho*W.spec[i].diffusion_coef;
-     }
-     if(nscal) for(int i=0; i<nscal; ++i) rhoscalar[i] = W.rho*W.scalar[i];    
-   }
-
-   // WARNING - automatic type conversion
-   LESPremixed2D_cState(const LESPremixed2D_pState &W) : rho(W.rho), rhov(W.rhov()),
-		   E(W.E()), tau(W.tau), qflux(W.qflux), lambda(W.lambda),
-		   theta(W.theta), 
-#ifdef THICKENED_FLAME_ON
-		   flame(W.flame)
 #endif		   
    {
      for(int i=0; i<W.ns; ++i){
@@ -1700,7 +1695,7 @@ inline bool LESPremixed2D_cState::negative_scalarcheck(void) const{
     }
   }
       if ( nscal > 1 ) {
-        if ( rhoscalar[0]/rho > 0.9905 || rhoscalar[0]/rho < 0.001 ) {
+        if ( rhoscalar[0]/rho > 0.99 || rhoscalar[0]/rho < 0.01 ) {
         rhoscalar[1] = ZERO;
       }
       }
@@ -1734,10 +1729,18 @@ inline bool LESPremixed2D_cState::Unphysical_Properties_Check(const int Flow_Typ
 	 << *this <<endl;
     return false;
   }
- if ((Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
-       Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
-       Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) &&
-      (rho <= ZERO || !negative_speccheck(n) || es() <= ZERO || !negative_scalarcheck() )) {
+ if ((Flow_Type == FLOWTYPE_LAMINAR_C ||                            
+      Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC ||       
+      Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+      Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+      Flow_Type == FLOWTYPE_TURBULENT_LES_C ||
+      Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+      Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+      Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE ||
+      Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY ||
+      Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+      Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD) &&
+     (rho <= ZERO || !negative_speccheck(n) || es() <= ZERO || !negative_scalarcheck() )) {
     cout << "\n " << CFFC_Name() 
 	 << " LESPremixed2D ERROR: Negative Density || Energy || Mass Fractions || Progress Variable || Flame Surface Density : \n"
 	 << *this << endl;

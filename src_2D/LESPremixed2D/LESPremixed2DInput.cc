@@ -3162,12 +3162,28 @@ int Parse_Next_Input_Control_Parameter(LESPremixed2D_Input_Parameters &IP) {
          IP.FlowType = FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY;
        } else if (strcmp(IP.Flow_Type, "Turbulent-LES-TF-k") == 0) {
          IP.FlowType = FLOWTYPE_TURBULENT_LES_TF_K;
+       } else if (strcmp(IP.Flow_Type, "Laminar-C") == 0) {
+         IP.FlowType = FLOWTYPE_LAMINAR_C;
+       } else if (strcmp(IP.Flow_Type, "Laminar-C-Algebraic") == 0) {
+         IP.FlowType = FLOWTYPE_LAMINAR_C_ALGEBRAIC;
        } else if (strcmp(IP.Flow_Type, "Laminar-C-FSD") == 0) {
          IP.FlowType = FLOWTYPE_LAMINAR_C_FSD;
+       } else if (strcmp(IP.Flow_Type, "Laminar-NGT-C-FSD") == 0) {
+         IP.FlowType = FLOWTYPE_LAMINAR_NGT_C_FSD;
+       } else if (strcmp(IP.Flow_Type, "Turbulent-LES-C") == 0) {
+         IP.FlowType = FLOWTYPE_TURBULENT_LES_C;
+       } else if (strcmp(IP.Flow_Type, "Turbulent-LES-C-Algebraic") == 0) {
+         IP.FlowType = FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC;
        } else if (strcmp(IP.Flow_Type, "Turbulent-LES-C-FSD-Smagorinsky") == 0) {
          IP.FlowType = FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY;
+       } else if (strcmp(IP.Flow_Type, "Turbulent-LES-C-FSD-Charlette") == 0) {
+         IP.FlowType = FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE;
+       } else if (strcmp(IP.Flow_Type, "Turbulent-LES-NGT-C-FSD-Smagorinsky") == 0) {
+         IP.FlowType = FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY;
        } else if (strcmp(IP.Flow_Type, "Turbulent-LES-C-FSD-K") == 0) {
          IP.FlowType = FLOWTYPE_TURBULENT_LES_C_FSD_K;
+       } else if (strcmp(IP.Flow_Type, "Frozen-Turbulent-LES-C-FSD") == 0) {
+         IP.FlowType = FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD;
        } else if (strcmp(IP.Flow_Type, "Turbulent-DNS") == 0) {
 	 IP.FlowType = FLOWTYPE_TURBULENT_DNS;
        } else {

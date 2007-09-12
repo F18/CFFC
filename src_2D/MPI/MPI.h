@@ -225,14 +225,14 @@ inline double CFFC_Summation_MPI(double &send_value) {
 }
 
 // Returns summation of all state values sent by each processor.
-/* template <class T> inline T CFFC_Summation_MPI(T &send_value) { */
-/*   T receive_value(send_value); */
-/* #ifdef _MPI_VERSION */
-/*   for (int n = 1; n < send_value.NumVar(); n++) */
-/*   MPI::COMM_WORLD.Allreduce(&send_value[n], &receive_value[n], 1, MPI::DOUBLE, MPI::SUM); */
-/* #endif */
-/*   return (receive_value); */
-/* } */
+template <class T> inline T CFFC_Summation_MPI(T &send_value) {
+  T receive_value(send_value);
+#ifdef _MPI_VERSION
+  for (int n = 1; n < send_value.NumVar(); n++)
+  MPI::COMM_WORLD.Allreduce(&send_value[n], &receive_value[n], 1, MPI::DOUBLE, MPI::SUM);
+#endif
+  return (receive_value);
+}
 
 // Returns product of all integers sent by each processor.
 inline int CFFC_Product_MPI(const int send_value) {

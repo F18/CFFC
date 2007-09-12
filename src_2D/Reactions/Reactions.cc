@@ -83,7 +83,7 @@ void Reaction_set::set_reactions(string &react){
     num_species = 5;
     num_react_species = 4;
     //allocate memory 
-    reactions = new Reactdata[num_reactions];
+    reactions = new React_data[num_reactions];
     //set reaction coefficients based on kov formulation
     //reactions[0].set_data("CH4_1step",3.3*6.7e12,0.0,(48400.0*CAL_TO_JOULE),0);    for 0.2,1,3
     reactions[0].set_data("C3H8_1step",4.5*2.4e16,0.0,(48400.0*CAL_TO_JOULE),0);     //for 1.0,1.0

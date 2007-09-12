@@ -371,6 +371,9 @@ class LESPremixed2D_Quad_Block{
 
     double M_x_n(const int &ii, const int &jj);
     double M_y_n(const int &ii, const int &jj);
+    double Reaction_Rate_Progvar_n(const int &ii, const int &jj);
+    double Reaction_Rate_Algebraic_n(const int &ii, const int &jj);
+    double Reaction_Rate_NGT_C_Fsd_n(const int &ii, const int &jj);
     double Reaction_Rate_Fsd_n(const int &ii, const int &jj);
     double Resolved_Strain_n(const int &ii, const int &jj);
     double Resolved_Propagation_Curvature_n(const int &ii, const int &jj);
@@ -759,6 +762,42 @@ inline double LESPremixed2D_Quad_Block::M_y_n(const int &ii, const int &jj) {
 
 }
 
+inline double LESPremixed2D_Quad_Block::Reaction_Rate_Progvar_n(const int &ii, const int &jj) {
+  double eta, zeta;
+  eta = ZERO;
+  zeta = ZERO;
+  
+  BiLinearInterpolationCoefficients(eta, zeta, ii, jj);
+      
+    double h1, h2, h3, h4;
+
+    h1 = W[ii-1][jj-1].Reaction_Rate_Progvar(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1]);
+    h2 = W[ii-1][jj].Reaction_Rate_Progvar(dWdx[ii-1][jj],dWdy[ii-1][jj]);
+    h3 = W[ii][jj-1].Reaction_Rate_Progvar(dWdx[ii][jj-1],dWdy[ii][jj-1]);
+    h4 = W[ii][jj].Reaction_Rate_Progvar(dWdx[ii][jj],dWdy[ii][jj]);
+
+  return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta); 
+
+}
+
+inline double LESPremixed2D_Quad_Block::Reaction_Rate_NGT_C_Fsd_n(const int &ii, const int &jj) {
+  double eta, zeta;
+  eta = ZERO;
+  zeta = ZERO;
+  
+  BiLinearInterpolationCoefficients(eta, zeta, ii, jj);
+      
+    double h1, h2, h3, h4;
+
+    h1 = W[ii-1][jj-1].Reaction_Rate_NGT_C_Fsd(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1]);
+    h2 = W[ii-1][jj].Reaction_Rate_NGT_C_Fsd(dWdx[ii-1][jj],dWdy[ii-1][jj]);
+    h3 = W[ii][jj-1].Reaction_Rate_NGT_C_Fsd(dWdx[ii][jj-1],dWdy[ii][jj-1]);
+    h4 = W[ii][jj].Reaction_Rate_NGT_C_Fsd(dWdx[ii][jj],dWdy[ii][jj]);
+
+  return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta); 
+
+}
+
 inline double LESPremixed2D_Quad_Block::Reaction_Rate_Fsd_n(const int &ii, const int &jj) {
   double eta, zeta;
   eta = ZERO;
@@ -858,10 +897,10 @@ inline double LESPremixed2D_Quad_Block::SFS_Strain_n(const int &ii, const int &j
       
     double h1, h2, h3, h4;
 
-    h1 = W[ii-1][jj-1].SFS_Strain(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1],Flow_Type);
-    h2 = W[ii-1][jj].SFS_Strain(dWdx[ii-1][jj],dWdy[ii-1][jj],Flow_Type);
-    h3 = W[ii][jj-1].SFS_Strain(dWdx[ii][jj-1],dWdy[ii][jj-1],Flow_Type);
-    h4 = W[ii][jj].SFS_Strain(dWdx[ii][jj],dWdy[ii][jj],Flow_Type);
+/*     h1 = W[ii-1][jj-1].SFS_Strain(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1],Flow_Type); */
+/*     h2 = W[ii-1][jj].SFS_Strain(dWdx[ii-1][jj],dWdy[ii-1][jj],Flow_Type); */
+/*     h3 = W[ii][jj-1].SFS_Strain(dWdx[ii][jj-1],dWdy[ii][jj-1],Flow_Type); */
+/*     h4 = W[ii][jj].SFS_Strain(dWdx[ii][jj],dWdy[ii][jj],Flow_Type); */
 
   return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta); 
 

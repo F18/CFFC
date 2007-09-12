@@ -181,7 +181,6 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 						 List_of_Global_Solution_Blocks,
 						 List_of_Local_Solution_Blocks);
 
- 
   
   if (Local_SolnBlk == NULL){ return (1); }
 
@@ -479,7 +478,11 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       if( Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
           Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_K ||
           Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_NO_MODEL ||
+          Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C ||
+          Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC ||
           Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+          Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE ||
+          Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY ||
           Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
           Input_Parameters.i_ICs == IC_HOMOGENEOUS_TURBULENCE ){
 
@@ -728,7 +731,11 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	    //calculate the turbulence kinetic energy and enstrophy for unsteady turbulent flows
 	    if (Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
 		Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_K ||
+                Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C ||
+                Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC ||
                 Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+                Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE ||
+                Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY ||
                 Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
                 Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_NO_MODEL ||
 		Input_Parameters.i_ICs == IC_HOMOGENEOUS_TURBULENCE) {
@@ -761,7 +768,11 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 
 	      if (Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
 		  Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_K ||
+                  Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C ||
+                  Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC ||
                   Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+                  Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE ||
+                  Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY ||
                   Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
                   Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_NO_MODEL ||
                   Input_Parameters.i_ICs == IC_HOMOGENEOUS_TURBULENCE ){
@@ -963,7 +974,11 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
         if (Input_Parameters.Dual_Time_Stepping ||
             (Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
 	     Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_K ||
+             Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C ||
+             Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC ||
              Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+             Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE ||
+             Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY ||
              Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
 	     Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_NO_MODEL)) {
 
@@ -974,9 +989,13 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	
      } /* endwhile */
 
-     if (Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
+     if ( Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
 	  Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_TF_K ||
+          Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C ||
+          Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC ||
           Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+          Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE ||
+          Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY ||
           Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
 	  Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_NO_MODEL) {
 
