@@ -135,10 +135,11 @@ inline Soln_State FieldData<Soln_State,Quad_Soln_Block> :: Interpolate(const Vec
 
   // declares
   int err;
-  int nb;       // block index
-  int ic, jc;   // cell indices
-  double value; // the value we are looking for!!!!
-  
+  int nb;           // block index
+  int i, j;       // cell indices
+  Polygon P;        // polygon
+  Soln_State value; // interpolated result
+
   // check to make sure parameter pointers have been properly defined
   if ( DF.List_of_Global_Solution_Blocks == NULL || 
        DF.List_of_Local_Solution_Blocks == NULL ||
@@ -147,52 +148,84 @@ inline Soln_State FieldData<Soln_State,Quad_Soln_Block> :: Interpolate(const Vec
     exit(-1);
   } // endif
 
-  //
+
+  //------------------------------------------------
   // search the multi-block grid to determine the containing block
-  //
-  err =  Search_Multi_Block_Grid(DF.List_of_Global_Solution_Blocks,
-				 DF.List_of_Local_Solution_Blocks,
-				 ,
-				 r,
-				 ib, jb);
-  // if there was an error, exit
-  if (err) {
-    cerr << "FieldData::Interpolate() - Error searching multiblock grid.\n";
+  //------------------------------------------------
+  bool block_found(false); // bool, true if block containing point is found
+  for (nb=0; nb<DF.List_of_Local_Solution_Blocks->Nblk; nb++) {
+    
+    // build a polygon
+    P.convert(DF.Local_SolnBlk[nb]->Grid.nodeSW(i,j).X,
+	      DF.Local_SolnBlk[nb]->Grid.nodeSE(i,j).X,
+	      DF.Local_SolnBlk[nb]->Grid.nodeNE(i,j).X,
+	      DF.Local_SolnBlk[nb]->Grid.nodeNW(i,j).X);
+
+    // is the point in the polygon, get out
+    if (P.point_in_polygon(r)) { 
+      block_found = true; 
+      break;
+    } // endif
+
+  } // endfor
+
+  // did we find it?
+  if (!block_found) {
+    cerr << "FieldData::Interpolate() - No containing block found.\n";
     exit(-1);
   } // endif
 
   
-  //
-  // search the known block for the cell in which the location falls
-  //
-  err =  Search_Single_Block_Grid(DF.Grid[ib][jb],
-				  r,
-				  ic, jc);
-  // if there was an error, exit
-  if (err) {
-    cerr << "FieldData::Interpolate() - Error searching multiblock grid.\n";
+  //------------------------------------------------
+  // search the sinlge-block grid to determine the containing cell
+  //------------------------------------------------
+  bool cell_found(false); // bool, true if cell containing point is found
+  for (j = DF.Local_SolnBlk[nb]->Grid.JCl - DF.Local_SolnBlk[nb]->Grid.Nghost; 
+       j <= DF.Local_SolnBlk[nb]->Grid.JCu + DF.Local_SolnBlk[nb]->Grid.Nghost && !cell_found; 
+       j++) {
+    for (i = DF.Local_SolnBlk[nb]->Grid.ICl - DF.Local_SolnBlk[nb]->Grid.Nghost; 
+	 i <= DF.Local_SolnBlk[nb]->Grid.ICu + DF.Local_SolnBlk[nb]->Grid.Nghost; 
+	 i++) {
+
+    // build a polygon
+    P.convert(DF.Local_SolnBlk[nb]->Grid.nodeSW(i,j).X,
+	      DF.Local_SolnBlk[nb]->Grid.nodeSE(i,j).X,
+	      DF.Local_SolnBlk[nb]->Grid.nodeNE(i,j).X,
+	      DF.Local_SolnBlk[nb]->Grid.nodeNW(i,j).X);
+
+    // is the point in the polygon, get out
+    if (P.point_in_polygon(r)) { 
+      cell_found = true; 
+      break;
+    } // endif
+
+
+    } // endfor
+  } // endfor
+  
+  // did we find it?
+  if (!cell_found) {
+    cerr << "FieldData::Interpolate() - No containing cell found.\n";
     exit(-1);
   } // endif
 
 
-  //
+  //------------------------------------------------
   // interpolate
-  //
-  err = Bilinear_Interpolation(DF.valarray[ic  ][jc  ], DF.Grid[ib][jb].Node[ic  ][jc  ].X,
-			       DF.valarray[ic  ][jc+1], DF.Grid[ib][jb].Node[ic  ][jc+1].X,
-			       DF.valarray[ic+1][jc+1], DF.Grid[ib][jb].Node[ic+1][jc+1].X,
-			       DF.valarray[ic+1][jc  ], DF.Grid[ib][jb].Node[ic+1][jc  ].X,
-			       r, value);
-   // if there was an error, exit
+  //------------------------------------------------
+  err = Bilinear_Interpolation(DF.Local_SolnBlk[nb]->UnSW(i,j), DF.Local_SolnBlk[nb]->Grid.nodeSW(i,j).X,
+                               DF.Local_SolnBlk[nb]->UnNW(i,j), DF.Local_SolnBlk[nb]->Grid.nodeNW(i,j).X,
+                               DF.Local_SolnBlk[nb]->UnNE(i,j), DF.Local_SolnBlk[nb]->Grid.nodeNE(i,j).X,
+                               DF.Local_SolnBlk[nb]->UnSE(i,j), DF.Local_SolnBlk[nb].Grid.nodeSE(i,j).X,
+                               r, value);
   if (err) {
     cerr << "FieldData::Interpolate() - Error interpolating.\n";
     exit(-1);
   } // endif
- 
 
   // return the value
   return value;
-*/
+
 }
 
 #endif //_FIELD_DATA_INCLUDED
