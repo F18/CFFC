@@ -45,6 +45,7 @@ labels.pl
 
 # misc
 tags
+.DS_Store
 
 # 2D executables
 cffc2D
