@@ -1,0 +1,139 @@
+#
+# ZALESAK'S DISK
+#
+#
+# SOLVER PARAMETERS:
+Time_Accurate = 
+1
+Time_Integration_Type =
+Explicit_Runge_Kutta
+N_Stage =
+2
+BC_Type =
+Linear_Extrapolation
+Reconstruction_Type =
+Weighted_Essentially_Non_Oscillatory
+#Cubic_Essentially_Non_Oscillatory
+#Quadratic_Essentially_Non_Oscillatory
+#Linear_Essentially_Non_Oscillatory
+#
+# INTERFACE PARAMETERS:
+Number_of_Interface_Components =
+1
+Interface_Spline_Type =
+Zalesaks_Disk
+Interface_Characteristic_Length = 
+0.20
+Number_of_Specified_Interface_Points = 
+1
+Interface_Points =
+ 0.500   0.750   0   0
+Interface_Reference_Point =
+ 0.500   0.750
+Interface_Motion =
+Stationary
+#
+# GRID PARAMETERS:
+Grid_Type =
+Square
+Box_Width =
+1.0
+X_Shift =
+ 0.500   0.500
+Number_of_Cells_Idir = 
+100
+Number_of_Cells_Jdir =
+100
+Number_of_Ghost_Cells =
+3
+Number_of_Blocks_Idir = 
+4
+Number_of_Blocks_Jdir =
+4
+Number_of_Blocks_Per_Processor =
+128
+#
+# HAMILTON-JACOBI EQUATION PARAMETERS:
+Hamilton_Jacobi_CFL_Number =
+0.25
+Time_Max =
+4000.000
+#1333.333
+#2000.000
+#666.666
+#0.0
+Maximum_Number_of_Time_Steps =
+2
+#
+# EIKONAL EQUATION PARAMETERS:
+Eikonal_Solution_Type =
+Sussman
+Eikonal_Sign_Function =
+Derivative
+Redistance_Frequency =
+0
+Eikonal_CFL_Number =
+0.25
+Redistance_Tolerance = 
+0.00001
+Initial_Distance_Type =
+Geometric
+Number_of_Initial_Redistance_Iterations = 
+0
+Number_of_Redistance_Iterations = 
+20
+Extension_Distance =
+100.0
+#
+# SCALAR (FRONT SPEED) EXTENSION EQUATION PARAMETERS:
+Scalar_Extension_CFL_Number =
+0.25
+Number_of_Scalar_Extension_Iterations = 
+0
+#
+# BULK FLOW PARAMETERS:
+Bulk_Flow_Field_Type =
+Swirl
+Bulk_Flow_Characteristic_Speed =
+1.0	0.0
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+4
+Minimum_Refinement_Level =
+1
+Threshold_for_Refinement =
+0.005
+Threshold_for_Coarsening =
+0.001
+#
+# INITIAL AMR PARAMETERS:
+Number_of_Initial_Mesh_Refinements =
+0
+#
+# UNSTEADY AMR PARAMETERS:
+AMR =
+Off
+AMR_Frequency =
+9
+#
+# IO PARAMETERS:
+Output_File_Name = 
+zalesak
+Restart_Solution_Save_Frequency = 
+1000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+Write_Output
+Write_Output_Cells
+Write_Output_Nodes
+#Write_Output_Interface_List
+#
+# WRITE RESTART:
+#Write_Restart
+#
+# TERMINATE PRGRAM:
+Terminate
