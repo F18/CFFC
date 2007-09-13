@@ -2357,6 +2357,7 @@ void ICs(LESPremixed2D_Quad_Block &SolnBlk,
      if ( SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_C &&
           SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_C_ALGEBRAIC &&
           SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_C_FSD &&
+          SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_NGT_C_FSD &&
           SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY &&
           SolnBlk.Flow_Type != FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ) {
 	  if (SolnBlk.Grid.Cell[i][j].Xc.x <= 0.01){ //spatial relation, grid independent 
@@ -2367,6 +2368,7 @@ void ICs(LESPremixed2D_Quad_Block &SolnBlk,
 	 }else if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C ||
                     SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC ||
                     SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+                    SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD ||
                     SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
                     SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ) {
             double xx = SolnBlk.Grid.Cell[i][j].Xc.x-0.01;
@@ -2377,9 +2379,10 @@ void ICs(LESPremixed2D_Quad_Block &SolnBlk,
        	  SolnBlk.W[i][j].rho = SolnBlk.W[i][j].reactants_den*SolnBlk.W[2][j].Rtot()/SolnBlk.W[i][j].Rtot()/(1.0+tau_fsd*SolnBlk.W[i][j].scalar[0]);
        	  SolnBlk.W[i][j].v.x = SolnBlk.W[i][j].reactants_den*SolnBlk.W[i][j].laminar_speed/SolnBlk.W[i][j].rho;
 	  if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+               SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD ||
                SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
                SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ) {
-       	  SolnBlk.W[i][j].scalar[1] = 4000.0*exp(-sqr(xx*4000.0))/sqrt(3.1415926)/SolnBlk.W[i][j].rho;
+       	  SolnBlk.W[i][j].scalar[1] = 2000.0*exp(-sqr(xx*4000.0))/sqrt(3.1415926)/SolnBlk.W[i][j].rho;
 	 }
      }
 	  SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
@@ -4411,7 +4414,6 @@ double CFL(LESPremixed2D_Quad_Block &SolnBlk,
              for(int ii=0; ii<NN; ii++){
               max_diagonal = max(max_diagonal,fabs(dSdW(ii,ii)));
              }
-
  	       SolnBlk.dt[i][j] = min(HALF/max_diagonal, SolnBlk.dt[i][j]);
 	       //	       cout<<"\nFsd=   "<<SolnBlk.dt[i][j]<<endl;
 	       //	       if ( SolnBlk.dt[i][j] < 1.0e-08 ) { SolnBlk.dt[i][j] = 1.0e-08; }
@@ -9311,7 +9313,6 @@ if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C ||
 
           //  P - CFL*dt*dSdU 
           LinSys.A += Precon;
-
 	  
 	  // 	  /******** LOW MACH NUMBER PRECONDITIONER CHECK ******************
 // 	  SolnBlk.Uo[i][j].Low_Mach_Number_Preconditioner_Inverse(Precon_Inv,
@@ -9590,6 +9591,7 @@ if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C ||
   } //end j //
 
   LinSys.deallocate();
+	  cout<<"species"<<endl;
 
   /* Solution successfully updated. */
   return (0);
@@ -9654,10 +9656,6 @@ void Viscous_Calculations(LESPremixed2D_Quad_Block &SolnBlk) {
       /* Determine the turbulent transport properties. */
       if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K ||
-	  SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
-	  SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
-	  SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
-	  SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
 	  SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
 	  SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
 	  SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
@@ -9703,10 +9701,6 @@ void Viscous_Calculations(LESPremixed2D_Quad_Block &SolnBlk) {
       /********************** Turbulent Stresses ***********************/
       if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K ||
-	  SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
-	  SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
-	  SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
-	  SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
 	  SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
 	  SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
 	  SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
@@ -9731,10 +9725,6 @@ void Viscous_Calculations(LESPremixed2D_Quad_Block &SolnBlk) {
          q = - kappa * grad(T)                                         */
       if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ||
           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K ||
-	  SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
-	  SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
-	  SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
-	  SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
 	  SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
 	  SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
 	  SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 

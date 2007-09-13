@@ -858,7 +858,6 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	    error_flag = CFFC_OR_MPI(error_flag);
 	    if (error_flag) return (error_flag);
 	    
-	    
 	    /************* BOUNDARY CONDITIONS *********************************/
 	    // 2. Apply boundary conditions for stage.
 	    BCs(Local_SolnBlk, List_of_Local_Solution_Blocks,Input_Parameters);
@@ -879,7 +878,6 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	    
 	    error_flag = CFFC_OR_MPI(error_flag);
 	    if (error_flag) return (error_flag);
-
 	    // 4. Send boundary flux corrections at block interfaces with resolution changes.
 	    error_flag = Send_Conservative_Flux_Corrections(Local_SolnBlk, 
 							    List_of_Local_Solution_Blocks,

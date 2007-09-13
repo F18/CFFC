@@ -921,7 +921,8 @@ void dFIdW(DenseMatrix &dFdW, const LESPremixed2D_pState &W, const int Flow_Type
     dFdW(4,1) = W.rho*W.scalar[0];
     dFdW(4,4) = W.rho*W.v.x;
 
-    if ( Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+    if ( Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+         Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
          Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
          Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
          Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
@@ -1042,7 +1043,8 @@ void LESPremixed2D_pState::dWdU(DenseMatrix &dWdQ, const int Flow_Type) const{
     dWdQ(4,0) = -scalar[0]/rho;
     dWdQ(4,4) = ONE/rho;
 
-    if ( Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+    if ( Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+         Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
          Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
          Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
          Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
@@ -1178,7 +1180,8 @@ void LESPremixed2D_pState::dUdW(DenseMatrix &dQdW, const int Flow_Type){
     dQdW(4,0) = scalar[0];
     dQdW(4,4) = rho;
 
-    if ( Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+    if ( Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+         Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
          Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
          Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
          Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
@@ -1384,11 +1387,11 @@ LESPremixed2D_cState LESPremixed2D_pState::rc_x(const int &index) const {
 // Primitive Left Eigenvector -- (x-direction)
 LESPremixed2D_pState LESPremixed2D_pState::lp_x(const int &index) const {
  
-//    if(Scal_sys.scalar_flag == LES_C ||
-//       Scal_sys.scalar_flag == LES_C_FSD ||
-//       Scal_sys.scalar_flag == LES_C_FSD_K) {
-//     assert( index >= 1 && index <= (NUM_VAR_LESPREMIXED2D-ns) );
-//   }
+    if(Scal_sys.scalar_flag == LES_C ||
+       Scal_sys.scalar_flag == LES_C_FSD ||
+       Scal_sys.scalar_flag == LES_C_FSD_K) {
+     assert( index >= 1 && index <= (NUM_VAR_LESPREMIXED2D-ns) );
+   }
       double c = amodified(); 
    if(index == 1){
       return (LESPremixed2D_pState(ZERO, -HALF*rho/c, ZERO, HALF/(c*c), ZERO));
@@ -1432,7 +1435,6 @@ LESPremixed2D_cState LESPremixed2D_pState::rc_x_precon(const int &index, const d
        u_a_precon(MR2*c*c,uprimed,cprimed);
        double eta_fsd = Progvar_Species_Grad();
        assert( index >= 1 && index <= (NUM_VAR_LESPREMIXED2D-ns) );
-
   if(index == 1){
     return (LESPremixed2D_cState(ONE, 
 				 (uprimed-cprimed)/MR2,
@@ -1525,11 +1527,11 @@ LESPremixed2D_cState LESPremixed2D_pState::rc_x_precon(const int &index, const d
 // Primitive Left Eigenvector -- (x-direction)
 LESPremixed2D_pState LESPremixed2D_pState::lp_x_precon(const int &index, const double &MR2) const {
 
-//    if(Scal_sys.scalar_flag == LES_C ||
-//       Scal_sys.scalar_flag == LES_C_FSD ||
-//       Scal_sys.scalar_flag == LES_C_FSD_K) {
-//        assert( index >= 1 && index <= (NUM_VAR_LESPREMIXED2D-ns) );
-//   }
+    if(Scal_sys.scalar_flag == LES_C ||
+       Scal_sys.scalar_flag == LES_C_FSD ||
+       Scal_sys.scalar_flag == LES_C_FSD_K) {
+        assert( index >= 1 && index <= (NUM_VAR_LESPREMIXED2D-ns) );
+   }
     double c = amodified();   
     double uprimed,cprimed;
     u_a_precon(MR2*c*c,uprimed,cprimed);
@@ -2198,7 +2200,8 @@ double LESPremixed2D_pState::SFS_Strain(const LESPremixed2D_pState &dWdx,
     double k_fsd, kappa_fsd;
     k_fsd = SFS_Kinetic_Energy_Fsd(dWdx,dWdy,Flow_Type,strain_rate);
     kappa_fsd = Efficiency_Function_Fsd(dWdx,dWdy,Flow_Type,strain_rate);   
-    if ( Flow_Type == FLOWTYPE_LAMINAR_C_FSD ){
+    if ( Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+         Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD){
     return ( 0.0 );
     }else {
     if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO) {
@@ -2218,7 +2221,8 @@ double LESPremixed2D_pState::SFS_Curvature(const LESPremixed2D_pState &dWdx,
     Mx = M_x(dWdx,dWdy);
     My = M_y(dWdx,dWdy);
     alpha_fsd = ONE - sqr(Mx) - sqr(My);
-    if ( Flow_Type == FLOWTYPE_LAMINAR_C_FSD ){
+    if ( Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+         Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD ){
     return ( 0.0 );
     }else{
     if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO && scalar[1] != ZERO) {
