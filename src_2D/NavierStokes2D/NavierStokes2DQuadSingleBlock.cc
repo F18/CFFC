@@ -5162,7 +5162,7 @@ int dUdt_Residual_Evaluation(NavierStokes2D_Quad_Block &SolnBlk,
 	    break;
 	  case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
 	    Flux -= ViscousFlux_n(Xu,Wu,HALF*(dWdxl+dWdxr),HALF*(dWdyl+dWdyr),
-				  SolnBlk.Grid.nfaceE(i,j),SolnBlk.Axisymmetric,OFF,
+				  SolnBlk.Grid.nfaceE(i,j),SolnBlk.Axisymmetric,
 				  viscous_bc_flag,
 				  SolnBlk.Wall[i][j].ywall, 
 				  SolnBlk.Wall[i][j].yplus);
