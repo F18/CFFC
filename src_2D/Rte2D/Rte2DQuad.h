@@ -754,6 +754,7 @@ inline ostream &operator << (ostream &out_file,
   if (SolnBlk.NCi == 0 || SolnBlk.NCj == 0) return(out_file);
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+         out_file << SolnBlk.M[i][j] << "\n";
          out_file << SolnBlk.U[i][j] << "\n";
      } /* endfor */
   } /* endfor */
@@ -798,6 +799,7 @@ inline istream &operator >> (istream &in_file,
   Copy_Quad_Block(SolnBlk.Grid, New_Grid); New_Grid.deallocate();
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+         in_file >> SolnBlk.M[i][j];
          in_file >> SolnBlk.U[i][j];
          for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_RTE2D-1 ; ++k ) {
 	   SolnBlk.dUdt[i][j][k].Zero();
