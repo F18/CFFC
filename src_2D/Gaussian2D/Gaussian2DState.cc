@@ -361,12 +361,6 @@ Gaussian2D_pState Adiabatic_Wall(const Gaussian2D_pState &W,
  *                                                      *
  ********************************************************/
 Gaussian2D_pState Isothermal_Wall(const Gaussian2D_pState &W,
-				  const Gaussian2D_pState &Wo,
-				  const Vector2D &norm_dir) {
-  return Isothermal_Wall(W,Wo.v,Wo.T(),norm_dir);
-}
-
-Gaussian2D_pState Isothermal_Wall(const Gaussian2D_pState &W,
 				  const Vector2D &V,
 				  const double &T,
 				  const Vector2D &norm_dir) {
@@ -467,12 +461,12 @@ Gaussian2D_pState Knudsen_Layer_Adiabatic(const Gaussian2D_pState &W,
  *                                                      *
  ********************************************************/
 Gaussian2D_pState Knudsen_Layer_Isothermal(const Gaussian2D_pState &W,
-					   const Gaussian2D_pState &Wo,
+					   const Vector2D &V,
+					   const double &T,
 					   const Vector2D &norm_dir) {
   Gaussian2D_pState W_rot, Kn_rot;
-  double T = Wo.T();  //temperature of wall
   double m = W.M/(THOUSAND*AVOGADRO);  //particle mass
-  double vy_wall_rot = -Wo.v.x*norm_dir.x + Wo.v.y*norm_dir.y;
+  double vy_wall_rot = -V.x*norm_dir.x + V.y*norm_dir.y;
   double ng, nw, n_temp, rho_temp, v_temp, pxx_temp, pxy_temp, pyy_temp, pzz_temp, erot_temp;
 
   W_rot = Rotate(W,norm_dir);
