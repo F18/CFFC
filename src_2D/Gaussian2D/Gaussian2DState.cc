@@ -301,12 +301,6 @@ Gaussian2D_pState Reflect(const Gaussian2D_pState &W,
  *                                                      *
  ********************************************************/
 Gaussian2D_pState Adiabatic_Wall(const Gaussian2D_pState &W,
-				 const Gaussian2D_pState &Wo,
-				 const Vector2D &norm_dir) {
-  return Adiabatic_Wall(W,Wo.v,norm_dir);
-}
-
-Gaussian2D_pState Adiabatic_Wall(const Gaussian2D_pState &W,
 				 const Vector2D &V,
 				 const Vector2D &norm_dir) {
 
@@ -430,12 +424,12 @@ Gaussian2D_pState Isothermal_Wall(const Gaussian2D_pState &W,
  *                                                      *
  ********************************************************/
 Gaussian2D_pState Knudsen_Layer_Adiabatic(const Gaussian2D_pState &W,
-					  const Gaussian2D_pState &Wo,
+					  const Vector2D  &v,
 					  const Vector2D &norm_dir) {
   Gaussian2D_pState W_rot, Kn_rot;
   double v_temp, pxy_temp, pyy_temp;
 
-  double vy_wall_rot = -Wo.v.x*norm_dir.x + Wo.v.y*norm_dir.y;
+  double vy_wall_rot = -v.x*norm_dir.x + v.y*norm_dir.y;
 
   W_rot = Rotate(W,norm_dir);
 
