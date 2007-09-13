@@ -87,7 +87,8 @@ else
 endif
 
 # Euler3D:
-SRC_EULER = $(EULER_DIR)Euler3DThermallyPerfectState.cc \
+SRC_EULER = $(EULER_DIR)Euler3DPolytropicState.cc \
+	    $(EULER_DIR)Euler3DThermallyPerfectState.cc \
 	    $(EULER_DIR)Euler3DThermallyPerfectInput.cc
 
 # NavierStokes3D:
@@ -175,7 +176,8 @@ else
 endif
 
 # Euler3D:
-OBJ_EULER = $(EULER_DIR)Euler3DThermallyPerfectState.o \
+OBJ_EULER = $(EULER_DIR)Euler3DPolytropicState.o \
+	    $(EULER_DIR)Euler3DThermallyPerfectState.o \
 	    $(EULER_DIR)Euler3DThermallyPerfectInput.o
 
 # NavierStokes3D:
