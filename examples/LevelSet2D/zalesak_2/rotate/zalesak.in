@@ -4,7 +4,7 @@
 #
 # SOLVER PARAMETERS:
 Time_Accurate = 
-1
+0
 Time_Integration_Type =
 Explicit_Runge_Kutta
 N_Stage =
@@ -41,15 +41,15 @@ Box_Width =
 X_Shift =
  0.500   0.500
 Number_of_Cells_Idir = 
-100
+20
 Number_of_Cells_Jdir =
-100
+20
 Number_of_Ghost_Cells =
 3
 Number_of_Blocks_Idir = 
-4
+1
 Number_of_Blocks_Jdir =
-4
+1
 Number_of_Blocks_Per_Processor =
 128
 #
@@ -76,17 +76,17 @@ Redistance_Frequency =
 Eikonal_Solution_Type =
 Sussman
 Eikonal_Sign_Function =
-Smeared_New
+Smeared
 Eikonal_CFL_Number =
 0.25
 Redistance_Tolerance = 
-0.001
+0.0001
 Initial_Distance_Type =
 Geometric
 Number_of_Initial_Redistance_Iterations = 
-20
+0
 Number_of_Redistance_Iterations = 
-20
+30
 Extension_Distance =
 100.0
 #

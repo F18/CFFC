@@ -1,0 +1,9 @@
+#!/bin/bash
+
+nice -n +19 mpirun -np 1 --gm-kill 2 /nfs/fe03/d1/cfd/samuel/CFDkit+caboodle/src/levelset2D -f zalesak.in -pde LevelSet2D
+cat zalesak_cpu*.dat > points.dat
+cat zalesak_cells_cpu*.dat > cells.dat
+cat zalesak_nodes_cpu*.dat > nodes.dat
+cat zalesak_interface_list_cpu*.dat > interface_list.dat
+rm zalesak_*cpu*.dat
+rm zalesak.e* zalesak.o*

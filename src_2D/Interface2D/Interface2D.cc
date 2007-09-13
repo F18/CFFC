@@ -198,6 +198,7 @@ void Interface2D::Zalesak(const Vector2D &Origin,
   // Compute the locations of the spline points on the 
   // spline and the point and boundary condition types.
   for (int i = 0; i < npts-3; i++) {
+    // Points on the circular arc.
     theta = theta1 + (theta2 - theta1)*double(i)/double(npts-4);
     theta = TWO*PI*theta/360.0;
     Spline.Xp[i].x = Radius*cos(theta);//Origin.x + 
@@ -207,6 +208,7 @@ void Interface2D::Zalesak(const Vector2D &Origin,
     if (i == 0 || i == npts - 4)
       Spline.tp[i] = SPLINE2D_POINT_SHARP_CORNER;
   }
+  // 
   Spline.Xp[npts-3] = Spline.Xp[npts-4] - Vector2D(1.5*Radius,ZERO);
   Spline.bc[npts-3] = BC_NONE;
   Spline.tp[npts-3] = SPLINE2D_POINT_SHARP_CORNER;
@@ -230,10 +232,11 @@ void Interface2D::Zalesak(const Vector2D &Origin,
 
 }
 
-/**********************************************************************
- * Interface2D::Star -- This routine calculates and returns an        *
- *                      interface representing a multi-point star.    *
- **********************************************************************/
+/***********************************************************************
+ * Interface2D::Star -- This routine calculates and returns an         *
+ *                      interface representing a multi-point star.     *
+ *                      Num_Ext_Pts is the number points the star has. *
+ ***********************************************************************/
 void Interface2D::Star(const Vector2D &Origin,
 		       const double &Radius,
 		       const int &Num_Ext_Pts) {
