@@ -66,7 +66,7 @@ class Vector2D_Function {
   //
   // constructors
   //
-  Vector2D_Function() { val.Zero(); };
+  Vector2D_Function() : fpt(NULL) { val.Zero(); };
   
   void SetConstantParams( const Soln_State &value ) 
   { 
