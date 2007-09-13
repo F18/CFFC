@@ -379,7 +379,9 @@ class Rte2D_State {
   Rte2D_State& operator +=(const Rte2D_State &U);
   Rte2D_State& operator -=(const Rte2D_State &U);
   Rte2D_State &operator *=(const double &a);
+  Rte2D_State &operator *=(const Rte2D_State &U);
   Rte2D_State &operator /=(const double &a);
+  Rte2D_State &operator /=(const Rte2D_State &U);
   //@}
       
   //@{ @name Unary arithmetic operators.
@@ -897,27 +899,27 @@ inline Rte2D_State Rte2D_State :: operator -(const Rte2D_State &U) const {
 // scalar multiplication
 inline Rte2D_State Rte2D_State :: operator *(const double &a) const {
   Rte2D_State Temp(*this);
-  for ( int i=0; i<NUM_VAR_RTE2D; i++ ) Temp.I[i] = a*I[i];
+  Temp *= a;
   return(Temp);
 }
 
 inline Rte2D_State operator *(const double &a, const Rte2D_State &U) {
   Rte2D_State Temp(U);
-  for ( int i=0; i<U.NUM_VAR_RTE2D; i++ ) Temp.I[i] = a*U.I[i];
+  Temp *= a;
   return(Temp);
 }
 
 // scalar division
 inline Rte2D_State Rte2D_State :: operator /(const double &a) const {
   Rte2D_State Temp(*this);
-  for ( int i=0; i<NUM_VAR_RTE2D; i++ ) Temp.I[i]= I[i]/a;
+  Temp /= a;
   return(Temp);
 }
 
 // solution state division operator
 inline Rte2D_State Rte2D_State :: operator /(const Rte2D_State &U) const {
   Rte2D_State Temp(*this);
-  for ( int i=0; i<NUM_VAR_RTE2D; i++ ) Temp.I[i]= I[i]/U.I[i];
+  Temp /= U;
   return(Temp);
 }
 
@@ -931,7 +933,7 @@ inline double Rte2D_State :: operator   *(const Rte2D_State &U) const {
 // solution state product operator
 inline Rte2D_State Rte2D_State :: operator ^(const Rte2D_State &U) const {
   Rte2D_State Temp(*this);
-  for ( int i=0; i<NUM_VAR_RTE2D; i++ ) Temp.I[i] = I[i]*U.I[i];
+  Temp *= U;
   return(Temp);
 }
 
@@ -961,8 +963,20 @@ inline Rte2D_State& Rte2D_State::operator *=(const double &a) {
   return (*this);
 }
 
+inline Rte2D_State& Rte2D_State::operator *=(const Rte2D_State &U) {
+  for ( int i=0; i<NUM_VAR_RTE2D; i++ ) I[i] *= U.I[i];
+  return (*this);
+}
+
+
 inline Rte2D_State& Rte2D_State::operator /=(const double &a) {
   for ( int i=0; i<NUM_VAR_RTE2D; i++ ) I[i] /= a;
+  return (*this);
+}
+
+
+inline Rte2D_State& Rte2D_State::operator /=(const Rte2D_State &U) {
+  for ( int i=0; i<NUM_VAR_RTE2D; i++ ) I[i] /= U.I[i];
   return (*this);
 }
 

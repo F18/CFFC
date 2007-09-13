@@ -30,6 +30,28 @@
 #include "../Math/Vector2D.h"
 
 
+
+/***********************************************************************/
+/*!
+ * Class: Vector2D_Function
+ *
+ * @brief Function class for a constant value function.
+/***********************************************************************/
+template<class Soln_State> 
+class ConstantFunc {
+  
+private:
+  Soln_State val;
+
+public:
+  ConstantFunc(const Soln_State &value) : val(value) { };
+  Soln_State Eval(const Vector2D &r) { return val; };
+
+};
+
+
+
+
 /***********************************************************************/
 /*!
  * Class: Vector2D_Function
@@ -47,51 +69,56 @@
  * \endverbatim
  */
 /***********************************************************************/
+//----------------------------------------------------------------------
+// abstract base class
+//----------------------------------------------------------------------
 template<class Soln_State> 
 class Vector2D_Function {
+  
+public:
+  
+  // two possible functions to call member function. virtual cause derived
+  // classes will use a pointer to an object and a pointer to a member function
+  // to make the function call
+  virtual Soln_State operator()(const Vector2D &r)=0;  // call using operator
+  virtual Soln_State Call(const Vector2D &r)=0;        // call using function
+};
 
- private:
+
+//----------------------------------------------------------------------
+// derived template class
+//----------------------------------------------------------------------
+template <class Soln_State, class Function> 
+class Vector2D_SpecFunction : public Vector2D_Function<Soln_State> {
+
+private:
 
   //
   //objects
   //
-  Soln_State val;
-
-  // pointer to member function
-  Soln_State (Vector2D_Function::*fpt)(const Vector2D &);
+  Function* ptr2obj; // pointer to object
 
 
- public:
+public:
 
   //
   // constructors
   //
-  Vector2D_Function() : fpt(NULL) { val.Zero(); };
+  Vector2D_SpecFunction(Function* ptr) : ptr2obj(ptr) { };
+  ~Vector2D_SpecFunction() { delete ptr2obj; ptr2obj=NULL; }
   
-  void SetConstantParams( const Soln_State &value ) 
-  { 
-    val = value; 
-    fpt = &Vector2D_Function<Soln_State>::Constant;
-  };
-  
-
   //
   // Functor overloads
   //
   // Two possible functions to call member function:
   // 1. call using operator
-  Soln_State operator()(const Vector2D &r) { return (*this.*fpt)(r); };   
+  Soln_State operator()(const Vector2D &r) { return ptr2obj->Eval(r); };   
 
   // 2. call using function
-  Soln_State Call(const Vector2D &r) { return (*this.*fpt)(r); };   
-
-  
-  //
-  // Functions to describe the field
-  //
-  // return a constant field
-  Soln_State Constant(const Vector2D &r) { return val; };
+  Soln_State Call(const Vector2D &r) { return ptr2obj->Eval(r); };   
 };
+
+
 
 
 // /********************************************************

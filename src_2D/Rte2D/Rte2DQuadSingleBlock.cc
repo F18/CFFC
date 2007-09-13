@@ -97,6 +97,7 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk) {
     /* Broadcast the axisymmetric/planar flow indicator. */
 
     MPI::COMM_WORLD.Bcast(&(SolnBlk.Axisymmetric), 1, MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(SolnBlk.Medium_Field_Type), 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(SolnBlk.NorthWallTemp), 1, MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(SolnBlk.SouthWallTemp), 1, MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(SolnBlk.EastWallTemp), 1, MPI::DOUBLE, 0);
@@ -321,6 +322,7 @@ void Broadcast_Solution_Block(Rte2D_Quad_Block &SolnBlk,
     /* Broadcast the axisymmetric/planar flow indicator. */
 
     Communicator.Bcast(&(SolnBlk.Axisymmetric), 1, MPI::INT, Source_Rank);
+    Communicator.Bcast(&(SolnBlk.Medium_Field_Type), 1, MPI::INT, Source_Rank);
     Communicator.Bcast(&(SolnBlk.NorthWallTemp), 1, MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(SolnBlk.SouthWallTemp), 1, MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(SolnBlk.EastWallTemp), 1, MPI::DOUBLE, Source_Rank);
@@ -519,6 +521,7 @@ void Copy_Solution_Block(Rte2D_Quad_Block &SolnBlk1,
     /* Set the axisymmetric/planar flow indicator. */
 
     SolnBlk1.Axisymmetric = SolnBlk2.Axisymmetric;
+    SolnBlk1.Medium_Field_Type  = SolnBlk2.Medium_Field_Type; 
     SolnBlk1.NorthWallTemp  = SolnBlk2.NorthWallTemp; 
     SolnBlk1.SouthWallTemp  = SolnBlk2.SouthWallTemp;  
     SolnBlk1.EastWallTemp   = SolnBlk2.EastWallTemp;  
@@ -532,10 +535,6 @@ void Copy_Solution_Block(Rte2D_Quad_Block &SolnBlk1,
        to the first solution block. */
 
     Copy_Quad_Block(SolnBlk1.Grid, SolnBlk2.Grid);
-
-    /* Set the grid 2D to quasi-3D scaling parameters*/
-      
-    SolnBlk1.ScaleGridTo3D();
 
     /* Copy the solution information from SolnBlk2 to SolnBlk1. */
 
@@ -625,6 +624,7 @@ int Prolong_Solution_Block(Rte2D_Quad_Block &SolnBlk_Fine,
        copy some relevant information. */
 
       SolnBlk_Fine.Axisymmetric = SolnBlk_Original.Axisymmetric;
+      SolnBlk_Fine.Medium_Field_Type  = SolnBlk_Original.Medium_Field_Type; 
       SolnBlk_Fine.NorthWallTemp = SolnBlk_Original.NorthWallTemp; 
       SolnBlk_Fine.SouthWallTemp = SolnBlk_Original.SouthWallTemp;  
       SolnBlk_Fine.EastWallTemp = SolnBlk_Original.EastWallTemp;  
@@ -674,6 +674,9 @@ int Prolong_Solution_Block(Rte2D_Quad_Block &SolnBlk_Fine,
            break;
        } /* endswitch */
        
+       //----------------------------------------------------------------
+       // conserved state
+       //----------------------------------------------------------------
        for ( j  = j_min; j <= j_max ; ++j ) {
 	   for ( i = i_min ; i <= i_max ; ++i ) {
 //                area_total_fine = SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl  ]
@@ -708,10 +711,41 @@ int Prolong_Solution_Block(Rte2D_Quad_Block &SolnBlk_Fine,
            } /* endfor */
        } /* endfor */
 
+       //----------------------------------------------------------------
        // and the medium state
-       PrescribeFields(SolnBlk_Fine);
+       //----------------------------------------------------------------
+       // if the field is prescribed analytically
+       if (SolnBlk_Fine.Medium_Field_Type == MEDIUM2D_FIELD_ANALYTIC) {
+	 PrescribeFields(SolnBlk_Fine);
+       //
+       // if it is a discretely specified field
+       } else {
 
-      // boundary ref states
+	 for ( j  = j_min; j <= j_max ; ++j ) {
+	   for ( i = i_min ; i <= i_max ; ++i ) {
+	     SolnBlk_Fine.M[2*(i-i_min)+SolnBlk_Fine.ICl  ]
+	                   [2*(j-j_min)+SolnBlk_Fine.JCl  ] 
+	       = SolnBlk_Original.M[i][j];
+	     
+	     SolnBlk_Fine.M[2*(i-i_min)+SolnBlk_Fine.ICl+1]
+                           [2*(j-j_min)+SolnBlk_Fine.JCl  ] 
+	       = SolnBlk_Original.M[i][j];
+
+	     SolnBlk_Fine.M[2*(i-i_min)+SolnBlk_Fine.ICl  ]
+                           [2*(j-j_min)+SolnBlk_Fine.JCl+1]
+	       = SolnBlk_Original.M[i][j];
+
+	     SolnBlk_Fine.M[2*(i-i_min)+SolnBlk_Fine.ICl+1]
+	                   [2*(j-j_min)+SolnBlk_Fine.JCl+1]
+	       = SolnBlk_Original.M[i][j];
+           } // endfor
+	 } // endfor
+	 
+       } // endif 
+       
+       //----------------------------------------------------------------
+       // boundary ref states
+       //----------------------------------------------------------------
        for ( j  = j_min-SolnBlk_Original.Nghost/2; j <= j_max+SolnBlk_Original.Nghost/2 ; ++j ) {
            SolnBlk_Fine.UoW[2*(j-j_min)+SolnBlk_Fine.JCl  ]
               = SolnBlk_Original.UoW[j];
@@ -758,6 +792,10 @@ int Restrict_Solution_Block(Rte2D_Quad_Block &SolnBlk_Coarse,
 			    Rte2D_Quad_Block &SolnBlk_Original_NE) {
 
     int i, j, i_coarse, j_coarse, mesh_coarsening_permitted;
+    double A_coarse;
+
+    // use a bool to make sure there are only 2 possible paths -> true or false
+    const bool discreteField( SolnBlk_Original_SW.Medium_Field_Type == MEDIUM2D_FIELD_DISCRETE );
  
     /* Allocate memory for the cells and nodes for the 
        coarsened quadrilateral mesh block. */
@@ -808,6 +846,7 @@ int Restrict_Solution_Block(Rte2D_Quad_Block &SolnBlk_Coarse,
        copy some relevant information. */
 
       SolnBlk_Coarse.Axisymmetric = SolnBlk_Original_SW.Axisymmetric;
+      SolnBlk_Coarse.Medium_Field_Type = SolnBlk_Original_SW.Medium_Field_Type; 
       SolnBlk_Coarse.NorthWallTemp = SolnBlk_Original_SW.NorthWallTemp; 
       SolnBlk_Coarse.SouthWallTemp = SolnBlk_Original_SW.SouthWallTemp;  
       SolnBlk_Coarse.EastWallTemp = SolnBlk_Original_SW.EastWallTemp;  
@@ -824,13 +863,26 @@ int Restrict_Solution_Block(Rte2D_Quad_Block &SolnBlk_Coarse,
       /* Restrict the solution information from the four original solution blocks
          to the newly coarsened solution block. */
 
+      //----------------------------------------------------------------
       // South-West corner fine block:	
+      //----------------------------------------------------------------
+      //
+      // conserved state
+      //
       for ( j = SolnBlk_Original_SW.JCl; j <= SolnBlk_Original_SW.JCu ; j += 2 ) {
       	  for ( i = SolnBlk_Original_SW.ICl ; i <= SolnBlk_Original_SW.ICu ; i += 2 ) {
       	     i_coarse = (i-SolnBlk_Original_SW.ICl)/2+
                         SolnBlk_Coarse.ICl;
       	     j_coarse = (j-SolnBlk_Original_SW.JCl)/2+
                         SolnBlk_Coarse.JCl;
+	     A_coarse = SolnBlk_Original_SW.Grid.Cell[i  ][j  ].A*
+	                SolnBlk_Original_SW.Sp[i  ][j  ] +
+	                SolnBlk_Original_SW.Grid.Cell[i+1][j  ].A*
+	                SolnBlk_Original_SW.Sp[i+1][j  ] +
+	                SolnBlk_Original_SW.Grid.Cell[i  ][j+1].A*
+	                SolnBlk_Original_SW.Sp[i  ][j+1] +
+ 	                SolnBlk_Original_SW.Grid.Cell[i+1][j+1].A*
+	                SolnBlk_Original_SW.Sp[i+1][j+1];
              SolnBlk_Coarse.U[i_coarse][j_coarse] = (SolnBlk_Original_SW.Grid.Cell[i  ][j  ].A*
 						     SolnBlk_Original_SW.Sp[i  ][j  ]*
                                                      SolnBlk_Original_SW.U[i  ][j  ] +
@@ -842,19 +894,30 @@ int Restrict_Solution_Block(Rte2D_Quad_Block &SolnBlk_Coarse,
                                                      SolnBlk_Original_SW.U[i  ][j+1] +
                                                      SolnBlk_Original_SW.Grid.Cell[i+1][j+1].A*
 						     SolnBlk_Original_SW.Sp[i+1][j+1]*
-                                                     SolnBlk_Original_SW.U[i+1][j+1]) /
-                                                    (SolnBlk_Original_SW.Grid.Cell[i  ][j  ].A*
-						     SolnBlk_Original_SW.Sp[i  ][j  ] +
-						     SolnBlk_Original_SW.Grid.Cell[i+1][j  ].A*
-						     SolnBlk_Original_SW.Sp[i+1][j  ] +
-                                                     SolnBlk_Original_SW.Grid.Cell[i  ][j+1].A*
-						     SolnBlk_Original_SW.Sp[i  ][j+1] +
-                                                     SolnBlk_Original_SW.Grid.Cell[i+1][j+1].A*
-						     SolnBlk_Original_SW.Sp[i+1][j+1]);
+                                                     SolnBlk_Original_SW.U[i+1][j+1]) / A_coarse;
                                                     //SolnBlk_Coarse.Grid.Cell[i_coarse][j_coarse].A;
+
+	     // if it is a discretely specified field
+	     if (discreteField)
+	       SolnBlk_Coarse.M[i_coarse][j_coarse] = (SolnBlk_Original_SW.Grid.Cell[i  ][j  ].A*
+						       SolnBlk_Original_SW.Sp[i  ][j  ]*
+						       SolnBlk_Original_SW.M[i  ][j  ] +
+						       SolnBlk_Original_SW.Grid.Cell[i+1][j  ].A*
+						       SolnBlk_Original_SW.Sp[i+1][j  ]*
+						       SolnBlk_Original_SW.M[i+1][j  ] + 
+						       SolnBlk_Original_SW.Grid.Cell[i  ][j+1].A*
+						       SolnBlk_Original_SW.Sp[i  ][j+1]*
+						       SolnBlk_Original_SW.M[i  ][j+1] +
+						       SolnBlk_Original_SW.Grid.Cell[i+1][j+1].A*
+						       SolnBlk_Original_SW.Sp[i+1][j+1]*
+						       SolnBlk_Original_SW.M[i+1][j+1]) / A_coarse;
+
           } /* endfor */
       } /* endfor */
-
+      
+      //
+      // Boundary ref states
+      //
       for ( j = SolnBlk_Original_SW.JCl-SolnBlk_Original_SW.Nghost; 
             j <= SolnBlk_Original_SW.JCu+SolnBlk_Original_SW.Nghost ; j += 2 ) {
       	  j_coarse = (j-SolnBlk_Original_SW.JCl)/2+SolnBlk_Coarse.JCl;
@@ -873,13 +936,26 @@ int Restrict_Solution_Block(Rte2D_Quad_Block &SolnBlk_Coarse,
           } /* endif */
       } /* endfor */
 
+      //----------------------------------------------------------------
       // South-East corner fine block:
+      //----------------------------------------------------------------
+      //
+      // Conserved state
+      //
       for ( j = SolnBlk_Original_SE.JCl; j <= SolnBlk_Original_SE.JCu ; j += 2 ) {
       	  for ( i = SolnBlk_Original_SE.ICl ; i <= SolnBlk_Original_SE.ICu ; i += 2 ) {
       	     i_coarse = (i-SolnBlk_Original_SE.ICl)/2+
                         (SolnBlk_Coarse.ICu-SolnBlk_Coarse.ICl+1)/2+SolnBlk_Coarse.ICl;
       	     j_coarse = (j-SolnBlk_Original_SE.JCl)/2+
                         SolnBlk_Coarse.JCl;
+	     A_coarse = SolnBlk_Original_SE.Grid.Cell[i  ][j  ].A*
+	                SolnBlk_Original_SE.Sp[i  ][j  ] +
+	                SolnBlk_Original_SE.Grid.Cell[i+1][j  ].A*
+			SolnBlk_Original_SE.Sp[i+1][j  ] +
+                        SolnBlk_Original_SE.Grid.Cell[i  ][j+1].A*
+			SolnBlk_Original_SE.Sp[i  ][j+1] +
+                        SolnBlk_Original_SE.Grid.Cell[i+1][j+1].A*
+			SolnBlk_Original_SE.Sp[i+1][j+1];
              SolnBlk_Coarse.U[i_coarse][j_coarse] = (SolnBlk_Original_SE.Grid.Cell[i  ][j  ].A*
 						     SolnBlk_Original_SE.Sp[i  ][j  ]*
                                                      SolnBlk_Original_SE.U[i  ][j  ] +
@@ -891,19 +967,30 @@ int Restrict_Solution_Block(Rte2D_Quad_Block &SolnBlk_Coarse,
                                                      SolnBlk_Original_SE.U[i  ][j+1] +
                                                      SolnBlk_Original_SE.Grid.Cell[i+1][j+1].A*
 						     SolnBlk_Original_SE.Sp[i+1][j+1]*
-                                                     SolnBlk_Original_SE.U[i+1][j+1]) /
- 	                                            (SolnBlk_Original_SE.Grid.Cell[i  ][j  ].A*
-						     SolnBlk_Original_SE.Sp[i  ][j  ] +
-						     SolnBlk_Original_SE.Grid.Cell[i+1][j  ].A*
-						     SolnBlk_Original_SE.Sp[i+1][j  ] +
-                                                     SolnBlk_Original_SE.Grid.Cell[i  ][j+1].A*
-						     SolnBlk_Original_SE.Sp[i  ][j+1] +
-                                                     SolnBlk_Original_SE.Grid.Cell[i+1][j+1].A*
-						     SolnBlk_Original_SE.Sp[i+1][j+1]);
+                                                     SolnBlk_Original_SE.U[i+1][j+1]) / A_coarse;
                                                     //SolnBlk_Coarse.Grid.Cell[i_coarse][j_coarse].A;
+
+	     // if it is a discretely specified field
+	     if (discreteField)
+	       SolnBlk_Coarse.M[i_coarse][j_coarse] = (SolnBlk_Original_SE.Grid.Cell[i  ][j  ].A*
+						       SolnBlk_Original_SE.Sp[i  ][j  ]*
+						       SolnBlk_Original_SE.M[i  ][j  ] +
+						       SolnBlk_Original_SE.Grid.Cell[i+1][j  ].A*
+						       SolnBlk_Original_SE.Sp[i+1][j  ]*
+						       SolnBlk_Original_SE.M[i+1][j  ] + 
+						       SolnBlk_Original_SE.Grid.Cell[i  ][j+1].A*
+						       SolnBlk_Original_SE.Sp[i  ][j+1]*
+						       SolnBlk_Original_SE.M[i  ][j+1] +
+						       SolnBlk_Original_SE.Grid.Cell[i+1][j+1].A*
+						       SolnBlk_Original_SE.Sp[i+1][j+1]*
+						       SolnBlk_Original_SE.M[i+1][j+1]) / A_coarse;
+	     
           } /* endfor */
       } /* endfor */
 
+      //
+      // boundary ref states
+      //
       for ( j = SolnBlk_Original_SE.JCl-SolnBlk_Original_SE.Nghost; 
             j <= SolnBlk_Original_SE.JCu+SolnBlk_Original_SE.Nghost ; j += 2 ) {
       	  j_coarse = (j-SolnBlk_Original_SE.JCl)/2+SolnBlk_Coarse.JCl;
@@ -923,13 +1010,26 @@ int Restrict_Solution_Block(Rte2D_Quad_Block &SolnBlk_Coarse,
           } /* endif */
       } /* endfor */
 
+      //----------------------------------------------------------------
       // North-West corner fine block:
+      //----------------------------------------------------------------
+      //
+      // conserved state
+      //
       for ( j = SolnBlk_Original_NW.JCl; j <= SolnBlk_Original_NW.JCu ; j += 2 ) {
       	  for ( i = SolnBlk_Original_NW.ICl ; i <= SolnBlk_Original_NW.ICu ; i += 2 ) {
       	     i_coarse = (i-SolnBlk_Original_NW.ICl)/2+
                         SolnBlk_Coarse.ICl;
       	     j_coarse = (j-SolnBlk_Original_NW.JCl)/2+
                         (SolnBlk_Coarse.JCu-SolnBlk_Coarse.JCl+1)/2+SolnBlk_Coarse.JCl;
+	     A_coarse = SolnBlk_Original_NW.Grid.Cell[i  ][j  ].A*
+			SolnBlk_Original_NW.Sp[i  ][j  ] +
+                        SolnBlk_Original_NW.Grid.Cell[i+1][j  ].A*
+			SolnBlk_Original_NW.Sp[i+1][j  ] +
+                        SolnBlk_Original_NW.Grid.Cell[i  ][j+1].A*
+			SolnBlk_Original_NW.Sp[i  ][j+1] +
+                        SolnBlk_Original_NW.Grid.Cell[i+1][j+1].A*
+			SolnBlk_Original_NW.Sp[i+1][j+1];
              SolnBlk_Coarse.U[i_coarse][j_coarse] = (SolnBlk_Original_NW.Grid.Cell[i  ][j  ].A*
 						     SolnBlk_Original_NW.Sp[i  ][j  ]*
                                                      SolnBlk_Original_NW.U[i  ][j  ] +
@@ -941,19 +1041,30 @@ int Restrict_Solution_Block(Rte2D_Quad_Block &SolnBlk_Coarse,
                                                      SolnBlk_Original_NW.U[i  ][j+1] +
                                                      SolnBlk_Original_NW.Grid.Cell[i+1][j+1].A*
 						     SolnBlk_Original_NW.Sp[i+1][j+1]*
-                                                     SolnBlk_Original_NW.U[i+1][j+1]) /
-                                                    (SolnBlk_Original_NW.Grid.Cell[i  ][j  ].A*
-						     SolnBlk_Original_NW.Sp[i  ][j  ] +
-                                                     SolnBlk_Original_NW.Grid.Cell[i+1][j  ].A*
-						     SolnBlk_Original_NW.Sp[i+1][j  ] +
-                                                     SolnBlk_Original_NW.Grid.Cell[i  ][j+1].A*
-						     SolnBlk_Original_NW.Sp[i  ][j+1] +
-                                                     SolnBlk_Original_NW.Grid.Cell[i+1][j+1].A*
-						     SolnBlk_Original_NW.Sp[i+1][j+1]);
+                                                     SolnBlk_Original_NW.U[i+1][j+1]) / A_coarse;
                                                      //SolnBlk_Coarse.Grid.Cell[i_coarse][j_coarse].A;
+
+	     // if it is a discretely specified field
+	     if (discreteField)
+	       SolnBlk_Coarse.M[i_coarse][j_coarse] = (SolnBlk_Original_NW.Grid.Cell[i  ][j  ].A*
+						       SolnBlk_Original_NW.Sp[i  ][j  ]*
+						       SolnBlk_Original_NW.M[i  ][j  ] +
+						       SolnBlk_Original_NW.Grid.Cell[i+1][j  ].A*
+						       SolnBlk_Original_NW.Sp[i+1][j  ]*
+						       SolnBlk_Original_NW.M[i+1][j  ] + 
+						       SolnBlk_Original_NW.Grid.Cell[i  ][j+1].A*
+						       SolnBlk_Original_NW.Sp[i  ][j+1]*
+						       SolnBlk_Original_NW.M[i  ][j+1] +
+						       SolnBlk_Original_NW.Grid.Cell[i+1][j+1].A*
+						       SolnBlk_Original_NW.Sp[i+1][j+1]*
+						       SolnBlk_Original_NW.M[i+1][j+1]) / A_coarse;
+
           } /* endfor */
       } /* endfor */
-
+      
+      //
+      // boundary ref states
+      //
       for ( j = SolnBlk_Original_NW.JCl-SolnBlk_Original_NW.Nghost; 
             j <= SolnBlk_Original_NW.JCu+SolnBlk_Original_NW.Nghost ; j += 2 ) {
       	  j_coarse = (j-SolnBlk_Original_NW.JCl)/2+
@@ -973,13 +1084,26 @@ int Restrict_Solution_Block(Rte2D_Quad_Block &SolnBlk_Coarse,
           } /* endif */
       } /* endfor */
 
+      //----------------------------------------------------------------
       // North-East corner fine block:
+      //----------------------------------------------------------------
+      //
+      // conserved state
+      //
       for ( j = SolnBlk_Original_NE.JCl; j <= SolnBlk_Original_NE.JCu ; j += 2 ) {
       	  for ( i = SolnBlk_Original_NE.ICl ; i <= SolnBlk_Original_NE.ICu ; i += 2 ) {
       	     i_coarse = (i-SolnBlk_Original_NE.ICl)/2+
                         (SolnBlk_Coarse.ICu-SolnBlk_Coarse.ICl+1)/2+SolnBlk_Coarse.ICl;
       	     j_coarse = (j-SolnBlk_Original_NE.JCl)/2+
                         (SolnBlk_Coarse.JCu-SolnBlk_Coarse.JCl+1)/2+SolnBlk_Coarse.JCl;
+	     A_coarse = SolnBlk_Original_NE.Grid.Cell[i  ][j  ].A*
+	                SolnBlk_Original_NE.Sp[i  ][j  ] +
+                        SolnBlk_Original_NE.Grid.Cell[i+1][j  ].A*
+			SolnBlk_Original_NE.Sp[i+1][j  ] +
+                        SolnBlk_Original_NE.Grid.Cell[i  ][j+1].A*
+			SolnBlk_Original_NE.Sp[i  ][j+1] +
+                        SolnBlk_Original_NE.Grid.Cell[i+1][j+1].A*
+			SolnBlk_Original_NE.Sp[i+1][j+1];
              SolnBlk_Coarse.U[i_coarse][j_coarse] = (SolnBlk_Original_NE.Grid.Cell[i  ][j  ].A*
 						     SolnBlk_Original_NE.Sp[i  ][j  ]*
                                                      SolnBlk_Original_NE.U[i  ][j  ] +
@@ -991,22 +1115,30 @@ int Restrict_Solution_Block(Rte2D_Quad_Block &SolnBlk_Coarse,
                                                      SolnBlk_Original_NE.U[i  ][j+1] +
                                                      SolnBlk_Original_NE.Grid.Cell[i+1][j+1].A*
 						     SolnBlk_Original_NE.Sp[i+1][j+1]*
-                                                     SolnBlk_Original_NE.U[i+1][j+1]) /
-                                                    (SolnBlk_Original_NE.Grid.Cell[i  ][j  ].A*
-						     SolnBlk_Original_NE.Sp[i  ][j  ] +
-                                                     SolnBlk_Original_NE.Grid.Cell[i+1][j  ].A*
-						     SolnBlk_Original_NE.Sp[i+1][j  ] +
-                                                     SolnBlk_Original_NE.Grid.Cell[i  ][j+1].A*
-						     SolnBlk_Original_NE.Sp[i  ][j+1] +
-                                                     SolnBlk_Original_NE.Grid.Cell[i+1][j+1].A*
-						     SolnBlk_Original_NE.Sp[i+1][j+1]);
+                                                     SolnBlk_Original_NE.U[i+1][j+1]) / A_coarse;
 	                                             //SolnBlk_Coarse.Grid.Cell[i_coarse][j_coarse].A;
+
+	     // if it is a discretely specified field
+	     if (discreteField)
+	       SolnBlk_Coarse.M[i_coarse][j_coarse] = (SolnBlk_Original_NE.Grid.Cell[i  ][j  ].A*
+						       SolnBlk_Original_NE.Sp[i  ][j  ]*
+						       SolnBlk_Original_NE.M[i  ][j  ] +
+						       SolnBlk_Original_NE.Grid.Cell[i+1][j  ].A*
+						       SolnBlk_Original_NE.Sp[i+1][j  ]*
+						       SolnBlk_Original_NE.M[i+1][j  ] + 
+						       SolnBlk_Original_NE.Grid.Cell[i  ][j+1].A*
+						       SolnBlk_Original_NE.Sp[i  ][j+1]*
+						       SolnBlk_Original_NE.M[i  ][j+1] +
+						       SolnBlk_Original_NE.Grid.Cell[i+1][j+1].A*
+						       SolnBlk_Original_NE.Sp[i+1][j+1]*
+						       SolnBlk_Original_NE.M[i+1][j+1]) / A_coarse;
+
           } /* endfor */
       } /* endfor */
 
-      // and the medium state
-      PrescribeFields(SolnBlk_Coarse);
-
+      //
+      // boundary ref states
+      //
       for ( j = SolnBlk_Original_NE.JCl-SolnBlk_Original_NE.Nghost; 
             j <= SolnBlk_Original_NE.JCu+SolnBlk_Original_NE.Nghost ; j += 2 ) {
       	  j_coarse = (j-SolnBlk_Original_NE.JCl)/2+
@@ -1026,6 +1158,15 @@ int Restrict_Solution_Block(Rte2D_Quad_Block &SolnBlk_Coarse,
              SolnBlk_Coarse.UoN[i_coarse+1] = SolnBlk_Original_NE.UoN[i];
           } /* endif */
       } /* endfor */
+
+
+      //
+      // Medium state
+      //
+      // if the field is prescribed analytically
+      if (!discreteField)
+	PrescribeFields(SolnBlk_Coarse);
+
 
    } /* endif */
 
@@ -1105,7 +1246,7 @@ void Output_Tecplot(Rte2D_Quad_Block &SolnBlk,
     for ( j  = SolnBlk.Grid.JNl ; j <= SolnBlk.Grid.JNu ; ++j ) {
        for ( i = SolnBlk.Grid.INl ; i <= SolnBlk.Grid.INu ; ++i ) {       
 	   U_node = SolnBlk.Un(i, j);
-	   M_node.GetState(SolnBlk.Grid.Node[i][j].X);
+	   M_node = SolnBlk.Mn(i, j);
 	   q_node = U_node.q(M_node);
            Out_File << " " << SolnBlk.Grid.Node[i][j].X 
 		    << " " << U_node.G(M_node)   // /(FOUR*PI*U_node.Ib)
@@ -3740,8 +3881,14 @@ void Fix_Refined_Block_Boundaries(Rte2D_Quad_Block SolnBlk,
 
     int i, j;
     double ds_ratio, dl, dr;
+
+    // use a bool, it just looks nicer
+    // if false, then you can directly compute the new statae
+    const bool discreteField( SolnBlk.Medium_Field_Type == MEDIUM2D_FIELD_DISCRETE );
  
-    /* Adjust the node locations at the north boundary. */
+    //----------------------------------------------------------------
+    // Adjust the node locations at the north boundary.
+    //----------------------------------------------------------------
 
     if (Fix_North_Boundary) {
        for ( i = SolnBlk.Grid.INl+1 ; i <= SolnBlk.Grid.INu-1 ; i+=2 ) {
@@ -3756,15 +3903,28 @@ void Fix_Refined_Block_Boundaries(Rte2D_Quad_Block SolnBlk,
                        SolnBlk.Grid.Node[i-1][SolnBlk.Grid.JNu].X);
        } /* endfor */
        for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-	  SolnBlk.U[i][SolnBlk.JCu] = 
-	    (SolnBlk.Grid.Cell[i][SolnBlk.JCu].A*SolnBlk.Sp[i][SolnBlk.JCu] /
-	     (SolnBlk.Grid.area(i, SolnBlk.JCu)*SolnBlk.Sp_c(i, SolnBlk.JCu))) *
-	    SolnBlk.U[i][SolnBlk.JCu];
-	  SolnBlk.M[i][SolnBlk.JCu].GetState(SolnBlk.Grid.centroid(i,SolnBlk.JCu));
+
+	 // conserved state
+	 SolnBlk.U[i][SolnBlk.JCu] = 
+	   (SolnBlk.Grid.Cell[i][SolnBlk.JCu].A*SolnBlk.Sp[i][SolnBlk.JCu] /
+	    (SolnBlk.Grid.area(i, SolnBlk.JCu)*SolnBlk.Sp_c(i, SolnBlk.JCu))) *
+	   SolnBlk.U[i][SolnBlk.JCu];
+
+	 // medium state
+	 if (discreteField)
+	   SolnBlk.M[i][SolnBlk.JCu] = 
+	     (SolnBlk.Grid.Cell[i][SolnBlk.JCu].A*SolnBlk.Sp[i][SolnBlk.JCu] /
+	      (SolnBlk.Grid.area(i, SolnBlk.JCu)*SolnBlk.Sp_c(i, SolnBlk.JCu))) *
+	     SolnBlk.M[i][SolnBlk.JCu];
+	 else 
+	   SolnBlk.M[i][SolnBlk.JCu].GetState(SolnBlk.Grid.centroid(i,SolnBlk.JCu));
+	 
        } /* endfor */
     } /* endif */
 
-    /* Adjust the node locations at the south boundary. */
+    //----------------------------------------------------------------
+    // Adjust the node locations at the south boundary.
+    //----------------------------------------------------------------
 
     if (Fix_South_Boundary) {
        for ( i = SolnBlk.Grid.INl+1 ; i <= SolnBlk.Grid.INu-1 ; i+=2 ) {
@@ -3779,15 +3939,28 @@ void Fix_Refined_Block_Boundaries(Rte2D_Quad_Block SolnBlk,
                        SolnBlk.Grid.Node[i-1][SolnBlk.Grid.JNl].X);
        } /* endfor */
        for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
+
+	 // conserved state
 	  SolnBlk.U[i][SolnBlk.JCl] = 
 	    (SolnBlk.Grid.Cell[i][SolnBlk.JCl].A*SolnBlk.Sp[i][SolnBlk.JCl] /
              (SolnBlk.Grid.area(i, SolnBlk.JCl)*SolnBlk.Sp_c(i, SolnBlk.JCl))) * 
 	    SolnBlk.U[i][SolnBlk.JCl];
-	  SolnBlk.M[i][SolnBlk.JCl].GetState(SolnBlk.Grid.centroid(i,SolnBlk.JCl));
+
+	 // medium state
+	 if (discreteField)
+	   SolnBlk.M[i][SolnBlk.JCl] = 
+	     (SolnBlk.Grid.Cell[i][SolnBlk.JCl].A*SolnBlk.Sp[i][SolnBlk.JCl] /
+	      (SolnBlk.Grid.area(i, SolnBlk.JCl)*SolnBlk.Sp_c(i, SolnBlk.JCl))) * 
+	     SolnBlk.M[i][SolnBlk.JCl];
+	 else 
+	   SolnBlk.M[i][SolnBlk.JCl].GetState(SolnBlk.Grid.centroid(i,SolnBlk.JCl));
+
        } /* endfor */
     } /* endif */
 
-    /* Adjust the node locations at the east boundary. */
+    //----------------------------------------------------------------
+    // Adjust the node locations at the east boundary.
+    //----------------------------------------------------------------
 
     if (Fix_East_Boundary) {
        for ( j  = SolnBlk.Grid.JNl+1; j <= SolnBlk.Grid.JNu-1; j+=2 ) {
@@ -3802,15 +3975,26 @@ void Fix_Refined_Block_Boundaries(Rte2D_Quad_Block SolnBlk,
                        SolnBlk.Grid.Node[SolnBlk.Grid.INu][j-1].X);
        } /* endfor */
        for ( j = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
+
+	 // conserved state
 	  SolnBlk.U[SolnBlk.ICu][j] = 
 	    (SolnBlk.Grid.Cell[SolnBlk.ICu][j].A*SolnBlk.Sp[SolnBlk.ICu][j] /
              (SolnBlk.Grid.area(SolnBlk.ICu, j)*SolnBlk.Sp_c(SolnBlk.ICu, j))) * 
 	    SolnBlk.U[SolnBlk.ICu][j];
+	 // medium state
+	 if (discreteField)
+	   SolnBlk.M[SolnBlk.ICu][j] = 
+	     (SolnBlk.Grid.Cell[SolnBlk.ICu][j].A*SolnBlk.Sp[SolnBlk.ICu][j] /
+	      (SolnBlk.Grid.area(SolnBlk.ICu, j)*SolnBlk.Sp_c(SolnBlk.ICu, j))) * 
+	     SolnBlk.M[SolnBlk.ICu][j];
+	 else 
 	  SolnBlk.M[SolnBlk.ICu][j].GetState(SolnBlk.Grid.centroid(SolnBlk.ICu,j));
        } /* endfor */
     } /* endif */
 
-    /* Adjust the node locations at the west boundary. */
+    //----------------------------------------------------------------
+    // Adjust the node locations at the west boundary.
+    //----------------------------------------------------------------
 
     if (Fix_West_Boundary) {
        for ( j  = SolnBlk.Grid.JNl+1; j <= SolnBlk.Grid.JNu-1; j+=2 ) {
@@ -3825,11 +4009,20 @@ void Fix_Refined_Block_Boundaries(Rte2D_Quad_Block SolnBlk,
                        SolnBlk.Grid.Node[SolnBlk.Grid.INl][j-1].X);
        } /* endfor */
        for ( j = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
+
+	 // conserved state
 	  SolnBlk.U[SolnBlk.ICl][j] = 
 	    (SolnBlk.Grid.Cell[SolnBlk.ICl][j].A*SolnBlk.Sp[SolnBlk.ICl][j] /
              (SolnBlk.Grid.area(SolnBlk.ICl, j)*SolnBlk.Sp_c(SolnBlk.ICl, j))) * 
 	    SolnBlk.U[SolnBlk.ICl][j];
-	  SolnBlk.M[SolnBlk.ICl][j].GetState(SolnBlk.Grid.centroid(SolnBlk.ICl,j));
+	 // medium state
+	 if (discreteField)
+	   SolnBlk.M[SolnBlk.ICl][j] = 
+	     (SolnBlk.Grid.Cell[SolnBlk.ICl][j].A*SolnBlk.Sp[SolnBlk.ICl][j] /
+	      (SolnBlk.Grid.area(SolnBlk.ICl, j)*SolnBlk.Sp_c(SolnBlk.ICl, j))) * 
+	     SolnBlk.M[SolnBlk.ICl][j];
+	 else 
+	   SolnBlk.M[SolnBlk.ICl][j].GetState(SolnBlk.Grid.centroid(SolnBlk.ICl,j));
        } /* endfor */
     } /* endif */
 
@@ -3864,8 +4057,13 @@ void Unfix_Refined_Block_Boundaries(Rte2D_Quad_Block SolnBlk) {
     int i, j;
     double sp_l, sp_r, sp_m, ds_ratio, dl, dr;
  
-    /* Return the nodes at the north boundary
-       to their original positions. */
+    // use a bool, it just looks nicer
+    // if false, then you can directly compute the new statae
+    const bool discreteField( SolnBlk.Medium_Field_Type == MEDIUM2D_FIELD_DISCRETE );
+
+    //----------------------------------------------------------------
+    // Return the nodes at the north boundary to their original positions.
+    //----------------------------------------------------------------
 
     if (SolnBlk.Grid.BndNorthSpline.np != 0) {
        for ( i = SolnBlk.Grid.INl+1 ; i < SolnBlk.Grid.INu ; i += 2 ) {
@@ -3882,16 +4080,28 @@ void Unfix_Refined_Block_Boundaries(Rte2D_Quad_Block SolnBlk) {
            SolnBlk.Grid.Node[i][SolnBlk.Grid.JNu].X = Spline(sp_m, SolnBlk.Grid.BndNorthSpline);
        } /* endfor */
        for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-	  SolnBlk.U[i][SolnBlk.JCu] = 
+
+	 // conserved state
+	 SolnBlk.U[i][SolnBlk.JCu] = 
 	    (SolnBlk.Grid.Cell[i][SolnBlk.JCu].A*SolnBlk.Sp[i][SolnBlk.JCu] /
              (SolnBlk.Grid.area(i, SolnBlk.JCu)*SolnBlk.Sp_c(i, SolnBlk.JCu))) *
 	    SolnBlk.U[i][SolnBlk.JCu];
-	  SolnBlk.M[i][SolnBlk.JCu].GetState(SolnBlk.Grid.centroid(i,SolnBlk.JCu));
+
+	 // medium state
+	 if (discreteField)
+	   SolnBlk.M[i][SolnBlk.JCu] = 
+	     (SolnBlk.Grid.Cell[i][SolnBlk.JCu].A*SolnBlk.Sp[i][SolnBlk.JCu] /
+	      (SolnBlk.Grid.area(i, SolnBlk.JCu)*SolnBlk.Sp_c(i, SolnBlk.JCu))) *
+	     SolnBlk.M[i][SolnBlk.JCu];
+	 else 
+	   SolnBlk.M[i][SolnBlk.JCu].GetState(SolnBlk.Grid.centroid(i,SolnBlk.JCu));
+
        } /* endfor */
     } /* endif */
 
-    /* Return the nodes at the south boundary
-       to their original positions. */
+    //----------------------------------------------------------------
+    // Return the nodes at the south boundary to their original positions.
+    //----------------------------------------------------------------
 
     if (SolnBlk.Grid.BndSouthSpline.np != 0) {
        for ( i = SolnBlk.Grid.INl+1 ; i < SolnBlk.Grid.INu ; i += 2 ) {
@@ -3908,16 +4118,27 @@ void Unfix_Refined_Block_Boundaries(Rte2D_Quad_Block SolnBlk) {
            SolnBlk.Grid.Node[i][SolnBlk.Grid.JNl].X = Spline(sp_m, SolnBlk.Grid.BndSouthSpline);
        } /* endfor */
        for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-	  SolnBlk.U[i][SolnBlk.JCl] = 
+
+	 // conserved state
+	 SolnBlk.U[i][SolnBlk.JCl] = 
 	    (SolnBlk.Grid.Cell[i][SolnBlk.JCl].A*SolnBlk.Sp[i][SolnBlk.JCl] /
              (SolnBlk.Grid.area(i, SolnBlk.JCl)*SolnBlk.Sp_c(i, SolnBlk.JCl))) *
 	    SolnBlk.U[i][SolnBlk.JCl];
-	  SolnBlk.M[i][SolnBlk.JCl].GetState(SolnBlk.Grid.centroid(i,SolnBlk.JCl));
+
+	 // medium state
+	 if (discreteField)
+	   SolnBlk.M[i][SolnBlk.JCl] = 
+	     (SolnBlk.Grid.Cell[i][SolnBlk.JCl].A*SolnBlk.Sp[i][SolnBlk.JCl] /
+	      (SolnBlk.Grid.area(i, SolnBlk.JCl)*SolnBlk.Sp_c(i, SolnBlk.JCl))) *
+	     SolnBlk.M[i][SolnBlk.JCl];
+	 else 
+	   SolnBlk.M[i][SolnBlk.JCl].GetState(SolnBlk.Grid.centroid(i,SolnBlk.JCl));
        } /* endfor */
     } /* endif */
 
-    /* Return the nodes at the east boundary
-       to their original positions. */
+    //----------------------------------------------------------------
+    // Return the nodes at the east boundary to their original positions.
+    //----------------------------------------------------------------
 
     if (SolnBlk.Grid.BndEastSpline.np != 0) {
        for (j  = SolnBlk.Grid.JNl+1 ; j < SolnBlk.Grid.JNu ; j += 2 ) {
@@ -3934,16 +4155,27 @@ void Unfix_Refined_Block_Boundaries(Rte2D_Quad_Block SolnBlk) {
            SolnBlk.Grid.Node[SolnBlk.Grid.INu][j].X = Spline(sp_m, SolnBlk.Grid.BndEastSpline);
        } /* endfor */
        for ( j = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
-	  SolnBlk.U[SolnBlk.ICu][j] = 
+
+	 // conserved state
+	 SolnBlk.U[SolnBlk.ICu][j] = 
 	    (SolnBlk.Grid.Cell[SolnBlk.ICu][j].A*SolnBlk.Sp[SolnBlk.ICu][j] /
              (SolnBlk.Grid.area(SolnBlk.ICu, j)*SolnBlk.Sp_c(SolnBlk.ICu, j))) *
 	    SolnBlk.U[SolnBlk.ICu][j];
-	  SolnBlk.M[SolnBlk.ICu][j].GetState(SolnBlk.Grid.centroid(SolnBlk.ICu,j));
+
+	 // medium state
+	 if (discreteField)
+	   SolnBlk.M[SolnBlk.ICu][j] = 
+	     (SolnBlk.Grid.Cell[SolnBlk.ICu][j].A*SolnBlk.Sp[SolnBlk.ICu][j] /
+	      (SolnBlk.Grid.area(SolnBlk.ICu, j)*SolnBlk.Sp_c(SolnBlk.ICu, j))) *
+	     SolnBlk.M[SolnBlk.ICu][j];
+	 else 
+	   SolnBlk.M[SolnBlk.ICu][j].GetState(SolnBlk.Grid.centroid(SolnBlk.ICu,j));
        } /* endfor */
     } /* endif */
 
-    /* Return the nodes at the west boundary
-       to their original positions. */
+    //----------------------------------------------------------------
+    // Return the nodes at the west boundary to their original positions.
+    //----------------------------------------------------------------
 
     if (SolnBlk.Grid.BndWestSpline.np != 0) {
        for (j  = SolnBlk.Grid.JNl+1 ; j < SolnBlk.Grid.JNu ; j += 2 ) {
@@ -3960,11 +4192,21 @@ void Unfix_Refined_Block_Boundaries(Rte2D_Quad_Block SolnBlk) {
            SolnBlk.Grid.Node[SolnBlk.Grid.INl][j].X = Spline(sp_m, SolnBlk.Grid.BndWestSpline);
        } /* endfor */
        for ( j = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
-	  SolnBlk.U[SolnBlk.ICl][j] = 
+
+	 // conserved state
+	 SolnBlk.U[SolnBlk.ICl][j] = 
 	    (SolnBlk.Grid.Cell[SolnBlk.ICl][j].A*SolnBlk.Sp[SolnBlk.ICl][j] /
              (SolnBlk.Grid.area(SolnBlk.ICl, j)*SolnBlk.Sp_c(SolnBlk.ICl, j))) *
 	    SolnBlk.U[SolnBlk.ICl][j];
-	  SolnBlk.M[SolnBlk.ICl][j].GetState(SolnBlk.Grid.centroid(SolnBlk.ICl,j));
+
+	 // medium state
+	 if (discreteField)
+	   SolnBlk.M[SolnBlk.ICl][j] = 
+	     (SolnBlk.Grid.Cell[SolnBlk.ICl][j].A*SolnBlk.Sp[SolnBlk.ICl][j] /
+	      (SolnBlk.Grid.area(SolnBlk.ICl, j)*SolnBlk.Sp_c(SolnBlk.ICl, j))) *
+	     SolnBlk.M[SolnBlk.ICl][j];
+	 else 
+	   SolnBlk.M[SolnBlk.ICl][j].GetState(SolnBlk.Grid.centroid(SolnBlk.ICl,j));
        } /* endfor */
     } /* endif */
 

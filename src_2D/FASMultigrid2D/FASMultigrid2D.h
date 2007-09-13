@@ -249,6 +249,9 @@ class FAS_Multigrid2D_Solver {
   //! Memory deallocation.
   void deallocate(void);
 
+  //! prescribe initial conditions in FAS_Multigrid2D_Solver::execute
+  void Apply_ICs(const int &level);
+
   //! Output the node-centred value information for each grid level.
   int Output_Multigrid(int &number_of_time_steps,
 		       double &Time,
@@ -701,6 +704,33 @@ deallocate(void) {
   IP = NULL;
 
 }
+
+/**********************************************************************
+ * Routine: Apply_ICs                                                 *
+ *                                                                    *
+ * This routing applies the initial conditions on all coarse grid     *
+ * levels.                                                            *
+ *                                                                    *
+ **********************************************************************/
+template <class Soln_Var_Type,
+	  class Quad_Soln_Block,
+	  class Quad_Soln_Input_Parameters>
+void FAS_Multigrid2D_Solver<Soln_Var_Type,
+			   Quad_Soln_Block,
+			   Quad_Soln_Input_Parameters>::
+Apply_ICs(const int &level) 
+{ 
+  ICs(Local_SolnBlk[level],
+      List_of_Local_Solution_Blocks[level],
+      *IP);
+  if (IP->i_ICs == IC_RESTART) {
+    Restrict_Solution_Blocks(level-1);
+    Update_Primitive_Variables(level);
+    }
+  if (IP->Multigrid_IP.Apply_Coarse_Mesh_Boundary_Conditions)
+    Restrict_Boundary_Ref_States(level-1);
+}
+
 
 /**********************************************************************
  * Routine: Output_Multigrid                                          *
@@ -3371,15 +3401,7 @@ Execute(const int &batch_flag,
 
   // Apply the initial conditions on all coarse grid levels.  
   for (int level = 1; level < IP->Multigrid_IP.Levels; level++) {
-    ICs(Local_SolnBlk[level],
-	List_of_Local_Solution_Blocks[level],
-	*IP);
-    if (IP->i_ICs == IC_RESTART) {
-      Restrict_Solution_Blocks(level-1);
-      Update_Primitive_Variables(level);
-    }
-    if (IP->Multigrid_IP.Apply_Coarse_Mesh_Boundary_Conditions)
-      Restrict_Boundary_Ref_States(level-1);
+    Apply_ICs(level);
   }
 
   // Send solution information between neighbouring blocks to complete

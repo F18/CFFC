@@ -79,7 +79,7 @@ class Medium2D_State {
  private:
   
   //@{ @name Field data:
-  static Vector2D_Function<Medium2D_State> Field;  //!< container class for analytic function
+  static Vector2D_Function<Medium2D_State>* Field;  //!< container class for analytic function
   //@}
 
 
@@ -138,8 +138,10 @@ class Medium2D_State {
   //! memory allocation / deallocation for the SNBCK data object
   static void AllocateSNBCK();
   static void DeallocateSNBCK();
+  //! memory allocation / deallocation for the field object
+  static void DeallocateField();
   //! deallocate all static variables
-  static void DeallocateAllStatic() { DeallocateSNBCK(); }
+  static void DeallocateAllStatic() { DeallocateSNBCK(); DeallocateField(); }
   //@}
 
   //@{ @name State functions.
@@ -147,7 +149,8 @@ class Medium2D_State {
   double beta(const int &v) const { return (kappa[v] + sigma[v]); }
 
   //! Compute medium state at location
-  void GetState(const Vector2D &r);
+  void SetState(const Vector2D &r);
+  static Medium2D_State GetState(const Vector2D &r);
   //@}
 
 
@@ -179,10 +182,13 @@ class Medium2D_State {
   Medium2D_State operator -(const Medium2D_State &U) const;
   Medium2D_State operator +(const Medium2D_State &U) const;
   Medium2D_State operator *(const double &a) const;
+  friend Medium2D_State operator *(const double &a, const Medium2D_State &U);
+  Medium2D_State operator /(const double &a) const;
  //!Shortcut operators
   Medium2D_State& operator -=(const Medium2D_State &U);
   Medium2D_State& operator +=(const Medium2D_State &U);
   Medium2D_State& operator *=(const double &a);
+  Medium2D_State& operator /=(const double &a);
   //@}
 
 
@@ -248,9 +254,12 @@ inline void Medium2D_State :: AllocateSNBCK()
 }
 
 inline void Medium2D_State :: DeallocateSNBCK()
-{ 
-  if ( SNBCKdata != NULL ) { delete SNBCKdata; SNBCKdata = NULL;}  
-}
+{ if ( SNBCKdata != NULL ) { delete SNBCKdata; SNBCKdata = NULL;} }
+
+
+inline void Medium2D_State :: DeallocateField()
+{ if ( Field != NULL ) { delete Field; Field = NULL;}  }
+
 
 
 /********************************************************
@@ -312,6 +321,9 @@ inline void Medium2D_State :: SetupStatic( const int &i_Absorb_Type,
 					   const SNBCK_Input_Parameters &SNBCK_IP,
 					   const char* PATH) {
 
+  // deallocate to be sure
+  DeallocateSNBCK();
+
   //------------------------------------------------
   // Absorbsion model 
   //------------------------------------------------
@@ -345,16 +357,28 @@ inline void Medium2D_State :: SetupStatic( const int &i_Absorb_Type,
  ********************************************************/
 inline void Medium2D_State :: SetConstantField(const Medium2D_State &M)
 {
+  // deallocate to be sure
+  DeallocateField();
+
+  // create objects
+  ConstantFunc<Medium2D_State>* funcObj = new ConstantFunc<Medium2D_State>(M);
+
   // assign all the fields
-  Field.SetConstantParams(M);
+  Field = new Vector2D_SpecFunction< Medium2D_State, 
+                                     ConstantFunc<Medium2D_State> >(funcObj);
 }
 
 
 /********************************************************
  * Compute medium state at location.                    *
  ********************************************************/
-inline void Medium2D_State :: GetState(const Vector2D &r) {
-  *this = Field(r);
+inline void Medium2D_State :: SetState(const Vector2D &r) {
+  *this = (*Field)(r);
+}
+
+
+inline Medium2D_State Medium2D_State :: GetState(const Vector2D &r) {
+  return (*Field)(r);
 }
 
 
@@ -404,6 +428,18 @@ inline Medium2D_State Medium2D_State::operator *(const double &a) const{
   return Temp;
 }
 
+inline Medium2D_State operator *(const double &a, const Medium2D_State &U) {
+  Medium2D_State Temp(U);
+  Temp *= a;
+  return Temp;
+}
+
+inline Medium2D_State Medium2D_State::operator /(const double &a) const{
+  Medium2D_State Temp(*this);
+  Temp /= a;
+  return Temp;
+}
+
 
 /********************************************************
  * Shortcut arithmetic operators                        *
@@ -431,6 +467,15 @@ inline Medium2D_State& Medium2D_State::operator *=(const double &a) {
     kappa[i] *= a;  
     sigma[i] *= a;
     Ib[i]    *= a;  
+  }
+  return (*this);
+}
+
+inline Medium2D_State& Medium2D_State::operator /=(const double &a) {
+  for(int i=0; i<Nband; i++) {
+    kappa[i] /= a;  
+    sigma[i] /= a;
+    Ib[i]    /= a;  
   }
   return (*this);
 }

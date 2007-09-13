@@ -99,6 +99,7 @@ void ICs(Rte2D_Quad_Block *Soln_ptr,
 
     int i;
 
+
     /* Assign initial data for each solution block. */
 
     for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
@@ -117,9 +118,20 @@ void ICs(Rte2D_Quad_Block *Soln_ptr,
           // Set initial data.
           ICs(Soln_ptr[i], Input_Parameters);
 
-          // Set initial data.
-          PrescribeFields(Soln_ptr[i]);
-
+	  //
+          // Set initial data for medium
+	  //
+	  // For an analytically prescribed field
+	  if (Input_Parameters.i_ICs_Medium != IC_SPECIFIED) {
+	    Soln_ptr[i].Medium_Field_Type = MEDIUM2D_FIELD_ANALYTIC;
+	    PrescribeFields(Soln_ptr[i]);
+	  //
+	  // for a discrete field specified by the user
+	  } else {
+	    Soln_ptr[i].Medium_Field_Type = MEDIUM2D_FIELD_DISCRETE;
+	    // do nothing
+	  } // endif - field type
+	  
        } /* endif */
     }  /* endfor */
 

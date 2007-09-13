@@ -170,8 +170,8 @@ public:
 
   //@{ @name Residual and time-stepping arrays:
   double                  **dt; //!< Local time step.
-  Rte2D_State         ***dUdt; //!< Solution residual.
-  Rte2D_State            **Uo; //!< Initial solution state.
+  Rte2D_State          ***dUdt; //!< Solution residual.
+  Rte2D_State             **Uo; //!< Initial solution state.
   static int residual_variable; //!< Static integer that indicates which variable is used for residual calculations.  
   static int Number_of_Residual_Norms; //!< How many Residual norms to plot?
   //@}
@@ -238,7 +238,7 @@ public:
       dUdpsi = NULL; phi_psi = NULL;
       FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
       UoN = NULL; UoS = NULL; UoE = NULL; UoW = NULL;
-      Axisymmetric = 0; Freeze_Limiter = OFF; Flow_Type = 0;
+      Axisymmetric = 0; Freeze_Limiter = OFF;
       Medium_Field_Type = MEDIUM2D_FIELD_ANALYTIC;
       Sp = NULL; SpN = NULL; SpS = NULL; SpE = NULL; SpW = NULL; 
       NorthWallTemp  = ZERO;   SouthWallTemp  = ZERO;  
@@ -257,7 +257,7 @@ public:
     FluxN = Soln.FluxN; FluxS = Soln.FluxS; FluxE = Soln.FluxE; FluxW = Soln.FluxW;
     UoN = Soln.UoN; UoS = Soln.UoS; UoE = Soln.UoE; UoW = Soln.UoW;
     Axisymmetric = Soln.Axisymmetric; Freeze_Limiter = Soln.Freeze_Limiter;
-    Flow_Type = Soln.Flow_Type; Medium_Field_Type = Soln.Medium_Field_Type;
+    Medium_Field_Type = Soln.Medium_Field_Type;
     Sp = Soln.Sp; SpN = Soln.SpN; SpS = Soln.SpS; SpE = Soln.SpE; SpW = Soln.SpW; 
     NorthWallTemp  = Soln.NorthWallTemp;    SouthWallTemp  = Soln.SouthWallTemp;  
     EastWallTemp   = Soln.EastWallTemp;     WestWallTemp   = Soln.WestWallTemp;  
@@ -641,6 +641,16 @@ inline Rte2D_State Rte2D_Quad_Block::UnSW(const int &ii, const int &jj) {
  **************************************************************************/
 inline Medium2D_State Rte2D_Quad_Block::Mn(const int &ii, const int &jj) {
  
+  //
+  // if the medium is prescribed analytically, compute it
+  //
+  if (Medium_Field_Type == MEDIUM2D_FIELD_ANALYTIC)
+    return Medium2D_State::GetState(Grid.Node[ii][jj].X);
+  
+  //
+  // otherwise, interpolate it
+  //
+
   double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y,
     eta1, zeta1, eta2, zeta2, eta, zeta;
  
@@ -732,7 +742,6 @@ inline ostream &operator << (ostream &out_file,
 	   << SolnBlk.ICu << " " << SolnBlk.Nghost << "\n";
   out_file << SolnBlk.NCj << " " << SolnBlk.JCl << " " << SolnBlk.JCu << "\n";
   out_file << SolnBlk.Axisymmetric << "\n";
-  out_file << SolnBlk.Flow_Type <<"\n";
   out_file << SolnBlk.Medium_Field_Type <<"\n";
   out_file << SolnBlk.NorthWallTemp << "\n";
   out_file << SolnBlk.SouthWallTemp << "\n";
@@ -768,7 +777,6 @@ inline istream &operator >> (istream &in_file,
   in_file.setf(ios::skipws);
   in_file >> ni >> il >> iu >> ng; in_file >> nj >> jl >> ju;
   in_file >> SolnBlk.Axisymmetric;
-  in_file >> SolnBlk.Flow_Type;
   in_file >> SolnBlk.Medium_Field_Type;
   in_file >> SolnBlk.NorthWallTemp;
   in_file >> SolnBlk.SouthWallTemp;

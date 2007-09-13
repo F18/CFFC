@@ -42,6 +42,7 @@ Additional_Solution_Block_Setup(Rte2D_Quad_Block &SolnBlk)
 }
 
 
+
 /**********************************************************************
  * Routine: Restrict_Solution_Blocks (for Multigrid)                  *
  *                                                                    *
@@ -108,8 +109,8 @@ Restrict_Solution_Blocks(const int &Level_Fine) {
 	     Local_SolnBlk[Level_Fine][nb].Sp[i_fine+1][j_fine+1]) /
 	    (Local_SolnBlk[Level_Coarse][nb].Grid.Cell[i_coarse][j_coarse].A * 
 	     Local_SolnBlk[Level_Coarse][nb].Sp[i_coarse][j_coarse]);	
-	/*************************************************************************
-	 *************************************************************************/
+	  /*************************************************************************
+	   *************************************************************************/
 
 	}
       }
@@ -353,6 +354,8 @@ Restrict_Boundary_Ref_States(const int &Level_Fine) {
 
 
 
+
+
 /**********************************************************************
  * Routine: CFL_Multigrid                                             *
  *                                                                    *
@@ -452,6 +455,124 @@ template <> void FAS_Multigrid2D_Solver<Rte2D_State,
 Update_Primitive_Variables(const int &Level) {  /* DO NOTHING */ }
 
 
+
+/**********************************************************************
+ * Routine: Restrict_NonSolution_Blocks                               *
+ *                                                                    *
+ * Restrict solution from Level_Fine to Level_Coarse for all blocks   *
+ * on the local solution block list.  Note that the solution at the   *
+ * coarse grid level is overwritten.  This is for the medium state    *
+ * which is not part of the overall solution state.  This function    *
+ * only called to initialize the coarse grid solutions.               *
+ *                                                                    *
+ **********************************************************************/
+void Restrict_NonSolution_Blocks( Rte2D_Quad_Block **Local_SolnBlk,
+				  AdaptiveBlock2D_List *List_of_Local_Solution_Blocks,
+				  const int &Level_Fine )
+{
+				  
+  //
+  // Declares
+  //
+  int i_fine, j_fine, Nghost;
+
+  // the coarse level
+  int Level_Coarse = Level_Fine + 1;
+
+  // Determine if the restriction includes the ghost cells.
+  // For the medium state, we always include the ghost cells
+  //if (IP->Multigrid_IP.Apply_Coarse_Mesh_Boundary_Conditions) nghost = 0;
+  //else nghost = 1;
+  int nghost(1);
+
+  //
+  // Loop through each solution block.
+  //
+  for (int nb = 0; nb < List_of_Local_Solution_Blocks[Level_Fine].Nblk; nb++) {
+    if (List_of_Local_Solution_Blocks[Level_Fine].Block[nb].used == ADAPTIVEBLOCK2D_USED) { 
+
+      // Get the number of ghost cells on the fine grid.
+      Nghost = Local_SolnBlk[Level_Fine][nb].Nghost;
+
+      //
+      // Loop through the coarse grid cells.
+      //
+      for (int i_coarse = Local_SolnBlk[Level_Coarse][nb].ICl-nghost; 
+	   i_coarse <= Local_SolnBlk[Level_Coarse][nb].ICu+nghost; 
+	   i_coarse++) 
+	for (int j_coarse = Local_SolnBlk[Level_Coarse][nb].JCl-nghost; 
+	     j_coarse <= Local_SolnBlk[Level_Coarse][nb].JCu+nghost; 
+	     j_coarse++) {
+
+	  // Determine the (i,j) index of the SW corner fine cell.
+	  i_fine = 2*(i_coarse-Nghost)+Nghost;
+	  j_fine = 2*(j_coarse-Nghost)+Nghost;
+
+	  // Determine the solution state of the coarse grid cell by
+	  // a area-weighted average of the associated fine grid cells.
+	  Local_SolnBlk[Level_Coarse][nb].M[i_coarse][j_coarse] = 
+	    (Local_SolnBlk[Level_Fine][nb].M[i_fine][j_fine] *
+	     Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].A * 
+	     Local_SolnBlk[Level_Fine][nb].Sp[i_fine][j_fine] +
+	     Local_SolnBlk[Level_Fine][nb].M[i_fine+1][j_fine] *
+	     Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine+1][j_fine].A * 
+	     Local_SolnBlk[Level_Fine][nb].Sp[i_fine+1][j_fine] +
+	     Local_SolnBlk[Level_Fine][nb].M[i_fine][j_fine+1] *
+	     Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine+1].A * 
+	     Local_SolnBlk[Level_Fine][nb].Sp[i_fine][j_fine+1] +
+	     Local_SolnBlk[Level_Fine][nb].M[i_fine+1][j_fine+1] *
+	     Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine+1][j_fine+1].A * 
+	     Local_SolnBlk[Level_Fine][nb].Sp[i_fine+1][j_fine+1]) /
+	    (Local_SolnBlk[Level_Coarse][nb].Grid.Cell[i_coarse][j_coarse].A * 
+	     Local_SolnBlk[Level_Coarse][nb].Sp[i_coarse][j_coarse]);	
+
+	} // endfor - cells
+
+    } // endif - used
+  } // endfor - blocks
+
+}
+
+
+
+/**********************************************************************
+ * Routine: Apply_ICs                                                 *
+ *                                                                    *
+ * This routing applies the initial conditions on all coarse grid     *
+ * levels.                                                            *
+ *                                                                    *
+ **********************************************************************/
+template <> void FAS_Multigrid2D_Solver<Rte2D_State,
+                                        Rte2D_Quad_Block,
+                                        Rte2D_Input_Parameters>::
+Apply_ICs(const int &level) 
+{ 
+  //
+  // conserved solution state
+  //
+  // specified ics
+  ICs(Local_SolnBlk[level],
+      List_of_Local_Solution_Blocks[level],
+      *IP);
+
+  // if restart, restrict fine solution
+  if (IP->i_ICs == IC_RESTART) {
+    Restrict_Solution_Blocks(level-1);
+    // Update_Primitive_Variables(level); // <- don't need it
+  }
+
+  // If this is a discretely specified medium field,
+  // then we will have to restrict it as well.
+  if ( Local_SolnBlk[level]->Medium_Field_Type == MEDIUM2D_FIELD_DISCRETE )
+    Restrict_NonSolution_Blocks(Local_SolnBlk, 
+				List_of_Local_Solution_Blocks, 
+				level-1);
+  
+  // apply coarse mesh BCs
+  if (IP->Multigrid_IP.Apply_Coarse_Mesh_Boundary_Conditions)
+    Restrict_Boundary_Ref_States(level-1);
+
+}
 
 
 

@@ -594,6 +594,8 @@ inline char *Date_And_Time() {
 #define IC_COUETTE                    306
 #define IC_BLUNT_BODY                 307
 
+#define IC_SPECIFIED                  400
+
 /********************************************************
  * CFD -- Time Integration (Time-Stepping) Types.       *
  ********************************************************/
