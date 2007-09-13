@@ -61,12 +61,18 @@ void SemiImplicitBlockJacobi(DenseMatrix &dSdU,
 			     const int &ii, const int &jj){ 
   
   if( (SolnBlk.Axisymmetric && SolnBlk.Flow_Type != FLOWTYPE_INVISCID) ||
-      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K ||
-      SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
-      SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD ||
-      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
-      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY ||
-      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) { 
+       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K ||
+       SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
+       SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+       SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+       SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+       SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD) { 
 
 #ifdef THICKENED_FLAME_ON
     int NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-3; 
@@ -74,11 +80,17 @@ void SemiImplicitBlockJacobi(DenseMatrix &dSdU,
     int NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-1;
 #endif
 
-    if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
-         SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD ||
-         SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
-         SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY ||
-         SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ){
+   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
       NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-SolnBlk.W[0][0].ns;
     }
 
@@ -124,11 +136,17 @@ void SemiImplicitBlockJacobi_dSdW(DenseMatrix &dSdW,
   //
   ////////////////////////////////////////////////////////////////
 
-   if(SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
-      SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD ||
-      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
-      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY ||
-      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ){    
+   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
      dS_tdW(dSdW,SolnBlk, d_dWdx_dW_C, d_dWdy_dW_C, ii,jj);
    }
   
@@ -156,9 +174,17 @@ void SemiImplicitBlockJacobi_dSdU(DenseMatrix &dSdU,
   
   //Add Jacobian for finite-rate chemistry source terms  
   if (SolnBlk.W[ii][jj].React.reactset_flag != NO_REACTIONS &&
+      SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_C &&
+      SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_C_ALGEBRAIC && 
       SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_C_FSD &&
+      SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_NGT_C_FSD &&
+      SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_C && 
+      SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC && 
       SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY &&
-      SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_C_FSD_K){    
+      SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE &&
+      SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY &&
+      SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_C_FSD_K &&
+      SolnBlk.Flow_Type != FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD){    
     SolnBlk.W[ii][jj].dSwdU(dSdU, SolnBlk.Flow_Type,solver_type);
   }  
 

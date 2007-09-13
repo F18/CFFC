@@ -9591,7 +9591,6 @@ if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C ||
   } //end j //
 
   LinSys.deallocate();
-	  cout<<"species"<<endl;
 
   /* Solution successfully updated. */
   return (0);
