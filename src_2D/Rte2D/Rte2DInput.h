@@ -328,7 +328,7 @@ inline void Rte2D_Input_Parameters::SetupInputState()
   //
   // CONSTANT
   if (i_ICs_Medium == IC_UNIFORM  || i_ICs_Medium == IC_CONSTANT) {
-    Medium2D_State::SetAllFieldsConstant( Mo );
+    Medium2D_State::SetConstantField( Mo );
     
   // ERROR
   } else {
@@ -411,7 +411,7 @@ inline ostream &operator << (ostream &out_file,
     /***********************************************************************
      *************************** RTE SPECIFIC ******************************/
     // SNBCK parameters
-    if (IP.i_AbsorptionModel == RTE2D_ABSORB_SNBCK) {
+    if (IP.i_AbsorptionModel == MEDIUM2D_ABSORB_SNBCK) {
       out_file << endl;
       IP.SNBCK_IP.Output(out_file);
     } else {

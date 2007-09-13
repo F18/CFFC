@@ -118,7 +118,7 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     IP.Number_of_Angles_Ldir = 4;
 
     // set gas Absorption model
-    IP.i_AbsorptionModel = RTE2D_ABSORB_GRAY;
+    IP.i_AbsorptionModel = MEDIUM2D_ABSORB_GRAY;
     string_ptr = "Gray";
     strcpy(IP.AbsorptionModel, string_ptr);
 
@@ -2112,9 +2112,9 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
       Get_Next_Input_Control_Parameter(IP);
       strcpy(IP.AbsorptionModel, IP.Next_Control_Parameter);
        if (strcmp(IP.AbsorptionModel, "Gray") == 0) {
-	 IP.i_AbsorptionModel = RTE2D_ABSORB_GRAY;
+	 IP.i_AbsorptionModel = MEDIUM2D_ABSORB_GRAY;
        } else if (strcmp(IP.AbsorptionModel, "SNBCK") == 0) {
-	 IP.i_AbsorptionModel = RTE2D_ABSORB_SNBCK;
+	 IP.i_AbsorptionModel = MEDIUM2D_ABSORB_SNBCK;
        } else {
 	 i_command = INVALID_INPUT_VALUE;
        } /* endif */

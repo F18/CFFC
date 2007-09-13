@@ -24,5 +24,5 @@
 int         Medium2D_State :: Nband          = 0;     // number of bands (& quad pts)
 int         Medium2D_State :: NUM_VAR_MEDIUM2D = 0;   // total number of variables
 SNBCK*      Medium2D_State :: SNBCKdata      = NULL;  // SNBCK data object
-double      Medium2D_State :: Absorb_Type    = RTE2D_ABSORB_GRAY; // absorbsion model
-FieldData<Medium2D_State, Medium2D_Quad_Block> Medium2D_State :: Field;
+double      Medium2D_State :: Absorb_Type    = MEDIUM2D_ABSORB_GRAY; // absorbsion model
+Vector2D_Function<Medium2D_State> Medium2D_State :: Field;

@@ -1006,9 +1006,9 @@ Rte2D_State Gray_Wall(const Rte2D_State &U,
     //------------------------------------------------
     // For a black wall, the blackbody intensity
     //------------------------------------------------
-    if (M.Absorb_Type == RTE2D_ABSORB_GRAY)
+    if (M.Absorb_Type == MEDIUM2D_ABSORB_GRAY)
       In = wall_emissivity * BlackBody(wall_temperature);
-    else if (M.Absorb_Type == RTE2D_ABSORB_SNBCK) {
+    else if (M.Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
       wn = M.SNBCKdata->WaveNo[ M.SNBCKdata->band_index[v] ];
       In = wall_emissivity * BlackBody(wall_temperature, wn);
       // Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
@@ -1128,9 +1128,9 @@ void Gray_Wall_Space_March(Rte2D_State &Uwall,
     //------------------------------------------------
     // for a black wall
     //------------------------------------------------
-    if (M.Absorb_Type == RTE2D_ABSORB_GRAY)
+    if (M.Absorb_Type == MEDIUM2D_ABSORB_GRAY)
       In = wall_emissivity * BlackBody(wall_temperature);
-    else if (M.Absorb_Type == RTE2D_ABSORB_SNBCK) {
+    else if (M.Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
       wn = M.SNBCKdata->WaveNo[ M.SNBCKdata->band_index[v] ];
       In = wall_emissivity * BlackBody(wall_temperature, wn);
       // Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array

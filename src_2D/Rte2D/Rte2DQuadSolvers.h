@@ -7,7 +7,6 @@
 
 /* Include 2D Rte quadrilateral mesh solution header file. */
 #include "Rte2DQuad.h"
-#include "Medium2DQuad.h"
 
 /* Include Rte2D Multigrid Specialization header file. */
 #include "Rte2DQuadMultigrid.h"

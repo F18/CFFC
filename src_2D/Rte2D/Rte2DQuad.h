@@ -111,11 +111,17 @@
  *                 south-west node.
  *    UnSE      -- Return conserved variable solution at the
  *                 south-east node.
+ *      Mn      -- Return medium state at the specified node.              
+ *    MnNW      -- Return medium state at the north-west node.              
+ *    MnNE      -- Return medium state at the north-east node.              
+ *    MnSW      -- Return medium state at the south-west node.              
+ *    MnSE      -- Return medium state at the south-east node.              
  * evaluate_limiters -- Set flag to evaluate limiters.
  * freeze_limiters -- Set flag to freeze limiters.
  * Member functions required for message passing.
  *    NumVar    -- Returns number of solution variables in primitive
  *                 and conserved solution state vectors.
+ *  NumVarMedium-- Returns number of variables in medium state vectors.
  * LoadSendBuffer -- Loads send buffer.
  * LoadSendBuffer_F2C -- Loads send buffer for fine to coarse block 
  *                       messages.
@@ -192,6 +198,7 @@ public:
   int           Freeze_Limiter; //!< Limiter freezing indicator.
   static int         Flow_Type; //!< Flow type flag (always inviscid).
   static char*   solutionTitle; //!< Solution title info
+  int        Medium_Field_Type; //!< medium descriptor type (analytic, discrete).
   //@}
 
   //@{ @name Boundary condtion reference states:
@@ -231,7 +238,8 @@ public:
       dUdpsi = NULL; phi_psi = NULL;
       FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
       UoN = NULL; UoS = NULL; UoE = NULL; UoW = NULL;
-      Axisymmetric = 0; Freeze_Limiter = OFF;
+      Axisymmetric = 0; Freeze_Limiter = OFF; Flow_Type = 0;
+      Medium_Field_Type = MEDIUM2D_FIELD_ANALYTIC;
       Sp = NULL; SpN = NULL; SpS = NULL; SpE = NULL; SpW = NULL; 
       NorthWallTemp  = ZERO;   SouthWallTemp  = ZERO;  
       EastWallTemp   = ZERO;   WestWallTemp   = ZERO;  
@@ -248,7 +256,8 @@ public:
     dUdpsi = Soln.dUdpsi; phi_psi = Soln.phi_psi;
     FluxN = Soln.FluxN; FluxS = Soln.FluxS; FluxE = Soln.FluxE; FluxW = Soln.FluxW;
     UoN = Soln.UoN; UoS = Soln.UoS; UoE = Soln.UoE; UoW = Soln.UoW;
-    Axisymmetric = 0; Freeze_Limiter = Soln.Freeze_Limiter;
+    Axisymmetric = Soln.Axisymmetric; Freeze_Limiter = Soln.Freeze_Limiter;
+    Flow_Type = Soln.Flow_Type; Medium_Field_Type = Soln.Medium_Field_Type;
     Sp = Soln.Sp; SpN = Soln.SpN; SpS = Soln.SpS; SpE = Soln.SpE; SpW = Soln.SpW; 
     NorthWallTemp  = Soln.NorthWallTemp;    SouthWallTemp  = Soln.SouthWallTemp;  
     EastWallTemp   = Soln.EastWallTemp;     WestWallTemp   = Soln.WestWallTemp;  
@@ -281,7 +290,15 @@ public:
   Rte2D_State UnNE(const int &ii, const int &jj); //!< Return conserved solution state at cell NE node.
   Rte2D_State UnSE(const int &ii, const int &jj); //!< Return conserved solution state at cell SE node.
   Rte2D_State UnSW(const int &ii, const int &jj); //!< Return conserved solution state at cell SW node.
-  //@}
+ 
+  //! Return medium state at specified node.
+  Medium2D_State Mn(const int &ii, const int &jj);
+
+  Medium2D_State MnNW(const int &ii, const int &jj); //!< Return medium state at cell NW node.
+  Medium2D_State MnNE(const int &ii, const int &jj); //!< Return medium state at cell NE node.
+  Medium2D_State MnSE(const int &ii, const int &jj); //!< Return medium state at cell SE node.
+  Medium2D_State MnSW(const int &ii, const int &jj); //!< Return medium state at cell SW node.
+ //@}
 
   //@{ @name Member functions for limiter freezing.
   void evaluate_limiters(void); //!< Set flags for limiter evaluation.
@@ -296,6 +313,8 @@ public:
   //@{ @name Member functions required for message passing.
   //! Number of solution state variables.
   int NumVar(void);
+  //! Number of medium state variables.
+  int NumVarMedium(void);
   //! Load send message passing buffer.
   int LoadSendBuffer(double *buffer,
 		     int &buffer_count,
@@ -618,6 +637,77 @@ inline Rte2D_State Rte2D_Quad_Block::UnSW(const int &ii, const int &jj) {
 }
 
 /**************************************************************************
+ * Medium2D_Quad_Block::Un -- Node conservative solution.                 *
+ **************************************************************************/
+inline Medium2D_State Rte2D_Quad_Block::Mn(const int &ii, const int &jj) {
+ 
+  double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y,
+    eta1, zeta1, eta2, zeta2, eta, zeta;
+ 
+  x=Grid.Node[ii][jj].X.x; y=Grid.Node[ii][jj].X.y;
+  ax=Grid.Cell[ii-1][jj-1].Xc.x;
+  bx=Grid.Cell[ii-1][jj].Xc.x-Grid.Cell[ii-1][jj-1].Xc.x;
+  cx=Grid.Cell[ii][jj-1].Xc.x-Grid.Cell[ii-1][jj-1].Xc.x;
+  dx=Grid.Cell[ii][jj].Xc.x+Grid.Cell[ii-1][jj-1].Xc.x-
+    Grid.Cell[ii-1][jj].Xc.x-Grid.Cell[ii][jj-1].Xc.x;
+  ay=Grid.Cell[ii-1][jj-1].Xc.y;
+  by=Grid.Cell[ii-1][jj].Xc.y-Grid.Cell[ii-1][jj-1].Xc.y;
+  cy=Grid.Cell[ii][jj-1].Xc.y-Grid.Cell[ii-1][jj-1].Xc.y;
+  dy=Grid.Cell[ii][jj].Xc.y+Grid.Cell[ii-1][jj-1].Xc.y-
+    Grid.Cell[ii-1][jj].Xc.y-Grid.Cell[ii][jj-1].Xc.y;
+  aa=bx*dy-dx*by; bb=dy*(ax-x)+bx*cy-cx*by+dx*(y-ay); cc=cy*(ax-x)+cx*(y-ay);
+  if (fabs(aa) < TOLER*TOLER) {
+    if (fabs(bb) >= TOLER*TOLER) { zeta1=-cc/bb; }
+    else { zeta1 = -cc/sgn(bb)*(TOLER*TOLER); }
+    if (fabs(cy+dy*zeta1) >= TOLER*TOLER) { eta1=(y-ay-by*zeta1)/(cy+dy*zeta1); }
+    else { eta1 = HALF; } zeta2=zeta1; eta2=eta1;
+  } else {
+    if (bb*bb-FOUR*aa*cc >= TOLER*TOLER) { zeta1=HALF*(-bb+sqrt(bb*bb-FOUR*aa*cc))/aa; }
+    else { zeta1 = -HALF*bb/aa; }
+    if (fabs(cy+dy*zeta1) < TOLER*TOLER) { eta1=-ONE; }
+    else { eta1=(y-ay-by*zeta1)/(cy+dy*zeta1); }
+    if (bb*bb-FOUR*aa*cc >= TOLER*TOLER) { zeta2=HALF*(-bb-sqrt(bb*bb-FOUR*aa*cc))/aa; }
+    else { zeta2 = -HALF*bb/aa; }
+    if (fabs(cy+dy*zeta2) < TOLER*TOLER) { eta2=-ONE; }
+    else { eta2=(y-ay-by*zeta2)/(cy+dy*zeta2); }
+  } /* end if */
+  if (zeta1 > -TOLER && zeta1 < ONE + TOLER &&
+      eta1  > -TOLER && eta1  < ONE + TOLER) {
+    zeta=zeta1; eta=eta1;
+  } else if (zeta2 > -TOLER && zeta2 < ONE + TOLER &&
+	     eta2  > -TOLER && eta2  < ONE + TOLER) {
+    zeta=zeta2; eta=eta2;
+  } else {
+    zeta=HALF; eta=HALF;
+  } /* endif */
+  
+  return (M[ii-1][jj-1] +(M[ii-1][jj]-M[ii-1][jj-1])*zeta+  
+	  (M[ii][jj-1]-M[ii-1][jj-1])*eta + 
+	  (M[ii][jj]+M[ii-1][jj-1]-M[ii-1][jj]-M[ii][jj-1])*zeta*eta);
+
+}
+
+/**************************************************************************
+ * Medium2D_Quad_Block::Un -- Get cell node conserved solution states.    *
+ **************************************************************************/
+inline Medium2D_State Rte2D_Quad_Block::MnNW(const int &ii, const int &jj) {
+  return (Mn(ii, jj+1));
+}
+
+inline Medium2D_State Rte2D_Quad_Block::MnNE(const int &ii, const int &jj) {
+  return (Mn(ii+1, jj+1));
+}
+
+inline Medium2D_State Rte2D_Quad_Block::MnSE(const int &ii, const int &jj) {
+  return (Mn(ii+1, jj));
+}
+
+inline Medium2D_State Rte2D_Quad_Block::MnSW(const int &ii, const int &jj) {
+  return (Mn(ii, jj));
+}
+
+
+/**************************************************************************
  * Rte2D_Quad_Block::evaluate_limiters -- Set flag to evaluate limiters.*
  **************************************************************************/
 inline void Rte2D_Quad_Block::evaluate_limiters(void) {
@@ -642,6 +732,8 @@ inline ostream &operator << (ostream &out_file,
 	   << SolnBlk.ICu << " " << SolnBlk.Nghost << "\n";
   out_file << SolnBlk.NCj << " " << SolnBlk.JCl << " " << SolnBlk.JCu << "\n";
   out_file << SolnBlk.Axisymmetric << "\n";
+  out_file << SolnBlk.Flow_Type <<"\n";
+  out_file << SolnBlk.Medium_Field_Type <<"\n";
   out_file << SolnBlk.NorthWallTemp << "\n";
   out_file << SolnBlk.SouthWallTemp << "\n";
   out_file << SolnBlk.EastWallTemp << "\n";
@@ -676,6 +768,8 @@ inline istream &operator >> (istream &in_file,
   in_file.setf(ios::skipws);
   in_file >> ni >> il >> iu >> ng; in_file >> nj >> jl >> ju;
   in_file >> SolnBlk.Axisymmetric;
+  in_file >> SolnBlk.Flow_Type;
+  in_file >> SolnBlk.Medium_Field_Type;
   in_file >> SolnBlk.NorthWallTemp;
   in_file >> SolnBlk.SouthWallTemp;
   in_file >> SolnBlk.EastWallTemp;
@@ -733,6 +827,9 @@ inline istream &operator >> (istream &in_file,
  *******************************************************************************/
 inline int Rte2D_Quad_Block::NumVar(void) {
   return (int(U[0][0].NUM_VAR_RTE2D));
+}
+inline int Rte2D_Quad_Block::NumVarMedium(void) {
+  return (int(M[0][0].NUM_VAR_MEDIUM2D));
 }
 
 /*******************************************************************************

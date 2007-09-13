@@ -431,7 +431,7 @@ inline double Rte2D_State :: G( const Medium2D_State &M )
   //------------------------------------------------
   // Absorbsion coefficient is constant -> easy
   // Nband should be = 1 for gray
-  if (M.Absorb_Type == RTE2D_ABSORB_GRAY) {
+  if (M.Absorb_Type == MEDIUM2D_ABSORB_GRAY) {
     for ( int v=0; v<Nband; v++ )
       for ( int m=0; m<Npolar; m++ ) 
 	for ( int l=0; l<Nazim[m]; l++ ) 
@@ -443,7 +443,7 @@ inline double Rte2D_State :: G( const Medium2D_State &M )
   // See Liu et al. Combust Flame 138 (2004) 136-154
   //    G = \sum_v {\Delta v} \sum_i w_i  * 
   //        \sum_m \sum_l ( {\Delta \Omega}_{m,l} * I_{m,l} )
-  } else if (M.Absorb_Type == RTE2D_ABSORB_SNBCK) {
+  } else if (M.Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
 
     //
     // loop over every quad point of every band
@@ -492,7 +492,7 @@ inline Vector2D Rte2D_State :: q( const Medium2D_State &M )
   //------------------------------------------------
   // Absorbsion coefficient is constant -> easy
   // Nband should be = 1 for gray
-  if (M.Absorb_Type == RTE2D_ABSORB_GRAY) {
+  if (M.Absorb_Type == MEDIUM2D_ABSORB_GRAY) {
     for ( int v=0; v<Nband; v++ ) 
       for ( int m=0; m<Npolar; m++ ) 
 	for ( int l=0; l<Nazim[m]; l++ ) {
@@ -506,7 +506,7 @@ inline Vector2D Rte2D_State :: q( const Medium2D_State &M )
   // See Liu et al. Combust Flame 138 (2004) 136-154
   //    q.x = \sum_v {\Delta v} \sum_i w_i \sum_m \sum_l (  \mu_{m,l} * I_{m,l} )
   //    q.y = \sum_v {\Delta v} \sum_i w_i \sum_m \sum_l ( \eta_{m,l} * I_{m,l} )
-  } else if (M.Absorb_Type == RTE2D_ABSORB_SNBCK) {
+  } else if (M.Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
 
     //
     // loop over every quad point of every band
@@ -559,7 +559,7 @@ inline Vector2D Rte2D_State :: Qr( const Medium2D_State &M )
   //------------------------------------------------
   // Absorbsion coefficient is constant -> easy
   // Nband should be = 1 for gray
-  if (M.Absorb_Type == RTE2D_ABSORB_GRAY) {
+  if (M.Absorb_Type == MEDIUM2D_ABSORB_GRAY) {
 
     //
     // loop over bands 
@@ -586,7 +586,7 @@ inline Vector2D Rte2D_State :: Qr( const Medium2D_State &M )
   // See Liu et al. Combust Flame 138 (2004) 136-154
   //    G = \sum_v {\Delta v} \sum_i w_i *
   //        \sum_m \sum_l ( 4\pi*Ib - {\Delta \Omega}_{m,l} * I_{m,l} )
-  } else if (M.Absorb_Type == RTE2D_ABSORB_SNBCK) {
+  } else if (M.Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
 
     //
     // loop over every quad point of every band

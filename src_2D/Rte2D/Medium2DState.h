@@ -19,11 +19,6 @@
 #define _Medium2D_STATE_INCLUDED 
 
 /********************************************************
- * Class Declaration                                    *
- ********************************************************/
-class Medium2D_Quad_Block;
-
-/********************************************************
  * Include required C++ libraries                       *
  ********************************************************/
 #include <cstdio>
@@ -44,16 +39,19 @@ using namespace std;
 #include "../Math/Vector2D.h"
 #include "../CFD/CFD.h"
 #include "SNBCK.h"
-#include "FieldData.h"
+#include "Vector2D_Function.h"
 
 /********************************************************
  * Necessary Medium2D Specific Constants                *
  ********************************************************/
 
 // Absorbsion model type 
-enum Gas_Models { RTE2D_ABSORB_GRAY,
-                  RTE2D_ABSORB_SNBCK };
+enum Gas_Models { MEDIUM2D_ABSORB_GRAY,
+                  MEDIUM2D_ABSORB_SNBCK };
 
+// Absorbsion model type 
+enum Field_Type { MEDIUM2D_FIELD_ANALYTIC,
+                  MEDIUM2D_FIELD_DISCRETE };
 
 /***********************************************************************/
 /*!
@@ -81,7 +79,7 @@ class Medium2D_State {
  private:
   
   //@{ @name Field data:
-  static FieldData<Medium2D_State, Medium2D_Quad_Block> Field;  //!< container class for field data
+  static Vector2D_Function<Medium2D_State> Field;  //!< container class for analytic function
   //@}
 
 
@@ -160,11 +158,7 @@ class Medium2D_State {
 			   const char* PATH);
 
   //! Set all all fields to the same function
-  static void SetAllFieldsConstant(const Medium2D_State &M);
-  static void SetDiscreteField( QuadTreeBlock_DataStructure &QuadTree,
-				AdaptiveBlockResourceList &List_of_Global_Solution_Blocks,
-			        AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
-			        Medium2D_Quad_Block *&Local_SolnBlk );
+  static void SetConstantField(const Medium2D_State &M);
   //@}
 
   //@{ @name Assignment operator.
@@ -277,7 +271,7 @@ inline void Medium2D_State :: SetInitialValues( const double &Pressure,
   // Absorbsion coefficient, Blackbody intensity 
   //------------------------------------------------
   // Use SNBCK
-  if (Absorb_Type == RTE2D_ABSORB_SNBCK) {
+  if (Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
     SNBCKdata->CalculateAbsorb( Pressure/PRESSURE_STDATM, //[atm]
 				Temperature,              //[K]
 				xco,
@@ -289,7 +283,7 @@ inline void Medium2D_State :: SetInitialValues( const double &Pressure,
     SNBCKdata->CalculatePlanck( Temperature, Ib );
 
   // Use Gray Gas (ie. constant)
-  } else if (Absorb_Type == RTE2D_ABSORB_GRAY) {
+  } else if (Absorb_Type == MEDIUM2D_ABSORB_GRAY) {
     for (int v=0; v<Nband; v++) {
       kappa[v] = AbsorptionCoef;
       Ib   [v] = BlackBody(Temperature);
@@ -325,11 +319,11 @@ inline void Medium2D_State :: SetupStatic( const int &i_Absorb_Type,
   Absorb_Type = i_Absorb_Type;
   
   // GRAY
-  if (Absorb_Type == RTE2D_ABSORB_GRAY) {
+  if (Absorb_Type == MEDIUM2D_ABSORB_GRAY) {
     Nband = 1;
 
   // SNBCK
-  } else if (Absorb_Type == RTE2D_ABSORB_SNBCK) {
+  } else if (Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
     AllocateSNBCK();
     SNBCKdata->Setup(SNBCK_IP, PATH);
     Nband = SNBCKdata->NumVar();
@@ -349,39 +343,12 @@ inline void Medium2D_State :: SetupStatic( const int &i_Absorb_Type,
 /********************************************************
  * Set all scalar fields to the same function.          *
  ********************************************************/
-inline void Medium2D_State :: SetAllFieldsConstant(const Medium2D_State &M)
+inline void Medium2D_State :: SetConstantField(const Medium2D_State &M)
 {
-  // decalares
-  ConstantFieldParams<Medium2D_State> P = {M};
-
   // assign all the fields
-  Field.SetConstantParams(P);
+  Field.SetConstantParams(M);
 }
 
-
-/********************************************************
- * Setup a discrete field for the absorbsion coefficient*
- * and the blackbody intensity.  The scattering         *
- * coefficient is always assumed constant !!!           *
- *                                                      *
- * NOT FINISHED - WILL NOT WORK!!!!                     *
- ********************************************************/
-inline void Medium2D_State :: SetDiscreteField( QuadTreeBlock_DataStructure &QuadTree,
-						AdaptiveBlockResourceList &List_of_Global_Solution_Blocks,
-						AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
-						Medium2D_Quad_Block *&Local_SolnBlk )
-{
-  // decalares
-  DiscreteFieldParams<Medium2D_Quad_Block> DF;
-
-  // set discrete field params
-  DF.QuadTree = &QuadTree; 
-  DF.List_of_Global_Solution_Blocks = &List_of_Global_Solution_Blocks; 
-  DF.List_of_Local_Solution_Blocks = &List_of_Local_Solution_Blocks; 
-  DF.Local_SolnBlk = &Local_SolnBlk; 
-  
-  Field.SetDiscreteParams(DF);
-}
 
 /********************************************************
  * Compute medium state at location.                    *
@@ -491,11 +458,5 @@ inline istream& operator >> (istream &in_file,  Medium2D_State &U)
   in_file.unsetf(ios::skipws);
   return (in_file);
 }
-
-
-/********************************************************
- * Required CFFC header files                           *
- ********************************************************/
-#include "Medium2DQuad.h"
 
 #endif // _Medium2D_STATE_INCLUDED 
