@@ -228,6 +228,11 @@ int Read_Restart_Solution(Rte2D_Quad_Block *Soln_ptr,
 	  // Soln_ptr[i].Flow_Type = Input_Parameters.FlowType; // <-- not used (static)
 	  Soln_ptr[i].Axisymmetric = Input_Parameters.Axisymmetric;
 	  Soln_ptr[i].Medium_Field_Type = Input_Parameters.Medium_Field_Type;
+
+          // Prescribe the medium field data if we have an analytic 
+	  // function specifying it.
+          if (Soln_ptr[i].Medium_Field_Type == MEDIUM2D_FIELD_ANALYTIC)
+	    PrescribeFields(Soln_ptr[i]);
 	  //---------------------- End Rte2D Specific -----------------------//
 
        } /* endif */

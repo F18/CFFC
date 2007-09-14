@@ -551,15 +551,17 @@ Apply_ICs(const int &level)
   // conserved solution state
   //
   // specified ics
-  ICs(Local_SolnBlk[level],
-      List_of_Local_Solution_Blocks[level],
-      *IP);
+  if (IP->i_ICs != IC_RESTART) {
+    ICs(Local_SolnBlk[level],
+	List_of_Local_Solution_Blocks[level],
+	*IP);
 
   // if restart, restrict fine solution
-  if (IP->i_ICs == IC_RESTART) {
+  } else {
     Restrict_Solution_Blocks(level-1);
     // Update_Primitive_Variables(level); // <- don't need it
-  }
+  } // endif
+
 
   // If this is a discretely specified medium field,
   // then we will have to restrict it as well.
