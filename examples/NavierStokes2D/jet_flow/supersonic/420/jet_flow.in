@@ -1,0 +1,189 @@
+#
+# JET FLOW THROUGH AN ORIFICE
+#
+#
+# PROBLEM PARAMETERS:
+Flow_Type =
+Turbulent_k_omega
+Flow_Geometry_Type = 
+Axisymmetric
+#
+# SOLVER PARAMETERS:
+Time_Integration_Type =
+Multistage_Optimal_Smoothing
+N_Stage =
+5
+Time_Accurate =
+0
+Local_Time_Stepping =
+1
+Residual_Smoothing_Epsilon = 
+0.175
+Residual_Smoothing_Gauss_Seidel_Iterations =
+0
+#
+# MULTIGRID PARAMETERS:
+Multigrid_Levels =
+4
+Multigrid_Cycle_Type =
+V
+Multigrid_Number_of_Smooths_on_Finest_Level =
+2
+Multigrid_Number_of_Pre_Smooths =
+4
+Multigrid_Number_of_Post_Smooths =
+0
+Multigrid_Number_of_Smooths_on_Coarsest_Level =
+5
+Full_Multigrid =
+500
+Defect_Correction =
+ON
+Prolong_Using_Injection =
+OFF
+First_Order_Coarse_Mesh_Reconstruction =
+ON
+Apply_Coarse_Mesh_Boundary_Conditions =
+ON
+Injection_at_Dirichlet_Boundary_Conditions =
+ON
+Update_Stability_Switch =
+ON
+Maximum_Number_of_Update_Reductions =
+5
+Multigrid_Smoothing_Type = 
+Multistage_Optimal_Smoothing
+N_Stage =
+5
+#
+# FLUX PARAMETERS:
+Reconstruction_Type =
+Least_Squares
+Limiter_Type =
+Venkatakrishnan
+#One
+#Freeze_Limiter =
+#1
+#Freeze_Limiter_Residual_Level = 
+#1.0
+Flux_Function_Type =
+Roe
+Viscous_Reconstruction_Type =
+Diamond_Path
+#
+# INITIAL CONDITIONS:
+ICs_Type =
+Restart
+#Jet_Flow
+Mach_Number = 
+2.0
+Gas_Type = 
+AIR
+Pressure_Gradient =
+-10.0
+#
+#
+# TURBULENCE PARAMETERS:
+Turbulence_BC_Type =
+Automatic_Wall_Treatment
+#Direct_Integration
+Friction_Velocity_Type =
+Iterative
+yplus_sublayer =
+2.5
+yplus_buffer_layer =
+30.0
+yplus_outer_layer =
+250.0
+Compressibility_Effect =
+Wilcox_Model
+Variable_Prandtl =
+OFF
+Step_Height =
+20.0
+Wedge_Length = 
+0.01
+#
+# GRID PARAMETERS:
+Grid_Type =
+Jet_Flow
+Pipe_Radius =
+0.04572
+Number_of_Cells_Idir = 
+32
+Number_of_Cells_Jdir =
+32
+Number_of_Blocks_Idir = 
+4
+Number_of_Blocks_Jdir =
+4
+Mesh_Stretching_Factor_Idir =
+1.1
+Mesh_Stretching_Factor_Jdir =
+1.1
+Boundary_Conditions_Specified =
+ON
+BC_North =
+Fixed
+BC_South =
+Reflection
+BC_East =
+Constant_Extrapolation
+BC_West =
+Fixed
+#
+# INITIAL AMR PARAMETERS:
+Number_of_Uniform_Mesh_Refinements =
+0
+Number_of_Boundary_Mesh_Refinements =
+0
+Number_of_Initial_Mesh_Refinements =
+0
+#
+# UNSTEADY AMR PARAMETERS:
+AMR =
+OFF
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+7
+Minimum_Refinement_Level =
+2
+Threshold_for_Refinement =
+0.10
+Threshold_for_Coarsening =
+0.01
+Smooth_Quad_Block =
+OFF
+#
+# TIME-STEPPING PARAMETERS:
+CFL_Number =
+0.10
+Time_Max =
+0.0
+Maximum_Number_of_Time_Steps =
+0
+Residual_Variable =
+2
+Number_of_Blocks_Per_Processor =
+128
+Output_File_Name = 
+jet_flow
+Restart_Solution_Save_Frequency = 
+6000
+#
+# EXECUTE PROGRAM:
+Execute
+#
+# WRITE OUTPUT:
+Write_Output
+Write_Output_Cells
+#
+# STEADY AMR:
+#Refine_Grid
+#
+# WRITE RESTART:
+Write_Restart
+#
+# TERMINATE PROGRAM:
+Terminate

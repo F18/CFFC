@@ -381,6 +381,7 @@ ifeq ($(PLATFORM),Linux_ia64)
     CXX = /usr/local/mpi/bin/mpiCC
     CPPFLAGS = -D_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
     CXXFLAGS = -w0 -O2 -mp -ftz
+    #CXXFLAGS = -w0 -g -ftz
     FFLAGS = -w -O2 -mp -ftz 
     F90FLAGS = $(FFLAGS) -r8
     MODFLAG = -module

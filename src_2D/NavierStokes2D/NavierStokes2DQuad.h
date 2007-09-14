@@ -87,6 +87,12 @@
  *                 gradients (x-direction) for the block.
  *    dWdy      -- Return the unlimited primitive variable solution
  *                 gradients (y-direction) for the block.
+ *    d_dWdx_dW -- Return the gradients of the unlimited primitive 
+ *                 variable solution gradients (x-direction) with 
+ *                 respect to the primitive variables for the block.
+ *    d_dWdy_dW -- Return the gradients of the unlimited primitive 
+ *                 variable solution gradients (y-direction) with 
+ *                 respect to the primitive variables for the block.
  *     phi      -- Return the solution slope limiters.
  *      Uo      -- Return initial solution state.
  *    FluxN     -- Return array of north boundary solution fluxes.
@@ -108,6 +114,13 @@
  *  Nghost      -- Number of ghost cells.
  * Axisymmetric -- Return axisymmetric flow indicator (= 1 for 
  *                 axisymmetric flow, = 0 for planar flow).
+ * Compressibility_Effect -- Returns Compressibility corrections indicator
+ * 
+ * Transition_Model -- Returns the Transition model to be used.
+ *     
+ * Variable_Prandtl -- Returns if Variable Prandtl number model is to be used
+ *                   (=1 for Variable Prandtl on,
+ *                   (=0 for Variable Prandtl off).
  * Freeze_Limiter -- Return limiter freezing indicator
  *                   (=1 for limiter freezing on,
  *                   (=0 for limiter freezing off).
@@ -209,6 +222,11 @@ public:
   NavierStokes2D_pState   **phi; //!< Solution slope limiter.
   //@}
 
+  //@{ @name gradient of Solution gradient w.r.t primitive variables state arrays:
+  double                  ***d_dWdx_dW; //!< Unlimited solution gradient (x-direction).
+  double                  ***d_dWdy_dW; //!< Unlimited solution gradient (y-direction).
+  //@}
+
   //@{ @name Solution face gradients arrays. For use in viscous NKS preconditioner. Not used in explicit time stepping.
   bool face_grad_arrays_allocated;
   NavierStokes2D_pState       **dWdx_faceN;   //!< north cell face(x-direction).
@@ -225,9 +243,12 @@ public:
   //@}
 
   //@{ @name Problem indicator flags:
-  int              Axisymmetric; //!< Axisymmetric flow indicator.
-  int                 Flow_Type; //!< Flow-type flag (inviscid, laminar, or k-omega).
-  int            Freeze_Limiter; //!< Limiter freezing indicator.
+  int                    Axisymmetric; //!< Axisymmetric flow indicator.
+  int          Compressibility_Effect; //!< Compressibility Effect indicator
+  int                Transition_Model; //!< Transition Model indicator
+  int                       Flow_Type; //!< Flow-type flag (inviscid, laminar, or k-omega).
+  int                  Freeze_Limiter; //!< Limiter freezing indicator.
+  int                Variable_Prandtl; //!< Variable Prandtl number indicator. 
   //@}
 
   //@{ @name Boundary condtion reference states:
@@ -251,8 +272,11 @@ public:
   NavierStokes2D_Quad_Block(void) {
     // Problem flags:
     Axisymmetric   = OFF;
+    Compressibility_Effect = OFF;
+    Transition_Model = OFF;
     Flow_Type      = FLOWTYPE_INVISCID;
     Freeze_Limiter = OFF;
+    Variable_Prandtl = OFF;
     Vwall = Vector2D_ZERO;
     Twall = ZERO;
     // Grid size and variables:
@@ -261,6 +285,7 @@ public:
     W = NULL; U = NULL;
     dt = NULL; dUdt = NULL; Uo = NULL;
     dWdx = NULL; dWdy = NULL; phi = NULL;
+    d_dWdx_dW = NULL; d_dWdy_dW = NULL;
     face_grad_arrays_allocated = false;
     dWdx_faceN = NULL; dWdy_faceN = NULL;
     dWdx_faceE = NULL; dWdy_faceE = NULL;
@@ -274,8 +299,11 @@ public:
   NavierStokes2D_Quad_Block(const NavierStokes2D_Quad_Block &Soln) {
     // Problem flags:
     Axisymmetric   = Soln.Axisymmetric;
+    Compressibility_Effect = Soln.Compressibility_Effect;
+    Transition_Model = Soln.Transition_Model;
     Flow_Type      = Soln.Flow_Type;
     Freeze_Limiter = Soln.Freeze_Limiter;
+    Variable_Prandtl = Soln.Variable_Prandtl;
     Vwall = Soln.Vwall;
     Twall = Soln.Twall;
     // Grid size and variables:
@@ -287,6 +315,7 @@ public:
     W = Soln.W; U = Soln.U;
     dt = Soln.dt; dUdt = Soln.dUdt; Uo = Soln.Uo;
     dWdx = Soln.dWdx; dWdy = Soln.dWdy; phi = Soln.phi;
+    d_dWdx_dW = Soln.d_dWdx_dW; d_dWdy_dW = Soln.d_dWdy_dW;
     face_grad_arrays_allocated = Soln.face_grad_arrays_allocated;
     dWdx_faceN = Soln.dWdx_faceN; dWdy_faceN = Soln.dWdy_faceN;
     dWdx_faceE = Soln.dWdx_faceE; dWdy_faceE = Soln.dWdy_faceE;
@@ -490,13 +519,21 @@ inline void NavierStokes2D_Quad_Block::allocate(const int Ni, const int Nj, cons
   W = new NavierStokes2D_pState*[NCi]; U = new NavierStokes2D_cState*[NCi];
   dt = new double*[NCi]; dUdt = new NavierStokes2D_cState**[NCi];
   dWdx = new NavierStokes2D_pState*[NCi]; dWdy = new NavierStokes2D_pState*[NCi];
-  phi = new NavierStokes2D_pState*[NCi]; Uo = new NavierStokes2D_cState*[NCi];
+  phi = new NavierStokes2D_pState*[NCi]; 
+  d_dWdx_dW = new double **[NCi];
+  d_dWdy_dW = new double **[NCi];
+  Uo = new NavierStokes2D_cState*[NCi];
   Wall = new Turbulent2DWallData*[NCi];
   for (int i = 0; i < NCi; i++) {
     W[i] = new NavierStokes2D_pState[NCj]; U[i] = new NavierStokes2D_cState[NCj];
     dt[i] = new double[NCj]; dUdt[i] = new NavierStokes2D_cState*[NCj];
-    for (int j = 0; j < NCj; j++)
+    d_dWdx_dW[i] = new double  *[NCj];
+    d_dWdy_dW[i] = new double  *[NCj];
+    for (int j = 0; j < NCj; j++){
       dUdt[i][j] = new NavierStokes2D_cState[NUMBER_OF_RESIDUAL_VECTORS_NAVIERSTOKES2D];
+      d_dWdx_dW[i][j] = new double [5];
+      d_dWdy_dW[i][j] = new double [5];
+    }
     dWdx[i] = new NavierStokes2D_pState[NCj]; dWdy[i] = new NavierStokes2D_pState[NCj];
     phi[i] = new NavierStokes2D_pState[NCj]; Uo[i] = new NavierStokes2D_cState[NCj];
     Wall[i] = new Turbulent2DWallData[NCj];
@@ -546,15 +583,23 @@ inline void NavierStokes2D_Quad_Block::deallocate(void) {
   for (int i = 0; i < NCi; i++) {
     delete []W[i]; W[i] = NULL; delete []U[i]; U[i] = NULL;
     delete []dt[i]; dt[i] = NULL; 
-    for (int j = 0; j < NCj; j++) { delete []dUdt[i][j]; dUdt[i][j] = NULL; }
+    for (int j = 0; j < NCj; j++) { 
+      delete []dUdt[i][j]; dUdt[i][j] = NULL; 
+      delete []d_dWdx_dW[i][j]; d_dWdx_dW[i][j] = NULL;
+      delete []d_dWdy_dW[i][j]; d_dWdy_dW[i][j] = NULL;
+    }
     delete []dUdt[i]; dUdt[i] = NULL;
     delete []dWdx[i]; dWdx[i] = NULL; delete []dWdy[i]; dWdy[i] = NULL;
+    delete []d_dWdx_dW[i]; d_dWdx_dW[i] = NULL;
+    delete []d_dWdy_dW[i]; d_dWdy_dW[i] = NULL;
     delete []phi[i];  phi[i]  = NULL; delete []Uo[i]; Uo[i] = NULL;
     delete []Wall[i]; Wall[i] = NULL; 
   }
   delete []W; W = NULL; delete []U; U = NULL;
   delete []dt; dt = NULL; delete []dUdt; dUdt = NULL;
   delete []dWdx; dWdx = NULL; delete []dWdy; dWdy = NULL; 
+  delete []d_dWdx_dW; d_dWdx_dW = NULL;
+  delete []d_dWdy_dW; d_dWdy_dW = NULL;
   delete []phi; phi = NULL; delete []Uo; Uo = NULL;
   delete []Wall; Wall = NULL;
   delete []FluxN; FluxN = NULL; delete []FluxS; FluxS = NULL;
@@ -582,19 +627,19 @@ inline void NavierStokes2D_Quad_Block::deallocate(void) {
  *                                                                    *
  **********************************************************************/
 inline NavierStokes2D_pState NavierStokes2D_Quad_Block::Wn(const int ii, const int jj) {
-  double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y, 
+  double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y,
          eta1, zeta1, eta2, zeta2, eta, zeta;
   NavierStokes2D_pState A, B, C, D;
   x  = Grid.Node[ii][jj].X.x;
   y  = Grid.Node[ii][jj].X.y;
   ax = Grid.Cell[ii-1][jj-1].Xc.x;
-  bx = Grid.Cell[ii-1][jj  ].Xc.x - Grid.Cell[ii-1][jj-1].Xc.x; 
-  cx = Grid.Cell[ii  ][jj-1].Xc.x - Grid.Cell[ii-1][jj-1].Xc.x; 
+  bx = Grid.Cell[ii-1][jj  ].Xc.x - Grid.Cell[ii-1][jj-1].Xc.x;
+  cx = Grid.Cell[ii  ][jj-1].Xc.x - Grid.Cell[ii-1][jj-1].Xc.x;
   dx = Grid.Cell[ii  ][jj  ].Xc.x + Grid.Cell[ii-1][jj-1].Xc.x -
        Grid.Cell[ii-1][jj  ].Xc.x - Grid.Cell[ii  ][jj-1].Xc.x;
   ay = Grid.Cell[ii-1][jj-1].Xc.y;
-  by = Grid.Cell[ii-1][jj  ].Xc.y - Grid.Cell[ii-1][jj-1].Xc.y; 
-  cy = Grid.Cell[ii  ][jj-1].Xc.y - Grid.Cell[ii-1][jj-1].Xc.y; 
+  by = Grid.Cell[ii-1][jj  ].Xc.y - Grid.Cell[ii-1][jj-1].Xc.y;
+  cy = Grid.Cell[ii  ][jj-1].Xc.y - Grid.Cell[ii-1][jj-1].Xc.y;
   dy = Grid.Cell[ii  ][jj  ].Xc.y + Grid.Cell[ii-1][jj-1].Xc.y -
        Grid.Cell[ii-1][jj  ].Xc.y - Grid.Cell[ii  ][jj-1].Xc.y;
   aa = bx*dy - dx*by;
@@ -603,32 +648,32 @@ inline NavierStokes2D_pState NavierStokes2D_Quad_Block::Wn(const int ii, const i
   if (fabs(aa) < TOLER*TOLER) {
     if (fabs(bb) >= TOLER*TOLER) {
       zeta1 = -cc/bb;
-    } else { 
-      zeta1 = -cc/sgn(bb)*(TOLER*TOLER); 
-    } 
+    } else {
+      zeta1 = -cc/sgn(bb)*(TOLER*TOLER);
+    }
     if (fabs(cy+dy*zeta1) >= TOLER*TOLER) {
-      eta1 = (y-ay-by*zeta1)/(cy+dy*zeta1); 
-    } else { 
+      eta1 = (y-ay-by*zeta1)/(cy+dy*zeta1);
+    } else {
       eta1 = HALF;
-    } 
+    }
     zeta2 = zeta1;
     eta2  = eta1;
   } else {
-    if (bb*bb-FOUR*aa*cc >= TOLER*TOLER) { 
-      zeta1 = HALF*(-bb+sqrt(bb*bb-FOUR*aa*cc))/aa; 
+    if (bb*bb-FOUR*aa*cc >= TOLER*TOLER) {
+      zeta1 = HALF*(-bb+sqrt(bb*bb-FOUR*aa*cc))/aa;
     } else { zeta1 = -HALF*bb/aa;
-    } 
+    }
     if (fabs(cy+dy*zeta1) < TOLER*TOLER) {
       eta1 = -ONE;
     } else {
       eta1 = (y-ay-by*zeta1)/(cy+dy*zeta1);
     }
     if (bb*bb-FOUR*aa*cc >= TOLER*TOLER) {
-      zeta2 = HALF*(-bb-sqrt(bb*bb-FOUR*aa*cc))/aa; 
+      zeta2 = HALF*(-bb-sqrt(bb*bb-FOUR*aa*cc))/aa;
     } else {
       zeta2 = -HALF*bb/aa;
     }
-    if (fabs(cy+dy*zeta2) < TOLER*TOLER) { 
+    if (fabs(cy+dy*zeta2) < TOLER*TOLER) {
       eta2 = -ONE;
     } else {
       eta2 = (y-ay-by*zeta2)/(cy+dy*zeta2);
@@ -646,8 +691,8 @@ inline NavierStokes2D_pState NavierStokes2D_Quad_Block::Wn(const int ii, const i
     zeta = HALF;
     eta  = HALF;
   }
-  A = W[ii-1][jj-1]; 
-  B = W[ii-1][jj  ] - W[ii-1][jj-1]; 
+  A = W[ii-1][jj-1];
+  B = W[ii-1][jj  ] - W[ii-1][jj-1];
   C = W[ii  ][jj-1] - W[ii-1][jj-1];
   D = W[ii  ][jj  ] + W[ii-1][jj-1] - W[ii-1][jj  ] - W[ii  ][jj-1];
   return A + B*zeta + C*eta + D*zeta*eta;
@@ -900,6 +945,9 @@ inline ostream &operator << (ostream &out_file,
   out_file << SolnBlk.NCj << " " << SolnBlk.JCl << " " << SolnBlk.JCu << endl;
   out_file << SolnBlk.Nghost << endl;
   out_file << SolnBlk.Axisymmetric << endl;
+  out_file << SolnBlk.Compressibility_Effect << endl;
+  out_file << SolnBlk.Transition_Model << endl;
+  out_file << SolnBlk.Variable_Prandtl << endl;
   out_file << SolnBlk.Flow_Type << endl;
   out_file << SolnBlk.Vwall << endl;
   out_file << SolnBlk.Twall << endl;
@@ -931,6 +979,9 @@ inline istream &operator >> (istream &in_file,
   in_file >> nj >> jl >> ju;
   in_file >> ng;
   in_file >> SolnBlk.Axisymmetric;
+  in_file >> SolnBlk.Compressibility_Effect;
+  in_file >> SolnBlk.Transition_Model;
+  in_file >> SolnBlk.Variable_Prandtl;
   in_file >> SolnBlk.Flow_Type;
   in_file.unsetf(ios::skipws);
   in_file >> SolnBlk.Vwall;
@@ -2378,6 +2429,20 @@ extern void Output_Turbulent_Pipe_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
 					  const double &Pipe_Radius,
 					  const int &variable_flag);
 
+extern void Output_Subsonic_Hot_Jet_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
+					    const int Block_Number,
+					    const int Output_Title,
+					    const int Output_Data,
+					    ostream &Out_File,
+					    const int &variable_flag);
+
+extern void Output_Supersonic_Hot_Jet_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
+					      const int Block_Number,
+					      const int Output_Title,
+					      const int Output_Data,
+					      ostream &Out_File,
+					      const int &variable_flag);
+
 extern void Output_Flat_Plate_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
 				      const int Block_Number,
 				      const int Output_Title_Soln,
@@ -2492,6 +2557,14 @@ extern int Output_Turbulent_Pipe_Tecplot(NavierStokes2D_Quad_Block *Soln_ptr,
 extern int Output_Flat_Plate_Tecplot(NavierStokes2D_Quad_Block *Soln_ptr,
 				     AdaptiveBlock2D_List &Soln_Block_List,
 				     NavierStokes2D_Input_Parameters &IP);
+
+extern int Output_Supersonic_Hot_Jet_Tecplot(NavierStokes2D_Quad_Block *Soln_ptr,
+					     AdaptiveBlock2D_List &Soln_Block_List,
+					     NavierStokes2D_Input_Parameters &IP);
+
+extern int Output_Subsonic_Hot_Jet_Tecplot(NavierStokes2D_Quad_Block *Soln_ptr,
+					   AdaptiveBlock2D_List &Soln_Block_List,
+					   NavierStokes2D_Input_Parameters &IP);
 
 extern int Output_Driven_Cavity_Flow_Tecplot(NavierStokes2D_Quad_Block *Soln_ptr,
 					     AdaptiveBlock2D_List &Soln_Block_List,

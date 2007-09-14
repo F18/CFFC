@@ -127,6 +127,12 @@ void ICs(NavierStokes2D_Quad_Block *Soln_ptr,
       Soln_ptr[nb].Flow_Type = Input_Parameters.FlowType;
       // Set flow geometry indicator (planar/axisymmetric).
       Soln_ptr[nb].Axisymmetric = Input_Parameters.Axisymmetric;
+      // Set compressibility correction indicator
+      Soln_ptr[nb].Compressibility_Effect = Input_Parameters.i_Compressibility_Effect;
+      // Set transition model indicator
+      Soln_ptr[nb].Transition_Model = Input_Parameters.i_Transition_Model;
+      // Set variable Prandtl number indicator
+      Soln_ptr[nb].Variable_Prandtl = Input_Parameters.i_Variable_Prandtl; 
       // Wall velocity and temperature.
       Soln_ptr[nb].Vwall = Input_Parameters.Vwall;
       Soln_ptr[nb].Twall = Input_Parameters.Twall;

@@ -349,6 +349,22 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 				       IP.Number_of_Cells_Jdir,
 				       IP.Number_of_Ghost_Cells);
     break;
+
+  case GRID_JET_FLOW:
+    Grid_ptr =  Grid_Jet_Flow(Grid_ptr,
+			      IP.Number_of_Blocks_Idir,
+			      IP.Number_of_Blocks_Jdir,
+			      IP.Pipe_Radius,
+			      IP.Mach_Number,
+			      IP.Mesh_Stretching_Type_Idir,
+			      IP.Mesh_Stretching_Type_Jdir,
+			      IP.Mesh_Stretching_Factor_Idir,
+			      IP.Mesh_Stretching_Factor_Jdir,
+			      IP.Number_of_Cells_Idir,
+			      IP.Number_of_Cells_Jdir,
+			      IP.Number_of_Ghost_Cells) ;
+    break ; 
+
   case GRID_BACKWARD_FACING_STEP :
     Grid_ptr = Grid_Backward_Facing_Step(Grid_ptr,
 					 IP.Number_of_Blocks_Idir,
@@ -366,6 +382,9 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 				 IP.Number_of_Blocks_Idir,
 				 IP.Number_of_Blocks_Jdir,
 				 IP.Box_Width,
+				 IP.Mach_Number,
+				 IP.Mesh_Stretching_Type_Idir,
+				 IP.Mesh_Stretching_Type_Jdir,
 				 IP.Mesh_Stretching_Factor_Idir,
 				 IP.Mesh_Stretching_Factor_Jdir,
 				 IP.Number_of_Cells_Idir,
