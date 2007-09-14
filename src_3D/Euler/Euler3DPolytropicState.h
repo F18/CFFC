@@ -174,33 +174,21 @@ class Euler3D_Polytropic_pState{
 	*/
 	
 	// Creation constructor
-	Euler3D_Polytropic_pState() {
-		rho = DENSITY_STDATM;	v.zero();	 p = PRESSURE_STDATM;
-	}
-   
+	Euler3D_Polytropic_pState();
+	
 	// Copy constructor
-	Euler3D_Polytropic_pState(const Euler3D_Polytropic_pState &W) {
-		rho = W.rho;	v = W.v;	p = W.p;
-	}
+	Euler3D_Polytropic_pState(const Euler3D_Polytropic_pState &W);
 	
 	// Assignment constructors
 	Euler3D_Polytropic_pState(const double &d, 
 							  const Vector3D &V, 
-							  const double &pre) {
-		rho = d;	v = V;		p = pre;
-	}
+							  const double &pre);
 	
 	Euler3D_Polytropic_pState(const double &d, 
 							  const double &vx, const double &vy, const double &vz, 
-							  const double &pre) {
-		rho = d;	
-		v.x = vx;	v.y = vy;	v.z = vz;
-		p = pre;
-	}
+							  const double &pre);
 	
-	Euler3D_Polytropic_pState(const Euler3D_Polytropic_cState &U) {
-		rho = U.d;	v = U.v();	p = U.p();
-	}
+	Euler3D_Polytropic_pState(const Euler3D_Polytropic_cState &U);
 	
    /* 
 	* Useful operators 
@@ -219,7 +207,7 @@ class Euler3D_Polytropic_pState{
 	
 	// Vacuum operator.
 	void Vacuum(void) {
-		rho = ZERO;		v = Vector3D_ZERO;		p = zero;
+		rho = ZERO;		v = Vector3D_ZERO;		p = ZERO;
 	}
 	
 	// Standard atmosphere operator.
@@ -467,13 +455,13 @@ class Euler3D_Polytropic_pState{
 	const double &operator[](int index) const;
 	
     // Binary arithmetic operators. 
-    Euler3D_Polytropic_pState operator +(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
-    Euler3D_Polytropic_pState operator -(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
-    double operator	  				   *(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
-    Euler3D_Polytropic_pState operator *(const Euler3D_Polytropic_pState &W, const double &a);
-    Euler3D_Polytropic_pState operator *(const double &a, const Euler3D_Polytropic_pState &W);
-    Euler3D_Polytropic_pState operator /(const Euler3D_Polytropic_pState &W, const double &a);
-	Euler2D_pState operator ^(const Euler2D_pState &W1, const Euler2D_pState &W2);
+    friend Euler3D_Polytropic_pState operator +(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
+    friend Euler3D_Polytropic_pState operator -(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
+    friend double operator	  				   *(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
+    friend Euler3D_Polytropic_pState operator *(const Euler3D_Polytropic_pState &W, const double &a);
+    friend Euler3D_Polytropic_pState operator *(const double &a, const Euler3D_Polytropic_pState &W);
+    friend Euler3D_Polytropic_pState operator /(const Euler3D_Polytropic_pState &W, const double &a);
+	friend Euler3D_Polytropic_pState operator ^(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
 
     // Unary arithmetic operators. 
     Euler3D_Polytropic_pState operator +(const Euler3D_Polytropic_pState &W);
@@ -486,12 +474,12 @@ class Euler3D_Polytropic_pState{
 	Euler3D_Polytropic_pState &operator /=(const double &a);
 
     // Relational operators. 
-    int operator ==(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
-    int operator !=(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
+    friend int operator ==(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
+    friend int operator !=(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
 
     // Input-output operators. 
-    ostream &operator << (ostream &out_file, const Euler3D_Polytropic_pState &W);
-    istream &operator >> (istream &in_file,  Euler3D_Polytropic_pState &W); 
+    friend ostream& operator << (ostream &out_file, const Euler3D_Polytropic_pState &W);
+    friend istream& operator >> (istream &in_file,  Euler3D_Polytropic_pState &W); 
     
 };
 
@@ -562,33 +550,21 @@ class Euler3D_Polytropic_cState{
 	 */
 	
 	// Creation constructor
-	Euler3D_Polytropic_cState(){
-		rho = DENSITY_STDATM;	rhov.zero;	E = PRESSURE_STDATM/(GAMMA_AIR-ONE);
-	}
+	Euler3D_Polytropic_cState();
 	
 	// Copy constructor
-	Euler3D_Polytropic_cState(const Euler3D_Polytropic_cState &U) {
-		rho = U.rho;	rhov = U.rhov;		E = U.E;
-	}
+	Euler3D_Polytropic_cState(const Euler3D_Polytropic_cState &U);
 	
 	// Assignment constructors
 	Euler3D_Polytropic_cState(const double &d, 
 							  const Vector3D &dv, 
-							  const double &Etotal) {
-		rho = d;	rhov = dv;		E = Etotal;
-	}
+							  const double &Etotal);
 	
 	Euler3D_Polytropic_cState(const double &d, 
 							  const double &dvx, const double &dvy, const double &dvz, 
-							  const double &Etotal) {
-		rho = d;	
-		rhov.x = dvx;	rhov.y = dvy;	rhov.z = dvz;
-		E = Etotal;
-	}
+							  const double &Etotal);
 	
-	Euler3D_Polytropic_cState(const Euler3D_Polytropic_pState &W) {
-		rho = W.rho;	rhov = W.dv();	E = W.E();
-	}
+	Euler3D_Polytropic_cState(const Euler3D_Polytropic_pState &W);
 	
    /* 
 	* Useful operators 
@@ -607,7 +583,7 @@ class Euler3D_Polytropic_cState{
 	
 	// Vacuum operator.
 	void Vacuum(void) {
-		rho = ZERO;		rhov = Vector3D_ZERO;		E = zero;
+		rho = ZERO;		rhov = Vector3D_ZERO;		E = ZERO;
 	}
 	
 	// Standard atmosphere operator.
@@ -707,41 +683,33 @@ class Euler3D_Polytropic_cState{
 	// x-direction
 	Euler3D_Polytropic_cState F(void);
     Euler3D_Polytropic_cState F(void) const;
-    Euler3D_Polytropic_cState F(const Euler3D_Polytropic_pState &W);
+    Euler3D_Polytropic_cState F(const Euler3D_Polytropic_cState &U);
 	void dFdU(DenseMatrix &dFdU);
 	void dFdU(DenseMatrix &dFdU) const;
-	void dFdU(DenseMatrix &dFdU, const Euler3D_Polytropic_pState &W);
+	void dFdU(DenseMatrix &dFdU, const Euler3D_Polytropic_cState &U);
 	
 	Euler3D_Polytropic_cState Fx(void);
     Euler3D_Polytropic_cState Fx(void) const;
-    Euler3D_Polytropic_cState Fx(const Euler3D_Polytropic_pState &W);
+    Euler3D_Polytropic_cState Fx(const Euler3D_Polytropic_cState &U);
 	void dFxdU(DenseMatrix &dFxdU);
 	void dFxdU(DenseMatrix &dFxdU) const;
-	void dFxdU(DenseMatrix &dFxdU, const Euler3D_Polytropic_pState &W);
+	void dFxdU(DenseMatrix &dFxdU, const Euler3D_Polytropic_cState &U);
 	
 	// y-direction
 	Euler3D_Polytropic_cState Fy(void);
     Euler3D_Polytropic_cState Fy(void) const;
-    Euler3D_Polytropic_cState Fy(const Euler3D_Polytropic_pState &W);
+    Euler3D_Polytropic_cState Fy(const Euler3D_Polytropic_cState &U);
 	void dFydU(DenseMatrix &dFydU);
 	void dFydU(DenseMatrix &dFydU) const;
-	void dFydU(DenseMatrix &dFydU, const Euler3D_Polytropic_pState &W);
+	void dFydU(DenseMatrix &dFydU, const Euler3D_Polytropic_cState &U);
 	
 	// z-direction
 	Euler3D_Polytropic_cState Fz(void);
     Euler3D_Polytropic_cState Fz(void) const;
-    Euler3D_Polytropic_cState Fz(const Euler3D_Polytropic_pState &W);
+    Euler3D_Polytropic_cState Fz(const Euler3D_Polytropic_cState &U);
 	void dFzdU(DenseMatrix &dFzdU);
 	void dFzdU(DenseMatrix &dFzdU) const;
-	void dFzdU(DenseMatrix &dFzdU, const Euler3D_Polytropic_pState &W);
-	
-	// n-direction
-	Euler3D_Polytropic_cState Fn(void);
-    Euler3D_Polytropic_cState Fn(void) const;
-    Euler3D_Polytropic_cState Fn(const Euler3D_Polytropic_pState &W);
-	void dFndU(DenseMatrix &dFndU);
-	void dFndU(DenseMatrix &dFndU) const;
-	void dFndU(DenseMatrix &dFndU, const Euler3D_Polytropic_pState &W);
+	void dFzdU(DenseMatrix &dFzdU, const Euler3D_Polytropic_cState &U);
 	
    /* 
 	* Solution variable Jacobians.
@@ -756,7 +724,7 @@ class Euler3D_Polytropic_cState{
 	// dWdU
 	void dWdU(DenseMatrix &dWdU);
 	void dWdU(DenseMatrix &dWdU) const;
-	void dWdU(DenseMatrix &dWdU, const Euler2D_Polytropic_cState &U);
+	void dWdU(DenseMatrix &dWdU, const Euler3D_Polytropic_cState &U);
 	
 	
    /*
@@ -765,36 +733,35 @@ class Euler3D_Polytropic_cState{
 	*/
 	
 	// Index operator. 
-    double &operator[](int index);
-    const double &operator[](int index) const;
+    double& operator[](int index);
+    const double& operator[](int index) const;
 
     // Binary arithmetic operators.
-    Euler3D_Polytropic_cState operator +(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
-    Euler3D_Polytropic_cState operator -(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
-    double operator					   *(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
-    Euler3D_Polytropic_cState operator *(const Euler3D_Polytropic_cState &U, const double &a);
-    Euler3D_Polytropic_cState operator *(const double &a, const Euler3D_Polytropic_cState &U);
-    Euler3D_Polytropic_cState operator /(const Euler3D_Polytropic_cState &U, const double &a);
-	Euler3D_Polytropic_cState operator ^(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
+    friend Euler3D_Polytropic_cState operator +(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
+    friend Euler3D_Polytropic_cState operator -(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
+    friend double operator					   *(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
+    friend Euler3D_Polytropic_cState operator *(const Euler3D_Polytropic_cState &U, const double &a);
+    friend Euler3D_Polytropic_cState operator *(const double &a, const Euler3D_Polytropic_cState &U);
+    friend Euler3D_Polytropic_cState operator /(const Euler3D_Polytropic_cState &U, const double &a);
+	friend Euler3D_Polytropic_cState operator ^(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
 
     // Unary arithmetic operators.
     Euler3D_Polytropic_cState operator +(const Euler3D_Polytropic_cState &U);
     Euler3D_Polytropic_cState operator -(const Euler3D_Polytropic_cState &U);
 
     // Shortcut arithmetic operators.
-    Euler3D_Polytropic_cState &operator +=(const Euler3D_Polytropic_cState &U);
-    Euler3D_Polytropic_cState &operator -=(const Euler3D_Polytropic_cState &U);
-	Euler3D_Polytropic_cState &operator *=(const double &a);
-	Euler3D_Polytropic_cState &operator /=(const double &a);
+    Euler3D_Polytropic_cState& operator +=(const Euler3D_Polytropic_cState &U);
+    Euler3D_Polytropic_cState& operator -=(const Euler3D_Polytropic_cState &U);
+	Euler3D_Polytropic_cState& operator *=(const double &a);
+	Euler3D_Polytropic_cState& operator /=(const double &a);
     
     // Relational operators.
-    int operator ==(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
-    int operator !=(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
+    friend int operator ==(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
+    friend int operator !=(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
     
     // Input-output operators.
-    ostream &operator << (ostream &out_file, const Euler3D_Polytropic_cState &U);
-    istream &operator >> (istream &in_file,  Euler3D_Polytropic_cState &U);
-    Euler3D_Polytropic_cState operator ^(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
+    friend ostream& operator << (ostream &out_file, const Euler3D_Polytropic_cState &U);
+    friend istream& operator >> (istream &in_file,  Euler3D_Polytropic_cState &U);
        
 };
 
