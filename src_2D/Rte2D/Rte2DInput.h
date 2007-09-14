@@ -148,6 +148,7 @@ class Rte2D_Input_Parameters{
   char AbsorptionModel[INPUT_PARAMETER_LENGTH_RTE2D];
   char ICs_Medium[INPUT_PARAMETER_LENGTH_RTE2D];
   int i_ICs_Medium;
+  int Medium_Field_Type;
   //@}
 
   //@{ @name Flow geometry (planar or axisymmetric):

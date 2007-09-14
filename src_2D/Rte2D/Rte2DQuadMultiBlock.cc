@@ -106,6 +106,7 @@ void ICs(Rte2D_Quad_Block *Soln_ptr,
        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
 	  // Set flow geometry indicator (planar/axisymmetric) flow block.
  	  Soln_ptr[i].Axisymmetric = Input_Parameters.Axisymmetric;
+	  Soln_ptr[i].Medium_Field_Type = Input_Parameters.Medium_Field_Type;
 	  Soln_ptr[i].NorthWallTemp  = Input_Parameters.NorthWallTemp;   
 	  Soln_ptr[i].SouthWallTemp  = Input_Parameters.SouthWallTemp;  
 	  Soln_ptr[i].EastWallTemp   = Input_Parameters.EastWallTemp;   
@@ -122,15 +123,11 @@ void ICs(Rte2D_Quad_Block *Soln_ptr,
           // Set initial data for medium
 	  //
 	  // For an analytically prescribed field
-	  if (Input_Parameters.i_ICs_Medium != IC_SPECIFIED) {
-	    Soln_ptr[i].Medium_Field_Type = MEDIUM2D_FIELD_ANALYTIC;
+	  if (Soln_ptr[i].Medium_Field_Type == MEDIUM2D_FIELD_ANALYTIC)
 	    PrescribeFields(Soln_ptr[i]);
 	  //
 	  // for a discrete field specified by the user
-	  } else {
-	    Soln_ptr[i].Medium_Field_Type = MEDIUM2D_FIELD_DISCRETE;
-	    // do nothing
-	  } // endif - field type
+	  // do nothing
 	  
        } /* endif */
     }  /* endfor */
@@ -227,8 +224,10 @@ int Read_Restart_Solution(Rte2D_Quad_Block *Soln_ptr,
           restart_file.close();
 
 	  //------------------------ Rte2D Specific -------------------------//
-	  // prescribe the medium field data
-	  PrescribeFields(Soln_ptr[i]);
+	  //OVERIDE Restart File settings with Input File Settings (may have changed)
+	  // Soln_ptr[i].Flow_Type = Input_Parameters.FlowType; // <-- not used (static)
+	  Soln_ptr[i].Axisymmetric = Input_Parameters.Axisymmetric;
+	  Soln_ptr[i].Medium_Field_Type = Input_Parameters.Medium_Field_Type;
 	  //---------------------- End Rte2D Specific -----------------------//
 
        } /* endif */

@@ -148,6 +148,7 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     string_ptr = "Uniform";
     strcpy(IP.ICs_Medium, string_ptr);
     IP.i_ICs_Medium = IC_UNIFORM;
+    IP.Medium_Field_Type = MEDIUM2D_FIELD_ANALYTIC;
 
     // boundary conditions
     IP.NorthWallTemp = ZERO;
@@ -395,6 +396,9 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
                           INPUT_PARAMETER_LENGTH_RTE2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(&(IP.i_ICs_Medium), 
+                          1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Medium_Field_Type), 
                           1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(IP.RTE_Solver, 
@@ -923,6 +927,9 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
 		       INPUT_PARAMETER_LENGTH_RTE2D, 
 		       MPI::CHAR, Source_Rank);
     Communicator.Bcast(&(IP.i_ICs_Medium), 
+		       1, 
+		       MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.Medium_Field_Type), 
 		       1, 
 		       MPI::INT, Source_Rank);
     Communicator.Bcast(IP.RTE_Solver, 
@@ -2204,9 +2211,17 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
 	IP.i_ICs_Medium = IC_CONSTANT;
       } else if (strcmp(IP.ICs_Medium, "Uniform") == 0) {
 	IP.i_ICs_Medium = IC_UNIFORM;
-      } else {
+	IP.Medium_Field_Type = MEDIUM2D_FIELD_ANALYTIC;
+      } else if (strcmp(IP.ICs_Medium, "Uniform") == 0) {
 	IP.i_ICs_Medium = IC_UNIFORM;
-      } /* endif */
+	IP.Medium_Field_Type = MEDIUM2D_FIELD_ANALYTIC;
+      } else if (strcmp(IP.ICs_Medium, "Restart") == 0) {
+	IP.i_ICs_Medium = IC_RESTART;
+	IP.Medium_Field_Type = MEDIUM2D_FIELD_DISCRETE;
+     } else {
+	IP.i_ICs_Medium = IC_UNIFORM;
+ 	IP.Medium_Field_Type = MEDIUM2D_FIELD_ANALYTIC;
+     } /* endif */
 	
 
     /***********************************************************************
