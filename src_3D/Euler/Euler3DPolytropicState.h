@@ -80,14 +80,21 @@ class Euler3D_Polytropic_cState;
  *      ao        -- Return stagnation sound speed.                   *
  *      ho        -- Return stagnation enthalpy.                      *
  *      U         -- Return conserved solution state.                 *
+ *      F         -- Return x-direction solution flux.                *
  *      Fx        -- Return x-direction solution flux.                *
  *      Fy        -- Return y-direction solution flux.                *
  *      Fz        -- Return z-direction solution flux.                *  
  *      Fn        -- Return n-direction solution flux.                *
+ *		dFdU	  -- Return x-direction jacobian					  *
+ *		dFxdU	  -- Return x-direction jacobian					  *
+ *		dFydU	  -- Return y-direction jacobian					  *
+ *		dFzdU	  -- Return z-direction jacobian					  *
+ *		dUdW	  -- Return solution variable jacobian				  *
+ *		dWdU	  -- Return solution variable jacobian				  *
  *      lambda    -- Return x-direction eigenvalue.                   *
  *      lambda_x  -- Return x-direction eigenvalue.                   *
- *      lambda_y  -- Return x-direction eigenvalue.                   *
- *      lambda_z  -- Return x-direction eigenvalue.                   *
+ *      lambda_y  -- Return y-direction eigenvalue.                   *
+ *      lambda_z  -- Return z-direction eigenvalue.                   *
  *      rp        -- Return x-direction primitive right eigenvector.  *
  *      rp_x      -- Return x-direction primitive right eigenvector.  *
  *      rp_y      -- Return y-direction primitive right eigenvector.  *
@@ -102,25 +109,28 @@ class Euler3D_Polytropic_cState;
  *      lp_z      -- Return z-direction primitive left eigenvector.   *
  *                                                                    *
  * Member operators                                                   *
- *      W -- a primitive solution state                               *
- *      c -- a scalar (double)                                        *
+ *      W		  -- a primitive solution state                       *
+ *      c		  -- a scalar (double)                                *
  *                                                                    *
- * W = W;                                                             *
- * c = W[i];                                                          *
- * W = W + W;                                                         *
- * W = W - W;                                                         *
- * c = W * W; (inner product)                                         *
- * W = c * W;                                                         *
- * W = W * c;                                                         *
- * W = W / c;                                                         *
- * W = +W;                                                            *
- * W = -W;                                                            *
- * W += W;                                                            *
- * W -= W;                                                            *
- * W == W;                                                            *
- * W != W;                                                            *
- * cout << W; (output function)                                       *
- * cin  >> W; (input function)                                        *
+ *		W = W;                                                        *
+ *		c = W[i];                                                     *
+ *		W = W + W;                                                    *
+ *		W = W - W;                                                    *
+ *		c = W * W; (inner product)                                    *
+ *		W = c * W;                                                    *
+ *		W = W * c;                                                    *
+ *		W = W / c;                                                    *
+ *		W = W ^ W;                                                    *
+ *		W = +W;                                                       *
+ *		W = -W;                                                       *
+ *		W += W;                                                       *
+ *		W -= W;                                                       *
+ *		W *= W;                                                       *
+ *		W /= W;                                                       *
+ *		W == W;                                                       *
+ *		W != W;                                                       *
+ *		cout << W; (output function)                                  *
+ *		cin  >> W; (input function)                                   *
  *                                                                    *
  **********************************************************************/
 
@@ -164,8 +174,8 @@ class Euler3D_Polytropic_pState{
 	*/
 	
 	// Creation constructor
-	Euler3D_Polytropic_pState() : rho(DENSITY_STDATM), p(PRESSURE_STDATM) {
-		v.zero();
+	Euler3D_Polytropic_pState() {
+		rho = DENSITY_STDATM;	v.zero();	 p = PRESSURE_STDATM;
 	}
    
 	// Copy constructor
@@ -785,29 +795,24 @@ class Euler3D_Polytropic_cState{
     ostream &operator << (ostream &out_file, const Euler3D_Polytropic_cState &U);
     istream &operator >> (istream &in_file,  Euler3D_Polytropic_cState &U);
     Euler3D_Polytropic_cState operator ^(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
-    
-    Euler3D_Polytropic_cState Fx(void);
-    Euler3D_Polytropic_cState Fx(void) const;
-    Euler3D_Polytropic_cState Fx(const Euler3D_Polytropic_cState &U);
        
 };
 
 
 
 
-
-
-
-
-
-/********************************************************
- * Useful 3D Euler state constants.                     *
- ********************************************************/
+/* -------------------------------------------------------------------------- *
+ *                     Useful 3D Euler state constants.                       *
+ * -------------------------------------------------------------------------- */
 const Euler3D_Polytropic_pState Euler3D_W_STDATM(DENSITY_STDATM,
 				      Vector3D_ZERO, PRESSURE_STDATM);
 const Euler3D_Polytropic_pState Euler3D_W_VACUUM(ZERO, Vector3D_ZERO, ZERO);
 const Euler3D_Polytropic_cState Euler3D_U_STDATM(Euler3D_W_STDATM);
 const Euler3D_Polytropic_cState Euler3D_U_VACUUM(Euler3D_W_VACUUM);
+
+/* -------------------------------------------------------------------------- *
+ *                Flux functions in Euler3DPolytropicState.cc                 *
+ * -------------------------------------------------------------------------- */
 
 extern Euler3D_Polytropic_pState RoeAverage(const Euler3D_Polytropic_pState &Wl,
 	      	                 const Euler3D_Polytropic_pState &Wr);
