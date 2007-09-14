@@ -1901,10 +1901,10 @@ extern int Check_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
                                   const int Number_of_Blocks_Idir,
                                   const int Number_of_Blocks_Jdir);
 
-extern void Copy_Quad_Block(Grid2D_Quad_Block **Grid1,
-		            Grid2D_Quad_Block **Grid2,
-			    const int Number_of_Blocks_Idir,
-			    const int Number_of_Blocks_Jdir);
+extern void Copy_Multi_Quad_Block(Grid2D_Quad_Block **&Grid1,  // target
+				  Grid2D_Quad_Block **Grid2,  // source
+				  const int Number_of_Blocks_Idir,
+				  const int Number_of_Blocks_Jdir);
 
 extern void Output_Tecplot(Grid2D_Quad_Block **Grid_ptr,
 			   const int Number_of_Blocks_Idir,

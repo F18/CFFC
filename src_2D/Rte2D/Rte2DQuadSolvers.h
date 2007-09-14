@@ -441,8 +441,12 @@ inline int Rte2DSolver::SetupSequentialSolve( const int batch_flag_,
   //--------------------------------------------------
   // Override input parameters
   //--------------------------------------------------
-  // FIXME - axisymmetric, n blocks, nblocks/processor, n cells
-
+  // FIXME - axisymmetric, Number_of_Blocks_Idir, Number_of_Blocks_Jdir
+  // Number_of_Processors, Number_of_Blocks_Per_Processor, Maximum_Refinement_Level
+  // Threshold_for_Refinement, Threshold_for_Coarsening, Number_of_Ghost_Cells
+n blocks, nblocks/processor, n cells, n processr
+  //         max refine level, thresshold for refinement/coarsn
+  
 
   //--------------------------------------------------
   // Setup mesh

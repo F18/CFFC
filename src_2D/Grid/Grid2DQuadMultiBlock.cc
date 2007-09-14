@@ -388,6 +388,58 @@ int Check_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 }
 
 /********************************************************
+ * Routine: Check_Multi_Block_Grid                      *
+ *                                                      *
+ * Check the validity of 2D array of 2D quadrilateral   *
+ * multi-block grids.  Returns a non-zero result if     *
+ * mesh is not valid.                                   *
+ *                                                      *
+ ********************************************************/
+void Copy_Multi_Block_Grid(Grid2D_Quad_Block **&Tgt_Grid_ptr,  // target grid
+			   Grid2D_Quad_Block **Src_Grid_ptr,   // source grid
+			   const int Number_of_Blocks_Idir,
+			   const int Number_of_Blocks_Jdir) {
+
+  // make sure the target grid is not already allocated
+  // if not, deallocate it
+  if (Tgt_Grid_ptr != NULL)
+    Tgt_Grid_ptr = Deallocate_Multi_Block_Grid(Tgt_Grid_ptr,
+					       Number_of_Blocks_Idir,
+					       Number_of_Blocks_Jdir);
+
+  //--------------------------------------------------
+  // Copy the grid.
+  // Make sure that we are copying a proper grid.
+  //--------------------------------------------------
+  if (Src_Grid_ptr != NULL && 
+      Number_of_Blocks_Idir!=0 && Number_of_Blocks_Jdir!=0) {
+
+    // allocate
+    Tgt_Grid_ptr = Allocate_Multi_Block_Grid(Tgt_Grid_ptr, 
+					     Number_of_Blocks_Idir, 
+					     Number_of_Blocks_Jdir);
+
+    //
+    // Copy each block
+    //
+    for ( int j = 0 ; j < Number_of_Blocks_Jdir ; ++j )
+       for ( int i = 0; i < Number_of_Blocks_Idir ; ++i )
+	 Copy_Quad_Block( Tgt_Grid_ptr[i][j], Src_Grid_ptr[i][j] );
+
+  //--------------------------------------------------
+  // Garbage grid.
+  //--------------------------------------------------
+  } else {
+    Tgt_Grid_ptr = NULL;
+
+  } // endif
+
+
+}
+
+
+
+/********************************************************
  * Routine: Output_Tecplot                              *
  *                                                      *
  * Writes the nodes of a 2D array of 2D quadrilateral   *
