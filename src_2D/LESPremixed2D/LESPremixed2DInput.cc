@@ -164,12 +164,12 @@ void Set_Default_Input_Parameters(LESPremixed2D_Input_Parameters &IP) {
 			   IP.CFFC_Path,
 			   IP.Mach_Number_Reference,
 			   IP.Schmidt,
-			   IP.i_trans_type); 
+      			   IP.i_trans_type); 
     IP.Uo.set_species_data(IP.num_species, IP.num_scalars, IP.multispecies,
 			   IP.CFFC_Path,
 			   IP.Mach_Number_Reference,
 			   IP.Schmidt,
-			   IP.i_trans_type);
+      			   IP.i_trans_type);
 
     //Air at STD_ATM
     IP.Pressure = IP.Wo.p;
@@ -199,13 +199,22 @@ void Set_Default_Input_Parameters(LESPremixed2D_Input_Parameters &IP) {
     IP.laminar_flame_thickness = 0.446E-3; // m
     IP.laminar_flame_speed = 0.38; // m/s
     IP.TFactor = ONE;
+    IP.adiabatic_temp = 2000.0;
+    IP.equivalence_ratio = ONE;
+    IP.reactants_den = 1.13;
 
     IP.Wo.set_premixed_flame_variables(IP.laminar_flame_thickness,
 				       IP.laminar_flame_speed,
-				       IP.TFactor);
+				       IP.TFactor,
+                                       IP.adiabatic_temp,
+                                       IP.equivalence_ratio,
+                                       IP.reactants_den);
     IP.Uo.set_premixed_flame_variables(IP.laminar_flame_thickness,
 				       IP.laminar_flame_speed,
-				       IP.TFactor);
+				       IP.TFactor,
+                                       IP.adiabatic_temp,
+                                       IP.equivalence_ratio,
+                                       IP.reactants_den);
 
     /***** END LESPREMIXED2D SPECFIC *****************/
     /*************************************************/
@@ -655,6 +664,15 @@ void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.TFactor), 
                           1, 
                           MPI::DOUBLE, 0);  
+    MPI::COMM_WORLD.Bcast(&(IP.adiabatic_temp), 
+                          1, 
+                          MPI::DOUBLE, 0);  
+    MPI::COMM_WORLD.Bcast(&(IP.equivalence_ratio), 
+                          1, 
+                          MPI::DOUBLE, 0);  
+    MPI::COMM_WORLD.Bcast(&(IP.reactants_den), 
+                          1, 
+                          MPI::DOUBLE, 0);  
 
     // Reset the static variables.
     IP.Wo.set_SFSmodel_variables(IP.filter_width,
@@ -665,10 +683,16 @@ void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP) {
 				 IP.Yoshizawa_coefficient);
     IP.Wo.set_premixed_flame_variables(IP.laminar_flame_thickness,
 				       IP.laminar_flame_speed,
-				       IP.TFactor);
+				       IP.TFactor,
+                                       IP.adiabatic_temp,
+                                       IP.equivalence_ratio,
+                                       IP.reactants_den);
     IP.Uo.set_premixed_flame_variables(IP.laminar_flame_thickness,
 				       IP.laminar_flame_speed,
-				       IP.TFactor);
+				       IP.TFactor,
+                                       IP.adiabatic_temp,
+                                       IP.equivalence_ratio,
+                                       IP.reactants_den);
  
     /*********************************************************
      ******************* LESPREMIXED2D END *******************
@@ -1350,6 +1374,15 @@ void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.TFactor), 
                           1, 
                           MPI::DOUBLE, Source_Rank);  
+    Communicator.Bcast(&(IP.adiabatic_temp), 
+                          1, 
+                          MPI::DOUBLE, Source_Rank);  
+    Communicator.Bcast(&(IP.equivalence_ratio), 
+                          1, 
+                          MPI::DOUBLE, Source_Rank);  
+    Communicator.Bcast(&(IP.reactants_den), 
+                          1, 
+                          MPI::DOUBLE, Source_Rank);  
 
     // Reset the static variables.
     IP.Wo.set_SFSmodel_variables(IP.filter_width,
@@ -1360,10 +1393,16 @@ void Broadcast_Input_Parameters(LESPremixed2D_Input_Parameters &IP,
 				 IP.Yoshizawa_coefficient);
     IP.Wo.set_premixed_flame_variables(IP.laminar_flame_thickness,
 				       IP.laminar_flame_speed,
-				       IP.TFactor);
+				       IP.TFactor,
+                                       IP.adiabatic_temp,
+                                       IP.equivalence_ratio,
+                                       IP.reactants_den);
     IP.Uo.set_premixed_flame_variables(IP.laminar_flame_thickness,
 				       IP.laminar_flame_speed,
-				       IP.TFactor);
+				       IP.TFactor,
+                                       IP.adiabatic_temp,
+                                       IP.equivalence_ratio,
+                                       IP.reactants_den);
 
     /*********************************************************
      ******************* LESPREMIXED2D END *******************
@@ -2948,6 +2987,24 @@ int Parse_Next_Input_Control_Parameter(LESPremixed2D_Input_Parameters &IP) {
       IP.Input_File >> IP.TFactor;
       IP.Input_File.getline(buffer, sizeof(buffer));   	 	 
       if (IP.TFactor < 1.0) i_command = INVALID_INPUT_VALUE;
+    } else if (strcmp(IP.Next_Control_Parameter, "Adiabatic_Temperature") == 0) {
+      i_command = 400;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.adiabatic_temp;
+      IP.Input_File.getline(buffer, sizeof(buffer));   	 	 
+      if (IP.adiabatic_temp < 0.0) i_command = INVALID_INPUT_VALUE;
+    } else if (strcmp(IP.Next_Control_Parameter, "Equivalence_Ratio") == 0) {
+      i_command = 401;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.equivalence_ratio;
+      IP.Input_File.getline(buffer, sizeof(buffer));   	 	 
+      if (IP.equivalence_ratio < 0.0) i_command = INVALID_INPUT_VALUE;
+    } else if (strcmp(IP.Next_Control_Parameter, "Reactants_Density") == 0) {
+      i_command = 402;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.reactants_den;
+      IP.Input_File.getline(buffer, sizeof(buffer));   	 	 
+      if (IP.reactants_den < 1.0) i_command = INVALID_INPUT_VALUE;
 
       /********** ENERGY SPECTRUM ***********/
     } else if (strcmp(IP.Next_Control_Parameter, "Energy_Spectrum") == 0) {
@@ -3105,6 +3162,28 @@ int Parse_Next_Input_Control_Parameter(LESPremixed2D_Input_Parameters &IP) {
          IP.FlowType = FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY;
        } else if (strcmp(IP.Flow_Type, "Turbulent-LES-TF-k") == 0) {
          IP.FlowType = FLOWTYPE_TURBULENT_LES_TF_K;
+       } else if (strcmp(IP.Flow_Type, "Laminar-C") == 0) {
+         IP.FlowType = FLOWTYPE_LAMINAR_C;
+       } else if (strcmp(IP.Flow_Type, "Laminar-C-Algebraic") == 0) {
+         IP.FlowType = FLOWTYPE_LAMINAR_C_ALGEBRAIC;
+       } else if (strcmp(IP.Flow_Type, "Laminar-C-FSD") == 0) {
+         IP.FlowType = FLOWTYPE_LAMINAR_C_FSD;
+       } else if (strcmp(IP.Flow_Type, "Laminar-NGT-C-FSD") == 0) {
+         IP.FlowType = FLOWTYPE_LAMINAR_NGT_C_FSD;
+       } else if (strcmp(IP.Flow_Type, "Turbulent-LES-C") == 0) {
+         IP.FlowType = FLOWTYPE_TURBULENT_LES_C;
+       } else if (strcmp(IP.Flow_Type, "Turbulent-LES-C-Algebraic") == 0) {
+         IP.FlowType = FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC;
+       } else if (strcmp(IP.Flow_Type, "Turbulent-LES-C-FSD-Smagorinsky") == 0) {
+         IP.FlowType = FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY;
+       } else if (strcmp(IP.Flow_Type, "Turbulent-LES-C-FSD-Charlette") == 0) {
+         IP.FlowType = FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE;
+       } else if (strcmp(IP.Flow_Type, "Turbulent-LES-NGT-C-FSD-Smagorinsky") == 0) {
+         IP.FlowType = FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY;
+       } else if (strcmp(IP.Flow_Type, "Turbulent-LES-C-FSD-K") == 0) {
+         IP.FlowType = FLOWTYPE_TURBULENT_LES_C_FSD_K;
+       } else if (strcmp(IP.Flow_Type, "Frozen-Turbulent-LES-C-FSD") == 0) {
+         IP.FlowType = FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD;
        } else if (strcmp(IP.Flow_Type, "Turbulent-DNS") == 0) {
 	 IP.FlowType = FLOWTYPE_TURBULENT_DNS;
        } else {
@@ -4230,10 +4309,16 @@ int Process_Input_Control_Parameter_File(LESPremixed2D_Input_Parameters &Input_P
 
     Input_Parameters.Wo.set_premixed_flame_variables(Input_Parameters.laminar_flame_thickness,
 						     Input_Parameters.laminar_flame_speed,
-						     Input_Parameters.TFactor);
+						     Input_Parameters.TFactor,
+                                                     Input_Parameters.adiabatic_temp,
+                                                     Input_Parameters.equivalence_ratio,
+                                                     Input_Parameters.reactants_den);
     Input_Parameters.Uo.set_premixed_flame_variables(Input_Parameters.laminar_flame_thickness,
 						     Input_Parameters.laminar_flame_speed,
-						     Input_Parameters.TFactor);
+						     Input_Parameters.TFactor,
+                                                     Input_Parameters.adiabatic_temp,
+                                                     Input_Parameters.equivalence_ratio,
+                                                     Input_Parameters.reactants_den);
 
     // Perform consitency checks on the refinement criteria.
     Input_Parameters.Number_of_Refinement_Criteria = 0;

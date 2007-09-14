@@ -226,6 +226,7 @@ inline istream &operator >> (istream &in_file, React_data &W) {
 enum Reactions {NO_REACTIONS,
 		CH4_1STEP,        // CH4 1 step HARDCODED mechanisms
 		CH4_2STEP,        // CH4 2 step HARDCODED mechanisms
+		C3H8_1STEP,       // C3H8 1 step HARDCODED mechanisms
 		H2O2_1STEP,       // H2-O2 1 step HARDCODED mechanisms
 		H2O2_2STEP,       // H2-O2 2 step HARDCODED mechanisms
 		H2O2_8STEP,       // H2-O2 8 step HARDCODED mechanisms
@@ -495,6 +496,13 @@ inline void Reaction_set::omega(SOLN_cSTATE &U, const SOLN_pSTATE &W,  const int
     }
     break;
   
+  // ONE STEP C3H8 mechanism
+  case C3H8_1STEP:
+    cerr<<"\nC3H8_1STEP not implemented.";
+    exit(1);
+    break;
+
+
     //ONE STEP H2&O2
   case H2O2_1STEP:
    
@@ -916,6 +924,14 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
     //   if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON ||
     // 	Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA){
     //     }
+
+
+  // ONE STEP C3H8 mechanism
+  case C3H8_1STEP:
+    cerr<<"\nC3H8_1STEP not implemented.";
+    exit(1);
+    break;
+
 
   case H2O2_1STEP:  
     kf[0] = reactions[0].kf(Temp);

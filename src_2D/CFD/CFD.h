@@ -375,9 +375,20 @@ inline char *Date_And_Time() {
 #define FLOWTYPE_TURBULENT_LES_NO_MODEL                9
 #define FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY         10
 #define FLOWTYPE_TURBULENT_LES_TF_K                   11
-#define FLOWTYPE_TURBULENT_DES                        12
-#define FLOWTYPE_TURBULENT_DES_K_OMEGA                13
-#define FLOWTYPE_TURBULENT_DNS                        14
+#define FLOWTYPE_LAMINAR_C                            12
+#define FLOWTYPE_LAMINAR_C_ALGEBRAIC                  13
+#define FLOWTYPE_LAMINAR_C_FSD                        14 
+#define FLOWTYPE_LAMINAR_NGT_C_FSD                    15 
+#define FLOWTYPE_TURBULENT_LES_C                      16
+#define FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC            17 
+#define FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY      18
+#define FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE        19
+#define FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY  20
+#define FLOWTYPE_TURBULENT_LES_C_FSD_K                21
+#define FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD           22
+#define FLOWTYPE_TURBULENT_DES                        23
+#define FLOWTYPE_TURBULENT_DES_K_OMEGA                24
+#define FLOWTYPE_TURBULENT_DNS                        25
 
 
 /**********************************************************************
