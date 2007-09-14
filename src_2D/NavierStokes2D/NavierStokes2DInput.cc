@@ -3481,16 +3481,17 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
   if (i_command == INVALID_INPUT_CODE) {
     strcpy(buffer, IP.Next_Control_Parameter);
     Get_Next_Input_Control_Parameter(IP);
-    i_command = IP.NKS_IP.Parse_Next_Input_Control_Parameter(buffer, IP.Next_Control_Parameter);
+    i_command = IP.NKS_IP.Parse_Next_Input_Control_Parameter(buffer, 
+                                                             IP.Next_Control_Parameter);
 
-    if (i_command == INVALID_INPUT_CODE) {
-      cout << "\n***\n\nWarning: input file line " << IP.Line_Number << ": ";
-      cout << "ignoring unknown input code:\n";
-      cout << "code: " << buffer;
-      cout << "\nvalue: " << IP.Next_Control_Parameter;
-      cout << "\n\n***\n";
-    }
-    i_command = COMMENT_CODE;
+//     if (i_command == INVALID_INPUT_CODE) {
+//       cout << "\n***\n\nWarning: input file line " << IP.Line_Number << ": ";
+//       cout << "ignoring unknown input code:\n";
+//       cout << "code: " << buffer;
+//       cout << "\nvalue: " << IP.Next_Control_Parameter;
+//       cout << "\n\n***\n";
+//     }
+//     i_command = COMMENT_CODE;
   }
 
   if (!IP.Input_File.good()) { i_command = INVALID_INPUT_VALUE; }
