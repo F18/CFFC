@@ -1,0 +1,132 @@
+#
+# Reconstruction1D input file
+#
+###########################
+# Set function parameters
+###########################
+#
+Function_Definition =
+Default
+Reconstruction_Order =
+0
+###########################
+# Set grid parameters
+###########################
+#
+Grid_Type =
+Grid_Predefined1
+X_min     =
+-1.65
+Length    =
+3.3
+X_Shift =
+0.0
+CellNumber_or_DeltaCell =
+N
+Number_of_Cells_Idir =
+9
+Delta_Cell =
+0.2323
+SubGridPoints_or_DeltaSubGrid =
+N
+Number_of_Subgrid_Points =
+10
+Delta_of_Subgrid =
+0.1
+Output_File_Name =
+job
+Output_Format_Type =
+tecplot
+#######################
+# Execute program
+#######################
+Execute
+#######################
+# Write output
+#######################
+Write_Output
+#######################
+# Write Cell Center Values
+######################
+Write_Cell_Comparison
+######################
+# Write Mathematical Function
+######################
+Write_Function_Graph
+############################
+#Write the derivatives
+############################
+Write_Output_Derivatives
+############################
+# Terminate program
+############################
+Terminate
+
+##############################################################
+##########################  HELP  ############################
+##############################################################
++-------+                     |            +----------------+
+| Field |                     |            | Possible Value |
++-------+                     |            +----------------+
+--------------------------------------------------------------
+                              |
+Function_Definition:                             Default                   
+Function_Definition:                             Example1
+Function_Definition:                             Example2
+Function_Definition:                             Example.. (must be updated)
+*************************************************************
+Reconstruction_Order:                   positive integer number 
+*************************************************************
+Grid_Type:                                   Grid_Uniform
+Grid_Type:                                Grid_NonUniform
+Grid_Type:                               Grid_Predefined1  (x=-1.5 : 1.5)
+Grid_Type:				 Grid_Predefined2  (x=-1.5 : 1.5)
+Grid_Type:			 Grid_Read_From_Data_File
+************************************************************
+X_min:( min X of the Domain)                      val
+Length (Domain length)	 			  val
+X_Shift:					  val
+X_Scale:                                          val
+************************************************************
+CellNumber_or_DeltaCell:
+ --for number				 	   N
+ -- for delta                                      D
+***********************************************************
+Number_of_Cells_Idir: 				  val
+Delta_Cell: 					  val
+***********************************************************
+SubGridPoints_or_DeltaSubGrid:
+ -- for number 					   N
+ -- for delta                                      D
+***********************************************************
+Number_of_Subgrid_Points:			  val
+Delta_of_Subgrid:				  val
+***********************************************************
+Output_File_Name:				file_name
+***********************************************************
+Output_Format_Type:				tecplot
+Output_Format_Type:				matlab
+**********************************************************
+
+
+**********************************************************
+Commands:
+
+------------------------------------------------------------
+# Execute program			Execute
+------------------------------------------------------------
+# Continue program			Continue
+------------------------------------------------------------
+# Write output cells			Write_Output_Cells
+------------------------------------------------------------
+# Write output				Write_Output
+------------------------------------------------------------
+# Write Cell Center Values		Write_Cell_Comparison
+------------------------------------------------------------
+# Write Mathematical Function Plot	Write_Function_Graph
+------------------------------------------------------------
+# Write the derivatives			Write_Output_Derivatives
+------------------------------------------------------------
+# Terminate program			Terminate
+------------------------------------------------------------
+

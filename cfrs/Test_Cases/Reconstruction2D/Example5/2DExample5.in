@@ -1,0 +1,298 @@
+#
+# Reconstruction2D input file
+#
+##########################################
+# Set method for solving the reconstruction
+##########################################
+Method_Used =
+DD_ENO
+#CENO
+#ENO
+###########################
+# Set function parameters
+###########################
+#
+Function_Definition =
+Example5
+Reconstruction_Order =
+3
+###########################
+# Set grid parameters
+###########################
+#
+Grid_Type      =
+Ringleb_Flow
+#
+Number_of_Cells_Idir =
+64
+Number_of_Cells_Jdir =
+64
+Number_of_Blocks_Idir =
+1
+Number_of_Blocks_Jdir =
+1
+Number_of_Subgrid_Points_Idir =
+4
+Number_of_Subgrid_Points_Jdir =
+4
+X_Scale =
+1.5
+Output_File_Name =
+2DShock_Order3
+#
+Output_Format_Type =
+tecplot
+#######################
+# Execute program
+#######################
+Execute
+#######################
+# Write output
+#######################
+# Write_Output
+#######################
+# Write output in One Zone using the subgrid points
+#######################
+Write_Output_OneZone
+#######################
+# Print the norms on the screen
+######################
+# Print_Norms
+######################
+# Write the norms in the file
+######################
+# Write_Output_Accuracy
+######################
+# Write the solution at the nodes of the mesh
+######################
+# Write_Output_Solution_Nodes
+######################
+# Write the whole solution at the nodes of the mesh (including ghost cells)
+######################
+# Write_Output_Full_Solution_Nodes
+######################
+#Write mathematical function to file
+######################
+Write_Function_Graph
+############################
+# Terminate program
+############################
+Terminate
+# -------------------------------------
+# Test 2
+# --------------------------------------
+Number_of_Cells_Idir =
+20
+Number_of_Cells_Jdir =
+20
+Execute
+Write_Output_Accuracy
+#
+# --------------------------------------
+# Test 3
+# ______________________________________
+Number_of_Cells_Idir =
+40
+Number_of_Cells_Jdir =
+40
+Execute
+Write_Output_Accuracy
+#
+# --------------------------------------
+# Test 4
+# ______________________________________
+Number_of_Cells_Idir =
+80
+Number_of_Cells_Jdir =
+80
+Execute
+Write_Output_Accuracy
+# --------------------------------------
+# Test 5
+# ______________________________________
+Number_of_Cells_Idir =
+160
+Number_of_Cells_Jdir =
+160
+Execute
+Write_Output_Accuracy
+############################  Finished accuracy assessment for Order1 ########################### 
+#
+#
+############################  Start accuracy assessment for Order2 ########################### 
+Reconstruction_Order =
+2
+Number_of_Cells_Idir =
+10
+Number_of_Cells_Jdir =
+10
+Execute
+Write_Output_Accuracy
+# -------------------------------------
+# Test 2
+# --------------------------------------
+Number_of_Cells_Idir =
+20
+Number_of_Cells_Jdir =
+20
+Execute
+Write_Output_Accuracy
+#
+# --------------------------------------
+# Test 3
+# ______________________________________
+Number_of_Cells_Idir =
+40
+Number_of_Cells_Jdir =
+40
+Execute
+Write_Output_Accuracy
+#
+# --------------------------------------
+# Test 4
+# ______________________________________
+Number_of_Cells_Idir =
+80
+Number_of_Cells_Jdir =
+80
+Execute
+Write_Output_Accuracy
+# --------------------------------------
+# Test 5
+# ______________________________________
+Number_of_Cells_Idir =
+160
+Number_of_Cells_Jdir =
+160
+Execute
+Write_Output_Accuracy
+############################  Finished accuracy assessment for Order2 ########################### 
+#
+#
+############################  Start accuracy assessment for Order3 ########################### 
+Reconstruction_Order =
+3
+Number_of_Cells_Idir =
+10
+Number_of_Cells_Jdir =
+10
+Execute
+Write_Output_Accuracy
+# -------------------------------------
+# Test 2
+# --------------------------------------
+Number_of_Cells_Idir =
+20
+Number_of_Cells_Jdir =
+20
+Execute
+Write_Output_Accuracy
+#
+# --------------------------------------
+# Test 3
+# ______________________________________
+Number_of_Cells_Idir =
+40
+Number_of_Cells_Jdir =
+40
+Execute
+Write_Output_Accuracy
+#
+# --------------------------------------
+# Test 4
+# ______________________________________
+Number_of_Cells_Idir =
+80
+Number_of_Cells_Jdir =
+80
+Execute
+Write_Output_Accuracy
+# --------------------------------------
+# Test 5
+# ______________________________________
+Number_of_Cells_Idir =
+160
+Number_of_Cells_Jdir =
+160
+Execute
+Write_Output_Accuracy
+############################  Finished accuracy assessment for Order3 ########################### 
+Terminate
+# --------------------------------------
+# Test 6
+# ______________________________________
+Number_of_Cells_Idir =
+256
+Number_of_Cells_Jdir =
+256
+Execute
+Print_Norms
+Write_Output_Accuracy
+
+##############################################################
+##########################  HELP  ############################
+##############################################################
++-------+                     |            +----------------+
+| Field |                     |            | Possible Value |
++-------+                     |            +----------------+
+--------------------------------------------------------------
+                              |
+Function_Definition:                             Default                   
+Function_Definition:                             Example1
+Function_Definition:                             Example2
+Function_Definition:                             Example3
+Function_Definition:                             Example4
+*************************************************************
+Reconstruction_Order:                   positive integer number 
+*************************************************************
+Grid_Type:                                   Grid_Cartesian
+Grid_Type:                               Grid_Predefined1  (x=-1.5 : 1.5)
+Grid_Type:			 Grid_Read_From_Data_File
+************************************************************
+X_min:( min X of the Domain)                      val
+Length (Domain length)	 			  val
+X_Shift:					  val
+X_Scale:                                          val
+************************************************************
+CellNumber_or_DeltaCell:
+ --for number				 	   N
+ -- for delta                                      D
+***********************************************************
+Number_of_Cells_Idir: 				  val
+Delta_Cell: 					  val
+***********************************************************
+SubGridPoints_or_DeltaSubGrid:
+ -- for number 					   N
+ -- for delta                                      D
+***********************************************************
+Number_of_Subgrid_Points:			  val
+Delta_of_Subgrid:				  val
+***********************************************************
+Output_File_Name:				file_name
+***********************************************************
+Output_Format_Type:				tecplot
+Output_Format_Type:				matlab
+**********************************************************
+
+
+**********************************************************
+Commands:
+
+------------------------------------------------------------
+# Execute program			Execute
+------------------------------------------------------------
+# Continue program			Continue
+------------------------------------------------------------
+# Write output cells			Write_Output_Cells
+------------------------------------------------------------
+# Write output				Write_Output
+------------------------------------------------------------
+# Write Cell Center Values		Write_Cell_Comparison
+------------------------------------------------------------
+# Write Mathematical Function Plot	Write_Function_Graph
+------------------------------------------------------------
+# Write the derivatives			Write_Output_Derivatives
+------------------------------------------------------------
+# Terminate program			Terminate
+------------------------------------------------------------
+

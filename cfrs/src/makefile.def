@@ -1,0 +1,247 @@
+# -----------------------------------------------------------
+# |    RECONSTRUCTION PROGRAM : Platform Compile Options    |
+# -----------------------------------------------------------
+
+# Set some default compile options
+PLATFORM := generic
+DEBUGING := OFF
+
+# Use Container Iterators or Not
+UseIterator := OFF
+#Bounds Checking
+CHECK_INDEX := OFF
+
+# Version V296, V3, ICC
+GCC_VERSION = V3
+
+# Set to ON for use with "gprof"
+# <x86  >  gprof pdes++ gmon.out > output.txt
+# <alpha>  gprof --demangle=compaq pdes++ gmon.out > output.txt
+PROFILING = OFF
+
+#
+# Set standard directories
+RECONSTRUCT_BIN_DIR = $(Reconstruction_Path)/bin
+
+#-----------------------------------------------------------#
+#       Platform Specific Compiler Flags                    #
+#-----------------------------------------------------------#
+# Set defaults
+F77 = g77
+FC = g77
+CC = gcc
+CXX = g++
+CPPFLAGS =
+FFLAGS = 
+CFLAGS = -O
+CXXFLAGS = -O
+LD = $(CXX)
+LDFLAGS = -lm
+DEPENDSFLAGS =
+#
+#
+# Determine the platform that is being used for this compilation
+# Currently setup to support: 
+#   x86    - gcc (2.96,3.x), icc (v8.0)
+#   x86_64 - gcc (3.x) 
+#   alpha  - cxx (6.x)
+#   ia64   - icc (v8.0,v8.1)
+#
+# Determine the platform that is being used for this compilation
+PLATFORM:= $(shell uname)_$(shell uname -m)
+
+# i486, i586, i686 are all compatible to i386
+ifeq ($(PLATFORM),Linux_i486)
+  PLATFORM = Linux_i386
+endif
+ifeq ($(PLATFORM),Linux_i586)
+  PLATFORM = Linux_i386
+endif
+ifeq ($(PLATFORM),Linux_i686)
+  PLATFORM = Linux_i386
+endif
+
+#
+# Set flags associated with sparse linear system solvers:
+# SparseLib++, MV++, IML++, BLAS, and BPKit
+SPARSELIB                 = SparseLib++
+SPARSELIB_DIR             = $(Reconstruction_Path)/lib/sparselib++
+
+SPARSELIB_LIB_DIR         = $(SPARSELIB_DIR)/lib
+SPARSELIB_INC_DIR         = $(SPARSELIB_DIR)/include
+
+SPARSELIB_IML_DIR         = $(SPARSELIB_DIR)/iml
+SPARSELIB_IML_INC_DIR     = $(SPARSELIB_IML_DIR)/include
+
+SPARSELIB_MV_DIR          = $(SPARSELIB_DIR)/mv
+SPARSELIB_MV_INC_DIR      = $(SPARSELIB_MV_DIR)/include
+
+SPARSELIB_CPP_FLAGS       = -I$(SPARSELIB_INC_DIR) -I$(SPARSELIB_IML_INC_DIR) -I$(SPARSELIB_MV_INC_DIR)
+
+SPARSELIB_LD_FLAGS        = -L$(SPARSELIB_LIB_DIR) -lsparse -lspblas -lmv 
+
+BPKIT                     = BPKIT
+BPKIT_DIR                 = $(Reconstruction_Path)/lib/bpkit
+
+BPKIT_LIB_DIR             = $(BPKIT_DIR)/lib
+BPKIT_INC_DIR             = $(BPKIT_DIR)/src
+
+BPKIT_CPP_FLAGS           = -I$(BPKIT_INC_DIR)
+BPKIT_LD_FLAGS            = -L$(BPKIT_LIB_DIR) -lbpkit
+
+BLAS_LD_FLAGS             = -lblas -llapack -lg2c -lgcc
+ifeq ($(PLATFORM),Linux_i386)
+  BLAS_LD_FLAGS           = -lblas -llapack # -lg2c -lgcc
+  ifeq ($(GCC_VERSION),ICC)
+   BLAS_LD_FLAGS   	  = -lblas -llapack -lifcore -L/usr/lib/gcc-lib/i386-redhat-linux/3.3.2
+  endif
+endif
+ifeq ($(PLATFORM),Linux_alpha)
+  BLAS_LD_FLAGS           = -L/usr/lib/gcc-lib/alpha-redhat-linux/2.96/ -lg2c -lUfor -L/usr/lib/compaq/cxml-5.2.0 \
+                            -lcxml_ev6
+endif
+ifeq ($(PLATFORM),Linux_ia64)
+ BLAS_LD_FLAGS   	  = -lblas -llapack -lg2c -lifcore
+endif	
+ifeq ($(PLATFORM),Linux_x86_64)
+  BLAS_LD_FLAGS           = -lblas -llapack -lg2c -lgcc
+endif
+
+#
+# CPPFLAG -D__USE_MALLOC explicitly handles C++ string memory issues, but 
+# is only really necessary when using memory checkers, ( ie. valgrind) 
+
+#
+# Set flags associated with unit testing frameworks:
+# TUT
+
+TUT                       = TUT
+TUT_DIR                   = $(Reconstruction_Path)/lib/TUT
+TUT_INC_DIR               = $(TUT_DIR)
+TUT_CPP_FLAGS             = -I$(TUT_INC_DIR)
+
+# Set flags associated with the reconstruction program:
+RECONSTRUCT_INC_DIR       = $(Reconstruction_Path)/src
+RECONSTRUCT_CPP_FLAGS     = -I$(RECONSTRUCT_INC_DIR)
+
+# Set Linux i386 specific compile flags
+ifeq ($(PLATFORM),Linux_i386)
+    FC = gfortran
+    CC = gcc
+    CXX = g++
+    CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_296 -D__NUM_LIMITS__ $(SPARSELIB_CPP_FLAGS) \
+                $(BPKIT_CPP_FLAGS) $(TUT_CPP_FLAGS) $(RECONSTRUCT_CPP_FLAGS)
+    FFLAGS = -O2 
+    FLAGS = -O2  
+    CXXFLAGS = -O2 	
+    ifeq ($(GCC_VERSION),V3)
+       CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D__NUM_LIMITS__ $(SPARSELIB_CPP_FLAGS) \
+                $(BPKIT_CPP_FLAGS) $(TUT_CPP_FLAGS) $(RECONSTRUCT_CPP_FLAGS)
+       CFLAGS = -O2 
+       CXXFLAGS = -O2
+    endif   
+    # Intel Compiler Flags (Version 8.0)
+    ifeq ($(GCC_VERSION),ICC)
+       FC = ifort
+       CC = icc
+       CXX = icpc
+       CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D__NUM_LIMITS__ $(SPARSELIB_CPP_FLAGS) \
+                $(BPKIT_CPP_FLAGS) $(TUT_CPP_FLAGS) $(RECONSTRUCT_CPP_FLAGS)
+       CXXFLAGS = -w0 -O2 -ip
+       FFLAGS = -O2 -ip
+       CFLAGS = -O2
+    endif
+    LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) -lm
+    # Profiling with gprof 
+    ifeq ($(PROFILING),ON)
+	CXXFLAGS = -pg -Wall -O2 #-g
+	LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) -lm -pg
+    endif
+    # Debuging with gdb
+    ifeq ($(DEBUGING),ON)
+	CXXFLAGS = -g3
+    endif	
+    # Use container iterators
+    ifeq ($(UseIterator),ON)
+      CPPFLAGS := $(CPPFLAGS) -D__Use_Iterator__
+    endif
+    # Index Checking
+    ifeq ($(CHECK_INDEX),OFF)
+      CPPFLAGS := $(CPPFLAGS) -D__No_Checking__
+    endif
+    LD = $(CXX)
+    DEPENDSFLAGS =
+endif
+
+#
+# Set Linux Alpha specific compile flags
+ifeq ($(PLATFORM),Linux_alpha)
+    FC = fort
+    CC = ccc
+    CXX = cxx
+    CPPFLAGS = -D_NO_MPI_VERSION -D__USE_STD_IOSTREAM -D__NUM_LIMITS__ $(SPARSELIB_CPP_FLAGS) \
+                $(BPKIT_CPP_FLAGS) $(TUT_CPP_FLAGS) $(RECONSTRUCT_CPP_FLAGS)
+    FFLAGS = -arch host -tune host -fast -w
+    CFLAGS = -arch host -tune host -fast -w 
+    CXXFLAGS = -arch host -tune host -fast -w -std gnu -ieee
+    LDFLAGS =  $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) -lm 
+    # Profiling with gprof 
+    ifeq ($(PROFILING),ON)
+      CXXFLAGS = -pg -arch host -tune host -fast -w -std gnu -Wall
+      LDFLAGS := $(LDFLAGS) -pg 
+    endif
+    # Debuging with gdb
+    ifeq ($(DEBUGING),ON)
+      CXXFLAGS = -g3 -arch host -tune host -fast -w -std gnu
+    endif
+    ifeq ($(UseIterator),ON)
+      CPPFLAGS := $(CPPFLAGS) -D__Use_Iterator__
+    endif
+    # Index Checking
+    ifeq ($(CHECK_INDEX),OFF)
+      CPPFLAGS := $(CPPFLAGS) -D__No_Checking__
+    endif
+    LD = $(CXX)	
+    DEPENDSFLAGS = 
+endif
+
+#
+# Set Itanium (ia64) specific compile flags
+ifeq ($(PLATFORM),Linux_ia64)
+    FC = ifort
+    CC = icc
+    CXX = icc
+    CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D__NUM_LIMITS__ $(SPARSELIB_CPP_FLAGS) \
+                $(BPKIT_CPP_FLAGS) $(TUT_CPP_FLAGS) $(RECONSTRUCT_CPP_FLAGS)
+    CXXFLAGS = -w0 -O2 -ftz -mp
+    FFLAGS = -O2 -mp -ftz 
+    CFLAGS = -w0 -O2 -mp -ftz 
+    LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) -limf
+    # Index Checking
+    ifeq ($(CHECK_INDEX),OFF)
+      CPPFLAGS := $(CPPFLAGS) -D__No_Checking__
+    endif
+    LD = icpc
+    DEPENDSFLAGS =
+endif
+
+#
+# Set Opteron/Athlon64 (x86_64) specific compile flags
+ifeq ($(PLATFORM),Linux_x86_64)
+  FC = g77
+  CC = gcc
+  CXX = g++
+  CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D__NUM_LIMITS__ $(SPARSELIB_CPP_FLAGS) \
+              $(BPKIT_CPP_FLAGS) $(TUT_CPP_FLAGS) $(RECONSTRUCT_CPP_FLAGS)
+  #CXXFLAGS = -march=k8 -mmmx -msse -msse2 -m3dnow -m64 -O3 -pipe -fexpensive-optimizations -mfpmath=sse,387 
+  CXXFLAGS = -O2
+  FFLAGS = -O2
+  CFLAGS = -O2 
+  LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) -lm
+  # Index Checking
+  ifeq ($(CHECK_INDEX),OFF)
+     CPPFLAGS := $(CPPFLAGS) -D__No_Checking__
+  endif
+  LD = $(CXX)
+  DEPENDSFLAGS =
+endif

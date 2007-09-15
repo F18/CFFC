@@ -1,0 +1,16 @@
+#!/bin/bash
+
+#Script to remove a list of files that is too large for the buffer
+# BE CAREFUL:  this script will overide the -i flag with -f
+
+if [ $# -lt 1 ]; then
+        echo "   Usage: $(basename $0) source"
+        echo ""
+        exit
+fi
+
+SOURCE=$1
+
+AT_A_TIME=128
+
+find ./ -type f -name "$SOURCE" -print | xargs -l$AT_A_TIME -i rm -f {}
