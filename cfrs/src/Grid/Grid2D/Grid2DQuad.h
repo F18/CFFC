@@ -14,8 +14,8 @@
 
 /* Include math macro, CFD, 2D vector, 2D cell,
    2D spline, and MPI header files. */
-#include "Math/Math.h"
-#include "Math/Vector2D.h"
+#include "../../../src_2D/Math/Math.h"
+#include "../../../src_2D/Math/Vector2D.h"
 #include "CFD/CFD.h"
 #include "Cell2D.h"
 #include "Spline2D.h"

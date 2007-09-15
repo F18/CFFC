@@ -3,6 +3,8 @@
 #ifndef _COMPUTATIONALCELL1D_SPECIALIZATIONS_INCLUDED
 #define _COMPUTATIONALCELL1D_SPECIALIZATIONS_INCLUDED
 
+#include "Grid/Grid1D/Cell1D.h"
+
 /*******************************************************
  * CLASS Template: ComputationalCell1D                 *
  * Specialization of member functions                  *

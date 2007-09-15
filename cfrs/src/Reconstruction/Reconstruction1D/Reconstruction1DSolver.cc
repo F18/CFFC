@@ -33,10 +33,9 @@ int Reconstruction1DSolver(char *Input_File_Name_ptr){
        << "*\t Running " << SourceCode::ProgramName() << " for 1D " << "\n"
        << "****************************************************" << "\n"
        << " Executable information:" << "\n"
-       << "    --> repository version: rev. " << SourceCode::LastCommitted_Revision() << '\n'
+       << "    --> GIT repository version: hash = " << SourceCode::LastCommitted_HashID() << '\n'
        << "    --> committed on: " << SourceCode::LastCommitted_Date() << '\n'
        << "    --> committed by: " << SourceCode::LastCommitted_Author() << '\n'
-       << "    --> local version: rev. " << SourceCode::RevisionAtCompileTime() << '\n'
        << "    --> compiled on: " << SourceCode::TimeAtCompilation() << '\n'
        << "####################################################" << "\n";
   cout.flush();

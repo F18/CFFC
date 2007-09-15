@@ -21,10 +21,10 @@ One-dimension:    OneD <br>
 Two-dimensions:   TwoD <br>
 Three-dimensions: ThreeD 
 */
-enum SpaceType {OneD=1, TwoD=2, ThreeD=3};
+typedef enum {OneD=1, TwoD=2, ThreeD=3}  SpaceType;
 
 /* Type of polynomials */
-enum PolynomOrder {CONSTANT = 0, LINEAR = 1, QUADRATIC = 2, CUBIC = 3, QUARTIC = 4, QUINTIC = 5 };
+typedef enum {CONSTANT = 0, LINEAR = 1, QUADRATIC = 2, CUBIC = 3, QUARTIC = 4, QUINTIC = 5}  PolynomOrder;
 
 /* Index type --> vector for storing the indeces of the cells that are part of the stencil  */
 typedef vector<int> IndexType;

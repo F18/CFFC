@@ -19,19 +19,13 @@ using namespace std;
 
 /* Include math macro file. */
 
-#ifndef _MATH_MACROS_INCLUDED
-#include "Math/Math.h"
-#endif // _MATH_MACROS_INCLUDED
+#include "../../../src_2D/Math/Math.h"
 
 /* Include vector2d headers */
-#ifndef _VECTOR2D_INCLUDED
-#include "Math/Vector2D.h"
-#endif //_VECTOR2D_INCLUDED
+#include "../../../src_2D/Math/Vector2D.h"
 
 /* Include require header file */
-#ifndef _REQUIRE_H
-#include "include/require.h"
-#endif // _REQUIRE_H_INCLUDED
+#include "../../../src_2D/Utilities/Utilities.h"
 
 /********************************************************
  * CFD -- CFDkit+caboodle library name and version.     *

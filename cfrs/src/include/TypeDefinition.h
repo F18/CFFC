@@ -1,5 +1,5 @@
-#ifndef _TYPEDEFINITION_INCLUDED
-#define _TYPEDEFINITION_INCLUDED
+#ifndef _TYPEDEFINITION_CFRS_INCLUDED
+#define _TYPEDEFINITION_CFRS_INCLUDED
 
 #ifndef _Cell1D_INCLUDED
 #include "Grid/Grid1D/Cell1D.h"
@@ -21,9 +21,9 @@
 #include "CFD/Euler2DState.h"
 #endif
 
-typedef enum {OneD=1, TwoD=2, ThreeD=3} SpaceType;
+#include "../../../src_2D/Utilities/TypeDefinition.h"
+
 typedef enum {FALSE=0, TRUE=1} Bool;
-typedef std::vector<int> const IndexType;
 
 // Geometry Traits;
 template<SpaceType SpaceDimension>
@@ -48,16 +48,6 @@ class GeometryTraits<ThreeD> {
  public:
   typedef Node3D NodeType;
   typedef Vector3D VectorType;
-};
-
-// NumberOfVariables inside the solution class traits;
-template<class T>
-class SolutionParameters;
-
-template<>
-class SolutionParameters<double> {
- public:
-  static const int NUM_OF_VARIABLES = 1; 
 };
 
 template<>

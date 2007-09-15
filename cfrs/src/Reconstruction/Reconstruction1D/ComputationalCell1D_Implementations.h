@@ -190,7 +190,7 @@ SolutionType ComputationalCell<OneD,GeometryType,SolutionType>::
 //SolutionAtCoordinates(double &)
 template<class GeometryType,class SolutionType> inline
 SolutionType ComputationalCell<OneD,GeometryType,SolutionType>::
-  SolutionAtCoordinates(double & X_Coord){
+  SolutionAtCoordinates(const double & X_Coord){
 
   double DifferenceX;
   DifferenceX = X_Coord - geom.x;
@@ -257,22 +257,33 @@ template<class GeometryType,class SolutionType>
   template<typename FO>
 void ComputationalCell<OneD,GeometryType,SolutionType>::ComputeReconstructionError(const FO FuncObj){
 
-  /* construct the error function for the L1 norm*/
-  _Error_<FO,CompCellType, SolutionType> ErrorFunction(FuncObj,this);
-  /* integrate the error */
-  ErrorRecL1Norm = IntegrateOverTheCell(ErrorFunction,10,ErrorRecL1Norm);
+  // Build member function wrapper
+  _Member_Function_Wrapper_<CompCellType,MemberFunctionType1D,SolutionType> 
+    WrappedMemberFunction(this, &CompCellType::SolutionAtCoordinates);
 
-  /* construct the error function for the L2 norm*/
-  _Error_Square_<FO,CompCellType, SolutionType> ErrorFunctionSquare(FuncObj,this);
-  /* integrate the error */
-  ErrorRecL2Norm = IntegrateOverTheCell(ErrorFunctionSquare,10,ErrorRecL2Norm);
+  // Build ErrorFunction object for the L1 norm
+  ErrorFunc<SolutionType, const FO,_Member_Function_Wrapper_<CompCellType,MemberFunctionType1D,SolutionType> > 
+    ErrorFunction(FuncObj, WrappedMemberFunction);
+
+
+  /* integrate the error for the L1 norm */
+  ErrorRecL1Norm = IntegrateOverTheCell(ErrorFunction,10, ErrorRecL1Norm);
+
+  /* integrate the error for the L2 norm*/
+  ErrorRecL2Norm = IntegrateOverTheCell(square_error_function(FuncObj,
+							      wrapped_member_function(this,
+										      &CompCellType::SolutionAtCoordinates,
+										      ErrorRecL2Norm),
+							      ErrorRecL2Norm),
+					10, ErrorRecL2Norm);
 
   /* generate 101 points over the cell domain and chose the maximum error */
   ErrorRecMaxNorm = 0.0;
   double DeltaMaxNorm = CellDelta()/100;
   double StartPoint = CellCenter() - 0.5*CellDelta();
   for (int i=0; i<=100; ++i){
-    ErrorRecMaxNorm = max(ErrorRecMaxNorm,ErrorFunction(StartPoint+i*DeltaMaxNorm));
+    ErrorRecMaxNorm = max(ErrorRecMaxNorm,
+			  ErrorFunction(StartPoint+i*DeltaMaxNorm));
   }
 
 }

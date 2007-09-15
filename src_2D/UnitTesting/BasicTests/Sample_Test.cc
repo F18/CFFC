@@ -17,7 +17,7 @@ namespace tut
       // Declare it relative to the /src_2D directory,
       // otherwise the framework might not find the input
       // and output files.
-      set_test_suit_path("UnitTesting/BasicTests");
+      set_test_suite_path("UnitTesting/BasicTests");
     }
   };
 
@@ -105,5 +105,5 @@ namespace tut
 
 namespace tut
 {
-  TestGroup TestSuitObject("Simple_Example");
+  TestGroup TestSuiteObject("Simple_Example");
 }

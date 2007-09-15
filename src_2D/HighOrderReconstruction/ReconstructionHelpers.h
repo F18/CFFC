@@ -58,6 +58,12 @@ void MakeReconstructionStencil(const int & rings, const int & iCell, vector<int>
 void MakeReconstructionStencil(const int & rings, const int & iCell, const int & jCell,
 			       vector<int> & i_index, vector<int> & j_index);
 
+/*! Set the stencil for the 2D kExact reconstruction
+******************************************************************************************/
+void MakeReconstructionStencil(const int & rings, const int & iCell, const int & jCell,
+			       int *i_index, int *j_index);
+
+
 /*! Set the stencil for the 2D kExact reconstruction used at curved boundaries
  *
  * The subroutine makes sure that enough cells are included in the stencil by adding cells

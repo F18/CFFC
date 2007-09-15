@@ -44,6 +44,7 @@ class ComputationalCell<TwoD, GeometryType, SolutionType>{
   typedef SubGridMesh<Node,TwoD,SolutionType> SubGridType;
 
   typedef ComputationalCell<TwoD, GeometryType, SolutionType> CompCellType;
+  typedef SolutionType (CompCellType::*MemberFunctionType2D)(double &, double &);
 
   static const int NumberOfVariables = SolutionParameters<SolutionType>::NUM_OF_VARIABLES;
 
@@ -180,9 +181,9 @@ class ComputationalCell<TwoD, GeometryType, SolutionType>{
   void SetSubGridGeometry(void);
   void ComputeGeometricCoefficients(void);
   void UpdateSubgridSolution(void);
-  SolutionType SolutionAt(double & deltaX, double & deltaY);
-  SolutionType SolutionAtCoordinates(double & X_Coord, double & Y_Coord);
-  double SolutionAtCoordinates(double & X_Coord, double & Y_Coord, int VarPosition);
+  SolutionType SolutionAt( double & deltaX, double & deltaY);
+  SolutionType SolutionAtCoordinates( double & X_Coord, double & Y_Coord);
+  double SolutionAtCoordinates( double & X_Coord, double & Y_Coord, int VarPosition);
   SolutionType SolutionAt(Node & node);
   // Compute exact solution
   template<typename FO>
@@ -246,9 +247,14 @@ class ComputationalCell<TwoD, GeometryType, SolutionType>{
 
   // IntegrateOverTheCell()
   template<typename FO, class ReturnType>
-    ReturnType IntegrateOverTheCell(const FO FuncObj, const int & digits, ReturnType _dummy_param){
-    return QuadrilateralQuadrature(FuncObj,geom.NodeSW(),geom.NodeNW(),geom.NodeNE(),geom.NodeSE(),
-				   digits,_dummy_param);
+    ReturnType IntegrateOverTheCell(FO FuncObj, const int & digits, const ReturnType & _dummy_param){
+
+    Node2D SW(geom.NodeSW()), NW(geom.NodeNW());
+    Node2D SE(geom.NodeSE()), NE(geom.NodeNE());
+
+    return QuadrilateralQuadrature(FuncObj, 
+				   SW, NW, NE, SE,
+   				   digits,_dummy_param);
   }
 
   // Friend functions

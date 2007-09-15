@@ -15,11 +15,11 @@ using namespace std;
 /* Include math macro and 3D vector header files. */
 
 #ifndef _MATH_MACROS_INCLUDED
-#include "Math/Math.h"
+#include "../../../src_2D/Math/Math.h"
 #endif // _MATH_MACROS_INCLUDED
 
 #ifndef _VECTOR3D_INCLUDED
-#include "Math/Vector3D.h"
+#include "../../../src_2D/Math/Vector3D.h"
 #endif //_VECTOR3D_INCLUDED
 
 /* Define the basic 3D cell class. */

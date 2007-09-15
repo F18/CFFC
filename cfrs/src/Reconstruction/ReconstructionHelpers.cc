@@ -478,7 +478,5 @@ int InverseOrder2D(const int & ReconstructionOrder, const int & ComputedDerivati
     }
   }
 
-  Print(FinalOrder);
-
   return FinalOrder;
 }

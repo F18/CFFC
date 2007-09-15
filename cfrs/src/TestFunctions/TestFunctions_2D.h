@@ -5,7 +5,7 @@
 #define _TESTFUNCTIONS_2D_INCLUDED
 
 #include "Grid/Grid2D/Cell2D.h"
-#include "Math/NumericalLibrary.h"
+#include "../../../src_2D/Math/NumericalLibrary.h"
 
 using namespace std;
 

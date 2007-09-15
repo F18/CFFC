@@ -10,7 +10,7 @@
 using namespace std;
 
 /* Include math macro header file. */
-#include "Math/Math.h"
+#include "../../../src_2D/Math/Math.h"
 
 /* Define the classes. */
 

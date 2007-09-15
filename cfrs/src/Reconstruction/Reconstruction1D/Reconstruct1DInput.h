@@ -18,7 +18,7 @@ using namespace std;
 #endif // _CELL1D_INCLUDED
 
 #ifndef _TESTFUNCTIONS_INCLUDED
-#include "TestFunctions/TestFunctions.h"
+#include "TestFunctions/TestFunctions_1D.h"
 #endif //_TESTFUNCTIONS_INCLUDED
 
 #ifndef _TYPEDEFINITION_INCLUDED

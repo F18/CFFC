@@ -1,7 +1,7 @@
 #ifndef _POINTWISESOLUTION_INCLUDED
 #define _POINTWISESOLUTION_INCLUDED
 
-#include "include/require.h"
+#include "../../../../src_2D/Utilities/Utilities.h"
 #include "Grid/Grid2D/Cell2D.h"
 #include "Grid/Grid3D/Cell3D.h"
 

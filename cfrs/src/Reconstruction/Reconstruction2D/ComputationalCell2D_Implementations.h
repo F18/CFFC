@@ -462,24 +462,38 @@ template<class GeometryType,class SolutionType>
   template<typename FO>
 void ComputationalCell<TwoD,GeometryType,SolutionType>::ComputeReconstructionError(const FO FuncObj){
 
-  /* construct the error function for the L1 norm*/
-  _Error_<FO,CompCellType, SolutionType> ErrorFunction(FuncObj,this);
-  /* integrate the error */
-  ErrorRecL1Norm = IntegrateOverTheCell(ErrorFunction,8,ErrorRecL1Norm);
+  // Build member function wrapper
+  _Member_Function_Wrapper_<CompCellType,MemberFunctionType2D,SolutionType> 
+    WrappedMemberFunction(this, &CompCellType::SolutionAtCoordinates);
 
-  /* construct the error function for the L2 norm*/
-  _Error_Square_<FO,CompCellType, SolutionType> ErrorFunctionSquare(FuncObj,this);
-  /* integrate the error */
-  ErrorRecL2Norm = IntegrateOverTheCell(ErrorFunctionSquare,8,ErrorRecL2Norm);
+  // Build ErrorFunction object for the L1 norm
+  ErrorFunc<SolutionType, const FO,_Member_Function_Wrapper_<CompCellType,MemberFunctionType2D,SolutionType> > 
+    ErrorFunction(FuncObj, WrappedMemberFunction);
+
+
+  /* integrate the error for the L1 norm*/
+  ErrorRecL1Norm = IntegrateOverTheCell(ErrorFunction,8, ErrorRecL1Norm);
+
+
+  // Build ErrorFunction object for the L2 norm
+  SquareErrorFunc<SolutionType, const FO,_Member_Function_Wrapper_<CompCellType,MemberFunctionType2D,SolutionType> > 
+    SquareErrorFunction(FuncObj, WrappedMemberFunction);
+
+
+  /* integrate the error for the L2 norm*/
+  ErrorRecL2Norm = IntegrateOverTheCell(SquareErrorFunction,
+					10, ErrorRecL2Norm);
 
   /* get the maximum error based on the error values at the subgrid points */
   ErrorRecMaxNorm = SolutionType(0.0);
   for (int i=0; i<NbSubgridPoints[0]; ++i){
     for (int j=0; j<NbSubgridPoints[1]; ++j){
-      ErrorRecMaxNorm = max(ErrorRecMaxNorm,ErrorFunction(SubgridSolution(i,j).GetNode().x(), 
-							  SubgridSolution(i,j).GetNode().y()));
+      ErrorRecMaxNorm = max(ErrorRecMaxNorm,
+			    ErrorFunction(SubgridSolution(i,j).GetNode().x(), 
+					  SubgridSolution(i,j).GetNode().y()));
     }
   }
+
 }
 
 // OutputSubgridTecplot()

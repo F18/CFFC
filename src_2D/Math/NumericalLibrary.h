@@ -1037,8 +1037,8 @@ planar_bilinear_function_transformation(FunctionType func,
 }
 
 /**
- * \fn  ReturnType QuadrilateralQuadrature(FunctionType func, NodeType & SW, NodeType & NW, NodeType & NE, 
- *  NodeType & SE, int digits, const ReturnType & dummy)
+ * \fn  ReturnType QuadrilateralQuadrature(FunctionType func, const NodeType & SW, const NodeType & NW, const NodeType & NE, 
+ *  const NodeType & SE, int digits, const ReturnType & dummy)
  * \brief Numerically evaluate integrals of TWO-variable functions over a quadrilateral domain.
  *
  * This subroutine maps the quadrilateral domain into a rectangle and integrate using an adaptive Lobatto rule
@@ -1053,12 +1053,12 @@ planar_bilinear_function_transformation(FunctionType func,
  * \param digits number of exact digits (there is a default value already provided!)
  **************************************************************************************************************************/
 template<class FunctionType, class NodeType, class ReturnType>
-  ReturnType QuadrilateralQuadrature(FunctionType func, NodeType & SW, NodeType & NW, NodeType & NE, 
-				     NodeType & SE, int digits, const ReturnType & dummy){
+  ReturnType QuadrilateralQuadrature(FunctionType func, const NodeType & SW, const NodeType & NW, const NodeType & NE, 
+				     const NodeType & SE, int digits, const ReturnType & dummy){
 
   /* Integrate the new function over the square defined by (0,0) , (0,1) , (1,0) and (1,1) */
   return AdaptiveGaussianQuadrature(planar_bilinear_function_transformation(func,SW,NW,NE,SE,dummy), // tranform the function
-				    0.0,1.0,0.0,1.0,digits,dummy);
+ 				    0.0,1.0,0.0,1.0,digits,dummy);
 }
 
 /**

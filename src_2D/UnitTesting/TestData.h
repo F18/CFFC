@@ -44,7 +44,7 @@ namespace tut {
     std::string Message;		/* message variable */
 
     /* Relative path to the "/src_2D" directory for outputing and inputing data */
-    char* Global_TestSuit_Path;
+    char* Global_TestSuite_Path;
 
     /* Local output and input path --> specific for each test */
     char *Local_Output_Path, *Local_Input_Path;
@@ -84,7 +84,7 @@ namespace tut {
     // Open input stream
     void open_input_stream(ifstream & input_stream, const char * input_stream_file_name);
 
-    void set_test_suit_path(char * dir_name);
+    void set_test_suite_path(char * dir_name);
     void set_local_output_path(char * dir_name);
     void set_local_input_path(char * dir_name);
 
@@ -172,12 +172,12 @@ namespace tut {
     /* Set pointers to NULL */
     MasterFile = NULL; CurrentFile = NULL;
     Local_Output_Path = NULL; Local_Input_Path = NULL;
-    Global_TestSuit_Path = NULL;
+    Global_TestSuite_Path = NULL;
     Msg = NULL;
 
-    /* Set the Global_TestSuit_Path to the current directory */
-    Global_TestSuit_Path = new char [3];
-    strcpy(Global_TestSuit_Path, "./");
+    /* Set the Global_TestSuite_Path to the current directory */
+    Global_TestSuite_Path = new char [3];
+    strcpy(Global_TestSuite_Path, "./");
 
     // Initialize output_file_name to the proper output directory
     InitializeOutputFileName();
@@ -235,7 +235,7 @@ namespace tut {
     if (Local_Output_Path != NULL){
       strcpy(output_file_name, Local_Output_Path);
     } else {
-      strcpy(output_file_name, Global_TestSuit_Path);
+      strcpy(output_file_name, Global_TestSuite_Path);
     }
   }
 
@@ -275,7 +275,7 @@ namespace tut {
     if (Local_Input_Path != NULL){
       strcpy(input_file_name, Local_Input_Path);
     } else {
-      strcpy(input_file_name, Global_TestSuit_Path);
+      strcpy(input_file_name, Global_TestSuite_Path);
     }
   }
   

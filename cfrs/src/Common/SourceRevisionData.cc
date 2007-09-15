@@ -3,9 +3,8 @@
 
 #include "SourceRevisionData.h"
 
-char* SourceCode::CodeName="Reconstruction++";
-char* SourceCode::Revision="9M";
-char* SourceCode::CompilationTime="Sun 11 Feb 2007 12:24:47 PM EST";
-char* SourceCode::LastChanged_Author="lucian";
-char* SourceCode::LastChanged_Revision="9";
-char* SourceCode::LastChanged_Date="Thu, 08 Feb 2007";
+char* SourceCode::CodeName="CFRS: Computational Framework for Reconstruction Studies";
+char* SourceCode::CompilationTime="14 Sep 2007, 16:32";
+char* SourceCode::LastChanged_Author="Lucian Ivan";
+char* SourceCode::LastCommitted_Hash="c4911caa340113e09670f005e70e160964a31624";
+char* SourceCode::LastChanged_Date="14 Sep 2007, 11:26";

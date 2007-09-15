@@ -17,8 +17,8 @@ using namespace std;
 
 /* Include math macro, CFD, 2D vector, and MPI header files. */
 
-#include "Math/Math.h"
-#include "Math/Vector2D.h"
+#include "../../../src_2D/Math/Math.h"
+#include "../../../src_2D/Math/Vector2D.h"
 #include "CFD/CFD.h"
 #include "MPI/MPI.h"
 

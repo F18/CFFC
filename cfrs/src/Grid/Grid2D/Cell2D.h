@@ -6,10 +6,10 @@
 /* Include math macro and 2D vector header files. */
 
 #ifndef _VECTOR2D_INCLUDED
-#include "Math/Vector2D.h"
+#include "../../../src_2D/Math/Vector2D.h"
 #endif //_VECTOR2D_INCLUDED
 
-#include "include/require.h"
+#include "../../../src_2D/Utilities/Utilities.h"
 
 /* Define the basic 2D cell class. */
 
@@ -216,7 +216,9 @@ public:
   void setloc(const Node2D &Node);
   void setloc(const Vector2D &V);
   void setloc(const double &xx, const double &yy);
+  const double & x(void) const {return X.x;}
   double & x(void) { return X.x;}
+  const double & y(void) const {return X.y;}
   double & y(void) { return X.y;}
   /* Assignment operator. */
   // Node2D operator = (const Node2D &Node);

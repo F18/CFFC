@@ -19,6 +19,9 @@ GCC_VERSION = V3
 # <alpha>  gprof --demangle=compaq pdes++ gmon.out > output.txt
 PROFILING = OFF
 
+# Set to ON in order to run the TUT unit testing on
+TUT_TESTING = ON
+
 #
 # Set standard directories
 RECONSTRUCT_BIN_DIR = $(Reconstruction_Path)/bin
@@ -65,7 +68,7 @@ endif
 # Set flags associated with sparse linear system solvers:
 # SparseLib++, MV++, IML++, BLAS, and BPKit
 SPARSELIB                 = SparseLib++
-SPARSELIB_DIR             = $(Reconstruction_Path)/lib/sparselib++
+SPARSELIB_DIR             = $(CFFC_Path)/sparselib++
 
 SPARSELIB_LIB_DIR         = $(SPARSELIB_DIR)/lib
 SPARSELIB_INC_DIR         = $(SPARSELIB_DIR)/include
@@ -81,7 +84,7 @@ SPARSELIB_CPP_FLAGS       = -I$(SPARSELIB_INC_DIR) -I$(SPARSELIB_IML_INC_DIR) -I
 SPARSELIB_LD_FLAGS        = -L$(SPARSELIB_LIB_DIR) -lsparse -lspblas -lmv 
 
 BPKIT                     = BPKIT
-BPKIT_DIR                 = $(Reconstruction_Path)/lib/bpkit
+BPKIT_DIR                 = $(CFFC_Path)/bpkit
 
 BPKIT_LIB_DIR             = $(BPKIT_DIR)/lib
 BPKIT_INC_DIR             = $(BPKIT_DIR)/src
@@ -91,9 +94,9 @@ BPKIT_LD_FLAGS            = -L$(BPKIT_LIB_DIR) -lbpkit
 
 BLAS_LD_FLAGS             = -lblas -llapack -lg2c -lgcc
 ifeq ($(PLATFORM),Linux_i386)
-  BLAS_LD_FLAGS           = -lblas -llapack # -lg2c -lgcc
+  BLAS_LD_FLAGS           = -lblas -llapack  -lgcc
   ifeq ($(GCC_VERSION),ICC)
-   BLAS_LD_FLAGS   	  = -lblas -llapack -lifcore -L/usr/lib/gcc-lib/i386-redhat-linux/3.3.2
+   BLAS_LD_FLAGS   	  = -lblas -llapack -lifcore -lg2c
   endif
 endif
 ifeq ($(PLATFORM),Linux_alpha)
@@ -101,7 +104,7 @@ ifeq ($(PLATFORM),Linux_alpha)
                             -lcxml_ev6
 endif
 ifeq ($(PLATFORM),Linux_ia64)
- BLAS_LD_FLAGS   	  = -lblas -llapack -lg2c -lifcore
+ BLAS_LD_FLAGS   	  = -lblas -llapack -lg2c -lifcore -L/opt/intel/fc/9.1.036/lib/
 endif	
 ifeq ($(PLATFORM),Linux_x86_64)
   BLAS_LD_FLAGS           = -lblas -llapack -lg2c -lgcc
@@ -112,13 +115,13 @@ endif
 # is only really necessary when using memory checkers, ( ie. valgrind) 
 
 #
-# Set flags associated with unit testing frameworks:
-# TUT
-
+# Set flags associated with the TUT (Template Unit Testing)
+# testing framework for C++ code:
+UNIT_TESTING_DIR = $(CFFC_Path)/src_2D/UnitTesting/
 TUT                       = TUT
-TUT_DIR                   = $(Reconstruction_Path)/lib/TUT
-TUT_INC_DIR               = $(TUT_DIR)
-TUT_CPP_FLAGS             = -I$(TUT_INC_DIR)
+TUT_DIR                   = $(CFFC_Path)/tut
+TUT_INC_DIR               = $(TUT_DIR)/tut-framework
+TUT_CPP_FLAGS             = -I$(TUT_INC_DIR) -I$(UNIT_TESTING_DIR)
 
 # Set flags associated with the reconstruction program:
 RECONSTRUCT_INC_DIR       = $(Reconstruction_Path)/src
@@ -244,4 +247,12 @@ ifeq ($(PLATFORM),Linux_x86_64)
   endif
   LD = $(CXX)
   DEPENDSFLAGS =
+endif
+
+#
+# Add TUT flags
+ifeq ($(TUT_TESTING),ON) 
+  CPPFLAGS += $(TUT_CPP_FLAGS)
+else
+  CPPFLAGS += -D_NO_TUT_TESTING
 endif

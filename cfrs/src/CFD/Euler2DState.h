@@ -21,15 +21,15 @@ using namespace std;
 #endif // _CFD_INCLUDED
 
 #ifndef _MATH_MACROS_INCLUDED
-#include "Math/Math.h"
+#include "../../../src_2D/Math/Math.h"
 #endif // _MATH_MACROS_INCLUDED
 
 #ifndef _MATRIX_INCLUDED
-#include "Math/Matrix.h"
+#include "../../../src_2D/Math/Matrix.h"
 #endif // _MATRIX_INCLUDED
 
 #ifndef _VECTOR2D_INCLUDED
-#include "Math/Vector2D.h"
+#include "../../../src_2D/Math/Vector2D.h"
 #endif //_VECTOR2D_INCLUDED
 
 #ifndef _GAS_CONSTANTS_INCLUDED

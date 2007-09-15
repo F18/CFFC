@@ -1,6 +1,8 @@
 /* ComputationalDomain_Implementations.h: Header file defining the implementations of 
                                           template computational domain member functions */
 
+#include "../../../src_2D/HighOrderReconstruction/ReconstructionHelpers.h"
+
 /****************************************************************************
  * TEMPLATIZED CLASS: ComputationalDomain                                   *
  * Implementation of member functions.                                      *
@@ -1607,8 +1609,8 @@ template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inli
 
     /* Print UnfitCells and TotalModifiedCells */
     std::cout << std::endl;
-    Print(UnfitCells);
-    Print(TotalModifiedCells);
+    Print_(UnfitCells);
+    Print_(TotalModifiedCells);
     break;
 
   default:
@@ -1644,7 +1646,7 @@ template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inli
   MakeReconstructionStencil(1,iCell,i_index);
 
   /* Solve the PWL reconstruction for the current cell */
-    kExact_Reconstruction(*this,i_index,iCell,2,ON);
+  kExact_Reconstruction(*this,i_index,iCell,2,ON);
 
   /* Copy the derivatives in the TD container */
   SolnPtr[0][0][iCell].CellDeriv(0,true,true,true).D() = SolnPtr[0][0][iCell].CellDerivFirstOrder(0,true,true,true).D();
@@ -1801,8 +1803,8 @@ template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inli
 
     /* Print UnfitCells and TotalModifiedCells */
     std::cout << std::endl;
-    Print(UnfitCells);
-    Print(TotalModifiedCells);
+    Print_(UnfitCells);
+    Print_(TotalModifiedCells);
     break;
    
     /* DataDependent ENO-like reconstruction */
@@ -1928,8 +1930,8 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ReconstructZ
 
   /* Print UnfitCells and TotalModifiedCells */
   std::cout << std::endl;
-  Print(UnfitCells);
-  Print(TotalModifiedCells);
+  Print_(UnfitCells);
+  Print_(TotalModifiedCells);
    
   // Free memory
   delete [] i_index; i_index = NULL;
@@ -2480,9 +2482,9 @@ template< SpaceType SpaceDimension, class GeometryType, class SolutionType>
 void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   PrintErrorNorms(void) const
 {
-  Print(L1Norm);
-  Print(L2Norm);
-  Print(LMaxNorm);
+  Print_(L1Norm);
+  Print_(L2Norm);
+  Print_(LMaxNorm);
 }
 
 /* Friend functions */

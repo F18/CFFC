@@ -250,8 +250,8 @@ double Test_Example7_Integral (double x1, double x2, double y1, double y2) {
   double Sqrt2 = sqrt(double(2));
   double val;
 
-  frenel(Sqrt2*x2, &FresnelS_x2, &FresnelC_x2);
-  frenel(Sqrt2*x1, &FresnelS_x1, &FresnelC_x1);
+  frenel(Sqrt2*x2, FresnelS_x2, FresnelC_x2);
+  frenel(Sqrt2*x1, FresnelS_x1, FresnelC_x1);
 
   val = 2*PI*(y2+y1);
   f = cos(val)*(FresnelC_x2 - FresnelC_x1)-sin(val)*(FresnelS_x2-FresnelS_x1);

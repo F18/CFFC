@@ -6,7 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <Test_Run.h>
+#include "UnitTesting.h"
 #include "Common/SourceRevisionData.h"
 
 using namespace std;
@@ -34,7 +34,7 @@ int main(int num_arg, char *arg_ptr[]){
 
   // Title of code:
   char *program_title_ptr = 
-    "'Reconstruction++' is a program for reconstructing functions \nin one-, two- and three-dimensions based on cell averages.";
+    "CFRS: Computational Framework for Reconstruction Studies \nProgram for studying function reconstructions in 1, 2 and 3 Space Dimensions.";
 
   // Version of code:
   char *program_version_ptr = 
@@ -51,7 +51,7 @@ int main(int num_arg, char *arg_ptr[]){
   ifstream Input_File;
 
   // Testing commands
-  string TestSuit;
+  string TestSuite;
   int TestNumber=0;
 
   /********************************************************  
@@ -108,7 +108,7 @@ int main(int num_arg, char *arg_ptr[]){
       } else if (strcmp(arg_ptr[i], "-t") == 0) {
 	test_flag=1;
 	if (num_arg-1>i){
-	  TestSuit= arg_ptr[i+1];
+	  TestSuite= arg_ptr[i+1];
 	}
 	if (num_arg-1>i+1){
 	  TestNumber = atoi(arg_ptr[i+2]);
@@ -135,8 +135,7 @@ int main(int num_arg, char *arg_ptr[]){
   if (version_flag || help_flag) {
     cout << '\n' << program_title_ptr << '\n'
 	 << program_version_ptr << SourceCode::LastCommitted_Date() << '\n'
-	 << " --> repository version: rev. " << SourceCode::LastCommitted_Revision() << '\n'
-	 << " --> local version: rev. " << SourceCode::RevisionAtCompileTime() << '\n'
+	 << " --> repository version: rev. " << SourceCode::LastCommitted_HashID() << '\n'
 	 << " --> compiled on: " << SourceCode::TimeAtCompilation() << '\n';
     cout.flush();
     if (version_flag) return (0);
@@ -163,9 +162,19 @@ int main(int num_arg, char *arg_ptr[]){
   /**********************************************************
    * UNIT TESTING                                           *
    *********************************************************/
+
   if (test_flag) {
-    Test_Run(TestSuit,TestNumber);
-    exit(0);
+
+#ifndef _NO_TUT_TESTING
+  Test_Run(TestSuite, TestNumber);
+  exit(0);
+#else
+  cout << "\n Current program has not been compiled with TUT unit testing on."
+       << "\n To include the TUT unit testing framework, re-compile code with option: "
+       << "\n TUT_TESTING = ON.\n";
+  exit(1);
+#endif
+  
   }
 
   /***********************************************************  

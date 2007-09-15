@@ -44,6 +44,7 @@ class ComputationalCell<OneD, GeometryType, SolutionType>{
   typedef SubGridMesh<Node,OneD,SolutionType> SubGridType;
   typedef typename SubGridType::SubgridSolutionType SubGridSolutionType;
   typedef ComputationalCell<OneD, GeometryType, SolutionType> CompCellType;
+  typedef SolutionType (CompCellType::*MemberFunctionType1D)(const double &);
   
   static const int NumberOfVariables = SolutionParameters<SolutionType>::NUM_OF_VARIABLES;
 
@@ -185,7 +186,7 @@ class ComputationalCell<OneD, GeometryType, SolutionType>{
   void UpdateSubgridSolution(void);
   CompCellType Reflexion(double & ReflexionCentre){ return ComputationalCell(this);};
   SolutionType SolutionAt(const double & deltaX);
-  SolutionType SolutionAtCoordinates(double & X_Coord);
+  SolutionType SolutionAtCoordinates(const double & X_Coord);
   // Compute exact solution
   template<typename FO>
     SolutionType ExactSolutionAt(Node & node, const FO FuncObj){
@@ -235,7 +236,7 @@ class ComputationalCell<OneD, GeometryType, SolutionType>{
   // IntegrateOverTheCell()
   template<typename FO, class ReturnType>
     ReturnType IntegrateOverTheCell(const FO FuncObj, const int & digits, ReturnType _dummy_param){
-    return AdaptiveGaussianQuadrature(FuncObj,geom.x-0.5*geom.dx,geom.x+0.5*geom.dx,digits,_dummy_param);
+    return AdaptiveGaussianQuadrature(FuncObj,geom.x-0.5*geom.dx,geom.x+0.5*geom.dx,_dummy_param,digits);
   }
 
   // ComputeReconstructionError()

@@ -1,9 +1,11 @@
-#ifndef _RECONSTRUCTIONHELPERS_INCLUDED
-#define _RECONSTRUCTIONHELPERS_INCLUDED
+#ifndef _RECONSTRUCTIONHELPERS_CFRS_INCLUDED
+#define _RECONSTRUCTIONHELPERS_CFRS_INCLUDED
 
 #include <vector>
-#include "Math/LinearSystems.h"
-#include "include/require.h"
+#include "../../../src_2D/Math/LinearSystems.h"
+#include "../../../src_2D/Math/Vector2D.h"
+#include "../../../src_2D/Utilities/Utilities.h"
+#include "../../../src_2D/HighOrderReconstruction/ReconstructionHelpers.h"
 #include "include/TypeDefinition.h"
 
 /* Function Definition */

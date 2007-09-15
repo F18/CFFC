@@ -36,7 +36,7 @@ X_min     =
 X_max    =
 5.0
 Number_of_Cells_Idir =
-32
+8
 Number_of_Subgrid_Points =
 20
 Output_File_Name =
@@ -51,11 +51,11 @@ Execute
 # Command: Write output
 #######################
 Write_Output_OneZone
-#Write_Function_Graph
+Write_Function_Graph
 Write_Output
-#Write_Stencil_Reconstruction
-#Write_Output_Accuracy
-Terminate
+Write_Stencil_Reconstruction
+Write_Output_Accuracy
+#Terminate
 ##########################
 # New execution!
 Number_of_Cells_Idir =

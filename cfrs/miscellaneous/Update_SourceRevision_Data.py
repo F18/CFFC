@@ -5,12 +5,11 @@ import commands
 Target = "Common/SourceRevisionData.cc"
 
 # Dictionaries
-# RevisionData --> associated with SVN output
+# RevisionData --> associated with GIT output
 RevisionData = {
     'CompilationTime' : ' ',
-    'GlobalRevision': ' ',
     'Last Changed Author' : ' ',
-    'Last Changed Rev' : ' ',
+    'Last Changed Commit' : ' ',
     'Last Changed Date': ' '
 }
 
@@ -18,48 +17,40 @@ RevisionData = {
 CodeRevisionData = {
     'SourceCode::CompilationTime' : ' ',
     'SourceCode::LastChanged_Author' : ' ',
-    'SourceCode::LastChanged_Revision' : ' ',
+    'SourceCode::LastCommitted_Hash' : ' ',
     'SourceCode::LastChanged_Date' : ' ',
-    'SourceCode::Revision' : ' ',
 }
 
 # Translator --> describes the conversion between the keys of RevisionData and CodeRevisionData
 Translator = {
     'CompilationTime'     : 'SourceCode::CompilationTime',
-    'GlobalRevision'      : 'SourceCode::Revision',
     'Last Changed Author' : 'SourceCode::LastChanged_Author',
     'Last Changed Date'   : 'SourceCode::LastChanged_Date',
-    'Last Changed Rev'    : 'SourceCode::LastChanged_Revision',
+    'Last Changed Commit'    : 'SourceCode::LastCommitted_Hash',
 }
-
-################# Get global revision with 'svnversion' ###############
-cmd="svnversion"
-RevisionData['GlobalRevision'] = commands.getoutput(cmd)
 
 ################# Get compilation time with 'date' ###############
 cmd="date '+%d %b %Y, %R'"
 RevisionData['CompilationTime'] = commands.getoutput(cmd)
 
-################# Get SVN info ###################
-cmd="svn info"
-svninfo = commands.getoutput(cmd)       # get the output of this command
+################# Get GIT info ###################
+cmd="git log --pretty=format:\"Last Changed Commit= %H %nLast Changed Author= %an %nLast Changed Date= %cd %n\" -1"
+gitinfo = commands.getoutput(cmd)       # get the output of this command
 
 ####### Update the values for RevisionData
-list = svninfo.split("\n")
+list = gitinfo.split("\n")
+
 for entry in list:
-    new = entry.strip().split(":")
-    
-    # for 'Last Changed Date' modify the second entry
-    if new[0] == 'Last Changed Date':
-        # match for the date between parenthesis
-        match = re.search('\(.*\)',new[-1])
-        date = match.group()[1:-1]
-        # assign the date to the second entry of new
-        new[1] = date
-    
+    new_entry = entry.strip().split("=")
+
     for key in RevisionData.keys():
-        if new[0] == key:
-            RevisionData[key] = new[1].strip()
+        if new_entry[0] == key:
+            if key == 'Last Changed Date':
+                date = new_entry[1].strip().split(' ')
+                # format the 'Last Changed Date'
+                RevisionData[key] = date[2] + " " + date[1] + " " + date[4] + ", " + date[3][0:5]
+            else :
+                RevisionData[key] = new_entry[1].strip()
 
 ####### Update the new values for CodeRevisionData
 for key in Translator:

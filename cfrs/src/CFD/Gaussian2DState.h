@@ -22,15 +22,15 @@ using namespace std;
 #endif // _CFD_INCLUDED
 
 #ifndef _MATH_MACROS_INCLUDED
-#include "Math/Math.h"
+#include "../../../src_2D/Math/Math.h"
 #endif // _MATH_MACROS_INCLUDED
 
 #ifndef _VECTOR2D_INCLUDED
-#include "Math/Vector2D.h"
+#include "../../../src_2D/Math/Vector2D.h"
 #endif //_VECTOR2D_INCLUDED
 
 #ifndef _TENSOR2D_INCLUDED
-#include "Math/Tensor2D.h"
+#include "../../../src_2D/Math/Tensor2D.h"
 #endif //_TENSOR2D_INCLUDED
 
 #ifndef _GAS_CONSTANTS_INCLUDED

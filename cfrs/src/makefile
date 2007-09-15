@@ -1,7 +1,7 @@
 #
-# Makefile for Reconstruction program
-# Computer program for reconstructing functions
-# based on the average values in the computational cells.
+# Makefile for CFRS program
+# 
+# Computational Framework for Reconstruction Studies (CFRS)
 #
 
 # Set Reconstruction directory location which 
@@ -10,137 +10,211 @@
 Reconstruction_Path= $(shell cd ../; pwd)
 export Reconstruction_Path
 
+#
+# Set CFFC directory location which can be overridden by 
+# setting an environement variable CFFC_Path
+CFFC_Path:= $(shell cd ../../; pwd)
+export CFFC_Path
+
+CFFC_2D_Path:= $(CFFC_Path)/src_2D
+export CFFC_2D_Path
+
+#
+# Set CFFC source tree
+CFFC_SRC_TREE = 2D
+export CFFC_SRC_TREE
+
 # Platform compile options
 include makefile.def
 
-# File SVN
-SVN_File = Common/SourceRevisionData.cc
+# File GIT
+GIT_File = Common/SourceRevisionData.cc
 
 # Assign sub directories
 DEPENDDIR               = Depend/
-TEST_DIR		= UnitTesting/Tests
 CFD_DIR                 = CFD
 GRID1D_DIR              = Grid/Grid1D
 GRID2D_DIR              = Grid/Grid2D
 GRID3D_DIR              = Grid/Grid3D
-MATH_DIR                = Math
+MATH_DIR                = $(CFFC_2D_Path)/Math
+MATH_TESTS_DIR          = Math/UnitTests
 RECONSTRUCTION1D_DIR    = Reconstruction/Reconstruction1D
 RECONSTRUCTION2D_DIR    = Reconstruction/Reconstruction2D
 RECONSTRUCTION3D_DIR    = Reconstruction/Reconstruction3D
 TESTFUNCTIONS_DIR       = TestFunctions
 COMMON_DIR              = Common
+CONTAINERS_TEST_DIR     = Common/Containers/UnitTests
 
-# Source files
-#
-SRC_TUT			= Test_Run.cc
-SRC_TUT                 := $(addprefix  $(TUT_DIR)/, $(SRC_TUT))
-#
+###############################################################################
+# C++, C, and Fortran Source Files
+###############################################################################
+# TUT testing:
+SRC_TUT = TestRun.cc \
+          TestData.cc \
+	  BasicTests/Sample_Test.cc \
+          BasicTests/test_TestData.cc
+SRC_TUT := $(addprefix $(UNIT_TESTING_DIR), $(SRC_TUT))
+
+# CFD:
 SRC_CFD                 = CFD.cc Euler2DState.cc Gaussian2DState.cc
 SRC_CFD			:= $(addprefix  $(CFD_DIR)/, $(SRC_CFD))
-#
+
+# Math: (files from CFFC2D)
 SRC_MATH		= LinearSystems.cc Matrix.cc NumericalLibrary.cc
 SRC_MATH		:= $(addprefix  $(MATH_DIR)/, $(SRC_MATH))
+#--- SRC_MATH_TESTS ----
+SRC_MATH_TESTS = test_LeastSquaresSolvers.cc \
+	         test_NumericalLibrary.cc
 #
-SRC_MATH_UnitTesting    = test_LinearSystems.cc test_NumericalLibrary.cc \
-			  test_Vector2D.cc  test_HeaderData.cc \
-			  test_ComputationalCell.cc
+SRC_MATH_TESTS	:= $(addprefix  $(MATH_TESTS_DIR)/, $(SRC_MATH_TESTS))
+#--- Add SRC_MATH_TESTS to SRC_MATH ----
+ifeq ($(TUT_TESTING),ON) 
+  SRC_MATH += $(SRC_MATH_TESTS)
+endif
+#
 
-SRC_MATH_UnitTesting	:= $(addprefix  $(TEST_DIR)/, $(SRC_MATH_UnitTesting))
-#
-SRC_COMMON              = StateData.cc SourceRevisionData.cc EpsilonTol.cc
+# Common:
+SRC_COMMON              = StateData.cc SourceRevisionData.cc
 SRC_COMMON		:= $(addprefix  $(COMMON_DIR)/, $(SRC_COMMON))
-#
-SRC_COMMON_UnitTesting  = test_SourceCode.cc BasicTestData.cc test_BasicTestData.cc
 
-SRC_COMMON_UnitTesting	:= $(addprefix  $(TEST_DIR)/, $(SRC_COMMON_UnitTesting))
+# Common from CFFC_2D:
+SRC_COMMON              += $(CFFC_2D_Path)/Utilities/EpsilonTol.cc
+
+#--- SRC_COMMON_TESTS ----
+SRC_COMMON_TESTS  = 
 #
-SRC_CONTAINERS_UnitTesting = test_PointWiseSolution.cc test_SubGridMesh.cc test_TaylorDerivatives.cc \
-			     test_ReconstructionSolver.cc test_ComputationalDomain.cc
-SRC_CONTAINERS_UnitTesting := $(addprefix  $(TEST_DIR)/, $(SRC_CONTAINERS_UnitTesting))
+#--- Add SRC_COMMON_TESTS to SRC_COMMON ----
+ifeq ($(TUT_TESTING),ON) 
+  SRC_COMMON += $(SRC_COMMON_TESTS)
+endif
+#
+
+# Tests for Containers:
+SRC_CONTAINERS_TESTS = $(CONTAINERS_TEST_DIR)/test_PointWiseSolution.cc \
+		       $(CONTAINERS_TEST_DIR)/test_TaylorDerivatives.cc \
+		       Reconstruction/UnitTests/test_ComputationalCell.cc
+
+# Tests for SubGrid:
+SRC_SUBGRID_TESTS := test_SubGridMesh.cc
+SRC_SUBGRID_TESTS := $(addprefix Grid/SubGrid/UnitTests/, $(SRC_SUBGRID_TESTS))
+
+
 ##################################################################################
 #                          ONE-DIMENSION
 ##################################################################################
+# Grid:
 SRC_GRID1D              = Cell1D.cc
 SRC_GRID1D		:= $(addprefix $(GRID1D_DIR)/, $(SRC_GRID1D))
-#
-SRC_1D_TEST_FUNCTIONS   = TestFunctions.cc
-SRC_1D_TEST_FUNCTIONS   := $(addprefix $(TESTFUNCTIONS_DIR)/, $(SRC_1D_TEST_FUNCTIONS))
-#
-SRC_1D_UnitTesting	= test_Cell1D.cc test_Cell1DNonUniform.cc
 
-SRC_1D_UnitTesting	:= $(addprefix $(TEST_DIR)/, $(SRC_1D_UnitTesting))
-#
-#*********************************
-# SRC_RECONSTRUCTION 1D Main Files
+# Test functions:
+SRC_1D_TEST_FUNCTIONS   = TestFunctions_1D.cc
+SRC_1D_TEST_FUNCTIONS   := $(addprefix $(TESTFUNCTIONS_DIR)/, $(SRC_1D_TEST_FUNCTIONS))
+
+# Reconstruction:
 #*********************************
 SRC_RECONSTRUCTION1D	=  Reconstruct1DInput.cc \
 			  Reconstruction1DSolver.cc 
-
 SRC_RECONSTRUCTION1D	:= $(addprefix  $(RECONSTRUCTION1D_DIR)/, $(SRC_RECONSTRUCTION1D))
+
 #*********************************
-# SRC_RECONSTRUCTION 1D Adds-on Files
+# Final SRC_RECONSTRUCTION1D
 #*********************************
-SRC_RECONSTRUCTION1D	:= $(SRC_RECONSTRUCTION1D) $(SRC_GRID1D) $(SRC_1D_TEST_FUNCTIONS)
+SRC_RECONSTRUCTION1D	+= $(SRC_GRID1D) $(SRC_1D_TEST_FUNCTIONS)
 #
-#
+
+
+##################################################################################
 ##################################################################################
 #                          TWO-DIMENSIONS
 ##################################################################################
+##################################################################################
+# Grid:
 SRC_GRID2D		= Cell2D.cc Grid2DQuadMultiBlock.cc  Grid2DQuadSingleBlock.cc Spline2D.cc \
 			  QuadrilateralGrid.cc Grid2DQuad.cc
 SRC_GRID2D		:= $(addprefix $(GRID2D_DIR)/, $(SRC_GRID2D))
+#--- SRC_GRID2D_TESTS ----
+SRC_GRID2D_TESTS  = test_Cell2D.cc  test_QuadrilateralGrid.cc
+SRC_GRID2D_TESTS := $(addprefix Grid/Grid2D/UnitTests/, $(SRC_GRID2D_TESTS))
+
 #
+#--- Add SRC_GRID2D_TESTS to SRC_GRID2D ----
+ifeq ($(TUT_TESTING),ON) 
+  SRC_GRID2D += $(SRC_GRID2D_TESTS)
+
+endif
+#
+
+# Test functions:
 SRC_2D_TEST_FUNCTIONS   = TestFunctions_2D.cc
 SRC_2D_TEST_FUNCTIONS   := $(addprefix $(TESTFUNCTIONS_DIR)/, $(SRC_2D_TEST_FUNCTIONS))
-#
-SRC_2D_UnitTesting	= test_Cell2D.cc test_QuadrilateralGrid.cc
-SRC_2D_UnitTesting	:= $(addprefix $(TEST_DIR)/, $(SRC_2D_UnitTesting))
-#
-#*********************************
-# SRC_RECONSTRUCTION 2D Main Files
+
+# Reconstruction:
 #*********************************
 SRC_RECONSTRUCTION2D	= Reconstruct2DInput.cc Reconstruction2DSolver.cc
 SRC_RECONSTRUCTION2D	:= $(addprefix  $(RECONSTRUCTION2D_DIR)/, $(SRC_RECONSTRUCTION2D))
+
 #*********************************
-# SRC_RECONSTRUCTION 2D Adds-on Files
+# Final SRC_RECONSTRUCTION2D
 #*********************************
-SRC_RECONSTRUCTION2D	:= $(SRC_RECONSTRUCTION2D) $(SRC_GRID2D) $(SRC_2D_TEST_FUNCTIONS)
+SRC_RECONSTRUCTION2D	+= $(SRC_GRID2D) $(SRC_2D_TEST_FUNCTIONS)
 #
-#
+
+##################################################################################
 ##################################################################################
 #                          THREE-DIMENSIONS
 ##################################################################################
-#
+##################################################################################
+# Grid:
 SRC_GRID3D		= 
 SRC_GRID3D		:= $(addprefix $(GRID3D_DIR)/, $(SRC_GRID3D))
 #
+
+# Test functions:
 SRC_3D_TEST_FUNCTIONS   = TestFunctions_3D.cc
 SRC_3D_TEST_FUNCTIONS   := $(addprefix $(TESTFUNCTIONS_DIR)/, $(SRC_3D_TEST_FUNCTIONS))
-#
-#*********************************
-# SRC_RECONSTRUCTION 3D Main Files
+
+
+# Reconstruction:
 #*********************************
 SRC_RECONSTRUCTION3D	= Reconstruction3DSolver.cc
 SRC_RECONSTRUCTION3D	:= $(addprefix  $(RECONSTRUCTION3D_DIR)/, $(SRC_RECONSTRUCTION3D))
+
 #*********************************
-# SRC_RECONSTRUCTION 2D Adds-on Files
+# Final SRC_RECONSTRUCTION3D
 #*********************************
-SRC_RECONSTRUCTION3D	:= $(SRC_RECONSTRUCTION3D) $(SRC_GRID3D) $(SRC_3D_TEST_FUNCTIONS)
+SRC_RECONSTRUCTION3D	+= $(SRC_GRID3D) $(SRC_3D_TEST_FUNCTIONS)
 #
+
+##################################################################################
+##################################################################################
 #
-SRC_UnitTesting         = $(SRC_1D_UnitTesting) $(SRC_2D_UnitTesting) $(SRC_MATH_UnitTesting) \
-			  $(SRC_CONTAINERS_UnitTesting) $(SRC_COMMON_UnitTesting)
+#                            SRC_RECONSTRUCTION
+#
+##################################################################################
+##################################################################################
 SRC_RECONSTRUCTION	= main.cc Reconstruction/ReconstructionHelpers.cc \
+			  $(CFFC_2D_Path)/HighOrderReconstruction/ReconstructionHelpers.cc \
 			  $(SRC_RECONSTRUCTION1D) $(SRC_RECONSTRUCTION2D) $(SRC_RECONSTRUCTION3D) \
 			  $(SRC_CFD) $(SRC_MATH) \
-			  $(SRC_UnitTesting) $(SRC_TUT) $(SRC_COMMON)
+			  $(SRC_TUT) $(SRC_COMMON)
 
-# Object files
+
+#--- Add SRC_CONTAINERS_TESTS to SRC_RECONSTRUCTION ----
+ifeq ($(TUT_TESTING),ON) 
+  SRC_RECONSTRUCTION += $(SRC_CONTAINERS_TESTS)
+  SRC_RECONSTRUCTION += $(SRC_SUBGRID_TESTS)
+endif
+#
+
+
+
+#**********************  Object files ******************
 #
 OBJ_RECONSTRUCTION   :=$(SRC_RECONSTRUCTION:.cc=.o)
 
 # Define the executables
 EXE_REC = reconstruct
+
 
 # Define targets
 
@@ -172,13 +246,13 @@ all: $(EXE_REC)
 
 $(EXE_REC) : $(OBJ_RECONSTRUCTION)
 	@echo ' '
-	@echo Update compilation time and SVN revision data
+	@echo Update compilation time and GIT revision data
 	@echo '--------------------------------------------------------'
-	@python ../miscellaneous/Update_SourceRevision_Data.py
-        # Update $(SVN_File,.cc=.o)
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(SVN_File) -c -o $(SVN_File:.cc=.o)
-        # The updated SourceRevisionData is not required anymore ==> Revert SVN_File to the default (original)
-	@svn revert $(SVN_File) >& /dev/null
+	#@python ../miscellaneous/Update_SourceRevision_Data.py
+        # Update $(GIT_File,.cc=.o)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(GIT_File) -c -o $(GIT_File:.cc=.o)
+        # The updated SourceRevisionData is not required anymore ==> Revert GIT_File to the default (original)
+        #@git checkout $(GIT_File) >& /dev/null
 	@echo ' '
 	@echo Building program $(EXE_REC) for a $(PLATFORM) platform.
 	@echo '--------------------------------------------------------'
@@ -234,6 +308,12 @@ clean:
 	@../miscellaneous/rmlots "*~"
 	@../miscellaneous/rmlots "#*#"
 	@rm -f $(TUT_DIR)/*.o
+	@rm -f $(UNIT_TESTING_DIR)/*.o
+	@echo Remove obj files from CFFC_2D
+	@rm -f $(CFFC_2D_Path)/Utilities/EpsilonTol.o $(CFFC_2D_Path)/HighOrderReconstruction/ReconstructionHelpers.o
+	@rm -f $(CFFC_2D_Path)/Math/LinearSystems.o $(CFFC_2D_Path)/Math/NumericalLibrary.o
+	@rm -f $(CFFC_2D_Path)/Math/Matrix.o
+	@rm -f $(CFFC_2D_Path)/UnitTesting/BasicTests/test_TestData.o $(CFFC_2D_Path)/UnitTesting/BasicTests/Sample_Test.o
 	@echo "Remove the automatically created dependency files *.d"
 	rm -fr $(DEPENDDIR)
 	rm -f $(EXE_REC)
@@ -286,12 +366,14 @@ NODEP_LIST = help clean clean-lib clean-sparselib clean-bpkit \
 #-----------------------------------
 # Include header file dependencies
 #-----------------------------------
+ifdef MAKECMDGOALS
 ifeq ($(strip $(filter $(MAKECMDGOALS), $(NODEP_LIST)) ), )
 ############# Include dependencies of files that have extensions different than " .cc " (e.g. *.c)
        # sinclude $(patsubst %.c,$(DEPENDDIR)%.d, $(filter %.c, $(SRC_RECONSTRUCTION)))
 ############# Include the .d files comming from different executables
        # this command includes most of the *.d files
        sinclude $(patsubst %.cc,$(DEPENDDIR)%.d, $(filter %.cc, $(SRC_RECONSTRUCTION)))
+endif
 endif
 
 ##################################################################################################
