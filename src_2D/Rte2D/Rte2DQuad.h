@@ -2895,6 +2895,10 @@ extern void ScaleGridTo3D( Rte2D_Quad_Block *Soln_ptr,
 extern Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
                                             Rte2D_Input_Parameters &Input_Parameters);
 
+extern Grid2D_Quad_Block** Set_Multi_Block_Grid_BCs(Grid2D_Quad_Block **Grid_ptr,
+						    Rte2D_Input_Parameters &Input_Parameters);
+
+
 extern Grid2D_Quad_Block** Broadcast_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
                                                       Rte2D_Input_Parameters &Input_Parameters);
 

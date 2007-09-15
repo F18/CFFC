@@ -395,17 +395,12 @@ int Check_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
  * mesh is not valid.                                   *
  *                                                      *
  ********************************************************/
-void Copy_Multi_Block_Grid(Grid2D_Quad_Block **&Tgt_Grid_ptr,  // target grid
-			   Grid2D_Quad_Block **Src_Grid_ptr,   // source grid
-			   const int Number_of_Blocks_Idir,
-			   const int Number_of_Blocks_Jdir) {
-
-  // make sure the target grid is not already allocated
-  // if not, deallocate it
-  if (Tgt_Grid_ptr != NULL)
-    Tgt_Grid_ptr = Deallocate_Multi_Block_Grid(Tgt_Grid_ptr,
-					       Number_of_Blocks_Idir,
-					       Number_of_Blocks_Jdir);
+Grid2D_Quad_Block** Copy_Multi_Block_Grid(Grid2D_Quad_Block **Src_Grid_ptr,   // source grid
+					  const int Number_of_Blocks_Idir,
+					  const int Number_of_Blocks_Jdir) {
+  // declares
+  Grid2D_Quad_Block** Tgt_Grid_ptr;
+  
 
   //--------------------------------------------------
   // Copy the grid.
@@ -434,7 +429,9 @@ void Copy_Multi_Block_Grid(Grid2D_Quad_Block **&Tgt_Grid_ptr,  // target grid
 
   } // endif
 
-
+  // return target grid
+  return Tgt_Grid_ptr;
+  
 }
 
 

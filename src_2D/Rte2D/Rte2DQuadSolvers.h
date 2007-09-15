@@ -107,8 +107,13 @@ class Rte2DSolver {
   int ReadInputFile(char *Input_File_Name_ptr, 
 		    int &command_flag);
 
+  // override input parameters with those of another object
+  template <class Quad_Soln_Input_Parameters>
+  void OverrideInputs(const Quad_Soln_Input_Parameters &SRC_Input_Parameters);
+
   // setup mesh
   int SetupMesh();
+  int CopyMesh(Grid2D_Quad_Block **SRC_MeshBlk);
 
   // setup ics or read restart
   int SetICs();
@@ -149,14 +154,38 @@ class Rte2DSolver {
   int PostProcess(int &command_flag);
 
   //
-  // main control loops
-  //
   // the standalone solver
+  //
   int StandAloneSolve(const int batch_flag, char *Input_File_Name_ptr);
 
-  // the sequential solver
-  int SetupSequentialSolve(const int batch_flag, char *Input_File_Name_ptr);
-  int SequentialSolve(const bool postProcess);
+  //
+  // The sequential solver
+  //
+  // Main setup function
+  template <class Quad_Soln_Input_Parameters>
+  int SetupSequentialSolve(const int batch_flag, char *Input_File_Name_ptr,
+			   Grid2D_Quad_Block **SRC_MeshBlk,
+			   const Quad_Soln_Input_Parameters &SRC_Input_Parameters);
+
+  // copy src solution data over to Rte2D solution block
+  template <class Quad_Soln_Block>
+  void Copy_SRC_Solution_Vars(Quad_Soln_Block *SRC_Local_SolnBlk) 
+  { 
+    cerr<<"\n EXPLICIT SPECIALIZATION OF Copy_SRC_Solution_Vars for Rte2DQuadSolvers.h requried \n";
+    exit(-1);
+  };
+
+  // copy Rte2D solution data back to src solution block
+  template <class Quad_Soln_Block>
+  void Copy_Rte2D_Solution_Vars(Quad_Soln_Block *SRC_Local_SolnBlk)
+  { 
+    cerr<<"\n EXPLICIT SPECIALIZATION OF Copy_SRC_Solution_Vars for Rte2DQuadSolvers.h requried \n";
+    exit(-1);
+ };
+
+  template <class Quad_Soln_Block>
+  int SequentialSolve(Quad_Soln_Block *SRC_Local_SolnBlk,
+		      const bool postProcess);
 
 };
 
@@ -401,17 +430,19 @@ inline int Rte2DSolver::StandAloneSolve(const int batch_flag_,
 
 }
 
+
+
 /********************************************************  
  * Rte2DSolver :: SetupSequentialSolve                  *
  *                                                      *
  * The main control function which sets up the          *
  * repeated sequential solves.                          *
  ********************************************************/
-/*
+template <class Quad_Soln_Input_Parameters>
 inline int Rte2DSolver::SetupSequentialSolve( const int batch_flag_, 
 					      char *Input_File_Name_ptr,
-					      const bool useSameGrid,
-					      const ) {
+					      Grid2D_Quad_Block **SRC_MeshBlk,
+					      const Quad_Soln_Input_Parameters &SRC_Input_Parameters ) {
 
   //
   // Declares
@@ -441,20 +472,14 @@ inline int Rte2DSolver::SetupSequentialSolve( const int batch_flag_,
   //--------------------------------------------------
   // Override input parameters
   //--------------------------------------------------
-  // FIXME - axisymmetric, Number_of_Blocks_Idir, Number_of_Blocks_Jdir
-  // Number_of_Processors, Number_of_Blocks_Per_Processor, Maximum_Refinement_Level
-  // Threshold_for_Refinement, Threshold_for_Coarsening, Number_of_Ghost_Cells
-n blocks, nblocks/processor, n cells, n processr
-  //         max refine level, thresshold for refinement/coarsn
-  
+  OverrideInputs(SRC_Input_Parameters);  
 
   //--------------------------------------------------
-  // Setup mesh
+  // Copy Quadtree data structure and mesh
   //--------------------------------------------------
-  // FIXME
-  error_flag = SetupMesh();
+  error_flag = CopyMesh(SRC_MeshBlk);
   if (error_flag) {
-    cout << "\n Rte2D ERROR: Unable to setup mesh.\n"
+    cout << "\n Rte2D ERROR: Unable to copy mesh.\n"
 	 << flush;
     return error_flag;
   } // endif
@@ -463,8 +488,7 @@ n blocks, nblocks/processor, n cells, n processr
   //--------------------------------------------------
   // Setup ICs
   //--------------------------------------------------
-   // FIXME - copy solution variables??
- error_flag = SetICs();
+  error_flag = SetICs();
   if (error_flag) {
     cout << "\n Rte2D ERROR: Unable to setup ICs.\n"
 	 << flush;
@@ -476,7 +500,6 @@ n blocks, nblocks/processor, n cells, n processr
   return error_flag;
 
 }
-*/
 
 /********************************************************  
  * Rte2DSolver :: SequentialSolve                       *
@@ -484,7 +507,9 @@ n blocks, nblocks/processor, n cells, n processr
  * The main control function which performs the         *
  * repeated sequential solves.                          *
  ********************************************************/
-inline int Rte2DSolver::SequentialSolve( const bool postProcess ) {
+template <class Quad_Soln_Block>
+inline int Rte2DSolver::SequentialSolve( Quad_Soln_Block *SRC_Local_SolnBlk,
+					 const bool postProcess ) {
 
   //
   // Declares
@@ -492,14 +517,6 @@ inline int Rte2DSolver::SequentialSolve( const bool postProcess ) {
   int error_flag(0);
   int command_flag(0);
 
-
-  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // We are redirected here when we want to execute a
-  // new calculation.
-  //
-  execute_new_calculation:
-  //
-  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   //--------------------------------------------------
   // Initialize Rte2D solution variables.
@@ -512,6 +529,11 @@ inline int Rte2DSolver::SequentialSolve( const bool postProcess ) {
   // Set the CPU time to zero.
   processor_cpu_time.zero();
   total_cpu_time.zero();
+
+  //--------------------------------------------------
+  // Copy Rte2D solution variables.
+  //--------------------------------------------------
+  Copy_SRC_Solution_Vars(SRC_Local_SolnBlk);
 
 
   //--------------------------------------------------
@@ -616,6 +638,10 @@ inline int Rte2DSolver::SequentialSolve( const bool postProcess ) {
     } // endif
   } // endif
 
+  //--------------------------------------------------
+  // Copy over computed Rte2D solution variables.
+  //--------------------------------------------------
+  Copy_Rte2D_Solution_Vars(SRC_Local_SolnBlk);
 
   //--------------------------------------------------
   // Postprocess
@@ -634,9 +660,8 @@ inline int Rte2DSolver::SequentialSolve( const bool postProcess ) {
     //
     // Redirect
     //
-    if (command_flag == EXECUTE_CODE) 
-      goto execute_new_calculation;
-    else if (command_flag == CONTINUE_CODE) 
+    if (command_flag == CONTINUE_CODE || 
+	command_flag == EXECUTE_CODE) 
       goto continue_existing_calculation;
     
   }// endif - postProcess
@@ -697,15 +722,137 @@ inline int Rte2DSolver::ReadInputFile(char *Input_File_Name_ptr,
 
 }
 
+/********************************************************  
+ * Rte2DSolver :: OverrideInputs                        *
+ *                                                      *
+ * When performing a sequential solve, override some    *
+ * input parameters to ensure both the Rte2D solver     *
+ * and the calling solver are in sync.                  *
+ *                                                      *
+ ********************************************************/
+template <class Quad_Soln_Input_Parameters>
+inline void Rte2DSolver::OverrideInputs( const Quad_Soln_Input_Parameters &SRC_IP ) {
+
+  // grid related
+  Input_Parameters.Number_of_Cells_Idir           = SRC_IP.Number_of_Cells_Idir;
+  Input_Parameters.Number_of_Cells_Jdir           = SRC_IP.Number_of_Cells_Jdir;
+  Input_Parameters.Number_of_Ghost_Cells          = SRC_IP.Number_of_Ghost_Cells;
+  Input_Parameters.Number_of_Blocks_Idir          = SRC_IP.Number_of_Blocks_Idir;
+  Input_Parameters.Number_of_Blocks_Jdir          = SRC_IP.Number_of_Blocks_Jdir;
+
+  // Quadtree data structure / AMR related
+  Input_Parameters.Number_of_Processors           = SRC_IP.Number_of_Processors;
+  Input_Parameters.Number_of_Blocks_Per_Processor = SRC_IP.Number_of_Blocks_Per_Processor;
+  Input_Parameters.Maximum_Refinement_Level       = SRC_IP.Maximum_Refinement_Level;
+  Input_Parameters.Threshold_for_Refinement       = SRC_IP.Threshold_for_Refinement;
+  Input_Parameters.Threshold_for_Coarsening       = SRC_IP.Threshold_for_Coarsening;
+
+  // turn off AMR, Morton ordering
+  Input_Parameters.Morton = OFF;
+  Input_Parameters.AMR = OFF;
+
+}
+
 
 /********************************************************  
- * Rte2DSolver :: SetupMesh                             *
+ * Rte2DSolver :: CopyMesh                              *
  *                                                      *
- * Create initial mesh and allocate Rte2D solution      *
+ * Copy an initial mesh and allocate Rte2D solution     *
  * avariables for specified IBVP/BVP problem.           *
- * Additionally, create (allocate) multi-block quadtree *
- * data structure, create (allocate) array of local 2D  *
- * solution blocks, assign and create (allocate) 2D     *
+ * Additionally, copy (allocate) multi-block quadtree   *
+ * data structure, copy (allocate) array of local 2D    *
+ * solution blocks, assign and copy (allocate) 2D       *
+ * equation solution blocks corresponding to the initial*
+ * mesh.                                                *
+ *                                                      *
+ * This is cheating, we are not actually copying the    *
+ * quadtree data structure, just recreating it with     *
+ * the same input parameters and mesh.                  *
+ *                                                      *
+ ********************************************************/
+inline int Rte2DSolver::CopyMesh(Grid2D_Quad_Block **SRC_MeshBlk) {
+
+  // declares
+  int error_flag(0);
+  
+  //--------------------------------------------------
+  // INITIAL GRID & SOLUTION SPACE
+  // Create initial mesh and allocate Chem2D solution variables for 
+  // specified IBVP/BVP problem. 
+  //--------------------------------------------------
+    
+  // MPI barrier to ensure processor synchronization.
+  CFFC_Barrier_MPI(); 
+  
+  // Create initial mesh.  Read mesh from grid definition or data files 
+  // when specified by input parameters.
+  
+  // The primary MPI processor creates the initial mesh.
+  MeshBlk = NULL;
+  if (CFFC_Primary_MPI_Processor()) {
+    if (!batch_flag) cout << "\n Copying (or reading) initial quadrilateral multi-block mesh.";
+    MeshBlk = Copy_Multi_Quad_Block(SRC_MeshBlk,
+				    Input_Parameters.Number_of_Blocks_Idir,
+				    Input_Parameters.Number_of_Blocks_Jdir);
+
+    if (MeshBlk == NULL) {
+      error_flag = 1;
+    } else if (Check_Multi_Block_Grid(MeshBlk,
+				      Input_Parameters.Number_of_Blocks_Idir,
+				      Input_Parameters.Number_of_Blocks_Jdir)) {
+      error_flag = 1;
+    } // endif 
+    
+    if (error_flag) {
+      cout << "\n Rte2D ERROR: Unable to copy valid Rte2D multi-block mesh.\n";
+      cout.flush();
+    }  // endif
+
+    // override the other meshes BCs
+    MeshBlk = Set_Multi_Block_Grid_BCs(SRC_MeshBlk,Input_Parameters);
+
+  } // endif
+  
+  // MPI barrier to ensure processor synchronization.
+  CFFC_Barrier_MPI();
+
+  // Broadcast the mesh to other MPI processors.
+  CFFC_Broadcast_MPI(&error_flag, 1); // Broadcast mesh error flag.
+  if (error_flag) return (error_flag);
+  MeshBlk = Broadcast_Multi_Block_Grid(MeshBlk, 
+                                       Input_Parameters);
+
+  //--------------------------------------------------
+  // MULTIBLOCK QUADTREE
+  // Create (allocate) multi-block quadtree data structure, create
+  // (allocate) array of local  2D equation solution blocks, 
+  // assign and create (allocate) 2D equation solution blocks
+  // corresponding to the initial mesh. 
+  //--------------------------------------------------
+
+  if (!batch_flag) cout << "\n Creating multi-block quadtree data structure and assigning"
+                        << "\n  Rte2D solution blocks corresponding to initial mesh.";
+  Local_SolnBlk = Create_Initial_Solution_Blocks(MeshBlk,
+                                                 Local_SolnBlk,
+                                                 Input_Parameters,
+                                                 QuadTree,
+                                                 List_of_Global_Solution_Blocks,
+                                                 List_of_Local_Solution_Blocks);
+  if (Local_SolnBlk == NULL) error_flag = 1;
+
+  // return error flag
+  return error_flag;
+
+}
+
+/********************************************************  
+ * Rte2DSolver :: CopyMesh                              *
+ *                                                      *
+ * Copy an initial mesh and allocate Rte2D solution     *
+ * avariables for specified IBVP/BVP problem.           *
+ * Additionally, copy (allocate) multi-block quadtree   *
+ * data structure, copy (allocate) array of local 2D    *
+ * solution blocks, assign and copy (allocate) 2D       *
  * equation solution blocks corresponding to the initial*
  * mesh.                                                *
  ********************************************************/
@@ -778,6 +925,7 @@ inline int Rte2DSolver::SetupMesh() {
   return error_flag;
 
 }
+
 
 /********************************************************  
  * Rte2DSolver :: SetICs                                *
