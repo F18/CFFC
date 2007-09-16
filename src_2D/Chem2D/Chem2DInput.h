@@ -203,6 +203,13 @@ class Chem2D_Input_Parameters{
   double yplus_sublayer, yplus_buffer_layer, yplus_outer_layer;
   //@}
 
+  //@{ @name Radiation related input parameters.
+  //! Input file name:
+  char Rte_Input_File_Name[INPUT_PARAMETER_LENGTH_CHEM2D];
+  //! Radiation Flag (0 -> no radiation, 1 -> radiation modelled)
+  int Radiation;
+  //@}
+
   //@{ @name Grid type indicator and related input parameters:
   char Grid_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
   char NACA_Aerofoil_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
@@ -409,6 +416,10 @@ inline ostream &operator << (ostream &out_file,
     } else { 
       out_file <<"\n on multi-block solution-adaptive quadrilateral mesh.";
     } 
+    if (IP.Radiation)
+      out_file<<"\n Radiation heat transfer modelled.";
+    else
+      out_file<<"\n Radiation Neglected.";
 
     /*********************************************************/
     if (IP.FlowType ==  FLOWTYPE_INVISCID) {

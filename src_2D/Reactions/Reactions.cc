@@ -8,6 +8,15 @@
 #endif // _REACTIONS_INCLUDED
 
 /***********************************************************************
+  Static object initialization.
+***********************************************************************/
+// indexes of specific species
+int Reaction_set::iCO  = -1;
+int Reaction_set::iCO2 = -1;
+int Reaction_set::iH2O = -1;
+int Reaction_set::iO2  = -1;
+
+/***********************************************************************
   Setup reaction data using hardcoded reaction mechanisms.
 ***********************************************************************/
 void Reaction_set::set_reactions(string &react){
@@ -20,6 +29,12 @@ void Reaction_set::set_reactions(string &react){
     reactset_flag = NO_REACTIONS;
     reactions = NULL;
     num_reactions = 0;
+
+    // set static indexes (-1 if does not exist)
+    iCO  = -1;
+    iH2O = -1;
+    iCO2 = -1;
+    iO2  = -1;
   }
 
   /****************** METHANE ***********************************/   
@@ -46,6 +61,12 @@ void Reaction_set::set_reactions(string &react){
     species[2] = "CO2";
     species[3] = "H2O";
     species[4] = "N2";
+
+    // set static indexes (-1 if does not exist)
+    iCO  = -1;
+    iH2O = 3;
+    iCO2 = 2;
+    iO2  = 1;
   }
    
   //-------------------------------------------//
@@ -72,7 +93,13 @@ void Reaction_set::set_reactions(string &react){
     species[3] = "H2O";
     species[4] = "CO"; 
     species[5] = "N2";
-  }
+ 
+    // set static indexes (-1 if does not exist)
+    iCO  = 4;
+    iH2O = 3;
+    iCO2 = 2;
+    iO2  = 1;
+ }
 
   // 1step C3H8 mechanism
   else if( react == "C3H8_1STEP" ){
@@ -130,6 +157,12 @@ void Reaction_set::set_reactions(string &react){
     species[17] = "HCN";              
     species[18] = "N2";
 
+    // set static indexes (-1 if does not exist)
+    iCO  = 9;
+    iH2O = 4;
+    iCO2 = 10;
+    iO2  = 2;
+
   /***********************
     Reactions:
 
@@ -185,6 +218,12 @@ void Reaction_set::set_reactions(string &react){
     species[17] = "HCN";              
     species[18] = "N2";
 
+    // set static indexes (-1 if does not exist)
+    iCO  = 9;
+    iH2O = 4;
+    iCO2 = 10;
+    iO2  = 2;
+
   /***********************
     Reactions:
 
@@ -229,7 +268,13 @@ void Reaction_set::set_reactions(string &react){
     species[1] = "O2";
     species[2] = "H2O"; 
     species[3] = "N2";
-  }
+
+    // set static indexes (-1 if does not exist)
+    iCO  = -1;
+    iH2O = 2;
+    iCO2 = -1;
+    iO2  = 1;
+ }
 
   //-------------------------------------------//
   // 2step H2 & O2
@@ -254,6 +299,12 @@ void Reaction_set::set_reactions(string &react){
     species[2] = "OH";
     species[3] = "H2O"; 
     species[4] = "N2";
+
+    // set static indexes (-1 if does not exist)
+    iCO  = -1;
+    iH2O = 3;
+    iCO2 = -1;
+    iO2  = 1;
   }
   
   //-------------------------------------------//
@@ -287,6 +338,12 @@ void Reaction_set::set_reactions(string &react){
     species[4] = "H2O";
     species[5] = "OH";
     species[6] = "N2";
+
+    // set static indexes (-1 if does not exist)
+    iCO  = -1;
+    iH2O = 4;
+    iCO2 = -1;
+    iO2  = 1;
   }
   
   // else error  
@@ -387,8 +444,16 @@ void Reaction_set::ct_load_mechanism(string &mechanism_file_name,
   ct_mech_file = mechanism_file_name;
   Reaction_system = "CANTERA";
 
+  // set static indexes (-1 returbed if does not exist)
+  iCO  = ct_gas->speciesIndex("CO");
+  iH2O = ct_gas->speciesIndex("H2O");
+  iCO2 = ct_gas->speciesIndex("CO2");
+  iO2  = ct_gas->speciesIndex("O2");
+
   // allocate some temporary storage
   set_storage();
+
+
 
 // _CANTERA_VERSION flag not set
 #else

@@ -209,6 +209,12 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
 				   IP.yplus_buffer_layer,
 				   IP.yplus_outer_layer);
 
+    // radiation parameters
+    string_ptr = "Chem2D_Rte.in";
+    strcpy(IP.Rte_Input_File_Name, string_ptr);
+    IP.Radiation = OFF;
+
+
     /* Grid Parameters */
     string_ptr = "Square";
     strcpy(IP.Grid_Type, string_ptr);
@@ -461,6 +467,13 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.yplus_outer_layer),
 			  1,
 			  MPI::DOUBLE,0);
+    // Radiation parameters:
+    MPI::COMM_WORLD.Bcast(IP.Rte_Input_File_Name, 
+                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Radiation), 
+                          1, 
+                          MPI::INT, 0);
     // Initial conditions:
     MPI::COMM_WORLD.Bcast(IP.ICs_Type,
                           INPUT_PARAMETER_LENGTH_CHEM2D, 
@@ -1094,6 +1107,13 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.yplus_outer_layer),
 		       1,
 		       MPI::DOUBLE,Source_Rank);
+    // Radiation parameters:
+    Communicator.Bcast(IP.Rte_Input_File_Name, 
+		       INPUT_PARAMETER_LENGTH_CHEM2D, 
+		       MPI::CHAR, Source_Rank);
+    Communicator.Bcast(&(IP.Radiation), 
+		       1, 
+		       MPI::INT, Source_Rank);
     // Initial conditions:
     Communicator.Bcast(IP.ICs_Type, 
                        INPUT_PARAMETER_LENGTH_CHEM2D, 
@@ -2311,6 +2331,23 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.BluffBody_Coflow_Fuel_Velocity <ZERO) i_command = INVALID_INPUT_VALUE;       
 
+       /*************************************/
+       /******** RADIATION PARAMETERS *******/
+       /*************************************/
+    } else if (strcmp(IP.Next_Control_Parameter,"Radiation") == 0) {
+      i_command = 100;
+      Get_Next_Input_Control_Parameter(IP);
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0)
+	IP.Radiation = ON;
+      else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0)
+	IP.Radiation = OFF;
+      else
+	i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Radiation_Input_File_Name") == 0) {
+      i_command = 101;
+      Get_Next_Input_Control_Parameter(IP);
+      strcpy(IP.Rte_Input_File_Name, IP.Next_Control_Parameter);
 
        /***********************************************************************
         ************************ CHEM2D SPECIFIC ******************************

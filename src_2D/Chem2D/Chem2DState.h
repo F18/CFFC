@@ -305,7 +305,12 @@ class Chem2D_pState {
 //    bool negative_speccheck(void) ; //-ve mass frac check and sets small -ve c's to ZERO  
 //    bool Unphysical_Properties_Check(Chem2D_cState &U, const int Flow_Type, const int n) ;   
    double SpecCon(int i) const;     //Species i concentration (rho*c/mol_mass)
+   double MoleFrac(int i) const;    //Species i mole fraction (c*mol_mass_mix/mol_mass)
    double Gibbs(int species) const; //Gibbs Free Energy (H-TS) for species
+
+   /********** radiating species related parameters ***********/
+    void MoleFracOfRadSpec( double &xCO,  double &xH2O, 
+			    double &xCO2, double &xO2 ) const;
 
    /**************** turbulence model related parameters*********/
    double eddy_viscosity(void) const;      
@@ -1017,6 +1022,13 @@ inline double Chem2D_pState::SpecCon(int i) const{
   //returned in kg/m^3 / kg/mol => mol/m^3
   return (rho)*spec[i].c/(specdata[i].Mol_mass());
 }
+
+/***** Species Mole Fractions ******************************/
+inline double Chem2D_pState::MoleFrac(int i) const{
+  //returned in kmol i / kmol mix
+  return spec[i].c*Mass()/(specdata[i].Mol_mass());
+}
+
 
 /******* GIBBS Free Energy ********************************
   Eqn. (10.84) (10.87) Anderson

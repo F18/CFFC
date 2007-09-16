@@ -1901,7 +1901,7 @@ extern int Check_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
                                   const int Number_of_Blocks_Idir,
                                   const int Number_of_Blocks_Jdir);
 
-extern Grid2D_Quad_Block** Copy_Multi_Quad_Block(Grid2D_Quad_Block **Grid,  // source
+extern Grid2D_Quad_Block** Copy_Multi_Block_Grid(Grid2D_Quad_Block **Grid,  // source
 						 const int Number_of_Blocks_Idir,
 						 const int Number_of_Blocks_Jdir);
 

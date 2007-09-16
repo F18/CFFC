@@ -265,6 +265,9 @@ public:
   IdealGasMix* ct_gas;     //the Cantera IdealGasMix object
 #endif
 
+  // indexes of specific species
+  static int iCO, iCO2, iH2O, iO2;
+
   Reaction_set(){ 
     reactset_flag=0; num_reactions=0; num_species=0; 
     num_react_species=0; reactions = NULL; species = NULL; 

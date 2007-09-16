@@ -148,9 +148,18 @@ class Medium2D_State {
   //! Return extinction coefficient
   double beta(const int &v) const { return (kappa[v] + sigma[v]); }
 
-  //! Compute medium state at location
+  //! Compute analytic medium state at location
   void SetState(const Vector2D &r);
   static Medium2D_State GetState(const Vector2D &r);
+
+  //! Compute a new state dependant upon gas state
+  void ComputeNewState( const double &Pressure,
+			const double &Temperature,
+			const double &xco,
+			const double &xh2o,
+			const double &xco2,
+			const double &xo2,
+			const double &fsoot );
   //@}
 
 
@@ -260,113 +269,6 @@ inline void Medium2D_State :: DeallocateSNBCK()
 inline void Medium2D_State :: DeallocateField()
 { if ( Field != NULL ) { delete Field; Field = NULL;}  }
 
-
-
-/********************************************************
- * Compute values and initialize state.                 *
- ********************************************************/
-inline void Medium2D_State :: SetInitialValues( const double &Pressure,
-						const double &Temperature,
-						const double &xco,
-						const double &xh2o,
-						const double &xco2,
-						const double &xo2,
-						const double &fsoot,
-						const double &AbsorptionCoef,
-						const double &ScatteringCoef)
-{
-
-  //------------------------------------------------
-  // Absorbsion coefficient, Blackbody intensity 
-  //------------------------------------------------
-  // Use SNBCK
-  if (Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
-    SNBCKdata->CalculateAbsorb( Pressure/PRESSURE_STDATM, //[atm]
-				Temperature,              //[K]
-				xco,
-				xh2o,
-				xco2,
-				xo2,
-				fsoot,
-				kappa );
-    SNBCKdata->CalculatePlanck( Temperature, Ib );
-
-  // Use Gray Gas (ie. constant)
-  } else if (Absorb_Type == MEDIUM2D_ABSORB_GRAY) {
-    for (int v=0; v<Nband; v++) {
-      kappa[v] = AbsorptionCoef;
-      Ib   [v] = BlackBody(Temperature);
-    } // endfor
-
-  // error
-  } else{
-    cerr << "Medium2D_State::SetInitialValues() - Invalid flag for Absorbsion model\n";
-    exit(1);
-  }
-
-  //------------------------------------------------
-  // Scattering coefficient 
-  //------------------------------------------------
-  // scattering coefficient always assumed gray
-  for (int v=0; v<Nband; v++) { sigma[v] = ScatteringCoef; }
-
-}
-
-
-
-/********************************************************
- * Setup Static variables.                              *
- ********************************************************/
-inline void Medium2D_State :: SetupStatic( const int &i_Absorb_Type, 
-					   const SNBCK_Input_Parameters &SNBCK_IP,
-					   const char* PATH) {
-
-  // deallocate to be sure
-  DeallocateSNBCK();
-
-  //------------------------------------------------
-  // Absorbsion model 
-  //------------------------------------------------
-  // set the absorption type flag
-  Absorb_Type = i_Absorb_Type;
-  
-  // GRAY
-  if (Absorb_Type == MEDIUM2D_ABSORB_GRAY) {
-    Nband = 1;
-
-  // SNBCK
-  } else if (Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
-    AllocateSNBCK();
-    SNBCKdata->Setup(SNBCK_IP, PATH);
-    Nband = SNBCKdata->NumVar();
-
-  // ERROR
-  } else {
-    cerr << "Medium2D_State::SetupState - Invalid flag for gas type\n";
-    exit(-1);
-  } // endif
-
-  // set number of variables
-  NUM_VAR_MEDIUM2D = 3*Nband;
-
-}
-
-
-/********************************************************
- * Set all scalar fields to the same function.          *
- ********************************************************/
-inline void Medium2D_State :: SetConstantField(const Medium2D_State &M)
-{
-  // deallocate to be sure
-  DeallocateField();
-
-  // create objects
-  ConstantFunc<Medium2D_State>* funcObj = new ConstantFunc<Medium2D_State>(M);
-
-  // assign all the fields
-  Field = new Vector2D_SpecFunction< Medium2D_State, 
-                                     ConstantFunc<Medium2D_State> >(funcObj);
-}
 
 
 /********************************************************

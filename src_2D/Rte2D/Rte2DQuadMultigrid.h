@@ -33,9 +33,10 @@
  * beginning Multi Grid computions.                                   *
  *                                                                    *
  **********************************************************************/
-template <> void FAS_Multigrid2D_Solver<Rte2D_State,
-                                        Rte2D_Quad_Block,
-                                        Rte2D_Input_Parameters>::
+template <> 
+inline void FAS_Multigrid2D_Solver<Rte2D_State,
+				   Rte2D_Quad_Block,
+				   Rte2D_Input_Parameters>::
 Additional_Solution_Block_Setup(Rte2D_Quad_Block &SolnBlk) 
 {
   SolnBlk.ScaleGridTo3D(IP->Axisymmetric);
@@ -51,9 +52,10 @@ Additional_Solution_Block_Setup(Rte2D_Quad_Block &SolnBlk)
  * coarse grid level is overwritten.                                  *
  *                                                                    *
  **********************************************************************/
-template <> void FAS_Multigrid2D_Solver<Rte2D_State,
-                                        Rte2D_Quad_Block,
-                                        Rte2D_Input_Parameters>::
+template <> 
+inline void FAS_Multigrid2D_Solver<Rte2D_State,
+				   Rte2D_Quad_Block,
+				   Rte2D_Input_Parameters>::
 Restrict_Solution_Blocks(const int &Level_Fine) {
 
   int i_fine, j_fine, Nghost, nghost;
@@ -131,9 +133,10 @@ Restrict_Solution_Blocks(const int &Level_Fine) {
  * overwritten by this routine.                                       *
  *                                                                    *
  **********************************************************************/
-template <> void FAS_Multigrid2D_Solver<Rte2D_State,
-		  		        Rte2D_Quad_Block,
-					Rte2D_Input_Parameters>::
+template <> 
+inline void FAS_Multigrid2D_Solver<Rte2D_State,
+				   Rte2D_Quad_Block,
+				   Rte2D_Input_Parameters>::
 Restrict_Residuals(const int &Level_Fine) {
 
   int i_fine, j_fine, Nghost, nghost;
@@ -210,9 +213,10 @@ Restrict_Residuals(const int &Level_Fine) {
  * The restriction operator used is area weighted average.            *
  *                                                                    *
  **********************************************************************/
-template <> void FAS_Multigrid2D_Solver<Rte2D_State,
-		  		        Rte2D_Quad_Block,
-				        Rte2D_Input_Parameters>::
+template <> 
+inline void FAS_Multigrid2D_Solver<Rte2D_State,
+				   Rte2D_Quad_Block,
+				   Rte2D_Input_Parameters>::
 Restrict_Boundary_Ref_States(const int &Level_Fine) {
 
   int i_fine, j_fine, ICl, ICu, JCl, JCu, Nghost;
@@ -365,9 +369,10 @@ Restrict_Boundary_Ref_States(const int &Level_Fine) {
  * grid cells.                                                        *
  *                                                                    *
  **********************************************************************/
-template <> void FAS_Multigrid2D_Solver<Rte2D_State,
-		  		        Rte2D_Quad_Block,
-				        Rte2D_Input_Parameters>::
+template <> 
+inline void FAS_Multigrid2D_Solver<Rte2D_State,
+				   Rte2D_Quad_Block,
+				   Rte2D_Input_Parameters>::
 CFL_Multigrid(const int &Level_Coarse) {
 
   int i_fine, j_fine, Level_Fine, Nghost;
@@ -449,9 +454,10 @@ CFL_Multigrid(const int &Level_Coarse) {
  * level.                                                             *
  *                                                                    *
  **********************************************************************/
-template <> void FAS_Multigrid2D_Solver<Rte2D_State,
-			 	        Rte2D_Quad_Block,
-				        Rte2D_Input_Parameters>::
+template <> 
+inline void FAS_Multigrid2D_Solver<Rte2D_State,
+				   Rte2D_Quad_Block,
+				   Rte2D_Input_Parameters>::
 Update_Primitive_Variables(const int &Level) {  /* DO NOTHING */ }
 
 
@@ -466,9 +472,9 @@ Update_Primitive_Variables(const int &Level) {  /* DO NOTHING */ }
  * only called to initialize the coarse grid solutions.               *
  *                                                                    *
  **********************************************************************/
-void Restrict_NonSolution_Blocks( Rte2D_Quad_Block **Local_SolnBlk,
-				  AdaptiveBlock2D_List *List_of_Local_Solution_Blocks,
-				  const int &Level_Fine )
+inline void Restrict_NonSolution_Blocks( Rte2D_Quad_Block **Local_SolnBlk,
+					 AdaptiveBlock2D_List *List_of_Local_Solution_Blocks,
+					 const int &Level_Fine )
 {
 				  
   //
@@ -542,9 +548,10 @@ void Restrict_NonSolution_Blocks( Rte2D_Quad_Block **Local_SolnBlk,
  * levels.                                                            *
  *                                                                    *
  **********************************************************************/
-template <> void FAS_Multigrid2D_Solver<Rte2D_State,
-                                        Rte2D_Quad_Block,
-                                        Rte2D_Input_Parameters>::
+template <> 
+inline void FAS_Multigrid2D_Solver<Rte2D_State,
+				   Rte2D_Quad_Block,
+				   Rte2D_Input_Parameters>::
 Apply_ICs(const int &level) 
 { 
   //

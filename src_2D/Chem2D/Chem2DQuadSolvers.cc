@@ -19,6 +19,10 @@
 #include "Chem2DQuadNKS.h"
 #endif // _CHEM2D_NKS_INCLUDED 
 
+/* Include Rte2D solver Sepcialization header file. */
+#include "Chem2DQuadRte.h"
+
+
 /********************************************************
  * Routine: Chem2DQuadSolver                            *
  *                                                      *
@@ -48,7 +52,10 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   FAS_Multigrid2D_Solver<Chem2D_cState, 
                          Chem2D_Quad_Block, 
                          Chem2D_Input_Parameters> MGSolver;
-
+  
+  // Radiation solver object pointer and parameters
+  Rte2DSolver *RteSolver(NULL); // object pointer
+  bool Rte_PostProcess(true);   // post process radiation solution after solve
 
   /* Define residual file and cpu time variables. */
   ofstream residual_file;
@@ -391,6 +398,33 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 			      List_of_Local_Solution_Blocks);
   } 
   
+  /***********************************************************************	
+   RADIATION SOLVER setup of initial grid, solution blocks, quadtree,
+   initial conditions.                                                      
+  ************************************************************************/
+  if (Input_Parameters.Radiation){
+
+    // deallocate radiation solver just in case
+    if (RteSolver != NULL) {
+      RteSolver->DeallocateSoln();
+      delete RteSolver;
+    }
+
+    // allocate a new radiation object
+    RteSolver = new Rte2DSolver;
+
+    // Pass the chem2D input parameters, quadtree data structure, and mesh
+    // to initialize the radiation solver.  Note that the radiation solver
+    // uses a copy of the same grid and quadtree.  All AMR is performed first
+    // on the Chem2D mesh (by Chem2D), and the resulting refinement flags 
+    // are passed to the radation solver and applied.  This keeps the meshes 
+    // in sync.
+    RteSolver->SetupSequentialSolve(batch_flag, 
+				    Input_Parameters.Rte_Input_File_Name,
+				    MeshBlk, 
+				    Input_Parameters);
+  } // endif
+
   /****************************************************************************
    *********************** MAIN SOLVER ****************************************
    Solve IBVP or BVP for conservation form of 2D Axisymmetric multispecies 
@@ -1000,6 +1034,15 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   /*************************************************************************************************************************/
   /*************************************************************************************************************************/
 
+
+  /***********************************************************************	
+   RADIATION SOLVER solution of equation of radiation transfer to obtain
+   the radiation heat flux term.
+  ************************************************************************/
+  if (Input_Parameters.Radiation)
+    RteSolver->SequentialSolve(Local_SolnBlk, Rte_PostProcess);
+
+
   /***************************************************************************
    ************************** POST PROCESSSING *******************************
     Solution calculations complete. Write 2D solution to output and restart files  
@@ -1046,6 +1089,14 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk, 
 					    Input_Parameters.Number_of_Blocks_Idir, 
 					    Input_Parameters.Number_of_Blocks_Jdir);
+      
+      // deallocate radiation solver
+      if (RteSolver != NULL) {
+	RteSolver->DeallocateSoln();
+	delete RteSolver;
+	RteSolver = NULL;
+      } //endif
+
       // Output input parameters for new caluculation.
       if (!batch_flag)  {
 	cout << "\n\n Starting a new calculation.";
@@ -1078,6 +1129,13 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 					    Input_Parameters.Number_of_Blocks_Idir, 
 					    Input_Parameters.Number_of_Blocks_Jdir);
    
+      // deallocate radiation solver
+      if (RteSolver != NULL) {
+	RteSolver->DeallocateSoln();
+	delete RteSolver;
+	RteSolver = NULL;
+      } //endif
+
       // Close input data file.
       if (!batch_flag) cout << "\n\n Closing Chem2D input data file.";
       if (CFFC_Primary_MPI_Processor()) Close_Input_File(Input_Parameters);

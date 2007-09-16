@@ -760,12 +760,12 @@ $(EXE_NAVIERSTOKES2D): $(OBJ_NAVIERSTOKES_EXE) $(OBJ_BASE) $(OBJ_NAVIERSTOKES) $
 	@echo '----------------------------------------------------------'
 	@echo ' '
 
-$(EXE_CHEM2D): $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_CHEM) $(OBJ_ICEMCFD)
+$(EXE_CHEM2D): $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_CHEM) $(OBJ_RTE) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_CHEM2D) for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_CHEM2D) $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_CHEM) $(OBJ_ICEMCFD) $(LDFLAGS)
+	$(LD) -o $(EXE_CHEM2D) $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_CHEM) $(OBJ_RTE) $(OBJ_ICEMCFD) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_CHEM2D) has been brought up to date.
 	@echo '--------------------------------------------------'

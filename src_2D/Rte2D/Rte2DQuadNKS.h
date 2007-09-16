@@ -41,11 +41,11 @@ void dFIdU_FD(DenseMatrix& dRdW, Rte2D_Quad_Block &SolnBlk,
  *                                                                                          *
  ********************************************************************************************/
 template <>
-int Newton_Update(Rte2D_Quad_Block *SolnBlk,
-		  AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
-		  Rte2D_Input_Parameters &Input_Parameters,
-		  GMRES_RightPrecon_MatrixFree<Rte2D_State,Rte2D_Quad_Block,Rte2D_Input_Parameters> &GMRES,
-		  double Relaxation_multiplier) {
+inline int Newton_Update(Rte2D_Quad_Block *SolnBlk,
+			 AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
+			 Rte2D_Input_Parameters &Input_Parameters,
+			 GMRES_RightPrecon_MatrixFree<Rte2D_State,Rte2D_Quad_Block,Rte2D_Input_Parameters> &GMRES,
+			 double Relaxation_multiplier) {
 
   int Num_Var = SolnBlk[0].NumVar();  
   int error_flag = 0;
@@ -1526,9 +1526,9 @@ First_Order_Inviscid_Jacobian_Roe(const int &cell_index_i,const int &cell_index_
  *     Finite difference approximation                  *
  *                                                      *
  ********************************************************/
-void dFIdU_FD(DenseMatrix& dRdU, Rte2D_Quad_Block &SolnBlk,  
-	      Rte2D_Input_Parameters &Input_Parameters,
-	      const int ii, const int jj, const int Orient)
+inline void dFIdU_FD(DenseMatrix& dRdU, Rte2D_Quad_Block &SolnBlk,  
+		     Rte2D_Input_Parameters &Input_Parameters,
+		     const int ii, const int jj, const int Orient)
 {
 
   //
