@@ -295,6 +295,7 @@ inline double& Medium2D_State :: operator[](int index){
   else {
     cerr << "Medium2D_State::operator[] - out of bounds.\n";
     exit(-1);
+    return kappa[0];
   }
 }
 
@@ -305,6 +306,7 @@ inline const double& Medium2D_State :: operator[](int index) const {
   else {
     cerr << "Medium2D_State::operator[] - out of bounds.\n";
     exit(-1);
+    return kappa[0];
   }
 }
 

@@ -1742,7 +1742,7 @@ int Rte2DSolver::SolveNKS() {
 
 /*****************************************************************************************
  *********************** POST PROCESSING FUNCTIONS ***************************************
- *****************************************************************************************
+ *****************************************************************************************/
 
 
 /***************************************************************************
@@ -1803,11 +1803,10 @@ int Rte2DSolver::PostProcess(int &command_flag) {
 	cout << "\n\n Starting a new calculation.";
 	cout << Input_Parameters << "\n";
 	cout.flush();
-      } /* endif */
-      // Execute new calculation.
+      } // endif
 
-      //return error_flag
-      return error_flag;
+      // Execute new calculation.
+      break;
       
     //--------------------------------------------------
     // TERMINATE CODE
@@ -1826,7 +1825,7 @@ int Rte2DSolver::PostProcess(int &command_flag) {
       if (CFFC_Primary_MPI_Processor()) Close_Input_File(Input_Parameters);
 
       // Terminate calculation.
-      return (error_flag);
+      break;
       
 
     //--------------------------------------------------
@@ -1845,7 +1844,7 @@ int Rte2DSolver::PostProcess(int &command_flag) {
       } // endif
 
       // Continue existing calculation.
-      return (error_flag);
+      break;
       
 
     //--------------------------------------------------
@@ -1871,7 +1870,7 @@ int Rte2DSolver::PostProcess(int &command_flag) {
 	cout.flush();
       } // endif
       error_flag = CFFC_OR_MPI(error_flag);
-      if (error_flag) return (error_flag);
+      if (error_flag) break;
 
       // Output multi-block solution-adaptive quadrilateral mesh statistics.
       if (!batch_flag) {
@@ -1930,10 +1929,9 @@ int Rte2DSolver::PostProcess(int &command_flag) {
 	     << List_of_Local_Solution_Blocks.ThisCPU
 	     << ".\n";
 	cout.flush();
-	return (error_flag);
       } // endif
       error_flag = CFFC_OR_MPI(error_flag);
-      if (error_flag) return (error_flag);
+      if (error_flag) break;
       
       //Output space filling curve in Tecplot format
       if (!batch_flag) cout << "\n Outputting space filling curve showing block loading for CPUs.";
@@ -1961,7 +1959,7 @@ int Rte2DSolver::PostProcess(int &command_flag) {
 	cout.flush();
       } // endif
       error_flag = CFFC_OR_MPI(error_flag);
-      if (error_flag) return (error_flag);
+      if (error_flag) break;
       
 
     //--------------------------------------------------
@@ -1984,7 +1982,7 @@ int Rte2DSolver::PostProcess(int &command_flag) {
 	cout.flush();
       } // endif
       error_flag = CFFC_OR_MPI(error_flag);
-      if (error_flag) return (error_flag);
+      if (error_flag) break;
       
 
     //--------------------------------------------------
@@ -2006,7 +2004,7 @@ int Rte2DSolver::PostProcess(int &command_flag) {
 	     << "." << endl;
       } // endif
       error_flag = CFFC_OR_MPI(error_flag);
-      if (error_flag) return error_flag;
+      if (error_flag) break;
       
     //--------------------------------------------------
     // WRITE OUTPUT GRADIENTS
@@ -2027,7 +2025,7 @@ int Rte2DSolver::PostProcess(int &command_flag) {
 	     << "." << endl;
       } // endif
       error_flag = CFFC_OR_MPI(error_flag);
-      if (error_flag) return error_flag;
+      if (error_flag) break;
 
     //--------------------------------------------------
     // WRITE RESTART FILE
@@ -2046,7 +2044,7 @@ int Rte2DSolver::PostProcess(int &command_flag) {
 	cout.flush();
       } // endif
       error_flag = CFFC_OR_MPI(error_flag);
-      if (error_flag) return (error_flag);
+      if (error_flag) break;
 
       // write restart file
       error_flag = Write_Restart_Solution(Local_SolnBlk, 
@@ -2063,7 +2061,7 @@ int Rte2DSolver::PostProcess(int &command_flag) {
 	cout.flush();
       } // endif
       error_flag = CFFC_OR_MPI(error_flag);
-      if (error_flag) return (error_flag);
+      if (error_flag) break;
 
       
     //--------------------------------------------------
@@ -2082,7 +2080,7 @@ int Rte2DSolver::PostProcess(int &command_flag) {
 	} // endif
       } // endif
       CFFC_Broadcast_MPI(&error_flag, 1);
-      if (error_flag) return (error_flag);
+      if (error_flag) break;
       
     //--------------------------------------------------
     // WRITE GRID DEFINITION
@@ -2102,7 +2100,7 @@ int Rte2DSolver::PostProcess(int &command_flag) {
 	} // endif
       } // endif
       CFFC_Broadcast_MPI(&error_flag, 1);
-      if (error_flag) return (error_flag);
+      if (error_flag) break;
       
 
     //--------------------------------------------------
@@ -2121,7 +2119,7 @@ int Rte2DSolver::PostProcess(int &command_flag) {
 	} // endif
       } // endif
       CFFC_Broadcast_MPI(&error_flag, 1);
-      if (error_flag) return (error_flag);
+      if (error_flag) break;
       
 
     //--------------------------------------------------
@@ -2140,7 +2138,7 @@ int Rte2DSolver::PostProcess(int &command_flag) {
 	} // endif
       } // endif
       CFFC_Broadcast_MPI(&error_flag, 1);
-      if (error_flag) return (error_flag);
+      if (error_flag) break;
       
 
     //--------------------------------------------------
@@ -2159,7 +2157,7 @@ int Rte2DSolver::PostProcess(int &command_flag) {
 	cout.flush();
       }
       CFFC_Broadcast_MPI(&error_flag,1);
-      if (error_flag) return error_flag;
+      if (error_flag) break;
    
 
     //--------------------------------------------------
@@ -2171,8 +2169,21 @@ int Rte2DSolver::PostProcess(int &command_flag) {
       cout << "\n Rte2D ERROR: Error reading Rte2D data at line #"
 	   << -line_number  << " of input data file.\n";
       cout.flush();
-      return (line_number);
+      error_flag = line_number;
+      break;
+
+
+    //--------------------------------------------------
+    // UNKNOWN
+    //--------------------------------------------------
+    } else {
+      line_number = -line_number;
+      cout << "\n Rte2D ERROR: Error reading Rte2D data at line #"
+	   << -line_number  << " of input data file.\n";
+      error_flag = line_number;
+      break;
     } // endif
+
     
   //==================================================
   } // endwhile

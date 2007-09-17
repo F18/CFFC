@@ -183,7 +183,7 @@ class Rte2DSolver {
   { 
     cerr<<"\n EXPLICIT SPECIALIZATION OF Copy_SRC_Solution_Vars for Rte2DQuadSolvers.h requried \n";
     exit(-1);
-  };
+  }
 
   // copy Rte2D solution data back to src solution block
   template <class Quad_Soln_Block>
@@ -191,7 +191,7 @@ class Rte2DSolver {
   { 
     cerr<<"\n EXPLICIT SPECIALIZATION OF Copy_SRC_Solution_Vars for Rte2DQuadSolvers.h requried \n";
     exit(-1);
- };
+ }
 
   // solver
   template <class Quad_Soln_Block>

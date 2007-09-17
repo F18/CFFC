@@ -374,6 +374,11 @@ Grid2D_Quad_Block** Set_Multi_Block_Grid_BCs(Grid2D_Quad_Block **Grid_ptr,
 
   } // endif - grid type
 
+
+  // Return the multi-block quadilateral mesh.
+  return(Grid_ptr);
+
+
 }
 
 

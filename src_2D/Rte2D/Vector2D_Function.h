@@ -36,6 +36,7 @@
  * Class: Vector2D_Function
  *
  * @brief Function class for a constant value function.
+ */
 /***********************************************************************/
 template<class Soln_State> 
 class ConstantFunc {

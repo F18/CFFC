@@ -5745,7 +5745,7 @@ int Update_Solution_Multistage_Explicit(Rte2D_Quad_Block &SolnBlk,
 	     
 	     for (n_residual_reduction = 1; n_residual_reduction <= 10; ++n_residual_reduction) {
 	       residual_reduction_factor = HALF*residual_reduction_factor;
-               if (n_residual_reduction = 10) residual_reduction_factor = ZERO;
+               if (n_residual_reduction == 10) residual_reduction_factor = ZERO;
 	       SolnBlk.dt[i][j] = residual_reduction_factor*SolnBlk.dt[i][j];
 	       SolnBlk.dUdt[i][j][k_residual] = residual_reduction_factor*SolnBlk.dUdt[i][j][k_residual];
 	       LinSys.A = (-1.00*SolnBlk.dt[i][j])*dRdU;

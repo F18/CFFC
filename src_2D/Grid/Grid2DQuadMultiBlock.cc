@@ -399,7 +399,7 @@ Grid2D_Quad_Block** Copy_Multi_Block_Grid(Grid2D_Quad_Block **Src_Grid_ptr,   //
 					  const int Number_of_Blocks_Idir,
 					  const int Number_of_Blocks_Jdir) {
   // declares
-  Grid2D_Quad_Block** Tgt_Grid_ptr;
+  Grid2D_Quad_Block** Tgt_Grid_ptr(NULL);
   
 
   //--------------------------------------------------
