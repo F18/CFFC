@@ -5257,8 +5257,8 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
 		 SolnBlk.U[i-xd][j].I[index],  // x-dir upstream intensity
 		 SolnBlk.U[i][j-yd].I[index],  // y-dir upstream intensity
 		 SolnBlk.U[i][j].I[index],     // cell intensity
-		 Ix_out,                       // outgoing x-dir face intensity
-		 Iy_out );                     // outgoing y-dir face intensity
+		 Ix_f[j],                      // outgoing x-dir face intensity
+		 Iy_f );                       // outgoing y-dir face intensity
       break;
 
     //------------------------------------------------
