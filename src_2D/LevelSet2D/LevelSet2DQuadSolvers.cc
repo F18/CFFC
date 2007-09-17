@@ -466,7 +466,7 @@ int LevelSet2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       }
 
       // Determine local and global time steps.
-      dTime = CFL_Hamilton_Jacobi(Local_SolnBlk,List_of_Local_Solution_Blocks);
+      dTime = CFL_Hamilton_Jacobi(Local_SolnBlk,List_of_Local_Solution_Blocks,Input_Parameters);
       // Find global minimum time step for all processors.
       dTime = CFFC_Minimum_MPI(dTime);
       if (Input_Parameters.Time_Accurate) {
@@ -1739,7 +1739,9 @@ int Evolve_Level_Set_Solution(const int &batch_flag,
       }
 
       // Determine local and global time steps.
-      dTime = CFL_Hamilton_Jacobi(Local_SolnBlk,List_of_Local_Solution_Blocks);
+      dTime = CFL_Hamilton_Jacobi(Local_SolnBlk,
+				  List_of_Local_Solution_Blocks,
+				  Input_Parameters);
       // Find global minimum time step for all processors.
       dTime = CFFC_Minimum_MPI(dTime);
       if (Time + Input_Parameters.Hamilton_Jacobi_CFL_Number*dTime > Time_Max)

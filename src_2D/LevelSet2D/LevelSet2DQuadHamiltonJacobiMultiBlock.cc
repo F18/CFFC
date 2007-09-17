@@ -28,14 +28,15 @@
  *                                                                    *
  **********************************************************************/
 double CFL_Hamilton_Jacobi(LevelSet2D_Quad_Block *Soln_ptr,
-			   AdaptiveBlock2D_List &Soln_Block_List) {
+			   AdaptiveBlock2D_List &Soln_Block_List,
+			   LevelSet2D_Input_Parameters &Input_Parameters) {
 
   double dtMin = MILLION;
   
   // Determine the allowable time step for each solution block.
   for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
     if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
-      dtMin = min(dtMin,CFL_Hamilton_Jacobi(Soln_ptr[nb]));
+      dtMin = min(dtMin,CFL_Hamilton_Jacobi(Soln_ptr[nb],Input_Parameters));
     }
   }
 

@@ -2,12 +2,12 @@
 
 nice -n +19 mpirun -np 1 --gm-kill 2 /nfs/fe03/d1/cfd/samuel/CFFC/src_2D/levelset2D -f star.in
 
-#cat star_cpu*.dat > points.dat
-#cat star_cells_cpu*.dat > cells.dat
-#cat star_nodes_cpu*.dat > nodes.dat
-#cat star_interface_list_cpu*.dat > interface_list.dat
+cat star_cpu*.dat > points.dat
+cat star_cells_cpu*.dat > cells.dat
+cat star_nodes_cpu*.dat > nodes.dat
+cat star_interface_list_cpu*.dat > interface_list.dat
 
-#rm star_cpu*.dat
-#rm star_cells_cpu*.dat
-#rm star_compare_cpu*.dat
-#rm star.e* star.o*
+rm star_cpu*.dat
+rm star_cells_cpu*.dat
+rm star_compare_cpu*.dat
+rm star.e* star.o*

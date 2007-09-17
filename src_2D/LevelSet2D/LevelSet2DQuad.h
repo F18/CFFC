@@ -2170,7 +2170,8 @@ extern int Share_Interface_Information(LevelSet2D_Quad_Block *Soln_ptr,
  *                          Subroutines                               *
  **********************************************************************/
 
-extern double CFL_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk);
+extern double CFL_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
+				  LevelSet2D_Input_Parameters &IP);
 
 extern int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
 					   const int i_stage,
@@ -2186,7 +2187,8 @@ extern int Update_Solution_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &Sol
  **********************************************************************/
 
 extern double CFL_Hamilton_Jacobi(LevelSet2D_Quad_Block *Soln_ptr,
-				 AdaptiveBlock2D_List &Soln_Block_List);
+				  AdaptiveBlock2D_List &Soln_Block_List,
+				  LevelSet2D_Input_Parameters &Input_Parameters);
 
 extern int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block *Soln_ptr,
 					   AdaptiveBlock2D_List &Soln_Block_List,

@@ -4,7 +4,7 @@
 #
 # SOLVER PARAMETERS:
 Time_Accurate = 
-0
+1
 Time_Integration_Type =
 Explicit_Runge_Kutta
 N_Stage =
@@ -23,7 +23,7 @@ Number_of_Interface_Components =
 Interface_Spline_Type =
 Star
 Interface_Characteristic_Length = 
-0.20
+0.4
 Number_of_Specified_Interface_Points = 
 1
 Interface_Points =
@@ -32,6 +32,15 @@ Interface_Reference_Point =
  0.000   0.000
 Interface_Motion =
 Stationary
+Interface_Characteristic_Velocity = 
+0.0  0.0
+#
+# CURVATURE FLOW PARAMETERS:
+Curvature_Speed =
+1.00
+Curvature_Scheme =
+Laplacian
+# Regular
 #
 # BULK FLOW PARAMETERS:
 Bulk_Flow_Field_Type =
@@ -59,14 +68,11 @@ Number_of_Blocks_Per_Processor =
 #
 # HAMILTON-JACOBI EQUATION PARAMETERS:
 Hamilton_Jacobi_CFL_Number =
-0.25
+0.5
 Time_Max =
-1333.333
-#2000.000
-#666.666
-#0.0
+30.0
 Maximum_Number_of_Time_Steps =
-0
+10
 #
 # EIKONAL EQUATION PARAMETERS:
 Redistance_Frequency =
@@ -92,7 +98,7 @@ Number_of_Scalar_Extension_Iterations =
 #
 # AMR PARAMETERS:
 Maximum_Refinement_Level =
-4
+2
 Minimum_Refinement_Level =
 1
 Threshold_for_Refinement =
