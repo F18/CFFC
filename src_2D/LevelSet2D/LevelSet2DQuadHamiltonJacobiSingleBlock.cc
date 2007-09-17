@@ -26,10 +26,11 @@
  * solution block according to the Courant-Friedrichs-Lewy condition. *
  *                                                                    *
  **********************************************************************/
-double CFL_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk) {
+double CFL_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
+			   LevelSet2D_Input_Parameters &IP) {
 
-  double dtMin = MILLION, d_i, d_j, w_i, w_j, v_i, v_j, f;
-  double dt_d, dt_v, dt_f;
+  double dtMin = MILLION, d_i, d_j, w_i, w_j, v_i, v_j, f, b;
+  double dt_d, dt_v, dt_f, dt_k;
   Vector2D W, dpsi;
 
   for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
@@ -40,12 +41,18 @@ double CFL_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk) {
 	d_i = TWO*(SolnBlk.Grid.Cell[i][j].A/(SolnBlk.Grid.lfaceE(i,j)+SolnBlk.Grid.lfaceW(i,j)));
 	d_j = TWO*(SolnBlk.Grid.Cell[i][j].A/(SolnBlk.Grid.lfaceN(i,j)+SolnBlk.Grid.lfaceS(i,j)));
 	dt_d = min(d_i,d_j);
+
 	f = fabs(SolnBlk.U[i][j].F);
 	dt_f = min(d_i,d_j)/(fabs(f) + TOLER);
+
 	v_i = HALF*(SolnBlk.U[i][j].V*(SolnBlk.Grid.nfaceE(i,j)-SolnBlk.Grid.nfaceW(i,j)));
 	v_j = HALF*(SolnBlk.U[i][j].V*(SolnBlk.Grid.nfaceN(i,j)-SolnBlk.Grid.nfaceS(i,j)));
 	dt_v = min(d_i/(fabs(v_i)+TOLER),d_j/(fabs(v_j)+TOLER));
-	SolnBlk.dt[i][j] = min(dt_d,min(dt_f,dt_v));
+
+	b = fabs(IP.Curvature_Speed);
+	dt_k = min(sqr(d_i),sqr(d_j))/(fabs(b) + TOLER);
+
+	SolnBlk.dt[i][j] = min(min(dt_d,dt_k),min(dt_f,dt_v));
 	dtMin = min(dtMin,SolnBlk.dt[i][j]);
       }
     }
