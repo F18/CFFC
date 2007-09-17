@@ -1145,6 +1145,26 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::ICs(const int i_ICtype,
 	    } /* endfor */
 	 } /* endfor */
          break; 
+	case IC_SOD_XDIR :
+		Wl = SOLN_pSTATE(DENSITY_STDATM, Vector3D_ZERO,
+						 PRESSURE_STDATM,
+						 IPs.mass_fractions);
+		Wr = SOLN_pSTATE(DENSITY_STDATM*8.0, Vector3D_ZERO,
+						 PRESSURE_STDATM*10.0, 
+						 IPs.mass_fractions);
+		for (k = KCl-Nghost; k <= KCu+Nghost; ++k) {
+			for (j = JCl-Nghost; j <= JCu+Nghost; ++j) {
+				for (i = ICl-Nghost; i <= ICu+Nghost; ++i) {
+					if (Grid.Cell[i][j][k].Xc.x <= ZERO) {
+						W[i][j][k] = Wl; 
+					} else {
+						W[i][j][k] = Wr;
+					} /* end if */
+					  U[i][j][k] = W[i][j][k].U();
+				} /* endfor */
+			} /* endfor */
+		} /* endfor */
+			 break;
 
       case IC_SHOCK_BOX :
          Wl = SOLN_pSTATE(DENSITY_STDATM, Vector3D_ZERO,

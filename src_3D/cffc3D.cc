@@ -25,6 +25,7 @@ using namespace std;
 
 // Include CFFC header files.
 
+#include "Euler/Euler3DPolytropic.h"
 #include "Euler/Euler3DThermallyPerfect.h"
 #include "NavierStokes/NavierStokes3DThermallyPerfect.h"
 #include "FANS/FANS3DThermallyPerfect.h"
@@ -64,7 +65,7 @@ int main(int num_arg, char *arg_ptr[]) {
    char *Input_File_Name_ptr = "cffc3d.in";
 
    // Equation type indicator:
-   char *Equation_Type_ptr = "Euler3DThermallyPerfect";
+   char *Equation_Type_ptr = "Euler3DPolytropic";
    char Equation_Type[256];
 
    // Input file stream:
@@ -230,16 +231,20 @@ int main(int num_arg, char *arg_ptr[]) {
       value problem(s)/boundary value problem(s) (IBVP/BVP) using the 
       appropriate solver. */
 
-   if (strcmp(Equation_Type, "Euler3DThermallyPerfect") == 0) {
-      error_flag = HexaSolver<Euler3D_ThermallyPerfect_pState, Euler3D_ThermallyPerfect_cState>
+    if (strcmp(Equation_Type, "Euler3DPolytropic") == 0) {
+       error_flag = HexaSolver<Euler3D_Polytropic_pState, Euler3D_Polytropic_cState>
                    (Input_File_Name_ptr, batch_flag);
 
-   } else if (strcmp(Equation_Type, "NavierStokes3DThermallyPerfect") == 0) {
-      error_flag = HexaSolver<NavierStokes3D_ThermallyPerfect_pState, NavierStokes3D_ThermallyPerfect_cState>
+    }else if (strcmp(Equation_Type, "Euler3DThermallyPerfect") == 0) {
+		error_flag = HexaSolver<Euler3D_ThermallyPerfect_pState, Euler3D_ThermallyPerfect_cState>
+				   (Input_File_Name_ptr, batch_flag);
+		
+	}else if (strcmp(Equation_Type, "NavierStokes3DThermallyPerfect") == 0) {
+		error_flag = HexaSolver<NavierStokes3D_ThermallyPerfect_pState, NavierStokes3D_ThermallyPerfect_cState>
                    (Input_File_Name_ptr, batch_flag);
       
    } else if(strcmp(Equation_Type, "FANS3DThermallyPerfect") == 0) {
-      error_flag = HexaSolver< FANS3D_ThermallyPerfect_KOmega_pState, FANS3D_ThermallyPerfect_KOmega_cState>
+		error_flag = HexaSolver< FANS3D_ThermallyPerfect_KOmega_pState, FANS3D_ThermallyPerfect_KOmega_cState>
                    (Input_File_Name_ptr, batch_flag);
    } /* endif */
  

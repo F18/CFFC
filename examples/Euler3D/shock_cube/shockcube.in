@@ -14,7 +14,8 @@ Flux_Function_Type =
 Roe
 #HLLE 
 ICs_Type = 
-ShockBox
+Sod_Xdir
+#ShockBox
 #ICs_Type = 
 #Uniform
 Schmidt=
@@ -28,22 +29,22 @@ Cube
 #Grid_Type =
 #Pipe
 Number_of_Cells_Idir = 
-10
+20
 Number_of_Cells_Jdir =
-10
+20
 Number_of_Cells_Kdir =
-10
+20
 Number_of_Blocks_Idir = 
-2
+1
 Number_of_Blocks_Jdir =
-2
+1
 Number_of_Blocks_Kdir =
-2
+1
 ###############################
 # Set time stepping parameters
 ###############################
 CFL_Number =
-0.1
+0.2
 Time_Max = 
 0.1
 Maximum_Number_of_Time_Steps =
