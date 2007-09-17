@@ -8277,7 +8277,6 @@ Grid2D_Quad_Block** Grid_Cylindrical_Encl(Grid2D_Quad_Block **Grid_ptr,
 				       Number_of_Blocks_Idir, 
 				       Number_of_Blocks_Jdir);
   
-
   //--------------------------------------------------
   // step sizes
   //--------------------------------------------------
@@ -8302,10 +8301,10 @@ Grid2D_Quad_Block** Grid_Cylindrical_Encl(Grid2D_Quad_Block **Grid_ptr,
       // Assign values to the locations of the corners
       // of the rectangular box defining the pipe geometry.
       //--------------------------------------------------
-      xc_NW = Vector2D( delta_x*double(iBlk)  , delta_y*double(iBlk+1) );
-      xc_NE = Vector2D( delta_x*double(iBlk+1), delta_y*double(iBlk+1) );
-      xc_SE = Vector2D( delta_x*double(iBlk+1), delta_y*double(iBlk)   );
-      xc_SW = Vector2D( delta_x*double(iBlk)  , delta_y*double(iBlk)   );
+      xc_NW = Vector2D( delta_x*double(iBlk)  , delta_y*double(jBlk+1) );
+      xc_NE = Vector2D( delta_x*double(iBlk+1), delta_y*double(jBlk+1) );
+      xc_SE = Vector2D( delta_x*double(iBlk+1), delta_y*double(jBlk)   );
+      xc_SW = Vector2D( delta_x*double(iBlk)  , delta_y*double(jBlk)   );
 
 
       //--------------------------------------------------
@@ -8369,13 +8368,13 @@ Grid2D_Quad_Block** Grid_Cylindrical_Encl(Grid2D_Quad_Block **Grid_ptr,
       // Create the 2D quadrilateral grid block representing
       // the mesh.
       //--------------------------------------------------
-      Create_Quad_Block(Grid_ptr[0][0],
+      Create_Quad_Block(Grid_ptr[iBlk][jBlk],
 			Bnd_Spline_North,
 			Bnd_Spline_South,
 			Bnd_Spline_East,
 			Bnd_Spline_West,
-			Number_of_Cells_Idir,
-			Number_of_Cells_Jdir,
+			Number_of_Cells_Idir/Number_of_Blocks_Idir,
+			Number_of_Cells_Jdir/Number_of_Blocks_Jdir,
 			Number_of_Ghost_Cells,
 			GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 			Stretch_I,
@@ -8464,14 +8463,14 @@ Grid2D_Quad_Block** Grid_Rectangular_Encl(Grid2D_Quad_Block **Grid_ptr,
       // Assign values to the locations of the corners
       // of the rectangular box shaped domain.
       //--------------------------------------------------
-      xc_NW = Vector2D(-HALF*Width+double(iBlk)*Width/double(Number_of_Blocks_Idir), 
-		       -HALF*Height+double(jBlk+1)*Height/double(Number_of_Blocks_Jdir));
-      xc_NE = Vector2D(-HALF*Width+double(iBlk+1)*Width/double(Number_of_Blocks_Idir), 
-		       -HALF*Height+double(jBlk+1)*Height/double(Number_of_Blocks_Jdir));
-      xc_SE = Vector2D(-HALF*Width+double(iBlk+1)*Width/double(Number_of_Blocks_Idir), 
-		       -HALF*Height+double(jBlk)*Height/double(Number_of_Blocks_Jdir));
-      xc_SW = Vector2D(-HALF*Width+double(iBlk)*Width/double(Number_of_Blocks_Idir), 
-		       -HALF*Height+double(jBlk)*Height/double(Number_of_Blocks_Jdir));
+      xc_NW = Vector2D(-HALF*Width+double(iBlk)    * Width  / double(Number_of_Blocks_Idir), 
+		       -HALF*Height+double(jBlk+1) * Height / double(Number_of_Blocks_Jdir) );
+      xc_NE = Vector2D(-HALF*Width+double(iBlk+1)  * Width  / double(Number_of_Blocks_Idir), 
+		       -HALF*Height+double(jBlk+1) * Height / double(Number_of_Blocks_Jdir) );
+      xc_SE = Vector2D(-HALF*Width+double(iBlk+1)  * Width  / double(Number_of_Blocks_Idir), 
+		       -HALF*Height+double(jBlk)   * Height / double(Number_of_Blocks_Jdir) );
+      xc_SW = Vector2D(-HALF*Width+double(iBlk)    * Width  / double(Number_of_Blocks_Idir), 
+		       -HALF*Height+double(jBlk)   * Height / double(Number_of_Blocks_Jdir) );
       
 
       //--------------------------------------------------

@@ -45,6 +45,29 @@ struct exact_rect_param {
 
 
 /********************************************************
+ * Spacial Differencing Schemes                         *
+ ********************************************************/
+// Balsara's Multidimensional Skew-Upwind High Resolution scheme
+// See: D. Balsara, "Fast and accurate discrete ordinates methods
+// for multidimensional radiative heat transfer," in Journal       
+// of Quantitative Spectroscopy, v69, 2001.    
+// Note: this scheme uses the deffered correction method
+void GM_Scheme( const double &dx,     // x-dir avg step size
+		const double &dy,     // y-dir avg step size
+		const double &vx,     // x-dir convective speed
+		const double &vy,     // y-dir convective speed
+		const double &S_id_j, // x-dir downstream Source
+		const double &S_i_jd, // y-dir downstream Source
+		const double &I_id_j, // x-dir downstream intensity
+		const double &I_i_jd, // y-dir downstream intensity
+		const double &I_iu_j, // x-dir upstream intensity
+		const double &I_i_ju, // y-dir upstream intensity
+		const double &I_i_j,  // cell intensity
+		double &Ix_out,       // outgoing x-dir face intensity
+		double &Iy_out );     // outgoing y-dir face intensity
+
+
+/********************************************************
  * Exact solution functions                             *
  *                                                      *
  * These functions are used to compute exact solutions  *

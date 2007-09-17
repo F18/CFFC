@@ -6,6 +6,61 @@
 ***********************************************************************/
 #include "Rte2DTools.h"
 
+/**************************************************************************
+ *********************** SPACE MARCH FUNCTIONS  ***************************
+ **************************************************************************/
+/********************************************************
+ * Routine: GM_Scheme                                   *
+ *                                                      *
+ * General multidimensional high resolution differencing*
+ * scheme for uniform grids.  See:                      *
+ *   D. Balsara, "Fast and accurate discrete ordinates  *
+ *   methods for multidimensional radiative heat        *
+ *   transfer," in Journal of Quantitative Spectroscopy,*
+ *   v69, 2001.                                         *
+ *                                                      *
+ * Note: this scheme uses the deffered correction method*
+ *                                                      *
+ ********************************************************/
+void GM_Scheme( const double &dx,     // x-dir avg step size
+		const double &dy,     // y-dir avg step size
+		const double &vx,     // x-dir convective speed
+		const double &vy,     // y-dir convective speed
+		const double &S_id_j, // x-dir downstream Source
+		const double &S_i_jd, // y-dir downstream Source
+		const double &I_id_j, // x-dir downstream intensity
+		const double &I_i_jd, // y-dir downstream intensity
+		const double &I_iu_j, // x-dir upstream intensity
+		const double &I_i_ju, // y-dir upstream intensity
+		const double &I_i_j,  // cell intensity
+		double &Ix_out,       // outgoing x-dir face intensity
+		double &Iy_out ) {    // outgoing y-dir face intensity
+
+  // declares
+  double a, b;
+
+  //
+  // case 1
+  //
+  if ( vx/dx <= vy/dy ) {
+	a = vx*(I_id_j-I_i_ju) - dx*S_id_j;
+	b = (vx-vy*dx/dy) * (I_i_j - I_i_ju);
+	Ix_out = I_i_ju + 0.5*vanalbada(a,b,0.1)/vx;
+	Iy_out = I_i_j;
+
+  //
+  // case 2
+  //
+  } else {
+	a = vy*(I_i_jd - I_iu_j) - dy*S_i_jd;
+	b = (vy-vx*dy/dx )*(I_i_j - I_iu_j);
+	Ix_out = I_i_j;
+	Iy_out = I_iu_j + 0.5*vanalbada(a,b,0.1)/vy;
+
+  } // endif
+}
+
+
  /**************************************************************************
   ************************ EXACT SOLN FUNCTIONS  ***************************
   **************************************************************************/

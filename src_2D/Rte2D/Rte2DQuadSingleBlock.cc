@@ -1330,12 +1330,12 @@ void Output_Cells_Tecplot(Rte2D_Quad_Block &SolnBlk,
        for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
 
 	 qc = SolnBlk.U[i][j].q(SolnBlk.M[i][j]);
-	 Out_File << " " << SolnBlk.Grid.Cell[i][j].Xc
-		  << " " << SolnBlk.U[i][j].G(SolnBlk.M[i][j])   // /(FOUR*PI*SolnBlk.U[i][j].Ib)
-		  << " " << qc.x // /(PI*SolnBlk.U[i][j].Ib)
-		  << " " << qc.y // /(PI*SolnBlk.U[i][j].Ib)
-		  << SolnBlk.M[i][j]
-		  << SolnBlk.U[i][j];
+	 Out_File << " " << SolnBlk.Grid.Cell[i][j].Xc;
+	 Out_File << " " << SolnBlk.U[i][j].G(SolnBlk.M[i][j]);   // /(FOUR*PI*SolnBlk.U[i][j].Ib)
+	 Out_File << " " << qc.x; // /(PI*SolnBlk.U[i][j].Ib)
+	 Out_File << " " << qc.y; // /(PI*SolnBlk.U[i][j].Ib)
+	 Out_File << SolnBlk.M[i][j];
+	 Out_File << SolnBlk.U[i][j];
 	 Out_File << "\n";
        } /* endfor */
     } /* endfor */
@@ -1557,7 +1557,7 @@ void PrescribeFields(Rte2D_Quad_Block &SolnBlk)
 {
     for (int j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for (int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	SolnBlk.M[i][j].GetState(SolnBlk.Grid.Cell[i][j].Xc);
+	SolnBlk.M[i][j].SetState(SolnBlk.Grid.Cell[i][j].Xc);
       } // endfor
     } // endfor 
 }
@@ -4956,9 +4956,8 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
          wpsi, wwpsi;               //  -> value = w*value_upstream + (1-w)*value_downstream
   double tau_x, tau_y;              // optical thicknesses
   double dx, dy;                    // average face length
-  double vx, vy;                    // convective velocity
-  double S;                         // source term (for GM scheme)
-  double a, b;                      // GM coefficients
+  double vx, vy;                    // wavespeeds
+  double S_id_j, S_i_jd;            // source term (for GM scheme)
   int i_SpaceMarch_Scheme;          // temporary space marching scheme flag
 
   // variable index
@@ -5076,28 +5075,42 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
     // for multidimensional radiative heat transfer," in Journal       
     // of Quantitative Spectroscopy, v69, 2001.    
     // Note: this scheme uses the deffered correction method
+    //
+    // FIXME - THIS IS BROKEN SOMEHOW
+    //
     case SPACE_MARCH_GM:
 
+      // step sizes
       dx = HALF * (SolnBlk.Grid.lfaceN(i,j) + SolnBlk.Grid.lfaceS(i,j) );
       dy = HALF * (SolnBlk.Grid.lfaceE(i,j) + SolnBlk.Grid.lfaceW(i,j) );
-      vx = fabs(U.mu[m][l]);
-      vy = fabs(U.eta[m][l]);
-      if ( vx/dx <= vy/dy ) {
-	S = SolnBlk.Uo[i+xd][j].S(SolnBlk.M[i+xd][j],v,m,l) - 
-	    SolnBlk.Uo[i+xd][j].dSdU(SolnBlk.M[i+xd][j],v,m,l)*SolnBlk.Uo[i+xd][j].I[index];
-	a = vx*(SolnBlk.Uo[i+xd][j].I[index]-SolnBlk.Uo[i][j-yd].I[index]) - dx*S;
-	b = (vx-vy*dx/dy) * (SolnBlk.Uo[i][j].I[index] - SolnBlk.Uo[i][j-yd].I[index]);
-	Ix_out = SolnBlk.Uo[i][j-yd].I[index] + 0.5*vanalbada(a,b,0.10)/vx;
-	Iy_out = SolnBlk.Uo[i][j].I[index];
+      
+      // wavespeeds
+      vx = fabs(U.mu[m][l]/U.omega[m][l]);
+      vy = fabs(U.eta[m][l]/U.omega[m][l]);
 
-      } else {
-	S = SolnBlk.Uo[i][j+yd].S(SolnBlk.M[i][j+yd],v,m,l) - 
-	    SolnBlk.Uo[i][j+yd].dSdU(SolnBlk.M[i][j+yd],v,m,l)*SolnBlk.Uo[i][j+yd][index];
-	a = vy*(SolnBlk.Uo[i][j+yd].I[index] - SolnBlk.Uo[i-xd][j].I[index]) - dy*S;
-	b = (vy-vx*dy/dx )*(SolnBlk.Uo[i][j].I[index] - SolnBlk.Uo[i-xd][j].I[index]);
-	Ix_out = SolnBlk.Uo[i][j].I[index];
-	Iy_out = SolnBlk.Uo[i-xd][j].I[index] + 0.5*vanalbada(a,b,0.10)/vy;
-      }
+
+      //sources terms
+      S_id_j = ( SolnBlk.Uo[i+xd][j].S(SolnBlk.M[i+xd][j],v,m,l) - 
+		 SolnBlk.Uo[i+xd][j].dSdU(SolnBlk.M[i+xd][j],v,m,l)*SolnBlk.Uo[i+xd][j].I[index] )
+	     / U.omega[m][l];
+      S_i_jd = ( SolnBlk.Uo[i][j+yd].S(SolnBlk.M[i][j+yd],v,m,l) - 
+		 SolnBlk.Uo[i][j+yd].dSdU(SolnBlk.M[i][j+yd],v,m,l)*SolnBlk.Uo[i][j+yd].I[index] )
+ 	     / U.omega[m][l];
+      
+      // compute
+      GM_Scheme( dx,                           // x-dir avg step size
+		 dy,                           // y-dir avg step size
+		 vx,                           // x-dir convective speed
+		 vy,                           // y-dir convective speed
+		 S_id_j,                       // x-dir downstream Source
+		 S_i_jd,                       // y-dir downstream Source
+		 SolnBlk.Uo[i+xd][j].I[index], // x-dir downstream intensity
+		 SolnBlk.Uo[i][j+yd].I[index], // y-dir downstream intensity
+		 SolnBlk.Uo[i-xd][j].I[index], // x-dir upstream intensity
+		 SolnBlk.Uo[i][j-yd].I[index], // y-dir upstream intensity
+		 SolnBlk.Uo[i][j].I[index],    // cell intensity
+		 Ix_out,                       // outgoing x-dir face intensity
+		 Iy_out );                     // outgoing y-dir face intensity
 
       // high order correction term
       corr = ( max(a_E, 0.0) + max(a_W, 0.0) ) * ( SolnBlk.U[i][j].I[index] - Ix_out ) +
@@ -5221,23 +5234,31 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
     // General Multidimensional
     //------------------------------------------------
     case SPACE_MARCH_GM:
-      // vx, vy, dx, dy are already computed
-      if ( vx/dx <= vy/dy ) {
-	S = SolnBlk.U[i+xd][j].S(SolnBlk.M[i+xd][j],v,m,l) - 
-	    SolnBlk.U[i+xd][j].dSdU(SolnBlk.M[i+xd][j],v,m,l)*SolnBlk.U[i+xd][j].I[index];
-	a = vx*(SolnBlk.U[i+xd][j].I[index] - SolnBlk.U[i][j-yd].I[index]) - dx*S;
-	b = (vx-vy*dx/dy) * (SolnBlk.U[i][j].I[index] - SolnBlk.U[i][j-yd].I[index]);
-	Ix_f[j] = SolnBlk.U[i][j-yd].I[index] + 0.5*vanalbada(a,b,0.10)/vx;
-	Iy_f = SolnBlk.U[i][j].I[index];
-
-      } else {
-	S = SolnBlk.U[i][j+yd].S(SolnBlk.M[i][j+yd],v,m,l) - 
-	    SolnBlk.U[i][j+yd].dSdU(SolnBlk.M[i][j+yd],v,m,l)*SolnBlk.U[i][j+yd].I[index];
-	a = vy*(SolnBlk.U[i][j+yd].I[index] - SolnBlk.U[i-xd][j].I[index]) - dy*S;
-	b = (vy-vx*dy/dx ) * (SolnBlk.U[i][j].I[index] - SolnBlk.U[i-xd][j].I[index]);
-	Ix_f[j] = SolnBlk.U[i][j].I[index];
-	Iy_f = SolnBlk.U[i-xd][j].I[index] + 0.5*vanalbada(a,b,0.10)/vy;
-      }
+ 
+      // step sizes, wavespeeds already computed
+      
+      //sources terms
+      S_id_j = ( SolnBlk.U[i+xd][j].S(SolnBlk.M[i+xd][j],v,m,l) - 
+		 SolnBlk.U[i+xd][j].dSdU(SolnBlk.M[i+xd][j],v,m,l)*SolnBlk.U[i+xd][j].I[index] )
+	     / U.omega[m][l];
+      S_i_jd = ( SolnBlk.U[i][j+yd].S(SolnBlk.M[i][j+yd],v,m,l) - 
+ 		 SolnBlk.U[i][j+yd].dSdU(SolnBlk.M[i][j+yd],v,m,l)*SolnBlk.U[i][j+yd].I[index] )
+	     / U.omega[m][l];
+      
+      // compute
+      GM_Scheme( dx,                           // x-dir avg step size
+		 dy,                           // y-dir avg step size
+		 vx,                           // x-dir convective speed
+		 vy,                           // y-dir convective speed
+		 S_id_j,                       // x-dir downstream Source
+		 S_i_jd,                       // y-dir downstream Source
+		 SolnBlk.U[i+xd][j].I[index],  // x-dir downstream intensity
+		 SolnBlk.U[i][j+yd].I[index],  // y-dir downstream intensity
+		 SolnBlk.U[i-xd][j].I[index],  // x-dir upstream intensity
+		 SolnBlk.U[i][j-yd].I[index],  // y-dir upstream intensity
+		 SolnBlk.U[i][j].I[index],     // cell intensity
+		 Ix_out,                       // outgoing x-dir face intensity
+		 Iy_out );                     // outgoing y-dir face intensity
       break;
 
     //------------------------------------------------

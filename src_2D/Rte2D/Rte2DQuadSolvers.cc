@@ -62,6 +62,10 @@ void Rte2DSolver::DeallocateSoln() {
 					Input_Parameters.Number_of_Blocks_Idir, 
 					Input_Parameters.Number_of_Blocks_Jdir);
   
+  // delete all static variables
+  Rte2D_State::DeallocateStatic();
+  Medium2D_State::DeallocateStatic();
+
 }
 
 /*****************************************************************************************
@@ -2172,16 +2176,6 @@ int Rte2DSolver::PostProcess(int &command_flag) {
       error_flag = line_number;
       break;
 
-
-    //--------------------------------------------------
-    // UNKNOWN
-    //--------------------------------------------------
-    } else {
-      line_number = -line_number;
-      cout << "\n Rte2D ERROR: Error reading Rte2D data at line #"
-	   << -line_number  << " of input data file.\n";
-      error_flag = line_number;
-      break;
     } // endif
 
     

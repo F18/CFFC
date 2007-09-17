@@ -141,7 +141,7 @@ class Medium2D_State {
   //! memory allocation / deallocation for the field object
   static void DeallocateField();
   //! deallocate all static variables
-  static void DeallocateAllStatic() { DeallocateSNBCK(); DeallocateField(); }
+  static void DeallocateStatic() { DeallocateSNBCK(); DeallocateField(); }
   //@}
 
   //@{ @name State functions.

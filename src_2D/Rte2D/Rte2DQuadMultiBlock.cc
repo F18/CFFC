@@ -125,6 +125,7 @@ void ICs(Rte2D_Quad_Block *Soln_ptr,
 	  // For an analytically prescribed field
 	  if (Soln_ptr[i].Medium_Field_Type == MEDIUM2D_FIELD_ANALYTIC)
 	    PrescribeFields(Soln_ptr[i]);
+
 	  //
 	  // for a discrete field specified by the user
 	  // do nothing
