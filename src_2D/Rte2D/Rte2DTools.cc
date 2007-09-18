@@ -325,8 +325,8 @@ void RectangularEnclosure( const double gas_temp,
     init_simp_struc( F, S );
     
     // set new integration limits
-    F.xmin[0] = ZERO; F.xmax[0] = PI;   // theta
-    F.xmin[1] = ZERO; F.xmax[1] = ONE;  // psi - variable
+    F.xmin[0] = ZERO+NANO; F.xmax[0] = PI-NANO;   // theta
+    F.xmin[1] = ZERO;      F.xmax[1] = ONE;       // psi - variable
   
     // set the term flag
     params.term_flag = i;
@@ -356,7 +356,7 @@ void RectangularEnclosure( const double gas_temp,
   // x-dir Flux 
   //------------------------------------------------
   params.coord_flag = 1;
-  
+ 
   //
   // loop over each term
   //
@@ -366,8 +366,8 @@ void RectangularEnclosure( const double gas_temp,
     init_simp_struc( F, S );
     
     // set new integration limits
-    F.xmin[0] = ZERO; F.xmax[0] = PI;   // theta
-    F.xmin[1] = ZERO; F.xmax[1] = ONE;  // psi - variable
+    F.xmin[0] = ZERO+NANO; F.xmax[0] = PI-NANO;   // theta
+    F.xmin[1] = ZERO;      F.xmax[1] = ONE;       // psi - variable
   
     // set the term flag
     params.term_flag = i;
@@ -397,7 +397,7 @@ void RectangularEnclosure( const double gas_temp,
   // y-dir Flux 
   //------------------------------------------------
   params.coord_flag = 2;
-  
+
   //
   // loop over each term
   //
@@ -407,8 +407,8 @@ void RectangularEnclosure( const double gas_temp,
     init_simp_struc( F, S );
     
     // set new integration limits
-    F.xmin[0] = ZERO; F.xmax[0] = PI;   // theta
-    F.xmin[1] = ZERO; F.xmax[1] = ONE;  // psi - variable
+    F.xmin[0] = ZERO+NANO; F.xmax[0] = PI-NANO;   // theta
+    F.xmin[1] = ZERO;      F.xmax[1] = ONE;       // psi - variable
   
     // set the term flag
     params.term_flag = i;
@@ -563,6 +563,7 @@ double func_exact_rect(int ndim, double *x, void *params) {
   double s1, s1_star, s1_til;
   double d, x_star, y_star;
   double temp = ZERO;
+  double denom;
 
   // set out integration parameters
   double theta = x[0];
