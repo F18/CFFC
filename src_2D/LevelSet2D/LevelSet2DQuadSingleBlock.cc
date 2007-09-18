@@ -800,7 +800,7 @@ int Calculate_Sign_Function(LevelSet2D_Quad_Block &SolnBlk,
       }
     }
     break;
-  case EIKONAL_SIGN_FUNCTION_SMEARED_RUUTH :
+  case EIKONAL_SIGN_FUNCTION_SMEARED_MACDONALD :
     // Colin Macdonald and Steven J. Ruuth.
     for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
       for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
