@@ -13,21 +13,23 @@
 /****************************************************************
  * Gaussian2D_pState -- Create storage and assign gas constants.*
  ****************************************************************/
-double Gaussian2D_pState::M      = MOLE_WT_AIR;
-int    Gaussian2D_pState::atoms  = GAUSSIAN_DIATOMIC;
-int    Gaussian2D_pState::gas    = GAS_AIR;
+double Gaussian2D_pState::M        = MOLE_WT_AIR;
+int    Gaussian2D_pState::atoms    = GAUSSIAN_DIATOMIC;
+int    Gaussian2D_pState::gas      = GAS_AIR;
 double Gaussian2D_pState::alpha_m  = ONE;
-double Gaussian2D_pState::omega  = OMEGA_AIR;
-double Gaussian2D_pState::mu_not = MU_NOT_AIR;
-double Gaussian2D_pState::pr     = 0.6666666666666666667;
+double Gaussian2D_pState::alpha_t  = ONE;
+double Gaussian2D_pState::omega    = OMEGA_AIR;
+double Gaussian2D_pState::mu_not   = MU_NOT_AIR;
+double Gaussian2D_pState::pr       = 0.6666666666666666667;
 /****************************************************************
  * Gaussian2D_cState -- Create storage and assign gas constants.*
  ****************************************************************/
-double Gaussian2D_cState::M     = MOLE_WT_AIR;
-int    Gaussian2D_cState::atoms = GAUSSIAN_DIATOMIC;
-int    Gaussian2D_cState::gas   = GAS_AIR;
+double Gaussian2D_cState::M       = MOLE_WT_AIR;
+int    Gaussian2D_cState::atoms   = GAUSSIAN_DIATOMIC;
+int    Gaussian2D_cState::gas     = GAS_AIR;
 double Gaussian2D_cState::alpha_m = ONE;
-double Gaussian2D_cState::pr    = 0.6666666666666666667;
+double Gaussian2D_cState::alpha_t = ONE;
+double Gaussian2D_cState::pr      = 0.6666666666666666667;
 
 /*************************************************************
  * Gaussian2D_pState -- set_state_from_ips                   *
