@@ -121,6 +121,7 @@ void Medium2D_State :: SetupStatic( const int &i_Absorb_Type,
 /********************************************************
  * Set all scalar fields to the same function.          *
  ********************************************************/
+// CONSTANT
 void Medium2D_State :: SetConstantField(const Medium2D_State &M)
 {
   // deallocate to be sure
@@ -136,6 +137,28 @@ void Medium2D_State :: SetConstantField(const Medium2D_State &M)
                                      ConstantFunc<Medium2D_State> >(funcObj);
 }
 
+// DISCONTINUOUS
+void Medium2D_State :: SetDiscontinuousField( const Medium2D_State &inner, 
+					      const Medium2D_State &outer, 
+					      const Vector2D &x_SW, 
+					      const Vector2D &x_NE )
+{
+  // deallocate to be sure
+  DeallocateField();
+
+  // Create objects.  You will no longer own this dynamically created object,
+  // once passed to the class 'Vector2D_SpecFunction', it's destructor
+  // will take care of it.
+  DiscontinuousFunc<Medium2D_State>* funcObj = new DiscontinuousFunc<Medium2D_State>(inner,
+										     outer,
+										     x_SW,
+										     x_NE);
+
+  // assign all the fields
+  Field = new Vector2D_SpecFunction< Medium2D_State, 
+                                     DiscontinuousFunc<Medium2D_State> >(funcObj);
+
+}
 
 /********************************************************
  * Compute NEW values for the medium state dependent on *

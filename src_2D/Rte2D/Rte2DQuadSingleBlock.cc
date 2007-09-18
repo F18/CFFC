@@ -1555,11 +1555,16 @@ void ICs(Rte2D_Quad_Block &SolnBlk,
  ********************************************************/
 void PrescribeFields(Rte2D_Quad_Block &SolnBlk) 
 {
+  // only prescribe analytic fields 
+  if (SolnBlk.Medium_Field_Type == MEDIUM2D_FIELD_ANALYTIC) {
+
     for (int j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for (int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
 	SolnBlk.M[i][j].SetState(SolnBlk.Grid.Cell[i][j].Xc);
       } // endfor
     } // endfor 
+
+  } // endif
 }
 
 /********************************************************

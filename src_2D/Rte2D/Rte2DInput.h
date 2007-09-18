@@ -331,6 +331,13 @@ inline void Rte2D_Input_Parameters::SetupInputState()
   if (i_ICs_Medium == IC_UNIFORM  || i_ICs_Medium == IC_CONSTANT) {
     Medium2D_State::SetConstantField( Mo );
     
+  // DISCONTINUOUS
+  } else if (i_ICs_Medium == IC_DISCONTINUOUS) {
+    Medium2D_State::SetDiscontinuousField( Mo, 
+					   Mo/FIVE, 
+					   Vector2D(-0.5, -0.5), 
+					   Vector2D(0.5, 0.5) );
+    
   // ERROR
   } else {
     cerr << "Rte2D_Input_Parameters::SetupInputState - Invalid flag for field type\n";

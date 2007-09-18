@@ -2209,8 +2209,12 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
 	     IP.Next_Control_Parameter);
       if (strcmp(IP.ICs_Medium, "Constant") == 0) {
 	IP.i_ICs_Medium = IC_CONSTANT;
+	IP.Medium_Field_Type = MEDIUM2D_FIELD_ANALYTIC;
       } else if (strcmp(IP.ICs_Medium, "Uniform") == 0) {
 	IP.i_ICs_Medium = IC_UNIFORM;
+	IP.Medium_Field_Type = MEDIUM2D_FIELD_ANALYTIC;
+      } else if (strcmp(IP.ICs_Medium, "Discontinuous") == 0) {
+	IP.i_ICs_Medium = IC_DISCONTINUOUS;
 	IP.Medium_Field_Type = MEDIUM2D_FIELD_ANALYTIC;
       } else if (strcmp(IP.ICs_Medium, "Restart") == 0) {
 	IP.i_ICs_Medium = IC_RESTART;

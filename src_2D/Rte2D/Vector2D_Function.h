@@ -45,12 +45,57 @@ private:
   Soln_State val;
 
 public:
+  // constructor
   ConstantFunc(const Soln_State &value) : val(value) { };
+  // evaluate state
   Soln_State Eval(const Vector2D &r) { return val; };
 
 };
 
 
+/***********************************************************************/
+/*!
+ * Class: Vector2D_Function
+ *
+ * @brief Function class for a discontinuous value function.
+ *
+ *
+ *     ---------------
+ *     |             |
+ *     |  ---------  |
+ *     |  |       |  |
+ *     |  | inner |  |
+ *     |  |       |  |
+ *     |  ---------  |
+ *     |  outer      |
+ *     ---------------
+ */
+/***********************************************************************/
+template<class Soln_State> 
+class DiscontinuousFunc {
+  
+private:
+  Soln_State inner, outer; // inner and outer states
+  Vector2D r_SW, r_NE;     // SW and NE corner locations of inner box
+  
+
+public:
+  // constructor
+  DiscontinuousFunc( const Soln_State &inner_, 
+		     const Soln_State &outer_,
+		     const Vector2D &x_SW,
+		     const Vector2D &x_NE ) 
+    : inner(inner_), outer(outer_), r_SW(x_SW), r_NE(x_NE) { };
+
+  // evaluate state
+  Soln_State Eval(const Vector2D &r) { 
+    if ( r.x<r_SW.x || r.y<r_SW.y || r.x>r_NE.x || r.y>r_NE.y )
+      return outer;
+    else 
+      return inner;
+  };
+  
+};
 
 
 /***********************************************************************/

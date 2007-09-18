@@ -171,6 +171,10 @@ class Medium2D_State {
 
   //! Set all all fields to the same function
   static void SetConstantField(const Medium2D_State &M);
+  static void SetDiscontinuousField( const Medium2D_State &inner, 
+				     const Medium2D_State &outer, 
+				     const Vector2D &x_SW, 
+				     const Vector2D &x_NE );
   //@}
 
   //@{ @name Assignment operator.
