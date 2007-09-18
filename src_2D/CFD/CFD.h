@@ -347,6 +347,7 @@ inline char *Date_And_Time() {
 #define BC_WALL_VISCOUS_HEATFLUX        12102   //      | CGNS
 #define BC_ADIABATIC_WALL BC_WALL_VISCOUS_HEATFLUX
 #define BC_FREE_SLIP                    12103   //      | ????
+#define BC_TEMPERATURE_SLIP             12104
 
 //----UNKNOWN OR WEIRD----//
 
