@@ -126,7 +126,9 @@ void Medium2D_State :: SetConstantField(const Medium2D_State &M)
   // deallocate to be sure
   DeallocateField();
 
-  // create objects
+  // Create objects.  You will no longer own this dynamically created object,
+  // once passed to the class 'Vector2D_SpecFunction', it's destructor
+  // will take care of it.
   ConstantFunc<Medium2D_State>* funcObj = new ConstantFunc<Medium2D_State>(M);
 
   // assign all the fields

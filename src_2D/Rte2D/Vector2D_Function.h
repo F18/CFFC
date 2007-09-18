@@ -83,6 +83,7 @@ public:
   // to make the function call
   virtual Soln_State operator()(const Vector2D &r)=0;  // call using operator
   virtual Soln_State Call(const Vector2D &r)=0;        // call using function
+  virtual ~Vector2D_Function(){};
 };
 
 
@@ -105,8 +106,10 @@ public:
   //
   // constructors
   //
+  Vector2D_SpecFunction() : ptr2obj(NULL) { };
   Vector2D_SpecFunction(Function* ptr) : ptr2obj(ptr) { };
-  ~Vector2D_SpecFunction() { delete ptr2obj; ptr2obj=NULL; }
+  ~Vector2D_SpecFunction() 
+  { if (ptr2obj!=NULL) {delete ptr2obj; ptr2obj=NULL;} };
   
   //
   // Functor overloads
