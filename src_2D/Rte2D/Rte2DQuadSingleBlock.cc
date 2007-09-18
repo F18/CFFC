@@ -4945,7 +4945,7 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
   //
   // declares
   //
-  Rte2D_State &U = SolnBlk.U[0][0]; // alias
+  Rte2D_State *U = &SolnBlk.U[0][0];// alias
   double V, Ae, Aw, An, As;         // cell face areas, volumes
   double num, denom;                // numerator and denominator
   double Ix_out, Iy_out;            // outgoing face intensity
@@ -4961,7 +4961,7 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
   int i_SpaceMarch_Scheme;          // temporary space marching scheme flag
 
   // variable index
-  int index = U.Index[v][m][l];
+  int index = U->Index[v][m][l];
 
   //
   // for high res methods, use the upwind scheme at the boundaries
@@ -5067,6 +5067,7 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
       wy = ONE;
       break;
 
+
     //------------------------------------------------
     // General Multidimensional high resolution differencing 
     // scheme for uniform grids. 
@@ -5075,28 +5076,25 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
     // for multidimensional radiative heat transfer," in Journal       
     // of Quantitative Spectroscopy, v69, 2001.    
     // Note: this scheme uses the deffered correction method
-    //
-    // FIXME - THIS IS BROKEN SOMEHOW
-    //
     case SPACE_MARCH_GM:
 
       // step sizes
       dx = HALF * (SolnBlk.Grid.lfaceN(i,j) + SolnBlk.Grid.lfaceS(i,j) );
       dy = HALF * (SolnBlk.Grid.lfaceE(i,j) + SolnBlk.Grid.lfaceW(i,j) );
-      
+   
       // wavespeeds
-      vx = fabs(U.mu[m][l]/U.omega[m][l]);
-      vy = fabs(U.eta[m][l]/U.omega[m][l]);
+      vx = fabs(U->mu[m][l]/U->omega[m][l]);
+      vy = fabs(U->eta[m][l]/U->omega[m][l]);
 
 
       //sources terms
       S_id_j = ( SolnBlk.Uo[i+xd][j].S(SolnBlk.M[i+xd][j],v,m,l) - 
 		 SolnBlk.Uo[i+xd][j].dSdU(SolnBlk.M[i+xd][j],v,m,l)*SolnBlk.Uo[i+xd][j].I[index] )
-	     / U.omega[m][l];
+	     / U->omega[m][l];
       S_i_jd = ( SolnBlk.Uo[i][j+yd].S(SolnBlk.M[i][j+yd],v,m,l) - 
 		 SolnBlk.Uo[i][j+yd].dSdU(SolnBlk.M[i][j+yd],v,m,l)*SolnBlk.Uo[i][j+yd].I[index] )
- 	     / U.omega[m][l];
-      
+ 	     / U->omega[m][l];
+   
       // compute
       GM_Scheme( dx,                           // x-dir avg step size
 		 dy,                           // y-dir avg step size
@@ -5133,8 +5131,8 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
       dx = HALF * (SolnBlk.Grid.lfaceN(i,j) + SolnBlk.Grid.lfaceS(i,j) );
       dy = HALF * (SolnBlk.Grid.lfaceE(i,j) + SolnBlk.Grid.lfaceW(i,j) );
       // optical thickness in each dir
-      tau_x = SolnBlk.M[i][j].beta(v) * dx / fabs(U.mu[m][l]/U.omega[m][l]);  // (mu/omega cause weighting worked into mu)
-      tau_y = SolnBlk.M[i][j].beta(v) * dy / fabs(U.eta[m][l]/U.omega[m][l]); // (eta/omega cause weighting worked into mu)
+      tau_x = SolnBlk.M[i][j].beta(v) * dx / fabs(U->mu[m][l]/U->omega[m][l]);  // (mu/omega cause weighting worked into mu)
+      tau_y = SolnBlk.M[i][j].beta(v) * dy / fabs(U->eta[m][l]/U->omega[m][l]); // (eta/omega cause weighting worked into mu)
       // weights
       wx = ONE / (ONE - exp(-tau_x)) - ONE/tau_x;
       wy = ONE / (ONE - exp(-tau_y)) - ONE/tau_y;
@@ -5236,15 +5234,15 @@ int dUdt_Space_March_Flux_Eval(Rte2D_Quad_Block &SolnBlk,
     case SPACE_MARCH_GM:
  
       // step sizes, wavespeeds already computed
-      
+   
       //sources terms
       S_id_j = ( SolnBlk.U[i+xd][j].S(SolnBlk.M[i+xd][j],v,m,l) - 
 		 SolnBlk.U[i+xd][j].dSdU(SolnBlk.M[i+xd][j],v,m,l)*SolnBlk.U[i+xd][j].I[index] )
-	     / U.omega[m][l];
+	     / U->omega[m][l];
       S_i_jd = ( SolnBlk.U[i][j+yd].S(SolnBlk.M[i][j+yd],v,m,l) - 
  		 SolnBlk.U[i][j+yd].dSdU(SolnBlk.M[i][j+yd],v,m,l)*SolnBlk.U[i][j+yd].I[index] )
-	     / U.omega[m][l];
-      
+	     / U->omega[m][l];
+   
       // compute
       GM_Scheme( dx,                           // x-dir avg step size
 		 dy,                           // y-dir avg step size
@@ -5310,7 +5308,7 @@ int dUdt_Space_March(Rte2D_Quad_Block &SolnBlk,
   // declares
   //
   int i, j;                               // index counters
-  Rte2D_State &U = SolnBlk.U[0][0];       // alias
+  Rte2D_State *U = &SolnBlk.U[0][0];      // alias
   double  Iy_f;                           // y face intensity
   double *Ix_f = new double[SolnBlk.NCj]; // x face intensity
   int varindex;                           // variable index
@@ -5353,12 +5351,12 @@ int dUdt_Space_March(Rte2D_Quad_Block &SolnBlk,
       for(int l=0 ; l<SolnBlk.U[0][0].Nazim[m] ; l++) {
 	  
 	// the index
-	varindex = U.Index[v][m][l]+1;
+	varindex = U->Index[v][m][l]+1;
 	  
 	//------------------------------------------------
 	// mu<0, eta<0
 	//------------------------------------------------
-	if ( U.mu[m][l]<ZERO && U.eta[m][l]<ZERO ) {
+	if ( U->mu[m][l]<ZERO && U->eta[m][l]<ZERO ) {
 	    
 	  // downstream index directions
 	  xd = -1;  yd = -1;
@@ -5393,7 +5391,7 @@ int dUdt_Space_March(Rte2D_Quad_Block &SolnBlk,
 	//------------------------------------------------
 	// mu<0, eta>0 
 	//------------------------------------------------
-	} else if ( U.mu[m][l]<ZERO && U.eta[m][l]>=ZERO ) {
+	} else if ( U->mu[m][l]<ZERO && U->eta[m][l]>=ZERO ) {
 
 	  // downstream index directions
 	  xd = -1;  yd = 1;
@@ -5428,7 +5426,7 @@ int dUdt_Space_March(Rte2D_Quad_Block &SolnBlk,
 	//------------------------------------------------
 	// mu>0, eta<0 
 	//------------------------------------------------
-	} else if ( U.mu[m][l]>=ZERO && U.eta[m][l]<ZERO ) {
+	} else if ( U->mu[m][l]>=ZERO && U->eta[m][l]<ZERO ) {
 
 	  // downstream index directions
 	  xd = 1;  yd = -1;
@@ -5464,7 +5462,7 @@ int dUdt_Space_March(Rte2D_Quad_Block &SolnBlk,
 	//------------------------------------------------
 	// mu>0, eta>0
 	//------------------------------------------------
-	} else if ( U.mu[m][l]>=ZERO && U.eta[m][l]>=ZERO ) {
+	} else if ( U->mu[m][l]>=ZERO && U->eta[m][l]>=ZERO ) {
 
 	  // downstream index directions
 	  xd = 1;  yd = 1;

@@ -40,23 +40,30 @@ void GM_Scheme( const double &dx,     // x-dir avg step size
   double a, b;
 
   //
-  // case 1
+  // case 1 - equal time to move through cell in both dirs
   //
-  if ( vx/dx <= vy/dy ) {
-	a = vx*(I_id_j-I_i_ju) - dx*S_id_j;
-	b = (vx-vy*dx/dy) * (I_i_j - I_i_ju);
-	Ix_out = I_i_ju + 0.5*vanalbada(a,b,0.1)/vx;
-	Iy_out = I_i_j;
+  if ( fabs(vx/dx-vy/dy)<TOLER ) {
+    Ix_out = I_i_j;
+    Iy_out = I_i_j;
 
   //
-  // case 2
+  // case 2 - wave takes longer to cross cell in x-dir
   //
-  } else {
-	a = vy*(I_i_jd - I_iu_j) - dy*S_i_jd;
-	b = (vy-vx*dy/dx )*(I_i_j - I_iu_j);
-	Ix_out = I_i_j;
-	Iy_out = I_iu_j + 0.5*vanalbada(a,b,0.1)/vy;
+  } else if ( vx/dx < vy/dy ) {
+    a = vx*(I_id_j-I_i_ju) - dx*S_id_j;
+    b = (vx-vy*dx/dy) * (I_i_j - I_i_ju);
+    Ix_out = I_i_ju + 0.5*vanalbada(a,b,0.1)/vx;
+    Iy_out = I_i_j;
 
+  //
+  // case 3 - wave takes longer to cross cell in y-dir
+  //
+  } else /*if ( vx/dx > vy/dy ) */ {
+    a = vy*(I_i_jd - I_iu_j) - dy*S_i_jd;
+    b = (vy-vx*dy/dx )*(I_i_j - I_iu_j);
+    Ix_out = I_i_j;
+    Iy_out = I_iu_j + 0.5*vanalbada(a,b,0.1)/vy;
+    
   } // endif
 }
 
