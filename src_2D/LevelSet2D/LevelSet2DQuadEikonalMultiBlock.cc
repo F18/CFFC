@@ -87,7 +87,7 @@ int Explicit_Eikonal_Equation(LevelSet2D_Quad_Block *Soln_ptr,
   // not required.
   if (Number_of_Iterations < 1) return 0;
 
-  // Store the solution before starting solution of the Eikonal equation.
+  // Store the solution to Uoo before starting solution of the Eikonal equation.
   error_flag = Store_Initial_Eikonal_Solution(Soln_ptr,
 					      Soln_Block_List);
 

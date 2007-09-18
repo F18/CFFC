@@ -677,7 +677,9 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
   // Reset memory for flag lists... I am using a magic number for the
   // size of these arrays... I know this is poor form and that I
   // should use a standard list (a.k.a. a linked list).
-  for (int nm = 0; nm < SolnBlk.NCi*(SolnBlk.NCj+1) + (SolnBlk.NCi+1)*SolnBlk.NCj; nm++) SolnBlk.Trace[nm].Zero();
+  for (int nm = 0; nm < SolnBlk.NCi*(SolnBlk.NCj+1) + (SolnBlk.NCi+1)*SolnBlk.NCj; nm++) {
+    SolnBlk.Trace[nm].Zero();
+  }
 
   // Initialize cut type matrix.
   for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
