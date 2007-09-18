@@ -173,7 +173,7 @@ class Gaussian2D_Input_Parameters{
   Vector2D X_Shift;
 
   //Boundary information
-  double alpha;
+  double alpha_m;
   double Ramp_by_Mach_Number;
   int Number_of_Time_Steps_to_Ramp;
   char Boundary_Conditions_Specified[INPUT_PARAMETER_LENGTH_GAUSSIAN2D];
@@ -573,7 +573,7 @@ inline ostream &operator << (ostream &out_file,
     if (IP.Interface_IP.Component_List.Ni) out_file << IP.Interface_IP;
     if(IP.i_ICs != IC_RESTART)
     out_file << "\n  -> Accomodation Coefficient: "
-	     << IP.alpha;
+	     << IP.alpha_m;
     if(IP.Number_of_Initial_Mesh_Refinements >0)
     out_file << "\n  -> Number of Initial Mesh Refinements : " 
              << IP.Number_of_Initial_Mesh_Refinements;

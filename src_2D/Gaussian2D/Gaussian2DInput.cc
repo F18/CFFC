@@ -131,7 +131,7 @@ void Set_Default_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
     IP.pr = (2.0)/(3.0);
 
     // Boundary Conditions
-    IP.alpha = 1.0;
+    IP.alpha_m = 1.0;
     IP.Ramp_by_Mach_Number = 0.0;
     IP.Number_of_Time_Steps_to_Ramp = 0; 
     string_ptr = "OFF";
@@ -590,12 +590,12 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
       IP.Wo.pr = IP.pr;
       IP.Uo.pr = IP.pr;
     } // endif 
-    MPI::COMM_WORLD.Bcast(&(IP.alpha), 
+    MPI::COMM_WORLD.Bcast(&(IP.alpha_m), 
                           1, 
                           MPI::DOUBLE, 0);
     if (!CFFC_Primary_MPI_Processor()) {
-      IP.Wo.alpha = IP.alpha;
-      IP.Uo.alpha = IP.alpha;
+      IP.Wo.alpha_m = IP.alpha_m;
+      IP.Uo.alpha_m = IP.alpha_m;
     } // endif 
     MPI::COMM_WORLD.Bcast(&(IP.Ramp_by_Mach_Number), 
                           1, 
@@ -1155,12 +1155,12 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP,
       IP.Wo.pr = IP.pr;
       IP.Uo.pr = IP.pr;
     } // endif
-    Communicator.Bcast(&(IP.alpha), 
+    Communicator.Bcast(&(IP.alpha_m), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
     if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
-      IP.Wo.alpha = IP.alpha;
-      IP.Uo.alpha = IP.alpha;
+      IP.Wo.alpha_m = IP.alpha_m;
+      IP.Uo.alpha_m = IP.alpha_m;
     } // endif
     Communicator.Bcast(&(IP.Ramp_by_Mach_Number), 
                        1, 
@@ -2085,14 +2085,14 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.pr < ZERO) i_command = INVALID_INPUT_VALUE;
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Alpha") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter, "Alpha_m") == 0) {
        i_command = 43;
        IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.alpha;
-       IP.Wo.alpha = IP.alpha;
-       IP.Uo.alpha = IP.alpha;
+       IP.Input_File >> IP.alpha_m;
+       IP.Wo.alpha_m = IP.alpha_m;
+       IP.Uo.alpha_m = IP.alpha_m;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.alpha < ZERO || IP.alpha > ONE) i_command = INVALID_INPUT_VALUE;
+       if (IP.alpha_m < ZERO || IP.alpha_m > ONE) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Ramp_by_Mach_Number") == 0) {
        i_command = 43;

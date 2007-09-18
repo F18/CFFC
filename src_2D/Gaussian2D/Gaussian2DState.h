@@ -155,7 +155,7 @@ class Gaussian2D_pState{
     static double             M;   // Molar Weight
     static int            atoms;   // Monatomic or Diatomic
     static int              gas;   // Gas type
-    static double         alpha;   // Accommodation coefficient for gas/solid boundary
+    static double         alpha_m;   // Accommodation coefficient for gas/solid boundary
     static double         omega;   // Viscosity exponent
     static double        mu_not;   // Reference viscosity
     static double            pr;   // Prandtl number
@@ -601,7 +601,7 @@ class Gaussian2D_cState{
     static double            M;   // Molar Weight
     static int           atoms;   // Monatomic or Diatomic
     static int             gas;   // gas type
-    static double        alpha;   // Accommodation coefficient for gas/solid boundary
+    static double        alpha_m;   // Accommodation coefficient for gas/solid boundary
     static double           pr;   // Prandtl number
 	                          // Made public so can access them.
 		      

@@ -16,7 +16,7 @@
 double Gaussian2D_pState::M      = MOLE_WT_AIR;
 int    Gaussian2D_pState::atoms  = GAUSSIAN_DIATOMIC;
 int    Gaussian2D_pState::gas    = GAS_AIR;
-double Gaussian2D_pState::alpha  = ONE;
+double Gaussian2D_pState::alpha_m  = ONE;
 double Gaussian2D_pState::omega  = OMEGA_AIR;
 double Gaussian2D_pState::mu_not = MU_NOT_AIR;
 double Gaussian2D_pState::pr     = 0.6666666666666666667;
@@ -26,7 +26,7 @@ double Gaussian2D_pState::pr     = 0.6666666666666666667;
 double Gaussian2D_cState::M     = MOLE_WT_AIR;
 int    Gaussian2D_cState::atoms = GAUSSIAN_DIATOMIC;
 int    Gaussian2D_cState::gas   = GAS_AIR;
-double Gaussian2D_cState::alpha = ONE;
+double Gaussian2D_cState::alpha_m = ONE;
 double Gaussian2D_cState::pr    = 0.6666666666666666667;
 
 /*************************************************************
@@ -317,19 +317,19 @@ Gaussian2D_pState Adiabatic_Wall(const Gaussian2D_pState &W,
     //  Mine 1
     /*
     ur2   = -ur;
-    vr2   = vr+W.alpha*(vWallr-vr)+2.0*(2.0-W.alpha)*pxyr/sqrt(2*PI*dr*pxxr);
+    vr2   = vr+W.alpha_m*(vWallr-vr)+2.0*(2.0-W.alpha_m)*pxyr/sqrt(2*PI*dr*pxxr);
     pxxr2 = pxxr;
-    pxyr2 = (W.alpha-1.0)*pxyr+2.0*W.alpha*sqrt(dr*pxxr/(2.0*PI))*(vr-vWallr);
-    pyyr2 = pyyr - 2.0/3.0*W.d*sqr(W.alpha/2.0*(vWallr-vr)+(2.0-W.alpha)*pxyr/sqrt(2*PI*dr*pxxr))
-                 + 2.0*((2.0-W.alpha)*(dr/2.0*sqr(vr-vr2)+pxyr*sqrt(2.0*dr/(PI*pxxr))*(vr-vr2))
-                         +W.alpha*dr/2.0*sqr(vWallr-vr2));
+    pxyr2 = (W.alpha_m-1.0)*pxyr+2.0*W.alpha_m*sqrt(dr*pxxr/(2.0*PI))*(vr-vWallr);
+    pyyr2 = pyyr - 2.0/3.0*W.d*sqr(W.alpha_m/2.0*(vWallr-vr)+(2.0-W.alpha_m)*pxyr/sqrt(2*PI*dr*pxxr))
+                 + 2.0*((2.0-W.alpha_m)*(dr/2.0*sqr(vr-vr2)+pxyr*sqrt(2.0*dr/(PI*pxxr))*(vr-vr2))
+                         +W.alpha_m*dr/2.0*sqr(vWallr-vr2));
     */
     //  Mine 2
     
     W_rot2.v.x  = -W_rot.v.x;
     W_rot2.v.y  = W_rot.v.y;
     //W_rot2.p.xx = W_rot.p.xx;
-    W_rot2.p.xy = (W.alpha-1.0)*W_rot.p.xy+2.0*W.alpha*sqrt(W_rot.d*W_rot.p.xx/(2.0*PI))*(W_rot.v.y-vWallr);
+    W_rot2.p.xy = (W.alpha_m-1.0)*W_rot.p.xy+2.0*W.alpha_m*sqrt(W_rot.d*W_rot.p.xx/(2.0*PI))*(W_rot.v.y-vWallr);
     //W_rot2.p.yy = W_rot.p.yy;
 
     //  Dr. Groth's
@@ -337,7 +337,7 @@ Gaussian2D_pState Adiabatic_Wall(const Gaussian2D_pState &W,
     ur2   = -ur;
     vr2   = vr;
     pxxr2 = pxxr;
-    pxyr2 = -pxyr+4.0*(W.alpha)/((2.0-W.alpha)*sqrt(2.0*PI))*dr*(vr-vWallr)
+    pxyr2 = -pxyr+4.0*(W.alpha_m)/((2.0-W.alpha_m)*sqrt(2.0*PI))*dr*(vr-vWallr)
                                                      *sqrt(pxxr/dr+ur*ur/3);
     pyyr2 = pyyr;
     */
@@ -379,15 +379,15 @@ Gaussian2D_pState Isothermal_Wall(const Gaussian2D_pState &W,
     ng = W_rot.d/m;   //number density of "incoming" Gaussian
     nw = ng*sqrt(W_rot.p.xx/(ng*BOLTZMANN*T));   //number density of reflected Maxwellian to ensure
                                                  //no mass transfer (thermal equilibrium with wall)
-    n_temp = ng+W.alpha/2.0*(nw-ng);        //"total" number density
+    n_temp = ng+W.alpha_m/2.0*(nw-ng);        //"total" number density
   
     W_rot2.d = sqr(n_temp*m)/W_rot.d;  //want roe-average state to be n_temp*m
 
-    v_temp = (m*ng*(2.0-W.alpha)*(W_rot.v.y/2.0+W_rot.p.xy/sqrt(2.0*PI*W_rot.d*W_rot.p.xx))
-	      +W.alpha/2.0*m*nw*vWallr)/(n_temp*m);  //combined momentum devided by density
+    v_temp = (m*ng*(2.0-W.alpha_m)*(W_rot.v.y/2.0+W_rot.p.xy/sqrt(2.0*PI*W_rot.d*W_rot.p.xx))
+	      +W.alpha_m/2.0*m*nw*vWallr)/(n_temp*m);  //combined momentum devided by density
 
 
-    pxy_desired = W.alpha*(W_rot.p.xy/2.0+sqrt(W_rot.d*W_rot.p.xx/(2.0*PI))*(W_rot.v.y-v_temp)
+    pxy_desired = W.alpha_m*(W_rot.p.xy/2.0+sqrt(W_rot.d*W_rot.p.xx/(2.0*PI))*(W_rot.v.y-v_temp)
 			   -sqrt(nw*nw*m*BOLTZMANN*T/(2.0*PI))*(vWallr-v_temp));
 
     W_rot2.v.x  = -W_rot.v.x*sqrt(W_rot.d/W_rot2.d);
@@ -427,15 +427,15 @@ Gaussian2D_pState Knudsen_Layer_Adiabatic(const Gaussian2D_pState &W,
 
   W_rot = Rotate(W,norm_dir);
 
-  v_temp = W_rot.v.y+W.alpha/2.0*(vy_wall_rot-W_rot.v.y)
-           +(2.0-W.alpha)*(W_rot.p.xy/sqrt(2*PI*W_rot.d*W_rot.p.xx));
+  v_temp = W_rot.v.y+W.alpha_m/2.0*(vy_wall_rot-W_rot.v.y)
+           +(2.0-W.alpha_m)*(W_rot.p.xy/sqrt(2*PI*W_rot.d*W_rot.p.xx));
 
-  pxy_temp =  W.alpha*(W_rot.p.xy/2.0
+  pxy_temp =  W.alpha_m*(W_rot.p.xy/2.0
 		       +sqrt(W_rot.d*W_rot.p.xx/(2.0*PI))*(W_rot.v.y-vy_wall_rot));
 
-  pyy_temp = W_rot.p.yy+(2.0-W.alpha)*(W_rot.d/2.0*sqr(W_rot.v.y-v_temp)
+  pyy_temp = W_rot.p.yy+(2.0-W.alpha_m)*(W_rot.d/2.0*sqr(W_rot.v.y-v_temp)
 				       +W_rot.p.xy*sqrt(2.0*W_rot.d/(PI*W_rot.p.yy))*(W_rot.v.y-v_temp))
-             +W.alpha*W_rot.d/2.0*sqr(vy_wall_rot-v_temp);
+             +W.alpha_m*W_rot.d/2.0*sqr(vy_wall_rot-v_temp);
 
   Kn_rot = Gaussian2D_pState(W_rot.d,
 			     0.0,
@@ -476,43 +476,43 @@ Gaussian2D_pState Knudsen_Layer_Isothermal(const Gaussian2D_pState &W,
   nw = ng*sqrt(W_rot.p.xx/(ng*BOLTZMANN*T));   //number density of reflected Maxwellian to ensure
                                                //no mass transfer (thermal equilibrium with wall)
 
-  n_temp = ng+W.alpha/2.0*(nw-ng);           //"total" number density
+  n_temp = ng+W.alpha_m/2.0*(nw-ng);           //"total" number density
 
   rho_temp = n_temp*m;
 
-  v_temp = (m*ng*(2.0-W.alpha)*(W_rot.v.y/2.0+W_rot.p.xy/sqrt(2.0*PI*W_rot.d*W_rot.p.xx))
-	    +W.alpha/2.0*m*nw*vy_wall_rot)/rho_temp;  //combined momentum devided by density
+  v_temp = (m*ng*(2.0-W.alpha_m)*(W_rot.v.y/2.0+W_rot.p.xy/sqrt(2.0*PI*W_rot.d*W_rot.p.xx))
+	    +W.alpha_m/2.0*m*nw*vy_wall_rot)/rho_temp;  //combined momentum devided by density
 
-  pxx_temp = W_rot.p.xx+W.alpha/2.0*(nw*BOLTZMANN*T-W_rot.p.xx);
+  pxx_temp = W_rot.p.xx+W.alpha_m/2.0*(nw*BOLTZMANN*T-W_rot.p.xx);
 
-  pxy_temp = W.alpha*(W_rot.p.xy/2.0+sqrt(W_rot.d*W_rot.p.xx/(2.0*PI))*(W_rot.v.y-v_temp)
+  pxy_temp = W.alpha_m*(W_rot.p.xy/2.0+sqrt(W_rot.d*W_rot.p.xx/(2.0*PI))*(W_rot.v.y-v_temp)
 		      -sqrt(nw*nw*m*BOLTZMANN*T/(2.0*PI))*(vy_wall_rot-v_temp));
 
-  pyy_temp = (2.0-W.alpha)*(W_rot.p.yy/2.0+W_rot.d*sqr(W_rot.v.y-v_temp)/2.0
+  pyy_temp = (2.0-W.alpha_m)*(W_rot.p.yy/2.0+W_rot.d*sqr(W_rot.v.y-v_temp)/2.0
 			    +W_rot.p.xy*sqrt(2.0*W_rot.d/PI*W_rot.p.xx)*(W_rot.v.y-v_temp))
-             +W.alpha*(nw*BOLTZMANN*T/2.0 + nw*m/2.0*sqr(vy_wall_rot-v_temp));
+             +W.alpha_m*(nw*BOLTZMANN*T/2.0 + nw*m/2.0*sqr(vy_wall_rot-v_temp));
 
-  pzz_temp = W_rot.p.zz+W.alpha/2.0*(nw*BOLTZMANN*T-W_rot.p.zz);
+  pzz_temp = W_rot.p.zz+W.alpha_m/2.0*(nw*BOLTZMANN*T-W_rot.p.zz);
 
-  erot_temp = W_rot.erot+W.alpha/2.0*(nw*BOLTZMANN*T-W_rot.erot);
+  erot_temp = W_rot.erot+W.alpha_m/2.0*(nw*BOLTZMANN*T-W_rot.erot);
 
-//  rho_temp = W_rot.d*(1.0+W.alpha/2.0*(sqrt(W_rot.p.xx/(n*BOLTZMANN*T))-1.0));
+//  rho_temp = W_rot.d*(1.0+W.alpha_m/2.0*(sqrt(W_rot.p.xx/(n*BOLTZMANN*T))-1.0));
 //
 //
-//  v_temp = (2.0-W.alpha)*(W_rot.v.y/2.0+W_rot.p.xy/(sqrt(2.0*PI*W_rot.d*W_rot.p.xx)))
-//           +W.alpha/2.0*sqrt(W_rot.p.xx/n*BOLTZMANN*T)*vy_wall_rot;
+//  v_temp = (2.0-W.alpha_m)*(W_rot.v.y/2.0+W_rot.p.xy/(sqrt(2.0*PI*W_rot.d*W_rot.p.xx)))
+//           +W.alpha_m/2.0*sqrt(W_rot.p.xx/n*BOLTZMANN*T)*vy_wall_rot;
 //
-//  pxx_temp = (2.0-W.alpha)/2.0*W_rot.p.xx+W.alpha/2.0*sqrt(W_rot.p.xx*n*BOLTZMANN*T);
+//  pxx_temp = (2.0-W.alpha_m)/2.0*W_rot.p.xx+W.alpha_m/2.0*sqrt(W_rot.p.xx*n*BOLTZMANN*T);
 //
 //
-//  pxy_temp = W.alpha*(W+rot.p.xy/2+sqrt(W_rot.d*W_rot.p.xx/(2.0*PI))*(W_rot.v.y-v_temp)
+//  pxy_temp = W.alpha_m*(W+rot.p.xy/2+sqrt(W_rot.d*W_rot.p.xx/(2.0*PI))*(W_rot.v.y-v_temp)
 //  		      +sqrt(;
 //
 //  pyy_temp = 0.0;
 //
-//  pzz_temp = (2.0-W.alpha)/2.0*W_rot.p.zz+W.alpha/2.0*sqrt(W_rot.p.xx*n*BOLTZMANN*T);
+//  pzz_temp = (2.0-W.alpha_m)/2.0*W_rot.p.zz+W.alpha_m/2.0*sqrt(W_rot.p.xx*n*BOLTZMANN*T);
 //
-//  erot_temp = (2.0-W.alpha)/2.0*W_rot.erot+W.alpha/2.0*sqrt(W_rot.p.xx*n*BOLTZMANN*T);
+//  erot_temp = (2.0-W.alpha_m)/2.0*W_rot.erot+W.alpha_m/2.0*sqrt(W_rot.p.xx*n*BOLTZMANN*T);
 
   Kn_rot = Gaussian2D_pState(rho_temp,
 			     0.0,
@@ -2081,17 +2081,17 @@ Gaussian2D_cState Imposed_adiabatic_wall_n(const Gaussian2D_pState &Wr,
 
     Knudsen_Layer.v.x = 0.0;
 
-    Knudsen_Layer.v.y = (2.0-Wr_rotated.alpha)*(Wr_rotated.v.y/2.0+
+    Knudsen_Layer.v.y = (2.0-Wr_rotated.alpha_m)*(Wr_rotated.v.y/2.0+
 						Wr_rotated.p.xy/sqrt(2.0*PI*Wr_rotated.p.xx))
-                                                +Wr_rotated.alpha/2.0*uWallr;
+                                                +Wr_rotated.alpha_m/2.0*uWallr;
     Knudsen_Layer.p.xx = Wr_rotated.p.xx;
 
-    Knudsen_Layer.p.xy = Wr_rotated.alpha*(Wr_rotated.p.xy/2.0-sqrt(Wr_rotated.d*Wr_rotated.p.xx/(2.0*PI))*
+    Knudsen_Layer.p.xy = Wr_rotated.alpha_m*(Wr_rotated.p.xy/2.0-sqrt(Wr_rotated.d*Wr_rotated.p.xx/(2.0*PI))*
 					  (Wr_rotated.v.y-vWallr));
 
-    Knudsen_Layer.p.yy = Wr_rotated.p.yy+(2.0-Wr_rotated.alpha)*(Wr_rotated.d/2.0*sqr(Wr_rotated.v.y-Knudsen_Layer.v.y)
+    Knudsen_Layer.p.yy = Wr_rotated.p.yy+(2.0-Wr_rotated.alpha_m)*(Wr_rotated.d/2.0*sqr(Wr_rotated.v.y-Knudsen_Layer.v.y)
 							       +Wr_rotated.p.xy*sqrt(2.0*Wr_rotated.d/(PI*Wr_rotated.p.xx))*(Wr_rotated.v.y-Knudsen_Layer.v.y)
-								 +Wr_rotated.alpha*Wr_rotated.d/2.0*sqr(vWallr-Wr_rotated.v.y));
+								 +Wr_rotated.alpha_m*Wr_rotated.d/2.0*sqr(vWallr-Wr_rotated.v.y));
 
     Knudsen_Layer.p.xx = Wr_rotated.p.zz;
 

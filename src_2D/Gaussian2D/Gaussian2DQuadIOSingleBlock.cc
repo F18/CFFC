@@ -382,7 +382,7 @@ void Output_Cylinder_Free_Molecular(Gaussian2D_Quad_Block &SolnBlk,
 
   int i, j;
   double psi, cos_angle, sin_angle, Pn, tau, Pn_exact, tau_exact, cpsi;
-  double c, S, alpha;
+  double c, S, alpha_m;
   double T_ratio(1.0); //ratio of temperature between incoming and reflected particles
   Vector2D dX;
   Gaussian2D_pState W_node, W_exact;
