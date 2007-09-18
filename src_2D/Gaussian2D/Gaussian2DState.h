@@ -115,6 +115,8 @@ class Gaussian2D_Input_Parameters;
  *                 vector.                              *
  *     tt       -- translational relaxation time        *
  *     tr       -- rotational relaxation time           *
+ *     gt       -- temperature jump distance            *
+ *                 for temperature slip BC              *
  *     relax    -- relaxes state towards thermodynamic  *
  *                 equilibrium (BGK source terms)       *
  *     set_temperature_d                                *
@@ -431,6 +433,9 @@ class Gaussian2D_pState{
     //translational and rotational relaxation times
     double tt() const;
     double tr() const;
+
+    //temperature slip distance
+    double gt() const;
 
     //set temperature and set state from ics
     void set_temperature_d(double temperature);
@@ -2903,6 +2908,22 @@ inline double Gaussian2D_pState::tt() const {
 
 inline double Gaussian2D_pState::tr() const {
   return 15.0/4.0*bulk_viscosity()/pressure();
+}
+
+/*************************************************************
+ * Gaussian2D_pState -- temperature jump distance            *
+ *                                                           *
+ *      This is used for temperature slip BC.                *
+ *                                                           *
+ * For more details, see "Kinetic Theory of Gases" by        *
+ * Kennard(1938) p.311-314.                                  *
+ *      Available at the UTIAS library.                      *
+ *                                                           *
+ * Kennard simply uses "g", but I don't want it confused     *
+ * with gamma.                                               *
+ *************************************************************/
+inline double Gaussian2D_pState::gt() const {
+  return (2.0-alpha_t)/alpha_t * sqrt(2*PI*R()*T()) * K()/((Gamma()+1.0)*Cv()*pressure());
 }
 
 /*************************************************************
