@@ -2723,6 +2723,8 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
 	IP.BC_North = BC_ADIABATIC_WALL;
       } else if (strcmp(IP.BC_North_Type,"Isothermal_Wall") == 0) {
 	IP.BC_North = BC_WALL_VISCOUS_ISOTHERMAL;
+      } else if (strcmp(IP.BC_North_Type,"Temperature_Slip") == 0) {
+	IP.BC_North = BC_TEMPERATURE_SLIP;
       } else if (strcmp(IP.BC_North_Type,"Fixed") == 0) {
 	IP.BC_North = BC_FIXED;
       } else if (strcmp(IP.BC_North_Type,"Constant_Extrapolation") == 0) {
@@ -2753,6 +2755,8 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
 	IP.BC_South = BC_ADIABATIC_WALL;
       } else if (strcmp(IP.BC_South_Type,"Isothermal_Wall") == 0) {
 	IP.BC_South = BC_WALL_VISCOUS_ISOTHERMAL;
+      } else if (strcmp(IP.BC_South_Type,"Temperature_Slip") == 0) {
+	IP.BC_South = BC_TEMPERATURE_SLIP;
       } else if (strcmp(IP.BC_South_Type,"Fixed") == 0) {
 	IP.BC_South = BC_FIXED;
       } else if (strcmp(IP.BC_South_Type,"Constant_Extrapolation") == 0) {
@@ -2784,6 +2788,8 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
 	IP.BC_East = BC_ADIABATIC_WALL;
       } else if (strcmp(IP.BC_East_Type,"Isothermal_Wall") == 0) {
 	IP.BC_East = BC_WALL_VISCOUS_ISOTHERMAL;
+      } else if (strcmp(IP.BC_East_Type,"Temperature_Slip") == 0) {
+	IP.BC_East = BC_TEMPERATURE_SLIP;
       } else if (strcmp(IP.BC_East_Type,"Fixed") == 0) {
 	IP.BC_East = BC_FIXED;
       } else if (strcmp(IP.BC_East_Type,"Constant_Extrapolation") == 0) {
@@ -2817,6 +2823,8 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
 	IP.BC_West = BC_ADIABATIC_WALL;
       } else if (strcmp(IP.BC_West_Type,"Isothermal_Wall") == 0) {
 	IP.BC_West = BC_WALL_VISCOUS_ISOTHERMAL;
+      } else if (strcmp(IP.BC_West_Type,"Temperature_Slip") == 0) {
+	IP.BC_West = BC_TEMPERATURE_SLIP;
       } else if (strcmp(IP.BC_West_Type,"Fixed") == 0) {
 	IP.BC_West = BC_FIXED;
       } else if (strcmp(IP.BC_West_Type,"Constant_Extrapolation") == 0) {
