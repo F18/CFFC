@@ -248,11 +248,11 @@ $(EXE_REC) : $(OBJ_RECONSTRUCTION)
 	@echo ' '
 	@echo Update compilation time and GIT revision data
 	@echo '--------------------------------------------------------'
-	#@python ../miscellaneous/Update_SourceRevision_Data.py
+	@python ../miscellaneous/Update_SourceRevision_Data.py -f $(GIT_File)
         # Update $(GIT_File,.cc=.o)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(GIT_File) -c -o $(GIT_File:.cc=.o)
         # The updated SourceRevisionData is not required anymore ==> Revert GIT_File to the default (original)
-        #@git checkout $(GIT_File) >& /dev/null
+	@python ../miscellaneous/Revert_Git_File.py -f $(GIT_File)
 	@echo ' '
 	@echo Building program $(EXE_REC) for a $(PLATFORM) platform.
 	@echo '--------------------------------------------------------'
