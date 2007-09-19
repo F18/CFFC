@@ -231,6 +231,9 @@ void Rte2D_State :: SetDirsDOM(const int Quad_Type,
       xi[m][l]  *= omega[m][l];
     } // endfor
 
+  // the symmetry factor (not used, already accounted for in quadrature)
+  Symmetry_Factor = ONE;
+
   // close the file
   in.close();
 }
@@ -251,9 +254,6 @@ void Rte2D_State :: SetDirsFVM(const int NumPolarDirs,
   // DECLARES
   //------------------------------------------------
 
-  // a temporary storage variable
-  double temp, temp1, temp2;
-  
   // Plolar angle limits (0 < theta < pi)
   // For 2D cartesion cases, only need theta->[0,pi/2] due to symmetry.
   double theta_min;
@@ -303,7 +303,7 @@ void Rte2D_State :: SetDirsFVM(const int NumPolarDirs,
   // (1968) pp. 171-266                              *
   if (Axisymmetric) {
     psi_min = PI; 
-    psi_max = 2*PI;
+    psi_max = 2.0*PI;
     theta_min = 0;
     theta_max = PI;
  
@@ -311,13 +311,13 @@ void Rte2D_State :: SetDirsFVM(const int NumPolarDirs,
   // Note that only a half hemisphere has been modelled
   } else {
     psi_min = 0; 
-    psi_max = 2*PI;
+    psi_max = 2.0*PI;
     theta_min = 0;
-    theta_max = PI/2;
+    theta_max = PI; //2.0;
   } // endif
 
   // the symmetry factor
-  Symmetry_Factor = TWO;
+  Symmetry_Factor = ONE;// TWO;
 
 
   // create the angular grid
@@ -345,40 +345,47 @@ void Rte2D_State :: SetDirsFVM(const int NumPolarDirs,
   // of the size of solid angle element size.
   
   //
-  // polar direction
+  // loop over all directions
   //
-  for (int m=0; m<Npolar; m++) {
-    
-    //
-    // azimuthal direction
-    //
-    for (int l=0; l<Nazim[m]; l++) { 
+  for (int m=0; m<Npolar; m++) { // polar direction
+    for (int l=0; l<Nazim[m]; l++) { // azimuthal direction
       
-      
-      // integrate over the polar angle
-      temp1 = 0.5*(theta[m+1]-theta[m]) 
-	- 0.25*( sin(2*theta[m+1]) - sin(2*theta[m]) );
-      temp2 = -0.25*( cos(2.0*theta[m+1]) - cos(2.0*theta[m]) );
-
       // compute the directional vector components 
       if (Axisymmetric == AXISYMMETRIC_Y) {
-	mu[m][l]  = temp2 * ( psi[m][l+1] - psi[m][l]  );             //axial
-	eta[m][l]  = temp1 * ( sin(psi[m][l+1]) - sin(psi[m][l])  );  //radial
- 	xi[m][l] = - temp1 * ( cos(psi[m][l+1]) - cos(psi[m][l])  );  //angular
+
+	Control_Angle_Avg( theta[m],     // lower polar angle
+			   theta[m+1],   // upper polar angle
+			   psi[m][l],    // lower azimuthal angle
+			   psi[m][l+1],  // upper azimuthal angle
+			   eta[m][l],    // radial-direction cosine
+			   xi[m][l],     // angular-direction cosine
+			   mu[m][l],     // axial-direction cosine
+			   omega[m][l] );// solid angle element size
+
      } else if (Axisymmetric == AXISYMMETRIC_X) {
-	mu[m][l]  = temp1 * ( sin(psi[m][l+1]) - sin(psi[m][l])  );   //radial
-	eta[m][l]  = temp2 * ( psi[m][l+1] - psi[m][l]  );            //axial
-	xi[m][l] = - temp1 * ( cos(psi[m][l+1]) - cos(psi[m][l])  );  //angular
+
+	Control_Angle_Avg( theta[m],     // lower polar angle
+			   theta[m+1],   // upper polar angle
+			   psi[m][l],    // lower azimuthal angle
+			   psi[m][l+1],  // upper azimuthal angle
+			   mu[m][l],     // radial-direction cosine
+			   xi[m][l],     // angular-direction cosine
+			   eta[m][l],    // axial-direction cosine
+			   omega[m][l] );// solid angle element size
+
       } else {
-	mu[m][l]  = temp1 * ( sin(psi[m][l+1]) - sin(psi[m][l])  );   //x
-	eta[m][l] = - temp1 * ( cos(psi[m][l+1]) - cos(psi[m][l])  ); //y
-	xi[m][l]  = temp2 * ( psi[m][l+1] - psi[m][l]  );             //z
+
+	Control_Angle_Avg( theta[m],     // lower polar angle
+			   theta[m+1],   // upper polar angle
+			   psi[m][l],    // lower azimuthal angle
+			   psi[m][l+1],  // upper azimuthal angle
+			   mu[m][l],     // x-direction cosine
+			   eta[m][l],    // y-direction cosine
+			   xi[m][l],     // z-direction cosine
+			   omega[m][l] );// solid angle element size
+
       }
       
-      // solid angles
-      omega[m][l] = - ( cos(theta[m+1]) - cos(theta[m]) ) *
-	              ( psi[m][l+1] - psi[m][l] );
-
       // multiply by the symmetry factor
       mu[m][l]    *= Symmetry_Factor;
       eta[m][l]   *= Symmetry_Factor;
@@ -487,20 +494,15 @@ void Rte2D_State :: SetupPhaseDOM( const int type ) {
       for(int p=0 ; p<Npolar ; p++) 
 	for(int q=0 ; q<Nazim[p] ; q++) {
 	  
-	  // initialize
-	  Phi[v][m][l][p][q] = ZERO;
-
-	  // incoming ray
-	  in_dir = Vector3D( mu[m][l],eta[m][l],xi[m][l] );
-	  // outgoing ray
-	  out_dir = Vector3D( mu[p][q],eta[p][q],xi[p][q] );
+	  // incoming ray (divide out omega)
+	  in_dir = Vector3D( mu[m][l],eta[m][l],xi[m][l] )/omega[m][l];
+	  // outgoing ray (divide out omega)
+	  out_dir = Vector3D( mu[p][q],eta[p][q],xi[p][q] )/omega[p][q];
 	  // Compute the dot product between the incoming 
-	  dprod = dot(in_dir,out_dir) / abs(in_dir) / abs(out_dir);
+	  dprod = dot(in_dir,out_dir);
 
 	  // compute the phase function for the current directions
-	  for (int i=0; i<Mn; i++)
-	    Phi[v][m][l][p][q] += An[i]*Legendre( dprod, i );
-
+	  Phi[v][m][l][p][q] = PhaseEval(An, Mn, dprod);
 	  
 	} //end for out-dirs
     } // end for in-dirs
@@ -509,41 +511,11 @@ void Rte2D_State :: SetupPhaseDOM( const int type ) {
   //------------------------------------------------
   // Normalize the phase function.
   //------------------------------------------------
-  //
-  // Loop over incoming dirs
-  //
-  for(int m=0 ; m<Npolar ; m++) 
-    for(int l=0 ; l<Nazim[m] ; l++) {
-      
-      // initialize
-      g = 0;
-      
-      //
-      // sum outgoing portion
-      //
-      for(int p=0 ; p<Npolar ; p++)
-	for(int q=0 ; q<Nazim[p] ; q++) 
-	  g += Phi[v][m][l][p][q]*omega[p][q]; 
-      
-      // if this is zero, don't divide by zero
-      if (g<TOLER) continue;
-      
-      // compute the constant
-      g = g/(4.0*PI);
-
-      // if this is already one, no need to normalize
-      if (fabs(g-ONE)<TOLER) continue;
-
-      //
-      // normalize
-      //
-      for(int p=0 ; p<Npolar ; p++)
-	for(int q=0 ; q<Nazim[p] ; q++) 
-	  Phi[v][m][l][p][q] = Phi[v][m][l][p][q]/g;
-	
-    }  // end for -in-dirs-
-  
-
+  NormalizePhase( Phi[0],   // phase function array (m,l,p,q)
+		  Npolar,   // number polar angles
+		  Nazim,    // number azim angles
+		  omega );  // control angle element size
+    
   //------------------------------------------------
   // now copy the phase function over all bands
   //------------------------------------------------
@@ -593,14 +565,12 @@ double phase_func(int ndim, double *x, void *params) {
   out_dir.z =           cos(x[3]);
 
   // the dot product
-  dprod = dot(in_dir,out_dir) / abs(in_dir) / abs(out_dir);
+  dprod = dot(in_dir,out_dir);
 
   //
-  // compute 
+  // compute the phase function for the current directions
   //
-  Phi = ZERO;
-  for (int i=0; i<P.Mn; i++)
-    Phi += P.An[i]*Legendre( dprod, i );
+  Phi = PhaseEval(P.An, P.Mn, dprod);
 
   // return the integrand
   return Phi * sin(x[0]) * sin(x[2]);
@@ -617,27 +587,58 @@ double phase_func(int ndim, double *x, void *params) {
  * Heat MAss Transfer 31 (8) (1988) pp 1711-1721 are    *
  * used.  Note that the phase function is assummed      *
  * independant of wavenumber.                           *
+ *                                                      *
+ * For anisotropic scattering, analytic integration may *
+ * be used to determine an average phase function.      *
+ * However, this can be computationally intensive       *
+ * for complex phase functions.  Analytic integration   *
+ * should only be used for accuracy tests. The method   *
+ * proposed by Chai, Lee, and Patankar, J. Thermophys   *
+ * Heat Transfer 8 (3) (1994) pp. 419-425 is also       *
+ * implemented.  It is an approximate evaluation of the *
+ * integral using the panel method.                     *
+ *                                                      *
+ * FIXME - Analytic integration takes too long.  And I  *
+ * had some problems obtaining similar results to those *
+ * computed using the approximate panel method.  This   *
+ * should be checked in more detail.                    *
+ *                                                      *
  ********************************************************/
 void Rte2D_State :: SetupPhaseFVM( const int type ) {
 
   //
   // initialize
   //
+  // common parameters
+  double val;   // value of integration
+  double g;     // constant for the normalization of the phase function
+  int v;        // band index
+  bool analytic_integration(false);  // true->use analytic integration
+                                     // false->use discrete approximation
+
+  // panel method integration parameters
+  int Nsub(1);  // break each control angle into Nsub x Nsub smaller ones
+  double delta_theta_in, delta_theta_out; // incoming / outgoing sub polar angle size
+  double delta_psi_in, delta_psi_out;     // incoming / outgoing sub azim angle size
+  Vector3D in_dir, out_dir;               // incoming / outgoing direction cosines
+  double dprod;                           // dot product
+  double omega_in, omega_out;             // solid angle element sizes
+  double tsub_lo, tsub_hi;                // polar angle limits
+  double psub_lo, psub_hi;                // azimuthal anlge limits
+
+  // Analytic integration parameters
   double* An;   // the polynomial expansion coefficients array
   int Mn;       // the degree of legendre polynomial
-  double g;     // constant for the normalization of the phase function
   simp_function F;    // function struct for integration
   legendre_param lp;  // function parameters struct for integration
   simp_state S;       // simpson state struct for integration
   simp_params P;      // simpson params struct for integration
   int fevals;         // number of function evaluations
-  double val;         // value of integration
   int err;            // error flag returned by adaptsim
-  int v;
 
   // setup integration parameters
   P.maxevals = 100000000;
-  P.tol = MILLI;
+  P.tol = MICRO;
 
   //------------------------------------------------
   // linear isotropic scattering
@@ -657,112 +658,191 @@ void Rte2D_State :: SetupPhaseFVM( const int type ) {
   } // endif
   
 
-  //------------------------------------------------
+  //================================================
+  //
   // anisotropic scatering
+  //
+  //================================================
+
   //------------------------------------------------
   // Setup anisotropic scattering by integrating the phase
   // function over the total solid angles.  Use an adaptive simpsons
   // quadrature rule for multidimensional integration
+  //------------------------------------------------
+  if (analytic_integration) {
 
-  // get the phase function constants and
-  // initialize the legendre parameter struct
-  An = PhaseFunc( type, Mn);
-  lp.An = An;
-  lp.Mn = Mn;
+    // get the phase function constants and
+    // initialize the legendre parameter struct
+    An = PhaseFunc( type, Mn);
+    lp.An = An;
+    lp.Mn = Mn;
 
-  // setup integration ( allocate memory and set parameters )
-  malloc_simp_struc( 4, F, S );
-  init_simp_struc( F, S );
-  
-  // setup function struct and params
-  F.f = phase_func;
-  F.params = &lp;
-
-  cout << "\nIntegrating Phase Funcion..." << flush;
-  
-
-  // For now, we make the phase function independant of wavelength
-  v = 0;
-  
-  //
-  // loop over incoming (m,l) and outgoing (p,q) directions
-  //
-  for(int m=0 ; m<Npolar ; m++) {
-    for(int l=0 ; l<Nazim[m] ; l++) {
-      
-      for(int p=0 ; p<Npolar ; p++) {
-	for(int q=0 ; q<Nazim[p] ; q++) {
-	  
-	  // initialize before integration
-	  init_simp_struc( F, S );
-	  
-	  // set new integration limits
-	  F.xmin[0] = theta[m];  F.xmax[0] = theta[m+1];
-	  F.xmin[1] = psi[m][l]; F.xmax[1] = psi[m][l+1];
-	  F.xmin[2] = theta[p];  F.xmax[2] = theta[p+1];;
-	  F.xmin[3] = psi[p][q]; F.xmax[3] = psi[p][q+1];
-	    
-	  
-	  // compute the integrated phase function
-	  err = adaptsim( F, S, P, fevals, val );
-	  if (err) { 
-	    cerr << "RteState.cc::SetupPhaseFVM() - "
-		 << "Error integrating phase function\n";
-	    cerr << "Error flag: " << err << endl;
-	    exit (-1);
-	  }
-	  
-	  // set
-	  Phi[v][m][l][p][q] = val 
-	    / (omega[m][l]/Symmetry_Factor)
-	    / (omega[p][q]/Symmetry_Factor);
-	  // IMPORTANT - THE FACTOR 4 COMES FROM SYMMETRY
-	  // WE ARE ONLY MODELLING HALF THE SOLID ANGLE RANGE,
-	  // THUS OMEGA HAS BEEN MULTIPLIED BY 2.  NEED TO
-	  // DIVIDE OUT THIS FACTOR WHEN AVERAGING PHI.
-	  
-	  
-	} //end for -q-
-      } // end for -p-
-    } // end for -l-
-  } // end for -m-
-  
+    // setup integration ( allocate memory and set parameters )
+    malloc_simp_struc( 4, F, S );
+    init_simp_struc( F, S );
     
+    // setup function struct and params
+    F.f = phase_func;
+    F.params = &lp;
+    
+    cout << "\nIntegrating Phase Function Analytically..." << flush;
+    
+    // For now, we make the phase function independant of wavelength
+    v = 0;
+    
+    //
+    // loop over incoming (m,l) and outgoing (p,q) directions
+    //
+    for(int m=0 ; m<Npolar ; m++) {
+      for(int l=0 ; l<Nazim[m] ; l++) {
+	
+	for(int p=0 ; p<Npolar ; p++) {
+	  for(int q=0 ; q<Nazim[p] ; q++) {
+	    
+	    // initialize before integration
+	    init_simp_struc( F, S );
+	    
+	    // set new integration limits
+	    F.xmin[0] = theta[m];  F.xmax[0] = theta[m+1];
+	    F.xmin[1] = psi[m][l]; F.xmax[1] = psi[m][l+1];
+	    F.xmin[2] = theta[p];  F.xmax[2] = theta[p+1];;
+	    F.xmin[3] = psi[p][q]; F.xmax[3] = psi[p][q+1];
+	  
+	    // compute the integrated phase function
+	    err = adaptsim( F, S, P, fevals, val );
+	    if (err) { 
+	      cerr << "RteState.cc::SetupPhaseFVM() - "
+		   << "Error integrating phase function\n";
+	      cerr << "Error flag: " << err << endl;
+	      exit (-1);
+	    }
+	    
+	    // set
+	    // IMPORTANT - We are only modelling a section (typically
+	    // half) of the solid anlge range.  Omega hass been weighed 
+	    // accordingly.  Thus need to divide out this factor when
+	    // averaging phi.
+	    Phi[v][m][l][p][q] = val 
+ 	      / (omega[m][l]/Symmetry_Factor)
+ 	      / (omega[p][q]/Symmetry_Factor);
+	  
+	    
+	  } //end for -q-
+	} // end for -p-
+      } // end for -l-
+    } // end for -m-
+    
+    // clean case specific memory
+    free_simp_struc( F, S );
+
+  //------------------------------------------------
+  // Setup anisotropic scattering by integrating the phase
+  // function over the total solid angles.  Use a type
+  // of panel method multidimensional integration
+  // See Chai et al. (1994).
+  //------------------------------------------------
+  } else {
+    
+    // get the phase function constants
+    An = PhaseFunc( type, Mn);
+
+    // For now, we make the phase function independant of wavelength
+    v = 0;
+    
+    //
+    // loop over incoming (m,l) and outgoing (p,q) directions
+    //
+    for(int m=0 ; m<Npolar ; m++) {
+      for(int l=0 ; l<Nazim[m] ; l++) {
+	
+	for(int p=0 ; p<Npolar ; p++) {
+	  for(int q=0 ; q<Nazim[p] ; q++) {
+	    	    
+	    // break control angles up into Nsub x Nsub sections
+	    delta_theta_in  = ( theta[m+1]  - theta[m]  ) / double(Nsub);
+	    delta_psi_in    = ( psi[m][l+1] - psi[m][l] ) / double(Nsub);
+	    delta_theta_out = ( theta[p+1]  - theta[p]  ) / double(Nsub);
+	    delta_psi_out   = ( psi[p][q+1] - psi[p][q] ) / double(Nsub);
+
+	    //
+	    // loop over the sub control angles
+	    //
+	    val = ZERO;
+	    for(int r=0 ; r<Nsub ; r++) // -> theta_sub_in
+	      for(int s=0 ; s<Nsub ; s++) // -> psi_sub_in
+		for(int t=0 ; t<Nsub ; t++) // -> theta_sub_out
+		  for(int u=0 ; u<Nsub ; u++) {// -> psi_sub_out
+
+		    // Compute the control angle element limits
+		    // and the incoming and outgoing cosines/element size.
+		    // Note: cosines are thos at the element centroid.
+
+		    // incoming
+		    tsub_lo = theta[m] + delta_theta_in*r;
+		    tsub_hi = theta[m] + delta_theta_in*(r+1);
+		    psub_lo = psi[m][l] + delta_psi_in*s;
+		    psub_hi = psi[m][l] + delta_psi_in*(s+1);
+
+		    Control_Angle_Ctr( tsub_lo,    // lower polar angle
+				       tsub_hi,    // upper polar angle
+				       psub_lo,    // lower azimuthal angle
+				       psub_hi,    // upper azimuthal angle
+				       in_dir.x,   // x-direction cosine
+				       in_dir.y,   // y-direction cosine
+				       in_dir.z,   // z-direction cosine
+				       omega_in ); // solid angle element size
+
+		    // outgoing
+		    tsub_lo = theta[p] + delta_theta_out*t;
+		    tsub_hi = theta[p] + delta_theta_out*(t+1);
+		    psub_lo = psi[p][q] + delta_psi_out*u;
+		    psub_hi = psi[p][q] + delta_psi_out*(u+1);
+
+		    Control_Angle_Ctr( tsub_lo,     // lower polar angle
+				       tsub_hi,     // upper polar angle
+				       psub_lo,     // lower azimuthal angle
+				       psub_hi,     // upper azimuthal angle
+				       out_dir.x,   // x-direction cosine
+				       out_dir.y,   // y-direction cosine
+				       out_dir.z,   // z-direction cosine
+				       omega_out ); // solid angle element size
+
+		    // the dot product
+		    dprod = dot(in_dir,out_dir);
+
+		    // compute the phase function
+		    val += PhaseEval(An, Mn, dprod)*omega_in*omega_out;
+		    
+		  } // endfor - Nsub
+
+	    
+	    // set
+	    // IMPORTANT - We are only modelling a section (typically
+	    // half) of the solid anlge range.  Omega hass been weighed 
+	    // accordingly.  Thus need to divide out this factor when
+	    // averaging phi.
+	    Phi[v][m][l][p][q] = val 
+	      / (omega[m][l]/Symmetry_Factor)
+	      / (omega[p][q]/Symmetry_Factor);
+	  
+	    
+	  } //end for -q-
+	} // end for -p-
+      } // end for -l-
+    } // end for -m-
+
+  //================================================
+  } //endif - integration type
+  //================================================
+
+
   //------------------------------------------------
   // Normalize the phase function.
   //------------------------------------------------
-  // 
-  // loop over incoming directions
-  //
-  for(int m=0 ; m<Npolar ; m++) {
-    for(int l=0 ; l<Nazim[m] ; l++) {
-      
-      // initialize
-      g = 0;
-      
-      //
-      // sum component from outgoing directions
-      //
-      for(int p=0 ; p<Npolar ; p++)
-	for(int q=0 ; q<Nazim[p] ; q++) 
-	  g += Phi[v][m][l][p][q]*omega[p][q]; 
-      
-      // if this is zero, don't divide by zero
-      if (g<TOLER) continue;
-      
-      // compute the constant
-      g = g/(4.0*PI);
-
-      // if this is already one, no need to normalize
-      if (fabs(g-ONE)<TOLER) continue;
-
-      // normalize
-      for(int p=0 ; p<Npolar ; p++)
-	for(int q=0 ; q<Nazim[p] ; q++) 
-	  Phi[v][m][l][p][q] = Phi[v][m][l][p][q]/g;
-	
-    }  // end for -l-
-  } // end for -m-
+  NormalizePhase( Phi[0],   // phase function array (m,l,p,q)
+		  Npolar,   // number polar angles
+		  Nazim,    // number azim angles
+		  omega );  // control angle element size
   
   //------------------------------------------------
   // now copy the phase function over all bands
@@ -774,12 +854,9 @@ void Rte2D_State :: SetupPhaseFVM( const int type ) {
 	  for(int q=0 ; q<Nazim[p] ; q++) 
 	    Phi[v][m][l][p][q] = Phi[0][m][l][p][q];
 
-  cout << " norm = " << g << "...done.\n" << flush;
-
 
   // clean up memory
   delete[] An;
-  free_simp_struc( F, S );
 
   return;
 

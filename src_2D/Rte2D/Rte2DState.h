@@ -56,6 +56,7 @@ using namespace std;
 #include "Medium2DState.h"
 #include "Planck.h"
 #include "Scatter.h"
+#include "ControlAngle.h"
 
 /********************************************************
  * Necessary Rte2D Specific Constants                   *

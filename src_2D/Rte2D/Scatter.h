@@ -51,14 +51,12 @@ struct legendre_param {
 inline double Legendre( const double &x, const int &n) { 
 
   // initialize
-  double P0, P1, Pn;
+  double P0(1), P1(x), Pn;
 
   // 0th degree
-  P0 = 1;
   if (n == 0) return P0;
 
   // 1st degree
-  P1 = x;
   if (n==1) return P1;
 
   //recursively compute the nth degree
@@ -194,6 +192,77 @@ inline double* PhaseFunc( const int type, int &n) {
 
   // return the array
   return An;
+
+}
+
+/********************************************************
+ * Routine: PhaseEval                                   *
+ *                                                      *
+ * Evaluate the phase function.                         *
+ *                                                      *
+ ********************************************************/
+inline double PhaseEval( const double* An, 
+			 const int &n,
+			 const double &cos_THETA ) {
+  double Phi(ZERO);
+  for (int i=0; i<n; i++)
+    Phi += An[i]*Legendre( cos_THETA, i );
+  return Phi;
+}
+
+
+/********************************************************
+ * Routine: NormalizePhase                              *
+ *                                                      *
+ * Normalizes the phase function so that it's           *
+ * integration over the solid angle sums to 4*PI        *
+ *                                                      *
+ ********************************************************/
+inline void NormalizePhase( double ****Phi,    // phase function array (m,l,p,q)
+			    const int &Npolar, // number polar angles
+			    const int* Nazim,  // number azim angles
+			    double **omega )   // control angle element size
+{
+  // declares
+  double g;
+  
+  //
+  // Loop over incoming dirs
+  //
+  for(int m=0 ; m<Npolar ; m++) 
+    for(int l=0 ; l<Nazim[m] ; l++) {
+      
+      // initialize
+      g = 0;
+      
+      //
+      // sum outgoing portion
+      //
+      for(int p=0 ; p<Npolar ; p++)
+	for(int q=0 ; q<Nazim[p] ; q++) 
+	  g += Phi[m][l][p][q]*omega[p][q]; 
+
+      // compute the constant
+      g /= 4.0*PI;
+
+      // if this is zero, don't divide by zero -> something wrong
+      if (fabs(g)<TOLER) {
+	cerr << "\nScatter.h::NormalizePhase() - Normalization factor "
+	     << "is zero -> something wrong.\n";
+	exit(-1);
+      } // endif
+
+      // if this is already one, no need to normalize
+      if (fabs(g-ONE)<TOLER) continue;
+
+      //
+      // normalize
+      //
+      for(int p=0 ; p<Npolar ; p++)
+	for(int q=0 ; q<Nazim[p] ; q++) 
+	  Phi[m][l][p][q] = Phi[m][l][p][q]/g;
+
+    }  // end for -in-dirs-
 
 }
 
