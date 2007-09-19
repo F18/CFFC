@@ -77,6 +77,11 @@ class Gaussian2D_Input_Parameters;
  *     axx      -- Return pxx/rho.                      *
  *     ayy      -- Return pyy/rho.                      *
  *     sound    -- Return sound speed.                  *
+ *     R        -- Return specific gas constant.        *
+ *     Gamma    -- Return gamma for gas.                *
+ *     Cv       -- Return specific heat at constant V.  *
+ *     Cp       -- Return specific heat at constant P.  *
+ *     K        -- Return thermal conductivity.         *
  *     dv       -- Return momentum.                     *
  *     U        -- Return conserved solution state.     *
  *     F        -- Return x-direction solution flux.    *
@@ -292,6 +297,13 @@ class Gaussian2D_pState{
 
     double sound(void);
     double sound(void) const;
+
+    /* Other gas properties */
+    double R(void) const;
+    double Gamma(void) const;
+    double Cv(void) const;
+    double Cp(void) const;
+    double K(void) const;
 
     /* Momentum. */
     Vector2D dv(void);
@@ -1089,6 +1101,52 @@ inline double Gaussian2D_pState::sound(void) const {
       return (sqrt((5.0/3.0)*(p.xx+p.yy+p.zz)/3/d));
     }
 }
+
+/********************************************************
+ * Gaussian2D_pState::R -- Specific Gas Constant.       *
+ ********************************************************/
+inline double Gaussian2D_pState::R(void) const {
+  return R_UNIVERSAL/M;
+}
+
+/********************************************************
+ * Gaussian2D_pState::Gamma                             *
+ ********************************************************/
+inline double Gaussian2D_pState::Gamma(void) const {
+  switch(atoms) {
+    case 1 :
+      return (5.0/3.0);
+    case 2 :
+      return 1.4;
+    default :
+      cout << "Error determining Gamma." << endl;
+      return -1.0;
+  };
+}
+
+/********************************************************
+ * Gaussian2D_pState::Cv -- specific heat at constant V.*
+ ********************************************************/
+inline double Gaussian2D_pState::Cv(void) const {
+  return R()/(Gamma()-1.0);
+}
+
+/********************************************************
+ * Gaussian2D_pState::Cp -- specific heat at constant P.*
+ ********************************************************/
+inline double Gaussian2D_pState::Cp(void) const {
+  double g(Gamma());
+  return R()*g/(g-1.0);
+}
+
+/********************************************************
+ * Gaussian2D_pState::K -- Thermal conductivity.        *
+ ********************************************************/
+inline double Gaussian2D_pState::K(void) const {
+  return Cp()*viscosity()/pr;
+}
+
+
 
 /********************************************************
  * Gaussian2D_pState::dv -- Momentum.                   *
