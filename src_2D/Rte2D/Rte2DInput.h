@@ -297,6 +297,7 @@ inline void Rte2D_Input_Parameters::SetupInputState()
   
   // Setup static state variables
   Medium2D_State:: SetupStatic( i_AbsorptionModel, 
+				i_ScatteringFunc,
 				SNBCK_IP,
 				CFFC_Path );
   Rte2D_State::SetupStatic( i_RTE_Solver, 

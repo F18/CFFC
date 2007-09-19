@@ -39,6 +39,7 @@ using namespace std;
 #include "../Math/Vector2D.h"
 #include "../CFD/CFD.h"
 #include "SNBCK.h"
+#include "Scatter.h"
 #include "Vector2D_Function.h"
 
 /********************************************************
@@ -95,7 +96,8 @@ class Medium2D_State {
   static int Nband;            //!< the total number of frequency bands (and quadrature points for SNBCK)
   static int NUM_VAR_MEDIUM2D; //!< the total number of variables in the state
   static SNBCK* SNBCKdata;     //!< statistical narrow band model 
-  static double Absorb_Type;   //!< flag for absorption model
+  static int Absorb_Type;      //!< flag for absorption model
+  static bool Scatter_Iso;     //!< true->isotropic scattering, false->anisotropic
   //@}
 
 
@@ -166,6 +168,7 @@ class Medium2D_State {
   //@{ @name Static functions
   //! Setup function
   static void SetupStatic( const int &i_Absorb_Type, 
+			   const int &i_Scattering_Type,
 			   const SNBCK_Input_Parameters &SNBCK_IP,
 			   const char* PATH);
 

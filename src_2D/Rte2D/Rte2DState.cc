@@ -313,11 +313,11 @@ void Rte2D_State :: SetDirsFVM(const int NumPolarDirs,
     psi_min = 0; 
     psi_max = 2.0*PI;
     theta_min = 0;
-    theta_max = PI; //2.0;
+    theta_max = PI/2.0;
   } // endif
 
   // the symmetry factor
-  Symmetry_Factor = ONE;// TWO;
+  Symmetry_Factor = TWO;
 
 
   // create the angular grid

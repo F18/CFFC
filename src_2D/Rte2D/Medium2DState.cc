@@ -21,10 +21,11 @@
 /********************************************************
  * Static member initialization                         *
  ********************************************************/
-int         Medium2D_State :: Nband          = 0;     // number of bands (& quad pts)
-int         Medium2D_State :: NUM_VAR_MEDIUM2D = 0;   // total number of variables
-SNBCK*      Medium2D_State :: SNBCKdata      = NULL;  // SNBCK data object
-double      Medium2D_State :: Absorb_Type    = MEDIUM2D_ABSORB_GRAY; // absorbsion model
+int    Medium2D_State :: Nband          = 0;     // number of bands (& quad pts)
+int    Medium2D_State :: NUM_VAR_MEDIUM2D = 0;   // total number of variables
+SNBCK* Medium2D_State :: SNBCKdata      = NULL;  // SNBCK data object
+int    Medium2D_State :: Absorb_Type    = MEDIUM2D_ABSORB_GRAY; // absorbsion model
+bool   Medium2D_State :: Scatter_Iso    = true;  // isotropic or anisotropic scattering
 Vector2D_Function<Medium2D_State>* Medium2D_State :: Field = NULL;   // functor pointer
 
 
@@ -83,7 +84,8 @@ void Medium2D_State :: SetInitialValues( const double &Pressure,
 /********************************************************
  * Setup Static variables.                              *
  ********************************************************/
-void Medium2D_State :: SetupStatic( const int &i_Absorb_Type, 
+void Medium2D_State :: SetupStatic( const int &i_Absorb_Type,
+				    const int &i_Scattering_Type,
 				    const SNBCK_Input_Parameters &SNBCK_IP,
 				    const char* PATH) {
 
@@ -111,6 +113,9 @@ void Medium2D_State :: SetupStatic( const int &i_Absorb_Type,
     cerr << "Medium2D_State::SetupState - Invalid flag for gas type\n";
     exit(-1);
   } // endif
+
+  // set the isotropic scattering flag
+  Scatter_Iso = (i_Scattering_Type == RTE2D_SCATTER_ISO);
 
   // set number of variables
   NUM_VAR_MEDIUM2D = 3*Nband;
