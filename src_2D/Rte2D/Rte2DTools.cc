@@ -563,7 +563,6 @@ double func_exact_rect(int ndim, double *x, void *params) {
   double s1, s1_star, s1_til;
   double d, x_star, y_star;
   double temp = ZERO;
-  double denom;
 
   // set out integration parameters
   double theta = x[0];
