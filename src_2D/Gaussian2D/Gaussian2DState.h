@@ -3304,6 +3304,13 @@ extern Gaussian2D_pState Isothermal_Wall(const Gaussian2D_pState &W,
 					 const double &T,
 					 const Vector2D &norm_dir);
 
+extern Gaussian2D_pState Isothermal_Wall_Slip_T(const Gaussian2D_pState &W,
+						const Vector2D &V,
+						const double &T,
+						const Gaussian2D_pState &dWdx,
+						const Gaussian2D_pState &dWdy,
+						const Vector2D &norm_dir);
+
 extern Gaussian2D_pState Knudsen_Layer_Adiabatic(const Gaussian2D_pState &W,
 						 const Vector2D &v,
 						 const Vector2D &norm_dir);
@@ -3312,6 +3319,13 @@ extern Gaussian2D_pState Knudsen_Layer_Isothermal(const Gaussian2D_pState &W,
 						  const Vector2D &V,
 						  const double &T,
 						  const Vector2D &norm_dir);
+
+extern Gaussian2D_pState Knudsen_Layer_Isothermal_Slip_T(const Gaussian2D_pState &W,
+							 const Vector2D &V,
+							 const double &T,
+							 const Gaussian2D_pState &dWdx,
+							 const Gaussian2D_pState &dWdy,
+							 const Vector2D &norm_dir);
 
 extern Gaussian2D_pState RinglebFlowAverageState(const Gaussian2D_pState &Wdum,
 						 const Vector2D &Y1,

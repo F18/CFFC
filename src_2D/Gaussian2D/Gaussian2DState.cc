@@ -438,6 +438,30 @@ Gaussian2D_pState Isothermal_Wall(const Gaussian2D_pState &W,
 }
 
 /********************************************************
+ * Routine: Isothermal_Wall_Slip_T                      *
+ *                                                      *
+ * This function returns the solution state for a wall  *
+ * in a given direction given the primitive solution    *
+ * variables and the unit normal vector in the          *
+ * direction of interest.                               *
+ *                                                      *
+ ********************************************************/
+Gaussian2D_pState Isothermal_Wall_Slip_T(const Gaussian2D_pState &W,
+					 const Vector2D &V,
+					 const double &T,
+					 const Gaussian2D_pState &dWdx,
+					 const Gaussian2D_pState &dWdy,
+					 const Vector2D &norm_dir) {
+  double Tk, _dTdn; //underscore to avoid same name as function dTdn()
+
+  _dTdn = dTdn(W,dWdx,dWdy,norm_dir);
+
+  Tk = T + W.gt()*_dTdn;
+
+  return Isothermal_Wall(W,V,Tk,norm_dir);
+}
+
+/********************************************************
  * Routine: Knudsen_Layer_Adiabatic                     *
  *                                                      *
  * This function returns the state inside a knudsen     *
@@ -559,6 +583,32 @@ Gaussian2D_pState Knudsen_Layer_Isothermal(const Gaussian2D_pState &W,
 
   return Rotate(Kn_rot,Vector2D(norm_dir.x,-norm_dir.y));
 
+}
+
+/********************************************************
+ * Routine: Knudsen_Layer_Isothermal_Slip_T             *
+ *                                                      *
+ * This function returns the state inside a knudsen     *
+ * layer.  This is different than the "Isothermal_Wall" *
+ * function which returns the state required to give    *
+ * the correct "Roe average" for flux calculations.     *
+ * This is the "isothermal" version of this function    *
+ * with slip boundary conditions for temperature.       *
+ *                                                      *
+ ********************************************************/
+Gaussian2D_pState Knudsen_Layer_Isothermal_Slip_T(const Gaussian2D_pState &W,
+						  const Vector2D &V,
+						  const double &T,
+						  const Gaussian2D_pState &dWdx,
+						  const Gaussian2D_pState &dWdy,
+						  const Vector2D &norm_dir) {
+  double Tk, _dTdn; //underscore to avoid same name as function dTdn()
+
+  _dTdn = dTdn(W,dWdx,dWdy,norm_dir);
+
+  Tk = T + W.gt()*_dTdn;
+
+  return Knudsen_Layer_Isothermal(W,V,Tk,norm_dir);
 }
 
 /********************************************************
