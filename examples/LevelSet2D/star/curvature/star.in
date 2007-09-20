@@ -60,9 +60,9 @@ Number_of_Cells_Jdir =
 Number_of_Ghost_Cells =
 3
 Number_of_Blocks_Idir = 
-4
+3
 Number_of_Blocks_Jdir =
-4
+3
 Number_of_Blocks_Per_Processor =
 128
 #
@@ -70,9 +70,9 @@ Number_of_Blocks_Per_Processor =
 Hamilton_Jacobi_CFL_Number =
 0.5
 Time_Max =
-30.0
+1.0
 Maximum_Number_of_Time_Steps =
-10
+0
 #
 # EIKONAL EQUATION PARAMETERS:
 Redistance_Frequency =
@@ -81,6 +81,8 @@ Eikonal_CFL_Number =
 0.25
 Redistance_Tolerance = 
 0.00001
+Eikonal_Sign_Function =
+Smeared
 Initial_Distance_Type =
 Geometric
 Number_of_Initial_Redistance_Iterations = 
@@ -129,10 +131,10 @@ Execute
 Write_Output
 Write_Output_Cells
 Write_Output_Nodes
-#Write_Output_Interface_List
+Write_Output_Interface_List
 #
 # WRITE RESTART:
-Write_Restart
+#Write_Restart
 #
 # TERMINATE PRGRAM:
 Terminate

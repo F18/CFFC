@@ -2029,15 +2029,15 @@ extern LESPremixed2D_cState FluxRoe_n(const LESPremixed2D_cState &Ul,
 extern LESPremixed2D_cState FluxAUSMplus_up(const LESPremixed2D_pState &Wl,
 					    const LESPremixed2D_pState &Wr);
 
-extern LESPremixed2D_cState FluxAUSMplus_up(const LESPremixed2D_cState &Wl,
-					    const LESPremixed2D_cState &Wr);
+extern LESPremixed2D_cState FluxAUSMplus_up(const LESPremixed2D_cState &Ul,
+					    const LESPremixed2D_cState &Ur);
 
 extern LESPremixed2D_cState FluxAUSMplus_up_n(const LESPremixed2D_pState &Wl,
 					      const LESPremixed2D_pState &Wr,
 					      const Vector2D &norm_dir);
 
-extern LESPremixed2D_cState FluxAUSMplus_up_n(const LESPremixed2D_cState &Wl,
-					      const LESPremixed2D_cState &Wr,
+extern LESPremixed2D_cState FluxAUSMplus_up_n(const LESPremixed2D_cState &Ul,
+					      const LESPremixed2D_cState &Ur,
 					      const Vector2D &norm_dir);
 
 /* Viscous Solution flux (laminar+turbulent) */
