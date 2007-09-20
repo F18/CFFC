@@ -294,6 +294,38 @@ Gaussian2D_pState Reflect(const Gaussian2D_pState &W,
 }
 
 /********************************************************
+ * Routine: dTdn                                        *
+ *                                                      *
+ * This function returns the gradient of the            *
+ * thermodynamic pressure in the n direction.           *
+ *                                                      *
+ ********************************************************/
+double dTdn(const Gaussian2D_pState &W,
+	    const Gaussian2D_pState &dWdx,
+	    const Gaussian2D_pState &dWdy,
+	    const Vector2D &norm_dir) {
+
+  Gaussian2D_pState dWdn(norm_dir.x*dWdx+norm_dir.y*dWdy);
+
+  switch(W.atoms) {
+    case 1 :
+
+      return ( 1.0/(3.0*W.d)*(dWdn.p.xx+dWdn.p.yy+dWdn.p.zz) -
+	       1.0/(3.0*W.d*W.d)*(W.p.xx+W.p.yy+W.p.zz)*dWdn.d);
+
+    case 2 :
+
+      return ( 1.0/(5.0*W.d)*(dWdn.p.xx+dWdn.p.yy+dWdn.p.zz+2.0*dWdn.erot) -
+	       1.0/(5.0*W.d*W.d)*(W.p.xx+W.p.yy+W.p.zz+2.0*W.erot)*dWdn.d);
+
+    default :
+      cout << "Error determining dTdn." << endl;
+      return -1.0;
+  };
+
+}
+
+/********************************************************
  * Routine: Adiabatic_Wall                              *
  *                                                      *
  * This function returns the solution state for a wall  *

@@ -3285,6 +3285,11 @@ extern Gaussian2D_pState Reflect(const Gaussian2D_pState &W,
 extern Gaussian2D_pState NoSlip(const Gaussian2D_pState &W,
 	      	                const Vector2D &norm_dir);
 
+extern double dTdn(const Gaussian2D_pState &W,
+		   const Gaussian2D_pState &dWdx,
+		   const Gaussian2D_pState &dWdy,
+		   const Vector2D &norm_dir);
+
 extern Gaussian2D_pState Adiabatic_Wall(const Gaussian2D_pState &W,
 					const Gaussian2D_pState &Wo,
 					const Vector2D &norm_dir,
