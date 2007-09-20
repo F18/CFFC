@@ -1,6 +1,6 @@
 #!/bin/bash
 
-nice -n +19 mpirun -np 1 --gm-kill 2 /nfs/fe03/d1/cfd/samuel/CFDkit+caboodle/src/levelset2D -f circle.in -pde LevelSet2D
+nice -n +19 mpirun -np 1 --gm-kill 2 /nfs/fe03/d1/cfd/samuel/CFFC/src_2D/levelset2D -f circle.in
 cat circle_cpu*.dat > points.dat
 cat circle_cells_cpu*.dat > cells.dat
 cat circle_nodes_cpu*.dat > nodes.dat

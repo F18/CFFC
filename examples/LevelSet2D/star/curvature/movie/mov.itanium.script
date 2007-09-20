@@ -1,0 +1,79 @@
+#!/bin/tcsh
+#
+#PBS -N star_curv
+#PBS -q iqmaster
+#PBS -l walltime=1:00:00,nodes=4:ppn=4:itanium-8G,other=night
+#PBS -W group_list=cfd
+
+cd /nfs/fe03/d1/cfd/samuel/CFFC/examples/LevelSet2D/star/curvature/
+mpirun -np 16 --gm-no-shmem --gm-kill 2 /nfs/fe03/d1/cfd/samuel/CFFC/src_2D/levelset2D -f star_001.in >& star_001.log
+cat star_cpu*.dat > points.dat
+cat star_cells_cpu*.dat > cells_001.dat
+cat stare_nodes_cpu*.dat > nodes.dat
+cat star_interface_list_cpu*.dat > interface_list.dat
+rm star_*cpu*.dat
+rm star_curv.e* star_curv.o*
+
+mpirun -np 16 --gm-no-shmem --gm-kill 2 /nfs/fe03/d1/cfd/samuel/CFFC/src_2D/levelset2D -f star_002.in >& star_002.log
+cat star_cpu*.dat > points.dat
+cat star_cells_cpu*.dat > cells_002.dat
+cat stare_nodes_cpu*.dat > nodes.dat
+cat star_interface_list_cpu*.dat > interface_list.dat
+rm star_*cpu*.dat
+rm star_curv.e* star_curv.o*
+
+mpirun -np 16 --gm-no-shmem --gm-kill 2 /nfs/fe03/d1/cfd/samuel/CFFC/src_2D/levelset2D -f star_003.in >& star_003.log
+cat star_cpu*.dat > points.dat
+cat star_cells_cpu*.dat > cells_003.dat
+cat stare_nodes_cpu*.dat > nodes.dat
+cat star_interface_list_cpu*.dat > interface_list.dat
+rm star_*cpu*.dat
+rm star_curv.e* star_curv.o*
+
+mpirun -np 16 --gm-no-shmem --gm-kill 2 /nfs/fe03/d1/cfd/samuel/CFFC/src_2D/levelset2D -f star_004.in >& star_004.log
+cat star_cpu*.dat > points.dat
+cat star_cells_cpu*.dat > cells_004.dat
+cat stare_nodes_cpu*.dat > nodes.dat
+cat star_interface_list_cpu*.dat > interface_list.dat
+rm star_*cpu*.dat
+rm star_curv.e* star_curv.o*
+
+mpirun -np 16 --gm-no-shmem --gm-kill 2 /nfs/fe03/d1/cfd/samuel/CFFC/src_2D/levelset2D -f star_005.in >& star_005.log
+cat star_cpu*.dat > points.dat
+cat star_cells_cpu*.dat > cells_005.dat
+cat stare_nodes_cpu*.dat > nodes.dat
+cat star_interface_list_cpu*.dat > interface_list.dat
+rm star_*cpu*.dat
+rm star_curv.e* star_curv.o*
+
+mpirun -np 16 --gm-no-shmem --gm-kill 2 /nfs/fe03/d1/cfd/samuel/CFFC/src_2D/levelset2D -f star_006.in >& star_006.log
+cat star_cpu*.dat > points.dat
+cat star_cells_cpu*.dat > cells_006.dat
+cat stare_nodes_cpu*.dat > nodes.dat
+cat star_interface_list_cpu*.dat > interface_list.dat
+rm star_*cpu*.dat
+rm star_curv.e* star_curv.o*
+
+mpirun -np 16 --gm-no-shmem --gm-kill 2 /nfs/fe03/d1/cfd/samuel/CFFC/src_2D/levelset2D -f star_007.in >& star_007.log
+cat star_cpu*.dat > points.dat
+cat star_cells_cpu*.dat > cells_007.dat
+cat stare_nodes_cpu*.dat > nodes.dat
+cat star_interface_list_cpu*.dat > interface_list.dat
+rm star_*cpu*.dat
+rm star_curv.e* star_curv.o*
+
+mpirun -np 16 --gm-no-shmem --gm-kill 2 /nfs/fe03/d1/cfd/samuel/CFFC/src_2D/levelset2D -f star_008.in >& star_008.log
+cat star_cpu*.dat > points.dat
+cat star_cells_cpu*.dat > cells_008.dat
+cat stare_nodes_cpu*.dat > nodes.dat
+cat star_interface_list_cpu*.dat > interface_list.dat
+rm star_*cpu*.dat
+rm star_curv.e* star_curv.o*
+
+mpirun -np 16 --gm-no-shmem --gm-kill 2 /nfs/fe03/d1/cfd/samuel/CFFC/src_2D/levelset2D -f star_009.in >& star_009.log
+cat star_cpu*.dat > points.dat
+cat star_cells_cpu*.dat > cells_009.dat
+cat stare_nodes_cpu*.dat > nodes.dat
+cat star_interface_list_cpu*.dat > interface_list.dat
+rm star_*cpu*.dat
+rm star_curv.e* star_curv.o*
