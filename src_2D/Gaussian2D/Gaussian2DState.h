@@ -848,6 +848,8 @@ inline void Gaussian2D_pState::setgas(char *string_ptr) {
     M = MOLE_WT_AIR;
     atoms = GAUSSIAN_DIATOMIC;
     gas = GAS_AIR;
+    omega = OMEGA_AIR;
+    mu_not = MU_NOT_AIR;
   } /* endif */
   if(atoms == GAUSSIAN_MONATOMIC){
     erot = 0.0;

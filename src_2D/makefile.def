@@ -15,7 +15,7 @@ MPI_VERSION = NoMPI
 ICEMCFD_VERSION = NoICEMCFD
 
 # Version V296, V3+, ICC
-GCC_VERSION = ICC
+GCC_VERSION = V3+
 
 # NoCANTERA, V70
 CANTERA_VERSION = NoCANTERA
@@ -356,6 +356,9 @@ ifeq ($(PLATFORM),Linux_ia64)
     MODFLAG = -module
     CFLAGS = -w0 -O2 -mp -ftz 
     LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -limf
+    ifeq ($(PROFILING),ON)
+      CXXFLAGS = -w0 -mp -ftz -g -p
+    endif
     LD = $(CXX)
     DEPENDSFLAGS =
   endif
