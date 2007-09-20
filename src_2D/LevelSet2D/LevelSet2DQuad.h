@@ -51,7 +51,7 @@
 #define UNCHECKED       2
 
 // Interface retrieval debugging option.
-// #define _RETRIEVE_DEBUG_
+#define _RETRIEVE_DEBUG_
 
 /*!
  * Class: CutType

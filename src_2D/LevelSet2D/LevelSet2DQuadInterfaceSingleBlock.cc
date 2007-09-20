@@ -1328,7 +1328,6 @@ void Flag_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
     SolnBlk.Trace[ncells].i = ic; SolnBlk.Trace[ncells].j = jc; SolnBlk.Trace[ncells].face = CENTER; ncells++;
     if (start == -1 && (ic == SolnBlk.ICu+1 || ic == SolnBlk.ICl-1 ||
 			jc == SolnBlk.JCu+1 || jc == SolnBlk.JCl-1)) start = ncells-1;
-
   } else {
 
     // Flag NORTH face.
