@@ -30,7 +30,8 @@ CHEM_DIR = Chem2D/
 DUSTY_DIR = Dusty2D/
 ELECTROSTATIC_DIR = Electrostatic2D/
 EOS_DIR = EquationOfState/
-EULER_DIR = Euler2D/
+EULER_1D_DIR = Euler1D/
+EULER_2D_DIR = Euler2D/
 GRID_DIR = Grid/
 HIGHTEMP_DIR = HighTemp2D/
 ICEMCFD_DIR = ICEM/
@@ -95,6 +96,8 @@ SRC_CFD = $(CFD_DIR)CFD.cc
 SRC_MPI = $(MPI_DIR)MPI.cc
 
 # Grid:
+SRC_GRID_1D = $(GRID_DIR)Cell1D.cc
+
 SRC_GRID = $(GRID_DIR)Cell1D.cc \
            $(GRID_DIR)Cell2D.cc \
            $(GRID_DIR)Grid2DQuadSingleBlock.cc \
@@ -115,6 +118,10 @@ else
             $(AMR_DIR)QuadTree.cc
 endif
 
+# HighOrderReconstruction
+SRC_HIGH_ORDER_RECONSTRUCTION = ReconstructionHelpers.cc
+SRC_HIGH_ORDER_RECONSTRUCTION := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR), $(SRC_HIGH_ORDER_RECONSTRUCTION))
+
 # 1D:
 SRC_SCALAR = $(SOLVERS1D_DIR)Scalar1D.cc \
              $(SOLVERS1D_DIR)Scalar1DSolvers.cc
@@ -123,16 +130,19 @@ SRC_HEAT = $(SOLVERS1D_DIR)Heat1D.cc \
 SRC_HYPERHEAT = $(SOLVERS1D_DIR)HyperHeat1DState.cc \
                 $(SOLVERS1D_DIR)HyperHeat1D.cc \
                 $(SOLVERS1D_DIR)HyperHeat1DSolvers.cc
-SRC_EULER1D = $(SOLVERS1D_DIR)Euler1DState.cc \
-              $(SOLVERS1D_DIR)Euler1D.cc \
-              $(SOLVERS1D_DIR)Euler1DSolvers.cc
 SRC_MHD1D = $(SOLVERS1D_DIR)MHD1DState.cc \
             $(SOLVERS1D_DIR)MHD1D.cc \
             $(SOLVERS1D_DIR)MHD1DSolvers.cc
 
-# HighOrderReconstruction:
-SRC_HIGH_ORDER_RECONSTRUCTION = ReconstructionHelpers.cc
-SRC_HIGH_ORDER_RECONSTRUCTION := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR), $(SRC_HIGH_ORDER_RECONSTRUCTION))
+# Euler 1D:
+SRC_EULER1D = Euler1DState.cc \
+	      Euler1D.cc \
+	      Euler1DSolvers.cc
+	     # Euler1D_HighOrder.cc \
+#
+SRC_EULER1D := $(addprefix $(EULER_1D_DIR), $(SRC_EULER1D))
+SRC_EULER1D_EXE = $(EULER_1D_DIR)Euler1DMain.cc
+#
 
 # Advectdiffuse2D:
 SRC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.cc \
@@ -147,14 +157,14 @@ SRC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.cc \
 SRC_ADVECTDIFFUSE_EXE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.cc
 
 # Euler2D:
-SRC_EULER = $(EULER_DIR)Euler2DState.cc \
-            $(EULER_DIR)Euler2DInput.cc \
-            $(EULER_DIR)Euler2DQuad.cc \
-            $(EULER_DIR)Euler2DQuadSingleBlock.cc \
-            $(EULER_DIR)Euler2DQuadMultiBlock.cc \
-            $(EULER_DIR)Euler2DQuadGrid.cc \
-            $(EULER_DIR)Euler2DQuadSolvers.cc 
-SRC_EULER_EXE = $(EULER_DIR)Euler2D.cc
+SRC_EULER = $(EULER_2D_DIR)Euler2DState.cc \
+            $(EULER_2D_DIR)Euler2DInput.cc \
+            $(EULER_2D_DIR)Euler2DQuad.cc \
+            $(EULER_2D_DIR)Euler2DQuadSingleBlock.cc \
+            $(EULER_2D_DIR)Euler2DQuadMultiBlock.cc \
+            $(EULER_2D_DIR)Euler2DQuadGrid.cc \
+            $(EULER_2D_DIR)Euler2DQuadSolvers.cc 
+SRC_EULER_EXE = $(EULER_2D_DIR)Euler2D.cc
 
 # NavierStokes2D:
 SRC_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes2DState.cc \
@@ -337,6 +347,28 @@ SRC_MAIN = cffc2D.cc
 SRC_ICEMCFD_UTIL1 = $(ICEMCFD_DIR)icemcfd2tecplot.cc 
 SRC_ICEMCFD_UTIL2 = $(ICEMCFD_DIR)icemcfd2grid2dquad.cc
 
+# Solvers 1D:
+SRC_SOLVERS1D = $(SRC_MATH) $(SRC_CFD) $(SRC_GRID_1D) \
+                $(SRC_SYSTEM) $(SRC_HIGH_ORDER_RECONSTRUCTION) \
+		$(SRC_SCALAR) $(SRC_HEAT) $(SRC_HYPERHEAT) \
+                $(SRC_MHD1D) $(SRC_EULER1D)
+# Add Unit Testing to Solvers 1D:
+ifeq ($(TUT_TESTING),ON) 
+  SRC_SOLVERS1D += $(SRC_TUT)
+endif
+#
+SRC_SOLVERS1D_EXE = $(SOLVERS1D_DIR)Solvers1D.cc
+SRC_SOLVERS1D_SOLVER = $(SRC_SOLVERS1D_EXE) $(SRC_SOLVERS1D)
+
+# Euler 1D:
+SRC_EULER1D_SOLVER = $(SRC_MATH) $(SRC_CFD) $(SRC_GRID_1D) \
+                     $(SRC_SYSTEM) $(SRC_HIGH_ORDER_RECONSTRUCTION) \
+                     $(SRC_EULER1D) $(SRC_EULER1D_EXE)
+# Add Unit Testing to Euler 1D:
+ifeq ($(TUT_TESTING),ON) 
+  SRC_EULER1D_SOLVER += $(SRC_TUT)
+endif
+
 #################################################################################
 # Compiled object code files (automatically generated with pattern substitution)
 #################################################################################
@@ -367,7 +399,7 @@ OBJ_HYPERHEAT = $(SRC_HYPERHEAT:.cc=.o)
 OBJ_EULER1D = $(SRC_EULER1D:.cc=.o)
 OBJ_MHD1D = $(SRC_MHD1D:.cc=.o)
 
-# HighOrderReconstruction
+# HighOrderReconstruction: (substitute *.o for *.cc)
 OBJ_HIGH_ORDER_RECONSTRUCTION := $(SRC_HIGH_ORDER_RECONSTRUCTION:.cc=.o)
 
 # Advectdiffuse2D:
@@ -456,12 +488,29 @@ OBJ_ICEMCFD_UTIL1 = $(SRC_ICEMCFD_UTIL1:.cc=.o) \
 OBJ_ICEMCFD_UTIL2 = $(SRC_ICEMCFD_UTIL2:.cc=.o) \
                     $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD) 
 
+
+# Euler1D:
+# Get the object files based on SRC_EULER1D_SOLVER (substitute for *.cc, *.c, *.f)
+OBJ_EULER1D_SOLVER := $(patsubst %.cc,%.o, $(filter %.cc, $(SRC_EULER1D_SOLVER))) \
+		      $(patsubst %.c,%.o, $(filter %.c, $(SRC_EULER1D_SOLVER))) \
+		      $(patsubst %.f,%.o, $(filter %.f, $(SRC_EULER1D_SOLVER)))
+
+
+# Solvers1D:
+# Get the object files based on SRC_SOLVERS1D_SOLVER (substitute for *.cc, *.c, *.f)
+OBJ_SOLVERS1D_SOLVER := $(patsubst %.cc,%.o, $(filter %.cc, $(SRC_SOLVERS1D_SOLVER))) \
+		        $(patsubst %.c,%.o, $(filter %.c, $(SRC_SOLVERS1D_SOLVER))) \
+		        $(patsubst %.f,%.o, $(filter %.f, $(SRC_SOLVERS1D_SOLVER)))
+
+
 ###############################################################################
 # Define the executables
 ###############################################################################
 EXE_MAIN = cffc2D
 EXE_ICEMCFD_UTIL1 = icemcfd2tecplot
 EXE_ICEMCFD_UTIL2 = icemcfd2grid2dquad
+EXE_EULER1D = euler1D
+EXE_SOLVERS1D = solvers1D
 EXE_ADVECTDIFFUSE2D = advectdiffuse2D
 EXE_EULER2D = euler2D
 EXE_NAVIERSTOKES2D = navierstokes2D
@@ -475,6 +524,7 @@ EXE_ELECTROSTATIC2D = electrostatic2D
 EXE_RTE2D = rte2D
 EXE_LEVELSET2D = levelset2D
 EXE_EMBEDDEDBOUNDARIES2D = embeddedboundaries2D
+
 
 ###############################################################################
 # Define dependencies
@@ -493,6 +543,10 @@ help:
 	@echo "|        make documentation        create code documentaion using doxygen & latex   |"
 	@echo "|        make icemcfd2tecplot      compile icemcfd2tecplot program                  |"
 	@echo "|        make icemcfd2grid2dquad   compile icemcfd2grid2dquad program               |"
+	@echo "|        make euler1D              compile euler1D stand alone program              |"
+	@echo "|        make euler1D-new          compile euler1D program from scratch             |"
+	@echo "|        make solvers1D            compile solvers1D stand alone program            |"
+	@echo "|        make solvers1D-new        compile solvers1D program from scratch           |"
 	@echo "|        make advectdiffuse2D      compile advectdiffuse2D stand alone program      |"
 	@echo "|        make euler2D              compile euler2D stand alone program              |"
 	@echo "|        make navierstokes2D       compile navierstokes2D stand alone program       |"
@@ -535,6 +589,7 @@ help:
 	@echo "+-----------------------------------------------------------------------------------+"
 
 all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
+     $(EXE_EULER1D) $(EXE_SOLVERS1D) \
      $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
      $(EXE_HIGHTEMP2D) $(EXE_DUSTY2D) $(EXE_LESPREMIXED2D) $(EXE_GAUSSIAN2D) \
      $(EXE_ION5MOMENT2D) $(EXE_ELECTROSTATIC2D) $(EXE_RTE2D) $(EXE_LEVELSET2D) \
@@ -612,6 +667,40 @@ $(EXE_MAIN): $(OBJ_MAIN) $(OBJ_CFFC)
 	@echo Program $(EXE_MAIN) has been brought up to date.
 	@echo '------------------------------------------------'
 	@echo ' '
+
+$(EXE_EULER1D): $(OBJ_EULER1D_SOLVER)
+	@echo ' '
+	@echo Building program $(EXE_EULER1D) for a $(PLATFORM) platform.
+	@echo '-----------------------------------------------------------'
+	@echo ' '
+	$(LD) -o $(EXE_EULER1D) $(OBJ_EULER1D_SOLVER) $(LDFLAGS)
+	@echo ' '
+	@echo Program $(EXE_EULER1D) has been brought up to date.
+	@echo '---------------------------------------------------'
+	@echo ' '
+
+$(EXE_EULER1D)-new:
+	@$(MAKE) --no-print-directory clean
+	@$(MAKE) --no-print-directory libraries-all 
+	@$(MAKE) --no-print-directory $(EXE_EULER1D)
+
+
+$(EXE_SOLVERS1D): $(OBJ_SOLVERS1D_SOLVER)
+	@echo ' '
+	@echo Building program $(EXE_SOLVERS1D) for a $(PLATFORM) platform.
+	@echo '----------------------------------------------------------'
+	@echo ' '
+	$(LD) -o $(EXE_SOLVERS1D) $(OBJ_SOLVERS1D_SOLVER) $(LDFLAGS)
+	@echo ' '
+	@echo Program $(EXE_SOLVERS1D) has been brought up to date.
+	@echo '---------------------------------------------------'
+	@echo ' '
+
+$(EXE_SOLVERS1D)-new:
+	@$(MAKE) --no-print-directory clean
+	@$(MAKE) --no-print-directory libraries-all 
+	@$(MAKE) --no-print-directory $(EXE_SOLVERS1D)
+
 
 $(EXE_ADVECTDIFFUSE2D): $(OBJ_ADVECTDIFFUSE_EXE) $(OBJ_BASE) $(OBJ_ADVECTDIFFUSE) $(OBJ_ICEMCFD)
 	@echo ' '
@@ -874,9 +963,10 @@ clean:
 	rm -f $(ICEMCFD_DIR)*.o $(ICEMCFD_DIR)*.il $(ICEMCFD_DIR)*~ $(ICEMCFD_DIR)*.depend $(ICEMCFD_DIR)*.bak
 	rm -f $(AMR_DIR)*.o $(AMR_DIR)*.il $(AMR_DIR)*~
 	rm -f $(SYSTEM_DIR)*.o $(SYSTEM_DIR)*.il $(SYSTEM_DIR)*~
-	rm -f $(SOLVERS1D_DIR)*.o $(SOLVERS1D_DIR)*.il $(SOLVERS1D_DIR)*~ 
+	rm -f $(EULER_1D_DIR)*.o $(EULER_1D_DIR)*.il $(EULER_1D_DIR)*~ $(EULER_1D_DIR)*.depend $(EULER_1D_DIR)*.bak
+	rm -f $(SOLVERS1D_DIR)*.o $(SOLVERS1D_DIR)*.il $(SOLVERS1D_DIR)*~ $(SOLVERS1D_DIR)*.depend
 	rm -f $(ADVECTDIFFUSE_DIR)*.o $(ADVECTDIFFUSE_DIR)*.il $(ADVECTDIFFUSE_DIR)*~ $(ADVECTDIFFUSE_DIR)*.depend $(ADVECTDIFFUSE_DIR)*.bak
-	rm -f $(EULER_DIR)*.o $(EULER_DIR)*.il $(EULER_DIR)*~ $(EULER_DIR)*.depend $(EULER_DIR)*.bak
+	rm -f $(EULER_2D_DIR)*.o $(EULER_2D_DIR)*.il $(EULER_2D_DIR)*~ $(EULER_2D_DIR)*.depend $(EULER_2D_DIR)*.bak
 	rm -f $(NAVIERSTOKES_DIR)*.o $(NAVIERSTOKES_DIR)*.il $(NAVIERSTOKES_DIR)*~ $(NAVIERSTOKES_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
 	rm -f $(CHEM_DIR)*.o $(CHEM_DIR)*.il $(CHEM_DIR)*~ $(CHEM_DIR)*.depend $(CHEM_DIR)*.bak
 	rm -f $(HIGHTEMP_DIR)*.o $(HIGHTEMP_DIR)*.il $(HIGHTEMP_DIR)*~ $(HIGHTEMP_DIR)*.depend $(HIGHTEMP_DIR)*.bak
@@ -902,6 +992,8 @@ clean:
 	rm -f $(MODULE_DIR)/*.mod $(MODULE_DIR)/*~
 	rm -f $(EXE_MAIN)
 	rm -f $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2)
+	rm -f $(EXE_EULER1D)
+	rm -f $(EXE_SOLVERS1D)
 	rm -f $(EXE_ADVECTDIFFUSE2D)
 	rm -f $(EXE_EULER2D)
 	rm -f $(EXE_NAVIERSTOKES2D)
@@ -1043,4 +1135,3 @@ $(DEPEND_DIR)%.d : %.f
 	@mkdir -p $(dir $@)
 	@makedepend -f- $(DEPENDSFLAGS) $(FFLAGS) $< 2>/dev/null \
         | sed 's,\($*\.o\)[ :]*\(.*\),$@ : $$\(wildcard \2\) \n\1 : \2,g' | tr "=" "\n" > $@
-

@@ -51,7 +51,7 @@ using namespace std;
 #include "Solvers1D/Scalar1D.h"
 #include "Solvers1D/Heat1D.h"
 #include "Solvers1D/HyperHeat1D.h"
-#include "Solvers1D/Euler1D.h"
+#include "Euler1D/Euler1D.h"
 #include "Solvers1D/MHD1D.h"
 #include "AdvectDiffuse2D/AdvectDiffuse2DQuad.h"
 #include "AdvectDiffuse2D/AdvectDiffuse2DQuad_NKS.h"
