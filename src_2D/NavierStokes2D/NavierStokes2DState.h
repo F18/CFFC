@@ -1556,7 +1556,7 @@ inline void NavierStokes2D_pState::set_static_variables(void) {
   // Set the flow type.
   flow_type = FLOWTYPE_LAMINAR;
   // Set turbulence constants.
-  set_turbulence(ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO);
+  set_turbulence(ZERO,ZERO,ZERO,ZERO,ZERO,0,0,0,ZERO,ZERO,ZERO,ZERO);
   // Set propellant type.
   set_propellant("AP_HTPB",ZERO,ZERO);
 }
@@ -2389,7 +2389,7 @@ inline void NavierStokes2D_cState::set_static_variables(void) {
   // Set the flow type.
   flow_type = FLOWTYPE_LAMINAR;
   // Set turbulence constants.
-  set_turbulence(ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO);
+  set_turbulence(ZERO,ZERO,ZERO,ZERO,ZERO,0,0,0,ZERO,ZERO,ZERO,ZERO);
   // Set propellant type.
   set_propellant("AP_HTPB",ZERO,ZERO);
 }
