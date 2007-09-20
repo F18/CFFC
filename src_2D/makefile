@@ -50,6 +50,7 @@ TURBULENT_DIR = Turbulent2D/
 GAUSSIAN_DIR = Gaussian2D/
 NASADATA_DIR = $(PHYSICS_DIR)NASAData/
 REACTIONS_DIR = Reactions/
+HIGH_ORDER_RECONSTRUCTION_DIR = HighOrderReconstruction/
 
 #
 # Set default f90 module directory
@@ -71,9 +72,23 @@ SRC_MATH = $(MATH_DIR)Vector2D.cc \
 	   $(MATH_DIR)Polyfit/Polyfit.cc \
 	   $(MATH_DIR)Polyfit/dp1vlu.f \
 	   $(MATH_DIR)Polyfit/dpcoef.f \
-	   $(MATH_DIR)Polyfit/dpolft.f
+	   $(MATH_DIR)Polyfit/dpolft.f \
+	   $(MATH_DIR)NumericalLibrary.cc
 SRC_MATH_F90 = $(MATH_DIR)complexify.f90
 SRC_MATH += $(SRC_MATH_F90)
+SRC_MATH += Utilities/EpsilonTol.cc
+#--- SRC_MATH_TESTS ----
+SRC_MATH_TESTS = TestFunctions/TestFunctions_1D.cc \
+	         TestFunctions/TestFunctions_2D.cc \
+	         TestFunctions/TestFunctions_3D.cc \
+	         test_LeastSquaresSolvers.cc \
+	         test_NumericalLibrary.cc
+SRC_MATH_TESTS := $(addprefix $(MATH_DIR)UnitTests/, $(SRC_MATH_TESTS))
+#--- Add SRC_MATH_TESTS to SRC_MATH ----
+ifeq ($(TUT_TESTING),ON) 
+  SRC_MATH += $(SRC_MATH_TESTS)
+endif
+#
 
 # CFD and MPI:
 SRC_CFD = $(CFD_DIR)CFD.cc
@@ -115,6 +130,10 @@ SRC_MHD1D = $(SOLVERS1D_DIR)MHD1DState.cc \
             $(SOLVERS1D_DIR)MHD1D.cc \
             $(SOLVERS1D_DIR)MHD1DSolvers.cc
 
+# HighOrderReconstruction
+SRC_HIGH_ORDER_RECONSTRUCTION = ReconstructionHelpers.cc
+SRC_HIGH_ORDER_RECONSTRUCTION := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR), $(SRC_HIGH_ORDER_RECONSTRUCTION))
+
 # Advectdiffuse2D:
 SRC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.cc \
 	            $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DInput.cc \
@@ -123,7 +142,8 @@ SRC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadMultiBlock.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadGrid.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadSolvers.cc \
-                    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuad_NKS.cc
+                    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuad_NKS.cc \
+		    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DExactSolutions.cc
 SRC_ADVECTDIFFUSE_EXE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.cc
 
 # Euler2D:
@@ -303,7 +323,7 @@ SRC_SYSTEM = $(SYSTEM_DIR)System_Linux.cc
 
 # Base and CFFC sources:
 SRC_BASE = $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_GRID) $(SRC_AMR) \
-           $(SRC_SYSTEM)
+           $(SRC_SYSTEM) $(SRC_HIGH_ORDER_RECONSTRUCTION)
 ifeq ($(TUT_TESTING),ON) 
   SRC_BASE += $(SRC_TUT)
 endif
@@ -334,10 +354,20 @@ OBJ_MATH = $(MATH_DIR)Vector2D.o \
 	   $(MATH_DIR)Polyfit/Polyfit.o \
 	   $(MATH_DIR)Polyfit/dp1vlu.o \
 	   $(MATH_DIR)Polyfit/dpcoef.o \
-	   $(MATH_DIR)Polyfit/dpolft.o
+	   $(MATH_DIR)Polyfit/dpolft.o \
+	   $(MATH_DIR)NumericalLibrary.o
 OBJ_MATH_F90 = $(MATH_DIR)complexify.o 
 OBJ_MATH += $(OBJ_MATH_F90)
+OBJ_MATH += Utilities/EpsilonTol.o
 MOD_MATH_F90 = $(MODULE_DIR)/complexify.mod
+#--- OBJ_MATH_TESTS ----
+OBJ_MATH_TESTS := $(SRC_MATH_TESTS:.cc=.o)
+#--- Add OBJ_MATH_TESTS to OBJ_MATH ----
+ifeq ($(TUT_TESTING),ON) 
+  OBJ_MATH += $(OBJ_MATH_TESTS)
+endif
+#
+
 
 # CFD and MPI:
 OBJ_CFD = $(CFD_DIR)CFD.o
@@ -379,6 +409,9 @@ OBJ_MHD1D = $(SOLVERS1D_DIR)MHD1DState.o \
             $(SOLVERS1D_DIR)MHD1D.o \
             $(SOLVERS1D_DIR)MHD1DSolvers.o
 
+# HighOrderReconstruction
+OBJ_HIGH_ORDER_RECONSTRUCTION := $(SRC_HIGH_ORDER_RECONSTRUCTION:.cc=.o)
+
 # Advectdiffuse2D:
 OBJ_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.o \
 	            $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DInput.o \
@@ -387,7 +420,8 @@ OBJ_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.o \
 	            $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadMultiBlock.o \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadGrid.o \
 	            $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadSolvers.o \
-		    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuad_NKS.o
+		    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuad_NKS.o \
+		    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DExactSolutions.o
 OBJ_ADVECTDIFFUSE_EXE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.o
 
 # Euler2D:
@@ -562,7 +596,7 @@ OBJ_SYSTEM = $(SYSTEM_DIR)System_Linux.o
 
 # Base and CFFC objects:
 OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_AMR) \
-	   $(OBJ_SYSTEM)
+	   $(OBJ_SYSTEM) $(OBJ_HIGH_ORDER_RECONSTRUCTION)
 ifeq ($(TUT_TESTING),ON) 
   OBJ_BASE += $(OBJ_TUT)
 endif

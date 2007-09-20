@@ -1,0 +1,82 @@
+# git-ls-files --others --exclude-from=.git/info/exclude
+# Lines that start with '#' are comments.
+
+# C++ source directories
+*.[oa]
+*~
+.*.swp
+*.il
+*.depend*
+*.mod
+\#*#
+.#*
+
+# example directories
+#*~
+*.soln
+*.log
+*.gplt
+*.plt
+tecplot.phy
+*.e*
+*.o*
+.gm_mpi
+*.core
+
+# latex document directories
+#*~
+#*.ps 
+#*.pdf 
+*.aux 
+#*.log 
+*.dvi 
+*.toc
+
+# html document directories
+*.html
+*.png
+*.gif
+*.css
+images.tex
+images.log
+images.aux
+images.pl
+labels.pl
+
+# misc
+tags
+
+# 2D executables
+cffc2D
+icemcfd2tecplot
+icemcfd2grid2dquad
+advectdiffuse2D
+chem2D
+dusty2D
+electrostatic2D
+euler2D
+hightemp2D
+ion5moment2D
+lespremixed2D
+levelset2D
+navierstokes2D
+embeddedboundaries2D
+gaussian2D
+rte2D
+
+
+# 3D executables
+cffc3D
+
+# unit testing directories
+journal.tut
+log.tut
+
+# dependency directories
+Depend
+
+# Reconstruction executables
+reconstruct
+
+# Output data files
+*.dat

@@ -197,6 +197,19 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
   if (!batch_flag) cout << "\n Prescribing AdvectDiffuse2D initial data.";
   if (Input_Parameters.i_ICs == IC_RESTART) {
      if (!batch_flag) cout << "\n Reading AdvectDiffuse2D solution from restart data files.";
+
+     //Check that restart files are probably not corrupt.
+     if (CFFC_Primary_MPI_Processor()) {
+       if(System::Restart_In_Progress()) {
+	 cout << "\n  Restart-in-progress flag detected, assuming data is corrupt."
+	      << "\n  Uncompressing backups.";
+	 System::Uncompress_Restart();
+	 System::Remove_Restart_Flag();
+	 cout << "\n  Backup successfully uncompressed; reading.";
+       }
+     }
+     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+
      error_flag = Read_QuadTree(QuadTree,
                                 List_of_Global_Solution_Blocks,
                                 List_of_Local_Solution_Blocks, 
@@ -212,6 +225,7 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
      if (error_flag) return (error_flag);
      Allocate_Message_Buffers(List_of_Local_Solution_Blocks,
                               Local_SolnBlk[0].NumVar()+NUM_COMP_VECTOR2D);
+
      error_flag = Read_Restart_Solution(Local_SolnBlk, 
                                         List_of_Local_Solution_Blocks, 
                                         Input_Parameters,
@@ -225,12 +239,16 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
              << ".\n";
         cout.flush();
      } /* endif */
+
      error_flag = CFFC_OR_MPI(error_flag);
      if (error_flag) return (error_flag);
+
      // Ensure each processor has the correct time and time!!!
      number_of_time_steps = CFFC_Maximum_MPI(number_of_time_steps);
      Time = CFFC_Maximum_MPI(Time);
      processor_cpu_time.cput = CFFC_Maximum_MPI(processor_cpu_time.cput);
+     Input_Parameters.Maximum_Number_of_Time_Steps =
+       CFFC_Maximum_MPI(Input_Parameters.Maximum_Number_of_Time_Steps);
   } else {
      ICs(Local_SolnBlk, 
          List_of_Local_Solution_Blocks, 
@@ -250,10 +268,12 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
                                  List_of_Local_Solution_Blocks,
                                  NUM_COMP_VECTOR2D,
                                  ON);
+
   if (!error_flag) error_flag = Send_All_Messages(Local_SolnBlk, 
                                                   List_of_Local_Solution_Blocks,
                                                   NUM_VAR_ADVECTDIFFUSE2D,
                                                   OFF);
+
   if (error_flag) {
      cout << "\n AdvectDiffuse2D ERROR: Message passing error during AdvectDiffuse2D solution intialization "
           << "on processor "
@@ -261,6 +281,7 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
           << ".\n";
      cout.flush();
   } /* endif */
+
   error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return (error_flag);
 
@@ -472,6 +493,7 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 		    List_of_Local_Solution_Blocks,
                     Input_Parameters);
 	dTime = CFFC_Minimum_MPI(dTime); // Find global minimum time step for all processors.
+
 	if (Input_Parameters.Time_Accurate) {
 	  if ((Input_Parameters.i_Time_Integration != 
 	       TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING) &&
@@ -517,6 +539,21 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 	if (!first_step &&
 	    number_of_time_steps-Input_Parameters.Restart_Solution_Save_Frequency*
 	    (number_of_time_steps/Input_Parameters.Restart_Solution_Save_Frequency) == 0 ) {
+
+	  //  Save and delete old restart files in compressed archive (just in case)
+	  if (CFFC_Primary_MPI_Processor()) {
+	    cout << "\n  Creating compressed archive of (and deleting) old restarts.";
+	    System::Compress_Restart();
+	    cout << "\n  Writing new restart files.";
+	    cout.flush();
+	  }
+	  CFFC_Barrier_MPI(); // MPI barrier so that other processors do
+	                      // not start over writing restarts
+
+	  if (CFFC_Primary_MPI_Processor()) {
+	    System::Set_Restart_Flag();  //Set flag to indicate a restart is being saved
+	  }
+
 	  if (!batch_flag) cout << "\n\n  Saving AdvectDiffuse2D solution to restart data file(s) after"
 				<< " n = " << number_of_time_steps << " steps (iterations).";
 	  error_flag = Write_Restart_Solution(Local_SolnBlk, 
@@ -532,6 +569,19 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 		 << ".\n";
 	    cout.flush();
 	  } /* endif */
+
+	  if (CFFC_Primary_MPI_Processor()) {
+	    if (!batch_flag) cout << "\n  Saving QuadTree data file.";
+	    error_flag = Write_QuadTree(QuadTree, Input_Parameters);
+	    if (error_flag) {
+	      cout << "\n AdvectDiffuse2D ERROR: Unable to open QuadTree data file(s).\n";
+	      cout.flush();
+	    } /* endif */
+	  } /* endif */
+
+	  CFFC_Broadcast_MPI(&error_flag, 1);
+	  if (error_flag) return (error_flag);
+
 	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return (error_flag);
 	  cout << "\n";
@@ -545,21 +595,23 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 						 residual_l2_norm,
 						 first_step,
 						 50);
-//  	if (!batch_flag) Output_Progress(number_of_time_steps,
-//  					 Time,
-//  					 total_cpu_time,
-//  					 residual_l1_norm,
-//  					 first_step,
-//  					 50);
-	if (CFFC_Primary_MPI_Processor() && !first_step) {
-	  Output_Progress_to_File(residual_file,
-				  number_of_time_steps,
-				  Time,
-				  total_cpu_time,
-				  residual_l1_norm,
-				  residual_l2_norm,
-				  residual_max_norm);
-	} /* endif */
+
+	 //  	if (!batch_flag) Output_Progress(number_of_time_steps,
+	 //  					 Time,
+	 //  					 total_cpu_time,
+	 //  					 residual_l1_norm,
+	 //  					 first_step,
+	 //  					 50);
+
+	 if (CFFC_Primary_MPI_Processor() && !first_step) {
+	   Output_Progress_to_File(residual_file,
+				   number_of_time_steps,
+				   Time,
+				   total_cpu_time,
+				   residual_l1_norm,
+				   residual_l2_norm,
+				   residual_max_norm);
+	 } /* endif */
 	
 	/* Check to see if calculations are complete. */
 	if (!Input_Parameters.Time_Accurate &&
@@ -673,8 +725,6 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 	} /* endif */
 	
       } /* endwhile */
-
-
 
       if (!batch_flag) cout << "\n\n AdvectDiffuse2D computations complete on " 
 			    << Date_And_Time() << ".\n";
@@ -981,34 +1031,52 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
        if (error_flag) return error_flag;
 
      } else if (command_flag == WRITE_RESTART_CODE) {
-         // Write restart files.
-         if (!batch_flag) cout << "\n Writing AdvectDiffuse2D solution to restart data file(s).";
-         error_flag = Write_QuadTree(QuadTree,
-                                     Input_Parameters);
-         if (error_flag) {
-            cout << "\n AdvectDiffuse2D ERROR: Unable to open AdvectDiffuse2D quadtree data file "
-                 << "on processor "
-                 << List_of_Local_Solution_Blocks.ThisCPU
-                 << ".\n";
-            cout.flush();
-         } /* endif */
-         error_flag = CFFC_OR_MPI(error_flag);
-         if (error_flag) return (error_flag);
-         error_flag = Write_Restart_Solution(Local_SolnBlk, 
-                                             List_of_Local_Solution_Blocks, 
-                                             Input_Parameters,
-                                             number_of_time_steps,
-                                             Time,
-                                             processor_cpu_time);
-         if (error_flag) {
-            cout << "\n AdvectDiffuse2D ERROR: Unable to open AdvectDiffuse2D restart output data file(s) "
-                 << "on processor "
-                 << List_of_Local_Solution_Blocks.ThisCPU
-                 << ".\n";
-            cout.flush();
-         } /* endif */
-         error_flag = CFFC_OR_MPI(error_flag);
-         if (error_flag) return (error_flag);
+       // Write restart files.
+       
+       //  Save and delete old restart files in compressed archive (just in case)
+       if (CFFC_Primary_MPI_Processor()) {
+	 cout << "\n  Creating compressed archive of (and deleting) old restarts.";
+	 System::Compress_Restart();
+	 cout << "\n  Writing new restart files.";
+	 cout.flush();
+       }
+       CFFC_Barrier_MPI(); // MPI barrier so that other processors do
+                           // not start over writing restarts
+
+       if (CFFC_Primary_MPI_Processor()) {
+	 System::Set_Restart_Flag();  //Set flag to indicate a restart is being saved
+       }
+
+       if (!batch_flag) cout << "\n Writing AdvectDiffuse2D solution to restart data file(s).";
+       error_flag = Write_Restart_Solution(Local_SolnBlk, 
+					   List_of_Local_Solution_Blocks, 
+					   Input_Parameters,
+					   number_of_time_steps,
+					   Time,
+					   processor_cpu_time);
+       if (error_flag) {
+	 cout << "\n AdvectDiffuse2D ERROR: Unable to open AdvectDiffuse2D restart output data file(s) "
+	      << "on processor "
+	      << List_of_Local_Solution_Blocks.ThisCPU
+	      << ".\n";
+	 cout.flush();
+       } /* endif */
+       error_flag = CFFC_OR_MPI(error_flag);
+       if (error_flag) return (error_flag);
+       error_flag = Write_QuadTree(QuadTree,
+				   Input_Parameters);
+       if (error_flag) {
+	 cout << "\n AdvectDiffuse2D ERROR: Unable to open AdvectDiffuse2D quadtree data file "
+	      << "on processor "
+	      << List_of_Local_Solution_Blocks.ThisCPU
+	      << ".\n";
+	 cout.flush();
+       } /* endif */
+       error_flag = CFFC_OR_MPI(error_flag);
+       if (error_flag) return (error_flag);
+       if (CFFC_Primary_MPI_Processor()) {
+	 System::Remove_Restart_Flag();  //Remove flag to indicate the restart is finished
+       }
 
      } else if (command_flag == WRITE_OUTPUT_GRID_CODE) {
          // Output multi-block solution-adaptive mesh data file.

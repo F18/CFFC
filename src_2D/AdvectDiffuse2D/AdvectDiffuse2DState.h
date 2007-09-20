@@ -1,5 +1,5 @@
-/* AdvectDiffuse2DState.h:  Header file defining 
-                            2D Advection Diffusion Equation Solution State Class. */
+/*!\file AdvectDiffuse2DState.h
+  \brief Header file defining 2D Advection Diffusion Equation Solution State Class. */
 
 #ifndef _ADVECTDIFFUSE2D_STATE_INCLUDED
 #define _ADVECTDIFFUSE2D_STATE_INCLUDED
@@ -29,6 +29,8 @@ using namespace std;
 #ifndef _VECTOR2D_INCLUDED
 #include "../Math/Vector2D.h"
 #endif //_VECTOR2D_INCLUDED
+
+#include "AdvectDiffuse2DExactSolutions.h"
 
 /* Define the classes. */
 
