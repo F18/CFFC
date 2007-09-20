@@ -22,7 +22,6 @@ using namespace std;
 
 #include "../Math/Math.h"
 #include "../Math/Matrix.h"
-#include "../Math/Tensor2D.h"
 #include "../Physics/GasConstants.h"
 #include "../CFD/CFD.h"
 #include "../Math/Complexify.h"
