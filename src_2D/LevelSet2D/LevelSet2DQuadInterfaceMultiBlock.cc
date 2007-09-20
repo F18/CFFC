@@ -625,6 +625,7 @@ int Share_Interface_Information(LevelSet2D_Quad_Block *Soln_ptr,
       dout << endl << " ==================================================="; dout.flush();
       dout << endl << List;
 #endif
+      cout << "Boohoo... it's not working!" << endl;
       return 11111;
     }
     //////////////////////////
