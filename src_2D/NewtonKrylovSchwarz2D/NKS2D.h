@@ -161,9 +161,14 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       }
   
       // Determine global time step
-      double DTS_dTime  = Input_Parameters.NKS_IP.Physical_Time_CFL_Number*
-	CFFC_Minimum_MPI(CFL(SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters)); 
+      double DTS_dTime  = CFL(SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
+      DTS_dTime = Input_Parameters.NKS_IP.Physical_Time_CFL_Number*CFFC_Minimum_MPI(DTS_dTime); 
   
+      //Last Time sized to get Time_Max
+      if( physical_time + DTS_dTime > Input_Parameters.Time_Max){
+	DTS_dTime = Input_Parameters.Time_Max - physical_time;
+      }
+
       // Store Previous Solution      
       for (int Bcount = 0; Bcount < List_of_Local_Solution_Blocks.Nblk; Bcount++) {
 	if (List_of_Local_Solution_Blocks.Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
@@ -468,21 +473,22 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
     //
     //  -- Alistair Tue Sep 12 2006 
     //
-    // if (Number_of_Newton_Steps == 1 ) {
-    // 	L2norm_first = max(L2norm_first,L2norm_current[SolnBlk[0].residual_variable-1]);  //another restart cludge
-    // 	L1norm_first = L1norm_current[SolnBlk[0].residual_variable-1];
-    // 	Max_norm_first = Max_norm_current[SolnBlk[0].residual_variable-1];
-    // } else {
-    // 	L2norm_first = max(L2norm_first, L2norm_current[SolnBlk[0].residual_variable-1]);
-    // 	L1norm_first = max(L1norm_first, L1norm_current[SolnBlk[0].residual_variable-1]);
-    // 	Max_norm_first = max(Max_norm_first, Max_norm_current[SolnBlk[0].residual_variable-1]);   
-    // } 
-
-    if (L2norm_first <= 0.0) {
-      L2norm_first = L2norm_current[SolnBlk[0].residual_variable-1];
-      L1norm_first = L1norm_current[SolnBlk[0].residual_variable-1];
-      Max_norm_first = Max_norm_current[SolnBlk[0].residual_variable-1];
+    if (Number_of_Newton_Steps == 1 ) {
+    	L2norm_first = max(L2norm_first,L2norm_current[SolnBlk[0].residual_variable-1]);  //another restart cludge
+    	L1norm_first = L1norm_current[SolnBlk[0].residual_variable-1];
+    	Max_norm_first = Max_norm_current[SolnBlk[0].residual_variable-1];
+    } else {
+    	L2norm_first = max(L2norm_first, L2norm_current[SolnBlk[0].residual_variable-1]);
+    	L1norm_first = max(L1norm_first, L1norm_current[SolnBlk[0].residual_variable-1]);
+    	Max_norm_first = max(Max_norm_first, Max_norm_current[SolnBlk[0].residual_variable-1]);   
     } 
+
+//     if (L2norm_first <= 0.0) {
+//       L2norm_first = L2norm_current[SolnBlk[0].residual_variable-1];
+//       L1norm_first = L1norm_current[SolnBlk[0].residual_variable-1];
+//       Max_norm_first = Max_norm_current[SolnBlk[0].residual_variable-1];
+//     } 
+
     L2norm_current_n   = L2norm_current[SolnBlk[0].residual_variable-1] / L2norm_first; 
     L1norm_current_n   = L1norm_current[SolnBlk[0].residual_variable-1] / L1norm_first; 
     Max_norm_current_n = Max_norm_current[SolnBlk[0].residual_variable-1] / Max_norm_first;
@@ -741,7 +747,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 				       L2norm_current[SolnBlk[0].residual_variable-1] ,
 				       L2norm_current_n, Number_of_Newton_Steps);	   
       } else { 
-	CFL_current = Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL;   	
+	CFL_current = Input_Parameters.NKS_IP.Finite_Time_Step_Final_CFL;   	
       } 
 
       // Determine time steps
@@ -773,9 +779,9 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 	    cout << "\n Newton Step (Outer It.) = " << Number_of_Newton_Steps;
 	    cout << " L2norm = " << L2norm_current[SolnBlk[0].residual_variable-1];
 	    cout << " L2norm_ratio = " << L2norm_current_n;
-	    if (!Input_Parameters.NKS_IP.Dual_Time_Stepping) {
+	    //	    if (!Input_Parameters.NKS_IP.Dual_Time_Stepping) {
 	      cout << " CFL = " << CFL_current;
-	    }
+	      //}
 	    //if(Input_Parameters.Preconditioning) cout<<" Mref = "<<Mrefnew;
 	    break;
 	  case OF_ALISTAIR: {

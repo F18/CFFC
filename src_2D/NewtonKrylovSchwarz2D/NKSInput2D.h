@@ -48,7 +48,6 @@ class NKS_Input_Parameters{
   bool Dual_Time_Stepping;              //!< Dual-time-stepping flag (on or off).  
   int Physical_Time_Integration;        //!< Implicit Euler, BDF2, ESDIRK, etc.
   double Physical_Time_CFL_Number;
-  double Dual_Time_Convergence_Tolerance;
   int Maximum_Number_of_DTS_Steps; 
 
   //int Dual_Time_Preconditioning;  
@@ -118,7 +117,6 @@ class NKS_Input_Parameters{
     Dual_Time_Stepping = false;         
     Physical_Time_Integration = TIME_STEPPING_IMPLICIT_EULER;
     Physical_Time_CFL_Number = 1.0 ;
-    Dual_Time_Convergence_Tolerance = 1e-4;   
     Maximum_Number_of_DTS_Steps = 0;
 
     Finite_Time_Step = true;
@@ -174,7 +172,6 @@ class NKS_Input_Parameters{
     MPI::COMM_WORLD.Bcast(&(Dual_Time_Stepping), 1, MPI::INT,    0);  //BOOL
     MPI::COMM_WORLD.Bcast(&(Physical_Time_Integration), 1, MPI::INT,   0);
     MPI::COMM_WORLD.Bcast(&(Physical_Time_CFL_Number), 1, MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Dual_Time_Convergence_Tolerance), 1, MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(Maximum_Number_of_DTS_Steps), 1, MPI::INT,   0);
 
     // Finite Time Step
@@ -251,7 +248,6 @@ class NKS_Input_Parameters{
     Communicator.Bcast(&(Dual_Time_Stepping), 1, MPI::INT,    Source_Rank);  //BOOL
     Communicator.Bcast(&(Physical_Time_Integration), 1, MPI::INT,   Source_Rank);
     Communicator.Bcast(&(Physical_Time_CFL_Number), 1, MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(Dual_Time_Convergence_Tolerance), 1, MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&( Maximum_Number_of_DTS_Steps), 1, MPI::INT,   Source_Rank);
 
     // Finite Time Step
@@ -369,11 +365,6 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
   } else if (strcmp(code, "NKS_Physical_Time_CFL") == 0) {
     i_command = 65;
     Physical_Time_CFL_Number = strtod(value, &ptr);
-    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
-
-  } else if (strcmp(code, "NKS_DTS_Convergence_Tolerance") == 0) {
-    i_command = 65;
-    Dual_Time_Convergence_Tolerance = strtod(value, &ptr);
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
 
   } else if (strcmp(code, "Maximum_Number_of_NKS_DTS_Steps" ) == 0) {
@@ -590,11 +581,8 @@ inline ostream& NKS_Input_Parameters::Output(ostream& fout) const {
      } else if ( Physical_Time_Integration == TIME_STEPPING_IMPLICIT_SECOND_ORDER_BACKWARD) {
        fout<<" DTS Time Integration  ====> Second Order Backwards \n";
      }
-     fout.setf(ios::scientific);
-     fout <<" DTS Tolerance         ====> " << Dual_Time_Convergence_Tolerance << endl;
      fout <<" DTS CFL Number        ====> " << Physical_Time_CFL_Number << endl; 
      fout <<" DTS Max Steps         ====> " << Maximum_Number_of_DTS_Steps  << endl;        
-     fout.unsetf(ios::scientific);  
   } else { 
      fout << "OFF\n"; 
   }
