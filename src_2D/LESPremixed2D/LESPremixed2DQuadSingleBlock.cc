@@ -2935,15 +2935,6 @@ void ICs(LESPremixed2D_Quad_Block &SolnBlk,
 	    SolnBlk.W[i][j].v.x += uprime_x;
 	    SolnBlk.W[i][j].v.y += uprime_y;
 	  }
-  if (  SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
-      Linear_Reconstruction_LeastSquares_2(SolnBlk, i, j, LIMITER_VENKATAKRISHNAN);
-      Tensor2D strain_rate = SolnBlk.W[i][j].Strain_Rate(SolnBlk.dWdx[i][j], 
-							 SolnBlk.dWdy[i][j], 
-							 SolnBlk.Flow_Type, 
-							 SolnBlk.Axisymmetric, 
-							 SolnBlk.Grid.Cell[i][j].Xc);  
-      SolnBlk.W[i][j].scalar[2] = SolnBlk.W[i][j].SFSmodel.sfs_k_Yoshizawa(strain_rate,SolnBlk.W[i][j].filter_width);
-  }
 #ifdef THICKENED_FLAME_ON
 	  SolnBlk.W[i][j].flame.unphysical_check(SolnBlk.W[i][j].TFactor);
 	  if (SolnBlk.W[i][j].flame.TF < (ONE-NANO)  || 

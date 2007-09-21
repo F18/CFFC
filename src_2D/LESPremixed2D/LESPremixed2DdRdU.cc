@@ -1871,7 +1871,8 @@ t127*t100)-t3*SolnBlk.W[ii][jj].rho*SolnBlk.W[ii][jj].scalar[1]*(-2.0*t59*t27+t3
 *t73;
   }
 
-  if ( SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY  ) {
+  if ( SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+       SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ) {
 
     double t1,t4,t5,t6,t7,t8,t9;
     double t10,t12,t14,t15,t17,t18,t19;
@@ -1960,6 +1961,103 @@ t127*t100)-t3*SolnBlk.W[ii][jj].rho*SolnBlk.W[ii][jj].scalar[1]*(-2.0*t59*t27+t3
 *t21+2.0*t4*t89*t21*t94-t17*t92*t20+(-4.0/3.0*t98+2.0/3.0*t101+2.0/3.0*t86-t95/3.0)*t26)*SolnBlk.W[ii][jj].scalar[1]*SolnBlk.W[ii][jj].rho-t49*(-t35*t124-t41*t129)-t32*(-t85*t34*t124+t4*t136*t124*t94-t92*t34*t129+t6*t136*t129*t94)-t49*SolnBlk.W[ii][jj].rho*SolnBlk.W[ii][jj].scalar[1]*(-2.0*t35*t85+t5*t136*t94-2.0*t41*t92+t7*t136*t94)-t60*t61*t163/t165;
       dStdW(5,5) = t28*SolnBlk.W[ii][jj].rho-t32*(-t35*(t171*SolnBlk.W[ii][jj].rho+t122)-t41*(t175*SolnBlk.W[ii][jj].rho+t127))-t49*SolnBlk.W[ii][jj].rho*t52+t56*SolnBlk.W[ii][jj].rho*t57-2.0*t60*SolnBlk.W[ii][jj].scalar[1]*t163*t64;
 
+  }
+
+  if ( SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE  ) {
+
+    double t1,t4,t5,t6,t7,t8,t9;
+    double t10,t12,t14,t15,t17,t18,t19;
+    double t20,t21,t25,t26,t28;
+    double t31,t32,t33,t34,t35,t37,t38;
+    double t42,t45,t49;
+    double t50,t51,t55,t57;
+    double t63,t66;
+    double t71,t72,t74,t75,t78;
+    double t80,t81,t84,t87;
+    double t107,t109,t116;
+    double t144,t145,t147,t148;
+    double t152,t161,t163,t164,t165,t167,t168,t169;
+    double t170,t173,t175,t176;
+    double t184,t196,t199;
+
+    double tau_fsd = SolnBlk.W[ii][jj].HeatRelease_Parameter();
+    double k_fsd = SolnBlk.W[ii][jj].SFS_Kinetic_Energy_Fsd(SolnBlk.dWdx[ii][jj],SolnBlk.dWdy[ii][jj],SolnBlk.Flow_Type,strain_rate);
+    double kappa_fsd = SolnBlk.W[ii][jj].Efficiency_Function_Fsd(SolnBlk.dWdx[ii][jj],SolnBlk.dWdy[ii][jj],SolnBlk.Flow_Type,strain_rate); 
+    double beta_fsd=1.0;
+
+      t1 = SolnBlk.W[ii][jj].reactants_den*SolnBlk.W[ii][jj].laminar_speed;
+      t4 = SolnBlk.dWdx[ii][jj].scalar[0];//cx(c);
+      t5 = t4*t4;
+      t6 = SolnBlk.dWdy[ii][jj].scalar[0];//cy(c);
+      t7 = t6*t6;
+      t8 = t5+t7;
+      t9 = 1/t8;
+      t10 = t5*t9;
+      t12 = t7*t9;
+      t14 = 2.0/3.0-2.0/3.0*t10+t12/3.0;
+      t15 = SolnBlk.dWdx[ii][jj].v.x;//Ux(U);
+      t17 = t4*t9;
+      t18 = SolnBlk.dWdy[ii][jj].v.x;//Uy(U);
+      t19 = SolnBlk.dWdx[ii][jj].v.y;//Vx(V);
+      t20 = t18+t19;
+      t21 = t6*t20;
+      t25 = 2.0/3.0-2.0/3.0*t12+t10/3.0;
+      t26 = SolnBlk.dWdx[ii][jj].scalar[0];//Vy(V);
+      t28 = t14*t15-t17*t21+t25*t26;
+      t31 = 1.0+tau_fsd*SolnBlk.W[ii][jj].scalar[0];//c;
+      t32 = sqrt(t8);
+      t33 = 1/t32;
+      t34 = t4*t33;
+      t35 = SolnBlk.dWdx[ii][jj].scalar[1];//Fsdx(Fsd);
+      t37 = t6*t33;
+      t38 = SolnBlk.dWdy[ii][jj].scalar[1];//Fsdy(Fsd);
+      t42 = tau_fsd*SolnBlk.W[ii][jj].scalar[1];//Fsd;
+      t45 = -t5*t33-t7*t33;
+      t49 = sqrt(k_fsd);
+      t50 = kappa_fsd*t49;
+      t51 = 1/SolnBlk.W[ii][jj].filter_width;
+      t55 = d_dWdx_dW_C;//diff(Ux(U),U);
+      t57 = d_dWdy_dW_C;//diff(Uy(U),U);
+      t63 = d_dWdx_dW_C;//diff(Vx(V),V);
+      t66 = d_dWdy_dW_C;//diff(Vy(V),V);
+      t71 = d_dWdx_dW_C;//diff(cx(c),c);
+      t72 = t17*t71;
+      t74 = t8*t8;
+      t75 = 1/t74;
+      t78 = d_dWdx_dW_C;//diff(cy(c),c);
+      t80 = t4*t71+t6*t78;
+      t81 = 2.0*t5*t75*t80;
+      t84 = t6*t9*t78;
+      t87 = 2.0*t7*t75*t80;
+      t107 = SolnBlk.W[ii][jj].rho*t35;
+      t109 = SolnBlk.W[ii][jj].rho*t38;
+      t116 = 1/t32/t8;
+      t144 = beta_fsd*SolnBlk.W[ii][jj].laminar_speed;
+      t145 = 1.0+tau_fsd;
+      t147 = t31*t31;
+      t148 = 1/t147;
+      t152 = t145*t32;
+      t161 = 1/t145;
+      t163 = t161/SolnBlk.W[ii][jj].scalar[0];//c;
+      t164 = t145*SolnBlk.W[ii][jj].scalar[0];//c;
+      t165 = 1/t31;
+      t167 = 1.0-t164*t165;
+      t168 = 1/t167;
+      t169 = t31*t168;
+      t170 = t163*t169;
+      t173 = SolnBlk.W[ii][jj].scalar[1]-t152*t148;
+      t175 = t144*t173*SolnBlk.W[ii][jj].scalar[1];
+      t176 = SolnBlk.W[ii][jj].scalar[1]*SolnBlk.W[ii][jj].scalar[0];
+      t184 = t167*t167;
+      t196 = d_dWdx_dW_C;//diff(Fsdx(Fsd),Fsd);
+      t199 = d_dWdy_dW_C;//diff(Fsdy(Fsd),Fsd);
+      dStdW(4,0) = t1*SolnBlk.W[ii][jj].scalar[1];
+      dStdW(4,5) = t1*SolnBlk.W[ii][jj].rho;
+      dStdW(5,0) = t28*SolnBlk.W[ii][jj].scalar[1]-SolnBlk.W[ii][jj].laminar_speed*(t31*(-t34*t35-t37*t38)+t42*t45)+t50*SolnBlk.W[ii][jj].scalar[1]*t51;
+      dStdW(5,1) = (t14*t55-t17*t6*t57)*SolnBlk.W[ii][jj].scalar[1]*SolnBlk.W[ii][jj].rho;
+      dStdW(5,2) = (-t17*t6*t63+t25*t66)*SolnBlk.W[ii][jj].scalar[1]*SolnBlk.W[ii][jj].rho;
+      dStdW(5,4) = ((-4.0/3.0*t72+2.0/3.0*t81+2.0/3.0*t84-t87/3.0)*t15-t71*t9*t21+2.0*t4*t75*t21*t80-t17*t78*t20+(-4.0/3.0*t84+2.0/3.0*t87+2.0/3.0*t72-t81/3.0)*t26)*SolnBlk.W[ii][jj].scalar[1]*SolnBlk.W[ii][jj].rho-SolnBlk.W[ii][jj].laminar_speed*(tau_fsd*(-t34*t107-t37*t109)+t31*(-t71*t33*t107+t4*t116*t107*t80-t78*t33*t109+t6*t116*t109*t80)+t42*SolnBlk.W[ii][jj].rho*(-2.0*t34*t71+t5*t116*t80-2.0*t37*t78+t7*t116*t80))-t144*(-t145*t33*t148*t80+2.0*t152/t147/t31*tau_fsd)*SolnBlk.W[ii][jj].scalar[1]*t170+t175*t161/t176*t169-t175*t163*tau_fsd*t168+t175*t163*t31/t184*(-t145*t165+t164*t148*tau_fsd);
+      dStdW(5,5) = t28*SolnBlk.W[ii][jj].rho-SolnBlk.W[ii][jj].laminar_speed*(t31*(-t34*SolnBlk.W[ii][jj].rho*t196-t37*SolnBlk.W[ii][jj].rho*t199)+tau_fsd*SolnBlk.W[ii][jj].rho*t45)+t50*SolnBlk.W[ii][jj].rho*t51-t144*SolnBlk.W[ii][jj].scalar[1]*t170-t144*t173*t170;
   }
 
   if ( SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY  ) {
