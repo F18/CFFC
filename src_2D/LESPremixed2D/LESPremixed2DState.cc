@@ -2595,7 +2595,7 @@ int FlameJump_n(const LESPremixed2D_pState &Wu,
 
   int error_flag;
   double cos_angle, sin_angle;
-  Chem2D_pState Wu_rotated, Wb_rotated;
+  LESPremixed2D_pState Wu_rotated, Wb_rotated;
 
   /* Determine the direction cosine's for the frame rotation. */
   cos_angle = norm_dir.x;
@@ -2637,8 +2637,8 @@ int FlameJump_x(const LESPremixed2D_cState &Uu,
 
   int error_flag;
 
-  Chem2D_pState Wu = Uu.W();
-  Chem2D_pState Wb = Ub.W();
+  LESPremixed2D_pState Wu = Uu.W();
+  LESPremixed2D_pState Wb = Ub.W();
 
   error_flag = FlameJump_x(Wu, Wb, Flow_Type);
   if (error_flag) {
@@ -2670,7 +2670,7 @@ int FlameJump_n(const LESPremixed2D_cState &Uu,
 
   int error_flag;
   double cos_angle, sin_angle;
-  Chem2D_cState Uu_rotated, Ub_rotated;
+  LESPremixed2D_cState Uu_rotated, Ub_rotated;
 
   /* Determine the direction cosine's for the frame rotation. */
   cos_angle = norm_dir.x; 
