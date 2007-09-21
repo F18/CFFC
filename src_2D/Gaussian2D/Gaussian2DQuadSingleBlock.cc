@@ -2325,6 +2325,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
                 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
                 SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
 	n_pts = 0;
       } else { //BC's are Periodic or "none"
@@ -2337,6 +2338,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
                 SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
                 SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i-1; j_index[0] = j;
@@ -2353,6 +2355,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                         SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
                         SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
                         SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                        SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
                         SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i-1; j_index[0] = j;
@@ -2390,6 +2393,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
                 SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
                 SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
 	n_pts = 0;
       } else { //BC's are Periodic or "none"
@@ -2402,6 +2406,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
                 SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
                 SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i-1; j_index[0] = j;
@@ -2418,6 +2423,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                         SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
                         SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
                         SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                        SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
                         SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i-1; j_index[0] = j;
@@ -2450,6 +2456,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
          SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+         SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
          SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
 	n_pts = 0;
       } else { //BC's are Periodic or "none"
@@ -2462,6 +2469,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
                 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
                 SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i;   j_index[0] = j+1;
@@ -2478,6 +2486,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                         SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
                         SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
                         SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                        SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
                         SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i;   j_index[0] = j+1;
@@ -2510,6 +2519,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
          SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+         SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
          SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
 	n_pts = 0;
       } else { //BC's are Periodic or "none"
@@ -2522,6 +2532,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
                 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
                 SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i;   j_index[0] = j+1;
@@ -2538,6 +2549,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                         SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
                         SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
                         SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                        SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
                         SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i;   j_index[0] = j+1;
@@ -2570,6 +2582,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
           SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+          SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
           SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)
                            &&
          (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
@@ -2578,6 +2591,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
           SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+          SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
           SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
 	n_pts = 3;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -2589,6 +2603,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
                  SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                 SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
                  SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -2602,6 +2617,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
                  SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                 SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
                  SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -2630,6 +2646,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
           SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+          SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
           SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)
                            &&
          (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
@@ -2638,6 +2655,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
           SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+          SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
           SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
 	n_pts = 3;
 	i_index[0] = i;   j_index[0] = j-1;
@@ -2649,6 +2667,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
                  SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                 SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
                  SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -2662,6 +2681,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
                  SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                 SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
                  SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -2690,6 +2710,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
           SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+          SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
           SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)
                            &&
          (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
@@ -2698,6 +2719,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
           SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+          SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
           SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
 	n_pts = 3;
 	i_index[0] = i-1; j_index[0] = j;
@@ -2709,6 +2731,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
                  SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                 SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
                  SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -2722,6 +2745,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
                  SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                 SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
                  SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -2750,6 +2774,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
           SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+          SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
           SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)
                            &&
          (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
@@ -2758,6 +2783,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
           SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+          SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
           SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
 	n_pts = 3;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -2769,6 +2795,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
                  SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                 SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
                  SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -2782,6 +2809,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
                  SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                 SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
                  SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -2810,6 +2838,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
          SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+         SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
          SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -2838,6 +2867,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
          SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+         SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
          SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -2866,6 +2896,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
          SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+         SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
          SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -2894,6 +2925,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
          SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+         SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
          SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -3280,6 +3312,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
                 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
                 SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
 	n_pts = 0;
       } else { //BC's are Periodic or "none"
@@ -3292,6 +3325,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
                 SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
                 SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i-1; j_index[0] = j;
@@ -3308,6 +3342,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                         SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
                         SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
                         SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                        SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
                         SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i-1; j_index[0] = j;
@@ -3345,6 +3380,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
                 SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
                 SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
 	n_pts = 0;
       } else { //BC's are Periodic or "none"
@@ -3357,6 +3393,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
                 SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
                 SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i-1; j_index[0] = j;
@@ -3373,6 +3410,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                         SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
                         SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
                         SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                        SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
                         SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i-1; j_index[0] = j;
@@ -3405,6 +3443,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
          SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+         SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
          SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
 	n_pts = 0;
       } else { //BC's are Periodic or "none"
@@ -3417,6 +3456,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
                 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
                 SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i;   j_index[0] = j+1;
@@ -3433,6 +3473,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                         SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
                         SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
                         SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                        SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
                         SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i;   j_index[0] = j+1;
@@ -3465,6 +3506,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
          SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+         SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
          SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
 	n_pts = 0;
       } else { //BC's are Periodic or "none"
@@ -3477,6 +3519,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                 SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
                 SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
                 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
                 SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i;   j_index[0] = j+1;
@@ -3493,6 +3536,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                         SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
                         SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
                         SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                        SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
                         SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)) {
 	  n_pts = 5;
 	  i_index[0] = i;   j_index[0] = j+1;
@@ -3525,6 +3569,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
           SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+          SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
           SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)
                            &&
          (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
@@ -3533,6 +3578,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
           SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+          SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
           SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
 	n_pts = 3;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -3544,6 +3590,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
                  SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                 SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
                  SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -3557,6 +3604,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
                  SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                 SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
                  SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -3585,6 +3633,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
           SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+          SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
           SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)
                            &&
          (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
@@ -3593,6 +3642,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
           SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+          SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
           SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
 	n_pts = 3;
 	i_index[0] = i;   j_index[0] = j-1;
@@ -3604,6 +3654,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
                  SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                 SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
                  SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -3617,6 +3668,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
                  SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                 SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
                  SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -3645,6 +3697,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
           SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+          SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
           SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)
                            &&
          (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
@@ -3653,6 +3706,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
           SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+          SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
           SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
 	n_pts = 3;
 	i_index[0] = i-1; j_index[0] = j;
@@ -3664,6 +3718,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
                  SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                 SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
                  SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -3677,6 +3732,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
                  SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                 SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
                  SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -3705,6 +3761,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
 	  SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+	  SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
           SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)
                            &&
          (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
@@ -3713,6 +3770,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
           SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
           SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
           SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+          SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
           SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
 	n_pts = 3;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -3724,6 +3782,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
                  SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                 SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
                  SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -3737,6 +3796,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                  SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
                  SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
                  SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+                 SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
                  SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -3765,6 +3825,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
 	 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+	 SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
          SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -3793,6 +3854,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
          SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+         SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
          SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
@@ -3821,6 +3883,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
          SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+         SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
          SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i;   j_index[0] = j+1;
@@ -3849,6 +3912,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
          SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
          SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
          SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+         SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
          SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
 	n_pts = 5;
 	i_index[0] = i-1; j_index[0] = j;
