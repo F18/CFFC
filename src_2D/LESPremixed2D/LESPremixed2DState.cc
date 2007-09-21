@@ -1272,9 +1272,9 @@ LESPremixed2D_pState LESPremixed2D_pState::lambda_x(void) const {
   Temp.p = v.x + c;
   if(nscal) for(int i=0; i<nscal; ++i) Temp.scalar[i] = v.x;
 
-//    if(Scal_sys.scalar_flag != LES_C &&
-//       Scal_sys.scalar_flag != LES_C_FSD &&
-//       Scal_sys.scalar_flag != LES_C_FSD_K) {
+//     if(Scal_sys.scalar_flag != LES_C &&
+//        Scal_sys.scalar_flag != LES_C_FSD &&
+//        Scal_sys.scalar_flag != LES_C_FSD_K) {
   for(int i=0; i<ns; ++i){
     Temp.spec[i].c = v.x;
     //  }
@@ -1300,9 +1300,9 @@ LESPremixed2D_pState LESPremixed2D_pState::lambda_preconditioned_x(const double 
   NEW.p = uprimed + cprimed;
   if(nscal) for(int i=0; i<nscal; ++i) NEW.scalar[i] = v.x;
 
-//    if(Scal_sys.scalar_flag != LES_C &&
-//       Scal_sys.scalar_flag != LES_C_FSD &&
-//       Scal_sys.scalar_flag != LES_C_FSD_K) {
+//     if(Scal_sys.scalar_flag != LES_C &&
+//        Scal_sys.scalar_flag != LES_C_FSD &&
+//        Scal_sys.scalar_flag != LES_C_FSD_K) {
   for(int i=0; i<ns; ++i){
     NEW.spec[i].c = v.x;
     //  }
@@ -1321,24 +1321,24 @@ LESPremixed2D_cState LESPremixed2D_pState::rc_x(const int &index) const {
       Scal_sys.scalar_flag == LES_C_FSD_K) {
       double c = amodified(); 
       double eta_fsd = Progvar_Species_Grad();
-    assert( index >= 1 && index <= (NUM_VAR_LESPREMIXED2D-ns) );
+      //    assert( index >= 1 && index <= (NUM_VAR_LESPREMIXED2D-ns) );
     if(index == 1){
       return (LESPremixed2D_cState(ONE, v.x-c, v.y, H()/rho-v.x*c, scalar));
     } else if(index == 2) {
-      return (LESPremixed2D_cState(ONE, v.x, v.y, H()/rho-c*c/(g()-ONE), scalar)); 
+      return (LESPremixed2D_cState(ONE, v.x, v.y, H()/rho-Cp()*T(), scalar)); 
     } else if(index == 3) {
-      return (LESPremixed2D_cState(ZERO, ZERO, rho, rho*v.y, ZERO));
+      return (LESPremixed2D_cState(ZERO, ZERO, ONE, v.y, ZERO));
     } else if(index == 4) {
       return (LESPremixed2D_cState(ONE, v.x+c, v.y, H()/rho+v.x*c, scalar));
     } else if( nscal  &&  index >=5 && index<=NUM_VAR_LESPREMIXED2D-ns){
          if(index == 5){
            LESPremixed2D_cState NEW(ZERO);
-           NEW.E = rho*eta_fsd;//FIVE*rho/THREE;   // For k equation
-           NEW.rhoscalar[index-5] = rho;
+           NEW.E = eta_fsd;//FIVE*rho/THREE;   // For k equation
+           NEW.rhoscalar[index-5] = ONE;
            return NEW;
  	} else {  
            LESPremixed2D_cState NEW(ZERO);
-           NEW.rhoscalar[index-5] = rho; // ????
+           NEW.rhoscalar[index-5] = ONE; // ????
            return NEW;
        }
     }
@@ -1387,11 +1387,11 @@ LESPremixed2D_cState LESPremixed2D_pState::rc_x(const int &index) const {
 // Primitive Left Eigenvector -- (x-direction)
 LESPremixed2D_pState LESPremixed2D_pState::lp_x(const int &index) const {
  
-    if(Scal_sys.scalar_flag == LES_C ||
-       Scal_sys.scalar_flag == LES_C_FSD ||
-       Scal_sys.scalar_flag == LES_C_FSD_K) {
-     assert( index >= 1 && index <= (NUM_VAR_LESPREMIXED2D-ns) );
-   }
+//     if(Scal_sys.scalar_flag == LES_C ||
+//        Scal_sys.scalar_flag == LES_C_FSD ||
+//        Scal_sys.scalar_flag == LES_C_FSD_K) {
+//      assert( index >= 1 && index <= (NUM_VAR_LESPREMIXED2D-ns) );
+//    }
       double c = amodified(); 
    if(index == 1){
       return (LESPremixed2D_pState(ZERO, -HALF*rho/c, ZERO, HALF/(c*c), ZERO));
@@ -1434,32 +1434,32 @@ LESPremixed2D_cState LESPremixed2D_pState::rc_x_precon(const int &index, const d
        double uprimed,cprimed;
        u_a_precon(MR2*c*c,uprimed,cprimed);
        double eta_fsd = Progvar_Species_Grad();
-       assert( index >= 1 && index <= (NUM_VAR_LESPREMIXED2D-ns) );
+       //       assert( index >= 1 && index <= (NUM_VAR_LESPREMIXED2D-ns) );
   if(index == 1){
     return (LESPremixed2D_cState(ONE, 
 				 (uprimed-cprimed)/MR2,
 				 v.y,
-				 h()+HALF*(v.y*v.y+v.x*v.x/MR2)+FIVE*k()/THREE-(v.x*cprimed)/MR2,
+				 h()+HALF*(v.y*v.y+v.x*v.x/MR2)/*+FIVE*k()/THREE*/-(v.x*cprimed)/MR2,
 				 scalar));
   } else if(index == 2) {
-    return (LESPremixed2D_cState(ONE, v.x, v.y, h()-Cp()*T()+ HALF*v.sqr()-scalar[0]*eta_fsd, scalar));
+    return (LESPremixed2D_cState(ONE, v.x, v.y, /*h()-Cp()*T()+HALF*v.sqr()*/H()/rho - c*c/(g()-ONE)-scalar[0]*eta_fsd, scalar));
   } else if(index == 3) {
-    return (LESPremixed2D_cState(ZERO, ZERO, rho, rho*v.y, ZERO));
+    return (LESPremixed2D_cState(ZERO, ZERO, ONE, v.y, ZERO));
   } else if(index == 4) { 
     return (LESPremixed2D_cState(ONE,
 				 (uprimed+cprimed)/MR2,
 				 v.y, 
-				 h()+HALF*(v.y*v.y+v.x*v.x/MR2)+FIVE*k()/THREE+(v.x*cprimed)/MR2,
+				 h()+HALF*(v.y*v.y+v.x*v.x/MR2)/*+FIVE*k()/THREE*/+(v.x*cprimed)/MR2,
 				 scalar));
   } else if(nscal  && index >=5  && index<=NUM_VAR_LESPREMIXED2D-ns ){
       if(index == 5){
 	LESPremixed2D_cState NEW(ZERO);
-	NEW.E = rho*eta_fsd;//FIVE*rho/THREE;   // For k equation
-	NEW.rhoscalar[index-5] = rho; 
+	NEW.E = eta_fsd;//FIVE*rho/THREE;   // For k equation
+	NEW.rhoscalar[index-5] = ONE; 
 	return NEW;
       } else {  
 	LESPremixed2D_cState NEW(ZERO);
-	NEW.rhoscalar[index-5] = rho; // ????
+	NEW.rhoscalar[index-5] = ONE; // ????
 	return NEW;
     }  
   }
@@ -1527,11 +1527,11 @@ LESPremixed2D_cState LESPremixed2D_pState::rc_x_precon(const int &index, const d
 // Primitive Left Eigenvector -- (x-direction)
 LESPremixed2D_pState LESPremixed2D_pState::lp_x_precon(const int &index, const double &MR2) const {
 
-    if(Scal_sys.scalar_flag == LES_C ||
-       Scal_sys.scalar_flag == LES_C_FSD ||
-       Scal_sys.scalar_flag == LES_C_FSD_K) {
-        assert( index >= 1 && index <= (NUM_VAR_LESPREMIXED2D-ns) );
-   }
+//     if(Scal_sys.scalar_flag == LES_C ||
+//        Scal_sys.scalar_flag == LES_C_FSD ||
+//        Scal_sys.scalar_flag == LES_C_FSD_K) {
+//         assert( index >= 1 && index <= (NUM_VAR_LESPREMIXED2D-ns) );
+//    }
     double c = amodified();   
     double uprimed,cprimed;
     u_a_precon(MR2*c*c,uprimed,cprimed);
@@ -2249,7 +2249,7 @@ double LESPremixed2D_pState::M_xx(const LESPremixed2D_pState &dWdx,
     double Mxx, magnitude_C;
     magnitude_C = sqrt(sqr(dWdx.scalar[0])+sqr(dWdy.scalar[0]));
     if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) { 
-    Mxx = -d_dWdx_dx.scalar[0]/magnitude_C+dWdx.scalar[0]*(dWdx.scalar[0]*d_dWdx_dx.scalar[0]+dWdy.scalar[0]*d_dWdx_dy.scalar[0])/pow(magnitude_C,3);
+    Mxx = -d_dWdx_dx.scalar[0]/magnitude_C+dWdx.scalar[0]*(dWdx.scalar[0]*d_dWdx_dx.scalar[0]+dWdy.scalar[0]*d_dWdx_dy.scalar[0])/cube(magnitude_C);
     return ( Mxx );
    }else{
     return (0.0);
@@ -2264,7 +2264,7 @@ double LESPremixed2D_pState::M_yy(const LESPremixed2D_pState &dWdx,
      double Myy, magnitude_C;
      magnitude_C = sqrt(sqr(dWdx.scalar[0])+sqr(dWdy.scalar[0]));
      if ( scalar[0] < 0.99 && scalar[0] > 0.01 && dWdx.scalar[0] != ZERO && dWdy.scalar[0] != ZERO ) {
-     Myy = -d_dWdy_dy.scalar[0]/magnitude_C+dWdy.scalar[0]*(dWdx.scalar[0]*d_dWdx_dy.scalar[0]+dWdy.scalar[0]*d_dWdy_dy.scalar[0])/pow(magnitude_C,3);
+     Myy = -d_dWdy_dy.scalar[0]/magnitude_C+dWdy.scalar[0]*(dWdx.scalar[0]*d_dWdx_dy.scalar[0]+dWdy.scalar[0]*d_dWdy_dy.scalar[0])/cube(magnitude_C);
      return ( Myy );
      }else{
      return (0.0);
