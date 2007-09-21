@@ -520,13 +520,15 @@ calculate_Matrix_Free(const double &epsilon)
 	  for(int l =0; l < blocksize; l++){
 	    value += Precon(k,l) * denormalizeU(W[(search_directions)*scalar_dim + index(i,j,l)],l);
 	  }
-	  V[(search_directions+1)*scalar_dim+iter] -= normalizeR(value * DTS_ptr->LHS_Time(SolnBlk->dt[i][j]), k);
+	  V[(search_directions+1)*scalar_dim+iter] -= 
+	    normalizeR(value * LHS_Time<INPUT_TYPE>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
+								 
 	  
 	//No Preconditioner
 	} else { // z/h
 	  V[(search_directions+1)*scalar_dim+iter] -= normalizeUtoR( W[(search_directions)*scalar_dim + iter] 
-								    * DTS_ptr->LHS_Time(SolnBlk->dt[i][j]), k);	
-	}      
+			       * LHS_Time<INPUT_TYPE>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
+	}       
 
 // #ifdef _NKS_VERBOSE_NAN_CHECK
 // 	// nan check most commonly caused by nans in dUdt !!!!
@@ -592,11 +594,11 @@ calculate_Matrix_Free_Restart(const double &epsilon)
 	  for(int l =0; l < blocksize; l++){
 	    value += Precon(k,l) * denormalizeU( x[index(i,j,l)],l);
 	  }
-	  V[iter] -= normalizeR(value * DTS_ptr->LHS_Time(SolnBlk->dt[i][j]),k);
+	  V[iter] -= normalizeR(value * LHS_Time<INPUT_TYPE>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
 	  
 	//No Preconditioner
 	} else { // z/h
-	  V[iter] -= normalizeUtoR(x[iter] * DTS_ptr->LHS_Time(SolnBlk->dt[i][j]),k);	
+	  V[iter] -= normalizeUtoR(x[iter] * LHS_Time<INPUT_TYPE>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);	
 	}
       }  
     
