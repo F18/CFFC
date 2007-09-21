@@ -1663,6 +1663,16 @@ void BCs(Gaussian2D_Quad_Block &SolnBlk,
             SolnBlk.W[SolnBlk.ICl-2][j] = SolnBlk.W[SolnBlk.ICl-1][j];
             SolnBlk.U[SolnBlk.ICl-2][j] = U(SolnBlk.W[SolnBlk.ICl-2][j]);
 	    break;
+	  case BC_TEMPERATURE_SLIP :
+	    SolnBlk.W[SolnBlk.ICl-1][j] = Isothermal_Wall_Slip_T(SolnBlk.W[SolnBlk.ICl][j],
+								 SolnBlk.WoW[j].v, SolnBlk.WoW[j].T(),
+								 SolnBlk.phi[SolnBlk.ICl][j]^SolnBlk.dWdx[SolnBlk.ICl][j],
+								 SolnBlk.phi[SolnBlk.ICl][j]^SolnBlk.dWdy[SolnBlk.ICl][j],
+								 SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
+            SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
+            SolnBlk.W[SolnBlk.ICl-2][j] = SolnBlk.W[SolnBlk.ICl-1][j];
+            SolnBlk.U[SolnBlk.ICl-2][j] = U(SolnBlk.W[SolnBlk.ICl-2][j]);
+	    break;
  	  case BC_COUETTE :
             Linear_Reconstruction_LeastSquares(SolnBlk, 
                                                  SolnBlk.ICl, j, 
@@ -1794,6 +1804,16 @@ void BCs(Gaussian2D_Quad_Block &SolnBlk,
             SolnBlk.W[SolnBlk.ICu+2][j] = SolnBlk.W[SolnBlk.ICu+1][j];
             SolnBlk.U[SolnBlk.ICu+2][j] = U(SolnBlk.W[SolnBlk.ICu+2][j]);
 	    break;
+	  case BC_TEMPERATURE_SLIP :
+	    SolnBlk.W[SolnBlk.ICu+1][j] = Isothermal_Wall_Slip_T(SolnBlk.W[SolnBlk.ICu][j],
+								 SolnBlk.WoE[j].v,SolnBlk.WoE[j].T(),
+								 SolnBlk.phi[SolnBlk.ICu][j]^SolnBlk.dWdx[SolnBlk.ICu][j],
+								 SolnBlk.phi[SolnBlk.ICu][j]^SolnBlk.dWdy[SolnBlk.ICu][j],
+								 SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
+            SolnBlk.U[SolnBlk.ICu+1][j] = U(SolnBlk.W[SolnBlk.ICu+1][j]);
+            SolnBlk.W[SolnBlk.ICu+2][j] = SolnBlk.W[SolnBlk.ICu+1][j];
+            SolnBlk.U[SolnBlk.ICu+2][j] = U(SolnBlk.W[SolnBlk.ICu+2][j]);
+	    break;
  	  case BC_COUETTE :
             Linear_Reconstruction_LeastSquares(SolnBlk, 
                                                  SolnBlk.ICu, j, 
@@ -1910,6 +1930,16 @@ void BCs(Gaussian2D_Quad_Block &SolnBlk,
             SolnBlk.W[i][SolnBlk.JCl-2] = SolnBlk.W[i][SolnBlk.JCl-1];
             SolnBlk.U[i][SolnBlk.JCl-2] = U(SolnBlk.W[i][SolnBlk.JCl-2]);
 	    break;
+	  case BC_TEMPERATURE_SLIP :
+	    SolnBlk.W[i][SolnBlk.JCl-1] = Isothermal_Wall_Slip_T(SolnBlk.W[i][SolnBlk.JCl],
+								 SolnBlk.WoS[i].v, SolnBlk.WoS[i].T(),
+								 SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dWdx[i][SolnBlk.JCl],
+								 SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dWdy[i][SolnBlk.JCl],
+								 SolnBlk.Grid.nfaceS(i,SolnBlk.JCl));
+            SolnBlk.U[i][SolnBlk.JCl-1] = U(SolnBlk.W[i][SolnBlk.JCl-1]);
+            SolnBlk.W[i][SolnBlk.JCl-2] = SolnBlk.W[i][SolnBlk.JCl-1];
+            SolnBlk.U[i][SolnBlk.JCl-2] = U(SolnBlk.W[i][SolnBlk.JCl-2]);
+	    break;
 	  case BC_COUETTE :
             Linear_Reconstruction_LeastSquares(SolnBlk, 
                                                  i, SolnBlk.JCl, 
@@ -2010,6 +2040,16 @@ void BCs(Gaussian2D_Quad_Block &SolnBlk,
 	    SolnBlk.W[i][SolnBlk.JCu+1] = Isothermal_Wall(SolnBlk.W[i][SolnBlk.JCu],
 							  SolnBlk.WoN[i].v, SolnBlk.WoN[i].T(),
 							  SolnBlk.Grid.nfaceN(i,SolnBlk.JCu));
+            SolnBlk.U[i][SolnBlk.JCu+1] = U(SolnBlk.W[i][SolnBlk.JCu+1]);
+            SolnBlk.W[i][SolnBlk.JCu+2] = SolnBlk.W[i][SolnBlk.JCu+1];
+            SolnBlk.U[i][SolnBlk.JCu+2] = U(SolnBlk.W[i][SolnBlk.JCu+2]);
+	    break;
+	  case BC_TEMPERATURE_SLIP :
+	    SolnBlk.W[i][SolnBlk.JCu+1] = Isothermal_Wall_Slip_T(SolnBlk.W[i][SolnBlk.JCu],
+								 SolnBlk.WoN[i].v, SolnBlk.WoN[i].T(),
+								 SolnBlk.phi[i][SolnBlk.JCu]^SolnBlk.dWdx[i][SolnBlk.JCu],
+								 SolnBlk.phi[i][SolnBlk.JCu]^SolnBlk.dWdy[i][SolnBlk.JCu],
+								 SolnBlk.Grid.nfaceN(i,SolnBlk.JCu));
             SolnBlk.U[i][SolnBlk.JCu+1] = U(SolnBlk.W[i][SolnBlk.JCu+1]);
             SolnBlk.W[i][SolnBlk.JCu+2] = SolnBlk.W[i][SolnBlk.JCu+1];
             SolnBlk.U[i][SolnBlk.JCu+2] = U(SolnBlk.W[i][SolnBlk.JCu+2]);
