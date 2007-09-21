@@ -6580,9 +6580,9 @@ int Update_Solution_Multistage_Explicit(NavierStokes2D_Quad_Block &SolnBlk,
 				 SolnBlk.Grid.Cell[i][j].Xc,
 				 SolnBlk.dWdx[i][j],
 				 SolnBlk.dWdy[i][j],
-				 SolnBlk.Axisymmetric,
 				 SolnBlk.d_dWdx_dW[i][j][0],
 				 SolnBlk.d_dWdy_dW[i][j][0],
+				 SolnBlk.Axisymmetric,
 				 SolnBlk.Wall[i][j].ywall,
 				 SolnBlk.Wall[i][j].yplus);
 	}
