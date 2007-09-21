@@ -35,7 +35,11 @@
 
 #ifndef _GMRES2D_INCLUDED
 #include "GMRES2D.h"
-#endif 
+#endif
+
+#ifndef _NKS_DTS_INCLUDED
+#include "DTS_NKS.h"
+#endif
 
 /************************************
  * NKS "Magic" Numbers              *           //MAKE THESE INPUT PARAMETERS ???
@@ -50,14 +54,14 @@
 // These are for the Detect_Convergence_Stall algorithm.
 enum DCS_States { CLEAR, WAITING_TO_FREEZE, FROZEN, WAITING_TO_STOP };
 
-// Relaxation_multiplier is the distance we take along the Newton Step.
-// Setting Relaxation_multiplier to 1.0 recovers plain Newton's Method.
+
 template <typename SOLN_VAR_TYPE,typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 int Newton_Update(SOLN_BLOCK_TYPE *SolnBlk,
 		  AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
 		  INPUT_TYPE &Input_Parameters,
 		  GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> &GMRES,
 		  double Relaxation_multiplier);
+
 
 template <typename INPUT_TYPE>
 double Finite_Time_Step(const INPUT_TYPE &Input_Parameters, 
@@ -69,12 +73,9 @@ double Finite_Time_Step(const INPUT_TYPE &Input_Parameters,
 template <typename SOLN_BLOCK_TYPE>
 int set_blocksize(SOLN_BLOCK_TYPE &SolnBlk){ return (SolnBlk.NumVar()); }
 
-inline int DTS_Uo_index(int i, int j, int k, int NCi, int NCj, int blocksize) {
-  return ((j*NCi+i)*blocksize+k);
-}
 
-/********************************************************************************************
-//!  Routine: Newton_Krylov_Solver
+/*! *****************************************************************************************
+ *   Routine: Newton_Krylov_Solver
  *                                                       
  * This routine updates the specified solution block    
  * using Newton-Krylov-Schwarz method.                  
@@ -89,57 +90,46 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 		                 INPUT_TYPE &Input_Parameters) {
 
   int error_flag = 0;
-
   int blocksize = set_blocksize<SOLN_BLOCK_TYPE>(SolnBlk[0]); //Number of equations used for calculation
 
   //Reset Solver Type flag
   Input_Parameters.Solver_Type = IMPLICIT;
 
-  double **DTS_Uo = new double*[List_of_Local_Solution_Blocks.Nblk];
-
   /**************************************************************************/  
   /****************** SETTING UP STORAGE AND DATASTRUCTURES *****************/
   /**************************************************************************/  
 
-  //  The time-accurate code (using dual-time-stepping (DTS)) does not
-  //  work. I wrote it as best as I could but it did not run as
-  //  expected. Other priorities came up and I did not fix it. Search
-  //  on the keyword: Time_Accurate to see the changes I made. The
-  //  non-time-accurate code still works as before.
-  //  
-  //  -- Alistair Wood. Mon Jul 23 2007.
-  if (Input_Parameters.NKS_IP.Time_Accurate) {
-    // Must allocate DTS_Uo before allocating GMRES_.
-    for (int Bcount = 0; Bcount < List_of_Local_Solution_Blocks.Nblk; Bcount++) {
-	if (List_of_Local_Solution_Blocks.Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
-  	   int NCi = SolnBlk[Bcount].NCi;
-	   int NCj = SolnBlk[Bcount].NCj;
- 	   DTS_Uo[Bcount] = new double[NCi * NCj * blocksize];
-	}
-    }
-  }
-
-  GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> GMRES_(SolnBlk,
-										List_of_Local_Solution_Blocks,
-										Input_Parameters,
-										blocksize, DTS_Uo);
-  
   /* Count number of used Blocks on this processor */
-
   int Used_blocks_count = 0; 
   for ( int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks.Nblk; ++Bcount ) {
     if (List_of_Local_Solution_Blocks.Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
       Used_blocks_count++;
     } 
   } 
+  //total_Used_blocks = CFFC_Summation_MPI(Used_blocks_count);  ??      
 
+  //DUAL TIME STEPPING 
+  DTS_NKS_Quad_Block<SOLN_BLOCK_TYPE,INPUT_TYPE> *DTS_SolnBlk 
+    = new DTS_NKS_Quad_Block<SOLN_BLOCK_TYPE,INPUT_TYPE>[Used_blocks_count];
+  if (Input_Parameters.NKS_IP.Dual_Time_Stepping) {          
+    for( int i=0; i<Used_blocks_count; i++) {  
+      DTS_SolnBlk[i].allocate(SolnBlk[i].NCi,SolnBlk[i].NCj,blocksize,Input_Parameters);      
+    }
+  } 
+  
+  //GMRES 
+  GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> GMRES_(SolnBlk,
+										List_of_Local_Solution_Blocks,
+										Input_Parameters,
+										blocksize,
+										DTS_SolnBlk);
+  // Block Preconditoner
   Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_precon 
     = new Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>[Used_blocks_count];
 
-  for( int i=0; i<Used_blocks_count; i++) {  
-    Block_precon[i].Create_Preconditioner(SolnBlk[i], Input_Parameters,blocksize);
+  for( int i=0; i<Used_blocks_count; i++) {                                    
+    Block_precon[i].Create_Preconditioner(SolnBlk[i],Input_Parameters,blocksize);
   }  
-  //total_Used_blocks = CFFC_Summation_MPI(Used_blocks_count);  maybe ??      
 
   /**************************************************************************/  
   /********* FINISHED SETTING UP STORAGE AND DATASTRUCTURES *****************/
@@ -150,70 +140,80 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
     //Input_Parameters.NKS_IP.Memory_Estimates(blocksize,SolnBlk[0].NCi*SolnBlk[0].NCj,Used_blocks_count);
   }
 
-  if (Input_Parameters.NKS_IP.Time_Accurate) { // Time accurate mode...
-     double real_L2norm_first = -1.0, real_L2norm_n = -1.0;
-     double CFL_Power = 0.0;
-     {
-	double i = Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL;
-	double f = Input_Parameters.NKS_IP.Finite_Time_Step_Final_CFL;
-	double L = max(Input_Parameters.NKS_IP.DTS_Tolerance, NKS_EPS);
-	// Find x such that:
-	// (i) (L)^(x) == f
-	CFL_Power = log(f/i) / log(L);
-     }
+  /**************************************************************************/  
+  /********* Unsteady Time Accurate, Dual Time Stepping  ********************/
+  /**************************************************************************/  
+  if (Input_Parameters.NKS_IP.Dual_Time_Stepping) { 
+  
+    int DTS_Step(0);
+    double physical_time(ZERO);
+    bool physical_first_step(true);
+    int physical_time_param(TIME_STEPPING_IMPLICIT_EULER);
 
-     double real_time = 0.0;
-
-     for (int DTS_Step = 1; DTS_Step <= Input_Parameters.NKS_IP.Max_DTS_Steps; DTS_Step++) {
-	double DTS_dTime = 0.0, DTS_CFL = 0.0;
-	if (real_L2norm_n <= 0) {
-	   DTS_CFL = Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL;
-	} else {
-	  // If L2norm_current_n were a straight line on a semi-log plot 
-	  //  then CFL would  also be a straight line on a semi-log plot.
-	  DTS_CFL = Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL*pow(real_L2norm_n, CFL_Power);
+    // Outer Loop (Physical Time)      
+    while ( (DTS_Step < Input_Parameters.NKS_IP.Maximum_Number_of_DTS_Steps) &&
+	    (Input_Parameters.Time_Max > physical_time ) ) {
+      
+      // First Step needs to be done with Implicit Euler
+      if (physical_first_step) {
+	physical_time_param = Input_Parameters.NKS_IP.Physical_Time_Integration;
+	Input_Parameters.NKS_IP.Physical_Time_Integration = TIME_STEPPING_IMPLICIT_EULER;
+      }
+  
+      // Determine global time step
+      double DTS_dTime  = Input_Parameters.NKS_IP.Physical_Time_CFL_Number*
+	CFFC_Minimum_MPI(CFL(SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters)); 
+  
+      // Store Previous Solution      
+      for (int Bcount = 0; Bcount < List_of_Local_Solution_Blocks.Nblk; Bcount++) {
+	if (List_of_Local_Solution_Blocks.Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
+	  DTS_SolnBlk[Bcount].Store_Previous(SolnBlk[Bcount],DTS_dTime);
 	}
-	DTS_dTime = CFL(SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
-	DTS_dTime = CFFC_Minimum_MPI(DTS_dTime); 
-	DTS_dTime *= DTS_CFL;
-	Set_Global_TimeStep(SolnBlk, List_of_Local_Solution_Blocks, DTS_dTime);      
-	// and then GMRES will have access to DTS_dTime since every single 
-	// SolnBlk[blk].dt[i][j] will be equal to DTS_dTime.
-	real_time += DTS_dTime;
+      } 
 
-	// What about limiter freezing?
-	error_flag = Internal_Newton_Krylov_Schwarz_Solver(processor_cpu_time,
- 					                   residual_file,   
- 					                   number_of_explicit_time_steps,
- 					                   SolnBlk,
- 					                   List_of_Local_Solution_Blocks,
- 					                   Input_Parameters,
-					                   GMRES_,
-					                   Block_precon,
-					                   DTS_Uo,
- 					                   DTS_Step,
-					                   DTS_dTime,
-					                   real_L2norm_first,
- 					                   real_L2norm_n);
-			
-	error_flag = CFFC_OR_MPI(error_flag);
-	if (error_flag) { break; } // break out of the "for (int DTS_Step = 1; ..." and so exit the solver.
+      // Solve using NKS 
+      error_flag = Internal_Newton_Krylov_Schwarz_Solver(processor_cpu_time,
+							 residual_file,   
+							 number_of_explicit_time_steps,
+							 SolnBlk,
+							 List_of_Local_Solution_Blocks,
+							 Input_Parameters,
+							 GMRES_,
+							 Block_precon,
+							 DTS_SolnBlk,
+							 DTS_Step);              
+					
+      // After first step reset to requested Time Integration Method
+      if (physical_first_step) {
+	Input_Parameters.NKS_IP.Physical_Time_Integration = physical_time_param;
+	physical_first_step =false;
+      }
 
-	if (CFFC_Primary_MPI_Processor()) {
-	   cout << "\nEnd of DTS Step " << DTS_Step << ". L2 norm n: " << real_L2norm_n;
-	   cout << " Time Step: " << DTS_dTime << " Real Time: " << real_time << "\n";
-	}
+      // Update Physical Time
+      physical_time +=  DTS_dTime;
 
-	if (real_L2norm_n < Input_Parameters.NKS_IP.DTS_Tolerance) { 
-	   number_of_explicit_time_steps += DTS_Step;
-	   break;
-	}
-     }
+      // Error Checking 
+      error_flag = CFFC_OR_MPI(error_flag);
+      if (error_flag) { break; } 
+      
+      //DTS Output
+      if (CFFC_Primary_MPI_Processor()) {
+	cout << "\n End of DTS Step " << DTS_Step; 
+	cout << " Time Step: " << DTS_dTime << " Real Time: " << physical_time << "\n";
+      }
+      
+      // Increment DTS Steps
+      DTS_Step++;
+      
+    } // end DTS while
+    /**************************************************************************/  
 
-  } else { // Not time accurate mode....
+
+    /**************************************************************************/  
+    /********* Steady State non-time accurate  ********************************/
+    /**************************************************************************/  
+  } else { 
      int dummy_int = 0;
-     double dummy_double = 0.0;
-     double **dummy_pointer = NULL;
      error_flag = Internal_Newton_Krylov_Schwarz_Solver(processor_cpu_time,
 				                        residual_file,   
 				                        number_of_explicit_time_steps,
@@ -222,29 +222,21 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 				                        Input_Parameters,
 				                        GMRES_,
 				                        Block_precon,
-				                        dummy_pointer,
-				                        dummy_int,
-				                        dummy_double,
-				                        dummy_double,
-				                        dummy_double);
+				                        DTS_SolnBlk,
+				                        dummy_int);
   }
 
+
+  /**************************************************************************/  
   // Housekeeping 
   delete[] Block_precon; 
+  delete[] DTS_SolnBlk;
 
-  if (Input_Parameters.NKS_IP.Time_Accurate) {
-	for (int Bcount = 0; Bcount < List_of_Local_Solution_Blocks.Nblk; Bcount++) {
-	   if (List_of_Local_Solution_Blocks.Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
-	      delete [] DTS_Uo[Bcount];
-	    }
-	}
-  }
-
-  delete [] DTS_Uo;
-
+  /**************************************************************************/  
   //Reset Solver Type flag
   Input_Parameters.Solver_Type = EXPLICIT;
 
+  /**************************************************************************/  
   return CFFC_OR_MPI(error_flag); 
 
 }
@@ -265,12 +257,9 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 		                          INPUT_TYPE &Input_Parameters,
 		                          GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> &GMRES_,
 		                          Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_precon,
-		                          double **DTS_Uo,
-		                          int DTS_Step,
-		                          double &DTS_dTime,
-		                          double &real_L2norm_first,
-		                          double &real_L2norm_n) {
- 
+					  DTS_NKS_Quad_Block<SOLN_BLOCK_TYPE,INPUT_TYPE> *DTS_SolnBlk,
+		                          int DTS_Step){
+		     
   double *L2norm_current = new double[SolnBlk[0].Number_of_Residual_Norms]; 
   double *L1norm_current = new double[SolnBlk[0].Number_of_Residual_Norms]; 
   double *Max_norm_current = new double[SolnBlk[0].Number_of_Residual_Norms];  
@@ -320,6 +309,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
      dcs_data = new double[Input_Parameters.NKS_IP.DCS_Window];
   }
 
+  //what ???
   int tmpp = cout.precision();
 
   bool GMRES_Restarted = false, GMRES_Failed = false;
@@ -335,23 +325,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
     // (i) (L)^(x) == f
     GMRES_Forcing_Power = log(f/i) / log(L);
   }
-
-  if (Input_Parameters.NKS_IP.Time_Accurate) {
-    for (int Bcount = 0; Bcount < List_of_Local_Solution_Blocks.Nblk; Bcount++) {
-	if (List_of_Local_Solution_Blocks.Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
-  	   int NCi = SolnBlk[Bcount].NCi;
-	   int NCj = SolnBlk[Bcount].NCj;
-  	   // Don't care about the ghost cells.
-	   for (int i = SolnBlk[Bcount].ICl; i <= SolnBlk[Bcount].ICu; i++) {
-	      for (int j = SolnBlk[Bcount].JCl; j <= SolnBlk[Bcount].JCu; j++) {
-		  for (int k = 0; k < blocksize; k++) {
-		     DTS_Uo[Bcount][DTS_Uo_index(i, j, k, NCi, NCj, blocksize)] = SolnBlk[Bcount].U[i][j][k+1];
-		  }
-	      }
-	   }
-	}
-		}
-  } // if time accurate
+ 
 
   /**************************************************************************/
   /******************* BEGIN NEWTON-KRYLOV-SCHWARZ CALCULATION **************/
@@ -362,8 +336,8 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
   int i_limiter = Input_Parameters.i_Limiter;
  
   if (CFFC_Primary_MPI_Processor() && Input_Parameters.NKS_IP.output_format == OF_ALISTAIR &&
-      (!Input_Parameters.NKS_IP.Time_Accurate ||
-       (Input_Parameters.NKS_IP.Time_Accurate && DTS_Step == 1))) {
+      (!Input_Parameters.NKS_IP.Dual_Time_Stepping ||
+       (Input_Parameters.NKS_IP.Dual_Time_Stepping && DTS_Step == 1))) {
      int ww = Input_Parameters.NKS_IP.output_width; 
      cout.precision(Input_Parameters.NKS_IP.output_precision); 
      cout << scientific;
@@ -409,14 +383,15 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       Input_Parameters.i_Limiter = i_limiter;
     } 
     /**************************************************************************/
-		clock_t t0 = clock();
+    clock_t t0 = clock();
     
-    // -R(U_n)
+    // -R(U_n) or  -R(U_n)* for DTS
     /**************************************************************************/
-    /* Calculate residual: dudt[i][j][0]  from U,W */
+    /* Calculate residual: dUdt[i][j][0]  from U,W */
     for ( int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks.Nblk ; Bcount++ ) {
       if (List_of_Local_Solution_Blocks.Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
-	error_flag = dUdt_Residual_Evaluation(SolnBlk[Bcount],Input_Parameters);
+	error_flag = dUdt_Residual_Evaluation_NKS<SOLN_BLOCK_TYPE,INPUT_TYPE>
+	                             (SolnBlk[Bcount],DTS_SolnBlk[Bcount],Input_Parameters);
       } 
     } 
     /**************************************************************************/
@@ -460,10 +435,11 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
     processor_cpu_time.update();
     total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput); 
 
+    // Output Solution Progress 
     if (CFFC_Primary_MPI_Processor() &&
-	(!Input_Parameters.NKS_IP.Time_Accurate ||
-	 (Input_Parameters.NKS_IP.Time_Accurate && Number_of_Newton_Steps == 1)) ) {
-	int real_NKS_Step = Input_Parameters.NKS_IP.Time_Accurate ? DTS_Step : (Number_of_Newton_Steps-1);
+	(!Input_Parameters.NKS_IP.Dual_Time_Stepping ||
+	 (Input_Parameters.NKS_IP.Dual_Time_Stepping && Number_of_Newton_Steps == 1)) ) {       //IS THIS CORRECT FOR DTS???
+	int real_NKS_Step = Input_Parameters.NKS_IP.Dual_Time_Stepping ? DTS_Step : (Number_of_Newton_Steps-1);
 
 	// FIXME - should not depend on Scott/Alistair but SolnBlk type.
 	if (Input_Parameters.NKS_IP.output_format == OF_ALISTAIR) {
@@ -479,7 +455,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 		 		   number_of_explicit_time_steps+real_NKS_Step,
 			           ZERO,
 				   total_cpu_time, 
-			           L1norm_current, //maybe switch to current_n so all scale from 1 ???
+			           L1norm_current,      //maybe switch to current_n so all scale from 1 ???
 			           L2norm_current,
 			           Max_norm_current,
 			           SolnBlk[0].residual_variable-1,
@@ -487,44 +463,6 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 	}
     }
 
-    if (Input_Parameters.NKS_IP.Time_Accurate) {
-	// For DTS:
-	// real_L2norm_first is the L2norm at the very start of the simulation.
-	// It persists over the multiple calls to Internal_Newton_Krylov_Schwarz_Solver().
-	if (real_L2norm_first <= 0) {
-	   real_L2norm_first = L2norm_current[SolnBlk[0].residual_variable];
-	}
-	real_L2norm_n = L2norm_current[SolnBlk[0].residual_variable] / real_L2norm_first;
-
-	// And now the critical DTS addition:
- 	for (int q = 0; q < SolnBlk[0].Number_of_Residual_Norms; q++) {
-	  L2norm_current[q] = 0.0;
-	}
-
-	for (int Bcount = 0; Bcount < List_of_Local_Solution_Blocks.Nblk; Bcount++) {
-	   if (List_of_Local_Solution_Blocks.Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
-	      int NCi = SolnBlk[Bcount].NCi;
-	      int NCj = SolnBlk[Bcount].NCj;
-	      for (int i = SolnBlk[Bcount].ICl; i <= SolnBlk[Bcount].ICu; i++) {
-		 for (int j = SolnBlk[Bcount].JCl; j <= SolnBlk[Bcount].JCu; j++) {
-		    for (int q = 0; q < SolnBlk[0].Number_of_Residual_Norms; q++) {
-			double add_term = (SolnBlk[Bcount].U[i][j][q+1] -
-                                          DTS_Uo[Bcount][DTS_Uo_index(i, j, q, NCi, NCj, blocksize)]);
-			double rhs_term = fabs((add_term/DTS_dTime) - SolnBlk[Bcount].dUdt[i][j][0][q+1]);
-			L2norm_current[q] += rhs_term*rhs_term;
-		    }
-		 }
-	      }
-	   }
-	}
-
-	// For DTS, we stop this current Newton solve when 
-	// this L2norm (which now contains the extra term) 
-	// is below our desired "Overall_Tolerance".
-	for (int q = 0; q < SolnBlk[0].Number_of_Residual_Norms; q++) {
- 	   L2norm_current[q] = sqrt(CFFC_Summation_MPI(L2norm_current[q]));
-	}
-    } // if (Input_Parameters.NKS_IP.Time_Accurate)
 
     // Should we not decrease the initial (not the max) residual norm?
     //
@@ -545,7 +483,6 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       L1norm_first = L1norm_current[SolnBlk[0].residual_variable-1];
       Max_norm_first = Max_norm_current[SolnBlk[0].residual_variable-1];
     } 
-
     L2norm_current_n   = L2norm_current[SolnBlk[0].residual_variable-1] / L2norm_first; 
     L1norm_current_n   = L1norm_current[SolnBlk[0].residual_variable-1] / L1norm_first; 
     Max_norm_current_n = Max_norm_current[SolnBlk[0].residual_variable-1] / Max_norm_first;
@@ -556,7 +493,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 
 //     // NEEDS SOME MODS TO Write and Read Restart_Solution to work properly....
 //     // Periodically save restart solution files  -> !!!!!! SHOULD USE Implicit_Restart_Solution_Save_Frequency ???
-//     if ( (number_of_explicit_time_steps + Number_of_Newton_Steps - 1)%Input_Parameters.Restart_Solution_Save_Frequency == 0 ) {       
+//     if ( (number_of_explicit_time_steps + Number_of_Newton_Steps - 1)%Input_Parameters.Restart_Solution_Save_Frequency == 0 ) { 
 //       if(CFFC_Primary_MPI_Processor()) cout << "\n\n  Saving solution to restart data file(s) after"
 // 			   << " n = " << number_of_explicit_time_steps << " steps (iterations). \n";      
 //       error_flag = Write_QuadTree(QuadTree,  Input_Parameters);
@@ -582,7 +519,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 	  do { // allows for a break
 	     // TODO: this could be a true time value for DTS.
 	     double no_time_please = 0.0;
-	     int real_NKS_Step = Input_Parameters.NKS_IP.Time_Accurate ?
+	     int real_NKS_Step = Input_Parameters.NKS_IP.Dual_Time_Stepping ?
 				 DTS_Step * 100 + (Number_of_Newton_Steps-1) : Number_of_Newton_Steps-1;
  	     char prefix[96], output_file_name[96];
 	     ofstream output_file;    
@@ -637,11 +574,10 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 	     output_file.close();
 
 	  } while (0); 
-			}
-    } // if (Input_Parameters.NKS_IP.NKS_Write_Output_Cells_Freq > 0) 
+       }
+    } // end if (Input_Parameters.NKS_IP.NKS_Write_Output_Cells_Freq > 0) 
 
-    if (CFFC_Primary_MPI_Processor() && 
-	Input_Parameters.NKS_IP.Detect_Convergence_Stall) {
+    if (CFFC_Primary_MPI_Processor() &&	Input_Parameters.NKS_IP.Detect_Convergence_Stall) {
       double L2norm_cq = L2norm_current[SolnBlk[0].residual_variable-1]; // looks pretty on the page
       dcs_data[dcs_position++] = log10(L2norm_cq);
       if (dcs_position == Input_Parameters.NKS_IP.DCS_Window) {
@@ -797,44 +733,37 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
     /***************** NEWTON STEP ********************************************/
     /**************************************************************************/
     if (L2norm_current_n > Input_Parameters.NKS_IP.Overall_Tolerance){  
-       // If time accurate (i.e. DTS), then the time step is constant 
-       // over the entire Newton solve. That is, with DTS, we are zeroing G(U):
-       //
-       // G(U) = - [ U - Uo ] / h  +  R(U)
-       //
-       // where h itself, not CFL, is constant over the entire Newton solve.
-       if (!Input_Parameters.NKS_IP.Time_Accurate) {
-	  if (Input_Parameters.NKS_IP.Finite_Time_Step) {  
-	     // Apply finite time step, ie. Implicit Euler ( as deltaT -> inf. Newton's Method)
-  	     CFL_current = Finite_Time_Step(Input_Parameters,L2norm_first,
-			 		    L2norm_current[SolnBlk[0].residual_variable-1] ,
-					    L2norm_current_n, Number_of_Newton_Steps);	   
-	  } else { 
-	     CFL_current = Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL;   	
-	  } 
+       
+      /**************************************************************************/     
+      if (Input_Parameters.NKS_IP.Finite_Time_Step) {  
+	// Apply finite time step, ie. Implicit Euler ( as deltaT -> inf. Newton's Method)
+	CFL_current = Finite_Time_Step(Input_Parameters,L2norm_first,
+				       L2norm_current[SolnBlk[0].residual_variable-1] ,
+				       L2norm_current_n, Number_of_Newton_Steps);	   
+      } else { 
+	CFL_current = Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL;   	
+      } 
 
-	  // We need to call CFL in order to set "dt" for each cell. 
-	  // But we only need to do something here with "dTime" if 
-	  // it is not time accurate but we are using global time stepping.
-	  dTime = CFL(SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
-
-	  if (Input_Parameters.Local_Time_Stepping == GLOBAL_TIME_STEPPING) {
-	     dTime = CFFC_Minimum_MPI(dTime); 
-	     dTime *= CFL_current;           
-	     Set_Global_TimeStep(SolnBlk, List_of_Local_Solution_Blocks, dTime);      
-	  } else {
-	     for (int Bcount = 0; Bcount < List_of_Local_Solution_Blocks.Nblk; Bcount++) {
-		if (List_of_Local_Solution_Blocks.Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
-		   for (int i = 0; i < SolnBlk[Bcount].NCi; i++) {
-		       for (int j = 0; j < SolnBlk[Bcount].NCj; j++) {
-			   SolnBlk[Bcount].dt[i][j] *= CFL_current;
-		       }
-		   }
-		}
-	     }
+      // Determine time steps
+      dTime = CFL(SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
+      
+      if (Input_Parameters.Local_Time_Stepping == GLOBAL_TIME_STEPPING) {
+	dTime = CFFC_Minimum_MPI(dTime); 
+	dTime *= CFL_current;           
+	Set_Global_TimeStep(SolnBlk, List_of_Local_Solution_Blocks, dTime);      
+      } else {
+	for (int Bcount = 0; Bcount < List_of_Local_Solution_Blocks.Nblk; Bcount++) {
+	  if (List_of_Local_Solution_Blocks.Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
+	    for (int i = 0; i < SolnBlk[Bcount].NCi; i++) {
+	      for (int j = 0; j < SolnBlk[Bcount].NCj; j++) {
+		SolnBlk[Bcount].dt[i][j] *= CFL_current;
+	      }
+	    }
 	  }
-       } /* end time accurate */
-
+	}
+      }
+      /**************************************************************************/
+      
       /**************************************************************************/
       // Print out Newton Step info at the beginning of the iteration. 
       if (CFFC_Primary_MPI_Processor()) {      	
@@ -844,7 +773,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 	    cout << "\n Newton Step (Outer It.) = " << Number_of_Newton_Steps;
 	    cout << " L2norm = " << L2norm_current[SolnBlk[0].residual_variable-1];
 	    cout << " L2norm_ratio = " << L2norm_current_n;
-	    if (!Input_Parameters.NKS_IP.Time_Accurate) {
+	    if (!Input_Parameters.NKS_IP.Dual_Time_Stepping) {
 	      cout << " CFL = " << CFL_current;
 	    }
 	    //if(Input_Parameters.Preconditioning) cout<<" Mref = "<<Mrefnew;
@@ -855,7 +784,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 	    cout << setw(5) << Number_of_Newton_Steps << "  ";
 	    cout << setw(ww) << L2norm_current[SolnBlk[0].residual_variable-1];
 	    cout << setw(ww) << L2norm_current_n;
-	    if (Input_Parameters.NKS_IP.Time_Accurate) {
+	    if (Input_Parameters.NKS_IP.Dual_Time_Stepping) {
 	       cout << setw(ww) << " ";
 	    } else {
 	       cout << setw(ww) << CFL_current;
@@ -875,13 +804,10 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 	  /* Copy solutions in conserved variables, U to Uo for all blocks for update procedure. */
 	  for (int j = SolnBlk[Bcount].JCl-SolnBlk[Bcount].Nghost;  j <= SolnBlk[Bcount].JCu+SolnBlk[Bcount].Nghost; j++){
 	    for (int i = SolnBlk[Bcount].ICl-SolnBlk[Bcount].Nghost;  i <= SolnBlk[Bcount].ICu+SolnBlk[Bcount].Nghost; i++){
-	      for(int varindex =1; varindex <= Num_Var; varindex++){		
-		// For DTS, DTS_Uo, which is the value of U at the 
-		// very start of this Newton solve, is completely 
-		// different than Uo, which is the value of U at the
-		// start of this Newton iteration.
-		SolnBlk[Bcount].Uo[i][j][varindex] = SolnBlk[Bcount].U[i][j][varindex];
-	      }    	      
+	      SolnBlk[Bcount].Uo[i][j] = SolnBlk[Bcount].U[i][j];
+// 	      for(int varindex =1; varindex <= Num_Var; varindex++){		
+// 		SolnBlk[Bcount].Uo[i][j][varindex] = SolnBlk[Bcount].U[i][j][varindex];
+// 	      }    	      
 	    } 
 	  } 	  
 	} 
@@ -911,7 +837,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 	for ( int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks.Nblk ; ++Bcount ) {
 	  if (List_of_Local_Solution_Blocks.Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
 	    // Jacobian changed and Preconditioner updated 
-	    Block_precon[Bcount].Update_Jacobian_and_Preconditioner();
+	    Block_precon[Bcount].Update_Jacobian_and_Preconditioner(DTS_SolnBlk[Bcount].DTS_dTime);
 	  } 
 	} 
 	preconditioner_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC);
@@ -954,9 +880,8 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
  	   if (CFFC_Primary_MPI_Processor()) { tell_me_about_output_gmres = true; }
   	   GMRES_.Output_GMRES_vars_Tecplot(Number_of_Newton_Steps-1,
 					    L2norm_current[SolnBlk[0].residual_variable-1], L2norm_current_n);
-	}
-			
-      } // if (Input_Parameters.NKS_IP.NKS_Write_Output_Cells_Freq > 0) 
+	}			
+      } 
 
       /**************************************************************************/
       /* Exchange solution information between neighbouring blocks. */    
@@ -1032,7 +957,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 
   /**************************************************************************/
   /* Output final 2-norm for all blocks */ 
-  if (CFFC_Primary_MPI_Processor() && !Input_Parameters.NKS_IP.Time_Accurate) {
+  if (CFFC_Primary_MPI_Processor() && !Input_Parameters.NKS_IP.Dual_Time_Stepping) {
     int ttmmpp = cout.precision();
     int nns = Number_of_Newton_Steps-1;
     cout << " " << endl;
@@ -1129,7 +1054,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
   /**************************************************************************/
 
   /**************************************************************************/
-  if (!Input_Parameters.NKS_IP.Time_Accurate) {
+  if (!Input_Parameters.NKS_IP.Dual_Time_Stepping) {
      number_of_explicit_time_steps += Number_of_Newton_Steps-1;
   } // Otherwise the external solver will update the number of explicit steps.
   /**************************************************************************/
@@ -1147,6 +1072,9 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
   return (error_flag);
 
 } /* End of Newton_Krylov_Schwarz_Solver. */
+
+
+
 
 /*! *****************************************************************************************
  * Generic Newton_Update                                                                    *
@@ -1190,6 +1118,8 @@ int Newton_Update(SOLN_BLOCK_TYPE *SolnBlk,
 
   return 0; 
 }
+
+
 
 /*! *****************************************************************************************
  * Generic Finite_Time_Step                                                                 *

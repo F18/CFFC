@@ -487,7 +487,7 @@ calculate_Matrix_Free(const double &epsilon)
     if ( SolnBlk->Grid.BCtypeW[JCl] == BC_NONE)  ICl_overlap = overlap;
   }
 	   
-  DenseMatrix Precon(blocksize,blocksize,ZERO); //SHOULD MOVE THIS OUT OF HERE AND STORE SOMEWHERE TO AVOID RECREATING EACH TIME
+  DenseMatrix Precon(blocksize,blocksize,ZERO); //SHOULD MOVE THIS OUT OF HERE AND STORE SOMEWHERE TO AVOID RECREATING EACH TIME!!
   
   // Non-Overlap Ghost Cells R(U) already set to zero by dUdt calculation  
   /* V(i+1) = ( R(U+epsilon*W) - b) / epsilon - (gamma) z / h */
@@ -497,7 +497,7 @@ calculate_Matrix_Free(const double &epsilon)
       // Low Mach # Preconditioner                   
       if(Input_Parameters->Preconditioning){ 
 	double delta_n = min( TWO*(SolnBlk->Grid.Cell[i][j].A/(SolnBlk->Grid.lfaceE(i, j) + SolnBlk->Grid.lfaceW(i, j))),
-			      TWO*(SolnBlk->Grid.Cell[i][j].A/(SolnBlk->Grid.lfaceN(i, j) + SolnBlk->Grid.lfaceS(i, j))));             
+			      TWO*(SolnBlk->Grid.Cell[i][j].A/(SolnBlk->Grid.lfaceN(i, j) + SolnBlk->Grid.lfaceS(i, j))));
 	SolnBlk->Uo[i][j].Low_Mach_Number_Preconditioner(Precon, SolnBlk->Flow_Type, delta_n);       
       }
 
@@ -520,14 +520,23 @@ calculate_Matrix_Free(const double &epsilon)
 	  for(int l =0; l < blocksize; l++){
 	    value += Precon(k,l) * denormalizeU(W[(search_directions)*scalar_dim + index(i,j,l)],l);
 	  }
-	  V[(search_directions+1)*scalar_dim+iter] -= normalizeR(value/(SolnBlk->dt[i][j]),k);
+	  V[(search_directions+1)*scalar_dim+iter] -= normalizeR(value * DTS_ptr->LHS_Time(SolnBlk->dt[i][j]), k);
 	  
 	//No Preconditioner
 	} else { // z/h
-	  V[(search_directions+1)*scalar_dim+iter] -= normalizeUtoR(W[(search_directions)*scalar_dim + iter]/(SolnBlk->dt[i][j]),k);	
-	}
-      }  
-    
+	  V[(search_directions+1)*scalar_dim+iter] -= normalizeUtoR( W[(search_directions)*scalar_dim + iter] 
+								    * DTS_ptr->LHS_Time(SolnBlk->dt[i][j]), k);	
+	}      
+
+// #ifdef _NKS_VERBOSE_NAN_CHECK
+// 	// nan check most commonly caused by nans in dUdt !!!!
+// 	if (V[(search_directions+1)*scalar_dim+iter] != V[(search_directions+1)*scalar_dim+iter] ){
+// 	  cout<<"\n nan in V[ "<<(search_directions+1)*scalar_dim+iter<<"] at "<<i<<" "<<j<<" "<<k
+// 	      <<" dUdt "<<  normalizeR(SolnBlk->dUdt[i][j][0][k+1],k) <<" b "<< b[iter]
+// 	      <<" z "<<W[(search_directions)*scalar_dim + iter]<< " h "<<( SolnBlk->dt[i][j]*ao);
+// 	}
+// #endif
+      } 
     } 
   } 
 }
@@ -583,11 +592,11 @@ calculate_Matrix_Free_Restart(const double &epsilon)
 	  for(int l =0; l < blocksize; l++){
 	    value += Precon(k,l) * denormalizeU( x[index(i,j,l)],l);
 	  }
-	  V[iter] -= normalizeR(value/(SolnBlk->dt[i][j]),k);
+	  V[iter] -= normalizeR(value * DTS_ptr->LHS_Time(SolnBlk->dt[i][j]),k);
 	  
 	//No Preconditioner
 	} else { // z/h
-	  V[iter] -= normalizeUtoR(x[iter]/(SolnBlk->dt[i][j]),k);	
+	  V[iter] -= normalizeUtoR(x[iter] * DTS_ptr->LHS_Time(SolnBlk->dt[i][j]),k);	
 	}
       }  
     
