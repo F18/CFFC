@@ -153,7 +153,7 @@ template <> double Finite_Time_Step(const Chem2D_Input_Parameters &Input_Paramet
 template<> inline void Block_Preconditioner<Chem2D_pState,
 					    Chem2D_Quad_Block,					    
 					    Chem2D_Input_Parameters>::
-Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jacobian)
+Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jacobian,const double& DTS_dTime)
 {   
   //Low Mach # Preconditioning 
   if(Input_Parameters->Preconditioning){
@@ -172,13 +172,15 @@ Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jac
 				     SolnBlk->Flow_Type,
 				     delta_n);    
 
-    Jacobian[CENTER] -= Low_Mach_Number_Preconditioner/(SolnBlk->dt[cell_index_i][cell_index_j]);
+    Jacobian[CENTER] -= Low_Mach_Number_Preconditioner*
+      LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters, SolnBlk->dt[cell_index_i][cell_index_j],DTS_dTime);
+
 
   } else { // I/deltat
 
     DenseMatrix II(blocksize,blocksize);  
     II.identity();    
-    Jacobian[CENTER] -= (II / (SolnBlk->dt[cell_index_i][cell_index_j]));
+    Jacobian[CENTER] -= II*LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters, SolnBlk->dt[cell_index_i][cell_index_j],DTS_dTime);
   }
 
 }
@@ -521,13 +523,13 @@ calculate_Matrix_Free(const double &epsilon)
 	    value += Precon(k,l) * denormalizeU(W[(search_directions)*scalar_dim + index(i,j,l)],l);
 	  }
 	  V[(search_directions+1)*scalar_dim+iter] -= 
-	    normalizeR(value * LHS_Time<INPUT_TYPE>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
+	    normalizeR(value * LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
 								 
 	  
 	//No Preconditioner
 	} else { // z/h
 	  V[(search_directions+1)*scalar_dim+iter] -= normalizeUtoR( W[(search_directions)*scalar_dim + iter] 
-			       * LHS_Time<INPUT_TYPE>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
+			       * LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
 	}       
 
 // #ifdef _NKS_VERBOSE_NAN_CHECK
@@ -594,11 +596,11 @@ calculate_Matrix_Free_Restart(const double &epsilon)
 	  for(int l =0; l < blocksize; l++){
 	    value += Precon(k,l) * denormalizeU( x[index(i,j,l)],l);
 	  }
-	  V[iter] -= normalizeR(value * LHS_Time<INPUT_TYPE>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
+	  V[iter] -= normalizeR(value * LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
 	  
 	//No Preconditioner
 	} else { // z/h
-	  V[iter] -= normalizeUtoR(x[iter] * LHS_Time<INPUT_TYPE>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);	
+	  V[iter] -= normalizeUtoR(x[iter] * LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);	
 	}
       }  
     
