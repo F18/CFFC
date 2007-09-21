@@ -1497,12 +1497,16 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
        } /* endif */
 
        //Set Wall velocities for Adiabatic walls or viscous isothermal
-       if (SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL || SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL){
+       if (SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL ||
+	   SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL || 
+	   SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP){
 	 SolnBlk.WoW[j].set_temperature_d(Input_Parameters.Temperature_West_BC);
 	 SolnBlk.WoW[j].v.y = 0.0;
 	 SolnBlk.WoW[j].v.x = 0.0;
        } /* endif */
-       if (SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL|| SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL){
+       if (SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL ||
+	   SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+	   SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP){
 	 SolnBlk.WoE[j].set_temperature_d(Input_Parameters.Temperature_East_BC);
 	 SolnBlk.WoE[j].v.y = 0.0;
 	 SolnBlk.WoE[j].v.x = 0.0;
@@ -1529,7 +1533,9 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
        } /* endif */
 
        //Set Wall velocities for Adiabatic walls
-       if (SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL || SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL){
+       if (SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL ||
+	   SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+	   SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP){
 	 SolnBlk.WoS[i].set_temperature_d(Input_Parameters.Temperature_South_BC);
 	 SolnBlk.WoS[i].v.y = 0.0;
 	 if (Input_Parameters.i_Grid == GRID_ADIABATIC_COUETTE) {
@@ -1538,7 +1544,9 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
 	   SolnBlk.WoS[i].v.x = 0.0;
 	 } /* endif */
        } /* endif */
-       if (SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL || SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL){
+       if (SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL ||
+	   SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+	   SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP){
 	 SolnBlk.WoN[j].set_temperature_d(Input_Parameters.Temperature_North_BC);
 	 SolnBlk.WoN[i].v.y = 0.0;
 	 if (Input_Parameters.i_Grid == GRID_ADIABATIC_COUETTE) {
