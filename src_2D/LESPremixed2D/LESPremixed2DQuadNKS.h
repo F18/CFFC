@@ -40,6 +40,7 @@ int Newton_Update(LESPremixed2D_Quad_Block *SolnBlk,
   int Num_Var = SolnBlk[0].NumVar()-2;
 #else
   int Num_Var = SolnBlk[0].NumVar();
+  //  int Num_Var = SolnBlk[0].NumVar()-5;
 #endif  	
   int error_flag = 0;
   
