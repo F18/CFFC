@@ -1,4 +1,5 @@
-/* CFD.h:  Header file defining CFD subroutines and macros. */
+/*!file CFD.h
+  \brief Header file defining CFD subroutines and macros. */
 
 #ifndef _CFD_INCLUDED
 #define _CFD_INCLUDED
@@ -1240,26 +1241,32 @@ inline ostream &operator << (ostream &out_file,
     } /* endif */
     out_file << "\n  -> Input File Name: " 
              << IP.Input_File_Name;
-    if (IP.Time_Accurate) { 
-       out_file << "\n  -> Time Accurate (Unsteady) Solution";
+    out_file << "\n  -> Output File Name: " 
+             << IP.Output_File_Name;
+    out_file << "\n  -> Output Format: " 
+             << IP.Output_Format_Type;
+
+    if (IP.Local_Time_Stepping) {
+      out_file << "\n  -> Time Invariant (Steady-State) Solution";
+      out_file << "\n  -> Local Time Stepping";
+      out_file << "\n  -> Maximum Numer of Time Steps: " 
+	       << IP.Maximum_Number_of_Time_Steps;
+    } else if (IP.Time_Accurate) { 
+      out_file << "\n  -> Time Accurate (Unsteady) Solution";
+      out_file << "\n  -> Maximum Time: " 
+	       << IP.Time_Max;
     } else {
-       out_file << "\n  -> Time Invariant (Steady-State) Solution";
+      out_file << "\n  -> ERROR: Time accuracy not defined!";
+      
     }
+
     out_file << "\n  -> Time Integration: " 
              << IP.Time_Integration_Type;
     out_file << "\n  -> Number of Stages in Multi-Stage Scheme: " 
              << IP.N_Stage;
-    if (IP.Local_Time_Stepping) 
-       out_file << "\n  -> Local Time Stepping";
-    out_file << "\n  -> Reconstruction: " 
-             << IP.Reconstruction_Type;
-    if ((IP.i_ReconstructionMethod != RECONSTRUCTION_ENO) &&
-        (IP.i_ReconstructionMethod != RECONSTRUCTION_ENO_CHARACTERISTIC)){
-      out_file << "\n  -> Limiter: " << IP.Limiter_Type;
-    }
-    if (IP.i_ReconstructionMethod == RECONSTRUCTION_CENO){
-      out_file << "\n  -> Fit Tolerance = " << IP.FitTolerance();
-    }
+    out_file << "\n  -> CFL Number: " 
+             << IP.CFL_Number;
+
     out_file << "\n  -> Space Accuracy Solution: ";
     switch(IP.Space_Accuracy){
     case 1: 
@@ -1284,8 +1291,19 @@ inline ostream &operator << (ostream &out_file,
       out_file << "higher than 6th order";
    }
 
+    out_file << "\n  -> Reconstruction: " 
+             << IP.Reconstruction_Type;
+    if ((IP.i_ReconstructionMethod != RECONSTRUCTION_ENO) &&
+        (IP.i_ReconstructionMethod != RECONSTRUCTION_ENO_CHARACTERISTIC)){
+      out_file << "\n  -> Limiter: " << IP.Limiter_Type;
+    }
+    if (IP.i_ReconstructionMethod == RECONSTRUCTION_CENO){
+      out_file << "\n  -> Fit Tolerance = " << IP.FitTolerance();
+    }
+
     out_file << "\n  -> Flux Function: " 
              << IP.Flux_Function_Type;
+
     out_file << "\n  -> Initial Conditions: " 
              << IP.ICs_Type;
     switch(IP.i_ICs) {
@@ -1308,6 +1326,7 @@ inline ostream &operator << (ostream &out_file,
              << IP.a;
     out_file << "\n  -> Relaxation Time : " 
              << IP.Tau;
+
     out_file << "\n  -> Grid: " 
              << IP.Grid_Type;
     switch(IP.i_Grid) {
@@ -1332,16 +1351,6 @@ inline ostream &operator << (ostream &out_file,
              << IP.Number_of_Cells;
     out_file << "\n  -> Number of Nodes: " 
              << IP.Number_of_Nodes;
-    out_file << "\n  -> CFL Number: " 
-             << IP.CFL_Number;
-    out_file << "\n  -> Maximum Time : " 
-             << IP.Time_Max;
-    out_file << "\n  -> Maximum Numer of Time Steps: " 
-             << IP.Maximum_Number_of_Time_Steps;
-    out_file << "\n  -> Output File Name: " 
-             << IP.Output_File_Name;
-    out_file << "\n  -> Output Format: " 
-             << IP.Output_Format_Type;
     return (out_file);
 }
 

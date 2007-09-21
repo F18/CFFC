@@ -1,4 +1,5 @@
-/* CFD.cc:  Basic CFD Subroutines. */
+/*!file CFD.cc
+  \brief Basic CFD Subroutines. */
 
 /* Include the CFD header file. */
 
@@ -1143,6 +1144,10 @@ void Set_Default_Input_Parameters(CFD1D_Input_Parameters &IP) {
     string_ptr = "MUSCL";
     strcpy(IP.Reconstruction_Type, string_ptr);
     IP.i_Reconstruction = RECONSTRUCTION_MUSCL;
+    IP.i_ReconstructionMethod = RECONSTRUCTION_MUSCL;
+    IP.Space_Accuracy = 2;
+    IP.CENO_Cutoff = 30;
+    IP.ExactFunction = NULL;
 
     string_ptr = "VanLeer";
     strcpy(IP.Limiter_Type, string_ptr);
@@ -1194,23 +1199,45 @@ void Set_Default_Input_Parameters(CFD1D_Input_Parameters &IP) {
  ********************************************************/
 void Get_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
 
-    int i;
-    char buffer[256];
+    int i, LineSize, IndexFirstChar(0);
+    char buffer[256], ControlParameter[256];
 
-    IP.Line_Number = IP.Line_Number + 1;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-    i = 0;
-    if (buffer[0] != '#') {
-       while (1) {
-          if (buffer[i] == ' ' || buffer[i] == '=') break;
-          i = i + 1;
-          if (i > strlen(buffer) ) break;
-       } /* endwhile */
-       buffer[i] = '\0';
-    } /* endif */
-    strcpy(IP.Next_Control_Parameter, buffer);
+    // Initialize ControlParameter and IP.Next_Control_Parameter
+    ControlParameter[0] = '\0';
+    strcpy(IP.Next_Control_Parameter, ControlParameter);
 
+    while (!IP.Input_File.getline(buffer, sizeof(buffer)).eof() ){
+
+      // process the line 
+      IP.Line_Number = IP.Line_Number + 1;
+      LineSize = IP.Input_File.gcount(); // The size of the line. Last character is "\0"
+
+      for (i=0; i<=LineSize; ++i){
+	if (buffer[i] != ' ' && buffer[i] != '\t'){	// determine the index of the first character different than 'space'
+	  IndexFirstChar = i;
+	  break;
+	}
+      }
+
+      if ( buffer[IndexFirstChar] != '#' && buffer[IndexFirstChar] != '\0'){
+	// If the first character different than 'space' is also different than '#' or '\n',
+	// then the line is different than a comment or the end of the line
+	for(i=IndexFirstChar; i<LineSize; ++i){
+	  // get the ControlParameter
+	  if (buffer[i] == ' ' || buffer[i] == '='){
+	    ControlParameter[i-IndexFirstChar] = '\0';
+	    break;
+	  } else {
+	    ControlParameter[i-IndexFirstChar] = buffer[i];
+	  }
+	}
+
+	strcpy(IP.Next_Control_Parameter, ControlParameter);
+	break;
+      }
+    }//endwhile
 }
+
 
 /********************************************************
  * Routine: Parse_Next_Input_Control_Parameter          *
