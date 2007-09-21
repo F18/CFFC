@@ -99,6 +99,8 @@ Compressibility_Effect =
 Wilcox_Model
 Variable_Prandtl =
 ON
+C_lambda = 
+0.07
 Step_Height =
 20.0
 Wedge_Length = 
@@ -162,7 +164,7 @@ CFL_Number =
 Time_Max =
 0.0
 Maximum_Number_of_Time_Steps =
-0
+500000
 Residual_Variable =
 2
 Number_of_Blocks_Per_Processor =
@@ -170,7 +172,7 @@ Number_of_Blocks_Per_Processor =
 Output_File_Name = 
 jet_flow
 Restart_Solution_Save_Frequency = 
-6000
+3000
 #
 # EXECUTE PROGRAM:
 Execute
