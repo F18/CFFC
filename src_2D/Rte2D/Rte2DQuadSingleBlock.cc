@@ -1643,8 +1643,7 @@ void BCs(Rte2D_Quad_Block &SolnBlk,
 	    Uwall = SolnBlk.U[SolnBlk.ICl][j] + 
 		(SolnBlk.phi[SolnBlk.ICl][j]^SolnBlk.dUdx[SolnBlk.ICl][j])*dX.x +
 		(SolnBlk.phi[SolnBlk.ICl][j]^SolnBlk.dUdy[SolnBlk.ICl][j])*dX.y;
-	    Uwall = Gray_Wall(Uwall, SolnBlk.M[0][0], 
-			      SolnBlk.Grid.nfaceW(SolnBlk.ICl, j), 
+	    Uwall = Gray_Wall(Uwall, SolnBlk.Grid.nfaceW(SolnBlk.ICl, j), 
 			      SolnBlk.WestWallTemp, SolnBlk.WestWallEmiss );
 	    dx_norm = dX*SolnBlk.Grid.nfaceW(SolnBlk.ICl, j);
 	    dU = Uwall-SolnBlk.U[SolnBlk.ICl][j];
@@ -1729,8 +1728,7 @@ void BCs(Rte2D_Quad_Block &SolnBlk,
 	    Uwall = SolnBlk.U[SolnBlk.ICu][j] + 
 		(SolnBlk.phi[SolnBlk.ICu][j]^SolnBlk.dUdx[SolnBlk.ICu][j])*dX.x +
 		(SolnBlk.phi[SolnBlk.ICu][j]^SolnBlk.dUdy[SolnBlk.ICu][j])*dX.y;
-	    Uwall = Gray_Wall(Uwall, SolnBlk.M[0][0], 
-			      SolnBlk.Grid.nfaceE(SolnBlk.ICu, j), 
+	    Uwall = Gray_Wall(Uwall, SolnBlk.Grid.nfaceE(SolnBlk.ICu, j), 
 			      SolnBlk.EastWallTemp, SolnBlk.EastWallEmiss );
 	    dx_norm = dX*SolnBlk.Grid.nfaceE(SolnBlk.ICu, j);
 	    dU = Uwall-SolnBlk.U[SolnBlk.ICu][j];
@@ -1806,8 +1804,7 @@ void BCs(Rte2D_Quad_Block &SolnBlk,
 	    Uwall = SolnBlk.U[i][SolnBlk.JCl] + 
 		(SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dUdx[i][SolnBlk.JCl])*dX.x +
 		(SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dUdy[i][SolnBlk.JCl])*dX.y;
-	    Uwall = Gray_Wall(Uwall, SolnBlk.M[0][0], 
-			      SolnBlk.Grid.nfaceS(i,SolnBlk.JCl), 
+	    Uwall = Gray_Wall(Uwall, SolnBlk.Grid.nfaceS(i,SolnBlk.JCl), 
 			      SolnBlk.SouthWallTemp, SolnBlk.SouthWallEmiss );
 	    dx_norm = dX*SolnBlk.Grid.nfaceS(i,SolnBlk.JCl);
 	    dU = Uwall-SolnBlk.U[i][SolnBlk.JCl];
@@ -1878,8 +1875,7 @@ void BCs(Rte2D_Quad_Block &SolnBlk,
 	    Uwall = SolnBlk.U[i][SolnBlk.JCu] + 
 		(SolnBlk.phi[i][SolnBlk.JCu]^SolnBlk.dUdx[i][SolnBlk.JCu])*dX.x +
 		(SolnBlk.phi[i][SolnBlk.JCu]^SolnBlk.dUdy[i][SolnBlk.JCu])*dX.y;
-	    Uwall = Gray_Wall(Uwall, SolnBlk.M[0][0],
-			      SolnBlk.Grid.nfaceN(i,SolnBlk.JCu), 
+	    Uwall = Gray_Wall(Uwall, SolnBlk.Grid.nfaceN(i,SolnBlk.JCu), 
 			      SolnBlk.NorthWallTemp, SolnBlk.NorthWallEmiss );
 	    dx_norm = dX*SolnBlk.Grid.nfaceN(i,SolnBlk.JCu);
 	    dU = Uwall-SolnBlk.U[i][SolnBlk.JCu];
@@ -1946,7 +1942,7 @@ void BCs_Space_March(Rte2D_Quad_Block &SolnBlk,
 	    }
            break;
           case BC_GRAY_WALL :
-	    Gray_Wall_Space_March(SolnBlk.UoW[j], SolnBlk.M[0][0],
+	    Gray_Wall_Space_March(SolnBlk.UoW[j],
 				  SolnBlk.Grid.nfaceW(SolnBlk.ICl, j), 
 				  SolnBlk.WestWallTemp, SolnBlk.WestWallEmiss );
 	    for( int ghost = 1; ghost <= SolnBlk.Nghost; ghost++){
@@ -1978,7 +1974,7 @@ void BCs_Space_March(Rte2D_Quad_Block &SolnBlk,
 	    }       
             break;
           case BC_GRAY_WALL :
-	    Gray_Wall_Space_March(SolnBlk.UoE[j], SolnBlk.M[0][0],
+	    Gray_Wall_Space_March(SolnBlk.UoE[j],
 				  SolnBlk.Grid.nfaceE(SolnBlk.ICu, j), 
 				  SolnBlk.EastWallTemp, SolnBlk.EastWallEmiss );
 	    for( int ghost = 1; ghost <= SolnBlk.Nghost; ghost++){
@@ -2007,7 +2003,7 @@ void BCs_Space_March(Rte2D_Quad_Block &SolnBlk,
 	    }
           break;
           case BC_GRAY_WALL :
-	    Gray_Wall_Space_March(SolnBlk.UoS[i], SolnBlk.M[0][0],
+	    Gray_Wall_Space_March(SolnBlk.UoS[i],
 				  SolnBlk.Grid.nfaceS(i,SolnBlk.JCl), 
 				  SolnBlk.SouthWallTemp, SolnBlk.SouthWallEmiss );
 	    for( int ghost = 1; ghost <= SolnBlk.Nghost; ghost++){
@@ -2032,7 +2028,7 @@ void BCs_Space_March(Rte2D_Quad_Block &SolnBlk,
 	    }
             break;
           case BC_GRAY_WALL :
-	    Gray_Wall_Space_March(SolnBlk.UoN[i], SolnBlk.M[0][0],
+	    Gray_Wall_Space_March(SolnBlk.UoN[i],
 				  SolnBlk.Grid.nfaceN(i,SolnBlk.JCu), 
 				  SolnBlk.NorthWallTemp, SolnBlk.NorthWallEmiss );
 	    for( int ghost = 1; ghost <= SolnBlk.Nghost; ghost++){
@@ -4472,7 +4468,7 @@ int dUdt_Residual_Evaluation(Rte2D_Quad_Block &SolnBlk,
 	    if (SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION) {
 	      Ul = Reflect(Ur, SolnBlk.Grid.nfaceW(i+1, j));
 	    } else if (SolnBlk.Grid.BCtypeW[j] == BC_GRAY_WALL) {
-	      Ul = Gray_Wall(Ur, SolnBlk.M[0][0], SolnBlk.Grid.nfaceW(i+1, j), 
+	      Ul = Gray_Wall(Ur, SolnBlk.Grid.nfaceW(i+1, j), 
 			SolnBlk.WestWallTemp, SolnBlk.WestWallEmiss );
 	    }/* endif */
 
@@ -4488,7 +4484,7 @@ int dUdt_Residual_Evaluation(Rte2D_Quad_Block &SolnBlk,
 	    if (SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION) {
 	      Ur = Reflect(Ul, SolnBlk.Grid.nfaceE(i, j));
 	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_GRAY_WALL) {
-	      Ur = Gray_Wall(Ul, SolnBlk.M[0][0], SolnBlk.Grid.nfaceE(i, j), 
+	      Ur = Gray_Wall(Ul, SolnBlk.Grid.nfaceE(i, j), 
 			SolnBlk.EastWallTemp, SolnBlk.EastWallEmiss );
 	    }/* endif */
 
@@ -4563,7 +4559,7 @@ int dUdt_Residual_Evaluation(Rte2D_Quad_Block &SolnBlk,
 	  if (SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ) {
 	    Ul = Reflect(Ur, SolnBlk.Grid.nfaceS(i, j+1));
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_GRAY_WALL) {
-	    Ul = Gray_Wall(Ur, SolnBlk.M[0][0], SolnBlk.Grid.nfaceS(i, j+1), 
+	    Ul = Gray_Wall(Ur, SolnBlk.Grid.nfaceS(i, j+1), 
 		      SolnBlk.SouthWallTemp, SolnBlk.SouthWallEmiss );
 	  } /* endif */
 
@@ -4579,7 +4575,7 @@ int dUdt_Residual_Evaluation(Rte2D_Quad_Block &SolnBlk,
 	  if (SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION) {
 	    Ur = Reflect(Ul, SolnBlk.Grid.nfaceN(i, j));
 	  } else if (SolnBlk.Grid.BCtypeN[i] == BC_GRAY_WALL) {
-	    Ur = Gray_Wall(Ul, SolnBlk.M[0][0], SolnBlk.Grid.nfaceN(i, j), 
+	    Ur = Gray_Wall(Ul, SolnBlk.Grid.nfaceN(i, j), 
 			   SolnBlk.NorthWallTemp, SolnBlk.NorthWallEmiss );
 	  } /* endif */
 
@@ -4761,7 +4757,7 @@ int dUdt_Multistage_Explicit(Rte2D_Quad_Block &SolnBlk,
 	       if (SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION) {
                  Ul = Reflect(Ur, SolnBlk.Grid.nfaceW(i+1, j));
 	       } else if (SolnBlk.Grid.BCtypeW[j] == BC_GRAY_WALL) {
-		 Ul = Gray_Wall(Ur, SolnBlk.M[0][0], SolnBlk.Grid.nfaceW(i+1, j), 
+		 Ul = Gray_Wall(Ur, SolnBlk.Grid.nfaceW(i+1, j), 
 			   SolnBlk.WestWallTemp, SolnBlk.WestWallEmiss );
 	       }/* endif */
 
@@ -4777,7 +4773,7 @@ int dUdt_Multistage_Explicit(Rte2D_Quad_Block &SolnBlk,
 	       if (SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION) {
 		 Ur = Reflect(Ul, SolnBlk.Grid.nfaceE(i, j));
 	       } else if (SolnBlk.Grid.BCtypeE[j] == BC_GRAY_WALL) {
-		 Ur = Gray_Wall(Ul, SolnBlk.M[0][0], SolnBlk.Grid.nfaceE(i, j), 
+		 Ur = Gray_Wall(Ul, SolnBlk.Grid.nfaceE(i, j), 
 			   SolnBlk.EastWallTemp, SolnBlk.EastWallEmiss );
 	       }/* endif */
 
@@ -4855,7 +4851,7 @@ int dUdt_Multistage_Explicit(Rte2D_Quad_Block &SolnBlk,
 	     if (SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ) {
                Ul = Reflect(Ur, SolnBlk.Grid.nfaceS(i, j+1));
 	     } else if (SolnBlk.Grid.BCtypeS[i] == BC_GRAY_WALL) {
-	       Ul = Gray_Wall(Ur, SolnBlk.M[0][0], SolnBlk.Grid.nfaceS(i, j+1), 
+	       Ul = Gray_Wall(Ur, SolnBlk.Grid.nfaceS(i, j+1), 
 			 SolnBlk.SouthWallTemp, SolnBlk.SouthWallEmiss );
 	     } /* endif */
 
@@ -4871,7 +4867,7 @@ int dUdt_Multistage_Explicit(Rte2D_Quad_Block &SolnBlk,
 	    if (SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION) {
 	      Ur = Reflect(Ul, SolnBlk.Grid.nfaceN(i, j));
 	    } else if (SolnBlk.Grid.BCtypeN[i] == BC_GRAY_WALL) {
-	      Ur = Gray_Wall(Ul, SolnBlk.M[0][0], SolnBlk.Grid.nfaceN(i, j), 
+	      Ur = Gray_Wall(Ul, SolnBlk.Grid.nfaceN(i, j), 
 			SolnBlk.NorthWallTemp, SolnBlk.NorthWallEmiss );
 	    } /* endif */
 

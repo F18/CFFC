@@ -1067,7 +1067,6 @@ Rte2D_State Flux_n(const Rte2D_State &Ul,
  * TODO: Implement pixelation                            *
  *********************************************************/
 Rte2D_State Gray_Wall(const Rte2D_State &U, 
-		      const Medium2D_State &M, 
 		      const Vector2D &norm_dir, 
 		      const double &wall_temperature,
 		      const double &wall_emissivity ) {
@@ -1083,20 +1082,22 @@ Rte2D_State Gray_Wall(const Rte2D_State &U,
     //------------------------------------------------
     // For a black wall, the blackbody intensity
     //------------------------------------------------
-    if (M.Absorb_Type == MEDIUM2D_ABSORB_GRAY)
+    if (Medium2D_State::Absorb_Type == MEDIUM2D_ABSORB_GRAY) {
       In = wall_emissivity * BlackBody(wall_temperature);
-    else if (M.Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
-      wn = M.SNBCKdata->WaveNo[ M.SNBCKdata->band_index[v] ];
+    } else if (Medium2D_State::Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
+      wn = Medium2D_State::SNBCKdata->WaveNo[ Medium2D_State::SNBCKdata->band_index[v] ];
       In = wall_emissivity * BlackBody(wall_temperature, wn);
       // Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
-    } else
-      In = ZERO; // shouldn't get here
-      
+    } else {
+      cerr << "\nRte2D_State.cc::Gray_Wall(): Invalid value for absorbsion type flag.\n";
+      exit(-1);
+    } // endif
+
+
     //------------------------------------------------
     // For grey wall.
     //------------------------------------------------
     if ( fabs(1.0-wall_emissivity)>MICRO ) {
-      
       
       // Iterate, summing the first moment over the half range for all
       // outgoing directions.  Note that for consistency, sum should
@@ -1190,7 +1191,6 @@ Rte2D_State Gray_Wall(const Rte2D_State &U,
  * TODO: Implement pixelation                           *
  *********************************************************/
 void Gray_Wall_Space_March(Rte2D_State &Uwall, 
-			   const Medium2D_State &M, 
 			   const Vector2D &norm_dir, 
 			   const double &wall_temperature,
 			   const double &wall_emissivity ) {
@@ -1205,20 +1205,23 @@ void Gray_Wall_Space_March(Rte2D_State &Uwall,
     //------------------------------------------------
     // for a black wall
     //------------------------------------------------
-    if (M.Absorb_Type == MEDIUM2D_ABSORB_GRAY)
+    if (Medium2D_State::Absorb_Type == MEDIUM2D_ABSORB_GRAY)
       In = wall_emissivity * BlackBody(wall_temperature);
-    else if (M.Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
-      wn = M.SNBCKdata->WaveNo[ M.SNBCKdata->band_index[v] ];
+    else if (Medium2D_State::Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
+      wn = Medium2D_State::SNBCKdata->WaveNo[ Medium2D_State::SNBCKdata->band_index[v] ];
       In = wall_emissivity * BlackBody(wall_temperature, wn);
       // Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
-    } else 
-      In = ZERO;  // shouldn't get here
+    } else {
+      cerr << "\nRte2D_State.cc::Gray_Wall_Space_March(): Invalid "
+	   << "value for absorbsion type flag.\n";
+      exit(-1);
+    } // endif
+
 
     //------------------------------------------------
     // For grey wall.
     //------------------------------------------------
     if ( fabs(1.0-wall_emissivity)>MICRO ) {
-      
       
       // Iterate, summing the first moment over the half range for all
       // outgoing directions.  Note that for consistency, sum should

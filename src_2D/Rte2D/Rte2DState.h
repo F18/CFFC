@@ -1685,12 +1685,10 @@ extern void Reflect_Space_March(Rte2D_State &U,
 				const Vector2D &norm_dir);
 
 extern Rte2D_State Gray_Wall(const Rte2D_State &U, 
-			     const Medium2D_State &M, 
 			     const Vector2D &norm_dir, 
 			     const double &wall_temperature,
 			     const double &wall_emissivity );
 extern void Gray_Wall_Space_March(Rte2D_State &Uwall, 
-				  const Medium2D_State &M, 
 				  const Vector2D &norm_dir, 
 				  const double &wall_temperature,
 				  const double &wall_emissivity );
