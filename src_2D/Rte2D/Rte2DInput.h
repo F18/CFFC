@@ -336,8 +336,8 @@ inline void Rte2D_Input_Parameters::SetupInputState()
   } else if (i_ICs_Medium == IC_DISCONTINUOUS) {
     Medium2D_State::SetDiscontinuousField( Mo, 
 					   Mo/FIVE, 
-					   Vector2D(-0.5, -0.5), 
-					   Vector2D(0.5, 0.5) );
+					   Vector2D(-0.25, -0.25), 
+					   Vector2D( 0.25,  0.25) );
     
   // ERROR
   } else {
