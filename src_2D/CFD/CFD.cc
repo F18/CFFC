@@ -7,6 +7,9 @@
 #include "CFD.h"
 #endif // _CFD_INCLUDED
 
+#include "../Euler1D/ExactSolutions/ExactSolutions.h"
+#include "../Utilities/Utilities.h"
+
 /********************************************************
  * CFD -- I/O Routines.                                 *
  ********************************************************/
@@ -1199,43 +1202,50 @@ void Set_Default_Input_Parameters(CFD1D_Input_Parameters &IP) {
  ********************************************************/
 void Get_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
 
-    int i, LineSize, IndexFirstChar(0);
-    char buffer[256], ControlParameter[256];
+  int i, index, LineSize, IndexFirstChar(0);
+  char buffer[256], ControlParameter[256];
 
-    // Initialize ControlParameter and IP.Next_Control_Parameter
-    ControlParameter[0] = '\0';
-    strcpy(IP.Next_Control_Parameter, ControlParameter);
+  // Initialize ControlParameter and IP.Next_Control_Parameter to end of string
+  ControlParameter[0] = '\0';
+  strcpy(IP.Next_Control_Parameter, ControlParameter);
 
-    while (!IP.Input_File.getline(buffer, sizeof(buffer)).eof() ){
+  // While the input stream is 'good' for reading and the end of file is not attained
+  while ( IP.Input_File.good() && !IP.Input_File.getline(buffer, sizeof(buffer)).eof() ){
 
-      // process the line 
-      IP.Line_Number = IP.Line_Number + 1;
-      LineSize = IP.Input_File.gcount(); // The size of the line. Last character is "\0"
+    // Process the line 
+    IP.Line_Number = IP.Line_Number + 1;
+    LineSize = IP.Input_File.gcount(); // Get the size of the line. Last character is "\0"!
 
-      for (i=0; i<=LineSize; ++i){
-	if (buffer[i] != ' ' && buffer[i] != '\t'){	// determine the index of the first character different than 'space'
-	  IndexFirstChar = i;
-	  break;
-	}
-      }
-
-      if ( buffer[IndexFirstChar] != '#' && buffer[IndexFirstChar] != '\0'){
-	// If the first character different than 'space' is also different than '#' or '\n',
-	// then the line is different than a comment or the end of the line
-	for(i=IndexFirstChar; i<LineSize; ++i){
-	  // get the ControlParameter
-	  if (buffer[i] == ' ' || buffer[i] == '='){
-	    ControlParameter[i-IndexFirstChar] = '\0';
-	    break;
-	  } else {
-	    ControlParameter[i-IndexFirstChar] = buffer[i];
-	  }
-	}
-
-	strcpy(IP.Next_Control_Parameter, ControlParameter);
+    // Determine the index of the first character different than 'space' and 'tab'
+    for (i=0; i<LineSize; ++i){
+      if (buffer[i] != ' ' && buffer[i] != '\t'){
+	IndexFirstChar = i;
 	break;
       }
-    }//endwhile
+    }
+
+    /* Parse the line if the first character different than 'space' 
+       is also different than '#' or end of string ('\0').
+       Otherwise skip the line because it is either a comment or an empty line. */
+    if ( buffer[IndexFirstChar] != '#' && buffer[IndexFirstChar] != '\0'){
+
+      // Get the ControlParameter
+      for(i=IndexFirstChar, index=0;  i<LineSize;  ++i, ++index){
+	if (buffer[i] == ' ' || buffer[i] == '='){
+	  ControlParameter[index] = '\0';
+	  break;
+	} else {
+	  ControlParameter[index] = buffer[i];
+	}
+      }
+
+      // Set the Next_Control_Parameter
+      strcpy(IP.Next_Control_Parameter, ControlParameter);
+      break;
+    }
+
+  }//endwhile
+
 }
 
 
@@ -1264,12 +1274,21 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
        } else if (strcmp(IP.Time_Integration_Type, "Implicit_Euler") == 0) {
            IP.i_Time_Integration = TIME_STEPPING_IMPLICIT_EULER;
            IP.N_Stage = 1;
+       } else if (strcmp(IP.Time_Integration_Type, "Explicit_Euler_HO") == 0){
+           IP.i_Time_Integration = TIME_STEPPING_EXPLICIT_EULER_HIGH_ORDER;
+           IP.N_Stage = 1;
        } else if (strcmp(IP.Time_Integration_Type, "Implicit_Trapezoidal") == 0) {
            IP.i_Time_Integration = TIME_STEPPING_IMPLICIT_TRAPEZOIDAL;
            IP.N_Stage = 1;
        } else if (strcmp(IP.Time_Integration_Type, "Explicit_Predictor_Corrector") == 0) {
            IP.i_Time_Integration = TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR;
            IP.N_Stage = 2;
+       } else if (strcmp(IP.Time_Integration_Type, "Explicit_Predictor_Corrector_HO") == 0) {
+           IP.i_Time_Integration = TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR_HIGH_ORDER;
+           IP.N_Stage = 2;
+       } else if (strcmp(IP.Time_Integration_Type, "Explicit_Predictor_Corrector4_HO") == 0) {
+           IP.i_Time_Integration = TIME_STEPPING_EXPLICIT_RUNGE_KUTTA_4_HIGH_ORDER;
+           IP.N_Stage = 4;
        } else if (strcmp(IP.Time_Integration_Type, "Semi_Implicit_Euler") == 0) {
            IP.i_Time_Integration = TIME_STEPPING_SEMI_IMPLICIT_EULER;
            IP.N_Stage = 1;
@@ -1307,8 +1326,7 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
            IP.i_Time_Integration = TIME_STEPPING_ADE;
            IP.N_Stage = 2;
        } else {
-           IP.i_Time_Integration = TIME_STEPPING_EXPLICIT_EULER;
-           IP.N_Stage = 1;
+	 i_command = INVALID_INPUT_CODE;
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Reconstruction_Type") == 0) {
@@ -1318,14 +1336,27 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
               IP.Next_Control_Parameter);
        if (strcmp(IP.Reconstruction_Type, "MUSCL") == 0) {
           IP.i_Reconstruction = RECONSTRUCTION_MUSCL;
+	  IP.i_ReconstructionMethod = RECONSTRUCTION_MUSCL;
        } else if (strcmp(IP.Reconstruction_Type, "Green_Gauss") == 0) {
           IP.i_Reconstruction = RECONSTRUCTION_GREEN_GAUSS;
+          IP.i_ReconstructionMethod = RECONSTRUCTION_GREEN_GAUSS;
        } else if (strcmp(IP.Reconstruction_Type, "Least_Squares") == 0) {
           IP.i_Reconstruction = RECONSTRUCTION_LEAST_SQUARES;
+          IP.i_ReconstructionMethod = RECONSTRUCTION_LEAST_SQUARES;
        } else if (strcmp(IP.Reconstruction_Type, "Characteristic") == 0) {
           IP.i_Reconstruction = RECONSTRUCTION_CHARACTERISTIC;
+          IP.i_ReconstructionMethod = RECONSTRUCTION_CHARACTERISTIC;
+       } else if (strcmp(IP.Reconstruction_Type, "ENO") == 0) {
+          IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
+          IP.i_ReconstructionMethod = RECONSTRUCTION_ENO;
+       } else if (strcmp(IP.Reconstruction_Type, "ENO_Characteristic") == 0) {
+          IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
+          IP.i_ReconstructionMethod = RECONSTRUCTION_ENO_CHARACTERISTIC;
+       } else if (strcmp(IP.Reconstruction_Type, "CENO") == 0) {
+          IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
+          IP.i_ReconstructionMethod = RECONSTRUCTION_CENO;
        } else {
-          IP.i_Reconstruction = RECONSTRUCTION_MUSCL;
+	 i_command = INVALID_INPUT_CODE;
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Limiter_Type") == 0) {
@@ -1356,7 +1387,7 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
        } else if (strcmp(IP.Limiter_Type, "Venkatakrishnan") == 0) {
           IP.i_Limiter = LIMITER_VENKATAKRISHNAN;
        } else {
-          IP.i_Limiter = LIMITER_VANLEER ;
+	 i_command = INVALID_INPUT_CODE;
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Flux_Function_Type") == 0) {
@@ -1379,7 +1410,7 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
        } else if (strcmp(IP.Flux_Function_Type, "Osher") == 0) {
           IP.i_Flux_Function = FLUX_FUNCTION_OSHER;
        } else {
-          IP.i_Flux_Function = FLUX_FUNCTION_ROE;
+	 i_command = INVALID_INPUT_CODE;
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "ICs_Type") == 0) {
@@ -1435,8 +1466,23 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
           IP.i_ICs = IC_RIEMANN_IVP;
           IP.X_Min = -ONE;
           IP.X_Max = ONE;
+       } else if (strcmp(IP.ICs_Type, "Sin_IVP") == 0) {
+          IP.i_ICs = IC_SIN_WAVE;
+	  IP.ExactFunction = SIN_WAVE_Solution;
+       } else if (strcmp(IP.ICs_Type, "Jiang_IVP") == 0) {
+          IP.i_ICs = IC_JIANG_WAVE;
+	  IP.ExactFunction = JIANG_IVP_Solution;
+       } else if (strcmp(IP.ICs_Type, "Acoustic_Shock_IVP") == 0) {
+          IP.i_ICs = IC_SHOCK_ACOUSTIC_INTERACTION;
+       } else if (strcmp(IP.ICs_Type, "Blast_Wave_IVP") == 0) {
+          IP.i_ICs = IC_BLAST_WAVE_INTERACTION;
+       } else if (strcmp(IP.ICs_Type, "Convection_Shapes_IVP") == 0) {
+          IP.i_ICs = IC_CONVECTION_OF_DIFFERENT_SHAPES;
+	  IP.ExactFunction = ConvectionShapes;
+       } else if (strcmp(IP.ICs_Type, "Density_Step_IVP") == 0) {
+          IP.i_ICs = IC_DENSITY_STEP_WAVE;
        } else {
-          IP.i_ICs = IC_UNIFORM;
+	 i_command = INVALID_INPUT_CODE;
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Grid_Type") == 0) {
@@ -1447,7 +1493,7 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
        if (strcmp(IP.Grid_Type, "Uniform") == 0) {
           IP.i_Grid = GRID_CARTESIAN_UNIFORM;
        } else {
-          IP.i_Grid = GRID_CARTESIAN_UNIFORM;
+	 i_command = INVALID_INPUT_CODE;
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Output_File_Name") == 0) {
@@ -1523,14 +1569,16 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.X_Min;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.X_Min <= ZERO) i_command = INVALID_INPUT_VALUE;
+       IP.X_ExactSolution_Min = IP.X_Min; // assume that the exact solution is given on the real domain.
+       // See ICs for domains that are different
 
     } else if (strcmp(IP.Next_Control_Parameter, "X_Max") == 0) {
        i_command = 16;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.X_Max;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.X_Max <= ZERO) i_command = INVALID_INPUT_VALUE;
+       IP.X_ExactSolution_Max = IP.X_Max; // assume that the exact solution is given on the real domain.
+       // See ICs for domains that are different
 
     } else if (strcmp(IP.Next_Control_Parameter, "Time_Max") == 0) {
        i_command = 17;
@@ -1584,6 +1632,23 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
           IP.i_Output_Format = IO_TECPLOT;
        } /* endif */
 
+    } else if (strcmp(IP.Next_Control_Parameter, "Space_Accuracy") == 0) {
+       i_command = 22;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Space_Accuracy;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.Space_Accuracy <= 0 && IP.Space_Accuracy >= 7){
+	 IP.Space_Accuracy = 1;
+	 cout << "\n Space Accuracy should be between 1 and 6 \n"
+	      << "Space Accuracy set to 1" << endl;
+       }/* endif */
+
+    } else if (strcmp(IP.Next_Control_Parameter, "CENO_Tolerance") == 0) {
+       i_command = 24;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.FitTolerance();
+       IP.Input_File.getline(buffer, sizeof(buffer));
+
     } else if (strcmp(IP.Next_Control_Parameter, "Execute") == 0) {
        i_command = EXECUTE_CODE;
 
@@ -1595,6 +1660,12 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
 
     } else if (strcmp(IP.Next_Control_Parameter, "Write_Output") == 0) {
        i_command = WRITE_OUTPUT_CODE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Write_Output_Accuracy") == 0) {
+      i_command = WRITE_OUTPUT_ACCURACY_CODE;
+      
+    } else if (strcmp(IP.Next_Control_Parameter, "Print_Norms") == 0) {
+      i_command = WRITE_NORM_ON_SCREEN;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Write_Restart") == 0) {
        i_command = WRITE_RESTART_CODE;

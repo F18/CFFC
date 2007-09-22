@@ -164,6 +164,7 @@ inline char *Date_And_Time() {
 
 #define WRITE_NORM_ON_SCREEN                             10105
 #define WRITE_OUTPUT_EXACT_SOLUTION                      10106
+#define WRITE_OUTPUT_ACCURACY_CODE                       10107
 
 #define	INVALID_INPUT_CODE                              -10000
 #define	INVALID_INPUT_VALUE                             -10001
@@ -615,7 +616,7 @@ inline char *Date_And_Time() {
 #define TIME_STEPPING_NKS                               21
 #define TIME_STEPPING_DUAL_TIME_STEPPING                22
 
-#define	TIME_STEPPING_EXPLICIT_EULER_LS                             30
+#define	TIME_STEPPING_EXPLICIT_EULER_HIGH_ORDER                     30
 #define	TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR_HIGH_ORDER       31
 #define	TIME_STEPPING_EXPLICIT_RUNGE_KUTTA_4_HIGH_ORDER             32
 
@@ -1216,6 +1217,9 @@ class CFD1D_Input_Parameters{
   // Input file line number:
   int Line_Number;
 
+  // Locally used variable
+  char **charPtr;
+
   /* Access fields */
   double & FitTolerance(void) {return CENO_Cutoff;}
   const double & FitTolerance(void) const {return CENO_Cutoff;}
@@ -1241,10 +1245,6 @@ inline ostream &operator << (ostream &out_file,
     } /* endif */
     out_file << "\n  -> Input File Name: " 
              << IP.Input_File_Name;
-    out_file << "\n  -> Output File Name: " 
-             << IP.Output_File_Name;
-    out_file << "\n  -> Output Format: " 
-             << IP.Output_Format_Type;
 
     if (IP.Local_Time_Stepping) {
       out_file << "\n  -> Time Invariant (Steady-State) Solution";
@@ -1351,6 +1351,12 @@ inline ostream &operator << (ostream &out_file,
              << IP.Number_of_Cells;
     out_file << "\n  -> Number of Nodes: " 
              << IP.Number_of_Nodes;
+
+    out_file << "\n  -> Output File Name: " 
+             << IP.Output_File_Name;
+    out_file << "\n  -> Output Format: " 
+             << IP.Output_Format_Type;
+
     return (out_file);
 }
 
@@ -1358,6 +1364,27 @@ inline istream &operator >> (istream &in_file,
 			     CFD1D_Input_Parameters &IP) {
     return (in_file);
 }
+
+// Output exact solution
+template<typename InputParameterType>
+void PrintFunctionGraph(FunctionType1D funct, InputParameterType & IP, ostream &out_file){
+
+  double dx = (IP.X_Max - IP.X_Min)/2000;
+  double point, value;
+
+  out_file << "TITLE = Exact Solution\n "
+	   << "VARIABLES = \"x\" \\ \n"
+	   << "\"Solution\" \\ \n"
+	   << "ZONE \n";
+
+  for (int i=0; i<=2000; ++i){
+    point = IP.X_Min + double(i)*dx;
+    value = funct(ConvertDomain(IP.X_Min,IP.X_Max,IP.X_ExactSolution_Min,IP.X_ExactSolution_Max,point));
+    out_file << " " << point << "\t" << value << "\n";
+  }
+
+}
+
 
 /**********************************************************************
  * CFD1D_Input_Parameters -- External subroutines.           *
