@@ -495,10 +495,6 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
    // SNBCK Parameters
    IP.SNBCK_IP.Broadcast_Input_Parameters();
 
-   if (!CFFC_Primary_MPI_Processor()) {
-     // Setup conserved and medium state
-     IP.SetupInputState();
-   } /* endif */
    /***********************************************************************
     ***********************************************************************/
     MPI::COMM_WORLD.Bcast(IP.Flow_Geometry_Type, 
@@ -825,6 +821,12 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
                           1, 
                           MPI::DOUBLE, 0);
 
+    //
+    // Setup conserved/medium states
+    //
+    if (!CFFC_Primary_MPI_Processor())
+      IP.SetupInputState();
+
 #endif
 
 }
@@ -1026,10 +1028,6 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     // SNBCK Parameters
     IP.SNBCK_IP.Broadcast_Input_Parameters(Communicator, Source_CPU);
 
-    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
-      // Setup conserved and medium state
-      IP.SetupInputState();
-    } /* endif */
     /***********************************************************************
      ***********************************************************************/
     Communicator.Bcast(IP.Flow_Geometry_Type, 
@@ -1356,6 +1354,12 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Freeze_Limiter_Residual_Level), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
+
+    //
+    // Setup conserved and medium states
+    //
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU))
+      IP.SetupInputState();
 
 }
 #endif
