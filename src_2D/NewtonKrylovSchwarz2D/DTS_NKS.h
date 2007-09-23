@@ -19,8 +19,8 @@
 template <typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 class DTS_NKS_Quad_Block {
  public:
-  int            NCi,        //!< Number of i-direction cells (including ghost cells).
-                 NCj,        //!< Number of j-direction cells (including ghost cells).
+  int            NCi,        //!< Number of i-direction cells (including ghost cells).  (DO I NEED GHOST CELLS
+                 NCj,        //!< Number of j-direction cells (including ghost cells).   OR MAYBE JUST ICu-ICl ??)
                  blocksize;  //!< Number of variables (equations being solved)
   double      ***Un,         //!< Conserved solution state at time-step n.
               ***Unminus1;   //!< Conserved solution state at time-step n-1.
@@ -85,25 +85,23 @@ template <typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 inline void DTS_NKS_Quad_Block<SOLN_BLOCK_TYPE,INPUT_TYPE>::
 Store_Previous(SOLN_BLOCK_TYPE &SolnBlk, const double &_dTime){
 
+  //ghost cells ???
   for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
     for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
-      // Implicit Euler only uses Un so could save some time here ???
-      if (Input_Parameters->NKS_IP.Physical_Time_Integration == TIME_STEPPING_IMPLICIT_EULER) {
-	for (int k = 0; k < blocksize; k++) {
-	  Un[i][j][k] = SolnBlk.U[i][j][k+1];
-	}
-	// BDF2
-      } else if (Input_Parameters->NKS_IP.Physical_Time_Integration == TIME_STEPPING_IMPLICIT_SECOND_ORDER_BACKWARD) {
-	for (int k = 0; k < blocksize; k++) {
+      for (int k = 0; k < blocksize; k++) {
+	// Implicit Euler only uses Un so could save some time here ???
+	if (Input_Parameters->NKS_IP.Physical_Time_Integration == TIME_STEPPING_IMPLICIT_EULER) {
+	  Un[i][j][k] = SolnBlk.U[i][j][k+1];	  
+	  // BDF2
+	} else if (Input_Parameters->NKS_IP.Physical_Time_Integration == TIME_STEPPING_IMPLICIT_SECOND_ORDER_BACKWARD) {
 	  Unminus1[i][j][k] =Un[i][j][k];        // t(n-1) 
 	  Un[i][j][k] = SolnBlk.U[i][j][k+1];    // t(n)	    
 	}
-      } 	      
-    }
+      }
+    } 	      
   }
-  // Stdore Physical time step
+  // Store Physical time step
   DTS_dTime = _dTime;
-
 }
 
 
@@ -149,7 +147,7 @@ int dUdt_Residual_Evaluation_NKS(SOLN_BLOCK_TYPE &SolnBlk,
 
   // Add dual time stepping Source Term to Residual ie. dUdt[i][j][0]
   if (Input_Parameters.NKS_IP.Dual_Time_Stepping) {
-    for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
+    for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {   //Do these line up with dUdt_Residual_Evaluation?????
       for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
 	for (int k = 0; k <  DTS_SolnBlk.blocksize; k++) {
 	  //Implicit Euler  R(U_n)* = R(U_n) + (U - Un)/dt

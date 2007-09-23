@@ -145,17 +145,16 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
   /**************************************************************************/  
   if (Input_Parameters.NKS_IP.Dual_Time_Stepping) { 
   
-    int DTS_Step(0);
+    int DTS_Step(1);
     double physical_time(ZERO);
-    bool physical_first_step(true);
     int physical_time_param(TIME_STEPPING_IMPLICIT_EULER);
 
     // Outer Loop (Physical Time)      
     while ( (DTS_Step < Input_Parameters.NKS_IP.Maximum_Number_of_DTS_Steps) &&
 	    (Input_Parameters.Time_Max > physical_time ) ) {
-      
+            
       // First Step needs to be done with Implicit Euler
-      if (physical_first_step) {
+      if (DTS_Step == 1 ) {
 	physical_time_param = Input_Parameters.NKS_IP.Physical_Time_Integration;
 	Input_Parameters.NKS_IP.Physical_Time_Integration = TIME_STEPPING_IMPLICIT_EULER;
       }
@@ -169,7 +168,7 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 	DTS_dTime = Input_Parameters.Time_Max - physical_time;
       }
 
-      // Store Previous Solution      
+      // Store Previous Solution & Physical Time Step  
       for (int Bcount = 0; Bcount < List_of_Local_Solution_Blocks.Nblk; Bcount++) {
 	if (List_of_Local_Solution_Blocks.Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
 	  DTS_SolnBlk[Bcount].Store_Previous(SolnBlk[Bcount],DTS_dTime);
@@ -188,10 +187,9 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 							 DTS_SolnBlk,
 							 DTS_Step);              
 					
-      // After first step reset to requested Time Integration Method
-      if (physical_first_step) {
-	Input_Parameters.NKS_IP.Physical_Time_Integration = physical_time_param;
-	physical_first_step =false;
+      // After first step, reset to requested Time Integration Method
+      if (DTS_Step == 1) {
+	Input_Parameters.NKS_IP.Physical_Time_Integration = physical_time_param;       
       }
 
       // Update Physical Time
@@ -203,8 +201,8 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       
       //DTS Output
       if (CFFC_Primary_MPI_Processor()) {
-	cout << "\n End of DTS Step " << DTS_Step; 
-	cout << " Time Step: " << DTS_dTime << " Real Time: " << physical_time << "\n";
+	cout << "\n *** End of DTS Step " << DTS_Step; 
+	cout << " Time Step: " << DTS_dTime << "s  Real Time: " << physical_time << "s **** \n";
       }
       
       // Increment DTS Steps
@@ -212,8 +210,11 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       
     } // end DTS while
     /**************************************************************************/  
+  
+    // Update global time steps
+    number_of_explicit_time_steps += DTS_Step-1;
 
-
+    
     /**************************************************************************/  
     /********* Steady State non-time accurate  ********************************/
     /**************************************************************************/  
@@ -443,7 +444,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
     // Output Solution Progress 
     if (CFFC_Primary_MPI_Processor() &&
 	(!Input_Parameters.NKS_IP.Dual_Time_Stepping ||
-	 (Input_Parameters.NKS_IP.Dual_Time_Stepping && Number_of_Newton_Steps == 1)) ) {       //IS THIS CORRECT FOR DTS???
+	 (Input_Parameters.NKS_IP.Dual_Time_Stepping && Number_of_Newton_Steps == 1)) ) {  //Output only 1st Step when using DTS
 	int real_NKS_Step = Input_Parameters.NKS_IP.Dual_Time_Stepping ? DTS_Step : (Number_of_Newton_Steps-1);
 
 	// FIXME - should not depend on Scott/Alistair but SolnBlk type.
@@ -772,16 +773,15 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       
       /**************************************************************************/
       // Print out Newton Step info at the beginning of the iteration. 
-      if (CFFC_Primary_MPI_Processor()) {      	
-	switch (Input_Parameters.NKS_IP.output_format) {
+      if (CFFC_Primary_MPI_Processor() && 
+	  (!Input_Parameters.NKS_IP.Dual_Time_Stepping || Number_of_Newton_Steps ==1 )) {      	
+	switch (Input_Parameters.NKS_IP.output_format ) {
 	  case OF_SCOTT: 
 	    cout.precision(10);
 	    cout << "\n Newton Step (Outer It.) = " << Number_of_Newton_Steps;
 	    cout << " L2norm = " << L2norm_current[SolnBlk[0].residual_variable-1];
 	    cout << " L2norm_ratio = " << L2norm_current_n;
-	    //	    if (!Input_Parameters.NKS_IP.Dual_Time_Stepping) {
-	      cout << " CFL = " << CFL_current;
-	      //}
+	    cout << " CFL = " << CFL_current;
 	    //if(Input_Parameters.Preconditioning) cout<<" Mref = "<<Mrefnew;
 	    break;
 	  case OF_ALISTAIR: {
@@ -826,7 +826,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       // Create/Update Jacobian Matrix(s) using Uo = U  
       if (Number_of_Newton_Steps < MIN_NUMBER_OF_NEWTON_STEPS_REQUIRING_JACOBIAN_UPDATE || 
           L2norm_current_n > MIN_L2_NORM_REQUIRING_JACOBIAN_UPDATE) { 
-        if (CFFC_Primary_MPI_Processor()) {	
+        if (CFFC_Primary_MPI_Processor() && !Input_Parameters.NKS_IP.Dual_Time_Stepping) {	//
 	    switch (Input_Parameters.NKS_IP.output_format) {
 	      case OF_SCOTT: 
                 cout << "\n Creating/Updating Jacobian Matrix"; 
@@ -963,28 +963,28 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 
   /**************************************************************************/
   /* Output final 2-norm for all blocks */ 
-  if (CFFC_Primary_MPI_Processor() && !Input_Parameters.NKS_IP.Dual_Time_Stepping) {
+  if (CFFC_Primary_MPI_Processor() ) {  //&& !Input_Parameters.NKS_IP.Dual_Time_Stepping
     int ttmmpp = cout.precision();
     int nns = Number_of_Newton_Steps-1;
-    cout << " " << endl;
+    cout << "\n ";
     for (int star=0;star<75;star++){cout <<"*";}
-    cout.setf(ios::scientific);
-    cout << "\n\nEnd of Newton Steps = " << nns  << " L2norm = "
+    //cout.setf(ios::scientific);
+    cout << "\n End of Newton Steps = " << nns  << " L2norm = "
          << L2norm_current[SolnBlk[0].residual_variable-1] 
-         << " L2norm_ratio = " << L2norm_current_n << "\n\n";
-    cout.unsetf(ios::scientific);
-    cout.setf(ios::fixed);
-
+         << " L2norm_ratio = " << L2norm_current_n << "\n";
+    //cout.unsetf(ios::scientific);
+    //cout.setf(ios::fixed);
     int GMRESt = 0;
     for (int iii = 0; iii < nns; iii++) { 
        GMRESt += GMRES_All_Iters[iii]; 
     }
-    cout << "GMRES Total Iterations: " << GMRESt << endl;
-    cout << "GMRES Restarts: " << GMRES_Restarts << endl;
-    cout << "GMRES Failures: " << GMRES_Failures << endl;
+    cout << " GMRES Total Iterations: " << GMRESt ;
+    cout << "   GMRES Restarts: " << GMRES_Restarts ;
+    cout << "   GMRES Failures: " << GMRES_Failures ;
+    /////////////////////////////////////////////////////////////////
     if (Input_Parameters.NKS_IP.output_format == OF_ALISTAIR) {
       qsort(GMRES_All_Iters, nns, sizeof(int), compare_integers);
-      cout << "GMRES Iterations:" << endl;
+      cout << "\nGMRES Iterations:" << endl;
       for (int iii = 0; iii < nns; iii++) {	
          cout << " " << setw(3) << GMRES_All_Iters[iii];
 	 if (((iii+1) % 20) == 0) { 
@@ -1050,7 +1050,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
            << "  us (" << aa << "x" << bb << " = " << aa*bb << " cells per block)\n";
     } // if (Input_Parameters.NKS_IP.output_format == OF_ALISTAIR)
 
-    cout << endl;
+    cout <<"\n ";
     for (int star=0;star<75;star++){
        cout <<"*";
     }

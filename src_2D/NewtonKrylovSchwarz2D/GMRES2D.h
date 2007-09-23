@@ -2689,7 +2689,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
     delete[] total_norm_eqn_b; delete[] total_norm_eqn_r; 
   }
 
-  if (CFFC_Primary_MPI_Processor()) { 
+  if (CFFC_Primary_MPI_Processor() && !Input_Parameters->NKS_IP.Dual_Time_Stepping ) { //
     switch (Input_Parameters->NKS_IP.output_format) {
     case OF_SCOTT:
       cout << "\n Finished GMRES with (Inner Iterations) = " << Number_of_GMRES_Iterations;
