@@ -1,4 +1,4 @@
-/*!file ExactSolutions.cc
+/*!\file ExactSolutions.cc
   \brief Implementation of subroutines prototyped in ExactSolutions.h */
 
 #include "../../Math/NumericalLibrary.h"

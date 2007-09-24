@@ -1,4 +1,4 @@
-/*!file ExactSolutions.h
+/*!\file ExactSolutions.h
   \brief Subroutines defining exact solutions for 1D Euler equations, including density convection.*/
 
 #ifndef _EXACTSOLUTIONS_EULER1D_INCLUDED

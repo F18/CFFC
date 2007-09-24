@@ -28,7 +28,7 @@ using std::endl;
 #define Print_File_3(x,y,z,output_stream) output_stream << setprecision(16)<< #x " = " << x << ",  " #y " = " << y << ",  " \
   #z " = " << z << endl;
 #define Print_Digits(x,digits) cout << setprecision(digits) << #x " = " << x << endl;
-#define TurnOff(x) /* #x */ cout << "\nElement " #x << " was turned off" << endl;
+#define TurnOff(x) /* #x */ cout << "\n Code: \n \"" #x << "\"\n was TURNED OFF!!!" << endl;
 
 inline void require(bool requirement, 
                     const std::string& msg = "Requirement failed"){
