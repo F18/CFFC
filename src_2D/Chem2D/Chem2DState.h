@@ -141,6 +141,11 @@ class Chem2D_pState {
    Tensor2D                 lambda; //!< Reynolds Stress Tensor
    Vector2D                  theta; //!< Turbulent Heat Flux Vector  
   
+  //@{ @name Radiant heat flux:
+  Vector2D qrad;
+  //@}
+
+
   //! Static Variaables 
   static int                   ns; //!< number of species
   static NASARP1311data *specdata; //!< Global Species Data
@@ -174,7 +179,8 @@ class Chem2D_pState {
   //@}
   
   //default constructors of many flavours, hopefully one is right 4U   
-  //v.zero(); tau.zero(); qflux.zero(); lambda.zero(); theta.zero();  //Unecessary as Vector2D and Tensor2D defaults are ZERO
+  //v.zero(); tau.zero(); qflux.zero(); lambda.zero(); theta.zero(); qrad.zero();
+  //  ^ Unecessary as Vector2D and Tensor2D defaults are ZERO
   //@{ @name Creation, copy, and assignment constructors.
  
    Chem2D_pState(): rho(DENSITY_STDATM), p(PRESSURE_STDATM), k(ZERO), omega(ZERO) 
@@ -221,7 +227,8 @@ class Chem2D_pState {
 
   //this is needed for the operator overload returns!!!!
   Chem2D_pState(const Chem2D_pState &W): rho(W.rho), v(W.v), p(W.p), k(W.k), omega(W.omega),
- 					 tau(W.tau), qflux(W.qflux), lambda(W.lambda), theta(W.theta) 
+ 					 tau(W.tau), qflux(W.qflux), lambda(W.lambda), theta(W.theta),
+					 qrad(W.qrad)
                                         { specnull(); set_initial_values(W.spec); }      
   //@}
 
@@ -245,6 +252,7 @@ class Chem2D_pState {
    void Vacuum(){ rho=ZERO; v.zero(); p=ZERO; k=ZERO; omega = ZERO; 
      for(int i=0; i<ns; i++)  spec[i].Vacuum();
      tau.zero(); qflux.zero(); lambda.zero(); theta.zero(); 
+     qrad.zero();
    }
 
    void zero_non_sol(){
@@ -252,7 +260,7 @@ class Chem2D_pState {
        spec[i].gradc.zero();
        spec[i].diffusion_coef=ZERO;
      }
-     tau.zero(); qflux.zero(); lambda.zero(); theta.zero(); 
+     tau.zero(); qflux.zero(); lambda.zero(); theta.zero(); qrad.zero();
    }  
  
   //! Set turbulence static variables.
@@ -524,6 +532,8 @@ class Chem2D_pState {
    Vector2D                  qflux; //!< Heat Flux Vector  
    Tensor2D                 lambda; //!< Reynolds Stress Tensor
    Vector2D                  theta; //!< Turbulent Heat Flux Vector  
+
+   Vector2D                   qrad; //!< radiant heat flux vector
  
    static int                   ns; //!< number of species
    static NASARP1311data *specdata; //!< Global species data 
@@ -602,7 +612,8 @@ class Chem2D_pState {
    // WARNING - automatic type conversion
    Chem2D_cState(const Chem2D_pState &W) :  rho(W.rho), rhov(W.rhov()),
 		   E(W.E()), rhok(W.rho*W.k), rhoomega(W.rho*W.omega),
-		   tau(W.tau), qflux(W.qflux), lambda(W.lambda), theta(W.theta)
+		   tau(W.tau), qflux(W.qflux), lambda(W.lambda), theta(W.theta),
+		   qrad(W.qrad)
    {   
      for(int i=0; i<W.ns; i++){
        rhospec[i].c = W.rho*W.spec[i].c;
@@ -615,7 +626,8 @@ class Chem2D_pState {
 
    //this is needed for the operator overload returns!!!!
    Chem2D_cState(const Chem2D_cState &U): rho(U.rho), rhov(U.rhov), E(U.E), rhok(U.rhok), rhoomega(U.rhoomega),
- 					 tau(U.tau), qflux(U.qflux), lambda(U.lambda), theta(U.theta)
+					  tau(U.tau), qflux(U.qflux), lambda(U.lambda), theta(U.theta),
+					  qrad(U.qrad)
                                          { rhospecnull(); set_initial_values(U.rhospec); }
 
    //read in ns species data, call only once as its static
@@ -634,7 +646,7 @@ class Chem2D_pState {
    /***************** VACUUM ************************/
    void Vacuum(){ rho=ZERO; rhov.zero(); E=ZERO; rhok = ZERO; rhoomega = ZERO; 
      for(int i=0; i<ns; i++) rhospec[i].Vacuum();
-     tau.zero();  qflux.zero(); lambda.zero(); theta.zero(); 
+     tau.zero();  qflux.zero(); lambda.zero(); theta.zero(); qrad.zero();
    }  
 
    void zero_non_sol(){
@@ -642,7 +654,7 @@ class Chem2D_pState {
        rhospec[i].gradc.zero();
        rhospec[i].diffusion_coef=ZERO;
      }
-     tau.zero(); qflux.zero(); lambda.zero(); theta.zero();  
+     tau.zero(); qflux.zero(); lambda.zero(); theta.zero(); qrad.zero();
    }  
 
    //! Set turbulence static variables.
@@ -1078,6 +1090,7 @@ inline void Chem2D_pState::Copy(const Chem2D_pState &W){
   qflux = W.qflux;
   lambda = W.lambda;
   theta = W.theta;
+  qrad = W.qrad;
 }
 
 //**************** Index Operators *************************/
@@ -1164,6 +1177,7 @@ inline Chem2D_cState Chem2D_pState::U(const Chem2D_pState &W) const{
     Temp.qflux = W.qflux; 
     Temp.lambda = W.lambda;
     Temp.theta = W.theta; 
+    Temp.qrad = W.qrad; 
     return Temp;
 }
 
@@ -1183,6 +1197,7 @@ inline Chem2D_cState U(const Chem2D_pState &W) {
   Temp.qflux = W.qflux; 
   Temp.lambda = W.lambda;
   Temp.theta = W.theta; 
+  Temp.qrad = W.qrad; 
   return Temp;
 }
 
@@ -1230,6 +1245,7 @@ inline void Chem2D_cState::Copy(const Chem2D_cState &U){
   qflux = U.qflux; 
   lambda = U.lambda;
   theta = U.theta; 
+  qrad = U.qrad; 
 }
 
 /**********************************************************************
@@ -1490,7 +1506,8 @@ inline Chem2D_pState Chem2D_cState::W(const Chem2D_cState &U) const{
     Temp.qflux = U.qflux; 
     Temp.lambda = U.lambda;
     Temp.theta = U.theta; 
-   
+    Temp.qrad = U.qrad; 
+
     return Temp;
 }
 
@@ -1510,6 +1527,7 @@ inline Chem2D_pState W(const Chem2D_cState &U) {
   Temp.qflux = U.qflux;
   Temp.lambda = U.lambda;
   Temp.theta = U.theta;
+  Temp.qrad = U.qrad;
 
   return Temp;
 }

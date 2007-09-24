@@ -418,8 +418,11 @@ Grid2D_Quad_Block** Copy_Multi_Block_Grid(Grid2D_Quad_Block **Src_Grid_ptr,   //
     // Copy each block
     //
     for ( int j = 0 ; j < Number_of_Blocks_Jdir ; ++j )
-       for ( int i = 0; i < Number_of_Blocks_Idir ; ++i )
-	 Copy_Quad_Block( Tgt_Grid_ptr[i][j], Src_Grid_ptr[i][j] );
+      for ( int i = 0; i < Number_of_Blocks_Idir ; ++i ) {
+
+	Copy_Quad_Block( Tgt_Grid_ptr[i][j], Src_Grid_ptr[i][j] );
+
+      } // endfor
 
   //--------------------------------------------------
   // Garbage grid.

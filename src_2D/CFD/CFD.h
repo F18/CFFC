@@ -161,6 +161,7 @@ inline char *Date_And_Time() {
 #define POSTPROCESS_1DFLAME                              10096
 
 #define WRITE_OUTPUT_BLACK_ENCLOSURE_CODE                10100
+#define POSTPROCESS_RADIATION_CODE                       10101
 
 #define WRITE_NORM_ON_SCREEN                             10105
 #define WRITE_OUTPUT_EXACT_SOLUTION                      10106

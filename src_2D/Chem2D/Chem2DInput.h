@@ -208,6 +208,8 @@ class Chem2D_Input_Parameters{
   char Rte_Input_File_Name[INPUT_PARAMETER_LENGTH_CHEM2D];
   //! Radiation Flag (0 -> no radiation, 1 -> radiation modelled)
   int Radiation;
+  //! Number of sequential solves
+  int Max_Number_Sequential_Solves;
   //@}
 
   //@{ @name Grid type indicator and related input parameters:

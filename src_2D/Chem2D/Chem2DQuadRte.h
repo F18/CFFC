@@ -131,8 +131,9 @@ inline void Rte2DSolver::Copy_Rte2D_Solution_Vars(Chem2D_Quad_Block *Chem2D_Soln
 	  // compute the radiant heat flux
  	  qr = Rte2D_SolnBlk[n]->U[i][j].q( Rte2D_SolnBlk[n]->M[i][j] );
 	  
-	  // add the component to the heat flux vector
-	  Chem2D_SolnBlk[n].U[i][j].qflux += qr;
+	  // store the radiant heat flux
+	  Chem2D_SolnBlk[n].U[i][j].qrad = qr;
+	  Chem2D_SolnBlk[n].W[i][j].qrad = qr;
 						     
 	} // endfor - i
       } // endfor - j

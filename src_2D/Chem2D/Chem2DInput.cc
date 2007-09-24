@@ -213,7 +213,7 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     string_ptr = "Chem2D_Rte.in";
     strcpy(IP.Rte_Input_File_Name, string_ptr);
     IP.Radiation = OFF;
-
+    IP.Max_Number_Sequential_Solves = 1;
 
     /* Grid Parameters */
     string_ptr = "Square";
@@ -472,6 +472,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
                           INPUT_PARAMETER_LENGTH_CHEM2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Radiation), 
+                          1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Max_Number_Sequential_Solves), 
                           1, 
                           MPI::INT, 0);
     // Initial conditions:
@@ -1112,6 +1115,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
 		       INPUT_PARAMETER_LENGTH_CHEM2D, 
 		       MPI::CHAR, Source_Rank);
     Communicator.Bcast(&(IP.Radiation), 
+		       1, 
+		       MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.Max_Number_Sequential_Solves), 
 		       1, 
 		       MPI::INT, Source_Rank);
     // Initial conditions:
@@ -2348,6 +2354,13 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       i_command = 101;
       Get_Next_Input_Control_Parameter(IP);
       strcpy(IP.Rte_Input_File_Name, IP.Next_Control_Parameter);
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Max_Number_Sequential_Solves") == 0) {
+       i_command = 16;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Max_Number_Sequential_Solves;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.Max_Number_Sequential_Solves < 0) i_command = INVALID_INPUT_VALUE;
 
        /***********************************************************************
         ************************ CHEM2D SPECIFIC ******************************
@@ -3854,6 +3867,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 
     } else if (strcmp(IP.Next_Control_Parameter, "Fix_BCs") == 0) {
       i_command = SWITCH_BCS_TO_FIXED;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Postprocess_Radiation") == 0) {
+       i_command = POSTPROCESS_RADIATION_CODE;
 
     } else if (IP.Next_Control_Parameter[0] == '#') {
        i_command = COMMENT_CODE;

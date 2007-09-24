@@ -42,6 +42,8 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
  ********************************************************/
 void Rte2DSolver::DeallocateSoln() {
 
+  if (!batch_flag) cout << "\n Deallocating Rte2D solution variables.";
+
   // multigrid
   if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
     MGSolver.deallocate();
@@ -55,12 +57,17 @@ void Rte2DSolver::DeallocateSoln() {
   //Deallocate_Message_Buffers(List_of_Local_Solution_Blocks);
   
   // solution block lists, quadtree, meshblock
-  List_of_Local_Solution_Blocks.deallocate();
-  List_of_Global_Solution_Blocks.deallocate();
-  QuadTree.deallocate();
-  MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk, 
-					Input_Parameters.Number_of_Blocks_Idir, 
-					Input_Parameters.Number_of_Blocks_Jdir);
+  if (List_of_Local_Solution_Blocks.Block != NULL)
+    List_of_Local_Solution_Blocks.deallocate();
+  if (List_of_Global_Solution_Blocks.CPU != NULL)
+    List_of_Global_Solution_Blocks.deallocate();
+  if (QuadTree.Blocks != NULL)
+    QuadTree.deallocate();
+
+  if (MeshBlk != NULL )
+    MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk, 
+					  Input_Parameters.Number_of_Blocks_Idir, 
+					  Input_Parameters.Number_of_Blocks_Jdir);
   
   // delete all static variables
   Rte2D_State::DeallocateStatic();
@@ -384,7 +391,7 @@ int Rte2DSolver::CopyMesh(Grid2D_Quad_Block **SRC_MeshBlk) {
     }  // endif
 
     // override the other meshes BCs
-    MeshBlk = Set_Multi_Block_Grid_BCs(SRC_MeshBlk,Input_Parameters);
+    MeshBlk = Set_Multi_Block_Grid_BCs(MeshBlk,Input_Parameters);
 
   } // endif
   
@@ -970,6 +977,21 @@ void Rte2DSolver::OutputProgress(const double residual_l1_norm,
 			      residual_l2_norm,
 			      residual_max_norm);
 }
+
+/********************************************************  
+ * Rte2DSolver :: OutputSolverStats()                   *
+ *                                                      *
+ * Output some stats.                                   *
+ ********************************************************/
+void Rte2DSolver::OutputSolverStats(ostream &out) const {
+  out << endl;
+  out << "\n " << string(69,'-');
+  out << "\n Radiation Solver Stats:";
+  out << "\n " << string(69,'-');
+  out << "\n Total CPU time       ====> " << total_cpu_time << " min";
+  out << "\n Number of Time Steps ====> " << number_of_time_steps;
+}
+
 
 /********************************************************  
  * Rte2DSolver :: ComputeNorms                          *
@@ -1799,7 +1821,6 @@ int Rte2DSolver::PostProcess(int &command_flag) {
       //
       // Deallocate memory for 2D Rte equation solution.
       //
-      if (!batch_flag) cout << "\n Deallocating Rte2D solution variables.";
       DeallocateSoln();
 
       // Output input parameters for new caluculation.
@@ -1816,13 +1837,6 @@ int Rte2DSolver::PostProcess(int &command_flag) {
     // TERMINATE CODE
     //--------------------------------------------------
     } else if (command_flag == TERMINATE_CODE) {
-
-      //
-      // Deallocate memory for 2D Rte equation solution.
-      //
-      if (!batch_flag) cout << "\n Deallocating Rte2D solution variables.";
-      DeallocateSoln();
-      
 
       // Close input data file.
       if (!batch_flag) cout << "\n\n Closing Rte2D input data file.";

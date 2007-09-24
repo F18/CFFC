@@ -1881,6 +1881,9 @@ Chem2D_cState Chem2D_pState::Sa_viscous(const Chem2D_pState &dWdx,
     qflux.y -= rhohsDs*dWdy.spec[i].c;
   }
   
+  // radiant heat flux
+  qflux += qrad;
+  
   //Turbulent heat flux
   //Thermal conduction, q = - kappa * grad(T)
   if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
@@ -4388,6 +4391,9 @@ Chem2D_cState Viscous_Flux_n(Chem2D_pState &W,
   //Thermal diffusion, q -= rho * sum ( hs * Ds *gradcs)
   U.qflux -= U.rho*U.thermal_diffusion(Temperature);  
   
+  // radiant heat flux
+  U.qflux += U.qrad;
+
   //Turbulent heat flux
   //Thermal conduction, q = - kappa * grad(T)
   if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||

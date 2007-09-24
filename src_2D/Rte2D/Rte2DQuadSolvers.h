@@ -100,7 +100,7 @@ class Rte2DSolver {
 		   start_explicit(), end_explicit(), 
 		   number_of_time_steps(0), Time(0),
 		   first_step(true), NUM_VAR_RTE2D(0) {}
-  //~Rte2DSolver() { DeallocateSoln(); }
+  ~Rte2DSolver() { DeallocateSoln(); }
 
   //------------------------------------------------------
   // Member functions
@@ -154,6 +154,9 @@ class Rte2DSolver {
 		      const double residual_max_norm,
 		      ofstream &);
 
+  // output some stats
+  void OutputSolverStats(ostream &) const;
+
   // solvers
   int SolveMultigrid();
   int SolveExplicitTimeStep();
@@ -191,8 +194,8 @@ class Rte2DSolver {
   { 
     cerr<<"\n EXPLICIT SPECIALIZATION OF Copy_SRC_Solution_Vars for Rte2DQuadSolvers.h requried \n";
     exit(-1);
- }
-
+  }
+  
   // solver
   template <class Quad_Soln_Block>
   int SequentialSolve(Quad_Soln_Block *SRC_Local_SolnBlk,
