@@ -2223,10 +2223,13 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
       } else if (strcmp(IP.ICs_Medium, "Restart") == 0) {
 	IP.i_ICs_Medium = IC_RESTART;
 	IP.Medium_Field_Type = MEDIUM2D_FIELD_DISCRETE;
-     } else {
+      } else if (strcmp(IP.ICs_Medium, "Specified") == 0) {
+	IP.i_ICs_Medium = IC_SPECIFIED;
+	IP.Medium_Field_Type = MEDIUM2D_FIELD_DISCRETE;    
+      } else {
 	IP.i_ICs_Medium = IC_UNIFORM;
  	IP.Medium_Field_Type = MEDIUM2D_FIELD_ANALYTIC;
-     } /* endif */
+      } /* endif */
 	
 
     /***********************************************************************

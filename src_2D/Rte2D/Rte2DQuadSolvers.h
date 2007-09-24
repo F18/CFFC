@@ -313,7 +313,9 @@ inline int Rte2DSolver::SequentialSolve( Quad_Soln_Block *SRC_Local_SolnBlk,
   //--------------------------------------------------
   // Copy Rte2D solution variables.
   //--------------------------------------------------
-  Copy_SRC_Solution_Vars(SRC_Local_SolnBlk);
+  // only do this if we are not prescribing an analytic field
+  if (Input_Parameters.Medium_Field_Type == MEDIUM2D_FIELD_DISCRETE)
+    Copy_SRC_Solution_Vars(SRC_Local_SolnBlk);
 
 
   //--------------------------------------------------
@@ -485,7 +487,7 @@ inline void Rte2DSolver::OverrideInputs( const Quad_Soln_Input_Parameters &SRC_I
   // turn off AMR, Morton ordering
   Input_Parameters.Morton = OFF;
   Input_Parameters.AMR = OFF;
-
+  
 }
 
 

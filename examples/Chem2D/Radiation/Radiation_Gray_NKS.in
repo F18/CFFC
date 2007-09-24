@@ -117,8 +117,8 @@ Wall_Temperature =
 # Wall emissivity [north south east west]
 Wall_Emissivity =
 1.0  1.0  1.0  1.0
-Gas_Temperature = 
-1000.0
+ICs_Medium =
+Specified
 Absorption_Coefficient = 
 1.0
 Absorption_Model =
