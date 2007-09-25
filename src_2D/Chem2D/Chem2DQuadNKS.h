@@ -523,13 +523,12 @@ calculate_Matrix_Free(const double &epsilon)
 	    value += Precon(k,l) * denormalizeU(W[(search_directions)*scalar_dim + index(i,j,l)],l);
 	  }
 	  V[(search_directions+1)*scalar_dim+iter] -= 
-	    normalizeR(value * LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
-								 
+	    normalizeR(value * LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);								 
 	  
 	//No Preconditioner
 	} else { // z/h
 	  V[(search_directions+1)*scalar_dim+iter] -= normalizeUtoR( W[(search_directions)*scalar_dim + iter] 
-			       * LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
+								     * LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
 	}       
 
 // #ifdef _NKS_VERBOSE_NAN_CHECK

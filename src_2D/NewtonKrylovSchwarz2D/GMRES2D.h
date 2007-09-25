@@ -2150,11 +2150,13 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	  //Calculate R(U+epsilon*(Minv*x(i))) -> Soln_ptr.U =  Soln_ptr.Uo + epsilon * W(i)
 	  G[Bcount].calculate_perturbed_residual_Restart(epsilon);	  
 	  BCs(Soln_ptr[Bcount],*Input_Parameters);
-		t0 = clock();
+		
+	  t0 = clock();
+	  
 	  error_flag = dUdt_Residual_Evaluation_NKS<SOLN_BLOCK_TYPE,INPUT_TYPE>
 	               (Soln_ptr[Bcount],DTS_ptr[Bcount],*Input_Parameters);
-	  // dUdt_Residual_Evaluation(Soln_ptr[Bcount],*Input_Parameters);	  
-		*res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
+	  
+	  *res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
 	} 
       } 
       /**************************************************************************/
@@ -2193,8 +2195,6 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	    error_flag = dUdt_Residual_Evaluation_NKS<SOLN_BLOCK_TYPE,INPUT_TYPE>
 	      (Soln_ptr[Bcount],DTS_ptr[Bcount],*Input_Parameters);
 
-// 	    error_flag = dUdt_Residual_Evaluation(Soln_ptr[Bcount],*Input_Parameters);	  
-		
 	    *res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
 	  } 
 	} 
@@ -2367,12 +2367,13 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
  	  G[Bcount].calculate_perturbed_residual(epsilon);
 	  //Apply Regular Soln_ptr BC'S 
 	  BCs(Soln_ptr[Bcount],*Input_Parameters);
+
 	  t0 = clock();
+
 	  //modified to calculate in "overlap" cells as well
 	  error_flag = dUdt_Residual_Evaluation_NKS<SOLN_BLOCK_TYPE,INPUT_TYPE>
 	               (Soln_ptr[Bcount],DTS_ptr[Bcount],*Input_Parameters);
 
-	  //error_flag = dUdt_Residual_Evaluation(Soln_ptr[Bcount],*Input_Parameters);	  
 	  *res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
 	 } 
       }
@@ -2409,14 +2410,13 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	    G[Bcount].calculate_perturbed_residual_2nd(epsilon);
 	    //Apply Regular Soln_ptr BC'S 
 	    BCs(Soln_ptr[Bcount],*Input_Parameters);
-	    //modified to calculate in "overlap" cells as well
-	  t0 = clock();	 
-
-	  error_flag = dUdt_Residual_Evaluation_NKS<SOLN_BLOCK_TYPE,INPUT_TYPE>
-	               (Soln_ptr[Bcount],DTS_ptr[Bcount],*Input_Parameters);
-
-	  //error_flag = dUdt_Residual_Evaluation(Soln_ptr[Bcount],*Input_Parameters);	  
-	  *res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
+	    
+	    t0 = clock();	 
+	    
+	    error_flag = dUdt_Residual_Evaluation_NKS<SOLN_BLOCK_TYPE,INPUT_TYPE>
+	      (Soln_ptr[Bcount],DTS_ptr[Bcount],*Input_Parameters);
+	    
+	    *res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
 	  } 
 	}
 	/**************************************************************************/

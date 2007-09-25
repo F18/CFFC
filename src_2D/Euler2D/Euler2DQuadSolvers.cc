@@ -854,7 +854,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
      CPUTime Explicit_total_cpu_time =  total_cpu_time;
     
      //Perform NKS Iterations 
-     error_flag = Newton_Krylov_Schwarz_Solver<Euler2D_pState,
+     error_flag = Newton_Krylov_Schwarz_Solver<Euler2D_pState,                    //pass in Time for DTS ??
                                                Euler2D_Quad_Block,                                               
                                                Euler2D_Input_Parameters>(processor_cpu_time,
 									 residual_file,

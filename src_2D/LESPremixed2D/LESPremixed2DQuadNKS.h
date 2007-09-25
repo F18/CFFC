@@ -164,7 +164,7 @@ template <> double Finite_Time_Step(const LESPremixed2D_Input_Parameters &Input_
 template<> inline void Block_Preconditioner<LESPremixed2D_pState,
 					    LESPremixed2D_Quad_Block,					    
 					    LESPremixed2D_Input_Parameters>::
-Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jacobian)
+Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jacobian, const double& DTS_dTime)
 {   
   //Low Mach # Preconditioning 
   if(Input_Parameters->Preconditioning){
@@ -183,13 +183,15 @@ Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jac
 				     SolnBlk->Flow_Type,
 				     delta_n);    
 
-    Jacobian[CENTER] -= Low_Mach_Number_Preconditioner/(SolnBlk->dt[cell_index_i][cell_index_j]);
+    Jacobian[CENTER] -= Low_Mach_Number_Preconditioner*
+      LHS_Time<LESPremixed2D_Input_Parameters>(*Input_Parameters, SolnBlk->dt[cell_index_i][cell_index_j],DTS_dTime);
 
   } else { // I/deltat
 
     DenseMatrix II(blocksize,blocksize);  
     II.identity();    
-    Jacobian[CENTER] -= (II / (SolnBlk->dt[cell_index_i][cell_index_j]));
+    Jacobian[CENTER] -= II*LHS_Time<LESPremixed2D_Input_Parameters>(*Input_Parameters, SolnBlk->dt[cell_index_i][cell_index_j],DTS_dTime);
+ 
   }
 
 }
@@ -543,11 +545,13 @@ calculate_Matrix_Free(const double &epsilon)
 	  for(int l =0; l < blocksize; l++){
 	    value += Precon(k,l) * denormalizeU(W[(search_directions)*scalar_dim + index(i,j,l)],l);
 	  }
-	  V[(search_directions+1)*scalar_dim+iter] -= normalizeR(value/(SolnBlk->dt[i][j]),k);
-	  
+	  V[(search_directions+1)*scalar_dim+iter] -= 
+	    normalizeR(value * LHS_Time<LESPremixed2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
 	//No Preconditioner
 	} else { // z/h
-	  V[(search_directions+1)*scalar_dim+iter] -= normalizeUtoR(W[(search_directions)*scalar_dim + iter]/(SolnBlk->dt[i][j]),k);	
+	  V[(search_directions+1)*scalar_dim+iter] -= normalizeUtoR( W[(search_directions)*scalar_dim + iter] 
+								     * LHS_Time<LESPremixed2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
+	
 	}
       }  
     

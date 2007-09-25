@@ -455,7 +455,6 @@ template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 inline void Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
 Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jacobian,const double& DTS_dTime)
 {   
-
   DenseMatrix Diag(blocksize,blocksize);      
   Diag.identity();    
   //Cacluate LHS depeneding on Steady State of Dual Time Stepping
