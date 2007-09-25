@@ -1337,7 +1337,7 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
  * This routine calculates the transformation matrix    *
  * to convert from the Cell Face to Cell Center used    *
  * for constructing the Viscous Jacobians based         *
- * on a diamond path recontstruction.                   *  
+ * on a diamond path reconstruction.                    *
  *                                                      *
  ********************************************************/
 void dWfdWc_Diamond(DenseMatrix &dWfdWc_x,DenseMatrix &dWfdWc_y, LESPremixed2D_Quad_Block &SolnBlk,
