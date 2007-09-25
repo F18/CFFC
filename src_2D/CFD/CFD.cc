@@ -1191,6 +1191,8 @@ void Set_Default_Input_Parameters(CFD1D_Input_Parameters &IP) {
 
     IP.Line_Number = 0;
 
+    // set output to verbose
+    IP.Verbose() = ON;
 }
 
 /********************************************************

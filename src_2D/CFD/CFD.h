@@ -1220,9 +1220,16 @@ class CFD1D_Input_Parameters{
   // Locally used variable
   char **charPtr;
 
+  // Batch mode or verbose
+  short verbose_flag;
+
   /* Access fields */
   double & FitTolerance(void) {return CENO_Cutoff;}
   const double & FitTolerance(void) const {return CENO_Cutoff;}
+
+  short & Verbose(void) {return verbose_flag;}
+  const short & Verbose(void) const {return verbose_flag;}
+
 
   /* Input-output operators. */
 

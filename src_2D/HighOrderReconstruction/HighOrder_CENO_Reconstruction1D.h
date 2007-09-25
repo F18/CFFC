@@ -17,24 +17,29 @@ template<typename SolutionContainer, typename Input_Parameters_Type> inline
 void Compute_CENO_PseudoInverse(SolutionContainer * SolnBlk,
 				const Input_Parameters_Type & IP){
 
-#ifdef __CENO_SPEED_EFFICIENT__
+#ifdef _CENO_SPEED_EFFICIENT
 
   if(Input_Parameters.i_ReconstructionMethod == RECONSTRUCTION_CENO){
-    cout << "\n\n --> Preprocessing Step\n" << "---------------------------------------\n"
-	 << "    > Compute the pseudo-inverse in \n       every computational cell.\n";
+
+    if (IP.Verbose()){
+      cout << "\n\n --> Preprocessing Step\n" << "---------------------------------------\n"
+	   << "    > Compute the pseudo-inverse in \n       every computational cell.\n";
+    }
     
     CENO1D_HighOrder_Reconstruction_PseudoInverse(Soln_ptr,Input_Parameters);
 
 
-    cout << "---------------------------------------\n" << " --> Preprocessing Step Done\n";
+    if (IP.Verbose()){
+      cout << "---------------------------------------\n" << " --> Preprocessing Step Done\n";
+    }
   }
 
-#endif //__CENO_SPEED_EFFICIENT__
+#endif //_CENO_SPEED_EFFICIENT
 
 }
 
 
-#ifdef __CENO_SPEED_EFFICIENT__
+#ifdef _CENO_SPEED_EFFICIENT
 template<typename SolutionContainer, typename Input_Parameters_Type> inline
 void CENO1D_HighOrder_Reconstruction_PseudoInverse(SolutionContainer * SolnBlk,
 						   const Input_Parameters_Type & IP){
@@ -68,4 +73,4 @@ void CENO1D_HighOrder_Reconstruction_PseudoInverse(SolutionContainer * SolnBlk,
   }
 
 }
-#endif //__CENO_SPEED_EFFICIENT__
+#endif //_CENO_SPEED_EFFICIENT

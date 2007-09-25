@@ -65,6 +65,11 @@ int Euler1DSolver(char *Input_File_Name_ptr,
 
   Set_Default_Input_Parameters(Input_Parameters);
 
+  // set batch_mode if required
+  if (batch_flag){
+    Input_Parameters.Verbose() = OFF;
+  }
+ 
   strcpy(Input_Parameters.Input_File_Name, Input_File_Name_ptr);
   Open_Input_File(Input_Parameters);
   if (Input_Parameters.Input_File.bad()) {

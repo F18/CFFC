@@ -112,7 +112,7 @@ class MemoryStorageENO_1D {
  * by "iCell" index.                                                        *
  *                                                                          *
  ***************************************************************************/
-#ifdef __CENO_SPEED_EFFICIENT__
+#ifdef _CENO_SPEED_EFFICIENT
 template< class SolutionContainer> inline
 void kExact_Reconstruction (SolutionContainer * SolnBlk, IndexType & i_index, const int iCell)
 {
@@ -258,7 +258,7 @@ void kExact_Reconstruction (SolutionContainer * SolnBlk, IndexType & i_index, co
     }
   }
 }
-#endif //__CENO_SPEED_EFFICIENT__
+#endif //_CENO_SPEED_EFFICIENT
 
 
 /****************************************************************************
@@ -270,7 +270,7 @@ void kExact_Reconstruction (SolutionContainer * SolnBlk, IndexType & i_index, co
  * The exactly satisfied conservation equation for cell iCell is left out.  *
  *                                                                          *
  ***************************************************************************/
-#ifdef __CENO_SPEED_EFFICIENT__
+#ifdef _CENO_SPEED_EFFICIENT
 template< class SolutionContainer> inline
 void kExact_Reconstruction_LHS (SolutionContainer * SolnBlk, IndexType & i_index, const int iCell)
 {
@@ -340,7 +340,7 @@ void kExact_Reconstruction_LHS (SolutionContainer * SolnBlk, IndexType & i_index
   // at every time step as long as the mesh is the same.
   // **********************************************************************
 }
-#endif //__CENO_SPEED_EFFICIENT__
+#endif //_CENO_SPEED_EFFICIENT
 
 /****************************************************************************
  * TEMPLATE Function: ENO_Reconstruction                                    *
