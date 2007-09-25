@@ -1547,7 +1547,7 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
        if (SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL ||
 	   SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
 	   SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP){
-	 SolnBlk.WoN[j].set_temperature_d(Input_Parameters.Temperature_North_BC);
+	 SolnBlk.WoN[i].set_temperature_d(Input_Parameters.Temperature_North_BC);
 	 SolnBlk.WoN[i].v.y = 0.0;
 	 if (Input_Parameters.i_Grid == GRID_ADIABATIC_COUETTE) {
 	 SolnBlk.WoN[i].v.x = Input_Parameters.Couette_Plate_Velocity;
