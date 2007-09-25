@@ -53,7 +53,7 @@ Number_of_Blocks_Jdir=
 CFL_Number=
 0.5
 Maximum_Number_of_Time_Steps=
-5000
+50
 ##############################
 Output_File_Name= 
 1STEP_CH4_1DFLAME
