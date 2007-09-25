@@ -52,7 +52,7 @@ double Turbulence_Model_k_omega::f_beta(const Tensor3D &rotation,
       (rotation.yz)*rotation.yz*strain_rate.zz ;
    
    base = beta_star*max(TOLER, omega);
-   kai_w =fabs(kai_w_numerator/max(TOLER, pow(base, 3)));
+   kai_w = fabs(kai_w_numerator/max(TOLER, cube(base)));
    // cout<<" \n kw = "<<fabs((ONE+70*kai_w)/(ONE+80*kai_w));
    return ((ONE+70*kai_w)/(ONE+80*kai_w));
    
@@ -69,7 +69,8 @@ double Turbulence_Model_k_omega::f_betastar(
 //  Xk = ---------------------------------
 //          omega^3
    base = max(TOLER, omega);
-   kai_k = (dkdx*domegadx + dkdy*domegady + dkdz*domegadz)/max(TOLER, pow(base, 3));
+   kai_k = (dkdx*domegadx + dkdy*domegady + dkdz*domegadz)/
+           max(TOLER, cube(base));
    
    if (kai_k <= ZERO){
       //    cout<<"\n kai_k= "<<  kai_k <<"      ---      "<<ONE;
