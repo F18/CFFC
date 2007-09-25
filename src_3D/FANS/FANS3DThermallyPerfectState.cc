@@ -32,82 +32,82 @@ double FANS3D_ThermallyPerfect_KOmega_pState::a(void) const{
    return sqrt(sum);
 }
 
-void FANS3D_ThermallyPerfect_KOmega_pState::set_species_data(FANS3D_ThermallyPerfect_KOmega_pState &Wo,
-                                                             const int &n,
-                                                             const string *S,
-                                                             const char *PATH,
-                                                             const int &debug, 
-                                                             const double &Mr, 
-                                                             const double* Sc){ 
+// void FANS3D_ThermallyPerfect_KOmega_pState::set_species_data(const int &n,
+//                                                              const string *S,
+//                                                              const char *PATH,
+//                                                              const int &debug, 
+//                                                              const double &Mr, 
+//                                                              const double* Sc,
+//                                                              const int &trans_data){ 
 
-   //Deallocate_static();
-   Wo.Deallocate(); //Clean up memory before changing ns
-   ns = n;
+//    //Deallocate_static();
+//    Wo.Deallocate(); //Clean up memory before changing ns
+//    ns = n;
    
-   NUM_VAR_3D = ns + NUM_EULER3D_VAR_SANS_SPECIES+ NUM_FANS3D_VAR_EXTRA;
+//    num_vars = ns + NUM_EULER3D_VAR_SANS_SPECIES+ NUM_FANS3D_VAR_EXTRA;
    
-   //read in NASA data for each species to be used 
-   specdata = new NASARP1311data[ns]; 
-   Schmidt = new double[ns];
+//    //read in NASA data for each species to be used 
+//    specdata = new NASARP1311data[ns]; 
+//    Schmidt = new double[ns];
    
-   for(int i=0; i<ns; i++){
-     specdata[i].Getdata(S[i], PATH);  
-      Schmidt[i] = Sc[i];
-   } 
+//    for(int i=0; i<ns; i++){
+//      specdata[i].Getdata(S[i], PATH);  
+//       Schmidt[i] = Sc[i];
+//    } 
 
-   //set data temperature ranges for mixture
-   Wo.Temp_low_range(); 
-   Wo.Temp_high_range(); 
+//    //set data temperature ranges for mixture
+//    Wo.Temp_low_range(); 
+//    Wo.Temp_high_range(); 
    
-   //Set Debug Information level
-   debug_level = debug;
+//    //Set Debug Information level
+//    debug_level = debug;
    
-   //setup initial array for mass fractions
+//    //setup initial array for mass fractions
 
-   Wo.spec = new Species[ns];
-   for(int i=0; i<ns; i++){
-      Wo.spec[i].c = ONE/ns ; 
-   }
-}   
+//    Wo.spec = new Species[ns];
+//    for(int i=0; i<ns; i++){
+//       Wo.spec[i].c = ONE/ns ; 
+//    }
+// }   
 
-void FANS3D_ThermallyPerfect_KOmega_cState::set_species_data(FANS3D_ThermallyPerfect_KOmega_cState &Uo,
-                                                             const int &n, 
-                                                             const string *S, 
-                                                             const char *PATH,
-                                                             const int &debug, 
-                                                             const double &Mr, 
-                                                             const double* Sc){ 
+// void FANS3D_ThermallyPerfect_KOmega_cState::set_species_data(const int &n, 
+//                                                              const string *S, 
+//                                                              const char *PATH,
+//                                                              const int &debug, 
+//                                                              const double &Mr, 
+//                                                              const double* Sc,
+//                                                              const int &trans_data){ 
  
-   //Deallocate_static();
-   Uo.Deallocate(); //Clean up memory before changing ns
+//    //Deallocate_static();
+//    Uo.Deallocate(); //Clean up memory before changing ns
  
-   ns =n; 
-   NUM_VAR_3D = ns + NUM_EULER3D_VAR_SANS_SPECIES+ NUM_FANS3D_VAR_EXTRA;
+//    ns =n; 
+//    num_vars = ns + NUM_EULER3D_VAR_SANS_SPECIES+ NUM_FANS3D_VAR_EXTRA;
 
-   //read in NASA data for each species to be used
-   specdata = new NASARP1311data[ns];
-   Schmidt = new double[ns];
+//    //read in NASA data for each species to be used
+//    specdata = new NASARP1311data[ns];
+//    Schmidt = new double[ns];
 
-   for(int i=0; i<ns; i++){
-      //overwrite default data  
-     specdata[i].Getdata(S[i], PATH);
-      Schmidt[i] = Sc[i];  
-   }  
+//    for(int i=0; i<ns; i++){
+//       //overwrite default data  
+//      specdata[i].Getdata(S[i], PATH);
+//       Schmidt[i] = Sc[i];  
+//    }  
 
-   //set data temperature ranges for mixture
-   Uo.Temp_low_range();
-   Uo.Temp_high_range();
+//    //set data temperature ranges for mixture
+//    Uo.Temp_low_range();
+//    Uo.Temp_high_range();
 
-   //Set Debug Information level
-   debug_level = debug;
+//    //Set Debug Information level
+//    debug_level = debug;
 
-   //setup initial array for mass fractions
-   Uo.rhospec = new Species[ns];
-   for(int i=0; i<ns; i++){
-      Uo.rhospec[i].c = Uo.rho/ns; 
-   }
+//    //setup initial array for mass fractions
+//    Uo.rhospec = new Species[ns];
+//    for(int i=0; i<ns; i++){
+//       Uo.rhospec[i].c = Uo.rho/ns; 
+//    }
    
-}      
+// }      
 
 /********************************************************************
  * FANS3D_ThermallyPerfect_KOmega_pState::F -- 
@@ -126,8 +126,12 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::F(v
    double Temp_rhok = rho*v.x*k;
    double Temp_rhoomega = rho*v.x*omega;
    
-   return (FANS3D_ThermallyPerfect_KOmega_cState(
-              Temp.rho, Temp.rhov, Temp.E, Temp_rhok, Temp_rhoomega,Temp.rhospec ));
+   return (FANS3D_ThermallyPerfect_KOmega_cState(Temp.rho, 
+                                                 Temp.rhov, 
+                                                 Temp.E, 
+                                                 Temp_rhok, 
+                                                 Temp_rhoomega,
+                                                 Temp.rhospec));
 }
 
 FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::F(void) const{
@@ -792,9 +796,9 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::rc_
                    specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Heatofform() 
                    - Cp(TEMP)*TEMP*specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Rs()/RTOT);
       double PHI =specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Enthalpy(TEMP)-
-         specdata[NUM_VAR_3D-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Enthalpy(TEMP)-
+         specdata[num_vars-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Enthalpy(TEMP)-
          (Cp(TEMP) -RTOT)*TEMP*(specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Rs() 
-                                - specdata[NUM_VAR_3D - (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Rs())/RTOT;
+                                - specdata[num_vars - (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Rs())/RTOT;
       NEW.rhospec[index - (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].c = rho*PHI; 
       return NEW;
    };
@@ -832,8 +836,8 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::rc_
       double TEMP = p/(rho*RTOT);      
       NEW.E = rho*(specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Enthalpy(TEMP) + specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Heatofform() 
                    - Cp(TEMP)*TEMP*specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Rs()/RTOT);
-      double PHI =specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Enthalpy(TEMP)-specdata[NUM_VAR_3D- (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Enthalpy(TEMP)-
-         (Cp(TEMP) -RTOT)*TEMP*(specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Rs() - specdata[NUM_VAR_3D - (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Rs())/RTOT;
+      double PHI =specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Enthalpy(TEMP)-specdata[num_vars- (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Enthalpy(TEMP)-
+         (Cp(TEMP) -RTOT)*TEMP*(specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Rs() - specdata[num_vars - (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].Rs())/RTOT;
       NEW.rhospec[index - (NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].c = rho*PHI; 
       return NEW;
    };
@@ -1082,7 +1086,7 @@ FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::Fl
    FANS3D_ThermallyPerfect_KOmega_pState Wa, lambdas_l, lambdas_r, lambdas_a;
    FANS3D_ThermallyPerfect_KOmega_cState Flux, dUrl;
    
-   int NUM_VAR_3D = Wl.NUM_VAR_3D;
+   int num_vars = Wl.num_vars;
 
    /* Evaluate the Roe-average primitive solution state. */
    
@@ -1102,8 +1106,8 @@ FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::Fl
    
    wavespeed_l = min(lambdas_l[1],
                      lambdas_a[1]);
-   wavespeed_r = max(lambdas_r[NUM_VAR_3D-NUM_FANS3D_VAR_EXTRA-lambdas_r.ns],
-                     lambdas_a[NUM_VAR_3D-NUM_FANS3D_VAR_EXTRA-lambdas_a.ns]);
+   wavespeed_r = max(lambdas_r[num_vars-NUM_FANS3D_VAR_EXTRA-lambdas_r.ns],
+                     lambdas_a[num_vars-NUM_FANS3D_VAR_EXTRA-lambdas_a.ns]);
    
     wavespeed_l = min(wavespeed_l, ZERO);
     wavespeed_r = max(wavespeed_r, ZERO); 
@@ -1259,7 +1263,7 @@ FANS3D_ThermallyPerfect_KOmega_pState HartenFixPos(const FANS3D_ThermallyPerfect
    NEW.k = HALF*(lambdas_a[6] + fabs(lambdas_a[6]));
    NEW.omega = HALF*(lambdas_a[7] +fabs(lambdas_a[7]));
   
-   for( int i=(NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA +1); i<=NEW.NUM_VAR_3D; i++){
+   for( int i=(NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA +1); i<=NEW.num_vars; i++){
       NEW.spec[i-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].c = 
          HALF*(lambdas_a[i]+fabs(lambdas_a[i]));
    }
@@ -1288,7 +1292,7 @@ FANS3D_ThermallyPerfect_KOmega_pState HartenFixNeg(const FANS3D_ThermallyPerfect
    NEW.k = HALF*(lambdas_a[6] -fabs(lambdas_a[6]));
    NEW.omega = HALF*(lambdas_a[7] - fabs(lambdas_a[7]));
    
-   for( int i = (NUM_EULER3D_VAR_SANS_SPECIES  + NUM_FANS3D_VAR_EXTRA+1); i<=NEW.NUM_VAR_3D; i++){
+   for( int i = (NUM_EULER3D_VAR_SANS_SPECIES  + NUM_FANS3D_VAR_EXTRA+1); i<=NEW.num_vars; i++){
       NEW.spec[i-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA+1)].c = 
          HALF*(lambdas_a[i]-fabs(lambdas_a[i]));
    }
@@ -1321,7 +1325,7 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Flu
       wavespeeds = HartenFixNeg(lambdas_a,
                                 lambdas_l,
                                 lambdas_r);
-      for (int i=1 ; i <= Wl.NUM_VAR_3D; i++) {
+      for (int i=1 ; i <= Wl.num_vars; i++) {
          if (wavespeeds[i] < ZERO) {
             Flux += wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i);
          }
@@ -1331,7 +1335,7 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Flu
       wavespeeds = HartenFixPos(lambdas_a,
                                 lambdas_l,
                                 lambdas_r);
-      for (int i=1; i <= Wl.NUM_VAR_3D; i++) {
+      for (int i=1; i <= Wl.num_vars; i++) {
          if (wavespeeds[i] > ZERO) {
             Flux -= wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i); 
          }

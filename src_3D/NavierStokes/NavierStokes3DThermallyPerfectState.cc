@@ -13,90 +13,84 @@
 #include "NavierStokes3DThermallyPerfectState.h"
 #endif // NAVIERSTOKES3D_THERMALLYPERFECT_STATE_INCLUDED   
 
-//set Global data for Species (STATIC, ie. so only call once! NavierStokes3DInput.h)
-/* Get max of the min temperature of the lowest region
-   and min of the max temperature of the highest region**/
+// void NavierStokes3D_ThermallyPerfect_pState::set_species_data(const int &n,
+//                                                               const string *S,
+//                                                               const char *PATH,
+//                                                               const int &debug, 
+//                                                               const double &Mr, 
+//                                                               const double* Sc,
+//                                                               const int &trans_data){ 
 
-void NavierStokes3D_ThermallyPerfect_pState::set_species_data(
-                 NavierStokes3D_ThermallyPerfect_pState &Wo,
-                 const int &n,
-                 const string *S,
-                 const char *PATH,
-                 const int &debug, 
-                 const double &Mr, 
-                 const double* Sc){ 
+//    //Deallocate_static();
+//    Wo.Deallocate(); //Clean up memory before changing ns
+   
+//    ns = n;
+//    num_vars = ns + NUM_EULER3D_VAR_SANS_SPECIES;
+   
+//    //read in NASA data for each species to be used 
+//    specdata = new NASARP1311data[ns]; 
+//    Schmidt = new double[ns];
+//    // cout<<"\n Get by thse two "<<endl;
+   
+//    for(int i=0; i<ns; i++){
+//      specdata[i].Getdata(S[i], PATH);  
+//       Schmidt[i] = Sc[i];
+//    } 
 
-   //Deallocate_static();
-   Wo.Deallocate(); //Clean up memory before changing ns
+//    //set data temperature ranges for mixture
+//    Wo.Temp_low_range(); 
+//    Wo.Temp_high_range(); 
    
-   ns = n;
-   NUM_VAR_3D = ns + NUM_EULER3D_VAR_SANS_SPECIES;
+//    //Set Debug Information level
+//    debug_level = debug;
    
-   //read in NASA data for each species to be used 
-   specdata = new NASARP1311data[ns]; 
-   Schmidt = new double[ns];
-   // cout<<"\n Get by thse two "<<endl;
+//    // set initial values for the species
+//    Wo.spec = new Species[ns];
+//    for(int i=0; i<ns; i++){
+//       Wo.spec[i].c = ONE/ns ; 
+//    }
    
-   for(int i=0; i<ns; i++){
-     specdata[i].Getdata(S[i], PATH);  
-      Schmidt[i] = Sc[i];
-   } 
+// }   
 
-   //set data temperature ranges for mixture
-   Wo.Temp_low_range(); 
-   Wo.Temp_high_range(); 
-   
-   //Set Debug Information level
-   debug_level = debug;
-   
-   // set initial values for the species
-   Wo.spec = new Species[ns];
-   for(int i=0; i<ns; i++){
-      Wo.spec[i].c = ONE/ns ; 
-   }
-   
-}   
+// void NavierStokes3D_ThermallyPerfect_cState::set_species_data(const int &n, 
+//                                                               const string *S, 
+//                                                               const char *PATH,
+//                                                               const int &debug, 
+//                                                               const double &Mr, 
+//                                                               const double* Sc,
+//                                                               const int &trans_data) { 
 
-void NavierStokes3D_ThermallyPerfect_cState::set_species_data(
-                      NavierStokes3D_ThermallyPerfect_cState &Uo, 
-                      const int &n, 
-                      const string *S, 
-                      const char *PATH,
-                      const int &debug, 
-                      const double &Mr, 
-                      const double* Sc){ 
-
-   // Deallocate_static();
-   Uo.Deallocate(); //Clean up memory before changing ns
+//    // Deallocate_static();
+//    Uo.Deallocate(); //Clean up memory before changing ns
   
-   ns =n; 
+//    ns =n; 
    
-   NUM_VAR_3D = ns + NUM_EULER3D_VAR_SANS_SPECIES;
+//    num_vars = ns + NUM_EULER3D_VAR_SANS_SPECIES;
 
-   //read in NASA data for each species to be used
-   specdata = new NASARP1311data[ns];
-   Schmidt = new double[ns];
+//    //read in NASA data for each species to be used
+//    specdata = new NASARP1311data[ns];
+//    Schmidt = new double[ns];
 
-   for(int i=0; i<ns; i++){
-      //overwrite default data  
-     specdata[i].Getdata(S[i], PATH);
-      Schmidt[i] = Sc[i];  
-   }  
+//    for(int i=0; i<ns; i++){
+//       //overwrite default data  
+//      specdata[i].Getdata(S[i], PATH);
+//       Schmidt[i] = Sc[i];  
+//    }  
 
-   //set data temperature ranges for mixture
-   Uo.Temp_low_range();
-   Uo.Temp_high_range();
+//    //set data temperature ranges for mixture
+//    Uo.Temp_low_range();
+//    Uo.Temp_high_range();
 
-   //Set Debug Information level
-   debug_level = debug;
+//    //Set Debug Information level
+//    debug_level = debug;
    
-   //setup initial array for mass fractions
-   Uo.rhospec = new Species[ns];
-   for(int i=0; i<ns; i++){
-      Uo.rhospec[i].c = Uo.rho/ns; 
-   }
+//    //setup initial array for mass fractions
+//    Uo.rhospec = new Species[ns];
+//    for(int i=0; i<ns; i++){
+//       Uo.rhospec[i].c = Uo.rho/ns; 
+//    }
    
-}      
+// }      
 
 /********************************************************************
  * NavierStokes3D_ThermallyPerfect_pState::F -- 
@@ -857,8 +851,8 @@ NavierStokes3D_ThermallyPerfect_cState NavierStokes3D_ThermallyPerfect_pState::r
       double TEMP = p/(rho*RTOT);      
       NEW.E = rho*(specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Enthalpy(TEMP) + specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Heatofform() 
                    - Cp(TEMP)*TEMP*specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Rs()/RTOT);
-      double PHI =specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Enthalpy(TEMP)-specdata[NUM_VAR_3D- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Enthalpy(TEMP)-
-         (Cp(TEMP) -RTOT)*TEMP*(specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Rs() - specdata[NUM_VAR_3D - (NUM_EULER3D_VAR_SANS_SPECIES+1)].Rs())/RTOT;
+      double PHI =specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Enthalpy(TEMP)-specdata[num_vars- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Enthalpy(TEMP)-
+         (Cp(TEMP) -RTOT)*TEMP*(specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Rs() - specdata[num_vars - (NUM_EULER3D_VAR_SANS_SPECIES+1)].Rs())/RTOT;
             
       NEW.rhospec[index- (NUM_EULER3D_VAR_SANS_SPECIES+1)].c = rho*PHI; 
             
@@ -895,8 +889,8 @@ NavierStokes3D_ThermallyPerfect_cState NavierStokes3D_ThermallyPerfect_pState::r
       double TEMP = p/(rho*RTOT);      
       NEW.E = rho*(specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Enthalpy(TEMP) + specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Heatofform() 
                    - Cp(TEMP)*TEMP*specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Rs()/RTOT);
-      double PHI =specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Enthalpy(TEMP)-specdata[NUM_VAR_3D- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Enthalpy(TEMP)-
-         (Cp(TEMP) -RTOT)*TEMP*(specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Rs() - specdata[NUM_VAR_3D - (NUM_EULER3D_VAR_SANS_SPECIES+1)].Rs())/RTOT;
+      double PHI =specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Enthalpy(TEMP)-specdata[num_vars- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Enthalpy(TEMP)-
+         (Cp(TEMP) -RTOT)*TEMP*(specdata[index- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Rs() - specdata[num_vars - (NUM_EULER3D_VAR_SANS_SPECIES+1)].Rs())/RTOT;
       
       NEW.rhospec[index- (NUM_EULER3D_VAR_SANS_SPECIES+1)].c = rho*PHI; 
       
@@ -966,7 +960,7 @@ NavierStokes3D_ThermallyPerfect_pState NavierStokes3D_ThermallyPerfect_pState::l
 
 // NavierStokes3D_ThermallyPerfect_cState NavierStokes3D_ThermallyPerfect_pState::rc_x(
 //    const int &index) {
-//    assert( index >= 1 && index <= NUM_VAR_3D);
+//    assert( index >= 1 && index <= num_vars);
 //    if(index == 1){
 //       double c = a(); 
 //       return (NavierStokes3D_ThermallyPerfect_cState(
@@ -986,7 +980,7 @@ NavierStokes3D_ThermallyPerfect_pState NavierStokes3D_ThermallyPerfect_pState::l
 //                  ONE, v.x+c, v.y, v.z, H()/rho+v.x*c, spec));
       
 //    } else{ 
-//       for(int i = NUM_EULER3D_VAR_SANS_SPECIES+1; i<=NUM_VAR_3D; i++){
+//       for(int i = NUM_EULER3D_VAR_SANS_SPECIES+1; i<=num_vars; i++){
 //          if(index == i){
 //             NavierStokes3D_ThermallyPerfect_cState NEW(ZERO);
 
@@ -994,8 +988,8 @@ NavierStokes3D_ThermallyPerfect_pState NavierStokes3D_ThermallyPerfect_pState::l
 //             double TEMP = p/(rho*RTOT);      
 //             NEW.E = rho*(specdata[i- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Enthalpy(TEMP) + specdata[i- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Heatofform() 
 //                          - Cp(TEMP)*TEMP*specdata[i- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Rs()/RTOT);
-//             double PHI =specdata[i- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Enthalpy(TEMP)-specdata[NUM_VAR_3D- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Enthalpy(TEMP)-
-//                (Cp(TEMP) -RTOT)*TEMP*(specdata[i- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Rs() - specdata[NUM_VAR_3D - (NUM_EULER3D_VAR_SANS_SPECIES+1)].Rs())/RTOT;
+//             double PHI =specdata[i- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Enthalpy(TEMP)-specdata[num_vars- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Enthalpy(TEMP)-
+//                (Cp(TEMP) -RTOT)*TEMP*(specdata[i- (NUM_EULER3D_VAR_SANS_SPECIES+1)].Rs() - specdata[num_vars - (NUM_EULER3D_VAR_SANS_SPECIES+1)].Rs())/RTOT;
             
 //             NEW.rhospec[i- (NUM_EULER3D_VAR_SANS_SPECIES+1)].c = rho*PHI; 
             
@@ -1009,7 +1003,7 @@ NavierStokes3D_ThermallyPerfect_pState NavierStokes3D_ThermallyPerfect_pState::l
 // // Primitive Left Eigenvector -- (x-direction)
 // NavierStokes3D_ThermallyPerfect_pState NavierStokes3D_ThermallyPerfect_pState::lp_x(
 //    const int &index) const {
-//    assert( index >= 1 && index <= NUM_VAR_3D );
+//    assert( index >= 1 && index <= num_vars );
 //    if(index == 1){
 //       double c = a(); 
 //       return (NavierStokes3D_ThermallyPerfect_pState(
@@ -1027,7 +1021,7 @@ NavierStokes3D_ThermallyPerfect_pState NavierStokes3D_ThermallyPerfect_pState::l
 //       return (NavierStokes3D_ThermallyPerfect_pState(
 //                  ZERO, HALF*rho/c, ZERO, ZERO, HALF/(c*c), ZERO));
 //    } else{ 
-//       for(int i=NUM_EULER3D_VAR_SANS_SPECIES+1; i<=NUM_VAR_3D; i++){
+//       for(int i=NUM_EULER3D_VAR_SANS_SPECIES+1; i<=num_vars; i++){
 // 	if(index == i){
 // 	  NavierStokes3D_ThermallyPerfect_pState NEW(ZERO);
 // 	  NEW.spec[i-(NUM_EULER3D_VAR_SANS_SPECIES+1)].c = ONE;
@@ -1116,7 +1110,7 @@ NavierStokes3D_ThermallyPerfect_cState NavierStokes3D_ThermallyPerfect_pState::F
    NavierStokes3D_ThermallyPerfect_pState Wa, lambdas_l, lambdas_r, lambdas_a;
    NavierStokes3D_ThermallyPerfect_cState Flux, dUrl;
    
-   int NUM_VAR_3D = Wl.NUM_VAR_3D;
+   int num_vars = Wl.num_vars;
       
  
    /* Evaluate the Roe-average primitive solution state. */
@@ -1139,8 +1133,8 @@ NavierStokes3D_ThermallyPerfect_cState NavierStokes3D_ThermallyPerfect_pState::F
    
    wavespeed_l = min(lambdas_l[1],
                      lambdas_a[1]);
-   wavespeed_r = max(lambdas_r[NUM_VAR_3D-lambdas_r.ns],
-                     lambdas_a[NUM_VAR_3D-lambdas_a.ns]);
+   wavespeed_r = max(lambdas_r[num_vars-lambdas_r.ns],
+                     lambdas_a[num_vars-lambdas_a.ns]);
 
    wavespeed_l = min(wavespeed_l, ZERO);
    wavespeed_r = max(wavespeed_r, ZERO);
@@ -1306,7 +1300,7 @@ NavierStokes3D_ThermallyPerfect_pState  HartenFixPos(
 
    NEW.p = HartenFixPos(lambdas_a[5],lambdas_l[5],lambdas_r[5]);
   
-   for( int i=(NUM_EULER3D_VAR_SANS_SPECIES +1); i<=NEW.NUM_VAR_3D; i++){
+   for( int i=(NUM_EULER3D_VAR_SANS_SPECIES +1); i<=NEW.num_vars; i++){
       NEW.spec[i-(NUM_EULER3D_VAR_SANS_SPECIES+1)].c = 
          HALF*(lambdas_a[i]+fabs(lambdas_a[i]));
    }
@@ -1334,7 +1328,7 @@ NavierStokes3D_ThermallyPerfect_pState  HartenFixNeg(
    NEW.v.z = HALF*(lambdas_a[4]-fabs(lambdas_a[4]));
    NEW.p = HartenFixNeg(lambdas_a[5],lambdas_l[5],lambdas_r[5]);
    
-   for( int i = (NUM_EULER3D_VAR_SANS_SPECIES +1); i<=NEW.NUM_VAR_3D; i++){
+   for( int i = (NUM_EULER3D_VAR_SANS_SPECIES +1); i<=NEW.num_vars; i++){
       NEW.spec[i-(NUM_EULER3D_VAR_SANS_SPECIES+1)].c = 
          HALF*(lambdas_a[i]-fabs(lambdas_a[i]));
    }
@@ -1372,7 +1366,7 @@ NavierStokes3D_ThermallyPerfect_cState  NavierStokes3D_ThermallyPerfect_pState::
                                 lambdas_r);
       
           
-      for (int i=1 ; i <= Wl.NUM_VAR_3D; i++) {
+      for (int i=1 ; i <= Wl.num_vars; i++) {
          if (wavespeeds[i] < ZERO) {
             Flux += wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i);
             
@@ -1392,7 +1386,7 @@ NavierStokes3D_ThermallyPerfect_cState  NavierStokes3D_ThermallyPerfect_pState::
                                 lambdas_r);
       
       
-      for (int i=1; i <= Wl.NUM_VAR_3D; i++) {
+      for (int i=1; i <= Wl.num_vars; i++) {
          if (wavespeeds[i] > ZERO) {
             
             Flux -= wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i); 

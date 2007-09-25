@@ -232,8 +232,7 @@ enum Reactions {NO_REACTIONS,
 		CH4_15STEP_ARM2,  // CH4 HARDCODED mechanisms based on GRI 2.11
 		CH4_15STEP_ARM3,  // CH4 HARDCODED mechanisms based on GRI 3
 		USER,             // User defined flag
-		CANTERA };        // cantera flag
-
+		CANTERA};         // cantera flag
 
 class Reaction_set{
 

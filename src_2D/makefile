@@ -1246,7 +1246,7 @@ clean:
 	rm -f $(LEVELSET_DIR)*.o $(LEVELSET_DIR)*.il $(LEVELSET_DIR)*~ $(LEVELSET_DIR)*.depend $(LEVELSET_DIR)*.bak
 	rm -f $(PHYSICS_DIR)*.o $(PHYSICS_DIR)*.il $(PHYSICS_DIR)*~
 	rm -f $(TURBULENT_DIR)*.o $(TURBULENT_DIR)*.il $(TURBULENT_DIR)*~
-	rm -f $(EOS_DIR)*.o $(EOS_DIR)*~
+	rm -f $(EOS_DIR)*.o $(EOS_DIR)*.il $(EOS_DIR)*~
 	rm -f $(NASADATA_DIR)*.o $(NASADATA_DIR)*.il $(NASADATA_DIR)*~
 	rm -f $(REACTIONS_DIR)*.o $(REACTIONS_DIR)*.il $(REACTIONS_DIR)*~
 	rm -f $(UNIT_TESTING_DIR)*.o $(UNIT_TESTING_DIR)*.il $(UNIT_TESTING_DIR)*~
