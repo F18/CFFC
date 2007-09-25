@@ -85,9 +85,7 @@ int HexaSolver(char *Input_File_Name_ptr,
    if (error_flag != 0) return (error_flag);
    CFFC_Broadcast_MPI(&command_flag, 1);
    if (command_flag == TERMINATE_CODE) return (0);
-   cout << "\n aaaa"; cout.flush();
    Input.Broadcast();
-   cout << "\n bbbb"; cout.flush();
 
    /********************************************************  
     * Create initial mesh and allocate solution            *
@@ -102,7 +100,7 @@ int HexaSolver(char *Input_File_Name_ptr,
 
    // The primary MPI processor creates the initial mesh.
    if (CFFC_Primary_MPI_Processor()) {
-      Initial_Mesh.Create_Grid(Input.IP_Grid);
+      Initial_Mesh.Create_Grid(Input.Grid_IP);
       error_flag = 0;
       //Outputting solution input parameters
       if (!batch_flag && error_flag == 0) {
@@ -117,7 +115,7 @@ int HexaSolver(char *Input_File_Name_ptr,
 
    //Broadcast the mesh to other MPI processors.
    Initial_Mesh.Broadcast();
-   
+
    /* Create (allocate) list of hexahedral solution blocks on each 
       processor. */
 
@@ -474,7 +472,7 @@ int HexaSolver(char *Input_File_Name_ptr,
 
    while (1) {
       if (CFFC_Primary_MPI_Processor()) {    
-         Input.Get_Next_Input_Control_Parameter();
+         Input.Get_Next_Input_Control_Parameter(true);
          command_flag = Input.Parse_Next_Input_Control_Parameter();
          line_number = Input.Line_Number;
       } /* endif */

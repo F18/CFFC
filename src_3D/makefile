@@ -32,11 +32,15 @@ HEXA_DIR = HexaBlock/
 ICEM_DIR = ICEM/
 MATH_DIR = Math/
 MPI_DIR = MPI/
-NASA_DIR = NASAData/
+MULTIGRID_DIR = FASMultigrid/
 NAVIERSTOKES_DIR = NavierStokes/
+NKS_DIR = NewtonKrylovSchwarz/
 PHYSICS_DIR = Physics/
+EOS_DIR = $(PHYSICS_DIR)EquationOfState/
+NASADATA_DIR = $(PHYSICS_DIR)NASAData/
+REACTIONS_DIR = Reactions/
 SYSTEM_DIR = System/
-TURBULENCE_DIR = Turbulence/
+TURBULENCE_DIR = TurbulenceModelling/
 
 #
 # Set default f90 module directory
@@ -63,13 +67,15 @@ SRC_MATH_F90 = $(MATH_DIR)complexify.f90
 SRC_MATH += $(SRC_MATH_F90)
 
 # CFD and MPI:
-SRC_CFD = $(CFD_DIR)CFD.cc
+SRC_CFD = $(CFD_DIR)CFD.cc \
+          $(CFD_DIR)CFDInput.cc
 SRC_MPI	= $(MPI_DIR)MPI.cc
 
 # Grid:
 SRC_GRID = $(GRID_DIR)Cell2D.cc \
            $(GRID_DIR)Grid2DQuadBlock.cc \
            $(GRID_DIR)Grid2DQuadMultiBlock.cc \
+           $(GRID_DIR)Grid3DInput.cc \
            $(GRID_DIR)Grid3DHexaBlock.cc \
            $(GRID_DIR)Grid3DHexaMultiBlock.cc
 SRC_ICEM = $(ICEM_DIR)ICEMCFD.cc \
@@ -77,14 +83,22 @@ SRC_ICEM = $(ICEM_DIR)ICEMCFD.cc \
 
 # AMR:
 ifeq ($(MPI_VERSION),NoMPI)
-  SRC_AMR = $(AMR_DIR)AdaptiveBlock3D.cc \
+  SRC_AMR = $(AMR_DIR)AMRInput.cc \
+            $(AMR_DIR)AdaptiveBlock3D.cc \
 	    $(AMR_DIR)AdaptiveBlock3D_NoMPI.cc \
             $(AMR_DIR)Octree.cc
 else
-  SRC_AMR = $(AMR_DIR)AdaptiveBlock3D.cc \
+  SRC_AMR = $(AMR_DIR)AMRInput.cc \
+            $(AMR_DIR)AdaptiveBlock3D.cc \
 	    $(AMR_DIR)AdaptiveBlock3D_MPI.cc \
             $(AMR_DIR)Octree.cc
 endif
+
+# Multigrid:
+SRC_MULTIGRID = $(MULTIGRID_DIR)FASMultigridInput.cc
+
+# NKS:
+SRC_NKS = $(NKS_DIR)NKSInput.cc
 
 # Euler3D:
 SRC_EULER = $(EULER_DIR)Euler3DPolytropicState.cc \
@@ -103,9 +117,18 @@ SRC_FANS = $(FANS_DIR)FANS3DThermallyPerfectState.cc \
            $(FANS_DIR)FANS3DThermallyPerfectInput.cc
 
 # Physics, Turbulence, Thermodynamics, and Chemistry:
-SRC_SPECIES = $(NASA_DIR)NASARP1311data.cc \
-              $(NASA_DIR)Reactions.cc
-SRC_TURBULENCE = $(TURBULENCE_DIR)TurbulenceModelling.cc 
+SRC_PHYSICS = $(PHYSICS_DIR)SpeciesInput.cc
+SRC_TURBULENCE = $(TURBULENCE_DIR)TurbulenceModellingInput.cc \
+                 $(TURBULENCE_DIR)TurbulenceModelling.cc 
+SRC_EOS = $(EOS_DIR)tgas.f \
+          $(EOS_DIR)ugas.f
+SRC_NASADATA = $(NASADATA_DIR)NASARP1311data.cc
+SRC_REACTIONS = $(REACTIONS_DIR)Reactions.cc \
+	   	$(REACTIONS_DIR)15step_GRI211.f \
+	  	$(REACTIONS_DIR)15step_GRI3.f
+SRC_REACTIONS_F90 = $(REACTIONS_DIR)c_15step_GRI211.f90 \
+                    $(REACTIONS_DIR)c_15step_GRI3.f90
+SRC_REACTIONS += $(SRC_REACTIONS_F90)
 
 # TUT testing:
 SRC_TUT = TestRun.cc \
@@ -120,13 +143,13 @@ SRC_SYSTEM = $(SYSTEM_DIR)System_Linux.cc
 # Base and CFFC sources:
 SRC_BASE = $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_SYSTEM) \
            $(SRC_AMR) $(SRC_GRID) $(SRC_ICEM) \
-           $(SRC_TURBULENCE)
+           $(SRC_MULTIGRID) $(SRC_NKS)
 ifeq ($(TUT_TESTING),ON) 
   SRC_BASE += $(SRC_TUT)
 endif
 SRC_CFFC = $(SRC_BASE) \
            $(SRC_EULER) $(SRC_NAVIERSTOKES) $(SRC_FANS) \
-           $(SRC_SPECIES)  
+           $(SRC_PHYSICS) $(SRC_TURBULENCE) $(SRC_EOS) $(SRC_NASADATA) $(SRC_REACTIONS)
 
 # Executable sources:
 SRC_MAIN = cffc3D.cc
@@ -153,13 +176,15 @@ OBJ_MATH += $(OBJ_MATH_F90)
 MOD_MATH_F90 = $(MODULE_DIR)/complexify.mod
 
 # CFD and MPI:
-OBJ_CFD = $(CFD_DIR)CFD.o
+OBJ_CFD = $(CFD_DIR)CFD.o \
+          $(CFD_DIR)CFDInput.o
 OBJ_MPI	= $(MPI_DIR)MPI.o
 
 # Grid:
 OBJ_GRID = $(GRID_DIR)Cell2D.o \
            $(GRID_DIR)Grid2DQuadBlock.o \
            $(GRID_DIR)Grid2DQuadMultiBlock.o \
+           $(GRID_DIR)Grid3DInput.o \
            $(GRID_DIR)Grid3DHexaBlock.o \
            $(GRID_DIR)Grid3DHexaMultiBlock.o
 OBJ_ICEM = $(ICEM_DIR)ICEMCFD.o \
@@ -167,14 +192,22 @@ OBJ_ICEM = $(ICEM_DIR)ICEMCFD.o \
 
 # AMR:
 ifeq ($(MPI_VERSION),NoMPI)
-  OBJ_AMR = $(AMR_DIR)AdaptiveBlock3D.o \
+  OBJ_AMR = $(AMR_DIR)AMRInput.o \
+            $(AMR_DIR)AdaptiveBlock3D.o \
 	    $(AMR_DIR)AdaptiveBlock3D_NoMPI.o \
             $(AMR_DIR)Octree.o
 else
-  OBJ_AMR = $(AMR_DIR)AdaptiveBlock3D.o \
+  OBJ_AMR = $(AMR_DIR)AMRInput.o \
+            $(AMR_DIR)AdaptiveBlock3D.o \
 	    $(AMR_DIR)AdaptiveBlock3D_MPI.o \
             $(AMR_DIR)Octree.o
 endif
+
+# Multigrid:
+OBJ_MULTIGRID = $(MULTIGRID_DIR)FASMultigridInput.o
+
+# NKS:
+OBJ_NKS = $(NKS_DIR)NKSInput.o
 
 # Euler3D:
 OBJ_EULER = $(EULER_DIR)Euler3DPolytropicState.o \
@@ -193,9 +226,18 @@ OBJ_FANS = $(FANS_DIR)FANS3DThermallyPerfectState.o \
            $(FANS_DIR)FANS3DThermallyPerfectInput.o
 
 # Physics, Turbulence, Thermodynamics, and Chemistry:
-OBJ_SPECIES = $(NASA_DIR)NASARP1311data.o \
-              $(NASA_DIR)Reactions.o
-OBJ_TURBULENCE = $(TURBULENCE_DIR)TurbulenceModelling.o 
+OBJ_PHYSICS = $(PHYSICS_DIR)SpeciesInput.o
+OBJ_TURBULENCE = $(TURBULENCE_DIR)TurbulenceModellingInput.o \
+                 $(TURBULENCE_DIR)TurbulenceModelling.o
+OBJ_EOS = $(EOS_DIR)tgas.o \
+          $(EOS_DIR)ugas.o
+OBJ_NASADATA = $(NASADATA_DIR)NASARP1311data.o
+OBJ_REACTIONS = $(REACTIONS_DIR)Reactions.o \
+		$(REACTIONS_DIR)15step_GRI211.o \
+		$(REACTIONS_DIR)15step_GRI3.o
+OBJ_REACTIONS_F90 = $(REACTIONS_DIR)c_15step_GRI211.o \
+		    $(REACTIONS_DIR)c_15step_GRI3.o
+OBJ_REACTIONS += $(OBJ_REACTIONS_F90)
 
 # TUT testing:
 OBJ_TUT := $(SRC_TUT:.cc=.o)
@@ -206,13 +248,13 @@ OBJ_SYSTEM = $(SYSTEM_DIR)System_Linux.o
 # Base and CFFC objects:
 OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_SYSTEM) \
            $(OBJ_AMR) $(OBJ_GRID) $(OBJ_ICEM) \
-           $(OBJ_TURBULENCE)
+           $(OBJ_MULTIGRID) $(OBJ_NKS)
 ifeq ($(TUT_TESTING),ON)
   OBJ_BASE += $(OBJ_TUT)
 endif
 OBJ_CFFC = $(OBJ_BASE) \
            $(OBJ_EULER) $(OBJ_NAVIERSTOKES) $(OBJ_FANS) \
-           $(OBJ_SPECIES)
+           $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_EOS) $(OBJ_NASADATA) $(OBJ_REACTIONS)
 
 # Executable objects:
 OBJ_MAIN = cffc3D.o
@@ -450,10 +492,15 @@ clean:
 	rm -f $(HEXA_DIR)*.o $(HEXA_DIR)*.il $(HEXA_DIR)*~
 	rm -f $(PHYSICS_DIR)*.o $(PHYSICS_DIR)*.il $(PHYSICS_DIR)*~
 	rm -f $(TURBULENCE_DIR)*.o $(TURBULENCE_DIR)*.il $(TURBULENCE_DIR)*~
-	rm -f $(NASA_DIR)*.o $(NASA_DIR)*.il $(NASA_DIR)*~
+	rm -f $(EOS_DIR)*.o $(EOS_DIR)*.il $(EOS_DIR)*~
+	rm -f $(NASADATA_DIR)*.o $(NASADATA_DIR)*.il $(NASADATA_DIR)*~
+	rm -f $(REACTIONS_DIR)*.o $(REACTIONS_DIR)*.il $(REACTIONS_DIR)*~
 	rm -f $(UNIT_TESTING_DIR)*.o $(UNIT_TESTING_DIR)*.il $(UNIT_TESTING_DIR)*~
 	rm -f $(UNIT_TESTING_DIR)BasicTests/*.o $(UNIT_TESTING_DIR)BasicTests/*.il $(UNIT_TESTING_DIR)BasicTests/*~
+	rm -f $(MULTIGRID_DIR)*.o $(MULTIGRID_DIR)*.il $(MULTIGRID_DIR)*~
+	rm -f $(NKS_DIR)*.o $(NKS_DIR)*.il $(NKS_DIR)*~
 	rm -f $(SYSTEM_DIR)*.o $(SYSTEM_DIR)*.il $(SYSTEM_DIR)*~
+	rm -f $(MODULE_DIR)/*.mod $(MODULE_DIR)/*~
 	rm -f $(EXE_MAIN)
 	@echo ' '
 	@echo All source file directories are now clean.
@@ -497,6 +544,8 @@ superclean: clean-extras
 
 #
 # Dependencies for Fortran 90 objects/modules
+$(OBJ_REACTIONS_F90): $(MOD_MATH_F90) $(SRC_REACTIONS_F90)
+
 $(MOD_MATH_F90): $(MATH_DIR)complexify.f90 $(MATH_DIR)Complexify.h
 	$(F90) $(F90FLAGS) $(MODFLAG) $(MODULE_DIR) -I$(MODULE_DIR) -c -o $(MATH_DIR)complexify.o $(MATH_DIR)complexify.f90
 

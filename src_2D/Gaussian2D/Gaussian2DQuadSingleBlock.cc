@@ -4782,7 +4782,7 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
 	      Wr = Adiabatic_Wall(Wl, SolnBlk.WoE[j], 
 	      			     SolnBlk.Grid.nfaceE(i, j));
-	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_COUETTE) {
+	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
 	      Wr = Isothermal_Wall(Wl, SolnBlk.WoE[j],SolnBlk.Grid.nfaceE(i, j)); 
 	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC_VELOCITY) {
 	      Wr = BC_Characteristic_Velocity(Wl, 

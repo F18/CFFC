@@ -230,7 +230,7 @@ dUdt_Multistage_Explicit(const int i_stage,
                   }
                   if ( Grid.BCtypeW[j][k] == BC_MOVING_WALL) {
                      Wl =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k),
-                                                                              IPs.Moving_wall_velocity,
+                                                                              IPs.Moving_Wall_Velocity,
                                                                               IPs.Pressure_Gradient,
                                                                               FIXED_TEMPERATURE_WALL);
                   }
@@ -257,7 +257,7 @@ dUdt_Multistage_Explicit(const int i_stage,
                   } 
                   if ( Grid.BCtypeE[j][k] == BC_MOVING_WALL) {
                      Wr =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wl, WoE[j][k], Grid.nfaceE(i, j, k),  
-                                                                              IPs.Moving_wall_velocity,
+                                                                              IPs.Moving_Wall_Velocity,
                                                                               IPs.Pressure_Gradient,
                                                                               FIXED_TEMPERATURE_WALL);
                   }
@@ -356,7 +356,7 @@ dUdt_Multistage_Explicit(const int i_stage,
                 }
                 if ( Grid.BCtypeS[i][k] == BC_MOVING_WALL) {
                    Wl =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
-                                                                            IPs.Moving_wall_velocity,
+                                                                            IPs.Moving_Wall_Velocity,
                                                                             IPs.Pressure_Gradient,
                                                                             FIXED_TEMPERATURE_WALL);
                 }
@@ -381,7 +381,7 @@ dUdt_Multistage_Explicit(const int i_stage,
                 }
                 if ( Grid.BCtypeN[i][k] == BC_MOVING_WALL) {
                    Wr =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
-                                                                            IPs.Moving_wall_velocity,
+                                                                            IPs.Moving_Wall_Velocity,
                                                                             IPs.Pressure_Gradient,
                                                                             FIXED_TEMPERATURE_WALL );
                 }
@@ -470,7 +470,7 @@ dUdt_Multistage_Explicit(const int i_stage,
                }
                if ( Grid.BCtypeB[i][j] == BC_MOVING_WALL) {
                   Wl =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1),
-                                                                           IPs.Moving_wall_velocity,
+                                                                           IPs.Moving_Wall_Velocity,
                                                                            IPs.Pressure_Gradient,
                                                                            FIXED_TEMPERATURE_WALL);
                }
@@ -496,7 +496,7 @@ dUdt_Multistage_Explicit(const int i_stage,
                 }
                 if ( Grid.BCtypeT[i][j] == BC_MOVING_WALL) {
                    Wr =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wl, WoT[i][j], Grid.nfaceTop(i, j, k),
-                                                                            IPs.Moving_wall_velocity,
+                                                                            IPs.Moving_Wall_Velocity,
                                                                             IPs.Pressure_Gradient, 
                                                                             FIXED_TEMPERATURE_WALL );
                 }
@@ -559,7 +559,7 @@ dUdt_Multistage_Explicit(const int i_stage,
    
    // Residual "correction" for sublayer and log-layer based on 
    // wall boundary treatment methods.
-   if (IPs.Wall_Boundary_Treatments == 0){
+   if (IPs.Turbulence_IP.Near_Wall_Boundary_Treatment == 0){
       for ( k  =  KCl ; k <=  KCu ; ++k ) 
          for ( j  =  JCl ; j <=  JCu ; ++j ) 
             for ( i =  ICl ; i <=  ICu ; ++i ) {
@@ -567,7 +567,7 @@ dUdt_Multistage_Explicit(const int i_stage,
                   i, j, k, WallData[i][j][k], Grid,  dUdt[i][j][k][k_residual].rhok, dUdt[i][j][k][k_residual].rhoomega);
             }
       
-   }else if (IPs.Wall_Boundary_Treatments == 2){
+   }else if (IPs.Turbulence_IP.Near_Wall_Boundary_Treatment == 2){
       for ( k  =  KCl ; k <=  KCu ; ++k ) 
          for ( j  =  JCl ; j <=  JCu ; ++j ) 
             for ( i =  ICl ; i <=  ICu ; ++i ) {
@@ -607,7 +607,7 @@ Update_Solution_Multistage_Explicit(const int i_stage,
    // Memory for linear system solver.
    
    FANS3D_ThermallyPerfect_KOmega_cState dU_precon;
-   int NUM_VAR_3D = NumVar();
+   int num_vars = NumVar();
 
    /* Evaluate the time step fraction and residual storage 
       location for the stage. */
@@ -659,18 +659,18 @@ Update_Solution_Multistage_Explicit(const int i_stage,
                U[i][j][k] = Uo[i][j][k] + omega* dUdt[i][j][k][k_residual];
       	   
       	       //N-1 species
-               U[i][j][k][NUM_VAR_3D] = U[i][j][k].rho*(ONE - U[i][j][k].sum_species());
+               U[i][j][k][num_vars] = U[i][j][k].rho*(ONE - U[i][j][k].sum_species());
             }
             
             // Wall function and low Reynolds number formulation  
-            if(IPs.Wall_Boundary_Treatments == 0){
+            if(IPs.Turbulence_IP.Near_Wall_Boundary_Treatment == 0){
                // automatic wall treatment formulation
                U[i][j][k].k_omega_model.automatic_wall_treatment(
                   U[i][j][k].rho, W[i][j][k].mu(), 
                   i, j, k, WallData[i][j][k],
                   Grid,  U[i][j][k].rhok, U[i][j][k].rhoomega);
                        
-            }else if(IPs.Wall_Boundary_Treatments == 2){
+            }else if(IPs.Turbulence_IP.Near_Wall_Boundary_Treatment == 2){
                // low Reynolds number formulation
                U[i][j][k].k_omega_model.low_Reynolds_number_formulation(
                   U[i][j][k].rho, W[i][j][k].mu(), 
@@ -1019,10 +1019,10 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
       dpdx = IPs.Pressure_Gradient.x;  
       dpdy = IPs.Pressure_Gradient.y;  
       dpdz = IPs.Pressure_Gradient.z;  
-      delta_pres_x = dpdx*IPs.IP_Grid.Box_Length;
-      delta_pres_y = dpdy*IPs.IP_Grid.Box_Width;
-      delta_pres_z = dpdz*IPs.IP_Grid.Box_Height;
-      Um = IPs.Reynolds_Number* IPs.Wo.mu()/(IPs.Wo.rho*IPs.IP_Grid.Box_Height);
+      delta_pres_x = dpdx*IPs.Grid_IP.Box_Length;
+      delta_pres_y = dpdy*IPs.Grid_IP.Box_Width;
+      delta_pres_z = dpdz*IPs.Grid_IP.Box_Height;
+      Um = IPs.Reynolds_Number* IPs.Wo.mu()/(IPs.Wo.rho*IPs.Grid_IP.Box_Height);
       
       if( IPs.Pressure_Gradient.x != ZERO){
          
@@ -1031,10 +1031,10 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
                for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   
                   W[i][j][k] = IPs.Wo;
-                  WallData[i][j][k].tauw = fabs(-IPs.IP_Grid.Box_Height *dpdx);
+                  WallData[i][j][k].tauw = fabs(-IPs.Grid_IP.Box_Height *dpdx);
                   WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
                   W[i][j][k].k = WallData[i][j][k].utau*WallData[i][j][k].utau/sqrt(W[0][0][0].k_omega_model.beta_star);
-                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.x)*delta_pres_x/IPs.IP_Grid.Box_Length;	 
+                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.x)*delta_pres_x/IPs.Grid_IP.Box_Length;	 
                   //start
               
                
@@ -1042,8 +1042,8 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
                   // by using the power law of u velocity in a turbulent pipe flow
                   zd = Grid.Cell[i][j][k].Xc.y;
                   
-                  if( zd > 0.0 && zd < 0.5*IPs.IP_Grid.Box_Width){
-                     zz = (1.0- zd/(0.5*IPs.IP_Grid.Box_Width));
+                  if( zd > 0.0 && zd < 0.5*IPs.Grid_IP.Box_Width){
+                     zz = (1.0- zd/(0.5*IPs.Grid_IP.Box_Width));
                      
                      W[i][j][k].v.x = Um*pow(zz, 0.133);
                      // try to feed a reasonalbe k profile as initial condition
@@ -1052,9 +1052,9 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
                      W[i][j][k].k = ( 0.5886 - 31.2*(zd)+2039.6*zd*zd -19208*zd*zd*zd );
                      if(zd <=0.01) {  W[i][j][k].k = 0.465;}
                      
-                  }else if( zd<ZERO && fabs(zd)< 0.5*IPs.IP_Grid.Box_Width){
+                  }else if( zd<ZERO && fabs(zd)< 0.5*IPs.Grid_IP.Box_Width){
                      
-                     zz = (fabs(zd)/(0.5*IPs.IP_Grid.Box_Width) - 1.0);
+                     zz = (fabs(zd)/(0.5*IPs.Grid_IP.Box_Width) - 1.0);
                      
                      W[i][j][k].v.x = Um*pow(fabs(zz), 0.133);
                      // try to feed a reasonalbe k profile as initial condition
@@ -1086,18 +1086,18 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
                for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   
                   W[i][j][k] = IPs.Wo;
-                  WallData[i][j][k].tauw = fabs(-IPs.IP_Grid.Box_Height *dpdy);
+                  WallData[i][j][k].tauw = fabs(-IPs.Grid_IP.Box_Height *dpdy);
                   WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
                   W[i][j][k].k = WallData[i][j][k].utau*WallData[i][j][k].utau/sqrt(W[0][0][0].k_omega_model.beta_star);
                   
-                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.y)*delta_pres_y/IPs.IP_Grid.Box_Width;	 
+                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.y)*delta_pres_y/IPs.Grid_IP.Box_Width;	 
                  
                   // setting the u velocity in a turbulent channel flow
                   // by using the power law of u velocity in a turbulent pipe flow
                   zd = Grid.Cell[i][j][k].Xc.z;
                   
-                  if( zd > 0.0 && zd < 0.5*IPs.IP_Grid.Box_Height){
-                     zz = (1.0- zd/(0.5*IPs.IP_Grid.Box_Height));
+                  if( zd > 0.0 && zd < 0.5*IPs.Grid_IP.Box_Height){
+                     zz = (1.0- zd/(0.5*IPs.Grid_IP.Box_Height));
                      
                      W[i][j][k].v.y = Um*pow(zz, 0.133);
                      // try to feed a reasonalbe k profile as initial condition
@@ -1107,9 +1107,9 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
                      W[i][j][k].k = ( 0.5886 - 31.2*(zd)+2039.6*zd*zd -19208*zd*zd*zd );
                      if(zd <=0.01) {  W[i][j][k].k = 0.465;}
                      
-                  }else if( zd<ZERO && fabs(zd)< 0.5*IPs.IP_Grid.Box_Height){
+                  }else if( zd<ZERO && fabs(zd)< 0.5*IPs.Grid_IP.Box_Height){
                      
-                     zz = (fabs(zd)/(0.5*IPs.IP_Grid.Box_Height) - 1.0);
+                     zz = (fabs(zd)/(0.5*IPs.Grid_IP.Box_Height) - 1.0);
                      
                      W[i][j][k].v.y = Um*pow(fabs(zz), 0.133);
                      // try to feed a reasonalbe k profile as initial condition
@@ -1139,17 +1139,17 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
                for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   
                   W[i][j][k] = IPs.Wo;
-                  WallData[i][j][k].tauw = fabs(-IPs.IP_Grid.Box_Width *dpdz);
+                  WallData[i][j][k].tauw = fabs(-IPs.Grid_IP.Box_Width *dpdz);
                   WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
                   W[i][j][k].k = WallData[i][j][k].utau*WallData[i][j][k].utau/sqrt(W[0][0][0].k_omega_model.beta_star);
-                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.z)*delta_pres_z/IPs.IP_Grid.Box_Height;	 
+                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.z)*delta_pres_z/IPs.Grid_IP.Box_Height;	 
                   
                   // setting the u velocity in a turbulent channel flow
                   // by using the power law of u velocity in a turbulent pipe flow
                   zd = Grid.Cell[i][j][k].Xc.y;
                   
-                  if( zd > 0.0 && zd < 0.5*IPs.IP_Grid.Box_Width){
-                     zz = (1.0- zd/(0.5*IPs.IP_Grid.Box_Width));
+                  if( zd > 0.0 && zd < 0.5*IPs.Grid_IP.Box_Width){
+                     zz = (1.0- zd/(0.5*IPs.Grid_IP.Box_Width));
                      
                      W[i][j][k].v.z = Um*pow(zz, 0.133);
                      // try to feed a reasonalbe k profile as initial condition
@@ -1160,9 +1160,9 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
                      
                      if(zd <=0.01) {  W[i][j][k].k = 0.465;}
                      
-                  }else if( zd<ZERO && fabs(zd)< 0.5*IPs.IP_Grid.Box_Width){
+                  }else if( zd<ZERO && fabs(zd)< 0.5*IPs.Grid_IP.Box_Width){
                      
-                     zz = (fabs(zd)/(0.5*IPs.IP_Grid.Box_Width) - 1.0);
+                     zz = (fabs(zd)/(0.5*IPs.Grid_IP.Box_Width) - 1.0);
                      
                      W[i][j][k].v.z = Um*pow(fabs(zz), 0.133);
                      // try to feed a reasonalbe k profile as initial condition
@@ -1318,9 +1318,7 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
    int i, j, k;
    double dpdx, dpdy, dpdz;
    Vector3D dX;
-   Vector3D MOVING_WALL_VELOCITY = IPs.Moving_wall_velocity;
-
- 
+   Vector3D MOVING_WALL_VELOCITY = IPs.Moving_Wall_Velocity;
 
    for ( k =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k) 
       for ( j =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j ) {

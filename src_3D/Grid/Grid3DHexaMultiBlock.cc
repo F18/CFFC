@@ -18,19 +18,19 @@ void Grid3D_Hexa_Multi_Block::Allocate(const int Ni,
                                        const int Nj, 
                                        const int Nk) {
 
-   assert(Ni >= 1 && Nj >= 1 && Nk >= 1 && !Allocated);
+   if (Ni >= 1 && Nj >= 1 && Nk >= 1 && !Allocated) {
+      NBlk_Idir = Ni; NBlk_Jdir = Nj; NBlk_Kdir = Nk; Allocated = 1;
 
-   NBlk_Idir = Ni; NBlk_Jdir = Nj; NBlk_Kdir = Nk; Allocated = 1;
+      Grid_Blks = new Grid3D_Hexa_Block**[NBlk_Idir];
+      for (int i = 0 ; i < NBlk_Idir ; ++i ) {
+         Grid_Blks[i] = new Grid3D_Hexa_Block*[NBlk_Jdir];
+         for (int j = 0 ; j <NBlk_Jdir ; ++j ) {
+            Grid_Blks[i][j] = new Grid3D_Hexa_Block[NBlk_Kdir];
+         }  /* endfor */
+      }/* endfor */ 
 
-   Grid_Blks = new Grid3D_Hexa_Block**[NBlk_Idir];
-   for (int i = 0 ; i < NBlk_Idir ; ++i ) {
-      Grid_Blks[i] = new Grid3D_Hexa_Block*[NBlk_Jdir];
-      for (int j = 0 ; j <NBlk_Jdir ; ++j ) {
-         Grid_Blks[i][j] = new Grid3D_Hexa_Block[NBlk_Kdir];
-      }  /* endfor */
-   }/* endfor */ 
-
-   Allocated = 1;
+      Allocated = 1;
+   } /* endif */
 
 }
 
@@ -43,27 +43,27 @@ void Grid3D_Hexa_Multi_Block::Allocate(const int Ni,
  ********************************************************/
 void Grid3D_Hexa_Multi_Block::Deallocate(void) {
 
-   assert(NBlk_Idir >= 1 && NBlk_Jdir >= 1 && NBlk_Kdir >= 1 && Allocated); 
-
-   for (int i = 0 ; i <= NBlk_Idir-1 ; ++i ) {
-      for ( int j=0 ; j <= NBlk_Jdir-1 ; ++j ) {
-	 for ( int k = NBlk_Kdir-1 ; k >= 0; --k ) {
-            if (Grid_Blks[i][j][k].Allocated) Grid_Blks[i][j][k].deallocate();
-	 }/* end for */
-	 delete []Grid_Blks[i][j];
-	 Grid_Blks[i][j]=NULL;
-       }  /* endfor */
+   if (NBlk_Idir >= 1 && NBlk_Jdir >= 1 && NBlk_Kdir >= 1 && Allocated) {
+      for (int i = 0 ; i <= NBlk_Idir-1 ; ++i ) {
+         for ( int j=0 ; j <= NBlk_Jdir-1 ; ++j ) {
+	    for ( int k = NBlk_Kdir-1 ; k >= 0; --k ) {
+               if (Grid_Blks[i][j][k].Allocated) Grid_Blks[i][j][k].deallocate();
+	    }/* end for */
+	    delete []Grid_Blks[i][j];
+	    Grid_Blks[i][j]=NULL;
+          }  /* endfor */
        
-       delete []Grid_Blks[i];
-       Grid_Blks[i] = NULL;
-    }  /* endfor */
+          delete []Grid_Blks[i];
+          Grid_Blks[i] = NULL;
+       }  /* endfor */
 
-    delete []Grid_Blks;
-    Grid_Blks = NULL;
+       delete []Grid_Blks;
+       Grid_Blks = NULL;
 
-    NBlk_Idir = 0; NBlk_Jdir = 0; NBlk_Kdir = 0;
+       NBlk_Idir = 0; NBlk_Jdir = 0; NBlk_Kdir = 0;
 
-    Allocated = 0;
+       Allocated = 0;
+   } /* endif */
 
 }
 
