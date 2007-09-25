@@ -1,0 +1,19 @@
+#!/bin/tcsh
+#
+#PBS -N translate_00
+#PBS -q iqmaster
+#PBS -l walltime=1:00:00,nodes=4:ppn=4:itanium-8G,other=night
+#PBS -W group_list=cfd
+
+cd /nfs/fe03/d1/cfd/samuel/CFFC/examples/EmbeddedBoundaries2D/ellipse/translate
+mpirun -np 16 --gm-no-shmem --gm-kill 2 /nfs/fe03/d1/cfd/samuel/CFFC/src_2D/embeddedboundaries2D -f ellipse.in -pde Euler2D >& ellipse.log
+cat ellipse_cpu*.dat > points.dat
+cat ellipse_active_cpu*.dat > active.dat
+cat ellipse_inactive_cpu*.dat > inactive.dat
+cat ellipse_cells_cpu*.dat > cells.dat
+cat ellipse_nodes_cpu*.dat > nodes.dat
+cat ellipse_interface_component_list_cpu*.dat > components.dat
+cat ellipse_interface_union_list_cpu*.dat > union.dat
+rm ellipse_cpu*.dat
+rm ellipse_*_cpu*.dat
+rm translate_00.e* translate_00.o*
