@@ -11,7 +11,7 @@
  *                                                      *
  * This routine adds all the appropriate Jacobians      *    
  * based on flow type, for use as a Point Implicit      *
- * Block Jacobi precondtioner.                          *
+ * Block Jacobi preconditioner.                         *
  *                                                      * 
  ********************************************************/ 
 void PointImplicitBlockJacobi(DenseMatrix &dRdU,
@@ -115,7 +115,7 @@ void SemiImplicitBlockJacobi_dSdW(DenseMatrix &dSdW,
 				  const int &solver_type,
 				  const int &ii, const int &jj){ 
   
-  //Cacluate 2nd derivatives  
+  //Calculate 2nd derivatives  
   double d_dWdx_dW_C,d_dWdy_dW_C;
   d_dWd_dW_Center(d_dWdx_dW_C,d_dWdy_dW_C,SolnBlk,ii, jj);  
   
@@ -393,7 +393,7 @@ void dFIdW_Inviscid_ROE(DenseMatrix& dRdW, LESPremixed2D_Quad_Block &SolnBlk,
      Left  = Rotate(Wl, nface);
      Right = Rotate(Wr, nface);
      
-     //Determin Roe Averaged State
+     //Determine Roe Averaged State
      Wa = RoeAverage(Left,Right);       
 
      // Jacobian dF/dW         
