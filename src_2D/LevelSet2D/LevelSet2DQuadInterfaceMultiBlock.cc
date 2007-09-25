@@ -206,7 +206,7 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block *Soln_ptr,
   strcat(output_file_name,extension);
   output_file_name_ptr = output_file_name;
   dout.open(output_file_name_ptr,ios::out);
-  if (dout.bad()) return ;
+  if (dout.bad()) return 1;
 #endif
 
   // Retrieve spline data for each solution block.

@@ -479,15 +479,12 @@ class LESPremixed2D_pState {
   /************** Premixed combustion ************************/
   LESPremixed2D_pState premixed_mfrac(const LESPremixed2D_pState &Wo);
   int FlameJumpLowMach_x(LESPremixed2D_pState &Wu,
-			 LESPremixed2D_pState &Wb,
-			 const int &Flow_Type);
+			 LESPremixed2D_pState &Wb);
   int FlameJump_x(const LESPremixed2D_pState &Wu,
-		  LESPremixed2D_pState &Wb,
-		  const int &Flow_Type);
+		  LESPremixed2D_pState &Wb);
   int FlameJump_n(const LESPremixed2D_pState &Wu,
 		  LESPremixed2D_pState &Wb,
-		  const Vector2D &norm_dir,
-		  const int &Flow_Type);
+		  const Vector2D &norm_dir);
 
   /************** FSD Model Source Term **********************/
   double HeatRelease_Parameter(void)const;
@@ -905,12 +902,10 @@ class LESPremixed2D_pState {
    /************** Premixed combustion ************************/
    LESPremixed2D_cState  premixed_mfrac(const LESPremixed2D_pState &Wo);
    int FlameJump_x(const LESPremixed2D_cState &Uu,
-		   LESPremixed2D_cState &Ub,
-		   const int &Flow_Type);
+		   LESPremixed2D_cState &Ub);
    int FlameJump_n(const LESPremixed2D_cState &Uu,
 		   LESPremixed2D_cState &Ub,
-		   const Vector2D &norm_dir,
-		   const int &Flow_Type);
+		   const Vector2D &norm_dir);
 
    /***************** Index operators *************************/
    double &operator[](int index);

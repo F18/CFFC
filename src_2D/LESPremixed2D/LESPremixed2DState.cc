@@ -2505,11 +2505,10 @@ LESPremixed2D_pState LESPremixed2D_pState::premixed_mfrac(const LESPremixed2D_pS
  * burnt solution vector.                                  *
  ***********************************************************/
 int FlameJump_x(const LESPremixed2D_pState &Wu,
-		LESPremixed2D_pState &Wb,
-		const int &Flow_Type) {
+		LESPremixed2D_pState &Wb) {
 
   // Solve for the product species' mass fraction.
-  Wb = Wb.premixed_mfrac(Wu, Flow_Type);
+  Wb = Wb.premixed_mfrac(Wu);
 
   // Apply Newton's method to solve for rho2, u2, p2, T2.
   double rho2, u2, T2, p2, Cp2;   // Unknown variables.
@@ -2590,8 +2589,7 @@ int FlameJump_x(const LESPremixed2D_pState &Wu,
  ***********************************************************/
 int FlameJump_n(const LESPremixed2D_pState &Wu,
 		LESPremixed2D_pState &Wb,
-		const Vector2D &norm_dir,
-		const int &Flow_Type) {
+		const Vector2D &norm_dir) {
 
   int error_flag;
   double cos_angle, sin_angle;
@@ -2610,7 +2608,7 @@ int FlameJump_n(const LESPremixed2D_pState &Wu,
   Wu_rotated.v.y = - Wu.v.x*sin_angle + Wu.v.y*cos_angle;
 
   /* Evaluate the jump conditions in the rotated frame. */
-  error_flag = FlameJump_x(Wu_rotated,Wb_rotated,Flow_Type);
+  error_flag = FlameJump_x(Wu_rotated,Wb_rotated);
   if (error_flag) {
     return error_flag;
   }
@@ -2632,15 +2630,14 @@ int FlameJump_n(const LESPremixed2D_pState &Wu,
  * burnt solution vector.                                  *
  ***********************************************************/
 int FlameJump_x(const LESPremixed2D_cState &Uu,
-		LESPremixed2D_cState &Ub,
-		const int &Flow_Type) {
+		LESPremixed2D_cState &Ub) {
 
   int error_flag;
 
   LESPremixed2D_pState Wu = Uu.W();
   LESPremixed2D_pState Wb = Ub.W();
 
-  error_flag = FlameJump_x(Wu, Wb, Flow_Type);
+  error_flag = FlameJump_x(Wu, Wb);
   if (error_flag) {
     return error_flag;
   }
@@ -2665,8 +2662,7 @@ int FlameJump_x(const LESPremixed2D_cState &Uu,
  ***********************************************************/
 int FlameJump_n(const LESPremixed2D_cState &Uu,
 		LESPremixed2D_cState &Ub,
-		const Vector2D &norm_dir,
-		const int &Flow_Type) {
+		const Vector2D &norm_dir) {
 
   int error_flag;
   double cos_angle, sin_angle;
@@ -2685,7 +2681,7 @@ int FlameJump_n(const LESPremixed2D_cState &Uu,
   Uu_rotated.rhov.y = - Uu.rhov.x*sin_angle + Uu.rhov.y*cos_angle;
 
   /* Evaluate the jump conditions in the rotated frame. */
-  error_flag = FlameJump_x(Uu_rotated,Ub_rotated,Flow_Type);
+  error_flag = FlameJump_x(Uu_rotated,Ub_rotated);
   if (error_flag) {
     return error_flag;
   }
@@ -2712,11 +2708,10 @@ int FlameJump_n(const LESPremixed2D_cState &Uu,
  *                                                                    *
  **********************************************************************/
 int FlameJumpLowMach_x(LESPremixed2D_pState &Wu,
-		       LESPremixed2D_pState &Wb,
-		       const int &Flow_Type) {
+		       LESPremixed2D_pState &Wb) {
 
   // Solve for the product species' mass fraction.
-  Wb = Wb.premixed_mfrac(Wu, Flow_Type);
+  Wb = Wb.premixed_mfrac(Wu);
 
   // Apply Newton's method to solve for rho2, u2, T2.
   double rho2, u2, T2, p2, Cp2;      // Unknown variables.
