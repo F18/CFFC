@@ -98,13 +98,13 @@ void NKS_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(DCS_Window), 
                           1, 
                           MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(output_format), 
+    MPI::COMM_WORLD.Bcast(&(Output_Format), 
                           1, 
                           MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(output_precision), 
+    MPI::COMM_WORLD.Bcast(&(Output_Precision), 
                           1, 
                           MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(output_width), 
+    MPI::COMM_WORLD.Bcast(&(Output_Width), 
                           1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(NKS_Write_Output_Cells_Freq), 

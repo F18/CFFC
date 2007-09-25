@@ -116,7 +116,6 @@ int HexaSolver(char *Input_File_Name_ptr,
    //Broadcast the mesh to other MPI processors.
    Initial_Mesh.Broadcast();
 
-   return (0);   
    /* Create (allocate) list of hexahedral solution blocks on each 
       processor. */
 
