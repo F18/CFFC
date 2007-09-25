@@ -1,6 +1,6 @@
 #!/bin/tcsh
 
-mpirun -np 4 --gm-no-shmem --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/embeddedboundaries2D -f ellipse.in -pde Euler2D
+mpirun -np 4 --gm-no-shmem --gm-kill 2 /nfs/fe03/d1/cfd/samuel/CFFC/src_2D/embeddedboundaries2D -f ellipse.in -pde Euler2D
 cat ellipse_cpu*.dat > points.dat
 cat ellipse_active_cpu*.dat > active.dat
 cat ellipse_inactive_cpu*.dat > inactive.dat

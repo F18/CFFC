@@ -598,7 +598,7 @@ public:
  * templated class essentially replaces the ****2DQuadSolvers routine
  * used by the individual equation-type solvers in CFFC.  The
  * set-up of the problem and the output of the computed solution is 
- * performd in the routine found in EmbeddedBoundaries_Solvers.h, 
+ * performed in the routine found in EmbeddedBoundaries_Solvers.h, 
  * however, the explicit solution of the system of equations is found in
  * the 'Execute' function.
  * 
