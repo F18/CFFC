@@ -337,259 +337,105 @@ SRC_MAIN = cffc2D.cc
 SRC_ICEMCFD_UTIL1 = $(ICEM_DIR)icemcfd2tecplot.cc 
 SRC_ICEMCFD_UTIL2 = $(ICEM_DIR)icemcfd2grid2dquad.cc
 
-###############################################################################
-# Compiled object code files
-###############################################################################
+#################################################################################
+# Compiled object code files (automatically generated with pattern substitution)
+#################################################################################
 # Math:
-OBJ_MATH = $(MATH_DIR)Vector2D.o \
-           $(MATH_DIR)Tensor2D.o \
-           $(MATH_DIR)Third_order_tensor2D.o \
-           $(MATH_DIR)Tensor3D.o \
-           $(MATH_DIR)Spline2D.o \
-           $(MATH_DIR)Matrix.o \
-           $(MATH_DIR)LinearSystems.o \
-	   $(MATH_DIR)LinkedList.o \
-	   $(MATH_DIR)Polygon.o \
-	   $(MATH_DIR)Polyfit/Polyfit.o \
-	   $(MATH_DIR)Polyfit/dp1vlu.o \
-	   $(MATH_DIR)Polyfit/dpcoef.o \
-	   $(MATH_DIR)Polyfit/dpolft.o \
-	   $(MATH_DIR)NumericalLibrary.o
-OBJ_MATH_F90 = $(MATH_DIR)complexify.o 
-OBJ_MATH += $(OBJ_MATH_F90)
-OBJ_MATH += Utilities/EpsilonTol.o
+OBJ_MATH  = $(patsubst %.cc,%.o,$(filter %.cc,$(SRC_MATH)))
+OBJ_MATH += $(patsubst %.f,%.o,$(filter %.f,$(SRC_MATH)))
+OBJ_MATH += $(patsubst %.f90,%.o,$(filter %.f90,$(SRC_MATH)))
+OBJ_MATH_F90 = $(SRC_MATH_F90:.f90=.o)
 MOD_MATH_F90 = $(MODULE_DIR)/complexify.mod
-
-# Add Math Testing If Required:
 OBJ_MATH_TESTS := $(SRC_MATH_TESTS:.cc=.o)
-ifeq ($(TUT_TESTING),ON) 
-  OBJ_MATH += $(OBJ_MATH_TESTS)
-endif
 
 # CFD and MPI:
-OBJ_CFD = $(CFD_DIR)CFD.o
-OBJ_MPI = $(MPI_DIR)MPI.o
+OBJ_CFD = $(SRC_CFD:.cc=.o)
+OBJ_MPI = $(SRC_MPI:.cc=.o)
 
 # Grid:
-OBJ_GRID = $(GRID_DIR)Cell1D.o \
-           $(GRID_DIR)Cell2D.o \
-           $(GRID_DIR)Grid2DQuadSingleBlock.o \
-           $(GRID_DIR)Grid2DQuadMultiBlock.o \
-           $(GRID_DIR)Grid3DHexaSingleBlock.o \
-           $(GRID_DIR)Grid3DHexaMultiBlock.o
-OBJ_ICEMCFD = $(ICEM_DIR)ICEMCFD.o \
-	      $(ICEM_DIR)ICEMCFD_ctype.o
+OBJ_GRID = $(SRC_GRID:.cc=.o)
+OBJ_ICEMCFD = $(patsubst %.cc,%.o,$(filter %.cc,$(SRC_ICEMCFD)))
+OBJ_ICEMCFD += $(patsubst %.c,%.o,$(filter %.c,$(SRC_ICEMCFD)))
 
 # AMR:
-ifeq ($(MPI_VERSION),NoMPI)
-  OBJ_AMR = $(AMR_DIR)AdaptiveBlock.o \
-	    $(AMR_DIR)AdaptiveBlock_NoMPI.o \
-            $(AMR_DIR)QuadTree.o
-else
-  OBJ_AMR = $(AMR_DIR)AdaptiveBlock.o \
-	    $(AMR_DIR)AdaptiveBlock_MPI.o \
-            $(AMR_DIR)QuadTree.o
-endif
+OBJ_AMR = $(SRC_AMR:.cc=.o)
 
 # 1D:
-OBJ_SCALAR = $(SOLVERS1D_DIR)Scalar1D.o \
-             $(SOLVERS1D_DIR)Scalar1DSolvers.o
-OBJ_HEAT = $(SOLVERS1D_DIR)Heat1D.o \
-           $(SOLVERS1D_DIR)Heat1DSolvers.o
-OBJ_HYPERHEAT = $(SOLVERS1D_DIR)HyperHeat1DState.o \
-                $(SOLVERS1D_DIR)HyperHeat1D.o \
-                $(SOLVERS1D_DIR)HyperHeat1DSolvers.o
-OBJ_EULER1D = $(SOLVERS1D_DIR)Euler1DState.o \
-              $(SOLVERS1D_DIR)Euler1D.o \
-              $(SOLVERS1D_DIR)Euler1DSolvers.o
-OBJ_MHD1D = $(SOLVERS1D_DIR)MHD1DState.o \
-            $(SOLVERS1D_DIR)MHD1D.o \
-            $(SOLVERS1D_DIR)MHD1DSolvers.o
+OBJ_SCALAR = $(SRC_SCALAR:.cc=.o)
+OBJ_HEAT = $(SRC_HEAT:.cc=.o)
+OBJ_HYPERHEAT = $(SRC_HYPERHEAT:.cc=.o)
+OBJ_EULER1D = $(SRC_EULER1D:.cc=.o)
+OBJ_MHD1D = $(SRC_MHD1D:.cc=.o)
 
 # HighOrderReconstruction
 OBJ_HIGH_ORDER_RECONSTRUCTION := $(SRC_HIGH_ORDER_RECONSTRUCTION:.cc=.o)
 
 # Advectdiffuse2D:
-OBJ_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.o \
-	            $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DInput.o \
-                    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuad.o \
-                    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadSingleBlock.o \
-	            $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadMultiBlock.o \
-                    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadGrid.o \
-	            $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadSolvers.o \
-		    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuad_NKS.o \
-		    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DExactSolutions.o
-OBJ_ADVECTDIFFUSE_EXE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.o
+OBJ_ADVECTDIFFUSE = $(SRC_ADVECTDIFFUSE:.cc=.o)
+OBJ_ADVECTDIFFUSE_EXE = $(SRC_ADVECTDIFFUSE_EXE:.cc=.o)
 
 # Euler2D:
-OBJ_EULER = $(EULER_DIR)Euler2DState.o \
-            $(EULER_DIR)Euler2DInput.o \
-            $(EULER_DIR)Euler2DQuad.o \
-            $(EULER_DIR)Euler2DQuadSingleBlock.o \
-            $(EULER_DIR)Euler2DQuadMultiBlock.o \
-            $(EULER_DIR)Euler2DQuadGrid.o \
-            $(EULER_DIR)Euler2DQuadSolvers.o 
-OBJ_EULER_EXE = $(EULER_DIR)Euler2D.o
+OBJ_EULER = $(SRC_EULER:.cc=.o)
+OBJ_EULER_EXE = $(SRC_EULER_EXE:.cc=.o)
 
 # NavierStokes2D:
-OBJ_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes2DState.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DInput.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DQuad.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DQuadSingleBlock.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DQuadMultiBlock.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DQuadIOSingleBlock.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DQuadIOMultiBlock.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DQuadTurbulenceSingleBlock.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DQuadTurbulenceMultiBlock.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DQuadGrid.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DdRdU.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DQuadSolvers.o
-OBJ_NAVIERSTOKES_EXE = $(NAVIERSTOKES_DIR)NavierStokes2D.o
+OBJ_NAVIERSTOKES = $(SRC_NAVIERSTOKES:.cc=.o)
+OBJ_NAVIERSTOKES_EXE = $(SRC_NAVIERSTOKES_EXE:.cc=.o)
 
 # Chem2D:
-OBJ_CHEM = $(CHEM_DIR)Chem2DState.o \
-	   $(CHEM_DIR)dRdU.o \
-	   $(CHEM_DIR)Chem2DTools.o \
-	   $(CHEM_DIR)Chem2DInput.o \
-	   $(CHEM_DIR)Chem2DQuad.o \
-	   $(CHEM_DIR)Chem2DQuadGrid.o \
-	   $(CHEM_DIR)Chem2DQuadMultiBlock.o \
-	   $(CHEM_DIR)Chem2DQuadSingleBlock.o \
-	   $(CHEM_DIR)Chem2DQuadSolvers.o 
-OBJ_CHEM_EXE = $(CHEM_DIR)Chem2D.o
+OBJ_CHEM = $(SRC_CHEM:.cc=.o)
+OBJ_CHEM_EXE = $(SRC_CHEM_EXE:.cc=.o)
 
 # HighTemp2D:
-OBJ_HIGHTEMP = $(HIGHTEMP_DIR)HighTemp2DState.o \
-               $(HIGHTEMP_DIR)HighTemp2DInput.o  \
-               $(HIGHTEMP_DIR)HighTemp2DQuad.o  \
-               $(HIGHTEMP_DIR)HighTemp2DQuadGrid.o \
-               $(HIGHTEMP_DIR)HighTemp2DQuadMultiBlock.o  \
-               $(HIGHTEMP_DIR)HighTemp2DQuadSingleBlock.o  \
-               $(HIGHTEMP_DIR)HighTemp2DQuadIOMultiBlock.o  \
-               $(HIGHTEMP_DIR)HighTemp2DQuadIOSingleBlock.o  \
-               $(HIGHTEMP_DIR)HighTemp2DQuadTurbulenceMultiBlock.o  \
-               $(HIGHTEMP_DIR)HighTemp2DQuadTurbulenceSingleBlock.o  \
-               $(HIGHTEMP_DIR)HighTemp2DdRdU.o  \
-               $(HIGHTEMP_DIR)HighTemp2DQuadSolvers.o
-OBJ_HIGHTEMP_EXE = $(HIGHTEMP_DIR)HighTemp2D.o
+OBJ_HIGHTEMP = $(SRC_HIGHTEMP:.cc=.o)
+OBJ_HIGHTEMP_EXE = $(SRC_HIGHTEMP_EXE:.cc=.o)
 
 # Dusty2D:
-OBJ_DUSTY = $(DUSTY_DIR)Particle2DComponents.o \
-            $(DUSTY_DIR)Dusty2DState.o \
-            $(DUSTY_DIR)Dusty2DInput.o \
-            $(DUSTY_DIR)Dusty2DQuad.o \
-            $(DUSTY_DIR)Dusty2DQuadSingleBlock.o \
-            $(DUSTY_DIR)Dusty2DQuadMultiBlock.o \
-            $(DUSTY_DIR)Dusty2DQuadIOSingleBlock.o \
-            $(DUSTY_DIR)Dusty2DQuadIOMultiBlock.o \
-            $(DUSTY_DIR)Dusty2DQuadTurbulenceSingleBlock.o \
-            $(DUSTY_DIR)Dusty2DQuadTurbulenceMultiBlock.o \
-            $(DUSTY_DIR)Dusty2DQuadGrid.o \
-            $(DUSTY_DIR)Dusty2DQuadSolvers.o
-OBJ_DUSTY_EXE = $(DUSTY_DIR)Dusty2D.o
+OBJ_DUSTY = $(SRC_DUSTY:.cc=.o)
+OBJ_DUSTY_EXE = $(SRC_DUSTY_EXE:.cc=.o)
 
 # LESPremixed2D:
-OBJ_LESPREMIXED = $(LESPREMIXED_DIR)LESPremixed2DState.o \
-	          $(LESPREMIXED_DIR)LESPremixed2DInput.o \
-	          $(LESPREMIXED_DIR)LESPremixed2DQuad.o \
-	          $(LESPREMIXED_DIR)LESPremixed2DQuadSingleBlock.o \
-	          $(LESPREMIXED_DIR)LESPremixed2DQuadMultiBlock.o \
-	          $(LESPREMIXED_DIR)LESPremixed2DQuadGrid.o \
-	          $(LESPREMIXED_DIR)LESPremixed2DQuadSolvers.o \
-	          $(LESPREMIXED_DIR)LESPremixed2DTools.o \
-	          $(LESPREMIXED_DIR)LESPremixed2DTurbInit.o \
-	          $(LESPREMIXED_DIR)LESPremixed2DdRdU.o \
-	          $(LESPREMIXED_DIR)PowerLaw.o \
-	          $(LESPREMIXED_DIR)Scalars.o 
-OBJ_LESPREMIXED_EXE = $(LESPREMIXED_DIR)LESPremixed2D.o
+OBJ_LESPREMIXED = $(SRC_LESPREMIXED:.cc=.o)
+OBJ_LESPREMIXED_EXE = $(SRC_LESPREMIXED_EXE:.cc=.o)
 
 # Gaussian2D:
-OBJ_GAUSSIAN = $(GAUSSIAN_DIR)Gaussian2DState.o \
-               $(GAUSSIAN_DIR)Gaussian2DInput.o \
-               $(GAUSSIAN_DIR)Gaussian2DCartesian.o \
-               $(GAUSSIAN_DIR)Gaussian2DCartesianSolvers.o \
-               $(GAUSSIAN_DIR)Gaussian2DQuadGrid.o \
-               $(GAUSSIAN_DIR)Gaussian2DQuadSingleBlock.o \
-               $(GAUSSIAN_DIR)Gaussian2DQuadMultiBlock.o \
-               $(GAUSSIAN_DIR)Gaussian2DQuadSolvers.o \
-               $(GAUSSIAN_DIR)Gaussian2DQuadIOSingleBlock.o \
-               $(GAUSSIAN_DIR)Gaussian2DQuadIOMultiBlock.o
-OBJ_GAUSSIAN_EXE = $(GAUSSIAN_DIR)Gaussian2D.o
+OBJ_GAUSSIAN = $(SRC_GAUSSIAN:.cc=.o)
+OBJ_GAUSSIAN_EXE = $(SRC_GAUSSIAN_EXE:.cc=.o)
 
 # Ion5Moment2D:
-OBJ_ION = $(ION_DIR)Ion5Moment2DState.o \
-          $(ION_DIR)Ion5Moment2DInput.o \
-          $(ION_DIR)Ion5Moment2DQuad.o \
-          $(ION_DIR)Ion5Moment2DQuadSingleBlock.o \
-          $(ION_DIR)Ion5Moment2DQuadMultiBlock.o \
-          $(ION_DIR)Ion5Moment2DQuadGrid.o \
-          $(ION_DIR)Ion5Moment2DQuadSolvers.o
-OBJ_ION_EXE = $(ION_DIR)Ion5Moment2D.o
+OBJ_ION = $(SRC_ION:.cc=.o)
+OBJ_ION_EXE = $(SRC_ION_EXE:.cc=.o)
 
 # Electrostatic2D:
-OBJ_ELECTROSTATIC = $(ELECTROSTATIC_DIR)Electrostatic2DState.o \
-	            $(ELECTROSTATIC_DIR)Electrostatic2DInput.o \
-                    $(ELECTROSTATIC_DIR)Electrostatic2DQuad.o \
-                    $(ELECTROSTATIC_DIR)Electrostatic2DQuadSingleBlock.o \
-                    $(ELECTROSTATIC_DIR)Electrostatic2DQuadMultiBlock.o \
-                    $(ELECTROSTATIC_DIR)Electrostatic2DQuadIOSingleBlock.o \
-                    $(ELECTROSTATIC_DIR)Electrostatic2DQuadIOMultiBlock.o \
-                    $(ELECTROSTATIC_DIR)Electrostatic2DQuadGrid.o \
-                    $(ELECTROSTATIC_DIR)Electrostatic2DQuadSolvers.o
-OBJ_ELECTROSTATIC_EXE = $(ELECTROSTATIC_DIR)Electrostatic2D.o
+OBJ_ELECTROSTATIC = $(SRC_ELECTROSTATIC:.cc=.o)
+OBJ_ELECTROSTATIC_EXE = $(SRC_ELECTROSTATIC_EXE:.cc=.o)
 
 # Rte2D:
-OBJ_RTE = $(RTE_DIR)Rte2DState.o \
-          $(RTE_DIR)Rte2DInput.o \
-          $(RTE_DIR)Rte2DQuad.o \
-          $(RTE_DIR)Rte2DQuadSingleBlock.o \
-          $(RTE_DIR)Rte2DQuadMultiBlock.o \
-          $(RTE_DIR)Rte2DQuadGrid.o \
-          $(RTE_DIR)Rte2DQuadSolvers.o \
-	  $(RTE_DIR)Rte2DTools.o \
-          $(RTE_DIR)SNBCK.o
-OBJ_RTE_EXE = $(RTE_DIR)Rte2D.o
+OBJ_RTE = $(SRC_RTE:.cc=.o)
+OBJ_RTE_EXE = $(SRC_RTE_EXE:.cc=.o)
 
 # EmbeddedBoundaries2D:
-OBJ_INTERFACE = $(INTERFACE_DIR)Interface2D.o
-OBJ_EMBEDDEDBOUNDARIES_EXE = $(INTERFACE_DIR)EmbeddedBoundaries2D.o
+OBJ_INTERFACE = $(SRC_INTERFACE:.cc=.o)
+OBJ_EMBEDDEDBOUNDARIES_EXE = $(SRC_EMBEDDEDBOUNDARIES_EXE:.cc=.o)
 
 # LevelSet2D:
-OBJ_LEVELSET = $(LEVELSET_DIR)LevelSet2DInput.o \
-               $(LEVELSET_DIR)LevelSet2DQuad.o \
-               $(LEVELSET_DIR)LevelSet2DQuadSingleBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadMultiBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadIOSingleBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadIOMultiBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadInterfaceSingleBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadInterfaceMultiBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadHamiltonJacobiSingleBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadHamiltonJacobiMultiBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadEikonalSingleBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadEikonalMultiBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadScalarExtensionSingleBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadScalarExtensionMultiBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadGrid.o \
-               $(LEVELSET_DIR)LevelSet2DQuadSolvers.o
-OBJ_LEVELSET_EXE = $(LEVELSET_DIR)LevelSet2D.o
+OBJ_LEVELSET = $(SRC_LEVELSET:.cc=.o)
+OBJ_LEVELSET_EXE = $(SRC_LEVELSET_EXE:.cc=.o)
 
 # Physics, Turbulence, Thermodynamics, and Chemistry:
-OBJ_TURBULENT = $(TURBULENT_DIR)SFSModelling.o
-OBJ_EOS = $(EOS_DIR)tgas.o \
-          $(EOS_DIR)ugas.o
-OBJ_NASADATA = $(NASADATA_DIR)NASARP1311dataclass.o
-OBJ_REACTIONS = $(REACTIONS_DIR)Reactions.o \
-		$(REACTIONS_DIR)15step_GRI211.o \
-		$(REACTIONS_DIR)15step_GRI3.o
-OBJ_REACTIONS_F90 = $(REACTIONS_DIR)c_15step_GRI211.o \
-		    $(REACTIONS_DIR)c_15step_GRI3.o
-OBJ_REACTIONS += $(OBJ_REACTIONS_F90)
+OBJ_TURBULENT = $(SRC_TURBULENT:.cc=.o)
+OBJ_EOS = $(SRC_EOS:.f=.o)
+OBJ_NASADATA = $(SRC_NASADATA:.cc=.o)
+OBJ_REACTIONS = $(patsubst %.cc,%.o,$(filter %.cc,$(SRC_REACTIONS)))
+OBJ_REACTIONS += $(patsubst %.f,%.o,$(filter %.f,$(SRC_REACTIONS)))
+OBJ_REACTIONS += $(patsubst %.f90,%.o,$(filter %.f90,$(SRC_REACTIONS)))
+OBJ_REACTIONS_F90 = $(SRC_REACTIONS_F90:.f90=.o)
 
 # TUT testing:
 OBJ_TUT := $(SRC_TUT:.cc=.o)
 
 # System:
-OBJ_SYSTEM = $(SYSTEM_DIR)System_Linux.o
+OBJ_SYSTEM = $(SRC_SYSTEM:.cc=.o)
 
 # Base and CFFC objects:
 OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_AMR) \
