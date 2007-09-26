@@ -375,7 +375,7 @@ int HexaSolver(char *Input_File_Name_ptr,
           } /* endif */
 
          /* Check to see if calculations are complete. */
-
+		cout << "timestep = " << number_of_time_steps << endl;
          if (!Input.Time_Accurate && number_of_time_steps >= Input.Maximum_Number_of_Time_Steps) break;
          if (Input.Time_Accurate && Time >= Input.Time_Max) break;
          

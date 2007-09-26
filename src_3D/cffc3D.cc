@@ -26,10 +26,10 @@ using namespace std;
 // Include CFFC header files.
 
 #include "Euler/Euler3DPolytropic.h"
-#include "Euler/Euler3DThermallyPerfect.h"
-#include "NavierStokes/NavierStokes3DThermallyPerfect.h"
-#include "FANS/FANS3DThermallyPerfect.h"
-#include "UnitTesting/UnitTesting.h"
+//#include "Euler/Euler3DThermallyPerfect.h"
+//#include "NavierStokes/NavierStokes3DThermallyPerfect.h"
+//#include "FANS/FANS3DThermallyPerfect.h"
+//#include "UnitTesting/UnitTesting.h"
 
 /* Begin CFFC3D program. */
 
@@ -217,11 +217,11 @@ int main(int num_arg, char *arg_ptr[]) {
     * RUN UNIT TESTS AS REQUIRED AND STOP (tests run using only 1 CPU). *
     *********************************************************************/
 
-   if (test_flag) {
-      error_flag = Perform_UnitTesting(TestSuite, TestNumber);
-      CFFC_Finalize_MPI();
-      return (error_flag);
-   } /* endif */
+//   if (test_flag) {
+//      error_flag = Perform_UnitTesting(TestSuite, TestNumber);
+//      CFFC_Finalize_MPI();
+//      return (error_flag);
+//   } /* endif */
 
    /***********************************************************  
     * PERFORM REQUIRED CALCULATIONS.                          *
@@ -235,17 +235,17 @@ int main(int num_arg, char *arg_ptr[]) {
        error_flag = HexaSolver<Euler3D_Polytropic_pState, Euler3D_Polytropic_cState>
                    (Input_File_Name_ptr, batch_flag);
 
-    }else if (strcmp(Equation_Type, "Euler3DThermallyPerfect") == 0) {
-		error_flag = HexaSolver<Euler3D_ThermallyPerfect_pState, Euler3D_ThermallyPerfect_cState>
-				   (Input_File_Name_ptr, batch_flag);
-		
-	}else if (strcmp(Equation_Type, "NavierStokes3DThermallyPerfect") == 0) {
-		error_flag = HexaSolver<NavierStokes3D_ThermallyPerfect_pState, NavierStokes3D_ThermallyPerfect_cState>
-                   (Input_File_Name_ptr, batch_flag);
-      
-   } else if(strcmp(Equation_Type, "FANS3DThermallyPerfect") == 0) {
-		error_flag = HexaSolver< FANS3D_ThermallyPerfect_KOmega_pState, FANS3D_ThermallyPerfect_KOmega_cState>
-                   (Input_File_Name_ptr, batch_flag);
+//    }else if (strcmp(Equation_Type, "Euler3DThermallyPerfect") == 0) {
+//		error_flag = HexaSolver<Euler3D_ThermallyPerfect_pState, Euler3D_ThermallyPerfect_cState>
+//				   (Input_File_Name_ptr, batch_flag);
+//		
+//	}else if (strcmp(Equation_Type, "NavierStokes3DThermallyPerfect") == 0) {
+//		error_flag = HexaSolver<NavierStokes3D_ThermallyPerfect_pState, NavierStokes3D_ThermallyPerfect_cState>
+//                   (Input_File_Name_ptr, batch_flag);
+//      
+//   } else if(strcmp(Equation_Type, "FANS3DThermallyPerfect") == 0) {
+//		error_flag = HexaSolver< FANS3D_ThermallyPerfect_KOmega_pState, FANS3D_ThermallyPerfect_KOmega_cState>
+//                   (Input_File_Name_ptr, batch_flag);
    } /* endif */
  
    if (error_flag) {

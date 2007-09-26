@@ -29,11 +29,11 @@ Cube
 #Grid_Type =
 #Pipe
 Number_of_Cells_Idir = 
-20
+5
 Number_of_Cells_Jdir =
-20
+5
 Number_of_Cells_Kdir =
-20
+5
 Number_of_Blocks_Idir = 
 1
 Number_of_Blocks_Jdir =
@@ -48,7 +48,7 @@ CFL_Number =
 Time_Max = 
 0.1
 Maximum_Number_of_Time_Steps =
-0
+1
 Number_of_Blocks_Per_Processor =
 64
 Output_File_Name = 
