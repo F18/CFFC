@@ -2508,20 +2508,27 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        //
        Get_Next_Input_Control_Parameter(IP);
        if (strcmp(IP.Next_Control_Parameter, "Schmidt_Numbers") == 0){
-	 for(int i=0; i<IP.num_species; i++){
-	   IP.Input_File >> IP.Schmidt[i];	 	 
-	 }	 
-	 //fudge the line number and istream counters
+
+	 // Get the schmidt numbers from user 
+	 // Here we use Cantera to parse the string of the form:
+	 //       CH4:0.5, O2:0.5
+	 // All other species will be assumed to have unity schmidt number.  
+	 // Returns them in an array.
 	 IP.Input_File.getline(buffer, sizeof(buffer)); 
 	 IP.Line_Number = IP.Line_Number + 1 ;
+	 IP.Wo.React.ct_parse_schmidt_string(buffer, IP.Schmidt);
 	 flag = 1;
-       } else { //Set to one value ~1
-	 for(int i=0; i<IP.num_species; i++){
-	   IP.Schmidt[i] = IP.Global_Schmidt;	 	 
-	 }
+
+       } else {
+
+	 //Set to one value ~1
+	 for(int i=0; i<IP.num_species; i++)
+	   IP.Schmidt[i] = IP.Global_Schmidt; 
+
 	 //To fix up line numbers
 	 IP.Line_Number = IP.Line_Number - 1 ;
        }
+
 
        //
        //Set appropriate species data

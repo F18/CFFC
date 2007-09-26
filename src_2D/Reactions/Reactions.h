@@ -286,9 +286,18 @@ public:
   void set_reactions(int &,string*,double*,double*,double*);
 
   // cantera member functions
-  void ct_load_mechanism(string &, string &);
-  void ct_parse_mass_string( const string&, double* );
-  void ct_parse_schmidt_string( const string&, double*);
+  void ct_load_mechanism(string &mechanism_file_name, 
+			 string &mechanism_name);
+  void ct_parse_mass_string( const string& massFracStr, 
+			     double* massFracs);
+  void ct_parse_schmidt_string( const string& schmidtStr, 
+				double* schmidt);
+
+  template<class SOLN_pSTATE>
+  void ct_dSwdU(DenseMatrix &dSwdU, 
+		const SOLN_pSTATE &W,
+		const double& Temp, 
+		const double& Press) const;
 
   //setup storage after num_reactions & num_species set.
   void set_storage(void){
@@ -674,10 +683,9 @@ inline void Reaction_set::omega(SOLN_cSTATE &U, const SOLN_pSTATE &W ) const{
     ct_gas->getNetProductionRates(r);
 
     // set the Chem2D_cState production rates
-    for (int i=0; i<num_react_species; i++){
+    for (int i=0; i<num_species-1; i++){
       U.rhospec[i].c = r[i]*M[i];
     }
-
     break;
 
 #endif // _CANTERA_VERSION
@@ -715,6 +723,7 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
 
   /***************** Local Variables *****************/
   double Temp = W.T();
+  double Press= W.p;    // [Pa]
   double rho= W.rho/THOUSAND; //kg/m^3 -> g/cm^3
   double VALUE = TOLER; //sqrt(TOLER);
   int NUM_VAR = W.NumVarSansSpecies();
@@ -993,7 +1002,8 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
 #ifdef _CANTERA_VERSION
 
   case CANTERA:
-    Finite_Difference_dSwdU<SOLN_pSTATE,SOLN_cSTATE>(dSwdU, W);
+    ct_dSwdU<SOLN_pSTATE>( dSwdU, W, Temp, Press );
+    //Finite_Difference_dSwdU<SOLN_pSTATE,SOLN_cSTATE>(dSwdU, W);
     break;
 
 #endif // _CANTERA_VERSION
@@ -1182,5 +1192,268 @@ inline void Reaction_set::Finite_Difference_dSwdU(DenseMatrix &dSwdU,
   } // end for
 
 } // end  Finite_Difference_dSwdU
+
+
+
+/***********************************************************************
+  Use cantera to compute the Chemical Source Jacobian.  This function
+  is called from the main dSwdU().
+***********************************************************************/
+template<class SOLN_pSTATE>
+void Reaction_set::ct_dSwdU( DenseMatrix &dSwdU,
+			     const SOLN_pSTATE &W,
+			     const double &Temp,            // [K]
+			     const double &Press ) const {  // [Pa]
+
+#ifdef _CANTERA_VERSION
+
+  
+  //------------------------------------------------
+  // declares
+  //------------------------------------------------
+  // number of variables not including species
+  int NUM_VAR = W.NumVarSansSpecies();
+
+  // temporary constants
+  double fwd, rev, net;
+  double sum;
+
+  // mechanism information
+  int nreac = ct_gas->nReactions(); // num reactions
+  int nsp = ct_gas->nSpecies();     // num species
+
+  //------------------------------------------------
+  // setup
+  //------------------------------------------------
+
+  // set the gas state
+  ct_gas->setState_TPY(Temp, Press, c);
+
+  // density [kg/m^3]
+  double rho = ct_gas->density();
+
+  // compute species concentrations [kmol/m^3]
+  double* X = new double[nsp];
+  ct_gas->getConcentrations(X);
+
+  // get reaction rate coefficients
+  ct_gas->getFwdRateConstants(r);
+  ct_gas->getRevRateConstants(kb, /* include irreversible rxns */ false);
+
+ /*************************************************
+  * FROZEN TEMPERATURE ASSUMPTION
+  *************************************************
+  *
+  // constant volume specific heat [J/(kg K)]
+  double Cv = ct_gas->cv_mole()/ct_gas->meanMolecularWeight();
+
+  // get fwd/rev activation energies [k]
+  double* E = new double[nreac];
+  ct_gas->getActivationEnergies(E);
+
+  // get fwd/rev temperature exponents
+  double* b = new double[nreac];
+  ct_gas->getTemperatureExponents(b);
+
+  //
+  // get specific internal energies [J/kg]
+  // e = (h - RT)
+  //
+  double* e = new double[nsp];
+
+  // nondimensional form e / RT
+  ct_gas->getIntEnergy_RT(e);
+
+  // dimensionalize (e/RT)*RT [J/kmol] ==> (e/RT)*RT/M [j/kg]
+  for (int j=0; j<nsp; j++)
+    e[j] *= Cantera::GasConstant*Temp / ct_gas->molarMass(j);
+
+
+  //------------------------------------------------
+  // Compute \frac{ \partial S_j }{ \partial T }
+  //------------------------------------------------
+  double* dSdT = new double[nsp];
+
+  //
+  // loop over species
+  //
+  for (int j=0; j<nsp; j++) {
+
+    //
+    // loop over reactions
+    //
+    sum = 0.0;
+    for (int i=0; i<nreac; i++) {
+   
+      // intialize
+      fwd = 1.0;
+      rev = 1.0;
+   
+      // Compute product of concentration raised to reaction order
+      for (int l=0; l<nsp; l++) {
+	fwd *= pow(X[l], ct_gas->reactantStoichCoeff(l,i) );
+	rev *= pow(X[l], ct_gas->productStoichCoeff(l,i) );
+      } // endfor - reactants
+   
+      // multuply by reaction constants
+      fwd *= kf[i];
+      rev *= kb[i];
+   
+      // multiply by temperature and activation energy coefficients
+      fwd *= b[i] +  E[i]/(Cantera::GasConstant*Temp);  // fwd constants
+      rev *= b[i] +  E[i]/(Cantera::GasConstant*Temp);  // FIXME - should be rev constants
+      net = (fwd-rev)/Temp;
+
+      // multiply by stoichiometric coefficients
+      net *= ( ct_gas->productStoichCoeff(j,i) - 
+	       ct_gas->reactantStoichCoeff(j,i) );
+   
+      // sum component from each reaction together
+      sum += net;
+   
+    } // endfor - reactions
+
+    // compute dSdT
+    dSdT[j] = ct_gas->molarMass(j) * sum;
+
+  } // endfor - species
+  *
+  ***********************************************
+  * END FROZEN TEMPERATURE ASSUMPTION
+  ***********************************************
+  */
+
+
+  //------------------------------------------------
+  // Compute \frac{ \partial S_j }{ \partial \rho Y_k }
+  //------------------------------------------------
+  // double** dSdrY = new double*[nsp];
+  // for (int j=0; j<nsp; j++) dSdrY[j] = new double[nsp];
+
+  //
+  // loop over species
+  //
+  for (int j=0; j<nsp; j++) {
+    for (int k=0; k<nsp; k++) {
+
+      //
+      // loop over reactions
+      //
+      sum = 0.0;
+      for (int i=0; i<nreac; i++) {
+	
+	// intialize
+	fwd = 1.0;
+	rev = 1.0;
+	
+	// Compute product of concentration raised to reaction order
+	for (int l=0; l<nsp; l++) {
+	  fwd *= pow(X[l], ct_gas->reactantStoichCoeff(l,i) );
+	  rev *= pow(X[l], ct_gas->productStoichCoeff(l,i) );
+	} // endfor - reactants
+	
+	// multuply by reaction constants
+	fwd *= kf[i];
+	rev *= kb[i];
+	
+	// multiply by stoich coefficients
+	fwd *= ct_gas->reactantStoichCoeff(k,i);
+	rev *= ct_gas->productStoichCoeff(k,i);
+
+	// the net value
+	net = fwd-rev;
+	net /= rho * (ct_gas->massFraction(k)+PICO);
+
+	// multiply by stoichiometric coefficients
+	net *= ( ct_gas->productStoichCoeff(j,i) - 
+		 ct_gas->reactantStoichCoeff(j,i) );
+	
+	// sum component from each reaction together
+	sum += net;
+	
+      } // endfor - reactions
+      
+      // compute dSdrY
+      // dSdrY[j][k] = ct_gas->molarMass(j) * sum;
+
+      // d(rho w_dot_n) / d(rho Y_n) - frozen temperature portion
+      // = d(rho w_dot)_j/d(rho Y_k)
+      dSwdU(NUM_VAR+j,NUM_VAR+k) += ct_gas->molarMass(j) * sum;
+
+
+    } // endfor - species
+  } // endfor - species
+
+
+  //------------------------------------------------
+  // Compute \frac{ \partial S_j }{ \partial U }
+  //------------------------------------------------
+  //
+  // loop over each row in the jacobian
+  //
+ /***********************************************
+  *FROZEN TEMPERATURE ASSUMPTION
+  ***********************************************
+  *
+  for (int n=0; n<nsp-1; n++) {
+    
+    // d(rho w_dot_n) / d(rho)
+    // = (1/(rho * Cv))*(0.5*u^2 +0.5*v^2 - e_N) * d(rho w_dot)_j/dT
+    dSwdU(NUM_VAR+n,0) += 
+      ( 0.5*(W.v.x*W.v.x + W.v.y*W.v.y) - e[nsp-1] ) * 
+      dSdT[n] / ( rho * Cv );
+
+    // d(rho w_dot_n) / d(rho u)
+    // = -(u/(rho * Cv)) * d(rho w_dot)_j/dT
+    dSwdU(NUM_VAR+n,1) -= W.v.x * dSdT[n] / ( rho * Cv );
+
+    // d(rho w_dot_n) / d(rho v)
+    // = -(v/(rho * Cv)) * d(rho w_dot)_j/dT
+    dSwdU(NUM_VAR+n,2) -= W.v.y * dSdT[n] / ( rho * Cv );
+
+    // d(rho w_dot_n) / d(E)
+    // = (1/(rho * Cv)) * d(rho w_dot)_j/dT
+    dSwdU(NUM_VAR+n,2) += dSdT[n] / ( rho * Cv );
+
+    // d(rho w_dot_n) / d(rho Y_n)
+    for (int k=0; k<nsp-1; k++)
+      dSwdU(NUM_VAR+n,NUM_VAR+k) -= 
+	(e[k]-e[nsp-1]) * dSdT[n] / ( rho * Cv );
+
+    // d(rho w_dot_n) / d(rho Y_n) - frozen species conc. portion
+    // = - (e_k-e_N)/(rho * Cv) * d(rho w_dot)_j/dT
+    for (int k=0; k<nsp-1; k++)
+      dSwdU(NUM_VAR+n,NUM_VAR+k) -= 
+	(e[k]-e[nsp-1]) * dSdT[n] / ( rho * Cv );
+
+    // d(rho w_dot_n) / d(rho Y_n) - frozen temperature portion
+    // = d(rho w_dot)_j/d(rho Y_k)
+    for (int k=0; k<nsp-1; k++)
+      dSwdU(NUM_VAR+n,NUM_VAR+k) += dSdrY[n][k];
+    
+  } // endfor - rows
+  *
+  ***********************************************
+  * END FROZEN TEMPERATURE ASSUMPTION
+  ***********************************************
+  */
+
+  //------------------------------------------------
+  // clean up memory
+  //------------------------------------------------
+  delete[] X; 
+  // for (int j=0; j<nsp; j++) delete[] dSdrY[j]; delete[] dSdrY;
+  // delete[] E; delete[] b; delete[] e; delete[] dSdT;
+
+
+#else
+  cout<<"\n CODE NOT COMPILED WITH CANTERA!";
+  cout<<"\n YOU SHOULD NOT BE HERE!";
+  
+#endif //_CANTERA_VERSION
+
+} // end of ct_dSwdU
+
+
 
 #endif // _REACTIONS_INCLUDED
