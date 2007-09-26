@@ -178,13 +178,17 @@ class Chem2D_Input_Parameters{
   //@{ @name Flow geometry (planar or axisymmetric):
   char Flow_Geometry_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
   int Axisymmetric; //0 no, 1 yes
+  //@}
+
+  //@{ @name Flow Conditions:
   double Global_Schmidt;  //depricated, use each individual Schmidt's
-  double *Schmidt;  //individual for each species
+  double *Schmidt;        //individual for each species
   int Wall_Boundary_Treatments; //0, 1,2 , automatic, wall function, low_Reynolds number
-   
   double Reynolds_Number;
   double Kinematic_Viscosity_Wall;
   double Eddy_Viscosity_Limit_Coefficient;
+  double flame_speed;     //laminar flame speed [m/s]
+  //@}
 
   //@{ @Debug Level 0 for none, 1,2,3... level of verboseness  
   int debug_level;

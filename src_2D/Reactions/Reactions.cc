@@ -7,6 +7,13 @@
 #include "Reactions.h"
 #endif // _REACTIONS_INCLUDED
 
+//
+// Cantera Libraries
+//
+#ifdef _CANTERA_VERSION
+#include <cantera/equilibrium.h>  // canteraequilibrium solver
+#endif //_CANTERA_VERSION
+
 /***********************************************************************
   Static object initialization.
 ***********************************************************************/
@@ -528,3 +535,33 @@ void Reaction_set::ct_parse_schmidt_string( const string& schmidtStr,
 #endif //_CANTERA_VERSION
 
 } // end of ct_parse_mass_string
+
+
+
+/***********************************************************************
+
+  This function is required as a workarround due to conflicts between
+  ::DenseMatrix and Cantera::DenseMatrix.  Instead of inserting '::'
+  everywhere in front of DenseMatrix, I just move the header file into
+  this include.  The problem only comes about when including 
+  <cantera/equilibrium.h> which defines the function 
+  'Cantera::equilibrate()'.
+
+  All this function does is equilibrate the fresh gas mixture defined
+  in the IdealGasMix::ct_gas object.
+
+***********************************************************************/
+void Reaction_set::ct_equilibrate( ) const {
+
+#ifdef _CANTERA_VERSION
+
+  equilibrate( *ct_gas, "HP" );
+
+#else
+  cout<<"\n CODE NOT COMPILED WITH CANTERA!";
+  cout<<"\n YOU SHOULD NOT BE HERE!";
+
+#endif //_CANTERA_VERSION
+
+} // end of ct_parse_mass_string
+

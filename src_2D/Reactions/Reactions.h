@@ -285,14 +285,21 @@ public:
   void set_species(string *, int);
   void set_reactions(int &,string*,double*,double*,double*);
 
+  //
   // cantera member functions
+  //
   void ct_load_mechanism(string &mechanism_file_name, 
 			 string &mechanism_name);
   void ct_parse_mass_string( const string& massFracStr, 
 			     double* massFracs);
   void ct_parse_schmidt_string( const string& schmidtStr, 
 				double* schmidt);
-
+  // compute equilibrium concetration with cantera
+  void ct_equilibrate() const; // needed cause of DenseMatrix conflicts
+  template<class SOLN_pSTATE>
+  void ct_equilibrium( const SOLN_pSTATE &Wu, 
+		       SOLN_pSTATE &Wb) const;
+  // compute chemical source jacobian with cantera
   template<class SOLN_pSTATE>
   void ct_dSwdU(DenseMatrix &dSwdU, 
 		const SOLN_pSTATE &W,
@@ -1454,6 +1461,48 @@ void Reaction_set::ct_dSwdU( DenseMatrix &dSwdU,
 
 } // end of ct_dSwdU
 
+
+/************************************************************************
+  Calculates the equilibrium composition given an unburnt mixture
+  using CANTERA.  This is only for CANTERA reaction types.
+
+  Wu - unburnt state
+  Wb - burnt state
+
+************************************************************************/
+
+template<class SOLN_pSTATE>
+inline void Reaction_set::ct_equilibrium( const SOLN_pSTATE &Wu, 
+					  SOLN_pSTATE &Wb) const {
+
+#ifdef _CANTERA_VERSION
+  
+  //copy unburnt mass fractions to an array
+  for(int i=0; i<num_react_species; i++)
+    c[i] = Wu.spec[i].c;
+
+  // set state and equilibrate
+  ct_gas->setState_TPY(Wu.T(), Wu.p, c);
+  ct_equilibrate();
+
+  //get burnt mass fractions
+  ct_gas->getMassFractions(c);
+  for(int i=0; i<num_react_species; i++)
+    Wb.spec[i].c = c[i];
+
+  // the pressure and density
+  Wb.p = ct_gas->pressure();   // [pa]
+  Wb.rho = ct_gas->density();  // [kg/m^3]
+
+
+
+#else
+  cout<<"\n CODE NOT COMPILED WITH CANTERA!";
+  cout<<"\n YOU SHOULD NOT BE HERE!";
+  
+#endif //_CANTERA_VERSION
+
+} // end of ct_equilibrate
 
 
 #endif // _REACTIONS_INCLUDED

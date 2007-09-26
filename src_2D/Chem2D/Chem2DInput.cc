@@ -186,6 +186,9 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.BluffBody_Data_Usage = 0; 
     IP.Wall_Boundary_Treatments = 0; 
 
+    // flame speed
+    IP.flame_speed = 41.01; // [m/s]; methane @ 1 atm, stoich
+
     // Turbulence parameters:
     string_ptr = "Direct_Integration";
     strcpy(IP.Turbulence_BC_Type,string_ptr);
@@ -508,6 +511,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Re_lid),
 			  1,
 			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.flame_speed), 
+                          1, 
+                          MPI::DOUBLE, 0);
     /*********************************************************
      ******************* CHEM2D SPECIFIC *********************
      *********************************************************/
@@ -1151,6 +1157,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Re_lid), 
                        1, 
 		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.flame_speed), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
     /*********************************************************
      ******************* CHEM2D SPECIFIC *********************
      *********************************************************/
@@ -2930,6 +2939,13 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        i_command = 520;
        IP.BluffBody_Data_Usage = 1;
        
+    }else if (strcmp(IP.Next_Control_Parameter, "flame_speed") == 0) {
+       i_command = 518;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.flame_speed;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.flame_speed < 0) i_command = INVALID_INPUT_VALUE;
+
     } else if (strcmp(IP.Next_Control_Parameter, "ICEMCFD_Topology_File") == 0) {
        i_command = 52;
       Get_Next_Input_Control_Parameter(IP);
