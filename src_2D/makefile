@@ -450,10 +450,10 @@ OBJ_CFFC = $(OBJ_BASE) $(OBJ_SCALAR) $(OBJ_HEAT) $(OBJ_HYPERHEAT) $(OBJ_EULER1D)
            $(OBJ_TURBULENT) $(OBJ_EOS) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_ICEMCFD)
 
 # Executable objects:
-OBJ_MAIN = cffc2D.o
-OBJ_ICEMCFD_UTIL1 = $(ICEM_DIR)icemcfd2tecplot.o \
+OBJ_MAIN = $(SRC_MAIN:.cc=.o)
+OBJ_ICEMCFD_UTIL1 = $(SRC_ICEMCFD_UTIL1:.cc=.o) \
                     $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD)
-OBJ_ICEMCFD_UTIL2 = $(ICEM_DIR)icemcfd2grid2dquad.o \
+OBJ_ICEMCFD_UTIL2 = $(SRC_ICEMCFD_UTIL2:.cc=.o) \
                     $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD) 
 
 ###############################################################################
