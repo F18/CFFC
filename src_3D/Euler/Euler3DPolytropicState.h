@@ -160,6 +160,7 @@ Thermal Conductivity:            k   N/(s*K)  W.(m*K)
 class Euler3D_Polytropic_pState{
 	
   public: 
+	static int num_vars;
 	double		   rho;		// Density
 	Vector3D	     v;		// Velocity
 	double		     p;		// Pressure
@@ -237,7 +238,11 @@ class Euler3D_Polytropic_pState{
     // Temperature.
     double T(void);
     double T(void) const;
-    
+	
+	// gasconstant. (for compatibility reasons for tecplot output)
+	double Rtot(void);
+	double Rtot(void) const;
+	
     // Specific internal energy.
     double e(void);
     double e(void) const;
@@ -271,10 +276,10 @@ class Euler3D_Polytropic_pState{
     double s(void) const;
 
     // Momentum. 
-    Vector3D dv(void);
-    Vector3D dv(void) const;
-    double dv(const Vector3D &n);
-    double dv(const Vector3D &n) const;
+    Vector3D rhov(void);
+    Vector3D rhov(void) const;
+    double rhov(const Vector3D &n);
+    double rhov(const Vector3D &n) const;
 
     // Stagnation temperature. 
     double To(void);
@@ -480,6 +485,68 @@ class Euler3D_Polytropic_pState{
     // Input-output operators. 
     friend ostream& operator << (ostream &out_file, const Euler3D_Polytropic_pState &W);
     friend istream& operator >> (istream &in_file,  Euler3D_Polytropic_pState &W); 
+	
+	
+	/* 
+	 * Flux Functions
+	 * --------------
+	 */
+	
+	static Euler3D_Polytropic_pState RoeAverage(const Euler3D_Polytropic_pState &Wl,
+												const Euler3D_Polytropic_pState &Wr);
+	static Euler3D_Polytropic_pState RoeAverage(const Euler3D_Polytropic_cState &Ul,
+												const Euler3D_Polytropic_cState &Ur);
+	static Euler3D_Polytropic_cState FluxHLLE_x(const Euler3D_Polytropic_pState &Wl,
+												const Euler3D_Polytropic_pState &Wr);
+	static Euler3D_Polytropic_cState FluxHLLE_x(const Euler3D_Polytropic_cState &Ul,
+												const Euler3D_Polytropic_cState &Ur);
+	static Euler3D_Polytropic_cState FluxHLLE_y(const Euler3D_Polytropic_pState &Wl,
+												const Euler3D_Polytropic_pState &Wr);
+	static Euler3D_Polytropic_cState FluxHLLE_y(const Euler3D_Polytropic_cState &Ul,
+												const Euler3D_Polytropic_cState &Ur);
+	static Euler3D_Polytropic_cState FluxHLLE_z(const Euler3D_Polytropic_pState &Wl,
+												const Euler3D_Polytropic_pState &Wr);
+	static Euler3D_Polytropic_cState FluxHLLE_z(const Euler3D_Polytropic_cState &Ul,
+												const Euler3D_Polytropic_cState &Ur);
+	static Euler3D_Polytropic_cState FluxHLLE_n(const Euler3D_Polytropic_pState &Wl,
+												const Euler3D_Polytropic_pState &Wr,
+												const Vector3D &norm_dir);
+	static Euler3D_Polytropic_cState FluxHLLE_n(const Euler3D_Polytropic_cState &Ul,
+												const Euler3D_Polytropic_cState &Ur,
+												const Vector3D &norm_dir);
+	
+	static Euler3D_Polytropic_cState FluxRoe_x(const Euler3D_Polytropic_pState &Wl, 
+													 const Euler3D_Polytropic_pState &Wr);
+	static Euler3D_Polytropic_cState FluxRoe_n(const Euler3D_Polytropic_pState &Wl,
+													 const Euler3D_Polytropic_pState &Wr,
+													 const Vector3D &norm_dir);
+	
+	friend Euler3D_Polytropic_pState HartenFixNeg(const Euler3D_Polytropic_pState  &lambda_a,
+														const Euler3D_Polytropic_pState  &lambda_l,
+														const Euler3D_Polytropic_pState  &lambda_r);
+	friend Euler3D_Polytropic_pState HartenFixPos(const Euler3D_Polytropic_pState  &lambda_a,
+														const Euler3D_Polytropic_pState  &lambda_l,
+														const Euler3D_Polytropic_pState  &lambda_r);
+	
+	
+	/*
+	 * Boundary Conditions
+	 * -------------------
+	 */
+	static Euler3D_Polytropic_pState Reflect(const Euler3D_Polytropic_pState &W, const Vector3D &norm_dir);
+	static Euler3D_Polytropic_pState Moving_Wall(
+										 const Euler3D_Polytropic_pState &Win,
+										 const Euler3D_Polytropic_pState &Wout,
+										 const Vector3D &norm_dir, 
+										 const Vector3D &wall_velocity,
+										 const Vector3D &pressure_gradient,
+										 const int &TEMPERATURE_BC_FLAG);
+	static Euler3D_Polytropic_pState No_Slip(
+									 const Euler3D_Polytropic_pState &Win,
+									 const Euler3D_Polytropic_pState &Wout,
+									 const Vector3D &norm_dir,
+									 const Vector3D &pressure_gradient,
+									 const int &TEMPERATURE_BC_FLAG);
     
 };
 
@@ -543,6 +610,7 @@ class Euler3D_Polytropic_cState{
     static double gm1;   // g-1
     static double gm1i;  // 1/(g-1)
     static double   R;   // Gas constant.
+	static int num_vars; // Number of variables.
 	
 	/*
 	 * Constructors

@@ -47,7 +47,8 @@
 	* Set static variables 
 	* -------------------- 
 	*/
-
+	
+	int Euler3D_Polytropic_pState::num_vars = NUM_VAR_EULER3D;
 	double Euler3D_Polytropic_pState::g = GAMMA_AIR;
 	double Euler3D_Polytropic_pState::gm1 = GAMMA_AIR-ONE;
 	double Euler3D_Polytropic_pState::gm1i = ONE/(GAMMA_AIR-ONE);
@@ -122,6 +123,13 @@
 		return (p/(rho*R));
 	}
 
+	// gasconstant. (for compatibility reasons)
+	double Euler3D_Polytropic_pState::Rtot(void) {
+		return (R);
+	}
+	double Euler3D_Polytropic_pState::Rtot(void) const {
+		return (R);
+	}
 	// Specific internal energy.
 	double Euler3D_Polytropic_pState::e(void) {
 		return (p/(gm1*rho));
@@ -187,18 +195,18 @@
 	}
 
 	// Momentum. 
-	Vector3D Euler3D_Polytropic_pState::dv(void) {
+	Vector3D Euler3D_Polytropic_pState::rhov(void) {
 		return (rho*v);
 	}
-	Vector3D Euler3D_Polytropic_pState::dv(void) const {
+	Vector3D Euler3D_Polytropic_pState::rhov(void) const {
 		return (rho*v);
 		
 	}
-	double Euler3D_Polytropic_pState::dv(const Vector3D &n) {
+	double Euler3D_Polytropic_pState::rhov(const Vector3D &n) {
 		return (rho*(v*n));
 		
 	}
-	double Euler3D_Polytropic_pState::dv(const Vector3D &n) const {
+	double Euler3D_Polytropic_pState::rhov(const Vector3D &n) const {
 		return (rho*(v*n));
 		
 	}
@@ -377,11 +385,11 @@
 	*/
 
 	Euler3D_Polytropic_cState Euler3D_Polytropic_pState::U(void) {
-		return (Euler3D_Polytropic_cState(rho, dv(), E()));
+		return (Euler3D_Polytropic_cState(rho, rhov(), E()));
 	}
 
 	Euler3D_Polytropic_cState Euler3D_Polytropic_pState::U(void) const {
-		return (Euler3D_Polytropic_cState(rho, dv(), E()));
+		return (Euler3D_Polytropic_cState(rho, rhov(), E()));
 	}
 
 	Euler3D_Polytropic_cState Euler3D_Polytropic_pState::U(const Euler3D_Polytropic_pState &W) {
@@ -1331,6 +1339,97 @@
 	}
 
 
+/********************************************************
+* Routine: Reflect                                     *
+*                                                      *
+* This function returns the reflected solution state   *
+* in a given direction given the primitive solution    *
+* variables and the unit normal vector in the          *
+* direction of interest.                               *
+*                                                      *
+********************************************************/
+Euler3D_Polytropic_pState Euler3D_Polytropic_pState::Reflect(const Euler3D_Polytropic_pState &W, const Vector3D &norm_dir) {
+	
+	Vector3D ur_norm, ur_tang, vr_tot;
+	
+	Euler3D_Polytropic_pState Temp;
+	Temp.Copy(W);
+	
+	ur_norm = dot(W.v, norm_dir)*norm_dir;
+	ur_tang = W.v - ur_norm;
+	
+	ur_norm = -ur_norm;
+	vr_tot = ur_norm + ur_tang;
+	
+	Temp.v = vr_tot;
+	
+    return (Temp);
+}
+
+Euler3D_Polytropic_pState Euler3D_Polytropic_pState::Moving_Wall(
+									 const Euler3D_Polytropic_pState &Win,
+									 const Euler3D_Polytropic_pState &Wout,
+									 const Vector3D &norm_dir, 
+									 const Vector3D &wall_velocity,
+									 const Vector3D &pressure_gradient,
+									 const int &TEMPERATURE_BC_FLAG) {
+	
+	Euler3D_Polytropic_pState Temp;
+	Temp.Copy(Win);
+	
+	if(wall_velocity == Vector3D_ZERO){
+		Temp.v = -Win.v;
+	}else{
+		
+		double  Wall_velocity_tang ;
+		Vector3D ur_norm, ur_tang, vr_tot, uw_tang;
+		
+		
+		ur_norm = dot(Win.v, norm_dir)*norm_dir;
+		ur_tang = Win.v - ur_norm;
+		
+		
+		uw_tang = wall_velocity - dot(norm_dir,wall_velocity)*norm_dir;
+		
+		ur_norm = -ur_norm;
+		ur_tang = 2.0*uw_tang - ur_tang;
+		vr_tot = ur_norm + ur_tang;
+		
+		Temp.v = vr_tot;
+	}
+	
+	//  Fixed Wall Temperature or constant extrapolation for Adiabatic
+	if(TEMPERATURE_BC_FLAG == FIXED_TEMPERATURE_WALL){
+		if (pressure_gradient != Vector3D_ZERO){
+			Temp.rho = Wout.p/(Temp.Rtot()*Wout.T());
+		}else{
+			
+			Temp.rho = Win.p/(Temp.Rtot()*Wout.T());
+		}
+		
+	}
+	
+	return (Temp);
+	
+}
+
+Euler3D_Polytropic_pState Euler3D_Polytropic_pState::No_Slip(
+										 const Euler3D_Polytropic_pState &Win,
+										 const Euler3D_Polytropic_pState &Wout,
+										 const Vector3D &norm_dir,
+										 const Vector3D &pressure_gradient,
+										 const int &TEMPERATURE_BC_FLAG) {
+	
+	return (Moving_Wall(Win, Wout, norm_dir,Vector3D_ZERO,pressure_gradient,TEMPERATURE_BC_FLAG));
+	
+}
+
+
+
+
+
+
+
 /* ------------------------------------------------------------------------- *
  *				 Euler3D_Polytropic_cState subroutines						 *
  * ------------------------------------------------------------------------- */
@@ -1366,7 +1465,7 @@
 	}
 
 	Euler3D_Polytropic_cState::Euler3D_Polytropic_cState(const Euler3D_Polytropic_pState &W) {
-		rho = W.rho;	rhov = W.dv();	E = W.E();
+		rho = W.rho;	rhov = W.rhov();	E = W.E();
 	}
 
 
@@ -1378,6 +1477,7 @@
 	* -------------------- 
 	*/
 
+	int Euler3D_Polytropic_cState::num_vars = NUM_VAR_EULER3D;
 	double Euler3D_Polytropic_cState::g = GAMMA_AIR;
 	double Euler3D_Polytropic_cState::gm1 = GAMMA_AIR-ONE;
 	double Euler3D_Polytropic_cState::gm1i = ONE/(GAMMA_AIR-ONE);
@@ -1846,7 +1946,7 @@ double Euler3D_Polytropic_cState::ho(void) const {
  * solution variables.  See Roe (1981).                 *
  *                                                      *
  ********************************************************/
-Euler3D_Polytropic_pState RoeAverage(const Euler3D_Polytropic_pState &Wl, const Euler3D_Polytropic_pState &Wr) {
+Euler3D_Polytropic_pState Euler3D_Polytropic_pState::RoeAverage(const Euler3D_Polytropic_pState &Wl, const Euler3D_Polytropic_pState &Wr) {
 
     double hl, hr, sqrt_rhol, sqrt_rhor;
     double da, ua, va,wa, pa, aa2, ha, ga, gam1;
@@ -1876,7 +1976,7 @@ Euler3D_Polytropic_pState RoeAverage(const Euler3D_Polytropic_pState &Wl, const 
     return (Euler3D_Polytropic_pState(da, ua, va, wa, pa));
 }
 
-Euler3D_Polytropic_pState RoeAverage(const Euler3D_Polytropic_cState &Ul, const Euler3D_Polytropic_cState &Ur) {
+Euler3D_Polytropic_pState Euler3D_Polytropic_pState::RoeAverage(const Euler3D_Polytropic_cState &Ul, const Euler3D_Polytropic_cState &Ur) {
 	return (RoeAverage(Ul.W(), Ur.W()));
 }
 
@@ -1891,7 +1991,7 @@ Euler3D_Polytropic_pState RoeAverage(const Euler3D_Polytropic_cState &Ul, const 
  * Lax, van Leer (1983).                                 *
  *                                                       *
  *********************************************************/
-Euler3D_Polytropic_cState FluxHLLE_x(const Euler3D_Polytropic_pState &Wl,
+Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxHLLE_x(const Euler3D_Polytropic_pState &Wl,
 	      	          const Euler3D_Polytropic_pState &Wr) {
 
     double wavespeed_l, wavespeed_r;
@@ -1935,13 +2035,13 @@ Euler3D_Polytropic_cState FluxHLLE_x(const Euler3D_Polytropic_pState &Wl,
     return (Flux);
 }
 
-Euler3D_Polytropic_cState FluxHLLE_x(const Euler3D_Polytropic_cState &Ul,
+Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxHLLE_x(const Euler3D_Polytropic_cState &Ul,
 	      	          const Euler3D_Polytropic_cState &Ur) {
    return (FluxHLLE_x(Ul.W(), Ur.W()));
 }
 
 
-Euler3D_Polytropic_cState FluxHLLE_y(const Euler3D_Polytropic_pState &Wl,
+Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxHLLE_y(const Euler3D_Polytropic_pState &Wl,
 									 const Euler3D_Polytropic_pState &Wr) {
 	
     double wavespeed_l, wavespeed_r;
@@ -1984,12 +2084,12 @@ Euler3D_Polytropic_cState FluxHLLE_y(const Euler3D_Polytropic_pState &Wl,
 
     return (Flux);
 }
-Euler3D_Polytropic_cState FluxHLLE_y(const Euler3D_Polytropic_cState &Ul,
+Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxHLLE_y(const Euler3D_Polytropic_cState &Ul,
 									 const Euler3D_Polytropic_cState &Ur) {
 	return (FluxHLLE_y(Ul.W(), Ur.W()));
 }
 
-Euler3D_Polytropic_cState FluxHLLE_z(const Euler3D_Polytropic_pState &Wl,
+Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxHLLE_z(const Euler3D_Polytropic_pState &Wl,
 									 const Euler3D_Polytropic_pState &Wr) {
 	
     double wavespeed_l, wavespeed_r;
@@ -2033,7 +2133,7 @@ Euler3D_Polytropic_cState FluxHLLE_z(const Euler3D_Polytropic_pState &Wl,
     return (Flux);
 }
 
-Euler3D_Polytropic_cState FluxHLLE_z(const Euler3D_Polytropic_cState &Ul,
+Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxHLLE_z(const Euler3D_Polytropic_cState &Ul,
 									 const Euler3D_Polytropic_cState &Ur) {
 	return (FluxHLLE_z(Ul.W(), Ur.W()));
 }
@@ -2054,7 +2154,7 @@ Euler3D_Polytropic_cState FluxHLLE_z(const Euler3D_Polytropic_cState &Ul,
  * solution states.  See Harten, Lax, van Leer (1983).   *
  *                                                       *
  *********************************************************/
-Euler3D_Polytropic_cState FluxHLLE_n(const Euler3D_Polytropic_pState &Wl,
+Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxHLLE_n(const Euler3D_Polytropic_pState &Wl,
 	      	          const Euler3D_Polytropic_pState &Wr,
                           const Vector3D &norm_dir) {
 
@@ -2110,7 +2210,7 @@ Euler3D_Polytropic_cState FluxHLLE_n(const Euler3D_Polytropic_pState &Wl,
 
 }
 
-Euler3D_Polytropic_cState FluxHLLE_n(const Euler3D_Polytropic_cState &Ul,
+Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxHLLE_n(const Euler3D_Polytropic_cState &Ul,
 	      	          const Euler3D_Polytropic_cState &Ur,
                           const Vector3D &norm_dir) {
     return (FluxHLLE_n(Ul.W(), Ur.W(), norm_dir));
@@ -2118,52 +2218,252 @@ Euler3D_Polytropic_cState FluxHLLE_n(const Euler3D_Polytropic_cState &Ul,
 
 
 /********************************************************
- * Routine: Reflect                                     *
- *                                                      *
- * This function returns the reflected solution state   *
- * in a given direction given the primitive solution    *
- * variables and the unit normal vector in the          *
- * direction of interest.                               *
- *                                                      *
- ********************************************************/
-Euler3D_Polytropic_pState Reflect(const Euler3D_Polytropic_pState &W,
-	      	       const Vector3D &norm_dir) {
-   
-   double sin_beta, cos_beta, sin_alpha, cos_alpha;
-   double dr, ur, vr, wr, pr, u, v, w;
-   
-   
-   sin_beta = norm_dir.z;
-   cos_beta = sqrt(sqr(norm_dir.x)+sqr(norm_dir.y));
-   if(cos_beta == ZERO){
-      sin_alpha = ZERO;
-      cos_alpha = ZERO;
-   }else{
-      sin_alpha = norm_dir.y/cos_beta;
-      cos_alpha = norm_dir.x/cos_beta;
-   }
-     
-   /* Apply the frame rotation and calculate the primitive
-      solution state variables in the local rotated frame
-      defined by the unit normal vector. */
-
-   dr = W.rho;
-   ur = (W.v.x*cos_alpha + W.v.y*sin_alpha)*cos_beta+ W.v.z*sin_beta;
-   vr = (W.v.x*cos_alpha + W.v.y*sin_alpha)*sin_beta+ W.v.z*cos_beta;
-   wr = ZERO;
-   pr = W.p;
-   
-   /* Reflect the normal velocity in the rotated frame. */
-   ur = -ur;
-   
-   /* Rotate back to the original Cartesian reference frame. */
-
-    u = (ur*cos_beta + vr*sin_beta)*cos_alpha;
-    v = (ur*cos_beta + vr*sin_beta)*sin_alpha;
-    w = (ur*sin_beta + vr*cos_beta);
-    
-    /* Return the reflected state. */
-
-    return (Euler3D_Polytropic_pState(dr, u, v, w, pr));
-       
+* Routine: HartenFixPos (Harten Entropy Fix)           *
+*                                                      *
+* This function returns the positive parts of the      *
+* corrected elemental wave speeds or eigenvalues       *
+* according to the entropy fix of Harten (1983).       *
+*                                                       *
+********************************************************/
+Euler3D_Polytropic_pState HartenFixPos(
+											 const Euler3D_Polytropic_pState &lambdas_a,
+											 const Euler3D_Polytropic_pState &lambdas_l,
+											 const Euler3D_Polytropic_pState &lambdas_r) {
+	
+	Euler3D_Polytropic_pState NEW;
+	NEW.rho = HartenFixPos(lambdas_a[1],lambdas_l[1],lambdas_r[1]);
+	NEW.v.x = HALF*(lambdas_a[2]+fabs(lambdas_a[2]));
+	NEW.v.y = HALF*(lambdas_a[3]+fabs(lambdas_a[3]));
+	NEW.v.z = HALF*(lambdas_a[4]+fabs(lambdas_a[4]));
+	
+	NEW.p = HartenFixPos(lambdas_a[5],lambdas_l[5],lambdas_r[5]);	
+	return (NEW);
 }
+
+
+/********************************************************
+* Routine: HartenFixNeg (Harten Entropy Fix)           *
+*                                                      *
+* This function returns the negative parts of the      *
+* corrected elemental wave speeds or eigenvalues       *
+* according to the entropy fix of Harten (1983).       *
+*                                                      *
+********************************************************/
+Euler3D_Polytropic_pState HartenFixNeg(
+											 const Euler3D_Polytropic_pState &lambdas_a,
+											 const Euler3D_Polytropic_pState &lambdas_l,
+											 const Euler3D_Polytropic_pState &lambdas_r) {
+	
+	Euler3D_Polytropic_pState NEW;
+	
+	NEW.rho = HartenFixNeg(lambdas_a[1],lambdas_l[1],lambdas_r[1]);
+	NEW.v.x = HALF*(lambdas_a[2]-fabs(lambdas_a[2]));
+	NEW.v.y = HALF*(lambdas_a[3]-fabs(lambdas_a[3]));
+	NEW.v.z = HALF*(lambdas_a[4]-fabs(lambdas_a[4]));
+	NEW.p = HartenFixNeg(lambdas_a[5],lambdas_l[5],lambdas_r[5]);
+		
+	return (NEW);
+}
+
+
+// Flux Roe -- based on Harten fix 
+Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxRoe_x(
+																		   const  Euler3D_Polytropic_pState &Wl,  
+																		   const  Euler3D_Polytropic_pState &Wr){
+	
+	Euler3D_Polytropic_pState Wa, dWrl, wavespeeds, 
+	lambdas_l, lambdas_r, lambdas_a;
+	Euler3D_Polytropic_cState Flux;
+	
+	
+	/* Evaluate the Roe-average primitive solution state. */    
+	Wa = RoeAverage(Wl, Wr);
+	
+	/* Evaluate the jumps in the primitive solution states. */
+	dWrl = Wr-Wl;
+	
+	/* Evaluate the left, right, and average state eigenvalues. */
+	lambdas_l = Wl.lambda_x();
+	lambdas_r = Wr.lambda_x();
+	lambdas_a = Wa.lambda_x();
+	
+	/* Determine the intermediate state flux. */
+	if (Wa.v.x >= ZERO) {
+		Flux = Wl.F();   
+		
+		wavespeeds = HartenFixNeg(lambdas_a,
+								  lambdas_l,
+								  lambdas_r);
+		
+		
+		
+		
+		for (int i=1 ; i <= Wl.num_vars; i++) {
+			if (wavespeeds[i] < ZERO) {
+				Flux += wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i);
+				
+				
+			}
+		} 
+	} else {
+		
+		Flux = Wr.F();
+		
+		wavespeeds = HartenFixPos(lambdas_a,
+								  lambdas_l,
+								  lambdas_r);
+		
+		for (int i=1; i <= Wl.num_vars; i++) {
+			if (wavespeeds[i] > ZERO) {
+				Flux -= wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i); 
+				
+				
+			}
+		} 
+	} 
+    
+	/* Return solution flux. */    
+	return (Flux);    
+    
+	
+}
+
+Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxRoe_n(const Euler3D_Polytropic_pState &Wl,
+															   const Euler3D_Polytropic_pState &Wr,
+															   const Vector3D &norm_dir){
+	
+	double Wl_ur_norm, Wl_ur_tang;
+	double Wr_ur_norm, Wr_ur_tang ;
+	double Wr_ur_tang_z;
+	
+	Vector3D Flux_rotated_x, Flux_rotated_tang_y, Flux_rotated_tang_z ;
+	Vector3D Wl_ur_tang_vector, Wr_ur_tang_vector;
+	Vector3D Wl_ur_tang_unit_vector, Wr_ur_tang_unit_vector;
+	Vector3D Wr_ur_tang_z_vector, Wr_ur_tang_z_unit_vector;
+	
+	//solnvec in  Wl_rotated (Wr_rotated) is allocated using new 
+	Euler3D_Polytropic_pState Wl_rotated, Wr_rotated;
+	Euler3D_Polytropic_cState Flux, Flux_rotated;
+	
+	
+	/* Apply the frame rotation and evaluate left and right
+		solution states in the local rotated frame defined
+		by the unit normal vector. */
+	Wl_rotated.Copy(Wl);
+	Wr_rotated.Copy(Wr);
+	
+	// Left state velocity in rotated frame
+	Wl_ur_norm = dot(Wl.v, norm_dir);
+	Wl_ur_tang = abs(Wl.v - Wl_ur_norm*norm_dir);
+	Wl_ur_tang_vector = (Wl.v - Wl_ur_norm*norm_dir);
+	if(Wl_ur_tang != ZERO){
+		Wl_ur_tang_unit_vector =  Wl_ur_tang_vector/Wl_ur_tang;
+	}else{
+		Wl_ur_tang_unit_vector= Vector3D_ZERO;
+	}
+	
+	Wl_rotated.rho = Wl.rho;
+	Wl_rotated.v.x = Wl_ur_norm ;
+	Wl_rotated.v.y = Wl_ur_tang;
+	Wl_rotated.v.z = ZERO;
+	Wl_rotated.p = Wl.p;
+	// Right state velocity in rotated frame
+	Wr_ur_norm = dot(Wr.v, norm_dir);
+	Wr_ur_tang_vector = Wr.v - Wr_ur_norm*norm_dir;
+	Wr_ur_tang = abs(Wr.v - Wr_ur_norm*norm_dir);
+	if( Wr_ur_tang != ZERO){
+		Wr_ur_tang_unit_vector =  Wr_ur_tang_vector/Wr_ur_tang ;
+	}else{
+		Wr_ur_tang_unit_vector= Vector3D_ZERO;  
+	}
+	
+	Wr_rotated.rho = Wr.rho;
+	Wr_rotated.v.x = Wr_ur_norm;
+	Wr_rotated.v.y = dot( Wr_ur_tang_vector, Wl_ur_tang_unit_vector);
+	Wr_rotated.v.z = abs( Wr_ur_tang_vector -Wr_rotated.v.y* Wl_ur_tang_unit_vector);
+	Wr_rotated.p = Wr.p;
+	
+	
+	Wr_ur_tang_z = abs(Wr_ur_tang_vector-Wr_rotated.v.y* Wl_ur_tang_unit_vector);
+	Wr_ur_tang_z_vector = Wr_ur_tang_vector -Wr_rotated.v.y* Wl_ur_tang_unit_vector;
+	if(Wr_ur_tang_z !=ZERO){
+		Wr_ur_tang_z_unit_vector = Wr_ur_tang_z_vector /Wr_ur_tang_z ;
+	}else{
+		Wr_ur_tang_z_unit_vector = Vector3D_ZERO;
+		
+	}
+	
+	
+    /* Evaluate the intermediate state solution 
+		flux in the rotated frame. */
+	
+	Flux_rotated = FluxRoe_x(Wl_rotated, Wr_rotated);
+	
+	/* Rotate back to the original Cartesian reference
+		frame and return the solution flux. */
+	
+	Flux.Copy(Flux_rotated);
+	
+	
+	
+	Flux_rotated_x = Flux.rhov.x*norm_dir;
+	Flux_rotated_tang_y = Flux.rhov.y* Wl_ur_tang_unit_vector ;
+	Flux_rotated_tang_z = Flux.rhov.z* Wr_ur_tang_z_unit_vector;
+	
+	
+	Flux.rhov =  Flux_rotated_x + Flux_rotated_tang_y+ Flux_rotated_tang_z;
+
+	return (Flux);
+	
+}
+
+///********************************************************
+// * Routine: Reflect                                     *
+// *                                                      *
+// * This function returns the reflected solution state   *
+// * in a given direction given the primitive solution    *
+// * variables and the unit normal vector in the          *
+// * direction of interest.                               *
+// *                                                      *
+// ********************************************************/
+//Euler3D_Polytropic_pState Reflect(const Euler3D_Polytropic_pState &W,
+//	      	       const Vector3D &norm_dir) {
+//   
+//   double sin_beta, cos_beta, sin_alpha, cos_alpha;
+//   double dr, ur, vr, wr, pr, u, v, w;
+//   
+//   
+//   sin_beta = norm_dir.z;
+//   cos_beta = sqrt(sqr(norm_dir.x)+sqr(norm_dir.y));
+//   if(cos_beta == ZERO){
+//      sin_alpha = ZERO;
+//      cos_alpha = ZERO;
+//   }else{
+//      sin_alpha = norm_dir.y/cos_beta;
+//      cos_alpha = norm_dir.x/cos_beta;
+//   }
+//     
+//   /* Apply the frame rotation and calculate the primitive
+//      solution state variables in the local rotated frame
+//      defined by the unit normal vector. */
+//
+//   dr = W.rho;
+//   ur = (W.v.x*cos_alpha + W.v.y*sin_alpha)*cos_beta+ W.v.z*sin_beta;
+//   vr = (W.v.x*cos_alpha + W.v.y*sin_alpha)*sin_beta+ W.v.z*cos_beta;
+//   wr = ZERO;
+//   pr = W.p;
+//   
+//   /* Reflect the normal velocity in the rotated frame. */
+//   ur = -ur;
+//   
+//   /* Rotate back to the original Cartesian reference frame. */
+//
+//    u = (ur*cos_beta + vr*sin_beta)*cos_alpha;
+//    v = (ur*cos_beta + vr*sin_beta)*sin_alpha;
+//    w = (ur*sin_beta + vr*cos_beta);
+//    
+//    /* Return the reflected state. */
+//
+//    return (Euler3D_Polytropic_pState(dr, u, v, w, pr));
+//       
+//}

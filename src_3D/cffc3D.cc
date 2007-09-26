@@ -197,7 +197,7 @@ int main(int num_arg, char *arg_ptr[]) {
       cout << " -h (--help)  show this help\n";
       cout << " -i (--inter)  execute in interactive mode (default)\n";
       cout << " -b (--batch)  execute in batch mode\n";
-      cout << " -pde type  solve `type' PDEs (`Euler3DThermallyPerfect' is default)\n";
+      cout << " -pde type  solve `type' PDEs (`Euler3DPolytropic' is default)\n";
       cout << " -f name  use `name' input data file (`cffc3d.in' is default)\n";
       cout << " -t              run all available test suites\n" 
 	   << " -t list         list available test suites\n"
