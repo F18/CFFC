@@ -168,7 +168,6 @@ SRC_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes2DState.cc \
                    $(NAVIERSTOKES_DIR)NavierStokes2DQuadTurbulenceMultiBlock.cc \
                    $(NAVIERSTOKES_DIR)NavierStokes2DdRdU.cc \
                    $(NAVIERSTOKES_DIR)NavierStokes2DQuadGrid.cc \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DdRdU.cc \
                    $(NAVIERSTOKES_DIR)NavierStokes2DQuadSolvers.cc
 SRC_NAVIERSTOKES_EXE = $(NAVIERSTOKES_DIR)NavierStokes2D.cc
 
