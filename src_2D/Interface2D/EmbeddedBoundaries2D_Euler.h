@@ -127,7 +127,7 @@ BCs_Interface(const int &nb, const double &Time) {
   // the current solution block.
   if (!Adjustment_Data[nb].Interface_Present[0]) return 0;
 
-  int error_flag, Ni, neighbour_flag;;
+  int error_flag, Ni, neighbour_flag;
   int Interface_BC_Type;
   double length;
   Vector2D V;
