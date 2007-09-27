@@ -268,6 +268,12 @@ int main(int num_arg, char *arg_ptr[]) {
                                               Gaussian2D_Quad_Block, 
                                               Gaussian2D_Input_Parameters>(Input_File_Name_ptr,
 									   batch_flag);
+   } else if (strcmp(Equation_Type,"LESPremix2D") == 0) {
+     error_flag = EmbeddedBoundaries2D_Solver<LESPremix2D_cState,
+                                              LESPremix2D_pState,
+                                              LESPremix2D_Quad_Block, 
+                                              LESPremix2D_Input_Parameters>(Input_File_Name_ptr,
+									    batch_flag);
   } else {
     if (CFFC_Primary_MPI_Processor() && !batch_flag)
       cout << "\n\n EmbeddedBoundaries2D ERROR: Specified equation set is not supported.\n";

@@ -27,12 +27,13 @@ tecplot.phy
 
 # latex document directories
 #*~
-#*.ps 
-#*.pdf 
-*.aux 
-#*.log 
-*.dvi 
+*.ps
+*.pdf
+*.aux
+#*.log
+*.dvi
 *.toc
+*.idx
 
 # html document directories
 *.html
