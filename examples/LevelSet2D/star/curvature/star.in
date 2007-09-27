@@ -60,9 +60,9 @@ Number_of_Cells_Jdir =
 Number_of_Ghost_Cells =
 3
 Number_of_Blocks_Idir = 
-3
+2
 Number_of_Blocks_Jdir =
-3
+2
 Number_of_Blocks_Per_Processor =
 128
 #
@@ -70,7 +70,7 @@ Number_of_Blocks_Per_Processor =
 Hamilton_Jacobi_CFL_Number =
 0.5
 Time_Max =
-1.0
+0.0
 Maximum_Number_of_Time_Steps =
 0
 #
