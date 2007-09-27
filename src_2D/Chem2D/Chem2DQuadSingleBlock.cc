@@ -12,6 +12,9 @@
 #include "dRdU.h"
 #endif // _CHEM2D_dRdU_INCLUDE
 
+/* Include header file to compute flame jump conditions */
+#include "../Reactions/FlameJump.h"
+
 /*************************************************************************
 * Chem2D_Quad_Block -- Single Block External Subroutines.                *
 **************************************************************************/
