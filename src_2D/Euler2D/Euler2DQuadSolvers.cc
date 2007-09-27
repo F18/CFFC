@@ -859,6 +859,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
                                                Euler2D_Input_Parameters>(processor_cpu_time,
 									 residual_file,
 									 number_of_time_steps, // explicit time steps
+									 Time,
 									 Local_SolnBlk, 
 									 List_of_Local_Solution_Blocks,
 									 Input_Parameters);

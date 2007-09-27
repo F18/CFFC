@@ -134,7 +134,7 @@ template <> double Finite_Time_Step(const LESPremixed2D_Input_Parameters &Input_
   double CFL_current;
 
   //SER 
-  if (L2norm_current_n > MIN_FINITE_TIME_STEP_NORM_RATIO ) { 
+  if (L2norm_current_n > Input_Parameters.NKS_IP.Min_Finite_Time_Step_Norm_Ratio) { 
     //Original works for Invisicd, Viscous OK, Reacting seems to be more picky
     CFL_current = Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL*
       pow( max(ONE, ONE/L2norm_current_n),ONE ); 
@@ -146,7 +146,8 @@ template <> double Finite_Time_Step(const LESPremixed2D_Input_Parameters &Input_
     }
 
   } else {
-    CFL_current = Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL/MIN_FINITE_TIME_STEP_NORM_RATIO;
+    CFL_current = Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL/
+      Input_Parameters.NKS_IP.Min_Finite_Time_Step_Norm_Ratio;
   }  
 
   // CAN SET A MAXIMUM, SOMETIMES USEFUL WITH CONVERGENCE STALL & BC ISSUES

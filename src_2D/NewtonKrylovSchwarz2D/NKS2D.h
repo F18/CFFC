@@ -41,19 +41,10 @@
 #include "DTS_NKS.h"
 #endif
 
-/************************************
- * NKS "Magic" Numbers              *           //MAKE THESE INPUT PARAMETERS ???
- ************************************/ 
-#define MIN_NUMBER_OF_NEWTON_STEPS_WITH_ZERO_LIMITER          0         // force 1st order for "N" steps
-#define MIN_NUMBER_OF_NEWTON_STEPS_REQUIRING_JACOBIAN_UPDATE  100       // force Jacobian updates for "N" Newton steps       
-#define MIN_L2_NORM_REQUIRING_JACOBIAN_UPDATE                 1.0e-08   // force Jacobian update for L2 < "N"
-#define MIN_FINITE_TIME_STEP_NORM_RATIO                       1.0e-10   // ramp over to full newton over 8 orders of L2 magnitude
-
 #define NKS_EPS 1e-18 // in case someone specifies a zero tolerance.
 
 // These are for the Detect_Convergence_Stall algorithm.
 enum DCS_States { CLEAR, WAITING_TO_FREEZE, FROZEN, WAITING_TO_STOP };
-
 
 template <typename SOLN_VAR_TYPE,typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 int Newton_Update(SOLN_BLOCK_TYPE *SolnBlk,
@@ -61,7 +52,6 @@ int Newton_Update(SOLN_BLOCK_TYPE *SolnBlk,
 		  INPUT_TYPE &Input_Parameters,
 		  GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> &GMRES,
 		  double Relaxation_multiplier);
-
 
 template <typename INPUT_TYPE>
 double Finite_Time_Step(const INPUT_TYPE &Input_Parameters, 
@@ -72,7 +62,6 @@ double Finite_Time_Step(const INPUT_TYPE &Input_Parameters,
 
 template <typename SOLN_BLOCK_TYPE>
 int set_blocksize(SOLN_BLOCK_TYPE &SolnBlk){ return (SolnBlk.NumVar()); }
-
 
 /*! *****************************************************************************************
  *   Routine: Newton_Krylov_Solver
@@ -85,6 +74,7 @@ template <typename SOLN_VAR_TYPE,typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
  		                 ostream &residual_file,   
 		                 int &number_of_explicit_time_steps,
+				 double &Physical_Time,
 		                 SOLN_BLOCK_TYPE *SolnBlk,
 		                 AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
 		                 INPUT_TYPE &Input_Parameters) {
@@ -98,7 +88,6 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
   /**************************************************************************/  
   /****************** SETTING UP STORAGE AND DATASTRUCTURES *****************/
   /**************************************************************************/  
-
   /* Count number of used Blocks on this processor */
   int Used_blocks_count = 0; 
   for ( int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks.Nblk; ++Bcount ) {
@@ -143,10 +132,11 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
   /**************************************************************************/  
   /********* Unsteady Time Accurate, Dual Time Stepping  ********************/
   /**************************************************************************/  
+  int DTS_Step(1);    
   if (Input_Parameters.NKS_IP.Dual_Time_Stepping) { 
-  
-    int DTS_Step(1);
-    double physical_time(ZERO);
+
+    double DTS_dTime(ZERO);
+    double physical_time(Physical_Time);   
     int physical_time_param(TIME_STEPPING_IMPLICIT_EULER);
 
     // Outer Loop (Physical Time)      
@@ -162,13 +152,17 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       /**************************************************************************/
       
       /**************************************************************************/
-      // Determine global time step                                                        //NEED TO FIX FOR RESTARTS
-      double DTS_dTime  = CFL(SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);   //ASSUMING STARTING @ TIME=0.0; 
-      DTS_dTime = Input_Parameters.NKS_IP.Physical_Time_CFL_Number*CFFC_Minimum_MPI(DTS_dTime); 
-  
-      //Last Time sized to get Time_Max
-      if( physical_time + DTS_dTime > Input_Parameters.Time_Max){
-	DTS_dTime = Input_Parameters.Time_Max - physical_time;
+      // Determine global time step using a "fixed" time step or using a CFL                                                       
+      if(Input_Parameters.NKS_IP.Physical_Time_Step > ZERO){
+	DTS_dTime = Input_Parameters.NKS_IP.Physical_Time_Step;
+      } else {
+	DTS_dTime = CFL(SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);  
+	DTS_dTime = Input_Parameters.NKS_IP.Physical_Time_CFL_Number*CFFC_Minimum_MPI(DTS_dTime); 
+	
+	//Last Time sized to get Time_Max
+	if( physical_time + DTS_dTime > Input_Parameters.Time_Max){
+	  DTS_dTime = Input_Parameters.Time_Max - physical_time;
+	}
       }
       /**************************************************************************/
 
@@ -193,6 +187,7 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 							 GMRES_,
 							 Block_precon,
 							 DTS_SolnBlk,
+							 physical_time,
 							 DTS_Step);              
       /**************************************************************************/
 
@@ -236,7 +231,6 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
     /********* Steady State non-time accurate  ********************************/
     /**************************************************************************/  
   } else { 
-    int dummy_int(0);
     error_flag = Internal_Newton_Krylov_Schwarz_Solver(processor_cpu_time,
 						       residual_file,   
 						       number_of_explicit_time_steps,
@@ -246,7 +240,8 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 						       GMRES_,
 						       Block_precon,
 						       DTS_SolnBlk,
-						       dummy_int);
+						       Physical_Time,
+						       DTS_Step);
   }
 
 
@@ -281,7 +276,8 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 		                          GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> &GMRES_,
 		                          Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_precon,
 					  DTS_NKS_Quad_Block<SOLN_BLOCK_TYPE,INPUT_TYPE> *DTS_SolnBlk,
-		                          int DTS_Step){
+		                          double Physical_Time,
+					  int DTS_Step){
 		     
   double *L2norm_current = new double[SolnBlk[0].Number_of_Residual_Norms]; 
   double *L1norm_current = new double[SolnBlk[0].Number_of_Residual_Norms]; 
@@ -399,7 +395,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
   while (NKS_continue_flag && Number_of_Newton_Steps <= Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations) {
     /**************************************************************************/
     // Limiter Switch to use  first order for first "N" newton steps, then switch to requested method 
-    if (Number_of_Newton_Steps <= MIN_NUMBER_OF_NEWTON_STEPS_WITH_ZERO_LIMITER) {
+    if (Number_of_Newton_Steps <= Input_Parameters.NKS_IP.Min_Number_of_Newton_Steps_With_Zero_Limiter) {
       if (CFFC_Primary_MPI_Processor()) {  cout<<"\n Setting Limiter to ZERO, ie. Using First Order"; }
       Input_Parameters.i_Limiter = LIMITER_ZERO;   
     } else {
@@ -468,7 +464,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 	if (Input_Parameters.NKS_IP.output_format == OF_ALISTAIR) {
 	   Output_Progress_to_File(residual_file, 
                                    number_of_explicit_time_steps+real_NKS_Step,
-				   ZERO, 
+				   Physical_Time*THOUSAND,
 				   total_cpu_time, 
 				   L1norm_current[SolnBlk[0].residual_variable-1],
 				   L2norm_current[SolnBlk[0].residual_variable-1],
@@ -476,7 +472,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
         } else {
            Output_Progress_to_File(residual_file,
 		 		   number_of_explicit_time_steps+real_NKS_Step,
-			           ZERO,                //DTS physical_time*THOUSAND ????
+			           Physical_Time*THOUSAND,
 				   total_cpu_time, 
 			           L1norm_current,      //maybe switch to current_n so all scale from 1 ???
 			           L2norm_current,
@@ -491,21 +487,21 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
     //
     //  -- Alistair Tue Sep 12 2006 
     //
-    if (Number_of_Newton_Steps == 1 ) {
-    	L2norm_first = max(L2norm_first,L2norm_current[SolnBlk[0].residual_variable-1]);  //another restart cludge
-    	L1norm_first = L1norm_current[SolnBlk[0].residual_variable-1];
-    	Max_norm_first = Max_norm_current[SolnBlk[0].residual_variable-1];
-    } else {
-    	L2norm_first = max(L2norm_first, L2norm_current[SolnBlk[0].residual_variable-1]);
-    	L1norm_first = max(L1norm_first, L1norm_current[SolnBlk[0].residual_variable-1]);
-    	Max_norm_first = max(Max_norm_first, Max_norm_current[SolnBlk[0].residual_variable-1]);   
-    } 
-
-//     if (L2norm_first <= 0.0) {
-//       L2norm_first = L2norm_current[SolnBlk[0].residual_variable-1];
-//       L1norm_first = L1norm_current[SolnBlk[0].residual_variable-1];
-//       Max_norm_first = Max_norm_current[SolnBlk[0].residual_variable-1];
+//     if (Number_of_Newton_Steps == 1 ) {
+//     	L2norm_first = max(L2norm_first,L2norm_current[SolnBlk[0].residual_variable-1]);  //another restart cludge
+//     	L1norm_first = L1norm_current[SolnBlk[0].residual_variable-1];
+//     	Max_norm_first = Max_norm_current[SolnBlk[0].residual_variable-1];
+//     } else {
+//     	L2norm_first = max(L2norm_first, L2norm_current[SolnBlk[0].residual_variable-1]);
+//     	L1norm_first = max(L1norm_first, L1norm_current[SolnBlk[0].residual_variable-1]);
+//     	Max_norm_first = max(Max_norm_first, Max_norm_current[SolnBlk[0].residual_variable-1]);   
 //     } 
+
+    if (L2norm_first <= ZERO) {
+      L2norm_first = L2norm_current[SolnBlk[0].residual_variable-1];
+      L1norm_first = L1norm_current[SolnBlk[0].residual_variable-1];
+      Max_norm_first = Max_norm_current[SolnBlk[0].residual_variable-1];
+    } 
 
     L2norm_current_n   = L2norm_current[SolnBlk[0].residual_variable-1] / L2norm_first; 
     L1norm_current_n   = L1norm_current[SolnBlk[0].residual_variable-1] / L1norm_first; 
@@ -851,8 +847,8 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       /**************************************************************************/
       // Create/Update Jacobian Matrix(s) using Uo = U  
       if ( ( !Input_Parameters.NKS_IP.Dual_Time_Stepping &&
-	     (Number_of_Newton_Steps < MIN_NUMBER_OF_NEWTON_STEPS_REQUIRING_JACOBIAN_UPDATE || 
-	      L2norm_current_n > MIN_L2_NORM_REQUIRING_JACOBIAN_UPDATE) ) ||                          
+	     (Number_of_Newton_Steps < Input_Parameters.NKS_IP.Min_Number_of_Newton_Steps_Requiring_Jacobian_Update || 
+	      L2norm_current_n > Input_Parameters.NKS_IP.Min_L2_Norm_Requiring_Jacobian_Update) ) ||                          
 	   ( Input_Parameters.NKS_IP.Dual_Time_Stepping && GMRES_Iters_increaseing) ) {
 
         if (CFFC_Primary_MPI_Processor() ) {	
@@ -1098,8 +1094,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
   // Housekeeping 
   delete[] L2norm_current; delete[] L1norm_current; delete[] Max_norm_current;
   delete[] GMRES_All_Iters;
-  if (CFFC_Primary_MPI_Processor() && 
-      Input_Parameters.NKS_IP.Detect_Convergence_Stall) {
+  if (CFFC_Primary_MPI_Processor() &&Input_Parameters.NKS_IP.Detect_Convergence_Stall) {
     delete [] dcs_data;
   }
   cout.precision(tmpp);
@@ -1178,13 +1173,13 @@ double Finite_Time_Step(const INPUT_TYPE &Input_Parameters,
   // over the last two Newton iterations, that is, the time step is not based
   // simply on the current norm residual ratio. 
   //   -- Alistair Wood. Wed Aug 08 2007.
-  if (L2norm_current_n > MIN_FINITE_TIME_STEP_NORM_RATIO ) { 
+  if (L2norm_current_n > Input_Parameters.NKS_IP.Min_Finite_Time_Step_Norm_Ratio ) { 
     CFL_current = Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL*
                   pow( max(ONE, ONE/L2norm_current_n),ONE );
                   //pow(min(ONE, max(ONE, ONE/L2norm_current_n)*MIN_FINITE_TIME_STEP_NORM_RATIO),ONE );     
   } else {
      CFL_current = Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL/
-                   MIN_FINITE_TIME_STEP_NORM_RATIO;
+       Input_Parameters.NKS_IP.Min_Finite_Time_Step_Norm_Ratio;
   } 
  
   return CFL_current;

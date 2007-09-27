@@ -48,8 +48,9 @@ class NKS_Input_Parameters{
   bool Dual_Time_Stepping;              //!< Dual-time-stepping flag (on or off).  
   int Physical_Time_Integration;        //!< Implicit Euler, BDF2, ESDIRK, etc.
   double Physical_Time_CFL_Number;
+  double Physical_Time_Step;
   int Maximum_Number_of_DTS_Steps; 
-
+  
   //int Dual_Time_Preconditioning;  
   //@}
 
@@ -108,6 +109,13 @@ class NKS_Input_Parameters{
   int    NKS_Write_Output_Cells_Freq; //!< set to zero to turn off
   //@}
 
+  //@{ @name NKS Parameters
+  int Min_Number_of_Newton_Steps_With_Zero_Limiter;            //!< force 1st order for "N" steps
+  double Min_Number_of_Newton_Steps_Requiring_Jacobian_Update; //!< force Jacobian updates for "N" Newton steps       
+  double Min_L2_Norm_Requiring_Jacobian_Update;                //!< force Jacobian update for L2 < "N"
+  double Min_Finite_Time_Step_Norm_Ratio;                      //!< ramp over to full newton over 8 orders of L2 magnitude
+  //@}
+
   //@{ @name Default Constructor 
   NKS_Input_Parameters() {
     Maximum_Number_of_NKS_Iterations = 0;
@@ -117,6 +125,7 @@ class NKS_Input_Parameters{
     Dual_Time_Stepping = false;         
     Physical_Time_Integration = TIME_STEPPING_IMPLICIT_EULER;
     Physical_Time_CFL_Number = 1.0 ;
+    Physical_Time_Step = 0.0;
     Maximum_Number_of_DTS_Steps = 0;
 
     Finite_Time_Step = true;
@@ -145,7 +154,13 @@ class NKS_Input_Parameters{
     output_precision = 2;
     output_width = output_precision + 9;
     Freeze_Limiter_Immediately = FLI_NOT_USED;
-    NKS_Write_Output_Cells_Freq = 0;
+    NKS_Write_Output_Cells_Freq = 0; 
+   
+    Min_Number_of_Newton_Steps_With_Zero_Limiter = 0 ;           
+    Min_Number_of_Newton_Steps_Requiring_Jacobian_Update = 100; 
+    Min_L2_Norm_Requiring_Jacobian_Update = 1.0e-08 ;
+    Min_Finite_Time_Step_Norm_Ratio = 1.0e-10; 
+
   };
   //@}
 
@@ -171,7 +186,8 @@ class NKS_Input_Parameters{
     // Dual Time Stepping
     MPI::COMM_WORLD.Bcast(&(Dual_Time_Stepping), 1, MPI::INT,    0);  //BOOL
     MPI::COMM_WORLD.Bcast(&(Physical_Time_Integration), 1, MPI::INT,   0);
-    MPI::COMM_WORLD.Bcast(&(Physical_Time_CFL_Number), 1, MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Physical_Time_CFL_Number), 1, MPI::DOUBLE, 0);  
+    MPI::COMM_WORLD.Bcast(&(Physical_Time_Step), 1, MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(Maximum_Number_of_DTS_Steps), 1, MPI::INT,   0);
 
     // Finite Time Step
@@ -228,7 +244,13 @@ class NKS_Input_Parameters{
     MPI::COMM_WORLD.Bcast(&(output_precision), 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(output_width), 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(Freeze_Limiter_Immediately), 1, MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(NKS_Write_Output_Cells_Freq), 1, MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(NKS_Write_Output_Cells_Freq), 1, MPI::INT, 0);  
+
+    MPI::COMM_WORLD.Bcast(&(Min_Number_of_Newton_Steps_With_Zero_Limiter), 1, MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(Min_Number_of_Newton_Steps_Requiring_Jacobian_Update), 1, MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&( Min_L2_Norm_Requiring_Jacobian_Update), 1, MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&( Min_Finite_Time_Step_Norm_Ratio), 1, MPI::DOUBLE, 0);
+
 #endif
   };
 
@@ -247,7 +269,8 @@ class NKS_Input_Parameters{
      // Dual Time Stepping
     Communicator.Bcast(&(Dual_Time_Stepping), 1, MPI::INT,    Source_Rank);  //BOOL
     Communicator.Bcast(&(Physical_Time_Integration), 1, MPI::INT,   Source_Rank);
-    Communicator.Bcast(&(Physical_Time_CFL_Number), 1, MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(Physical_Time_CFL_Number), 1, MPI::DOUBLE, Source_Rank); 
+    Communicator.Bcast(&(Physical_Time_Step), 1, MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&( Maximum_Number_of_DTS_Steps), 1, MPI::INT,   Source_Rank);
 
     // Finite Time Step
@@ -304,7 +327,13 @@ class NKS_Input_Parameters{
     Communicator.Bcast(&(output_precision), 1, MPI::INT, Source_Rank);
     Communicator.Bcast(&(output_width), 1, MPI::INT, Source_Rank);
     Communicator.Bcast(&(Freeze_Limiter_Immediately), 1, MPI::INT, Source_Rank);
-    Communicator.Bcast(&(NKS_Write_Output_Cells_Freq), 1, MPI::INT, Source_Rank);
+    Communicator.Bcast(&(NKS_Write_Output_Cells_Freq), 1, MPI::INT, Source_Rank);  
+
+    Communicator.Bcast(&(Min_Number_of_Newton_Steps_With_Zero_Limiter), 1, MPI::INT, Source_Rank);
+    Communicator.Bcast(&(Min_Number_of_Newton_Steps_Requiring_Jacobian_Update), 1, MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(Min_L2_Norm_Requiring_Jacobian_Update), 1, MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(Min_Finite_Time_Step_Norm_Ratio), 1, MPI::DOUBLE, Source_Rank);
+
   };
 #endif
 
@@ -365,6 +394,11 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
   } else if (strcmp(code, "NKS_Physical_Time_CFL") == 0) {
     i_command = 65;
     Physical_Time_CFL_Number = strtod(value, &ptr);
+    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
+   
+  } else if (strcmp(code, "NKS_Physical_Time_Step") == 0) {
+    i_command = 65;
+    Physical_Time_Step = strtod(value, &ptr);
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
 
   } else if (strcmp(code, "Maximum_Number_of_NKS_DTS_Steps" ) == 0) {
@@ -551,6 +585,26 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
     NKS_Write_Output_Cells_Freq = static_cast<int>(strtol(value, &ptr, 10));
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
 
+  } else if (strcmp(code, "NKS_Min_Number_of_Newton_Steps_With_Zero_Limiter") == 0) {
+    i_command = 77;
+    Min_Number_of_Newton_Steps_With_Zero_Limiter = static_cast<int>(strtol(value, &ptr, 10));
+    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
+
+  } else if (strcmp(code, "NKS_Min_Number_of_Newton_Steps_Requiring_Jacobian_Update") == 0) {
+    i_command = 79;
+    Min_Number_of_Newton_Steps_Requiring_Jacobian_Update = strtod(value, &ptr);
+    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
+
+  } else if (strcmp(code, "NKS_Min_L2_Norm_Requiring_Jacobian_Update") == 0) {
+    i_command = 80;
+    Min_L2_Norm_Requiring_Jacobian_Update = strtod(value, &ptr);
+    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
+    
+  } else if (strcmp(code, "NKS_Min_Finite_Time_Step_Norm_Ratio") == 0) {
+    i_command = 81;
+    Min_Finite_Time_Step_Norm_Ratio = strtod(value, &ptr);
+    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
+ 
   } else {
     i_command = INVALID_INPUT_CODE;
   }
@@ -580,9 +634,13 @@ inline ostream& NKS_Input_Parameters::Output(ostream& fout) const {
        fout<<" DTS Time Integration  ====> Implicit Euler \n";
      } else if ( Physical_Time_Integration == TIME_STEPPING_IMPLICIT_SECOND_ORDER_BACKWARD) {
        fout<<" DTS Time Integration  ====> Second Order Backwards \n";
+     } 
+     if( Physical_Time_Step > ZERO){
+       fout <<" DTS Fixed Time Step   ====> " << Physical_Time_Step << endl; 
+     } else { 
+       fout <<" DTS CFL Number        ====> " << Physical_Time_CFL_Number << endl;   
      }
-     fout <<" DTS CFL Number        ====> " << Physical_Time_CFL_Number << endl; 
-     fout <<" DTS Max Steps         ====> " << Maximum_Number_of_DTS_Steps  << endl;        
+    fout <<" DTS Max Steps         ====> " << Maximum_Number_of_DTS_Steps  << endl;        
   } else { 
      fout << "OFF\n"; 
   }
