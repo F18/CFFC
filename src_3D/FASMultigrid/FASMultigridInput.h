@@ -43,12 +43,14 @@ class Multigrid_Input_Parameters{
  private:
  public:
   //@{ @name Multigrid cycle definitions
-  int Levels; //!< Number of levels in multigrid cycle.
+  //! Number of levels in multigrid cycle
+  int Levels;
   char Cycle_Type[MULTIGRID_INPUT_PARAMETER_LENGTH];
   int i_Cycle;
   int N_Stage;
   int Number_of_Cycles_per_Stage_for_Full_Multigrid;
-  int Defect_Correction; //!< Flag for fine to coarse defect correction.
+  //! Flag for fine to coarse defect correction.
+  int Defect_Correction;
   int Prolong_Using_Injection;
   int First_Order_Coarse_Mesh_Reconstruction;
   int Apply_Coarse_Mesh_Boundary_Conditions;
@@ -74,8 +76,9 @@ class Multigrid_Input_Parameters{
   int Residual_Smoothing_Gauss_Seidel_Iterations;
   //@}
 
-  //@{ @name Dual-time-stepping parameters
-  int i_Dual_Time_Stepping; //!< Dual-time-stepping flag (on or off).
+  //@{ @name Dual-time-stepping parameters:
+  //! Dual-time-stepping flag (on or off).
+  int i_Dual_Time_Stepping;
   int Ncycles_Regular_Multigrid;
   int Ncycles_Full_Multigrid;
   char Physical_Time_Integration_Type[MULTIGRID_INPUT_PARAMETER_LENGTH];
@@ -85,12 +88,13 @@ class Multigrid_Input_Parameters{
   int i_Dual_Time_Preconditioning;
   //@}
 
-  //@{ @name Output control parameters
-  int Write_Output_Cells_Frequency; // set to zero to turn off
+  //@{ @name Output control parameters:
+  //! Ouput control flag (1=produce output, 0=turn off output)
+  int Write_Output_Cells_Frequency;
   //@}
 
-  //@{ @name Constructor and desctructor
-  //! Constructor (assign default values).
+  //@{ @name Constructors and desctructors:
+  //! Constructor (assign default values)
   Multigrid_Input_Parameters(void) {
     // Multigrid cycle parameters:
     strcpy(Cycle_Type,"V");
@@ -136,12 +140,12 @@ class Multigrid_Input_Parameters{
   ~Multigrid_Input_Parameters(void){}
   //@}
 
-  //@{ @name Other Member functions.
-  //! Broadcast input parameters to all processors:
+  //@{ @name Other Member functions:
+  //! Broadcast input parameters to all processors
   void Broadcast(void);
-  //! Parse next input line:
+  //! Parse next input line
   int Parse_Next_Input_Control_Parameter(char *code, stringstream &value);
-  //! Check validity of specified input parameters:
+  //! Check validity of specified input parameters
   int Check_Inputs(void);
   //@}
 

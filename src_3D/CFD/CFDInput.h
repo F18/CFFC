@@ -75,42 +75,43 @@ class CFD_Input_Parameters{
   private:
   public:
   //@{ @name Input file parameters:
-  //! CFFC root directory path:
+  //! CFFC root directory path
   char CFFC_Path[INPUT_PARAMETER_LENGTH];
-  //! Input file name:
+  //! Input file name
   char Input_File_Name[INPUT_PARAMETER_LENGTH];
-  //! Input file stream:
+  //! Input file stream
   ifstream Input_File;
-  //! Input file line number:
+  //! Input file line number
   int Line_Number;
-  //! Next_Control_Parameter:
+  //! Next_Control_Parameter
   char Next_Control_Parameter[INPUT_PARAMETER_LENGTH];
   //@}
 
   //@{ @name Output parameters:
-  //! Output file name:
+  //! Output file name
   char Output_File_Name[INPUT_PARAMETER_LENGTH];
-  //! Restart file name:
+  //! Restart file name
   char Restart_File_Name[INPUT_PARAMETER_LENGTH];
-  //! Output format type indicator:
+  //! Output format type indicator
   char Output_Format_Type[INPUT_PARAMETER_LENGTH];
   int i_Output_Format;
-  //! Frequency for saving restart solutions:
+  //! Frequency for saving restart solutions
   int Restart_Solution_Save_Frequency;
-  //! Frequency of outputting solution progress information:
+  //! Frequency of outputting solution progress information
   int Output_Progress_Frequency;
-  //! Frequency of outputting solution for time accurate calculations:
+  //! Frequency of outputting solution for time accurate calculations
   int Time_Accurate_Output_Frequency;
   //@}
 
-  //@{ @name Debug level for calculation: 0 for none, 1,2,3... level of verboseness
+  //@{ @name Debugging parameters:
+  //! Debug level for calculation (0 for none, 1,2,3... level of verboseness)
   int Debug_Level;
   //@}
 
   //@{ @name Flow type indicator and related input parameters:
   char Flow_Type[INPUT_PARAMETER_LENGTH];
   int i_Flow_Type;
-  //! Axisymmetric flow indicator (0 no, 1 yes, axisymmetric):
+  //! Axisymmetric flow indicator (1=axisymmetric flow, 0=2D planar or 3D flow)
   int Axisymmetric;
   //@}
 
@@ -119,7 +120,8 @@ class CFD_Input_Parameters{
   int i_Time_Integration;
   int Time_Accurate, Local_Time_Stepping, 
       Maximum_Number_of_Time_Steps, N_Stage;
-  int p_Norm_Indicator; // 0 density, 1, momentum, 2 k,...
+  //! p-norm calculation indicator (0 density, 1, momentum, 2 k,...)
+  int p_Norm_Indicator;
   double CFL_Number, Time_Max;
   //@}
 
@@ -178,21 +180,28 @@ class CFD_Input_Parameters{
   //@{ @name Initial condition type indicator and related input parameters:
   char ICs_Type[INPUT_PARAMETER_LENGTH];
   int i_ICs;
-  //! Gas Type:
+  //! Gas Type
   char Gas_Type[INPUT_PARAMETER_LENGTH];
-  //! Freestream conditions (M, Re, P, T, alpha):
-  double Mach_Number, Reynolds_Number, 
-         Pressure, Temperature, Flow_Angle;
+  //! Freestream Mach number
+  double Mach_Number;
+  //! Freestream Reynolds number
+  double Reynolds_Number;
+  //! Freestream pressure
+  double Pressure;
+  //! Freestream temperature
+  double Temperature;
+  //! Freestream flow angle
+  double Flow_Angle;
   //@}
 
   //@{ @name Other initial and boundary condition related input parameters:
-  //! Wall velocity: 
+  //! Wall velocity 
   Vector3D Moving_Wall_Velocity;
-  //! Pressure gradient: 
+  //! Pressure gradient 
   Vector3D Pressure_Gradient;
   //@}
  
-  //@{ @name Constructor and desctructor
+  //@{ @name Constructors and desctructors:
   //! Constructor (assign default values).
   CFD_Input_Parameters(void) {
     // Input file parameters:
@@ -207,7 +216,7 @@ class CFD_Input_Parameters{
     i_Output_Format = IO_TECPLOT;
     Restart_Solution_Save_Frequency = 1000;
     Time_Accurate_Output_Frequency = 0;
-    // Debug level for calculation:
+    // Debugging parameters:
     Debug_Level = 0;  //default no debug information
     // Flow type indicator and related input parameters:
     strcpy(Flow_Type, "Inviscid");
@@ -259,23 +268,23 @@ class CFD_Input_Parameters{
   ~CFD_Input_Parameters(void){ }
   //@}
 
-  //@{ @name Other Member functions.
-  //! Obtain location/path of CFFC source directory from environment variable:
+  //@{ @name Other Member functions:
+  //! Obtain location/path of CFFC source directory from environment variable
   void Get_CFFC_Path(void);
-  //! Open input file:
+  //! Open input file
   void Open_Input_File(void);
-  //! Close input file:
+  //! Close input file
   void Close_Input_File(void);
-  //! Broadcast input parameters to all processors:
+  //! Broadcast input parameters to all processors
   void Broadcast(void);
-  //! Read next input line from input file:
+  //! Read next input line from input file
   int Get_Next_Input_Control_Parameter(const bool read_control_parameter);
-  //! Parse next input line:
+  //! Parse next input line
   int Parse_Next_Input_Control_Parameter(void);
-  //! Process/parse all input from input file:
+  //! Process/parse all input from input file
   int Process_Input_Control_Parameter_File(char *Input_File_Name_ptr,
                                            int &Command_Flag);
-  //! Check validity of specified input parameters:
+  //! Check validity of specified input parameters
   int Check_Inputs(void);
   //@}
 

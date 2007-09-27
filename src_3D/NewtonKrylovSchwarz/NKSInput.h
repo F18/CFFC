@@ -64,15 +64,16 @@ class NKS_Input_Parameters{
  private:
  public:
   //@{ @name Newton parameters:
-  int    Maximum_Number_of_NKS_Iterations; //!< Outer
+  //! Maximum number of Newton (outer) iterations for calculation
+  int    Maximum_Number_of_NKS_Iterations;
   double Overall_Tolerance;
-  double Relaxation_multiplier; //!< If time accurate then do DTS with Implicit Euler. Currently not working.
+  double Relaxation_multiplier;
   bool   Time_Accurate; 
-  double DTS_Tolerance; //!< Only used if time accurate.
-  int    Max_DTS_Steps; //!< Only used if time accurate.
+  double DTS_Tolerance;
+  int    Max_DTS_Steps;
+  //! True/false flag for application of convergence stall detection algorithm
   bool   Detect_Convergence_Stall;
-  // size of the window for the 
-  // detect convergence stall algorithm.
+  //! Size of the window for the detection of convergence stall 
   int    DCS_Window;
   int    Freeze_Limiter_Immediately;  //!< Hack by Alistair to play with Newton convergence.
   //@}
@@ -80,14 +81,13 @@ class NKS_Input_Parameters{
   //@{ @name Implicit Euler parameters:
   bool   Finite_Time_Step;   
   double Finite_Time_Step_Initial_CFL;
-  // Some of these finite-time step parameters are only used by explicit
-  // specializations of the Finite_Time_Step() function.
   double Finite_Time_Step_Final_CFL; 
   double Finite_Time_Step_Max_CFL;
   //@}
 
   //@{ @name GMRES parameters:
-  int    Maximum_Number_of_GMRES_Iterations; //!< Inner
+  //! Maximum number of GMRES (inner) iterations for the calculation
+  int    Maximum_Number_of_GMRES_Iterations;
   int    GMRES_Restart;
   int    GMRES_Overlap;
   bool   Normalization;   
@@ -124,8 +124,8 @@ class NKS_Input_Parameters{
   int    NKS_Write_Output_Cells_Freq; // set to zero to turn off
   //@}
   
-  //@{ @name Constructor and desctructor
-  //! Constructor (assign default values).
+  //@{ @name Constructors and desctructors:
+  //! Constructor (assign default values)
   NKS_Input_Parameters() {
     Maximum_Number_of_NKS_Iterations = 0;
     Overall_Tolerance = 1e-5;      
@@ -167,14 +167,14 @@ class NKS_Input_Parameters{
   ~NKS_Input_Parameters(void){}
   //@}
 
-  //@{ @name Other Member functions.
-  //! Broadcast input parameters to all processors:
+  //@{ @name Other Member functions:
+  //! Broadcast input parameters to all processors
   void Broadcast(void);
-  //! Parse next input line:
+  //! Parse next input line
   int Parse_Next_Input_Control_Parameter(char *code, stringstream &value);
-  //! Check validity of specified input parameters:
+  //! Check validity of specified input parameters
   int Check_Inputs(void);
-  //! Estimate memory usage:
+  //! Estimate memory usage
   void Memory_Estimates(const int &, const int &, const int &);
   //@}
 

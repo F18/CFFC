@@ -264,7 +264,7 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
        if (Time_Accurate_Output_Frequency < 0) i_command = INVALID_INPUT_VALUE;
 
     //
-    // Debug level for calculation:
+    // Debugging parameters:
     //
     } else if (strcmp(code, "Debug_Level") == 0) {
        i_command = 20;
@@ -819,7 +819,7 @@ void CFD_Input_Parameters::Broadcast(void) {
                           1,
                           MPI::INT, 0);
 
-    // Debug level for calculation:
+    // Debugging parameters:
     MPI::COMM_WORLD.Bcast(&(Debug_Level),
                           1,
 			  MPI::INT, 0);
