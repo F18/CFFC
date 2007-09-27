@@ -639,32 +639,25 @@ void Chem2D_pState::MoleFracOfRadSpec( double &xCO,  double &xH2O,
   double M_mix = Mass(); // kg/mol
 
   //
-  // the species exists, compute its 
+  // the species exists, compute its mole fraction
   //
+  xCO = ZERO;  xH2O = ZERO;  xCO2 = ZERO;  xO2 = ZERO;
 
   //CO
   if (React.iCO > -1) 
     xCO = spec[React.iCO].c*M_mix/(specdata[React.iCO].Mol_mass());
-  else
-    xCO = ZERO;
   
   // H2O
   if (React.iH2O > -1) 
     xH2O = spec[React.iH2O].c*M_mix/(specdata[React.iH2O].Mol_mass());
-  else
-    xH2O = ZERO;
 
   //CO2
   if (React.iCO2 > -1) 
     xCO2 = spec[React.iCO2].c*M_mix/(specdata[React.iCO2].Mol_mass());
-  else
-    xCO2 = ZERO;
 
   //CO
   if (React.iO2 > -1) 
     xO2 = spec[React.iO2].c*M_mix/(specdata[React.iO2].Mol_mass());
-  else
-    xO2 = ZERO;
 
 }
 

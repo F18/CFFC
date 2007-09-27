@@ -197,7 +197,7 @@ void Medium2D_State :: ComputeNewState( const double &Pressure,
   } else if (Absorb_Type == MEDIUM2D_ABSORB_GRAY) {
     for (int v=0; v<Nband; v++) {
       //kappa[v] = AbsorptionCoef; // <-- it is a treated as a specified constant
-      Ib   [v] = BlackBody(Temperature);
+      Ib[v] = BlackBody(Temperature);
     } // endfor
 
   // error

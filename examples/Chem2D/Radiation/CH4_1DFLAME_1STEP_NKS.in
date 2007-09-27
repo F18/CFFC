@@ -35,7 +35,7 @@ GMRES_ILUK_Level_of_Fill =
 GMRES_Normalization=
 ON
 GMRES_Check=
-ON
+OFF
 #---------- NK -----------------
 NKS_Overall_Tolerance =
 1.0e-12
@@ -125,7 +125,7 @@ Mass_Fractions=
 #################################
 # Non STD_ATM properties
 # T(K) and P(kPa)
-#################################ls
+#################################
 Temperature=
 298.0
 ##################################
@@ -134,7 +134,8 @@ Temperature=
 Radiation=
 ON
 Radiation_Input_File_Name=
-Radiation_Gray_NKS.in
+Radiation_SNBCK_NKS.in
+#Radiation_Gray_NKS.in
 Max_Number_Sequential_Solves=
 4
 #################################
