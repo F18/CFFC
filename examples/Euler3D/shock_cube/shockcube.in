@@ -14,8 +14,8 @@ Flux_Function_Type =
 Roe
 #HLLE 
 ICs_Type = 
-Sod_Xdir
-#ShockBox
+#Sod_Xdir
+ShockBox
 #ICs_Type = 
 #Uniform
 Schmidt=
@@ -29,11 +29,11 @@ Cube
 #Grid_Type =
 #Pipe
 Number_of_Cells_Idir = 
-5
+20
 Number_of_Cells_Jdir =
-5
+20
 Number_of_Cells_Kdir =
-5
+20
 Number_of_Blocks_Idir = 
 1
 Number_of_Blocks_Jdir =

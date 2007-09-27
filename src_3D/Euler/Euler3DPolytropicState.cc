@@ -148,21 +148,21 @@
 
 	// Specific enthalpy. 
 	double Euler3D_Polytropic_pState::h(void) {
-		cout << "h1 called" << endl;
+		//cout << "h1 called" << endl;
 		return (g*p/(gm1*rho) + HALF*v.sqr());
 	}
 	double Euler3D_Polytropic_pState::h(void) const {
-		cout << "h2 called" << endl;
+		//cout << "h2 called" << endl;
 		return (g*p/(gm1*rho) + HALF*v.sqr());
 	}
 
 	// Total enthalpy. 
 	double Euler3D_Polytropic_pState::H(void) {
-		cout << "H1 called" << endl;
+		//cout << "H1 called" << endl;
 		return (g*gm1i*p + HALF*rho*v.sqr());
 	}
 	double Euler3D_Polytropic_pState::H(void) const {
-		cout << "H2 called" << endl;
+		//cout << "H2 called" << endl;
 		return (g*gm1i*p + HALF*rho*v.sqr());
 	}
 
@@ -803,7 +803,7 @@
 			case 5 :
 				return (v.x+a());
 			default:
-				return (v.x);
+				return (v.x-a());
 		}
 	}
 	double Euler3D_Polytropic_pState::lambda(int index) const {
@@ -820,7 +820,7 @@
 			case 5 :
 				return (v.x+a());
 			default:
-				return (v.x);
+				return (v.x-a());
 		}
 	}
 
@@ -979,7 +979,7 @@
 	Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc(const int &index){
 		switch(index){
 			case 1: 
-				return (Euler3D_Polytropic_cState(ONE, v.x-a(), v.y, v.z, h()-v.x*a()));
+				return (Euler3D_Polytropic_cState(ONE, v.x-a(), v.y, v.z, H()/rho-v.x*a()));
 			case 2:
 				return (Euler3D_Polytropic_cState(ONE, v.x, v.y, v.z, HALF*v.sqr())); 
 			case 3:
@@ -987,13 +987,13 @@
 			case 4: 
 				return (Euler3D_Polytropic_cState(ZERO, ZERO, ZERO, rho, rho*v.z));
 			case 5: 
-				return (Euler3D_Polytropic_cState(ONE, v.x+a(), v.y, v.z, h()+v.x*a()));
+				return (Euler3D_Polytropic_cState(ONE, v.x+a(), v.y, v.z, H()/rho+v.x*a()));
 		}		
 	}
 	Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc(const int &index) const{
 		switch(index){
 			case 1: 
-				return (Euler3D_Polytropic_cState(ONE, v.x-a(), v.y, v.z, h()-v.x*a()));
+				return (Euler3D_Polytropic_cState(ONE, v.x-a(), v.y, v.z, H()/rho-v.x*a()));
 			case 2:
 				return (Euler3D_Polytropic_cState(ONE, v.x, v.y, v.z, HALF*v.sqr())); 
 			case 3:
@@ -1001,14 +1001,14 @@
 			case 4: 
 				return (Euler3D_Polytropic_cState(ZERO, ZERO, ZERO, rho, rho*v.z));
 			case 5: 
-				return (Euler3D_Polytropic_cState(ONE, v.x+a(), v.y, v.z, h()+v.x*a()));
+				return (Euler3D_Polytropic_cState(ONE, v.x+a(), v.y, v.z, H()/rho+v.x*a()));
 		}		
 	}
 
 	Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc_x(const int &index){
 		switch(index){
 			case 1: 
-				return (Euler3D_Polytropic_cState(ONE, v.x-a(), v.y, v.z, h()-v.x*a()));
+				return (Euler3D_Polytropic_cState(ONE, v.x-a(), v.y, v.z, H()/rho-v.x*a()));
 			case 2:
 				return (Euler3D_Polytropic_cState(ONE, v.x, v.y, v.z, HALF*v.sqr())); 
 			case 3:
@@ -1016,13 +1016,13 @@
 			case 4: 
 				return (Euler3D_Polytropic_cState(ZERO, ZERO, ZERO, rho, rho*v.z));
 			case 5: 
-				return (Euler3D_Polytropic_cState(ONE, v.x+a(), v.y, v.z, h()+v.x*a()));
+				return (Euler3D_Polytropic_cState(ONE, v.x+a(), v.y, v.z, H()/rho+v.x*a()));
 			}		
 		}
 	Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc_x(const int &index) const{
 		switch(index){
 			case 1: 
-				return (Euler3D_Polytropic_cState(ONE, v.x-a(), v.y, v.z, h()-v.x*a()));
+				return (Euler3D_Polytropic_cState(ONE, v.x-a(), v.y, v.z, H()/rho-v.x*a()));
 			case 2:
 				return (Euler3D_Polytropic_cState(ONE, v.x, v.y, v.z, HALF*v.sqr())); 
 			case 3:
@@ -1030,7 +1030,7 @@
 			case 4: 
 				return (Euler3D_Polytropic_cState(ZERO, ZERO, ZERO, rho, rho*v.z));
 			case 5: 
-				return (Euler3D_Polytropic_cState(ONE, v.x+a(), v.y, v.z, h()+v.x*a()));
+				return (Euler3D_Polytropic_cState(ONE, v.x+a(), v.y, v.z, H()/rho+v.x*a()));
 		}		
 	}
 
@@ -1547,107 +1547,158 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::No_Slip(
 
 // Flow velocity. 
 Vector3D Euler3D_Polytropic_cState::v(void) {
+	cout << "call v1" << endl;
+
     return (rhov/rho);
 }
 Vector3D Euler3D_Polytropic_cState::v(void) const {
+	cout << "call v2" << endl;
+
     return (rhov/rho);
 }
 double Euler3D_Polytropic_cState::v(const Vector3D &n) {
+	cout << "call v3" << endl;
+
     return ((rhov*n)/rho);
 }
 double Euler3D_Polytropic_cState::v(const Vector3D &n) const {
+	cout << "call v4" << endl;
+
     return ((rhov*n)/rho);
 }
 
 // Pressure. 
 double Euler3D_Polytropic_cState::p(void) {
+	cout << "call p1" << endl;
+
     return (gm1*(E - HALF*rhov.sqr()/rho));
 }
 double Euler3D_Polytropic_cState::p(void) const {
+	cout << "call p2" << endl;
+
     return (gm1*(E - HALF*rhov.sqr()/rho));
 }
 
 // Temperature. 
 double Euler3D_Polytropic_cState::T(void) {
+	cout << "call T1" << endl;
+
     return (gm1*(E - HALF*rhov.sqr()/rho)/(rho*R));
 }
 double Euler3D_Polytropic_cState::T(void) const {
+	cout << "call T2" << endl;
+
     return (gm1*(E - HALF*rhov.sqr()/rho)/(rho*R));
 }
 
 // Specific internal energy. 
 double Euler3D_Polytropic_cState::e(void) {
+	cout << "call e1" << endl;
+
     return (E/rho - HALF*rhov.sqr()/sqr(rho));
 }
 double Euler3D_Polytropic_cState::e(void) const {
+	cout << "call e2" << endl;
     return (E/rho - HALF*rhov.sqr()/sqr(rho));
 }
 
 // Specific enthalpy. 
 double Euler3D_Polytropic_cState::h(void) {
+	cout << "call h1" << endl;
+
     return (g*E/rho - gm1*HALF*rhov.sqr()/sqr(rho));
 }
 double Euler3D_Polytropic_cState::h(void) const {
+	cout << "call h2" << endl;
+
     return (g*E/rho - gm1*HALF*rhov.sqr()/sqr(rho));
 }
 
 // Total enthalpy. 
 double Euler3D_Polytropic_cState::H(void) {
+	cout << "call H1" << endl;
+
 	return (g*E - gm1*HALF*rhov.sqr()/rho);
 }
 double Euler3D_Polytropic_cState::H(void) const {
+	cout << "call H2" << endl;
+
 	return (g*E - gm1*HALF*rhov.sqr()/rho);
 }
 
 // Sound speed. 
 double Euler3D_Polytropic_cState::a(void) {
+	cout << "call a1" << endl;
+
     return (sqrt(g*gm1*(E/rho - HALF*rhov.sqr()/sqr(rho))));
 }
 double Euler3D_Polytropic_cState::a(void) const {
+	cout << "call a2" << endl;
+
     return (sqrt(g*gm1*(E/rho - HALF*rhov.sqr()/sqr(rho))));
 }
 
 // Sound speed squared. 
 double Euler3D_Polytropic_cState::a2(void) {
+	cout << "call a21" << endl;
+
     return (g*gm1*(E/rho - HALF*rhov.sqr()/sqr(rho)));
 }
 double Euler3D_Polytropic_cState::a2(void) const {
+	cout << "call a22" << endl;
+
     return (g*gm1*(E/rho - HALF*rhov.sqr()/sqr(rho)));
 }
 
 // Mach number. 
 double Euler3D_Polytropic_cState::M(void) {
+	cout << "call M1" << endl;
+
     return (abs(rhov)/(rho*sqrt(g*gm1*(E/rho - HALF*rhov.sqr()/sqr(rho)))));
 }
 double Euler3D_Polytropic_cState::M(void) const {
+	cout << "call M2" << endl;
+
     return (abs(rhov)/(rho*sqrt(g*gm1*(E/rho - HALF*rhov.sqr()/sqr(rho)))));
 }
 
 // Specific entropy. 
 double Euler3D_Polytropic_cState::s(void) {
+	cout << "call s1" << endl;
+
     return (R*gm1i*log(gm1*(E - HALF*rhov.sqr()/rho)/pow(rho, g)));
 }
 double Euler3D_Polytropic_cState::s(void) const {
+	cout << "call s2" << endl;
+
     return (R*gm1i*log(gm1*(E - HALF*rhov.sqr()/rho)/pow(rho, g)));
 }
 
 // Stagnation temperature. 
 double Euler3D_Polytropic_cState::To(void) {
+	cout << "call To1" << endl;
+
     return ((gm1*(E - HALF*rhov.sqr()/rho)/(rho*R))*
 			(ONE+HALF*gm1*rhov.sqr()/(rho*rho*g*gm1*(E/rho - HALF*rhov.sqr()/sqr(rho)))));
 }
 double Euler3D_Polytropic_cState::To(void) const {
+	cout << "call To2" << endl;
+
     return ((gm1*(E - HALF*rhov.sqr()/rho)/(rho*R))*
 			(ONE+HALF*gm1*rhov.sqr()/(rho*rho*g*gm1*(E/rho - HALF*rhov.sqr()/sqr(rho)))));
 }
 
 // Stagnation pressure. 
 double Euler3D_Polytropic_cState::po(void) {
+	cout << "call po1" << endl;
+
     return ((gm1*(E - HALF*rhov.sqr()/rho))*
             pow(ONE+HALF*gm1*rhov.sqr()/(rho*rho*g*gm1*
                                        (E/rho -HALF*rhov.sqr()/sqr(rho))), g*gm1i));
 }
 double Euler3D_Polytropic_cState::po(void) const {
+	cout << "call po2" << endl;
+
     return ((gm1*(E - HALF*rhov.sqr()/rho))*
             pow(ONE+HALF*gm1*rhov.sqr()/(rho*rho*g*gm1*
                                        (E/rho - HALF*rhov.sqr()/sqr(rho))), g*gm1i));
@@ -1655,11 +1706,15 @@ double Euler3D_Polytropic_cState::po(void) const {
 
 // Stagnation sound speed. 
 double Euler3D_Polytropic_cState::ao(void) {
+	cout << "call ao1" << endl;
+
 	return (sqrt((g*gm1*(E/rho - HALF*rhov.sqr()/sqr(rho)))*
 				 (ONE+HALF*gm1*rhov.sqr()/
 				  (rho*rho*g*gm1*(E/rho - HALF*rhov.sqr()/sqr(rho))))));
 }
 double Euler3D_Polytropic_cState::ao(void) const {
+	cout << "call ao2" << endl;
+
 	return (sqrt((g*gm1*(E/rho - HALF*rhov.sqr()/sqr(rho)))*
 				 (ONE+HALF*gm1*rhov.sqr()/
 				  (rho*rho*g*gm1*(E/rho - HALF*rhov.sqr()/sqr(rho))))));
@@ -1668,11 +1723,14 @@ double Euler3D_Polytropic_cState::ao(void) const {
 
 // Stagnation enthalpy. 
 double Euler3D_Polytropic_cState::ho(void) {
+	cout << "call ho1" << endl;
 	return ((g*E/rho - gm1*HALF*rhov.sqr()/sqr(rho))*
 			(ONE+HALF*gm1*rhov.sqr()/
 			 (rho*rho*g*gm1*(E/rho - HALF*rhov.sqr()/sqr(rho)))));
 }
 double Euler3D_Polytropic_cState::ho(void) const {
+	cout << "call h02" << endl;
+
     return ((g*E/rho - gm1*HALF*rhov.sqr()/sqr(rho))*
             (ONE+HALF*gm1*rhov.sqr()/
              (rho*rho*g*gm1*(E/rho - HALF*rhov.sqr()/sqr(rho)))));
@@ -1684,14 +1742,20 @@ double Euler3D_Polytropic_cState::ho(void) const {
 	* -------------------------
 	*/
 	Euler3D_Polytropic_pState Euler3D_Polytropic_cState::W(void) {
+		cout << "call W1" << endl;
+
 		return (Euler3D_Polytropic_pState(rho, v(), p()));
 	}
 
 	Euler3D_Polytropic_pState Euler3D_Polytropic_cState::W(void) const {
+	cout << "call W2" << endl;
+
 		return (Euler3D_Polytropic_pState(rho, v(), p()));
 	}
 
 	Euler3D_Polytropic_pState Euler3D_Polytropic_cState::W(const Euler3D_Polytropic_cState &U) {
+		cout << "call W3" << endl;
+
 		return (Euler3D_Polytropic_pState(U.rho, U.v(), U.p()));
 	}
 
