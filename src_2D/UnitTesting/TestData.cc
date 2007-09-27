@@ -6,8 +6,8 @@ namespace tut{
     DIR *dp;
     std::string FailureMsg;
 
-    if ((dp = opendir(Global_TestSuit_Path)) == NULL){
-      FailureMsg = "Critical ERROR: Cannot open directory: " + std::string(Global_TestSuit_Path);
+    if ((dp = opendir(Global_TestSuite_Path)) == NULL){
+      FailureMsg = "Critical ERROR: Cannot open directory: " + std::string(Global_TestSuite_Path);
       FailureMsg += "\n\t       Most likely you are NOT running the executable under the '/src_2D' directory!";
       throw tut::bad_ctor(FailureMsg);
     } else {
@@ -16,8 +16,8 @@ namespace tut{
     }
   }
  
-  void TestData::set_test_suit_path(char * dir_name){
-    // sets the path to the test suit directory relative to "/src_2D"
+  void TestData::set_test_suite_path(char * dir_name){
+    // sets the path to the test suite directory relative to "/src_2D"
     // this path is used to determine where the input and output files are located
     DIR *dp;
     std::string Path;
@@ -26,24 +26,24 @@ namespace tut{
     Path = "./" + std::string(dir_name) + "/";
 
     // deallocate memory
-    if (Global_TestSuit_Path != NULL){
-      delete [] Global_TestSuit_Path; Global_TestSuit_Path = NULL;
+    if (Global_TestSuite_Path != NULL){
+      delete [] Global_TestSuite_Path; Global_TestSuite_Path = NULL;
     }
 
-    // Set the Global_TestSuit_Path
-    Global_TestSuit_Path = new char [Path.capacity() + 1];
-    strcpy(Global_TestSuit_Path,Path.c_str());
+    // Set the Global_TestSuite_Path
+    Global_TestSuite_Path = new char [Path.capacity() + 1];
+    strcpy(Global_TestSuite_Path,Path.c_str());
 
     check_global_paths();
 
-    if ((dp = opendir(Global_TestSuit_Path)) == NULL){
+    if ((dp = opendir(Global_TestSuite_Path)) == NULL){
       try {
-	FailureMsg = "Critical ERROR: Cannot open the test-suit directory: " + std::string(Global_TestSuit_Path);
+	FailureMsg = "Critical ERROR: Cannot open the test-suite directory: " + std::string(Global_TestSuite_Path);
 	FailureMsg += "\n\t       Most likely you are NOT running the executable under the '/src_2D' directory!";
 	throw tut::bad_ctor(FailureMsg);
       } 
       catch (...){
-	delete [] Global_TestSuit_Path; Global_TestSuit_Path = NULL;
+	delete [] Global_TestSuite_Path; Global_TestSuite_Path = NULL;
 	throw;
       }
     } else {
@@ -66,7 +66,7 @@ namespace tut{
     int stat;
     std::string FailureMsg;
 
-    Path = std::string(Global_TestSuit_Path) + std::string(dir_name) + "/";
+    Path = std::string(Global_TestSuite_Path) + std::string(dir_name) + "/";
 
     // deallocate memory
     if (Local_Output_Path != NULL){
@@ -109,7 +109,7 @@ namespace tut{
     std::string Path;
     std::string FailureMsg;
 
-    Path = std::string(Global_TestSuit_Path) + std::string(dir_name) + "/";
+    Path = std::string(Global_TestSuite_Path) + std::string(dir_name) + "/";
 
     // deallocate memory
     if (Local_Input_Path != NULL){
@@ -165,12 +165,12 @@ namespace tut{
 
       } else {
 
-	File1 = new char [strlen(Global_TestSuit_Path) + strlen(_CurrentFile_) + 1];
-	strcpy(File1,Global_TestSuit_Path);
+	File1 = new char [strlen(Global_TestSuite_Path) + strlen(_CurrentFile_) + 1];
+	strcpy(File1,Global_TestSuite_Path);
 	strcat(File1,_CurrentFile_);
 
-	File2 = new char [strlen(Global_TestSuit_Path) + strlen(_MasterFile_) + 1];
-	strcpy(File2,Global_TestSuit_Path);
+	File2 = new char [strlen(Global_TestSuite_Path) + strlen(_MasterFile_) + 1];
+	strcpy(File2,Global_TestSuite_Path);
 	strcat(File2,_MasterFile_);
       } // endif
 

@@ -8,6 +8,8 @@
 *.il
 *.depend*
 *.mod
+\#*#
+.#*
 
 # example directories
 #*~

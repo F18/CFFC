@@ -85,8 +85,6 @@ using namespace std;
  ********************************************************/
 
 /*********************************************************
-
-
   Density:   rho  kg/m^3
   Velocity:  v    m/s
   Pressure:  p    Pa (N/m^2)
@@ -108,18 +106,17 @@ using namespace std;
   Thermal Conductivity:            k   N/(s*K)  W.(m*K)
 
   ns;                number of species
-  NASARP1311data *specdata;   Global Species Data
+  NASARP1311data *specdata:   Global Species Data
 
-  NUM_VAR_3D;         number of total variables (5+ns)
-  Reaction_set React;         Global Reaction Data
+  num_vars:         number of total variables (5+ns)
+  Reaction_set React:         Global Reaction Data
 
-  low_temp_range;      low temp data range
-  high_temp_range;     high temp data range
-
+  low_temp_range:      low temp data range
+  high_temp_range:     high temp data range
 ***********************************************************/
-class NavierStokes3D_ThermallyPerfect_pState :public Euler3D_ThermallyPerfect_pState {
+
+class NavierStokes3D_ThermallyPerfect_pState : public Euler3D_ThermallyPerfect_pState {
   public:
-   
    // constructor
    NavierStokes3D_ThermallyPerfect_pState(): Euler3D_ThermallyPerfect_pState(){ }
    
@@ -313,30 +310,19 @@ class NavierStokes3D_ThermallyPerfect_pState :public Euler3D_ThermallyPerfect_pS
    Vector3D thermal_diffusion(void) const;
    /* Input-output operators. */
  
-
    friend ostream& operator << (ostream &out_file,
                                 const NavierStokes3D_ThermallyPerfect_pState &W);
    friend istream& operator >> (istream &in_file,
                                 NavierStokes3D_ThermallyPerfect_pState &W);
   
-   /*  // Destructors */
-/*   void Deallocate_static(void){ if(specdata != NULL) delete[] specdata; */
-/*   specdata = NULL;} */
-  
-/*   void Deallocate(void){ if(spec != NULL) delete[] spec; */
-/*   spec = NULL;  } */
-  
-/*   ~NavierStokes3D_ThermallyPerfect_pState(){ Deallocate(); } */
-
-  //Read in ns species data
-  /* Set Data Temperature Ranges */
-   static void set_species_data(NavierStokes3D_ThermallyPerfect_pState &Wo, 
-                                const int &, 
-                                const string *,
-                                const char *, 
-                                const int &, 
-                                const double&,
-                                const double *);
+   //Read in ns species data
+/*    void set_species_data(const int &n, */
+/*                          const string *S, */
+/*                          const char *PATH, */
+/*                          const int &debug,  */
+/*                          const double &Mr,  */
+/*                          const double* Sc, */
+/*                          const int &trans_data); */
 
 };
 
@@ -435,31 +421,14 @@ class NavierStokes3D_ThermallyPerfect_cState : public Euler3D_ThermallyPerfect_c
 
   Vector3D thermal_diffusion(const double &T) const;
   
-/*   /\* Input-output operators. *\/ */
-/*   friend ostream& operator << (ostream &out_file,  */
-/*                                const NavierStokes3D_ThermallyPerfect_cState &U); */
-/*   friend istream& operator >> (istream &in_file,   */
-/*                                NavierStokes3D_ThermallyPerfect_cState &U); */
-
-/*    /\* Destructors *\/ */
-/*   void Deallocate_static(void){ if(specdata != NULL) delete[] specdata;  */
-/*   specdata = NULL;  */
-/*   if(Schmidt != NULL) delete[] Schmidt;  */
-/*   Schmidt = NULL;  */
-/*   } */
-/*   void Deallocate(void){ if(rhospec != NULL) delete[] rhospec;  */
-/*   rhospec = NULL;  } */
-  
-/*   ~NavierStokes3D_ThermallyPerfect_cState(){ Deallocate(); } */
-
   //Read in ns species data
-  static void set_species_data(NavierStokes3D_ThermallyPerfect_cState &Uo, 
-                               const int &, 
-                               const string *,
-                               const char *, 
-                               const int &, 
-                               const double&,
-                               const double *);
+/*   void set_species_data(const int &n, */
+/*                         const string *S, */
+/*                         const char *PATH, */
+/*                         const int &debug,  */
+/*                         const double &Mr,  */
+/*                         const double* Sc, */
+/*                         const int &trans_data); */
   
 };
 
@@ -620,8 +589,6 @@ inline Vector3D NavierStokes3D_ThermallyPerfect_pState::thermal_diffusion(void) 
       sum  +=  (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())
          * spec[i].diffusion_coef * spec[i].gradc;
    }
-
-   
    return sum;
 }
 

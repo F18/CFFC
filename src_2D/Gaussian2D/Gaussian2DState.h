@@ -507,7 +507,7 @@ class Gaussian2D_pState{
 	       << "\"Mach\" \\ \n";
     }
 
-    void output_data(ostream &out_file) {
+    void output_data(ostream &out_file, double dummy1, double dummy2) { //dummies needed for compatibility with NS turbulent
       out_file << " " << d << " " << v.x << " " << v.y << " " << p.xx
 	       << " " << p.xy << " " << p.yy << " " << p.zz << " " << erot
 	       << " " << pressure() << " " << (sqrt(sqr(v.x)+sqr(v.y))/sound());
@@ -848,6 +848,8 @@ inline void Gaussian2D_pState::setgas(char *string_ptr) {
     M = MOLE_WT_AIR;
     atoms = GAUSSIAN_DIATOMIC;
     gas = GAS_AIR;
+    omega = OMEGA_AIR;
+    mu_not = MU_NOT_AIR;
   } /* endif */
   if(atoms == GAUSSIAN_MONATOMIC){
     erot = 0.0;

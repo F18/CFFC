@@ -90,7 +90,14 @@ void Output_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
 	       << "\"omega\" \\ \n"
 	       << "\"epsilon\" \\ \n"
 	       << "\"ell\" \\ \n"
-	       << "\"p_modified\" \\ \n";
+	       << "\"p_modified\" \\ \n"
+	       << "\"PrT\" \\ \n"
+	       << "\"yplus\" \\ \n";
+      if (SolnBlk.Variable_Prandtl == ON) {
+	Out_File << "\"ke\" \\ \n"
+		 << "\"ee\" \\ \n";
+      }
+
     }
     Out_File << "\"Rex\" \\ \n";
   }
@@ -118,7 +125,13 @@ void Output_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
 		 << " " << W_node.omega
 		 << " " << W_node.epsilon()
 		 << " " << W_node.ell()
-		 << " " << W_node.pmodified();
+		 << " " << W_node.pmodified()
+		 << " " << W_node.PrT(SolnBlk.Wall[i][j].ywall,SolnBlk.Wall[i][j].yplus)
+		 << " " << SolnBlk.Wall[i][j].yplus;
+	if (SolnBlk.Variable_Prandtl == ON) {
+	  Out_File << " " << W_node.ke
+		   << " " << W_node.ee;
+	}
       }
       Out_File << " " << IP.Wo.v.x/IP.Wo.nu()*SolnBlk.Grid.Node[i][j].X.x;
       Out_File << endl;
@@ -145,6 +158,7 @@ void Output_Cells_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
                           const int Output_Title,
 	                  ostream &Out_File) {
 
+  //The final tecplot output data file just has one ghost cell.
   int nghost = 1;
 
   Out_File << setprecision(14);
@@ -169,7 +183,19 @@ void Output_Cells_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
 	       << "\"epsilon\" \\ \n"
 	       << "\"ell\" \\ \n"
 	       << "\"p_modified\" \\ \n"
-	       << "\"Mt\" \\ \n";
+	       << "\"Mt\" \\ \n"
+	       << "\"PrT\" \\ \n"
+      	       << "\"yplus\" \\ \n";
+      if (SolnBlk.Variable_Prandtl == ON) {
+	Out_File << "\"ke\" \\ \n"
+		 << "\"ee\" \\ \n"
+		 << "\"deriv2\" \\ \n"
+	         << "\"f_lambda\" \\ \n"
+		 << "\"productionE1\" \\ \n"
+		 << "\"D1\" \\ \n"
+		 << "\"D2\" \\ \n"
+		 << "\"diff\" \\ \n";
+      }
     }
     if (SolnBlk.Flow_Type) {
       Out_File << "\"tau_xx\" \\ \n"
@@ -178,7 +204,9 @@ void Output_Cells_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
       if (SolnBlk.Axisymmetric)
 	Out_File << "\"tau_zz\" \\ \n";
       Out_File << "\"qx\" \\ \n"
-	       << "\"qy\" \\ \n";
+	       << "\"qy\" \\ \n"
+	       << "\"alphaT\" \\ \n"
+	       << "\"kappaT\" \\ \n";
     }
     Out_File << "\"mu\" \\ \n";
     if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
@@ -211,7 +239,10 @@ void Output_Cells_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
  	SolnBlk.W[i][j].ComputeViscousTerms(SolnBlk.dWdx[i][j],
  					    SolnBlk.dWdy[i][j],
  					    SolnBlk.Grid.Cell[i][j].Xc,
- 					    SolnBlk.Axisymmetric);
+ 					    SolnBlk.Axisymmetric,
+ 					    OFF,
+					    SolnBlk.Wall[i][j].ywall,
+				            SolnBlk.Wall[i][j].yplus);
  	SolnBlk.U[i][j].tau = SolnBlk.W[i][j].tau;
  	SolnBlk.U[i][j].q = SolnBlk.W[i][j].q;
       }
@@ -230,7 +261,19 @@ void Output_Cells_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
  		 << " " << SolnBlk.W[i][j].epsilon()
 		 << " " << SolnBlk.W[i][j].ell()
 		 << " " << SolnBlk.W[i][j].pmodified()
-		 << " " << SolnBlk.W[i][j].Mt();
+		 << " " << SolnBlk.W[i][j].Mt()
+		 << " " << SolnBlk.W[i][j].PrT(SolnBlk.Wall[i][j].ywall,SolnBlk.Wall[i][j].yplus)
+		 << " " << SolnBlk.Wall[i][j].yplus;
+	if (SolnBlk.Variable_Prandtl == ON) {
+	  Out_File << " " << SolnBlk.W[i][j].ke
+		   << " " << SolnBlk.W[i][j].ee
+		   << " " << SolnBlk.W[i][j].deriv2(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j])
+                   << " " << SolnBlk.W[i][j].f_lambda(SolnBlk.Wall[i][j].ywall)
+		   << " " << SolnBlk.W[i][j].productionE1(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],SolnBlk.Wall[i][j].ywall,SolnBlk.Wall[i][j].yplus)
+		   << " " << SolnBlk.W[i][j].D1()
+		   << " " << SolnBlk.W[i][j].D2()
+		   << " " << SolnBlk.W[i][j].diff(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],SolnBlk.Wall[i][j].ywall,SolnBlk.Wall[i][j].yplus);
+	}
       }
       if (SolnBlk.Flow_Type) {
 	Out_File << " " << SolnBlk.W[i][j].tau.xx
@@ -239,7 +282,9 @@ void Output_Cells_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
 	if (SolnBlk.Axisymmetric)
 	  Out_File << " " << SolnBlk.W[i][j].tau.zz;
 	Out_File << " " << SolnBlk.W[i][j].q.x
-		 << " " << SolnBlk.W[i][j].q.y;
+		 << " " << SolnBlk.W[i][j].q.y
+		 << " " << SolnBlk.W[i][j].alphaT(SolnBlk.Wall[i][j].ywall,SolnBlk.Wall[i][j].yplus)
+		 << " " << SolnBlk.W[i][j].kappaT(SolnBlk.Wall[i][j].ywall,SolnBlk.Wall[i][j].yplus);
       }
       Out_File.unsetf(ios::scientific);
       Out_File << " " << SolnBlk.W[i][j].mu();
@@ -346,14 +391,17 @@ void Output_Nozzleless_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
  	SolnBlk.W[i][j].ComputeViscousTerms(SolnBlk.dWdx[i][j],
  					    SolnBlk.dWdy[i][j],
  					    SolnBlk.Grid.Cell[i][j].Xc,
- 					    SolnBlk.Axisymmetric);
+ 					    SolnBlk.Axisymmetric,
+ 					    OFF,
+					    SolnBlk.Wall[i][j].ywall,
+			 		    SolnBlk.Wall[i][j].yplus);
  	SolnBlk.U[i][j].tau = SolnBlk.W[i][j].tau;
  	SolnBlk.U[i][j].q = SolnBlk.W[i][j].q;
       }
       Out_File.setf(ios::scientific);
       Out_File << " " << SolnBlk.Grid.Cell[i][j].Xc;
       Out_File << " " << SolnBlk.W[i][j].rho 
-	       << SolnBlk.W[i][j].v
+	       << " " << SolnBlk.W[i][j].v
 	       << " " << SolnBlk.W[i][j].p
 	       << " " << SolnBlk.W[i][j].T() 
 	       << " " << SolnBlk.W[i][j].v.abs()/SolnBlk.W[i][j].a() 
@@ -703,6 +751,11 @@ void Output_Quasi3D_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
     if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
       Out_File << "\"k\" \\ \n"
 	       << "\"omega\" \\ \n";
+      if (SolnBlk.Variable_Prandtl == ON) {
+	Out_File << "\"ke\" \\ \n"
+		 << "\"ee\" \\ \n"
+		 << "\"PrT\" \\ \n";
+      }
     }
   }
 
@@ -730,6 +783,11 @@ void Output_Quasi3D_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
 	if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
 	  Out_File << " " << W_node.k
 		   << " " << W_node.omega;
+	  if (SolnBlk.Variable_Prandtl == ON) {
+	    Out_File << " " << W_node.ke
+		     << " " << W_node.ee
+		     << " " << W_node.PrT(SolnBlk.Wall[i][j].ywall,SolnBlk.Wall[i][j].yplus);
+	  }
 	}
 	Out_File << endl;
       }
@@ -1844,6 +1902,197 @@ void Output_Driven_Cavity_Flow_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
     }
   }
 
+}
+
+
+/**********************************************************************
+ * Routine: Output_Supersonic_Hot_Jet_Tecplot                         *
+ *                                                                    *
+ * Writes the experimental solution data for a supersonic hot jet     *
+ * flow for a 1D array of 2D quadrilateral multi-block solution       *
+ * blocks to the specified output data file(s) in a format suitable   *
+ * for plotting with TECPLOT.  Returns a non-zero value if cannot     *
+ * write any of the TECPLOT solution files.  The experimental data    *
+ * was reported by Seiner(1992).                                      *
+ *                                                                    *
+ **********************************************************************/
+void Output_Supersonic_Hot_Jet_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
+				       const int Block_Number,
+				       const int Output_Title,
+				       const int Output_Data,
+				       ostream &Out_File,
+				       const int &variable_flag) {
+  
+  NavierStokes2D_pState We, W;
+
+  // Output node solution data.  
+  Out_File << setprecision(14);
+
+  if (variable_flag == 1) {
+    // Axial static temperature file.
+    if (Output_Title) {
+      Out_File << "TITLE = \"" << CFFC_Name() << ": 2D NavierStokes Hot Supersonic Flow Axial Static Temperature "
+	       << "\"" << "\n"
+	       << "VARIABLES = \"x/R\" \\ \n"
+	       << "\"T\" \\ \n";
+      if (Output_Data) {
+	Out_File << "ZONE T =  \"Experimental data\" \\ \n"
+		 << "I = " << 36 << " \\ \n"
+		 << "J = " << 1 << " \\ \n"
+		 << "F = POINT \\ \n";
+	Out_File << 1.00000000000000e+01 << " " << 1.00100000000000e+00 << endl
+		 << 1.09810000000000e+01 << " " << 9.93000000000000e-01 << endl
+		 << 1.19330000000000e+01 << " " << 9.93000000000000e-01 << endl
+                 << 1.29740000000000e+01 << " " << 1.00400000000000e+00 << endl
+		 << 1.39550000000000e+01 << " " << 1.00200000000000e+00 << endl
+		 << 1.49370000000000e+01 << " " << 1.00100000000000e+00 << endl
+		 << 1.59180000000000e+01 << " " << 1.00500000000000e+00 << endl
+		 << 1.69290000000000e+01 << " " << 1.01800000000000e+00 << endl
+		 << 1.79410000000000e+01 << " " << 1.01400000000000e+00 << endl
+		 << 1.89220000000000e+01 << " " << 1.01300000000000e+00 << endl
+		 << 1.99330000000000e+01 << " " << 1.02500000000000e+00 << endl
+		 << 2.10330000000000e+01 << " " << 1.02600000000000e+00 << endl
+		 << 2.19550000000000e+01 << " " << 1.03000000000000e+00 << endl
+		 << 2.30260000000000e+01 << " " << 1.04400000000000e+00 << endl
+		 << 2.39480000000000e+01 << " " << 1.05100000000000e+00 << endl
+		 << 2.49290000000000e+01 << " " << 1.04400000000000e+00 << endl
+		 << 2.59410000000000e+01 << " " << 1.04800000000000e+00 << endl
+		 << 2.69810000000000e+01 << " " << 1.05700000000000e+00 << endl
+		 << 2.79630000000000e+01 << " " << 1.05300000000000e+00 << endl
+		 << 2.89140000000000e+01 << " " << 1.05100000000000e+00 << endl
+		 << 2.99550000000000e+01 << " " << 1.04800000000000e+00 << endl
+		 << 3.09960000000000e+01 << " " << 1.04300000000000e+00 << endl
+		 << 3.19180000000000e+01 << " " << 1.03700000000000e+00 << endl
+		 << 3.29000000000000e+01 << " " << 1.03300000000000e+00 << endl
+		 << 3.40300000000000e+01 << " " << 1.02500000000000e+00 << endl
+		 << 3.49810000000000e+01 << " " << 1.01800000000000e+00 << endl
+		 << 3.59630000000000e+01 << " " << 1.01200000000000e+00 << endl
+		 << 3.69740000000000e+01 << " " << 1.00100000000000e+00 << endl
+		 << 3.80150000000000e+01 << " " << 9.98000000000000e-01 << endl
+		 << 3.90260000000000e+01 << " " << 9.91000000000000e-01 << endl
+		 << 3.99780000000000e+01 << " " << 9.83000000000000e-01 << endl
+		 << 4.09890000000000e+01 << " " << 9.75000000000000e-01 << endl
+		 << 4.20000000000000e+01 << " " << 9.67000000000000e-01 << endl
+		 << 4.29520000000000e+01 << " " << 9.66000000000000e-01 << endl
+		 << 4.40220000000000e+01 << " " << 9.56000000000000e-01 << endl
+		 << 4.50040000000000e+01 << " " << 9.48000000000000e-01 << endl;
+      }
+    }
+  } else if (variable_flag == 2) {
+    // Kinetic energy output file.
+    if (Output_Title) {
+      Out_File << "TITLE = \"" << CFFC_Name() << ": 2D NavierStokes Turbulent Pipe Flow Kinetic Energy "
+	       << "\"" << "\n"
+	       << "VARIABLES = \"x/R\" \\ \n"
+	       << "\"To\" \\ \n";
+      if (Output_Data) {
+	Out_File << "ZONE T =  \"Experimental data\" \\ \n"
+		 << "I = " << 34 << " \\ \n"
+		 << "J = " << 1 << " \\ \n"
+		 << "F = POINT \\ \n"; 
+	Out_File << 1.00350000000000e+01 << " " << 9.99000000000000e-01 << endl
+		 << 1.10520000000000e+01 << " " << 9.98000000000000e-01 << endl
+		 << 1.19980000000000e+01 << " " << 9.94000000000000e-01 << endl
+		 << 1.30150000000000e+01 << " " << 1.00100000000000e+00 << endl
+		 << 1.40310000000000e+01 << " " << 9.98000000000000e-01 << endl
+		 << 1.59950000000000e+01 << " " << 9.97000000000000e-01 << endl
+		 << 1.70120000000000e+01 << " " << 1.00200000000000e+00 << endl
+		 << 1.79930000000000e+01 << " " << 9.98000000000000e-01 << endl
+		 << 1.90090000000000e+01 << " " << 9.91000000000000e-01 << endl
+		 << 2.00250000000000e+01 << " " << 9.82000000000000e-01 << endl
+		 << 2.10410000000000e+01 << " " << 9.71000000000000e-01 << endl
+		 << 2.19520000000000e+01 << " " << 9.61000000000000e-01 << endl
+		 << 2.30380000000000e+01 << " " << 9.50000000000000e-01 << endl
+		 << 2.40530000000000e+01 << " " << 9.36000000000000e-01 << endl
+		 << 2.50680000000000e+01 << " " << 9.12000000000000e-01 << endl
+		 << 2.60130000000000e+01 << " " << 8.90000000000000e-01 << endl
+		 << 2.70290000000000e+01 << " " << 8.80000000000000e-01 << endl
+		 << 2.80090000000000e+01 << " " << 8.58000000000000e-01 << endl
+		 << 2.90600000000000e+01 << " " << 8.37000000000000e-01 << endl
+		 << 2.99700000000000e+01 << " " << 8.19000000000000e-01 << endl
+		 << 3.10550000000000e+01 << " " << 7.99000000000000e-01 << endl
+		 << 3.20350000000000e+01 << " " << 7.81000000000000e-01 << endl
+		 << 3.30510000000000e+01 << " " << 7.63000000000000e-01 << endl
+		 << 3.40660000000000e+01 << " " << 7.48000000000000e-01 << endl
+		 << 3.50120000000000e+01 << " " << 7.31000000000000e-01 << endl
+		 << 3.60970000000000e+01 << " " << 7.14000000000000e-01 << endl
+		 << 3.70430000000000e+01 << " " << 7.00000000000000e-01 << endl
+		 << 3.80940000000000e+01 << " " << 6.89000000000000e-01 << endl
+		 << 4.00200000000000e+01 << " " << 6.76000000000000e-01 << endl
+		 << 4.13070000000000e+01 << " " << 6.59000000000000e-01 << endl
+		 << 4.19820000000000e+01 << " " << 6.41000000000000e-01 << endl
+		 << 4.29980000000000e+01 << " " << 6.33000000000000e-01 << endl
+		 << 4.40140000000000e+01 << " " << 6.23000000000000e-01 << endl
+		 << 4.50300000000000e+01 << " " << 6.14000000000000e-01 << endl;
+      }
+    }
+  }
+}
+
+/**********************************************************************
+ * Routine: Output_Subsonic_Hot_Jet_Tecplot                           *
+ *                                                                    *
+ * Writes the experimental solution data for a subsonic hot jet       *
+ * flow for a 1D array of 2D quadrilateral multi-block solution       *
+ * blocks to the specified output data file(s) in a format suitable   *
+ * for plotting with TECPLOT.  Returns a non-zero value if cannot     *
+ * write any of the TECPLOT solution files.  The experimental data    *
+ * was reported by Seiner(1992).                                      *
+ *                                                                    *
+ **********************************************************************/
+void Output_Subsonic_Hot_Jet_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
+				       const int Block_Number,
+				       const int Output_Title,
+				       const int Output_Data,
+				       ostream &Out_File,
+				       const int &variable_flag) {
+  
+  NavierStokes2D_pState We, W;
+
+  // Output node solution data.  
+  Out_File << setprecision(14);
+
+  if (variable_flag == 1) {
+    // Axial static temperature file.
+    if (Output_Title) {
+      Out_File << "TITLE = \"" << CFFC_Name() << ": 2D NavierStokes Hot Subsonic Flow Axial Static Temperature "
+	       << "\"" << "\n"
+	       << "VARIABLES = \"x/R\" \\ \n"
+	       << "\"To\" \\ \n";
+      if (Output_Data) {
+	Out_File << "ZONE T =  \"Experimental data\" \\ \n"
+		 << "I = " << 26 << " \\ \n"
+		 << "J = " << 1 << " \\ \n"
+		 << "F = POINT \\ \n";
+	Out_File << 1.29500000000000e+00 << " " << 9.98000000000000e-01 << endl
+		 << 3.33000000000000e+00 << " " << 1.00000000000000e+00 << endl
+		 << 5.36600000000000e+00 << " " << 9.99000000000000e-01 << endl
+		 << 7.31100000000000e+00 << " " << 9.70000000000000e-01 << endl
+		 << 9.35200000000000e+00 << " " << 9.00000000000000e-01 << endl
+		 << 1.14900000000000e+01 << " " << 7.95000000000000e-01 << endl
+		 << 1.31640000000000e+01 << " " << 6.95000000000000e-01 << endl
+		 << 1.55760000000000e+01 << " " << 6.20000000000000e-01 << endl
+		 << 1.73400000000000e+01 << " " << 5.54000000000000e-01 << endl
+		 << 1.95660000000000e+01 << " " << 4.95000000000000e-01 << endl
+		 << 2.16070000000000e+01 << " " << 4.33000000000000e-01 << endl
+		 << 2.41090000000000e+01 << " " << 3.84000000000000e-01 << endl
+		 << 2.64250000000000e+01 << " " << 3.49000000000000e-01 << endl
+		 << 2.89260000000000e+01 << " " << 3.10000000000000e-01 << endl
+		 << 3.16110000000000e+01 << " " << 2.86000000000000e-01 << endl
+		 << 3.43890000000000e+01 << " " << 2.59000000000000e-01 << endl
+		 << 3.70730000000000e+01 << " " << 2.36000000000000e-01 << endl
+		 << 3.94800000000000e+01 << " " << 2.22000000000000e-01 << endl
+		 << 4.27020000000000e+01 << " " << 2.04000000000000e-01 << endl
+		 << 4.48480000000000e+01 << " " << 1.94000000000000e-01 << endl
+		 << 4.73480000000000e+01 << " " << 1.73000000000000e-01 << endl
+		 << 4.96610000000000e+01 << " " << 1.59000000000000e-01 << endl
+		 << 5.22520000000000e+01 << " " << 1.59000000000000e-01 << endl
+		 << 5.51200000000000e+01 << " " << 1.56000000000000e-01 << endl
+		 << 5.77100000000000e+01 << " " << 1.53000000000000e-01 << endl
+		 << 6.01160000000000e+01 << " " << 1.50000000000000e-01 << endl;
+      }
+    }
+  }
 }
 
 /**********************************************************************

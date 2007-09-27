@@ -1,5 +1,4 @@
-/* Grid3DInput.h:  Header file defining 
-                   3D grid/mesh input data class. */
+/* Grid3DInput.h:  Header file defining 3D grid/mesh input data class. */
 
 #ifndef _GRID3D_INPUT_INCLUDED
 #define _GRID3D_INPUT_INCLUDED
@@ -10,8 +9,10 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <sstream>
 #include <cassert>
 #include <cstdlib>
+#include <cstring>
 
 using namespace std;
 
@@ -21,72 +22,130 @@ using namespace std;
 #include "../CFD/CFD.h"
 #endif // _CFD_INCLUDED
 
+#ifndef _VECTOR3D_INCLUDED
+#include "../Math/Vector3D.h"
+#endif //_VECTOR3D_INCLUDED
+
 #ifndef _ICEMCFD_INCLUDED
 #include "../ICEM/ICEMCFD.h"
 #endif // _ICEMCFD_INCLUDED
 
-#define GRID_INPUT_PARAMETER_LENGTH 128
+#ifndef _MPI_INCLUDED
+#include "../MPI/MPI.h"
+#endif // _MPI_INCLUDED
 
-/* Define the 3D hexahedral grid input class for controlling
-   mesh selection and grid generation. */
+#define GRID_INPUT_PARAMETER_LENGTH 256
 
-struct Grid3D_Input_Parameters{
+/*!
+ * Class: Grid3D_Input_Parameters
+ *
+ * @brief Input Parameters for 3D hexahedral mesh generation.
+ *
+ * This class defines and handles the input variables related to the
+ * the 3D hexahedral mesh selection and grid generation.
+ *
+ */
+class Grid3D_Input_Parameters{
   public:
-    // Number of blocks in multiblock mesh in each direction
+    //@{ @name Number of blocks in multiblock mesh in each direction:
     int NBlk_Idir, NBlk_Jdir, NBlk_Kdir;
+    //@}
 
-    // Default number of cells in multiblock mesh in each direction
+    //@{ @name Default number of cells in multiblock mesh in each direction:
     int NCells_Idir, NCells_Jdir, NCells_Kdir;
     int Nghost;
+    //@}
 
-    // Grid type indicator
+    //@{ @name Grid type indicator:
     int i_Grid;
     char Grid_Type[GRID_INPUT_PARAMETER_LENGTH];
+    //@}
 
-    // ICEMCFD Filenames
+    //@{ @name Multi-block mesh input file:
+    char Grid_File_Name[GRID_INPUT_PARAMETER_LENGTH];
+    //@}
+
+    //@{ @name ICEMCFD Filenames:
     char **ICEMCFD_FileNames;
+    //@}
 
-    // Dimensions for basic flow geometry
+    //@{ @name Dimensions for basic flow geometry:
     double Box_Length, Box_Width, Box_Height;
+    //@}
 
-    // Mesh stretching parameters
+    //@{ @name Mesh stretching parameters:
     int Stretching_Type_Idir, Stretching_Type_Jdir, 
         Stretching_Type_Kdir; 
     double Stretching_Factor_Idir, Stretching_Factor_Jdir, 
            Stretching_Factor_Kdir;
+    //@}
 
-   // Pipe mesh parameters
-   double Pipe_Length, Pipe_Radius;
+    //@{ @name Mesh shifting, scaling and rotation parameters:
+    Vector3D X_Shift;
+    double X_Scale, X_Rotate;
+    //@}
 
-   // Bluff body burner mesh parameters
-   double Radius_Fuel_Line, Radius_Bluff_Body, Radius_Coflow_Inlet_Pipe,
-          Length_Coflow_Inlet_Pipe, Length_Combustor_Tube; 
+    //@{ @name Pipe mesh parameters:
+    double Pipe_Length, Pipe_Radius;
+    //@}
 
-   // Constructor: set some default values
-   Grid3D_Input_Parameters(void){
+    //@{ @name Bluff body burner mesh parameters:
+    double Radius_Fuel_Line, Radius_Bluff_Body, Radius_Coflow_Inlet_Pipe,
+           Length_Coflow_Inlet_Pipe, Length_Combustor_Tube; 
+    //@}
+
+    //@{ @name Constructor and desctructor
+    //! Constructor (assign default values).
+    Grid3D_Input_Parameters(void){
+       // Basic grid parameters:
        NBlk_Idir = 1; NBlk_Jdir = 1; NBlk_Kdir = 1;
        NCells_Idir = 10; NCells_Jdir = 10; NCells_Kdir = 10; 
        Nghost = 2;
        Box_Length = ONE; Box_Width = ONE; Box_Height = ONE;
+       strcpy(Grid_Type,"Cube");
        i_Grid = GRID_CUBE; 
-       ICEMCFD_FileNames = ICEMCFD_get_filenames();
+       strcpy(Grid_File_Name,"gridfile.grid");
        Stretching_Type_Idir = STRETCHING_FCN_LINEAR;
        Stretching_Type_Jdir = STRETCHING_FCN_LINEAR; 
        Stretching_Type_Kdir = STRETCHING_FCN_LINEAR;
        Stretching_Factor_Idir = 1.10;
        Stretching_Factor_Jdir = 1.10;
        Stretching_Factor_Kdir = 1.10;
+       X_Shift = Vector3D_ZERO;
+       X_Scale = ONE;
+       X_Rotate = ZERO;
+       // Pipe parameters:
        Pipe_Length = ONE; Pipe_Radius = 0.1;
+       // Bluff body burner parameters:
        Radius_Fuel_Line = 1.80e-03;
        Radius_Bluff_Body = 25.04e-03;
        Radius_Coflow_Inlet_Pipe = 0.1;
        Length_Coflow_Inlet_Pipe = 0.127; 
        Length_Combustor_Tube = 0.508;
-   }
+       //ICEM Filenames:
+       ICEMCFD_FileNames = ICEMCFD_get_filenames();
+    }
    
-   // Use default destructor
-   //~Grid3D_Input_Parameters(void){
-   //}
+    //! Destructor
+    ~Grid3D_Input_Parameters(void){}
+    //@}
+ 
+    //@{ @name Other Member functions.
+    //! Broadcast input parameters to all processors:
+    void Broadcast(void);
+    //! Parse next input line:
+    int Parse_Next_Input_Control_Parameter(char *code, stringstream &value);
+    //! Check validity of specified input parameters:
+    int Check_Inputs(void);
+    //@}
+
+    //@{ @name Input-output operators:
+    friend ostream &operator << (ostream &out_file,
+                                 const Grid3D_Input_Parameters &IP);
+    friend istream &operator >> (istream &in_file,
+                                 Grid3D_Input_Parameters &IP);
+    void Output(ostream &out_file) const;
+    //@}
 
 };
 

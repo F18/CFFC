@@ -26,7 +26,7 @@ using namespace std;
 #endif  //NAVIERSTOKES3D_THERMALLYPERFECT_STATE_INCLUDED
 
 #ifndef _TURBULENCE_MODELLING_INCLUDED
-#include "../Turbulence/TurbulenceModelling.h"
+#include "../TurbulenceModelling/TurbulenceModelling.h"
 #endif  //TURBULENCE_MODELLING_INCLUDED
 
 #define NUM_FANS3D_VAR_EXTRA 2  //rho, v(3), p
@@ -91,8 +91,6 @@ using namespace std;
  ********************************************************/
 
 /*********************************************************
-
-
   Density:   rho  kg/m^3
   Velocity:  v    m/s
   Pressure:  p    Pa (N/m^2)
@@ -114,23 +112,22 @@ using namespace std;
   Thermal Conductivity:            k   N/(s*K)  W.(m*K)
 
   ns;                number of species
-  NASARP1311data *specdata;   Global Species Data
+  NASARP1311data *specdata:   Global Species Data
 
-  NUM_VAR_3D;         number of total variables (5+ns)
-  Reaction_set React;         Global Reaction Data
+  num_vars:         number of total variables (5+ns)
+  Reaction_set React:         Global Reaction Data
 
-  low_temp_range;      low temp data range
-  high_temp_range;     high temp data range
+  low_temp_range:      low temp data range
+  high_temp_range:     high temp data range
+**********************************************************/
 
-***********************************************************/
-class FANS3D_ThermallyPerfect_KOmega_pState :public NavierStokes3D_ThermallyPerfect_pState {
+class FANS3D_ThermallyPerfect_KOmega_pState : public NavierStokes3D_ThermallyPerfect_pState {
   public:
    double k;
    double omega;
      
    Turbulence_Model_k_omega k_omega_model;
- 
-   
+
    // constructor
    FANS3D_ThermallyPerfect_KOmega_pState(): NavierStokes3D_ThermallyPerfect_pState(){ 
       k= ONE; omega = MILLION;}
@@ -194,18 +191,19 @@ class FANS3D_ThermallyPerfect_KOmega_pState :public NavierStokes3D_ThermallyPerf
       k = ke; omega = Omega; 
       set_initial_values(mfrac); }
   
-      //this is needed for the operator overload returns!!!!
-      FANS3D_ThermallyPerfect_KOmega_pState(const  FANS3D_ThermallyPerfect_KOmega_pState &W)
-                   {spec = NULL; rho = DENSITY_STDATM; set_initial_values(); Copy(W);}
-                    
+   //this is needed for the operator overload returns!!!!
+   FANS3D_ThermallyPerfect_KOmega_pState(const  FANS3D_ThermallyPerfect_KOmega_pState &W){
+      spec = NULL; rho = DENSITY_STDATM; 
+      set_initial_values(); Copy(W);
+   }
 
-      static void set_species_data(FANS3D_ThermallyPerfect_KOmega_pState &Wo, 
-                                   const int &, 
-                                   const string *,
-                                   const char *, 
-                                   const int &, 
-                                   const double&, 
-                                   const double *);
+/*    void set_species_data(const int &n, */
+/*                          const string *S, */
+/*                          const char *PATH, */
+/*                          const int &debug,  */
+/*                          const double &Mr,  */
+/*                          const double* Sc, */
+/*                          const int &trans_data); */
 
    void Vacuum(){
       Euler3D_ThermallyPerfect_pState::Vacuum();
@@ -383,17 +381,8 @@ class FANS3D_ThermallyPerfect_KOmega_pState :public NavierStokes3D_ThermallyPerf
                                 const FANS3D_ThermallyPerfect_KOmega_pState &W);
    friend istream& operator >> (istream &in_file,
                                 FANS3D_ThermallyPerfect_KOmega_pState &W);
-  
-   /*  // Destructors */
-/*   void Deallocate_static(void){ if(specdata != NULL) delete[] specdata; */
-/*   specdata = NULL;} */
-  
-/*   void Deallocate(void){ if(spec != NULL) delete[] spec; */
-/*   spec = NULL;  } */
-  
-/*   ~FANS3D_ThermallyPerfect_KOmega_pState(){ Deallocate(); } */
-};
 
+};
 
 /***********************************************************
  *             FANS3D_TheramllyPerfect_cState      *
@@ -405,7 +394,6 @@ class FANS3D_ThermallyPerfect_KOmega_cState : public NavierStokes3D_ThermallyPer
    double rhoomega;
    
    Turbulence_Model_k_omega k_omega_model;
-
    
 // constructors
    
@@ -459,39 +447,35 @@ class FANS3D_ThermallyPerfect_KOmega_cState : public NavierStokes3D_ThermallyPer
                                          Species *rhomfrac):
       NavierStokes3D_ThermallyPerfect_cState(d, dV, En, rhomfrac){
       rhok = dk; rhoomega = domega;}
- //this is needed for the operator overload returns!!!!
-    FANS3D_ThermallyPerfect_KOmega_cState(const FANS3D_ThermallyPerfect_KOmega_cState &U)
-                { rhospec = NULL; rho = DENSITY_STDATM; set_initial_values();
-                           Copy(U); }
-                           
-
    
+    //this is needed for the operator overload returns!!!!
+   FANS3D_ThermallyPerfect_KOmega_cState(const FANS3D_ThermallyPerfect_KOmega_cState &U)
+      {rhospec = NULL; rho = DENSITY_STDATM; set_initial_values(); Copy(U);}
+                           
    FANS3D_ThermallyPerfect_KOmega_pState W(void) ; 
    FANS3D_ThermallyPerfect_KOmega_pState W(void) const;
    FANS3D_ThermallyPerfect_KOmega_pState W(const FANS3D_ThermallyPerfect_KOmega_cState &U) const;
-
 
    /* Index operators */
    double &operator[](int index);
    const double &operator[](int index) const;
   
    //Read in ns species data
-   static void set_species_data(FANS3D_ThermallyPerfect_KOmega_cState &Uo, 
-                                const int &, 
-                                const string *,
-                                const char *, 
-                                const int &, 
-                                const double&,
-                                const double *);
+/*    void set_species_data(const int &n, */
+/*                          const string *S, */
+/*                          const char *PATH, */
+/*                          const int &debug,  */
+/*                          const double &Mr,  */
+/*                          const double* Sc, */
+/*                          const int &trans_data); */
 
    /* VACUUM **/
-   void Vacuum(){
+   void Vacuum(void) {
       Euler3D_ThermallyPerfect_cState::Vacuum();
-      
       rhok = ZERO;
       rhoomega = ZERO;
-      
-   }  
+   }
+
    void Copy(const FANS3D_ThermallyPerfect_KOmega_cState &U);
    double T(void) const;
    double a(void) const;     
@@ -544,16 +528,6 @@ class FANS3D_ThermallyPerfect_KOmega_cState : public NavierStokes3D_ThermallyPer
   friend istream& operator >> (istream &in_file,
                                FANS3D_ThermallyPerfect_KOmega_cState &U);
   
-/*    /\* Destructors *\/ */
-/*   void Deallocate_static(void){ if(specdata != NULL) delete[] specdata;  */
-/*   specdata = NULL;  */
-/*   if(Schmidt != NULL) delete[] Schmidt;  */
-/*   Schmidt = NULL;  */
-/*   } */
-/*   void Deallocate(void){ if(rhospec != NULL) delete[] rhospec;  */
-/*   rhospec = NULL;  } */
-  
-/*   ~FANS3D_ThermallyPerfect_KOmega_cState(){ Deallocate(); } */
   int Unphysical_Properties_Check(
      FANS3D_ThermallyPerfect_KOmega_cState &Uw,
      FANS3D_ThermallyPerfect_KOmega_cState &Ue,
@@ -716,9 +690,7 @@ inline const double& FANS3D_ThermallyPerfect_KOmega_pState::operator[](int index
       return omega;
    default :
       return spec[index-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA +1)].c;     
-      
    };
-
 
 }
 
@@ -738,7 +710,6 @@ inline FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_cSta
    }
    
    return Temp;
-   
    
 }
 
@@ -797,8 +768,6 @@ inline Vector3D FANS3D_ThermallyPerfect_KOmega_pState::thermal_diffusion_t(void)
       sum  +=  (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())
          * rho*Dm_t() * spec[i].gradc;
    }
-
-   
    return sum;
 }
 
@@ -850,8 +819,6 @@ inline double& FANS3D_ThermallyPerfect_KOmega_cState::operator[](int index) {
       return rhoomega;
    default :
       return rhospec[index-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA +1)].c;     
-      
-  
    };
     
 }

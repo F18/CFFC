@@ -100,12 +100,14 @@ Zero_Residuals_on_Coarse_Grid(const int &Level,
 	for (int i = Local_SolnBlk[Level][nb].ICl; i <= Local_SolnBlk[Level][nb].ICu; i++) {
 	  Local_SolnBlk[Level][nb].dUdt[i][j][k_residual].dk = ZERO;
 	  Local_SolnBlk[Level][nb].dUdt[i][j][k_residual].domega = ZERO;
+	  Local_SolnBlk[Level][nb].dUdt[i][j][k_residual].dke = ZERO;
+	  Local_SolnBlk[Level][nb].dUdt[i][j][k_residual].dee = ZERO;
 	}
       }
     }
   }
 
-  // Residuals for k and omega zeroed.
+  // Residuals for k and omega and ke and ee zeroed.
   return 0;
 
 }

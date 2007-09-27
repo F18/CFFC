@@ -31,7 +31,7 @@
 #endif // _GASCONSTANTS_INCLUDED
 
 #ifndef _TURBULENCE_MODELLING_INCLUDED
-#include "../Turbulence/TurbulenceModelling.h"
+#include "../TurbulenceModelling/TurbulenceModelling.h"
 #endif // TURBULENCE_MODELLING_INCLUDED   
 
 /* Define the solution block in-use indicators. */
@@ -548,9 +548,9 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::NumVar(void) {
    
    int num=0;
-   int NUM_VAR_3D = W[num][num][num].NUM_VAR_3D;    
+   int num_vars = W[num][num][num].num_vars;    
 
-   return (int(NUM_VAR_3D));
+   return (int(num_vars));
 
 }
 
@@ -986,16 +986,16 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::ICs(const int i_ICtype,
    switch(i_ICtype) {
       case IC_VISCOUS_COUETTE :
          dpdx = IPs.Pressure_Gradient.x;  
-         delta_pres = dpdx*IPs.IP_Grid.Box_Length;
+         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
          //starts with linear pressure gradient 
          for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
             for (  j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
                for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
                   /* velocity is function of z only (2D flow) */
-                  W[i][j][k].v.x = HALF*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 0.5*IPs.IP_Grid.Box_Height)*
-                     (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.IP_Grid.Box_Height) +
-                     IPs.Moving_wall_velocity.x*(Grid.Cell[i][j][k].Xc.z/IPs.IP_Grid.Box_Height + HALF);
+                  W[i][j][k].v.x = HALF*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 0.5*IPs.Grid_IP.Box_Height)*
+                     (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.Grid_IP.Box_Height) +
+                     IPs.Moving_Wall_Velocity.x*(Grid.Cell[i][j][k].Xc.z/IPs.Grid_IP.Box_Height + HALF);
                   // assuming the wall velocity is parallel to x direction
                   W[i][j][k].p = IPs.Wo.p - (i-ICl-Nghost)*delta_pres/(ICu-ICl);	 
                   //start
@@ -1014,18 +1014,18 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::ICs(const int i_ICtype,
 
       case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_X :
          dpdx = IPs.Pressure_Gradient.x;  
-         delta_pres = dpdx*IPs.IP_Grid.Box_Length;
+         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
          //starts with linear pressure gradient 
          for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
             for (  j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
                for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
                   /* velocity is function of z only (2D flow) */
-                  W[i][j][k].v.x = HALF*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 0.5*IPs.IP_Grid.Box_Height)*
-                     (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.IP_Grid.Box_Height) +
-                     IPs.Moving_wall_velocity.x*(Grid.Cell[i][j][k].Xc.z/IPs.IP_Grid.Box_Height + HALF);
+                  W[i][j][k].v.x = HALF*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 0.5*IPs.Grid_IP.Box_Height)*
+                     (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.Grid_IP.Box_Height) +
+                     IPs.Moving_Wall_Velocity.x*(Grid.Cell[i][j][k].Xc.z/IPs.Grid_IP.Box_Height + HALF);
                   // assuming the wall velocity is parallel to x direction
-                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.x)*  delta_pres/IPs.IP_Grid.Box_Length;	 
+                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.x)*  delta_pres/IPs.Grid_IP.Box_Length;	 
                   U[i][j][k] = W[i][j][k].U( );
 	       } /* endfor */
 	    } /* endfor */
@@ -1034,18 +1034,18 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::ICs(const int i_ICtype,
 
       case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_Y :
          dpdy = IPs.Pressure_Gradient.y;  
-         delta_pres = dpdy*IPs.IP_Grid.Box_Width;
+         delta_pres = dpdy*IPs.Grid_IP.Box_Width;
          //starts with linear pressure gradient 
          for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
             for (  j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
                for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
                   /* velocity is function of z only (2D flow) */
-                  W[i][j][k].v.y = HALF*(-dpdy)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 0.5*IPs.IP_Grid.Box_Height)*
-                     (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.IP_Grid.Box_Height) +
-                     IPs.Moving_wall_velocity.y*(Grid.Cell[i][j][k].Xc.z/IPs.IP_Grid.Box_Height + HALF);
+                  W[i][j][k].v.y = HALF*(-dpdy)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 0.5*IPs.Grid_IP.Box_Height)*
+                     (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.Grid_IP.Box_Height) +
+                     IPs.Moving_Wall_Velocity.y*(Grid.Cell[i][j][k].Xc.z/IPs.Grid_IP.Box_Height + HALF);
                   //assuming the wall velocity is parallel to x direction
-                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.y)*delta_pres/IPs.IP_Grid.Box_Width;	 
+                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.y)*delta_pres/IPs.Grid_IP.Box_Width;	 
                   //start
                   if( j == JCl-Nghost || j == JCl-Nghost+1 ){
                      W[i][j][k].p = IPs.Wo.p;
@@ -1062,17 +1062,17 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::ICs(const int i_ICtype,
 
       case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_Z :
          dpdz = IPs.Pressure_Gradient.z;  
-         delta_pres = dpdz*IPs.IP_Grid.Box_Height;
+         delta_pres = dpdz*IPs.Grid_IP.Box_Height;
          //starts with linear pressure gradient 
          for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
             for (  j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
                for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
                   /* velocity is function of y only (2D flow) */
-                  W[i][j][k].v.z = HALF*(-dpdz)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.y + 0.5*IPs.IP_Grid.Box_Width)*
-                     (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.IP_Grid.Box_Width) +
-                     IPs.Moving_wall_velocity.z*(Grid.Cell[i][j][k].Xc.y/IPs.IP_Grid.Box_Width + HALF);
-                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.z)*delta_pres/IPs.IP_Grid.Box_Height;	 
+                  W[i][j][k].v.z = HALF*(-dpdz)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.y + 0.5*IPs.Grid_IP.Box_Width)*
+                     (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Width) +
+                     IPs.Moving_Wall_Velocity.z*(Grid.Cell[i][j][k].Xc.y/IPs.Grid_IP.Box_Width + HALF);
+                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.z)*delta_pres/IPs.Grid_IP.Box_Height;	 
                   //start
                  if( k == KCl-Nghost || k == KCl-Nghost+1 ){
                      W[i][j][k].p = IPs.Wo.p;
@@ -1089,8 +1089,8 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::ICs(const int i_ICtype,
       
       case IC_PRESSURE_GRADIENT_X :
          dpdx = IPs.Pressure_Gradient.x;  
-         delta_pres = dpdx*IPs.IP_Grid.Box_Length;
-         di =  1.0/sqr(IPs.IP_Grid.Box_Height/2.0)+ 1.0/sqr(IPs.IP_Grid.Box_Width/2.0);
+         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
+         di =  1.0/sqr(IPs.Grid_IP.Box_Height/2.0)+ 1.0/sqr(IPs.Grid_IP.Box_Width/2.0);
          U_axi = delta_pres/(2.0*W[0][0][0].mu())/di;
          //starts with linear pressure gradient 
          for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
@@ -1098,8 +1098,8 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::ICs(const int i_ICtype,
                for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
                   /* velocity is function of z only (2D flow) */
-                  W[i][j][k].v.x = 0.5*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 0.5*IPs.IP_Grid.Box_Height)*
-                     (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.IP_Grid.Box_Height);
+                  W[i][j][k].v.x = 0.5*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 0.5*IPs.Grid_IP.Box_Height)*
+                     (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.Grid_IP.Box_Height);
                   W[i][j][k].p = IPs.Wo.p - (i-ICl-Nghost)*delta_pres/(ICu-ICl);	 
                   //start
                   if( i == ICl-Nghost || i == ICl-Nghost+1 ){
@@ -1120,7 +1120,7 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::ICs(const int i_ICtype,
          // Investigation of Turbulent Flow in a Two-Dimensional Channel
          // debugging purpose here (laminar flow)
          dpdx = IPs.Pressure_Gradient.x;  
-         delta_pres = dpdx*IPs.IP_Grid.Box_Length;
+         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
          Um = 22.3;
          //Um = 7.07; // computed from Reynolds number 61600
          for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
@@ -1137,8 +1137,8 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::ICs(const int i_ICtype,
                      W[i][j][k].p = IPs.Wo.p - delta_pres; 
                   }
                   /* velocity is function of y only (2D flow) */
-                  W[i][j][k].v.x = 0.5*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.y + 0.5*IPs.IP_Grid.Box_Width)*
-                     (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.IP_Grid.Box_Width);
+                  W[i][j][k].v.x = 0.5*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.y + 0.5*IPs.Grid_IP.Box_Width)*
+                     (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Width);
                   //conservative solution state
                   U[i][j][k] = W[i][j][k].U();
  	       } /* endfor */
@@ -1147,12 +1147,14 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::ICs(const int i_ICtype,
          break; 
 
       case IC_SHOCK_BOX :
-         Wl = SOLN_pSTATE(DENSITY_STDATM, Vector3D_ZERO,
-                          PRESSURE_STDATM,
-                          IPs.mass_fractions);
-         Wr = SOLN_pSTATE(DENSITY_STDATM*8.0, Vector3D_ZERO,
-                          PRESSURE_STDATM*10.0, 
-                          IPs.mass_fractions);
+	 Wl = SOLN_pSTATE(IPs.Wo);
+         Wl.rho = DENSITY_STDATM;
+         Wl.v = Vector3D_ZERO;
+         Wl.p = PRESSURE_STDATM;
+         Wr = SOLN_pSTATE(IPs.Wo);
+         Wr.rho = EIGHT*DENSITY_STDATM;
+         Wr.v = Vector3D_ZERO;
+         Wr.p = TEN*PRESSURE_STDATM; 
          for (k = KCl-Nghost; k <= KCu+Nghost; ++k) {
 	    for (j = JCl-Nghost; j <= JCu+Nghost; ++j) {
                for (i = ICl-Nghost; i <= ICu+Nghost; ++i) {
@@ -1302,7 +1304,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::BCs(Input_Parameters<SOLN_pSTATE, SOL
    
    int i, j, k;
    
-   Vector3D MOVING_WALL_VELOCITY = IPs.Moving_wall_velocity, dX;
+   Vector3D MOVING_WALL_VELOCITY = IPs.Moving_Wall_Velocity, dX;
    double dpdx;
    
  
@@ -2051,7 +2053,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Linear_Reconstruction_LeastSquares(co
    SOLN_pSTATE D1, D2, D3;
    SOLN_pSTATE Temp1, Temp2, Temp3;
    
-   int NUM_VAR_3D = NumVar();
+   int num_vars = NumVar();
    
    Vector3D dX_neigbor;
 
@@ -2160,7 +2162,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Linear_Reconstruction_LeastSquares(co
       dWdz[i][j][k] = D3/D;
       
       if (! Freeze_Limiter) {
-         for ( n = 1 ; n <= NUM_VAR_3D ; ++n ) {
+         for ( n = 1 ; n <= num_vars ; ++n ) {
             
             u0Min =  W[i][j][k][n];
             u0Max = u0Min;
@@ -2398,7 +2400,7 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::dUdt_Multistage_Explicit(const int i_s
                   }
                   if ( Grid.BCtypeW[j][k] == BC_MOVING_WALL) {
                      Wl =  SOLN_pSTATE::Moving_Wall(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k),
-                                                    IPs.Moving_wall_velocity,
+                                                    IPs.Moving_Wall_Velocity,
                                                     IPs.Pressure_Gradient,
                                                     FIXED_TEMPERATURE_WALL);
                   }
@@ -2422,7 +2424,7 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::dUdt_Multistage_Explicit(const int i_s
                   }
                   if ( Grid.BCtypeE[j][k] == BC_MOVING_WALL) {
                      Wr =  SOLN_pSTATE::Moving_Wall(Wl, WoE[j][k], Grid.nfaceE(i, j, k),
-                                                    IPs.Moving_wall_velocity,
+                                                    IPs.Moving_Wall_Velocity,
                                                     IPs.Pressure_Gradient,
                                                     FIXED_TEMPERATURE_WALL);
                   }
@@ -2523,7 +2525,7 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::dUdt_Multistage_Explicit(const int i_s
                }
                if ( Grid.BCtypeS[i][k] == BC_MOVING_WALL) {
                   Wl =  SOLN_pSTATE::Moving_Wall(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
-                                                 IPs.Moving_wall_velocity,
+                                                 IPs.Moving_Wall_Velocity,
                                                  IPs.Pressure_Gradient,
                                                  FIXED_TEMPERATURE_WALL);
                }
@@ -2547,7 +2549,7 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::dUdt_Multistage_Explicit(const int i_s
                }
                if ( Grid.BCtypeN[i][k] == BC_MOVING_WALL) {
                   Wr =  SOLN_pSTATE::Moving_Wall(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
-                                                 IPs.Moving_wall_velocity,
+                                                 IPs.Moving_Wall_Velocity,
                                                  IPs.Pressure_Gradient,
                                                  FIXED_TEMPERATURE_WALL );
                }
@@ -2633,7 +2635,7 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::dUdt_Multistage_Explicit(const int i_s
                }
                if ( Grid.BCtypeB[i][j] == BC_MOVING_WALL) {
                   Wl =  SOLN_pSTATE::Moving_Wall(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1),
-                                                 IPs.Moving_wall_velocity,
+                                                 IPs.Moving_Wall_Velocity,
                                                  IPs.Pressure_Gradient,
                                                  FIXED_TEMPERATURE_WALL);
                }
@@ -2659,7 +2661,7 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::dUdt_Multistage_Explicit(const int i_s
                }
                if ( Grid.BCtypeT[i][j] == BC_MOVING_WALL) {
                   Wr =  SOLN_pSTATE::Moving_Wall(Wl, WoT[i][j], Grid.nfaceTop(i, j, k),
-                                                 IPs.Moving_wall_velocity,
+                                                 IPs.Moving_Wall_Velocity,
                                                  IPs.Pressure_Gradient,
                                                  FIXED_TEMPERATURE_WALL );
                }
@@ -2736,7 +2738,7 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Update_Solution_Multistage_Explicit(co
    // Memory for linear system solver.
    
    SOLN_cSTATE dU_precon;
-   int NUM_VAR_3D = NumVar();
+   int num_vars = NumVar();
    /* Allocate memory for linear system solver. */
    /* Perform update of solution variables for stage 
       i_stage of an N stage scheme. */
@@ -2790,7 +2792,7 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Update_Solution_Multistage_Explicit(co
                U[i][j][k] = Uo[i][j][k] + omega* dUdt[i][j][k][k_residual];
                              
                //N-1 species
-               U[i][j][k][NUM_VAR_3D] = U[i][j][k].rho*(ONE - U[i][j][k].sum_species());
+               U[i][j][k][num_vars] = U[i][j][k].rho*(ONE - U[i][j][k].sum_species());
             }
             
             Uo[i][j][k].negative_speccheck( Uo[i][j][k], W[i][j][k].React.reactset_flag );
@@ -2944,7 +2946,7 @@ istream &operator >> (istream &in_file,
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Wall_Shear(void) {
 
-   // for Euler and NavierStokes ... 
+   // For Euler and NavierStokes ... 
    // do nothing
    return (0);
    

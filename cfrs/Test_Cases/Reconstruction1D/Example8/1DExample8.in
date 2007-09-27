@@ -1,0 +1,122 @@
+############################
+#
+# Reconstruction1D input file for function Test_Example8
+# f(x) = 2 steps of different intensities
+#
+##########################################
+# Set method for solving the linear system
+##########################################
+Method_Used =
+DD_ENO
+Integration_Type =
+Theoretic
+#
+###########################
+# Set function parameters
+###########################
+#
+Function_Definition =
+Example3
+Reconstruction_Order =
+4
+###########################
+# Set grid parameters
+###########################
+#
+Grid_Type =
+Grid_Uniform
+X_min     =
+-3.0
+X_max    =
+7.0
+Characteristic_Length =
+1
+Number_of_Cells_Idir =
+137
+Number_of_Subgrid_Points =
+10
+Output_File_Name =
+1DExample3
+Output_Format_Type =
+tecplot
+#######################
+# Execution Flow
+#######################
+Execute
+######################
+#  Output Commands
+######################
+Write_Function_Graph
+Write_Output_OneZone
+Terminate
+
+##############################################################
+##########################  HELP  ############################
+##############################################################
++-------+                     |            +----------------+
+| Field |                     |            | Possible Value |
++-------+                     |            +----------------+
+--------------------------------------------------------------
+                              |
+Method_Used:                  
+
+###############################################################
+Function_Definition:
+	                Default, Example1, Example2, Example3,
+			Example4,
+
+
+*************************************************************
+Reconstruction_Order:                   positive integer number 
+*************************************************************
+Grid_Type:
+                        Grid_Uniform
+                        Grid_NonUniform
+                        Grid_Predefined1
+			Grid_Predefined2
+			Grid_Read_From_Data_File
+************************************************************
+X_min:( min X of the Domain)                      val
+Length (Domain length)	 			  val
+X_Shift:					  val
+X_Scale:                                          val
+************************************************************
+!!!!!!!!!!!!!!
+N                         :CellNumber_or_DeltaCell --- for number
+D			  :CellNumber_or_DeltaCell --- for delta
+*********************************************
+val                       :Number_of_Cells_Idir
+val                       :Delta_Cell
+*********************************************
+N                         :SubGridPoints_or_DeltaSubGrid --- for number
+D                         :SubGridPoints_or_DeltaSubGrid --- for delta
+*********************************************
+val                       :Number_of_Subgrid_Points
+val                       :Delta_of_Subgrid
+*********************************************
+file_name                 :Output_File_Name
+*********************************************
+gnuplot                   :Output_Format_Type
+tecplot                   :Output_Format_Type
+matlab                    :Output_Format_Type
+*********************************************
+**********************************************
+COMMANDS::                 
+	Execute 		        - execute code
+	Terminate      			- stop code
+	Continue			- continue code
+	Write_Output			- write solution to file
+	Write_Output_Cells 		- write
+	Write_Output_Mesh		- write mesh data
+	Write_Mesh_Definition		- write
+	Write_L1_Norm			- write L1 norm to file
+	Write_L2_Norm			- write L2 norm to file
+	Write_Norm_On_Screen		- write L1 & L2 norms on screen
+	Write_Output_Mesh_Cells		- write 
+	Write_Output_Derivatives	- write derivatives values to file
+	Write_Cell_Comparison		- write data showing the difference between the values at
+					  the cell center
+	Write_Function_Graph		- write the exact solution to file
+			
+
+

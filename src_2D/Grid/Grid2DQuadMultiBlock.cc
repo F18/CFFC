@@ -4351,138 +4351,6 @@ Grid2D_Quad_Block** Grid_Free_Jet(Grid2D_Quad_Block **Grid_ptr,
 }
 
 /**********************************************************************
- * Routine: Grid_Mixing_Layer                                         *
- *                                                                    *
- * Generates a quadilateral mesh with for predicting mixing layer     *
- * flows.                                                             *
- *                                                                    *
- * Usage: Grid_ptr = Grid_Mixing_Layer(Grid_ptr,                      *
- *                                     nblk_i,                        *
- *                                     nblk_j,                        *
- *                                     length,                        *
- *				       1.01,                          *  
- *				       1.01,                          *  
- *				       32,                            *  
- *				       24,                            *  
- *                                     2)                             *
- *                                                                    *
- **********************************************************************/
-Grid2D_Quad_Block** Grid_Mixing_Layer(Grid2D_Quad_Block **Grid_ptr,
-				      int &Number_of_Blocks_Idir,
-				      int &Number_of_Blocks_Jdir,
-				      const double &Length,
-				      const double &Stretching_Factor_Idir,
-				      const double &Stretching_Factor_Jdir,
-				      const int Number_of_Cells_Idir,
-				      const int Number_of_Cells_Jdir,
-				      const int Number_of_Ghost_Cells) {
-
-  int block_flag,
-      BCtypeN, BCtypeS, BCtypeE, BCtypeW,
-      Stretch_I, Stretch_J,
-      Orthogonal_North, Orthogonal_South,
-      Orthogonal_East, Orthogonal_West;
-  double Beta_I, Tau_I, Beta_J, Tau_J;
-  Vector2D xNW, xNE, xSE, xSW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-           Bnd_Spline_East, Bnd_Spline_West;
-
-  // Allocate memory for grid blocks. There are two grid blocks for
-  // this mesh.
-  Number_of_Blocks_Idir = 1;
-  Number_of_Blocks_Jdir = 2;
-  Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr,
-                                       Number_of_Blocks_Idir,
-                                       Number_of_Blocks_Jdir);
-
-  // Create the mesh for each block representing the complete grid.
-  for (int jBlk = 0; jBlk < Number_of_Blocks_Jdir; jBlk++) {
-    
-    // Preset all boundary conditions to none and reset when required:
-    BCtypeN = BC_NONE;
-    BCtypeS = BC_NONE;
-    BCtypeE = BC_FIXED_PRESSURE;
-    BCtypeW = BC_FIXED;
- 
-    // Preset all stretching parameters and reset when required:
-    Stretch_I = STRETCHING_FCN_MIN_CLUSTERING;
-    Beta_I = Stretching_Factor_Idir;
-    Tau_I = ZERO;
-    Stretch_J = STRETCHING_FCN_LINEAR;
-    Beta_J = Stretching_Factor_Jdir;
-    Tau_J = ZERO;
-    Orthogonal_North = 0;
-    Orthogonal_South = 0;
-    Orthogonal_East = 0;
-    Orthogonal_West = 0;
-
-    if (jBlk == 0) {
-      xSW = Vector2D(ZERO,-0.25*Length);
-      xSE = Vector2D(Length,-0.25*Length);
-      xNW = Vector2D(ZERO,ZERO);
-      xNE = Vector2D(Length,ZERO);
-      BCtypeS = BC_CONSTANT_EXTRAPOLATION;
-      Stretch_J = STRETCHING_FCN_MAX_CLUSTERING;
-	
-    } else{
-      xSW = Vector2D(ZERO,ZERO);
-      xSE = Vector2D(Length,ZERO);
-      xNW = Vector2D(ZERO,0.25*Length);
-      xNE = Vector2D(Length,0.25*Length);
-      BCtypeN = BC_CONSTANT_EXTRAPOLATION;
-      Stretch_J = STRETCHING_FCN_MIN_CLUSTERING;
-      Beta_J = Stretching_Factor_Jdir; 
-    }
-
-    // Create the splines defining the north, south, east, and west
-    // boundaries of the rectangular boxes.
-    Create_Spline_Line(Bnd_Spline_North,xNW,xNE,2);
-    Create_Spline_Line(Bnd_Spline_South,xSW,xSE,2);
-    Create_Spline_Line(Bnd_Spline_East,xSE,xNE,2);
-    Create_Spline_Line(Bnd_Spline_West,xSW,xNW,2);
-
-    // Set the boundary condition types for each of the boundary
-    // splines:
-    Bnd_Spline_North.setBCtype(BCtypeN);
-    Bnd_Spline_South.setBCtype(BCtypeS);
-    Bnd_Spline_East.setBCtype(BCtypeE);
-    Bnd_Spline_West.setBCtype(BCtypeW);
-
-    // Create the 2D quadrilateral grid block.
-    Create_Quad_Block(Grid_ptr[0][jBlk],
-		      Bnd_Spline_North,
-		      Bnd_Spline_South,
-		      Bnd_Spline_East,
-		      Bnd_Spline_West,
-		      Number_of_Cells_Idir,
-		      Number_of_Cells_Jdir,
-		      Number_of_Ghost_Cells,
-		      GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-		      Stretch_I,
-		      Beta_I,
-		      Tau_I,
-		      Stretch_J,
-		      Beta_J,
-		      Tau_J,
-		      Orthogonal_North,
-		      Orthogonal_South,
-		      Orthogonal_East,
-		      Orthogonal_West);
-
-    // Deallocate the memory for the boundary splines.
-    Bnd_Spline_North.deallocate();
-    Bnd_Spline_South.deallocate();
-    Bnd_Spline_East.deallocate();
-    Bnd_Spline_West.deallocate();
-
-  }
-
-  // Return the grid.
-  return Grid_ptr;
-
-}
-
-/**********************************************************************
  * Routine: Grid_Wedge                                                *
  *                                                                    *
  * Generates a quadilateral mesh with clustering consisting of two    *
@@ -5231,6 +5099,460 @@ Grid2D_Quad_Block** Grid_Bump_Channel_Flow(Grid2D_Quad_Block **Grid_ptr,
   // Return the grid.
   return Grid_ptr;
 
+}
+
+/**********************************************************************
+ * Routine: Grid_Jet_Flow                                             *
+ *                                                                    *
+ * Generates a quadilateral mesh with for predicting jet flow coming  *
+ * out through an orifice.                                            *
+ *                                                                    *
+ * Usage: Grid_ptr = Grid_Jet_Flow(Grid_ptr,                          *
+ *                                 nblk_i,                            *
+ *                                 nblk_j,                            *
+ *                                 plate_length,                      *
+ *				   Stretching_Type_Idir,              *
+ *				   Stretching_Type_Jdir,              *
+ *				   Stretching_Factor_Idir,            *  
+ *				   Stretching_Factor_Jdir,            *
+ *                                 Number_of_Cells_Idir,              *
+ *                                 Number_of_Cells_Jdir,              *
+ *                                 2)                                 *
+ *                                                                    *
+ **********************************************************************/
+
+Grid2D_Quad_Block** Grid_Jet_Flow(Grid2D_Quad_Block **Grid_ptr,
+                                  int &Number_of_Blocks_Idir,
+                                  int &Number_of_Blocks_Jdir,
+				  const double &Radius,
+				  const double &Mach,
+				  const int &Stretching_Type_Idir,
+				  const int &Stretching_Type_Jdir,
+				  const double &Stretching_Factor_Idir,
+				  const double &Stretching_Factor_Jdir,
+                                  const int Number_of_Cells_Idir,
+                                  const int Number_of_Cells_Jdir,
+				  const int Number_of_Ghost_Cells){
+              
+  int block_flag,
+      BCtypeN, BCtypeS, BCtypeE, BCtypeW,
+      Stretch_I, Stretch_J,
+      Orthogonal_North, Orthogonal_South,
+      Orthogonal_East, Orthogonal_West;
+  double Beta_I, Tau_I, Beta_J, Tau_J;
+  Vector2D xNW, xNE, xSE, xSW;
+  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+           Bnd_Spline_East, Bnd_Spline_West;
+ 
+  // Allocate memory for grid blocks. There are two grid blocks for 
+  // this mesh.
+
+  Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr,
+                                       Number_of_Blocks_Idir,
+                                       Number_of_Blocks_Jdir);
+  // Create the mesh for each block representing the complete grid.
+  for (int jBlk = 0 ; jBlk < Number_of_Blocks_Jdir ; jBlk++) {
+    for (int iBlk = 0; iBlk < Number_of_Blocks_Idir ; iBlk++) {
+      // Preset the block indicator and turn off when required:
+      block_flag = ON;
+
+       // Preset all boundary conditions to none and reset when required:
+      BCtypeN = BC_NONE;
+      BCtypeS = BC_NONE;
+      BCtypeE = BC_NONE;
+      BCtypeW = BC_NONE;    
+ 
+      // Preset all stretching parameters and reset when required:
+      Stretch_I = STRETCHING_FCN_LINEAR;
+      Beta_I = ZERO;
+      Tau_I = ZERO;
+      Stretch_J = STRETCHING_FCN_LINEAR;
+      Beta_J = ZERO;
+      Tau_J = ZERO;
+      Orthogonal_North = 0;
+      Orthogonal_South = 0;
+      Orthogonal_East = 0;
+      Orthogonal_West = 0;
+
+      if (Mach < 1.0){
+	double Width_Domain = Radius*25.0; // Width of the domain
+	double Len = 65.0*Radius; // Length of the domain
+	double height_Block = (Width_Domain - 2*Radius)/(pow(TWO,Number_of_Blocks_Jdir-2)-ONE);
+	double height_Block_sup = (2.0*Width_Domain - 2*Radius)/(pow(TWO,Number_of_Blocks_Jdir-2)-ONE);
+	double ele = Len/(pow(TWO,Number_of_Blocks_Idir)-ONE);
+	if (jBlk==0){
+	  xSW = Vector2D(ele*(pow(TWO,iBlk)-1.0), ZERO);
+	  xSE = Vector2D(ele*(pow(TWO,iBlk+1.0)-1.0), ZERO);
+	  xNW = Vector2D(ele*(pow(TWO,iBlk)-1.0), Radius);
+	  xNE = Vector2D(ele*(pow(TWO,iBlk+1.0)-1.0), Radius);
+	  Stretch_J = STRETCHING_FCN_MAX_CLUSTERING;
+	  Beta_J = Stretching_Factor_Jdir;
+	}else {
+	  if (jBlk ==1){
+	    xSW = Vector2D(ele*(pow(TWO,iBlk)-1.0), Radius);
+	    xSE = Vector2D(ele*(pow(TWO,iBlk+1.0)-1.0), Radius);
+	    xNW = Vector2D(ele*(pow(TWO,iBlk)-1.0), TWO*Radius);
+	    xNE = Vector2D(ele*(pow(TWO,iBlk+1)-1.0), TWO*Radius);
+	    Stretch_J = STRETCHING_FCN_MIN_CLUSTERING;
+	    Beta_J = Stretching_Factor_Jdir; 
+	  }else{
+	    xSW = Vector2D(ele*(pow(TWO,iBlk)-1.0), TWO*Radius + height_Block*(pow(TWO,jBlk-2)-1.0) );
+	    xSE = Vector2D(ele*(pow(TWO,iBlk+1.0)-1.0), TWO*Radius + height_Block*(pow(TWO,jBlk-2)-1.0));
+	    xNW = Vector2D(ele*(pow(TWO,iBlk)-1.0), TWO*Radius + height_Block*(pow(TWO,jBlk-1)-1.0));
+	    xNE = Vector2D(ele*(pow(TWO,iBlk+1)-1.0), TWO*Radius + height_Block*(pow(TWO,jBlk-1)-1.0));
+	  }
+	  
+	}
+	
+	if (iBlk==0){
+	  Stretch_I = STRETCHING_FCN_MIN_CLUSTERING;
+	  Beta_I = Stretching_Factor_Idir;
+	}
+	if (jBlk==2){
+	  Stretch_J = STRETCHING_FCN_MIN_CLUSTERING;
+	  Beta_J = (Stretching_Factor_Jdir-1.0)/2.0+1.0; 
+	}
+
+	//Specifying boundary conditions
+// 	if (jBlk==0 && iBlk ==0)
+// 	  BCtypeW = BC_FIXED; 
+// 	if (jBlk >0 && iBlk ==0)
+// 	  BCtypeW = BC_WALL_VISCOUS_ISOTHERMAL; 
+// 	if (jBlk == 0)
+// 	  BCtypeS = BC_REFLECTION;
+// 	if (jBlk == Number_of_Blocks_Jdir-1)
+// 	  BCtypeN = BC_FIXED;
+// 	if (iBlk ==  Number_of_Blocks_Idir-1)
+// 	  BCtypeE = BC_CONSTANT_EXTRAPOLATION;
+	//Boundary condition specified
+
+      }else{
+	double Width_Domain = Radius*25.0; // Width of the domain
+	double Len = 100.0*Radius; // Length of the domain
+	double height_Block = (Width_Domain - 2*Radius)/(pow(TWO,Number_of_Blocks_Jdir-2)-ONE);
+	double height_Block_sup = (2.0*Width_Domain - 2*Radius)/(pow(TWO,Number_of_Blocks_Jdir-2)-ONE);
+	double ele = Len/(pow(TWO,Number_of_Blocks_Idir)-ONE);
+
+	if (jBlk==0){
+	  xSW = Vector2D(ele*(pow(TWO,iBlk)-1.0), ZERO);
+	  xSE = Vector2D(ele*(pow(TWO,iBlk+1.0)-1.0), ZERO);
+	  xNW = Vector2D(ele*(pow(TWO,iBlk)-1.0), Radius);
+	  xNE = Vector2D(ele*(pow(TWO,iBlk+1.0)-1.0), Radius);
+	  Stretch_J = STRETCHING_FCN_MAX_CLUSTERING;
+	  Beta_J = Stretching_Factor_Jdir;
+	}else if (jBlk ==1){
+	    xSW = Vector2D(ele*(pow(TWO,iBlk)-1.0), Radius);
+	    xSE = Vector2D(ele*(pow(TWO,iBlk+1.0)-1.0), Radius);
+	    xNW = Vector2D(ele*(pow(TWO,iBlk)-1.0), TWO*Radius);
+	    xNE = Vector2D(ele*(pow(TWO,iBlk+1)-1.0), TWO*Radius);
+	    Stretch_J = STRETCHING_FCN_MIN_CLUSTERING;
+	    Beta_J = Stretching_Factor_Jdir; 
+	}else if (jBlk == 2){
+	  xSW = Vector2D(ele*(pow(TWO,iBlk)-1.0), TWO*Radius + height_Block*(pow(TWO,jBlk-2)-1.0) );
+	  xSE = Vector2D(ele*(pow(TWO,iBlk+1.0)-1.0), TWO*Radius + height_Block*(pow(TWO,jBlk-2)-1.0));
+	  xNW = Vector2D(ele*(pow(TWO,iBlk)-1.0), TWO*Radius +  height_Block*(pow(TWO,jBlk-1)-1.0) + ele*(pow(TWO,iBlk)-1.0)/Len*(height_Block_sup*(pow(TWO,jBlk-1)-1.0)-height_Block*(pow(TWO,jBlk-1)-1.0)));
+	  xNE = Vector2D(ele*(pow(TWO,iBlk+1)-1.0), TWO*Radius + height_Block*(pow(TWO,jBlk-1)-1.0) + ele*(pow(TWO,iBlk+1.0)-1.0)/Len*(height_Block_sup*(pow(TWO,jBlk-1)-1.0)-height_Block*(pow(TWO,jBlk-1)-1.0)));
+	}else if (jBlk == 3){
+	  xSW = Vector2D(ele*(pow(TWO,iBlk)-1.0), TWO*Radius +  height_Block*(pow(TWO,jBlk-2)-1.0) + ele*(pow(TWO,iBlk)-1.0)/Len*(height_Block_sup*(pow(TWO,jBlk-2)-1.0)-height_Block*(pow(TWO,jBlk-2)-1.0)));
+	  xSE = Vector2D(ele*(pow(TWO,iBlk+1)-1.0), TWO*Radius + height_Block*(pow(TWO,jBlk-2)-1.0) + ele*(pow(TWO,iBlk+1.0)-1.0)/Len*(height_Block_sup*(pow(TWO,jBlk-2)-1.0)-height_Block*(pow(TWO,jBlk-2)-1.0)));	 
+	  xNW = Vector2D(ele*(pow(TWO,iBlk)-1.0), TWO*Radius +  height_Block*(pow(TWO,jBlk-1)-1.0) + ele*(pow(TWO,iBlk)-1.0)/Len*(height_Block_sup*(pow(TWO,jBlk-1)-1.0)-height_Block*(pow(TWO,jBlk-1)-1.0)));
+	  xNE = Vector2D(ele*(pow(TWO,iBlk+1)-1.0), TWO*Radius + height_Block*(pow(TWO,jBlk-1)-1.0) + ele*(pow(TWO,iBlk+1.0)-1.0)/Len*(height_Block_sup*(pow(TWO,jBlk-1)-1.0)-height_Block*(pow(TWO,jBlk-1)-1.0)));
+	}
+	if (iBlk==0){
+	  Stretch_I = STRETCHING_FCN_MIN_CLUSTERING;
+	  Beta_I = Stretching_Factor_Idir; 
+	}
+	if (jBlk==2){
+	  Stretch_J = STRETCHING_FCN_MIN_CLUSTERING;
+	  Beta_J = (Stretching_Factor_Jdir-1.0)/2.0+1.0; 
+	}
+
+	//Specifying boundary conditions
+	if (jBlk==0 && iBlk ==0)
+	  BCtypeW = BC_FIXED; 
+	if (jBlk!=0 && iBlk ==0)
+	  BCtypeW = BC_REFLECTION; 
+	if (jBlk == 0)
+	  BCtypeS = BC_REFLECTION;
+	if (jBlk == Number_of_Blocks_Jdir-1)
+	  BCtypeN = BC_FIXED;
+	if (iBlk == Number_of_Blocks_Idir-1)
+	  BCtypeE = BC_CONSTANT_EXTRAPOLATION;
+	//Boundary condition specified
+
+      }
+      // Determine the block indicator and all boundary splines and
+      // reset all boundary conditions and stretching parameters for the
+      // current block: 
+       
+      if (block_flag) {
+
+	// Create the splines defining the north, south, east, and west 
+	// boundaries of the rectangular boxes.
+	Create_Spline_Line(Bnd_Spline_North,xNW,xNE,2);
+	Create_Spline_Line(Bnd_Spline_South,xSW,xSE,2);
+	Create_Spline_Line(Bnd_Spline_East,xSE,xNE,2);
+	Create_Spline_Line(Bnd_Spline_West,xSW,xNW,2);
+
+	// Set the boundary condition types for each of the boundary
+	// splines:
+	Bnd_Spline_North.setBCtype(BCtypeN);
+	Bnd_Spline_South.setBCtype(BCtypeS);
+	Bnd_Spline_East.setBCtype(BCtypeE);
+	Bnd_Spline_West.setBCtype(BCtypeW);
+    
+	// Create the 2D quadrilateral grid block.
+	Create_Quad_Block(Grid_ptr[iBlk][jBlk],
+			  Bnd_Spline_North,
+			  Bnd_Spline_South,
+			  Bnd_Spline_East,
+			  Bnd_Spline_West,
+			  Number_of_Cells_Idir,
+			  Number_of_Cells_Jdir,
+			  Number_of_Ghost_Cells,
+			  GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+			  Stretch_I,
+			  Beta_I,
+			  Tau_I,
+			  Stretch_J,
+			  Beta_J,
+			  Tau_J,
+			  Orthogonal_North,
+			  Orthogonal_South,
+			  Orthogonal_East,
+			  Orthogonal_West);
+
+	// Deallocate the memory for the boundary splines.
+	Bnd_Spline_North.deallocate();
+	Bnd_Spline_South.deallocate();
+	Bnd_Spline_East.deallocate();
+	Bnd_Spline_West.deallocate();
+
+      }
+
+    }    
+  }
+
+  // Return the grid.
+  return Grid_ptr;
+}
+
+/**********************************************************************
+ * Routine: Grid_Mixing_Layer                                         *
+ *                                                                    *
+ * Generates a quadilateral mesh with for predicting Mixing Layer flow*
+ * coming out through an orifice.                                     *
+ *                                                                    *
+ * Usage: Grid_ptr = Grid_Mixing_Layer(Grid_ptr,                      *
+ *                                 nblk_i,                            *
+ *                                 nblk_j,                            *
+ *                                 plate_length,                      *
+ *				   Stretching_Type_Idir,              *
+ *				   Stretching_Type_Jdir,              *
+ *				   Stretching_Factor_Idir,            *  
+ *				   Stretching_Factor_Jdir,            *
+ *                                 Number_of_Cells_Idir,              *
+ *                                 2)                                 *
+ *                                                                    *
+ **********************************************************************/
+
+Grid2D_Quad_Block** Grid_Mixing_Layer(Grid2D_Quad_Block **Grid_ptr,
+				      int &Number_of_Blocks_Idir,
+				      int &Number_of_Blocks_Jdir,
+				      const double &Length,
+				      const double &Mach,
+				      const int &Stretching_Type_Idir,
+				      const int &Stretching_Type_Jdir,
+				      const double &Stretching_Factor_Idir,
+				      const double &Stretching_Factor_Jdir,
+				      const int Number_of_Cells_Idir,
+				      const int Number_of_Cells_Jdir,
+				      const int Number_of_Ghost_Cells){
+              
+  int block_flag,
+      BCtypeN, BCtypeS, BCtypeE, BCtypeW,
+      Stretch_I, Stretch_J,
+      Orthogonal_North, Orthogonal_South,
+      Orthogonal_East, Orthogonal_West;
+  double Beta_I, Tau_I, Beta_J, Tau_J;
+  Vector2D xNW, xNE, xSE, xSW;
+  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+           Bnd_Spline_East, Bnd_Spline_West;
+
+  double factor = ONE; // this factor increases the length of the domain calculated
+  // by the given Reynolds number 'factor' times. 
+
+  double Fside = TWO; // this factor decides the width of the domain.
+  //'Fside = fside' implies width of the domain on either side of centerline
+  //will be 'factor*Length/fside'
+
+  // Allocate memory for grid blocks. There are two grid blocks for 
+  // this mesh.
+
+  double len = Length*factor; // final length of the domain.
+  double width = len/Fside;  // width on each side of the centerline.
+
+  len = 2.0;
+  width = 1.0;
+
+  Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr,
+                                       Number_of_Blocks_Idir,
+                                       Number_of_Blocks_Jdir) ;
+  // Create the mesh for each block representing the complete grid.
+
+  for (int jBlk = 0; jBlk < Number_of_Blocks_Jdir; jBlk++) {
+    for (int iBlk = 0; iBlk < Number_of_Blocks_Idir; iBlk++) {
+    
+      // Preset the block indicator and turn off when required:
+       block_flag = ON;
+
+       // Preset all boundary conditions to none and reset when required:
+      BCtypeN = BC_NONE;
+      BCtypeS = BC_NONE;
+      BCtypeE = BC_NONE;
+      BCtypeW = BC_NONE;    
+ 
+      // Preset all stretching parameters and reset when required:
+      Stretch_I = STRETCHING_FCN_LINEAR;
+      Beta_I = ZERO;
+      Tau_I = ZERO;
+      Stretch_J = STRETCHING_FCN_LINEAR;
+      Beta_J = ZERO;
+      Tau_J = ZERO;
+      Orthogonal_North = 0;
+      Orthogonal_South = 0;
+      Orthogonal_East = 0;
+      Orthogonal_West = 0;
+
+//       if ( jBlk < Number_of_Blocks_Jdir/TWO ){
+// 	xSW = Vector2D(iBlk*len/Number_of_Blocks_Idir,-(pow(TWO,Number_of_Blocks_Jdir/TWO - jBlk)-ONE)*width/(pow(TWO,Number_of_Blocks_Jdir/TWO)-ONE));
+// 	xSE = Vector2D((iBlk+ONE)*len/Number_of_Blocks_Idir,-(pow(TWO,Number_of_Blocks_Jdir/TWO - jBlk)-ONE)*width/(pow(TWO,Number_of_Blocks_Jdir/TWO)-ONE));
+// 	xNW = Vector2D(iBlk*len/Number_of_Blocks_Idir,-(pow(TWO,Number_of_Blocks_Jdir/TWO-jBlk-ONE ) -ONE)*width/(pow(TWO,Number_of_Blocks_Jdir/TWO)-ONE));
+// 	xNE=Vector2D((iBlk+ONE)*len/Number_of_Blocks_Idir,-(pow(TWO,Number_of_Blocks_Jdir/TWO-jBlk-ONE)-ONE)*width/(pow(TWO,Number_of_Blocks_Jdir/TWO)-ONE));
+// 	if ( jBlk == 0 )
+// 	  BCtypeS = BC_CONSTANT_EXTRAPOLATION;
+// 	if ( iBlk == 0 )
+// 	  BCtypeW = BC_FIXED;
+// 	if ( iBlk == Number_of_Blocks_Idir - 1 )
+// 	  BCtypeE = BC_FIXED_PRESSURE;
+	
+// 	if (jBlk == Number_of_Blocks_Jdir / 2 - 1 ){
+// 	  Stretch_J = STRETCHING_FCN_MAX_CLUSTERING;
+// 	  Beta_J = Stretching_Factor_Jdir; 
+// 	}
+	
+//       }else{
+// 	xSW = Vector2D(iBlk*len/Number_of_Blocks_Idir,(pow(TWO,jBlk - Number_of_Blocks_Jdir/TWO) -ONE)*width/(pow(TWO,Number_of_Blocks_Jdir/TWO)-ONE));
+// 	xSE = Vector2D((iBlk+ONE)*len/Number_of_Blocks_Idir,(pow(TWO,jBlk -Number_of_Blocks_Jdir/TWO) -ONE)*width/(pow(TWO,Number_of_Blocks_Jdir/TWO)-ONE));
+// 	xNW = Vector2D(iBlk*len/Number_of_Blocks_Idir,(pow(TWO,jBlk-Number_of_Blocks_Jdir/TWO + ONE )-ONE)*width/(pow(TWO,Number_of_Blocks_Jdir/TWO)-ONE) );
+// 	xNE =Vector2D((iBlk+ONE)*len/Number_of_Blocks_Idir,(pow(TWO,jBlk-Number_of_Blocks_Jdir/TWO+ONE)-ONE)*width/(pow(TWO,Number_of_Blocks_Jdir/TWO)-ONE));
+// 	if ( jBlk == Number_of_Blocks_Jdir - 1 )
+// 	  BCtypeN = BC_CONSTANT_EXTRAPOLATION;
+// 	if ( iBlk == 0 )
+// 	  BCtypeW = BC_FIXED;
+// 	if ( iBlk == Number_of_Blocks_Idir - 1 ){
+// 	  if (Mach < ONE)
+// 	    BCtypeE = BC_FIXED_PRESSURE;
+// 	  else
+// 	    BCtypeE = BC_CONSTANT_EXTRAPOLATION;
+// 	}
+// 	if (jBlk == Number_of_Blocks_Jdir / 2 ){
+// 	  Stretch_J = STRETCHING_FCN_MIN_CLUSTERING;
+// 	  Beta_J = Stretching_Factor_Jdir; 
+// 	}
+//       }
+      
+      double w_part = width/(Number_of_Blocks_Idir/TWO);
+      double l_part = len/(Number_of_Blocks_Jdir/TWO);
+
+      xSW = Vector2D((iBlk-Number_of_Blocks_Idir/TWO)*w_part,(jBlk-Number_of_Blocks_Jdir/TWO)*l_part);
+      xSE = Vector2D((iBlk+1.0-Number_of_Blocks_Idir/TWO)*w_part,(jBlk-Number_of_Blocks_Jdir/TWO)*l_part);
+      xNW = Vector2D((iBlk-Number_of_Blocks_Idir/TWO)*w_part,(jBlk+1.0-Number_of_Blocks_Jdir/TWO)*l_part);
+      xNE = Vector2D((iBlk+1.0-Number_of_Blocks_Idir/TWO)*w_part,(jBlk+1.0-Number_of_Blocks_Jdir/TWO)*l_part);
+
+      if (jBlk == 0)
+	BCtypeS = BC_REFLECTION;
+      
+      if(jBlk == Number_of_Blocks_Jdir - 1)
+	BCtypeN = BC_REFLECTION;
+    
+      if(iBlk == Number_of_Blocks_Idir - 1)
+	BCtypeE = BC_CHARACTERISTIC;
+
+      if (iBlk ==0){
+	if(jBlk < Number_of_Blocks_Jdir/TWO){
+	  BCtypeW = BC_INFLOW_SUBSONIC;
+	}else{
+	  BCtypeW = BC_CHARACTERISTIC;
+	}
+      }
+
+      if (jBlk == Number_of_Blocks_Jdir/TWO-1){
+	  Stretch_J = STRETCHING_FCN_MAX_CLUSTERING;
+ 	  Beta_J = Stretching_Factor_Jdir; 
+	  if (iBlk < Number_of_Blocks_Idir/TWO){
+	    BCtypeN = BC_WALL_VISCOUS_HEATFLUX;
+	  }
+      }
+
+      if (jBlk == Number_of_Blocks_Jdir/TWO){
+	  Stretch_J = STRETCHING_FCN_MIN_CLUSTERING;
+ 	  Beta_J = Stretching_Factor_Jdir; 
+	  if (iBlk < Number_of_Blocks_Idir/TWO){
+	    BCtypeS = BC_WALL_VISCOUS_HEATFLUX;
+	  }
+      }
+      
+      if (block_flag) {
+	
+	// Create the splines defining the north, south, east, and west 
+	// boundaries of the rectangular boxes.
+	Create_Spline_Line(Bnd_Spline_North,xNW,xNE,2);
+	Create_Spline_Line(Bnd_Spline_South,xSW,xSE,2);
+	Create_Spline_Line(Bnd_Spline_East,xSE,xNE,2);
+	Create_Spline_Line(Bnd_Spline_West,xSW,xNW,2);
+
+	// Set the boundary condition types for each of the boundary
+	// splines:
+	Bnd_Spline_North.setBCtype(BCtypeN);
+	Bnd_Spline_South.setBCtype(BCtypeS);
+	Bnd_Spline_East.setBCtype(BCtypeE);
+	Bnd_Spline_West.setBCtype(BCtypeW);
+    
+	// Create the 2D quadrilateral grid block.
+	Create_Quad_Block(Grid_ptr[iBlk][jBlk],
+			  Bnd_Spline_North,
+			  Bnd_Spline_South,
+			  Bnd_Spline_East,
+			  Bnd_Spline_West,
+			  Number_of_Cells_Idir,
+			  Number_of_Cells_Jdir,
+			  Number_of_Ghost_Cells,
+			  GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+			  Stretch_I,
+			  Beta_I,
+			  Tau_I,
+			  Stretch_J,
+			  Beta_J,
+			  Tau_J,
+			  Orthogonal_North,
+			  Orthogonal_South,
+			  Orthogonal_East,
+			  Orthogonal_West);
+
+	// Deallocate the memory for the boundary splines.
+	Bnd_Spline_North.deallocate();
+	Bnd_Spline_South.deallocate();
+	Bnd_Spline_East.deallocate();
+	Bnd_Spline_West.deallocate();
+
+      }
+
+    }    
+  }
+
+  // Return the grid.
+  return Grid_ptr;
 }
 
 /**********************************************************************

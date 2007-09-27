@@ -130,6 +130,19 @@ int Turbulence_BCs(NavierStokes2D_Quad_Block &SolnBlk,
 	  //}
 	  SolnBlk.U[i][j].domega = SolnBlk.W[i][j].domega();
 	}
+	if (SolnBlk.Wall[i][j].yplus <= 6.0 &&
+	    SolnBlk.Wall[i][j].BCwall != BC_BURNING_SURFACE &&
+	    SolnBlk.Wall[i][j].BCwall != BC_MASS_INJECTION){
+	  //double Vpr = 0.2 + 0.0125*sqr(SolnBlk.Wall[i][j].yplus);
+	  // double Vpr = 0.01 + 0.0028*sqr(SolnBlk.Wall[i][j].yplus);
+	  double Vpr = 0.2 + 0.00255*sqr(SolnBlk.Wall[i][j].yplus);
+	  double CmuFmu = SolnBlk.W[i][j].muT()*SolnBlk.W[i][j].epsilon()/SolnBlk.W[i][j].rho/max(sqr(SolnBlk.W[i][j].k),sqr(TOLER));
+	  double Coeff = sqr(Vpr*0.14*SolnBlk.W[i][j].f_lambda(SolnBlk.Wall[i][j].ywall)/max(CmuFmu,sqr(TOLER)));
+	  SolnBlk.W[i][j].ee = Coeff*SolnBlk.W[i][j].epsilon()* SolnBlk.W[i][j].ke/ max(SolnBlk.W[i][j].k,TOLER);
+	  //  SolnBlk.W[i][j].ee = SolnBlk.W[i][j].Alpha()*(ONE/FOUR/SolnBlk.W[i][j].ke*sqr(SolnBlk.dWdy[i][j].ke));
+	  
+	  SolnBlk.U[i][j].dee = SolnBlk.W[i][j].dee();
+	}
       }
     }
 
@@ -272,6 +285,9 @@ int Apply_Turbulence_BCs(NavierStokes2D_Quad_Block &SolnBlk,
     }
     SolnBlk.U[i][j].domega = SolnBlk.W[i][j].domega();
 
+    SolnBlk.W[i][j].ee = SolnBlk.W[i][j].Alpha()*sqr(ONE/TWO/sqrt(SolnBlk.W[i][j].ke)*(SolnBlk.dWdx[i][j].ke*SolnBlk.Wall[i][j].nwall.x+SolnBlk.dWdy[i][j].ke*SolnBlk.Wall[i][j].nwall.y));
+    SolnBlk.U[i][j].dee = SolnBlk.W[i][j].dee();
+
   // The cell is within the buffer layer: apply the blending function.
   } else if (Turbulent_BCtype == TURBULENT_BC_AUTOMATIC_WALL_TREATMENT &&
 	     SolnBlk.Wall[i][j].yplus <= IP.yplus_buffer_layer) {
@@ -397,6 +413,11 @@ int Turbulence_Zero_Residual(NavierStokes2D_Quad_Block &SolnBlk,
 	    ) {
 	  SolnBlk.dUdt[i][j][k_residual].domega = ZERO;
  	}
+	if (SolnBlk.Wall[i][j].yplus <= 6.0&&
+	    SolnBlk.Wall[i][j].BCwall != BC_BURNING_SURFACE &&
+	    SolnBlk.Wall[i][j].BCwall != BC_MASS_INJECTION){
+	  SolnBlk.dUdt[i][j][k_residual].dee = ZERO;
+	}
       }
     }
   } else if (IP.i_Turbulence_BCs == TURBULENT_BC_AUTOMATIC_WALL_TREATMENT) {
@@ -524,6 +545,7 @@ int Zero_Turbulence_Residuals(NavierStokes2D_Quad_Block &SolnBlk,
   if (Turbulent_BCtype == TURBULENT_BC_DIRECT_INTEGRATION &&
       SolnBlk.Wall[i][j].yplus <= IP.yplus_sublayer) {
     SolnBlk.dUdt[i][j][k_residual].domega = ZERO;
+    SolnBlk.dUdt[i][j][k_residual].dee = ZERO;
 
   // The cell is within the buffer layer: apply the blending function.
   } else if (Turbulent_BCtype == TURBULENT_BC_AUTOMATIC_WALL_TREATMENT &&

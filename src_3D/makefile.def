@@ -287,7 +287,7 @@ ifeq ($(PLATFORM),Linux_i386)
   endif
   ifeq ($(MPI_VERSION),MPICH2)
     FC = /usr/local/mpi/bin/mpif77
-    F90 = /usr/local/mpin/bin/mpif90
+    F90 = /usr/local/mpi/bin/mpif90
     CC = /usr/local/mpi/bin/mpicc
     CXX = /usr/local/mpi/bin/mpicxx
     CPPFLAGS = -D_MPI_VERSION -D_MPI_VERSION2 -DMPICH_IGNORE_CXX_SEEK -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS)
@@ -356,6 +356,9 @@ ifeq ($(PLATFORM),Linux_ia64)
     MODFLAG = -module
     CFLAGS = -w0 -O2 -mp -ftz 
     LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -limf
+    ifeq ($(PROFILING),ON)
+      CXXFLAGS = -w0 -mp -ftz -g -p
+    endif
     LD = $(CXX)
     DEPENDSFLAGS =
   endif

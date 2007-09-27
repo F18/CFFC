@@ -47,6 +47,9 @@ int NavierStokes2D_cState::flow_type = FLOWTYPE_LAMINAR;
  * NavierStokes2D_pState -- Create storage and assign turbulent       *
  *                          static variables.                         *
  **********************************************************************/
+int NavierStokes2D_pState::Compressibility_Effect = OFF;
+int NavierStokes2D_pState::Transition_Model=OFF;
+int NavierStokes2D_pState::Variable_Prandtl=OFF;
 // Turbulent boundary-layer constants:
 double NavierStokes2D_pState::yplus_o = 10.0;
 double NavierStokes2D_pState::C = 5.0;
@@ -55,7 +58,6 @@ double NavierStokes2D_pState::yplus_sublayer = 5.0;
 double NavierStokes2D_pState::yplus_buffer_layer = 30.0;
 double NavierStokes2D_pState::yplus_outer_layer = 100.0;
 // k-omega closure coefficients:
-double NavierStokes2D_pState::PrT = 0.90;
 double NavierStokes2D_pState::Cmu = 0.090;
 double NavierStokes2D_pState::beta_k_o = 0.09;
 double NavierStokes2D_pState::beta_omega_o = 0.072;
@@ -64,11 +66,33 @@ double NavierStokes2D_pState::sigma_omega = 0.50;
 double NavierStokes2D_pState::alpha = 0.52;
 double NavierStokes2D_pState::xi = 1.50;
 double NavierStokes2D_pState::Mto = 0.25;
+// Wilcox transition model closure coefficients
+double NavierStokes2D_pState::Rbeta = EIGHT;
+double NavierStokes2D_pState::Rk = SIX;
+double NavierStokes2D_pState::Romega = 27.0/10.0;
+double NavierStokes2D_pState::alpha_o = ONE/10.0;
+double NavierStokes2D_pState::sigma_star = HALF;
+double NavierStokes2D_pState::sigma_Wilcox = HALF;
+double NavierStokes2D_pState::beta_Wilcox = THREE / 40.0;
+// Variable Prandtl number coefficients
+double NavierStokes2D_pState::Cd1 = 2.0;
+double NavierStokes2D_pState::Cd2 = 0.0;
+double NavierStokes2D_pState::Cd3 = 0.72;
+double NavierStokes2D_pState::Cd4 = 2.2;
+double NavierStokes2D_pState::Cd5 = 0.8;
+double NavierStokes2D_pState::sigma_k_e = 1.0;
+double NavierStokes2D_pState::sigma_ep_e = 1.0;
+double NavierStokes2D_pState::A_plus = 45.0;
+double NavierStokes2D_pState::C1_lambda = 0.1;
+double NavierStokes2D_pState::C_lambda = 0.14;
 
 /**********************************************************************
  * NavierStokes2D_cState -- Create storage and assign turbulent       *
  *                          static variables.                         *
  **********************************************************************/
+int NavierStokes2D_cState::Compressibility_Effect = OFF;
+int NavierStokes2D_cState::Transition_Model=OFF;
+int NavierStokes2D_cState::Variable_Prandtl=OFF;
 // Turbulent boundary-layer constants:
 double NavierStokes2D_cState::yplus_o = 10.0;
 double NavierStokes2D_cState::C = 5.0;
@@ -77,7 +101,6 @@ double NavierStokes2D_cState::yplus_sublayer = 5.0;
 double NavierStokes2D_cState::yplus_buffer_layer = 30.0;
 double NavierStokes2D_cState::yplus_outer_layer = 100.0;
 // k-omega coefficients:
-double NavierStokes2D_cState::PrT = 0.90;
 double NavierStokes2D_cState::Cmu = 0.090;
 double NavierStokes2D_cState::beta_k_o = 0.09;
 double NavierStokes2D_cState::beta_omega_o = 0.072;
@@ -86,6 +109,25 @@ double NavierStokes2D_cState::sigma_omega = 0.50;
 double NavierStokes2D_cState::alpha = 0.52;
 double NavierStokes2D_cState::xi = 1.50;
 double NavierStokes2D_cState::Mto = 0.25;
+// Wilcox transition model closure coefficients
+double NavierStokes2D_cState::Rbeta = EIGHT;
+double NavierStokes2D_cState::Rk = SIX;
+double NavierStokes2D_cState::Romega = 27.0/10.0;
+double NavierStokes2D_cState::alpha_o = ONE/10.0;
+double NavierStokes2D_cState::sigma_star = HALF;
+double NavierStokes2D_cState::sigma_Wilcox = HALF;
+double NavierStokes2D_cState::beta_Wilcox = THREE / 40.0;
+// Variable Prandtl number coefficients
+double NavierStokes2D_cState::Cd1 = 2.0;
+double NavierStokes2D_cState::Cd2 = 0.0;
+double NavierStokes2D_cState::Cd3 = 0.72;
+double NavierStokes2D_cState::Cd4 = 2.2;
+double NavierStokes2D_cState::Cd5 = 0.8;
+double NavierStokes2D_cState::sigma_k_e = 1.0;
+double NavierStokes2D_cState::sigma_ep_e = 1.0;
+double NavierStokes2D_cState::A_plus = 45.0;
+double NavierStokes2D_cState::C1_lambda = 0.1;
+double NavierStokes2D_cState::C_lambda = 0.14;
 
 /**********************************************************************
  * NavierStokes2D_pState -- Create storage and assign propellant      *
@@ -433,8 +475,8 @@ NavierStokes2D_pState Riemann_Wrs(const NavierStokes2D_pState &Wl,
   }
 
   // Determine the intermediate states.
-  Wls = NavierStokes2D_pState(Wl.g*pm/sqr(aml),vm,Wl.v.y,pm,ZERO,ZERO);
-  Wrs = NavierStokes2D_pState(Wr.g*pm/sqr(amr),vm,Wr.v.y,pm,ZERO,ZERO);
+  Wls = NavierStokes2D_pState(Wl.g*pm/sqr(aml),vm,Wl.v.y,pm,ZERO,ZERO,ZERO,ZERO);
+  Wrs = NavierStokes2D_pState(Wr.g*pm/sqr(amr),vm,Wr.v.y,pm,ZERO,ZERO,ZERO,ZERO);
 
   return Wrs;
 
@@ -465,6 +507,8 @@ NavierStokes2D_pState RoeAverage(const NavierStokes2D_pState &Wl, const NavierSt
   Wa.v.y   = (srhol*Wl.v.y + srhor*Wr.v.y)/(srhol+srhor);
   Wa.k     = (srhol*Wl.k + srhor*Wr.k)/(srhol+srhor);
   Wa.omega = (srhol*Wl.omega + srhor*Wr.omega)/(srhol+srhor);
+  Wa.ke    = (srhol*Wl.ke + srhor*Wr.ke)/(srhol+srhor);
+  Wa.ee    = (srhol*Wl.ee + srhor*Wr.ee)/(srhol+srhor);
   ha  = (srhol*hl + srhor*hr)/(srhol+srhor);
   aa2 = Wa.gm1*(ha - HALF*(sqr(Wa.v.x) + sqr(Wa.v.y)) - Wa.k);
   Wa.p = Wa.rho*aa2/Wa.g;
@@ -482,7 +526,7 @@ NavierStokes2D_pState RoeAverage(const NavierStokes2D_pState &Wl, const NavierSt
  **********************************************************************/
 NavierStokes2D_pState Translate(const NavierStokes2D_pState &W, const Vector2D &V) {
 
-  return NavierStokes2D_pState(W.rho,W.v.x-V.x,W.v.y-V.y,W.p,W.k,W.omega);
+  return NavierStokes2D_pState(W.rho,W.v.x-V.x,W.v.y-V.y,W.p,W.k,W.omega,W.ke,W.ee);
 
 }
 
@@ -498,7 +542,9 @@ NavierStokes2D_pState Rotate(const NavierStokes2D_pState &W, const Vector2D &nor
 			       -W.v.x*norm_dir.y+W.v.y*norm_dir.x,
 			       W.p,
 			       W.k,
-			       W.omega);
+			       W.omega,
+			       W.ke,
+			       W.ee);
 }
 
 NavierStokes2D_cState Rotate(const NavierStokes2D_cState &U, const Vector2D &norm_dir) {
@@ -507,7 +553,9 @@ NavierStokes2D_cState Rotate(const NavierStokes2D_cState &U, const Vector2D &nor
 			       -U.dv.x*norm_dir.y+U.dv.y*norm_dir.x,
 			       U.E,
 			       U.dk,
-			       U.domega);
+			       U.domega,
+			       U.dke,
+			       U.dee);
 }
 
 /**********************************************************************
@@ -540,6 +588,35 @@ NavierStokes2D_pState Reflect(const NavierStokes2D_pState &W,
 }
 
 /**********************************************************************
+ * Routine: Mirror                                                    *
+ *                                                                    *
+ * This function returns the mirrored solution state in a given       *
+ * direction given the primitive solution variables and the unit      *
+ * normal vector in the direction of interest.                        *
+ *                                                                    *
+ **********************************************************************/
+NavierStokes2D_pState Mirror(const NavierStokes2D_pState &W, const Vector2D &norm_dir) {
+  
+  NavierStokes2D_pState Wr, Wn;
+
+  // Apply the frame rotation and calculate the primitive solution 
+  // state variables in the local rotated frame defined by the unit 
+  // normal vector.
+  Wr = Rotate(W,norm_dir);
+
+  // Mirror the normal velocity in the rotated frame.
+  Wr.v.x = -Wr.v.x;
+  Wr.v.y = -Wr.v.y;
+
+  // Rotate back to the original Cartesian reference frame.
+  Wn = Rotate(Wr,Vector2D(norm_dir.x,-norm_dir.y));
+
+  // Return the mirrored state.
+  return Wn;
+  
+}
+
+/**********************************************************************
  * Routine: WallViscousHeatFlux                                       *
  *                                                                    *
  * This function returns the adiabatic no-slip solution state in a    *
@@ -564,8 +641,10 @@ NavierStokes2D_pState WallViscousHeatFlux(const NavierStokes2D_pState &W,
   // Apply the adiabatic viscous wall boundary condition to the
   // turbulent variables.
   Wr.k = ZERO;
+  Wr.ke = ZERO;
 
   // Rotate back to the original Cartesian reference frame.
+
   Wn = Rotate(Wr,Vector2D(norm_dir.x,-norm_dir.y));
 
   // Return the moving wall state.
@@ -616,7 +695,7 @@ NavierStokes2D_pState MovingWallHeatFlux(const NavierStokes2D_pState &W,
   // Apply the adiabatic viscous wall boundary condition to the
   // turbulent variables.
   Wr.k = ZERO;
-
+  Wr.ke = ZERO;
   // Rotate back to the original Cartesian reference frame.
   Wn = Rotate(Wr,Vector2D(norm_dir.x,-norm_dir.y));
 
@@ -656,6 +735,7 @@ NavierStokes2D_pState MovingWallIsothermal(const NavierStokes2D_pState &W,
   // Apply the isothermal viscous wall boundary condition to the
   // turbulent variables.
   Wr.k = ZERO;
+  Wr.ke = ZERO;
 
   // Rotate back to the original Cartesian reference frame.
   Wn = Rotate(Wr,Vector2D(norm_dir.x,-norm_dir.y));
@@ -1247,7 +1327,8 @@ NavierStokes2D_pState TurbulentPipeFlow(const NavierStokes2D_pState &Wo,
 					const Vector2D X,
 					const double dp,
 					const double length,
-					const double radius) {
+					const double radius,
+					const double ReN) {
 
   NavierStokes2D_pState W;
   double utau, tauw, y;
@@ -1257,13 +1338,52 @@ NavierStokes2D_pState TurbulentPipeFlow(const NavierStokes2D_pState &Wo,
   // viscosity, mu, which depends on the temperature, T.
   y = max(ZERO,min(X.y,radius-TOLER));
   W.rho = Wo.rho;
-  W.p   = Wo.p + X.x*dp/length;
-  W.v.x = Wo.v.x*pow(1.0 - y/radius,0.133);
+  //We introduce '-dp' to keep the exit pressure == atm pressure and the inlet
+  //pressure is increased to > atm presure to keep the pressure gradient.
+  W.p   = Wo.p - dp + X.x*dp/length;
+  //The value stored in the Wo.v.x is the u_bar. To get the U_max value we need 
+  //'n' which is F(Reynolds number). We simply use linear extrapolation between the 
+  //known values of n and Re.
+  int numKnown = 6;
+  double* Re_known;
+  double* n_known;
+  double n = 0.0;
+  Re_known = (double *) malloc(sizeof(double)*numKnown);
+  n_known = (double *) malloc(sizeof(double)*numKnown);
+
+  n_known[0]=6.0;n_known[1]=6.6;n_known[2]=7.0;
+  n_known[3]=8.8;n_known[4]=10.0;n_known[5]=10.0;
+
+  Re_known[0]=4000.0;Re_known[1]=23000.0;Re_known[2]=110000.0;
+  Re_known[3]=1100000.0;Re_known[4]=2000000.0;Re_known[5]=3200000;
+  
+  int j = 0, foundN=0;
+  double interpol;
+
+  if (ReN <=  Re_known[0]){
+    n = n_known[0];
+  }else if (ReN >=  Re_known[5]){
+    n = n_known[5];
+  }else{
+    for (j=1;j<numKnown;j++){
+      if (ReN <= Re_known[j] && (foundN == 0)){
+	foundN = 1;
+	interpol = (ReN-Re_known[j-1])/(Re_known[j]-Re_known[j-1]);
+	n = n_known[j-1]+interpol*(n_known[j]-n_known[j-1]);
+      }
+    }
+  }
+  //Calculation of 'n' completed.    
+  
+  //U_max calculated from equation (20.7) in Schlichting.
+  double U_max =  Wo.v.x*(n+1.0)*(2.0*n+1.0)/2.0/sqr(n); 
+  W.v.x = U_max*pow(1.0 - y/radius,ONE/n); //Eqn (20.6)
   W.v.y = ZERO;
   tauw = -HALF*radius*(dp/length);
   utau = sqrt(tauw/W.rho);
   W.k = sqr(utau)/sqrt(W.beta_k_o);
   W.omega = utau/(sqrt(W.beta_k_o)*W.von_karman*(radius-X.y));
+  W.ke = sqr(0.001*W.p/(Wo.gm1*W.rho));
   // Return W state.
   return W;
 
@@ -1758,6 +1878,8 @@ NavierStokes2D_pState BC_Characteristic_Pressure(const NavierStokes2D_pState &Wi
     Wb_rotated.p     = Wi_rotated.p;
     Wb_rotated.k     = Wi_rotated.k;
     Wb_rotated.omega = Wi_rotated.omega;
+    Wb_rotated.ke    = Wi_rotated.ke;
+    Wb_rotated.ee    = Wi_rotated.ee;
 
   // Boundary condition for subsonic outflow.  Pressure specified.
   } else if (mi >= ZERO) {
@@ -1768,6 +1890,8 @@ NavierStokes2D_pState BC_Characteristic_Pressure(const NavierStokes2D_pState &Wi
     Wb_rotated.v.y   = Wi_rotated.v.y;
     Wb_rotated.k     = Wo_rotated.k;
     Wb_rotated.omega = Wo_rotated.omega;
+    Wb_rotated.ke    = Wo_rotated.ke;
+    Wb_rotated.ee    = Wo_rotated.ee;
 
   // Boundary condition for subsonic inflow.  Pressure specified.
   } else if (mi >= -ONE) {
@@ -1778,6 +1902,8 @@ NavierStokes2D_pState BC_Characteristic_Pressure(const NavierStokes2D_pState &Wi
     Wb_rotated.v.y   = Wo_rotated.v.y;
     Wb_rotated.k     = Wo_rotated.k;
     Wb_rotated.omega = Wo_rotated.omega;
+    Wb_rotated.ke    = Wo_rotated.ke;
+    Wb_rotated.ee    = Wo_rotated.ee;
 
   // Boundary condition for supersonic inflow.
   } else {
@@ -1787,6 +1913,8 @@ NavierStokes2D_pState BC_Characteristic_Pressure(const NavierStokes2D_pState &Wi
     Wb_rotated.p     = Wo_rotated.p;
     Wb_rotated.k     = Wo_rotated.k;
     Wb_rotated.omega = Wo_rotated.omega;
+    Wb_rotated.ke    = Wo_rotated.ke;
+    Wb_rotated.ee    = Wo_rotated.ee;
   }
 
   // Rotate the resulting boundary state back to the original 
@@ -1969,7 +2097,9 @@ NavierStokes2D_pState WaveSpeedAbs(const NavierStokes2D_pState &lambdas_a,
 			       fabs(lambdas_a[3]),
 			       fabs(lambdas_a[4]),
 			       fabs(lambdas_a[5]),
-			       fabs(lambdas_a[6]));
+			       fabs(lambdas_a[6]),
+			       fabs(lambdas_a[7]),
+			       fabs(lambdas_a[8]));
 }
 
 /**********************************************************************
@@ -1988,7 +2118,9 @@ NavierStokes2D_pState HartenFixPos(const NavierStokes2D_pState &lambdas_a,
 			       HALF*(lambdas_a[3]+fabs(lambdas_a[3])),
 			       HartenFixPos(lambdas_a[4],lambdas_l[4],lambdas_r[4]),
 			       HALF*(lambdas_a[5]+fabs(lambdas_a[5])),
-			       HALF*(lambdas_a[6]+fabs(lambdas_a[6])));
+			       HALF*(lambdas_a[6]+fabs(lambdas_a[6])),
+			       HALF*(lambdas_a[7]+fabs(lambdas_a[7])),
+			       HALF*(lambdas_a[8]+fabs(lambdas_a[8])));
 }
 
 /**********************************************************************
@@ -2007,7 +2139,9 @@ NavierStokes2D_pState HartenFixNeg(const NavierStokes2D_pState &lambdas_a,
 			       HALF*(lambdas_a[3]-fabs(lambdas_a[3])),
 			       HartenFixNeg(lambdas_a[4],lambdas_l[4],lambdas_r[4]),
 			       HALF*(lambdas_a[5]-fabs(lambdas_a[5])),
-			       HALF*(lambdas_a[6]-fabs(lambdas_a[6])));
+			       HALF*(lambdas_a[6]-fabs(lambdas_a[6])),
+			       HALF*(lambdas_a[7]-fabs(lambdas_a[7])),
+			       HALF*(lambdas_a[8]-fabs(lambdas_a[8])));
 }
 
 /**********************************************************************
@@ -2026,7 +2160,9 @@ NavierStokes2D_pState HartenFixAbs(const NavierStokes2D_pState &lambdas_a,
 			       fabs(lambdas_a[3]),
 			       HartenFixAbs(lambdas_a[4],lambdas_l[4],lambdas_r[4]),
 			       fabs(lambdas_a[5]),
-			       fabs(lambdas_a[6]));
+			       fabs(lambdas_a[6]),
+			       fabs(lambdas_a[7]),
+			       fabs(lambdas_a[8]));
 }
 
 /**********************************************************************
@@ -2207,9 +2343,13 @@ NavierStokes2D_cState FluxRoe(const NavierStokes2D_pState &Wl,
 
   NavierStokes2D_pState Wa, dWrl, wavespeeds, lambdas_l, lambdas_r, lambdas_a;
   NavierStokes2D_cState Flux;
-  int NumVar = (Wl.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA)
-               ? NUM_VAR_NAVIERSTOKES2D : NUM_VAR_NAVIERSTOKES2D-2;
-
+  int NumVar; 
+  if (Wl.Variable_Prandtl == ON && Wl.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA){
+    NumVar = NUM_VAR_NAVIERSTOKES2D;
+  }else if (Wl.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA){
+    NumVar = NUM_VAR_NAVIERSTOKES2D -2;
+  }else NumVar = NUM_VAR_NAVIERSTOKES2D-4;
+  
   // Evaluate the Roe-average primitive solution state.
   Wa = RoeAverage(Wl,Wr);
 //   cout << endl << " Wa =" << Wa;
@@ -2319,8 +2459,13 @@ NavierStokes2D_cState FluxRoe_MB(const NavierStokes2D_pState &Wl,
 
   NavierStokes2D_pState Wa, dWrl, wavespeeds, lambdas_l, lambdas_r, lambdas_a;
   NavierStokes2D_cState Flux;
-  int NumVar = (Wl.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA)
-               ? NUM_VAR_NAVIERSTOKES2D : NUM_VAR_NAVIERSTOKES2D-2;
+  int NumVar; 
+  if (Wl.Variable_Prandtl == ON && Wl.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA){
+    NumVar = NUM_VAR_NAVIERSTOKES2D;
+  }else if (Wl.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA){
+    NumVar = NUM_VAR_NAVIERSTOKES2D -2;
+  }else NumVar = NUM_VAR_NAVIERSTOKES2D-4;
+  
 
   // Evaluate the Roe-average primitive solution state.
   Wa = RoeAverage(Wl,Wr);
@@ -2423,8 +2568,13 @@ NavierStokes2D_cState FluxRusanov(const NavierStokes2D_pState &Wl,
   double wavespeed_max;
   NavierStokes2D_pState Wa, wavespeeds, lambdas_l, lambdas_r, lambdas_a;
   NavierStokes2D_cState Flux, dUrl;
-  int NumVar = (Wl.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA)
-               ? NUM_VAR_NAVIERSTOKES2D : NUM_VAR_NAVIERSTOKES2D-2;
+
+  int NumVar; 
+  if (Wl.Variable_Prandtl == ON && Wl.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA){
+    NumVar = NUM_VAR_NAVIERSTOKES2D;
+  }else if (Wl.flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA){
+    NumVar = NUM_VAR_NAVIERSTOKES2D -2;
+  }else NumVar = NUM_VAR_NAVIERSTOKES2D-4;
 
   // Evaluate the Roe-average primitive solution state.
   Wa = RoeAverage(Wl,Wr);
@@ -3365,19 +3515,21 @@ NavierStokes2D_cState ViscousFlux_n(const Vector2D &X,
 				    const NavierStokes2D_pState &dWdx,
 				    const NavierStokes2D_pState &dWdy,
 				    const Vector2D &norm_dir,
-				    const int &Axisymmetric) {
+				    const int &Axisymmetric,
+				    const int &adiabatic_flag,
+				    const double &ywall,
+	                            const double &yplus) {
 
   NavierStokes2D_cState Gx, Gy, U;
-
   // Compute the intermediate state viscous stress tensor and heat flux
   // vector.
-  W.ComputeViscousTerms(dWdx,dWdy,X,Axisymmetric);
+  W.ComputeViscousTerms(dWdx,dWdy,X,Axisymmetric,adiabatic_flag,ywall,yplus);
   U = W.U(); U.tau = W.tau; U.q = W.q;
 
   // Compute the Cartesian components of the intermediate state
   // solution viscous flux.
-  Gx = U.Gx(dWdx);
-  Gy = U.Gy(dWdy);
+  Gx = U.Gx(dWdx,W,ywall,yplus);
+  Gy = U.Gy(dWdy,W,ywall,yplus);
 
   // Return the intermediate state solution viscous flux.
   return Gx*norm_dir.x + Gy*norm_dir.y;
@@ -3402,14 +3554,18 @@ NavierStokes2D_cState ViscousFluxDiamondPath_n(const Vector2D &X,
 					       const Vector2D &Xu, const NavierStokes2D_pState &Wu,
 					       const Vector2D &norm_dir,
 					       const int &Axisymmetric,
-					       const int &stencil_flag) {
+					       const int &stencil_flag,
+					       const double &ywall,
+					       const double &yplus) {
 	NavierStokes2D_pState dWdx, dWdy;
 	return ViscousFluxDiamondPath_n(X,
-			Xl,Wl,Xd,Wd,Xr,Wr,Xu,Wu,
-			norm_dir,
-			Axisymmetric,
-			stencil_flag,
-			dWdx, dWdy);
+					Xl,Wl,Xd,Wd,Xr,Wr,Xu,Wu,
+					norm_dir,
+					Axisymmetric,
+					stencil_flag,
+					ywall,
+					yplus,
+					dWdx, dWdy);
 }
 
 NavierStokes2D_cState ViscousFluxDiamondPath_n(const Vector2D &X,
@@ -3420,9 +3576,11 @@ NavierStokes2D_cState ViscousFluxDiamondPath_n(const Vector2D &X,
 					       const Vector2D &norm_dir,
 					       const int &Axisymmetric,
 					       const int &stencil_flag,
+					       const double &ywall,
+					       const double &yplus,
                                                NavierStokes2D_pState &dWdx, NavierStokes2D_pState &dWdy) {
 
-  if (stencil_flag == DIAMONDPATH_NONE) return NavierStokes2D_cState(ZERO,ZERO,ZERO,ZERO,ZERO,ZERO);
+  if (stencil_flag == DIAMONDPATH_NONE) return NavierStokes2D_cState(ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO);
 
   NavierStokes2D_pState W_face, dWdxl, dWdyl, dWdxr, dWdyr;
   NavierStokes2D_cState Flux;
@@ -3483,24 +3641,24 @@ NavierStokes2D_cState ViscousFluxDiamondPath_n(const Vector2D &X,
     //W_face = (Wl + Wd + Wr + Wu)/FOUR;
     error_flag = Bilinear_Interpolation_ZY(Wl,Xl,Wu,Xu,Wr,Xr,Wd,Xd,X,W_face);
     //if (error_flag) return error_flag;
-    Flux = ViscousFlux_n(X,W_face,dWdx,dWdy,norm_dir,Axisymmetric);
+    Flux = ViscousFlux_n(X,W_face,dWdx,dWdy,norm_dir,Axisymmetric,OFF,ywall,yplus);
 
   } else if (stencil_flag == DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX ||
 	     stencil_flag == DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL) {
     W_face = Wd;
     if (stencil_flag == DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX) {
-      Flux = ViscousFlux_n(X,W_face,dWdxl,dWdyl,norm_dir,Axisymmetric);
+      Flux = ViscousFlux_n(X,W_face,dWdxl,dWdyl,norm_dir,Axisymmetric,ON,ywall,yplus);
     } else if (stencil_flag == DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL) {
-      Flux = ViscousFlux_n(X,W_face,dWdxl,dWdyl,norm_dir,Axisymmetric);
+      Flux = ViscousFlux_n(X,W_face,dWdxl,dWdyl,norm_dir,Axisymmetric,OFF,ywall,yplus);
     }
 
   } else if (stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX ||
 	     stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL) {
     W_face = Wd;
     if (stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX) {
-      Flux = ViscousFlux_n(X,W_face,dWdxr,dWdyr,norm_dir,Axisymmetric);
+      Flux = ViscousFlux_n(X,W_face,dWdxr,dWdyr,norm_dir,Axisymmetric,ON,ywall,yplus);
     } else if (stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL) {
-      Flux = ViscousFlux_n(X,W_face,dWdxr,dWdyr,norm_dir,Axisymmetric);
+      Flux = ViscousFlux_n(X,W_face,dWdxr,dWdyr,norm_dir,Axisymmetric,OFF,ywall,yplus);
     }
 
   }
@@ -3538,11 +3696,14 @@ NavierStokes2D_cState ViscousFluxHybrid_n(const Vector2D &X,
 					  const NavierStokes2D_pState &dW2dx,
 					  const NavierStokes2D_pState &dW2dy,
 					  const Vector2D &norm_dir,
-					  const int &Axisymmetric) {
+					  const int &Axisymmetric,
+					  const double &ywall,
+					  const double &yplus) {
 	NavierStokes2D_pState dWdx, dWdy;
 	return ViscousFluxHybrid_n(X,
 		 	           W, X1, W1, dW1dx, dW1dy, X2, W2, dW2dx, dW2dy, 
 			           norm_dir, Axisymmetric,
+				   ywall, yplus,
 			           dWdx, dWdy);
 }
 
@@ -3558,6 +3719,8 @@ NavierStokes2D_cState ViscousFluxHybrid_n(const Vector2D &X,
 					  const NavierStokes2D_pState &dW2dy,
 					  const Vector2D &norm_dir,
 					  const int &Axisymmetric,
+					  const double &ywall,
+					  const double &yplus,
 					  NavierStokes2D_pState &dWdx, NavierStokes2D_pState &dWdy) {
   NavierStokes2D_pState dWdx_ave, dWdy_ave, dWds;
   Vector2D dX;
@@ -3576,7 +3739,7 @@ NavierStokes2D_cState ViscousFluxHybrid_n(const Vector2D &X,
   dWdy = dWdy_ave + (dWds - dWdy_ave*dX.y)*norm_dir.y/dot(norm_dir,dX);
 
   // Return the intermediate state solution viscous flux.
-  return ViscousFlux_n(X,W,dWdx,dWdy,norm_dir,Axisymmetric);
+  return ViscousFlux_n(X,W,dWdx,dWdy,norm_dir,Axisymmetric,OFF,ywall,yplus);
 
 }
 

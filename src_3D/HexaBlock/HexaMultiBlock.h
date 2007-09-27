@@ -148,16 +148,17 @@ template<class HEXA_BLOCK> class Hexa_Multi_Block{
 template<class HEXA_BLOCK>
 void Hexa_Multi_Block<HEXA_BLOCK>::Allocate(const int Nblk) {
 
-   assert(Nblk >= 1 && !Allocated);
-   Number_of_Soln_Blks = Nblk;
+   if (Nblk >= 1 && !Allocated) {
+      Number_of_Soln_Blks = Nblk;
 
-   Soln_Blks = new HEXA_BLOCK[Number_of_Soln_Blks];
-   Block_Used = new int[Number_of_Soln_Blks];
-   for (int usage = 0; usage<Number_of_Soln_Blks; ++usage) {
-      Block_Used[usage] = HEXA_BLOCK_NOT_USED;
-   } /* endfor */
+      Soln_Blks = new HEXA_BLOCK[Number_of_Soln_Blks];
+      Block_Used = new int[Number_of_Soln_Blks];
+      for (int usage = 0; usage<Number_of_Soln_Blks; ++usage) {
+         Block_Used[usage] = HEXA_BLOCK_NOT_USED;
+      } /* endfor */
 
-   Allocated = 1;
+      Allocated = 1;
+   } /* endif */
 
 }
 
@@ -171,14 +172,14 @@ void Hexa_Multi_Block<HEXA_BLOCK>::Allocate(const int Nblk) {
 template<class HEXA_BLOCK>
 void Hexa_Multi_Block<HEXA_BLOCK>::Deallocate(void) {
 
-   assert(Number_of_Soln_Blks >= 1 && Allocated);
+   if (Number_of_Soln_Blks >= 1 && Allocated) {
+      delete []Soln_Blks; delete []Block_Used;
+      Soln_Blks = NULL; Block_Used = NULL;
 
-   delete []Soln_Blks; delete []Block_Used;
-   Soln_Blks = NULL; Block_Used = NULL;
+      Number_of_Soln_Blks = 0;
 
-   Number_of_Soln_Blks = 0;
-
-   Allocated = 0;
+      Allocated = 0;
+   } /* endif */
 
 }
 
@@ -562,36 +563,13 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Read_Restart_Solution(Input_Parameters<typenam
          restart_file_name_ptr = restart_file_name;
           
          // Open restart file.
-          
          restart_file.open(restart_file_name_ptr, ios::in);
          if (restart_file.bad()) return (1);
           
-         // Read solution block data.
+         // Read iteration/time data.
          restart_file.setf(ios::skipws);
          restart_file >> nsteps >> time0 >> cpu_time0;
          restart_file.unsetf(ios::skipws);
-
-         /*Multispecies*/
-         restart_file.getline(line,sizeof(line)); 
-         // get reaction set name
-         restart_file >>Input.react_name;
-         Input.Wo.React.set_reactions(Input.react_name);
-       
-         // multispecies but no reactions
-         if ( Input.react_name == "NO_REACTIONS"){
-            restart_file.setf(ios::skipws);
-            int num_species;
-            //get number of species
-            restart_file >> num_species; 
-            string *species = new string[num_species];
-            //get species names 
-            for(int k=0; k<num_species; k++){
-              restart_file >> species[k];
-            } /* endfor */ 
-            restart_file.unsetf(ios::skipws);  
-            Input.Wo.React.set_species(species,num_species);
-            delete[] species; 
-	 } /* endif */
 
          if (!i_new_time_set) {
             Number_of_Time_Steps = nsteps;
@@ -600,7 +578,11 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Read_Restart_Solution(Input_Parameters<typenam
             CPU_Time.cput = cpu_time0.cput;
             i_new_time_set = 1;
          } /* endif */
-      
+
+         // Read reference solution states.
+         Input.Read_Reference_Solution_States(restart_file);
+
+         // Read solution block data.
          restart_file >> Soln_Blks[nblk];
               
          // Close restart file.
@@ -665,21 +647,16 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Write_Restart_Solution(Input_Parameters<typena
          restart_file.open(restart_file_name_ptr, ios::out);
          if (restart_file.bad()) return (1);
       
-         // Write solution block data.
+         // Write iteration/time data.
          restart_file.setf(ios::scientific);
          restart_file << setprecision(14) << Number_of_Time_Steps 
                       << " " << Time << " " << CPU_Time << "\n";
          restart_file.unsetf(ios::scientific);
          
-         restart_file << Input.react_name << "\n";
-         if(Input.react_name == "NO_REACTIONS"){
-            restart_file << Input.Wo.ns <<" ";
-            for(int k=0; k< Input.Wo.ns; k++){ 
-               restart_file << Input.multispecies[k] <<" ";
-            }
-            restart_file<<endl;
-         }
+         // Write reference solution states.
+         Input.Write_Reference_Solution_States(restart_file);
          
+         // Write solution block data.
          restart_file << setprecision(14) << Soln_Blks[nblk];
          
          // Close restart file.

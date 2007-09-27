@@ -99,8 +99,6 @@ inline char *Date_And_Time() {
 #define	OFF                           0
 #define	ON                            1
 
-#define NO_REACTIONS                  0
-
 /**********************************************************************
  * CFD -- Input parameter command codes.                              *
  **********************************************************************/

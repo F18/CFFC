@@ -1493,6 +1493,28 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
 
+    } else if (command_flag == WRITE_OUTPUT_SUPERSONIC_HOT_JET_CODE) {
+      if (!batch_flag) cout << endl << " Writing experimental solution data for the supersonic hot jet.";
+      error_flag = Output_Supersonic_Hot_Jet_Tecplot(Local_SolnBlk,
+						     List_of_Local_Solution_Blocks,
+						     Input_Parameters);
+      if (error_flag) {
+	cout << endl << "\n NavierStokes2D ERROR: Unable to open NavierStokes2D supersonic hot jet file." << endl;
+      }
+      CFFC_Broadcast_MPI(&error_flag,1);
+      if (error_flag) return error_flag;
+
+    } else if (command_flag == WRITE_OUTPUT_SUBSONIC_HOT_JET_CODE) {
+      if (!batch_flag) cout << endl << " Writing experimental solution data for the subsonic hot jet.";
+      error_flag = Output_Subsonic_Hot_Jet_Tecplot(Local_SolnBlk,
+						   List_of_Local_Solution_Blocks,
+						   Input_Parameters);
+      if (error_flag) {
+	cout << endl << "\n NavierStokes2D ERROR: Unable to open NavierStokes2D subsonic hot jet file." << endl;
+      }
+      CFFC_Broadcast_MPI(&error_flag,1);
+      if (error_flag) return error_flag;
+
     } else if (command_flag == WRITE_OUTPUT_FLAT_PLATE_CODE) {
       if (!batch_flag) cout << endl << " Writing exact solution and error norms for the flat plate flow (Blasius solution).";
       error_flag = Output_Flat_Plate_Tecplot(Local_SolnBlk,

@@ -184,6 +184,9 @@ class LESPremixed2D_Input_Parameters{
   double laminar_flame_speed;
   double laminar_flame_thickness;
   double TFactor;
+  double adiabatic_temp;
+  double equivalence_ratio;
+  double reactants_den;
   double Fresh_Fuel_Mass_Fraction, Burnt_Fuel_Mass_Fraction, 
          Fresh_Density;
   //@}
@@ -483,6 +486,28 @@ inline ostream &operator << (ostream &out_file,
       out_file << "\n  -> Spectrum: " << IP.Spectrum_Type;  
     } else if (IP.FlowType == FLOWTYPE_TURBULENT_LES_TF_K) {
       out_file << "\n  -> Turbulent flow: Thickened flame LES with k-equation ";
+    } else if (IP.FlowType == FLOWTYPE_LAMINAR_C) {
+      out_file << "\n  -> Laminar flow: progress variable";
+    } else if (IP.FlowType == FLOWTYPE_LAMINAR_C_ALGEBRAIC) {
+      out_file << "\n  -> Laminar flow: progress variable and Algebraic model for fsd ";
+    } else if (IP.FlowType == FLOWTYPE_LAMINAR_C_FSD) {
+      out_file << "\n  -> Laminar flow: progress variable and flame surface density ";
+    } else if (IP.FlowType == FLOWTYPE_LAMINAR_NGT_C_FSD) {
+      out_file << "\n  -> Laminar flow: progress variable with non-gradient-term and flame surface density ";
+    } else if (IP.FlowType == FLOWTYPE_TURBULENT_LES_C) {
+      out_file << "\n  -> Turbulent flow: progress variable";
+    } else if (IP.FlowType == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC) {
+      out_file << "\n  -> Turbulent flow: progress variable and Algebraic model for fsd ";
+    } else if (IP.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) {
+      out_file << "\n  -> Turbulent flow: progress variable and flame surface density with Smagorinsky model";
+    } else if (IP.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE) {
+      out_file << "\n  -> Turbulent flow: progress variable and flame surface density with Smagorinsky model, and sfs curvature with Charlette model";
+    } else if (IP.FlowType == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY) {
+      out_file << "\n  -> Turbulent flow: progress variable with non-gradient-term and flame surface density with Smagorinsky model";
+    } else if (IP.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
+      out_file << "\n  -> Turbulent flow: progress variable, flame surface density with k equation ";
+    } else if (IP.FlowType == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD) {
+      out_file << "\n  -> Turbulent flow: progress variable, flame surface density with constant k ";
     } else if (IP.FlowType == FLOWTYPE_TURBULENT_DNS) {
       out_file << "\n  -> Turbulent flow: DNS ";
     }
