@@ -38,6 +38,7 @@ namespace tut {
     char output_file_name[256];	// Output file name
     char input_file_name[256];	// Input file name
     int  RunRegression;		// Flag for running regression
+    int  verbose;		// Flag for running verbose
 
     char *MasterFile, *CurrentFile; /* File name variables used for regression tests */
     char* Msg;			/* message variable */
@@ -185,6 +186,7 @@ namespace tut {
     InitializeInputFileName();
 
     RunRegression = ON;		/* run regression tests */
+    verbose = 0; 		/* if batch_flag = ZERO, it means the code runs in VERBOSE mode */
   }
 
   /* Destructor */

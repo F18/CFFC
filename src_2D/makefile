@@ -151,6 +151,16 @@ SRC_EULER1D = Euler1DState.cc \
 	     # Euler1D_HighOrder.cc \
 #
 SRC_EULER1D := $(addprefix $(EULER_1D_DIR), $(SRC_EULER1D))
+
+# Add Euler 1D Testing If Required:
+SRC_EULER1D_TESTS = test_Euler1D_Simulations.cc
+
+SRC_EULER1D_TESTS := $(addprefix $(EULER_1D_DIR)UnitTests/, $(SRC_EULER1D_TESTS))
+ifeq ($(TUT_TESTING),ON) 
+  SRC_EULER1D += $(SRC_EULER1D_TESTS)
+endif
+
+
 SRC_EULER1D_EXE = $(EULER_1D_DIR)Euler1DMain.cc
 #
 
