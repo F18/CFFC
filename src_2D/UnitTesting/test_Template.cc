@@ -72,6 +72,7 @@ namespace tut
   */
 
 
+
   /* Test 1:*/
   template<>
   template<>

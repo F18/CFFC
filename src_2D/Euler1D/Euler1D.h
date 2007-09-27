@@ -50,6 +50,7 @@ class Euler1D_UniformMesh{
   public:
     Euler1D_pState    W;   // Primitive solution state.
     Euler1D_cState    U;   // Conserved solution state.
+    Euler1D_pState CharactVar;    // Characteristic solution state.
     Cell1D_Uniform    X;   // Cell geometry.
     double           dt;   // Local time step.
     Euler1D_cState dUdt;   // Solution residual.
@@ -57,7 +58,29 @@ class Euler1D_UniformMesh{
     Euler1D_pState  phi;   // Solution slope limiter.
     Euler1D_cState   Uo;   // Initial solution state.
                            // Made public so can access them.
-		      
+    int Nghost;     // Number of ghost cells(!= 1 for high-order)
+	
+    /* Field access */
+    const double & CellCenter(void) const {return X.x;}
+    const double & CellDelta (void) {return X.dx;}
+
+    /* Primitive variables */
+    const Euler1D_pState & CellSolutionPrimVar(void) const {return W;}
+    Euler1D_pState & CellSolutionPrimVar(void) {return W;}
+    const double & CellSolutionPrimVar(int & VarPosition) const { return W[VarPosition];}
+    double & CellSolutionPrimVar(int & VarPosition){ return W[VarPosition];}
+    /* Conservative variables */
+    const Euler1D_cState & CellSolutionConsVar(void) const {return U;}
+    Euler1D_cState & CellSolutionConsVar(void) {return U;}
+    const double & CellSolutionConsVar(int & VarPosition) const { return U[VarPosition];}
+    double & CellSolutionConsVar(int & VarPosition) { return U[VarPosition];}
+    /* Characteristic variables */
+    const Euler1D_pState & CellSolutionCharactVar(void) const {return CharactVar;}
+    Euler1D_pState & CellSolutionCharactVar(void) {return CharactVar;}
+    const double & CellSolutionCharactVar(int & VarPosition) const { return CharactVar[VarPosition];}
+    double & CellSolutionCharactVar(int & VarPosition) { return CharactVar[VarPosition];}
+  
+	      
     /* Creation, copy, and assignment constructors. */
     Euler1D_UniformMesh(void) {
        W = Euler1D_W_STDATM; U = Euler1D_U_STDATM;
