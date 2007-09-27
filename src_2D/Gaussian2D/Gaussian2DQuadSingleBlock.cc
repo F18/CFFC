@@ -2105,6 +2105,7 @@ double CFL(Gaussian2D_Quad_Block &SolnBlk) {
     double sin_angleN, sin_angleS, sin_angleE, sin_angleW;
     double cos_anglei, cos_anglej, sin_anglei, sin_anglej;
     double dtMin, d_i, d_j, v_i, v_j, a_i, a_j, p_ii, p_jj;
+    double dt_heat;
 
     dtMin = MILLION;
 
@@ -2147,10 +2148,16 @@ double CFL(Gaussian2D_Quad_Block &SolnBlk) {
                     +SolnBlk.W[i][j].p.yy*sin_anglej*sin_anglej
                     +2.0*SolnBlk.W[i][j].p.xy*cos_anglej*sin_anglej;
 
-             a_i = sqrt(3.0*p_ii/SolnBlk.W[i][j].d);
+	     // Inviscid dt calculation.
+	     a_i = sqrt(3.0*p_ii/SolnBlk.W[i][j].d);
 	     a_j = sqrt(3.0*p_jj/SolnBlk.W[i][j].d);
-  
 	     SolnBlk.dt[i][j] = min(d_i/(a_i+fabs(v_i)), d_j/(a_j+fabs(v_j)));
+
+	     // Heat-Transfer-related dt calculation.
+	     if(SolnBlk.Heat_Transfer) {
+	       dt_heat = HALF*min(sqr(d_i),sqr(d_j))/(SolnBlk.W[i][j].pr*SolnBlk.W[i][j].tt()*SolnBlk.W[i][j].pressure()/SolnBlk.W[i][j].d);
+	       SolnBlk.dt[i][j] = min(SolnBlk.dt[i][j],dt_heat);
+	     }
 
              dtMin = min(dtMin, SolnBlk.dt[i][j]);
           } /* endif */
