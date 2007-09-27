@@ -40,6 +40,9 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
     Set_Reference_Solution_States();
   }
 
+  //! Constructor (allows base class return type).
+  Input_Parameters(const CFD_Input_Parameters &IP) : CFD_Input_Parameters() { }
+
   //! Destructor
   ~Input_Parameters(void){ }
   //@}

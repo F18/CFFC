@@ -101,18 +101,15 @@ SRC_MULTIGRID = $(MULTIGRID_DIR)FASMultigridInput.cc
 SRC_NKS = $(NKS_DIR)NKSInput.cc
 
 # Euler3D:
-SRC_EULER = $(EULER_DIR)Euler3DThermallyPerfectState.cc \
-	    $(EULER_DIR)Euler3DThermallyPerfectInput.cc
+SRC_EULER = $(EULER_DIR)Euler3DThermallyPerfectState.cc
 
 # NavierStokes3D:
 SRC_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectState.cc \
-                   $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectHexaBlock.cc \
-                   $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectInput.cc
+                   $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectHexaBlock.cc
 
 # FANS3D:
 SRC_FANS = $(FANS_DIR)FANS3DThermallyPerfectState.cc \
-           $(FANS_DIR)FANS3DThermallyPerfectHexaBlock.cc \
-           $(FANS_DIR)FANS3DThermallyPerfectInput.cc
+           $(FANS_DIR)FANS3DThermallyPerfectHexaBlock.cc
 
 # Physics, Turbulence, Thermodynamics, and Chemistry:
 SRC_PHYSICS = $(PHYSICS_DIR)SpeciesInput.cc
@@ -208,18 +205,15 @@ OBJ_MULTIGRID = $(MULTIGRID_DIR)FASMultigridInput.o
 OBJ_NKS = $(NKS_DIR)NKSInput.o
 
 # Euler3D:
-OBJ_EULER = $(EULER_DIR)Euler3DThermallyPerfectState.o \
-	    $(EULER_DIR)Euler3DThermallyPerfectInput.o
+OBJ_EULER = $(EULER_DIR)Euler3DThermallyPerfectState.o
 
 # NavierStokes3D:
 OBJ_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectState.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectHexaBlock.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectInput.o
+                   $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectHexaBlock.o
 
 # FANS3D:
 OBJ_FANS = $(FANS_DIR)FANS3DThermallyPerfectState.o \
-           $(FANS_DIR)FANS3DThermallyPerfectHexaBlock.o \
-           $(FANS_DIR)FANS3DThermallyPerfectInput.o
+           $(FANS_DIR)FANS3DThermallyPerfectHexaBlock.o
 
 # Physics, Turbulence, Thermodynamics, and Chemistry:
 OBJ_PHYSICS = $(PHYSICS_DIR)SpeciesInput.o
