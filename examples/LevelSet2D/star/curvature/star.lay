@@ -1,6 +1,8 @@
 #!MC 1100
 $!VarSet |LFDSFN1| = '"cells.dat"'
 $!VarSet |LFDSVL1| = '"x" "y" "psi" "F" "u" "v" "sign" "dpsidx" "dpsidy" "kappa" "gradMag" "dFdx" "dFdy" "ddpsi" "Eikonal"'
+$!VarSet |LFDSFN2| = '"interface_list.dat"'
+$!VarSet |LFDSVL2| = '"x" "y" "psi" "F" "u" "v" "sign" "dpsidx" "dpsidy" "kappa" "gradMag" "dFdx" "dFdy" "ddpsi" "Eikonal" "Fx" "Fy" "nx" "ny"'
 $!SETSTYLEBASE FACTORY
 $!PAPER 
   BACKGROUNDCOLOR = WHITE
@@ -534,7 +536,19 @@ $!READDATASET  '|LFDSFN1|'
   VARNAMELIST = '|LFDSVL1|' 
 $!REMOVEVAR |LFDSVL1|
 $!REMOVEVAR |LFDSFN1|
+$!READDATASET  '|LFDSFN2|' 
+  INITIALPLOTTYPE = CARTESIAN2D
+  INCLUDETEXT = NO
+  INCLUDEGEOM = NO
+  READDATAOPTION = APPEND
+  RESETSTYLE = NO
+  ASSIGNSTRANDIDS = YES
+  VARLOADMODE = BYNAME
+  VARNAMELIST = '|LFDSVL2|' 
+$!REMOVEVAR |LFDSVL2|
+$!REMOVEVAR |LFDSFN2|
 $!FRAMELAYOUT 
+  SHOWBORDER = NO
   SHOWHEADER = NO
   HEADERCOLOR = RED
   XYPOS
@@ -549,7 +563,7 @@ $!THREEDAXIS
   BOXASPECTRATIOLIMIT = 25
 $!PLOTTYPE  = CARTESIAN2D
 $!FRAMENAME  = 'Frame 001' 
-$!ACTIVEFIELDMAPS  =  [1-16]
+$!ACTIVEFIELDMAPS  =  [1-8]
 $!GLOBALTIME 
   SOLUTIONTIME = 0
 $!GLOBALRGB 
@@ -557,10 +571,6 @@ $!GLOBALRGB
   RANGEMAX = 1
 $!GLOBALCONTOUR  1
   VAR = 3
-  LABELS
-    {
-    SHOW = YES
-    }
   LEGEND
     {
     XYPOS
@@ -664,6 +674,7 @@ $!GLOBALSCATTER
 $!FIELDMAP  [1]
   MESH
     {
+    SHOW = NO
     MESHTYPE = WIREFRAME
     COLOR = CUSTOM2
     LINETHICKNESS = 0.02
@@ -688,7 +699,9 @@ $!FIELDMAP  [1]
   EDGELAYER
     {
     SHOW = YES
-    COLOR = RED
+    IBORDER = MIN
+    JBORDER = MIN
+    COLOR = CUSTOM1
     }
   POINTS
     {
@@ -710,6 +723,7 @@ $!FIELDMAP  [1]
 $!FIELDMAP  [2]
   MESH
     {
+    SHOW = NO
     MESHTYPE = WIREFRAME
     COLOR = CUSTOM2
     LINETHICKNESS = 0.02
@@ -734,7 +748,9 @@ $!FIELDMAP  [2]
   EDGELAYER
     {
     SHOW = YES
-    COLOR = GREEN
+    IBORDER = MAX
+    JBORDER = MIN
+    COLOR = CUSTOM1
     }
   POINTS
     {
@@ -756,6 +772,7 @@ $!FIELDMAP  [2]
 $!FIELDMAP  [3]
   MESH
     {
+    SHOW = NO
     MESHTYPE = WIREFRAME
     COLOR = CUSTOM2
     LINETHICKNESS = 0.02
@@ -780,7 +797,9 @@ $!FIELDMAP  [3]
   EDGELAYER
     {
     SHOW = YES
-    COLOR = BLUE
+    IBORDER = MIN
+    JBORDER = MAX
+    COLOR = CUSTOM1
     }
   POINTS
     {
@@ -802,6 +821,7 @@ $!FIELDMAP  [3]
 $!FIELDMAP  [4]
   MESH
     {
+    SHOW = NO
     MESHTYPE = WIREFRAME
     COLOR = CUSTOM2
     LINETHICKNESS = 0.02
@@ -826,7 +846,9 @@ $!FIELDMAP  [4]
   EDGELAYER
     {
     SHOW = YES
-    COLOR = CYAN
+    IBORDER = MAX
+    JBORDER = MAX
+    COLOR = CUSTOM1
     }
   POINTS
     {
@@ -848,13 +870,13 @@ $!FIELDMAP  [4]
 $!FIELDMAP  [5]
   MESH
     {
-    MESHTYPE = WIREFRAME
-    COLOR = CUSTOM2
-    LINETHICKNESS = 0.02
+    COLOR = CUSTOM3
+    LINETHICKNESS = 0.3
     }
   CONTOUR
     {
-    COLOR = GREEN
+    SHOW = NO
+    COLOR = RED
     USELIGHTINGEFFECT = YES
     }
   VECTOR
@@ -871,12 +893,12 @@ $!FIELDMAP  [5]
     }
   EDGELAYER
     {
-    SHOW = YES
+    SHOW = NO
     COLOR = YELLOW
     }
   POINTS
     {
-    POINTSTOPLOT = SURFACENODES
+    POINTSTOPLOT = ALLNODES
     }
   SURFACES
     {
@@ -894,13 +916,13 @@ $!FIELDMAP  [5]
 $!FIELDMAP  [6]
   MESH
     {
-    MESHTYPE = WIREFRAME
-    COLOR = CUSTOM2
-    LINETHICKNESS = 0.02
+    COLOR = CUSTOM3
+    LINETHICKNESS = 0.3
     }
   CONTOUR
     {
-    COLOR = GREEN
+    SHOW = NO
+    COLOR = RED
     USELIGHTINGEFFECT = YES
     }
   VECTOR
@@ -917,12 +939,12 @@ $!FIELDMAP  [6]
     }
   EDGELAYER
     {
-    SHOW = YES
+    SHOW = NO
     COLOR = PURPLE
     }
   POINTS
     {
-    POINTSTOPLOT = SURFACENODES
+    POINTSTOPLOT = ALLNODES
     }
   SURFACES
     {
@@ -940,13 +962,13 @@ $!FIELDMAP  [6]
 $!FIELDMAP  [7]
   MESH
     {
-    MESHTYPE = WIREFRAME
-    COLOR = CUSTOM2
-    LINETHICKNESS = 0.02
+    COLOR = CUSTOM3
+    LINETHICKNESS = 0.3
     }
   CONTOUR
     {
-    COLOR = GREEN
+    SHOW = NO
+    COLOR = RED
     USELIGHTINGEFFECT = YES
     }
   VECTOR
@@ -963,12 +985,12 @@ $!FIELDMAP  [7]
     }
   EDGELAYER
     {
-    SHOW = YES
+    SHOW = NO
     COLOR = RED
     }
   POINTS
     {
-    POINTSTOPLOT = SURFACENODES
+    POINTSTOPLOT = ALLNODES
     }
   SURFACES
     {
@@ -986,289 +1008,13 @@ $!FIELDMAP  [7]
 $!FIELDMAP  [8]
   MESH
     {
-    MESHTYPE = WIREFRAME
-    COLOR = CUSTOM2
-    LINETHICKNESS = 0.02
+    COLOR = CUSTOM3
+    LINETHICKNESS = 0.3
     }
   CONTOUR
     {
-    COLOR = GREEN
-    USELIGHTINGEFFECT = YES
-    }
-  VECTOR
-    {
-    COLOR = GREEN
-    }
-  SCATTER
-    {
-    COLOR = GREEN
-    }
-  SHADE
-    {
-    COLOR = WHITE
-    }
-  EDGELAYER
-    {
-    SHOW = YES
-    COLOR = GREEN
-    }
-  POINTS
-    {
-    POINTSTOPLOT = SURFACENODES
-    }
-  SURFACES
-    {
-    SURFACESTOPLOT = KPLANES
-    }
-  VOLUMEMODE
-    {
-    VOLUMEOBJECTSTOPLOT
-      {
-      SHOWISOSURFACES = NO
-      SHOWSLICES = NO
-      SHOWSTREAMTRACES = NO
-      }
-    }
-$!FIELDMAP  [9]
-  MESH
-    {
-    MESHTYPE = WIREFRAME
-    COLOR = CUSTOM2
-    LINETHICKNESS = 0.02
-    }
-  CONTOUR
-    {
-    COLOR = GREEN
-    USELIGHTINGEFFECT = YES
-    }
-  VECTOR
-    {
-    COLOR = BLUE
-    }
-  SCATTER
-    {
-    COLOR = BLUE
-    }
-  SHADE
-    {
-    COLOR = WHITE
-    }
-  EDGELAYER
-    {
-    SHOW = YES
-    COLOR = BLUE
-    }
-  POINTS
-    {
-    POINTSTOPLOT = SURFACENODES
-    }
-  SURFACES
-    {
-    SURFACESTOPLOT = KPLANES
-    }
-  VOLUMEMODE
-    {
-    VOLUMEOBJECTSTOPLOT
-      {
-      SHOWISOSURFACES = NO
-      SHOWSLICES = NO
-      SHOWSTREAMTRACES = NO
-      }
-    }
-$!FIELDMAP  [10]
-  MESH
-    {
-    MESHTYPE = WIREFRAME
-    COLOR = CUSTOM2
-    LINETHICKNESS = 0.02
-    }
-  CONTOUR
-    {
-    COLOR = GREEN
-    USELIGHTINGEFFECT = YES
-    }
-  VECTOR
-    {
-    COLOR = CYAN
-    }
-  SCATTER
-    {
-    COLOR = CYAN
-    }
-  SHADE
-    {
-    COLOR = WHITE
-    }
-  EDGELAYER
-    {
-    SHOW = YES
-    COLOR = CYAN
-    }
-  POINTS
-    {
-    POINTSTOPLOT = SURFACENODES
-    }
-  SURFACES
-    {
-    SURFACESTOPLOT = KPLANES
-    }
-  VOLUMEMODE
-    {
-    VOLUMEOBJECTSTOPLOT
-      {
-      SHOWISOSURFACES = NO
-      SHOWSLICES = NO
-      SHOWSTREAMTRACES = NO
-      }
-    }
-$!FIELDMAP  [11]
-  MESH
-    {
-    MESHTYPE = WIREFRAME
-    COLOR = CUSTOM2
-    LINETHICKNESS = 0.02
-    }
-  CONTOUR
-    {
-    COLOR = GREEN
-    USELIGHTINGEFFECT = YES
-    }
-  VECTOR
-    {
-    COLOR = YELLOW
-    }
-  SCATTER
-    {
-    COLOR = YELLOW
-    }
-  SHADE
-    {
-    COLOR = WHITE
-    }
-  EDGELAYER
-    {
-    SHOW = YES
-    COLOR = YELLOW
-    }
-  POINTS
-    {
-    POINTSTOPLOT = SURFACENODES
-    }
-  SURFACES
-    {
-    SURFACESTOPLOT = KPLANES
-    }
-  VOLUMEMODE
-    {
-    VOLUMEOBJECTSTOPLOT
-      {
-      SHOWISOSURFACES = NO
-      SHOWSLICES = NO
-      SHOWSTREAMTRACES = NO
-      }
-    }
-$!FIELDMAP  [12]
-  MESH
-    {
-    MESHTYPE = WIREFRAME
-    COLOR = CUSTOM2
-    LINETHICKNESS = 0.02
-    }
-  CONTOUR
-    {
-    COLOR = GREEN
-    USELIGHTINGEFFECT = YES
-    }
-  VECTOR
-    {
-    COLOR = PURPLE
-    }
-  SCATTER
-    {
-    COLOR = PURPLE
-    }
-  SHADE
-    {
-    COLOR = WHITE
-    }
-  EDGELAYER
-    {
-    SHOW = YES
-    COLOR = PURPLE
-    }
-  POINTS
-    {
-    POINTSTOPLOT = SURFACENODES
-    }
-  SURFACES
-    {
-    SURFACESTOPLOT = KPLANES
-    }
-  VOLUMEMODE
-    {
-    VOLUMEOBJECTSTOPLOT
-      {
-      SHOWISOSURFACES = NO
-      SHOWSLICES = NO
-      SHOWSTREAMTRACES = NO
-      }
-    }
-$!FIELDMAP  [13]
-  MESH
-    {
-    MESHTYPE = WIREFRAME
-    COLOR = CUSTOM2
-    LINETHICKNESS = 0.02
-    }
-  CONTOUR
-    {
-    COLOR = GREEN
-    USELIGHTINGEFFECT = YES
-    }
-  VECTOR
-    {
+    SHOW = NO
     COLOR = RED
-    }
-  SCATTER
-    {
-    COLOR = RED
-    }
-  SHADE
-    {
-    COLOR = WHITE
-    }
-  EDGELAYER
-    {
-    SHOW = YES
-    COLOR = RED
-    }
-  POINTS
-    {
-    POINTSTOPLOT = SURFACENODES
-    }
-  SURFACES
-    {
-    SURFACESTOPLOT = KPLANES
-    }
-  VOLUMEMODE
-    {
-    VOLUMEOBJECTSTOPLOT
-      {
-      SHOWISOSURFACES = NO
-      SHOWSLICES = NO
-      SHOWSTREAMTRACES = NO
-      }
-    }
-$!FIELDMAP  [14]
-  MESH
-    {
-    MESHTYPE = WIREFRAME
-    COLOR = CUSTOM2
-    LINETHICKNESS = 0.02
-    }
-  CONTOUR
-    {
-    COLOR = GREEN
     USELIGHTINGEFFECT = YES
     }
   VECTOR
@@ -1285,104 +1031,12 @@ $!FIELDMAP  [14]
     }
   EDGELAYER
     {
-    SHOW = YES
+    SHOW = NO
     COLOR = GREEN
     }
   POINTS
     {
-    POINTSTOPLOT = SURFACENODES
-    }
-  SURFACES
-    {
-    SURFACESTOPLOT = KPLANES
-    }
-  VOLUMEMODE
-    {
-    VOLUMEOBJECTSTOPLOT
-      {
-      SHOWISOSURFACES = NO
-      SHOWSLICES = NO
-      SHOWSTREAMTRACES = NO
-      }
-    }
-$!FIELDMAP  [15]
-  MESH
-    {
-    MESHTYPE = WIREFRAME
-    COLOR = CUSTOM2
-    LINETHICKNESS = 0.02
-    }
-  CONTOUR
-    {
-    COLOR = GREEN
-    USELIGHTINGEFFECT = YES
-    }
-  VECTOR
-    {
-    COLOR = BLUE
-    }
-  SCATTER
-    {
-    COLOR = BLUE
-    }
-  SHADE
-    {
-    COLOR = WHITE
-    }
-  EDGELAYER
-    {
-    SHOW = YES
-    COLOR = BLUE
-    }
-  POINTS
-    {
-    POINTSTOPLOT = SURFACENODES
-    }
-  SURFACES
-    {
-    SURFACESTOPLOT = KPLANES
-    }
-  VOLUMEMODE
-    {
-    VOLUMEOBJECTSTOPLOT
-      {
-      SHOWISOSURFACES = NO
-      SHOWSLICES = NO
-      SHOWSTREAMTRACES = NO
-      }
-    }
-$!FIELDMAP  [16]
-  MESH
-    {
-    MESHTYPE = WIREFRAME
-    COLOR = CUSTOM2
-    LINETHICKNESS = 0.02
-    }
-  CONTOUR
-    {
-    COLOR = GREEN
-    USELIGHTINGEFFECT = YES
-    }
-  VECTOR
-    {
-    COLOR = CYAN
-    }
-  SCATTER
-    {
-    COLOR = CYAN
-    }
-  SHADE
-    {
-    COLOR = WHITE
-    }
-  EDGELAYER
-    {
-    SHOW = YES
-    COLOR = CYAN
-    }
-  POINTS
-    {
-    POINTSTOPLOT = SURFACENODES
+    POINTSTOPLOT = ALLNODES
     }
   SURFACES
     {
@@ -1417,6 +1071,7 @@ $!TWODAXIS
 $!TWODAXIS 
   XDETAIL
     {
+    SHOWAXIS = NO
     RANGEMIN = -0.51249999999999995559
     RANGEMAX = 0.65904571428571379066
     GRSPACING = 0.2
@@ -1424,6 +1079,7 @@ $!TWODAXIS
 $!TWODAXIS 
   YDETAIL
     {
+    SHOWAXIS = NO
     RANGEMIN = -0.51249999999999995559
     RANGEMAX = 0.51260076437671919791
     GRSPACING = 0.2
@@ -1520,7 +1176,6 @@ $!STREAMATTRIBUTES
   MAXSTEPS = 10000
 $!FIELDLAYERS 
   SHOWCONTOUR = YES
-  SHOWEDGE = NO
 $!STREAMTRACELAYERS 
   SHOW = NO
 $!SETSTYLEBASE CONFIG
