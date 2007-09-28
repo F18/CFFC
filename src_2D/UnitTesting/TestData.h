@@ -44,7 +44,7 @@ namespace tut {
     char* Msg;			/* message variable */
     std::string Message;		/* message variable */
 
-    /* Relative path to the "/src_2D" directory for outputing and inputing data */
+    /* Relative path to the "/src_2D" directory for output and input data */
     char* Global_TestSuite_Path;
 
     /* Local output and input path --> specific for each test */

@@ -72,7 +72,7 @@ int Euler1DSolver(char *Input_File_Name_ptr,
  
   strcpy(Input_Parameters.Input_File_Name, Input_File_Name_ptr);
   Open_Input_File(Input_Parameters);
-  if (Input_Parameters.Input_File.bad()) {
+  if (Input_Parameters.Input_File.fail()) {
      if (batch_flag) {
         cout << "\n Euler1D ERROR: Unable to open Euler1D input data file.\n\n";
      } else {
