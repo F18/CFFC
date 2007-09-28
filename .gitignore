@@ -71,3 +71,6 @@ cffc3D
 # unit testing directories
 journal.tut
 log.tut
+
+#dependencies
+src_2D/Depend
