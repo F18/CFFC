@@ -74,6 +74,10 @@ enum DOM_Qauad { RTE2D_DOM_S2,   // S2 NONSYMMETRIC from LATHROP and CARLSON
 		 RTE2D_DOM_S12,  // S12 SYMMETRIC from LATHROP and CARLSON
 		 RTE2D_DOM_T3 }; // T3 SYMMETRIC from Truelove
 
+// Set fixed static number of directions x bands.
+// If you define this variable, the number of species will be
+// predetermined for faster calculations.., however it is not as general.
+//#define RTE2D_STATIC_NUMBER_OF_VARS  100
 
 /***********************************************************************/
 /*!
@@ -152,7 +156,11 @@ class Rte2D_State {
  public:
 
   //@{ @name Conserved variables and associated constants:
+#ifdef RTE2D_STATIC_NUMBER_OF_VARS
+  double  I[RTE2D_STATIC_NUMBER_OF_VARS];
+#else 
   double* I;                   //!< directional intentsity [W/m^2 or W/(m^2 cm)]
+#endif
   //@}
 
   //@{ @name DOM space marching parameters (See Carlson and Lathrop (1968)):
@@ -186,13 +194,22 @@ class Rte2D_State {
 
   //@{ @name Creation, copy, and assignment constructors.
   //! Creation constructor.
- Rte2D_State() : I(NULL), alpha(NULL), I_half(NULL)
-    { Allocate(); }
+#ifdef RTE2D_STATIC_NUMBER_OF_VARS
+  Rte2D_State() : alpha(NULL), I_half(NULL) {}
+#else 
+  Rte2D_State() : I(NULL), alpha(NULL), I_half(NULL)
+  { Allocate(); }
+#endif
 
   //! Copy constructor.
+#ifdef RTE2D_STATIC_NUMBER_OF_VARS
+  Rte2D_State( const Rte2D_State &U ) : alpha(NULL), I_half(NULL)
+  { if( this != &U) Copy(U); }
+#else 
   Rte2D_State( const Rte2D_State &U ) : I(NULL), alpha(NULL), I_half(NULL)
-    { Allocate(); if( this != &U) Copy(U); }
-  
+  { Allocate(); if( this != &U) Copy(U); }
+#endif
+
   //! Destructor.
   ~Rte2D_State() { Deallocate(); }
   //@}
@@ -269,6 +286,10 @@ class Rte2D_State {
   void Allocate();
   void Deallocate();
 
+  //! memory allocation / deallocation for temporary ART variables
+  void AllocateART();
+  void DeallocateART();
+
   //! memory allocation / deallocation for the directional arrays
   static void AllocateDirs( );
   static void DeallocateDirs();
@@ -297,7 +318,7 @@ class Rte2D_State {
 
   //@{ @name State functions.
   //! access intensity using 2D indexes 
-  double& In( const int &v, const int &m, const int &l ) const;
+  const double& In( const int &v, const int &m, const int &l ) const;
   double& In( const int &v, const int &m, const int &l );
 
   //! Return directional integrated intensity [W/m^2]
@@ -411,7 +432,7 @@ class Rte2D_State {
 /********************************************************
  * Access intensity array using 3D indexing.            *
  ********************************************************/
-inline double& Rte2D_State :: In( const int &v, const int &m, const int &l ) const
+inline const double& Rte2D_State :: In( const int &v, const int &m, const int &l ) const
 { return I[ Index[v][m][l] ]; }
 
 inline double& Rte2D_State :: In( const int &v, const int &m, const int &l )
@@ -640,18 +661,47 @@ inline void Rte2D_State :: SetInitialValues(const double &val) {
  ********************************************************/
 inline void Rte2D_State :: Allocate()
 {
+#ifndef RTE2D_STATIC_NUMBER_OF_VARS
+
   // deallocate first
   Deallocate();
 
   // create the jagged array
   if (NUM_VAR_RTE2D>0)  { I = new double[NUM_VAR_RTE2D]; }
 
+#endif
 }
 
 
 inline void Rte2D_State :: Deallocate()
 {
-  if (     I != NULL ) { delete[] I;           I = NULL; }
+
+#ifndef RTE2D_STATIC_NUMBER_OF_VARS
+  if ( I != NULL ) { delete[] I; I = NULL; }
+#endif
+
+  DeallocateART();
+}
+
+/********************************************************
+ * Array allocator and deallocator for angular          *
+ * redistribution term and temporary storage.           *
+ *                                                      *
+ * Don't worry about this, it only gets allocated       *
+ * once at the beginning of the first dUdt_SpaceMarch   *
+ * and it never gets copied.                            *
+ *                                                      *
+ ********************************************************/
+inline void Rte2D_State :: AllocateART()
+{
+  if (alpha==NULL) {
+    alpha = new double*[Npolar];
+    for (int i=0; i<Npolar; i++) alpha[i] = new double[ Nazim[i]+1 ];	
+  } /* endif */
+}
+
+inline void Rte2D_State :: DeallocateART()
+{
   if ( alpha != NULL ) { 
     for (int i=0; i<Npolar; i++ ) delete[] alpha[i];
     delete[] alpha; 
@@ -663,7 +713,6 @@ inline void Rte2D_State :: Deallocate()
     I_half = NULL; 
   }
 }
-
 
 /********************************************************
  * Array allocator and deallocator for directional      *

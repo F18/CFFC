@@ -120,6 +120,18 @@ void Medium2D_State :: SetupStatic( const int &i_Absorb_Type,
   // set number of variables
   NUM_VAR_MEDIUM2D = 3*Nband;
 
+
+  // check to make sure we are not asking for too much memory
+#ifdef MEDIUM2D_STATIC_NUMBER_OF_VARS
+  if( MEDIUM2D_STATIC_NUMBER_OF_VARS < NUM_VAR_MEDIUM2D ) {
+    cerr <<"\n WARNING USING STATIC MEDIUM2D BUILT WITH " 
+	 << MEDIUM2D_STATIC_NUMBER_OF_VARS
+	 <<" VARS PREDEFINED, HOWEVER ASKING FOR "
+	 << NUM_VAR_MEDIUM2D << endl; 
+    exit(1); 
+  }
+#endif
+
 }
 
 

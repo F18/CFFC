@@ -54,6 +54,11 @@ enum Gas_Models { MEDIUM2D_ABSORB_GRAY,
 enum Field_Type { MEDIUM2D_FIELD_ANALYTIC,
                   MEDIUM2D_FIELD_DISCRETE };
 
+// Set fixed static number of bands.
+// If you define this variable, the number of species will be
+// predetermined for faster calculations.., however it is not as general.
+//#define MEDIUM2D_STATIC_NUMBER_OF_VARS  10
+
 /***********************************************************************/
 /*!
  * Class: Medium_State
@@ -87,9 +92,15 @@ class Medium2D_State {
  public:
 
   //@{ @name medium state:
+#ifdef MEDIUM2D_STATIC_NUMBER_OF_VARS
+  double kappa[MEDIUM2D_STATIC_NUMBER_OF_VARS];
+  double sigma[MEDIUM2D_STATIC_NUMBER_OF_VARS];
+  double Ib[MEDIUM2D_STATIC_NUMBER_OF_VARS];
+#else 
   double* kappa;        //!< absorbsion coefficient [m^-1]
   double* sigma;        //!< scattering coefficient [m^-1]
   double* Ib;           //!< blackbody intentsity [W/m^2 or W/(m^2 cm)]
+#endif
   //@}
 
   //@{ @name Public objects:
@@ -103,15 +114,27 @@ class Medium2D_State {
 
   //@{ @name Creation, copy, and assignment constructors.
   //! Creation constructor.
+#ifdef MEDIUM2D_STATIC_NUMBER_OF_VARS
+  Medium2D_State() { }
+#else
   Medium2D_State() : kappa(NULL), sigma(NULL), Ib(NULL)
-    { Allocate(); }
+  { Allocate(); }
+#endif
 
   //! Copy constructor.
+#ifdef MEDIUM2D_STATIC_NUMBER_OF_VARS
+  Medium2D_State( const Medium2D_State &U ) { if( this != &U) Copy(U); }
+#else
   Medium2D_State( const Medium2D_State &U ) : kappa(NULL), sigma(NULL), Ib(NULL)
-    { Allocate(); if( this != &U) Copy(U); }
+  { Allocate(); if( this != &U) Copy(U); }
+#endif
   
   //! Destructor.
+#ifdef MEDIUM2D_STATIC_NUMBER_OF_VARS
+  ~Medium2D_State() { }
+#else
   ~Medium2D_State() { Deallocate(); }
+#endif
   //@}
 
   //@{ @name Useful operators.
@@ -244,6 +267,8 @@ inline void Medium2D_State :: Zero() {
  ********************************************************/
 inline void Medium2D_State :: Allocate()
 {
+#ifndef MEDIUM2D_STATIC_NUMBER_OF_VARS
+
   // deallocate first
   Deallocate();
 
@@ -253,13 +278,19 @@ inline void Medium2D_State :: Allocate()
     kappa = new double[Nband];
     sigma = new double[Nband];
   }
+
+#endif
 }
 
 inline void Medium2D_State :: Deallocate()
 {
+#ifndef MEDIUM2D_STATIC_NUMBER_OF_VARS
+
   if ( kappa != NULL ) { delete[] kappa;   kappa = NULL; }
   if ( sigma != NULL ) { delete[] sigma;   sigma = NULL; }
   if (    Ib != NULL ) { delete[] Ib;         Ib = NULL; }
+
+#endif
 }
 
 

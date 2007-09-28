@@ -236,6 +236,18 @@ void Rte2D_State :: SetDirsDOM(const int Quad_Type,
 
   // close the file
   in.close();
+
+  // check to make sure we are not asking for too much memory
+#ifdef RTE2D_STATIC_NUMBER_OF_VARS
+  if( RTE2D_STATIC_NUMBER_OF_VARS < NUM_VAR_RTE2D ) {
+    cerr <<"\n WARNING USING STATIC RTE2D BUILT WITH " 
+	 << RTE2D_STATIC_NUMBER_OF_VARS
+	 <<" VARS PREDEFINED, HOWEVER ASKING FOR "
+	 << NUM_VAR_RTE2D << endl; 
+    exit(1); 
+  }
+#endif
+
 }
 
 /********************************************************
@@ -417,6 +429,17 @@ void Rte2D_State :: SetDirsFVM(const int NumPolarDirs,
 //   }
 //-------------   DEBUG    ------------------
   
+  // check to make sure we are not asking for too much memory
+#ifdef RTE2D_STATIC_NUMBER_OF_VARS
+  if( RTE2D_STATIC_NUMBER_OF_VARS < NUM_VAR_RTE2D ) {
+    cerr <<"\n WARNING USING STATIC RTE2D BUILT WITH " 
+	 << RTE2D_STATIC_NUMBER_OF_VARS
+	 <<" VARS PREDEFINED, HOWEVER ASKING FOR "
+	 << NUM_VAR_RTE2D << endl; 
+    exit(1); 
+  }
+#endif
+
 }
 
 
@@ -900,10 +923,7 @@ void Rte2D_State :: SetupART_DOM( const Vector2D &nfaceE, const double &AfaceE,
 				  const Vector2D &nfaceS, const double &AfaceS ) {
 
   // allocate the ART array
-  if (alpha==NULL) {
-    alpha = new double*[Npolar];
-    for (int i=0; i<Npolar; i++) alpha[i] = new double[ Nazim[i]+1 ];	
-  } /* endif */
+  AllocateART();
 
   // Allocate storage for intensity in the special directions.
   // These directions are those with no angular distribution.
