@@ -2393,8 +2393,8 @@ double LESPremixed2D_pState::Heat_Release_Strain (const LESPremixed2D_pState &dW
 
 LESPremixed2D_pState LESPremixed2D_pState::premixed_mfrac(const LESPremixed2D_pState &Wo){
 
-       LESPremixed2D_pState temp;
-       temp.Copy (*this);       
+  LESPremixed2D_pState temp;
+  temp.Copy (*this);       
 
       
   double unburnt_fuel_c, burnt_fuel_c, tol;
@@ -2440,19 +2440,19 @@ LESPremixed2D_pState LESPremixed2D_pState::premixed_mfrac(const LESPremixed2D_pS
     if(temp.spec[0].c == ZERO){
       temp.spec[1].c = burnt_oxygen_c;      
     }else{
-      temp.spec[1].c = temp.spec[0].c * stoich_ratio + burnt_oxygen_c;///phi;
+      temp.spec[1].c = temp.spec[0].c * stoich_ratio + burnt_oxygen_c;//phi;
     }  
 
   // rich mixture(phi > 1) => excessive CH4
   }else if(phi > ONE){  
     unburnt_fuel_c = Wo.spec[0].c;  // initial fuel mass fraction
     burnt_oxygen_c = ZERO;
-    burnt_fuel_c = (ONE - ONE/phi)*unburnt_fuel_c;///stoich_ratio;
+    burnt_fuel_c = (ONE - ONE/phi)*unburnt_fuel_c;//stoich_ratio;
     temp.spec[0].c = temp.scalar[0]*(burnt_fuel_c - unburnt_fuel_c) + unburnt_fuel_c;
     if(temp.spec[0].c <= burnt_fuel_c){
       temp.spec[1].c = burnt_oxygen_c;
     }else{
-      temp.spec[1].c = (temp.spec[0].c - burnt_fuel_c) * stoich_ratio;///phi;
+      temp.spec[1].c = (temp.spec[0].c - burnt_fuel_c) * stoich_ratio;//phi;
     }
 
   // stoichiometric mixture(phi = 1)
