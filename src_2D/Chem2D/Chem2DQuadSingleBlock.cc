@@ -1878,11 +1878,17 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 	// set laminar flame speed
 	Wl.v.x = Input_Parameters.flame_speed;
 
-	// TODO: add jump conditions
-	//Wr.v.x = ????;
-
 	// get equilibrium concentration
 	Wo[0].React.ct_equilibrium<Chem2D_pState>( /* unburnt */Wl, /* burnt */Wr );
+
+	// compute flame jump conditions
+	if ( FlameJumpLowMach_x<Chem2D_pState>( /* unburnt */Wl, 
+						/* burnt */Wr ) ) {
+	  cerr << "\nChem2DQuadSingleBlock.cc::ICs() - "
+	       << "Error computing 1D premixed flame jump conditions.\n";
+	  exit(-1);
+	} // endif - flame
+	  
 
       } else {
 	cout<<"\n No 1D_Premixed Flame Initial Conditions for "<<Wo[0].React.Reaction_system; exit(1);

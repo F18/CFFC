@@ -43,8 +43,7 @@ inline int FlameJump_x(const SOLN_PSTATE &Wu, // unburnt state
 		       SOLN_PSTATE &Wb)       // burnt state
 {
   
-  // Solve for the product species' mass fraction.
-  Wb = Wb.premixed_mfrac(Wu);
+  // Product species' mass fractions should already be set
 
   // Apply Newton's method to solve for rho2, u2, p2, T2.
   double rho2, u2, T2, p2, Cp2;   // Unknown variables.
@@ -253,8 +252,7 @@ inline int FlameJumpLowMach_x(const SOLN_PSTATE &Wu, // unburnt state
 			      SOLN_PSTATE &Wb)       // burnt state
 {
 
-  // Solve for the product species' mass fraction.
-  Wb = Wb.premixed_mfrac(Wu);
+  // Product species' mass fractions should already be set
 
   // Apply Newton's method to solve for rho2, u2, T2.
   double rho2, u2, T2, p2, Cp2;      // Unknown variables.
