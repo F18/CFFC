@@ -174,7 +174,7 @@ int Read_Restart_Solution(Rte2D_Quad_Block *Soln_ptr,
 
           // Open restart file.
           restart_file.open(restart_file_name_ptr, ios::in);
-          if (restart_file.bad()) return (1);
+          if (restart_file.fail()) return (1);
 
           // Read solution block data.
           restart_file.setf(ios::skipws);
@@ -269,7 +269,7 @@ int Write_Restart_Solution(Rte2D_Quad_Block *Soln_ptr,
 
           // Open restart file.
           restart_file.open(restart_file_name_ptr, ios::out);
-          if (restart_file.bad()) return (1);
+          if (restart_file.fail()) return (1);
 
           // Write solution block data.
           restart_file.setf(ios::scientific);
@@ -348,7 +348,7 @@ int Output_Tecplot(Rte2D_Quad_Block *Soln_ptr,
     /* Open the output data file. */
 
     output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.bad()) return (1);
+    if (output_file.fail()) return (1);
 
     /* Write the solution data for each solution block. */
 
@@ -422,7 +422,7 @@ int Output_Cells_Tecplot(Rte2D_Quad_Block *Soln_ptr,
     /* Open the output data file. */
 
     output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.bad()) return (1);
+    if (output_file.fail()) return (1);
 
     /* Write the solution data for each solution block. */
 
@@ -495,7 +495,7 @@ int Output_Nodes_Tecplot(Rte2D_Quad_Block *Soln_ptr,
     /* Open the output data file. */
 
     output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.bad()) return (1);
+    if (output_file.fail()) return (1);
 
     /* Write the solution data for each solution block. */
 
@@ -567,7 +567,7 @@ int Output_Gradients_Tecplot(Rte2D_Quad_Block *Soln_ptr,
   
   // Open the output data file.
   output_file.open(output_file_name_ptr,ios::out);
-  if (output_file.bad()) return 1;
+  if (output_file.fail()) return 1;
 
   // Write the solution data for each solution block.
   i_output_title = 1;
@@ -636,7 +636,7 @@ int Output_Mesh_Tecplot(Rte2D_Quad_Block *Soln_ptr,
     /* Open the output data file. */
 
     output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.bad()) return (1);
+    if (output_file.fail()) return (1);
 
     /* Write the solution data for each solution block. */
 
@@ -710,7 +710,7 @@ int Output_Mesh_Gnuplot(Rte2D_Quad_Block *Soln_ptr,
     /* Open the output data file. */
 
     output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.bad()) return (1);
+    if (output_file.fail()) return (1);
 
     /* Write the solution data for each solution block. */
 
@@ -1358,7 +1358,7 @@ int Output_Exact(Rte2D_Quad_Block *Soln_ptr,
   
   // Open the output data file.
   output_file.open(output_file_name_ptr,ios::out);
-  if (output_file.bad()) return 1;
+  if (output_file.fail()) return 1;
   
   // Write the solution data for each solution block.
   i_output_title = 1;
