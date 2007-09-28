@@ -39,8 +39,8 @@
  * burnt solution vector.                                  *
  ***********************************************************/
 template <class SOLN_PSTATE>
-inline int FlameJump_x(const SOLN_PSTATE &Wu, // unburnt state
-		       SOLN_PSTATE &Wb)       // burnt state
+inline int FlameJump_x_pState(const SOLN_PSTATE &Wu, // unburnt state
+			      SOLN_PSTATE &Wb)       // burnt state
 {
   
   // Product species' mass fractions should already be set
@@ -123,9 +123,9 @@ inline int FlameJump_x(const SOLN_PSTATE &Wu, // unburnt state
  *                                                         *
  ***********************************************************/
 template <class SOLN_PSTATE>
-inline int FlameJump_n(const SOLN_PSTATE &Wu,     // unburnt state
-		       SOLN_PSTATE &Wb,           // burnt state
-		       const Vector2D &norm_dir)  // normal direction vec
+inline int FlameJump_n_pState(const SOLN_PSTATE &Wu,     // unburnt state
+			      SOLN_PSTATE &Wb,           // burnt state
+			      const Vector2D &norm_dir)  // normal direction vec
 {
 
   int error_flag;
@@ -167,8 +167,8 @@ inline int FlameJump_n(const SOLN_PSTATE &Wu,     // unburnt state
  * burnt solution vector.                                  *
  ***********************************************************/
 template <class SOLN_PSTATE, class SOLN_CSTATE>
-inline int FlameJump_x(const SOLN_CSTATE &Uu, // unburnt state
-		       SOLN_CSTATE &Ub)       // burnt state
+inline int FlameJump_x_cState(const SOLN_CSTATE &Uu, // unburnt state
+			      SOLN_CSTATE &Ub)       // burnt state
 {
   int error_flag;
 
@@ -199,9 +199,9 @@ inline int FlameJump_x(const SOLN_CSTATE &Uu, // unburnt state
  *                                                         *
  ***********************************************************/
 template <class SOLN_PSTATE, class SOLN_CSTATE>
-inline int FlameJump_n(const SOLN_CSTATE &Uu,    // unburnt state
-		       SOLN_CSTATE &Ub,          // burnt state
-		       const Vector2D &norm_dir) // normal direction vec
+inline int FlameJump_n_cState(const SOLN_CSTATE &Uu,    // unburnt state
+			      SOLN_CSTATE &Ub,          // burnt state
+			      const Vector2D &norm_dir) // normal direction vec
 {
 
   int error_flag;

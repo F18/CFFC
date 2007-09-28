@@ -466,6 +466,7 @@ void Reaction_set::ct_load_mechanism(string &mechanism_file_name,
 #else
   cout<<"\n CODE NOT COMPILED WITH CANTERA!";
   cout<<"\n YOU SHOULD NOT BE HERE!";
+  exit(-1);
 
 #endif //_CANTERA_VERSION
 
@@ -492,6 +493,7 @@ void Reaction_set::ct_parse_mass_string(const string& massFracStr,
 #else
   cout<<"\n CODE NOT COMPILED WITH CANTERA!";
   cout<<"\n YOU SHOULD NOT BE HERE!";  
+  exit(-1);
 
 #endif //_CANTERA_VERSION
 
@@ -531,6 +533,7 @@ void Reaction_set::ct_parse_schmidt_string( const string& schmidtStr,
 #else
   cout<<"\n CODE NOT COMPILED WITH CANTERA!";
   cout<<"\n YOU SHOULD NOT BE HERE!";
+  exit(-1);
 
 #endif //_CANTERA_VERSION
 
@@ -560,6 +563,7 @@ void Reaction_set::ct_equilibrate( ) const {
 #else
   cout<<"\n CODE NOT COMPILED WITH CANTERA!";
   cout<<"\n YOU SHOULD NOT BE HERE!";
+  exit(-1);
 
 #endif //_CANTERA_VERSION
 

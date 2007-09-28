@@ -1340,8 +1340,8 @@ void Reaction_set::ct_dSwdU( DenseMatrix &dSwdU,
   //
   // loop over species
   //
-  for (int j=0; j<nsp; j++) {
-    for (int k=0; k<nsp; k++) {
+  for (int j=0; j<nsp-1; j++) {
+    for (int k=0; k<nsp-1; k++) {
 
       //
       // loop over reactions
@@ -1456,7 +1456,8 @@ void Reaction_set::ct_dSwdU( DenseMatrix &dSwdU,
 #else
   cout<<"\n CODE NOT COMPILED WITH CANTERA!";
   cout<<"\n YOU SHOULD NOT BE HERE!";
-  
+  exit(-1);
+
 #endif //_CANTERA_VERSION
 
 } // end of ct_dSwdU
@@ -1499,7 +1500,8 @@ inline void Reaction_set::ct_equilibrium( const SOLN_pSTATE &Wu,
 #else
   cout<<"\n CODE NOT COMPILED WITH CANTERA!";
   cout<<"\n YOU SHOULD NOT BE HERE!";
-  
+  exit(-1);
+
 #endif //_CANTERA_VERSION
 
 } // end of ct_equilibrate

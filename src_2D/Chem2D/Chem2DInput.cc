@@ -187,7 +187,7 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.Wall_Boundary_Treatments = 0; 
 
     // flame speed
-    IP.flame_speed = 41.01; // [m/s]; methane @ 1 atm, stoich
+    IP.flame_speed = 0.4101; // [m/s]; methane @ 1 atm, stoich
 
     // Turbulence parameters:
     string_ptr = "Direct_Integration";
@@ -2481,7 +2481,7 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        /*************************************/
     } else if (strcmp(IP.Next_Control_Parameter, "Cantera_Reaction_Mechanism") == 0) {
        i_command = 202;
-
+       
        Get_Next_Input_Control_Parameter(IP);
        IP.Deallocate();  //DEALLOCATE BEFORE CHANGING num_species
        int flag =0;
