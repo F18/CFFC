@@ -410,7 +410,7 @@ int Open_Progress_File(ofstream &Progress_File,
     } else {
        Progress_File.open(progress_file_name_ptr, ios::out);
     } 
-    if (Progress_File.bad()) return (1);
+    if (Progress_File.fail()) return (1);
 
     /* Write the appropriate GNUPLOT command file for 
        plotting progress file information. */
@@ -421,7 +421,7 @@ int Open_Progress_File(ofstream &Progress_File,
     gnuplot_file_name_ptr = gnuplot_file_name;
 
     gnuplot_file.open(gnuplot_file_name_ptr, ios::out);
-    if (gnuplot_file.bad()) return(1);
+    if (gnuplot_file.fail()) return(1);
 
     // Write gnuplot script
     gnuplot_file << "set term x11 enhanced font \",10\"\n"
@@ -1098,7 +1098,7 @@ double CLAM(const double Uu,   // upstream nodal value
 void Open_Input_File(CFD1D_Input_Parameters &IP) {
 
     IP.Input_File.open(IP.Input_File_Name, ios::in);
-    if (! IP.Input_File.bad()) {
+    if (! IP.Input_File.fail()) {
        IP.Line_Number = 0;
        IP.Input_File.setf(ios::skipws);
     } /* endif */

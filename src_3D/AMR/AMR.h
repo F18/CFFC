@@ -217,7 +217,7 @@ int Read_Octree(Octree_DataStructure                         &Octree,
 
     if (CFFC_Primary_MPI_Processor()) {
        Octree_file.open(Octree_file_name_ptr, ios::in);
-       if (Octree_file.bad()) return (1);
+       if (Octree_file.fail()) return (1);
     } /* endif */
 
     /* On primary processor, read in the data structure size parameters and 
@@ -345,7 +345,7 @@ int Write_Octree(Octree_DataStructure                        &Octree,
 
     if (CFFC_Primary_MPI_Processor()) {
        Octree_file.open(Octree_file_name_ptr, ios::out);
-       if (Octree_file.bad()) return (1);
+       if (Octree_file.fail()) return (1);
     } /* endif */
 
     /* On primary processor, write the Octree data to the file. */

@@ -138,7 +138,7 @@ void AdvectDiffuse2D_Input_Parameters::SetExactSolutionPointer(void){
 void Open_Input_File(AdvectDiffuse2D_Input_Parameters &IP) {
 
     IP.Input_File.open(IP.Input_File_Name, ios::in);
-    if (!IP.Input_File.bad()) {
+    if (!IP.Input_File.fail()) {
        IP.Line_Number = 0;
        IP.Input_File.setf(ios::skipws);
     } /* endif */
