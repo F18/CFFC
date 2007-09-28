@@ -160,7 +160,7 @@ Output_Flat_Plate_Tecplot(const int &nb,
       X = Local_SolnBlk[nb].Grid.Cell[i][j].Xc;
       W = Local_SolnBlk[nb].W[i][j];
       if (Mesh[nb].cell_status[i][j] == CELL_STATUS_ACTIVE) {
-	We = FlatPlate(IP->Wo,X,IP->Plate_Length,eta,f,fp,fpp);
+	We = FlatPlate(IP->Wo,X,eta,f,fp,fpp);
 	if (X.x > ZERO && X.x < IP->Plate_Length) phiv = (W.v.y/IP->Wo.v.x)*sqrt(IP->Wo.v.x*X.x/IP->Wo.nu());
 	else phiv = ZERO;
       } else {
