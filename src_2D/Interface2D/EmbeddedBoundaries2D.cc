@@ -28,6 +28,7 @@ using namespace std;
 #include "EmbeddedBoundaries2D_Euler.h"
 #include "EmbeddedBoundaries2D_NavierStokes.h"
 #include "EmbeddedBoundaries2D_Dusty.h"
+// #include "EmbeddedBoundaries2D_LESPremixed.h"
 #include "../MPI/MPI.h"
 #include "../ICEM/ICEMCFD.h"
 #include "../UnitTesting/UnitTesting.h"
@@ -268,12 +269,12 @@ int main(int num_arg, char *arg_ptr[]) {
                                               Gaussian2D_Quad_Block, 
                                               Gaussian2D_Input_Parameters>(Input_File_Name_ptr,
 									   batch_flag);
-   } else if (strcmp(Equation_Type,"LESPremix2D") == 0) {
-     error_flag = EmbeddedBoundaries2D_Solver<LESPremix2D_cState,
-                                              LESPremix2D_pState,
-                                              LESPremix2D_Quad_Block, 
-                                              LESPremix2D_Input_Parameters>(Input_File_Name_ptr,
-									    batch_flag);
+//    } else if (strcmp(Equation_Type,"LESPremix2D") == 0) {
+//      error_flag = EmbeddedBoundaries2D_Solver<LESPremix2D_cState,
+//                                               LESPremix2D_pState,
+//                                               LESPremix2D_Quad_Block, 
+//                                               LESPremix2D_Input_Parameters>(Input_File_Name_ptr,
+// 									    batch_flag);
   } else {
     if (CFFC_Primary_MPI_Processor() && !batch_flag)
       cout << "\n\n EmbeddedBoundaries2D ERROR: Specified equation set is not supported.\n";
