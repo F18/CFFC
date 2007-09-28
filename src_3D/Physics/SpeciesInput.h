@@ -54,29 +54,29 @@ class Species_Input_Parameters{
  private:
  public:
   //@{ @name Reaction data input parameters:
-  //! Name of reaction mechanism.
+  //! Name of reaction mechanism
   string reaction_mechanism_name;
   char Reaction_Mechanism_Name[SPECIES_INPUT_PARAMETER_LENGTH];
   //@}
 
   //@{ @name Cantera input parameters:
-  //! Mechanism name:
+  //! Mechanism name
   string cantera_mech_name;
   char Cantera_Mech_Name[SPECIES_INPUT_PARAMETER_LENGTH];
-  //! Mechanism file:
+  //! Mechanism file
   string cantera_mech_file;
   char Cantera_Mech_File[SPECIES_INPUT_PARAMETER_LENGTH];
   //@}
 
   //@{ @name Speceis input parameters:
-  //! Number of species in mixture:
+  //! Number of species in mixture
   int num_species;
-  //! Names of each species in mixture:
-  char **Multispecies;
+  //! Names of each species in mixture
   string *multispecies;
-  //! Mass fractions of each species in mixture:
+  char **Multispecies;
+  //! Mass fractions of each species in mixture
   double *mass_fractions;
-  //! Schmidt numbers of each species in mixture:
+  //! Schmidt numbers of each species in mixture
   double *Schmidt;
   double Global_Schmidt;  //depricated, use each individual Schmidt's
   //@}
@@ -91,8 +91,8 @@ class Species_Input_Parameters{
   int Allocated;
   //@}
 
-  //@{ @name Constructor and desctructor
-  //! Constructor (assign default values):
+  //@{ @name Constructors and desctructors:
+  //! Constructor (assign default values)
   Species_Input_Parameters() {
      Allocated = 0;
      //Default: multi-species with no reactions.
@@ -123,22 +123,22 @@ class Species_Input_Parameters{
      Allocate(Ns);    
   }
 
-  //! Destructor:
+  //! Destructor
   ~Species_Input_Parameters(void) {
      Deallocate();
   }
   //@}
 
-  //@{ @name Other Member functions.
-  //! Allocate required memory:
+  //@{ @name Other Member functions:
+  //! Allocate required memory
   void Allocate(const int Ns);
-  //! Deallocate require memory:
+  //! Deallocate require memory
   void Deallocate(void);
-  //! Broadcast input parameters to all processors:
+  //! Broadcast input parameters to all processors
   void Broadcast(void);
-  //! Parse next input line:
+  //! Parse next input line
   int Parse_Next_Input_Control_Parameter(char *code, stringstream &value);
-  //! Check validity of specified input parameters:
+  //! Check validity of specified input parameters
   int Check_Inputs(void);
   //@}
 

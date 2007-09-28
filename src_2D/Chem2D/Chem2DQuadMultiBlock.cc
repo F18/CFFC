@@ -279,7 +279,7 @@ int Write_Restart_Solution(Chem2D_Quad_Block *Soln_ptr,
 
           // Open restart file.
           restart_file.open(restart_file_name_ptr, ios::out);
-          if (restart_file.bad()) return (1);
+          if (restart_file.fail()) return (1);
 
           // Write solution block data.
           restart_file.setf(ios::scientific);
@@ -353,7 +353,7 @@ int Output_Tecplot(Chem2D_Quad_Block *Soln_ptr,
     /* Open the output data file. */
 
     output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.bad()) return (1);
+    if (output_file.fail()) return (1);
 
     /* Write the solution data for each solution block. */
 
@@ -430,7 +430,7 @@ int Output_Cells_Tecplot(Chem2D_Quad_Block *Soln_ptr,
     /* Open the output data file. */
 
     output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.bad()) return (1);
+    if (output_file.fail()) return (1);
 
     /* Write the solution data for each solution block. */
 
@@ -502,7 +502,7 @@ int Output_Nodes_Tecplot(Chem2D_Quad_Block *Soln_ptr,
     /* Open the output data file. */
 
     output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.bad()) return (1);
+    if (output_file.fail()) return (1);
 
     /* Write the solution data for each solution block. */
 
@@ -574,7 +574,7 @@ int Output_Mesh_Tecplot(Chem2D_Quad_Block *Soln_ptr,
     /* Open the output data file. */
 
     output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.bad()) return (1);
+    if (output_file.fail()) return (1);
 
     /* Write the solution data for each solution block. */
 
@@ -641,7 +641,7 @@ int Output_RHS(Chem2D_Quad_Block *Soln_ptr,
     /* Open the output data file. */
 
     output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.bad()) return (1);
+    if (output_file.fail()) return (1);
 
     /* Write the solution data for each solution block. */
 
@@ -713,7 +713,7 @@ int Output_PERTURB(Chem2D_Quad_Block *Soln_ptr,
 
           // Open restart file.
           restart_file.open(restart_file_name_ptr, ios::out);
-          if (restart_file.bad()) return (1);
+          if (restart_file.fail()) return (1);
 
           // Write solution block data.
           restart_file.setf(ios::scientific);
@@ -797,7 +797,7 @@ int Output_Mesh_Gnuplot(Chem2D_Quad_Block *Soln_ptr,
     /* Open the output data file. */
 
     output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.bad()) return (1);
+    if (output_file.fail()) return (1);
 
     /* Write the solution data for each solution block. */
 
@@ -1380,7 +1380,7 @@ int Output_Ringleb(Chem2D_Quad_Block *Soln_ptr,
   
   // Open the output data file.
   output_file.open(output_file_name_ptr,ios::out);
-  if (output_file.bad()) return 1;
+  if (output_file.fail()) return 1;
   
   // Write the solution data for each solution block.
   i_output_title = 1;
@@ -1500,7 +1500,7 @@ int Output_Viscous_Channel(Chem2D_Quad_Block *Soln_ptr,
   
   // Open the output data file.
   output_file.open(output_file_name_ptr,ios::out);
-  if (output_file.bad()) return 1;
+  if (output_file.fail()) return 1;
   
   double dpdx = -3177.7;  //should be from dp/dx = Input_Parameter.delta_pres/length
 
@@ -1617,9 +1617,9 @@ int Output_Flat_Plate(Chem2D_Quad_Block *Soln_ptr,
   
   // Open the output data files.
   output_file_soln.open(output_file_name_soln_ptr,ios::out);
-  if (output_file_soln.bad()) return 1;
+  if (output_file_soln.fail()) return 1;
   output_file_skin.open(output_file_name_skin_ptr,ios::out);
-  if (output_file_skin.bad()) return 1;
+  if (output_file_skin.fail()) return 1;
   
   // Write the solution data for each solution block.
   i_output_title_soln = 1;
@@ -1725,9 +1725,9 @@ int Output_Driven_Cavity_Flow(Chem2D_Quad_Block *Soln_ptr,
 
   // Open the output data files.
   output_file_u.open(output_file_name_ptr_u,ios::out);
-  if (output_file_u.bad()) return 1;
+  if (output_file_u.fail()) return 1;
   output_file_v.open(output_file_name_ptr_v,ios::out);
-  if (output_file_v.bad()) return 2;
+  if (output_file_v.fail()) return 2;
 
   // Write the solution data for each solution block.
   i_output_title = 1;

@@ -1,7 +1,10 @@
-/****************** NavierStokes3DThermallyPerfectInput.cc ****************************
-  Input parameter member function specializations for 
-  NavierStokes3D_ThermallyPerfect solution classes.
-***************************************************************************************/
+/* Navierstokes3DThermallyPerfectInput.h:  Header file defining various 
+                                           specializations for 
+                                           Navierstokes3d_ThermallyPerfect 
+                                           solution input parameter class. */
+
+#ifndef _NAVIERSTOKES3D_THERMALLYPERFECT_INPUT_INCLUDED
+#define _NAVIERSTOKES3D_THERMALLYPERFECT_INPUT_INCLUDED
 
 // Include required CFFC header files
 
@@ -163,6 +166,4 @@ void Input_Parameters<NavierStokes3D_ThermallyPerfect_pState,
 
 }
 
-
-
-
+#endif // _NAVIERSTOKES3D_THERMALLYPERFECT_INPUT_INCLUDED

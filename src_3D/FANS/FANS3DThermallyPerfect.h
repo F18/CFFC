@@ -1,7 +1,8 @@
 /* FANS3DThermallyPerfect.h:  
 
-   Header file for the 3D Favre-Averaged Navier-Stokes (FANS) equations 
-   for thermally perfect gaseous mixtures. */
+   Header file for the solution of the Favre-Averaged Navier-Stokes 
+   (FANS) equations governing thermally perfect non-reactive and 
+   combusting gaseous mixtures. */
 
 #ifndef _FANS3D_THERMALLYPERFECT_INCLUDED
 #define _FANS3D_THERMALLYPERFECT_INCLUDED
@@ -15,6 +16,10 @@
 #ifndef _FANS3D_THERMALLYPERFECT_STATE_INCLUDED
 #include "FANS3DThermallyPerfectState.h"
 #endif // _FANS3D_THERMALLYPERFECT_STATE_INCLUDED
+
+#ifndef _FANS3D_THERMALLYPERFECT_INPUT_INCLUDED
+#include "FANS3DThermallyPerfectInput.h"
+#endif // _FANS3D_THERMALLYPERFECT_INPUT_INCLUDED
 
 #ifndef _FANS3D_THERMALLYPERFECT_HEXA_BLOCK_INCLUDED
 #include "FANS3DThermallyPerfectHexaBlock.h"

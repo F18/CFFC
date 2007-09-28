@@ -42,12 +42,13 @@ class Turbulence_Modelling_Input_Parameters{
  private:
  public:
   //@{ @name Indicator for near wall treatment for turbulent flows using FANS solver:
+  //! Indicator for near wall treatment for turbulent flows (0, 1,2 , automatic, wall function, low_Reynolds number)
   int Near_Wall_Boundary_Treatment; 
   //! 0, 1,2 , automatic, wall function, low_Reynolds number.
   //@}
 
-  //@{ @name Constructor and desctructor
-  //! Constructor (assign default values).
+  //@{ @name Constructors and desctructors:
+  //! Constructor (assign default values)
   Turbulence_Modelling_Input_Parameters() {
     Near_Wall_Boundary_Treatment = 0; 
   }
@@ -56,12 +57,12 @@ class Turbulence_Modelling_Input_Parameters{
   ~Turbulence_Modelling_Input_Parameters(void){ }
   //@}
 
-  //@{ @name Other Member functions.
-  //! Broadcast input parameters to all processors:
+  //@{ @name Other Member functions:
+  //! Broadcast input parameters to all processors
   void Broadcast(void);
-  //! Parse next input line:
+  //! Parse next input line
   int Parse_Next_Input_Control_Parameter(char *code, stringstream &value);
-  //! Check validity of specified input parameters:
+  //! Check validity of specified input parameters
   int Check_Inputs(void);
   //@}
 

@@ -564,7 +564,7 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Read_Restart_Solution(Input_Parameters<typenam
           
          // Open restart file.
          restart_file.open(restart_file_name_ptr, ios::in);
-         if (restart_file.bad()) return (1);
+         if (restart_file.fail()) return (1);
           
          // Read iteration/time data.
          restart_file.setf(ios::skipws);
@@ -645,7 +645,7 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Write_Restart_Solution(Input_Parameters<typena
          
          // Open restart file.
          restart_file.open(restart_file_name_ptr, ios::out);
-         if (restart_file.bad()) return (1);
+         if (restart_file.fail()) return (1);
       
          // Write iteration/time data.
          restart_file.setf(ios::scientific);
@@ -719,7 +719,7 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Output_Tecplot(Input_Parameters<typename HEXA_
     /* Open the output data file. */
 
     output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.bad()) return (1);
+    if (output_file.fail()) return (1);
 
     /* Write the solution data for each solution block. */
 
@@ -792,7 +792,7 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Output_Cells_Tecplot(Input_Parameters<typename
     /* Open the output data file. */
 
     output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.bad()) return (1);
+    if (output_file.fail()) return (1);
 
     /* Write the solution data for each solution block. */
 
@@ -866,7 +866,7 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Output_Nodes_Tecplot(Input_Parameters<typename
     /* Open the output data file. */
 
     output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.bad()) return (1);
+    if (output_file.fail()) return (1);
 
     /* Write the solution data for each solution block. */
 

@@ -38,7 +38,7 @@ void CFD_Input_Parameters::Get_CFFC_Path(void){
 void CFD_Input_Parameters::Open_Input_File(void) {
 
     Input_File.open(Input_File_Name, ios::in);
-    if (!Input_File.bad()) {
+    if (!Input_File.fail()) {
        Line_Number = 0;
        Input_File.setf(ios::skipws);
     } /* endif */
@@ -74,11 +74,11 @@ int CFD_Input_Parameters::Get_Next_Input_Control_Parameter(const bool read_contr
     Line_Number = Line_Number + 1;
     Input_File.getline(buffer, sizeof(buffer));
 
-    // Remove leading blanks.
+    // Remove leading blanks and tabs.
     i = 0;
-    if (buffer[0] == ' ') {
+    if (buffer[0] == ' ' || buffer[0] == '\t') {
        while (1) {
-	  if (buffer[i] != ' ') break;
+	  if (buffer[i] != ' ' && buffer[i] != '\t') break;
           i = i + 1;
           if (i > strlen(buffer) ) break;
        } /* endwhile */
@@ -264,7 +264,7 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
        if (Time_Accurate_Output_Frequency < 0) i_command = INVALID_INPUT_VALUE;
 
     //
-    // Debug level for calculation:
+    // Debugging parameters:
     //
     } else if (strcmp(code, "Debug_Level") == 0) {
        i_command = 20;
@@ -723,8 +723,8 @@ int CFD_Input_Parameters::Process_Input_Control_Parameter_File(char *Input_File_
    
    /* Open the input file containing the input parameters. */
    Open_Input_File();
-   error_flag = Input_File.bad();
-   
+   error_flag = Input_File.fail();
+
    if (error_flag) {
       cout << "\n ERROR: Unable to open input data file.\n";
       return (error_flag);
@@ -819,7 +819,7 @@ void CFD_Input_Parameters::Broadcast(void) {
                           1,
                           MPI::INT, 0);
 
-    // Debug level for calculation:
+    // Debugging parameters:
     MPI::COMM_WORLD.Bcast(&(Debug_Level),
                           1,
 			  MPI::INT, 0);

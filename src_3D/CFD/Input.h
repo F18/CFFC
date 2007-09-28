@@ -28,35 +28,38 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
   private:
   public:
   //@{ @name Reference solution states:
-  //! Primitive solution variables:
+  //! Primitive solution variables
   SOLN_pSTATE Wo;
-  //! Converved solution variables:
+  //! Converved solution variables
   SOLN_cSTATE Uo;
   //@}
 
-  //@{ @name Constructor and desctructor
-  //! Constructor (assign default values).
+  //@{ @name Constructors and desctructors:
+  //! Constructor (assign default values)
   Input_Parameters(void) : CFD_Input_Parameters() {
     Set_Reference_Solution_States();
   }
+
+  //! Constructor (allows base class return type)
+  Input_Parameters(const CFD_Input_Parameters &IP) : CFD_Input_Parameters() { }
 
   //! Destructor
   ~Input_Parameters(void){ }
   //@}
 
-  //@{ @name Other Member functions.
-  //! Broadcast input parameters to all processors:
+  //@{ @name Other Member functions:
+  //! Broadcast input parameters to all processors
   void Broadcast(void);
-  //! Parse next input line:
+  //! Parse next input line
   int Parse_Next_Input_Control_Parameter(void);
-  //! Process/parse all input from input file:
+  //! Process/parse all input from input file
   int Process_Input_Control_Parameter_File(char *Input_File_Name_ptr,
                                            int &Command_Flag);
-  //! Set reference solution states:
+  //! Set reference solution states
   void Set_Reference_Solution_States(void);
-  //! Read reference solution states:
+  //! Read reference solution states
   void Read_Reference_Solution_States(istream &restart_file);
-  //! Write reference solution states:
+  //! Write reference solution states
   void Write_Reference_Solution_States(ostream &restart_file);
   //@}
 

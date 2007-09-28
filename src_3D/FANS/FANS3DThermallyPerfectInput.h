@@ -1,15 +1,18 @@
-/****************** Euler3DThermallyPerfectInput.cc *******************
-  Input parameter member function specializations for 
-  Euler3D_ThermallyPerfect solution classes.
-***********************************************************************/
+/* FANS3DThermallyPerfectInput.h:  Header file defining various specializations for 
+                                   FANS3D_ThermallyPerfect solution input parameter class. */
+
+#ifndef _FANS3D_THERMALLYPERFECT_INPUT_INCLUDED
+#define _FANS3D_THERMALLYPERFECT_INPUT_INCLUDED
+
+/* Include related CFFC header files. */
 
 #ifndef _INPUT_INCLUDED
 #include "../CFD/Input.h"
 #endif // INPUT_INCLUDED
 
-#ifndef _EULER3D_THERMALLYPERFECT_STATE_INCLUDED
-#include "Euler3DThermallyPerfectState.h"
-#endif // EULER3D_THERMALLYPERFECT_STATE_INCLUDED
+#ifndef _FANS3D_THERMALLYPERFECT_STATE_INCLUDED
+#include "FANS3DThermallyPerfectState.h"
+#endif // _FANS3D_THERMALLYPERFECT_STATE_INCLUDED
 
 /********************************************************
  * Routine: Set_Reference_Solution_States               *
@@ -19,8 +22,8 @@
  *                                                      *
  ********************************************************/
 template<>
-void Input_Parameters<Euler3D_ThermallyPerfect_pState, 
-                      Euler3D_ThermallyPerfect_cState>::Set_Reference_Solution_States(void) {
+void Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
+                      FANS3D_ThermallyPerfect_KOmega_cState>::Set_Reference_Solution_States(void) {
 
     // Load reaction mechanism data.
     if (Species_IP.reaction_mechanism_name != "CANTERA") {
@@ -30,12 +33,12 @@ void Input_Parameters<Euler3D_ThermallyPerfect_pState,
                                   Species_IP.cantera_mech_name);
     } /* endif */
       
-    // Set species types if non-reacting mixture.
+    // Set species types if non-reacting.
     if (Wo.React.reactset_flag == NO_REACTIONS) {
        Wo.React.set_species(Species_IP.multispecies, 
                             Species_IP.num_species);
     } /* endif */
-
+          
     // Obtain and set physical/transport data for component gases
     // as well as set default default initial values.
     Wo.set_species_data(Species_IP.num_species,
@@ -61,7 +64,7 @@ void Input_Parameters<Euler3D_ThermallyPerfect_pState,
     Wo.v.zero();
     Wo.v.x = Mach_Number*Wo.a()*cos(TWO*PI*Flow_Angle/360.00);
     Wo.v.y = Mach_Number*Wo.a()*sin(TWO*PI*Flow_Angle/360.00);
-    Uo = Wo.U();  
+    Uo = Wo.U();
 
 }
 
@@ -72,8 +75,8 @@ void Input_Parameters<Euler3D_ThermallyPerfect_pState,
  *                                                      *
  ********************************************************/
 template<>
-void Input_Parameters<Euler3D_ThermallyPerfect_pState, 
-                      Euler3D_ThermallyPerfect_cState>::Read_Reference_Solution_States(istream &restart_file) {
+void Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
+                      FANS3D_ThermallyPerfect_KOmega_cState>::Read_Reference_Solution_States(istream &restart_file) {
 
     char line[256];
 
@@ -122,8 +125,8 @@ void Input_Parameters<Euler3D_ThermallyPerfect_pState,
  *                                                      *
  ********************************************************/
 template<>
-void Input_Parameters<Euler3D_ThermallyPerfect_pState, 
-                      Euler3D_ThermallyPerfect_cState>::Write_Reference_Solution_States(ostream &restart_file) {
+void Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
+                      FANS3D_ThermallyPerfect_KOmega_cState>::Write_Reference_Solution_States(ostream &restart_file) {
 
     // Write name of reaction mechanism.
     restart_file << Species_IP.reaction_mechanism_name << endl;
@@ -149,14 +152,16 @@ void Input_Parameters<Euler3D_ThermallyPerfect_pState,
 }
 
 /******************************************************************************
- * Euler3D_ThermallyPerfect_Input_Parameters -- Input-output operators.       *
+ * FANS3D_ThermallyPerfect_Input_Parameters -- Input-output operators.        *
  ******************************************************************************/
 template<>
-void Input_Parameters<Euler3D_ThermallyPerfect_pState, 
-                      Euler3D_ThermallyPerfect_cState>::Output_Solution_Type(ostream &out_file) const {
+void Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
+                      FANS3D_ThermallyPerfect_KOmega_cState>::Output_Solution_Type(ostream &out_file) const {
 
     // Multi-species Input Parameters:
     out_file << "\n\n Thermally Perfect Reactive/Non-Reactive Gaseous Mixture";
     out_file << Species_IP;
 
 }
+
+#endif // _FANS3D_THERMALLYPERFECT_INPUT_INCLUDED
