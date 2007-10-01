@@ -1214,7 +1214,6 @@ void Reaction_set::ct_dSwdU( DenseMatrix &dSwdU,
 
 #ifdef _CANTERA_VERSION
 
-  
   //------------------------------------------------
   // declares
   //------------------------------------------------
@@ -1244,7 +1243,7 @@ void Reaction_set::ct_dSwdU( DenseMatrix &dSwdU,
   ct_gas->getConcentrations(X);
 
   // get reaction rate coefficients
-  ct_gas->getFwdRateConstants(r);
+  ct_gas->getFwdRateConstants(kf);
   ct_gas->getRevRateConstants(kb, /* include irreversible rxns */ false);
 
  /*************************************************
@@ -1494,9 +1493,7 @@ inline void Reaction_set::ct_equilibrium( const SOLN_pSTATE &Wu,
   // the pressure and density
   Wb.p = ct_gas->pressure();   // [pa]
   Wb.rho = ct_gas->density();  // [kg/m^3]
-
-
-
+  
 #else
   cout<<"\n CODE NOT COMPILED WITH CANTERA!";
   cout<<"\n YOU SHOULD NOT BE HERE!";
