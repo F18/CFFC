@@ -372,14 +372,14 @@ class LESPremixed2D_Quad_Block{
     double M_x_n(const int &ii, const int &jj);
     double M_y_n(const int &ii, const int &jj);
     double Reaction_Rate_Progvar_n(const int &ii, const int &jj);
-    double Reaction_Rate_Algebraic_n(const int &ii, const int &jj);
+    double Reaction_Rate_Algebraic_n(const int &ii, const int &jj, const int &Flow_Type, const int &Axisymmetric);
     double Reaction_Rate_NGT_C_Fsd_n(const int &ii, const int &jj);
     double Reaction_Rate_Fsd_n(const int &ii, const int &jj);
     double Resolved_Strain_n(const int &ii, const int &jj);
     double Resolved_Propagation_Curvature_n(const int &ii, const int &jj);
     double Resolved_Curvature_n(const int &ii, const int &jj); 
     double Resolved_Propagation_n(const int &ii, const int &jj); 
-    double SFS_Strain_n(const int &ii, const int &jj, const int &Flow_Type);
+    double SFS_Strain_n(const int &ii, const int &jj, const int &Flow_Type, const int &Axisymmetric);
     double SFS_Curvature_n(const int &ii, const int &jj, const int &Flow_Type);
     double Resolved_Convection_Progvar_n(const int &ii, const int &jj); 
     double Resolved_Convection_Fsd_n(const int &ii, const int &jj); 
@@ -780,6 +780,30 @@ inline double LESPremixed2D_Quad_Block::Reaction_Rate_Progvar_n(const int &ii, c
 
 }
 
+inline double LESPremixed2D_Quad_Block::Reaction_Rate_Algebraic_n(const int &ii, const int &jj, const int &Flow_Type, const int &Axisymmetric) {
+  double eta, zeta;
+  eta = ZERO;
+  zeta = ZERO;
+  
+  Tensor2D strain_rate_h1, strain_rate_h2, strain_rate_h3, strain_rate_h4;
+  strain_rate_h1 = W[ii-1][jj-1].Strain_Rate(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1],Flow_Type,Axisymmetric,Grid.Cell[ii-1][jj-1].Xc);
+  strain_rate_h2 = W[ii-1][jj].Strain_Rate(dWdx[ii-1][jj],dWdy[ii-1][jj],Flow_Type,Axisymmetric,Grid.Cell[ii-1][jj].Xc);
+  strain_rate_h3 = W[ii][jj-1].Strain_Rate(dWdx[ii][jj-1],dWdy[ii][jj-1],Flow_Type,Axisymmetric,Grid.Cell[ii][jj-1].Xc);
+  strain_rate_h4 = W[ii][jj].Strain_Rate(dWdx[ii][jj],dWdy[ii][jj],Flow_Type,Axisymmetric,Grid.Cell[ii][jj].Xc);
+
+  BiLinearInterpolationCoefficients(eta, zeta, ii, jj);
+      
+    double h1, h2, h3, h4;
+
+    h1 = W[ii-1][jj-1].Reaction_Rate_Algebraic(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1],Flow_Type,strain_rate_h1);
+    h2 = W[ii-1][jj].Reaction_Rate_Algebraic(dWdx[ii-1][jj],dWdy[ii-1][jj],Flow_Type,strain_rate_h2);
+    h3 = W[ii][jj-1].Reaction_Rate_Algebraic(dWdx[ii][jj-1],dWdy[ii][jj-1],Flow_Type,strain_rate_h3);
+    h4 = W[ii][jj].Reaction_Rate_Algebraic(dWdx[ii][jj],dWdy[ii][jj],Flow_Type,strain_rate_h4);
+
+  return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta); 
+
+}
+
 inline double LESPremixed2D_Quad_Block::Reaction_Rate_NGT_C_Fsd_n(const int &ii, const int &jj) {
   double eta, zeta;
   eta = ZERO;
@@ -888,19 +912,25 @@ inline double LESPremixed2D_Quad_Block::Resolved_Propagation_n(const int &ii, co
 
 }
 
-inline double LESPremixed2D_Quad_Block::SFS_Strain_n(const int &ii, const int &jj, const int &Flow_Type) {
+inline double LESPremixed2D_Quad_Block::SFS_Strain_n(const int &ii, const int &jj, const int &Flow_Type, const int &Axisymmetric) {
   double eta, zeta;
   eta = ZERO;
   zeta = ZERO;
   
+  Tensor2D strain_rate_h1, strain_rate_h2, strain_rate_h3, strain_rate_h4;
+  strain_rate_h1 = W[ii-1][jj-1].Strain_Rate(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1],Flow_Type,Axisymmetric,Grid.Cell[ii-1][jj-1].Xc);
+  strain_rate_h2 = W[ii-1][jj].Strain_Rate(dWdx[ii-1][jj],dWdy[ii-1][jj],Flow_Type,Axisymmetric,Grid.Cell[ii-1][jj].Xc);
+  strain_rate_h3 = W[ii][jj-1].Strain_Rate(dWdx[ii][jj-1],dWdy[ii][jj-1],Flow_Type,Axisymmetric,Grid.Cell[ii][jj-1].Xc);
+  strain_rate_h4 = W[ii][jj].Strain_Rate(dWdx[ii][jj],dWdy[ii][jj],Flow_Type,Axisymmetric,Grid.Cell[ii][jj].Xc);
+
   BiLinearInterpolationCoefficients(eta, zeta, ii, jj);
       
     double h1, h2, h3, h4;
 
-/*     h1 = W[ii-1][jj-1].SFS_Strain(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1],Flow_Type); */
-/*     h2 = W[ii-1][jj].SFS_Strain(dWdx[ii-1][jj],dWdy[ii-1][jj],Flow_Type); */
-/*     h3 = W[ii][jj-1].SFS_Strain(dWdx[ii][jj-1],dWdy[ii][jj-1],Flow_Type); */
-/*     h4 = W[ii][jj].SFS_Strain(dWdx[ii][jj],dWdy[ii][jj],Flow_Type); */
+    h1 = W[ii-1][jj-1].SFS_Strain(dWdx[ii-1][jj-1],dWdy[ii-1][jj-1],Flow_Type,strain_rate_h1);
+    h2 = W[ii-1][jj].SFS_Strain(dWdx[ii-1][jj],dWdy[ii-1][jj],Flow_Type,strain_rate_h2);
+    h3 = W[ii][jj-1].SFS_Strain(dWdx[ii][jj-1],dWdy[ii][jj-1],Flow_Type,strain_rate_h3);
+    h4 = W[ii][jj].SFS_Strain(dWdx[ii][jj],dWdy[ii][jj],Flow_Type,strain_rate_h4);
 
   return (h1 +(h2- h1)*zeta+ (h3-h1)*eta + (h4+h1-h2-h3)*zeta*eta); 
 
@@ -3094,6 +3124,7 @@ extern void Output_Turbulence_Progress_to_File(ostream &Turbulence_Progress_File
 					       const double &Taylor_scale,
 					       const double &viscosity,
 					       const double &turbulent_burning_rate,
+					       const double &turbulent_burning_rate_prog,
                                                const int &n_inner); 
 
 extern void Write_Turbulent_Solution(LESPremixed2D_Quad_Block *Soln_ptr,
@@ -3162,6 +3193,10 @@ extern double Taylor_Scale(LESPremixed2D_Quad_Block *Soln_ptr,
 extern double Turbulent_Burning_Rate(LESPremixed2D_Quad_Block *Soln_ptr,
 				     AdaptiveBlock2D_List &Soln_Block_List,
 				     LESPremixed2D_Input_Parameters &Input_Parameters);
+
+extern double Turbulent_Burning_Rate_Progvar(LESPremixed2D_Quad_Block *Soln_ptr,
+   				             AdaptiveBlock2D_List &Soln_Block_List,
+				             LESPremixed2D_Input_Parameters &Input_Parameters);
 
 extern double Total_Species_Mass(LESPremixed2D_Quad_Block *Soln_ptr,
 				 AdaptiveBlock2D_List &Soln_Block_List,

@@ -70,7 +70,7 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 
   /* Variables for unsteady turbulent flows. */
   double TKEold, TKE, TKEo, viscosity; 
-  double energy, enstrophy, u_prime, Taylor_scale, turbulent_burning_rate; 
+  double energy, enstrophy, u_prime, Taylor_scale, turbulent_burning_rate, turbulent_burning_rate_prog; 
   double flame_x;
 
   /*************************************************************************
@@ -753,6 +753,9 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
               turbulent_burning_rate = Turbulent_Burning_Rate(Local_SolnBlk, 
                                                               List_of_Local_Solution_Blocks,
                                                               Input_Parameters);
+              turbulent_burning_rate_prog = Turbulent_Burning_Rate_Progvar(Local_SolnBlk, 
+                                                                           List_of_Local_Solution_Blocks,
+                                                                           Input_Parameters);
 	    }
 	    //residual to file
 	    if (CFFC_Primary_MPI_Processor() && !first_step) {
@@ -793,6 +796,7 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 						   Taylor_scale,
 						   viscosity,
 						   turbulent_burning_rate,
+						   turbulent_burning_rate_prog,                                                  
 						   n_inner_temp);
 	      }
 	    }

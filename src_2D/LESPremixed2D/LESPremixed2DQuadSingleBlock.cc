@@ -1289,11 +1289,11 @@ void Output_Tecplot(LESPremixed2D_Quad_Block &SolnBlk,
        Out_File<< " " << SolnBlk.Reaction_Rate_Progvar_n(i,j)
                << " " << SolnBlk.Reaction_Rate_Progvar_n(i,j)/W_node.rho/SolnBlk.W[i][j].laminar_speed; 
     }
-//      if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC ||
-//           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC ) {
-//        Out_File<< " " << SolnBlk.Reaction_Rate_Algebraic_n(i,j,SolnBlk.Flow_Type,SolnBlk.Grid.Cell[i][j].A)
-//                << " " << SolnBlk.Reaction_Rate_ALgebraic_n(i,j,SolnBlk.Flow_Type,SolnBlk.Grid.Cell[i][j].A)/W_node.rho; 
-//     }
+     if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC ||
+          SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC ) {
+       Out_File<< " " << SolnBlk.Reaction_Rate_Algebraic_n(i,j,SolnBlk.Flow_Type,SolnBlk.Axisymmetric)
+               << " " << SolnBlk.Reaction_Rate_Algebraic_n(i,j,SolnBlk.Flow_Type,SolnBlk.Axisymmetric)/W_node.rho; 
+    }
      if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
           SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD ||
           SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
@@ -1318,7 +1318,7 @@ void Output_Tecplot(LESPremixed2D_Quad_Block &SolnBlk,
 	       << " " << SolnBlk.Resolved_Propagation_Curvature_n(i,j)
  	       << " " << SolnBlk.Resolved_Propagation_n(i,j)
  	       << " " << SolnBlk.Resolved_Curvature_n(i,j)
-	       << " " << SolnBlk.SFS_Strain_n(i,j,SolnBlk.Flow_Type)
+	       << " " << SolnBlk.SFS_Strain_n(i,j,SolnBlk.Flow_Type,SolnBlk.Axisymmetric)
 	       << " " << SolnBlk.SFS_Curvature_n(i,j,SolnBlk.Flow_Type)
  	       << " " << SolnBlk.Resolved_Convection_Progvar_n(i,j)
  	       << " " << SolnBlk.Resolved_Convection_Fsd_n(i,j)
