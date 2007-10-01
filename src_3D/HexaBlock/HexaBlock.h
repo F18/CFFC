@@ -2490,6 +2490,10 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::dUdt_Multistage_Explicit(const int i_s
                   Flux* Grid.AfaceW(i+1, j, k)/
                   Grid.volume(i+1, j ,k);
                
+		//		cout << "Cell ( " << i << " , " << j << " , " << k << " ) :" << endl;
+//				cout << "dUdt[i][j][k]   = " << dUdt[i][j][k][k_residual] << endl;
+//				cout << "dUdt[i+1][j][k] = " << dUdt[i][j][k][k_residual] << endl;
+
                
                /* Include source terms associated with the finite-rate chemistry and
                   turbulence/chemistry interactions */
@@ -2613,6 +2617,10 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::dUdt_Multistage_Explicit(const int i_s
                (IPs.CFL_Number* dt[i][j+1][k])*
                Flux* Grid.AfaceS(i, j+1, k)/
                Grid.volume(i, j+1, k);
+//
+//			cout << "Cell ( " << i << " , " << j << " , " << k << " ) :" << endl;
+//				cout << "dUdt[i][j][k]   = " << dUdt[i][j][k][k_residual] << endl;
+//				cout << "dUdt[i+1][j][k] = " << dUdt[i][j][k][k_residual] << endl;
 
             
             /* Save south and north face boundary flux. */
@@ -2725,6 +2733,10 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::dUdt_Multistage_Explicit(const int i_s
                (IPs.CFL_Number* dt[i][j][k+1])*
                Flux* Grid.AfaceBot(i, j, k+1)/
                Grid.volume(i, j, k+1);
+
+			//cout << "Cell ( " << i << " , " << j << " , " << k << " ) :" << endl;
+//			cout << "dUdt[i][j][k]   = " << dUdt[i][j][k][k_residual] << endl;
+//			cout << "dUdt[i+1][j][k] = " << dUdt[i][j][k][k_residual] << endl;
             
             /* Save top and bottom face boundary flux. */
             
@@ -2822,15 +2834,19 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Update_Solution_Multistage_Explicit(co
       
 //            Uo[i][j][k].negative_speccheck( Uo[i][j][k], W[i][j][k].React.reactset_flag );
             if (IPs.Local_Time_Stepping == GLOBAL_TIME_STEPPING && 
-                ( U[i][j][k].rho  <= ZERO /*||  
+                ( U[i][j][k].rho  <= ZERO || isnan(U[i][j][k].rho) /*||  
                   U[i][j][k].es() <= ZERO*/)) {
                
                cout << "\n " << CFFC_Name() << 
                   " ERROR: Negative Density, Mass Fractions, and/or Sensible Energy: \n"
                     << " cell = (" << i << ", " << j <<", "<< k << ") " 
-                    << " X = " <<  Grid.Cell[i][j][k].Xc << "\n U = " 
-                    <<  U[i][j][k] << "\n dUdt = " 
-                    <<  dUdt[i][j][k][k_residual] << "\n";
+				<< " X = " <<  Grid.Cell[i][j][k].Xc << "\n Uo = " 
+				<<  Uo[i][j][k] << "\n U = " 
+                    <<  U[i][j][k] << "\n W = "
+					<<  U[i][j][k].W() << "\n dUdt = " 
+                    <<  dUdt[i][j][k][k_residual] << "\n"
+					<< "omega = " << omega << endl
+				<< "omega * dUdt = " << omega*dUdt[i][j][j][k_residual] << endl;
                return (i);
                
             } 

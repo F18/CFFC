@@ -314,7 +314,8 @@ SRC_REACTIONS += $(SRC_REACTIONS_F90)
 SRC_TUT = TestRun.cc \
           TestData.cc \
 	  BasicTests/Sample_Test.cc \
-          BasicTests/test_TestData.cc
+          BasicTests/test_TestData.cc \
+	  ../Euler2D/test_Euler2DState.cc
 SRC_TUT := $(addprefix $(UNIT_TESTING_DIR), $(SRC_TUT))
 
 # System:

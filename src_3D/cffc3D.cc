@@ -26,10 +26,10 @@ using namespace std;
 // Include CFFC header files.
 
 #include "Euler/Euler3DPolytropic.h"
-//#include "Euler/Euler3DThermallyPerfect.h"
-//#include "NavierStokes/NavierStokes3DThermallyPerfect.h"
-//#include "FANS/FANS3DThermallyPerfect.h"
-//#include "UnitTesting/UnitTesting.h"
+#include "Euler/Euler3DThermallyPerfect.h"
+#include "NavierStokes/NavierStokes3DThermallyPerfect.h"
+#include "FANS/FANS3DThermallyPerfect.h"
+#include "UnitTesting/UnitTesting.h"
 
 /* Begin CFFC3D program. */
 
@@ -217,11 +217,11 @@ int main(int num_arg, char *arg_ptr[]) {
     * RUN UNIT TESTS AS REQUIRED AND STOP (tests run using only 1 CPU). *
     *********************************************************************/
 
-//   if (test_flag) {
-//      error_flag = Perform_UnitTesting(TestSuite, TestNumber);
-//      CFFC_Finalize_MPI();
-//      return (error_flag);
-//   } /* endif */
+   if (test_flag) {
+      error_flag = Perform_UnitTesting(TestSuite, TestNumber);
+      CFFC_Finalize_MPI();
+      return (error_flag);
+   } /* endif */
 
    /***********************************************************  
     * PERFORM REQUIRED CALCULATIONS.                          *

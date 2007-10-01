@@ -1,7 +1,6 @@
 Time_Integration_Type =
 Explicit_Euler
 #Explicit_Runge_Kutta
-#Explicit_Euler
 Time_Accurate = 
 ON
 Local_Time_Stepping =
@@ -12,16 +11,15 @@ Limiter_Type =
 Barth_Jespersen
 Flux_Function_Type =
 Roe
-#HLLE 
 ICs_Type = 
-#Sod_Xdir
-ShockBox
+Sod_Xdir
+#ShockBox
 #ICs_Type = 
 #Uniform
-Schmidt=
-1.0
-Temperature = 
-298
+#Schmidt=
+#1.0
+#Temperature = 
+#298
 Grid_Type =
 Cube
 #Grid_Type
@@ -29,11 +27,11 @@ Cube
 #Grid_Type =
 #Pipe
 Number_of_Cells_Idir = 
-20
+10
 Number_of_Cells_Jdir =
-20
+40
 Number_of_Cells_Kdir =
-20
+10
 Number_of_Blocks_Idir = 
 1
 Number_of_Blocks_Jdir =
@@ -44,11 +42,11 @@ Number_of_Blocks_Kdir =
 # Set time stepping parameters
 ###############################
 CFL_Number =
-0.2
+0.5
 Time_Max = 
-0.1
+0.7
 Maximum_Number_of_Time_Steps =
-1
+0
 Number_of_Blocks_Per_Processor =
 64
 Output_File_Name = 

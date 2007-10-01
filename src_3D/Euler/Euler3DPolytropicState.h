@@ -469,8 +469,8 @@ class Euler3D_Polytropic_pState{
 	friend Euler3D_Polytropic_pState operator ^(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
 
     // Unary arithmetic operators. 
-    Euler3D_Polytropic_pState operator +(const Euler3D_Polytropic_pState &W);
-    Euler3D_Polytropic_pState operator -(const Euler3D_Polytropic_pState &W);
+    friend Euler3D_Polytropic_pState operator +(const Euler3D_Polytropic_pState &W);
+    friend Euler3D_Polytropic_pState operator -(const Euler3D_Polytropic_pState &W);
 
     // Shortcut arithmetic operators. 
     Euler3D_Polytropic_pState &operator +=(const Euler3D_Polytropic_pState &W);
@@ -814,8 +814,8 @@ class Euler3D_Polytropic_cState{
 	friend Euler3D_Polytropic_cState operator ^(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
 
     // Unary arithmetic operators.
-    Euler3D_Polytropic_cState operator +(const Euler3D_Polytropic_cState &U);
-    Euler3D_Polytropic_cState operator -(const Euler3D_Polytropic_cState &U);
+    friend Euler3D_Polytropic_cState operator +(const Euler3D_Polytropic_cState &U);
+    friend Euler3D_Polytropic_cState operator -(const Euler3D_Polytropic_cState &U);
 
     // Shortcut arithmetic operators.
     Euler3D_Polytropic_cState& operator +=(const Euler3D_Polytropic_cState &U);
