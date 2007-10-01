@@ -167,57 +167,57 @@ int Input_Parameters<SOLN_pSTATE,SOLN_cSTATE>::
 
 }
 
-///********************************************************
-// * Routine: Set_Reference_Solution_States               *
-// *                                                      *
-// * Assigns default values to the reference solution     *
-// * states.                                              *
-// *                                                      *
-// ********************************************************/
-//template<class SOLN_pSTATE, class SOLN_cSTATE>
-//void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
-//                     Set_Reference_Solution_States(void) {
-//
-//   cerr << "\n Explicit Specialization of "
-//        << "Input_Parameters::Set_Reference_Solution_States "
-//        << "in Input.h requried.\n";
-//   exit(1);
-//
-//}
-//
-///********************************************************
-// * Routine: Read_Reference_Solution_States              *
-// *                                                      *
-// * Read in the reference solution states.               *
-// *                                                      *
-// ********************************************************/
-//template<class SOLN_pSTATE, class SOLN_cSTATE>
-//void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
-//                     Read_Reference_Solution_States(istream &restart_file) {
-//
-//   cerr << "\n Explicit Specialization of "
-//        << "Input_Parameters::Read_Reference_Solution_States "
-//        << "in Input.h requried.\n";
-//   exit(1);
-//
-//}
-//
-///********************************************************
-// * Routine: Write_Reference_Solution_States             *
-// *                                                      *
-// * Write out the reference solution states.             *
-// *                                                      *
-// ********************************************************/
-//template<class SOLN_pSTATE, class SOLN_cSTATE>
-//void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
-//                     Write_Reference_Solution_States(ostream &restart_file) {
-//
-//   cerr << "\n Explicit Specialization of "
-//        << "Input_Parameters::Write_Reference_Solution_States "
-//        << "in Input.h requried.\n";
-//   exit(1);
-//
-//}
+/********************************************************
+ * Routine: Set_Reference_Solution_States               *
+ *                                                      *
+ * Assigns default values to the reference solution     *
+ * states.                                              *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
+                     Set_Reference_Solution_States(void) {
+
+   cerr << "\n Explicit Specialization of "
+        << "Input_Parameters::Set_Reference_Solution_States "
+        << "in Input.h requried.\n";
+   exit(1);
+
+}
+
+/********************************************************
+ * Routine: Read_Reference_Solution_States              *
+ *                                                      *
+ * Read in the reference solution states.               *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
+                     Read_Reference_Solution_States(istream &restart_file) {
+
+   cerr << "\n Explicit Specialization of "
+        << "Input_Parameters::Read_Reference_Solution_States "
+        << "in Input.h requried.\n";
+   exit(1);
+
+}
+
+/********************************************************
+ * Routine: Write_Reference_Solution_States             *
+ *                                                      *
+ * Write out the reference solution states.             *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
+                     Write_Reference_Solution_States(ostream &restart_file) {
+
+   cerr << "\n Explicit Specialization of "
+        << "Input_Parameters::Write_Reference_Solution_States "
+        << "in Input.h requried.\n";
+   exit(1);
+
+}
 
 /*************************************************************
  * Input_Parameters -- Input-output operators.               *
