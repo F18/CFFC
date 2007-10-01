@@ -973,36 +973,36 @@ void NASARP1311data::FitTransDataLJ() {
   //------------------------------------------------
   // DEBUG - write tests to file
   //------------------------------------------------
-  ofstream outfile;
-
-  //
-  // evaluate max fit errors for viscosity
-  //
-  double val, fit, err, relerr;
-  outfile.open("Viscosity.dat", ios::out);
-  for (int n = 0; n < np; ++n) {
-    val = exp(spvisc[n]);
-    fit = exp( poly3(Tlog[n], V_coef) ); 
-    err = fit - val;
-    relerr = err/val;
-    outfile << exp(Tlog[n]) << "  " << val << "  " << fit 
-	    << "  " << relerr << endl;
-  }
-  outfile.close();
- 
-  //
-  // evaluate max fit errors for conductivity
-  //
-  outfile.open("Thermal_Conductivity.dat", ios::out);
-  for (int n = 0; n < np; ++n) {
-    val = exp(spcond[n]);
-    fit = exp( poly3(Tlog[n], C_coef) ); 
-    err = fit - val;
-    relerr = err/val;
-    outfile << exp(Tlog[n]) << "  " << val << "  " << fit 
-	    << "  " << relerr << endl;
-  }
-  outfile.close();
+  // ofstream outfile;
+  // 
+  // //
+  // // evaluate max fit errors for viscosity
+  // //
+  // double val, fit, err, relerr;
+  // outfile.open("Viscosity.dat", ios::out);
+  // for (int n = 0; n < np; ++n) {
+  //   val = exp(spvisc[n]);
+  //   fit = exp( poly3(Tlog[n], V_coef) ); 
+  //   err = fit - val;
+  //   relerr = err/val;
+  //   outfile << exp(Tlog[n]) << "  " << val << "  " << fit 
+  // 	    << "  " << relerr << endl;
+  // }
+  // outfile.close();
+  // 
+  // //
+  // // evaluate max fit errors for conductivity
+  // //
+  // outfile.open("Thermal_Conductivity.dat", ios::out);
+  // for (int n = 0; n < np; ++n) {
+  //   val = exp(spcond[n]);
+  //   fit = exp( poly3(Tlog[n], C_coef) ); 
+  //   err = fit - val;
+  //   relerr = err/val;
+  //   outfile << exp(Tlog[n]) << "  " << val << "  " << fit 
+  // 	    << "  " << relerr << endl;
+  // }
+  // outfile.close();
   //------------------------------------------------
   // END DEBUG
   //------------------------------------------------

@@ -22,6 +22,7 @@ include makefile.def
 
 #
 # Assign sub directories
+DEPEND_DIR = Depend/
 ADVECTDIFFUSE_DIR = AdvectDiffuse2D/
 AMR_DIR = AMR/
 CFD_DIR = CFD/
@@ -167,7 +168,6 @@ SRC_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes2DState.cc \
                    $(NAVIERSTOKES_DIR)NavierStokes2DQuadTurbulenceMultiBlock.cc \
                    $(NAVIERSTOKES_DIR)NavierStokes2DdRdU.cc \
                    $(NAVIERSTOKES_DIR)NavierStokes2DQuadGrid.cc \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DdRdU.cc \
                    $(NAVIERSTOKES_DIR)NavierStokes2DQuadSolvers.cc
 SRC_NAVIERSTOKES_EXE = $(NAVIERSTOKES_DIR)NavierStokes2D.cc
 
@@ -337,259 +337,105 @@ SRC_MAIN = cffc2D.cc
 SRC_ICEMCFD_UTIL1 = $(ICEM_DIR)icemcfd2tecplot.cc 
 SRC_ICEMCFD_UTIL2 = $(ICEM_DIR)icemcfd2grid2dquad.cc
 
-###############################################################################
-# Compiled object code files
-###############################################################################
+#################################################################################
+# Compiled object code files (automatically generated with pattern substitution)
+#################################################################################
 # Math:
-OBJ_MATH = $(MATH_DIR)Vector2D.o \
-           $(MATH_DIR)Tensor2D.o \
-           $(MATH_DIR)Third_order_tensor2D.o \
-           $(MATH_DIR)Tensor3D.o \
-           $(MATH_DIR)Spline2D.o \
-           $(MATH_DIR)Matrix.o \
-           $(MATH_DIR)LinearSystems.o \
-	   $(MATH_DIR)LinkedList.o \
-	   $(MATH_DIR)Polygon.o \
-	   $(MATH_DIR)Polyfit/Polyfit.o \
-	   $(MATH_DIR)Polyfit/dp1vlu.o \
-	   $(MATH_DIR)Polyfit/dpcoef.o \
-	   $(MATH_DIR)Polyfit/dpolft.o \
-	   $(MATH_DIR)NumericalLibrary.o
-OBJ_MATH_F90 = $(MATH_DIR)complexify.o 
-OBJ_MATH += $(OBJ_MATH_F90)
-OBJ_MATH += Utilities/EpsilonTol.o
+OBJ_MATH  = $(patsubst %.cc,%.o,$(filter %.cc,$(SRC_MATH)))
+OBJ_MATH += $(patsubst %.f,%.o,$(filter %.f,$(SRC_MATH)))
+OBJ_MATH += $(patsubst %.f90,%.o,$(filter %.f90,$(SRC_MATH)))
+OBJ_MATH_F90 = $(SRC_MATH_F90:.f90=.o)
 MOD_MATH_F90 = $(MODULE_DIR)/complexify.mod
-
-# Add Math Testing If Required:
 OBJ_MATH_TESTS := $(SRC_MATH_TESTS:.cc=.o)
-ifeq ($(TUT_TESTING),ON) 
-  OBJ_MATH += $(OBJ_MATH_TESTS)
-endif
 
 # CFD and MPI:
-OBJ_CFD = $(CFD_DIR)CFD.o
-OBJ_MPI = $(MPI_DIR)MPI.o
+OBJ_CFD = $(SRC_CFD:.cc=.o)
+OBJ_MPI = $(SRC_MPI:.cc=.o)
 
 # Grid:
-OBJ_GRID = $(GRID_DIR)Cell1D.o \
-           $(GRID_DIR)Cell2D.o \
-           $(GRID_DIR)Grid2DQuadSingleBlock.o \
-           $(GRID_DIR)Grid2DQuadMultiBlock.o \
-           $(GRID_DIR)Grid3DHexaSingleBlock.o \
-           $(GRID_DIR)Grid3DHexaMultiBlock.o
-OBJ_ICEMCFD = $(ICEM_DIR)ICEMCFD.o \
-	      $(ICEM_DIR)ICEMCFD_ctype.o
+OBJ_GRID = $(SRC_GRID:.cc=.o)
+OBJ_ICEMCFD = $(patsubst %.cc,%.o,$(filter %.cc,$(SRC_ICEMCFD)))
+OBJ_ICEMCFD += $(patsubst %.c,%.o,$(filter %.c,$(SRC_ICEMCFD)))
 
 # AMR:
-ifeq ($(MPI_VERSION),NoMPI)
-  OBJ_AMR = $(AMR_DIR)AdaptiveBlock.o \
-	    $(AMR_DIR)AdaptiveBlock_NoMPI.o \
-            $(AMR_DIR)QuadTree.o
-else
-  OBJ_AMR = $(AMR_DIR)AdaptiveBlock.o \
-	    $(AMR_DIR)AdaptiveBlock_MPI.o \
-            $(AMR_DIR)QuadTree.o
-endif
+OBJ_AMR = $(SRC_AMR:.cc=.o)
 
 # 1D:
-OBJ_SCALAR = $(SOLVERS1D_DIR)Scalar1D.o \
-             $(SOLVERS1D_DIR)Scalar1DSolvers.o
-OBJ_HEAT = $(SOLVERS1D_DIR)Heat1D.o \
-           $(SOLVERS1D_DIR)Heat1DSolvers.o
-OBJ_HYPERHEAT = $(SOLVERS1D_DIR)HyperHeat1DState.o \
-                $(SOLVERS1D_DIR)HyperHeat1D.o \
-                $(SOLVERS1D_DIR)HyperHeat1DSolvers.o
-OBJ_EULER1D = $(SOLVERS1D_DIR)Euler1DState.o \
-              $(SOLVERS1D_DIR)Euler1D.o \
-              $(SOLVERS1D_DIR)Euler1DSolvers.o
-OBJ_MHD1D = $(SOLVERS1D_DIR)MHD1DState.o \
-            $(SOLVERS1D_DIR)MHD1D.o \
-            $(SOLVERS1D_DIR)MHD1DSolvers.o
+OBJ_SCALAR = $(SRC_SCALAR:.cc=.o)
+OBJ_HEAT = $(SRC_HEAT:.cc=.o)
+OBJ_HYPERHEAT = $(SRC_HYPERHEAT:.cc=.o)
+OBJ_EULER1D = $(SRC_EULER1D:.cc=.o)
+OBJ_MHD1D = $(SRC_MHD1D:.cc=.o)
 
 # HighOrderReconstruction
 OBJ_HIGH_ORDER_RECONSTRUCTION := $(SRC_HIGH_ORDER_RECONSTRUCTION:.cc=.o)
 
 # Advectdiffuse2D:
-OBJ_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.o \
-	            $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DInput.o \
-                    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuad.o \
-                    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadSingleBlock.o \
-	            $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadMultiBlock.o \
-                    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadGrid.o \
-	            $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadSolvers.o \
-		    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuad_NKS.o \
-		    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DExactSolutions.o
-OBJ_ADVECTDIFFUSE_EXE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.o
+OBJ_ADVECTDIFFUSE = $(SRC_ADVECTDIFFUSE:.cc=.o)
+OBJ_ADVECTDIFFUSE_EXE = $(SRC_ADVECTDIFFUSE_EXE:.cc=.o)
 
 # Euler2D:
-OBJ_EULER = $(EULER_DIR)Euler2DState.o \
-            $(EULER_DIR)Euler2DInput.o \
-            $(EULER_DIR)Euler2DQuad.o \
-            $(EULER_DIR)Euler2DQuadSingleBlock.o \
-            $(EULER_DIR)Euler2DQuadMultiBlock.o \
-            $(EULER_DIR)Euler2DQuadGrid.o \
-            $(EULER_DIR)Euler2DQuadSolvers.o 
-OBJ_EULER_EXE = $(EULER_DIR)Euler2D.o
+OBJ_EULER = $(SRC_EULER:.cc=.o)
+OBJ_EULER_EXE = $(SRC_EULER_EXE:.cc=.o)
 
 # NavierStokes2D:
-OBJ_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes2DState.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DInput.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DQuad.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DQuadSingleBlock.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DQuadMultiBlock.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DQuadIOSingleBlock.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DQuadIOMultiBlock.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DQuadTurbulenceSingleBlock.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DQuadTurbulenceMultiBlock.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DQuadGrid.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DdRdU.o \
-                   $(NAVIERSTOKES_DIR)NavierStokes2DQuadSolvers.o
-OBJ_NAVIERSTOKES_EXE = $(NAVIERSTOKES_DIR)NavierStokes2D.o
+OBJ_NAVIERSTOKES = $(SRC_NAVIERSTOKES:.cc=.o)
+OBJ_NAVIERSTOKES_EXE = $(SRC_NAVIERSTOKES_EXE:.cc=.o)
 
 # Chem2D:
-OBJ_CHEM = $(CHEM_DIR)Chem2DState.o \
-	   $(CHEM_DIR)dRdU.o \
-	   $(CHEM_DIR)Chem2DTools.o \
-	   $(CHEM_DIR)Chem2DInput.o \
-	   $(CHEM_DIR)Chem2DQuad.o \
-	   $(CHEM_DIR)Chem2DQuadGrid.o \
-	   $(CHEM_DIR)Chem2DQuadMultiBlock.o \
-	   $(CHEM_DIR)Chem2DQuadSingleBlock.o \
-	   $(CHEM_DIR)Chem2DQuadSolvers.o 
-OBJ_CHEM_EXE = $(CHEM_DIR)Chem2D.o
+OBJ_CHEM = $(SRC_CHEM:.cc=.o)
+OBJ_CHEM_EXE = $(SRC_CHEM_EXE:.cc=.o)
 
 # HighTemp2D:
-OBJ_HIGHTEMP = $(HIGHTEMP_DIR)HighTemp2DState.o \
-               $(HIGHTEMP_DIR)HighTemp2DInput.o  \
-               $(HIGHTEMP_DIR)HighTemp2DQuad.o  \
-               $(HIGHTEMP_DIR)HighTemp2DQuadGrid.o \
-               $(HIGHTEMP_DIR)HighTemp2DQuadMultiBlock.o  \
-               $(HIGHTEMP_DIR)HighTemp2DQuadSingleBlock.o  \
-               $(HIGHTEMP_DIR)HighTemp2DQuadIOMultiBlock.o  \
-               $(HIGHTEMP_DIR)HighTemp2DQuadIOSingleBlock.o  \
-               $(HIGHTEMP_DIR)HighTemp2DQuadTurbulenceMultiBlock.o  \
-               $(HIGHTEMP_DIR)HighTemp2DQuadTurbulenceSingleBlock.o  \
-               $(HIGHTEMP_DIR)HighTemp2DdRdU.o  \
-               $(HIGHTEMP_DIR)HighTemp2DQuadSolvers.o
-OBJ_HIGHTEMP_EXE = $(HIGHTEMP_DIR)HighTemp2D.o
+OBJ_HIGHTEMP = $(SRC_HIGHTEMP:.cc=.o)
+OBJ_HIGHTEMP_EXE = $(SRC_HIGHTEMP_EXE:.cc=.o)
 
 # Dusty2D:
-OBJ_DUSTY = $(DUSTY_DIR)Particle2DComponents.o \
-            $(DUSTY_DIR)Dusty2DState.o \
-            $(DUSTY_DIR)Dusty2DInput.o \
-            $(DUSTY_DIR)Dusty2DQuad.o \
-            $(DUSTY_DIR)Dusty2DQuadSingleBlock.o \
-            $(DUSTY_DIR)Dusty2DQuadMultiBlock.o \
-            $(DUSTY_DIR)Dusty2DQuadIOSingleBlock.o \
-            $(DUSTY_DIR)Dusty2DQuadIOMultiBlock.o \
-            $(DUSTY_DIR)Dusty2DQuadTurbulenceSingleBlock.o \
-            $(DUSTY_DIR)Dusty2DQuadTurbulenceMultiBlock.o \
-            $(DUSTY_DIR)Dusty2DQuadGrid.o \
-            $(DUSTY_DIR)Dusty2DQuadSolvers.o
-OBJ_DUSTY_EXE = $(DUSTY_DIR)Dusty2D.o
+OBJ_DUSTY = $(SRC_DUSTY:.cc=.o)
+OBJ_DUSTY_EXE = $(SRC_DUSTY_EXE:.cc=.o)
 
 # LESPremixed2D:
-OBJ_LESPREMIXED = $(LESPREMIXED_DIR)LESPremixed2DState.o \
-	          $(LESPREMIXED_DIR)LESPremixed2DInput.o \
-	          $(LESPREMIXED_DIR)LESPremixed2DQuad.o \
-	          $(LESPREMIXED_DIR)LESPremixed2DQuadSingleBlock.o \
-	          $(LESPREMIXED_DIR)LESPremixed2DQuadMultiBlock.o \
-	          $(LESPREMIXED_DIR)LESPremixed2DQuadGrid.o \
-	          $(LESPREMIXED_DIR)LESPremixed2DQuadSolvers.o \
-	          $(LESPREMIXED_DIR)LESPremixed2DTools.o \
-	          $(LESPREMIXED_DIR)LESPremixed2DTurbInit.o \
-	          $(LESPREMIXED_DIR)LESPremixed2DdRdU.o \
-	          $(LESPREMIXED_DIR)PowerLaw.o \
-	          $(LESPREMIXED_DIR)Scalars.o 
-OBJ_LESPREMIXED_EXE = $(LESPREMIXED_DIR)LESPremixed2D.o
+OBJ_LESPREMIXED = $(SRC_LESPREMIXED:.cc=.o)
+OBJ_LESPREMIXED_EXE = $(SRC_LESPREMIXED_EXE:.cc=.o)
 
 # Gaussian2D:
-OBJ_GAUSSIAN = $(GAUSSIAN_DIR)Gaussian2DState.o \
-               $(GAUSSIAN_DIR)Gaussian2DInput.o \
-               $(GAUSSIAN_DIR)Gaussian2DCartesian.o \
-               $(GAUSSIAN_DIR)Gaussian2DCartesianSolvers.o \
-               $(GAUSSIAN_DIR)Gaussian2DQuadGrid.o \
-               $(GAUSSIAN_DIR)Gaussian2DQuadSingleBlock.o \
-               $(GAUSSIAN_DIR)Gaussian2DQuadMultiBlock.o \
-               $(GAUSSIAN_DIR)Gaussian2DQuadSolvers.o \
-               $(GAUSSIAN_DIR)Gaussian2DQuadIOSingleBlock.o \
-               $(GAUSSIAN_DIR)Gaussian2DQuadIOMultiBlock.o
-OBJ_GAUSSIAN_EXE = $(GAUSSIAN_DIR)Gaussian2D.o
+OBJ_GAUSSIAN = $(SRC_GAUSSIAN:.cc=.o)
+OBJ_GAUSSIAN_EXE = $(SRC_GAUSSIAN_EXE:.cc=.o)
 
 # Ion5Moment2D:
-OBJ_ION = $(ION_DIR)Ion5Moment2DState.o \
-          $(ION_DIR)Ion5Moment2DInput.o \
-          $(ION_DIR)Ion5Moment2DQuad.o \
-          $(ION_DIR)Ion5Moment2DQuadSingleBlock.o \
-          $(ION_DIR)Ion5Moment2DQuadMultiBlock.o \
-          $(ION_DIR)Ion5Moment2DQuadGrid.o \
-          $(ION_DIR)Ion5Moment2DQuadSolvers.o
-OBJ_ION_EXE = $(ION_DIR)Ion5Moment2D.o
+OBJ_ION = $(SRC_ION:.cc=.o)
+OBJ_ION_EXE = $(SRC_ION_EXE:.cc=.o)
 
 # Electrostatic2D:
-OBJ_ELECTROSTATIC = $(ELECTROSTATIC_DIR)Electrostatic2DState.o \
-	            $(ELECTROSTATIC_DIR)Electrostatic2DInput.o \
-                    $(ELECTROSTATIC_DIR)Electrostatic2DQuad.o \
-                    $(ELECTROSTATIC_DIR)Electrostatic2DQuadSingleBlock.o \
-                    $(ELECTROSTATIC_DIR)Electrostatic2DQuadMultiBlock.o \
-                    $(ELECTROSTATIC_DIR)Electrostatic2DQuadIOSingleBlock.o \
-                    $(ELECTROSTATIC_DIR)Electrostatic2DQuadIOMultiBlock.o \
-                    $(ELECTROSTATIC_DIR)Electrostatic2DQuadGrid.o \
-                    $(ELECTROSTATIC_DIR)Electrostatic2DQuadSolvers.o
-OBJ_ELECTROSTATIC_EXE = $(ELECTROSTATIC_DIR)Electrostatic2D.o
+OBJ_ELECTROSTATIC = $(SRC_ELECTROSTATIC:.cc=.o)
+OBJ_ELECTROSTATIC_EXE = $(SRC_ELECTROSTATIC_EXE:.cc=.o)
 
 # Rte2D:
-OBJ_RTE = $(RTE_DIR)Rte2DState.o \
-          $(RTE_DIR)Rte2DInput.o \
-          $(RTE_DIR)Rte2DQuad.o \
-          $(RTE_DIR)Rte2DQuadSingleBlock.o \
-          $(RTE_DIR)Rte2DQuadMultiBlock.o \
-          $(RTE_DIR)Rte2DQuadGrid.o \
-          $(RTE_DIR)Rte2DQuadSolvers.o \
-	  $(RTE_DIR)Rte2DTools.o \
-          $(RTE_DIR)SNBCK.o
-OBJ_RTE_EXE = $(RTE_DIR)Rte2D.o
+OBJ_RTE = $(SRC_RTE:.cc=.o)
+OBJ_RTE_EXE = $(SRC_RTE_EXE:.cc=.o)
 
 # EmbeddedBoundaries2D:
-OBJ_INTERFACE = $(INTERFACE_DIR)Interface2D.o
-OBJ_EMBEDDEDBOUNDARIES_EXE = $(INTERFACE_DIR)EmbeddedBoundaries2D.o
+OBJ_INTERFACE = $(SRC_INTERFACE:.cc=.o)
+OBJ_EMBEDDEDBOUNDARIES_EXE = $(SRC_EMBEDDEDBOUNDARIES_EXE:.cc=.o)
 
 # LevelSet2D:
-OBJ_LEVELSET = $(LEVELSET_DIR)LevelSet2DInput.o \
-               $(LEVELSET_DIR)LevelSet2DQuad.o \
-               $(LEVELSET_DIR)LevelSet2DQuadSingleBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadMultiBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadIOSingleBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadIOMultiBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadInterfaceSingleBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadInterfaceMultiBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadHamiltonJacobiSingleBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadHamiltonJacobiMultiBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadEikonalSingleBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadEikonalMultiBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadScalarExtensionSingleBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadScalarExtensionMultiBlock.o \
-               $(LEVELSET_DIR)LevelSet2DQuadGrid.o \
-               $(LEVELSET_DIR)LevelSet2DQuadSolvers.o
-OBJ_LEVELSET_EXE = $(LEVELSET_DIR)LevelSet2D.o
+OBJ_LEVELSET = $(SRC_LEVELSET:.cc=.o)
+OBJ_LEVELSET_EXE = $(SRC_LEVELSET_EXE:.cc=.o)
 
 # Physics, Turbulence, Thermodynamics, and Chemistry:
-OBJ_TURBULENT = $(TURBULENT_DIR)SFSModelling.o
-OBJ_EOS = $(EOS_DIR)tgas.o \
-          $(EOS_DIR)ugas.o
-OBJ_NASADATA = $(NASADATA_DIR)NASARP1311dataclass.o
-OBJ_REACTIONS = $(REACTIONS_DIR)Reactions.o \
-		$(REACTIONS_DIR)15step_GRI211.o \
-		$(REACTIONS_DIR)15step_GRI3.o
-OBJ_REACTIONS_F90 = $(REACTIONS_DIR)c_15step_GRI211.o \
-		    $(REACTIONS_DIR)c_15step_GRI3.o
-OBJ_REACTIONS += $(OBJ_REACTIONS_F90)
+OBJ_TURBULENT = $(SRC_TURBULENT:.cc=.o)
+OBJ_EOS = $(SRC_EOS:.f=.o)
+OBJ_NASADATA = $(SRC_NASADATA:.cc=.o)
+OBJ_REACTIONS = $(patsubst %.cc,%.o,$(filter %.cc,$(SRC_REACTIONS)))
+OBJ_REACTIONS += $(patsubst %.f,%.o,$(filter %.f,$(SRC_REACTIONS)))
+OBJ_REACTIONS += $(patsubst %.f90,%.o,$(filter %.f90,$(SRC_REACTIONS)))
+OBJ_REACTIONS_F90 = $(SRC_REACTIONS_F90:.f90=.o)
 
 # TUT testing:
 OBJ_TUT := $(SRC_TUT:.cc=.o)
 
 # System:
-OBJ_SYSTEM = $(SYSTEM_DIR)System_Linux.o
+OBJ_SYSTEM = $(SRC_SYSTEM:.cc=.o)
 
 # Base and CFFC objects:
 OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_AMR) \
@@ -604,10 +450,10 @@ OBJ_CFFC = $(OBJ_BASE) $(OBJ_SCALAR) $(OBJ_HEAT) $(OBJ_HYPERHEAT) $(OBJ_EULER1D)
            $(OBJ_TURBULENT) $(OBJ_EOS) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_ICEMCFD)
 
 # Executable objects:
-OBJ_MAIN = cffc2D.o
-OBJ_ICEMCFD_UTIL1 = $(ICEM_DIR)icemcfd2tecplot.o \
+OBJ_MAIN = $(SRC_MAIN:.cc=.o)
+OBJ_ICEMCFD_UTIL1 = $(SRC_ICEMCFD_UTIL1:.cc=.o) \
                     $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD)
-OBJ_ICEMCFD_UTIL2 = $(ICEM_DIR)icemcfd2grid2dquad.o \
+OBJ_ICEMCFD_UTIL2 = $(SRC_ICEMCFD_UTIL2:.cc=.o) \
                     $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD) 
 
 ###############################################################################
@@ -756,7 +602,7 @@ fftw:
 	@echo '------------------------------------------------'
 	@echo ' '
 
-$(EXE_MAIN): CFFC.depend cffc2D.depend $(OBJ_MAIN) $(OBJ_CFFC)
+$(EXE_MAIN): $(OBJ_MAIN) $(OBJ_CFFC)
 	@echo ' '
 	@echo Building program $(EXE_MAIN) for a $(PLATFORM) platform.
 	@echo '--------------------------------------------------------'
@@ -767,31 +613,7 @@ $(EXE_MAIN): CFFC.depend cffc2D.depend $(OBJ_MAIN) $(OBJ_CFFC)
 	@echo '------------------------------------------------'
 	@echo ' '
 
-CFFC.depend: $(SRC_CFFC)
-	@echo ' '
-	@echo Determining CFFC source file dependencies for a $(PLATFORM) platform.
-	@echo '--------------------------------------------------------------------------------'
-	@echo ' '
-	touch CFFC.depend
-	makedepend -fCFFC.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_CFFC) >& /dev/null
-	@echo ' '
-	@echo CFFC source file dependencies have been brought up to date.
-	@echo '-----------------------------------------------------------------'
-	@echo ' '
-
-cffc2D.depend: $(SRC_MAIN)
-	@echo ' '
-	@echo Determining cffc2D source file dependencies for a $(PLATFORM) platform.
-	@echo '--------=--------------------------------------------------------------'
-	@echo ' '
-	touch cffc2D.depend
-	makedepend -fcffc2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_MAIN) >& /dev/null
-	@echo ' '
-	@echo cffc2D source file dependencies have been brought up to date.
-	@echo '-----------------------------------------------------------------'
-	@echo ' '
-
-$(EXE_ADVECTDIFFUSE2D): $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.depend $(OBJ_ADVECTDIFFUSE_EXE) $(OBJ_BASE) $(OBJ_ADVECTDIFFUSE) $(OBJ_ICEMCFD)
+$(EXE_ADVECTDIFFUSE2D): $(OBJ_ADVECTDIFFUSE_EXE) $(OBJ_BASE) $(OBJ_ADVECTDIFFUSE) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_ADVECTDIFFUSE2D) for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------------'
@@ -802,19 +624,7 @@ $(EXE_ADVECTDIFFUSE2D): $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.depend $(OBJ_ADVECTD
 	@echo '--------------------------------------------------'
 	@echo ' '
 
-$(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.depend: $(SRC_ADVECTDIFFUSE_EXE) 
-	@echo ' '
-	@echo Determining AdvectDiffuse2D source file dependencies for a $(PLATFORM) platform.
-	@echo '-----------------------------------------------------------------------'
-	@echo ' '
-	touch $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.depend
-	makedepend -f$(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_ADVECTDIFFUSE_EXE) $(SRC_ADVECTDIFFUSE) >& /dev/null
-	@echo ' '
-	@echo AdvectDiffuse2D source file dependencies have been brought up to date.
-	@echo '-------------------------------------------------------------'
-	@echo ' '
-
-$(EXE_EULER2D): $(EULER_DIR)Euler2D.depend $(OBJ_EULER_EXE) $(OBJ_BASE) $(OBJ_EULER) $(OBJ_INTERFACE) $(OBJ_ICEMCFD)
+$(EXE_EULER2D): $(OBJ_EULER_EXE) $(OBJ_BASE) $(OBJ_EULER) $(OBJ_INTERFACE) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_EULER2D) for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------'
@@ -825,19 +635,7 @@ $(EXE_EULER2D): $(EULER_DIR)Euler2D.depend $(OBJ_EULER_EXE) $(OBJ_BASE) $(OBJ_EU
 	@echo '---------------------------------------------------'
 	@echo ' '
 
-$(EULER_DIR)Euler2D.depend: $(SRC_EULER_EXE)
-	@echo ' '
-	@echo Determining Euler2D source file dependencies for a $(PLATFORM) platform.
-	@echo '------------------------------------------------------------------------'
-	@echo ' '
-	touch $(EULER_DIR)Euler2D.depend
-	makedepend -f$(EULER_DIR)Euler2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_EULER_EXE) $(SRC_EULER) >& /dev/null
-	@echo ' '
-	@echo Euler2D source file dependencies have been brought up to date.
-	@echo '--------------------------------------------------------------'
-	@echo ' '
-
-$(EXE_NAVIERSTOKES2D): $(NAVIERSTOKES_DIR)NavierStokes2D.depend $(OBJ_NAVIERSTOKES_EXE) $(OBJ_BASE) $(OBJ_NAVIERSTOKES) $(OBJ_INTERFACE) $(OBJ_ICEMCFD)
+$(EXE_NAVIERSTOKES2D): $(OBJ_NAVIERSTOKES_EXE) $(OBJ_BASE) $(OBJ_NAVIERSTOKES) $(OBJ_INTERFACE) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_NAVIERSTOKES2D) for a $(PLATFORM) platform.
 	@echo '------------------------------------------------------------------'
@@ -848,19 +646,7 @@ $(EXE_NAVIERSTOKES2D): $(NAVIERSTOKES_DIR)NavierStokes2D.depend $(OBJ_NAVIERSTOK
 	@echo '----------------------------------------------------------'
 	@echo ' '
 
-$(NAVIERSTOKES_DIR)NavierStokes2D.depend: $(SRC_NAVIERSTOKES_EXE)
-	@echo ' '
-	@echo Determining NavierStokes2D source file dependencies for a $(PLATFORM) platform.
-	@echo '-------------------------------------------------------------------------------'
-	@echo ' '
-	touch $(NAVIERSTOKES_DIR)NavierStokes2D.depend
-	makedepend -f$(NAVIERSTOKES_DIR)NavierStokes2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_NAVIERSTOKES_EXE) $(SRC_NAVIERSTOKES) >& /dev/null
-	@echo ' '
-	@echo NavierStokes2D source file dependencies have been brought up to date.
-	@echo '---------------------------------------------------------------------'
-	@echo ' '
-
-$(EXE_CHEM2D): $(CHEM_DIR)Chem2D.depend $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_CHEM) $(OBJ_ICEMCFD)
+$(EXE_CHEM2D): $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_CHEM) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_CHEM2D) for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------------'
@@ -871,19 +657,7 @@ $(EXE_CHEM2D): $(CHEM_DIR)Chem2D.depend $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADA
 	@echo '--------------------------------------------------'
 	@echo ' '
 
-$(CHEM_DIR)Chem2D.depend: $(SRC_CHEM_EXE) 
-	@echo ' '
-	@echo Determining Chem2D source file dependencies for a $(PLATFORM) platform.
-	@echo '-----------------------------------------------------------------------'
-	@echo ' '
-	touch $(CHEM_DIR)Chem2D.depend
-	makedepend -f$(CHEM_DIR)Chem2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_CHEM_EXE) $(SRC_CHEM) >& /dev/null
-	@echo ' '
-	@echo Chem2D source file dependencies have been brought up to date.
-	@echo '-------------------------------------------------------------'
-	@echo ' '
-
-$(EXE_HIGHTEMP2D): $(HIGHTEMP_DIR)HighTemp2D.depend $(OBJ_HIGHTEMP_EXE) $(OBJ_BASE) $(OBJ_INTERFACE) $(OBJ_HIGHTEMP) $(OBJ_ICEMCFD) $(OBJ_EOS)
+$(EXE_HIGHTEMP2D): $(OBJ_HIGHTEMP_EXE) $(OBJ_BASE) $(OBJ_INTERFACE) $(OBJ_HIGHTEMP) $(OBJ_ICEMCFD) $(OBJ_EOS)
 	@echo ' '
 	@echo Building program $(EXE_HIGHTEMP2D) for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------------'
@@ -894,19 +668,7 @@ $(EXE_HIGHTEMP2D): $(HIGHTEMP_DIR)HighTemp2D.depend $(OBJ_HIGHTEMP_EXE) $(OBJ_BA
 	@echo '--------------------------------------------------'
 	@echo ' '
 
-$(HIGHTEMP_DIR)HighTemp2D.depend: $(SRC_HIGHTEMP_EXE) 
-	@echo ' '
-	@echo Determining HighTemp2D source file dependencies for a $(PLATFORM) platform.
-	@echo '-----------------------------------------------------------------------'
-	@echo ' '
-	touch $(HIGHTEMP_DIR)HighTemp2D.depend
-	makedepend -f$(HIGHTEMP_DIR)HighTemp2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_HIGHTEMP_EXE) >& /dev/null
-	@echo ' '
-	@echo HighTemp2D source file dependencies have been brought up to date.
-	@echo '-------------------------------------------------------------'
-	@echo ' '
-
-$(EXE_DUSTY2D): $(DUSTY_DIR)Dusty2D.depend $(OBJ_DUSTY_EXE) $(OBJ_BASE) $(OBJ_DUSTY) $(OBJ_INTERFACE) $(OBJ_ELECTROSTATIC) $(OBJ_ICEMCFD)
+$(EXE_DUSTY2D): $(OBJ_DUSTY_EXE) $(OBJ_BASE) $(OBJ_DUSTY) $(OBJ_INTERFACE) $(OBJ_ELECTROSTATIC) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_DUSTY2D) for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------'
@@ -917,19 +679,7 @@ $(EXE_DUSTY2D): $(DUSTY_DIR)Dusty2D.depend $(OBJ_DUSTY_EXE) $(OBJ_BASE) $(OBJ_DU
 	@echo '---------------------------------------------------'
 	@echo ' '
 
-$(DUSTY_DIR)Dusty2D.depend: $(SRC_DUSTY_EXE)
-	@echo ' '
-	@echo Determining $(DUSTY_DIR)Dusty2D source file dependencies for a $(PLATFORM) platform.
-	@echo '------------------------------------------------------------------------'
-	@echo ' '
-	touch $(DUSTY_DIR)Dusty2D.depend
-	makedepend -f$(DUSTY_DIR)Dusty2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_DUSTY_EXE) $(SRC_DUSTY) >& /dev/null
-	@echo ' '
-	@echo Dusty2D source file dependencies have been brought up to date.
-	@echo '--------------------------------------------------------------'
-	@echo ' '
-
-$(EXE_LESPREMIXED2D): $(LESPREMIXED_DIR)LESPremixed2D.depend $(OBJ_LESPREMIXED_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_LESPREMIXED) $(OBJ_TURBULENT) $(OBJ_ICEMCFD) 
+$(EXE_LESPREMIXED2D): $(OBJ_LESPREMIXED_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_LESPREMIXED) $(OBJ_TURBULENT) $(OBJ_ICEMCFD) 
 	@echo ' '
 	@echo Building program $(EXE_LESPREMIXED2D) for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------------'
@@ -940,19 +690,7 @@ $(EXE_LESPREMIXED2D): $(LESPREMIXED_DIR)LESPremixed2D.depend $(OBJ_LESPREMIXED_E
 	@echo '--------------------------------------------------'
 	@echo ' '
 
-$(LESPREMIXED_DIR)LESPremixed2D.depend: $(SRC_LESPREMIXED_EXE) 
-	@echo ' '
-	@echo Determining LESPremixed2D source file dependencies for a $(PLATFORM) platform.
-	@echo '-----------------------------------------------------------------------'
-	@echo ' '
-	touch $(LESPREMIXED_DIR)LESPremixed2D.depend
-	makedepend -f$(LESPREMIXED_DIR)LESPremixed2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_LESPREMIXED_EXE) $(SRC_LESPREMIXED) >& /dev/null
-	@echo ' '
-	@echo LESPremixed2D source file dependencies have been brought up to date.
-	@echo '-------------------------------------------------------------'
-	@echo ' '
-
-$(EXE_GAUSSIAN2D): $(GAUSSIAN_DIR)Gaussian2D.depend $(OBJ_GAUSSIAN_EXE) $(OBJ_BASE) $(OBJ_GAUSSIAN) $(OBJ_INTERFACE) $(OBJ_ICEMCFD)
+$(EXE_GAUSSIAN2D): $(OBJ_GAUSSIAN_EXE) $(OBJ_BASE) $(OBJ_GAUSSIAN) $(OBJ_INTERFACE) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_GAUSSIAN2D) for a $(PLATFORM) platform.
 	@echo '--------------------------------------------------------'
@@ -963,19 +701,7 @@ $(EXE_GAUSSIAN2D): $(GAUSSIAN_DIR)Gaussian2D.depend $(OBJ_GAUSSIAN_EXE) $(OBJ_BA
 	@echo '------------------------------------------------'
 	@echo ' '
 
-$(GAUSSIAN_DIR)Gaussian2D.depend: $(SRC_GAUSSIAN_EXE) 
-	@echo ' '
-	@echo Determining Gaussian2D source file dependencies for a $(PLATFORM) platform.
-	@echo '-----------------------------------------------------------------------'
-	@echo ' '
-	touch $(GAUSSIAN_DIR)Gaussian2D.depend
-	makedepend -f$(GAUSSIAN_DIR)Gaussian2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_GAUSSIAN_EXE) $(SRC_GAUSSIAN) >& /dev/null
-	@echo ' '
-	@echo Gaussian2D source file dependencies have been brought up to date.
-	@echo '-------------------------------------------------------------'
-	@echo ' '
-
-$(EXE_ION5MOMENT2D): $(ION_DIR)Ion5Moment2D.depend $(OBJ_ION_EXE) $(OBJ_BASE) $(OBJ_ION) $(OBJ_EULER) $(OBJ_INTERFACE) $(OBJ_ICEMCFD)
+$(EXE_ION5MOMENT2D): $(OBJ_ION_EXE) $(OBJ_BASE) $(OBJ_ION) $(OBJ_EULER) $(OBJ_INTERFACE) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_ION5MOMENT2D) for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------------------'
@@ -986,19 +712,7 @@ $(EXE_ION5MOMENT2D): $(ION_DIR)Ion5Moment2D.depend $(OBJ_ION_EXE) $(OBJ_BASE) $(
 	@echo '--------------------------------------------------------'
 	@echo ' '
 
-$(ION_DIR)Ion5Moment2D.depend: $(SRC_ION_EXE) 
-	@echo ' '
-	@echo Determining Ion5Moment2D source file dependencies for a $(PLATFORM) platform.
-	@echo '-----------------------------------------------------------------------------'
-	@echo ' '
-	touch $(ION_DIR)Ion5Moment2D.depend
-	makedepend -f$(ION_DIR)Ion5Moment2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_ION_EXE) $(SRC_ION) >& /dev/null
-	@echo ' '
-	@echo Ion5Moment2D source file dependencies have been brought up to date.
-	@echo '-------------------------------------------------------------------'
-	@echo ' '
-
-$(EXE_ELECTROSTATIC2D): $(ELECTROSTATIC_DIR)Electrostatic2D.depend $(OBJ_ELECTROSTATIC_EXE) $(OBJ_BASE) $(OBJ_ELECTROSTATIC) $(OBJ_ICEMCFD)
+$(EXE_ELECTROSTATIC2D): $(OBJ_ELECTROSTATIC_EXE) $(OBJ_BASE) $(OBJ_ELECTROSTATIC) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_ELECTROSTATIC2D) for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------'
@@ -1009,19 +723,7 @@ $(EXE_ELECTROSTATIC2D): $(ELECTROSTATIC_DIR)Electrostatic2D.depend $(OBJ_ELECTRO
 	@echo '---------------------------------------------------'
 	@echo ' '
 
-$(ELECTROSTATIC_DIR)Electrostatic2D.depend: $(SRC_ELECTROSTATIC_EXE)
-	@echo ' '
-	@echo Determining Electrostatic2D source file dependencies for a $(PLATFORM) platform.
-	@echo '------------------------------------------------------------------------'
-	@echo ' '
-	touch $(ELECTROSTATIC_DIR)Electrostatic2D.depend
-	makedepend -f$(ELECTROSTATIC_DIR)Electrostatic2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_ELECTROSTATIC_EXE) $(SRC_ELECTROSTATIC) >& /dev/null
-	@echo ' '
-	@echo Electrostatic2D source file dependencies have been brought up to date.
-	@echo '--------------------------------------------------------------'
-	@echo ' '
-
-$(EXE_RTE2D): $(RTE_DIR)Rte2D.depend $(OBJ_RTE_EXE) $(OBJ_BASE) $(OBJ_RTE) $(OBJ_ICEMCFD)
+$(EXE_RTE2D): $(OBJ_RTE_EXE) $(OBJ_BASE) $(OBJ_RTE) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_RTE2D) for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------'
@@ -1032,19 +734,7 @@ $(EXE_RTE2D): $(RTE_DIR)Rte2D.depend $(OBJ_RTE_EXE) $(OBJ_BASE) $(OBJ_RTE) $(OBJ
 	@echo '---------------------------------------------------'
 	@echo ' '
 
-$(RTE_DIR)Rte2D.depend: $(SRC_RTE_EXE)
-	@echo ' '
-	@echo Determining Euler2D source file dependencies for a $(PLATFORM) platform.
-	@echo '------------------------------------------------------------------------'
-	@echo ' '
-	touch $(RTE_DIR)Rte2D.depend
-	makedepend -f$(RTE_DIR)Rte2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_RTE_EXE) $(SRC_RTE) >& /dev/null
-	@echo ' '
-	@echo Rte2D source file dependencies have been brought up to date.
-	@echo '--------------------------------------------------------------'
-	@echo ' '
-
-$(EXE_LEVELSET2D): $(LEVELSET_DIR)LevelSet2D.depend $(OBJ_LEVELSET_EXE) $(OBJ_BASE) $(OBJ_LEVELSET) $(OBJ_INTERFACE)
+$(EXE_LEVELSET2D): $(OBJ_LEVELSET_EXE) $(OBJ_BASE) $(OBJ_LEVELSET) $(OBJ_INTERFACE)
 	@echo ' '
 	@echo Building program $(EXE_LEVELSET2D) for a $(PLATFORM) platform.
 	@echo '------------------------------------------------------------------------'
@@ -1055,19 +745,7 @@ $(EXE_LEVELSET2D): $(LEVELSET_DIR)LevelSet2D.depend $(OBJ_LEVELSET_EXE) $(OBJ_BA
 	@echo '------------------------------------------------------------------------'
 	@echo ' '
 
-$(LEVELSET_DIR)LevelSet2D.depend: $(SRC_LEVELSET_EXE) 
-	@echo ' '
-	@echo Determining LevelSet2D source file dependencies for a $(PLATFORM) platform.
-	@echo '------------------------------------------------------------------------'
-	@echo ' '
-	touch $(LEVELSET_DIR)LevelSet2D.depend
-	makedepend -f$(LEVELSET_DIR)LevelSet2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_LEVELSET_EXE) $(SRC_LEVELSET) >& /dev/null
-	@echo ' '
-	@echo LevelSet2D source file dependencies have been brought up to date.
-	@echo '------------------------------------------------------------------------'
-	@echo ' '
-
-$(EXE_EMBEDDEDBOUNDARIES2D): $(INTERFACE_DIR)EmbeddedBoundaries2D.depend $(OBJ_EMBEDDEDBOUNDARIES_EXE) $(OBJ_BASE) $(OBJ_EMBEDDEDBOUNDARIES) $(OBJ_INTERFACE) $(OBJ_LEVELSET) $(OBJ_EULER) $(OBJ_NAVIERSTOKES) $(OBJ_DUSTY) $(OBJ_ELECTROSTATIC) $(OBJ_ICEMCFD) $(OBJ_GAUSSIAN)
+$(EXE_EMBEDDEDBOUNDARIES2D): $(OBJ_EMBEDDEDBOUNDARIES_EXE) $(OBJ_BASE) $(OBJ_EMBEDDEDBOUNDARIES) $(OBJ_INTERFACE) $(OBJ_LEVELSET) $(OBJ_EULER) $(OBJ_NAVIERSTOKES) $(OBJ_DUSTY) $(OBJ_ELECTROSTATIC) $(OBJ_ICEMCFD) $(OBJ_GAUSSIAN)
 	@echo ' '
 	@echo Building program $(EXE_EMBEDDEDBOUNDARIES2D) for a $(PLATFORM) platform.
 	@echo '------------------------------------------------------------------'
@@ -1078,19 +756,7 @@ $(EXE_EMBEDDEDBOUNDARIES2D): $(INTERFACE_DIR)EmbeddedBoundaries2D.depend $(OBJ_E
 	@echo '----------------------------------------------------------'
 	@echo ' '
 
-$(INTERFACE_DIR)EmbeddedBoundaries2D.depend: $(SRC_EMBEDDEDBOUNDARIES_EXE)
-	@echo ' '
-	@echo Determining EmbeddedBoundaries2D source file dependencies for a $(PLATFORM) platform.
-	@echo '-------------------------------------------------------------------------------'
-	@echo ' '
-	touch $(INTERFACE_DIR)EmbeddedBoundaries2D.depend
-	makedepend -f$(INTERFACE_DIR)EmbeddedBoundaries2D.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_EMBEDDEDBOUNDARIES_EXE) $(SRC_EMBEDDEDBOUNDARIES) >& /dev/null
-	@echo ' '
-	@echo EmbeddedBoundaries2D source file dependencies have been brought up to date.
-	@echo '---------------------------------------------------------------------'
-	@echo ' '
-
-$(EXE_ICEMCFD_UTIL1): CFFC.depend $(ICEM_DIR)icemcfd2tecplot.depend $(OBJ_ICEMCFD_UTIL1)
+$(EXE_ICEMCFD_UTIL1): $(OBJ_ICEMCFD_UTIL1)
 	@echo ' '
 	@echo Building program $(EXE_ICEMCFD_UTIL1) for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------------'
@@ -1101,7 +767,7 @@ $(EXE_ICEMCFD_UTIL1): CFFC.depend $(ICEM_DIR)icemcfd2tecplot.depend $(OBJ_ICEMCF
 	@echo '---------------------------------------------------------'
 	@echo ' '
 
-$(EXE_ICEMCFD_UTIL2): CFFC.depend $(ICEM_DIR)icemcfd2grid2dquad.depend $(OBJ_ICEMCFD_UTIL2)
+$(EXE_ICEMCFD_UTIL2): $(OBJ_ICEMCFD_UTIL2)
 	@echo ' '
 	@echo Building program $(EXE_ICEMCFD_UTIL2) for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------------'
@@ -1112,29 +778,6 @@ $(EXE_ICEMCFD_UTIL2): CFFC.depend $(ICEM_DIR)icemcfd2grid2dquad.depend $(OBJ_ICE
 	@echo '---------------------------------------------------------'
 	@echo ' '
 
-$(ICEM_DIR)icemcfd2tecplot.depend: $(SRC_ICEMCFD_UTIL1)
-	@echo ' '
-	@echo Determining ICEM CFD utility program source file dependencies for a $(PLATFORM) platform.
-	@echo '-----------------------------------------------------------------------------------------'
-	@echo ' '
-	touch $(ICEM_DIR)icemcfd2tecplot.depend
-	makedepend -f$(ICEM_DIR)icemcfd2tecplot.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_ICEMCFD_UTIL1) >& /dev/null
-	@echo ' '
-	@echo ICEM CFD utility program source file dependencies have been brought up to date.
-	@echo '-------------------------------------------------------------------------------'
-	@echo ' '
-
-$(ICEM_DIR)icemcfd2grid2dquad.depend: $(SRC_ICEMCFD_UTIL2)
-	@echo ' '
-	@echo Determining ICEM CFD utility program source file dependencies for a $(PLATFORM) platform.
-	@echo '-----------------------------------------------------------------------------------------'
-	@echo ' '
-	touch $(ICEM_DIR)icemcfd2grid2dquad.depend
-	makedepend -f$(ICEM_DIR)icemcfd2grid2dquad.depend $(DEPENDSFLAGS) $(CPPFLAGS) $(SRC_ICEMCFD_UTIL2) >& /dev/null
-	@echo ' '
-	@echo ICEM CFD utility program source file dependencies have been brought up to date.
-	@echo '-------------------------------------------------------------------------------'
-	@echo ' '
 
 #
 # Install/Uninstall targets
@@ -1246,7 +889,7 @@ clean:
 	rm -f $(LEVELSET_DIR)*.o $(LEVELSET_DIR)*.il $(LEVELSET_DIR)*~ $(LEVELSET_DIR)*.depend $(LEVELSET_DIR)*.bak
 	rm -f $(PHYSICS_DIR)*.o $(PHYSICS_DIR)*.il $(PHYSICS_DIR)*~
 	rm -f $(TURBULENT_DIR)*.o $(TURBULENT_DIR)*.il $(TURBULENT_DIR)*~
-	rm -f $(EOS_DIR)*.o $(EOS_DIR)*~
+	rm -f $(EOS_DIR)*.o $(EOS_DIR)*.il $(EOS_DIR)*~
 	rm -f $(NASADATA_DIR)*.o $(NASADATA_DIR)*.il $(NASADATA_DIR)*~
 	rm -f $(REACTIONS_DIR)*.o $(REACTIONS_DIR)*.il $(REACTIONS_DIR)*~
 	rm -f $(UNIT_TESTING_DIR)*.o $(UNIT_TESTING_DIR)*.il $(UNIT_TESTING_DIR)*~
@@ -1269,6 +912,7 @@ clean:
 	rm -f $(EXE_RTE2D)
 	rm -f $(EXE_LEVELSET2D)
 	rm -f $(EXE_EMBEDDEDBOUNDARIES2D)
+	rm -fr $(DEPEND_DIR)
 	@echo ' '
 	@echo All source file directories are now clean.
 	@echo '------------------------------------------'
@@ -1322,22 +966,78 @@ $(MOD_MATH_F90): $(MATH_DIR)complexify.f90 $(MATH_DIR)Complexify.h
 .f90.o:
 	$(F90) $(F90FLAGS) $(MODFLAG) $(MODULE_DIR) -I$(MODULE_DIR) -c -o $*.o $*.f90
 
+
+
+###################################################################
 #
 # Include header file dependencies
-include CFFC.depend
-include cffc2D.depend
-include $(ICEM_DIR)icemcfd2tecplot.depend
-include $(ICEM_DIR)icemcfd2grid2dquad.depend
-include $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.depend
-include $(EULER_DIR)Euler2D.depend
-include $(NAVIERSTOKES_DIR)NavierStokes2D.depend
-include $(CHEM_DIR)Chem2D.depend
-include $(HIGHTEMP_DIR)HighTemp2D.depend
-include $(DUSTY_DIR)Dusty2D.depend
-include $(LESPREMIXED_DIR)LESPremixed2D.depend
-include $(GAUSSIAN_DIR)Gaussian2D.depend
-include $(ION_DIR)Ion5Moment2D.depend
-include $(ELECTROSTATIC_DIR)Electrostatic2D.depend
-include $(RTE_DIR)Rte2D.depend
-include $(INTERFACE_DIR)EmbeddedBoundaries2D.depend
-include $(LEVELSET_DIR)LevelSet2D.depend
+#
+#------------------------------------------------------------------
+# For some commands (targets) there is no need to include the
+# dependencies. Therefore a list of targets for which the dependencies
+# DON'T need to be generated is provided.
+# If you don't want to have dependencies generated for a particular target,
+# just add the target name to 'NODEP_LIST' variable.
+NODEP_LIST = help clean superclean libraries-all \
+             bpkit sparselib fftw cantera documentation \
+             uninstall
+
+#-------------------------------------------------
+# Include header file dependencies when required
+#-------------------------------------------------
+ifdef MAKECMDGOALS
+ifeq ($(strip $(filter $(MAKECMDGOALS), $(NODEP_LIST)) ), )
+############# Include dependencies of files that have extensions different than " .cc " (e.g. *.c, *.f, *.f90)
+	sinclude $(patsubst %.c,$(DEPEND_DIR)%.d, $(filter %.c, $(SRC_CFFC)))
+	sinclude $(patsubst %.f,$(DEPEND_DIR)%.d, $(filter %.f, $(SRC_CFFC)))
+	sinclude $(patsubst %.f90,$(DEPEND_DIR)%.d, $(filter %.f90, $(SRC_CFFC)))
+############# Include the .d files comming from different executables
+# this command includes most of the *.d files
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_CFFC)))
+# if you add a new executable, you must add a line here.
+# all other files should be included in the previous rule.
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_ICEMCFD_UTIL1)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_ICEMCFD_UTIL2)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_ADVECTDIFFUSE_EXE)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_EULER_EXE)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_NAVIERSTOKES_EXE)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_CHEM_EXE)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_HIGHTEMP_EXE)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_DUSTY_EXE)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_LESPREMIXED_EXE)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_GAUSSIAN_EXE)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_ION_EXE)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_ELECTROSTATIC_EXE)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_RTE_EXE)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_LEVELSET_EXE)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_EMBEDDEDBOUNDARIES_EXE)))
+endif
+endif
+
+##################################################################################################
+#------------------------------------- IMPLICIT RULES --------------------------------------------
+##################################################################################################
+
+# Rule for building automatic dependencies (#include <file_name>)
+# These file are assigned '.d' extension
+# See "http://www.ddj.com/linux-open-source/184406479" for a thorough explanation.
+$(DEPEND_DIR)%.d : %.cc
+	@mkdir -p $(dir $@)
+	@makedepend -f- $(DEPENDSFLAGS) $(CPPFLAGS) $< 2>/dev/null \
+        | sed 's,\($*\.o\)[ :]*\(.*\),$@ : $$\(wildcard \2\) =\1 : \2,g' | tr "=" "\n" > $@
+
+$(DEPEND_DIR)%.d : %.c
+	@mkdir -p $(dir $@)
+	@makedepend -f- $(DEPENDSFLAGS) $(CPPFLAGS) $< 2>/dev/null \
+        | sed 's,\($*\.o\)[ :]*\(.*\),$@ : $$\(wildcard \2\) \n\1 : \2,g' | tr "=" "\n" > $@
+
+$(DEPEND_DIR)%.d : %.f90
+	@mkdir -p $(dir $@)
+	@makedepend -f- $(DEPENDSFLAGS) $(F90FLAGS) $< 2>/dev/null \
+        | sed 's,\($*\.o\)[ :]*\(.*\),$@ : $$\(wildcard \2\) \n\1 : \2,g' | tr "=" "\n" > $@
+
+$(DEPEND_DIR)%.d : %.f
+	@mkdir -p $(dir $@)
+	@makedepend -f- $(DEPENDSFLAGS) $(FFLAGS) $< 2>/dev/null \
+        | sed 's,\($*\.o\)[ :]*\(.*\),$@ : $$\(wildcard \2\) \n\1 : \2,g' | tr "=" "\n" > $@
+

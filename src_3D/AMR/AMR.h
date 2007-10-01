@@ -57,28 +57,28 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block                      
    /* Create (allocate) octree data structure. */
    
    Octree_DataStructure::Create_Octree_Data_Structure(Octree,
-                                                      Input.IP_Grid.NBlk_Idir,
-                                                      Input.IP_Grid.NBlk_Jdir,
-                                                      Input.IP_Grid.NBlk_Kdir,
-                                                      Input.Number_of_Processors,
-                                                      Input.Number_of_Blocks_Per_Processor);
+                                                      Input.Grid_IP.NBlk_Idir,
+                                                      Input.Grid_IP.NBlk_Jdir,
+                                                      Input.Grid_IP.NBlk_Kdir,
+                                                      Input.AMR_IP.Number_of_Processors,
+                                                      Input.AMR_IP.Number_of_Blocks_Per_Processor);
 
-   Octree.MaximumRefinementLevel = Input.Maximum_Refinement_Level-1;
-   Octree.MinimumRefinementLevel = Input.Minimum_Refinement_Level-1;
+   Octree.MaximumRefinementLevel = Input.AMR_IP.Maximum_Refinement_Level-1;
+   Octree.MinimumRefinementLevel = Input.AMR_IP.Minimum_Refinement_Level-1;
    
    /* Set the thresholds for refinement and coarsening of the mesh. */
    
-   Octree.RefineThreshold = Input.Threshold_for_Refinement;
-   Octree.CoarsenThreshold = Input.Threshold_for_Coarsening;
+   Octree.RefineThreshold = Input.AMR_IP.Threshold_for_Refinement;
+   Octree.CoarsenThreshold = Input.AMR_IP.Threshold_for_Coarsening;
    
    /* Create (allocate) array of local 3D hexarilateral solution blocks. */
    
-   Local_Solution_Blocks.Allocate(Input.Number_of_Blocks_Per_Processor);
+   Local_Solution_Blocks.Allocate(Input.AMR_IP.Number_of_Blocks_Per_Processor);
 
    AdaptiveBlock3D_ResourceList::Create_Block_Resource_List(Global_Adaptive_Block_List,
-                                                            Input.Number_of_Processors,
-                                                            Input.Number_of_Blocks_Per_Processor);
-   Local_Adaptive_Block_List.allocate(Input.Number_of_Blocks_Per_Processor);
+                                                            Input.AMR_IP.Number_of_Processors,
+                                                            Input.AMR_IP.Number_of_Blocks_Per_Processor);
+   Local_Adaptive_Block_List.allocate(Input.AMR_IP.Number_of_Blocks_Per_Processor);
    Local_Adaptive_Block_List.ThisCPU = Global_Adaptive_Block_List.ThisCPU;
    
    /* Loop over all initial mesh blocks and assign Octree root blocks and 
@@ -164,7 +164,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block                      
 
     Octree_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(Octree,
                                                                     Local_Adaptive_Block_List,
-                                                                    Input.IP_Grid.i_Grid);
+                                                                    Input.Grid_IP.i_Grid);
 
     /* Allocates memory for all message passing buffers used to send 
        solution information between neighbouring solution blocks. */
@@ -217,7 +217,7 @@ int Read_Octree(Octree_DataStructure                         &Octree,
 
     if (CFFC_Primary_MPI_Processor()) {
        Octree_file.open(Octree_file_name_ptr, ios::in);
-       if (Octree_file.bad()) return (1);
+       if (Octree_file.fail()) return (1);
     } /* endif */
 
     /* On primary processor, read in the data structure size parameters and 
@@ -345,7 +345,7 @@ int Write_Octree(Octree_DataStructure                        &Octree,
 
     if (CFFC_Primary_MPI_Processor()) {
        Octree_file.open(Octree_file_name_ptr, ios::out);
-       if (Octree_file.bad()) return (1);
+       if (Octree_file.fail()) return (1);
     } /* endif */
 
     /* On primary processor, write the Octree data to the file. */

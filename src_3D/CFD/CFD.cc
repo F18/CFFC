@@ -216,7 +216,7 @@ int Open_Progress_File(ofstream &Progress_File,
     } else {
        Progress_File.open(progress_file_name_ptr, ios::out);
     } /* endif */
-    if (Progress_File.bad()) return (1);
+    if (Progress_File.fail()) return (1);
 
     /* Write the appropriate GNUPLOT command file for 
        plotting progress file information. */
@@ -228,7 +228,7 @@ int Open_Progress_File(ofstream &Progress_File,
     gnuplot_file_name_ptr = gnuplot_file_name;
 
     gnuplot_file.open(gnuplot_file_name_ptr, ios::out);
-    if (gnuplot_file.bad()) return(1);
+    if (gnuplot_file.fail()) return(1);
 
     gnuplot_file << "set title \"Solution Convergence\"\n"
                  << "set xlabel \"N (iterations)\"\n"
@@ -254,7 +254,7 @@ int Open_Progress_File(ofstream &Progress_File,
     gnuplot_file_name_ptr = gnuplot_file_name;
 
     gnuplot_file.open(gnuplot_file_name_ptr, ios::out);
-    if (gnuplot_file.bad()) return(1);
+    if (gnuplot_file.fail()) return(1);
 
     gnuplot_file << "set title \"Solution Convergence\"\n"
                  << "set xlabel \"N (iterations)\"\n"

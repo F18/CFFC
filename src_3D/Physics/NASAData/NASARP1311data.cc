@@ -7,7 +7,7 @@
           hence the use of -D_GNU_GCC_296 compiler flag.
 
         assosiated header file: 
-                  NASARP1311.h
+                  NASARP1311data.h
 
 *****************************************************************************/
 
@@ -30,13 +30,51 @@
 ***************************************************************************/
 
 //NASARP1311data::NASARP1311data(string &spec)
-void NASARP1311data::Getdata(string spec, const char *PATH)
+void NASARP1311data::Getdata(string spec, const char *PATH, const int &trans_data)
 {
-   
+
+  // set transport flag
+  trans_type = trans_data;
+
   //Set Data path for thermo.inp and trans.inp
   Set_Path_Names(PATH);
- 
-  if(temp_ranges_thermo != 0) {deallocate();}
+
+  // get the thermodynamic data
+  GetThermoData(spec);
+
+  //
+  // get the tranport data and initialize function pointers
+  //
+  if (trans_type == TRANSPORT_NASA) {
+    // set pointers
+    pt_Viscosity = &NASARP1311data::Viscosity_NASA;
+    pt_ThermalConduct = &NASARP1311data::ThermalConduct_NASA;
+    pt_dViscositydT = &NASARP1311data::dViscositydT_NASA;
+    // get NASA transport data
+    GetTransDataNASA(spec);
+  } else if (trans_type == TRANSPORT_LENNARD_JONES) {
+    // set pointers
+    pt_Viscosity = &NASARP1311data::Viscosity_LJ;            // fit a polynomial
+    pt_ThermalConduct = &NASARP1311data::ThermalConduct_LJ;  // fit a polynomial
+    pt_dViscositydT = &NASARP1311data::dViscositydT_LJ;      // fit a polynomial
+    // get LJ transport data
+    LJdata.GetData(datafilename_trans,spec);   
+    // need to copy molar mass
+    LJdata.mol_mass = mol_mass;
+    // fit data to polynomials
+    FitTransDataLJ();
+  } else {
+    cerr << "Error - Getdata(): Never heard of this transport dataset!";
+    exit(-1);
+  }
+   
+}
+
+/********************* GET THERMO DATA *******************************/
+void NASARP1311data::GetThermoData(const string spec) {
+  
+  if(temp_ranges_thermo != 0) { deallocate_thermo_data(); }
+
 
   //------------ READ IN WHAT SPECIES ---------------------//
   species = spec;
@@ -51,7 +89,6 @@ void NASARP1311data::Getdata(string spec, const char *PATH)
 
   //------------- OPEN DATA FILES ------------------------//
   ifstream thermodatafile(datafilename_thermo);
-  ifstream transdatafile(datafilename_trans);
 
   //Check to see if successful
   if(thermodatafile.fail()){ 
@@ -69,15 +106,14 @@ void NASARP1311data::Getdata(string spec, const char *PATH)
   //------------------------------------------------------------//
   // sort through file until desired species
   do{
-     getline(thermodatafile,type);
+    getline(thermodatafile,type);
   } 
-  
 #ifdef _GNU_GCC_296 //redhat 7.3 gcc-2.96 
   while( type.compare(species,0,spec_l) != 0 && !thermodatafile.eof() );
 #else //alpha & redhat 9.0 gcc-3.22
   while( type.compare(0,spec_l,species) != 0 && !thermodatafile.eof() );
 #endif
-  
+
   if(thermodatafile.eof()){
     cerr<<" Species: "<<species<<" not in "<<datafilename_thermo<<endl;
     exit(1);
@@ -180,10 +216,38 @@ void NASARP1311data::Getdata(string spec, const char *PATH)
   //close thermodynamic data file
   thermodatafile.close();
 
+}
+
+/********************* GET TRANS DATA *******************************/
+void NASARP1311data::GetTransDataNASA(const string spec) {
+
+  if(temp_ranges_V != 0) { deallocate_trans_V(); }
+  if(temp_ranges_C != 0) { deallocate_trans_C(); }
+  
+  //------------ READ IN WHAT SPECIES ---------------------//
+  species = spec;
+  //add a space at the end of the string, necessary for search accuracy
+  species += ' ';
+  
+  //variables
+  string line;
+  int spec_l;
+   
+  spec_l = species.length();
+  
+  
+  //------------- OPEN DATA FILES ------------------------//
+  ifstream transdatafile(datafilename_trans);
+  
+  //Check to see if successful
+  if(transdatafile.fail()){ 
+    cerr<<"\nError opening file: "<<datafilename_trans<<endl;
+    exit(0); 
+  }
+
   //------------------------------------------------------------//
   //-------------- FIND SPECIES TRANSPORT DATA -----------------//
   //------------------------------------------------------------//
-  string line;
 
   //adding 20 spaces to make sure the data is for pure species
   //not binary data which would have another species name 
@@ -220,7 +284,7 @@ void NASARP1311data::Getdata(string spec, const char *PATH)
     temp_ranges_C = stoi(C);
   }
 
-  //container for cofficients of size temp_ranges
+  //container for coefficients of size temp_ranges
    trans_viscosity = new transcoef[temp_ranges_V]; 
    trans_thermconduct = new transcoef[temp_ranges_C];
 
@@ -304,8 +368,7 @@ void NASARP1311data::Getdata(string spec, const char *PATH)
   species = species.replace(species.find("                     "),21,""); //21 spaces
   //close transport data file
   transdatafile.close();
-
-}  //END INPUT
+}
 
 
 /**************** Find coefficient to use *************************************/
@@ -333,7 +396,7 @@ int NASARP1311data::Which_coef(double &Temp){
   }
 
 
-//   /****** ORIGINAL ******/
+  /****** ORIGINAL ******/
 //   //check if below range and if it is use lowest data set.
 //   if (Temp < thermo_data[0].Low_range() && Temp > 0.0 ){
 //     Temp = thermo_data[0].Low_range();
@@ -451,8 +514,6 @@ double NASARP1311data::Enthalpy(double Temp){
 // 			+ thermo_data[i].Thermo_coef(6)*Temp*Temp*Temp*Temp/5.0 
 // 			+ thermo_data[i].Thermo_coef(7)/Temp );
 
- 
-  
   // form requiring less computation 
   double H = R_UNIVERSAL * ( - thermo_data[i].Thermo_coef(0)/Temp
 			     + log(Temp)*thermo_data[i].Thermo_coef(1)
@@ -462,7 +523,6 @@ double NASARP1311data::Enthalpy(double Temp){
 			     + Temp*(thermo_data[i].Thermo_coef(5)/FOUR
 			     + Temp*(thermo_data[i].Thermo_coef(6)/FIVE))))) 
  			     + thermo_data[i].Thermo_coef(7) );	     
-
   // J/kg
   // h = H + DeltaHref - heatofform
   //cout<<"\nH "<<H/mol_mass<<" "<<DeltaHref()<<" "<<heatofform<<" "<<(H/mol_mass + DeltaHref() - heatofform)<<endl; 
@@ -520,24 +580,25 @@ double NASARP1311data::Entropy_mol(double Temp){
 
 
 /********************** Viscosity *********************************************/
-double NASARP1311data::Viscosity(double Temp){  
+// compute the viscosity using NASA polynomial
+double NASARP1311data::Viscosity_NASA(double Temp){
+  
+  //find appropriate coefficients for temperature range
+  int i = Which_coef(Temp,trans_viscosity,temp_ranges_V);
 
-   //find appropriate coefficients for temperature range
-   int i = Which_coef(Temp,trans_viscosity,temp_ranges_V);
-   
-   //use polynomial and return Cp. Ref. NASA RP1311 Appendix E
-   double eta =   trans_viscosity[i].Trans_coef(0)*log(Temp)
-      + trans_viscosity[i].Trans_coef(1)/Temp
-      + trans_viscosity[i].Trans_coef(2)/(Temp*Temp)
-      + trans_viscosity[i].Trans_coef(3); 
-
-   //converted from mircoposie (dynes*s/cm^2)x10^-6 to kg/(m*s)
-   // 1 (dynes*s/cm^2) = .1 kg/(m*s)
-   return exp(eta)*1e-7; 
+  //use polynomial and return Cp. Ref. NASA RP1311 Appendix E
+  double eta =   trans_viscosity[i].Trans_coef(0)*log(Temp)
+               + trans_viscosity[i].Trans_coef(1)/Temp
+               + trans_viscosity[i].Trans_coef(2)/(Temp*Temp)
+               + trans_viscosity[i].Trans_coef(3);              
+ 
+  //converted from mircoposie (dynes*s/cm^2)x10^-6 to kg/(m*s)
+  // 1 (dynes*s/cm^2) = .1 kg/(m*s)
+  return exp(eta)*1e-7;
 }
 
-//The derivative of viscosity w.r.t Temperature
-double NASARP1311data::dViscositydT(double Temp){
+//The derivative of viscosity w.r.t Temperature using NASA polynomial
+double NASARP1311data::dViscositydT_NASA(double Temp){
   
   //find appropriate coefficients for temperature range
   int i = Which_coef(Temp,trans_viscosity,temp_ranges_V);
@@ -558,7 +619,7 @@ double NASARP1311data::dViscositydT(double Temp){
 }
 
 /****************** Thermal Conductivity ***************************************/
-double NASARP1311data::ThermalConduct(double Temp){
+double NASARP1311data::ThermalConduct_NASA(double Temp){
   
   //find appropriate coefficients for temperature range
   int i = Which_coef(Temp,trans_thermconduct,temp_ranges_C);
@@ -780,6 +841,178 @@ double NASARP1311data::ThermalConduct(double Temp){
 
 // } //END Plot_data
 
+
+/**************************************************************************
+********************* LENNARD-JONES TRANPORT PROPS ************************
+***************************************************************************/
+
+// This is an addendum to the NASARP1311 species data class
+// For additional information on the methods used to compute the transport 
+// properties, see the Chemkin 4.0 Theory Manual (2004).
+
+
+/************************************************************
+ * Description: Viscosity computed Chapman-Enskog theory    * 
+ *              See 'The properties of gases and liquids by *
+ *              Reid et al.(1987).  This is Units [N s/m^2] *
+ ************************************************************/
+// Computed from polynomial fit
+double NASARP1311data::Viscosity_LJ(double Temp){
+  double logT = log(Temp);
+  return exp( poly3(logT, trans_viscosity[0].trans_coef) );
+}
+
+//The derivative of viscosity w.r.t Temperature using 3rd order polynomial
+double NASARP1311data::dViscositydT_LJ(double Temp){
+  double logT = log(Temp);
+  double eta = exp( poly3(logT, trans_viscosity[0].trans_coef) );
+  double prod = ( 3.0*trans_viscosity[0].Trans_coef(3)*logT*logT +
+		  2.0*trans_viscosity[0].Trans_coef(2)*logT +
+		      trans_viscosity[0].Trans_coef(1) ) / Temp;
+  return eta*prod;
+}
+
+
+/************************************************************
+ * Description: Thermal conductivity computed Chapman-Enskog*
+ *              theory.  See 'The properties of gases and   *
+ *              liquids by Reid et al.(1987).               *
+ *              Units [W/(m K)]                             *
+ ************************************************************/
+// Computed from polynomial fit
+double NASARP1311data::ThermalConduct_LJ(double Temp){
+  double logT = log(Temp);
+  return exp( poly3(logT, trans_thermconduct[0].trans_coef) );
+}
+
+
+/************************************************************
+ * NASARP1311data::FitTransDataLJ                           
+ *                                                          
+ * Generate polynomial fits for the pure-species viscosities
+ * andfor the binary diffusion coefficients. The fits are of
+ * the form \f[                                             
+ * \log(\eta(i)) = \sum_{n = 0}^3 a_n(i) (\log T)^n         
+ * \f]                             
+ * and \f[
+ * \log(D(i,j)) = \sum_{n = 0}^3 a_n(i,j) (\log T)^n
+ * \f]
+ *
+ * This is copied from CANTERA.
+ ************************************************************/
+void NASARP1311data::FitTransDataLJ() {
+  
+  //------------------------------------------------
+  // Declares
+  //------------------------------------------------
+
+  // polynomial parameters
+  const int np = 100;   // number of interpolation points
+  const int degree = 3; // degree of polynomial
+
+  // counter for term
+  int ndeg = 0;        
+
+  // temperature interval parameters
+  double dT, T;          // stepsize, temperature point
+  double Tmin = Low_range();   // min value (use thermodata value for this species)
+  double Tmax = High_range();  // max value (use thermodata value for this species)
+
+  // temporary arrays
+  double *w, *Tlog, *spvisc, *spcond;
+
+  //------------------------------------------------
+  // Allocate
+  //------------------------------------------------
+
+  // deallocate, just to be sure
+  if(temp_ranges_V != 0) { deallocate_trans_V(); }
+  if(temp_ranges_C != 0) { deallocate_trans_C(); }
+
+  //container for coefficients of size temp_ranges (one range)
+  trans_viscosity = new transcoef[1]; 
+  trans_thermconduct = new transcoef[1];
+  double V_coef[degree+1];  
+  double C_coef[degree+1];
+  
+  // allocate temporary storage
+  w = new double[np];
+  Tlog = new double[np];
+  spvisc = new double[np];
+  spcond = new double[np];
+
+  //double Tlog[np], spvisc[np], spcond[np], w[np];
+
+  //------------------------------------------------
+  // Fit
+  // Note that the viscosity and conductivity are 
+  // independant of pressure.
+  //------------------------------------------------
+  // compute step size
+  dT = (Tmax - Tmin)/double(np-1);     
+
+  // generate array of log(T) values
+  for (int n = 0; n < np; ++n) {
+    T = Tmin + dT*double(n);
+    Tlog[n] = log(T);
+
+    spvisc[n] = log( LJdata.Viscosity(T) );
+    spcond[n] = log( LJdata.ThermalConduct(HeatCapacity_v(T), T) );
+    w[n] = -1.0;
+  }
+  
+  // call the polynomial fitting function
+  polyfit(np, Tlog, spvisc, w, degree, ndeg, 0.0, V_coef);
+  polyfit(np, Tlog, spcond, w, degree, ndeg, 0.0, C_coef);
+
+  // move into transcoef class
+  trans_viscosity[0].Trans_coef_in(V_coef);
+  trans_thermconduct[0].Trans_coef_in(C_coef);
+
+  //------------------------------------------------
+  // DEBUG - write tests to file
+  //------------------------------------------------
+  // ofstream outfile;
+  // 
+  // //
+  // // evaluate max fit errors for viscosity
+  // //
+  // double val, fit, err, relerr;
+  // outfile.open("Viscosity.dat", ios::out);
+  // for (int n = 0; n < np; ++n) {
+  //   val = exp(spvisc[n]);
+  //   fit = exp( poly3(Tlog[n], V_coef) ); 
+  //   err = fit - val;
+  //   relerr = err/val;
+  //   outfile << exp(Tlog[n]) << "  " << val << "  " << fit 
+  // 	    << "  " << relerr << endl;
+  // }
+  // outfile.close();
+  // 
+  // //
+  // // evaluate max fit errors for conductivity
+  // //
+  // outfile.open("Thermal_Conductivity.dat", ios::out);
+  // for (int n = 0; n < np; ++n) {
+  //   val = exp(spcond[n]);
+  //   fit = exp( poly3(Tlog[n], C_coef) ); 
+  //   err = fit - val;
+  //   relerr = err/val;
+  //   outfile << exp(Tlog[n]) << "  " << val << "  " << fit 
+  // 	    << "  " << relerr << endl;
+  // }
+  // outfile.close();
+  //------------------------------------------------
+  // END DEBUG
+  //------------------------------------------------
+
+  // deallocate memory
+  delete[]  w;
+  delete[]  Tlog;
+  delete[]  spvisc;
+  delete[]  spcond;
+
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 ///////////////////////FUNCTIONS////////////////////////////////////////////////

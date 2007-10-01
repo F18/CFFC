@@ -20,7 +20,7 @@
 void Open_Input_File(Rte2D_Input_Parameters &IP) {
 
     IP.Input_File.open(IP.Input_File_Name, ios::in);
-    if (!IP.Input_File.bad()) {
+    if (!IP.Input_File.fail()) {
        IP.Line_Number = 0;
        IP.Input_File.setf(ios::skipws);
     } /* endif */
@@ -3090,7 +3090,7 @@ int Process_Input_Control_Parameter_File(Rte2D_Input_Parameters &Input_Parameter
     /* Open the input file containing the input parameters. */
 
     Open_Input_File(Input_Parameters);
-    error_flag = Input_Parameters.Input_File.bad();
+    error_flag = Input_Parameters.Input_File.fail();
 
     if (error_flag) {
        cout << "\n Rte2D ERROR: Unable to open Rte2D input data file.\n";

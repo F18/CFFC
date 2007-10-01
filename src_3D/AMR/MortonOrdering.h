@@ -227,7 +227,7 @@ int Morton_ReOrdering_of_Solution_Blocks(Octree_DataStructure                   
     
     // Modify block neighbours for grid geometries with 
     //periodic boundaries, etc. 
-    Octree_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(Octree, IPs.IP_Grid.i_Grid);
+    Octree_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(Octree, IPs.Grid_IP.i_Grid);
   
     // Determine the neighbouring blocks of all used (active)
     //solution blocks in the octree data structure. This will

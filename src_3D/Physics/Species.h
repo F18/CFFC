@@ -39,11 +39,13 @@ class Species {
   double diffusion_coef;
   Vector3D gradc;
  
-  //read species parameters from data file
-  Species(){c=ONE; diffusion_coef=ZERO; gradc.x=ZERO; gradc.y=ZERO;}
-  Species(const double &frac){c=frac; diffusion_coef=ZERO; gradc.x=ZERO; gradc.y=ZERO;}
+  /*************** DEFAULT CONSTRUCTORS *****************/
+  Species()
+     {c=ONE; diffusion_coef=ZERO; gradc.x=ZERO; gradc.y=ZERO;}
+  Species(const double &frac)
+     {c=frac; diffusion_coef=ZERO; gradc.x=ZERO; gradc.y=ZERO;}
   Species(const double &frac, const double &dcoef, const Vector3D &gc)
-  {c=frac; diffusion_coef=dcoef; gradc=gc; }
+     {c=frac; diffusion_coef=dcoef; gradc=gc; }
   
   /*************** VACUUM OPERATOR *********************/
   void Vacuum(){c=ZERO; diffusion_coef=ZERO; gradc.zero();}
@@ -145,26 +147,26 @@ inline Species &Species::operator =(const Species &A){
 
 //----------- Shortcut arithmetic operators ---------------//
 inline Species &Species::operator +=(Species &A){
-  c += A.c; 
+  c += A.c;
 //   diffusion_coef += A.diffusion_coef;
 //   gradc += A.gradc; 
   return(*this);
 }
 
 inline Species &Species::operator -=(Species &A){
-  c -= A.c; 
+  c -= A.c;
 //   diffusion_coef -= A.diffusion_coef;
 //   gradc -= A.gradc; 
   return(*this);
 }
 
 inline Species& Species::operator *=(const double &a) {
-  c *= a; 
+  c *= a;
   return *this;
 }
 
 inline Species& Species::operator /=(const double &a) {
-  c /= a; 
+  c /= a;
   return *this;
 }
 
@@ -193,7 +195,4 @@ inline istream &operator >> (istream &in_file,  Species &B){
   return (in_file);
 }
 
-#endif /* END of _SPECIES_INCLUDED */
-
-
-
+#endif // _SPECIES_INCLUDED

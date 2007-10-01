@@ -232,8 +232,7 @@ enum Reactions {NO_REACTIONS,
 		CH4_15STEP_ARM2,  // CH4 HARDCODED mechanisms based on GRI 2.11
 		CH4_15STEP_ARM3,  // CH4 HARDCODED mechanisms based on GRI 3
 		USER,             // User defined flag
-		CANTERA };        // cantera flag
-
+		CANTERA};         // cantera flag
 
 class Reaction_set{
 
@@ -1617,7 +1616,7 @@ inline void Reaction_set::Finite_Difference_dSwdU(DenseMatrix &dSwdU,
 
   // if this is one of those cases where num_species == num_reactions,
   // subtract one, cause dSwdU is (N-1)x(N-1)
-  int ns=num_reactions;
+  int ns=num_react_species;
   if (num_species == num_react_species) ns--;
 
   // get unperturbed reaction rate
