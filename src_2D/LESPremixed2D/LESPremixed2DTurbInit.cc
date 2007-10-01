@@ -298,6 +298,14 @@ double Turbulent_Burning_Rate(LESPremixed2D_Quad_Block *Soln_ptr,
       for (int i = Soln_ptr[p].ICl ; i <= Soln_ptr[p].ICu ; ++i) {
         for (int j = Soln_ptr[p].JCl ; j <= Soln_ptr[p].JCu ; ++j) {
           local_A = Soln_ptr[p].Grid.Cell[i][j].A;
+	  if (Soln_ptr[p].Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+              Soln_ptr[p].Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD ||
+              Soln_ptr[p].Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+              Soln_ptr[p].Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY ||
+              Soln_ptr[p].Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE ) {
+	    burning_rate +=  Soln_ptr[p].W[i][j].scalar[1]*local_A*Soln_ptr[p].W[i][j].rho;
+	    //	    	    burning_rate += Soln_ptr[p].W[i][j].Reaction_Rate_Fsd( Soln_ptr[p].dWdx[i][j],Soln_ptr[p].dWdy[i][j])*local_A;
+	  }else{
           // Rate of consumption of fuel
 	  burning_rate += Soln_ptr[p].W[i][j].Sw(Soln_ptr[p].W[i][j].React.reactset_flag,
                                                  Soln_ptr[p].Flow_Type).rhospec[0].c*local_A;      
@@ -305,13 +313,54 @@ double Turbulent_Burning_Rate(LESPremixed2D_Quad_Block *Soln_ptr,
       }
     }
   }
-
+  }
   burning_rate = CFFC_Summation_MPI(burning_rate);
+  if (Input_Parameters.FlowType == FLOWTYPE_LAMINAR_C_FSD ||
+      Input_Parameters.FlowType == FLOWTYPE_LAMINAR_NGT_C_FSD ||
+      Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+      Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY ||
+      Input_Parameters.FlowType == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE ) {
+    burning_rate = burning_rate*Input_Parameters.laminar_flame_speed/Ly;//(rho_u*Ly);  //(rho_u*Yf_u*Ly);
+  }else{
   burning_rate = -burning_rate/(rho_u*Yf_u*Ly);
-  
+  }  
   return burning_rate;
 }
 
+double Turbulent_Burning_Rate_Progvar(LESPremixed2D_Quad_Block *Soln_ptr,
+			              AdaptiveBlock2D_List &Soln_Block_List,
+			              LESPremixed2D_Input_Parameters &Input_Parameters) {
+
+  double local_A, Yf_u, rho_u, Ly, lam_speed_fsd, turbulent_burning_rate_prog = ZERO;
+  Yf_u = Input_Parameters.Fresh_Fuel_Mass_Fraction;
+  rho_u = Input_Parameters.Fresh_Density;
+  lam_speed_fsd = Input_Parameters.laminar_flame_speed;
+  Ly = Input_Parameters.Box_Height; 
+
+  for (int p = 0; p <= Soln_Block_List.Nblk-1; ++p) {
+    if (Soln_Block_List.Block[p].used == ADAPTIVEBLOCK2D_USED) {  
+      for (int i = Soln_ptr[p].ICl ; i <= Soln_ptr[p].ICu ; ++i) {
+        for (int j = Soln_ptr[p].JCl ; j <= Soln_ptr[p].JCu ; ++j) {
+          local_A = Soln_ptr[p].Grid.Cell[i][j].A;
+	    Tensor2D strain_rate;
+	    strain_rate = Soln_ptr[p].W[i][j].Strain_Rate(Soln_ptr[p].dWdx[i][j], Soln_ptr[p].dWdy[i][j], 
+					  	          Soln_ptr[p].Flow_Type, Soln_ptr[p].Axisymmetric, 
+						          Soln_ptr[p].Grid.Cell[i][j].Xc);  
+ 	  if (Soln_ptr[p].Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC ||
+              Soln_ptr[p].Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC ) {
+          turbulent_burning_rate_prog += Soln_ptr[p].W[i][j].Reaction_Rate_Algebraic( Soln_ptr[p].dWdx[i][j],Soln_ptr[p].dWdy[i][j],Soln_ptr[p].Flow_Type,strain_rate)*local_A;
+ 	  }else{
+	  turbulent_burning_rate_prog += Soln_ptr[p].W[i][j].Reaction_Rate_Progvar( Soln_ptr[p].dWdx[i][j],Soln_ptr[p].dWdy[i][j])*local_A;//Soln_ptr[p].W[i][j].Reaction_Rate_Fsd_Algebraic(Soln_ptr[p].dWdx[i][j],Soln_ptr[p].dWdy[i][j],local_A,Soln_ptr[p].Flow_Type)*local_A;//Soln_ptr[p].W[i][j].Reaction_Rate_Progvar( Soln_ptr[p].dWdx[i][j],Soln_ptr[p].dWdy[i][j])*local_A;
+	  }
+	 }
+        }
+      }
+    }
+  
+  turbulent_burning_rate_prog = CFFC_Summation_MPI(turbulent_burning_rate_prog);
+  turbulent_burning_rate_prog = turbulent_burning_rate_prog/(rho_u*Ly);//*lam_speed_fsd/Ly;//(rho_u*Ly);  //(rho_u*Yf_u*Ly);
+  return turbulent_burning_rate_prog;
+}
 
 /*----------------------------------------------------------------*\
    Total mass of species k per unit transversal length 
