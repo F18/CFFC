@@ -149,7 +149,7 @@ void NASARP1311data::GetThermoData(const string spec) {
     thermo_data[i].Low_range_in(stof(Temp));
 
     //Temp = type.substr(13,21);
-    Temp = type.substr(13,9);
+    Temp = type.substr(11,10);
     thermo_data[i].High_range_in(stof(Temp));
 
     Temp = type.substr(22,1);
