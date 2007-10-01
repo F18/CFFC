@@ -1,7 +1,10 @@
-/********************* Euler3DPolytropicInput.cc **********************
-  Input parameter member function specializations for 
-  Euler3D_Polytropic solution classes.
-***********************************************************************/
+/* Euler3DPolytropicInput.h:  Header file defining various specializations for 
+                              Euler3D_Polytropic solution input parameter class. */
+
+#ifndef _EULER3D_POLYTROPIC_INPUT_INCLUDED
+#define _EULER3D_POLYTROPIC_INPUT_INCLUDED
+
+/* Include related CFFC header files. */
 
 #ifndef _INPUT_INCLUDED
 #include "../CFD/Input.h"
@@ -77,3 +80,5 @@ void Input_Parameters<Euler3D_Polytropic_pState,
     restart_file << Wo << endl << Uo << endl;
 
 }
+
+#endif // _EULER3D_POLYTROPIC_INPUT_INCLUDED

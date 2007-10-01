@@ -552,7 +552,7 @@ int HexaSolver(char *Input_File_Name_ptr,
       } else if (command_flag == WRITE_OUTPUT_CODE) {
          // Output solution data.
 	 if (!batch_flag) {
-           cout << "\n Writing nodal solution to output data file(s).";
+           cout << "\n Writing solution to output data file(s).";
            cout.flush();
            cout.flush();
  	 } /* endif */

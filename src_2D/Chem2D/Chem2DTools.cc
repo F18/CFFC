@@ -48,7 +48,7 @@ int Open_Time_Accurate_File(ofstream &Time_Accurate_File,
     } else {
        Time_Accurate_File.open(time_accurate_name_ptr, ios::out);
     } /* endif */
-    if (Time_Accurate_File.bad()) return (1);
+    if (Time_Accurate_File.fail()) return (1);
 
     if(!Append_to_File){
       /* Write the appropriate Tecplot header information. */
@@ -895,7 +895,7 @@ int Output_Quasi3D_Tecplot(Chem2D_Quad_Block *Soln_ptr,
   
   // Open the output data file.
   output_file.open(output_file_name_ptr,ios::out);
-  if (output_file.bad()) return 1;
+  if (output_file.fail()) return 1;
   
   // Write the solution data for each solution block.
   i_output_title = 1;

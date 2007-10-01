@@ -1,15 +1,12 @@
-/****************** Euler3DThermallyPerfectState.h *********************
-  This class defines the state variables and constructors for the 
-  Euler3D thermally perfect gaseous mixture class.
- ***********************************************************************/
+/* Euler3DThermallyPerfectState.h:  Header file defining the Euler solution state
+                                    classes associated with the solution of 
+                                    a thermally perfect non-reactive or combusting
+                                    mixture. */
 
 #ifndef _EULER3D_THERMALLYPERFECT_STATE_INCLUDED 
 #define _EULER3D_THERMALLYPERFECT_STATE_INCLUDED
 
-class Euler3D_ThermallyPerfect_cState;
-class Euler3D_ThermallyPerfect_pState;
-
-// Required C++ libraries
+/* Include required C++ libraries. */
 
 #include <cstdio>
 #include <iostream>
@@ -20,7 +17,7 @@ class Euler3D_ThermallyPerfect_pState;
 
 using namespace std;
 
-// Required CFFC header files
+/* Include required CFFC header files. */
 
 #ifndef _MATH_MACROS_INCLUDED
 #include "../Math/Math.h"
@@ -58,100 +55,98 @@ using namespace std;
 #include "../Reactions/Reactions.h"
 #endif // _REACTIONS_INCLUDED
 
+/* Define the class. */
+
+class Euler3D_ThermallyPerfect_cState;
+class Euler3D_ThermallyPerfect_pState;
+
 //number of fixed variables in the Euler3D_ThermallyPerfect class
 #define NUM_EULER3D_VAR_SANS_SPECIES 5  //rho, v(3), p
 
 #define CONV_TOLERANCE 1e-8
 
-/********************************************************
- * Class: Euler3D_ThermallyPerfect_pState               *
- * (all for thermally perfect mixture                   *
- * Member functions                                     *
- *      d       -- Return density.                      *
- *      v       -- Return flow velocity.                *
- *      p       -- Return pressure.                     *
- *      g       -- Return specific heat ratio.          *
- *      gm1     -- Return g-1                           *
- *      gm1i    -- Return 1/(g-1).                      *
- *      R       -- Return gas constant.                 *
- *      setgas  -- Set gas constants.                   *
- *      T       -- Return temperature.                  *
- *      e       -- Return total  energy.                *
- *      E       -- Return interal energy.               *
- *      h       -- Return specific enthalpy.            *
- *      H       -- Return total enthalpy.               *
- *      a       -- Return sound speed.                  *
- *      a2      -- Return sound speed square.           *
- *      M       -- Return Mach number.                  *
- *      s       -- Return specific entropy.             *
- *      dv      -- Return momentum.                     *
- *      To      -- Return stagnation temperature.       *
- *      po      -- Return stagnation pressure.          *
- *      ao      -- Return stagnation sound speed.       *
- *      ho      -- Return stagnation enthalpy.          *
- *      U       -- Return conserved solution state.     *
- *      F       -- Return x-direction solution flux.    *
- *      G       -- Return y-direction solution flux.    *
- *      H       -- Return z-direction solution flux.    *
- *      Fn      -- Return n-direction solution flux.    *
- *      lambda  -- Return eigenvalue.                   *
- *      rp      -- Return primitive right eigenvector.  *
- *      rc      -- Return conserved right eigenvector.  *
- *      lp      -- Return primitive left eigenvector.   *
- *                                                      *
- * Member operators                                     *
- *      W -- a primitive solution state                 *
- *      c -- a scalar (double)                          *
- *                                                      *
- * W = W;                                               *
- * c = W[i];                                            *
- * W = W + W;                                           *
- * W = W - W;                                           *
- * c = W * W; (inner product)                           *
- * W = c * W;                                           *
- * W = W * c;                                           *
- * W = W / c;                                           *
- * W = +W;                                              *
- * W = -W;                                              *
- * W += W;                                              *
- * W -= W;                                              *
- * W == W;                                              *
- * W != W;                                              *
- * cout << W; (output function)                         *
- * cin  >> W; (input function)                          *
- *                                                      *
- ********************************************************/
-
-/*********************************************************
-  Density:   rho  kg/m^3
-  Velocity:  v    m/s
-  Pressure:  p    Pa (N/m^2)
-  
-  Molecular Mass:          M    kg/mol
-  Species Gas Constant:    Rs   J/(kg*K)
-  
-  Temperature(Kelvin) Dependent data: f(T) 
-   
-  Heat Capacity (const Pressure):  Cp  J/(kg*K)
-  Heat Capacity (const Volume):    Cv  J/(kg*K)
-  Specific Heat Ratio:             g
-  Specific Enthalpy:               h   J/kg
-  Specific Internal Energy:        e   J/kg
-  Total Enthalpy:                  H   J/kg 
-  Total Internal Energy:           E   J/kg
-
-  Viscosity:                       mu  kg/(m*s) N*s/m^2  
-  Thermal Conductivity:            k   N/(s*K)  W.(m*K)
-
-  ns;                number of species
-  NASARP1311data *specdata:   Global Species Data
-
-  num_vars:         number of total variables (5+ns)
-  Reaction_set React:         Global Reaction Data
-
-  low_temp_range:      low temp data range
-  high_temp_range:     high temp data range
-  ***********************************************************/
+/*!
+ * Class: Euler3D_ThermallyPerfect_pState
+ *
+ * @brief Euler 3D primitive solution state class.
+ *
+ * This class defines the primitive solution state for the
+ * Euler equations governing three-dimensional flows of
+ * thermally perfect non-reactive and combusting mixtures.
+ *
+ * \verbatim
+ * Member functions
+ *      d       -- Return density
+ *      v       -- Return flow velocity
+ *      p       -- Return pressure
+ *      g       -- Return specific heat ratio
+ *      gm1     -- Return g-1
+ *      gm1i    -- Return 1/(g-1)
+ *      R       -- Return gas constant
+ *      T       -- Return temperature
+ *      e       -- Return total energy
+ *      E       -- Return interal energy
+ *      h       -- Return specific enthalpy
+ *      H       -- Return total enthalpy
+ *      a       -- Return sound speed
+ *      a2      -- Return sound speed square
+ *      M       -- Return Mach number
+ *      s       -- Return specific entropy
+ *      dv      -- Return momentum
+ *      To      -- Return stagnation temperature
+ *      po      -- Return stagnation pressure
+ *      ao      -- Return stagnation sound speed
+ *      ho      -- Return stagnation enthalpy
+ *      U       -- Return conserved solution state
+ *      F       -- Return x-direction solution flux
+ *      G       -- Return y-direction solution flux
+ *      H       -- Return z-direction solution flux
+ *      Fn      -- Return n-direction solution flux
+ *      lambda  -- Return eigenvalue
+ *      rp      -- Return primitive right eigenvector
+ *      rc      -- Return conserved right eigenvector
+ *      lp      -- Return primitive left eigenvector
+ *
+ * Member operators
+ *      W -- a primitive solution state
+ *      c -- a scalar (double) 
+ *
+ * W = W;
+ * c = W[i];
+ * W = W + W;
+ * W = W - W;
+ * c = W * W; (inner product)
+ * W = c * W;
+ * W = W * c;
+ * W = W / c;
+ * W = +W;
+ * W = -W;
+ * W += W;
+ * W -= W;
+ * W == W;
+ * W != W;
+ * cout << W; (output function)
+ * cin  >> W; (input function)
+ *
+ * Density:   rho  kg/m^3
+ * Velocity:  v    m/s
+ * Pressure:  p    Pa (N/m^2)
+ * 
+ * Molecular Mass:          M    kg/mol
+ * Species Gas Constant:    Rs   J/(kg*K)
+ * 
+ * Temperature(Kelvin) Dependent data: f(T) 
+ *  
+ * Heat Capacity (const Pressure):  Cp  J/(kg*K)
+ * Heat Capacity (const Volume):    Cv  J/(kg*K)
+ * Specific Heat Ratio:             g
+ * Specific Enthalpy:               h   J/kg
+ * Specific Internal Energy:        e   J/kg
+ * Total Enthalpy:                  H   J/kg 
+ * Total Internal Energy:           E   J/kg
+ *
+ * \endverbatim
+ */
 class Euler3D_ThermallyPerfect_pState {
   public:
    double         rho;  
@@ -168,7 +163,8 @@ class Euler3D_ThermallyPerfect_pState {
    static double high_temp_range;   
    static int debug_level;        
    
-   // Default constructor
+  //@{ @name Constructors and desctructors:
+  //! Default constructor (assign default values).
    Euler3D_ThermallyPerfect_pState(): 
     rho(DENSITY_STDATM), p(PRESSURE_STDATM), spec(NULL) {
       v.zero(); set_initial_values();
@@ -249,6 +245,25 @@ class Euler3D_ThermallyPerfect_pState {
       set_initial_values(); Copy(W);
    }
      
+   //! Default destructor
+   ~Euler3D_ThermallyPerfect_pState() {
+      Deallocate(); 
+   }
+   //@}
+
+   //@{ @name Other Member functions:
+   void Deallocate(void){
+      if(spec != NULL) delete[] spec;
+      spec = NULL;
+   }
+
+   void Deallocate_static(void){
+      if (specdata != NULL) delete[] specdata;
+      specdata = NULL;
+      if (Schmidt != NULL) delete[] Schmidt; 
+      Schmidt = NULL;
+   }
+
    // Sets the species data, needs to be called only once as it is static
    void set_species_data(const int &n,
                          const string *S,
@@ -430,6 +445,7 @@ Vector3D rhov(void) const;
    Euler3D_ThermallyPerfect_cState Sw(int &REACT_SET_FLAG) const;
    void dSwdU(DenseMatrix &dSwdU) const; //Jacobian
    double dSwdU_max_diagonal(void) const;
+   //@}
   
    /* Unary arithmetic operators. */
    //friend Euler3D_ThermallyPerfect_pState operator -(
@@ -441,35 +457,25 @@ Vector3D rhov(void) const;
    friend int operator !=(const Euler3D_ThermallyPerfect_pState &W1, 
                           const Euler3D_ThermallyPerfect_pState &W2);
 
-   /* Input-output operators. */
+   //@{ @name Input-output operators:
    friend ostream& operator << (ostream &out_file, 
                                 const Euler3D_ThermallyPerfect_pState &W);
    friend istream& operator >> (istream &in_file,  
                                 Euler3D_ThermallyPerfect_pState &W);
-  
-  /* Destructors */
-
-  void Deallocate_static(void){
-     if (specdata != NULL) delete[] specdata;
-     specdata = NULL;
-     if (Schmidt != NULL) delete[] Schmidt; 
-     Schmidt = NULL;
-  }
-
-  void Deallocate(void){
-     if(spec != NULL) delete[] spec;
-     spec = NULL;
-  }
-  
-  ~Euler3D_ThermallyPerfect_pState(){
-     Deallocate(); 
-  }
-  
+   //@}
+ 
 };
 
-/***********************************************************
- *             Euler3D_TheramllyPerfect_cState             *
- ***********************************************************/
+/*!
+ * Class: Euler3D_ThermallyPerfect_cState
+ *
+ * @brief Euler 3D conservative solution state class.
+ *
+ * This class defines the primitive solution state for the
+ * Euler equations governing three-dimensional flows of
+ * thermally perfect non-reactive and combusting mixtures.
+ *
+ */
 class Euler3D_ThermallyPerfect_cState {
   public:
    double         rho;  

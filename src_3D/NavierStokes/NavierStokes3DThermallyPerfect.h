@@ -1,7 +1,8 @@
 /* NavierStokes3DThermallyPerfect.h:  
 
-   Header file for the 3D Navier-Stokes equations 
-   for thermally perfect gaseous mixtures. */
+   Header file for the solution of the Navier-Stokes equations 
+   governing thermally perfect non-reactive and combusting
+   gaseous mixtures. */
 
 #ifndef _NAVIERSTOKES3D_THERMALLYPERFECT_INCLUDED
 #define _NAVIERSTOKES3D_THERMALLYPERFECT_INCLUDED
@@ -15,6 +16,10 @@
 #ifndef _NAVIERSTOKES3D_THERMALLYPERFECT_STATE_INCLUDED
 #include "NavierStokes3DThermallyPerfectState.h"
 #endif // _NAVIERSTOKES3D_THERMALLYPERFECT_STATE_INCLUDED
+
+#ifndef _NAVIERSTOKES3D_THERMALLYPERFECT_INPUT_INCLUDED
+#include "NavierStokes3DThermallyPerfectInput.h"
+#endif // _NAVIERSTOKES3D_THERMALLYPERFECT_INPUT_INCLUDED
 
 #ifndef _NAVIERSTOKES3D_THERMALLYPERFECT_HEXA_BLOCK_INCLUDED
 #include "NavierStokes3DThermallyPerfectHexaBlock.h"

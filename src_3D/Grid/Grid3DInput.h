@@ -94,8 +94,8 @@ class Grid3D_Input_Parameters{
            Length_Coflow_Inlet_Pipe, Length_Combustor_Tube; 
     //@}
 
-    //@{ @name Constructor and desctructor
-    //! Constructor (assign default values).
+    //@{ @name Constructors and desctructors:
+    //! Constructor (assign default values)
     Grid3D_Input_Parameters(void){
        // Basic grid parameters:
        NBlk_Idir = 1; NBlk_Jdir = 1; NBlk_Kdir = 1;
@@ -130,12 +130,12 @@ class Grid3D_Input_Parameters{
     ~Grid3D_Input_Parameters(void){}
     //@}
  
-    //@{ @name Other Member functions.
-    //! Broadcast input parameters to all processors:
+    //@{ @name Other Member functions:
+    //! Broadcast input parameters to all processors
     void Broadcast(void);
-    //! Parse next input line:
+    //! Parse next input line
     int Parse_Next_Input_Control_Parameter(char *code, stringstream &value);
-    //! Check validity of specified input parameters:
+    //! Check validity of specified input parameters
     int Check_Inputs(void);
     //@}
 
