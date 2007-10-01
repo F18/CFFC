@@ -81,6 +81,35 @@ void Grid3D_Hexa_Multi_Block_List::Allocate(const int Ni,
       neighBSE_ctm = new Mesh_Orientation_Matrix[NBlk];
 
       Allocated = 1;
+
+      for (int  i = 0 ; i < NBlk ; ++i ) {
+         neighT[i] = GRID3D_NO_NEIGHBOUR;
+         neighB[i] = GRID3D_NO_NEIGHBOUR;
+         neighN[i] = GRID3D_NO_NEIGHBOUR;
+         neighS[i] = GRID3D_NO_NEIGHBOUR;
+         neighE[i] = GRID3D_NO_NEIGHBOUR;
+         neighW[i] = GRID3D_NO_NEIGHBOUR; 
+         neighNW[i] = GRID3D_NO_NEIGHBOUR;
+         neighNE[i] = GRID3D_NO_NEIGHBOUR;
+         neighSE[i] = GRID3D_NO_NEIGHBOUR;
+         neighSW[i] = GRID3D_NO_NEIGHBOUR;
+         neighTN[i] = GRID3D_NO_NEIGHBOUR;
+         neighTS[i] = GRID3D_NO_NEIGHBOUR;
+         neighTE[i] = GRID3D_NO_NEIGHBOUR;
+         neighTW[i] = GRID3D_NO_NEIGHBOUR;  
+         neighTNW[i] = GRID3D_NO_NEIGHBOUR;
+         neighTSW[i] = GRID3D_NO_NEIGHBOUR;
+         neighTNE[i] = GRID3D_NO_NEIGHBOUR;
+         neighTSE[i] = GRID3D_NO_NEIGHBOUR;  
+         neighBN[i] = GRID3D_NO_NEIGHBOUR;
+         neighBS[i] = GRID3D_NO_NEIGHBOUR;
+         neighBE[i] = GRID3D_NO_NEIGHBOUR;
+         neighBW[i] = GRID3D_NO_NEIGHBOUR;  
+         neighBNW[i] = GRID3D_NO_NEIGHBOUR;
+         neighBSW[i] = GRID3D_NO_NEIGHBOUR;
+         neighBNE[i] = GRID3D_NO_NEIGHBOUR;
+         neighBSE[i] = GRID3D_NO_NEIGHBOUR;
+      } /* endfor */
    } /* endif */
 
 }
@@ -157,6 +186,35 @@ void Grid3D_Hexa_Multi_Block_List::Allocate(const int N) {
       neighBSE_ctm = new Mesh_Orientation_Matrix[NBlk];
 
       Allocated = 1;
+
+      for (int  i = 0 ; i < NBlk ; ++i ) {
+         neighT[i] = GRID3D_NO_NEIGHBOUR;
+         neighB[i] = GRID3D_NO_NEIGHBOUR;
+         neighN[i] = GRID3D_NO_NEIGHBOUR;
+         neighS[i] = GRID3D_NO_NEIGHBOUR;
+         neighE[i] = GRID3D_NO_NEIGHBOUR;
+         neighW[i] = GRID3D_NO_NEIGHBOUR; 
+         neighNW[i] = GRID3D_NO_NEIGHBOUR;
+         neighNE[i] = GRID3D_NO_NEIGHBOUR;
+         neighSE[i] = GRID3D_NO_NEIGHBOUR;
+         neighSW[i] = GRID3D_NO_NEIGHBOUR;
+         neighTN[i] = GRID3D_NO_NEIGHBOUR;
+         neighTS[i] = GRID3D_NO_NEIGHBOUR;
+         neighTE[i] = GRID3D_NO_NEIGHBOUR;
+         neighTW[i] = GRID3D_NO_NEIGHBOUR;  
+         neighTNW[i] = GRID3D_NO_NEIGHBOUR;
+         neighTSW[i] = GRID3D_NO_NEIGHBOUR;
+         neighTNE[i] = GRID3D_NO_NEIGHBOUR;
+         neighTSE[i] = GRID3D_NO_NEIGHBOUR;  
+         neighBN[i] = GRID3D_NO_NEIGHBOUR;
+         neighBS[i] = GRID3D_NO_NEIGHBOUR;
+         neighBE[i] = GRID3D_NO_NEIGHBOUR;
+         neighBW[i] = GRID3D_NO_NEIGHBOUR;  
+         neighBNW[i] = GRID3D_NO_NEIGHBOUR;
+         neighBSW[i] = GRID3D_NO_NEIGHBOUR;
+         neighBNE[i] = GRID3D_NO_NEIGHBOUR;
+         neighBSE[i] = GRID3D_NO_NEIGHBOUR;
+      } /* endfor */
    } /* endif */
 
 }
