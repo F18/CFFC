@@ -314,47 +314,47 @@ class Euler3D_Polytropic_pState{
 	Euler3D_Polytropic_cState F(void);
     Euler3D_Polytropic_cState F(void) const;
     Euler3D_Polytropic_cState F(const Euler3D_Polytropic_pState &W);
-//	void dFdU(DenseMatrix &dFdU);
-//	void dFdU(DenseMatrix &dFdU) const;
-//	void dFdU(DenseMatrix &dFdU, const Euler3D_Polytropic_pState &W);
+	void dFdU(DenseMatrix &dFdU);
+	void dFdU(DenseMatrix &dFdU) const;
+	void dFdU(DenseMatrix &dFdU, const Euler3D_Polytropic_pState &W);
 	
 	Euler3D_Polytropic_cState Fx(void);
     Euler3D_Polytropic_cState Fx(void) const;
     Euler3D_Polytropic_cState Fx(const Euler3D_Polytropic_pState &W);
-//	void dFxdU(DenseMatrix &dFxdU);
-//	void dFxdU(DenseMatrix &dFxdU) const;
-//	void dFxdU(DenseMatrix &dFxdU, const Euler3D_Polytropic_pState &W);
-//	
-//	// y-direction
-//	Euler3D_Polytropic_cState Fy(void);
-//    Euler3D_Polytropic_cState Fy(void) const;
-//    Euler3D_Polytropic_cState Fy(const Euler3D_Polytropic_pState &W);
-//	void dFydU(DenseMatrix &dFydU);
-//	void dFydU(DenseMatrix &dFydU) const;
-//	void dFydU(DenseMatrix &dFydU, const Euler3D_Polytropic_pState &W);
-//	
-//	// z-direction
-//	Euler3D_Polytropic_cState Fz(void);
-//    Euler3D_Polytropic_cState Fz(void) const;
-//    Euler3D_Polytropic_cState Fz(const Euler3D_Polytropic_pState &W);
-//	void dFzdU(DenseMatrix &dFzdU);
-//	void dFzdU(DenseMatrix &dFzdU) const;
-//	void dFzdU(DenseMatrix &dFzdU, const Euler3D_Polytropic_pState &W);
-//	
-//   /* 
-//	* Solution variable Jacobians.
-//	* ----------------------------
-//	*/
-//	
-//	// dUdW
-//	void dUdW(DenseMatrix &dUdW);
-//	void dUdW(DenseMatrix &dUdW) const;
-//	void dUdW(DenseMatrix &dUdW, const Euler3D_Polytropic_pState &W);
-//	
-//	// dWdU
-//	void dWdU(DenseMatrix &dWdU);
-//	void dWdU(DenseMatrix &dWdU) const;
-//	void dWdU(DenseMatrix &dWdU, const Euler3D_Polytropic_pState &W);
+	void dFxdU(DenseMatrix &dFxdU);
+	void dFxdU(DenseMatrix &dFxdU) const;
+	void dFxdU(DenseMatrix &dFxdU, const Euler3D_Polytropic_pState &W);
+	
+	// y-direction
+	Euler3D_Polytropic_cState Fy(void);
+    Euler3D_Polytropic_cState Fy(void) const;
+    Euler3D_Polytropic_cState Fy(const Euler3D_Polytropic_pState &W);
+	void dFydU(DenseMatrix &dFydU);
+	void dFydU(DenseMatrix &dFydU) const;
+	void dFydU(DenseMatrix &dFydU, const Euler3D_Polytropic_pState &W);
+	
+	// z-direction
+	Euler3D_Polytropic_cState Fz(void);
+    Euler3D_Polytropic_cState Fz(void) const;
+    Euler3D_Polytropic_cState Fz(const Euler3D_Polytropic_pState &W);
+	void dFzdU(DenseMatrix &dFzdU);
+	void dFzdU(DenseMatrix &dFzdU) const;
+	void dFzdU(DenseMatrix &dFzdU, const Euler3D_Polytropic_pState &W);
+	
+   /* 
+	* Solution variable Jacobians.
+	* ----------------------------
+	*/
+	
+	// dUdW
+	void dUdW(DenseMatrix &dUdW);
+	void dUdW(DenseMatrix &dUdW) const;
+	void dUdW(DenseMatrix &dUdW, const Euler3D_Polytropic_pState &W);
+	
+	// dWdU
+	void dWdU(DenseMatrix &dWdU);
+	void dWdU(DenseMatrix &dWdU) const;
+	void dWdU(DenseMatrix &dWdU, const Euler3D_Polytropic_pState &W);
 		
    /* 
 	* Eigenvalues
@@ -374,19 +374,19 @@ class Euler3D_Polytropic_pState{
 	double lambda_x(int index);
 	double lambda_x(int index) const;
 
-//	// y-direction
-//	Euler3D_Polytropic_pState lambda_y(void);
-//    Euler3D_Polytropic_pState lambda_y(void) const;
-//    Euler3D_Polytropic_pState lambda_y(const Euler3D_Polytropic_pState &W);
-//	double lambda_y(int index);
-//	double lambda_y(int index) const;
-//	
-//	// z-direction
-//	Euler3D_Polytropic_pState lambda_z(void);
-//    Euler3D_Polytropic_pState lambda_z(void) const;
-//    Euler3D_Polytropic_pState lambda_z(const Euler3D_Polytropic_pState &W);
-//	double lambda_z(int index);
-//	double lambda_z(int index) const;
+	// y-direction
+	Euler3D_Polytropic_pState lambda_y(void);
+    Euler3D_Polytropic_pState lambda_y(void) const;
+    Euler3D_Polytropic_pState lambda_y(const Euler3D_Polytropic_pState &W);
+	double lambda_y(int index);
+	double lambda_y(int index) const;
+	
+	// z-direction
+	Euler3D_Polytropic_pState lambda_z(void);
+    Euler3D_Polytropic_pState lambda_z(void) const;
+    Euler3D_Polytropic_pState lambda_z(const Euler3D_Polytropic_pState &W);
+	double lambda_z(int index);
+	double lambda_z(int index) const;
 
    /*
 	* Conserved right eigenvector
@@ -400,13 +400,13 @@ class Euler3D_Polytropic_pState{
 	Euler3D_Polytropic_cState rc_x(const int &index);
 	Euler3D_Polytropic_cState rc_x(const int &index) const;
 	
-//	// y-direction
-//	Euler3D_Polytropic_cState rc_y(const int &index);
-//	Euler3D_Polytropic_cState rc_y(const int &index) const;
-//	
-//	// z-direction
-//	Euler3D_Polytropic_cState rc_z(const int &index);
-//	Euler3D_Polytropic_cState rc_z(const int &index) const;
+	// y-direction
+	Euler3D_Polytropic_cState rc_y(const int &index);
+	Euler3D_Polytropic_cState rc_y(const int &index) const;
+	
+	// z-direction
+	Euler3D_Polytropic_cState rc_z(const int &index);
+	Euler3D_Polytropic_cState rc_z(const int &index) const;
 	
 	
    /*
@@ -421,34 +421,34 @@ class Euler3D_Polytropic_pState{
 	Euler3D_Polytropic_pState lp_x(const int &index);
 	Euler3D_Polytropic_pState lp_x(const int &index) const;
 	
-//	// y-direction
-//	Euler3D_Polytropic_pState lp_y(const int &index);
-//	Euler3D_Polytropic_pState lp_y(const int &index) const;
-//	
-//	// z-direction
-//	Euler3D_Polytropic_pState lp_z(const int &index);
-//	Euler3D_Polytropic_pState lp_z(const int &index) const;
-//	
-//   /*
-//	* Primitive right eigenvector
-//	* ---------------------------
-//	*/
-//	
-//	// x-direction
-//	Euler3D_Polytropic_pState rp(const int &index);
-//	Euler3D_Polytropic_pState rp(const int &index) const;
-//	
-//	Euler3D_Polytropic_pState rp_x(const int &index);
-//	Euler3D_Polytropic_pState rp_x(const int &index) const;
-//	
-//	// y-direction
-//	Euler3D_Polytropic_pState rp_y(const int &index);
-//	Euler3D_Polytropic_pState rp_y(const int &index) const;
-//	
-//	// z-direction
-//	Euler3D_Polytropic_pState rp_z(const int &index);
-//	Euler3D_Polytropic_pState rp_z(const int &index) const;
-//		
+	// y-direction
+	Euler3D_Polytropic_pState lp_y(const int &index);
+	Euler3D_Polytropic_pState lp_y(const int &index) const;
+	
+	// z-direction
+	Euler3D_Polytropic_pState lp_z(const int &index);
+	Euler3D_Polytropic_pState lp_z(const int &index) const;
+	
+   /*
+	* Primitive right eigenvector
+	* ---------------------------
+	*/
+	
+	// x-direction
+	Euler3D_Polytropic_pState rp(const int &index);
+	Euler3D_Polytropic_pState rp(const int &index) const;
+	
+	Euler3D_Polytropic_pState rp_x(const int &index);
+	Euler3D_Polytropic_pState rp_x(const int &index) const;
+	
+	// y-direction
+	Euler3D_Polytropic_pState rp_y(const int &index);
+	Euler3D_Polytropic_pState rp_y(const int &index) const;
+	
+	// z-direction
+	Euler3D_Polytropic_pState rp_z(const int &index);
+	Euler3D_Polytropic_pState rp_z(const int &index) const;
+		
 	
    /*
 	* Operators.
@@ -516,17 +516,30 @@ class Euler3D_Polytropic_pState{
 												const Vector3D &norm_dir);
 	
 	static Euler3D_Polytropic_cState FluxRoe_x(const Euler3D_Polytropic_pState &Wl, 
-													 const Euler3D_Polytropic_pState &Wr);
+											   const Euler3D_Polytropic_pState &Wr);
+	static Euler3D_Polytropic_cState FluxRoe_x(const Euler3D_Polytropic_cState &Ul, 
+											   const Euler3D_Polytropic_cState &Ur);
+	static Euler3D_Polytropic_cState FluxRoe_y(const Euler3D_Polytropic_pState &Wl, 
+											   const Euler3D_Polytropic_pState &Wr);
+	static Euler3D_Polytropic_cState FluxRoe_y(const Euler3D_Polytropic_cState &Ul, 
+											   const Euler3D_Polytropic_cState &Ur);
+	static Euler3D_Polytropic_cState FluxRoe_z(const Euler3D_Polytropic_pState &Wl, 
+											   const Euler3D_Polytropic_pState &Wr);
+	static Euler3D_Polytropic_cState FluxRoe_z(const Euler3D_Polytropic_cState &Ul, 
+											   const Euler3D_Polytropic_cState &Ur);
 	static Euler3D_Polytropic_cState FluxRoe_n(const Euler3D_Polytropic_pState &Wl,
-													 const Euler3D_Polytropic_pState &Wr,
-													 const Vector3D &norm_dir);
+											   const Euler3D_Polytropic_pState &Wr,
+											   const Vector3D &norm_dir);
+	static Euler3D_Polytropic_cState FluxRoe_n(const Euler3D_Polytropic_cState &Ul,
+											   const Euler3D_Polytropic_cState &Ur,
+											   const Vector3D &norm_dir);
 	
 	friend Euler3D_Polytropic_pState HartenFixNeg(const Euler3D_Polytropic_pState  &lambda_a,
-														const Euler3D_Polytropic_pState  &lambda_l,
-														const Euler3D_Polytropic_pState  &lambda_r);
+												  const Euler3D_Polytropic_pState  &lambda_l,
+												  const Euler3D_Polytropic_pState  &lambda_r);
 	friend Euler3D_Polytropic_pState HartenFixPos(const Euler3D_Polytropic_pState  &lambda_a,
-														const Euler3D_Polytropic_pState  &lambda_l,
-														const Euler3D_Polytropic_pState  &lambda_r);
+												  const Euler3D_Polytropic_pState  &lambda_l,
+												   const Euler3D_Polytropic_pState  &lambda_r);
 	
 	
 	/*
@@ -743,57 +756,50 @@ class Euler3D_Polytropic_cState{
     Euler3D_Polytropic_pState W(void) const;
     Euler3D_Polytropic_pState W(const Euler3D_Polytropic_cState &U);
     
-//   /* 
-//	* Fluxes and Jacobians
-//	* --------------------
-//	*/
-//	
-//	// x-direction
-//	Euler3D_Polytropic_cState F(void);
-//    Euler3D_Polytropic_cState F(void) const;
-//    Euler3D_Polytropic_cState F(const Euler3D_Polytropic_cState &U);
-//	void dFdU(DenseMatrix &dFdU);
-//	void dFdU(DenseMatrix &dFdU) const;
-//	void dFdU(DenseMatrix &dFdU, const Euler3D_Polytropic_cState &U);
-//	
-//	Euler3D_Polytropic_cState Fx(void);
-//    Euler3D_Polytropic_cState Fx(void) const;
-//    Euler3D_Polytropic_cState Fx(const Euler3D_Polytropic_cState &U);
-//	void dFxdU(DenseMatrix &dFxdU);
-//	void dFxdU(DenseMatrix &dFxdU) const;
-//	void dFxdU(DenseMatrix &dFxdU, const Euler3D_Polytropic_cState &U);
-//	
-//	// y-direction
-//	Euler3D_Polytropic_cState Fy(void);
-//    Euler3D_Polytropic_cState Fy(void) const;
-//    Euler3D_Polytropic_cState Fy(const Euler3D_Polytropic_cState &U);
-//	void dFydU(DenseMatrix &dFydU);
-//	void dFydU(DenseMatrix &dFydU) const;
-//	void dFydU(DenseMatrix &dFydU, const Euler3D_Polytropic_cState &U);
-//	
-//	// z-direction
-//	Euler3D_Polytropic_cState Fz(void);
-//    Euler3D_Polytropic_cState Fz(void) const;
-//    Euler3D_Polytropic_cState Fz(const Euler3D_Polytropic_cState &U);
-//	void dFzdU(DenseMatrix &dFzdU);
-//	void dFzdU(DenseMatrix &dFzdU) const;
-//	void dFzdU(DenseMatrix &dFzdU, const Euler3D_Polytropic_cState &U);
-//	
-//   /* 
-//	* Solution variable Jacobians.
-//	* ----------------------------
-//	*/
-//	
-//	// dUdW
-//	void dUdW(DenseMatrix &dUdW);
-//	void dUdW(DenseMatrix &dUdW) const;
-//	void dUdW(DenseMatrix &dUdW, const Euler3D_Polytropic_cState &U);
-//	
-//	// dWdU
-//	void dWdU(DenseMatrix &dWdU);
-//	void dWdU(DenseMatrix &dWdU) const;
-//	void dWdU(DenseMatrix &dWdU, const Euler3D_Polytropic_cState &U);
-//	
+   /* 
+	* Fluxes and Jacobians
+	* --------------------
+	*/
+	
+	// x-direction
+	Euler3D_Polytropic_cState Fx(void);
+    Euler3D_Polytropic_cState Fx(void) const;
+    Euler3D_Polytropic_cState Fx(const Euler3D_Polytropic_cState &U);
+	void dFxdU(DenseMatrix &dFxdU);
+	void dFxdU(DenseMatrix &dFxdU) const;
+	void dFxdU(DenseMatrix &dFxdU, const Euler3D_Polytropic_cState &U);
+	
+	// y-direction
+	Euler3D_Polytropic_cState Fy(void);
+    Euler3D_Polytropic_cState Fy(void) const;
+    Euler3D_Polytropic_cState Fy(const Euler3D_Polytropic_cState &U);
+	void dFydU(DenseMatrix &dFydU);
+	void dFydU(DenseMatrix &dFydU) const;
+	void dFydU(DenseMatrix &dFydU, const Euler3D_Polytropic_cState &U);
+	
+	// z-direction
+	Euler3D_Polytropic_cState Fz(void);
+    Euler3D_Polytropic_cState Fz(void) const;
+    Euler3D_Polytropic_cState Fz(const Euler3D_Polytropic_cState &U);
+	void dFzdU(DenseMatrix &dFzdU);
+	void dFzdU(DenseMatrix &dFzdU) const;
+	void dFzdU(DenseMatrix &dFzdU, const Euler3D_Polytropic_cState &U);
+	
+   /* 
+	* Solution variable Jacobians.
+	* ----------------------------
+	*/
+	
+	// dUdW
+	void dUdW(DenseMatrix &dUdW);
+	void dUdW(DenseMatrix &dUdW) const;
+	void dUdW(DenseMatrix &dUdW, const Euler3D_Polytropic_cState &U);
+	
+	// dWdU
+	void dWdU(DenseMatrix &dWdU);
+	void dWdU(DenseMatrix &dWdU) const;
+	void dWdU(DenseMatrix &dWdU, const Euler3D_Polytropic_cState &U);
+	
 	
    /*
 	* Operators.
