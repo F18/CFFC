@@ -27,6 +27,14 @@
  **********************************************************************/
 int AdvectDiffuse2D_Quad_Block::residual_variable = 1;
 
+
+// Initialize ExactGrad
+AdvectDiffuse2D_Quad_Block::Exact_Gradient_Function AdvectDiffuse2D_Quad_Block::ExactGrad = NULL;
+
+// Initialize ExactSoln
+FunctionType2D AdvectDiffuse2D_Quad_Block::ExactSoln = NULL;
+
+
 /*******************************************************************************
  * AdvectDiffuse2D_Quad_Block -- Single Block Member Functions.
  ******************************************************************************/

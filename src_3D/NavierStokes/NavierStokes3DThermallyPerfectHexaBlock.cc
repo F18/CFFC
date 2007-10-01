@@ -157,7 +157,7 @@ int Hexa_Block<NavierStokes3D_ThermallyPerfect_pState,
                   }
                   if ( Grid.BCtypeW[j][k] == BC_MOVING_WALL) {
                      Wl =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k),
-                                                                               IPs.Moving_wall_velocity,
+                                                                               IPs.Moving_Wall_Velocity,
                                                                                IPs.Pressure_Gradient,
                                                                                FIXED_TEMPERATURE_WALL);
                  
@@ -182,7 +182,7 @@ int Hexa_Block<NavierStokes3D_ThermallyPerfect_pState,
                   } 
                   if ( Grid.BCtypeE[j][k] == BC_MOVING_WALL) {
                      Wr =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wl, WoE[j][k], Grid.nfaceE(i, j, k),  
-                                                                               IPs.Moving_wall_velocity,
+                                                                               IPs.Moving_Wall_Velocity,
                                                                                IPs.Pressure_Gradient,
                                                                                FIXED_TEMPERATURE_WALL);
                   } 
@@ -282,7 +282,7 @@ int Hexa_Block<NavierStokes3D_ThermallyPerfect_pState,
                 if ( Grid.BCtypeS[i][k] == BC_MOVING_WALL) {
                    Wl =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
                                                                              IPs.Pressure_Gradient,
-                                                                             IPs.Moving_wall_velocity,
+                                                                             IPs.Moving_Wall_Velocity,
                                                                              FIXED_TEMPERATURE_WALL);
                 }
 
@@ -306,7 +306,7 @@ int Hexa_Block<NavierStokes3D_ThermallyPerfect_pState,
                 }
                 if ( Grid.BCtypeN[i][k] == BC_MOVING_WALL) {
                    Wr =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
-                                                                             IPs.Moving_wall_velocity,
+                                                                             IPs.Moving_Wall_Velocity,
                                                                              IPs.Pressure_Gradient,
                                                                              FIXED_TEMPERATURE_WALL );
                 }
@@ -394,7 +394,7 @@ int Hexa_Block<NavierStokes3D_ThermallyPerfect_pState,
                 }
                 if ( Grid.BCtypeB[i][j] == BC_MOVING_WALL) {
                    Wl =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1),
-                                                                             IPs.Moving_wall_velocity,
+                                                                             IPs.Moving_Wall_Velocity,
                                                                              IPs.Pressure_Gradient,
                                                                              FIXED_TEMPERATURE_WALL);
                 }
@@ -420,7 +420,7 @@ int Hexa_Block<NavierStokes3D_ThermallyPerfect_pState,
                 }
                 if ( Grid.BCtypeT[i][j] == BC_MOVING_WALL) {
                    Wr =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wl, WoT[i][j], Grid.nfaceTop(i, j, k),
-                                                                             IPs.Moving_wall_velocity,  
+                                                                             IPs.Moving_Wall_Velocity,  
                                                                              IPs.Pressure_Gradient,
                                                                              FIXED_TEMPERATURE_WALL );
                 }

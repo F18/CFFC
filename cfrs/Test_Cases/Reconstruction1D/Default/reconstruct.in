@@ -1,0 +1,242 @@
+############################
+#
+# Reconstruction1D input file
+#
+##########################################
+# Set method for solving the linear system
+##########################################
+Method_Used =
+LSH
+Geometric_Weighting =
+Yes
+Data_Dependent_Weighting =
+Yes
+Integration_Type =
+Numeric
+#Theoretic
+#
+###########################
+# Set function parameters
+###########################
+#
+Function_Definition =
+Default
+Reconstruction_Order =
+3
+###########################
+# Set grid parameters
+###########################
+#
+Grid_Type =
+Grid_Uniform
+X_min     =
+-2.0
+Length    =
+6.0
+X_Shift =
+0.0
+CellNumber_or_DeltaCell =
+N
+Number_of_Cells_Idir =
+15
+Delta_Cell =
+0.001
+SubGridPoints_or_DeltaSubGrid =
+N
+Number_of_Subgrid_Points =
+10
+Delta_of_Subgrid =
+0.1
+Output_File_Name =
+Job1D
+Output_Format_Type =
+tecplot
+#######################
+# Execute program
+#######################
+Execute
+#######################
+# Write output
+#######################
+Write_Output
+#######################
+# Write Cell Center Values
+######################
+#Write_Cell_Comparison
+######################
+# Write Mathematical Function
+######################
+Write_Function_Graph
+############################
+#Write the derivatives
+############################
+#Write_Output_Derivatives
+############################
+#Write the IC for the whole domain
+############################
+Write_Mesh_Definition
+############################
+#
+Terminate
+Write_Norm_On_Screen
+#
+# Order 2
+Number_of_Cells_Idir =
+16
+Execute
+Write_L1_Norm
+Number_of_Cells_Idir =
+32
+Execute
+Write_L1_Norm
+Number_of_Cells_Idir =
+64
+Execute
+Write_L1_Norm
+Write_Output
+Terminate
+Number_of_Cells_Idir =
+128
+Execute
+Number_of_Cells_Idir =
+256
+Execute
+Number_of_Cells_Idir =
+512
+Execute
+Number_of_Cells_Idir =
+1024
+Execute
+Number_of_Cells_Idir =
+2048
+Execute
+Number_of_Cells_Idir =
+4096
+Execute
+Number_of_Cells_Idir =
+8192
+Execute
+Number_of_Cells_Idir =
+16384
+Execute
+Number_of_Cells_Idir =
+32768
+Execute
+Terminate
+Number_of_Cells_Idir =
+65536
+Execute
+Number_of_Cells_Idir =
+131072
+Execute
+Terminate
+Number_of_Cells_Idir =
+262144
+Execute
+Number_of_Cells_Idir =
+524288
+Execute
+Number_of_Cells_Idir =
+1048576
+Execute
+Number_of_Cells_Idir =
+2097152
+Execute
+Terminate
+# Order 3
+Reconstruction_Order =
+3
+Output_File_Name =
+job_LSH_3
+Execute
+Write_Output
+# Order 4
+Reconstruction_Order =
+4
+Output_File_Name =
+job_LSH_4
+Execute
+Write_Output
+# Order 5
+Reconstruction_Order =
+5
+Output_File_Name =
+job_LSH_5
+Execute
+Write_Output
+Write_Mesh_Definition
+# Terminate program
+############################
+Terminate
+
+##############################################################
+##########################  HELP  ############################
+##############################################################
++-------+                     |            +----------------+
+| Field |                     |            | Possible Value |
++-------+                     |            +----------------+
+--------------------------------------------------------------
+                              |
+Method_Used:                  
+			Normal_Eq  (Normal Equation)
+ 	                LSH        (Householder transformation)
+###############################################################
+Function_Definition:
+	                Default, Example1, Example2, Example3,
+			Example4,
+			Not_Defined_Yet: Example5, Example6, Example7
+
+*************************************************************
+Reconstruction_Order:                   positive integer number 
+*************************************************************
+Grid_Type:
+                        Grid_Uniform
+                        Grid_NonUniform
+                        Grid_Predefined1
+			Grid_Predefined2
+			Grid_Read_From_Data_File
+************************************************************
+X_min:( min X of the Domain)                      val
+Length (Domain length)	 			  val
+X_Shift:					  val
+X_Scale:                                          val
+************************************************************
+!!!!!!!!!!!!!!
+N                         :CellNumber_or_DeltaCell --- for number
+D			  :CellNumber_or_DeltaCell --- for delta
+*********************************************
+val                       :Number_of_Cells_Idir
+val                       :Delta_Cell
+*********************************************
+N                         :SubGridPoints_or_DeltaSubGrid --- for number
+D                         :SubGridPoints_or_DeltaSubGrid --- for delta
+*********************************************
+val                       :Number_of_Subgrid_Points
+val                       :Delta_of_Subgrid
+*********************************************
+file_name                 :Output_File_Name
+*********************************************
+gnuplot                   :Output_Format_Type
+tecplot                   :Output_Format_Type
+matlab                    :Output_Format_Type
+*********************************************
+**********************************************
+COMMANDS::                 
+	Execute 		        - execute code
+	Terminate      			- stop code
+	Continue			- continue code
+	Write_Output			- write solution to file
+	Write_Output_Cells 		- write
+	Write_Output_Mesh		- write mesh data
+	Write_Mesh_Definition		- write
+	Write_L1_Norm			- write L1 norm to file
+	Write_L2_Norm			- write L2 norm to file
+	Write_Norm_On_Screen		- write L1 & L2 norms on screen
+	Write_Output_Mesh_Cells		- write 
+	Write_Output_Derivatives	- write derivatives values to file
+	Write_Cell_Comparison		- write data showing the difference between the values at
+					  the cell center
+	Write_Function_Graph		- write the exact solution to file
+			
+
+

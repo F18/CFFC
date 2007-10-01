@@ -22,7 +22,7 @@
 void Open_Input_File(NavierStokes2D_Input_Parameters &IP) {
 
   IP.Input_File.open(IP.Input_File_Name,ios::in);
-  if (!IP.Input_File.bad()) {
+  if (!IP.Input_File.fail()) {
     IP.Line_Number = 0;
     IP.Input_File.setf(ios::skipws);
   }
@@ -124,14 +124,30 @@ void Set_Default_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   IP.i_Friction_Velocity = FRICTION_VELOCITY_WALL_SHEAR_STRESS;
   IP.C_constant = 5.0;
   IP.von_Karman_Constant = 0.41;
-  IP.yplus_sublayer = 5.0;
+  IP.yplus_sublayer = 2.5;
   IP.yplus_buffer_layer = 30.0;
-  IP.yplus_outer_layer = 100.0;
+  IP.yplus_outer_layer = 250.0;//If this comment exists, you yet need to verify this value (6th sept, 2007)
   IP.n_cells_sublayer_support = 5;
   IP.i_Turbulent_Wall_Injection = OFF;
   IP.sigmav = 0.035;
   IP.lw = 0.000200;
+  
+  // Compressibility effect switch:
+  string_ptr = "Off";
+  strcpy(IP.Compressibility_Effect,string_ptr);
+  IP.i_Compressibility_Effect = OFF;
 
+  // Transition model:
+  string_ptr = "Off";
+  strcpy(IP.Transition_Model,string_ptr);
+  IP.i_Transition_Model = OFF;
+
+  // Variable Prandtl number model:
+  string_ptr = "Off";
+  strcpy(IP.Variable_Prandtl,string_ptr);
+  IP.i_Variable_Prandtl = OFF;
+  IP.C_lambda = 0.14; IP.Cd1 = 2.0; IP.Cd4 = 2.2; IP.Cd5 = 0.8; 
+ 
   // Propellant type:
   string_ptr = "AP_HTPB";
   strcpy(IP.Propellant_Type,string_ptr);
@@ -142,7 +158,8 @@ void Set_Default_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   IP.Wo.set_static_variables(IP.Gas_Type,IP.FlowType,IP.C_constant,IP.von_Karman_Constant,
 			     IP.yplus_sublayer,IP.yplus_buffer_layer,
 			     IP.yplus_outer_layer,IP.Propellant_Type,
-			     IP.sigmav,IP.lw);
+			     IP.i_Compressibility_Effect, IP.i_Transition_Model, IP.i_Variable_Prandtl,
+			     IP.sigmav,IP.lw,IP.C_lambda,IP.Cd1,IP.Cd4,IP.Cd5);
   IP.Pressure = IP.Wo.p;
   IP.Temperature = IP.Wo.T();
   IP.Mach_Number = 0.80;
@@ -162,7 +179,8 @@ void Set_Default_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   IP.Uo.set_static_variables(IP.Gas_Type,IP.FlowType,IP.C_constant,IP.von_Karman_Constant,
 			     IP.yplus_sublayer,IP.yplus_buffer_layer,
 			     IP.yplus_outer_layer,IP.Propellant_Type,
-			     IP.sigmav,IP.lw);
+			     IP.i_Compressibility_Effect, IP.i_Transition_Model, IP.i_Variable_Prandtl,
+			     IP.sigmav,IP.lw,IP.C_lambda,IP.Cd1,IP.Cd4,IP.Cd5);
   IP.Uo = U(IP.Wo);
   IP.W1 = IP.Wo;
   IP.W2 = IP.Wo;
@@ -460,6 +478,39 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
 			1,
 			MPI::DOUBLE,0);
   MPI::COMM_WORLD.Bcast(&(IP.lw),
+			1,
+			MPI::DOUBLE,0);
+  // Compressibility Effects:
+  MPI::COMM_WORLD.Bcast(IP.Compressibility_Effect,
+			INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D,
+			MPI::CHAR,0);
+  MPI::COMM_WORLD.Bcast(&(IP.i_Compressibility_Effect),
+			1,
+			MPI::INT,0);
+  // Transition Model
+  MPI::COMM_WORLD.Bcast(IP.Transition_Model,
+			INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D,
+			MPI::CHAR,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Transition_Model),
+			1,
+			MPI::INT,0);
+  // Variable Prandtl number
+  MPI::COMM_WORLD.Bcast(IP.Variable_Prandtl,
+			INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D,
+			MPI::CHAR,0);
+  MPI::COMM_WORLD.Bcast(&(IP.i_Variable_Prandtl),
+			1,
+			MPI::INT,0);
+  MPI::COMM_WORLD.Bcast(&(IP.C_lambda),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Cd1),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Cd4),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Cd5),
 			1,
 			MPI::DOUBLE,0);
   // Initial conditions:
@@ -1007,6 +1058,39 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP,
 		     1,
 		     MPI::DOUBLE,Source_Rank);
   Communicator.Bcast(&(IP.lw),
+		     1,
+		     MPI::DOUBLE,Source_Rank);
+  //Compressibility Effects
+  Communicator.Bcast(IP.Compressibility_Effect,
+		     INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D,
+		     MPI::CHAR,Source_Rank);
+  Communicator.Bcast(&(IP.i_Compressibility_Effect),
+		     1,
+		     MPI::INT,Source_Rank);
+  //Transition Effects
+  Communicator.Bcast(IP.Transition_Model,
+		     INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D,
+		     MPI::CHAR,Source_Rank);
+  Communicator.Bcast(&(IP.i_Transition_Model),
+		     1,
+		     MPI::INT,Source_Rank);
+  //Variable Prandtl number
+  Communicator.Bcast(IP.Variable_Prandtl,
+		     INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D,
+		     MPI::CHAR,Source_Rank);
+  Communicator.Bcast(&(IP.i_Variable_Prandtl),
+		     1,
+		     MPI::INT,Source_Rank);
+  Communicator.Bcast(&(IP.C_lambda),
+		     1,
+		     MPI::DOUBLE,Source_Rank);
+  Communicator.Bcast(&(IP.Cd1),
+		     1,
+		     MPI::DOUBLE,Source_Rank);
+  Communicator.Bcast(&(IP.Cd4),
+		     1,
+		     MPI::DOUBLE,Source_Rank);
+  Communicator.Bcast(&(IP.Cd5),
 		     1,
 		     MPI::DOUBLE,Source_Rank);
   // Initial conditions:
@@ -1642,6 +1726,8 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.i_ICs = IC_VISCOUS_DRIVEN_CAVITY_FLOW;
     } else if (strcmp(IP.ICs_Type,"Backward_Facing_Step") == 0) {
       IP.i_ICs = IC_VISCOUS_BACKWARD_FACING_STEP;
+    } else if (strcmp(IP.ICs_Type,"Jet_Flow") == 0) {
+      IP.i_ICs = IC_JET_FLOW; 
     } else if (strcmp(IP.ICs_Type,"Mixing_Layer") == 0) {
       IP.i_ICs = IC_MIXING_LAYER;  
     } else if (strcmp(IP.ICs_Type,"Branched_Duct") == 0) {
@@ -1747,6 +1833,8 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.Box_Width = 2.0;
       IP.Mesh_Stretching_Factor_Idir = 1.0001;
       IP.Mesh_Stretching_Factor_Jdir = 1.0010;
+    } else if (strcmp(IP.Grid_Type,"Jet_Flow") == 0) {
+      IP.i_Grid = GRID_JET_FLOW;
     } else if (strcmp(IP.Grid_Type,"Ringleb_Flow") == 0) {
       IP.i_Grid = GRID_RINGLEB_FLOW;
       IP.Inner_Streamline_Number = 0.80;
@@ -2658,6 +2746,76 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       i_command = INVALID_INPUT_VALUE;
     }
 
+  } else if (strcmp(IP.Next_Control_Parameter,"Compressibility_Effect") == 0) {
+    i_command = 70;
+    Get_Next_Input_Control_Parameter(IP);
+    strcpy(IP.Compressibility_Effect,IP.Next_Control_Parameter);
+    if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
+      IP.i_Compressibility_Effect = OFF;
+    } else if (strcmp(IP.Compressibility_Effect,"Sarkar_Model") == 0) {
+      IP.i_Compressibility_Effect = COMPRESSIBILITY_CORRECTION_SARKAR;
+    } else if (strcmp(IP.Compressibility_Effect,"Zeman_Model") == 0) {
+      IP.i_Compressibility_Effect = COMPRESSIBILITY_CORRECTION_ZEMAN;
+    } else if (strcmp(IP.Compressibility_Effect,"Wilcox_Model") == 0) {
+      IP.i_Compressibility_Effect = COMPRESSIBILITY_CORRECTION_WILCOX;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+    }
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Variable_Prandtl") == 0) {
+    i_command = 68;
+    Get_Next_Input_Control_Parameter(IP);
+    strcpy(IP.Variable_Prandtl,IP.Next_Control_Parameter);
+    if (strcmp(IP.Variable_Prandtl,"OFF") == 0) {
+      IP.i_Variable_Prandtl = OFF;
+    } else if (strcmp(IP.Variable_Prandtl,"ON") == 0) {
+      IP.i_Variable_Prandtl = ON;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+    }
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Transition_Model") == 0) {
+    i_command = 69;
+    Get_Next_Input_Control_Parameter(IP);
+    strcpy(IP.Transition_Model,IP.Next_Control_Parameter);
+    if (strcmp(IP.Transition_Model,"OFF") == 0) {
+      IP.i_Transition_Model = OFF;
+    } else if (strcmp(IP.Transition_Model,"Wilcox") == 0) {
+      IP.i_Transition_Model = TRANSITION_WILCOX;
+    } else if (strcmp(IP.Transition_Model,"Menter") == 0) {
+      IP.i_Transition_Model = TRANSITION_MENTER;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+    }
+
+  } else if (strcmp(IP.Next_Control_Parameter,"C_lambda") == 0) {
+    i_command = 70;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.C_lambda;
+    IP.Input_File.getline(buffer,sizeof(buffer));
+    if (IP.C_lambda < ZERO) i_command = INVALID_INPUT_VALUE;
+    
+  } else if (strcmp(IP.Next_Control_Parameter,"Cd1") == 0) {
+    i_command = 71;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Cd1;
+    IP.Input_File.getline(buffer,sizeof(buffer));
+    if (IP.Cd1 < ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Cd4") == 0) {
+    i_command = 72;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Cd4;
+    IP.Input_File.getline(buffer,sizeof(buffer));
+    if (IP.Cd4 < ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Cd5") == 0) {
+    i_command = 73;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Cd5;
+    IP.Input_File.getline(buffer,sizeof(buffer));
+    if (IP.Cd5 < ZERO) i_command = INVALID_INPUT_VALUE;
+    
   } else if (strcmp(IP.Next_Control_Parameter,"Friction_Velocity_Type") == 0) {
     i_command = 162;
     Get_Next_Input_Control_Parameter(IP);;
@@ -3460,6 +3618,12 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Elliptic_Operator_Analysis") == 0) {
     i_command = WRITE_OUTPUT_ELLIPTIC_OPERATOR_ANALYSIS;
 
+  } else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Supersonic_Hot_Jet") == 0) {
+    i_command = WRITE_OUTPUT_SUPERSONIC_HOT_JET_CODE;
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Subsonic_Hot_Jet") == 0) {
+    i_command = WRITE_OUTPUT_SUBSONIC_HOT_JET_CODE;
+
   } else if (strcmp(IP.Next_Control_Parameter,"Refine_Grid") == 0) {
     i_command = REFINE_GRID_CODE;
 
@@ -3481,16 +3645,17 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
   if (i_command == INVALID_INPUT_CODE) {
     strcpy(buffer, IP.Next_Control_Parameter);
     Get_Next_Input_Control_Parameter(IP);
-    i_command = IP.NKS_IP.Parse_Next_Input_Control_Parameter(buffer, IP.Next_Control_Parameter);
+    i_command = IP.NKS_IP.Parse_Next_Input_Control_Parameter(buffer, 
+                                                             IP.Next_Control_Parameter);
 
-    if (i_command == INVALID_INPUT_CODE) {
-      cout << "\n***\n\nWarning: input file line " << IP.Line_Number << ": ";
-      cout << "ignoring unknown input code:\n";
-      cout << "code: " << buffer;
-      cout << "\nvalue: " << IP.Next_Control_Parameter;
-      cout << "\n\n***\n";
-    }
-    i_command = COMMENT_CODE;
+//     if (i_command == INVALID_INPUT_CODE) {
+//       cout << "\n***\n\nWarning: input file line " << IP.Line_Number << ": ";
+//       cout << "ignoring unknown input code:\n";
+//       cout << "code: " << buffer;
+//       cout << "\nvalue: " << IP.Next_Control_Parameter;
+//       cout << "\n\n***\n";
+//     }
+//     i_command = COMMENT_CODE;
   }
 
   if (!IP.Input_File.good()) { i_command = INVALID_INPUT_VALUE; }
@@ -3521,7 +3686,7 @@ int Process_Input_Control_Parameter_File(NavierStokes2D_Input_Parameters &IP,
 
   // Open the input file containing the input parameters.
   Open_Input_File(IP);
-  error_flag = IP.Input_File.bad();
+  error_flag = IP.Input_File.fail();
 
   if (error_flag) {
     cout << "\n NavierStokes2D ERROR: Unable to open NavierStokes2D input data file.\n";
@@ -3592,7 +3757,13 @@ void Initialize_Reference_State(NavierStokes2D_Input_Parameters &IP) {
 			     IP.yplus_buffer_layer,
 			     IP.yplus_outer_layer,
 			     IP.Propellant_Type,
-			     IP.sigmav,IP.lw);
+			     IP.i_Compressibility_Effect,
+			     IP.i_Transition_Model, 
+			     IP.i_Variable_Prandtl,
+			     IP.sigmav,IP.lw,
+			     IP.C_lambda,
+			     IP.Cd1,IP.Cd4,
+			     IP.Cd5);
   IP.Uo.set_static_variables(IP.Gas_Type,
 			     IP.FlowType,
 			     IP.C_constant,
@@ -3601,7 +3772,13 @@ void Initialize_Reference_State(NavierStokes2D_Input_Parameters &IP) {
 			     IP.yplus_buffer_layer,
 			     IP.yplus_outer_layer,
 			     IP.Propellant_Type,
-			     IP.sigmav,IP.lw);
+			     IP.i_Compressibility_Effect,
+			     IP.i_Transition_Model, 
+			     IP.i_Variable_Prandtl,
+			     IP.sigmav,IP.lw,
+			     IP.C_lambda,
+			     IP.Cd1,IP.Cd4,
+			     IP.Cd5);
 
   // Initialize gas-phase reference state.
   IP.Wo.rho = IP.Pressure/(IP.Wo.R*IP.Temperature);

@@ -1,4 +1,5 @@
-/* UnitTesting.h:  Header file defining unit testing framework. */
+/*!\file UnitTesting.h
+  \brief Header file defining unit testing framework. */
 
 #ifndef _UNITTESTING_INCLUDED
 #define _UNITTESTING_INCLUDED

@@ -1,7 +1,8 @@
 /* Euler3DThermallyPerfect.h:  
 
-   Header file for the 3D Euler equations 
-   for thermally perfect gaseous mixtures. */
+   Header file for the solution of the Euler equations 
+   governing thermally perfect non-reactive and combusting
+   gaseous mixtures. */
 
 #ifndef _EULER3D_THERMALLYPERFECT_INCLUDED
 #define _EULER3D_THERMALLYPERFECT_INCLUDED
@@ -15,6 +16,10 @@
 #ifndef _EULER3D_THERMALLYPERFECT_STATE_INCLUDED
 #include "Euler3DThermallyPerfectState.h"
 #endif // _EULER3D_THERMALLYPERFECT_STATE_INCLUDED
+
+#ifndef _EULER3D_THERMALLYPERFECT_INPUT_INCLUDED
+#include "Euler3DThermallyPerfectInput.h"
+#endif // _EULER3D_THERMALLYPERFECT_INPUT_INCLUDED
 
 #ifndef _MPI_INCLUDED
 #include "../MPI/MPI.h"

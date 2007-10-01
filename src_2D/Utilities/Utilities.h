@@ -1,4 +1,5 @@
-//: :Utilities.h
+/*!\file Utilities.h
+ \brief Header file defining useful macros and functions. */
 
 // Original source from Thinking in C++, 2nd Edition
 // Available at http://www.BruceEckel.com
@@ -43,42 +44,50 @@ inline void require(bool requirement,
 
 inline void requireArgs(int argc, int args, 
 			const std::string& msg = "Must use %d arguments") {
+#ifndef __No_Checking__
   using namespace std;
   if (argc != args + 1) {
     fprintf(stderr, msg.c_str(), args);
     fputs("\n", stderr);
     exit(1);
   }
+#endif
 }
 
 inline void requireMinArgs(int argc, int minArgs,
 			   const std::string& msg = "Must use at least %d arguments") {
+#ifndef __No_Checking__
   using namespace std;
   if(argc < minArgs + 1) {
     fprintf(stderr, msg.c_str(), minArgs);
     fputs("\n", stderr);
     exit(1);
   }
+#endif
 }
   
 inline void assure(std::ifstream& in, 
 		   const std::string& filename = "") {
+#ifndef __No_Checking__
   using namespace std;
   if(!in) {
     fprintf(stderr, "Could not open file %s\n",
 	    filename.c_str());
     exit(1);
   }
+#endif
 }
 
 inline void assure(std::ofstream& out, 
 		   const std::string& filename = "") {
+#ifndef __No_Checking__
   using namespace std;
   if(!out) {
     fprintf(stderr, "Could not open file %s\n", 
 	    filename.c_str());
     exit(1);
   }
+#endif
 }
 
 #endif // _UTILITIES_INCLUDED

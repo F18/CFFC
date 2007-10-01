@@ -825,7 +825,7 @@ class Dusty2D_pState {
     }
   }
 
-  void output_data(ostream &out_file) {
+  void output_data(ostream &out_file, double dummy1, double dummy2) { //dummies needed for compatibility with NS turbulent
     out_file << " " << rho << " " << v.x << " " << v.y << " " << p
 	     << " " << T() << " " << M() << " " << H() << " " << s();
     if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {

@@ -122,9 +122,9 @@ int main(int num_arg, char *arg_ptr[]) {
         batch_flag = 1;
       } else if (strcmp(arg_ptr[i],"-pde") == 0) {
         pde_flag = 1;
-	//} else if (strcmp(arg_ptr[i-1],"-pde") == 0) {
-        //Equation_Type_ptr = arg_ptr[i];
-        //strcpy(Equation_Type, Equation_Type_ptr);
+      } else if (strcmp(arg_ptr[i-1],"-pde") == 0) {
+        Equation_Type_ptr = arg_ptr[i];
+        strcpy(Equation_Type, Equation_Type_ptr);
       } else if (strcmp(arg_ptr[i],"-f") == 0) {
         file_flag = 1;
       } else if (strcmp(arg_ptr[i-1],"-f") == 0) {
@@ -151,7 +151,7 @@ int main(int num_arg, char *arg_ptr[]) {
       }
     }
   }
-
+  
   // Display command line argument error message and terminate the
   // program as required.
 

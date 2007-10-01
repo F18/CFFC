@@ -33,7 +33,7 @@ int Read_Restart_Solution(NavierStokes2D_Quad_Block *Soln_ptr,
                           double &Time,
                           CPUTime &CPU_Time) {
 
-  int i, i_new_time_set, nsteps;
+  int i, j, i_new_time_set, nsteps;
   char prefix[256], extension[256], restart_file_name[256];
   //char gas_type[256], particle_type[256];
   char *restart_file_name_ptr;
@@ -89,6 +89,48 @@ int Read_Restart_Solution(NavierStokes2D_Quad_Block *Soln_ptr,
 	i_new_time_set = 1;
       }
       restart_file >> Soln_ptr[nb];
+
+      if (IP.i_Variable_Prandtl == ON  && Soln_ptr[nb].Variable_Prandtl == OFF){
+	Soln_ptr[nb].Variable_Prandtl = ON;
+	double CmuFmu, Coeff;
+	
+	for (j = Soln_ptr[nb].JCl-Soln_ptr[nb].Nghost; j <= Soln_ptr[nb].JCu+Soln_ptr[nb].Nghost; j++) {
+	  for (i = Soln_ptr[nb].ICl-Soln_ptr[nb].Nghost; i <= Soln_ptr[nb].ICu+Soln_ptr[nb].Nghost; i++) {
+	    Soln_ptr[nb].W[i][j].ke = sqr(IP.Step_Height*Soln_ptr[nb].W[i][j].p/(IP.Wo.gm1*Soln_ptr[nb].W[i][j].rho));
+// 	    if (Soln_ptr[nb].W[i][j].k < TOLER)
+// 	      Soln_ptr[nb].W[i][j].k = TOLER;
+	    CmuFmu = Soln_ptr[nb].W[i][j].muT()*Soln_ptr[nb].W[i][j].epsilon()/Soln_ptr[nb].W[i][j].rho/sqr(max(Soln_ptr[nb].W[i][j].k,TOLER*TOLER));
+	    Coeff = sqr(0.9*IP.C_lambda*Soln_ptr[nb].W[i][j].f_lambda(Soln_ptr[nb].Wall[i][j].ywall)/max(CmuFmu,TOLER));
+	    Soln_ptr[nb].W[i][j].ee = Coeff*Soln_ptr[nb].W[i][j].epsilon()*Soln_ptr[nb].W[i][j].ke/max(Soln_ptr[nb].W[i][j].k,TOLER*TOLER);
+	    Soln_ptr[nb].U[i][j] = U(Soln_ptr[nb].W[i][j]);
+	  }
+	}
+
+	for (int j = Soln_ptr[nb].JCl-Soln_ptr[nb].Nghost; j <= Soln_ptr[nb].JCu+Soln_ptr[nb].Nghost; j++) {
+	  Soln_ptr[nb].WoW[j].ke = sqr(IP.Step_Height*Soln_ptr[nb].WoW[j].p/(IP.Wo.gm1*Soln_ptr[nb].WoW[j].rho));
+	  CmuFmu = Soln_ptr[nb].WoW[j].muT()*Soln_ptr[nb].WoW[j].epsilon()/Soln_ptr[nb].WoW[j].rho/sqr(max(Soln_ptr[nb].WoW[j].k,TOLER*TOLER));
+	  Coeff = sqr(0.9*IP.C_lambda*Soln_ptr[nb].WoW[j].f_lambda(Soln_ptr[nb].Wall[Soln_ptr[nb].ICl][j].ywall)/max(CmuFmu,TOLER*TOLER));
+	  Soln_ptr[nb].WoW[j].ee = Coeff*Soln_ptr[nb].WoW[j].epsilon()*Soln_ptr[nb].WoW[j].ke/max(Soln_ptr[nb].WoW[j].k,TOLER*TOLER);
+	  
+	  Soln_ptr[nb].WoE[j].ke = sqr(IP.Step_Height*Soln_ptr[nb].WoE[j].p/(IP.Wo.gm1*Soln_ptr[nb].WoE[j].rho));
+	  CmuFmu = Soln_ptr[nb].WoE[j].muT()*Soln_ptr[nb].WoE[j].epsilon()/Soln_ptr[nb].WoE[j].rho/sqr(max(Soln_ptr[nb].WoE[j].k,TOLER*TOLER));
+	  Coeff = sqr(0.9*IP.C_lambda*Soln_ptr[nb].WoE[j].f_lambda(Soln_ptr[nb].Wall[Soln_ptr[nb].ICu][j].ywall)/max(CmuFmu,TOLER*TOLER));
+	  Soln_ptr[nb].WoE[j].ee = Coeff*Soln_ptr[nb].WoE[j].epsilon()*Soln_ptr[nb].WoE[j].ke/max(Soln_ptr[nb].WoE[j].k,TOLER*TOLER);	  
+	}
+	
+	for (int i = Soln_ptr[nb].ICl-Soln_ptr[nb].Nghost; i <= Soln_ptr[nb].ICu+Soln_ptr[nb].Nghost; i++) {
+	  Soln_ptr[nb].WoS[i].ke = sqr(IP.Step_Height*Soln_ptr[nb].WoS[i].p/(IP.Wo.gm1*Soln_ptr[nb].WoS[i].rho));
+	  CmuFmu = Soln_ptr[nb].WoW[i].muT()*Soln_ptr[nb].WoS[i].epsilon()/Soln_ptr[nb].WoS[i].rho/sqr(max(Soln_ptr[nb].WoS[i].k,TOLER*TOLER));
+	  Coeff = sqr(0.9*IP.C_lambda*Soln_ptr[nb].WoS[i].f_lambda(Soln_ptr[nb].Wall[i][Soln_ptr[nb].JCl].ywall)/max(CmuFmu,sqr(TOLER*TOLER)));
+	  Soln_ptr[nb].WoS[i].ee = Coeff*Soln_ptr[nb].WoS[i].epsilon()*Soln_ptr[nb].WoS[i].ke/max(Soln_ptr[nb].WoS[i].k,TOLER*TOLER);
+	
+	  Soln_ptr[nb].WoN[i].ke = sqr(IP.Step_Height*Soln_ptr[nb].WoN[i].p/(IP.Wo.gm1*Soln_ptr[nb].WoN[i].rho));
+	  CmuFmu = Soln_ptr[nb].WoN[i].muT()*Soln_ptr[nb].WoN[i].epsilon()/Soln_ptr[nb].WoN[i].rho/sqr(max(Soln_ptr[nb].WoN[i].k,TOLER*TOLER));
+	  Coeff = sqr(0.9*IP.C_lambda*Soln_ptr[nb].WoN[i].f_lambda(Soln_ptr[nb].Wall[i][Soln_ptr[nb].JCu].ywall)/max(CmuFmu,sqr(TOLER*TOLER)));
+	  Soln_ptr[nb].WoN[i].ee = Coeff*Soln_ptr[nb].WoN[i].epsilon()*Soln_ptr[nb].WoN[i].ke/max(Soln_ptr[nb].WoN[i].k,TOLER*TOLER);	 
+	}	
+      }
+
       // Close restart file.
       restart_file.close();
     }
@@ -1342,6 +1384,143 @@ int Output_Backward_Facing_Step_Tecplot(NavierStokes2D_Quad_Block *Soln_ptr,
   
   // Close the output data files.
   output_file.close();
+
+  // Writing of output data files complete.  Return zero value.
+  return 0;
+
+}
+
+/**********************************************************************
+ * Routine: Output_Supersonic_Hot_Jet_Tecplot                         *
+ *                                                                    *
+ * Writes the experimental solution data for a supersonic hot jet     *
+ * flow for a 1D array of 2D quadrilateral multi-block solution       *
+ * blocks to the specified output data file(s) in a format suitable   *
+ * for plotting with TECPLOT.  Returns a non-zero value if cannot     *
+ * write any of the TECPLOT solution files.  The experimental data    *
+ * was reported by Seiner(1992).                                      *
+ *                                                                    *
+ **********************************************************************/
+int Output_Supersonic_Hot_Jet_Tecplot(NavierStokes2D_Quad_Block *Soln_ptr,
+				      AdaptiveBlock2D_List &Soln_Block_List,
+				      NavierStokes2D_Input_Parameters &IP) {
+
+  int i, i_output_title, i_output_data;
+  char prefix[256], extension[256], output_file_name[256];
+  char *output_file_name_ptr;
+  ofstream output_file;
+
+  for (int n = 1; n <= 2; n++) {
+
+    // Determine prefix of output data file names.
+    i = 0;
+    while (1) {
+      if (IP.Output_File_Name[i] == ' ' ||
+	  IP.Output_File_Name[i] == '.') break;
+      prefix[i] = IP.Output_File_Name[i];
+      i = i + 1;
+      if (i > strlen(IP.Output_File_Name)) break;
+    }
+    prefix[i] = '\0';
+    if (n == 1) strcat(prefix,"_supersonic_hot_jet_T_cpu");
+    else if (n == 2) strcat(prefix,"_supersonic_hot_jet_To_cpu");
+  
+    // Determine output data file name for this processor.
+    sprintf(extension,"%.6d",Soln_Block_List.ThisCPU);
+    strcat(extension,".dat");
+    strcpy(output_file_name,prefix);
+    strcat(output_file_name,extension);
+    output_file_name_ptr = output_file_name;
+  
+    // Open the output data file.
+    output_file.open(output_file_name_ptr,ios::out);
+    if (output_file.bad()) return 1;
+
+    // Write the solution data for each solution block.
+    i_output_title = 1;
+    if (CFFC_Primary_MPI_Processor()) i_output_data = 1;
+    else i_output_data = 0;
+    for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
+      if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
+	Output_Supersonic_Hot_Jet_Tecplot(Soln_ptr[nb],nb,i_output_title,
+					  i_output_data,output_file,n);
+	if (i_output_title) i_output_title = 0;
+	if (i_output_data) i_output_data = 0;
+      }
+    }
+
+    // Close the output data file.
+    output_file.close();
+
+  }
+
+  // Writing of output data files complete.  Return zero value.
+  return 0;
+
+}
+
+/**********************************************************************
+ * Routine: Output_Subsonic_Hot_Jet_Tecplot                           *
+ *                                                                    *
+ * Writes the experiment and computed solution data for a heated      *
+ * subsonic jet flow for a 1D array of 2D quadrilateral multi-block   *
+ * solution blocks to the specified output data file(s) in a format   *
+ * suitable for plotting with TECPLOT.  Returns a non-zero value if   *
+ * cannot write any of the TECPLOT solution files.  The experiment    *
+ * data was reported by Lockwood (1980).                                     *
+ *                                                                    *
+ **********************************************************************/
+int Output_Subsonic_Hot_Jet_Tecplot(NavierStokes2D_Quad_Block *Soln_ptr,
+				    AdaptiveBlock2D_List &Soln_Block_List,
+				    NavierStokes2D_Input_Parameters &IP) {
+
+  int i, i_output_title, i_output_data;
+  char prefix[256], extension[256], output_file_name[256];
+  char *output_file_name_ptr;
+  ofstream output_file;
+
+  for (int n = 1; n <= 1; n++) {
+
+    // Determine prefix of output data file names.
+    i = 0;
+    while (1) {
+      if (IP.Output_File_Name[i] == ' ' ||
+	  IP.Output_File_Name[i] == '.') break;
+      prefix[i] = IP.Output_File_Name[i];
+      i = i + 1;
+      if (i > strlen(IP.Output_File_Name)) break;
+    }
+    prefix[i] = '\0';
+    if (n == 1) strcat(prefix,"_subsonic_hot_jet_To_cpu");
+  
+    // Determine output data file name for this processor.
+    sprintf(extension,"%.6d",Soln_Block_List.ThisCPU);
+    strcat(extension,".dat");
+    strcpy(output_file_name,prefix);
+    strcat(output_file_name,extension);
+    output_file_name_ptr = output_file_name;
+  
+    // Open the output data file.
+    output_file.open(output_file_name_ptr,ios::out);
+    if (output_file.bad()) return 1;
+
+    // Write the solution data for each solution block.
+    i_output_title = 1;
+    if (CFFC_Primary_MPI_Processor()) i_output_data = 1;
+    else i_output_data = 0;
+    for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
+      if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
+	Output_Subsonic_Hot_Jet_Tecplot(Soln_ptr[nb],nb,i_output_title,
+					i_output_data,output_file,n);
+	if (i_output_title) i_output_title = 0;
+	if (i_output_data) i_output_data = 0;
+      }
+    }
+
+    // Close the output data file.
+    output_file.close();
+
+  }
 
   // Writing of output data files complete.  Return zero value.
   return 0;

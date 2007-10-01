@@ -63,7 +63,7 @@ void Broadcast_Solution_Block(LESPremixed2D_Quad_Block &SolnBlk) {
     double *buffer;
 
     int NUM_VAR_LESPREMIXED2D = SolnBlk.NumVar(); 
-    cout<<"nn_broad=    "<<NUM_VAR_LESPREMIXED2D<<endl;
+
     /* Broadcast the number of cells in each direction. */
     if (CFFC_Primary_MPI_Processor()) {
       ni = SolnBlk.NCi;
@@ -269,7 +269,6 @@ void Broadcast_Solution_Block(LESPremixed2D_Quad_Block &SolnBlk,
   double *buffer;
 
   int NUM_VAR_LESPREMIXED2D = SolnBlk.NumVar();
-    cout<<"nn_broad2=    "<<NUM_VAR_LESPREMIXED2D<<endl;
 
   /* Broadcast the number of cells in each direction. */
 
@@ -4388,6 +4387,7 @@ double CFL(LESPremixed2D_Quad_Block &SolnBlk,
 	     SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
 	     SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
 	     SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
+	if (Input_Parameters.Local_Time_Stepping == SEMI_IMPLICIT_LOCAL_TIME_STEPPING ){
   	     int NN = SolnBlk.NumVar() - SolnBlk.W[0][0].ns;
              DenseMatrix dSdW(NN,NN);
              dSdW.zero();
@@ -4406,14 +4406,10 @@ double CFL(LESPremixed2D_Quad_Block &SolnBlk,
               max_diagonal = max(max_diagonal,fabs(dSdW(ii,ii)));
              }
  	       SolnBlk.dt[i][j] = min(HALF/max_diagonal, SolnBlk.dt[i][j]);
-	       //	       cout<<"\nFsd=   "<<SolnBlk.dt[i][j]<<endl;
-	       //	       if ( SolnBlk.dt[i][j] < 1.0e-08 ) { SolnBlk.dt[i][j] = 1.0e-08; }
  	     }
-	
+	}	
 	/************ Global Minimum ********************************/
 	dtMin = min(dtMin, SolnBlk.dt[i][j]);
-	
-	//cout<<i<<" "<<j<<" Viscous "<<dt_vis<<" Chemistry "<<dt_chem<<" Final " <<dtMin<<endl;
 	
       } 
     } 
@@ -5964,15 +5960,15 @@ void Linear_Reconstruction_LeastSquares_Diamond(LESPremixed2D_Quad_Block &SolnBl
     int NUM_VAR_LESPREMIXED2D = SolnBlk.NumVar();
 #endif
   
-  /****************************************************************/
-  //  * A least squares       *
-  //  * approach is used in the evaluation of the unlimited  *
-  //  * solution gradients on cell faces that is peformed on a diamond path
-  // For cell (i,j), in order to reconstruct the gradients on cell faces, 
-  // information of four points are needed
-  // centeroid (i+1, j) and vertices (i+1, j) and (i+1, j+1)
-  // By convention: the quadrature point (mid-edge) (i, j)  
-  
+/************************************************************************
+ * A least squares                                                      *
+ * approach is used in the evaluation of the unlimited                  *
+ * solution gradients on cell faces that is peformed on a diamond path  *
+ * For cell (i,j), in order to reconstruct the gradients on cell faces, * 
+ * information of four points are needed                                *
+ * centeroid (i+1, j) and vertices (i+1, j) and (i+1, j+1)              *
+ * By convention: the quadrature point (mid-edge) (i, j)                *
+ ***********************************************************************/
   if (i == SolnBlk.ICl-SolnBlk.Nghost || i == SolnBlk.ICu+SolnBlk.Nghost ||
       j == SolnBlk.JCl-SolnBlk.Nghost || j == SolnBlk.JCu+SolnBlk.Nghost) {
     n_pts = 0;
@@ -6390,7 +6386,7 @@ void Linear_Reconstruction_GreenGauss_Diamond(LESPremixed2D_Quad_Block &SolnBlk,
     
     /*************** EAST ****************************/
     
-    /*Formulate the gradients of primitive parameters on the east face of cell (i, j)*/
+    // Formulate the gradients of primitive parameters on the east face of cell (i, j)
     // counterclockwise, starting from  nodeSE(i,j), cell (i+1, j), 
     // nodeNE(i,j), cell center (i, j+1)     
     W_average[2] = W_average[0];
@@ -6420,7 +6416,7 @@ void Linear_Reconstruction_GreenGauss_Diamond(LESPremixed2D_Quad_Block &SolnBlk,
     
     /*************** SOUTH ****************************/
     
-    /*Formulate the gradients of primitive parameters on the south face of cell (i, j)*/
+    //Formulate the gradients of primitive parameters on the south face of cell (i, j)
     // counterclockwise, starting from  cell (i, j-1), nodeSE(i,j) 
     // cell(i,j), nodeSW(i,j)     
     W_average[1] = W_average[3];
@@ -6449,7 +6445,7 @@ void Linear_Reconstruction_GreenGauss_Diamond(LESPremixed2D_Quad_Block &SolnBlk,
     SolnBlk.dWdy_faceS[i][j] = ( W_average[0]* norm[0].y +W_average[1]* norm[1].y+ W_average[2]* norm[2].y+W_average[3]* norm[3].y)/AREA;  
     
     /*************** WEST ****************************/    
-    /*Formulate the gradients of primitive parameters on the west face of cell (i, j ) */
+    //Formulate the gradients of primitive parameters on the west face of cell (i, j ) 
     // counterclockwise, starting from  NodeSW(i,j) 
     // cell(i,j), nodeNW(i,j), cell (i-1, j)     
     W_average[0] = W_average[2];

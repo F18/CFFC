@@ -1,15 +1,12 @@
-/****************** Euler3DThermallyPerfectState.h *********************
-  This class defines the state variables and constructors for the 
-  Euler3D thermally perfect gaseous mixture class.
- ***********************************************************************/
+/* Euler3DThermallyPerfectState.h:  Header file defining the Euler solution state
+                                    classes associated with the solution of 
+                                    a thermally perfect non-reactive or combusting
+                                    mixture. */
 
 #ifndef _EULER3D_THERMALLYPERFECT_STATE_INCLUDED 
 #define _EULER3D_THERMALLYPERFECT_STATE_INCLUDED
 
-class Euler3D_ThermallyPerfect_cState;
-class Euler3D_ThermallyPerfect_pState;
-
-// Required C++ libraries
+/* Include required C++ libraries. */
 
 #include <cstdio>
 #include <iostream>
@@ -20,19 +17,19 @@ class Euler3D_ThermallyPerfect_pState;
 
 using namespace std;
 
-// Required CFFC header files
+/* Include required CFFC header files. */
 
 #ifndef _MATH_MACROS_INCLUDED
 #include "../Math/Math.h"
 #endif // _MATH_MACROS_INCLUDED
 
-#ifndef _MATRIX_INCLUDED
-#include "../Math/Matrix.h"
-#endif // _MATRIX_INCLUDED
-
 #ifndef _CFD_INCLUDED
 #include "../CFD/CFD.h"
 #endif // _CFD_INCLUDED
+
+#ifndef _MATRIX_INCLUDED
+#include "../Math/Matrix.h"
+#endif // _MATRIX_INCLUDED
 
 #ifndef _TENSOR3D_INCLUDED
 #include "../Math/Tensor3D.h"
@@ -47,116 +44,109 @@ using namespace std;
 #endif // _GAS_CONSTANTS_INCLUDED
 
 #ifndef _SPECIES_INCLUDED
-#include "../NASAData/Species.h"
+#include "../Physics/Species.h"
 #endif //_SPECIES_INCLUDED
 
 #ifndef _NASARP1311_DATA_INCLUDED
-#include "../NASAData/NASARP1311data.h"
+#include "../Physics/NASAData/NASARP1311data.h"
 #endif // _NASARP1311_DATA_INCLUDED
 
 #ifndef _REACTIONS_INCLUDED
-#include "../NASAData/Reactions.h"
+#include "../Reactions/Reactions.h"
 #endif // _REACTIONS_INCLUDED
+
+/* Define the class. */
+
+class Euler3D_ThermallyPerfect_cState;
+class Euler3D_ThermallyPerfect_pState;
 
 //number of fixed variables in the Euler3D_ThermallyPerfect class
 #define NUM_EULER3D_VAR_SANS_SPECIES 5  //rho, v(3), p
 
 #define CONV_TOLERANCE 1e-8
 
-/********************************************************
- * Class: Euler3D_ThermallyPerfect_pState               *
- * (all for thermally perfect mixture                   *
- * Member functions                                     *
- *      d       -- Return density.                      *
- *      v       -- Return flow velocity.                *
- *      p       -- Return pressure.                     *
- *      g       -- Return specific heat ratio.          *
- *      gm1     -- Return g-1                           *
- *      gm1i    -- Return 1/(g-1).                      *
- *      R       -- Return gas constant.                 *
- *      setgas  -- Set gas constants.                   *
- *      T       -- Return temperature.                  *
- *      e       -- Return total  energy.                *
- *      E       -- Return interal energy.               *
- *      h       -- Return specific enthalpy.            *
- *      H       -- Return total enthalpy.               *
- *      a       -- Return sound speed.                  *
- *      a2      -- Return sound speed square.           *
- *      M       -- Return Mach number.                  *
- *      s       -- Return specific entropy.             *
- *      dv      -- Return momentum.                     *
- *      To      -- Return stagnation temperature.       *
- *      po      -- Return stagnation pressure.          *
- *      ao      -- Return stagnation sound speed.       *
- *      ho      -- Return stagnation enthalpy.          *
- *      U       -- Return conserved solution state.     *
- *      F       -- Return x-direction solution flux.    *
- *      G       -- Return y-direction solution flux.    *
- *      H       -- Return z-direction solution flux.    *
- *      Fn      -- Return n-direction solution flux.    *
- *      lambda  -- Return eigenvalue.                   *
- *      rp      -- Return primitive right eigenvector.  *
- *      rc      -- Return conserved right eigenvector.  *
- *      lp      -- Return primitive left eigenvector.   *
- *                                                      *
- * Member operators                                     *
- *      W -- a primitive solution state                 *
- *      c -- a scalar (double)                          *
- *                                                      *
- * W = W;                                               *
- * c = W[i];                                            *
- * W = W + W;                                           *
- * W = W - W;                                           *
- * c = W * W; (inner product)                           *
- * W = c * W;                                           *
- * W = W * c;                                           *
- * W = W / c;                                           *
- * W = +W;                                              *
- * W = -W;                                              *
- * W += W;                                              *
- * W -= W;                                              *
- * W == W;                                              *
- * W != W;                                              *
- * cout << W; (output function)                         *
- * cin  >> W; (input function)                          *
- *                                                      *
- ********************************************************/
-
-/*********************************************************
-
-
-  Density:   rho  kg/m^3
-  Velocity:  v    m/s
-  Pressure:  p    Pa (N/m^2)
-  
-  Molecular Mass:          M    kg/mol
-  Species Gas Constant:    Rs   J/(kg*K)
-  
-  Temperature(Kelvin) Dependent data: f(T) 
-   
-  Heat Capacity (const Pressure):  Cp  J/(kg*K)
-  Heat Capacity (const Volume):    Cv  J/(kg*K)
-  Specific Heat Ratio:             g
-  Specific Enthalpy:               h   J/kg
-  Specific Internal Energy:        e   J/kg
-  Total Enthalpy:                  H   J/kg 
-  Total Internal Energy:           E   J/kg
-
-  Viscosity:                       mu  kg/(m*s) N*s/m^2  
-  Thermal Conductivity:            k   N/(s*K)  W.(m*K)
-
-  ns;                number of species
-  NASARP1311data *specdata;   Global Species Data
-
-  NUM_VAR_3D;         number of total variables (5+ns)
-  Reaction_set React;         Global Reaction Data
-
-  low_temp_range;      low temp data range
-  high_temp_range;     high temp data range
-
-
-  ***********************************************************
-  ***********************************************************/
+/*!
+ * Class: Euler3D_ThermallyPerfect_pState
+ *
+ * @brief Euler 3D primitive solution state class.
+ *
+ * This class defines the primitive solution state for the
+ * Euler equations governing three-dimensional flows of
+ * thermally perfect non-reactive and combusting mixtures.
+ *
+ * \verbatim
+ * Member functions
+ *      d       -- Return density
+ *      v       -- Return flow velocity
+ *      p       -- Return pressure
+ *      g       -- Return specific heat ratio
+ *      gm1     -- Return g-1
+ *      gm1i    -- Return 1/(g-1)
+ *      R       -- Return gas constant
+ *      T       -- Return temperature
+ *      e       -- Return total energy
+ *      E       -- Return interal energy
+ *      h       -- Return specific enthalpy
+ *      H       -- Return total enthalpy
+ *      a       -- Return sound speed
+ *      a2      -- Return sound speed square
+ *      M       -- Return Mach number
+ *      s       -- Return specific entropy
+ *      dv      -- Return momentum
+ *      To      -- Return stagnation temperature
+ *      po      -- Return stagnation pressure
+ *      ao      -- Return stagnation sound speed
+ *      ho      -- Return stagnation enthalpy
+ *      U       -- Return conserved solution state
+ *      F       -- Return x-direction solution flux
+ *      G       -- Return y-direction solution flux
+ *      H       -- Return z-direction solution flux
+ *      Fn      -- Return n-direction solution flux
+ *      lambda  -- Return eigenvalue
+ *      rp      -- Return primitive right eigenvector
+ *      rc      -- Return conserved right eigenvector
+ *      lp      -- Return primitive left eigenvector
+ *
+ * Member operators
+ *      W -- a primitive solution state
+ *      c -- a scalar (double) 
+ *
+ * W = W;
+ * c = W[i];
+ * W = W + W;
+ * W = W - W;
+ * c = W * W; (inner product)
+ * W = c * W;
+ * W = W * c;
+ * W = W / c;
+ * W = +W;
+ * W = -W;
+ * W += W;
+ * W -= W;
+ * W == W;
+ * W != W;
+ * cout << W; (output function)
+ * cin  >> W; (input function)
+ *
+ * Density:   rho  kg/m^3
+ * Velocity:  v    m/s
+ * Pressure:  p    Pa (N/m^2)
+ * 
+ * Molecular Mass:          M    kg/mol
+ * Species Gas Constant:    Rs   J/(kg*K)
+ * 
+ * Temperature(Kelvin) Dependent data: f(T) 
+ *  
+ * Heat Capacity (const Pressure):  Cp  J/(kg*K)
+ * Heat Capacity (const Volume):    Cv  J/(kg*K)
+ * Specific Heat Ratio:             g
+ * Specific Enthalpy:               h   J/kg
+ * Specific Internal Energy:        e   J/kg
+ * Total Enthalpy:                  H   J/kg 
+ * Total Internal Energy:           E   J/kg
+ *
+ * \endverbatim
+ */
 class Euler3D_ThermallyPerfect_pState {
   public:
    double         rho;  
@@ -164,486 +154,534 @@ class Euler3D_ThermallyPerfect_pState {
    double           p;   
    Species      *spec;   
    
-   static int      ns;               
+   static int num_vars; 
+   static int ns;               
    static NASARP1311data *specdata;  
-   static int NUM_VAR_3D;      
    static double *Schmidt;
    static Reaction_set React;       
    static double low_temp_range;    
    static double high_temp_range;   
    static int debug_level;        
    
-   // Default constructor
-   Euler3D_ThermallyPerfect_pState():
-      rho(DENSITY_STDATM), p(PRESSURE_STDATM), 
-      spec(NULL){
-      v.zero(); set_initial_values();}
+  //@{ @name Constructors and desctructors:
+  //! Default constructor (assign default values).
+   Euler3D_ThermallyPerfect_pState(): 
+    rho(DENSITY_STDATM), p(PRESSURE_STDATM), spec(NULL) {
+      v.zero(); set_initial_values();
+   }
    
-   Euler3D_ThermallyPerfect_pState(const double &value):
-         rho(value), p(value), spec(NULL){
-         v.x = value;  v.y = value; v.z = value; 
-         set_initial_values(value);}
+   Euler3D_ThermallyPerfect_pState(const double &value): 
+    rho(value), p(value), spec(NULL) {
+      v.x = value;  v.y = value; v.z = value; 
+      set_initial_values(value);
+   }
          
-   Euler3D_ThermallyPerfect_pState(const double &d, const Vector3D &V, 
-                                        const double &pre):
-           rho(d), v(V), p(pre), spec(NULL){set_initial_values();}
-   Euler3D_ThermallyPerfect_pState(const double &d, const Vector3D &V, 
-                                   const double &pre, const double &frac):
-              rho(d), v(V), p(pre), spec(NULL){set_initial_values(frac);}
-             
-   Euler3D_ThermallyPerfect_pState(const double &d, const double &vx, 
-                                   const double &vy, const double &vz, 
-                                   const double &pre, const double &frac):
-                 rho(d), p(pre), spec(NULL){
-                 v.x = vx;  v.y = vy; v.z = vz; 
-                 set_initial_values(frac); }
-                 
-   Euler3D_ThermallyPerfect_pState(const double &d, const double &vx,
-                                   const double &vy, const double &vz,
+   Euler3D_ThermallyPerfect_pState(const double &d, 
+                                   const Vector3D &V,
                                    const double &pre):
-     rho(d), p(pre), spec(NULL){
-        v.x = vx;  v.y = vy; v.z = vz;
-        set_initial_values(); }
+    rho(d), v(V), p(pre), spec(NULL) {
+      set_initial_values();
+   }
+
+   Euler3D_ThermallyPerfect_pState(const double &d, 
+                                   const Vector3D &V, 
+                                   const double &pre, 
+                                   const double &frac):
+    rho(d), v(V), p(pre), spec(NULL) {
+      set_initial_values(frac);
+   }
+             
+   Euler3D_ThermallyPerfect_pState(const double &d, 
+                                   const double &vx, 
+                                   const double &vy, 
+                                   const double &vz, 
+                                   const double &pre, 
+                                   const double &frac):
+    rho(d), p(pre), spec(NULL) {
+      v.x = vx; v.y = vy; v.z = vz; 
+      set_initial_values(frac); 
+   }
+                 
+   Euler3D_ThermallyPerfect_pState(const double &d, 
+                                   const double &vx,
+                                   const double &vy, 
+                                   const double &vz,
+                                   const double &pre):
+    rho(d), p(pre), spec(NULL) {
+      v.x = vx;  v.y = vy; v.z = vz;
+      set_initial_values(); 
+   }
    
-  Euler3D_ThermallyPerfect_pState(const double &d, const double &vx, 
-                                  const double &vy,  const double &vz,
-                                  const double &pre, Species *mfrac):
-     rho(d), p (pre), spec(NULL){
-     v.x=vx; v.y=vy; v.z = vz; set_initial_values(mfrac); }
+   Euler3D_ThermallyPerfect_pState(const double &d, 
+                                   const double &vx, 
+                                   const double &vy,  
+                                   const double &vz,
+                                   const double &pre, 
+                                   Species *mfrac):
+    rho(d), p (pre), spec(NULL) {
+      v.x=vx; v.y=vy; v.z = vz; 
+      set_initial_values(mfrac); 
+   }
   
-  Euler3D_ThermallyPerfect_pState(const double &d, const Vector3D &V, 
-                                  const double &pre, Species *mfrac):
-     rho(d), v(V), p(pre), spec(NULL){
-     set_initial_values(mfrac); }
+   Euler3D_ThermallyPerfect_pState(const double &d, 
+                                   const Vector3D &V, 
+                                   const double &pre, 
+                                   Species *mfrac):
+    rho(d), v(V), p(pre), spec(NULL) {
+      set_initial_values(mfrac); 
+   }
   
-  
-  Euler3D_ThermallyPerfect_pState(const double &d, const Vector3D &V,
-		                  const double &pre, double *mfrac):
-	        rho(d), v(V), p(pre), spec(NULL){
-		set_initial_values(mfrac); }
+   Euler3D_ThermallyPerfect_pState(const double &d, 
+                                   const Vector3D &V,
+	 	                   const double &pre, 
+                                   double *mfrac):
+    rho(d), v(V), p(pre), spec(NULL) {
+      set_initial_values(mfrac); 
+   }
 
-     //this is needed for the operator overload returns!!!!
-     Euler3D_ThermallyPerfect_pState(const  Euler3D_ThermallyPerfect_pState &W)
-        {spec = NULL; rho = DENSITY_STDATM; set_initial_values(); Copy(W);}
+   // This is needed for the operator overload returns!!!!
+   Euler3D_ThermallyPerfect_pState(const Euler3D_ThermallyPerfect_pState &W) {
+      spec = NULL; rho = DENSITY_STDATM; 
+      set_initial_values(); Copy(W);
+   }
      
-     static void set_species_data(Euler3D_ThermallyPerfect_pState &Wo, 
-                                  const int &, 
-                                  const string *, 
-                                  const char *, 
-                                  const int &, 
-                                  const double&, 
-                                  const double *);
-     
-     //Set initial data values
-     void set_initial_values();
-     void set_initial_values(const double &value);
-     void set_initial_values(double *cfrac);
-     void set_initial_values(Species *mfrac);
-     
+   //! Default destructor
+   ~Euler3D_ThermallyPerfect_pState() {
+      Deallocate(); 
+   }
+   //@}
 
-     /****** Source terms associated with finite-rate chemistry ******/
-     Euler3D_ThermallyPerfect_cState Sw(int &REACT_SET_FLAG) const;
-     void dSwdU(DenseMatrix &dSwdU ) const; //Jacobian
-     double dSwdU_max_diagonal(void) const;
+   //@{ @name Other Member functions:
+   void Deallocate(void){
+      if(spec != NULL) delete[] spec;
+      spec = NULL;
+   }
+
+   void Deallocate_static(void){
+      if (specdata != NULL) delete[] specdata;
+      specdata = NULL;
+      if (Schmidt != NULL) delete[] Schmidt; 
+      Schmidt = NULL;
+   }
+
+   // Sets the species data, needs to be called only once as it is static
+   void set_species_data(const int &n,
+                         const string *S,
+                         const char *PATH,
+                         const int &debug, 
+                         const double &Mr, 
+                         const double* Sc,
+                         const int &trans_data);
      
-     /*************** VACUUM OPERATOR *********************/
-     void Vacuum(){ 
-        rho=ZERO; v.x=ZERO; v.y=ZERO; v.z=ZERO;  p = ZERO;
-        
-        for(int i=0; i<ns; i++){
-           spec[i].Vacuum();
-        }
+   //Set initial data values
+   void set_initial_values();
+   void set_initial_values(const double &value);
+   void set_initial_values(double *cfrac);
+   void set_initial_values(Species *mfrac);
+
+   //Copy construtor, cheaper than = operator
+   void Copy(const Euler3D_ThermallyPerfect_pState &W);
+
+   // return the number of variables - number of species
+   int NumVarSansSpecies() const { return num_vars - ns; }
+
+   // Vacuum operator
+   void Vacuum(){ 
+     rho=ZERO; v.x=ZERO; v.y=ZERO; v.z=ZERO;  p = ZERO;
+       
+     for(int i=0; i<ns; i++){
+        spec[i].Vacuum();
      }
+   }
   
-     void zero_non_sol(){
-        for(int i=0; i<ns; i++){
+   void zero_non_sol(){
+     for(int i=0; i<ns; i++){
            spec[i].gradc.zero();
            spec[i].diffusion_coef=ZERO;
         }
-     }  
+   }  
 
-  /******** Set Data Temperature Ranges ***************/
-     void Temp_low_range();     
-     void Temp_high_range(); 
-     void Copy(const Euler3D_ThermallyPerfect_pState &W);
-     
-     /***************** Mixing Rules ************************
+   // Set Data Temperature Ranges 
+   void Temp_low_range();     
+   void Temp_high_range(); 
+
+   /***************** Mixing Rules ************************
    The physical parameters based on mixture rules for each.
-     ********************************************************/
-  //mixture molecular mass
-  double Mass(void) const;   
-  double Rtot(void);        
-  double Rtot(void) const;   
-  double Cp(void) const;    
-  double Cp(const double& TEMP) const;
-  double Cv(void) const;     
-  double g(void) const;    
-  //mixture absolute (sensible+chemical) internal energy
-  double e(void) const;     
-  double eref(void) const;
-  //mixture sensible internal energy  
-  double es(void) const; 
-  //mixture specific enthalpy   
-  double h(void) const;      
-  double h(const double &T) const;
-  double href(void) const;
-  double hs(void) const;
-  double hs(const double &T) const;
-  double E(void) const;      
-  double H(void) const;     
-  double Hs(void) const;    
-  double mu(void) const;    
-  double kappa(void) const; 
-  double hprime(void) const;  
-  double hprime(double &Temp) const;
-  Vector3D rhov(void) const;      
-  double T(void) const;         
- //Determine temperature knowing sensible enthalpy 
-  double T(double &h_s) const;   
-  double gamma_guess(void) const; 
-  double a(void);                
-  double a(void) const;
+   ********************************************************/
+   //mixture molecular mass
+   double Mass(void) const;   
+   double Rtot(void);        
+   double Rtot(void) const;   
+   double Cp(void) const;    
+   double Cp(const double& TEMP) const;
+   double Cv(void) const;     
+   double g(void) const;    
+   //mixture absolute (sensible+chemical) internal energy
+   double e(void) const;     
+   double eref(void) const;
+   //mixture sensible internal energy  
+   double es(void) const; 
+   //mixture specific enthalpy   
+   double h(void) const;      
+   double h(const double &T) const;
+   double href(void) const;
+   double hs(void) const;
+   double hs(const double &T) const;
+   double E(void) const;      
+   double H(void) const;     
+   double Hs(void) const;    
+   double mu(void) const;    
+   double kappa(void) const; 
+   double hprime(void) const;  
+   double hprime(double &Temp) const;
+   Vector3D rhov(void) const;      
+   double T(void) const;         
+   //Determine temperature knowing sensible enthalpy 
+   double T(double &h_s) const;   
+   double gamma_guess(void) const; 
+   double a(void);                
+   double a(void) const;
 
-  bool negative_speccheck(void) const;
- //Species i concentration (rho*c/mol_mass)
-  double SpecCon(int i) const;     
- //Gibbs Free Energy (H-TS) for species
-  double Gibbs(int species) const;
+   bool negative_speccheck(void) const;
+   //Species i concentration (rho*c/mol_mass)
+   double SpecCon(int i) const;     
+   //Gibbs Free Energy (H-TS) for species
+   double Gibbs(int species) const;
 
-  double Schmidt_No(const int &) const;
-  double Prandtl() const;
-  double Lewis(const int &) const;
+   double Schmidt_No(const int &) const;
+   double Prandtl() const;
+   double Lewis(const int &) const;
 
-  //Temperature Derivatives 
-  double diedip() const;
-  double diedirho() const;
-  double dmudT(void) const;
-  double dkappadT(void) const;
+   //Temperature Derivatives 
+   double diedip() const;
+   double diedirho() const;
+   double dmudT(void) const;
+   double dkappadT(void) const;
 
-  // Conserved solution state. /
-  Euler3D_ThermallyPerfect_cState U(void); 
-  Euler3D_ThermallyPerfect_cState U(void)const; 
-  Euler3D_ThermallyPerfect_cState U(const Euler3D_ThermallyPerfect_pState &W); 
-
+   // Conserved solution state. /
+   Euler3D_ThermallyPerfect_cState U(void); 
+   Euler3D_ThermallyPerfect_cState U(void)const; 
+   Euler3D_ThermallyPerfect_cState U(const Euler3D_ThermallyPerfect_pState &W); 
  
-  //Fluxes /
-  Euler3D_ThermallyPerfect_cState F(void);
-  Euler3D_ThermallyPerfect_cState F(void) const;
-  Euler3D_ThermallyPerfect_cState F(const Euler3D_ThermallyPerfect_pState &W);
-  /* Eigenvalue(s), Eigenvectors (x-direction). */ 
+   //Fluxes /
+   Euler3D_ThermallyPerfect_cState F(void);
+   Euler3D_ThermallyPerfect_cState F(void) const;
+   Euler3D_ThermallyPerfect_cState F(const Euler3D_ThermallyPerfect_pState &W);
 
-  Euler3D_ThermallyPerfect_pState lambda_x(void);
-  Euler3D_ThermallyPerfect_cState rc_x(const int &index); 
-  Euler3D_ThermallyPerfect_pState lp_x(const int &index) ; 
-  Euler3D_ThermallyPerfect_pState lambda_x(void) const;
-  Euler3D_ThermallyPerfect_cState rc_x(const int &index) const; 
-  Euler3D_ThermallyPerfect_pState lp_x(const int &index) const; 
+   /* Eigenvalue(s), Eigenvectors (x-direction). */ 
+   Euler3D_ThermallyPerfect_pState lambda_x(void);
+   Euler3D_ThermallyPerfect_cState rc_x(const int &index); 
+   Euler3D_ThermallyPerfect_pState lp_x(const int &index) ; 
+   Euler3D_ThermallyPerfect_pState lambda_x(void) const;
+   Euler3D_ThermallyPerfect_cState rc_x(const int &index) const; 
+   Euler3D_ThermallyPerfect_pState lp_x(const int &index) const; 
   
-  /* Index operator */
-  double &operator[](int index);
-  const double &operator[](int index) const;
+   /* Index operator */
+   double &operator[](int index);
+   const double &operator[](int index) const;
 
-  /* Binary arithmetic operators. */
-  Euler3D_ThermallyPerfect_pState operator +(const Euler3D_ThermallyPerfect_pState &W) const;
-  Euler3D_ThermallyPerfect_pState operator -(const Euler3D_ThermallyPerfect_pState &W) const;
-  Euler3D_ThermallyPerfect_pState operator *(const double &a) const;
-  friend Euler3D_ThermallyPerfect_pState operator *(const double &a, const Euler3D_ThermallyPerfect_pState &W);
-  Euler3D_ThermallyPerfect_pState operator /(const double &a) const;
-  double operator *(const Euler3D_ThermallyPerfect_pState &W) const;
-  Euler3D_ThermallyPerfect_pState operator ^(const Euler3D_ThermallyPerfect_pState &W) const;
+   /* Binary arithmetic operators. */
+   Euler3D_ThermallyPerfect_pState operator +(const Euler3D_ThermallyPerfect_pState &W) const;
+   Euler3D_ThermallyPerfect_pState operator -(const Euler3D_ThermallyPerfect_pState &W) const;
+   Euler3D_ThermallyPerfect_pState operator *(const double &a) const;
+   friend Euler3D_ThermallyPerfect_pState operator *(const double &a, const Euler3D_ThermallyPerfect_pState &W);
+   Euler3D_ThermallyPerfect_pState operator /(const double &a) const;
+   double operator *(const Euler3D_ThermallyPerfect_pState &W) const;
+   Euler3D_ThermallyPerfect_pState operator ^(const Euler3D_ThermallyPerfect_pState &W) const;
   
-  /* Assignment Operator. */ 
-  Euler3D_ThermallyPerfect_pState& operator =(const Euler3D_ThermallyPerfect_pState &W); 
+   /* Assignment Operator. */ 
+   Euler3D_ThermallyPerfect_pState& operator =(const Euler3D_ThermallyPerfect_pState &W); 
   
-  /* Shortcut arithmetic operators. */
-  Euler3D_ThermallyPerfect_pState& operator +=(const Euler3D_ThermallyPerfect_pState &W);
-  Euler3D_ThermallyPerfect_pState& operator -=(const Euler3D_ThermallyPerfect_pState &W);
+   /* Shortcut arithmetic operators. */
+   Euler3D_ThermallyPerfect_pState& operator +=(const Euler3D_ThermallyPerfect_pState &W);
+   Euler3D_ThermallyPerfect_pState& operator -=(const Euler3D_ThermallyPerfect_pState &W);
   
-  // Flux functions
-  static Euler3D_ThermallyPerfect_pState RoeAverage(
-     const Euler3D_ThermallyPerfect_pState &Wl,
-     const Euler3D_ThermallyPerfect_pState &Wr);
-  static Euler3D_ThermallyPerfect_cState FluxHLLE_x(
-     const Euler3D_ThermallyPerfect_pState &Wl,
-     const Euler3D_ThermallyPerfect_pState &Wr);
-  static Euler3D_ThermallyPerfect_cState FluxHLLE_x(
-     const Euler3D_ThermallyPerfect_cState &Ul,
-     const Euler3D_ThermallyPerfect_cState &Ur);
-  static  Euler3D_ThermallyPerfect_cState FluxHLLE_n(
-     const Euler3D_ThermallyPerfect_pState &Wl,
-     const Euler3D_ThermallyPerfect_pState &Wr,
-     const Vector3D &norm_dir);
-  static Euler3D_ThermallyPerfect_cState FluxHLLE_n(
-     const Euler3D_ThermallyPerfect_cState &Ul,
-     const Euler3D_ThermallyPerfect_cState &Ur,
-     const Vector3D &norm_dir);
+   // Flux functions
+   static Euler3D_ThermallyPerfect_pState RoeAverage(const Euler3D_ThermallyPerfect_pState &Wl,
+                                                     const Euler3D_ThermallyPerfect_pState &Wr);
 
-  static Euler3D_ThermallyPerfect_cState FluxRoe_x(
-     const Euler3D_ThermallyPerfect_pState &Wl, 
-     const Euler3D_ThermallyPerfect_pState &Wr);
-  static Euler3D_ThermallyPerfect_cState FluxRoe_n(
-     const Euler3D_ThermallyPerfect_pState &Wl,
-     const Euler3D_ThermallyPerfect_pState &Wr,
-     const Vector3D &norm_dir);
+   static Euler3D_ThermallyPerfect_cState FluxHLLE_x(const Euler3D_ThermallyPerfect_pState &Wl,
+                                                     const Euler3D_ThermallyPerfect_pState &Wr);
+   static Euler3D_ThermallyPerfect_cState FluxHLLE_x(const Euler3D_ThermallyPerfect_cState &Ul,
+                                                     const Euler3D_ThermallyPerfect_cState &Ur);
+   static  Euler3D_ThermallyPerfect_cState FluxHLLE_n(const Euler3D_ThermallyPerfect_pState &Wl,
+                                                      const Euler3D_ThermallyPerfect_pState &Wr,
+                                                      const Vector3D &norm_dir);
+   static Euler3D_ThermallyPerfect_cState FluxHLLE_n(const Euler3D_ThermallyPerfect_cState &Ul,
+                                                     const Euler3D_ThermallyPerfect_cState &Ur,
+                                                     const Vector3D &norm_dir);
 
-  friend Euler3D_ThermallyPerfect_pState HartenFixNeg(
-     const Euler3D_ThermallyPerfect_pState  &lambda_a,
-     const Euler3D_ThermallyPerfect_pState  &lambda_l,
-     const Euler3D_ThermallyPerfect_pState  &lambda_r);
-  friend Euler3D_ThermallyPerfect_pState HartenFixPos(
-     const Euler3D_ThermallyPerfect_pState  &lambda_a,
-     const Euler3D_ThermallyPerfect_pState  &lambda_l,
-     const Euler3D_ThermallyPerfect_pState  &lambda_r);
+   static Euler3D_ThermallyPerfect_cState FluxRoe_x(const Euler3D_ThermallyPerfect_pState &Wl, 
+                                                    const Euler3D_ThermallyPerfect_pState &Wr);
+   static Euler3D_ThermallyPerfect_cState FluxRoe_n(const Euler3D_ThermallyPerfect_pState &Wl,
+                                                    const Euler3D_ThermallyPerfect_pState &Wr,
+                                                    const Vector3D &norm_dir);
+
+   friend Euler3D_ThermallyPerfect_pState HartenFixNeg(const Euler3D_ThermallyPerfect_pState  &lambda_a,
+                                                       const Euler3D_ThermallyPerfect_pState  &lambda_l,
+                                                       const Euler3D_ThermallyPerfect_pState  &lambda_r);
+   friend Euler3D_ThermallyPerfect_pState HartenFixPos(const Euler3D_ThermallyPerfect_pState  &lambda_a,
+                                                       const Euler3D_ThermallyPerfect_pState  &lambda_l,
+                                                       const Euler3D_ThermallyPerfect_pState  &lambda_r);
 				  
-  // Boundary Conditions
-  static Euler3D_ThermallyPerfect_pState Reflect(
-     const Euler3D_ThermallyPerfect_pState &W, const Vector3D &norm_dir);
-  static Euler3D_ThermallyPerfect_pState Moving_Wall(
-     const Euler3D_ThermallyPerfect_pState &Win,
-     const Euler3D_ThermallyPerfect_pState &Wout,
-     const Vector3D &norm_dir,				 
-     const Vector3D &wall_velocity,
-     const Vector3D &pressure_gradient,
-     const int &TEMPERATURE_BC_FLAG);
-  static Euler3D_ThermallyPerfect_pState No_Slip(
-     const Euler3D_ThermallyPerfect_pState &Win, 
-     const Euler3D_ThermallyPerfect_pState &Wout,
-     const Vector3D &norm_dir,  const Vector3D &pressure_gradient,
-     const int &TEMPERATURE_BC_FLAG);
+   // Boundary Conditions
+   static Euler3D_ThermallyPerfect_pState Reflect(const Euler3D_ThermallyPerfect_pState &W, 
+                                                  const Vector3D &norm_dir);
 
+  static Euler3D_ThermallyPerfect_pState Moving_Wall(const Euler3D_ThermallyPerfect_pState &Win,
+                                                     const Euler3D_ThermallyPerfect_pState &Wout,
+                                                     const Vector3D &norm_dir,				 
+                                                     const Vector3D &wall_velocity,
+                                                     const Vector3D &pressure_gradient,
+                                                     const int &TEMPERATURE_BC_FLAG);
 
+   static Euler3D_ThermallyPerfect_pState No_Slip(const Euler3D_ThermallyPerfect_pState &Win, 
+                                                  const Euler3D_ThermallyPerfect_pState &Wout,
+                                                  const Vector3D &norm_dir,  
+                                                  const Vector3D &pressure_gradient,
+                                                  const int &TEMPERATURE_BC_FLAG);
 
+   /****** Source terms associated with finite-rate chemistry ******/
+   Euler3D_ThermallyPerfect_cState Sw(int &REACT_SET_FLAG) const;
+   void dSwdU(DenseMatrix &dSwdU) const; //Jacobian
+   double dSwdU_max_diagonal(void) const;
+   //@}
   
-  /* Unary arithmetic operators. */
-  //friend Euler3D_ThermallyPerfect_pState operator -(
-  //   const Euler3D_ThermallyPerfect_pState &W);
+   /* Unary arithmetic operators. */
+   //friend Euler3D_ThermallyPerfect_pState operator -(
+   //   const Euler3D_ThermallyPerfect_pState &W);
   
-  /* Relational operators. */
-  friend int operator ==(const Euler3D_ThermallyPerfect_pState &W1, 
-                         const Euler3D_ThermallyPerfect_pState &W2);
-  friend int operator !=(const Euler3D_ThermallyPerfect_pState &W1, 
-                         const Euler3D_ThermallyPerfect_pState &W2);
+   /* Relational operators. */
+   friend int operator ==(const Euler3D_ThermallyPerfect_pState &W1, 
+                          const Euler3D_ThermallyPerfect_pState &W2);
+   friend int operator !=(const Euler3D_ThermallyPerfect_pState &W1, 
+                          const Euler3D_ThermallyPerfect_pState &W2);
 
-  /* Input-output operators. */
-  friend ostream& operator << (ostream &out_file, 
-                               const Euler3D_ThermallyPerfect_pState &W);
-  friend istream& operator >> (istream &in_file,  
-                               Euler3D_ThermallyPerfect_pState &W);
-  
- /*  // Destructors */
-  void Deallocate_static(void){
-     if(specdata != NULL) delete[] specdata;
-     specdata = NULL;
-  }
-
-  void Deallocate(void){
-     if(spec != NULL) delete[] spec;
-     spec = NULL;
-  }
-  
-  ~Euler3D_ThermallyPerfect_pState(){
-     Deallocate(); 
-  }
-  
+   //@{ @name Input-output operators:
+   friend ostream& operator << (ostream &out_file, 
+                                const Euler3D_ThermallyPerfect_pState &W);
+   friend istream& operator >> (istream &in_file,  
+                                Euler3D_ThermallyPerfect_pState &W);
+   //@}
+ 
 };
 
-
-/***********************************************************
- *             Euler3D_TheramllyPerfect_cState             *
- ************************************************************/
+/*!
+ * Class: Euler3D_ThermallyPerfect_cState
+ *
+ * @brief Euler 3D conservative solution state class.
+ *
+ * This class defines the primitive solution state for the
+ * Euler equations governing three-dimensional flows of
+ * thermally perfect non-reactive and combusting mixtures.
+ *
+ */
 class Euler3D_ThermallyPerfect_cState {
   public:
    double         rho;  
    Vector3D      rhov;   
-  double           E;  
-  Species   *rhospec;   
+   double           E;  
+   Species   *rhospec;   
 
-  static int      ns;           
-  static NASARP1311data *specdata;  
-  static int NUM_VAR_3D;      
-  static double low_temp_range;    
-  static double high_temp_range;   
-  static int debug_level;          
-  static double *Schmidt;          
+   static int num_vars;  
+   static int      ns;           
+   static NASARP1311data *specdata;  
+   static double low_temp_range;    
+   static double high_temp_range;   
+   static int debug_level;          
+   static double *Schmidt;          
  
    //constructors
-  Euler3D_ThermallyPerfect_cState(): 
-     rho(DENSITY_STDATM), E(PRESSURE_STDATM/(rho*(0.4))),
-     rhospec(NULL){
-     rhov.zero(); set_initial_values(); }   
+   Euler3D_ThermallyPerfect_cState(): 
+    rho(DENSITY_STDATM), E(PRESSURE_STDATM/(rho*(0.4))), rhospec(NULL) {
+      rhov.zero(); set_initial_values(); 
+   }   
 
-  Euler3D_ThermallyPerfect_cState(const double &value): 
-     rho(value), E(value),
-     rhospec(NULL){
-     rhov.x = value; rhov.y = value; rhov.z = value;
-     set_initial_values(value); }   
+   Euler3D_ThermallyPerfect_cState(const double &value): 
+    rho(value), E(value), rhospec(NULL) {
+      rhov.x = value; rhov.y = value; rhov.z = value;
+      set_initial_values(value); 
+   }   
   
-  Euler3D_ThermallyPerfect_cState(const double &d, const double &vx, 
-                                  const double &vy, const double &vz,
-                                  const double &En ):
-     rho(d), E(En), rhospec(NULL){
-     rhov.x=vx; rhov.y=vy; rhov.z=vz; set_initial_values(); }
+   Euler3D_ThermallyPerfect_cState(const double &d, 
+                                   const double &vx, 
+                                   const double &vy, 
+                                   const double &vz,
+                                   const double &En ):
+    rho(d), E(En), rhospec(NULL) {
+      rhov.x=vx; rhov.y=vy; rhov.z=vz; 
+      set_initial_values(); 
+   }
   
-  Euler3D_ThermallyPerfect_cState(const double &d, const double &vx, 
-                                  const double &vy, const double &vz, 
-                                  const double &En,	
-                                  Species *rhomfrac): 
-     rho(d), E(En), rhospec(NULL){ 
-     rhov.x=vx; rhov.y=vy; rhov.z = vz;set_initial_values(rhomfrac); }
+   Euler3D_ThermallyPerfect_cState(const double &d, 
+                                   const double &vx, 
+                                   const double &vy, 
+                                   const double &vz, 
+                                   const double &En,	
+                                   Species *rhomfrac): 
+    rho(d), E(En), rhospec(NULL) { 
+      rhov.x=vx; rhov.y=vy; rhov.z = vz;
+      set_initial_values(rhomfrac); 
+   }
 
-  Euler3D_ThermallyPerfect_cState(const double &d, const double &vx, 
-                                  const double &vy, const double &vz, 
-                                  const double &En,	
-                                  const double &rhomfrac): 
-     rho(d), E(En), rhospec(NULL){ 
-     rhov.x=vx; rhov.y=vy; rhov.z = vz;set_initial_values(rhomfrac); }
+   Euler3D_ThermallyPerfect_cState(const double &d, 
+                                   const double &vx, 
+                                   const double &vy, 
+                                   const double &vz, 
+                                   const double &En,	
+                                   const double &rhomfrac): 
+    rho(d), E(En), rhospec(NULL) { 
+      rhov.x=vx; rhov.y=vy; rhov.z = vz;
+      set_initial_values(rhomfrac); 
+   }
   
-  Euler3D_ThermallyPerfect_cState(const double &d, const Vector3D &V, 
-                                  const double &En):
-     rho(d), rhov(V), E(En), rhospec (NULL){
-     set_initial_values(); } 
-  Euler3D_ThermallyPerfect_cState(const double &d, const Vector3D &V, 
-                                  const double &En, const double &frac):
-     rho(d), rhov(V), E(En), rhospec (NULL){
-     set_initial_values(frac); } 
+   Euler3D_ThermallyPerfect_cState(const double &d, 
+                                   const Vector3D &V, 
+                                   const double &En):
+    rho(d), rhov(V), E(En), rhospec (NULL) {
+      set_initial_values();
+   } 
 
-  Euler3D_ThermallyPerfect_cState(const double &d, const Vector3D &dV, 
-                                  const double &En, Species *rhomfrac):
-     rho(d), rhov(dV), E(En), rhospec(NULL){
-     set_initial_values(rhomfrac); }
+   Euler3D_ThermallyPerfect_cState(const double &d, 
+                                   const Vector3D &V, 
+                                   const double &En, 
+                                   const double &frac):
+    rho(d), rhov(V), E(En), rhospec (NULL) {
+      set_initial_values(frac);
+   } 
 
-  //this is needed for the operator overload returns!!!!
-  Euler3D_ThermallyPerfect_cState(const Euler3D_ThermallyPerfect_cState &U)
-        { rhospec = NULL; rho = DENSITY_STDATM; set_initial_values();
-           Copy(U); }
+   Euler3D_ThermallyPerfect_cState(const double &d, 
+                                   const Vector3D &dV, 
+                                   const double &En, 
+                                   Species *rhomfrac):
+    rho(d), rhov(dV), E(En), rhospec(NULL){
+      set_initial_values(rhomfrac);
+   }
 
+   // This is needed for the operator overload returns!!!!
+   Euler3D_ThermallyPerfect_cState(const Euler3D_ThermallyPerfect_cState &U) { 
+      rhospec = NULL; rho = DENSITY_STDATM; 
+      set_initial_values();
+      Copy(U); 
+   }
   
-  //Read in ns species data
-  static void set_species_data(Euler3D_ThermallyPerfect_cState &Uo, 
-                               const int &, 
-                               const string *,
-                               const char *,
-                               const int &, 
-                               const double&,
-                               const double *);
+   // Sets the species data, needs to be called only once as it is static
+   void set_species_data(const int &n,
+                         const string *S,
+                         const char *PATH,
+                         const int &debug, 
+                         const double &Mr, 
+                         const double* Sc,
+                         const int &trans_data);
 
-     //Set initial data values  
-     void set_initial_values();
-     void set_initial_values(const double &value);
-     void set_initial_values(double *rhomfrac);
-     void set_initial_values(Species *rhomfrac);
+   //Set initial data values  
+   void set_initial_values();
+   void set_initial_values(const double &value);
+   void set_initial_values(double *rhomfrac);
+   void set_initial_values(Species *rhomfrac);
      
-     /* VACUUM **/
-  void Vacuum(){
-     rho=ZERO; rhov.x=ZERO; rhov.y=ZERO; rhov.z=ZERO; E=ZERO;
+   // Copy operator
+   void Copy(const Euler3D_ThermallyPerfect_cState &U);
+
+   /*************** VACUUM OPERATOR *********************/
+   void Vacuum(){
+      rho=ZERO; rhov.x=ZERO; rhov.y=ZERO; rhov.z=ZERO; E=ZERO;
+      for(int i=0; i<ns; i++){
+         rhospec[i].Vacuum();
+      }
+   }  
+
+   void zero_non_sol(){
      for(int i=0; i<ns; i++){
-        rhospec[i].Vacuum();
+       rhospec[i].gradc.zero();
+       rhospec[i].diffusion_coef=ZERO;
      }
+   }
 
-  }  
-  void zero_non_sol(){
-    for(int i=0; i<ns; i++){
-      rhospec[i].gradc.zero();
-      rhospec[i].diffusion_coef=ZERO;
-    }
+   /* Set Data Temperature Ranges */
+   void Temp_low_range();     
+   void Temp_high_range(); 
+
+   // Mixing Rules 
+   double Rtot(void) const; 
+   double Cp(void) const;  
+   double Cv(void) const;  
+   double g(void) const;   
+   double gamma_guess(void) const;  
+   double e(void) const;            
+   double es(void) const;           
+   double h(const double &T) const;  
+   double hs(const double &T) const; 
+   double hprime(const double &T) const; 
+   double heatofform(void) const;      
+   double mu(void) const;             
+   double kappa(void) const;         
+   Vector3D v(void) const;   
+   double p(void) const;    
+   double T(void) const;      
+   double a(void) const;     
+   bool negative_speccheck(  const Euler3D_ThermallyPerfect_cState &Uo, const int &flag) const; 
+   double sum_species(void) const;
  
-  }  
-  /* Set Data Temperature Ranges */
-  void Temp_low_range();     
-  void Temp_high_range(); 
-  // copy operator
-  void Copy(const Euler3D_ThermallyPerfect_cState &U);
+   // Temperature Derivatives 
+   double dmudT(void) const;
 
+   Euler3D_ThermallyPerfect_pState W(void) ;
+   Euler3D_ThermallyPerfect_pState W(void) const;
+   Euler3D_ThermallyPerfect_pState W(const Euler3D_ThermallyPerfect_cState &U) const;
+   friend Euler3D_ThermallyPerfect_pState W(const Euler3D_ThermallyPerfect_cState &U);
 
-  // Mixing Rules 
-  double Rtot(void) const; 
-  double Cp(void) const;  
-  double Cv(void) const;  
-  double g(void) const;   
-  double gamma_guess(void) const;  
-  double e(void) const;            
-  double es(void) const;           
-  double h(const double &T) const;  
-  double hs(const double &T) const; 
-  double hprime(const double &T) const; 
-  double heatofform(void) const;      
-  double mu(void) const;             
-  double kappa(void) const;         
-  Vector3D v(void) const;   
-  double p(void) const;    
-  double T(void) const;      
-  double a(void) const;     
-  bool negative_speccheck(  const Euler3D_ThermallyPerfect_cState &Uo, const int &flag) const; 
-  double sum_species(void) const;
+   /* Index operators */
+   double &operator[](int index);
+   const double &operator[](int index) const;
  
-  // Temperature Derivatives 
-  double dmudT(void) const;
+   /* Binary arithmetic operators. */
+   Euler3D_ThermallyPerfect_cState operator +(const Euler3D_ThermallyPerfect_cState &U) const;
+   Euler3D_ThermallyPerfect_cState operator -(const Euler3D_ThermallyPerfect_cState &U) const;
+   Euler3D_ThermallyPerfect_cState operator *(const double &a) const;
+   friend Euler3D_ThermallyPerfect_cState operator *(const double &a, const Euler3D_ThermallyPerfect_cState &U);
+   Euler3D_ThermallyPerfect_cState operator /(const double &a) const;
+   double operator *(const Euler3D_ThermallyPerfect_cState &U) const;
+   Euler3D_ThermallyPerfect_cState operator ^(const Euler3D_ThermallyPerfect_cState &U) const;
 
-  Euler3D_ThermallyPerfect_pState W(void) ;
-  Euler3D_ThermallyPerfect_pState W(void) const;
-  Euler3D_ThermallyPerfect_pState W(const Euler3D_ThermallyPerfect_cState &U) const;
-  friend Euler3D_ThermallyPerfect_pState W(const Euler3D_ThermallyPerfect_cState &U);
+   /* Assignment Operator. */ 
+   Euler3D_ThermallyPerfect_cState& operator =(const Euler3D_ThermallyPerfect_cState &U); 
 
-  /* Index operators */
-  double &operator[](int index);
-  const double &operator[](int index) const;
- 
-  /* Binary arithmetic operators. */
-  Euler3D_ThermallyPerfect_cState operator +(
-     const Euler3D_ThermallyPerfect_cState &U) const;
-  Euler3D_ThermallyPerfect_cState operator -(
-     const Euler3D_ThermallyPerfect_cState &U) const;
-  Euler3D_ThermallyPerfect_cState operator *(const double &a) const;
-  friend Euler3D_ThermallyPerfect_cState operator *(
-     const double &a, const Euler3D_ThermallyPerfect_cState &U);
-  Euler3D_ThermallyPerfect_cState operator /(const double &a) const;
-  
-  double operator *(const Euler3D_ThermallyPerfect_cState &U) const;
-  Euler3D_ThermallyPerfect_cState operator ^(
-     const Euler3D_ThermallyPerfect_cState &U) const;
-
-  /* Assignment Operator. */ 
-  Euler3D_ThermallyPerfect_cState& operator =(
-     const Euler3D_ThermallyPerfect_cState &U); 
-  /* Shortcut arithmetic operators. */
-  Euler3D_ThermallyPerfect_cState& operator +=(
-     const Euler3D_ThermallyPerfect_cState &U);
-  Euler3D_ThermallyPerfect_cState& operator -=(
-     const Euler3D_ThermallyPerfect_cState &U);
+   /* Shortcut arithmetic operators. */
+   Euler3D_ThermallyPerfect_cState& operator +=(const Euler3D_ThermallyPerfect_cState &U);
+   Euler3D_ThermallyPerfect_cState& operator -=(const Euler3D_ThermallyPerfect_cState &U);
       
-  /* Unary arithmetic operators. */
-  friend Euler3D_ThermallyPerfect_cState operator -(
-     const Euler3D_ThermallyPerfect_cState &U);
+   /* Unary arithmetic operators. */
+   friend Euler3D_ThermallyPerfect_cState operator -(const Euler3D_ThermallyPerfect_cState &U);
   
-  /* Relational operators. */
-  friend int operator ==(const Euler3D_ThermallyPerfect_cState &U1, 
-                         const Euler3D_ThermallyPerfect_cState &U2);
-  friend int operator !=(const Euler3D_ThermallyPerfect_cState &U1, 
-                         const Euler3D_ThermallyPerfect_cState &U2);
+   /* Relational operators. */
+   friend int operator ==(const Euler3D_ThermallyPerfect_cState &U1, 
+                          const Euler3D_ThermallyPerfect_cState &U2);
+   friend int operator !=(const Euler3D_ThermallyPerfect_cState &U1, 
+                          const Euler3D_ThermallyPerfect_cState &U2);
   
-  /* Input-output operators. */
-  friend ostream& operator << (ostream &out_file, 
-                               const Euler3D_ThermallyPerfect_cState &U);
-  friend istream& operator >> (istream &in_file,  
-                               Euler3D_ThermallyPerfect_cState &U);
+   /* Input-output operators. */
+   friend ostream& operator << (ostream &out_file, 
+                                const Euler3D_ThermallyPerfect_cState &U);
+   friend istream& operator >> (istream &in_file,  
+                                Euler3D_ThermallyPerfect_cState &U);
 
    /* Destructors */
-  void Deallocate_static(void){
-     
-     if(specdata != NULL) delete[] specdata;
+   void Deallocate_static(void) {
+     if (specdata != NULL) delete[] specdata;
      specdata = NULL;
      if(Schmidt != NULL)  delete[] Schmidt;
      Schmidt = NULL;
-  }
+   }
 
-  void Deallocate(void){
+   void Deallocate(void) {
      if (rhospec != NULL) delete[] rhospec;
      rhospec = NULL;
-  }
+   }
   
-  ~Euler3D_ThermallyPerfect_cState(){ 
+   ~Euler3D_ThermallyPerfect_cState(){ 
      Deallocate();
-  }
+   }
   
 };
 
@@ -660,8 +698,7 @@ inline void Euler3D_ThermallyPerfect_pState::set_initial_values(){
    }
 }
 
-inline void  Euler3D_ThermallyPerfect_pState::set_initial_values(
-   const double &value){
+inline void  Euler3D_ThermallyPerfect_pState::set_initial_values(const double &value){
    Deallocate();
    spec = new Species[ns];
    for(int i=0; i<ns; i++){
@@ -686,10 +723,12 @@ inline void Euler3D_ThermallyPerfect_pState::set_initial_values(Species *mfrac){
       spec[i] = mfrac[i];
    }
 }
+
 //momentum
 inline Vector3D Euler3D_ThermallyPerfect_pState::rhov(void) const{
    return rho*v; 
-} 
+}
+ 
 inline double Euler3D_ThermallyPerfect_pState::mu(void) const{
  double sum =0.0;
   double Temp = T();
@@ -710,10 +749,7 @@ inline double Euler3D_ThermallyPerfect_pState::mu(void) const{
       (specdata[i].Mol_mass() * phi);
   }
 
-
   delete[] vis;
-
-
 
   return sum;
 }
@@ -723,6 +759,7 @@ inline double Euler3D_ThermallyPerfect_pState::Prandtl(void) const{
    //Pr = Cp*mu/k
    return Cp()*mu()/kappa();
 }
+
 //Schmidt no.
 inline double Euler3D_ThermallyPerfect_pState::Schmidt_No(const int &i) const{
    if(spec[i].diffusion_coef != ZERO){
@@ -732,6 +769,7 @@ inline double Euler3D_ThermallyPerfect_pState::Schmidt_No(const int &i) const{
    }
    
 }
+
 //Lewis number
 inline double Euler3D_ThermallyPerfect_pState::Lewis(const int &i) const{
    if(spec[i].diffusion_coef != ZERO){
@@ -739,10 +777,12 @@ inline double Euler3D_ThermallyPerfect_pState::Lewis(const int &i) const{
    }
    return ZERO;
 }
+
 //Temperature
 inline double Euler3D_ThermallyPerfect_pState::T(void) const{
-    
+
   return p/(rho*Rtot());
+
 }
 //Species concentrations
 inline double Euler3D_ThermallyPerfect_pState::SpecCon(int i) const{
@@ -758,10 +798,7 @@ inline double Euler3D_ThermallyPerfect_pState::SpecCon(int i) const{
 ***********************************************************/
 inline double Euler3D_ThermallyPerfect_pState::Gibbs(int species) const{
    double Temp = T(); 
-   
-   return specdata[species].Enthalpy_mol(Temp)  
-      - Temp*specdata[species].Entropy_mol(Temp);
-   
+   return specdata[species].GibbsFree(Temp);
 }
 
 // Temperature Derivatives 
@@ -789,7 +826,6 @@ inline void Euler3D_ThermallyPerfect_pState::Copy(
 
 //----------------- Index Operator ------------------------/
 inline double& Euler3D_ThermallyPerfect_pState::operator[](int index) {
-   
    switch(index){  
    case 1:
       return rho;    
@@ -821,13 +857,9 @@ inline const double& Euler3D_ThermallyPerfect_pState::operator[](int index) cons
    default :
       return spec[index-NUM_EULER3D_VAR_SANS_SPECIES-1].c;
    };
-
-
 }
 
-
 inline Euler3D_ThermallyPerfect_cState Euler3D_ThermallyPerfect_pState::U(void){
-  
    Euler3D_ThermallyPerfect_cState Temp;
    Temp.rho = rho;
    Temp.rhov = rhov();
@@ -839,7 +871,6 @@ inline Euler3D_ThermallyPerfect_cState Euler3D_ThermallyPerfect_pState::U(void){
    }
  
    return Temp;
-  
 }
 
 
@@ -856,7 +887,6 @@ inline Euler3D_ThermallyPerfect_cState Euler3D_ThermallyPerfect_pState::U(void)c
    }
  
    return Temp;
-  
 }
 
 inline Euler3D_ThermallyPerfect_cState Euler3D_ThermallyPerfect_pState::U(const Euler3D_ThermallyPerfect_pState &W){
@@ -888,7 +918,6 @@ inline Euler3D_ThermallyPerfect_cState U(const Euler3D_ThermallyPerfect_pState &
       Temp.rhospec[i].gradc = W.rho*W.spec[i].gradc;
       Temp.rhospec[i].diffusion_coef = W.rho*W.spec[i].diffusion_coef;
    }
-   
    return Temp;
 }
 
@@ -933,61 +962,6 @@ inline bool Euler3D_ThermallyPerfect_pState::negative_speccheck(void) const{
    
 }
 
-
-
-/* Euler3D_ThermallyPerfect_pState::U -- Conserved solution state.*/
-
-/* inline Euler3D_ThermallyPerfect_cState Euler3D_ThermallyPerfect_pState::U(void) const { */
-/*   return U(*this); */
-/*   /\*  Euler3D_ThermallyPerfect_cState Temp; *\/ */
-/* /\*    Temp.rho = rho; *\/ */
-/* /\*    Temp.rhov = rhov(); *\/ */
-/* /\*    Temp.E = E(); *\/ */
-/* /\*    for(int i=0; i<ns; i++){ *\/ */
-/* /\*       Temp.rhospec[i] = rho*spec[i]; *\/ */
-/* /\*       Temp.rhospec[i].gradc = rho*spec[i].gradc; *\/ */
-/* /\*       Temp.rhospec[i].diffusion_coef = rho*spec[i].diffusion_coef; *\/ */
-         
-/* /\*    }  *\/ */
-   
-/* /\*    return Temp; *\/ */
-/* } */
-
-/* inline Euler3D_ThermallyPerfect_cState Euler3D_ThermallyPerfect_pState::U ( */
-/*    const Euler3D_ThermallyPerfect_pState &W) const{ */
-
-/*    if(ns == W.ns){  */
-/*       Euler3D_ThermallyPerfect_cState Temp; */
-/*       Temp.rho = W.rho; */
-/*       Temp.rhov = W.rhov(); */
-/*       Temp.E = W.E(); */
-/*       for(int i=0; i<W.ns; i++){ */
-/*          Temp.rhospec[i] = W.rho*W.spec[i]; */
-/*          Temp.rhospec[i].gradc = W.rho*W.spec[i].gradc; */
-/*          Temp.rhospec[i].diffusion_coef = W.rho*W.spec[i].diffusion_coef; */
-/*     } */
-      
-/*       return Temp; */
-/*    } else { */
-/*       cerr<<"\n Mismatch in number of species \n"; */
-/*       exit(1); */
-/*    }  */
-/* } */
-
-/* inline Euler3D_ThermallyPerfect_cState U(const Euler3D_ThermallyPerfect_pState &W) { */
-/*   Euler3D_ThermallyPerfect_cState Temp; */
-/*   Temp.rho = W.rho; */
-/*   Temp.rhov = W.rhov(); */
-/*   Temp.E = W.E(); */
-/*   for(int i=0; i<W.ns; i++){ */
-/*     Temp.rhospec[i] = W.rho*W.spec[i]; */
-/*     Temp.rhospec[i].gradc = W.rho*W.spec[i].gradc; */
-/*     Temp.rhospec[i].diffusion_coef = W.rho*W.spec[i].diffusion_coef; */
-/*   }   */
- 
-/*   return Temp; */
-/* } */
-
 /**************************************************************************
 *Euler3D_ThermallyPerfect_cState member functions  ************************
 ***************************************************************************/
@@ -1019,8 +993,6 @@ inline void Euler3D_ThermallyPerfect_cState::set_initial_values(double *rhomfrac
    rhospec = new Species[ns];
    for(int i=0; i<ns; i++){
       rhospec[i].c = rhomfrac[i];
-  
-     
    }
    
 }
@@ -1032,7 +1004,6 @@ inline void Euler3D_ThermallyPerfect_cState::set_initial_values(Species *rhomfra
    rhospec = new Species[ns];
    for(int i=0; i<ns; i++){
       rhospec[i] = rhomfrac[i];
-   
    }
 }
 
@@ -1162,12 +1133,8 @@ inline double Euler3D_ThermallyPerfect_cState::mu(void) const{
       (specdata[i].Mol_mass() * phi);
   }  
 
-
-
   return sum;
 }
-
-
 
 /*  Sum N-1 species.*/
 inline double Euler3D_ThermallyPerfect_cState::sum_species(void) const{
@@ -1177,8 +1144,6 @@ inline double Euler3D_ThermallyPerfect_cState::sum_species(void) const{
    }
    return sum/rho;
 }
-
-
 
 inline Euler3D_ThermallyPerfect_pState Euler3D_ThermallyPerfect_cState::W(void){
   
@@ -1194,8 +1159,6 @@ inline Euler3D_ThermallyPerfect_pState Euler3D_ThermallyPerfect_cState::W(void){
    }
    
    return Temp;
-   
-   
 }
 
 inline Euler3D_ThermallyPerfect_pState Euler3D_ThermallyPerfect_cState::W(void)const{
@@ -1212,8 +1175,6 @@ inline Euler3D_ThermallyPerfect_pState Euler3D_ThermallyPerfect_cState::W(void)c
    }
    
    return Temp;
-   
-   
 }
 
 inline Euler3D_ThermallyPerfect_pState Euler3D_ThermallyPerfect_cState::W(
@@ -1252,6 +1213,4 @@ inline Euler3D_ThermallyPerfect_pState W(const Euler3D_ThermallyPerfect_cState &
   return Temp;
 }
 
-
-
-#endif //end EULER3D_THERMALLYPERFECT_STATE_INCLUDED 
+#endif // _EULER3D_THERMALLYPERFECT_STATE_INCLUDED

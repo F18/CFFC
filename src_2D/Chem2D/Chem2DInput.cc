@@ -24,7 +24,7 @@ NEW
 void Open_Input_File(Chem2D_Input_Parameters &IP) {
 
     IP.Input_File.open(IP.Input_File_Name, ios::in);
-    if (!IP.Input_File.bad()) {
+    if (!IP.Input_File.fail()) {
        IP.Line_Number = 0;
        IP.Input_File.setf(ios::skipws);
     } /* endif */
@@ -3833,14 +3833,14 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       // If it's still unknown then ignore it. 
       // This could be a bad idea if it was an unknown command 
       // as opposed to an unknown code.
-      if (i_command == INVALID_INPUT_CODE) {
-	cout << "\n***\n\nWarning: input file line " << IP.Line_Number << ": ";
-	cout << "ignoring unknown input code:\n";
-	cout << "code: " << buffer;
-	cout << "\nvalue: " << IP.Next_Control_Parameter;
-	cout << "\n\n***\n";
-      }
-      i_command = COMMENT_CODE; // sure why not
+//       if (i_command == INVALID_INPUT_CODE) {
+// 	cout << "\n***\n\nWarning: input file line " << IP.Line_Number << ": ";
+// 	cout << "ignoring unknown input code:\n";
+// 	cout << "code: " << buffer;
+// 	cout << "\nvalue: " << IP.Next_Control_Parameter;
+// 	cout << "\n\n***\n";
+//       }
+//       i_command = COMMENT_CODE; // sure why not
     }
     
     if (!IP.Input_File.good()) { i_command = INVALID_INPUT_VALUE; }
@@ -3874,7 +3874,7 @@ int Process_Input_Control_Parameter_File(Chem2D_Input_Parameters &Input_Paramete
 
     /* Open the input file containing the input parameters. */
     Open_Input_File(Input_Parameters);
-    error_flag = Input_Parameters.Input_File.bad();
+    error_flag = Input_Parameters.Input_File.fail();
 
     if (error_flag) {
        cout << "\n Chem2D ERROR: Unable to open Chem2D input data file.\n";

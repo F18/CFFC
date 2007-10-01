@@ -41,6 +41,9 @@ using namespace std;
 #include "../Math/Polygon.h"
 #endif //_POLYGON_INCLUDED
 
+/* Include TypeDefinition header*/
+#include "../Utilities/TypeDefinition.h"
+
 /**********************************************************************
  * CFD -- CFFC library name and version.                              *
  **********************************************************************/
@@ -141,6 +144,9 @@ inline char *Date_And_Time() {
 #define WRITE_OUTPUT_MIXING_LAYER_CODE                   10057
 #define WRITE_OUTPUT_FORWARD_FACING_STEP_CODE            10058
 #define WRITE_OUTPUT_SHOCK_STRUCTURE_CODE                10059
+#define WRITE_OUTPUT_JET_FLOW                            10060 
+#define WRITE_OUTPUT_SUPERSONIC_HOT_JET_CODE             10061
+#define WRITE_OUTPUT_SUBSONIC_HOT_JET_CODE               10062
 
 #define DETERMINE_MAXIMUM_SURFACE_PRESSURE_CODE          10070
 #define DETERMINE_MACH_STEM_HEIGHT_CODE                  10071
@@ -154,6 +160,9 @@ inline char *Date_And_Time() {
 #define POSTPROCESS_1DFLAME                              10096
 
 #define WRITE_OUTPUT_BLACK_ENCLOSURE_CODE                10100
+
+#define WRITE_NORM_ON_SCREEN                             10105
+#define WRITE_OUTPUT_EXACT_SOLUTION                      10106
 
 #define	INVALID_INPUT_CODE                              -10000
 #define	INVALID_INPUT_VALUE                             -10001
@@ -216,6 +225,7 @@ inline char *Date_And_Time() {
 #define GRID_ADIABATIC_COUETTE               28
 #define GRID_RECTANGULAR_ENCLOSURE           28
 #define GRID_CYLINDRICAL_ENCLOSURE           29
+#define GRID_JET_FLOW                        30
 
 #define GRID_ICEMCFD                       1000
 #define GRID_READ_FROM_DEFINITION_FILE    10000
@@ -410,6 +420,21 @@ inline char *Date_And_Time() {
 #define TURBULENT_BC_AUTOMATIC_WALL_TREATMENT     954
 
 /**********************************************************************
+ * CFD -- Compressibility correction types.                           *
+ **********************************************************************/
+
+#define COMPRESSIBILITY_CORRECTION_SARKAR           980
+#define COMPRESSIBILITY_CORRECTION_ZEMAN            981
+#define COMPRESSIBILITY_CORRECTION_WILCOX           982
+
+/**********************************************************************
+ * CFD -- Transition Model types.                                     *
+ **********************************************************************/
+
+#define TRANSITION_WILCOX                           983
+#define TRANSITION_MENTER                           984
+
+/**********************************************************************
  * CFD -- Turbulent flow friction velocity evaluation types.          *
  **********************************************************************/
 
@@ -464,6 +489,14 @@ inline char *Date_And_Time() {
 #define IC_SINE_WAVE_YDIR              34
 #define IC_SINE2_WAVE_XDIR             35
 #define IC_SINE2_WAVE_YDIR             36
+#define IC_SIN_WAVE                    37
+#define IC_JIANG_WAVE                  38
+#define IC_DENSITY_STEP_WAVE           39
+#define IC_SHOCK_ACOUSTIC_INTERACTION  40
+#define IC_BLAST_WAVE_INTERACTION      41
+#define IC_CONVECTION_OF_DIFFERENT_SHAPES 42
+#define IC_LAX                         43
+
 
 #define IC_COMPRESSION_XDIR            50
 #define IC_COMPRESSION_YDIR            51
@@ -497,13 +530,14 @@ inline char *Date_And_Time() {
 #define IC_VISCOUS_BACKWARD_FACING_STEP        85
 #define IC_VISCOUS_BRANCHED_DUCT               86
 #define IC_MIXING_LAYER                        87
+#define IC_JET_FLOW                            88
 
-#define IC_TURBULENT_PIPE_FLOW                 88
-#define IC_TURBULENT_COFLOW                    89 
-#define IC_TURBULENT_DIFFUSION_FLAME           90 
-#define IC_TURBULENT_DUMP_COMBUSTOR            91 
+#define IC_TURBULENT_PIPE_FLOW                 89
+#define IC_TURBULENT_COFLOW                    90 
+#define IC_TURBULENT_DIFFUSION_FLAME           91 
+#define IC_TURBULENT_DUMP_COMBUSTOR            92 
 
-#define IC_FREE_JET_FLAME                      92 
+#define IC_FREE_JET_FLAME                      93 
 #define IC_FORWARD_FACING_STEP                 95
 
 #define	IC_RIEMANN                    100
@@ -518,6 +552,29 @@ inline char *Date_And_Time() {
 #define IC_SQUARE_BOX_IVP             109
 #define IC_CIRCULAR_BOX_IVP           110
 #define IC_CIRCULAR_FLOW              111
+#define IC_PERIODIC_SINX_WAVE         112
+#define IC_PERIODIC_SINY_WAVE         113
+#define IC_ABGRALL_FUNCTION           114
+#define IC_SIN_EXP_X_WAVE             115
+#define IC_SIN_EXP_Y_WAVE             116
+#define IC_SIN_EXP_ROTATED_WAVE       117
+#define IC_COSINE_HILL                118
+#define IC_PERIODIC_SINX_MULTIWAVE    119
+#define IC_PERIODIC_SINY_MULTIWAVE    120
+#define IC_PERIODIC_COMPLEX_MULTIWAVE 121
+#define IC_POLYNOMIAL_FUNCTION        122
+#define IC_HYPER_TANGENT              123
+#define IC_LAPLACE_1                  124
+#define IC_LAPLACE_2                  125
+#define IC_LAPLACE_3                  126
+#define IC_LAPLACE_4                  127
+#define IC_LAPLACE_5                  128
+#define IC_POISSON_1                  129
+#define IC_POISSON_2                  130
+#define IC_POISSON_3                  131
+#define IC_POISSON_4                  132
+#define IC_POISSON_5                  133
+
 
 #define IC_ELECTRIC_FIELD_UNIFORM            200
 #define IC_ELECTRIC_FIELD_QUADRUPOLE         201
@@ -557,6 +614,10 @@ inline char *Date_And_Time() {
 #define TIME_STEPPING_NKS                               21
 #define TIME_STEPPING_DUAL_TIME_STEPPING                22
 
+#define	TIME_STEPPING_EXPLICIT_EULER_LS                             30
+#define	TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR_HIGH_ORDER       31
+#define	TIME_STEPPING_EXPLICIT_RUNGE_KUTTA_4_HIGH_ORDER             32
+
 #define	TIME_STEPPING_LAX_FRIEDRICHS                   100
 #define	TIME_STEPPING_LAX_WENDROFF                     101
 #define	TIME_STEPPING_MACCORMACK                       102
@@ -590,6 +651,10 @@ inline char *Date_And_Time() {
 #define RECONSTRUCTION_QUADRATIC_ESSENTIALLY_NON_OSCILLATORY   8
 #define RECONSTRUCTION_CUBIC_ESSENTIALLY_NON_OSCILLATORY       9
 #define RECONSTRUCTION_WEIGHTED_ESSENTIALLY_NON_OSCILLATORY   10
+#define RECONSTRUCTION_HIGH_ORDER                             11
+#define RECONSTRUCTION_ENO                                    12  /* ENO --> ESSENTIALLY_NON_OSCILLATORY */
+#define RECONSTRUCTION_ENO_CHARACTERISTIC                     13
+#define RECONSTRUCTION_CENO                                   14 /* CENO --> CENTRAL_ESSENTIALLY_NON_OSCILLATORY */
 
 #define VISCOUS_RECONSTRUCTION_CARTESIAN           21
 #define VISCOUS_RECONSTRUCTION_DIAMOND_PATH        22
@@ -1083,6 +1148,7 @@ inline istream &operator >> (istream &in_file, CPUTime &T) {
 }
 
 #define	INPUT_PARAMETER_LENGTH_CFD1D    80
+#define INPUT_PARAMETER_LENGTH_CFD1D_FILE_NAME 350
 
 /********************************************************
  * Class:  CFD1D_Input_Parameters                       *
@@ -1091,7 +1157,7 @@ class CFD1D_Input_Parameters{
   private:
   public:
   // Input file name:
-  char Input_File_Name[INPUT_PARAMETER_LENGTH_CFD1D];
+  char Input_File_Name[INPUT_PARAMETER_LENGTH_CFD1D_FILE_NAME];
 
   // Input file stream:
   ifstream Input_File;
@@ -1106,6 +1172,9 @@ class CFD1D_Input_Parameters{
   // Reconstruction type indicator and related input parameters:
   char Reconstruction_Type[INPUT_PARAMETER_LENGTH_CFD1D];
   int i_Reconstruction;
+  int i_ReconstructionMethod;
+  int Space_Accuracy;
+  double CENO_Cutoff;
 
   // Limiter type indicator and related input parameters:
   char Limiter_Type[INPUT_PARAMETER_LENGTH_CFD1D];
@@ -1118,12 +1187,14 @@ class CFD1D_Input_Parameters{
   // Initial condition type indicator and related input parameters:
   char ICs_Type[INPUT_PARAMETER_LENGTH_CFD1D];
   int i_ICs;
+  FunctionType1D ExactFunction; // pointer to the exact function
 
   // Grid type indicator and related input parameters:
   char Grid_Type[INPUT_PARAMETER_LENGTH_CFD1D];
   int i_Grid;
   int Number_of_Cells, Number_of_Nodes;
   double X_Min, X_Max;
+  double X_ExactSolution_Min, X_ExactSolution_Max; /* determine the definition domain of the exact solution */
 
   // Diffusion coefficient, wave speed, and relaxation time:
   double Kappa, a, Tau;
@@ -1143,6 +1214,10 @@ class CFD1D_Input_Parameters{
 
   // Input file line number:
   int Line_Number;
+
+  /* Access fields */
+  double & FitTolerance(void) {return CENO_Cutoff;}
+  const double & FitTolerance(void) const {return CENO_Cutoff;}
 
   /* Input-output operators. */
 
@@ -1178,8 +1253,37 @@ inline ostream &operator << (ostream &out_file,
        out_file << "\n  -> Local Time Stepping";
     out_file << "\n  -> Reconstruction: " 
              << IP.Reconstruction_Type;
-    out_file << "\n  -> Limiter: " 
-             << IP.Limiter_Type;
+    if ((IP.i_ReconstructionMethod != RECONSTRUCTION_ENO) &&
+        (IP.i_ReconstructionMethod != RECONSTRUCTION_ENO_CHARACTERISTIC)){
+      out_file << "\n  -> Limiter: " << IP.Limiter_Type;
+    }
+    if (IP.i_ReconstructionMethod == RECONSTRUCTION_CENO){
+      out_file << "\n  -> Fit Tolerance = " << IP.FitTolerance();
+    }
+    out_file << "\n  -> Space Accuracy Solution: ";
+    switch(IP.Space_Accuracy){
+    case 1: 
+      out_file << "1st order";
+      break;
+    case 2:
+      out_file << "2nd order";
+      break;
+    case 3:
+      out_file << "3rd order";
+      break;
+    case 4:
+      out_file << "4th order";
+      break;
+    case 5:
+      out_file << "5th order";
+      break;
+    case 6:
+      out_file << "6th order";
+      break;
+    default:
+      out_file << "higher than 6th order";
+   }
+
     out_file << "\n  -> Flux Function: " 
              << IP.Flux_Function_Type;
     out_file << "\n  -> Initial Conditions: " 

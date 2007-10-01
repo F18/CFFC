@@ -1,3 +1,6 @@
+/*!\file TestRun.h
+  \brief Header file defining the elements needed for running the testing framework.*/
+
 #ifndef _TEST_RUN_INCLUDED
 #define _TEST_RUN_INCLUDED
 
