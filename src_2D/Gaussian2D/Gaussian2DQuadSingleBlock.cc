@@ -2153,11 +2153,13 @@ double CFL(Gaussian2D_Quad_Block &SolnBlk) {
 	     a_j = sqrt(3.0*p_jj/SolnBlk.W[i][j].d);
 	     SolnBlk.dt[i][j] = min(d_i/(a_i+fabs(v_i)), d_j/(a_j+fabs(v_j)));
 
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
 	     // Heat-Transfer-related dt calculation.
 	     if(SolnBlk.Heat_Transfer) {
 	       dt_heat = HALF*min(sqr(d_i),sqr(d_j))/(SolnBlk.W[i][j].pr*SolnBlk.W[i][j].tt()*SolnBlk.W[i][j].pressure()/SolnBlk.W[i][j].d);
 	       SolnBlk.dt[i][j] = min(SolnBlk.dt[i][j],dt_heat);
 	     }
+#endif
 
              dtMin = min(dtMin, SolnBlk.dt[i][j]);
           } /* endif */
