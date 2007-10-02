@@ -114,8 +114,8 @@ set_normalize_values(void)
 
   // NOT NORMALIZED
   for(int i=0; i < blocksize; i++) {
-    normalize_valuesU[i] = ONE;
-    normalize_valuesR[i] = ONE;
+    normalize_valuesU[i] = BlackBody(TEMPERATURE_STDATM);//ONE;
+    normalize_valuesR[i] = BlackBody(TEMPERATURE_STDATM);//ONE;
   }
 }
 
@@ -1369,7 +1369,89 @@ SubcellReconstruction(const int i,
 
 
 
+/**************************************************************************
+ * Routine: calculate_epsilon                                             *
+ **************************************************************************/
+//
+// Restart vesion
+//
+// template <> 
+// inline void GMRES_RightPrecon_MatrixFree<Rte2D_State,
+// 					 Rte2D_Quad_Block,
+// 					 Rte2D_Input_Parameters>::
+// calculate_epsilon_restart(double &epsilon)
+// {
+//   double l2_norm_x(ZERO);
+//   double l1_norm_u(ZERO);
+//   int total_vars(0);
+// 
+//   //
+//   // loop over each block
+//   //
+//   for ( int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) {
+//     if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
+// 
+//       // add l2 norm of x component
+//       l2_norm_x += sqr( G[Bcount].L2_Norm(G[Bcount].x) );
+// 
+//       // add l1 norm of U component
+//       l1_norm_u += G[Bcount].L1_Norm_Unorm();
+// 
+//       // compute the total number of variables
+//       total_vars += G[Bcount].scalar_dim;
+//       
+//     } // endif
+//   }
+// 
+//   // compute the global norms
+//   l2_norm_x = sqrt(CFFC_Summation_MPI(l2_norm_x));
+//   l1_norm_u = CFFC_Summation_MPI(l1_norm_u) / CFFC_Summation_MPI(total_vars);
+// 
+//   // comput epsilon => (  (1/n)||U||  / ||V||_2 + 1 ) * b
+//   epsilon = (l1_norm_u/l2_norm_x + 1.0) * Input_Parameters->NKS_IP.Epsilon_Naught;
+// }
+// 
 
+//
+// Non-Restart version
+//
+// template <> 
+// inline void GMRES_RightPrecon_MatrixFree<Rte2D_State,
+// 					 Rte2D_Quad_Block,
+// 					 Rte2D_Input_Parameters>::
+// calculate_epsilon(double &epsilon, const int &search_direction_counter)
+// {
+//   double l2_norm_z(ZERO); 
+//   double l1_norm_u(ZERO); 
+//   int total_vars(0);
+// 
+//   //
+//   // loop over each block
+//   //
+//   for ( int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) {
+//     if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
+// 
+//       // add l2 norm of z component
+//       l2_norm_z += sqr(G[Bcount].L2_Norm(&(G[Bcount].W[(search_direction_counter)*
+// 						       G[Bcount].scalar_dim])));
+// 
+//       // add l1 norm of U component
+//       l1_norm_u += G[Bcount].L1_Norm_Unorm();
+// 
+//       // compute the total number of variables
+//       total_vars += G[Bcount].scalar_dim;
+//       
+//     } // endif
+//   }       
+// 
+//   // compute the global norms
+//   l2_norm_z = sqrt(CFFC_Summation_MPI(l2_norm_z));
+//   l1_norm_u = CFFC_Summation_MPI(l1_norm_u) / CFFC_Summation_MPI(total_vars);
+// 
+//   // comput epsilon => (  (1/n)||U||  / ||V||_2 + 1 ) * b
+//   epsilon = (l1_norm_u/l2_norm_z + 1.0) * Input_Parameters->NKS_IP.Epsilon_Naught;
+// }
+// 
 
 /****************************************************************/
 /**** PRECONDTIONER REQUIRED SPECIALIZATIONS & FUNCTIONS ********/

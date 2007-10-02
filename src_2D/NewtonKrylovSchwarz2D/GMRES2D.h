@@ -174,6 +174,9 @@ public:
   double L2_Norm(int k, const double* v);
   double Dotproduct(const double *v1, const double *v2);
 
+  // norm of normalized solution vector
+  double L1_Norm_Unorm(void);
+
   //Return denormalized deltaU
   double deltaU(const int i, const int j, const int k){
     return ( denormalizeU(x[index(i,j,k)],k) ); }  
@@ -669,6 +672,21 @@ inline double GMRES_Block<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
 Dotproduct(const double *v1, const double *v2) {
   integer inc = 1;
   return (F77NAME(ddot)( &scalar_dim, v1, &inc, v2, &inc));	   
+}
+
+
+/********************************************************
+ * L1 Norm of normalized solution variable.             *
+ ********************************************************/
+template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE> 
+inline double GMRES_Block<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
+L1_Norm_Unorm(void) {
+  double l1_norm_u(ZERO); 
+  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++)
+    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++)
+      for(int varindex = 0; varindex < blocksize; varindex++)
+	l1_norm_u += fabs(normalizeU( SolnBlk->U[i][j][varindex+1], varindex));
+  return l1_norm_u;
 }
 
 /*******************************************************************************
