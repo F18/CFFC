@@ -342,7 +342,7 @@ int Euler1DSolver(char *Input_File_Name_ptr,
            cout << "\n Writing Euler1D solution to output data file `"
 	        << Output_File_Name_ptr << "'.";
          Output_File.open(Output_File_Name_ptr, ios::out);
-         if (Output_File.bad()) {
+         if (Output_File.fail()) {
             if (batch_flag) {
                cout << "\nPDES++ ERROR: Unable to open Euler1D output data file.\n\n";
             } else {
@@ -371,7 +371,7 @@ int Euler1DSolver(char *Input_File_Name_ptr,
          if (Input_Parameters.i_Output_Format == IO_GNUPLOT) {
             Gnuplot_File_Name_ptr = Input_Parameters.Gnuplot_File_Name;
             Gnuplot_File.open(Gnuplot_File_Name_ptr, ios::out);
-            if (Gnuplot_File.bad()) {
+            if (Gnuplot_File.fail()) {
                if (batch_flag) {
                   cout << "\nPDES++ ERROR: Unable to open Euler1D Gnuplot macro file.\n\n";
                } else {

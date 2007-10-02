@@ -31,17 +31,37 @@ using namespace std;
 #ifndef _TEST_RUN_INCLUDED
 #include "TestRun.h"
 #endif // _TEST_RUN_INCLUDED
+
+#include "TestData.h"
+
 #endif
 
 /********************************************************
  * Subroutine for performing TUT unit testing.          *
  ********************************************************/
-inline int Perform_UnitTesting(string TestSuite, int TestNumber) {
+inline int Perform_UnitTesting(string TestSuite, int TestNumber, string Path_to_Root_Location) {
 
   int error_flag = 0;
 
 #ifndef _NO_TUT_TESTING
   if (CFFC_Primary_MPI_Processor() ) {
+
+    int Result;
+    // change directory
+    Result = chdir(Path_to_Root_Location.c_str());
+
+    Print_(Result);
+    Print_(getenv("PWD"))
+
+    // set TestData::Root_Path
+    if (Path_to_Root_Location.empty()){
+      // check if the environment variable CFFC_UnitTest_Path is set
+      
+
+    } else {
+      TestData::Root_Path = Path_to_Root_Location.c_str();
+    }
+
     Test_Run(TestSuite, TestNumber);
     error_flag = 0;
   } /* endif */

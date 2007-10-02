@@ -25,7 +25,10 @@ using std::ostringstream;
 /* Include CFFC header files */
 
 #include "../Utilities/Utilities.h"
+#include "../System/System_Linux.h"
 #include "../CFD/CFD.h"
+
+#define TESTDATA_PATH_LENGTH_FILE 256
 
 namespace tut {
 
@@ -35,8 +38,8 @@ namespace tut {
     int digits;			// Number of exact imposed digits --> gives the precision
     double tol;	                // Numerical tolerance for comparing the solutions
     double EpsMachine;          // Machine accuracy
-    char output_file_name[256];	// Output file name
-    char input_file_name[256];	// Input file name
+    char output_file_name[TESTDATA_PATH_LENGTH_FILE];	// Output file name
+    char input_file_name[TESTDATA_PATH_LENGTH_FILE];	// Input file name
     int  RunRegression;		// Flag for running regression
     int  verbose;		// Flag for running verbose
 
@@ -44,7 +47,10 @@ namespace tut {
     char* Msg;			/* message variable */
     std::string Message;		/* message variable */
 
-    /* Relative path to the "/src_2D" directory for output and input data */
+    /* Root_Path is the reference path for all relative paths. */
+    static char* Root_Path;
+
+    /* Relative path to the "Root_Path" directory for output and input data */
     char* Global_TestSuite_Path;
 
     /* Local output and input path --> specific for each test */
@@ -55,6 +61,9 @@ namespace tut {
 
     // Destructor
     ~TestData(void);
+
+    // Set the path to the root directory
+    static void Set_Root_Path(std::string & Path_To_Root_Location);
 
     // Fiels Access
     ofstream & out(void){ return output_file; }
@@ -155,6 +164,14 @@ namespace tut {
     /* Check the existance of the Global paths */
     void check_global_paths(void);
 
+    /* Check the existance of the Root path */
+    static void check_root_path(void);
+
+    // Length of the root path string (includes the end of string character)
+    static int Root_Path_Length;
+
+    // Enforce the end of path slash
+    static void enforce_slash_in_path(std::string & path);
   };
 
   /* Constructor */
@@ -176,9 +193,9 @@ namespace tut {
     Global_TestSuite_Path = NULL;
     Msg = NULL;
 
-    /* Set the Global_TestSuite_Path to the current directory */
-    Global_TestSuite_Path = new char [3];
-    strcpy(Global_TestSuite_Path, "./");
+    /* Set the Global_TestSuite_Path to be the Root_Path + Slash */
+    Global_TestSuite_Path = new char [Root_Path_Length];
+    strcpy(Global_TestSuite_Path, Root_Path);
 
     // Initialize output_file_name to the proper output directory
     InitializeOutputFileName();
@@ -203,6 +220,15 @@ namespace tut {
     if (IFR()){
       // close the input stream
       in_file.close();
+    }
+  }
+
+  /* Enforce the end of path slash */
+  inline void TestData::enforce_slash_in_path(std::string & path){
+    // Check if the last character is "/"
+    if (path[path.size()-1] != 47){ // 47 is the ASCII value for "/"
+      // add the slash character
+      path += "/";
     }
   }
   
