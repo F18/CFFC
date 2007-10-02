@@ -867,6 +867,8 @@ clean:
 	rm -f *.depend *.o *.bak *.il *~
 	rm -f $(MATH_DIR)*.o $(MATH_DIR)*.il $(MATH_DIR)*~
 	rm -f $(MATH_DIR)Polyfit/*.o $(MATH_DIR)Polyfit/*.il $(MATH_DIR)Polyfit/*~
+	rm -f $(MATH_DIR)UnitTests/*.o $(MATH_DIR)UnitTests/*.il $(MATH_DIR)UnitTests/*~
+	rm -f $(MATH_DIR)UnitTests/TestFunctions/*.o $(MATH_DIR)UnitTests/TestFunctions/*.il $(MATH_DIR)UnitTests/TestFunctions/*~
 	rm -f $(CFD_DIR)*.o $(CFD_DIR)*.il $(CFD_DIR)*~
 	rm -f $(MPI_DIR)*.o $(MPI_DIR)*.il $(MPI_DIR)*~
 	rm -f $(GRID_DIR)*.o $(GRID_DIR)*.il $(GRID_DIR)*~
@@ -892,8 +894,10 @@ clean:
 	rm -f $(EOS_DIR)*.o $(EOS_DIR)*.il $(EOS_DIR)*~
 	rm -f $(NASADATA_DIR)*.o $(NASADATA_DIR)*.il $(NASADATA_DIR)*~
 	rm -f $(REACTIONS_DIR)*.o $(REACTIONS_DIR)*.il $(REACTIONS_DIR)*~
+	rm -f $(HIGH_ORDER_RECONSTRUCTION_DIR)*.o $(HIGH_ORDER_RECONSTRUCTION_DIR)*.il $(HIGH_ORDER_RECONSTRUCTION_DIR)*~
 	rm -f $(UNIT_TESTING_DIR)*.o $(UNIT_TESTING_DIR)*.il $(UNIT_TESTING_DIR)*~
 	rm -f $(UNIT_TESTING_DIR)BasicTests/*.o $(UNIT_TESTING_DIR)BasicTests/*.il $(UNIT_TESTING_DIR)BasicTests/*~
+	rm -f Utilities/*.o Utilities/.il Utilities/*~
 	rm -f $(MULTIGRID_DIR)*~
 	rm -f $(NKS_DIR)*~
 	rm -f $(MODULE_DIR)/*.mod $(MODULE_DIR)/*~
