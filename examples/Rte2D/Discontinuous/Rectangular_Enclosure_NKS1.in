@@ -41,7 +41,7 @@ NKS_Finite_Time_Step=
 OFF
 #
 NKS_Finite_Time_Step_Initial_CFL=
-1e4
+1e12
 NKS_Finite_Time_Step_Max_CFL=
 1e12
 # Number of Total NKS Iterations
