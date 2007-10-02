@@ -1690,7 +1690,7 @@ int Evolve_Level_Set_Solution(const int &batch_flag,
 //   strcat(output_file_name,extension);
 //   output_file_name_ptr = output_file_name;
 //   dout.open(output_file_name_ptr,ios::out);
-//   if (dout.bad()) return ;
+//   if (dout.fail()) return ;
 
   // Perform required number of iterations (time steps).
   if (Time_Max > Time) {
