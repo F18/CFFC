@@ -200,9 +200,9 @@ int Read_Restart_Solution(Rte2D_Quad_Block *Soln_ptr,
 	  restart_file >> Input_Parameters.Number_of_Angles_Mdir;	    
 	  restart_file >> Input_Parameters.Number_of_Angles_Ldir;	    
 	  restart_file >> Input_Parameters.i_DOM_Quadrature;	    
-	  restart_file >> Input_Parameters.i_AbsorptionModel;	    
-	  restart_file >> Input_Parameters.SNBCK_IP;	    
-	  restart_file >> Input_Parameters.Axisymmetric;	    
+	  restart_file >> Input_Parameters.i_AbsorptionModel;
+	  restart_file >> Input_Parameters.SNBCK_IP;
+	  restart_file >> Input_Parameters.Axisymmetric;
           restart_file.unsetf(ios::skipws);
 
 	  // Setup conserved and medium state
@@ -304,7 +304,7 @@ int Write_Restart_Solution(Rte2D_Quad_Block *Soln_ptr,
 	  restart_file << Input_Parameters.i_RTE_Solver << "\n";	    
 	  restart_file << Input_Parameters.Number_of_Angles_Mdir << "\n";	    
 	  restart_file << Input_Parameters.Number_of_Angles_Ldir << "\n";	    
-	  restart_file << Input_Parameters.DOM_Quadrature << "\n";	    
+	  restart_file << Input_Parameters.i_DOM_Quadrature << "\n";	    
 	  restart_file << Input_Parameters.i_AbsorptionModel << "\n";
 	  restart_file << Input_Parameters.SNBCK_IP << "\n";	    
 	  restart_file << Input_Parameters.Axisymmetric << "\n";	    

@@ -1698,11 +1698,9 @@ ostream &operator << (ostream &out_file,
 
 istream &operator >> (istream &in_file,
 		      SNBCK_Input_Parameters &IP) {
-  in_file.setf(ios::skipws);
   in_file>>IP.QuadPoints;
   in_file>>IP.LumpedBands;
   in_file>>IP.OptimizedLumping;
-  in_file.unsetf(ios::skipws);
   return (in_file);
 }
 
