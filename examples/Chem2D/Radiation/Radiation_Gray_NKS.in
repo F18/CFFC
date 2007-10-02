@@ -111,12 +111,9 @@ Number_of_Blocks_Idir =
 1
 Number_of_Blocks_Jdir =
 1
-# Wall temperature [north south east west]
-Wall_Temperature = 
-0.0  0.0  0.0  0.0
 # Wall emissivity [north south east west]
 Wall_Emissivity =
-1.0  1.0  1.0  1.0
+0.0  0.0  0.0  0.0
 ICs_Medium =
 Specified
 Absorption_Coefficient = 
