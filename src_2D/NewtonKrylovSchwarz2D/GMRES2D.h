@@ -552,10 +552,27 @@ calculate_Matrix_Free(const double &epsilon) {
       for(int k =0; k < blocksize; k++){	
 	int iter = index(i,j,k);		
 	//Matrix Free V(i+1) 
-	V[(search_directions+1)*scalar_dim+iter] = 
-	  ( normalizeR(SolnBlk->dUdt[i][j][0][k+1],k) - b[iter]) / epsilon  
-	  -  normalizeUtoR( W[(search_directions)*scalar_dim + iter] * 
-			    LHS_Time<INPUT_TYPE>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime), k);
+	if( Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == FIRST_ORDER ){
+	  //forwards differenceing R(U+epsilon) - R(U) / epsilon
+	  V[(search_directions+1)*scalar_dim+iter] = 
+	    ( normalizeR(SolnBlk->dUdt[i][j][0][k+1],k) - b[iter]) / epsilon ;
+	} else if ( Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == SECOND_ORDER ){
+	  //2nd order R(U+epsilon) - R(U-epsilon) / 2*epsilon
+	  V[(search_directions+1)*scalar_dim+iter] = 
+	    normalizeR( SolnBlk->dUdt[i][j][1][k+1] - SolnBlk->dUdt[i][j][0][k+1],k )/(TWO*epsilon);
+	}
+	V[(search_directions+1)*scalar_dim+iter] -=  
+	  normalizeUtoR( W[(search_directions)*scalar_dim + iter] * 
+			 LHS_Time<INPUT_TYPE>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime), k);
+
+// #ifdef _NKS_VERBOSE_NAN_CHECK
+// 	// nan check most commonly caused by nans in dUdt !!!!
+// 	if (V[(search_directions+1)*scalar_dim+iter] != V[(search_directions+1)*scalar_dim+iter] ){
+// 	  cout<<"\n nan in V[ "<<(search_directions+1)*scalar_dim+iter<<"] at "<<i<<" "<<j<<" "<<k
+// 	      <<" dUdt "<<  normalizeR(SolnBlk->dUdt[i][j][0][k+1],k) <<" b "<< b[iter]
+// 	      <<" z "<<W[(search_directions)*scalar_dim + iter]<< " h "<<( SolnBlk->dt[i][j]*ao);
+// 	}
+// #endif 
       }      
     } 
   } 
@@ -581,8 +598,16 @@ calculate_Matrix_Free_Restart(const double &epsilon) {
       for(int k =0; k < blocksize; k++){	
 	int iter = index(i,j,k);		
 	//Matrix Free V(0) 
-	V[iter] =  ( normalizeR(SolnBlk->dUdt[i][j][0][k+1],k) - b[iter]) / epsilon 
-	  - normalizeUtoR( x[iter] * LHS_Time<INPUT_TYPE>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime), k); 
+	if( Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == FIRST_ORDER ){
+	  //forwards differenceing R(U+epsilon) - R(U) / epsilon
+	  V[iter] = (normalizeR(SolnBlk->dUdt[i][j][0][k+1],k) - b[iter]) / epsilon ;
+	} else if ( Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == SECOND_ORDER ){
+	  //2nd order R(U+epsilon) - R(U-epsilon) / 2*epsilon
+	  V[iter] = normalizeR( SolnBlk->dUdt[i][j][1][k+1] - SolnBlk->dUdt[i][j][0][k+1],k)/(TWO*epsilon);
+	}
+	V[iter] -= normalizeUtoR( x[iter] * LHS_Time<INPUT_TYPE>(*Input_Parameters,
+								 SolnBlk->dt[i][j],
+								 DTS_ptr->DTS_dTime), k); 
       }      
     } 
   } 
@@ -1969,6 +1994,13 @@ public:
 			        const double &l2_norm,
 			        const double &l2_norm_rel);
 
+  // calulate perturbation parameter
+  void calculate_epsilon_restart(double &epsilon); 
+  void calculate_epsilon(double &epsilon, const int &search_direction_counter); 
+
+  // norm calculations
+  double L2_Norm_z(const int &search_direction_counter);
+  double L2_Norm_x(void);
 };
 
 /***************************************************************************************************/
@@ -2132,14 +2164,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 
       /**************************************************************************/
       /* Calculate global epsilon based on 2-norm of x. */  
-      double total_norm_x = ZERO;
-      for ( int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) {
-	if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
-	  total_norm_x += sqr( G[Bcount].L2_Norm(G[Bcount].x) );	  
-	}
-      } 
-      total_norm_x = sqrt(CFFC_Summation_MPI(total_norm_x));      
-      epsilon = Input_Parameters->NKS_IP.Epsilon_Naught/sqrt(total_norm_x);       
+      calculate_epsilon_restart(epsilon);
 
       /**************************************************************************/
       /******* BEGIN MATRIX-FREE FOR RESTART ************************************/
@@ -2345,16 +2370,9 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 
       /**************************************************************************/
       /* Calculate global epsilon base on 2-norm of z. */
-      double total_norm_z = ZERO; 
-      for ( int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) {
-	if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
-	  total_norm_z += sqr(G[Bcount].L2_Norm(&(G[Bcount].W[(search_direction_counter)*
-                          G[Bcount].scalar_dim])));
- 	} 
-      }       
-      total_norm_z = sqrt(CFFC_Summation_MPI(total_norm_z));     	                      
-      epsilon = Input_Parameters->NKS_IP.Epsilon_Naught/sqrt(total_norm_z);
-      /**************************************************************************/
+      calculate_epsilon(epsilon, search_direction_counter);
+
+     /**************************************************************************/
 
       /**************************************************************************/
       /***************** BEGIN MATRIX-FREE FOR PRIMARY GMRES LOOP ***************/
@@ -2576,7 +2594,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	} 
 	cout << "\n \t" << Number_of_GMRES_Iterations << "\t" << resid0 << "\t" 
 	     << relative_residual*resid0 << "\t" << relative_residual
-	     <<"\t"<< total_norm_z << "\t  "<<epsilon;	
+	     <<"\t"<< L2_Norm_z(search_direction_counter) << "\t  "<<epsilon;	
       } 
 
       if (relative_residual <= tol) { 
@@ -2772,6 +2790,85 @@ Output_GMRES_vars_Tecplot(const int Number_of_Time_Steps,
   output_file.close();
   return 0;
 
+}
+
+/**************************************************************************
+ * Routine: calculate_epsilon                                             *
+ **************************************************************************/
+//
+// Restart vesion
+//
+template <typename SOLN_VAR_TYPE,
+	  typename SOLN_BLOCK_TYPE, 
+	  typename INPUT_TYPE>
+inline void GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,
+					 SOLN_BLOCK_TYPE,
+					 INPUT_TYPE>::
+calculate_epsilon_restart(double &epsilon)
+{    
+  // Calculate global epsilon based on 2-norm of x.
+  epsilon = Input_Parameters->NKS_IP.Epsilon_Naught/L2_Norm_x();       
+}
+
+
+//
+// Non-Restart version
+//
+template <typename SOLN_VAR_TYPE,
+	  typename SOLN_BLOCK_TYPE, 
+	  typename INPUT_TYPE>
+inline void GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,
+					 SOLN_BLOCK_TYPE,
+					 INPUT_TYPE>::
+calculate_epsilon(double &epsilon, const int &search_direction_counter)
+{    
+  // Calculate global epsilon base on 2-norm of z.
+  epsilon = Input_Parameters->NKS_IP.Epsilon_Naught/L2_Norm_z(search_direction_counter);
+}
+
+
+/**************************************************************************
+ * Some necessary norm calculations.                                      *
+ **************************************************************************/
+//
+// 2-norm of z.
+//
+template <typename SOLN_VAR_TYPE,
+	  typename SOLN_BLOCK_TYPE, 
+	  typename INPUT_TYPE>
+inline double GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,
+					   SOLN_BLOCK_TYPE,
+					   INPUT_TYPE>::
+L2_Norm_z(const int &search_direction_counter)
+{    
+  double total_norm_z(ZERO); 
+  for ( int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) {
+    if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
+      total_norm_z += sqr(G[Bcount].L2_Norm(&(G[Bcount].W[(search_direction_counter)*
+							  G[Bcount].scalar_dim])));
+    } 
+  }       
+  return sqrt(CFFC_Summation_MPI(total_norm_z));
+}
+
+//
+// 2-norm of x.
+//
+template <typename SOLN_VAR_TYPE,
+	  typename SOLN_BLOCK_TYPE, 
+	  typename INPUT_TYPE>
+inline double GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,
+					   SOLN_BLOCK_TYPE,
+					   INPUT_TYPE>::
+L2_Norm_x(void)
+{
+  double total_norm_x(ZERO);
+  for ( int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) {
+    if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
+      total_norm_x += sqr( G[Bcount].L2_Norm(G[Bcount].x) );	  
+    }
+  } 
+  return sqrt(CFFC_Summation_MPI(total_norm_x));      
 }
 
 #endif // _GMRES2D_INCLUDED
