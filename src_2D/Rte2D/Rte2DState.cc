@@ -1102,16 +1102,21 @@ Rte2D_State Gray_Wall(const Rte2D_State &U,
     //------------------------------------------------
     // For a black wall, the blackbody intensity
     //------------------------------------------------
-    if (Medium2D_State::Absorb_Type == MEDIUM2D_ABSORB_GRAY) {
-      In = wall_emissivity * BlackBody(wall_temperature);
-    } else if (Medium2D_State::Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
-      wn = Medium2D_State::SNBCKdata->WaveNo[ Medium2D_State::SNBCKdata->band_index[v] ];
-      In = wall_emissivity * BlackBody(wall_temperature, wn);
-      // Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
-    } else {
-      cerr << "\nRte2D_State.cc::Gray_Wall(): Invalid value for absorbsion type flag.\n";
-      exit(-1);
-    } // endif
+    In = ZERO;
+    if (wall_emissivity>MICRO) {
+
+      if (Medium2D_State::Absorb_Type == MEDIUM2D_ABSORB_GRAY) {
+	In = wall_emissivity * BlackBody(wall_temperature);
+      } else if (Medium2D_State::Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
+	wn = Medium2D_State::SNBCKdata->WaveNo[ Medium2D_State::SNBCKdata->band_index[v] ];
+	In = wall_emissivity * BlackBody(wall_temperature, wn);
+	// Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
+      } else {
+	cerr << "\nRte2D_State.cc::Gray_Wall(): Invalid value for absorbsion type flag.\n";
+	exit(-1);
+      } // endif
+
+    } // endif - emiss>0
 
 
     //------------------------------------------------
@@ -1225,17 +1230,22 @@ void Gray_Wall_Space_March(Rte2D_State &Uwall,
     //------------------------------------------------
     // for a black wall
     //------------------------------------------------
-    if (Medium2D_State::Absorb_Type == MEDIUM2D_ABSORB_GRAY)
-      In = wall_emissivity * BlackBody(wall_temperature);
-    else if (Medium2D_State::Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
-      wn = Medium2D_State::SNBCKdata->WaveNo[ Medium2D_State::SNBCKdata->band_index[v] ];
-      In = wall_emissivity * BlackBody(wall_temperature, wn);
-      // Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
-    } else {
-      cerr << "\nRte2D_State.cc::Gray_Wall_Space_March(): Invalid "
-	   << "value for absorbsion type flag.\n";
-      exit(-1);
-    } // endif
+    In = ZERO;
+    if (wall_emissivity>MICRO) {
+
+      if (Medium2D_State::Absorb_Type == MEDIUM2D_ABSORB_GRAY)
+	In = wall_emissivity * BlackBody(wall_temperature);
+      else if (Medium2D_State::Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
+	wn = Medium2D_State::SNBCKdata->WaveNo[ Medium2D_State::SNBCKdata->band_index[v] ];
+	In = wall_emissivity * BlackBody(wall_temperature, wn);
+	// Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
+      } else {
+	cerr << "\nRte2D_State.cc::Gray_Wall_Space_March(): Invalid "
+	     << "value for absorbsion type flag.\n";
+	exit(-1);
+      } // endif
+
+    } // endif - emiss>0
 
 
     //------------------------------------------------
