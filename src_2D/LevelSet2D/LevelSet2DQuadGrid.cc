@@ -188,7 +188,7 @@ int Write_Multi_Block_Grid_Definition(Grid2D_Quad_Block **Grid_ptr,
   // Open the grid definition file.
   mesh_definition_file_name_ptr = Input_Parameters.Grid_Definition_File_Name;
   mesh_definition_file.open(mesh_definition_file_name_ptr,ios::out);
-  if (mesh_definition_file.bad()) return 1;
+  if (mesh_definition_file.fail()) return 1;
   
   // Write grid type information.
   mesh_definition_file << Input_Parameters.Grid_Type << "\n" 
@@ -226,7 +226,7 @@ Grid2D_Quad_Block** Read_Multi_Block_Grid_Definition(Grid2D_Quad_Block **Grid_pt
   // Open the grid definition file.
   mesh_definition_file_name_ptr = Input_Parameters.Grid_Definition_File_Name;
   mesh_definition_file.open(mesh_definition_file_name_ptr,ios::in);
-  if (mesh_definition_file.bad()) return NULL;
+  if (mesh_definition_file.fail()) return NULL;
   
   // Read grid type information.
   mesh_definition_file.getline(buffer,sizeof(buffer));
@@ -265,7 +265,7 @@ int Write_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
   // Open the grid data output file.
   mesh_file_name_ptr = Input_Parameters.Grid_File_Name;
   mesh_file.open(mesh_file_name_ptr,ios::out);
-  if (mesh_file.bad()) return 1;
+  if (mesh_file.fail()) return 1;
   
   // Write grid type information.
   mesh_file << Input_Parameters.Grid_Type << "\n" 
@@ -302,7 +302,7 @@ Grid2D_Quad_Block** Read_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
   // Open the grid data input file.
   mesh_file_name_ptr = Input_Parameters.Grid_File_Name;
   mesh_file.open(mesh_file_name_ptr,ios::in);
-  if (mesh_file.bad()) return NULL;
+  if (mesh_file.fail()) return NULL;
   
   // Read grid type information.
   mesh_file.getline(buffer,sizeof(buffer));
@@ -359,7 +359,7 @@ int Output_Tecplot(Grid2D_Quad_Block **Grid_ptr,
   
   // Open the grid data output file.
   mesh_file.open(mesh_file_name_ptr,ios::out);
-  if (mesh_file.bad()) return 1;
+  if (mesh_file.fail()) return 1;
   
   // Write the node locations for each quadrilateral grid block.
   Output_Tecplot(Grid_ptr,
@@ -411,7 +411,7 @@ int Output_Nodes_Tecplot(Grid2D_Quad_Block **Grid_ptr,
   
   // Open the grid data output file.
   mesh_file.open(mesh_file_name_ptr,ios::out);
-  if (mesh_file.bad()) return 1;
+  if (mesh_file.fail()) return 1;
   
   // Write the node locations for each quadrilateral grid block.
   Output_Nodes_Tecplot(Grid_ptr,
@@ -463,7 +463,7 @@ int Output_Cells_Tecplot(Grid2D_Quad_Block **Grid_ptr,
 
   // Open the grid data output file.
   mesh_file.open(mesh_file_name_ptr,ios::out);
-  if (mesh_file.bad()) return 1;
+  if (mesh_file.fail()) return 1;
   
   // Write the node locations for each quadrilateral grid block.
   
