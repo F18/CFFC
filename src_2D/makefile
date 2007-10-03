@@ -979,7 +979,9 @@ clean:
 	rm -f $(ICEMCFD_DIR)*.o $(ICEMCFD_DIR)*.il $(ICEMCFD_DIR)*~ $(ICEMCFD_DIR)*.depend $(ICEMCFD_DIR)*.bak
 	rm -f $(AMR_DIR)*.o $(AMR_DIR)*.il $(AMR_DIR)*~
 	rm -f $(SYSTEM_DIR)*.o $(SYSTEM_DIR)*.il $(SYSTEM_DIR)*~
-	rm -f $(EULER_1D_DIR)*.o $(EULER_1D_DIR)*.il $(EULER_1D_DIR)*~ $(EULER_1D_DIR)*.depend $(EULER_1D_DIR)*.bak
+	rm -f $(EULER_1D_DIR)*.o $(EULER_1D_DIR)*.il $(EULER_1D_DIR)*~ $(EULER_1D_DIR)*.bak
+	rm -f $(EULER_1D_DIR)ExactSolutions/*.o $(EULER_1D_DIR)ExactSolutions/*.il $(EULER_1D_DIR)ExactSolutions/*~ $(EULER_1D_DIR)ExactSolutions/*.bak
+	rm -f $(EULER_1D_DIR)UnitTests/*.o $(EULER_1D_DIR)UnitTests/*.il $(EULER_1D_DIR)UnitTests/*~ $(EULER_1D_DIR)UnitTests/*.bak
 	rm -f $(SOLVERS1D_DIR)*.o $(SOLVERS1D_DIR)*.il $(SOLVERS1D_DIR)*~ $(SOLVERS1D_DIR)*.depend
 	rm -f $(ADVECTDIFFUSE_DIR)*.o $(ADVECTDIFFUSE_DIR)*.il $(ADVECTDIFFUSE_DIR)*~ $(ADVECTDIFFUSE_DIR)*.depend $(ADVECTDIFFUSE_DIR)*.bak
 	rm -f $(EULER_2D_DIR)*.o $(EULER_2D_DIR)*.il $(EULER_2D_DIR)*~ $(EULER_2D_DIR)*.depend $(EULER_2D_DIR)*.bak
@@ -1000,6 +1002,7 @@ clean:
 	rm -f $(NASADATA_DIR)*.o $(NASADATA_DIR)*.il $(NASADATA_DIR)*~
 	rm -f $(REACTIONS_DIR)*.o $(REACTIONS_DIR)*.il $(REACTIONS_DIR)*~
 	rm -f $(HIGH_ORDER_RECONSTRUCTION_DIR)*.o $(HIGH_ORDER_RECONSTRUCTION_DIR)*.il $(HIGH_ORDER_RECONSTRUCTION_DIR)*~
+	rm -f $(HIGH_ORDER_RECONSTRUCTION_DIR)UnitTests/*.o $(HIGH_ORDER_RECONSTRUCTION_DIR)UnitTests/*.il $(HIGH_ORDER_RECONSTRUCTION_DIR)UnitTests/*~
 	rm -f $(UNIT_TESTING_DIR)*.o $(UNIT_TESTING_DIR)*.il $(UNIT_TESTING_DIR)*~
 	rm -f $(UNIT_TESTING_DIR)BasicTests/*.o $(UNIT_TESTING_DIR)BasicTests/*.il $(UNIT_TESTING_DIR)BasicTests/*~
 	rm -f Utilities/*.o Utilities/.il Utilities/*~
