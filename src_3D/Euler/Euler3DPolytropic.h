@@ -15,6 +15,10 @@
 #include "Euler3DPolytropicState.h"
 #endif // _EULER3D_POLYTROPIC_STATE_INCLUDED
 
+#ifndef _EULER3D_POLYTROPIC_INPUT_INCLUDED
+#include "Euler3DPolytropicInput.h"
+#endif // _EULER3D_POLYTROPIC_INPUT_INCLUDED
+
 #ifndef _MPI_INCLUDED
 #include "../MPI/MPI.h"
 #endif // _MPI_INCLUDED
