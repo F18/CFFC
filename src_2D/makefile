@@ -502,7 +502,10 @@ OBJ_TUT := $(SRC_TUT:.cc=.o)
 OBJ_SYSTEM = $(SRC_SYSTEM:.cc=.o)
 
 # Base and CFFC objects:
-OBJ_BASE = $(SRC_BASE:.cc=.o)
+OBJ_BASE = $(patsubst %.cc,%.o,$(filter %.cc,$(SRC_BASE)))
+OBJ_BASE += $(patsubst %.c,%.o,$(filter %.c,$(SRC_BASE)))
+OBJ_BASE += $(patsubst %.f90,%.o,$(filter %.f90,$(SRC_BASE)))
+OBJ_BASE += $(patsubst %.f,%.o,$(filter %.f,$(SRC_BASE)))
 
 OBJ_CFFC = $(patsubst %.cc,%.o,$(filter %.cc,$(SRC_CFFC)))
 OBJ_CFFC += $(patsubst %.c,%.o,$(filter %.c,$(SRC_CFFC)))

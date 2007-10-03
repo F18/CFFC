@@ -227,14 +227,14 @@ int main(int num_arg, char *arg_ptr[]) {
    ******************************************************************/
 
   if (CFFC_Primary_MPI_Processor() && (version_flag || help_flag || !batch_flag)) {
-     cout << '\n' << program_title_ptr << '\n';
-     cout << program_version_ptr << '\n';
-     cout << "Built using " << CFFC_Version() << "\n";
-     cout << CFFC_Version_MPI() << "\n";
-     cout << Cantera_Version() << "\n";
-     cout << ICEMCFD_Version() << "\n";
-     cout << "Built using MV++, SparseLib++, IML++, BPKIT, and FFTW Libraries\n";
-     cout << "Built using CEA Thermodynamic and Transport Data, NASA Glenn Research Center\n";
+     cout << '\n' << program_title_ptr << '\n'
+	  << program_version_ptr << '\n'
+	  << "Built using " << CFFC_Version() << "\n"
+	  << CFFC_Version_MPI() << "\n"
+	  << Cantera_Version() << "\n"
+	  << ICEMCFD_Version() << "\n"
+	  << "Built using MV++, SparseLib++, IML++, BPKIT, and FFTW Libraries\n"
+	  << "Built using CEA Thermodynamic and Transport Data, NASA Glenn Research Center\n";
      cout.flush();
   } /* endif */
 
@@ -268,7 +268,6 @@ int main(int num_arg, char *arg_ptr[]) {
 	  << "                 from a directory different than '/src_2D'\n";  
      cout.flush();
   } /* endif */
-
   if (help_flag) {
      CFFC_Finalize_MPI();
      return (0);

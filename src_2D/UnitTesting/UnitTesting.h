@@ -82,9 +82,9 @@ inline int Perform_UnitTesting(string TestSuite, int TestNumber, string Path_to_
 	    cout << "\nUsing directory " << Path_to_Root_Location << " to run the UnitTesting framework.\n";
 	  }
 	} else {
-	  cerr << "\nUnitTesting ERROR: The path provided on the command line with option '-path' "
+	  cout << "\nUnitTesting ERROR: The path provided on the command line with option '-path' "
 	       << "\ndoes not represent a valid path to 'src_2D' directory!"
-	       << "\nPlease provide a valid path to run the UnitTesting framework.\n";
+	       << "\nPlease provide a valid path to run the UnitTesting framework.\n\n";
 	
 	  error_flag = 1;
 	  RunTests = OFF;
@@ -104,9 +104,9 @@ inline int Perform_UnitTesting(string TestSuite, int TestNumber, string Path_to_
 	    cout << "\nUsing directory " << CFFC_UnitTest_Path << " to run the UnitTesting framework.\n";
 	  }
 	} else {
-	  cerr << "\nUnitTesting ERROR: The environment variable 'CFFC_UnitTest_Path_2D' "
+	  cout << "\nUnitTesting ERROR: The environment variable 'CFFC_UnitTest_Path_2D' "
 	       << "\ndoes not represent a valid path to 'src_2D' directory!"
-	       << "\nPlease provide a valid path to run the UnitTesting framework.\n";
+	       << "\nPlease provide a valid path to run the UnitTesting framework.\n\n";
 	
 	  error_flag = 1;
 	  RunTests = OFF;
@@ -120,10 +120,10 @@ inline int Perform_UnitTesting(string TestSuite, int TestNumber, string Path_to_
 	} 
 	
 	if (strcmp(buffer,"/src_2D") != 0){
-	  cerr << "\nUnitTesting ERROR: The current directory is not '/src_2D'."
+	  cout << "\nUnitTesting ERROR: The current directory is not '/src_2D'."
 	       << "\nPlease run the executable from '/src_2D' directory or provide a valid"
 	       << "\npath to this directory in order to run the UnitTesting framework."
-	       << "\nUse: -path [path_to_src_2D] or set 'CFFC_UnitTest_Path_2D' environment variable.\n";
+	       << "\nUse: -path [path_to_src_2D] or set 'CFFC_UnitTest_Path_2D' environment variable.\n\n";
 	  
 	  error_flag = 1;
 	  RunTests = OFF;
