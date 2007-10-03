@@ -25,8 +25,6 @@ using namespace std;
 #ifndef _TEST_RUN_INCLUDED
 #include "TestRun.h"
 #endif // _TEST_RUN_INCLUDED
-
-#include "TestData.h"
 #include "../System/System_Linux.h"
 #endif
 
@@ -39,9 +37,9 @@ inline int Perform_UnitTesting(string TestSuite, int TestNumber, string Path_to_
 
 #ifndef _NO_TUT_TESTING
 
-    char * CFFC_UnitTest_Path(NULL);
-    char * CurrentDirectory = new char [_MAX_PATH_];
-    char * NewCurrentDirectory = new char [_MAX_PATH_];
+  char * CFFC_UnitTest_Path(NULL);
+  char * CurrentDirectory = new char [_MAX_PATH_];
+  char * NewCurrentDirectory = new char [_MAX_PATH_];
 
 
   try {
