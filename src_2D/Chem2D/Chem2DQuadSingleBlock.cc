@@ -1081,6 +1081,8 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
        //Viscous Terms 
        Out_File << "\"qflux_x\" \\ \n"  
 		<< "\"qflux_y\" \\ \n"   
+		<< "\"qrad_x\" \\ \n"   
+		<< "\"qrad_y\" \\ \n"   
 		<< "\"Tau_xx\" \\ \n"  //rr -axisymmetric
 		<< "\"Tau_xy\" \\ \n"  //rz
 		<< "\"Tau_yy\" \\ \n"  //zz
@@ -1176,8 +1178,11 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
                     << SolnBlk.W[i][j];
            Out_File.setf(ios::scientific);
 	   //Temperature
-	   Out_File << " " << SolnBlk.W[i][j].qflux<< " " << SolnBlk.W[i][j].tau
-		    << " " << SolnBlk.W[i][j].theta<< " " << SolnBlk.W[i][j].lambda
+	   Out_File << " " << SolnBlk.W[i][j].qflux
+		    << " " << SolnBlk.W[i][j].qrad
+		    << " " << SolnBlk.W[i][j].tau
+		    << " " << SolnBlk.W[i][j].theta
+		    << " " << SolnBlk.W[i][j].lambda
 		    << " " << SolnBlk.W[i][j].T()
 		    << " " << SolnBlk.W[i][j].v.abs()/SolnBlk.W[i][j].a() 
 		    << " " << SolnBlk.W[i][j].Rtot()
