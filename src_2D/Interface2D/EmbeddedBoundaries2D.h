@@ -2046,12 +2046,18 @@ Mesh_Unadjustment(void) {
       Mesh_Unadjustment(nb);
     }
   }
+
+  cout << "Sam says: DONE Mesh_Unadjustment, now running Send_All_Messages" << endl;
+
   int error_flag = Send_All_Messages(Local_SolnBlk,
 				     *Local_Solution_Block_List,
 				     NUM_COMP_VECTOR2D,
 				     ON);
   //CFFC_Broadcast_MPI(&error_flag,1);
   //if (error_flag) return error_flag;
+
+  cout << "Sam says: DONE AS IN DONE." << endl;
+
 }
 
 template <class cState, class pState, class Quad_Soln_Block, class Quad_Soln_Input_Parameters>
@@ -8316,6 +8322,8 @@ inline int EmbeddedBoundaries2D<cState, pState, Quad_Soln_Block, Quad_Soln_Input
 Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
 			 const int &Perform_Mesh_Adjustment) {
 
+  cout << "Sam says: Now I'm inside Adaptive_Mesh_Refinement routine." << endl;
+
   int error_flag, number_of_changes,
       *maximum_interface_mesh_refinement_flag,
       *maximum_interface_mesh_refinement_level;
@@ -8335,8 +8343,12 @@ Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
     }    
   }
 
+  cout << "Sam says: Finished calculating refinement measures." << endl;
+
   // Enforce the interface refinement criteria if necessary.
   if (Interface_Component_List.Ni && Perform_Mesh_Adjustment) {
+
+    cout << "Sam says: Enforcing!" << endl;
 
     // Allocate memory for the interface refinement criteria.
     maximum_interface_mesh_refinement_flag = new int[Interface_Union_List.Ni+1];
@@ -8346,12 +8358,18 @@ Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
       maximum_interface_mesh_refinement_level[n] = 0;
     }
 
+    cout << "Sam says: done allocating." << endl;
+
     // Store the adjusted mesh for future reference.
     Store_Adjusted_Mesh();
 
+    cout << "Sam says: done storing." << endl;
+    
     // Get the global refinement list.
     Get_Refinement_List(*QuadTree,
 			*Local_Solution_Block_List);
+
+    cout << "Sam says: done getting refinement list." << endl;
 
     // Determine maximum interface refinement level.
     for (int nb = 0; nb < Local_Solution_Block_List->Nblk; nb++) {
@@ -8370,13 +8388,15 @@ Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
 	}
       }
     }
-
+    
 #ifdef _MPI_VERSION
     for (int n = 0; n < Interface_Union_List.Ni+1; n++) {
       maximum_interface_mesh_refinement_flag[n] = CFFC_Maximum_MPI(maximum_interface_mesh_refinement_flag[n]);
       maximum_interface_mesh_refinement_level[n] = CFFC_Maximum_MPI(maximum_interface_mesh_refinement_level[n]);
     }
 #endif
+
+    cout << "Sam says: done determining max refinement level." << endl;
 
     for (int number_of_passes = 0; number_of_passes < 10; number_of_passes++) {
 
@@ -8412,11 +8432,15 @@ Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
       Get_Refinement_List(*QuadTree,
 			  *Local_Solution_Block_List);
 
+      cout << "Sam says: done getting global refinement list" << endl;
+
     }
     if(number_of_changes) {return 121145;}
 
     // Unadjust the mesh.
     Mesh_Unadjustment();
+
+    cout << "Sam says: Mesh_unadjustment done" << endl;
 
   }
 
@@ -8430,6 +8454,9 @@ Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
   //the diagonals, it is crude).  Really, I should look
   //for intersections with each linear element of interface splines. oh well.
   //                                 ~james
+
+  cout << "Sam says: I'm down here now." << endl;
+
   for (int nb = 0; nb < Local_Solution_Block_List->Nblk; nb++) {
     if (Local_Solution_Block_List->Block[nb].used == ADAPTIVEBLOCK2D_USED) {
       iii = Local_SolnBlk[nb].Grid.INu;
@@ -8526,10 +8553,14 @@ Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
   Get_Refinement_List(*QuadTree,
 		      *Local_Solution_Block_List);
 
+  cout << "Sam says: done get_refinement_list" << endl;
+
   // Return the locations of the boundary nodes of the solution blocks
   // to their unmodified locations.
   Unfix_Refined_Block_Boundaries(Local_SolnBlk,
 				 *Local_Solution_Block_List);
+
+  cout << "Sam says: done unfix_refined_block_boundaries." << endl;
 
   // Coarsen solution blocks as required and return the unused solution
   // blocks to the pool of available resources for subsequent
@@ -8537,18 +8568,26 @@ Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
   error_flag = Coarsen_Grid(Perform_Mesh_Adjustment);
   if (error_flag) return (error_flag);
 
+  cout << "Sam says: done coarsen_grid routine." << endl;
+
   // Refine solution blocks as required.
   error_flag = Refine_Grid(Perform_Mesh_Adjustment);
   if (error_flag) return (error_flag);
+
+  cout << "Sam says: done refine_grid routine." << endl;
 
   // Renumber all solution blocks, assigning new global block numbers.
   Renumber_Solution_Blocks(*QuadTree, 
 			   *Local_Solution_Block_List);
 
+  cout << "Sam says: done Renumber_Solution_Blocks routine." << endl;
+
   // Determine the neighbouring blocks of all used solution blocks in
   // the quadtree data structure.
   Find_Neighbours(*QuadTree,
 		  *Local_Solution_Block_List);
+
+  cout << "Sam says: done find_neighbours" << endl;
 
   // Adjust the locations of the boundary nodes of the solution blocks
   // so that the new node locations match with cell volumes of adjacent
@@ -8561,6 +8600,8 @@ Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
   Mesh_Unadjustment();   //ADDED BY JAMES FOR GHOST CELL TROUBLES WHEN MESH REFINEMENT 
                          //IS DONE ON BOUNDARIES
                          //I also changed the lines commented with &*&*&*&*&*&*
+
+  cout << "Sam says: done Mesh_Unadjustment routine." << endl;
 
   // Re-allocate memory for all message passing buffers used to send
   // solution information between neighbouring solution blocks.
@@ -8594,6 +8635,8 @@ Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
       }
     }
 
+    cout << "Sam says: done mesh adjustment sharp, first, second, third." << endl;
+
     // Update solution information shared between neighbouring blocks.
     error_flag = Send_All_Messages(Local_SolnBlk,
 				   *Local_Solution_Block_List,
@@ -8607,6 +8650,8 @@ Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
 	if (error_flag) return error_flag;
       }
     }
+
+    cout << "Sam says: done mesh_adjustment_finalize routine." << endl;
 
     // Update solution information shared between neighbouring blocks.
     error_flag = Send_All_Messages(Local_SolnBlk,
@@ -8627,6 +8672,8 @@ Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
 	if (error_flag) return error_flag;
       }
     }
+
+    cout << "Sam says: done post-mesh painting." << endl;
 
     // Store the adjusted mesh blocks.
     Store_Adjusted_Mesh();
@@ -8908,6 +8955,8 @@ Interface_Adaptive_Mesh_Refinement(void) {
     error_flag = Adaptive_Mesh_Refinement(OFF,ON);
     if (error_flag) return error_flag;
 
+    cout << "Sam says: finished calling adaptive_mesh_refinement routine." << endl;
+
     // Output the refinement statistics.
     if (CFFC_Primary_MPI_Processor()) {
       cout << "\n Refinement Level #"      << number_of_interface_mesh_refinements
@@ -8924,9 +8973,13 @@ Interface_Adaptive_Mesh_Refinement(void) {
   // Initial conditions.
   ICs(Local_SolnBlk,*Local_Solution_Block_List,*IP);
 
+  cout << "Sam says: Done assigning initial conditions." << endl;
+
   // Apply boundary conditions.
   error_flag = Boundary_Conditions(ZERO);
   if (error_flag) return error_flag;
+
+  cout << "Sam says: Done assigning boundary conditions." << endl;
 
   // Send all messages.
   error_flag = Send_All_Messages(Local_SolnBlk,
@@ -8934,6 +8987,8 @@ Interface_Adaptive_Mesh_Refinement(void) {
 				 Local_SolnBlk[0].NumVar(),
 				 ON);
   if (error_flag) return error_flag;
+
+  cout << "Sam says: Done sending all messages. All done now!" << endl;
 
   // Initial interface AMR successful.
   return 0;
