@@ -2099,6 +2099,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
   double resid0(ZERO);
   double beta(ZERO);
   double epsilon(ZERO);
+  double total_norm_z(ZERO);
 
   int met_tol(0);
   bool do_one_more_iter_for_check(false);
@@ -2605,15 +2606,18 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
       // Output progress
 
       //Verbose Output for CHECKING
-      if (CFFC_Primary_MPI_Processor() && Number_of_GMRES_Iterations%5 == 0 && 
+      if (Number_of_GMRES_Iterations%5 == 0 && 
           Input_Parameters->NKS_IP.GMRES_CHECK) { 
-	if(Number_of_GMRES_Iterations == 5){	
-	  cout << "\n  GMRES Iter.  \t   resid0 \t   resid \t  rel_resid  \t   L2||z||   \t  epsilon ";
-	} 
-	cout << "\n \t" << Number_of_GMRES_Iterations << "\t" << resid0 << "\t" 
-	     << relative_residual*resid0 << "\t" << relative_residual
-	     <<"\t"<< L2_Norm_z(search_direction_counter) << "\t  "<<epsilon;	
-      } 
+	total_norm_z = L2_Norm_z(search_direction_counter);
+	if (CFFC_Primary_MPI_Processor()) {
+	  if(Number_of_GMRES_Iterations == 5){	
+	    cout << "\n  GMRES Iter.  \t   resid0 \t   resid \t  rel_resid  \t   L2||z||   \t  epsilon ";
+	  } 
+	  cout << "\n \t" << Number_of_GMRES_Iterations << "\t" << resid0 << "\t" 
+	       << relative_residual*resid0 << "\t" << relative_residual
+	       <<"\t"<< total_norm_z << "\t  "<<epsilon;	
+	} // endif - primary processor
+      } // endif - GMRES check
 
       if (relative_residual <= tol) { 
 	 met_tol = 1; 
