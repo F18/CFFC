@@ -470,16 +470,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.yplus_outer_layer),
 			  1,
 			  MPI::DOUBLE,0);
-    // Radiation parameters:
-    MPI::COMM_WORLD.Bcast(IP.Rte_Input_File_Name, 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
-                          MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Radiation), 
-                          1, 
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Max_Number_Sequential_Solves), 
-                          1, 
-                          MPI::INT, 0);
     // Initial conditions:
     MPI::COMM_WORLD.Bcast(IP.ICs_Type,
                           INPUT_PARAMETER_LENGTH_CHEM2D, 
@@ -520,6 +510,18 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(IP.CFFC_Path, 
 			  INPUT_PARAMETER_LENGTH_CHEM2D, 
 			  MPI::CHAR, 0);
+    // Radiation parameters:
+    MPI::COMM_WORLD.Bcast(IP.Rte_Input_File_Name, 
+                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Radiation), 
+                          1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Max_Number_Sequential_Solves), 
+                          1, 
+                          MPI::INT, 0);
+    // SNBCK Parameters
+    IP.SNBCK_IP.Broadcast_Input_Parameters();
     //reaction name
     MPI::COMM_WORLD.Bcast(IP.React_Name, 
                           INPUT_PARAMETER_LENGTH_CHEM2D, 
@@ -1116,16 +1118,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.yplus_outer_layer),
 		       1,
 		       MPI::DOUBLE,Source_Rank);
-    // Radiation parameters:
-    Communicator.Bcast(IP.Rte_Input_File_Name, 
-		       INPUT_PARAMETER_LENGTH_CHEM2D, 
-		       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(&(IP.Radiation), 
-		       1, 
-		       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Max_Number_Sequential_Solves), 
-		       1, 
-		       MPI::INT, Source_Rank);
     // Initial conditions:
     Communicator.Bcast(IP.ICs_Type, 
                        INPUT_PARAMETER_LENGTH_CHEM2D, 
@@ -1166,6 +1158,18 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     Communicator.Bcast(IP.CFFC_Path, 
 			  INPUT_PARAMETER_LENGTH_CHEM2D, 
 			  MPI::CHAR, Source_Rank);
+    // Radiation parameters:
+    Communicator.Bcast(IP.Rte_Input_File_Name, 
+		       INPUT_PARAMETER_LENGTH_CHEM2D, 
+		       MPI::CHAR, Source_Rank);
+    Communicator.Bcast(&(IP.Radiation), 
+		       1, 
+		       MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.Max_Number_Sequential_Solves), 
+		       1, 
+		       MPI::INT, Source_Rank);
+    // SNBCK Parameters
+    IP.SNBCK_IP.Broadcast_Input_Parameters(Communicator, Source_CPU);
     //reaction name
     Communicator.Bcast(IP.React_Name, 
                           INPUT_PARAMETER_LENGTH_CHEM2D, 
@@ -2352,8 +2356,10 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter,"Radiation") == 0) {
       i_command = 100;
       Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"ON") == 0)
-	IP.Radiation = ON;
+      if (strcmp(IP.Next_Control_Parameter,"RTE") == 0)
+	IP.Radiation = RADIATION_RTE;
+      if (strcmp(IP.Next_Control_Parameter,"Optically_Thin") == 0)
+	IP.Radiation = RADIATION_OPTICALLY_THIN;
       else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0)
 	IP.Radiation = OFF;
       else
@@ -3901,14 +3907,26 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } /* endif */
 
     if (i_command == INVALID_INPUT_CODE) {
-      
+      // that is, we have an input line which:
+      //  - is not a comment (that's COMMENT_CODE), and,
+      //  - is not a valid code with an invalid value (that's INVALID_INPUT_VALUE), 
+      // and so is an unknown option. Maybe it's an NKS option:
       strcpy(buffer, IP.Next_Control_Parameter);
       Get_Next_Input_Control_Parameter(IP);
       i_command = IP.NKS_IP.Parse_Next_Input_Control_Parameter(buffer, IP.Next_Control_Parameter);
-      
-      // If it's still unknown then ignore it. 
-      // This could be a bad idea if it was an unknown command 
-      // as opposed to an unknown code.
+    }
+    if (i_command == INVALID_INPUT_CODE) {
+      // that is, we have an input line which:
+      //  - is not a comment (that's COMMENT_CODE), and,
+      //  - is not a valid code with an invalid value (that's INVALID_INPUT_VALUE), 
+      //  - is not a an NKS option
+      // and so is an unknown option. Maybe it's an SNBCK option:
+      i_command = IP.SNBCK_IP.Parse_Next_Input_Control_Parameter(buffer, IP.Next_Control_Parameter);
+    }
+
+    // If it's still unknown then ignore it. 
+    // This could be a bad idea if it was an unknown command 
+    // as opposed to an unknown code.
 //       if (i_command == INVALID_INPUT_CODE) {
 // 	cout << "\n***\n\nWarning: input file line " << IP.Line_Number << ": ";
 // 	cout << "ignoring unknown input code:\n";
@@ -3917,7 +3935,6 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 // 	cout << "\n\n***\n";
 //       }
 //       i_command = COMMENT_CODE; // sure why not
-    }
     
     if (!IP.Input_File.good()) { i_command = INVALID_INPUT_VALUE; }
        

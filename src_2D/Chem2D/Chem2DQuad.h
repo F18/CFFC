@@ -2370,6 +2370,10 @@ extern int Update_Dual_Solution_States(Chem2D_Quad_Block &SolnBlk);
 
 extern void Viscous_Calculations(Chem2D_Quad_Block &SolnBlk);
 
+// optically thin radiation source term evaluation
+extern void Radiation_Source_Eval( Chem2D_Quad_Block &SolnBlk,
+				   Chem2D_Input_Parameters &Input_Parameters );
+
 /**************************************************************************
  * Chem2D_Quad_Block -- Multiple Block External Subroutines.              *
  * Chem2DQuadMultiBlock.cc                                                *

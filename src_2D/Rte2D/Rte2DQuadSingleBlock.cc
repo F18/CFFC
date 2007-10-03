@@ -1210,7 +1210,8 @@ void Output_Tecplot(Rte2D_Quad_Block &SolnBlk,
                 << "\"y\" \\ \n"
 		<<"\"G\" \\ \n"
 	        <<"\"q.x\" \\ \n"
-		<<"\"q.y\" \n";
+		<<"\"q.y\" \n"
+		<<"\"S\" \n";
 
        // blackbody
        for(int v=0 ;v<SolnBlk.U[0][0].Nband ;v++) 
@@ -1252,6 +1253,7 @@ void Output_Tecplot(Rte2D_Quad_Block &SolnBlk,
 		    << " " << U_node.G(M_node)   // /(FOUR*PI*U_node.Ib)
 		    << " " << q_node.x // /(PI*U_node.Ib)
 		    << " " << q_node.y // /(PI*U_node.Ib)
+		    << " " << U_node.Sr(M_node)
 		    << M_node
 		    << U_node
 		    << endl;
@@ -1292,7 +1294,8 @@ void Output_Cells_Tecplot(Rte2D_Quad_Block &SolnBlk,
                 << "\"y\" \\ \n"
 		<<"\"G\" \\ \n"
 	        <<"\"q.x\" \\ \n"
-		<<"\"q.y\" \n";
+		<<"\"q.y\" \n"
+		<<"\"S\" \n";
 
        // Blackbody intensity
        for(int v=0 ;v<SolnBlk.U[0][0].Nband ;v++) 
@@ -1334,6 +1337,7 @@ void Output_Cells_Tecplot(Rte2D_Quad_Block &SolnBlk,
 	 Out_File << " " << SolnBlk.U[i][j].G(SolnBlk.M[i][j]);   // /(FOUR*PI*SolnBlk.U[i][j].Ib)
 	 Out_File << " " << qc.x; // /(PI*SolnBlk.U[i][j].Ib)
 	 Out_File << " " << qc.y; // /(PI*SolnBlk.U[i][j].Ib)
+	 Out_File << " " << SolnBlk.U[i][j].Sr(SolnBlk.M[i][j]);   
 	 Out_File << SolnBlk.M[i][j];
 	 Out_File << SolnBlk.U[i][j];
 	 Out_File << "\n";

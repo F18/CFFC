@@ -15,6 +15,9 @@
 /* Include header file to compute flame jump conditions */
 #include "../Reactions/FlameJump.h"
 
+/* include SNBCK for radiation calcs*/
+#include "../Physics/SNBCK/SNBCK.h"
+
 /*************************************************************************
 * Chem2D_Quad_Block -- Single Block External Subroutines.                *
 **************************************************************************/
@@ -1081,8 +1084,7 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
        //Viscous Terms 
        Out_File << "\"qflux_x\" \\ \n"  
 		<< "\"qflux_y\" \\ \n"   
-		<< "\"qrad_x\" \\ \n"   
-		<< "\"qrad_y\" \\ \n"   
+		<< "\"Srad\" \\ \n"   
 		<< "\"Tau_xx\" \\ \n"  //rr -axisymmetric
 		<< "\"Tau_xy\" \\ \n"  //rz
 		<< "\"Tau_yy\" \\ \n"  //zz
@@ -1179,7 +1181,7 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
            Out_File.setf(ios::scientific);
 	   //Temperature
 	   Out_File << " " << SolnBlk.W[i][j].qflux
-		    << " " << SolnBlk.W[i][j].qrad
+		    << " " << SolnBlk.W[i][j].Srad
 		    << " " << SolnBlk.W[i][j].tau
 		    << " " << SolnBlk.W[i][j].theta
 		    << " " << SolnBlk.W[i][j].lambda
@@ -6074,6 +6076,9 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
       Input_Parameters.i_Viscous_Flux_Evaluation == VISCOUS_RECONSTRUCTION_ARITHMETIC) {
     Viscous_Calculations(SolnBlk);
   }  
+  // radiation evaluation if using opticallyt htin approx
+  if ( Input_Parameters.Radiation == RADIATION_OPTICALLY_THIN )
+    Radiation_Source_Eval( SolnBlk, Input_Parameters );
   /********************************************************/
   
   /* Evaluate the time rate of change of the solution
@@ -6354,6 +6359,9 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	if (SolnBlk.Gravity) {	 
 	  SolnBlk.dUdt[i][j][0] += SolnBlk.W[i][j].Sg();
 	}   
+	
+	/* Include source terms associated with radiation */
+	SolnBlk.dUdt[i][j][0].E += SolnBlk.W[i][j].Srad;
 	
 	/* Include physical time derivative for dual time stepping */
 	if (Input_Parameters.Dual_Time_Stepping) {
@@ -6758,7 +6766,9 @@ int dUdt_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
         Input_Parameters.i_Viscous_Flux_Evaluation == VISCOUS_RECONSTRUCTION_ARITHMETIC) {
        Viscous_Calculations(SolnBlk);
     }
-  
+    // radiation evaluation if using opticallyt htin approx
+    if ( Input_Parameters.Radiation == RADIATION_OPTICALLY_THIN )
+      Radiation_Source_Eval( SolnBlk, Input_Parameters );
     /********************************************************/
     /********************************************************/
 
@@ -7087,6 +7097,11 @@ int dUdt_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
 	      SolnBlk.dUdt[i][j][k_residual] += (Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*
                                                 SolnBlk.W[i][j].Sg();
           } /* endif */
+
+	  /* Include source terms associated with radiation */
+	  SolnBlk.dUdt[i][j][k_residual].E += 
+	    (Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*SolnBlk.W[i][j].Srad;
+
 
 	  /* Save west and east face boundary flux. */
 	  // USED for AMR 	
@@ -7881,3 +7896,57 @@ extern void Low_ReynoldsNumber_Formulation(Chem2D_Quad_Block &SolnBlk,
  
 
 //Xinfeng: NEEDS WORK ON THIS LOW REYNOLDS NUMBER FORMULATIONS
+
+
+/**********************************************************************
+ * Radiation_Source_Eval                                              *
+ *                                                                    *
+ * Optically thin radiation source term evaluation.  The radiation    *
+ * source term is the divergence of the radiative flux vector.        *
+ * Here it is evaluated using the optically thin approximation.       *
+ *                                                                    *
+ **********************************************************************/
+void Radiation_Source_Eval( Chem2D_Quad_Block &SolnBlk,
+			    Chem2D_Input_Parameters &Input_Parameters ) {
+
+  //
+  // declares
+  //
+  double source;
+  double Temperature, Pressure;
+  double xCO, xH2O, xCO2, xO2;
+  static const double fsoot = ZERO;  // no soot for now
+  static SNBCK SNBCKdata = SNBCK(Input_Parameters.SNBCK_IP, 
+				 Input_Parameters.CFFC_Path); // SNBCK object
+
+  //
+  // loop over the block
+  //
+  for (int j = SolnBlk.JCl-1; j <= SolnBlk.JCu+1; j++) {
+    for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
+
+      // get the temperature and pressure at this point
+      Temperature = SolnBlk.W[i][j].T();
+      Pressure = SolnBlk.W[i][j].p;
+
+      // first, get radiating species concentrations
+      SolnBlk.W[i][j].MoleFracOfRadSpec( xCO,  xH2O, xCO2, xO2 );
+
+      // compute the source term using optically thin approx
+      // using the SNBCK model
+      source = SNBCKdata.RadSourceOptThin( Pressure,
+					   Temperature,
+					   xCO,
+					   xH2O,
+					   xCO2,
+					   xO2,
+					   fsoot );
+
+      // store values
+      SolnBlk.U[i][j].Srad = source;
+      SolnBlk.W[i][j].Srad = source;
+
+    } // endfor i
+  } // endfor j
+
+} // end Radiation_Source_Eval()

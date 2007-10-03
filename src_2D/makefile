@@ -51,6 +51,7 @@ SYSTEM_DIR = System/
 TURBULENT_DIR = Turbulent2D/
 GAUSSIAN_DIR = Gaussian2D/
 NASADATA_DIR = $(PHYSICS_DIR)NASAData/
+SNBCK_DIR = $(PHYSICS_DIR)SNBCK/
 REACTIONS_DIR = Reactions/
 HIGH_ORDER_RECONSTRUCTION_DIR = HighOrderReconstruction/
 
@@ -306,8 +307,7 @@ SRC_RTE = $(RTE_DIR)Rte2DState.cc \
           $(RTE_DIR)Rte2DQuadMultiBlock.cc \
           $(RTE_DIR)Rte2DQuadGrid.cc \
           $(RTE_DIR)Rte2DQuadSolvers.cc \
-          $(RTE_DIR)Rte2DTools.cc \
-          $(RTE_DIR)SNBCK.cc 
+          $(RTE_DIR)Rte2DTools.cc
 SRC_RTE_EXE = $(RTE_DIR)Rte2D.cc
 
 # EmbeddedBoundaries2D:
@@ -344,6 +344,7 @@ SRC_REACTIONS = $(REACTIONS_DIR)Reactions.cc \
 SRC_REACTIONS_F90 = $(REACTIONS_DIR)c_15step_GRI211.f90 \
                     $(REACTIONS_DIR)c_15step_GRI3.f90
 SRC_REACTIONS += $(SRC_REACTIONS_F90)
+SRC_SNBCK = $(SNBCK_DIR)SNBCK.cc
 
 # TUT testing:
 SRC_TUT = TestRun.cc \
@@ -366,7 +367,7 @@ SRC_CFFC = $(SRC_BASE) \
            $(SRC_ADVECTDIFFUSE) $(SRC_EULER) $(SRC_NAVIERSTOKES) $(SRC_CHEM) $(SRC_HIGHTEMP) \
            $(SRC_DUSTY) $(SRC_LESPREMIXED) $(SRC_GAUSSIAN) $(SRC_ION) $(SRC_ELECTROSTATIC) \
            $(SRC_RTE) $(SRC_INTERFACE) $(SRC_LEVELSET) \
-           $(SRC_TURBULENT) $(SRC_EOS) $(SRC_NASADATA) $(SRC_REACTIONS) $(SRC_ICEMCFD)
+           $(SRC_TURBULENT) $(SRC_EOS) $(SRC_NASADATA) $(SRC_REACTIONS) $(SRC_SNBCK) $(SRC_ICEMCFD)
 
 # Executable sources:
 SRC_MAIN = cffc2D.cc
@@ -501,6 +502,7 @@ OBJ_REACTIONS = $(patsubst %.cc,%.o,$(filter %.cc,$(SRC_REACTIONS)))
 OBJ_REACTIONS += $(patsubst %.f,%.o,$(filter %.f,$(SRC_REACTIONS)))
 OBJ_REACTIONS += $(patsubst %.f90,%.o,$(filter %.f90,$(SRC_REACTIONS)))
 OBJ_REACTIONS_F90 = $(SRC_REACTIONS_F90:.f90=.o)
+OBJ_SNBCK = $(SRC_SNBCK:.cc=.o)
 
 # TUT testing:
 OBJ_TUT := $(SRC_TUT:.cc=.o)
@@ -760,12 +762,12 @@ $(EXE_NAVIERSTOKES2D): $(OBJ_NAVIERSTOKES_EXE) $(OBJ_BASE) $(OBJ_NAVIERSTOKES) $
 	@echo '----------------------------------------------------------'
 	@echo ' '
 
-$(EXE_CHEM2D): $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_CHEM) $(OBJ_RTE) $(OBJ_ICEMCFD)
+$(EXE_CHEM2D): $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_SNBCK) $(OBJ_CHEM) $(OBJ_RTE) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_CHEM2D) for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_CHEM2D) $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_CHEM) $(OBJ_RTE) $(OBJ_ICEMCFD) $(LDFLAGS)
+	$(LD) -o $(EXE_CHEM2D) $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_SNBCK) $(OBJ_CHEM) $(OBJ_RTE) $(OBJ_ICEMCFD) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_CHEM2D) has been brought up to date.
 	@echo '--------------------------------------------------'
@@ -837,12 +839,12 @@ $(EXE_ELECTROSTATIC2D): $(OBJ_ELECTROSTATIC_EXE) $(OBJ_BASE) $(OBJ_ELECTROSTATIC
 	@echo '---------------------------------------------------'
 	@echo ' '
 
-$(EXE_RTE2D): $(OBJ_RTE_EXE) $(OBJ_BASE) $(OBJ_RTE) $(OBJ_ICEMCFD)
+$(EXE_RTE2D): $(OBJ_RTE_EXE) $(OBJ_BASE) $(OBJ_SNBCK) $(OBJ_RTE) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_RTE2D) for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_RTE2D) $(OBJ_RTE_EXE) $(OBJ_BASE) $(OBJ_RTE) $(OBJ_ICEMCFD) $(LDFLAGS)
+	$(LD) -o $(EXE_RTE2D) $(OBJ_RTE_EXE) $(OBJ_BASE) $(OBJ_SNBCK) $(OBJ_RTE) $(OBJ_ICEMCFD) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_RTE2D) has been brought up to date.
 	@echo '---------------------------------------------------'
@@ -1011,6 +1013,7 @@ clean:
 	rm -f $(EOS_DIR)*.o $(EOS_DIR)*.il $(EOS_DIR)*~
 	rm -f $(NASADATA_DIR)*.o $(NASADATA_DIR)*.il $(NASADATA_DIR)*~
 	rm -f $(REACTIONS_DIR)*.o $(REACTIONS_DIR)*.il $(REACTIONS_DIR)*~
+	rm -f $(SNBCK_DIR)*.o $(SNBCK_DIR)*.il $(SNBCK_DIR)*~
 	rm -f $(HIGH_ORDER_RECONSTRUCTION_DIR)*.o $(HIGH_ORDER_RECONSTRUCTION_DIR)*.il $(HIGH_ORDER_RECONSTRUCTION_DIR)*~
 	rm -f $(HIGH_ORDER_RECONSTRUCTION_DIR)UnitTests/*.o $(HIGH_ORDER_RECONSTRUCTION_DIR)UnitTests/*.il $(HIGH_ORDER_RECONSTRUCTION_DIR)UnitTests/*~
 	rm -f $(UNIT_TESTING_DIR)*.o $(UNIT_TESTING_DIR)*.il $(UNIT_TESTING_DIR)*~

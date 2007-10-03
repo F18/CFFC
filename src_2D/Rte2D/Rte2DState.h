@@ -53,8 +53,8 @@ using namespace std;
 #include "../Math/Simpson.h"
 #include "../CFD/CFD.h"
 #include "../Physics/GasConstants.h"
+#include "../Physics/Planck.h"
 #include "Medium2DState.h"
-#include "Planck.h"
 #include "Scatter.h"
 #include "ControlAngle.h"
 
@@ -328,7 +328,7 @@ class Rte2D_State {
   Vector2D q(const Medium2D_State &M);
 
   //! Return radiation source term [W/m^3]
-  Vector2D Qr(const Medium2D_State &M);
+  double Sr(const Medium2D_State &M);
   //@}
 
   //@{ @name Solution flux and Jacobian (n-direction).
@@ -456,10 +456,9 @@ inline double Rte2D_State :: G( const Medium2D_State &M )
   // Absorbsion coefficient is constant -> easy
   // Nband should be = 1 for gray
   if (M.Absorb_Type == MEDIUM2D_ABSORB_GRAY) {
-    for ( int v=0; v<Nband; v++ )
-      for ( int m=0; m<Npolar; m++ ) 
-	for ( int l=0; l<Nazim[m]; l++ ) 
-	  sum += omega[m][l] * In(v,m,l);
+    for ( int m=0; m<Npolar; m++ ) 
+      for ( int l=0; l<Nazim[m]; l++ ) 
+	sum += omega[m][l] * In(0,m,l);
 
   //------------------------------------------------
   // SNBCK 
@@ -517,12 +516,11 @@ inline Vector2D Rte2D_State :: q( const Medium2D_State &M )
   // Absorbsion coefficient is constant -> easy
   // Nband should be = 1 for gray
   if (M.Absorb_Type == MEDIUM2D_ABSORB_GRAY) {
-    for ( int v=0; v<Nband; v++ ) 
-      for ( int m=0; m<Npolar; m++ ) 
-	for ( int l=0; l<Nazim[m]; l++ ) {
-	  Temp.x +=  mu[m][l] * In(v,m,l);
-	  Temp.y += eta[m][l] * In(v,m,l);
-	}
+    for ( int m=0; m<Npolar; m++ ) 
+      for ( int l=0; l<Nazim[m]; l++ ) {
+	Temp.x +=  mu[m][l] * In(0,m,l);
+	Temp.y += eta[m][l] * In(0,m,l);
+      }
 
   //------------------------------------------------
   // SNBCK 
@@ -572,7 +570,7 @@ inline Vector2D Rte2D_State :: q( const Medium2D_State &M )
  * Qr= \int_{0->infty} {d\eta} kappa ( 4\pi*Ib  -            *
  *                            \int_{4\pi} I(r,s) {d\Omega} ) *
  *************************************************************/
-inline Vector2D Rte2D_State :: Qr( const Medium2D_State &M )
+inline double Rte2D_State :: Sr( const Medium2D_State &M )
 {
   double source = ZERO;
   double sum;
@@ -585,24 +583,18 @@ inline Vector2D Rte2D_State :: Qr( const Medium2D_State &M )
   // Nband should be = 1 for gray
   if (M.Absorb_Type == MEDIUM2D_ABSORB_GRAY) {
 
-    //
-    // loop over bands 
-    //
-    for ( int v=0; v<Nband; v++ ) { 
+    // Subtract G()
+    sum = ZERO;
+    for ( int m=0; m<Npolar; m++ ) 
+      for ( int l=0; l<Nazim[m]; l++ ) 
+	sum -= omega[m][l] * In(0,m,l);
+    
+    // add blackbody
+    sum += FOUR*PI*M.Ib[0];
 
-      // Subtract G()
-      sum = ZERO;
-      for ( int m=0; m<Npolar; m++ ) 
-	for ( int l=0; l<Nazim[m]; l++ ) 
-	  sum -= omega[m][l] * In(v,m,l);
+    // the radiation source term
+    source += sum*M.kappa[0];
 
-      // add blackbody
-      sum += FOUR*PI*M.Ib[v];
-
-      // the radiation source term
-      source += sum*M.kappa[v];
-
-    } // endfor - bands
 
   //------------------------------------------------
   // SNBCK 

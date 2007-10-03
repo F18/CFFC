@@ -89,12 +89,13 @@
 using namespace std;
 
 // Required header files
-#include "../Math/Math.h"
-#include "../Math/SplineFit.h"
-#include "../Math/Quadrature.h"
-#include "Planck.h"
-#include "../CFD/CFD.h"
-#include "../MPI/MPI.h"
+#include "../../Math/Math.h"
+#include "../../Math/Vector2D.h"
+#include "../../Math/SplineFit.h"
+#include "../../Math/Quadrature.h"
+#include "../../CFD/CFD.h"
+#include "../../MPI/MPI.h"
+#include "../Planck.h"
 
 
 /*********************************************************************
@@ -386,6 +387,9 @@ private:
          ***k2_CO2,
          ***k2_H2O;
 
+  // temporary storage
+  double **k;        // absorbsion coefficient [m^-1]
+
   //------------------------------------------------
   // Member Functions
   //------------------------------------------------
@@ -401,7 +405,19 @@ public:
             k2_CO(NULL), k2_CO2(NULL), k2_H2O(NULL), dT(ZERO),
             Ninterp(0), MixType(SNBCK_OVERLAP_OPTICALLY_THIN),
             EvalType(SNBCK_EVAL_ONLINE), index(NULL),
-            band_index(NULL), quad_index(NULL) {}
+            band_index(NULL), quad_index(NULL), k(NULL) {}
+  SNBCK( const SNBCK_Input_Parameters &IP,  // input parameters
+	 const char *CFFC_PATH )            // Current path
+    : SNB(), Nquad(0), nquad(NULL), Nbands(0),  
+      g(NULL), ww(NULL), w(NULL), WaveNo(NULL), 
+      BandWidth(NULL), istart(NULL), iend(NULL),
+      iCO(NULL), iCO2(NULL), iH2O(NULL), iMix(NULL),
+      Tn(NULL), k_CO(NULL), k_CO2(NULL), k_H2O(NULL), 
+      k2_CO(NULL), k2_CO2(NULL), k2_H2O(NULL), dT(ZERO),
+      Ninterp(0), MixType(SNBCK_OVERLAP_OPTICALLY_THIN),
+      EvalType(SNBCK_EVAL_ONLINE), index(NULL),
+      band_index(NULL), quad_index(NULL), k(NULL) 
+      { Setup(IP, CFFC_PATH); }
   
   // destructor
   ~SNBCK() {  Deallocate(); }
@@ -429,8 +445,15 @@ public:
 			const double xh2o,     // mole fraction oh H2O
 			const double xco2,     // mole fraction oh CO2
 			const double o2,       // mole fraction oh O2
+			const double xsoot );  // volume fraction oh soot 
+  void CalculateAbsorb( const double p,        // pressure [atm]
+			const double T,        // temperature [K]
+			const double xco,      // mole fraction oh CO
+			const double xh2o,     // mole fraction oh H2O
+			const double xco2,     // mole fraction oh CO2
+			const double o2,       // mole fraction oh O2
 			const double xsoot,    // volume fraction oh soot 
-			double *k );           // absorbsion coefficient array  [m^-1]
+			double *ka );          // absorbsion coefficient array  [m^-1]
 			          
   // return band averaged property
   double BandAverage( const double *phi, const int v );
@@ -440,6 +463,15 @@ public:
 
   // calculate the planck distribution for the gas
   void CalculatePlanck( const double T, double* Ib );
+
+  // calculate the radiation source based on the optically thin approximation
+  double RadSourceOptThin( const double p,        // pressure [atm]
+			   const double T,        // temperature [K]
+			   const double xco,      // mole fraction oh CO
+			   const double xh2o,     // mole fraction oh H2O
+			   const double xco2,     // mole fraction oh CO2
+			   const double o2,       // mole fraction oh O2
+			   const double xsoot );  // volume fraction oh soot 
 
 private:
 
@@ -467,8 +499,7 @@ private:
 			       const double xh2o,     // mole fraction oh H2O
 			       const double xco2,     // mole fraction oh CO2
 			       const double xo2,      // mole fraction oh O2
-			       const double fsoot,    // volume fraction oh soot 
-			       double *k );           // absorbsion coefficient array [cm^-1]
+			       const double fsoot );  // volume fraction oh soot 
 
   // compute absorbsion coeffient - precalculated interpolation
   void CalculateAbsorb_Interp( const double p,        // pressure [atm]
@@ -477,8 +508,7 @@ private:
 			       const double xh2o,     // mole fraction oh H2O
 			       const double xco2,     // mole fraction oh CO2
 			       const double xo2,      // mole fraction oh O2
-			       const double fsoot,    // volume fraction oh soot 
-			       double *k );           // absorbsion coefficient array [cm^-1]
+			       const double fsoot );  // volume fraction oh soot 
 
   // allocate and deallocate the arrays
   void AllocateQuad();
@@ -489,6 +519,8 @@ private:
   void DeallocateInterp();
   void AllocateIndex();
   void DeallocateIndex();
+  void AllocateStorage();
+  void DeallocateStorage();
   void Deallocate();
 
 };

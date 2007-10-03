@@ -637,6 +637,18 @@ void SNBCK :: AllocateIndex() {
 
 }
 
+void SNBCK :: AllocateStorage() {
+
+  // deallocate just in case
+  DeallocateStorage();
+ 
+  if ( Nquad>0 && Nbands>0) {
+    k = new double*[Nbands];
+    for (int v=0; v<Nbands; v++) k[v] = new double[nquad[v]];
+  } // endif
+}
+
+
 void SNBCK :: DeallocateQuad() {
 
   if (g != NULL)  delete[] g; g = NULL;
@@ -703,11 +715,18 @@ void SNBCK :: DeallocateIndex() {
   if (quad_index != NULL) { delete[] quad_index; quad_index = NULL; }
 }
 
+void SNBCK :: DeallocateStorage() {
+  if (k != NULL) { 
+    for (int i=0; i<Nbands; i++) delete[] k[i];
+    delete[] k; k=NULL;
+  }
+}
+
 
 void SNBCK :: Deallocate() {  
   DeallocateInterp();  DeallocateIndex();
   DeallocateQuad();    DeallocateBands(); 
-  
+  DeallocateStorage();
 }
 
 
@@ -747,8 +766,10 @@ void SNBCK :: Setup( const SNBCK_Input_Parameters &IP,  // input parameters
 			IP.xco2_ref, IP.xo2_ref, IP.IntPoints);
 
   // setup the index
-  AllocateIndex();
-  
+  AllocateIndex();  
+
+  // allocate temporary storage
+  AllocateStorage();
 }
 
 
@@ -944,6 +965,9 @@ void SNBCK :: SetupBands( const int Nlump,      // number of narrow bands lumped
  * Wrapper function.  Calculates absorbsion coefficient directly     *
  * or using spline interpolants built from the reference state.      *
  *********************************************************************/
+//
+// Pass with 1D array version
+//
 void SNBCK :: CalculateAbsorb( const double p,        // pressure [atm]
 			       const double T,        // temperature [K]
 			       const double xco,      // mole fraction oh CO
@@ -951,10 +975,37 @@ void SNBCK :: CalculateAbsorb( const double p,        // pressure [atm]
 			       const double xco2,     // mole fraction oh CO2
 			       const double xo2,      // mole fraction of O2
 			       const double xsoot,    // volume fraction of soot  
-			       double *k )            // absorbsion coefficient array [m^-1]
+			       double *ka )            // absorbsion coefficient array [m^-1]
+{
+
+  //------------------------------------------------
+  // compute absorbsion coefficient in [cm^-1]
+  //------------------------------------------------
+  CalculateAbsorb( p, T, xco, xh2o, xco2, xo2, xsoot );
+
+
+  //------------------------------------------------
+  // convert absorbsion coefficient to [m^-1]
+  //------------------------------------------------
+  for (int v=0; v<Nbands; v++)
+    for (int i=0; i<nquad[v]; i++)
+      ka[index[v][i]] = k[v][i] / CM_TO_M;
+
+}
+
+
+//
+// Use internal storage version
+//
+void SNBCK :: CalculateAbsorb( const double p,        // pressure [atm]
+			       const double T,        // temperature [K]
+			       const double xco,      // mole fraction oh CO
+			       const double xh2o,     // mole fraction oh H2O
+			       const double xco2,     // mole fraction oh CO2
+			       const double xo2,      // mole fraction of O2
+			       const double xsoot )   // volume fraction of soot  
 {
   
- 
   //------------------------------------------------
   // compute absorbsion coefficient in [cm^-1]
   //------------------------------------------------
@@ -962,12 +1013,12 @@ void SNBCK :: CalculateAbsorb( const double p,        // pressure [atm]
 
     // if we are doing online inversion
   case SNBCK_EVAL_ONLINE:
-    CalculateAbsorb_Direct( p, T, xco, xh2o, xco2, xo2, xsoot, k ); 
+    CalculateAbsorb_Direct( p, T, xco, xh2o, xco2, xo2, xsoot ); 
     break;
 
     // if we are precalculating the absorbsion coefficient
   case SNBCK_EVAL_PRECALC:
-    CalculateAbsorb_Interp( p, T, xco, xh2o, xco2, xo2, xsoot, k ); 
+    CalculateAbsorb_Interp( p, T, xco, xh2o, xco2, xo2, xsoot ); 
     break;
 
   default:
@@ -976,15 +1027,7 @@ void SNBCK :: CalculateAbsorb( const double p,        // pressure [atm]
     exit(-1);
   } // endswitch
 
-  //------------------------------------------------
-  // convert absorbsion coefficient to [m^-1]
-  //------------------------------------------------
-  int N = NumVar();
-  for (int i=0; i<N; i++) k[i] /= CM_TO_M;
-
 }
-
-
 
 /*********************************************************************
  * SNBCK :: CalculateAbsrob_Direct                                   *
@@ -1009,8 +1052,7 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
 				      const double xh2o,     // mole fraction oh H2O
 				      const double xco2,     // mole fraction oh CO2
 				      const double xo2,      // mole fraction of O2
-				      const double xsoot,    // volume fraction of soot  
-				      double *k )            // absorbsion coefficient array [cm^-1]
+				      const double xsoot )   // volume fraction of soot  
 {
 
   // declares
@@ -1043,9 +1085,9 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
 	if ( (iH2O[v] && xh2o>MICRO) || 
 	     (iCO2[v] && xco2>MICRO) ||
 	     (iCO[v] && xco>MICRO) )
-	  k[index[v][i]] = AbsorptionCoeffSNBCK( g[i], SNB.B_Thin, SNB.S_Thin, 
-						 SNB.liMix, istart[v], iend[v] );
-	else k[index[v][i]]=ZERO;
+	  k[v][i] = AbsorptionCoeffSNBCK( g[i], SNB.B_Thin, SNB.S_Thin, 
+					  SNB.liMix, istart[v], iend[v] );
+	else k[v][i]=ZERO;
 
       } /* end for - quadrature */
     } /* end for - band */
@@ -1067,9 +1109,9 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
 	if ( (iH2O[v] && xh2o>MICRO) || 
 	     (iCO2[v] && xco2>MICRO) ||
 	     (iCO[v] && xco>MICRO) )
-	  k[index[v][i]] = AbsorptionCoeffSNBCK( g[i], SNB.B_Thick, SNB.S_Thick, 
-						 SNB.liMix, istart[v], iend[v] );
-	else k[index[v][i]]=ZERO;
+	  k[v][i] = AbsorptionCoeffSNBCK( g[i], SNB.B_Thick, SNB.S_Thick, 
+					  SNB.liMix, istart[v], iend[v] );
+	else k[v][i]=ZERO;
 
       } /* end for - quadrature */
     } /* end for - band */
@@ -1089,16 +1131,16 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
       for (int i=0; i<nquad[v]; i++) {
 
 	// add each active component
-	k[index[v][i]] = ZERO;
+	k[v][i] = ZERO;
 	if (iH2O[v] && xh2o>MICRO) 
-	  k[index[v][i]] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
-						  SNB.liH2O, istart[v], iend[v] );
+	  k[v][i] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
+					   SNB.liH2O, istart[v], iend[v] );
 	if (iCO2[v] && xco2>MICRO) 
-	  k[index[v][i]] += AbsorptionCoeffSNBCK( g[i], SNB.B_CO2, SNB.S_CO2, 
-						  SNB.liCO2, istart[v], iend[v] );
+	  k[v][i] += AbsorptionCoeffSNBCK( g[i], SNB.B_CO2, SNB.S_CO2, 
+					   SNB.liCO2, istart[v], iend[v] );
 	if (iCO[v] && xco>MICRO) 
-	  k[index[v][i]] += AbsorptionCoeffSNBCK( g[i],  SNB.B_CO,  SNB.S_CO,  
-						  SNB.liCO, istart[v], iend[v] );
+	  k[v][i] += AbsorptionCoeffSNBCK( g[i],  SNB.B_CO,  SNB.S_CO,  
+					   SNB.liCO, istart[v], iend[v] );
 
       } /* end for - quadrature */
     } /* end for - bands */
@@ -1116,7 +1158,7 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
     for (int v=0; v<Nbands; v++) {
           
       // initialize the k array
-      for (int i=0; i<nquad[v]; i++) k[index[v][i]] = ZERO;
+      for (int i=0; i<nquad[v]; i++) k[v][i] = ZERO;
 
       // depending upon which gases are active, compute
       // the absorbsion coefficients and the combined 
@@ -1126,85 +1168,79 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
       if ( iMix[v] == 1 ) {
 	for (int i=0; i<nquad[v]; i++) {
 	  if (iH2O[v] && xh2o>MICRO) 
-	    k[index[v][i]] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
-						    SNB.liH2O, istart[v], iend[v] );
+	    k[v][i] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
+					     SNB.liH2O, istart[v], iend[v] );
 	  if (iCO2[v] && xco2>MICRO) 
-	    k[index[v][i]] += AbsorptionCoeffSNBCK( g[i], SNB.B_CO2, SNB.S_CO2, 
-						    SNB.liCO2, istart[v], iend[v] );
+	    k[v][i] += AbsorptionCoeffSNBCK( g[i], SNB.B_CO2, SNB.S_CO2, 
+					     SNB.liCO2, istart[v], iend[v] );
 	  if (iCO[v] && xco>MICRO) 
-	    k[index[v][i]] += AbsorptionCoeffSNBCK( g[i],  SNB.B_CO,  SNB.S_CO,  
-						    SNB.liCO, istart[v], iend[v] );
+	    k[v][i] += AbsorptionCoeffSNBCK( g[i],  SNB.B_CO,  SNB.S_CO,  
+					     SNB.liCO, istart[v], iend[v] );
 	  ww[v][i] = w[i];          // compute new weight
 	} /* endfor */
 	
       // h2o and co2 active
       } else if (iMix[v]==2 && iH2O[v] && iCO2[v]) {
-	cnt = 0;
 	for (int i=0; i<Nquad; i++) {
 	  for (int j=0; j<Nquad; j++) {
+	    cnt = i*Nquad + j;
 	    if (xh2o>MICRO) 
-	      k[index[v][cnt]] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
-							SNB.liH2O, istart[v], iend[v] );
+	      k[v][cnt] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
+						 SNB.liH2O, istart[v], iend[v] );
 	    if (xco2>MICRO) 
-	      k[index[v][cnt]] += AbsorptionCoeffSNBCK( g[j], SNB.B_CO2, SNB.S_CO2, 
-							SNB.liCO2, istart[v], iend[v] );
+	      k[v][cnt] += AbsorptionCoeffSNBCK( g[j], SNB.B_CO2, SNB.S_CO2, 
+						 SNB.liCO2, istart[v], iend[v] );
 	    ww[v][cnt] = w[i]*w[j]; // compute new weight
-	    cnt++;                  // increment counter
 	  } /* endfor */
 	} /* endfor */
 
       // h2o and co active
       } else if (iMix[v]==2 && iH2O[v] && iCO[v]) {
-	cnt = 0;
 	for (int i=0; i<Nquad; i++) {
 	  for (int j=0; j<Nquad; j++) {
+	    cnt = i*Nquad + j;
 	    if (xh2o>MICRO) 
-	      k[index[v][cnt]] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
-							SNB.liH2O, istart[v], iend[v] );
+	      k[v][cnt] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
+						 SNB.liH2O, istart[v], iend[v] );
 	    if (xco>MICRO) 
-	      k[index[v][cnt]] += AbsorptionCoeffSNBCK( g[j],  SNB.B_CO,  SNB.S_CO,  
-							SNB.liCO, istart[v], iend[v] );
-	    ww[v][cnt] = w[i]*w[j];
-
-	    // increment counter
-	    cnt++;
+	      k[v][cnt] += AbsorptionCoeffSNBCK( g[j],  SNB.B_CO,  SNB.S_CO,  
+						 SNB.liCO, istart[v], iend[v] );
+	    ww[v][cnt] = w[i]*w[j]; // compute new weight
 	  } /* endfor */
 	} /* endfor */
 
       // co2 and co active
       } else if (iMix[v]==2 && iCO2[v] && iCO[v]) {
-	cnt = 0;
 	for (int i=0; i<Nquad; i++) {
 	  for (int j=0; j<Nquad; j++) {
+	    cnt = i*Nquad + j;
 	    if (xco2>MICRO) 
-	      k[index[v][cnt]] += AbsorptionCoeffSNBCK( g[i], SNB.B_CO2, SNB.S_CO2, 
-							SNB.liCO2, istart[v], iend[v] );
+	      k[v][cnt] += AbsorptionCoeffSNBCK( g[i], SNB.B_CO2, SNB.S_CO2, 
+						 SNB.liCO2, istart[v], iend[v] );
 	    if (xco>MICRO) 
-	      k[index[v][cnt]] += AbsorptionCoeffSNBCK( g[j],  SNB.B_CO,  SNB.S_CO,  
-							SNB.liCO, istart[v], iend[v] );
+	      k[v][cnt] += AbsorptionCoeffSNBCK( g[j],  SNB.B_CO,  SNB.S_CO,  
+						 SNB.liCO, istart[v], iend[v] );
 	    ww[v][cnt] = w[i]*w[j]; // compute new weight
-	    cnt++;                  // increment counter
 	  } /* endfor */
 	} /* endfor */
 	
 
       // all three are active
       } else if ( iMix[v] == 3 ) {
-	cnt = 0;
 	for (int i=0; i<Nquad; i++) {
 	  for (int j=0; j<Nquad; j++) {
 	    for (int n=0; n<Nquad; n++) {
+	      cnt = i*Nquad*Nquad + j*Nquad + n;
 	      if (xh2o>MICRO) 
-		k[index[v][cnt]] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
-							  SNB.liH2O, istart[v], iend[v] );
+		k[v][cnt] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
+						   SNB.liH2O, istart[v], iend[v] );
 	      if (xco2>MICRO) 
-		k[index[v][cnt]] += AbsorptionCoeffSNBCK( g[j], SNB.B_CO2, SNB.S_CO2, 
-							  SNB.liCO2, istart[v], iend[v] );
+		k[v][cnt] += AbsorptionCoeffSNBCK( g[j], SNB.B_CO2, SNB.S_CO2, 
+						   SNB.liCO2, istart[v], iend[v] );
 	      if (xco>MICRO) 
-		k[index[v][cnt]] += AbsorptionCoeffSNBCK( g[n],  SNB.B_CO,  SNB.S_CO,  
-							  SNB.liCO, istart[v], iend[v] );
+		k[v][cnt] += AbsorptionCoeffSNBCK( g[n],  SNB.B_CO,  SNB.S_CO,  
+						   SNB.liCO, istart[v], iend[v] );
 	      ww[v][cnt] = w[i]*w[j]*w[n]; // compute new weight
-	      cnt++;                       // increment counter
 	    } /* endfor */
 	  } /* endfor */
 	} /* endfor */
@@ -1231,7 +1267,7 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
   // Add soot component to absorbsion coefficient [cm^-1]
   for (int v=0; v<Nbands; v++) {
     for (int i=0; i<nquad[v]; i++) {
-      k[index[v][i]] += 5.5 * xsoot * WaveNo[v];
+      k[v][i] += 5.5 * xsoot * WaveNo[v];
     } /* end for */
   } /* end for */
 
@@ -1364,8 +1400,7 @@ void SNBCK :: CalculateAbsorb_Interp( const double p,        // pressure [atm]
 				      const double xh2o,     // mole fraction oh H2O
 				      const double xco2,     // mole fraction oh CO2
 				      const double xo2,      // mole fraction of O2
-				      const double xsoot,    // volume fraction of soot  
-				      double *k )            // absorbsion coefficient array  [cm^-1]
+				      const double xsoot )   // volume fraction of soot  
 {
 
   // check to make sure 
@@ -1391,11 +1426,11 @@ void SNBCK :: CalculateAbsorb_Interp( const double p,        // pressure [atm]
 
       // compute absorbsion coefficient using uncorrelated approximation
       // See Liu and Smallwood (2004)
-      k[index[v][i]] = kk_CO*xco + kk_CO2*xco2 + kk_H2O*xh2o;
-      k[index[v][i]] *= p;
+      k[v][i] = kk_CO*xco + kk_CO2*xco2 + kk_H2O*xh2o;
+      k[v][i] *= p;
       
       // add soot
-      k[index[v][i]] += 5.5 * xsoot * WaveNo[v];
+      k[v][i] += 5.5 * xsoot * WaveNo[v];
 
     } // endfor
 
@@ -1429,6 +1464,54 @@ void SNBCK :: CalculatePlanck( const double T, double* Ib ) {
     Ib_v = BlackBody(T, WaveNo[v]);
     for (int i=0; i<nquad[v]; i++) Ib[ index[v][i] ] = Ib_v;
   }
+}
+
+
+/*********************************************************************
+ * SNBCK :: RadSourceOptThin                                         *
+ *                                                                   *
+ * Calculate the divergence of the radiative heat flux in the        *
+ * optically thin limit. Thus, self-reabsorption of radiation of hot *
+ * burned gas is neglected. See:                                     *
+ *   Y. Ju, H. Guo, F. Liu, and K. Maruta, J Fluid Mech (1999), vol. *
+ *   379, pp. 165-190.                                               *
+ *                                                                   *
+ * Assuming the ambient is cold, we have:                            *
+ *  qr = \int_{-1}^{-1} \int_{0}^{\infty} k_v Ib_v dv d\mu           *
+ *     = 4 K_p \sigma T^4                                            *
+ *                                                                   *
+ *********************************************************************/
+double SNBCK :: RadSourceOptThin( const double p,        // pressure [atm]
+				  const double T,        // temperature [K]
+				  const double xco,      // mole fraction oh CO
+				  const double xh2o,     // mole fraction oh H2O
+				  const double xco2,     // mole fraction oh CO2
+				  const double xo2,      // mole fraction oh O2
+				  const double xsoot )   // volume fraction oh soot 
+{
+  // declates
+  double Srad(0.0);
+  static const double C = 3.337E-4; // [W/(m^3 K^5)]
+  
+  // compute the absorbsion coeffcient
+  CalculateAbsorb( p, T, xco, xh2o, xco2, xo2, xsoot );
+  
+  //
+  // compute gas band contribution
+  //
+  for (int v=0; v<Nbands; v++)
+    for (int i=0; i<nquad[v]; i++)
+      Srad += k[v][i] * BlackBody(T, WaveNo[v]) * BandWidth[v] * Weight(v,i);
+  Srad *= 2.0;
+
+  //
+  // Add soot radiation.
+  // See Liu, Guo, Smallwood, Gulder, J QSRT 73 (2002) pp. 409-421. 
+  //
+  Srad += C * xsoot * pow(T,5);
+
+  // return the value
+  return -Srad;
 }
 
 /*********************************************************************

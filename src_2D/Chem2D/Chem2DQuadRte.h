@@ -105,8 +105,8 @@ inline void Rte2DSolver::Copy_SRC_Solution_Vars(Chem2D_Quad_Block *Chem2D_SolnBl
 template <>
 inline void Rte2DSolver::Copy_Rte2D_Solution_Vars(Chem2D_Quad_Block *Chem2D_SolnBlk)
 { 
-  // radiant heat flux vector
-  Vector2D qr;
+  // radiant heat source term
+  double source;
 
   // make some pointers to help readability
   Rte2D_Quad_Block **Rte2D_SolnBlk = &Local_SolnBlk;
@@ -128,12 +128,12 @@ inline void Rte2DSolver::Copy_Rte2D_Solution_Vars(Chem2D_Quad_Block *Chem2D_Soln
 	      j<=Rte2D_SolnBlk[n]->JCu+Rte2D_SolnBlk[n]->Nghost; 
 	      j++ ) {
 
-	  // compute the radiant heat flux
- 	  qr = Rte2D_SolnBlk[n]->U[i][j].q( Rte2D_SolnBlk[n]->M[i][j] );
+	  // compute the divergence of the radiant heat flux
+ 	  source = Rte2D_SolnBlk[n]->U[i][j].Sr( Rte2D_SolnBlk[n]->M[i][j] );
 	  
 	  // store the radiant heat flux
-	  Chem2D_SolnBlk[n].U[i][j].qrad = qr;
-	  Chem2D_SolnBlk[n].W[i][j].qrad = qr;
+	  Chem2D_SolnBlk[n].U[i][j].Srad = source;
+	  Chem2D_SolnBlk[n].W[i][j].Srad = source;
 						     
 	} // endfor - i
       } // endfor - j

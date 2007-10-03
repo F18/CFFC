@@ -405,7 +405,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
    RADIATION SOLVER setup of initial grid, solution blocks, quadtree,
    initial conditions.                                                      
   ************************************************************************/
-  if (Input_Parameters.Radiation){
+  if (Input_Parameters.Radiation == RADIATION_RTE){
 
     if (!batch_flag) cout << "\n Setting up radiation solver.";
 
@@ -444,7 +444,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
  
 
   // print out a header for sequential solver
-  if (!batch_flag && Input_Parameters.Radiation) {
+  if (!batch_flag && Input_Parameters.Radiation == RADIATION_RTE) {
     cout << endl << endl << string(70,'=');
     cout << "\n Sequential Solver Step = " << number_sequential_solves+1;
     cout << endl << string(70,'=');
@@ -1055,7 +1055,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
    RADIATION SOLVER solution of equation of radiation transfer to obtain
    the radiation heat flux term.
   ************************************************************************/
-  if (Input_Parameters.Radiation) {
+  if (Input_Parameters.Radiation == RADIATION_RTE) {
 
     if (!batch_flag) cout << "\n Solving radiation transfer equation...";
 
@@ -1092,7 +1092,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 
 
   // print out finalstats for sequential solver
-  if (!batch_flag && Input_Parameters.Radiation) {
+  if (!batch_flag && Input_Parameters.Radiation == RADIATION_RTE) {
     cout << endl << endl << string(70,'=');
     cout << "\n Sequential Solver Finished on " << Date_And_Time();
     cout << "\n Total Sequential Solves = " << number_sequential_solves;

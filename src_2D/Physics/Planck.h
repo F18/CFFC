@@ -17,7 +17,7 @@
 #define _PLANCK_INCLUDED 
 
 /* Required CFFC header files */
-#include "../Physics/GasConstants.h"
+#include "GasConstants.h"
 
 
 /********************************************************
