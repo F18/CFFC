@@ -1696,7 +1696,6 @@ void ICs(NavierStokes2D_Quad_Block &SolnBlk,
 	  SolnBlk.W[i][j].v.y = ZERO;
 	  //Adjust the freestream pressure is there is a pressure gradient.
 	  SolnBlk.W[i][j].p = Wo[0].p + SolnBlk.Grid.Cell[i][j].Xc.x/100.0/IP.Pipe_Radius*IP.dp; 
-	  double dist = SolnBlk.Grid.Cell[i][j].Xc.y/FIVE/IP.Pipe_Radius;
 	  // If the Y value is greater than pipe radius we simply use the STDATM conditions 
 	  // otherwise we interpolate the solutions to get the pipe profile at the exit. 
 	  if (abs(SolnBlk.Grid.Cell[i][j].Xc.y) < IP.Pipe_Radius && SolnBlk.Grid.Cell[i][j].Xc.x<50.0*IP.Pipe_Radius*(1.0-abs(SolnBlk.Grid.Cell[i][j].Xc.y)/IP.Pipe_Radius)){//if 1 begins
@@ -1734,15 +1733,17 @@ void ICs(NavierStokes2D_Quad_Block &SolnBlk,
 	   * which introduces some turbulent kinetic energy near the shear layer and damps out to     *
 	   * extremely small values in the free stream.                                               *
 	   ********************************************************************************************/
-	  double dist = SolnBlk.Grid.Cell[i][j].Xc.y/TEN/IP.Pipe_Radius;
+	  double dist = SolnBlk.Grid.Cell[i][j].Xc.y/FIVE/IP.Pipe_Radius;
 	  if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
 	    if (SolnBlk.W[i][j].k == ZERO)
 	      SolnBlk.W[i][j].k = maxK*exp(-dist);
 	    if (SolnBlk.W[i][j].omega == ZERO)
 	      SolnBlk.W[i][j].omega = maxOmega*exp(-dist/IP.Step_Height);
 	  }
-
+	}
+      }
       //      delete storedColumn, columnCounter, numRows, numColumn, foundYval;
+	
     }
     break;
     
