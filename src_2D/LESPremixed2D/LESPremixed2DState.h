@@ -307,7 +307,6 @@ class LESPremixed2D_pState {
   void set_SFSmodel_variables(const double &delta,
 			      const double &Smagorinsky_coef,
 			      const double &Yoshizawa_coef);
-  //@}
 
   //! @name Data Temperature Ranges:
   //@{
@@ -602,70 +601,87 @@ class LESPremixed2D_pState {
                               const LESPremixed2D_pState &d_dWdy_dy) const;
   //@}
 
-   /**************** Operators Overloading ********************/
-   /* Index operator */
-   double &operator[](int index);
-   const double &operator[](int index) const;
+  /**************** Operators Overloading ********************/
 
-   /* Binary arithmetic operators. */
-   LESPremixed2D_pState operator +(const LESPremixed2D_pState &W) const;
-   LESPremixed2D_pState operator -(const LESPremixed2D_pState &W) const;
-   LESPremixed2D_pState operator *(const double &a) const;
-   friend LESPremixed2D_pState operator *(const double &a, const LESPremixed2D_pState &W);
-   LESPremixed2D_pState operator /(const double &a) const;
-   double operator *(const LESPremixed2D_pState &W) const;
-   LESPremixed2D_pState operator ^(const LESPremixed2D_pState &W) const;
+  //! @name Index operator.
+  //@{
+  double &operator[](int index);
+  const double &operator[](int index) const;
+  //@}
 
-   /* Assignment Operator. */ 
-   LESPremixed2D_pState& operator =(const LESPremixed2D_pState &W); 
+  //! @name Binary arithmetic operators.
+  //@{
+  LESPremixed2D_pState operator +(const LESPremixed2D_pState &W) const;
+  LESPremixed2D_pState operator -(const LESPremixed2D_pState &W) const;
+  LESPremixed2D_pState operator *(const double &a) const;
+  friend LESPremixed2D_pState operator *(const double &a, const LESPremixed2D_pState &W);
+  LESPremixed2D_pState operator /(const double &a) const;
+  double operator *(const LESPremixed2D_pState &W) const;
+  LESPremixed2D_pState operator ^(const LESPremixed2D_pState &W) const;
+  //@}
 
-   /* Shortcut arithmetic operators. */
-   LESPremixed2D_pState& operator +=(const LESPremixed2D_pState &W);
-   LESPremixed2D_pState& operator -=(const LESPremixed2D_pState &W);
- 
-   /* Unary arithmetic operators. */
-   //LESPremixed2D_pState operator +(const LESPremixed2D_pState &W);
-   friend LESPremixed2D_pState operator -(const LESPremixed2D_pState &W);
+  //! Assignment Operator.
+  LESPremixed2D_pState& operator =(const LESPremixed2D_pState &W); 
 
-   /* Relational operators. */
-   friend int operator ==(const LESPremixed2D_pState &W1, const LESPremixed2D_pState &W2);
-   friend int operator !=(const LESPremixed2D_pState &W1, const LESPremixed2D_pState &W2);
+  //! @name Shortcut arithmetic operators.
+  //@{
+  LESPremixed2D_pState& operator +=(const LESPremixed2D_pState &W);
+  LESPremixed2D_pState& operator -=(const LESPremixed2D_pState &W);
+  //@}
 
-   /* Input-output operators. */
-   friend ostream& operator << (ostream &out_file, const LESPremixed2D_pState &W);
-   friend istream& operator >> (istream &in_file,  LESPremixed2D_pState &W);
+  //! @name Unary arithmetic operators.
+  //@{
+  //LESPremixed2D_pState operator +(const LESPremixed2D_pState &W);
+  friend LESPremixed2D_pState operator -(const LESPremixed2D_pState &W);
+  //@}
 
-   /**************** Destructors ******************************/
-   //for static specdata
-   void Deallocate_static(void){ if(specdata != NULL) delete[] specdata; 
-                                           specdata = NULL; 
-				 if(Schmidt != NULL) delete[] Schmidt; 
- 				           Schmidt = NULL;
-                                }
+  //! @name Relational operators.
+  //@{
+  friend int operator ==(const LESPremixed2D_pState &W1, const LESPremixed2D_pState &W2);
+  friend int operator !=(const LESPremixed2D_pState &W1, const LESPremixed2D_pState &W2);
+  //@}
 
-   //for scalars
-   void Deallocate_addvar(void){ if(scalar != NULL)  delete[] scalar;   
-                                           scalar = NULL;
-                               }
+  //! @name Input-output operators.
+  //@{
+  friend ostream& operator << (ostream &out_file, const LESPremixed2D_pState &W);
+  friend istream& operator >> (istream &in_file,  LESPremixed2D_pState &W);
+  //@}
 
-   void scalar_memory() { Deallocate_addvar(); 
-                          if (nscal) scalar = new double[nscal];
-                        }
+  //! @name Destructors.
+  //@{
+  //! for static specdata
+  void Deallocate_static(void) {
+    if(specdata != NULL) delete[] specdata; 
+    specdata = NULL; 
+    if(Schmidt != NULL) delete[] Schmidt; 
+    Schmidt = NULL;
+  }
+
+  //! for scalars
+  void Deallocate_addvar(void) {
+    if(scalar != NULL)  delete[] scalar;   
+    scalar = NULL;
+  }
+
+  void scalar_memory() {
+    Deallocate_addvar(); 
+    if (nscal) scalar = new double[nscal];
+  }
 
 #ifdef STATIC_LESPREMIXED2D_SPECIES    
-   void specnull() {}
-   void spec_memory() {}
-   void Deallocate_species(void) {}
-   void Deallocate(void){ Deallocate_addvar(); }
+  void specnull() {}
+  void spec_memory() {}
+  void Deallocate_species(void) {}
+  void Deallocate(void){ Deallocate_addvar(); }
 #else
-   void specnull() {spec=NULL;}
-   void spec_memory() { Deallocate_species(); spec = new Species[ns];}
-   void Deallocate_species(void) { if(spec != NULL){ delete[] spec;}  specnull(); }
-   void Deallocate(void){ Deallocate_species(); Deallocate_addvar(); }
+  void specnull() {spec=NULL;}
+  void spec_memory() { Deallocate_species(); spec = new Species[ns];}
+  void Deallocate_species(void) { if(spec != NULL){ delete[] spec;}  specnull(); }
+  void Deallocate(void){ Deallocate_species(); Deallocate_addvar(); }
 #endif
 
-   ~LESPremixed2D_pState(){ Deallocate(); }
-
+  ~LESPremixed2D_pState(){ Deallocate(); }
+  //@}
 };
 
 
@@ -850,41 +866,42 @@ class LESPremixed2D_pState {
     The following constructors return "total" physical
     parameters based on mixture rules for each.
    ****************************************************/
-   //double Mass(void);       //mixture molecular mass
+   //double Mass(void);       //!< mixture molecular mass
    double Rtot(void) const; 
- //  double Cp(void) const;   //mixture heat capacity (Pressure constant)
- //  double Cv(void) const;   //mixture heat capacity (Volume constant)
- //  double g(void) const;    //specific heat ratio
-   double gamma_guess(void) const;   //mixture specifc heat ratio
-   double e(void) const;             //mixture specific internal energy
-   double es(void) const;            //mixture specific sensible internal energy
-   double h(const double &T) const;  //mixture specific enthalpy
-   double hs(const double &T) const; //mixture specific enthalpy
+ //  double Cp(void) const;   //!< mixture heat capacity (Pressure constant)
+ //  double Cv(void) const;   //!< mixture heat capacity (Volume constant)
+ //  double g(void) const;    //!< specific heat ratio
+   double gamma_guess(void) const;   //!< mixture specifc heat ratio
+   double e(void) const;             //!< mixture specific internal energy
+   double es(void) const;            //!< mixture specific sensible internal energy
+   double h(const double &T) const;  //!< mixture specific enthalpy
+   double hs(const double &T) const; //!< mixture specific enthalpy
    double hprime(const double &T) const; 
-   double heatofform(void) const;      //mixture heat of formations
-   //double E(void) const;             //mixture total internal energy
-   //double H(void);                   //mixture total enthalpy
-   double mu(void) const;              //mixture viscosity
-   double kappa(void) const;           //mixture thermal conductivity
+   double heatofform(void) const;      //!< mixture heat of formations
+   //double E(void) const;             //!< mixture total internal energy
+   //double H(void);                   //!< mixture total enthalpy
+   double mu(void) const;              //!< mixture viscosity
+   double kappa(void) const;           //!< mixture thermal conductivity
 
    /***********************************************************/
-   Vector2D v(void) const;    //velocity  
-   double p(void) const;      //pressure
+   Vector2D v(void) const;    //!< velocity  
+   double p(void) const;      //!< pressure
    double k(void) const;
-   double T(void) const;      //temperature
-   double a(void) const;      //speed of sound
+   double T(void) const;      //!< temperature
+   double a(void) const;      //!< speed of sound
    double rhok(void) const; 
    /************  FSD Model*******************/
    double C(void) const;
    double Fsd(void) const;
    bool negative_scalarcheck(void) const;
 
-   bool negative_speccheck(const int &step) ; //-ve mass frac check and sets small -ve c's to ZERO
+   bool negative_speccheck(const int &step) ; //!< -ve mass frac check and sets small -ve c's to ZERO
    bool Unphysical_Properties();
    bool Unphysical_Properties_Check(const int Flow_Type, const int n);   
    double sum_species(void) const;
 
-   //@{ @name Functions required for multigrid.
+   //! @name Functions required for multigrid.
+   //@{
    //! Copy variables solved by multigrid only.
    void Copy_Multigrid_State_Variables(const LESPremixed2D_cState &Ufine);
   
@@ -896,32 +913,40 @@ class LESPremixed2D_pState {
    /************** Temperature Derivatives *******************/
    double dmudT(void) const;
 
-   // STRAIN RATE, LAMINAR STRESS, SFS STRESS 6 FUNCTIONS\
+   // STRAIN RATE, LAMINAR STRESS, SFS STRESS 6 FUNCTIONS
    // LIKE PRIMITIVE 
-   /************ Strain rate tensor, laminar stress and SFS stress tensors ***********/
+
+   //! @name Strain rate tensor, laminar stress and SFS stress tensors.
+   //@{
    Tensor2D Strain_Rate(const LESPremixed2D_pState &dWdx,
 			const LESPremixed2D_pState &dWdy,
 			const int Flow_Type,
 			const int Axisymmetric,
 			const Vector2D X) const;
+   //@}
 
-   /************ Heat Flux vector thermal Diffusion ***********/
+   //! @name Heat Flux vector thermal Diffusion
+   //@{
    Vector2D thermal_diffusion(const double &Temp) const;
+   //@}
 
-   /*********** Primitive solution state ***********************/
+   //! @name Primitive solution state.
+   //@{
    LESPremixed2D_pState W(void) const;
    LESPremixed2D_pState W(const LESPremixed2D_cState &U) const;
    friend LESPremixed2D_pState W(const LESPremixed2D_cState &U);
+   //@}
 
-   /**************** turbulence model related parameters*********/
+   //! @name Turbulence Model Related Parameters.
+   //@{
    double mu_t(const Tensor2D &strain_rate, const int &Flow_Type) const;      
    double Pr_turb(void) const;      
    double Sc_turb(void) const;      
    double Dm_turb(const double &mut) const;  
-  
+   //@}
 
-   /**************** Fluxes ***********************************/
-   //Viscous Flux (laminar+turbulent)
+   //! @name Viscous Fluxes (laminar+turbulent).
+   //@{
    LESPremixed2D_cState Viscous_Flux_x(const LESPremixed2D_pState &dWdx, 
 				       const LESPremixed2D_pState &dWdy, 
 				       const int Flow_Type,
@@ -932,22 +957,29 @@ class LESPremixed2D_pState {
 				       const int Flow_Type,
 				       const int Axisymmetric,
 				       const Vector2D X) const;
+   //@}
 
-   /*************** Preconditioner ****************************/
+   //! @name Preconditioner.
+   //@{
    void Low_Mach_Number_Preconditioner(DenseMatrix &P,const int &flow_type_flag, const double &deltax) const; 
    void Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,const int &flow_type_flag, const double &deltax) const; 
+   //@}
 
-   /************** Premixed combustion ************************/
+   //! @name Premixed combustion.
+   //@{
    LESPremixed2D_cState  premixed_mfrac(const LESPremixed2D_pState &Wo);
    int FlameJump_x(const LESPremixed2D_cState &Uu,
 		   LESPremixed2D_cState &Ub);
    int FlameJump_n(const LESPremixed2D_cState &Uu,
 		   LESPremixed2D_cState &Ub,
 		   const Vector2D &norm_dir);
+   //@}
 
-   /***************** Index operators *************************/
+   //! @name Index operators.
+   //@{
    double &operator[](int index);
    const double &operator[](int index) const;
+   //@}
 
    /**************** Operators Overloading ********************/
    /* Binary arithmetic operators. */
@@ -1014,34 +1046,34 @@ class LESPremixed2D_pState {
  };
 
 
- /**************************************************************************
+/**************************************************************************
  ****************** LESPREMIXED2D_PSTATE CONSTRUCTORS **********************
  ***************************************************************************/
 
- /**************************************************************************
+/**************************************************************************
     Set up mass fractions memory and initial values, ie. Species Class  
- **************************************************************************/
- inline void LESPremixed2D_pState::set_initial_values(){
-   spec_memory();
-   for(int i=0; i<ns; ++i) spec[i].c = ONE/ns; 
- }
+**************************************************************************/
+inline void LESPremixed2D_pState::set_initial_values(){
+  spec_memory();
+  for(int i=0; i<ns; ++i) spec[i].c = ONE/ns; 
+}
 
- inline void  LESPremixed2D_pState::set_initial_values(const double &value){
-   spec_memory();
-   for(int i=0; i<ns; ++i) spec[i].c = value; 
- }
+inline void  LESPremixed2D_pState::set_initial_values(const double &value){
+  spec_memory();
+  for(int i=0; i<ns; ++i) spec[i].c = value; 
+}
 
- //user specified
- inline void LESPremixed2D_pState::set_initial_values(double *cfrac){
-   spec_memory();
-   for(int i=0; i<ns; ++i) spec[i].c = cfrac[i];
- }
+//user specified
+inline void LESPremixed2D_pState::set_initial_values(double *cfrac){
+  spec_memory();
+  for(int i=0; i<ns; ++i) spec[i].c = cfrac[i];
+}
 
- //another set using species class
- inline void LESPremixed2D_pState::set_initial_values(const Species *mfrac){
-   spec_memory();
-   for(int i=0; i<ns; ++i) spec[i] = mfrac[i];
- }
+//another set using species class
+inline void LESPremixed2D_pState::set_initial_values(const Species *mfrac){
+  spec_memory();
+  for(int i=0; i<ns; ++i) spec[i] = mfrac[i];
+}
 
 /**************************************************************************
    Set up scalars memory and initial values  

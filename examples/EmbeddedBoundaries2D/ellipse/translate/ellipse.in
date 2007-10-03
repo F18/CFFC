@@ -75,9 +75,9 @@ Number_of_Cells_Idir =
 Number_of_Cells_Jdir =
 40
 Number_of_Blocks_Idir =
-10
+5
 Number_of_Blocks_Jdir =
-4
+2
 Boundary_Conditions_Specified =
 ON
 BC_North =
