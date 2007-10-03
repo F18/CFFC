@@ -14,23 +14,24 @@
 	* ------------
 	*/
 
-	// Creation constructor
+	/*! Creates primitive state with standard atmosphere variables */
 	Euler3D_Polytropic_pState::Euler3D_Polytropic_pState() {
 		rho = DENSITY_STDATM;	v.zero();	 p = PRESSURE_STDATM;
 	}
 
-	// Copy constructor
+	/*! Copies primitive state from a given primitive state */
 	Euler3D_Polytropic_pState::Euler3D_Polytropic_pState(const Euler3D_Polytropic_pState &W) {
 		rho = W.rho;	v = W.v;	p = W.p;
 	}
 
-	// Assignment constructors
+	/*! Creates primitive state with given variables */ 
 	Euler3D_Polytropic_pState::Euler3D_Polytropic_pState(const double &d, 
 							  const Vector3D &V, 
 							  const double &pre) {
 		rho = d;	v = V;		p = pre;
 	}
 
+	/*! Creates primitive state with given variables */ 
 	Euler3D_Polytropic_pState::Euler3D_Polytropic_pState(const double &d, 
 							  const double &vx, const double &vy, const double &vz, 
 							  const double &pre) {
@@ -39,6 +40,7 @@
 		p = pre;
 	}
 
+	/*! Creates primitive state from a given conservative state */ 
 	Euler3D_Polytropic_pState::Euler3D_Polytropic_pState(const Euler3D_Polytropic_cState &U) {
 		rho = U.rho;	v = U.v();	p = U.p();
 	}
@@ -111,6 +113,9 @@
 	}
 
 	// Total velocity.
+	double Euler3D_Polytropic_pState::uo(void) {
+		return (sqrt(v.x*v.x + v.y*v.y + v.z*v.z));  
+	}
 	double Euler3D_Polytropic_pState::uo(void) const{
 		return (sqrt(v.x*v.x + v.y*v.y + v.z*v.z));  
 	}

@@ -1,5 +1,10 @@
-/*!\file test_Euler3DPolytropicState.cc
-  \brief Regression tests for class 'CLASS_NAME' . */
+/*!	\file test_Euler3DPolytropicState.cc
+	\brief Regression tests for classes in file Euler3DPolytropicState.h
+
+	This file tests the classes Euler3D_Polytropic_pState and
+	Euler3D_Polytropic_cState. It tests the constructors, the static variables,
+	the operators, the fluxes and the Riemann solvers.
+*/
 
 /* Include required C++ libraries. */
 // None

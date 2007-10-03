@@ -1,7 +1,7 @@
-/****************** Euler3DPolytropicState.h **************************
-This class defines the state variables and constructors for the 
-Euler3D Polytropic class.
-***********************************************************************/
+/*! \file Euler3DPolytropicState.h
+ * 	\brief	This file defines the state classes for 
+ *			Euler3D Polytropic flows.
+ */
 
 #ifndef _EULER3D_POLYTROPIC_STATE_INCLUDED 
 #define _EULER3D_POLYTROPIC_STATE_INCLUDED
@@ -49,9 +49,8 @@ using namespace std;
 
 /* Define the classes. */
 
+/*! Number of variables in Euler 3D*/
 #define	NUM_VAR_EULER3D    5
-
-class Euler3D_Polytropic_cState;
 
 /**********************************************************************
  * Class: Euler3D_Polytropic_pState                                   *
@@ -134,7 +133,7 @@ class Euler3D_Polytropic_cState;
  *                                                                    *
  **********************************************************************/
 
-/*********************************************************
+/********************************************************
 
 
 Density:   rho  kg/m^3
@@ -157,395 +156,372 @@ Thermal Conductivity:            k   N/(s*K)  W.(m*K)
 
 ***********************************************************
 ***********************************************************/
+
+/*! \brief This is the primitive state class for Euler 3D Polytropic flows.
+ *
+ *	This class contains the primitive variables and memberfunctions.
+ *	It also contains the approximate riemann solvers.
+ */
 class Euler3D_Polytropic_pState{
 	
   public: 
-	static int num_vars;
-	double		   rho;		// Density
-	Vector3D	     v;		// Velocity
-	double		     p;		// Pressure
-	static double    g;		// Specific heat ratio.
-	static double  gm1;		// g-1
-	static double gm1i;		// 1/(g-1)
-	static double    R;		// Gas constant.
+	static int num_vars;	//!< Number of variables 
+	double		   rho;		//!< Density \f$ \rho \f$ 
+	Vector3D	     v;		//!< Velocity \f$ v \f$ 
+	double		     p;		//!< Pressure \f$ p \f$ 
+	static double    g;		//!< Specific heat ratio \f$ \gamma \f$ 
+	static double  gm1;		//!< \f$ \gamma - 1 \f$ 
+	static double gm1i;		//!< \f$ \frac{1}{\gamma-1} \f$ 
+	static double    R;		//!< Gas constant \f$ R \f$ 
 
    /*
 	* Constructors
 	* ------------
 	*/
 	
-	// Creation constructor
+	//! Creation constructor 
 	Euler3D_Polytropic_pState();
 	
-	// Copy constructor
+	//! Copy constructor 
 	Euler3D_Polytropic_pState(const Euler3D_Polytropic_pState &W);
 	
-	// Assignment constructors
+	//! Assignment constructor 
 	Euler3D_Polytropic_pState(const double &d, 
 							  const Vector3D &V, 
 							  const double &pre);
-	
+	//! Assignment constructor 
 	Euler3D_Polytropic_pState(const double &d, 
 							  const double &vx, const double &vy, const double &vz, 
 							  const double &pre);
-	
+	//! Assignment constructor 
 	Euler3D_Polytropic_pState(const Euler3D_Polytropic_cState &U);
 	
-   /* 
-	* Useful operators 
-	* ---------------- 
-	*/
+    /** @name Useful operators */
+	/*        ---------------- */
+	//@{
 	
-	// Return the number of variables.
+	//! Return the number of variables.
 	int NumVar(void) {
 		return NUM_VAR_EULER3D;
 	}
 	
-	// Copy operator.
+	//! Copy operator.
+	/*! Set this primitive state to a given primitive state */
 	void Copy(const Euler3D_Polytropic_pState &W) {
 		rho = W.rho;	v = W.v;	p = W.p;
 	}
 	
-	// Vacuum operator.
+	//! Vacuum operator.
+	/*! Set this primitive state to vacuum state */
 	void Vacuum(void) {
 		rho = ZERO;		v = Vector3D_ZERO;		p = ZERO;
 	}
 	
-	// Standard atmosphere operator.
+	//! Standard atmosphere operator.
+	/*! Set this primitive state to the standard atmosphere */
 	void Standard_Atmosphere(void) {
 		rho = DENSITY_STDATM;	v.zero();	p = PRESSURE_STDATM;
 	}
 	
-	// Check for unphysical state properties.
+	//! Check for unphysical state properties.
 	int Unphysical_Properties(void) const {
 		if (rho <= ZERO || p <= ZERO || E() <= ZERO)
 			return 1;
 		return 0;
 	}
+	//@}
 	
-   /*
-	* Set static variables 
-	* -------------------- 
-	*/
+    /** @name Set static variables */
+	/*        --------------------	*/
+	//@{
+		
+    void setgas(void);					//!< Set gas to air.
+    void setgas(char *string_ptr);		//!< Set gas.
+	double uo(void);					//!< Total velocity.
+    double T(void);						//!< Temperature.
+	double Rtot(void);					//!< gasconstant. (for compatibility)
+    double e(void);						//!< Specific internal energy.
+    double E(void);						//!< Total energy.
+    double h(void);						//!< Specific enthalpy.
+    double H(void);						//!< Total enthalpy.
+    double a(void);						//!< Sound speed.
+    double a2(void);					//!< Sound speed squared.
+    double M(void);						//!< Mach number.
+    double s(void);						//!< Specific entropy. 
+    Vector3D rhov(void);				//!< Momentum.
+    double rhov(const Vector3D &n);		//!< Momentum in given direction.
+    double To(void);					//!< Stagnation temperature.
+    double po(void);					//!< Stagnation pressure.
+    double ao(void);					//!< Stagnation sound speed.
+    double ho(void);				    //!< Stagnation enthalpy. 
+	//@}
 	
-	// Set gas constants.
-    void setgas(void);
-    void setgas(char *string_ptr);
-
-    // Total velocity.
+	// Same functions with const 
     double uo(void) const;
-    
-    // Temperature.
-    double T(void);
     double T(void) const;
-	
-	// gasconstant. (for compatibility reasons for tecplot output)
-	double Rtot(void);
 	double Rtot(void) const;
-	
-    // Specific internal energy.
-    double e(void);
     double e(void) const;
-
-    // Total energy.
-    double E(void);
     double E(void) const;
-    
-    // Specific enthalpy. 
-    double h(void);
     double h(void) const;
-
-    // Total enthalpy. 
-    double H(void);
     double H(void) const;
-
-    // Sound speed. 
-    double a(void);
     double a(void) const;
-
-    // Sound speed squared. 
-    double a2(void);
     double a2(void) const;
-	
-    // Mach number. 
-    double M(void);
     double M(void) const;
-    
-    // Specific entropy. 
-    double s(void);
     double s(void) const;
-
-    // Momentum. 
-    Vector3D rhov(void);
     Vector3D rhov(void) const;
-    double rhov(const Vector3D &n);
     double rhov(const Vector3D &n) const;
-
-    // Stagnation temperature. 
-    double To(void);
     double To(void) const;
-
-    // Stagnation pressure. 
-    double po(void);
     double po(void) const;
-
-    // Stagnation sound speed. 
-    double ao(void);
     double ao(void) const;
-
-    // Stagnation enthalpy. 
-    double ho(void);
     double ho(void) const;
-  
-   /* 
-    * Conserved solution state. 
-    * -------------------------
-    */
+	
+	
+    /** @name Conserved solution state. */ 
+    /*        ------------------------- */
+	//! Convert primitive solution state to conservative solution state
+	//@{
     Euler3D_Polytropic_cState U(void);
-    Euler3D_Polytropic_cState U(void) const;
     Euler3D_Polytropic_cState U(const Euler3D_Polytropic_pState &W);
+	//@}
+	// same functions with const
+	Euler3D_Polytropic_cState U(void) const;
+
     
-   /* 
-	* Fluxes and Jacobians
-	* --------------------
-	*/
-	
-	// x-direction
-	Euler3D_Polytropic_cState F(void);
-    Euler3D_Polytropic_cState F(void) const;
-    Euler3D_Polytropic_cState F(const Euler3D_Polytropic_pState &W);
-	void dFdU(DenseMatrix &dFdU);
-	void dFdU(DenseMatrix &dFdU) const;
-	void dFdU(DenseMatrix &dFdU, const Euler3D_Polytropic_pState &W);
-	
-	Euler3D_Polytropic_cState Fx(void);
+    /** @name Fluxes */
+	/*        ------ */
+	//@{
+	Euler3D_Polytropic_cState Fx(void);				//!< x-direction Flux
+	Euler3D_Polytropic_cState Fy(void);				//!< y-direction Flux
+	Euler3D_Polytropic_cState Fz(void);				//!< z-direction Flux
+	//@}
+	//same functions with const
     Euler3D_Polytropic_cState Fx(void) const;
-    Euler3D_Polytropic_cState Fx(const Euler3D_Polytropic_pState &W);
-	void dFxdU(DenseMatrix &dFxdU);
+	Euler3D_Polytropic_cState Fx(const Euler3D_Polytropic_pState &W);
+	Euler3D_Polytropic_cState Fy(void) const;
+    Euler3D_Polytropic_cState Fy(const Euler3D_Polytropic_pState &W);
+	Euler3D_Polytropic_cState Fz(void) const;
+    Euler3D_Polytropic_cState Fz(const Euler3D_Polytropic_pState &W);
+	
+	
+	/** @name Flux Jacobians */
+	/*        -------------- */
+	//@{
+	void dFxdU(DenseMatrix &dFxdU);			//!< x-direction Flux Jacobian
+	void dFydU(DenseMatrix &dFydU);			//!< y-direction Flux Jacobian
+	void dFzdU(DenseMatrix &dFzdU);			//!< z-direction Flux Jacobian
+	//@}
+	//same functions with const
 	void dFxdU(DenseMatrix &dFxdU) const;
 	void dFxdU(DenseMatrix &dFxdU, const Euler3D_Polytropic_pState &W);
-	
-	// y-direction
-	Euler3D_Polytropic_cState Fy(void);
-    Euler3D_Polytropic_cState Fy(void) const;
-    Euler3D_Polytropic_cState Fy(const Euler3D_Polytropic_pState &W);
-	void dFydU(DenseMatrix &dFydU);
 	void dFydU(DenseMatrix &dFydU) const;
 	void dFydU(DenseMatrix &dFydU, const Euler3D_Polytropic_pState &W);
-	
-	// z-direction
-	Euler3D_Polytropic_cState Fz(void);
-    Euler3D_Polytropic_cState Fz(void) const;
-    Euler3D_Polytropic_cState Fz(const Euler3D_Polytropic_pState &W);
-	void dFzdU(DenseMatrix &dFzdU);
 	void dFzdU(DenseMatrix &dFzdU) const;
 	void dFzdU(DenseMatrix &dFzdU, const Euler3D_Polytropic_pState &W);
 	
-   /* 
-	* Solution variable Jacobians.
-	* ----------------------------
-	*/
-	
-	// dUdW
-	void dUdW(DenseMatrix &dUdW);
+    /** @name Solution variable Jacobians. */
+	/*        ---------------------------- */
+	//@{
+	void dUdW(DenseMatrix &dUdW);		//!< dUdW
+	void dWdU(DenseMatrix &dWdU);		//!< dWdU
+	//@}
+	// same functions with const
 	void dUdW(DenseMatrix &dUdW) const;
 	void dUdW(DenseMatrix &dUdW, const Euler3D_Polytropic_pState &W);
-	
-	// dWdU
-	void dWdU(DenseMatrix &dWdU);
 	void dWdU(DenseMatrix &dWdU) const;
 	void dWdU(DenseMatrix &dWdU, const Euler3D_Polytropic_pState &W);
 		
-   /* 
-	* Eigenvalues
-	* ----------- 
-	*/
-		
-	// x-direction
-	Euler3D_Polytropic_pState lambda(void);
-    Euler3D_Polytropic_pState lambda(void) const;
-    Euler3D_Polytropic_pState lambda(const Euler3D_Polytropic_pState &W);
-	double lambda(int index);
-	double lambda(int index) const;
-	
-    Euler3D_Polytropic_pState lambda_x(void);
-    Euler3D_Polytropic_pState lambda_x(void) const;
-    Euler3D_Polytropic_pState lambda_x(const Euler3D_Polytropic_pState &W);
-	double lambda_x(int index);
-	double lambda_x(int index) const;
+    /** @name Eigenvalues */
+	/*        ----------- */
+	//@{	
+	Euler3D_Polytropic_pState lambda_x(void);	//!< x-direction eigenvalues
+	double lambda_x(int index);					//!< x-direction eigenvalues
 
-	// y-direction
-	Euler3D_Polytropic_pState lambda_y(void);
-    Euler3D_Polytropic_pState lambda_y(void) const;
-    Euler3D_Polytropic_pState lambda_y(const Euler3D_Polytropic_pState &W);
-	double lambda_y(int index);
-	double lambda_y(int index) const;
+	Euler3D_Polytropic_pState lambda_y(void);	//!< y-direction eigenvalues
+	double lambda_y(int index);					//!< y-direction eigenvalues
 	
-	// z-direction
-	Euler3D_Polytropic_pState lambda_z(void);
+	Euler3D_Polytropic_pState lambda_z(void);	//!< z-direction eigenvalues
+	double lambda_z(int index);					//!< z-direction eigenvalues
+    //@}
+	//same functions with const
+	Euler3D_Polytropic_pState lambda_x(void) const;
+    Euler3D_Polytropic_pState lambda_x(const Euler3D_Polytropic_pState &W);
+	Euler3D_Polytropic_pState lambda_y(void) const;
+    Euler3D_Polytropic_pState lambda_y(const Euler3D_Polytropic_pState &W);
     Euler3D_Polytropic_pState lambda_z(void) const;
     Euler3D_Polytropic_pState lambda_z(const Euler3D_Polytropic_pState &W);
-	double lambda_z(int index);
+	double lambda_x(int index) const;
+	double lambda_y(int index) const;
 	double lambda_z(int index) const;
 
-   /*
-	* Conserved right eigenvector
-	* ---------------------------
-	*/
-	
-	// x-direction
-	Euler3D_Polytropic_cState rc(const int &index);
-	Euler3D_Polytropic_cState rc(const int &index) const;
-	
-	Euler3D_Polytropic_cState rc_x(const int &index);
+
+
+
+	/** @name Conserved right eigenvector */
+	/*        --------------------------- */
+	//@{
+	Euler3D_Polytropic_cState rc_x(const int &index);	//!< x-direction conserved right eigenvector
+	Euler3D_Polytropic_cState rc_y(const int &index);	//!< y-direction conserved right eigenvector
+	Euler3D_Polytropic_cState rc_z(const int &index);	//!< z-direction conserved right eigenvector
+	//@}
+	//same functions with const
 	Euler3D_Polytropic_cState rc_x(const int &index) const;
-	
-	// y-direction
-	Euler3D_Polytropic_cState rc_y(const int &index);
 	Euler3D_Polytropic_cState rc_y(const int &index) const;
-	
-	// z-direction
-	Euler3D_Polytropic_cState rc_z(const int &index);
 	Euler3D_Polytropic_cState rc_z(const int &index) const;
+
 	
-	
-   /*
-	* Primitive left eigenvector
-	* --------------------------
-	*/
-	
-	// x-direction
-	Euler3D_Polytropic_pState lp(const int &index);
-	Euler3D_Polytropic_pState lp(const int &index) const;
-	
-	Euler3D_Polytropic_pState lp_x(const int &index);
+	/** @name  Primitive left eigenvector */
+	/*         -------------------------- */
+	//@{
+	Euler3D_Polytropic_pState lp_x(const int &index);	//!< x-direction primitive left eigenvector
+	Euler3D_Polytropic_pState lp_y(const int &index);	//!< y-direction primitive left eigenvector
+	Euler3D_Polytropic_pState lp_z(const int &index);	//!< z-direction primitive left eigenvector
+	//@}
+	//same functions with const
 	Euler3D_Polytropic_pState lp_x(const int &index) const;
-	
-	// y-direction
-	Euler3D_Polytropic_pState lp_y(const int &index);
 	Euler3D_Polytropic_pState lp_y(const int &index) const;
-	
-	// z-direction
-	Euler3D_Polytropic_pState lp_z(const int &index);
 	Euler3D_Polytropic_pState lp_z(const int &index) const;
-	
-   /*
-	* Primitive right eigenvector
-	* ---------------------------
-	*/
-	
-	// x-direction
-	Euler3D_Polytropic_pState rp(const int &index);
-	Euler3D_Polytropic_pState rp(const int &index) const;
-	
-	Euler3D_Polytropic_pState rp_x(const int &index);
+
+	/** @name Primitive right eigenvector */
+	/*        --------------------------- */
+	//@{
+	Euler3D_Polytropic_pState rp_x(const int &index);	//!< x-direction primitive right eigenvector
+	Euler3D_Polytropic_pState rp_y(const int &index);	//!< y-direction primitive right eigenvector
+	Euler3D_Polytropic_pState rp_z(const int &index);	//!< z-direction primitive right eigenvector
+	//@}
+	//same functions with const
 	Euler3D_Polytropic_pState rp_x(const int &index) const;
-	
-	// y-direction
-	Euler3D_Polytropic_pState rp_y(const int &index);
 	Euler3D_Polytropic_pState rp_y(const int &index) const;
-	
-	// z-direction
-	Euler3D_Polytropic_pState rp_z(const int &index);
 	Euler3D_Polytropic_pState rp_z(const int &index) const;
-		
+
 	
-   /*
-	* Operators.
-	* ----------
-	*/
-	
+    /** @name Operators. */
+	/*        ---------- */
+	//@{
 	// Index operator. 
-	double &operator[](int index);
+	//!  c = W[i]
+	double &operator[](int index);		
 	const double &operator[](int index) const;
 	
     // Binary arithmetic operators. 
-    friend Euler3D_Polytropic_pState operator +(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
-    friend Euler3D_Polytropic_pState operator -(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
-    friend double operator	  				   *(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
-    friend Euler3D_Polytropic_pState operator *(const Euler3D_Polytropic_pState &W, const double &a);
-    friend Euler3D_Polytropic_pState operator *(const double &a, const Euler3D_Polytropic_pState &W);
-    friend Euler3D_Polytropic_pState operator /(const Euler3D_Polytropic_pState &W, const double &a);
+    //! W = W + W
+	friend Euler3D_Polytropic_pState operator +(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
+    //! W = W - W
+	friend Euler3D_Polytropic_pState operator -(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
+    //! c = W * W  (inner product)
+	friend double operator	  				  *(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
+    //! W = W * c
+	friend Euler3D_Polytropic_pState operator *(const Euler3D_Polytropic_pState &W, const double &a);
+    //! W = c * W
+	friend Euler3D_Polytropic_pState operator *(const double &a, const Euler3D_Polytropic_pState &W);
+    //! W = W / c
+	friend Euler3D_Polytropic_pState operator /(const Euler3D_Polytropic_pState &W, const double &a);
+	//! W = W ^ W
 	friend Euler3D_Polytropic_pState operator ^(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
 
     // Unary arithmetic operators. 
-    friend Euler3D_Polytropic_pState operator +(const Euler3D_Polytropic_pState &W);
-    friend Euler3D_Polytropic_pState operator -(const Euler3D_Polytropic_pState &W);
+    //! W = +W
+	friend Euler3D_Polytropic_pState operator +(const Euler3D_Polytropic_pState &W);
+    //! W = -W 
+	friend Euler3D_Polytropic_pState operator -(const Euler3D_Polytropic_pState &W);
 
     // Shortcut arithmetic operators. 
-    Euler3D_Polytropic_pState &operator +=(const Euler3D_Polytropic_pState &W);
-    Euler3D_Polytropic_pState &operator -=(const Euler3D_Polytropic_pState &W);
+    //! W += W
+	Euler3D_Polytropic_pState &operator +=(const Euler3D_Polytropic_pState &W);
+    //! W -= W
+	Euler3D_Polytropic_pState &operator -=(const Euler3D_Polytropic_pState &W);
+	//! W *= W
 	Euler3D_Polytropic_pState &operator *=(const double &a);
+	//! W /= W
 	Euler3D_Polytropic_pState &operator /=(const double &a);
 
     // Relational operators. 
+	//! W == W
     friend int operator ==(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
-    friend int operator !=(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
+    //! W != W
+	friend int operator !=(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
 
     // Input-output operators. 
+	//! ostream << W
     friend ostream& operator << (ostream &out_file, const Euler3D_Polytropic_pState &W);
-    friend istream& operator >> (istream &in_file,  Euler3D_Polytropic_pState &W); 
+    //! istream >> W
+	friend istream& operator >> (istream &in_file,  Euler3D_Polytropic_pState &W); 
+	//@}
 	
-	
-	/* 
-	 * Flux Functions
-	 * --------------
-	 */
-	
-	static Euler3D_Polytropic_pState RoeAverage(const Euler3D_Polytropic_pState &Wl,
-												const Euler3D_Polytropic_pState &Wr);
-	static Euler3D_Polytropic_pState RoeAverage(const Euler3D_Polytropic_cState &Ul,
-												const Euler3D_Polytropic_cState &Ur);
+	/** @name Approximate Riemann solvers */
+	/*        --------------------------- */
+	//@{
+	//! HLLE flux function in x-direction given 2 primitive states
 	static Euler3D_Polytropic_cState FluxHLLE_x(const Euler3D_Polytropic_pState &Wl,
 												const Euler3D_Polytropic_pState &Wr);
+	//! HLLE flux function in x-direction given 2 conservative states
 	static Euler3D_Polytropic_cState FluxHLLE_x(const Euler3D_Polytropic_cState &Ul,
 												const Euler3D_Polytropic_cState &Ur);
+	//! HLLE flux function in y-direction given 2 primitive states
 	static Euler3D_Polytropic_cState FluxHLLE_y(const Euler3D_Polytropic_pState &Wl,
 												const Euler3D_Polytropic_pState &Wr);
+	//! HLLE flux function in y-direction given 2 conservative states
 	static Euler3D_Polytropic_cState FluxHLLE_y(const Euler3D_Polytropic_cState &Ul,
 												const Euler3D_Polytropic_cState &Ur);
+	//! HLLE flux function in z-direction given 2 primitive states
 	static Euler3D_Polytropic_cState FluxHLLE_z(const Euler3D_Polytropic_pState &Wl,
 												const Euler3D_Polytropic_pState &Wr);
+	//! HLLE flux function in z-direction given 2 conservative states
 	static Euler3D_Polytropic_cState FluxHLLE_z(const Euler3D_Polytropic_cState &Ul,
 												const Euler3D_Polytropic_cState &Ur);
+	//! HLLE flux function in n-direction given 2 primitive states and a direction
 	static Euler3D_Polytropic_cState FluxHLLE_n(const Euler3D_Polytropic_pState &Wl,
 												const Euler3D_Polytropic_pState &Wr,
 												const Vector3D &norm_dir);
+	//! HLLE flux function in n-direction given 2 conservative states and a direction
 	static Euler3D_Polytropic_cState FluxHLLE_n(const Euler3D_Polytropic_cState &Ul,
 												const Euler3D_Polytropic_cState &Ur,
 												const Vector3D &norm_dir);
 	
+	//! Roe flux function in x-direction given 2 primitive states
 	static Euler3D_Polytropic_cState FluxRoe_x(const Euler3D_Polytropic_pState &Wl, 
 											   const Euler3D_Polytropic_pState &Wr);
+	//! Roe flux function in x-direction given 2 conservative states
 	static Euler3D_Polytropic_cState FluxRoe_x(const Euler3D_Polytropic_cState &Ul, 
 											   const Euler3D_Polytropic_cState &Ur);
+	//! Roe flux function in y-direction given 2 primitive states
 	static Euler3D_Polytropic_cState FluxRoe_y(const Euler3D_Polytropic_pState &Wl, 
 											   const Euler3D_Polytropic_pState &Wr);
+	//! Roe flux function in y-direction given 2 conservative states
 	static Euler3D_Polytropic_cState FluxRoe_y(const Euler3D_Polytropic_cState &Ul, 
 											   const Euler3D_Polytropic_cState &Ur);
+	//! Roe flux function in y-direction given 2 primitive states
 	static Euler3D_Polytropic_cState FluxRoe_z(const Euler3D_Polytropic_pState &Wl, 
 											   const Euler3D_Polytropic_pState &Wr);
+	//! Roe flux function in y-direction given 2 conservative states
 	static Euler3D_Polytropic_cState FluxRoe_z(const Euler3D_Polytropic_cState &Ul, 
 											   const Euler3D_Polytropic_cState &Ur);
+	//! Roe flux function in n-direction given 2 primitive states and a direction
 	static Euler3D_Polytropic_cState FluxRoe_n(const Euler3D_Polytropic_pState &Wl,
 											   const Euler3D_Polytropic_pState &Wr,
 											   const Vector3D &norm_dir);
+	//! Roe flux function in n-direction given 2 conservative states and a direction
 	static Euler3D_Polytropic_cState FluxRoe_n(const Euler3D_Polytropic_cState &Ul,
 											   const Euler3D_Polytropic_cState &Ur,
 											   const Vector3D &norm_dir);
+	//@}
+	//! Roe Average given 2 primitive states
+	static Euler3D_Polytropic_pState RoeAverage(const Euler3D_Polytropic_pState &Wl,
+												const Euler3D_Polytropic_pState &Wr);
+	//! Roe Average given 2 conservative states
+	static Euler3D_Polytropic_pState RoeAverage(const Euler3D_Polytropic_cState &Ul,
+												const Euler3D_Polytropic_cState &Ur);
 	
 	friend Euler3D_Polytropic_pState HartenFixNeg(const Euler3D_Polytropic_pState  &lambda_a,
 												  const Euler3D_Polytropic_pState  &lambda_l,
 												  const Euler3D_Polytropic_pState  &lambda_r);
+	
 	friend Euler3D_Polytropic_pState HartenFixPos(const Euler3D_Polytropic_pState  &lambda_a,
 												  const Euler3D_Polytropic_pState  &lambda_l,
-												   const Euler3D_Polytropic_pState  &lambda_r);
+												  const Euler3D_Polytropic_pState  &lambda_r);
 	
-	
-	/*
-	 * Boundary Conditions
-	 * -------------------
-	 */
+	/** @name Boundary Conditions */
+	/*        ------------------- */
+	//@{
 	static Euler3D_Polytropic_pState Reflect(const Euler3D_Polytropic_pState &W, const Vector3D &norm_dir);
 	static Euler3D_Polytropic_pState Moving_Wall(
 										 const Euler3D_Polytropic_pState &Win,
@@ -560,283 +536,232 @@ class Euler3D_Polytropic_pState{
 									 const Vector3D &norm_dir,
 									 const Vector3D &pressure_gradient,
 									 const int &TEMPERATURE_BC_FLAG);
+	//@}
     
 };
 
-/********************************************************
- * Class: Euler3D_Polytropic_cState                     *
- *                                                      *
- * Member functions                                     *
- *      d       -- Return density.                      *
- *      dv      -- Return momentum.                     *
- *      E       -- Return total energy.                 *
- *      g       -- Return specific heat ratio.          *
- *      gm1     -- Return g-1.                          *
- *      gm1i    -- Return 1/(g-1).                      *
- *      R       -- Return gas constant.                 *
- *      setgas  -- Set gas constants.                   *
- *      v       -- Return flow velocity.                *
- *      p       -- Return pressure.                     *
- *      T       -- Return temperature.                  *
- *      e       -- Return specific internal energy.     *
- *      h       -- Return specific enthalpy.            *
- *      H       -- Return total enthalpy.               *
- *      a       -- Return sound speed.                  *
- *      a2      -- Return sound speed square.           *
- *      M       -- Return Mach number.                  *
- *      s       -- Return specific entropy.             *
- *      To      -- Return stagnation temperature.       *
- *      po      -- Return stagnation pressure.          *
- *      ao      -- Return stagnation sound speed.       *
- *      ho      -- Return stagnation enthalpy.          *
- *      W       -- Return primitive solution state.     *
- *                                                      *
- * Member operators                                     *
- *      U -- a primitive solution state                 *
- *      c -- a scalar (double)                          *
- *                                                      *
- * U = U;                                               *
- * c = U[i];                                            *
- * U = U + U;                                           *
- * U = U - U;                                           *
- * c = U * U; (inner product)                           *
- * U = c * U;                                           *
- * U = U * c;                                           *
- * U = U / c;                                           *
- * U = +U;                                              *
- * U = -U;                                              *
- * U += U;                                              *
- * U -= U;                                              *
- * U == U;                                              *
- * U != U;                                              *
- * cout << U; (output function)                         *
- * cin  >> U; (input function)                          *
- *                                                      *
- ********************************************************/
+
+/*! \brief This is the conserved state class for Euler 3D Polytropic flows.
+ *
+ * This class contains the conserved variables and memberfunctions
+ */
 class Euler3D_Polytropic_cState{
   
   public:
-    double        rho;   // Density.
-    Vector3D     rhov;   // Momentum.
-    double          E;   // Total Energy.
-    static double   g;   // Specific heat ratio.
-    static double gm1;   // g-1
-    static double gm1i;  // 1/(g-1)
-    static double   R;   // Gas constant.
-	static int num_vars; // Number of variables.
+    double        rho;   //!< Density.
+    Vector3D     rhov;   //!< Momentum.
+    double          E;   //!< Total Energy.
+    static double   g;   //!< Specific heat ratio.
+    static double gm1;   //!< g-1
+    static double gm1i;  //!< 1/(g-1)
+    static double   R;   //!< Gas constant.
+	static int num_vars; //!< Number of variables.
 	
 	/*
 	 * Constructors
 	 * ------------
 	 */
 	
-	// Creation constructor
+	//! Creation constructor
 	Euler3D_Polytropic_cState();
 	
-	// Copy constructor
+	//! Copy constructor
 	Euler3D_Polytropic_cState(const Euler3D_Polytropic_cState &U);
 	
-	// Assignment constructors
+	//! Assignment constructor
 	Euler3D_Polytropic_cState(const double &d, 
 							  const Vector3D &dv, 
 							  const double &Etotal);
 	
+	//! Assignment constructor
 	Euler3D_Polytropic_cState(const double &d, 
 							  const double &dvx, const double &dvy, const double &dvz, 
 							  const double &Etotal);
 	
+	//! Assignment constructor
 	Euler3D_Polytropic_cState(const Euler3D_Polytropic_pState &W);
 	
-   /* 
-	* Useful operators 
-	* ---------------- 
-	*/
+    /** @name Useful operators */
+	/*        ---------------- */
+	//@{
 	
-	// Return the number of variables.
+	//! Return the number of variables.
 	int NumVar(void) {
 		return NUM_VAR_EULER3D;
 	}
 	
-	// Copy operator.
+	//! Copy operator.
 	void Copy(const Euler3D_Polytropic_cState &U) {
 		rho = U.rho;	rhov = U.rhov;		E = U.E;
 	}
 	
-	// Vacuum operator.
+	//! Vacuum operator.
 	void Vacuum(void) {
 		rho = ZERO;		rhov = Vector3D_ZERO;		E = ZERO;
 	}
 	
-	// Standard atmosphere operator.
+	//! Standard atmosphere operator.
 	void Standard_Atmosphere(void) {
 		rho = DENSITY_STDATM;	rhov.zero();	E = PRESSURE_STDATM/(GAMMA_AIR-ONE);
 	}
 	
-	// Check for unphysical state properties.
+	//! Check for unphysical state properties.
 	int Unphysical_Properties(void) const {
 		if (rho <= ZERO || E <= ZERO || e() <= ZERO)
 			return 1;
 		return 0;
 	}
-	
+	//@}
         
-   /*
-	* Set static variables 
-	* -------------------- 
-	*/
-	
-    // Set gas constants. 
-    void setgas(void);
-    void setgas(char *string_ptr);
 
-    // Flow velocity. 
-    Vector3D v(void);
-    Vector3D v(void) const;
-    double v(const Vector3D &n);
-    double v(const Vector3D &n) const;
-    
-    // Pressure. 
-    double p(void);
+
+	/** @name Set static variables */ 
+	/*        -------------------- */
+	//@{
+    void setgas(void);						//!< Set gas to air 
+    void setgas(char *string_ptr);			//!< Set gas constants
+    Vector3D v(void);						//!< Flow velocity
+    double v(const Vector3D &n);			//!< Flow velocity in direction n
+	double p(void);							//!< Pressure
+	double T(void);							//!< Temperature
+    double e(void);							//!< Specific internal energy
+    double h(void);							//!< Specific enthalpy
+    double H(void);							//!< Total enthalpy
+    double a(void);							//!< Sound speed
+    double a2(void);						//!< Sound speed squared
+    double M(void);							//!< Mach number
+    double s(void);							//!< Specific entropy
+    double To(void);						//!< Stagnation temperature
+    double po(void);						//!< Stagnation pressure
+    double ao(void);						//!< Stagnation sound speed
+    double ho(void);						//!< Stagnation enthalpy
+	//@}
+	//same functions with const
+	Vector3D v(void) const;
+	double v(const Vector3D &n) const;
     double p(void) const;
-
-    // Temperature. 
-    double T(void);
-    double T(void) const;
-
-    // Specific internal energy. 
-    double e(void);
+	double T(void) const;
     double e(void) const;
-
-    // Specific enthalpy. 
-    double h(void);
     double h(void) const;
-
-    // Total enthalpy. 
-    double H(void);
-    double H(void) const;
-
-    // Sound speed. 
-    double a(void);
-    double a(void) const;
-
-    // Sound speed squared. 
-    double a2(void);
+	double H(void) const;
+	double a(void) const;
     double a2(void) const;
-
-    // Mach number. 
-    double M(void);
     double M(void) const;
-
-    // Specific entropy. 
-    double s(void);
     double s(void) const;
-
-    // Stagnation temperature. 
-    double To(void);
     double To(void) const;
-
-    // Stagnation pressure. 
-    double po(void);
     double po(void) const;
-
-    // Stagnation sound speed. 
-    double ao(void);
     double ao(void) const;
-
-    // Stagnation enthalpy. 
-    double ho(void);
     double ho(void) const;
 
-   /*
-	* Primitive solution state. 
-	* -------------------------
-	*/
-	
+	/** @name Primitive solution state */ 
+	/*        ------------------------ */
+	//@{
+	//! Convert primitive solution state to conservative solution state
     Euler3D_Polytropic_pState W(void);
-    Euler3D_Polytropic_pState W(void) const;
     Euler3D_Polytropic_pState W(const Euler3D_Polytropic_cState &U);
-    
-   /* 
-	* Fluxes and Jacobians
-	* --------------------
-	*/
+	//@}
+	//same functions with const
+	Euler3D_Polytropic_pState W(void) const;
+
 	
-	// x-direction
-	Euler3D_Polytropic_cState Fx(void);
+	
+	
+	/** @name Fluxes */
+	/*        ------ */
+	//@{
+	Euler3D_Polytropic_cState Fx(void);				//!< x-direction Flux
+	Euler3D_Polytropic_cState Fy(void);				//!< y-direction Flux
+	Euler3D_Polytropic_cState Fz(void);				//!< z-direction Flux
+	//@}
+	//same functions with const
     Euler3D_Polytropic_cState Fx(void) const;
-    Euler3D_Polytropic_cState Fx(const Euler3D_Polytropic_cState &U);
-	void dFxdU(DenseMatrix &dFxdU);
+	Euler3D_Polytropic_cState Fx(const Euler3D_Polytropic_cState &U);
+	Euler3D_Polytropic_cState Fy(void) const;
+    Euler3D_Polytropic_cState Fy(const Euler3D_Polytropic_cState &U);
+	Euler3D_Polytropic_cState Fz(void) const;
+    Euler3D_Polytropic_cState Fz(const Euler3D_Polytropic_cState &U);
+	
+	
+	/** @name Flux Jacobians */
+	/*        -------------- */
+	//@{
+	void dFxdU(DenseMatrix &dFxdU);			//!< x-direction Flux Jacobian
+	void dFydU(DenseMatrix &dFydU);			//!< y-direction Flux Jacobian
+	void dFzdU(DenseMatrix &dFzdU);			//!< z-direction Flux Jacobian
+	//@}
+	//same functions with const
 	void dFxdU(DenseMatrix &dFxdU) const;
 	void dFxdU(DenseMatrix &dFxdU, const Euler3D_Polytropic_cState &U);
-	
-	// y-direction
-	Euler3D_Polytropic_cState Fy(void);
-    Euler3D_Polytropic_cState Fy(void) const;
-    Euler3D_Polytropic_cState Fy(const Euler3D_Polytropic_cState &U);
-	void dFydU(DenseMatrix &dFydU);
 	void dFydU(DenseMatrix &dFydU) const;
 	void dFydU(DenseMatrix &dFydU, const Euler3D_Polytropic_cState &U);
-	
-	// z-direction
-	Euler3D_Polytropic_cState Fz(void);
-    Euler3D_Polytropic_cState Fz(void) const;
-    Euler3D_Polytropic_cState Fz(const Euler3D_Polytropic_cState &U);
-	void dFzdU(DenseMatrix &dFzdU);
 	void dFzdU(DenseMatrix &dFzdU) const;
 	void dFzdU(DenseMatrix &dFzdU, const Euler3D_Polytropic_cState &U);
 	
-   /* 
-	* Solution variable Jacobians.
-	* ----------------------------
-	*/
-	
-	// dUdW
-	void dUdW(DenseMatrix &dUdW);
+    /** @name Solution variable Jacobians. */
+	/*        ---------------------------- */
+	//@{
+	void dUdW(DenseMatrix &dUdW);		//!< dUdW
+	void dWdU(DenseMatrix &dWdU);		//!< dWdU
+	//@}
+	// same functions with const
 	void dUdW(DenseMatrix &dUdW) const;
 	void dUdW(DenseMatrix &dUdW, const Euler3D_Polytropic_cState &U);
-	
-	// dWdU
-	void dWdU(DenseMatrix &dWdU);
 	void dWdU(DenseMatrix &dWdU) const;
 	void dWdU(DenseMatrix &dWdU, const Euler3D_Polytropic_cState &U);
 	
 	
-   /*
-	* Operators.
-	* ----------
-	*/
-	
+    /** @name Operators. */
+	/*        ---------- */
+	//@{
 	// Index operator. 
-    double& operator[](int index);
-    const double& operator[](int index) const;
-
-    // Binary arithmetic operators.
+	//!  c = U[i]
+	double &operator[](int index);		
+	const double &operator[](int index) const;
+	
+    // Binary arithmetic operators. 
+    //! U = U + U
     friend Euler3D_Polytropic_cState operator +(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
-    friend Euler3D_Polytropic_cState operator -(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
-    friend double operator					   *(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
-    friend Euler3D_Polytropic_cState operator *(const Euler3D_Polytropic_cState &U, const double &a);
-    friend Euler3D_Polytropic_cState operator *(const double &a, const Euler3D_Polytropic_cState &U);
-    friend Euler3D_Polytropic_cState operator /(const Euler3D_Polytropic_cState &U, const double &a);
+    //! U = U - U
+	friend Euler3D_Polytropic_cState operator -(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
+    //! c = U * U (inner product)
+	friend double operator					   *(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
+    //! U = U * c
+	friend Euler3D_Polytropic_cState operator *(const Euler3D_Polytropic_cState &U, const double &a);
+    //! U = c * U
+	friend Euler3D_Polytropic_cState operator *(const double &a, const Euler3D_Polytropic_cState &U);
+    //! U = U / c
+	friend Euler3D_Polytropic_cState operator /(const Euler3D_Polytropic_cState &U, const double &a);
+	//! U = U ^ U
 	friend Euler3D_Polytropic_cState operator ^(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
 
     // Unary arithmetic operators.
+	//! U = +U
     friend Euler3D_Polytropic_cState operator +(const Euler3D_Polytropic_cState &U);
+	//! U = -U
     friend Euler3D_Polytropic_cState operator -(const Euler3D_Polytropic_cState &U);
 
     // Shortcut arithmetic operators.
-    Euler3D_Polytropic_cState& operator +=(const Euler3D_Polytropic_cState &U);
-    Euler3D_Polytropic_cState& operator -=(const Euler3D_Polytropic_cState &U);
+    //! U += U
+	Euler3D_Polytropic_cState& operator +=(const Euler3D_Polytropic_cState &U);
+    //! U -= U
+	Euler3D_Polytropic_cState& operator -=(const Euler3D_Polytropic_cState &U);
+	//! U *= U
 	Euler3D_Polytropic_cState& operator *=(const double &a);
+	//! U /= U
 	Euler3D_Polytropic_cState& operator /=(const double &a);
     
     // Relational operators.
+	//! U == U
     friend int operator ==(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
-    friend int operator !=(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
+    //! U != U
+	friend int operator !=(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
     
     // Input-output operators.
-    friend ostream& operator << (ostream &out_file, const Euler3D_Polytropic_cState &U);
-    friend istream& operator >> (istream &in_file,  Euler3D_Polytropic_cState &U);
-       
+    //! ostream << U
+	friend ostream& operator << (ostream &out_file, const Euler3D_Polytropic_cState &U);
+	//! istream >> U
+	friend istream& operator >> (istream &in_file,  Euler3D_Polytropic_cState &U);
+	//@}
 };
 
 
@@ -845,29 +770,17 @@ class Euler3D_Polytropic_cState{
 /* -------------------------------------------------------------------------- *
  *                     Useful 3D Euler state constants.                       *
  * -------------------------------------------------------------------------- */
+/** @name Usefule 3D Euler state constants. */
+//@{
+//! Standard atmosphere primitive state
 const Euler3D_Polytropic_pState Euler3D_W_STDATM(DENSITY_STDATM,
 				      Vector3D_ZERO, PRESSURE_STDATM);
+//! Vacuum primitive state
 const Euler3D_Polytropic_pState Euler3D_W_VACUUM(ZERO, Vector3D_ZERO, ZERO);
+//! Standard atmosphere conservative state
 const Euler3D_Polytropic_cState Euler3D_U_STDATM(Euler3D_W_STDATM);
+//! Vacuum conservative state
 const Euler3D_Polytropic_cState Euler3D_U_VACUUM(Euler3D_W_VACUUM);
-
-///* -------------------------------------------------------------------------- *
-// *                Flux functions in Euler3DPolytropicState.cc                 *
-// * -------------------------------------------------------------------------- */
-//
-//extern Euler3D_Polytropic_pState RoeAverage(const Euler3D_Polytropic_pState &Wl,
-//	      	                 const Euler3D_Polytropic_pState &Wr);
-//extern Euler3D_Polytropic_cState FluxHLLE_x(const Euler3D_Polytropic_pState &Wl,
-//	      	                 const Euler3D_Polytropic_pState &Wr);
-//extern Euler3D_Polytropic_cState FluxHLLE_x(const Euler3D_Polytropic_cState &Ul,
-//	      	                 const Euler3D_Polytropic_cState &Ur);
-//extern Euler3D_Polytropic_cState FluxHLLE_n(const Euler3D_Polytropic_pState &Wl,
-//	      	                 const Euler3D_Polytropic_pState &Wr,
-//                                 const Vector3D &norm_dir);
-//extern Euler3D_Polytropic_cState FluxHLLE_n(const Euler3D_Polytropic_cState &Ul,
-//	      	                 const Euler3D_Polytropic_cState &Ur,
-//                                 const Vector3D &norm_dir);
-//extern Euler3D_Polytropic_pState Reflect(const Euler3D_Polytropic_pState &W,
-//	      	              const Vector3D &norm_dir);
+//@}
 
 #endif /* _EULER3D_POLYTROPIC_STATE_INCLUDED  */
