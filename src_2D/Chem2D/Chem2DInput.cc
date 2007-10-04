@@ -2358,7 +2358,7 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       Get_Next_Input_Control_Parameter(IP);
       if (strcmp(IP.Next_Control_Parameter,"RTE") == 0)
 	IP.Radiation = RADIATION_RTE;
-      if (strcmp(IP.Next_Control_Parameter,"Optically_Thin") == 0)
+      else if (strcmp(IP.Next_Control_Parameter,"Optically_Thin") == 0)
 	IP.Radiation = RADIATION_OPTICALLY_THIN;
       else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0)
 	IP.Radiation = OFF;

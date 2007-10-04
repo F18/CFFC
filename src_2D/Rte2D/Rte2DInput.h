@@ -271,10 +271,28 @@ class Rte2D_Input_Parameters{
   int Number_of_Processors, Number_of_Blocks_Per_Processor;
   //@}
 
+  //@{ @name Constructor and destructor.
+  //! Default constructor.
+  Rte2D_Input_Parameters()
+  { ICEMCFD_FileNames = NULL; }
+
+
+  //! Default constructor.
+  ~Rte2D_Input_Parameters(){
+ 
+    // delete filenames
+    for (int i = 0; i < 3; i++) { delete[] ICEMCFD_FileNames[i]; }
+    delete[] ICEMCFD_FileNames; ICEMCFD_FileNames=NULL;
+
+    //delete State class memory
+    Rte2D_State::DeallocateStatic();
+    Medium2D_State::DeallocateStatic();
+  }
+  //@}
 
   //@{ @name Member function to setup conserved state Uo and medium state Mo
   void SetupInputState();
-
+  //@}
 
   //@{ @name Input-output operators:
   friend ostream &operator << (ostream &out_file, const Rte2D_Input_Parameters &IP);

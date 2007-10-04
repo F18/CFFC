@@ -68,10 +68,6 @@ void Rte2DSolver::DeallocateSoln() {
     MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk, 
 					  Input_Parameters.Number_of_Blocks_Idir, 
 					  Input_Parameters.Number_of_Blocks_Jdir);
-  
-  // delete all static variables
-  Rte2D_State::DeallocateStatic();
-  Medium2D_State::DeallocateStatic();
 
 }
 

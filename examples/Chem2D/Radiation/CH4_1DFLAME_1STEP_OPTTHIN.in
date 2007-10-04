@@ -1,0 +1,157 @@
+# 1D Premixed Flame Test Case
+#
+########################
+# Set solver parameters
+########################
+Time_Integration_Type=
+Multistage_Optimal_Smoothing
+N_Stage=
+4
+##############################
+Freeze_Limiter =
+1
+# Relative to L2 Norm, so if rhoU will be much
+# higher than say just rho??
+Freeze_Limiter_Residual_Level = 
+0.1
+# 1 rho, 4 energy (follows index operator for pstate)
+#Residual_Variable =
+#1
+############################
+# NKS PARAMETERS
+############################
+#----------- GMRES -------------
+GMRES_Overlap =
+0
+GMRES_Initial_Tolerance =
+2.0e-02
+GMRES_Final_Tolerance =
+2.0e-02
+GMRES_Block_Preconditioner = 
+ILUK
+#( ILUK, Diagonal)
+GMRES_ILUK_Level_of_Fill = 
+4
+GMRES_Normalization=
+ON
+GMRES_Check=
+OFF
+#---------- NK -----------------
+NKS_Overall_Tolerance =
+1.0e-12
+# Implict Euler Startup
+NKS_Finite_Time_Step =
+ON
+NKS_Finite_Time_Step_Initial_CFL =
+10.0
+NKS_Finite_Time_Step_Max_CFL =
+1000.0
+#---------- Precon ------------
+Jacobian_Order =
+Second_Order_Diamond_Path_with_Roe
+##############################
+#
+##############################
+# 0 for steady, 1 unsteady
+Time_Accurate= 
+0
+# 0,1 3(Pre),4(SI),5(SI&Pre)
+Local_Time_Stepping=
+5
+# Least_Squares, Green_Gauss
+Reconstruction_Type=
+Green_Gauss
+#
+Limiter_Type= 
+Venkatakrishnan
+Flux_Function_Type=
+Roe
+#########################
+Flow_Type=
+Laminar
+Viscous_Flux_Evaluation_Type=
+Diamond_Path_Green_Gauss
+#########################
+# Set initial conditions
+#########################
+ICs_Type= 
+1DPremixedFlame
+Grid_Type=
+1DFlame
+Smooth_Quad_Block =
+OFF
+Mach_Number_Reference=
+0.1 0.1 
+Box_Width=
+0.02
+Box_Height=
+0.002
+Number_of_Cells_Idir= 
+100
+Number_of_Cells_Jdir=
+10
+Number_of_Blocks_Idir= 
+1
+Number_of_Blocks_Jdir=
+1
+###############################
+# Set time stepping parameters
+###############################
+CFL_Number=
+0.75
+Maximum_Number_of_Time_Steps=
+10
+####### Implicit ###############
+Maximum_Number_of_NKS_Iterations =
+10
+Maximum_Number_of_GMRES_Iterations=
+100
+GMRES_Restart =
+100
+###############################
+Output_File_Name= 
+1STEP_CH4_1DFLAME
+Restart_Solution_Save_Frequency=
+2000
+##################################
+# Chem2D Parameters
+##################################
+Reaction_Mechanism=
+CH4_1STEP
+Schmidt_Numbers=
+0.73 0.8 1.0 0.66 1.0 
+Mass_Fractions=
+0.0551 0.2202 0.0 0.0 0.7247 
+#################################
+# Non STD_ATM properties
+# T(K) and P(kPa)
+#################################
+Temperature=
+298.0
+##################################
+# Radiation Parameters
+##################################
+Radiation=
+Optically_Thin
+#################################
+# Execute program
+#################################
+Execute
+# The next section is used by the 
+# postprocessor , until terminate
+#######################
+# Write output
+#######################
+Write_Output
+Write_Output_Cells
+#Write_Output_Mesh
+#Write_Mesh_Definition
+#Write_Output_Mesh_Cells
+#Write_Output_Mesh_Nodes
+Write_Restart
+Postprocess_Radiation
+#
+#############################
+########## TERMINATE ########
+Terminate
+

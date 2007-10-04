@@ -55,6 +55,9 @@ double Chem2D_cState::f_beta_star = ONE;
 double Chem2D_cState::Coeff_edm = ZERO;
 double Chem2D_cState::y_sublayer = 2.50;
 
+//SNBCK data object
+SNBCK* Chem2D_pState::SNBCKdata=NULL;
+
 /**********************************************************************
  * Chem2D_pState -- Create storage and assign turbulence static       *
  *                  variables.                                        *

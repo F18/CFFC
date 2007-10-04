@@ -15,9 +15,6 @@
 /* Include header file to compute flame jump conditions */
 #include "../Reactions/FlameJump.h"
 
-/* include SNBCK for radiation calcs*/
-#include "../Physics/SNBCK/SNBCK.h"
-
 /*************************************************************************
 * Chem2D_Quad_Block -- Single Block External Subroutines.                *
 **************************************************************************/
@@ -7916,8 +7913,13 @@ void Radiation_Source_Eval( Chem2D_Quad_Block &SolnBlk,
   double Temperature, Pressure;
   double xCO, xH2O, xCO2, xO2;
   static const double fsoot = ZERO;  // no soot for now
-  static SNBCK SNBCKdata = SNBCK(Input_Parameters.SNBCK_IP, 
-				 Input_Parameters.CFFC_Path); // SNBCK object
+
+  // if SNBCK not allocated, allocate/setup a new object
+  if (Chem2D_pState::SNBCKdata==NULL) {
+    Chem2D_pState::SNBCKdata = new SNBCK;
+    Chem2D_pState::SNBCKdata->Setup(Input_Parameters.SNBCK_IP,
+				    Input_Parameters.CFFC_Path);
+  } // endif
 
   //
   // loop over the block
@@ -7934,13 +7936,13 @@ void Radiation_Source_Eval( Chem2D_Quad_Block &SolnBlk,
 
       // compute the source term using optically thin approx
       // using the SNBCK model
-      source = SNBCKdata.RadSourceOptThin( Pressure,
-					   Temperature,
-					   xCO,
-					   xH2O,
-					   xCO2,
-					   xO2,
-					   fsoot );
+      source = Chem2D_pState::SNBCKdata->RadSourceOptThin( Pressure,
+							   Temperature,
+							   xCO,
+							   xH2O,
+							   xCO2,
+							   xO2,
+							   fsoot );
 
       // store values
       SolnBlk.U[i][j].Srad = source;

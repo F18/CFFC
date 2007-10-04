@@ -74,6 +74,9 @@ using namespace std;
 #include "../Reactions/Reactions.h"
 #endif // _REACTIONS_INCLUDED
 
+/* include SNBCK for optically thin radiation */
+#include "../Physics/SNBCK/SNBCK.h"
+
 //Temperature convergence tolerance in
 //Chem2D_cState::T(void)
 // these should be moved to CFD.h or Math.h
@@ -175,6 +178,13 @@ class Chem2D_pState {
   static double Coeff_edm;
   static double y_sublayer;    //Xinfeng
   //@}
+
+  //@{ @name SNBCK data object
+  //! For computation of radiant heat transfer using 
+  //! optically thin approximation.
+  static SNBCK *SNBCKdata;
+  //@}
+
   
   //default constructors of many flavours, hopefully one is right 4U   
   //v.zero(); tau.zero(); qflux.zero(); lambda.zero(); theta.zero();
@@ -484,11 +494,11 @@ class Chem2D_pState {
 
    /**************** Destructors ******************************/
    //for static specdata
-   void Deallocate_static(void){ if(specdata != NULL) delete[] specdata; 
-                                           specdata = NULL; 
- 				if(Schmidt != NULL) delete[] Schmidt; 
- 				           Schmidt = NULL;
-                                }
+   void Deallocate_static(void){ 
+     if(specdata != NULL) { delete[] specdata; specdata = NULL; }
+     if(Schmidt != NULL) { delete[] Schmidt; Schmidt = NULL; }
+     if(SNBCKdata != NULL) { delete SNBCKdata; SNBCKdata = NULL; }
+   }
 
 #ifdef STATIC_NUMBER_OF_SPECIES    
    void specnull() {}

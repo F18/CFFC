@@ -45,7 +45,7 @@ NKS_Finite_Time_Step_Max_CFL=
 1e12
 # Number of Total NKS Iterations
 Maximum_Number_of_NKS_Iterations=
-20
+10
 ###############################
 # GMRES (Inner Loop) Parameters
 ###############################
