@@ -58,7 +58,6 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   bool Rte_PostProcess(false);      // don't post process radiation solution after solve
   int Rte_batch_flag(1);            // don't print out information
   int number_sequential_solves(0);  // current sequential solve number
-  int radiation_update_frequency(0);// update frequency
 
   /* Define residual file and cpu time variables. */
   ofstream residual_file;
@@ -71,6 +70,8 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     command_flag, error_flag, line_number, 
     i_stage, limiter_freezing_off;
   
+  int Max_Number_Global_Steps;
+
   double Time, dTime, initial_residual_l2_norm;
 
   /* Variables used for dual time stepping. */
@@ -192,6 +193,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   /* Set the initial time level. */
   Time = ZERO;
   number_of_time_steps = 0;
+  Max_Number_Global_Steps = 0;
 
   /* Set the CPU time to zero. */
   processor_cpu_time.zero();
@@ -428,7 +430,6 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 
     // set the current number of sequential solves and the update frequency
     number_sequential_solves = 0;
-    radiation_update_frequency = Input_Parameters.Maximum_Number_of_Time_Steps;
 
   } // endif
 
@@ -513,8 +514,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
      Perform required number of iterations (time steps). 
     **************************************************************************/ 
     if ((!Input_Parameters.Time_Accurate && 
-	 Input_Parameters.Maximum_Number_of_Time_Steps > 0 &&
-	 number_of_time_steps < Input_Parameters.Maximum_Number_of_Time_Steps) ||
+	 Input_Parameters.Maximum_Number_of_Time_Steps > 0) ||
 	(Input_Parameters.Time_Accurate && Input_Parameters.Time_Max > Time)) {
      
       if (!batch_flag) { cout << "\n\n Beginning Explicit Chem2D computations on "
@@ -522,9 +522,10 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 
      last_step = 0;
      int i=1; //markthis
+     double number_explicit_steps = 0;
 
      while ((!Input_Parameters.Time_Accurate &&
-	     number_of_time_steps < Input_Parameters.Maximum_Number_of_Time_Steps) ||
+	     number_explicit_steps < Input_Parameters.Maximum_Number_of_Time_Steps) ||
 	    (Input_Parameters.Time_Accurate && Time < Input_Parameters.Time_Max)) {
 
        /***********************************************************************	
@@ -762,7 +763,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	  ***************************************************************************/
  
 	if (!Input_Parameters.Time_Accurate &&
- 	    number_of_time_steps >= 
+ 	    number_explicit_steps >= 
  	    Input_Parameters.Maximum_Number_of_Time_Steps) break;
  	if (Input_Parameters.Time_Accurate && 
  	    Time >= Input_Parameters.Time_Max) break;
@@ -900,11 +901,12 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	  Input_Parameters.first_step = 0;
 	}
 
-	number_of_time_steps = number_of_time_steps + 1;
+	number_of_time_steps++;
+	number_explicit_steps++;
 
 	// check for last step
         if (!Input_Parameters.Time_Accurate &&
-	    number_of_time_steps == Input_Parameters.Maximum_Number_of_Time_Steps) {
+	    number_explicit_steps == Input_Parameters.Maximum_Number_of_Time_Steps) {
           last_step = 1;
 	}
 		
@@ -1062,7 +1064,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     // perform sequential solve
     RteSolver->SequentialSolve(Local_SolnBlk, Rte_PostProcess);
     
-    if (!batch_flag) cout << "Done";
+    if (!batch_flag) cout << "\n ...Done";
 
     // output some radiation solver stats
     if (!batch_flag) RteSolver->OutputSolverStats(cout);
@@ -1078,27 +1080,22 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     //
     if (number_sequential_solves < Input_Parameters.Max_Number_Sequential_Solves) {
 
-      // Reset maximum time step counter.
-      Input_Parameters.Maximum_Number_of_Time_Steps += radiation_update_frequency;
-
       // Continue existing calculation.     
       //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       goto continue_existing_calculation;
       //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+    //
+    // print out finalstats for sequential solver
+    } else if (!batch_flag) {
+      cout << endl << endl << string(70,'=');
+      cout << "\n Sequential Solver Finished on " << Date_And_Time();
+      cout << "\n Total Sequential Solves = " << number_sequential_solves;
+      cout << "\n Total CPU Time          = " << total_cpu_time.min() << " min";
+      cout << endl << string(70,'=') << endl;
     } // endif - continue
 
   } // endif - radiation
-
-
-  // print out finalstats for sequential solver
-  if (!batch_flag && Input_Parameters.Radiation == RADIATION_RTE) {
-    cout << endl << endl << string(70,'=');
-    cout << "\n Sequential Solver Finished on " << Date_And_Time();
-    cout << "\n Total Sequential Solves = " << number_sequential_solves;
-    cout << "\n Total CPU Time          = " << total_cpu_time.min() << " min";
-    cout << endl << string(70,'=') << endl;
-  }
 
 
   /***************************************************************************
@@ -1197,7 +1194,8 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     *************************************************************************/
     else if (command_flag == CONTINUE_CODE) {
       // Reset maximum time step counter.
-      Input_Parameters.Maximum_Number_of_Time_Steps += number_of_time_steps;
+      // Input_Parameters.Maximum_Number_of_Time_Steps += number_of_time_steps;
+
       // Output input parameters for continuing calculation.
       if (!batch_flag)  {
 	cout << "\n\n Continuing existing calculation.";

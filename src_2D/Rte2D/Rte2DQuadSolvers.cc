@@ -1140,6 +1140,7 @@ int Rte2DSolver::SolveSpaceMarch() {
   // declares
   int error_flag(0);
   int i_SpaceMarch_Scheme;
+  int number_steps(0);
   double residual_l1_norm, residual_l2_norm, residual_max_norm;
   ofstream residual_file;
 
@@ -1167,7 +1168,7 @@ int Rte2DSolver::SolveSpaceMarch() {
   //
   //==================================================
   while (Input_Parameters.Maximum_Number_of_Time_Steps > 0 &&
-	 number_of_time_steps <= Input_Parameters.Maximum_Number_of_Time_Steps) {
+	 number_steps <= Input_Parameters.Maximum_Number_of_Time_Steps) {
     
     //--------------------------------------------------
     // MORTON ORDERING: Periodically re-order the solution 
@@ -1213,7 +1214,7 @@ int Rte2DSolver::SolveSpaceMarch() {
     // CALCULATION CHECK: Check to see if calculations are 
     // complete and if so jump of out of this infinite loop.   
     //--------------------------------------------------
-    if (number_of_time_steps >= 
+    if (number_steps >= 
 	Input_Parameters.Maximum_Number_of_Time_Steps) break;	
 
     //--------------------------------------------------
@@ -1291,7 +1292,8 @@ int Rte2DSolver::SolveSpaceMarch() {
     //--------------------------------------------------
       
     if (first_step) first_step = false;
-    number_of_time_steps = number_of_time_steps + 1;
+    number_of_time_steps++;
+    number_steps++;
       
 
   //==================================================
@@ -1365,6 +1367,7 @@ int Rte2DSolver::SolveExplicitTimeStep() {
   
   // declares
   int error_flag(0);
+  int number_explicit_steps(0);
   double dTime;
   double residual_l1_norm, residual_l2_norm, residual_max_norm;
   ofstream residual_file;
@@ -1394,7 +1397,7 @@ int Rte2DSolver::SolveExplicitTimeStep() {
   //==================================================
   while ( (!Input_Parameters.Time_Accurate &&
 	   Input_Parameters.Maximum_Number_of_Time_Steps > 0 &&
-	   number_of_time_steps <= Input_Parameters.Maximum_Number_of_Time_Steps) ||
+	   number_explicit_steps <= Input_Parameters.Maximum_Number_of_Time_Steps) ||
 	  (Input_Parameters.Time_Accurate &&
 	   Input_Parameters.Time_Max >= Time) ) {
 
@@ -1488,7 +1491,7 @@ int Rte2DSolver::SolveExplicitTimeStep() {
     // complete and if so jump of out of this infinite loop.   
     //--------------------------------------------------
     if (!Input_Parameters.Time_Accurate && 
-	number_of_time_steps >= Input_Parameters.Maximum_Number_of_Time_Steps) 
+	number_explicit_steps >= Input_Parameters.Maximum_Number_of_Time_Steps) 
       break;
     if (Input_Parameters.Time_Accurate &&
 	Time >= Input_Parameters.Time_Max) 
@@ -1596,7 +1599,8 @@ int Rte2DSolver::SolveExplicitTimeStep() {
     // counter.
     //--------------------------------------------------
     if (first_step) first_step = false;
-    number_of_time_steps = number_of_time_steps + 1;
+    number_of_time_steps++;
+    number_explicit_steps++;
     
     //
     // Time accurate case
@@ -1848,7 +1852,7 @@ int Rte2DSolver::PostProcess(int &command_flag) {
     } else if (command_flag == CONTINUE_CODE) {
 
       // Reset maximum time step counter.
-      Input_Parameters.Maximum_Number_of_Time_Steps += number_of_time_steps;
+      // Input_Parameters.Maximum_Number_of_Time_Steps += number_of_time_steps;
 
       // Output input parameters for continuing calculation.
       if (!batch_flag)  {
