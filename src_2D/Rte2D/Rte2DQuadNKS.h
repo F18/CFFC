@@ -114,8 +114,8 @@ set_normalize_values(void)
 
   // NOT NORMALIZED
   for(int i=0; i < blocksize; i++) {
-    normalize_valuesU[i] = BlackBody(TEMPERATURE_STDATM);//ONE;
-    normalize_valuesR[i] = BlackBody(TEMPERATURE_STDATM);//ONE;
+    normalize_valuesU[i] = BlackBody(1000.0);//ONE;
+    normalize_valuesR[i] = FOUR*PI*BlackBody(1000.0);//ONE;
   }
 }
 

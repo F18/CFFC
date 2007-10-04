@@ -67,10 +67,10 @@ GMRES_Restart=
 40
 # Use Normalized values ON/OFF 
 GMRES_Normalization= 
-OFF
+ON
 # Turn on more GMRES Details, values ON/OFF 
 GMRES_Check=
-OFF
+ON
 # Order of Frechet Derivative used
 # -> First Order
 # -> 2nd Order
@@ -96,7 +96,7 @@ Jacobian_Order=
 First_Order_Inviscid_HLLE
 # Set sqrt of machine zero
 GMRES_Epsilon_Naught=
-1e+1
+1e-4
 ############################
 # Set angular discretization
 ############################
@@ -149,7 +149,7 @@ Write_Output_Mesh_Cells
 Write_Output_Mesh_Nodes
 Write_Restart
 Write_Mesh_Definition
-Write_Output_Black_Enclosure
+#Write_Output_Black_Enclosure
 #######################
 # Terminate program
 #######################
