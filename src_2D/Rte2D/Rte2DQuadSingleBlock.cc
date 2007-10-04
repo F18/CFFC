@@ -1504,6 +1504,7 @@ void ICs(Rte2D_Quad_Block &SolnBlk,
         for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
             for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
 	      SolnBlk.U[i][j] = IP.Uo;
+	      SolnBlk.M[i][j] = IP.Mo;
             } /* endfor */
         } /* endfor */
         break;
@@ -1512,6 +1513,7 @@ void ICs(Rte2D_Quad_Block &SolnBlk,
         for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
             for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
 	      SolnBlk.U[i][j] = IP.Uo;
+	      SolnBlk.M[i][j] = IP.Mo;
             } /* endfor */
         } /* endfor */
         break;

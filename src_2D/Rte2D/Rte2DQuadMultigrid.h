@@ -570,6 +570,9 @@ Apply_ICs(const int &level)
   } // endif
 
 
+  //
+  // medium state
+  //
   // If this is a discretely specified medium field,
   // then we will have to restrict it as well.
   if ( Local_SolnBlk[level]->Medium_Field_Type == MEDIUM2D_FIELD_DISCRETE )
