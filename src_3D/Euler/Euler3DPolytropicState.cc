@@ -1,4 +1,6 @@
-/* Euler3DPolytropicState.cc:  Subroutines for 3D Euler Solution State Classes. */
+/*! \file  Euler3DPolytropicState.cc
+    \brief Subroutines for 3D Euler Solution State Classes. 
+ */
 
 /* Include 3D Euler solution state header file. */
 
@@ -1921,7 +1923,7 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxHLLE_z(const Euler3D_Po
 	return (FluxHLLE_z(Ul.W(), Ur.W()));
 }
 
-/*********************************************************
+/*!*******************************************************
  * Routine: FluxHLLE_n (Harten-Lax-van Leer flux         *
  *                      function, n-direction)           *
  *                                                       *
@@ -2037,14 +2039,14 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxHLLE_n(const Euler3D_Po
 }
 
 
-/********************************************************
-* Routine: HartenFixPos (Harten Entropy Fix)           *
-*                                                      *
-* This function returns the positive parts of the      *
-* corrected elemental wave speeds or eigenvalues       *
-* according to the entropy fix of Harten (1983).       *
-*                                                       *
-********************************************************/
+/***************************************************//**
+* Routine: HartenFixPos (Harten Entropy Fix)           
+*                                                      
+* This function returns the positive parts of the      
+* corrected elemental wave speeds or eigenvalues       
+* according to the entropy fix of Harten (1983).       
+*                                                      
+*******************************************************/
 Euler3D_Polytropic_pState HartenFixPos(
 											 const Euler3D_Polytropic_pState &lambdas_a,
 											 const Euler3D_Polytropic_pState &lambdas_l,
@@ -2061,13 +2063,13 @@ Euler3D_Polytropic_pState HartenFixPos(
 }
 
 
-/********************************************************
-* Routine: HartenFixNeg (Harten Entropy Fix)           *
-*                                                      *
-* This function returns the negative parts of the      *
-* corrected elemental wave speeds or eigenvalues       *
-* according to the entropy fix of Harten (1983).       *
-*                                                      *
+/***************************************************//*!
+* Routine: HartenFixNeg (Harten Entropy Fix) 
+*                                                      
+* This function returns the negative parts of the      
+* corrected elemental wave speeds or eigenvalues       
+* according to the entropy fix of Harten (1983).       
+*                                                      
 ********************************************************/
 Euler3D_Polytropic_pState HartenFixNeg(
 											 const Euler3D_Polytropic_pState &lambdas_a,
@@ -2374,3 +2376,10 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxRoe_n(const  Euler3D_Po
 	return (FluxRoe_n(Ul.W(),Ur.W(),norm_dir));
 }
 
+/*!
+ * detailed description of functiontest
+ */
+void functiontest(void)
+{
+	double a = 10;
+}

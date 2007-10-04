@@ -161,6 +161,7 @@ Thermal Conductivity:            k   N/(s*K)  W.(m*K)
  *
  *	This class contains the primitive variables and memberfunctions.
  *	It also contains the approximate riemann solvers.
+ *  \nosubgrouping
  */
 class Euler3D_Polytropic_pState{
 	
