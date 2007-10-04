@@ -244,7 +244,7 @@ private:
   double *M; 
   double *c; 
   double *c_denom; 
-  double *r; 
+  double *r, *r0; 
   cplx   *cc;
   cplx   *rc;
 
@@ -272,7 +272,7 @@ public:
     reactset_flag=0; num_reactions=0; num_species=0; 
     num_react_species=0; reactions = NULL; species = NULL; 
     kf=NULL; kb=NULL; M=NULL; c=NULL; c_denom=NULL; r=NULL;
-    cc=NULL; rc=NULL;
+    cc=NULL; rc=NULL; r0=NULL;
 #ifdef _CANTERA_VERSION
     ct_gas=NULL;
 #endif
@@ -299,13 +299,22 @@ public:
   template<class SOLN_pSTATE>
   void ct_equilibrium( const SOLN_pSTATE &Wu, 
 		       SOLN_pSTATE &Wb) const;
-  // compute chemical source jacobian with cantera
+  // compute analytical chemical source jacobian with cantera
   template<class SOLN_pSTATE>
   void ct_dSwdU(DenseMatrix &dSwdU, 
 		const SOLN_pSTATE &W,
 		const double& Temp, 
 		const double& Press) const;
+  // compute finite diff chemical source jacobian with cantera
+  template<class SOLN_pSTATE>
+  void ct_dSwdU_FiniteDiff(DenseMatrix &dSwdU, 
+		const SOLN_pSTATE &W,
+		const double& Temp, 
+		const double& Press) const;
 
+  //
+  // gneral member functions
+  //
   //setup storage after num_reactions & num_species set.
   void set_storage(void){
     kf = new double[num_reactions];        
@@ -314,6 +323,7 @@ public:
     c  = new double[num_react_species];
     c_denom = new double[num_react_species]; 
     r  = new double[num_react_species]; 
+    r0  = new double[num_react_species]; 
     cc = new cplx[num_react_species];
     rc = new cplx[num_react_species]; 
   }
@@ -361,6 +371,7 @@ inline void Reaction_set::Deallocate(){
   if(c != NULL){  delete[] c; c = NULL;}
   if(c_denom != NULL){  delete[] c_denom; c_denom = NULL;}
   if(r != NULL){  delete[] r; r = NULL;}
+  if(r0 != NULL){  delete[] r0; r0 = NULL;}
   if(cc!= NULL){ delete[] cc; cc = NULL;}
   if(rc!= NULL){ delete[] rc; rc = NULL;}
 #ifdef _CANTERA_VERSION
@@ -1009,7 +1020,8 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
 #ifdef _CANTERA_VERSION
 
   case CANTERA:
-    ct_dSwdU<SOLN_pSTATE>( dSwdU, W, Temp, Press );
+    //ct_dSwdU<SOLN_pSTATE>( dSwdU, W, Temp, Press );
+    ct_dSwdU_FiniteDiff<SOLN_pSTATE>( dSwdU, W, Temp, Press );
     //Finite_Difference_dSwdU<SOLN_pSTATE,SOLN_cSTATE>(dSwdU, W);
     break;
 
@@ -1460,6 +1472,78 @@ void Reaction_set::ct_dSwdU( DenseMatrix &dSwdU,
 #endif //_CANTERA_VERSION
 
 } // end of ct_dSwdU
+
+
+/***********************************************************************
+  Use cantera to compute the Chemical Source Jacobian.  This function
+  is called from the main dSwdU().
+***********************************************************************/
+template<class SOLN_pSTATE>
+void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
+					const SOLN_pSTATE &W,
+					const double &Temp,            // [K]
+					const double &Press ) const {  // [Pa]
+
+#ifdef _CANTERA_VERSION
+
+  //------------------------------------------------
+  // declares
+  //------------------------------------------------
+  // number of variables not including species
+  int NUM_VAR = W.NumVarSansSpecies();
+  double c_save;
+
+  //------------------------------------------------
+  // setup
+  //------------------------------------------------
+
+  // initial unperturbed values reaction rates
+  gas->setState_TPY(Temp, Press, c);
+  gas->getNetProductionRates(r0);
+
+
+  //------------------------------------------------
+  // Compute \frac{ \partial S_j }{ \partial \rho Y_k }
+  //------------------------------------------------
+	
+  //
+  // iterate over the species (jac columns)
+  //
+  for (int j=0; j<num_react_species-1; j++) {
+    
+    // compute the perturbed reaction rates
+    c[j] += e;
+    c[num_species-1] -= e;
+    gas->setState_TPY(Temp, Press, c);
+    gas->getNetProductionRates(r);
+    
+    //
+    // iterate over the species (jac rows)
+    //
+    for (int i=0; i<num_react_species-1; i++) {
+      
+      // the i,j element of jacobian
+      dSwdU(NUM_VAR+i,NUM_VAR+j) = M[i]*(r[i]-r0[i]) / e;
+      
+    } // endfor - rows
+    
+
+    // unperturb
+    c[j] -= e;
+    c[num_species-1] += e;
+
+  } // endfor - columns
+  
+
+#else
+  cout<<"\n CODE NOT COMPILED WITH CANTERA!";
+  cout<<"\n YOU SHOULD NOT BE HERE!";
+  exit(-1);
+
+#endif //_CANTERA_VERSION
+
+} // end of ct_dSwdU
+
 
 
 /************************************************************************
