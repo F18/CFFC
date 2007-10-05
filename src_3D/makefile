@@ -272,6 +272,7 @@ help:
 	@echo "|        make libraries-all        create all supporting libraries                  |"
 	@echo "|        make sparselib            create SparseLib++ library                       |"
 	@echo "|        make bpkit                create BPKIT library                             |"
+	@echo "|        make blkclib              create block connectivity library                |"
 	@echo "|        make cantera              create Cantera library                           |"
 	@echo "|        make fftw                 create fftw library                              |"
 	@echo "|        make clean                clean up source directories                      |"
@@ -334,6 +335,19 @@ bpkit:
 	@echo '--------------------------------------------'
 	@echo ' '
 
+blkclib:
+	@echo ' '
+	@echo Building $(BLKCLIB) library for a $(PLATFORM) platform.
+	@echo '--------------------------------------------------------'
+	@echo ' '
+	cd $(BLKCLIB_DIR); ./configure;	
+	cd $(BLKCLIB_DIR); $(MAKE) distclean;
+	cd $(BLKCLIB_DIR); ./configure;
+	cd $(BLKCLIB_DIR); $(MAKE);	
+	@echo ' '
+	@echo $(BLKCLIB) library has been brought up to date.
+	@echo '------------------------------------------------'
+	@echo ' '
 cantera:
 	@echo ' '
 	@echo Building $(CANTERA) library for a $(PLATFORM) platform.
@@ -527,6 +541,7 @@ superclean: clean-extras
 	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) wipe;
 	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
 	cd $(BPKIT_DIR)/src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
+	cd $(BLKCLIB_DIR); make distclean;	
 	@echo ' '
 	@echo All documentation and library directories are now clean.
 	@echo '-------------------------------------------------------'
