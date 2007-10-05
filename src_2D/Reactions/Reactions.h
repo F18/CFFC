@@ -1491,15 +1491,17 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
   //------------------------------------------------
   // number of variables not including species
   int NUM_VAR = W.NumVarSansSpecies();
-  double c_save;
+
+  // perturbation factor
+  double eps = 1.E-6;
 
   //------------------------------------------------
   // setup
   //------------------------------------------------
 
   // initial unperturbed values reaction rates
-  gas->setState_TPY(Temp, Press, c);
-  gas->getNetProductionRates(r0);
+  ct_gas->setState_TPY(Temp, Press, c);
+  ct_gas->getNetProductionRates(r0);
 
 
   //------------------------------------------------
@@ -1511,11 +1513,13 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
   //
   for (int j=0; j<num_react_species-1; j++) {
     
+    // perturb the species concetration array
+    c[j] += eps;
+    c[num_species-1] -= eps;
+
     // compute the perturbed reaction rates
-    c[j] += e;
-    c[num_species-1] -= e;
-    gas->setState_TPY(Temp, Press, c);
-    gas->getNetProductionRates(r);
+    ct_gas->setState_TPY(Temp, Press, c);
+    ct_gas->getNetProductionRates(r);
     
     //
     // iterate over the species (jac rows)
@@ -1523,14 +1527,14 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
     for (int i=0; i<num_react_species-1; i++) {
       
       // the i,j element of jacobian
-      dSwdU(NUM_VAR+i,NUM_VAR+j) = M[i]*(r[i]-r0[i]) / e;
+      dSwdU(NUM_VAR+i,NUM_VAR+j) = M[i]*(r[i]-r0[i]) / eps;
       
     } // endfor - rows
     
 
     // unperturb
-    c[j] -= e;
-    c[num_species-1] += e;
+    c[j] -= eps;
+    c[num_species-1] += eps;
 
   } // endfor - columns
   
