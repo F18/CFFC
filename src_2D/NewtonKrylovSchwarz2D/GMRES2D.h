@@ -2017,7 +2017,9 @@ public:
   void calculate_epsilon(double &epsilon, const int &search_direction_counter); 
 
   // norm calculations
+  double L1_Norm_z(const int &search_direction_counter);
   double L2_Norm_z(const int &search_direction_counter);
+  double L1_Norm_x(void);
   double L2_Norm_x(void);
 };
 
@@ -2829,7 +2831,9 @@ inline void GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,
 calculate_epsilon_restart(double &epsilon)
 {    
   // Calculate global epsilon based on 2-norm of x.
-  epsilon = Input_Parameters->NKS_IP.Epsilon_Naught/L2_Norm_x();       
+  // FIXME - extra square root of L2_Norm_x here, should be eps = sqrt(eps_mach)/||x||_2
+  //       - since it works better with it, leave it for now
+  epsilon = Input_Parameters->NKS_IP.Epsilon_Naught/sqrt(L2_Norm_x());
 }
 
 
@@ -2845,7 +2849,9 @@ inline void GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,
 calculate_epsilon(double &epsilon, const int &search_direction_counter)
 {    
   // Calculate global epsilon base on 2-norm of z.
-  epsilon = Input_Parameters->NKS_IP.Epsilon_Naught/L2_Norm_z(search_direction_counter);
+  // FIXME - extra square root of L2_Norm_z here, should be eps = sqrt(eps_mach)/||z||_2
+  //       - sice it works better with it, leave it for now
+  epsilon = Input_Parameters->NKS_IP.Epsilon_Naught/sqrt(L2_Norm_z(search_direction_counter));
 }
 
 
@@ -2874,6 +2880,28 @@ L2_Norm_z(const int &search_direction_counter)
 }
 
 //
+// 1-norm of z.
+//
+template <typename SOLN_VAR_TYPE,
+	  typename SOLN_BLOCK_TYPE, 
+	  typename INPUT_TYPE>
+inline double GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,
+					   SOLN_BLOCK_TYPE,
+					   INPUT_TYPE>::
+L1_Norm_z(const int &search_direction_counter)
+{    
+  double total_norm_z(ZERO); 
+  for ( int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) {
+    if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
+      total_norm_z += fabs(G[Bcount].L2_Norm(&(G[Bcount].W[(search_direction_counter)*
+							   G[Bcount].scalar_dim])));
+    } 
+  }       
+  return CFFC_Summation_MPI(total_norm_z);
+}
+
+
+//
 // 2-norm of x.
 //
 template <typename SOLN_VAR_TYPE,
@@ -2892,6 +2920,27 @@ L2_Norm_x(void)
   } 
   return sqrt(CFFC_Summation_MPI(total_norm_x));      
 }
+
+//
+// 1-norm of x.
+//
+template <typename SOLN_VAR_TYPE,
+	  typename SOLN_BLOCK_TYPE, 
+	  typename INPUT_TYPE>
+inline double GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,
+					   SOLN_BLOCK_TYPE,
+					   INPUT_TYPE>::
+L1_Norm_x(void)
+{
+  double total_norm_x(ZERO);
+  for ( int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) {
+    if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
+      total_norm_x += fabs( G[Bcount].L2_Norm(G[Bcount].x) );	  
+    }
+  } 
+  return CFFC_Summation_MPI(total_norm_x);      
+}
+
 
 #endif // _GMRES2D_INCLUDED
 
