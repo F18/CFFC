@@ -9,22 +9,30 @@
 
 /* Include CFFC header files */
 #include "TestData.h"
-#include "../HighOrder1DState.h"
+#include "../HighOrder1D.h"
 
 namespace tut
 {
 
   /* Define the test-specific data class and add data members 
      when tests have complex or repeating creation phase. */
-  class Data_HighOrder1DState : public TestData {
+  class Data_HighOrder1D : public TestData {
 
     // Local variables
   public:
 
+    // generate a geometry set
+    Cell1D_Uniform Cell1D;
+
     // Constructor
-    Data_HighOrder1DState(){
+    Data_HighOrder1D(){
 
       set_test_suite_path("HighOrderReconstruction/UnitTests/");
+
+      // set geometry
+      Cell1D.setloc(2.3);
+      Cell1D.setsize(34.3434);
+    
     }
 
   private:
@@ -38,8 +46,8 @@ namespace tut
    * be unique in tut:: namespace. Alternatively, you
    * you may put it into anonymous namespace.
    */
-  typedef test_group<Data_HighOrder1DState> HighOrder1DState_TestSuite;
-  typedef HighOrder1DState_TestSuite::object HighOrder1DState_object;
+  typedef test_group<Data_HighOrder1D> HighOrder1D_TestSuite;
+  typedef HighOrder1D_TestSuite::object HighOrder1D_object;
 
 
   /******************************************************************************************************
@@ -72,19 +80,83 @@ namespace tut
   /* Test 1:*/
   template<>
   template<>
-  void HighOrder1DState_object::test<1>()
+  void HighOrder1D_object::test<1>()
   {
+    set_test_name("Defalt Constructor");
 
-    set_test_name("Name of the test");
+    HighOrder1D<double> HO;
+    Cell1D_Uniform * Geom(NULL);
 
+    ensure("Geometry Pointer", HO.Geometry() == NULL);
   }
+
+  /* Test 2:*/
+  template<>
+  template<>
+  void HighOrder1D_object::test<2>()
+  {
+    set_test_name("Copy Constructor");
+
+    // set HighOrder1D variable
+    HighOrder1D<double> HO;
+
+    // set the geometry pointer
+    HO.SetGeometryPointer(Cell1D);
+
+    // call copy constructor
+    HighOrder1D<double> HO_2(HO);
+
+    // == check if both geometry pointers point to the same object
+    ensure_equals("Copy constructor (geometry pointer)", HO_2.CellGeometry(), HO.CellGeometry());
+  }
+
+  /* Test 3:*/
+  template<>
+  template<>
+  void HighOrder1D_object::test<3>()
+  {
+    set_test_name("Assignment Operator");
+
+    // set HighOrder1D variable
+    HighOrder1D<double> HO, HO_2;
+
+    // set the geometry pointer
+    HO.SetGeometryPointer(Cell1D);
+
+    // call assignment operator
+    HO_2 = HO;
+
+    // == check if both geometry pointers point to the same object
+    ensure_equals("Assignment operator (geometry pointer)", HO_2.CellGeometry(), HO.CellGeometry());
+  }
+
+  /* Test 4:*/
+  template<>
+  template<>
+  void HighOrder1D_object::test<4>()
+  {
+    set_test_name("SetGeometryPointer()");
+
+    // set HighOrder1D variable
+    HighOrder1D<double> HO;
+
+    // set the geometry pointer
+    HO.SetGeometryPointer(Cell1D);
+
+    // == check
+    ensure_equals("geometry pointer", HO.CellGeometry(), Cell1D);
+  }
+
+
+
+
 
 }
 
 
 
 // Test suite constructor
-tut::HighOrder1DState_TestSuite HighOrder1DStateTestSuite("Template Class:HighOrder1DState");
+tut::HighOrder1D_TestSuite HighOrder1DTestSuite("Template Class:HighOrder1D");
 
 /*************************************************************
  Guidelines for naming "Test Suite Name".
