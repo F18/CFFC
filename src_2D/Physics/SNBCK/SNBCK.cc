@@ -306,13 +306,17 @@ void EM2C :: ComputeRefSNB( const double p,       // pressure [atm]
   int index;
   double slope;
   double gamma, k, delta_inv, beta;
+  static int err_cnt(0);
 
   // check if temperature is within range
-  if (T<Tmin || T>Tmax) {
+  if ( (T<Tmin || T>Tmax) && err_cnt<5 ) {
+    err_cnt++;
     cerr << "EM2C::ComputeSNB(): Temperature out of valid range, "
 	 << Tmin << " < T < " << Tmax << " where T = "
 	 << T << " [K].\n";
+    if (err_cnt==5) cerr << "EM2C::ComputeSNB(): Suppressing error output from now on.\n";
   }
+
   
 
   // compute interpolation coefficients using linear piecewise interpolation
@@ -1863,6 +1867,9 @@ double AbsorptionCoeffSNBCK( const double g_val, const double*B,
 			     const double*S,  const int*iFlag,
 			     const int Nstart, const int Nend){
   
+  // declares
+  static int err_cnt(0);
+
   // set iteration paramters
   int Nmax = 200;    // max iterations
   double TOL = 1E-6; // error tolerance
@@ -1957,14 +1964,16 @@ double AbsorptionCoeffSNBCK( const double g_val, const double*B,
   //------------------------------------------------
 
   // check to see if it converged, if not, print an error
-  if ( i>=Nmax || dkn!=dkn ) {
-    cerr << "getAbsorptionCoeff(): Newton-Raphson iteration failed to converge." << endl;
-    cerr << "getAbsorptionCoeff(): err = " << fabs(dkn) 
+  if ( (i>=Nmax || dkn!=dkn) && err_cnt<5 ) {
+    err_cnt++;
+    cerr << "SNBCK.cc::getAbsorptionCoeff(): Newton-Raphson iteration failed to converge." << endl;
+    cerr << "SNBCK.cc::getAbsorptionCoeff(): err = " << fabs(dkn) 
 	 << ", f(x) = " << gn << ", f'(x) = " << dgn << ", x = " << g_val     
 	 << ", kmin = " << kmin << ", k = " << kn << ", kmax = " << kmax <<  endl;
-    cerr << "getAbsorptionCoeff(): k_peak = " << k_peak << ", it = " << i <<  endl;
+    cerr << "SNBCK.cc::getAbsorptionCoeff(): k_peak = " << k_peak << ", it = " << i <<  endl;
     cerr << "B = " << B[Nstart] << ", S = " << S[Nstart] <<  endl;
     cerr << endl;
+    if (err_cnt==5) cerr << "SNBCK.cc::getAbsorptionCoeff(): Suppressing error output from now on.\n";
   }
 
 
@@ -1985,6 +1994,9 @@ double AbsorptionCoeffSNBCK( const double g_val, const double*B,
  *********************************************************************/
 double PeakAbsorptionCoeffSNBCK( const double B, const double S ){
 
+  // declares
+  static int err_cnt(0);
+
   // NOTE:
   // -> See Eq. (19) in Lacias and Oinas, J Geophysical Research, v96, 
   // pp. 9027-9063, 1991.
@@ -1992,12 +2004,13 @@ double PeakAbsorptionCoeffSNBCK( const double B, const double S ){
   k1 *= THREE*S / (PI*B);
 
   // -> return peak, since b>0, then k2<0 always  
-  if ( k1<ZERO || k1!=k1 ) {
-    cerr << "getPeakAbsorptionCoeff(): Error computing k_peak." << endl;
-    cerr << "getPeakAbsorptionCoeff(): B = " << setw(18) << B 
+  if ( (k1<ZERO || k1!=k1) && err_cnt<5 ) {
+    cerr << "SNBCK.cc::getPeakAbsorptionCoeff(): Error computing k_peak." << endl;
+    cerr << "SNBCK.cc::getPeakAbsorptionCoeff(): B = " << setw(18) << B 
 	 << ", S = " << setw(18) << S 
       	 << ", k_peak = " << k1
 	 <<  endl;
+    if (err_cnt==5) cerr << "SNBCK.cc::PeakAbsorptionCoeffSNBCK(): Suppressing error output from now on.\n";
   }
   return k1;
 
