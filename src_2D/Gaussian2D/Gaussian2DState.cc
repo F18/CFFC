@@ -445,6 +445,10 @@ Gaussian2D_pState Isothermal_Wall(const Gaussian2D_pState &W,
  * variables and the unit normal vector in the          *
  * direction of interest.                               *
  *                                                      *
+ * It relies on the reconstructed values for dWdn and   *
+ * thus if you are setting the limiter to zero, you     *
+ * will always get zero slip; be careful.               *
+ *                                                      *
  ********************************************************/
 Gaussian2D_pState Isothermal_Wall_Slip_T(const Gaussian2D_pState &W,
 					 const Vector2D &V,
