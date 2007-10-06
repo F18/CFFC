@@ -731,6 +731,17 @@ inline char *Date_And_Time() {
 #define SOUTH_EAST                     13
 #define SOUTH_WEST                     14
 
+/********************************************************
+ * CFD -- Turbulence energy spectrum.                   *
+ ********************************************************/
+ 
+#define LEE_REYNOLDS                    0
+#define LAVAL_NAZARENKO                 1
+#define VON_KARMAN_PAO                  2
+#define HAWORTH_POINSOT                 3
+#define CHASNOV                         4
+#define BELL_DAY                        5
+
 /**********************************************************************
  * CFD -- Inline functions.                                           *
  **********************************************************************/

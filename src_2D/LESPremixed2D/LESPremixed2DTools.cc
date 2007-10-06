@@ -1096,10 +1096,10 @@ int Open_Turbulence_Progress_File(ofstream &Turbulence_Progress_File,
                  << "set ylabel \"u_rms/Taylor/St\"\n" 
                  << "set logscale xy\n"
                  << "plot \"" << turbulence_progress_file_name_ptr << "\""
-                 << " using 1:2 \"%lf%*lf%*lf%lf%*lf%*lf%*lf%*lf\" \\\n"
+                 << " using 1:2 \"%lf%*lf%*lf%lf%*lf%*lf%*lf%*lf%*lf\" \\\n"
                  << "     title \"u_rms\" with lines, \\\n"
                  << "\"" << turbulence_progress_file_name_ptr << "\""
-		 << " using 1:2 \"%lf%*lf%*lf%*lf%lf%*lf%*lf%*lf\" \\\n"
+		 << " using 1:2 \"%lf%*lf%*lf%*lf%lf%*lf%*lf%*lf%*lf\" \\\n"
 	         << "     title \"Taylor_scale\" with lines, \\\n"
                  // << "\"" << turbulence_progress_file_name_ptr << "\""
 //                  << " using 1:2 \"%lf%*lf%*lf%*lf%*lf%lf%*lf%*lf%*lf%*lf\" \\\n"
@@ -1111,8 +1111,11 @@ int Open_Turbulence_Progress_File(ofstream &Turbulence_Progress_File,
 //                  << " using 1:2 \"%lf%*lf%*lf%*lf%*lf%*lf%*lf%lf%*lf%*lf\" \\\n"
 //                  << "     title \"Kolmogorov\" with lines, \\\n"
                  << "\"" << turbulence_progress_file_name_ptr << "\""
-                 << " using 1:2 \"%lf%*lf%*lf%*lf%*lf%*lf%lf%*lf\" \\\n"
-                 << "     title \"St\" with lines\n"
+                 << " using 1:2 \"%lf%*lf%*lf%*lf%*lf%*lf%lf%*lf%*lf\" \\\n"
+                 << "     title \"St\" with lines, \\\n"
+                 << "\"" << turbulence_progress_file_name_ptr << "\""
+                 << " using 1:2 \"%lf%*lf%*lf%*lf%*lf%*lf%*lf%lf%*lf\" \\\n"
+                 << "     title \"St_prog\" with lines\n"
                  << "pause -1  \"Hit return to continue\"\n";
 
     gnuplot_file.close();
@@ -1150,6 +1153,7 @@ void Output_Turbulence_Progress_to_File(ostream &Turbulence_Progress_File,
 //                                         const double &dissipation,
 //                                         const double &Kolmogorov_scale,
                                         const double &turbulent_burning_rate,
+                                        const double &turbulent_burning_rate_prog,
                                         const int &n_inner) {
 
     Turbulence_Progress_File << setprecision(6);
@@ -1163,7 +1167,8 @@ void Output_Turbulence_Progress_to_File(ostream &Turbulence_Progress_File,
                              // << " " << integral_scale
 //                              << " " << dissipation
 //                              << " " << Kolmogorov_scale
-			     << " " << turbulent_burning_rate;                       
+			     << " " << turbulent_burning_rate
+                             << " " << turbulent_burning_rate_prog;                       
     Turbulence_Progress_File.unsetf(ios::scientific);
     Turbulence_Progress_File << " " << n_inner << "\n";
     Turbulence_Progress_File.flush();
@@ -1312,6 +1317,32 @@ void Write_Slice_Solution(LESPremixed2D_Quad_Block *Soln_ptr,
        //L_centre = HALF*(Soln_ptr[p].Grid.Cell[ICu+2][j].Xc.x - Soln_ptr[p].Grid.Cell[ICl-2][j].Xc.x);
        cout << "\n Laminar flame thickness: " << lam_thickness; 
        
+       if ( Soln_ptr[p].Flow_Type == FLOWTYPE_LAMINAR_C ||
+            Soln_ptr[p].Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC ||
+            Soln_ptr[p].Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+            Soln_ptr[p].Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD ||
+            Soln_ptr[p].Flow_Type == FLOWTYPE_TURBULENT_LES_C ||
+            Soln_ptr[p].Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC ||
+            Soln_ptr[p].Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+            Soln_ptr[p].Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY ||
+            Soln_ptr[p].Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE ||
+            Soln_ptr[p].Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
+       double turbulent_burning_rate_prog = Turbulent_Burning_Rate_Progvar(Soln_ptr, 
+                                                                           Soln_Block_List,
+                                                                           Input_Parameters);
+       cout<<"\n tur_speed_grad_C=  "<<turbulent_burning_rate_prog<<endl;
+	  if (Soln_ptr[p].Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+              Soln_ptr[p].Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD ||
+              Soln_ptr[p].Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+              Soln_ptr[p].Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY ||
+              Soln_ptr[p].Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE ) {
+       double turbulent_burning_rate = Turbulent_Burning_Rate(Soln_ptr, 
+                                                              Soln_Block_List,
+                                                              Input_Parameters);
+       cout<<"\n tur_speed_fsd=  "<<turbulent_burning_rate<<endl;
+       }
+       }       
+
        // Length of the region to be written in the file
        //  - It has to be large enough to contain the flame thickness and
        //    part of the unburnt and burnt gas solution
