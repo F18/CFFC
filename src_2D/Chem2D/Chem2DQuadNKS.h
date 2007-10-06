@@ -123,7 +123,7 @@ template <> double Finite_Time_Step(const Chem2D_Input_Parameters &Input_Paramet
   double CFL_current;
 
   //SER 
-  if (L2norm_current_n > MIN_FINITE_TIME_STEP_NORM_RATIO ) { 
+  if (L2norm_current_n > Input_Parameters.NKS_IP.Min_Finite_Time_Step_Norm_Ratio ) { 
     //Original works for Invisicd, Viscous OK, Reacting seems to be more picky
     CFL_current = Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL*
       pow( max(ONE, ONE/L2norm_current_n),ONE ); 
@@ -135,7 +135,8 @@ template <> double Finite_Time_Step(const Chem2D_Input_Parameters &Input_Paramet
     }
 
   } else {
-    CFL_current = Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL/MIN_FINITE_TIME_STEP_NORM_RATIO;
+    CFL_current = Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL/
+      Input_Parameters.NKS_IP.Min_Finite_Time_Step_Norm_Ratio;
   }  
 
   // CAN SET A MAXIMUM, SOMETIMES USEFUL WITH CONVERGENCE STALL & BC ISSUES
@@ -153,7 +154,7 @@ template <> double Finite_Time_Step(const Chem2D_Input_Parameters &Input_Paramet
 template<> inline void Block_Preconditioner<Chem2D_pState,
 					    Chem2D_Quad_Block,					    
 					    Chem2D_Input_Parameters>::
-Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jacobian)
+Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jacobian,const double& DTS_dTime)
 {   
   //Low Mach # Preconditioning 
   if(Input_Parameters->Preconditioning){
@@ -172,13 +173,15 @@ Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jac
 				     SolnBlk->Flow_Type,
 				     delta_n);    
 
-    Jacobian[CENTER] -= Low_Mach_Number_Preconditioner/(SolnBlk->dt[cell_index_i][cell_index_j]);
+    Jacobian[CENTER] -= Low_Mach_Number_Preconditioner*
+      LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters, SolnBlk->dt[cell_index_i][cell_index_j],DTS_dTime);
+
 
   } else { // I/deltat
 
     DenseMatrix II(blocksize,blocksize);  
     II.identity();    
-    Jacobian[CENTER] -= (II / (SolnBlk->dt[cell_index_i][cell_index_j]));
+    Jacobian[CENTER] -= II*LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters, SolnBlk->dt[cell_index_i][cell_index_j],DTS_dTime);
   }
 
 }
@@ -487,7 +490,7 @@ calculate_Matrix_Free(const double &epsilon)
     if ( SolnBlk->Grid.BCtypeW[JCl] == BC_NONE)  ICl_overlap = overlap;
   }
 	   
-  DenseMatrix Precon(blocksize,blocksize,ZERO); //SHOULD MOVE THIS OUT OF HERE AND STORE SOMEWHERE TO AVOID RECREATING EACH TIME
+  DenseMatrix Precon(blocksize,blocksize,ZERO); //SHOULD MOVE THIS OUT OF HERE AND STORE SOMEWHERE TO AVOID RECREATING EACH TIME!!
   
   // Non-Overlap Ghost Cells R(U) already set to zero by dUdt calculation  
   /* V(i+1) = ( R(U+epsilon*W) - b) / epsilon - (gamma) z / h */
@@ -497,7 +500,7 @@ calculate_Matrix_Free(const double &epsilon)
       // Low Mach # Preconditioner                   
       if(Input_Parameters->Preconditioning){ 
 	double delta_n = min( TWO*(SolnBlk->Grid.Cell[i][j].A/(SolnBlk->Grid.lfaceE(i, j) + SolnBlk->Grid.lfaceW(i, j))),
-			      TWO*(SolnBlk->Grid.Cell[i][j].A/(SolnBlk->Grid.lfaceN(i, j) + SolnBlk->Grid.lfaceS(i, j))));             
+			      TWO*(SolnBlk->Grid.Cell[i][j].A/(SolnBlk->Grid.lfaceN(i, j) + SolnBlk->Grid.lfaceS(i, j))));
 	SolnBlk->Uo[i][j].Low_Mach_Number_Preconditioner(Precon, SolnBlk->Flow_Type, delta_n);       
       }
 
@@ -520,14 +523,23 @@ calculate_Matrix_Free(const double &epsilon)
 	  for(int l =0; l < blocksize; l++){
 	    value += Precon(k,l) * denormalizeU(W[(search_directions)*scalar_dim + index(i,j,l)],l);
 	  }
-	  V[(search_directions+1)*scalar_dim+iter] -= normalizeR(value/(SolnBlk->dt[i][j]),k);
-	  
+	  V[(search_directions+1)*scalar_dim+iter] -= 
+	    normalizeR(value * LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);   
 	//No Preconditioner
 	} else { // z/h
-	  V[(search_directions+1)*scalar_dim+iter] -= normalizeUtoR(W[(search_directions)*scalar_dim + iter]/(SolnBlk->dt[i][j]),k);	
-	}
-      }  
-    
+	  V[(search_directions+1)*scalar_dim+iter] -= normalizeUtoR( W[(search_directions)*scalar_dim + iter] 
+			      * LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
+	}       
+
+// #ifdef _NKS_VERBOSE_NAN_CHECK
+// 	// nan check most commonly caused by nans in dUdt !!!!
+// 	if (V[(search_directions+1)*scalar_dim+iter] != V[(search_directions+1)*scalar_dim+iter] ){
+// 	  cout<<"\n nan in V[ "<<(search_directions+1)*scalar_dim+iter<<"] at "<<i<<" "<<j<<" "<<k
+// 	      <<" dUdt "<<  normalizeR(SolnBlk->dUdt[i][j][0][k+1],k) <<" b "<< b[iter]
+// 	      <<" z "<<W[(search_directions)*scalar_dim + iter]<< " h "<<( SolnBlk->dt[i][j]*ao);
+// 	}
+// #endif
+      } 
     } 
   } 
 }
@@ -583,11 +595,11 @@ calculate_Matrix_Free_Restart(const double &epsilon)
 	  for(int l =0; l < blocksize; l++){
 	    value += Precon(k,l) * denormalizeU( x[index(i,j,l)],l);
 	  }
-	  V[iter] -= normalizeR(value/(SolnBlk->dt[i][j]),k);
+	  V[iter] -= normalizeR(value * LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
 	  
 	//No Preconditioner
 	} else { // z/h
-	  V[iter] -= normalizeUtoR(x[iter]/(SolnBlk->dt[i][j]),k);	
+	  V[iter] -= normalizeUtoR(x[iter] * LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);	
 	}
       }  
     
