@@ -304,7 +304,7 @@ all: $(EXE_MAIN)
 	@echo '-------------------------------------------'
 	@echo ' '
 
-libraries-all: sparselib bpkit fftw
+libraries-all: sparselib bpkit blkclib fftw
 	@echo ' '	
 	@echo All libraries have been brought up to date.
 	@echo '-------------------------------------------'
@@ -348,6 +348,7 @@ blkclib:
 	@echo $(BLKCLIB) library has been brought up to date.
 	@echo '------------------------------------------------'
 	@echo ' '
+
 cantera:
 	@echo ' '
 	@echo Building $(CANTERA) library for a $(PLATFORM) platform.
