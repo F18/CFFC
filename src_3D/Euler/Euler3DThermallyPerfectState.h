@@ -334,7 +334,7 @@ class Euler3D_ThermallyPerfect_pState {
    double kappa(void) const; 
    double hprime(void) const;  
    double hprime(double &Temp) const;
-   Vector3D rhov(void) const;      
+Vector3D rhov(void) const;      
    double T(void) const;         
    //Determine temperature knowing sensible enthalpy 
    double T(double &h_s) const;   

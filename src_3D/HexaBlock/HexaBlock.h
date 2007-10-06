@@ -764,10 +764,11 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Output_Tecplot(Input_Parameters<SOLN_
                << "\"v\" \\ \n"
                << "\"w\" \\ \n"
                << "\"p\" \\ \n";
-      //n species mass fractions names
-      for (int i =0 ;i<W[0][0][0].ns ;i++) {
-         Out_File <<"\"c_"<<W[0][0][0].specdata[i].Speciesname()<<"\" \\ \n";
-      }
+/* Had to comment out for it to work with Euler 3D Polytropic */
+//      //n species mass fractions names
+//      for (int i =0 ;i<W[0][0][0].ns ;i++) {
+//         Out_File <<"\"c_"<<W[0][0][0].specdata[i].Speciesname()<<"\" \\ \n";
+//      }
       
       Out_File <<"\"T\" \\ \n";
       
@@ -844,10 +845,11 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Output_Cells_Tecplot(Input_Parameters
                << "\"w\" \\ \n"
                << "\"p\" \\ \n";
                 
-      //n species mass fractions names
-      for (int i =0;i<W[0][0][0].ns ;i++) {
-         Out_File <<"\"c"<<W[0][0][0].specdata[i].Speciesname()<<"\" \\ \n";
-      }
+/* Had to comment out for it to work with Euler 3D Polytropic */	   
+//      //n species mass fractions names
+//      for (int i =0;i<W[0][0][0].ns ;i++) {
+//         Out_File <<"\"c"<<W[0][0][0].specdata[i].Speciesname()<<"\" \\ \n";
+//      }
      
       Out_File <<"\"T\" \\ \n";
       Out_File <<"\"R\" \\ \n";
@@ -923,10 +925,11 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Output_Nodes_Tecplot(Input_Parameters
                << "\"v\" \\ \n"
                << "\"w\" \\ \n"
                << "\"p\" \\ \n";
-      //n species mass fractions names
-      for (int i =0 ;i<W[0][0][0].ns ;i++) {
-         Out_File <<"\"c_"<<W[0][0][0].specdata[i].Speciesname()<<"\" \\ \n";
-      }
+/* Had to comment out for it to work with Euler 3D polytropic */	   
+//      //n species mass fractions names
+//      for (int i =0 ;i<W[0][0][0].ns ;i++) {
+//         Out_File <<"\"c_"<<W[0][0][0].specdata[i].Speciesname()<<"\" \\ \n";
+//      }
       
       Out_File <<"\"T\" \\ \n";
       
@@ -984,167 +987,224 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::ICs(const int i_ICtype,
    SOLN_pSTATE Wl, Wr;
    
    switch(i_ICtype) {
-      case IC_VISCOUS_COUETTE :
-         dpdx = IPs.Pressure_Gradient.x;  
-         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
-         //starts with linear pressure gradient 
-         for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
-            for (  j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
-               for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-                  W[i][j][k] = IPs.Wo;
-                  /* velocity is function of z only (2D flow) */
-                  W[i][j][k].v.x = HALF*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 0.5*IPs.Grid_IP.Box_Height)*
-                     (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.Grid_IP.Box_Height) +
-                     IPs.Moving_Wall_Velocity.x*(Grid.Cell[i][j][k].Xc.z/IPs.Grid_IP.Box_Height + HALF);
-                  // assuming the wall velocity is parallel to x direction
-                  W[i][j][k].p = IPs.Wo.p - (i-ICl-Nghost)*delta_pres/(ICu-ICl);	 
-                  //start
-                  if( i == ICl-Nghost || i == ICl-Nghost+1 ){
-                    W[i][j][k].p = IPs.Wo.p;
-                  }
-                  //end
-                  if( i == ICu+Nghost || i == ICu+Nghost-1 ){
-                     W[i][j][k].p = IPs.Wo.p - delta_pres; 
-                  }
-                  U[i][j][k] = W[i][j][k].U( );
-	       } /* endfor */
-	    } /* endfor */
-	 } /* endfor */
-         break; 
+/* Had to comment this out because of mu in the viscous initial conditions that don't apply to Euler */
+//      case IC_VISCOUS_COUETTE :
+//         dpdx = IPs.Pressure_Gradient.x;  
+//         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
+//         //starts with linear pressure gradient 
+//         for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+//            for (  j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+//               for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+//                  W[i][j][k] = IPs.Wo;
+//                  /* velocity is function of z only (2D flow) */
+//                  W[i][j][k].v.x = HALF*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 0.5*IPs.Grid_IP.Box_Height)*
+//                     (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.Grid_IP.Box_Height) +
+//                     IPs.Moving_Wall_Velocity.x*(Grid.Cell[i][j][k].Xc.z/IPs.Grid_IP.Box_Height + HALF);
+//                  // assuming the wall velocity is parallel to x direction
+//                  W[i][j][k].p = IPs.Wo.p - (i-ICl-Nghost)*delta_pres/(ICu-ICl);	 
+//                  //start
+//                  if( i == ICl-Nghost || i == ICl-Nghost+1 ){
+//                    W[i][j][k].p = IPs.Wo.p;
+//                  }
+//                  //end
+//                  if( i == ICu+Nghost || i == ICu+Nghost-1 ){
+//                     W[i][j][k].p = IPs.Wo.p - delta_pres; 
+//                  }
+//                  U[i][j][k] = W[i][j][k].U( );
+//	       } /* endfor */
+//	    } /* endfor */
+//	 } /* endfor */
+//         break; 
+//
+//      case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_X :
+//         dpdx = IPs.Pressure_Gradient.x;  
+//         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
+//         //starts with linear pressure gradient 
+//         for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+//            for (  j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+//               for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+//                  W[i][j][k] = IPs.Wo;
+//                  /* velocity is function of z only (2D flow) */
+//                  W[i][j][k].v.x = HALF*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 0.5*IPs.Grid_IP.Box_Height)*
+//                     (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.Grid_IP.Box_Height) +
+//                     IPs.Moving_Wall_Velocity.x*(Grid.Cell[i][j][k].Xc.z/IPs.Grid_IP.Box_Height + HALF);
+//                  // assuming the wall velocity is parallel to x direction
+//                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.x)*  delta_pres/IPs.Grid_IP.Box_Length;	 
+//                  U[i][j][k] = W[i][j][k].U( );
+//	       } /* endfor */
+//	    } /* endfor */
+//	 } /* endfor */
+//         break; 
+//
+//      case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_Y :
+//         dpdy = IPs.Pressure_Gradient.y;  
+//         delta_pres = dpdy*IPs.Grid_IP.Box_Width;
+//         //starts with linear pressure gradient 
+//         for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+//            for (  j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+//               for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+//                  W[i][j][k] = IPs.Wo;
+//                  /* velocity is function of z only (2D flow) */
+//                  W[i][j][k].v.y = HALF*(-dpdy)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 0.5*IPs.Grid_IP.Box_Height)*
+//                     (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.Grid_IP.Box_Height) +
+//                     IPs.Moving_Wall_Velocity.y*(Grid.Cell[i][j][k].Xc.z/IPs.Grid_IP.Box_Height + HALF);
+//                  //assuming the wall velocity is parallel to x direction
+//                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.y)*delta_pres/IPs.Grid_IP.Box_Width;	 
+//                  //start
+//                  if( j == JCl-Nghost || j == JCl-Nghost+1 ){
+//                     W[i][j][k].p = IPs.Wo.p;
+//                  }
+//                  //end
+//                  if( j == JCu+Nghost || j == JCu+Nghost-1 ){
+//                     W[i][j][k].p = IPs.Wo.p - delta_pres; 
+//                  }
+//                  U[i][j][k] = W[i][j][k].U( );
+// 	       } /* endfor */
+//	    } /* endfor */
+//	 } /* endfor */
+//         break; 
+//
+//      case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_Z :
+//         dpdz = IPs.Pressure_Gradient.z;  
+//         delta_pres = dpdz*IPs.Grid_IP.Box_Height;
+//         //starts with linear pressure gradient 
+//         for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+//            for (  j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+//               for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+//                  W[i][j][k] = IPs.Wo;
+//                  /* velocity is function of y only (2D flow) */
+//                  W[i][j][k].v.z = HALF*(-dpdz)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.y + 0.5*IPs.Grid_IP.Box_Width)*
+//                     (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Width) +
+//                     IPs.Moving_Wall_Velocity.z*(Grid.Cell[i][j][k].Xc.y/IPs.Grid_IP.Box_Width + HALF);
+//                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.z)*delta_pres/IPs.Grid_IP.Box_Height;	 
+//                  //start
+//                 if( k == KCl-Nghost || k == KCl-Nghost+1 ){
+//                     W[i][j][k].p = IPs.Wo.p;
+//                  }
+//                  //end
+//                  if( k == KCu+Nghost || k == KCu+Nghost-1 ){
+//                     W[i][j][k].p = IPs.Wo.p - delta_pres; 
+//                  }
+//                  U[i][j][k] = W[i][j][k].U( );
+//	       } /* endfor */
+//	    } /* endfor */
+//	 } /* endfor */
+//         break; 
+//      
+//      case IC_PRESSURE_GRADIENT_X :
+//         dpdx = IPs.Pressure_Gradient.x;  
+//         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
+//         di =  1.0/sqr(IPs.Grid_IP.Box_Height/2.0)+ 1.0/sqr(IPs.Grid_IP.Box_Width/2.0);
+//         U_axi = delta_pres/(2.0*W[0][0][0].mu())/di;
+//         //starts with linear pressure gradient 
+//         for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+//            for (  j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+//               for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+//                  W[i][j][k] = IPs.Wo;
+//                  /* velocity is function of z only (2D flow) */
+//                  W[i][j][k].v.x = 0.5*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 0.5*IPs.Grid_IP.Box_Height)*
+//                     (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.Grid_IP.Box_Height);
+//                  W[i][j][k].p = IPs.Wo.p - (i-ICl-Nghost)*delta_pres/(ICu-ICl);	 
+//                  //start
+//                  if( i == ICl-Nghost || i == ICl-Nghost+1 ){
+//                     W[i][j][k].p = IPs.Wo.p;
+//                  }
+//                  //end
+//                  if( i == ICu+Nghost || i == ICu+Nghost-1){
+//                     W[i][j][k].p = IPs.Wo.p - delta_pres; 
+//                  }
+//                  U[i][j][k] = W[i][j][k].U( );
+//	       } /* endfor */ 
+//	    } /* endfor */       
+//	 } /* endfor */
+//         break; 
+//
+//      case IC_CHANNEL_FLOW :
+//         // this case is from John Laufer
+//         // Investigation of Turbulent Flow in a Two-Dimensional Channel
+//         // debugging purpose here (laminar flow)
+//         dpdx = IPs.Pressure_Gradient.x;  
+//         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
+//         Um = 22.3;
+//         //Um = 7.07; // computed from Reynolds number 61600
+//         for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+//	    for (  j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+//               for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+//                  W[i][j][k] = IPs.Wo;
+//                  W[i][j][k].p = IPs.Wo.p - (i-ICl-Nghost)*delta_pres/(ICu-ICl);	 
+//                  //start
+//                  if( i == ICl-Nghost || i == ICl-Nghost+1 ){
+//                     W[i][j][k].p = IPs.Wo.p;
+//                  }
+//                  //end
+//                  if( i == ICu+Nghost || i == ICu+Nghost-1){
+//                     W[i][j][k].p = IPs.Wo.p - delta_pres; 
+//                  }
+//                  /* velocity is function of y only (2D flow) */
+//                  W[i][j][k].v.x = 0.5*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.y + 0.5*IPs.Grid_IP.Box_Width)*
+//                     (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Width);
+//                  //conservative solution state
+//                  U[i][j][k] = W[i][j][k].U();
+// 	       } /* endfor */
+//	    } /* endfor */
+//	 } /* endfor */
+//         break; 
+	case IC_SOD_XDIR :
+		Wl = SOLN_pSTATE(DENSITY_STDATM, Vector3D_ZERO,
+						 PRESSURE_STDATM);
+		Wr = SOLN_pSTATE(DENSITY_STDATM*8.0, Vector3D_ZERO,
+						 PRESSURE_STDATM*10.0);
+		for (k = KCl-Nghost; k <= KCu+Nghost; ++k) {
+			for (j = JCl-Nghost; j <= JCu+Nghost; ++j) {
+				for (i = ICl-Nghost; i <= ICu+Nghost; ++i) {
+					if (Grid.Cell[i][j][k].Xc.x <= ZERO) {
+						W[i][j][k] = Wl; 
+					} else {
+						W[i][j][k] = Wr;
+					} /* end if */
+					  U[i][j][k] = W[i][j][k].U();
+				} /* endfor */
+			} /* endfor */
+		} /* endfor */
+			 break;
 
-      case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_X :
-         dpdx = IPs.Pressure_Gradient.x;  
-         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
-         //starts with linear pressure gradient 
-         for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
-            for (  j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
-               for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-                  W[i][j][k] = IPs.Wo;
-                  /* velocity is function of z only (2D flow) */
-                  W[i][j][k].v.x = HALF*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 0.5*IPs.Grid_IP.Box_Height)*
-                     (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.Grid_IP.Box_Height) +
-                     IPs.Moving_Wall_Velocity.x*(Grid.Cell[i][j][k].Xc.z/IPs.Grid_IP.Box_Height + HALF);
-                  // assuming the wall velocity is parallel to x direction
-                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.x)*  delta_pres/IPs.Grid_IP.Box_Length;	 
-                  U[i][j][k] = W[i][j][k].U( );
-	       } /* endfor */
-	    } /* endfor */
-	 } /* endfor */
-         break; 
+	case IC_SOD_YDIR :
+		Wl = SOLN_pSTATE(DENSITY_STDATM, Vector3D_ZERO,
+						 PRESSURE_STDATM);
+		Wr = SOLN_pSTATE(DENSITY_STDATM*8.0, Vector3D_ZERO,
+						 PRESSURE_STDATM*10.0);
+		for (k = KCl-Nghost; k <= KCu+Nghost; ++k) {
+			for (j = JCl-Nghost; j <= JCu+Nghost; ++j) {
+				for (i = ICl-Nghost; i <= ICu+Nghost; ++i) {
+					if (Grid.Cell[i][j][k].Xc.y <= ZERO) {
+						W[i][j][k] = Wl; 
+					} else {
+						W[i][j][k] = Wr;
+					} /* end if */
+					  U[i][j][k] = W[i][j][k].U();
+				} /* endfor */
+			} /* endfor */
+		} /* endfor */
+			 break;
 
-      case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_Y :
-         dpdy = IPs.Pressure_Gradient.y;  
-         delta_pres = dpdy*IPs.Grid_IP.Box_Width;
-         //starts with linear pressure gradient 
-         for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
-            for (  j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
-               for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-                  W[i][j][k] = IPs.Wo;
-                  /* velocity is function of z only (2D flow) */
-                  W[i][j][k].v.y = HALF*(-dpdy)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 0.5*IPs.Grid_IP.Box_Height)*
-                     (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.Grid_IP.Box_Height) +
-                     IPs.Moving_Wall_Velocity.y*(Grid.Cell[i][j][k].Xc.z/IPs.Grid_IP.Box_Height + HALF);
-                  //assuming the wall velocity is parallel to x direction
-                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.y)*delta_pres/IPs.Grid_IP.Box_Width;	 
-                  //start
-                  if( j == JCl-Nghost || j == JCl-Nghost+1 ){
-                     W[i][j][k].p = IPs.Wo.p;
-                  }
-                  //end
-                  if( j == JCu+Nghost || j == JCu+Nghost-1 ){
-                     W[i][j][k].p = IPs.Wo.p - delta_pres; 
-                  }
-                  U[i][j][k] = W[i][j][k].U( );
- 	       } /* endfor */
-	    } /* endfor */
-	 } /* endfor */
-         break; 
-
-      case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_Z :
-         dpdz = IPs.Pressure_Gradient.z;  
-         delta_pres = dpdz*IPs.Grid_IP.Box_Height;
-         //starts with linear pressure gradient 
-         for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
-            for (  j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
-               for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-                  W[i][j][k] = IPs.Wo;
-                  /* velocity is function of y only (2D flow) */
-                  W[i][j][k].v.z = HALF*(-dpdz)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.y + 0.5*IPs.Grid_IP.Box_Width)*
-                     (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Width) +
-                     IPs.Moving_Wall_Velocity.z*(Grid.Cell[i][j][k].Xc.y/IPs.Grid_IP.Box_Width + HALF);
-                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.z)*delta_pres/IPs.Grid_IP.Box_Height;	 
-                  //start
-                 if( k == KCl-Nghost || k == KCl-Nghost+1 ){
-                     W[i][j][k].p = IPs.Wo.p;
-                  }
-                  //end
-                  if( k == KCu+Nghost || k == KCu+Nghost-1 ){
-                     W[i][j][k].p = IPs.Wo.p - delta_pres; 
-                  }
-                  U[i][j][k] = W[i][j][k].U( );
-	       } /* endfor */
-	    } /* endfor */
-	 } /* endfor */
-         break; 
-      
-      case IC_PRESSURE_GRADIENT_X :
-         dpdx = IPs.Pressure_Gradient.x;  
-         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
-         di =  1.0/sqr(IPs.Grid_IP.Box_Height/2.0)+ 1.0/sqr(IPs.Grid_IP.Box_Width/2.0);
-         U_axi = delta_pres/(2.0*W[0][0][0].mu())/di;
-         //starts with linear pressure gradient 
-         for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
-            for (  j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
-               for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-                  W[i][j][k] = IPs.Wo;
-                  /* velocity is function of z only (2D flow) */
-                  W[i][j][k].v.x = 0.5*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 0.5*IPs.Grid_IP.Box_Height)*
-                     (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.Grid_IP.Box_Height);
-                  W[i][j][k].p = IPs.Wo.p - (i-ICl-Nghost)*delta_pres/(ICu-ICl);	 
-                  //start
-                  if( i == ICl-Nghost || i == ICl-Nghost+1 ){
-                     W[i][j][k].p = IPs.Wo.p;
-                  }
-                  //end
-                  if( i == ICu+Nghost || i == ICu+Nghost-1){
-                     W[i][j][k].p = IPs.Wo.p - delta_pres; 
-                  }
-                  U[i][j][k] = W[i][j][k].U( );
-	       } /* endfor */ 
-	    } /* endfor */       
-	 } /* endfor */
-         break; 
-
-      case IC_CHANNEL_FLOW :
-         // this case is from John Laufer
-         // Investigation of Turbulent Flow in a Two-Dimensional Channel
-         // debugging purpose here (laminar flow)
-         dpdx = IPs.Pressure_Gradient.x;  
-         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
-         Um = 22.3;
-         //Um = 7.07; // computed from Reynolds number 61600
-         for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
-	    for (  j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
-               for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-                  W[i][j][k] = IPs.Wo;
-                  W[i][j][k].p = IPs.Wo.p - (i-ICl-Nghost)*delta_pres/(ICu-ICl);	 
-                  //start
-                  if( i == ICl-Nghost || i == ICl-Nghost+1 ){
-                     W[i][j][k].p = IPs.Wo.p;
-                  }
-                  //end
-                  if( i == ICu+Nghost || i == ICu+Nghost-1){
-                     W[i][j][k].p = IPs.Wo.p - delta_pres; 
-                  }
-                  /* velocity is function of y only (2D flow) */
-                  W[i][j][k].v.x = 0.5*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.y + 0.5*IPs.Grid_IP.Box_Width)*
-                     (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Width);
-                  //conservative solution state
-                  U[i][j][k] = W[i][j][k].U();
- 	       } /* endfor */
-	    } /* endfor */
-	 } /* endfor */
-         break; 
+	case IC_SOD_ZDIR :
+		Wl = SOLN_pSTATE(DENSITY_STDATM, Vector3D_ZERO,
+						 PRESSURE_STDATM);
+		Wr = SOLN_pSTATE(DENSITY_STDATM*8.0, Vector3D_ZERO,
+						 PRESSURE_STDATM*10.0);
+		for (k = KCl-Nghost; k <= KCu+Nghost; ++k) {
+			for (j = JCl-Nghost; j <= JCu+Nghost; ++j) {
+				for (i = ICl-Nghost; i <= ICu+Nghost; ++i) {
+					if (Grid.Cell[i][j][k].Xc.z <= ZERO) {
+						W[i][j][k] = Wl; 
+					} else {
+						W[i][j][k] = Wr;
+					} /* end if */
+					  U[i][j][k] = W[i][j][k].U();
+				} /* endfor */
+			} /* endfor */
+		} /* endfor */
+			 break;
 
       case IC_SHOCK_BOX :
 	 Wl = SOLN_pSTATE(IPs.Wo);
@@ -1840,18 +1900,18 @@ double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::CFL(Input_Parameters<SOLN_pSTATE, S
                a =  W[i][j][k].a();
                dt[i][j][k] = min(min(d_i/(a+fabs(v_i)), d_j/(a+fabs(v_j))),
                                  d_k/(a+fabs(v_k)));
-               
-               if (IPs.i_Flow_Type != FLOWTYPE_INVISCID) {  
-                  nv = W[i][j][k].mu()/W[i][j][k].rho;
-                  dt_vis = min(min((d_i*d_i)/(3.0*nv), (d_j*d_j)/(3.0*nv)), (d_k*d_k)/(3.0*nv)); 
-                  dt[i][j][k]  = min(dt_vis, dt[i][j][k]);
-               }
-
-               /******** Chemical Source Term deltat calculation ************/   
-               if (W[i][j][k].React.reactset_flag != NO_REACTIONS){
-                  dt_chem = HALF/W[i][j][k].dSwdU_max_diagonal();
-                  dt[i][j][k] = min(dt_chem, dt[i][j][k]);
-               } /* endif */
+/* Had to comment this out for it to work with Euler3D Polytropic */               
+//               if (IPs.i_Flow_Type != FLOWTYPE_INVISCID) {  
+//                  nv = W[i][j][k].mu()/W[i][j][k].rho;
+//                  dt_vis = min(min((d_i*d_i)/(3.0*nv), (d_j*d_j)/(3.0*nv)), (d_k*d_k)/(3.0*nv)); 
+//                  dt[i][j][k]  = min(dt_vis, dt[i][j][k]);
+//               }
+//
+//               /******** Chemical Source Term deltat calculation ************/   
+//               if (W[i][j][k].React.reactset_flag != NO_REACTIONS){
+//                  dt_chem = HALF/W[i][j][k].dSwdU_max_diagonal();
+//                  dt[i][j][k] = min(dt_chem, dt[i][j][k]);
+//               } /* endif */
                
                dtMin = min(dtMin,  dt[i][j][k]);
             } /* endif */
@@ -2468,16 +2528,22 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::dUdt_Multistage_Explicit(const int i_s
                   Flux* Grid.AfaceW(i+1, j, k)/
                   Grid.volume(i+1, j ,k);
                
+		//		cout << "Cell ( " << i << " , " << j << " , " << k << " ) :" << endl;
+//				cout << "dUdt[i][j][k]   = " << dUdt[i][j][k][k_residual] << endl;
+//				cout << "dUdt[i+1][j][k] = " << dUdt[i][j][k][k_residual] << endl;
+
                
                /* Include source terms associated with the finite-rate chemistry and
                   turbulence/chemistry interactions */
                
-               if (W[i][j][k].React.reactset_flag != NO_REACTIONS) {
-                  
-                  dUdt[i][j][k][k_residual] += IPs.CFL_Number*dt[i][j][k]*W[i][j][k].Sw(
-                     W[i][j][k].React.reactset_flag);
-                  
-               } /* endif */
+
+/* Had to comment out for it to work with Euler3D Polytropic */
+//               if (W[i][j][k].React.reactset_flag != NO_REACTIONS) {
+//                  
+//                  dUdt[i][j][k][k_residual] += IPs.CFL_Number*dt[i][j][k]*W[i][j][k].Sw(
+//                     W[i][j][k].React.reactset_flag);
+//                  
+//               } /* endif */
               
                
                /* Save west and east face boundary flux. */
@@ -2589,6 +2655,10 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::dUdt_Multistage_Explicit(const int i_s
                (IPs.CFL_Number* dt[i][j+1][k])*
                Flux* Grid.AfaceS(i, j+1, k)/
                Grid.volume(i, j+1, k);
+//
+//			cout << "Cell ( " << i << " , " << j << " , " << k << " ) :" << endl;
+//				cout << "dUdt[i][j][k]   = " << dUdt[i][j][k][k_residual] << endl;
+//				cout << "dUdt[i+1][j][k] = " << dUdt[i][j][k][k_residual] << endl;
 
             
             /* Save south and north face boundary flux. */
@@ -2701,6 +2771,10 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::dUdt_Multistage_Explicit(const int i_s
                (IPs.CFL_Number* dt[i][j][k+1])*
                Flux* Grid.AfaceBot(i, j, k+1)/
                Grid.volume(i, j, k+1);
+
+			//cout << "Cell ( " << i << " , " << j << " , " << k << " ) :" << endl;
+//			cout << "dUdt[i][j][k]   = " << dUdt[i][j][k][k_residual] << endl;
+//			cout << "dUdt[i+1][j][k] = " << dUdt[i][j][k][k_residual] << endl;
             
             /* Save top and bottom face boundary flux. */
             
@@ -2790,22 +2864,27 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Update_Solution_Multistage_Explicit(co
                 SCALAR_LOCAL_TIME_STEPPING) {
                
                U[i][j][k] = Uo[i][j][k] + omega* dUdt[i][j][k][k_residual];
-                             
-               //N-1 species
-               U[i][j][k][num_vars] = U[i][j][k].rho*(ONE - U[i][j][k].sum_species());
+
+/* had to comment out for it to work with Euler3D Polytropic */				
+//               //N-1 species
+//               U[i][j][k][num_vars] = U[i][j][k].rho*(ONE - U[i][j][k].sum_species());
             }
-            
-            Uo[i][j][k].negative_speccheck( Uo[i][j][k], W[i][j][k].React.reactset_flag );
+      
+//            Uo[i][j][k].negative_speccheck( Uo[i][j][k], W[i][j][k].React.reactset_flag );
             if (IPs.Local_Time_Stepping == GLOBAL_TIME_STEPPING && 
-                ( U[i][j][k].rho  <= ZERO ||  
-                  U[i][j][k].es() <= ZERO)) {
+                ( U[i][j][k].rho  <= ZERO || isnan(U[i][j][k].rho) /*||  
+                  U[i][j][k].es() <= ZERO*/)) {
                
                cout << "\n " << CFFC_Name() << 
                   " ERROR: Negative Density, Mass Fractions, and/or Sensible Energy: \n"
                     << " cell = (" << i << ", " << j <<", "<< k << ") " 
-                    << " X = " <<  Grid.Cell[i][j][k].Xc << "\n U = " 
-                    <<  U[i][j][k] << "\n dUdt = " 
-                    <<  dUdt[i][j][k][k_residual] << "\n";
+				<< " X = " <<  Grid.Cell[i][j][k].Xc << "\n Uo = " 
+				<<  Uo[i][j][k] << "\n U = " 
+                    <<  U[i][j][k] << "\n W = "
+					<<  U[i][j][k].W() << "\n dUdt = " 
+                    <<  dUdt[i][j][k][k_residual] << "\n"
+					<< "omega = " << omega << endl
+				<< "omega * dUdt = " << omega*dUdt[i][j][j][k_residual] << endl;
                return (i);
                
             } 

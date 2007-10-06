@@ -210,6 +210,17 @@ int HexaSolver(char *Input_File_Name_ptr,
       if (error_flag) return (error_flag);
 
       Local_Solution_Blocks.ICs(Input);
+
+//	error_flag = Local_Solution_Blocks.Output_Nodes_Tecplot(Input, 
+//															Local_Adaptive_Block_List,
+//															number_of_time_steps,
+//															Time);
+//         if (error_flag) {
+//			 cout << "\n  ERROR: Unable to open  cell output data file(s) on processor "
+//			 << CFFC_MPI::This_Processor_Number
+//			 << ".\n";
+//			 cout.flush();}
+			 
    } /* endif */
 
    /* Send solution information between neighbouring blocks to complete
@@ -382,7 +393,6 @@ int HexaSolver(char *Input_File_Name_ptr,
           } /* endif */
 
          /* Check to see if calculations are complete. */
-
          if (!Input.Time_Accurate && number_of_time_steps >= Input.Maximum_Number_of_Time_Steps) break;
          if (Input.Time_Accurate && Time >= Input.Time_Max) break;
          
@@ -404,9 +414,18 @@ int HexaSolver(char *Input_File_Name_ptr,
                                                                      Local_Adaptive_Block_List,
                                                                      Local_Solution_Blocks.Soln_Blks[0].NumVar(),
                                                                      OFF);
-          
             // 2. Apply boundary conditions for stage.
             Local_Solution_Blocks.BCs(Input);
+
+			error_flag = Local_Solution_Blocks.Output_Nodes_Tecplot(Input, 
+																	Local_Adaptive_Block_List,
+																	number_of_time_steps,
+																	Time);
+			if (error_flag) {
+				cout << "\n  ERROR: Unable to open  cell output data file(s) on processor "
+				<< CFFC_MPI::This_Processor_Number
+				<< ".\n";
+				cout.flush();}
 
             // 3. Determine solution residuals for stage.
             error_flag =  Local_Solution_Blocks.dUdt_Multistage_Explicit(Input, i_stage);
@@ -417,7 +436,7 @@ int HexaSolver(char *Input_File_Name_ptr,
             } /* endif */
             error_flag = CFFC_OR_MPI(error_flag);
             if (error_flag) return (error_flag);
-          
+			          
             // 7. Update solution for stage.
             error_flag =  Local_Solution_Blocks.Update_Solution_Multistage_Explicit(Input, i_stage);
             if (error_flag) {

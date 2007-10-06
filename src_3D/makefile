@@ -101,7 +101,8 @@ SRC_MULTIGRID = $(MULTIGRID_DIR)FASMultigridInput.cc
 SRC_NKS = $(NKS_DIR)NKSInput.cc
 
 # Euler3D:
-SRC_EULER = $(EULER_DIR)Euler3DThermallyPerfectState.cc
+SRC_EULER = $(EULER_DIR)Euler3DPolytropicState.cc \
+	    $(EULER_DIR)Euler3DThermallyPerfectState.cc \
 
 # NavierStokes3D:
 SRC_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectState.cc \
@@ -129,7 +130,8 @@ SRC_REACTIONS += $(SRC_REACTIONS_F90)
 SRC_TUT = TestRun.cc \
           TestData.cc \
 	  BasicTests/Sample_Test.cc \
-          BasicTests/test_TestData.cc
+          BasicTests/test_TestData.cc \
+	  ../Euler/test_Euler3DPolytropicState.cc
 SRC_TUT := $(addprefix $(UNIT_TESTING_DIR), $(SRC_TUT))
 
 # System:
@@ -205,7 +207,9 @@ OBJ_MULTIGRID = $(MULTIGRID_DIR)FASMultigridInput.o
 OBJ_NKS = $(NKS_DIR)NKSInput.o
 
 # Euler3D:
-OBJ_EULER = $(EULER_DIR)Euler3DThermallyPerfectState.o
+OBJ_EULER = $(EULER_DIR)Euler3DPolytropicState.o \
+	    $(EULER_DIR)Euler3DThermallyPerfectState.o \
+
 
 # NavierStokes3D:
 OBJ_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectState.o \
