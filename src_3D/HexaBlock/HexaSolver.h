@@ -192,9 +192,9 @@ int HexaSolver(char *Input_File_Name_ptr,
    } else {
 
      /////////////////////////////////////////////////////
-     RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>  Create_Turbulence(HAWORTH_POINSOT);
-     Create_Turbulence.Generate_Velocity_Fluctuations(Initial_Mesh, Input.Grid_IP); 
-     cout << "\n\n INITIAL TURBULENT FLUCTUATIONS GENERATED. \n\n";
+     //RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>  Create_Turbulence(HAWORTH_POINSOT);
+     //Create_Turbulence.Generate_Velocity_Fluctuations(Initial_Mesh, Input.Grid_IP); 
+     //cout << "\n\n INITIAL TURBULENT FLUCTUATIONS GENERATED. \n\n";
      /////////////////////////////////////////////////////
 
       error_flag = Wall_Distance(Local_Solution_Blocks.Soln_Blks,
