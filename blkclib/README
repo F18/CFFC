@@ -1,0 +1,76 @@
+=================================================================
+To compile the blkc library
+=================================================================
+
+  ./configure [options]
+  make [target]
+
+The arguments in [] are optional, and if given should be specified
+without the [].
+
+The recognized options to configure are:
+
+--enable-debug
+  This enables a debug version of the library. Normally, this just sets the
+  -g option for compiling.
+
+--enable-hashmap
+  This enables use of a hash map instead of the map in the C++ standard library.
+  Edit file "/src/hash_map to specify the hash map.  The file is configured to
+  use the gnu cxx hash map by default.  Note that using a hash map probably
+  will not make much difference.  Also, it has not been tested much.
+
+--prefix=PREFIX
+  This sets the installation directory for the blkc library and headers.  By
+  default, PREFIX is set to /usr/local and the library will be installed as:
+    /usr/local/lib/libblkc.a
+  and the headers as:
+    /usr/local/include/block_connectivity.h
+    /usr/local/include/transform_matrix.h
+  Use absolute paths or shell environment variables when specifying a directory,
+  since the 'configure' is interpreted by 'sh' not 'csh'. i.e: use
+  --prefix=$HOME instead of --prefix=~ .
+
+The configure script creates the file make.defs which may be further edited
+to customize the makefile settings.
+
+Options have been explicitly set for the following systems and compilers:
+  *       - gxx
+  alpha   - cxx
+  itanium - icpc
+
+For a description of configuration options, type
+
+./configure --help
+
+The available make targets are:
+
+all
+  This is the default target (if target is not given). This builds the blkc
+  library 'lib/libblkc.a' and installs '/include/block_connectivity.h' and
+  '/include/transform_matrix.h'.
+
+clean
+  This removes all object files.  The library and headers in '/include' are not
+  affected
+
+distclean
+  Removes the object files, library, headers in '/include' and files generated
+  by 'configure'
+
+install
+  Installs the library and headers
+
+uninstall
+  Uninstalls the library and headers
+
+depend
+  Builds dependencies for the libary.  This is only useful if you are modifying
+  the library.
+
+check
+  Runs a program to check the functioning of the library.
+
+dist
+  Performs a distclean and then builds the tar file 'blkc.tar.bz2' in the parent
+  directory.  This is only useful if you are modifying the library.
