@@ -389,15 +389,49 @@ void Grid3D_Hexa_Multi_Block_List::Copy(Grid3D_Hexa_Multi_Block_List &Grid2) {
  ********************************************************/
 void Grid3D_Hexa_Multi_Block_List::Broadcast(void) {
 
-  if (Allocated) {
+#ifdef _MPI_VERSION
+  int n, ni, nj, nk, grid_allocated;
 
-    /* Broadcast each of the blocks in the multiblock mesh. */
+  /* Broadcast the number of grid blocks. */
 
-    for (int  i = 0 ; i < NBlk ; ++i ) {
-       if (Grid_Blks[i].Allocated) Grid_Blks[i].Broadcast();
-    } /* endfor */
-
+  if (CFFC_Primary_MPI_Processor()) {
+     n = NBlk;
+     ni = NBlk_Idir;
+     nj = NBlk_Jdir;
+     nk = NBlk_Kdir;
+     grid_allocated = Allocated;
   } /* endif */
+
+  MPI::COMM_WORLD.Bcast(&n, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&ni, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&nj, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&nk, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&grid_allocated, 1, MPI::INT, 0);
+
+  /* On non-primary MPI processors, allocate (re-allocate) 
+     memory for the grid blocks as necessary. */
+
+  if (!CFFC_Primary_MPI_Processor()) {
+     if (grid_allocated && 
+         (NBlk != n ||
+          NBlk_Idir != ni || 
+          NBlk_Jdir != nj || 
+          NBlk_Kdir != nk) ) { 
+        if (Allocated) { 
+          Deallocate();
+        } /* endif */
+        Allocate(ni, nj, nk);
+     } /* endif */
+  } /* endif */
+
+  /* Broadcast each of the blocks in the multiblock mesh. */
+
+  if (Allocated) {
+    for (int  i = 0 ; i < NBlk ; ++i ) {
+       Grid_Blks[i].Broadcast();
+    } /* endfor */
+  } /* endif */
+#endif
 
 }
 

@@ -161,13 +161,16 @@ endif
 ifeq ($(PLATFORM),Linux_x86_64)
   BLAS_LD_FLAGS           = -lblas -llapack -lg2c -lgcc
 endif
-# Set flags associated with block connectivity library
+
+#
+# Set flags associated with block connectivity library, blkclib
 BLKCLIB                 = BlockConnectivity
 BLKCLIB_DIR             = $(CFFC_Path)/blkclib
 BLKCLIB_LIB_DIR         = $(BLKCLIB_DIR)/lib
 BLKCLIB_INC_DIR         = $(BLKCLIB_DIR)/include
 BLKCLIB_CPP_FLAGS       = -I$(BLKCLIB_INC_DIR) 
 BLKCLIB_LD_FLAGS        = -L$(BLKCLIB_LIB_DIR) -lblkc 
+
 #
 # Set flags associated with cantera
 ifeq ($(PLATFORM),Linux_i386)
