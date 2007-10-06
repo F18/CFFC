@@ -175,6 +175,9 @@ bool operator!= (const TaylorDerivativesContainer<OneD,T>& left,
 template<SpaceType OneD, class T>
 std::ostream & operator<< (std::ostream & os, const TaylorDerivativesContainer<OneD,T>& Obj);
 
+template<SpaceType OneD, class T>
+std::istream & operator>> (std::istream & os, TaylorDerivativesContainer<OneD,T>& Obj);
+
 /*******************************************************
  * TEMPLATIZED CLASS: TaylorDerivativesContainer_1D    *
  ******************************************************/
@@ -239,6 +242,8 @@ class TaylorDerivativesContainer<OneD,T>{
 			      const TaylorDerivativesContainer<OneD,T>& right);
 
   friend std::ostream & operator<< <OneD,T> (std::ostream & os, const TaylorDerivativesContainer<OneD,T>& Obj);
+
+  friend std::istream & operator>> <OneD,T> (std::istream & os, TaylorDerivativesContainer<OneD,T>& Obj);
 
     // Assignment operator;
   TaylorDerivativesContainer<OneD,T> & operator=(const TaylorDerivativesContainer<OneD,T> & rhs);
@@ -401,7 +406,22 @@ std::ostream & operator<< (std::ostream & os, const TaylorDerivativesContainer<O
     os << Obj(i,true,true,true) << endl;
   os.unsetf(ios::skipws);
   return os;
-};
+}
+
+template<class T> inline
+std::istream & operator>> (std::istream & os, TaylorDerivativesContainer<OneD,T>& Obj){
+
+  int ReconstructionOrder;
+  os.setf(ios::skipws);
+  os >> ReconstructionOrder;
+  /* Adjust the container size */
+  Obj.GenerateContainer(ReconstructionOrder);
+  for(int i=0; i<=Obj.LastElem(); ++i){
+    os >> Obj(i,true,true,true);
+  }
+  os.unsetf(ios::skipws);
+  return os;
+}
 
 // operator ==
 template<class T> inline

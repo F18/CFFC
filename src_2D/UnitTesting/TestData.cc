@@ -233,8 +233,8 @@ namespace tut{
       delete [] File2; File2 = NULL;
     }
     catch(...) {
-      // Try to remove File1(_CurrentFile_)
-      remove(File1);
+      // Something went wrong.
+      // DON'T remove File1(_CurrentFile_) so user can check!
 
       // Deallocate memory
       delete [] File1; File1 = NULL;

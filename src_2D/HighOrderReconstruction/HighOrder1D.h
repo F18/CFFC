@@ -77,22 +77,22 @@ public:
   /* Field access */
   const DerivativesContainer & CellDeriv(void) const {return TD;}
   DerivativesContainer & CellDeriv(void) {return TD;}
-  const Soln_State & CellDeriv(int i) const {return TD(i);}
-  Soln_State & CellDeriv(int i) {return TD(i);}
-  const double & CellDeriv(const int i, const int Variable) const { return TD(i)[Variable];}
-  double & CellDeriv(const int i, const int Variable) { return TD(i)[Variable];}
-  Derivative & CellDeriv(const int position, const bool, const bool) {return TD(position,true,true,true);}
-  const Derivative & CellDeriv(const int position, const bool, const bool) const {return TD(position,true,true,true);}
+  const Soln_State & CellDeriv(const int & p1) const {return TD(p1);}
+  Soln_State & CellDeriv(const int & p1) {return TD(p1);}
+  const double & CellDeriv(const int & p1, const int & Variable) const { return TD(p1)[Variable];}
+  double & CellDeriv(const int & p1, const int & Variable) { return TD(p1)[Variable];}
+  Derivative & CellDeriv_InPosition(const int & position) {return TD(position,true,true,true);}
+  const Derivative & CellDeriv_InPosition(const int & position) const {return TD(position,true,true,true);}
 
   const int NumberOfTaylorDerivatives() const {return TD.size();}
 
   const GeometricMoments & CellGeomCoeff() const { return GeomCoeff; }
   GeometricMoments & CellGeomCoeff() {return GeomCoeff;}
   const double & CellGeomCoeff(const int & p1) {return GeomCoeff(p1);}
-  const double & CellGeomCoeff(const int position, const bool) {return GeomCoeff(position,true,true,true).D();}
+  const double & CellGeomCoeff_InPosition(const int & position) {return GeomCoeff(position,true,true,true).D();}
 
   const int & CellRings() const {return rings;}
-  const int & CellRecOrder() const {return RecOrder;}
+  const int & CellRecOrder() const {return TD.RecOrder();}
 
   /* Monotonicity variables --> high-order */
   const vector<short int> & CellInadequateFit() const { return LimitedCell;}
@@ -102,8 +102,8 @@ public:
 
   const Soln_State & CellSmoothnessIndicator() const { return SI;}
   Soln_State & CellSmoothnessIndicator(){ return SI;}
-  const double & CellSmoothnessIndicator(const int VarPosition)const{ return SI[VarPosition];}
-  double & CellSmoothnessIndicator( const int VarPosition){ return SI[VarPosition];}
+  const double & CellSmoothnessIndicator(const int & VarPosition)const{ return SI[VarPosition];}
+  double & CellSmoothnessIndicator( const int & VarPosition){ return SI[VarPosition];}
 
   /* Access the pseudo-inverse of the LHS term in the CENO reconstruction */
   DenseMatrix & LHS(void) {return CENO_LHS;}
@@ -129,12 +129,16 @@ public:
   void SetRings(void);
   void ComputeGeometricCoefficients(void);
   void InitializeMonotonicityFlag(void);
+
   double SolutionAtCoordinates(const double & X_Coord, const unsigned parameter){
     return TD.ComputeSolutionFor(X_Coord - CellCenter())[parameter];
   }
   Soln_State SolutionAtCoordinates(const double & X_Coord){
     return TD.ComputeSolutionFor(X_Coord - CellCenter());
   }
+  /* Computation of right and left states (left and right are relative to the position of the centroid) */
+  Soln_State left_state(void);
+  Soln_State right_state(void);
 
   // Integrate over the domain of the geometry associated with this high-order solution
   template<typename FO, class ReturnType>
@@ -158,9 +162,8 @@ private:
   GeometricMoments GeomCoeff;   // The integrals of the geometric moments with respect to the centroid
   Soln_State SI;                // The values of the smoothness indicator calculated for each variable
   vector<short int> LimitedCell; // Monotonicity flag: Values --> OFF - high-order reconstruction
-                                      //                                ON - limited linear reconstruction
+                                 //                               ON - limited linear reconstruction
   int rings;                    // Number of rings used to generate the reconstruction stencil
-  int RecOrder;                 // Reconstruction Order
 
   /* Create storage for the pseudo-inverse of the LHS term in the CENO reconstruction */
   DenseMatrix CENO_LHS;
@@ -180,17 +183,22 @@ private:
 
 //! Default Constructor
 template<class SOLN_STATE> inline
-HighOrder1D<SOLN_STATE>::HighOrder1D(void):TD(), GeomCoeff(), Geom(NULL),
-					   CENO_LHS(), CENO_Geometric_Weights() {
-  RecOrder = 0;
-  rings = 0;
+HighOrder1D<SOLN_STATE>::HighOrder1D(void):TD(0), GeomCoeff(0), SI(0),
+					   CENO_LHS(), CENO_Geometric_Weights(), Geom(NULL) {
+  // set rings
+  SetRings();
+
+  // initialize monotonicity flag
   InitializeMonotonicityFlag();
+
+  // set the value of the geometric moment
+  GeomCoeff(0) = 1.0;
 }
 
 //! Main Constructor
 template<class SOLN_STATE> inline
 HighOrder1D<SOLN_STATE>::HighOrder1D(int ReconstructionOrder, GeometryType & Cell):
-  RecOrder(ReconstructionOrder), TD(ReconstructionOrder), GeomCoeff(ReconstructionOrder),
+  TD(ReconstructionOrder), GeomCoeff(ReconstructionOrder),
   SI(), CENO_LHS(), CENO_Geometric_Weights(){
 
   // set geometry pointer
@@ -215,7 +223,6 @@ HighOrder1D<SOLN_STATE>::HighOrder1D(const HighOrder1D<SOLN_STATE> & rhs): Geom(
   SI = rhs.CellSmoothnessIndicator();
   LimitedCell = rhs.CellInadequateFit();
   rings = rhs.CellRings();
-  RecOrder = rhs.CellRecOrder();
 
   if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT && (rhs.GeomWeights().size() != 0)){
     CENO_LHS = rhs.LHS();
@@ -238,7 +245,6 @@ HighOrder1D<SOLN_STATE> & HighOrder1D<SOLN_STATE>::operator=(const HighOrder1D<S
   SI = rhs.CellSmoothnessIndicator();
   LimitedCell = rhs.CellInadequateFit();
   rings = rhs.CellRings();
-  RecOrder = rhs.CellRecOrder();
 
   if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT && (!rhs.GeomWeights().null()) ){
     CENO_LHS = rhs.LHS();
@@ -317,7 +323,20 @@ ReturnType HighOrder1D<SOLN_STATE>::IntegrateOverTheCell(const FO FuncObj,
 }
 
 
+//! Compute the solution at the left cell interface
+template<class SOLN_STATE> inline
+SOLN_STATE HighOrder1D<SOLN_STATE>::left_state(void){
+  return SolutionAtCoordinates(CellCenter() - 0.5* CellDelta());
+}
+
+//! Compute the solution at the right cell interface
+template<class SOLN_STATE> inline
+SOLN_STATE HighOrder1D<SOLN_STATE>::right_state(void){
+  return SolutionAtCoordinates(CellCenter() + 0.5* CellDelta());
+}
+
 // Friend functions
+//! operator== 
 template<class SOLN_STATE> inline
 bool operator== (const HighOrder1D<SOLN_STATE> & left, const HighOrder1D<SOLN_STATE> & right){
    
@@ -327,7 +346,6 @@ bool operator== (const HighOrder1D<SOLN_STATE> & left, const HighOrder1D<SOLN_ST
 	     (left.CellSmoothnessIndicator() == right.CellSmoothnessIndicator()) &&
 	     (left.CellInadequateFit() == right.CellInadequateFit()) &&
 	     (left.CellRings() == right.CellRings()) && 
-	     (left.CellRecOrder() == right.CellRecOrder()) && 
 	     (left.CellGeometry() == right.CellGeometry()) && 
 	     (left.LHS() == right.LHS()) &&
 	     (left.GeomWeights() == right.GeomWeights()) 
@@ -339,16 +357,17 @@ bool operator== (const HighOrder1D<SOLN_STATE> & left, const HighOrder1D<SOLN_ST
 	     (left.CellSmoothnessIndicator() == right.CellSmoothnessIndicator()) &&
 	     (left.CellInadequateFit() == right.CellInadequateFit()) &&
 	     (left.CellRings() == right.CellRings()) && 
-	     (left.CellRecOrder() == right.CellRecOrder()) && 
 	     (left.CellGeometry() == right.CellGeometry()) );
   }
 }
 
+//! operator!= 
 template<class SOLN_STATE> inline
 bool operator!= (const HighOrder1D<SOLN_STATE> & left, const HighOrder1D<SOLN_STATE> & right){
   return !(left == right);
 }
 
+//! operator<<
 template<class SOLN_STATE> inline
 ostream & operator<< (ostream & os, const HighOrder1D<SOLN_STATE> & Obj){
 
@@ -358,21 +377,23 @@ ostream & operator<< (ostream & os, const HighOrder1D<SOLN_STATE> & Obj){
   os.width(4);
   os << Obj.CellSmoothnessIndicator() << endl;
   os.width(4);
-  os << Obj.CellRings() << "   " << Obj.CellRecOrder();
+  os << Obj.CellRings();
   os.unsetf(ios::skipws);
   os.unsetf(ios::scientific);
   return os;
 }
 
+//! operator>>
 template<class SOLN_STATE> inline
 istream & operator>> (istream & os, HighOrder1D<SOLN_STATE> & Obj){
 
   os.setf(ios::skipws);
   os >> Obj.CellDeriv()
      >> Obj.CellGeomCoeff()
-     >> Obj.CellSmoothnessIndicator()
-     >> Obj.CellRings
-     >> Obj.CellRecOrder();
+     >> Obj.CellSmoothnessIndicator();
+
+  // Set rings
+  Obj.SetRings();
   os.unsetf(ios::skipws);
   return os;
 }
@@ -383,6 +404,31 @@ template<> inline
 void HighOrder1D<double>::InitializeMonotonicityFlag(void){
   LimitedCell.reserve(1);
   LimitedCell[0] = OFF;
+}
+
+template<> inline
+double & HighOrder1D<double>::CellDeriv(const int & p1, const int & Variable) {
+ return TD(p1);
+}
+
+template<> inline
+const double & HighOrder1D<double>::CellDeriv(const int & p1, const int & Variable) const {
+ return TD(p1);
+}
+
+template<> inline
+const double & HighOrder1D<double>::CellSmoothnessIndicator(const int & VarPosition) const {
+  return SI;
+}
+
+template<> inline
+double & HighOrder1D<double>::CellSmoothnessIndicator(const int & VarPosition) {
+  return SI;
+}
+
+template <> inline
+double HighOrder1D<double>::SolutionAtCoordinates(const double & X_Coord, const unsigned parameter){
+  return TD.ComputeSolutionFor(X_Coord - CellCenter());
 }
 
 
