@@ -29,6 +29,9 @@ bool operator!=(const DerivativeObj<OneD,T>& left, const DerivativeObj<OneD,T>& 
 template<SpaceType OneD, class T >
 std::ostream& operator<< (std::ostream& os, const DerivativeObj<OneD,T>& Obj);
 
+template<SpaceType OneD, class T >
+std::istream& operator>> (std::istream& os, DerivativeObj<OneD,T>& Obj);
+
 /*******************************************************
  * TEMPLETIZED CLASS: DerivativeObj                    *
  ******************************************************/
@@ -64,6 +67,8 @@ class DerivativeObj<OneD,T>{
  void SetValue(const T & ValueD_, const bool ) { ValueD = ValueD_;} /* set ValueD, passing by reference */
  bool IsPowerEqualTo(const unsigned p1) const ; /* if the argument provided is equal to p1 returns true */
 
+ void Read_Derivative(istream &In_File);
+
  // Access functions
  T & D(void) { return ValueD; } 		      /* return ValueD */
  const T & D(void) const {return ValueD; }
@@ -82,6 +87,8 @@ class DerivativeObj<OneD,T>{
  friend bool operator!= <OneD,T> (const DerivativeObj<OneD,T>& left,
 				  const DerivativeObj<OneD,T>& right);
  friend std::ostream& operator<< <OneD,T> (std::ostream& os, const DerivativeObj<OneD,T>& Obj);
+
+ friend std::istream& operator>> <OneD,T> (std::istream& os, DerivativeObj<OneD,T>& Obj);
 };
 
 // CLASS DerivativeObj
@@ -108,10 +115,30 @@ inline bool DerivativeObj<OneD,T>::IsPowerEqualTo(const unsigned p1) const {
 };
 
 // Friend functions
+// operator <<
 template< class T> inline
 std::ostream& operator<<(std::ostream& os, const DerivativeObj<OneD,T>& Obj){
-  return os << "Power=" << Obj.P1() << "\tValueD=" << Obj.D() << std::endl;
+  os.width(4); os << Obj.P1(); 
+  os.precision(15); os.width(25);
+  return os << Obj.D();
 };
+
+template< class T> inline
+void DerivativeObj<OneD,T>::Read_Derivative(istream &In_File){
+
+  In_File.setf(ios::skipws);
+  In_File >> Power >> ValueD; 
+  In_File.unsetf(ios::skipws);
+}
+
+// operator >>
+template< class T> inline
+std::istream& operator>>(std::istream& os, DerivativeObj<OneD,T>& Obj){
+
+  Obj.Read_Derivative(os);
+
+  return os;
+}
 
 // operator ==
 template< class T> inline
@@ -202,7 +229,7 @@ class TaylorDerivativesContainer<OneD,T>{
   Derivative & operator()(const unsigned & position, const bool, const bool, const bool) {return DContainer[position];}
   Derivative & operator()(const unsigned & position, const bool, const bool, const bool) const {return DContainer[position];}
   T & operator()(const unsigned & p1);
-  T & operator()(const unsigned & p1) const;
+  const T & operator()(const unsigned & p1) const;
 
   /* Friend functions */
   friend bool operator== <OneD,T> (const TaylorDerivativesContainer<OneD,T>& left,
@@ -319,7 +346,7 @@ T & TaylorDerivativesContainer<OneD,T>::operator()(const unsigned & p1){
 
 // operator(unsigned) -> returns the derivative for which p1_ = p1
 template<class T> inline 
-T & TaylorDerivativesContainer<OneD,T>::operator()(const unsigned & p1) const{
+const T & TaylorDerivativesContainer<OneD,T>::operator()(const unsigned & p1) const{
 
   return DContainer[p1].D();
 }
@@ -367,9 +394,13 @@ T TaylorDerivativesContainer<OneD,T>::ComputeSolutionFor(const double DeltaX){
 template<class T> inline
 std::ostream & operator<< (std::ostream & os, const TaylorDerivativesContainer<OneD,T>& Obj){
 
+  os.setf(ios::skipws);
+  os.width(4);
+  os << Obj.RecOrder() << endl;
   for(int i=0; i<=Obj.LastElem(); ++i)
-    os << Obj(i,true,true,true);
-  return os << std::endl;
+    os << Obj(i,true,true,true) << endl;
+  os.unsetf(ios::skipws);
+  return os;
 };
 
 // operator ==

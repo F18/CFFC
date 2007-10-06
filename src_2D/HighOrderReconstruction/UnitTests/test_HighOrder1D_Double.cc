@@ -31,7 +31,7 @@ namespace tut
 
       // set geometry
       Cell1D.setloc(2.3);
-      Cell1D.setsize(34.3434);
+      Cell1D.setsize(4.34);
     
     }
 
@@ -147,6 +147,78 @@ namespace tut
     ensure_equals("geometry pointer", HO.CellGeometry(), Cell1D);
   }
 
+  /* Test 5:*/
+  template<>
+  template<>
+  void HighOrder1D_object::test<5>()
+  {
+    set_test_name("operator ==");
+
+    // set HighOrder1D variable
+    HighOrder1D<double> HO, HO_2;
+
+    // set the geometry pointer
+    HO.SetGeometryPointer(Cell1D);
+
+    HO_2 = HO;
+
+    // == check
+    ensure("==", (HO_2 == HO) == true);
+  }
+
+  /* Test 6:*/
+  template<>
+  template<>
+  void HighOrder1D_object::test<6>()
+  {
+    set_test_name("operator <<");
+
+    // set HighOrder1D variable
+    HighOrder1D<double> HO, HO_2;
+
+    // set the geometry pointer
+    HO.SetGeometryPointer(Cell1D);
+
+    // == check
+
+    //    cout << HO << endl;
+
+  }
+
+  /* Test 7:*/
+  template<>
+  template<>
+  void HighOrder1D_object::test<7>()
+  {
+    set_test_name("operator >>");
+
+    // set HighOrder1D variable
+    HighOrder1D<double> HO, HO_2;
+
+    // set the geometry pointer
+    HO.SetGeometryPointer(Cell1D);
+
+    // == check
+
+    //    cout << HO << endl;
+
+  }
+
+  /* Test 8:*/
+  template<>
+  template<>
+  void HighOrder1D_object::test<8>()
+  {
+    set_test_name("Constructor(RecOrder=3, Geometry)");
+
+    // set HighOrder1D variable
+    HighOrder1D<double> HO(3,Cell1D);
+
+    // == check
+
+    cout << HO << endl;
+
+  }
 
 
 
