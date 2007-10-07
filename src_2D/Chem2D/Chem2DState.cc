@@ -581,11 +581,12 @@ double Chem2D_pState::T(double &h_s) const{
     }
     numit++;
   }
-  if (numit>=19 || T <= low_temp_range){
+  if (numit>=19 /*|| T <= low_temp_range*/){
     T = max(Tguess,low_temp_range); 
     cout<<"\nTemperature didn't converge in Chem2D_cState::T(void)";
-    cout<<" with polytopic Tguess "<<Tguess<<", or lower than Tmin "
-	<<low_temp_range<<" using "<<T;
+    cout<<" with polytopic Tguess "<<Tguess
+      //<<", or lower than Tmin "<<low_temp_range
+	<<" using "<<T;
   }
   return T;
 }
@@ -2381,10 +2382,12 @@ double Chem2D_cState::T(void) const{
     }
     numit++;
   }  
-  if (numit>=19 || T <= low_temp_range){
+  if (numit>=19 /*|| T <= low_temp_range*/){
     T = max(Tguess,low_temp_range); 	
     cout<<"\nTemperature didn't converge in Chem2D_cState::T(void)";
-    cout<<" with polytopic Tguess "<<Tguess<<", or lower than Tmin "<<low_temp_range<<" using "<<T;
+    cout<<" with polytopic Tguess "<<Tguess
+      //<<", or lower than Tmin "<<low_temp_range
+	<<" using "<<T;
   }
 
   return T;
