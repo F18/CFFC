@@ -211,7 +211,7 @@ int Read_Restart_Solution(Rte2D_Quad_Block *Soln_ptr,
 
           if (!i_new_time_set) {
              Number_of_Time_Steps = nsteps;
-             Input_Parameters.Maximum_Number_of_Time_Steps += Number_of_Time_Steps;
+             //Input_Parameters.Maximum_Number_of_Time_Steps += Number_of_Time_Steps;
 	     Time = time0;
              CPU_Time.cput = cpu_time0.cput;
 
