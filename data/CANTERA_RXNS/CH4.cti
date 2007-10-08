@@ -9,14 +9,14 @@ units(length = "cm", time = "s", quantity = "mol", act_energy = "kcal/mol")
 ideal_gas(name = "CH4_WD1a",
       elements = " O  H  C N ",
       species = """ CH4 O2 CO2 H2O N2 """,
-      reactions = "1",
+      reactions = " 0001 ",
       initial_state = state(temperature = 300.0,
                         pressure = OneAtm)    )
 
 ideal_gas(name = "CH4_WD1b",
       elements = " O  H  C N ",
       species = """ CH4 O2 CO2 H2O N2 """,
-      reactions = "2",
+      reactions = " 0002 ",
       initial_state = state(temperature = 300.0,
                         pressure = OneAtm)    )
 

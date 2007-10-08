@@ -7,7 +7,7 @@
     <elementArray datasrc="elements.xml">O  H  C N </elementArray>
     <speciesArray datasrc="#species_data">CH4 O2 CO2 H2O N2 </speciesArray>
     <reactionArray datasrc="#reaction_data">
-      <include max="1" min="1"/>
+      <include max="0001" min="0001"/>
     </reactionArray>
     <state>
       <temperature units="K">300.0</temperature>
@@ -23,7 +23,7 @@
     <elementArray datasrc="elements.xml">O  H  C N </elementArray>
     <speciesArray datasrc="#species_data">CH4 O2 CO2 H2O N2 </speciesArray>
     <reactionArray datasrc="#reaction_data">
-      <include max="2" min="2"/>
+      <include max="0002" min="0002"/>
     </reactionArray>
     <state>
       <temperature units="K">300.0</temperature>

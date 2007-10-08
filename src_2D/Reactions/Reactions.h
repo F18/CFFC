@@ -1549,6 +1549,12 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
   } // endfor - columns
 
 
+ /***********************************************
+  *FROZEN TEMPERATURE ASSUMPTION
+  ***********************************************
+  *
+  * COMMENT OUT THIS BLOCK OF CODE FOR dS/dT=0 ASSUMPTION
+  */
   //------------------------------------------------
   // Compute \frac{ \partial S_j }{ \partial T }
   //------------------------------------------------
@@ -1600,7 +1606,12 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
 
   } // endfor - rows
           
-  
+ /*
+  ***********************************************
+  * END FROZEN TEMPERATURE ASSUMPTION
+  ***********************************************
+  */
+
 #else
   cout<<"\n CODE NOT COMPILED WITH CANTERA!";
   cout<<"\n YOU SHOULD NOT BE HERE!";
