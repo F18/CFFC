@@ -1433,11 +1433,6 @@ void Reaction_set::ct_dSwdU( DenseMatrix &dSwdU,
     // = (1/(rho * Cv)) * d(rho w_dot)_j/dT
     dSwdU(NUM_VAR+n,2) += dSdT[n] / ( rho * Cv );
 
-    // d(rho w_dot_n) / d(rho Y_n)
-    for (int k=0; k<nsp-1; k++)
-      dSwdU(NUM_VAR+n,NUM_VAR+k) -= 
-	(e[k]-e[nsp-1]) * dSdT[n] / ( rho * Cv );
-
     // d(rho w_dot_n) / d(rho Y_n) - frozen species conc. portion
     // = - (e_k-e_N)/(rho * Cv) * d(rho w_dot)_j/dT
     for (int k=0; k<nsp-1; k++)
@@ -1493,7 +1488,19 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
   int NUM_VAR = W.NumVarSansSpecies();
 
   // perturbation factor
-  double eps = 1.E-6;
+  double abs_tol = 1.E-6; // absolute tolerance (sqrt(machine eps))
+  double rel_tol = 1.E-5; // relative tolerance
+  double eps;
+
+  // temporary storage
+  double dSdT, T0, e_k;
+
+  // some constants
+  double rho = W.rho; // density
+  double Cv = W.Cv(); // constant volume specific heat
+  double e_N = W.spec[num_react_species-1].c*(W.specdata[num_react_species-1].Enthalpy(Temp) + 
+					      W.specdata[num_react_species-1].Heatofform() - 
+					      W.specdata[num_react_species-1].Rs()*Temp); // internal energy of N2
 
   //------------------------------------------------
   // setup
@@ -1513,6 +1520,9 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
   //
   for (int j=0; j<num_react_species-1; j++) {
     
+    // compute perturbation factor
+    eps = abs_tol + fabs(c[j])*rel_tol;
+
     // perturb the species concetration array
     c[j] += eps;
     c[num_species-1] -= eps;
@@ -1537,8 +1547,60 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
     c[num_species-1] += eps;
 
   } // endfor - columns
-  
 
+
+  //------------------------------------------------
+  // Compute \frac{ \partial S_j }{ \partial T }
+  //------------------------------------------------
+  // compute perturbation factor
+  eps = abs_tol + fabs(Temp)*rel_tol;
+    
+  // perturb the species temperature
+  T0 = Temp + eps;
+
+  // compute the perturbed reaction rates
+  ct_gas->setState_TPY(T0, Press, c);
+  ct_gas->getNetProductionRates(r);
+  
+  //
+  // iterate over the species (jac rows)
+  //
+  for (int i=0; i<num_react_species-1; i++) {
+      
+    // compute the derivative
+    dSdT = M[i]*(r[i]-r0[i]) / eps;     
+
+    // d(rho w_dot_n) / d(rho)
+    // = (1/(rho * Cv))*(0.5*u^2 +0.5*v^2 - e_N) * d(rho w_dot)_j/dT
+    dSwdU(NUM_VAR+i,0) += 
+      ( 0.5*(W.v.x*W.v.x + W.v.y*W.v.y) - e_N ) * dSdT / ( rho * Cv );
+    
+    // d(rho w_dot_n) / d(rho u)
+    // = -(u/(rho * Cv)) * d(rho w_dot)_j/dT
+    dSwdU(NUM_VAR+i,1) -= W.v.x * dSdT / ( rho * Cv );
+
+    // d(rho w_dot_n) / d(rho v)
+    // = -(v/(rho * Cv)) * d(rho w_dot)_j/dT
+    dSwdU(NUM_VAR+i,2) -= W.v.y * dSdT / ( rho * Cv );
+    
+    // d(rho w_dot_n) / d(E)
+    // = (1/(rho * Cv)) * d(rho w_dot)_j/dT
+    dSwdU(NUM_VAR+i,2) += dSdT / ( rho * Cv );
+      
+    // d(rho w_dot_n) / d(rho Y_n) - frozen species conc. portion
+    // = - (e_k-e_N)/(rho * Cv) * d(rho w_dot)_j/dT
+    for (int k=0; k<num_react_species-1; k++) {
+      // internal energy species k
+      e_k = W.spec[k].c*(W.specdata[k].Enthalpy(Temp) + 
+			 W.specdata[k].Heatofform() -
+			 W.specdata[k].Rs()*Temp);
+      
+      dSwdU(NUM_VAR+i,NUM_VAR+k) -=  (e_k-e_N) * dSdT / ( rho * Cv );
+    } // endfor - species
+
+  } // endfor - rows
+          
+  
 #else
   cout<<"\n CODE NOT COMPILED WITH CANTERA!";
   cout<<"\n YOU SHOULD NOT BE HERE!";
