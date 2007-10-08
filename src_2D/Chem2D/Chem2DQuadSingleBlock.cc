@@ -7921,6 +7921,7 @@ void Radiation_Source_Eval( Chem2D_Quad_Block &SolnBlk,
 				    Input_Parameters.CFFC_Path);
   } // endif
 
+
   //
   // loop over the block
   //
@@ -7936,8 +7937,8 @@ void Radiation_Source_Eval( Chem2D_Quad_Block &SolnBlk,
 
       // compute the source term using optically thin approx
       // using the SNBCK model
-      source = Chem2D_pState::SNBCKdata->RadSourceOptThin( Pressure,
-							   Temperature,
+      source = Chem2D_pState::SNBCKdata->RadSourceOptThin( Pressure/PRESSURE_STDATM, //[atm]
+							   Temperature,              //[K]
 							   xCO,
 							   xH2O,
 							   xCO2,

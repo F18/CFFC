@@ -190,7 +190,7 @@ Gauss_Legendre
 Number_of_Quad_Points =
 1
 Number_of_Lumped_Bands =
-36
+1
 Optimized_Lumping =
 OFF
 Number_of_Interpolation_Points =

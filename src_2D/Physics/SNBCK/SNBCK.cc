@@ -1871,9 +1871,11 @@ double AbsorptionCoeffSNBCK( const double g_val, const double*B,
   static int err_cnt(0);
 
   // set iteration paramters
-  int Nmax = 200;    // max iterations
-  double TOL = 1E-6; // error tolerance
-  
+  static const int Nmax = 200;      // max iterations
+  static const double ATOL = 1.E-7; // abs error tolerance
+  static const double RTOL = 1.E-6; // rel error tolerance
+  bool converged(false);            // convergence flag
+
   // the function values
   double gn;                 // g(k)
   double dgn;                // g'(k)
@@ -1928,7 +1930,7 @@ double AbsorptionCoeffSNBCK( const double g_val, const double*B,
 
     // use bisection if Newton out of range or not decreasing 
     // fast enough
-    if ( (((kn-kmax)*dgn-gn)*((kn-kmin)*dgn-gn) > ZERO) || 
+    if ( (((kn-kmax)*dgn-gn)*((kn-kmin)*dgn-gn) >= ZERO) || 
 	 (fabs(TWO*gn) > fabs(dk0*dgn)) ) {
       dk0 = dkn;
       dkn = HALF*(kmax-kmin);
@@ -1943,7 +1945,8 @@ double AbsorptionCoeffSNBCK( const double g_val, const double*B,
 
 
     // Convergence test
-    if (fabs(dkn)/kn<TOL || dkn!=dkn) break;      
+    converged = (fabs(dkn)<=RTOL*kn && fabs(dkn)<=ATOL && fabs(gn)<=ATOL);
+    if ( converged || dkn!=dkn || kn!=kn) break;
       
     // depending upon how many bands are lumped together,
     // compute the cummulative dist function and its derivative
@@ -1962,19 +1965,28 @@ double AbsorptionCoeffSNBCK( const double g_val, const double*B,
   //------------------------------------------------
   // Convergence
   //------------------------------------------------
-
   // check to see if it converged, if not, print an error
-  if ( (i>=Nmax || dkn!=dkn) && err_cnt<5 ) {
+  if ( (i>=Nmax || dkn!=dkn || kn!=kn) && err_cnt<5 ) {
     err_cnt++;
     cerr << "SNBCK.cc::getAbsorptionCoeff(): Newton-Raphson iteration failed to converge." << endl;
     cerr << "SNBCK.cc::getAbsorptionCoeff(): err = " << fabs(dkn) 
 	 << ", f(x) = " << gn << ", f'(x) = " << dgn << ", x = " << g_val     
 	 << ", kmin = " << kmin << ", k = " << kn << ", kmax = " << kmax <<  endl;
     cerr << "SNBCK.cc::getAbsorptionCoeff(): k_peak = " << k_peak << ", it = " << i <<  endl;
-    cerr << "B = " << B[Nstart] << ", S = " << S[Nstart] <<  endl;
+    double S_avg(0);
+    for (int i=0; i<Nlump; i++) S_avg += S[Nstart+i];
+    S_avg /= Nlump;
+    cerr << "B[0] = " << B[Nstart] << ", S_avg = " << S_avg <<  endl;
+    if (err_cnt==5) 
+      cerr << "SNBCK.cc::getAbsorptionCoeff(): Suppressing error output from now on.\n";
     cerr << endl;
-    if (err_cnt==5) cerr << "SNBCK.cc::getAbsorptionCoeff(): Suppressing error output from now on.\n";
-  }
+  } // endif - check
+
+  // check for NANs
+  if (dkn!=dkn || kn!=kn) {
+    cerr << "SNBCK.cc::getAbsorptionCoeff(): NAN encountered...exiting.\n";
+    exit(-1);
+  } // endif - check
 
 
   // return the value
