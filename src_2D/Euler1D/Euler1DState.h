@@ -106,6 +106,8 @@ class Euler1D_pState{
     static double gm1i;  // 1/(g-1)
     static double   R;   // Gas constant.
 	                 // Made public so can access them.
+
+    static const int NumberOfVariables = NUM_VAR_EULER1D;
 		      
     /* Creation, copy, and assignment constructors. */
     Euler1D_pState(void) {
@@ -124,6 +126,20 @@ class Euler1D_pState{
        d = rho; v = u; p = pre;
     }
     
+    Euler1D_pState(const double & Val){
+      d = Val; v = Val; p = Val;
+    }
+  
+    /* Vacuum operator. */
+    void Vacuum() {
+      d = ZERO; v = ZERO; p = ZERO;
+    }
+
+    /* One operator. */
+    void One() {
+      d = ONE; v = ONE; p = ONE;
+    }
+   
     /* Destructor. */
     // ~Euler1D_pState(void);
     // Use automatically generated destructor.
@@ -207,6 +223,14 @@ class Euler1D_pState{
     friend Euler1D_pState C(const Euler1D_pState &W);
     friend Euler1D_pState CtoW(const Euler1D_pState &W);
 
+    /* Functions for transforming to the locally defined characteristic variables from 
+       the conserved variables.
+       The left and the right eigenvectors used for the transformation are based on the values of 
+       a reference state. */
+    Euler1D_cState CharactVarToConservedVar(const double SoundSpeed, const double Vel);
+    Euler1D_cState CharactVarToConservedVar(const Euler1D_pState &W_Ref);
+    Euler1D_cState CharactVarToConservedVar(const Euler1D_cState &U_Ref);
+
     /* Eigenvalue(s). */
     Euler1D_pState lambda(void);
     Euler1D_pState lambda(void) const;
@@ -284,6 +308,11 @@ class Euler1D_pState{
     /* Relational operators. */
     friend int operator ==(const Euler1D_pState &W1, const Euler1D_pState &W2);
     friend int operator !=(const Euler1D_pState &W1, const Euler1D_pState &W2);
+    friend int operator <=(const Euler1D_pState &W1, const Euler1D_pState &W2);
+    friend int operator >=(const Euler1D_pState &W1, const Euler1D_pState &W2);
+    friend int operator <(const Euler1D_pState &W1, const Euler1D_pState &W2);
+    friend int operator >(const Euler1D_pState &W1, const Euler1D_pState &W2);
+
     
     /* Input-output operators. */
     friend ostream &operator << (ostream &out_file, const Euler1D_pState &W);
@@ -358,6 +387,8 @@ class Euler1D_cState{
     static double gm1i;  // 1/(g-1)
     static double   R;   // Gas constant.
 	                 // Made public so can access them.
+
+    static const int NumberOfVariables = NUM_VAR_EULER1D;
 		      
     /* Creation, copy, and assignment constructors. */
     Euler1D_cState(void) {
@@ -459,6 +490,18 @@ class Euler1D_cState{
     friend Euler1D_pState C(const Euler1D_cState &U);
     friend Euler1D_cState CtoU(const Euler1D_pState &W);
     
+   /* Characteristic variable using the left and right conserved eigenvectors */
+    Euler1D_pState ConservedVarToCharactVar(const double SoundSpeed, const double Vel) const;
+    Euler1D_pState ConservedVarToCharactVar(const double SoundSpeed, const double Vel);
+    Euler1D_pState ConservedVarToCharactVar(void);
+    Euler1D_pState ConservedVarToCharactVar(void) const;
+   /* the transformation below is relative to the variables of other state */
+    Euler1D_pState ConservedVarToCharactVar(const Euler1D_cState &U);
+    Euler1D_pState ConservedVarToCharactVar(const Euler1D_cState &U) const;
+    Euler1D_pState ConservedVarToCharactVar(const Euler1D_pState &W);
+    Euler1D_pState ConservedVarToCharactVar(const Euler1D_pState &W) const;
+    friend Euler1D_cState CharactVarToConservedVar(const Euler1D_pState &Wc, const Euler1D_cState &U_Ref);
+     
     /* Assignment operator. */
     // Euler1D_cState operator = (const Euler1D_cState &U);
     // Use automatically generated assignment operator.
@@ -801,6 +844,22 @@ inline int operator ==(const Euler1D_pState &W1, const Euler1D_pState &W2) {
 
 inline int operator !=(const Euler1D_pState &W1, const Euler1D_pState &W2) {
   return (W1.d != W2.d || W1.v != W2.v || W1.p != W2.p);
+}
+
+inline int operator <=(const Euler1D_pState &W1, const Euler1D_pState &W2) {
+  return (W1[1]<=W2[1] && W1[2]<=W2[2] && W1[3]<=W2[3]);
+}
+
+inline int operator >=(const Euler1D_pState &W1, const Euler1D_pState &W2) {
+  return (W1[1]>=W2[1] && W1[2]>=W2[2] && W1[3]>=W2[3]);
+}
+
+inline int operator <(const Euler1D_pState &W1, const Euler1D_pState &W2) {
+  return (W1[1]<W2[1] && W1[2]<W2[2] && W1[3]<W2[3]);
+}
+
+inline int operator >(const Euler1D_pState &W1, const Euler1D_pState &W2) {
+  return (W1[1]>W2[1] && W1[2]>W2[2] && W1[3]>W2[3]);
 }
 
 /********************************************************
@@ -1207,6 +1266,88 @@ inline Euler1D_pState CtoW(const Euler1D_pState &W) {
   return (Euler1D_pState(dd, u, sqr(c)*dd/W.g));
 }
 
+/* Transformation of the Characteristic Variables To Conserved Variables */
+inline Euler1D_cState Euler1D_pState::CharactVarToConservedVar(const double SoundSpeed, const double Vel){
+  /**** The characteristic variables ****
+	Wc[1] = d;
+	Wc[2] = v;
+	Wc[3] = p; 
+	Euler1D_cState( Wc[1]+Wc[2]+Wc[3], (v-c)*Wc[1]+v*Wc[2]+(v+c)*Wc[3] , (H-c*v)*Wc[1]+0.5*v^2*Wc[2]+(H+c*v)*Wc[3])
+  ***************************************/
+  double H = sqr(SoundSpeed)*gm1i + 0.5*sqr(Vel);
+  /*   return Euler1D_cState( d + v + p, */
+  /* 			    (Vel-SoundSpeed)*d + Vel*v + (Vel+SoundSpeed)*p, */
+  /* 			    (H-SoundSpeed*Vel)*d + 0.5*sqr(Vel)*v + (H+SoundSpeed*Vel)*p ); */
+  // The form below is only more compact than the form above
+  return Euler1D_cState( d + v + p,
+			 Vel*(d+v+p) - SoundSpeed*(d-p),
+			 H*(d+p) - SoundSpeed*Vel*(d-p) + 0.5*sqr(Vel)*v );
+}
+
+inline Euler1D_cState Euler1D_pState::CharactVarToConservedVar(const Euler1D_pState &W_Ref){
+  return CharactVarToConservedVar(W_Ref.a(), W_Ref.v);
+}
+
+inline Euler1D_cState Euler1D_pState::CharactVarToConservedVar(const Euler1D_cState &U_Ref){
+  /* U -> the reference state that is used for computing the right eigenvectors
+     "Wc" is a state storing primitive variables!!! */
+
+  return CharactVarToConservedVar(U_Ref.a(), U_Ref.v());
+  /*   double c = U_Ref.a(); */
+  /*   double vel = U_Ref.v(); */
+  /*   double H = U_Ref.h(); */
+  
+  /*   return Euler1D_cState( d+v+p, (vel-c)*d+vel*v+(vel+c)*p, (H-c*vel)*d+0.5*vel*vel*v+(H+c*vel)*p); */
+}
+
+inline Euler1D_cState CharactVarToConservedVar(const Euler1D_pState &Wc, const Euler1D_cState &U_Ref){
+  /* U -> the reference state that is used for computing the right eigenvectors
+     Wc -> the characteristic variables that are used for the transformation
+     "Wc" is a state storing primitive variables!!! */
+
+  double SoundSpeed = U_Ref.a();
+  double Vel = U_Ref.v();
+  double H = U_Ref.h();
+  
+  return Euler1D_cState( Wc.d+Wc.v+Wc.p,
+			 Vel*(Wc.d+Wc.v+Wc.p) - SoundSpeed*(Wc.d-Wc.p),
+			 H*(Wc.d+Wc.p) - SoundSpeed*Vel*(Wc.d-Wc.p) + 0.5*sqr(Vel)*Wc.v );
+}
+
+inline Euler1D_pState Euler1D_cState::ConservedVarToCharactVar(const double SoundSpeed, const double Vel){
+  double omega = gm1*(0.5*sqr(Vel)*d - Vel*dv + E)/(SoundSpeed*SoundSpeed);
+  return Euler1D_pState( 0.5*(omega + (Vel*d - dv)/SoundSpeed), d-omega, 0.5*(omega - (Vel*d - dv)/SoundSpeed) );
+}
+
+inline Euler1D_pState Euler1D_cState::ConservedVarToCharactVar(const double SoundSpeed, const double Vel) const{
+  double omega = gm1*(0.5*sqr(Vel)*d - Vel*dv + E)/(SoundSpeed*SoundSpeed);
+  return Euler1D_pState( 0.5*(omega + (Vel*d - dv)/SoundSpeed), d-omega, 0.5*(omega - (Vel*d - dv)/SoundSpeed) );
+}
+
+inline Euler1D_pState Euler1D_cState::ConservedVarToCharactVar(void){
+  return ConservedVarToCharactVar(a(),v());
+}
+
+inline Euler1D_pState Euler1D_cState::ConservedVarToCharactVar(void) const{
+  return ConservedVarToCharactVar(a(),v());
+}
+
+inline Euler1D_pState Euler1D_cState::ConservedVarToCharactVar(const Euler1D_cState &U){
+  return ConservedVarToCharactVar(U.a(),U.v());
+}
+
+inline Euler1D_pState Euler1D_cState::ConservedVarToCharactVar(const Euler1D_cState &U) const{
+  return ConservedVarToCharactVar(U.a(),U.v());
+}
+
+inline Euler1D_pState Euler1D_cState::ConservedVarToCharactVar(const Euler1D_pState &W){
+  return ConservedVarToCharactVar(W.a(),W.v);
+}
+
+inline Euler1D_pState Euler1D_cState::ConservedVarToCharactVar(const Euler1D_pState &W) const{
+  return ConservedVarToCharactVar(W.a(),W.v);
+}
+
 /********************************************************
  * Euler1D_pState::lambda -- Eigenvalue(s).             *
  ********************************************************/
@@ -1606,6 +1747,10 @@ extern Euler1D_cState FluxOsher(const Euler1D_pState &Wl,
 
 extern Euler1D_cState FluxOsher(const Euler1D_cState &Ul,
 	      	                const Euler1D_cState &Ur);
+
+extern Euler1D_cState RiemannFlux(const int & Flux_Function,
+				  const Euler1D_pState &Wl,
+				  const Euler1D_pState &Wr);
 
 extern Euler1D_pState BC_Reflection(const Euler1D_pState &Wi,
                                     const double Vbnd,

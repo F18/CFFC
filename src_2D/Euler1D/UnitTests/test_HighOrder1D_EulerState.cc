@@ -1,5 +1,5 @@
-/*!\file test_HighOrder1D_Double.cc
-  \brief Regression tests for template class HighOrder1D with double datatype. */
+/*!\file test_HighOrder1D_EulerState.cc
+  \brief Regression tests for template class HighOrder1D with Euler1DState datatype. */
 
 /* Include required C++ libraries. */
 // None
@@ -9,14 +9,15 @@
 
 /* Include CFFC header files */
 #include "TestData.h"
-#include "../HighOrder1D.h"
+#include "../../HighOrderReconstruction/HighOrder1D.h"
+#include "../Euler1DState.h"
 
 namespace tut
 {
 
   /* Define the test-specific data class and add data members 
      when tests have complex or repeating creation phase. */
-  class Data_HighOrder1D : public TestData {
+  class Data_HighOrder1DEuler : public TestData {
 
     // Local variables
   public:
@@ -29,11 +30,11 @@ namespace tut
     ColumnVector B;
 
     // Constructor
-    Data_HighOrder1D(): A(2,3), B(3){
+    Data_HighOrder1DEuler(): A(2,3), B(3){
 
-      set_test_suite_path("HighOrderReconstruction/UnitTests/");
-      set_local_input_path("test_TaylorDerivatives1D");
-      set_local_output_path("test_TaylorDerivatives1D");
+      set_test_suite_path("Euler1D/UnitTests/");
+      set_local_input_path("test_HighOrder1D");
+      set_local_output_path("test_HighOrder1D");
 
       // set geometry
       Cell1D.setloc(2.3);
@@ -58,8 +59,8 @@ namespace tut
    * be unique in tut:: namespace. Alternatively, you
    * you may put it into anonymous namespace.
    */
-  typedef test_group<Data_HighOrder1D> HighOrder1D_TestSuite;
-  typedef HighOrder1D_TestSuite::object HighOrder1D_object;
+  typedef test_group<Data_HighOrder1DEuler> HighOrder1DEuler_TestSuite;
+  typedef HighOrder1DEuler_TestSuite::object HighOrder1DEuler_object;
 
 
   /******************************************************************************************************
@@ -92,18 +93,19 @@ namespace tut
   /* Test 1:*/
   template<>
   template<>
-  void HighOrder1D_object::test<1>()
+  void HighOrder1DEuler_object::test<1>()
   {
     set_test_name("Defalt Constructor (for piecewise constant)");
 
-    HighOrder1D<double> HO;
+    HighOrder1D<Euler1D_pState> HO;
     Cell1D_Uniform * Geom(NULL);
 
     ensure_equals("TD size", HO.NumberOfTaylorDerivatives(), 1);
     ensure_equals("TD power", HO.CellDeriv_InPosition(0).P1(), 0);
-    ensure_equals("TD value I", HO.CellDeriv_InPosition(0).D(), 0.0);
-    ensure_equals("TD value II", HO.CellDeriv(0), 0.0);
+    ensure_equals("TD value I", HO.CellDeriv_InPosition(0).D(), Euler1D_pState(0.0));
+    ensure_equals("TD value II", HO.CellDeriv(0), Euler1D_pState(0.0));
     ensure_equals("TD value III", HO.CellDeriv(0,1), 0.0);
+    ensure_equals("TD value IV", HO.CellDeriv_InPosition(0).D(1), 0.0);
 
     ensure_equals("GeomCoeff size", HO.CellGeomCoeff().size(), 1);
     ensure_equals("GeomCoeff power", HO.CellGeomCoeff().operator()(0,true,true,true).P1(), 0);
@@ -112,7 +114,7 @@ namespace tut
     ensure_equals("Rings", HO.CellRings(), 0);
     ensure_equals("Monotonicity flag", HO.CellInadequateFit(1), OFF);
     ensure_equals("Smoothness indicator I", HO.CellSmoothnessIndicator(1), 0.0);
-    ensure_equals("Smoothness indicator II", HO.CellSmoothnessIndicator(), 0.0);
+    ensure_equals("Smoothness indicator II", HO.CellSmoothnessIndicator(), Euler1D_pState(0.0));
 
     ensure("Geometry Pointer", HO.Geometry() == NULL);
   }
@@ -120,7 +122,7 @@ namespace tut
   /* Test 2:*/
   template<>
   template<>
-  void HighOrder1D_object::test<2>()
+  void HighOrder1DEuler_object::test<2>()
   {
     set_test_name("Main Constructor(RecOrder=3, Cell1D)");
 
@@ -131,27 +133,29 @@ namespace tut
     Cell1D.setsize(2.34);
     
     // set HighOrder1D variable
-    HighOrder1D<double> HO(3,Cell1D);
+    HighOrder1D<Euler1D_pState> HO(3,Cell1D);
 
     // set values of TD
-    HO.CellDeriv(0) = 1.03; HO.CellDeriv(1) = 2.03;
-    HO.CellDeriv(2) = 3.03; HO.CellDeriv(3) = 4.03;
+    HO.CellDeriv(0) = Euler1D_pState(1.03);
+    HO.CellDeriv(1) = Euler1D_pState(2.03);
+    HO.CellDeriv(2) = Euler1D_pState(3.03);
+    HO.CellDeriv(3) = Euler1D_pState(4.03);
 
     // == check
     out() << HO;
 
-    RunRegressionTest("Main Constructor", "HO.dat", "TD_1D_MainConstructor.dat", 1.0e-14);
+    RunRegressionTest("Main Constructor", "HO.dat", "HO_1D_MainConstructor.dat", 1.0e-14);
   }
 
   /* Test 3:*/
   template<>
   template<>
-  void HighOrder1D_object::test<3>()
+  void HighOrder1DEuler_object::test<3>()
   {
     set_test_name("SetGeometryPointer()");
 
     // set HighOrder1D variable
-    HighOrder1D<double> HO;
+    HighOrder1D<Euler1D_pState> HO;
 
     // set the geometry pointer
     HO.SetGeometryPointer(Cell1D);
@@ -163,19 +167,19 @@ namespace tut
   /* Test 4:*/
   template<>
   template<>
-  void HighOrder1D_object::test<4>()
+  void HighOrder1DEuler_object::test<4>()
   {
     set_test_name("operator ==");
 
     // set HighOrder1D variables
-    HighOrder1D<double> HO(3,Cell1D), HO_2(3,Cell1D);
+    HighOrder1D<Euler1D_pState> HO(3,Cell1D), HO_2(3,Cell1D);
 
     // set values of TD
-    HO.CellDeriv(0) = 1.03; HO.CellDeriv(1) = 2.03;
-    HO.CellDeriv(2) = 3.03; HO.CellDeriv(3) = 4.03;
+    HO.CellDeriv(0) = Euler1D_pState(1.03); HO.CellDeriv(1) = Euler1D_pState(2.03);
+    HO.CellDeriv(2) = Euler1D_pState(3.03); HO.CellDeriv(3) = Euler1D_pState(4.03);
 
-    HO_2.CellDeriv(0) = 1.03; HO_2.CellDeriv(1) = 2.03;
-    HO_2.CellDeriv(2) = 3.03; HO_2.CellDeriv(3) = 4.03;
+    HO_2.CellDeriv(0) = Euler1D_pState(1.03); HO_2.CellDeriv(1) = Euler1D_pState(2.03);
+    HO_2.CellDeriv(2) = Euler1D_pState(3.03); HO_2.CellDeriv(3) = Euler1D_pState(4.03);
     
     // == check
     ensure("==", (HO_2 == HO) == true);
@@ -184,19 +188,19 @@ namespace tut
   /* Test 5:*/
   template<>
   template<>
-  void HighOrder1D_object::test<5>()
+  void HighOrder1DEuler_object::test<5>()
   {
     set_test_name("operator ==, with LHS and Weights");
 
     // set HighOrder1D variables
-    HighOrder1D<double> HO(3,Cell1D), HO_2(3,Cell1D);
+    HighOrder1D<Euler1D_pState> HO(3,Cell1D), HO_2(3,Cell1D);
 
     // set values of TD
-    HO.CellDeriv(0) = 1.03; HO.CellDeriv(1) = 2.03;
-    HO.CellDeriv(2) = 3.03; HO.CellDeriv(3) = 4.03;
+    HO.CellDeriv(0) = Euler1D_pState(1.03); HO.CellDeriv(1) = Euler1D_pState(2.03);
+    HO.CellDeriv(2) = Euler1D_pState(3.03); HO.CellDeriv(3) = Euler1D_pState(4.03);
 
-    HO_2.CellDeriv(0) = 1.03; HO_2.CellDeriv(1) = 2.03;
-    HO_2.CellDeriv(2) = 3.03; HO_2.CellDeriv(3) = 4.03;
+    HO_2.CellDeriv(0) = Euler1D_pState(1.03); HO_2.CellDeriv(1) = Euler1D_pState(2.03);
+    HO_2.CellDeriv(2) = Euler1D_pState(3.03); HO_2.CellDeriv(3) = Euler1D_pState(4.03);
 
     // set LHS and GeomWeights
     HO.LHS() = A; HO_2.LHS() = A;
@@ -209,19 +213,19 @@ namespace tut
   /* Test 6:*/
   template<>
   template<>
-  void HighOrder1D_object::test<6>()
+  void HighOrder1DEuler_object::test<6>()
   {
     set_test_name("operator !=");
 
     // set HighOrder1D variables
-    HighOrder1D<double> HO(3,Cell1D), HO_2(3,Cell1D);
+    HighOrder1D<Euler1D_pState> HO(3,Cell1D), HO_2(3,Cell1D);
 
     // set values of TD
-    HO.CellDeriv(0) = 1.03; HO.CellDeriv(1) = 2.03;
-    HO.CellDeriv(2) = 3.03; HO.CellDeriv(3) = 4.03;
+    HO.CellDeriv(0) = Euler1D_pState(1.03); HO.CellDeriv(1) = Euler1D_pState(2.03);
+    HO.CellDeriv(2) = Euler1D_pState(3.03); HO.CellDeriv(3) = Euler1D_pState(4.03);
 
-    HO_2.CellDeriv(0) = 1.03; HO_2.CellDeriv(1) = 2.03;
-    HO_2.CellDeriv(2) = 3.034; HO_2.CellDeriv(3) = 4.03;
+    HO_2.CellDeriv(0) = Euler1D_pState(1.03); HO_2.CellDeriv(1) = Euler1D_pState(2.03);
+    HO_2.CellDeriv(2) = Euler1D_pState(3.034); HO_2.CellDeriv(3) = Euler1D_pState(4.03);
 
     // == check
     ensure("==", (HO_2 == HO) == false);
@@ -231,19 +235,19 @@ namespace tut
   /* Test 7:*/
   template<>
   template<>
-  void HighOrder1D_object::test<7>()
+  void HighOrder1DEuler_object::test<7>()
   {
     set_test_name("operator !=, with LHS and Weights");
 
     // set HighOrder1D variables
-    HighOrder1D<double> HO(3,Cell1D), HO_2(3,Cell1D);
+    HighOrder1D<Euler1D_pState> HO(3,Cell1D), HO_2(3,Cell1D);
 
     // set values of TD
-    HO.CellDeriv(0) = 1.03; HO.CellDeriv(1) = 2.03;
-    HO.CellDeriv(2) = 3.03; HO.CellDeriv(3) = 4.03;
+    HO.CellDeriv(0) = Euler1D_pState(1.03); HO.CellDeriv(1) = Euler1D_pState(2.03);
+    HO.CellDeriv(2) = Euler1D_pState(3.03); HO.CellDeriv(3) = Euler1D_pState(4.03);
 
-    HO_2.CellDeriv(0) = 1.03; HO_2.CellDeriv(1) = 2.03;
-    HO_2.CellDeriv(2) = 3.03; HO_2.CellDeriv(3) = 4.03;
+    HO_2.CellDeriv(0) = Euler1D_pState(1.03); HO_2.CellDeriv(1) = Euler1D_pState(2.03);
+    HO_2.CellDeriv(2) = Euler1D_pState(3.03); HO_2.CellDeriv(3) = Euler1D_pState(4.03);
 
     // set LHS and GeomWeights
     HO.LHS() = A; 
@@ -259,19 +263,19 @@ namespace tut
   /* Test 8:*/
   template<>
   template<>
-  void HighOrder1D_object::test<8>()
+  void HighOrder1DEuler_object::test<8>()
   {
     set_test_name("Copy Constructor");
 
     // set HighOrder1D variable
-    HighOrder1D<double> HO(3,Cell1D);
+    HighOrder1D<Euler1D_pState> HO(3,Cell1D);
 
     // set values of TD
-    HO.CellDeriv(0) = 1.03; HO.CellDeriv(1) = 2.03;
-    HO.CellDeriv(2) = 3.03; HO.CellDeriv(3) = 4.03;
+    HO.CellDeriv(0) = Euler1D_pState(1.03); HO.CellDeriv(1) = Euler1D_pState(2.03);
+    HO.CellDeriv(2) = Euler1D_pState(3.03); HO.CellDeriv(3) = Euler1D_pState(4.03);
 
     // call copy constructor
-    HighOrder1D<double> HO_2(HO);
+    HighOrder1D<Euler1D_pState> HO_2(HO);
 
     // == check if the objects are equal
     ensure_equals("Copy constructor", HO_2, HO);
@@ -280,16 +284,16 @@ namespace tut
   /* Test 9:*/
   template<>
   template<>
-  void HighOrder1D_object::test<9>()
+  void HighOrder1DEuler_object::test<9>()
   {
     set_test_name("Assignment Operator");
 
     // set HighOrder1D variable
-    HighOrder1D<double> HO(3,Cell1D), HO_2;
+    HighOrder1D<Euler1D_pState> HO(3,Cell1D), HO_2;
 
     // set values of TD
-    HO.CellDeriv(0) = 1.03; HO.CellDeriv(1) = 2.03;
-    HO.CellDeriv(2) = 3.03; HO.CellDeriv(3) = 4.03;
+    HO.CellDeriv(0) = Euler1D_pState(1.03); HO.CellDeriv(1) = Euler1D_pState(2.03);
+    HO.CellDeriv(2) = Euler1D_pState(3.03); HO.CellDeriv(3) = Euler1D_pState(4.03);
 
     // call assignment operator
     HO_2 = HO;
@@ -301,16 +305,16 @@ namespace tut
   /* Test 10:*/
   template<>
   template<>
-  void HighOrder1D_object::test<10>()
+  void HighOrder1DEuler_object::test<10>()
   {
     set_test_name("operator >>");
 
     // set HighOrder1D variable
-    HighOrder1D<double> HO(3,Cell1D);
+    HighOrder1D<Euler1D_pState> HO(3,Cell1D);
 
     // set values of TD
-    HO.CellDeriv(0) = 1.03; HO.CellDeriv(1) = 2.03;
-    HO.CellDeriv(2) = 3.03; HO.CellDeriv(3) = 4.03;
+    HO.CellDeriv(0) = Euler1D_pState(1.03); HO.CellDeriv(1) = Euler1D_pState(2.03);
+    HO.CellDeriv(2) = Euler1D_pState(3.03); HO.CellDeriv(3) = Euler1D_pState(4.03);
 
     // == check
     Check_Input_Output_Operator(HO);
@@ -320,19 +324,19 @@ namespace tut
   /* Test 11:*/
   template<>
   template<>
-  void HighOrder1D_object::test<11>()
+  void HighOrder1DEuler_object::test<11>()
   {
     set_test_name("operator !=");
 
     // set HighOrder1D variable
-    HighOrder1D<double> HO(3,Cell1D), HO_2(2,Cell1D);
+    HighOrder1D<Euler1D_pState> HO(3,Cell1D), HO_2(2,Cell1D);
 
     // set values of TD
-    HO.CellDeriv(0) = 1.03; HO.CellDeriv(1) = 2.03;
-    HO.CellDeriv(2) = 3.03; HO.CellDeriv(3) = 4.03;
+    HO.CellDeriv(0) = Euler1D_pState(1.03); HO.CellDeriv(1) = Euler1D_pState(2.03);
+    HO.CellDeriv(2) = Euler1D_pState(3.03); HO.CellDeriv(3) = Euler1D_pState(4.03);
 
-    HO_2.CellDeriv(0) = 1.03; HO_2.CellDeriv(1) = 2.03;
-    HO_2.CellDeriv(2) = 3.03;
+    HO_2.CellDeriv(0) = Euler1D_pState(1.03); HO_2.CellDeriv(1) = Euler1D_pState(2.03);
+    HO_2.CellDeriv(2) = Euler1D_pState(3.03);
 
     // == check
     ensure_not("==", HO == HO_2);
@@ -341,7 +345,7 @@ namespace tut
   /* Test 12:*/
   template<>
   template<>
-  void HighOrder1D_object::test<12>()
+  void HighOrder1DEuler_object::test<12>()
   {
     set_test_name("SolutionAtCoordinates()");
 
@@ -350,21 +354,22 @@ namespace tut
     Cell1D.setsize(4.34);
 
     // set HighOrder1D variable
-    HighOrder1D<double> HO(3,Cell1D);
+    HighOrder1D<Euler1D_pState> HO(3,Cell1D);
 
     // set values of TD
-    HO.CellDeriv(0) = 1.03; HO.CellDeriv(1) = 2.03;
-    HO.CellDeriv(2) = 3.03; HO.CellDeriv(3) = 4.03;
+    HO.CellDeriv(0) = Euler1D_pState(1.03); HO.CellDeriv(1) = Euler1D_pState(2.03);
+    HO.CellDeriv(2) = Euler1D_pState(3.03); HO.CellDeriv(3) = Euler1D_pState(4.03);
 
     // == check
-    ensure_distance("solution", HO.SolutionAtCoordinates(0.13), -30.28693439, 1.0e-14);
     ensure_distance("solution", HO.SolutionAtCoordinates(0.13,1), -30.28693439, 1.0e-14);
+    ensure_distance("solution", HO.SolutionAtCoordinates(0.13,2), -30.28693439, 1.0e-14);
+    ensure_distance("solution", HO.SolutionAtCoordinates(0.13,3), -30.28693439, 1.0e-14);
   }
 
   /* Test 13:*/
   template<>
   template<>
-  void HighOrder1D_object::test<13>()
+  void HighOrder1DEuler_object::test<13>()
   {
     set_test_name("left_state()");
 
@@ -373,20 +378,20 @@ namespace tut
     Cell1D.setsize(4.34);
 
     // set HighOrder1D variable
-    HighOrder1D<double> HO(3,Cell1D);
+    HighOrder1D<Euler1D_pState> HO(3,Cell1D);
 
     // set values of TD
-    HO.CellDeriv(0) = 1.03; HO.CellDeriv(1) = 2.03;
-    HO.CellDeriv(2) = 3.03; HO.CellDeriv(3) = 4.03;
+    HO.CellDeriv(0) = Euler1D_pState(1.03); HO.CellDeriv(1) = Euler1D_pState(2.03);
+    HO.CellDeriv(2) = Euler1D_pState(3.03); HO.CellDeriv(3) = Euler1D_pState(4.03);
 
     // == check
-    ensure_distance("left interface solution", HO.left_state(), -30.28693439, 1.0e-14);
+    ensure_distance("left interface solution", HO.left_state(), Euler1D_pState(-30.28693439), Euler1D_pState(1.0e-14));
   }
 
   /* Test 14:*/
   template<>
   template<>
-  void HighOrder1D_object::test<14>()
+  void HighOrder1DEuler_object::test<14>()
   {
     set_test_name("right_state()");
 
@@ -395,14 +400,14 @@ namespace tut
     Cell1D.setsize(4.34);
 
     // set HighOrder1D variable
-    HighOrder1D<double> HO(3,Cell1D);
+    HighOrder1D<Euler1D_pState> HO(3,Cell1D);
 
     // set values of TD
-    HO.CellDeriv(0) = 1.03; HO.CellDeriv(1) = 2.03;
-    HO.CellDeriv(2) = 3.03; HO.CellDeriv(3) = 4.03;
+    HO.CellDeriv(0) = Euler1D_pState(1.03); HO.CellDeriv(1) = Euler1D_pState(2.03);
+    HO.CellDeriv(2) = Euler1D_pState(3.03); HO.CellDeriv(3) = Euler1D_pState(4.03);
 
     // == check
-    ensure_distance("right interface solution", HO.right_state(), 60.88286839, 1.0e-14);
+    ensure_distance("right interface solution", HO.right_state(), Euler1D_pState(60.88286839), Euler1D_pState(1.0e-14));
   }
 
 
@@ -411,7 +416,7 @@ namespace tut
 
 
 // Test suite constructor
-tut::HighOrder1D_TestSuite HighOrder1DTestSuite("Template Class:HighOrder1D && double");
+tut::HighOrder1DEuler_TestSuite HighOrder1DEulerTestSuite("Template Class:HighOrder1D && Euler");
 
 /*************************************************************
  Guidelines for naming "Test Suite Name".

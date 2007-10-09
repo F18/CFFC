@@ -61,7 +61,7 @@ class Euler1D_UniformMesh{
     Euler1D_cState   Uo;   // Initial solution state.
                            // Made public so can access them.
     int Nghost;     // Number of ghost cells(!= 1 for high-order)
-	
+
     /* Field access */
     const double & CellCenter(void) const {return X.x;}
     const double & CellDelta (void) {return X.dx;}

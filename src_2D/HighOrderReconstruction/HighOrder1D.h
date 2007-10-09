@@ -199,7 +199,7 @@ HighOrder1D<SOLN_STATE>::HighOrder1D(void):TD(0), GeomCoeff(0), SI(0),
 template<class SOLN_STATE> inline
 HighOrder1D<SOLN_STATE>::HighOrder1D(int ReconstructionOrder, GeometryType & Cell):
   TD(ReconstructionOrder), GeomCoeff(ReconstructionOrder),
-  SI(), CENO_LHS(), CENO_Geometric_Weights(){
+  SI(0), CENO_LHS(), CENO_Geometric_Weights(){
 
   // set geometry pointer
   SetGeometryPointer(Cell);
