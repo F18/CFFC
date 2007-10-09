@@ -156,15 +156,13 @@ int HexaSolver(char *Input_File_Name_ptr,
    output_file.close();
 
    
-   exit(1);
+   Create_Initial_Solution_Blocks<SOLN_pSTATE, SOLN_cSTATE>(Initial_Mesh,
+                                                            Local_Solution_Blocks,
+                                                            Input,
+                                                            Octree,
+                                                            Global_Adaptive_Block_List,
+                                                            Local_Adaptive_Block_List);
    
-  /*  Create_Initial_Solution_Blocks<SOLN_pSTATE, SOLN_cSTATE>(Initial_Mesh, */
-/*                                                             Local_Solution_Blocks, */
-/*                                                             Input, */
-/*                                                             Octree, */
-/*                                                             Global_Adaptive_Block_List, */
-/*                                                             Local_Adaptive_Block_List); */
-     
    /********************************************************  
     * Initialize solution variables.                       *
     ********************************************************/

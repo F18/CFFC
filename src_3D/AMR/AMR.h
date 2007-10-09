@@ -44,8 +44,169 @@
  * roots of the octree data structure.                            *
  *                                                                *
  ******************************************************************/
+/*  template<typename SOLN_pSTATE, typename SOLN_cSTATE> */
+/* int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                                 &Initial_Mesh, */
+/*                                    Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Local_Solution_Blocks, */
+/*                                    Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>              &Input, */
+/*                                    Octree_DataStructure                                    &Octree, */
+/*                                    AdaptiveBlock3D_ResourceList                            &Global_Adaptive_Block_List, */
+/*                                    AdaptiveBlock3D_List                                    &Local_Adaptive_Block_List) { */
+   
+
+  
+/*    int totalblks, n_cpu, n_blk; */
+   
+   
+/*    Octree_DataStructure::Create_Octree_Data_Structure( */
+/*       Octree, */
+/*       Input.IP_Grid.IBlk, */
+/*       Input.IP_Grid.JBlk, */
+/*       Input.IP_Grid.KBlk, */
+/*       Input.Number_of_Processors, */
+/*       Input.Number_of_Blocks_Per_Processor); */
+
+   
+/*    Octree.MaximumRefinementLevel = Input.Maximum_Refinement_Level-1; */
+/*    Octree.MinimumRefinementLevel = Input.Minimum_Refinement_Level-1; */
+   
+/*   /\*  cout<<"\n/\\* Set the thresholds for refinement and coarsening of the mesh. *\\/"; *\/ */
+/* /\*    cout.flush(); *\/ */
+   
+/*    Octree.RefineThreshold = Input.Threshold_for_Refinement; */
+/*    Octree.CoarsenThreshold = Input.Threshold_for_Coarsening; */
+   
+/*   /\*  cout<<"\n/\\* Create (allocate) array of local 3D hexarilateral solution blocks. *\\/"; *\/ */
+/* /\*    cout.flush(); *\/ */
+   
+/*    AdaptiveBlock3D_ResourceList::Create_Block_Resource_List(GlobalSolnBlockList, */
+/*                               Input.Number_of_Processors, */
+/*                               Input.Number_of_Blocks_Per_Processor); */
+/*    LocalSolnBlockList.allocate(Input.Number_of_Blocks_Per_Processor); */
+/*    LocalSolnBlockList.ThisCPU = GlobalSolnBlockList.ThisCPU; */
+   
+/*  /\*   cout<<"\n Loop over all initial mesh blocks and assign Octree root blocks and local solution block information as required. "; *\/ */
+/* /\*    cout.flush(); *\/ */
+
+/*    int nused=0; */
+/*    totalblks = Input.IP_Grid.IBlk*Input.IP_Grid.JBlk*Input.IP_Grid.KBlk; */
+   
+/*    for ( int nb = 0 ; nb < totalblks ; ++nb ) { */
+/*       if (InitMeshBlks.Grid_Blks[nb]->Node != NULL) { // Mesh block is used!!!! */
+/*          // Get next free solution block from list of available */
+/*          // solution blocks. */
+
+/*          if (GlobalSolnBlockList.Nfree > 0) { */
+/*             n_cpu = GlobalSolnBlockList.nextCPU(); */
+/*             n_blk = GlobalSolnBlockList.nextBlock(); */
+            
+/*             GlobalSolnBlockList.update_next(); */
+            
+/*          } else { */
+/*             cout << "\n"  */
+/*                  << " AMR Error: Create_Initial_Solution_Blocks, Insufficient number of hexahedrial solution blocks.\n"; */
+/* //                  Soln_ptr ->deallocate( ); */
+/*             //  return (NULL); */
+/*             return (1); */
+/*          } /\* endif *\/ */
+         
+/*          // Assign block information to appropriate Octree root solution block. */
+/*          Octree.Rootblks[nb].block.used = ADAPTIVEBLOCK3D_USED; */
+/*          Octree.Rootblks[nb].block.gblknum = */
+/*             GlobalSolnBlockList.Nused-1; */
+/*          Octree.Rootblks[nb].block.info.cpu = n_cpu; */
+/*          Octree.Rootblks[nb].block.info.blknum = n_blk; */
+/*          Octree.Rootblks[nb].block.info.dimen.i = */
+/*             InitMeshBlks.Grid_Blks[nb]->NCi-  2*InitMeshBlks.Grid_Blks[nb]->Nghost; */
+/*          Octree.Rootblks[nb].block.info.dimen.j = */
+/*             InitMeshBlks.Grid_Blks[nb]->NCj- 2*InitMeshBlks.Grid_Blks[nb]->Nghost; */
+/*          Octree.Rootblks[nb].block.info.dimen.k = */
+/*             InitMeshBlks.Grid_Blks[nb]->NCk- 2*InitMeshBlks.Grid_Blks[nb]->Nghost; */
+/*          Octree.Rootblks[nb].block.info.dimen.ghost = 2; */
+/*          Octree.Rootblks[nb].block.info.sector = ADAPTIVEBLOCK3D_SECTOR_NONE; */
+/*          Octree.Rootblks[nb].block.info.level = 0; */
+/*          Octree.Rootblks[nb].parent_ptr = NULL; */
+/*          Octree.Rootblks[nb].childTNW_ptr = NULL; */
+/*          Octree.Rootblks[nb].childTNE_ptr = NULL; */
+/*          Octree.Rootblks[nb].childTSE_ptr = NULL; */
+/*          Octree.Rootblks[nb].childTSW_ptr = NULL; */
+/*          Octree.Rootblks[nb].childBNW_ptr = NULL; */
+/*          Octree.Rootblks[nb].childBNE_ptr = NULL; */
+/*          Octree.Rootblks[nb].childBSE_ptr = NULL; */
+/*          Octree.Rootblks[nb].childBSW_ptr = NULL; */
+/*          Octree.Blocks[n_cpu][n_blk] = &(Octree.Rootblks[nb]); */
+               
+/*          // For solution blocks on this processor (or processor */
+/*          // element), add block to local list, create the solution */
+/*          // block, and copy the appropriate block of the */
+/*          // initial hexarilateral mesh to the solution block mesh. */
+/*          if (GlobalSolnBlockList.ThisCPU == n_cpu) { */
+            
+/*             LocalSolnBlockList.Block[n_blk] = Octree.Rootblks[nb].block; */
+            
+/*             Hexa_Multi_Block.Hexa_Block_List[n_blk] =  */
+/*                new Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>(Input.IP_Grid.ICells, */
+/*                                                         Input.IP_Grid.JCells, */
+/*                                                         Input.IP_Grid.KCells, */
+/*                                                         Input.IP_Grid.Nghost, */
+/*                                                         nb, */
+/*                                                         Input.i_Flow_Type,  */
+/*                                                         InitMeshBlks.Grid_Blks[nb]); */
+            
+/*             Hexa_Multi_Block.Block_Used[n_blk] = LocalSolnBlockList.Block[n_blk].used; */
+/*             //      cout<<"\n AMR3D n_blk "<<n_blk<<"  used=   "<< LocalSolnBlockList.Block[n_blk].used<<endl; */
+            
+/*          } /\* endif *\/ */
+         
+/*       } /\* endif *\/ */
+/*       else{ */
+/*          Octree.Rootblks[nb].block.used = 0; */
+         
+/*          nused++; */
+/*          //  cout<<"\n Block ("<<i_blk <<","<<j_blk <<","<<k_blk <<") is not used"; */
+/*       } */
+/*    } /\* endfor *\/ */
+
+/*    /\*   cout<<"\n/\\* Renumber all solution blocks, assigning a unique global block number. *\\/"; *\/ */
+/* /\*     cout.flush(); *\/ */
+   
+/*    Octree_DataStructure::Renumber_Solution_Blocks(Octree, */
+/*                                                        LocalSolnBlockList); */
+
+/*    /\*  cout<<"\n/\\* Find the neighbours of all of the newly assigned root blocks. *\\/"; *\/ */
+/* /\*     cout.flush(); *\/ */
+   
+   
+/*  /\*   Octree_DataStructure::Find_Neighbours_of_Root_Solution_Blocks(Octree, *\/ */
+/* /\*                                                                       LocalSolnBlockList); *\/ */
+  
+/* /\*    //cout<<"\n/\\* Modify block neighbours for grid geometries with *\/ */
+/* /\*    //   periodic boundaries, etc. *\\/"; *\/ */
+/* /\*    //cout.flush(); *\/ */
+
+/* /\*    Octree_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(Octree, *\/ */
+/* /\*                                                                         LocalSolnBlockList, *\/ */
+/* /\*                                                                         Input.IP_Grid.i_Grid); *\/ */
+
+   
+/*    //cout<<"\n/\* Allocates memory for all message passing buffers used */
+/*    //   to send solution information between neighbouring solution blocks. *\/"; */
+/*    //cout.flush(); */
+   
+/*    AdaptiveBlock3D_List::Allocate_Message_Buffers( */
+/*       LocalSolnBlockList, */
+/*       Hexa_Multi_Block.Hexa_Block_List[0]->NumVar()+NUM_COMP_VECTOR3D); */
+   
+   
+/*    //cout<<"\n/\* Solution block allocation and assignment complete. */
+/*    //   Return pointer to local solution blocks. *\/"; */
+/*    //cout.flush(); */
+   
+/*     return(0); */
+
+/* } */
+
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block                                 &Initial_Mesh,
+int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                            &Initial_Mesh,
                                    Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Local_Solution_Blocks,
                                    Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>              &Input,
                                    Octree_DataStructure                                    &Octree,
@@ -81,76 +242,74 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block                      
    Local_Adaptive_Block_List.allocate(Input.AMR_IP.Number_of_Blocks_Per_Processor);
    Local_Adaptive_Block_List.ThisCPU = Global_Adaptive_Block_List.ThisCPU;
    
-   /* Loop over all initial mesh blocks and assign Octree root blocks and 
+   /* Loop over all initial mesh blocks and assign Octree root blocks and
       local solution block information as required. */
 
    int nused=0;
-
-   for ( int k_blk = 0 ; k_blk <= Initial_Mesh.NBlk_Kdir-1 ; ++k_blk ) {
-      for ( int j_blk = 0 ; j_blk <= Initial_Mesh.NBlk_Jdir-1 ; ++j_blk ) {
-         for ( int i_blk = 0 ; i_blk <= Initial_Mesh.NBlk_Idir-1 ; ++i_blk ) {
-            if (Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk].Allocated) { // Mesh block is used!!!!
-	       // Get next free solution block from list of available
-	       // solution blocks.
-               
-               if (Global_Adaptive_Block_List.Nfree > 0) {
-                  n_cpu = Global_Adaptive_Block_List.nextCPU();
-                  n_blk = Global_Adaptive_Block_List.nextBlock();
-                  Global_Adaptive_Block_List.update_next();
-               } else {
-                  cout << "\n" 
-                       << " AMR Error: Create_Initial_Solution_Blocks, Insufficient number of hexahedrial solution blocks.\n";
-                  return (1);
-               } /* endif */
-	        
-               // Assign block information to appropriate Octree root solution block.
-               Octree.Roots[i_blk][j_blk][k_blk].block.used = ADAPTIVEBLOCK3D_USED;
-               Octree.Roots[i_blk][j_blk][k_blk].block.gblknum =
-	          Global_Adaptive_Block_List.Nused-1;
-               Octree.Roots[i_blk][j_blk][k_blk].block.info.cpu = n_cpu;
-               Octree.Roots[i_blk][j_blk][k_blk].block.info.blknum = n_blk;
-               Octree.Roots[i_blk][j_blk][k_blk].block.info.dimen.i =
-                   Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk].NCi -  
-                   2*Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk].Nghost;
-               Octree.Roots[i_blk][j_blk][k_blk].block.info.dimen.j =
-                   Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk].NCj - 
-                   2*Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk].Nghost;
-               Octree.Roots[i_blk][j_blk][k_blk].block.info.dimen.k =
-                   Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk].NCk - 
-                   2*Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk].Nghost;
-               Octree.Roots[i_blk][j_blk][k_blk].block.info.dimen.ghost = 2;
-               Octree.Roots[i_blk][j_blk][k_blk].block.info.sector = ADAPTIVEBLOCK3D_SECTOR_NONE;
-               Octree.Roots[i_blk][j_blk][k_blk].block.info.level = 0;
-               Octree.Roots[i_blk][j_blk][k_blk].parent_ptr = NULL;
-               Octree.Roots[i_blk][j_blk][k_blk].childTNW_ptr = NULL;
-               Octree.Roots[i_blk][j_blk][k_blk].childTNE_ptr = NULL;
-               Octree.Roots[i_blk][j_blk][k_blk].childTSE_ptr = NULL;
-               Octree.Roots[i_blk][j_blk][k_blk].childTSW_ptr = NULL;
-               Octree.Roots[i_blk][j_blk][k_blk].childBNW_ptr = NULL;
-               Octree.Roots[i_blk][j_blk][k_blk].childBNE_ptr = NULL;
-               Octree.Roots[i_blk][j_blk][k_blk].childBSE_ptr = NULL;
-               Octree.Roots[i_blk][j_blk][k_blk].childBSW_ptr = NULL;
-               Octree.Blocks[n_cpu][n_blk] = &(Octree.Roots[i_blk][j_blk][k_blk]);
-               
-               // For solution blocks on this processor (or processor
-               // element), add block to local list, create the solution
-               // block, and copy the appropriate block of the
-               // initial hexarilateral mesh to the solution block mesh.
-               if (Global_Adaptive_Block_List.ThisCPU == n_cpu) {
-                  Local_Adaptive_Block_List.Block[n_blk] = Octree.Roots[i_blk][j_blk][k_blk].block;
-                  Local_Solution_Blocks.Soln_Blks[n_blk].Create_Block(Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk]);
-                  Local_Solution_Blocks.Soln_Blks[n_blk].Flow_Type = Input.i_Flow_Type;
-                  Local_Solution_Blocks.Block_Used[n_blk] = HEXA_BLOCK_USED;
-               } /* endif */
-            } else{
- 	       Octree.Roots[i_blk][j_blk][k_blk].block.used = 0;
-	       nused++;
-	    } /* endif */
-        } /* endfor */
-      } /* endfor */
-    } /* endfor */
+   int totalblks = Initial_Mesh.NBlk_Kdir*Initial_Mesh.NBlk_Jdir*Initial_Mesh.NBlk_Idir;
    
-    /* Renumber all solution blocks, assigning a unique global block number. */
+   for ( int nb = 0 ; nb < totalblks ; ++nb ){
+      if (Initial_Mesh.Grid_Blks[nb].Allocated) { // Mesh block is used!!!!
+         // Get next free solution block from list of available
+         // solution blocks.
+               
+         if (Global_Adaptive_Block_List.Nfree > 0) {
+            n_cpu = Global_Adaptive_Block_List.nextCPU();
+            n_blk = Global_Adaptive_Block_List.nextBlock();
+            Global_Adaptive_Block_List.update_next();
+         } else {
+            cout << "\n"
+                 << " AMR Error: Create_Initial_Solution_Blocks, Insufficient number of hexahedrial solution blocks.\n";
+            return (1);
+         } /* endif */
+	 
+         // Assign block information to appropriate Octree root solution block.
+         Octree.Rootblks[nb].block.used = ADAPTIVEBLOCK3D_USED;
+         Octree.Rootblks[nb].block.gblknum =
+            Global_Adaptive_Block_List.Nused-1;
+         Octree.Rootblks[nb].block.info.cpu = n_cpu;
+         Octree.Rootblks[nb].block.info.blknum = n_blk;
+         Octree.Rootblks[nb].block.info.dimen.i =
+            Initial_Mesh.Grid_Blks[nb].NCi -
+            2*Initial_Mesh.Grid_Blks[nb].Nghost;
+         Octree.Rootblks[nb].block.info.dimen.j =
+            Initial_Mesh.Grid_Blks[nb].NCj -
+            2*Initial_Mesh.Grid_Blks[nb].Nghost;
+         Octree.Rootblks[nb].block.info.dimen.k =
+            Initial_Mesh.Grid_Blks[nb].NCk -
+            2*Initial_Mesh.Grid_Blks[nb].Nghost;
+         Octree.Rootblks[nb].block.info.dimen.ghost = 2;
+         Octree.Rootblks[nb].block.info.sector = ADAPTIVEBLOCK3D_SECTOR_NONE;
+         Octree.Rootblks[nb].block.info.level = 0;
+         Octree.Rootblks[nb].parent_ptr = NULL;
+         Octree.Rootblks[nb].childTNW_ptr = NULL;
+         Octree.Rootblks[nb].childTNE_ptr = NULL;
+         Octree.Rootblks[nb].childTSE_ptr = NULL;
+         Octree.Rootblks[nb].childTSW_ptr = NULL;
+         Octree.Rootblks[nb].childBNW_ptr = NULL;
+         Octree.Rootblks[nb].childBNE_ptr = NULL;
+         Octree.Rootblks[nb].childBSE_ptr = NULL;
+         Octree.Rootblks[nb].childBSW_ptr = NULL;
+         Octree.Blocks[n_cpu][n_blk] = &(Octree.Rootblks[nb]);
+         
+         // For solution blocks on this processor (or processor
+         // element), add block to local list, create the solution
+         // block, and copy the appropriate block of the
+         // initial hexarilateral mesh to the solution block mesh.
+         if (Global_Adaptive_Block_List.ThisCPU == n_cpu) {
+            Local_Adaptive_Block_List.Block[n_blk] = Octree.Rootblks[nb].block;
+            Local_Solution_Blocks.Soln_Blks[n_blk].Create_Block(Initial_Mesh.Grid_Blks[nb]);
+            Local_Solution_Blocks.Soln_Blks[n_blk].Flow_Type = Input.i_Flow_Type;
+            Local_Solution_Blocks.Block_Used[n_blk] = HEXA_BLOCK_USED;
+         } /* endif */
+      } else{
+         Octree.Rootblks[nb].block.used = 0;
+         nused++;
+      } /* endif */
+      
+   } /* endfor */
+   
+   /* Renumber all solution blocks, assigning a unique global block number. */
 
     Octree_DataStructure::Renumber_Solution_Blocks(Octree,
                                                    Local_Adaptive_Block_List);
@@ -166,7 +325,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block                      
                                                                     Local_Adaptive_Block_List,
                                                                     Input.Grid_IP.i_Grid);
 
-    /* Allocates memory for all message passing buffers used to send 
+    /* Allocates memory for all message passing buffers used to send
        solution information between neighbouring solution blocks. */
 
     AdaptiveBlock3D_List::Allocate_Message_Buffers(Local_Adaptive_Block_List,

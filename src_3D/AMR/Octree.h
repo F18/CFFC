@@ -1152,6 +1152,7 @@ class Octree_DataStructure{
     int                    NRj; // Number of roots in j-direction.
     int                    NRk; // Number of roots in k-direction.
     OctreeBlock       ***Roots; // Roots of octree data structure.
+    OctreeBlock      *Rootblks; // Roots of octree data structure.
     int                   Ncpu; // Number of CPUs available.
     int                   Nblk; // Number of local blocks per CPU.
     OctreeBlock      ***Blocks; // Global list of pointers to blocks
@@ -1166,7 +1167,7 @@ class Octree_DataStructure{
 
     /* Creation, copy, and assignment constructors. */
     Octree_DataStructure(void) {
-       NRi = 0; NRj = 0;NRk = 0; Roots = NULL;
+       NRi = 0; NRj = 0;NRk = 0; Roots = NULL; Rootblks = NULL;
        Ncpu = 0; Nblk = 0; Blocks = NULL; RefineFlags = NULL;
        MaximumRefinementLevel = 99; MinimumRefinementLevel = 0;
        RefineThreshold = 0.50; CoarsenThreshold = 0.10;
@@ -1174,6 +1175,7 @@ class Octree_DataStructure{
 
     Octree_DataStructure(const Octree_DataStructure &QT) {
        NRi = QT.NRi; NRj = QT.NRj; NRk = QT.NRk; Roots = QT.Roots;
+       Rootblks = QT.Rootblks; 
        Ncpu = QT.Ncpu; Nblk = QT.Nblk; Blocks = QT.Blocks;
        RefineFlags = QT.RefineFlags;
        MaximumRefinementLevel = QT.MaximumRefinementLevel; 
@@ -1310,6 +1312,7 @@ inline void Octree_DataStructure::allocate(const int ni,
    assert( ni > 0 && nj > 0 && nk > 0 && ncpu > 0 && nblk > 0 );
    NRi = ni; NRj = nj; NRk = nk; Ncpu = ncpu; Nblk = nblk;
    Roots = new OctreeBlock**[NRi];
+   Rootblks = new OctreeBlock[NRi*NRj*NRk];
    for ( i = 0; i <= NRi-1 ; ++i ) {
      Roots[i] = new OctreeBlock*[NRj];
      for ( j = 0; j <= NRj-1 ; ++j ) Roots[i][j] = new OctreeBlock[NRk];
@@ -1329,6 +1332,7 @@ inline void Octree_DataStructure::allocateRoots(const int ni,
                                                 const int nj) {
    int i,j; assert( ni > 0 && nj > 0 && nk > 0 );
    NRi = ni; NRj = nj; NRk = nk; Roots = new OctreeBlock**[NRi];
+   Rootblks = new OctreeBlock[NRi*NRj*NRk];
    for ( i = 0; i <= NRi-1 ; ++i ) {
      Roots[i] = new OctreeBlock*[NRj];
      for ( j = 0; j <= NRj-1 ; ++j ) 
@@ -1360,6 +1364,7 @@ inline void Octree_DataStructure::deallocate(void) {
      Roots[i] = NULL;
    } /* endfor */
    delete []Roots; Roots = NULL;
+   delete []Rootblks; Rootblks = NULL;
    NRi = 0; NRj = 0; NRk = 0;
    for ( i = 0; i <= Ncpu-1 ; ++i ) {
       delete []Blocks[i]; Blocks[i] = NULL;
@@ -1380,6 +1385,7 @@ inline void Octree_DataStructure::deallocateRoots(void) {
      Roots[i] = NULL;
    } /* endfor */
   delete []Roots; Roots = NULL;
+  delete []Rootblks; Rootblks = NULL;
   NRi = 0; NRj = 0; NRk = 0;
 }
 
