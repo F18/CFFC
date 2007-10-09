@@ -119,7 +119,7 @@ Restart_Solution_Save_Frequency=
 Cantera_Reaction_Mechanism=
 CH4_WD1b
 Mechanism_File=
-/home/charestm/CFFC/data/CANTERA_RXNS/CH4.xml
+../../../data/CANTERA_RXNS/CH4.xml
 Schmidt_Numbers=
 CH4:0.73 O2:0.8 H2O:0.66
 Mass_Fractions=

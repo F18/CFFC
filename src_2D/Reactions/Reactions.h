@@ -1217,6 +1217,8 @@ inline void Reaction_set::Finite_Difference_dSwdU(DenseMatrix &dSwdU,
 /***********************************************************************
   Use cantera to compute the Chemical Source Jacobian.  This function
   is called from the main dSwdU().
+
+  Comment out "FROZEN TEMPERATURE BLOCKS" for dS/dT=0 assumption.
 ***********************************************************************/
 template<class SOLN_pSTATE>
 void Reaction_set::ct_dSwdU( DenseMatrix &dSwdU,
@@ -1472,6 +1474,8 @@ void Reaction_set::ct_dSwdU( DenseMatrix &dSwdU,
 /***********************************************************************
   Use cantera to compute the Chemical Source Jacobian.  This function
   is called from the main dSwdU().
+
+  Comment out "FROZEN TEMPERATURE BLOCKS" for dS/dT=0 assumption.
 ***********************************************************************/
 template<class SOLN_pSTATE>
 void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
@@ -1498,9 +1502,11 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
   // some constants
   double rho = W.rho; // density
   double Cv = W.Cv(); // constant volume specific heat
-  double e_N = W.spec[num_react_species-1].c*(W.specdata[num_react_species-1].Enthalpy(Temp) + 
-					      W.specdata[num_react_species-1].Heatofform() - 
-					      W.specdata[num_react_species-1].Rs()*Temp); // internal energy of N2
+  double e_N =        // internal energy of N2
+    W.spec[num_react_species-1].c *
+    ( W.specdata[num_react_species-1].Enthalpy(Temp) + 
+      W.specdata[num_react_species-1].Heatofform() - 
+      W.specdata[num_react_species-1].Rs()*Temp );
 
   //------------------------------------------------
   // setup
@@ -1537,7 +1543,7 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
     for (int i=0; i<num_react_species-1; i++) {
       
       // the i,j element of jacobian
-      dSwdU(NUM_VAR+i,NUM_VAR+j) = M[i]*(r[i]-r0[i]) / eps;
+      dSwdU(NUM_VAR+i,NUM_VAR+j) += (M[i]/rho)*(r[i]-r0[i]) / eps;
       
     } // endfor - rows
     
@@ -1573,8 +1579,8 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
   //
   for (int i=0; i<num_react_species-1; i++) {
       
-    // compute the derivative
-    dSdT = M[i]*(r[i]-r0[i]) / eps;     
+    // compute the derivative => d(rho w_dot)_j/dT
+    dSdT = M[i]*rho*((Temp/T0)*r[i]-r0[i]) / eps;     
 
     // d(rho w_dot_n) / d(rho)
     // = (1/(rho * Cv))*(0.5*u^2 +0.5*v^2 - e_N) * d(rho w_dot)_j/dT
