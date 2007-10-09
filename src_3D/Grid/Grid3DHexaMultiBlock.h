@@ -16,11 +16,87 @@
 #include "Grid3DHexaBlock.h"
 #endif // _GRID3D_HEXA_BLOCK_INCLUDED
 
+
+#ifndef _BLOCK_ORIENTATION_INFO_INCLUDED
+#include "../AMR/BlockOrientationInfo.h"
+#endif // _BLOCK_ORIENTATION_INFO_INCLUDED
+
+
 #define	GRID3D_NO_NEIGHBOUR             -1
 
-#define Mesh_Orientation_Matrix int
 
 /* Define the 3D hexahedral grid multiblock classes. */
+
+class Grid3D_Hexa_Multi_Block_Connectivity{
+   
+  public:
+   
+   int      num_neighT,num_neighB,num_neighN; // Number of neighbouring grid blocks in each direction
+   int      num_neighS,num_neighE,num_neighW; // for each of the block in the multi-block grid
+   int      num_neighNW,num_neighNE,num_neighSE,num_neighSW;
+   int      num_neighTN,num_neighTS,num_neighTE,num_neighTW;
+   int      num_neighTNW,num_neighTSW,num_neighTNE,num_neighTSE;
+   int      num_neighBN,num_neighBS,num_neighBE,num_neighBW;
+   int      num_neighBNW,num_neighBSW,num_neighBNE,num_neighBSE;
+   
+
+   int      neighT,neighB,neighN; // Possible 26 neighbouring grid blocks in each direction
+   int      neighS,neighE,neighW; // for each of the block in the multi-block grid
+   int      neighNW[BLOCK_ORIENTATION_MAX_NEIGHBOUR],neighNE[BLOCK_ORIENTATION_MAX_NEIGHBOUR],
+            neighSE[BLOCK_ORIENTATION_MAX_NEIGHBOUR],neighSW[BLOCK_ORIENTATION_MAX_NEIGHBOUR];
+   int      neighTN[BLOCK_ORIENTATION_MAX_NEIGHBOUR],neighTS[BLOCK_ORIENTATION_MAX_NEIGHBOUR],
+            neighTE[BLOCK_ORIENTATION_MAX_NEIGHBOUR],neighTW[BLOCK_ORIENTATION_MAX_NEIGHBOUR];
+   int      neighTNW[BLOCK_ORIENTATION_MAX_NEIGHBOUR],neighTSW[BLOCK_ORIENTATION_MAX_NEIGHBOUR],
+            neighTNE[BLOCK_ORIENTATION_MAX_NEIGHBOUR],neighTSE[BLOCK_ORIENTATION_MAX_NEIGHBOUR];
+   int      neighBN[BLOCK_ORIENTATION_MAX_NEIGHBOUR],neighBS[BLOCK_ORIENTATION_MAX_NEIGHBOUR],
+            neighBE[BLOCK_ORIENTATION_MAX_NEIGHBOUR],neighBW[BLOCK_ORIENTATION_MAX_NEIGHBOUR];
+   int      neighBNW[BLOCK_ORIENTATION_MAX_NEIGHBOUR],neighBSW[BLOCK_ORIENTATION_MAX_NEIGHBOUR],
+            neighBNE[BLOCK_ORIENTATION_MAX_NEIGHBOUR],neighBSE[BLOCK_ORIENTATION_MAX_NEIGHBOUR];
+   
+
+   Block_Orientation_Info  neighT_info,neighB_info,neighN_info; // Compact transformation matrix for each of the
+   Block_Orientation_Info  neighS_info,neighE_info,neighW_info; // possible 26 neighbouring grid blocks in each direction
+   Block_Orientation_Info  neighNW_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR],neighNE_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR],
+                           neighSE_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR],neighSW_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR]; // for each of the block in the multi-block grid
+   Block_Orientation_Info  neighTN_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR],neighTS_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR],
+                           neighTE_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR],neighTW_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR];
+   Block_Orientation_Info  neighTNW_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR],neighTSW_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR],
+                           neighTNE_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR],neighTSE_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR];
+   Block_Orientation_Info  neighBN_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR],neighBS_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR],
+                           neighBE_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR],neighBW_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR];
+   Block_Orientation_Info  neighBNW_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR],neighBSW_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR],
+                           neighBNE_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR],neighBSE_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR];
+
+
+  //Creation constructors.
+   Grid3D_Hexa_Multi_Block_Connectivity(void):
+      neighT(GRID3D_NO_NEIGHBOUR), neighB(GRID3D_NO_NEIGHBOUR),
+      neighN(GRID3D_NO_NEIGHBOUR), neighS(GRID3D_NO_NEIGHBOUR),
+      neighE(GRID3D_NO_NEIGHBOUR), neighW(GRID3D_NO_NEIGHBOUR){
+      
+      for(int nN = 0; nN < BLOCK_ORIENTATION_MAX_NEIGHBOUR; nN++){
+         neighNW[nN] = 0;  neighNE[nN] = 0; 
+         neighSE[nN] = 0;  neighSW[nN] = 0; 
+         neighTN[nN] = 0;  neighTS[nN] = 0; 
+         neighTE[nN] = 0;  neighTW[nN] = 0; 
+         neighTNW[nN] = 0;  neighTSW[nN] = 0; 
+         neighTNE[nN] = 0;  neighTSE[nN] = 0; 
+         neighBN[nN] = 0;  neighBS[nN] = 0; 
+         neighBE[nN] = 0;  neighBW[nN] = 0; 
+         neighBNW[nN] = 0;  neighBSW[nN] = 0; 
+         neighBNE[nN] = 0;  neighBSE[nN] = 0; 
+      }
+         
+      
+   }
+
+      
+      
+      void Deallocate(void);
+
+
+};
+
 
 class Grid3D_Hexa_Multi_Block_List{
   public:
@@ -30,38 +106,13 @@ class Grid3D_Hexa_Multi_Block_List{
                            NBlk_Jdir, 
                            NBlk_Kdir; // Number of blocks in i, j and k directions.
     int                    Allocated; // Indicates if the grid blocks have been allocated or not.
-    int      *neighT,*neighB,*neighN; // Possible 26 neighbouring grid blocks in each direction
-    int      *neighS,*neighE,*neighW; // for each of the block in the multi-block grid 
-    int      *neighNW,*neighNE,*neighSE,*neighSW; 
-    int      *neighTN,*neighTS,*neighTE,*neighTW;  
-    int      *neighTNW,*neighTSW,*neighTNE,*neighTSE;  
-    int      *neighBN,*neighBS,*neighBE,*neighBW;  
-    int      *neighBNW,*neighBSW,*neighBNE,*neighBSE;
    
-    Mesh_Orientation_Matrix  *neighT_ctm,*neighB_ctm,*neighN_ctm; // Compact transformation matrix for each of the
-    Mesh_Orientation_Matrix  *neighS_ctm,*neighE_ctm,*neighW_ctm; // possible 26 neighbouring grid blocks in each direction
-    Mesh_Orientation_Matrix  *neighNW_ctm,*neighNE_ctm,*neighSE_ctm,*neighSW_ctm; // for each of the block in the multi-block grid
-    Mesh_Orientation_Matrix  *neighTN_ctm,*neighTS_ctm,*neighTE_ctm,*neighTW_ctm; 
-    Mesh_Orientation_Matrix  *neighTNW_ctm,*neighTSW_ctm,*neighTNE_ctm,*neighTSE_ctm;  
-    Mesh_Orientation_Matrix  *neighBN_ctm,*neighBS_ctm,*neighBE_ctm,*neighBW_ctm;  
-    Mesh_Orientation_Matrix  *neighBNW_ctm,*neighBSW_ctm,*neighBNE_ctm,*neighBSE_ctm;
-
+    Grid3D_Hexa_Multi_Block_Connectivity  *Connectivity; 
+   
     /* Creation constructors. */
     Grid3D_Hexa_Multi_Block_List(void): 
-      NBlk(0), NBlk_Idir(0), NBlk_Jdir(0), NBlk_Kdir(0), Grid_Blks(NULL), Allocated(0),
-      neighT(NULL), neighB(NULL), neighN(NULL), neighS(NULL), neighE(NULL), neighW(NULL),
-      neighNW(NULL), neighNE(NULL), neighSE(NULL), neighSW(NULL), 
-      neighTN(NULL), neighTS(NULL), neighTE(NULL), neighTW(NULL),   
-      neighTNW(NULL), neighTSW(NULL), neighTNE(NULL), neighTSE(NULL),   
-      neighBN(NULL), neighBS(NULL), neighBE(NULL), neighBW(NULL),   
-      neighBNW(NULL), neighBSW(NULL), neighBNE(NULL), neighBSE(NULL),
-      neighT_ctm(NULL), neighB_ctm(NULL), neighN_ctm(NULL), neighS_ctm(NULL), neighE_ctm(NULL), neighW_ctm(NULL),
-      neighNW_ctm(NULL), neighNE_ctm(NULL), neighSE_ctm(NULL), neighSW_ctm(NULL), 
-      neighTN_ctm(NULL), neighTS_ctm(NULL), neighTE_ctm(NULL), neighTW_ctm(NULL),   
-      neighTNW_ctm(NULL), neighTSW_ctm(NULL), neighTNE_ctm(NULL), neighTSE_ctm(NULL),   
-      neighBN_ctm(NULL), neighBS_ctm(NULL), neighBE_ctm(NULL), neighBW_ctm(NULL),   
-      neighBNW_ctm(NULL), neighBSW_ctm(NULL), neighBNE_ctm(NULL), neighBSE_ctm(NULL) { 
-    }
+       NBlk(0), NBlk_Idir(0), NBlk_Jdir(0), NBlk_Kdir(0), Grid_Blks(NULL), 
+       Connectivity(NULL), Allocated(0){ }
 
     Grid3D_Hexa_Multi_Block_List(const int N) {
        Allocate(N);

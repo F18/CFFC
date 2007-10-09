@@ -37,7 +37,7 @@ int HexaSolver(char *Input_File_Name_ptr,
      adaptive mesh refinement (AMR). */ 
 
    Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>              Input;
-   Grid3D_Hexa_Multi_Block                                 Initial_Mesh;
+   Grid3D_Hexa_Multi_Block_List                            Initial_Mesh;
    Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > Local_Solution_Blocks; 
     
    AdaptiveBlock3D_List                                    Local_Adaptive_Block_List; 
@@ -125,12 +125,45 @@ int HexaSolver(char *Input_File_Name_ptr,
       cout.flush();
    } /* endif */
 
-   Create_Initial_Solution_Blocks<SOLN_pSTATE, SOLN_cSTATE>(Initial_Mesh,
-                                                            Local_Solution_Blocks,
-                                                            Input,
-                                                            Octree,
-                                                            Global_Adaptive_Block_List,
-                                                            Local_Adaptive_Block_List);
+// **************************************************************
+// output the grid geometry...
+   char prefix[256], extension[256], output_file_name[256];
+   char *output_file_name_ptr;
+   ofstream output_file;
+   
+   /* Determine prefix of output data file names. */
+   int i = 0;
+   
+   while (1) {
+      if (Input.Output_File_Name[i] == ' ' ||
+          Input.Output_File_Name[i] == '.') break;
+      prefix[i]=Input.Output_File_Name[i];
+      i = i + 1;
+      if (i > strlen(Input.Output_File_Name) ) break;
+   } /* endwhile */
+   prefix[i] = '\0';
+   strcat(prefix, "_cells_cpu");
+   
+   sprintf(extension, "%.6d");
+   strcat(extension, ".dat");
+   strcpy(output_file_name, prefix);
+   strcat(output_file_name, extension);
+   output_file_name_ptr = output_file_name;
+       
+   // Open the output data file.
+   output_file.open(output_file_name_ptr, ios::out);
+   Initial_Mesh.Output_Cells_Tecplot(output_file);
+   output_file.close();
+
+   
+   exit(1);
+   
+  /*  Create_Initial_Solution_Blocks<SOLN_pSTATE, SOLN_cSTATE>(Initial_Mesh, */
+/*                                                             Local_Solution_Blocks, */
+/*                                                             Input, */
+/*                                                             Octree, */
+/*                                                             Global_Adaptive_Block_List, */
+/*                                                             Local_Adaptive_Block_List); */
      
    /********************************************************  
     * Initialize solution variables.                       *

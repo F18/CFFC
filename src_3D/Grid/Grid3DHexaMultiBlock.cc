@@ -25,91 +25,11 @@ void Grid3D_Hexa_Multi_Block_List::Allocate(const int Ni,
       NBlk = Ni*Nj*Nk;
 
       Grid_Blks = new Grid3D_Hexa_Block[NBlk];
-
-      neighT = new int[NBlk];
-      neighB = new int[NBlk];
-      neighN = new int[NBlk];
-      neighS = new int[NBlk];
-      neighE = new int[NBlk];
-      neighW = new int[NBlk]; 
-      neighNW = new int[NBlk];
-      neighNE = new int[NBlk];
-      neighSE = new int[NBlk];
-      neighSW = new int[NBlk];
-      neighTN = new int[NBlk];
-      neighTS = new int[NBlk];
-      neighTE = new int[NBlk];
-      neighTW = new int[NBlk];  
-      neighTNW = new int[NBlk];
-      neighTSW = new int[NBlk];
-      neighTNE = new int[NBlk];
-      neighTSE = new int[NBlk];  
-      neighBN = new int[NBlk];
-      neighBS = new int[NBlk];
-      neighBE = new int[NBlk];
-      neighBW = new int[NBlk];  
-      neighBNW = new int[NBlk];
-      neighBSW = new int[NBlk];
-      neighBNE = new int[NBlk];
-      neighBSE = new int[NBlk];
-
-      neighT_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighB_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighN_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighS_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighW_ctm = new Mesh_Orientation_Matrix[NBlk]; 
-      neighNW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighNE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighSE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighSW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTN_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTS_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTW_ctm = new Mesh_Orientation_Matrix[NBlk];  
-      neighTNW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTSW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTNE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTSE_ctm = new Mesh_Orientation_Matrix[NBlk];  
-      neighBN_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBS_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBW_ctm = new Mesh_Orientation_Matrix[NBlk];  
-      neighBNW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBSW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBNE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBSE_ctm = new Mesh_Orientation_Matrix[NBlk];
-
+      Connectivity = new Grid3D_Hexa_Multi_Block_Connectivity[NBlk];
+    
       Allocated = 1;
 
-      for (int  i = 0 ; i < NBlk ; ++i ) {
-         neighT[i] = GRID3D_NO_NEIGHBOUR;
-         neighB[i] = GRID3D_NO_NEIGHBOUR;
-         neighN[i] = GRID3D_NO_NEIGHBOUR;
-         neighS[i] = GRID3D_NO_NEIGHBOUR;
-         neighE[i] = GRID3D_NO_NEIGHBOUR;
-         neighW[i] = GRID3D_NO_NEIGHBOUR; 
-         neighNW[i] = GRID3D_NO_NEIGHBOUR;
-         neighNE[i] = GRID3D_NO_NEIGHBOUR;
-         neighSE[i] = GRID3D_NO_NEIGHBOUR;
-         neighSW[i] = GRID3D_NO_NEIGHBOUR;
-         neighTN[i] = GRID3D_NO_NEIGHBOUR;
-         neighTS[i] = GRID3D_NO_NEIGHBOUR;
-         neighTE[i] = GRID3D_NO_NEIGHBOUR;
-         neighTW[i] = GRID3D_NO_NEIGHBOUR;  
-         neighTNW[i] = GRID3D_NO_NEIGHBOUR;
-         neighTSW[i] = GRID3D_NO_NEIGHBOUR;
-         neighTNE[i] = GRID3D_NO_NEIGHBOUR;
-         neighTSE[i] = GRID3D_NO_NEIGHBOUR;  
-         neighBN[i] = GRID3D_NO_NEIGHBOUR;
-         neighBS[i] = GRID3D_NO_NEIGHBOUR;
-         neighBE[i] = GRID3D_NO_NEIGHBOUR;
-         neighBW[i] = GRID3D_NO_NEIGHBOUR;  
-         neighBNW[i] = GRID3D_NO_NEIGHBOUR;
-         neighBSW[i] = GRID3D_NO_NEIGHBOUR;
-         neighBNE[i] = GRID3D_NO_NEIGHBOUR;
-         neighBSE[i] = GRID3D_NO_NEIGHBOUR;
-      } /* endfor */
+     
    } /* endif */
 
 }
@@ -130,91 +50,10 @@ void Grid3D_Hexa_Multi_Block_List::Allocate(const int N) {
       NBlk = N;
 
       Grid_Blks = new Grid3D_Hexa_Block[NBlk];
-
-      neighT = new int[NBlk];
-      neighB = new int[NBlk];
-      neighN = new int[NBlk];
-      neighS = new int[NBlk];
-      neighE = new int[NBlk];
-      neighW = new int[NBlk]; 
-      neighNW = new int[NBlk];
-      neighNE = new int[NBlk];
-      neighSE = new int[NBlk];
-      neighSW = new int[NBlk];
-      neighTN = new int[NBlk];
-      neighTS = new int[NBlk];
-      neighTE = new int[NBlk];
-      neighTW = new int[NBlk];  
-      neighTNW = new int[NBlk];
-      neighTSW = new int[NBlk];
-      neighTNE = new int[NBlk];
-      neighTSE = new int[NBlk];  
-      neighBN = new int[NBlk];
-      neighBS = new int[NBlk];
-      neighBE = new int[NBlk];
-      neighBW = new int[NBlk];  
-      neighBNW = new int[NBlk];
-      neighBSW = new int[NBlk];
-      neighBNE = new int[NBlk];
-      neighBSE = new int[NBlk];
-
-      neighT_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighB_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighN_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighS_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighW_ctm = new Mesh_Orientation_Matrix[NBlk]; 
-      neighNW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighNE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighSE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighSW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTN_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTS_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTW_ctm = new Mesh_Orientation_Matrix[NBlk];  
-      neighTNW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTSW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTNE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTSE_ctm = new Mesh_Orientation_Matrix[NBlk];  
-      neighBN_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBS_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBW_ctm = new Mesh_Orientation_Matrix[NBlk];  
-      neighBNW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBSW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBNE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBSE_ctm = new Mesh_Orientation_Matrix[NBlk];
+      Connectivity = new Grid3D_Hexa_Multi_Block_Connectivity[NBlk];
 
       Allocated = 1;
-
-      for (int  i = 0 ; i < NBlk ; ++i ) {
-         neighT[i] = GRID3D_NO_NEIGHBOUR;
-         neighB[i] = GRID3D_NO_NEIGHBOUR;
-         neighN[i] = GRID3D_NO_NEIGHBOUR;
-         neighS[i] = GRID3D_NO_NEIGHBOUR;
-         neighE[i] = GRID3D_NO_NEIGHBOUR;
-         neighW[i] = GRID3D_NO_NEIGHBOUR; 
-         neighNW[i] = GRID3D_NO_NEIGHBOUR;
-         neighNE[i] = GRID3D_NO_NEIGHBOUR;
-         neighSE[i] = GRID3D_NO_NEIGHBOUR;
-         neighSW[i] = GRID3D_NO_NEIGHBOUR;
-         neighTN[i] = GRID3D_NO_NEIGHBOUR;
-         neighTS[i] = GRID3D_NO_NEIGHBOUR;
-         neighTE[i] = GRID3D_NO_NEIGHBOUR;
-         neighTW[i] = GRID3D_NO_NEIGHBOUR;  
-         neighTNW[i] = GRID3D_NO_NEIGHBOUR;
-         neighTSW[i] = GRID3D_NO_NEIGHBOUR;
-         neighTNE[i] = GRID3D_NO_NEIGHBOUR;
-         neighTSE[i] = GRID3D_NO_NEIGHBOUR;  
-         neighBN[i] = GRID3D_NO_NEIGHBOUR;
-         neighBS[i] = GRID3D_NO_NEIGHBOUR;
-         neighBE[i] = GRID3D_NO_NEIGHBOUR;
-         neighBW[i] = GRID3D_NO_NEIGHBOUR;  
-         neighBNW[i] = GRID3D_NO_NEIGHBOUR;
-         neighBSW[i] = GRID3D_NO_NEIGHBOUR;
-         neighBNE[i] = GRID3D_NO_NEIGHBOUR;
-         neighBSE[i] = GRID3D_NO_NEIGHBOUR;
-      } /* endfor */
+     
    } /* endif */
 
 }
@@ -232,112 +71,10 @@ void Grid3D_Hexa_Multi_Block_List::Deallocate(void) {
        delete []Grid_Blks;
        Grid_Blks = NULL;
 
-       delete []neighT;
-       delete []neighB;
-       delete []neighN;
-       delete []neighS;
-       delete []neighE;
-       delete []neighW; 
-       delete []neighNW;
-       delete []neighNE;
-       delete []neighSE;
-       delete []neighSW;
-       delete []neighTN;
-       delete []neighTS;
-       delete []neighTE;
-       delete []neighTW;  
-       delete []neighTNW;
-       delete []neighTSW;
-       delete []neighTNE;
-       delete []neighTSE;  
-       delete []neighBN;
-       delete []neighBS;
-       delete []neighBE;
-       delete []neighBW;  
-       delete []neighBNW;
-       delete []neighBSW;
-       delete []neighBNE;
-       delete []neighBSE;
-       neighT = NULL;
-       neighB = NULL;
-       neighN = NULL;
-       neighS = NULL;
-       neighE = NULL;
-       neighW = NULL; 
-       neighNW = NULL;
-       neighNE = NULL;
-       neighSE = NULL;
-       neighSW = NULL;
-       neighTN = NULL;
-       neighTS = NULL;
-       neighTE = NULL;
-       neighTW = NULL;  
-       neighTNW = NULL;
-       neighTSW = NULL;
-       neighTNE = NULL;
-       neighTSE = NULL;  
-       neighBN = NULL;
-       neighBS = NULL;
-       neighBE = NULL;
-       neighBW = NULL;  
-       neighBNW = NULL;
-       neighBSW = NULL;
-       neighBNE = NULL;
-       neighBSE = NULL;
+       delete []Connectivity;
+       Connectivity = NULL;
 
-       delete []neighT_ctm;
-       delete []neighB_ctm;
-       delete []neighN_ctm;
-       delete []neighS_ctm;
-       delete []neighE_ctm;
-       delete []neighW_ctm; 
-       delete []neighNW_ctm;
-       delete []neighNE_ctm;
-       delete []neighSE_ctm;
-       delete []neighSW_ctm;
-       delete []neighTN_ctm;
-       delete []neighTS_ctm;
-       delete []neighTE_ctm;
-       delete []neighTW_ctm;  
-       delete []neighTNW_ctm;
-       delete []neighTSW_ctm;
-       delete []neighTNE_ctm;
-       delete []neighTSE_ctm;  
-       delete []neighBN_ctm;
-       delete []neighBS_ctm;
-       delete []neighBE_ctm;
-       delete []neighBW_ctm;  
-       delete []neighBNW_ctm;
-       delete []neighBSW_ctm;
-       delete []neighBNE_ctm;
-       delete []neighBSE_ctm;
-       neighT_ctm = NULL;
-       neighB_ctm = NULL;
-       neighN_ctm = NULL;
-       neighS_ctm = NULL;
-       neighE_ctm = NULL;
-       neighW_ctm = NULL; 
-       neighNW_ctm = NULL;
-       neighNE_ctm = NULL;
-       neighSE_ctm = NULL;
-       neighSW_ctm = NULL;
-       neighTN_ctm = NULL;
-       neighTS_ctm = NULL;
-       neighTE_ctm = NULL;
-       neighTW_ctm = NULL;  
-       neighTNW_ctm = NULL;
-       neighTSW_ctm = NULL;
-       neighTNE_ctm = NULL;
-       neighTSE_ctm = NULL;  
-       neighBN_ctm = NULL;
-       neighBS_ctm = NULL;
-       neighBE_ctm = NULL;
-       neighBW_ctm = NULL;  
-       neighBNW_ctm = NULL;
-       neighBSW_ctm = NULL;
-       neighBNE_ctm = NULL;
-       neighBSE_ctm = NULL;
-
+  
        NBlk_Idir = 0; 
        NBlk_Jdir = 0; 
        NBlk_Kdir = 0;
@@ -346,6 +83,64 @@ void Grid3D_Hexa_Multi_Block_List::Deallocate(void) {
        Allocated = 0;
    } /* endif */
 
+}
+
+
+
+/********************************************************
+ * Routine: Deallocate                                  *
+ *                                                      *
+ * Deallocate memory for a 1D array of 3D hexahedral    *
+ * multi-block grids.                                   *
+ *                                                      *
+ ********************************************************/
+void Grid3D_Hexa_Multi_Block_Connectivity::Deallocate(void) {
+
+   
+       delete []neighNW;
+       delete []neighNE;
+       delete []neighSE;
+       delete []neighSW;
+       delete []neighTN;
+       delete []neighTS;
+       delete []neighTE;
+       delete []neighTW;
+       delete []neighTNW;
+       delete []neighTSW; 
+       delete []neighTNE; 
+       delete []neighTSE; 
+       delete []neighBN; 
+       delete []neighBS; 
+       delete []neighBE; 
+       delete []neighBW; 
+       delete []neighBNW;
+       delete []neighBSW;
+       delete []neighBNE;
+       delete []neighBSE;
+
+
+       delete []neighNW_info; 
+       delete []neighNE_info; 
+       delete []neighSE_info;
+       delete []neighSW_info; 
+       delete []neighTN_info; 
+       delete []neighTS_info; 
+       delete []neighTE_info; 
+       delete []neighTW_info; 
+       delete []neighTNW_info;
+       delete []neighTSW_info; 
+       delete []neighTNE_info; 
+       delete []neighTSE_info; 
+       delete []neighBN_info; 
+       delete []neighBS_info; 
+       delete []neighBE_info; 
+       delete []neighBW_info; 
+       delete []neighBNW_info;
+       delete []neighBSW_info;
+       delete []neighBNE_info;
+       delete []neighBSE_info;
+    
+       
 }
 
 /********************************************************
