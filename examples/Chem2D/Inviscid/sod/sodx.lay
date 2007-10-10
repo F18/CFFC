@@ -3,8 +3,6 @@ $!VarSet |LFDSFN1| = '"sod_cells_cpu000000.dat"'
 $!VarSet |LFDSVL1| = '"x" "y" "rho" "u" "v" "p" "T" "M" "H" "s"'
 $!VarSet |LFDSFN2| = '"sodNKS_cells_cpu000000.dat"'
 $!VarSet |LFDSVL2| = '"x" "y" "rho" "u" "v" "p" "T" "M" "H" "s"'
-$!VarSet |LFDSFN3| = '"soddts_cells_cpu000000.dat"'
-$!VarSet |LFDSVL3| = '"x" "y" "rho" "u" "v" "p" "T" "M" "H" "s"'
 $!SETSTYLEBASE FACTORY
 $!PAPER 
   BACKGROUNDCOLOR = WHITE
@@ -548,17 +546,6 @@ $!READDATASET  '|LFDSFN2|'
   VARNAMELIST = '|LFDSVL2|' 
 $!REMOVEVAR |LFDSVL2|
 $!REMOVEVAR |LFDSFN2|
-$!READDATASET  '|LFDSFN3|' 
-  INITIALPLOTTYPE = XYLINE
-  INCLUDETEXT = NO
-  INCLUDEGEOM = NO
-  READDATAOPTION = APPEND
-  RESETSTYLE = NO
-  ASSIGNSTRANDIDS = YES
-  VARLOADMODE = BYNAME
-  VARNAMELIST = '|LFDSVL3|' 
-$!REMOVEVAR |LFDSVL3|
-$!REMOVEVAR |LFDSFN3|
 $!FRAMELAYOUT 
   SHOWHEADER = NO
   HEADERCOLOR = RED
