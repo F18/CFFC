@@ -163,6 +163,11 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     // Setup conserved and medium state
     IP.SetupInputState();
 
+    // NKS defaults
+    // Force no jacobian updates.
+    IP.NKS_IP.Min_Number_of_Newton_Steps_Requiring_Jacobian_Update = 2; // <- SIGSEGV if < 2
+    IP.NKS_IP.Min_L2_Norm_Requiring_Jacobian_Update = 1.0e+10;
+
     /***********************************************************************
      ***********************************************************************/
 
