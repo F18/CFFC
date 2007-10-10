@@ -430,7 +430,7 @@ void EM2C :: ComputeRefSNB( const double p,       // pressure [atm]
 }
 
 /*********************************************************************
- * EM2C :: ComputeRefSNB                                             *
+ * EM2C :: ComputeSNB                                                *
  *                                                                   *
  * Compute SNB model parameters (S and B) for a specified mixture    *
  * (mole fractions of CO, CO2, H2O), temperature, and pressure.      *
@@ -500,6 +500,26 @@ void EM2C :: ComputeSNB( const double p,       // pressure [atm]
 
   } // end for 
 
+}
+
+/*********************************************************************
+ * EM2C :: MultiplySNB                                               *
+ *                                                                   *
+ * Multiply normalized SNB model parameters by an arbitrary state.   *
+ * This is used in the precaluclated method to allow one to          *
+ * evaluate 'gamma' at one reference state and then compute the SNB  *
+ * model parameters B and S at another state '0'.                    *
+ *********************************************************************/
+void EM2C :: MultiplySNB( const double p_0,         // pressure [atm]
+			  const double xCO_0,       // mole fraction of CO
+			  const double xH2O_0,      // mole fraction of H2O
+			  const double xCO2_0 )     // mole fraction of CO2
+{
+  for (int i=0; i<Nbands; i++) {
+    S_CO[i]  *=  xCO_0*p_0;
+    S_CO2[i] *= xCO2_0*p_0;
+    S_H2O[i] *= xH2O_0*p_0;
+  } // end for 
 }
 
 
@@ -1309,6 +1329,14 @@ void SNBCK :: PreCalculateAbsorb( const double p_ref,    // pressure [atm]
 				  const double xo2_ref,  // mole fraction of O2
 				  const int Nint )       // number of interpolation points 
 {
+  //------------------------------------------------
+  // Declares
+  //------------------------------------------------
+  // Compute absorbsion coefficient arbitrary '0' state 
+  // and renormalize to get pressure/concentration independant
+  // absorbsion coefficient.  This is performed based on
+  // private communication with Dr. Fengshan Liu.
+  double x0_H2O(1.0), x0_CO2(0.2), x0_CO(0.5), p0(1.0);
 
   //------------------------------------------------
   // Initialize
@@ -1339,6 +1367,9 @@ void SNBCK :: PreCalculateAbsorb( const double p_ref,    // pressure [atm]
     // and normalize by the reference state
     SNB.ComputeRefSNB( p_ref, Tn[n], xco_ref, xh2o_ref, xco2_ref, xo2_ref );
 
+    // Compute S @ X0 and P0. The result will be renormalized so that
+    // k_xxx = k/(X_xxx * p)
+    SNB.MultiplySNB(p0, x0_CO, x0_H2O, x0_CO2);
       
     //
     // loop over each wide band, inverting the 
@@ -1350,14 +1381,17 @@ void SNBCK :: PreCalculateAbsorb( const double p_ref,    // pressure [atm]
 	// add each active component
 	k_CO[v][i][n] = ZERO; k_CO2[v][i][n] = ZERO; k_H2O[v][i][n] = ZERO;
 	if (iH2O[v])
-	  k_H2O[v][i][n] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
-						  SNB.liH2O, istart[v], iend[v] );
+	  k_H2O[v][i][n] += 
+	    AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
+				  SNB.liH2O, istart[v], iend[v] ) / ( x0_H2O * p0 );
 	if (iCO2[v])
-	  k_CO2[v][i][n] += AbsorptionCoeffSNBCK( g[i], SNB.B_CO2, SNB.S_CO2, 
-						  SNB.liCO2, istart[v], iend[v] );
+	  k_CO2[v][i][n] += 
+	    AbsorptionCoeffSNBCK( g[i], SNB.B_CO2, SNB.S_CO2, 
+				  SNB.liCO2, istart[v], iend[v] ) / ( x0_CO2 * p0 );
 	if (iCO[v])
-	  k_CO[v][i][n] += AbsorptionCoeffSNBCK( g[i],  SNB.B_CO,  SNB.S_CO,  
-						 SNB.liCO, istart[v], iend[v] );
+	  k_CO[v][i][n] += 
+	    AbsorptionCoeffSNBCK( g[i],  SNB.B_CO,  SNB.S_CO,  
+				  SNB.liCO, istart[v], iend[v] ) / ( x0_CO * p0 );
       }  // endfor - bands, quad points
 
 

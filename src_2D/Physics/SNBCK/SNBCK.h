@@ -272,6 +272,12 @@ class EM2C{
 		   const double xCO2,   // mole fraction oh CO2
 		   const double xO2 );  // mole fraction oh O2
 
+  // multiply S by arbitrary state
+  void MultiplySNB( const double p_0,         // pressure [atm]
+		    const double xCO_0,       // mole fraction of CO
+		    const double xH2O_0,      // mole fraction of H2O
+		    const double xCO2_0 );    // mole fraction of CO2
+
   // compute gas transmissivity
   double Transmissivity( const double L, const int i );
 
