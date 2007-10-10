@@ -1433,7 +1433,7 @@ void Reaction_set::ct_dSwdU( DenseMatrix &dSwdU,
 
     // d(rho w_dot_n) / d(E)
     // = (1/(rho * Cv)) * d(rho w_dot)_j/dT
-    dSwdU(NUM_VAR+n,2) += dSdT[n] / ( rho * Cv );
+    dSwdU(NUM_VAR+n,3) += dSdT[n] / ( rho * Cv );
 
     // d(rho w_dot_n) / d(rho Y_n) - frozen species conc. portion
     // = - (e_k-e_N)/(rho * Cv) * d(rho w_dot)_j/dT
@@ -1580,7 +1580,7 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
   for (int i=0; i<num_react_species-1; i++) {
       
     // compute the derivative => d(rho w_dot)_j/dT
-    dSdT = M[i]*rho*((Temp/T0)*r[i]-r0[i]) / eps;     
+    dSdT = M[i]*(r[i]-r0[i]) / eps;     
 
     // d(rho w_dot_n) / d(rho)
     // = (1/(rho * Cv))*(0.5*u^2 +0.5*v^2 - e_N) * d(rho w_dot)_j/dT
@@ -1597,7 +1597,7 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
     
     // d(rho w_dot_n) / d(E)
     // = (1/(rho * Cv)) * d(rho w_dot)_j/dT
-    dSwdU(NUM_VAR+i,2) += dSdT / ( rho * Cv );
+    dSwdU(NUM_VAR+i,3) += dSdT / ( rho * Cv );
       
     // d(rho w_dot_n) / d(rho Y_n) - frozen species conc. portion
     // = - (e_k-e_N)/(rho * Cv) * d(rho w_dot)_j/dT
@@ -1611,7 +1611,7 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
     } // endfor - species
 
   } // endfor - rows
-          
+  
  /*
   ***********************************************
   * END FROZEN TEMPERATURE ASSUMPTION
