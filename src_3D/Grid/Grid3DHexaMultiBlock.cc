@@ -1234,6 +1234,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bluff_Body_Burner(Grid3D_Input_Pa
 
 // }
 
+
 /********************************************************
  * Routine: Find_Neighbours                             *
  *                                                      *
@@ -1242,13 +1243,301 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bluff_Body_Burner(Grid3D_Input_Pa
  * to each block in the multi-block list.               *
  *                                                      *
  ********************************************************/
-void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(void) {
-
+void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Input) {
+   
    if (Allocated) {
+      // add all the blocks in the database in order to compute the
+      // connectivity between blocks
+      // constructor for blockConn
+      
+      BlkC::BlockConnectivity blkConn(NBlk, BlkC::CellCenter,Input.Nghost, 6);
+      //blockConn.dbg_save_input("blkc_bluffbody.dat");
+      
+      BlkC::VertexPack vp;
+      int id,jd,kd;
+      int id_n, jd_n, kd_n;
+      Vector3D dX_i, dX_j, dX_k;
 
+      for (int iblk = 0 ; iblk < NBlk ; ++iblk ){
+         // a vertex pack (8 vertices and 24 vecotrs) for each block
+         for ( int i = 0; i != 2; ++i ) 
+            for ( int j = 0; j != 2; ++j ) 
+               for ( int k = 0; k != 2; ++k ) {
+                  BlkC::ILoc_t iloc = ( i ) ? BlkC::IMax : BlkC::IMin;
+                  BlkC::JLoc_t jloc = ( j ) ? BlkC::JMax : BlkC::JMin;
+                  BlkC::KLoc_t kloc = ( k ) ? BlkC::KMax : BlkC::KMin;
+                  
+                  if(iloc == BlkC::IMin){
+                     id = Input.Nghost;
+                  }else{
+                     id = Input.NCells_Idir + Input.Nghost;
+                  }
+                  if(jloc == BlkC::JMin){
+                     jd =  Input.Nghost;
+                  }else{
+                     jd = Input.NCells_Jdir + Input.Nghost;
+                  }
+                  if(kloc == BlkC::KMin){
+                     kd =  Input.Nghost;
+                  }else{
+                     kd = Input.NCells_Kdir + Input.Nghost;
+                  }
+                  
+                  // Set coordinate
+                  vp.set_coord(iloc, jloc, kloc, 
+                               Grid_Blks[iblk].Node[id][jd][kd].X.x,
+                               Grid_Blks[iblk].Node[id][jd][kd].X.y,  
+                               Grid_Blks[iblk].Node[id][jd][kd].X.z);
+                  
+                  // Set vectors along each edge
+                  if (id == Input.Nghost){
+                     id_n = id +1;
+                  }else{
+                     id_n = id - 1;
+                  }
+                  if (jd == Input.Nghost){
+                     jd_n = jd +1;
+                  }else{
+                     jd_n = jd - 1;
+                  }
+                  if (kd == Input.Nghost){
+                     kd_n = kd +1;
+                  }else{
+                     kd_n = kd - 1;
+                  }
+                  dX_i = Grid_Blks[iblk].Node[id_n][jd][kd].X - Grid_Blks[iblk].Node[id][jd][kd].X;
+                  dX_j = Grid_Blks[iblk].Node[id][jd_n][kd].X - Grid_Blks[iblk].Node[id][jd][kd].X;
+                  dX_k = Grid_Blks[iblk].Node[id][jd][kd_n].X - Grid_Blks[iblk].Node[id][jd][kd].X;
+                                
+                  vp.set_vector(iloc, jloc, kloc, 'i', dX_i.x, dX_i.y, dX_i.z);
+                  vp.set_vector(iloc, jloc, kloc, 'j', dX_j.x, dX_j.y, dX_j.z);
+                  vp.set_vector(iloc, jloc, kloc, 'k', dX_k.x, dX_k.y, dX_k.z);
+               }
+               
+         blkConn.add_block(iblk, Input.NCells_Idir, Input.NCells_Jdir, Input.NCells_Kdir, vp);
+                  
+               
+      } /* endfor */
+      
+      
+      // get the number of blocks on each element (total 26 elements) for each block
+      // and the neighbour information
+      for (int iblk = 0 ; iblk <NBlk ; ++iblk ){
+       
+         // number of blocks on the top face
+         Connectivity[iblk].num_neighT = blkConn.num_neighbour_block(
+            iblk, BlkC::IAll, BlkC::JAll, BlkC::KMax);
+         // information of neighbour block of the top face
+         Connectivity[iblk].neighT_info.set_block_orientation_info(
+            blkConn, iblk, BlkC::IAll, BlkC::JAll, BlkC::KMax, 
+            Connectivity[iblk].neighT);
+
+         Connectivity[iblk].num_neighB = blkConn.num_neighbour_block(
+            iblk,  BlkC::IAll, BlkC::JAll, BlkC::KMin);
+         // information of neighbour block of the bottom face
+         Connectivity[iblk].neighB_info.set_block_orientation_info(
+            blkConn, iblk,  BlkC::IAll, BlkC::JAll, BlkC::KMin, 
+            Connectivity[iblk].neighB);
+
+         Connectivity[iblk].num_neighN = blkConn.num_neighbour_block(
+            iblk,  BlkC::IAll, BlkC::JMax, BlkC::KAll);
+         // information of neighbour block of the north face
+         Connectivity[iblk].neighN_info.set_block_orientation_info(
+            blkConn, iblk,  BlkC::IAll, BlkC::JMax, BlkC::KAll, 
+            Connectivity[iblk].neighN);
+
+         Connectivity[iblk].num_neighS = blkConn.num_neighbour_block(
+            iblk,   BlkC::IAll, BlkC::JMin, BlkC::KAll);
+         // information of neighbour block of the south face
+         Connectivity[iblk].neighS_info.set_block_orientation_info(
+            blkConn, iblk,   BlkC::IAll, BlkC::JMin, BlkC::KAll, 
+            Connectivity[iblk].neighS);
+
+         Connectivity[iblk].num_neighE = blkConn.num_neighbour_block(
+            iblk, BlkC::IMax, BlkC::JAll, BlkC::KAll);
+         // information of neighbour block of the east face
+         Connectivity[iblk].neighE_info.set_block_orientation_info(
+            blkConn, iblk, BlkC::IMax, BlkC::JAll, BlkC::KAll, 
+            Connectivity[iblk].neighE);
+         
+         Connectivity[iblk].num_neighW = blkConn.num_neighbour_block(
+            iblk,  BlkC::IMin, BlkC::JAll, BlkC::KAll);
+         // information of neighbour block of the west face
+         Connectivity[iblk].neighW_info.set_block_orientation_info(
+            blkConn, iblk,  BlkC::IMin, BlkC::JAll, BlkC::KAll, 
+            Connectivity[iblk].neighW);
+
+         Connectivity[iblk].num_neighTN = blkConn.num_neighbour_block(
+            iblk, BlkC::IAll, BlkC::JMax, BlkC::KMax);
+         // information of neighbour block of the topnorth edge
+         Connectivity[iblk].neighTN_info[0].set_block_orientation_info(
+            blkConn, iblk, BlkC::IAll, BlkC::JMax, BlkC::KMax, 
+            Connectivity[iblk].neighTN[0]);
+
+         Connectivity[iblk].num_neighTS = blkConn.num_neighbour_block(
+            iblk, BlkC::IAll, BlkC::JMin, BlkC::KMax);
+         // information of neighbour block of the topsouth edge
+         Connectivity[iblk].neighTS_info[0].set_block_orientation_info(
+            blkConn, iblk,  BlkC::IAll, BlkC::JMin, BlkC::KMax, 
+            Connectivity[iblk].neighTS[0]);
+         
+         Connectivity[iblk].num_neighTW = blkConn.num_neighbour_block(
+            iblk,  BlkC::IMin, BlkC::JAll, BlkC::KMax);
+         // information of neighbour block of the topwest edge
+         Connectivity[iblk].neighTW_info[0].set_block_orientation_info(
+            blkConn, iblk,  BlkC::IMin, BlkC::JAll, BlkC::KMax, 
+            Connectivity[iblk].neighTW[0]);
+
+         Connectivity[iblk].num_neighTE = blkConn.num_neighbour_block(
+            iblk,  BlkC::IMax, BlkC::JAll, BlkC::KMax);
+         // information of neighbour block of the topeast edge
+         Connectivity[iblk].neighTE_info[0].set_block_orientation_info(
+            blkConn, iblk,  BlkC::IMax, BlkC::JAll, BlkC::KMax, 
+            Connectivity[iblk].neighTE[0]);
+
+         Connectivity[iblk].num_neighBN = blkConn.num_neighbour_block(
+            iblk,   BlkC::IAll, BlkC::JMax, BlkC::KMin);
+         // information of neighbour block of the bottomnorth edge 
+         Connectivity[iblk].neighBN_info[0].set_block_orientation_info(
+            blkConn, iblk,  BlkC::IAll, BlkC::JMax, BlkC::KMin, 
+            Connectivity[iblk].neighBN[0]);
+         
+         Connectivity[iblk].num_neighBS = blkConn.num_neighbour_block(
+            iblk,   BlkC::IAll, BlkC::JMin, BlkC::KMin);
+         // information of neighbour block of the bottomsouth edge 
+         Connectivity[iblk].neighBS_info[0].set_block_orientation_info(
+            blkConn, iblk,  BlkC::IAll, BlkC::JMin, BlkC::KMin, 
+            Connectivity[iblk].neighBS[0]);
+
+         Connectivity[iblk].num_neighBW = blkConn.num_neighbour_block(
+            iblk,   BlkC::IMin, BlkC::JAll, BlkC::KMin);
+         // information of neighbour block of the bottomwest edge  
+         Connectivity[iblk].neighBW_info[0].set_block_orientation_info(
+            blkConn, iblk,   BlkC::IMin, BlkC::JAll, BlkC::KMin, 
+            Connectivity[iblk].neighBW[0]);
+
+         Connectivity[iblk].num_neighBE = blkConn.num_neighbour_block(
+            iblk,  BlkC::IMax, BlkC::JAll, BlkC::KMin);
+         // information of neighbour block of the bottomeast edge
+         Connectivity[iblk].neighBE_info[0].set_block_orientation_info(
+            blkConn, iblk,  BlkC::IMax, BlkC::JAll, BlkC::KMin, 
+            Connectivity[iblk].neighBE[0]);
+         
+         Connectivity[iblk].num_neighNW = blkConn.num_neighbour_block(
+            iblk, BlkC::IMin, BlkC::JMax, BlkC::KAll);
+         // information of neighbour block of the northwest edge
+         Connectivity[iblk].neighNW_info[0].set_block_orientation_info(
+            blkConn, iblk, BlkC::IMin, BlkC::JMax, BlkC::KAll, 
+            Connectivity[iblk].neighNW[0]);
+         
+         Connectivity[iblk].num_neighNE = blkConn.num_neighbour_block(
+            iblk,  BlkC::IMax, BlkC::JMax, BlkC::KAll);
+         // information of neighbour block of the northeast edge
+         Connectivity[iblk].neighNE_info[0].set_block_orientation_info(
+            blkConn, iblk, BlkC::IMax, BlkC::JMin, BlkC::KAll, 
+            Connectivity[iblk].neighNE[0]);
+         Connectivity[iblk].num_neighSE = blkConn.num_neighbour_block(
+            iblk,  BlkC::IMax, BlkC::JMax, BlkC::KAll);
+         // information of neighbour block of the southeast edge 
+         Connectivity[iblk].neighSE_info[0].set_block_orientation_info(
+            blkConn, iblk,  BlkC::IMax, BlkC::JMin, BlkC::KAll, 
+            Connectivity[iblk].neighSE[0]);
+
+         Connectivity[iblk].num_neighSW = blkConn.num_neighbour_block(
+            iblk,   BlkC::IMin, BlkC::JMin, BlkC::KAll);
+         // information of neighbour block of the southwest edge 
+         Connectivity[iblk].neighSW_info[0].set_block_orientation_info(
+            blkConn, iblk,  BlkC::IMin, BlkC::JMin, BlkC::KAll, 
+            Connectivity[iblk].neighSW[0]);
+
+         Connectivity[iblk].num_neighTNW = blkConn.num_neighbour_block(
+            iblk,  BlkC::IMin, BlkC::JMax, BlkC::KMax);
+         // information of neighbour block of the topnorthwest vertex
+         Connectivity[iblk].neighTNW_info[0].set_block_orientation_info(
+            blkConn, iblk,  BlkC::IMin, BlkC::JMax, BlkC::KMax, 
+            Connectivity[iblk].neighTNW[0]);
+
+         Connectivity[iblk].num_neighTSW = blkConn.num_neighbour_block(
+            iblk, BlkC::IMin, BlkC::JMin, BlkC::KMax);
+         // information of neighbour block of the topsouthwest vertex
+         Connectivity[iblk].neighTSW_info[0].set_block_orientation_info(
+            blkConn, iblk,  BlkC::IMin, BlkC::JMin, BlkC::KMax, 
+            Connectivity[iblk].neighTSW[0]);
+         
+         Connectivity[iblk].num_neighTNE = blkConn.num_neighbour_block(
+            iblk,  BlkC::IMax, BlkC::JMax, BlkC::KMax);
+         // information of neighbour block of the topnortheast vertex
+         Connectivity[iblk].neighTNE_info[0].set_block_orientation_info(
+            blkConn, iblk,  BlkC::IMax, BlkC::JMax, BlkC::KMax, 
+            Connectivity[iblk].neighTNE[0]);
+
+         Connectivity[iblk].num_neighTSE = blkConn.num_neighbour_block(
+            iblk, BlkC::IMax, BlkC::JMin, BlkC::KMax);
+         // information of neighbour block of the topsoutheast vertex
+         Connectivity[iblk].neighTSE_info[0].set_block_orientation_info(
+            blkConn, iblk, BlkC::IMax, BlkC::JMin, BlkC::KMax, 
+            Connectivity[iblk].neighTSE[0]);
+
+        Connectivity[iblk].num_neighBNW = blkConn.num_neighbour_block(
+            iblk,  BlkC::IMin, BlkC::JMax, BlkC::KMin);
+         // information of neighbour block of the bottomnrothwest vertex
+         Connectivity[iblk].neighBNW_info[0].set_block_orientation_info(
+            blkConn, iblk,  BlkC::IMin, BlkC::JMax, BlkC::KMin, 
+            Connectivity[iblk].neighBNW[0]);
+
+         Connectivity[iblk].num_neighBSW = blkConn.num_neighbour_block(
+            iblk,  BlkC::IMin, BlkC::JMin, BlkC::KMin);
+         // information of neighbour block of the bottomsouthwest vertex
+         Connectivity[iblk].neighBSW_info[0].set_block_orientation_info(
+            blkConn, iblk,  BlkC::IMin, BlkC::JMin, BlkC::KMin, 
+            Connectivity[iblk].neighBSW[0]);
+
+         Connectivity[iblk].num_neighBNE = blkConn.num_neighbour_block(
+            iblk,  BlkC::IMax, BlkC::JMax, BlkC::KMin);
+         // information of neighbour block of the bottomnortheast vertex
+         Connectivity[iblk].neighBNE_info[0].set_block_orientation_info(
+            blkConn, iblk,  BlkC::IMax, BlkC::JMax, BlkC::KMin, 
+            Connectivity[iblk].neighBNE[0]);
+
+         Connectivity[iblk].num_neighBSE = blkConn.num_neighbour_block(
+            iblk,  BlkC::IMax, BlkC::JMin, BlkC::KMin);
+         // information of neighbour block of the bottomsoutheast vertex
+         Connectivity[iblk].neighBSE_info[0].set_block_orientation_info(
+            blkConn, iblk, BlkC::IMax, BlkC::JMin, BlkC::KMin, 
+            Connectivity[iblk].neighBSE[0]);
+
+         // for roots only 
+         if(Connectivity[iblk].num_neighT>ONE || Connectivity[iblk].num_neighB>ONE ||
+            Connectivity[iblk].num_neighN>ONE || Connectivity[iblk].num_neighS>ONE ||
+            Connectivity[iblk].num_neighE>ONE || Connectivity[iblk].num_neighW>ONE || 
+            Connectivity[iblk].num_neighTN>BLOCK_ORIENTATION_MAX_NEIGHBOUR ||
+            Connectivity[iblk].num_neighTS>BLOCK_ORIENTATION_MAX_NEIGHBOUR||
+            Connectivity[iblk].num_neighTE>BLOCK_ORIENTATION_MAX_NEIGHBOUR||
+            Connectivity[iblk].num_neighTW>BLOCK_ORIENTATION_MAX_NEIGHBOUR||
+            Connectivity[iblk].num_neighTNW>BLOCK_ORIENTATION_MAX_NEIGHBOUR||
+            Connectivity[iblk].num_neighTNE>BLOCK_ORIENTATION_MAX_NEIGHBOUR||
+            Connectivity[iblk].num_neighTSW>BLOCK_ORIENTATION_MAX_NEIGHBOUR||
+            Connectivity[iblk].num_neighTSE>BLOCK_ORIENTATION_MAX_NEIGHBOUR||
+            Connectivity[iblk].num_neighBN>BLOCK_ORIENTATION_MAX_NEIGHBOUR ||
+            Connectivity[iblk].num_neighBS>BLOCK_ORIENTATION_MAX_NEIGHBOUR||
+            Connectivity[iblk].num_neighBE>BLOCK_ORIENTATION_MAX_NEIGHBOUR||
+            Connectivity[iblk].num_neighBW>BLOCK_ORIENTATION_MAX_NEIGHBOUR||
+            Connectivity[iblk].num_neighBNW>BLOCK_ORIENTATION_MAX_NEIGHBOUR||
+            Connectivity[iblk].num_neighBNE>BLOCK_ORIENTATION_MAX_NEIGHBOUR||
+            Connectivity[iblk].num_neighBSW>BLOCK_ORIENTATION_MAX_NEIGHBOUR||
+            Connectivity[iblk].num_neighBSE>BLOCK_ORIENTATION_MAX_NEIGHBOUR){
+            
+            cerr<<"\n Number of neighbour blocks on some boudnary elements is out of bounds. \n";
+            exit(1);
+
+         }//
+      
+      } /* endfor */
+  
    } /* endif */
 
 }
+
 
 /********************************************************
  * Routine: Allocate                                    *

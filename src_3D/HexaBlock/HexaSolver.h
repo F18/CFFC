@@ -154,7 +154,15 @@ int HexaSolver(char *Input_File_Name_ptr,
    output_file.open(output_file_name_ptr, ios::out);
    Initial_Mesh.Output_Cells_Tecplot(output_file);
    output_file.close();
-
+   
+   for(int ii= -1; ii<2; ii++)
+      for(int jj= -1; jj<2; jj++)
+         for(int kk= -1; kk<2; kk++){
+            Initial_Mesh.Connectivity[1].neighT_info.compute_message_tag(ii, jj, kk);
+            
+         }
+   
+   exit(1);
    
    Create_Initial_Solution_Blocks<SOLN_pSTATE, SOLN_cSTATE>(Initial_Mesh,
                                                             Local_Solution_Blocks,

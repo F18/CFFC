@@ -194,7 +194,7 @@ class Grid3D_Hexa_Multi_Block_List{
 
     void Create_Grid_Bluff_Body_Burner(Grid3D_Input_Parameters &Input);
 
-    void Find_Neighbours(void);
+    void Find_Neighbours(Grid3D_Input_Parameters &Input);
 
     //void Create_Grid_ICEMCFD(Grid3D_Input_Parameters &Input);
 

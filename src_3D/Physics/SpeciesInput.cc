@@ -272,18 +272,19 @@ int Species_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
   /**** Mass Fractions *******/ 
   /***************************/
   } else if (strcmp(code, "Mass_Fractions") == 0) {
-    i_command = 5008; 
-    if (reaction_mechanism_name != "CANTERA") {
-       // Get Initial Mass Fractions from user 
-       double temp = ZERO;
-       for (int i = 0; i < num_species; i++){
-          value >> mass_fractions[i];
-          temp += mass_fractions[i];
-       } /*endfor */
-       //check to make sure mass fractions adds to 1
-       if (temp < ONE-MICRO || temp > ONE+MICRO) { 
-          cout << "\n Error: input mass fractions have a sum of " 
-               << temp
+    
+     i_command = 5008; 
+     if (reaction_mechanism_name != "CANTERA") {
+        // Get Initial Mass Fractions from user 
+        double temp = ZERO;
+        for (int i = 0; i < num_species; i++){
+           value >> mass_fractions[i];
+           temp += mass_fractions[i];
+        } /*endfor */
+        //check to make sure mass fractions adds to 1
+        if (temp < ONE-MICRO || temp > ONE+MICRO) { 
+           cout << "\n Error: input mass fractions have a sum of " 
+                << temp
                << ". Should sum to 1.";
           cout << "\n mass_fractions: ";
           for (int i = 0; i < num_species; i++){
@@ -291,19 +292,20 @@ int Species_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
           } /*endfor */
           i_command = INVALID_INPUT_VALUE;
        } /* endif */
-    } else {
-       // Here we use Cantera to parse the string of the form:
-       //       CH4:0.5, O2:0.5
-       // All other species will be assumed to have 0 mass fractions.  
-       // Cantera also normalizes the mass fractions to sum to unity.  
-       // Returns them in an array.
-       string mass_fractions_input;
-       char Mass_Fractions_Input[SPECIES_INPUT_PARAMETER_LENGTH];
-       mass_fractions_input = value.str();
-       strcpy(Mass_Fractions_Input, mass_fractions_input.c_str());
-       reaction_mechanism.ct_load_mechanism(cantera_mech_file, cantera_mech_name);
-       reaction_mechanism.ct_parse_mass_string(Mass_Fractions_Input, mass_fractions);
-    } /* endif */
+     } else {
+         
+        // Here we use Cantera to parse the string of the form:
+        //       CH4:0.5, O2:0.5
+        // All other species will be assumed to have 0 mass fractions.  
+        // Cantera also normalizes the mass fractions to sum to unity.  
+        // Returns them in an array.
+        string mass_fractions_input;
+        char Mass_Fractions_Input[SPECIES_INPUT_PARAMETER_LENGTH];
+        mass_fractions_input = value.str();
+        strcpy(Mass_Fractions_Input, mass_fractions_input.c_str());
+        reaction_mechanism.ct_load_mechanism(cantera_mech_file, cantera_mech_name);
+        reaction_mechanism.ct_parse_mass_string(Mass_Fractions_Input, mass_fractions);
+     } /* endif */
 
   /********* TRANSPORT DATA **********************************************
   // Transport-Lennard-Jones  - Use Lennard-Jones potentials or 

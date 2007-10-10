@@ -91,7 +91,8 @@ else
   SRC_AMR = $(AMR_DIR)AMRInput.cc \
             $(AMR_DIR)AdaptiveBlock3D.cc \
 	    $(AMR_DIR)AdaptiveBlock3D_MPI.cc \
-            $(AMR_DIR)Octree.cc
+            $(AMR_DIR)Octree.cc \
+            $(AMR_DIR)BlockOrientationInfo.cc	
 endif
 
 # Multigrid:
@@ -195,7 +196,8 @@ else
   OBJ_AMR = $(AMR_DIR)AMRInput.o \
             $(AMR_DIR)AdaptiveBlock3D.o \
 	    $(AMR_DIR)AdaptiveBlock3D_MPI.o \
-            $(AMR_DIR)Octree.o
+            $(AMR_DIR)Octree.o \
+            $(AMR_DIR)BlockOrientationInfo.o	
 endif
 
 # Multigrid:
