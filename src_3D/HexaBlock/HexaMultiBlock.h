@@ -572,11 +572,11 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Read_Restart_Solution(Input_Parameters<typenam
          restart_file.unsetf(ios::skipws);
 
          if (!i_new_time_set) {
-            Number_of_Time_Steps = nsteps;
-            Input.Maximum_Number_of_Time_Steps += Number_of_Time_Steps;
-            Time = time0;
-            CPU_Time.cput = cpu_time0.cput;
-            i_new_time_set = 1;
+	   Number_of_Time_Steps = nsteps;  
+	   Input.Maximum_Number_of_Time_Steps += Number_of_Time_Steps;  //Adds to "Explicit" Time steps
+	   Time = time0;
+	   CPU_Time.cput = cpu_time0.cput;
+	   i_new_time_set = 1;
          } /* endif */
 
          // Read reference solution states.
