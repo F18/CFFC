@@ -2014,7 +2014,8 @@ public:
 
   // calulate perturbation parameter
   void calculate_epsilon_restart(double &epsilon); 
-  void calculate_epsilon(double &epsilon, const int &search_direction_counter); 
+  void calculate_epsilon(double &epsilon, double &l2_norm_z, 
+			 const int &search_direction_counter); 
 
   // norm calculations
   double L1_Norm_z(const int &search_direction_counter);
@@ -2391,7 +2392,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 
       /**************************************************************************/
       /* Calculate global epsilon base on 2-norm of z. */
-      calculate_epsilon(epsilon, search_direction_counter);
+      calculate_epsilon(epsilon, total_norm_z, search_direction_counter);
 
      /**************************************************************************/
 
@@ -2608,18 +2609,15 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
       // Output progress
 
       //Verbose Output for CHECKING
-      if (Number_of_GMRES_Iterations%5 == 0 && 
+      if (CFFC_Primary_MPI_Processor() && Number_of_GMRES_Iterations%5 == 0 && 
           Input_Parameters->NKS_IP.GMRES_CHECK) { 
-	total_norm_z = L2_Norm_z(search_direction_counter);
-	if (CFFC_Primary_MPI_Processor()) {
-	  if(Number_of_GMRES_Iterations == 5){	
-	    cout << "\n  GMRES Iter.  \t   resid0 \t   resid \t  rel_resid  \t   L2||z||   \t  epsilon ";
-	  } 
-	  cout << "\n \t" << Number_of_GMRES_Iterations << "\t" << resid0 << "\t" 
-	       << relative_residual*resid0 << "\t" << relative_residual
-	       <<"\t"<< total_norm_z << "\t  "<<epsilon;	
-	} // endif - primary processor
-      } // endif - GMRES check
+        if(Number_of_GMRES_Iterations == 5){    
+          cout << "\n  GMRES Iter.  \t   resid0 \t   resid \t  rel_resid  \t   L2||z||   \t  epsilon ";
+        } 
+        cout << "\n \t" << Number_of_GMRES_Iterations << "\t" << resid0 << "\t" 
+             << relative_residual*resid0 << "\t" << relative_residual
+             <<"\t"<< total_norm_z << "\t  "<<epsilon;   
+      } 
 
       if (relative_residual <= tol) { 
 	 met_tol = 1; 
@@ -2831,9 +2829,8 @@ inline void GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,
 calculate_epsilon_restart(double &epsilon)
 {    
   // Calculate global epsilon based on 2-norm of x.
-  // FIXME - extra square root of L2_Norm_x here, should be eps = sqrt(eps_mach)/||x||_2
-  //       - since it works better with it, leave it for now
-  epsilon = Input_Parameters->NKS_IP.Epsilon_Naught/sqrt(L2_Norm_x());
+  // FIXED - extra square root of L2_Norm_x here, should be eps = sqrt(eps_mach)/||x||_2
+  epsilon = Input_Parameters->NKS_IP.Epsilon_Naught/L2_Norm_x();
 }
 
 
@@ -2846,12 +2843,14 @@ template <typename SOLN_VAR_TYPE,
 inline void GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,
 					 SOLN_BLOCK_TYPE,
 					 INPUT_TYPE>::
-calculate_epsilon(double &epsilon, const int &search_direction_counter)
+calculate_epsilon(double &epsilon, double &l2_norm_z, const int &search_direction_counter)
 {    
+  // compute l2 norm of z
+  l2_norm_z = L2_Norm_z(search_direction_counter);
+
   // Calculate global epsilon base on 2-norm of z.
-  // FIXME - extra square root of L2_Norm_z here, should be eps = sqrt(eps_mach)/||z||_2
-  //       - sice it works better with it, leave it for now
-  epsilon = Input_Parameters->NKS_IP.Epsilon_Naught/sqrt(L2_Norm_z(search_direction_counter));
+  // FIXED - extra square root of L2_Norm_z here, should be eps = sqrt(eps_mach)/||z||_2
+  epsilon = Input_Parameters->NKS_IP.Epsilon_Naught/l2_norm_z;
 }
 
 
