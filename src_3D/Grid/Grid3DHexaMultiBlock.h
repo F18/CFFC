@@ -91,7 +91,7 @@ class Grid3D_Hexa_Multi_Block_Connectivity{
 
       
       
-      void Deallocate(void);
+   void Deallocate(void);
 
 
 };

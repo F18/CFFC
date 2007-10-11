@@ -28,6 +28,10 @@ using namespace std;
 #include "../MPI/MPI.h"
 #endif // _MPI_INCLUDED
 
+#ifndef _BLOCK_ORIENTATION_INFO_INCLUDED
+#include "BlockOrientationInfo.h"
+#endif // _BLOCK_ORIENTATION_INFO_INCLUDED
+
 /* Define the block in-use indicators. */
 
 #define	ADAPTIVEBLOCK3D_USED                            1
@@ -395,6 +399,8 @@ class AdaptiveBlock3D_Info{
     AdaptiveBlock3D_Dimensions   dimen; // Adaptive block dimensions. 
     int                         sector; // Adaptive block sector number.
     int                          level; // Adaptive block refinement level.
+    Block_Orientation_Info       blkorient; // block orientation information
+    
 	                                // Made public so can access them.
     
     /* Creation, copy, and assignment constructors. */

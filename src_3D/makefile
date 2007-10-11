@@ -41,7 +41,7 @@ NASADATA_DIR = $(PHYSICS_DIR)NASAData/
 REACTIONS_DIR = Reactions/
 SYSTEM_DIR = System/
 TURBULENCE_DIR = TurbulenceModelling/
-CASEINIT_DIR = CaseInitializations/
+CASEINIT_DIR = InitialSolutionFields/
 #
 # Set default f90 module directory
 MODULE_DIR = F90_Modules

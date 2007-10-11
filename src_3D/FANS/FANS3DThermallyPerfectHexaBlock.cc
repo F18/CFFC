@@ -4,7 +4,7 @@
 #endif // _FANS3D_THERMALLYPERFECT_HEXA_BLOCK_INCLUDED
 
 #ifndef _BLUFFBODY_DATABASE_INCLUDED
-#include "../CaseInitializations/BluffBodyBurner.h"
+#include "../InitialSolutionFields/BluffBodyBurner.h"
 #endif // _BLUFFBODY_DATABASE_INCLUDE
 /********************************************************
  * Routine: CFL                                         *
