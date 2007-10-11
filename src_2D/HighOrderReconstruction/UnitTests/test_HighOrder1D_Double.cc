@@ -29,27 +29,33 @@ namespace tut
     ColumnVector B;
 
     // Constructor
-    Data_HighOrder1D(): A(2,3), B(3){
-
-      set_test_suite_path("HighOrderReconstruction/UnitTests/");
-      set_local_input_path("test_TaylorDerivatives1D");
-      set_local_output_path("test_TaylorDerivatives1D");
-
-      // set geometry
-      Cell1D.setloc(2.3);
-      Cell1D.setsize(4.34);
-
-      // set the pseudo-inverse situation
-      A(0,0) = 1.0; A(0,1) = 2.0; A(0,2) = 3.0;
-      A(1,0) = 1.0; A(1,1) = 4.0; A(1,2) = 3.0;
-      
-      B(0) = 1.0; B(1) = 2.34; B(2) = 34.0;
-    
-    }
+    Data_HighOrder1D();
 
   private:
     
   };
+
+  // Constructor
+  Data_HighOrder1D::Data_HighOrder1D(): A(2,3), B(3){
+
+    set_test_suite_path("HighOrderReconstruction/UnitTests/");
+    set_local_input_path("test_TaylorDerivatives1D");
+    set_local_output_path("test_TaylorDerivatives1D");
+    
+    // set CENO_Execution_Mode to default values
+    CENO_Execution_Mode::SetDefaults();
+
+    // set geometry
+    Cell1D.setloc(2.3);
+    Cell1D.setsize(4.34);
+    
+    // set the pseudo-inverse situation
+    A(0,0) = 1.0; A(0,1) = 2.0; A(0,2) = 3.0;
+    A(1,0) = 1.0; A(1,1) = 4.0; A(1,2) = 3.0;
+    
+    B(0) = 1.0; B(1) = 2.34; B(2) = 34.0;
+    
+  }
 
   /**
    * This group of declarations is just to register
@@ -235,6 +241,8 @@ namespace tut
   {
     set_test_name("operator !=, with LHS and Weights");
 
+    CENO_Execution_Mode::CENO_SPEED_EFFICIENT = ON;
+
     // set HighOrder1D variables
     HighOrder1D<double> HO(3,Cell1D), HO_2(3,Cell1D);
 
@@ -404,6 +412,135 @@ namespace tut
     // == check
     ensure_distance("right interface solution", HO.right_state(), 60.88286839, 1.0e-14);
   }
+
+  /* Test 15:*/
+  template<>
+  template<>
+  void HighOrder1D_object::test<15>()
+  {
+    set_test_name("Associate geometry");
+
+    // reset the geometry
+    Cell1D.setloc(23.3);
+    Cell1D.setsize(2.34);
+    
+    // set HighOrder1D variable
+    HighOrder1D<double> HO(3,Cell1D);
+
+    // set values of TD
+    HO.CellDeriv(0) = 1.03; HO.CellDeriv(1) = 2.03;
+    HO.CellDeriv(2) = 3.03; HO.CellDeriv(3) = 4.03;
+
+    Cell1D_Uniform Cell2;
+    Cell2.setloc(21.3);
+    Cell2.setsize(2.1);
+
+    HO.AssociateGeometry(Cell2);
+
+    // == check
+    ensure_distance("Second-order geometric moment", HO.CellGeomCoeff(2), 0.3675, 1.0e-14);
+  }
+
+  /* Test 16:*/
+  template<>
+  template<>
+  void HighOrder1D_object::test<16>()
+  {
+    set_test_name("InitializeVariable() && RECONSTRUCTION_CENO");
+    Open_Output_File("CENO_Current.dat");
+
+    CENO_Execution_Mode::CENO_SPEED_EFFICIENT = ON;
+
+    // set HighOrder1D variable
+    HighOrder1D<double> HO;
+
+    HO.InitializeVariable(3,RECONSTRUCTION_CENO);
+
+    // set values of TD
+    HO.CellDeriv(0) = 1.03; HO.CellDeriv(1) = 2.03;
+    HO.CellDeriv(2) = 3.03; HO.CellDeriv(3) = 4.03;
+
+    // == check
+    out() << HO;
+
+    RunRegressionTest("initialized variable", "CENO_Current.dat", "InitializeVariable_CENO_Master.dat", 1.0e-14);
+  }
+
+  /* Test 17:*/
+  template<>
+  template<>
+  void HighOrder1D_object::test<17>()
+  {
+    set_test_name("InitializeVariable() && RECONSTRUCTION_ENO");
+    Open_Output_File("ENO_Current.dat");
+
+    // set HighOrder1D variable
+    HighOrder1D<double> HO;
+
+    HO.InitializeVariable(3,RECONSTRUCTION_ENO);
+
+    // set values of TD
+    HO.CellDeriv(0) = 1.03; HO.CellDeriv(1) = 2.03;
+    HO.CellDeriv(2) = 3.03; HO.CellDeriv(3) = 4.03;
+
+    // == check
+    out() << HO;
+
+    RunRegressionTest("initialized variable", "ENO_Current.dat", "InitializeVariable_ENO_Master.dat", 1.0e-14);
+  }
+
+  /* Test 18:*/
+  template<>
+  template<>
+  void HighOrder1D_object::test<18>()
+  {
+    set_test_name("InitializeVariable() && RECONSTRUCTION_LEAST_SQUARES");
+    Open_Output_File("LEAST_SQUARES_Current.dat");
+
+    // set HighOrder1D variable
+    HighOrder1D<double> HO;
+
+    HO.InitializeVariable(3,RECONSTRUCTION_LEAST_SQUARES);
+
+    // == check
+    out() << HO;
+
+    RunRegressionTest("initialized variable", "LEAST_SQUARES_Current.dat",
+		      "InitializeVariable_LEAST_SQUARES_Master.dat", 1.0e-14);
+  }
+
+  /* Test 19:*/
+  template<>
+  template<>
+  void HighOrder1D_object::test<19>()
+  {
+    set_test_name("operator << >> && RECONSTRUCTION_LEAST_SQUARES");
+
+    // set HighOrder1D variable
+    HighOrder1D<double> HO;
+
+    HO.InitializeVariable(3,RECONSTRUCTION_LEAST_SQUARES);
+
+    // == check
+    Check_Input_Output_Operator("initialized variable for RECONSTRUCTION_LEAST_SQUARES", HO);
+  }
+
+  /* Test 20:*/
+  template<>
+  template<>
+  void HighOrder1D_object::test<20>()
+  {
+    set_test_name("operator << >> && ENO");
+
+    // set HighOrder1D variable
+    HighOrder1D<double> HO;
+
+    HO.InitializeVariable(3,RECONSTRUCTION_ENO);
+
+    // == check
+    Check_Input_Output_Operator("initialized variable for RECONSTRUCTION_ENO", HO);
+  }
+
 
 
 }

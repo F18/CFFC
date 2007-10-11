@@ -13,16 +13,35 @@
  *                                                      *
  ********************************************************/
 Euler1D_UniformMesh* Allocate(Euler1D_UniformMesh *Soln_ptr,
-                              const int Number_of_Cells) {
+                              const CFD1D_Input_Parameters &IP) {
 
-    /* Allocate memory. */
+  int NC;                       // number of cells in the computational domain
+  int StencilSize; 		// the size of the stencil used in the reconstruction process
+  int Nghost; 			// number of ghost cells
+  
+  /* Calculate the total number of computational cells */
+  // IP.Nghost() : calculates the number of ghost cells based on the order and the method of reconstruction.
+  Nghost = IP.Nghost();
+  NC = IP.Number_of_Cells + 2 * Nghost;
 
-    Soln_ptr = new Euler1D_UniformMesh[Number_of_Cells+2];
+  /* Allocate memory. */  
+  Soln_ptr = new Euler1D_UniformMesh[NC];
 
-    /* Return memory location. */
+  /* Set preliminary mesh parameters */
+  for (int i=0; i<= NC-1; ++i){
 
-    return(Soln_ptr);
+    // store domain indexes in each cell
+    Soln_ptr[i].Nghost = Nghost;
+    Soln_ptr[i].ICl = Nghost;
+    Soln_ptr[i].ICu = NC - 1 - Nghost;
+    
+    // setup high-order variables using parameters provided by the input parameters object
+    Soln_ptr[i].CellHighOrder().InitializeVariable(IP);
+  }//endfor
 
+  /* Return memory location. */
+  
+  return(Soln_ptr);
 }
 
 /********************************************************
@@ -31,18 +50,15 @@ Euler1D_UniformMesh* Allocate(Euler1D_UniformMesh *Soln_ptr,
  * Deallocate memory for 1D Euler equation solution.    *
  *                                                      *
  ********************************************************/
-Euler1D_UniformMesh* Deallocate(Euler1D_UniformMesh *Soln_ptr,
-                                const int Number_of_Cells) {
+Euler1D_UniformMesh* Deallocate(Euler1D_UniformMesh *Soln_ptr) {
 
-    /* Deallocate memory. */
+  /* Deallocate memory. */
+  delete []Soln_ptr;
+  Soln_ptr = NULL;
 
-    delete []Soln_ptr;
-    Soln_ptr = NULL;
-
-    /* Return memory location. */
-
-    return(Soln_ptr);
-
+  /* Return memory location. */
+  
+  return(Soln_ptr);
 }
 
 /********************************************************

@@ -69,7 +69,8 @@ public:
   HighOrder1D( const HighOrder1D & rhs);
 
   // Destructor
-  ~HighOrder1D(void){ Geom = NULL;};
+  ~HighOrder1D(void){ Geom = NULL;}
+  void deallocate(void);
 
   // Assignment operator
   HighOrder1D<Soln_State> & operator=(const HighOrder1D<Soln_State> & rhs);
@@ -124,11 +125,18 @@ public:
   const double & CellCenter(void) const {return Geom->x;}
   const double & CellDelta (void) {return Geom->dx;}
   void SetGeometryPointer(GeometryType & Cell){ Geom = &Cell;}
+  void AssociateGeometry(GeometryType & Cell);
 
   /* Operating functions */
+  static int Nghost(int ReconstructionOrder); //!< return the required number of ghost cells
   void SetRings(void);
+  int StencilSize(void) const {return 1 + 2*CellRings();} //!< return the stencil size for CENO reconstruction
   void ComputeGeometricCoefficients(void);
   void InitializeMonotonicityFlag(void);
+
+  void InitializeVariable(int ReconstructionOrder, int ReconstructionMethod);
+  template<typename InputParametersType>
+  void InitializeVariable(const InputParametersType & IP);
 
   double SolutionAtCoordinates(const double & X_Coord, const unsigned parameter){
     return TD.ComputeSolutionFor(X_Coord - CellCenter())[parameter];
@@ -175,6 +183,9 @@ private:
 
   // Set Geometry_Ptr to point to the same geometry as the current Geom pointer
   void set_geometry_pointer(GeometryType* & Geometry_Ptr) const { Geometry_Ptr = Geom; }
+
+  // Return the required number of neighbor rings
+  static int NumberOfRings(int number_of_Taylor_derivatives);
 };
 
 /****************************************************
@@ -224,7 +235,7 @@ HighOrder1D<SOLN_STATE>::HighOrder1D(const HighOrder1D<SOLN_STATE> & rhs): Geom(
   LimitedCell = rhs.CellInadequateFit();
   rings = rhs.CellRings();
 
-  if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT && (rhs.GeomWeights().size() != 0)){
+  if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT && (!rhs.GeomWeights().null()) ){
     CENO_LHS = rhs.LHS();
     CENO_Geometric_Weights = rhs.GeomWeights();
   }
@@ -257,6 +268,64 @@ HighOrder1D<SOLN_STATE> & HighOrder1D<SOLN_STATE>::operator=(const HighOrder1D<S
   return *this;
 }
 
+//! deallocate()
+/*! Deallocate memory when high-order is not required.
+ *  Automatic deallocation is already provided when the 
+ *  variables are deleted.
+ */
+template<class SOLN_STATE> inline
+void HighOrder1D<SOLN_STATE>::deallocate(void){
+  // deallocate TD
+  CellDeriv().free_memory();
+
+  // deallocate geometric coefficients
+  CellGeomCoeff().free_memory();
+
+  // deallocate LimitedCell
+  CellInadequateFit().reserve(0);
+}
+
+//! AssociateGeometry()
+/*! Assign a specific geometry to the high-order object.
+ */
+template<class SOLN_STATE> inline
+void HighOrder1D<SOLN_STATE>::AssociateGeometry(GeometryType & Cell){
+  // Set geometry pointer
+  SetGeometryPointer(Cell);
+
+  // Recalculate the geometric coefficients
+  ComputeGeometricCoefficients(); 
+}
+
+//! NumberOfRings()
+/*! Return the required number of neighbor rings
+ */
+template<class SOLN_STATE> inline
+int HighOrder1D<SOLN_STATE>::NumberOfRings(int number_of_Taylor_derivatives){
+  switch(number_of_Taylor_derivatives){
+  case 1: 
+    return 0;	// piecewise constant
+  case 2:
+    return 1; 	// piecewise linear
+  case 3:
+    return 2;	// piecewise quadratic
+  case 4:
+    return 2;	// piecewise cubic
+  case 5:
+    return 3;	// piecewise quartic
+  case 6:
+    return 3;	// piecewise quintic
+  case 7:
+    return 4;	// piecewise 6th-order
+  case 8:
+    return 4;	// piecewise 7th-order
+  case 9:
+    return 5;	// piecewise 8th-order
+  default:
+    return -1;
+  }
+}
+
 //! SetRings()
 /*! Set the number of rings around the current cell
  * which will be used to form the supporting stencil
@@ -267,19 +336,22 @@ HighOrder1D<SOLN_STATE> & HighOrder1D<SOLN_STATE>::operator=(const HighOrder1D<S
  */
 template<class SOLN_STATE> inline
 void HighOrder1D<SOLN_STATE>::SetRings(void){
- 
-  switch(TD.size()){
-  case 1: rings = 0; break;	// piecewise constant
-  case 2: rings = 1; break;	// piecewise linear
-  case 3: rings = 2; break;	// piecewise quadratic
-  case 4: rings = 2; break;	// piecewise cubic
-  case 5: rings = 3; break;	// piecewise quartic
-  case 6: rings = 3; break;	// piecewise quintic
-  case 7: rings = 4; break;	// piecewise 6th-order
-  case 8: rings = 4; break;	// piecewise 7th-order
-  case 9: rings = 5; break;	// piecewise 8th-order
-  default: rings = -1;
-  }
+  rings = NumberOfRings(TD.size());
+}
+
+//! Nghost(ReconstructionOrder)
+/*! Returns the minimum number of ghost cells for the solution domain
+ *  required to carry out a reconstruction of order ReconstructionOrder
+ */
+template<class SOLN_STATE> inline
+int HighOrder1D<SOLN_STATE>::Nghost(int ReconstructionOrder){
+  // Compute the size of the TaylorDerivative container
+  int TD_size(ReconstructionOrder+1);
+
+  // Return final number of ghost cells
+  // --> double the number of rings: smoothness indicator requirement)
+  // --> add one extra cell: boundary flux calculation requirement
+  return 1 + 2* NumberOfRings(TD_size);
 }
 
 //! ComputeGeometricCoefficients()
@@ -309,6 +381,78 @@ void HighOrder1D<SOLN_STATE>::InitializeMonotonicityFlag(void){
   for (int i = 0; i <= Soln_State::NumberOfVariables - 1; ++i){
     LimitedCell[i] = OFF; /* initialize the flags to OFF (smooth solution)*/
   }
+}
+
+//! InitializeVariable()
+/*! 
+ * Allocate memory and initialize the high-order variables
+ * based on the ReconstructionOrder and the ReconstructionMethod.
+ * 
+ */
+template<class SOLN_STATE>
+void HighOrder1D<SOLN_STATE>::InitializeVariable(int ReconstructionOrder, int ReconstructionMethod){
+  const int Reconstruction_Order(ReconstructionOrder);
+  const int Reconstruction_Method(ReconstructionMethod);
+
+  // Set specific variables to each reconstruction method
+  switch(Reconstruction_Method){
+  case RECONSTRUCTION_CENO:
+    // Generate TaylorDerivatives container for the required reconstruction order
+    CellDeriv().GenerateContainer(Reconstruction_Order);
+    
+    // Generate Geometric Coefficients container for the required reconstruction order
+    CellGeomCoeff().GenerateContainer(Reconstruction_Order);
+    
+    // Set the number of rings
+    SetRings();
+    
+    // Allocate memory for the pseudo-inverse and the vector of geometric weights
+    if ( CENO_Execution_Mode::CENO_SPEED_EFFICIENT ){
+      LHS().newsize(StencilSize() - 1, NumberOfTaylorDerivatives() - 1);
+      GeomWeights().newsize(StencilSize() );
+    }
+    break;
+
+  case RECONSTRUCTION_ENO:
+    // Deallocate memory
+    deallocate();
+    
+    // Generate TaylorDerivatives container for the required reconstruction order
+    CellDeriv().GenerateContainer(Reconstruction_Order);
+
+    // Set the number of rings
+    SetRings();
+    break;
+
+  case RECONSTRUCTION_ENO_CHARACTERISTIC:
+    // Deallocate memory
+    deallocate();
+
+    // Generate TaylorDerivatives container for the required reconstruction order
+    CellDeriv().GenerateContainer(Reconstruction_Order);
+
+    // Set the number of rings
+    SetRings();
+    break;
+
+  default:
+    // Lower-order schemes
+    deallocate();
+
+    // Set the number of rings
+    SetRings();
+  }
+}
+
+//! InitializeVariable()
+/*! 
+ * Initialize the high-order variables with the parameters provided by
+ * an input parameters object.
+ */
+template<class SOLN_STATE>
+template<typename InputParametersType>
+void HighOrder1D<SOLN_STATE>::InitializeVariable(const InputParametersType & IP){
+  InitializeVariable(IP.ReconstructionOrder(), IP.i_ReconstructionMethod);
 }
 
 //! Integrate over the cell
@@ -372,7 +516,7 @@ template<class SOLN_STATE> inline
 ostream & operator<< (ostream & os, const HighOrder1D<SOLN_STATE> & Obj){
 
   os.setf(ios::skipws,ios::scientific);
-  os << Obj.CellDeriv() 
+  os << Obj.CellDeriv()
      << Obj.CellGeomCoeff();
   os.width(4);
   os << Obj.CellSmoothnessIndicator() << endl;

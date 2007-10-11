@@ -2,6 +2,7 @@
   \brief Implementation of subroutines prototyped in CFD1DInput.h. */
 
 /* Include required C++ libraries. */
+#include <sstream>
 // None
 
 /* Using std namespace functions */
@@ -10,6 +11,92 @@
 /* Include CFFC header files */
 #include "CFD1DInput.h"
 #include "../Euler1D/ExactSolutions/ExactSolutions.h"
+#include "../HighOrderReconstruction/HighOrder1D.h"
+
+/*************************************************************
+ * CFD1D_Input_Parameters -- Member functions.               *
+ *************************************************************/
+int CFD1D_Input_Parameters::Nghost(void) const{
+  
+  int Number_Of_Ghost_Cells(0);
+  
+  switch(i_ReconstructionMethod){
+
+  case RECONSTRUCTION_ENO:
+    if (ReconstructionOrder() == 0){
+      Number_Of_Ghost_Cells = 1;
+    } else {
+      Number_Of_Ghost_Cells = ReconstructionOrder();
+    }
+    break;
+
+  case RECONSTRUCTION_ENO_CHARACTERISTIC:
+    if (ReconstructionOrder() == 0){
+      Number_Of_Ghost_Cells = 1;
+    } else {
+      Number_Of_Ghost_Cells = ReconstructionOrder();
+    }
+    break;
+
+  case RECONSTRUCTION_CENO:
+    // This number if function of the specified reconstruction order
+    // Use 'int' type to get the number of ghost cells (it doesn't matter which type is used!)
+    Number_Of_Ghost_Cells = HighOrder1D<int>::Nghost(ReconstructionOrder());
+    break;
+
+  default:
+    Number_Of_Ghost_Cells = 1;
+  }
+
+  return Number_Of_Ghost_Cells;
+}
+
+int CFD1D_Input_Parameters::Parse_Input_File(char *Input_File_Name_ptr){
+
+  ostringstream msg;
+  int command_flag;
+
+  strcpy(Input_File_Name, Input_File_Name_ptr);
+  Open_Input_File(*this);
+  if (Input_File.fail()) {
+    msg << "CFD1D_Input_Parameters::Parse_Input_File() ERROR: Unable to open "
+	<<string(Input_File_Name_ptr) 
+	<< " input data file.";
+    if (Verbose()) {
+      cerr << msg.str() << endl;
+    }
+    throw runtime_error(msg.str());
+  } /* endif */
+
+  if (Verbose()) {
+    cout << "\n Reading input data file `"
+	 << Input_File_Name << "'." << endl;
+    cout.flush();
+  }
+  while (1) {
+     Get_Next_Input_Control_Parameter(*this);
+     command_flag = Parse_Next_Input_Control_Parameter(*this);
+     if (command_flag == EXECUTE_CODE) {
+       break;
+       
+     } else if (command_flag == TERMINATE_CODE) {
+       return (0);
+       
+     } else if (command_flag == INVALID_INPUT_CODE ||
+		command_flag == INVALID_INPUT_VALUE) {
+       Line_Number = -Line_Number;
+       
+       msg << "CFD1D_Input_Parameters::Parse_Input_File() ERROR: Error reading data at line # " 
+	   << -Line_Number
+	   << " of input data file.";
+       if (Verbose()){
+	 cerr << msg.str() << endl;
+       }
+       
+       throw runtime_error(msg.str());
+     } /* endif */
+  } /* endwhile */
+}
 
 /*************************************************************
  * CFD1D_Input_Parameters -- External subroutines.           *

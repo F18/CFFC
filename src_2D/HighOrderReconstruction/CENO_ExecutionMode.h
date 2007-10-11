@@ -22,6 +22,9 @@
 class CENO_Execution_Mode{
   
 public:
+
+  // set all flags to default values
+  static void SetDefaults(void);
   
   /* Store the pseudo-inverse of the LHS term in the CENO reconstruction for every computational cell.
      Turn ON if you want to run in speed efficient mode. However, the memory requirements will

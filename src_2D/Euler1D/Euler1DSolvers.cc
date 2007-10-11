@@ -126,7 +126,7 @@ int Euler1DSolver(char *Input_File_Name_ptr,
 
   if (! batch_flag) cout << "\n Creating memory for Euler1D solution variables.";
   Soln_ptr=Allocate(Soln_ptr,
-                    Input_Parameters.Number_of_Cells);
+                    Input_Parameters);
 
   if (Soln_ptr == NULL){
     cout << "\n Euler1DSolvers::Allocate() Error! Probably not enough memory!";
@@ -305,8 +305,7 @@ int Euler1DSolver(char *Input_File_Name_ptr,
      if (command_flag == EXECUTE_CODE) {
          // Deallocate memory for 1D Euler equation solution.
          if (! batch_flag) cout << "\n Deallocating Euler1D solution variables.";
-         Soln_ptr=Deallocate(Soln_ptr,
-                             Input_Parameters.Number_of_Cells);
+         Soln_ptr=Deallocate(Soln_ptr);
          // Execute new calculation.
          if (! batch_flag)  {
             cout << "\n\n Starting a new calculation.";
@@ -317,8 +316,7 @@ int Euler1DSolver(char *Input_File_Name_ptr,
      } else if (command_flag == TERMINATE_CODE) {
          // Deallocate memory for 1D Euler equation solution.
          if (! batch_flag) cout << "\n Deallocating Euler1D solution variables.";
-         Soln_ptr=Deallocate(Soln_ptr,
-                             Input_Parameters.Number_of_Cells);
+         Soln_ptr=Deallocate(Soln_ptr);
          // Close input data file.
          if (! batch_flag) cout << "\n\n Closing CFD1D input data file.";
          Close_Input_File(Input_Parameters);

@@ -124,7 +124,7 @@ SRC_HIGH_ORDER_RECONSTRUCTION := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR), 
 
 # Add High-Order Reconstruction Testing If Required:
 SRC_HIGH_ORDER_RECONSTRUCTION_TESTS := test_HighOrder1D_Double.cc test_TaylorDerivatives2D_Double.cc
-SRC_HIGH_ORDER_RECONSTRUCTION_TESTS := $(addprefix $(HIGH_ORDER_RECONSTRUCTION_DIR)/UnitTests/,$(SRC_HIGH_ORDER_RECONSTRUCTION_TESTS))
+SRC_HIGH_ORDER_RECONSTRUCTION_TESTS := $(addprefix $(HIGH_ORDER_RECONSTRUCTION_DIR)UnitTests/,$(SRC_HIGH_ORDER_RECONSTRUCTION_TESTS))
 ifeq ($(TUT_TESTING),ON) 
   SRC_HIGH_ORDER_RECONSTRUCTION += $(SRC_HIGH_ORDER_RECONSTRUCTION_TESTS)
 endif
@@ -156,7 +156,8 @@ SRC_EULER1D := $(addprefix $(EULER_1D_DIR), $(SRC_EULER1D))
 
 # Add Euler 1D Testing If Required:
 SRC_EULER1D_TESTS = test_Euler1D_Simulations.cc \
-		    test_HighOrder1D_EulerState.cc
+		    test_HighOrder1D_EulerState.cc \
+		    test_HighOrder1D_Euler1DUniformMesh.cc
 
 SRC_EULER1D_TESTS := $(addprefix $(EULER_1D_DIR)UnitTests/, $(SRC_EULER1D_TESTS))
 ifeq ($(TUT_TESTING),ON) 

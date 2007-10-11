@@ -94,6 +94,14 @@ class CFD1D_Input_Parameters{
   short & Verbose(void) {return verbose_flag;}
   const short & Verbose(void) const {return verbose_flag;}
 
+  int ReconstructionOrder(void) const {return (Space_Accuracy-1);}
+  int & Limiter(void) {return i_Limiter;}
+  const int & Limiter(void) const {return i_Limiter;} 
+
+  int Parse_Input_File(char *Input_File_Name_ptr);
+
+  // Return the number of required ghost cells for the specified ReconstructionMethod
+  int Nghost(void) const;  
 
   /* Input-output operators. */
 

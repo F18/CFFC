@@ -15,6 +15,8 @@
 
 #include "../CFD/CFD1DInput.h"
 
+#include "../HighOrderReconstruction/HighOrder1D.h"
+
 /* Define the classes. */
 
 /********************************************************
@@ -30,6 +32,9 @@
  *                 gradient.                            *
  *     phi      -- Return the solution slope limiters.  *
  *      Uo      -- Return initial solution state.       *
+ *  Nghost      -- Number of ghost cells (!= 1 for      *
+ *                 high-order)                          *
+ *  HO_dWdx     -- High-order variable                  *
  *                                                      *
  * Member operators                                     *
  *      S -- a 1D Euler solution                        *
@@ -48,136 +53,138 @@
  *                                                      *
  ********************************************************/
 class Euler1D_UniformMesh{
-  private:
-  public:
-    Euler1D_pState    W;   // Primitive solution state.
-    Euler1D_cState    U;   // Conserved solution state.
-    Euler1D_pState CharactVar;    // Characteristic solution state.
-    Cell1D_Uniform    X;   // Cell geometry.
-    double           dt;   // Local time step.
-    Euler1D_cState dUdt;   // Solution residual.
-    Euler1D_pState dWdx;   // Unlimited solution gradient.
-    Euler1D_pState  phi;   // Solution slope limiter.
-    Euler1D_cState   Uo;   // Initial solution state.
-                           // Made public so can access them.
-    int Nghost;     // Number of ghost cells(!= 1 for high-order)
+public:
+  typedef HighOrder1D<Euler1D_pState> HighOrderType;
 
-    /* Field access */
-    const double & CellCenter(void) const {return X.x;}
-    const double & CellDelta (void) {return X.dx;}
+  Euler1D_pState    W;   // Primitive solution state.
+  Euler1D_cState    U;   // Conserved solution state.
+  Euler1D_pState CharactVar;    // Characteristic solution state.
+  Cell1D_Uniform    X;   // Cell geometry.
+  double           dt;   // Local time step.
+  Euler1D_cState dUdt;   // Solution residual.
+  Euler1D_cState TotaldUdt; // Solution residual. Used for RK4
+  Euler1D_pState dWdx;   // Unlimited solution gradient.
+  Euler1D_pState  phi;   // Solution slope limiter.
+  Euler1D_cState   Uo;   // Initial solution state.
+  // Made public so can access them.
 
-    /* Primitive variables */
-    const Euler1D_pState & CellSolutionPrimVar(void) const {return W;}
-    Euler1D_pState & CellSolutionPrimVar(void) {return W;}
-    const double & CellSolutionPrimVar(int & VarPosition) const { return W[VarPosition];}
-    double & CellSolutionPrimVar(int & VarPosition){ return W[VarPosition];}
-    /* Conservative variables */
-    const Euler1D_cState & CellSolutionConsVar(void) const {return U;}
-    Euler1D_cState & CellSolutionConsVar(void) {return U;}
-    const double & CellSolutionConsVar(int & VarPosition) const { return U[VarPosition];}
-    double & CellSolutionConsVar(int & VarPosition) { return U[VarPosition];}
-    /* Characteristic variables */
-    const Euler1D_pState & CellSolutionCharactVar(void) const {return CharactVar;}
-    Euler1D_pState & CellSolutionCharactVar(void) {return CharactVar;}
-    const double & CellSolutionCharactVar(int & VarPosition) const { return CharactVar[VarPosition];}
-    double & CellSolutionCharactVar(int & VarPosition) { return CharactVar[VarPosition];}
+  int Nghost;            // Number of ghost cells(!= 1 for high-order)
+  int ICl, ICu;	   // Indexes (Start & End)
+
+  /* Creation, copy, and assignment constructors. */
+  Euler1D_UniformMesh(void);
+  Euler1D_UniformMesh(const Euler1D_UniformMesh &Soln);
+  Euler1D_UniformMesh(const Euler1D_pState &W0, const Euler1D_cState &U0, const Cell1D_Uniform &X0);
+  Euler1D_UniformMesh(const Euler1D_pState &W0, const Cell1D_Uniform &X0);
+  Euler1D_UniformMesh(const Euler1D_cState &U0, const Cell1D_Uniform &X0);
+
+  /* Field access */
+  const double & CellCenter(void) const {return X.x;}
+  const double & CellDelta (void) {return X.dx;}
+
+  /* Primitive variables */
+  const Euler1D_pState & CellSolutionPrimVar(void) const {return W;}
+  Euler1D_pState & CellSolutionPrimVar(void) {return W;}
+  const double & CellSolutionPrimVar(int & VarPosition) const { return W[VarPosition];}
+  double & CellSolutionPrimVar(int & VarPosition){ return W[VarPosition];}
+  /* Conservative variables */
+  const Euler1D_cState & CellSolutionConsVar(void) const {return U;}
+  Euler1D_cState & CellSolutionConsVar(void) {return U;}
+  const double & CellSolutionConsVar(int & VarPosition) const { return U[VarPosition];}
+  double & CellSolutionConsVar(int & VarPosition) { return U[VarPosition];}
+  /* Characteristic variables */
+  const Euler1D_pState & CellSolutionCharactVar(void) const {return CharactVar;}
+  Euler1D_pState & CellSolutionCharactVar(void) {return CharactVar;}
+  const double & CellSolutionCharactVar(int & VarPosition) const { return CharactVar[VarPosition];}
+  double & CellSolutionCharactVar(int & VarPosition) { return CharactVar[VarPosition];}
+  /* High-order variables */
+  HighOrderType & CellHighOrder(void) { return HO_dWdx; }
+  const HighOrderType & CellHighOrder(void) const { return HO_dWdx; }
+    
+  /* Relational operators. */
+  friend int operator ==(const Euler1D_UniformMesh &Soln1,
+			 const Euler1D_UniformMesh &Soln2);
+  friend int operator !=(const Euler1D_UniformMesh &Soln1,
+			 const Euler1D_UniformMesh &Soln2);
+    
+  /* Input-output operators. */
+  friend ostream &operator << (ostream &out_file,
+			       const Euler1D_UniformMesh &Soln);
+  friend istream &operator >> (istream &in_file,
+			       Euler1D_UniformMesh &Soln);
+
+private:
+  HighOrderType   HO_dWdx; // High-order derivatives container for the primitive solution state
   
-	      
-    /* Creation, copy, and assignment constructors. */
-    Euler1D_UniformMesh(void) {
-       W = Euler1D_W_STDATM; U = Euler1D_U_STDATM;
-       X = Cell1D_Uniform_ONE; dt = ZERO;
-       dUdt = Euler1D_U_VACUUM;
-       dWdx = Euler1D_W_VACUUM; phi = Euler1D_W_VACUUM;
-       Uo = Euler1D_U_VACUUM;
-    }
-
-    Euler1D_UniformMesh(const Euler1D_UniformMesh &Soln) {
-       W = Soln.W; U = Soln.U; X = Soln.X;
-       dt = Soln.dt; dUdt = Soln.dUdt; dWdx = Soln.dWdx;
-       phi = Soln.phi; Uo = Soln.Uo;
-    }
-
-    Euler1D_UniformMesh(const Euler1D_pState &W0,
-			const Euler1D_cState &U0,
-			const Cell1D_Uniform &X0) {
-       W = W0; U = U0; X = X0;
-       dt = ZERO; dUdt = Euler1D_U_VACUUM;
-       dWdx = Euler1D_W_VACUUM; phi = Euler1D_W_VACUUM;
-       Uo = Euler1D_U_VACUUM;
-    }
-
-    Euler1D_UniformMesh(const Euler1D_pState &W0,
-			const Cell1D_Uniform &X0) {
-       W = W0; U = W0.U(); X = X0;
-       dt = ZERO; dUdt = Euler1D_U_VACUUM;
-       dWdx = Euler1D_W_VACUUM; phi = Euler1D_W_VACUUM;
-       Uo = Euler1D_U_VACUUM;
-    }
-
-    Euler1D_UniformMesh(const Euler1D_cState &U0,
-			const Cell1D_Uniform &X0) {
-       W = U0.W(); U = U0; X = X0;
-       dt = ZERO; dUdt = Euler1D_U_VACUUM;
-       dWdx = Euler1D_W_VACUUM; phi = Euler1D_W_VACUUM;
-       Uo = Euler1D_U_VACUUM;
-    }
-    
-    /* Destructor. */
-    // ~Euler1D_UniformMesh(void);
-    // Use automatically generated destructor.
-
-    /* Assignment operator. */
-    // Euler1D_UniformMesh operator = (const Euler1D_UniformMesh &Soln);
-    // Use automatically generated assignment operator.
-
-    /* Binary arithmetic operators. */
-//    friend Euler1D_UniformMesh operator +(const Euler1D_UniformMesh &Soln1,
-//					  const Euler1D_UniformMesh &Soln2);
-//    friend Euler1D_UniformMesh operator -(const Euler1D_UniformMesh &Soln1,
-//					  const Euler1D_UniformMesh &Soln2);
-
-    /* Unary arithmetic operators. */
-//    friend Euler1D_UniformMesh operator +(const Euler1D_UniformMesh &Soln);
-//    friend Euler1D_UniformMesh operator -(const Euler1D_UniformMesh &Soln);
-
-    /* Shortcut arithmetic operators. */
-//    friend Euler1D_UniformMesh &operator +=(Euler1D_UniformMesh &Soln1,
-//					    const Euler1D_UniformMesh &Soln2);
-//    friend Euler1D_UniformMesh &operator -=(Euler1D_UniformMesh &Soln1,
-//					    const Euler1D_UniformMesh &Soln2);
-    
-    /* Relational operators. */
-    friend int operator ==(const Euler1D_UniformMesh &Soln1,
-			   const Euler1D_UniformMesh &Soln2);
-    friend int operator !=(const Euler1D_UniformMesh &Soln1,
-			   const Euler1D_UniformMesh &Soln2);
-    
-    /* Input-output operators. */
-    friend ostream &operator << (ostream &out_file,
-				 const Euler1D_UniformMesh &Soln);
-    friend istream &operator >> (istream &in_file,
-				 Euler1D_UniformMesh &Soln);
-    
 };
+
+/*******************************************************
+ *  Euler1D_UniformMesh::MemberFunctions()             *
+ ******************************************************/
+/* Constructor */
+inline Euler1D_UniformMesh::Euler1D_UniformMesh(void): HO_dWdx() {
+  W = Euler1D_W_STDATM; U = Euler1D_U_STDATM;
+  X = Cell1D_Uniform_ONE; dt = ZERO;
+  dUdt = Euler1D_U_VACUUM;
+  dWdx = Euler1D_W_VACUUM; phi = Euler1D_W_VACUUM;
+  Uo = Euler1D_U_VACUUM;
+}
+
+inline Euler1D_UniformMesh::Euler1D_UniformMesh(const Euler1D_UniformMesh &Soln) {
+  W = Soln.W; U = Soln.U; X = Soln.X;
+  dt = Soln.dt; dUdt = Soln.dUdt; dWdx = Soln.dWdx;
+  phi = Soln.phi; Uo = Soln.Uo;
+  Nghost = Soln.Nghost; ICl = Soln.ICl; ICu = Soln.ICu;
+  HO_dWdx = Soln.CellHighOrder();
+}
+
+inline Euler1D_UniformMesh::Euler1D_UniformMesh(const Euler1D_pState &W0,
+						const Euler1D_cState &U0,
+						const Cell1D_Uniform &X0): HO_dWdx() {
+  W = W0; U = U0; X = X0;
+  dt = ZERO; dUdt = Euler1D_U_VACUUM;
+  dWdx = Euler1D_W_VACUUM; phi = Euler1D_W_VACUUM;
+  Uo = Euler1D_U_VACUUM;
+}
+
+inline Euler1D_UniformMesh::Euler1D_UniformMesh(const Euler1D_pState &W0,
+						const Cell1D_Uniform &X0): HO_dWdx() {
+  W = W0; U = W0.U(); X = X0;
+  dt = ZERO; dUdt = Euler1D_U_VACUUM;
+  dWdx = Euler1D_W_VACUUM; phi = Euler1D_W_VACUUM;
+  Uo = Euler1D_U_VACUUM;
+}
+
+inline Euler1D_UniformMesh::Euler1D_UniformMesh(const Euler1D_cState &U0,
+						const Cell1D_Uniform &X0): HO_dWdx() {
+  W = U0.W(); U = U0; X = X0;
+  dt = ZERO; dUdt = Euler1D_U_VACUUM;
+  dWdx = Euler1D_W_VACUUM; phi = Euler1D_W_VACUUM;
+  Uo = Euler1D_U_VACUUM;
+}
+
 
 /********************************************************
  * Euler1D_UniformMesh -- Relational operators.         *
  ********************************************************/
 inline int operator ==(const Euler1D_UniformMesh &Soln1,
 		       const Euler1D_UniformMesh &Soln2) {
-    return (Soln1.W == Soln2.W && Soln1.U == Soln2.U &&
-	    Soln1.X == Soln2.X && Soln1.dt == Soln2.dt &&
-	    Soln1.dUdt == Soln2.dUdt && Soln1.dWdx == Soln2.dWdx &&
-	    Soln1.phi == Soln2.phi && Soln1.Uo == Soln2.Uo);
+  return (Soln1.W == Soln2.W && Soln1.U == Soln2.U &&
+	  Soln1.X == Soln2.X && Soln1.dt == Soln2.dt &&
+	  Soln1.dUdt == Soln2.dUdt && Soln1.dWdx == Soln2.dWdx &&
+	  Soln1.phi == Soln2.phi && Soln1.Uo == Soln2.Uo && 
+	  Soln1.CellSolutionCharactVar() == Soln2.CellSolutionCharactVar() &&
+	  Soln1.CellHighOrder() == Soln2.CellHighOrder() );
 }
 
 inline int operator !=(const Euler1D_UniformMesh &Soln1,
 		       const Euler1D_UniformMesh &Soln2) {
-    return (Soln1.W != Soln2.W || Soln1.U != Soln2.U ||
-	    Soln1.X != Soln2.X || Soln1.dt != Soln2.dt ||
-	    Soln1.dUdt != Soln2.dUdt || Soln1.dWdx != Soln2.dWdx ||
-	    Soln1.phi != Soln2.phi || Soln1.Uo == Soln2.Uo);
+  return (Soln1.W != Soln2.W || Soln1.U != Soln2.U ||
+	  Soln1.X != Soln2.X || Soln1.dt != Soln2.dt ||
+	  Soln1.dUdt != Soln2.dUdt || Soln1.dWdx != Soln2.dWdx ||
+	  Soln1.phi != Soln2.phi || Soln1.Uo != Soln2.Uo ||
+	  Soln1.CellSolutionCharactVar() != Soln2.CellSolutionCharactVar() ||
+	  Soln1.CellHighOrder() != Soln2.CellHighOrder());
 }
 
 /********************************************************
@@ -185,18 +192,18 @@ inline int operator !=(const Euler1D_UniformMesh &Soln1,
  ********************************************************/
 inline ostream &operator << (ostream &out_file,
 			     const Euler1D_UniformMesh &Soln) {
-    out_file << Soln.X << Soln.W;
-    out_file.setf(ios::scientific);
-    out_file << " " << Soln.W.T();
-    out_file.unsetf(ios::scientific);
-    return (out_file);
+  out_file << Soln.X << Soln.W;
+  out_file.setf(ios::scientific);
+  out_file << " " << Soln.W.T();
+  out_file.unsetf(ios::scientific);
+  return (out_file);
 }
 
 inline istream &operator >> (istream &in_file,
 			     Euler1D_UniformMesh &Soln) {
-    in_file >> Soln.X >> Soln.W;
-    Soln.U = Soln.W.U();
-    return (in_file);
+  in_file >> Soln.X >> Soln.W;
+  Soln.U = Soln.W.U();
+  return (in_file);
 }
 
 /********************************************************
@@ -204,10 +211,9 @@ inline istream &operator >> (istream &in_file,
  ********************************************************/
 
 extern Euler1D_UniformMesh* Allocate(Euler1D_UniformMesh *Soln_ptr,
-				     const int Number_of_Cells);
+				     const CFD1D_Input_Parameters &IP);
 
-extern Euler1D_UniformMesh* Deallocate(Euler1D_UniformMesh *Soln_ptr,
-				       const int Number_of_Cells);
+extern Euler1D_UniformMesh* Deallocate(Euler1D_UniformMesh *Soln_ptr);
 
 extern void Output_Gnuplot(Euler1D_UniformMesh *Soln,
   		           const int Number_of_Cells,
