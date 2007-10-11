@@ -3066,10 +3066,19 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                          SolnBlk.dWdx[i][j][n]*dX.x +
                          SolnBlk.dWdy[i][j][n]*dX.y ;
 
-	      if( (i == SolnBlk.ICl && SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) ||
-		  (i == SolnBlk.ICu && SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) ||
-		  (j == SolnBlk.JCl && SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) ||
-		  (j == SolnBlk.JCu && SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
+	      if( Limiter != LIMITER_ZERO &&
+		  ((i == SolnBlk.ICl && (SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL ||
+					 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+					 SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP)) ||
+		   (i == SolnBlk.ICu && (SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL ||
+					 SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+					 SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP)) ||
+		   (j == SolnBlk.JCl && (SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL ||
+					 SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+					 SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP)) ||
+		   (j == SolnBlk.JCu && (SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL ||
+					 SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+					 SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP))) ) {
 		//I put this in because the limiter was causing problems at solid boundaries!
 		phi = ONE;
 
@@ -4011,10 +4020,19 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
                          SolnBlk.dWdx[i][j][n]*dX.x +
                          SolnBlk.dWdy[i][j][n]*dX.y ;
 
-	      if( (i == SolnBlk.ICl && SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) ||
-		  (i == SolnBlk.ICu && SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) ||
-		  (j == SolnBlk.JCl && SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) ||
-		  (j == SolnBlk.JCu && SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
+	      if( Limiter != LIMITER_ZERO &&
+		  ((i == SolnBlk.ICl && (SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL ||
+					 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+					 SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP)) ||
+		   (i == SolnBlk.ICu && (SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL ||
+					 SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+					 SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP)) ||
+		   (j == SolnBlk.JCl && (SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL ||
+					 SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+					 SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP)) ||
+		   (j == SolnBlk.JCu && (SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL ||
+					 SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+					 SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP))) ) {
 		//I put this in because the limiter was causing problems at solid boundaries!
 		phi = ONE;
 
