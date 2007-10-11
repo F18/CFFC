@@ -344,7 +344,8 @@ SRC_REACTIONS = $(REACTIONS_DIR)Reactions.cc \
 SRC_REACTIONS_F90 = $(REACTIONS_DIR)c_15step_GRI211.f90 \
                     $(REACTIONS_DIR)c_15step_GRI3.f90
 SRC_REACTIONS += $(SRC_REACTIONS_F90)
-SRC_SNBCK = $(SNBCK_DIR)SNBCK.cc
+SRC_SNBCK = $(SNBCK_DIR)SNBCK.cc \
+	    $(SNBCK_DIR)PlanckMean.cc
 
 # TUT testing:
 SRC_TUT = TestRun.cc \

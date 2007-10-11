@@ -46,9 +46,6 @@ NEW
 /* Also include NKS  input header file. */
 #include "../NewtonKrylovSchwarz2D/NKSInput2D.h"
 
-/* include SNBCK input header file */
-#include "../Physics/SNBCK/SNBCK.h"
-
 // Include ICEMCFD input header file.
 
 #ifndef _ICEMCFD_INCLUDED
@@ -107,10 +104,6 @@ class Chem2D_Input_Parameters{
   //@{ @name NKS related input parametrs:
   NKS_Input_Parameters  NKS_IP;
   int Solver_Type; 
-  //@}
-
-  //@{ @name SNBCK related input parameters
-  SNBCK_Input_Parameters SNBCK_IP;
   //@}
 
   //@{ @name Reconstruction type indicator and related input parameters:

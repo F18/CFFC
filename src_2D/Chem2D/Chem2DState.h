@@ -75,7 +75,7 @@ using namespace std;
 #endif // _REACTIONS_INCLUDED
 
 /* include SNBCK for optically thin radiation */
-#include "../Physics/SNBCK/SNBCK.h"
+#include "../Physics/SNBCK/PlanckMean.h"
 
 //Temperature convergence tolerance in
 //Chem2D_cState::T(void)
@@ -182,7 +182,7 @@ class Chem2D_pState {
   //@{ @name SNBCK data object
   //! For computation of radiant heat transfer using 
   //! optically thin approximation.
-  static SNBCK *SNBCKdata;
+  static PlanckMean  *PlanckMean_data;
   //@}
 
   
@@ -497,7 +497,7 @@ class Chem2D_pState {
    void Deallocate_static(void){ 
      if(specdata != NULL) { delete[] specdata; specdata = NULL; }
      if(Schmidt != NULL) { delete[] Schmidt; Schmidt = NULL; }
-     if(SNBCKdata != NULL) { delete SNBCKdata; SNBCKdata = NULL; }
+     if(PlanckMean_data != NULL) { delete PlanckMean_data; PlanckMean_data = NULL; }
    }
 
 #ifdef STATIC_NUMBER_OF_SPECIES    

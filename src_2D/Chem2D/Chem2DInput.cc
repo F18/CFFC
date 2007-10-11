@@ -520,8 +520,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Max_Number_Sequential_Solves), 
                           1, 
                           MPI::INT, 0);
-    // SNBCK Parameters
-    IP.SNBCK_IP.Broadcast_Input_Parameters();
     //reaction name
     MPI::COMM_WORLD.Bcast(IP.React_Name, 
                           INPUT_PARAMETER_LENGTH_CHEM2D, 
@@ -1168,8 +1166,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Max_Number_Sequential_Solves), 
 		       1, 
 		       MPI::INT, Source_Rank);
-    // SNBCK Parameters
-    IP.SNBCK_IP.Broadcast_Input_Parameters(Communicator, Source_CPU);
     //reaction name
     Communicator.Bcast(IP.React_Name, 
                           INPUT_PARAMETER_LENGTH_CHEM2D, 
@@ -3907,34 +3903,23 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } /* endif */
 
     if (i_command == INVALID_INPUT_CODE) {
-      // that is, we have an input line which:
-      //  - is not a comment (that's COMMENT_CODE), and,
-      //  - is not a valid code with an invalid value (that's INVALID_INPUT_VALUE), 
-      // and so is an unknown option. Maybe it's an NKS option:
+      
       strcpy(buffer, IP.Next_Control_Parameter);
       Get_Next_Input_Control_Parameter(IP);
       i_command = IP.NKS_IP.Parse_Next_Input_Control_Parameter(buffer, IP.Next_Control_Parameter);
-    }
-    if (i_command == INVALID_INPUT_CODE) {
-      // that is, we have an input line which:
-      //  - is not a comment (that's COMMENT_CODE), and,
-      //  - is not a valid code with an invalid value (that's INVALID_INPUT_VALUE), 
-      //  - is not a an NKS option
-      // and so is an unknown option. Maybe it's an SNBCK option:
-      i_command = IP.SNBCK_IP.Parse_Next_Input_Control_Parameter(buffer, IP.Next_Control_Parameter);
-    }
-
-    // If it's still unknown then ignore it. 
-    // This could be a bad idea if it was an unknown command 
-    // as opposed to an unknown code.
+      
+      // If it's still unknown then ignore it. 
+      // This could be a bad idea if it was an unknown command 
+      // as opposed to an unknown code.
 //       if (i_command == INVALID_INPUT_CODE) {
-// 	cout << "\n***\n\nWarning: input file line " << IP.Line_Number << ": ";
-// 	cout << "ignoring unknown input code:\n";
-// 	cout << "code: " << buffer;
-// 	cout << "\nvalue: " << IP.Next_Control_Parameter;
-// 	cout << "\n\n***\n";
+//      cout << "\n***\n\nWarning: input file line " << IP.Line_Number << ": ";
+//      cout << "ignoring unknown input code:\n";
+//      cout << "code: " << buffer;
+//      cout << "\nvalue: " << IP.Next_Control_Parameter;
+//      cout << "\n\n***\n";
 //       }
 //       i_command = COMMENT_CODE; // sure why not
+    }
     
     if (!IP.Input_File.good()) { i_command = INVALID_INPUT_VALUE; }
        

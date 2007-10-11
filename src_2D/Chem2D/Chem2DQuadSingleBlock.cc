@@ -7915,10 +7915,8 @@ void Radiation_Source_Eval( Chem2D_Quad_Block &SolnBlk,
   static const double fsoot = ZERO;  // no soot for now
 
   // if SNBCK not allocated, allocate/setup a new object
-  if (Chem2D_pState::SNBCKdata==NULL) {
-    Chem2D_pState::SNBCKdata = new SNBCK;
-    Chem2D_pState::SNBCKdata->Setup(Input_Parameters.SNBCK_IP,
-				    Input_Parameters.CFFC_Path);
+  if (Chem2D_pState::PlanckMean_data==NULL) {
+    Chem2D_pState::PlanckMean_data = new PlanckMean(Input_Parameters.CFFC_Path);
   } // endif
 
 
@@ -7937,14 +7935,15 @@ void Radiation_Source_Eval( Chem2D_Quad_Block &SolnBlk,
 
       // compute the source term using optically thin approx
       // using the SNBCK model
-      source = Chem2D_pState::SNBCKdata->RadSourceOptThin( Pressure/PRESSURE_STDATM, //[atm]
-							   Temperature,              //[K]
-							   xCO,
-							   xH2O,
-							   xCO2,
-							   xO2,
-							   fsoot );
-
+      source = 
+	Chem2D_pState::PlanckMean_data->RadSourceOptThin( Pressure/PRESSURE_STDATM, //[atm]
+							  Temperature,              //[K]
+							  xCO,
+							  xH2O,
+							  xCO2,
+							  xO2,
+							  fsoot );
+      
       // store values
       SolnBlk.U[i][j].Srad = source;
       SolnBlk.W[i][j].Srad = source;

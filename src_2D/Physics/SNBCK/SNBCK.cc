@@ -346,9 +346,15 @@ void EM2C :: ComputeRefSNB( const double p,       // pressure [atm]
 
       // Eq. (2) in Soufiani and Taine (1997)
       gamma = 0.075*xCO2*pow(T296,0.60) +
-	      0.120*xH2O*pow(T296,0.82) +
+              0.120*xH2O*pow(T296,0.82) +
               0.060*pow(T296,0.7)*(ONE-xCO2-xH2O);
       gamma *= p;
+      //
+      // Copied from the EM2C fortran program provided in 
+      // the Appendix of Modest's book "Radiative Heat Transfer," 
+      // 2nd ed., 2003.  Written by Soufiani and Taine (1997).
+      // gamma = 0.07*xCO2 + 0.06*( xCO+xN2+xH2O );
+      // gamma *= sqrt(T273) * p;
 
       // k
       k = kCO[iCO[i]][index] + 
@@ -376,6 +382,13 @@ void EM2C :: ComputeRefSNB( const double p,       // pressure [atm]
       // Eq. (2) in Soufiani and Taine (1997)
       gamma = 0.070*xCO2 + 0.058*(ONE-xCO2-xH2O) + 0.1*xH2O;
       gamma *= p*pow(T296,0.7);
+      //
+      // Copied from the EM2C fortran program provided in 
+      // the Appendix of Modest's book "Radiative Heat Transfer," 
+      // 2nd ed., 2003.  Written by Soufiani and Taine (1997).
+      // gamma = 0.07*xCO2 + 0.058*xN2 + 0.15*xH2O;
+      // if ( T<=900.0 ) gamma *= p * pow(T296,0.7);
+      // else gamma *= p * 0.45913 * sqrt(T900);
 
       // k
       k = kCO2[iCO2[i]][index] + 
@@ -402,9 +415,16 @@ void EM2C :: ComputeRefSNB( const double p,       // pressure [atm]
 
       // Eq. (2) in Soufiani and Taine (1997)
       gamma = 0.462*xH2O*T296 +
-	      sqrt(T296)*( 0.079*(ONE-xCO2-xO2) + 
-			   0.106*xCO2 + 0.036*xO2 );
+              sqrt(T296)*( 0.079*(ONE-xCO2-xO2) + 
+                           0.106*xCO2 + 0.036*xO2 );
       gamma *= p;
+      //
+      // Copied from the EM2C fortran program provided in 
+      // the Appendix of Modest's book "Radiative Heat Transfer," 
+      // 2nd ed., 2003.  Written by Soufiani and Taine (1997).
+      // double tmp = sqrt(T296);
+      // gamma = 0.066 * ( 7.0*tmp*xH2O + 1.2*(xH2O+xN2) + 1.5*xCO2 ) * tmp;
+      // gamma *= p;
 
       // k
       k = kH2O[iH2O[i]][index] + 
@@ -1351,8 +1371,8 @@ void SNBCK :: PreCalculateAbsorb( const double p_ref,    // pressure [atm]
 
 
   // for uniform spacing
-  double Tmin = SNB.Tmin;
-  double Tmax = SNB.Tmax;
+  Tmin = SNB.Tmin;
+  Tmax = SNB.Tmax;
   dT = (Tmax-Tmin)/double(Ninterp-1);
 
   //
@@ -1441,15 +1461,24 @@ void SNBCK :: CalculateAbsorb_Interp( const double p,        // pressure [atm]
 				      const double xsoot )   // volume fraction of soot  
 {
 
-  // check to make sure 
+  // declares
+  double kk_CO, kk_CO2, kk_H2O;
+
+  // check to make sure everything allocated
   if (k_CO == NULL) {
-    cerr << "Error in SNBCK::CalculateAbsorb_Interp() : Need to run "
+    cerr << "\nError in SNBCK::CalculateAbsorb_Interp() : Need to run "
 	 << "SNBCK::PreCalculateAbsorb() first.\n";
     exit(-1);
   }
 
-  // declares
-  double kk_CO, kk_CO2, kk_H2O;
+  // check to make sure T within bounds
+  if (T<Tmin || T>Tmax) {
+    cerr << "\nError in SNBCK::CalculateAbsorb_Interp() : Temperature "
+	 << "out of bounds. Tmin=" << Tmin << " < T=" << T 
+	 << " < Tmax=" << Tmax << "\n";
+    exit(-1);
+  }
+
 
   //
   // loop over each wide band, quad point
@@ -1494,6 +1523,8 @@ double SNBCK :: BandAverage( const double *phi, const int v )  {
  *                                                                   *
  * Calculate the planck distribution for the gas. Remember, we are   *
  * passing a 1D array.                                               *
+ *                                                                   *
+ * Planck function in W/(m2*cm)                                      *
  *********************************************************************/
 void SNBCK :: CalculatePlanck( const double T, double* Ib ) {
 
@@ -1518,6 +1549,7 @@ void SNBCK :: CalculatePlanck( const double T, double* Ib ) {
  *  qr = \int_{-1}^{-1} \int_{0}^{\infty} k_v Ib_v dv d\mu           *
  *     = 4 K_p \sigma T^4                                            *
  *                                                                   *
+ * Radiation source in [W/m^3]                                       *
  *********************************************************************/
 double SNBCK :: RadSourceOptThin( const double p,        // pressure [atm]
 				  const double T,        // temperature [K]
@@ -1529,28 +1561,79 @@ double SNBCK :: RadSourceOptThin( const double p,        // pressure [atm]
 {
   // declates
   double Srad(0.0);
-  static const double C = 3.337E-4; // [W/(m^3 K^5)]
   
   // compute the absorbsion coeffcient
-  CalculateAbsorb( p, T, xco, xh2o, xco2, xo2, xsoot );
+  CalculateAbsorb( p, T, xco, xh2o, xco2, xo2, /*xsoot*/0.0 );
   
   //
   // compute gas band contribution
   //
   for (int v=0; v<Nbands; v++)
     for (int i=0; i<nquad[v]; i++)
-      Srad += k[v][i] * BlackBody(T, WaveNo[v]) * BandWidth[v] * Weight(v,i);
+      Srad += (k[v][i]/CM_TO_M) * BlackBody(T, WaveNo[v]) * BandWidth[v] * Weight(v,i);
   Srad *= 2.0;
 
   //
   // Add soot radiation.
   // See Liu, Guo, Smallwood, Gulder, J QSRT 73 (2002) pp. 409-421. 
   //
+  static const double C = 3.337E-4; // [W/(m^3 K^5)]
   Srad += C * xsoot * pow(T,5);
 
   // return the value
   return -Srad;
 }
+
+/*********************************************************************
+ * SNBCK :: PlanckMean                                               *
+ *                                                                   *
+ * Calculate the planck mean absorbsion coefficient using the        *
+ * optically thin limit. Thus, self-reabsorption of radiation of hot *
+ * burned gas is neglected. See:                                     *
+ *   Y. Ju, H. Guo, F. Liu, and K. Maruta, J Fluid Mech (1999), vol. *
+ *   379, pp. 165-190.                                               *
+ *                                                                   *
+ * Assuming the ambient is cold, we have:                            *
+ *  qr = \int_{-1}^{-1} \int_{0}^{\infty} k_v Ib_v dv d\mu           *
+ *     = 4 K_p \sigma T^4                                            *
+ *                                                                   *
+ * Placnk mean in [m^-1]                                             *
+ *********************************************************************/
+double SNBCK :: PlanckMean( const double p,        // pressure [atm]
+			    const double T,        // temperature [K]
+			    const double xco,      // mole fraction of CO
+			    const double xh2o,     // mole fraction of H2O
+			    const double xco2,     // mole fraction of CO2
+			    const double xo2,      // mole fraction of O2
+			    const double xsoot )   // volume fraction of soot 
+{
+
+  // check to make sure T not negative
+  if (T<=ZERO) {
+    cerr << "\nError in SNBCK::PlanckMean() : Negative or zero temperature"
+	 << " of T=" << T << " detected.\n";
+    exit(-1);
+  } // endif - check
+
+
+  // compute the absorbsion coeffcient
+  CalculateAbsorb( p, T, xco, xh2o, xco2, xo2, xsoot );
+  
+  //
+  // compute gas band contribution
+  //
+  double kp(ZERO);
+  for (int v=0; v<Nbands; v++)
+    for (int i=0; i<nquad[v]; i++)
+      kp += k[v][i] * BlackBody(T, WaveNo[v]) * BandWidth[v] * Weight(v,i);
+  kp *= PI;
+  kp /= STEFFAN_BOLTZMANN*pow(T,4);
+
+  //
+  // return the value in [m^-1]
+  return kp / CM_TO_M;
+}
+
 
 /*********************************************************************
  ********** SNBCK_INPUT_PARAMETERS CLASS MEMBER FUNCTIONS ************

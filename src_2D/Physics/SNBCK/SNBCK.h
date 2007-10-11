@@ -384,6 +384,7 @@ private:
   // the absorbsion coefficient wrt temperature.  Uniform spacing in 
   // temperature is used.
   int Ninterp;       // number of tempeature interpolation points
+  double Tmin, Tmax; // temperature limits
   double dT;         // stepsize between temperature interpolation points (uniform spacing)
   double *Tn;        // temperature points
   double ***k_CO,    // k wrt temp for interpolation
@@ -394,7 +395,7 @@ private:
          ***k2_H2O;
 
   // temporary storage
-  double **k;        // absorbsion coefficient [m^-1]
+  double **k;        // absorbsion coefficient [cm^-1]
 
   //------------------------------------------------
   // Member Functions
@@ -409,6 +410,7 @@ public:
             iCO(NULL), iCO2(NULL), iH2O(NULL), iMix(NULL),
             Tn(NULL), k_CO(NULL), k_CO2(NULL), k_H2O(NULL), 
             k2_CO(NULL), k2_CO2(NULL), k2_H2O(NULL), dT(ZERO),
+	    Tmax(ZERO), Tmin(ZERO),
             Ninterp(0), MixType(SNBCK_OVERLAP_OPTICALLY_THIN),
             EvalType(SNBCK_EVAL_ONLINE), index(NULL),
             band_index(NULL), quad_index(NULL), k(NULL) {}
@@ -420,6 +422,7 @@ public:
       iCO(NULL), iCO2(NULL), iH2O(NULL), iMix(NULL),
       Tn(NULL), k_CO(NULL), k_CO2(NULL), k_H2O(NULL), 
       k2_CO(NULL), k2_CO2(NULL), k2_H2O(NULL), dT(ZERO),
+      Tmax(ZERO), Tmin(ZERO),
       Ninterp(0), MixType(SNBCK_OVERLAP_OPTICALLY_THIN),
       EvalType(SNBCK_EVAL_ONLINE), index(NULL),
       band_index(NULL), quad_index(NULL), k(NULL) 
@@ -478,6 +481,15 @@ public:
 			   const double xco2,     // mole fraction oh CO2
 			   const double o2,       // mole fraction oh O2
 			   const double xsoot );  // volume fraction oh soot 
+
+  // calculate the planck mean absorbsion coefficient based on the optically thin approximation
+  double PlanckMean( const double p,        // pressure [atm]
+		     const double T,        // temperature [K]
+		     const double xco,      // mole fraction oh CO
+		     const double xh2o,     // mole fraction oh H2O
+		     const double xco2,     // mole fraction oh CO2
+		     const double o2,       // mole fraction oh O2
+		     const double xsoot );  // volume fraction oh soot 
 
 private:
 

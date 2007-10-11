@@ -180,31 +180,6 @@ Temperature=
 ##################################
 Radiation=
 Optically_Thin
-#########################
-# SNBCK params
-#########################
-Evaluation_Type =
-Precalculated
-Quadrature_Type =
-Gauss_Legendre
-Number_of_Quad_Points =
-1
-Number_of_Lumped_Bands =
-1
-Optimized_Lumping =
-OFF
-Number_of_Interpolation_Points =
-16
-p_ref =
-1.0
-xco_ref =
-0.0
-xh2o_ref =
-0.2
-xco2_ref =
-0.1
-xo2_ref =
-0.0
 #################################
 # Execute program
 #################################
