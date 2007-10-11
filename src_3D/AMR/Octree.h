@@ -1308,11 +1308,13 @@ inline void Octree_DataStructure::allocate(const int ni,
                                            const int nk, 
                                            const int ncpu, 
                                            const int nblk) {
-   int i, j,k ; 
+   int i, j, k, ntotblks ; 
    assert( ni > 0 && nj > 0 && nk > 0 && ncpu > 0 && nblk > 0 );
    NRi = ni; NRj = nj; NRk = nk; Ncpu = ncpu; Nblk = nblk;
+   ntotblks = NRi*NRj*NRk;
+               
    Roots = new OctreeBlock**[NRi];
-   Rootblks = new OctreeBlock[NRi*NRj*NRk];
+   Rootblks = new OctreeBlock[ntotblks];
    for ( i = 0; i <= NRi-1 ; ++i ) {
      Roots[i] = new OctreeBlock*[NRj];
      for ( j = 0; j <= NRj-1 ; ++j ) Roots[i][j] = new OctreeBlock[NRk];

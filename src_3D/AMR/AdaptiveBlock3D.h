@@ -406,12 +406,14 @@ class AdaptiveBlock3D_Info{
     /* Creation, copy, and assignment constructors. */
     AdaptiveBlock3D_Info(void) {
        cpu = 0; blknum = 0; dimen.i = 0; dimen.j = 0; dimen.k = 0; dimen.ghost = 0; 
-       sector = ADAPTIVEBLOCK3D_SECTOR_NONE; level = 0;
+       sector = ADAPTIVEBLOCK3D_SECTOR_NONE; level = 0; 
     }
 
     AdaptiveBlock3D_Info(const AdaptiveBlock3D_Info &Blk_Info) {
        cpu = Blk_Info.cpu; blknum = Blk_Info.blknum;
        dimen = Blk_Info.dimen; sector = Blk_Info.sector; level = Blk_Info.level;
+       blkorient = Blk_Info.blkorient;
+       
     }
 
     AdaptiveBlock3D_Info(const int i_processor,
@@ -421,10 +423,12 @@ class AdaptiveBlock3D_Info{
  			 const int k_dimen,
                          const int ghost_dimen,
                          const int i_sector,
-	                 const int i_level) {
+	                 const int i_level,
+                         const Block_Orientation_Info i_blkorient) {
        cpu = i_processor; blknum = i_block;
        dimen.i = i_dimen; dimen.j = j_dimen;dimen.k = k_dimen;  dimen.ghost = ghost_dimen;
-       sector = i_sector; level = i_level;
+       sector = i_sector; level = i_level; blkorient = i_blkorient;
+       
     }
 
     /* Destructor. */
@@ -458,6 +462,7 @@ inline void AdaptiveBlock3D_Info::reset(void) {
   dimen.i = 0; dimen.j = 0; dimen.k = 0; dimen.ghost = 0; 
   sector = ADAPTIVEBLOCK3D_SECTOR_NONE;
   level = 0;
+  
 }
 
 /*************************************************************
@@ -469,6 +474,8 @@ inline ostream &operator << (ostream &out_file,
            << " " << Blk_Info.blknum << Blk_Info.dimen 
            << " " << Blk_Info.sector
            << " " << Blk_Info.level;
+  out_file << " " << Blk_Info.blkorient;
+  
   return (out_file);
 }
 
@@ -481,6 +488,8 @@ inline istream &operator >> (istream &in_file,
   in_file.setf(ios::skipws);
   in_file >> Blk_Info.sector >> Blk_Info.level;
   in_file.unsetf(ios::skipws);
+  in_file.setf(ios::skipws);
+  in_file >> Blk_Info.blkorient;
   return (in_file);
 }
 
