@@ -396,6 +396,10 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid(Grid3D_Input_Parameters &Input) {
         break;
     } /* endswitch */
 
+    // call the function Find_Neighbours to obtain the neighbour block information
+    // and assign values to Connectivity. 
+    Find_Neighbours(Input);
+
 }
 
 /********************************************************

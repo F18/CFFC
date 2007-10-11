@@ -255,7 +255,7 @@ class Grid3D_Hexa_Multi_Block{
           break;
       } /* endswitch */
 
-    // call function find_neighbours(void) to assign the 
+    
     } 
    
     /* Destructor. */
