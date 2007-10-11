@@ -3,6 +3,9 @@
 #include "FANS3DThermallyPerfectHexaBlock.h"
 #endif // _FANS3D_THERMALLYPERFECT_HEXA_BLOCK_INCLUDED
 
+#ifndef _BLUFFBODY_DATABASE_INCLUDED
+#include "../CaseInitializations/BluffBodyBurner.h"
+#endif // _BLUFFBODY_DATABASE_INCLUDE
 /********************************************************
  * Routine: CFL                                         *
  *                                                      *
@@ -991,10 +994,22 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
    
    double dpdx, dpdy, dpdz, delta_pres_x, delta_pres_y, delta_pres_z ;
    double zd, zz, di, Um;
+   double Rprime, yprime, xn, yn, fc, tempvalue;
+   Vector2D Xt;
+   ReactiveScalarField_Fuel_CH4H2 RSF;
+   NonreactiveScalarField NRSF;
+   double tc[10], max_mean_velocity, 
+      BluffBody_Coflow_Air_Velocity, 
+      BluffBody_Coflow_Fuel_Velocity ;
+   
+   int BluffBody_Data_Usage = 1;
    
    Flow_Type = IPs.i_Flow_Type;
    
    FANS3D_ThermallyPerfect_KOmega_pState Wl, Wr;
+
+   BluffBody_Coflow_Air_Velocity = 125;
+   BluffBody_Coflow_Fuel_Velocity = 25;
    
    switch(i_ICtype) {
       
@@ -1192,6 +1207,319 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
       }
 
       break; 
+
+   case  IC_TURBULENT_COFLOW:
+  
+      max_mean_velocity = BluffBody_Coflow_Air_Velocity;
+      
+      for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) 
+         for (  j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) 
+            for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+               // Apply uniform solution state
+               W[i][j][k] = IPs.Wo;
+               W[i][j][k].v.z= BluffBody_Coflow_Air_Velocity;
+               W[i][j][k].v.x = ZERO;
+               W[i][j][k].v.y = ZERO;
+               
+       
+               W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300.0);
+               tempvalue = W[i][j][k].v.z*(HALF*(IPs.Grid_IP.Radius_Coflow_Inlet_Pipe-IPs.Grid_IP.Radius_Bluff_Body))/
+                  (W[i][j][k].mu()/W[i][j][k].rho);
+               WallData[i][j][k].tauw = 0.0228*W[i][j][k].rho*max_mean_velocity*max_mean_velocity/pow(tempvalue, 0.25);
+               WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
+               W[i][j][k].k = 0.5*WallData[i][j][k].utau*WallData[i][j][k].utau/sqrt(W[0][0][0].k_omega_model.beta_star);
+               
+               WallData[i][j][k].yplus = WallData[i][j][k].ywall*WallData[i][j][k].utau/(W[i][j][k].mu()/W[i][j][k].rho);
+               if(WallData[i][j][k].ywall !=ZERO){
+                  if(WallData[i][j][k].yplus<=W[0][0][0].k_omega_model.y_sublayer){
+                     W[i][j][k].omega = 6.0*(W[i][j][k].mu()/W[i][j][k].rho)
+                        /(W[0][0][0].k_omega_model.beta*WallData[i][j][k].ywall*WallData[i][j][k].ywall);
+                  }
+                  else{
+                     W[i][j][k].omega = sqrt(W[i][j][k].k)/
+                        (pow(W[0][0][0].k_omega_model.beta_star, 0.25)*W[0][0][0].k_omega_model.Karman_const*WallData[i][j][k].ywall);
+                  }
+               }
+   
+               if(IPs.Species_IP.num_species == 2){// This is the velocity field evaluation case, but the "fuel" is also air. 
+                  //  i.e. the working fluid is air. The experimental data is available for it.
+                  //             Can be used to initalize nonreacting flow field.
+                  
+                  xn = Grid.Cell[i][j][k].Xc.z;
+                  yn = Grid.Cell[i][j][k].Xc.x;
+                  xn =xn/(TWO*IPs.Grid_IP.Radius_Bluff_Body);
+                  yn = yn/(IPs.Grid_IP.Radius_Bluff_Body);
+                  Xt.x = xn;
+                  Xt.y = yn;
+                  
+                  //  // Specifying the velocity profiles in the annular pipe (coflowing air and jet)
+                  if((fabs(Grid.Cell[i][j][k].Xc.x)>IPs.Grid_IP.Radius_Bluff_Body) && 
+                     (fabs(Grid.Cell[i][j][k].Xc.x)<IPs.Grid_IP.Radius_Coflow_Inlet_Pipe)){
+                     if(Grid.Cell[i][j][k].Xc.z <= 0.0){
+                        Rprime = (IPs.Grid_IP.Radius_Coflow_Inlet_Pipe - IPs.Grid_IP.Radius_Bluff_Body)/2.0;
+                        if(fabs(Grid.Cell[i][j][k].Xc.x)<=(IPs.Grid_IP.Radius_Bluff_Body+ Rprime)){
+                           yprime = fabs(Grid.Cell[i][j][k].Xc.x) -  IPs.Grid_IP.Radius_Bluff_Body;
+                           W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity*pow((yprime/Rprime), 0.143);
+                        }else{
+                           yprime = fabs(Grid.Cell[i][j][k].Xc.x) -  IPs.Grid_IP.Radius_Bluff_Body- Rprime;
+                           W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity*pow((1.0- fabs(yprime)/Rprime), 0.143);
+                        }
+                     }else{
+                        W[i][j][k].v.z =   BluffBody_Coflow_Air_Velocity;
+                     }
+                  }//coflowing air "power law" profile at the very begining of coflow inlet
+                  
+                  if(Grid.Cell[i][j][k].Xc.x<=IPs.Grid_IP.Radius_Fuel_Line){
+                     max_mean_velocity = BluffBody_Coflow_Fuel_Velocity;
+                     // Fluid flow Sabersky, Acosta and Hauptmann P261
+                     
+                     W[i][j][k].v.z=max_mean_velocity*pow((1.0- fabs(Grid.Cell[i][j][k].Xc.x)/IPs.Grid_IP.Radius_Fuel_Line), 0.143);
+                     tempvalue = max_mean_velocity*IPs.Grid_IP.Radius_Fuel_Line/(W[i][j][k].mu()/W[i][j][k].rho);
+                     WallData[i][j][k].tauw = 0.0228*W[i][j][k].rho*max_mean_velocity*max_mean_velocity/pow(tempvalue, 0.25);
+                     WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
+                     W[i][j][k].k = 0.5*WallData[i][j][k].utau*WallData[i][j][k].utau/sqrt(W[0][0][0].k_omega_model.beta_star);
+                     WallData[i][j][k].yplus = WallData[i][j][k].ywall *WallData[i][j][k].utau/(W[i][j][k].mu()/W[i][j][k].rho);
+                     if (WallData[i][j][k].ywall !=ZERO) {
+                        if(WallData[i][j][k].yplus<=W[0][0][0].k_omega_model.y_sublayer){
+                           W[i][j][k].omega =  6.0*(W[i][j][k].mu()/W[i][j][k].rho)/(W[0][0][0].k_omega_model.beta*WallData[i][j][k].ywall*WallData[i][j][k].ywall);
+                        } else{
+                           W[i][j][k].omega = sqrt(W[i][j][k].k)/
+                              (pow(W[0][0][0].k_omega_model.beta_star, 0.25)*W[0][0][0].k_omega_model.Karman_const*WallData[i][j][k].ywall);
+                        }
+                        
+                     }
+                  }
+               }
+            
+               
+               if(IPs.Species_IP.num_species == 3){ 
+                  if(!BluffBody_Data_Usage){
+
+                     if(fabs(Grid.Cell[i][j][k].Xc.x)<=IPs.Grid_IP.Radius_Fuel_Line && 
+                        Grid.Cell[i][j][k].Xc.z>=0 && Grid.Cell[i][j][k].Xc.z/IPs.Grid_IP.Radius_Bluff_Body<=ONE){
+                        
+                        W[i][j][k].spec[0] = ONE; //CH4
+                        W[i][j][k].spec[1] = ZERO;//O2
+                        W[i][j][k].spec[IPs.Wo.ns-1] = ZERO; //N2
+                        
+                     }
+                     
+                  }// specifying the methane concentration at fuel orifice
+               
+                  // This is nonreacting multispecies mixing evaluation case
+                  // the fuel is indicated in the input file
+                  // The experimental data is available. 
+                  if(BluffBody_Data_Usage){
+                     xn = Grid.Cell[i][j][k].Xc.z;
+                     yn = fabs(Grid.Cell[i][j][k].Xc.x);
+                     Xt.x = xn*1000;
+                     Xt.y = yn*1000; // note: times 100 to convert data from m to mm. 
+                  
+                     if((fabs(Xt.x)<=IPs.Grid_IP.Radius_Bluff_Body*1000)){
+                        fc = NRSF.interpolation(Xt).x;
+                        W[i][j][k].spec[0] = fc; 
+                        // coefficient 1.1 is to "recalibrate" the initial field to be close to the reality.
+                        W[i][j][k].spec[1] = (ONE - fc)*0.235;
+                        W[i][j][k].spec[2] = (ONE - fc)*0.765;
+                        
+                        // In initial condition the sum of total species should not be less than a certain very small number,
+                        //   otherwise the program gives error message such as "temperature out of range". 
+                        
+                     }
+                   
+
+                  }
+               }
+               
+            
+               W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300.0);
+               U[i][j][k] = W[i][j][k].U();
+            
+         
+            }
+         
+      break;
+
+   case IC_TURBULENT_DIFFUSION_FLAME :  
+      
+      for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) 
+         for (  j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) 
+            for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+               
+               // Apply uniform solution state
+               W[i][j][k] = IPs.Wo;
+               W[i][j][k].v.z= BluffBody_Coflow_Air_Velocity;
+               W[i][j][k].v.y = ZERO;
+               W[i][j][k].v.x = ZERO;
+               W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300.0);
+          
+               tempvalue = BluffBody_Coflow_Air_Velocity*(HALF*(IPs.Grid_IP.Radius_Coflow_Inlet_Pipe-IPs.Grid_IP.Radius_Bluff_Body))
+                  /(W[i][j][k].mu()/W[i][j][k].rho);
+               WallData[i][j][k].tauw = 0.0228*W[i][j][k].rho*pow(BluffBody_Coflow_Air_Velocity, 2.0)/pow(tempvalue, 0.25);
+               WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
+               
+               W[i][j][k].k =WallData[i][j][k].utau*WallData[i][j][k].utau/sqrt(W[0][0][0].k_omega_model.beta_star);
+               
+               WallData[i][j][k].yplus = WallData[i][j][k].ywall *WallData[i][j][k].utau/(W[i][j][k].mu()/W[i][j][k].rho);
+               if (WallData[i][j][k].ywall !=ZERO) {
+                  if (WallData[i][j][k].yplus<= W[0][0][0].k_omega_model.y_sublayer){
+                     W[i][j][k].omega = 6.0*(W[i][j][k].mu()/W[i][j][k].rho)
+                        /(W[0][0][0].k_omega_model.beta*WallData[i][j][k].ywall*WallData[i][j][k].ywall);
+                  } else {
+                     W[i][j][k].omega = 10.0*sqrt(W[i][j][k].k)/
+                        (pow(W[0][0][0].k_omega_model.beta_star, 0.25)*W[0][0][0].k_omega_model.Karman_const*WallData[i][j][k].ywall);
+                  }
+               }
+                        // Specifying the velocity profiles in the annular pipe (coflowing air and jet)
+               if((fabs(Grid.Cell[i][j][k].Xc.x)>IPs.Grid_IP.Radius_Bluff_Body) && 
+                  (fabs(Grid.Cell[i][j][k].Xc.x)<IPs.Grid_IP.Radius_Coflow_Inlet_Pipe)){
+                  if(Grid.Cell[i][j][k].Xc.z<= 0.0){// coflowing air inlet pipe
+                     Rprime = (IPs.Grid_IP.Radius_Coflow_Inlet_Pipe - IPs.Grid_IP.Radius_Bluff_Body)/2.0;
+                     if(fabs(Grid.Cell[i][j][k].Xc.x)<=(IPs.Grid_IP.Radius_Bluff_Body+ Rprime)){
+                        yprime = fabs(Grid.Cell[i][j][k].Xc.x) -  IPs.Grid_IP.Radius_Bluff_Body;
+                        W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity*pow((yprime/Rprime), 0.143);
+                        
+                     }else{
+                        yprime = fabs(Grid.Cell[i][j][k].Xc.x) -  IPs.Grid_IP.Radius_Bluff_Body- Rprime;
+                        W[i][j][k].v.z = BluffBody_Coflow_Air_Velocity*pow((1.0- fabs(yprime)/Rprime), 0.143);
+                     }
+                  }else{
+                     W[i][j][k].v.z = BluffBody_Coflow_Air_Velocity;
+                  }
+               }//coflowing air "power law" profile at the very begining of coflow inlet
+               
+               if(BluffBody_Data_Usage){
+                  xn = Grid.Cell[i][j][k].Xc.z - IPs.Grid_IP.Length_Coflow_Inlet_Pipe;
+                  yn = fabs(Grid.Cell[i][j][k].Xc.x);
+                  
+                  Xt.x = xn/(TWO*IPs.Grid_IP.Radius_Bluff_Body);
+                  Xt.y = yn*1000; //note: times 100 to convert data from m to mm. 
+                  if(( Xt.x>ZERO) &&(yn<=(IPs.Grid_IP.Radius_Bluff_Body))){
+                    //  if( IPs.Wo.React.reactset_flag == CH4H2_2STEP){
+//                         RSF.interpolation(Xt,tc).x;
+//                         //ch4, co2 ....   
+//                         W[i][j][k].spec[1] = tc[1]/100.0; //O2
+//                         W[i][j][k].spec[2] = tc[6]/100; //CO2
+//                         W[i][j][k].spec[3] = tc[4]/100.0; //H2O
+//                         W[i][j][k].spec[4] = tc[5]/100.0; //CO
+//                         W[i][j][k].spec[5] = tc[3]/100.0; //H2
+//                         W[i][j][k].spec[6] = tc[8]/100.0; //OH
+//                         W[i][j][k].spec[ IPs.Wo.ns-1] = ONE-(tc[1]+tc[6]+tc[5]+tc[3]+tc[8])/100.0;
+//                         W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*tc[0]);
+//                        
+//                     }// mass fraction distribution for CH4/H2 Masri-bluff body burner
+                     if( IPs.Wo.React.reactset_flag == CH4_2STEP){
+                        //(Initialze the mixture field with CH4/H2 case to see how solution evolves for CH4 case)
+                        // There is only two axial and radial location experimental data availabe for CH4 fuel. 
+                        RSF.interpolation(Xt,tc).x;
+                        //ch4, co2 ....   
+                        W[i][j][k].spec[1] = 0.3*tc[1]/100.0; //O2
+                        W[i][j][k].spec[2] = 0.3*tc[6]/100;//CO2
+                        W[i][j][k].spec[3] = 0.3*tc[4]/100.0; //H2O
+                        W[i][j][k].spec[4] = 0.3*tc[5]/100.0; //CO
+                        // W[i][j][k].spec[Wo.ns-1] = tc[2]/100.0; //N2
+                        W[i][j][k].spec[ IPs.Wo.ns-1] = ONE-0.3*(tc[1]+tc[6]+tc[4]+tc[5])/100.0;
+                        W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*tc[0]);
+                     }
+                     
+                  }// mass fraction distribution for CH4 Masri-bluff body burner
+               }
+               
+               // ------------------------------------------------------------------------------------------------------
+               if(fabs(Grid.Cell[i][j][k].Xc.x)<=IPs.Grid_IP.Radius_Fuel_Line){
+                 
+                  // Fluid flow Sabersky, Acosta and Hauptmann P261
+                  tempvalue =  BluffBody_Coflow_Fuel_Velocity*IPs.Grid_IP.Radius_Fuel_Line/(W[i][j][k].mu()/W[i][j][k].rho);
+                  WallData[i][j][k].tauw = 0.0228*W[i][j][k].rho* BluffBody_Coflow_Fuel_Velocity* BluffBody_Coflow_Fuel_Velocity/pow(tempvalue, 0.25);
+                  WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
+                  
+                  if((fabs(Grid.Cell[i][j][k].Xc.z)/IPs.Grid_IP.Radius_Bluff_Body)<=ONE){
+                     
+                     W[i][j][k].v.z= BluffBody_Coflow_Fuel_Velocity*pow((1.0- fabs(Grid.Cell[i][j][k].Xc.z)/IPs.Grid_IP.Radius_Fuel_Line), 0.143);
+                     tempvalue = BluffBody_Coflow_Fuel_Velocity*IPs.Grid_IP.Radius_Fuel_Line/(W[i][j][k].mu()/W[i][j][k].rho);
+                     WallData[i][j][k].tauw = 0.0228*W[i][j][k].rho*pow(BluffBody_Coflow_Fuel_Velocity,2.0)/pow(tempvalue,0.25);
+                     WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
+                     W[i][j][k].k = pow(WallData[i][j][k].utau,2.0)/sqrt(W[0][0][0].k_omega_model.beta_star);
+                     WallData[i][j][k].yplus = WallData[i][j][k].ywall *WallData[i][j][k].utau/(W[i][j][k].mu()/W[i][j][k].rho);
+                     if(WallData[i][j][k].ywall !=ZERO){
+                        if(WallData[i][j][k].yplus<=W[0][0][0].k_omega_model.y_sublayer){
+                           W[i][j][k].omega = 6.0*(W[i][j][k].mu()/W[i][j][k].rho)/(W[0][0][0].k_omega_model.beta*pow(WallData[i][j][k].ywall,2.0));
+                        }
+                        else{ W[i][j][k].omega = 10.0*sqrt(W[i][j][k].k)/
+                                 (pow(W[0][0][0].k_omega_model.beta_star, 0.25)*W[0][0][0].k_omega_model.Karman_const*WallData[i][j][k].ywall);
+                        }
+                     }
+                     
+                  }
+                  if(!BluffBody_Data_Usage){
+                     if( (fabs(Grid.Cell[i][j][k].Xc.z)/IPs.Grid_IP.Radius_Bluff_Body<=ONE) ){ //all the way ch4 stream 
+                        if( IPs.Wo.React.reactset_flag == CH4_1STEP){
+                           double profile = ONE*pow((1.0-abs(Grid.Cell[i][j][k].Xc.x)/IPs.Grid_IP.Radius_Fuel_Line), 0.143);
+                           W[i][j][k].spec[0] = profile;
+                           W[i][j][k].spec[1] = (ONE-profile)*0.235;
+                           //ch4, co2 ....   
+                           //W[i][j][k].spec[0] = ONE; //CH4
+                           //W[i][j][k].spec[1] = ZERO;//0.2232; //O2
+                           W[i][j][k].spec[2] = ZERO; //CO2
+                           W[i][j][k].spec[3] = ZERO ; //H2O
+                           W[i][j][k].spec[ IPs.Wo.ns-1] =(ONE-profile)*0.765;//N2
+                           W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300);
+                        }// mass fraction distribution for CH4 bluff body burner at the fuel inlet
+                        
+                        if( IPs.Wo.React.reactset_flag == CH4_2STEP){
+                           //ch4, co2 ....   
+                           W[i][j][k].spec[0] = 0.993; //CH4
+                           W[i][j][k].spec[1] = ZERO;//0.2232; //O2
+                           W[i][j][k].spec[2] = ZERO; //CO2
+                           W[i][j][k].spec[3] = ZERO ; //H2O
+                           W[i][j][k].spec[4] = 0.007; //CO(in order to start burn "EDM")
+                           W[i][j][k].spec[ IPs.Wo.ns-1] = ZERO; //0.7266; //N2
+                           W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300);
+                        }// mass fraction distribution for CH4 bluff body burner at the fuel inlet
+                        // assume inlet temperature is 700K equivalence ratio set up  (test only)  */
+                       //  if( IPs.Wo.React.reactset_flag == CH4H2_2STEP){
+//                            //ch4, co2 ....   
+//                            W[i][j][k].spec[0] = 0.8884;//0.0446;//8884; //CH4
+//                            W[i][j][k].spec[1] = ZERO;//0.2232; //O2
+//                            W[i][j][k].spec[2] = ZERO; //CO2
+//                            W[i][j][k].spec[2] = ZERO; //CO2
+//                            W[i][j][k].spec[3] = ZERO;//H2O
+//                            W[i][j][k].spec[4] = ZERO;//CO 
+//                            W[i][j][k].spec[5] = 0.1116;//H2
+//                            W[i][j][k].spec[6] = ZERO; //OH
+//                            W[i][j][k].spec[IPs.Wo.ns-1] = ZERO;//0.7266; //N2
+//                            W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300);
+//                         }// mass fraction distribution for CH4/H2 Masri-bluff body burner at the fuel inlet
+//                         // assume inlet temperature is still 700K/* equivalence ratio set up  (test only)  */
+                        
+                     }else{
+                        if( IPs.Wo.React.reactset_flag == CH4_1STEP){
+                           double profile = 0.00001;
+                           W[i][j][k].spec[0] = profile;
+                           W[i][j][k].spec[1] = (ONE-profile)*0.235;
+                           //ch4, co2 ....   
+                           //W[i][j][k].spec[0] = ONE; //CH4
+                           //W[i][j][k].spec[1] = ZERO;//0.2232; //O2
+                           W[i][j][k].spec[2] = ZERO; //CO2
+                           W[i][j][k].spec[3] = ZERO ; //H2O
+                           W[i][j][k].spec[IPs.Wo.ns-1] =(ONE-profile)*0.765;//N2
+                           W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300);
+                        }// mass fraction distribution for CH4 bluff body burner at the fuel inlet
+                        
+                     }
+                     
+                  }
+               }
+            
+      
+      
+               U[i][j][k]   = W[i][j][k].U();
+
+      
+   }
+      
+      
+   break;
       
    } //end of switch
    

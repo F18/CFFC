@@ -192,9 +192,19 @@ int HexaSolver(char *Input_File_Name_ptr,
    } /* endif */
 
    if (Input.i_ICs == IC_RESTART) {
+
+      error_flag = Wall_Distance(Local_Solution_Blocks.Soln_Blks,
+                                 Octree, 
+                                 Local_Adaptive_Block_List);
+      if (error_flag) {
+         cout << "\n  ERROR: Difficulty determining the wall distance "
+              << "on processor "<< CFFC_MPI::This_Processor_Number
+              << ".\n";
+         cout.flush();
+      } /* endif */
       if (!batch_flag){ 
-          cout << "\n Reading solution from restart data files."; 
-          cout.flush();
+         cout << "\n Reading solution from restart data files."; 
+         cout.flush();
       }
       //error_flag = Read_Octree(Octree,
       //			 Input);

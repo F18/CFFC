@@ -41,7 +41,7 @@ NASADATA_DIR = $(PHYSICS_DIR)NASAData/
 REACTIONS_DIR = Reactions/
 SYSTEM_DIR = System/
 TURBULENCE_DIR = TurbulenceModelling/
-
+CASEINIT_DIR = CaseInitializations/
 #
 # Set default f90 module directory
 MODULE_DIR = F90_Modules
@@ -80,13 +80,14 @@ SRC_GRID = $(GRID_DIR)Cell2D.cc \
            $(GRID_DIR)Grid3DHexaMultiBlock.cc
 SRC_ICEM = $(ICEM_DIR)ICEMCFD.cc \
 	   $(ICEM_DIR)ICEMCFD_ctype.c
-
+SRC_INIT = $(CASEINIT_DIR)BluffBodyBurner.cc 	
 # AMR:
 ifeq ($(MPI_VERSION),NoMPI)
   SRC_AMR = $(AMR_DIR)AMRInput.cc \
             $(AMR_DIR)AdaptiveBlock3D.cc \
 	    $(AMR_DIR)AdaptiveBlock3D_NoMPI.cc \
-            $(AMR_DIR)Octree.cc
+            $(AMR_DIR)Octree.cc \
+            $(AMR_DIR)BlockOrientationInfo.cc		
 else
   SRC_AMR = $(AMR_DIR)AMRInput.cc \
             $(AMR_DIR)AdaptiveBlock3D.cc \
@@ -139,7 +140,7 @@ SRC_SYSTEM = $(SYSTEM_DIR)System_Linux.cc
 # Base and CFFC sources:
 SRC_BASE = $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_SYSTEM) \
            $(SRC_AMR) $(SRC_GRID) $(SRC_ICEM) \
-           $(SRC_MULTIGRID) $(SRC_NKS)
+           $(SRC_MULTIGRID) $(SRC_NKS) $(SRC_INIT)
 ifeq ($(TUT_TESTING),ON) 
   SRC_BASE += $(SRC_TUT)
 endif
@@ -185,13 +186,14 @@ OBJ_GRID = $(GRID_DIR)Cell2D.o \
            $(GRID_DIR)Grid3DHexaMultiBlock.o
 OBJ_ICEM = $(ICEM_DIR)ICEMCFD.o \
 	   $(ICEM_DIR)ICEMCFD_ctype.o
-
+OBJ_INIT = $(CASEINIT_DIR)BluffBodyBurner.o 
 # AMR:
 ifeq ($(MPI_VERSION),NoMPI)
   OBJ_AMR = $(AMR_DIR)AMRInput.o \
             $(AMR_DIR)AdaptiveBlock3D.o \
 	    $(AMR_DIR)AdaptiveBlock3D_NoMPI.o \
-            $(AMR_DIR)Octree.o
+            $(AMR_DIR)Octree.o \
+            $(AMR_DIR)BlockOrientationInfo.o		
 else
   OBJ_AMR = $(AMR_DIR)AMRInput.o \
             $(AMR_DIR)AdaptiveBlock3D.o \
@@ -239,7 +241,7 @@ OBJ_SYSTEM = $(SYSTEM_DIR)System_Linux.o
 
 # Base and CFFC objects:
 OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_SYSTEM) \
-           $(OBJ_AMR) $(OBJ_GRID) $(OBJ_ICEM) \
+           $(OBJ_AMR) $(OBJ_GRID) $(OBJ_ICEM) $(OBJ_INIT) \
            $(OBJ_MULTIGRID) $(OBJ_NKS)
 ifeq ($(TUT_TESTING),ON)
   OBJ_BASE += $(OBJ_TUT)
@@ -491,6 +493,7 @@ clean:
 	rm -f $(CFD_DIR)*.o $(CFD_DIR)*.il $(CFD_DIR)*~
 	rm -f $(MPI_DIR)*.o $(MPI_DIR)*.il $(MPI_DIR)*~
 	rm -f $(GRID_DIR)*.o $(GRID_DIR)*.il $(GRID_DIR)*~
+	rm -f $(CASEINIT_DIR)*.o $(CASEINIT_DIR)*.il $(CASEINIT_DIR)*~	
 	rm -f $(ICEM_DIR)*.o $(ICEM_DIR)*.il $(ICEM_DIR)*~ $(ICEM_DIR)*.depend $(ICEM_DIR)*.bak
 	rm -f $(AMR_DIR)*.o $(AMR_DIR)*.il $(AMR_DIR)*~
 	rm -f $(EULER_DIR)*.o $(EULER_DIR)*.il $(EULER_DIR)*~ $(EULER_DIR)*.depend $(EULER_DIR)*.bak

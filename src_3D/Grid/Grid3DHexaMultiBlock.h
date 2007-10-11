@@ -254,6 +254,8 @@ class Grid3D_Hexa_Multi_Block{
           Create_Grid_Cube(Input);
           break;
       } /* endswitch */
+
+    // call function find_neighbours(void) to assign the 
     } 
    
     /* Destructor. */

@@ -99,9 +99,7 @@ int Block_Orientation_Info::convert_boundary_elements_from_ijk_to_orientations(
 void  Block_Orientation_Info::my_index(int &i_index, int &j_index,  int &k_index){
    
    CoordTransform transformationMatrix(ctm_offsets); 
-   
-   transformationMatrix.transpose();
-   
+   transformationMatrix.reverse();
    transformationMatrix.transform(i_index, j_index, k_index);
    
    
@@ -115,10 +113,9 @@ void Block_Orientation_Info::neighbour_index(
      
 }
 
-
-
-
-int Block_Orientation_Info::compute_message_tag(const int i_index, const int j_index,  const int k_index){
+int Block_Orientation_Info::compute_message_tag(const int i_index, 
+                                                const int j_index,  
+                                                const int k_index){
    
    int tag = 0;
    return  tag = (i_index+1)*9 + (j_index+1)*3 + (k_index+1) +1 ;
