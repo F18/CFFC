@@ -17,6 +17,38 @@ Freeze_Limiter_Residual_Level =
 # 1 rho, 4 energy (follows index operator for pstate)
 Residual_Variable =
 1
+############################
+# NKS PARAMETERS
+############################
+#----------- GMRES -------------
+GMRES_Overlap =
+0
+GMRES_Initial_Tolerance =
+2.0e-02
+GMRES_Final_Tolerance =
+2.0e-02
+GMRES_Block_Preconditioner = 
+ILUK
+#( ILUK, Diagonal)
+GMRES_ILUK_Level_of_Fill = 
+4
+GMRES_Normalization=
+ON
+GMRES_Check=
+ON
+#---------- NK -----------------
+NKS_Overall_Tolerance =
+1.0e-12
+# Implict Euler Startup
+NKS_Finite_Time_Step =
+ON
+NKS_Finite_Time_Step_Initial_CFL =
+10.0
+NKS_Finite_Time_Step_Max_CFL =
+1000.0
+#---------- Precon ------------
+Jacobian_Order =
+Second_Order_Diamond_Path_with_Roe
 ##############################
 #
 ##############################
@@ -66,8 +98,15 @@ Number_of_Blocks_Jdir=
 # Set time stepping parameters
 ###############################
 CFL_Number=
-0.5
+0.75
 Maximum_Number_of_Time_Steps=
+50
+####### Implicit ###############
+Maximum_Number_of_NKS_Iterations =
+50
+Maximum_Number_of_GMRES_Iterations=
+100
+GMRES_Restart =
 100
 ##############################
 Output_File_Name= 
@@ -80,9 +119,9 @@ Restart_Solution_Save_Frequency=
 Transport_Data_Type=
 Transport-Lennard-Jones
 Cantera_Reaction_Mechanism=
-gri30
+gri30_noNOX
 Mechanism_File=
-../../..//data/CANTERA_RXNS/gri30.xml
+../../../data/CANTERA_RXNS/gri30_noNOX.xml
 Schmidt_Numbers=
 CH4:0.73 O2:0.8 H2O:0.66
 Mass_Fractions=
