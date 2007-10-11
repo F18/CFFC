@@ -1,20 +1,18 @@
 #
-# Generated from file grimech30.dat
-# by ck2cti on Thu Oct 11 16:00:20 2007
+# Generated from file grimech30_noNOX.dat
+# by ck2cti on Thu Oct 11 16:10:50 2007
 #
 # Transport data from file transport.dat.
 
 units(length = "cm", time = "s", quantity = "mol", act_energy = "cal/mol")
 
 
-ideal_gas(name = "gri30",
+ideal_gas(name = "gri30_noNOX",
       elements = " O  H  C  N  Ar ",
       species = """ H2  H  O  O2  OH  H2O  HO2  H2O2  C  CH 
                    CH2  CH2(S)  CH3  CH4  CO  CO2  HCO  CH2O  CH2OH  CH3O 
                    CH3OH  C2H  C2H2  C2H3  C2H4  C2H5  C2H6  HCCO  CH2CO  HCCOH 
-                   N  NH  NH2  NH3  NNH  NO  NO2  N2O  HNO  CN 
-                   HCN  H2CN  HCNN  HCNO  HOCN  HNCO  NCO  AR  C3H7 
-                   C3H8  CH2CHO  CH3CHO  N2 """,
+                   AR  C3H7  C3H8  CH2CHO  CH3CHO  N2 """,
       reactions = "all",
       transport = "Mix",
       initial_state = state(temperature = 300.0,
@@ -563,314 +561,6 @@ species(name = "HCCOH",
                      well_depth =   436.00,
                      rot_relax =     2.00),
     note = "SRI91"
-       )
-
-species(name = "N",
-    atoms = " N:1 ",
-    thermo = (
-       NASA( [  200.00,  1000.00], [  2.500000000E+00,   0.000000000E+00, 
-                0.000000000E+00,   0.000000000E+00,   0.000000000E+00,
-                5.610463700E+04,   4.193908700E+00] ),
-       NASA( [ 1000.00,  6000.00], [  2.415942900E+00,   1.748906500E-04, 
-               -1.190236900E-07,   3.022624500E-11,  -2.036098200E-15,
-                5.613377300E+04,   4.649609600E+00] )
-             ),
-    transport = gas_transport(
-                     geom = "atom",
-                     diam =     3.30,
-                     well_depth =    71.40),
-    note = "L 6/88"
-       )
-
-species(name = "NH",
-    atoms = " N:1  H:1 ",
-    thermo = (
-       NASA( [  200.00,  1000.00], [  3.492908500E+00,   3.117919800E-04, 
-               -1.489048400E-06,   2.481644200E-09,  -1.035696700E-12,
-                4.188062900E+04,   1.848327800E+00] ),
-       NASA( [ 1000.00,  6000.00], [  2.783692800E+00,   1.329843000E-03, 
-               -4.247804700E-07,   7.834850100E-11,  -5.504447000E-15,
-                4.212084800E+04,   5.740779900E+00] )
-             ),
-    transport = gas_transport(
-                     geom = "linear",
-                     diam =     2.65,
-                     well_depth =    80.00,
-                     rot_relax =     4.00),
-    note = "And94"
-       )
-
-species(name = "NH2",
-    atoms = " N:1  H:2 ",
-    thermo = (
-       NASA( [  200.00,  1000.00], [  4.204002900E+00,  -2.106138500E-03, 
-                7.106834800E-06,  -5.611519700E-09,   1.644071700E-12,
-                2.188591000E+04,  -1.418424800E-01] ),
-       NASA( [ 1000.00,  6000.00], [  2.834742100E+00,   3.207308200E-03, 
-               -9.339080400E-07,   1.370295300E-10,  -7.920614400E-15,
-                2.217195700E+04,   6.520416300E+00] )
-             ),
-    transport = gas_transport(
-                     geom = "nonlinear",
-                     diam =     2.65,
-                     well_depth =    80.00,
-                     polar =     2.26,
-                     rot_relax =     4.00),
-    note = "And89"
-       )
-
-species(name = "NH3",
-    atoms = " N:1  H:3 ",
-    thermo = (
-       NASA( [  200.00,  1000.00], [  4.286027400E+00,  -4.660523000E-03, 
-                2.171851300E-05,  -2.280888700E-08,   8.263804600E-12,
-               -6.741728500E+03,  -6.253727700E-01] ),
-       NASA( [ 1000.00,  6000.00], [  2.634452100E+00,   5.666256000E-03, 
-               -1.727867600E-06,   2.386716100E-10,  -1.257878600E-14,
-               -6.544695800E+03,   6.566292800E+00] )
-             ),
-    transport = gas_transport(
-                     geom = "nonlinear",
-                     diam =     2.92,
-                     well_depth =   481.00,
-                     dipole =     1.47,
-                     rot_relax =    10.00),
-    note = "J 6/77"
-       )
-
-species(name = "NNH",
-    atoms = " N:2  H:1 ",
-    thermo = (
-       NASA( [  200.00,  1000.00], [  4.344692700E+00,  -4.849707200E-03, 
-                2.005945900E-05,  -2.172646400E-08,   7.946953900E-12,
-                2.879197300E+04,   2.977941000E+00] ),
-       NASA( [ 1000.00,  6000.00], [  3.766754400E+00,   2.891508200E-03, 
-               -1.041662000E-06,   1.684259400E-10,  -1.009189600E-14,
-                2.865069700E+04,   4.470506700E+00] )
-             ),
-    transport = gas_transport(
-                     geom = "nonlinear",
-                     diam =     3.80,
-                     well_depth =    71.40,
-                     rot_relax =     1.00),
-    note = "T07/93"
-       )
-
-species(name = "NO",
-    atoms = " N:1  O:1 ",
-    thermo = (
-       NASA( [  200.00,  1000.00], [  4.218476300E+00,  -4.638976000E-03, 
-                1.104102200E-05,  -9.336135400E-09,   2.803577000E-12,
-                9.844623000E+03,   2.280846400E+00] ),
-       NASA( [ 1000.00,  6000.00], [  3.260605600E+00,   1.191104300E-03, 
-               -4.291704800E-07,   6.945766900E-11,  -4.033609900E-15,
-                9.920974600E+03,   6.369302700E+00] )
-             ),
-    transport = gas_transport(
-                     geom = "linear",
-                     diam =     3.62,
-                     well_depth =    97.53,
-                     polar =     1.76,
-                     rot_relax =     4.00),
-    note = "RUS 78"
-       )
-
-species(name = "NO2",
-    atoms = " N:1  O:2 ",
-    thermo = (
-       NASA( [  200.00,  1000.00], [  3.944031200E+00,  -1.585429000E-03, 
-                1.665781200E-05,  -2.047542600E-08,   7.835056400E-12,
-                2.896617900E+03,   6.311991700E+00] ),
-       NASA( [ 1000.00,  6000.00], [  4.884754200E+00,   2.172395600E-03, 
-               -8.280690600E-07,   1.574751000E-10,  -1.051089500E-14,
-                2.316498300E+03,  -1.174169500E-01] )
-             ),
-    transport = gas_transport(
-                     geom = "nonlinear",
-                     diam =     3.50,
-                     well_depth =   200.00,
-                     rot_relax =     1.00),
-    note = "L 7/88"
-       )
-
-species(name = "N2O",
-    atoms = " N:2  O:1 ",
-    thermo = (
-       NASA( [  200.00,  1000.00], [  2.257150200E+00,   1.130472800E-02, 
-               -1.367131900E-05,   9.681980600E-09,  -2.930718200E-12,
-                8.741774400E+03,   1.075799200E+01] ),
-       NASA( [ 1000.00,  6000.00], [  4.823072900E+00,   2.627025100E-03, 
-               -9.585087400E-07,   1.600071200E-10,  -9.775230300E-15,
-                8.073404800E+03,  -2.201720700E+00] )
-             ),
-    transport = gas_transport(
-                     geom = "linear",
-                     diam =     3.83,
-                     well_depth =   232.40,
-                     rot_relax =     1.00),
-    note = "L 7/88"
-       )
-
-species(name = "HNO",
-    atoms = " H:1  N:1  O:1 ",
-    thermo = (
-       NASA( [  200.00,  1000.00], [  4.533491600E+00,  -5.669617100E-03, 
-                1.847320700E-05,  -1.713709400E-08,   5.545457300E-12,
-                1.154829700E+04,   1.749841700E+00] ),
-       NASA( [ 1000.00,  6000.00], [  2.979250900E+00,   3.494405900E-03, 
-               -7.854977800E-07,   5.747959400E-11,  -1.933591600E-16,
-                1.175058200E+04,   8.606372800E+00] )
-             ),
-    transport = gas_transport(
-                     geom = "nonlinear",
-                     diam =     3.49,
-                     well_depth =   116.70,
-                     rot_relax =     1.00),
-    note = "And93"
-       )
-
-species(name = "CN",
-    atoms = " C:1  N:1 ",
-    thermo = (
-       NASA( [  200.00,  1000.00], [  3.612935100E+00,  -9.555132700E-04, 
-                2.144297700E-06,  -3.151632300E-10,  -4.643035600E-13,
-                5.170834000E+04,   3.980499500E+00] ),
-       NASA( [ 1000.00,  6000.00], [  3.745980500E+00,   4.345077500E-05, 
-                2.970598400E-07,  -6.865180600E-11,   4.413417300E-15,
-                5.153618800E+04,   2.786760100E+00] )
-             ),
-    transport = gas_transport(
-                     geom = "linear",
-                     diam =     3.86,
-                     well_depth =    75.00,
-                     rot_relax =     1.00),
-    note = "HBH92"
-       )
-
-species(name = "HCN",
-    atoms = " H:1  C:1  N:1 ",
-    thermo = (
-       NASA( [  200.00,  1000.00], [  2.258988600E+00,   1.005117000E-02, 
-               -1.335176300E-05,   1.009234900E-08,  -3.008902800E-12,
-                1.471263300E+04,   8.916441900E+00] ),
-       NASA( [ 1000.00,  6000.00], [  3.802239200E+00,   3.146422800E-03, 
-               -1.063218500E-06,   1.661975700E-10,  -9.799757000E-15,
-                1.440729200E+04,   1.575460100E+00] )
-             ),
-    transport = gas_transport(
-                     geom = "linear",
-                     diam =     3.63,
-                     well_depth =   569.00,
-                     rot_relax =     1.00),
-    note = "GRI/98"
-       )
-
-species(name = "H2CN",
-    atoms = " H:2  C:1  N:1 ",
-    thermo = (
-       NASA( [  300.00,  1000.00], [  2.851661000E+00,   5.695233100E-03, 
-                1.071140000E-06,  -1.622612000E-09,  -2.351108100E-13,
-                2.863782000E+04,   8.992751100E+00] ),
-       NASA( [ 1000.00,  4000.00], [  5.209703000E+00,   2.969291100E-03, 
-               -2.855589100E-07,  -1.635550000E-10,   3.043258900E-14,
-                2.767710900E+04,  -4.444478000E+00] )
-             ),
-    transport = gas_transport(
-                     geom = "linear",
-                     diam =     3.63,
-                     well_depth =   569.00,
-                     rot_relax =     1.00),
-    note = "41687"
-       )
-
-species(name = "HCNN",
-    atoms = " C:1  N:2  H:1 ",
-    thermo = (
-       NASA( [  300.00,  1000.00], [  2.524319400E+00,   1.596061900E-02, 
-               -1.881635400E-05,   1.212554000E-08,  -3.235737800E-12,
-                5.426198400E+04,   1.167587000E+01] ),
-       NASA( [ 1000.00,  5000.00], [  5.894636200E+00,   3.989595900E-03, 
-               -1.598238000E-06,   2.924939500E-10,  -2.009468600E-14,
-                5.345294100E+04,  -5.103050200E+00] )
-             ),
-    transport = gas_transport(
-                     geom = "nonlinear",
-                     diam =     2.50,
-                     well_depth =   150.00,
-                     rot_relax =     1.00),
-    note = "SRI/94"
-       )
-
-species(name = "HCNO",
-    atoms = " H:1  N:1  C:1  O:1 ",
-    thermo = (
-       NASA( [  300.00,  1382.00], [  2.647279890E+00,   1.275053420E-02, 
-               -1.047942360E-05,   4.414328360E-09,  -7.575214660E-13,
-                1.929902520E+04,   1.073329720E+01] ),
-       NASA( [ 1382.00,  5000.00], [  6.598604560E+00,   3.027786260E-03, 
-               -1.077043460E-06,   1.716665280E-10,  -1.014393910E-14,
-                1.796613390E+04,  -1.033065990E+01] )
-             ),
-    transport = gas_transport(
-                     geom = "nonlinear",
-                     diam =     3.83,
-                     well_depth =   232.40,
-                     rot_relax =     1.00),
-    note = "BDEA94"
-       )
-
-species(name = "HOCN",
-    atoms = " H:1  N:1  C:1  O:1 ",
-    thermo = (
-       NASA( [  300.00,  1368.00], [  3.786049520E+00,   6.886679220E-03, 
-               -3.214878640E-06,   5.171957670E-10,   1.193607880E-14,
-               -2.826984000E+03,   5.632921620E+00] ),
-       NASA( [ 1368.00,  5000.00], [  5.897848850E+00,   3.167893930E-03, 
-               -1.118010640E-06,   1.772431440E-10,  -1.043391770E-14,
-               -3.706533310E+03,  -6.181678250E+00] )
-             ),
-    transport = gas_transport(
-                     geom = "nonlinear",
-                     diam =     3.83,
-                     well_depth =   232.40,
-                     rot_relax =     1.00),
-    note = "BDEA94"
-       )
-
-species(name = "HNCO",
-    atoms = " H:1  N:1  C:1  O:1 ",
-    thermo = (
-       NASA( [  300.00,  1478.00], [  3.630963170E+00,   7.302823570E-03, 
-               -2.280500030E-06,  -6.612712980E-10,   3.622357520E-13,
-               -1.558736360E+04,   6.194577270E+00] ),
-       NASA( [ 1478.00,  5000.00], [  6.223951340E+00,   3.178640040E-03, 
-               -1.093787550E-06,   1.707351630E-10,  -9.950219550E-15,
-               -1.665993440E+04,  -8.382247410E+00] )
-             ),
-    transport = gas_transport(
-                     geom = "nonlinear",
-                     diam =     3.83,
-                     well_depth =   232.40,
-                     rot_relax =     1.00),
-    note = "BDEA94"
-       )
-
-species(name = "NCO",
-    atoms = " N:1  C:1  O:1 ",
-    thermo = (
-       NASA( [  200.00,  1000.00], [  2.826930800E+00,   8.805168800E-03, 
-               -8.386613400E-06,   4.801696400E-09,  -1.331359500E-12,
-                1.468247700E+04,   9.550464600E+00] ),
-       NASA( [ 1000.00,  6000.00], [  5.152184500E+00,   2.305176100E-03, 
-               -8.803315300E-07,   1.478909800E-10,  -9.097799600E-15,
-                1.400412300E+04,  -2.544266000E+00] )
-             ),
-    transport = gas_transport(
-                     geom = "linear",
-                     diam =     3.83,
-                     well_depth =   232.40,
-                     rot_relax =     1.00),
-    note = "EA 93"
        )
 
 species(name = "N2",
@@ -1613,482 +1303,148 @@ reaction(  "HCCO + O2 <=> OH + 2 CO",  [3.20000E+12, 0, 854])
 reaction(  "2 HCCO <=> 2 CO + C2H2",  [1.00000E+13, 0, 0])
 
 #  Reaction 178
-reaction(  "N + NO <=> N2 + O",  [2.70000E+13, 0, 355])
-
-#  Reaction 179
-reaction(  "N + O2 <=> NO + O",  [9.00000E+09, 1, 6500])
-
-#  Reaction 180
-reaction(  "N + OH <=> NO + H",  [3.36000E+13, 0, 385])
-
-#  Reaction 181
-reaction(  "N2O + O <=> N2 + O2",  [1.40000E+12, 0, 10810])
-
-#  Reaction 182
-reaction(  "N2O + O <=> 2 NO",  [2.90000E+13, 0, 23150])
-
-#  Reaction 183
-reaction(  "N2O + H <=> N2 + OH",  [3.87000E+14, 0, 18880])
-
-#  Reaction 184
-reaction(  "N2O + OH <=> N2 + HO2",  [2.00000E+12, 0, 21060])
-
-#  Reaction 185
-falloff_reaction( "N2O (+ M) <=> N2 + O (+ M)",
-         kf = [7.91000E+10, 0, 56020],
-         kf0   = [6.37000E+14, 0, 56640],
-         efficiencies = " AR:0.625  C2H6:3  CH4:2  CO:1.5  CO2:2  H2:2  H2O:6 ")
-
-#  Reaction 186
-reaction(  "HO2 + NO <=> NO2 + OH",  [2.11000E+12, 0, -480])
-
-#  Reaction 187
-three_body_reaction( "NO + O + M <=> NO2 + M",  [1.06000E+20, -1.41, 0],
-         efficiencies = " AR:0.7  C2H6:3  CH4:2  CO:1.5  CO2:2  H2:2  H2O:6 ")
-
-#  Reaction 188
-reaction(  "NO2 + O <=> NO + O2",  [3.90000E+12, 0, -240])
-
-#  Reaction 189
-reaction(  "NO2 + H <=> NO + OH",  [1.32000E+14, 0, 360])
-
-#  Reaction 190
-reaction(  "NH + O <=> NO + H",  [4.00000E+13, 0, 0])
-
-#  Reaction 191
-reaction(  "NH + H <=> N + H2",  [3.20000E+13, 0, 330])
-
-#  Reaction 192
-reaction(  "NH + OH <=> HNO + H",  [2.00000E+13, 0, 0])
-
-#  Reaction 193
-reaction(  "NH + OH <=> N + H2O",  [2.00000E+09, 1.2, 0])
-
-#  Reaction 194
-reaction(  "NH + O2 <=> HNO + O",  [4.61000E+05, 2, 6500])
-
-#  Reaction 195
-reaction(  "NH + O2 <=> NO + OH",  [1.28000E+06, 1.5, 100])
-
-#  Reaction 196
-reaction(  "NH + N <=> N2 + H",  [1.50000E+13, 0, 0])
-
-#  Reaction 197
-reaction(  "NH + H2O <=> HNO + H2",  [2.00000E+13, 0, 13850])
-
-#  Reaction 198
-reaction(  "NH + NO <=> N2 + OH",  [2.16000E+13, -0.23, 0])
-
-#  Reaction 199
-reaction(  "NH + NO <=> N2O + H",  [3.65000E+14, -0.45, 0])
-
-#  Reaction 200
-reaction(  "NH2 + O <=> OH + NH",  [3.00000E+12, 0, 0])
-
-#  Reaction 201
-reaction(  "NH2 + O <=> H + HNO",  [3.90000E+13, 0, 0])
-
-#  Reaction 202
-reaction(  "NH2 + H <=> NH + H2",  [4.00000E+13, 0, 3650])
-
-#  Reaction 203
-reaction(  "NH2 + OH <=> NH + H2O",  [9.00000E+07, 1.5, -460])
-
-#  Reaction 204
-reaction(  "NNH <=> N2 + H",  [3.30000E+08, 0, 0])
-
-#  Reaction 205
-three_body_reaction( "NNH + M <=> N2 + H + M",  [1.30000E+14, -0.11, 4980],
-         efficiencies = " AR:0.7  C2H6:3  CH4:2  CO:1.5  CO2:2  H2:2  H2O:6 ")
-
-#  Reaction 206
-reaction(  "NNH + O2 <=> HO2 + N2",  [5.00000E+12, 0, 0])
-
-#  Reaction 207
-reaction(  "NNH + O <=> OH + N2",  [2.50000E+13, 0, 0])
-
-#  Reaction 208
-reaction(  "NNH + O <=> NH + NO",  [7.00000E+13, 0, 0])
-
-#  Reaction 209
-reaction(  "NNH + H <=> H2 + N2",  [5.00000E+13, 0, 0])
-
-#  Reaction 210
-reaction(  "NNH + OH <=> H2O + N2",  [2.00000E+13, 0, 0])
-
-#  Reaction 211
-reaction(  "NNH + CH3 <=> CH4 + N2",  [2.50000E+13, 0, 0])
-
-#  Reaction 212
-three_body_reaction( "H + NO + M <=> HNO + M",  [4.48000E+19, -1.32, 740],
-         efficiencies = " AR:0.7  C2H6:3  CH4:2  CO:1.5  CO2:2  H2:2  H2O:6 ")
-
-#  Reaction 213
-reaction(  "HNO + O <=> NO + OH",  [2.50000E+13, 0, 0])
-
-#  Reaction 214
-reaction(  "HNO + H <=> H2 + NO",  [9.00000E+11, 0.72, 660])
-
-#  Reaction 215
-reaction(  "HNO + OH <=> NO + H2O",  [1.30000E+07, 1.9, -950])
-
-#  Reaction 216
-reaction(  "HNO + O2 <=> HO2 + NO",  [1.00000E+13, 0, 13000])
-
-#  Reaction 217
-reaction(  "CN + O <=> CO + N",  [7.70000E+13, 0, 0])
-
-#  Reaction 218
-reaction(  "CN + OH <=> NCO + H",  [4.00000E+13, 0, 0])
-
-#  Reaction 219
-reaction(  "CN + H2O <=> HCN + OH",  [8.00000E+12, 0, 7460])
-
-#  Reaction 220
-reaction(  "CN + O2 <=> NCO + O",  [6.14000E+12, 0, -440])
-
-#  Reaction 221
-reaction(  "CN + H2 <=> HCN + H",  [2.95000E+05, 2.45, 2240])
-
-#  Reaction 222
-reaction(  "NCO + O <=> NO + CO",  [2.35000E+13, 0, 0])
-
-#  Reaction 223
-reaction(  "NCO + H <=> NH + CO",  [5.40000E+13, 0, 0])
-
-#  Reaction 224
-reaction(  "NCO + OH <=> NO + H + CO",  [2.50000E+12, 0, 0])
-
-#  Reaction 225
-reaction(  "NCO + N <=> N2 + CO",  [2.00000E+13, 0, 0])
-
-#  Reaction 226
-reaction(  "NCO + O2 <=> NO + CO2",  [2.00000E+12, 0, 20000])
-
-#  Reaction 227
-three_body_reaction( "NCO + M <=> N + CO + M",  [3.10000E+14, 0, 54050],
-         efficiencies = " AR:0.7  C2H6:3  CH4:2  CO:1.5  CO2:2  H2:2  H2O:6 ")
-
-#  Reaction 228
-reaction(  "NCO + NO <=> N2O + CO",  [1.90000E+17, -1.52, 740])
-
-#  Reaction 229
-reaction(  "NCO + NO <=> N2 + CO2",  [3.80000E+18, -2, 800])
-
-#  Reaction 230
-three_body_reaction( "HCN + M <=> H + CN + M",  [1.04000E+29, -3.3, 126600],
-         efficiencies = " AR:0.7  C2H6:3  CH4:2  CO:1.5  CO2:2  H2:2  H2O:6 ")
-
-#  Reaction 231
-reaction(  "HCN + O <=> NCO + H",  [2.03000E+04, 2.64, 4980])
-
-#  Reaction 232
-reaction(  "HCN + O <=> NH + CO",  [5.07000E+03, 2.64, 4980])
-
-#  Reaction 233
-reaction(  "HCN + O <=> CN + OH",  [3.91000E+09, 1.58, 26600])
-
-#  Reaction 234
-reaction(  "HCN + OH <=> HOCN + H",  [1.10000E+06, 2.03, 13370])
-
-#  Reaction 235
-reaction(  "HCN + OH <=> HNCO + H",  [4.40000E+03, 2.26, 6400])
-
-#  Reaction 236
-reaction(  "HCN + OH <=> NH2 + CO",  [1.60000E+02, 2.56, 9000])
-
-#  Reaction 237
-falloff_reaction( "H + HCN (+ M) <=> H2CN (+ M)",
-         kf = [3.30000E+13, 0, 0],
-         kf0   = [1.40000E+26, -3.4, 1900],
-         efficiencies = " AR:0.7  C2H6:3  CH4:2  CO:1.5  CO2:2  H2:2  H2O:6 ")
-
-#  Reaction 238
-reaction(  "H2CN + N <=> N2 + CH2",  [6.00000E+13, 0, 400])
-
-#  Reaction 239
-reaction(  "C + N2 <=> CN + N",  [6.30000E+13, 0, 46020])
-
-#  Reaction 240
-reaction(  "CH + N2 <=> HCN + N",  [3.12000E+09, 0.88, 20130])
-
-#  Reaction 241
-falloff_reaction( "CH + N2 (+ M) <=> HCNN (+ M)",
-         kf = [3.10000E+12, 0.15, 0],
-         kf0   = [1.30000E+25, -3.16, 740],
-         falloff = Troe(A = 0.667, T3 = 235, T1 = 2117, T2 = 4536),
-         efficiencies = " AR:1  C2H6:3  CH4:2  CO:1.5  CO2:2  H2:2  H2O:6 ")
-
-#  Reaction 242
-reaction(  "CH2 + N2 <=> HCN + NH",  [1.00000E+13, 0, 74000])
-
-#  Reaction 243
-reaction(  "CH2(S) + N2 <=> NH + HCN",  [1.00000E+11, 0, 65000])
-
-#  Reaction 244
-reaction(  "C + NO <=> CN + O",  [1.90000E+13, 0, 0])
-
-#  Reaction 245
-reaction(  "C + NO <=> CO + N",  [2.90000E+13, 0, 0])
-
-#  Reaction 246
-reaction(  "CH + NO <=> HCN + O",  [4.10000E+13, 0, 0])
-
-#  Reaction 247
-reaction(  "CH + NO <=> H + NCO",  [1.62000E+13, 0, 0])
-
-#  Reaction 248
-reaction(  "CH + NO <=> N + HCO",  [2.46000E+13, 0, 0])
-
-#  Reaction 249
-reaction(  "CH2 + NO <=> H + HNCO",  [3.10000E+17, -1.38, 1270])
-
-#  Reaction 250
-reaction(  "CH2 + NO <=> OH + HCN",  [2.90000E+14, -0.69, 760])
-
-#  Reaction 251
-reaction(  "CH2 + NO <=> H + HCNO",  [3.80000E+13, -0.36, 580])
-
-#  Reaction 252
-reaction(  "CH2(S) + NO <=> H + HNCO",  [3.10000E+17, -1.38, 1270])
-
-#  Reaction 253
-reaction(  "CH2(S) + NO <=> OH + HCN",  [2.90000E+14, -0.69, 760])
-
-#  Reaction 254
-reaction(  "CH2(S) + NO <=> H + HCNO",  [3.80000E+13, -0.36, 580])
-
-#  Reaction 255
-reaction(  "CH3 + NO <=> HCN + H2O",  [9.60000E+13, 0, 28800])
-
-#  Reaction 256
-reaction(  "CH3 + NO <=> H2CN + OH",  [1.00000E+12, 0, 21750])
-
-#  Reaction 257
-reaction(  "HCNN + O <=> CO + H + N2",  [2.20000E+13, 0, 0])
-
-#  Reaction 258
-reaction(  "HCNN + O <=> HCN + NO",  [2.00000E+12, 0, 0])
-
-#  Reaction 259
-reaction(  "HCNN + O2 <=> O + HCO + N2",  [1.20000E+13, 0, 0])
-
-#  Reaction 260
-reaction(  "HCNN + OH <=> H + HCO + N2",  [1.20000E+13, 0, 0])
-
-#  Reaction 261
-reaction(  "HCNN + H <=> CH2 + N2",  [1.00000E+14, 0, 0])
-
-#  Reaction 262
-reaction(  "HNCO + O <=> NH + CO2",  [9.80000E+07, 1.41, 8500])
-
-#  Reaction 263
-reaction(  "HNCO + O <=> HNO + CO",  [1.50000E+08, 1.57, 44000])
-
-#  Reaction 264
-reaction(  "HNCO + O <=> NCO + OH",  [2.20000E+06, 2.11, 11400])
-
-#  Reaction 265
-reaction(  "HNCO + H <=> NH2 + CO",  [2.25000E+07, 1.7, 3800])
-
-#  Reaction 266
-reaction(  "HNCO + H <=> H2 + NCO",  [1.05000E+05, 2.5, 13300])
-
-#  Reaction 267
-reaction(  "HNCO + OH <=> NCO + H2O",  [3.30000E+07, 1.5, 3600])
-
-#  Reaction 268
-reaction(  "HNCO + OH <=> NH2 + CO2",  [3.30000E+06, 1.5, 3600])
-
-#  Reaction 269
-three_body_reaction( "HNCO + M <=> NH + CO + M",  [1.18000E+16, 0, 84720],
-         efficiencies = " AR:0.7  C2H6:3  CH4:2  CO:1.5  CO2:2  H2:2  H2O:6 ")
-
-#  Reaction 270
-reaction(  "HCNO + H <=> H + HNCO",  [2.10000E+15, -0.69, 2850])
-
-#  Reaction 271
-reaction(  "HCNO + H <=> OH + HCN",  [2.70000E+11, 0.18, 2120])
-
-#  Reaction 272
-reaction(  "HCNO + H <=> NH2 + CO",  [1.70000E+14, -0.75, 2890])
-
-#  Reaction 273
-reaction(  "HOCN + H <=> H + HNCO",  [2.00000E+07, 2, 2000])
-
-#  Reaction 274
-reaction(  "HCCO + NO <=> HCNO + CO",  [9.00000E+12, 0, 0])
-
-#  Reaction 275
-reaction(  "CH3 + N <=> H2CN + H",  [6.10000E+14, -0.31, 290])
-
-#  Reaction 276
-reaction(  "CH3 + N <=> HCN + H2",  [3.70000E+12, 0.15, -90])
-
-#  Reaction 277
-reaction(  "NH3 + H <=> NH2 + H2",  [5.40000E+05, 2.4, 9915])
-
-#  Reaction 278
-reaction(  "NH3 + OH <=> NH2 + H2O",  [5.00000E+07, 1.6, 955])
-
-#  Reaction 279
-reaction(  "NH3 + O <=> NH2 + OH",  [9.40000E+06, 1.94, 6460])
-
-#  Reaction 280
-reaction(  "NH + CO2 <=> HNO + CO",  [1.00000E+13, 0, 14350])
-
-#  Reaction 281
-reaction(  "CN + NO2 <=> NCO + NO",  [6.16000E+15, -0.752, 345])
-
-#  Reaction 282
-reaction(  "NCO + NO2 <=> N2O + CO2",  [3.25000E+12, 0, -705])
-
-#  Reaction 283
-reaction(  "N + CO2 <=> NO + CO",  [3.00000E+12, 0, 11300])
-
-#  Reaction 284
 reaction(  "O + CH3 => H + H2 + CO",  [3.37000E+13, 0, 0])
 
-#  Reaction 285
+#  Reaction 179
 reaction(  "O + C2H4 <=> H + CH2CHO",  [6.70000E+06, 1.83, 220])
 
-#  Reaction 286
+#  Reaction 180
 reaction(  "O + C2H5 <=> H + CH3CHO",  [1.09600E+14, 0, 0])
 
-#  Reaction 287
+#  Reaction 181
 reaction(  "OH + HO2 <=> O2 + H2O",  [5.00000E+15, 0, 17330],
          options = ["duplicate"])
 
-#  Reaction 288
+#  Reaction 182
 reaction(  "OH + CH3 => H2 + CH2O",  [8.00000E+09, 0.5, -1755])
 
-#  Reaction 289
+#  Reaction 183
 falloff_reaction( "CH + H2 (+ M) <=> CH3 (+ M)",
          kf = [1.97000E+12, 0.43, -370],
          kf0   = [4.82000E+25, -2.8, 590],
          falloff = Troe(A = 0.578, T3 = 122, T1 = 2535, T2 = 9365),
          efficiencies = " AR:0.7  C2H6:3  CH4:2  CO:1.5  CO2:2  H2:2  H2O:6 ")
 
-#  Reaction 290
+#  Reaction 184
 reaction(  "CH2 + O2 => 2 H + CO2",  [5.80000E+12, 0, 1500])
 
-#  Reaction 291
+#  Reaction 185
 reaction(  "CH2 + O2 <=> O + CH2O",  [2.40000E+12, 0, 1500])
 
-#  Reaction 292
+#  Reaction 186
 reaction(  "CH2 + CH2 => 2 H + C2H2",  [2.00000E+14, 0, 10989])
 
-#  Reaction 293
+#  Reaction 187
 reaction(  "CH2(S) + H2O => H2 + CH2O",  [6.82000E+10, 0.25, -935])
 
-#  Reaction 294
+#  Reaction 188
 reaction(  "C2H3 + O2 <=> O + CH2CHO",  [3.03000E+11, 0.29, 11])
 
-#  Reaction 295
+#  Reaction 189
 reaction(  "C2H3 + O2 <=> HO2 + C2H2",  [1.33700E+06, 1.61, -384])
 
-#  Reaction 296
+#  Reaction 190
 reaction(  "O + CH3CHO <=> OH + CH2CHO",  [2.92000E+12, 0, 1808])
 
-#  Reaction 297
+#  Reaction 191
 reaction(  "O + CH3CHO => OH + CH3 + CO",  [2.92000E+12, 0, 1808])
 
-#  Reaction 298
+#  Reaction 192
 reaction(  "O2 + CH3CHO => HO2 + CH3 + CO",  [3.01000E+13, 0, 39150])
 
-#  Reaction 299
+#  Reaction 193
 reaction(  "H + CH3CHO <=> CH2CHO + H2",  [2.05000E+09, 1.16, 2405])
 
-#  Reaction 300
+#  Reaction 194
 reaction(  "H + CH3CHO => CH3 + H2 + CO",  [2.05000E+09, 1.16, 2405])
 
-#  Reaction 301
+#  Reaction 195
 reaction(  "OH + CH3CHO => CH3 + H2O + CO",  [2.34300E+10, 0.73, -1113])
 
-#  Reaction 302
+#  Reaction 196
 reaction(  "HO2 + CH3CHO => CH3 + H2O2 + CO",  [3.01000E+12, 0, 11923])
 
-#  Reaction 303
+#  Reaction 197
 reaction(  "CH3 + CH3CHO => CH3 + CH4 + CO",  [2.72000E+06, 1.77, 5920])
 
-#  Reaction 304
+#  Reaction 198
 falloff_reaction( "H + CH2CO (+ M) <=> CH2CHO (+ M)",
          kf = [4.86500E+11, 0.422, -1755],
          kf0   = [1.01200E+42, -7.63, 3854],
          falloff = Troe(A = 0.465, T3 = 201, T1 = 1773, T2 = 5333),
          efficiencies = " AR:0.7  C2H6:3  CH4:2  CO:1.5  CO2:2  H2:2  H2O:6 ")
 
-#  Reaction 305
+#  Reaction 199
 reaction(  "O + CH2CHO => H + CH2 + CO2",  [1.50000E+14, 0, 0])
 
-#  Reaction 306
+#  Reaction 200
 reaction(  "O2 + CH2CHO => OH + CO + CH2O",  [1.81000E+10, 0, 0])
 
-#  Reaction 307
+#  Reaction 201
 reaction(  "O2 + CH2CHO => OH + 2 HCO",  [2.35000E+10, 0, 0])
 
-#  Reaction 308
+#  Reaction 202
 reaction(  "H + CH2CHO <=> CH3 + HCO",  [2.20000E+13, 0, 0])
 
-#  Reaction 309
+#  Reaction 203
 reaction(  "H + CH2CHO <=> CH2CO + H2",  [1.10000E+13, 0, 0])
 
-#  Reaction 310
+#  Reaction 204
 reaction(  "OH + CH2CHO <=> H2O + CH2CO",  [1.20000E+13, 0, 0])
 
-#  Reaction 311
+#  Reaction 205
 reaction(  "OH + CH2CHO <=> HCO + CH2OH",  [3.01000E+13, 0, 0])
 
-#  Reaction 312
+#  Reaction 206
 falloff_reaction( "CH3 + C2H5 (+ M) <=> C3H8 (+ M)",
          kf = [9.43000E+12, 0, 0],
          kf0   = [2.71000E+74, -16.82, 13065],
          falloff = Troe(A = 0.1527, T3 = 291, T1 = 2742, T2 = 7748),
          efficiencies = " AR:0.7  C2H6:3  CH4:2  CO:1.5  CO2:2  H2:2  H2O:6 ")
 
-#  Reaction 313
+#  Reaction 207
 reaction(  "O + C3H8 <=> OH + C3H7",  [1.93000E+05, 2.68, 3716])
 
-#  Reaction 314
+#  Reaction 208
 reaction(  "H + C3H8 <=> C3H7 + H2",  [1.32000E+06, 2.54, 6756])
 
-#  Reaction 315
+#  Reaction 209
 reaction(  "OH + C3H8 <=> C3H7 + H2O",  [3.16000E+07, 1.8, 934])
 
-#  Reaction 316
+#  Reaction 210
 reaction(  "C3H7 + H2O2 <=> HO2 + C3H8",  [3.78000E+02, 2.72, 1500])
 
-#  Reaction 317
+#  Reaction 211
 reaction(  "CH3 + C3H8 <=> C3H7 + CH4",  [9.03000E-01, 3.65, 7154])
 
-#  Reaction 318
+#  Reaction 212
 falloff_reaction( "CH3 + C2H4 (+ M) <=> C3H7 (+ M)",
          kf = [2.55000E+06, 1.6, 5700],
          kf0   = [3.00000E+63, -14.6, 18170],
          falloff = Troe(A = 0.1894, T3 = 277, T1 = 8748, T2 = 7891),
          efficiencies = " AR:0.7  C2H6:3  CH4:2  CO:1.5  CO2:2  H2:2  H2O:6 ")
 
-#  Reaction 319
+#  Reaction 213
 reaction(  "O + C3H7 <=> C2H5 + CH2O",  [9.64000E+13, 0, 0])
 
-#  Reaction 320
+#  Reaction 214
 falloff_reaction( "H + C3H7 (+ M) <=> C3H8 (+ M)",
          kf = [3.61300E+13, 0, 0],
          kf0   = [4.42000E+61, -13.545, 11357],
          falloff = Troe(A = 0.315, T3 = 369, T1 = 3285, T2 = 6667),
          efficiencies = " AR:0.7  C2H6:3  CH4:2  CO:1.5  CO2:2  H2:2  H2O:6 ")
 
-#  Reaction 321
+#  Reaction 215
 reaction(  "H + C3H7 <=> CH3 + C2H5",  [4.06000E+06, 2.19, 890])
 
-#  Reaction 322
+#  Reaction 216
 reaction(  "OH + C3H7 <=> C2H5 + CH2OH",  [2.41000E+13, 0, 0])
 
-#  Reaction 323
+#  Reaction 217
 reaction(  "HO2 + C3H7 <=> O2 + C3H8",  [2.55000E+10, 0.255, -943])
 
-#  Reaction 324
+#  Reaction 218
 reaction(  "HO2 + C3H7 => OH + C2H5 + CH2O",  [2.41000E+13, 0, 0])
 
-#  Reaction 325
+#  Reaction 219
 reaction(  "CH3 + C3H7 <=> 2 C2H5",  [1.92700E+13, -0.32, 0])
