@@ -26,7 +26,6 @@
 
 
 /* Define the 3D hexahedral grid multiblock classes. */
-
 class Grid3D_Hexa_Multi_Block_Connectivity{
    
   public:
