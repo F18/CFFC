@@ -456,7 +456,7 @@ Gaussian2D_pState Isothermal_Wall_Slip_T(const Gaussian2D_pState &W,
 					 const Gaussian2D_pState &dWdx,
 					 const Gaussian2D_pState &dWdy,
 					 const Vector2D &norm_dir) {
-  double Tk, _dTdn, check; //underscore to avoid same name as function dTdn()
+  double Tk, _dTdn; //underscore to avoid same name as function dTdn()
 
   //I need the negative sign because this function takes the
   //outward facing normal from the first cell inside the domain.
@@ -609,7 +609,7 @@ Gaussian2D_pState Knudsen_Layer_Isothermal_Slip_T(const Gaussian2D_pState &W,
 						  const Gaussian2D_pState &dWdx,
 						  const Gaussian2D_pState &dWdy,
 						  const Vector2D &norm_dir) {
-  double Tk, _dTdn, check; //underscore to avoid same name as function dTdn()
+  double Tk, _dTdn; //underscore to avoid same name as function dTdn()
 
   //I need the negative sign because this function takes the
   //outward facing normal from the first cell inside the domain.
