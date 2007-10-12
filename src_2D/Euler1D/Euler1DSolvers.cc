@@ -166,7 +166,8 @@ int Euler1DSolver(char *Input_File_Name_ptr,
   ICs(Soln_ptr, 
       "AIR", 
       Input_Parameters.i_ICs, 
-      Input_Parameters.Number_of_Cells);
+      Input_Parameters.Number_of_Cells,
+      Input_Parameters);
   
 
   /********************************************************  

@@ -365,12 +365,14 @@ int HighOrder1D<SOLN_STATE>::Nghost(int ReconstructionOrder){
 template<class SOLN_STATE>
 void HighOrder1D<SOLN_STATE>::ComputeGeometricCoefficients(void){
 
-  /* Create the polynomial function for the cell */
-  GeneralizedPolynomialFunctionOfOneVariable Polynom(0,CellCenter());
-  GeomCoeff(0) = 1.0;
-  for (int p1=1; p1<=GeomCoeff.RecOrder(); ++p1){
-    Polynom.ChangePowerTo(p1);
-    GeomCoeff(p1) = IntegrateOverTheCell(Polynom,14,GeomCoeff(p1))/CellDelta();
+  if (GeomCoeff.RecOrder() > -1){ // check for allocated memory
+    /* Create the polynomial function for the cell */
+    GeneralizedPolynomialFunctionOfOneVariable Polynom(0,CellCenter());
+    GeomCoeff(0) = 1.0;
+    for (int p1=1; p1<=GeomCoeff.RecOrder(); ++p1){
+      Polynom.ChangePowerTo(p1);
+      GeomCoeff(p1) = IntegrateOverTheCell(Polynom,14,GeomCoeff(p1))/CellDelta();
+    }
   }
 }
 

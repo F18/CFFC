@@ -25,6 +25,14 @@ public:
 
   // set all flags to default values
   static void SetDefaults(void);
+
+  /* This flag controls whether the CENO algorithm is used in the computation.
+     Turn ON if you want to use the high-order CENO scheme.
+     Turn OFF if you don't want to use this scheme.
+     ATTENTION: Some settings/memory allocations are done only if this flag is ON.
+     ----------------------------------------------------------------------------------------  */
+  static short USE_CENO_ALGORITHM;
+
   
   /* Store the pseudo-inverse of the LHS term in the CENO reconstruction for every computational cell.
      Turn ON if you want to run in speed efficient mode. However, the memory requirements will

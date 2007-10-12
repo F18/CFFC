@@ -227,6 +227,12 @@ extern void Output_Tecplot(Euler1D_UniformMesh *Soln,
                            const double &Time,
 	                   ostream &out_file);
 
+void Output_Tecplot_HighOrder(Euler1D_UniformMesh *Soln,
+			      const int Number_of_Cells,
+			      const int Number_of_Time_Steps,
+			      const double &Time,
+			      ostream &out_file);
+
 extern void Grid(Euler1D_UniformMesh *Soln,
                  const double &xmin,
 		 const double &xmax,
@@ -235,7 +241,8 @@ extern void Grid(Euler1D_UniformMesh *Soln,
 extern void ICs(Euler1D_UniformMesh *Soln,
                 char *gas_ptr,
 		const int i_ICtype,
-		const int Number_of_Cells);
+		const int Number_of_Cells,
+		CFD1D_Input_Parameters &IP);
 
 extern double CFL(Euler1D_UniformMesh *Soln,
   		  const int Number_of_Cells);

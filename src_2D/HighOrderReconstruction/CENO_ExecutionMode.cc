@@ -5,6 +5,7 @@
 #include "../CFD/CFD.h"
 #include "CENO_ExecutionMode.h"
 
+short CENO_Execution_Mode::USE_CENO_ALGORITHM = OFF; // CENO scheme is not used
 short CENO_Execution_Mode::CENO_SPEED_EFFICIENT = ON; // computation time efficient mode
 short CENO_Execution_Mode::CENO_DROP_ORDER = ON; // produce monotone solutions
 short CENO_Execution_Mode::CENO_Padding = OFF; // no padding
@@ -16,6 +17,7 @@ short CENO_Execution_Mode::CENO_CONSIDER_WEIGHTS = OFF;	// computation of smooth
 // add all flag default values to this function
 void CENO_Execution_Mode::SetDefaults(void){
   
+  USE_CENO_ALGORITHM = OFF; // CENO scheme is not used
   CENO_SPEED_EFFICIENT = ON; // computation time efficient mode
   CENO_DROP_ORDER = ON; // produce monotone solutions
   CENO_Padding = OFF; // no padding

@@ -97,7 +97,8 @@ namespace tut
     ICs(SolnBlk, 
 	"AIR", 
 	IP.i_ICs, 
-	IP.Number_of_Cells);
+	IP.Number_of_Cells,
+	IP);
   }
 
 

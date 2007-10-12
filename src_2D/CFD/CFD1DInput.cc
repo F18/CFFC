@@ -158,7 +158,7 @@ void Set_Default_Input_Parameters(CFD1D_Input_Parameters &IP) {
     IP.i_Reconstruction = RECONSTRUCTION_MUSCL;
     IP.i_ReconstructionMethod = RECONSTRUCTION_MUSCL;
     IP.Space_Accuracy = 2;
-    IP.CENO_Cutoff = 30;
+    IP.CENO_Cutoff = 100;
     IP.ExactFunction = NULL;
 
     string_ptr = "VanLeer";
@@ -366,6 +366,7 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
        } else if (strcmp(IP.Reconstruction_Type, "CENO") == 0) {
           IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
           IP.i_ReconstructionMethod = RECONSTRUCTION_CENO;
+	  CENO_Execution_Mode::USE_CENO_ALGORITHM = ON;
        } else {
 	 i_command = INVALID_INPUT_CODE;
        } /* endif */
