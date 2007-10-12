@@ -1,0 +1,873 @@
+#ifndef _BLOCK_PRECONDITONER_INCLUDED 
+#define _BLOCK_PRECONDITONER_INCLUDED 
+
+/* BPKIT data structures and precondtioners along with BLAS 
+   FORTRAN wrappers */ 
+
+#ifndef _BLOCKMAT_H_
+#include "BlockMat.h"
+#endif //_BLOCKMAT_H_
+
+#ifndef _DENSEMAT_H_
+#include "DenseMat.h"
+#endif //_DENSEMAT_H_
+
+#ifndef _BILUK_H_
+#include "BILUK.h"
+#endif //_BILUK_H_
+
+#ifndef _BRELAX_H_  //For BJacobi
+#include "BRelax.h"
+#endif //_BRELAX_H_
+
+#include "../Math/Matrix.h"
+#include "../Math/Vector2D.h"
+
+/********************************************************
+ * Class: Block_Preconditioner                          *
+ *                                                      *
+ * Member functions                                     * 
+ *                                                      *
+ ********************************************************/
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+class Block_Preconditioner {
+  private:
+  int blocksize;
+  int Jacobian_stencil_size; 
+
+  void Get_Block_Index(const int &i, int *);
+  void Get_Block_Index(const int &,const int &, int *, int *);
+  void Setup_Jacobian_approximation();          //called from Create_Preconditioner
+  void Setup_Preconditioner();                  //called from Update_Jacobian
+  void Implicit_Euler(const int&,const int&, DenseMatrix*);                     //called from Update_Jacobian       
+  void First_Order_Inviscid_Jacobian_HLLE(const int&,const int&, DenseMatrix*); //called from Update_Jacobian
+  void First_Order_Inviscid_Jacobian_Roe(const int&,const int&, DenseMatrix*);  //called from Update_Jacobian
+  void First_Order_Inviscid_Jacobian_AUSM_plus_up(const int&,const int&, DenseMatrix*);  //called from Update_Jacobian
+  void Second_Order_Viscous_Jacobian(const int&,const int&, DenseMatrix*);      //called from Update_Jacobian
+
+  DenseMatrix Rotation_Matrix(const Vector2D &nface, const int &A_matrix); //Used in Jacobian_LocalBlock
+  DenseMat DenseMatrix_to_DenseMat(const DenseMatrix &B); 
+
+  protected:
+  public:
+   //Address of corresponding Solution block data
+//   SOLN_BLOCK_TYPE *SolnBlk;
+//   INPUT_TYPE *Input_Parameters;
+  Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>           *Hexa_Block_ptr;                                                    
+  Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>     *IPs;
+
+  // BPKIT BlockMat storage of Approximate Jacobian for use with Preconditioner  
+  BlockMat Block_Jacobian_approx;
+
+  // BPKIT BpPrecon Preconditioner Types
+  BILUK   *ILUK_Precon;
+  BJacobi *Jacobi_Precon;
+
+  /*******************************************************/
+  //default constructors
+  Block_Preconditioner(void):
+    ILUK_Precon(NULL), Jacobi_Precon(NULL), Hexa_Block_ptr(NULL), IPs(NULL) {}
+  Block_Preconditioner( Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IP, 
+			Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> *_Hexa_Block, 
+			const int &_blocksize )
+  { Create_Preconditioner(IP, _Hexa_Block, _blocksize); }
+  
+  //Constructors
+  //These should be generalized for any precondtioner, not just "BPkit" types....
+  void Create_Preconditioner( Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IP, 
+			      Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> *_Hexa_Block, 
+			      const int &_blocksize);
+  void Update_Jacobian_and_Preconditioner();  
+  void Apply_Preconditioner(int A, int B, const double *C, int D, double *E, int F); 
+  
+  //Equation Specific Specializations required for Inviscid, Viscous, and Source Term Jacobians
+  //Inviscid
+  void Preconditioner_dFIdU(DenseMatrix &dFdU,SOLN_pSTATE W); 
+  void Preconditioner_dFIdU_Roe(DenseMatrix &, const int, const int, const int);  
+  void Preconditioner_dFIdU_AUSM_plus_up(DenseMatrix &, const int, const int, const int);  
+  //Viscous
+  void Preconditioner_dFVdU(DenseMatrix &, const int, const int, const int, const int, const int ,const int);
+  //Source 
+  void Preconditioner_dSdU(int cell_index_i, int cell_index_j, DenseMatrix &Jacobian);
+  void normalize_Preconditioner_dFdU(DenseMatrix &dFdU);
+
+  //Destructor / memory cleanup
+  ~Block_Preconditioner(){ deallocate(); deallocate_Precon(); }
+  void deallocate_Precon(){
+    if (ILUK_Precon != NULL) delete ILUK_Precon; ILUK_Precon=NULL;
+    if (Jacobi_Precon != NULL) delete Jacobi_Precon; Jacobi_Precon=NULL;
+  }
+  void deallocate(){}
+
+};
+
+/*!***********************************************************
+ *  dFdU needs to be Provided By _Quad_Block Specialization  *
+ *  otherwise the following errors will be shown.            *
+ *************************************************************/ 
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
+Preconditioner_dFIdU(DenseMatrix &dFdU, SOLN_pSTATE W) {
+  cerr<<"\n EXPLICIT SPECIALIZATION OF Preconditioner_dFIdU for Block_Preconditioner2D.h requried \n";
+  exit(1);
+}
+
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
+Preconditioner_dFIdU_Roe(DenseMatrix &dFdU, const int, const int, const int) {
+  cerr<<"\n EXPLICIT SPECIALIZATION OF Preconditioner_dFIdU_Roe for Block_Preconditioner2D.h requried \n";
+  exit(1);
+}
+
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
+Preconditioner_dFIdU_AUSM_plus_up(DenseMatrix &dFdU, const int, const int, const int) {
+  cerr<<"\n EXPLICIT SPECIALIZATION OF Preconditioner_dFIdU_AUSM_plus_up for Block_Preconditioner2D.h requried \n";
+  exit(1);
+}
+
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
+Preconditioner_dFVdU(DenseMatrix &dFvdU, const int Rii, const int Rjj, 
+		     const int Wii, const int Wjj, const int Orient_face, const int Orient_cell) {
+  cerr<<"\n EXPLICIT SPECIALIZATION OF Preconditioner_dFVdU for Block_Preconditioner2D.h requried \n";
+  exit(1);
+}
+
+// BLANK UNLESS OTHERWISE SPECIALIZED
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
+Preconditioner_dSdU( int cell_index_i, int cell_index_j, DenseMatrix &Jacobian) {
+//   cerr<<"\n EXPLICIT SPECIALIZATION OF Preconditioner_dSdU for Block_Preconditioner2D.h requried \n";
+//   exit(1);
+}
+
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
+normalize_Preconditioner_dFdU(DenseMatrix &dFdU) {
+  cerr<<"\n EXPLICIT SPECIALIZATION OF normalize_Preconditioner_dFdU for Block_Preconditioner2D.h requried \n";
+  exit(1);
+}
+
+
+/*!**************************************************************
+ * Generate block matrix indexing for a given matrix row "i"    *
+ ****************************************************************/
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
+Get_Block_Index(const int &i, int *Block_index_j)
+{
+//   //Determine Block_Indicies for Block Matrix formation
+//   if( Jacobian_stencil_size == 5){        
+//     Block_index_j[NORTH] = i - Hexa_Block_ptr->NCi ; 
+//     Block_index_j[EAST] = ( i%Hexa_Block_ptr->NCi != 0) ? i-1 : -1;
+//     Block_index_j[CENTER] = i;     
+//     Block_index_j[WEST] = ( (i+1)%Hexa_Block_ptr->NCi != 0) ? i+1 : -1;
+//     Block_index_j[SOUTH] = i + Hexa_Block_ptr->NCi ;   
+//   }  else if ( Jacobian_stencil_size == 9) {
+//     Block_index_j[NE] = ( (i - Hexa_Block_ptr->NCi)%Hexa_Block_ptr->NCi != 0) ? i - Hexa_Block_ptr->NCi - 1 : -1;
+//     Block_index_j[NORTH] = i - Hexa_Block_ptr->NCi;
+//     Block_index_j[NW] = ( (i - Hexa_Block_ptr->NCi+1)%Hexa_Block_ptr->NCi != 0) ? i - Hexa_Block_ptr->NCi + 1 : -1;
+//     Block_index_j[EAST] = ( i%Hexa_Block_ptr->NCi != 0) ? i-1 : -1;
+//     Block_index_j[CENTER] = i;
+//     Block_index_j[WEST] = ( (i+1)%Hexa_Block_ptr->NCi != 0) ? i+1 : -1;
+//     Block_index_j[SE] = ( (i + Hexa_Block_ptr->NCi)%Hexa_Block_ptr->NCi != 0) ? i + Hexa_Block_ptr->NCi - 1 : -1;
+//     Block_index_j[SOUTH] = i + Hexa_Block_ptr->NCi;
+//     Block_index_j[SW] = ( (i + Hexa_Block_ptr->NCi+1)%Hexa_Block_ptr->NCi != 0) ? i + Hexa_Block_ptr->NCi + 1 : -1;
+//   }  
+}
+
+/****************************************************************
+ * Generate block matrix indexing for a given cell (i,j)        *
+ ****************************************************************/
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
+Get_Block_Index(const int &cell_index_i,const int &cell_index_j, int *Block_index_i, int *Block_index_j)
+{ 
+//   //J index 
+//   for( int i=0; i<Jacobian_stencil_size; i++)  
+//     Block_index_j[i] = cell_index_j*Hexa_Block_ptr->NCi+cell_index_i; 
+
+//   //I index 
+//   if( Jacobian_stencil_size == 5){        
+//     /*! Determine 1st order Block_Indicies for Cell (i,j)   
+//      *
+//      *            ---  
+//      *           | 1 |
+//      *        --- --- ---
+//      *       | 2 | 0 | 4 |                
+//      *        --- --- ---
+//      *           | 3 |
+//      *            ---
+//      */
+//     Block_index_i[NORTH] = (cell_index_j - 1)*Hexa_Block_ptr->NCi+cell_index_i;  //NORTH  
+//     Block_index_i[EAST] = cell_index_j*Hexa_Block_ptr->NCi+cell_index_i-1;       //EAST     
+//     Block_index_i[CENTER] = cell_index_j*Hexa_Block_ptr->NCi+cell_index_i;       //CENTER   
+//     Block_index_i[WEST] = cell_index_j*Hexa_Block_ptr->NCi+cell_index_i+1;       //WEST         
+//     Block_index_i[SOUTH] = (cell_index_j + 1)*Hexa_Block_ptr->NCi+cell_index_i;  //SOUTH    
+    
+//   }  else if ( Jacobian_stencil_size == 9) {
+//     /*! Determine 2nd order Block_Indicies for Cell (i,j)   
+//      *
+//      *        --- --- ---
+//      *       | 5 | 1 | 8 |
+//      *        --- --- --- 
+//      *       | 2 | 0 | 4 | 
+//      *       --- --- --- -
+//      *       | 6 | 3 | 7 |
+//      *        --- --- ---
+//      */ 
+//     Block_index_i[NE] = (cell_index_j - 1)*Hexa_Block_ptr->NCi+cell_index_i-1;    //NE  
+//     Block_index_i[NORTH] = (cell_index_j - 1)*Hexa_Block_ptr->NCi+cell_index_i;   //NORTH
+//     Block_index_i[NW] = (cell_index_j - 1)*Hexa_Block_ptr->NCi+cell_index_i+1;    //NW   
+//     Block_index_i[EAST] = cell_index_j*Hexa_Block_ptr->NCi+cell_index_i-1;        //EAST      
+//     Block_index_i[CENTER] = cell_index_j*Hexa_Block_ptr->NCi+cell_index_i;        //CENTER
+//     Block_index_i[WEST] = cell_index_j*Hexa_Block_ptr->NCi+cell_index_i+1;        //WEST
+//     Block_index_i[SE] = (cell_index_j + 1)*Hexa_Block_ptr->NCi+cell_index_i-1;    //SE     
+//     Block_index_i[SOUTH] = (cell_index_j + 1)*Hexa_Block_ptr->NCi+cell_index_i;   //SOUTH    
+//     Block_index_i[SW] = (cell_index_j + 1)*Hexa_Block_ptr->NCi+cell_index_i+1;    //SW  
+//   }  
+
+}
+
+
+/*********************************************************
+ *  Create the Preconditoner as required by BPKIT        *
+ *********************************************************/
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
+Create_Preconditioner( Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IP, 
+		       Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> *_Hexa_Block, 
+		       const int &_blocksize)
+{
+  Hexa_Block_ptr = _Hexa_Block;	
+  IPs= &(IP);
+  blocksize = _blocksize;       //number of equations
+
+  if (IP.NKS_IP.Jacobian_Order == SOURCE_TERMS_ONLY ||
+      IP.NKS_IP.Jacobian_Order == FIRST_ORDER_INVISCID_HLLE ||
+      IP.NKS_IP.Jacobian_Order == FIRST_ORDER_INVISCID_ROE || 
+      IP.NKS_IP.Jacobian_Order == FIRST_ORDER_INVISCID_AUSMPLUSUP) {
+    Jacobian_stencil_size = 5;
+  } else if (IP.NKS_IP.Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_HLLE ||
+             IP.NKS_IP.Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_ROE ||
+             IP.NKS_IP.Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_AUSMPLUSUP) {
+    Jacobian_stencil_size = 9;
+  } else {
+    cerr<<"\n Invalid Jacobian Preconditioner Order "<<IP.NKS_IP.Jacobian_Order;
+    exit(1);
+  }
+    
+  //Sets up memory for Approximate Jacobian (Block_Jacobian_approx)
+  Setup_Jacobian_approximation(); 
+}
+
+/********************************************************************************
+ *  Jacobian (dR/dU) Approximation Stencil Allocation - only called on STARTUP   *
+ *********************************************************************************/
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
+Setup_Jacobian_approximation(){
+
+  int block_mat_size = Hexa_Block_ptr->NCi* Hexa_Block_ptr->NCj*Hexa_Block_ptr->NCk;   //block matrix size based on icells*jcells
+  int nnz;
+
+  cerr<<"\n Setup_Jacobian_approximation MISSING 3D SETUP \n";
+
+  //! 1st order 2D Jacobian, Sparse Block Matrix Memory Allocation of non-zero block entries
+  if( Jacobian_stencil_size == 5){        
+    nnz = 5*block_mat_size - 2*(Hexa_Block_ptr->NCi + Hexa_Block_ptr->NCj); 
+    //! 2nd order 2D Jacobian
+  }  else if ( Jacobian_stencil_size == 9) {
+    nnz = 9*block_mat_size - 6*(Hexa_Block_ptr->NCi + Hexa_Block_ptr->NCj) + 4;    
+  }      
+
+  //!Temporary Storage Arrays
+  int *i_index = new int[nnz];      //location of dense local blocks, in global sparse block Matrix   
+  int *j_index = new int[nnz];
+  double *Data = new double [nnz*blocksize*blocksize];
+  int *block_i = new int[Jacobian_stencil_size];
+  
+  //!Setup Stencil for approximate Jacobian
+  int nnz_count = 0;   
+  //! Loop through each row of Block Matrix
+  for (int i=0; i< block_mat_size; i++){       
+    Get_Block_Index(i,block_i);
+    int stencil = 0;
+    //! Determine which entries correspond to 1st, 2nd, etc. order stencil    
+    //cout<<"\n i "<<i;
+    while( stencil < Jacobian_stencil_size) { 
+      int j = block_i[stencil];
+      //cout<<" "<<j;
+      if( j >= 0 && j < block_mat_size){	
+	i_index[nnz_count] = i+1;  // bpkit assumes Fortran indexing ie. starting at 1 
+	j_index[nnz_count] = j+1;
+	for(int k=0; k<blocksize*blocksize; k++){ //initialize Block Matrix as identity matrix
+	  if( i == j && k%(blocksize+1) == 0){
+	    Data[nnz_count*blocksize*blocksize + k] = ONE;
+	  } else {
+	    Data[nnz_count*blocksize*blocksize + k] = ZERO;
+	  }
+	}	 
+	nnz_count++;
+      }
+      stencil++;	
+    }      
+  }
+
+  if( nnz != nnz_count){ cerr<<"\n Number of nonzero blocks mismatch error in approximate Jacobian formation "
+			     <<nnz<<" != "<<nnz_count<<"\n"; exit(1); }
+
+  //! Create Sparse bpkit "BlockMat" Block Matrix 
+  Block_Jacobian_approx.setup(block_mat_size,nnz,i_index,j_index,Data,blocksize);                  
+  
+  //! Clean up local memory
+  delete[] i_index; delete[] j_index; delete[] Data;  delete[] block_i;
+
+}
+
+
+/**********************************************************
+ *  Update BlockMat with approximation to the Jacobian    *
+ **********************************************************/
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
+Update_Jacobian_and_Preconditioner()
+{
+  
+//   //!Local Variables and Temporary Storage
+//   int block_mat_size = Hexa_Block_ptr->NCi*Hexa_Block_ptr->NCj; 
+//   DenseMatrix *Jacobian_Data = new DenseMatrix[Jacobian_stencil_size];
+//   for(int i=0; i<Jacobian_stencil_size; i++) { Jacobian_Data[i] = DenseMatrix(blocksize,blocksize,ZERO); }
+//   int *block_i = new int[Jacobian_stencil_size]; 
+//   int *block_j = new int[Jacobian_stencil_size]; 
+
+//   //! Initially assume no overlap
+//   int JCl_overlap = 0, JCu_overlap = 0, ICu_overlap =0, ICl_overlap = 0;
+  
+//   //! If overlap determine which block boundaries are internal, ie. BC_NONE
+//   if(Input_Parameters->NKS_IP.GMRES_Overlap){	
+//     if (Hexa_Block_ptr->Grid.BCtypeS[Hexa_Block_ptr->ICl] == BC_NONE)  JCl_overlap = Input_Parameters->NKS_IP.GMRES_Overlap;
+//     if (Hexa_Block_ptr->Grid.BCtypeN[Hexa_Block_ptr->ICu] == BC_NONE)  JCu_overlap = Input_Parameters->NKS_IP.GMRES_Overlap;
+//     if (Hexa_Block_ptr->Grid.BCtypeE[Hexa_Block_ptr->JCu] == BC_NONE)  ICu_overlap = Input_Parameters->NKS_IP.GMRES_Overlap;
+//     if (Hexa_Block_ptr->Grid.BCtypeW[Hexa_Block_ptr->JCl] == BC_NONE)  ICl_overlap = Input_Parameters->NKS_IP.GMRES_Overlap;
+//   }
+
+//   //*********************************************************************************//
+//   /*! Calculate Jacobians for each cell and Update Global Jacobian Block Matrix
+//    * loop through all non-ghost cells, including overlap cells.  Ghost cells already
+//    * set to Zero or Identity by initialization.
+//    **********************************************************************************/
+//   for(int i= Hexa_Block_ptr->ICl - ICl_overlap; i<= Hexa_Block_ptr->ICu + ICu_overlap; i++){    
+//     for(int j= Hexa_Block_ptr->JCl - JCl_overlap; j<= Hexa_Block_ptr->JCu + ICu_overlap; j++){  
+  
+//       //--------------------------------------------------------------------------//
+//       //! Calculate Local Approximate Jacobian                        
+//       switch(Input_Parameters->NKS_IP.Jacobian_Order){
+//       case SOURCE_TERMS_ONLY :
+// 	Implicit_Euler(i,j, Jacobian_Data);
+// 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);
+// 	break;
+//       case FIRST_ORDER_INVISCID_HLLE : 
+// 	Implicit_Euler(i,j, Jacobian_Data);
+// 	First_Order_Inviscid_Jacobian_HLLE(i,j, Jacobian_Data);
+// 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);                       
+// 	break;
+//       case FIRST_ORDER_INVISCID_ROE : 
+// 	Implicit_Euler(i,j, Jacobian_Data);
+// 	First_Order_Inviscid_Jacobian_Roe(i,j, Jacobian_Data);
+// 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);
+// 	break;
+//       case FIRST_ORDER_INVISCID_AUSMPLUSUP : 
+// 	Implicit_Euler(i,j, Jacobian_Data);
+// 	First_Order_Inviscid_Jacobian_AUSM_plus_up(i,j, Jacobian_Data);
+// 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);
+// 	break;
+//       case SECOND_ORDER_DIAMOND_WITH_HLLE:
+// 	Implicit_Euler(i,j, Jacobian_Data);
+// 	First_Order_Inviscid_Jacobian_HLLE(i,j, Jacobian_Data);   
+// 	Second_Order_Viscous_Jacobian(i,j, Jacobian_Data);    
+// 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);   
+// 	break;
+//       case SECOND_ORDER_DIAMOND_WITH_ROE :	
+// 	Implicit_Euler(i,j, Jacobian_Data);
+// 	First_Order_Inviscid_Jacobian_Roe(i,j, Jacobian_Data);
+// 	Second_Order_Viscous_Jacobian(i,j, Jacobian_Data);    
+// 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]); 
+// 	break;
+//       case SECOND_ORDER_DIAMOND_WITH_AUSMPLUSUP :	
+// 	Implicit_Euler(i,j, Jacobian_Data);
+// 	First_Order_Inviscid_Jacobian_AUSM_plus_up(i,j, Jacobian_Data);
+// 	Second_Order_Viscous_Jacobian(i,j, Jacobian_Data);    
+// 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);  
+// 	break;
+//       }
+                  
+//       //--------------------------------------------------------------------------//
+//       //! Get Block Matrix locations that have components from a given Cell(i,j)
+//       Get_Block_Index(i,j, block_i, block_j);
+      
+//       //fudge for iGhost Cell reset to zero   //jGhost cell already zero                
+//       if(block_i[NORTH] < TWO*Hexa_Block_ptr->NCi) Jacobian_Data[NORTH].zero();
+//       if(block_i[SOUTH] > block_mat_size - TWO*Hexa_Block_ptr->NCi) Jacobian_Data[SOUTH].zero();
+
+//       if(Jacobian_stencil_size == 9){		
+// 	if(block_i[NE] < TWO*Hexa_Block_ptr->NCi)    Jacobian_Data[NE].zero();
+// 	if(block_i[NW] < TWO*Hexa_Block_ptr->NCi)    Jacobian_Data[NW].zero(); 
+// 	if(block_i[SE] > block_mat_size - TWO*Hexa_Block_ptr->NCi)    Jacobian_Data[SE].zero();
+// 	if(block_i[SW] > block_mat_size - TWO*Hexa_Block_ptr->NCi)    Jacobian_Data[SW].zero();
+//       }
+//       //--------------------------------------------------------------------------//
+//       //! Update BlockMat with Local Approximate Jacobians 
+//       for( int block = 0; block < Jacobian_stencil_size; block++){
+// 	// Normalize
+// 	normalize_Preconditioner_dFdU(Jacobian_Data[block]);
+
+// 	//can be sped up by more intelligent logic in bkpkit (BlockMat.cc  "setblock")
+// 	Block_Jacobian_approx.setblock( block_i[block], block_j[block], DenseMatrix_to_DenseMat(Jacobian_Data[block]));
+
+// 	Jacobian_Data[block].zero(); //Just in case to avoid +=/-= issues
+//       }     
+
+//     }
+//   }
+  
+//   //Local Memory cleanup
+//   delete[] Jacobian_Data; delete[] block_i; delete[] block_j;
+
+//   //Setup appropriate Preconditioner after Jacobian has been formed/Updated
+//   Setup_Preconditioner();
+}
+
+/*****************************************************************************
+ *  Add finite time step to diagonal.                                        *
+ *****************************************************************************/ 
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
+Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jacobian){   
+
+  DenseMatrix II(blocksize,blocksize);  
+  II.identity();    
+  Jacobian[CENTER] -= (II / (Hexa_Block_ptr->dt[cell_index_i][cell_index_j]));
+}
+
+/*****************************************************************************
+ *  Calculate First Order Local Jacobian Block(s) Coresponding to Cell(i,j)  *
+ *  using HLLE                                                               *
+ *****************************************************************************/ 
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
+First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index_j, 
+				   DenseMatrix* Jacobian){              
+  
+//   //! Caculate normal vectors -> in Vector2D format. 
+//   Vector2D nface_N = Hexa_Block_ptr->Grid.nfaceN(cell_index_i,cell_index_j-1);
+//   Vector2D nface_S = Hexa_Block_ptr->Grid.nfaceS(cell_index_i,cell_index_j+1);
+//   Vector2D nface_E = Hexa_Block_ptr->Grid.nfaceE(cell_index_i-1,cell_index_j);
+//   Vector2D nface_W = Hexa_Block_ptr->Grid.nfaceW(cell_index_i+1,cell_index_j);
+
+//   //! Calculate wavespeeds using solutions in the rotated frame -> in Vector2D format.
+//   Vector2D lambdas_N = HLLE_wavespeeds(Hexa_Block_ptr->W[cell_index_i][cell_index_j-1], 
+// 				       Hexa_Block_ptr->W[cell_index_i][cell_index_j], nface_N);
+//   Vector2D lambdas_S = HLLE_wavespeeds(Hexa_Block_ptr->W[cell_index_i][cell_index_j+1], 
+// 				       Hexa_Block_ptr->W[cell_index_i][cell_index_j], nface_S);  
+//   Vector2D lambdas_E = HLLE_wavespeeds(Hexa_Block_ptr->W[cell_index_i-1][cell_index_j], 
+// 				       Hexa_Block_ptr->W[cell_index_i][cell_index_j], nface_E);
+//   Vector2D lambdas_W = HLLE_wavespeeds(Hexa_Block_ptr->W[cell_index_i+1][cell_index_j], 
+// 				       Hexa_Block_ptr->W[cell_index_i][cell_index_j], nface_W);
+
+//   //checks necessary ????
+//   //if ((lambdas_W.y-lambdas_W.x) == ZERO) cout << " WEST : HLLE_wavespeeds " << endl;
+ 
+//   //! Calculate constants gamma and beta -> scalar values. 
+//   double gamma_N = (lambdas_N.x*lambdas_N.y)/(lambdas_N.y-lambdas_N.x);
+//   double beta_N  = - lambdas_N.x/(lambdas_N.y-lambdas_N.x);
+//   double gamma_S = (lambdas_S.x*lambdas_S.y)/(lambdas_S.y-lambdas_S.x);
+//   double beta_S  = - lambdas_S.x/(lambdas_S.y-lambdas_S.x);
+//   double gamma_E = (lambdas_E.x*lambdas_E.y)/(lambdas_E.y-lambdas_E.x);
+//   double beta_E  = - lambdas_E.x/(lambdas_E.y-lambdas_E.x);
+//   double gamma_W = (lambdas_W.x*lambdas_W.y)/(lambdas_W.y-lambdas_W.x);
+//   double beta_W  = - lambdas_W.x/(lambdas_W.y-lambdas_W.x);
+
+//   //! Obtain rotation matrices with normal vector -> matrices in DenseMatrix format. 
+//   DenseMatrix A_N( Rotation_Matrix(nface_N, 1) );
+//   DenseMatrix AI_N( Rotation_Matrix(nface_N, 0) );
+//   DenseMatrix A_S( Rotation_Matrix(nface_S, 1) );
+//   DenseMatrix AI_S( Rotation_Matrix(nface_S, 0) );
+//   DenseMatrix A_E( Rotation_Matrix(nface_E, 1) );
+//   DenseMatrix AI_E( Rotation_Matrix(nface_E, 0) );
+//   DenseMatrix A_W( Rotation_Matrix(nface_W, 1) );
+//   DenseMatrix AI_W( Rotation_Matrix(nface_W, 0) );
+
+//   //! Calculate dFdU using solutions in the rotated frame -> matrix in DenseMatrix format. 
+//   DenseMatrix dFdU_N(blocksize,blocksize,ZERO); 
+//   DenseMatrix dFdU_S(blocksize,blocksize,ZERO); 
+//   DenseMatrix dFdU_E(blocksize,blocksize,ZERO); 
+//   DenseMatrix dFdU_W(blocksize,blocksize,ZERO); 
+
+//   //Solution Rotate provided in pState 
+//   Preconditioner_dFIdU( dFdU_N, Rotate(Hexa_Block_ptr->W[cell_index_i][cell_index_j], nface_N)); 
+//   Preconditioner_dFIdU( dFdU_S, Rotate(Hexa_Block_ptr->W[cell_index_i][cell_index_j], nface_S));
+//   Preconditioner_dFIdU( dFdU_E, Rotate(Hexa_Block_ptr->W[cell_index_i][cell_index_j], nface_E));
+//   Preconditioner_dFIdU( dFdU_W, Rotate(Hexa_Block_ptr->W[cell_index_i][cell_index_j], nface_W));
+  
+//   DenseMatrix II(blocksize,blocksize);  II.identity();    
+
+//   //! Calculate Jacobian matrix -> blocksizexblocksize matrix in DenseMatrix format
+//   //North
+//   Jacobian[NORTH] = (Hexa_Block_ptr->Grid.lfaceN(cell_index_i,cell_index_j-1) 
+// 		 * AI_N * (beta_N * dFdU_N + gamma_N * II) * A_N); 
+
+//   //South
+//   Jacobian[SOUTH] = (Hexa_Block_ptr->Grid.lfaceS(cell_index_i,cell_index_j+1) 
+// 		 * AI_S * (beta_S * dFdU_S + gamma_S * II) * A_S);
+
+//   //East
+//   Jacobian[EAST] = (Hexa_Block_ptr->Grid.lfaceE(cell_index_i-1,cell_index_j) 
+// 		 * AI_E * (beta_E * dFdU_E + gamma_E * II) * A_E);
+
+//   //West
+//   Jacobian[WEST] = (Hexa_Block_ptr->Grid.lfaceW(cell_index_i+1,cell_index_j) 
+// 		 * AI_W * (beta_W * dFdU_W + gamma_W * II) * A_W);
+
+//   //Center calculated from neighbours
+//   //! Using the fact that dF/dU(right) = - dF/dU(left) 
+//   Jacobian[CENTER] += (Jacobian[NORTH] + Jacobian[SOUTH] + Jacobian[EAST]  + Jacobian[WEST])
+//     /Hexa_Block_ptr->Grid.Cell[cell_index_i][cell_index_j].A;
+
+//   Jacobian[NORTH] = -Jacobian[NORTH]/Hexa_Block_ptr->Grid.Cell[cell_index_i][cell_index_j-1].A;
+//   Jacobian[SOUTH] = -Jacobian[SOUTH]/Hexa_Block_ptr->Grid.Cell[cell_index_i][cell_index_j+1].A;
+//   Jacobian[EAST] = -Jacobian[EAST]/Hexa_Block_ptr->Grid.Cell[cell_index_i-1][cell_index_j].A;
+//   Jacobian[WEST] = -Jacobian[WEST]/Hexa_Block_ptr->Grid.Cell[cell_index_i+1][cell_index_j].A;
+
+}
+
+/*****************************************************************************
+ *  Calculate First Order Local Jacobian Block(s) Coresponding to Cell(i,j)  *
+ *  using Roe                                                                *
+ *****************************************************************************/
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
+First_Order_Inviscid_Jacobian_Roe(const int &cell_index_i,const int &cell_index_j, 
+				   DenseMatrix* Jacobian){              
+    
+//   //! Calculate Jacobian matrix -> blocksizexblocksize matrix in DenseMatrix format
+//   Preconditioner_dFIdU_Roe(Jacobian[NORTH],cell_index_i,cell_index_j,NORTH);
+//   Preconditioner_dFIdU_Roe(Jacobian[SOUTH],cell_index_i,cell_index_j,SOUTH); 
+//   Preconditioner_dFIdU_Roe(Jacobian[EAST],cell_index_i,cell_index_j,EAST);        
+//   Preconditioner_dFIdU_Roe(Jacobian[WEST],cell_index_i,cell_index_j,WEST); 
+
+//   //Center calculated from neighbours
+//   //! Using the fact that dF/dU(right) = - dF/dU(left) 
+//   Jacobian[CENTER] += (Jacobian[NORTH] + Jacobian[SOUTH] + Jacobian[EAST]  + Jacobian[WEST])
+//                      /Hexa_Block_ptr->Grid.Cell[cell_index_i][cell_index_j].A;
+
+//   Jacobian[NORTH] = -Jacobian[NORTH]/Hexa_Block_ptr->Grid.Cell[cell_index_i][cell_index_j-1].A;
+//   Jacobian[SOUTH] = -Jacobian[SOUTH]/Hexa_Block_ptr->Grid.Cell[cell_index_i][cell_index_j+1].A;
+//   Jacobian[EAST] = -Jacobian[EAST]/Hexa_Block_ptr->Grid.Cell[cell_index_i-1][cell_index_j].A;
+//   Jacobian[WEST] = -Jacobian[WEST]/Hexa_Block_ptr->Grid.Cell[cell_index_i+1][cell_index_j].A;
+
+}
+
+/*****************************************************************************
+ *  Calculate First Order Local Jacobian Block(s) Coresponding to Cell(i,j)  *
+ *  using AUSM_plus_up                                                       *
+ ****************************************************************************/
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
+First_Order_Inviscid_Jacobian_AUSM_plus_up(const int &cell_index_i,const int &cell_index_j, 
+					   DenseMatrix* Jacobian){              
+
+//   //! Calculate Jacobian matrix -> blocksizexblocksize matrix in DenseMatrix format
+//   Preconditioner_dFIdU_AUSM_plus_up(Jacobian[NORTH],cell_index_i,cell_index_j,NORTH);
+//   Preconditioner_dFIdU_AUSM_plus_up(Jacobian[SOUTH],cell_index_i,cell_index_j,SOUTH); 
+//   Preconditioner_dFIdU_AUSM_plus_up(Jacobian[EAST],cell_index_i,cell_index_j,EAST);        
+//   Preconditioner_dFIdU_AUSM_plus_up(Jacobian[WEST],cell_index_i,cell_index_j,WEST); 
+
+//   //! Using the fact that dF/dU(right) = - dF/dU(left) 
+//   Jacobian[CENTER] += (Jacobian[NORTH] + Jacobian[SOUTH] + Jacobian[EAST]  + Jacobian[WEST])
+//     /Hexa_Block_ptr->Grid.Cell[cell_index_i][cell_index_j].A;
+
+//   Jacobian[NORTH] = -Jacobian[NORTH]/Hexa_Block_ptr->Grid.Cell[cell_index_i][cell_index_j-1].A;
+//   Jacobian[SOUTH] = -Jacobian[SOUTH]/Hexa_Block_ptr->Grid.Cell[cell_index_i][cell_index_j+1].A;
+//   Jacobian[EAST] = -Jacobian[EAST]/Hexa_Block_ptr->Grid.Cell[cell_index_i-1][cell_index_j].A;
+//   Jacobian[WEST] = -Jacobian[WEST]/Hexa_Block_ptr->Grid.Cell[cell_index_i+1][cell_index_j].A;
+  
+}
+
+/****************************************************************************
+ *  Calculate Second Order Local Jacobian Block(s) Coresponding to Cell(i,j) *                      
+ ****************************************************************************/
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
+Second_Order_Viscous_Jacobian(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jacobian){
+
+//   // A real cludge with all the DenseMatrices and recalculations, 
+//   //  but just to test, need to change for performance....
+//   DenseMatrix JacobianN(blocksize,blocksize,ZERO); 
+//   DenseMatrix JacobianS(blocksize,blocksize,ZERO); 
+//   DenseMatrix JacobianE(blocksize,blocksize,ZERO); 
+//   DenseMatrix JacobianW(blocksize,blocksize,ZERO); 
+
+//   //Also should rewrite to minimize dR/dU calls and just 
+//   //call dWdU, but this needs to be done in Preconditioner_dFVdU
+  
+//   //***************** dR(i,j)/dU(i,j) *********************************************/
+//   //CENTER
+//   Preconditioner_dFVdU(JacobianN,cell_index_i,cell_index_j,
+// 		       cell_index_i,cell_index_j,NORTH,CENTER);
+//   Preconditioner_dFVdU(JacobianS,cell_index_i,cell_index_j,
+// 		       cell_index_i,cell_index_j,SOUTH,CENTER);
+//   Preconditioner_dFVdU(JacobianE,cell_index_i,cell_index_j,
+// 		       cell_index_i,cell_index_j,EAST,CENTER);
+//   Preconditioner_dFVdU(JacobianW,cell_index_i,cell_index_j,
+// 		       cell_index_i,cell_index_j,WEST,CENTER);
+
+//   Jacobian[CENTER] += (JacobianN + JacobianS + JacobianE  + JacobianW) 
+//     /Hexa_Block_ptr->Grid.Cell[cell_index_i][cell_index_j].A;
+
+
+//   /***************** dR(i,j-1)/dU(i,j) *********************************************/
+//   //NORTH                           
+//   JacobianN.zero();
+//   Preconditioner_dFVdU(JacobianN,cell_index_i,cell_index_j-1,
+// 		       cell_index_i,cell_index_j,EAST,NORTH); 
+//   Preconditioner_dFVdU(JacobianN,cell_index_i,cell_index_j-1,
+// 		       cell_index_i,cell_index_j,NORTH,NORTH); 
+//   Preconditioner_dFVdU(JacobianN,cell_index_i,cell_index_j-1,
+// 		       cell_index_i,cell_index_j,WEST,NORTH); 
+ 
+//   /***************** dR(i,j+1)/dU(i,j) *********************************************/
+//   //SOUTH 
+//   JacobianS.zero();
+//   Preconditioner_dFVdU(JacobianS,cell_index_i,cell_index_j+1,
+// 		       cell_index_i,cell_index_j,EAST,SOUTH);
+//   Preconditioner_dFVdU(JacobianS,cell_index_i,cell_index_j+1,
+// 		       cell_index_i,cell_index_j,SOUTH,SOUTH);
+//   Preconditioner_dFVdU(JacobianS,cell_index_i,cell_index_j+1,
+// 		       cell_index_i,cell_index_j,WEST,SOUTH);
+  
+//   /***************** dR(i-1,j)/dU(i,j) *********************************************/
+//   //EAST 
+//   JacobianE.zero();
+//   Preconditioner_dFVdU(JacobianE,cell_index_i-1,cell_index_j,
+// 		       cell_index_i,cell_index_j,NORTH,EAST);
+//   Preconditioner_dFVdU(JacobianE,cell_index_i-1,cell_index_j,
+// 		       cell_index_i,cell_index_j,EAST,EAST);
+//   Preconditioner_dFVdU(JacobianE,cell_index_i-1,cell_index_j,
+// 		       cell_index_i,cell_index_j,SOUTH,EAST);
+
+//   /***************** dR(i+1,j)/dU(i,j) *********************************************/
+//   //WEST
+//   JacobianW.zero(); 
+//   Preconditioner_dFVdU(JacobianW,cell_index_i+1,cell_index_j,
+// 		       cell_index_i,cell_index_j, NORTH,WEST);
+//   Preconditioner_dFVdU(JacobianW,cell_index_i+1,cell_index_j,
+// 		       cell_index_i,cell_index_j, WEST,WEST);
+//   Preconditioner_dFVdU(JacobianW,cell_index_i+1,cell_index_j,
+// 		       cell_index_i,cell_index_j, SOUTH,WEST);
+
+//   Jacobian[NORTH] += JacobianN/Hexa_Block_ptr->Grid.Cell[cell_index_i][cell_index_j-1].A;
+//   Jacobian[SOUTH] += JacobianS/Hexa_Block_ptr->Grid.Cell[cell_index_i][cell_index_j+1].A;
+//   Jacobian[EAST] += JacobianE/Hexa_Block_ptr->Grid.Cell[cell_index_i-1][cell_index_j].A;
+//   Jacobian[WEST] += JacobianW/Hexa_Block_ptr->Grid.Cell[cell_index_i+1][cell_index_j].A; 
+
+//   /********************************************************************************/
+//   //CORNERS reuse matrices
+//   JacobianN.zero();  JacobianS.zero();
+//   JacobianE.zero();  JacobianW.zero();
+
+//   /***************** dR(i+1,j+1)/dU(i,j) *********************************************/
+//   //SOUTHWEST
+//   Preconditioner_dFVdU(JacobianS,cell_index_i+1,cell_index_j+1,
+// 		       cell_index_i,cell_index_j,SOUTH,SW);
+//   Preconditioner_dFVdU(JacobianS,cell_index_i+1,cell_index_j+1,
+// 		       cell_index_i,cell_index_j, WEST,SW);  
+//   Jacobian[SW] += JacobianS/Hexa_Block_ptr->Grid.Cell[cell_index_i+1][cell_index_j+1].A;
+  
+//   /***************** dR(i-1,j+1)/dU(i,j) *********************************************/
+//   //SOUTHEAST
+//   Preconditioner_dFVdU(JacobianE,cell_index_i-1,cell_index_j+1,
+// 		       cell_index_i,cell_index_j,SOUTH,SE);
+//   Preconditioner_dFVdU(JacobianE,cell_index_i-1,cell_index_j+1,
+// 		       cell_index_i,cell_index_j,EAST,SE);  
+//   Jacobian[SE] += JacobianE/Hexa_Block_ptr->Grid.Cell[cell_index_i-1][cell_index_j+1].A;
+
+//   /***************** dR(i+1,j-1)/dU(i,j) *********************************************/
+//   //NORTHWEST
+//   Preconditioner_dFVdU(JacobianW,cell_index_i+1,cell_index_j-1,
+// 		       cell_index_i,cell_index_j, NORTH,NW);
+//   Preconditioner_dFVdU(JacobianW,cell_index_i+1,cell_index_j-1,
+// 		       cell_index_i,cell_index_j, WEST,NW);  
+//   Jacobian[NW] += JacobianW/Hexa_Block_ptr->Grid.Cell[cell_index_i+1][cell_index_j-1].A;
+
+//   /***************** dR(i-1,j-1)/dU(i,j) *********************************************/
+//   //NORTHEAST
+//   Preconditioner_dFVdU(JacobianN,cell_index_i-1,cell_index_j-1,
+// 		       cell_index_i,cell_index_j, NORTH,NE);
+//   Preconditioner_dFVdU(JacobianN,cell_index_i-1,cell_index_j-1,
+// 		       cell_index_i,cell_index_j, EAST,NE);  
+//   Jacobian[NE] += JacobianN/Hexa_Block_ptr->Grid.Cell[cell_index_i-1][cell_index_j-1].A;
+
+
+}
+
+/*********************************************************
+ *  Setup preconditioner from Jacobian Approx            *
+ *********************************************************/
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
+Setup_Preconditioner()
+{
+  deallocate_Precon(); // cludge of a workaround to fix up how BpPrecon uses memory in .setup
+ 
+  ILUK_Precon = new BILUK;
+  Jacobi_Precon = new BJacobi;
+  
+  if (IPs->NKS_IP.GMRES_Block_Preconditioner == Block_ILUK ) {      
+    /* ILU(k) */   
+    ILUK_Precon->localprecon(LP_INVERSE);  // currently using "exact" local inverse, many other options which may be cheaper !!!!!
+    ILUK_Precon->setup(Block_Jacobian_approx, IPs->NKS_IP.GMRES_ILUK_Level_of_Fill);
+  } else if (IPs->NKS_IP.GMRES_Block_Preconditioner == Block_Jacobi) {
+    /* Diagonal */    
+    Jacobi_Precon->localprecon(LP_INVERSE);
+    Jacobi_Precon->setup(Block_Jacobian_approx);
+  }
+
+}
+
+/*********************************************************
+ * Apply preconditioner - in GMRES                       *
+ *********************************************************/  //FYI Issues with passing by address &
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
+Apply_Preconditioner(int A, int B, const double *C, int D, double *E, int F)
+{
+  /* z = Minv * V(i) -> stored in W(i). */
+  if (IPs->NKS_IP.GMRES_Block_Preconditioner == Block_ILUK ) {
+    ILUK_Precon->apply(A, B, C, D , E, F);
+  } else if (IPs->NKS_IP.GMRES_Block_Preconditioner == Block_Jacobi ) {
+    Jacobi_Precon->apply(A, B, C, D , E, F);
+  }
+}
+
+/********************************************************
+ * Block_Preconditioner::DenseMat_to_DenseMatrix.       *
+ ********************************************************/
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline DenseMat Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
+DenseMatrix_to_DenseMat(const DenseMatrix &B) {
+  DenseMat A(B.dim(0),B.dim(1));
+  for (int i=0; i<B.dim(0); i++) {
+    for( int j=0; j<B.dim(1); j++) {
+      A(i,j) = B(i,j); 
+    }
+  }
+  return A;
+} 
+
+/*********************************************************
+ * Routine: Rotation_Matrix                              *
+ *                                                       *
+ * This function returns either the rotation matrix, A,  *
+ * or the inverse of A.                                  *
+ *                                                       *
+ * Note: A_matrix = 1 for returning A.                   *
+ *                = 0 for returning inverse of A.        *
+ *                                                       *
+ *********************************************************/
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline DenseMatrix Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
+Rotation_Matrix(const Vector2D &nface, const int &A_matrix) 
+{
+  double cos_angle = nface.x; 
+  double sin_angle = nface.y;
+    
+  DenseMatrix mat(blocksize,blocksize);
+  mat.identity();
+
+  if (A_matrix) {             
+    // Rotation Matrix, A   
+    mat(1,1) = cos_angle;
+    mat(1,2) = sin_angle;
+    mat(2,1) = -sin_angle;
+    mat(2,2) = cos_angle;
+  } else {
+    // Rotation Matrix, Inv A 
+    mat(1,1) = cos_angle;
+    mat(1,2) = -sin_angle;
+    mat(2,1) = sin_angle;
+    mat(2,2) = cos_angle;
+  } /* endif */
+
+  return mat;
+
+} /* End of Rotation_Matrix. */
+
+#endif  // _BLOCK_PRECONDITONER_INCLUDED 
+
+
+
+
+
+  /************* DEBUGGING FOR FIRST ORDER *********************
+  cout<<"\n CELL "<<cell_index_i<<" "<<cell_index_j;  
+  cout<<"\n faces \n N"<< nface_N <<"\n S "<<nface_S<<"\n E "<<nface_E<<"\n W "<<nface_W;
+  cout<<"\n lambdas \n N"<< lambdas_N <<"\n S "<<lambdas_S<<"\n E "<<lambdas_E<<"\n W "<<lambdas_W;
+  cout<<"\n dFdUs \n N \n"<< dFdU_N <<"\n S \n"<<dFdU_S<<"\n E \n"<<dFdU_E<<"\n W \n"<<dFdU_W;
+  cout<<"\n Jacobians \n N \n"<<Jacobian[1]<<"\n S \n"<<Jacobian[3]
+      <<"\n E \n"<<Jacobian[4]<<"\n W \n"<<Jacobian[2]<<"\n C \n"<<Jacobian[0];
+  *********************************************/
+
+
+//   /************************************************************************/
+//   /*********************** TEST OF BPKIT DATA STRUCTURE *******************/
+//   blocksize = 2;
+//   int nrow = 4;
+//   int nnz = 6;
+//   int *row= new int[nnz];   //row index of block
+//   int *col = new int[nnz];  //column index of block
+//   double *A = new double[nnz*blocksize*blocksize]; //1D array of values corresponding to (row,col) indices
+  
+//   for(int i=0; i<blocksize*blocksize; i++){
+//     A[i] = ONE;
+//     A[i+blocksize*blocksize] = 2.0;
+//     A[i+2*blocksize*blocksize] = 3.0;
+//     A[i+3*blocksize*blocksize] = 4.0;
+//     A[i+4*blocksize*blocksize] = 5.0;
+//     A[i+5*blocksize*blocksize] = 6.0;
+//   }  
+//   col[0] = 1;
+//   col[1] = 2;
+//   col[2] = 3;
+//   col[3] = 4;
+//   col[4] = 3;
+//   col[5] = 1;
+//   row[0] = 1;
+//   row[1] = 2;
+//   row[2] = 3;
+//   row[3] = 4;
+//   row[4] = 1;
+//   row[5] = 3;
+  
+//   Block_Jacobian_approx.setup(nrow,nnz,row,col,A,blocksize);                
+
+//   cout<<"\n Test of BlockMat\n "<<Block_Jacobian_approx;
+
+//   delete[] row; delete[] col; delete[] A;
+ 
+//   DenseMat Q(2,2);
+//   Q(0,0) = 1.5;
+//   Q(1,0) = 2.5;
+//   Q(0,1) = 3.5;
+//   Q(1,1) = 4.5;
+//   cout<<"\n  TEST replacement block at 2,0 \n"<<Q;
+
+//   Block_Jacobian_approx.setblock(2,0,Q);
+  
+//   cout<<"\n Test of BlockMat after modification\n "<<Block_Jacobian_approx;
+//   cout<<"\n End of Test \n\n"; exit(1); 
+
+//   /*********************** TEST OF BPKIT DATA STRUCTURE *******************/
+//   /************************************************************************/
+
