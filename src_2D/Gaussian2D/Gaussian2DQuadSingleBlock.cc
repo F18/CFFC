@@ -2087,6 +2087,40 @@ void BCs(Gaussian2D_Quad_Block &SolnBlk,
             break;
         } /* endswitch */
     } /* endfor */
+
+    //if east and west BCs are periodic, update corner ghost cells.
+    //this has to be done after the North and South BCs have been
+    //calculated.
+    for(j = SolnBlk.JCl-SolnBlk.Nghost ; j < SolnBlk.JCl ; ++j ) {
+      if(SolnBlk.Grid.BCtypeW[j] == BC_PERIODIC) {
+	SolnBlk.W[SolnBlk.ICl-1][j] = SolnBlk.W[SolnBlk.ICu-1][j];
+	SolnBlk.U[SolnBlk.ICl-1][j] = SolnBlk.U[SolnBlk.ICu-1][j];
+	SolnBlk.W[SolnBlk.ICl-2][j] = SolnBlk.W[SolnBlk.ICu-2][j];
+	SolnBlk.U[SolnBlk.ICl-2][j] = SolnBlk.U[SolnBlk.ICu-2][j];
+      }
+      if(SolnBlk.Grid.BCtypeE[j] == BC_PERIODIC) {
+            SolnBlk.W[SolnBlk.ICu+1][j] = SolnBlk.W[SolnBlk.ICl+1][j];
+            SolnBlk.U[SolnBlk.ICu+1][j] = SolnBlk.U[SolnBlk.ICl+1][j];
+            SolnBlk.W[SolnBlk.ICu+2][j] = SolnBlk.W[SolnBlk.ICl+2][j];
+            SolnBlk.U[SolnBlk.ICu+2][j] = SolnBlk.U[SolnBlk.ICl+2][j];
+      }
+    }
+
+    for(j = SolnBlk.JCu+1; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+      if(SolnBlk.Grid.BCtypeW[j] == BC_PERIODIC) {
+	SolnBlk.W[SolnBlk.ICl-1][j] = SolnBlk.W[SolnBlk.ICu-1][j];
+	SolnBlk.U[SolnBlk.ICl-1][j] = SolnBlk.U[SolnBlk.ICu-1][j];
+	SolnBlk.W[SolnBlk.ICl-2][j] = SolnBlk.W[SolnBlk.ICu-2][j];
+	SolnBlk.U[SolnBlk.ICl-2][j] = SolnBlk.U[SolnBlk.ICu-2][j];
+      }
+      if(SolnBlk.Grid.BCtypeE[j] == BC_PERIODIC) {
+            SolnBlk.W[SolnBlk.ICu+1][j] = SolnBlk.W[SolnBlk.ICl+1][j];
+            SolnBlk.U[SolnBlk.ICu+1][j] = SolnBlk.U[SolnBlk.ICl+1][j];
+            SolnBlk.W[SolnBlk.ICu+2][j] = SolnBlk.W[SolnBlk.ICl+2][j];
+            SolnBlk.U[SolnBlk.ICu+2][j] = SolnBlk.U[SolnBlk.ICl+2][j];
+      }
+    }
+    return;
 }
 
 /********************************************************
