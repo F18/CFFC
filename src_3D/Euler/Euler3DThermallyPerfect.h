@@ -21,6 +21,10 @@
 #include "Euler3DThermallyPerfectInput.h"
 #endif // _EULER3D_THERMALLYPERFECT_INPUT_INCLUDED
 
+#ifndef _EULER3D_THERMALLYPERFECT_HEXA_BLOCK_INCLUDED
+#include "Euler3DThermallyPerfectHexaBlock.h"
+#endif // _EULER3D_THERMALLYPERFECT_HEXA_BLOCK_INCLUDED
+
 #ifndef _MPI_INCLUDED
 #include "../MPI/MPI.h"
 #endif // _MPI_INCLUDED

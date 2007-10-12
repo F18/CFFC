@@ -778,7 +778,6 @@ $(EXE_ICEMCFD_UTIL2): $(OBJ_ICEMCFD_UTIL2)
 	@echo '---------------------------------------------------------'
 	@echo ' '
 
-
 #
 # Install/Uninstall targets
 install: $(EXE_MAIN)
@@ -969,7 +968,6 @@ $(MOD_MATH_F90): $(MATH_DIR)complexify.f90 $(MATH_DIR)Complexify.h
 .SUFFIXES: .f90
 .f90.o:
 	$(F90) $(F90FLAGS) $(MODFLAG) $(MODULE_DIR) -I$(MODULE_DIR) -c -o $*.o $*.f90
-
 
 
 ###################################################################

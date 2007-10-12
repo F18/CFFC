@@ -16,29 +16,9 @@
 #include "FANS3DThermallyPerfectState.h"
 #endif // _FANS3D_THERMALLYPERFECT_STATE_INCLUDED   
 
-// Member function specilizations:
+/* Define required specializations. */
 
 template<>
-int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
-               FANS3D_ThermallyPerfect_KOmega_cState>::
-dUdt_Multistage_Explicit(const int i_stage,
-                         Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
-                                          FANS3D_ThermallyPerfect_KOmega_cState> &IPs);
-
-template<>
-double Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
-                  FANS3D_ThermallyPerfect_KOmega_cState>::
-CFL(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
-                     FANS3D_ThermallyPerfect_KOmega_cState> &IPs);
-
-template<>
-double Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
-                  FANS3D_ThermallyPerfect_KOmega_cState>::
-Wall_Friction_Velocity(const int i, 
-                       const int j, 
-                       const int k);
-
-template< >
 void Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
 	        FANS3D_ThermallyPerfect_KOmega_cState>::
 Output_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
@@ -49,7 +29,7 @@ Output_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
 	       const int Output_Title,
 	       ostream &Out_File);
 				
-template< >
+template<>
 void Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
                 FANS3D_ThermallyPerfect_KOmega_cState>::
 Output_Cells_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
@@ -60,7 +40,7 @@ Output_Cells_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                      const int Output_Title,
                      ostream &Out_File);
 
-template< >
+template<>
 void Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
                 FANS3D_ThermallyPerfect_KOmega_cState>::
 Output_Nodes_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
@@ -71,22 +51,31 @@ Output_Nodes_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                      const int Output_Title,
                      ostream &Out_File);
 
-template< >
+template<>
 int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
                FANS3D_ThermallyPerfect_KOmega_cState>::
 ICs(const int i_ICtype,
     Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
                      FANS3D_ThermallyPerfect_KOmega_cState> &IPs);
 
-template< >
+template<>
 void Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
                 FANS3D_ThermallyPerfect_KOmega_cState>::
 BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
                      FANS3D_ThermallyPerfect_KOmega_cState> &IPs);
 
-template< > 
-int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,  
-               FANS3D_ThermallyPerfect_KOmega_cState>::Wall_Shear(void);
+template<>
+double Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
+                  FANS3D_ThermallyPerfect_KOmega_cState>::
+CFL(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
+                     FANS3D_ThermallyPerfect_KOmega_cState> &IPs);
+
+template<>
+int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
+               FANS3D_ThermallyPerfect_KOmega_cState>::
+dUdt_Multistage_Explicit(const int i_stage,
+                         Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
+                                          FANS3D_ThermallyPerfect_KOmega_cState> &IPs);
 
 template<>
 int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
@@ -95,5 +84,15 @@ Update_Solution_Multistage_Explicit(const int i_stage,
                                     Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                                                      FANS3D_ThermallyPerfect_KOmega_cState> &IPs);
 
+template<>
+double Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
+                  FANS3D_ThermallyPerfect_KOmega_cState>::
+Wall_Friction_Velocity(const int i, 
+                       const int j, 
+                       const int k);
+
+template<> 
+int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,  
+               FANS3D_ThermallyPerfect_KOmega_cState>::Wall_Shear(void);
 
 #endif // _FANS3D_THERMALLYPERFECT_HEXA_BLOCK_INCLUDED

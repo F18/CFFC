@@ -145,7 +145,14 @@ int Initial_Conditions(HexaSolver_Data &Data,
       CFFC_Maximum_MPI(Solution_Data.Input.Maximum_Number_of_Time_Steps);
    
     // NON RESTART 
-  } else {
+  } else {    
+
+    /////////////////////////////////////////////////////
+    //RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>  Create_Turbulence(HAWORTH_POINSOT);   //LES ONLY !GENERIC TYPE??????????
+    //Create_Turbulence.Generate_Velocity_Fluctuations(Initial_Mesh, Input.Grid_IP); 
+    //cout << "\n\n INITIAL TURBULENT FLUCTUATIONS GENERATED. \n\n";
+    /////////////////////////////////////////////////////
+    
     error_flag = Wall_Distance(Solution_Data.Local_Solution_Blocks.Soln_Blks,  // Turbulence function in GENERIC TYPE????
 			       Data.Octree, 
 			       Data.Local_Adaptive_Block_List);
@@ -233,22 +240,7 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
     /*! *********************** MAIN SOLVER ****************************************
       Solve IBVP or BVP for conservation form of equations on multi-block 
       solution-adaptive quadrilateral mesh.                                  
-    ****************************************************************************/  
-    
-    /* 
-      Need logic for explicit, implicit, multigrid, & unsteady, with combinations
-      of both...    
-
-      Input.Time_Accurate                  (true/false)
-      Input.NKS_IP.Dual_Time_Stepping      (true/false) 
-
-      Input.Time_Max                       (0 -> n) seconds
-      Input.i_Time_Integration             (Explicit_Euler,Explicit_Runge_Kutta,Multistage_Optimal_Smoothing, etc.)
-
-      Input.NKS_IP.Maximum_Number_of_NKS_Iterations   (0 -> n) its
-      Input.Maximum_Number_of_Time_Steps              (0 -> n) its  explicit
-   */
-  
+    ****************************************************************************/    
     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.    
     
     /********************** EXPLICIT **********************************/  

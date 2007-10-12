@@ -72,7 +72,7 @@ void Input_Parameters<Euler3D_Polytropic_pState,
 template<>
 void Input_Parameters<Euler3D_Polytropic_pState, 
                       Euler3D_Polytropic_cState>::Write_Reference_Solution_States(ostream &restart_file) {
-.
+
     // Write gas type.
     restart_file << Gas_Type << endl;
 
