@@ -69,7 +69,9 @@ void  Block_Orientation_Info::set_block_orientation_info(
 int Block_Orientation_Info::convert_boundary_elements_from_ijk_to_orientations(
    const int my_i, const int my_j, const int my_k){
    
-   char orientation[] = "neigh";
+   char orientation[9];
+
+   strcpy(orientation, "neigh");
    
    if(my_k == BlkC::KMax){
       strcat(orientation, "T");
