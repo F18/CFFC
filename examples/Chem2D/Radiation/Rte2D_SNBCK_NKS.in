@@ -115,9 +115,12 @@ Number_of_Blocks_Idir =
 1
 Number_of_Blocks_Jdir =
 1
+# Wall temperature [north south east west]
+Wall_Temperature = 
+0.0  0.0  0.0  0.0
 # Wall emissivity [north south east west]
 Wall_Emissivity =
-0.0  0.0  0.0  0.0
+1.0  1.0  1.0  1.0
 ICs_Medium =
 Specified
 Scattering_Coefficient =
@@ -130,7 +133,7 @@ SNBCK
 # SNBCK params
 #########################
 Evaluation_Type =
-Online
+Precalculated
 Quadrature_Type =
 Gauss_Legendre
 Number_of_Quad_Points =
@@ -139,8 +142,6 @@ Number_of_Lumped_Bands =
 40
 Optimized_Lumping =
 ON
-Overlap_Model =
-Correlated
 #######################
 # Execute program
 #######################
