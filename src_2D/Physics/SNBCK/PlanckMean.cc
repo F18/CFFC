@@ -170,6 +170,7 @@ double PlanckMean :: EvalPlanckMean( const double p,        // pressure [atm]
 {
   // declares
   double kp, kkp_CO, kkp_CO2, kkp_H2O;
+  static int err_cnt(0);
 
 
   // check to make sure everything allocated
@@ -180,11 +181,14 @@ double PlanckMean :: EvalPlanckMean( const double p,        // pressure [atm]
   }
 
   // check to make sure T within bounds
-  if (T<Tmin || T>Tmax) {
+  if ( (T<Tmin || T>Tmax) && err_cnt<5 ) {
+    err_cnt++;
     cerr << "\nError in PlanckMean::EvalPlanckMean() : Temperature "
 	 << "out of bounds. Tmin=" << Tmin << " < T=" << T 
 	 << " < Tmax=" << Tmax << "\n";
-    exit(-1);
+    if (err_cnt==5) 
+      cerr << "PlanckMean::EvalPlanckMean(): Suppressing error output from now on.\n";
+    //exit(-1);
   }
 
   // interpolate using the cubic spline

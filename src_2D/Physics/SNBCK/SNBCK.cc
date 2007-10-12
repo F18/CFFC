@@ -1463,6 +1463,7 @@ void SNBCK :: CalculateAbsorb_Interp( const double p,        // pressure [atm]
 
   // declares
   double kk_CO, kk_CO2, kk_H2O;
+  static int err_cnt(0);
 
   // check to make sure everything allocated
   if (k_CO == NULL) {
@@ -1472,11 +1473,14 @@ void SNBCK :: CalculateAbsorb_Interp( const double p,        // pressure [atm]
   }
 
   // check to make sure T within bounds
-  if (T<Tmin || T>Tmax) {
+  if ( (T<Tmin || T>Tmax) && err_cnt<5 ) {
+    err_cnt++;
     cerr << "\nError in SNBCK::CalculateAbsorb_Interp() : Temperature "
 	 << "out of bounds. Tmin=" << Tmin << " < T=" << T 
 	 << " < Tmax=" << Tmax << "\n";
-    exit(-1);
+    if (err_cnt==5) 
+      cerr << "SNBCK::CalculateAbsorb_Interp(): Suppressing error output from now on.\n";
+    //exit(-1);
   }
 
 
