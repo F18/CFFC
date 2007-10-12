@@ -230,6 +230,22 @@ void Output_Cells_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
                 << "\"DetP\" \\ \n"
                 << "\"d_rho_u\" \\ \n"
                 << "\"Mean Free Path\" \\ \n"
+                << "\"drhodx\" \\ \n"
+                << "\"dudx\" \\ \n"
+                << "\"dvdx\" \\ \n"
+                << "\"dpxxdx\" \\ \n"
+                << "\"dpxydx\" \\ \n"
+                << "\"dpyydx\" \\ \n"
+                << "\"dpzzdx\" \\ \n"
+                << "\"derotdx\" \\ \n"
+                << "\"drhody\" \\ \n"
+                << "\"dudy\" \\ \n"
+                << "\"dvdy\" \\ \n"
+                << "\"dpxxdy\" \\ \n"
+                << "\"dpxydy\" \\ \n"
+                << "\"dpyydy\" \\ \n"
+                << "\"dpzzdy\" \\ \n"
+                << "\"derotdy\" \\ \n"
                 << "\"phi_d\" \\ \n"
                 << "\"phi_vx\" \\ \n"
                 << "\"phi_vy\" \\ \n"
@@ -266,6 +282,8 @@ void Output_Cells_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
 	   Out_File << " " << sqrt(sqr(SolnBlk.W[i][j].v.x)+sqr(SolnBlk.W[i][j].v.y))
 		    << " " << SolnBlk.W[i][j].T() << " " << SolnBlk.W[i][j].DetP()
 		    << " " << SolnBlk.dUdt[i][j][0][1]<< " " << SolnBlk.W[i][j].mfp() 
+		    << " " << SolnBlk.dWdx[i][j]
+		    << " " << SolnBlk.dWdy[i][j]
 		    << " " << SolnBlk.phi[i][j] 
 		    << " " << sqrt(sqr(SolnBlk.dWdx[i][j].d) + sqr(SolnBlk.dWdy[i][j].d))
 		    << " " << fabs(SolnBlk.dWdx[i][j].v.x + SolnBlk.dWdy[i][j].v.y)
