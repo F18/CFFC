@@ -14,8 +14,8 @@
 
 /* Include CFFC header files */
 #include "TestData.h"
-#include "Euler3DPolytropicState.h"
-#include "../Utilities/Utilities.h"
+#include "../Euler3DPolytropicState.h"
+#include "../../Utilities/Utilities.h"
 
 namespace tut
 {
@@ -100,8 +100,6 @@ void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix 
      Obs: "ConditionName" is optional
   */
 
-
-
   /* Test 1:*/
   template<>
   template<>
@@ -162,13 +160,6 @@ void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix 
 
   }
 
-
-
-
-
-
-
-
  /* Test 2:*/
   template<>
   template<>
@@ -204,12 +195,6 @@ void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix 
 	ensure("enthalpy WH", W.H() == W.E() + W.p );
 
   }
-
-
-
-
-
-
 
  /* Test 3:*/
   template<>
@@ -258,7 +243,6 @@ void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix 
 	ensure_distance_cState("a*U" , a*U , Euler3D_Polytropic_cState(a*rho,a*rhov,a*E) , tol);
 	
   }
-  
   
    /* Test 4:*/
   template<>
@@ -494,11 +478,7 @@ void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix 
 	ensure_distance_pState("lp_z4",lp_z4_num,W.lp_z(4),tol);
 	ensure_distance_pState("lp_z5",lp_z5_num,W.lp_z(5),tol);
 	
-	
-	
-	
   }
-
 
 	/* Test 5:*/
 	template<>
@@ -540,7 +520,6 @@ void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix 
 	}
 
 }
-
 
 
 // Test suite constructor

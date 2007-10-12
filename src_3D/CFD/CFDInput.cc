@@ -516,8 +516,8 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
           i_ICs = IC_SOD_XDIR;
        } else if (strcmp(ICs_Type, "Sod_Ydir") == 0) {
           i_ICs = IC_SOD_YDIR;
-	   } else if (strcmp(ICs_Type, "Sod_Zdir") == 0) {
-		   i_ICs = IC_SOD_ZDIR;
+       } else if (strcmp(ICs_Type, "Sod_Zdir") == 0) {
+          i_ICs = IC_SOD_ZDIR;
        } else if (strcmp(ICs_Type, "Groth") == 0) {
           i_ICs = IC_GROTH;
        } else if (strcmp(ICs_Type, "Groth_Xdir") == 0) {

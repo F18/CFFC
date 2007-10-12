@@ -65,9 +65,14 @@ embeddedboundaries2D
 gaussian2D
 rte2D
 
-
 # 3D executables
 cffc3D
+euler3Dpolytropic
+euler3Dthermallyperfect
+navierstokes3Dpolytropic
+navierstokes3Dthermallyperfect
+fans3Dpolytropic
+fans3Dthermallyperfect
 
 # unit testing directories
 journal.tut
@@ -75,3 +80,4 @@ log.tut
 
 #dependencies
 src_2D/Depend
+src_3D/Depend

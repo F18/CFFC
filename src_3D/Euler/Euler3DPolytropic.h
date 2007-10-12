@@ -1,6 +1,8 @@
 /* Euler3DPolytropic.h:  
 
-   Header file for the 3D Euler Polytropic equations . */
+   Header file for the solution of the Euler equations 
+   governing polytropic (thermally and calorically 
+   perfect) gases. */
 
 #ifndef _EULER3D_POLYTROPIC_INCLUDED
 #define _EULER3D_POLYTROPIC_INCLUDED

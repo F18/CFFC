@@ -341,6 +341,7 @@ Vector3D rhov(void) const;
    double gamma_guess(void) const; 
    double a(void);                
    double a(void) const;
+   double M(void) const;
 
    bool negative_speccheck(void) const;
    //Species i concentration (rho*c/mol_mass)
@@ -619,7 +620,8 @@ class Euler3D_ThermallyPerfect_cState {
    Vector3D v(void) const;   
    double p(void) const;    
    double T(void) const;      
-   double a(void) const;     
+   double a(void) const;
+   double M(void) const;   
    bool negative_speccheck(  const Euler3D_ThermallyPerfect_cState &Uo, const int &flag) const; 
    double sum_species(void) const;
  

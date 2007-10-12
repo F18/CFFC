@@ -512,7 +512,7 @@ inline char *Date_And_Time() {
 #define IC_SINE_WAVE_ZDIR              45
 #define IC_SINE2_WAVE_XDIR             46
 #define IC_SINE2_WAVE_YDIR             47
-#define IC_SINE2_WAVE_YDIR             48
+#define IC_SINE2_WAVE_ZDIR             48
 
 #define IC_COMPRESSION_XDIR            50
 #define IC_COMPRESSION_YDIR            51
@@ -524,7 +524,7 @@ inline char *Date_And_Time() {
 #define IC_ELECTROSTATIC_CHANNEL       57
 #define IC_DESOLVATION_CHAMBER         58
 
-#define IC_GAS_MIX		               70
+#define IC_GAS_MIX		       70
 #define IC_CHEM_CORE_FLAME             71
 #define IC_CHEM_INVERSE_FLAME          72
 #define IC_CHEM_1DFLAME                73

@@ -314,8 +314,7 @@ SRC_REACTIONS += $(SRC_REACTIONS_F90)
 SRC_TUT = TestRun.cc \
           TestData.cc \
 	  BasicTests/Sample_Test.cc \
-          BasicTests/test_TestData.cc \
-	  ../Euler2D/test_Euler2DState.cc
+          BasicTests/test_TestData.cc
 SRC_TUT := $(addprefix $(UNIT_TESTING_DIR), $(SRC_TUT))
 
 # System:
@@ -779,7 +778,6 @@ $(EXE_ICEMCFD_UTIL2): $(OBJ_ICEMCFD_UTIL2)
 	@echo '---------------------------------------------------------'
 	@echo ' '
 
-
 #
 # Install/Uninstall targets
 install: $(EXE_MAIN)
@@ -970,7 +968,6 @@ $(MOD_MATH_F90): $(MATH_DIR)complexify.f90 $(MATH_DIR)Complexify.h
 .SUFFIXES: .f90
 .f90.o:
 	$(F90) $(F90FLAGS) $(MODFLAG) $(MODULE_DIR) -I$(MODULE_DIR) -c -o $*.o $*.f90
-
 
 
 ###################################################################
