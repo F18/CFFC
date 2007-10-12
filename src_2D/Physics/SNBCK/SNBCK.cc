@@ -334,9 +334,9 @@ void EM2C :: ComputeRefSNB( const double p,       // pressure [atm]
   for (int i=0; i<Nbands; i++) {
 
     // zero 
-    S_CO[i]  = ZERO; B_CO[i]  = ZERO;
-    S_CO2[i] = ZERO; B_CO2[i] = ZERO;
-    S_H2O[i] = ZERO; B_H2O[i] = ZERO;
+    S_CO[i]  = TOLER; B_CO[i]  = TOLER;
+    S_CO2[i] = TOLER; B_CO2[i] = TOLER;
+    S_H2O[i] = TOLER; B_H2O[i] = TOLER;
 
     
     //------------------------------------------------
@@ -486,8 +486,8 @@ void EM2C :: ComputeSNB( const double p,       // pressure [atm]
     // optically thin approximation proposed by Liu et al. (2001) 
     // and the optically thick approximation described by Liu et al. (2001) 
     // by treating the overlapping bands to be an approximate Malkmus band.
-    S_Thin[i] = ZERO;  B_Thin[i] = ZERO;
-    S_Thick[i] = ZERO; B_Thick[i] = ZERO;
+     S_Thin[i] = TOLER;  B_Thin[i] = TOLER;
+    S_Thick[i] = TOLER; B_Thick[i] = TOLER;
     flag = false;
     if (liH2O[i] && xH2O>MICRO) {
       S_Thin[i] += S_H2O[i];
@@ -1130,7 +1130,7 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
 	     (iCO2[v] && xco2>MICRO) ||
 	     (iCO[v] && xco>MICRO) )
 	  k[v][i] = AbsorptionCoeffSNBCK( g[i], SNB.B_Thin, SNB.S_Thin, 
-					  SNB.liMix, istart[v], iend[v] );
+					  istart[v], iend[v] );
 	else k[v][i]=ZERO;
 
       } /* end for - quadrature */
@@ -1154,7 +1154,7 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
 	     (iCO2[v] && xco2>MICRO) ||
 	     (iCO[v] && xco>MICRO) )
 	  k[v][i] = AbsorptionCoeffSNBCK( g[i], SNB.B_Thick, SNB.S_Thick, 
-					  SNB.liMix, istart[v], iend[v] );
+					  istart[v], iend[v] );
 	else k[v][i]=ZERO;
 
       } /* end for - quadrature */
@@ -1178,13 +1178,13 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
 	k[v][i] = ZERO;
 	if (iH2O[v] && xh2o>MICRO) 
 	  k[v][i] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
-					   SNB.liH2O, istart[v], iend[v] );
+					   istart[v], iend[v] );
 	if (iCO2[v] && xco2>MICRO) 
 	  k[v][i] += AbsorptionCoeffSNBCK( g[i], SNB.B_CO2, SNB.S_CO2, 
-					   SNB.liCO2, istart[v], iend[v] );
+					   istart[v], iend[v] );
 	if (iCO[v] && xco>MICRO) 
 	  k[v][i] += AbsorptionCoeffSNBCK( g[i],  SNB.B_CO,  SNB.S_CO,  
-					   SNB.liCO, istart[v], iend[v] );
+					   istart[v], iend[v] );
 
       } /* end for - quadrature */
     } /* end for - bands */
@@ -1213,13 +1213,13 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
 	for (int i=0; i<nquad[v]; i++) {
 	  if (iH2O[v] && xh2o>MICRO) 
 	    k[v][i] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
-					     SNB.liH2O, istart[v], iend[v] );
+					     istart[v], iend[v] );
 	  if (iCO2[v] && xco2>MICRO) 
 	    k[v][i] += AbsorptionCoeffSNBCK( g[i], SNB.B_CO2, SNB.S_CO2, 
-					     SNB.liCO2, istart[v], iend[v] );
+					     istart[v], iend[v] );
 	  if (iCO[v] && xco>MICRO) 
 	    k[v][i] += AbsorptionCoeffSNBCK( g[i],  SNB.B_CO,  SNB.S_CO,  
-					     SNB.liCO, istart[v], iend[v] );
+					     istart[v], iend[v] );
 	  ww[v][i] = w[i];          // compute new weight
 	} /* endfor */
 	
@@ -1230,10 +1230,10 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
 	    cnt = i*Nquad + j;
 	    if (xh2o>MICRO) 
 	      k[v][cnt] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
-						 SNB.liH2O, istart[v], iend[v] );
+						 istart[v], iend[v] );
 	    if (xco2>MICRO) 
 	      k[v][cnt] += AbsorptionCoeffSNBCK( g[j], SNB.B_CO2, SNB.S_CO2, 
-						 SNB.liCO2, istart[v], iend[v] );
+						 istart[v], iend[v] );
 	    ww[v][cnt] = w[i]*w[j]; // compute new weight
 	  } /* endfor */
 	} /* endfor */
@@ -1245,10 +1245,10 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
 	    cnt = i*Nquad + j;
 	    if (xh2o>MICRO) 
 	      k[v][cnt] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
-						 SNB.liH2O, istart[v], iend[v] );
+						 istart[v], iend[v] );
 	    if (xco>MICRO) 
 	      k[v][cnt] += AbsorptionCoeffSNBCK( g[j],  SNB.B_CO,  SNB.S_CO,  
-						 SNB.liCO, istart[v], iend[v] );
+						 istart[v], iend[v] );
 	    ww[v][cnt] = w[i]*w[j]; // compute new weight
 	  } /* endfor */
 	} /* endfor */
@@ -1260,10 +1260,10 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
 	    cnt = i*Nquad + j;
 	    if (xco2>MICRO) 
 	      k[v][cnt] += AbsorptionCoeffSNBCK( g[i], SNB.B_CO2, SNB.S_CO2, 
-						 SNB.liCO2, istart[v], iend[v] );
+						 istart[v], iend[v] );
 	    if (xco>MICRO) 
 	      k[v][cnt] += AbsorptionCoeffSNBCK( g[j],  SNB.B_CO,  SNB.S_CO,  
-						 SNB.liCO, istart[v], iend[v] );
+						 istart[v], iend[v] );
 	    ww[v][cnt] = w[i]*w[j]; // compute new weight
 	  } /* endfor */
 	} /* endfor */
@@ -1277,13 +1277,13 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
 	      cnt = i*Nquad*Nquad + j*Nquad + n;
 	      if (xh2o>MICRO) 
 		k[v][cnt] += AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
-						   SNB.liH2O, istart[v], iend[v] );
+						   istart[v], iend[v] );
 	      if (xco2>MICRO) 
 		k[v][cnt] += AbsorptionCoeffSNBCK( g[j], SNB.B_CO2, SNB.S_CO2, 
-						   SNB.liCO2, istart[v], iend[v] );
+						   istart[v], iend[v] );
 	      if (xco>MICRO) 
 		k[v][cnt] += AbsorptionCoeffSNBCK( g[n],  SNB.B_CO,  SNB.S_CO,  
-						   SNB.liCO, istart[v], iend[v] );
+						   istart[v], iend[v] );
 	      ww[v][cnt] = w[i]*w[j]*w[n]; // compute new weight
 	    } /* endfor */
 	  } /* endfor */
@@ -1403,15 +1403,15 @@ void SNBCK :: PreCalculateAbsorb( const double p_ref,    // pressure [atm]
 	if (iH2O[v])
 	  k_H2O[v][i][n] += 
 	    AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
-				  SNB.liH2O, istart[v], iend[v] ) / ( x0_H2O * p0 );
+				  istart[v], iend[v] ) / ( x0_H2O * p0 );
 	if (iCO2[v])
 	  k_CO2[v][i][n] += 
 	    AbsorptionCoeffSNBCK( g[i], SNB.B_CO2, SNB.S_CO2, 
-				  SNB.liCO2, istart[v], iend[v] ) / ( x0_CO2 * p0 );
+				  istart[v], iend[v] ) / ( x0_CO2 * p0 );
 	if (iCO[v])
 	  k_CO[v][i][n] += 
 	    AbsorptionCoeffSNBCK( g[i],  SNB.B_CO,  SNB.S_CO,  
-				  SNB.liCO, istart[v], iend[v] ) / ( x0_CO * p0 );
+				  istart[v], iend[v] ) / ( x0_CO * p0 );
       }  // endfor - bands, quad points
 
 
@@ -1952,19 +1952,17 @@ double g_prime( const double k, const double B, const double S ){
   return temp;
 }
 
-void g_lumped( const double*B, const double*S,  const int*iFlag,
+void g_lumped( const double*B, const double*S,
 	       const int Nstart, const int Nend, const int Nlump,
 	       const double k, double &gg, double &dgg){
 
   
   gg = ZERO;  dgg = ZERO; 
   for (int n=Nstart; n<=Nend; n++) {
-    if (iFlag[n]) {
-      // compute g1 using Eq. (7) in Liu et al. (2000)
-      gg += g(k,B[n],S[n]) / Nlump;
-      // the derivative of g
-      dgg += g_prime(k,B[n],S[n])/Nlump;
-    }
+    // compute g1 using Eq. (7) in Liu et al. (2000)
+    gg += g(k,B[n],S[n]) / Nlump;
+    // the derivative of g
+    dgg += g_prime(k,B[n],S[n]) / Nlump;
   } /* endfor */
 
 }
@@ -1980,18 +1978,13 @@ void g_lumped( const double*B, const double*S,  const int*iFlag,
  *      F. Liu, G.J. Smallwood, O.L. Gulder, Int. J. Heat Mass       *
  *      Trans., v43, 2000. pp. 3119-3135.                            *
  *********************************************************************/
-double AbsorptionCoeffSNBCK( const double g_val, const double*B, 
-			     const double*S,  const int*iFlag,
+double AbsorptionCoeffSNBCK( const double g_val, 
+			     const double*B, const double*S,
 			     const int Nstart, const int Nend){
   
-  // declares
-  static int err_cnt(0);
-
   // set iteration paramters
   static const int Nmax = 200;      // max iterations
-  static const double ATOL = 1.E-7; // abs error tolerance
-  static const double RTOL = 1.E-6; // rel error tolerance
-  bool converged(false);            // convergence flag
+  static const double TOL = MICRO;  // abs error tolerance
 
   // the function values
   double gn;                 // g(k)
@@ -2002,6 +1995,7 @@ double AbsorptionCoeffSNBCK( const double g_val, const double*B,
   double kmax = MILLION;     // right bracket
   double gmin = ZERO-g_val;  // function value at left bracket
   double gmax = ONE-g_val;   // function value at right bracket
+  double err;
 
   // number of bands to lump together
   int Nlump = (Nend - Nstart) + 1;
@@ -2019,9 +2013,8 @@ double AbsorptionCoeffSNBCK( const double g_val, const double*B,
   // determine the value of k where f(k) peaks for initial guess
   // depending upon how many bands are lumped together, take an average
   double k_peak = ZERO;
-  for (int n=Nstart; n<=Nend; n++) {
-    if (iFlag[n]) k_peak += PeakAbsorptionCoeffSNBCK(B[n], S[n])/Nlump;
-  }
+  for (int n=Nstart; n<=Nend; n++)
+    k_peak = max( PeakAbsorptionCoeffSNBCK(B[n], S[n]), k_peak);
 
   // make sure guess is within bracket to start
   if (k_peak>kmin && k_peak<kmax) kn = k_peak;
@@ -2029,7 +2022,7 @@ double AbsorptionCoeffSNBCK( const double g_val, const double*B,
 
   // depending upon how many bands are lumped together,
   // compute the cummulative dist function and its derivative
-  g_lumped( B, S, iFlag, Nstart, Nend, Nlump, kn, gn, dgn);
+  g_lumped( B, S, Nstart, Nend, Nlump, kn, gn, dgn);
   gn -= g_val; 
 
   // initialize the previous stepsizes
@@ -2062,12 +2055,12 @@ double AbsorptionCoeffSNBCK( const double g_val, const double*B,
 
 
     // Convergence test
-    converged = (fabs(dkn)<=RTOL*kn && fabs(dkn)<=ATOL && fabs(gn)<=ATOL);
-    if ( converged || dkn!=dkn || kn!=kn) break;
+    err = fabs(dkn)/(kn+NANO);
+    if ( err<=TOL || dkn!=dkn || kn!=kn) break;
       
     // depending upon how many bands are lumped together,
     // compute the cummulative dist function and its derivative
-    g_lumped( B, S, iFlag, Nstart, Nend, Nlump, kn, gn, dgn);
+    g_lumped( B, S, Nstart, Nend, Nlump, kn, gn, dgn);
     gn -= g_val; 
 
     // change bisection bracket
@@ -2083,8 +2076,7 @@ double AbsorptionCoeffSNBCK( const double g_val, const double*B,
   // Convergence
   //------------------------------------------------
   // check to see if it converged, if not, print an error
-  if ( (i>=Nmax || dkn!=dkn || kn!=kn) && err_cnt<5 ) {
-    err_cnt++;
+  if ( i>=Nmax || dkn!=dkn || kn!=kn || kn>1000 ) {
     cerr << "SNBCK.cc::getAbsorptionCoeff(): Newton-Raphson iteration failed to converge." << endl;
     cerr << "SNBCK.cc::getAbsorptionCoeff(): err = " << fabs(dkn) 
 	 << ", f(x) = " << gn << ", f'(x) = " << dgn << ", x = " << g_val     
@@ -2094,14 +2086,6 @@ double AbsorptionCoeffSNBCK( const double g_val, const double*B,
     for (int i=0; i<Nlump; i++) S_avg += S[Nstart+i];
     S_avg /= Nlump;
     cerr << "B[0] = " << B[Nstart] << ", S_avg = " << S_avg <<  endl;
-    if (err_cnt==5) 
-      cerr << "SNBCK.cc::getAbsorptionCoeff(): Suppressing error output from now on.\n";
-    cerr << endl;
-  } // endif - check
-
-  // check for NANs
-  if (dkn!=dkn || kn!=kn) {
-    cerr << "SNBCK.cc::getAbsorptionCoeff(): NAN encountered...exiting.\n";
     exit(-1);
   } // endif - check
 
@@ -2123,9 +2107,6 @@ double AbsorptionCoeffSNBCK( const double g_val, const double*B,
  *********************************************************************/
 double PeakAbsorptionCoeffSNBCK( const double B, const double S ){
 
-  // declares
-  static int err_cnt(0);
-
   // NOTE:
   // -> See Eq. (19) in Lacias and Oinas, J Geophysical Research, v96, 
   // pp. 9027-9063, 1991.
@@ -2133,13 +2114,12 @@ double PeakAbsorptionCoeffSNBCK( const double B, const double S ){
   k1 *= THREE*S / (PI*B);
 
   // -> return peak, since b>0, then k2<0 always  
-  if ( (k1<ZERO || k1!=k1) && err_cnt<5 ) {
+  if ( k1<ZERO || k1!=k1 ) {
     cerr << "SNBCK.cc::getPeakAbsorptionCoeff(): Error computing k_peak." << endl;
     cerr << "SNBCK.cc::getPeakAbsorptionCoeff(): B = " << setw(18) << B 
 	 << ", S = " << setw(18) << S 
       	 << ", k_peak = " << k1
 	 <<  endl;
-    if (err_cnt==5) cerr << "SNBCK.cc::PeakAbsorptionCoeffSNBCK(): Suppressing error output from now on.\n";
   }
   return k1;
 
@@ -2165,7 +2145,6 @@ void OutputDistFunction(  const double B, const double S,
   int Ng = 100;
   double delta_g = ONE/double(Ng-1);
   double k1, g1, Ba[1]={B}, Sa[1]={S};
-  int iFlag[1];
 
 
   // open output stream and print the header
@@ -2200,7 +2179,7 @@ void OutputDistFunction(  const double B, const double S,
 
     // compute k1 inverting Eq. (7) in Liu et al. (2000)
     g1 = i*delta_g;
-    k1 = AbsorptionCoeffSNBCK( g1, Ba, Sa, iFlag, 0, 0);
+    k1 = AbsorptionCoeffSNBCK( g1, Ba, Sa, 0, 0);
 
     // output
     out << setw(24) << scientific << setprecision(15) << k1 

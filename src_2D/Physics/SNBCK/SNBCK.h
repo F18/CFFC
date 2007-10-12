@@ -138,13 +138,13 @@ enum { SNBCK_BROADENING_CUTOFF = 200 };
 // return value of cummulative distribution function and its derivative
 double g( const double k, const double B, const double S );
 double g_prime( const double k, const double B, const double S );
-void g_lumped( const double*B, const double*S,  const int*iFlag,
+void g_lumped( const double*B, const double*S,
 	       const int Nstart, const int Nend, const int Nlump,
 	       const double k, double &gg, double &dgg);
 
 // return the value of the absorbsion coefficient for a specified quad point
-double AbsorptionCoeffSNBCK( const double g, const double*B, 
-			     const double*S, const int*iFlag,
+double AbsorptionCoeffSNBCK( const double g, 
+			     const double*B, const double*S,
 			     const int Nstart, const int Nend);
 double PeakAbsorptionCoeffSNBCK( const double B, const double S );
 
