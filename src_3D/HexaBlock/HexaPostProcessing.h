@@ -14,8 +14,8 @@
  *                                                      *
  ********************************************************/
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-int Hexa_PostProcessing(HexaSolver_Data &Data,
-			HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTATE> &Solution_Data) {
+int Hexa_Post_Processing(HexaSolver_Data &Data,
+		 	 HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTATE> &Solution_Data) {
 
 
   int error_flag(0);

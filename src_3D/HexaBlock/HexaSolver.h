@@ -20,11 +20,11 @@
 #endif  //_HEXA_SOLVER_CLASSES_INCLUDED
 
 #ifndef _HEXA_POST_PROCESSING_INCLUDED
-#include "Hexa_PostProcessing.h"
+#include "HexaPostProcessing.h"
 #endif //_HEXA_POST_PROCESSING_INCLUDED
 
 #ifndef _HEXA_EXPLICIT_SOLVER
-#include "Hexa_Explicit_Solver.h"
+#include "HexaExplicitSolver.h"
 #endif //_HEXA_EXPLICIT_SOLVER
 
 // #ifndef _NKS_INCLUDED
@@ -269,7 +269,7 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
     *******************************************************************************/     
     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.    
 
-    error_flag = Hexa_PostProcessing(Data,Solution_Data);   
+    error_flag = Hexa_Post_Processing(Data,Solution_Data);   
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
 
