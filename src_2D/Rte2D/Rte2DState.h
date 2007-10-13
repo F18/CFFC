@@ -633,7 +633,8 @@ inline double Rte2D_State :: Sr( const Medium2D_State &M )
   } // endif
   //------------------------------------------------
 
-  return source;
+  // heat generated is lost
+  return -source;
 }
 
  /**************************************************************************

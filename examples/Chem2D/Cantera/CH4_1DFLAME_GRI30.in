@@ -98,12 +98,12 @@ Number_of_Blocks_Jdir=
 # Set time stepping parameters
 ###############################
 CFL_Number=
-100.0
+500.0
 Maximum_Number_of_Time_Steps=
-100
+1000
 ####### Implicit ###############
 Maximum_Number_of_NKS_Iterations =
-100
+0
 Maximum_Number_of_GMRES_Iterations=
 100
 GMRES_Restart =
