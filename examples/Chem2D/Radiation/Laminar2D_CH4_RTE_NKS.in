@@ -206,6 +206,7 @@ Write_Output_Cells
 #Write_Output_Mesh_Cells
 #Write_Output_Mesh_Nodes
 Write_Restart
+Postprocess_Radiation
 #######################
 # Terminate program
 #######################
