@@ -1136,6 +1136,11 @@ class AdaptiveBlock3D_List{
                              // Message passing send and receive buffers
                               // for block faces and corners with no block
                               // resolution (refinement) change.
+
+
+    double   ***message_noreschange_sendbuf,
+             ***message_noreschange_recbuf;
+
     double 
       ***message_reschange_northface_sendbuf,
       ***message_reschange_northface_recbuf,
@@ -1198,6 +1203,12 @@ class AdaptiveBlock3D_List{
     AdaptiveBlock3D_List(void) {
       ThisCPU = 0; Nblk = 0; Block = NULL; RefineFlag = NULL;
       // No resolution change message buffers.
+
+      // the following two buffers are new buffers Oct.12 2007
+      //******************************************************
+    /*   message_noreschange_sendbuf = NULL; */
+/*       message_noreschange_recbuf = NULL; */
+      //******************************************************
       message_noreschange_northface_sendbuf = NULL;
       message_noreschange_northface_recbuf = NULL;
       message_noreschange_southface_sendbuf = NULL;
@@ -1311,6 +1322,10 @@ class AdaptiveBlock3D_List{
       ThisCPU = Blk_List.ThisCPU; Nblk = Blk_List.Nblk; 
       Block = Blk_List.Block; RefineFlag = Blk_List.RefineFlag;
       // No resolution change message buffers.
+      //******************************************************
+      message_noreschange_sendbuf = Blk_List.message_noreschange_sendbuf;
+      message_noreschange_recbuf = Blk_List.message_noreschange_recbuf;
+      //******************************************************
       message_noreschange_northface_sendbuf = Blk_List.message_noreschange_northface_sendbuf;
       message_noreschange_northface_recbuf = Blk_List.message_noreschange_northface_recbuf;
       message_noreschange_southface_sendbuf = Blk_List.message_noreschange_southface_sendbuf;
@@ -1485,7 +1500,32 @@ inline void AdaptiveBlock3D_List::allocate(const int N) {
    Block = new AdaptiveBlock3D[Nblk]; 
    RefineFlag = new int[Nblk]; nochangeAll();
    //
-   // No resolution change message buffers. 
+   // No resolution change message buffers.
+   
+// the following two buffers are new buffers Oct.12 2007
+      //******************************************************
+
+   message_noreschange_sendbuf = new double**[Nblk];
+   for ( i = 0; i <= Nblk-1 ; ++i ) {
+       message_noreschange_sendbuf[i] = new double*[27];
+      for (j = 0; j < 27 ; ++j) {
+         message_noreschange_sendbuf[i][j] = new double[1];
+         message_noreschange_sendbuf[i][j][0] = ZERO;
+      } /* endfor */
+   } /* endfor */
+
+   message_noreschange_recbuf = new double**[Nblk];
+   for ( i = 0; i <= Nblk-1 ; ++i ) {
+      message_noreschange_recbuf[i] = new double*[27];
+      for (j = 0; j < 27 ; ++j) {
+         message_noreschange_recbuf[i][j] = new double[1];
+         message_noreschange_recbuf[i][j][0] = ZERO;
+      } /* endfor */
+   } /* endfor */
+
+
+  //******************************************************
+
    message_noreschange_topface_sendbuf = new double*[Nblk];
    for ( i = 0; i <= Nblk-1 ; ++i ) {
       message_noreschange_topface_sendbuf[i] = new double[1];
@@ -2079,6 +2119,30 @@ inline void AdaptiveBlock3D_List::deallocate(void) {
    delete []RefineFlag; RefineFlag = NULL;
    //
    // No resolution change message buffers.
+// the following two buffers are new buffers Oct.12 2007
+      //******************************************************
+   for ( i = 0; i <= Nblk-1 ; ++i ) {
+      for (j = 0; j < 27 ; ++j) {
+         delete []message_noreschange_sendbuf[i][j];
+         message_noreschange_sendbuf[i][j] = NULL;
+      } /* endfor */
+      delete []message_noreschange_sendbuf[i];
+      message_noreschange_sendbuf[i] = NULL;
+   } /* endfor */
+   delete []message_noreschange_sendbuf;
+   message_noreschange_sendbuf = NULL;
+
+   for ( i = 0; i <= Nblk-1 ; ++i ) {
+      for (j = 0; j < 27 ; ++j) {
+         delete []message_noreschange_recbuf[i][j];
+         message_noreschange_recbuf[i][j] = NULL;
+      } /* endfor */
+      delete []message_noreschange_recbuf[i];
+      message_noreschange_recbuf[i] = NULL;
+   } /* endfor */
+   delete []message_noreschange_recbuf;
+   message_noreschange_recbuf = NULL;
+/*    //\****************************************************** */
 
    for ( i = 0; i <= Nblk-1 ; ++i ) {
       delete []message_noreschange_topface_sendbuf[i]; 

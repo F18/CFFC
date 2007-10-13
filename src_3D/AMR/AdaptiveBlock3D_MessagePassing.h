@@ -103,7 +103,83 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	  k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
 	  k_max = Soln_Blks[i_blk].KCu;
 	  k_inc = 1;
-	} 
+	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.i > 0 &&
+		   Soln_Block_List.Block[i_blk].infoT[0].dimen.j > 0) {
+	  i_min = Soln_Blks[i_blk].ICl;
+	  i_max = Soln_Blks[i_blk].ICu;
+	  i_inc = 1;
+	  j_min = Soln_Blks[i_blk].JCl;
+	  j_max = Soln_Blks[i_blk].JCu;
+	  j_inc = 1;
+	  k_min = Soln_Blks[i_blk].KCu;
+	  k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
+	  k_inc = -1;
+	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.j > 0 &&
+		   Soln_Block_List.Block[i_blk].infoT[0].dimen.k > 0) {
+	  i_min = Soln_Blks[i_blk].ICu;
+	  i_max = Soln_Blks[i_blk].ICl;
+	  i_inc = -1;
+	  j_min = Soln_Blks[i_blk].JCl;
+	  j_max = Soln_Blks[i_blk].JCu;
+	  j_inc = 1;
+	  k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
+	  k_max = Soln_Blks[i_blk].KCu;
+	  k_inc = 1;
+	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.i > 0 &&
+		   Soln_Block_List.Block[i_blk].infoT[0].dimen.k > 0) {
+	  i_min = Soln_Blks[i_blk].ICl;
+	  i_max = Soln_Blks[i_blk].ICu;
+	  i_inc = 1;
+	  j_min = Soln_Blks[i_blk].JCu;
+	  j_max = Soln_Blks[i_blk].JCl;
+	  j_inc = -1;
+	  k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
+	  k_max = Soln_Blks[i_blk].KCu;
+	  k_inc = 1;
+	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.k > 0) {
+	  i_min = Soln_Blks[i_blk].ICu;
+	  i_max = Soln_Blks[i_blk].ICl;
+	  i_inc = -1;
+	  j_min = Soln_Blks[i_blk].JCu;
+	  j_max = Soln_Blks[i_blk].JCl;
+	  j_inc = -1;
+	  k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
+	  k_max = Soln_Blks[i_blk].KCu;
+	  k_inc = 1;
+	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.j > 0) {
+	  i_min = Soln_Blks[i_blk].ICu;
+	  i_max = Soln_Blks[i_blk].ICl;
+	  i_inc = -1;
+	  j_min = Soln_Blks[i_blk].JCl;
+	  j_max = Soln_Blks[i_blk].JCu;
+	  j_inc = 1;
+	  k_min = Soln_Blks[i_blk].KCu;
+	  k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
+	  k_inc = -1;
+	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.i > 0) {
+	  i_min = Soln_Blks[i_blk].ICl;
+	  i_max = Soln_Blks[i_blk].ICu;
+	  i_inc = 1;
+	  j_min = Soln_Blks[i_blk].JCu;
+	  j_max = Soln_Blks[i_blk].JCl;
+	  j_inc = -1;
+	  k_min = Soln_Blks[i_blk].KCu;
+	  k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
+	  k_inc = -1;
+	} else {
+	  i_min = Soln_Blks[i_blk].ICu;
+	  i_max = Soln_Blks[i_blk].ICl;
+	  i_inc = -1;
+	  j_min = Soln_Blks[i_blk].JCu;
+	  j_max = Soln_Blks[i_blk].JCl;
+	  j_inc = -1;
+	  k_min = Soln_Blks[i_blk].KCu;
+	  k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
+	  k_inc = -1;
+	} /* endif */
+
+
+  
         
 	i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_topface_sendbuf[i_blk],
 					   l,buffer_size_neighbour,
@@ -130,7 +206,102 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	  i_ref = i_min;
 	  j_ref = j_min;
 	  k_ref = k_max+1;
-	} 
+	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.i > 0 &&
+	      Soln_Block_List.Block[i_blk].infoT[0].dimen.j > 0 ) {
+	    i_min = Soln_Blks[i_blk].Grid.INl;
+	    i_max = Soln_Blks[i_blk].Grid.INu;
+	    i_inc = 1;
+	    j_min = Soln_Blks[i_blk].Grid.JNl;
+	    j_max = Soln_Blks[i_blk].Grid.JNu;
+	    j_inc = 1;
+	    k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	    k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost;
+	    k_inc = -1;
+	    i_ref = i_min;
+	    j_ref = j_min;
+	    k_ref = k_min+1;
+	} else if ( Soln_Block_List.Block[i_blk].infoT[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoT[0].dimen.k > 0) {
+	      i_min = Soln_Blks[i_blk].Grid.INu;
+	      i_max = Soln_Blks[i_blk].Grid.INl;
+	      i_inc = -1;
+	      j_min = Soln_Blks[i_blk].Grid.JNl;
+	      j_max = Soln_Blks[i_blk].Grid.JNu;
+	      j_inc = 1;
+	      k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost;
+	      k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	      k_inc = 1;
+	      i_ref = i_min;
+	      j_ref = j_min;
+	      k_ref = k_max+1;
+	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.i > 0 &&
+		  Soln_Block_List.Block[i_blk].infoT[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl;
+	        i_max = Soln_Blks[i_blk].Grid.INu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_min;
+                k_ref = k_max+1;
+	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_min;
+                k_ref = k_max+1;
+	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl;
+	        j_max = Soln_Blks[i_blk].Grid.JNu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_min;
+                k_ref = k_min+1;
+	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl;
+	        i_max = Soln_Blks[i_blk].Grid.INu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_min;
+                k_ref = k_min+1;
+	} else {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_min;
+                k_ref = k_min+1;
+	} /* endif */
+
 	x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
 	for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
 	  for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
@@ -153,7 +324,80 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
                 k_max = Soln_Blks[i_blk].KCu;
 	        k_inc = 1;
-	}
+	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.i > 0 &&
+		    Soln_Block_List.Block[i_blk].infoT[0].dimen.j > 0) {
+		  i_min = Soln_Blks[i_blk].ICl;
+		  i_max = Soln_Blks[i_blk].ICu;
+		  i_inc = 1;
+		  j_min = Soln_Blks[i_blk].JCl;
+		  j_max = Soln_Blks[i_blk].JCu;
+		  j_inc = 1;
+		  k_min = Soln_Blks[i_blk].KCu;
+		  k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
+		  k_inc = -1;
+	} else if ( Soln_Block_List.Block[i_blk].infoT[0].dimen.j > 0 &&
+		       Soln_Block_List.Block[i_blk].infoT[0].dimen.k > 0) {
+		    i_min = Soln_Blks[i_blk].ICu;
+		    i_max = Soln_Blks[i_blk].ICl;
+		    i_inc = -1;
+		    j_min = Soln_Blks[i_blk].JCl;
+		    j_max = Soln_Blks[i_blk].JCu;
+		    j_inc = 1;
+		    k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
+		    k_max = Soln_Blks[i_blk].KCu;
+		    k_inc = 1;
+	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.i > 0 &&
+			Soln_Block_List.Block[i_blk].infoT[0].dimen.k > 0) {
+		      i_min = Soln_Blks[i_blk].ICl;
+		      i_max = Soln_Blks[i_blk].ICu;
+		      i_inc = 1;
+		      j_min = Soln_Blks[i_blk].JCu;
+		      j_max = Soln_Blks[i_blk].JCl;
+		      j_inc = -1;
+		      k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
+		      k_max = Soln_Blks[i_blk].KCu;
+		      k_inc = 1;
+	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.k> 0) {
+		      i_min = Soln_Blks[i_blk].ICu;
+		      i_max = Soln_Blks[i_blk].ICl;
+		      i_inc = -1;
+		      j_min = Soln_Blks[i_blk].JCu;
+		      j_max = Soln_Blks[i_blk].JCl;
+		      j_inc = -1;
+		      k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
+		      k_max = Soln_Blks[i_blk].KCu;
+		      k_inc = 1;
+	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.j > 0) {
+		      i_min = Soln_Blks[i_blk].ICu;
+		      i_max = Soln_Blks[i_blk].ICl;
+		      i_inc = -1;
+		      j_min = Soln_Blks[i_blk].JCl;
+		      j_max = Soln_Blks[i_blk].JCu;
+		      j_inc = 1;
+		      k_min = Soln_Blks[i_blk].KCu;
+		      k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
+		      k_inc = -1;
+	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.i > 0) {
+		      i_min = Soln_Blks[i_blk].ICl;
+		      i_max = Soln_Blks[i_blk].ICu;
+		      i_inc = 1;
+		      j_min = Soln_Blks[i_blk].JCu;
+		      j_max = Soln_Blks[i_blk].JCl;
+		      j_inc = -1;
+		      k_min = Soln_Blks[i_blk].KCu;
+		      k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
+		      k_inc = -1;
+	} else {
+		      i_min = Soln_Blks[i_blk].ICu;
+		      i_max = Soln_Blks[i_blk].ICl;
+		      i_inc = -1;
+		      j_min = Soln_Blks[i_blk].JCu;
+		      j_max = Soln_Blks[i_blk].JCl;
+		      j_inc = -1;
+		      k_min = Soln_Blks[i_blk].KCu;
+		      k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
+		      k_inc = -1;
+	} /* endif */
 	for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
 	  for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ){
 	    l = l + 1;
@@ -231,7 +475,81 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCl;
                 k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
 	        k_inc = 1;
-	}
+	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoB[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl;
+ 	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoB[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+                i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+ 	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl;
+                k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
+	        k_inc = 1;
+	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoB[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+                k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
+	        k_inc = 1;
+	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+                k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
+	        k_inc = 1;
+	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+ 	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+	} else {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+	} /* endif */
+
 	i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_bottomface_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
                                                 i_min,i_max,i_inc,
@@ -257,7 +575,101 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_min;
                 j_ref = j_min;
                 k_ref = k_min-1;
-	}
+	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoB[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].Grid.INl;
+	        i_max = Soln_Blks[i_blk].Grid.INu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl;
+	        j_max = Soln_Blks[i_blk].Grid.JNu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost;;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_min;
+                k_ref = k_max-1;
+	} else if ( Soln_Block_List.Block[i_blk].infoB[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoB[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl;
+	        j_max = Soln_Blks[i_blk].Grid.JNu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost;;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_min;
+                k_ref = k_min-1;
+	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoB[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl;
+	        i_max = Soln_Blks[i_blk].Grid.INu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost;;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_min;
+                k_ref = k_min-1;
+	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost;;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_min;
+                k_ref = k_min-1;
+	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl;
+	        j_max = Soln_Blks[i_blk].Grid.JNu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost;;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_min;
+                k_ref = k_max-1;
+	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl;
+	        i_max = Soln_Blks[i_blk].Grid.INu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost;;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_min;
+                k_ref = k_max-1;
+	} else {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost;;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_min;
+                k_ref = k_max-1;
+	} /* endif */
 
 	x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
 	for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
@@ -282,7 +694,81 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	  k_min = Soln_Blks[i_blk].KCl;
 	  k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
 	  k_inc = 1;
-	} 
+	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.i > 0 &&
+                  Soln_Block_List.Block[i_blk].infoB[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+	} else if ( Soln_Block_List.Block[i_blk].infoB[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoB[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+                i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl;
+                k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
+	        k_inc = 1;
+	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoB[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+                k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
+	        k_inc = 1;
+	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+ 	        k_min = Soln_Blks[i_blk].KCl;
+                k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
+	        k_inc = 1;
+	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+ 	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+	} else {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+	} /* endif */
+
 	for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
 	  for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
 		  l = l + 1;
@@ -359,7 +845,80 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCl;
                 k_max = Soln_Blks[i_blk].KCu;
 	        k_inc = 1;
-	    } 
+	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoN[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoN[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+                i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl;
+                k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoN[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+                k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+                k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+	    } else {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+ 	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+	    } /* endif */
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_northface_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
                                                 i_min,i_max,i_inc,
@@ -385,7 +944,101 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_min;
                 j_ref = j_max+1;
                 k_ref = k_min;
-	    } 
+	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoN[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].Grid.INl;
+	        i_max = Soln_Blks[i_blk].Grid.INu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_max+1;
+                k_ref = k_min;
+	    } else if ( Soln_Block_List.Block[i_blk].infoN[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoN[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_max+1;
+                k_ref = k_min;
+	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoN[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl;
+	        i_max = Soln_Blks[i_blk].Grid.INu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_min+1;
+                k_ref = k_min;
+	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_min+1;
+                k_ref = k_min;
+	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_max+1;
+                k_ref = k_min;
+	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl;
+	        i_max = Soln_Blks[i_blk].Grid.INu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_min+1;
+                k_ref = k_min;
+	    } else {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_min+1;
+                k_ref = k_min;
+	    } /* endif */
 	    x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
 	    for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
 	      for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
@@ -408,7 +1061,80 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCl;
                 k_max = Soln_Blks[i_blk].KCu;
 	        k_inc = 1;
-	    } 
+	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.i > 0 &&
+                  Soln_Block_List.Block[i_blk].infoN[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+	    } else if ( Soln_Block_List.Block[i_blk].infoN[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoN[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+                i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl;
+                k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoN[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+                k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.k> 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
+	        j_inc = -1;
+ 	        k_min = Soln_Blks[i_blk].KCl;
+                k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
+	        j_inc = -1;
+ 	        k_min = Soln_Blks[i_blk].KCu;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+            } else {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+ 	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+	    } /* endif */
 
 	    for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
 	      for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) {
@@ -486,7 +1212,81 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCl;
                 k_max = Soln_Blks[i_blk].KCu;
 	        k_inc = 1;
-             } 
+             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoS[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl;
+ 	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoS[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+                i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+ 	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl;
+                k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoS[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+                k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+                k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+ 	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } /* endif */
+
 
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_southface_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
@@ -513,7 +1313,102 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_min;
                 j_ref = j_min-1;
                 k_ref = k_min;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoS[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].Grid.INl;
+	        i_max = Soln_Blks[i_blk].Grid.INu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_min-1;
+                k_ref = k_min;
+             } else if ( Soln_Block_List.Block[i_blk].infoS[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoS[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_min-1;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoS[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl;
+	        i_max = Soln_Blks[i_blk].Grid.INu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_max-1;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_max-1;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_min-1;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl;
+	        i_max = Soln_Blks[i_blk].Grid.INu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_max-1;
+                k_ref = k_min;
+             } else {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_max-1;
+                k_ref = k_min;
+             } /* endif */
+
              x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
              for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
 	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
@@ -537,7 +1432,80 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCl;
                 k_max = Soln_Blks[i_blk].KCu;
 	        k_inc = 1;
-              }
+              } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.i > 0 &&
+                  Soln_Block_List.Block[i_blk].infoS[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+              } else if ( Soln_Block_List.Block[i_blk].infoS[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoS[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+                i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl;
+                k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+              } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoS[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+                k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+ 	        k_min = Soln_Blks[i_blk].KCl;
+                k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+ 	        k_min = Soln_Blks[i_blk].KCu;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+            } else {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+                k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } /* endif */
                 for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
 		  for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) {
 		  l = l + 1;
@@ -613,7 +1581,80 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCl;
 	        k_max = Soln_Blks[i_blk].KCu;
 	        k_inc = 1;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoE[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+            } else  if ( Soln_Block_List.Block[i_blk].infoE[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } /* endif */
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_eastface_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
                                                 i_min,i_max,i_inc,j_min,j_max,j_inc,
@@ -638,7 +1679,197 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_max+1;
                 j_ref = j_min;
                 k_ref = k_min;
-             } 
+             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl;
+	        j_max = Soln_Blks[i_blk].Grid.JNu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_max+1;
+                j_ref = j_min;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl;
+	        j_max = Soln_Blks[i_blk].Grid.JNu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+                i_ref = i_min+1;
+                j_ref = j_min;
+                k_ref = k_min;
+             } else  if (Soln_Block_List.Block[i_blk].infoE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+                i_ref = i_max+1;
+                j_ref = j_min;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+ 	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+               i_ref = i_min+1;
+                j_ref = j_min;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl;
+	        j_max = Soln_Blks[i_blk].Grid.JNu;
+	        j_inc = 1;
+ 	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+		i_ref = i_min+1;
+                j_ref = j_min;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = 1;
+                i_ref = i_max+1;
+                j_ref = j_min;
+                k_ref = k_min;
+             } else {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_min+1;
+                j_ref = j_min;
+                k_ref = k_min;
+             } /* endif */
+             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
+             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
+	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
+                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
+                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
+		      l = l + 1;
+                      if (l >= buffer_size_neighbour) return(1201);
+                      Soln_Block_List.message_noreschange_eastface_sendbuf[i_blk][l] =
+                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
+                   } /* endfor */
+             if (Soln_Block_List.Block[i_blk].infoE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoE[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoE[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+ 	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+            } /* endif */
                 for ( i  = i_min ; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
 		  for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
 		  l = l + 1;
@@ -717,7 +1948,80 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCl;
 	        k_max = Soln_Blks[i_blk].KCu;
 	        k_inc = 1;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoW[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].ICl;
+	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+            } else  if ( Soln_Block_List.Block[i_blk].infoW[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } /* endif */
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_westface_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
                                                 i_min,i_max,i_inc,j_min,j_max,j_inc,
@@ -742,7 +2046,101 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_min-1;
                 j_ref = j_min;
                 k_ref = k_min;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl;
+	        j_max = Soln_Blks[i_blk].Grid.JNu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_min-1;
+                j_ref = j_min;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl;
+	        j_max = Soln_Blks[i_blk].Grid.JNu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+                i_ref = i_max-1;
+                j_ref = j_min;
+                k_ref = k_min;
+             } else  if (Soln_Block_List.Block[i_blk].infoW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+                i_ref = i_min-1;
+                j_ref = j_min;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+ 	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+               i_ref = i_max-1;
+                j_ref = j_min;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl;
+	        j_max = Soln_Blks[i_blk].Grid.JNu;
+	        j_inc = 1;
+ 	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+		i_ref = i_max-1;
+                j_ref = j_min;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = 1;
+                i_ref = i_min-1;
+                j_ref = j_min;
+                k_ref = k_min;
+             } else {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_max-1;
+                j_ref = j_min;
+                k_ref = k_min;
+             } /* endif */
              x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
              for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
 	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
@@ -765,7 +2163,81 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCl;
 	        k_max = Soln_Blks[i_blk].KCu;
 	        k_inc = 1;
-             } 
+             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoW[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].ICl;
+	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+ 	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+            } /* endif */
+
                  for ( i  = i_min ; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
 		   for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
 		  l = l + 1;
@@ -935,7 +2407,114 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_min-1;
                 j_ref = j_max+1;
                 k_ref = k_min  ;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoNW[0].dimen.i > 0 &&
+			Soln_Block_List.Block[i_blk].infoNW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_min-1;
+                j_ref = j_max+1;
+                k_ref = k_min  ;
+             } else if ( Soln_Block_List.Block[i_blk].infoNW[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoNW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+                i_ref = i_max-1;
+                j_ref = j_max+1;
+                k_ref = k_min  ;
+             } else if (Soln_Block_List.Block[i_blk].infoNW[0].dimen.i > 0 &&
+			Soln_Block_List.Block[i_blk].infoNW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+                i_ref = i_min-1;
+                j_ref = j_min+1;
+                k_ref = k_min  ;
+             } else if (Soln_Block_List.Block[i_blk].infoNW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+                i_ref = i_max-1;
+                j_ref = j_min+1;
+                k_ref = k_min  ;
+             } else if (Soln_Block_List.Block[i_blk].infoNW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_max-1;
+                j_ref = j_max+1;
+                k_ref = k_min  ;
+             } else if (Soln_Block_List.Block[i_blk].infoNW[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_min-1;
+                j_ref = j_min+1;
+		k_ref = k_min  ;
+            } else {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_max-1;
+                j_ref = j_min+1;
+                k_ref = k_min  ;
+             } /* endif */
+             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
+             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
+	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
+                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
+                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
+		      l = l + 1;
+                      if (l >= buffer_size_neighbour) return(4201);
+                      Soln_Block_List.message_noreschange_northwestcorner_sendbuf[i_blk][l] =
+                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
+                   } /* endfor */
+          } /* endif */
+       } /* endif */
+
        ///////////////////////////////////////////////////////////////////////////
        // Load send buffer for North East corner neighbours of solution blocks. //
        ///////////////////////////////////////////////////////////////////////////
@@ -972,7 +2551,80 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCl;
 	        k_max = Soln_Blks[i_blk].KCu;
 	        k_inc = 1;
-             } 
+             } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoNE[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+              } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoNE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+              } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoNE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+            } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+              } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+ 	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+            } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+ 	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } /* endif */
 
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_northeastcorner_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
@@ -998,7 +2650,101 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_max+1;
                 j_ref = j_max+1;
                 k_ref = k_min;
-             } 
+             } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoNE[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_max+1;
+                j_ref = j_max+1;
+                k_ref = k_min;
+              } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoNE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+                i_ref = i_min+1;
+                j_ref = j_max+1;
+                k_ref = k_min;
+              } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoNE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+                i_ref = i_max+1;
+                j_ref = j_min+1;
+                k_ref = k_min;
+              } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+                i_ref = i_min+1;
+                j_ref = j_min+1;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_min+1;
+                j_ref = j_max+1;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_max+1;
+                j_ref = j_min+1;
+                k_ref = k_min;
+             } else {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_min+1;
+                j_ref = j_min+1;
+                k_ref = k_min;
+             } /* endif */
              x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
              for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
@@ -1048,7 +2794,80 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
    	        k_min = Soln_Blks[i_blk].KCl;
 	        k_max = Soln_Blks[i_blk].KCu;
 	        k_inc = 1;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoSE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost+1;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost-1;
+	        j_inc = 1;
+   	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoSE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost-1;
+	        j_inc = 1;
+   	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoSE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost+1;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+   	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+	     } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+ 	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+	     } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost-1;
+	        j_inc = 1;
+ 	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+            } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost+1;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } /* endif */
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_southeastcorner_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
                                                 i_min,i_max,i_inc,j_min,j_max,j_inc,
@@ -1073,7 +2892,101 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_max+1;
                 j_ref = j_min-1;
                 k_ref = k_min;
-             } 
+             } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoSE[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_max+1;
+                j_ref = j_min-1;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoSE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+                i_ref = i_min+1;
+                j_ref = j_min-1;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoSE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+                i_ref = i_max+1;
+                j_ref = j_max-1;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+                i_ref = i_min+1;
+                j_ref = j_max-1;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_min+1;
+                j_ref = j_min-1;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_max+1;
+                j_ref = j_max-1;
+                k_ref = k_min;
+              } else {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_min+1;
+                j_ref = j_max-1;
+                k_ref = k_min;
+             } /* endif */
              x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
              for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
 	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
@@ -1123,7 +3036,83 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCl;
 	        k_max = Soln_Blks[i_blk].KCu;
 	        k_inc = 1;
-          }
+          } else
+             if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoSW[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+          } else
+             if ( Soln_Block_List.Block[i_blk].infoSW[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoSW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+          } else
+             if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoSW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+            } else if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } /* endif */
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_southwestcorner_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
                                                 i_min,i_max,i_inc,j_min,j_max,j_inc,
@@ -1148,7 +3137,101 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_min-1;
                 j_ref = j_min-1;
                 k_ref = k_min;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.i > 0 &&
+                Soln_Block_List.Block[i_blk].infoSW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_min-1;
+                j_ref = j_min-1;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoSW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+                i_ref = i_max-1;
+                j_ref = j_min-1;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoSW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+                i_ref = i_min-1;
+                j_ref = j_max-1;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl;
+	        k_max = Soln_Blks[i_blk].Grid.KNu;
+	        k_inc = 1;
+                i_ref = i_max-1;
+                j_ref = j_max-1;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_max-1;
+                j_ref = j_min-1;
+                k_ref = k_min;
+             } else if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_min-1;
+                j_ref = j_max-1;
+                k_ref = k_min;
+             } else {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl;
+	        k_inc = -1;
+                i_ref = i_max-1;
+                j_ref = j_max-1;
+                k_ref = k_min;
+             } /* endif */
              x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
              for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
 	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
@@ -1199,7 +3282,80 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
 	        k_max = Soln_Blks[i_blk].KCu;
 	        k_inc = 1;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTN[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
+	        k_inc = -1;
+              } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTN[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+              } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTN[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+            } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+              } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+ 	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
+	        k_inc = -1;
+            } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+ 	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
+	        k_inc = -1;
+             } /* endif */
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_topnorthcorner_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
                                                 i_min,i_max,i_inc,j_min,j_max,j_inc,
@@ -1224,7 +3380,101 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_min;
                 j_ref = j_max+1;
                 k_ref = k_max+1;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTN[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].Grid.INl;
+	        i_max = Soln_Blks[i_blk].Grid.INu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_max+1;
+                k_ref = k_min+1;
+              } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTN[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_max+1;
+                k_ref = k_max+1;
+              } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTN[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl;
+	        i_max = Soln_Blks[i_blk].Grid.INu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_min+1;
+                k_ref = k_max+1;
+              } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_min+1;
+                k_ref = k_max+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_max+1;
+                k_ref = k_min+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl;
+	        i_max = Soln_Blks[i_blk].Grid.INu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_min+1;
+                k_ref = k_min+1;
+             } else {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_min+1;
+                k_ref = k_min+1;
+             } /* endif */
              x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
              for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
@@ -1274,7 +3524,80 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
 	        k_max = Soln_Blks[i_blk].KCu;
 	        k_inc = 1;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTE[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
+	        k_inc = -1;
+              } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+              } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+            } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+              } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+ 	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
+	        k_inc = -1;
+            } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+ 	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
+	        k_inc = -1;
+             } /* endif */
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_topeastcorner_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
                                                 i_min,i_max,i_inc,j_min,j_max,j_inc,
@@ -1299,7 +3622,101 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_max+1;
                 j_ref = j_min;
                 k_ref = k_max+1;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTE[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl;
+	        j_max = Soln_Blks[i_blk].Grid.JNu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_max+1;
+                j_ref = j_min;
+                k_ref = k_min+1;
+              } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl;
+	        j_max = Soln_Blks[i_blk].Grid.JNu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_min+1;
+                j_ref = j_min;
+                k_ref = k_max+1;
+              } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_max+1;
+                j_ref = j_min;
+                k_ref = k_max+1;
+              } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_min+1;
+                j_ref = j_min;
+                k_ref = k_max+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl;
+	        j_max = Soln_Blks[i_blk].Grid.JNu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_min+1;
+                j_ref = j_min;
+                k_ref = k_min+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_max+1;
+                j_ref = j_min;
+                k_ref = k_min+1;
+             } else {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_min+1;
+                j_ref = j_min;
+                k_ref = k_min+1;
+             } /* endif */
              x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
              for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
@@ -1348,7 +3765,80 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
    	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost+1;
 	        k_max = Soln_Blks[i_blk].KCu;
 	        k_inc = 1;
-            }
+            } else  if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTS[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost-1;
+	        j_inc = 1;
+   	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost+1;
+	        k_inc = -1;
+             } else if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTS[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost-1;
+	        j_inc = 1;
+   	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost+1;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTS[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+   	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost+1;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+	     } else if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+ 	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost+1;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+	     } else if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost-1;
+	        j_inc = 1;
+ 	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost+1;
+	        k_inc = -1;
+            } else if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost+1;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost+1;
+	        k_inc = -1;
+             } /* endif */
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_topsouthcorner_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
                                                 i_min,i_max,i_inc,j_min,j_max,j_inc,
@@ -1373,7 +3863,101 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_min;
                 j_ref = j_min-1;
                 k_ref = k_max+1;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTS[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].Grid.INl;
+	        i_max = Soln_Blks[i_blk].Grid.INu;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_min-1;
+                k_ref = k_min+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTS[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_min-1;
+                k_ref = k_max+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTS[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl;
+	        i_max = Soln_Blks[i_blk].Grid.INu;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_max-1;
+                k_ref = k_max+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_max-1;
+                k_ref = k_max+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_min-1;
+                k_ref = k_min+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl;
+	        i_max = Soln_Blks[i_blk].Grid.INu;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+ 	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
+	        k_inc = -1;
+               i_ref = i_min;
+                j_ref = j_max-1;
+                k_ref = k_min+1;
+              } else {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_max-1;
+                k_ref = k_min+1;
+             } /* endif */
              x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
              for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
 	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
@@ -1424,7 +4008,80 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost+1;
 	        k_max = Soln_Blks[i_blk].KCu;
 	        k_inc = 1;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoTW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTW[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost+1;
+	        k_inc = -1;
+             } else if ( Soln_Block_List.Block[i_blk].infoTW[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost+1;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoTW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost+1;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoTW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost+1;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoTW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost+1;
+	        k_inc = -1;
+             } else if (Soln_Block_List.Block[i_blk].infoTW[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost+1;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+ 	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost+1;
+	        k_inc = -1;
+             } /* endif */
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_topwestcorner_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
                                                 i_min,i_max,i_inc,
@@ -1449,7 +4106,101 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_min-1;
                 j_ref = j_min;
                 k_ref = k_max+1;
-             } 
+             } else if (Soln_Block_List.Block[i_blk].infoTW[0].dimen.i > 0 &&
+			Soln_Block_List.Block[i_blk].infoTW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl;
+	        j_max = Soln_Blks[i_blk].Grid.JNu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_min-1;
+                j_ref = j_min;
+                k_ref = k_min+1  ;
+             } else if ( Soln_Block_List.Block[i_blk].infoTW[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl;
+	        j_max = Soln_Blks[i_blk].Grid.JNu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_max-1;
+                j_ref = j_min;
+                k_ref = k_max+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTW[0].dimen.i > 0 &&
+			Soln_Block_List.Block[i_blk].infoTW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_min-1;
+                j_ref = j_min;
+                k_ref = k_max+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_max-1;
+                j_ref = j_min;
+                k_ref = k_max+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl;
+	        j_max = Soln_Blks[i_blk].Grid.JNu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_max-1;
+                j_ref = j_min;
+                k_ref = k_min+1  ;
+             } else if (Soln_Block_List.Block[i_blk].infoTW[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_min-1;
+                j_ref = j_min;
+		k_ref = k_min+1  ;
+            } else {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_max-1;
+                j_ref = j_min;
+                k_ref = k_min+1  ;
+             } /* endif */
              x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
              for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
 	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
@@ -1499,7 +4250,80 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCl;
 	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost-1;
 	        k_inc = 1;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBN[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+              } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBN[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost-1;
+	        k_inc = 1;
+              } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBN[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost-1;
+	        k_inc = 1;
+            } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost-1;
+	        k_inc = 1;
+              } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+ 	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+            } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+ 	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } /* endif */
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_bottomnorthcorner_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
                                                 i_min,i_max,i_inc,j_min,j_max,j_inc,
@@ -1538,7 +4362,87 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_min;
                 j_ref = j_max+1;
                 k_ref = k_max-1;
-              }
+              } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBN[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_max+1;
+                k_ref = k_min-1;
+              } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBN[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl;
+	        i_max = Soln_Blks[i_blk].Grid.INu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_min+1;
+                k_ref = k_min-1;
+              } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_min+1;
+                k_ref = k_min-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_max+1;
+                k_ref = k_max-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl;
+	        i_max = Soln_Blks[i_blk].Grid.INu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_min+1;
+                k_ref = k_max-1;
+             } else {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_min+1;
+                k_ref = k_max-1;
+             } /* endif */
              x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
              for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
@@ -1588,7 +4492,80 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCl;
 	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost-1;
 	        k_inc = 1;
-             } 
+             } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBE[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost+1;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+              } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost-1;
+	        k_inc = 1;
+              } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost+1;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost-1;
+	        k_inc = 1;
+            } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost-1;
+	        k_inc = 1;
+              } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+ 	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+            } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost+1;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+ 	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } /* endif */
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_bottomeastcorner_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
                                                 i_min,i_max,i_inc,j_min,j_max,j_inc,
@@ -1613,7 +4590,101 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_max+1;
                 j_ref = j_min;
                 k_ref = k_min-1;
-             } 
+             } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBE[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl;
+	        j_max = Soln_Blks[i_blk].Grid.JNu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_max+1;
+                j_ref = j_min;
+                k_ref = k_max-1;
+              } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl;
+	        j_max = Soln_Blks[i_blk].Grid.JNu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_min+1;
+                j_ref = j_min;
+                k_ref = k_min-1;
+              } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_max+1;
+                j_ref = j_min;
+                k_ref = k_min-1;
+              } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_min+1;
+                j_ref = j_min;
+                k_ref = k_min-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl;
+	        j_max = Soln_Blks[i_blk].Grid.JNu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_min+1;
+                j_ref = j_min;
+                k_ref = k_max-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_max+1;
+                j_ref = j_min;
+                k_ref = k_max-1;
+             } else {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_min+1;
+                j_ref = j_min;
+                k_ref = k_max-1;
+             } /* endif */
              x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
              for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
@@ -1662,7 +4733,80 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
    	        k_min = Soln_Blks[i_blk].KCl;
 	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
 	        k_inc = 1;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBS[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
+	        j_inc = 1;
+   	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBS[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
+	        j_inc = 1;
+   	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBS[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+   	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
+	        k_inc = 1;
+	     } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+ 	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
+	        k_inc = 1;
+	     } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
+	        j_inc = 1;
+ 	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+            } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } /* endif */
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_bottomsouthcorner_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
                                                 i_min,i_max,i_inc,j_min,j_max,j_inc,
@@ -1687,7 +4831,101 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_min;
                 j_ref = j_min-1;
                 k_ref = k_min-1;
-             } 
+             } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBS[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].Grid.INl;
+	        i_max = Soln_Blks[i_blk].Grid.INu;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_min-1;
+                k_ref = k_max-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBS[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_min-1;
+                k_ref = k_min-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBS[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl;
+	        i_max = Soln_Blks[i_blk].Grid.INu;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_max-1;
+                k_ref = k_min-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_min;
+                j_ref = j_max-1;
+                k_ref = k_min-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_min-1;
+                k_ref = k_max-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl;
+	        i_max = Soln_Blks[i_blk].Grid.INu;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_max-1;
+                k_ref = k_max-1;
+              } else {
+	        i_min = Soln_Blks[i_blk].Grid.INu;
+	        i_max = Soln_Blks[i_blk].Grid.INl;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_min;
+                j_ref = j_max-1;
+                k_ref = k_max-1;
+             } /* endif */
              x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
              for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
 	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
@@ -1738,7 +4976,80 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCl;
 	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
 	        k_inc = 1;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoBW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBW[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else if ( Soln_Block_List.Block[i_blk].infoBW[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoBW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoBW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoBW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else if (Soln_Block_List.Block[i_blk].infoBW[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+ 	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } /* endif */
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_bottomwestcorner_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
                                                 i_min,i_max,i_inc,
@@ -1763,7 +5074,101 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_min-1;
                 j_ref = j_min;
                 k_ref = k_min-1;
-             } 
+             } else if (Soln_Block_List.Block[i_blk].infoBW[0].dimen.i > 0 &&
+			Soln_Block_List.Block[i_blk].infoBW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl;
+	        j_max = Soln_Blks[i_blk].Grid.JNu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_min-1;
+                j_ref = j_min;
+                k_ref = k_max-1 ;
+             } else if ( Soln_Block_List.Block[i_blk].infoBW[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl;
+	        j_max = Soln_Blks[i_blk].Grid.JNu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_max-1;
+                j_ref = j_min;
+                k_ref = k_min-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBW[0].dimen.i > 0 &&
+			Soln_Block_List.Block[i_blk].infoBW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_min-1;
+                j_ref = j_min;
+                k_ref = k_min-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_max-1;
+                j_ref = j_min;
+                k_ref = k_min-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl;
+	        j_max = Soln_Blks[i_blk].Grid.JNu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_max-1;
+                j_ref = j_min;
+                k_ref = k_max-1 ;
+             } else if (Soln_Block_List.Block[i_blk].infoBW[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_min-1;
+                j_ref = j_min;
+		k_ref = k_max-1 ;
+            } else {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu;
+	        j_max = Soln_Blks[i_blk].Grid.JNl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_max-1;
+                j_ref = j_min;
+                k_ref = k_max-1;
+             } /* endif */
              x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
              for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
 	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
@@ -1802,7 +5207,80 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
 	        k_max = Soln_Blks[i_blk].KCu;
 	        k_inc = 1;
-             } 
+             } else if (Soln_Block_List.Block[i_blk].infoTNW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTNW[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
+	        k_inc = -1;
+             } else if ( Soln_Block_List.Block[i_blk].infoTNW[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTNW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoTNW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTNW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoTNW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoTNW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
+	        k_inc = -1;
+             } else if (Soln_Block_List.Block[i_blk].infoTNW[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+ 	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
+	        k_inc = -1;
+             } /* endif */
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_topnorthwestcorner_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
                                                 i_min,i_max,i_inc,
@@ -1842,7 +5320,87 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_min-1;
                 j_ref = j_max+1;
                 k_ref = k_min+1;
-             }
+             } else if ( Soln_Block_List.Block[i_blk].infoTNW[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTNW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_max-1;
+                j_ref = j_max+1;
+                k_ref = k_max+1  ;
+             } else if (Soln_Block_List.Block[i_blk].infoTNW[0].dimen.i > 0 &&
+			Soln_Block_List.Block[i_blk].infoTNW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_min-1;
+                j_ref = j_min+1;
+                k_ref = k_max+1  ;
+             } else if (Soln_Block_List.Block[i_blk].infoTNW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_max-1;
+                j_ref = j_min+1;
+                k_ref = k_max+1  ;
+             } else if (Soln_Block_List.Block[i_blk].infoTNW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_max-1;
+                j_ref = j_max+1;
+                k_ref = k_min+1  ;
+             } else if (Soln_Block_List.Block[i_blk].infoTNW[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_min-1;
+                j_ref = j_min+1;
+		k_ref = k_min+1  ;
+            } else {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_max-1;
+                j_ref = j_min+1;
+                k_ref = k_min+1  ;
+             } /* endif */
              x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
              for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
 	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
@@ -1882,7 +5440,80 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
    	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
 	        k_max = Soln_Blks[i_blk].KCu;
 	        k_inc = 1;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTSE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost-1;
+	        j_inc = 1;
+   	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
+	        k_inc = -1;
+             } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTSE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost-1;
+	        j_inc = 1;
+   	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTSE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+   	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+	     } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+ 	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+	     } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost-1;
+	        j_inc = 1;
+ 	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
+	        k_inc = -1;
+            } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
+	        k_inc = -1;
+             } /* endif */
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_topsoutheastcorner_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
                                                 i_min,i_max,i_inc,j_min,j_max,j_inc,
@@ -1907,7 +5538,101 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_max+1;
                 j_ref = j_min-1;
                 k_ref = k_max+1;
-             } 
+             } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTSE[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_max+1;
+                j_ref = j_min-1;
+                k_ref = k_min+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTSE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_min+1;
+                j_ref = j_min-1;
+                k_ref = k_max+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTSE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_max+1;
+                j_ref = j_max-1;
+                k_ref = k_max+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_min+1;
+                j_ref = j_max-1;
+                k_ref = k_max+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_min+1;
+                j_ref = j_min-1;
+                k_ref = k_min+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_max+1;
+                j_ref = j_max-1;
+                k_ref = k_min+1;
+              } else {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_min+1;
+                j_ref = j_max-1;
+                k_ref = k_min+1;
+             } /* endif */
              x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
              for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
 	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
@@ -1946,7 +5671,83 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost+1;
 	        k_max = Soln_Blks[i_blk].KCu;
 	        k_inc = 1;
-          }
+          } else
+             if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTSW[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost+1;
+	        k_inc = -1;
+          } else
+             if ( Soln_Block_List.Block[i_blk].infoTSW[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTSW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost+1;
+	        k_inc = -1;
+          } else
+             if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTSW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost+1;
+	        k_inc = -1;
+            } else if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost+1;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost+1;
+	        k_inc = -1;
+             } else if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost+1;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost+1;
+	        k_inc = -1;
+             } /* endif */
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_topsouthwestcorner_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
                                                 i_min,i_max,i_inc,j_min,j_max,j_inc,
@@ -1971,7 +5772,101 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_min-1;
                 j_ref = j_min-1;
                 k_ref = k_max+1;
-             } 
+             } else if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.i > 0 &&
+                Soln_Block_List.Block[i_blk].infoTSW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_min-1;
+                j_ref = j_min-1;
+                k_ref = k_min+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTSW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_max-1;
+                j_ref = j_min-1;
+                k_ref = k_max+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTSW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_min-1;
+                j_ref = j_max-1;
+                k_ref = k_max+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_max-1;
+                j_ref = j_max-1;
+                k_ref = k_max+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_max-1;
+                j_ref = j_min-1;
+                k_ref = k_min+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_min-1;
+                j_ref = j_max-1;
+                k_ref = k_min+1;
+             } else {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_max-1;
+                j_ref = j_max-1;
+                k_ref = k_min+1;
+             } /* endif */
              x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
              for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
 	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
@@ -2010,7 +5905,80 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCl;
 	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
 	        k_inc = 1;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoBNW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBNW[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else if ( Soln_Block_List.Block[i_blk].infoBNW[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBNW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoBNW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBNW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoBNW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoBNW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else if (Soln_Block_List.Block[i_blk].infoBNW[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+ 	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } /* endif */
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_bottomnorthwestcorner_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
                                                 i_min,i_max,i_inc,
@@ -2035,7 +6003,101 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_min-1;
                 j_ref = j_max+1;
                 k_ref = k_min-1  ;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoBNW[0].dimen.i > 0 &&
+			Soln_Block_List.Block[i_blk].infoBNW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_min-1;
+                j_ref = j_max+1;
+                k_ref = k_max-1;
+             } else if ( Soln_Block_List.Block[i_blk].infoBNW[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBNW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_max-1;
+                j_ref = j_max+1;
+                k_ref = k_min-1  ;
+             } else if (Soln_Block_List.Block[i_blk].infoBNW[0].dimen.i > 0 &&
+			Soln_Block_List.Block[i_blk].infoBNW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_min-1;
+                j_ref = j_min+1;
+                k_ref = k_min-1  ;
+             } else if (Soln_Block_List.Block[i_blk].infoBNW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_max-1;
+                j_ref = j_min+1;
+                k_ref = k_min-1  ;
+             } else if (Soln_Block_List.Block[i_blk].infoBNW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_max-1;
+                j_ref = j_max+1;
+                k_ref = k_max-1  ;
+             } else if (Soln_Block_List.Block[i_blk].infoBNW[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_min-1;
+                j_ref = j_min+1;
+		k_ref = k_max-1  ;
+            } else {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_max-1;
+                j_ref = j_min+1;
+                k_ref = k_max-1  ;
+             } /* endif */
              x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
              for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
 	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
@@ -2074,7 +6136,80 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCl;
 	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost-1;
 	        k_inc = 1;
-             } 
+             } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBNE[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+              } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBNE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost-1;
+	        k_inc = 1;
+              } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBNE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost-1;
+	        k_inc = 1;
+            } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost-1;
+	        k_inc = 1;
+              } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+ 	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+            } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+ 	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } /* endif */
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_bottomnortheastcorner_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
                                                 i_min,i_max,i_inc,j_min,j_max,j_inc,
@@ -2099,7 +6234,101 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_max+1;
                 j_ref = j_max+1;
                 k_ref = k_min-1;
-             } 
+             } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBNE[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_max+1;
+                j_ref = j_max+1;
+                k_ref = k_max-1;
+              } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBNE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_min+1;
+                j_ref = j_max+1;
+                k_ref = k_min-1;
+              } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBNE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_max+1;
+                j_ref = j_min+1;
+                k_ref = k_min-1;
+              } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_min+1;
+                j_ref = j_min+1;
+                k_ref = k_min-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_min+1;
+                j_ref = j_max+1;
+                k_ref = k_max-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_max+1;
+                j_ref = j_min+1;
+                k_ref = k_max-1;
+             } else {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_min+1;
+                j_ref = j_min+1;
+                k_ref = k_max-1;
+             } /* endif */
              x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
              for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
@@ -2138,7 +6367,80 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
    	        k_min = Soln_Blks[i_blk].KCl;
 	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
 	        k_inc = 1;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBSE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost+1;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
+	        j_inc = 1;
+   	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBSE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
+	        j_inc = 1;
+   	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBSE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost+1;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+   	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
+	        k_inc = 1;
+	     } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+ 	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
+	        k_inc = 1;
+	     } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
+	        j_inc = 1;
+ 	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+            } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost+1;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } /* endif */
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_bottomsoutheastcorner_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
                                                 i_min,i_max,i_inc,j_min,j_max,j_inc,
@@ -2163,7 +6465,101 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_max+1;
                 j_ref = j_min-1;
                 k_ref = k_min-1;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBSE[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_max+1;
+                j_ref = j_min-1;
+                k_ref = k_max-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBSE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_min+1;
+                j_ref = j_min-1;
+                k_ref = k_min-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBSE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_max+1;
+                j_ref = j_max-1;
+                k_ref = k_min-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_min+1;
+                j_ref = j_max-1;
+                k_ref = k_min-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_min+1;
+                j_ref = j_min-1;
+                k_ref = k_max-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_max+1;
+                j_ref = j_max-1;
+                k_ref = k_max-1;
+              } else {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_min+1;
+                j_ref = j_max-1;
+                k_ref = k_max-1;
+             } /* endif */
              x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
              for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
 	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
@@ -2202,7 +6598,80 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
 	        k_max = Soln_Blks[i_blk].KCu;
 	        k_inc = 1;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTNE[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
+	        k_inc = -1;
+              } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTNE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+              } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTNE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
+                i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+            } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
+	        k_max = Soln_Blks[i_blk].KCu;
+	        k_inc = 1;
+              } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
+	        j_max = Soln_Blks[i_blk].JCu;
+	        j_inc = 1;
+ 	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
+	        k_inc = -1;
+            } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
+	        i_max = Soln_Blks[i_blk].ICu;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCu;
+	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICu;
+	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCu;
+ 	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCu;
+	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
+	        k_inc = -1;
+             } /* endif */
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_topnortheastcorner_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
                                                 i_min,i_max,i_inc,j_min,j_max,j_inc,
@@ -2227,7 +6696,101 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_max+1;
                 j_ref = j_max+1;
                 k_ref = k_max+1;
-             } 
+             } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTNE[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_max+1;
+                j_ref = j_max+1;
+                k_ref = k_min+1;
+              } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTNE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_min+1;
+                j_ref = j_max+1;
+                k_ref = k_max+1;
+              } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoTNE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_max+1;
+                j_ref = j_min+1;
+                k_ref = k_max+1;
+              } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_inc = 1;
+                i_ref = i_min+1;
+                j_ref = j_min+1;
+                k_ref = k_max+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_min+1;
+                j_ref = j_max+1;
+                k_ref = k_min+1;
+             } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INu-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_max+1;
+                j_ref = j_min+1;
+                k_ref = k_min+1;
+             } else {
+	        i_min = Soln_Blks[i_blk].Grid.INu-1;
+	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
+	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
+	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
+	        k_inc = -1;
+                i_ref = i_min+1;
+                j_ref = j_min+1;
+                k_ref = k_min+1;
+             } /* endif */
              x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
              for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
@@ -2266,7 +6829,83 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 	        k_min = Soln_Blks[i_blk].KCl;
 	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
 	        k_inc = 1;
-          } 
+          } else
+             if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBSW[0].dimen.j > 0 ) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+          } else
+             if ( Soln_Block_List.Block[i_blk].infoBSW[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBSW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+          } else
+             if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBSW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+            } else if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl;
+	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
+	        k_inc = 1;
+             } else if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl;
+	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].ICl;
+                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
+	        i_inc = 1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } else {
+	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
+	        i_max = Soln_Blks[i_blk].ICl;
+	        i_inc = -1;
+	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
+	        j_max = Soln_Blks[i_blk].JCl;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
+	        k_max = Soln_Blks[i_blk].KCl;
+	        k_inc = -1;
+             } /* endif */
 
              i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_bottomsouthwestcorner_sendbuf[i_blk],
                                                 l,buffer_size_neighbour,
@@ -2306,7 +6945,87 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                 i_ref = i_min-1;
                 j_ref = j_min-1;
                 k_ref = k_max-1;
-             }
+             } else if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.j > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBSW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_max-1;
+                j_ref = j_min-1;
+                k_ref = k_min-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.i > 0 &&
+                 Soln_Block_List.Block[i_blk].infoBSW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_min-1;
+                j_ref = j_max-1;
+                k_ref = k_min-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.k > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
+	        k_inc = 1;
+                i_ref = i_max-1;
+                j_ref = j_max-1;
+                k_ref = k_min-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.j > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
+	        j_inc = 1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_max-1;
+                j_ref = j_min-1;
+                k_ref = k_max-1;
+             } else if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.i > 0) {
+	        i_min = Soln_Blks[i_blk].Grid.INl+1;
+	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
+                i_inc = 1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_min-1;
+                j_ref = j_max-1;
+                k_ref = k_max-1;
+             } else {
+	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
+	        i_max = Soln_Blks[i_blk].Grid.INl+1;
+                i_inc = -1;
+	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
+	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
+	        j_inc = -1;
+	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
+	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
+	        k_inc = -1;
+                i_ref = i_max-1;
+                j_ref = j_max-1;
+                k_ref = k_max-1;
+             } /* endif */
              x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
              for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
 	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
