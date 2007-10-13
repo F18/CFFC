@@ -98,12 +98,12 @@ Number_of_Blocks_Jdir=
 # Set time stepping parameters
 ###############################
 CFL_Number=
-0.75
+100.0
 Maximum_Number_of_Time_Steps=
-50
+100
 ####### Implicit ###############
 Maximum_Number_of_NKS_Iterations =
-50
+100
 Maximum_Number_of_GMRES_Iterations=
 100
 GMRES_Restart =
@@ -134,7 +134,7 @@ Temperature=
 298.0
 # laminar flame speed [m/s]
 flame_speed=
-0.4101
+0.3839
 #################################
 # Execute program
 #################################
