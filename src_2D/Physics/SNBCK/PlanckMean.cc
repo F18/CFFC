@@ -90,12 +90,6 @@ void PlanckMean :: Setup( const char *CFFC_PATH ) // Current path
   //
   // loop over each temperature point
   //
-  cout << endl << "Planck Mean Abs. Coeff" << endl;
-  cout << setw(12) << "T [K]"
-       << setw(12) << "Kp (H2O)" 
-       << setw(12) << "Kp (CO)" 
-       << setw(12) << "Kp (CO2)"
-       << endl;
   for (int n=0; n<Ninterp; n++) {
 
     // compute temperautre
@@ -104,11 +98,6 @@ void PlanckMean :: Setup( const char *CFFC_PATH ) // Current path
     // compute planck mean for each species, kp [atm^-1 m^-1]
     SNB.PlanckMean( Tn[n], kp_CO[n], kp_H2O[n], kp_CO2[n] );
 
-    cout << setw(12) << Tn[n] 
-	 << setw(12) << kp_H2O[n] 
-	 << setw(12) << kp_CO[n] 
-	 << setw(12) << kp_CO2[n] 
-	 << endl;
   } // endfor - T
 
   // Build a natural cubic spline
