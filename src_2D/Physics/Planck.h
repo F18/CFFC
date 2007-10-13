@@ -41,8 +41,8 @@ inline double BlackBody(const double T,
   // EN = E_beta/nT^3
   double V=C2*wn/T;
   double EX=exp(V);
-  double EN=C1*wn*wn*wn/(EX-1.0); // W/m2cm-1K3
-  return EN;                      //W/m2cm-1
+  double EN=C1*wn*wn*wn/(EX-1.0); // W/m2cm-1
+  return EN;                      // W/m2cm-1
 }
 
 

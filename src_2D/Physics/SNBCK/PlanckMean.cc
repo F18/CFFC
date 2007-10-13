@@ -70,32 +70,12 @@ void PlanckMean :: Deallocate() {
 void PlanckMean :: Setup( const char *CFFC_PATH ) // Current path
 {
 
-  //------------------------------------------------
-  // declares
-  //------------------------------------------------
-  // referece composition (mole fractions)
-  double xco(1.0), xh2o(1.0), xco2(1.0), xo2(0.0), xsoot(0.0);
-
-  // reference pressure
-  double p(1.0); // 1 atm
-
   //-----------------------------------------------
-  // Setup SNBCK data object
+  // Setup SNB data object
   //-----------------------------------------------
 
-  // setup temporary input parameters object
-  SNBCK_Input_Parameters IP;
-  
-  // use 'full' model with no band lumping
-  IP.EvaluationType   = SNBCK_EVAL_ONLINE;
-  IP.QuadType         = GAUSS_LEGENDRE;
-  IP.QuadPoints       = 12;
-  IP.LumpedBands      = 1;
-  IP.OptimizedLumping = false;
-  IP.OverlapModel     = SNBCK_OVERLAP_UNCORRELATED;
-
-  // perform main setup
-  SNBCKdata.Setup(IP, CFFC_PATH);
+  // get SNB model parameters for gas mixture (units: cm, atm, K)
+  SNB.LoadParams(CFFC_PATH);
 
 
   //------------------------------------------------
@@ -122,12 +102,7 @@ void PlanckMean :: Setup( const char *CFFC_PATH ) // Current path
     Tn[n] = Tmin + double(n)*dT;
 
     // compute planck mean for each species, kp [atm^-1 m^-1]
-    kp_CO[n] = SNBCKdata.PlanckMean( p, Tn[n],  xco,  0.0,  0.0, xo2, xsoot )
-      / ( xco * p );
-    kp_H2O[n] = SNBCKdata.PlanckMean( p, Tn[n], 0.0, xh2o,  0.0, xo2, xsoot )
-      / ( xh2o * p );
-    kp_CO2[n] = SNBCKdata.PlanckMean( p, Tn[n], 0.0,  0.0, xco2, xo2, xsoot )
-      / ( xco2 * p );
+    SNB.PlanckMean( Tn[n], kp_CO[n], kp_H2O[n], kp_CO2[n] );
 
     cout << setw(12) << Tn[n] 
 	 << setw(12) << kp_H2O[n] 

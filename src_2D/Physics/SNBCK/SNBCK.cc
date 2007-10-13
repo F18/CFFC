@@ -565,6 +565,102 @@ double EM2C :: Transmissivity( const double L, const int i ){
 }
 
 /*********************************************************************
+ * EM2C  :: PlanckMean                                               *
+ *                                                                   *
+ * Calculate the planck mean absorbsion coefficient using narrow     *
+ * band averaged values for the absorbsion coefficient and making    *
+ * the assumption that the Planck function varies little over each   *
+ * band. See chapter 10 in                                           *
+ *   MF. Modest, "Radiative Heat Transfer," 2nd. ed., (2003)       . *
+ *                                                                   *
+ * Assuming the ambient is cold, we have:                            *
+ *  Kp = \sum_N{ \frac{\pi I_{b_\eta}}{\sigma T^4} \int{S/d}d\eta    *
+ *                                                                   *
+ * Placnk mean in [atm^-1 m^-1]                                      *
+ *********************************************************************/
+void EM2C :: PlanckMean( const double T,   // temperature [K]
+			 double &kp_CO,    // planck mean abs. of CO
+			 double &kp_H2O,   // planck mean abs. of H2O
+			 double &kp_CO2 )  // planck mean abs. of CO2
+{
+  // declares
+  int index;
+  double slope;
+  double k, delta_inv, E_eta;
+
+  // check if temperature is within range
+  if ( T<Tmin || T>Tmax ) {
+    cerr << "EM2C::ComputeSNB(): Temperature out of valid range, "
+	 << Tmin << " < T < " << Tmax << " where T = "
+	 << T << " [K].\n";
+    exit(-1);
+  }
+
+  // compute interpolation coefficients using linear piecewise interpolation
+  Interp( T, slope, index);
+
+  //
+  // loop over the number of bands and compute integrand
+  //
+  kp_CO = ZERO; kp_H2O = ZERO; kp_CO2 = ZERO;
+  for (int i=0; i<Nbands; i++) {
+
+    // planck function [W/(m^2 cm^-1) * cm^-1]
+    E_eta = BlackBody(T, WaveNo[i])* BandWidth[i];
+   
+    //------------------------------------------------
+    // CO 
+    //------------------------------------------------
+    if (liCO[i]) {
+
+      // k
+      k = kCO[iCO[i]][index] + 
+	  slope*(kCO[iCO[i]][index+1]-kCO[iCO[i]][index]);
+      // Kp[ (cm^-1 atm^-1) * W/m^2 ]
+      kp_CO += k * E_eta;
+
+    }// endif CO
+
+    //------------------------------------------------
+    // CO2
+    //------------------------------------------------
+    if (liCO2[i]) {
+
+      // k
+      k = kCO2[iCO2[i]][index] + 
+          slope*(kCO2[iCO2[i]][index+1]-kCO2[iCO2[i]][index]);
+      // Kp[ (cm^-1 atm^-1) * W/m^2 ]
+      kp_CO2 += k * E_eta;
+
+    }// endif CO2
+
+    //------------------------------------------------
+    // H2O
+    //------------------------------------------------
+    if (liH2O[i]) {
+
+      // k
+      k = kH2O[iH2O[i]][index] + 
+	  slope*(kH2O[iH2O[i]][index+1]-kH2O[iH2O[i]][index]);
+      // Kp[ (cm^-1 atm^-1) * W/m^2 ]
+      kp_H2O += k * E_eta;
+
+    }// endif H2O
+
+  } // end for - bands
+
+  // compute factor [ (W/(m^2 K^4)) * K^4 ]
+  double tmp = STEFFAN_BOLTZMANN * T*T*T*T / PI;
+
+  // compute planck mean [ atm^-1 m^-1 ]
+  kp_CO  /= tmp * CM_TO_M;
+  kp_CO2 /= tmp * CM_TO_M;
+  kp_H2O /= tmp * CM_TO_M;
+
+}
+
+
+/*********************************************************************
  ********************* SNBCK CLASS MEMBER FUNCTIONS ******************
  *********************************************************************/
 
@@ -1570,12 +1666,12 @@ double SNBCK :: RadSourceOptThin( const double p,        // pressure [atm]
   CalculateAbsorb( p, T, xco, xh2o, xco2, xo2, /*xsoot*/0.0 );
   
   //
-  // compute gas band contribution
+  // compute gas band contribution by integrating over the wavenumber spectrum
   //
   for (int v=0; v<Nbands; v++)
     for (int i=0; i<nquad[v]; i++)
       Srad += (k[v][i]/CM_TO_M) * BlackBody(T, WaveNo[v]) * BandWidth[v] * Weight(v,i);
-  Srad *= 2.0;
+  Srad *= FOUR*PI;
 
   //
   // Add soot radiation.
@@ -1624,7 +1720,7 @@ double SNBCK :: PlanckMean( const double p,        // pressure [atm]
   CalculateAbsorb( p, T, xco, xh2o, xco2, xo2, xsoot );
   
   //
-  // compute gas band contribution
+  // compute gas band contribution by integrating over the wavenumber spectrum
   //
   double kp(ZERO);
   for (int v=0; v<Nbands; v++)

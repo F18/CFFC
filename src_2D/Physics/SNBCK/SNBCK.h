@@ -278,6 +278,12 @@ class EM2C{
 		    const double xH2O_0,      // mole fraction of H2O
 		    const double xCO2_0 );    // mole fraction of CO2
 
+  // compute planck mean absorbsion coefficient
+  void PlanckMean( const double T,   // temperature [K]
+		   double &kp_CO,    // planck mean abs. of CO
+		   double &kp_H2O,   // planck mean abs. of H2O
+		   double &kp_CO2 ); // planck mean abs. of CO2
+  
   // compute gas transmissivity
   double Transmissivity( const double L, const int i );
 

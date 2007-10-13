@@ -96,8 +96,8 @@ public:
   
 private:
 
-  // SNBCK data object
-  SNBCK SNBCKdata;
+  // SNB data object
+  EM2C SNB;
 
   // Interpolation parameters required for cubic spline fitting of
   // the absorbsion coefficient wrt temperature.  Uniform spacing in 
