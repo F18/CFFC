@@ -2197,15 +2197,14 @@ void Set_Global_TimeStep(Rte2D_Quad_Block &SolnBlk,
  ********************************************************/
 double L1_Norm_Residual(Rte2D_Quad_Block &SolnBlk, const int &norm) {
 
-    int i, j, n;
     double l1_norm;
     int NUM_VAR_RTE2D = SolnBlk.NumVar();
 
     l1_norm = ZERO;
 
-    for ( j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
-       for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-	 for ( n = 0 ; n < NUM_VAR_RTE2D ; ++n ) 
+    for ( int j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
+       for ( int i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
+	 for ( int n = 0 ; n < NUM_VAR_RTE2D ; ++n ) 
 	   l1_norm += fabs(SolnBlk.dUdt[i][j][0].I[n]);
        } /* endfor */
     } /* endfor */
@@ -2225,15 +2224,14 @@ double L1_Norm_Residual(Rte2D_Quad_Block &SolnBlk, const int &norm) {
  ********************************************************/
 double L2_Norm_Residual(Rte2D_Quad_Block &SolnBlk, const int &norm) {
 
-    int i, j, n;
     double l2_norm;
     int NUM_VAR_RTE2D = SolnBlk.NumVar();
 
     l2_norm = ZERO;
 
-    for ( j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
-       for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-	 for ( n = 0 ; n < NUM_VAR_RTE2D ; ++n ) 
+    for ( int j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
+       for ( int i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
+	 for ( int n = 0 ; n < NUM_VAR_RTE2D ; ++n ) 
 	   l2_norm += sqr(SolnBlk.dUdt[i][j][0].I[n]);
        } /* endfor */
     } /* endfor */
@@ -2255,19 +2253,19 @@ double L2_Norm_Residual(Rte2D_Quad_Block &SolnBlk, const int &norm) {
  ********************************************************/
 double Max_Norm_Residual(Rte2D_Quad_Block &SolnBlk, const int &norm) {
 
-    int i, j, n;
     double max_norm;
-    double temp(ZERO);
+    double temp;
     int NUM_VAR_RTE2D = SolnBlk.NumVar();
 
     max_norm = ZERO;
 
-    for ( j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
-       for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-	 for ( n = 0 ; n < NUM_VAR_RTE2D ; ++n ) {
-	   temp += sqr(SolnBlk.dUdt[i][j][0].I[n]);
+    for ( int j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
+       for ( int i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
+	 temp = ZERO;
+	 for ( int n = 0 ; n < NUM_VAR_RTE2D ; ++n ) {
+	   temp += fabs(SolnBlk.dUdt[i][j][0].I[n]);
 	 }
-	 max_norm = max(max_norm, sqrt(temp));
+	 max_norm = max(max_norm, temp);
        } /* endfor */
     } /* endfor */
 
