@@ -218,9 +218,88 @@ void AdaptiveBlock3D_List::Allocate_Message_Buffers(AdaptiveBlock3D_List &Blk_Li
 void  AdaptiveBlock3D_List::Allocate_Message_Buffers_NoResChange(AdaptiveBlock3D_List &Blk_List,
                                           const int Number_of_Solution_Variables) {
     int i_blk, buffer_size, buffer_size_neighbour, l;
-
+    int i_be; // index for boundary element, face edge or vertex
+    
     /* Ensure that memory for the block index of the send and receive buffers
        has been allocated. */
+/* ********************************************************************/
+    if (Blk_List.Nblk > 0 &&
+        Blk_List.message_noreschange_sendbuf == NULL) {
+       Blk_List.message_noreschange_sendbuf = new double**[Blk_List.Nblk];
+       for ( i_blk = 0; i_blk <= Blk_List.Nblk-1 ; ++i_blk ) {
+          Blk_List.message_noreschange_sendbuf[i_blk] = new double*[27];
+          for (j_neigh = 0; j_neigh < 27 ; ++j_neigh) {
+             Blk_List.message_noreschange_sendbuf[i_blk][j_neigh] = new double[1];
+             Blk_List.message_noreschange_sendbuf[i_blk][j_neigh][0] = ZERO;
+	  } /* endfor */
+       } /* endfor */
+    } /* endif */
+    if (Blk_List.Nblk > 0 &&
+        Blk_List.message_noreschange_recbuf == NULL) {
+       Blk_List.message_noreschange_recbuf = new double**[Blk_List.Nblk];
+       for ( i_blk = 0; i_blk <= Blk_List.Nblk-1 ; ++i_blk ) {
+          Blk_List.message_noreschange_recbuf[i_blk] = new double*[27];
+          for (j_neigh = 0; j_neigh < 27 ; ++j_neigh) {
+             Blk_List.message_noreschange_recbuf[i_blk][j_neigh] = new double[1];
+             Blk_List.message_noreschange_recbuf[i_blk][j_neigh][0] = ZERO;
+	  } /* endfor */
+       } /* endfor */
+    } /* endif */
+
+
+  // Reallocate memory for send and receive buffers.
+    if (Blk_List.message_noreschange_sendbuf[i_blk] != NULL) {
+       for (j_neigh = 0; j_neigh < 27 ; ++j_neigh) {
+          delete []Blk_List.message_noreschange_sendbuf[i_blk][j_neigh];
+          Blk_List.message_noreschange_sendbuf[i_blk][j_neigh] = NULL;
+       } /* endfor */
+    } /* endif */
+    if (Blk_List.message_noreschange_recbuf[i_blk] != NULL) {
+       for (j_neigh = 0; j_neigh < 27 ; ++j_neigh) {
+          delete []Blk_List.message_noreschange_recbuf[i_blk][j_neigh];
+          Blk_List.message_noreschange_recbuf[i_blk][j_neigh] = NULL;
+       } /* endfor */
+    } /* endif */
+
+    if (Blk_List.Block[i_blk].used && 
+        (Blk_List.Block[i_blk].nT == 1) &&
+        (Blk_List.Block[i_blk].info.level == Blk_List.Block[i_blk].infoT[0].level)) {
+       
+ 
+       buffer_size = Blk_List.Block[i_blk].info.dimen.ghost*
+          (abs(Blk_List.Block[i_blk].info.dimen.i)+1)*
+          (abs(Blk_List.Block[i_blk].info.dimen.j)+1)*
+          Number_of_Solution_Variables+
+          4*Blk_List.Block[i_blk].infoT[0].dimen.ghost*abs(Blk_List.Block[i_blk].infoT[0].dimen.i)+
+          4*Blk_List.Block[i_blk].infoT[0].dimen.ghost*abs(Blk_List.Block[i_blk].infoT[0].dimen.j);
+       buffer_size_neighbour = Blk_List.Block[i_blk].infoT[0].dimen.ghost*
+          (abs(Blk_List.Block[i_blk].infoT[0].dimen.i)+1)*
+          (abs(Blk_List.Block[i_blk].infoT[0].dimen.j)+1)*
+          Number_of_Solution_Variables+
+          4*Blk_List.Block[i_blk].infoT[0].dimen.ghost*abs(Blk_List.Block[i_blk].infoT[0].dimen.i)+
+          4*Blk_List.Block[i_blk].infoT[0].dimen.ghost*abs(Blk_List.Block[i_blk].infoT[0].dimen.j);
+	  // 	  cout<<"\nmessage_noreschange_topface buffer_size= "<<buffer_size<<" buffer_size_neighbour= "<<buffer_size_neighbour<<" For block "<<i_blk; cout.flush();
+       Blk_List.message_noreschange_sendbuf[i_blk][i_be] = 
+          new double[buffer_size_neighbour];
+       for (l = 0; l <= buffer_size_neighbour-1; ++l) 
+          Blk_List.message_noreschange_sendbuf[i_blk][i_be][l] = ZERO;
+       Blk_List.message_noreschange_recbuf[i_blk][i_be] = 
+          new double[buffer_size];
+       for (l = 0; l <= buffer_size-1; ++l) 
+          Blk_List.message_noreschange_recbuf[i_blk][i_be][l] = ZERO;
+    } else {
+       Blk_List.message_noreschange_sendbuf[i_blk][i_be] = 
+          new double[1];
+       Blk_List.message_noreschange_sendbuf[i_blk][i_be][0] = ZERO;
+       Blk_List.message_noreschange_recbuf[i_blk][i_be] = 
+          new double[1];
+       Blk_List.message_noreschange_recbuf[i_blk][i_be][0] = ZERO;
+    } /* endif */
+
+
+/* ********************************************************************/
+
+
 
     if (Blk_List.Nblk > 0 &&
         Blk_List.message_noreschange_topface_sendbuf == NULL) {

@@ -75,6 +75,49 @@ using namespace std;
 #define	ADAPTIVEBLOCK3D_NOCHANGE                        0
 #define	ADAPTIVEBLOCK3D_COARSEN                        -1
 
+
+
+
+/*******************************************************************************
+ *
+ * Special types
+ *
+ ******************************************************************************/
+namespace BE
+{
+   enum Boundary_Elements{
+      
+      BSW = 0,
+      SW = 1,
+      TSW = 2,
+      BW = 3,
+      W =4,
+      TW = 5,
+      BNW = 6,
+      NW = 7,
+      TNW = 8,
+      BS = 9,
+      S = 10,
+      TS = 11,
+      B = 12,
+      T = 14,
+      BN = 15,
+      N = 16,
+      TN = 17,
+      BSE = 18,
+      SE = 19,
+      TSE = 20,
+      BE = 21,
+      E = 22,
+      TE = 23,
+      BNE = 24,
+      NE = 25,
+      TNE = 26
+   
+   };
+}
+
+
 /* Define the classes. */
 
 /********************************************************
