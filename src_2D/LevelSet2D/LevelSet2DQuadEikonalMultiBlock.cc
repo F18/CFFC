@@ -1,10 +1,10 @@
-/**********************************************************************
- * LevelSet2DQuadEikonalMultiBlock.cc                                 *
- *                                                                    *
- * Multi-block versions of subroutines for the solution of the 2D     *
- * Eikonal equations for the 2D Level Set multi-block quadrilateral   *
- * mesh solution classes.                                             *
- *                                                                    *
+/******************************************************************//**
+ * \file LevelSet2DQuadEikonalMultiBlock.cc                           
+ *                                                                    
+ * Multi-block versions of subroutines for the solution of the 2D     
+ * Eikonal equations for the 2D Level Set multi-block quadrilateral   
+ * mesh solution classes.                                             
+ *                                                                    
  **********************************************************************/
 
 // Include 2D LevelSet quadrilateral mesh solution header file.
@@ -18,12 +18,12 @@
  *                          Subroutines.                              *
  **********************************************************************/
 
-/**********************************************************************
- * Routine: Eikonal_Error                                             *
- *                                                                    *
- * This routine calculates the local area-weighted error in the       *
- * Eikonal equation solution.                                         *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Eikonal_Error                                             
+ *                                                                    
+ * This routine calculates the local area-weighted error in the       
+ * Eikonal equation solution.                                         
+ *                                                                    
  **********************************************************************/
 int Eikonal_Error(LevelSet2D_Quad_Block *Soln_ptr,
 		  LevelSet2D_Input_Parameters &IP,
@@ -58,13 +58,13 @@ int Eikonal_Error(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Explicit_Eikonal_Equation                                 *
- *                                                                    *
- * This routine manages the explicit solution of the Eikonal equation *
- * for iteratively forcing the level set function, psi, to be a       *
- * signed distance fuction.                                           *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Explicit_Eikonal_Equation                                 
+ *                                                                    
+ * This routine manages the explicit solution of the Eikonal equation 
+ * for iteratively forcing the level set function, psi, to be a       
+ * signed distance fuction.                                           
+ *                                                                    
  **********************************************************************/
 int Explicit_Eikonal_Equation(LevelSet2D_Quad_Block *Soln_ptr,
 			      LevelSet2D_Input_Parameters &IP,
@@ -175,14 +175,14 @@ int Explicit_Eikonal_Equation(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: CFL_Eikonal                                               *
- *                                                                    *
- * Determines the allowable global and local time steps for the       *
- * solution of the Eikonal equation for a 1D array of 2D              *
- * quadrilateral multi-block solution blocks according to the         *
- * Courant-Friedrichs-Lewy condition.                                 *
- *                                                                    *
+/******************************************************************//**
+ * Routine: CFL_Eikonal                                               
+ *                                                                    
+ * Determines the allowable global and local time steps for the       
+ * solution of the Eikonal equation for a 1D array of 2D              
+ * quadrilateral multi-block solution blocks according to the         
+ * Courant-Friedrichs-Lewy condition.                                 
+ *                                                                    
  **********************************************************************/
 double CFL_Eikonal(LevelSet2D_Quad_Block *Soln_ptr,
 		   AdaptiveBlock2D_List &Soln_Block_List) {
@@ -201,15 +201,15 @@ double CFL_Eikonal(LevelSet2D_Quad_Block *Soln_ptr,
   
 }
 
-/**********************************************************************
- * Routine: dUdt_Multistage_Eikonal                                   *
- *                                                                    *
- * This routine evaluates the stage solution residual for the Eikonal *
- * equation for a 1D array of 2D quadrilateral multi-block solution   *
- * blocks.  A variety of multistage explicit time integration and an  *
- * upwind finite-volume spatial discretization procedure can is used  *
- * depending on the specified input data.                             *
- *                                                                    *
+/******************************************************************//**
+ * Routine: dUdt_Multistage_Eikonal                                   
+ *                                                                    
+ * This routine evaluates the stage solution residual for the Eikonal 
+ * equation for a 1D array of 2D quadrilateral multi-block solution   
+ * blocks.  A variety of multistage explicit time integration and an  
+ * upwind finite-volume spatial discretization procedure can is used  
+ * depending on the specified input data.                             
+ *                                                                    
  **********************************************************************/
 int dUdt_Multistage_Eikonal(LevelSet2D_Quad_Block *Soln_ptr,
 			    AdaptiveBlock2D_List &Soln_Block_List,
@@ -234,14 +234,14 @@ int dUdt_Multistage_Eikonal(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Update_Multistage_Eikonal                                 *
- *                                                                    *
- * This routine updates the solution for a 1D array of 2D             *
- * quadrilateral multi-block Level Set solution blocks.  Second-order *
- * multistage explicit time integration and a finite-volume spatial   *
- * discretization procedure is used.                                  *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Update_Multistage_Eikonal                                 
+ *                                                                    
+ * This routine updates the solution for a 1D array of 2D             
+ * quadrilateral multi-block Level Set solution blocks.  Second-order 
+ * multistage explicit time integration and a finite-volume spatial   
+ * discretization procedure is used.                                  
+ *                                                                    
  **********************************************************************/
 int Update_Multistage_Eikonal(LevelSet2D_Quad_Block *Soln_ptr,
 			      AdaptiveBlock2D_List &Soln_Block_List,

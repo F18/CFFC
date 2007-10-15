@@ -111,32 +111,32 @@ public:
   int i_Limiter;
   //@}
 
-  //@name Limiter type indicator and related input parameters:
+  //!@name Limiter type indicator and related input parameters:
   //@{ 
   char BC_Type[INPUT_PARAMETER_LENGTH_LEVELSET2D];
   int i_BC_Type;
   //@}
 
-  //@name Embedded boundary input parameters:
+  //!@name Embedded boundary input parameters:
   //@{ 
   EmbeddedBoundaries2D_Input_Parameters Interface_IP;
   //@}
 
-  //@name Curvature driven flow parameters:
+  //!@name Curvature driven flow parameters:
   //@{
   double Curvature_Speed;
   char Curvature_Scheme[INPUT_PARAMETER_LENGTH_LEVELSET2D];
   int i_Curvature_Scheme;
   //@}
 
-  //@name Bullk flowfield.
+  //!@name Bullk flowfield.
   //@{ 
   char BulkFlowField_Type[INPUT_PARAMETER_LENGTH_LEVELSET2D];
   int i_BulkFlowField_Type;
   Vector2D V;
   //@}
 
-  //@name Grid type indicator and related input parameters:
+  //!@name Grid type indicator and related input parameters:
   //@{ 
   char Grid_Type[INPUT_PARAMETER_LENGTH_LEVELSET2D];
   char NACA_Aerofoil_Type[INPUT_PARAMETER_LENGTH_LEVELSET2D];
@@ -154,7 +154,7 @@ public:
   Vector2D X_Shift;
   //@}
 
-  //@name Mesh stretching factor.
+  //!@name Mesh stretching factor.
   //@{ 
   int i_Mesh_Stretching;
   int Mesh_Stretching_Type_Idir;
@@ -163,7 +163,7 @@ public:
   double Mesh_Stretching_Factor_Jdir;
   //@}
 
-  //@name AMR input parameters:
+  //!@name AMR input parameters:
   //@{
   //! Unsteady AMR flag.
   int AMR;
@@ -191,7 +191,7 @@ public:
   int i_Smooth_Quad_Block;
   //@}
 
-  //@name Output parameters:
+  //!@name Output parameters:
   //@{
   //! Output file name:
   char Output_File_Name[INPUT_PARAMETER_LENGTH_LEVELSET2D];
@@ -212,17 +212,17 @@ public:
   int Output_Progress_Frequency;
   //@}
 
-  //@name Multi-block solution-adaption and parallel domain decomposition input parameters:
+  //!@name Multi-block solution-adaption and parallel domain decomposition input parameters:
   //@{ 
   int Number_of_Processors, Number_of_Blocks_Per_Processor;
   //@}
 
-  //@name Obtain the CFFC root directory path:
+  //!@name Obtain the CFFC root directory path:
   //@{ 
   void get_cffc_path();
   //@}
 
-  //@name Input-output operators:
+  //!@name Input-output operators:
   //@{
   friend ostream &operator << (ostream &out_file, const LevelSet2D_Input_Parameters &IP);
   friend istream &operator >> (istream &in_file, LevelSet2D_Input_Parameters &IP);

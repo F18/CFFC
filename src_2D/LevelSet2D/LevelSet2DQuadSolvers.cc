@@ -1,8 +1,8 @@
-/**********************************************************************
- * LevelSet2DQuadSolvers.cc                                           *
- *                                                                    *
- * 2D Level Set equation multi-block quadrilateral mesh solvers.      *
- *                                                                    *
+/******************************************************************//**
+ * \file LevelSet2DQuadSolvers.cc                                     
+ *                                                                    
+ * 2D Level Set equation multi-block quadrilateral mesh solvers.      
+ *                                                                    
  **********************************************************************/
 
 // Include 2D LevelSet quadrilateral mesh solution header file.
@@ -11,12 +11,12 @@
 #include "LevelSet2DQuad.h"
 #endif // _LEVELSET2D_QUAD_INCLUDED
 
-/**********************************************************************
- * Routine: LevelSet2DQuadSolver                                      *
- *                                                                    *
- * Computes solutions to 2D LevelSet equations on 2D quadrilateral    *
- * multi-block solution-adaptive mesh.                                *
- *                                                                    *
+/******************************************************************//**
+ * Routine: LevelSet2DQuadSolver                                      
+ *                                                                    
+ * Computes solutions to 2D LevelSet equations on 2D quadrilateral    
+ * multi-block solution-adaptive mesh.                                
+ *                                                                    
  **********************************************************************/
 int LevelSet2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 
@@ -1173,11 +1173,11 @@ int LevelSet2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 
 }
 
-/**********************************************************************
- * Routine: Initialize_Level_Set_Solution                             *
- *                                                                    *
- *                                                                    *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Initialize_Level_Set_Solution                             
+ *                                                                    
+ *                                                                    
+ *                                                                    
  **********************************************************************/
 LevelSet2D_Quad_Block* Initialize_Level_Set_Solution(char *Input_File_Name,
 						     const int &batch_flag,
@@ -1432,11 +1432,11 @@ LevelSet2D_Quad_Block* Initialize_Level_Set_Solution(char *Input_File_Name,
 
 }
 
-/**********************************************************************
- * Routine: Restart_Level_Set_Solution                                *
- *                                                                    *
- *                                                                    *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Restart_Level_Set_Solution                                
+ *                                                                    
+ *                                                                    
+ *                                                                    
  **********************************************************************/
 LevelSet2D_Quad_Block* Restart_Level_Set_Solution(char *Input_File_Name,
 						  const int &batch_flag,
@@ -1659,8 +1659,8 @@ LevelSet2D_Quad_Block* Restart_Level_Set_Solution(char *Input_File_Name,
 
 }
 
-/**********************************************************************
- * Routine: Evolve_Level_Set_Solution                                 *
+/******************************************************************//**
+ * Routine: Evolve_Level_Set_Solution                                 
  **********************************************************************/
 int Evolve_Level_Set_Solution(const int &batch_flag,
 			      LevelSet2D_Quad_Block *Local_SolnBlk,

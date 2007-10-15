@@ -1,10 +1,10 @@
-/**********************************************************************
- * LevelSet2DQuadHamiltonJacobiMultiBlock.cc                          *
- *                                                                    *
- * Multi-block versions of subroutines for the solution of the 2D     *
- * Hamilton-Jacobi-type equations for the 2D Level Set multi-block    *
- * quadrilateral mesh solution classes.                               *
- *                                                                    *
+/******************************************************************//**
+ * \file LevelSet2DQuadHamiltonJacobiMultiBlock.cc                    
+ *                                                                    
+ * Multi-block versions of subroutines for the solution of the 2D     
+ * Hamilton-Jacobi-type equations for the 2D Level Set multi-block    
+ * quadrilateral mesh solution classes.                               
+ *                                                                    
  **********************************************************************/
 
 // Include 2D LevelSet quadrilateral mesh solution header file.
@@ -18,14 +18,14 @@
  *                          Subroutines.                              *
  **********************************************************************/
 
-/**********************************************************************
- * Routine: CFL_Hamilton_Jacobi                                       *
- *                                                                    *
- * Determines the allowable global and local time steps (for explicit *
- * LevelSet time stepping scheme) for a 1D array of 2D quadrilateral  *
- * multi-block solution blocks according to the                       *
- * Courant-Friedrichs-Lewy condition.                                 *
- *                                                                    *
+/******************************************************************//**
+ * Routine: CFL_Hamilton_Jacobi                                       
+ *                                                                    
+ * Determines the allowable global and local time steps (for explicit 
+ * LevelSet time stepping scheme) for a 1D array of 2D quadrilateral  
+ * multi-block solution blocks according to the                       
+ * Courant-Friedrichs-Lewy condition.                                 
+ *                                                                    
  **********************************************************************/
 double CFL_Hamilton_Jacobi(LevelSet2D_Quad_Block *Soln_ptr,
 			   AdaptiveBlock2D_List &Soln_Block_List,
@@ -45,15 +45,15 @@ double CFL_Hamilton_Jacobi(LevelSet2D_Quad_Block *Soln_ptr,
   
 }
 
-/**********************************************************************
- * Routine: dUdt_Multistage_Hamilton_Jacobi                           *
- *                                                                    *
- * This routine evaluates the stage solution residual for the level   *
- * set equation for a 1D array of 2D quadrilateral multi-block        *
- * solution blocks.  A variety of multistage explicit time            *
- * integration and upwind finite-volume spatial discretization        *
- * procedures can be used depending on the specified input data.      *
- *                                                                    *
+/******************************************************************//**
+ * Routine: dUdt_Multistage_Hamilton_Jacobi                           
+ *                                                                    
+ * This routine evaluates the stage solution residual for the level   
+ * set equation for a 1D array of 2D quadrilateral multi-block        
+ * solution blocks.  A variety of multistage explicit time            
+ * integration and upwind finite-volume spatial discretization        
+ * procedures can be used depending on the specified input data.      
+ *                                                                    
  **********************************************************************/
 int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block *Soln_ptr,
 				    AdaptiveBlock2D_List &Soln_Block_List,
@@ -78,14 +78,14 @@ int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Update_Solution_Multistage_Hamilton_Jacobi                *
- *                                                                    *
- * This routine updates the solution for a 1D array of 2D             *
- * quadrilateral multi-block Level Set solution blocks.  Second-order *
- * multistage explicit time integration and a finite-volume spatial   *
- * discretization procedure is used.                                  *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Update_Solution_Multistage_Hamilton_Jacobi                
+ *                                                                    
+ * This routine updates the solution for a 1D array of 2D             
+ * quadrilateral multi-block Level Set solution blocks.  Second-order 
+ * multistage explicit time integration and a finite-volume spatial   
+ * discretization procedure is used.                                  
+ *                                                                    
  **********************************************************************/
 int Update_Solution_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block *Soln_ptr,
 					       AdaptiveBlock2D_List &Soln_Block_List,

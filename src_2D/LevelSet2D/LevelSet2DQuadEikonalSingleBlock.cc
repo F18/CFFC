@@ -1,10 +1,10 @@
-/**********************************************************************
- * LevelSet2DQuadEikonalSingleBlock.cc                                *
- *                                                                    *
- * Single-block versions of subroutines for the solution of the       *
- * Eikonal equations for the 2D Level Set multi-block quadrilateral   *
- * mesh solution classes.                                             *
- *                                                                    *
+/******************************************************************//**
+ * \file LevelSet2DQuadEikonalSingleBlock.cc                          
+ *                                                                    
+ * Single-block versions of subroutines for the solution of the       
+ * Eikonal equations for the 2D Level Set multi-block quadrilateral   
+ * mesh solution classes.                                             
+ *                                                                    
  **********************************************************************/
 
 // Include 2D LevelSet quadrilateral mesh solution header file.
@@ -17,12 +17,12 @@
  * LevelSet2D_Quad_Block -- Eikonal Single Block External Subroutines.*
  **********************************************************************/
 
-/**********************************************************************
- * Routine: Eikonal_Error                                             *
- *                                                                    *
- * This routine calculates this block's area-weighted error in the    *
- * Eikonal equation solution. Local Error = | grad(phi) - 1 |         *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Eikonal_Error                                             
+ *                                                                    
+ * This routine calculates this block's area-weighted error in the    
+ * Eikonal equation solution. Local Error = \f$| \nabla(\phi) - 1 |\f$         
+ *                                                                    
  **********************************************************************/
 int Eikonal_Error(LevelSet2D_Quad_Block &SolnBlk,
 		  LevelSet2D_Input_Parameters &IP,
@@ -70,13 +70,13 @@ int Eikonal_Error(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: CFL_Eikonal                                               *
- *                                                                    *
- * Determines the allowable global and local time steps (for explicit *
- * Euler time stepping scheme) for the specified quadrilateral        *
- * solution block according to the Courant-Friedrichs-Lewy condition. *
- *                                                                    *
+/******************************************************************//**
+ * Routine: CFL_Eikonal                                               
+ *                                                                    
+ * Determines the allowable global and local time steps (for explicit 
+ * Euler time stepping scheme) for the specified quadrilateral        
+ * solution block according to the Courant-Friedrichs-Lewy condition. 
+ *                                                                    
  **********************************************************************/
 double CFL_Eikonal(LevelSet2D_Quad_Block &SolnBlk) {
 
@@ -100,12 +100,12 @@ double CFL_Eikonal(LevelSet2D_Quad_Block &SolnBlk) {
 
 }
 
-/**********************************************************************
- * Routine: dUdt_Multistage_Eikonal                                   *
- *                                                                    *
- * This routine evaulates the stage solution residual for the Eikonal *
- * equation on the specified solution block.                          *
- *                                                                    *
+/******************************************************************//**
+ * Routine: dUdt_Multistage_Eikonal                                   
+ *                                                                    
+ * This routine evaulates the stage solution residual for the Eikonal 
+ * equation on the specified solution block.                          
+ *                                                                    
  **********************************************************************/
 int dUdt_Multistage_Eikonal(LevelSet2D_Quad_Block &SolnBlk,
 			    const int i_stage,
@@ -311,12 +311,12 @@ int dUdt_Multistage_Eikonal(LevelSet2D_Quad_Block &SolnBlk,
   
 }
 
-/**********************************************************************
- * Routine: Update_Multistage_Eikonal                                 *
- *                                                                    *
- * This routine updates solution states of the given solution block   *
- * for a variety of multi-stage explicit time integration schemes.    *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Update_Multistage_Eikonal                                 
+ *                                                                    
+ * This routine updates solution states of the given solution block   
+ * for a variety of multi-stage explicit time integration schemes.    
+ *                                                                    
  **********************************************************************/
 int Update_Multistage_Eikonal(LevelSet2D_Quad_Block &SolnBlk,
 			      const int i_stage,
