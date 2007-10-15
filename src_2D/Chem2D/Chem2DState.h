@@ -81,7 +81,6 @@ using namespace std;
 //Chem2D_cState::T(void)
 // these should be moved to CFD.h or Math.h
 #define CONV_TOLERANCE 1e-8  //Used for temperature convergence
-#define gravity_z -9.81      //m/s^2 acceleration due to gravity  
 #define SPEC_TOLERANCE 1e-8  //Used in negative_speccheck for species round off (was MICRO)      
 
 //number of fixed variables in the Chem2D class
@@ -89,7 +88,7 @@ using namespace std;
 
 // If you define this variable, the number of species will be
 // predetermined for faster calculations.., however it is not as general 
-#define STATIC_NUMBER_OF_SPECIES 53 //2 AIR, 6 2STEP_CH4
+#define STATIC_NUMBER_OF_SPECIES 36 //2 AIR, 6 2STEP_CH4
 
 // Flag for Lower bounds check on T in Chem2D_cState::T(void)
 // If you define this, then the value of T computed in 
@@ -162,6 +161,7 @@ class Chem2D_pState {
   static double   high_temp_range; //!< High temp data range
   static int       NUM_VAR_CHEM2D; //!< Number of Chem2d variables (6+ns)
   static double              Mref; //!< Mref for Precondtioning (normally set to incoming freestream Mach)
+  static double         gravity_z; //!< m/s^2 acceleration due to gravity  
   //@}
 
   //@{ @name Turbulence boundary-layer constants:
@@ -283,6 +283,9 @@ class Chem2D_pState {
 				const double &yplus_sub,
 				const double &yplus_buffer,
 				const double &yplus_oute);
+  
+  //! set acceleration due to gravity
+  void set_gravity(const double &g);
   //@}
 
    /******** Set Data Temperature Ranges ***************/
@@ -556,6 +559,7 @@ class Chem2D_pState {
    static double   high_temp_range; //!< High temp data range
    static int       NUM_VAR_CHEM2D; //!< Number of Chem2d variables (4+ns)
    static double              Mref; //!< Mref for Precondtioning (normally set to incoming freestream Mach)
+   static double         gravity_z; //!< m/s^2 acceleration due to gravity  
    //@}
  
    //@{ @name Turbulence boundary-layer constants:
@@ -678,6 +682,9 @@ class Chem2D_pState {
 				 const double &yplus_sub,
 				 const double &yplus_buffer,
 				 const double &yplus_outer);
+
+   //! set acceleration due to gravity
+   void set_gravity(const double &g);
    //@}
 
    /******** Set Data Temperature Ranges ***************/
@@ -867,6 +874,25 @@ inline void Chem2D_pState::set_turbulence_variables(const double &C_constant,
     yplus_o -= f/df;
   } while(fabs(f) >= 0.00000001);
 }
+
+ /**********************************************************************
+  * Chem2D_pState::set_gravity -- Set the acceleration due to gravity  *
+  *                               in m/s^2.  It acts downwards in the  *
+  *                               z-dir (g <= 0)                       *
+  **********************************************************************/
+inline void Chem2D_pState::set_gravity(const double &g) { // [m/s^2]
+
+  // if gravity is acting upwards (wrong way)
+  if (g>0) {
+    cerr<<"\n Chem2D_pState::set_gravity() - Gravity acting upwards!!!! \n";
+    exit(1);
+    
+  // gravity acting downwards (-ve), OK
+  } else {
+    gravity_z = g;
+  }
+}
+
 
  /*****************  Momentum *******************************/
  inline Vector2D Chem2D_pState::rhov(void) const{
@@ -1287,6 +1313,25 @@ inline void Chem2D_cState::set_turbulence_variables(const double &C_constant,
     yplus_o -= f/df;
   } while(fabs(f) >= 0.00000001);
 }
+
+ /**********************************************************************
+  * Chem2D_cState::set_gravity -- Set the acceleration due to gravity  *
+  *                               in m/s^2.  It acts downwards in the  *
+  *                               z-dir (g <= 0)                       *
+  **********************************************************************/
+inline void Chem2D_cState::set_gravity(const double &g) { // [m/s^2]
+
+  // if gravity is acting upwards (wrong way)
+  if (g>0) {
+    cerr<<"\n Chem2D_pState::set_gravity() - Gravity acting upwards!!!! \n";
+    exit(1);
+    
+  // gravity acting downwards (-ve), OK
+  } else {
+    gravity_z = g;
+  }
+}
+
 
 /**************** Velocity *********************************/
 inline Vector2D Chem2D_cState::v() const{

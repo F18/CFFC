@@ -181,7 +181,12 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     string_ptr = "Planar";
     strcpy(IP.Flow_Geometry_Type, string_ptr);
     IP.Axisymmetric = 0;
+    
+    // Gravity
     IP.Gravity = 0;  //default sans gravity
+    IP.gravity_z = -9.81;  // [m/s] gravitational accel on earh
+    IP.Uo.set_gravity(IP.gravity_z);
+    IP.Wo.set_gravity(IP.gravity_z);
 
     IP.BluffBody_Data_Usage = 0; 
     IP.Wall_Boundary_Treatments = 0; 
@@ -633,6 +638,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Gravity), 
                           1, 
 			  MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.gravity_z), 
+                          1, 
+			  MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.debug_level), 
                           1, 
 			  MPI::INT, 0);
@@ -993,6 +1001,10 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
 				   IP.yplus_buffer_layer,
 				   IP.yplus_outer_layer);
 
+    // set gravity
+    IP.Wo.set_gravity(IP.gravity_z);
+    IP.Uo.set_gravity(IP.gravity_z);
+
 #endif
 }
 
@@ -1275,6 +1287,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Gravity), 
                        1, 
                        MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.gravity_z), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.Global_Schmidt),
                        1, 
                        MPI::INT, Source_Rank);
@@ -1637,6 +1652,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
 				   IP.yplus_buffer_layer,
 				   IP.yplus_outer_layer);
 
+    // set gravity
+    IP.Wo.set_gravity(IP.gravity_z);
+    IP.Uo.set_gravity(IP.gravity_z);
 }
 #endif
 
@@ -2888,6 +2906,13 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter, "Gravity") == 0) {
       i_command = 511; 
       IP.Gravity = 1;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Gravitational_Acceleration") == 0) {
+      i_command = 512; 
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.gravity_z; // g_z -ve => acts downwards
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      if (IP.gravity_z > 0) i_command = INVALID_INPUT_VALUE;
      
     } else if (strcmp(IP.Next_Control_Parameter, "Schmidt") == 0) {
       i_command = 512; 
@@ -4009,6 +4034,8 @@ int Process_Input_Control_Parameter_File(Chem2D_Input_Parameters &Input_Paramete
 						 Input_Parameters.yplus_sublayer,
 						 Input_Parameters.yplus_buffer_layer,
 						 Input_Parameters.yplus_outer_layer);
+    Input_Parameters.Wo.set_gravity(Input_Parameters.gravity_z);
+    Input_Parameters.Uo.set_gravity(Input_Parameters.gravity_z);
 
     // Perform consitency checks on the refinement criteria.
     Input_Parameters.Number_of_Refinement_Criteria = 0;

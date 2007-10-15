@@ -26,6 +26,7 @@ double Chem2D_pState::low_temp_range = 200.0;
 double Chem2D_pState::high_temp_range = 300.0;
 double Chem2D_pState::Mref=0.5;
 double* Chem2D_pState::Schmidt=NULL;
+double Chem2D_pState::gravity_z=-9.81;
 
 int Chem2D_cState::ns = 1; 
 int Chem2D_cState::NUM_VAR_CHEM2D = NUM_CHEM2D_VAR_SANS_SPECIES;   
@@ -34,6 +35,7 @@ double Chem2D_cState::low_temp_range = 200.0;
 double Chem2D_cState::high_temp_range = 300.0;
 double Chem2D_cState::Mref=0.5;
 double* Chem2D_cState::Schmidt=NULL;
+double Chem2D_cState::gravity_z=-9.81;
 
 //k-omega Turbulence model coefficients
 double Chem2D_pState::alpha = FIVE/NINE; //13.0/15.0; 

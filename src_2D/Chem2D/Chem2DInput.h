@@ -196,6 +196,7 @@ class Chem2D_Input_Parameters{
 
   //@{ @name Gravity indicator (yes/no) = (1,0).
   int Gravity;
+  double gravity_z; // acceration due to gravity [m/s] (negative => acts downward)
   //@}
 
   //@{ @name Turbulence parameters:
@@ -477,7 +478,7 @@ inline ostream &operator << (ostream &out_file,
     }
     /********************************************************/
     if(IP.Gravity) {
-      out_file << "\n  -> With Gravity (-z)";
+      out_file << "\n  -> With Gravity (-z): g_z="<<IP.gravity_z<<" [m/s]";
     }
     if(IP.FlowType != FLOWTYPE_INVISCID) {
       out_file << "\n  -> Viscous Reconstruction Method: "

@@ -63,7 +63,8 @@ Reconstruction_Type=
 Green_Gauss
 #
 Limiter_Type= 
-Venkatakrishnan
+Zero
+#Venkatakrishnan
 Flux_Function_Type=
 Roe
 #########################
@@ -75,7 +76,8 @@ Diamond_Path_Green_Gauss
 # Set initial conditions
 #########################
 ICs_Type= 
-1DPremixedFlame
+Restart
+#1DPremixedFlame
 Grid_Type=
 1DFlame
 Smooth_Quad_Block=
@@ -98,9 +100,9 @@ Number_of_Blocks_Jdir=
 # Set time stepping parameters
 ###############################
 CFL_Number=
-500.0
+100.0
 Maximum_Number_of_Time_Steps=
-1000
+3000
 ####### Implicit ###############
 Maximum_Number_of_NKS_Iterations =
 0
