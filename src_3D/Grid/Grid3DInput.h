@@ -27,7 +27,7 @@ using namespace std;
 #endif //_VECTOR3D_INCLUDED
 
 #ifndef _ICEMCFD_INCLUDED
-#include "../ICEM/ICEMCFD.h"
+#include "../ICEMCFD/ICEMCFD.h"
 #endif // _ICEMCFD_INCLUDED
 
 #ifndef _MPI_INCLUDED

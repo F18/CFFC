@@ -33,7 +33,7 @@ EOS_DIR = EquationOfState/
 EULER_DIR = Euler2D/
 GRID_DIR = Grid/
 HIGHTEMP_DIR = HighTemp2D/
-ICEM_DIR = ICEM/
+ICEMCFD_DIR = ICEM/
 INTERFACE_DIR = Interface2D/
 ION_DIR = Ion5Moment2D/
 LESPREMIXED_DIR = LESPremixed2D/
@@ -101,8 +101,8 @@ SRC_GRID = $(GRID_DIR)Cell1D.cc \
            $(GRID_DIR)Grid2DQuadMultiBlock.cc \
            $(GRID_DIR)Grid3DHexaSingleBlock.cc \
            $(GRID_DIR)Grid3DHexaMultiBlock.cc
-SRC_ICEMCFD = $(ICEM_DIR)ICEMCFD.cc \
-	      $(ICEM_DIR)ICEMCFD_ctype.c
+SRC_ICEMCFD = $(ICEMCFD_DIR)ICEMCFD.cc \
+	      $(ICEMCFD_DIR)ICEMCFD_ctype.c
 
 # AMR:
 ifeq ($(MPI_VERSION),NoMPI)
@@ -334,8 +334,8 @@ SRC_CFFC = $(SRC_BASE) $(SRC_SCALAR) $(SRC_HEAT) $(SRC_HYPERHEAT) $(SRC_EULER1D)
 
 # Executable sources:
 SRC_MAIN = cffc2D.cc
-SRC_ICEMCFD_UTIL1 = $(ICEM_DIR)icemcfd2tecplot.cc 
-SRC_ICEMCFD_UTIL2 = $(ICEM_DIR)icemcfd2grid2dquad.cc
+SRC_ICEMCFD_UTIL1 = $(ICEMCFD_DIR)icemcfd2tecplot.cc 
+SRC_ICEMCFD_UTIL2 = $(ICEMCFD_DIR)icemcfd2grid2dquad.cc
 
 #################################################################################
 # Compiled object code files (automatically generated with pattern substitution)
@@ -871,7 +871,7 @@ clean:
 	rm -f $(CFD_DIR)*.o $(CFD_DIR)*.il $(CFD_DIR)*~
 	rm -f $(MPI_DIR)*.o $(MPI_DIR)*.il $(MPI_DIR)*~
 	rm -f $(GRID_DIR)*.o $(GRID_DIR)*.il $(GRID_DIR)*~
-	rm -f $(ICEM_DIR)*.o $(ICEM_DIR)*.il $(ICEM_DIR)*~ $(ICEM_DIR)*.depend $(ICEM_DIR)*.bak
+	rm -f $(ICEMCFD_DIR)*.o $(ICEMCFD_DIR)*.il $(ICEMCFD_DIR)*~ $(ICEMCFD_DIR)*.depend $(ICEMCFD_DIR)*.bak
 	rm -f $(AMR_DIR)*.o $(AMR_DIR)*.il $(AMR_DIR)*~
 	rm -f $(SYSTEM_DIR)*.o $(SYSTEM_DIR)*.il $(SYSTEM_DIR)*~
 	rm -f $(SOLVERS1D_DIR)*.o $(SOLVERS1D_DIR)*.il $(SOLVERS1D_DIR)*~ 
@@ -980,9 +980,9 @@ $(MOD_MATH_F90): $(MATH_DIR)complexify.f90 $(MATH_DIR)Complexify.h
 # DON'T need to be generated is provided.
 # If you don't want to have dependencies generated for a particular target,
 # just add the target name to 'NODEP_LIST' variable.
-NODEP_LIST = help clean superclean libraries-all \
+NODEP_LIST = help clean superclean clean-extras libraries-all \
              bpkit sparselib fftw cantera documentation \
-             uninstall
+             uninstall uninstall-all
 
 #-------------------------------------------------
 # Include header file dependencies when required
@@ -993,11 +993,12 @@ ifeq ($(strip $(filter $(MAKECMDGOALS), $(NODEP_LIST)) ), )
 	sinclude $(patsubst %.c,$(DEPEND_DIR)%.d, $(filter %.c, $(SRC_CFFC)))
 	sinclude $(patsubst %.f,$(DEPEND_DIR)%.d, $(filter %.f, $(SRC_CFFC)))
 	sinclude $(patsubst %.f90,$(DEPEND_DIR)%.d, $(filter %.f90, $(SRC_CFFC)))
-############# Include the .d files comming from different executables
-# this command includes most of the *.d files
+############# Include the .d files coming from different executables
+# This command includes most of the *.d files
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_CFFC)))
-# if you add a new executable, you must add a line here.
+# If you add a new executable, you must add a line here.
 # all other files should be included in the previous rule.
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_MAIN)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_ICEMCFD_UTIL1)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_ICEMCFD_UTIL2)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_ADVECTDIFFUSE_EXE)))
