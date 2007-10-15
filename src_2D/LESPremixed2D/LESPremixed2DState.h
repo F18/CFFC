@@ -1,31 +1,31 @@
-/****************** LESPremixed2DState.h **************************************
-  This class defines the state variables and constructors for the 
+/*!
+  \file LESPremixed2DState.h
+
+  \brief This class defines the state variables and constructors for the 
   2D Favre-Filtered Navier-Stokes with Multiple Species solution.
 
-  NOTES:  
-         - be careful with set_species_data(), set_initial_values() and
-           set_initial_values_scal() due to dynamic memory 
+  \note Be careful with set_species_data(), set_initial_values() and
+        set_initial_values_scal() due to dynamic memory 
 
-         - if #define STATIC_LESPREMIXED2D_SPECIES is set dynamic memory
-           is not used so code is faster, however code is not as flexible
-           as only up to STATIC_LESPREMIXED2D_SPECIES can be used without recompling.
+  \note If #define STATIC_LESPREMIXED2D_SPECIES is set dynamic memory
+        is not used so code is faster, however code is not as flexible
+        as only up to STATIC_LESPREMIXED2D_SPECIES can be used without recompling.
   
-         - Avoid cState.T() as much as possible as it is $$$ to calculate, pass
-           the temperature from pState if possible as it is cheap (p/rhoR)             
+  \note Avoid cState.T() as much as possible as it is $$$ to calculate, pass
+        the temperature from pState if possible as it is cheap (p/rhoR)             
               
-         - The Static "specdata" has to be deleted outside the class
-           in order to avoid seg faults. In LESPremixed2D it is done by calling
-           the deallocate function from the Input destructor as it is kept
-           until the end of the program.
+  \note The Static "specdata" has to be deleted outside the class
+        in order to avoid seg faults. In LESPremixed2D it is done by calling
+        the deallocate function from the Input destructor as it is kept
+        until the end of the program.
 
-         - if #define THICKENED_FLAME_ON is set the thickened flame and power-law
-           stuff will be activated
+  \note If #define THICKENED_FLAME_ON is set the thickened flame and power-law
+        stuff will be activated
 
-  TODO:  - Unphysical_properties & negativespec_check functions need to be  
-           worked through
-
+  \todo Unphysical_properties & negativespec_check functions need to be  
+        worked through
                    
-***********************************************************************/
+*/
 #ifndef _LESPREMIXED2D_STATE_INCLUDED 
 #define _LESPREMIXED2D_STATE_INCLUDED
 
