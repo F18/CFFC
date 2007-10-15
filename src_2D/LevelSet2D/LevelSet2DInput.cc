@@ -1,8 +1,8 @@
-/**********************************************************************
- * LevelSet2DInput.cc                                                 *
- *                                                                    *
- * Subroutines for 2D Level Set input classes.                        *
- *                                                                    *
+/******************************************************************//**
+ * \file LevelSet2DInput.cc                                           
+ *                                                                    
+ * Subroutines for 2D Level Set input classes.                        
+ *                                                                    
  **********************************************************************/
 
 // Include 2D LevelSet input parameter header file.
@@ -14,11 +14,11 @@
  * LevelSet2D_Input_Parameters -- External subroutines.               *
  **********************************************************************/
 
-/**********************************************************************
- * Routine: Open_Input_File                                           *
- *                                                                    *
- * Opens the appropriate input data file.                             *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Open_Input_File                                           
+ *                                                                    
+ * Opens the appropriate input data file.                             
+ *                                                                    
  **********************************************************************/
 void Open_Input_File(LevelSet2D_Input_Parameters &IP) {
 
@@ -30,11 +30,11 @@ void Open_Input_File(LevelSet2D_Input_Parameters &IP) {
 
 }
 
-/**********************************************************************
- * Routine: Close_Input_File                                          *
- *                                                                    *
- * Closes the appropriate input data file.                            *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Close_Input_File                                          
+ *                                                                    
+ * Closes the appropriate input data file.                            
+ *                                                                    
  **********************************************************************/
 void Close_Input_File(LevelSet2D_Input_Parameters &IP) {
 
@@ -43,11 +43,11 @@ void Close_Input_File(LevelSet2D_Input_Parameters &IP) {
 
 }
 
-/**********************************************************************
- * Routine: Set_Default_Input_Parameters                              *
- *                                                                    *
- * Assigns default values to the input parameters.                    *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Set_Default_Input_Parameters                              
+ *                                                                    
+ * Assigns default values to the input parameters.                    
+ *                                                                    
  **********************************************************************/
 void Set_Default_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
 
@@ -202,13 +202,13 @@ void Set_Default_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
 
 }
 
-/**********************************************************************
- * Routine: Broadcast_Input_Parameters                                *
- *                                                                    *
- * Broadcast the input parameters variables to all processors         *
- * involved in the calculation from the primary processor using the   *
- * MPI broadcast routine.                                             *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Broadcast_Input_Parameters                                
+ *                                                                    
+ * Broadcast the input parameters variables to all processors         
+ * involved in the calculation from the primary processor using the   
+ * MPI broadcast routine.                                             
+ *                                                                    
  **********************************************************************/
 void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
 
@@ -520,13 +520,13 @@ void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
 }
 
 #ifdef _MPI_VERSION
-/**********************************************************************
- * Routine: Broadcast_Input_Parameters                                *
- *                                                                    *
- * Broadcast the input parameters variables to all processors         *
- * associated with the specified communicator from the specified      *
- * processor using the MPI broadcast routine.                         *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Broadcast_Input_Parameters                                
+ *                                                                    
+ * Broadcast the input parameters variables to all processors         
+ * associated with the specified communicator from the specified      
+ * processor using the MPI broadcast routine.                         
+ *                                                                    
  **********************************************************************/
 void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP,
                                 MPI::Intracomm &Communicator,
@@ -840,11 +840,11 @@ void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP,
 }
 #endif
 
-/**********************************************************************
- * Routine: Get_Next_Input_Control_Parameter                          *
- *                                                                    *
- * Get the next input control parameter from the input file.          *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Get_Next_Input_Control_Parameter                          
+ *                                                                    
+ * Get the next input control parameter from the input file.          
+ *                                                                    
  **********************************************************************/
 void Get_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
 
@@ -866,12 +866,12 @@ void Get_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
 
 }
 
-/**********************************************************************
- * Routine: Parse_Next_Input_Control_Parameter                        *
- *                                                                    *
- * Parses and executes the next input control parameter from the      *
- * input file.                                                        *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Parse_Next_Input_Control_Parameter                        
+ *                                                                    
+ * Parses and executes the next input control parameter from the      
+ * input file.                                                        
+ *                                                                    
  **********************************************************************/
 int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
 
@@ -1755,12 +1755,12 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
 
 }
 
-/**********************************************************************
- * Routine: Process_Input_Control_Parameter_File                      *
- *                                                                    *
- * Reads,parses,and executes the list of input control parameters     *
- * from the standard input file.                                      *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Process_Input_Control_Parameter_File                      
+ *                                                                    
+ * Reads,parses,and executes the list of input control parameters     
+ * from the standard input file.                                      
+ *                                                                    
  **********************************************************************/
 int Process_Input_Control_Parameter_File(LevelSet2D_Input_Parameters &Input_Parameters,
                                          char *Input_File_Name_ptr,

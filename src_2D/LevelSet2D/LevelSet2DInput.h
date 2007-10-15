@@ -1,6 +1,7 @@
-/**********************************************************************
- * LevelSet2DInput.h: Header file defining 2D Level Set input         *
- *                    parameter class.                                *
+/******************************************************************//**
+ * \file LevelSet2DInput.h
+ *
+ * Header file defining 2D Level Set input parameter class.
  **********************************************************************/
 
 #ifndef _LEVELSET2D_INPUT_INCLUDED
@@ -46,35 +47,39 @@
 class LevelSet2D_Input_Parameters{
   private:
 public:
-  //@{ @name Input file parameters.
+  //! @name Input file parameters.
+  //@{ 
   //! Input file name:
+  char Input_File_Name[INPUT_PARAMETER_LENGTH_LEVELSET2D];
   //! CFFC root directory path:
   char CFFC_Path[INPUT_PARAMETER_LENGTH_LEVELSET2D];
-  char Input_File_Name[INPUT_PARAMETER_LENGTH_LEVELSET2D];
   //! Input file stream:
   ifstream Input_File;
   //! Input file line number:
   int Line_Number;
   //@}
 
-  //@{ @name Time integration type indicator and related input parameters:
+  //! @name Time integration type indicator and related input parameters:
+  //@{
   char Time_Integration_Type[INPUT_PARAMETER_LENGTH_LEVELSET2D];
   int i_Time_Integration;
   int Time_Accurate, Local_Time_Stepping, 
       Maximum_Number_of_Time_Steps, N_Stage;
   double Hamilton_Jacobi_CFL_Number, Time_Max;
-  // Residual variable:
+  //! Residual variable:
   int i_Residual_Variable;
   //@}
 
-  //@{ @name Initial distance function:
+  //! @name Initial distance function:
+  //@{
   char Initial_Distance_Type[INPUT_PARAMETER_LENGTH_LEVELSET2D];
   int i_Initial_Distance_Type;
   int Perturb_Distance_Function;
   double Extension_Distance;
   //@}
 
-  //@{ @name Redistance type indicator and related input parameters:
+  //! @name Redistance type indicator and related input parameters:
+  //@{
   char Redistance_Criteria[INPUT_PARAMETER_LENGTH_LEVELSET2D];
   int i_Redistance_Criteria;
   double Eikonal_Threshold;
@@ -88,43 +93,51 @@ public:
   int i_Eikonal_Sign_Function;
   //@}
 
-  //@{ @name Scalar (front speed) extension problem input parameters:
+  //!@name Scalar (front speed) extension problem input parameters:
+  //@{
   int Number_of_Scalar_Extension_Iterations;
   double Scalar_Extension_CFL_Number;
   //@}
 
-  //@{ @name Reconstruction type indicator and related input parameters:
+  //!@name Reconstruction type indicator and related input parameters:
+  //@{
   char Reconstruction_Type[INPUT_PARAMETER_LENGTH_LEVELSET2D];
   int i_Reconstruction;
   //@}
 
-  //@{ @name Limiter type indicator and related input parameters:
+  //!@name Limiter type indicator and related input parameters:
+  //@{ 
   char Limiter_Type[INPUT_PARAMETER_LENGTH_LEVELSET2D];
   int i_Limiter;
   //@}
 
-  //@{ @name Limiter type indicator and related input parameters:
+  //@name Limiter type indicator and related input parameters:
+  //@{ 
   char BC_Type[INPUT_PARAMETER_LENGTH_LEVELSET2D];
   int i_BC_Type;
   //@}
 
-  //@{ @name Embedded boundary input parameters:
+  //@name Embedded boundary input parameters:
+  //@{ 
   EmbeddedBoundaries2D_Input_Parameters Interface_IP;
   //@}
 
-  //@{ @name Curvature driven flow parameters:
+  //@name Curvature driven flow parameters:
+  //@{
   double Curvature_Speed;
   char Curvature_Scheme[INPUT_PARAMETER_LENGTH_LEVELSET2D];
   int i_Curvature_Scheme;
   //@}
 
-  //@{ @name Bullk flowfield.
+  //@name Bullk flowfield.
+  //@{ 
   char BulkFlowField_Type[INPUT_PARAMETER_LENGTH_LEVELSET2D];
   int i_BulkFlowField_Type;
   Vector2D V;
   //@}
 
-  //@{ @name Grid type indicator and related input parameters:
+  //@name Grid type indicator and related input parameters:
+  //@{ 
   char Grid_Type[INPUT_PARAMETER_LENGTH_LEVELSET2D];
   char NACA_Aerofoil_Type[INPUT_PARAMETER_LENGTH_LEVELSET2D];
   int i_Grid;
@@ -141,7 +154,8 @@ public:
   Vector2D X_Shift;
   //@}
 
-  //@{ @name Mesh stretching factor.
+  //@name Mesh stretching factor.
+  //@{ 
   int i_Mesh_Stretching;
   int Mesh_Stretching_Type_Idir;
   int Mesh_Stretching_Type_Jdir;
@@ -149,7 +163,8 @@ public:
   double Mesh_Stretching_Factor_Jdir;
   //@}
 
-  //@{ @name AMR input parameters:
+  //@name AMR input parameters:
+  //@{
   //! Unsteady AMR flag.
   int AMR;
   //! Unsteady AMR frequency.
@@ -176,7 +191,8 @@ public:
   int i_Smooth_Quad_Block;
   //@}
 
-  //@{ @name Output parameters:
+  //@name Output parameters:
+  //@{
   //! Output file name:
   char Output_File_Name[INPUT_PARAMETER_LENGTH_LEVELSET2D];
   //! Multi-block mesh definition input file names:
@@ -196,15 +212,18 @@ public:
   int Output_Progress_Frequency;
   //@}
 
-  //@{ @name Multi-block solution-adaption and parallel domain decomposition input parameters:
+  //@name Multi-block solution-adaption and parallel domain decomposition input parameters:
+  //@{ 
   int Number_of_Processors, Number_of_Blocks_Per_Processor;
   //@}
 
-  //@{ @name Obtain the CFFC root directory path:
+  //@name Obtain the CFFC root directory path:
+  //@{ 
   void get_cffc_path();
   //@}
 
-  //@{ @name Input-output operators:
+  //@name Input-output operators:
+  //@{
   friend ostream &operator << (ostream &out_file, const LevelSet2D_Input_Parameters &IP);
   friend istream &operator >> (istream &in_file, LevelSet2D_Input_Parameters &IP);
   //@}
