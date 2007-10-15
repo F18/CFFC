@@ -1,4 +1,4 @@
-/**********************************************************************
+/******************************************************************//**
  * \file LevelSet2DQuadGrid.cc                                        
  *                                                                    
  * Grid manipulation subroutines for 2D Level Set multi-block         
