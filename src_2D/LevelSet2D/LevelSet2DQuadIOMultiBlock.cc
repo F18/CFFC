@@ -1,9 +1,9 @@
-/**********************************************************************
- * LevelSet2DQuadIOMultiBlock.cc                                      *
- *                                                                    *
- * Multi-block versions of the input and output subroutines for the   *
- * 2D Level Set multi-block quadrilateral mesh solution class.        *
- *                                                                    *
+/******************************************************************//**
+ * \file LevelSet2DQuadIOMultiBlock.cc                                
+ *                                                                    
+ * Multi-block versions of the input and output subroutines for the   
+ * 2D Level Set multi-block quadrilateral mesh solution class.        
+ *                                                                    
  **********************************************************************/
 
 // Include 2D LevelSet quadrilateral mesh solution header file.
@@ -17,14 +17,14 @@
  *                          Subroutines.                              *
  **********************************************************************/
 
-/**********************************************************************
- * Routine: Read_Restart_Solution                                     *
- *                                                                    *
- * Reads restart solution file(s) and assigns values to the solution  *
- * variables of a 1D array of 2D quadrilateral multi-block solution   *
- * blocks.  Returns a non-zero value if cannot read any of the        *
- * restart solution files.                                            *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Read_Restart_Solution                                     
+ *                                                                    
+ * Reads restart solution file(s) and assigns values to the solution  
+ * variables of a 1D array of 2D quadrilateral multi-block solution   
+ * blocks.  Returns a non-zero value if cannot read any of the        
+ * restart solution files.                                            
+ *                                                                    
  **********************************************************************/
 int Read_Restart_Solution(LevelSet2D_Quad_Block *Soln_ptr,
                           AdaptiveBlock2D_List &Soln_Block_List,
@@ -90,13 +90,13 @@ int Read_Restart_Solution(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Write_Restart_Solution                                    *
- *                                                                    *
- * Writes restart solution file(s) for a 1D array of 2D quadrilateral *
- * multi-block solution blocks. Returns a non-zero value if cannot    *
- * write any of the restart solution files.                           *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Write_Restart_Solution                                    
+ *                                                                    
+ * Writes restart solution file(s) for a 1D array of 2D quadrilateral 
+ * multi-block solution blocks. Returns a non-zero value if cannot    
+ * write any of the restart solution files.                           
+ *                                                                    
  **********************************************************************/
 int Write_Restart_Solution(LevelSet2D_Quad_Block *Soln_ptr,
                            AdaptiveBlock2D_List &Soln_Block_List,
@@ -153,15 +153,15 @@ int Write_Restart_Solution(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Output_Tecplot                                            *
- *                                                                    *
- * Writes the solution values at the nodes for a 1D array of 2D       *
- * quadrilateral multi-block solution blocks to the specified output  *
- * data file(s) in a format suitable for plotting with TECPLOT.       *
- * Returns a non-zero value if cannot write any of the TECPLOT        *
- * solution files.                                                    *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Output_Tecplot                                            
+ *                                                                    
+ * Writes the solution values at the nodes for a 1D array of 2D       
+ * quadrilateral multi-block solution blocks to the specified output  
+ * data file(s) in a format suitable for plotting with TECPLOT.       
+ * Returns a non-zero value if cannot write any of the TECPLOT        
+ * solution files.                                                    
+ *                                                                    
  **********************************************************************/
 int Output_Tecplot(LevelSet2D_Quad_Block *Soln_ptr,
                    AdaptiveBlock2D_List &Soln_Block_List,
@@ -223,15 +223,15 @@ int Output_Tecplot(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Output_Cells_Tecplot                                      *
- *                                                                    *
- * Writes the cell centred solution values for a 1D array of 2D       *
- * quadrilateral multi-block solution blocks to the specified output  *
- * data file(s) in a format suitable for plotting with TECPLOT.       *
- * Returns a non-zero value if cannot write any of the TECPLOT        *
- * solution files.                                                    *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Output_Cells_Tecplot                                      
+ *                                                                    
+ * Writes the cell centred solution values for a 1D array of 2D       
+ * quadrilateral multi-block solution blocks to the specified output  
+ * data file(s) in a format suitable for plotting with TECPLOT.       
+ * Returns a non-zero value if cannot write any of the TECPLOT        
+ * solution files.                                                    
+ *                                                                    
  **********************************************************************/
 int Output_Cells_Tecplot(LevelSet2D_Quad_Block *Soln_ptr,
                          AdaptiveBlock2D_List &Soln_Block_List,
@@ -294,14 +294,14 @@ int Output_Cells_Tecplot(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Output_Nodes_Tecplot                                      *
- *                                                                    *
- * Writes the node location values for a 1D array of 2D quadrilateral *
- * multi-block solution blocks to the specified output data file(s)   *
- * in a format suitable for plotting with TECPLOT.  Returns a non-    *
- * zero value if cannot write any of the TECPLOT solution files.      *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Output_Nodes_Tecplot                                      
+ *                                                                    
+ * Writes the node location values for a 1D array of 2D quadrilateral 
+ * multi-block solution blocks to the specified output data file(s)   
+ * in a format suitable for plotting with TECPLOT.  Returns a non-    
+ * zero value if cannot write any of the TECPLOT solution files.      
+ *                                                                    
  **********************************************************************/
 int Output_Nodes_Tecplot(LevelSet2D_Quad_Block *Soln_ptr,
                          AdaptiveBlock2D_List &Soln_Block_List,
@@ -359,14 +359,14 @@ int Output_Nodes_Tecplot(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Output_Mesh_Tecplot                                       *
- *                                                                    *
- * Writes the nodes of the mesh for a 1D array of 2D quadrilateral    *
- * multi-block solution blocks to the specified output data file(s)   *
- * in a format suitable for plotting with TECPLOT. Returns a non-zero *
- * value if cannot write any of the TECPLOT solution files.           *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Output_Mesh_Tecplot                                       
+ *                                                                    
+ * Writes the nodes of the mesh for a 1D array of 2D quadrilateral    
+ * multi-block solution blocks to the specified output data file(s)   
+ * in a format suitable for plotting with TECPLOT. Returns a non-zero 
+ * value if cannot write any of the TECPLOT solution files.           
+ *                                                                    
  **********************************************************************/
 int Output_Mesh_Tecplot(LevelSet2D_Quad_Block *Soln_ptr,
                         AdaptiveBlock2D_List &Soln_Block_List,
@@ -426,14 +426,14 @@ int Output_Mesh_Tecplot(LevelSet2D_Quad_Block *Soln_ptr,
   
 }
 
-/**********************************************************************
- * Routine: Output_Mesh_Gnuplot                                       *
- *                                                                    *
- * Writes the nodes of the mesh for a 1D array of 2D quadrilateral    *
- * multi-block solution blocks to the specified output data file(s)   *
- * in a format suitable for plotting with GNUPLOT. Returns a non-zero *
- * value if cannot write any of the GNUPLOT solution files.           *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Output_Mesh_Gnuplot                                       
+ *                                                                    
+ * Writes the nodes of the mesh for a 1D array of 2D quadrilateral    
+ * multi-block solution blocks to the specified output data file(s)   
+ * in a format suitable for plotting with GNUPLOT. Returns a non-zero 
+ * value if cannot write any of the GNUPLOT solution files.           
+ *                                                                    
  **********************************************************************/
 int Output_Mesh_Gnuplot(LevelSet2D_Quad_Block *Soln_ptr,
                         AdaptiveBlock2D_List &Soln_Block_List,
@@ -493,13 +493,13 @@ int Output_Mesh_Gnuplot(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Output_Interface_Tecplot                                  *
- *                                                                    *
- * Output the interface spline in a format suitabile for plotting     *
- * with TECPLOT.  Returns a non-zero value if cannot write any of the *
- * TECPLOT solution files.                                            *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Output_Interface_Tecplot                                  
+ *                                                                    
+ * Output the interface spline in a format suitabile for plotting     
+ * with TECPLOT.  Returns a non-zero value if cannot write any of the 
+ * TECPLOT solution files.                                            
+ *                                                                    
  **********************************************************************/
 int Output_Interface_Tecplot(LevelSet2D_Quad_Block *Soln_ptr,
 			     AdaptiveBlock2D_List &Soln_Block_List,
@@ -558,12 +558,12 @@ int Output_Interface_Tecplot(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Output_Circle_Tecplot                                     *
- *                                                                    *
- * Output a comparison of the exact and computed solutions for a      *
- * circle interface in a format suitabile for plotting with TECPLOT.  *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Output_Circle_Tecplot                                     
+ *                                                                    
+ * Output a comparison of the exact and computed solutions for a      
+ * circle interface in a format suitabile for plotting with TECPLOT.  
+ *                                                                    
  **********************************************************************/
 int Output_Circle_Tecplot(LevelSet2D_Quad_Block *Soln_ptr,
 			  AdaptiveBlock2D_List &Soln_Block_List,
@@ -659,12 +659,12 @@ int Output_Circle_Tecplot(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Output_Ellipse_Tecplot                                    *
- *                                                                    *
- * Output a comparison of the exact and computed solutions for an     *
- * ellipse interface in a format suitabile for plotting with TECPLOT. *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Output_Ellipse_Tecplot                                    
+ *                                                                    
+ * Output a comparison of the exact and computed solutions for an     
+ * ellipse interface in a format suitabile for plotting with TECPLOT. 
+ *                                                                    
  **********************************************************************/
 int Output_Ellipse_Tecplot(LevelSet2D_Quad_Block *Soln_ptr,
 			   AdaptiveBlock2D_List &Soln_Block_List,
@@ -760,12 +760,12 @@ int Output_Ellipse_Tecplot(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Output_Zalesaks_Disk_Tecplot                              *
- *                                                                    *
- * Output a comparison of the exact and computed solutions for        *
- * Zalesak's disk in a format suitabile for plotting with TECPLOT.    *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Output_Zalesaks_Disk_Tecplot                              
+ *                                                                    
+ * Output a comparison of the exact and computed solutions for        
+ * Zalesak's disk in a format suitabile for plotting with TECPLOT.    
+ *                                                                    
  **********************************************************************/
 int Output_Zalesaks_Disk_Tecplot(LevelSet2D_Quad_Block *Soln_ptr,
 				 AdaptiveBlock2D_List &Soln_Block_List,

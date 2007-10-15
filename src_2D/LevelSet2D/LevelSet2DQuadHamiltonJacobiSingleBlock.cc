@@ -1,10 +1,10 @@
-/**********************************************************************
- * LevelSet2DQuadHamiltonJacobiSingleBlock.cc                         *
- *                                                                    *
- * Single-block versions of subroutines for the solution of the 2D    *
- * Hamilton-Jacobi-type equations for the 2D Level Set multi-block    *
- * quadrilateral mesh solution classes.                               *
- *                                                                    *
+/******************************************************************//**
+ * \file LevelSet2DQuadHamiltonJacobiSingleBlock.cc                   
+ *                                                                    
+ * Single-block versions of subroutines for the solution of the 2D    
+ * Hamilton-Jacobi-type equations for the 2D Level Set multi-block    
+ * quadrilateral mesh solution classes.                               
+ *                                                                    
  **********************************************************************/
 
 // Include 2D LevelSet quadrilateral mesh solution header file.
@@ -18,13 +18,13 @@
  *                          Subroutines.                              *
  **********************************************************************/
 
-/**********************************************************************
- * Routine: CFL_Hamilton_Jacobi                                       *
- *                                                                    *
- * Determines the allowable global and local time steps (for explicit *
- * Euler time stepping scheme) for the specified quadrilateral        *
- * solution block according to the Courant-Friedrichs-Lewy condition. *
- *                                                                    *
+/******************************************************************//**
+ * Routine: CFL_Hamilton_Jacobi                                       
+ *                                                                    
+ * Determines the allowable global and local time steps (for explicit 
+ * Euler time stepping scheme) for the specified quadrilateral        
+ * solution block according to the Courant-Friedrichs-Lewy condition. 
+ *                                                                    
  **********************************************************************/
 double CFL_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
 			   LevelSet2D_Input_Parameters &IP) {
@@ -63,13 +63,13 @@ double CFL_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: dUdt_Multistage_Hamilton_Jacobi                           *
- *                                                                    *
- * This routine determines the solution residuals for a given stage   *
- * of a variety of multi-stage explicit time integration schemes for  *
- * a given solution block.                                            *
- *                                                                    *
+/******************************************************************//**
+ * Routine: dUdt_Multistage_Hamilton_Jacobi                           
+ *                                                                    
+ * This routine determines the solution residuals for a given stage   
+ * of a variety of multi-stage explicit time integration schemes for  
+ * a given solution block.                                            
+ *                                                                    
  **********************************************************************/
 int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
 				    const int i_stage,
@@ -221,12 +221,12 @@ int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Update_Solution_Multistage_Hamilton_Jacobi                *
- *                                                                    *
- * This routine updates solution states of the given solution block   *
- * for a variety of multi-stage explicit time integration schemes.    *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Update_Solution_Multistage_Hamilton_Jacobi                
+ *                                                                    
+ * This routine updates solution states of the given solution block   
+ * for a variety of multi-stage explicit time integration schemes.    
+ *                                                                    
  **********************************************************************/
 int Update_Solution_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
 					       const int i_stage,

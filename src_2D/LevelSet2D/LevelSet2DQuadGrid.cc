@@ -1,9 +1,9 @@
 /**********************************************************************
- * LevelSet2DQuadGrid.cc                                              *
- *                                                                    *
- * Grid manipulation subroutines for 2D Level Set multi-block         *
- * quadrilateral mesh solution classes.                               *
- *                                                                    *
+ * \file LevelSet2DQuadGrid.cc                                        
+ *                                                                    
+ * Grid manipulation subroutines for 2D Level Set multi-block         
+ * quadrilateral mesh solution classes.                               
+ *                                                                    
  **********************************************************************/
 
 // Include 2D LevelSet quadrilateral mesh solution header file.
@@ -17,11 +17,11 @@
  *                          Mesh.                                     *
  **********************************************************************/
 
-/**********************************************************************
- * Routine: Multi_Block_Grid                                          *
- *                                                                    *
- * Generates multi-block quadilateral mesh.                           *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Multi_Block_Grid                                          
+ *                                                                    
+ * Generates multi-block quadilateral mesh.                           
+ *                                                                    
  **********************************************************************/
 Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 				     LevelSet2D_Input_Parameters &Input_Parameters) {
@@ -141,13 +141,13 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Broadcast_Multi_Block_Grid                                *
- *                                                                    *
- * Broadcast multi-block quadilateral mesh to all processors involved *
- * in the calculation from the primary processor using the MPI        *
- * broadcast routine.                                                 *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Broadcast_Multi_Block_Grid                                
+ *                                                                    
+ * Broadcast multi-block quadilateral mesh to all processors involved 
+ * in the calculation from the primary processor using the MPI        
+ * broadcast routine.                                                 
+ *                                                                    
  **********************************************************************/
 Grid2D_Quad_Block** Broadcast_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
                                                LevelSet2D_Input_Parameters &Input_Parameters) {
@@ -171,13 +171,13 @@ Grid2D_Quad_Block** Broadcast_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Write_Multi_Block_Grid_Definition                         *
- *                                                                    *
- * Writes a grid definition file for a multi-block quadilateral mesh  *
- * in a format suitable for retrieval and re-use purposes.  Returns a *
- * non-zero value if unable to write the grid definition file.        *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Write_Multi_Block_Grid_Definition                         
+ *                                                                    
+ * Writes a grid definition file for a multi-block quadilateral mesh  
+ * in a format suitable for retrieval and re-use purposes.  Returns a 
+ * non-zero value if unable to write the grid definition file.        
+ *                                                                    
  **********************************************************************/
 int Write_Multi_Block_Grid_Definition(Grid2D_Quad_Block **Grid_ptr,
                                       LevelSet2D_Input_Parameters &Input_Parameters) {
@@ -209,12 +209,12 @@ int Write_Multi_Block_Grid_Definition(Grid2D_Quad_Block **Grid_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Read_Multi_Block_Grid_Definition                          *
- *                                                                    *
- * Reads a grid definition file for a multi-block quadilateral mesh.  *
- * Returns a pointer to the mesh.                                     *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Read_Multi_Block_Grid_Definition                          
+ *                                                                    
+ * Reads a grid definition file for a multi-block quadilateral mesh.  
+ * Returns a pointer to the mesh.                                     
+ *                                                                    
  **********************************************************************/
 Grid2D_Quad_Block** Read_Multi_Block_Grid_Definition(Grid2D_Quad_Block **Grid_ptr,
                                                      LevelSet2D_Input_Parameters &Input_Parameters) {
@@ -248,13 +248,13 @@ Grid2D_Quad_Block** Read_Multi_Block_Grid_Definition(Grid2D_Quad_Block **Grid_pt
 
 }
 
-/**********************************************************************
- * Routine: Write_Multi_Block_Grid                                    *
- *                                                                    *
- * Writes multi-block quadilateral mesh to a grid data file in a      *
- * format suitable for retrieval and re-use purposes.  Returns a      *
- * non-zero value if unable to write the grid data file.              *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Write_Multi_Block_Grid                                    
+ *                                                                    
+ * Writes multi-block quadilateral mesh to a grid data file in a      
+ * format suitable for retrieval and re-use purposes.  Returns a      
+ * non-zero value if unable to write the grid data file.              
+ *                                                                    
  **********************************************************************/
 int Write_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
                            LevelSet2D_Input_Parameters &Input_Parameters) {
@@ -285,12 +285,12 @@ int Write_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Read_Multi_Block_Grid                                     *
- *                                                                    *
- * Reads multi-block quadilateral mesh from a grid data file.         *
- * Returns a pointer to the mesh.                                     *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Read_Multi_Block_Grid                                     
+ *                                                                    
+ * Reads multi-block quadilateral mesh from a grid data file.         
+ * Returns a pointer to the mesh.                                     
+ *                                                                    
  **********************************************************************/
 Grid2D_Quad_Block** Read_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 						   LevelSet2D_Input_Parameters &Input_Parameters) {
@@ -323,13 +323,13 @@ Grid2D_Quad_Block** Read_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Output_Tecplot                                            *
- *                                                                    *
- * Writes the nodes of a multi-block quadilateral mesh in a format    *
- * suitable for plotting with TECPLOT.  Returns a non-zero value if   *
- * unable to write the TECPLOT file.                                  *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Output_Tecplot                                            
+ *                                                                    
+ * Writes the nodes of a multi-block quadilateral mesh in a format    
+ * suitable for plotting with TECPLOT.  Returns a non-zero value if   
+ * unable to write the TECPLOT file.                                  
+ *                                                                    
  **********************************************************************/
 int Output_Tecplot(Grid2D_Quad_Block **Grid_ptr,
                    LevelSet2D_Input_Parameters &Input_Parameters) {
@@ -375,13 +375,13 @@ int Output_Tecplot(Grid2D_Quad_Block **Grid_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Output_Nodes_Tecplot                                      *
- *                                                                    *
- * Writes the nodes of a multi-block quadilateral mesh in a format    *
- * suitable for plotting with TECPLOT.  Includes boundary nodes.      *
- * Returns a non-zero value if unable to write the TECPLOT file.      *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Output_Nodes_Tecplot                                      
+ *                                                                    
+ * Writes the nodes of a multi-block quadilateral mesh in a format    
+ * suitable for plotting with TECPLOT.  Includes boundary nodes.      
+ * Returns a non-zero value if unable to write the TECPLOT file.      
+ *                                                                    
  **********************************************************************/
 int Output_Nodes_Tecplot(Grid2D_Quad_Block **Grid_ptr,
                          LevelSet2D_Input_Parameters &Input_Parameters) {
@@ -427,13 +427,13 @@ int Output_Nodes_Tecplot(Grid2D_Quad_Block **Grid_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Output_Cells_Tecplot                                      *
- *                                                                    *
- * Writes the cells of a multi-block quadilateral mesh in a format    *
- * suitable for plotting with TECPLOT.  Returns a non-zero value if   *
- * unable to write the TECPLOT file.                                  *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Output_Cells_Tecplot                                      
+ *                                                                    
+ * Writes the cells of a multi-block quadilateral mesh in a format    
+ * suitable for plotting with TECPLOT.  Returns a non-zero value if   
+ * unable to write the TECPLOT file.                                  
+ *                                                                    
  **********************************************************************/
 int Output_Cells_Tecplot(Grid2D_Quad_Block **Grid_ptr,
                          LevelSet2D_Input_Parameters &Input_Parameters) {
