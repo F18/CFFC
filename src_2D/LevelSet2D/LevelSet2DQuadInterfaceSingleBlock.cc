@@ -1,7 +1,7 @@
-/**********************************************************************
- * LevelSet2DQuadInterfaceSingleBlock.cc:                             *
- *              Single-block versions of subroutines for 2D Level Set *
- *              multi-block quadrilateral mesh solution classes.      *
+/******************************************************************//**
+ * \file LevelSet2DQuadInterfaceSingleBlock.cc:                       
+ *              Single-block versions of subroutines for 2D Level Set 
+ *              multi-block quadrilateral mesh solution classes.      
  **********************************************************************/
 
 // Include 2D LevelSet quadrilateral mesh solution header file.
@@ -13,11 +13,11 @@
  * LevelSet2D_Quad_Block -- Single Block External Subroutines.        *
  **********************************************************************/
 
-/**********************************************************************
- * Routine: Set_Interface_List                                        *
- *                                                                    *
- * Sets the interface list to the given list.                         *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Set_Interface_List                                        
+ *                                                                    
+ * Sets the interface list to the given list.                         
+ *                                                                    
  **********************************************************************/
 int Set_Interface_List(LevelSet2D_Quad_Block &SolnBlk,
 		       const Interface2D_List &Interface_List) {
@@ -30,12 +30,12 @@ int Set_Interface_List(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Initialize_Interfaces                                     *
- *                                                                    *
- * Constructs the initial interfaces: assigns appropriate flags and   *
- * reference values and constructs the actual interface spline.       *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Initialize_Interfaces                                     
+ *                                                                    
+ * Constructs the initial interfaces: assigns appropriate flags and   
+ * reference values and constructs the actual interface spline.       
+ *                                                                    
  **********************************************************************/
 int Initialize_Interfaces(LevelSet2D_Quad_Block &SolnBlk,
 			  LevelSet2D_Input_Parameters &IP) {
@@ -217,13 +217,13 @@ int Initialize_Interfaces(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Exact_Initial_Extension                                   *
- *                                                                    *
- * Exact initialization of the level set function and the extended    *
- * front speeds.  Only available for line, circle, ellipse, and       *
- * square interface.                                                  *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Exact_Initial_Extension                                   
+ *                                                                    
+ * Exact initialization of the level set function and the extended    
+ * front speeds.  Only available for line, circle, ellipse, and       
+ * square interface.                                                  
+ *                                                                    
  **********************************************************************/
 int Exact_Initial_Extension(LevelSet2D_Quad_Block &SolnBlk,
 			    LevelSet2D_Input_Parameters &IP) {
@@ -263,18 +263,18 @@ int Exact_Initial_Extension(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Geometric_Extension_Problem                               *
- *                                                                    *
- * Geometric solution of the extension problems involving the level   *
- * set function and the normal front speed.  This algorithm based on  *
- * triangles constructed out of the point of contention and the two   *
- * nearest interface nodes.  Note, that this algorithm does not, in   *
- * general, initialize the level set function as a signed distance    *
- * funtion.  It does, however, produce a decent initial estimate.     *
- * Iterative solution of the Eikonal equations (with unit from speed) *
- * is required to produce ensure a signed distance function.          *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Geometric_Extension_Problem                               
+ *                                                                    
+ * Geometric solution of the extension problems involving the level   
+ * set function and the normal front speed.  This algorithm based on  
+ * triangles constructed out of the point of contention and the two   
+ * nearest interface nodes.  Note, that this algorithm does not, in   
+ * general, initialize the level set function as a signed distance    
+ * funtion.  It does, however, produce a decent initial estimate.     
+ * Iterative solution of the Eikonal equations (with unit from speed) 
+ * is required to produce ensure a signed distance function.          
+ *                                                                    
  **********************************************************************/
 int Geometric_Extension_Problem(LevelSet2D_Quad_Block &SolnBlk,
 				LevelSet2D_Input_Parameters &IP) {
@@ -471,13 +471,13 @@ int Geometric_Extension_Problem(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Scalar_Geometric_Extension_Problem                        *
- *                                                                    *
- * Geometric solution of the scalar extension problem (eg, the normal *
- * front speed).  This algorithm based on triangles constructed out   *
- * of the point of contention and the two nearest interface nodes.    *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Scalar_Geometric_Extension_Problem                        
+ *                                                                    
+ * Geometric solution of the scalar extension problem (eg, the normal 
+ * front speed).  This algorithm based on triangles constructed out   
+ * of the point of contention and the two nearest interface nodes.    
+ *                                                                    
  **********************************************************************/
 int Scalar_Geometric_Extension_Problem(LevelSet2D_Quad_Block &SolnBlk,
 				       LevelSet2D_Input_Parameters &IP) {
@@ -646,13 +646,13 @@ int Scalar_Geometric_Extension_Problem(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Retrieve_Interface_Spline                                 *
- *                                                                    *
- * This routine locates the zero level set contained within the       *
- * specified solution block. The interface location is saved as a     *
- * spline(s).                                                         *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Retrieve_Interface_Spline                                 
+ *                                                                    
+ * This routine locates the zero level set contained within the       
+ * specified solution block. The interface location is saved as a     
+ * spline(s).                                                         
+ *                                                                    
  **********************************************************************/
 #ifndef _RETRIEVE_DEBUG_
 int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
@@ -664,7 +664,12 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
 			      ofstream &dout) {
 #endif
 
-  int found, start, ncells;
+  int found,
+      numStartPoses,      // number of spline points located in a ghost cell
+      numInfectedFaces;   // number of infected faces/centers
+
+  LinkedList<int> start;  // list of potential starting points for spline tracing
+
   double epsilon = TOLER*min(SolnBlk.Grid.lfaceN(SolnBlk.Grid.ICl,SolnBlk.Grid.JCl),
 			     SolnBlk.Grid.lfaceE(SolnBlk.Grid.ICl,SolnBlk.Grid.JCl));
 #ifdef _RETRIEVE_DEBUG_
@@ -673,13 +678,6 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
 
   // Deallocate current level set spline(s).
   if (SolnBlk.Interface_List.Ni) SolnBlk.Interface_List.deallocate();
-
-  // Reset memory for flag lists... I am using a magic number for the
-  // size of these arrays... I know this is poor form and that I
-  // should use a standard list (a.k.a. a linked list).
-  for (int nm = 0; nm < SolnBlk.NCi*(SolnBlk.NCj+1) + (SolnBlk.NCi+1)*SolnBlk.NCj; nm++) {
-    SolnBlk.Trace[nm].Zero();
-  }
 
   // Initialize cut type matrix.
   for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
@@ -691,20 +689,20 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
   // Flag infected cells and compile a list of all faces that the
   // interfaces intersects with.
 
-  ncells = 0;
-  start = -1;
-
+  numStartPoses = 0;
+  numInfectedFaces = 0;
+  
   for (int j = SolnBlk.JCl-1; j <= SolnBlk.JCu+1; j++) {
     for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
-      Flag_Infected_Cell(SolnBlk,i,j,epsilon,ncells,start);
+      Flag_Infected_Cell(SolnBlk,i,j,epsilon,numStartPoses,numInfectedFaces,start);
     }
   }
 
   // Exit immediately if no interface points have been located.
-  if (!ncells || start == -1) return 0;
+  if (!numInfectedFaces) return 0;
 
 #ifdef _RETRIEVE_DEBUG_
-  dout << endl;
+  dout << endl << "Cells infected in CENTER:" << endl;
   for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
     for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
       if (SolnBlk.cut[i][j].center == INFECTED) dout << "c ";
@@ -713,7 +711,7 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
     }
     dout << endl;
   }
-  dout << endl;
+  dout << endl << "Cells infected in NORTH:" << endl;
   for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
     for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
       if (SolnBlk.cut[i][j].north == INFECTED) dout << "n ";
@@ -722,7 +720,7 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
     }
     dout << endl;
   }
-  dout << endl;
+  dout << endl << "Cells infected in SOUTH:" << endl;
   for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
     for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
       if (SolnBlk.cut[i][j].south == INFECTED) dout << "s ";
@@ -731,7 +729,7 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
     }
     dout << endl;
   }
-  dout << endl;
+  dout << endl << "Cells infected in EAST:" << endl;
   for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
     for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
       if (SolnBlk.cut[i][j].east == INFECTED) dout << "e ";
@@ -740,7 +738,7 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
     }
     dout << endl;
   }
-  dout << endl;
+  dout << endl << "Cells infected in WEST:" << endl;
   for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
     for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
       if (SolnBlk.cut[i][j].west == INFECTED) dout << "w ";
@@ -749,7 +747,7 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
     }
     dout << endl;
   }
-  dout << endl;
+  dout << endl << "Cells infected in NORTHEAST:" << endl;
   for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
     for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
       if (SolnBlk.cut[i][j].north_east == INFECTED) dout << "a ";
@@ -758,7 +756,7 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
     }
     dout << endl;
   }
-  dout << endl;
+  dout << endl << "Cells infected in SOUTHWEST:" << endl;
   for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
     for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
       if (SolnBlk.cut[i][j].south_west == INFECTED) dout << "d ";
@@ -767,7 +765,7 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
     }
     dout << endl;
   }
-  dout << endl;
+  dout << endl << "Cells that are infected somewhere:" << endl;
   for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
     for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
       if (SolnBlk.cut[i][j].center == INFECTED ||
@@ -787,10 +785,19 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
   }
   dout << endl;
   dout << endl;
-  dout << endl << " Number of infected cells = " << ncells;  dout.flush();
-  dout << endl << " Starting position = " << start;  dout.flush();
-  dout << endl << " Starting data: " << SolnBlk.Trace[start].i << " " << SolnBlk.Trace[start].j << " " << SolnBlk.Trace[start].face;
-  for (int n = 0; n < ncells; n++) {
+  dout << endl << " Number of infected faces = " << numInfectedFaces;
+  dout << endl << " Number of starting positions = " << numStartPoses;
+  dout << endl;
+  dout << endl << " Starting data: ";
+  for (int ns = 0; ns < numStartPoses; ns++) {
+    dout << endl << ns
+	 << " " << start[ns] 
+	 << " " << SolnBlk.Trace[start[ns]].i
+	 << " " << SolnBlk.Trace[start[ns]].j
+	 << " " << SolnBlk.Trace[start[ns]].face;
+  }
+  dout << endl << " Trace data: ";
+  for (int n = 0; n < numInfectedFaces; n++) {
     dout << endl
 	 << " " << n
 	 << " " << SolnBlk.Trace[n].i
@@ -802,261 +809,296 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
   dout << endl;
 #endif
 
-  // Declare required integer variables.
-  int error_flag, numpts = 0, nsp = 0;
-  LinkedList<Vector2D> p, F;
-  LinkedList<int> npts;
 
-  // Trace all interfaces.
-//   for (int m = 0; m < ncells; m++) {
-//     if (((SolnBlk.Trace[m].i == SolnBlk.ICl-1 || SolnBlk.Trace[m].i == SolnBlk.ICu+1) && SolnBlk.Trace[m].face == NORTH && SolnBlk.cut[SolnBlk.Trace[m].i][SolnBlk.Trace[m].j].north == INFECTED) ||
-//   	((SolnBlk.Trace[m].j == SolnBlk.JCl-1 || SolnBlk.Trace[m].j == SolnBlk.JCu+1) && SolnBlk.Trace[m].face == EAST  && SolnBlk.cut[SolnBlk.Trace[m].i][SolnBlk.Trace[m].j].east  == INFECTED) ||
-//   	((SolnBlk.Trace[m].i == SolnBlk.ICl-1 || SolnBlk.Trace[m].i == SolnBlk.ICu+1) && SolnBlk.Trace[m].face == SOUTH && SolnBlk.cut[SolnBlk.Trace[m].i][SolnBlk.Trace[m].j].south == INFECTED) ||
-//   	((SolnBlk.Trace[m].j == SolnBlk.JCl-1 || SolnBlk.Trace[m].j == SolnBlk.JCu+1) && SolnBlk.Trace[m].face == WEST  && SolnBlk.cut[SolnBlk.Trace[m].i][SolnBlk.Trace[m].j].west  == INFECTED)) {
-  nsp++;
-  numpts = 0;
+
+  // Declare required integer variables.
+  int error_flag,
+    numpts = 0,    // number of points in the spline
+    nsp = 0;       // number of splines in this block
+  //  LinkedList<Vector2D> p, F;
+  //  LinkedList<int> npts;
+
+  // Trace all interfaces using the start positions.
+  while (start.np != 0) {
+
+    nsp++;
+
+    // Trace the interface at specified start point.
 #ifndef _RETRIEVE_DEBUG_
-  //error_flag = Trace_Interface_Spline(SolnBlk,p,F,numpts,m);
-  error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,start);
+    error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,start[0]);
 #endif
 #ifdef _RETRIEVE_DEBUG_
-  dout << endl << " Begin Trace"; dout.flush();
-  //error_flag = Trace_Interface_Spline(SolnBlk,p,F,numpts,m,dout);
-  error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,start,dout);
-  dout << endl << numpts;
-  dout << endl << " End Trace"; dout.flush();
+    error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,start[0],dout);
 #endif
-  if (error_flag) return error_flag;
-  npts.add(numpts);
+    if (error_flag) return error_flag;
+
+    // Remove specified start point from list.
+    start.remove(start[0]);
+
+    // Remove start points that have already been traced.
+
+  }
+
+// //   for (int m = 0; m < ncells; m++) {
+// //     if (((SolnBlk.Trace[m].i == SolnBlk.ICl-1 || SolnBlk.Trace[m].i == SolnBlk.ICu+1) && SolnBlk.Trace[m].face == NORTH && SolnBlk.cut[SolnBlk.Trace[m].i][SolnBlk.Trace[m].j].north == INFECTED) ||
+// //   	((SolnBlk.Trace[m].j == SolnBlk.JCl-1 || SolnBlk.Trace[m].j == SolnBlk.JCu+1) && SolnBlk.Trace[m].face == EAST  && SolnBlk.cut[SolnBlk.Trace[m].i][SolnBlk.Trace[m].j].east  == INFECTED) ||
+// //   	((SolnBlk.Trace[m].i == SolnBlk.ICl-1 || SolnBlk.Trace[m].i == SolnBlk.ICu+1) && SolnBlk.Trace[m].face == SOUTH && SolnBlk.cut[SolnBlk.Trace[m].i][SolnBlk.Trace[m].j].south == INFECTED) ||
+// //   	((SolnBlk.Trace[m].j == SolnBlk.JCl-1 || SolnBlk.Trace[m].j == SolnBlk.JCu+1) && SolnBlk.Trace[m].face == WEST  && SolnBlk.cut[SolnBlk.Trace[m].i][SolnBlk.Trace[m].j].west  == INFECTED)) {
+//   nsp++;
+//   numpts = 0;
+
+// #ifndef _RETRIEVE_DEBUG_
+//   //error_flag = Trace_Interface_Spline(SolnBlk,p,F,numpts,m);
+//   error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,start);
+// #endif
+// #ifdef _RETRIEVE_DEBUG_
+//   dout << endl << " Begin Trace"; dout.flush();
+//   //error_flag = Trace_Interface_Spline(SolnBlk,p,F,numpts,m,dout);
+//   error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,start,dout);
+//   dout << endl << "Number of points traced: " << numpts;
+//   dout << endl << " End Trace"; dout.flush();
+// #endif
+//   if (error_flag) return error_flag;
+//   npts.add(numpts);
+// //     }
+// //   }
+
+//   // Exit immediately if no interfaces have been found.
+//   if (!nsp) { 
+//     p.deallocate();
+//     F.deallocate();
+//     npts.deallocate();
+//     return 0;
+//   }
+
+//   // Parse the list of interfaces and clip interfaces as required.
+//   LinkedList<Vector2D> pn, Fn;
+//   LinkedList<int> nptsn;
+//   int added_flag, in_counter;
+//   Vector2D Xmin = SolnBlk.Grid.Node[SolnBlk.Grid.INl][SolnBlk.Grid.JNl].X;
+//   Vector2D Xmax = SolnBlk.Grid.Node[SolnBlk.Grid.INu][SolnBlk.Grid.JNu].X;
+//   Vector2D Xp, Xp1, Xp2, Xp3, Xp4, fm;
+
+//   start = 0;
+
+//   for (int ni = 0; ni < nsp; ni++) {
+//     nptsn.add(0);
+//     if (npts[ni] > 1) {
+//       // If none of the traced nodes are within the block then disregard
+//       // the trace.
+//       in_counter = 0;
+//       for (int np = start; np < npts[ni]; np++) {
+//  	if (p[np].x >= Xmin.x && p[np].x <= Xmax.x && p[np].y >= Xmin.y && p[np].y <= Xmax.y) {
+//  	  in_counter++;
+//  	}
+//       }
+//       // None of the traced nodes are within the block but if the trace
+//       // interesects the block (can occur at corners) then interpolate
+//       // an internal point.
+//       if (!in_counter) {
+// 	for (int np = start; np < npts[ni]-1; np++) {
+// 	  found = 0;
+//  	  if ((p[np].x < Xmin.x || p[np].x > Xmax.x || p[np].y < Xmin.y || p[np].y > Xmax.y) &&
+//  	      (p[np+1].x < Xmin.x || p[np+1].x > Xmax.x || p[np+1].y < Xmin.y || p[np+1].y > Xmax.y)) {
+//   	    if (Line_Intersection(p[np],p[np+1],Vector2D(Xmin.x,Xmin.y),Vector2D(Xmax.x,Xmin.y),Xp1)) in_counter++;
+//  	    if (Line_Intersection(p[np],p[np+1],Vector2D(Xmax.x,Xmin.y),Vector2D(Xmax.x,Xmax.y),Xp2)) in_counter++;
+//  	    if (Line_Intersection(p[np],p[np+1],Vector2D(Xmax.x,Xmax.y),Vector2D(Xmin.x,Xmax.y),Xp3)) in_counter++;
+//  	    if (Line_Intersection(p[np],p[np+1],Vector2D(Xmin.x,Xmax.y),Vector2D(Xmin.x,Xmin.y),Xp4)) in_counter++;
+// 	    if (in_counter == 2) {
+// 	      Xp = HALF*(Xp1 + Xp2 + Xp3 + Xp4);
+//  	      fm = Linear_Interpolation(p[np],F[np],p[np+1],F[np+1],Xp);
+// 	      p.insert(Xp,np);
+// 	      F.insert(fm,np);
+// 	      found = 1;
+// 	    }
+//  	  }
+// 	  if (found) break;
+// 	}
+//       }
+//       // Include the traced nodes.
+//       if (in_counter) {
+//         added_flag = 0;
+// 	for (int np = start; np < npts[ni]; np++) {
+// 	  if (!added_flag && np < npts[ni]-1) {
+// 	    if ((p[np].x < Xmin.x || p[np].x > Xmax.x || p[np].y < Xmin.y || p[np].y > Xmax.y) &&
+// 		(p[np+1].x >= Xmin.x && p[np+1].x <= Xmax.x && p[np+1].y >= Xmin.y && p[np+1].y <= Xmax.y)) {
+// 	      added_flag = 1;
+// 	    }
+// 	  }
+// 	  if (added_flag) {
+// 	    pn.add(p[np]);
+// 	    Fn.add(F[np]);
+// 	    nptsn.put(nptsn[ni]+1,ni);
+// 	    if (np+1 < npts[ni]) {
+// 	      if ((p[np].x < Xmin.x || p[np].x > Xmax.x || p[np].y < Xmin.y || p[np].y > Xmax.y) &&
+// 		  (p[np+1].x < Xmin.x || p[np+1].x > Xmax.x || p[np+1].y < Xmin.y || p[np+1].y > Xmax.y)) {
+// 		break;
+// 	      }
+// 	    }
+// 	  }
+// 	}
+//       }
+//     }
+//     start = npts[ni];
+//   }
+
+//   // Count the new number of interfaces (ignore all 1-point interfaces).
+//   int nnsp = 0;
+//   for (int ni = 0; ni < nsp; ni++) if (nptsn[ni] > 1) nnsp++;
+
+//   cout << endl << "###########";
+//   cout << endl << "New number of interfaces: " << nnsp;
+//   cout << endl << "###########";
+
+//   // Exit immediately if no interfaces exist.
+//   if (!nnsp) {
+//     p.deallocate(); F.deallocate(); npts.deallocate();
+//     pn.deallocate(); Fn.deallocate(); nptsn.deallocate();
+//     return 0;
+//   }
+
+//   // Assemble the interface list.
+//   int nnii = 0; start = 0;
+//   double fx;
+
+//   // Allocate the number of interfaces.
+//   SolnBlk.Interface_List.allocate(nnsp);
+//   for (int ni = 0; ni < nsp; ni++) {
+//     if (nptsn[ni] > 1) {
+//       // Increment the interface number.
+//       nnii++;
+//       // Allocate interface.
+//       SolnBlk.Interface_List[nnii].allocate(nptsn[ni]);
+//       // Set the interface type to the global block number.
+//       SolnBlk.Interface_List[nnii].Type = gblknum;
+//       // Set interface spline type.
+//       SolnBlk.Interface_List[nnii].Spline.settype(SPLINE2D_LINEAR);
+//       // Set the interface data.
+//       for (int np = 0; np < nptsn[ni]; np++) {
+//  	SolnBlk.Interface_List[nnii].Spline.Xp[np] = pn[start + np];
+//  	if ((np == 0) || (np == npts[ni-1]-1)) {
+//  	  SolnBlk.Interface_List[nnii].Spline.tp[np] = SPLINE2D_POINT_SHARP_CORNER;
+//  	} else {
+//  	  SolnBlk.Interface_List[nnii].Spline.tp[np] = SPLINE2D_POINT_NORMAL;
+//  	}
+// 	SolnBlk.Interface_List[nnii].Spline.tp[np] = SPLINE2D_POINT_NORMAL;
+//  	SolnBlk.Interface_List[nnii].Spline.bc[np] = BC_NONE;
+//  	SolnBlk.Interface_List[nnii].F[np] = Fn[start + np];
+//       }
+//       SolnBlk.Interface_List[nnii].Spline.pathlength();
+//     }
+//     start = nptsn[ni];
+//   }
+
+//   // Clip interfaces to block boundaries.
+
+//   int clipped_flag;
+
+//   for (int ni = 1; ni <= SolnBlk.Interface_List.Ni; ni++) {
+
+//     // Determine if the first spline point needs to be clipped.
+//     if (SolnBlk.Interface_List[ni].Spline.Xp[0].x < Xmin.x ||
+// 	SolnBlk.Interface_List[ni].Spline.Xp[0].x > Xmax.x ||
+// 	SolnBlk.Interface_List[ni].Spline.Xp[0].y < Xmin.y ||
+// 	SolnBlk.Interface_List[ni].Spline.Xp[0].y > Xmax.y) {
+//       clipped_flag = 0;
+//       // Try clipping against the north boundary:
+//       if (SolnBlk.Interface_List[ni].Spline.Xp[0].y > Xmax.y)
+// 	clipped_flag = Line_Intersection(Vector2D(Xmin.x,Xmax.y),Vector2D(Xmax.x,Xmax.y),
+// 					 SolnBlk.Interface_List[ni].Spline.Xp[0],SolnBlk.Interface_List[ni].Spline.Xp[1],Xp);
+//       // Try clipping against the south boundary if not already clipped:
+//       if (SolnBlk.Interface_List[ni].Spline.Xp[0].y < Xmin.y && !clipped_flag)
+// 	clipped_flag = Line_Intersection(Vector2D(Xmin.x,Xmin.y),Vector2D(Xmax.x,Xmin.y),
+// 					 SolnBlk.Interface_List[ni].Spline.Xp[0],SolnBlk.Interface_List[ni].Spline.Xp[1],Xp);
+//       // Try clipping against the east boundary if not already clipped:
+//       if (SolnBlk.Interface_List[ni].Spline.Xp[0].x > Xmax.x && !clipped_flag)
+// 	clipped_flag = Line_Intersection(Vector2D(Xmax.x,Xmin.y),Vector2D(Xmax.x,Xmax.y),
+// 					 SolnBlk.Interface_List[ni].Spline.Xp[0],SolnBlk.Interface_List[ni].Spline.Xp[1],Xp);
+//       // Try clipping against the west boundary if not already clipped:
+//       if (SolnBlk.Interface_List[ni].Spline.Xp[0].x < Xmin.x && !clipped_flag)
+// 	clipped_flag = Line_Intersection(Vector2D(Xmin.x,Xmin.y),Vector2D(Xmin.x,Xmax.y),
+// 					 SolnBlk.Interface_List[ni].Spline.Xp[0],SolnBlk.Interface_List[ni].Spline.Xp[1],Xp);
+//       if (!clipped_flag) {
+// #ifdef _RETRIEVE_DEBUG_
+// 	dout << endl << " " << 7771 << SolnBlk.Interface_List[ni].Spline.Xp[0]
+// 	     << SolnBlk.Interface_List[ni].Spline.Xp[1] << Xmin << Xmax;
+// #endif
+// 	return 7771;
+//       }
+//       // Determine the front speed at the clipped point if found
+//       // and add the information to the interface list:
+//       fm = Linear_Interpolation(SolnBlk.Interface_List[ni].Spline.Xp[0],SolnBlk.Interface_List[ni].F[0],
+// 				SolnBlk.Interface_List[ni].Spline.Xp[1],SolnBlk.Interface_List[ni].F[1],Xp);
+//       SolnBlk.Interface_List[ni].Spline.Xp[0] = Xp;
+//       SolnBlk.Interface_List[ni].F[0] = fm;
+//     }
+//     // Determine if the last spline point needs to be clipped.
+//     for (int np = SolnBlk.Interface_List[ni].Spline.np-1; np >= SolnBlk.Interface_List[ni].Spline.np-2; np--) {
+//       if (SolnBlk.Interface_List[ni].Spline.Xp[np].x >= Xmin.x &&
+// 	  SolnBlk.Interface_List[ni].Spline.Xp[np].x <= Xmax.x &&
+// 	  SolnBlk.Interface_List[ni].Spline.Xp[np].y >= Xmin.y &&
+// 	  SolnBlk.Interface_List[ni].Spline.Xp[np].y <= Xmax.y) {
+// 	// Do nothing.
+// 	break;
+//       } else if ((SolnBlk.Interface_List[ni].Spline.Xp[np].x < Xmin.x ||
+// 		  SolnBlk.Interface_List[ni].Spline.Xp[np].x > Xmax.x ||
+// 		  SolnBlk.Interface_List[ni].Spline.Xp[np].y < Xmin.y ||
+// 		  SolnBlk.Interface_List[ni].Spline.Xp[np].y > Xmax.y) &&
+// 		 (SolnBlk.Interface_List[ni].Spline.Xp[np-1].x >= Xmin.x &&
+// 		  SolnBlk.Interface_List[ni].Spline.Xp[np-1].x <= Xmax.x &&
+// 		  SolnBlk.Interface_List[ni].Spline.Xp[np-1].y >= Xmin.y &&
+// 		  SolnBlk.Interface_List[ni].Spline.Xp[np-1].y <= Xmax.y)) {
+// 	clipped_flag = 0;
+// 	// Try clipping against the north boundary:
+// 	if (SolnBlk.Interface_List[ni].Spline.Xp[np].y > Xmax.y)
+// 	  clipped_flag = Line_Intersection(Vector2D(Xmin.x,Xmax.y),Vector2D(Xmax.x,Xmax.y),
+// 					   SolnBlk.Interface_List[ni].Spline.Xp[np],SolnBlk.Interface_List[ni].Spline.Xp[np-1],Xp);
+// 	// Try clipping against the south boundary if not already clipped:
+// 	if (SolnBlk.Interface_List[ni].Spline.Xp[np].y < Xmin.y && !clipped_flag)
+// 	  clipped_flag = Line_Intersection(Vector2D(Xmin.x,Xmin.y),Vector2D(Xmax.x,Xmin.y),
+// 					   SolnBlk.Interface_List[ni].Spline.Xp[np],SolnBlk.Interface_List[ni].Spline.Xp[np-1],Xp);
+// 	// Try clipping against the east boundary if not already clipped:
+// 	if (SolnBlk.Interface_List[ni].Spline.Xp[np].x > Xmax.x && !clipped_flag)
+// 	  clipped_flag = Line_Intersection(Vector2D(Xmax.x,Xmin.y),Vector2D(Xmax.x,Xmax.y),
+// 					   SolnBlk.Interface_List[ni].Spline.Xp[np],SolnBlk.Interface_List[ni].Spline.Xp[np-1],Xp);
+// 	// Try clipping against the west boundary if not already clipped:
+// 	if (SolnBlk.Interface_List[ni].Spline.Xp[np].x < Xmin.x && !clipped_flag)
+// 	  clipped_flag = Line_Intersection(Vector2D(Xmin.x,Xmin.y),Vector2D(Xmin.x,Xmax.y),
+// 					   SolnBlk.Interface_List[ni].Spline.Xp[np],SolnBlk.Interface_List[ni].Spline.Xp[np-1],Xp);
+// 	if (!clipped_flag) {
+// #ifdef _RETRIEVE_DEBUG_
+// 	  dout << endl << " " << 7772;
+// #endif
+// 	  return 7772;
+// 	}
+// 	// Determine the front speed at the clipped point if found
+// 	// and add the information to the interface list:
+// 	fm = Linear_Interpolation(SolnBlk.Interface_List[ni].Spline.Xp[np],SolnBlk.Interface_List[ni].F[np],
+// 				  SolnBlk.Interface_List[ni].Spline.Xp[np-1],SolnBlk.Interface_List[ni].F[np-1],Xp);
+// 	SolnBlk.Interface_List[ni].Spline.Xp[np] = Xp;
+// 	SolnBlk.Interface_List[ni].F[np] = fm;
+// 	break;
+//       } else {
+// 	SolnBlk.Interface_List[ni].Spline.np--;
+//       }
 //     }
 //   }
 
-  // Exit immediately if no interfaces have been found.
-  if (!nsp) { p.deallocate(); F.deallocate(); npts.deallocate(); return 0; }
-
-  // Parse the list of interfaces and clip interfaces as required.
-  LinkedList<Vector2D> pn, Fn;
-  LinkedList<int> nptsn;
-  int added_flag, in_counter;
-  Vector2D Xmin = SolnBlk.Grid.Node[SolnBlk.Grid.INl][SolnBlk.Grid.JNl].X;
-  Vector2D Xmax = SolnBlk.Grid.Node[SolnBlk.Grid.INu][SolnBlk.Grid.JNu].X;
-  Vector2D Xp, Xp1, Xp2, Xp3, Xp4, fm;
-
-  start = 0;
-
-  for (int ni = 0; ni < nsp; ni++) {
-    nptsn.add(0);
-    if (npts[ni] > 1) {
-      // If not of the traced nodes are within the block then disregard
-      // the trace.
-      in_counter = 0;
-      for (int np = start; np < npts[ni]; np++) {
- 	if (p[np].x >= Xmin.x && p[np].x <= Xmax.x && p[np].y >= Xmin.y && p[np].y <= Xmax.y) {
- 	  in_counter++;
- 	}
-      }
-      // None of the traced nodes are within the block but if the trace
-      // interesects the block (can occur at corners) then interpolate
-      // an internal point.
-      if (!in_counter) {
-	for (int np = start; np < npts[ni]-1; np++) {
-	  found = 0;
- 	  if ((p[np].x < Xmin.x || p[np].x > Xmax.x || p[np].y < Xmin.y || p[np].y > Xmax.y) &&
- 	      (p[np+1].x < Xmin.x || p[np+1].x > Xmax.x || p[np+1].y < Xmin.y || p[np+1].y > Xmax.y)) {
-  	    if (Line_Intersection(p[np],p[np+1],Vector2D(Xmin.x,Xmin.y),Vector2D(Xmax.x,Xmin.y),Xp1)) in_counter++;
- 	    if (Line_Intersection(p[np],p[np+1],Vector2D(Xmax.x,Xmin.y),Vector2D(Xmax.x,Xmax.y),Xp2)) in_counter++;
- 	    if (Line_Intersection(p[np],p[np+1],Vector2D(Xmax.x,Xmax.y),Vector2D(Xmin.x,Xmax.y),Xp3)) in_counter++;
- 	    if (Line_Intersection(p[np],p[np+1],Vector2D(Xmin.x,Xmax.y),Vector2D(Xmin.x,Xmin.y),Xp4)) in_counter++;
-	    if (in_counter == 2) {
-	      Xp = HALF*(Xp1 + Xp2 + Xp3 + Xp4);
- 	      fm = Linear_Interpolation(p[np],F[np],p[np+1],F[np+1],Xp);
-	      p.insert(Xp,np);
-	      F.insert(fm,np);
-	      found = 1;
-	    }
- 	  }
-	  if (found) break;
-	}
-      }
-      // Include the traced nodes.
-      if (in_counter) {
-        added_flag = 0;
-	for (int np = start; np < npts[ni]; np++) {
-	  if (!added_flag && np < npts[ni]-1) {
-	    if ((p[np].x < Xmin.x || p[np].x > Xmax.x || p[np].y < Xmin.y || p[np].y > Xmax.y) &&
-		(p[np+1].x >= Xmin.x && p[np+1].x <= Xmax.x && p[np+1].y >= Xmin.y && p[np+1].y <= Xmax.y)) {
-	      added_flag = 1;
-	    }
-	  }
-	  if (added_flag) {
-	    pn.add(p[np]);
-	    Fn.add(F[np]);
-	    nptsn.put(nptsn[ni]+1,ni);
-	    if (np+1 < npts[ni]) {
-	      if ((p[np].x < Xmin.x || p[np].x > Xmax.x || p[np].y < Xmin.y || p[np].y > Xmax.y) &&
-		  (p[np+1].x < Xmin.x || p[np+1].x > Xmax.x || p[np+1].y < Xmin.y || p[np+1].y > Xmax.y)) {
-		break;
-	      }
-	    }
-	  }
-	}
-      }
-    }
-    start = npts[ni];
-  }
-
-  // Count the new number of interfaces (ignore all 1-point interfaces).
-  int nnsp = 0;
-  for (int ni = 0; ni < nsp; ni++) if (nptsn[ni] > 1) nnsp++;
-
-  // Exit immediately if no interfaces exist.
-  if (!nnsp) {
-    p.deallocate(); F.deallocate(); npts.deallocate();
-    pn.deallocate(); Fn.deallocate(); nptsn.deallocate();
-    return 0;
-  }
-
-  // Assemble the interface list.
-  int nnii = 0; start = 0;
-  double fx;
-
-  // Allocate the number of interfaces.
-  SolnBlk.Interface_List.allocate(nnsp);
-  for (int ni = 0; ni < nsp; ni++) {
-    if (nptsn[ni] > 1) {
-      // Increment the interface number.
-      nnii++;
-      // Allocate interface.
-      SolnBlk.Interface_List[nnii].allocate(nptsn[ni]);
-      // Set the interface type to the global block number.
-      SolnBlk.Interface_List[nnii].Type = gblknum;
-      // Set interface spline type.
-      SolnBlk.Interface_List[nnii].Spline.settype(SPLINE2D_LINEAR);
-      // Set the interface data.
-      for (int np = 0; np < nptsn[ni]; np++) {
- 	SolnBlk.Interface_List[nnii].Spline.Xp[np] = pn[start + np];
- 	if ((np == 0) || (np == npts[ni-1]-1)) {
- 	  SolnBlk.Interface_List[nnii].Spline.tp[np] = SPLINE2D_POINT_SHARP_CORNER;
- 	} else {
- 	  SolnBlk.Interface_List[nnii].Spline.tp[np] = SPLINE2D_POINT_NORMAL;
- 	}
-	SolnBlk.Interface_List[nnii].Spline.tp[np] = SPLINE2D_POINT_NORMAL;
- 	SolnBlk.Interface_List[nnii].Spline.bc[np] = BC_NONE;
- 	SolnBlk.Interface_List[nnii].F[np] = Fn[start + np];
-      }
-      SolnBlk.Interface_List[nnii].Spline.pathlength();
-    }
-    start = nptsn[ni];
-  }
-
-  // Clip interfaces to block boundaries.
-
-  int clipped_flag;
-
-  for (int ni = 1; ni <= SolnBlk.Interface_List.Ni; ni++) {
-
-    // Determine if the first spline point needs to be clipped.
-    if (SolnBlk.Interface_List[ni].Spline.Xp[0].x < Xmin.x ||
-	SolnBlk.Interface_List[ni].Spline.Xp[0].x > Xmax.x ||
-	SolnBlk.Interface_List[ni].Spline.Xp[0].y < Xmin.y ||
-	SolnBlk.Interface_List[ni].Spline.Xp[0].y > Xmax.y) {
-      clipped_flag = 0;
-      // Try clipping against the north boundary:
-      if (SolnBlk.Interface_List[ni].Spline.Xp[0].y > Xmax.y)
-	clipped_flag = Line_Intersection(Vector2D(Xmin.x,Xmax.y),Vector2D(Xmax.x,Xmax.y),
-					 SolnBlk.Interface_List[ni].Spline.Xp[0],SolnBlk.Interface_List[ni].Spline.Xp[1],Xp);
-      // Try clipping against the south boundary if not already clipped:
-      if (SolnBlk.Interface_List[ni].Spline.Xp[0].y < Xmin.y && !clipped_flag)
-	clipped_flag = Line_Intersection(Vector2D(Xmin.x,Xmin.y),Vector2D(Xmax.x,Xmin.y),
-					 SolnBlk.Interface_List[ni].Spline.Xp[0],SolnBlk.Interface_List[ni].Spline.Xp[1],Xp);
-      // Try clipping against the east boundary if not already clipped:
-      if (SolnBlk.Interface_List[ni].Spline.Xp[0].x > Xmax.x && !clipped_flag)
-	clipped_flag = Line_Intersection(Vector2D(Xmax.x,Xmin.y),Vector2D(Xmax.x,Xmax.y),
-					 SolnBlk.Interface_List[ni].Spline.Xp[0],SolnBlk.Interface_List[ni].Spline.Xp[1],Xp);
-      // Try clipping against the west boundary if not already clipped:
-      if (SolnBlk.Interface_List[ni].Spline.Xp[0].x < Xmin.x && !clipped_flag)
-	clipped_flag = Line_Intersection(Vector2D(Xmin.x,Xmin.y),Vector2D(Xmin.x,Xmax.y),
-					 SolnBlk.Interface_List[ni].Spline.Xp[0],SolnBlk.Interface_List[ni].Spline.Xp[1],Xp);
-      if (!clipped_flag) {
-#ifdef _RETRIEVE_DEBUG_
-	dout << endl << " " << 7771 << SolnBlk.Interface_List[ni].Spline.Xp[0]
-	     << SolnBlk.Interface_List[ni].Spline.Xp[1] << Xmin << Xmax;
-#endif
-	return 7771;
-      }
-      // Determine the front speed at the clipped point if found
-      // and add the information to the interface list:
-      fm = Linear_Interpolation(SolnBlk.Interface_List[ni].Spline.Xp[0],SolnBlk.Interface_List[ni].F[0],
-				SolnBlk.Interface_List[ni].Spline.Xp[1],SolnBlk.Interface_List[ni].F[1],Xp);
-      SolnBlk.Interface_List[ni].Spline.Xp[0] = Xp;
-      SolnBlk.Interface_List[ni].F[0] = fm;
-    }
-    // Determine if the last spline point needs to be clipped.
-    for (int np = SolnBlk.Interface_List[ni].Spline.np-1; np >= SolnBlk.Interface_List[ni].Spline.np-2; np--) {
-      if (SolnBlk.Interface_List[ni].Spline.Xp[np].x >= Xmin.x &&
-	  SolnBlk.Interface_List[ni].Spline.Xp[np].x <= Xmax.x &&
-	  SolnBlk.Interface_List[ni].Spline.Xp[np].y >= Xmin.y &&
-	  SolnBlk.Interface_List[ni].Spline.Xp[np].y <= Xmax.y) {
-	// Do nothing.
-	break;
-      } else if ((SolnBlk.Interface_List[ni].Spline.Xp[np].x < Xmin.x ||
-		  SolnBlk.Interface_List[ni].Spline.Xp[np].x > Xmax.x ||
-		  SolnBlk.Interface_List[ni].Spline.Xp[np].y < Xmin.y ||
-		  SolnBlk.Interface_List[ni].Spline.Xp[np].y > Xmax.y) &&
-		 (SolnBlk.Interface_List[ni].Spline.Xp[np-1].x >= Xmin.x &&
-		  SolnBlk.Interface_List[ni].Spline.Xp[np-1].x <= Xmax.x &&
-		  SolnBlk.Interface_List[ni].Spline.Xp[np-1].y >= Xmin.y &&
-		  SolnBlk.Interface_List[ni].Spline.Xp[np-1].y <= Xmax.y)) {
-	clipped_flag = 0;
-	// Try clipping against the north boundary:
-	if (SolnBlk.Interface_List[ni].Spline.Xp[np].y > Xmax.y)
-	  clipped_flag = Line_Intersection(Vector2D(Xmin.x,Xmax.y),Vector2D(Xmax.x,Xmax.y),
-					   SolnBlk.Interface_List[ni].Spline.Xp[np],SolnBlk.Interface_List[ni].Spline.Xp[np-1],Xp);
-	// Try clipping against the south boundary if not already clipped:
-	if (SolnBlk.Interface_List[ni].Spline.Xp[np].y < Xmin.y && !clipped_flag)
-	  clipped_flag = Line_Intersection(Vector2D(Xmin.x,Xmin.y),Vector2D(Xmax.x,Xmin.y),
-					   SolnBlk.Interface_List[ni].Spline.Xp[np],SolnBlk.Interface_List[ni].Spline.Xp[np-1],Xp);
-	// Try clipping against the east boundary if not already clipped:
-	if (SolnBlk.Interface_List[ni].Spline.Xp[np].x > Xmax.x && !clipped_flag)
-	  clipped_flag = Line_Intersection(Vector2D(Xmax.x,Xmin.y),Vector2D(Xmax.x,Xmax.y),
-					   SolnBlk.Interface_List[ni].Spline.Xp[np],SolnBlk.Interface_List[ni].Spline.Xp[np-1],Xp);
-	// Try clipping against the west boundary if not already clipped:
-	if (SolnBlk.Interface_List[ni].Spline.Xp[np].x < Xmin.x && !clipped_flag)
-	  clipped_flag = Line_Intersection(Vector2D(Xmin.x,Xmin.y),Vector2D(Xmin.x,Xmax.y),
-					   SolnBlk.Interface_List[ni].Spline.Xp[np],SolnBlk.Interface_List[ni].Spline.Xp[np-1],Xp);
-	if (!clipped_flag) {
-#ifdef _RETRIEVE_DEBUG_
-	  dout << endl << " " << 7772;
-#endif
-	  return 7772;
-	}
-	// Determine the front speed at the clipped point if found
-	// and add the information to the interface list:
-	fm = Linear_Interpolation(SolnBlk.Interface_List[ni].Spline.Xp[np],SolnBlk.Interface_List[ni].F[np],
-				  SolnBlk.Interface_List[ni].Spline.Xp[np-1],SolnBlk.Interface_List[ni].F[np-1],Xp);
-	SolnBlk.Interface_List[ni].Spline.Xp[np] = Xp;
-	SolnBlk.Interface_List[ni].F[np] = fm;
-	break;
-      } else {
-	SolnBlk.Interface_List[ni].Spline.np--;
-      }
-    }
-  }
-
-  p.deallocate(); F.deallocate(); npts.deallocate();
-  pn.deallocate(); Fn.deallocate(); nptsn.deallocate();
+//   p.deallocate(); F.deallocate(); npts.deallocate();
+//   pn.deallocate(); Fn.deallocate(); nptsn.deallocate();
 
   // Interface spline retrieval completed.
   return 0;
 
 }
 
-/**********************************************************************
- * Routine: Trace_Interface_Spline                                    *
- *                                                                    *
- * This routine will trace the interface throughout a domain given a  *
- * starting location.  The interface is saved as a spline.            *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Trace_Interface_Spline                                    
+ *                                                                    
+ * This routine will trace the interface throughout a domain given a  
+ * starting location.  The interface is saved as a linked list of     
+ * spline points.                                                     
+ *                                                                    
  **********************************************************************/
 #ifndef _RETRIEVE_DEBUG_
 int Trace_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
@@ -1136,23 +1178,23 @@ int Trace_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
     }
 
 #ifdef _RETRIEVE_DEBUG_
-    dout << endl << ic << " " << jc << " " << face << SolnBlk.Grid.Cell[ic][jc].Xc;
-    if (face == CENTER) {
-      dout << endl << " C:" << SolnBlk.Grid.Cell[ico][jco].Xc << " " << SolnBlk.U[ico][jco].psi;
-    } else if (face == NORTH) {
-      dout << endl << " N:" << SolnBlk.Grid.Cell[ico][jco].Xc << SolnBlk.Grid.Cell[ico][jco+1].Xc << " " << SolnBlk.U[ico][jco  ].psi << " " << SolnBlk.U[ico][jco+1].psi;
-    } else if (face == SOUTH) {
-      dout << endl << " S:" << SolnBlk.Grid.Cell[ico][jco].Xc << SolnBlk.Grid.Cell[ico][jco-1].Xc << " " << SolnBlk.U[ico][jco  ].psi << " " << SolnBlk.U[ico][jco-1].psi;
-    } else if (face == EAST) {
-      dout << endl << " E:" << SolnBlk.Grid.Cell[ico][jco].Xc << SolnBlk.Grid.Cell[ico+1][jco].Xc << " " << SolnBlk.U[ico][jco  ].psi << " " << SolnBlk.U[ico+1][jco].psi;
-    } else if (face == WEST) {
-      dout << endl << " W:" << SolnBlk.Grid.Cell[ico][jco].Xc << SolnBlk.Grid.Cell[ico-1][jco].Xc << " " << SolnBlk.U[ico][jco  ].psi << " " << SolnBlk.U[ico-1][jco].psi;
-    } else if (face == NORTH_EAST) {
-      dout << endl << " NE:" << SolnBlk.Grid.Cell[ico+1][jco].Xc << SolnBlk.Grid.Cell[ico][jco+1].Xc << " " << SolnBlk.U[ico+1][jco].psi << " " << SolnBlk.U[ico][jco+1].psi;
-    } else if (face == SOUTH_WEST) {
-      dout << endl << " SW:" << SolnBlk.Grid.Cell[ico-1][jco].Xc << SolnBlk.Grid.Cell[ico][jco-1].Xc << " " << SolnBlk.U[ico-1][jco].psi << " " << SolnBlk.U[ico][jco-1].psi;
-    }
-    dout << endl << pn << " " << fn;
+//     dout << endl << ic << " " << jc << " " << face << SolnBlk.Grid.Cell[ic][jc].Xc;
+//     if (face == CENTER) {
+//       dout << endl << " C:" << SolnBlk.Grid.Cell[ico][jco].Xc << " " << SolnBlk.U[ico][jco].psi;
+//     } else if (face == NORTH) {
+//       dout << endl << " N:" << SolnBlk.Grid.Cell[ico][jco].Xc << SolnBlk.Grid.Cell[ico][jco+1].Xc << " " << SolnBlk.U[ico][jco  ].psi << " " << SolnBlk.U[ico][jco+1].psi;
+//     } else if (face == SOUTH) {
+//       dout << endl << " S:" << SolnBlk.Grid.Cell[ico][jco].Xc << SolnBlk.Grid.Cell[ico][jco-1].Xc << " " << SolnBlk.U[ico][jco  ].psi << " " << SolnBlk.U[ico][jco-1].psi;
+//     } else if (face == EAST) {
+//       dout << endl << " E:" << SolnBlk.Grid.Cell[ico][jco].Xc << SolnBlk.Grid.Cell[ico+1][jco].Xc << " " << SolnBlk.U[ico][jco  ].psi << " " << SolnBlk.U[ico+1][jco].psi;
+//     } else if (face == WEST) {
+//       dout << endl << " W:" << SolnBlk.Grid.Cell[ico][jco].Xc << SolnBlk.Grid.Cell[ico-1][jco].Xc << " " << SolnBlk.U[ico][jco  ].psi << " " << SolnBlk.U[ico-1][jco].psi;
+//     } else if (face == NORTH_EAST) {
+//       dout << endl << " NE:" << SolnBlk.Grid.Cell[ico+1][jco].Xc << SolnBlk.Grid.Cell[ico][jco+1].Xc << " " << SolnBlk.U[ico+1][jco].psi << " " << SolnBlk.U[ico][jco+1].psi;
+//     } else if (face == SOUTH_WEST) {
+//       dout << endl << " SW:" << SolnBlk.Grid.Cell[ico-1][jco].Xc << SolnBlk.Grid.Cell[ico][jco-1].Xc << " " << SolnBlk.U[ico-1][jco].psi << " " << SolnBlk.U[ico][jco-1].psi;
+//     }
+    dout << endl << pn;// << " " << fn;
 #endif
 
     // Add the computed point to the list.
@@ -1310,24 +1352,31 @@ int Trace_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
 }
 
 
-/**********************************************************************
- * Routine: Flag_Infected_Cell                                        *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Flag_Infected_Cell                                        
+ *                                                                    
+ * Flag infected cells and compile a list of all faces that the       
+ * interfaces intersects with. Also identify infected cells that live 
+ * in the ghost cell layer.                                           
  **********************************************************************/
 void Flag_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
 			const int &ic,
 			const int &jc,
 			const double &epsilon,
+			int &nstart,
 			int &ncells,
-			int &start) {
+			LinkedList<int> &start) {
 
   if (fabs(SolnBlk.U[ic][jc].psi) < epsilon) {
 
     // Flag cell CENTER.
     SolnBlk.cut[ic][jc].center = INFECTED;
-    SolnBlk.Trace[ncells].i = ic; SolnBlk.Trace[ncells].j = jc; SolnBlk.Trace[ncells].face = CENTER; ncells++;
-    if (start == -1 && (ic == SolnBlk.ICu+1 || ic == SolnBlk.ICl-1 ||
-			jc == SolnBlk.JCu+1 || jc == SolnBlk.JCl-1)) start = ncells-1;
+    SolnBlk.Trace.add(Trace_Data(ic,jc,CENTER));
+    ncells++;
+    if (ic == SolnBlk.ICu+1 || ic == SolnBlk.ICl-1 || jc == SolnBlk.JCu+1 || jc == SolnBlk.JCl-1) {
+      start.add(ncells-1);
+      nstart++;
+    }
   } else {
 
     // Flag NORTH face.
@@ -1336,8 +1385,12 @@ void Flag_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
     if (jc <= SolnBlk.JCu && SolnBlk.U[ic][jc].psi*SolnBlk.U[ic][jc+1].psi <= ZERO &&
 	fabs(SolnBlk.U[ic][jc+1].psi) > epsilon) {	
       SolnBlk.cut[ic][jc].north = INFECTED;
-      SolnBlk.Trace[ncells].i = ic; SolnBlk.Trace[ncells].j = jc; SolnBlk.Trace[ncells].face = NORTH; ncells++;
-      if (start == -1 && ic == SolnBlk.ICu+1) start = ncells-1;
+      SolnBlk.Trace.add(Trace_Data(ic,jc,NORTH));
+      ncells++;
+      if (ic == SolnBlk.ICu+1) {
+	start.add(ncells-1);
+	nstart++;
+      }
     }
 
     // Flag SOUTH face.
@@ -1346,8 +1399,12 @@ void Flag_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
     if (jc >= SolnBlk.JCl && SolnBlk.U[ic][jc].psi*SolnBlk.U[ic][jc-1].psi <= ZERO &&
 	fabs(SolnBlk.U[ic][jc-1].psi) > epsilon) {
       SolnBlk.cut[ic][jc].south = INFECTED;
-      SolnBlk.Trace[ncells].i = ic; SolnBlk.Trace[ncells].j = jc; SolnBlk.Trace[ncells].face = SOUTH; ncells++;
-      if (start == -1 && ic == SolnBlk.ICl-1) start = ncells-1;
+      SolnBlk.Trace.add(Trace_Data(ic,jc,SOUTH));
+      ncells++;
+      if (ic == SolnBlk.ICl-1) {
+	start.add(ncells-1);
+	nstart++;
+      }
     }
 
     // Flag EAST face.
@@ -1356,8 +1413,12 @@ void Flag_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
     if (ic <= SolnBlk.ICu && SolnBlk.U[ic][jc].psi*SolnBlk.U[ic+1][jc].psi <= ZERO &&
 	fabs(SolnBlk.U[ic+1][jc].psi) > epsilon) {
       SolnBlk.cut[ic][jc].east = INFECTED;
-      SolnBlk.Trace[ncells].i = ic; SolnBlk.Trace[ncells].j = jc; SolnBlk.Trace[ncells].face = EAST; ncells++;
-      if (start == -1 && jc == SolnBlk.JCl-1) start = ncells-1;
+      SolnBlk.Trace.add(Trace_Data(ic,jc,EAST));
+      ncells++;
+      if (jc == SolnBlk.JCl-1) {
+	start.add(ncells-1);
+	nstart++;
+      }
     }
 
     // Flag WEST face.
@@ -1366,8 +1427,12 @@ void Flag_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
     if (ic >= SolnBlk.ICl && SolnBlk.U[ic][jc].psi*SolnBlk.U[ic-1][jc].psi <= ZERO &&
 	fabs(SolnBlk.U[ic-1][jc].psi) > epsilon) {
       SolnBlk.cut[ic][jc].west = INFECTED;
-      SolnBlk.Trace[ncells].i = ic; SolnBlk.Trace[ncells].j = jc; SolnBlk.Trace[ncells].face = WEST; ncells++;
-      if (start == -1 && jc == SolnBlk.JCu+1) start = ncells-1;
+      SolnBlk.Trace.add(Trace_Data(ic,jc,WEST));
+      ncells++;
+      if (jc == SolnBlk.JCu+1) {
+	start.add(ncells-1);
+	nstart++;
+      }
     }
 
     // Flag NORTH-EAST face.
@@ -1375,7 +1440,8 @@ void Flag_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
 	fabs(SolnBlk.U[ic+1][jc].psi) > epsilon && fabs(SolnBlk.U[ic][jc+1].psi) > epsilon &&
 	SolnBlk.U[ic+1][jc].psi*SolnBlk.U[ic][jc+1].psi <= ZERO) {
       SolnBlk.cut[ic][jc].north_east = INFECTED;
-      SolnBlk.Trace[ncells].i = ic; SolnBlk.Trace[ncells].j = jc; SolnBlk.Trace[ncells].face = NORTH_EAST; ncells++;
+      SolnBlk.Trace.add(Trace_Data(ic,jc,NORTH_EAST));
+      ncells++;
     }
 
     // Flag SOUTH-WEST face.
@@ -1383,19 +1449,20 @@ void Flag_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
 	fabs(SolnBlk.U[ic-1][jc].psi) > epsilon && fabs(SolnBlk.U[ic][jc-1].psi) > epsilon &&
 	SolnBlk.U[ic-1][jc].psi*SolnBlk.U[ic][jc-1].psi <= ZERO) {
       SolnBlk.cut[ic][jc].south_west = INFECTED;
-      SolnBlk.Trace[ncells].i = ic; SolnBlk.Trace[ncells].j = jc; SolnBlk.Trace[ncells].face = SOUTH_WEST; ncells++;
+      SolnBlk.Trace.add(Trace_Data(ic,jc,SOUTH_WEST));
+      ncells++;
     }
 
   }
 
 }
 
-/**********************************************************************
- * Routine: Clean_Infected_Cell                                       *
- *                                                                    *
- * This routine turns off the appropriate flags of the adjacent cells *
- * for nodes that have been used to locate an interface point.        *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Clean_Infected_Cell                                       
+ *                                                                    
+ * This routine turns off the appropriate flags of the adjacent cells 
+ * for nodes that have been used to locate an interface point.        
+ *                                                                    
  **********************************************************************/
 void Clean_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
 			 const int &ic,

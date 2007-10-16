@@ -2,7 +2,7 @@
 #
 #PBS -N star_curv
 #PBS -q iqmaster
-#PBS -l walltime=1:00:00,nodes=1:ppn=4:itanium-8G,other=day
+#PBS -l walltime=1:00:00,nodes=1:ppn=4:itanium-8G,other=night
 #PBS -W group_list=cfd
 
 cd /nfs/fe03/d1/cfd/samuel/CFFC/examples/LevelSet2D/star/curvature/
