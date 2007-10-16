@@ -22,20 +22,20 @@
  variety of solution techniques appropriate for the problem.  The
  PDEs that can be treated include:
 
- \li the scalar advection equation,
- \li the inviscid Burger's equation,
- \li the Poisson equation,
- \li the scalar heat equation,
- \li the hyperbolic heat equations (Maxwell-Cattaneo equations),
- \li the advection diffusion equation,
- \li the Euler equations of continuum fluid dynamics,
- \li the Euler/dusty-gas equations,
- \li the Euler multispecies with finite rate chemistry equation system,
- \li the Navier-Stokes equations of continuum fluid dynamics,
- \li the ideal MHD equations,
- \li the 10-moment equations of the Gaussian closure,
- \li the generalized 10-moment equations with heat conduction,
- \li the 35-moment equations of the Gaussian-based 35-moment closure.
+ - the scalar advection equation,
+ - the inviscid Burger's equation,
+ - the Poisson equation,
+ - the scalar heat equation,
+ - the hyperbolic heat equations (Maxwell-Cattaneo equations),
+ - the advection diffusion equation,
+ - the Euler equations of continuum fluid dynamics,
+ - the Euler/dusty-gas equations,
+ - the Euler multispecies with finite rate chemistry equation system,
+ - the Navier-Stokes equations of continuum fluid dynamics,
+ - the ideal MHD equations,
+ - the 10-moment equations of the Gaussian closure,
+ - the generalized 10-moment equations with heat conduction,
+ - the 35-moment equations of the Gaussian-based 35-moment closure.
 
  The program is built using the CFFC library.
 
