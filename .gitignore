@@ -34,13 +34,18 @@ tecplot.phy
 *.dvi
 *.toc
 *.idx
+*.tex
+*.sty
+*.ilg
+*.ind
+*.ttf
 
 # html document directories
 *.html
 *.png
 *.gif
 *.css
-images.tex
+iamges.tex
 images.log
 images.aux
 images.pl
