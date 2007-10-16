@@ -4,7 +4,7 @@
 #
 # SOLVER PARAMETERS:
 Time_Accurate = 
-1
+0
 Time_Integration_Type =
 Explicit_Runge_Kutta
 N_Stage =
@@ -60,7 +60,7 @@ Number_of_Cells_Jdir =
 Number_of_Ghost_Cells =
 3
 Number_of_Blocks_Idir = 
-2
+4
 Number_of_Blocks_Jdir =
 2
 Number_of_Blocks_Per_Processor =
@@ -70,9 +70,9 @@ Number_of_Blocks_Per_Processor =
 Hamilton_Jacobi_CFL_Number =
 0.5
 Time_Max =
-0.0
+1.0
 Maximum_Number_of_Time_Steps =
-0
+1
 #
 # EIKONAL EQUATION PARAMETERS:
 Redistance_Frequency =

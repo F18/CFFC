@@ -1,7 +1,7 @@
-/**********************************************************************
- * LevelSet2DQuadInterfaceMultiBlock.cc:                              *
- *              Multi-block versions of subroutines for 2D Level Set  *
- *              multi-block quadrilateral mesh solution classes.      *
+/******************************************************************//**
+ * \file LevelSet2DQuadInterfaceMultiBlock.cc:                        
+ *              Multi-block versions of subroutines for 2D Level Set  
+ *              multi-block quadrilateral mesh solution classes.      
  **********************************************************************/
 
 // Include 2D LevelSet quadrilateral mesh solution header file.
@@ -15,13 +15,13 @@
  *                          Subroutines.                              *
  **********************************************************************/
 
-/**********************************************************************
- * Routine: Set_Interface_List                                        *
- *                                                                    *
- * Set the interface list to the given list on each of the solution   *
- * blocks in the 1D array of 2D quadrilateral multi-block solution    *
- * blocks.                                                            *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Set_Interface_List                                        
+ *                                                                    
+ * Set the interface list to the given list on each of the solution   
+ * blocks in the 1D array of 2D quadrilateral multi-block solution    
+ * blocks.                                                            
+ *                                                                    
  **********************************************************************/
 int Set_Interface_List(LevelSet2D_Quad_Block *Soln_ptr,
 		       AdaptiveBlock2D_List &Soln_Block_List,
@@ -43,12 +43,12 @@ int Set_Interface_List(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Initialize_Interfaces                                     *
- *                                                                    *
- * Initializes the interface(s) on each of the solution blocks in the *
- * 1D array of 2D quadrilateral multi-block solution blocks.          *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Initialize_Interfaces                                     
+ *                                                                    
+ * Initializes the interface(s) on each of the solution blocks in the 
+ * 1D array of 2D quadrilateral multi-block solution blocks.          
+ *                                                                    
  **********************************************************************/
 int Initialize_Interfaces(LevelSet2D_Quad_Block *Soln_ptr,
 			  AdaptiveBlock2D_List &Soln_Block_List,
@@ -92,13 +92,13 @@ int Initialize_Interfaces(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Exact_Initial_Extension                                   *
- *                                                                    *
- * Exact initialization of the level set function and the extended    *
- * front speeds.  Only available for line, circle, ellipse, and       *
- * square interface.                                                  *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Exact_Initial_Extension                                   
+ *                                                                    
+ * Exact initialization of the level set function and the extended    
+ * front speeds.  Only available for line, circle, ellipse, and       
+ * square interface.                                                  
+ *                                                                    
  **********************************************************************/
 int Exact_Initial_Extension(LevelSet2D_Quad_Block *Soln_ptr,
 			    AdaptiveBlock2D_List &Soln_Block_List,
@@ -125,14 +125,14 @@ int Exact_Initial_Extension(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Geometric_Extension_Problem                               *
- *                                                                    *
- * Geometric solution of the extension problems involving the level   *
- * set function and the normal front speed on each of the solution    *
- * blocks in the 1D array of 2D quadrilateral multi-block solution    *
- * blocks.                                                            *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Geometric_Extension_Problem                               
+ *                                                                    
+ * Geometric solution of the extension problems involving the level   
+ * set function and the normal front speed on each of the solution    
+ * blocks in the 1D array of 2D quadrilateral multi-block solution    
+ * blocks.                                                            
+ *                                                                    
  **********************************************************************/
 int Geometric_Extension_Problem(LevelSet2D_Quad_Block *Soln_ptr,
 				AdaptiveBlock2D_List &Soln_Block_List,
@@ -154,14 +154,14 @@ int Geometric_Extension_Problem(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Scalar_Geometric_Extension_Problem                        *
- *                                                                    *
- * Geometric solution of the extension problems involving the level   *
- * set function and the normal front speed on each of the solution    *
- * blocks in the 1D array of 2D quadrilateral multi-block solution    *
- * blocks.                                                            *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Scalar_Geometric_Extension_Problem                        
+ *                                                                    
+ * Geometric solution of the extension problems involving the level   
+ * set function and the normal front speed on each of the solution    
+ * blocks in the 1D array of 2D quadrilateral multi-block solution    
+ * blocks.                                                            
+ *                                                                    
  **********************************************************************/
 int Scalar_Geometric_Extension_Problem(LevelSet2D_Quad_Block *Soln_ptr,
 				       AdaptiveBlock2D_List &Soln_Block_List,
@@ -183,13 +183,13 @@ int Scalar_Geometric_Extension_Problem(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: RetrieveInterfaceSpline                                   *
- *                                                                    *
- * This routine locates the zero level set contained within the 1D    *
- * array of 2D quadrilateral multi-block solution blocks.  The        *
- * interface location is saved as a spline(s).                        *
- *                                                                    *
+/******************************************************************//**
+ * Routine: RetrieveInterfaceSpline                                   
+ *                                                                    
+ * This routine locates the zero level set contained within the 1D    
+ * array of 2D quadrilateral multi-block solution blocks.  The        
+ * interface location is saved as a spline(s).                        
+ *                                                                    
  **********************************************************************/
 int Retrieve_Interface_Spline(LevelSet2D_Quad_Block *Soln_ptr,
 			      AdaptiveBlock2D_List &Soln_Block_List) {
@@ -236,15 +236,15 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Share_Interface_Information                               *
- *                                                                    *
- * The information regarding each interface must be known by all of   *
- * the solution blocks.  This function collects the interface         *
- * information on each processor and shares it with the other         *
- * processors if running a parallel case.  Interfaces that are        *
- * actually just segments of a bigger interface are concatenated.     *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Share_Interface_Information                               
+ *                                                                    
+ * The information regarding each interface must be known by all of   
+ * the solution blocks.  This function collects the interface         
+ * information on each processor and shares it with the other         
+ * processors if running a parallel case.  Interfaces that are        
+ * actually just segments of a bigger interface are concatenated.     
+ *                                                                    
  **********************************************************************/
 int Share_Interface_Information(LevelSet2D_Quad_Block *Soln_ptr,
 				QuadTreeBlock_DataStructure &QuadTree,
@@ -272,6 +272,7 @@ int Share_Interface_Information(LevelSet2D_Quad_Block *Soln_ptr,
   Interface2D temp_Interface;
   double dx;
 
+  // Set the tolerance used for matching/concatenating interfaces.
   if (Soln_Block_List.Block[0].used == ADAPTIVEBLOCK2D_USED) {
     dx = 0.01*max(TOLER,min(fabs(Soln_ptr[0].Grid.Cell[2][2].Xc.x-Soln_ptr[0].Grid.Cell[1][2].Xc.x),
 			    fabs(Soln_ptr[0].Grid.Cell[2][2].Xc.y-Soln_ptr[0].Grid.Cell[2][1].Xc.y)));
@@ -418,6 +419,17 @@ int Share_Interface_Information(LevelSet2D_Quad_Block *Soln_ptr,
   // MPI barrier to ensure processor synchronization.
   CFFC_Barrier_MPI();
 
+#endif
+
+
+#ifdef _RETRIEVE_DEBUG_
+  dout << endl << "ACTIVE INTERFACES BEFORE STITCHING";
+  for (int ni = 1; ni <= Number_of_Interfaces; ni++) {
+    dout << endl << "ni = " << ni << " of " << Number_of_Interfaces;
+    dout << endl << List[ni];
+  }
+  dout << endl << "**************************************************";
+  dout.flush();
 #endif
 
   int next = 0, n_containted_points;
@@ -618,14 +630,16 @@ int Share_Interface_Information(LevelSet2D_Quad_Block *Soln_ptr,
     for (int ni = 1; ni <= Number_of_Interfaces; ni++) if (Active[ni]) Nactive++;
     if (Nactive != 1) {
 #ifdef _RETRIEVE_DEBUG_
-      dout << endl << " ACTIVE INTERFACES: ";
+      dout << endl << " ACTIVE INTERFACES AFTER STITCHING: " << Nactive;
       for (int ni = 1; ni <= Number_of_Interfaces; ni++) {
- 	if (Active[ni]) dout << endl << List[ni];
+ 	if (Active[ni]) {
+	  dout << endl << "ni=" << ni;
+	  dout << endl << List[ni];
+	}
       }
       dout << endl << " ==================================================="; dout.flush();
       dout << endl << List;
 #endif
-      cout << "Boohoo... it's not working!" << endl;
       return 11111;
     }
     //////////////////////////

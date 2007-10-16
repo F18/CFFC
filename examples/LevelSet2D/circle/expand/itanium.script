@@ -3,10 +3,10 @@
 #PBS -N expand
 #PBS -q iqmaster
 #PBS -l walltime=0:10:00,nodes=1:ppn=4:itanium-8G,other=day
-#PBS -W group_list=jai
+#PBS -W group_list=cfd
 
-cd /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/pdes++/examples/LevelSet2D/circle/expand/
-mpirun -np 4 --gm-kill 2 /nfs/fe01/d1/cfd/jai/CFDkit+caboodle/src/levelset2D -f circle.in -pde LevelSet2D >& circle.log
+cd /nfs/fe03/d1/cfd/samuel/CFFC/examples/LevelSet2D/circle/expand/
+mpirun -np 4 --gm-kill 2 /nfs/fe03/d1/cfd/samuel/CFFC/src_2D/levelset2D -f circle.in >& circle.log
 cat circle_cpu*.dat > points.dat
 cat circle_cells_cpu*.dat > cells.dat
 cat circle_circle_cpu*.dat > circle.dat
