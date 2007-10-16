@@ -45,7 +45,8 @@ tecplot.phy
 *.png
 *.gif
 *.css
-iamges.tex
+formula.repository
+images.tex
 images.log
 images.aux
 images.pl
