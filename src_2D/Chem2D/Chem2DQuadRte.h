@@ -48,7 +48,7 @@ inline void Rte2DSolver::Copy_SRC_Solution_Vars(Chem2D_Quad_Block *Chem2D_SolnBl
   static const double fsoot = ZERO;  // no soot for now
   
   // make some pointers to help readability
-  Rte2D_Quad_Block **Rte2D_SolnBlk = &Local_SolnBlk;
+  Rte2D_Quad_Block *Rte2D_SolnBlk = Local_SolnBlk;
   AdaptiveBlock2D_List *Rte2D_Soln_Block_List = &List_of_Local_Solution_Blocks;
 
   //
@@ -60,24 +60,24 @@ inline void Rte2DSolver::Copy_SRC_Solution_Vars(Chem2D_Quad_Block *Chem2D_SolnBl
       //
       // loop over all the cells in the grid
       //
-      for ( int i=Rte2D_SolnBlk[n]->ICl-Rte2D_SolnBlk[n]->Nghost; 
-	    i<=Rte2D_SolnBlk[n]->ICu+Rte2D_SolnBlk[n]->Nghost; 
+      for ( int i=Rte2D_SolnBlk[n].ICl-Rte2D_SolnBlk[n].Nghost; 
+	    i<=Rte2D_SolnBlk[n].ICu+Rte2D_SolnBlk[n].Nghost; 
 	    i++ ) {
-	for ( int j=Rte2D_SolnBlk[n]->JCl-Rte2D_SolnBlk[n]->Nghost; 
-	      j<=Rte2D_SolnBlk[n]->JCu+Rte2D_SolnBlk[n]->Nghost; 
+	for ( int j=Rte2D_SolnBlk[n].JCl-Rte2D_SolnBlk[n].Nghost; 
+	      j<=Rte2D_SolnBlk[n].JCu+Rte2D_SolnBlk[n].Nghost; 
 	      j++ ) {
 
 	  // first, get radiating species concentrations
 	  Chem2D_SolnBlk[n].W[i][j].MoleFracOfRadSpec( xCO,  xH2O, xCO2, xO2 );
 
 	  // compute the new state
- 	  Rte2D_SolnBlk[n]->M[i][j].ComputeNewState( Chem2D_SolnBlk[n].W[i][j].p,
-						     Chem2D_SolnBlk[n].W[i][j].T(),
-						     xCO,
-						     xH2O,
-						     xCO2,
-						     xO2,
-						     fsoot );
+ 	  Rte2D_SolnBlk[n].M[i][j].ComputeNewState( Chem2D_SolnBlk[n].W[i][j].p,
+						    Chem2D_SolnBlk[n].W[i][j].T(),
+						    xCO,
+						    xH2O,
+						    xCO2,
+						    xO2,
+						    fsoot );
 
 	} // endfor - i
       } // endfor - j
@@ -109,7 +109,7 @@ inline void Rte2DSolver::Copy_Rte2D_Solution_Vars(Chem2D_Quad_Block *Chem2D_Soln
   double source;
 
   // make some pointers to help readability
-  Rte2D_Quad_Block **Rte2D_SolnBlk = &Local_SolnBlk;
+  Rte2D_Quad_Block *Rte2D_SolnBlk = Local_SolnBlk;
   AdaptiveBlock2D_List *Rte2D_Soln_Block_List = &List_of_Local_Solution_Blocks;
 
   //
@@ -121,15 +121,15 @@ inline void Rte2DSolver::Copy_Rte2D_Solution_Vars(Chem2D_Quad_Block *Chem2D_Soln
       //
       // loop over all the cells in the grid
       //
-      for ( int i=Rte2D_SolnBlk[n]->ICl-Rte2D_SolnBlk[n]->Nghost; 
-	    i<=Rte2D_SolnBlk[n]->ICu+Rte2D_SolnBlk[n]->Nghost; 
+      for ( int i=Rte2D_SolnBlk[n].ICl-Rte2D_SolnBlk[n].Nghost; 
+	    i<=Rte2D_SolnBlk[n].ICu+Rte2D_SolnBlk[n].Nghost; 
 	    i++ ) {
-	for ( int j=Rte2D_SolnBlk[n]->JCl-Rte2D_SolnBlk[n]->Nghost; 
-	      j<=Rte2D_SolnBlk[n]->JCu+Rte2D_SolnBlk[n]->Nghost; 
+	for ( int j=Rte2D_SolnBlk[n].JCl-Rte2D_SolnBlk[n].Nghost; 
+	      j<=Rte2D_SolnBlk[n].JCu+Rte2D_SolnBlk[n].Nghost; 
 	      j++ ) {
 
 	  // compute the divergence of the radiant heat flux
- 	  source = Rte2D_SolnBlk[n]->U[i][j].Sr( Rte2D_SolnBlk[n]->M[i][j] );
+ 	  source = Rte2D_SolnBlk[n].U[i][j].Sr( Rte2D_SolnBlk[n].M[i][j] );
 	  
 	  // store the radiant heat flux
 	  Chem2D_SolnBlk[n].U[i][j].Srad = source;

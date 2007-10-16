@@ -88,7 +88,7 @@ using namespace std;
 
 // If you define this variable, the number of species will be
 // predetermined for faster calculations.., however it is not as general 
-#define STATIC_NUMBER_OF_SPECIES 36 //2 AIR, 6 2STEP_CH4
+#define STATIC_NUMBER_OF_SPECIES 6 //2 AIR, 6 2STEP_CH4
 
 // Flag for Lower bounds check on T in Chem2D_cState::T(void)
 // If you define this, then the value of T computed in 
