@@ -27,9 +27,9 @@
 #include "HexaExplicitSolver.h"
 #endif //_HEXA_EXPLICIT_SOLVER
 
-// #ifndef _NKS_INCLUDED
-// #include "../NewtonKrylovSchwarz/NKS.h"
-// #endif //_NKS_INCLUDED
+#ifndef _NKS_INCLUDED
+#include "../NewtonKrylovSchwarz/NKS.h"
+#endif //_NKS_INCLUDED
 
 /*! *****************************************************
  * Routine: Initialize_Grid                             *
@@ -258,8 +258,8 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
     /********************** IMPLICIT **********************************/  
     if(Data.number_of_implicit_time_steps < Solution_Data.Input.NKS_IP.Maximum_Number_of_NKS_Iterations){
       cerr<< "\n NKS would be here, but not yet. \n"; return error_flag;
-      //   	error_flag = Hexa_Newton_Krylov_Schwarz_Solver<SOLN_pSTATE, SOLN_cSTATE> 
-      //       	  (Data,Solution_Data);
+        	error_flag = Hexa_Newton_Krylov_Schwarz_Solver<SOLN_pSTATE, SOLN_cSTATE> 
+            	  (Data,Solution_Data);
     }
      
     /*! ************************** POST PROCESSSING *******************************
