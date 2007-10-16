@@ -151,10 +151,14 @@ namespace tut
     IP.Verbose() = OFF;
 
     // Set up domain
-    SetUpDomain("sod.in");
+    SetUpDomain("sod_HighOrder.in");
 
     // Reconstruct the solution in one of the cells
-    
+    SolnBlk[5].CellHighOrder().ComputeReconstructionPseudoInverse(SolnBlk,5);
+    SolnBlk[5].CellHighOrder().ComputeUnlimitedSolutionReconstruction(SolnBlk,5,RECONSTRUCTION_CENO);
+    //     Print_(SolnBlk[5].CellHighOrder().LHS());
+    //     Print_(SolnBlk[5].CellHighOrder().GeomWeights());
+    //     Print_(SolnBlk[5].CellHighOrder().CellDeriv());
 
   }
 

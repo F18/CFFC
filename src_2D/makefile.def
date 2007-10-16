@@ -34,6 +34,18 @@ PROFILING = OFF
 # CPPFLAG -D__USE_MALLOC explicitly handles C++ string memory issues, but 
 # is only really necessary when using memory checkers, ( ie. valgrind) 
 
+# Do Checking:
+# Set to ON for checking conditions controled by the _DO_CHECKS macro
+# Set to OFF in order to run faster (no condition checking)
+DO_CHECKS = ON
+
+# Use 'assert' : Set to OFF if you want to use the 'assert' macro.
+#
+#                Set to ON if you want to DEACTIVATE the 'assert' macro (runs faster)!
+#                ATTENTION: All your checks with 'assert' will be turned OFF!!!!
+NO_ASSERT = OFF
+
+
 #-----------------------------------------------------------#
 #       Platform Specific Compiler Flags                    #
 #-----------------------------------------------------------#
@@ -491,4 +503,17 @@ ifeq ($(TUT_TESTING),ON)
   CPPFLAGS += $(TUT_CPP_FLAGS)
 else
   CPPFLAGS += -D_NO_TUT_TESTING
+endif
+
+
+#
+# Add DO_CHECKS flags
+ifeq ($(DO_CHECKS),ON)
+  CPPFLAGS += -D_DO_CHECKS
+endif
+
+#
+# Add NO_ASSERT if required
+ifeq ($(NO_ASSERT),ON)
+  CPPFLAGS += -DNDEBUG
 endif

@@ -18,6 +18,7 @@ using std::vector;
 #include "../Math/NumericalLibrary.h"
 #include "CENO_ExecutionMode.h"
 #include "../Grid/Cell1D.h"
+#include "ReconstructionSolvers1D.h"
 
 /*********************************
  * Declare the HighOrder1D class *
@@ -53,29 +54,30 @@ class HighOrder1D{
   
 public: 
 
+  //@{ @name Defined public types:
   typedef SOLN_STATE Soln_State;
-
-  /* Use TaylorDerivativesContainer_1D */
+  typedef Cell1D_Uniform GeometryType;
   typedef TaylorDerivativesContainer<OneD,Soln_State> DerivativesContainer;
   typedef TaylorDerivativesContainer<OneD,double> GeometricMoments;
   typedef typename DerivativesContainer::Derivative  Derivative;
-  typedef Cell1D_Uniform GeometryType;
+  //@}
   
-  // Constructors
-  HighOrder1D(void);
-  HighOrder1D(int ReconstructionOrder, GeometryType & Cell);
+  //@{ @name Constructors:
+  HighOrder1D(void);		//!< Simple constructor 
+  HighOrder1D(int ReconstructionOrder, GeometryType & Cell); //!< Advanced constructor
+  HighOrder1D( const HighOrder1D & rhs); //!< Copy constructor
+  //@}
 
-  // Copy constructor
-  HighOrder1D( const HighOrder1D & rhs);
 
-  // Destructor
+  //@{ @name Destructors:
   ~HighOrder1D(void){ Geom = NULL;}
   void deallocate(void);
+  //@} 
 
-  // Assignment operator
-  HighOrder1D<Soln_State> & operator=(const HighOrder1D<Soln_State> & rhs);
+  HighOrder1D<Soln_State> & operator=(const HighOrder1D<Soln_State> & rhs); //!< Assignment operator
 
-  /* Field access */
+  //@{ @name Field access functions:
+  //@{ @name Taylor Derivatives:
   const DerivativesContainer & CellDeriv(void) const {return TD;}
   DerivativesContainer & CellDeriv(void) {return TD;}
   const Soln_State & CellDeriv(const int & p1) const {return TD(p1);}
@@ -84,38 +86,49 @@ public:
   double & CellDeriv(const int & p1, const int & Variable) { return TD(p1)[Variable];}
   Derivative & CellDeriv_InPosition(const int & position) {return TD(position,true,true,true);}
   const Derivative & CellDeriv_InPosition(const int & position) const {return TD(position,true,true,true);}
+  //@} 
 
-  const int NumberOfTaylorDerivatives() const {return TD.size();}
+  const int NumberOfTaylorDerivatives(void) const {return TD.size();}
 
-  const GeometricMoments & CellGeomCoeff() const { return GeomCoeff; }
-  GeometricMoments & CellGeomCoeff() {return GeomCoeff;}
+  const GeometricMoments & CellGeomCoeff(void) const { return GeomCoeff; }
+  GeometricMoments & CellGeomCoeff(void) {return GeomCoeff;}
   const double & CellGeomCoeff(const int & p1) {return GeomCoeff(p1);}
   const double & CellGeomCoeff_InPosition(const int & position) {return GeomCoeff(position,true,true,true).D();}
 
-  const int & CellRings() const {return rings;}
-  const int & CellRecOrder() const {return TD.RecOrder();}
+  const int & CellRings(void) const {return rings;}
+  const int & CellRecOrder(void) const {return TD.RecOrder();}
 
-  /* Monotonicity variables --> high-order */
-  const vector<short int> & CellInadequateFit() const { return LimitedCell;}
-  vector<short int> & CellInadequateFit(){ return LimitedCell;}
+  MemoryStorageENO_1D & ENO_MemoryPool(void){ return ENO_Mem; }
+  const MemoryStorageENO_1D & ENO_MemoryPool(void) const { return ENO_Mem; }
+
+  //@{ @name Monotonicity info for high-order
+  const vector<short int> & CellInadequateFit(void) const { return LimitedCell;}
+  vector<short int> & CellInadequateFit(void){ return LimitedCell;}
   const short int & CellInadequateFit( const int VarPosition) const { return LimitedCell[VarPosition-1];}
   short int & CellInadequateFit( const int VarPosition){ return LimitedCell[VarPosition-1];}
+  //@}
 
-  const Soln_State & CellSmoothnessIndicator() const { return SI;}
-  Soln_State & CellSmoothnessIndicator(){ return SI;}
+  //@{ @name Smoothness indicator
+  const Soln_State & CellSmoothnessIndicator(void) const { return SI;}
+  Soln_State & CellSmoothnessIndicator(void){ return SI;}
   const double & CellSmoothnessIndicator(const int & VarPosition)const{ return SI[VarPosition];}
   double & CellSmoothnessIndicator( const int & VarPosition){ return SI[VarPosition];}
+  //@}
 
-  /* Access the pseudo-inverse of the LHS term in the CENO reconstruction */
+  //@{ @name Pseudo-inverse of the LHS term in the CENO reconstruction
   DenseMatrix & LHS(void) {return CENO_LHS;}
   const DenseMatrix & LHS(void) const {return CENO_LHS;}
   double & LHS(const int & IndexI, const int & IndexJ) {return CENO_LHS(IndexI,IndexJ);}
   const double & LHS(const int & IndexI, const int & IndexJ) const {return CENO_LHS(IndexI,IndexJ);}
-  /* Access the geometric weights assigned to the cells in the stencil */
+  //@}
+
+  //@{ @name Geometric weights assigned to the cells that are part of the stencil
   ColumnVector & GeomWeights(void){return CENO_Geometric_Weights;}
   const ColumnVector & GeomWeights(void) const {return CENO_Geometric_Weights;}
   double & GeomWeights(const int & Index){return CENO_Geometric_Weights(Index);}
   const double & GeomWeights(const int & Index) const {return CENO_Geometric_Weights(Index);}
+  //@}
+  //@}
 
   // Cell geometry
   GeometryType* Geometry(void){return Geom;}
@@ -152,6 +165,18 @@ public:
   template<typename FO, class ReturnType>
   ReturnType IntegrateOverTheCell(const FO FuncObj, const int & digits, ReturnType _dummy_param);
 
+  bool IsPseudoInversePreComputed(void) const { return (PseudoInverseFlag==ON) ? true:false; }
+
+  //@{ @name Reconstructions:
+  template<class Soln_Block_Type>
+  void ComputeUnlimitedSolutionReconstruction(Soln_Block_Type *SolnBlk, const int iCell, const int ReconstructionMethod);
+
+  template<class Soln_Block_Type>
+  void ComputeReconstructionPseudoInverse(Soln_Block_Type *SolnBlk, const int iCell);
+
+
+  //@}
+
   /* Friend functions */
   friend bool operator== <Soln_State> (const HighOrder1D<Soln_State> & left,
 				       const HighOrder1D<Soln_State> & right);
@@ -166,36 +191,46 @@ public:
 protected:
   
 private:
-  DerivativesContainer TD;  	// High-order TaylorDerivatives
-  GeometricMoments GeomCoeff;   // The integrals of the geometric moments with respect to the centroid
-  Soln_State SI;                // The values of the smoothness indicator calculated for each variable
-  vector<short int> LimitedCell; // Monotonicity flag: Values --> OFF - high-order reconstruction
+  DerivativesContainer TD;  	//!< High-order TaylorDerivatives
+  GeometricMoments GeomCoeff;   //!< The integrals of the geometric moments with respect to the centroid
+  Soln_State SI;                //!< The values of the smoothness indicator calculated for each variable
+  vector<short int> LimitedCell; //!< Monotonicity flag: Values --> OFF - high-order reconstruction
                                  //                               ON - limited linear reconstruction
-  int rings;                    // Number of rings used to generate the reconstruction stencil
+  int rings;                    //!< Number of rings used to generate the reconstruction stencil
+  
+
+  short PseudoInverseFlag;	//!< Flag to indicate whether the pseudo-inverse has been set or not
 
   /* Create storage for the pseudo-inverse of the LHS term in the CENO reconstruction */
   DenseMatrix CENO_LHS;
   ColumnVector CENO_Geometric_Weights;
 
   // Associate this reconstruction to a certain cell
-  GeometryType* Geom;    // Pointer to cell geometry
+  GeometryType* Geom;    //!< Pointer to cell geometry
 
+  /* Create memory pool for the ENO reconstruction */
+  static MemoryStorageENO_1D ENO_Mem;
 
   // Set Geometry_Ptr to point to the same geometry as the current Geom pointer
   void set_geometry_pointer(GeometryType* & Geometry_Ptr) const { Geometry_Ptr = Geom; }
 
   // Return the required number of neighbor rings
   static int NumberOfRings(int number_of_Taylor_derivatives);
+
 };
+
+/******************************************************
+ * Initialize the HighOrder1D class static variables  *
+ *****************************************************/
+template<class SOLN_STATE> MemoryStorageENO_1D HighOrder1D<SOLN_STATE>::ENO_Mem = MemoryStorageENO_1D(0);
 
 /****************************************************
  * Implement the HighOrder1D class member functions *
  ***************************************************/
-
 //! Default Constructor
 template<class SOLN_STATE> inline
 HighOrder1D<SOLN_STATE>::HighOrder1D(void):TD(0), GeomCoeff(0), SI(0),
-					   CENO_LHS(), CENO_Geometric_Weights(), Geom(NULL) {
+					   CENO_LHS(), CENO_Geometric_Weights(), PseudoInverseFlag(OFF), Geom(NULL) {
   // set rings
   SetRings();
 
@@ -210,7 +245,7 @@ HighOrder1D<SOLN_STATE>::HighOrder1D(void):TD(0), GeomCoeff(0), SI(0),
 template<class SOLN_STATE> inline
 HighOrder1D<SOLN_STATE>::HighOrder1D(int ReconstructionOrder, GeometryType & Cell):
   TD(ReconstructionOrder), GeomCoeff(ReconstructionOrder),
-  SI(0), CENO_LHS(), CENO_Geometric_Weights(){
+  SI(0), CENO_LHS(), CENO_Geometric_Weights(), PseudoInverseFlag(OFF){
 
   // set geometry pointer
   SetGeometryPointer(Cell);
@@ -238,6 +273,7 @@ HighOrder1D<SOLN_STATE>::HighOrder1D(const HighOrder1D<SOLN_STATE> & rhs): Geom(
   if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT && (!rhs.GeomWeights().null()) ){
     CENO_LHS = rhs.LHS();
     CENO_Geometric_Weights = rhs.GeomWeights();
+    PseudoInverseFlag = ON;
   }
 
   // point to the same geometry as rhs.Geom
@@ -260,6 +296,7 @@ HighOrder1D<SOLN_STATE> & HighOrder1D<SOLN_STATE>::operator=(const HighOrder1D<S
   if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT && (!rhs.GeomWeights().null()) ){
     CENO_LHS = rhs.LHS();
     CENO_Geometric_Weights = rhs.GeomWeights();
+    PseudoInverseFlag = ON;
   }
 
   // point to the same geometry as rhs.Geom
@@ -424,6 +461,11 @@ void HighOrder1D<SOLN_STATE>::InitializeVariable(int ReconstructionOrder, int Re
 
     // Set the number of rings
     SetRings();
+
+    // Allocate enough memory in the memory pool
+    if (ENO_Mem.NumOfUnknowns != CellDeriv().size()){
+      ENO_Mem.newsize(CellDeriv().size());
+    }
     break;
 
   case RECONSTRUCTION_ENO_CHARACTERISTIC:
@@ -435,6 +477,11 @@ void HighOrder1D<SOLN_STATE>::InitializeVariable(int ReconstructionOrder, int Re
 
     // Set the number of rings
     SetRings();
+
+    // Allocate enough memory in the memory pool
+    if (ENO_Mem.NumOfUnknowns != CellDeriv().size()){
+      ENO_Mem.newsize(CellDeriv().size());
+    }
     break;
 
   default:
@@ -468,6 +515,84 @@ ReturnType HighOrder1D<SOLN_STATE>::IntegrateOverTheCell(const FO FuncObj,
 				    _dummy_param,digits);
 }
 
+//! ComputeUnlimitedSolutionReconstruction()
+/*! 
+ * Compute the unlimited high-order reconstruction for 
+ * the computational cell iCell, using information provided by
+ * the SolnBlk domain and the 'ReconstructionMethod' algorithm.
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type>
+void HighOrder1D<SOLN_STATE>::ComputeUnlimitedSolutionReconstruction(Soln_Block_Type *SolnBlk,
+								     const int iCell,
+								     const int ReconstructionMethod){
+
+  vector<int> i_index(StencilSize()); 
+
+  switch(ReconstructionMethod){
+  case RECONSTRUCTION_CENO:
+    // Make Stencil
+    MakeReconstructionStencil(CellRings(),iCell,i_index);
+
+    // Solve reconstruction for the current cell
+    kExact_Reconstruction(*this,SolnBlk,iCell,i_index,StencilSize(),NumberOfTaylorDerivatives());
+
+    // Reset the CellInadequateFit flag & the limiter value in the Taylor derivatives container
+    for (int i = 0; i <= Soln_State::NumberOfVariables - 1; ++i){
+      LimitedCell[i] = OFF; /* reset the flags to OFF (smooth solution)*/
+    }
+    CellDeriv().ResetLimiter();
+    
+    break;
+    
+  case RECONSTRUCTION_ENO:
+    ENO_Reconstruction(SolnBlk,iCell,ENO_MemoryPool());
+    break;
+
+  case RECONSTRUCTION_ENO_CHARACTERISTIC:
+    ENO_Characteristics_Reconstruction(SolnBlk,iCell,ENO_MemoryPool());
+    break;
+    
+  default:
+    throw runtime_error("HighOrder1D ERROR: Unknown specified reconstruction method");
+
+  }
+}
+
+//! ComputeUnlimitedSolutionReconstruction()
+/*! 
+ * Compute the unlimited high-order reconstruction for 
+ * the computational cell iCell, using information provided by
+ * the SolnBlk domain and the 'ReconstructionMethod' algorithm.
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type>
+void HighOrder1D<SOLN_STATE>::ComputeReconstructionPseudoInverse(Soln_Block_Type *SolnBlk,
+								 const int iCell){
+
+  if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT){
+
+    vector<int> i_index(StencilSize()); 
+
+    // Make Stencil
+    MakeReconstructionStencil(CellRings(),iCell,i_index);
+    
+    // Form the left-hand-side (LHS) term for the current cell
+    kExact_Reconstruction_Compute_LHS(*this,SolnBlk,iCell,i_index,StencilSize(),NumberOfTaylorDerivatives());
+    
+    // Compute the pseudo-inverse and override the LHS term
+    LHS().pseudo_inverse_override();
+
+    // Reset the CellInadequateFit flag & the limiter value in the Taylor derivatives container
+    for (int i = 0; i <= Soln_State::NumberOfVariables - 1; ++i){
+      LimitedCell[i] = OFF; /* reset the flags to OFF (smooth solution)*/
+    }
+    CellDeriv().ResetLimiter();
+
+    // Set properly the PseudoInverseFlag
+    PseudoInverseFlag = ON;
+  }
+}
 
 //! Compute the solution at the left cell interface
 template<class SOLN_STATE> inline
