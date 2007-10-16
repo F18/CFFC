@@ -428,6 +428,9 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 				    MeshBlk, 
 				    Input_Parameters);
 
+    // Copy over computed Rte2D solution variables.
+    RteSolver->Copy_Rte2D_Solution_Vars(Local_SolnBlk);
+
     // set the current number of sequential solves and the update frequency
     number_sequential_solves = 0;
 
