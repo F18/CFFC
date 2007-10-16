@@ -1,6 +1,7 @@
-/**********************************************************************
- * LevelSet2DQuad.h: Header file defining 2D Level Set quadrilateral  *
- *                   mesh solution classes.                           *
+/******************************************************************//**
+ * \file LevelSet2DQuad.h:
+ *
+ * Header file defining 2D Level Set quadrilateral mesh solution classes.
  **********************************************************************/
 
 #ifndef _LEVELSET2D_QUAD_INCLUDED
@@ -46,11 +47,11 @@
 #define CLOSEDCURVE     50
 #define DOMAINBOUNDED   51
 
-#define CLEAN           0
-#define INFECTED        1
-#define UNCHECKED       2
+#define CLEAN           0  //!< Clean flag used in interface tracing.
+#define INFECTED        1  //!< Infected flag used in interface tracing.
+#define UNCHECKED       2  //!< Probably a deprecated flag.
 
-// Interface retrieval debugging option.
+//! Interface retrieval debugging option. Uncomment to print debugging files.
 #define _RETRIEVE_DEBUG_
 
 /*!
@@ -98,6 +99,10 @@ class Trace_Data {
       face; //!< Starting face.
 
   Trace_Data(void) { Zero(); }
+
+  Trace_Data(int ii, int jj, int fface) {
+    i = ii; j = jj; face = fface;
+  }
 
   void Zero(void) { i = 0; j = 0; face = 0; }
 
@@ -255,7 +260,7 @@ public:
   //@{ @name Interface storage and retracing information:
   Interface2D_List Interface_List; //!< Interface list.
   CutType                   **cut; //!< Cell cut types.
-  Trace_Data               *Trace; //!< Data to assist in interface tracing.
+  LinkedList<Trace_Data>    Trace; //!< Data to assist in interface tracing.
   //@}
 
   //@{ @name Creation, copy, and assignment constructors.
@@ -278,7 +283,6 @@ public:
     //Interface_List = NULL;
     // Cut class.
     cut = NULL;
-    Trace = NULL;
   }
 
   //! Copy constructor.
@@ -531,8 +535,6 @@ inline void LevelSet2D_Quad_Block::allocate(const int Ni, const int Nj, const in
   }
   FluxN = new LevelSet2DState[NCi]; FluxS = new LevelSet2DState[NCi];
   FluxE = new LevelSet2DState[NCj]; FluxW = new LevelSet2DState[NCj];
-  Trace = new Trace_Data[NCi*(NCj+1) + (NCi+1)*NCj];
-  for (int n = 0; n < NCi*(NCj+1) + (NCi+1)*NCj; n++) Trace[n].Zero();
 }
 
 /**********************************************************************
@@ -581,7 +583,7 @@ inline void LevelSet2D_Quad_Block::deallocate(void) {
   delete []Uo;    Uo   = NULL;
   delete []Uoo;   Uoo  = NULL;
   delete []cut;   cut  = NULL;
-  delete []Trace; Trace = NULL;
+  //delete []Trace; Trace = NULL;
   delete []FluxN; FluxN = NULL; delete []FluxS; FluxS = NULL;
   delete []FluxE; FluxE = NULL; delete []FluxW; FluxW = NULL;
   NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
@@ -2118,8 +2120,9 @@ extern void Flag_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
 			       const int &ic,
 			       const int &jc,
 			       const double &epsilon,
+			       int &nstart,
 			       int &ncells,
-			       int &start);
+			       LinkedList<int> &start);
 
 extern void Clean_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
 				const int &ic,
