@@ -594,6 +594,8 @@ help:
 	@echo "|                  FFTW_VERSION = V32 (default), NoFFTW                             |"
 	@echo "|                  TUT_TESTING = ON (default), OFF                                  |"
 	@echo "|                  PROFILING = OFF (default), ON                                    |"
+	@echo "|                  DO_CHECKS = ON (default), OFF                                    |"
+	@echo "|                  NO_ASSERT = OFF (default), ON                                    |"
 	@echo "|                                                                                   |"
 	@echo "| Ensure that the source directory is clean and the ICEMCFD, SparseLib++, BPKIT,    |"
 	@echo "| FFTW, and Cantera libraries are up to date before re-making CFFC from scratch.    |"
