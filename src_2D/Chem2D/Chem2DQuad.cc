@@ -16,3 +16,6 @@
 int Chem2D_Quad_Block::residual_variable = 1;
 int Chem2D_Quad_Block::Number_of_Residual_Norms = 4;
 //int Chem2D_Quad_Block::Flow_Type = FLOWTYPE_INVISCID;
+
+//SNBCK data object
+PlanckMean* Chem2D_Quad_Block::PlanckMean_data=NULL;

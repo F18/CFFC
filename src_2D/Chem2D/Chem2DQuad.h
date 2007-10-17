@@ -49,6 +49,8 @@
 #include "../Turbulent2D/Turbulent2DWallData.h"
 #endif // _TURBULENT2D_WALLDATA_INCLUDED
 
+// include SNBCK for optically thin radiation 
+#include "../Physics/SNBCK/PlanckMean.h"
 
 /* Define the structures and classes. */
 
@@ -247,6 +249,12 @@ class Chem2D_Quad_Block{
   Turbulent2DWallData   **Wall; //!< Turbulent wall data.
   //@}
 
+  //@{ @name Radiation source term and static data:
+  double                       **Srad; //!< radiant source term (divergence of rad. heat flux)
+  static PlanckMean  *PlanckMean_data; //!< planck mean data object
+  //@}
+
+
   //@{ @name FLAGS ( These are all esentially "static" Input parameters put in the SolnBlk for ease of access)
   int             Axisymmetric;   //!< Axisymmetric flow indicator.
   int                  Gravity;   //!< Gravity flag
@@ -276,6 +284,7 @@ class Chem2D_Quad_Block{
     Wall_Functions = 0; Freeze_Limiter = OFF;
     Moving_wall_velocity=ZERO; Pressure_gradient =ZERO; debug_level=0;
     Wall = NULL; 
+    Srad = NULL;
   }
   
   Chem2D_Quad_Block(const Chem2D_Quad_Block &Soln) {
@@ -296,7 +305,8 @@ class Chem2D_Quad_Block{
     Wall_Functions = Soln.Wall_Functions; Freeze_Limiter = Soln.Freeze_Limiter;
     Pressure_gradient = Soln.Pressure_gradient;
     debug_level=0; Wall = Soln.Wall;
-  }
+    Srad = Soln.Srad;
+ }
    
   /* Assignment operator. */
   // Chem2D_Quad_Block operator = (const Chem2D_Quad_Block &Soln);
@@ -307,6 +317,7 @@ class Chem2D_Quad_Block{
   
   /* Deallocate memory for structured quadrilateral solution block. */
   void deallocate(void);
+  static void deallocate_static(void);
   
   /* Return primitive solution state at specified node. */
   Chem2D_pState Wn(const int &ii, const int &jj);
@@ -478,6 +489,7 @@ inline void Chem2D_Quad_Block::allocate(const int Ni, const int Nj, const int Ng
    phi = new Chem2D_pState*[NCi]; Uo = new Chem2D_cState*[NCi];
    Ut = new Chem2D_cState*[NCi]; Uold = new Chem2D_cState*[NCi];
    Wall = new Turbulent2DWallData*[NCi];
+   Srad = new double*[NCi];
    
    for (int i = 0; i <= NCi-1 ; ++i ) {
       W[i] = new Chem2D_pState[NCj]; U[i] = new Chem2D_cState[NCj];
@@ -493,6 +505,7 @@ inline void Chem2D_Quad_Block::allocate(const int Ni, const int Nj, const int Ng
       phi[i] = new Chem2D_pState[NCj]; Uo[i] = new Chem2D_cState[NCj];
       Ut[i] = new Chem2D_cState[NCj]; Uold[i] = new Chem2D_cState[NCj]; 
       Wall[i] = new Turbulent2DWallData[NCj];
+      Srad[i] = new double[NCj];
    } /* endfor */
    FluxN = new Chem2D_cState[NCi]; FluxS = new Chem2D_cState[NCi];
    FluxE = new Chem2D_cState[NCj]; FluxW = new Chem2D_cState[NCj];
@@ -508,6 +521,7 @@ inline void Chem2D_Quad_Block::allocate(const int Ni, const int Nj, const int Ng
 	  dWdx[i][j].Vacuum() ; dWdy[i][j].Vacuum();
 	  phi[i][j].Vacuum(); Uo[i][j].Vacuum();
 	  dt[i][j] = ZERO;
+	  Srad[i][j] = ZERO;
       } 
    }  
 }
@@ -531,6 +545,7 @@ inline void Chem2D_Quad_Block::deallocate(void) {
       delete []phi[i]; phi[i] = NULL; delete []Uo[i]; Uo[i] = NULL; 
       delete []Ut[i]; Ut[i] = NULL; delete []Uold[i]; Uold[i] = NULL;
       delete []Wall[i]; Wall[i] = NULL; 
+      delete []Srad[i]; Srad[i] = NULL; 
    } /* endfor */
    delete []W; W = NULL; delete []U; U = NULL;
    delete []dt; dt = NULL; delete []dUdt; dUdt = NULL;
@@ -543,6 +558,7 @@ inline void Chem2D_Quad_Block::deallocate(void) {
    delete []phi; phi = NULL; delete []Uo; Uo = NULL;  
    delete []Ut; Ut = NULL; delete []Uold; Uold = NULL;
    delete []Wall; Wall = NULL;
+   delete []Srad; Srad = NULL;
    delete []FluxN; FluxN = NULL; delete []FluxS; FluxS = NULL;
    delete []FluxE; FluxE = NULL; delete []FluxW; FluxW = NULL;
    delete []WoN; WoN = NULL; delete []WoS; WoS = NULL;
@@ -550,6 +566,12 @@ inline void Chem2D_Quad_Block::deallocate(void) {
    NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
 }
 
+/**************************************************************************
+ * Chem2D_Quad_Block::deallocate_static -- Deallocate static memory.      *
+ **************************************************************************/
+inline void Chem2D_Quad_Block::deallocate_static(void) {
+  if(PlanckMean_data != NULL) { delete PlanckMean_data; PlanckMean_data = NULL; }
+}
 
 /**************************************************************************
  * Chem2D_Quad_Block:BiLinearInterpolationCoefficients --                 *
@@ -988,6 +1010,7 @@ inline istream &operator >> (istream &in_file,
 	 SolnBlk.phi[i][j] = Chem2D_W_VACUUM;
 	 SolnBlk.Uo[i][j] = Chem2D_U_VACUUM;
 	 SolnBlk.dt[i][j] = ZERO;
+	 SolnBlk.Srad[i][j] = ZERO;
      } /* endfor */
   } /* endfor */
   for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {

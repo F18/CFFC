@@ -1178,7 +1178,7 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
            Out_File.setf(ios::scientific);
 	   //Temperature
 	   Out_File << " " << SolnBlk.W[i][j].qflux
-		    << " " << SolnBlk.W[i][j].Srad
+		    << " " << SolnBlk.Srad[i][j]
 		    << " " << SolnBlk.W[i][j].tau
 		    << " " << SolnBlk.W[i][j].theta
 		    << " " << SolnBlk.W[i][j].lambda
@@ -6358,7 +6358,7 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	}   
 	
 	/* Include source terms associated with radiation */
-	SolnBlk.dUdt[i][j][0].E += SolnBlk.W[i][j].Srad;
+	SolnBlk.dUdt[i][j][0].E += SolnBlk.Srad[i][j];
 	
 	/* Include physical time derivative for dual time stepping */
 	if (Input_Parameters.Dual_Time_Stepping) {
@@ -7097,7 +7097,7 @@ int dUdt_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
 
 	  /* Include source terms associated with radiation */
 	  SolnBlk.dUdt[i][j][k_residual].E += 
-	    (Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*SolnBlk.W[i][j].Srad;
+	    (Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*SolnBlk.Srad[i][j];
 
 
 	  /* Save west and east face boundary flux. */
@@ -7909,14 +7909,13 @@ void Radiation_Source_Eval( Chem2D_Quad_Block &SolnBlk,
   //
   // declares
   //
-  double source;
   double Temperature, Pressure;
   double xCO, xH2O, xCO2, xO2;
   static const double fsoot = ZERO;  // no soot for now
 
   // if SNBCK not allocated, allocate/setup a new object
-  if (Chem2D_pState::PlanckMean_data==NULL) {
-    Chem2D_pState::PlanckMean_data = new PlanckMean(Input_Parameters.CFFC_Path);
+  if (Chem2D_Quad_Block::PlanckMean_data==NULL) {
+    Chem2D_Quad_Block::PlanckMean_data = new PlanckMean(Input_Parameters.CFFC_Path);
   } // endif
 
 
@@ -7935,18 +7934,14 @@ void Radiation_Source_Eval( Chem2D_Quad_Block &SolnBlk,
 
       // compute the source term using optically thin approx
       // using the SNBCK model
-      source = 
-	Chem2D_pState::PlanckMean_data->RadSourceOptThin( Pressure/PRESSURE_STDATM, //[atm]
-							  Temperature,              //[K]
-							  xCO,
-							  xH2O,
-							  xCO2,
-							  xO2,
-							  fsoot );
-      
-      // store values
-      SolnBlk.U[i][j].Srad = source;
-      SolnBlk.W[i][j].Srad = source;
+      SolnBlk.Srad[i][j] = 
+	Chem2D_Quad_Block::PlanckMean_data->RadSourceOptThin( Pressure/PRESSURE_STDATM, //[atm]
+							      Temperature,              //[K]
+							      xCO,
+							      xH2O,
+							      xCO2,
+							      xO2,
+							      fsoot );
 
     } // endfor i
   } // endfor j

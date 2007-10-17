@@ -74,8 +74,6 @@ using namespace std;
 #include "../Reactions/Reactions.h"
 #endif // _REACTIONS_INCLUDED
 
-/* include SNBCK for optically thin radiation */
-#include "../Physics/SNBCK/PlanckMean.h"
 
 //Temperature convergence tolerance in
 //Chem2D_cState::T(void)
@@ -149,7 +147,6 @@ class Chem2D_pState {
    Tensor2D                 lambda; //!< Reynolds Stress Tensor
    Vector2D                  theta; //!< Turbulent Heat Flux Vector  
   
-   double                     Srad; //!< radiant source term (divergence of rad. heat flux)
 
 
   //! Static Variaables 
@@ -185,64 +182,57 @@ class Chem2D_pState {
   static double y_sublayer;    //Xinfeng
   //@}
 
-  //@{ @name SNBCK data object
-  //! For computation of radiant heat transfer using 
-  //! optically thin approximation.
-  static PlanckMean  *PlanckMean_data;
-  //@}
-
   
   //default constructors of many flavours, hopefully one is right 4U   
   //v.zero(); tau.zero(); qflux.zero(); lambda.zero(); theta.zero();
   //  ^ Unecessary as Vector2D and Tensor2D defaults are ZERO
   //@{ @name Creation, copy, and assignment constructors.
  
-  Chem2D_pState(): rho(DENSITY_STDATM), p(PRESSURE_STDATM), k(ZERO), omega(ZERO), Srad(ZERO)
+  Chem2D_pState(): rho(DENSITY_STDATM), p(PRESSURE_STDATM), k(ZERO), omega(ZERO)
                 { specnull();  set_initial_values(); }
 
-   Chem2D_pState(const double &value): rho(value), v(value), p(value),  k(ZERO), omega(ZERO), Srad(ZERO)
+   Chem2D_pState(const double &value): rho(value), v(value), p(value),  k(ZERO), omega(ZERO)
                 { specnull(); set_initial_values(value); }
 
    Chem2D_pState(const double &d, const Vector2D &V, const double &pre):
-                 rho(d), v(V), p(pre), k(ZERO), omega(ZERO), Srad(ZERO)
+                 rho(d), v(V), p(pre), k(ZERO), omega(ZERO)
  		{ specnull();  set_initial_values(); }
 
    Chem2D_pState(const double &d, const double &vx, const double &vy, const double &pre):
-                 rho(d), v(vx,vy), p(pre), k(ZERO), omega(ZERO), Srad(ZERO)
+                 rho(d), v(vx,vy), p(pre), k(ZERO), omega(ZERO)
  		{specnull();  set_initial_values(); }
 
    Chem2D_pState(const double &d, const Vector2D &V, const double &pre, const double &kk, const double & oomega):
-                 rho(d), v(V), p(pre), k(kk), omega(oomega), Srad(ZERO)
+                 rho(d), v(V), p(pre), k(kk), omega(oomega)
  		{ specnull();  set_initial_values(); } 
 
    Chem2D_pState(const double &d, const double &vx, const double &vy, const double &pre, 
                  const double &kk, const double &oomega):
-                 rho(d), v(vx,vy), p(pre) , k(kk), omega(oomega), Srad(ZERO)
+                 rho(d), v(vx,vy), p(pre) , k(kk), omega(oomega)
  		{ specnull();  set_initial_values(); }
 
    Chem2D_pState(const double &d, const double &vx, const double &vy, const double &pre, const double &value):
-                 rho(d), v(vx,vy), p(pre), k(ZERO), omega(ZERO), Srad(ZERO)
+                 rho(d), v(vx,vy), p(pre), k(ZERO), omega(ZERO)
  		{ specnull();  set_initial_values(value); }
 
    Chem2D_pState(const double &d, const double &vx, const double &vy, const double &pre, 
                  const double &kk, const double &oomega,	const double &value):
-                 rho(d), v(vx,vy), p(pre) ,k(kk), omega(oomega) , Srad(ZERO)
+                 rho(d), v(vx,vy), p(pre) ,k(kk), omega(oomega)
  		{ specnull();  set_initial_values(value); }
 
    Chem2D_pState(const double &d, const double &vx, const double &vy, const double &pre, 
                  const double &kk, const double & oomega, const Species *mfrac): 
-                 rho(d), v(vx,vy), p(pre), k(kk), omega(oomega), Srad(ZERO)
+                 rho(d), v(vx,vy), p(pre), k(kk), omega(oomega)
  		{ specnull();  set_initial_values(mfrac); }
 
    Chem2D_pState(const double &d, const Vector2D &V, const double &pre,
                  const double &kk, const double & oomega, const Species *mfrac): 
-                 rho(d), v(V), p(pre), k(kk), omega(oomega), Srad(ZERO)
+                 rho(d), v(V), p(pre), k(kk), omega(oomega)
                  { specnull(); set_initial_values(mfrac); }
 
   //this is needed for the operator overload returns!!!!
   Chem2D_pState(const Chem2D_pState &W): rho(W.rho), v(W.v), p(W.p), k(W.k), omega(W.omega),
- 					 tau(W.tau), qflux(W.qflux), lambda(W.lambda), theta(W.theta),
-					 Srad(W.Srad)
+ 					 tau(W.tau), qflux(W.qflux), lambda(W.lambda), theta(W.theta)
                                         { specnull(); set_initial_values(W.spec); }      
   //@}
 
@@ -266,7 +256,6 @@ class Chem2D_pState {
    void Vacuum(){ rho=ZERO; v.zero(); p=ZERO; k=ZERO; omega = ZERO; 
      for(int i=0; i<ns; i++)  spec[i].Vacuum();
      tau.zero(); qflux.zero(); lambda.zero(); theta.zero(); 
-     Srad = ZERO;
    }
 
    void zero_non_sol(){
@@ -274,7 +263,7 @@ class Chem2D_pState {
        spec[i].gradc.zero();
        spec[i].diffusion_coef=ZERO;
      }
-     tau.zero(); qflux.zero(); lambda.zero(); theta.zero(); Srad = ZERO;
+     tau.zero(); qflux.zero(); lambda.zero(); theta.zero();
    }  
  
   //! Set turbulence static variables.
@@ -506,7 +495,6 @@ class Chem2D_pState {
    void Deallocate_static(void){ 
      if(specdata != NULL) { delete[] specdata; specdata = NULL; }
      if(Schmidt != NULL) { delete[] Schmidt; Schmidt = NULL; }
-     if(PlanckMean_data != NULL) { delete PlanckMean_data; PlanckMean_data = NULL; }
    }
 
 #ifdef STATIC_NUMBER_OF_SPECIES    
@@ -550,8 +538,6 @@ class Chem2D_pState {
    Tensor2D                 lambda; //!< Reynolds Stress Tensor
    Vector2D                  theta; //!< Turbulent Heat Flux Vector  
 
-   double                     Srad; //!< radiant source term (divergence of rad. heat flux)
- 
    static int                   ns; //!< number of species
    static NASARP1311data *specdata; //!< Global species data 
    static double          *Schmidt; //!< Schmidt Number for each species
@@ -585,54 +571,52 @@ class Chem2D_pState {
 
    /*****************************************************/
    //default constructors of many flavours, hopefully one is right 4U
-   Chem2D_cState(): rho(DENSITY_STDATM), E(PRESSURE_STDATM/(rho*((double)0.4))), rhok(ZERO), rhoomega(ZERO),
-		    Srad(ZERO)
+   Chem2D_cState(): rho(DENSITY_STDATM), E(PRESSURE_STDATM/(rho*((double)0.4))), rhok(ZERO), rhoomega(ZERO)
                     {rhospecnull(); set_initial_values(); }   
 
-   Chem2D_cState(const double &value): rho(value), rhov(value), E(value), rhok(ZERO), rhoomega(ZERO), Srad(ZERO)
+   Chem2D_cState(const double &value): rho(value), rhov(value), E(value), rhok(ZERO), rhoomega(ZERO)
                  { rhospecnull();  set_initial_values(value); }   
 
    Chem2D_cState(const double &d, const Vector2D &V, const double &En):
-                 rho(d), rhov(V), E(En), rhok(ZERO), rhoomega(ZERO), Srad(ZERO)
+                 rho(d), rhov(V), E(En), rhok(ZERO), rhoomega(ZERO)
  		{ rhospecnull(); set_initial_values(); }
 
    Chem2D_cState(const double &d, const double &vx, const double &vy, const double &En):
-                 rho(d), rhov(vx,vy), E(En), rhok(ZERO), rhoomega(ZERO), Srad(ZERO)
+                 rho(d), rhov(vx,vy), E(En), rhok(ZERO), rhoomega(ZERO)
  		{ rhospecnull(); set_initial_values(); }
 
    Chem2D_cState(const double &d, const Vector2D &V, const double &En, const double &dk,const double &domega):
-                 rho(d), rhov(V), E(En), rhok(dk), rhoomega(domega), Srad(ZERO)
+                 rho(d), rhov(V), E(En), rhok(dk), rhoomega(domega)
  		{ rhospecnull(); set_initial_values(); }
 
    Chem2D_cState(const double &d, const double &vx, const double &vy, const double &En,
  		const double &dk, const double &domega ):
-                 rho(d), rhov(vx,vy), E(En), rhok(dk), rhoomega(domega), Srad(ZERO)
+                 rho(d), rhov(vx,vy), E(En), rhok(dk), rhoomega(domega)
  		{ rhospecnull();   set_initial_values(); }
 
    Chem2D_cState(const double &d, const double &vx, const double &vy, const double &En, const double &value): 
-                 rho(d), rhov(vx,vy), E(En), rhok(ZERO), rhoomega(ZERO), Srad(ZERO)
+                 rho(d), rhov(vx,vy), E(En), rhok(ZERO), rhoomega(ZERO)
                  { rhospecnull();  set_initial_values(value); }
 
    Chem2D_cState(const double &d, const double &vx, const double &vy, const double &En, 
                  const double &dk, const double &domega,	const double &value): 
-                 rho(d), rhov(vx,vy), E(En), rhok(dk), rhoomega(domega), Srad(ZERO)
+                 rho(d), rhov(vx,vy), E(En), rhok(dk), rhoomega(domega)
  		{ rhospecnull();   set_initial_values(value); }
 
    Chem2D_cState(const double &d, const double &vx, const double &vy, const double &En,	const double &dk,
  		const double &domega, const Species *rhomfrac): 
-                 rho(d), rhov(vx,vy), E(En), rhok(dk), rhoomega(domega), Srad(ZERO)
+                 rho(d), rhov(vx,vy), E(En), rhok(dk), rhoomega(domega)
  		{ rhospecnull();   set_initial_values(rhomfrac); }
 
    Chem2D_cState(const double d, const Vector2D &V, const double &En,  const double &dk, 
  		const double &domega, const Species *rhomfrac): 
-                 rho(d), rhov(V), E(En), rhok(dk), rhoomega(domega), Srad(ZERO)
+                 rho(d), rhov(V), E(En), rhok(dk), rhoomega(domega)
                  { rhospecnull();   set_initial_values(rhomfrac); }
 		 
    // WARNING - automatic type conversion
    Chem2D_cState(const Chem2D_pState &W) :  rho(W.rho), rhov(W.rhov()),
 		   E(W.E()), rhok(W.rho*W.k), rhoomega(W.rho*W.omega),
-		   tau(W.tau), qflux(W.qflux), lambda(W.lambda), theta(W.theta),
-		   Srad(W.Srad)
+		   tau(W.tau), qflux(W.qflux), lambda(W.lambda), theta(W.theta)
    {   
      for(int i=0; i<W.ns; i++){
        rhospec[i].c = W.rho*W.spec[i].c;
@@ -645,8 +629,7 @@ class Chem2D_pState {
 
    //this is needed for the operator overload returns!!!!
    Chem2D_cState(const Chem2D_cState &U): rho(U.rho), rhov(U.rhov), E(U.E), rhok(U.rhok), rhoomega(U.rhoomega),
-					  tau(U.tau), qflux(U.qflux), lambda(U.lambda), theta(U.theta),
-					  Srad(U.Srad)
+					  tau(U.tau), qflux(U.qflux), lambda(U.lambda), theta(U.theta)
                                          { rhospecnull(); set_initial_values(U.rhospec); }
 
    //read in ns species data, call only once as its static
@@ -665,7 +648,7 @@ class Chem2D_pState {
    /***************** VACUUM ************************/
    void Vacuum(){ rho=ZERO; rhov.zero(); E=ZERO; rhok = ZERO; rhoomega = ZERO; 
      for(int i=0; i<ns; i++) rhospec[i].Vacuum();
-     tau.zero();  qflux.zero(); lambda.zero(); theta.zero(); Srad  = ZERO;
+     tau.zero();  qflux.zero(); lambda.zero(); theta.zero();
    }  
 
    void zero_non_sol(){
@@ -673,7 +656,7 @@ class Chem2D_pState {
        rhospec[i].gradc.zero();
        rhospec[i].diffusion_coef=ZERO;
      }
-     tau.zero(); qflux.zero(); lambda.zero(); theta.zero(); Srad = ZERO;
+     tau.zero(); qflux.zero(); lambda.zero(); theta.zero();
    }  
 
    //! Set turbulence static variables.
@@ -1131,7 +1114,6 @@ inline void Chem2D_pState::Copy(const Chem2D_pState &W){
   qflux = W.qflux;
   lambda = W.lambda;
   theta = W.theta;
-  Srad = W.Srad;
 }
 
 //**************** Index Operators *************************/
@@ -1218,7 +1200,6 @@ inline Chem2D_cState Chem2D_pState::U(const Chem2D_pState &W) const{
     Temp.qflux = W.qflux; 
     Temp.lambda = W.lambda;
     Temp.theta = W.theta; 
-    Temp.Srad = W.Srad; 
     return Temp;
 }
 
@@ -1238,7 +1219,6 @@ inline Chem2D_cState U(const Chem2D_pState &W) {
   Temp.qflux = W.qflux; 
   Temp.lambda = W.lambda;
   Temp.theta = W.theta; 
-  Temp.Srad = W.Srad; 
   return Temp;
 }
 
@@ -1286,7 +1266,6 @@ inline void Chem2D_cState::Copy(const Chem2D_cState &U){
   qflux = U.qflux; 
   lambda = U.lambda;
   theta = U.theta; 
-  Srad = U.Srad; 
 }
 
 /**********************************************************************
@@ -1566,7 +1545,6 @@ inline Chem2D_pState Chem2D_cState::W(const Chem2D_cState &U) const{
     Temp.qflux = U.qflux; 
     Temp.lambda = U.lambda;
     Temp.theta = U.theta; 
-    Temp.Srad = U.Srad; 
 
     return Temp;
 }
@@ -1587,7 +1565,6 @@ inline Chem2D_pState W(const Chem2D_cState &U) {
   Temp.qflux = U.qflux;
   Temp.lambda = U.lambda;
   Temp.theta = U.theta;
-  Temp.Srad = U.Srad;
 
   return Temp;
 }

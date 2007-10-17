@@ -449,7 +449,8 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 
       // Copy over computed Rte2D solution variables only
       } else {
-	RteSolver->Copy_Rte2D_Solution_Vars(Local_SolnBlk);
+	RteSolver->Copy_SRC_Solution_Vars(Local_SolnBlk);   // set medium state using Chem2D data
+	RteSolver->Copy_Rte2D_Solution_Vars(Local_SolnBlk); // compute Chem2D rad source using Rte2D data
       } // endif - Rte2D restart
       
     } // endif - Chem2D restart
@@ -1170,7 +1171,8 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk, 
 					    Input_Parameters.Number_of_Blocks_Idir, 
 					    Input_Parameters.Number_of_Blocks_Jdir);
-      
+      Chem2D_Quad_Block::deallocate_static();
+
       // Output input parameters for new caluculation.
       if (!batch_flag)  {
 	cout << "\n\n Starting a new calculation.";
@@ -1202,7 +1204,8 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk, 
 					    Input_Parameters.Number_of_Blocks_Idir, 
 					    Input_Parameters.Number_of_Blocks_Jdir);
-   
+      Chem2D_Quad_Block::deallocate_static();
+
       // deallocate radiation solver
       if (RteSolver != NULL) {
 	delete RteSolver;
