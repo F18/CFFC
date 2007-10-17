@@ -18,12 +18,27 @@ void PointImplicitBlockJacobi(DenseMatrix &dRdU,
 			      LESPremixed2D_Quad_Block &SolnBlk,
 			      LESPremixed2D_Input_Parameters &Input_Parameters,
 			      const int &ii, const int &jj){
-   
+  int NUM_VAR_LESPREMIXED2D;
 #ifdef THICKENED_FLAME_ON
-  int NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-3; 
+   NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-3; 
 #else
-  int NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-1; 
+   NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-1; 
 #endif
+
+   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
+    NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-SolnBlk.W[0][0].ns;
+    }
+
   DenseMatrix dRdW(NUM_VAR_LESPREMIXED2D,NUM_VAR_LESPREMIXED2D,ZERO);  
 
   //Inviscid dRdU
@@ -60,25 +75,17 @@ void SemiImplicitBlockJacobi(DenseMatrix &dSdU,
 			     const int &solver_type,
 			     const int &ii, const int &jj){ 
   
+    int NUM_VAR_LESPREMIXED2D;
   if( (SolnBlk.Axisymmetric && SolnBlk.Flow_Type != FLOWTYPE_INVISCID) ||
-       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K ||
-       SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
-       SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
-       SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
-       SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
-       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
-       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
-       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
-       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
-       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
-       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
-       SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD) { 
+       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K ) { 
 
 #ifdef THICKENED_FLAME_ON
-    int NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-3; 
+    NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-3; 
 #else
-    int NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-1;
+    NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-1;
 #endif
+
+  }
 
    if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
 	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
@@ -91,7 +98,7 @@ void SemiImplicitBlockJacobi(DenseMatrix &dSdU,
 	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
 	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
 	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
-      NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-SolnBlk.W[0][0].ns;
+     NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-SolnBlk.W[0][0].ns;
     }
 
     DenseMatrix dRdW(NUM_VAR_LESPREMIXED2D,NUM_VAR_LESPREMIXED2D,ZERO);  
@@ -103,7 +110,6 @@ void SemiImplicitBlockJacobi(DenseMatrix &dSdU,
     // Transformation Jacobian 
     SolnBlk.Uo[ii][jj].W().dWdU(dWdU, SolnBlk.Flow_Type); 
     dSdU += dRdW*dWdU;
-  }
 
   // Add Source Jacobians (inviscid axisymmetric, chemistry, gravity)
   SemiImplicitBlockJacobi_dSdU(dSdU,SolnBlk,EXPLICIT,ii,jj);                 
@@ -482,7 +488,7 @@ void dFIdW_Inviscid_ROE_FD(DenseMatrix& dRdW, LESPremixed2D_Quad_Block &SolnBlk,
      cout<<"\n Hey I am not suppose to be here! \n"; exit(1);
 
   } else {     
-     int NUM_VAR_LESPREMIXED2D = dRdW.get_n();   
+    int NUM_VAR_LESPREMIXED2D = dRdW.get_n();   
      DenseMatrix dFidW(NUM_VAR_LESPREMIXED2D, NUM_VAR_LESPREMIXED2D,ZERO);
      
      Vector2D nface, DX;   double lface;
