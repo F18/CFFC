@@ -804,7 +804,6 @@ inline istream &operator >> (istream &in_file,
          for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_RTE2D-1 ; ++k ) {
 	   SolnBlk.dUdt[i][j][k].Zero();
          } /* endfor */
-	 SolnBlk.M[i][j].Zero();
 	 SolnBlk.dUdx[i][j].Zero();
 	 SolnBlk.dUdy[i][j].Zero();
 	 SolnBlk.phi[i][j].Zero();

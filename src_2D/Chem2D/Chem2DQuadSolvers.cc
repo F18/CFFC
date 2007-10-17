@@ -449,7 +449,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 
       // Copy over computed Rte2D solution variables only
       } else {
-	RteSolver->Copy_SRC_Solution_Vars(Local_SolnBlk);   // set medium state using Chem2D data
+	//RteSolver->Copy_SRC_Solution_Vars(Local_SolnBlk);   // set medium state using Chem2D data
 	RteSolver->Copy_Rte2D_Solution_Vars(Local_SolnBlk); // compute Chem2D rad source using Rte2D data
       } // endif - Rte2D restart
       
@@ -472,7 +472,8 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
  
 
   // print out a header for sequential solver
-  if (!batch_flag && Input_Parameters.Radiation == RADIATION_RTE) {
+  if (!batch_flag && Input_Parameters.Radiation == RADIATION_RTE &&
+      Input_Parameters.Max_Number_Sequential_Solves > 0) {
     cout << endl << endl << string(70,'=');
     cout << "\n Sequential Solver Step = " << number_sequential_solves+1;
     cout << endl << string(70,'=');
@@ -1084,7 +1085,8 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
    RADIATION SOLVER solution of equation of radiation transfer to obtain
    the radiation heat flux term.
   ************************************************************************/
-  if (Input_Parameters.Radiation == RADIATION_RTE) {
+  if (Input_Parameters.Radiation == RADIATION_RTE &&
+      Input_Parameters.Max_Number_Sequential_Solves > 0) {
 
     if (!batch_flag) cout << "\n Solving radiation transfer equation...";
 
