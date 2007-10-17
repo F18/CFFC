@@ -1085,7 +1085,7 @@ inline int operator <(const Rte2D_State &U1, const double &d) {
  ********************************************************/
 inline ostream& operator << (ostream &out_file, const Rte2D_State &U) 
 {
-  out_file.precision(10);
+  //out_file.precision(10);
   out_file.setf(ios::scientific);
   for( int i=0; i<U.NUM_VAR_RTE2D; i++)  out_file<<" "<<U.I[i]; 
   out_file.unsetf(ios::scientific);

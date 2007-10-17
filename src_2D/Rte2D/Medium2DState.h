@@ -427,7 +427,7 @@ inline Medium2D_State& Medium2D_State::operator /=(const double &a) {
  ********************************************************/
 inline ostream& operator << (ostream &out_file, const Medium2D_State &U) 
 {
-  out_file.precision(10);
+  //out_file.precision(10);
   out_file.setf(ios::scientific);
   for( int i=0; i<U.Nband; i++) out_file<<" "<<U.Ib[i];
   for( int i=0; i<U.Nband; i++) out_file<<" "<<U.kappa[i];
