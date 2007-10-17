@@ -25,6 +25,7 @@ using namespace std;
 
 // Include CFFC header files.
 
+#include "Euler/Euler3DPolytropic.h"
 #include "Euler/Euler3DThermallyPerfect.h"
 #include "NavierStokes/NavierStokes3DThermallyPerfect.h"
 #include "FANS/FANS3DThermallyPerfect.h"
@@ -37,15 +38,16 @@ int main(int num_arg, char *arg_ptr[]) {
    /********************************************************  
     * VARIABLE DECLARATIONS                                *
     ********************************************************/
+
    // Command line flags:  
    int version_flag, 
-      help_flag, 
-      batch_flag, 
-      pde_flag,
-      file_flag, 
-      error_flag,
-      mpirun_flag,
-      test_flag;
+       help_flag, 
+       batch_flag, 
+       pde_flag,
+       file_flag, 
+       error_flag,
+       mpirun_flag,
+       test_flag;
 
    // Other local integer variables:
    int i;
@@ -64,7 +66,7 @@ int main(int num_arg, char *arg_ptr[]) {
    char *Input_File_Name_ptr = "cffc3d.in";
 
    // Equation type indicator:
-   char *Equation_Type_ptr = "Euler3DThermallyPerfect";
+   char *Equation_Type_ptr = "Euler3DPolytropic";
    char Equation_Type[256];
 
    // Input file stream:
@@ -87,6 +89,7 @@ int main(int num_arg, char *arg_ptr[]) {
     ********************************************************/
 
    /* Initialize command line flags. */
+
    version_flag = 0;
    help_flag = 0;
    batch_flag = 0;
@@ -111,6 +114,7 @@ int main(int num_arg, char *arg_ptr[]) {
       to be solve to "type" (default is "Euler3D"),
       6) -f name  uses "name" as the input data file rather than
       the standard input data file "cffc3D.in". */
+
    if (num_arg >= 2) {
       for (i = 1; i <= num_arg - 1; ++i) {
          if (strcmp(arg_ptr[i], "-v") == 0 ||
@@ -154,13 +158,17 @@ int main(int num_arg, char *arg_ptr[]) {
          } else {
             error_flag = 1;
          } /* endif */
-         
       } /* endfor */
    } /* endif */
 
-  /********************************************************  
-   * INITIALIZE MPI                                       *
-   ********************************************************/
+   if (error_flag) {
+     cout << "\n CFFC3D ERROR: Invalid command line argument.\n";
+     return (error_flag);
+   } /* endif */
+
+   /********************************************************  
+    * INITIALIZE MPI                                       *
+    ********************************************************/
 
    CFFC_Initialize_MPI(num_arg, arg_ptr);
    if (!CFFC_Primary_MPI_Processor()) batch_flag = 1;
@@ -180,6 +188,7 @@ int main(int num_arg, char *arg_ptr[]) {
       cout << "Built using CEA Thermodynamic and Transport Data, NASA Glenn Research Center\n";
       cout.flush();
    } /* endif */
+
    if (version_flag) {
       CFFC_Finalize_MPI();
       return (0);
@@ -196,7 +205,7 @@ int main(int num_arg, char *arg_ptr[]) {
       cout << " -h (--help)  show this help\n";
       cout << " -i (--inter)  execute in interactive mode (default)\n";
       cout << " -b (--batch)  execute in batch mode\n";
-      cout << " -pde type  solve `type' PDEs (`Euler3DThermallyPerfect' is default)\n";
+      cout << " -pde type  solve `type' PDEs (`Euler3DPolytropic' is default)\n";
       cout << " -f name  use `name' input data file (`cffc3d.in' is default)\n";
       cout << " -t              run all available test suites\n" 
 	   << " -t list         list available test suites\n"
@@ -207,6 +216,7 @@ int main(int num_arg, char *arg_ptr[]) {
  	   << "                 example: cffc3D -t MyTestSuit 3\n";
       cout.flush();
    } /* endif */
+
    if (help_flag) {
       CFFC_Finalize_MPI();
       return (0);
@@ -230,10 +240,14 @@ int main(int num_arg, char *arg_ptr[]) {
       value problem(s)/boundary value problem(s) (IBVP/BVP) using the 
       appropriate solver. */
 
-   if (strcmp(Equation_Type, "Euler3DThermallyPerfect") == 0) {
-      error_flag = HexaSolver<Euler3D_ThermallyPerfect_pState, Euler3D_ThermallyPerfect_cState>
+   if (strcmp(Equation_Type, "Euler3DPolytropic") == 0) {
+      error_flag = HexaSolver<Euler3D_Polytropic_pState, Euler3D_Polytropic_cState>
                    (Input_File_Name_ptr, batch_flag);
 
+   } else if (strcmp(Equation_Type, "Euler3DThermallyPerfect") == 0) {
+      error_flag = HexaSolver<Euler3D_ThermallyPerfect_pState, Euler3D_ThermallyPerfect_cState>
+	           (Input_File_Name_ptr, batch_flag);
+		
    } else if (strcmp(Equation_Type, "NavierStokes3DThermallyPerfect") == 0) {
       error_flag = HexaSolver<NavierStokes3D_ThermallyPerfect_pState, NavierStokes3D_ThermallyPerfect_cState>
                    (Input_File_Name_ptr, batch_flag);

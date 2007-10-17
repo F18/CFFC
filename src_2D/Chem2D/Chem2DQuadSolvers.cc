@@ -716,11 +716,11 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
  	    Input_Parameters.Maximum_Number_of_Time_Steps) break;
  	if (Input_Parameters.Time_Accurate && 
  	    Time >= Input_Parameters.Time_Max) break;
-	  if (Input_Parameters.Dual_Time_Stepping && 
-	      (n_inner == Input_Parameters.Max_Inner_Steps ||
-	       (n_inner > 0  && (residual_l2_norm[Local_SolnBlk[0].residual_variable-1] < dual_eps  || 
-				 residual_l2_norm[Local_SolnBlk[0].residual_variable-1]/
-				 initial_residual_l2_norm < dual_eps)))) break;
+	if (Input_Parameters.Dual_Time_Stepping && 
+	    (n_inner == Input_Parameters.Max_Inner_Steps ||
+	     (n_inner > 0  && (residual_l2_norm[Local_SolnBlk[0].residual_variable-1] < dual_eps  || 
+			       residual_l2_norm[Local_SolnBlk[0].residual_variable-1]/
+			       initial_residual_l2_norm < dual_eps)))) break;
 
 // 	/******************* LIMITER FREEZE ***************************************	
 // 	 Freeze limiters as necessary
@@ -954,6 +954,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
                                                Chem2D_Input_Parameters>(processor_cpu_time,
 									residual_file,
 									number_of_time_steps, // explicit time steps
+									Time,							
 									Local_SolnBlk, 
 									List_of_Local_Solution_Blocks,
 									Input_Parameters);

@@ -81,6 +81,35 @@ void Grid3D_Hexa_Multi_Block_List::Allocate(const int Ni,
       neighBSE_ctm = new Mesh_Orientation_Matrix[NBlk];
 
       Allocated = 1;
+
+      for (int  i = 0 ; i < NBlk ; ++i ) {
+         neighT[i] = GRID3D_NO_NEIGHBOUR;
+         neighB[i] = GRID3D_NO_NEIGHBOUR;
+         neighN[i] = GRID3D_NO_NEIGHBOUR;
+         neighS[i] = GRID3D_NO_NEIGHBOUR;
+         neighE[i] = GRID3D_NO_NEIGHBOUR;
+         neighW[i] = GRID3D_NO_NEIGHBOUR; 
+         neighNW[i] = GRID3D_NO_NEIGHBOUR;
+         neighNE[i] = GRID3D_NO_NEIGHBOUR;
+         neighSE[i] = GRID3D_NO_NEIGHBOUR;
+         neighSW[i] = GRID3D_NO_NEIGHBOUR;
+         neighTN[i] = GRID3D_NO_NEIGHBOUR;
+         neighTS[i] = GRID3D_NO_NEIGHBOUR;
+         neighTE[i] = GRID3D_NO_NEIGHBOUR;
+         neighTW[i] = GRID3D_NO_NEIGHBOUR;  
+         neighTNW[i] = GRID3D_NO_NEIGHBOUR;
+         neighTSW[i] = GRID3D_NO_NEIGHBOUR;
+         neighTNE[i] = GRID3D_NO_NEIGHBOUR;
+         neighTSE[i] = GRID3D_NO_NEIGHBOUR;  
+         neighBN[i] = GRID3D_NO_NEIGHBOUR;
+         neighBS[i] = GRID3D_NO_NEIGHBOUR;
+         neighBE[i] = GRID3D_NO_NEIGHBOUR;
+         neighBW[i] = GRID3D_NO_NEIGHBOUR;  
+         neighBNW[i] = GRID3D_NO_NEIGHBOUR;
+         neighBSW[i] = GRID3D_NO_NEIGHBOUR;
+         neighBNE[i] = GRID3D_NO_NEIGHBOUR;
+         neighBSE[i] = GRID3D_NO_NEIGHBOUR;
+      } /* endfor */
    } /* endif */
 
 }
@@ -157,6 +186,35 @@ void Grid3D_Hexa_Multi_Block_List::Allocate(const int N) {
       neighBSE_ctm = new Mesh_Orientation_Matrix[NBlk];
 
       Allocated = 1;
+
+      for (int  i = 0 ; i < NBlk ; ++i ) {
+         neighT[i] = GRID3D_NO_NEIGHBOUR;
+         neighB[i] = GRID3D_NO_NEIGHBOUR;
+         neighN[i] = GRID3D_NO_NEIGHBOUR;
+         neighS[i] = GRID3D_NO_NEIGHBOUR;
+         neighE[i] = GRID3D_NO_NEIGHBOUR;
+         neighW[i] = GRID3D_NO_NEIGHBOUR; 
+         neighNW[i] = GRID3D_NO_NEIGHBOUR;
+         neighNE[i] = GRID3D_NO_NEIGHBOUR;
+         neighSE[i] = GRID3D_NO_NEIGHBOUR;
+         neighSW[i] = GRID3D_NO_NEIGHBOUR;
+         neighTN[i] = GRID3D_NO_NEIGHBOUR;
+         neighTS[i] = GRID3D_NO_NEIGHBOUR;
+         neighTE[i] = GRID3D_NO_NEIGHBOUR;
+         neighTW[i] = GRID3D_NO_NEIGHBOUR;  
+         neighTNW[i] = GRID3D_NO_NEIGHBOUR;
+         neighTSW[i] = GRID3D_NO_NEIGHBOUR;
+         neighTNE[i] = GRID3D_NO_NEIGHBOUR;
+         neighTSE[i] = GRID3D_NO_NEIGHBOUR;  
+         neighBN[i] = GRID3D_NO_NEIGHBOUR;
+         neighBS[i] = GRID3D_NO_NEIGHBOUR;
+         neighBE[i] = GRID3D_NO_NEIGHBOUR;
+         neighBW[i] = GRID3D_NO_NEIGHBOUR;  
+         neighBNW[i] = GRID3D_NO_NEIGHBOUR;
+         neighBSW[i] = GRID3D_NO_NEIGHBOUR;
+         neighBNE[i] = GRID3D_NO_NEIGHBOUR;
+         neighBSE[i] = GRID3D_NO_NEIGHBOUR;
+      } /* endfor */
    } /* endif */
 
 }
@@ -331,15 +389,49 @@ void Grid3D_Hexa_Multi_Block_List::Copy(Grid3D_Hexa_Multi_Block_List &Grid2) {
  ********************************************************/
 void Grid3D_Hexa_Multi_Block_List::Broadcast(void) {
 
-  if (Allocated) {
+#ifdef _MPI_VERSION
+  int n, ni, nj, nk, grid_allocated;
 
-    /* Broadcast each of the blocks in the multiblock mesh. */
+  /* Broadcast the number of grid blocks. */
 
-    for (int  i = 0 ; i < NBlk ; ++i ) {
-       if (Grid_Blks[i].Allocated) Grid_Blks[i].Broadcast();
-    } /* endfor */
-
+  if (CFFC_Primary_MPI_Processor()) {
+     n = NBlk;
+     ni = NBlk_Idir;
+     nj = NBlk_Jdir;
+     nk = NBlk_Kdir;
+     grid_allocated = Allocated;
   } /* endif */
+
+  MPI::COMM_WORLD.Bcast(&n, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&ni, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&nj, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&nk, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&grid_allocated, 1, MPI::INT, 0);
+
+  /* On non-primary MPI processors, allocate (re-allocate) 
+     memory for the grid blocks as necessary. */
+
+  if (!CFFC_Primary_MPI_Processor()) {
+     if (grid_allocated && 
+         (NBlk != n ||
+          NBlk_Idir != ni || 
+          NBlk_Jdir != nj || 
+          NBlk_Kdir != nk) ) { 
+        if (Allocated) { 
+          Deallocate();
+        } /* endif */
+        Allocate(ni, nj, nk);
+     } /* endif */
+  } /* endif */
+
+  /* Broadcast each of the blocks in the multiblock mesh. */
+
+  if (Allocated) {
+    for (int  i = 0 ; i < NBlk ; ++i ) {
+       Grid_Blks[i].Broadcast();
+    } /* endfor */
+  } /* endif */
+#endif
 
 }
 
@@ -1471,19 +1563,50 @@ void Grid3D_Hexa_Multi_Block::Copy(Grid3D_Hexa_Multi_Block &Grid2) {
  ********************************************************/
 void Grid3D_Hexa_Multi_Block::Broadcast(void) {
 
+#ifdef _MPI_VERSION
+  int ni, nj, nk, grid_allocated;
+
+  /* Broadcast the number of grid blocks. */
+
+  if (CFFC_Primary_MPI_Processor()) {
+     ni = NBlk_Idir;
+     nj = NBlk_Jdir;
+     nk = NBlk_Kdir;
+     grid_allocated = Allocated;
+  } /* endif */
+
+  MPI::COMM_WORLD.Bcast(&ni, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&nj, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&nk, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&grid_allocated, 1, MPI::INT, 0);
+
+  /* On non-primary MPI processors, allocate (re-allocate) 
+     memory for the grid blocks as necessary. */
+
+  if (!CFFC_Primary_MPI_Processor()) {
+     if (grid_allocated && 
+         (NBlk_Idir != ni || 
+          NBlk_Jdir != nj || 
+          NBlk_Kdir != nk) ) { 
+        if (Allocated) { 
+          Deallocate();
+        } /* endif */
+        Allocate(ni, nj, nk);
+     } /* endif */
+  } /* endif */
+
+  /* Broadcast each of the blocks in the multiblock mesh. */
+
   if (Allocated) {
-
-    /* Broadcast each of the blocks in the multiblock mesh. */
-
     for (int  k = 0 ; k < NBlk_Kdir ; ++k ) {
        for (int  j = 0 ; j < NBlk_Jdir ; ++j ) {
           for (int  i = 0 ; i < NBlk_Idir ; ++i ) {
-	     if (Grid_Blks[i][j][k].Allocated) Grid_Blks[i][j][k].Broadcast();
+	     Grid_Blks[i][j][k].Broadcast();
           } /* endfor */
        } /* endfor */
     } /* endfor */
-
   } /* endif */
+#endif
 
 }
 

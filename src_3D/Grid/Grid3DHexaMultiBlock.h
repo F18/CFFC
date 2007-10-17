@@ -16,6 +16,8 @@
 #include "Grid3DHexaBlock.h"
 #endif // _GRID3D_HEXA_BLOCK_INCLUDED
 
+#define	GRID3D_NO_NEIGHBOUR             -1
+
 #define Mesh_Orientation_Matrix int
 
 /* Define the 3D hexahedral grid multiblock classes. */

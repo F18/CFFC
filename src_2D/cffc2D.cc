@@ -232,6 +232,7 @@ int main(int num_arg, char *arg_ptr[]) {
      cout << "Built using CEA Thermodynamic and Transport Data, NASA Glenn Research Center\n";
      cout.flush();
   } /* endif */
+
   if (version_flag) {
      CFFC_Finalize_MPI();
      return (0);
@@ -259,6 +260,7 @@ int main(int num_arg, char *arg_ptr[]) {
  	  << "                 example: cffc2D -t MyTestSuit 3\n";
      cout.flush();
   } /* endif */
+
   if (help_flag) {
      CFFC_Finalize_MPI();
      return (0);
