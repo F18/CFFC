@@ -1026,6 +1026,7 @@ int HighTemp2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 			processor_cpu_time,
 			residual_file,
 			number_of_time_steps, // For printing. Set to total steps by NKS.
+			Time,
 			Local_SolnBlk, 
 			List_of_Local_Solution_Blocks,
 			Input_Parameters);

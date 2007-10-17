@@ -23,81 +23,111 @@ enum output_formats { OF_SCOTT, OF_ALISTAIR };
 
 enum Freeze_Limiter_Immediately_values { FLI_NOT_USED, FLI_NO, FLI_YES };
 
-/************************************************
- * Class: NKS_Input_Parameters                  *
- ***********************************************/ 
+/*! ***************************************************************
+ * Class: NKS_Input_Parameters
+ *
+ * @brief Input Parameters for NKS.
+ *
+ * This class defines and handles the input variables related to the
+ * Newton Krylov Schwarz (NKS) method for solving 
+ * nonlinear partial differential equations.  Note that unsteady
+ * calculations can be performed using dual-time-stepping.
+ *
+ * Class: NKS_Input_Parameters                  
+ *****************************************************************/ 
 class NKS_Input_Parameters{
  private:
  public:
-  // Newton Parameters
-  int    Maximum_Number_of_NKS_Iterations;  //Outer
+  //@{ @name Newton Parameters
+  int    Maximum_Number_of_NKS_Iterations;  //!<Outer
   double Overall_Tolerance;
   double Relaxation_multiplier;
-  // If time accurate then do DTS with Implicit Euler. Currently not working.
-  bool   Time_Accurate; 
-  double DTS_Tolerance; // Only used if time accurate.
-  int    Max_DTS_Steps; // Only used if time accurate.
+  //@}
 
-  // Implicit Euler Parameters
+  //@{ @name Dual Time Stepping Parameters
+  bool Dual_Time_Stepping;              //!< Dual-time-stepping flag (on or off).  
+  int Physical_Time_Integration;        //!< Implicit Euler, BDF2, ESDIRK, etc.
+  double Physical_Time_CFL_Number;
+  double Physical_Time_Step;
+  int Maximum_Number_of_DTS_Steps; 
+  
+  //int Dual_Time_Preconditioning;  
+  //@}
+
+  //@{ @name Implicit Euler Parameters
   bool   Finite_Time_Step;   
   double Finite_Time_Step_Initial_CFL;
   // Some of these finite-time step parameters are only used by explicit
   // specializations of the Finite_Time_Step() function.
   double Finite_Time_Step_Final_CFL; 
   double Finite_Time_Step_Max_CFL;
+  //@}
 
-  // GMRES parameters 
-  int    Maximum_Number_of_GMRES_Iterations; //Inner
+  //@{ @name GMRES parameters 
+  int    Maximum_Number_of_GMRES_Iterations; //!<Inner
   int    GMRES_Restart;
   int    GMRES_Overlap;
   bool   Normalization;   
-	// The linear (GMRES) L2-norm tolerance at each Newton iteration 
-	// is calculated as:
-	//    (i) (L)^(x) 
-	// where:
-	//     i is GMRES_Initial_Tolerance
-	//     L is the L2-norm of the non-linear (Newton) residual ratio
-	// and x is calculated such that:
-	//    (i) (Overall_Tolerance)^(x) == GMRES_Final_Tolerance
-	// 
-	// To turn off this variable linear tolerance, simply set 
-	// the final tolerance equal to the initial tolerance.
+  
+  // The linear (GMRES) L2-norm tolerance at each Newton iteration 
+  // is calculated as:
+  //    (i) (L)^(x) 
+  // where:
+  //     i is GMRES_Initial_Tolerance
+  //     L is the L2-norm of the non-linear (Newton) residual ratio
+  // and x is calculated such that:
+  //    (i) (Overall_Tolerance)^(x) == GMRES_Final_Tolerance
+  // 
+  // To turn off this variable linear tolerance, simply set 
+  // the final tolerance equal to the initial tolerance.
   double GMRES_Initial_Tolerance;
   double GMRES_Final_Tolerance;
+  //@}
 
-  // Matrix Free
+  //@{ @name Matrix Free
   bool   GMRES_CHECK;
   int    GMRES_Frechet_Derivative_Order;
   double Epsilon_Naught;
+  //@}
 
-  // Preconditioner 
+  //@{ @name Preconditioner 
   int    GMRES_Block_Preconditioner; 
   int    Jacobian_Order;  
   int    GMRES_ILUK_Level_of_Fill;  
+  //@}
 
-  // size of the window for the 
-  // detect convergence stall algorithm.
-  int    DCS_Window; 
-   
-  int    output_format;
-  int    output_precision, output_width;
-  
+  //@{ @name Convergence Parameters
+  int    DCS_Window;  //!< size of the window for the detect convergence stall algorithm.
   bool   Detect_Convergence_Stall;
-
   // Hack by Alistair to play with Newton convergence.
   int    Freeze_Limiter_Immediately; 
-  
-  int    NKS_Write_Output_Cells_Freq; // set to zero to turn off
-  
-  // Default Constructor 
+  //@}
+
+  //@{ @name Output & Debugging 
+  int    output_format;
+  int    output_precision, output_width;  
+  int    NKS_Write_Output_Cells_Freq; //!< set to zero to turn off
+  //@}
+
+  //@{ @name NKS Parameters
+  int Min_Number_of_Newton_Steps_With_Zero_Limiter;            //!< force 1st order for "N" steps
+  double Min_Number_of_Newton_Steps_Requiring_Jacobian_Update; //!< force Jacobian updates for "N" Newton steps       
+  double Min_L2_Norm_Requiring_Jacobian_Update;                //!< force Jacobian update for L2 < "N"
+  double Min_Finite_Time_Step_Norm_Ratio;                      //!< ramp over to full newton over 8 orders of L2 magnitude
+  //@}
+
+  //@{ @name Default Constructor 
   NKS_Input_Parameters() {
     Maximum_Number_of_NKS_Iterations = 0;
     Overall_Tolerance = 1e-5;      
     Relaxation_multiplier = 1.0;
-    Time_Accurate = false;
-    DTS_Tolerance = 0.0;
-    Max_DTS_Steps = 0; 
- 
+
+    Dual_Time_Stepping = false;         
+    Physical_Time_Integration = TIME_STEPPING_IMPLICIT_EULER;
+    Physical_Time_CFL_Number = 1.0 ;
+    Physical_Time_Step = 0.0;
+    Maximum_Number_of_DTS_Steps = 0;
+
     Finite_Time_Step = true;
     Finite_Time_Step_Initial_CFL = 1.0; 
     Finite_Time_Step_Final_CFL = 1.0e12;
@@ -124,8 +154,15 @@ class NKS_Input_Parameters{
     output_precision = 2;
     output_width = output_precision + 9;
     Freeze_Limiter_Immediately = FLI_NOT_USED;
-    NKS_Write_Output_Cells_Freq = 0;
+    NKS_Write_Output_Cells_Freq = 0; 
+   
+    Min_Number_of_Newton_Steps_With_Zero_Limiter = 0 ;           
+    Min_Number_of_Newton_Steps_Requiring_Jacobian_Update = 100; 
+    Min_L2_Norm_Requiring_Jacobian_Update = 1.0e-08 ;
+    Min_Finite_Time_Step_Norm_Ratio = 1.0e-10; 
+
   };
+  //@}
 
   ostream& Output(ostream&) const;
   int Parse_Next_Input_Control_Parameter(char *code, char *value);
@@ -145,10 +182,14 @@ class NKS_Input_Parameters{
 			  1, 
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(Relaxation_multiplier), 1, MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Time_Accurate), 1, MPI::INT,    0); // bool
-    MPI::COMM_WORLD.Bcast(&(DTS_Tolerance), 1, MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Max_DTS_Steps), 1, MPI::INT,    0);
  
+    // Dual Time Stepping
+    MPI::COMM_WORLD.Bcast(&(Dual_Time_Stepping), 1, MPI::INT,    0);  //BOOL
+    MPI::COMM_WORLD.Bcast(&(Physical_Time_Integration), 1, MPI::INT,   0);
+    MPI::COMM_WORLD.Bcast(&(Physical_Time_CFL_Number), 1, MPI::DOUBLE, 0);  
+    MPI::COMM_WORLD.Bcast(&(Physical_Time_Step), 1, MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Maximum_Number_of_DTS_Steps), 1, MPI::INT,   0);
+
     // Finite Time Step
     MPI::COMM_WORLD.Bcast(&(Finite_Time_Step), 
 			  1, 
@@ -203,7 +244,13 @@ class NKS_Input_Parameters{
     MPI::COMM_WORLD.Bcast(&(output_precision), 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(output_width), 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(Freeze_Limiter_Immediately), 1, MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(NKS_Write_Output_Cells_Freq), 1, MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(NKS_Write_Output_Cells_Freq), 1, MPI::INT, 0);  
+
+    MPI::COMM_WORLD.Bcast(&(Min_Number_of_Newton_Steps_With_Zero_Limiter), 1, MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(Min_Number_of_Newton_Steps_Requiring_Jacobian_Update), 1, MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&( Min_L2_Norm_Requiring_Jacobian_Update), 1, MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&( Min_Finite_Time_Step_Norm_Ratio), 1, MPI::DOUBLE, 0);
+
 #endif
   };
 
@@ -218,10 +265,14 @@ class NKS_Input_Parameters{
 			  1, 
                           MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(Relaxation_multiplier), 1, MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(Time_Accurate), 1, MPI::INT,    Source_Rank); // bool
-    Communicator.Bcast(&(DTS_Tolerance), 1, MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(Max_DTS_Steps), 1, MPI::INT,    Source_Rank);
  
+     // Dual Time Stepping
+    Communicator.Bcast(&(Dual_Time_Stepping), 1, MPI::INT,    Source_Rank);  //BOOL
+    Communicator.Bcast(&(Physical_Time_Integration), 1, MPI::INT,   Source_Rank);
+    Communicator.Bcast(&(Physical_Time_CFL_Number), 1, MPI::DOUBLE, Source_Rank); 
+    Communicator.Bcast(&(Physical_Time_Step), 1, MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&( Maximum_Number_of_DTS_Steps), 1, MPI::INT,   Source_Rank);
+
     // Finite Time Step
     Communicator.Bcast(&(Finite_Time_Step), 
 			  1, 
@@ -276,7 +327,13 @@ class NKS_Input_Parameters{
     Communicator.Bcast(&(output_precision), 1, MPI::INT, Source_Rank);
     Communicator.Bcast(&(output_width), 1, MPI::INT, Source_Rank);
     Communicator.Bcast(&(Freeze_Limiter_Immediately), 1, MPI::INT, Source_Rank);
-    Communicator.Bcast(&(NKS_Write_Output_Cells_Freq), 1, MPI::INT, Source_Rank);
+    Communicator.Bcast(&(NKS_Write_Output_Cells_Freq), 1, MPI::INT, Source_Rank);  
+
+    Communicator.Bcast(&(Min_Number_of_Newton_Steps_With_Zero_Limiter), 1, MPI::INT, Source_Rank);
+    Communicator.Bcast(&(Min_Number_of_Newton_Steps_Requiring_Jacobian_Update), 1, MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(Min_L2_Norm_Requiring_Jacobian_Update), 1, MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(Min_Finite_Time_Step_Norm_Ratio), 1, MPI::DOUBLE, Source_Rank);
+
   };
 #endif
 
@@ -314,37 +371,44 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
     Relaxation_multiplier = strtod(value, &ptr);
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
 
-  } else if (strcmp(code, "NKS_Time_Accurate") == 0) {
-    i_command = 67;
-    if (strlen(value) > 1) {
-	for (unsigned ii = 0; ii < strlen(value); ii++) {
-  	  value[ii] = tolower(value[ii]);
-	}
-    }
-    if (strcmp(value, "on") == 0 || strcmp(value, "true") == 0 || strcmp(value, "1") == 0) {
-	Time_Accurate = true;
+     
+    //DUAL TIME STEPPING 
+  } else if (strcmp(code, "NKS_Dual_Time_Stepping") == 0) {
+    i_command = 63;
+    if (strcmp(value, "ON") == 0 || strcmp(value, "true") == 0 || strcmp(value, "1") == 0) {
+      Dual_Time_Stepping = true;
     } else {
-	Time_Accurate = false;
+      Dual_Time_Stepping = false;
     }
-
-  } else if (strcmp(code, "NKS_DTS_Tolerance") == 0) {
-    i_command = 61;
-    DTS_Tolerance = strtod(value, &ptr);
+   
+  } else if (strcmp(code, "NKS_Physical_Time_Integration") == 0) {
+    i_command = 65;
+    if (strcmp(value, "Implicit_Euler") == 0) {
+      Physical_Time_Integration = TIME_STEPPING_IMPLICIT_EULER;
+    } else if(strcmp(value, "Second_Order_Backwards") == 0) {
+      Physical_Time_Integration = TIME_STEPPING_IMPLICIT_SECOND_ORDER_BACKWARD;
+    } else {
+      Physical_Time_Integration = TIME_STEPPING_IMPLICIT_EULER;
+    }
+    
+  } else if (strcmp(code, "NKS_Physical_Time_CFL") == 0) {
+    i_command = 65;
+    Physical_Time_CFL_Number = strtod(value, &ptr);
+    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
+   
+  } else if (strcmp(code, "NKS_Physical_Time_Step") == 0) {
+    i_command = 65;
+    Physical_Time_Step = strtod(value, &ptr);
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
 
-  } else if (strcmp(code, "NKS_Max_DTS_Steps") == 0) {
-    i_command = 63;
-    Max_DTS_Steps = static_cast<int>(strtol(value, &ptr, 10));
+  } else if (strcmp(code, "Maximum_Number_of_NKS_DTS_Steps" ) == 0) {
+    i_command = 64;
+    Maximum_Number_of_DTS_Steps = static_cast<int>(strtol(value, &ptr, 10));
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
 
     // FINITE TIME
   } else if (strcmp(code, "NKS_Finite_Time_Step") == 0) {
     i_command = 66; 
-//     if (strlen(value) > 1) {
-//       for (unsigned ii = 0; ii < strlen(value); ii++) {
-// 	value[ii] = tolower(value[ii]);
-//       }
-//     }
     if (strcmp(value, "OFF") == 0 || strcmp(value, "0") == 0) {
       Finite_Time_Step = false;
     } else {
@@ -384,11 +448,6 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
 
   } else if (strcmp(code, "GMRES_Normalization") == 0) {
     i_command = 67;
-//     if (strlen(value) > 1) {
-//       for (unsigned ii = 0; ii < strlen(value); ii++) {
-// 	value[ii] = tolower(value[ii]);
-//       }
-//     }
     if (strcmp(value, "OFF") == 0 || strcmp(value, "0") == 0) {
       Normalization = false;
     } else {
@@ -398,7 +457,7 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
   } else if (strcmp(code, "GMRES_Tolerance") == 0) { // backward compatible
     i_command = 60;
     GMRES_Initial_Tolerance = strtod(value, &ptr);
-		GMRES_Final_Tolerance = GMRES_Initial_Tolerance; 
+    GMRES_Final_Tolerance = GMRES_Initial_Tolerance; 
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; } 
 
   } else if (strcmp(code, "GMRES_Initial_Tolerance") == 0) {
@@ -411,14 +470,8 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
     GMRES_Final_Tolerance = strtod(value, &ptr);
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
 
-
   } else if (strcmp(code, "GMRES_Check") == 0) {
     i_command = 67;
-  //   if (strlen(value) > 1) {
-//       for (unsigned ii = 0; ii < strlen(value); ii++) {
-// 	value[ii] = tolower(value[ii]);
-//       }
-//     }
     if (strcmp(value, "ON") == 0 || strcmp(value, "1") == 0) {
       GMRES_CHECK = true;
     } else {
@@ -532,6 +585,26 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
     NKS_Write_Output_Cells_Freq = static_cast<int>(strtol(value, &ptr, 10));
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
 
+  } else if (strcmp(code, "NKS_Min_Number_of_Newton_Steps_With_Zero_Limiter") == 0) {
+    i_command = 77;
+    Min_Number_of_Newton_Steps_With_Zero_Limiter = static_cast<int>(strtol(value, &ptr, 10));
+    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
+
+  } else if (strcmp(code, "NKS_Min_Number_of_Newton_Steps_Requiring_Jacobian_Update") == 0) {
+    i_command = 79;
+    Min_Number_of_Newton_Steps_Requiring_Jacobian_Update = strtod(value, &ptr);
+    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
+
+  } else if (strcmp(code, "NKS_Min_L2_Norm_Requiring_Jacobian_Update") == 0) {
+    i_command = 80;
+    Min_L2_Norm_Requiring_Jacobian_Update = strtod(value, &ptr);
+    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
+    
+  } else if (strcmp(code, "NKS_Min_Finite_Time_Step_Norm_Ratio") == 0) {
+    i_command = 81;
+    Min_Finite_Time_Step_Norm_Ratio = strtod(value, &ptr);
+    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
+ 
   } else {
     i_command = INVALID_INPUT_CODE;
   }
@@ -552,15 +625,22 @@ inline ostream& NKS_Input_Parameters::Output(ostream& fout) const {
   
   fout <<"\n Overall Tolerance     ====> " << Overall_Tolerance << endl;
 
-  fout << " Relaxation Multiplier ====> " << Relaxation_multiplier << endl;
+  fout <<" Relaxation Multiplier ====> " << Relaxation_multiplier << endl;
 
-  fout <<" Time Accurate (DTS)   ====> ";
-  if (Time_Accurate) { 
+  fout <<" Dual Time Stepping    ====> ";
+  if (Dual_Time_Stepping) { 
      fout << "ON\n"; 
-     fout.setf(ios::scientific);
-     fout <<" DTS Tolerance         ====> " << DTS_Tolerance << endl;
-     fout.unsetf(ios::scientific);
-     fout <<" DTS Max Steps         ====> " << Max_DTS_Steps << endl;
+     if ( Physical_Time_Integration == TIME_STEPPING_IMPLICIT_EULER) {
+       fout<<" DTS Time Integration  ====> Implicit Euler \n";
+     } else if ( Physical_Time_Integration == TIME_STEPPING_IMPLICIT_SECOND_ORDER_BACKWARD) {
+       fout<<" DTS Time Integration  ====> Second Order Backwards \n";
+     } 
+     if( Physical_Time_Step > ZERO){
+       fout <<" DTS Fixed Time Step   ====> " << Physical_Time_Step << endl; 
+     } else { 
+       fout <<" DTS CFL Number        ====> " << Physical_Time_CFL_Number << endl;   
+     }
+    fout <<" DTS Max Steps         ====> " << Maximum_Number_of_DTS_Steps  << endl;        
   } else { 
      fout << "OFF\n"; 
   }
@@ -568,7 +648,6 @@ inline ostream& NKS_Input_Parameters::Output(ostream& fout) const {
   if (Finite_Time_Step == ON) {     
     fout <<" Finite Time Step      ====> ON" << endl;
     fout <<" Initial_CFL           ====> " << Finite_Time_Step_Initial_CFL << endl;
-		// But not everyone uses all of these ...
     fout <<" Final_CFL             ====> " << Finite_Time_Step_Final_CFL << endl;
     fout <<" Max_CFL               ====> " << Finite_Time_Step_Max_CFL << endl;
   } else {
@@ -579,12 +658,13 @@ inline ostream& NKS_Input_Parameters::Output(ostream& fout) const {
   fout <<" Maximum GMRES Its.    ====> " << Maximum_Number_of_GMRES_Iterations<< endl;
   fout <<" GMRES Restart Its.    ====> " << GMRES_Restart << endl;
   fout <<" Level of Overlap      ====> " << GMRES_Overlap << endl;
-	if (fabs(GMRES_Initial_Tolerance-GMRES_Final_Tolerance) < 1e-10) {
-  fout <<" GMRES Tolerance       ====> " << GMRES_Initial_Tolerance << endl;
-	} else {
-	 fout <<" GMRES Initial Tol     ====> " << GMRES_Initial_Tolerance << endl;
-	 fout <<" GMRES Final Tol       ====> " << GMRES_Final_Tolerance << endl;
-	}
+
+  if (fabs(GMRES_Initial_Tolerance-GMRES_Final_Tolerance) < 1e-10) {
+    fout <<" GMRES Tolerance       ====> " << GMRES_Initial_Tolerance << endl;
+  } else {
+    fout <<" GMRES Initial Tol     ====> " << GMRES_Initial_Tolerance << endl;
+    fout <<" GMRES Final Tol       ====> " << GMRES_Final_Tolerance << endl;
+  }
   
   if (Normalization == ON) {
     fout <<" Normalization         ====> ON" << endl;

@@ -38,17 +38,17 @@ Multigrid_Number_of_Smooths_on_Coarsest_Level =
 Full_Multigrid =
 500
 Defect_Correction =
-On
+OFF
 Prolong_Using_Injection =
-On
+OFF
 First_Order_Coarse_Mesh_Reconstruction =
-On
+OFF
 Apply_Coarse_Mesh_Boundary_Conditions =
-On
+OFF
 Injection_at_Dirichlet_Boundary_Conditions =
-On
+OFF
 Update_Stability_Switch =
-On
+OFF
 Maximum_Number_of_Update_Reductions =
 5
 Multigrid_Smoothing_Type = 
@@ -94,9 +94,9 @@ yplus_buffer_layer =
 yplus_outer_layer =
 250.0
 Compressibility_Effect =
-Off
+OFF
 Variable_Prandtl =
-Off
+OFF
 Step_Height =
 20.0
 #
@@ -118,7 +118,7 @@ Mesh_Stretching_Factor_Idir =
 Mesh_Stretching_Factor_Jdir =
 1.1
 Boundary_Conditions_Specified =
-On
+ON
 BC_North =
 Fixed
 BC_South =
@@ -138,7 +138,7 @@ Number_of_Initial_Mesh_Refinements =
 #
 # UNSTEADY AMR PARAMETERS:
 AMR =
-Off
+OFF
 #
 # AMR PARAMETERS:
 Maximum_Refinement_Level =
@@ -150,7 +150,7 @@ Threshold_for_Refinement =
 Threshold_for_Coarsening =
 0.01
 Smooth_Quad_Block =
-Off
+OFF
 #
 # TIME-STEPPING PARAMETERS:
 CFL_Number =
@@ -166,7 +166,7 @@ Number_of_Blocks_Per_Processor =
 Output_File_Name = 
 jet_flow
 Restart_Solution_Save_Frequency = 
-6000
+3000
 #
 # EXECUTE PROGRAM:
 Execute

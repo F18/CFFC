@@ -525,7 +525,6 @@ double Euler3D_ThermallyPerfect_pState::a(void){
    
 //  one way to obtain the speed of sound
 //   sum = (p/rho)*(RTOT/( hprime() - RTOT) + ONE);
-   
 // also could use:  
     sum  =  (g()*(Rtot()*T()));
    return sqrt(sum);
@@ -540,6 +539,13 @@ double Euler3D_ThermallyPerfect_pState::a(void) const{
 // also could use 
     sum =  (g()*(Rtot()*T()));
    return sqrt(sum);
+}
+
+// Mach number
+double Euler3D_ThermallyPerfect_pState::M(void) const{
+   double mach_number;
+   mach_number = v.abs() / a();
+   return sqrt(mach_number);
 }
 
 /*******************************************************************
@@ -1218,6 +1224,13 @@ double Euler3D_ThermallyPerfect_cState::a(void) const{
   sum  =  (g()*(Rtot()*T()));
  
   return sqrt(sum);
+}
+
+// Mach number
+double Euler3D_ThermallyPerfect_cState::M(void) const{
+   double mach_number;
+   mach_number = rhov.abs() / (rho*a());
+   return sqrt(mach_number);
 }
 
 //----------------- Addition -----------------------------//

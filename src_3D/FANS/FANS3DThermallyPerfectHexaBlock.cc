@@ -1,715 +1,7 @@
 
-#ifndef  _FANS3D_THERMALLYPERFECT_HEXA_BLOCK_INCLUDED
+#ifndef _FANS3D_THERMALLYPERFECT_HEXA_BLOCK_INCLUDED
 #include "FANS3DThermallyPerfectHexaBlock.h"
 #endif // _FANS3D_THERMALLYPERFECT_HEXA_BLOCK_INCLUDED
-
-/********************************************************
- * Routine: CFL                                         *
- *                                                      *
- * Determines the allowable global and local time steps *
- * (for explicit Euler time stepping scheme) for the    *
- * specified hexa solution block according to           *
- * the Courant-Friedrichs-Lewy condition.               *
- *                                                      *
- ********************************************************/
-template<>
-double Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
-                  FANS3D_ThermallyPerfect_KOmega_cState>::
-CFL(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
-                     FANS3D_ThermallyPerfect_KOmega_cState> &IPs){
-   
-   int i, j, k;
-   double dtMin, d_i, d_j, d_k, v_i, v_j, v_k, a, dt_vis, nv, nv_t;
-   double mr, aa_i, aa_j, aa_k;
-   
-   dtMin = MILLION;
-   
-   for ( k  =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k ) 
-      for ( j  =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j ) 
-         for ( i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i ) {
-            if (i <  ICl || i >  ICu ||
-                j <  JCl || j >  JCu || 
-                k <  KCl || k >  KCu) {
-               dt[i][j][k] = ZERO;
-            } else {
-               d_i = TWO*(Grid.volume(i,j,k)/
-                          (Grid.AfaceE(i, j, k)+ Grid.AfaceW(i, j, k)));
-               d_j = TWO*( Grid.volume(i, j, k)/
-                           (Grid.AfaceN(i, j, k)+ Grid.AfaceS(i, j, k)));
-               d_k = TWO*( Grid.volume(i, j, k)/
-                           (Grid.AfaceTop(i, j, k)+ Grid.AfaceBot(i, j, k)));
-               v_i = HALF*(W[i][j][k].rhov()/W[i][j][k].rho*
-                           (Grid.nfaceE(i, j, k)- Grid.nfaceW(i, j, k)));
-               v_j = HALF*(W[i][j][k].rhov()/W[i][j][k].rho*
-                           ( Grid.nfaceN(i, j, k)- Grid.nfaceS(i, j, k)));
-               v_k = HALF*(W[i][j][k].rhov()/W[i][j][k].rho*
-                            (Grid.nfaceTop(i, j, k)- Grid.nfaceBot(i, j, k)));
-               a =  W[i][j][k].a();
-               dt[i][j][k] = min(min(d_i/(a+fabs(v_i)), d_j/(a+fabs(v_j))),
-                                 d_k/(a+fabs(v_k)));
-               
-               if (IPs.i_Flow_Type != FLOWTYPE_INVISCID) {  
-                  nv = W[i][j][k].mu()/W[i][j][k].rho;
-                  
-                  if((IPs.i_Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-                      IPs.i_Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON)) {
-                     nv_t = W[i][j][k].eddy_viscosity()/W[i][j][k].rho; 
-                     nv = max(nv, nv_t);
-                  }
-                  dt_vis = min(min((d_i*d_i)/(3.0*nv), (d_j*d_j)/(3.0*nv)), (d_k*d_k)/(3.0*nv)); 
-                  dt[i][j][k]  = min(dt_vis, dt[i][j][k]);
-               }	  
-               
-               dtMin = min(dtMin,  dt[i][j][k]);
-               
-            } /* endif */
-            
-         } /* endfor */
-   
-      for ( k  =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k ) 
-         for ( j  =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j ) 
-            for ( i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i ) {
-               if (i <  ICl || i >  ICu ||
-                   j <  JCl || j >  JCu || 
-                   k <  KCl || k >  KCu) {
-                  dt[i][j][k] = dtMin;
-               } /* endif */
-            } /* endfor */
-   
-   /* Return the global time step. */
-   
-   return (dtMin);
-}
-
-template<>
-int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
-               FANS3D_ThermallyPerfect_KOmega_cState>::
-dUdt_Multistage_Explicit(const int i_stage,
-                         Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
-                                          FANS3D_ThermallyPerfect_KOmega_cState> &IPs) {
-
-   int i, j, k,  k_residual;
-   double omega;
-   Vector3D dX;
-   
-   FANS3D_ThermallyPerfect_KOmega_pState Wl, Wr;
-   FANS3D_ThermallyPerfect_KOmega_cState Flux, Temp;
-
-   FANS3D_ThermallyPerfect_KOmega_cState U_VACUUM;
-   U_VACUUM.Vacuum();
-   FANS3D_ThermallyPerfect_KOmega_pState W_VACUUM;
-   W_VACUUM.Vacuum();
-   Wl = W_VACUUM;
-   Wr = W_VACUUM;
-   Flux = U_VACUUM;
-   Temp = U_VACUUM;
-
-
-  /* Evaluate the time step fraction and residual storage location 
-   *     *       for the stage. */
-   switch(IPs.i_Time_Integration) {
-   case TIME_STEPPING_EXPLICIT_EULER :
-      omega = Runge_Kutta(i_stage, IPs.N_Stage);
-      k_residual = 0;
-      break;
-   case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
-      omega = Runge_Kutta(i_stage, IPs.N_Stage);
-      k_residual = 0;
-      break;
-   case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
-      omega = Runge_Kutta(i_stage, IPs.N_Stage);
-      k_residual = 0; 
-      if (IPs.N_Stage == 4) {
-         if (i_stage == 4) {
-            k_residual = 0;
-         } else {
-            k_residual = i_stage - 1;
-         } /* endif */
-      } /* endif */
-      break;
-   case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
-      omega = MultiStage_Optimally_Smoothing(i_stage,
-                                             IPs.N_Stage,
-                                             IPs.i_Limiter);
-      k_residual = 0;
-      break;
-   default: 
-      omega = Runge_Kutta(i_stage, IPs.N_Stage);
-      k_residual = 0;
-      break;
-   } /* endswitch */
-   
-   
-   /* Perform the linear reconstruction within each cell
-      of the computational grid for this stage. */
-   
-   switch(IPs.i_Reconstruction) {
-      
-   case RECONSTRUCTION_LEAST_SQUARES :
-
-      Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
-
-      break;
-   default:
-      Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
-      break;
-   } /* endswitch */
-
-   // compute y+ etc.;
-   Wall_Shear( );
-   
-   /* Evaluate the time rate of change of the solution
-      (i.e., the solution residuals) using a second-order
-      limited upwind scheme with a variety of flux functions. */
-   
-   // Add i-direction (zeta-direction) fluxes.
-   for ( k  =  KCl-1 ; k <=  KCu+1 ; ++k ){
-      
-      for ( j  =  JCl-1 ; j <=  JCu+1 ; ++j ) {
-         if ( i_stage == 1 ) {
-            Uo[ ICl-1][j][k] =  U[ ICl-1][j][k];
-            dUdt[ ICl-1][j][k][k_residual] = U_VACUUM;
-         } else {
-            dUdt[ ICl-1][j][k][k_residual] = U_VACUUM;
-         } /* endif */
-         
-         for ( i =  ICl-1 ; i <=  ICu ; ++i ) {
-            if ( i_stage == 1 ) {
-               Uo[i+1][j][k] =  U[i+1][j][k];
-               dUdt[i+1][j][k][k_residual] = U_VACUUM;
-            } else if (( j >  JCl-1 && j <  JCu+1 ) 
-                       && (k >  KCl-1 && k <  KCu+1) ){
-               switch(IPs.i_Time_Integration) {
-               case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
-                  //dUdt[i+1][j][k][k_residual] = 
-                  //  dUdt[i+1][j][k][k_residual];
-                  break;
-               case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
-		  if (IPs.N_Stage == 2) {
-                     //dUdt[i+1][j][k_residual] = 
-                     // dUdt[i+1][j][k_residual];
-                  } else if (IPs.N_Stage == 4 && i_stage == 4) {
-                     dUdt[i+1][j][k][k_residual] = 
-                        dUdt[i+1][j][k][0] + 
-                        TWO*dUdt[i+1][j][k][1] +TWO*dUdt[i+1][j][k][2];
-                  } else {
-         	     dUdt[i+1][j][k][k_residual].Vacuum();
-                  } /* endif */
-                  break;
-
-               case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
-                  dUdt[i+1][j][k][k_residual] = U_VACUUM;
-                  break;
-               default:
-                  dUdt[i+1][j][k][k_residual] = U_VACUUM;
-                  break;
-               } /* endswitch */
-            } /* endif */
-            if (( j >  JCl-1 && j <  JCu+1 ) && 
-                ( k >  KCl-1 && k <  KCu+1 )) {
-               
-               /* Evaluate the cell interface i-direction fluxes. */
-               if (i ==  ICl-1 &&  (Grid.BCtypeW[j][k] == BC_REFLECTION ||
-                                    Grid.BCtypeW[j][k] == BC_NO_SLIP||
-                                    Grid.BCtypeW[j][k] == BC_MOVING_WALL)  ) {
-                               
-                  dX =  Grid.xfaceW(i+1, j, k)- Grid.Cell[i+1][j][k].Xc;
-                  
-                  Wr =  W[i+1][j][k] + 
-                     ( phi[i+1][j][k]^dWdx[i+1][j][k])*dX.x +
-                     ( phi[i+1][j][k]^dWdy[i+1][j][k])*dX.y +
-                     ( phi[i+1][j][k]^dWdz[i+1][j][k])*dX.z;
-                                 
-                  if ( Grid.BCtypeW[j][k] == BC_REFLECTION) {
-                     Wl =  FANS3D_ThermallyPerfect_KOmega_pState::Reflect(Wr,  Grid.nfaceW(i+1, j, k));
-                  }
-                  if ( Grid.BCtypeW[j][k] == BC_NO_SLIP) {
-                     Wl =  FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k), 
-                                                                          IPs.Pressure_Gradient,
-                                                                          FIXED_TEMPERATURE_WALL);
-                  }
-                  if ( Grid.BCtypeW[j][k] == BC_MOVING_WALL) {
-                     Wl =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k),
-                                                                              IPs.Moving_Wall_Velocity,
-                                                                              IPs.Pressure_Gradient,
-                                                                              FIXED_TEMPERATURE_WALL);
-                  }
-               } else if (i ==  ICu && 
-                          ( Grid.BCtypeE[j][k] == BC_REFLECTION||
-                            Grid.BCtypeE[j][k] == BC_NO_SLIP||
-                            Grid.BCtypeE[j][k] == BC_MOVING_WALL)) {
-                  
-                  dX =  Grid.xfaceE(i, j, k)- Grid.Cell[i][j][k].Xc;
-                  Wl =  W[i][j][k] + 
-                     ( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
-                     ( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
-                     ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
-                  
-                  if ( Grid.BCtypeE[j][k] == BC_REFLECTION) {
-                     Wr =  FANS3D_ThermallyPerfect_KOmega_pState::Reflect(Wl,  Grid.nfaceE(i, j, k));
-                     
-                  } 
-                  if ( Grid.BCtypeE[j][k] == BC_NO_SLIP) {
-                     Wr =  FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(Wl, WoE[j][k], Grid.nfaceE(i, j, k), 
-                                                                          IPs.Pressure_Gradient, 
-                                                                          FIXED_TEMPERATURE_WALL);
-                     
-                  } 
-                  if ( Grid.BCtypeE[j][k] == BC_MOVING_WALL) {
-                     Wr =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wl, WoE[j][k], Grid.nfaceE(i, j, k),  
-                                                                              IPs.Moving_Wall_Velocity,
-                                                                              IPs.Pressure_Gradient,
-                                                                              FIXED_TEMPERATURE_WALL);
-                  }
-                  
-               } else { 
-                  dX =  Grid.xfaceE(i, j, k)- Grid.Cell[i][j][k].Xc;
-                  Wl =  W[i][j][k] + 
-                     ( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
-                     ( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
-                     ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
-               
-                  dX =  Grid.xfaceW(i+1, j, k)- Grid.Cell[i+1][j][k].Xc;
-                  Wr =  W[i+1][j][k] + 
-                     ( phi[i+1][j][k]^ dWdx[i+1][j][k])*dX.x +
-                     ( phi[i+1][j][k]^ dWdy[i+1][j][k])*dX.y +
-                     ( phi[i+1][j][k]^ dWdz[i+1][j][k])*dX.z;
-               } /* endif */
-               
-               switch(IPs.i_Flux_Function) {
-               case FLUX_FUNCTION_HLLE :
-                  Flux =  FANS3D_ThermallyPerfect_KOmega_pState::FluxHLLE_n(Wl, Wr,  Grid.nfaceE(i, j, k));
-                  break;
-               case FLUX_FUNCTION_ROE :
-                  Flux =  FANS3D_ThermallyPerfect_KOmega_pState::FluxRoe_n(Wl, Wr,  Grid.nfaceE(i, j, k));
-                  break;
-               } /* endswitch */
-
-               // add viscous flux in i direction
-               Flux -=  FANS3D_ThermallyPerfect_KOmega_pState::FluxViscous_n(Wl, Wr,W[i][j][k], W[i+1][j][k], 
-                                                                             dWdx[i][j][k], dWdy[i][j][k],dWdz[i][j][k],
-                                                                             dWdx[i+1][j][k], dWdy[i+1][j][k],dWdz[i+1][j][k],
-                                                                             Grid.nfaceE(i, j, k), Grid.Voe(i, j, k),  
-                                                                             Grid.delta_oe(i, j, k),
-                                                                             Grid.volume(i, j, k), 
-                                                                            Grid.volume(i+1, j, k));
-
-               /* Evaluate cell-averaged solution changes. */
-               
-               dUdt[i][j][k][k_residual] -= 
-                  (IPs.CFL_Number* dt[i][j][k])*
-                  Flux* Grid.AfaceE(i, j, k)/
-                  Grid.volume(i, j, k);
-               dUdt[i+1][j][k][k_residual] += 
-                  (IPs.CFL_Number* dt[i+1][j][k])*
-                  Flux* Grid.AfaceW(i+1, j, k)/
-                  Grid.volume(i+1, j ,k);
-                                 
-               /* Include source terms associated with turbulence model */
-               dUdt[i][j][k][k_residual] += (IPs.CFL_Number* dt[i][j][k])*
-                  FANS3D_ThermallyPerfect_KOmega_pState::Src_t(W[i][j][k], dWdx[i][j][k], 
-                                                               dWdy[i][j][k], dWdz[i][j][k]);
-     
-	   /* Save west and east face boundary flux. */
-               
-               //    if (i ==  ICl-1) {
-//                     FluxW[j] = -Flux* Grid.lfaceW(i+1, j);
-//                 } else if (i ==  ICu) {
-//                     FluxE[j] = Flux* Grid.lfaceE(i, j);
-//                 } /* endif */ 
-               
-            } /* endif */
-         } /* endfor */
-          
-         if (( j >  JCl-1 && j <  JCu+1 ) && 
-             ( k >  KCl-1 && k <  KCu+1 ) ) {
-            dUdt[ ICl-1][j][k][k_residual] = U_VACUUM;
-            dUdt[ ICu+1][j][k][k_residual] = U_VACUUM;
-         } /* endif */
-      } /* endfor */
-   } /* endfor */
- 
-   // Add j-direction (eta-direction) fluxes.
-   for ( k =  KCl ; k <=  KCu ; ++k ) {
-      
-      for ( i =  ICl ; i <=  ICu ; ++i ) {
-         for ( j  =  JCl-1 ; j <=  JCu ; ++j ) {
-            
-            /* Evaluate the cell interface j-direction fluxes. */
-            if (j ==  JCl-1 && 
-                ( Grid.BCtypeS[i][k] == BC_REFLECTION ||
-                  Grid.BCtypeS[i][k] == BC_NO_SLIP||
-                  Grid.BCtypeS[i][k] == BC_MOVING_WALL)) {
-               
-               dX =  Grid.xfaceS(i, j+1, k)- Grid.Cell[i][j+1][k].Xc;
-               Wr =  W[i][j+1][k] +
-                  ( phi[i][j+1][k]^ dWdx[i][j+1][k])*dX.x +
-                  ( phi[i][j+1][k]^ dWdy[i][j+1][k])*dX.y+
-                  ( phi[i][j+1][k]^ dWdz[i][j+1][k])*dX.z;
-               if ( Grid.BCtypeS[i][k] == BC_REFLECTION) {
-                  Wl =  FANS3D_ThermallyPerfect_KOmega_pState::Reflect(Wr,  Grid.nfaceS(i, j+1, k));
-                }
-                if ( Grid.BCtypeS[i][k] == BC_NO_SLIP) {
-                   Wl =  FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
-                                                                        IPs.Pressure_Gradient,
-                                FIXED_TEMPERATURE_WALL);
-                }
-                if ( Grid.BCtypeS[i][k] == BC_MOVING_WALL) {
-                   Wl =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
-                                                                            IPs.Moving_Wall_Velocity,
-                                                                            IPs.Pressure_Gradient,
-                                                                            FIXED_TEMPERATURE_WALL);
-                }
-
-             } else if (j ==  JCu && 
-                        ( Grid.BCtypeN[i][k] == BC_REFLECTION ||
-                          Grid.BCtypeN[i][k] == BC_NO_SLIP||
-                          Grid.BCtypeN[i][k] == BC_MOVING_WALL)) {
-                
-                dX =  Grid.xfaceN(i, j, k)- Grid.Cell[i][j][k].Xc;
-                Wl =  W[i][j][k] + 
-                   ( phi[i][j][k]^ dWdx[i][j][k])*dX.x+
-                   ( phi[i][j][k]^ dWdy[i][j][k])*dX.y+
-                   ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
-                if ( Grid.BCtypeN[i][k] == BC_REFLECTION) {
-                   Wr =  FANS3D_ThermallyPerfect_KOmega_pState::Reflect(Wl,  Grid.nfaceN(i, j, k));
-                }
-                if ( Grid.BCtypeN[i][k] == BC_NO_SLIP) {
-                   Wr =  FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
-                                                                        IPs.Pressure_Gradient,
-                                                                        FIXED_TEMPERATURE_WALL );
-                }
-                if ( Grid.BCtypeN[i][k] == BC_MOVING_WALL) {
-                   Wr =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
-                                                                            IPs.Moving_Wall_Velocity,
-                                                                            IPs.Pressure_Gradient,
-                                                                            FIXED_TEMPERATURE_WALL );
-                }
-             } else {
-                dX =  Grid.xfaceN(i, j, k)- Grid.Cell[i][j][k].Xc;
-                Wl =  W[i][j][k] + 
-                   ( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
-                   ( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
-                   ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
-                dX =  Grid.xfaceS(i, j+1, k)- Grid.Cell[i][j+1][k].Xc;
-                Wr =  W[i][j+1][k] +
-                   ( phi[i][j+1][k]^ dWdx[i][j+1][k])*dX.x +
-                   ( phi[i][j+1][k]^ dWdy[i][j+1][k])*dX.y +
-                   ( phi[i][j+1][k]^ dWdz[i][j+1][k])*dX.z;
-          
-                        
-          } /* endif */
-
-             switch(IPs.i_Flux_Function) {
-             case FLUX_FUNCTION_HLLE :
-                Flux =  FANS3D_ThermallyPerfect_KOmega_pState::FluxHLLE_n(Wl, Wr,  Grid.nfaceN(i, j, k));
-                break;
-             case FLUX_FUNCTION_ROE :
-                Flux =  FANS3D_ThermallyPerfect_KOmega_pState::FluxRoe_n(Wl, Wr,  Grid.nfaceN(i, j, k));
-                break;
-             } /* endswitch */
-              
-             // add viscous flux in j direction
-             
-             Flux -=  FANS3D_ThermallyPerfect_KOmega_pState::FluxViscous_n(Wl, Wr, W[i][j][k], W[i][j+1][k],
-                                                                           dWdx[i][j][k], dWdy[i][j][k],dWdz[i][j][k],
-                                                                           dWdx[i][j+1][k], dWdy[i][j+1][k],dWdz[i][j+1][k],
-                                                                           Grid.nfaceN(i, j, k),  Grid.Von(i, j, k),
-                                                                           Grid.delta_on(i, j, k), Grid.volume(i, j, k), 
-                                                                           Grid.volume(i, j+1, k));
-             
-             /* Evaluate cell-averaged solution changes. */
-             dUdt[i][j][k][k_residual] -= 
-                (IPs.CFL_Number* dt[i][j][k])*
-                Flux* Grid.AfaceN(i, j, k)/
-                Grid.volume(i, j, k);
-              dUdt[i][j+1][k][k_residual] += 
-                (IPs.CFL_Number* dt[i][j+1][k])*
-                Flux* Grid.AfaceS(i, j+1, k)/
-                 Grid.volume(i, j+1, k);
-    
-              
-          /* Save south and north face boundary flux. */
-
-          // if (j ==  JCl-1) {
-//               FluxS[i] = -Flux* Grid.lfaceS(i, j+1);
-//           } else if (j ==  JCu) {
-//               FluxN[i] = Flux* Grid.lfaceN(i, j);
-//           } /* endif */
-
-          } /* endfor */
-           dUdt[i][ JCl-1][k][k_residual] = U_VACUUM;
-           dUdt[i][ JCu+1][k][k_residual] = U_VACUUM;
-       } /* endfor */
-   } /* endfor */
-
-   // Add k-direction (gamma-direction) fluxes.
-   for ( i =  ICl; i <=  ICu ; ++i ) {
-   
-      for ( j  =  JCl ; j <=  JCu ; ++j ){
-         for ( k =  KCl-1 ; k <=  KCu ; ++k )  {
-            
-            /* Evaluate the cell interface j-direction fluxes. */
-            if (k ==  KCl-1 && 
-                ( Grid.BCtypeB[i][j] == BC_REFLECTION  || 
-                  Grid.BCtypeB[i][j] == BC_NO_SLIP ||
-                  Grid.BCtypeB[i][j] == BC_MOVING_WALL)) {
-                
-               dX =  Grid.xfaceBot(i, j, k+1)- Grid.Cell[i][j][k+1].Xc;
-               Wr =  W[i][j][k+1] +
-                  ( phi[i][j][k+1]^ dWdx[i][j][k+1])*dX.x +
-                  ( phi[i][j][k+1]^ dWdy[i][j][k+1])*dX.y+
-                  ( phi[i][j][k+1]^ dWdz[i][j][k+1])*dX.z;
-               if ( Grid.BCtypeB[i][j] == BC_REFLECTION) {
-                  Wl =  FANS3D_ThermallyPerfect_KOmega_pState::Reflect(Wr,  Grid.nfaceBot(i, j, k+1));
-               }
-               if ( Grid.BCtypeB[i][j] == BC_NO_SLIP) {
-                  Wl =  FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1), 
-                                                                       IPs.Pressure_Gradient,
-                                                                       FIXED_TEMPERATURE_WALL);
-               }
-               if ( Grid.BCtypeB[i][j] == BC_MOVING_WALL) {
-                  Wl =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1),
-                                                                           IPs.Moving_Wall_Velocity,
-                                                                           IPs.Pressure_Gradient,
-                                                                           FIXED_TEMPERATURE_WALL);
-               }
-
-
-            } else if (k ==  KCu && 
-                       ( Grid.BCtypeT[i][j] == BC_REFLECTION ||
-                         Grid.BCtypeT[i][j] == BC_NO_SLIP ||
-                         Grid.BCtypeT[i][j] == BC_MOVING_WALL)) {
-                
-               dX =  Grid.xfaceTop(i, j, k)- Grid.Cell[i][j][k].Xc;
-                Wl =  W[i][j][k] + 
-                   ( phi[i][j][k]^ dWdx[i][j][k])*dX.x+
-                   ( phi[i][j][k]^ dWdy[i][j][k])*dX.y+
-                   ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
-                if ( Grid.BCtypeT[i][j] == BC_REFLECTION) {
-                   Wr =  FANS3D_ThermallyPerfect_KOmega_pState::Reflect(Wl,  Grid.nfaceTop(i, j, k));
-                }
-                if ( Grid.BCtypeT[i][j] == BC_NO_SLIP) {
-                   Wr =  FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(Wl, WoT[i][j], Grid.nfaceTop(i, j, k), 
-                                                                        IPs.Pressure_Gradient,
-                                                                        FIXED_TEMPERATURE_WALL );
-                }
-                if ( Grid.BCtypeT[i][j] == BC_MOVING_WALL) {
-                   Wr =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wl, WoT[i][j], Grid.nfaceTop(i, j, k),
-                                                                            IPs.Moving_Wall_Velocity,
-                                                                            IPs.Pressure_Gradient, 
-                                                                            FIXED_TEMPERATURE_WALL );
-                }
-
-             } else {
-                dX =  Grid.xfaceTop(i, j, k)- Grid.Cell[i][j][k].Xc;
-                Wl =  W[i][j][k] + 
-                   ( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
-                   ( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
-                   ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
-                dX =  Grid.xfaceBot(i, j, k+1)- Grid.Cell[i][j][k+1].Xc;
-                Wr =  W[i][j][k+1] +
-                   ( phi[i][j][k+1]^ dWdx[i][j][k+1])*dX.x +
-                   ( phi[i][j][k+1]^ dWdy[i][j][k+1])*dX.y +
-                   ( phi[i][j][k+1]^ dWdz[i][j][k+1])*dX.z;
-             } /* endif */
-             
-             switch(IPs.i_Flux_Function) {
-             case FLUX_FUNCTION_HLLE :
-                Flux =  FANS3D_ThermallyPerfect_KOmega_pState::FluxHLLE_n(Wl, Wr,  Grid.nfaceTop(i, j, k));
-                break;
-             case FLUX_FUNCTION_ROE :
-                Flux =  FANS3D_ThermallyPerfect_KOmega_pState::FluxRoe_n(Wl, Wr,  Grid.nfaceTop(i, j, k));
-                break;
-             } /* endswitch */
-             
-             // add viscous flux in k direction
-             Flux -=  FANS3D_ThermallyPerfect_KOmega_pState::FluxViscous_n(Wl, Wr,W[i][j][k], W[i][j][k+1], 
-                                   dWdx[i][j][k], dWdy[i][j][k], dWdz[i][j][k],
-                                   dWdx[i][j][k+1], dWdy[i][j][k+1], dWdz[i][j][k+1],
-                                   Grid.nfaceTop(i, j, k), Grid.Vot(i, j, k), 
-                                   Grid.delta_ot(i, j, k), Grid.volume(i, j, k), Grid.volume(i, j, k+1));
-
-             /* Evaluate cell-averaged solution changes. */
-             
-             dUdt[i][j][k][k_residual] -= 
-                (IPs.CFL_Number* dt[i][j][k])*
-                Flux* Grid.AfaceTop(i, j, k)/
-                Grid.volume(i, j, k);
-             dUdt[i][j][k+1][k_residual] += 
-                (IPs.CFL_Number* dt[i][j][k+1])*
-                Flux* Grid.AfaceBot(i, j, k+1)/
-                Grid.volume(i, j, k+1);
-             
-             /* Save top and bottom face boundary flux. */
-             
-             // if (j ==  JCl-1) {
-//               FluxS[i] = -Flux* Grid.lfaceS(i, j+1);
-//           } else if (j ==  JCu) {
-//               FluxN[i] = Flux* Grid.lfaceN(i, j);
-//           } /* endif */
-             
-          } /* endfor */
-          dUdt[i][j][ KCl-1][k_residual] = U_VACUUM;
-          dUdt[i][j][ KCu+1][k_residual] = U_VACUUM;
-
-      } /* endfor */
-
-   } /* endfor */
-   
-   // Residual "correction" for sublayer and log-layer based on 
-   // wall boundary treatment methods.
-   if (IPs.Turbulence_IP.Near_Wall_Boundary_Treatment == 0){
-      for ( k  =  KCl ; k <=  KCu ; ++k ) 
-         for ( j  =  JCl ; j <=  JCu ; ++j ) 
-            for ( i =  ICl ; i <=  ICu ; ++i ) {
-               U[i][j][k].k_omega_model.automatic_wall_treatment_residual_evaluaton(
-                  i, j, k, WallData[i][j][k], Grid,  dUdt[i][j][k][k_residual].rhok, dUdt[i][j][k][k_residual].rhoomega);
-            }
-      
-   }else if (IPs.Turbulence_IP.Near_Wall_Boundary_Treatment == 2){
-      for ( k  =  KCl ; k <=  KCu ; ++k ) 
-         for ( j  =  JCl ; j <=  JCu ; ++j ) 
-            for ( i =  ICl ; i <=  ICu ; ++i ) {
-               U[i][j][k].k_omega_model.low_Reynolds_number_formulation_residual_evaluaton(
-                  i, j, k, WallData[i][j][k], Grid, dUdt[i][j][k][k_residual].rhoomega);
-            }
-      
-   }else{
-      for ( k  =  KCl ; k <=  KCu ; ++k ) 
-         for ( j  =  JCl ; j <=  JCu ; ++j ) 
-            for ( i =  ICl ; i <=  ICu ; ++i ) {
-               U[i][j][k].k_omega_model.wall_function_residual_evaluation(
-                  WallData[i][j][k], dUdt[i][j][k][k_residual].rhok,
-                  dUdt[i][j][k][k_residual].rhoomega);
-            }
-      
-   } // end of the residual "correction".
-   
-   
-   /* Residual for the stage successfully calculated. */
-   
-   
-   return (0);
-    
-}
-
-template<>
-int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
-               FANS3D_ThermallyPerfect_KOmega_cState>::
-Update_Solution_Multistage_Explicit(const int i_stage,
-                                    Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
-                                                     FANS3D_ThermallyPerfect_KOmega_cState> &IPs){
-   
-   int i, j, k,  k_residual;
-   double omega;
-   
-   // Memory for linear system solver.
-   
-   FANS3D_ThermallyPerfect_KOmega_cState dU_precon;
-   int num_vars = NumVar();
-
-   /* Evaluate the time step fraction and residual storage 
-      location for the stage. */
-  
-   switch(IPs.i_Time_Integration) {
-   case TIME_STEPPING_EXPLICIT_EULER :
-      omega = Runge_Kutta(i_stage, IPs.N_Stage);
-      k_residual = 0;
-      break;
-   case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
-      omega = Runge_Kutta(i_stage, IPs.N_Stage);
-      k_residual = 0;
-      break;
-   case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
-      omega = Runge_Kutta(i_stage, IPs.N_Stage);
-      k_residual = 0;
-      if (IPs.N_Stage == 4) {
-         if (i_stage == 4) {
-            k_residual = 0;
-         } else {
-            k_residual = i_stage - 1;
-         } /* endif */
-      } /* endif */
-      break;
-   case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
-     
-      omega = MultiStage_Optimally_Smoothing(i_stage, 
-                                             IPs.N_Stage,
-                                             IPs.i_Limiter);
-      k_residual = 0;
-      break;
-   default:
-      omega = Runge_Kutta(i_stage, IPs.N_Stage);
-      k_residual = 0;
-      break;
-   } /* endswitch */
-    
-
-   /* Update solution variables for this stage. */
-   for ( k  =  KCl ; k <=  KCu ; ++k ) {
-      for ( j  =  JCl ; j <=  JCu ; ++j ) {
-         for ( i =  ICl ; i <=  ICu ; ++i ) {
-            
-            if (IPs.Local_Time_Stepping == 
-                GLOBAL_TIME_STEPPING || 
-                IPs.Local_Time_Stepping == 
-                SCALAR_LOCAL_TIME_STEPPING) {
-           
-               U[i][j][k] = Uo[i][j][k] + omega* dUdt[i][j][k][k_residual];
-      	   
-      	       //N-1 species
-               U[i][j][k][num_vars] = U[i][j][k].rho*(ONE - U[i][j][k].sum_species());
-            }
-            
-            // Wall function and low Reynolds number formulation  
-            if(IPs.Turbulence_IP.Near_Wall_Boundary_Treatment == 0){
-               // automatic wall treatment formulation
-               U[i][j][k].k_omega_model.automatic_wall_treatment(
-                  U[i][j][k].rho, W[i][j][k].mu(), 
-                  i, j, k, WallData[i][j][k],
-                  Grid,  U[i][j][k].rhok, U[i][j][k].rhoomega);
-                       
-            }else if(IPs.Turbulence_IP.Near_Wall_Boundary_Treatment == 2){
-               // low Reynolds number formulation
-               U[i][j][k].k_omega_model.low_Reynolds_number_formulation(
-                  U[i][j][k].rho, W[i][j][k].mu(), 
-                  i, j, k, WallData[i][j][k],
-                  Grid, U[i][j][k].rhoomega);
-               
-               
-            }else{ // wall function
-               U[i][j][k].k_omega_model.wall_function(
-                  U[i][j][k].rho, W[i][j][k].mu(), WallData[i][j][k], 
-                  U[i][j][k].rhok, U[i][j][k].rhoomega); 
-               
-                          
-            }
-            
-            if (IPs.Local_Time_Stepping == GLOBAL_TIME_STEPPING){
-               // always ensure the positive k and omega
-               U[i][j][k].Unphysical_Properties_Check(
-                  Uo[i-1][j][k], Uo[i+1][j][k], 
-                  Uo[i][j][k+1], Uo[i][j][k-1], 
-                  Uo[i][j+1][k], Uo[i][j-1][k], 10);
-               
-            }
-            
-            W[i][j][k] = U[i][j][k].W();
-            
-         } /* endfor */    	 
-      } /* endfor */    
-   } /* endfor */
-    
-    /* Deallocate memory for linear system solver. */
-
-   /* Solution successfully updated. */
-    
-   return (0);   
-   
-
-   
-}
 
 /********************************************************
  * Routine: Output_Tecplot                              *
@@ -720,7 +12,7 @@ Update_Solution_Multistage_Explicit(const int i_stage,
  * TECPLOT.                                             *
  *                                                      *
  ********************************************************/
-template< >
+template<>
 void Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
                 FANS3D_ThermallyPerfect_KOmega_cState>::
 Output_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
@@ -731,7 +23,6 @@ Output_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                const int Output_Title,
                ostream &Out_File) {
 
-   int i, j, k;
    FANS3D_ThermallyPerfect_KOmega_pState W_node;
    
    /* Ensure boundary conditions are updated before
@@ -742,6 +33,7 @@ Output_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
    /* Output nodal solution data. */
    
    Out_File << setprecision(14);
+
    if (Output_Title) {
       Out_File << "TITLE = \"" << CFFC_Name() << ": 3D Solution, "
                << "Time Step/Iteration Level = " << Number_of_Time_Steps
@@ -757,20 +49,22 @@ Output_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                << "\"p\" \\ \n"
                << "\"k\" \\ \n"
                << "\"omega\" \\ \n";
+
       //n species mass fractions names
-      for (int i =0 ;i<W[0][0][0].ns ;i++) {
-         Out_File <<"\"c_"<<W[0][0][0].specdata[i].Speciesname()<<"\" \\ \n";
-      }
+      for (int i =0 ; i < W[0][0][0].ns; i++) {
+         Out_File << "\"c_" << W[0][0][0].specdata[i].Speciesname() 
+                  << "\" \\ \n";
+      } /* endfor */
       
-      Out_File <<"\"T\" \\ \n";
-      
+      Out_File << "\"T\" \\ \n"
+               << "\"M\" \\ \n";      
+
       Out_File<< "ZONE T =  \"Block Number = " << Block_Number
               << "\" \\ \n"
               << "I = " << Grid.INu -  Grid.INl + 1 << " \\ \n"
               << "J = " << Grid.JNu -  Grid.JNl + 1 << " \\ \n"
               << "K = " << Grid.KNu -  Grid.KNl + 1 << " \\ \n"
               << "DATAPACKING = POINT \n";
-      
    } else {
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
@@ -780,13 +74,14 @@ Output_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                << "DATAPACKING = POINT \n";              
    } /* endif */
    
-   for ( k  =  Grid.KNl ; k <=  Grid.KNu ; ++k ) {
-      for ( j  =  Grid.JNl ; j <=  Grid.JNu ; ++j ) {
-         for ( i =  Grid.INl ; i <=  Grid.INu ; ++i ) {
+   for (int k  =  Grid.KNl ; k <=  Grid.KNu ; ++k ) {
+      for (int j  =  Grid.JNl ; j <=  Grid.JNu ; ++j ) {
+         for (int i =  Grid.INl ; i <=  Grid.INu ; ++i ) {
             W_node = Wn(i, j, k);
-            Out_File << " "  << Grid.Node[i][j][k].X <<W_node;
+            Out_File << " "  << Grid.Node[i][j][k].X << W_node;
             Out_File.setf(ios::scientific);
-            Out_File << " " << W_node.T() << "\n";
+            Out_File << " " << W_node.T() 
+                     << " " << W_node.M() << "\n";
             Out_File.unsetf(ios::scientific);
          } /* endfor */
       } /* endfor */
@@ -805,7 +100,7 @@ Output_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
  * TECPLOT.                                             *
  *                                                      *
  ********************************************************/
-template< >
+template<>
 void Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
                 FANS3D_ThermallyPerfect_KOmega_cState>::
 Output_Cells_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
@@ -815,8 +110,6 @@ Output_Cells_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                      const int Block_Number,
                      const int Output_Title,
                      ostream &Out_File) {
-
-   int i, j, k;
 
    /* Ensure boundary conditions are updated before
       evaluating solution at the nodes. */
@@ -829,7 +122,8 @@ Output_Cells_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
 
    if (Output_Title) {
       Out_File << "TITLE = \"" << CFFC_Name() << ": 3D Solution, "
-               << "Time Step/Iteration Level = " << Number_of_Time_Steps
+               << "Time Step/Iteration Level = " 
+               << Number_of_Time_Steps
                << ", Time = " << Time
                << "\"" << "\n"
                << "VARIABLES = \"x\" \\ \n"
@@ -842,17 +136,19 @@ Output_Cells_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                << "\"p\" \\ \n"
                << "\"k\" \\ \n"
                << "\"omega\" \\ \n";
+
       //n species mass fractions names
-      for (int i =0;i<W[0][0][0].ns ;i++) {
-         Out_File <<"\"c"<<W[0][0][0].specdata[i].Speciesname()<<"\" \\ \n";
-      }
+      for (int i = 0; i < W[0][0][0].ns; i++) {
+         Out_File << "\"c" << W[0][0][0].specdata[i].Speciesname()
+                  << "\" \\ \n";
+      } /* endfor */
      
-      Out_File <<"\"T\" \\ \n";
-      Out_File <<"\"R\" \\ \n";
-      Out_File << "\"ywall\" \\ \n";
-      Out_File << "\"yplus\" \\ \n";
-      Out_File << "\"tauw\" \\ \n";    
-      Out_File << "\" utau\" \\ \n";
+      Out_File <<"\"T\" \\ \n"
+               <<"\"M\" \\ \n"
+               << "\"ywall\" \\ \n"
+               << "\"yplus\" \\ \n"
+               << "\"tauw\" \\ \n"
+               << "\" utau\" \\ \n";
       
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
@@ -867,18 +163,20 @@ Output_Cells_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                << "J = " <<  Grid.JCu -  Grid.JCl + 2* Nghost + 1 << " \\ \n"
                << "K = " <<  Grid.KCu -  Grid.KCl + 2* Nghost + 1 << " \\ \n"
                << "DATAPACKING = POINT \n";
-      
    } /* endif */
 
-   for (k =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k) {
-      for (j  =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j ) {
-         for (i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i ) {
-            Out_File << " "  <<  Grid.Cell[i][j][k].Xc
-                     <<  W[i][j][k];
+   for (int k =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k) {
+      for (int j  =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j ) {
+         for (int i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i ) {
+            Out_File << " " << Grid.Cell[i][j][k].Xc
+                     << W[i][j][k];
             Out_File.setf(ios::scientific);
-            Out_File << " " << W[i][j][k].T() << " " << W[i][j][k].Rtot()<< " ";
-            Out_File << " " << WallData[i][j][k].ywall << "  " << WallData[i][j][k].yplus
-                     << " " << WallData[i][j][k].tauw << "  " << WallData[i][j][k].utau<<"\n ";
+            Out_File << " " << W[i][j][k].T() 
+                     << " " << W[i][j][k].M();
+            Out_File << " " << WallData[i][j][k].ywall 
+                     << " " << WallData[i][j][k].yplus
+                     << " " << WallData[i][j][k].tauw 
+                     << " " << WallData[i][j][k].utau << "\n ";
             Out_File.unsetf(ios::scientific);
          } /* endfor */
       } /* endfor */
@@ -897,7 +195,7 @@ Output_Cells_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
  * TECPLOT.                                             *
  *                                                      *
  ********************************************************/
-template< >
+template<>
 void Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
                 FANS3D_ThermallyPerfect_KOmega_cState>::
 Output_Nodes_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
@@ -908,7 +206,6 @@ Output_Nodes_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                      const int Output_Title,
                      ostream &Out_File) {
 
-   int i, j, k;
    FANS3D_ThermallyPerfect_KOmega_pState W_node;
    
    /* Ensure boundary conditions are updated before
@@ -919,9 +216,11 @@ Output_Nodes_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
    /* Output nodal solution data. */
    
    Out_File << setprecision(14);
+
    if (Output_Title) {
       Out_File << "TITLE = \"" << CFFC_Name() << ": 3D Solution, "
-               << "Time Step/Iteration Level = " << Number_of_Time_Steps
+               << "Time Step/Iteration Level = " 
+               << Number_of_Time_Steps
                << ", Time = " << Time
                << "\"" << "\n"
                << "VARIABLES = \"x\" \\ \n"
@@ -934,20 +233,22 @@ Output_Nodes_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                << "\"p\" \\ \n"
                << "\"k\" \\ \n"
                << "\"omega\" \\ \n";
+
       //n species mass fractions names
-      for (int i =0 ;i<W[0][0][0].ns ;i++) {
-         Out_File <<"\"c_"<<W[0][0][0].specdata[i].Speciesname()<<"\" \\ \n";
-      }
+      for (int i = 0; i < W[0][0][0].ns; i++) {
+         Out_File << "\"c_" << W[0][0][0].specdata[i].Speciesname()
+                  << "\" \\ \n";
+      } /* endfor */
       
-      Out_File <<"\"T\" \\ \n";
-      
+      Out_File << "\"T\" \\ \n"
+               << "\"M\" \\ \n";
+
       Out_File<< "ZONE T =  \"Block Number = " << Block_Number
               << "\" \\ \n"
               << "I = " << Grid.INu -  Grid.INl + 1 << " \\ \n"
               << "J = " << Grid.JNu -  Grid.JNl + 1 << " \\ \n"
               << "K = " << Grid.KNu -  Grid.KNl + 1 << " \\ \n"
               << "DATAPACKING = POINT \n";
-      
    } else {
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
@@ -957,13 +258,14 @@ Output_Nodes_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                << "DATAPACKING = POINT \n";              
    } /* endif */
    
-   for ( k  =  Grid.KNl ; k <=  Grid.KNu ; ++k ) {
-      for ( j  =  Grid.JNl ; j <=  Grid.JNu ; ++j ) {
-         for ( i =  Grid.INl ; i <=  Grid.INu ; ++i ) {
+   for (int k  =  Grid.KNl ; k <=  Grid.KNu ; ++k ) {
+      for (int j  =  Grid.JNl ; j <=  Grid.JNu ; ++j ) {
+         for (int i =  Grid.INl ; i <=  Grid.INu ; ++i ) {
             W_node = Wn(i, j, k);
-            Out_File << " "  << Grid.Node[i][j][k].X <<W_node;
+            Out_File << " "  << Grid.Node[i][j][k].X << W_node;
             Out_File.setf(ios::scientific);
-            Out_File << " " << W_node.T() << "\n";
+            Out_File << " " << W_node.T()
+                     << " " << W_node.M() << "\n";
             Out_File.unsetf(ios::scientific);
          } /* endfor */
       } /* endfor */
@@ -980,225 +282,392 @@ Output_Nodes_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
  * solution block.                                      *
  *                                                      *
  ********************************************************/
-template< >
+template<>
 int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
-               FANS3D_ThermallyPerfect_KOmega_cState>::ICs(
-                  const int i_ICtype,
-                  Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
-                  FANS3D_ThermallyPerfect_KOmega_cState> &IPs){
+               FANS3D_ThermallyPerfect_KOmega_cState>::
+ICs(const int i_ICtype,
+    Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
+                     FANS3D_ThermallyPerfect_KOmega_cState> &IPs) {
    
-   int i, j, k;
-   
-   double dpdx, dpdy, dpdz, delta_pres_x, delta_pres_y, delta_pres_z ;
-   double zd, zz, di, Um;
-   
-   Flow_Type = IPs.i_Flow_Type;
+   double dpdx, dpdy, dpdz, delta_pres, delta_pres_x, delta_pres_y, delta_pres_z;
+   double zd, zz, di, Um, U_axi;
    
    FANS3D_ThermallyPerfect_KOmega_pState Wl, Wr;
    
    switch(i_ICtype) {
-      
-   case IC_UNIFORM :
-      // Set the solution state to the initial state Wo[0].
-      for (k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) 
-         for ( j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) 
-            for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-               W[i][j][k] = IPs.Wo;
-               U[i][j][k] = W[i][j][k].U( );
-               
-            }
-      break;
-      
- 
-   case IC_CHANNEL_FLOW :
-  
-
-   // the North and South are walls; testing the profile in y direction.  
-   // this case is from John Laufer
-   // Investigation of Turbulent Flow in a Two-Dimensional Channel
-      dpdx = IPs.Pressure_Gradient.x;  
-      dpdy = IPs.Pressure_Gradient.y;  
-      dpdz = IPs.Pressure_Gradient.z;  
-      delta_pres_x = dpdx*IPs.Grid_IP.Box_Length;
-      delta_pres_y = dpdy*IPs.Grid_IP.Box_Width;
-      delta_pres_z = dpdz*IPs.Grid_IP.Box_Height;
-      Um = IPs.Reynolds_Number* IPs.Wo.mu()/(IPs.Wo.rho*IPs.Grid_IP.Box_Height);
-      
-      if( IPs.Pressure_Gradient.x != ZERO){
-         
-         for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) 
-            for (  j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) 
-               for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-                  
+      case IC_VISCOUS_COUETTE :
+      case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_X :
+         dpdx = IPs.Pressure_Gradient.x;  
+         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
+         for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+            for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+               for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
-                  WallData[i][j][k].tauw = fabs(-IPs.Grid_IP.Box_Height *dpdx);
-                  WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
-                  W[i][j][k].k = WallData[i][j][k].utau*WallData[i][j][k].utau/sqrt(W[0][0][0].k_omega_model.beta_star);
-                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.x)*delta_pres_x/IPs.Grid_IP.Box_Length;	 
-                  //start
-              
-               
-                  // setting the u velocity in a turbulent channel flow
-                  // by using the power law of u velocity in a turbulent pipe flow
-                  zd = Grid.Cell[i][j][k].Xc.y;
-                  
-                  if( zd > 0.0 && zd < 0.5*IPs.Grid_IP.Box_Width){
-                     zz = (1.0- zd/(0.5*IPs.Grid_IP.Box_Width));
-                     
-                     W[i][j][k].v.x = Um*pow(zz, 0.133);
-                     // try to feed a reasonalbe k profile as initial condition
-                     // to see how far it goes, since this case has really small 
-                     // pressure gradient
-                     W[i][j][k].k = ( 0.5886 - 31.2*(zd)+2039.6*zd*zd -19208*zd*zd*zd );
-                     if(zd <=0.01) {  W[i][j][k].k = 0.465;}
-                     
-                  }else if( zd<ZERO && fabs(zd)< 0.5*IPs.Grid_IP.Box_Width){
-                     
-                     zz = (fabs(zd)/(0.5*IPs.Grid_IP.Box_Width) - 1.0);
-                     
-                     W[i][j][k].v.x = Um*pow(fabs(zz), 0.133);
-                     // try to feed a reasonalbe k profile as initial condition
-                     // to see how far it goes, since this case has really small 
-                     // pressure gradient
-                     W[i][j][k].k = ( 0.5886 - 31.2*fabs(zd)+2039.6*zd*zd -19208*fabs(zd)*zd*zd );
-                     
-                     if(fabs(zd) <=0.01) {  W[i][j][k].k = 0.465;}
-                     
-                  }else{
-                     
-                     W[i][j][k].v.x = Um;
-                  }
-                  
-                  if(WallData[i][j][k].ywall !=0.0){
-                     
-                     W[i][j][k].omega = WallData[i][j][k].utau/
-                        (sqrt(W[0][0][0].k_omega_model.beta_star)*W[0][0][0].k_omega_model.Karman_const*WallData[i][j][k].ywall); 
-                  }
-                 
-                  //conservative solution state
+                  W[i][j][k].v.x = HALF*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 
+                                   0.5*IPs.Grid_IP.Box_Height)*
+                                   (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.Grid_IP.Box_Height) +
+                                   IPs.Moving_Wall_Velocity.x*(Grid.Cell[i][j][k].Xc.z/IPs.Grid_IP.Box_Height + 
+                                   HALF);
+                  W[i][j][k].p = IPs.Wo.p - (i-ICl-Nghost)*delta_pres/(ICu-ICl);	 
+                  if (i == ICl-Nghost || i == ICl-Nghost+1 ) {
+                    W[i][j][k].p = IPs.Wo.p;
+                  } /* endif */
+                  if (i == ICu+Nghost || i == ICu+Nghost-1 ) {
+                     W[i][j][k].p = IPs.Wo.p - delta_pres; 
+                  } /* endif */
                   U[i][j][k] = W[i][j][k].U();
-                  
-               }
-      }else if( IPs.Pressure_Gradient.y !=ZERO){
-         
-         for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) 
-            for (  j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) 
-               for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-                  
+	       } /* endfor */
+	    } /* endfor */
+	 } /* endfor */
+         break; 
+
+      case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_Y :
+         dpdy = IPs.Pressure_Gradient.y;  
+         delta_pres = dpdy*IPs.Grid_IP.Box_Width;
+         for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+            for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+               for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
-                  WallData[i][j][k].tauw = fabs(-IPs.Grid_IP.Box_Height *dpdy);
-                  WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
-                  W[i][j][k].k = WallData[i][j][k].utau*WallData[i][j][k].utau/sqrt(W[0][0][0].k_omega_model.beta_star);
-                  
-                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.y)*delta_pres_y/IPs.Grid_IP.Box_Width;	 
-                 
-                  // setting the u velocity in a turbulent channel flow
-                  // by using the power law of u velocity in a turbulent pipe flow
-                  zd = Grid.Cell[i][j][k].Xc.z;
-                  
-                  if( zd > 0.0 && zd < 0.5*IPs.Grid_IP.Box_Height){
-                     zz = (1.0- zd/(0.5*IPs.Grid_IP.Box_Height));
-                     
-                     W[i][j][k].v.y = Um*pow(zz, 0.133);
-                     // try to feed a reasonalbe k profile as initial condition
-                     // to see how far it goes, since this case has really small 
-                     // pressure gradient
-                     
-                     W[i][j][k].k = ( 0.5886 - 31.2*(zd)+2039.6*zd*zd -19208*zd*zd*zd );
-                     if(zd <=0.01) {  W[i][j][k].k = 0.465;}
-                     
-                  }else if( zd<ZERO && fabs(zd)< 0.5*IPs.Grid_IP.Box_Height){
-                     
-                     zz = (fabs(zd)/(0.5*IPs.Grid_IP.Box_Height) - 1.0);
-                     
-                     W[i][j][k].v.y = Um*pow(fabs(zz), 0.133);
-                     // try to feed a reasonalbe k profile as initial condition
-                     // to see how far it goes, since this case has really small 
-                     // pressure gradient
-                     W[i][j][k].k = ( 0.5886 - 31.2*fabs(zd)+2039.6*zd*zd -19208*fabs(zd)*zd*zd );
-                     if(fabs(zd) <=0.01) {  W[i][j][k].k = 0.465;}
-                     
-                  }else{
-                     
-                     W[i][j][k].v.y = Um;
-                  }
-                  
-                  if(WallData[i][j][k].ywall !=0.0){
-                     
-                     W[i][j][k].omega = WallData[i][j][k].utau/
-                        (sqrt(W[0][0][0].k_omega_model.beta_star)*W[0][0][0].k_omega_model.Karman_const*WallData[i][j][k].ywall); 
-                  }
-                  
-                  //conservative solution state
+                  W[i][j][k].v.y = HALF*(-dpdy)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 
+                                   0.5*IPs.Grid_IP.Box_Height)*(Grid.Cell[i][j][k].Xc.z - 
+                                   0.5*IPs.Grid_IP.Box_Height) +
+                                   IPs.Moving_Wall_Velocity.y*(Grid.Cell[i][j][k].Xc.z/IPs.Grid_IP.Box_Height + 
+                                   HALF);
+                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.y)*delta_pres/IPs.Grid_IP.Box_Width;	 
+                  if (j == JCl-Nghost || j == JCl-Nghost+1 ){
+                     W[i][j][k].p = IPs.Wo.p;
+                  } /* endif */
+                  if (j == JCu+Nghost || j == JCu+Nghost-1 ){
+                     W[i][j][k].p = IPs.Wo.p - delta_pres; 
+                  } /* endif */
                   U[i][j][k] = W[i][j][k].U();
-               
-               }
-      }  else if( IPs.Pressure_Gradient.z !=ZERO){
-         for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) 
-            for (  j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) 
-               for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-                  
+ 	       } /* endfor */
+	    } /* endfor */
+	 } /* endfor */
+         break; 
+
+      case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_Z :
+         dpdz = IPs.Pressure_Gradient.z;  
+         delta_pres = dpdz*IPs.Grid_IP.Box_Height;
+         for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+            for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+               for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
-                  WallData[i][j][k].tauw = fabs(-IPs.Grid_IP.Box_Width *dpdz);
-                  WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
-                  W[i][j][k].k = WallData[i][j][k].utau*WallData[i][j][k].utau/sqrt(W[0][0][0].k_omega_model.beta_star);
-                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.z)*delta_pres_z/IPs.Grid_IP.Box_Height;	 
-                  
-                  // setting the u velocity in a turbulent channel flow
-                  // by using the power law of u velocity in a turbulent pipe flow
-                  zd = Grid.Cell[i][j][k].Xc.y;
-                  
-                  if( zd > 0.0 && zd < 0.5*IPs.Grid_IP.Box_Width){
-                     zz = (1.0- zd/(0.5*IPs.Grid_IP.Box_Width));
-                     
-                     W[i][j][k].v.z = Um*pow(zz, 0.133);
-                     // try to feed a reasonalbe k profile as initial condition
-                     // to see how far it goes, since this case has really small 
-                     // pressure gradient
-                     
-                     W[i][j][k].k = ( 0.5886 - 31.2*(zd)+2039.6*zd*zd -19208*zd*zd*zd );
-                     
-                     if(zd <=0.01) {  W[i][j][k].k = 0.465;}
-                     
-                  }else if( zd<ZERO && fabs(zd)< 0.5*IPs.Grid_IP.Box_Width){
-                     
-                     zz = (fabs(zd)/(0.5*IPs.Grid_IP.Box_Width) - 1.0);
-                     
-                     W[i][j][k].v.z = Um*pow(fabs(zz), 0.133);
-                     // try to feed a reasonalbe k profile as initial condition
-                     // to see how far it goes, since this case has really small 
-                     // pressure gradient
-                     W[i][j][k].k = ( 0.5886 - 31.2*fabs(zd)+2039.6*zd*zd -19208*fabs(zd)*zd*zd );
-                     
-                      
-                     if(fabs(zd) <=0.01) {  W[i][j][k].k = 0.465;}
-                  }else{
-
-                     
-                     W[i][j][k].v.z = Um;
-                  }
-                  
-                  if(WallData[i][j][k].ywall !=0.0){
-                     
-                     W[i][j][k].omega = WallData[i][j][k].utau/
-                        (sqrt(W[0][0][0].k_omega_model.beta_star)*W[0][0][0].k_omega_model.Karman_const*WallData[i][j][k].ywall); 
-                  }
-             
-                  //conservative solution state
-                  U[i][j][k] = W[i][j][k].U();
-
-               }
-         
-      }
-
-      break; 
+                  W[i][j][k].v.z = HALF*(-dpdz)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.y + 
+                                   0.5*IPs.Grid_IP.Box_Width)*
+                                   (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Width) +
+                                   IPs.Moving_Wall_Velocity.z*(Grid.Cell[i][j][k].Xc.y/IPs.Grid_IP.Box_Width + 
+                                   HALF);
+                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.z)*delta_pres/IPs.Grid_IP.Box_Height;
+                  if (k == KCl-Nghost || k == KCl-Nghost+1 ) {
+                     W[i][j][k].p = IPs.Wo.p;
+                  } /* endif */
+                  if (k == KCu+Nghost || k == KCu+Nghost-1 ) {
+                     W[i][j][k].p = IPs.Wo.p - delta_pres; 
+                  } /* endif */
+                  U[i][j][k] = W[i][j][k].U( );
+	       } /* endfor */
+	    } /* endfor */
+	 } /* endfor */
+         break; 
       
-   } //end of switch
-   
+      case IC_PRESSURE_GRADIENT_X :
+         dpdx = IPs.Pressure_Gradient.x;  
+         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
+         di =  1.0/sqr(IPs.Grid_IP.Box_Height/2.0)+ 1.0/sqr(IPs.Grid_IP.Box_Width/2.0);
+         U_axi = delta_pres/(2.0*W[0][0][0].mu())/di;
+         for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+            for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+               for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+                  W[i][j][k] = IPs.Wo;
+                  W[i][j][k].v.x = 0.5*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 
+                                   0.5*IPs.Grid_IP.Box_Height)*
+                                   (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.Grid_IP.Box_Height);
+                  W[i][j][k].p = IPs.Wo.p - (i-ICl-Nghost)*delta_pres/(ICu-ICl);	 
+                  if( i == ICl-Nghost || i == ICl-Nghost+1 ){
+                     W[i][j][k].p = IPs.Wo.p;
+                  }
+                  if( i == ICu+Nghost || i == ICu+Nghost-1){
+                     W[i][j][k].p = IPs.Wo.p - delta_pres; 
+                  }
+                  U[i][j][k] = W[i][j][k].U();
+	       } /* endfor */ 
+	    } /* endfor */       
+	 } /* endfor */
+         break; 
+
+      case IC_CHANNEL_FLOW :
+         // the North and South are walls; testing the profile in y direction.  
+         // this case is from John Laufer
+         // Investigation of Turbulent Flow in a Two-Dimensional Channel
+         dpdx = IPs.Pressure_Gradient.x;  
+         dpdy = IPs.Pressure_Gradient.y;  
+         dpdz = IPs.Pressure_Gradient.z;  
+         delta_pres_x = dpdx*IPs.Grid_IP.Box_Length;
+         delta_pres_y = dpdy*IPs.Grid_IP.Box_Width;
+         delta_pres_z = dpdz*IPs.Grid_IP.Box_Height;
+         Um = IPs.Reynolds_Number* IPs.Wo.mu()/(IPs.Wo.rho*IPs.Grid_IP.Box_Height);
+         if (IPs.Pressure_Gradient.x != ZERO) {
+            for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+	       for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+                  for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+                     W[i][j][k] = IPs.Wo;
+                     WallData[i][j][k].tauw = fabs(-IPs.Grid_IP.Box_Height *dpdx);
+                     WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
+                     W[i][j][k].k = WallData[i][j][k].utau*WallData[i][j][k].utau/
+                                    sqrt(W[0][0][0].k_omega_model.beta_star);
+                     W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.x)*delta_pres_x/
+                                    IPs.Grid_IP.Box_Length;	 
+                     // setting the u velocity in a turbulent channel flow
+                     // by using the power law of u velocity in a turbulent pipe flow
+                     zd = Grid.Cell[i][j][k].Xc.y;
+                     if (zd > 0.0 && zd < 0.5*IPs.Grid_IP.Box_Width) {
+                        zz = (1.0- zd/(0.5*IPs.Grid_IP.Box_Width));
+                        W[i][j][k].v.x = Um*pow(zz, 0.133);
+                        // try to feed a reasonalbe k profile as initial condition
+                        // to see how far it goes, since this case has really small 
+                        // pressure gradient
+                        W[i][j][k].k = ( 0.5886 - 31.2*(zd)+2039.6*zd*zd -19208*zd*zd*zd );
+                        if(zd <=0.01) {W[i][j][k].k = 0.465;}
+                     } else if(zd < ZERO && fabs(zd)< 0.5*IPs.Grid_IP.Box_Width) {
+                        zz = (fabs(zd)/(0.5*IPs.Grid_IP.Box_Width) - 1.0);
+                        W[i][j][k].v.x = Um*pow(fabs(zz), 0.133);
+                        // try to feed a reasonalbe k profile as initial condition
+                        // to see how far it goes, since this case has really small 
+                        // pressure gradient
+                        W[i][j][k].k = (0.5886 - 31.2*fabs(zd)+2039.6*zd*zd -
+                                       19208*fabs(zd)*zd*zd );
+                        if(fabs(zd) <=0.01) {  W[i][j][k].k = 0.465;}
+                     } else {
+                        W[i][j][k].v.x = Um;
+                     } /* endif */
+                     if (WallData[i][j][k].ywall !=0.0) {
+                        W[i][j][k].omega = WallData[i][j][k].utau/
+                                           (sqrt(W[0][0][0].k_omega_model.beta_star)*
+                                           W[0][0][0].k_omega_model.Karman_const*
+                                           WallData[i][j][k].ywall); 
+		     } /* endif */
+                     //conservative solution state
+                     U[i][j][k] = W[i][j][k].U();
+		  } /* endfor */
+	       } /* endfor */
+	    } /* endfor */
+
+         } else if (IPs.Pressure_Gradient.y !=ZERO) {
+            for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+	       for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+                  for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+                     W[i][j][k] = IPs.Wo;
+                     WallData[i][j][k].tauw = fabs(-IPs.Grid_IP.Box_Height *dpdy);
+                     WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
+                     W[i][j][k].k = WallData[i][j][k].utau*WallData[i][j][k].utau/
+                                    sqrt(W[0][0][0].k_omega_model.beta_star);
+                     W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.y)*delta_pres_y/
+                                    IPs.Grid_IP.Box_Width;	 
+                     // setting the u velocity in a turbulent channel flow
+                     // by using the power law of u velocity in a turbulent pipe flow
+                     zd = Grid.Cell[i][j][k].Xc.z;
+                     if (zd > 0.0 && zd < 0.5*IPs.Grid_IP.Box_Height) {
+                        zz = (1.0- zd/(0.5*IPs.Grid_IP.Box_Height));
+                        W[i][j][k].v.y = Um*pow(zz, 0.133);
+                        // try to feed a reasonalbe k profile as initial condition
+                        // to see how far it goes, since this case has really small 
+                        // pressure gradient
+                        W[i][j][k].k = ( 0.5886 - 31.2*(zd)+2039.6*zd*zd -19208*zd*zd*zd );
+                        if(zd <=0.01) {W[i][j][k].k = 0.465;}
+                     } else if (zd<ZERO && fabs(zd)< 0.5*IPs.Grid_IP.Box_Height) {
+                        zz = (fabs(zd)/(0.5*IPs.Grid_IP.Box_Height) - 1.0);
+                        W[i][j][k].v.y = Um*pow(fabs(zz), 0.133);
+                        // try to feed a reasonalbe k profile as initial condition
+                        // to see how far it goes, since this case has really small 
+                        // pressure gradient
+                        W[i][j][k].k = (0.5886 - 31.2*fabs(zd)+2039.6*zd*zd -
+                                       19208*fabs(zd)*zd*zd );
+                        if (fabs(zd) <=0.01) { W[i][j][k].k = 0.465;}
+                     } else {
+                        W[i][j][k].v.y = Um;
+		     } /* endif */
+                     if(WallData[i][j][k].ywall !=0.0){
+                        W[i][j][k].omega = WallData[i][j][k].utau/
+                                           (sqrt(W[0][0][0].k_omega_model.beta_star)*
+                                           W[0][0][0].k_omega_model.Karman_const*
+                                           WallData[i][j][k].ywall); 
+		     } /* endif */
+                     //conservative solution state
+                     U[i][j][k] = W[i][j][k].U();
+		  } /* endfor */
+	       } /* endfor */
+	    } /* endfor */
+
+         } else if (IPs.Pressure_Gradient.z !=ZERO) {
+            for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+	       for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+                  for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+                     W[i][j][k] = IPs.Wo;
+                     WallData[i][j][k].tauw = fabs(-IPs.Grid_IP.Box_Width *dpdz);
+                     WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
+                     W[i][j][k].k = WallData[i][j][k].utau*WallData[i][j][k].utau/
+                                    sqrt(W[0][0][0].k_omega_model.beta_star);
+                     W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.z)*delta_pres_z/
+                                    IPs.Grid_IP.Box_Height;	 
+                     // setting the u velocity in a turbulent channel flow
+                     // by using the power law of u velocity in a turbulent pipe flow
+                     zd = Grid.Cell[i][j][k].Xc.y;
+                     if (zd > 0.0 && zd < 0.5*IPs.Grid_IP.Box_Width) {
+                        zz = (1.0- zd/(0.5*IPs.Grid_IP.Box_Width));
+                        W[i][j][k].v.z = Um*pow(zz, 0.133);
+                        // try to feed a reasonalbe k profile as initial condition
+                        // to see how far it goes, since this case has really small 
+                        // pressure gradient
+                        W[i][j][k].k = (0.5886 - 31.2*(zd)+2039.6*zd*zd -19208*zd*zd*zd);
+                        if (zd <=0.01) {W[i][j][k].k = 0.465;}
+                     } else if (zd<ZERO && fabs(zd)< 0.5*IPs.Grid_IP.Box_Width) {
+                        zz = (fabs(zd)/(0.5*IPs.Grid_IP.Box_Width) - 1.0);
+                        W[i][j][k].v.z = Um*pow(fabs(zz), 0.133);
+                        // try to feed a reasonalbe k profile as initial condition
+                        // to see how far it goes, since this case has really small 
+                        // pressure gradient
+                        W[i][j][k].k = ( 0.5886 - 31.2*fabs(zd)+2039.6*zd*zd -
+                                       19208*fabs(zd)*zd*zd );
+                        if (fabs(zd) <= 0.01) {W[i][j][k].k = 0.465;}
+                     } else {
+                        W[i][j][k].v.z = Um;
+                     } /* endif */
+                     if (WallData[i][j][k].ywall !=0.0) {
+                        W[i][j][k].omega = WallData[i][j][k].utau/
+                                           (sqrt(W[0][0][0].k_omega_model.beta_star)*
+                                           W[0][0][0].k_omega_model.Karman_const*
+                                           WallData[i][j][k].ywall); 
+		     } /* endif */
+                     //conservative solution state
+                     U[i][j][k] = W[i][j][k].U();
+		  } /* endfor */
+	       } /* endfor */
+	    } /* endfor */
+
+	 } /* endif */         
+         break; 
+
+      case IC_SHOCK_BOX :
+	 Wl = FANS3D_ThermallyPerfect_KOmega_pState(IPs.Wo);
+         Wl.rho = DENSITY_STDATM;
+         Wl.v = Vector3D_ZERO;
+         Wl.p = PRESSURE_STDATM;
+         Wr = FANS3D_ThermallyPerfect_KOmega_pState(IPs.Wo);
+         Wr.rho = EIGHT*DENSITY_STDATM;
+         Wr.v = Vector3D_ZERO;
+         Wr.p = TEN*PRESSURE_STDATM; 
+         for (int k = KCl-Nghost; k <= KCu+Nghost; ++k) {
+	    for (int j = JCl-Nghost; j <= JCu+Nghost; ++j) {
+               for (int i = ICl-Nghost; i <= ICu+Nghost; ++i) {
+		  if (Grid.Cell[i][j][k].Xc.x <= ZERO &&
+                      Grid.Cell[i][j][k].Xc.y <= ZERO &&
+                      Grid.Cell[i][j][k].Xc.z <= ZERO) {
+                      W[i][j][k] = Wl; 
+                  } else {
+                      W[i][j][k] = Wr;
+                  } /* end if */
+                  U[i][j][k] = W[i][j][k].U();
+	       } /* endfor */
+	    } /* endfor */
+	 } /* endfor */
+         break;
+
+      case IC_SOD_XDIR :
+         Wl = FANS3D_ThermallyPerfect_KOmega_pState(DENSITY_STDATM, 
+                                                    Vector3D_ZERO,
+                                                    PRESSURE_STDATM,
+                                                    ZERO,
+                                                    ZERO);
+         Wr = FANS3D_ThermallyPerfect_KOmega_pState(DENSITY_STDATM*8.0, 
+                                                    Vector3D_ZERO,
+                                                    PRESSURE_STDATM*10.0,
+                                                    ZERO,
+                                                    ZERO);
+	 for (int k = KCl-Nghost; k <= KCu+Nghost; ++k) {
+            for (int j = JCl-Nghost; j <= JCu+Nghost; ++j) {
+               for (int i = ICl-Nghost; i <= ICu+Nghost; ++i) {
+                  if (Grid.Cell[i][j][k].Xc.x <= ZERO) {
+                     W[i][j][k] = Wl; 
+                  } else {
+                     W[i][j][k] = Wr;
+		  } /* end if */
+                  U[i][j][k] = W[i][j][k].U();
+               } /* endfor */
+            } /* endfor */
+         } /* endfor */
+	 break;
+
+      case IC_SOD_YDIR :
+         Wl = FANS3D_ThermallyPerfect_KOmega_pState(DENSITY_STDATM, 
+                                                    Vector3D_ZERO,
+	                                            PRESSURE_STDATM,
+                                                    ZERO,
+                                                    ZERO);
+         Wr = FANS3D_ThermallyPerfect_KOmega_pState(DENSITY_STDATM*8.0, 
+                                                    Vector3D_ZERO,
+                                                    PRESSURE_STDATM*10.0,
+                                                    ZERO,
+                                                    ZERO);
+         for (int k = KCl-Nghost; k <= KCu+Nghost; ++k) {
+            for (int j = JCl-Nghost; j <= JCu+Nghost; ++j) {
+               for (int i = ICl-Nghost; i <= ICu+Nghost; ++i) {
+                  if (Grid.Cell[i][j][k].Xc.y <= ZERO) {
+                     W[i][j][k] = Wl; 
+		  } else {
+                     W[i][j][k] = Wr;
+                  } /* end if */
+                  U[i][j][k] = W[i][j][k].U();
+               } /* endfor */
+            } /* endfor */
+         } /* endfor */
+         break;
+
+      case IC_SOD_ZDIR :
+         Wl = FANS3D_ThermallyPerfect_KOmega_pState(DENSITY_STDATM, 
+                                                    Vector3D_ZERO,
+                                                    PRESSURE_STDATM,
+                                                    ZERO,
+                                                    ZERO);
+         Wr = FANS3D_ThermallyPerfect_KOmega_pState(DENSITY_STDATM*8.0, 
+                                                    Vector3D_ZERO,
+                                                    PRESSURE_STDATM*10.0,
+                                                    ZERO,
+                                                    ZERO);
+         for (int k = KCl-Nghost; k <= KCu+Nghost; ++k) {
+            for (int j = JCl-Nghost; j <= JCu+Nghost; ++j) {
+               for (int i = ICl-Nghost; i <= ICu+Nghost; ++i) {
+                  if (Grid.Cell[i][j][k].Xc.z <= ZERO) {
+                     W[i][j][k] = Wl; 
+                  } else {
+                     W[i][j][k] = Wr;
+		  } /* end if */
+                  U[i][j][k] = W[i][j][k].U();
+               } /* endfor */
+            } /* endfor */
+         } /* endfor */
+         break;
+
+      case IC_UNIFORM :
+      default:
+         // Set the solution state everywhere to the initial state Wo[0].
+	 for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+	    for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+               for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+                  W[i][j][k] = IPs.Wo;
+                  U[i][j][k] = W[i][j][k].U( );
+               } /* endfor */
+	    } /* endfor */
+	 } /* endfor */
+         break;
+      
+   } /* endswitch */
+
    /* Set default values for the boundary conditions
       reference states. */
-   for ( k = KCl-Nghost ; k<= KCu+Nghost; ++k )
-      for ( j = JCl-Nghost ; j<= JCu+Nghost; ++j ){
+
+   for (int k = KCl-Nghost ; k<= KCu+Nghost; ++k ) {
+      for (int j = JCl-Nghost ; j<= JCu+Nghost; ++j ){
          if ((k >= KCl && k <= KCu) && (j >= JCl && j <= JCu)) {
             WoW[j][k] = W[ICl][j][k];
             WoE[j][k] = W[ICu][j][k];
@@ -1227,12 +696,11 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
             WoW[j][k] = W[ICl][JCu][KCl];
             WoE[j][k] = W[ICu][JCu][KCl];
          }
-
-         
       } /* endfor */ 
+   } /* endfor */
     
-   for (  k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) 
-      for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+   for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+      for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
          if ((k >= KCl && k <= KCu) && (i >= ICl && i <= ICu)) {
             WoS[i][k] = W[i][JCl][k];
             WoN[i][k] = W[i][JCu][k];
@@ -1261,16 +729,15 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
             WoS[i][k] = W[ICu][JCl][KCl];
             WoN[i][k] = W[ICu][JCu][KCl];
          }
-         
-          
       } /* endfor */
+   } /* endfor */
 
-   for (  j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) 
-      for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+   for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+      for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
           if ((j >= JCl && j <= JCu) && (i >= ICl && i <= ICu)) {
              WoT[i][j] = W[i][j][KCu];
              WoB[i][j] = W[i][j][KCl];
-          }  else if (i < ICl &&  j< JCl) {
+          } else if (i < ICl &&  j< JCl) {
              WoT[i][j] = W[ICl][JCl][KCu];
              WoB[i][j] = W[ICl][JCl][KCl];
           } else if(i > ICu &&  j > JCu) {
@@ -1285,31 +752,34 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
           } else if ((i >= ICl && i <= ICu) &&  j< JCl) {
              WoT[i][j] = W[i][JCl][KCu];
              WoB[i][j] = W[i][JCl][KCl];
-           
           } else if ((i >= ICl && i <= ICu) &&  j> JCu) {
              WoT[i][j] = W[i][JCu][KCu];
              WoB[i][j] = W[i][JCu][KCl];
-             
           } else if (i > ICu && j < JCl) {
              WoT[i][j] = W[ICu][JCl][KCu];
              WoB[i][j] = W[ICu][JCl][KCl];
-           
           } else if (i < ICl && j > JCu) {
              WoT[i][j] = W[ICl][JCu][KCu];
              WoB[i][j] = W[ICl][JCu][KCl];
           }
-          
        } /* endfor */
-               
-    // compute y+ etc.;
-    Wall_Shear( );
+   } /* endfor */
+      
+   // compute y+ etc.;
+   Wall_Shear();
 
-    return (0);
+   return (0);
     
 }
 
-
-template< >
+/********************************************************
+ * Routine: BCs                                         *
+ *                                                      *
+ * Apply boundary conditions at boundaries of the       *
+ * specified hexa solution block.                       *
+ *                                                      *
+ ********************************************************/
+template<>
 void Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
                 FANS3D_ThermallyPerfect_KOmega_cState>::
 BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
@@ -1942,14 +1412,741 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
    
 }
 
-template< > 
+/********************************************************
+ * Routine: CFL                                         *
+ *                                                      *
+ * Determines the allowable global and local time steps *
+ * (for explicit Euler time stepping scheme) for the    *
+ * specified hexa solution block according to           *
+ * the Courant-Friedrichs-Lewy condition.               *
+ *                                                      *
+ ********************************************************/
+template<>
+double Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
+                  FANS3D_ThermallyPerfect_KOmega_cState>::
+CFL(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
+                     FANS3D_ThermallyPerfect_KOmega_cState> &IPs){
+   
+   double dtMin, d_i, d_j, d_k, v_i, v_j, v_k, a, dt_vis, nv, nv_t;
+   
+   dtMin = MILLION;
+   
+   for (int k  =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k ) {
+      for (int j  =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j ) {
+         for (int i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i ) {
+            if (i <  ICl || i >  ICu ||
+                j <  JCl || j >  JCu || 
+                k <  KCl || k >  KCu) {
+               dt[i][j][k] = ZERO;
+            } else {
+               d_i = TWO*(Grid.volume(i,j,k)/
+                          (Grid.AfaceE(i, j, k)+ Grid.AfaceW(i, j, k)));
+               d_j = TWO*( Grid.volume(i, j, k)/
+                           (Grid.AfaceN(i, j, k)+ Grid.AfaceS(i, j, k)));
+               d_k = TWO*( Grid.volume(i, j, k)/
+                           (Grid.AfaceTop(i, j, k)+ Grid.AfaceBot(i, j, k)));
+               v_i = HALF*(W[i][j][k].rhov()/W[i][j][k].rho*
+                           (Grid.nfaceE(i, j, k)- Grid.nfaceW(i, j, k)));
+               v_j = HALF*(W[i][j][k].rhov()/W[i][j][k].rho*
+                           ( Grid.nfaceN(i, j, k)- Grid.nfaceS(i, j, k)));
+               v_k = HALF*(W[i][j][k].rhov()/W[i][j][k].rho*
+                            (Grid.nfaceTop(i, j, k)- Grid.nfaceBot(i, j, k)));
+               a =  W[i][j][k].a();
+               dt[i][j][k] = min(min(d_i/(a+fabs(v_i)), 
+                                     d_j/(a+fabs(v_j))),
+                                     d_k/(a+fabs(v_k)));
+               
+               if (IPs.i_Flow_Type != FLOWTYPE_INVISCID) {  
+                  nv = W[i][j][k].mu()/W[i][j][k].rho;
+                  if (IPs.i_Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
+                      IPs.i_Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+                     nv_t = W[i][j][k].eddy_viscosity()/W[i][j][k].rho; 
+                     nv = max(nv, nv_t);
+                  } /* endif */
+                  dt_vis = min(min((d_i*d_i)/(3.0*nv), 
+                                   (d_j*d_j)/(3.0*nv)), 
+                                   (d_k*d_k)/(3.0*nv)); 
+                  dt[i][j][k]  = min(dt_vis, dt[i][j][k]);
+               } /* endif */
+               
+               dtMin = min(dtMin,  dt[i][j][k]);
+               
+            } /* endif */
+         } /* endfor */
+      } /* endfor */
+   } /* endfor */
+   
+   for (int k  =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k ) {
+      for (int j  =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j ) {
+         for (int i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i ) {
+            if (i <  ICl || i >  ICu ||
+                j <  JCl || j >  JCu || 
+                k <  KCl || k >  KCu) {
+               dt[i][j][k] = dtMin;
+            } /* endif */
+         } /* endfor */
+      } /* endfor */
+   } /* endfor */
+   
+   /* Return the global time step. */
+   
+   return (dtMin);
+
+}
+
+/********************************************************
+ * Routine: dUdt_Multistage_Explicit                    *
+ *                                                      *
+ * This routine determines the solution residuals for a *
+ * given stage of a variety of multi-stage explicit     *
+ * time integration schemes for a given solution block. *
+ *                                                      *
+ ********************************************************/
+template<>
+int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
+               FANS3D_ThermallyPerfect_KOmega_cState>::
+dUdt_Multistage_Explicit(const int i_stage,
+                         Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
+                                          FANS3D_ThermallyPerfect_KOmega_cState> &IPs) {
+
+   int i, j, k,  k_residual;
+   double omega;
+   Vector3D dX;
+   
+   FANS3D_ThermallyPerfect_KOmega_pState Wl, Wr;
+   FANS3D_ThermallyPerfect_KOmega_cState Flux, Temp;
+
+   FANS3D_ThermallyPerfect_KOmega_cState U_VACUUM;
+   U_VACUUM.Vacuum();
+   FANS3D_ThermallyPerfect_KOmega_pState W_VACUUM;
+   W_VACUUM.Vacuum();
+   Wl = W_VACUUM;
+   Wr = W_VACUUM;
+   Flux = U_VACUUM;
+   Temp = U_VACUUM;
+
+
+  /* Evaluate the time step fraction and residual storage location 
+   *     *       for the stage. */
+   switch(IPs.i_Time_Integration) {
+   case TIME_STEPPING_EXPLICIT_EULER :
+      omega = Runge_Kutta(i_stage, IPs.N_Stage);
+      k_residual = 0;
+      break;
+   case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
+      omega = Runge_Kutta(i_stage, IPs.N_Stage);
+      k_residual = 0;
+      break;
+   case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
+      omega = Runge_Kutta(i_stage, IPs.N_Stage);
+      k_residual = 0; 
+      if (IPs.N_Stage == 4) {
+         if (i_stage == 4) {
+            k_residual = 0;
+         } else {
+            k_residual = i_stage - 1;
+         } /* endif */
+      } /* endif */
+      break;
+   case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
+      omega = MultiStage_Optimally_Smoothing(i_stage,
+                                             IPs.N_Stage,
+                                             IPs.i_Limiter);
+      k_residual = 0;
+      break;
+   default: 
+      omega = Runge_Kutta(i_stage, IPs.N_Stage);
+      k_residual = 0;
+      break;
+   } /* endswitch */
+   
+   
+   /* Perform the linear reconstruction within each cell
+      of the computational grid for this stage. */
+   
+   switch(IPs.i_Reconstruction) {
+      
+   case RECONSTRUCTION_LEAST_SQUARES :
+
+      Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
+
+      break;
+   default:
+      Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
+      break;
+   } /* endswitch */
+
+   // compute y+ etc.;
+   Wall_Shear( );
+   
+   /* Evaluate the time rate of change of the solution
+      (i.e., the solution residuals) using a second-order
+      limited upwind scheme with a variety of flux functions. */
+   
+   // Add i-direction (zeta-direction) fluxes.
+   for ( k  =  KCl-1 ; k <=  KCu+1 ; ++k ){
+      
+      for ( j  =  JCl-1 ; j <=  JCu+1 ; ++j ) {
+         if ( i_stage == 1 ) {
+            Uo[ ICl-1][j][k] =  U[ ICl-1][j][k];
+            dUdt[ ICl-1][j][k][k_residual] = U_VACUUM;
+         } else {
+            dUdt[ ICl-1][j][k][k_residual] = U_VACUUM;
+         } /* endif */
+         
+         for ( i =  ICl-1 ; i <=  ICu ; ++i ) {
+            if ( i_stage == 1 ) {
+               Uo[i+1][j][k] =  U[i+1][j][k];
+               dUdt[i+1][j][k][k_residual] = U_VACUUM;
+            } else if (( j >  JCl-1 && j <  JCu+1 ) 
+                       && (k >  KCl-1 && k <  KCu+1) ){
+               switch(IPs.i_Time_Integration) {
+               case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
+                  //dUdt[i+1][j][k][k_residual] = 
+                  //  dUdt[i+1][j][k][k_residual];
+                  break;
+               case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
+		  if (IPs.N_Stage == 2) {
+                     //dUdt[i+1][j][k_residual] = 
+                     // dUdt[i+1][j][k_residual];
+                  } else if (IPs.N_Stage == 4 && i_stage == 4) {
+                     dUdt[i+1][j][k][k_residual] = 
+                        dUdt[i+1][j][k][0] + 
+                        TWO*dUdt[i+1][j][k][1] +TWO*dUdt[i+1][j][k][2];
+                  } else {
+         	     dUdt[i+1][j][k][k_residual].Vacuum();
+                  } /* endif */
+                  break;
+
+               case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
+                  dUdt[i+1][j][k][k_residual] = U_VACUUM;
+                  break;
+               default:
+                  dUdt[i+1][j][k][k_residual] = U_VACUUM;
+                  break;
+               } /* endswitch */
+            } /* endif */
+            if (( j >  JCl-1 && j <  JCu+1 ) && 
+                ( k >  KCl-1 && k <  KCu+1 )) {
+               
+               /* Evaluate the cell interface i-direction fluxes. */
+               if (i ==  ICl-1 &&  (Grid.BCtypeW[j][k] == BC_REFLECTION ||
+                                    Grid.BCtypeW[j][k] == BC_NO_SLIP||
+                                    Grid.BCtypeW[j][k] == BC_MOVING_WALL)  ) {
+                               
+                  dX =  Grid.xfaceW(i+1, j, k)- Grid.Cell[i+1][j][k].Xc;
+                  
+                  Wr =  W[i+1][j][k] + 
+                     ( phi[i+1][j][k]^dWdx[i+1][j][k])*dX.x +
+                     ( phi[i+1][j][k]^dWdy[i+1][j][k])*dX.y +
+                     ( phi[i+1][j][k]^dWdz[i+1][j][k])*dX.z;
+                                 
+                  if ( Grid.BCtypeW[j][k] == BC_REFLECTION) {
+                     Wl =  FANS3D_ThermallyPerfect_KOmega_pState::Reflect(Wr,  Grid.nfaceW(i+1, j, k));
+                  }
+                  if ( Grid.BCtypeW[j][k] == BC_NO_SLIP) {
+                     Wl =  FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k), 
+                                                                          IPs.Pressure_Gradient,
+                                                                          FIXED_TEMPERATURE_WALL);
+                  }
+                  if ( Grid.BCtypeW[j][k] == BC_MOVING_WALL) {
+                     Wl =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k),
+                                                                              IPs.Moving_Wall_Velocity,
+                                                                              IPs.Pressure_Gradient,
+                                                                              FIXED_TEMPERATURE_WALL);
+                  }
+               } else if (i ==  ICu && 
+                          ( Grid.BCtypeE[j][k] == BC_REFLECTION||
+                            Grid.BCtypeE[j][k] == BC_NO_SLIP||
+                            Grid.BCtypeE[j][k] == BC_MOVING_WALL)) {
+                  
+                  dX =  Grid.xfaceE(i, j, k)- Grid.Cell[i][j][k].Xc;
+                  Wl =  W[i][j][k] + 
+                     ( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
+                     ( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
+                     ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
+                  
+                  if ( Grid.BCtypeE[j][k] == BC_REFLECTION) {
+                     Wr =  FANS3D_ThermallyPerfect_KOmega_pState::Reflect(Wl,  Grid.nfaceE(i, j, k));
+                     
+                  } 
+                  if ( Grid.BCtypeE[j][k] == BC_NO_SLIP) {
+                     Wr =  FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(Wl, WoE[j][k], Grid.nfaceE(i, j, k), 
+                                                                          IPs.Pressure_Gradient, 
+                                                                          FIXED_TEMPERATURE_WALL);
+                     
+                  } 
+                  if ( Grid.BCtypeE[j][k] == BC_MOVING_WALL) {
+                     Wr =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wl, WoE[j][k], Grid.nfaceE(i, j, k),  
+                                                                              IPs.Moving_Wall_Velocity,
+                                                                              IPs.Pressure_Gradient,
+                                                                              FIXED_TEMPERATURE_WALL);
+                  }
+                  
+               } else { 
+                  dX =  Grid.xfaceE(i, j, k)- Grid.Cell[i][j][k].Xc;
+                  Wl =  W[i][j][k] + 
+                     ( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
+                     ( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
+                     ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
+               
+                  dX =  Grid.xfaceW(i+1, j, k)- Grid.Cell[i+1][j][k].Xc;
+                  Wr =  W[i+1][j][k] + 
+                     ( phi[i+1][j][k]^ dWdx[i+1][j][k])*dX.x +
+                     ( phi[i+1][j][k]^ dWdy[i+1][j][k])*dX.y +
+                     ( phi[i+1][j][k]^ dWdz[i+1][j][k])*dX.z;
+               } /* endif */
+               
+               switch(IPs.i_Flux_Function) {
+               case FLUX_FUNCTION_HLLE :
+                  Flux =  FANS3D_ThermallyPerfect_KOmega_pState::FluxHLLE_n(Wl, Wr,  Grid.nfaceE(i, j, k));
+                  break;
+               case FLUX_FUNCTION_ROE :
+                  Flux =  FANS3D_ThermallyPerfect_KOmega_pState::FluxRoe_n(Wl, Wr,  Grid.nfaceE(i, j, k));
+                  break;
+               } /* endswitch */
+
+               // add viscous flux in i direction
+               Flux -=  FANS3D_ThermallyPerfect_KOmega_pState::FluxViscous_n(Wl, Wr,W[i][j][k], W[i+1][j][k], 
+                                                                             dWdx[i][j][k], dWdy[i][j][k],dWdz[i][j][k],
+                                                                             dWdx[i+1][j][k], dWdy[i+1][j][k],dWdz[i+1][j][k],
+                                                                             Grid.nfaceE(i, j, k), Grid.Voe(i, j, k),  
+                                                                             Grid.delta_oe(i, j, k),
+                                                                             Grid.volume(i, j, k), 
+                                                                            Grid.volume(i+1, j, k));
+
+               /* Evaluate cell-averaged solution changes. */
+               
+               dUdt[i][j][k][k_residual] -= 
+                  (IPs.CFL_Number* dt[i][j][k])*
+                  Flux* Grid.AfaceE(i, j, k)/
+                  Grid.volume(i, j, k);
+               dUdt[i+1][j][k][k_residual] += 
+                  (IPs.CFL_Number* dt[i+1][j][k])*
+                  Flux* Grid.AfaceW(i+1, j, k)/
+                  Grid.volume(i+1, j ,k);
+                                 
+               /* Include source terms associated with turbulence model */
+               dUdt[i][j][k][k_residual] += (IPs.CFL_Number* dt[i][j][k])*
+                  FANS3D_ThermallyPerfect_KOmega_pState::Src_t(W[i][j][k], dWdx[i][j][k], 
+                                                               dWdy[i][j][k], dWdz[i][j][k]);
+     
+	   /* Save west and east face boundary flux. */
+               
+               //    if (i ==  ICl-1) {
+//                     FluxW[j] = -Flux* Grid.lfaceW(i+1, j);
+//                 } else if (i ==  ICu) {
+//                     FluxE[j] = Flux* Grid.lfaceE(i, j);
+//                 } /* endif */ 
+               
+            } /* endif */
+         } /* endfor */
+          
+         if (( j >  JCl-1 && j <  JCu+1 ) && 
+             ( k >  KCl-1 && k <  KCu+1 ) ) {
+            dUdt[ ICl-1][j][k][k_residual] = U_VACUUM;
+            dUdt[ ICu+1][j][k][k_residual] = U_VACUUM;
+         } /* endif */
+      } /* endfor */
+   } /* endfor */
+ 
+   // Add j-direction (eta-direction) fluxes.
+   for ( k =  KCl ; k <=  KCu ; ++k ) {
+      
+      for ( i =  ICl ; i <=  ICu ; ++i ) {
+         for ( j  =  JCl-1 ; j <=  JCu ; ++j ) {
+            
+            /* Evaluate the cell interface j-direction fluxes. */
+            if (j ==  JCl-1 && 
+                ( Grid.BCtypeS[i][k] == BC_REFLECTION ||
+                  Grid.BCtypeS[i][k] == BC_NO_SLIP||
+                  Grid.BCtypeS[i][k] == BC_MOVING_WALL)) {
+               
+               dX =  Grid.xfaceS(i, j+1, k)- Grid.Cell[i][j+1][k].Xc;
+               Wr =  W[i][j+1][k] +
+                  ( phi[i][j+1][k]^ dWdx[i][j+1][k])*dX.x +
+                  ( phi[i][j+1][k]^ dWdy[i][j+1][k])*dX.y+
+                  ( phi[i][j+1][k]^ dWdz[i][j+1][k])*dX.z;
+               if ( Grid.BCtypeS[i][k] == BC_REFLECTION) {
+                  Wl =  FANS3D_ThermallyPerfect_KOmega_pState::Reflect(Wr,  Grid.nfaceS(i, j+1, k));
+                }
+                if ( Grid.BCtypeS[i][k] == BC_NO_SLIP) {
+                   Wl =  FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
+                                                                        IPs.Pressure_Gradient,
+                                FIXED_TEMPERATURE_WALL);
+                }
+                if ( Grid.BCtypeS[i][k] == BC_MOVING_WALL) {
+                   Wl =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
+                                                                            IPs.Moving_Wall_Velocity,
+                                                                            IPs.Pressure_Gradient,
+                                                                            FIXED_TEMPERATURE_WALL);
+                }
+
+             } else if (j ==  JCu && 
+                        ( Grid.BCtypeN[i][k] == BC_REFLECTION ||
+                          Grid.BCtypeN[i][k] == BC_NO_SLIP||
+                          Grid.BCtypeN[i][k] == BC_MOVING_WALL)) {
+                
+                dX =  Grid.xfaceN(i, j, k)- Grid.Cell[i][j][k].Xc;
+                Wl =  W[i][j][k] + 
+                   ( phi[i][j][k]^ dWdx[i][j][k])*dX.x+
+                   ( phi[i][j][k]^ dWdy[i][j][k])*dX.y+
+                   ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
+                if ( Grid.BCtypeN[i][k] == BC_REFLECTION) {
+                   Wr =  FANS3D_ThermallyPerfect_KOmega_pState::Reflect(Wl,  Grid.nfaceN(i, j, k));
+                }
+                if ( Grid.BCtypeN[i][k] == BC_NO_SLIP) {
+                   Wr =  FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
+                                                                        IPs.Pressure_Gradient,
+                                                                        FIXED_TEMPERATURE_WALL );
+                }
+                if ( Grid.BCtypeN[i][k] == BC_MOVING_WALL) {
+                   Wr =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
+                                                                            IPs.Moving_Wall_Velocity,
+                                                                            IPs.Pressure_Gradient,
+                                                                            FIXED_TEMPERATURE_WALL );
+                }
+             } else {
+                dX =  Grid.xfaceN(i, j, k)- Grid.Cell[i][j][k].Xc;
+                Wl =  W[i][j][k] + 
+                   ( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
+                   ( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
+                   ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
+                dX =  Grid.xfaceS(i, j+1, k)- Grid.Cell[i][j+1][k].Xc;
+                Wr =  W[i][j+1][k] +
+                   ( phi[i][j+1][k]^ dWdx[i][j+1][k])*dX.x +
+                   ( phi[i][j+1][k]^ dWdy[i][j+1][k])*dX.y +
+                   ( phi[i][j+1][k]^ dWdz[i][j+1][k])*dX.z;
+          
+                        
+          } /* endif */
+
+             switch(IPs.i_Flux_Function) {
+             case FLUX_FUNCTION_HLLE :
+                Flux =  FANS3D_ThermallyPerfect_KOmega_pState::FluxHLLE_n(Wl, Wr,  Grid.nfaceN(i, j, k));
+                break;
+             case FLUX_FUNCTION_ROE :
+                Flux =  FANS3D_ThermallyPerfect_KOmega_pState::FluxRoe_n(Wl, Wr,  Grid.nfaceN(i, j, k));
+                break;
+             } /* endswitch */
+              
+             // add viscous flux in j direction
+             
+             Flux -=  FANS3D_ThermallyPerfect_KOmega_pState::FluxViscous_n(Wl, Wr, W[i][j][k], W[i][j+1][k],
+                                                                           dWdx[i][j][k], dWdy[i][j][k],dWdz[i][j][k],
+                                                                           dWdx[i][j+1][k], dWdy[i][j+1][k],dWdz[i][j+1][k],
+                                                                           Grid.nfaceN(i, j, k),  Grid.Von(i, j, k),
+                                                                           Grid.delta_on(i, j, k), Grid.volume(i, j, k), 
+                                                                           Grid.volume(i, j+1, k));
+             
+             /* Evaluate cell-averaged solution changes. */
+             dUdt[i][j][k][k_residual] -= 
+                (IPs.CFL_Number* dt[i][j][k])*
+                Flux* Grid.AfaceN(i, j, k)/
+                Grid.volume(i, j, k);
+              dUdt[i][j+1][k][k_residual] += 
+                (IPs.CFL_Number* dt[i][j+1][k])*
+                Flux* Grid.AfaceS(i, j+1, k)/
+                 Grid.volume(i, j+1, k);
+    
+              
+          /* Save south and north face boundary flux. */
+
+          // if (j ==  JCl-1) {
+//               FluxS[i] = -Flux* Grid.lfaceS(i, j+1);
+//           } else if (j ==  JCu) {
+//               FluxN[i] = Flux* Grid.lfaceN(i, j);
+//           } /* endif */
+
+          } /* endfor */
+           dUdt[i][ JCl-1][k][k_residual] = U_VACUUM;
+           dUdt[i][ JCu+1][k][k_residual] = U_VACUUM;
+       } /* endfor */
+   } /* endfor */
+
+   // Add k-direction (gamma-direction) fluxes.
+   for ( i =  ICl; i <=  ICu ; ++i ) {
+   
+      for ( j  =  JCl ; j <=  JCu ; ++j ){
+         for ( k =  KCl-1 ; k <=  KCu ; ++k )  {
+            
+            /* Evaluate the cell interface j-direction fluxes. */
+            if (k ==  KCl-1 && 
+                ( Grid.BCtypeB[i][j] == BC_REFLECTION  || 
+                  Grid.BCtypeB[i][j] == BC_NO_SLIP ||
+                  Grid.BCtypeB[i][j] == BC_MOVING_WALL)) {
+                
+               dX =  Grid.xfaceBot(i, j, k+1)- Grid.Cell[i][j][k+1].Xc;
+               Wr =  W[i][j][k+1] +
+                  ( phi[i][j][k+1]^ dWdx[i][j][k+1])*dX.x +
+                  ( phi[i][j][k+1]^ dWdy[i][j][k+1])*dX.y+
+                  ( phi[i][j][k+1]^ dWdz[i][j][k+1])*dX.z;
+               if ( Grid.BCtypeB[i][j] == BC_REFLECTION) {
+                  Wl =  FANS3D_ThermallyPerfect_KOmega_pState::Reflect(Wr,  Grid.nfaceBot(i, j, k+1));
+               }
+               if ( Grid.BCtypeB[i][j] == BC_NO_SLIP) {
+                  Wl =  FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1), 
+                                                                       IPs.Pressure_Gradient,
+                                                                       FIXED_TEMPERATURE_WALL);
+               }
+               if ( Grid.BCtypeB[i][j] == BC_MOVING_WALL) {
+                  Wl =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1),
+                                                                           IPs.Moving_Wall_Velocity,
+                                                                           IPs.Pressure_Gradient,
+                                                                           FIXED_TEMPERATURE_WALL);
+               }
+
+
+            } else if (k ==  KCu && 
+                       ( Grid.BCtypeT[i][j] == BC_REFLECTION ||
+                         Grid.BCtypeT[i][j] == BC_NO_SLIP ||
+                         Grid.BCtypeT[i][j] == BC_MOVING_WALL)) {
+                
+               dX =  Grid.xfaceTop(i, j, k)- Grid.Cell[i][j][k].Xc;
+                Wl =  W[i][j][k] + 
+                   ( phi[i][j][k]^ dWdx[i][j][k])*dX.x+
+                   ( phi[i][j][k]^ dWdy[i][j][k])*dX.y+
+                   ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
+                if ( Grid.BCtypeT[i][j] == BC_REFLECTION) {
+                   Wr =  FANS3D_ThermallyPerfect_KOmega_pState::Reflect(Wl,  Grid.nfaceTop(i, j, k));
+                }
+                if ( Grid.BCtypeT[i][j] == BC_NO_SLIP) {
+                   Wr =  FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(Wl, WoT[i][j], Grid.nfaceTop(i, j, k), 
+                                                                        IPs.Pressure_Gradient,
+                                                                        FIXED_TEMPERATURE_WALL );
+                }
+                if ( Grid.BCtypeT[i][j] == BC_MOVING_WALL) {
+                   Wr =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wl, WoT[i][j], Grid.nfaceTop(i, j, k),
+                                                                            IPs.Moving_Wall_Velocity,
+                                                                            IPs.Pressure_Gradient, 
+                                                                            FIXED_TEMPERATURE_WALL );
+                }
+
+             } else {
+                dX =  Grid.xfaceTop(i, j, k)- Grid.Cell[i][j][k].Xc;
+                Wl =  W[i][j][k] + 
+                   ( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
+                   ( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
+                   ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
+                dX =  Grid.xfaceBot(i, j, k+1)- Grid.Cell[i][j][k+1].Xc;
+                Wr =  W[i][j][k+1] +
+                   ( phi[i][j][k+1]^ dWdx[i][j][k+1])*dX.x +
+                   ( phi[i][j][k+1]^ dWdy[i][j][k+1])*dX.y +
+                   ( phi[i][j][k+1]^ dWdz[i][j][k+1])*dX.z;
+             } /* endif */
+             
+             switch(IPs.i_Flux_Function) {
+             case FLUX_FUNCTION_HLLE :
+                Flux =  FANS3D_ThermallyPerfect_KOmega_pState::FluxHLLE_n(Wl, Wr,  Grid.nfaceTop(i, j, k));
+                break;
+             case FLUX_FUNCTION_ROE :
+                Flux =  FANS3D_ThermallyPerfect_KOmega_pState::FluxRoe_n(Wl, Wr,  Grid.nfaceTop(i, j, k));
+                break;
+             } /* endswitch */
+             
+             // add viscous flux in k direction
+             Flux -=  FANS3D_ThermallyPerfect_KOmega_pState::FluxViscous_n(Wl, Wr,W[i][j][k], W[i][j][k+1], 
+                                   dWdx[i][j][k], dWdy[i][j][k], dWdz[i][j][k],
+                                   dWdx[i][j][k+1], dWdy[i][j][k+1], dWdz[i][j][k+1],
+                                   Grid.nfaceTop(i, j, k), Grid.Vot(i, j, k), 
+                                   Grid.delta_ot(i, j, k), Grid.volume(i, j, k), Grid.volume(i, j, k+1));
+
+             /* Evaluate cell-averaged solution changes. */
+             
+             dUdt[i][j][k][k_residual] -= 
+                (IPs.CFL_Number* dt[i][j][k])*
+                Flux* Grid.AfaceTop(i, j, k)/
+                Grid.volume(i, j, k);
+             dUdt[i][j][k+1][k_residual] += 
+                (IPs.CFL_Number* dt[i][j][k+1])*
+                Flux* Grid.AfaceBot(i, j, k+1)/
+                Grid.volume(i, j, k+1);
+             
+             /* Save top and bottom face boundary flux. */
+             
+             // if (j ==  JCl-1) {
+//               FluxS[i] = -Flux* Grid.lfaceS(i, j+1);
+//           } else if (j ==  JCu) {
+//               FluxN[i] = Flux* Grid.lfaceN(i, j);
+//           } /* endif */
+             
+          } /* endfor */
+          dUdt[i][j][ KCl-1][k_residual] = U_VACUUM;
+          dUdt[i][j][ KCu+1][k_residual] = U_VACUUM;
+
+      } /* endfor */
+
+   } /* endfor */
+   
+   // Residual "correction" for sublayer and log-layer based on 
+   // wall boundary treatment methods.
+   if (IPs.Turbulence_IP.Near_Wall_Boundary_Treatment == 0){
+      for ( k  =  KCl ; k <=  KCu ; ++k ) 
+         for ( j  =  JCl ; j <=  JCu ; ++j ) 
+            for ( i =  ICl ; i <=  ICu ; ++i ) {
+               U[i][j][k].k_omega_model.automatic_wall_treatment_residual_evaluaton(
+                  i, j, k, WallData[i][j][k], Grid,  dUdt[i][j][k][k_residual].rhok, dUdt[i][j][k][k_residual].rhoomega);
+            }
+      
+   }else if (IPs.Turbulence_IP.Near_Wall_Boundary_Treatment == 2){
+      for ( k  =  KCl ; k <=  KCu ; ++k ) 
+         for ( j  =  JCl ; j <=  JCu ; ++j ) 
+            for ( i =  ICl ; i <=  ICu ; ++i ) {
+               U[i][j][k].k_omega_model.low_Reynolds_number_formulation_residual_evaluaton(
+                  i, j, k, WallData[i][j][k], Grid, dUdt[i][j][k][k_residual].rhoomega);
+            }
+      
+   }else{
+      for ( k  =  KCl ; k <=  KCu ; ++k ) 
+         for ( j  =  JCl ; j <=  JCu ; ++j ) 
+            for ( i =  ICl ; i <=  ICu ; ++i ) {
+               U[i][j][k].k_omega_model.wall_function_residual_evaluation(
+                  WallData[i][j][k], dUdt[i][j][k][k_residual].rhok,
+                  dUdt[i][j][k][k_residual].rhoomega);
+            }
+      
+   } // end of the residual "correction".
+   
+   
+   /* Residual for the stage successfully calculated. */
+   
+   
+   return (0);
+    
+}
+
+/********************************************************
+ * Routine: Update_Solution_Multistage_Explicit         *
+ *                                                      *
+ * This routine updates solution states of the given    *
+ * solution block for a variety of multi-stage explicit *
+ * time integration schemes.                            *
+ *                                                      *
+ ********************************************************/
+template<>
+int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
+               FANS3D_ThermallyPerfect_KOmega_cState>::
+Update_Solution_Multistage_Explicit(const int i_stage,
+                                    Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
+                                                     FANS3D_ThermallyPerfect_KOmega_cState> &IPs){
+   
+   int k_residual;
+   double omega;
+   
+   int num_vars = NumVar();
+
+   /* Evaluate the time step fraction and residual storage 
+      location for the stage. */
+  
+   switch(IPs.i_Time_Integration) {
+   case TIME_STEPPING_EXPLICIT_EULER :
+      omega = Runge_Kutta(i_stage, IPs.N_Stage);
+      k_residual = 0;
+      break;
+   case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
+      omega = Runge_Kutta(i_stage, IPs.N_Stage);
+      k_residual = 0;
+      break;
+   case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
+      omega = Runge_Kutta(i_stage, IPs.N_Stage);
+      k_residual = 0;
+      if (IPs.N_Stage == 4) {
+         if (i_stage == 4) {
+            k_residual = 0;
+         } else {
+            k_residual = i_stage - 1;
+         } /* endif */
+      } /* endif */
+      break;
+   case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
+      omega = MultiStage_Optimally_Smoothing(i_stage, 
+                                             IPs.N_Stage,
+                                             IPs.i_Limiter);
+      k_residual = 0;
+      break;
+   default:
+      omega = Runge_Kutta(i_stage, IPs.N_Stage);
+      k_residual = 0;
+      break;
+   } /* endswitch */
+
+   /* Update solution variables for this stage. */
+
+   for (int k =  KCl ; k <= KCu ; ++k ) {
+      for (int j = JCl ; j <= JCu ; ++j ) {
+         for (int i = ICl ; i <= ICu ; ++i ) {
+            if (IPs.Local_Time_Stepping == 
+                GLOBAL_TIME_STEPPING || 
+                IPs.Local_Time_Stepping == 
+                SCALAR_LOCAL_TIME_STEPPING) {
+               U[i][j][k] = Uo[i][j][k] + omega* dUdt[i][j][k][k_residual];
+      	       //N-1 species
+               U[i][j][k][num_vars] = U[i][j][k].rho*(ONE - U[i][j][k].sum_species());
+            } /* endif */
+            
+            // Wall function and low Reynolds number formulation  
+            if (IPs.Turbulence_IP.Near_Wall_Boundary_Treatment == 0) {
+               // automatic wall treatment formulation
+               U[i][j][k].k_omega_model.automatic_wall_treatment(U[i][j][k].rho, 
+                                                                 W[i][j][k].mu(), 
+                                                                 i, j, k, 
+                                                                 WallData[i][j][k],
+                                                                 Grid,
+                                                                 U[i][j][k].rhok, 
+                                                                 U[i][j][k].rhoomega);
+                       
+            } else if(IPs.Turbulence_IP.Near_Wall_Boundary_Treatment == 2) {
+               // low Reynolds number formulation
+               U[i][j][k].k_omega_model.low_Reynolds_number_formulation(
+                  U[i][j][k].rho, W[i][j][k].mu(), 
+                  i, j, k, WallData[i][j][k],
+                  Grid, U[i][j][k].rhoomega);
+               
+            } else { // wall function
+               U[i][j][k].k_omega_model.wall_function(U[i][j][k].rho, 
+                                                      W[i][j][k].mu(), 
+                                                      WallData[i][j][k], 
+                                                      U[i][j][k].rhok, 
+                                                      U[i][j][k].rhoomega); 
+            } /* endif */
+            
+            if (IPs.Local_Time_Stepping == GLOBAL_TIME_STEPPING){
+               // always ensure the positive k and omega
+               U[i][j][k].Unphysical_Properties_Check(Uo[i-1][j][k], 
+                                                      Uo[i+1][j][k], 
+                                                      Uo[i][j][k+1], 
+                                                      Uo[i][j][k-1], 
+                                                      Uo[i][j+1][k], 
+                                                      Uo[i][j-1][k], 
+                                                      10);
+            } /* endif */
+            
+            W[i][j][k] = U[i][j][k].W();
+            
+         } /* endfor */    	 
+      } /* endfor */    
+   } /* endfor */
+    
+   /* Solution successfully updated. */
+    
+   return (0);   
+      
+}
+
+/**********************************************************************
+ * Routine: Wall_Shear                                                *
+ *                                                                    *
+ * This routine determines the wall shear stress, friction velocity,  *
+ * and yplus at each cell given the normal distance to the wall.      *
+ *                                                                    *
+ **********************************************************************/
+template<> 
 int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,  
                FANS3D_ThermallyPerfect_KOmega_cState>::Wall_Shear(void) { 
    
-   int i, j, k;
-   for ( k =  Grid.KCl- Grid.Nghost ; k <=  Grid.KCu+ Grid.Nghost ; ++k )
-      for ( j =  Grid.JCl- Grid.Nghost ; j <=  Grid.JCu+ Grid.Nghost ; ++j ) 
-         for ( i =  Grid.ICl- Grid.Nghost ; i <=  Grid.ICu+ Grid.Nghost ; ++i ) {
+   for (int k = Grid.KCl- Grid.Nghost ; k <= Grid.KCu+ Grid.Nghost ; ++k )
+      for (int j = Grid.JCl- Grid.Nghost ; j <= Grid.JCu+ Grid.Nghost ; ++j ) 
+         for (int i = Grid.ICl- Grid.Nghost ; i <= Grid.ICu+ Grid.Nghost ; ++i ) {
             
             // for ghost cells close to solid wall, the ywall is set to be zero,
             // this is related to the application of wall function (see the logic in the wall fucntion code
@@ -2048,11 +2245,9 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
 /**********************************************************************
  * Routine: Friction_Velocity                                         *
  *                                                                    *
- * This routine determines the wall shear stress, friction velocity,  *
- * and yplus at each cell given the normal distance to the wall.      *
+ * This routine determines the friction velocity.                     *
  *                                                                    *
  **********************************************************************/
-
 template<>
 double Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
                   FANS3D_ThermallyPerfect_KOmega_cState>::
@@ -2173,6 +2368,6 @@ Wall_Friction_Velocity(const int i,
       }
    }//end of turbulent case 
    
-} // end of wall friction velocity
+} 
 
  

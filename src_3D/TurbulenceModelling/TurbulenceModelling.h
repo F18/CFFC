@@ -9,9 +9,17 @@
 
 /* Include required CFFC header files. */
 
+#ifndef _MATH_MACROS_INCLUDED
+#include "../Math/Math.h"
+#endif //MATH_MACROS_INCLUDED
+
 #ifndef _TENSOR3D_INCLUDED
 #include "../Math/Tensor3D.h"
 #endif //_TENSOR3D_INCLUDED
+
+#ifndef _CFD_INCLUDED
+#include "../CFD/CFD.h"
+#endif //CFD_INCLUDED
 
 #ifndef _INPUT_INCLUDED
 #include "../CFD/Input.h"
@@ -28,14 +36,6 @@
 #ifndef _OCTREE_INCLUDED
 #include "../AMR/Octree.h"
 #endif // _OCTREE_INCLUDED
-
-#ifndef _CFD_INCLUDED
-#include "../CFD/CFD.h"
-#endif //CFD_INCLUDED
-
-#ifndef _MATH_MACROS_INCLUDED
-#include "../Math/Math.h"
-#endif //MATH_MACROS_INCLUDED
 
 #ifndef _FFTW_INCLUDED
 #include "fftw3.h"

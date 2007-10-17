@@ -10,6 +10,10 @@
 #include "BRelax.h" //For BJacobi
 #include "../Math/Matrix.h" //For DenseMatrix
 
+#ifndef _NKS_DTS_INCLUDED
+#include "DTS_NKS.h"
+#endif
+
 /********************************************************
  * Class: Block_Preconditioner                          *
  *                                                      *
@@ -26,7 +30,7 @@ class Block_Preconditioner {
   void Get_Block_Index(const int &,const int &, int *, int *);
   void Setup_Jacobian_approximation();          //called from Create_Preconditioner
   void Setup_Preconditioner();                  //called from Update_Jacobian
-  void Implicit_Euler(const int&,const int&, DenseMatrix*);                     //called from Update_Jacobian       
+  void Implicit_Euler(const int&,const int&, DenseMatrix*, const double& );     //called from Update_Jacobian       
   void First_Order_Inviscid_Jacobian_HLLE(const int&,const int&, DenseMatrix*); //called from Update_Jacobian
   void First_Order_Inviscid_Jacobian_Roe(const int&,const int&, DenseMatrix*);  //called from Update_Jacobian
   void First_Order_Inviscid_Jacobian_AUSM_plus_up(const int&,const int&, DenseMatrix*);  //called from Update_Jacobian
@@ -39,7 +43,7 @@ class Block_Preconditioner {
   public:
   //Address of corresponding Solution block data
   SOLN_BLOCK_TYPE *SolnBlk;
-  INPUT_TYPE *Input_Parameters;
+  INPUT_TYPE *Input_Parameters;  
 
   // BPKIT BlockMat storage of Approximate Jacobian for use with Preconditioner  
   BlockMat Block_Jacobian_approx;
@@ -50,15 +54,15 @@ class Block_Preconditioner {
 
   /*******************************************************/
   //default constructors
-  Block_Preconditioner(void):
+  Block_Preconditioner(void):Jacobian_stencil_size(5), blocksize(1),
     SolnBlk(NULL),Input_Parameters(NULL), ILUK_Precon(NULL), Jacobi_Precon(NULL) {}
-  Block_Preconditioner(SOLN_BLOCK_TYPE  &Soln_ptr,INPUT_TYPE &IP, const int &_blocksize )
+  Block_Preconditioner(SOLN_BLOCK_TYPE  &Soln_ptr,INPUT_TYPE &IP, const int &_blocksize)		      
   { Create_Preconditioner(Soln_ptr,IP,_blocksize); }
   
   //Constructors
   //These should be generalized for any precondtioner, not just "BPkit" types....
-  void Create_Preconditioner(SOLN_BLOCK_TYPE  &Soln_ptr, INPUT_TYPE &IP, const int &_blocksize ); 
-  void Update_Jacobian_and_Preconditioner();  
+  void Create_Preconditioner(SOLN_BLOCK_TYPE  &Soln_ptr, INPUT_TYPE &IP, const int &_blocksize);
+  void Update_Jacobian_and_Preconditioner(const double &DTS_dTime);  
   void Apply_Preconditioner(int A, int B, const double *C, int D, double *E, int F); 
   
   //Equation Specific Specializations required for Inviscid, Viscous, and Source Term Jacobians
@@ -246,7 +250,7 @@ Get_Block_Index(const int &cell_index_i,const int &cell_index_j, int *Block_inde
  *********************************************************/
 template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 inline void Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-Create_Preconditioner( SOLN_BLOCK_TYPE  &Soln_ptr, INPUT_TYPE &IP, const int &_blocksize )
+Create_Preconditioner( SOLN_BLOCK_TYPE  &Soln_ptr, INPUT_TYPE &IP, const int &_blocksize)
 {
   SolnBlk = &(Soln_ptr);
   Input_Parameters= &(IP);
@@ -290,9 +294,9 @@ Setup_Jacobian_approximation(){
 
   //!Temporary Storage Arrays
   int *i_index = new int[nnz];      //location of dense local blocks, in global sparse block Matrix   
-  int *j_index = new int[nnz];
-  double *Data = new double [nnz*blocksize*blocksize];
-  int *block_i = new int[Jacobian_stencil_size];
+  int *j_index = new int[nnz];                            //TEMP VAR      
+  double *Data = new double [nnz*blocksize*blocksize];    //TEMP VAR
+  int *block_i = new int[Jacobian_stencil_size];          //TEMP VAR
   
   //!Setup Stencil for approximate Jacobian
   int nnz_count = 0;   
@@ -338,16 +342,16 @@ Setup_Jacobian_approximation(){
  **********************************************************/
 template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 void Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-Update_Jacobian_and_Preconditioner()
+Update_Jacobian_and_Preconditioner(const double &DTS_dTime)
 {
-  
+
   //!Local Variables and Temporary Storage
   int block_mat_size = SolnBlk->NCi*SolnBlk->NCj; 
-  DenseMatrix *Jacobian_Data = new DenseMatrix[Jacobian_stencil_size];
+  DenseMatrix *Jacobian_Data = new DenseMatrix[Jacobian_stencil_size];        //TEMP VAR  
   for(int i=0; i<Jacobian_stencil_size; i++) { Jacobian_Data[i] = DenseMatrix(blocksize,blocksize,ZERO); }
-  int *block_i = new int[Jacobian_stencil_size]; 
-  int *block_j = new int[Jacobian_stencil_size]; 
-
+  int *block_i = new int[Jacobian_stencil_size];                                //TEMP VAR
+  int *block_j = new int[Jacobian_stencil_size];                                  //TEMP VAR
+  
   //! Initially assume no overlap
   int JCl_overlap = 0, JCu_overlap = 0, ICu_overlap =0, ICl_overlap = 0;
   
@@ -366,49 +370,49 @@ Update_Jacobian_and_Preconditioner()
    **********************************************************************************/
   for(int i= SolnBlk->ICl - ICl_overlap; i<= SolnBlk->ICu + ICu_overlap; i++){    
     for(int j= SolnBlk->JCl - JCl_overlap; j<= SolnBlk->JCu + ICu_overlap; j++){  
-  
+         
       //--------------------------------------------------------------------------//
       //! Calculate Local Approximate Jacobian                        
       switch(Input_Parameters->NKS_IP.Jacobian_Order){
       case SOURCE_TERMS_ONLY :
-	Implicit_Euler(i,j, Jacobian_Data);
+ 	Implicit_Euler(i,j, Jacobian_Data,DTS_dTime);
 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);
 	break;
       case FIRST_ORDER_INVISCID_HLLE : 
-	Implicit_Euler(i,j, Jacobian_Data);
+	Implicit_Euler(i,j, Jacobian_Data,DTS_dTime);
 	First_Order_Inviscid_Jacobian_HLLE(i,j, Jacobian_Data);
 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);                       
 	break;
-      case FIRST_ORDER_INVISCID_ROE : 
-	Implicit_Euler(i,j, Jacobian_Data);
+      case FIRST_ORDER_INVISCID_ROE :  
+	Implicit_Euler(i,j, Jacobian_Data,DTS_dTime); 
 	First_Order_Inviscid_Jacobian_Roe(i,j, Jacobian_Data);
 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);
 	break;
       case FIRST_ORDER_INVISCID_AUSMPLUSUP : 
-	Implicit_Euler(i,j, Jacobian_Data);
+	Implicit_Euler(i,j, Jacobian_Data,DTS_dTime);
 	First_Order_Inviscid_Jacobian_AUSM_plus_up(i,j, Jacobian_Data);
 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);
 	break;
       case SECOND_ORDER_DIAMOND_WITH_HLLE:
-	Implicit_Euler(i,j, Jacobian_Data);
+	Implicit_Euler(i,j, Jacobian_Data,DTS_dTime);
 	First_Order_Inviscid_Jacobian_HLLE(i,j, Jacobian_Data);   
 	Second_Order_Viscous_Jacobian(i,j, Jacobian_Data);    
 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);   
 	break;
       case SECOND_ORDER_DIAMOND_WITH_ROE :	
-	Implicit_Euler(i,j, Jacobian_Data);
+	Implicit_Euler(i,j, Jacobian_Data,DTS_dTime);
 	First_Order_Inviscid_Jacobian_Roe(i,j, Jacobian_Data);
 	Second_Order_Viscous_Jacobian(i,j, Jacobian_Data);    
 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]); 
 	break;
       case SECOND_ORDER_DIAMOND_WITH_AUSMPLUSUP :	
-	Implicit_Euler(i,j, Jacobian_Data);
+	Implicit_Euler(i,j, Jacobian_Data,DTS_dTime);
 	First_Order_Inviscid_Jacobian_AUSM_plus_up(i,j, Jacobian_Data);
 	Second_Order_Viscous_Jacobian(i,j, Jacobian_Data);    
 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);  
 	break;
       }
-                  
+
       //--------------------------------------------------------------------------//
       //! Get Block Matrix locations that have components from a given Cell(i,j)
       Get_Block_Index(i,j, block_i, block_j);
@@ -434,10 +438,9 @@ Update_Jacobian_and_Preconditioner()
 
 	Jacobian_Data[block].zero(); //Just in case to avoid +=/-= issues
       }     
-
     }
   }
-  
+
   //Local Memory cleanup
   delete[] Jacobian_Data; delete[] block_i; delete[] block_j;
 
@@ -450,12 +453,13 @@ Update_Jacobian_and_Preconditioner()
  *****************************************************************************/ 
 template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 inline void Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jacobian)
+Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jacobian,const double& DTS_dTime)
 {   
-	DenseMatrix Diag(blocksize,blocksize);  
-	Diag.identity();    
-	Diag *= 1.0 / (SolnBlk->dt[cell_index_i][cell_index_j]);
-	Jacobian[CENTER] -= Diag;
+  DenseMatrix Diag(blocksize,blocksize);      
+  Diag.identity();    
+  //Cacluate LHS depeneding on Steady State of Dual Time Stepping
+  Diag *= LHS_Time<INPUT_TYPE>(*Input_Parameters, SolnBlk->dt[cell_index_i][cell_index_j],DTS_dTime);  
+  Jacobian[CENTER] -= Diag;
 }
 
 /*****************************************************************************
@@ -497,20 +501,20 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
   double beta_W  = - lambdas_W.x/(lambdas_W.y-lambdas_W.x);
 
   //! Obtain rotation matrices with normal vector -> matrices in DenseMatrix format. 
-  DenseMatrix A_N( Rotation_Matrix(nface_N, 1) );
-  DenseMatrix AI_N( Rotation_Matrix(nface_N, 0) );
-  DenseMatrix A_S( Rotation_Matrix(nface_S, 1) );
-  DenseMatrix AI_S( Rotation_Matrix(nface_S, 0) );
-  DenseMatrix A_E( Rotation_Matrix(nface_E, 1) );
-  DenseMatrix AI_E( Rotation_Matrix(nface_E, 0) );
-  DenseMatrix A_W( Rotation_Matrix(nface_W, 1) );
-  DenseMatrix AI_W( Rotation_Matrix(nface_W, 0) );
+  DenseMatrix A_N( Rotation_Matrix(nface_N, 1) );           //TEMP VAR
+  DenseMatrix AI_N( Rotation_Matrix(nface_N, 0) );            //TEMP VAR
+  DenseMatrix A_S( Rotation_Matrix(nface_S, 1) );            //TEMP VAR
+  DenseMatrix AI_S( Rotation_Matrix(nface_S, 0) );            //TEMP VAR
+  DenseMatrix A_E( Rotation_Matrix(nface_E, 1) );             //TEMP VAR 
+  DenseMatrix AI_E( Rotation_Matrix(nface_E, 0) );            //TEMP VAR
+  DenseMatrix A_W( Rotation_Matrix(nface_W, 1) );             //TEMP VAR  
+  DenseMatrix AI_W( Rotation_Matrix(nface_W, 0) );            //TEMP VAR      
 
   //! Calculate dFdU using solutions in the rotated frame -> matrix in DenseMatrix format. 
-  DenseMatrix dFdU_N(blocksize,blocksize,ZERO); 
-  DenseMatrix dFdU_S(blocksize,blocksize,ZERO); 
-  DenseMatrix dFdU_E(blocksize,blocksize,ZERO); 
-  DenseMatrix dFdU_W(blocksize,blocksize,ZERO); 
+  DenseMatrix dFdU_N(blocksize,blocksize,ZERO);            //TEMP VAR  
+  DenseMatrix dFdU_S(blocksize,blocksize,ZERO);            //TEMP VAR
+  DenseMatrix dFdU_E(blocksize,blocksize,ZERO);             //TEMP VAR
+  DenseMatrix dFdU_W(blocksize,blocksize,ZERO);             //TEMP VAR  
 
   //Solution Rotate provided in pState 
   Preconditioner_dFIdU(dFdU_N, Rotate(SolnBlk->W[cell_index_i][cell_index_j], nface_N)); 
@@ -611,10 +615,10 @@ Second_Order_Viscous_Jacobian(const int &cell_index_i,const int &cell_index_j, D
 
   // A real cludge with all the DenseMatrices and recalculations, 
   //  but just to test, need to change for performance....
-  DenseMatrix JacobianN(blocksize,blocksize,ZERO); 
-  DenseMatrix JacobianS(blocksize,blocksize,ZERO); 
-  DenseMatrix JacobianE(blocksize,blocksize,ZERO); 
-  DenseMatrix JacobianW(blocksize,blocksize,ZERO); 
+  DenseMatrix JacobianN(blocksize,blocksize,ZERO);   //TEMP VAR
+  DenseMatrix JacobianS(blocksize,blocksize,ZERO);    //TEMP VAR
+  DenseMatrix JacobianE(blocksize,blocksize,ZERO);     //TEMP VAR 
+  DenseMatrix JacobianW(blocksize,blocksize,ZERO);     //TEMP VAR 
 
   //Also should rewrite to minimize dR/dU calls and just 
   //call dWdU, but this needs to be done in Preconditioner_dFVdU
@@ -728,8 +732,8 @@ Setup_Preconditioner()
 {
   deallocate_Precon(); // cludge of a workaround to fix up how BpPrecon uses memory in .setup
  
-  ILUK_Precon = new BILUK;
-  Jacobi_Precon = new BJacobi;
+  ILUK_Precon = new BILUK;         //TEMP VAR          
+  Jacobi_Precon = new BJacobi;     //TEMP VAR
   
   if (Input_Parameters->NKS_IP.GMRES_Block_Preconditioner == Block_ILUK ) {      
     /* ILU(k) */   

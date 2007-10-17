@@ -1,4 +1,5 @@
-/* LinearSystems.h:  Header file defining a variety of linear system classes. */
+/*!\file LinearSystems.h
+  \brief Header file defining a variety of linear system classes. */
 
 #ifndef _LINEARSYSTEMS_INCLUDED
 #define _LINEARSYSTEMS_INCLUDED
@@ -18,11 +19,13 @@
 
 using namespace std;
 
-/* Include the matrix header file. */
+/* Include CFFC header files */
 
 #ifndef _MATRIX_INCLUDED
-#include "Matrix.h"
+#include "Matrix.h"             /* Include the matrix header file. */
 #endif // _MATRIX_INCLUDED
+
+#include "../Utilities/EpsilonTol.h" /* Include numerical tolerances header file. */
 
 /* Define some useful constants. */
 
@@ -30,6 +33,7 @@ using namespace std;
 #define	LU_DECOMPOSITION            1
 #define POINT_JACOBI                2
 #define GAUSS_SEIDEL                3
+#define LS_Householder              4
 
 /* External subroutines for dense systems. */
 
@@ -44,6 +48,34 @@ extern void Solve_Point_Jacobi(DenseMatrix &A,
 extern void Solve_Gauss_Seidel(DenseMatrix &A,
                                ColumnVector &b,
                                ColumnVector &x);
+
+void Solve_LS_Householder(DenseMatrix &A,
+			  ColumnVector &b,
+			  ColumnVector &x,
+			  int &krank, double &RNorm);
+
+void Solve_LS_Householder(DenseMatrix &A,
+			  DenseMatrix &B,
+			  DenseMatrix &X,
+			  int &krank, ColumnVector &RNorm);
+
+void Solve_Constrained_LS_Householder(DenseMatrix &A,
+				      DenseMatrix &B,
+				      DenseMatrix &X,
+				      const int NumberOfConstraints);
+
+void HouseholderOrthogTransf_col(bool KnownTransformation, bool MaxAbsValueDetermined,
+				 int PivotElement,int StartZeroElem, int MaxColumnIndex,
+				 DenseMatrix &V, int PivotVector, double &UP, DenseMatrix &C,
+				 int CLow, int CUp);
+
+void HouseholderOrthogTransf_row(bool KnownTransformation, bool MaxAbsValueDetermined,
+				 int PivotElement,int StartZeroElem,int MaxRowIndex,
+				 DenseMatrix &V, int PivotVector, double &UP, DenseMatrix &C,
+				 int RLow, int RUp);
+
+void ComputeSquaredColumnLength(const int &j,const DenseMatrix &A,int &lmax,
+				double &Hmax, double *H, const int &M, const int &N);
 
 /* Define the n x n dense system of linear equations class. */
 
@@ -266,6 +298,47 @@ inline void Solve_LAPACK_dgesv(DenseMatrix &A,
   F77NAME(dgesv)(&N, &NRHS, &A(0,0), &N, IPIV, &B(0), &N, &INFO);
 
   delete []IPIV; IPIV = NULL;
+}
+
+inline void Solve_LS_Householder_F77(DenseMatrix &A,
+				     DenseMatrix &B,
+				     int &krank, const int & NumberOfParameters,
+				     int _NROW_, int _NCOL_){
+
+  //  static char TRANS('N');
+  static integer INFO;
+  static double RCOND(EpsilonTol::epsilon);
+  static integer NRHS, NROW, NCOL, LWORK;
+  static double *WORK;
+  static int *JPVT;
+
+  /* Initialize variables */
+  NRHS = NumberOfParameters;
+  NROW = _NROW_;
+  NCOL = _NCOL_;
+  LWORK = max( min(NROW, NCOL) + 3*NCOL+1, 2*min(NROW,NCOL) +  NumberOfParameters);
+  WORK = new double[LWORK];
+  JPVT = new int[NCOL];
+  for (int i=0; i<NCOL; ++i){
+    JPVT[i] = 0;
+  }
+  
+  /* Call Fortran subroutine */
+  F77NAME(dgelsy)(&NROW, &NCOL, &NRHS, &A(0,0), &NROW,
+		  &B(0,0), &NROW, JPVT, &RCOND, &krank, WORK, &LWORK, &INFO);
+
+  /* Free memory */
+  delete [] WORK; WORK = NULL;
+  delete [] JPVT; JPVT = NULL;
+}
+
+inline void Solve_LS_Householder_F77(DenseMatrix &A,
+				     ColumnVector &b,
+				     int &krank,
+				     int _NROW_, int _NCOL_){
+
+  DenseMatrix B(&b(0),b.size(),1,MV_Matrix_::ref);
+  Solve_LS_Householder_F77(A,B,krank,1,_NROW_,_NCOL_);
 }
 
 #endif /* _LINEARSYSTEMS_INCLUDED  */

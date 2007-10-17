@@ -974,27 +974,10 @@ void ICs(NavierStokes2D_Quad_Block &SolnBlk,
     for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
       for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
 	SolnBlk.W[i][j] = Wo[0];
- 	if (SolnBlk.Grid.Cell[i][j].Xc.x<ZERO){
- 	  SolnBlk.W[i][j].p = SolnBlk.W[i][j].p*1.3;
-	  SolnBlk.W[i][j].v.y = IP.Mach_Number* SolnBlk.W[i][j].a();
-	   SolnBlk.W[i][j].v.x = ZERO; 
-	}else {
-	  //SolnBlk.W[i][j].p = SolnBlk.W[i][j].p*(1.4-0.4/0.005*SolnBlk.Grid.Cell[i][j].Xc.x);
-	  SolnBlk.W[i][j].v.x = ZERO;
-	}
 	if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
 	  //SolnBlk.W[i][j].k = max(ONE,0.00005*(sqr(SolnBlk.W[i][j].v.x) + sqr(SolnBlk.W[i][j].v.y)));
 	  SolnBlk.W[i][j].k = 0.00005*(sqr(SolnBlk.W[i][j].v.x) + sqr(SolnBlk.W[i][j].v.y));
 	  SolnBlk.W[i][j].omega = SolnBlk.W[i][j].k/0.000001;
-	}
-	if (SolnBlk.Variable_Prandtl == ON) {
-	  //SolnBlk.W[i][j].ke = 100.0;
-	  //SolnBlk.W[i][j].ee = 0.1;
-	  SolnBlk.W[i][j].ke = sqr(0.0001*SolnBlk.W[i][j].p/(IP.Wo.gm1*SolnBlk.W[i][j].rho));
-	  //For the inital guess of 'ee' we fix the Prandtl number (0.7 in the present case) and calculate all 'ee' accordingly.
-	  double CmuFmu = SolnBlk.W[i][j].muT()*SolnBlk.W[i][j].epsilon()/SolnBlk.W[i][j].rho/max(sqr(SolnBlk.W[i][j].k),sqr(TOLER));
-	  double Coeff = sqr(0.7*0.14*SolnBlk.W[i][j].f_lambda(SolnBlk.Wall[i][j].ywall)/max(CmuFmu,sqr(TOLER)));
-	  SolnBlk.W[i][j].ee = Coeff*SolnBlk.W[i][j].epsilon()* SolnBlk.W[i][j].ke/ max(SolnBlk.W[i][j].k,TOLER);
 	}
 	SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
       }
@@ -1009,7 +992,7 @@ void ICs(NavierStokes2D_Quad_Block &SolnBlk,
 					      SolnBlk.Grid.Cell[i][j].Xc,
 					      IP.dp,
 					      length,
-					      SolnBlk.Wall[i][j].Xwall.y,
+					      IP.Pipe_Radius,
 					      IP.Reynolds_Number);
     //    //SolnBlk.W[i][j].p = IP.Wo.p - (2.0/3.0)*SolnBlk.W[i][j].rho*SolnBlk.W[i][j].k;
     //    SolnBlk.W[i][j].p += (2.0/3.0)*SolnBlk.W[i][j].rho*SolnBlk.W[i][j].k;
@@ -1610,24 +1593,6 @@ void ICs(NavierStokes2D_Quad_Block &SolnBlk,
 	    }
 	  }
           
-	  /********************************************************************************************
-           * THE NEXT IF STATEMENT IS NEVER USED. REMOVE IT SOMETIME.                                 *
-	   * The initial guess of Ke is taken to be a small fraction of the specific internal energy  *
-	   * at a point and the dissipation rate, ee, calcualted so that the intital value of PrT=0.7 *
-	   ********************************************************************************************/	
-	  if (SolnBlk.Variable_Prandtl == ON){ 
-	    SolnBlk.W[i][j].ke = sample_Ke;
-	    SolnBlk.W[i][j].ee = sample_Ee;
-	    if (SolnBlk.Grid.Cell[i][j].Xc.y >= IP.Pipe_Radius){
-	      SolnBlk.W[i][j].ke = sqr(0.0001*SolnBlk.W[i][j].p/(IP.Wo.gm1*SolnBlk.W[i][j].rho)); 
-	      double CmuFmu = SolnBlk.W[i][j].muT()*SolnBlk.W[i][j].epsilon()/SolnBlk.W[i][j].rho/max(sqr(SolnBlk.W[i][j].k),sqr(TOLER));
-	      double Coeff = sqr(0.7*0.14*SolnBlk.W[i][j].f_lambda(SolnBlk.Wall[i][j].ywall)/max(CmuFmu,sqr(TOLER)));
-	      SolnBlk.W[i][j].ee = Coeff*SolnBlk.W[i][j].epsilon()* SolnBlk.W[i][j].ke/max(SolnBlk.W[i][j].k,TOLER);
-//  	      double CmuFmu = SolnBlk.W[i][j].muT()*SolnBlk.W[i][j].epsilon()/SolnBlk.W[i][j].rho/max(sqr(SolnBlk.W[i][j].k),sqr(TOLER));
-//  	      double Coeff = sqr(CmuFmu/0.14/max(SolnBlk.W[i][j].f_lambda(SolnBlk.Wall[i][j].ywall),TOLER));
-//  	      SolnBlk.W[i][j].ke = Coeff* SolnBlk.W[i][j].ee* SolnBlk.W[i][j].k/ max(SolnBlk.W[i][j].epsilon(),TOLER)/0.7/0.7;
-	    }
-	  }
 	  SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
 	}
       }
@@ -1639,254 +1604,149 @@ void ICs(NavierStokes2D_Quad_Block &SolnBlk,
     // in the following 6 colums in the ascending order of 'y', making the 
     // total number of columns (variables) to be 7.
 
-//       /*****************************************
-//        *Reading solution from the exit.dat file*
-//        *****************************************/
+      /*****************************************
+       *Reading solution from the exit.dat file*
+       *****************************************/
 
-//       int numColumn; // the number of columns(variables) in the file pipe exit file.
-//       if (SolnBlk.Variable_Prandtl == ON){
-// 	numColumn = 9;
-//       }else numColumn = 7;
-//       int numRows=0; // number of rows in the file
-//       double num;
-//       if (SolnBlk.Variable_Prandtl == ON){
-// 	indata.open("exit_vp.dat"); //opens the file
-//       }else{
-// 	indata.open("exit.dat"); //opens the file
-//       };
-//       if(!indata) { // file couldn't be opened
-// 	cerr << "\n Error: The exit.dat file could not be opened" << endl;
-// 	exit(1);
-//       }
+      int numColumn; // the number of columns(variables) in the file pipe exit file.
+      if (SolnBlk.Variable_Prandtl == ON){
+	numColumn = 9;
+      }else numColumn = 7;
+      int numRows=0; // number of rows in the file
+      double num;
+      if (SolnBlk.Variable_Prandtl == ON){
+	indata.open("exit_vp.dat"); //opens the file
+      }else{
+	indata.open("exit.dat"); //opens the file
+      };
+      if(!indata) { // file couldn't be opened
+	cerr << "\n Error: The exit.dat file could not be opened" << endl;
+	exit(1);
+      }
       
-//       //Lets find how many rows are there in the file
-//       int columnCounter=0;
-//       indata >> num;
-//       while ( !indata.eof() ) { 
-// 	columnCounter++;
-// 	indata >>num;
-// 	if(columnCounter == numColumn){
-// 	  numRows++;
-// 	  columnCounter = 0;
-// 	}  
-//       }
-//       indata.close();
+      //Lets find how many rows are there in the file
+      int columnCounter=0;
+      indata >> num;
+      while ( !indata.eof() ) { 
+	columnCounter++;
+	indata >>num;
+	if(columnCounter == numColumn){
+	  numRows++;
+	  columnCounter = 0;
+	}  
+      }
+      indata.close();
 
-//       // allocate a double array of numColumn*numRows
-//       double** storedColumn;
-//       int j,k=0;
-//       storedColumn = (double **) malloc(sizeof(double *) * numColumn);
-//       for(k=0; k<numColumn; k++)
-// 	storedColumn[k] = (double *) malloc(sizeof(double)*numRows);
+      // allocate a double array of numColumn*numRows
+      double** storedColumn;
+      int j,k=0;
+      storedColumn = (double **) malloc(sizeof(double *) * numColumn);
+      for(k=0; k<numColumn; k++)
+	storedColumn[k] = (double *) malloc(sizeof(double)*numRows);
    
-//       // allocate the file data in the double array.
-//       columnCounter=0;
-//       int currentRow = 0;  
-//       if (SolnBlk.Variable_Prandtl == ON){
-// 	comparedata.open("exit_vp.dat"); //opens the file
-//       }else{
-// 	comparedata.open("exit.dat"); //opens the file
-//       };
-//       if(!comparedata) { // file couldn't be opened
-// 	cerr << "\n Error: The exit.dat file could not be opened" << endl;
-// 	exit(1);
-//       }
+      // allocate the file data in the double array.
+      columnCounter=0;
+      int currentRow = 0;  
+      if (SolnBlk.Variable_Prandtl == ON){
+	comparedata.open("exit_vp.dat"); //opens the file
+      }else{
+	comparedata.open("exit.dat"); //opens the file
+      };
+      if(!comparedata) { // file couldn't be opened
+	cerr << "\n Error: The exit.dat file could not be opened" << endl;
+	exit(1);
+      }
 
-//       comparedata >> num;
-//       while ( !comparedata.eof() ) { // keep reading until end-of-file
-// 	storedColumn[columnCounter][currentRow] = num;
-// 	//Increase the downstream pipe pressure equal to the 
-// 	//atmospheric pressure.
-// // 	if (columnCounter==4){
-// // 	  storedColumn[columnCounter][currentRow]=Wo[0].p;
-// // 	}
-// 	columnCounter++;
-// 	if(columnCounter == numColumn){
-// 	  columnCounter = 0;
-// 	  currentRow ++;
+      comparedata >> num;
+      while ( !comparedata.eof() ) { // keep reading until end-of-file
+	storedColumn[columnCounter][currentRow] = num;
+	//Increase the downstream pipe pressure equal to the 
+	//atmospheric pressure.
+// 	if (columnCounter==4){
+// 	  storedColumn[columnCounter][currentRow]=Wo[0].p;
 // 	}
-// 	comparedata >> num; // sets EOF flag if no value found
-//       }
-//       comparedata.close();
+	columnCounter++;
+	if(columnCounter == numColumn){
+	  columnCounter = 0;
+	  currentRow ++;
+	}
+	comparedata >> num; // sets EOF flag if no value found
+      }
+      comparedata.close();
 
-//       /**************************************
-//       Reading done from the exit.dat file
-//       ****************************************/
-//       //Finding the maximum value of K and Omega in the Pipe
-//       double maxK = ZERO, maxOmega = ZERO;
-//       for(k=0; k<numRows; k++){
-// 	if (maxK < storedColumn[5][k])
-// 	  maxK = storedColumn[5][k];
-// 	if (maxOmega < storedColumn[6][k])
-// 	  maxOmega = storedColumn[6][k];
-//       }
+      /**************************************
+      Reading done from the exit.dat file
+      ****************************************/
+      //Finding the maximum value of K and Omega in the Pipe
+      double maxK = ZERO, maxOmega = ZERO;
+      for(k=0; k<numRows; k++){
+	if (maxK < storedColumn[5][k])
+	  maxK = storedColumn[5][k];
+	if (maxOmega < storedColumn[6][k])
+	  maxOmega = storedColumn[6][k];
+      }
 
-//       double interpol; //stores the interpolation factor between two points
-//       int foundYval; // a flag to see that whether or not we need to go ahead 
-//       for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
-// 	for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
-// 	  SolnBlk.W[i][j] = Wo[0];
-// 	  SolnBlk.W[i][j].rho = Wo[0].p/IP.Wo.R/295.0; 
-// 	  SolnBlk.W[i][j].v.x = ZERO;
-// 	  SolnBlk.W[i][j].v.y = ZERO;
-// 	  //Adjust the freestream pressure is there is a pressure gradient.
-// 	  SolnBlk.W[i][j].p = Wo[0].p + SolnBlk.Grid.Cell[i][j].Xc.x/100.0/IP.Pipe_Radius*IP.dp; 
-// 	  double dist = SolnBlk.Grid.Cell[i][j].Xc.y/FIVE/IP.Pipe_Radius;
-// 	  // If the Y value is greater than pipe radius we simply use the STDATM conditions 
-// 	  // otherwise we interpolate the solutions to get the pipe profile at the exit. 
-// 	  if (abs(SolnBlk.Grid.Cell[i][j].Xc.y) < IP.Pipe_Radius && SolnBlk.Grid.Cell[i][j].Xc.x<50.0*IP.Pipe_Radius*(1.0-abs(SolnBlk.Grid.Cell[i][j].Xc.y)/IP.Pipe_Radius)){//if 1 begins
-// 	    //if (abs(SolnBlk.Grid.Cell[i][j].Xc.y) < IP.Pipe_Radius && abs(SolnBlk.Grid.Cell[i][j].Xc.x) < 20.0*IP.Pipe_Radius){
-// 	    //if (abs(SolnBlk.Grid.Cell[i][j].Xc.y) < IP.Pipe_Radius ){
-// 	    foundYval = 0; 
-// 	    for(k=0;(k<numRows) && (foundYval == 0);k++){//'for loop' begins
-// 	      if( (SolnBlk.Grid.Cell[i][j].Xc.y < storedColumn[0][k]) && foundYval == 0 ){//if 2 begins
-// 		foundYval = 1;
-// 		if (k==0){
-// 		  interpol = 0.0;
-// 		  k = 1;
-// 		}else{ 
-// 		  if (storedColumn[0][k] != storedColumn[0][k-1]){
-// 		    interpol = (SolnBlk.Grid.Cell[i][j].Xc.y-storedColumn[0][k-1])/(storedColumn[0][k]-storedColumn[0][k-1]);
-// 		  }else interpol = 0.0;
-// 		  //Linear interpolation is performed in order to match the values of the exit profile and the grid points
-// 		  SolnBlk.W[i][j].rho = storedColumn[1][k-1] + interpol*(storedColumn[1][k]-storedColumn[1][k-1]);
-// 		  SolnBlk.W[i][j].v.x = storedColumn[2][k-1] + interpol*(storedColumn[2][k]-storedColumn[2][k-1]);
-// 		  SolnBlk.W[i][j].v.y = storedColumn[3][k-1] + interpol*(storedColumn[3][k]-storedColumn[3][k-1]);
-// 		  SolnBlk.W[i][j].p = storedColumn[4][k-1] + interpol*(storedColumn[4][k]-storedColumn[4][k-1]);
-// 		  SolnBlk.W[i][j].k = storedColumn[5][k-1] + interpol*(storedColumn[5][k]-storedColumn[5][k-1]);	      
-// 		  SolnBlk.W[i][j].omega = storedColumn[6][k-1] + interpol*(storedColumn[6][k]-storedColumn[6][k-1]);
-// 		  if (SolnBlk.Variable_Prandtl == ON){
-// 		    SolnBlk.W[i][j].ke = storedColumn[7][k-1] + interpol*(storedColumn[7][k]-storedColumn[7][k-1]);
-// 		    SolnBlk.W[i][j].ee = storedColumn[8][k-1] + interpol*(storedColumn[8][k]-storedColumn[8][k-1]);
-// 		  }
-// 		}   
-// 	      }//if 2 ends
-// 	    }//for ends
-// 	  }//if 1 ends
-	  
-      double maxK, maxOmega;
-      for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+      double interpol; //stores the interpolation factor between two points
+      int foundYval; // a flag to see that whether or not we need to go ahead 
+      for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
 	for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
-	  SolnBlk.W[i][j] = Wo[0];	
-	  SolnBlk.W[i][j].rho = Wo[0].p/(288.8*IP.Wo.R);
+	  SolnBlk.W[i][j] = Wo[0];
+	  SolnBlk.W[i][j].rho = Wo[0].p/IP.Wo.R/295.0; 
 	  SolnBlk.W[i][j].v.x = ZERO;
 	  SolnBlk.W[i][j].v.y = ZERO;
-	  
-	  if (SolnBlk.Grid.Cell[i][j].Xc.y <IP.Pipe_Radius){
-	    SolnBlk.W[i][j].rho = SolnBlk.W[i][j].p/IP.Wo.R/551.2;
-	    SolnBlk.W[i][j].v.x = IP.Mach_Number* SolnBlk.W[i][j].a();
-	    SolnBlk.W[i][j].v.y = ZERO;
-	    SolnBlk.W[i][j].k = sqr(0.1* SolnBlk.W[i][j].v.x);
-	    maxK = SolnBlk.W[i][j].k;
-	    SolnBlk.W[i][j].omega = IP.Step_Height*SolnBlk.W[i][j].k;
-	    maxOmega = SolnBlk.W[i][j].omega;
-	  }
+	  //Adjust the freestream pressure is there is a pressure gradient.
+	  SolnBlk.W[i][j].p = Wo[0].p + SolnBlk.Grid.Cell[i][j].Xc.x/100.0/IP.Pipe_Radius*IP.dp; 
+	  // If the Y value is greater than pipe radius we simply use the STDATM conditions 
+	  // otherwise we interpolate the solutions to get the pipe profile at the exit. 
+	  if (abs(SolnBlk.Grid.Cell[i][j].Xc.y) < IP.Pipe_Radius && SolnBlk.Grid.Cell[i][j].Xc.x<50.0*IP.Pipe_Radius*(1.0-abs(SolnBlk.Grid.Cell[i][j].Xc.y)/IP.Pipe_Radius)){//if 1 begins
+	    //if (abs(SolnBlk.Grid.Cell[i][j].Xc.y) < IP.Pipe_Radius && abs(SolnBlk.Grid.Cell[i][j].Xc.x) < 20.0*IP.Pipe_Radius){
+	    //if (abs(SolnBlk.Grid.Cell[i][j].Xc.y) < IP.Pipe_Radius ){
+	    foundYval = 0; 
+	    for(k=0;(k<numRows) && (foundYval == 0);k++){//'for loop' begins
+	      if( (SolnBlk.Grid.Cell[i][j].Xc.y < storedColumn[0][k]) && foundYval == 0 ){//if 2 begins
+		foundYval = 1;
+		if (k==0){
+		  interpol = 0.0;
+		  k = 1;
+		}else{ 
+		  if (storedColumn[0][k] != storedColumn[0][k-1]){
+		    interpol = (SolnBlk.Grid.Cell[i][j].Xc.y-storedColumn[0][k-1])/(storedColumn[0][k]-storedColumn[0][k-1]);
+		  }else interpol = 0.0;
+		  //Linear interpolation is performed in order to match the values of the exit profile and the grid points
+		  SolnBlk.W[i][j].rho = storedColumn[1][k-1] + interpol*(storedColumn[1][k]-storedColumn[1][k-1]);
+		  SolnBlk.W[i][j].v.x = storedColumn[2][k-1] + interpol*(storedColumn[2][k]-storedColumn[2][k-1]);
+		  SolnBlk.W[i][j].v.y = storedColumn[3][k-1] + interpol*(storedColumn[3][k]-storedColumn[3][k-1]);
+		  SolnBlk.W[i][j].p = storedColumn[4][k-1] + interpol*(storedColumn[4][k]-storedColumn[4][k-1]);
+		  SolnBlk.W[i][j].k = storedColumn[5][k-1] + interpol*(storedColumn[5][k]-storedColumn[5][k-1]);	      
+		  SolnBlk.W[i][j].omega = storedColumn[6][k-1] + interpol*(storedColumn[6][k]-storedColumn[6][k-1]);
+		  if (SolnBlk.Variable_Prandtl == ON){
+		    SolnBlk.W[i][j].ke = storedColumn[7][k-1] + interpol*(storedColumn[7][k]-storedColumn[7][k-1]);
+		    SolnBlk.W[i][j].ee = storedColumn[8][k-1] + interpol*(storedColumn[8][k]-storedColumn[8][k-1]);
+		  }
+		}   
+	      }//if 2 ends
+	    }//for ends
+	  }//if 1 ends
 	  
 	  /********************************************************************************************
 	   * For the K-Omega initial guess we are introducing a damping function for both K and omega *
 	   * which introduces some turbulent kinetic energy near the shear layer and damps out to     *
 	   * extremely small values in the free stream.                                               *
 	   ********************************************************************************************/
-	  double dist = SolnBlk.Grid.Cell[i][j].Xc.y/TEN/IP.Pipe_Radius;
+	  double dist = SolnBlk.Grid.Cell[i][j].Xc.y/FIVE/IP.Pipe_Radius;
 	  if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
 	    if (SolnBlk.W[i][j].k == ZERO)
 	      SolnBlk.W[i][j].k = maxK*exp(-dist);
 	    if (SolnBlk.W[i][j].omega == ZERO)
 	      SolnBlk.W[i][j].omega = maxOmega*exp(-dist/IP.Step_Height);
 	  }
-
-	  /********************************************************************************************
-	   * The initial guess of Ke is taken to be a small fraction of the specific internal energy  *
-	   * at a point and the dissipation rate, ee, calcualted so that the intital value of PrT=0.7 *
-	   ********************************************************************************************/	
-	  if (SolnBlk.Variable_Prandtl == ON){ 
-	    if (SolnBlk.W[i][j].ke == ZERO)
-	      SolnBlk.W[i][j].ke = sqr(0.001*SolnBlk.W[i][j].p/(IP.Wo.gm1*SolnBlk.W[i][j].rho));
-	    if (SolnBlk.W[i][j].ee == ZERO){
-	      double CmuFmu = SolnBlk.W[i][j].muT()*SolnBlk.W[i][j].epsilon()/SolnBlk.W[i][j].rho/max(sqr(SolnBlk.W[i][j].k),sqr(TOLER));
-	      double Coeff = sqr(0.7*0.14*SolnBlk.W[i][j].f_lambda(SolnBlk.Wall[i][j].ywall)/max(CmuFmu,sqr(TOLER)));
-	      SolnBlk.W[i][j].ee = Coeff*SolnBlk.W[i][j].epsilon()* SolnBlk.W[i][j].ke/max(SolnBlk.W[i][j].k,TOLER);
-	    }
-	  }
-	  
-	  SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
 	}
       }
       //      delete storedColumn, columnCounter, numRows, numColumn, foundYval;
+	
     }
     break;
     
-//   case IC_MIXING_LAYER:
-//     if (IP.Mach_Number > ONE){
-//       for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
-// 	for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
-	  
-// 	  SolnBlk.W[i][j] = Wo[0];
-// // 	  if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) 
-// // 	    SolnBlk.W[i][j].k = 0.01*(SolnBlk.W[i][j].v.x);
-   
-// 	  if (SolnBlk.Grid.Cell[i][j].Xc.y >= ZERO) {
-// 	    SolnBlk.W[i][j].v.y = ZERO;
-// 	  } else{ 
-// 	    SolnBlk.W[i][j].rho = SolnBlk.W[i][j].rho * pow( ONE + IP.Wo.gm1/TWO*sqr(IP.Mach_Number), -ONE);
-// // 	    SolnBlk.W[i][j].k = Wo[0].rho*SolnBlk.W[i][j].k/SolnBlk.W[i][j].rho;
-// 	    SolnBlk.W[i][j].v.x = SolnBlk.W[i][j].v.y;
-// 	    SolnBlk.W[i][j].v.y = ZERO;
-// 	  }
-// // 	  SolnBlk.W[i][j].omega = SolnBlk.W[i][j].rho * SolnBlk.W[i][j].k/ SolnBlk.W[i][j].mu()*100.0;
-
-// 	 /********************************************************************************************
-//           * For the K-Omega initial guess we are introducing a damping function for both K and omega *
-//           * which introduces some turbulent kinetic energy near the shear layer and damps out to     *
-//           * extremely small values in the free stream.                                               *
-//           ********************************************************************************************/
-// 	  //We are using "Step_Height" as an input variable just to set and test different initial values of Omega
-// 	  if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-// 	    SolnBlk.W[i][j].k = IP.Step_Height*(-90.0*abs(SolnBlk.Grid.Cell[i][j].Xc.y)/IP.Plate_Length+90.0)*pow(cos(atan(1.0)*TWO*SolnBlk.Grid.Cell[i][j].Xc.y/IP.Plate_Length),2.0);
-// 	    SolnBlk.W[i][j].omega = IP.Wedge_Length*SolnBlk.W[i][j].k;
-// 	    //IP.Wedge_Length*(-90.0*abs(SolnBlk.Grid.Cell[i][j].Xc.y)/IP.Plate_Length*TWO+90.0)*pow(cos(atan(1.0)*TWO*SolnBlk.Grid.Cell[i][j].Xc.y/IP.Plate_Length*TWO),2.0); 
-// 	  }
-	  
-// 	  SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
-// 	}
-//       }
-//     }else{
-//       for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
-// 	for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
-// 	  SolnBlk.W[i][j] = Wo[0];
-	  
-// // 	  if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-// // 	    SolnBlk.W[i][j].k = 0.01*(SolnBlk.W[i][j].v.x);
-// // 	    SolnBlk.W[i][j].omega = SolnBlk.W[i][j].rho * SolnBlk.W[i][j].k/ SolnBlk.W[i][j].mu()*100.0;
-// // 	  }
-	  
-// 	  if (SolnBlk.Grid.Cell[i][j].Xc.y >= ZERO) {
-// 	    SolnBlk.W[i][j].v.y = ZERO;
-// 	  } else{ 
-// 	      SolnBlk.W[i][j].rho = SolnBlk.W[i][j].rho * pow( ONE + IP.Wo.gm1/TWO*sqr(IP.Mach_Number), -ONE);
-// 	      // SolnBlk.W[i][j].rho = DENSITY_STDATM * pow( ONE + (IP.Wo.g-ONE)/TWO*sqr(IP.Mach_Number),-IP.Wo.g*(IP.Wo.g-ONE));
-// 	      SolnBlk.W[i][j].v.x = SolnBlk.W[i][j].v.y;
-// 	      SolnBlk.W[i][j].v.y = ZERO;
-// 	  }
-	  
-// 	 /********************************************************************************************
-//           * For the K-Omega initial guess we are introducing a damping function for both K and omega *
-//           * which introduces some turbulent kinetic energy near the shear layer and damps out to     *
-//           * extremely small values in the free stream.                                               *
-//            ********************************************************************************************/
-// 	  //We are using "Step_Height" as an input variable just to set and test different initial values of Omega
-// 	  if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-// 	    SolnBlk.W[i][j].k=IP.Step_Height*(-20.0*abs(SolnBlk.Grid.Cell[i][j].Xc.y)/IP.Plate_Length+20.0)*pow(cos(atan(1.0)*TWO*SolnBlk.Grid.Cell[i][j].Xc.y/IP.Plate_Length),2.0);
-// 	    SolnBlk.W[i][j].omega = IP.Wedge_Length*SolnBlk.W[i][j].k;
-
-// 	    //IP.Wedge_Length*(-90.0*abs(SolnBlk.Grid.Cell[i][j].Xc.y)/IP.Plate_Length*TWO+90.0)*pow(cos(atan(1.0)*TWO*SolnBlk.Grid.Cell[i][j].Xc.y/IP.Plate_Length*TWO),2.0);
-// 	  }
-
-// 	  SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
-// 	}
-//       }
-//     }
-//     break;
   case IC_MIXING_LAYER :
     for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
       for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {

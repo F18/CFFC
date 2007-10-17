@@ -75,3 +75,37 @@ GMRES_ILUK_Level_of_Fill=
 # -> Second_Order_Diamond_Path_with_AUSM_plus_up
 Jacobian_Order=
 First_Order_Inviscid_HLLE
+#################################
+# Dual-Time Stepping (Implicit Time Accurate)
+#################################
+#
+# When using Dual Time Stepping & NKS
+# set the Time_accurate=0 to turn
+# off the explicit time accurate flag,
+# and set Time_Max to determine the
+# stopping criteria. 
+#
+# Set NKS_Overall_Tolerance or 
+# use Maximum_Number_of_NKS_Iterations
+# to set the number of pseudo time
+# subiterations. 
+#
+#
+NKS_Dual_Time_Stepping =
+ON
+# Physical Time Integration method
+# -> Implicit_Euler
+# -> Second_Order_Backwards
+NKS_Physical_Time_Integration =
+Implicit_Euler
+#
+# Physical Time Step CFL
+NKS_Physical_Time_CFL =
+1.0
+# Instead of setting a CFL
+# fix the physical time step
+NKS_Physiclal_Time_Step=
+0.0
+# Outer loop Max steps 
+Maximum_Number_of_NKS_DTS_Steps =
+0

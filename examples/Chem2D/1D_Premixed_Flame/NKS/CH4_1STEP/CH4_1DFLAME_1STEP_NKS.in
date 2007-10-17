@@ -12,7 +12,7 @@ Freeze_Limiter =
 # Relative to L2 Norm, so if rhoU will be much
 # higher than say just rho??
 Freeze_Limiter_Residual_Level = 
-0.1
+0.01
 # 1 rho, 4 energy (follows index operator for pstate)
 #Residual_Variable =
 #1
@@ -23,9 +23,9 @@ Freeze_Limiter_Residual_Level =
 GMRES_Overlap =
 0
 GMRES_Initial_Tolerance =
-2.0e-02
+1.0e-02
 GMRES_Final_Tolerance =
-2.0e-02
+1.0e-02
 GMRES_Block_Preconditioner = 
 ILUK
 #( ILUK, Diagonal)
@@ -44,7 +44,7 @@ ON
 NKS_Finite_Time_Step_Initial_CFL =
 10.0
 NKS_Finite_Time_Step_Max_CFL =
-1000.0
+500.0
 #---------- Precon ------------
 Jacobian_Order =
 Second_Order_Diamond_Path_with_Roe

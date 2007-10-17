@@ -286,7 +286,7 @@ void Grid3D_Hexa_Block::Broadcast(void) {
     int *i_buffer;
     double *buffer;
 
-    /* Broadcast the number of regular and cells 
+    /* Broadcast the number of regular and ghost cells 
        for the grid block. */
 
     if (CFFC_Primary_MPI_Processor()) {
@@ -304,7 +304,7 @@ void Grid3D_Hexa_Block::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&mesh_allocated, 1, MPI::INT, 0);
 
     /* On non-primary MPI processors, allocate (re-allocate) 
-       memory for the cells and nodes of the quadrilateral 
+       memory for the cells and nodes of the hexihedral
        mesh block as necessary. */
 
     if (!CFFC_Primary_MPI_Processor()) {

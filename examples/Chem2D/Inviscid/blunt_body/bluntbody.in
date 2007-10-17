@@ -38,7 +38,9 @@ Residual_Variable =
 ############################
 GMRES_Overlap =
 0
-GMRES_Tolerance =
+GMRES_Initial_Tolerance =
+1.0e-01
+GMRES_Final_Tolerance =
 1.0e-01
 NKS_Overall_Tolerance =
 1.0e-10
@@ -59,7 +61,7 @@ NKS_Finite_Time_Step_Max_CFL =
 GMRES_Normalization = 
 ON
 Jacobian_Order =
-First_Order_Inviscid_Roe
+First_Order_Inviscid_HLLE
 #########################
 # Set initial conditions
 #########################

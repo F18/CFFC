@@ -14,5 +14,7 @@
  *                              variables.                            *
  **********************************************************************/
 int NavierStokes2D_Quad_Block::residual_variable = 1;
+#ifdef _NS_PARALLEL_DEBUG_
 ofstream NavierStokes2D_Quad_Block::dout;
+#endif
 int NavierStokes2D_Quad_Block::Number_of_Residual_Norms = 4;
