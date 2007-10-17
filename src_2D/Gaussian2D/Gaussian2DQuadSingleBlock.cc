@@ -2332,7 +2332,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                                       const int j,
                                       const int Limiter) {
 
-    int n, n2, n_pts, i_index[8], j_index[8];
+    int n, n2, n_pts, ii, i_index[8], j_index[8];
     double u0Min, u0Max, uQuad[4], phi;
     double DxDx_ave, DxDy_ave, DyDy_ave;
     double l_north, l_south, l_east, l_west;
@@ -3073,7 +3073,7 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                                 (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
         } /* endif */
 
-        // Calculate slope limiters.    
+        // Calculate slope limiters.
 	if (!SolnBlk.Freeze_Limiter) {
            for ( n = 1 ; n <= NUM_VAR_GAUSSIAN2D ; ++n ) {
               u0Min = SolnBlk.W[i][j][n];
@@ -3082,73 +3082,76 @@ void Linear_Reconstruction_GreenGauss(Gaussian2D_Quad_Block &SolnBlk,
                  u0Min = min(u0Min, SolnBlk.W[ i_index[n2] ][ j_index[n2] ][n]);
                  u0Max = max(u0Max, SolnBlk.W[ i_index[n2] ][ j_index[n2] ][n]);
               } /* endfor */
-    
-              dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-              uQuad[0] = SolnBlk.W[i][j][n] + 
-                         SolnBlk.dWdx[i][j][n]*dX.x +
-                         SolnBlk.dWdy[i][j][n]*dX.y ;
-              dX = SolnBlk.Grid.xfaceW(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-              uQuad[1] = SolnBlk.W[i][j][n] + 
-                         SolnBlk.dWdx[i][j][n]*dX.x +
-                         SolnBlk.dWdy[i][j][n]*dX.y ;
-              dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-              uQuad[2] = SolnBlk.W[i][j][n] + 
-                         SolnBlk.dWdx[i][j][n]*dX.x +
-                         SolnBlk.dWdy[i][j][n]*dX.y ;
-              dX = SolnBlk.Grid.xfaceS(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-              uQuad[3] = SolnBlk.W[i][j][n] + 
-                         SolnBlk.dWdx[i][j][n]*dX.x +
-                         SolnBlk.dWdy[i][j][n]*dX.y ;
 
-	      if( Limiter != LIMITER_ZERO &&
-		  ((i == SolnBlk.ICl && (SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL ||
-					 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-					 SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP)) ||
-		   (i == SolnBlk.ICu && (SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL ||
-					 SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-					 SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP)) ||
-		   (j == SolnBlk.JCl && (SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL ||
-					 SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-					 SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP)) ||
-		   (j == SolnBlk.JCu && (SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL ||
-					 SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-					 SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP))) ) {
-		//I put this in because the limiter was causing problems at solid boundaries!
+	      ii=0;
+	      if(i != SolnBlk.ICu || (SolnBlk.Grid.BCtypeE[j] != BC_ADIABATIC_WALL &&
+				      SolnBlk.Grid.BCtypeE[j] != BC_WALL_VISCOUS_ISOTHERMAL &&
+				      SolnBlk.Grid.BCtypeE[j] != BC_TEMPERATURE_SLIP)) {
+		dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
+		uQuad[ii] = SolnBlk.W[i][j][n] +
+			    SolnBlk.dWdx[i][j][n]*dX.x +
+			    SolnBlk.dWdy[i][j][n]*dX.y;
+		ii++;
+	      }
+	      if(i != SolnBlk.ICl || (SolnBlk.Grid.BCtypeW[j] != BC_ADIABATIC_WALL &&
+				      SolnBlk.Grid.BCtypeW[j] != BC_WALL_VISCOUS_ISOTHERMAL &&
+				      SolnBlk.Grid.BCtypeW[j] != BC_TEMPERATURE_SLIP)) {
+		dX = SolnBlk.Grid.xfaceW(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
+		uQuad[ii] = SolnBlk.W[i][j][n] +
+                            SolnBlk.dWdx[i][j][n]*dX.x +
+                            SolnBlk.dWdy[i][j][n]*dX.y;
+		ii++;
+	      }
+	      if(j != SolnBlk.JCu || (SolnBlk.Grid.BCtypeN[i] != BC_ADIABATIC_WALL &&
+				      SolnBlk.Grid.BCtypeN[i] != BC_WALL_VISCOUS_ISOTHERMAL &&
+				      SolnBlk.Grid.BCtypeN[i] != BC_TEMPERATURE_SLIP)) {
+		dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
+		uQuad[ii] = SolnBlk.W[i][j][n] +
+                           SolnBlk.dWdx[i][j][n]*dX.x +
+		           SolnBlk.dWdy[i][j][n]*dX.y;
+		ii++;
+	      }
+	      if(j != SolnBlk.JCl || (SolnBlk.Grid.BCtypeS[i] != BC_ADIABATIC_WALL &&
+				      SolnBlk.Grid.BCtypeS[i] != BC_WALL_VISCOUS_ISOTHERMAL &&
+				      SolnBlk.Grid.BCtypeS[i] != BC_TEMPERATURE_SLIP)) {
+		dX = SolnBlk.Grid.xfaceS(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
+		uQuad[ii] = SolnBlk.W[i][j][n] +
+                           SolnBlk.dWdx[i][j][n]*dX.x +
+                           SolnBlk.dWdy[i][j][n]*dX.y;
+		ii++;
+	      }
+
+	      switch(Limiter) {
+	      case LIMITER_ONE :
 		phi = ONE;
-
-	      } else {
-    
-		switch(Limiter) {
-                case LIMITER_ONE :
-                  phi = ONE;
-                  break;
-                case LIMITER_ZERO :
-                  phi = ZERO;
-                  break;
-                case LIMITER_BARTH_JESPERSEN :
-                  phi = Limiter_BarthJespersen(uQuad, SolnBlk.W[i][j][n], 
-                                               u0Min, u0Max, 4);
-                  break;
-                case LIMITER_VENKATAKRISHNAN :
-                  phi = Limiter_Venkatakrishnan(uQuad, SolnBlk.W[i][j][n], 
-                                                u0Min, u0Max, 4);
-                  break;
-                case LIMITER_VANLEER :
-                  phi = Limiter_VanLeer(uQuad, SolnBlk.W[i][j][n], 
-                                        u0Min, u0Max, 4);
-                  break;
-                case LIMITER_VANALBADA :
-                  phi = Limiter_VanAlbada(uQuad, SolnBlk.W[i][j][n], 
-                                          u0Min, u0Max, 4);
-                  break;
-                default:
-                  phi = Limiter_BarthJespersen(uQuad, SolnBlk.W[i][j][n], 
-                                               u0Min, u0Max, 4);
-                  break;
-		} /* endswitch */
-	      } /* end if */
+		break;
+	      case LIMITER_ZERO :
+		phi = ZERO;
+		break;
+	      case LIMITER_BARTH_JESPERSEN :
+		phi = Limiter_BarthJespersen(uQuad, SolnBlk.W[i][j][n],
+					     u0Min, u0Max, ii);
+		break;
+	      case LIMITER_VENKATAKRISHNAN :
+		phi = Limiter_Venkatakrishnan(uQuad, SolnBlk.W[i][j][n],
+					      u0Min, u0Max, ii);
+		break;
+	      case LIMITER_VANLEER :
+		phi = Limiter_VanLeer(uQuad, SolnBlk.W[i][j][n],
+				      u0Min, u0Max, ii);
+		break;
+	      case LIMITER_VANALBADA :
+		phi = Limiter_VanAlbada(uQuad, SolnBlk.W[i][j][n],
+					u0Min, u0Max, ii);
+		break;
+	      default:
+		phi = Limiter_BarthJespersen(uQuad, SolnBlk.W[i][j][n],
+					     u0Min, u0Max, ii);
+		break;
+	      } /* endswitch */
 	      SolnBlk.phi[i][j][n] = phi;
            } /* endfor */
+
         } /* endif */
 
 	//Adjust limiter for validity at Quadrature points
@@ -4027,7 +4030,7 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
         SolnBlk.dWdy[i][j] = (DUDy_ave*DxDx_ave-DUDx_ave*DxDy_ave)/
                              (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
     
-        // Calculate slope limiters. 
+        // Calculate slope limiters.
 	if (!SolnBlk.Freeze_Limiter) {
            for ( n = 1 ; n <= NUM_VAR_GAUSSIAN2D ; ++n ) {
               u0Min = SolnBlk.W[i][j][n];
