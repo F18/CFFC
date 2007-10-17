@@ -230,6 +230,16 @@ void Output_Cells_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
                 << "\"DetP\" \\ \n"
                 << "\"d_rho_u\" \\ \n"
                 << "\"Mean Free Path\" \\ \n"
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
+		<< "\"Qxxx\" \\ \n"
+		<< "\"Qxxy\" \\ \n"
+		<< "\"Qxyy\" \\ \n"
+		<< "\"Qxzz\" \\ \n"
+		<< "\"Qyyy\" \\ \n"
+		<< "\"Qyzz\" \\ \n"
+		<< "\"qx\" \\ \n"
+		<< "\"qy\" \\ \n"
+#endif
                 << "\"drhodx\" \\ \n"
                 << "\"dudx\" \\ \n"
                 << "\"dvdx\" \\ \n"
@@ -275,6 +285,13 @@ void Output_Cells_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
 
     for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
        for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
+	   //note: this does not compute the heat terms in exactly the same way as in
+	   //      the residual calculation.  Be sure you know what you're computing.
+	   SolnBlk.W[i][j].ComputeHeatTerms(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],
+					    Vector2D(0.0,0.0),0);
+#endif
 	 
            Out_File << " "  << SolnBlk.Grid.Cell[i][j].Xc
                     << SolnBlk.W[i][j];
@@ -282,6 +299,11 @@ void Output_Cells_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
 	   Out_File << " " << sqrt(sqr(SolnBlk.W[i][j].v.x)+sqr(SolnBlk.W[i][j].v.y))
 		    << " " << SolnBlk.W[i][j].T() << " " << SolnBlk.W[i][j].DetP()
 		    << " " << SolnBlk.dUdt[i][j][0][1]<< " " << SolnBlk.W[i][j].mfp() 
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
+		    << " " << SolnBlk.W[i][j].q
+		    << " " << (SolnBlk.W[i][j].q.xxx+SolnBlk.W[i][j].q.xyy+SolnBlk.W[i][j].q.xzz)/2.0
+		    << " " << (SolnBlk.W[i][j].q.xxy+SolnBlk.W[i][j].q.yyy+SolnBlk.W[i][j].q.yzz)/2.0
+#endif
 		    << " " << SolnBlk.dWdx[i][j]
 		    << " " << SolnBlk.dWdy[i][j]
 		    << " " << SolnBlk.phi[i][j] 
