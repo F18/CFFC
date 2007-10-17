@@ -69,21 +69,32 @@ class Grid3D_Hexa_Multi_Block_Connectivity{
 
   //Creation constructors.
    Grid3D_Hexa_Multi_Block_Connectivity(void):
+      num_neighT(0), num_neighB(0),
+      num_neighN(0), num_neighS(0),
+      num_neighE(0), num_neighW(0),
+      num_neighTN(0), num_neighTS(0),
+      num_neighTE(0), num_neighTW(0),
+      num_neighBN(0), num_neighBS(0),
+      num_neighBE(0), num_neighBW(0),
+      num_neighTNW(0), num_neighTSW(0),
+      num_neighTNE(0), num_neighTSE(0),
+      num_neighBNW(0), num_neighBSW(0),
+      num_neighBNE(0), num_neighBSE(0),
       neighT(GRID3D_NO_NEIGHBOUR), neighB(GRID3D_NO_NEIGHBOUR),
       neighN(GRID3D_NO_NEIGHBOUR), neighS(GRID3D_NO_NEIGHBOUR),
       neighE(GRID3D_NO_NEIGHBOUR), neighW(GRID3D_NO_NEIGHBOUR){
       
       for(int nN = 0; nN < BLOCK_ORIENTATION_MAX_NEIGHBOUR; nN++){
-         neighNW[nN] = 0;  neighNE[nN] = 0; 
-         neighSE[nN] = 0;  neighSW[nN] = 0; 
-         neighTN[nN] = 0;  neighTS[nN] = 0; 
-         neighTE[nN] = 0;  neighTW[nN] = 0; 
-         neighTNW[nN] = 0;  neighTSW[nN] = 0; 
-         neighTNE[nN] = 0;  neighTSE[nN] = 0; 
-         neighBN[nN] = 0;  neighBS[nN] = 0; 
-         neighBE[nN] = 0;  neighBW[nN] = 0; 
-         neighBNW[nN] = 0;  neighBSW[nN] = 0; 
-         neighBNE[nN] = 0;  neighBSE[nN] = 0; 
+         neighNW[nN] = GRID3D_NO_NEIGHBOUR;  neighNE[nN] = GRID3D_NO_NEIGHBOUR; 
+         neighSE[nN] = GRID3D_NO_NEIGHBOUR;  neighSW[nN] = GRID3D_NO_NEIGHBOUR; 
+         neighTN[nN] = GRID3D_NO_NEIGHBOUR;  neighTS[nN] = GRID3D_NO_NEIGHBOUR; 
+         neighTE[nN] = GRID3D_NO_NEIGHBOUR;  neighTW[nN] = GRID3D_NO_NEIGHBOUR; 
+         neighTNW[nN] = GRID3D_NO_NEIGHBOUR;  neighTSW[nN] = GRID3D_NO_NEIGHBOUR; 
+         neighTNE[nN] = GRID3D_NO_NEIGHBOUR;  neighTSE[nN] = GRID3D_NO_NEIGHBOUR; 
+         neighBN[nN] = GRID3D_NO_NEIGHBOUR;  neighBS[nN] = GRID3D_NO_NEIGHBOUR; 
+         neighBE[nN] = GRID3D_NO_NEIGHBOUR;  neighBW[nN] = GRID3D_NO_NEIGHBOUR; 
+         neighBNW[nN] = GRID3D_NO_NEIGHBOUR;  neighBSW[nN] = GRID3D_NO_NEIGHBOUR; 
+         neighBNE[nN] = GRID3D_NO_NEIGHBOUR;  neighBSE[nN] = GRID3D_NO_NEIGHBOUR; 
       }
          
       

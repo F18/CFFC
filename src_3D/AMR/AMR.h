@@ -167,6 +167,11 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          Octree.Rootblks[nb].block.infoTS[0].blknum = Initial_Mesh.Connectivity[nb].neighTS[0];
          Octree.Rootblks[nb].block.infoTE[0].blknum = Initial_Mesh.Connectivity[nb].neighTE[0];
          Octree.Rootblks[nb].block.infoTW[0].blknum = Initial_Mesh.Connectivity[nb].neighTW[0];
+         Octree.Rootblks[nb].block.infoBN[0].blknum = Initial_Mesh.Connectivity[nb].neighBN[0];
+         Octree.Rootblks[nb].block.infoBS[0].blknum = Initial_Mesh.Connectivity[nb].neighBS[0];
+         Octree.Rootblks[nb].block.infoBE[0].blknum = Initial_Mesh.Connectivity[nb].neighBE[0];
+         Octree.Rootblks[nb].block.infoBW[0].blknum = Initial_Mesh.Connectivity[nb].neighBW[0];
+
         
          Octree.Rootblks[nb].block.infoTNW[0].blknum = Initial_Mesh.Connectivity[nb].neighTNW[0];
          Octree.Rootblks[nb].block.infoTSW[0].blknum = Initial_Mesh.Connectivity[nb].neighTSW[0];
@@ -175,7 +180,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          Octree.Rootblks[nb].block.infoBNW[0].blknum = Initial_Mesh.Connectivity[nb].neighBNW[0];
          Octree.Rootblks[nb].block.infoBSW[0].blknum = Initial_Mesh.Connectivity[nb].neighBSW[0];
          Octree.Rootblks[nb].block.infoBNE[0].blknum = Initial_Mesh.Connectivity[nb].neighBNE[0];
-         Octree.Rootblks[nb].block.infoBNW[0].blknum = Initial_Mesh.Connectivity[nb].neighBNW[0];
+         Octree.Rootblks[nb].block.infoBSE[0].blknum = Initial_Mesh.Connectivity[nb].neighBSE[0];
 
          // block orientation information of the neighbouring blocks in each direction
          // for each of the block in the roots
@@ -194,6 +199,10 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          Octree.Rootblks[nb].block.infoTS[0].blkorient = Initial_Mesh.Connectivity[nb].neighTS_info[0];
          Octree.Rootblks[nb].block.infoTE[0].blkorient = Initial_Mesh.Connectivity[nb].neighTE_info[0];
          Octree.Rootblks[nb].block.infoTW[0].blkorient = Initial_Mesh.Connectivity[nb].neighTW_info[0];
+         Octree.Rootblks[nb].block.infoBN[0].blkorient = Initial_Mesh.Connectivity[nb].neighBN_info[0];
+         Octree.Rootblks[nb].block.infoBS[0].blkorient = Initial_Mesh.Connectivity[nb].neighBS_info[0];
+         Octree.Rootblks[nb].block.infoBE[0].blkorient = Initial_Mesh.Connectivity[nb].neighBE_info[0];
+         Octree.Rootblks[nb].block.infoBW[0].blkorient = Initial_Mesh.Connectivity[nb].neighBW_info[0];
          
          Octree.Rootblks[nb].block.infoTNW[0].blkorient = Initial_Mesh.Connectivity[nb].neighTNW_info[0];
          Octree.Rootblks[nb].block.infoTSW[0].blkorient = Initial_Mesh.Connectivity[nb].neighTSW_info[0];
@@ -202,7 +211,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          Octree.Rootblks[nb].block.infoBNW[0].blkorient = Initial_Mesh.Connectivity[nb].neighBNW_info[0];
          Octree.Rootblks[nb].block.infoBSW[0].blkorient = Initial_Mesh.Connectivity[nb].neighBSW_info[0];
          Octree.Rootblks[nb].block.infoBNE[0].blkorient = Initial_Mesh.Connectivity[nb].neighBNE_info[0];
-         Octree.Rootblks[nb].block.infoBNW[0].blkorient = Initial_Mesh.Connectivity[nb].neighBNW_info[0];
+         Octree.Rootblks[nb].block.infoBSE[0].blkorient = Initial_Mesh.Connectivity[nb].neighBSE_info[0];
          
          Octree.Rootblks[nb].parent_ptr = NULL;
          Octree.Rootblks[nb].childTNW_ptr = NULL;
@@ -214,13 +223,15 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          Octree.Rootblks[nb].childBSE_ptr = NULL;
          Octree.Rootblks[nb].childBSW_ptr = NULL;
          Octree.Blocks[n_cpu][n_blk] = &(Octree.Rootblks[nb]);
+          
+         Local_Adaptive_Block_List.Block[n_blk] = Octree.Rootblks[nb].block;
          
          // For solution blocks on this processor (or processor
          // element), add block to local list, create the solution
          // block, and copy the appropriate block of the
          // initial hexarilateral mesh to the solution block mesh.
          if (Global_Adaptive_Block_List.ThisCPU == n_cpu) {
-            Local_Adaptive_Block_List.Block[n_blk] = Octree.Rootblks[nb].block;
+            //  Local_Adaptive_Block_List.Block[n_blk] = Octree.Rootblks[nb].block;
             Local_Solution_Blocks.Soln_Blks[n_blk].Create_Block(Initial_Mesh.Grid_Blks[nb]);
             Local_Solution_Blocks.Soln_Blks[n_blk].Flow_Type = Input.i_Flow_Type;
             Local_Solution_Blocks.Block_Used[n_blk] = HEXA_BLOCK_USED;
@@ -231,7 +242,44 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
       } /* endif */
       
    } /* endfor */
+   //assigning the dimensions
+   for ( int nb = 0 ; nb < totalblks ; ++nb ){
+      // cpu and dimen sector and level assignment
+      if(Octree.Rootblks[nb].block.infoT[0].blknum>0) Octree.Rootblks[nb].block.infoT[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoT[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoB[0].blknum>0) Octree.Rootblks[nb].block.infoB[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoB[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoN[0].blknum>0) Octree.Rootblks[nb].block.infoN[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoN[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoS[0].blknum>0) Octree.Rootblks[nb].block.infoS[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoS[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoE[0].blknum>0) Octree.Rootblks[nb].block.infoE[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoE[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoW[0].blknum>0) Octree.Rootblks[nb].block.infoW[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoW[0].blknum].block.info;
+      
+      if(Octree.Rootblks[nb].block.infoNW[0].blknum>0) Octree.Rootblks[nb].block.infoNW[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoNW[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoNE[0].blknum>0) Octree.Rootblks[nb].block.infoNE[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoNE[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoSE[0].blknum>0) Octree.Rootblks[nb].block.infoSE[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoSE[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoSW[0].blknum>0) Octree.Rootblks[nb].block.infoSW[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoSW[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoTN[0].blknum>0) Octree.Rootblks[nb].block.infoTN[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTN[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoTS[0].blknum>0) Octree.Rootblks[nb].block.infoTS[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTS[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoTE[0].blknum>0) Octree.Rootblks[nb].block.infoTE[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTE[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoTW[0].blknum>0) Octree.Rootblks[nb].block.infoTW[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTW[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoBN[0].blknum>0) Octree.Rootblks[nb].block.infoBN[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBN[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoBS[0].blknum>0) Octree.Rootblks[nb].block.infoBS[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBS[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoBE[0].blknum>0) Octree.Rootblks[nb].block.infoBE[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBE[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoBW[0].blknum>0) Octree.Rootblks[nb].block.infoBW[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBW[0].blknum].block.info;
+      
+      if(Octree.Rootblks[nb].block.infoTNW[0].blknum>0) Octree.Rootblks[nb].block.infoTNW[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTNW[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoTSW[0].blknum>0) Octree.Rootblks[nb].block.infoTSW[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTSW[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoTNE[0].blknum>0) Octree.Rootblks[nb].block.infoTNE[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTNE[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoTSE[0].blknum>0) Octree.Rootblks[nb].block.infoTSE[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTSE[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoBNW[0].blknum>0) Octree.Rootblks[nb].block.infoBNW[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBNW[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoBSW[0].blknum>0) Octree.Rootblks[nb].block.infoBSW[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBSW[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoBNE[0].blknum>0) Octree.Rootblks[nb].block.infoBNE[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBNE[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoBSE[0].blknum>0) Octree.Rootblks[nb].block.infoBSE[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBSE[0].blknum].block.info;
+      
+    
    
+      Local_Adaptive_Block_List.Block[n_blk] = Octree.Rootblks[nb].block;  
+   
+   }
+  
    /* Renumber all solution blocks, assigning a unique global block number. */
 
     Octree_DataStructure::Renumber_Solution_Blocks(Octree,

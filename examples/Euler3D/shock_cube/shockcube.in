@@ -28,17 +28,17 @@ Cube
 #Grid_Type =
 #Pipe
 Number_of_Cells_Idir = 
-10
+4
 Number_of_Cells_Jdir =
-10
+8
 Number_of_Cells_Kdir =
-10
+8
 Number_of_Blocks_Idir = 
 2
 Number_of_Blocks_Jdir =
-2
+1
 Number_of_Blocks_Kdir =
-2
+1
 ###############################
 # Set time stepping parameters
 ###############################

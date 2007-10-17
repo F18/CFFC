@@ -29,11 +29,11 @@ Temperature =
 Grid_Type =
 Bluff_Body_Burner
 Number_of_Cells_Idir = 
-8
+4
 Number_of_Cells_Jdir =
-8
+4
 Number_of_Cells_Kdir =
-8
+4
 Number_of_Blocks_Idir = 
 42
 Number_of_Blocks_Jdir =

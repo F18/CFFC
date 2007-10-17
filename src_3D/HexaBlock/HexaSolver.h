@@ -162,8 +162,6 @@ int HexaSolver(char *Input_File_Name_ptr,
             
          }
    
-   exit(1);
-   
    Create_Initial_Solution_Blocks<SOLN_pSTATE, SOLN_cSTATE>(Initial_Mesh,
                                                             Local_Solution_Blocks,
                                                             Input,
@@ -171,7 +169,21 @@ int HexaSolver(char *Input_File_Name_ptr,
                                                             Global_Adaptive_Block_List,
                                                             Local_Adaptive_Block_List);
    
-   /********************************************************  
+  
+
+/*    Local_Adaptive_Block_List.Allocate_Message_Buffers_NoResChange( */
+/*       Local_Adaptive_Block_List, */
+/*       Local_Solution_Blocks.Soln_Blks[0].NumVar()); */
+   
+/*    Local_Adaptive_Block_List.Deallocate_Message_Buffers_NoResChange( */
+/*       Local_Adaptive_Block_List); */
+   
+    Local_Adaptive_Block_List.Exchange_Messages_NoResChange(
+      Local_Adaptive_Block_List,
+      Local_Solution_Blocks.Soln_Blks[0].NumVar());
+   
+   exit(1);
+    /********************************************************  
     * Initialize solution variables.                       *
     ********************************************************/
 
