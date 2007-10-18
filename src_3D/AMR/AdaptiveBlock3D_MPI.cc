@@ -156,9 +156,6 @@ int  AdaptiveBlock3D_List::Exchange_Messages_NoResChange(AdaptiveBlock3D_List &B
                   cout<<"\n I am block # "<<i_blk<<"  my neighbour on  "<<i_bound_elem<<" is "<<neighbour_blk<<endl;
                   cout<<"\n  my neighbour info: "<<info_bound_elem[i_bound_elem]<<endl;
                   
-                
-                  
-
                   buffer_size = ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*
                      ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)))*
                      ((abs(kk)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)))*(Number_of_Solution_Variables);
@@ -202,9 +199,7 @@ int  AdaptiveBlock3D_List::Exchange_Messages_NoResChange(AdaptiveBlock3D_List &B
                         info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[2]);
                      
                      for (l = 0; l <= buffer_size-1; ++l) {
-                //         cout<<"\n l = "<<l<<"  buffer_size = "<<buffer_size<<endl;
-//                         cout<<"\n i_blk = "<<i_blk<<"  i_bound_elem = "<<i_bound_elem<<"  neighbour_blk =  "<<neighbour_blk<<"  tag_base_neigh = "<<tag_base_neigh<<endl;
-                    
+              
                         Blk_List.message_noreschange_recbuf[neighbour_blk][tag_base_neigh][l] =
                            Blk_List.message_noreschange_sendbuf[i_blk][i_bound_elem][l];
                         
