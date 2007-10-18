@@ -24,15 +24,24 @@ void NKS_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(Relaxation_multiplier), 
                           1, 
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Time_Accurate), 
-                          1, 
-                          MPI::INT, 0); // bool
-    MPI::COMM_WORLD.Bcast(&(DTS_Tolerance), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Max_DTS_Steps), 
-                          1, 
-                          MPI::INT, 0);
+   
+    // Dual Time Stepping
+    MPI::COMM_WORLD.Bcast(&(Dual_Time_Stepping), 
+			  1, 
+			  MPI::INT, 0);  //BOOL
+    MPI::COMM_WORLD.Bcast(&(Physical_Time_Integration), 
+			  1, 
+			  MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(Physical_Time_CFL_Number),
+			  1, 
+			  MPI::DOUBLE, 0);  
+    MPI::COMM_WORLD.Bcast(&(Physical_Time_Step),
+			  1,
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Maximum_Number_of_DTS_Steps),
+			  1, 
+			  MPI::INT, 0);
+
     MPI::COMM_WORLD.Bcast(&(Freeze_Limiter_Immediately), 
                           1, 
                           MPI::INT, 0);
@@ -140,28 +149,44 @@ int NKS_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
     i_command = 1003;
     value >> Relaxation_multiplier;
 
-  } else if (strcmp(code, "NKS_Time_Accurate") == 0) {
+    //DUAL TIME STEPPING 
+  } else if (strcmp(code, "NKS_Dual_Time_Stepping") == 0) {
     i_command = 1004;
     value >> value_string;
     if (value_string == "ON" || 
         value_string == "TRUE" || 
         value_string == "1") {
-       Time_Accurate = true;
+        Dual_Time_Stepping = true;
     } else if (value_string == "OFF" || 
                value_string == "FALSE" || 
                value_string == "0") {
-       Time_Accurate = false;
+        Dual_Time_Stepping = false;
     } else {
        i_command = INVALID_INPUT_VALUE;
     }
 
-  } else if (strcmp(code, "NKS_DTS_Tolerance") == 0) {
-    i_command = 1005;
-    value >> DTS_Tolerance;
+  } else if (strcmp(code, "NKS_Physical_Time_Integration") == 0) {
+    i_command = 65;  
+    value >> value_string;
+    if ( value_string == "Implicit_Euler" ) {
+      Physical_Time_Integration = TIME_STEPPING_IMPLICIT_EULER;
+    } else if( value_string == "Second_Order_Backwards") {
+      Physical_Time_Integration = TIME_STEPPING_IMPLICIT_SECOND_ORDER_BACKWARD;
+    } else {
+      Physical_Time_Integration = TIME_STEPPING_IMPLICIT_EULER;
+    }
+    
+  } else if (strcmp(code, "NKS_Physical_Time_CFL") == 0) {
+    i_command = 65;
+    value >> Physical_Time_CFL_Number;
+   
+  } else if (strcmp(code, "NKS_Physical_Time_Step") == 0) {
+    i_command = 65;
+    value >> Physical_Time_Step;
 
-  } else if (strcmp(code, "NKS_Max_DTS_Steps") == 0) {
-    i_command = 1006;
-    value >> Max_DTS_Steps;
+  } else if (strcmp(code, "Maximum_Number_of_NKS_DTS_Steps" ) == 0) {
+    i_command = 64;
+    value >> Maximum_Number_of_DTS_Steps;
 
   // FINITE TIME
   } else if (strcmp(code, "NKS_Finite_Time_Step") == 0) {
@@ -450,17 +475,26 @@ void NKS_Input_Parameters::Output(ostream &fout) const {
 
   fout << " Relaxation Multiplier ====> " << Relaxation_multiplier << endl;
 
+  //DTS
   fout <<" Time Accurate (DTS)   ====> ";
-  if (Time_Accurate) { 
+  if (Dual_Time_Stepping) { 
      fout << "ON\n"; 
-     fout.setf(ios::scientific);
-     fout <<" DTS Tolerance         ====> " << DTS_Tolerance << endl;
-     fout.unsetf(ios::scientific);
-     fout <<" DTS Max Steps         ====> " << Max_DTS_Steps << endl;
+     if ( Physical_Time_Integration == TIME_STEPPING_IMPLICIT_EULER) {
+       fout<<" DTS Time Integration  ====> Implicit Euler \n";
+     } else if ( Physical_Time_Integration == TIME_STEPPING_IMPLICIT_SECOND_ORDER_BACKWARD) {
+       fout<<" DTS Time Integration  ====> Second Order Backwards \n";
+     } 
+     if( Physical_Time_Step > ZERO){
+       fout <<" DTS Fixed Time Step   ====> " << Physical_Time_Step << endl; 
+     } else { 
+       fout <<" DTS CFL Number        ====> " << Physical_Time_CFL_Number << endl;   
+     }
+     fout <<" DTS Max Steps         ====> " << Maximum_Number_of_DTS_Steps  << endl;        
   } else { 
-     fout << "OFF\n"; 
+    fout << "OFF\n"; 
   }
   
+  //Finite Time Step
   if (Finite_Time_Step == ON) {     
     fout <<" Finite Time Step      ====> ON" << endl;
     fout <<" Initial_CFL           ====> " << Finite_Time_Step_Initial_CFL << endl;

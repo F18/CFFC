@@ -1759,7 +1759,7 @@ class GMRES_RightPrecon_MatrixFree {
 private:
   
   //Pointers to Solution Info and DATA
-  Hexa_MultiBlock<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  *Hexa_Blocks;                                                    
+  Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  *Hexa_Blocks;                                                    
   Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>              *IP;
 
   //GMRES LOCAL DYNAMIC DATA
@@ -1780,7 +1780,7 @@ public:
     Number_of_GMRES_Iterations(0), global_time_step_size(ZERO), relative_residual(ZERO) {}
   
   GMRES_RightPrecon_MatrixFree(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs, 
-			       Hexa_MultiBlock<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Hexa_MultiBlock_List, 
+			       Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Hexa_Multi_Block_List, 
 			       const int &blocksize);
 
   // Proper functions not built yet.
@@ -1812,9 +1812,9 @@ public:
 template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
 inline GMRES_RightPrecon_MatrixFree<SOLN_pSTATE,SOLN_cSTATE>::
 GMRES_RightPrecon_MatrixFree(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs, 
-			     Hexa_MultiBlock<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Hexa_MultiBlock_List, 			     
+			     Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Hexa_Multi_Block_List, 			     
 			     const int &blocksize):
-  Hexa_Blocks(&Hexa_MultiBlock_List),
+  Hexa_Blocks(&Hexa_Multi_Block_List),
   IP(&IPs),
   Number_of_GMRES_Iterations(0),
   relative_residual(0)  
@@ -1823,9 +1823,9 @@ GMRES_RightPrecon_MatrixFree(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
   allocate(); 
 
   // Setup GMRES for each Block that is used on this processor
-  for (int  Bcount = 0 ; Bcount < Hexa_MultiBlock_List.Size_of_Block_List; ++Bcount ) {
-    if ( Hexa_MultiBlock_List.Block_Used[Bcount] ) {
-      G[Bcount].allocate(IPs,Hexa_MultiBlock_List.Hexa_Block_List[Bcount],blocksize);
+  for (int  Bcount = 0 ; Bcount < Hexa_Multi_Block_List.Size_of_Block_List; ++Bcount ) {
+    if ( Hexa_Multi_Block_List.Block_Used[Bcount] ) {
+      G[Bcount].allocate(IPs,Hexa_Multi_Block_List.Hexa_Block_List[Bcount],blocksize);
     } 
   } 
 }

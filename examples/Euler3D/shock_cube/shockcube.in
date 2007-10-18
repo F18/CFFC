@@ -29,15 +29,15 @@ Cube
 Number_of_Cells_Idir = 
 10
 Number_of_Cells_Jdir =
-40
+10
 Number_of_Cells_Kdir =
 10
 Number_of_Blocks_Idir = 
-1
+2
 Number_of_Blocks_Jdir =
-1
+2
 Number_of_Blocks_Kdir =
-1
+2
 ###############################
 # Set time stepping parameters
 ###############################
