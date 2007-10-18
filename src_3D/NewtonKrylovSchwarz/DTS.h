@@ -1,9 +1,9 @@
-#ifndef _NKS_DTS_INCLUDED
-#define _NKS_DTS_INCLUDED
+#ifndef _DTS_INCLUDED
+#define _DTS_INCLUDED
 
 
 /*! *****************************************************************************************
- * class: DTS_NKS_Quad_Block
+ * class: DTS_Quad_Block
  *
  * @brief Dual-time-stepping NKS solution block data.
  *
@@ -17,37 +17,36 @@
  * \end{verbatim}
  ********************************************************************************************/
 template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
-class DTS_NKS_HEXA_Block {
+class DTS_Hexa_Block {
  public:
   int            NCi,        //!< Number of i-direction cells (including ghost cells). (WHY AM I STORING GHOST CELLS???) 
                  NCj,        //!< Number of j-direction cells (including ghost cells).
                  NCk;        //!< Number of k-direction cells (including ghost cells).
   SOLN_cSTATE ***Un,         //!< Conserved solution state at time-step n.
               ***Unminus1;   //!< Conserved solution state at time-step n-1.
-  double         DTS_dTime;      //!< Physical Time step.
-
+  double         DTS_dTime;  //!< Physical Time step.
+  
  
   //! Default constructor.
-  DTS_NKS_Quad_Block(void): NCi(0), NCj(0), NCj(0), DTS_dTime(ZERO),
-			    Un(NULL), Unminus1(NULL)  {}
+  DTS_Hexa_Block(void): NCi(0), NCj(0), NCk(0), DTS_dTime(ZERO),
+			Un(NULL), Unminus1(NULL)  {}
 
   //! Constructor.
-  DTS_NKS_Quad_Block(const int &Ni, const int &Nj, const int &Nk) {
-    allocate(Ni,Nj,blocksize);
+  DTS_Hexa_Block(const int i, const int j, const int k){
+    allocates(i,j,k);
   }
 
   //! Destructor.
-  ~DTS_NKS_Quad_Block(void) {
+  ~DTS_Hexa_Block(void) {
     deallocate();
   }
 
   //! Memory allocation.
-  void allocate(const int &Ni, const int &Nj, const int &Nk) {
-
-    NCi = Ni; NCj = Nj; NCk = Nk;
+  void allocate(const int i, const int j, const int k){
+    NCi = i; NCj = j; NCk = k;      
 
     Un = new SOLN_cSTATE**[NCi];
-    Unminus1 = new SOLN_cSTATE*[NCi];
+    Unminus1 = new SOLN_cSTATE**[NCi];
     for( int i=0; i<NCi; i++){
       Un[i] = new SOLN_cSTATE*[NCj];
       Unminus1[i] = new SOLN_cSTATE*[NCj];
@@ -76,13 +75,13 @@ class DTS_NKS_HEXA_Block {
 };
 
 // /*! *******************************************************************
-//  * DTS_NKS_Quad_Block::Store_Previous_Solution                        *
+//  * DTS_Hexa_Block::Store_Previous_Solution                        *
 //  *                                                                    *
 //  * Store the previous solution.                                       *
 //  *                                                                    *
 //  **********************************************************************/
 // template <typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
-// inline void DTS_NKS_Quad_Block<SOLN_BLOCK_TYPE,INPUT_TYPE>::
+// inline void DTS_Hexa_Block<SOLN_BLOCK_TYPE,INPUT_TYPE>::
 // Store_Previous(SOLN_BLOCK_TYPE &SolnBlk){
 
 //   for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
@@ -97,7 +96,9 @@ class DTS_NKS_HEXA_Block {
 // }
 
 
-// /******************** TEMPLATED FUNCTION **************************************************************/
+// /******************** TEMPLATED FUNCTIONS **************************************************************/
+//  SHOULD THESE BE MOVED TO NKS.h ????
+
 
 // /*! *******************************************************************
 //  * LHS_Time                                                           *
@@ -131,7 +132,7 @@ class DTS_NKS_HEXA_Block {
 //  ****************************************************************************/
 // template <typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 // int dUdt_Residual_Evaluation_NKS(SOLN_BLOCK_TYPE &SolnBlk,
-// 				 DTS_NKS_Quad_Block<SOLN_BLOCK_TYPE,INPUT_TYPE> &DTS_SolnBlk,
+// 				 DTS_Hexa_Block<SOLN_BLOCK_TYPE,INPUT_TYPE> &DTS_SolnBlk,
 // 				 INPUT_TYPE &Input_Parameters){
 
 //   int error_flag = dUdt_Residual_Evaluation(SolnBlk,Input_Parameters);
@@ -160,4 +161,4 @@ class DTS_NKS_HEXA_Block {
 
 
 
-#endif //_NKS_DTS_INCLUDED
+#endif //_DTS_INCLUDED

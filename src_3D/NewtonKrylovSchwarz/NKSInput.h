@@ -68,9 +68,16 @@ class NKS_Input_Parameters{
   int    Maximum_Number_of_NKS_Iterations;
   double Overall_Tolerance;
   double Relaxation_multiplier;
-  bool   Time_Accurate; 
-  double DTS_Tolerance;
-  int    Max_DTS_Steps;
+  //@}
+
+  //@{ @name Dual Time Stepping Parameters
+  bool Dual_Time_Stepping;              //!< Dual-time-stepping flag (on or off).  
+  int Physical_Time_Integration;        //!< Implicit Euler, BDF2, ESDIRK, etc.
+  double Physical_Time_CFL_Number;
+  double Physical_Time_Step;
+  int Maximum_Number_of_DTS_Steps; 
+  
+  //@{ @name Allistar flags
   //! True/false flag for application of convergence stall detection algorithm
   bool   Detect_Convergence_Stall;
   //! Size of the window for the detection of convergence stall 
@@ -130,9 +137,12 @@ class NKS_Input_Parameters{
     Maximum_Number_of_NKS_Iterations = 0;
     Overall_Tolerance = 1e-5;      
     Relaxation_multiplier = 1.0;
-    Time_Accurate = false;
-    DTS_Tolerance = 0.0;
-    Max_DTS_Steps = 0; 
+    //
+    Dual_Time_Stepping = false;         
+    Physical_Time_Integration = TIME_STEPPING_IMPLICIT_EULER;
+    Physical_Time_CFL_Number = 1.0 ;
+    Physical_Time_Step = 0.0;
+    Maximum_Number_of_DTS_Steps = 0;
     //
     Finite_Time_Step = true;
     Finite_Time_Step_Initial_CFL = 1.0; 

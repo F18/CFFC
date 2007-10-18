@@ -105,9 +105,9 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
     } /* endif */
 
     /********************** IMPLICIT **********************************/  
-    if (Data.number_of_implicit_time_steps < Solution_Data.Input.NKS_IP.Maximum_Number_of_NKS_Iterations) {
-       	error_flag = Hexa_Newton_Krylov_Schwarz_Solver<SOLN_pSTATE, SOLN_cSTATE> 
-             	  (Data,Solution_Data);
+    if(Data.number_of_implicit_time_steps < Solution_Data.Input.NKS_IP.Maximum_Number_of_NKS_Iterations){
+      Hexa_Newton_Krylov_Schwarz_Solver<SOLN_pSTATE, SOLN_cSTATE> NKS(Data,Solution_Data);
+      error_flag = NKS.Solve();
     }
      
     /*! ************************** POST PROCESSSING *******************************
