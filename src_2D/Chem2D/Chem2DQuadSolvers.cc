@@ -439,21 +439,14 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     //           variables to Chem2D
     //  3 -> Completely new simulation (Neither are being restarted).
     //       |-> No initialization required
-    if (Input_Parameters.i_ICs == IC_RESTART ) {
-
-      // compute the initial field and copy the solution variables
-      if (RteSolver->Input_Parameters.i_ICs != IC_RESTART) {
-	if (!batch_flag) cout << "\n Initializing solve of radiation transfer equation...";
-	RteSolver->SequentialSolve(Local_SolnBlk, Rte_PostProcess);
-	if (!batch_flag) cout << "\n ...Done";
+    if (Input_Parameters.i_ICs == IC_RESTART && 
+	RteSolver->Input_Parameters.i_ICs == IC_RESTART) {
 
       // Copy over computed Rte2D solution variables only
-      } else {
-	//RteSolver->Copy_SRC_Solution_Vars(Local_SolnBlk);   // set medium state using Chem2D data
-	RteSolver->Copy_Rte2D_Solution_Vars(Local_SolnBlk); // compute Chem2D rad source using Rte2D data
-      } // endif - Rte2D restart
-      
-    } // endif - Chem2D restart
+      //RteSolver->Copy_SRC_Solution_Vars(Local_SolnBlk); // set medium state using Chem2D data
+      RteSolver->Copy_Rte2D_Solution_Vars(Local_SolnBlk); // compute Chem2D rad source using Rte2D data
+
+    } // endif - restart
 
     // set the current number of sequential solves and the update frequency
     number_sequential_solves = 0;
