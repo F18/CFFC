@@ -356,18 +356,7 @@ void  AdaptiveBlock3D_List::Allocate_Message_Buffers_NoResChange(AdaptiveBlock3D
                    (n_bound_elem[i_bound_elem] == 1) && (i_bound_elem != 13) &&
                    (Blk_List.Block[i_blk].info.level ==  info_bound_elem[i_bound_elem].level)) {
               
-               //    buffer_size =  Blk_List.Block[i_blk].info.dimen.ghost*
-//                      Blk_List.Block[i_blk].info.dimen.ghost*
-//                      Blk_List.Block[i_blk].info.dimen.ghost*
-//                      ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)+1)*
-//                      ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)+1)*
-//                      ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)+1)*
-//                      Number_of_Solution_Variables+
-//                      4*2*abs(!info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[0]*info_bound_elem[i_bound_elem].dimen.i)+
-//                      4*2*abs(!info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[1]*info_bound_elem[i_bound_elem].dimen.j)+
-//                      4*2*abs(!info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[2]*info_bound_elem[i_bound_elem].dimen.k);
-
-       
+        
                   buffer_size = ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*
                      ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)))*
                      ((abs(kk)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)))*(Number_of_Solution_Variables);

@@ -149,7 +149,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          Octree.Rootblks[nb].block.info.dimen.ghost = 2;
          Octree.Rootblks[nb].block.info.sector = ADAPTIVEBLOCK3D_SECTOR_NONE;
          Octree.Rootblks[nb].block.info.level = 0;
-        
+              
          // block number of the neighbouring blocks in each direction
          // for each of the block in the roots
          Octree.Rootblks[nb].block.infoT[0].blknum = Initial_Mesh.Connectivity[nb].neighT;
@@ -212,7 +212,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          Octree.Rootblks[nb].block.infoBSW[0].blkorient = Initial_Mesh.Connectivity[nb].neighBSW_info[0];
          Octree.Rootblks[nb].block.infoBNE[0].blkorient = Initial_Mesh.Connectivity[nb].neighBNE_info[0];
          Octree.Rootblks[nb].block.infoBSE[0].blkorient = Initial_Mesh.Connectivity[nb].neighBSE_info[0];
-         
+
          Octree.Rootblks[nb].parent_ptr = NULL;
          Octree.Rootblks[nb].childTNW_ptr = NULL;
          Octree.Rootblks[nb].childTNE_ptr = NULL;
@@ -245,37 +245,197 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
    //assigning the dimensions
    for ( int nb = 0 ; nb < totalblks ; ++nb ){
       // cpu and dimen sector and level assignment
-      if(Octree.Rootblks[nb].block.infoT[0].blknum>0) Octree.Rootblks[nb].block.infoT[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoT[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoB[0].blknum>0) Octree.Rootblks[nb].block.infoB[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoB[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoN[0].blknum>0) Octree.Rootblks[nb].block.infoN[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoN[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoS[0].blknum>0) Octree.Rootblks[nb].block.infoS[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoS[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoE[0].blknum>0) Octree.Rootblks[nb].block.infoE[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoE[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoW[0].blknum>0) Octree.Rootblks[nb].block.infoW[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoW[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoT[0].blknum>0){
+         Octree.Rootblks[nb].block.infoT[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoT[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoT[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoT[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoT[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoT[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoT[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoT[0].blknum].block.info.level;
+      }
       
-      if(Octree.Rootblks[nb].block.infoNW[0].blknum>0) Octree.Rootblks[nb].block.infoNW[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoNW[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoNE[0].blknum>0) Octree.Rootblks[nb].block.infoNE[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoNE[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoSE[0].blknum>0) Octree.Rootblks[nb].block.infoSE[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoSE[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoSW[0].blknum>0) Octree.Rootblks[nb].block.infoSW[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoSW[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoTN[0].blknum>0) Octree.Rootblks[nb].block.infoTN[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTN[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoTS[0].blknum>0) Octree.Rootblks[nb].block.infoTS[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTS[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoTE[0].blknum>0) Octree.Rootblks[nb].block.infoTE[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTE[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoTW[0].blknum>0) Octree.Rootblks[nb].block.infoTW[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTW[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoBN[0].blknum>0) Octree.Rootblks[nb].block.infoBN[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBN[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoBS[0].blknum>0) Octree.Rootblks[nb].block.infoBS[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBS[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoBE[0].blknum>0) Octree.Rootblks[nb].block.infoBE[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBE[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoBW[0].blknum>0) Octree.Rootblks[nb].block.infoBW[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBW[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoB[0].blknum>0) {
+         Octree.Rootblks[nb].block.infoB[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoB[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoB[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoB[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoB[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoB[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoB[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoB[0].blknum].block.info.level;
+      }
       
-      if(Octree.Rootblks[nb].block.infoTNW[0].blknum>0) Octree.Rootblks[nb].block.infoTNW[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTNW[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoTSW[0].blknum>0) Octree.Rootblks[nb].block.infoTSW[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTSW[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoTNE[0].blknum>0) Octree.Rootblks[nb].block.infoTNE[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTNE[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoTSE[0].blknum>0) Octree.Rootblks[nb].block.infoTSE[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTSE[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoBNW[0].blknum>0) Octree.Rootblks[nb].block.infoBNW[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBNW[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoBSW[0].blknum>0) Octree.Rootblks[nb].block.infoBSW[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBSW[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoBNE[0].blknum>0) Octree.Rootblks[nb].block.infoBNE[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBNE[0].blknum].block.info;
-      if(Octree.Rootblks[nb].block.infoBSE[0].blknum>0) Octree.Rootblks[nb].block.infoBSE[0] =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBSE[0].blknum].block.info;
+      if(Octree.Rootblks[nb].block.infoN[0].blknum>0){
+         Octree.Rootblks[nb].block.infoN[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoN[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoN[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoN[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoN[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoN[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoN[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoN[0].blknum].block.info.level;
+
+      }
       
-    
-   
+      if(Octree.Rootblks[nb].block.infoS[0].blknum>0){
+         Octree.Rootblks[nb].block.infoS[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoS[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoS[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoS[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoS[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoS[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoS[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoS[0].blknum].block.info.level;
+      }
+      
+      if(Octree.Rootblks[nb].block.infoE[0].blknum>0){
+         Octree.Rootblks[nb].block.infoE[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoE[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoE[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoE[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoE[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoE[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoE[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoE[0].blknum].block.info.level;
+      }
+      
+      if(Octree.Rootblks[nb].block.infoW[0].blknum>0) {
+         Octree.Rootblks[nb].block.infoW[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoW[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoW[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoW[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoW[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoW[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoW[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoW[0].blknum].block.info.level;
+             
+      }
+            
+      if(Octree.Rootblks[nb].block.infoNW[0].blknum>0){
+         Octree.Rootblks[nb].block.infoNW[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoNW[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoNW[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoNW[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoNW[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoNW[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoNW[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoNW[0].blknum].block.info.level;
+      }
+      
+      if(Octree.Rootblks[nb].block.infoNE[0].blknum>0){
+         Octree.Rootblks[nb].block.infoNE[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoNE[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoNE[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoNE[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoNE[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoNE[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoNE[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoNE[0].blknum].block.info.level;
+
+      }
+      
+      if(Octree.Rootblks[nb].block.infoSE[0].blknum>0) {
+         Octree.Rootblks[nb].block.infoSE[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoSE[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoSE[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoSE[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoSE[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoSE[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoSE[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoSE[0].blknum].block.info.level;
+      
+      }
+      if(Octree.Rootblks[nb].block.infoSW[0].blknum>0){
+         Octree.Rootblks[nb].block.infoSW[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoSW[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoSW[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoSW[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoSW[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoSW[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoSW[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoSW[0].blknum].block.info.level;
+      }
+      
+      if(Octree.Rootblks[nb].block.infoTN[0].blknum>0){
+         Octree.Rootblks[nb].block.infoTN[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTN[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoTN[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTN[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoTN[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTN[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoTN[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTN[0].blknum].block.info.level;
+      }
+      
+      if(Octree.Rootblks[nb].block.infoTS[0].blknum>0){
+         Octree.Rootblks[nb].block.infoTS[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTS[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoTS[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTS[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoTS[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTS[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoTS[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTS[0].blknum].block.info.level;
+      }
+      
+      if(Octree.Rootblks[nb].block.infoTE[0].blknum>0){
+         Octree.Rootblks[nb].block.infoTE[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTE[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoTE[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTE[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoTE[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTE[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoTE[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTE[0].blknum].block.info.level;
+      
+      }
+      
+      if(Octree.Rootblks[nb].block.infoTW[0].blknum>0){
+         Octree.Rootblks[nb].block.infoTW[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTW[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoTW[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTW[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoTW[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTW[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoTW[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTW[0].blknum].block.info.level;
+      }
+      
+      if(Octree.Rootblks[nb].block.infoBN[0].blknum>0){
+         Octree.Rootblks[nb].block.infoBN[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBN[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoBN[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBN[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoBN[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBN[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoBN[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBN[0].blknum].block.info.level;
+      }
+      
+      if(Octree.Rootblks[nb].block.infoBS[0].blknum>0){
+         Octree.Rootblks[nb].block.infoBS[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBS[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoBS[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBS[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoBS[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBS[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoBS[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBS[0].blknum].block.info.level;
+      }
+      
+      if(Octree.Rootblks[nb].block.infoBE[0].blknum>0){
+         Octree.Rootblks[nb].block.infoBE[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBE[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoBE[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBE[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoBE[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBE[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoBE[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBE[0].blknum].block.info.level;
+      }
+      
+      if(Octree.Rootblks[nb].block.infoBW[0].blknum>0){
+         Octree.Rootblks[nb].block.infoBW[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBW[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoBW[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBW[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoBW[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBW[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoBW[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBW[0].blknum].block.info.level;
+      
+      }
+      
+      if(Octree.Rootblks[nb].block.infoTNW[0].blknum>0){
+         Octree.Rootblks[nb].block.infoTNW[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTNW[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoTNW[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTNW[0].blknum].block.info.dimen;   
+         Octree.Rootblks[nb].block.infoTNW[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTNW[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoTNW[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTNW[0].blknum].block.info.level;
+      }
+      
+      if(Octree.Rootblks[nb].block.infoTSW[0].blknum>0){
+         Octree.Rootblks[nb].block.infoTSW[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTSW[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoTSW[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTSW[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoTSW[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTSW[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoTSW[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTSW[0].blknum].block.info.level;
+      }
+      
+      if(Octree.Rootblks[nb].block.infoTNE[0].blknum>0){
+         Octree.Rootblks[nb].block.infoTNE[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTNE[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoTNE[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTNE[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoTNE[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTNE[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoTNE[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTNE[0].blknum].block.info.level;
+      }
+      
+      if(Octree.Rootblks[nb].block.infoTSE[0].blknum>0){
+         Octree.Rootblks[nb].block.infoTSE[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTSE[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoTSE[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTSE[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoTSE[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTSE[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoTSE[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoTSE[0].blknum].block.info.level;
+
+      }
+      
+      if(Octree.Rootblks[nb].block.infoBNW[0].blknum>0){
+         Octree.Rootblks[nb].block.infoBNW[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBNW[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoBNW[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBNW[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoBNW[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBNW[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoBNW[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBNW[0].blknum].block.info.level;  
+
+      }
+      
+      if(Octree.Rootblks[nb].block.infoBSW[0].blknum>0){
+         Octree.Rootblks[nb].block.infoBSW[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBSW[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoBSW[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBSW[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoBSW[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBSW[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoBSW[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBSW[0].blknum].block.info.level;
+      }
+      
+      if(Octree.Rootblks[nb].block.infoBNE[0].blknum>0){
+         Octree.Rootblks[nb].block.infoBNE[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBNE[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoBNE[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBNE[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoBNE[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBNE[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoBNE[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBNE[0].blknum].block.info.level;
+      }
+      
+      if(Octree.Rootblks[nb].block.infoBSE[0].blknum>0){
+         Octree.Rootblks[nb].block.infoBSE[0].cpu =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBSE[0].blknum].block.info.cpu;
+         Octree.Rootblks[nb].block.infoBSE[0].dimen =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBSE[0].blknum].block.info.dimen;
+         Octree.Rootblks[nb].block.infoBSE[0].sector =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBSE[0].blknum].block.info.sector;
+         Octree.Rootblks[nb].block.infoBSE[0].level =  Octree.Rootblks[Octree.Rootblks[nb].block.infoBSE[0].blknum].block.info.level;
+
+      }
+      
+       
       Local_Adaptive_Block_List.Block[n_blk] = Octree.Rootblks[nb].block;  
    
    }

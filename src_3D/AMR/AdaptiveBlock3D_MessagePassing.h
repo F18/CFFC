@@ -148,14 +148,6 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                   (Soln_Block_List.Block[i_blk].info.level == info_bound_elem[i_bound_elem].level)) {
                  
                  if (!Send_Mesh_Geometry_Only) {
-                /*   buffer_size_neighbour  =  Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost* */
-/*                      ((!ii)*abs(Soln_Block_List.Block[i_blk].infoT[0].dimen.i)+1)* */
-/*                      ((!jj)*abs(Soln_Block_List.Block[i_blk].infoT[0].dimen.j)+1)* */
-/*                      ((!kk)*abs(Soln_Block_List.Block[i_blk].infoT[0].dimen.k)+1)* */
-/*                      Number_of_Solution_Variables+ */
-/*                      4*2*abs(!info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[0]*info_bound_elem[i_bound_elem].dimen.i)+ */
-/*                      4*2*abs(!info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[1]*info_bound_elem[i_bound_elem].dimen.j)+ */
-/*                      4*2*abs(!info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[2]*info_bound_elem[i_bound_elem].dimen.k); */
              
                     buffer_size_neighbour = ((abs(ii)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)))*
                        ((abs(jj)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)))*

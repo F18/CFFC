@@ -151,26 +151,18 @@ int  AdaptiveBlock3D_List::Exchange_Messages_NoResChange(AdaptiveBlock3D_List &B
                   neighbour_blk = info_bound_elem[i_bound_elem].blknum;
 
                   cout<<"\n ***************************************";
-                  cout<<"\n "<<ii<<"  "<<jj<<"  "<<kk<<" be= "<<i_bound_elem<<"   info: "<<info_bound_elem[i_bound_elem]<<endl;
+                  cout<<"\n n_bound_elem["<<i_bound_elem<<"] = "<<n_bound_elem[i_bound_elem]<<endl;
                   
-                  cout<<"\n neighbour_blk = "<<  neighbour_blk<<endl;
+                  cout<<"\n I am block # "<<i_blk<<"  my neighbour on  "<<i_bound_elem<<" is "<<neighbour_blk<<endl;
+                  cout<<"\n  my neighbour info: "<<info_bound_elem[i_bound_elem]<<endl;
+                  
+                
                   
 
                   buffer_size = ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*
                      ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)))*
                      ((abs(kk)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)))*(Number_of_Solution_Variables);
                   
-                  //   buffer_size =  Blk_List.Block[i_blk].info.dimen.ghost
-//                      *Blk_List.Block[i_blk].info.dimen.ghost
-//                      *Blk_List.Block[i_blk].info.dimen.ghost*
-//                      ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)+1)*
-//                      ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)+1)*
-//                      ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)+1)*
-//                      Number_of_Solution_Variables+
-//                      4*2*abs(!info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[0]*info_bound_elem[i_bound_elem].dimen.i)+
-//                      4*2*abs(!info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[1]*info_bound_elem[i_bound_elem].dimen.j)+
-//                      4*2*abs(!info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[2]*info_bound_elem[i_bound_elem].dimen.k);
-
                   if (neighbour_cpu != i_cpu) {
                      tag_receive = neighbour_blk*27 + i_bound_elem ;
                      

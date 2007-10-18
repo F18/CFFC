@@ -72,6 +72,8 @@ class Grid3D_Hexa_Multi_Block_Connectivity{
       num_neighT(0), num_neighB(0),
       num_neighN(0), num_neighS(0),
       num_neighE(0), num_neighW(0),
+      num_neighNE(0), num_neighNW(0),
+      num_neighSE(0), num_neighSW(0),
       num_neighTN(0), num_neighTS(0),
       num_neighTE(0), num_neighTW(0),
       num_neighBN(0), num_neighBS(0),

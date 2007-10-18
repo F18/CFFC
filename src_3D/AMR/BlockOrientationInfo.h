@@ -78,7 +78,6 @@ inline Block_Orientation_Info & Block_Orientation_Info::operator =(const Block_O
       } // ctm and offsets   
       
       for(int i=0; i<3; i++){
-         
          direction_me_to_neighbour[i] = BlkOI.direction_me_to_neighbour[i];
          direction_neighbour_to_me[i] = BlkOI.direction_neighbour_to_me[i];
          // directions          

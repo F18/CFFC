@@ -1439,15 +1439,16 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
             iblk,  BlkC::IMax, BlkC::JMax, BlkC::KAll);
          // information of neighbour block of the northeast edge
          Connectivity[iblk].neighNE_info[0].set_block_orientation_info(
-            blkConn, iblk, BlkC::IMax, BlkC::JMin, BlkC::KAll, 
+            blkConn, iblk, BlkC::IMax, BlkC::JMax, BlkC::KAll, 
             Connectivity[iblk].neighNE[0]);
+
          Connectivity[iblk].num_neighSE = blkConn.num_neighbour_block(
-            iblk,  BlkC::IMax, BlkC::JMax, BlkC::KAll);
+            iblk,  BlkC::IMax, BlkC::JMin, BlkC::KAll);
          // information of neighbour block of the southeast edge 
          Connectivity[iblk].neighSE_info[0].set_block_orientation_info(
             blkConn, iblk,  BlkC::IMax, BlkC::JMin, BlkC::KAll, 
             Connectivity[iblk].neighSE[0]);
-
+                
          Connectivity[iblk].num_neighSW = blkConn.num_neighbour_block(
             iblk,   BlkC::IMin, BlkC::JMin, BlkC::KAll);
          // information of neighbour block of the southwest edge 
