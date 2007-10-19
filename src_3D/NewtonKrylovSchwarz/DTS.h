@@ -125,29 +125,29 @@ class DTS_Hexa_Block {
 //   return ONE/(d_tau);  
 // }
 
-// /*! *************************************************************************
-//  *  Overloading dUdt_Residual_Evaluation function to include Dual Time 
-//  *  Stepping source term.
-//  *
-//  ****************************************************************************/
-// template <typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
-// int dUdt_Residual_Evaluation_NKS(SOLN_BLOCK_TYPE &SolnBlk,
-// 				 DTS_Hexa_Block<SOLN_BLOCK_TYPE,INPUT_TYPE> &DTS_SolnBlk,
-// 				 INPUT_TYPE &Input_Parameters){
-
-//   int error_flag = dUdt_Residual_Evaluation(SolnBlk,Input_Parameters);
+/*! *************************************************************************
+ *  Overloading dUdt_Residual_Evaluation function to include Dual Time 
+ *  Stepping source term.
+ *
+ ****************************************************************************/
+template  <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+int dUdt_Residual_Evaluation_DTS(HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTATE> *Solution_Data,
+				 DTS_Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> *DTS_SolnBlk,
+				 const int Block){
+				 
+  int error_flag = Solution_Data->Local_Solution_Blocks.Soln_Blks[Block].dUdt_Multistage_Explicit(0,Solution_Data->Input);
 
 //   // Add dual time stepping Source Term to Residual ie. dUdt[i][j][0]
-//   if (Input_Parameters.NKS_IP.Dual_Time_Stepping) {
+//   if ( Solution_Data->Input.NKS_IP.Dual_Time_Stepping) {
 //     for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {   //Do these line up with dUdt_Residual_Evaluation?????
 //       for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
-// 	for (int k = 0; k <  DTS_SolnBlk.blocksize; k++) {
+// 	for (int k = SolnBlk.KCl; k <= SolnBlk.KCu; k++) {
 // 	  //Implicit Euler  R(U_n)* = R(U_n) + (U - Un)/dt
-// 	  if (Input_Parameters.NKS_IP.Physical_Time_Integration == TIME_STEPPING_IMPLICIT_EULER) {		  
-// 	    SolnBlk.dUdt[i][j][0][k+1] -= (SolnBlk.U[i][j][k+1] - DTS_SolnBlk.Un[i][j][k])/(DTS_SolnBlk.DTS_dTime); 
+// 	  if ( Solution_Data->Input.NKS_IP.Physical_Time_Integration == TIME_STEPPING_IMPLICIT_EULER) {		  
+// 	    SolnBlk.dUdt[i][j][0][k+1] -= (SolnBlk.U[i][j][k] - DTS_SolnBlk.Un[i][j][k])/(DTS_SolnBlk.DTS_dTime); 
 // 	    // BDF2         R(U_n)* = R(U_n) + (3U - 4Un +  Un-1)/2dt  
-// 	  } else if (Input_Parameters.NKS_IP.Physical_Time_Integration == TIME_STEPPING_IMPLICIT_SECOND_ORDER_BACKWARD) {     
-// 	    SolnBlk.dUdt[i][j][0][k+1] -= (THREE*SolnBlk.U[i][j][k+1] - FOUR*DTS_SolnBlk.Un[i][j][k]
+// 	  } else if (Solution_Data->Input.NKS_IP.Physical_Time_Integration == TIME_STEPPING_IMPLICIT_SECOND_ORDER_BACKWARD) {     
+// 	    SolnBlk.dUdt[i][j][0][k+1] -= (THREE*SolnBlk.U[i][j][k] - FOUR*DTS_SolnBlk.Un[i][j][k]
 // 					   + DTS_SolnBlk.Unminus1[i][j][k])/(TWO*DTS_SolnBlk.DTS_dTime);
 // 	  }
 // 	} 	      
@@ -155,8 +155,8 @@ class DTS_Hexa_Block {
 //     }
 //   }  
      
-//   return error_flag;
-// }
+  return error_flag;
+}
 
 
 
