@@ -45,6 +45,8 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
  
    int i_bound_elem; // index for boundary element, face edge or vertex
    int n_bound_elem[27];
+   int n_imin, n_imax, n_jmin, n_jmax, n_kmin, n_kmax;
+   
    AdaptiveBlock3D_Info info_bound_elem[27];
 
  
@@ -139,6 +141,8 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
      n_bound_elem[BE::TNE] = Soln_Block_List.Block[i_blk].nTNE;
      info_bound_elem[BE::TNE] =  Soln_Block_List.Block[i_blk].infoTNE[0]; 
      
+      
+     
      for (int ii = -1; ii<2; ii++){
         for (int jj = -1; jj<2; jj++){
            for (int kk = -1; kk<2; kk++){
@@ -148,13 +152,14 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                   (Soln_Block_List.Block[i_blk].info.level == info_bound_elem[i_bound_elem].level)) {
                  
                  if (!Send_Mesh_Geometry_Only) {
-             
+                  
+                    
                     buffer_size_neighbour = ((abs(ii)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)))*
                        ((abs(jj)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)))*
                        ((abs(kk)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)))*(Number_of_Solution_Variables);
                     
                     if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                       buffer_size_neighbour = buffer_size_neighbour + 
+                       buffer_size_neighbour = buffer_size_neighbour +
                           ((abs(ii)*Soln_Block_List.Block[i_blk].info.dimen.ghost)+ ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)))*
                           ((abs(jj)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)))*
                           ((abs(kk)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)))*(NUM_COMP_VECTOR3D);
@@ -164,43 +169,124 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                        ((abs(jj)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)))*
                        ((abs(kk)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)))*(NUM_COMP_VECTOR3D);
                  } /* endif */
+
+                 
                  l = -1;
                  // Load ghost cell solution variable information as required.
                  if (!Send_Mesh_Geometry_Only) {
                     
-                    i_min = Soln_Blks[i_blk].ICl;
-                    i_max = Soln_Blks[i_blk].ICu;
+                    if( ii == -1 ){
+                       n_imin = Soln_Blks[i_blk].Nghost;
+                       n_imax = Soln_Blks[i_blk].ICl +1;
+                       
+                    }else if( ii == 1){
+                       n_imin =  Soln_Blks[i_blk].ICu-1;
+                       n_imax = Soln_Blks[i_blk].ICu;
+                       
+                    }else{
+                       n_imin = 0;
+                       n_imax = 0;
+                    }
+                    if( jj == -1 ){
+                       n_jmin = Soln_Blks[i_blk].Nghost;
+                       n_jmax = Soln_Blks[i_blk].JCl +1;
+                       
+                    }else if( jj == 1){
+                       n_jmin =  Soln_Blks[i_blk].JCu-1;
+                       n_jmax = Soln_Blks[i_blk].JCu;
+                       
+                    }else{
+                       n_jmin = 0;
+                       n_jmax = 0;
+                    }
+                    if( kk == -1 ){
+                       n_kmin = Soln_Blks[i_blk].Nghost;
+                       n_kmax = Soln_Blks[i_blk].KCl +1;
+                       
+                    }else if( kk == 1){
+                       n_kmin =  Soln_Blks[i_blk].KCu-1;
+                       n_kmax = Soln_Blks[i_blk].KCu;
+                       
+                    }else{
+                       n_kmin = 0;
+                       n_kmax = 0;
+                    }
+   
+                    i_min = (!ii)*Soln_Blks[i_blk].ICl + n_imin;
+                    i_max = (!ii)*Soln_Blks[i_blk].ICu + n_imax;
                     i_inc = 1;
-                    j_min = Soln_Blks[i_blk].JCl;
-                    j_max = Soln_Blks[i_blk].JCu;
+                    j_min = (!jj)*Soln_Blks[i_blk].JCl + n_jmin;
+                    j_max = (!jj)*Soln_Blks[i_blk].JCu + n_jmax;
                     j_inc = 1;
-                    k_min = Soln_Blks[i_blk].KCu- info_bound_elem[i_bound_elem].dimen.ghost+1;
-                    k_max = Soln_Blks[i_blk].KCu;
+                    k_min = (!kk)*Soln_Blks[i_blk].KCl + n_kmin;
+                    k_max = (!kk)*Soln_Blks[i_blk].KCu + n_kmax;
                     k_inc = 1;
            
+                    cout<<"\n i_bound_elem = "<<i_bound_elem<<"   "<<i_min<<"  "<<j_min<<"  "<<k_min<<"  "<<i_max<<"  "<<j_max<<"  "<<k_max<<endl;
+                    
                     i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_sendbuf[i_blk][i_bound_elem],
                                                         l,buffer_size_neighbour,
                                                         i_min,i_max,i_inc,
                                                         j_min,j_max,j_inc,
                                                         k_min,k_max,k_inc);
                     
+                    
                     if (i != 0) return(2200);
                  } /* endif */
                  // Load ghost cell mesh information as required.
                  if (Send_Mesh_Geometry_Only || Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
                     
-                    i_min = Soln_Blks[i_blk].Grid.INl;
-                    i_max = Soln_Blks[i_blk].Grid.INu;
+                    if( ii == -1 ){
+                       n_imin = Soln_Blks[i_blk].Nghost;
+                       n_imax = Soln_Blks[i_blk].Grid.INl +1;
+                       
+                    }else if( ii == 1){
+                       n_imin =  Soln_Blks[i_blk].Grid.INu-1;
+                       n_imax = Soln_Blks[i_blk].Grid.INu;
+                       
+                    }else{
+                       n_imin = 0;
+                       n_imax = 0;
+                    }
+                    if( jj == -1 ){
+                       n_jmin = Soln_Blks[i_blk].Nghost;
+                       n_jmax = Soln_Blks[i_blk].Grid.JNl +1;
+                       
+                    }else if( jj == 1){
+                       n_jmin =  Soln_Blks[i_blk].Grid.JNu-1;
+                       n_jmax = Soln_Blks[i_blk].Grid.JNu;
+                       
+                    }else{
+                       n_jmin = 0;
+                       n_jmax = 0;
+                    }
+                    if( kk == -1 ){
+                       n_kmin = Soln_Blks[i_blk].Nghost;
+                       n_kmax = Soln_Blks[i_blk].Grid.KNl +1;
+                       
+                    }else if( kk == 1){
+                       n_kmin =  Soln_Blks[i_blk].Grid.KNu-1;
+                       n_kmax = Soln_Blks[i_blk].Grid.KNu;
+                       
+                    }else{
+                       n_kmin = 0;
+                       n_kmax = 0;
+                    }
+                    
+                    i_min = (!ii)*Soln_Blks[i_blk].Grid.INl + n_imin;
+                    i_max = (!ii)*Soln_Blks[i_blk].Grid.INu + n_imax;
                     i_inc = 1;
-                    j_min = Soln_Blks[i_blk].Grid.JNl;
-                    j_max = Soln_Blks[i_blk].Grid.JNu;
+                    j_min = (!jj)*Soln_Blks[i_blk].Grid.JNl + n_jmin;
+                    j_max = (!jj)*Soln_Blks[i_blk].Grid.JNu + n_jmax;
                     j_inc = 1;
-                    k_min = Soln_Blks[i_blk].Grid.KNu-info_bound_elem[i_bound_elem].dimen.ghost;
-                    k_max = Soln_Blks[i_blk].Grid.KNu-1;
+                    k_min = (!kk)*Soln_Blks[i_blk].Grid.KNl + n_kmin;
+                    k_max = (!kk)*Soln_Blks[i_blk].Grid.KNu + n_kmax;
                     k_inc = 1;
+           
+
                     i_ref = i_min;
                     j_ref = j_min;
-                    k_ref = k_max+1;
+                    k_ref = k_min;
                     
                     x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
                     for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
@@ -214,16 +300,55 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                                    Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
                              } /* endfor */
                     
-                    i_min = Soln_Blks[i_blk].ICl;
-                    i_max = Soln_Blks[i_blk].ICu;
-                    i_inc = 1;
-                    j_min = Soln_Blks[i_blk].JCl;
-                    j_max = Soln_Blks[i_blk].JCu;
-                    j_inc = 1;
-                    k_min = Soln_Blks[i_blk].KCu-info_bound_elem[i_bound_elem].dimen.ghost+1;
-                    k_max = Soln_Blks[i_blk].KCu;
-                    k_inc = 1;
+               
+                    if( ii == -1 ){
+                       n_imin = Soln_Blks[i_blk].Nghost;
+                       n_imax = Soln_Blks[i_blk].ICl +1;
+                       
+                    }else if( ii == 1){
+                       n_imin =  Soln_Blks[i_blk].ICu-1;
+                       n_imax = Soln_Blks[i_blk].ICu;
+                       
+                    }else{
+                       n_imin = 0;
+                       n_imax = 0;
+                    }
+                    if( jj == -1 ){
+                       n_jmin = Soln_Blks[i_blk].Nghost;
+                       n_jmax = Soln_Blks[i_blk].JCl +1;
+                       
+                    }else if( jj == 1){
+                       n_jmin =  Soln_Blks[i_blk].JCu-1;
+                       n_jmax = Soln_Blks[i_blk].JCu;
+                       
+                    }else{
+                       n_jmin = 0;
+                       n_jmax = 0;
+                    }
+                    if( kk == -1 ){
+                       n_kmin = Soln_Blks[i_blk].Nghost;
+                       n_kmax = Soln_Blks[i_blk].KCl +1;
+                       
+                    }else if( kk == 1){
+                       n_kmin =  Soln_Blks[i_blk].KCu-1;
+                       n_kmax = Soln_Blks[i_blk].KCu;
+                       
+                    }else{
+                       n_kmin = 0;
+                       n_kmax = 0;
+                    }
                     
+                    i_min = (!ii)*Soln_Blks[i_blk].ICl + n_imin;
+                    i_max = (!ii)*Soln_Blks[i_blk].ICu + n_imax;
+                    i_inc = 1;
+                    j_min = (!jj)*Soln_Blks[i_blk].JCl + n_jmin;
+                    j_max = (!jj)*Soln_Blks[i_blk].JCu + n_jmax;
+                    j_inc = 1;
+                    k_min = (!kk)*Soln_Blks[i_blk].KCl + n_kmin;
+                    k_max = (!kk)*Soln_Blks[i_blk].KCu + n_kmax;
+                    k_inc = 1;
+           
+  
                     for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
                        for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ){
                           l = l + 1;
@@ -263,7 +388,7 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
   }   /* endfor */
 
     /* Loading of send buffers complete.  Return zero value. */
-
+  
     return(0);
 
 }
@@ -465,15 +590,59 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                  l = -1;
                  // Unload ghost cell solution information as required.
                  if (!Send_Mesh_Geometry_Only) {
-                    i_min = Soln_Blks[i_blk].ICl;
-                    i_max = Soln_Blks[i_blk].ICu;
+
+                    if( ii == -1 ){
+                       n_imin = Soln_Blks[i_blk].Nghost;
+                       n_imax = Soln_Blks[i_blk].ICl +1;
+                       
+                    }else if( ii == 1){
+                       n_imin =  Soln_Blks[i_blk].ICu-1;
+                       n_imax = Soln_Blks[i_blk].ICu;
+                       
+                    }else{
+                       n_imin = 0;
+                       n_imax = 0;
+                    }
+                    if( jj == -1 ){
+                       n_jmin = Soln_Blks[i_blk].Nghost;
+                       n_jmax = Soln_Blks[i_blk].JCl +1;
+                       
+                    }else if( jj == 1){
+                       n_jmin =  Soln_Blks[i_blk].JCu-1;
+                       n_jmax = Soln_Blks[i_blk].JCu;
+                       
+                    }else{
+                       n_jmin = 0;
+                       n_jmax = 0;
+                    }
+                    if( kk == -1 ){
+                       n_kmin = Soln_Blks[i_blk].Nghost;
+                       n_kmax = Soln_Blks[i_blk].KCl +1;
+                       
+                    }else if( kk == 1){
+                       n_kmin =  Soln_Blks[i_blk].KCu-1;
+                       n_kmax = Soln_Blks[i_blk].KCu;
+                       
+                    }else{
+                       n_kmin = 0;
+                       n_kmax = 0;
+                    }
+   
+                    i_min = (!ii)*Soln_Blks[i_blk].ICl + n_imin;
+                    i_max = (!ii)*Soln_Blks[i_blk].ICu + n_imax;
                     i_inc = 1;
-                    j_min = Soln_Blks[i_blk].JCl;
-                    j_max = Soln_Blks[i_blk].JCu;
+                    j_min = (!jj)*Soln_Blks[i_blk].JCl + n_jmin;
+                    j_max = (!jj)*Soln_Blks[i_blk].JCu + n_jmax;
                     j_inc = 1;
-                    k_min = Soln_Blks[i_blk].KCu+1;
-                    k_max = Soln_Blks[i_blk].KCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
+                    k_min = (!kk)*Soln_Blks[i_blk].KCl + n_kmin;
+                    k_max = (!kk)*Soln_Blks[i_blk].KCu + n_kmax;
                     k_inc = 1;
+
+                    // transform the neighbour's index to my index
+                    info_bound_elem[i_bound_elem].blkorient.my_index(i_min, j_min, k_min);
+                    info_bound_elem[i_bound_elem].blkorient.my_index(i_max, j_max, k_max);
+                    
+           
                     i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem],
                                                              l,buffer_size,
                                                              i_min,i_max,i_inc,j_min,j_max,j_inc,
@@ -483,16 +652,58 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                  // Unload ghost cell mesh information as required.
                  if (Send_Mesh_Geometry_Only ||
                      Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-                    i_min = Soln_Blks[i_blk].Grid.INl;
-                    i_max = Soln_Blks[i_blk].Grid.INu;
-                    i_inc = 1;
-                    j_min = Soln_Blks[i_blk].Grid.JNl;
-                    j_max = Soln_Blks[i_blk].Grid.JNu;
-                    j_inc = 1;
-                    k_min = Soln_Blks[i_blk].Grid.KNu+1;
-                    k_max = Soln_Blks[i_blk].Grid.KNu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-                    k_inc = 1;
+                    if( ii == -1 ){
+                       n_imin = Soln_Blks[i_blk].Nghost;
+                       n_imax = Soln_Blks[i_blk].Grid.INl +1;
+                       
+                    }else if( ii == 1){
+                       n_imin =  Soln_Blks[i_blk].Grid.INu-1;
+                       n_imax = Soln_Blks[i_blk].Grid.INu;
+                       
+                    }else{
+                       n_imin = 0;
+                       n_imax = 0;
+                    }
+                    if( jj == -1 ){
+                       n_jmin = Soln_Blks[i_blk].Nghost;
+                       n_jmax = Soln_Blks[i_blk].Grid.JNl +1;
+                       
+                    }else if( jj == 1){
+                       n_jmin =  Soln_Blks[i_blk].Grid.JNu-1;
+                       n_jmax = Soln_Blks[i_blk].Grid.JNu;
+                       
+                    }else{
+                       n_jmin = 0;
+                       n_jmax = 0;
+                    }
+                    if( kk == -1 ){
+                       n_kmin = Soln_Blks[i_blk].Nghost;
+                       n_kmax = Soln_Blks[i_blk].Grid.KNl +1;
+                       
+                    }else if( kk == 1){
+                       n_kmin =  Soln_Blks[i_blk].Grid.KNu-1;
+                       n_kmax = Soln_Blks[i_blk].Grid.KNu;
+                       
+                    }else{
+                       n_kmin = 0;
+                       n_kmax = 0;
+                    }
                     
+                    i_min = (!ii)*Soln_Blks[i_blk].Grid.INl + n_imin;
+                    i_max = (!ii)*Soln_Blks[i_blk].Grid.INu + n_imax;
+                    i_inc = 1;
+                    j_min = (!jj)*Soln_Blks[i_blk].Grid.JNl + n_jmin;
+                    j_max = (!jj)*Soln_Blks[i_blk].Grid.JNu + n_jmax;
+                    j_inc = 1;
+                    k_min = (!kk)*Soln_Blks[i_blk].Grid.KNl + n_kmin;
+                    k_max = (!kk)*Soln_Blks[i_blk].Grid.KNu + n_kmax;
+                    k_inc = 1;
+           
+
+                 
+                    // transform the neighbour's index to my index
+                    info_bound_elem[i_bound_elem].blkorient.my_index(i_min, j_min, k_min);
+                    info_bound_elem[i_bound_elem].blkorient.my_index(i_max, j_max, k_max);
 /* 	cout<<"\nat Unload Top buffer_size ="<<buffer_size; */
 /* 	cout<<" i_min= "<<i_min<< " i_max= "<<i_max<< " i_inc= "<<i_inc << " j_min= "<<j_min<< " j_max= "<<j_max */
 /* 	    << " j_inc= "<<j_inc<< " k_min= "<< k_min << " k_max= "<<k_max<< " k_inc= "<<k_inc <<" l="<<l; */
@@ -508,15 +719,59 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                                          Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem][l-1],
                                          Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem][l])+x_ref;
                           } /* endfor */
-                    i_min = Soln_Blks[i_blk].ICl;
-                    i_max = Soln_Blks[i_blk].ICu;
+                    
+                    
+                    if( ii == -1 ){
+                       n_imin = Soln_Blks[i_blk].Nghost;
+                       n_imax = Soln_Blks[i_blk].ICl +1;
+                       
+                    }else if( ii == 1){
+                       n_imin =  Soln_Blks[i_blk].ICu-1;
+                       n_imax = Soln_Blks[i_blk].ICu;
+                       
+                    }else{
+                       n_imin = 0;
+                       n_imax = 0;
+                    }
+                    if( jj == -1 ){
+                       n_jmin = Soln_Blks[i_blk].Nghost;
+                       n_jmax = Soln_Blks[i_blk].JCl +1;
+                       
+                    }else if( jj == 1){
+                       n_jmin =  Soln_Blks[i_blk].JCu-1;
+                       n_jmax = Soln_Blks[i_blk].JCu;
+                       
+                    }else{
+                       n_jmin = 0;
+                       n_jmax = 0;
+                    }
+                    if( kk == -1 ){
+                       n_kmin = Soln_Blks[i_blk].Nghost;
+                       n_kmax = Soln_Blks[i_blk].KCl +1;
+                       
+                    }else if( kk == 1){
+                       n_kmin =  Soln_Blks[i_blk].KCu-1;
+                       n_kmax = Soln_Blks[i_blk].KCu;
+                       
+                    }else{
+                       n_kmin = 0;
+                       n_kmax = 0;
+                    }
+                    
+                    i_min = (!ii)*Soln_Blks[i_blk].ICl + n_imin;
+                    i_max = (!ii)*Soln_Blks[i_blk].ICu + n_imax;
                     i_inc = 1;
-                    j_min = Soln_Blks[i_blk].JCl;
-                    j_max = Soln_Blks[i_blk].JCu;
+                    j_min = (!jj)*Soln_Blks[i_blk].JCl + n_jmin;
+                    j_max = (!jj)*Soln_Blks[i_blk].JCu + n_jmax;
                     j_inc = 1;
-                    k_min = Soln_Blks[i_blk].KCu+1;
-                    k_max = Soln_Blks[i_blk].KCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
+                    k_min = (!kk)*Soln_Blks[i_blk].KCl + n_kmin;
+                    k_max = (!kk)*Soln_Blks[i_blk].KCu + n_kmax;
                     k_inc = 1;
+                    
+                    // transform the neighbour's index to my index
+                    info_bound_elem[i_bound_elem].blkorient.my_index(i_min, j_min, k_min);
+                    info_bound_elem[i_bound_elem].blkorient.my_index(i_max, j_max, k_max);
+                    
                     for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
                        for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
                           for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
@@ -639,7 +894,7 @@ int Send_All_Messages(Hexa_Soln_Block *Soln_Blks,
        return(error_flag);
     } /* endif */
 
-
+     
     /* Exchange message buffers at block interfaces with no cell resolution change. */
 
     error_flag = AdaptiveBlock3D_List::Exchange_Messages_NoResChange(Soln_Block_List,
@@ -651,19 +906,21 @@ int Send_All_Messages(Hexa_Soln_Block *Soln_Blks,
        return(error_flag);
     } /* endif */
 
+    cout<<"\n without unload message buffers at block interfaces ... "<<endl;
+    
 
-    /* Unload message buffers at block interfaces with no cell resolution change. */
+/*     /\* Unload message buffers at block interfaces with no cell resolution change. *\/ */
 
-    error_flag = Unload_Receive_Message_Buffers_NoResChange(Soln_Blks,
-                                                            Soln_Block_List,
-                                                            Number_of_Solution_Variables,
-                                                            Send_Mesh_Geometry_Only);
-    if (error_flag) {
-       cout << "\n " << CFFC_Version()
-            << " Message Passing Error: Unload_Receive_Message_Buffers_NoResChange, "
-            << "flag = " << error_flag << ".\n";
-       return(error_flag);
-    } /* endif */
+/*     error_flag = Unload_Receive_Message_Buffers_NoResChange(Soln_Blks, */
+/*                                                             Soln_Block_List, */
+/*                                                             Number_of_Solution_Variables, */
+/*                                                             Send_Mesh_Geometry_Only); */
+/*     if (error_flag) { */
+/*        cout << "\n " << CFFC_Version() */
+/*             << " Message Passing Error: Unload_Receive_Message_Buffers_NoResChange, " */
+/*             << "flag = " << error_flag << ".\n"; */
+/*        return(error_flag); */
+/*     } /\* endif *\/ */
 
 
     /* Update corner ghost cell information for cases where there are no corner neighbours. */

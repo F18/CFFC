@@ -125,42 +125,43 @@ int HexaSolver(char *Input_File_Name_ptr,
       cout.flush();
    } /* endif */
 
-// **************************************************************
-// output the grid geometry...
-   char prefix[256], extension[256], output_file_name[256];
-   char *output_file_name_ptr;
-   ofstream output_file;
+/* // ************************************************************** */
+/* // output the grid geometry... */
+/*    char prefix[256], extension[256], output_file_name[256]; */
+/*    char *output_file_name_ptr; */
+/*    ofstream output_file; */
    
-   /* Determine prefix of output data file names. */
-   int i = 0;
+/*    /\* Determine prefix of output data file names. *\/ */
+/*    int i = 0; */
    
-   while (1) {
-      if (Input.Output_File_Name[i] == ' ' ||
-          Input.Output_File_Name[i] == '.') break;
-      prefix[i]=Input.Output_File_Name[i];
-      i = i + 1;
-      if (i > strlen(Input.Output_File_Name) ) break;
-   } /* endwhile */
-   prefix[i] = '\0';
-   strcat(prefix, "_cells_cpu");
+/*    while (1) { */
+/*       if (Input.Output_File_Name[i] == ' ' || */
+/*           Input.Output_File_Name[i] == '.') break; */
+/*       prefix[i]=Input.Output_File_Name[i]; */
+/*       i = i + 1; */
+/*       if (i > strlen(Input.Output_File_Name) ) break; */
+/*    } /\* endwhile *\/ */
+/*    prefix[i] = '\0'; */
+/*    strcat(prefix, "_cells_cpu"); */
    
-   sprintf(extension, "%.6d");
-   strcat(extension, ".dat");
-   strcpy(output_file_name, prefix);
-   strcat(output_file_name, extension);
-   output_file_name_ptr = output_file_name;
+/*    sprintf(extension, "%.6d"); */
+/*    strcat(extension, ".dat"); */
+/*    strcpy(output_file_name, prefix); */
+/*    strcat(output_file_name, extension); */
+/*    output_file_name_ptr = output_file_name; */
        
-   // Open the output data file.
-   output_file.open(output_file_name_ptr, ios::out);
-   Initial_Mesh.Output_Cells_Tecplot(output_file);
-   output_file.close();
+/*    // Open the output data file. */
+/*    output_file.open(output_file_name_ptr, ios::out); */
+/*    Initial_Mesh.Output_Cells_Tecplot(output_file); */
+/*    output_file.close(); */
    
-   for(int ii= -1; ii<2; ii++)
-      for(int jj= -1; jj<2; jj++)
-         for(int kk= -1; kk<2; kk++){
-            Initial_Mesh.Connectivity[1].neighT_info.compute_message_tag(ii, jj, kk);
+/*    for(int ii= -1; ii<2; ii++) */
+/*       for(int jj= -1; jj<2; jj++) */
+/*          for(int kk= -1; kk<2; kk++){ */
+/*             Initial_Mesh.Connectivity[1].neighT_info.compute_message_tag(ii, jj, kk); */
             
-         }
+/*          } */
+
    
    Create_Initial_Solution_Blocks<SOLN_pSTATE, SOLN_cSTATE>(Initial_Mesh,
                                                             Local_Solution_Blocks,
@@ -169,21 +170,7 @@ int HexaSolver(char *Input_File_Name_ptr,
                                                             Global_Adaptive_Block_List,
                                                             Local_Adaptive_Block_List);
    
-  
-
-/*    Local_Adaptive_Block_List.Allocate_Message_Buffers_NoResChange( */
-/*       Local_Adaptive_Block_List, */
-/*       Local_Solution_Blocks.Soln_Blks[0].NumVar()); */
-   
-/*    Local_Adaptive_Block_List.Deallocate_Message_Buffers_NoResChange( */
-/*       Local_Adaptive_Block_List); */
-   
-    Local_Adaptive_Block_List.Exchange_Messages_NoResChange(
-      Local_Adaptive_Block_List,
-      Local_Solution_Blocks.Soln_Blks[0].NumVar());
-   
-   exit(1);
-    /********************************************************  
+   /********************************************************  
     * Initialize solution variables.                       *
     ********************************************************/
 
@@ -273,8 +260,11 @@ int HexaSolver(char *Input_File_Name_ptr,
                                                             Local_Adaptive_Block_List,
                                                             Local_Solution_Blocks.Soln_Blks[0].NumVar(),
                                                             OFF);
-
+   exit(1);
    /* Prescribe boundary data consistent with initial data. */
+
+ 
+   
 
    Local_Solution_Blocks.BCs(Input);
 

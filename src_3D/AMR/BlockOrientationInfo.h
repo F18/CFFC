@@ -17,6 +17,9 @@ using namespace std;
 #include "coord_transform.h"
 #include "block_connectivity.h"
 
+#ifndef _MPI_INCLUDED
+#include "../MPI/MPI.h"
+#endif // _MPI_INCLUDED
 
 #define BLOCK_ORIENTATION_MAX_NEIGHBOUR            2
 
@@ -51,6 +54,7 @@ class  Block_Orientation_Info{
    int convert_boundary_elements_from_ijk_to_orientations(const int my_i, const int my_j, const int my_k);
    void my_index(int &i_index, int &j_index, int &k_index);
    void neighbour_index(int &i_index, int &j_index, int &k_index);
+   void broadcast(void);
    
    // assignment operator 
    Block_Orientation_Info  & operator =(const Block_Orientation_Info &BlkOI); 

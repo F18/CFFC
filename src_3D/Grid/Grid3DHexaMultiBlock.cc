@@ -90,9 +90,6 @@ void Grid3D_Hexa_Multi_Block_List::Deallocate(void) {
 /********************************************************
  * Routine: Deallocate                                  *
  *                                                      *
- * Deallocate memory for a 1D array of 3D hexahedral    *
- * multi-block grids.                                   *
- *                                                      *
  ********************************************************/
 void Grid3D_Hexa_Multi_Block_Connectivity::Deallocate(void) {
 
@@ -141,6 +138,124 @@ void Grid3D_Hexa_Multi_Block_Connectivity::Deallocate(void) {
        delete []neighBSE_info;
     
        
+}
+/********************************************************
+ * Routine: Broadcast                                   *
+ *                                                      *
+ * Broadcast block connectivity info.                   *
+ *                                                      *
+ ********************************************************/
+void Grid3D_Hexa_Multi_Block_Connectivity::Broadcast(void) {
+#ifdef _MPI_VERSION
+
+  MPI::COMM_WORLD.Bcast(&num_neighT, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighB, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighS, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighW, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighE, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighN, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighTN, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighTS, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighTW, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighTE, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighBN, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighBS, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighBE, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighBW, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighSW, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighSE, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighNW, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighNE, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighTNW, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighTNE, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighTSW, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighTSE, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighBNW, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighBNE, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighBSW, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&num_neighBSE, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighT, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighB, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighS, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighW, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighE, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighN, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighTN[0], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighTS[0], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighTW[0], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighTE[0], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighBN[0], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighBS[0], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighBE[0], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighBW[0], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighSW[0], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighSE[0], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighNW[0], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighNE[0], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighTNW[0], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighTNE[0], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighTSW[0], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighTSE[0], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighBNW[0], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighBNE[0], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighBSW[0], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighBSE[0], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighTN[1], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighTS[1], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighTW[1], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighTE[1], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighBN[1], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighBS[1], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighBE[1], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighBW[1], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighSW[1], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighSE[1], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighNW[1], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighNE[1], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighTNW[1], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighTNE[1], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighTSW[1], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighTSE[1], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighBNW[1], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighBNE[1], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighBSW[1], 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&neighBSE[1], 1, MPI::INT, 0);
+
+  neighT_info.broadcast();
+  neighB_info.broadcast();
+  neighN_info.broadcast();
+  neighS_info.broadcast();
+  neighE_info.broadcast();
+  neighW_info.broadcast();
+  
+  for(int i_nb = 0; i_nb < BLOCK_ORIENTATION_MAX_NEIGHBOUR; ++i_nb){
+     
+     neighNW_info[i_nb].broadcast();
+     neighNE_info[i_nb].broadcast();
+     neighSW_info[i_nb].broadcast();
+     neighSE_info[i_nb].broadcast();
+     neighTN_info[i_nb].broadcast();
+     neighTE_info[i_nb].broadcast();
+     neighTW_info[i_nb].broadcast();
+     neighTS_info[i_nb].broadcast();
+     neighBN_info[i_nb].broadcast();
+     neighBE_info[i_nb].broadcast();
+     neighBW_info[i_nb].broadcast();
+     neighBS_info[i_nb].broadcast();
+     neighTNW_info[i_nb].broadcast();
+     neighTNE_info[i_nb].broadcast();
+     neighTSW_info[i_nb].broadcast();
+     neighTSE_info[i_nb].broadcast();
+     neighBNW_info[i_nb].broadcast();
+     neighBNE_info[i_nb].broadcast();
+     neighBSW_info[i_nb].broadcast();
+     neighBSE_info[i_nb].broadcast();
+   
+  }
+  
+#endif  
+
+
 }
 
 /********************************************************
@@ -220,10 +335,13 @@ void Grid3D_Hexa_Multi_Block_List::Broadcast(void) {
   } /* endif */
 
   /* Broadcast each of the blocks in the multiblock mesh. */
+  /* Broadcast block connectivity info in the multiblock mesh. */
 
   if (Allocated) {
     for (int  i = 0 ; i < NBlk ; ++i ) {
        Grid_Blks[i].Broadcast();
+       Connectivity[i].Broadcast();
+       
     } /* endfor */
   } /* endif */
 #endif
@@ -1371,6 +1489,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighW_info.set_block_orientation_info(
             blkConn, iblk,  BlkC::IMin, BlkC::JAll, BlkC::KAll, 
             Connectivity[iblk].neighW);
+          
 
          Connectivity[iblk].num_neighTN = blkConn.num_neighbour_block(
             iblk, BlkC::IAll, BlkC::JMax, BlkC::KMax);

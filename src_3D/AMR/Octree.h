@@ -1110,8 +1110,6 @@ inline istream &operator >> (istream &in_file,
  *   getNeighbour -- Return neighbour of octree block   *
  *                   in specified search direction of   *
  *                   interest.                          *
- *   findRootNeighbours -- Find neighbouring blocks of  *
- *                         all octree root blocks.      *
  *   findNeighbours -- Find neighbouring blocks of      *
  *                     octree block.                    *
  *   refineBlock   -- Refines (divides) a octree        *
@@ -1151,8 +1149,7 @@ class Octree_DataStructure{
     int                    NRi; // Number of roots in i-direction.
     int                    NRj; // Number of roots in j-direction.
     int                    NRk; // Number of roots in k-direction.
-    OctreeBlock       ***Roots; // Roots of octree data structure.
-    OctreeBlock      *Rootblks; // Roots of octree data structure.
+    OctreeBlock      *Roots; // Roots of octree data structure.
     int                   Ncpu; // Number of CPUs available.
     int                   Nblk; // Number of local blocks per CPU.
     OctreeBlock      ***Blocks; // Global list of pointers to blocks
@@ -1167,15 +1164,15 @@ class Octree_DataStructure{
 
     /* Creation, copy, and assignment constructors. */
     Octree_DataStructure(void) {
-       NRi = 0; NRj = 0;NRk = 0; Roots = NULL; Rootblks = NULL;
+       NRi = 0; NRj = 0;NRk = 0; Roots = NULL;
        Ncpu = 0; Nblk = 0; Blocks = NULL; RefineFlags = NULL;
        MaximumRefinementLevel = 99; MinimumRefinementLevel = 0;
        RefineThreshold = 0.50; CoarsenThreshold = 0.10;
     }
 
     Octree_DataStructure(const Octree_DataStructure &QT) {
-       NRi = QT.NRi; NRj = QT.NRj; NRk = QT.NRk; Roots = QT.Roots;
-       Rootblks = QT.Rootblks; 
+       NRi = QT.NRi; NRj = QT.NRj; NRk = QT.NRk;
+       Roots = QT.Roots; 
        Ncpu = QT.Ncpu; Nblk = QT.Nblk; Blocks = QT.Blocks;
        RefineFlags = QT.RefineFlags;
        MaximumRefinementLevel = QT.MaximumRefinementLevel; 
@@ -1231,9 +1228,6 @@ class Octree_DataStructure{
     OctreeBlock *getNeighbour(OctreeBlock *Block_Ptr,
                                 const int Search_Dir_Mask);
 
-    /* Find neighbouring blocks of all octree root blocks. */
-    void findRootNeighbours(void);
-
     /* Find neighbouring blocks. */
     void findNeighbours(void);
 
@@ -1272,11 +1266,6 @@ class Octree_DataStructure{
     static void Renumber_Solution_Blocks(Octree_DataStructure &Octree,
                                          AdaptiveBlock3D_List &LocalSolnBlockList);
 
-    static void Find_Neighbours_of_Root_Solution_Blocks(Octree_DataStructure &Octree);
-
-    static void Find_Neighbours_of_Root_Solution_Blocks(Octree_DataStructure &Octree,
-                                                        AdaptiveBlock3D_List &LocalSolnBlockList);
-
     static void Modify_Neighbours_of_Root_Solution_Blocks(Octree_DataStructure &Octree,
                                                           const int Grid_Type);
 
@@ -1313,13 +1302,9 @@ inline void Octree_DataStructure::allocate(const int ni,
    NRi = ni; NRj = nj; NRk = nk; Ncpu = ncpu; Nblk = nblk;
    ntotblks = NRi*NRj*NRk;
                
-   Roots = new OctreeBlock**[NRi];
-   Rootblks = new OctreeBlock[ntotblks];
-   for ( i = 0; i <= NRi-1 ; ++i ) {
-     Roots[i] = new OctreeBlock*[NRj];
-     for ( j = 0; j <= NRj-1 ; ++j ) Roots[i][j] = new OctreeBlock[NRk];
-   } 
-  Blocks = new OctreeBlock**[Ncpu];
+   Roots = new OctreeBlock[ntotblks];
+   
+   Blocks = new OctreeBlock**[Ncpu];
    for ( i = 0; i <= Ncpu-1 ; ++i ) {
       Blocks[i] = new OctreeBlock*[Nblk];
       for ( j = 0; j <= Nblk-1; ++j) Blocks[i][j] = NULL; 
@@ -1333,13 +1318,9 @@ inline void Octree_DataStructure::allocateRoots(const int ni,
 						const int nk,
                                                 const int nj) {
    int i,j; assert( ni > 0 && nj > 0 && nk > 0 );
-   NRi = ni; NRj = nj; NRk = nk; Roots = new OctreeBlock**[NRi];
-   Rootblks = new OctreeBlock[NRi*NRj*NRk];
-   for ( i = 0; i <= NRi-1 ; ++i ) {
-     Roots[i] = new OctreeBlock*[NRj];
-     for ( j = 0; j <= NRj-1 ; ++j ) 
-       Roots[i][j] = new OctreeBlock[NRk];
-   }
+   NRi = ni; NRj = nj; NRk = nk;
+   Roots = new OctreeBlock[NRi*NRj*NRk];
+   
 }
 
 inline void Octree_DataStructure::allocateBlocks(const int ncpu, 
@@ -1360,13 +1341,8 @@ inline void Octree_DataStructure::allocateBlocks(const int ncpu,
  *********************************************************************/
 inline void Octree_DataStructure::deallocate(void) {
    int i, j;
-   for ( i = 0; i <= NRi-1 ; ++i ) {
-     for ( j = 0; j <= NRj-1 ; ++j ) delete []Roots[i][j]; 
-     delete []Roots[i]; 
-     Roots[i] = NULL;
-   } /* endfor */
+   
    delete []Roots; Roots = NULL;
-   delete []Rootblks; Rootblks = NULL;
    NRi = 0; NRj = 0; NRk = 0;
    for ( i = 0; i <= Ncpu-1 ; ++i ) {
       delete []Blocks[i]; Blocks[i] = NULL;
@@ -1380,14 +1356,8 @@ inline void Octree_DataStructure::deallocate(void) {
 }
 
 inline void Octree_DataStructure::deallocateRoots(void) {
-   int i,j;
-  for ( i = 0; i <= NRi-1 ; ++i ) {
-     for ( j = 0; j <= NRj-1 ; ++j ) delete []Roots[i][j]; 
-     delete []Roots[i]; 
-     Roots[i] = NULL;
-   } /* endfor */
+  
   delete []Roots; Roots = NULL;
-  delete []Rootblks; Rootblks = NULL;
   NRi = 0; NRj = 0; NRk = 0;
 }
 
@@ -1436,16 +1406,16 @@ inline void Octree_DataStructure::assign_block_ptr(OctreeBlock *Block_Ptr) {
 }
 
 inline void Octree_DataStructure::assign_block_pointers(void) {
-   int iBLK, jBLK,kBLK;
+   int iBLK, jBLK,kBLK, ntotalblks;
    for ( jBLK = 0; jBLK <= Nblk-1; ++jBLK) 
      for ( iBLK = 0; iBLK <= Ncpu-1 ; ++iBLK ) {
          Blocks[iBLK][jBLK] = NULL;
        } /* endfor */
-   for ( kBLK = 0 ; kBLK <= NRk-1 ; ++kBLK ) 
-     for ( jBLK = 0 ; jBLK <= NRj-1 ; ++jBLK ) 
-      for ( iBLK = 0 ; iBLK <= NRi-1 ; ++iBLK ) {
- 	 assign_block_ptr(&(Roots[iBLK][jBLK][kBLK]));
-      } /* endfor */
+   
+   ntotalblks = NRk*NRj*NRi;
+   for ( iBLK = 0 ; iBLK <= ntotalblks-1 ; ++iBLK ) {
+ 	 assign_block_ptr(&(Roots[iBLK]));
+   } /* endfor */
 }
 
 /****************************************************************************
@@ -1539,7 +1509,7 @@ inline AdaptiveBlock3D_Dimensions Octree_DataStructure::getRoot(OctreeBlock *Blo
   for ( kBLK = 0 ; kBLK <= NRk-1 ; ++kBLK ) 
     for ( jBLK = 0 ; jBLK <= NRj-1 ; ++jBLK ) 
       for ( iBLK = 0 ; iBLK <= NRi-1 ; ++iBLK ) {
-         if (Block_Ptr == &(Roots[iBLK][jBLK][kBLK])) {
+         if (Block_Ptr == &(Roots[iBLK*jBLK*kBLK])) {
             return (AdaptiveBlock3D_Dimensions(iBLK, jBLK, kBLK, 0));
          } /* endif */
       } /* endfor */
@@ -1555,879 +1525,881 @@ inline OctreeBlock *Octree_DataStructure::getNeighbour(OctreeBlock *Block_Ptr,
   assert(Block_Ptr!=NULL);//used for debugging
   OctreeBlock *neighbour_block_ptr; AdaptiveBlock3D_Dimensions index; 
   AdaptiveBlock3D_Dimensions search_direction;
-  // if (Block_Ptr->parent_ptr != NULL) cout<<" BLOCK HAS A PARENT"
+  
 
-  if (Block_Ptr->parent_ptr == NULL || // Block has no parent.  Block is a root.  
-      Block_Ptr->block.info.sector == OCTREE_SECTOR_NONE) {
-     index = getRoot(Block_Ptr);  // Get indices of root block.
-     //cout<<"\nFor Block_Ptr= "<<Block_Ptr->block.info<<"Index of getRoot(Block_Ptr) is "<<index;
-     switch(Search_Dir_Mask) { // Find neighbouring root block.  Check each direction.
-     case OCTREE_DIRECTION_MASK_EAST :
-         if (index.i < NRi-1) {
-            if (Block_Ptr->block.nE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-	    if (Block_Ptr->block.nE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_WEST :
-         if (index.i > 0) {
-            if (Block_Ptr->block.nW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-	    if (Block_Ptr->block.nW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_NORTH :
-         if (index.j < NRj-1) {
-            if (Block_Ptr->block.nN > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j+1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-            if (Block_Ptr->block.nN > 0) {
-               neighbour_block_ptr = &(Roots[index.i][0][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_SOUTH :
-         if (index.j > 0) {
-            if (Block_Ptr->block.nS > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j-1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-            if (Block_Ptr->block.nS > 0) {
-               neighbour_block_ptr = &(Roots[index.i][NRj-1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_TOP :
-         if (index.k < NRk-1) {
-            if (Block_Ptr->block.nT > 0) {
-	      neighbour_block_ptr = &(Roots[index.i][index.j][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-            if (Block_Ptr->block.nT > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j][0]);
-            } else {
-	      neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_BOTTOM :
-         if (index.k > 0) {
-            if (Block_Ptr->block.nB > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-            if (Block_Ptr->block.nB > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
+ /*  if (Block_Ptr->parent_ptr == NULL || // Block has no parent.  Block is a root.   */
+/*       Block_Ptr->block.info.sector == OCTREE_SECTOR_NONE) { */
+/*      index = getRoot(Block_Ptr);  // Get indices of root block. */
+/*      //cout<<"\nFor Block_Ptr= "<<Block_Ptr->block.info<<"Index of getRoot(Block_Ptr) is "<<index; */
+/*      switch(Search_Dir_Mask) { // Find neighbouring root block.  Check each direction. */
+/*      case OCTREE_DIRECTION_MASK_EAST : */
+/*          if (index.i < NRi-1) { */
+/*             if (Block_Ptr->block.nE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][index.j][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/* 	    if (Block_Ptr->block.nE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][index.j][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
+/*        case OCTREE_DIRECTION_MASK_WEST : */
+/*          if (index.i > 0) { */
+/*             if (Block_Ptr->block.nW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][index.j][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/* 	    if (Block_Ptr->block.nW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][index.j][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
+/*        case OCTREE_DIRECTION_MASK_NORTH : */
+/*          if (index.j < NRj-1) { */
+/*             if (Block_Ptr->block.nN > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][index.j+1][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*             if (Block_Ptr->block.nN > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][0][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
+/*        case OCTREE_DIRECTION_MASK_SOUTH : */
+/*          if (index.j > 0) { */
+/*             if (Block_Ptr->block.nS > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][index.j-1][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*             if (Block_Ptr->block.nS > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][NRj-1][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
+/*        case OCTREE_DIRECTION_MASK_TOP : */
+/*          if (index.k < NRk-1) { */
+/*             if (Block_Ptr->block.nT > 0) { */
+/* 	      neighbour_block_ptr = &(Roots[index.i][index.j][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*             if (Block_Ptr->block.nT > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][index.j][0]); */
+/*             } else { */
+/* 	      neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
+/*        case OCTREE_DIRECTION_MASK_BOTTOM : */
+/*          if (index.k > 0) { */
+/*             if (Block_Ptr->block.nB > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][index.j][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*             if (Block_Ptr->block.nB > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][index.j][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
 
-       case OCTREE_DIRECTION_MASK_SOUTHWEST :
-         if (index.i > 0 && index.j > 0) {
-            if (Block_Ptr->block.nSW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j-1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j > 0) {
-            if (Block_Ptr->block.nSW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j-1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i > 0) {
-            if (Block_Ptr->block.nSW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][NRj-1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-            if (Block_Ptr->block.nSW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][NRj-1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_SOUTHEAST :
-         if (index.i < NRi-1 && index.j > 0) {
-           if (Block_Ptr->block.nSE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j-1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j > 0) {
-           if (Block_Ptr->block.nSE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j-1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1) {
-           if (Block_Ptr->block.nSE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][NRj-1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nSE > 0) {
-               neighbour_block_ptr = &(Roots[0][NRj-1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_NORTHWEST :
-         if (index.i > 0 && index.j < NRj-1) {
-           if (Block_Ptr->block.nNW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j+1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j < NRj-1) {
-           if (Block_Ptr->block.nNW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j+1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i > 0) {
-           if (Block_Ptr->block.nNW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][0][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nNW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][0][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_NORTHEAST :
-         if (index.i < NRi-1 && index.j < NRj-1) {
-           if (Block_Ptr->block.nNE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j+1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j < NRj-1) {
-           if (Block_Ptr->block.nNE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j+1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else if (index.i < NRi-1) {
-           if (Block_Ptr->block.nNE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][0][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nNE > 0) {
-               neighbour_block_ptr = &(Roots[0][0][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-
-
-       case OCTREE_DIRECTION_MASK_BOTTOMWEST :
-         if (index.i > 0 && index.k > 0) {
-            if (Block_Ptr->block.nBW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k > 0) {
-            if (Block_Ptr->block.nBW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i > 0) {
-            if (Block_Ptr->block.nBW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-            if (Block_Ptr->block.nBW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_BOTTOMEAST :
-         if (index.i < NRi-1 && index.k > 0) {
-           if (Block_Ptr->block.nBE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k > 0) {
-           if (Block_Ptr->block.nBE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1) {
-           if (Block_Ptr->block.nBE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nBE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_BOTTOMNORTH :
-         if (index.k > 0 && index.j < NRj-1) {
-           if (Block_Ptr->block.nBN > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j+1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j < NRj-1) {
-           if (Block_Ptr->block.nBN > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j+1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k > 0) {
-           if (Block_Ptr->block.nBN > 0) {
-               neighbour_block_ptr = &(Roots[index.i][0][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nBN > 0) {
-               neighbour_block_ptr = &(Roots[index.i][0][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_BOTTOMSOUTH :
-         if (index.k > 0 && index.j > 0) {
-           if (Block_Ptr->block.nBS > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j-1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j > 0) {
-           if (Block_Ptr->block.nBS > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j-1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else if (index.k > 0) {
-           if (Block_Ptr->block.nBS > 0) {
-               neighbour_block_ptr = &(Roots[index.i][NRj-1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nBS > 0) {
-               neighbour_block_ptr = &(Roots[index.i][NRj-1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-
-       case OCTREE_DIRECTION_MASK_TOPWEST :
-         if (index.i > 0 && index.k < NRk-1) {
-            if (Block_Ptr->block.nTW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k < NRk-1) {
-            if (Block_Ptr->block.nTW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j > 0) {
-            if (Block_Ptr->block.nTW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-            if (Block_Ptr->block.nTW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_TOPEAST :
-         if (index.i < NRi-1 && index.k < NRk-1) {
-           if (Block_Ptr->block.nTE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k < NRk-1) {
-           if (Block_Ptr->block.nTE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1) {
-           if (Block_Ptr->block.nTE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nTE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_TOPNORTH :
-         if (index.k < NRk-1 && index.j < NRj-1) {
-           if (Block_Ptr->block.nTN > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j+1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j < NRj-1) {
-           if (Block_Ptr->block.nTN > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j+1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k < NRk-1) {
-           if (Block_Ptr->block.nTN > 0) {
-               neighbour_block_ptr = &(Roots[index.i][0][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nTN > 0) {
-               neighbour_block_ptr = &(Roots[index.i][0][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_TOPSOUTH :
-         if (index.k < NRk-1 && index.j > 0) {
-           if (Block_Ptr->block.nTS > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j-1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j > 0) {
-           if (Block_Ptr->block.nTS > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j-1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else if (index.k < NRk-1) {
-           if (Block_Ptr->block.nTS > 0) {
-               neighbour_block_ptr = &(Roots[index.i][NRj-1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nTS > 0) {
-               neighbour_block_ptr = &(Roots[index.i][NRj-1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-
-       case OCTREE_DIRECTION_MASK_BOTTOMSOUTHWEST :
-         if (index.i > 0 && index.j > 0 && index.k > 0) {
-            if (Block_Ptr->block.nBSW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j-1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else if (index.i > 0 && index.j > 0) {
-            if (Block_Ptr->block.nBSW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j-1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else if (index.j > 0 && index.k > 0) {
-            if (Block_Ptr->block.nBSW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j-1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else if (index.i > 0 && index.k > 0) {
-            if (Block_Ptr->block.nBSW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][NRj-1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j > 0) {
-            if (Block_Ptr->block.nBSW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j-1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i > 0) {
-            if (Block_Ptr->block.nBSW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][NRj-1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k > 0) {
-            if (Block_Ptr->block.nBSW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][NRj-1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-            if (Block_Ptr->block.nBSW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][NRj-1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-
-       case OCTREE_DIRECTION_MASK_BOTTOMSOUTHEAST :
-         if (index.i < NRi-1 && index.j > 0 && index.k > 0) {
-           if (Block_Ptr->block.nBSE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j-1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1 && index.j > 0 ) {
-           if (Block_Ptr->block.nBSE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j-1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if ( index.j > 0 && index.k > 0) {
-           if (Block_Ptr->block.nBSE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j-1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1  && index.k > 0) {
-           if (Block_Ptr->block.nBSE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][NRj-1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k > 0) {
-           if (Block_Ptr->block.nBSE > 0) {
-               neighbour_block_ptr = &(Roots[0][0][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j > 0) {
-           if (Block_Ptr->block.nBSE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j-1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1) {
-           if (Block_Ptr->block.nBSE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][NRj-1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nBSE > 0) {
-               neighbour_block_ptr = &(Roots[0][NRj-1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_BOTTOMNORTHWEST :
-         if (index.i > 0 && index.j < NRj-1 && index.k > 0) {
-           if (Block_Ptr->block.nBNW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j+1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i > 0 && index.j < NRj-1 ) {
-           if (Block_Ptr->block.nBNW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j+1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if ( index.j < NRj-1 && index.k > 0) {
-           if (Block_Ptr->block.nBNW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j+1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i > 0  && index.k > 0) {
-           if (Block_Ptr->block.nBNW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][0][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-        } else if (index.k > 0) {
-           if (Block_Ptr->block.nBNW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][0][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j < NRj-1) {
-           if (Block_Ptr->block.nBNW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j+1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i > 0) {
-           if (Block_Ptr->block.nBNW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][0][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nBNW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][0][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_BOTTOMNORTHEAST :
-         if (index.i < NRi-1 && index.j < NRj-1 && index.k > 0) {
-           if (Block_Ptr->block.nBNE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j+1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1 && index.j < NRj-1 ) {
-           if (Block_Ptr->block.nBNE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j+1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if ( index.j < NRj-1 && index.k > 0) {
-           if (Block_Ptr->block.nBNE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j+1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1  && index.k > 0) {
-           if (Block_Ptr->block.nBNE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][0][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k > 0) {
-           if (Block_Ptr->block.nBNE > 0) {
-               neighbour_block_ptr = &(Roots[0][0][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j < NRj-1) {
-           if (Block_Ptr->block.nBNE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j+1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else if (index.i < NRi-1) {
-           if (Block_Ptr->block.nBNE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][0][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else {
-           if (Block_Ptr->block.nBNE > 0) {
-               neighbour_block_ptr = &(Roots[0][0][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-
-	 //***UPDATE FROM HERE*******//
-
-      case OCTREE_DIRECTION_MASK_TOPSOUTHWEST :
-         if (index.i > 0 && index.j > 0 && index.k < NRk-1) {
-            if (Block_Ptr->block.nTSW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j-1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else if (index.i > 0 && index.j > 0) {
-            if (Block_Ptr->block.nTSW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j-1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else if (index.j > 0 && index.k < NRk-1) {
-            if (Block_Ptr->block.nTSW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j-1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else if (index.i > 0 && index.k < NRk-1) {
-            if (Block_Ptr->block.nTSW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][NRj-1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j > 0) {
-            if (Block_Ptr->block.nTSW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j-1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i > 0) {
-            if (Block_Ptr->block.nTSW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][NRj-1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k < NRk-1) {
-            if (Block_Ptr->block.nTSW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][NRj-1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-            if (Block_Ptr->block.nTSW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][NRj-1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_TOPSOUTHEAST :
-         if (index.i < NRi-1 && index.j > 0 && index.k < NRk-1) {
-           if (Block_Ptr->block.nTSE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j-1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1 && index.j > 0 ) {
-           if (Block_Ptr->block.nTSE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j-1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if ( index.j > 0 && index.k < NRk-1) {
-           if (Block_Ptr->block.nTSE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j-1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1  && index.k < NRk-1) {
-           if (Block_Ptr->block.nTSE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][NRj-1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k < NRk-1) {
-           if (Block_Ptr->block.nTSE > 0) {
-               neighbour_block_ptr = &(Roots[0][0][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j > 0) {
-           if (Block_Ptr->block.nTSE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j-1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1) {
-           if (Block_Ptr->block.nTSE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][NRj-1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nTSE > 0) {
-               neighbour_block_ptr = &(Roots[0][NRj-1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_TOPNORTHWEST :
-         if (index.i > 0 && index.j < NRj-1 && index.k < NRk-1) {
-           if (Block_Ptr->block.nTNW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j+1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i > 0 && index.j < NRj-1 ) {
-           if (Block_Ptr->block.nTNW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j+1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if ( index.j < NRj-1 && index.k < NRk-1) {
-           if (Block_Ptr->block.nTNW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j+1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i > 0  && index.k < NRk-1) {
-           if (Block_Ptr->block.nTNW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][0][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-        } else if (index.k < NRk-1) {
-           if (Block_Ptr->block.nTNW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][0][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j < NRj-1) {
-           if (Block_Ptr->block.nTNW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j+1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i > 0) {
-           if (Block_Ptr->block.nTNW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][0][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nTNW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][0][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_TOPNORTHEAST :
-         if (index.i < NRi-1 && index.j < NRj-1 && index.k < NRk-1) {
-           if (Block_Ptr->block.nTNE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j+1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1 && index.j < NRj-1 ) {
-           if (Block_Ptr->block.nTNE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j+1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if ( index.j < NRj-1 && index.k < NRk-1) {
-           if (Block_Ptr->block.nTNE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j+1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1  && index.k < NRk-1) {
-           if (Block_Ptr->block.nTNE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][0][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k < NRk-1) {
-           if (Block_Ptr->block.nTNE > 0) {
-               neighbour_block_ptr = &(Roots[0][0][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j < NRj-1) {
-           if (Block_Ptr->block.nTNE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j+1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else if (index.i < NRi-1) {
-           if (Block_Ptr->block.nTNE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][0][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nTNE > 0) {
-               neighbour_block_ptr = &(Roots[0][0][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-
-       default:
-         neighbour_block_ptr = NULL;
-         break;
-     } /* endswitch */
+/*        case OCTREE_DIRECTION_MASK_SOUTHWEST : */
+/*          if (index.i > 0 && index.j > 0) { */
+/*             if (Block_Ptr->block.nSW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][index.j-1][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.j > 0) { */
+/*             if (Block_Ptr->block.nSW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][index.j-1][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i > 0) { */
+/*             if (Block_Ptr->block.nSW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][NRj-1][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*             if (Block_Ptr->block.nSW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][NRj-1][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
+/*        case OCTREE_DIRECTION_MASK_SOUTHEAST : */
+/*          if (index.i < NRi-1 && index.j > 0) { */
+/*            if (Block_Ptr->block.nSE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][index.j-1][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.j > 0) { */
+/*            if (Block_Ptr->block.nSE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][index.j-1][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i < NRi-1) { */
+/*            if (Block_Ptr->block.nSE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][NRj-1][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*            if (Block_Ptr->block.nSE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][NRj-1][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
+/*        case OCTREE_DIRECTION_MASK_NORTHWEST : */
+/*          if (index.i > 0 && index.j < NRj-1) { */
+/*            if (Block_Ptr->block.nNW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][index.j+1][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.j < NRj-1) { */
+/*            if (Block_Ptr->block.nNW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][index.j+1][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i > 0) { */
+/*            if (Block_Ptr->block.nNW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][0][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*            if (Block_Ptr->block.nNW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][0][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
+/*        case OCTREE_DIRECTION_MASK_NORTHEAST : */
+/*          if (index.i < NRi-1 && index.j < NRj-1) { */
+/*            if (Block_Ptr->block.nNE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][index.j+1][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.j < NRj-1) { */
+/*            if (Block_Ptr->block.nNE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][index.j+1][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/* 	 } else if (index.i < NRi-1) { */
+/*            if (Block_Ptr->block.nNE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][0][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*            if (Block_Ptr->block.nNE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][0][index.k]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
 
 
-     if (Block_Ptr->block.used &&
-         neighbour_block_ptr != NULL) { 
+/*        case OCTREE_DIRECTION_MASK_BOTTOMWEST : */
+/*          if (index.i > 0 && index.k > 0) { */
+/*             if (Block_Ptr->block.nBW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][index.j][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.k > 0) { */
+/*             if (Block_Ptr->block.nBW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][index.j][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i > 0) { */
+/*             if (Block_Ptr->block.nBW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][index.j][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*             if (Block_Ptr->block.nBW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][index.j][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
+/*        case OCTREE_DIRECTION_MASK_BOTTOMEAST : */
+/*          if (index.i < NRi-1 && index.k > 0) { */
+/*            if (Block_Ptr->block.nBE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][index.j][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.k > 0) { */
+/*            if (Block_Ptr->block.nBE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][index.j][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i < NRi-1) { */
+/*            if (Block_Ptr->block.nBE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][index.j][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*            if (Block_Ptr->block.nBE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][index.j][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
+/*        case OCTREE_DIRECTION_MASK_BOTTOMNORTH : */
+/*          if (index.k > 0 && index.j < NRj-1) { */
+/*            if (Block_Ptr->block.nBN > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][index.j+1][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.j < NRj-1) { */
+/*            if (Block_Ptr->block.nBN > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][index.j+1][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.k > 0) { */
+/*            if (Block_Ptr->block.nBN > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][0][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*            if (Block_Ptr->block.nBN > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][0][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
+/*        case OCTREE_DIRECTION_MASK_BOTTOMSOUTH : */
+/*          if (index.k > 0 && index.j > 0) { */
+/*            if (Block_Ptr->block.nBS > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][index.j-1][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.j > 0) { */
+/*            if (Block_Ptr->block.nBS > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][index.j-1][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/* 	 } else if (index.k > 0) { */
+/*            if (Block_Ptr->block.nBS > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][NRj-1][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*            if (Block_Ptr->block.nBS > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][NRj-1][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
 
-       // Descend neigbouring root block until used children are encountered.
+/*        case OCTREE_DIRECTION_MASK_TOPWEST : */
+/*          if (index.i > 0 && index.k < NRk-1) { */
+/*             if (Block_Ptr->block.nTW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][index.j][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.k < NRk-1) { */
+/*             if (Block_Ptr->block.nTW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][index.j][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.j > 0) { */
+/*             if (Block_Ptr->block.nTW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][index.j][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*             if (Block_Ptr->block.nTW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][index.j][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
+/*        case OCTREE_DIRECTION_MASK_TOPEAST : */
+/*          if (index.i < NRi-1 && index.k < NRk-1) { */
+/*            if (Block_Ptr->block.nTE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][index.j][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.k < NRk-1) { */
+/*            if (Block_Ptr->block.nTE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][index.j][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i < NRi-1) { */
+/*            if (Block_Ptr->block.nTE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][index.j][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*            if (Block_Ptr->block.nTE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][index.j][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
+/*        case OCTREE_DIRECTION_MASK_TOPNORTH : */
+/*          if (index.k < NRk-1 && index.j < NRj-1) { */
+/*            if (Block_Ptr->block.nTN > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][index.j+1][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.j < NRj-1) { */
+/*            if (Block_Ptr->block.nTN > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][index.j+1][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.k < NRk-1) { */
+/*            if (Block_Ptr->block.nTN > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][0][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*            if (Block_Ptr->block.nTN > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][0][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
+/*        case OCTREE_DIRECTION_MASK_TOPSOUTH : */
+/*          if (index.k < NRk-1 && index.j > 0) { */
+/*            if (Block_Ptr->block.nTS > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][index.j-1][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.j > 0) { */
+/*            if (Block_Ptr->block.nTS > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][index.j-1][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/* 	 } else if (index.k < NRk-1) { */
+/*            if (Block_Ptr->block.nTS > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][NRj-1][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*            if (Block_Ptr->block.nTS > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i][NRj-1][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
 
-        search_direction = Block_Ptr->search_dir(Search_Dir_Mask);
-        while ((neighbour_block_ptr->
-		child_ptr(OCTREE_SECTOR_BSW-
-			  search_direction.i-
-			  search_direction.j-
-			  search_direction.k+
-			  (max(-search_direction.i*search_direction.j*search_direction.k, 0)/2)*
-			  max(max(search_direction.i, search_direction.j),search_direction.k)) != NULL) 
-	       && !(neighbour_block_ptr->block.used)) {
+/*        case OCTREE_DIRECTION_MASK_BOTTOMSOUTHWEST : */
+/*          if (index.i > 0 && index.j > 0 && index.k > 0) { */
+/*             if (Block_Ptr->block.nBSW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][index.j-1][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/* 	 } else if (index.i > 0 && index.j > 0) { */
+/*             if (Block_Ptr->block.nBSW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][index.j-1][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/* 	 } else if (index.j > 0 && index.k > 0) { */
+/*             if (Block_Ptr->block.nBSW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][index.j-1][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/* 	 } else if (index.i > 0 && index.k > 0) { */
+/*             if (Block_Ptr->block.nBSW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][NRj-1][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.j > 0) { */
+/*             if (Block_Ptr->block.nBSW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][index.j-1][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i > 0) { */
+/*             if (Block_Ptr->block.nBSW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][NRj-1][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.k > 0) { */
+/*             if (Block_Ptr->block.nBSW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][NRj-1][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*             if (Block_Ptr->block.nBSW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][NRj-1][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
 
-           neighbour_block_ptr = 
-	     neighbour_block_ptr->child_ptr(OCTREE_SECTOR_BSW-
-					    search_direction.i-
-					    search_direction.j-
-					    search_direction.k+
-					    (max(-search_direction.i*search_direction.j*search_direction.k, 0)/2)
-					    *max(max(search_direction.i, search_direction.j),search_direction.k));
+/*        case OCTREE_DIRECTION_MASK_BOTTOMSOUTHEAST : */
+/*          if (index.i < NRi-1 && index.j > 0 && index.k > 0) { */
+/*            if (Block_Ptr->block.nBSE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][index.j-1][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i < NRi-1 && index.j > 0 ) { */
+/*            if (Block_Ptr->block.nBSE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][index.j-1][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if ( index.j > 0 && index.k > 0) { */
+/*            if (Block_Ptr->block.nBSE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][index.j-1][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i < NRi-1  && index.k > 0) { */
+/*            if (Block_Ptr->block.nBSE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][NRj-1][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.k > 0) { */
+/*            if (Block_Ptr->block.nBSE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][0][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.j > 0) { */
+/*            if (Block_Ptr->block.nBSE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][index.j-1][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i < NRi-1) { */
+/*            if (Block_Ptr->block.nBSE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][NRj-1][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*            if (Block_Ptr->block.nBSE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][NRj-1][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
+/*        case OCTREE_DIRECTION_MASK_BOTTOMNORTHWEST : */
+/*          if (index.i > 0 && index.j < NRj-1 && index.k > 0) { */
+/*            if (Block_Ptr->block.nBNW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][index.j+1][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i > 0 && index.j < NRj-1 ) { */
+/*            if (Block_Ptr->block.nBNW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][index.j+1][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if ( index.j < NRj-1 && index.k > 0) { */
+/*            if (Block_Ptr->block.nBNW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][index.j+1][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i > 0  && index.k > 0) { */
+/*            if (Block_Ptr->block.nBNW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][0][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*         } else if (index.k > 0) { */
+/*            if (Block_Ptr->block.nBNW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][0][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.j < NRj-1) { */
+/*            if (Block_Ptr->block.nBNW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][index.j+1][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i > 0) { */
+/*            if (Block_Ptr->block.nBNW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][0][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*            if (Block_Ptr->block.nBNW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][0][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
+/*        case OCTREE_DIRECTION_MASK_BOTTOMNORTHEAST : */
+/*          if (index.i < NRi-1 && index.j < NRj-1 && index.k > 0) { */
+/*            if (Block_Ptr->block.nBNE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][index.j+1][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i < NRi-1 && index.j < NRj-1 ) { */
+/*            if (Block_Ptr->block.nBNE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][index.j+1][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if ( index.j < NRj-1 && index.k > 0) { */
+/*            if (Block_Ptr->block.nBNE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][index.j+1][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i < NRi-1  && index.k > 0) { */
+/*            if (Block_Ptr->block.nBNE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][0][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.k > 0) { */
+/*            if (Block_Ptr->block.nBNE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][0][index.k-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.j < NRj-1) { */
+/*            if (Block_Ptr->block.nBNE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][index.j+1][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/* 	 } else if (index.i < NRi-1) { */
+/*            if (Block_Ptr->block.nBNE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][0][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/* 	 } else { */
+/*            if (Block_Ptr->block.nBNE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][0][NRk-1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
+
+/* 	 //\***UPDATE FROM HERE*******\// */
+
+/*       case OCTREE_DIRECTION_MASK_TOPSOUTHWEST : */
+/*          if (index.i > 0 && index.j > 0 && index.k < NRk-1) { */
+/*             if (Block_Ptr->block.nTSW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][index.j-1][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/* 	 } else if (index.i > 0 && index.j > 0) { */
+/*             if (Block_Ptr->block.nTSW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][index.j-1][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/* 	 } else if (index.j > 0 && index.k < NRk-1) { */
+/*             if (Block_Ptr->block.nTSW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][index.j-1][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/* 	 } else if (index.i > 0 && index.k < NRk-1) { */
+/*             if (Block_Ptr->block.nTSW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][NRj-1][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.j > 0) { */
+/*             if (Block_Ptr->block.nTSW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][index.j-1][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i > 0) { */
+/*             if (Block_Ptr->block.nTSW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][NRj-1][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.k < NRk-1) { */
+/*             if (Block_Ptr->block.nTSW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][NRj-1][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*             if (Block_Ptr->block.nTSW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][NRj-1][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
+/*        case OCTREE_DIRECTION_MASK_TOPSOUTHEAST : */
+/*          if (index.i < NRi-1 && index.j > 0 && index.k < NRk-1) { */
+/*            if (Block_Ptr->block.nTSE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][index.j-1][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i < NRi-1 && index.j > 0 ) { */
+/*            if (Block_Ptr->block.nTSE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][index.j-1][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if ( index.j > 0 && index.k < NRk-1) { */
+/*            if (Block_Ptr->block.nTSE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][index.j-1][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i < NRi-1  && index.k < NRk-1) { */
+/*            if (Block_Ptr->block.nTSE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][NRj-1][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.k < NRk-1) { */
+/*            if (Block_Ptr->block.nTSE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][0][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.j > 0) { */
+/*            if (Block_Ptr->block.nTSE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][index.j-1][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i < NRi-1) { */
+/*            if (Block_Ptr->block.nTSE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][NRj-1][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*            if (Block_Ptr->block.nTSE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][NRj-1][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
+/*        case OCTREE_DIRECTION_MASK_TOPNORTHWEST : */
+/*          if (index.i > 0 && index.j < NRj-1 && index.k < NRk-1) { */
+/*            if (Block_Ptr->block.nTNW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][index.j+1][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i > 0 && index.j < NRj-1 ) { */
+/*            if (Block_Ptr->block.nTNW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][index.j+1][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if ( index.j < NRj-1 && index.k < NRk-1) { */
+/*            if (Block_Ptr->block.nTNW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][index.j+1][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i > 0  && index.k < NRk-1) { */
+/*            if (Block_Ptr->block.nTNW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][0][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*         } else if (index.k < NRk-1) { */
+/*            if (Block_Ptr->block.nTNW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][0][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.j < NRj-1) { */
+/*            if (Block_Ptr->block.nTNW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][index.j+1][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i > 0) { */
+/*            if (Block_Ptr->block.nTNW > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i-1][0][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*            if (Block_Ptr->block.nTNW > 0) { */
+/*                neighbour_block_ptr = &(Roots[NRi-1][0][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
+/*        case OCTREE_DIRECTION_MASK_TOPNORTHEAST : */
+/*          if (index.i < NRi-1 && index.j < NRj-1 && index.k < NRk-1) { */
+/*            if (Block_Ptr->block.nTNE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][index.j+1][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i < NRi-1 && index.j < NRj-1 ) { */
+/*            if (Block_Ptr->block.nTNE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][index.j+1][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if ( index.j < NRj-1 && index.k < NRk-1) { */
+/*            if (Block_Ptr->block.nTNE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][index.j+1][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.i < NRi-1  && index.k < NRk-1) { */
+/*            if (Block_Ptr->block.nTNE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][0][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.k < NRk-1) { */
+/*            if (Block_Ptr->block.nTNE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][0][index.k+1]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else if (index.j < NRj-1) { */
+/*            if (Block_Ptr->block.nTNE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][index.j+1][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/* 	 } else if (index.i < NRi-1) { */
+/*            if (Block_Ptr->block.nTNE > 0) { */
+/*                neighbour_block_ptr = &(Roots[index.i+1][0][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } else { */
+/*            if (Block_Ptr->block.nTNE > 0) { */
+/*                neighbour_block_ptr = &(Roots[0][0][0]); */
+/*             } else { */
+/*                neighbour_block_ptr = NULL; */
+/*             } /\* endif *\/ */
+/*          } /\* endif *\/ */
+/*          break; */
+
+/*        default: */
+/*          neighbour_block_ptr = NULL; */
+/*          break; */
+/*      } /\* endswitch *\/ */
+
+
+/*      if (Block_Ptr->block.used && */
+/*          neighbour_block_ptr != NULL) {  */
+
+/*        // Descend neigbouring root block until used children are encountered. */
+
+/*         search_direction = Block_Ptr->search_dir(Search_Dir_Mask); */
+/*         while ((neighbour_block_ptr-> */
+/* 		child_ptr(OCTREE_SECTOR_BSW- */
+/* 			  search_direction.i- */
+/* 			  search_direction.j- */
+/* 			  search_direction.k+ */
+/* 			  (max(-search_direction.i*search_direction.j*search_direction.k, 0)/2)* */
+/* 			  max(max(search_direction.i, search_direction.j),search_direction.k)) != NULL)  */
+/* 	       && !(neighbour_block_ptr->block.used)) { */
+
+/*            neighbour_block_ptr =  */
+/* 	     neighbour_block_ptr->child_ptr(OCTREE_SECTOR_BSW- */
+/* 					    search_direction.i- */
+/* 					    search_direction.j- */
+/* 					    search_direction.k+ */
+/* 					    (max(-search_direction.i*search_direction.j*search_direction.k, 0)/2) */
+/* 					    *max(max(search_direction.i, search_direction.j),search_direction.k)); */
 	   
-        } /* endwhile */
-    } /* endif */ // Finally, return resulting neighbour.
-  } else { // Block has a parent.  Block is not a root. */
-    cout<<"\nError **** Octree Roots not yet defined to have children\n";cout.flush();
-  }  
+/*         } /\* endwhile *\/ */
+/*     } /\* endif *\/ // Finally, return resulting neighbour. */
+/*   } else { // Block has a parent.  Block is not a root. *\/ */
+/*     cout<<"\nError **** Octree Roots not yet defined to have children\n";cout.flush(); */
+/*   }   */
+
+
 //********************************************************
 //********************************************************
 //**********Needs to be checked for 3D AMR****************
@@ -2737,694 +2709,6 @@ inline OctreeBlock *Octree_DataStructure::getNeighbour(OctreeBlock *Block_Ptr,
   return (neighbour_block_ptr); 
 }
 
-/****************************************************************************
- * Octree_DataStructure::findRootNeighbours -- Find root neighbours.        *
- ****************************************************************************/
-inline void Octree_DataStructure::findRootNeighbours(void) {
-  int iBLK, jBLK, kBLK;
-  for ( kBLK = 0 ; kBLK <= NRk-1 ; ++kBLK ) 
-  for ( jBLK = 0 ; jBLK <= NRj-1 ; ++jBLK ) 
-      for ( iBLK = 0 ; iBLK <= NRi-1 ; ++iBLK ) {
-	  // First determine the number of neighbours based
-	  // on (i,j,k) index location of the block.
-          if (iBLK == 0 && iBLK == NRi-1) {
-	    Roots[iBLK][jBLK][kBLK].block.nW = 0;//number to the west
-	    Roots[iBLK][jBLK][kBLK].block.nTW = 0;//number to the west
-	    Roots[iBLK][jBLK][kBLK].block.nBW = 0;//number to the west
-	    Roots[iBLK][jBLK][kBLK].block.nNW = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nSW = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nTNW = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nTSW = 0;
- 	    Roots[iBLK][jBLK][kBLK].block.nBNW = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nBSW = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nE = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nTE = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nBE = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nNE = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nSE = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nTNE = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nTSE = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nBNE = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nBSE = 0;
-          } else if (iBLK == 0) {
-             Roots[iBLK][jBLK][kBLK].block.nW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nNE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nSE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 1;
-          } else if (iBLK == NRi-1) {
-             Roots[iBLK][jBLK][kBLK].block.nW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nNW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nSW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nNE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nSE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 0;
-          } else {
-             Roots[iBLK][jBLK][kBLK].block.nW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nNW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nSW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nNE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nSE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 1;
-          } /* endif */
-          if (jBLK == 0 && jBLK == NRj-1) {
-             Roots[iBLK][jBLK][kBLK].block.nS = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTS = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBS = 0;
-             Roots[iBLK][jBLK][kBLK].block.nSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nSE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nN = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTN = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBN = 0;
-             Roots[iBLK][jBLK][kBLK].block.nNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nNE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 0;
-          } else if (jBLK == 0) {
-            Roots[iBLK][jBLK][kBLK].block.nS = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTS = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBS = 0;
-             Roots[iBLK][jBLK][kBLK].block.nSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nSE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nN = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTN = 1 ;//* Roots[iBLK][jBLK][kBLK].block.nTN;
-             Roots[iBLK][jBLK][kBLK].block.nBN = 1 ;//* Roots[iBLK][jBLK][kBLK].block.nBN;
-             Roots[iBLK][jBLK][kBLK].block.nNW = 1 * Roots[iBLK][jBLK][kBLK].block.nNW;
-             Roots[iBLK][jBLK][kBLK].block.nNE = 1 * Roots[iBLK][jBLK][kBLK].block.nNE;
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 1 * Roots[iBLK][jBLK][kBLK].block.nTNW;
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 1 * Roots[iBLK][jBLK][kBLK].block.nTNE;
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 1 * Roots[iBLK][jBLK][kBLK].block.nBNW;
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 1 * Roots[iBLK][jBLK][kBLK].block.nBNE;
-	    } else if (jBLK == NRj-1) {
-             Roots[iBLK][jBLK][kBLK].block.nS = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTS = 1;//* Roots[iBLK][jBLK][kBLK].block.nTS;
-             Roots[iBLK][jBLK][kBLK].block.nBS = 1;//* Roots[iBLK][jBLK][kBLK].block.nBS;
-             Roots[iBLK][jBLK][kBLK].block.nSW = 1 * Roots[iBLK][jBLK][kBLK].block.nSW;
-             Roots[iBLK][jBLK][kBLK].block.nSE = 1 * Roots[iBLK][jBLK][kBLK].block.nSE;
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 1 * Roots[iBLK][jBLK][kBLK].block.nTSW;
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 1 * Roots[iBLK][jBLK][kBLK].block.nTSE;
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 1 * Roots[iBLK][jBLK][kBLK].block.nBSW;
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 1 * Roots[iBLK][jBLK][kBLK].block.nBSE;
-             Roots[iBLK][jBLK][kBLK].block.nN = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTN = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBN = 0;
-             Roots[iBLK][jBLK][kBLK].block.nNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nNE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 0;
-          } else {
-             Roots[iBLK][jBLK][kBLK].block.nS = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTS = 1;//* Roots[iBLK][jBLK][kBLK].block.nTS;
-             Roots[iBLK][jBLK][kBLK].block.nBS = 1;//* Roots[iBLK][jBLK][kBLK].block.nBS;
-             Roots[iBLK][jBLK][kBLK].block.nSW = 1 * Roots[iBLK][jBLK][kBLK].block.nSW;
-             Roots[iBLK][jBLK][kBLK].block.nSE = 1 * Roots[iBLK][jBLK][kBLK].block.nSE;
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 1 * Roots[iBLK][jBLK][kBLK].block.nTSW;
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 1 * Roots[iBLK][jBLK][kBLK].block.nTSE;
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 1 * Roots[iBLK][jBLK][kBLK].block.nBSW;
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 1 * Roots[iBLK][jBLK][kBLK].block.nBSE;
-             Roots[iBLK][jBLK][kBLK].block.nN = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTN = 1 ;//* Roots[iBLK][jBLK][kBLK].block.nTN;
-             Roots[iBLK][jBLK][kBLK].block.nBN = 1;// * Roots[iBLK][jBLK][kBLK].block.nBN;
-             Roots[iBLK][jBLK][kBLK].block.nNW = 1 * Roots[iBLK][jBLK][kBLK].block.nNW;
-             Roots[iBLK][jBLK][kBLK].block.nNE = 1 * Roots[iBLK][jBLK][kBLK].block.nNE;
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 1 * Roots[iBLK][jBLK][kBLK].block.nTNW;
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 1 * Roots[iBLK][jBLK][kBLK].block.nTNE;
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 1 * Roots[iBLK][jBLK][kBLK].block.nBNW;
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 1 * Roots[iBLK][jBLK][kBLK].block.nBNE;
-          } /* endif */
-
-          if (kBLK == 0 && kBLK == NRk-1) {
-             Roots[iBLK][jBLK][kBLK].block.nT = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTS = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTN = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nB = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBS = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBN = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 0;
-          } else if (kBLK == 0) {
-             Roots[iBLK][jBLK][kBLK].block.nB = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBS = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBN = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nT = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTN = 1 * Roots[iBLK][jBLK][kBLK].block.nTN;
-             Roots[iBLK][jBLK][kBLK].block.nTS = 1 * Roots[iBLK][jBLK][kBLK].block.nTS;
-             Roots[iBLK][jBLK][kBLK].block.nTE = 1 * Roots[iBLK][jBLK][kBLK].block.nTE;
-             Roots[iBLK][jBLK][kBLK].block.nTW = 1 * Roots[iBLK][jBLK][kBLK].block.nTW;
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 1 * Roots[iBLK][jBLK][kBLK].block.nTNW;
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 1 * Roots[iBLK][jBLK][kBLK].block.nTNE;
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 1 * Roots[iBLK][jBLK][kBLK].block.nTSW;
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 1 * Roots[iBLK][jBLK][kBLK].block.nTSE;
-	    } else if (kBLK == NRk-1) {
-             Roots[iBLK][jBLK][kBLK].block.nB = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBN = 1* Roots[iBLK][jBLK][kBLK].block.nBN;
-             Roots[iBLK][jBLK][kBLK].block.nBS = 1* Roots[iBLK][jBLK][kBLK].block.nBS;
-             Roots[iBLK][jBLK][kBLK].block.nBE = 1 * Roots[iBLK][jBLK][kBLK].block.nBE;
-             Roots[iBLK][jBLK][kBLK].block.nBW = 1 * Roots[iBLK][jBLK][kBLK].block.nBW;
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 1 * Roots[iBLK][jBLK][kBLK].block.nBNW;
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 1 * Roots[iBLK][jBLK][kBLK].block.nBNE;
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 1 * Roots[iBLK][jBLK][kBLK].block.nBSW;
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 1 * Roots[iBLK][jBLK][kBLK].block.nBSE;
-             Roots[iBLK][jBLK][kBLK].block.nT = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTN = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTS = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 0;
-          } else {
-             Roots[iBLK][jBLK][kBLK].block.nT = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTN = 1 * Roots[iBLK][jBLK][kBLK].block.nTN;
-             Roots[iBLK][jBLK][kBLK].block.nTS = 1 * Roots[iBLK][jBLK][kBLK].block.nTS;
-             Roots[iBLK][jBLK][kBLK].block.nTE = 1 * Roots[iBLK][jBLK][kBLK].block.nTE;
-             Roots[iBLK][jBLK][kBLK].block.nTW = 1 * Roots[iBLK][jBLK][kBLK].block.nTW;
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 1 * Roots[iBLK][jBLK][kBLK].block.nTNW;
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 1 * Roots[iBLK][jBLK][kBLK].block.nTNE;
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 1 * Roots[iBLK][jBLK][kBLK].block.nTSW;
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 1 * Roots[iBLK][jBLK][kBLK].block.nTSE;
-             Roots[iBLK][jBLK][kBLK].block.nB = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBN = 1* Roots[iBLK][jBLK][kBLK].block.nBN;
-             Roots[iBLK][jBLK][kBLK].block.nBS = 1* Roots[iBLK][jBLK][kBLK].block.nBS;
-             Roots[iBLK][jBLK][kBLK].block.nBE = 1 * Roots[iBLK][jBLK][kBLK].block.nBE;
-             Roots[iBLK][jBLK][kBLK].block.nBW = 1 * Roots[iBLK][jBLK][kBLK].block.nBW;
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 1 * Roots[iBLK][jBLK][kBLK].block.nBNW;
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 1 * Roots[iBLK][jBLK][kBLK].block.nBNE;
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 1 * Roots[iBLK][jBLK][kBLK].block.nBSW;
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 1 * Roots[iBLK][jBLK][kBLK].block.nBSE;
-          } /* endif */
-
-	  
-          // Check to see if the neighbour numbers are valid.
-	  if (Roots[iBLK][jBLK][kBLK].block.nW == 1 &&
-	      !Roots[iBLK-1][jBLK][kBLK].block.used && 
-              Roots[iBLK-1][jBLK][kBLK].childTNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK].childTNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK].childTSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK].childTSW_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK].childBNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK].childBNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK].childBSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK].childBSW_ptr == NULL) {
-             Roots[iBLK][jBLK][kBLK].block.nW = 0;
-          } /* endif */
-	  if (Roots[iBLK][jBLK][kBLK].block.nE == 1 &&
-              !Roots[iBLK+1][jBLK][kBLK].block.used && 
-              Roots[iBLK+1][jBLK][kBLK].childTNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK].childTNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK].childTSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK].childTSW_ptr == NULL && 
-              Roots[iBLK+1][jBLK][kBLK].childBNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK].childBNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK].childBSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nE = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nS == 1 &&
-              !Roots[iBLK][jBLK-1][kBLK].block.used && 
-              Roots[iBLK][jBLK-1][kBLK].childTNW_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK].childTNE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK].childTSE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK].childTSW_ptr == NULL && 
-              Roots[iBLK][jBLK-1][kBLK].childBNW_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK].childBNE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK].childBSE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nS = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nN == 1 &&
-              !Roots[iBLK][jBLK+1][kBLK].block.used && 
-              Roots[iBLK][jBLK+1][kBLK].childTNW_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK].childTNE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK].childTSE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK].childTSW_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK].childBNW_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK].childBNE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK].childBSE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK].childBSW_ptr == NULL) { 
-            Roots[iBLK][jBLK][kBLK].block.nN = 0;
-          } /* endif */
-
-	  if (Roots[iBLK][jBLK][kBLK].block.nB == 1 &&
-              !Roots[iBLK][jBLK][kBLK-1].block.used && 
-              Roots[iBLK][jBLK][kBLK-1].childTNW_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK-1].childTNE_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK-1].childTSE_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK-1].childTSW_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK-1].childBNW_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK-1].childBNE_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK-1].childBSE_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK-1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nB = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nT == 1 &&
-              !Roots[iBLK][jBLK][kBLK+1].block.used && 
-              Roots[iBLK][jBLK][kBLK+1].childTNW_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK+1].childTNE_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK+1].childTSE_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK+1].childTSW_ptr == NULL && 
-              Roots[iBLK][jBLK][kBLK+1].childBNW_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK+1].childBNE_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK+1].childBSE_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK+1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nT = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nNW == 1 &&
-              !Roots[iBLK-1][jBLK+1][kBLK].block.used && 
-              Roots[iBLK-1][jBLK+1][kBLK].childTNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK].childTNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK].childTSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK].childTSW_ptr == NULL && 
-              Roots[iBLK-1][jBLK+1][kBLK].childBNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK].childBNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK].childBSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK].childBSW_ptr == NULL) { 
-              Roots[iBLK][jBLK][kBLK].block.nNW = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nSW == 1 &&
-              !Roots[iBLK-1][jBLK-1][kBLK].block.used && 
-              Roots[iBLK-1][jBLK-1][kBLK].childTNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK].childTNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK].childTSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK].childTSW_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK].childBNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK].childBNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK].childBSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nSW = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nNE == 1 &&
-              !Roots[iBLK+1][jBLK+1][kBLK].block.used && 
-              Roots[iBLK+1][jBLK+1][kBLK].childTNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK].childTNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK].childTSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK].childTSW_ptr == NULL && 
-              Roots[iBLK+1][jBLK+1][kBLK].childBNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK].childBNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK].childBSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nNE = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nSE == 1 &&
-              !Roots[iBLK+1][jBLK-1][kBLK].block.used && 
-              Roots[iBLK+1][jBLK-1][kBLK].childTNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK].childTNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK].childTSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK].childTSW_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK].childBNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK].childBNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK].childBSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK].childBSW_ptr == NULL) {
-             Roots[iBLK][jBLK][kBLK].block.nSE = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTN == 1 &&
-              !Roots[iBLK][jBLK+1][kBLK+1].block.used && 
-              Roots[iBLK][jBLK+1][kBLK+1].childTNW_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK+1].childTNE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK+1].childTSE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK+1].childTSW_ptr == NULL && 
-              Roots[iBLK][jBLK+1][kBLK+1].childBNW_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK+1].childBNE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK+1].childBSE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK+1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nTN = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTS == 1 &&
-              !Roots[iBLK][jBLK-1][kBLK+1].block.used && 
-              Roots[iBLK][jBLK-1][kBLK+1].childTNW_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK+1].childTNE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK+1].childTSE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK+1].childTSW_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK+1].childBNW_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK+1].childBNE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK+1].childBSE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK+1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nTS = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTE == 1 &&
-              !Roots[iBLK+1][jBLK][kBLK+1].block.used && 
-              Roots[iBLK+1][jBLK][kBLK+1].childTNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK+1].childTNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK+1].childTSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK+1].childTSW_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK+1].childBNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK+1].childBNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK+1].childBSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK+1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nTE = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTW == 1 &&
-              !Roots[iBLK-1][jBLK][kBLK+1].block.used && 
-              Roots[iBLK-1][jBLK][kBLK+1].childTNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK+1].childTNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK+1].childTSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK+1].childTSW_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK+1].childBNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK+1].childBNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK+1].childBSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK+1].childBSW_ptr == NULL) {
-             Roots[iBLK][jBLK][kBLK].block.nTW = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBN == 1 &&
-              !Roots[iBLK][jBLK+1][kBLK-1].block.used && 
-              Roots[iBLK][jBLK+1][kBLK-1].childTNW_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK-1].childTNE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK-1].childTSE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK-1].childTSW_ptr == NULL && 
-              Roots[iBLK][jBLK+1][kBLK-1].childBNW_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK-1].childBNE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK-1].childBSE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK-1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nBN = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBS == 1 &&
-              !Roots[iBLK][jBLK-1][kBLK-1].block.used && 
-              Roots[iBLK][jBLK-1][kBLK-1].childTNW_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK-1].childTNE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK-1].childTSE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK-1].childTSW_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK-1].childBNW_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK-1].childBNE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK-1].childBSE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK-1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nBS = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBE == 1 &&
-              !Roots[iBLK+1][jBLK][kBLK-1].block.used && 
-              Roots[iBLK+1][jBLK][kBLK-1].childTNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK-1].childTNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK-1].childTSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK-1].childTSW_ptr == NULL && 
-              Roots[iBLK+1][jBLK][kBLK-1].childBNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK-1].childBNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK-1].childBSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK-1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nBE = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBW == 1 &&
-              !Roots[iBLK-1][jBLK][kBLK-1].block.used && 
-              Roots[iBLK-1][jBLK][kBLK-1].childTNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK-1].childTNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK-1].childTSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK-1].childTSW_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK-1].childBNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK-1].childBNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK-1].childBSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK-1].childBSW_ptr == NULL) {
-             Roots[iBLK][jBLK][kBLK].block.nBW = 0;
-          } /* endif */
-
-	  if (Roots[iBLK][jBLK][kBLK].block.nTNW == 1 &&
-              !Roots[iBLK-1][jBLK+1][kBLK+1].block.used && 
-              Roots[iBLK-1][jBLK+1][kBLK+1].childTNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK+1].childTNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK+1].childTSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK+1].childTSW_ptr == NULL && 
-              Roots[iBLK-1][jBLK+1][kBLK+1].childBNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK+1].childBNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK+1].childBSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK+1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTNE == 1 &&
-              !Roots[iBLK+1][jBLK+1][kBLK+1].block.used && 
-              Roots[iBLK+1][jBLK+1][kBLK+1].childTNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK+1].childTNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK+1].childTSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK+1].childTSW_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK+1].childBNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK+1].childBNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK+1].childBSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK+1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTSW == 1 &&
-              !Roots[iBLK-1][jBLK-1][kBLK+1].block.used && 
-              Roots[iBLK-1][jBLK-1][kBLK+1].childTNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK+1].childTNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK+1].childTSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK+1].childTSW_ptr == NULL && 
-              Roots[iBLK-1][jBLK-1][kBLK+1].childBNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK+1].childBNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK+1].childBSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK+1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTSE == 1 &&
-              !Roots[iBLK+1][jBLK-1][kBLK+1].block.used && 
-              Roots[iBLK+1][jBLK-1][kBLK+1].childTNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK+1].childTNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK+1].childTSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK+1].childTSW_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK+1].childBNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK+1].childBNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK+1].childBSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK+1].childBSW_ptr == NULL) {
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 0;
-          } /* endif */
-
-	  if (Roots[iBLK][jBLK][kBLK].block.nBNW == 1 &&
-              !Roots[iBLK-1][jBLK+1][kBLK-1].block.used && 
-              Roots[iBLK-1][jBLK+1][kBLK-1].childTNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK-1].childTNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK-1].childTSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK-1].childTSW_ptr == NULL && 
-              Roots[iBLK-1][jBLK+1][kBLK-1].childBNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK-1].childBNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK-1].childBSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK-1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBNE == 1 &&
-              !Roots[iBLK+1][jBLK+1][kBLK-1].block.used && 
-              Roots[iBLK+1][jBLK+1][kBLK-1].childTNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK-1].childTNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK-1].childTSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK-1].childTSW_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK-1].childBNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK-1].childBNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK-1].childBSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK-1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBSW == 1 &&
-              !Roots[iBLK-1][jBLK-1][kBLK-1].block.used && 
-              Roots[iBLK-1][jBLK-1][kBLK-1].childTNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK-1].childTNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK-1].childTSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK-1].childTSW_ptr == NULL && 
-              Roots[iBLK-1][jBLK-1][kBLK-1].childBNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK-1].childBNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK-1].childBSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK-1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBSE == 1 &&
-              !Roots[iBLK+1][jBLK-1][kBLK-1].block.used && 
-              Roots[iBLK+1][jBLK-1][kBLK-1].childTNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK-1].childTNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK-1].childTSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK-1].childTSW_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK-1].childBNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK-1].childBNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK-1].childBSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK-1].childBSW_ptr == NULL) {
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 0;
-          } /* endif */
-
-          // Finally, assign neighbour information.
-	  if (Roots[iBLK][jBLK][kBLK].block.nW == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoW[0] = Roots[iBLK-1][jBLK][kBLK].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nE == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoE[0] = Roots[iBLK+1][jBLK][kBLK].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nS == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoS[0] = Roots[iBLK][jBLK-1][kBLK].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nN == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoN[0] = Roots[iBLK][jBLK+1][kBLK].block.info;
-          } /* endif */
-
-	  if (Roots[iBLK][jBLK][kBLK].block.nT == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoT[0] = Roots[iBLK][jBLK][kBLK+1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nB == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoB[0] = Roots[iBLK][jBLK][kBLK-1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nNW == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoNW[0] = Roots[iBLK-1][jBLK+1][kBLK].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nSW == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoSW[0] = Roots[iBLK-1][jBLK-1][kBLK].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nNE == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoNE[0] = Roots[iBLK+1][jBLK+1][kBLK].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nSE == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoSE[0] = Roots[iBLK+1][jBLK-1][kBLK].block.info;
-          } /* endif */
-
-	  if (Roots[iBLK][jBLK][kBLK].block.nTN == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoTN[0] = Roots[iBLK][jBLK+1][kBLK+1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTS == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoTS[0] = Roots[iBLK][jBLK-1][kBLK+1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTE == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoTE[0] = Roots[iBLK+1][jBLK][kBLK+1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTW == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoTW[0] = Roots[iBLK-1][jBLK][kBLK+1].block.info;
-          } /* endif */
-
-	  if (Roots[iBLK][jBLK][kBLK].block.nBN == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoBN[0] = Roots[iBLK][jBLK+1][kBLK-1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBS == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoBS[0] = Roots[iBLK][jBLK-1][kBLK-1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBE == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoBE[0] = Roots[iBLK+1][jBLK][kBLK-1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBW == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoBW[0] = Roots[iBLK-1][jBLK][kBLK-1].block.info;
-          } /* endif */
-
-	  if (Roots[iBLK][jBLK][kBLK].block.nTNW == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoTNW[0] = Roots[iBLK-1][jBLK+1][kBLK+1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTSE == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoTSE[0] = Roots[iBLK+1][jBLK-1][kBLK+1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTNE == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoTNE[0] = Roots[iBLK+1][jBLK+1][kBLK+1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTSW == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoTSW[0] = Roots[iBLK-1][jBLK-1][kBLK+1].block.info;
-          } /* endif */
-
-	  if (Roots[iBLK][jBLK][kBLK].block.nBNW == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoBNW[0] = Roots[iBLK-1][jBLK+1][kBLK-1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBSE == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoBSE[0] = Roots[iBLK+1][jBLK-1][kBLK-1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBNE == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoBNE[0] = Roots[iBLK+1][jBLK+1][kBLK-1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBSW == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoBSW[0] = Roots[iBLK-1][jBLK-1][kBLK-1].block.info;
-          } /* endif */
-  } /* endfor */
-}
 
 /****************************************************************************
  * Octree_DataStructure::findNeighbours -- Find block neighbours.           *
@@ -4173,11 +3457,11 @@ inline int Octree_DataStructure::highestRefinementLevel(void) {
 
 inline int Octree_DataStructure::highestRefinementLevel(const int use_tree) {
    int i, j,k, level = 0;
+   int n, ntotalblks = NRk*NRj*NRi;
+   
    if (use_tree) {
-      for ( k = 0 ; k <= NRk-1 ; ++k ) 
-	for ( j = 0 ; j <= NRj-1 ; ++j ) 
-         for ( i = 0 ; i <= NRi-1 ; ++i ) {
-	    level = Roots[i][j][k].maxRefinementLevel(level);
+      for ( n = 0 ; n <= ntotalblks-1 ; ++n ) {
+         level = Roots[n].maxRefinementLevel(level);
       } /* endfor */
    } else {
       for ( i = 0; i <= Ncpu-1 ; ++i ) {
@@ -4238,13 +3522,14 @@ inline int Octree_DataStructure::numberToBeCoarsened(void) {
  ****************************************************************************/
 inline ostream &operator << (ostream &out_file,
 			     const Octree_DataStructure &QT) {
-   int iBLK, jBLK, kBLK;
+   int iBLK, jBLK, kBLK, n, ntotalblks;
+   
+   ntotalblks = QT.NRk*QT.NRj*QT.NRi;
+   
    out_file << QT.NRi << " " << QT.NRj << " " << QT.NRk << " " << QT.Ncpu << " " << QT.Nblk << "\n";
-   for ( kBLK = 0 ; kBLK <= QT.NRk-1 ; ++kBLK ) 
-     for ( jBLK = 0 ; jBLK <= QT.NRj-1 ; ++jBLK ) 
-       for ( iBLK = 0 ; iBLK <= QT.NRi-1 ; ++iBLK ) {
-	 QT.Roots[iBLK][jBLK][kBLK].write(out_file);
-       } /* endfor */
+   for ( n = 0 ; n <= ntotalblks-1 ; ++n ) {
+      QT.Roots[n].write(out_file);
+   } /* endfor */
    return (out_file);
 }
 
@@ -4262,11 +3547,11 @@ inline istream &operator >> (istream &in_file,
    in_file >> nri >> nrj >> nrk >> ncpu >> nblk;
    in_file.setf(ios::skipws);
    QT.allocate(nri, nrj, nrk, ncpu, nblk);
-   for ( kBLK = 0 ; kBLK <= QT.NRk-1 ; ++kBLK ) 
-     for ( jBLK = 0 ; jBLK <= QT.NRj-1 ; ++jBLK ) 
-       for ( iBLK = 0 ; iBLK <= QT.NRi-1 ; ++iBLK ) {
-	  QT.Roots[iBLK][jBLK][kBLK].read(in_file);
-       } /* endfor */
+
+   int ntotalblks = QT.NRk*QT.NRj*QT.NRi;
+   for ( int n = 0 ; n <= ntotalblks-1 ; ++n ) {
+      QT.Roots[n].read(in_file);
+   } /* endfor */
    return (in_file);
 }
 

@@ -104,7 +104,6 @@ void  Block_Orientation_Info::my_index(int &i_index, int &j_index,  int &k_index
    transformationMatrix.reverse();
    transformationMatrix.transform(i_index, j_index, k_index);
    
-   
 }
 
 void Block_Orientation_Info::neighbour_index(
@@ -112,7 +111,7 @@ void Block_Orientation_Info::neighbour_index(
    
    CoordTransform transformationMatrix(ctm_offsets);
    transformationMatrix.transform(i_index, j_index, k_index);
-     
+   
 }
 
 int Block_Orientation_Info::compute_message_tag(const int i_index, 
@@ -125,4 +124,29 @@ int Block_Orientation_Info::compute_message_tag(const int i_index,
    
    
 }
+
+void Block_Orientation_Info::broadcast(void){
+#ifdef _MPI_VERSION
+   MPI::COMM_WORLD.Bcast(& ctm_offsets[0], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& ctm_offsets[1], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& ctm_offsets[2], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& ctm_offsets[3], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& ctm_offsets[4], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& ctm_offsets[5], 1, MPI::INT, 0);
+
+   MPI::COMM_WORLD.Bcast(& direction_me_to_neighbour[0], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& direction_me_to_neighbour[1], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& direction_me_to_neighbour[2], 1, MPI::INT, 0);
+   
+   MPI::COMM_WORLD.Bcast(& direction_neighbour_to_me[0], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& direction_neighbour_to_me[1], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& direction_neighbour_to_me[2], 1, MPI::INT, 0);
+
+#endif    
+}
+
+   
+
+
+
 
