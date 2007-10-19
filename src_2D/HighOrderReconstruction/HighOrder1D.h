@@ -48,6 +48,7 @@ istream & operator>> (istream & os, HighOrder1D<SOLN_STATE> & Obj);
  * \class HighOrder1D
  *
  * \brief Template class for high-order variables in 1D.
+ * \nosubgrouping
  *********************************************************/
 template<class SOLN_STATE>
 class HighOrder1D{
@@ -96,7 +97,7 @@ public:
   const double & CellGeomCoeff_InPosition(const int & position) {return GeomCoeff(position,true,true,true).D();}
 
   const int & CellRings(void) const {return rings;}
-  const int & CellRecOrder(void) const {return TD.RecOrder();}
+  const int CellRecOrder(void) const {return TD.RecOrder();}
 
   MemoryStorageENO_1D & ENO_MemoryPool(void){ return ENO_Mem; }
   const MemoryStorageENO_1D & ENO_MemoryPool(void) const { return ENO_Mem; }
@@ -130,7 +131,7 @@ public:
   //@}
   //@}
 
-  // Cell geometry
+  //@{ @name Cell geometry
   GeometryType* Geometry(void){return Geom;}
   const GeometryType* Geometry(void) const {return Geom;}
   GeometryType & CellGeometry(void){return *Geom;}
@@ -139,6 +140,7 @@ public:
   const double & CellDelta (void) {return Geom->dx;}
   void SetGeometryPointer(GeometryType & Cell){ Geom = &Cell;}
   void AssociateGeometry(GeometryType & Cell);
+  //@}
 
   /* Operating functions */
   static int Nghost(int ReconstructionOrder); //!< return the required number of ghost cells
@@ -161,20 +163,49 @@ public:
   Soln_State left_state(void);
   Soln_State right_state(void);
 
-  // Integrate over the domain of the geometry associated with this high-order solution
+  /*!
+   * Integrate over the domain of the geometry associated with this high-order solution
+   */
   template<typename FO, class ReturnType>
   ReturnType IntegrateOverTheCell(const FO FuncObj, const int & digits, ReturnType _dummy_param);
-
+  
   bool IsPseudoInversePreComputed(void) const { return (PseudoInverseFlag==ON) ? true:false; }
+  void MustUpdatePseudoInverse(void) {PseudoInverseFlag = OFF;}
 
   //@{ @name Reconstructions:
+  /*! 
+   * Compute the unlimited high-order solution reconstruction.
+   */
   template<class Soln_Block_Type>
-  void ComputeUnlimitedSolutionReconstruction(Soln_Block_Type *SolnBlk, const int iCell, const int ReconstructionMethod);
+  void ComputeUnlimitedSolutionReconstruction(Soln_Block_Type *SolnBlk,
+					      const int iCell,
+					      const int ReconstructionMethod,
+					      HighOrder1D<Soln_State> & (Soln_Block_Type::*AccessToHighOrderVar)(void) = 
+					      &Soln_Block_Type::CellHighOrder);
 
+  /*! 
+   * Compute the pseudo-inverse corresponding to the unlimited high-order solution reconstruction.
+   */
   template<class Soln_Block_Type>
-  void ComputeReconstructionPseudoInverse(Soln_Block_Type *SolnBlk, const int iCell);
+  void ComputeReconstructionPseudoInverse(Soln_Block_Type *SolnBlk,
+					  const int iCell,
+					  HighOrder1D<Soln_State> & (Soln_Block_Type::*AccessToHighOrderVar)(void) = 
+					  &Soln_Block_Type::CellHighOrder);
 
+  /*! 
+   * Compute the second (low-order) reconstruction in the CENO algorithm.
+   */
+  template<class Soln_Block_Type>
+  void ComputeLowOrderReconstruction(Soln_Block_Type *SolnBlk, const int iCell, const int Limiter);
 
+  //@}
+
+  //@{ @name CENO Analysis:
+  template<class Soln_Block_Type>
+  void ComputeSmoothnessIndicator(Soln_Block_Type *SolnBlk,
+				  const int iCell,
+				  HighOrder1D<Soln_State> & (Soln_Block_Type::*AccessToHighOrderVar)(void) = 
+				  &Soln_Block_Type::CellHighOrder);
   //@}
 
   /* Friend functions */
@@ -453,11 +484,14 @@ void HighOrder1D<SOLN_STATE>::InitializeVariable(int ReconstructionOrder, int Re
     break;
 
   case RECONSTRUCTION_ENO:
-    // Deallocate memory
-    deallocate();
-    
     // Generate TaylorDerivatives container for the required reconstruction order
     CellDeriv().GenerateContainer(Reconstruction_Order);
+
+    // Generate Geometric Coefficients container for the required reconstruction order
+    CellGeomCoeff().GenerateContainer(Reconstruction_Order);
+
+    // deallocate LimitedCell
+    CellInadequateFit().reserve(0);
 
     // Set the number of rings
     SetRings();
@@ -469,11 +503,14 @@ void HighOrder1D<SOLN_STATE>::InitializeVariable(int ReconstructionOrder, int Re
     break;
 
   case RECONSTRUCTION_ENO_CHARACTERISTIC:
-    // Deallocate memory
-    deallocate();
-
     // Generate TaylorDerivatives container for the required reconstruction order
     CellDeriv().GenerateContainer(Reconstruction_Order);
+
+    // Generate Geometric Coefficients container for the required reconstruction order
+    CellGeomCoeff().GenerateContainer(Reconstruction_Order);
+
+    // deallocate LimitedCell
+    CellInadequateFit().reserve(0);
 
     // Set the number of rings
     SetRings();
@@ -499,7 +536,7 @@ void HighOrder1D<SOLN_STATE>::InitializeVariable(int ReconstructionOrder, int Re
  * an input parameters object.
  */
 template<class SOLN_STATE>
-template<typename InputParametersType>
+template<typename InputParametersType> inline
 void HighOrder1D<SOLN_STATE>::InitializeVariable(const InputParametersType & IP){
   InitializeVariable(IP.ReconstructionOrder(), IP.i_ReconstructionMethod);
 }
@@ -522,10 +559,12 @@ ReturnType HighOrder1D<SOLN_STATE>::IntegrateOverTheCell(const FO FuncObj,
  * the SolnBlk domain and the 'ReconstructionMethod' algorithm.
  */
 template<class SOLN_STATE>
-template<class Soln_Block_Type>
-void HighOrder1D<SOLN_STATE>::ComputeUnlimitedSolutionReconstruction(Soln_Block_Type *SolnBlk,
-								     const int iCell,
-								     const int ReconstructionMethod){
+template<class Soln_Block_Type> inline
+void HighOrder1D<SOLN_STATE>::
+ComputeUnlimitedSolutionReconstruction(Soln_Block_Type *SolnBlk,
+				       const int iCell,
+				       const int ReconstructionMethod,
+				       HighOrder1D<Soln_State> & (Soln_Block_Type::*AccessToHighOrderVar)(void)){
 
   vector<int> i_index(StencilSize()); 
 
@@ -535,7 +574,7 @@ void HighOrder1D<SOLN_STATE>::ComputeUnlimitedSolutionReconstruction(Soln_Block_
     MakeReconstructionStencil(CellRings(),iCell,i_index);
 
     // Solve reconstruction for the current cell
-    kExact_Reconstruction(*this,SolnBlk,iCell,i_index,StencilSize(),NumberOfTaylorDerivatives());
+    kExact_Reconstruction(*this,SolnBlk,AccessToHighOrderVar,iCell,i_index,StencilSize(),NumberOfTaylorDerivatives());
 
     // Reset the CellInadequateFit flag & the limiter value in the Taylor derivatives container
     for (int i = 0; i <= Soln_State::NumberOfVariables - 1; ++i){
@@ -546,11 +585,11 @@ void HighOrder1D<SOLN_STATE>::ComputeUnlimitedSolutionReconstruction(Soln_Block_
     break;
     
   case RECONSTRUCTION_ENO:
-    ENO_Reconstruction(SolnBlk,iCell,ENO_MemoryPool());
+    ENO_Reconstruction(*this,SolnBlk,AccessToHighOrderVar,iCell,ENO_MemoryPool());
     break;
 
   case RECONSTRUCTION_ENO_CHARACTERISTIC:
-    ENO_Characteristics_Reconstruction(SolnBlk,iCell,ENO_MemoryPool());
+    ENO_Characteristics_Reconstruction(*this,SolnBlk,AccessToHighOrderVar,iCell,ENO_MemoryPool());
     break;
     
   default:
@@ -566,11 +605,15 @@ void HighOrder1D<SOLN_STATE>::ComputeUnlimitedSolutionReconstruction(Soln_Block_
  * the SolnBlk domain and the 'ReconstructionMethod' algorithm.
  */
 template<class SOLN_STATE>
-template<class Soln_Block_Type>
+template<class Soln_Block_Type> inline
 void HighOrder1D<SOLN_STATE>::ComputeReconstructionPseudoInverse(Soln_Block_Type *SolnBlk,
-								 const int iCell){
+								 const int iCell,
+								 HighOrder1D<Soln_State> & 
+								 (Soln_Block_Type::*AccessToHighOrderVar)(void)){
 
-  if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT){
+  if (CENO_Execution_Mode::USE_CENO_ALGORITHM && 
+      CENO_Execution_Mode::CENO_SPEED_EFFICIENT && 
+      PseudoInverseFlag == OFF){
 
     vector<int> i_index(StencilSize()); 
 
@@ -578,7 +621,8 @@ void HighOrder1D<SOLN_STATE>::ComputeReconstructionPseudoInverse(Soln_Block_Type
     MakeReconstructionStencil(CellRings(),iCell,i_index);
     
     // Form the left-hand-side (LHS) term for the current cell
-    kExact_Reconstruction_Compute_LHS(*this,SolnBlk,iCell,i_index,StencilSize(),NumberOfTaylorDerivatives());
+    kExact_Reconstruction_Compute_LHS(*this,SolnBlk,AccessToHighOrderVar,
+				      iCell,i_index,StencilSize(),NumberOfTaylorDerivatives());
     
     // Compute the pseudo-inverse and override the LHS term
     LHS().pseudo_inverse_override();
@@ -593,6 +637,207 @@ void HighOrder1D<SOLN_STATE>::ComputeReconstructionPseudoInverse(Soln_Block_Type
     PseudoInverseFlag = ON;
   }
 }
+
+
+/*! 
+ * This reconstruction is carried out when the order or reconstruction
+ * is required to be dropped since the high-order interpolant is detected
+ * to be non-smooth. \n
+ * The high-order interpolant is going to be overwritten by the low-order one.
+ * \param [in] SolnBlk The solution domain
+ * \param [in] iCell  The cell for which the reconstruction is done
+ * \param [in] Limiter The limiter used during this linear least-squares reconstruction
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type>
+void HighOrder1D<SOLN_STATE>::ComputeLowOrderReconstruction(Soln_Block_Type *SolnBlk,
+							    const int iCell,
+							    const int Limiter){
+
+  // Local variables
+  int i, n, n2, n_pts, index[2];
+  double u0Min, u0Max, uQuad[2], phi;
+  double Dx, DxDx_ave;
+  Soln_State DU, DUDx_ave, dWdx;
+  int TD;
+
+  /* Carry out the limited linear least-squares solution reconstruction. */
+
+  n_pts = 2;
+  index[0] = iCell-1;
+  index[1] = iCell+1; 
+    
+  DUDx_ave = Soln_State(0);
+  DxDx_ave = ZERO;
+    
+  for ( n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
+    Dx = SolnBlk[ index[n2] ].CellCenter() - SolnBlk[iCell].CellCenter();
+    DU = SolnBlk[ index[n2] ].CellSolutionPrimVar() - SolnBlk[iCell].CellSolutionPrimVar();
+    DUDx_ave += DU*Dx;
+    DxDx_ave += Dx*Dx;
+  } /* endfor */
+    					    
+  DUDx_ave = DUDx_ave/double(n_pts);
+  DxDx_ave = DxDx_ave/double(n_pts);
+	
+  dWdx = DUDx_ave/DxDx_ave;
+	
+  for ( n = 1 ; n <= Soln_State::NumberOfVariables ; ++n ) {
+
+    if (CellInadequateFit(n) == ON){ // drop the order only for the variables that are flagged as unfit
+
+      /* Zero all the derivatives but the first two ones associated with this parameter. */
+      for (TD = 2; TD<NumberOfTaylorDerivatives(); ++TD){
+	CellDeriv(TD,n) = 0.0;
+      }
+
+      /* Copy the first order derivative in the derivatives container. */
+      CellDeriv(0,n) = SolnBlk[iCell].CellSolutionPrimVar(n);
+      CellDeriv(1,n) = dWdx[n];
+
+      /* Compute the limiter value for this parameter */
+      u0Min = SolnBlk[iCell].CellSolutionPrimVar(n);
+      u0Max = u0Min;
+      for ( n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
+	u0Min = min(u0Min, SolnBlk[ index[n2] ].CellSolutionPrimVar(n));
+	u0Max = max(u0Max, SolnBlk[ index[n2] ].CellSolutionPrimVar(n));
+      } /* endfor */
+
+      uQuad[0] = SolnBlk[iCell].CellSolutionPrimVar(n) - HALF*dWdx[n]*SolnBlk[iCell].CellDelta();
+      uQuad[1] = SolnBlk[iCell].CellSolutionPrimVar(n) + HALF*dWdx[n]*SolnBlk[iCell].CellDelta();
+
+      switch(Limiter) {
+      case LIMITER_BARTH_JESPERSEN :
+	phi = Limiter_BarthJespersen(uQuad, SolnBlk[iCell].CellSolutionPrimVar(n), u0Min, u0Max, 2);
+	break;
+      case LIMITER_VENKATAKRISHNAN :
+	phi = Limiter_Venkatakrishnan(uQuad, SolnBlk[iCell].CellSolutionPrimVar(n), u0Min, u0Max, 2);
+	break;
+      case LIMITER_VANLEER :
+	phi = Limiter_VanLeer(uQuad, SolnBlk[iCell].CellSolutionPrimVar(n), u0Min, u0Max, 2);
+	break;
+      case LIMITER_VANALBADA :
+	phi = Limiter_VanAlbada(uQuad, SolnBlk[iCell].CellSolutionPrimVar(n), u0Min, u0Max, 2);
+	break;
+      case LIMITER_ZERO :
+	phi = ZERO;
+	break;
+      case LIMITER_ONE :
+	phi = ONE;
+	break;
+      default:
+	throw runtime_error("ComputeLowOrderReconstruction() ERROR: Unknown limiter type");
+      } /* endswitch */
+
+      /* Copy the limiter value to the derivatives container. */
+      CellDeriv().Limiter(n) = phi;
+    } // endif
+  } /* endfor (n) */
+
+}
+
+//! ComputeUnlimitedSolutionReconstruction()
+/*! 
+ * Compute the unlimited high-order reconstruction for 
+ * the computational cell iCell, using information provided by
+ * the SolnBlk domain and the 'ReconstructionMethod' algorithm.
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type>
+void HighOrder1D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type *SolnBlk,
+							 const int iCell,
+							 HighOrder1D<Soln_State> &
+							 (Soln_Block_Type::*AccessToHighOrderVar)(void)){
+
+  static double SS_Regression, SS_Residual; // regression sum of squares, residual sum of squares
+  static double MeanSolution, alpha;
+  static int DOF; 		 /* degrees of freedom */
+  static double AdjustmentCoeff; /* adjustment coefficient */
+  static double Temp, DeltaTol;	
+  static int parameter, cell, ComputeSI;
+  int _StencilSize_(StencilSize());
+  vector<int> i_index(_StencilSize_); 
+
+  // Make Stencil
+  MakeReconstructionStencil(CellRings(),iCell,i_index);
+
+  /* Compute the CENO smoothness indicator for the current cell */
+
+  /* Initialize the static variables */
+  DOF = NumberOfTaylorDerivatives();
+  AdjustmentCoeff = (_StencilSize_ - DOF)/(DOF - 1.0);
+
+  for (parameter=1; parameter<=Soln_State::NumberOfVariables; ++parameter){
+
+    // Assign the Mean Solution
+    MeanSolution = SolnBlk[iCell].CellSolutionPrimVar(parameter);
+
+    /* DeltaTolerance */
+    DeltaTol = CENO_EpsilonTol::SquareToleranceAroundValue(MeanSolution);
+
+    // Compute the regression and residual sums
+    ComputeSI = OFF;		/* assume that the smoothness indicator is not computed but assigned */
+
+    /* Initialize SS_Regression & SS_Residual with the values obtained for iCell */
+    Temp = (SolnBlk[iCell].*AccessToHighOrderVar)().CellDeriv(0,parameter) - MeanSolution;
+    Temp *= Temp;		/* compute Temp square */
+    SS_Regression = Temp;
+    
+    /* Check if the Temp is greater than DeltaTol */
+    if (Temp > DeltaTol){
+      ComputeSI = ON; 	        /* Decide to compute the smoothness indicator */
+    }
+    SS_Residual = 0.0;		/* for iCell this term is 0.0 */
+    
+    /* compute S(quare)S(sum)_Regression and SS_Residual for the rest of the stencil */
+    for(cell=1; cell<_StencilSize_; ++cell){
+
+      Temp = (SolnBlk[i_index[cell]].*AccessToHighOrderVar)().CellDeriv(0,parameter) - MeanSolution;
+      Temp *= Temp;		/* compute Temp square */
+
+      if (CENO_Execution_Mode::CENO_CONSIDER_WEIGHTS){
+	if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT){
+	  /* the weighting works only with the speed efficient CENO */
+	  SS_Regression += (SolnBlk[iCell].*AccessToHighOrderVar)().GeomWeights(cell) * Temp;
+	} else {
+	  throw runtime_error("ComputeSmoothnessIndicator() 1D ERROR: CENO_CONSIDER_WEIGHTS only works with CENO_SPEED_EFFICIENT");
+	}
+      } else {
+	SS_Regression += Temp;
+      }
+      
+      /* Check if any of the Temps is greater than DeltaTol */
+      if ((ComputeSI==OFF) && (Temp > DeltaTol)){
+	ComputeSI = ON; 	/* Decide to compute the smoothness indicator */
+      }
+      
+      Temp = ( (SolnBlk[i_index[cell]].*AccessToHighOrderVar)().CellDeriv(0,parameter) - 
+	       (SolnBlk[iCell].*AccessToHighOrderVar)().SolutionAtCoordinates( (SolnBlk[i_index[cell]].*AccessToHighOrderVar)().CellCenter(),parameter) );
+
+      if (CENO_Execution_Mode::CENO_CONSIDER_WEIGHTS){
+	if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT){
+	  /* the weighting works only with the speed efficient CENO */
+	  SS_Residual += (SolnBlk[iCell].*AccessToHighOrderVar)().GeomWeights(cell) * Temp * Temp;
+	}
+      } else {
+	SS_Residual += Temp * Temp;
+      }
+    }
+    
+    // Decide if the smoothness indicator is computed or not
+    if (ComputeSI){ 
+      alpha = 1.0 - SS_Residual/SS_Regression;
+    } else {
+      // Assign the perfect fit value to the smoothness indicator
+      alpha = 1.0;
+    }
+
+    (SolnBlk[iCell].*AccessToHighOrderVar)().CellSmoothnessIndicator(parameter) = 
+      (alpha/(max(CENO_EpsilonTol::epsilon,1.0 - alpha))) * AdjustmentCoeff;
+
+  }//endfor -> parameter
+}
+
 
 //! Compute the solution at the left cell interface
 template<class SOLN_STATE> inline
@@ -702,5 +947,118 @@ double HighOrder1D<double>::SolutionAtCoordinates(const double & X_Coord, const 
   return TD.ComputeSolutionFor(X_Coord - CellCenter());
 }
 
+
+
+//! ReconstructSolutionOverDomain()
+/*! 
+ * Compute the high-order reconstruction for each computational cell 
+ * of the SolnBlk using the 'IP.i_ReconstructionMethod' algorithm.
+ * 'AccessToHighOrderVar' is the member function of Soln_Block_Type 
+ * that returns the high-order variable which is used in the
+ * reconstruction process.
+ */
+template<class Soln_Block_Type, class InputParametersType>
+void ReconstructSolutionOverDomain(Soln_Block_Type *SolnBlk,
+				   const InputParametersType & IP,
+				   HighOrder1D<typename Soln_Block_Type::HighOrderType::Soln_State> & 
+				   (Soln_Block_Type::*AccessToHighOrderVar)(void)) {
+
+  typedef HighOrder1D<typename Soln_Block_Type::HighOrderType::Soln_State> HighOrderType;
+
+  int ICl(SolnBlk[0].ICl), ICu( SolnBlk[0].ICu);
+  int i, parameter;
+  bool InadequateFitFlag;
+
+  switch(IP.i_ReconstructionMethod){
+    /* C(entral)ENO -> central stencil with post-analysis of the reconstruction */
+  case RECONSTRUCTION_CENO:
+    // require a minimum number of ghost cells equal to what is necessary for the current high-order reconstruction
+    require(SolnBlk[0].Nghost >= HighOrderType::Nghost((SolnBlk[i].*AccessToHighOrderVar)().CellRecOrder()),
+	    "ReconstructSolutionOverDomain() ERROR: Not enough ghost cells to perform the current reconstruction");
+
+    //Step 1: Compute the k-exact reconstruction
+    for (i = ICl - ((SolnBlk[i].*AccessToHighOrderVar)().CellRings() + 1);
+	 i<= ICu + ((SolnBlk[i].*AccessToHighOrderVar)().CellRings() + 1);
+	 ++i) {
+
+      // Compute PseudoInverse if required
+      (SolnBlk[i].*AccessToHighOrderVar)().ComputeReconstructionPseudoInverse(SolnBlk,i);
+
+      // Compute Unlimited High-Order Reconstruction
+      (SolnBlk[i].*AccessToHighOrderVar)().ComputeUnlimitedSolutionReconstruction(SolnBlk,i,RECONSTRUCTION_CENO,
+										  AccessToHighOrderVar);
+    }
+    
+    // Step 2 and 3: Check smoothness
+    for (i=ICl-1; i<=ICu+1; ++i){
+      
+      //Step 2: Compute the Smoothness Indicator for the cells used to compute the Riemann problem.
+      (SolnBlk[i].*AccessToHighOrderVar)().ComputeSmoothnessIndicator(SolnBlk,i,AccessToHighOrderVar);
+      
+      //Step 3: Do a post-reconstruction analysis
+      /* Check the smoothness condition */
+      for(parameter=1; parameter<=Soln_Block_Type::HighOrderType::Soln_State::NumberOfVariables; ++parameter){
+	if( (SolnBlk[i].*AccessToHighOrderVar)().CellSmoothnessIndicator(parameter) < IP.FitTolerance() ){
+
+	  /* Flag the 'i' cell with non-smooth reconstruction */
+	  (SolnBlk[i].*AccessToHighOrderVar)().CellInadequateFit(parameter) = ON;
+
+	  if (CENO_Execution_Mode::CENO_PADDING){
+	    /* Flag all the cell surrounding the 'i' cell with bad reconstruction if CENO_Padding is ON */
+	    (SolnBlk[i-1].*AccessToHighOrderVar)().CellInadequateFit(parameter) = ON;
+	    (SolnBlk[i+1].*AccessToHighOrderVar)().CellInadequateFit(parameter) = ON;
+	  }
+	}//endif
+      }//endfor(parameter)
+      
+    } //endfor(i)
+    
+    //Step 4: Switch the high-order reconstruction to a monotone piecewise one for 
+    //        those cells that are detected as unfit.
+    for (i=ICl-1; i<=ICu+1; ++i){
+      
+      // Reset flag
+      InadequateFitFlag = false;
+      
+      // analyse the 'CellInadequateFit' flags and set 'InadequateFitFlag'
+      for(parameter=1; parameter<=Soln_Block_Type::HighOrderType::Soln_State::NumberOfVariables; ++parameter){
+	if (InadequateFitFlag == true){	// break the loop if the flag is already 'true'
+	  break;
+	} else if ( (SolnBlk[i].*AccessToHighOrderVar)().CellInadequateFit(parameter) == ON ){
+	  InadequateFitFlag = true;
+	}
+      }//endfor(parameter)
+      
+      if (InadequateFitFlag == true && CENO_Execution_Mode::CENO_DROP_ORDER){
+	(SolnBlk[i].*AccessToHighOrderVar)().ComputeLowOrderReconstruction(SolnBlk,i,IP.i_Limiter);
+      }
+
+    }//endfor (i) 
+
+    break;
+    
+    /* Essentially NonOscillatory (ENO) */
+  case RECONSTRUCTION_ENO:
+    for (i = ICl-1 ;i<= ICu+1 ;++i) {
+      /* Solve reconstruction for the current cell */
+      (SolnBlk[i].*AccessToHighOrderVar)().ComputeUnlimitedSolutionReconstruction(SolnBlk,i,RECONSTRUCTION_ENO,
+										  AccessToHighOrderVar);
+    }
+    break;
+    
+    /* Essentially NonOscillatory (ENO) in characteristic variables */
+  case RECONSTRUCTION_ENO_CHARACTERISTIC:
+    for (i = ICl-1 ;i<= ICu+1 ;++i) {
+      /* Solve reconstruction for the current cell */
+      (SolnBlk[i].*AccessToHighOrderVar)().ComputeUnlimitedSolutionReconstruction(SolnBlk,i,RECONSTRUCTION_ENO_CHARACTERISTIC,
+										  AccessToHighOrderVar);
+    }
+    break;
+    
+  default:
+    throw runtime_error("ReconstructSolutionOverDomain ERROR: Unknown reconstruction method!");
+  } /* endswitch */
+  
+}
 
 #endif

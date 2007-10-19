@@ -112,6 +112,8 @@ class MemoryStorageENO_1D {
  * information about the cell averages in the neighborhood.                 *
  * HO_Var:  the high-order variable for which the coeffs. are determined    *
  * SolnBlk: the computational domain used to provide solution information   *
+ * AccessToHighOrderVar: reference to the SolutionContainer member function *
+ *      that returns the reference to the reconstructed high-order variable * 
  * i_index: the indexes of the cells that are part of the supporting stencil*
  * StencilSize:  number of cells used in the reconstruction stencil         *
  * ND: the number of Taylor expansion coefficients                          *
@@ -119,9 +121,9 @@ class MemoryStorageENO_1D {
  ***************************************************************************/
 template< class SolutionContainer>
 void kExact_Reconstruction (typename SolutionContainer::HighOrderType & HO_Var,
-			    SolutionContainer * SolnBlk, const int iCell,
-			    IndexType & i_index, const int StencilSize,
-			    const int ND)
+			    SolutionContainer * SolnBlk,
+			    typename SolutionContainer::HighOrderType & (SolutionContainer::*AccessToHighOrderVar)(void),
+			    const int iCell, IndexType & i_index, const int StencilSize, const int ND)
 {
 
   static const int NumberOfParameters = SolutionContainer::HighOrderType::Soln_State::NumberOfVariables;
@@ -219,7 +221,7 @@ void kExact_Reconstruction (typename SolutionContainer::HighOrderType & HO_Var,
 	// ********* Compute geometric integral over the neighbour's domain **********
 	for (IndexSumX = 0; IndexSumX<=P1; ++IndexSumX){
 	  A(cell-1,i-1) += ( CombP1X * PowDistanceXC *
-			     SolnBlk[i_index[cell]].CellHighOrder().CellGeomCoeff()(P1-IndexSumX) );
+			     (SolnBlk[i_index[cell]].*AccessToHighOrderVar)().CellGeomCoeff()(P1-IndexSumX) );
 	
 	  // update the binomial coefficients
 	  CombP1X = (P1-IndexSumX)*CombP1X/(IndexSumX+1);  // the index is still the old one => expression for "nC k+1"
@@ -275,9 +277,10 @@ void kExact_Reconstruction (typename SolutionContainer::HighOrderType & HO_Var,
  ***************************************************************************/
 template< class SolutionContainer> inline
 void kExact_Reconstruction_Compute_LHS (typename SolutionContainer::HighOrderType & HO_Var,
-					SolutionContainer * SolnBlk, const int iCell,
-					IndexType & i_index, const int StencilSize,
-					const int ND)
+					SolutionContainer * SolnBlk,
+					typename SolutionContainer::HighOrderType & 
+					(SolutionContainer::*AccessToHighOrderVar)(void),
+					const int iCell, IndexType & i_index, const int StencilSize, const int ND)
 {
 
   if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT){
@@ -354,17 +357,18 @@ void kExact_Reconstruction_Compute_LHS (typename SolutionContainer::HighOrderTyp
  *                                                                          *
  * This function determines the coefficients of a Taylor series expansion   *
  * which approximates the solution over the domain of the cell specified    *
- * by "i" index.                                                            *
+ * by "iCell" index.                                                        *
  * The method used is presented in:                                         *
  * "Uniformly High Order Accurate Essentially Non-oscillatory Schemes, III" *
  * Ami Harten, Journal of Computational Physics, 71, (1987)                 *
  *                                                                          *
  ***************************************************************************/
 template< class SolutionContainer> inline
-void ENO_Reconstruction (SolutionContainer * SolnBlk, const int iCell, MemoryStorageENO_1D & Mem)
+void ENO_Reconstruction (typename SolutionContainer::HighOrderType & HO_Var,
+			 SolutionContainer * SolnBlk,
+			 typename SolutionContainer::HighOrderType & (SolutionContainer::*AccessToHighOrderVar)(void),
+			 const int iCell, MemoryStorageENO_1D & Mem)
 {
-
-#if 0
 
   int cell, Counter, i, P1;
   double PowDistanceXC;
@@ -373,7 +377,7 @@ void ENO_Reconstruction (SolutionContainer * SolnBlk, const int iCell, MemorySto
   Mem.StencilPoints = 1;
   Mem.DivDiffOrder=1;
 
-  for(int parameter=1; parameter <= SolutionContainer::NumberOfVariables; ++parameter){
+  for(int parameter=1; parameter <= SolutionContainer::HighOrderType::Soln_State::NumberOfVariables; ++parameter){
 
     /* Determine the "smoothest" stencil */
     while(Mem.StencilPoints < Mem.NumOfUnknowns){
@@ -402,13 +406,13 @@ void ENO_Reconstruction (SolutionContainer * SolnBlk, const int iCell, MemorySto
       /*** SET the matrix A of the linear system (LHS) ***/
 
       /* Compute the distance between the cell center of the current cell and the reconstructed cell */
-      Mem.DeltaCellCenter = SolnBlk[cell].CellCenter() - SolnBlk[iCell].CellCenter();
+      Mem.DeltaCellCenter = SolnBlk[cell].CellCenter() - HO_Var.CellCenter();
 
       /* compute for each derivative the corresponding entry in the matrix of the linear system */
-      for( i = SolnBlk[iCell].CellDeriv().FirstElem(); i<=SolnBlk[iCell].CellDeriv().LastElem(); ++i){
+      for( i = HO_Var.CellDeriv().FirstElem(); i<=HO_Var.CellDeriv().LastElem(); ++i){
 
 	// build the row of the matrix
-	P1 = SolnBlk[iCell].CellDeriv(i,true,true).P1(); // identify P1
+	P1 = HO_Var.CellDeriv_InPosition(i).P1(); // identify P1
 	Mem.GeomIntegralOverCell = 0.0;  // set sumation variable to zero
 	Mem.CombP1X = 1.0;               // the binomial coefficient "nC k" for k=0 is 1
 	PowDistanceXC = 1.0;             // initialize PowDistanceXC
@@ -416,7 +420,7 @@ void ENO_Reconstruction (SolutionContainer * SolnBlk, const int iCell, MemorySto
 	// ********* Compute geometric integral over the neighbour's domain **********
 	for (IndexSumX = 0; IndexSumX<=P1; ++IndexSumX){
 	  Mem.GeomIntegralOverCell += (Mem.CombP1X * PowDistanceXC *
-				       SolnBlk[cell].CellGeomCoeff()(P1-IndexSumX) );
+				       SolnBlk[cell].CellHighOrder().CellGeomCoeff()(P1-IndexSumX) );
 	  // update the binomial coefficients
 	  Mem.CombP1X = (P1-IndexSumX)*Mem.CombP1X/(IndexSumX+1); // the index is still the old one => expression for "nC k+1"
 	  PowDistanceXC *= Mem.DeltaCellCenter;      // Update PowDistanceXC
@@ -434,8 +438,8 @@ void ENO_Reconstruction (SolutionContainer * SolnBlk, const int iCell, MemorySto
     Solve_LU_Decomposition(Mem.A,Mem.U,Mem.X);
 
     /* Update the coefficients D (derivatives) */
-    for( i = SolnBlk[iCell].CellDeriv().FirstElem(); i<=SolnBlk[iCell].CellDeriv().LastElem(); ++i){
-      SolnBlk[iCell].CellDeriv(i,parameter) = Mem.X(i);
+    for( i = HO_Var.CellDeriv().FirstElem(); i<=HO_Var.CellDeriv().LastElem(); ++i){
+      HO_Var.CellDeriv(i,parameter) = Mem.X(i);
     }
 
     /* Reset stencil variables for the reconstruction of the next parameter */
@@ -443,8 +447,6 @@ void ENO_Reconstruction (SolutionContainer * SolnBlk, const int iCell, MemorySto
     Mem.StencilPoints = 1;
     Mem.DivDiffOrder = 1;
   }
-
-#endif
 
 }
 
@@ -462,10 +464,19 @@ void ENO_Reconstruction (SolutionContainer * SolnBlk, const int iCell, MemorySto
  *                                                                          *
  ***************************************************************************/
 template< class SolutionContainer> inline
-void ENO_Characteristics_Reconstruction (SolutionContainer * SolnBlk, const int iCell, MemoryStorageENO_1D & Mem)
+void ENO_Characteristics_Reconstruction (typename SolutionContainer::HighOrderType & HO_Var,
+					 SolutionContainer * SolnBlk,
+					 typename SolutionContainer::HighOrderType &
+					 (SolutionContainer::*AccessToHighOrderVar)(void),
+					 const int iCell, MemoryStorageENO_1D & Mem)
 {
 
-#if 0
+//  It 'UsePrimitiveVar' macro is defined, the primitive variables are computed directly 
+//  from the characteristic ones.
+//  It this macro is not defined, the primitive variables are calculated based on the conserved ones,
+//  which are in turn determined from the characteristic ones.
+//  ----------------------------------------------------------------------------------------
+// #define UsePrimitiveVar
 
   int cell, Counter, i;
   int IndexSumX;
@@ -487,8 +498,8 @@ void ENO_Characteristics_Reconstruction (SolutionContainer * SolnBlk, const int 
   }
   #endif
 
-  for(int parameter=1; parameter <= SolutionContainer::NumberOfVariables; ++parameter){
-
+  for(int parameter=1; parameter <= SolutionContainer::HighOrderType::Soln_State::NumberOfVariables; ++parameter){
+    
     /* Determine the "smoothest" stencil */
     while(Mem.StencilPoints < Mem.NumOfUnknowns){
 
@@ -516,21 +527,22 @@ void ENO_Characteristics_Reconstruction (SolutionContainer * SolnBlk, const int 
       /*** SET the matrix A of the linear system (LHS) ***/
 
       /* Compute the distance between the cell center of the current cell and the reconstructed cell */
-      Mem.DeltaCellCenter = SolnBlk[cell].CellCenter() - SolnBlk[iCell].CellCenter();
+      Mem.DeltaCellCenter = SolnBlk[cell].CellCenter() - HO_Var.CellCenter();
 
    
       /* compute for each derivative the corresponding entry in the matrix of the linear system */
-      for( i = SolnBlk[iCell].CellDeriv().FirstElem(); i<=SolnBlk[iCell].CellDeriv().LastElem(); ++i){
+      for( i = HO_Var.CellDeriv().FirstElem(); i<=HO_Var.CellDeriv().LastElem(); ++i){
 
 	// build the row of the matrix
 	Mem.GeomIntegralOverCell = 0.0;  // set sumation variable to zero
 	// Compute geometric integral over the neighbour's domain
 	Mem.CombP1X = 1.0; // the binomial coefficient "nC k" for k=0 is 1
-	for (IndexSumX = 0; IndexSumX<=(int)SolnBlk[iCell].CellDeriv(i,true,true).P1(); ++IndexSumX){
+	for (IndexSumX = 0; IndexSumX<=(int)HO_Var.CellDeriv_InPosition(i).P1(); ++IndexSumX){
 	  Mem.GeomIntegralOverCell += (Mem.CombP1X * pow(Mem.DeltaCellCenter,IndexSumX)*
-				       SolnBlk[cell].CellGeomCoeff()(SolnBlk[iCell].CellDeriv(i,true,true).P1()-IndexSumX));
+				       SolnBlk[cell].CellHighOrder().CellGeomCoeff()(HO_Var.CellDeriv_InPosition(i).P1()-
+										     IndexSumX));
 	  // update the binomial coefficients
-	  Mem.CombP1X = (SolnBlk[iCell].CellDeriv(i,true,true).P1()-IndexSumX)*Mem.CombP1X/(IndexSumX+1);
+	  Mem.CombP1X = (HO_Var.CellDeriv_InPosition(i).P1()-IndexSumX)*Mem.CombP1X/(IndexSumX+1);
 	  // the index is still the old one => expression for "nC k+1"
 	}
 
@@ -546,8 +558,8 @@ void ENO_Characteristics_Reconstruction (SolutionContainer * SolnBlk, const int 
     Solve_LU_Decomposition(Mem.A,Mem.U,Mem.X);
 
     /* Update the coefficients D (derivatives) */
-    for( i = SolnBlk[iCell].CellDeriv().FirstElem(); i<=SolnBlk[iCell].CellDeriv().LastElem(); ++i){
-      SolnBlk[iCell].CellDeriv(i,parameter) = Mem.X(i);
+    for( i = HO_Var.CellDeriv().FirstElem(); i<=HO_Var.CellDeriv().LastElem(); ++i){
+      HO_Var.CellDeriv(i,parameter) = Mem.X(i);
     }
 
     /* Reset stencil variables for the reconstruction of the next parameter */
@@ -555,10 +567,8 @@ void ENO_Characteristics_Reconstruction (SolutionContainer * SolnBlk, const int 
     Mem.StencilPoints = 1;
     Mem.DivDiffOrder = 1;
   }
-
-#endif
-
 }
+
 
 /**********************************************************************************************************************
  ----------------------------------------------------------------------------------------------------------------------

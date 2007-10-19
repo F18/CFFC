@@ -30,6 +30,8 @@ namespace tut
 
     void SetUpDomain(char *Input_File_Name);
 
+    int Iter;
+
   private:
     
   };
@@ -42,8 +44,12 @@ namespace tut
     set_local_input_path("test_HighOrder1D");
     set_local_output_path("test_HighOrder1D");
 
+    CENO_Execution_Mode::SetDefaults();
+
     Set_Default_Input_Parameters(IP);
     IP.Verbose() = OFF;
+
+    Iter = 2000;
   }
 
   // Destructor
@@ -61,10 +67,16 @@ namespace tut
     
     /* Allocate memory for 1D Euler equation solution on
        uniform mesh. */
-    if (IP.Verbose()) cout << "\n Creating memory for Euler1D solution variables.";
+    if (IP.Verbose()){
+      cout << "\n Creating memory for Euler1D solution variables.";
+      cout.flush();
+    }
 
     if (SolnBlk != NULL){	// deallocate memory
-      if (IP.Verbose()) cout << "\n Already allcoated memory.\n Deallocating Euler1D solution variables.";
+      if (IP.Verbose()){
+	cout << "\n Already allcoated memory.\n Deallocating Euler1D solution variables.";
+	cout.flush();
+      }
       SolnBlk=Deallocate(SolnBlk);
     }
     SolnBlk=Allocate(SolnBlk,IP);
@@ -73,6 +85,7 @@ namespace tut
       Message = "\n Euler1DSolvers::Allocate() Error! Probably not enough memory!";
       if (IP.Verbose()){
 	cout << Message << endl;
+	cout.flush();
       }
       throw runtime_error(Message.c_str());
     }
@@ -80,6 +93,7 @@ namespace tut
     /* Create uniform mesh. */
     if (IP.Verbose()){
       cout << "\n Creating uniform mesh.";
+      cout.flush();
     }
 
     Grid(SolnBlk, IP.X_Min, IP.X_Max, IP.Number_of_Cells);
@@ -92,7 +106,8 @@ namespace tut
        solution variables. */
   
     if (IP.Verbose()){
-      cout << "\n Prescribing Euler1D initial data.";
+      cout << "\n Prescribing Euler1D initial data.\n";
+      cout.flush();
     }
     ICs(SolnBlk, 
 	"AIR", 
@@ -148,19 +163,54 @@ namespace tut
     set_test_name("Test HighOrder1D functionality");
     set_local_input_path("SodProblem");
 
-    IP.Verbose() = OFF;
+    IP.Verbose() = ON;
 
     // Set up domain
     SetUpDomain("sod_HighOrder.in");
 
     // Reconstruct the solution in one of the cells
-    SolnBlk[5].CellHighOrder().ComputeReconstructionPseudoInverse(SolnBlk,5);
-    SolnBlk[5].CellHighOrder().ComputeUnlimitedSolutionReconstruction(SolnBlk,5,RECONSTRUCTION_CENO);
-    //     Print_(SolnBlk[5].CellHighOrder().LHS());
-    //     Print_(SolnBlk[5].CellHighOrder().GeomWeights());
-    //     Print_(SolnBlk[5].CellHighOrder().CellDeriv());
+    //     SolnBlk[5].CellHighOrder().ComputeReconstructionPseudoInverse(SolnBlk,5);
+    //     SolnBlk[5].CellHighOrder().ComputeUnlimitedSolutionReconstruction(SolnBlk,5,RECONSTRUCTION_CENO);
+
+    ReconstructSolutionOverDomain(SolnBlk,IP,&Euler1D_UniformMesh::CellHighOrder);
+
+    for (int i=SolnBlk[0].ICl; i<=SolnBlk[0].ICu; ++i){
+      //      for(int parameter=1; parameter<=3; ++parameter){
+      if ( SolnBlk[i].CellHighOrder().CellInadequateFit(1) == 1){
+	Print_(SolnBlk[i].CellHighOrder().CellDeriv());
+      }
+      //      }
+    }
+
+//     Print_(SolnBlk[5].CellHighOrder().LHS());
+//     Print_(SolnBlk[5].CellHighOrder().GeomWeights());
+//     Print_(SolnBlk[5].CellHighOrder().CellDeriv());
 
   }
+
+  /* Test 2:*/
+  template<>
+  template<>
+  void HighOrder1D_EulerUniformMesh_object::test<2>()
+  {
+    set_test_name("Test HighOrder1D functionality with ENO");
+    set_local_input_path("SodProblem");
+
+    IP.Verbose() = ON;
+
+    // Set up domain
+    SetUpDomain("sod_HighOrder_ENO.in");
+
+    // Reconstruct the solution in one of the cells
+//     SolnBlk[55].CellHighOrder().ComputeReconstructionPseudoInverse(SolnBlk,55);
+//     SolnBlk[55].CellHighOrder().ComputeUnlimitedSolutionReconstruction(SolnBlk,55,RECONSTRUCTION_ENO_CHARACTERISTIC);
+
+    ReconstructSolutionOverDomain(SolnBlk,IP,&Euler1D_UniformMesh::CellHighOrder);
+
+    Print_(SolnBlk[55].CellHighOrder().CellDeriv());
+
+  }
+
 
 }
 

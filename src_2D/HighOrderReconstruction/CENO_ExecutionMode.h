@@ -53,7 +53,7 @@ public:
   /* Use CENO smoothness indicator with padding (set to ON to have Piecewise Linear reconstructions
      in all the cells surrounding a cell with non-smooth reconstruction)
      ---------------------------------------------------------------------------------------- */
-  static short CENO_Padding;
+  static short CENO_PADDING;
 
   /* Turn ON this flag if the geometric weighting used in the least-squares problem is 1.0/(Distance^2)
      Turn OFF if the geometric weighting is 1.0/fabs(Distance)
