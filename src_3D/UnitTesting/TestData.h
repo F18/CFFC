@@ -209,6 +209,7 @@ namespace tut {
   /* Destructor */
   inline TestData::~TestData(void){ 
     // deallocate memory
+    delete [] Global_TestSuite_Path; Global_TestSuite_Path = NULL;
     delete [] Local_Output_Path; Local_Output_Path = NULL;
     delete [] Local_Input_Path; Local_Input_Path = NULL;
     delete [] Msg; Msg = NULL;
