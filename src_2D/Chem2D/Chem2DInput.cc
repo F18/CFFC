@@ -574,15 +574,17 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     //set recaction and species parameters
     if (!CFFC_Primary_MPI_Processor()) {      
       IP.react_name = IP.React_Name;
+      IP.ct_mech_name = IP.ct_Mech_Name;
+      IP.ct_mech_file = IP.ct_Mech_File;
       for (int i = 0; i < IP.num_species; i++) {
 	IP.multispecies[i] = IP.Multispecies[i];  
       }    
 
       //load reaction data
-      if (IP.Wo.React.reactset_flag != CANTERA)
+      if (IP.react_name != "CANTERA")
 	IP.Wo.React.set_reactions(IP.react_name);
       else
-	 IP.Wo.React.ct_load_mechanism(IP.ct_mech_file, IP.ct_mech_name);
+	IP.Wo.React.ct_load_mechanism(IP.ct_mech_file, IP.ct_mech_name);
       
       //Set species if non-reacting
       if( IP.Wo.React.reactset_flag == NO_REACTIONS){
@@ -1223,15 +1225,17 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     //set recaction and species parameters
     if (!CFFC_Primary_MPI_Processor()) {      
       IP.react_name = IP.React_Name;
+      IP.ct_mech_name = IP.ct_Mech_Name;
+      IP.ct_mech_file = IP.ct_Mech_File;
       for (int i = 0; i < IP.num_species; i++) {
 	IP.multispecies[i] = IP.Multispecies[i];  
       }     
 
       //load reaction data
-      if (IP.Wo.React.reactset_flag != CANTERA)
+      if (IP.react_name != "CANTERA")
 	IP.Wo.React.set_reactions(IP.react_name);
       else
-	 IP.Wo.React.ct_load_mechanism(IP.ct_mech_file, IP.ct_mech_name);
+	IP.Wo.React.ct_load_mechanism(IP.ct_mech_file, IP.ct_mech_name);
       
       //Set species if non-reacting
       if( IP.Wo.React.reactset_flag == NO_REACTIONS){
