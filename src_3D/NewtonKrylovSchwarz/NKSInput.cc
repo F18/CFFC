@@ -118,7 +118,20 @@ void NKS_Input_Parameters::Broadcast(void) {
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(NKS_Write_Output_Cells_Freq), 
                           1, 
-                          MPI::INT, 0);
+                          MPI::INT, 0); 
+
+    MPI::COMM_WORLD.Bcast(&(Min_Number_of_Newton_Steps_With_Zero_Limiter), 
+			  1, 
+			  MPI::INT, 0);    
+    MPI::COMM_WORLD.Bcast(&(Min_Number_of_Newton_Steps_Requiring_Jacobian_Update), 
+			  1, 
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&( Min_L2_Norm_Requiring_Jacobian_Update), 
+			  1, 
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&( Min_Finite_Time_Step_Norm_Ratio), 
+			  1, 
+			  MPI::DOUBLE, 0);
 #endif
 
 }
@@ -374,6 +387,22 @@ int NKS_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
     i_command = 1030;
     value >> NKS_Write_Output_Cells_Freq;
 
+  } else if (strcmp(code, "NKS_Min_Number_of_Newton_Steps_With_Zero_Limiter") == 0) {
+    i_command = 1034;
+    value >> Min_Number_of_Newton_Steps_With_Zero_Limiter;  
+
+  } else if (strcmp(code, "NKS_Min_Number_of_Newton_Steps_Requiring_Jacobian_Update") == 0) {
+    i_command = 1035;
+    value >> Min_Number_of_Newton_Steps_Requiring_Jacobian_Update;
+
+  } else if (strcmp(code, "NKS_Min_L2_Norm_Requiring_Jacobian_Update") == 0) {
+    i_command = 1036;
+    value >> Min_L2_Norm_Requiring_Jacobian_Update;
+    
+  } else if (strcmp(code, "NKS_Min_Finite_Time_Step_Norm_Ratio") == 0) {
+    i_command = 1037;
+    value >> Min_Finite_Time_Step_Norm_Ratio;
+ 
   } else {
     i_command = INVALID_INPUT_CODE;
 

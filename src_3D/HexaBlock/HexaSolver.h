@@ -223,7 +223,7 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
       specified IBVP/BVP problem. 
     *************************************************************************/    
     
-    // New Calculation (  != CONTINUE_CODE )
+    // New Calculation (ie.  != CONTINUE_CODE )
     if(Solution_Data.command_flag == EXECUTE_CODE) { 
 
       CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization. 
@@ -242,7 +242,18 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
       solution-adaptive quadrilateral mesh.                                  
     ****************************************************************************/    
     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.    
-    
+       
+    // Open Progress File 
+    if (CFFC_Primary_MPI_Processor()) {    
+      error_flag = Open_Progress_File(Data.residual_file,
+				      Solution_Data.Input.Output_File_Name,
+				      Data.number_of_explicit_time_steps);
+      if (error_flag) {
+	cout << "\n ERROR: Unable to open residual file for the calculation.\n";
+	cout.flush(); return (error_flag);
+      } 
+    } 
+
     /********************** EXPLICIT **********************************/  
     if( (Data.number_of_explicit_time_steps < Solution_Data.Input.Maximum_Number_of_Time_Steps) ||
 	(Solution_Data.Input.Time_Accurate && Solution_Data.Input.Time_Max > Data.Time) ) {    
@@ -260,7 +271,11 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
       Hexa_Newton_Krylov_Schwarz_Solver<SOLN_pSTATE, SOLN_cSTATE> NKS(Data,Solution_Data);
       error_flag = NKS.Solve();
     }
-     
+    
+    // Close Progress File 
+    if (CFFC_Primary_MPI_Processor()) error_flag = Close_Progress_File(Data.residual_file);
+    if (error_flag) return (error_flag);
+
     /*! ************************** POST PROCESSSING *******************************
       Solution calculations complete. Write 3D solution to output and restart files  
       as required, reset solution parameters, and run other cases as specified 

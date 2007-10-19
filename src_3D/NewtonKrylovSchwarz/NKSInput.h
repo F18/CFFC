@@ -130,7 +130,14 @@ class NKS_Input_Parameters{
   int    Output_Precision, Output_Width;
   int    NKS_Write_Output_Cells_Freq; // set to zero to turn off
   //@}
-  
+
+  //@{ @name NKS Parameters
+  int Min_Number_of_Newton_Steps_With_Zero_Limiter;            //!< force 1st order for "N" steps
+  double Min_Number_of_Newton_Steps_Requiring_Jacobian_Update; //!< force Jacobian updates for "N" Newton steps       
+  double Min_L2_Norm_Requiring_Jacobian_Update;                //!< force Jacobian update for L2 < "N"
+  double Min_Finite_Time_Step_Norm_Ratio;                      //!< ramp over to full newton over 8 orders of L2 magnitude
+  //@}
+
   //@{ @name Constructors and desctructors:
   //! Constructor (assign default values)
   NKS_Input_Parameters() {
@@ -170,7 +177,12 @@ class NKS_Input_Parameters{
     Output_Precision = 2;
     Output_Width = Output_Precision + 9;
     Freeze_Limiter_Immediately = FLI_NOT_USED;
-    NKS_Write_Output_Cells_Freq = 0;
+    NKS_Write_Output_Cells_Freq = 0;  
+
+    Min_Number_of_Newton_Steps_With_Zero_Limiter = 0 ;           
+    Min_Number_of_Newton_Steps_Requiring_Jacobian_Update = 100; 
+    Min_L2_Norm_Requiring_Jacobian_Update = 1.0e-08 ;
+    Min_Finite_Time_Step_Norm_Ratio = 1.0e-10; 
   }
 
   //! Destructor

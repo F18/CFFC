@@ -387,6 +387,11 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
        value_stream >> p_Norm_Indicator;
        if (p_Norm_Indicator < 0) i_command = INVALID_INPUT_VALUE;
 
+    } else if (strcmp(code, "Number_of_Residual_Norms") == 0) {
+       i_command = 48;
+       value_stream >> Number_of_Residual_Norms;
+       if (Number_of_Residual_Norms < 0) i_command = INVALID_INPUT_VALUE;
+
     //
     // Reconstruction type indicator and related input parameters:
     //
@@ -865,7 +870,9 @@ void CFD_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(p_Norm_Indicator),
                           1,
                           MPI::INT, 0);
-
+    MPI::COMM_WORLD.Bcast(&(Number_of_Residual_Norms),
+                          1,
+                          MPI::INT, 0);
     // Reconstruction type indicator and related input parameters:
     MPI::COMM_WORLD.Bcast(Reconstruction_Type,
                           INPUT_PARAMETER_LENGTH,
