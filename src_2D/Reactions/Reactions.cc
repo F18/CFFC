@@ -666,6 +666,36 @@ void Reaction_set::ct_parse_schmidt_string( const string& schmidtStr,
 
 } // end of ct_parse_mass_string
 
+/***********************************************************************
+  Use cantera to return the species index.  Exits in error if an
+  unidentified species is requested.
+***********************************************************************/
+int Reaction_set::ct_get_species_index(const string &sp) {
+
+#ifdef _CANTERA_VERSION
+
+  // get index
+  int index = ct_gas->speciesIndex(sp);
+
+  // if index==-1, species not found
+  if (index<0) {
+    cerr<<"\n Reaction_set::ct_get_species_index() - Index of unkown species, "
+	<<sp<<", requested.\n";
+    exit(-1);
+  } // endif
+
+  // return index
+  return index;
+
+
+#else
+  cout<<"\n CODE NOT COMPILED WITH CANTERA!";
+  cout<<"\n YOU SHOULD NOT BE HERE!";
+  exit(-1);
+
+#endif //_CANTERA_VERSION
+
+} // end of ct_get_species_index
 
 
 /***********************************************************************

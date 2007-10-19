@@ -1951,6 +1951,11 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
     case IC_CHEM_CORE_FLAME :           
 
 //       if(Wo[0].React.reactset_flag == CH4_2STEP || Wo[0].React.reactset_flag == CH4_1STEP){
+
+      //
+      // Hardcoded ICs: General form
+      //
+      if (Wo[0].React.reactset_flag != CANTERA) {
 	fuel_spacing = 0.002;      //m
 	fuel_velocity = 0.70;      //m/s  //0.70
 	fuel_temp_inlet = 298.0;   //K 
@@ -1985,6 +1990,38 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 	Wr.rho = Wr.p/(Wr.Rtot()*air_temp_inlet);
 	Wr.v.zero();
 
+      //
+      // Cantera ICs: General form
+      //
+      } else {
+	fuel_spacing = 0.002;      //m
+	fuel_velocity = 0.70;      //m/s  //0.70
+	fuel_temp_inlet = 298.0;   //K 
+	tube_thickness =  0.00038; //m delta	
+
+	air_spacing = 0.030;       //m   //0.025
+	air_velocity = 0.35;       //m/s  0.35
+	air_temp_inlet = 298.0;    //K
+	ignition_temp = 1300.0;    //K
+	
+	Wr = Wo[0];
+	Wl = Wo[0];
+	
+	//fuel 65% FUEL & 35% N2
+	for(int q=0; q < Wl.ns; q++) Wl.spec[q].c =ZERO;
+	Wl.spec[Wo[0].React.ct_get_species_index("CH4")] = 0.5149;
+	Wl.spec[Wo[0].React.ct_get_species_index("N2")]  = 0.4851;
+	Wl.rho = Wl.p/(Wl.Rtot()*fuel_temp_inlet);
+	Wl.v.zero();
+
+	//air 21% O2 & 79% N2
+	for(int q=0; q < Wr.ns; q++) Wr.spec[q] = ZERO;
+	Wr.spec[Wo[0].React.ct_get_species_index("O2")] = 0.232;
+	Wr.spec[Wo[0].React.ct_get_species_index("N2")] = 0.768;
+	Wr.rho = Wr.p/(Wr.Rtot()*air_temp_inlet);
+	Wr.v.zero();
+
+      }
 
 //       } else if(Wo[0].React.reactset_flag == H2O2_1STEP) {
 	

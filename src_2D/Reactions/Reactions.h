@@ -296,6 +296,7 @@ public:
 				double* schmidt);
   void ct_parse_mole_string( const string& moleFracStr, 
 			     double* moleFracs);
+  int ct_get_species_index(const string &sp);
   // compute equilibrium concetration with cantera
   void ct_equilibrate_HP() const; // needed cause of DenseMatrix conflicts
   void ct_equilibrate_TP() const; // needed cause of DenseMatrix conflicts
