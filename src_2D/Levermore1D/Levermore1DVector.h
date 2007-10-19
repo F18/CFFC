@@ -13,6 +13,8 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "Templated_Metaprogramming.h"
+
 using namespace std;
 
 /********************************************************
@@ -25,17 +27,12 @@ class Levermore1D_Vector {
  public:
 
   /* Default constructor */
-  Levermore1D_Vector(void) {
-    zero();
-  }
+  Levermore1D_Vector(void) {zero();}
 
   /* Copy constructor */
-  Levermore1D_Vector(const Levermore1D_Vector &L) {
-    copy_from(L);
-  }
+  Levermore1D_Vector(const Levermore1D_Vector &L) {copy_from(L);}
 
   /* Operators */
-
   double& operator[](int index);
   Levermore1D_Vector& operator=(const Levermore1D_Vector &L);
   Levermore1D_Vector operator+(const Levermore1D_Vector &L) const;
@@ -46,13 +43,11 @@ class Levermore1D_Vector {
   Levermore1D_Vector operator^(const Levermore1D_Vector &L) const;
 
   /* Functions */
-
   void copy_from(const Levermore1D_Vector &L);
-  void zero();
-  void one();
+  void zero() {set_all(0.0);}
+  void one() {set_all(1.0);}
   void set_all(double in);
   void output(ostream &out) const;
-
 };
 
 /********************************************************
@@ -68,60 +63,46 @@ inline double& Levermore1D_Vector<N_moments>::operator[](int index) {
 
 template<int N_moments>
 inline Levermore1D_Vector<N_moments>& Levermore1D_Vector<N_moments>::operator=(const Levermore1D_Vector &L) {
-  if(this == &L) {return (*this);}
+  //if(this == &L) {return (*this);}
   copy_from(L);
   return (*this);
 }
 
 template<int N_moments>
-inline Levermore1D_Vector<N_moments> Levermore1D_Vector<N_moments>::operator+(const Levermore1D_Vector &L) const{
+inline Levermore1D_Vector<N_moments> Levermore1D_Vector<N_moments>::operator+(const Levermore1D_Vector &L) const {
   Levermore1D_Vector<N_moments> temp;
-  for(int i=0; i<N_moments; ++i) {
-    temp.m_values[i] = m_values[i]+L.m_values[i];
-  }
+  templated_metaprogramming::add_double_array<N_moments-1>(temp.m_values,m_values,L.m_values);
   return temp;
 }
 
 template<int N_moments>
 inline Levermore1D_Vector<N_moments>& Levermore1D_Vector<N_moments>::operator+=(const Levermore1D_Vector &L) {
-  for(int i=0; i<N_moments; ++i) {
-    m_values[i] += L.m_values[i];
-  }
+  templated_metaprogramming::addto_double_array<N_moments-1>(m_values,L.m_values);
   return (*this);
 }
 
 template<int N_moments>
 inline Levermore1D_Vector<N_moments> Levermore1D_Vector<N_moments>::operator-(const Levermore1D_Vector &L) const{
   Levermore1D_Vector<N_moments> temp;
-  for(int i=0; i<N_moments; ++i) {
-    temp.m_values[i] = m_values[i]-L.m_values[i];
-  }
+  templated_metaprogramming::subtract_double_array<N_moments-1>(temp.m_values,m_values,L.m_values);
   return temp;
 }
 
 template<int N_moments>
 inline Levermore1D_Vector<N_moments>& Levermore1D_Vector<N_moments>::operator-=(const Levermore1D_Vector &L) {
-  for(int i=0; i<N_moments; ++i) {
-    m_values[i] -= L.m_values[i];
-  }
+  templated_metaprogramming::subtractfrom_double_array<N_moments-1>(m_values,L.m_values);
   return (*this);
 }
 
 template<int N_moments>
 inline double Levermore1D_Vector<N_moments>::operator*(const Levermore1D_Vector &L) const{
-  double temp;
-  for(int i=0; i<N_moments; ++i) {
-    temp += m_values[i]*L.m_values[i];
-  }
-  return temp;
+  return templated_metaprogramming::dot_product_double_array<N_moments-1>(m_values,L.m_values);
 }
 
 template<int N_moments>
 inline Levermore1D_Vector<N_moments> Levermore1D_Vector<N_moments>::operator^(const Levermore1D_Vector &L) const{
   Levermore1D_Vector<N_moments> temp;
-  for(int i=0; i<N_moments; ++i) {
-    temp.m_values[i] = m_values[i]*L.m_values[i];
-  }
+  templated_metaprogramming::termwise_multiply_double_array<N_moments-1>(temp.m_values,m_values,L.m_values);
   return temp;
 }
 
@@ -130,26 +111,12 @@ inline Levermore1D_Vector<N_moments> Levermore1D_Vector<N_moments>::operator^(co
  ********************************************************/
 template<int N_moments>
 inline void Levermore1D_Vector<N_moments>::copy_from(const Levermore1D_Vector &L) {
-  for(int i=0; i<N_moments; ++i) {
-    m_values[i] = L.m_values[i];
-  }
-}
-
-template<int N_moments>
-inline void Levermore1D_Vector<N_moments>::zero() {
-  set_all(0.0);
-}
-
-template<int N_moments>
-inline void Levermore1D_Vector<N_moments>::one() {
-  set_all(1.0);
+  templated_metaprogramming::copy_double_array<N_moments-1>(m_values,L.m_values);
 }
 
 template<int N_moments>
 inline void Levermore1D_Vector<N_moments>::set_all(double in) {
-  for(int i=0; i<N_moments; ++i) {
-    m_values[i] = in;
-  }
+  templated_metaprogramming::set_double_array<N_moments-1>(m_values,in);
 }
 
 template<int N_moments>
