@@ -13,7 +13,9 @@
 #include <cstdlib>
 #include <cstring>
 
+#ifndef _TEMPLATED_METAPROGRAMMING
 #include "Templated_Metaprogramming.h"
+#endif //_TEMPLATED_METAPROGRAMMING
 
 using namespace std;
 

@@ -1,3 +1,5 @@
+#ifndef _TEMPLATED_METAPROGRAMMING
+#define _TEMPLATED_METAPROGRAMMING
 
 namespace templated_metaprogramming {
 
@@ -88,3 +90,5 @@ namespace templated_metaprogramming {
 
 
 }
+
+#endif //_TEMPLATED_METAPROGRAMMING

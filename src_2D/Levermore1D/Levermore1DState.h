@@ -15,8 +15,6 @@
 
 using namespace std;
 
-/* Include math macro, CFD, and gas constant header files. */
-
 #ifndef _LEVERMORE1D_VECTOR_INCLUDED
 #include "Levermore1DVector.h"
 #endif //_LEVERMORE1D_VECTOR_INCLUDED
