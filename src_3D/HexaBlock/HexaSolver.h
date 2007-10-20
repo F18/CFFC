@@ -125,8 +125,16 @@ int HexaSolver(char *Input_File_Name_ptr,
       cout.flush();
    } /* endif */
 
-/* // ************************************************************** */
-/* // output the grid geometry... */
+/*    int nused=0; */
+/*    int totalblks = Initial_Mesh.NBlk_Kdir*Initial_Mesh.NBlk_Jdir*Initial_Mesh.NBlk_Idir; */
+   
+/*    cout<<"\n   CFFC_MPI::This_Processor_Number  "<< CFFC_MPI::This_Processor_Number<<endl; */
+/*    for ( int nb = 0 ; nb < totalblks ; ++nb ){ */
+/*       cout<<"\n this Initial_Mesh.Grid_Blks["<<nb<<"].Allocated = "<<Initial_Mesh.Grid_Blks[nb].Allocated<<endl; */
+      
+/*    } */
+// **************************************************************
+// output the grid geometry...
 /*    char prefix[256], extension[256], output_file_name[256]; */
 /*    char *output_file_name_ptr; */
 /*    ofstream output_file; */
@@ -260,7 +268,6 @@ int HexaSolver(char *Input_File_Name_ptr,
                                                             Local_Adaptive_Block_List,
                                                             Local_Solution_Blocks.Soln_Blks[0].NumVar(),
                                                             OFF);
-   exit(1);
    /* Prescribe boundary data consistent with initial data. */
 
  
@@ -499,7 +506,8 @@ int HexaSolver(char *Input_File_Name_ptr,
     
    /* Update ghostcell information and prescribe boundary conditions to ensure
       that the solution is consistent on each block. */
-
+   
+ 
    Send_All_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Local_Solution_Blocks.Soln_Blks,
                                                             Local_Adaptive_Block_List,
                                                             Local_Solution_Blocks.Soln_Blks[0].NumVar(),

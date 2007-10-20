@@ -314,6 +314,7 @@ void Grid3D_Hexa_Block::Broadcast(void) {
           } /* endif */
 
           allocate(ni-2*ng, nj-2*ng, nk-2*ng, ng);
+          
        } /* endif */
     } /* endif */
 

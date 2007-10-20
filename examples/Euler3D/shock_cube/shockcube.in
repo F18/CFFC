@@ -32,20 +32,20 @@ Number_of_Cells_Idir =
 Number_of_Cells_Jdir =
 4
 Number_of_Cells_Kdir =
-4
+8
 Number_of_Blocks_Idir = 
 2
 Number_of_Blocks_Jdir =
 2
 Number_of_Blocks_Kdir =
-2
+1
 ###############################
 # Set time stepping parameters
 ###############################
 CFL_Number =
 0.1
 Time_Max = 
-0.1
+0.
 Maximum_Number_of_Time_Steps =
 0
 Number_of_Blocks_Per_Processor =

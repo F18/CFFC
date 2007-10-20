@@ -53,16 +53,18 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
                                    AdaptiveBlock3D_List                                    &Local_Adaptive_Block_List) {
    
    int n_cpu, n_blk;
+   int nused=0;
+   int totalblks = Initial_Mesh.NBlk_Kdir*Initial_Mesh.NBlk_Jdir*Initial_Mesh.NBlk_Idir;
 
-   /* Create (allocate) octree data structure. */
    
+   /* Create (allocate) octree data structure. */
    Octree_DataStructure::Create_Octree_Data_Structure(Octree,
                                                       Input.Grid_IP.NBlk_Idir,
                                                       Input.Grid_IP.NBlk_Jdir,
                                                       Input.Grid_IP.NBlk_Kdir,
                                                       Input.AMR_IP.Number_of_Processors,
                                                       Input.AMR_IP.Number_of_Blocks_Per_Processor);
-
+   
    Octree.MaximumRefinementLevel = Input.AMR_IP.Maximum_Refinement_Level-1;
    Octree.MinimumRefinementLevel = Input.AMR_IP.Minimum_Refinement_Level-1;
    
@@ -84,15 +86,15 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
    /* Loop over all initial mesh blocks and assign Octree root blocks and
       local solution block information as required. */
 
-   int nused=0;
-   int totalblks = Initial_Mesh.NBlk_Kdir*Initial_Mesh.NBlk_Jdir*Initial_Mesh.NBlk_Idir;
+   cout<<"\n   CFFC_MPI::This_Processor_Number  "<< CFFC_MPI::This_Processor_Number<<endl; 
    
    for ( int nb = 0 ; nb < totalblks ; ++nb ){
+      cout<<"\n nb = "<<nb<<"  allocated is "<<Initial_Mesh.Grid_Blks[nb].Allocated<<endl;
       if (Initial_Mesh.Grid_Blks[nb].Allocated) { // Mesh block is used!!!!
+         
          // Get next free solution block from list of available
          // solution blocks.
-               
-         if (Global_Adaptive_Block_List.Nfree > 0) {
+            if (Global_Adaptive_Block_List.Nfree > 0) {
             n_cpu = Global_Adaptive_Block_List.nextCPU();
             n_blk = Global_Adaptive_Block_List.nextBlock();
             Global_Adaptive_Block_List.update_next();
@@ -286,6 +288,8 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          Octree.Roots[nb].block.infoW[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoW[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoW[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoW[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoW[0].level =  Octree.Roots[Octree.Roots[nb].block.infoW[0].blknum].block.info.level;
+         
+    
              
       }
             
@@ -437,7 +441,9 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
       
        
       Local_Adaptive_Block_List.Block[nb] = Octree.Roots[nb].block;  
-
+//      cout<<"\n   CFFC_MPI::This_Processor_Number  "<< CFFC_MPI::This_Processor_Number<<endl;
+//      cout<<"\n nb = "<<nb<<"   "<< Local_Adaptive_Block_List.Block[nb].infoE[0]<<endl;
+      
    
    }
   

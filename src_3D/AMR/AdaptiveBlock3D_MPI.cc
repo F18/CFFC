@@ -152,11 +152,11 @@ int  AdaptiveBlock3D_List::Exchange_Messages_NoResChange(AdaptiveBlock3D_List &B
                   neighbour_cpu = info_bound_elem[i_bound_elem].cpu;
                   neighbour_blk = info_bound_elem[i_bound_elem].blknum;
 
-                  cout<<"\n ***************************************";
-                  cout<<"\n n_bound_elem["<<i_bound_elem<<"] = "<<n_bound_elem[i_bound_elem]<<endl;
+//                   cout<<"\n ***************************************";
+//                   cout<<"\n n_bound_elem["<<i_bound_elem<<"] = "<<n_bound_elem[i_bound_elem]<<endl;
                   
-                  cout<<"\n I am block # "<<i_blk<<"  my neighbour on  "<<i_bound_elem<<" is "<<neighbour_blk<<" on processor "<<neighbour_cpu<<endl;
-                  cout<<"\n  my neighbour info: "<<info_bound_elem[i_bound_elem]<<endl;
+//                   cout<<"\n I am block # "<<i_blk<<"  my neighbour on  "<<i_bound_elem<<" is "<<neighbour_blk<<" on processor "<<neighbour_cpu<<endl;
+//                   cout<<"\n  my neighbour info: "<<info_bound_elem[i_bound_elem]<<endl;
                   
                   buffer_size = ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*
                      ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)))*

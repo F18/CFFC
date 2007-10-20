@@ -5,6 +5,6 @@
 #PBS -W group_list=xinfeng
 
 cd /nfs/fe03/d1/cfd/xinfeng/CFFC/examples/Euler3D/shock_cube/
-mpirun -np 2 --gm-no-shmem --gm-kill 2 /nfs/fe03/d1/cfd/xinfeng/CFFC/src_3D/cffc3D -f shockcube.in -pde Euler3DThermallyPerfect >& out.log 
+mpirun -np 1 --gm-no-shmem --gm-kill 2 /nfs/fe03/d1/cfd/xinfeng/CFFC/src_3D/cffc3D -f shockcube.in -pde Euler3DThermallyPerfect >& out.log 
 rm euler3d.*
 

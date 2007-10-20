@@ -21,6 +21,9 @@ namespace System
    // Create or replace a directory
    int Replace_Directory(const std::string &dirName);
    
+   // Let the process sleep for a while
+   int sleep(const double s);
+
 }  // End of namespace System
 
 #endif  // _SYSTEM_LINUX_INCLUDED

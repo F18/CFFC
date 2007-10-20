@@ -26,12 +26,11 @@ void Grid3D_Hexa_Multi_Block_List::Allocate(const int Ni,
 
       Grid_Blks = new Grid3D_Hexa_Block[NBlk];
       Connectivity = new Grid3D_Hexa_Multi_Block_Connectivity[NBlk];
-    
       Allocated = 1;
-
-     
+         
    } /* endif */
 
+ 
 }
 
 /********************************************************
@@ -174,6 +173,7 @@ void Grid3D_Hexa_Multi_Block_Connectivity::Broadcast(void) {
   MPI::COMM_WORLD.Bcast(&num_neighBNE, 1, MPI::INT, 0);
   MPI::COMM_WORLD.Bcast(&num_neighBSW, 1, MPI::INT, 0);
   MPI::COMM_WORLD.Bcast(&num_neighBSE, 1, MPI::INT, 0);
+  
   MPI::COMM_WORLD.Bcast(&neighT, 1, MPI::INT, 0);
   MPI::COMM_WORLD.Bcast(&neighB, 1, MPI::INT, 0);
   MPI::COMM_WORLD.Bcast(&neighS, 1, MPI::INT, 0);
@@ -328,22 +328,24 @@ void Grid3D_Hexa_Multi_Block_List::Broadcast(void) {
           NBlk_Jdir != nj || 
           NBlk_Kdir != nk) ) { 
         if (Allocated) { 
-          Deallocate();
+           Deallocate();
         } /* endif */
         Allocate(ni, nj, nk);
+            
      } /* endif */
   } /* endif */
-
+  
   /* Broadcast each of the blocks in the multiblock mesh. */
   /* Broadcast block connectivity info in the multiblock mesh. */
+//  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+  if (Allocated ) {
+     for (int  i = 0 ; i < NBlk ; ++i ) {
+        Grid_Blks[i].Broadcast();
+        Connectivity[i].Broadcast();
 
-  if (Allocated) {
-    for (int  i = 0 ; i < NBlk ; ++i ) {
-       Grid_Blks[i].Broadcast();
-       Connectivity[i].Broadcast();
-       
-    } /* endfor */
+     } /* endfor */
   } /* endif */
+  
 #endif
 
 }

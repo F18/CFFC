@@ -14,6 +14,10 @@
 #include "AdaptiveBlock3D.h"
 #endif // _ADAPTIVEBLOCK_INCLUDED
 
+#ifndef  _SYSTEM_LINUX_INCLUDED
+#include "../System/System_Linux.h"
+#endif //_SYSTEM_LINUX_INCLUDED
+
 /*************************************************************
  * AdaptiveBlock3D -- Templated message passing subroutines. *
  *************************************************************/
@@ -153,7 +157,6 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                  
                  if (!Send_Mesh_Geometry_Only) {
                   
-                    
                     buffer_size_neighbour = ((abs(ii)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)))*
                        ((abs(jj)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)))*
                        ((abs(kk)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)))*(Number_of_Solution_Variables);
@@ -170,7 +173,7 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                        ((abs(kk)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)))*(NUM_COMP_VECTOR3D);
                  } /* endif */
 
-                 
+             
                  l = -1;
                  // Load ghost cell solution variable information as required.
                  if (!Send_Mesh_Geometry_Only) {
@@ -221,16 +224,27 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                     k_min = (!kk)*Soln_Blks[i_blk].KCl + n_kmin;
                     k_max = (!kk)*Soln_Blks[i_blk].KCu + n_kmax;
                     k_inc = 1;
-           
-                    cout<<"\n i_bound_elem = "<<i_bound_elem<<"   "<<i_min<<"  "<<j_min<<"  "<<k_min<<"  "<<i_max<<"  "<<j_max<<"  "<<k_max<<endl;
                     
+                 
+                  
                     i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_sendbuf[i_blk][i_bound_elem],
                                                         l,buffer_size_neighbour,
                                                         i_min,i_max,i_inc,
                                                         j_min,j_max,j_inc,
                                                         k_min,k_max,k_inc);
-                    
-                    
+
+
+/*                     for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+/*                        if (  CFFC_MPI::This_Processor_Number == iProc ) { */
+/*                           cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl; */
+/*                           cout<<"\n min = ("<<i_min<<", "<<j_min<<", "<<k_min<<")       max = ("<<i_max<<","<<j_max<<","<<k_max<<") "; */
+/*                           cout<<"\n i_blk = "<<i_blk<<"  i_bound_element = "<<i_bound_elem<<"   buffer_size_neighbour= "<<buffer_size_neighbour<<endl; */
+                          
+/*                           System::sleep(0.1); */
+/*                        } */
+/*                        MPI::COMM_WORLD.Barrier(); */
+/*                     } */
+                                     
                     if (i != 0) return(2200);
                  } /* endif */
                  // Load ghost cell mesh information as required.
@@ -377,7 +391,20 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                           Soln_Block_List.message_noreschange_sendbuf[i_blk][i_bound_elem][l] =
                              double(Soln_Blks[i_blk].Grid.BCtypeN[i][k]);
                        } /* endfor */
-                    
+                    for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
+                       for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
+                          l = l + 1;
+                          if (l >= buffer_size_neighbour) return(2205);
+                          Soln_Blks[i_blk].Grid.BCtypeT[i][j] =
+                             int(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem][l]);
+                       } /* endfor */
+                    for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
+                       for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
+                          l = l + 1;
+                          if (l >= buffer_size_neighbour) return(2205);
+                          Soln_Blks[i_blk].Grid.BCtypeB[i][j] =
+                             int(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem][l]);
+                       } /* endfor */ 
                  } /* endif */
               } /* endif */
            }/* end of for k*/
@@ -386,7 +413,7 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
   
 
   }   /* endfor */
-
+ 
     /* Loading of send buffers complete.  Return zero value. */
   
     return(0);
@@ -454,7 +481,8 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                                                const int Number_of_Solution_Variables,
                                                const int Send_Mesh_Geometry_Only) {
 
-    int i_blk, buffer_size, 
+   
+   int i_blk, buffer_size, 
         i_min, i_max, i_inc, i, 
         j_min, j_max, j_inc, j, 
         k_min, k_max, k_inc, k, 
@@ -464,8 +492,9 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
     int i_bound_elem; // index for boundary element, face edge or vertex
     int n_bound_elem[27];
     AdaptiveBlock3D_Info info_bound_elem[27];
-
- 
+    int n_imin, n_imax, n_jmin, n_jmax, n_kmin, n_kmax;
+    int recv_bound_elem, recv_blknum;
+    
 
     /* Check to see if the number of solution variables specified
        in the calling argument is correct. */
@@ -588,9 +617,10 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                     
                  } /* endif */
                  l = -1;
+                 
                  // Unload ghost cell solution information as required.
                  if (!Send_Mesh_Geometry_Only) {
-
+                    
                     if( ii == -1 ){
                        n_imin = Soln_Blks[i_blk].Nghost;
                        n_imax = Soln_Blks[i_blk].ICl +1;
@@ -638,15 +668,45 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                     k_max = (!kk)*Soln_Blks[i_blk].KCu + n_kmax;
                     k_inc = 1;
 
+                    cout<<"\n in Unloading the buffers"<<endl;
+                 
+                    for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) {
+                       if (  CFFC_MPI::This_Processor_Number == iProc ) {
+                          cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl;
+                          cout<<"\n min = ("<<i_min<<", "<<j_min<<", "<<k_min<<")       max = ("<<i_max<<","<<j_max<<","<<k_max<<") ";
+                          cout<<"\n i_blk = "<<i_blk<<"  i_bound_element = "<<i_bound_elem<<"   buffer_size= "<<buffer_size<<endl;
+                          
+                          System::sleep(0.1);
+                       }
+                       MPI::COMM_WORLD.Barrier();
+                    }
                     // transform the neighbour's index to my index
                     info_bound_elem[i_bound_elem].blkorient.my_index(i_min, j_min, k_min);
                     info_bound_elem[i_bound_elem].blkorient.my_index(i_max, j_max, k_max);
                     
-           
-                    i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem],
+                    recv_bound_elem = info_bound_elem[i_bound_elem].blkorient.compute_message_tag(
+                       info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[0],
+                       info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[1], 
+                       info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[2]);
+                    
+                    recv_blknum = info_bound_elem[i_bound_elem].blknum;
+                    
+                    for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) {
+                       if (  CFFC_MPI::This_Processor_Number == iProc ) {
+                          cout<<"\n min = ("<<i_min<<", "<<j_min<<", "<<k_min<<")       max = ("<<i_max<<","<<j_max<<","<<k_max<<") ";
+                          cout<<"\n recv_blk = "<<recv_blknum<<"  recv_bound_element = "<<recv_bound_elem<<"   buffer_size= "<<buffer_size<<endl;
+                          
+                          System::sleep(0.1);
+                       }
+                       MPI::COMM_WORLD.Barrier();
+                    }
+                    //    cout<<"\n recv bound elem = "<<recv_bound_elem<<"  recv_blknum =  "<<recv_blknum<<endl;
+                    i = Soln_Blks[recv_blknum].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_recbuf[recv_blknum][recv_bound_elem],
                                                              l,buffer_size,
                                                              i_min,i_max,i_inc,j_min,j_max,j_inc,
                                                              k_min,k_max,k_inc);
+                    
+                    
                     if (i != 0) return(2200);
                  } /* endif */
                  // Unload ghost cell mesh information as required.
@@ -700,13 +760,22 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                     k_inc = 1;
            
 
-                 
+                    
+
                     // transform the neighbour's index to my index
                     info_bound_elem[i_bound_elem].blkorient.my_index(i_min, j_min, k_min);
                     info_bound_elem[i_bound_elem].blkorient.my_index(i_max, j_max, k_max);
 /* 	cout<<"\nat Unload Top buffer_size ="<<buffer_size; */
 /* 	cout<<" i_min= "<<i_min<< " i_max= "<<i_max<< " i_inc= "<<i_inc << " j_min= "<<j_min<< " j_max= "<<j_max */
 /* 	    << " j_inc= "<<j_inc<< " k_min= "<< k_min << " k_max= "<<k_max<< " k_inc= "<<k_inc <<" l="<<l; */
+
+
+                    recv_bound_elem = info_bound_elem[i_bound_elem].blkorient.compute_message_tag(
+                       info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[0],
+                       info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[1], 
+                       info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[2]);
+                    
+                    recv_blknum = info_bound_elem[i_bound_elem].blknum;
                     
                     x_ref = Soln_Blks[i_blk].Grid.Node[i_min][j_min][k_min-1].X; // Reference node location.
                     for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
@@ -715,9 +784,9 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                              l = l + NUM_COMP_VECTOR3D;
                              if (l >= buffer_size) return(2201);
                              Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-                                Vector3D(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem][l-2],
-                                         Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem][l-1],
-                                         Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem][l])+x_ref;
+                                Vector3D(Soln_Block_List.message_noreschange_recbuf[ recv_blknum][ recv_bound_elem][l-2],
+                                         Soln_Block_List.message_noreschange_recbuf[ recv_blknum][ recv_bound_elem][l-1],
+                                         Soln_Block_List.message_noreschange_recbuf[ recv_blknum][ recv_bound_elem][l])+x_ref;
                           } /* endfor */
                     
                     
@@ -771,41 +840,65 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                     // transform the neighbour's index to my index
                     info_bound_elem[i_bound_elem].blkorient.my_index(i_min, j_min, k_min);
                     info_bound_elem[i_bound_elem].blkorient.my_index(i_max, j_max, k_max);
+
+
+                    recv_bound_elem = info_bound_elem[i_bound_elem].blkorient.compute_message_tag(
+                       info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[0],
+                       info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[1], 
+                       info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[2]);
                     
+                    recv_blknum = info_bound_elem[i_bound_elem].blknum;
+                    
+                    // boundary needs to be checked ... Oct. 19 2007
                     for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
                        for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
                           for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-                             Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i,j,k);
-                             Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
+                             Soln_Blks[ recv_blknum].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i,j,k);
+                             Soln_Blks[ recv_blknum].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
                           } /* endfor */
                     for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
                        for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                           l = l + 1;
                           if (l >= buffer_size) return(2202);
-                          Soln_Blks[i_blk].Grid.BCtypeW[j][k] =
-                             int(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem][l]);
+                          Soln_Blks[recv_blknum].Grid.BCtypeW[j][k] =
+                             int(Soln_Block_List.message_noreschange_recbuf[recv_blknum][recv_bound_elem][l]);
                        } /* endfor */
                     for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
                        for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ){
                           l = l + 1;
                           if (l >= buffer_size) return(2203);
-                          Soln_Blks[i_blk].Grid.BCtypeE[j][k] =
-                             int(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem][l]);
+                          Soln_Blks[recv_blknum].Grid.BCtypeE[j][k] =
+                             int(Soln_Block_List.message_noreschange_recbuf[recv_blknum][recv_bound_elem][l]);
                        } /* endfor */
                     for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
                        for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
                           l = l + 1;
                           if (l >= buffer_size) return(2204);
-                          Soln_Blks[i_blk].Grid.BCtypeS[i][k] =
-                             int(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem][l]);
+                          Soln_Blks[recv_blknum].Grid.BCtypeS[i][k] =
+                             int(Soln_Block_List.message_noreschange_recbuf[recv_blknum][recv_bound_elem][l]);
                        } /* endfor */
                     for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
                        for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
                           l = l + 1;
                           if (l >= buffer_size) return(2205);
-                          Soln_Blks[i_blk].Grid.BCtypeN[i][k] =
-                             int(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem][l]);
+                          Soln_Blks[recv_blknum].Grid.BCtypeN[i][k] =
+                             int(Soln_Block_List.message_noreschange_recbuf[recv_blknum][recv_bound_elem][l]);
                        } /* endfor */
+                    for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
+                       for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
+                          l = l + 1;
+                          if (l >= buffer_size) return(2205);
+                          Soln_Blks[recv_blknum].Grid.BCtypeT[i][j] =
+                             int(Soln_Block_List.message_noreschange_recbuf[recv_blknum][recv_bound_elem][l]);
+                       } /* endfor */
+                    for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
+                       for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
+                          l = l + 1;
+                          if (l >= buffer_size) return(2205);
+                          Soln_Blks[recv_blknum].Grid.BCtypeB[i][j] =
+                             int(Soln_Block_List.message_noreschange_recbuf[recv_blknum][recv_bound_elem][l]);
+                       } /* endfor */
+
                  } /* endif */
               } /* endif */
            }  /* endfor */ 
@@ -882,7 +975,7 @@ int Send_All_Messages(Hexa_Soln_Block *Soln_Blks,
 
     /* Load message buffers at block interfaces with no cell resolution change. */
 
-
+  
     error_flag = Load_Send_Message_Buffers_NoResChange(Soln_Blks,
                                                        Soln_Block_List,
                                                        Number_of_Solution_Variables,
@@ -894,7 +987,8 @@ int Send_All_Messages(Hexa_Soln_Block *Soln_Blks,
        return(error_flag);
     } /* endif */
 
-     
+  
+    
     /* Exchange message buffers at block interfaces with no cell resolution change. */
 
     error_flag = AdaptiveBlock3D_List::Exchange_Messages_NoResChange(Soln_Block_List,
@@ -906,21 +1000,18 @@ int Send_All_Messages(Hexa_Soln_Block *Soln_Blks,
        return(error_flag);
     } /* endif */
 
-    cout<<"\n without unload message buffers at block interfaces ... "<<endl;
-    
+        /* Unload message buffers at block interfaces with no cell resolution change. */
 
-/*     /\* Unload message buffers at block interfaces with no cell resolution change. *\/ */
-
-/*     error_flag = Unload_Receive_Message_Buffers_NoResChange(Soln_Blks, */
-/*                                                             Soln_Block_List, */
-/*                                                             Number_of_Solution_Variables, */
-/*                                                             Send_Mesh_Geometry_Only); */
-/*     if (error_flag) { */
-/*        cout << "\n " << CFFC_Version() */
-/*             << " Message Passing Error: Unload_Receive_Message_Buffers_NoResChange, " */
-/*             << "flag = " << error_flag << ".\n"; */
-/*        return(error_flag); */
-/*     } /\* endif *\/ */
+    error_flag = Unload_Receive_Message_Buffers_NoResChange(Soln_Blks,
+                                                            Soln_Block_List,
+                                                            Number_of_Solution_Variables,
+                                                            Send_Mesh_Geometry_Only);
+    if (error_flag) {
+       cout << "\n " << CFFC_Version()
+            << " Message Passing Error: Unload_Receive_Message_Buffers_NoResChange, "
+            << "flag = " << error_flag << ".\n";
+       return(error_flag);
+    } /* endif */
 
 
     /* Update corner ghost cell information for cases where there are no corner neighbours. */
