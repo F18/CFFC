@@ -23,8 +23,9 @@
  *                                                                               *
  *********************************************************************************/
 
-#include "GMRES.h"
 #include "DTS.h"
+#include "NKS_DTS.h"
+#include "GMRES.h"
 
 /*! **************************************************************
  * class: Hexa_Newton_Krylov_Schwarz_Solver                      *
@@ -44,8 +45,10 @@ class Hexa_Newton_Krylov_Schwarz_Solver {
                              NumVar = blocksize; } 
  
   double *L2norm_current, *L1norm_current, *Max_norm_current; 
+  double L2norm_first, L1norm_first, Max_norm_first;  
+  double L2norm_current_n, L1norm_current_n, Max_norm_current_n;
 
-  CPUTime total_cpu_time, start_total_cpu_time;
+  CPUTime total_cpu_time, start_total_cpu_time; //better names specific to NKS..
 
   protected: 
   public:
@@ -69,11 +72,13 @@ class Hexa_Newton_Krylov_Schwarz_Solver {
   ~Hexa_Newton_Krylov_Schwarz_Solver() {deallocate();}
 
   //Member Functions
-  int Solve();
-
-  int Steady_Solve(const double &,const int &);
+  void Calculate_Norms(const int &);
+  int Restart_NKS();
   int Newton_Update();       //private ??
-  double Finite_Time_Step(); //private ??
+  double Finite_Time_Step(const int &); //private ??
+
+  int Solve();
+  int Steady_Solve(const double &,const int &);
 
 };
 
@@ -144,6 +149,152 @@ deallocate() {
   if(L1norm_current != NULL)   delete[] L1norm_current; 
   if(Max_norm_current != NULL) delete[] Max_norm_current;
 } 
+
+/*! *****************************************************************************************
+ *   Routine: 
+ ********************************************************************************************/
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+void Hexa_Newton_Krylov_Schwarz_Solver<SOLN_pSTATE,SOLN_cSTATE>::
+Calculate_Norms(const int &Number_of_Newton_Steps){
+
+  // Calculate 1-, 2-, and max-norms of density residual (dUdt) for all blocks. 
+  
+  // NEED TO MOD THIS FOR  Number_of_Residual_Norms >1
+  L1norm_current[0] = Solution_Data->Local_Solution_Blocks.L1_Norm_Residual();       
+  L2norm_current[0] = Solution_Data->Local_Solution_Blocks.L2_Norm_Residual();
+  Max_norm_current[0] = Solution_Data->Local_Solution_Blocks.Max_Norm_Residual();
+  
+  for(int q=0; q < Solution_Data->Input.Number_of_Residual_Norms; q++){
+    L1norm_current[q] = CFFC_Summation_MPI(L1norm_current[q]);      // L1 norm for all processors.
+    L2norm_current[q] = sqr(L2norm_current[q]);
+    L2norm_current[q] = sqrt(CFFC_Summation_MPI(L2norm_current[q])); // L2 norm for all processors.
+    Max_norm_current[q] = CFFC_Maximum_MPI(Max_norm_current[q]);     // Max norm for all processors.
+  }
+  
+  //Relative Norms used for CFL scaling during startup
+  if (Number_of_Newton_Steps == 1 ) {
+    L2norm_first = max(L2norm_first,L2norm_current[Solution_Data->Input.p_Norm_Indicator]);  //another restart cludge
+    L1norm_first = L1norm_current[Solution_Data->Input.p_Norm_Indicator];
+    Max_norm_first = Max_norm_current[Solution_Data->Input.p_Norm_Indicator];
+  } else {
+    L2norm_first = max(L2norm_first, L2norm_current[Solution_Data->Input.p_Norm_Indicator]);
+    L1norm_first = max(L1norm_first, L1norm_current[Solution_Data->Input.p_Norm_Indicator]);
+    Max_norm_first = max(Max_norm_first, Max_norm_current[Solution_Data->Input.p_Norm_Indicator]);   
+  } 
+  
+  // Calculate ratio of initial and current 2-norms. 
+  L2norm_current_n   = L2norm_current[Solution_Data->Input.p_Norm_Indicator] / L2norm_first; 
+  L1norm_current_n   = L1norm_current[Solution_Data->Input.p_Norm_Indicator] / L1norm_first; 
+  Max_norm_current_n = Max_norm_current[Solution_Data->Input.p_Norm_Indicator] / Max_norm_first;
+
+}
+
+/*! *****************************************************************************************
+ *   Routine: 
+ ********************************************************************************************/
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+int Hexa_Newton_Krylov_Schwarz_Solver<SOLN_pSTATE,SOLN_cSTATE>::
+Restart_NKS(){
+  int error_flag(0);
+
+//     // NEEDS SOME MODS TO Write and Read Restart_Solution to work properly....
+//     // Periodically save restart solution files  -> !!!!!! SHOULD USE Implicit_Restart_Solution_Save_Frequency ???
+//     if ( (number_of_explicit_time_steps + Number_of_Newton_Steps - 1)%Solution_Data->Input.Restart_Solution_Save_Frequency == 0 ) {       
+//       if(CFFC_Primary_MPI_Processor()) cout << "\n\n  Saving solution to restart data file(s) after"
+// 			   << " n = " << number_of_explicit_time_steps << " steps (iterations). \n";      
+//       error_flag = Write_QuadTree(QuadTree,  Input_Parameters);
+//       error_flag = Write_Restart_Solution(SolnBlk, 
+// 					  List_of_Local_Solution_Blocks, 
+// 					  Input_Parameters,
+// 					  number_of_explicit_time_steps + Number_of_Newton_Steps - 1 ,
+// 					  L2norm_first,
+// 					  NKS_processor_cpu_time);        //Should add explicit processor time as well????
+//       if (error_flag) {
+// 	cout << "\n NKS ERROR: Unable to open restart output data file(s) on processor "
+// 	     << List_of_Local_Solution_Blocks.ThisCPU<< ".\n";
+// 	cout.flush();
+//       } 
+//       error_flag = CFFC_OR_MPI(error_flag);
+//       if (error_flag) return (error_flag);  cout.flush();
+//     } 
+
+  return error_flag;
+}
+
+/*! *****************************************************************************************
+ * Generic Newton_Update                                                                    *
+ *                                                                                          *
+ * This routine updates the previous Solution Data Uo with the deltaU from the GMRES        *                  
+ * iterative solver.  U = Uo + GMRES.delatU                                                 *
+ *                                                                                          *
+ ********************************************************************************************/
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+int Hexa_Newton_Krylov_Schwarz_Solver<SOLN_pSTATE,SOLN_cSTATE>:: 
+Newton_Update(){
+
+  int Num_Var = Solution_Data->Local_Solution_Blocks.Soln_Blks[0].NumVar();
+
+  /* Update Solution. No updates to Ghost Cells, let the BC's take care of it */
+    for ( int Bcount = 0 ; Bcount < Data->Local_Adaptive_Block_List.Nblk; ++Bcount ) {      
+      if (Data->Local_Adaptive_Block_List.Block[Bcount].used) {
+
+	for (int k = Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].KCl; 
+	     k <= Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].KCu; k++){
+	  for (int j = Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].JCl; 
+	       j <= Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].JCu; j++){
+	    for (int i = Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].ICl; 
+		 i <= Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].ICu; i++){
+	  
+	      /* Update solutions in conversed variables  U = Uo + deltaU = Uo + denormalized(x) */	 
+	      for(int varindex =1; varindex <= Num_Var; varindex++){  
+// 	      Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].U[i][j][k][varindex] = 
+// 		Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].Uo[i][j][k][varindex] 
+// /		+  GMRES.deltaU(Bcount,i,j,k,varindex-1);
+	      } 	      	  
+	      // THIS FUNCTION HAS NO CHECKS FOR INVALID SOLUTIONS, 
+	      // YOU PROBABLY WANT TO CREATE A SPECIALIZATION OF THIS FUNCTION SPECIFIC 
+	      // FOR YOUR EQUATION SYSTEM 
+	      
+	      //Update solution in primitive variables.
+	      Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].W[i][j][k] = 
+		Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].U[i][j][k].W(); 
+	    } 
+	  } 
+	}
+      } 
+    } 
+  
+  cout<<"\n USING GENERIC NEWTON_UPDATE \n";
+
+  return 0; 
+}
+
+/*! *****************************************************************************************
+ * Generic Finite_Time_Step                                                                 *
+ *                                                                                          *
+ * This routine calculates the Finite Time Step using a basic SER approach for startup,     *                  
+ * returning a "CFL" number to multiply by the stability determined dt.                     *
+ *                                                                                          *
+ ********************************************************************************************/
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+double Hexa_Newton_Krylov_Schwarz_Solver<SOLN_pSTATE,SOLN_cSTATE>:: 
+Finite_Time_Step(const int &Number_of_Newton_Steps){
+
+  double CFL_current;
+
+  //SER 
+  if (L2norm_current_n > Solution_Data->Input.NKS_IP.Min_Finite_Time_Step_Norm_Ratio ) { 
+    CFL_current = Solution_Data->Input.NKS_IP.Finite_Time_Step_Initial_CFL*
+      pow( max(ONE, ONE/L2norm_current_n),ONE ); 
+      //      pow(min(ONE, max(ONE, ONE/L2norm_current_n)*MIN_FINITE_TIME_STEP_NORM_RATIO),ONE );     
+  } else {
+    CFL_current = Solution_Data->Input.NKS_IP.Finite_Time_Step_Initial_CFL;
+  } 
+ 
+  return CFL_current;
+
+}
+
 
 /*! *****************************************************************************************
  *  Routine: Hexa_Newton_Krylov_Schwarz_Solver
@@ -264,7 +415,6 @@ Solve(){
 }
 
 
-
 /*! *****************************************************************************************
  *  Routine: Newton_Krylov_Solver
  *                                                       
@@ -278,12 +428,20 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
   int error_flag(0);
 
   /* Local Variabls */ 
-  double L2norm_first(ZERO), L1norm_first(ZERO), Max_norm_first(ZERO);   //RESTART -> NON_ZERO
-  double L2norm_current_n(ONE), L1norm_current_n(ONE), Max_norm_current_n(ONE);
-
   double dTime, CFL_current;
   CPUTime total_cpu_time, start_total_cpu_time;
-  
+  bool limiter_check= true;
+
+  // SHOULD BE IN GMRES !!!!!! ?????????
+  bool GMRES_Restarted = false, GMRES_Failed = false;
+  int GMRES_Restarts = 0, GMRES_Failures = 0, GMRES_Iters = 0, All_Iters_index = 0;
+  int *GMRES_All_Iters = new int[Solution_Data->Input.NKS_IP.Maximum_Number_of_NKS_Iterations];
+
+  //Reset relative Norms ???;
+  L2norm_first = L1norm_first = Max_norm_first = ZERO;  
+  L2norm_current_n = L1norm_current_n = Max_norm_current_n = ONE;
+
+
   /**************************************************************************/
   /******************* BEGIN NEWTON-KRYLOV-SCHWARZ CALCULATION **************/
   /**************************************************************************/
@@ -314,9 +472,9 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
     /* Calculate residual: dUdt[i][j][0]  from U,W */ 
     for ( int Bcount = 0 ; Bcount < Data->Local_Adaptive_Block_List.Nblk; ++Bcount ) {
       if (Data->Local_Adaptive_Block_List.Block[Bcount].used == ADAPTIVEBLOCK3D_USED) {
-	error_flag = dUdt_Residual_Evaluation_DTS(Solution_Data,
-						  DTS_SolnBlk,
-						  Bcount);
+	error_flag = dUdt_Residual_Evaluation_DTS<SOLN_pSTATE,SOLN_cSTATE>(Solution_Data,
+									   DTS_SolnBlk,
+									   Bcount);
       } 
     } 
     /**************************************************************************/
@@ -341,249 +499,239 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
 // 		                    List_of_Local_Solution_Blocks);
     /**************************************************************************/
 
-//     /**************************************************************************/
-//     /* Calculate 1-, 2-, and max-norms of density residual (dUdt) for all blocks. */   
 
-//     // NEED TO MOD THIS FOR  Number_of_Residual_Norms >1
-//     L1norm_current[0] = Hexa_MultiBlock_List.L1_Norm_Residual();
-//     L2norm_current[0] = Hexa_MultiBlock_List.L2_Norm_Residual();
-//     Max_norm_current[0] =Hexa_MultiBlock_List.Max_Norm_Residual();
+    /**************************************************************************/
+    /* Calculate 1-, 2-, and max-norms of density residual (dUdt) for all blocks. */   
+    Calculate_Norms(Number_of_Newton_Steps);
+    /**************************************************************************/
+    Data->processor_cpu_time.update();
+    Data->total_cpu_time.cput = CFFC_Summation_MPI(Data->processor_cpu_time.cput); 
 
-//     for(int q=0; q < Solution_Data->Input.Number_of_Residual_Norms; q++){
-//       L1norm_current[q] = CFDkit_Summation_MPI(L1norm_current[q]);      // L1 norm for all processors.
-//       L2norm_current[q] = sqr(L2norm_current[q]);
-//       L2norm_current[q] = sqrt(CFDkit_Summation_MPI(L2norm_current[q])); // L2 norm for all processors.
-//       Max_norm_current[q] = CFDkit_Maximum_MPI(Max_norm_current[q]);     // Max norm for all processors.
-//     }
+    // Output Solution Progress 
+    if (CFFC_Primary_MPI_Processor() &&
+	(!Solution_Data->Input.NKS_IP.Dual_Time_Stepping ||
+	 (Solution_Data->Input.NKS_IP.Dual_Time_Stepping && Number_of_Newton_Steps == 1)) ) {  //Output only 1st Step when using DTS
+      
+//       Output_Progress_to_File(residual_file,
+// 			      number_of_explicit_time_steps+real_NKS_Step,
+// 			      Physical_Time*THOUSAND,
+// 			      total_cpu_time, 
+// 			      L1norm_current,      //maybe switch to current_n so all scale from 1 ???
+// 			      L2norm_current,
+// 			      Max_norm_current,
+// 			      SolnBlk[0].residual_variable-1,
+// 			      SolnBlk[0].Number_of_Residual_Norms);
+    }
 
-//     if (Number_of_Newton_Steps == 1 ) {
-//       L2norm_first = max(L2norm_first,L2norm_current[Solution_Data->Input.Residual_Norm]);  //another restart cludge
-//       L1norm_first = L1norm_current[Solution_Data->Input.Residual_Norm];
-//       Max_norm_first = Max_norm_current[Solution_Data->Input.Residual_Norm];
-//     } else {
-//       L2norm_first = max(L2norm_first, L2norm_current[Solution_Data->Input.Residual_Norm]);
-//       L1norm_first = max(L1norm_first, L1norm_current[Solution_Data->Input.Residual_Norm]);
-//       Max_norm_first = max(Max_norm_first, Max_norm_current[Solution_Data->Input.Residual_Norm]);   
-//     } 
-
-//     /* Calculate ratio of initial and current 2-norms. */
-//     L2norm_current_n   = L2norm_current[Solution_Data->Input.Residual_Norm] / L2norm_first; 
-//     L1norm_current_n   = L1norm_current[Solution_Data->Input.Residual_Norm] / L1norm_first; 
-//     Max_norm_current_n = Max_norm_current[Solution_Data->Input.Residual_Norm] / Max_norm_first;
-    
-//     /**************************************************************************/
-
-//     /**************************************************************************/
-//     /*************** Restart & Progress ***************************************/
-//     /**************************************************************************/
-//     NKS_processor_cpu_time.update();
-//     // Total CPU time for all processors.
-//     NKS_total_cpu_time.cput = CFDkit_Summation_MPI(NKS_processor_cpu_time.cput); 
-
-// //     // NEEDS SOME MODS TO Write and Read Restart_Solution to work properly....
-// //     // Periodically save restart solution files  -> !!!!!! SHOULD USE Implicit_Restart_Solution_Save_Frequency ???
-// //     if ( (number_of_explicit_time_steps + Number_of_Newton_Steps - 1)%Solution_Data->Input.Restart_Solution_Save_Frequency == 0 ) {       
-// //       if(CFDkit_Primary_MPI_Processor()) cout << "\n\n  Saving solution to restart data file(s) after"
-// // 			   << " n = " << number_of_explicit_time_steps << " steps (iterations). \n";      
-// //       error_flag = Write_QuadTree(QuadTree,  Input_Parameters);
-// //       error_flag = Write_Restart_Solution(SolnBlk, 
-// // 					  List_of_Local_Solution_Blocks, 
-// // 					  Input_Parameters,
-// // 					  number_of_explicit_time_steps + Number_of_Newton_Steps - 1 ,
-// // 					  L2norm_first,
-// // 					  NKS_processor_cpu_time);        //Should add explicit processor time as well????
-// //       if (error_flag) {
-// // 	cout << "\n NKS ERROR: Unable to open restart output data file(s) on processor "
-// // 	     << List_of_Local_Solution_Blocks.ThisCPU<< ".\n";
-// // 	cout.flush();
-// //       } 
-// //       error_flag = CFDkit_OR_MPI(error_flag);
-// //       if (error_flag) return (error_flag);  cout.flush();
-// //     } 
-
-//     // Output progress information for the calculation
-//     if (CFDkit_Primary_MPI_Processor()){
-//       Output_Progress_to_File(Data.residual_file,
-// 			      number_of_explicit_time_steps+Number_of_Newton_Steps-1,  
-// 			      ZERO,
-// 			      NKS_total_cpu_time,     //Should add explicit processor time as well????
-// 			      L1norm_current[0],         //maybe switch to current_n so all scale from 1 ???
-// 			      L2norm_current[0],
-// 			      Max_norm_current[0]); //,
-//       //			      Solution_Data->Input.Residual_Norm,
-//       //			      Solution_Data->Input.Number_of_Residual_Norms);
-//     }
-//     /**************************************************************************/
+    /************************** Restart ***************************************/
+    error_flag = Restart_NKS();
+    /**************************************************************************/
  
-//     /**************************************************************************/
-//     // Freeze Limiters if Residual less than given value or # of orders of reduction.
-//     if (Solution_Data->Input.Freeze_Limiter && limiter_check){
-//       if (Number_of_Newton_Steps > 1 &&  L2norm_current[Solution_Data->Input.Residual_Norm] 
-// 	  <= Solution_Data->Input.Freeze_Limiter_Residual_Level)  {    // absolute
-// 	//if (Number_of_Newton_Steps > 1 &&  L2norm_current_n <= Solution_Data->Input.Freeze_Limiter_Residual_Level)  {  // relative 
-// 	if (CFDkit_Primary_MPI_Processor()) {
-// 	  cout << "\n\n ********** Apply Limiter Freezing ********** \n";
-//         } 
-// 	//Freeze_Limiters(SolnBlk, List_of_Local_Solution_Blocks);	
-// 	limiter_check = false;	
-//       } 
-//     } 
-//     /**************************************************************************/
+    /**************************************************************************/
+    // Freeze Limiters if Residual less than given value or # of orders of reduction.
+    if (Solution_Data->Input.Freeze_Limiter && limiter_check){
+      if (Number_of_Newton_Steps > 1 &&  L2norm_current[Solution_Data->Input.p_Norm_Indicator] 
+	  <= Solution_Data->Input.Freeze_Limiter_Residual_Level)  {    // absolute
+	//if (Number_of_Newton_Steps > 1 &&  L2norm_current_n <= Solution_Data->Input.Freeze_Limiter_Residual_Level)  {  // relative 
+	if (CFFC_Primary_MPI_Processor()) {
+	  cout << "\n\n ********** Apply Limiter Freezing ********** \n";
+        } 
+	//Freeze_Limiters(SolnBlk, List_of_Local_Solution_Blocks);	
+	limiter_check = false;	
+      } 
+    } 
+    /**************************************************************************/
 
-//     /**************************************************************************/
-//     /***************** NEWTON STEP ********************************************/
-//     /**************************************************************************/
-//     if (L2norm_current_n > Solution_Data->Input.NKS_IP.Overall_Tolerance){  
+    /**************************************************************************/
+    /***************** NEWTON STEP ********************************************/
+    /**************************************************************************/
+    if (L2norm_current_n > Solution_Data->Input.NKS_IP.Overall_Tolerance){  
      
-//       /**************************************************************************/
-//       /************************** TIME STEP *************************************/ 
-//       /**************************************************************************/
-//       /* Calculate delta t = min(delta t) among processors. */
-//       dTime = Hexa_MultiBlock_List.CFL(Input_Parameters); 
-//       dTime = CFDkit_Minimum_MPI(dTime); 
+      /************************** TIME STEP *************************************/ 
+      if (Solution_Data->Input.NKS_IP.Finite_Time_Step) {  
+	// Apply finite time step, ie. Implicit Euler ( as deltaT -> inf. Newton's Method)
+	CFL_current = Finite_Time_Step(Number_of_Newton_Steps);	   
+      } else { 
+	CFL_current = Solution_Data->Input.NKS_IP.Finite_Time_Step_Final_CFL;   	
+      } 
+
+      // Determine time steps
+      dTime = Solution_Data->Local_Solution_Blocks.CFL(Solution_Data->Input); 
+      
+      if (Solution_Data->Input.Local_Time_Stepping == GLOBAL_TIME_STEPPING ){
+	dTime = CFFC_Minimum_MPI(dTime); 
+	dTime *= CFL_current;           
+	Solution_Data->Local_Solution_Blocks.Set_Global_TimeStep(dTime);      
+      } else { 
+	for ( int Bcount = 0 ; Bcount < Data->Local_Adaptive_Block_List.Nblk; ++Bcount ) {
+	  if (Data->Local_Adaptive_Block_List.Block[Bcount].used == ADAPTIVEBLOCK3D_USED) {
+	    for (int k = Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].KCl; 
+		 k <= Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].KCu; k++){
+	      for (int j = Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].JCl; 
+		   j <= Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].JCu; j++){
+		for (int i = Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].ICl; 
+		     i <= Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].ICu; i++){
+		  Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].dt[i][j][k] *= CFL_current;
+		}
+	      }
+	    }
+	  }
+	}
+      }
+      /**************************************************************************/   
+
+      /**************************************************************************/
+      // Print out Newtwon Step info at the beginning of the iteration. 
+      cout.precision(10);
+      if (CFFC_Primary_MPI_Processor()) {      	
+	cout << "\n Newton Step (Outer It.) = " << Number_of_Newton_Steps << " L2norm = "
+	     << L2norm_current[Solution_Data->Input.p_Norm_Indicator] << " L2norm_ratio = " << L2norm_current_n 
+	     << " CFL = " << CFL_current <<" min_deltat = "<<CFL_current*dTime;
+      } 
+      /**************************************************************************/
+
    
-//       // Apply finite time step, ie. Implicit Euler ( as deltaT -> inf. Newtons Method)
-//       if (Solution_Data->Input.NKS_IP.Finite_Time_Step) {  
-// 	CFL_current = Finite_Time_Step(Input_Parameters,L2norm_first,
-// 				       L2norm_current[Solution_Data->Input.Residual_Norm] ,
-// 				       L2norm_current_n, Number_of_Newton_Steps);	   
-//       } else { 
-//         CFL_current = Solution_Data->Input.NKS_IP.Finite_Time_Step_Initial_CFL;   	
-//       }  
+      // POSSIBLE MOVE THIS TO ITS OWN FUNCTION, LIKE NEWTON_UPDATE
+      /**************************************************************************/
+      // Store  Uo, dt for use in GMRES & Preconditioner Calculations
+      for ( int Bcount = 0 ; Bcount < Data->Local_Adaptive_Block_List.Nblk; ++Bcount ) {
+	if (Data->Local_Adaptive_Block_List.Block[Bcount].used == ADAPTIVEBLOCK3D_USED) {
+	  /* Copy solutions in conserved variables, U to Uo for all blocks for update procedure. */
+	  for (int k = Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].KCl 
+		 - Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].Nghost;
+	       k <= Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].KCu 
+		 + Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].Nghost; k++){
+	    for (int j = Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].JCl 
+		   - Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].Nghost; 
+		 j <= Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].JCu 
+		   + Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].Nghost; j++){
+	      for (int i = Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].ICl 
+		     - Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].Nghost; 
+		   i <= Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].ICu 
+		     + Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].Nghost; i++){	
+		Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].Uo[i][j][k]= 
+		  Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].U[i][j][k];
+	      }    	      		
+	      //Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].dt[i][j][k] *= CFL_current;
+	    } 
+	  } 	  
+	} 
+      }  
+      /**************************************************************************/
+  
 
-//       //Set all dt[i][j] for global time stepping if requested (shouldn't be as this is NOT Time accurate)
-//       if(Solution_Data->Input.Local_Time_Stepping == GLOBAL_TIME_STEPPING ){
-// 	Hexa_MultiBlock_List.Set_Global_TimeStep(dTime);      
-//       }
-//       /**************************************************************************/
-   
+      //DTS RULES: update Preconditioner only if GMRES iterations increase between Newton Its.
+      bool GMRES_Iters_increaseing(true);
+      if( GMRES_Iters != 0){
+	if(GMRES_Iters ==1) {
+	  GMRES_Iters_increaseing = false;
+	} else if (GMRES_All_Iters[All_Iters_index-2] > GMRES_Iters) {
+	  GMRES_Iters_increaseing = true;
+	} else {
+	  GMRES_Iters_increaseing = false;
+	}
+      }
 
-//       /**************************************************************************/
-//       // Print out Newtwon Step info at the beginning of the iteration. 
-//       cout.precision(10);
-//       if (CFDkit_Primary_MPI_Processor()) {      	
-// 	cout << "\n Newton Step (Outer It.) = " << Number_of_Newton_Steps << " L2norm = "
-// 	     << L2norm_current[Solution_Data->Input.Residual_Norm] << " L2norm_ratio = " << L2norm_current_n 
-// 	     << " CFL = " << CFL_current <<" min_deltat = "<<CFL_current*dTime;
-//       } 
-//       /**************************************************************************/
-
-   
-//       // POSSIBLE MOVE THIS TO ITS OWN FUNCTION, LIKE NEWTON_UPDATE
-//       /**************************************************************************/
-//       // Store  Uo, dt for use in GMRES & Precondtioner Calculations
-//       for ( int Bcount = 0 ; Bcount < Hexa_MultiBlock_List.Size_of_Block_List; Bcount++ ) {
-// 	if (Hexa_MultiBlock_List.Block_Used[Bcount]){
-// 	  /* Copy solutions in conserved variables, U to Uo for all blocks for update procedure. */
-// 	  for (int k = Hexa_MultiBlock_List.Hexa_Block_List[Bcount]->KCl - Hexa_MultiBlock_List.Hexa_Block_List[Bcount]->Nghost;
-// 	       k <= Hexa_MultiBlock_List.Hexa_Block_List[Bcount]->KCu + Hexa_MultiBlock_List.Hexa_Block_List[Bcount]->Nghost; k++){
-// 	    for (int j = Hexa_MultiBlock_List.Hexa_Block_List[Bcount]->JCl- Hexa_MultiBlock_List.Hexa_Block_List[Bcount]->Nghost; 
-// 		 j <= Hexa_MultiBlock_List.Hexa_Block_List[Bcount]->JCu + Hexa_MultiBlock_List.Hexa_Block_List[Bcount]->Nghost; j++){
-// 	      for (int i = Hexa_MultiBlock_List.Hexa_Block_List[Bcount]->ICl - Hexa_MultiBlock_List.Hexa_Block_List[Bcount]->Nghost; 
-// 		   i <= Hexa_MultiBlock_List.Hexa_Block_List[Bcount]->ICu + Hexa_MultiBlock_List.Hexa_Block_List[Bcount]->Nghost; i++){
-// 		for(int varindex =1; varindex <= Num_Var; varindex++){		
-// 		  Hexa_MultiBlock_List.Hexa_Block_List[Bcount]->Uo[i][j][k][varindex] = 
-// 		    Hexa_MultiBlock_List.Hexa_Block_List[Bcount]->U[i][j][k][varindex];
-// 		}    	      		
-// 		/* Set time step. */
-// 		Hexa_MultiBlock_List.Hexa_Block_List[Bcount]->dt[i][j][k] *= CFL_current;
-// 	      } 
-// 	    } 	  
-// 	  } 
-// 	}  
-//       }
-//       /**************************************************************************/
-
- 
-//       /**************************************************************************/
-//       /************* PRECONDTIONER "BLOCK" JACOBIANS ****************************/      
-//       /**************************************************************************/
-//       // Create/Update Jacobian Matrix(s) using Uo = U  
-//       if (Number_of_Newton_Steps < MIN_NUMBER_OF_NEWTON_STEPS_REQUIRING_JACOBIAN_UPDATE
-// 	   || L2norm_current_n > MIN_L2_NORM_REQUIRING_JACOBIAN_UPDATE ) { 
+      /**************************************************************************/
+      /************* PRECONDTIONER "BLOCK" JACOBIANS ****************************/      
+      /**************************************************************************/
+      // Create/Update Jacobian Matrix(s) using Uo = U  
+      if ( ( !Solution_Data->Input.NKS_IP.Dual_Time_Stepping &&
+	     (Number_of_Newton_Steps < Solution_Data->Input.NKS_IP.Min_Number_of_Newton_Steps_Requiring_Jacobian_Update || 
+	      L2norm_current_n > Solution_Data->Input.NKS_IP.Min_L2_Norm_Requiring_Jacobian_Update) ) ||                           
+	   ( Solution_Data->Input.NKS_IP.Dual_Time_Stepping && GMRES_Iters_increaseing) ) {                       
 	
-// 	if (CFDkit_Primary_MPI_Processor()) cout << "\n Creating/Updating Jacobian Matrix";  
-	
-// 	//Update for each block.
-// 	for ( int Bcount = 0 ; Bcount < Hexa_MultiBlock_List.Size_of_Block_List; Bcount++ ) {
-// 	  if (Hexa_MultiBlock_List.Block_Used[Bcount]){
-// 	    // Jacobian changed and Preconditioner updated 
-// 	    Block_precon[Bcount].Update_Jacobian_and_Preconditioner();
-// 	  } 
-// 	} 
-//       }
-//       /**************************************************************************/
+	cout << "\n Creating/Updating Jacobian Matrix"; 
+  
+	//CLOCK
+	clock_t t0 = clock();
+
+	//Update for each block.
+	for ( int Bcount = 0 ; Bcount < Data->Local_Adaptive_Block_List.Nblk; ++Bcount ) {
+	  if (Solution_Data->Local_Solution_Blocks.Block_Used[Bcount] == ADAPTIVEBLOCK3D_USED){
+	    // Jacobian changed and Preconditioner updated 
+// 	    Block_precon[Bcount].Update_Jacobian_and_Preconditioner(DTS_SolnBlk[Bcount].DTS_dTime);
+	  } 
+	} 
+
+// 	preconditioner_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC);
+
+      }
+      /**************************************************************************/
 
 
-//       /**************************************************************************/
-//       /************* LINEAR SYSTEM SOLVE WITH GMRES  ****************************/      
-//       /**************************************************************************/
-//       /* Solve system with right-preconditioned matrix free GMRES */  
-//       error_flag = GMRES_.solve(Block_precon, Number_of_Newton_Steps);
-//       if (CFDkit_Primary_MPI_Processor() && error_flag) cout << "\n NKS2D: Error in GMRES \n";
-//       /**************************************************************************/      
+      /**************************************************************************/
+      /************* LINEAR SYSTEM SOLVE WITH GMRES  ****************************/      
+      /**************************************************************************/
+      /* Solve system with right-preconditioned matrix free GMRES */  
+//       error_flag = GMRES_.solve(Block_precon, linear_tolerance,
+//                                  &GMRES_Restarted, &GMRES_Failed, &GMRES_Iters,
+// 				 &res_cputime, &res_nevals)
+      if (CFFC_Primary_MPI_Processor() && error_flag) cout << "\n NKS2D: Error in GMRES \n";
+      GMRES_All_Iters[All_Iters_index++] = GMRES_Iters;
+      /**************************************************************************/      
  
 
-//       /**************************************************************************/      
-//       // Solution Update U = Uo + GMRES.deltaU
-//       error_flag = Newton_Update(Input_Parameters,Hexa_MultiBlock_List,GMRES_);      
-//       if (CFDkit_Primary_MPI_Processor() && error_flag) cout <<  "\n NKS2D: Error in Solution Update \n";
-//       /**************************************************************************/
+      /**************************************************************************/      
+      // Solution Update U = Uo + GMRES.deltaU
+      error_flag = Newton_Update();      
+      if (CFFC_Primary_MPI_Processor() && error_flag) cout <<  "\n NKS2D: Error in Solution Update \n";
+      /**************************************************************************/
       
 
-// //       /**************************************************************************/
-// //       /* Exchange solution information between neighbouring blocks. */    
-// //       error_flag = Send_All_Messages(SolnBlk,
-// // 				     List_of_Local_Solution_Blocks,
-// // 				     Num_Var, 
-// // 				     OFF);
-// //       if (error_flag) {
-// //          cout << "\n 2D_NKS ERROR: 2D message passing error on processor "
-// // 	      << List_of_Local_Solution_Blocks.ThisCPU
-// // 	      << ".\n";
-// //          cout.flush();
-// //       } /* endif */
-// //       error_flag = CFDkit_OR_MPI(error_flag);
-// //       if (error_flag) return (error_flag);
-// //       /**************************************************************************/
-
-//       /**************************************************************************/  
-//       /* Apply boundary conditions for Newton step. */
-//       Hexa_MultiBlock_List.BCs(Input_Parameters);
+//       /**************************************************************************/
+//       /* Exchange solution information between neighbouring blocks. */    
+//       error_flag = Send_All_Messages(SolnBlk,
+// 				     List_of_Local_Solution_Blocks,
+// 				     Num_Var, 
+// 				     OFF);
+//       if (error_flag) {
+//          cout << "\n 2D_NKS ERROR: 2D message passing error on processor "
+// 	      << List_of_Local_Solution_Blocks.ThisCPU
+// 	      << ".\n";
+//          cout.flush();
+//       } /* endif */
+//       error_flag = CFFC_OR_MPI(error_flag);
+//       if (error_flag) return (error_flag);
 //       /**************************************************************************/
 
-//       /**************************************************************************/
-//       Number_of_Newton_Steps++;      
+      /**************************************************************************/  
+      /* Apply boundary conditions for Newton step. */
+      Solution_Data->Local_Solution_Blocks.BCs(Solution_Data->Input);
+      /**************************************************************************/
 
-//       // END OF  if (L2norm_current_n > Solution_Data->Input.NKS_IP.Overall_Tolerance)
-//       /**************************************************************************/
-//     } else {       
-//       // L2norm_current_n < Solution_Data->Input.NKS_IP.Overall_Tolerance so set flag to "stop"     
-//       NKS_continue_flag = false;
-//     } /* endif */
-//     /**************************************************************************/
+      /**************************************************************************/
+      Number_of_Newton_Steps++;      
+
+      // END OF  if (L2norm_current_n > Solution_Data->Input.NKS_IP.Overall_Tolerance)
+      /**************************************************************************/
+    } else {       
+      // L2norm_current_n < Solution_Data->Input.NKS_IP.Overall_Tolerance so set flag to "stop"     
+      NKS_continue_flag = false;
+    } /* endif */
+    /**************************************************************************/
  
   }  // END OF NEWTON ITERATION WHILE LOOP
  
-//   /**************************************************************************/  
-//   /********* FINISHED NEWTON KRYLOV SCHWARZ *********************************/
-//   /**************************************************************************/  
+  /**************************************************************************/  
+  /********* FINISHED NEWTON KRYLOV SCHWARZ *********************************/
+  /**************************************************************************/  
   
-//   /**************************************************************************/
-//   /* Reset limiter. */
-//   Solution_Data->Input.i_Limiter = i_limiter;
-//   /**************************************************************************/
+  /**************************************************************************/
+  /* Reset limiter. */
+  Solution_Data->Input.i_Limiter = i_limiter;
+  /**************************************************************************/
 
-//   /**************************************************************************/
-//   /* Output final 2-norm for all blocks */ 
-//   if (CFDkit_Primary_MPI_Processor()) {     
-//     cout << " " << endl;
-//     for (int star=0;star<75;star++){cout <<"*";}
-//     cout << "\nEnd of Newton Steps = " << Number_of_Newton_Steps-1  << " L2norm = "
-// 	 << L2norm_current[Solution_Data->Input.Residual_Norm] << " L2norm_ratio = " << L2norm_current_n << endl;
-//     for (int star=0;star<75;star++){cout <<"*";}
-//   } /* endif */
-//   /**************************************************************************/
+  /**************************************************************************/
+  /* Output final 2-norm for all blocks */ 
+  if (CFFC_Primary_MPI_Processor()) {     
+    cout << " " << endl;
+    for (int star=0;star<75;star++){cout <<"*";}
+    cout << "\nEnd of Newton Steps = " << Number_of_Newton_Steps-1  << " L2norm = "
+	 << L2norm_current[Solution_Data->Input.p_Norm_Indicator] << " L2norm_ratio = " << L2norm_current_n << endl;
+    for (int star=0;star<75;star++){cout <<"*";}
+  } /* endif */
+  /**************************************************************************/
 
   
 //   //For total its count used in Restart ??
@@ -592,85 +740,13 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
 //   /**************************************************************************/    
 
 
+  delete[] GMRES_All_Iters;
+
+
   return error_flag;
-} /* End of Steady Newton_Krylov_Schwarz_Solver. */
+} // End of Steady Newton_Krylov_Schwarz_Solver.
 
 
 
-/*! *****************************************************************************************
- * Generic Newton_Update                                                                    *
- *                                                                                          *
- * This routine updates the previous Solution Data Uo with the deltaU from the GMRES        *                  
- * iterative solver.  U = Uo + GMRES.delatU                                                 *
- *                                                                                          *
- ********************************************************************************************/
-template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
-int Hexa_Newton_Krylov_Schwarz_Solver<SOLN_pSTATE,SOLN_cSTATE>:: 
-Newton_Update(){
-
-  int Num_Var = Solution_Data->Local_Solution_Blocks.Soln_Blks[0].NumVar();
-
-  /* Update Solution. No updates to Ghost Cells, let the BC's take care of it */
-    for ( int Bcount = 0 ; Bcount < Data->Local_Adaptive_Block_List.Nblk; ++Bcount ) {      
-      if (Data->Local_Adaptive_Block_List.Block[Bcount].used) {
-
-	for (int k = Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount]->KCl; 
-	     k <= Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount]->KCu; k++){
-	  for (int j = Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount]->JCl; 
-	       j <= Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount]->JCu; j++){
-	    for (int i = Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount]->ICl; 
-		 i <= Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount]->ICu; i++){
-	  
-	      /* Update solutions in conversed variables  U = Uo + deltaU = Uo + denormalized(x) */	 
-	      for(int varindex =1; varindex <= Num_Var; varindex++){  
-// 	      Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount]->U[i][j][k][varindex] = 
-// 		Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount]->Uo[i][j][k][varindex] 
-// /		+  GMRES.deltaU(Bcount,i,j,k,varindex-1);
-	      } 	      	  
-	      // THIS FUNCTION HAS NO CHECKS FOR INVALID SOLUTIONS, 
-	      // YOU PROBABLY WANT TO CREATE A SPECIALIZATION OF THIS FUNCTION SPECIFIC 
-	      // FOR YOUR EQUATION SYSTEM 
-	      
-	      //Update solution in primitive variables.
-	      Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount]->W[i][j][k] = Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount]->U[i][j][k].W(); 
-	    } 
-	  } 
-	}
-      } 
-    } 
-  
-  cout<<"\n USING GENERIC NEWTON_UPDATE \n";
-
-  return 0; 
-}
-
-/*! *****************************************************************************************
- * Generic Finite_Time_Step                                                                 *
- *                                                                                          *
- * This routine calculates the Finite Time Step using a basic SER approach for startup,     *                  
- * returning a "CFL" number to multiply by the stability determined dt.                     *
- *                                                                                          *
- ********************************************************************************************/
-// template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
-// void Hexa_Newton_Krylov_Schwarz_Solver<SOLN_pSTATE,SOLN_cSTATE>:: 
-// double Finite_Time_Step(const double &L2norm_first,
-// 			const double &L2norm_current,
-// 			const double &L2norm_current_n,				
-// 			const int &Number_of_Newton_Steps){
-
-//   double CFL_current;
-
-//   //SER 
-//   if (L2norm_current_n > MIN_FINITE_TIME_STEP_NORM_RATIO ) { 
-//     CFL_current = Solution_Data->Input.NKS_IP.Finite_Time_Step_Initial_CFL*
-//       pow( max(ONE, ONE/L2norm_current_n),ONE ); 
-//       //      pow(min(ONE, max(ONE, ONE/L2norm_current_n)*MIN_FINITE_TIME_STEP_NORM_RATIO),ONE );     
-//   } else {
-//      CFL_current = Solution_Data->Input.NKS_IP.Finite_Time_Step_Initial_CFL/MIN_FINITE_TIME_STEP_NORM_RATIO;
-//   } 
- 
-//   return CFL_current;
-
-// }
 
 #endif  /* _NKS_INCLUDED */
