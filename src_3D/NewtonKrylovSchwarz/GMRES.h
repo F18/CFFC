@@ -10,6 +10,7 @@
 #endif // _BLAS1_H_
 
 #include "Block_Preconditioner.h"
+#include "NKS_DTS.h"
 
 using namespace std;
 
