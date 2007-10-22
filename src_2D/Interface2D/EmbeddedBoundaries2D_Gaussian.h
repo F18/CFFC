@@ -1287,7 +1287,7 @@ dUdt_Residual_Evaluation(const double &Time) {
 		  Wl = Reflect(Wr,Local_SolnBlk[nb].Grid.nfaceW(i+1,j));
 		} else if (Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
 		  // WEST face of cell (i+1,j) is an ADIABATIC_WALL boundary.
-		  Wl = Adiabatic_Wall(Wr,Local_SolnBlk[nb].WoW[j],Local_SolnBlk[nb].Grid.nfaceW(i+1,j));
+		  Wl = Adiabatic_Wall(Wr,Local_SolnBlk[nb].WoW[j].v,Local_SolnBlk[nb].Grid.nfaceW(i+1,j));
 		//} else if (Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_COUETTE) {
 		//  // WEST face of cell (i+1,j) is a COUETTE boundary.
 		//  Wl = BC_Couette(Wr,Local_SolnBlk[nb].WoW[j]);
@@ -1316,7 +1316,7 @@ dUdt_Residual_Evaluation(const double &Time) {
 		  Wr = Reflect(Wl,Local_SolnBlk[nb].Grid.nfaceE(i,j));
 		} else if (Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
 		  // EAST face of cell (i,j) is an ADIABATIC_WALL boundary.
-		  Wr = Adiabatic_Wall(Wl,Local_SolnBlk[nb].WoE[j],Local_SolnBlk[nb].Grid.nfaceE(i,j));
+		  Wr = Adiabatic_Wall(Wl,Local_SolnBlk[nb].WoE[j].v,Local_SolnBlk[nb].Grid.nfaceE(i,j));
 		//} else if (Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_COUETTE) {
 		//  // EAST face of cell (i,j) is a COUETTE boundary.
 		//  Wr = BC_Couette(Wl,Local_SolnBlk[nb].WoE[j]);
@@ -1471,7 +1471,7 @@ dUdt_Residual_Evaluation(const double &Time) {
 		Wl = Reflect(Wr,Local_SolnBlk[nb].Grid.nfaceS(i,j+1));
 	      } else if (Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
 		// SOUTH face of cell (i,j+1) is an ADIABATIC_WALL boundary.
-		Wl = Adiabatic_Wall(Wr,Local_SolnBlk[nb].WoS[i],Local_SolnBlk[nb].Grid.nfaceS(i,j+1));
+		Wl = Adiabatic_Wall(Wr,Local_SolnBlk[nb].WoS[i].v,Local_SolnBlk[nb].Grid.nfaceS(i,j+1));
 	      //else if (Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_COUETTE) {
 	      //// SOUTH face of cell (i,j+1) is a COUETTE boundary.
 	      //Wl = BC_Couette(Wr,Local_SolnBlk[nb].WoS[i]);
@@ -1499,7 +1499,7 @@ dUdt_Residual_Evaluation(const double &Time) {
 		Wr = Reflect(Wl,Local_SolnBlk[nb].Grid.nfaceN(i,j));
 	      } else if (Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
 		// NORTH face of cell (i,j) is an ADIABATIC_WALL boundary.
-		Wr = Adiabatic_Wall(Wl,Local_SolnBlk[nb].WoN[i],Local_SolnBlk[nb].Grid.nfaceN(i,j));
+		Wr = Adiabatic_Wall(Wl,Local_SolnBlk[nb].WoN[i].v,Local_SolnBlk[nb].Grid.nfaceN(i,j));
 	      //else if (Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_COUETTE) {
 	      //// NORTH face of cell (i,j) is a COUETTE boundary.
 	      //Wr = BC_Couette(Wl,Local_SolnBlk[nb].WoN[i]);
@@ -1739,7 +1739,7 @@ dUdt_Multistage_Explicit(const int &i_stage,
 		  Wl = Reflect(Wr,Local_SolnBlk[nb].Grid.nfaceW(i+1,j));
 		} else if (Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
 		  // WEST face of cell (i+1,j) is an ADIABATIC_WALL boundary.
-		  Wl = Adiabatic_Wall(Wr,Local_SolnBlk[nb].WoW[j],Local_SolnBlk[nb].Grid.nfaceW(i+1,j));
+		  Wl = Adiabatic_Wall(Wr,Local_SolnBlk[nb].WoW[j].v,Local_SolnBlk[nb].Grid.nfaceW(i+1,j));
 		//} else if (Local_SolnBlk[nb].Grid.BCtypeW[j] == BC_COUETTE) {
 		//  // WEST face of cell (i+1,j) is a COUETTE boundary.
 		//  Wl = BC_Couette(Wr,Local_SolnBlk[nb].WoW[j]);
@@ -1768,7 +1768,7 @@ dUdt_Multistage_Explicit(const int &i_stage,
 		  Wr = Reflect(Wl,Local_SolnBlk[nb].Grid.nfaceE(i,j));
 		} else if (Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
 		  // EAST face of cell (i,j) is an ADIABATIC_WALL boundary.
-		  Wr = Adiabatic_Wall(Wl,Local_SolnBlk[nb].WoE[j],Local_SolnBlk[nb].Grid.nfaceE(i,j));
+		  Wr = Adiabatic_Wall(Wl,Local_SolnBlk[nb].WoE[j].v,Local_SolnBlk[nb].Grid.nfaceE(i,j));
 		//} else if (Local_SolnBlk[nb].Grid.BCtypeE[j] == BC_COUETTE) {
 		//  // EAST face of cell (i,j) is a COUETTE boundary.
 		//  Wr = BC_Couette(Wl,Local_SolnBlk[nb].WoE[j]);
@@ -1928,7 +1928,7 @@ dUdt_Multistage_Explicit(const int &i_stage,
 		Wl = Reflect(Wr,Local_SolnBlk[nb].Grid.nfaceS(i,j+1));
 	      } else if (Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
 		// SOUTH face of cell (i,j+1) is an ADIABATIC_WALL boundary.
-		Wl = Adiabatic_Wall(Wr,Local_SolnBlk[nb].WoS[i],Local_SolnBlk[nb].Grid.nfaceS(i,j+1));
+		Wl = Adiabatic_Wall(Wr,Local_SolnBlk[nb].WoS[i].v,Local_SolnBlk[nb].Grid.nfaceS(i,j+1));
 	      //else if (Local_SolnBlk[nb].Grid.BCtypeS[i] == BC_COUETTE) {
 	      //// SOUTH face of cell (i,j+1) is a COUETTE boundary.
 	      //Wl = BC_Couette(Wr,Local_SolnBlk[nb].WoS[i]);
@@ -1957,7 +1957,7 @@ dUdt_Multistage_Explicit(const int &i_stage,
 		Wr = Reflect(Wl,Local_SolnBlk[nb].Grid.nfaceN(i,j));
 	      } else if (Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
 		// NORTH face of cell (i,j) is an ADIABATIC_WALL boundary.
-		Wr = Adiabatic_Wall(Wl,Local_SolnBlk[nb].WoN[i],Local_SolnBlk[nb].Grid.nfaceN(i,j));
+		Wr = Adiabatic_Wall(Wl,Local_SolnBlk[nb].WoN[i].v,Local_SolnBlk[nb].Grid.nfaceN(i,j));
 	      //else if (Local_SolnBlk[nb].Grid.BCtypeN[i] == BC_COUETTE) {
 	      //// NORTH face of cell (i,j) is a COUETTE boundary.
 	      //Wr = BC_Couette(Wl,Local_SolnBlk[nb].WoN[i]);

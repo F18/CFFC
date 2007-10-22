@@ -30,7 +30,7 @@ int Read_Restart_Solution(Gaussian2D_Quad_Block *Soln_ptr,
     char prefix[256], extension[256], restart_file_name[256], gas_type[256];
     char *restart_file_name_ptr;
     ifstream restart_file;
-    double time0, alpha;
+    double time0, alpha_m;
     CPUTime cpu_time0;
     double pr;
 
@@ -70,7 +70,7 @@ int Read_Restart_Solution(Gaussian2D_Quad_Block *Soln_ptr,
           restart_file.getline(gas_type, sizeof(gas_type));
           restart_file.getline(gas_type, sizeof(gas_type));
           restart_file.setf(ios::skipws);
-	  restart_file >> alpha;
+	  restart_file >> alpha_m;
 	  restart_file >> pr;
           restart_file.unsetf(ios::skipws);
           if (!i_new_time_set) {
@@ -78,9 +78,9 @@ int Read_Restart_Solution(Gaussian2D_Quad_Block *Soln_ptr,
              Input_Parameters.Maximum_Number_of_Time_Steps += Number_of_Time_Steps;
 	     Time = time0;
              CPU_Time.cput = cpu_time0.cput;
-	     Input_Parameters.alpha    = alpha;
-	     Input_Parameters.Wo.alpha = alpha;
-	     Input_Parameters.Uo.alpha = alpha;
+	     Input_Parameters.alpha_m    = alpha_m;
+	     Input_Parameters.Wo.alpha_m = alpha_m;
+	     Input_Parameters.Uo.alpha_m = alpha_m;
 	     Input_Parameters.pr    = pr;
 	     Input_Parameters.Wo.pr = pr;
 	     Input_Parameters.Uo.pr = pr;
@@ -178,7 +178,7 @@ int Write_Restart_Solution(Gaussian2D_Quad_Block *Soln_ptr,
           restart_file.unsetf(ios::scientific);
           restart_file << Input_Parameters.Gas_Type << "\n";
           restart_file.setf(ios::scientific);
-	  restart_file << Input_Parameters.Wo.alpha << "\n";
+	  restart_file << Input_Parameters.Wo.alpha_m << "\n";
 	  restart_file << Input_Parameters.Wo.pr << "\n";
           restart_file.unsetf(ios::scientific);
           restart_file << setprecision(14) << Soln_ptr[i];

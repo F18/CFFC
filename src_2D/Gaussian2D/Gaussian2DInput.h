@@ -173,7 +173,7 @@ class Gaussian2D_Input_Parameters{
   Vector2D X_Shift;
 
   //Boundary information
-  double alpha;
+  double alpha_m, alpha_t;
   double Ramp_by_Mach_Number;
   int Number_of_Time_Steps_to_Ramp;
   char Boundary_Conditions_Specified[INPUT_PARAMETER_LENGTH_GAUSSIAN2D];
@@ -183,6 +183,7 @@ class Gaussian2D_Input_Parameters{
   char BC_East_Type[INPUT_PARAMETER_LENGTH_GAUSSIAN2D];
   char BC_West_Type[INPUT_PARAMETER_LENGTH_GAUSSIAN2D];
   int BC_North, BC_South, BC_East, BC_West;
+  double Temperature_North_BC, Temperature_South_BC, Temperature_East_BC, Temperature_West_BC;
 
   char NASA_Rotor37_Data_Directory[INPUT_PARAMETER_LENGTH_GAUSSIAN2D],
        NASA_Rotor67_Data_Directory[INPUT_PARAMETER_LENGTH_GAUSSIAN2D];
@@ -333,6 +334,10 @@ inline ostream &operator << (ostream &out_file,
        out_file << "\n  -> Heat Transfer added";
        out_file << "\n  -> Heat flux evaluation: " << IP.Heat_Reconstruction_Type;
        out_file << "\n  -> Prandtl number: " << IP.pr;
+       out_file << "\n  -> Temperature_North_BC: " << IP.Temperature_North_BC;
+       out_file << "\n  -> Temperature_South_BC: " << IP.Temperature_South_BC;
+       out_file << "\n  -> Temperature_East_BC: " << IP.Temperature_East_BC;
+       out_file << "\n  -> Temperature_West_BC: " << IP.Temperature_West_BC;
     }
     out_file << "\n  -> Time Integration: " 
              << IP.Time_Integration_Type;
@@ -567,8 +572,10 @@ inline ostream &operator << (ostream &out_file,
 	     << IP.Number_of_Ghost_Cells;
     if (IP.Interface_IP.Component_List.Ni) out_file << IP.Interface_IP;
     if(IP.i_ICs != IC_RESTART)
-    out_file << "\n  -> Accomodation Coefficient: "
-	     << IP.alpha;
+    out_file << "\n  -> Momentum Accomodation Coefficient: "
+	     << IP.alpha_m;
+    out_file << "\n  -> Thermal Accomodation Coefficient: "
+	     << IP.alpha_t;
     if(IP.Number_of_Initial_Mesh_Refinements >0)
     out_file << "\n  -> Number of Initial Mesh Refinements : " 
              << IP.Number_of_Initial_Mesh_Refinements;
