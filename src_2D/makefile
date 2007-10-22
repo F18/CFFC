@@ -149,7 +149,7 @@ SRC_EULER1D = Euler1DState.cc \
 	      Euler1D.cc \
 	      Euler1DSolvers.cc \
 	      ExactSolutions/ExactSolutions.cc
-	     # Euler1D_HighOrder.cc \
+#             Euler1D_HighOrder.cc
 SRC_EULER1D := $(addprefix $(EULER_1D_DIR), $(SRC_EULER1D))
 
 # Add Euler 1D Testing If Required:
@@ -372,11 +372,12 @@ SRC_SOLVERS1D = $(SRC_MATH) $(SRC_CFD) $(SRC_CFD1D_INPUT) $(SRC_GRID_1D) \
                 $(SRC_SYSTEM) $(SRC_HIGH_ORDER_RECONSTRUCTION) \
 		$(SRC_SCALAR) $(SRC_HEAT) $(SRC_HYPERHEAT) \
                 $(SRC_MHD1D) $(SRC_EULER1D) $(SRC_MPI)
+
 # Add Unit Testing to Solvers 1D:
 ifeq ($(TUT_TESTING),ON) 
   SRC_SOLVERS1D += $(SRC_TUT)
 endif
-#
+
 SRC_SOLVERS1D_EXE = $(SOLVERS1D_DIR)Solvers1D.cc
 SRC_SOLVERS1D_SOLVER = $(SRC_SOLVERS1D_EXE) $(SRC_SOLVERS1D)
 
@@ -384,6 +385,7 @@ SRC_SOLVERS1D_SOLVER = $(SRC_SOLVERS1D_EXE) $(SRC_SOLVERS1D)
 SRC_EULER1D_SOLVER = $(SRC_MATH) $(SRC_CFD) $(SRC_CFD1D_INPUT) $(SRC_GRID_1D) \
                      $(SRC_SYSTEM) $(SRC_HIGH_ORDER_RECONSTRUCTION) \
                      $(SRC_EULER1D) $(SRC_EULER1D_EXE) $(SRC_MPI)
+
 # Add Unit Testing to Euler 1D:
 ifeq ($(TUT_TESTING),ON) 
   SRC_EULER1D_SOLVER += $(SRC_TUT)
@@ -604,6 +606,9 @@ help:
 	@echo "|  tcsh:   setenv CFFC_Path /your/path/here/CFFC                                    |"
 	@echo "|                                                                                   |"
 	@echo "+-----------------------------------------------------------------------------------+"
+
+dum: 
+	@echo $(SRC_EULER1D)
 
 all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
      $(EXE_EULER1D) $(EXE_SOLVERS1D) \
