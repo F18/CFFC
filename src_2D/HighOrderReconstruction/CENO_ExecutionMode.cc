@@ -11,6 +11,7 @@ short CENO_Execution_Mode::CENO_DROP_ORDER = ON; // produce monotone solutions
 short CENO_Execution_Mode::CENO_PADDING = OFF; // no padding
 short CENO_Execution_Mode::CENO_SQUARE_GEOM_WEIGHTING = OFF; // use 1.0/fabs(Distance)
 short CENO_Execution_Mode::CENO_CONSIDER_WEIGHTS = OFF;	// computation of smoothness indicator without weights
+short CENO_Execution_Mode::FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE = ON; // try to use the PWC at interface
 
 
 //! Set all flags to default values
@@ -23,4 +24,5 @@ void CENO_Execution_Mode::SetDefaults(void){
   CENO_PADDING = OFF; // no padding
   CENO_SQUARE_GEOM_WEIGHTING = OFF; // use 1.0/fabs(Distance)
   CENO_CONSIDER_WEIGHTS = OFF;	// computation of smoothness indicator without weights
+  FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE = ON; // try to use the PWC at interface
 }

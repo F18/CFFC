@@ -98,6 +98,35 @@ void Output_Gnuplot(Euler1D_UniformMesh *Soln,
     
 }
 
+/******************************************************//**
+ * Routine: Output_Tecplot                              
+ *                                                      
+ * Writes the solution to specified output stream       
+ * suitable for plotting with TECPLOT.                  
+ *                                                      
+ ********************************************************/
+void Output_Tecplot(Euler1D_UniformMesh *Soln,
+                    const CFD1D_Input_Parameters &IP,
+                    const int Number_of_Time_Steps,
+                    const double &Time,
+	            ostream &out_file) {
+
+  if (IP.i_ReconstructionMethod == RECONSTRUCTION_CENO){
+    Output_Tecplot_HighOrder(Soln,
+			     IP.Number_of_Cells,
+			     Number_of_Time_Steps,
+			     Time,
+			     out_file);
+  } else {
+    Output_Tecplot(Soln,
+		   IP.Number_of_Cells,
+		   Number_of_Time_Steps,
+		   Time,
+		   out_file);
+  }
+ 
+}
+
 /********************************************************
  * Routine: Output_Tecplot                              *
  *                                                      *
@@ -1514,4 +1543,36 @@ int dUdt_2stage_2ndOrder_upwind(Euler1D_UniformMesh *Soln,
 
     return (0);
     
+}
+
+void LimitedLinearReconstructionOverDomain(Euler1D_UniformMesh *Soln, const CFD1D_Input_Parameters &IP){
+
+  int ICl(Soln[0].ICl), ICu(Soln[0].ICu);
+
+  switch(IP.i_Reconstruction) {
+  case RECONSTRUCTION_MUSCL :
+    Linear_Reconstruction_MUSCL(Soln, 
+				IP.Number_of_Cells, 
+				IP.i_Limiter);
+    break;
+  case RECONSTRUCTION_GREEN_GAUSS :
+    Linear_Reconstruction_GreenGauss(Soln, 
+				     IP.Number_of_Cells, 
+				     IP.i_Limiter);
+    break;
+  case RECONSTRUCTION_LEAST_SQUARES :
+    Linear_Reconstruction_LeastSquares(Soln, 
+				       IP.Number_of_Cells, 
+				       IP.i_Limiter);
+    break;
+  case RECONSTRUCTION_CHARACTERISTIC :
+    Linear_Reconstruction_Characteristic(Soln, 
+					 IP.Number_of_Cells, 
+					 IP.i_Limiter);
+    break;
+  default:
+    throw runtime_error("LimitedLinearReconstructionOverDomain() ERROR: Unknown reconstruction type");
+    break;
+  } /* endswitch */
+
 }

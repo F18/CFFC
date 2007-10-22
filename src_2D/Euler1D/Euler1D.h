@@ -55,6 +55,8 @@
 class Euler1D_UniformMesh{
 public:
   typedef HighOrder1D<Euler1D_pState> HighOrderType;
+  typedef Euler1D_pState SOLN_pSTATE;
+  typedef Euler1D_cState SOLN_cSTATE;
 
   Euler1D_pState    W;   // Primitive solution state.
   Euler1D_cState    U;   // Conserved solution state.
@@ -227,6 +229,12 @@ extern void Output_Tecplot(Euler1D_UniformMesh *Soln,
                            const double &Time,
 	                   ostream &out_file);
 
+void Output_Tecplot(Euler1D_UniformMesh *Soln,
+		    const CFD1D_Input_Parameters &IP,
+		    const int Number_of_Time_Steps,
+		    const double &Time,
+		    ostream &out_file);
+
 void Output_Tecplot_HighOrder(Euler1D_UniformMesh *Soln,
 			      const int Number_of_Cells,
 			      const int Number_of_Time_Steps,
@@ -304,6 +312,8 @@ extern int dUdt_2stage_2ndOrder_upwind(Euler1D_UniformMesh *Soln,
                                        const int Limiter_Type,
 				       const int Flux_Function_Type,
 			               const int Local_Time_Stepping);
+
+void LimitedLinearReconstructionOverDomain(Euler1D_UniformMesh *Soln, const CFD1D_Input_Parameters &IP);
 
 /********************************************************
  * Euler1D_UniformMesh -- Solvers.                      *

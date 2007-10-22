@@ -26,7 +26,7 @@ int CFD1D_Input_Parameters::Nghost(void) const{
     if (ReconstructionOrder() == 0){
       Number_Of_Ghost_Cells = 1;
     } else {
-      Number_Of_Ghost_Cells = ReconstructionOrder();
+      Number_Of_Ghost_Cells = ReconstructionOrder()+1;
     }
     break;
 
@@ -34,7 +34,7 @@ int CFD1D_Input_Parameters::Nghost(void) const{
     if (ReconstructionOrder() == 0){
       Number_Of_Ghost_Cells = 1;
     } else {
-      Number_Of_Ghost_Cells = ReconstructionOrder();
+      Number_Of_Ghost_Cells = ReconstructionOrder()+1;
     }
     break;
 
@@ -360,9 +360,11 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
        } else if (strcmp(IP.Reconstruction_Type, "ENO") == 0) {
           IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
           IP.i_ReconstructionMethod = RECONSTRUCTION_ENO;
+	  ENO_Execution_Mode::USE_ENO_ALGORITHM = ON;
        } else if (strcmp(IP.Reconstruction_Type, "ENO_Characteristic") == 0) {
           IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
           IP.i_ReconstructionMethod = RECONSTRUCTION_ENO_CHARACTERISTIC;
+	  ENO_Execution_Mode::USE_ENO_ALGORITHM = ON;
        } else if (strcmp(IP.Reconstruction_Type, "CENO") == 0) {
           IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
           IP.i_ReconstructionMethod = RECONSTRUCTION_CENO;

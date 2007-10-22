@@ -119,7 +119,7 @@ else
 endif
 
 # HighOrderReconstruction
-SRC_HIGH_ORDER_RECONSTRUCTION = ReconstructionHelpers.cc CENO_ExecutionMode.cc
+SRC_HIGH_ORDER_RECONSTRUCTION = ReconstructionHelpers.cc CENO_Tolerances.cc CENO_ExecutionMode.cc ENO_ExecutionMode.cc
 SRC_HIGH_ORDER_RECONSTRUCTION := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR), $(SRC_HIGH_ORDER_RECONSTRUCTION))
 
 # Add High-Order Reconstruction Testing If Required:

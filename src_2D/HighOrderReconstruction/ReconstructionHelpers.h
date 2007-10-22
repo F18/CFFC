@@ -8,7 +8,7 @@
 #include "../Math/Matrix.h"
 #include "../Math/Vector2D.h"
 #include "../Utilities/Utilities.h"
-#include "../Utilities/EpsilonTol.h"
+#include "CENO_Tolerances.h"
 #include "CENO_ExecutionMode.h"
 
 

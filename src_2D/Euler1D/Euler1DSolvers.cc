@@ -7,7 +7,7 @@
 #include "Euler1D.h"
 #endif // _EULER1D_INCLUDED
 
-#include "../HighOrderReconstruction/HighOrder_CENO_Reconstruction1D.h"
+#include "Euler1D_HighOrder.h"	// High-order 1D Euler header file 
 
 /********************************************************
  * Routine: Euler1DSolver                               *
@@ -141,15 +141,6 @@ int Euler1DSolver(char *Input_File_Name_ptr,
        Input_Parameters.X_Max, 
        Input_Parameters.Number_of_Cells);
 
-  /*********************************************************  
-   * Create memory storage for the ENO subroutines.        *
-   *********************************************************/
-  if (Input_Parameters.i_ReconstructionMethod == RECONSTRUCTION_ENO ||
-      Input_Parameters.i_ReconstructionMethod == RECONSTRUCTION_ENO_CHARACTERISTIC){
-    cout << "\n Allocate storage for the ENO subroutine.\n";
-    TurnOff( MemoryENO.newsize(Soln_ptr[0].NumberOfTaylorDerivatives()); )
-  }
-
   /********************************************************  
    * Initialize Euler1D solution variables.               *
    ********************************************************/
@@ -174,10 +165,6 @@ int Euler1DSolver(char *Input_File_Name_ptr,
    * Solve conservation form of 1D Euler equations for    *
    * specified IBVP or BVP on uniform mesh.               *
    ********************************************************/
-  
-  /* Compute the pseudo-inverse matrices used in the CENO reconstruction for each 
-     each cell if selected CENO in fast mode. */
-  Compute_CENO_PseudoInverse(Soln_ptr,Input_Parameters);
 
   continue_existing_calculation: ;
 
@@ -227,6 +214,13 @@ int Euler1DSolver(char *Input_File_Name_ptr,
                            Input_Parameters.i_Flux_Function,
        			   Input_Parameters.Local_Time_Stepping);
              break;
+	   case TIME_STEPPING_EXPLICIT_EULER_HIGH_ORDER:
+	     error_flag = dUdt_explicitEuler_upwind(Soln_ptr,
+						    Input_Parameters,
+						    dtime,
+						    Input_Parameters.Local_Time_Stepping,
+						    &Euler1D_UniformMesh::CellHighOrder);
+	     break;
            case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR:
              error_flag = dUdt_2stage_2ndOrder_upwind(Soln_ptr,
                            Input_Parameters.Number_of_Cells,
@@ -237,6 +231,20 @@ int Euler1DSolver(char *Input_File_Name_ptr,
                            Input_Parameters.i_Flux_Function,
        			   Input_Parameters.Local_Time_Stepping);
              break;
+	   case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR_HIGH_ORDER:
+	     error_flag = dUdt_2stage_HighOrder_upwind(Soln_ptr,
+						       Input_Parameters,
+						       dtime,
+						       Input_Parameters.Local_Time_Stepping,
+						       &Euler1D_UniformMesh::CellHighOrder);
+	     break;
+	   case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA_4_HIGH_ORDER:
+	     error_flag = dUdt_4stage_HighOrder_upwind(Soln_ptr,
+						       Input_Parameters,
+						       dtime,
+						       Input_Parameters.Local_Time_Stepping,
+						       &Euler1D_UniformMesh::CellHighOrder);
+	     break;
            case TIME_STEPPING_LAX_FRIEDRICHS:
              error_flag = dUdt_LaxFriedrichs(Soln_ptr,
                            Input_Parameters.Number_of_Cells,
@@ -294,6 +302,21 @@ int Euler1DSolver(char *Input_File_Name_ptr,
      } /* endwhile */
      if (! batch_flag) cout << "\n\n Euler1D computations complete.\n";
   } /* endif */
+
+  /**************************************************  
+   * Reconstruct the final solution (high-order or  *
+   * limited linear reconstruction)                 *
+   *************************************************/
+  if (Input_Parameters.Verbose()){
+    cout << '\n'
+	 << " Reconstruct the final solution. "
+	 << "\n";
+  }
+  if(Input_Parameters.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+    HighOrderSolutionReconstructionOverDomain(Soln_ptr,Input_Parameters,&Euler1D_UniformMesh::CellHighOrder);
+  } else {
+    LimitedLinearReconstructionOverDomain(Soln_ptr,Input_Parameters);
+  }
 
   /********************************************************  
    * Write 1D Euler solution to output file.              *
@@ -359,7 +382,7 @@ int Euler1DSolver(char *Input_File_Name_ptr,
 		           Output_File);
          } else if (Input_Parameters.i_Output_Format == IO_TECPLOT) {
             Output_Tecplot(Soln_ptr,
-	   	           Input_Parameters.Number_of_Cells,
+	   	           Input_Parameters,
 		           number_of_time_steps,
 		           time,
 		           Output_File);

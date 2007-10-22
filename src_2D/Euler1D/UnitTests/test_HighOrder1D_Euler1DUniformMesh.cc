@@ -11,6 +11,7 @@
 #include "TestData.h"
 #include "../../HighOrderReconstruction/HighOrder1D.h"
 #include "../Euler1D.h"
+#include "../Euler1D_HighOrder.h"
 
 namespace tut
 {
@@ -172,19 +173,27 @@ namespace tut
     //     SolnBlk[5].CellHighOrder().ComputeReconstructionPseudoInverse(SolnBlk,5);
     //     SolnBlk[5].CellHighOrder().ComputeUnlimitedSolutionReconstruction(SolnBlk,5,RECONSTRUCTION_CENO);
 
-    ReconstructSolutionOverDomain(SolnBlk,IP,&Euler1D_UniformMesh::CellHighOrder);
+    //    HighOrderSolutionReconstructionOverDomain(SolnBlk,IP,&Euler1D_UniformMesh::CellHighOrder);
+
+    double dtime(0.12);
+    int error_flag;
+    
+    error_flag = dUdt_2stage_HighOrder_upwind(SolnBlk,
+					      IP,
+					      dtime,
+					      IP.Local_Time_Stepping);
 
     for (int i=SolnBlk[0].ICl; i<=SolnBlk[0].ICu; ++i){
       //      for(int parameter=1; parameter<=3; ++parameter){
-      if ( SolnBlk[i].CellHighOrder().CellInadequateFit(1) == 1){
-	Print_(SolnBlk[i].CellHighOrder().CellDeriv());
+      if ( SolnBlk[i].CellHighOrder().CellInadequateFit(3) == 1){
+	//	Print_(SolnBlk[i].CellHighOrder().CellDeriv());
       }
       //      }
     }
 
-//     Print_(SolnBlk[5].CellHighOrder().LHS());
-//     Print_(SolnBlk[5].CellHighOrder().GeomWeights());
-//     Print_(SolnBlk[5].CellHighOrder().CellDeriv());
+    //     Print_(SolnBlk[5].CellHighOrder().LHS());
+    //     Print_(SolnBlk[5].CellHighOrder().GeomWeights());
+    //     Print_(SolnBlk[5].CellHighOrder().CellDeriv());
 
   }
 
@@ -202,12 +211,12 @@ namespace tut
     SetUpDomain("sod_HighOrder_ENO.in");
 
     // Reconstruct the solution in one of the cells
-//     SolnBlk[55].CellHighOrder().ComputeReconstructionPseudoInverse(SolnBlk,55);
-//     SolnBlk[55].CellHighOrder().ComputeUnlimitedSolutionReconstruction(SolnBlk,55,RECONSTRUCTION_ENO_CHARACTERISTIC);
+    //     SolnBlk[55].CellHighOrder().ComputeReconstructionPseudoInverse(SolnBlk,55);
+    //     SolnBlk[55].CellHighOrder().ComputeUnlimitedSolutionReconstruction(SolnBlk,55,RECONSTRUCTION_ENO_CHARACTERISTIC);
 
-    ReconstructSolutionOverDomain(SolnBlk,IP,&Euler1D_UniformMesh::CellHighOrder);
+    HighOrderSolutionReconstructionOverDomain(SolnBlk,IP,&Euler1D_UniformMesh::CellHighOrder);
 
-    Print_(SolnBlk[55].CellHighOrder().CellDeriv());
+    //    Print_(SolnBlk[55].CellHighOrder().CellDeriv());
 
   }
 

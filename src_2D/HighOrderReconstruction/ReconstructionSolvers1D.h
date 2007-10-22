@@ -471,13 +471,6 @@ void ENO_Characteristics_Reconstruction (typename SolutionContainer::HighOrderTy
 					 const int iCell, MemoryStorageENO_1D & Mem)
 {
 
-//  It 'UsePrimitiveVar' macro is defined, the primitive variables are computed directly 
-//  from the characteristic ones.
-//  It this macro is not defined, the primitive variables are calculated based on the conserved ones,
-//  which are in turn determined from the characteristic ones.
-//  ----------------------------------------------------------------------------------------
-// #define UsePrimitiveVar
-
   int cell, Counter, i;
   int IndexSumX;
   Mem.StencilStartIndex = iCell;
@@ -486,17 +479,10 @@ void ENO_Characteristics_Reconstruction (typename SolutionContainer::HighOrderTy
 
   /* Compute the characteristic variables of the stencil candidates using the local left-eigenvector system */
 
-  /* 1st choice: use primitive variables */
-  #ifdef UsePrimitiveVar
-  for( i = iCell-Mem.NumOfUnknowns+1; i<iCell+Mem.NumOfUnknowns; ++i){
-    SolnBlk[i].CellSolutionCharactVar() = SolnBlk[i].CellSolutionPrimVar().PrimitiveVarToCharactVar(SolnBlk[iCell].CellSolutionPrimVar());
-  }
-  #else
-  /* 2nd choice: use conserved variables */
+  /* Use conserved variables */
   for( i = iCell-Mem.NumOfUnknowns+1; i<iCell+Mem.NumOfUnknowns; ++i){
     SolnBlk[i].CellSolutionCharactVar() = SolnBlk[i].CellSolutionConsVar().ConservedVarToCharactVar(SolnBlk[iCell].CellSolutionConsVar());
-  }
-  #endif
+  } // endfor
 
   for(int parameter=1; parameter <= SolutionContainer::HighOrderType::Soln_State::NumberOfVariables; ++parameter){
     

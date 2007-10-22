@@ -17,6 +17,7 @@ using std::vector;
 #include "../Math/Matrix.h"
 #include "../Math/NumericalLibrary.h"
 #include "CENO_ExecutionMode.h"
+#include "ENO_ExecutionMode.h"
 #include "../Grid/Cell1D.h"
 #include "ReconstructionSolvers1D.h"
 
@@ -261,7 +262,7 @@ template<class SOLN_STATE> MemoryStorageENO_1D HighOrder1D<SOLN_STATE>::ENO_Mem 
 //! Default Constructor
 template<class SOLN_STATE> inline
 HighOrder1D<SOLN_STATE>::HighOrder1D(void):TD(0), GeomCoeff(0), SI(0),
-					   CENO_LHS(), CENO_Geometric_Weights(), PseudoInverseFlag(OFF), Geom(NULL) {
+					   CENO_LHS(), CENO_Geometric_Weights(), PseudoInverseFlag(OFF), Geom(NULL){
   // set rings
   SetRings();
 
@@ -615,6 +616,13 @@ void HighOrder1D<SOLN_STATE>::ComputeReconstructionPseudoInverse(Soln_Block_Type
       CENO_Execution_Mode::CENO_SPEED_EFFICIENT && 
       PseudoInverseFlag == OFF){
 
+    // == Check if the reconstruction polynomial is piecewise constant
+    if (NumberOfTaylorDerivatives() == 1){
+      // Set properly the PseudoInverseFlag
+      PseudoInverseFlag = ON;
+      return;
+    }
+
     vector<int> i_index(StencilSize()); 
 
     // Make Stencil
@@ -949,7 +957,7 @@ double HighOrder1D<double>::SolutionAtCoordinates(const double & X_Coord, const 
 
 
 
-//! ReconstructSolutionOverDomain()
+//! HighOrderSolutionReconstructionOverDomain()
 /*! 
  * Compute the high-order reconstruction for each computational cell 
  * of the SolnBlk using the 'IP.i_ReconstructionMethod' algorithm.
@@ -958,12 +966,12 @@ double HighOrder1D<double>::SolutionAtCoordinates(const double & X_Coord, const 
  * reconstruction process.
  */
 template<class Soln_Block_Type, class InputParametersType>
-void ReconstructSolutionOverDomain(Soln_Block_Type *SolnBlk,
-				   const InputParametersType & IP,
-				   HighOrder1D<typename Soln_Block_Type::HighOrderType::Soln_State> & 
-				   (Soln_Block_Type::*AccessToHighOrderVar)(void)) {
+void HighOrderSolutionReconstructionOverDomain(Soln_Block_Type *SolnBlk,
+					       const InputParametersType & IP,
+					       typename Soln_Block_Type::HighOrderType & 
+					       (Soln_Block_Type::*AccessToHighOrderVar)(void)) {
 
-  typedef HighOrder1D<typename Soln_Block_Type::HighOrderType::Soln_State> HighOrderType;
+  typedef typename Soln_Block_Type::HighOrderType HighOrderType;
 
   int ICl(SolnBlk[0].ICl), ICu( SolnBlk[0].ICu);
   int i, parameter;
@@ -973,12 +981,12 @@ void ReconstructSolutionOverDomain(Soln_Block_Type *SolnBlk,
     /* C(entral)ENO -> central stencil with post-analysis of the reconstruction */
   case RECONSTRUCTION_CENO:
     // require a minimum number of ghost cells equal to what is necessary for the current high-order reconstruction
-    require(SolnBlk[0].Nghost >= HighOrderType::Nghost((SolnBlk[i].*AccessToHighOrderVar)().CellRecOrder()),
+    require(SolnBlk[0].Nghost >= HighOrderType::Nghost((SolnBlk[0].*AccessToHighOrderVar)().CellRecOrder()),
 	    "ReconstructSolutionOverDomain() ERROR: Not enough ghost cells to perform the current reconstruction");
 
     //Step 1: Compute the k-exact reconstruction
-    for (i = ICl - ((SolnBlk[i].*AccessToHighOrderVar)().CellRings() + 1);
-	 i<= ICu + ((SolnBlk[i].*AccessToHighOrderVar)().CellRings() + 1);
+    for (i = ICl - ((SolnBlk[0].*AccessToHighOrderVar)().CellRings() + 1);
+	 i<= ICu + ((SolnBlk[0].*AccessToHighOrderVar)().CellRings() + 1);
 	 ++i) {
 
       // Compute PseudoInverse if required
