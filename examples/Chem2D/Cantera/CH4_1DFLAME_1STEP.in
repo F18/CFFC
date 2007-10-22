@@ -66,7 +66,7 @@ Number_of_Blocks_Jdir=
 # Set time stepping parameters
 ###############################
 CFL_Number=
-0.5
+0.75
 Maximum_Number_of_Time_Steps=
 1000
 ##############################
@@ -78,7 +78,7 @@ Restart_Solution_Save_Frequency=
 # Chem2D Parameters
 ##################################
 Cantera_Reaction_Mechanism=
-CH4_WD1a
+CH4_WD1b
 Mechanism_File=
 ../../../data/CANTERA_RXNS/CH4.xml
 Schmidt_Numbers=
