@@ -14,9 +14,6 @@
 
 #ifdef _MPI_VERSION
 #ifdef _MPI_VERSION2
-//#undef SEEK_SET
-//#undef SEEK_CUR
-//#undef SEEK_END
 #include "mpi.h"
 #else
 #include "mpi++.h"
@@ -26,7 +23,7 @@
 /* Define the classes. */
 
 /********************************************************
- * Class: CFFC_MPI                                    *
+ * Class: CFFC_MPI                                      *
  *                                                      *
  * Member functions                                     *
  *   Number_of_Processors  -- Return number of MPI      *
@@ -64,7 +61,7 @@ class CFFC_MPI{
 };
 
 /*************************************************************
- * CFFC_MPI -- Input-output operators.                     *
+ * CFFC_MPI -- Input-output operators.                       *
  *************************************************************/
 inline ostream &operator << (ostream &out_file, const CFFC_MPI &mpi) {
     return (out_file);
@@ -91,13 +88,16 @@ inline string CFFC_Version_MPI() {
   strcat(string1, string2);
   return (string(string1));
 #else
+#ifdef _MPI_VERSION2
   MPI::Get_version(version, subversion);
   strcpy(string1, "MPI Version, Built using Version ");
   sprintf(string2, "%d.%d", version, subversion);
   strcat(string2, " of Message-Passing Interface (MPI) Standard.");
   strcat(string1, string2);
   return (string(string1));
-  //return ("MPI Version, Built using Version 1.xx of Message-Passing Interface (MPI) Standard.");
+#else
+  return ("MPI Version, Built using Version 1.xx of Message-Passing Interface (MPI) Standard.");
+#endif
 #endif
 #endif
 #ifdef _NO_MPI_VERSION

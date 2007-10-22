@@ -999,8 +999,8 @@ ICs(const int i_ICtype,
       case IC_SOD_XDIR :
          Wl = SOLN_pSTATE(DENSITY_STDATM, Vector3D_ZERO,
                           PRESSURE_STDATM);
-         Wr = SOLN_pSTATE(DENSITY_STDATM*8.0, Vector3D_ZERO,
-                          PRESSURE_STDATM*10.0);
+         Wr = SOLN_pSTATE(DENSITY_STDATM*EIGHT, Vector3D_ZERO,
+                          PRESSURE_STDATM*TEN);
 	 for (int k = KCl-Nghost; k <= KCu+Nghost; ++k) {
             for (int j = JCl-Nghost; j <= JCu+Nghost; ++j) {
                for (int i = ICl-Nghost; i <= ICu+Nghost; ++i) {
@@ -1018,8 +1018,8 @@ ICs(const int i_ICtype,
       case IC_SOD_YDIR :
          Wl = SOLN_pSTATE(DENSITY_STDATM, Vector3D_ZERO,
 	                  PRESSURE_STDATM);
-         Wr = SOLN_pSTATE(DENSITY_STDATM*8.0, Vector3D_ZERO,
-                          PRESSURE_STDATM*10.0);
+         Wr = SOLN_pSTATE(DENSITY_STDATM*EIGHT, Vector3D_ZERO,
+                          PRESSURE_STDATM*TEN);
          for (int k = KCl-Nghost; k <= KCu+Nghost; ++k) {
             for (int j = JCl-Nghost; j <= JCu+Nghost; ++j) {
                for (int i = ICl-Nghost; i <= ICu+Nghost; ++i) {
@@ -1037,8 +1037,8 @@ ICs(const int i_ICtype,
       case IC_SOD_ZDIR :
          Wl = SOLN_pSTATE(DENSITY_STDATM, Vector3D_ZERO,
                           PRESSURE_STDATM);
-         Wr = SOLN_pSTATE(DENSITY_STDATM*8.0, Vector3D_ZERO,
-                          PRESSURE_STDATM*10.0);
+         Wr = SOLN_pSTATE(DENSITY_STDATM*EIGHT, Vector3D_ZERO,
+                          PRESSURE_STDATM*TEN);
          for (int k = KCl-Nghost; k <= KCu+Nghost; ++k) {
             for (int j = JCl-Nghost; j <= JCu+Nghost; ++j) {
                for (int i = ICl-Nghost; i <= ICu+Nghost; ++i) {
