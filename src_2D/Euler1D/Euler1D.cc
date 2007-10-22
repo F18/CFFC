@@ -6,6 +6,8 @@
 #include "Euler1D.h"
 #endif // _EULER1D_INCLUDED
 
+#include "ExactSolutions/ExactSolutions.h"
+
 /********************************************************
  * Routine: Allocate                                    *
  *                                                      *
@@ -13,16 +15,35 @@
  *                                                      *
  ********************************************************/
 Euler1D_UniformMesh* Allocate(Euler1D_UniformMesh *Soln_ptr,
-                              const int Number_of_Cells) {
+                              const CFD1D_Input_Parameters &IP) {
 
-    /* Allocate memory. */
+  int NC;                       // number of cells in the computational domain
+  int StencilSize; 		// the size of the stencil used in the reconstruction process
+  int Nghost; 			// number of ghost cells
+  
+  /* Calculate the total number of computational cells */
+  // IP.Nghost() : calculates the number of ghost cells based on the order and the method of reconstruction.
+  Nghost = IP.Nghost();
+  NC = IP.Number_of_Cells + 2 * Nghost;
 
-    Soln_ptr = new Euler1D_UniformMesh[Number_of_Cells+2];
+  /* Allocate memory. */  
+  Soln_ptr = new Euler1D_UniformMesh[NC];
 
-    /* Return memory location. */
+  /* Set preliminary mesh parameters */
+  for (int i=0; i<= NC-1; ++i){
 
-    return(Soln_ptr);
+    // store domain indexes in each cell
+    Soln_ptr[i].Nghost = Nghost;
+    Soln_ptr[i].ICl = Nghost;
+    Soln_ptr[i].ICu = NC - 1 - Nghost;
+    
+    // setup high-order variables using parameters provided by the input parameters object
+    Soln_ptr[i].CellHighOrder().InitializeVariable(IP);
+  }//endfor
 
+  /* Return memory location. */
+  
+  return(Soln_ptr);
 }
 
 /********************************************************
@@ -31,18 +52,15 @@ Euler1D_UniformMesh* Allocate(Euler1D_UniformMesh *Soln_ptr,
  * Deallocate memory for 1D Euler equation solution.    *
  *                                                      *
  ********************************************************/
-Euler1D_UniformMesh* Deallocate(Euler1D_UniformMesh *Soln_ptr,
-                                const int Number_of_Cells) {
+Euler1D_UniformMesh* Deallocate(Euler1D_UniformMesh *Soln_ptr) {
 
-    /* Deallocate memory. */
+  /* Deallocate memory. */
+  delete []Soln_ptr;
+  Soln_ptr = NULL;
 
-    delete []Soln_ptr;
-    Soln_ptr = NULL;
-
-    /* Return memory location. */
-
-    return(Soln_ptr);
-
+  /* Return memory location. */
+  
+  return(Soln_ptr);
 }
 
 /********************************************************
@@ -58,20 +76,25 @@ void Output_Gnuplot(Euler1D_UniformMesh *Soln,
                     const double &Time,
 	            ostream &out_file) {
 
-    int i;
+  int i;
+  int ICl, ICu;
 
-    out_file << "# " << CFFC_Name() << ": 1D Euler Solution, "
-             << "Time Step/Iteration Level = "
-             << Number_of_Time_Steps
-             << ", Time = " << Time*THOUSAND << " (ms)\n"
-	     << "# cell, x(m), dx(m), rho (kg/m^3), "
-	     << "v (m/s), p (Pa), T (K)\n";
-    
-    for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
-        out_file << " " << i << " " << Soln[i] << "\n";
-    } /* endfor */
+  // Set the limits of the plotted domain
+  ICl = Soln[0].ICl;
+  ICu = Soln[0].ICu;
 
-    out_file << "\n";
+  out_file << "# " << CFFC_Name() << ": 1D Euler Solution, "
+	   << "Time Step/Iteration Level = "
+	   << Number_of_Time_Steps
+	   << ", Time = " << Time*THOUSAND << " (ms)\n"
+	   << "# cell, x(m), dx(m), rho (kg/m^3), "
+	   << "v (m/s), p (Pa), T (K)\n";
+
+  for ( i = ICl ; i <= ICu ; ++i ) {
+    out_file << " " << i << " " << Soln[i] << "\n";
+  } /* endfor */
+
+  out_file << "\n";
     
 }
 
@@ -88,26 +111,85 @@ void Output_Tecplot(Euler1D_UniformMesh *Soln,
                     const double &Time,
 	            ostream &out_file) {
 
-    int i;
+  int ICl, ICu;
 
-    out_file << "TITLE = \"" << CFFC_Name() << ": 1D Euler Solution, "
-             << "Time Step/Iteration Level = "
-             << Number_of_Time_Steps
-             << ", Time = " << Time*THOUSAND << " (ms)\"" << "\n"
-	     << "VARIABLES = \"x\" \\ \n"
-             << "\"dx\" \\ \n"
-             << "\"rho\" \\ \n"
-             << "\"u\" \\ \n"
-             << "\"p\" \\ \n"
-             << "\"T\" \n"
-             << "ZONE \n";
-    
-    for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
-        out_file << " " << Soln[i] << "\n";
-    } /* endfor */
+  // Set the limits of the plotted domain
+  ICl = Soln[0].ICl;
+  ICu = Soln[0].ICu;
 
-    out_file << "\n";
+  int i;
+
+  out_file << "TITLE = \"" << CFFC_Name() << ": 1D Euler Solution, "
+	   << "Time Step/Iteration Level = "
+	   << Number_of_Time_Steps
+	   << ", Time = " << Time*THOUSAND << " (ms)\"" << "\n"
+	   << "VARIABLES = \"x\" \\ \n"
+	   << "\"dx\" \\ \n"
+	   << "\"rho\" \\ \n"
+	   << "\"u\" \\ \n"
+	   << "\"p\" \\ \n"
+	   << "\"T\" \n"
+	   << "ZONE \n";
     
+  for ( i = ICl ; i <= ICu ; ++i ) {
+    out_file << " " << Soln[i] << "\n";
+  } /* endfor */
+
+  out_file << "\n";
+    
+}
+
+/********************************************************
+ * Routine: Output_Tecplot_HighOrder                    *
+ *                                                      *
+ * Writes the solution to specified output stream       *
+ * suitable for plotting with TECPLOT.                  *
+ *                                                      *
+ ********************************************************/
+void Output_Tecplot_HighOrder(Euler1D_UniformMesh *Soln,
+			      const int Number_of_Cells,
+			      const int Number_of_Time_Steps,
+			      const double &Time,
+			      ostream &out_file) {
+
+
+  int ICl, ICu;
+  
+  // Set the limits of the plotted domain
+  ICl = Soln[0].ICl;
+  ICu = Soln[0].ICu;
+  
+  int i;
+  out_file << "TITLE = \"" << CFFC_Name() << ": 1D Euler Solution, "
+	   << "Time Step/Iteration Level = "
+	   << Number_of_Time_Steps
+	   << ", Time = " << Time*THOUSAND << " (ms)\"" << "\n"
+	   << "VARIABLES = \"x\" \\ \n"
+	   << "\"dx\" \\ \n"
+	   << "\"rho\" \\ \n"
+	   << "\"u\" \\ \n"
+	   << "\"p\" \\ \n"
+	   << "\"T\" \\ \n"
+	   << "\"ValISrho\" \\ \n"
+	   << "\"ISrho\" \\ \n"
+	   << "\"ValISu\" \\ \n"
+	   << "\"ISu\" \\ \n"
+	   << "\"ValISp\" \\ \n"
+	   << "\"ISp\" \\ \n"
+	   << "ZONE \n";
+
+  for ( i = ICl ; i <= ICu ; ++i ) {
+    out_file << " " << Soln[i] << "\n"
+	     << Soln[i].CellHighOrder().CellSmoothnessIndicator(1) <<" "
+	     << Soln[i].CellHighOrder().CellInadequateFit(1) <<" "
+	     << Soln[i].CellHighOrder().CellSmoothnessIndicator(2) <<" "
+	     << Soln[i].CellHighOrder().CellInadequateFit(2) <<" "
+	     << Soln[i].CellHighOrder().CellSmoothnessIndicator(3) <<" "
+	     << Soln[i].CellHighOrder().CellInadequateFit(3) <<" " << "\n";
+  } /* endfor */
+  
+  out_file << "\n";
+ 
 }
 
 /********************************************************
@@ -122,22 +204,31 @@ void Grid(Euler1D_UniformMesh *Soln,
 	  const double &xMax,
 	  const int Number_of_Cells) {
 
-    int i;
-    double delta_x;
+  int i;
+  double delta_x;
 
-    /* Determine the mesh spacing. */
+  int TC;
+  
+  TC = Number_of_Cells+2*Soln[0].Nghost; // total number of cells
 
-    delta_x = (xMax - xMin)/double(Number_of_Cells);
-    Soln[0].X.setsize(delta_x);
+  /* Determine the mesh spacing. */
 
-    /* Create the cells. */
+  delta_x = (xMax - xMin)/double(Number_of_Cells);
+  Soln[0].X.setsize(delta_x);
 
-    Soln[0].X.x = xMin - HALF*delta_x;
+  /* Create the cells. */
 
-    for ( i = 1 ; i <= Number_of_Cells+1 ; ++i ) {
-        Soln[i].X.x =  Soln[0].X.x + double(i)*delta_x;
-    } /* endfor */
+  Soln[0].X.x = xMin - (Soln[0].Nghost - HALF)*delta_x;
+  Soln[0].CellHighOrder().AssociateGeometry(Soln[0].X);   // Associate geometry with high-order solution variables
+  
 
+  for ( i = 1 ; i <= TC-1 ; ++i ) {
+    // Initialize the coordinate of the centroids
+    Soln[i].X.x =  Soln[0].X.x + double(i)*delta_x;
+    
+    // Associate geometry with high-order solution variables
+    Soln[i].CellHighOrder().AssociateGeometry(Soln[i].X);
+  } /* endfor */
 }
 
 /********************************************************
@@ -150,116 +241,231 @@ void Grid(Euler1D_UniformMesh *Soln,
 void ICs(Euler1D_UniformMesh *Soln,
          char *gas_ptr,
 	 const int i_ICtype,
-         const int Number_of_Cells) {
+         const int Number_of_Cells,
+	 CFD1D_Input_Parameters &IP) {
 
-    int i;
-    Euler1D_pState Wl,Wr;
+  int i;
+  Euler1D_pState Wl,Wr,Wm;
 
-    /* Assign the gas constants for the gas of interest. */
+  int ICl, ICu, TC;
+  double xmin, xmax;
+  double a, b, dx;
 
-    Soln[0].W.setgas(gas_ptr);
-    Soln[0].U.setgas(gas_ptr);
+  ICl = Soln[0].ICl;
+  ICu = Soln[0].ICu;
+  TC = Number_of_Cells+2*Soln[0].Nghost; // total number of cells
 
-    /* Assign the initial data for the IVP of interest. */
+  /* Assign the gas constants for the gas of interest. */
+
+  Soln[0].W.setgas(gas_ptr);
+  Soln[0].U.setgas(gas_ptr);
+  Soln[0].CellSolutionCharactVar().setgas(gas_ptr);
+
+  /* Assign the initial data for the IVP of interest. */
     
-    switch(i_ICtype) {
-      case IC_CONSTANT :
-        Wl = Euler1D_W_STDATM;
-        for ( i = 0 ; i <= Number_of_Cells+1 ; ++i ) {
-            Soln[i].W = Wl;
-            Soln[i].U = U(Soln[i].W);
-        } /* endfor */
-        break;
-      case IC_UNIFORM :
-        Wl = Euler1D_W_STDATM;
-        for ( i = 0 ; i <= Number_of_Cells+1 ; ++i ) {
-            Soln[i].W = Wl;
-            Soln[i].U = U(Soln[i].W);
-        } /* endfor */
-        break;
-      case IC_SOD :
-        Wl = Euler1D_W_STDATM;
-        Wr = Euler1D_pState(DENSITY_STDATM/EIGHT,
-          		    ZERO,
-         		    PRESSURE_STDATM/TEN); 
-        for ( i = 0 ; i <= Number_of_Cells+1 ; ++i ) {
-	    if (Soln[i].X.x <= ZERO) {
-               Soln[i].W = Wl;
-            } else {
-               Soln[i].W = Wr;	     
-            } /* end if */
-            Soln[i].U = U(Soln[i].W);
-        } /* endfor */
-        break;
-      case IC_GROTH :
-        Wl = Euler1D_pState(4.696, ZERO, 404.4e03);
-        Wr = Euler1D_pState(1.408, ZERO, 101.1e03);
-        for ( i = 0 ; i <= Number_of_Cells+1 ; ++i ) {
-	    if (Soln[i].X.x <= ZERO) {
-               Soln[i].W = Wl;
-            } else {
-               Soln[i].W = Wr;	     
-            } /* end if */
-            Soln[i].U = U(Soln[i].W);
-        } /* endfor */
-        break;
-      case IC_EINFELDT :
-        Wl = Euler1D_pState(ONE,-TWO,FOUR/TEN);
-        Wr = Euler1D_pState(ONE,TWO,FOUR/TEN);
-        for ( i = 0 ; i <= Number_of_Cells+1 ; ++i ) {
-	    if (Soln[i].X.x <= ZERO) {
-               Soln[i].W = Wl;
-            } else {
-               Soln[i].W = Wr;	     
-            } /* end if */
-            Soln[i].U = U(Soln[i].W);
-        } /* endfor */
-        break;
-      case IC_SHOCK_WAVE :
-        Wl = Euler1D_pState(2.281, 164.83, 201.17e03);
-        Wr = Euler1D_pState(1.408, ZERO, 101.1e03);
-        for ( i = 0 ; i <= Number_of_Cells+1 ; ++i ) {
-	    if (Soln[i].X.x <= ZERO) {
-               Soln[i].W = Wl;
-            } else {
-               Soln[i].W = Wr;	     
-            } /* end if */
-            Soln[i].U = U(Soln[i].W);
-        } /* endfor */
-        break;
-      case IC_CONTACT_SURFACE :
-        Wl = Euler1D_pState(1.045, 200.00, 300.00e03);
-        Wr = Euler1D_pState(3.483, 200.00, 300.00e03);
-        for ( i = 0 ; i <= Number_of_Cells+1 ; ++i ) {
-	    if (Soln[i].X.x <= ZERO) {
-               Soln[i].W = Wl;
-            } else {
-               Soln[i].W = Wr;	     
-            } /* end if */
-            Soln[i].U = U(Soln[i].W);
-        } /* endfor */
-        break;
-      case IC_RAREFACTION_WAVE :
-        Wl = Euler1D_pState(1.598, -383.64, 91.88e03);
-        Wr = Euler1D_pState(2.787, -216.97, 200.0e03);
-        for ( i = 0 ; i <= Number_of_Cells+1 ; ++i ) {
-	    if (Soln[i].X.x <= ZERO) {
-               Soln[i].W = Wl;
-            } else {
-               Soln[i].W = Wr;	     
-            } /* end if */
-            Soln[i].U = U(Soln[i].W);
-        } /* endfor */
-        break;
-      default:
-        Wl = Euler1D_W_STDATM;
-        for ( i = 0 ; i <= Number_of_Cells+1 ; ++i ) {
-            Soln[i].W = Wl;
-            Soln[i].U = U(Soln[i].W);
-        } /* endfor */
-        break;
-    } /* endswitch */
+  switch(i_ICtype) {
+  case IC_CONSTANT :
+    Wl = Euler1D_W_STDATM;
+    for ( i = 0 ; i <= TC-1 ; ++i ) {
+      Soln[i].W = Wl;
+      Soln[i].U = U(Soln[i].W);
+    } /* endfor */
+    break;
+  case IC_UNIFORM :
+    Wl = Euler1D_W_STDATM;
+    for ( i = 0 ; i <= TC-1 ; ++i ) {
+      Soln[i].W = Wl;
+      Soln[i].U = U(Soln[i].W);
+    } /* endfor */
+    break;
+  case IC_SOD :
+    Wl = Euler1D_W_STDATM;
+    Wr = Euler1D_pState(DENSITY_STDATM/EIGHT,
+			ZERO,
+			PRESSURE_STDATM/TEN); 
+    for ( i = 0 ; i <= TC-1 ; ++i ) {
+      if (Soln[i].X.x <= ZERO) {
+	Soln[i].W = Wl;
+      } else {
+	Soln[i].W = Wr;	     
+      } /* end if */
+      Soln[i].U = U(Soln[i].W);
+    } /* endfor */
+    break;
+  case IC_GROTH :
+    Wl = Euler1D_pState(4.696, ZERO, 404.4e03);
+    Wr = Euler1D_pState(1.408, ZERO, 101.1e03);
+    for ( i = 0 ; i <= TC-1 ; ++i ) {
+      if (Soln[i].X.x <= ZERO) {
+	Soln[i].W = Wl;
+      } else {
+	Soln[i].W = Wr;	     
+      } /* end if */
+      Soln[i].U = U(Soln[i].W);
+    } /* endfor */
+    break;
+  case IC_EINFELDT :
+    Wl = Euler1D_pState(ONE,-TWO,FOUR/TEN);
+    Wr = Euler1D_pState(ONE,TWO,FOUR/TEN);
+    for ( i = 0 ; i <= TC-1 ; ++i ) {
+      if (Soln[i].X.x <= ZERO) {
+	Soln[i].W = Wl;
+      } else {
+	Soln[i].W = Wr;	     
+      } /* end if */
+      Soln[i].U = U(Soln[i].W);
+    } /* endfor */
+    break;
+  case IC_SHOCK_WAVE :
+    Wl = Euler1D_pState(2.281, 164.83, 201.17e03);
+    Wr = Euler1D_pState(1.408, ZERO, 101.1e03);
+    for ( i = 0 ; i <= TC-1 ; ++i ) {
+      if (Soln[i].X.x <= ZERO) {
+	Soln[i].W = Wl;
+      } else {
+	Soln[i].W = Wr;	     
+      } /* end if */
+      Soln[i].U = U(Soln[i].W);
+    } /* endfor */
+    break;
+  case IC_CONTACT_SURFACE :
+    Wl = Euler1D_pState(1.045, 200.00, 300.00e03);
+    Wr = Euler1D_pState(3.483, 200.00, 300.00e03);
+    for ( i = 0 ; i <= TC-1 ; ++i ) {
+      if (Soln[i].X.x <= ZERO) {
+	Soln[i].W = Wl;
+      } else {
+	Soln[i].W = Wr;	     
+      } /* end if */
+      Soln[i].U = U(Soln[i].W);
+    } /* endfor */
+    break;
+  case IC_RAREFACTION_WAVE :
+    Wl = Euler1D_pState(1.598, -383.64, 91.88e03);
+    Wr = Euler1D_pState(2.787, -216.97, 200.0e03);
+    for ( i = 0 ; i <= TC-1 ; ++i ) {
+      if (Soln[i].X.x <= ZERO) {
+	Soln[i].W = Wl;
+      } else {
+	Soln[i].W = Wr;	     
+      } /* end if */
+      Soln[i].U = U(Soln[i].W);
+    } /* endfor */
+    break;
+  case IC_LAX :
+    Wl = Euler1D_pState(0.445, 0.698, 3.528);
+    Wr = Euler1D_pState(0.5, 0.0, 0.571);
+    for ( i = 0 ; i <= TC-1 ; ++i ) {
+      if (Soln[i].X.x <= ZERO) {
+	Soln[i].W = Wl;
+      } else {
+	Soln[i].W = Wr;	     
+      } /* end if */
+      Soln[i].U = U(Soln[i].W);
+    } /* endfor */
+    break;
+  case IC_SIN_WAVE:
+    IP.ExactFunction = SIN_WAVE_Solution;
+    IP.X_ExactSolution_Min = -ONE;
+    IP.X_ExactSolution_Max = ONE;
+    xmax = Soln[ICu].X.x+Soln[ICu].X.dx/2.0;
+    xmin = Soln[ICl].X.x-Soln[ICl].X.dx/2.0;
+    for ( i = 0 ; i <= TC-1 ; ++i ) {
+      Soln[i].W = Euler1D_W_STDATM;
+      dx = Soln[i].X.dx;
+      a = Soln[i].X.x-dx/2.0;
+      b = Soln[i].X.x+dx/2.0;
+      Soln[i].W[1] = (Integral_SIN_WAVE(xmin,xmax,b)-
+		      Integral_SIN_WAVE(xmin,xmax,a))/dx;
+      Soln[i].W[2] = 100.0;
+      Soln[i].U = U(Soln[i].W);
+    } /* endfor */
+    break;
+  case IC_JIANG_WAVE:
+    IP.ExactFunction = JIANG_IVP_Solution;
+    IP.X_ExactSolution_Min = -ONE;
+    IP.X_ExactSolution_Max = ONE;
+    double dist;
+    xmax = Soln[ICu].X.x+Soln[ICu].X.dx/2.0;
+    xmin = Soln[ICl].X.x-Soln[ICl].X.dx/2.0;
 
+    for ( i = 0 ; i <= TC-1 ; ++i ) {
+      Soln[i].W = Euler1D_W_STDATM;
+      dx = Soln[i].X.dx;
+      a = Soln[i].X.x-dx/2.0;
+      a = ConvertDomainToMinusOneOne(xmin,xmax,a);
+      b = Soln[i].X.x+dx/2.0;
+      b = ConvertDomainToMinusOneOne(xmin,xmax,b);
+      dist = fabs(b-a);
+
+      // Numeric Integration
+      Soln[i].W[1] = AdaptiveGaussianQuadrature(JIANG_IVP_Solution,a,b,Soln[i].W[1],10)/dist;
+
+      Soln[i].W[2] = 100.0;
+      Soln[i].U = U(Soln[i].W);
+    } /* endfor */
+    break;
+  case IC_SHOCK_ACOUSTIC_INTERACTION:
+    double density;
+    Wl = Euler1D_pState(3.857143, 2.629369, 10.333333);
+    for ( i = 0 ; i <= TC-1 ; ++i ) {
+      if (Soln[i].X.x <= -4) {
+	Soln[i].W = Wl;
+      } else {
+	density = 1 + 0.2*sin(5*Soln[i].X.x);
+	Wr = Euler1D_pState(density, ZERO, ONE);
+	Soln[i].W = Wr;	     
+      } /* end if */
+      Soln[i].U = U(Soln[i].W);
+    } /* endfor */
+    break;
+  case IC_BLAST_WAVE_INTERACTION:
+    // defined in the domain '0' to '1'
+    Wl = Euler1D_pState(ONE, ZERO, 1.0e03);
+    Wm = Euler1D_pState(ONE, ZERO, 1.0e-02);
+    Wr = Euler1D_pState(ONE, ZERO, 1.0e02);
+    for ( i = 0 ; i <= TC-1 ; ++i ) {
+      if (Soln[i].X.x <= 0.1) {
+	Soln[i].W = Wl;
+      } else if (Soln[i].X.x <= 0.9){
+	Soln[i].W = Wm;
+      } else {
+	Soln[i].W = Wr;
+      } /* end if */
+      Soln[i].U = U(Soln[i].W);
+    } /* endfor */
+    break;
+  case IC_CONVECTION_OF_DIFFERENT_SHAPES:
+    // see 'Efficient Implementation of Weighted ENO Schemes', JCP 126, 202-228
+    double xmin, xmax;
+    xmax = Soln[ICu].X.x+Soln[ICu].X.dx/2.0;
+    xmin = Soln[ICl].X.x-Soln[ICl].X.dx/2.0;
+
+    for ( i = 0 ; i <= TC-1 ; ++i ) {
+      a = Soln[i].X.x-Soln[i].X.dx/2.0;
+      a = ConvertDomainToMinusOneOne(xmin,xmax,a);
+      b = Soln[i].X.x+Soln[i].X.dx/2.0;
+      b = ConvertDomainToMinusOneOne(xmin,xmax,b);
+      // compute the average solution in each cell for the density
+      Soln[i].W[1] = AdaptiveGaussianQuadrature(ConvectionShapes,a,b,Soln[i].W[1],14)/Soln[i].X.dx;
+      Soln[i].W[2] = 100.0;	// set velocity
+      // set the conservative variables
+      Soln[i].U = U(Soln[i].W);
+    } /* endfor */
+    break;
+  default:
+    Wl = Euler1D_W_STDATM;
+    for ( i = 0 ; i <= TC-1 ; ++i ) {
+      Soln[i].W = Wl;
+      Soln[i].U = U(Soln[i].W);
+    } /* endfor */
+    break;
+  } /* endswitch */
+  
+  // Update the characteristic variables
+  for ( i = 0 ; i <= TC-1 ; ++i ) {
+    Soln[i].CellSolutionCharactVar() = Soln[i].CellSolutionConsVar().ConservedVarToCharactVar();
+  }
 }
 
 /********************************************************
@@ -280,7 +486,7 @@ double CFL(Euler1D_UniformMesh *Soln,
 
     dtMin = MILLION;
 
-    for ( i = 0 ; i <= Number_of_Cells+1 ; ++i ) {
+    for ( i = Soln[0].ICl; i <= Soln[0].ICu ; ++i ) {
         Soln[i].dt = Soln[i].X.dx/
 	             (Soln[i].W.a()+fabs(Soln[i].W.v));
         dtMin = min(dtMin, Soln[i].dt);

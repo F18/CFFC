@@ -104,7 +104,7 @@ ifeq ($(PLATFORM),Linux_alpha)
                             -lcxml_ev6
 endif
 ifeq ($(PLATFORM),Linux_ia64)
- BLAS_LD_FLAGS   	  = -lblas -llapack -lg2c -lifcore -L/opt/intel/fc/9.1.036/lib/
+ BLAS_LD_FLAGS   	  = -lblas -llapack -lg2c -lifcore
 endif	
 ifeq ($(PLATFORM),Linux_x86_64)
   BLAS_LD_FLAGS           = -lblas -llapack -lg2c -lgcc
@@ -213,18 +213,21 @@ endif
 ifeq ($(PLATFORM),Linux_ia64)
     FC = ifort
     CC = icc
-    CXX = icc
+    CXX = icpc
     CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 -D__NUM_LIMITS__ $(SPARSELIB_CPP_FLAGS) \
                 $(BPKIT_CPP_FLAGS) $(TUT_CPP_FLAGS) $(RECONSTRUCT_CPP_FLAGS)
     CXXFLAGS = -w0 -O2 -ftz -mp
     FFLAGS = -O2 -mp -ftz 
     CFLAGS = -w0 -O2 -mp -ftz 
     LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) -limf
+    ifeq ($(PROFILING),ON)
+      CXXFLAGS = -w0 -mp -ftz -g -p
+    endif
     # Index Checking
     ifeq ($(CHECK_INDEX),OFF)
       CPPFLAGS := $(CPPFLAGS) -D__No_Checking__
     endif
-    LD = icpc
+    LD = $(CXX)
     DEPENDSFLAGS =
 endif
 

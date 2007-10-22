@@ -17,14 +17,14 @@ namespace tut
       // Declare it relative to the /src_2D directory,
       // otherwise the framework might not find the input
       // and output files.
-      set_test_suit_path("UnitTesting/BasicTests");
+      set_test_suite_path("UnitTesting/BasicTests");
     }
   };
 
   /**
    * This group of declarations is just to register
    * test group in test-application-wide singleton.
-   * Name of test group object (LinearSystems_TestGroup) shall
+   * Name of test group object (e.g. TestGroup) shall
    * be unique in tut:: namespace. Alternatively, you
    * you may put it into anonymous namespace.
    */
@@ -105,5 +105,5 @@ namespace tut
 
 namespace tut
 {
-  TestGroup TestSuitObject("Simple_Example");
+  TestGroup TestSuiteObject("Simple_Example");
 }

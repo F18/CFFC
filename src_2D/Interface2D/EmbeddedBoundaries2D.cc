@@ -73,7 +73,7 @@ int main(int num_arg, char *arg_ptr[]) {
   ifstream Input_File;
 
   // Unit testing flags:
-  string TestSuite;
+  string TestSuite, TestRootPath;
   int TestNumber=0;
 
   /********************************************************************  
@@ -148,13 +148,18 @@ int main(int num_arg, char *arg_ptr[]) {
 	automate_flag = 1;
       } else if (strcmp(arg_ptr[i], "-t") == 0) {
 	test_flag=1;
+	if (num_arg-1>i && strcmp(arg_ptr[i+1], "-path") != 0 ){
+	  // Read TestSuite name
+	  TestSuite= arg_ptr[++i];
+	} /* endif */
+	if (num_arg-1>i && strcmp(arg_ptr[i+1], "-path") != 0){
+	  // Read TestNumber
+	  TestNumber = atoi(arg_ptr[++i]);
+	} /* endif */
+      } else if (strcmp(arg_ptr[i], "-path") == 0) {
 	if (num_arg-1>i){
-	  TestSuite= arg_ptr[i+1];
-	} /* endif */
-	if (num_arg-1>i+1){
-	  TestNumber = atoi(arg_ptr[i+2]);
-	} /* endif */
-	break;
+	  TestRootPath = arg_ptr[++i];
+	}  /* endif */
       } else {
         error_flag = 1;
       }
@@ -211,7 +216,10 @@ int main(int num_arg, char *arg_ptr[]) {
 	  << " -t test-suite-name [test-number] \n"
 	  << "                 run all tests in test-suite-name or \n"
 	  << "                 a particular test-number \n"
-	  << "                 example: embeddedboundaries2D -t MyTestSuit 3\n";
+	  << "                 example: embeddedboundaries2D -t MyTestSuit 3\n"
+	  << " -path name      use 'name' as path to '/src_2D' directory\n"
+	  << "                 use this option if you run UnitTesting framework\n"
+	  << "                 from a directory different than '/src_2D'\n";  
      cout.flush();
   }
   if (help_flag) {
@@ -224,7 +232,7 @@ int main(int num_arg, char *arg_ptr[]) {
    *********************************************************************/
 
   if (test_flag) {
-     error_flag = Perform_UnitTesting(TestSuite, TestNumber);
+     error_flag = Perform_UnitTesting(TestSuite, TestNumber, TestRootPath);
      CFFC_Finalize_MPI();
      return (error_flag);
   } /* endif */

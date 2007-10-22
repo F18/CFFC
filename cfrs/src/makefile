@@ -313,6 +313,7 @@ clean:
 	@rm -f $(CFFC_2D_Path)/Utilities/EpsilonTol.o $(CFFC_2D_Path)/HighOrderReconstruction/ReconstructionHelpers.o
 	@rm -f $(CFFC_2D_Path)/Math/LinearSystems.o $(CFFC_2D_Path)/Math/NumericalLibrary.o
 	@rm -f $(CFFC_2D_Path)/Math/Matrix.o
+	@rm -f $(CFFC_2D_Path)/Math/UnitTests/*.o $(CFFC_2D_Path)/Math/UnitTests/TestFunctions/*.o
 	@rm -f $(CFFC_2D_Path)/UnitTesting/BasicTests/test_TestData.o $(CFFC_2D_Path)/UnitTesting/BasicTests/Sample_Test.o
 	@echo "Remove the automatically created dependency files *.d"
 	rm -fr $(DEPENDDIR)

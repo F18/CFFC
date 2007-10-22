@@ -1,8 +1,8 @@
 /*!\file NumericalLibrary.h
   \brief Header file defining some useful numerical methods/objects. */
 
-#ifndef _NumericalLibrary_INCLUDED
-#define _NumericalLibrary_INCLUDED
+#ifndef _NUMERICAL_LIBRARY_INCLUDED
+#define _NUMERICAL_LIBRARY_INCLUDED
 
 /* Include required C++ libraries. */
 #include <limits>

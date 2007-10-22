@@ -14,11 +14,13 @@
 /* Include required C++ libraries. */
 #include <fstream>
 #include <iomanip>
+#include <stdexcept>
 
 /* Using std namespace functions */
 using std::cout;
 using std::setprecision;
 using std::endl;
+using std::runtime_error;
 
 #define Print_(x) cout << setprecision(16) << #x " = " << x << endl;
 #define Print_2(x,y) cout<< setprecision(16)<< #x " = " << x << ",  " #y " = " << y << endl;
@@ -28,24 +30,20 @@ using std::endl;
 #define Print_File_3(x,y,z,output_stream) output_stream << setprecision(16)<< #x " = " << x << ",  " #y " = " << y << ",  " \
   #z " = " << z << endl;
 #define Print_Digits(x,digits) cout << setprecision(digits) << #x " = " << x << endl;
-#define TurnOff(x) /* #x */ cout << "\nElement " #x << " was turned off" << endl;
+#define TurnOff(x) /* #x */ cout << "\n Code: \n \"" #x << "\"\n was TURNED OFF!!!" << endl;
 
 inline void require(bool requirement, 
-                    const std::string& msg = "Requirement failed"){
-#ifndef __No_Checking__
-  using namespace std;
+                    const std::string& msg = "Requirement failed") throw(runtime_error) {
+#ifdef _DO_CHECKS
   if (!requirement) {
-    fputs(msg.c_str(), stderr);
-    fputs("\n", stderr);
-    exit(1);
+    throw runtime_error(msg.c_str());
   }
 #endif
 }
 
 inline void requireArgs(int argc, int args, 
-			const std::string& msg = "Must use %d arguments") {
-#ifndef __No_Checking__
-  using namespace std;
+			const std::string& msg = "Must use %d arguments"){
+#ifdef _DO_CHECKS
   if (argc != args + 1) {
     fprintf(stderr, msg.c_str(), args);
     fputs("\n", stderr);
@@ -55,9 +53,8 @@ inline void requireArgs(int argc, int args,
 }
 
 inline void requireMinArgs(int argc, int minArgs,
-			   const std::string& msg = "Must use at least %d arguments") {
-#ifndef __No_Checking__
-  using namespace std;
+			   const std::string& msg = "Must use at least %d arguments"){
+#ifdef _DO_CHECKS
   if(argc < minArgs + 1) {
     fprintf(stderr, msg.c_str(), minArgs);
     fputs("\n", stderr);
@@ -67,9 +64,8 @@ inline void requireMinArgs(int argc, int minArgs,
 }
   
 inline void assure(std::ifstream& in, 
-		   const std::string& filename = "") {
-#ifndef __No_Checking__
-  using namespace std;
+		   const std::string& filename = ""){
+#ifdef _DO_CHECKS
   if(!in) {
     fprintf(stderr, "Could not open file %s\n",
 	    filename.c_str());
@@ -79,9 +75,8 @@ inline void assure(std::ifstream& in,
 }
 
 inline void assure(std::ofstream& out, 
-		   const std::string& filename = "") {
-#ifndef __No_Checking__
-  using namespace std;
+		   const std::string& filename = ""){
+#ifdef _DO_CHECKS
   if(!out) {
     fprintf(stderr, "Could not open file %s\n", 
 	    filename.c_str());

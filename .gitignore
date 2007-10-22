@@ -47,6 +47,10 @@ labels.pl
 tags
 .DS_Store
 
+# 1D executables
+solvers1D
+euler1D
+
 # 2D executables
 cffc2D
 icemcfd2tecplot

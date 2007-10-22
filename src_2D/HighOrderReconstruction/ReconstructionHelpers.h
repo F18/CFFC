@@ -9,19 +9,22 @@
 #include "../Math/Vector2D.h"
 #include "../Utilities/Utilities.h"
 #include "../Utilities/EpsilonTol.h"
+#include "CENO_ExecutionMode.h"
 
 
 /*! \brief Compute the geometric weight based on the imput distance.
  * 
  * The returned geometric weight depends on the precompilation 
- * directive __CENO_SQUARE_GEOM_WEIGHTING__ .
+ * directive _CENO_SQUARE_GEOM_WEIGHTING.
  */
 inline double CENO_Geometric_Weighting(double & Distance){
-#ifdef __CENO_SQUARE_GEOM_WEIGHTING__
-  return 1.0/(EpsilonTol::epsilon + sqr(Distance));
-#else
-  return 1.0/(EpsilonTol::epsilon + fabs(Distance));
-#endif
+  
+  if (CENO_Execution_Mode::CENO_SQUARE_GEOM_WEIGHTING ) {
+    return 1.0/(EpsilonTol::epsilon + sqr(Distance));
+  }
+  else {
+    return 1.0/(EpsilonTol::epsilon + fabs(Distance));
+  }
 }
 
 
@@ -36,10 +39,10 @@ inline double CENO_Geometric_Weighting(double & Distance){
 inline void CENO_Geometric_Weighting(double & ControlVolumeWeight, const double & DistanceBetweenCentroids){
 
   ControlVolumeWeight = DistanceBetweenCentroids;
-  
-#ifdef __CENO_SQUARE_GEOM_WEIGHTING__
-  ControlVolumeWeight *= ControlVolumeWeight;
-#endif // __CENO_SQUARE_GEOM_WEIGHTING__
+
+  if (CENO_Execution_Mode::CENO_SQUARE_GEOM_WEIGHTING ) {
+    ControlVolumeWeight *= ControlVolumeWeight;
+  }
 
   ControlVolumeWeight = 1.0/(EpsilonTol::epsilon + ControlVolumeWeight);
 }

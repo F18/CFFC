@@ -1,10 +1,13 @@
-/* Euler1DSolvers.cc:  1D Euler Equation Solvers. */
+/*!\file Euler1DSolvers.cc
+  \brief 1D Euler Equation Solvers. */
 
 /* Include 1D Euler solution header file. */
 
 #ifndef _EULER1D_INCLUDED
 #include "Euler1D.h"
 #endif // _EULER1D_INCLUDED
+
+#include "../HighOrderReconstruction/HighOrder_CENO_Reconstruction1D.h"
 
 /********************************************************
  * Routine: Euler1DSolver                               *
@@ -36,12 +39,21 @@ int Euler1DSolver(char *Input_File_Name_ptr,
 
   /* Solution variables. */
 
-  Euler1D_UniformMesh *Soln_ptr;
+  Euler1D_UniformMesh *Soln_ptr = NULL;
 
  /* Other local solution variables. */
 
   int number_of_time_steps,
       command_flag, error_flag, line_number, i;
+
+  /* Accuracy variables */
+  vector<double> LNorms; LNorms.reserve(3);
+  bool AccuracyAssessed_flag = false;
+  bool Title_Error_Norms = true;
+
+
+  /* Create memory storage variable for the ENO subroutines */
+  MemoryStorageENO_1D MemoryENO;
 
   double time, dtime;
 
@@ -53,20 +65,25 @@ int Euler1DSolver(char *Input_File_Name_ptr,
 
   Set_Default_Input_Parameters(Input_Parameters);
 
+  // set batch_mode if required
+  if (batch_flag){
+    Input_Parameters.Verbose() = OFF;
+  }
+ 
   strcpy(Input_Parameters.Input_File_Name, Input_File_Name_ptr);
   Open_Input_File(Input_Parameters);
-  if (Input_Parameters.Input_File.bad()) {
+  if (Input_Parameters.Input_File.fail()) {
      if (batch_flag) {
-        cout << "\nPDES++ ERROR: Unable to open CFD1D input data file.\n\n";
+        cout << "\n Euler1D ERROR: Unable to open Euler1D input data file.\n\n";
      } else {
-        cout << "\n PDES++ ERROR: Unable to open CFD1D input data file.";
-        cout << "\n\nPDES++: Execution terminated.\n";
+        cout << "\n Euler1D ERROR: Unable to open Euler1D input data file.";
+        cout << "\n\nEuler1D: Execution terminated.\n";
      } /* endif */
      return (-1);
   } /* endif */
 
   if (! batch_flag) {
-    cout << "\n Reading CFD1D input data file `"
+    cout << "\n Reading Euler1D input data file `"
 	 << Input_Parameters.Input_File_Name << "'.";
   }
   while (1) {
@@ -83,12 +100,12 @@ int Euler1DSolver(char *Input_File_Name_ptr,
                 command_flag == INVALID_INPUT_VALUE) {
          line_number = -line_number;
          if (batch_flag) {
-             cout << "\nPDES++ ERROR: Error reading CFD1D data at line #"
+             cout << "\n Euler1D ERROR: Error reading Euler1D data at line #"
 	          << -line_number << " of input data file.\n\n";
          } else {
-             cout << "\n PDES++ ERROR: Error reading CFD1D data at line #"
+             cout << "\n Euler1D ERROR: Error reading Euler1D data at line #"
 	          << -line_number  << " of input data file.";
-             cout << "\n\nPDES++: Execution terminated.\n";
+             cout << "\n\nEuler1D: Execution terminated.\n";
          } /* end if */
          return (line_number);
      } /* endif */
@@ -109,7 +126,12 @@ int Euler1DSolver(char *Input_File_Name_ptr,
 
   if (! batch_flag) cout << "\n Creating memory for Euler1D solution variables.";
   Soln_ptr=Allocate(Soln_ptr,
-                    Input_Parameters.Number_of_Cells);
+                    Input_Parameters);
+
+  if (Soln_ptr == NULL){
+    cout << "\n Euler1DSolvers::Allocate() Error! Probably not enough memory!";
+    exit(1);
+  }
 
   /* Create uniform mesh. */
 
@@ -118,6 +140,15 @@ int Euler1DSolver(char *Input_File_Name_ptr,
        Input_Parameters.X_Min, 
        Input_Parameters.X_Max, 
        Input_Parameters.Number_of_Cells);
+
+  /*********************************************************  
+   * Create memory storage for the ENO subroutines.        *
+   *********************************************************/
+  if (Input_Parameters.i_ReconstructionMethod == RECONSTRUCTION_ENO ||
+      Input_Parameters.i_ReconstructionMethod == RECONSTRUCTION_ENO_CHARACTERISTIC){
+    cout << "\n Allocate storage for the ENO subroutine.\n";
+    TurnOff( MemoryENO.newsize(Soln_ptr[0].NumberOfTaylorDerivatives()); )
+  }
 
   /********************************************************  
    * Initialize Euler1D solution variables.               *
@@ -135,12 +166,18 @@ int Euler1DSolver(char *Input_File_Name_ptr,
   ICs(Soln_ptr, 
       "AIR", 
       Input_Parameters.i_ICs, 
-      Input_Parameters.Number_of_Cells);
+      Input_Parameters.Number_of_Cells,
+      Input_Parameters);
   
+
   /********************************************************  
    * Solve conservation form of 1D Euler equations for    *
    * specified IBVP or BVP on uniform mesh.               *
    ********************************************************/
+  
+  /* Compute the pseudo-inverse matrices used in the CENO reconstruction for each 
+     each cell if selected CENO in fast mode. */
+  Compute_CENO_PseudoInverse(Soln_ptr,Input_Parameters);
 
   continue_existing_calculation: ;
 
@@ -269,8 +306,7 @@ int Euler1DSolver(char *Input_File_Name_ptr,
      if (command_flag == EXECUTE_CODE) {
          // Deallocate memory for 1D Euler equation solution.
          if (! batch_flag) cout << "\n Deallocating Euler1D solution variables.";
-         Soln_ptr=Deallocate(Soln_ptr,
-                             Input_Parameters.Number_of_Cells);
+         Soln_ptr=Deallocate(Soln_ptr);
          // Execute new calculation.
          if (! batch_flag)  {
             cout << "\n\n Starting a new calculation.";
@@ -281,8 +317,7 @@ int Euler1DSolver(char *Input_File_Name_ptr,
      } else if (command_flag == TERMINATE_CODE) {
          // Deallocate memory for 1D Euler equation solution.
          if (! batch_flag) cout << "\n Deallocating Euler1D solution variables.";
-         Soln_ptr=Deallocate(Soln_ptr,
-                             Input_Parameters.Number_of_Cells);
+         Soln_ptr=Deallocate(Soln_ptr);
          // Close input data file.
          if (! batch_flag) cout << "\n\n Closing CFD1D input data file.";
          Close_Input_File(Input_Parameters);
@@ -306,7 +341,7 @@ int Euler1DSolver(char *Input_File_Name_ptr,
            cout << "\n Writing Euler1D solution to output data file `"
 	        << Output_File_Name_ptr << "'.";
          Output_File.open(Output_File_Name_ptr, ios::out);
-         if (Output_File.bad()) {
+         if (Output_File.fail()) {
             if (batch_flag) {
                cout << "\nPDES++ ERROR: Unable to open Euler1D output data file.\n\n";
             } else {
@@ -335,7 +370,7 @@ int Euler1DSolver(char *Input_File_Name_ptr,
          if (Input_Parameters.i_Output_Format == IO_GNUPLOT) {
             Gnuplot_File_Name_ptr = Input_Parameters.Gnuplot_File_Name;
             Gnuplot_File.open(Gnuplot_File_Name_ptr, ios::out);
-            if (Gnuplot_File.bad()) {
+            if (Gnuplot_File.fail()) {
                if (batch_flag) {
                   cout << "\nPDES++ ERROR: Unable to open Euler1D Gnuplot macro file.\n\n";
                } else {
@@ -371,10 +406,10 @@ int Euler1DSolver(char *Input_File_Name_ptr,
                 command_flag == INVALID_INPUT_VALUE) {
          line_number = -line_number;
          if (batch_flag) {
-             cout << "\nPDES++ ERROR: Error reading CFD1D data at line #"
+             cout << "\nEuler1D ERROR: Error reading Euler1D data at line #"
 	          << -line_number << " of input data file.\n\n";
          } else {
-             cout << "\n PDES++ ERROR: Error reading CFD1D data at line #"
+             cout << "\nEuler1D ERROR: Error reading Euler1D data at line #"
 	          << -line_number  << " of input data file.";
              cout << "\n\nPDES++: Execution terminated.\n";
          } /* end if */

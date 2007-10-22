@@ -28,6 +28,8 @@ using namespace std;
 #include "../Grid/Cell1D.h"
 #endif // _CELL1D_INCLUDED
 
+#include "../CFD/CFD1DInput.h"
+
 /* Define the classes. */
 
 /********************************************************
