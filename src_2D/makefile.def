@@ -45,7 +45,6 @@ DO_CHECKS = ON
 #                ATTENTION: All your checks with 'assert' will be turned OFF!!!!
 NO_ASSERT = OFF
 
-
 #-----------------------------------------------------------#
 #       Platform Specific Compiler Flags                    #
 #-----------------------------------------------------------#
@@ -504,7 +503,6 @@ ifeq ($(TUT_TESTING),ON)
 else
   CPPFLAGS += -D_NO_TUT_TESTING
 endif
-
 
 #
 # Add DO_CHECKS flags

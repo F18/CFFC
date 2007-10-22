@@ -129,7 +129,6 @@ ifeq ($(TUT_TESTING),ON)
   SRC_HIGH_ORDER_RECONSTRUCTION += $(SRC_HIGH_ORDER_RECONSTRUCTION_TESTS)
 endif
 
-
 # 1D:
 SRC_CFD1D_INPUT = CFD1DInput.cc
 SRC_CFD1D_INPUT := $(addprefix $(CFD_DIR), $(SRC_CFD1D_INPUT))
@@ -151,7 +150,6 @@ SRC_EULER1D = Euler1DState.cc \
 	      Euler1DSolvers.cc \
 	      ExactSolutions/ExactSolutions.cc
 	     # Euler1D_HighOrder.cc \
-#
 SRC_EULER1D := $(addprefix $(EULER_1D_DIR), $(SRC_EULER1D))
 
 # Add Euler 1D Testing If Required:
@@ -165,7 +163,6 @@ ifeq ($(TUT_TESTING),ON)
 endif
 
 SRC_EULER1D_EXE = $(EULER_1D_DIR)Euler1DMain.cc
-#
 
 # Advectdiffuse2D:
 SRC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.cc \
