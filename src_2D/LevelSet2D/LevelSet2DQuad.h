@@ -2116,11 +2116,14 @@ extern int Trace_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
 				  ofstream &dout);
 #endif
 
+extern void Update_Start_List(LevelSet2D_Quad_Block &SolnBlk,
+			      LinkedList<int> &start);
+
 extern void Flag_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
 			       const int &ic,
 			       const int &jc,
-			       int &ncells,
-			       const double &epsilon);
+			       const double &epsilon,
+			       LinkedList<int> start);
 
 extern void Clean_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
 				const int &ic,

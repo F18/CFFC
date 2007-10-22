@@ -623,21 +623,21 @@ int Scalar_Geometric_Extension_Problem(LevelSet2D_Quad_Block &SolnBlk,
 	      }
 
 	    }
-
+	    
 	  }
-
+	  
 	}
-
+	
       }
-
+      
       // Enforce the signed distance to zero if need be.
       if (fabs(d) < epsilon) d = ZERO;
       if (fabs(f) < epsilon) f = ZERO;
-
+      
       // Assign the solution to the scalar geometric extension problem.
       if (fabs(SolnBlk.U[i][j].psi) < IP.Extension_Distance) SolnBlk.U[i][j].F = f;
       else SolnBlk.U[i][j].F = ZERO;
-
+      
     }
   }
 
@@ -667,8 +667,9 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
   int found;
 
   //  int numInfectedFaces;   // number of infected faces/centers
+  //  int ncells;     // number of infected cells.
 
-  int ncells;     // number of infected cells.
+  LinkedList<int> start;  // starting points
 
   double epsilon = TOLER*min(SolnBlk.Grid.lfaceN(SolnBlk.Grid.ICl,SolnBlk.Grid.JCl),
 			     SolnBlk.Grid.lfaceE(SolnBlk.Grid.ICl,SolnBlk.Grid.JCl));
@@ -689,12 +690,12 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
   // Flag infected cells and identify start points for spline tracing.
   for (int j = SolnBlk.JCl-1; j <= SolnBlk.JCu+1; j++) {
     for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
-      Flag_Infected_Cell(SolnBlk,i,j,ncells,epsilon);
+      Flag_Infected_Cell(SolnBlk,i,j,epsilon,start);
     }
   }
 
   // Exit immediately if no interface points have been located.
-  if (!ncells) return 0;
+  if (!SolnBlk.Trace.np) return 0;
 
 #ifdef _RETRIEVE_DEBUG_
   dout << endl << "Cells infected in CENTER:" << endl;
@@ -780,18 +781,15 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
   }
   dout << endl;
   dout << endl;
-  dout << endl << " Number of infected faces/centers = " << ncells;
-  dout << endl << " Number of starting points        = " << SolnBlk.Trace.np;
+  dout << endl << " Number of infected faces/centers = " << SolnBlk.Trace.np;
+  dout << endl << " Number of starting points        = " << start.np;
   dout << endl;
   dout << endl << " Starting data: ";
-//   for (int nspts = 0; nspts < start.np; nspts++) {
-//     dout << endl << nspts
-// 	 << " " << start[nspts]
-// 	 << " " << start[nspts].i
-// 	 << " " << start[nspts].j
-// 	 << " " << start[nspts].face;
-//   }
-//   dout << endl << " Trace data: ";
+  for (int nspts = 0; nspts < start.np; nspts++) {
+    dout << endl << nspts
+	 << " " << start[nspts];
+  }
+  dout << endl << " Trace data: ";
   for (int nifs = 0; nifs < SolnBlk.Trace.np; nifs++) {
     dout << endl
 	 << " " << nifs
@@ -804,7 +802,9 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
   dout << endl;
 #endif
 
-
+  cout << endl << "===WE ARE HERE===" << endl;
+  
+  return 0;
 
   // Declare required integer variables.
   int error_flag;
@@ -815,73 +815,70 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
   LinkedList<int> npts;    // number of points in each spline
 
   int numpts;              // number of points in this spline
-  int icell, jcell;
-  int start = 0;           // Index of the 'Trace' LinkedList at which we should
-                           // begin tracing the interface.
-
-  int doneTracing = 0;     // completion flag
+  int icell, jcell, iface;
 
   // Trace all interfaces until there are no more starting points.
-  while (!doneTracing) {
+  while (!start.np) {
+
+    cout << "current startpoint =" << start[0] << endl;
+
+    // Reset counters.
+    numpts = 0;
 
     // Trace the interface at specified start point.
 #ifndef _RETRIEVE_DEBUG_
-    error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,start);
+    error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,start[0]);
 #endif
 #ifdef _RETRIEVE_DEBUG_
-    error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,start,dout);
+    error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,start[0],dout);
 #endif
     if (error_flag) return error_flag;
 
     // Add to linked list.
     npts.add(numpts);
 
-    // Next starting point index.
-    start++;
-
-    // Find the next infected starting point to begin tracing.
-    while (start <= SolnBlk.Trace.np) {
-      icell = SolnBlk.Trace[start].i;
-      jcell = SolnBlk.Trace[start].j;
-      if (SolnBlk.cut[icell][jcell].center == INFECTED ||
-	  SolnBlk.cut[icell][jcell].north  == INFECTED ||
-	  SolnBlk.cut[icell][jcell].east   == INFECTED ||
-	  SolnBlk.cut[icell][jcell].south  == INFECTED ||
-	  SolnBlk.cut[icell][jcell].west   == INFECTED) {
-	break;
-      } else {
-	if (start == SolnBlk.Trace.np) {
-	  doneTracing = 1;   // All starting points have been traced.
-	  break;
-	} else {
-	  start++;
-	}
-      }
-    }
+    // Update start list.
+    Update_Start_List(SolnBlk,start);
 
   }
 
   // Look for any more infected cells that have not been traced.
-  for (int j = SolnBlk.JCl-1; j <= SolnBlk.JCu+1; j++) {
-    for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
-      if (SolnBlk.cut[i][j].center == INFECTED ||
-	  SolnBlk.cut[i][j].north  == INFECTED ||
-	  SolnBlk.cut[i][j].east   == INFECTED ||
-	  SolnBlk.cut[i][j].south  == INFECTED ||
-	  SolnBlk.cut[i][j].west   == INFECTED) {
-	// Trace using this as the starting point.
+  for (int it = 0; it <= SolnBlk.Trace.np; it++) {
+    icell = SolnBlk.Trace[it].i;
+    jcell = SolnBlk.Trace[it].j;
+    iface = SolnBlk.Trace[it].face;
+
 #ifndef _RETRIEVE_DEBUG_
-	error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,0);
+    if (iface == CENTER && SolnBlk.cut[icell][jcell].center == INFECTED) {
+      error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,it);
+    } else if (iface == NORTH && SolnBlk.cut[icell][jcell].north == INFECTED) {
+      error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,it);
+    } else if (iface == SOUTH && SolnBlk.cut[icell][jcell].south == INFECTED) {
+      error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,it);
+    } else if (iface == EAST && SolnBlk.cut[icell][jcell].east == INFECTED) {
+      error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,it);
+    } else if (iface == WEST && SolnBlk.cut[icell][jcell].west == INFECTED) {
+      error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,it);
+    }
 #endif
 #ifdef _RETRIEVE_DEBUG_
-	error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,0,dout);
-#endif
-	if (error_flag) return error_flag;
-
-	// Add to linked list.
-	npts.add(numpts);
-      }
+    if (iface == CENTER && SolnBlk.cut[icell][jcell].center == INFECTED) {
+      error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,it,dout);
+    } else if (iface == NORTH && SolnBlk.cut[icell][jcell].north == INFECTED) {
+      error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,it,dout);
+    } else if (iface == SOUTH && SolnBlk.cut[icell][jcell].south == INFECTED) {
+      error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,it,dout);
+    } else if (iface == EAST && SolnBlk.cut[icell][jcell].east == INFECTED) {
+      error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,it,dout);
+    } else if (iface == WEST && SolnBlk.cut[icell][jcell].west == INFECTED) {
+      error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,it,dout);
     }
+#endif
+
+    if (error_flag) return error_flag;
+    
+    // Add to linked list.
+    npts.add(numpts);
   }
 
 #ifdef _RETRIEVE_DEBUG_
@@ -1151,8 +1148,29 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
 
   // Interface spline retrieval completed.
   return 0;
-
+  
 }
+
+void Update_Start_List(LevelSet2D_Quad_Block &SolnBlk,
+		       LinkedList<int> &start) {
+  int ic, jc, iface, startpt;
+
+  for (int i=0; i<start.np; i++) {
+    startpt = start[i];
+    ic = SolnBlk.Trace[startpt].i;
+    jc = SolnBlk.Trace[startpt].j;
+    iface = SolnBlk.Trace[startpt].face;
+    if ((iface == CENTER && SolnBlk.cut[ic][jc].center == CLEAN) ||
+	(iface == NORTH  && SolnBlk.cut[ic][jc].north  == CLEAN) || 
+	(iface == SOUTH  && SolnBlk.cut[ic][jc].south  == CLEAN) ||
+	(iface == EAST   && SolnBlk.cut[ic][jc].east   == CLEAN) || 
+	(iface == WEST   && SolnBlk.cut[ic][jc].west   == CLEAN)){
+      start.remove(start.find(startpt));
+    }
+    i--;
+  }
+}
+
 
 /******************************************************************//**
  * Routine: Trace_Interface_Spline                                    
@@ -1424,17 +1442,16 @@ int Trace_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
 void Flag_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
 			const int &ic,
 			const int &jc,
-			int &ncells,
-			const double &epsilon) {
+			const double &epsilon,
+			LinkedList<int> start) {
 
   if (fabs(SolnBlk.U[ic][jc].psi) < epsilon) {
 
     // Flag cell CENTER.
     SolnBlk.cut[ic][jc].center = INFECTED;
-    ncells++;
-    //  SolnBlk.Trace.add(Trace_Data(ic,jc,CENTER));
+    SolnBlk.Trace.add(Trace_Data(ic,jc,CENTER));
     if (ic == SolnBlk.ICu+1 || ic == SolnBlk.ICl-1 || jc == SolnBlk.JCu+1 || jc == SolnBlk.JCl-1) {
-      SolnBlk.Trace.add(Trace_Data(ic,jc,CENTER));
+      start.add(SolnBlk.Trace.np-1);
     }
   } else {
 
@@ -1444,10 +1461,9 @@ void Flag_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
     if (jc <= SolnBlk.JCu && SolnBlk.U[ic][jc].psi*SolnBlk.U[ic][jc+1].psi <= ZERO &&
 	fabs(SolnBlk.U[ic][jc+1].psi) > epsilon) {	
       SolnBlk.cut[ic][jc].north = INFECTED;
-      ncells++;
-      //    SolnBlk.Trace.add(Trace_Data(ic,jc,NORTH));
+      SolnBlk.Trace.add(Trace_Data(ic,jc,NORTH));
       if (ic == SolnBlk.ICu+1) {
-	SolnBlk.Trace.add(Trace_Data(ic,jc,NORTH));
+	start.add(SolnBlk.Trace.np-1);
       }
     }
 
@@ -1457,10 +1473,9 @@ void Flag_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
     if (jc >= SolnBlk.JCl && SolnBlk.U[ic][jc].psi*SolnBlk.U[ic][jc-1].psi <= ZERO &&
 	fabs(SolnBlk.U[ic][jc-1].psi) > epsilon) {
       SolnBlk.cut[ic][jc].south = INFECTED;
-      ncells++;
-      //    SolnBlk.Trace.add(Trace_Data(ic,jc,SOUTH));
+      SolnBlk.Trace.add(Trace_Data(ic,jc,SOUTH));
       if (ic == SolnBlk.ICl-1) {
-	SolnBlk.Trace.add(Trace_Data(ic,jc,SOUTH));
+	start.add(SolnBlk.Trace.np-1);
       }
     }
 
@@ -1470,10 +1485,9 @@ void Flag_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
     if (ic <= SolnBlk.ICu && SolnBlk.U[ic][jc].psi*SolnBlk.U[ic+1][jc].psi <= ZERO &&
 	fabs(SolnBlk.U[ic+1][jc].psi) > epsilon) {
       SolnBlk.cut[ic][jc].east = INFECTED;
-      ncells++;
-      //      SolnBlk.Trace.add(Trace_Data(ic,jc,EAST));
+      SolnBlk.Trace.add(Trace_Data(ic,jc,EAST));
       if (jc == SolnBlk.JCl-1) {
-	SolnBlk.Trace.add(Trace_Data(ic,jc,EAST));
+	start.add(SolnBlk.Trace.np-1);
       }
     }
 
@@ -1483,10 +1497,9 @@ void Flag_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
     if (ic >= SolnBlk.ICl && SolnBlk.U[ic][jc].psi*SolnBlk.U[ic-1][jc].psi <= ZERO &&
 	fabs(SolnBlk.U[ic-1][jc].psi) > epsilon) {
       SolnBlk.cut[ic][jc].west = INFECTED;
-      ncells++;
-      //      SolnBlk.Trace.add(Trace_Data(ic,jc,WEST));
+      SolnBlk.Trace.add(Trace_Data(ic,jc,WEST));
       if (jc == SolnBlk.JCu+1) {
-	SolnBlk.Trace.add(Trace_Data(ic,jc,WEST));
+	start.add(SolnBlk.Trace.np-1);
       }
     }
 
@@ -1495,8 +1508,7 @@ void Flag_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
 	fabs(SolnBlk.U[ic+1][jc].psi) > epsilon && fabs(SolnBlk.U[ic][jc+1].psi) > epsilon &&
 	SolnBlk.U[ic+1][jc].psi*SolnBlk.U[ic][jc+1].psi <= ZERO) {
       SolnBlk.cut[ic][jc].north_east = INFECTED;
-      ncells++;
-      //      SolnBlk.Trace.add(Trace_Data(ic,jc,NORTH_EAST));
+      SolnBlk.Trace.add(Trace_Data(ic,jc,NORTH_EAST));
     }
 
     // Flag SOUTH-WEST face.
@@ -1504,8 +1516,7 @@ void Flag_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
 	fabs(SolnBlk.U[ic-1][jc].psi) > epsilon && fabs(SolnBlk.U[ic][jc-1].psi) > epsilon &&
 	SolnBlk.U[ic-1][jc].psi*SolnBlk.U[ic][jc-1].psi <= ZERO) {
       SolnBlk.cut[ic][jc].south_west = INFECTED;
-      ncells++;
-      //      SolnBlk.Trace.add(Trace_Data(ic,jc,SOUTH_WEST));
+      SolnBlk.Trace.add(Trace_Data(ic,jc,SOUTH_WEST));
     }
 
   }
