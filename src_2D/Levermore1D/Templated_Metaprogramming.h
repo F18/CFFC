@@ -3,6 +3,17 @@
 
 namespace templated_metaprogramming {
 
+  template<int N> inline double meta_pow(const double &d) {
+    return d*meta_pow<N-1>(d);
+  }
+
+  template<> inline double meta_pow<1>(const double &d) {
+    return d;
+  }
+
+  template<> inline double meta_pow<0>(const double &d) {
+    return 1.0;
+  }
 
   template<int N_term> inline void copy_double_array(double *out, const double *in_1) {
     out[N_term] = in_1[N_term];
