@@ -63,8 +63,7 @@ Reconstruction_Type=
 Green_Gauss
 #
 Limiter_Type= 
-Zero
-#Venkatakrishnan
+Venkatakrishnan
 Flux_Function_Type=
 Roe
 #########################
@@ -76,8 +75,7 @@ Diamond_Path_Green_Gauss
 # Set initial conditions
 #########################
 ICs_Type= 
-Restart
-#1DPremixedFlame
+1DPremixedFlame
 Grid_Type=
 1DFlame
 Smooth_Quad_Block=
