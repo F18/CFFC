@@ -16,6 +16,7 @@
 /*************************************************************
  * CFD1D_Input_Parameters -- Member functions.               *
  *************************************************************/
+
 int CFD1D_Input_Parameters::Nghost(void) const{
   
   int Number_Of_Ghost_Cells(0);
@@ -74,28 +75,82 @@ int CFD1D_Input_Parameters::Parse_Input_File(char *Input_File_Name_ptr){
     cout.flush();
   }
   while (1) {
-     Get_Next_Input_Control_Parameter(*this);
-     command_flag = Parse_Next_Input_Control_Parameter(*this);
-     if (command_flag == EXECUTE_CODE) {
-       break;
-       
-     } else if (command_flag == TERMINATE_CODE) {
-       return (0);
-       
-     } else if (command_flag == INVALID_INPUT_CODE ||
-		command_flag == INVALID_INPUT_VALUE) {
-       Line_Number = -Line_Number;
-       
-       msg << "CFD1D_Input_Parameters::Parse_Input_File() ERROR: Error reading data at line # " 
-	   << -Line_Number
-	   << " of input data file.";
-       if (Verbose()){
-	 cerr << msg.str() << endl;
-       }
-       
-       throw runtime_error(msg.str());
-     } /* endif */
+    Get_Next_Input_Control_Parameter();
+    command_flag = Parse_Next_Input_Control_Parameter(*this);
+    if (command_flag == EXECUTE_CODE) {
+      break;
+      
+    } else if (command_flag == TERMINATE_CODE) {
+      return (0);
+      
+    } else if (command_flag == INVALID_INPUT_CODE ||
+	       command_flag == INVALID_INPUT_VALUE) {
+      Line_Number = -Line_Number;
+      
+      msg << "CFD1D_Input_Parameters::Parse_Input_File() ERROR: Error reading data at line # " 
+	  << -Line_Number
+	  << " of input data file.";
+      if (Verbose()){
+	cerr << msg.str() << endl;
+      }
+      
+      throw runtime_error(msg.str());
+    } /* endif */
   } /* endwhile */
+}
+
+/******************************************************//**
+ * Routine: Get_Next_Input_Control_Parameter            
+ *                                                      
+ * Get the next input control parameter from the input  
+ * file.                                                
+ *                                                      
+ ********************************************************/
+void CFD1D_Input_Parameters::Get_Next_Input_Control_Parameter(void){
+
+  int i, index, LineSize, IndexFirstChar(0);
+  char buffer[256], ControlParameter[256];
+
+  // Initialize ControlParameter and Next_Control_Parameter to end of string
+  ControlParameter[0] = '\0';
+  strcpy(Next_Control_Parameter, ControlParameter);
+
+  // While the input stream is 'good' for reading and the end of file is not attained
+  while ( Input_File.good() && !Input_File.getline(buffer, sizeof(buffer)).eof() ){
+
+    // Process the line 
+    Line_Number = Line_Number + 1;
+    LineSize = Input_File.gcount(); // Get the size of the line. Last character is "\0"!
+
+    // Determine the index of the first character different than 'space' and 'tab'
+    for (i=0; i<LineSize; ++i){
+      if (buffer[i] != ' ' && buffer[i] != '\t'){
+	IndexFirstChar = i;
+	break;
+      }
+    }
+
+    /* Parse the line if the first character different than 'space' 
+       is also different than '#' or end of string ('\0').
+       Otherwise skip the line because it is either a comment or an empty line. */
+    if ( buffer[IndexFirstChar] != '#' && buffer[IndexFirstChar] != '\0'){
+
+      // Get the ControlParameter
+      for(i=IndexFirstChar, index=0;  i<LineSize;  ++i, ++index){
+	if (buffer[i] == ' ' || buffer[i] == '='){
+	  ControlParameter[index] = '\0';
+	  break;
+	} else {
+	  ControlParameter[index] = buffer[i];
+	}
+      }
+
+      // Set the Next_Control_Parameter
+      strcpy(Next_Control_Parameter, ControlParameter);
+      break;
+    }
+
+  }//endwhile
 }
 
 /*************************************************************
@@ -212,51 +267,7 @@ void Set_Default_Input_Parameters(CFD1D_Input_Parameters &IP) {
  *                                                      *
  ********************************************************/
 void Get_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
-
-  int i, index, LineSize, IndexFirstChar(0);
-  char buffer[256], ControlParameter[256];
-
-  // Initialize ControlParameter and IP.Next_Control_Parameter to end of string
-  ControlParameter[0] = '\0';
-  strcpy(IP.Next_Control_Parameter, ControlParameter);
-
-  // While the input stream is 'good' for reading and the end of file is not attained
-  while ( IP.Input_File.good() && !IP.Input_File.getline(buffer, sizeof(buffer)).eof() ){
-
-    // Process the line 
-    IP.Line_Number = IP.Line_Number + 1;
-    LineSize = IP.Input_File.gcount(); // Get the size of the line. Last character is "\0"!
-
-    // Determine the index of the first character different than 'space' and 'tab'
-    for (i=0; i<LineSize; ++i){
-      if (buffer[i] != ' ' && buffer[i] != '\t'){
-	IndexFirstChar = i;
-	break;
-      }
-    }
-
-    /* Parse the line if the first character different than 'space' 
-       is also different than '#' or end of string ('\0').
-       Otherwise skip the line because it is either a comment or an empty line. */
-    if ( buffer[IndexFirstChar] != '#' && buffer[IndexFirstChar] != '\0'){
-
-      // Get the ControlParameter
-      for(i=IndexFirstChar, index=0;  i<LineSize;  ++i, ++index){
-	if (buffer[i] == ' ' || buffer[i] == '='){
-	  ControlParameter[index] = '\0';
-	  break;
-	} else {
-	  ControlParameter[index] = buffer[i];
-	}
-      }
-
-      // Set the Next_Control_Parameter
-      strcpy(IP.Next_Control_Parameter, ControlParameter);
-      break;
-    }
-
-  }//endwhile
-
+  return IP.Get_Next_Input_Control_Parameter();
 }
 
 
@@ -691,6 +702,11 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
        i_command = INVALID_INPUT_CODE;
 
     } /* endif */
+
+
+    /* Parse next control parameter with CENO_Execution_Mode parser */
+    CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
+
 
     /* Return the parser command type indicator. */
 

@@ -1,0 +1,296 @@
+	###############################################################
+	#-------------------------------------------------------------#
+	#  Starting Paramters for the BlastWaveInteraction simulation #
+	#-------------------------------------------------------------#
+	###############################################################
+
+		##############################
+		#	DEFINE PROBLEM       #
+		##############################
+ICs_Type =
+	Blast_Wave_IVP
+
+		##############################
+		#	DEFINE GEOMETRY      #
+		##############################
+Grid_Type =
+	Uniform
+X_Min =
+	0.0
+X_Max =
+	1.0
+Number_of_Cells = 
+	400
+	#800
+	
+		###################################
+		# DEFINE TIME MARCHING PARAMETERS #
+		###################################
+
+Time_Max = 
+	  0.010
+
+Time_Accurate =	   	# Time accurate is ON
+		1  
+
+Maximum_Number_of_Time_Steps =
+	1
+
+Time_Integration_Type =
+	    Explicit_Predictor_Corrector4_HO
+	    #Explicit_Predictor_Corrector_HO
+	    #Explicit_Euler_HO
+
+CFL_Number =
+	0.5
+
+		############################################
+		# DEFINE SPATIAL DISCRETIZATION PARAMETERS #
+		############################################
+
+Space_Accuracy =
+	    4
+
+Reconstruction_Type =
+	    #ENO
+	    CENO
+	    #ENO_Characteristic
+
+CENO_Tolerance =
+	    500
+
+CENO_Execution_Mode = 
+	     Speed_Efficient
+	    #  Memory_Efficient
+
+CENO_Padding = 
+	    # Yes
+	      No
+
+CENO_Drop_Order =
+	      Yes
+
+Limiter_Type =
+	     Venkatakrishnan
+	    # Barth_Jespersen
+	    # VanLeer
+
+Flux_Function_Type = 
+	    Roe
+
+		#########################################
+		# 	DEFINE OUTPUT PARAMETERS  	#
+		#########################################
+
+Output_File_Name = 
+	    BlastWave_4thOrder_CENO_400_T1
+
+Output_Format_Type =
+	    tecplot
+
+
+#############    #########################################    #############
+#		 	MAIN RUN  PROGRAM COMMANDS 			  #
+#############    #########################################    #############
+Execute
+Write_Output
+#Terminate
+
+		#########################
+		#-----------------------#
+		#  	  Run II 	#
+		#########################
+
+#################################
+# VARY THE FOLLOWING PARAMETERS #
+#################################
+Time_Max = 
+	0.016
+
+Output_File_Name = 
+	 BlastWave_4thOrder_CENO_400_T2
+
+########## RUN II COMMANDS #######
+Continue
+Write_Output
+
+
+		#########################
+		#-----------------------#
+		#  	  Run III 	#
+		#########################
+
+#################################
+# VARY THE FOLLOWING PARAMETERS #
+#################################
+Time_Max = 
+	0.026
+
+Output_File_Name = 
+	 BlastWave_4thOrder_CENO_400_T3
+
+########## RUN III COMMANDS #######
+Continue
+Write_Output
+
+
+		#########################
+		#-----------------------#
+		#  	  Run IV 	#
+		#########################
+
+#################################
+# VARY THE FOLLOWING PARAMETERS #
+#################################
+Time_Max = 
+	0.028
+
+Output_File_Name = 
+	 BlastWave_4thOrder_CENO_400_T4
+
+########## RUN IV COMMANDS #######
+Continue
+Write_Output
+
+		#########################
+		#-----------------------#
+		#  	  Run V 	#
+		#########################
+
+#################################
+# VARY THE FOLLOWING PARAMETERS #
+#################################
+Time_Max = 
+	0.030
+
+Output_File_Name = 
+	# BlastWave_ExactSolution_ENO_T5
+	 BlastWave_4thOrder_CENO_400_T5
+	# BlastWave_4thOrder_ENO_3600_T5
+
+########## RUN V COMMANDS #######
+Continue
+Write_Output
+
+		#########################
+		#-----------------------#
+		#  	  Run VI 	#
+		#########################
+
+#################################
+# VARY THE FOLLOWING PARAMETERS #
+#################################
+Time_Max = 
+	0.032
+
+Output_File_Name = 
+	 BlastWave_4thOrder_CENO_400_T6
+
+########## RUN VI COMMANDS #######
+Continue
+Write_Output
+
+		#########################
+		#-----------------------#
+		#  	  Run VII 	#
+		#########################
+
+#################################
+# VARY THE FOLLOWING PARAMETERS #
+#################################
+Time_Max = 
+	0.034
+
+Output_File_Name = 
+	 BlastWave_4thOrder_CENO_400_T7
+
+########## RUN VII COMMANDS #######
+Continue
+Write_Output
+
+		#########################
+		#-----------------------#
+		#  	  Run VIII 	#
+		#########################
+
+#################################
+# VARY THE FOLLOWING PARAMETERS #
+#################################
+Time_Max = 
+	0.038
+
+Output_File_Name = 
+     BlastWave_4thOrder_CENO_400_T8
+
+########## RUN VIII COMMANDS #######
+Continue
+Write_Output
+Terminate
+
+
+
+#################################################################
+#   	   AVAILABLE OPTIONS FOR THE INPUT PARAMETERS 		#
+#################################################################
+
+
+# Uniform                        :ICs_Type
+# Sod                            :ICs_Type
+# Groth                          :ICs_Type 
+# Einfeldt                       :ICs_Type 
+# Constant                       :ICs_Type 
+# Shock_Wave                     :ICs_Type
+# Contact_Surface                :ICs_Type 
+# Rarefaction_Wave               :ICs_Type 
+# Brio_Wu                        :ICs_Type 
+# Riemann                        :ICs_Type 
+# Square_Wave                    :ICs_Type 
+# Sinx2_Wave                     :ICs_Type 
+# Impulsive_Rod                  :ICs_Type 
+# Sinusoidal_Rod1                :ICs_Type 
+# Sinusoidal_Rod4                :ICs_Type 
+# Riemann_IVP_qx=0               :ICs_Type 
+# Riemann_IVP_T=0                :ICs_Type 
+# Riemann_IVP                    :ICs_Type
+# Acoustic_Shock_IVP
+# Jiang_IVP
+# Blast_Wave_IVP 
+# 
+# Explicit_Euler                 :Time_Integration_Type
+# Explicit_Euler_HO              :Time_Integration_Type
+# Explicit_Predictor_Corrector   :Time_Integration_Type
+# Explicit_Predictor_Corrector_HO:Time_Integration_Type
+# Explicit_Predictor_Corrector4_HO :Time_Integration_Type
+# Lax_Friedrichs                 :Time_Integration_Type
+# Lax_Wendroff                   :Time_Integration_Type
+# MacCormack                     :Time_Integration_Type
+# Hancock                       :Time_Integration_Type
+# 
+# MUSCL                          :Reconstruction_Type
+# Least_Squares                  :Reconstruction_Type
+# Green_Gauss                    :Reconstruction_Type
+# Characteristic                 :Reconstruction_Type
+# High_Order                     :Reconstruction_Type
+# 
+# Zero                           :Limiter_Type
+# One                            :Limiter_Type
+# Minmod                         :Limiter_Type
+# UMIST                          :Limiter_Type
+# Double_Minmod                  :Limiter_Type
+# Superbee                       :Limiter_Type
+# Phi                            :Limiter_Type
+# VanLeer                        :Limiter_Type
+# VanAlbada                      :Limiter_Type
+# Venkatakrishnan                :Limiter_Type
+# Barth_Jespersen                :Limiter_Type
+# Data_Dependent                 :Limiter_Type
+# 
+# Godunov                        :Flux_Function_Type
+# Roe                            :Flux_Function_Type
+# Rusanov                        :Flux_Function_Type
+# HLLE                           :Flux_Function_Type
+# Linde                          :Flux_Function_Type
+# HLLC                           :Flux_Function_Type
+# Osher                          :Flux_Function_Type
+#
+ 

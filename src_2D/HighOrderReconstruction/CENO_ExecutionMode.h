@@ -12,6 +12,7 @@
 
 /* Include CFFC header files */
 #include "../Utilities/Utilities.h"
+#include "../CFD/CFD.h"
 
 /*!
  * Class: CENO_Execution_Mode
@@ -79,9 +80,75 @@ public:
      --------------------------------------------------------------------------------------- */
   static short FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE;
 
+  
+  template<class Input_Parameters_Type>
+  static void Parse_Next_Input_Control_Parameter(Input_Parameters_Type & IP, int & i_command);
+
+  static void Print_Info(std::ostream & out_file);
+
 private:
   CENO_Execution_Mode(void){};
 
 };
+
+//! Parse the input control parameters for 
+//  settings related to CENO_Execution_Mode class
+template<class Input_Parameters_Type> inline
+void CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Parameters_Type & IP, int & i_command){
+
+  // Check if the next control parameter has already been identified
+  if (i_command != INVALID_INPUT_CODE){
+    return;
+  }
+
+  // Try to match the next control parameter
+  if (strcmp(IP.Next_Control_Parameter, "CENO_Execution_Mode") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Speed_Efficient") == 0 ){
+      CENO_SPEED_EFFICIENT = ON;
+    } else if ( strcmp(IP.Next_Control_Parameter, "Memory_Efficient") == 0 ) {
+      CENO_SPEED_EFFICIENT = OFF;
+    } else {
+      i_command = INVALID_INPUT_CODE;
+      return;
+    }
+    i_command = 0;
+  } else if (strcmp(IP.Next_Control_Parameter, "CENO_Drop_Order") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Yes") == 0 ){
+      CENO_DROP_ORDER = ON;      
+    } else {
+      CENO_DROP_ORDER = OFF;
+    }
+    i_command = 0;
+  } else if (strcmp(IP.Next_Control_Parameter, "CENO_Padding") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Yes") == 0 ){
+      CENO_PADDING = ON;
+    } else {
+      CENO_PADDING = OFF;
+    }
+    i_command = 0;
+  } else if (strcmp(IP.Next_Control_Parameter, "CENO_Square_Geom_Weighting") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Yes") == 0 ){
+      CENO_SQUARE_GEOM_WEIGHTING = ON;
+    } else {
+      CENO_SQUARE_GEOM_WEIGHTING = OFF;
+    }
+    i_command = 0;
+  } else if (strcmp(IP.Next_Control_Parameter, "CENO_Force_With_PWC") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Yes") == 0 ){
+      FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE = ON;
+    } else {
+      FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE = OFF;
+    }
+    i_command = 0;
+  } else {
+    i_command = INVALID_INPUT_CODE;
+  } // endif
+
+}
 
 #endif

@@ -171,7 +171,7 @@ void CheckSolutionPositivity<Euler1D_UniformMesh>(const Euler1D_UniformMesh *Sol
 	 << "\n U = " << SolnBlk[iCell].U 
 	 << "\n dUdt = "  << SolnBlk[iCell].dUdt << "\n"
 	 << " rho = " << SolnBlk[iCell].U.d << "\t v = " << SolnBlk[iCell].U.v()
-	 << "\t p = " << SolnBlk[iCell].U.p() << "\t e = " << SolnBlk[iCell].U.e();
+	 << "\t p = " << SolnBlk[iCell].U.p() << "\t e = " << SolnBlk[iCell].U.e() << "\n";
 
     cout.flush();
 

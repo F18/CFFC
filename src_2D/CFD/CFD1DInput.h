@@ -12,6 +12,7 @@
 
 /* Include CFFC header files */
 #include "CFD.h"
+#include "../HighOrderReconstruction/CENO_ExecutionMode.h"
 
 #define	INPUT_PARAMETER_LENGTH_CFD1D    80
 #define INPUT_PARAMETER_LENGTH_CFD1D_FILE_NAME 350
@@ -103,6 +104,9 @@ class CFD1D_Input_Parameters{
   // Return the number of required ghost cells for the specified ReconstructionMethod
   int Nghost(void) const;  
 
+  // Read the next input control parameter
+  void Get_Next_Input_Control_Parameter(void);
+
   /* Input-output operators. */
 
   friend ostream &operator << (ostream &out_file,
@@ -172,12 +176,13 @@ inline ostream &operator << (ostream &out_file,
 
     out_file << "\n  -> Reconstruction: " 
              << IP.Reconstruction_Type;
-    if ((IP.i_ReconstructionMethod != RECONSTRUCTION_ENO) &&
-        (IP.i_ReconstructionMethod != RECONSTRUCTION_ENO_CHARACTERISTIC)){
+    if ( IP.i_Reconstruction != RECONSTRUCTION_HIGH_ORDER ){
       out_file << "\n  -> Limiter: " << IP.Limiter_Type;
     }
     if (IP.i_ReconstructionMethod == RECONSTRUCTION_CENO){
+      CENO_Execution_Mode::Print_Info(out_file);
       out_file << "\n  -> Fit Tolerance = " << IP.FitTolerance();
+      out_file << "\n  -> Limiter: " << IP.Limiter_Type;
     }
 
     out_file << "\n  -> Flux Function: " 
