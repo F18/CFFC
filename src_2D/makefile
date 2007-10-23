@@ -149,7 +149,6 @@ SRC_EULER1D = Euler1DState.cc \
 	      Euler1D.cc \
 	      Euler1DSolvers.cc \
 	      ExactSolutions/ExactSolutions.cc
-#             Euler1D_HighOrder.cc
 SRC_EULER1D := $(addprefix $(EULER_1D_DIR), $(SRC_EULER1D))
 
 # Add Euler 1D Testing If Required:

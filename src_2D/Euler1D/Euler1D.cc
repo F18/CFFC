@@ -7,6 +7,7 @@
 #endif // _EULER1D_INCLUDED
 
 #include "ExactSolutions/ExactSolutions.h"
+#include "Euler1D_HighOrder.h"
 
 /********************************************************
  * Routine: Allocate                                    *
@@ -1385,7 +1386,7 @@ int dUdt_Hancock(Euler1D_UniformMesh *Soln,
  *                                                      *
  ********************************************************/
 int dUdt_2stage_2ndOrder_upwind(Euler1D_UniformMesh *Soln,
-	                        const int Number_of_Cells,
+	                        const CFD1D_Input_Parameters &IP,
 			        double &dtMin,
 				const double &CFL_Number,
                                 const int Reconstruction_Type,
@@ -1408,40 +1409,38 @@ int dUdt_2stage_2ndOrder_upwind(Euler1D_UniformMesh *Soln,
         omega = ONE/double(n_stage);
 
         /* Apply boundary conditions for stage. */
-
+	BCs(Soln,IP);
 
         /* Perform the linear reconstruction within each cell
-           of the computational grid in first stage. */
+           of the computational grid for stage. */
 
-        if ( n_stage == 1 ) {
-          switch(Reconstruction_Type) {
-            case RECONSTRUCTION_MUSCL :
-               Linear_Reconstruction_MUSCL(Soln, 
-                                           Number_of_Cells, 
-                                           Limiter_Type);
-              break;
-            case RECONSTRUCTION_GREEN_GAUSS :
-               Linear_Reconstruction_GreenGauss(Soln, 
-                                                Number_of_Cells, 
-                                                Limiter_Type);
-              break;
-            case RECONSTRUCTION_LEAST_SQUARES :
-               Linear_Reconstruction_LeastSquares(Soln, 
-                                                  Number_of_Cells, 
-                                                  Limiter_Type);
-              break;
-            case RECONSTRUCTION_CHARACTERISTIC :
-               Linear_Reconstruction_Characteristic(Soln, 
-                                                    Number_of_Cells, 
-                                                    Limiter_Type);
-              break;
-	    default:
-               Linear_Reconstruction_MUSCL(Soln, 
-                                           Number_of_Cells, 
-                                           Limiter_Type);
-              break;
-          } /* endswitch */
-        } /* endif */
+	switch(Reconstruction_Type) {
+	case RECONSTRUCTION_MUSCL :
+	  Linear_Reconstruction_MUSCL(Soln, 
+				      IP.Number_of_Cells, 
+				      Limiter_Type);
+	  break;
+	case RECONSTRUCTION_GREEN_GAUSS :
+	  Linear_Reconstruction_GreenGauss(Soln, 
+					   IP.Number_of_Cells, 
+					   Limiter_Type);
+	  break;
+	case RECONSTRUCTION_LEAST_SQUARES :
+	  Linear_Reconstruction_LeastSquares(Soln, 
+					     IP.Number_of_Cells, 
+					     Limiter_Type);
+	  break;
+	case RECONSTRUCTION_CHARACTERISTIC :
+	  Linear_Reconstruction_Characteristic(Soln, 
+					       IP.Number_of_Cells, 
+					       Limiter_Type);
+	  break;
+	default:
+	  Linear_Reconstruction_MUSCL(Soln, 
+				      IP.Number_of_Cells, 
+				      Limiter_Type);
+	  break;
+	} /* endswitch */
 
         /* Evaluate the time rate of change of the solution
            (i.e., the solution residuals) using a second-order
@@ -1451,7 +1450,7 @@ int dUdt_2stage_2ndOrder_upwind(Euler1D_UniformMesh *Soln,
         if ( n_stage == 1 ) Soln[0].Uo = Soln[0].U;
         Soln[0].dUdt = Euler1D_U_VACUUM;
 
-        for ( i = 0 ; i <= Number_of_Cells ; ++i ) {
+        for ( i = 0 ; i <= IP.Number_of_Cells ; ++i ) {
             if ( !Local_Time_Stepping && n_stage == 1 ) Soln[i+1].dt = dtMin;
             if ( n_stage == 1 ) {
                Soln[i+1].Uo = Soln[i+1].U;
@@ -1472,6 +1471,44 @@ int dUdt_2stage_2ndOrder_upwind(Euler1D_UniformMesh *Soln,
                Wr = CtoW(Soln[i+1].W.C() - 
                     HALF*(Soln[i+1].phi^Soln[i+1].dWdx)*Soln[i+1].X.dx);
             } /* endif */
+
+	    /* Apply the BCs before the flux evaluation */
+	    // ***** Left boundary **********
+	    if (i == 0){
+	      // extrapolation BC (by default)
+	      Wl = Wr;
+	      
+	      // wall BCs
+	      if (IP.i_ICs == IC_BLAST_WAVE_INTERACTION){
+		Wl.v = -Wl.v;      // change velocity sign	  
+	      }
+	      
+	      // periodic BCs
+	      if ((IP.i_ICs == IC_SIN_WAVE) || (IP.i_ICs == IC_JIANG_WAVE) ||
+		  (IP.i_ICs == IC_DENSITY_STEP_WAVE) || (IP.i_ICs == IC_CONVECTION_OF_DIFFERENT_SHAPES)){
+		Wl = Soln[IP.Number_of_Cells].W + 
+		     HALF*(Soln[IP.Number_of_Cells].phi^Soln[IP.Number_of_Cells].dWdx)*Soln[IP.Number_of_Cells].X.dx;
+	      }
+	      
+	    }
+	    
+	    // *****  Right boundary *********
+	    if (i == IP.Number_of_Cells){
+	      // extrapolation BC (by default)
+	      Wr = Wl;
+	      
+	      // wall BCs
+	      if (IP.i_ICs == IC_BLAST_WAVE_INTERACTION){
+		Wr.v = -Wr.v;      // change velocity sign
+	      }
+	      
+	      // periodic BCs
+	      if ((IP.i_ICs == IC_SIN_WAVE) || (IP.i_ICs == IC_JIANG_WAVE) ||
+		  (IP.i_ICs == IC_DENSITY_STEP_WAVE) || (IP.i_ICs == IC_CONVECTION_OF_DIFFERENT_SHAPES)){
+		Wr = Soln[1].W - 
+		     HALF*(Soln[1].phi^Soln[1].dWdx)*Soln[1].X.dx;
+	      }
+	    }
 
             switch(Flux_Function_Type) {
               case FLUX_FUNCTION_GODUNOV :
@@ -1508,11 +1545,11 @@ int dUdt_2stage_2ndOrder_upwind(Euler1D_UniformMesh *Soln,
         } /* endfor */
 
         Soln[0].dUdt = Euler1D_U_VACUUM;
-        Soln[Number_of_Cells+1].dUdt = Euler1D_U_VACUUM;
+        Soln[IP.Number_of_Cells+1].dUdt = Euler1D_U_VACUUM;
 
         /* Update solution variables for this stage. */
 
-        for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
+        for ( i = 1 ; i <= IP.Number_of_Cells ; ++i ) {
             Soln[i].U = Soln[i].Uo + Soln[i].dUdt;
 
   	    if (Soln[i].U.d   <= ZERO ||
@@ -1530,19 +1567,9 @@ int dUdt_2stage_2ndOrder_upwind(Euler1D_UniformMesh *Soln,
 
     } /* endfor */
 
-    /* By default, constant extrapolation boundary
-       conditions are applied at either end of the mesh. */
-
-    Soln[0].U = Soln[1].U;
-    Soln[0].W = Soln[1].W;
-
-    Soln[Number_of_Cells+1].U = Soln[Number_of_Cells].U;
-    Soln[Number_of_Cells+1].W = Soln[Number_of_Cells].W;
-
     /* Solution successfully updated. */
 
     return (0);
-    
 }
 
 void LimitedLinearReconstructionOverDomain(Euler1D_UniformMesh *Soln, const CFD1D_Input_Parameters &IP){

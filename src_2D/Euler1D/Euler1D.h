@@ -305,7 +305,7 @@ extern int dUdt_Hancock(Euler1D_UniformMesh *Soln,
 			const int Local_Time_Stepping);
 
 extern int dUdt_2stage_2ndOrder_upwind(Euler1D_UniformMesh *Soln,
-    	                               const int Number_of_Cells,
+				       const CFD1D_Input_Parameters &IP,
 			               double &dtMin,
 				       const double &CFL_Number,
                                        const int Reconstruction_Type,

@@ -208,11 +208,11 @@ int Euler1DSolver(char *Input_File_Name_ptr,
          switch (Input_Parameters.i_Time_Integration) {
            case TIME_STEPPING_EXPLICIT_EULER:
              error_flag = dUdt_explicitEuler_upwind(Soln_ptr,
-                           Input_Parameters.Number_of_Cells,
-          		   dtime,
-                           Input_Parameters.CFL_Number,
-                           Input_Parameters.i_Flux_Function,
-       			   Input_Parameters.Local_Time_Stepping);
+						    Input_Parameters.Number_of_Cells,
+						    dtime,
+						    Input_Parameters.CFL_Number,
+						    Input_Parameters.i_Flux_Function,
+						    Input_Parameters.Local_Time_Stepping);
              break;
 	   case TIME_STEPPING_EXPLICIT_EULER_HIGH_ORDER:
 	     error_flag = dUdt_explicitEuler_upwind(Soln_ptr,
@@ -223,13 +223,13 @@ int Euler1DSolver(char *Input_File_Name_ptr,
 	     break;
            case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR:
              error_flag = dUdt_2stage_2ndOrder_upwind(Soln_ptr,
-                           Input_Parameters.Number_of_Cells,
-        		   dtime,
-                           Input_Parameters.CFL_Number,
-                           Input_Parameters.i_Reconstruction,
-                           Input_Parameters.i_Limiter, 
-                           Input_Parameters.i_Flux_Function,
-       			   Input_Parameters.Local_Time_Stepping);
+						      Input_Parameters,
+						      dtime,
+						      Input_Parameters.CFL_Number,
+						      Input_Parameters.i_Reconstruction,
+						      Input_Parameters.i_Limiter, 
+						      Input_Parameters.i_Flux_Function,
+						      Input_Parameters.Local_Time_Stepping);
              break;
 	   case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR_HIGH_ORDER:
 	     error_flag = dUdt_2stage_HighOrder_upwind(Soln_ptr,
@@ -247,41 +247,41 @@ int Euler1DSolver(char *Input_File_Name_ptr,
 	     break;
            case TIME_STEPPING_LAX_FRIEDRICHS:
              error_flag = dUdt_LaxFriedrichs(Soln_ptr,
-                           Input_Parameters.Number_of_Cells,
-        		   dtime,
-                           Input_Parameters.CFL_Number,
-       			   Input_Parameters.Local_Time_Stepping);
+					     Input_Parameters.Number_of_Cells,
+					     dtime,
+					     Input_Parameters.CFL_Number,
+					     Input_Parameters.Local_Time_Stepping);
              break;
            case TIME_STEPPING_LAX_WENDROFF:
              error_flag = dUdt_LaxWendroff(Soln_ptr,
-                           Input_Parameters.Number_of_Cells,
-        		   dtime,
-                           Input_Parameters.CFL_Number,
-       			   Input_Parameters.Local_Time_Stepping);
+					   Input_Parameters.Number_of_Cells,
+					   dtime,
+					   Input_Parameters.CFL_Number,
+					   Input_Parameters.Local_Time_Stepping);
              break;
            case TIME_STEPPING_MACCORMACK:
              error_flag = dUdt_MacCormack(Soln_ptr,
-                           Input_Parameters.Number_of_Cells,
-        		   dtime,
-                           Input_Parameters.CFL_Number,
-       			   Input_Parameters.Local_Time_Stepping);
+					  Input_Parameters.Number_of_Cells,
+					  dtime,
+					  Input_Parameters.CFL_Number,
+					  Input_Parameters.Local_Time_Stepping);
              break;
            case TIME_STEPPING_HANCOCK:
              error_flag = dUdt_Hancock(Soln_ptr,
-                           Input_Parameters.Number_of_Cells,
-        		   dtime,
-                           Input_Parameters.CFL_Number,
-                           Input_Parameters.i_Limiter, 
-                           Input_Parameters.i_Flux_Function,
-       			   Input_Parameters.Local_Time_Stepping);
+				       Input_Parameters.Number_of_Cells,
+				       dtime,
+				       Input_Parameters.CFL_Number,
+				       Input_Parameters.i_Limiter, 
+				       Input_Parameters.i_Flux_Function,
+				       Input_Parameters.Local_Time_Stepping);
              break;
            default:
              error_flag = dUdt_explicitEuler_upwind(Soln_ptr,
-                           Input_Parameters.Number_of_Cells,
-          		   dtime,
-                           Input_Parameters.CFL_Number,
-                           Input_Parameters.i_Flux_Function,
-       			   Input_Parameters.Local_Time_Stepping);
+						    Input_Parameters.Number_of_Cells,
+						    dtime,
+						    Input_Parameters.CFL_Number,
+						    Input_Parameters.i_Flux_Function,
+						    Input_Parameters.Local_Time_Stepping);
              break;
          } /* endswitch */
 
