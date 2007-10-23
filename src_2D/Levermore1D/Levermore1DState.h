@@ -108,6 +108,7 @@ class Levermore1D_weights : public Levermore1D_Vector<N_moments>{
  ********************************************************/
 template<int N_moments>
 inline void Levermore1D_pState<N_moments>::set_from_U(const Levermore1D_cState<N_moments> &U) {
+  templated_metaprogramming::Levermore1D_convert_U_to_W<N_moments-1>(Levermore1D_Vector<N_moments>::m_values, U.m_values);
   return;
 }
 
