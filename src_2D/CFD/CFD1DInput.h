@@ -13,6 +13,7 @@
 /* Include CFFC header files */
 #include "CFD.h"
 #include "../HighOrderReconstruction/CENO_ExecutionMode.h"
+#include "../HighOrderReconstruction/CENO_Tolerances.h"
 
 #define	INPUT_PARAMETER_LENGTH_CFD1D    80
 #define INPUT_PARAMETER_LENGTH_CFD1D_FILE_NAME 350
@@ -181,6 +182,7 @@ inline ostream &operator << (ostream &out_file,
     }
     if (IP.i_ReconstructionMethod == RECONSTRUCTION_CENO){
       CENO_Execution_Mode::Print_Info(out_file);
+      CENO_EpsilonTol::Print_Info(out_file);
       out_file << "\n  -> Fit Tolerance = " << IP.FitTolerance();
       out_file << "\n  -> Limiter: " << IP.Limiter_Type;
     }

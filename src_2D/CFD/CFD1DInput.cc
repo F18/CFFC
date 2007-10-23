@@ -707,6 +707,8 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
     /* Parse next control parameter with CENO_Execution_Mode parser */
     CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
 
+    /* Parse next control parameter with CENO_EpsilonTol parser */
+    CENO_EpsilonTol::Parse_Next_Input_Control_Parameter(IP,i_command);
 
     /* Return the parser command type indicator. */
 

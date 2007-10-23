@@ -29,6 +29,7 @@ void CENO_Execution_Mode::SetDefaults(void){
 
 //! Print the current execution mode
 //  at the output stream
+// \param [in] out_file the output stream
 void CENO_Execution_Mode::Print_Info(std::ostream & out_file){
 
   // output execution mode

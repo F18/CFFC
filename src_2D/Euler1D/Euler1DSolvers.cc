@@ -85,6 +85,7 @@ int Euler1DSolver(char *Input_File_Name_ptr,
   if (! batch_flag) {
     cout << "\n Reading Euler1D input data file `"
 	 << Input_Parameters.Input_File_Name << "'.";
+    cout.flush();
   }
   while (1) {
      Get_Next_Input_Control_Parameter(Input_Parameters);
@@ -113,6 +114,7 @@ int Euler1DSolver(char *Input_File_Name_ptr,
 
   if (! batch_flag)  {
      cout << Input_Parameters << "\n";
+     cout.flush();
   } /* endif */
 
   /*********************************************************  
@@ -124,18 +126,25 @@ int Euler1DSolver(char *Input_File_Name_ptr,
   /* Allocate memory for 1D Euler equation solution on
      uniform mesh. */
 
-  if (! batch_flag) cout << "\n Creating memory for Euler1D solution variables.";
+  if (! batch_flag){
+    cout << "\n Creating memory for Euler1D solution variables.";
+    cout.flush();
+  }
   Soln_ptr=Allocate(Soln_ptr,
                     Input_Parameters);
 
   if (Soln_ptr == NULL){
     cout << "\n Euler1DSolvers::Allocate() Error! Probably not enough memory!";
+    cout.flush();
     exit(1);
   }
 
   /* Create uniform mesh. */
 
-  if (! batch_flag) cout << "\n Creating uniform mesh.";
+  if (! batch_flag){
+    cout << "\n Creating uniform mesh.";
+    cout.flush();
+  }
   Grid(Soln_ptr, 
        Input_Parameters.X_Min, 
        Input_Parameters.X_Max, 
@@ -153,7 +162,10 @@ int Euler1DSolver(char *Input_File_Name_ptr,
   /* Initialize the conserved and primitive state
      solution variables. */
   
-  if (! batch_flag) cout << "\n Prescribing Euler1D initial data.";
+  if (! batch_flag){
+    cout << "\n Prescribing Euler1D initial data.";
+    cout.flush();
+  }
   ICs(Soln_ptr, 
       "AIR", 
       Input_Parameters.i_ICs, 
@@ -172,7 +184,10 @@ int Euler1DSolver(char *Input_File_Name_ptr,
        Input_Parameters.Maximum_Number_of_Time_Steps > 0) ||
       (!Input_Parameters.Local_Time_Stepping &&
        Input_Parameters.Time_Max > time)) {
-     if (! batch_flag) cout << "\n\n Beginning Euler1D computations.\n\n";
+    if (! batch_flag){
+      cout << "\n\n Beginning Euler1D computations.\n\n";
+      cout.flush();
+    }
      while (1) {
          /* Determine local and global time steps. */
          dtime = CFL(Soln_ptr, 
@@ -186,15 +201,19 @@ int Euler1DSolver(char *Input_File_Name_ptr,
          if (! batch_flag && number_of_time_steps == 0 ) {
              cout << " Time Step = " << number_of_time_steps
 	          << " Time = " << time*THOUSAND << "\n .";
+	     cout.flush();
          } else if (! batch_flag && 
                     number_of_time_steps-100*(number_of_time_steps/100) == 0 ) {
 	     cout << "\n" << " Time Step = " << number_of_time_steps
 	          << " Time = " << time*THOUSAND << "\n .";
+	     cout.flush();
          } else if (! batch_flag && 
                     number_of_time_steps-50*(number_of_time_steps/50) == 0 ) {
 	     cout << "\n .";
+	     cout.flush();
          } else if (! batch_flag) {
 	     cout << ".";
+	     cout.flush();
          } /* endif */
 
          /* Check to see if calculations are complete. */
@@ -288,9 +307,11 @@ int Euler1DSolver(char *Input_File_Name_ptr,
          if (error_flag) {
              if (batch_flag) {
                  cout << "\nPDES++ ERROR: Euler1D solution error.\n\n";
+		 cout.flush();
              } else {
                  cout << "\n PDES++ ERROR: Euler1D solution error.";
                  cout << "\n\nPDES++: Execution terminated.\n";
+		 cout.flush();
              } /* endif */
              return (error_flag);
          } /* endif */
@@ -300,7 +321,10 @@ int Euler1DSolver(char *Input_File_Name_ptr,
          time = time + Input_Parameters.CFL_Number*dtime;
 
      } /* endwhile */
-     if (! batch_flag) cout << "\n\n Euler1D computations complete.\n";
+     if (! batch_flag){
+       cout << "\n\n Euler1D computations complete.\n";
+       cout.flush();
+     }
   } /* endif */
 
   /**************************************************  
@@ -311,6 +335,7 @@ int Euler1DSolver(char *Input_File_Name_ptr,
     cout << '\n'
 	 << " Reconstruct the final solution. "
 	 << "\n";
+    cout.flush();
   }
   if(Input_Parameters.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
     HighOrderSolutionReconstructionOverDomain(Soln_ptr,Input_Parameters,&Euler1D_UniformMesh::CellHighOrder);

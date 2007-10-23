@@ -36,9 +36,28 @@ class CENO_EpsilonTol: public EpsilonTol{
   /* Output operator. */
   static void Print_CENO_Tolerances(ostream& os = std::cout);
 
+  /* Set tolerances at runtime. */
+  template<class Input_Parameters_Type>
+  static void Parse_Next_Input_Control_Parameter(Input_Parameters_Type & IP, int & i_command);
+
+  static void Print_Info(std::ostream & out_file);
+
+  static void SetDefaults(void);
+
  protected:
   CENO_EpsilonTol(){};
 
+  // Update tolerances that depend on the values of other tolerances
+  static void UpdateDependentTolerances(void);
+
+  // flag to track changes to the default values
+  static bool ChangedDefault_Epsilon;
+  static bool ChangedDefault_EpsilonAbsolute;
+  static bool ChangedDefault_EpsilonRelative;
+
+  static double epsilon_default;          //!< this is a copy of epsilon that cannot be modified at runtime
+  static double epsilon_relative_default; //!< this is a copy of epsilon_relative that cannot be modified at runtime
+  static double epsilon_absolute_default; //!< this is a copy of epsilon_absolute that cannot be modified at runtime
 };
 
 /*!
@@ -71,6 +90,63 @@ inline double CENO_EpsilonTol::ToleranceAroundValue(const double & U){
  */
 inline double CENO_EpsilonTol::SquareToleranceAroundValue(const double & U){
   return epsilon_absolute_square + cross_epsilon*fabs(U) + epsilon_relative_square*U*U;
+}
+
+/*! 
+ * Update tolerances that depend on the values of other tolerances
+ * (e.g. epsilon_absolute_square depends on epsilon_absolute)
+ */
+inline void CENO_EpsilonTol::UpdateDependentTolerances(void){
+  epsilon_absolute_square = epsilon_absolute * epsilon_absolute;
+  epsilon_relative_square = epsilon_relative * epsilon_relative;
+  cross_epsilon = 2.0 * epsilon_absolute * epsilon_relative;
+}
+
+
+/*!
+ * Parse the input control parameters for 
+ * settings related to CENO_EpsilonTol class
+ */
+template<class Input_Parameters_Type>
+inline void CENO_EpsilonTol::Parse_Next_Input_Control_Parameter(Input_Parameters_Type & IP,
+								int & i_command){
+
+  // Check if the next control parameter has already been identified
+  if (i_command != INVALID_INPUT_CODE){
+    return;
+  }
+
+  char buffer[256];
+
+  // Try to match the next control parameter
+  if (strcmp(IP.Next_Control_Parameter, "CENO_Epsilon") == 0) {
+    i_command = 0;
+    ++IP.Line_Number;
+    IP.Input_File >> epsilon;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    ChangedDefault_Epsilon = true;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "CENO_Absolute_Epsilon") == 0) {
+    i_command = 0;
+    ++IP.Line_Number;
+    IP.Input_File >> epsilon_absolute;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    ChangedDefault_EpsilonAbsolute = true;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "CENO_Relative_Epsilon") == 0) {
+    i_command = 0;
+    ++IP.Line_Number;
+    IP.Input_File >> epsilon_relative;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    ChangedDefault_EpsilonRelative = true;
+
+  } else {
+    i_command = INVALID_INPUT_CODE;
+    return;
+  } // endif
+
+  // Update all tolerances
+  UpdateDependentTolerances();
 }
 
 #endif
