@@ -33,6 +33,7 @@ class CFD1D_Input_Parameters{
   // Time integration type indicator and related input parameters:
   char Time_Integration_Type[INPUT_PARAMETER_LENGTH_CFD1D];
   int i_Time_Integration;
+  bool Reconstruction_In_Each_Stage;
   int Time_Accurate, Local_Time_Stepping, 
       Maximum_Number_of_Time_Steps, N_Stage;
   double CFL_Number, Time_Max;

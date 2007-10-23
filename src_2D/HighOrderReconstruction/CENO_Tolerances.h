@@ -12,6 +12,7 @@
 
 /* Include CFFC header files */
 #include "../Utilities/EpsilonTol.h" // general usage tolerances
+#include "../CFD/CFD.h"
 
 /*!
  * \class CENO_EpsilonTol

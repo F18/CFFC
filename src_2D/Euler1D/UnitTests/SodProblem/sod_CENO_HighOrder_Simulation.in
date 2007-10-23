@@ -1,5 +1,5 @@
 Time_Integration_Type =
-	Explicit_Predictor_Corrector
+	Explicit_Predictor_Corrector4_HO
 Reconstruction_Type =
 	CENO
 Limiter_Type = 
@@ -9,11 +9,11 @@ Limiter_Type =
 CENO_Epsilon = 
 	      1.0e-8
 CENO_Relative_Epsilon = 
-			5.0e-3
+			5.0e-5
 CENO_Absolute_Epsilon = 
 			5.0e-7
 CENO_Tolerance =
-	    500
+	        2000
 CENO_Execution_Mode = 
 	     Speed_Efficient
 CENO_Padding = 
@@ -23,7 +23,7 @@ CENO_Drop_Order =
 
 
 Flux_Function_Type = 
-	Godunov
+	Roe
 ICs_Type = 
 	Sod
 Grid_Type =
@@ -31,13 +31,13 @@ Grid_Type =
 Space_Accuracy =
         4
 Number_of_Cells = 
-	500
+	300
 CFL_Number =
 	0.70
 Time_Max = 
 	0.0018
 Output_File_Name = 
-	Euler1D/UnitTests/SodProblem/Current_HighOrder_sod
+	Euler1D/UnitTests/SodProblem/Current_sod_CENO_HighOrder_Simulation
 Output_Format_Type = 
 	tecplot
 Execute

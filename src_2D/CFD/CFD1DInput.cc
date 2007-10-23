@@ -207,6 +207,7 @@ void Set_Default_Input_Parameters(CFD1D_Input_Parameters &IP) {
     IP.Maximum_Number_of_Time_Steps = 100;
     IP.N_Stage = 1;
     IP.Time_Max = ZERO;
+    IP.Reconstruction_In_Each_Stage = false;
 
     string_ptr = "MUSCL";
     strcpy(IP.Reconstruction_Type, string_ptr);
@@ -674,6 +675,15 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
        IP.Input_File >> IP.FitTolerance();
        IP.Input_File.getline(buffer, sizeof(buffer));
 
+    } else if (strcmp(IP.Next_Control_Parameter, "Reconstruct_In_Each_Stage") == 0) {
+      i_command = 25;
+      Get_Next_Input_Control_Parameter(IP);
+      if (strcmp(IP.Next_Control_Parameter, "Yes") == 0) {
+	IP.Reconstruction_In_Each_Stage = true;
+      } else {
+	IP.Reconstruction_In_Each_Stage = false;
+      } /* endif */
+      
     } else if (strcmp(IP.Next_Control_Parameter, "Execute") == 0) {
        i_command = EXECUTE_CODE;
 

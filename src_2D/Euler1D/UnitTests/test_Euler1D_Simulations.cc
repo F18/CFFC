@@ -124,6 +124,62 @@ namespace tut
     }
   }
 
+  /* Test 2:*/
+  template<>
+  template<>
+  void Euler1DSolver_object::test<2>()
+  {
+    set_test_name("Sod Problem 4th-order with CENO");
+    set_local_output_path("SodProblem");
+    set_local_input_path("SodProblem");
+
+    RunRegression = ON;
+    
+    // Set input file name
+    Open_Input_File("sod_CENO_HighOrder_Simulation.in");
+
+    // call solver
+    Solve_Problem();
+    
+    if (RunRegression){
+
+      //===== Check solution
+      MasterFile  = "sod_CENO_HighOrder_Simulation.dat";
+      CurrentFile = "Current_sod_CENO_HighOrder_Simulation.dat";
+
+      // check
+      RunRegressionTest("CENO high-order Sod solution", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+    }
+  }
+
+  /* Test 3:*/
+  template<>
+  template<>
+  void Euler1DSolver_object::test<3>()
+  {
+    set_test_name("Sod Problem 4th-order with ENO characteristics");
+    set_local_output_path("SodProblem");
+    set_local_input_path("SodProblem");
+
+    RunRegression = ON;
+    
+    // Set input file name
+    Open_Input_File("sod_HighOrder_ENO.in");
+
+    // call solver
+    Solve_Problem();
+    
+    if (RunRegression){
+
+      //===== Check solution
+      MasterFile  = "sod_HighOrder_ENO.dat";
+      CurrentFile = "Current_sod_HighOrder_ENO.dat";
+
+      // check
+      RunRegressionTest("ENO with charcteristics high-order Sod solution", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+    }
+  }
+
 
 }
 

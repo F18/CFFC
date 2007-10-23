@@ -1408,39 +1408,44 @@ int dUdt_2stage_2ndOrder_upwind(Euler1D_UniformMesh *Soln,
 
         omega = ONE/double(n_stage);
 
-        /* Apply boundary conditions for stage. */
-	BCs(Soln,IP);
+	if ( IP.Reconstruction_In_Each_Stage == true || n_stage == 1 ){
 
-        /* Perform the linear reconstruction within each cell
-           of the computational grid for stage. */
-
-	switch(Reconstruction_Type) {
-	case RECONSTRUCTION_MUSCL :
-	  Linear_Reconstruction_MUSCL(Soln, 
-				      IP.Number_of_Cells, 
-				      Limiter_Type);
-	  break;
-	case RECONSTRUCTION_GREEN_GAUSS :
-	  Linear_Reconstruction_GreenGauss(Soln, 
-					   IP.Number_of_Cells, 
-					   Limiter_Type);
-	  break;
-	case RECONSTRUCTION_LEAST_SQUARES :
-	  Linear_Reconstruction_LeastSquares(Soln, 
+	  /* Perform the linear reconstruction within each cell
+	     of the computational grid for the current stage if 
+	     Reconstruction_In_Each_Stage is true, or only in 
+	     the first stage if Reconstruction_In_Each_Stage is false */
+	  
+	  /* Apply boundary conditions for stage. */
+	  BCs(Soln,IP);
+	  
+	  switch(Reconstruction_Type) {
+	  case RECONSTRUCTION_MUSCL :
+	    Linear_Reconstruction_MUSCL(Soln, 
+					IP.Number_of_Cells, 
+					Limiter_Type);
+	    break;
+	  case RECONSTRUCTION_GREEN_GAUSS :
+	    Linear_Reconstruction_GreenGauss(Soln, 
 					     IP.Number_of_Cells, 
 					     Limiter_Type);
-	  break;
-	case RECONSTRUCTION_CHARACTERISTIC :
-	  Linear_Reconstruction_Characteristic(Soln, 
+	    break;
+	  case RECONSTRUCTION_LEAST_SQUARES :
+	    Linear_Reconstruction_LeastSquares(Soln, 
 					       IP.Number_of_Cells, 
 					       Limiter_Type);
-	  break;
-	default:
-	  Linear_Reconstruction_MUSCL(Soln, 
-				      IP.Number_of_Cells, 
-				      Limiter_Type);
-	  break;
-	} /* endswitch */
+	    break;
+	  case RECONSTRUCTION_CHARACTERISTIC :
+	    Linear_Reconstruction_Characteristic(Soln, 
+						 IP.Number_of_Cells, 
+						 Limiter_Type);
+	    break;
+	  default:
+	    Linear_Reconstruction_MUSCL(Soln, 
+					IP.Number_of_Cells, 
+					Limiter_Type);
+	    break;
+	  } /* endswitch */
+	}
 
         /* Evaluate the time rate of change of the solution
            (i.e., the solution residuals) using a second-order

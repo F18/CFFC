@@ -1,12 +1,11 @@
 Time_Integration_Type =
-	Explicit_Predictor_Corrector
+	Explicit_Predictor_Corrector4_HO
 Reconstruction_Type =
-	ENO
-	# ENO_Characteristic
+	ENO_Characteristic
 Limiter_Type = 
 	Barth_Jespersen
 Flux_Function_Type = 
-	Godunov
+	Roe
 ICs_Type = 
 	Sod
 Grid_Type =
@@ -14,13 +13,13 @@ Grid_Type =
 Space_Accuracy =
         4
 Number_of_Cells = 
-	100
+	300
 CFL_Number =
 	0.70
 Time_Max = 
 	0.0018
 Output_File_Name = 
-	Euler1D/UnitTests/SodProblem/Current_HighOrder_ENO_sod
+	Euler1D/UnitTests/SodProblem/Current_sod_HighOrder_ENO
 Output_Format_Type = 
 	tecplot
 Execute

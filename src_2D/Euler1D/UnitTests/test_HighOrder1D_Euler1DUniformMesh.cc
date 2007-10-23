@@ -65,6 +65,10 @@ namespace tut
 
     // Parse input file
     IP.Parse_Input_File(input_file_name);
+    if (IP.Verbose()){
+      cout << IP;
+      cout.flush();
+    }
     
     /* Allocate memory for 1D Euler equation solution on
        uniform mesh. */
@@ -163,63 +167,60 @@ namespace tut
   {
     set_test_name("Test HighOrder1D functionality");
     set_local_input_path("SodProblem");
+    set_local_output_path("SodProblem");
 
-    IP.Verbose() = ON;
+    RunRegression = ON;
+
+    IP.Verbose() = OFF;
 
     // Set up domain
     SetUpDomain("sod_HighOrder.in");
 
     // Reconstruct the solution in one of the cells
-    //     SolnBlk[5].CellHighOrder().ComputeReconstructionPseudoInverse(SolnBlk,5);
-    //     SolnBlk[5].CellHighOrder().ComputeUnlimitedSolutionReconstruction(SolnBlk,5,RECONSTRUCTION_CENO);
-
-    //    HighOrderSolutionReconstructionOverDomain(SolnBlk,IP,&Euler1D_UniformMesh::CellHighOrder);
-
-    double dtime(0.12);
-    int error_flag;
-    
-    error_flag = dUdt_2stage_HighOrder_upwind(SolnBlk,
-					      IP,
-					      dtime,
-					      IP.Local_Time_Stepping);
-
-    for (int i=SolnBlk[0].ICl; i<=SolnBlk[0].ICu; ++i){
-      //      for(int parameter=1; parameter<=3; ++parameter){
-      if ( SolnBlk[i].CellHighOrder().CellInadequateFit(3) == 1){
-	//	Print_(SolnBlk[i].CellHighOrder().CellDeriv());
-      }
-      //      }
-    }
-
-    //     Print_(SolnBlk[5].CellHighOrder().LHS());
-    //     Print_(SolnBlk[5].CellHighOrder().GeomWeights());
-    //     Print_(SolnBlk[5].CellHighOrder().CellDeriv());
-
-  }
-
-  /* Test 2:*/
-  template<>
-  template<>
-  void HighOrder1D_EulerUniformMesh_object::test<2>()
-  {
-    set_test_name("Test HighOrder1D functionality with ENO");
-    set_local_input_path("SodProblem");
-
-    IP.Verbose() = ON;
-
-    // Set up domain
-    SetUpDomain("sod_HighOrder_ENO.in");
-
-    // Reconstruct the solution in one of the cells
-    //     SolnBlk[55].CellHighOrder().ComputeReconstructionPseudoInverse(SolnBlk,55);
-    //     SolnBlk[55].CellHighOrder().ComputeUnlimitedSolutionReconstruction(SolnBlk,55,RECONSTRUCTION_ENO_CHARACTERISTIC);
-
     HighOrderSolutionReconstructionOverDomain(SolnBlk,IP,&Euler1D_UniformMesh::CellHighOrder);
 
-    //    Print_(SolnBlk[55].CellHighOrder().CellDeriv());
+    // Set master and current files
+    MasterFile  = "sod_HighOrder.dat";
+    CurrentFile = "Current_HighOrder_sod.dat";
 
+    // Check reconstruction
+    if (RunRegression){
+
+      // Open file for output
+      Open_Output_File(CurrentFile);
+
+      // Output data
+      for (int i=SolnBlk[0].ICl; i<=SolnBlk[0].ICu; ++i){
+	Print_File(SolnBlk[i].CellHighOrder().CellDeriv(),out());
+	Print_File(SolnBlk[i].CellHighOrder().LHS(),out());
+	Print_File(SolnBlk[i].CellHighOrder().GeomWeights(),out());
+	Print_File(SolnBlk[i].CellHighOrder().CellSmoothnessIndicator(),out());
+	Print_File(SolnBlk[i].CellHighOrder().CellInadequateFit(1),out());
+	Print_File(SolnBlk[i].CellHighOrder().CellInadequateFit(2),out());
+	Print_File(SolnBlk[i].CellHighOrder().CellInadequateFit(3),out());
+      }
+
+      //===== Check solution
+      RunRegressionTest("High-order Sod Solution", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+
+    } else { 
+      // create the Master file
+
+      // Open file for output
+      Open_Output_File(MasterFile);
+
+      // Output data
+      for (int i=SolnBlk[0].ICl; i<=SolnBlk[0].ICu; ++i){
+	Print_File(SolnBlk[i].CellHighOrder().CellDeriv(),out());
+	Print_File(SolnBlk[i].CellHighOrder().LHS(),out());
+	Print_File(SolnBlk[i].CellHighOrder().GeomWeights(),out());
+	Print_File(SolnBlk[i].CellHighOrder().CellSmoothnessIndicator(),out());
+	Print_File(SolnBlk[i].CellHighOrder().CellInadequateFit(1),out());
+	Print_File(SolnBlk[i].CellHighOrder().CellInadequateFit(2),out());
+	Print_File(SolnBlk[i].CellHighOrder().CellInadequateFit(3),out());
+      }	// endfor
+    } // endif
   }
-
 
 }
 

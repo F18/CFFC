@@ -298,6 +298,9 @@ void kExact_Reconstruction_Compute_LHS (typename SolutionContainer::HighOrderTyp
     // START:   Set the LHS of the linear system 
     // ***************************************************
 
+    // ==== Set the geometric weight associated with the reconstructed cell
+    HO_Var.GeomWeights(0) = 1.0;
+
     // Step1. Compute the normalized geometric weights
     for (cell=1; cell<StencilSize; ++cell){ //for each neighbour cell in the stencil
 
@@ -311,7 +314,7 @@ void kExact_Reconstruction_Compute_LHS (typename SolutionContainer::HighOrderTyp
     }
 
     // Step2. Set the approximate equations
-    for (cell=1 ; cell<StencilSize; ++cell){ //for each cell in the stencil
+    for (cell=1 ; cell<StencilSize; ++cell){ //for each neighbour cell in the stencil
     
       // compute the normalized geometric weight
       HO_Var.GeomWeights(cell) /= MaxWeight;
