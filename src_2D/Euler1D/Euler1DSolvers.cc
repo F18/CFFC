@@ -8,6 +8,7 @@
 #endif // _EULER1D_INCLUDED
 
 #include "Euler1D_HighOrder.h"	// High-order 1D Euler header file 
+#include "../HighOrderReconstruction/AccuracyAssessment1D.h" // Post-processing accuracy assessment
 
 /********************************************************
  * Routine: Euler1DSolver                               *
@@ -449,6 +450,14 @@ int Euler1DSolver(char *Input_File_Name_ptr,
 
             Gnuplot_File.close();
          } /* endif */
+	 
+     } else if (command_flag == WRITE_OUTPUT_ACCURACY_CODE) {
+       // Output error norms to tecplot file
+       AccuracyAssessment1D::OutputErrorNormsTecplot(Soln_ptr,Input_Parameters);
+
+    } else if (command_flag == WRITE_NORM_ON_SCREEN) {
+       // Print solution
+       AccuracyAssessment1D::PrintErrorNorms(Soln_ptr,Input_Parameters,cout);
 
      } else if (command_flag == INVALID_INPUT_CODE ||
                 command_flag == INVALID_INPUT_VALUE) {

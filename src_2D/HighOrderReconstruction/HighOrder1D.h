@@ -1,5 +1,5 @@
 /*!\file HighOrder1D.h
-  \brief Regression tests for functions prototyped in NumericalLibrary.h */
+  \brief Header file implementing the templated HighOrder1D class.*/
 
 #ifndef _HIGHORDER_1D_INCLUDED
 #define _HIGHORDER_1D_INCLUDED
