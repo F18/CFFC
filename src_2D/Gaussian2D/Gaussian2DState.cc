@@ -326,6 +326,27 @@ double dTdn(const Gaussian2D_pState &W,
 }
 
 /********************************************************
+ * Routine: Slip_T                                      *
+ *                                                      *
+ * Find the slip temperature.                           *
+ *                                                      *
+ ********************************************************/
+double Slip_T(const Gaussian2D_pState &W,
+	      const double &T,
+	      const Gaussian2D_pState &dWdx,
+	      const Gaussian2D_pState &dWdy,
+	      const Vector2D &norm_dir) {
+  double _dTdn; //underscore to avoid same name as function dTdn()
+
+  //I need the negative sign because this function takes the
+  //outward facing normal from the first cell inside the domain.
+  //I need the opposite sign.
+  _dTdn = -dTdn(W,dWdx,dWdy,norm_dir);
+
+  return T + W.gt()*_dTdn;
+}
+
+/********************************************************
  * Routine: Adiabatic_Wall                              *
  *                                                      *
  * This function returns the solution state for a wall  *
@@ -456,14 +477,9 @@ Gaussian2D_pState Isothermal_Wall_Slip_T(const Gaussian2D_pState &W,
 					 const Gaussian2D_pState &dWdx,
 					 const Gaussian2D_pState &dWdy,
 					 const Vector2D &norm_dir) {
-  double Tk, _dTdn; //underscore to avoid same name as function dTdn()
+  double Tk;
 
-  //I need the negative sign because this function takes the
-  //outward facing normal from the first cell inside the domain.
-  //I need the opposite sign.
-  _dTdn = -dTdn(W,dWdx,dWdy,norm_dir);
-
-  Tk = T + W.gt()*_dTdn;
+  Tk = Slip_T(W,T,dWdx,dWdy,norm_dir);
 
   return Isothermal_Wall(W,V,Tk,norm_dir);
 }
@@ -609,14 +625,9 @@ Gaussian2D_pState Knudsen_Layer_Isothermal_Slip_T(const Gaussian2D_pState &W,
 						  const Gaussian2D_pState &dWdx,
 						  const Gaussian2D_pState &dWdy,
 						  const Vector2D &norm_dir) {
-  double Tk, _dTdn; //underscore to avoid same name as function dTdn()
+  double Tk;
 
-  //I need the negative sign because this function takes the
-  //outward facing normal from the first cell inside the domain.
-  //I need the opposite sign.
-  _dTdn = -dTdn(W,dWdx,dWdy,norm_dir);
-
-  Tk = T + W.gt()*_dTdn;
+  Tk = Slip_T(W,T,dWdx,dWdy,norm_dir);
 
   return Knudsen_Layer_Isothermal(W,V,Tk,norm_dir);
 }
