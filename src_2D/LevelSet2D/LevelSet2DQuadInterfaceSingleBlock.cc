@@ -674,7 +674,9 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
   double epsilon = TOLER*min(SolnBlk.Grid.lfaceN(SolnBlk.Grid.ICl,SolnBlk.Grid.JCl),
 			     SolnBlk.Grid.lfaceE(SolnBlk.Grid.ICl,SolnBlk.Grid.JCl));
 #ifdef _RETRIEVE_DEBUG_
-  dout << endl << " epsilon = " << epsilon; dout.flush();
+  dout << endl << " epsilon = " << epsilon << endl;
+
+  cout << endl << "Retrieving Interface on block = " << gblknum << endl;
 #endif
 
   // Deallocate current level set spline(s).
@@ -694,74 +696,78 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
     }
   }
 
+  cout << "SAM == DONE FLAGGING" << endl;
+
   // Exit immediately if no interface points have been located.
   if (!SolnBlk.Trace.np) return 0;
 
+  cout << "SAM == INTERFACE POINTS HAVE BEEN FOUND" << endl;
+
 #ifdef _RETRIEVE_DEBUG_
-  dout << endl << "Cells infected in CENTER:" << endl;
-  for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
-    for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
-      if (SolnBlk.cut[i][j].center == INFECTED) dout << "c ";
-      else dout << "o ";
-      dout.flush();
-    }
-    dout << endl;
-  }
-  dout << endl << "Cells infected in NORTH:" << endl;
-  for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
-    for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
-      if (SolnBlk.cut[i][j].north == INFECTED) dout << "n ";
-      else dout << "o ";
-      dout.flush();
-    }
-    dout << endl;
-  }
-  dout << endl << "Cells infected in SOUTH:" << endl;
-  for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
-    for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
-      if (SolnBlk.cut[i][j].south == INFECTED) dout << "s ";
-      else dout << "o ";
-      dout.flush();
-    }
-    dout << endl;
-  }
-  dout << endl << "Cells infected in EAST:" << endl;
-  for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
-    for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
-      if (SolnBlk.cut[i][j].east == INFECTED) dout << "e ";
-      else dout << "o ";
-      dout.flush();
-    }
-    dout << endl;
-  }
-  dout << endl << "Cells infected in WEST:" << endl;
-  for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
-    for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
-      if (SolnBlk.cut[i][j].west == INFECTED) dout << "w ";
-      else dout << "o ";
-      dout.flush();
-    }
-    dout << endl;
-  }
-  dout << endl << "Cells infected in NORTHEAST:" << endl;
-  for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
-    for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
-      if (SolnBlk.cut[i][j].north_east == INFECTED) dout << "a ";
-      else dout << "o ";
-      dout.flush();
-    }
-    dout << endl;
-  }
-  dout << endl << "Cells infected in SOUTHWEST:" << endl;
-  for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
-    for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
-      if (SolnBlk.cut[i][j].south_west == INFECTED) dout << "d ";
-      else dout << "o ";
-      dout.flush();
-    }
-    dout << endl;
-  }
-  dout << endl << "Cells that are infected somewhere:" << endl;
+//   dout << endl << "Cells infected in CENTER:" << endl;
+//   for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
+//     for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
+//       if (SolnBlk.cut[i][j].center == INFECTED) dout << "c ";
+//       else dout << "o ";
+//       dout.flush();
+//     }
+//     dout << endl;
+//   }
+//   dout << endl << "Cells infected in NORTH:" << endl;
+//   for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
+//     for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
+//       if (SolnBlk.cut[i][j].north == INFECTED) dout << "n ";
+//       else dout << "o ";
+//       dout.flush();
+//     }
+//     dout << endl;
+//   }
+//   dout << endl << "Cells infected in SOUTH:" << endl;
+//   for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
+//     for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
+//       if (SolnBlk.cut[i][j].south == INFECTED) dout << "s ";
+//       else dout << "o ";
+//       dout.flush();
+//     }
+//     dout << endl;
+//   }
+//   dout << endl << "Cells infected in EAST:" << endl;
+//   for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
+//     for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
+//       if (SolnBlk.cut[i][j].east == INFECTED) dout << "e ";
+//       else dout << "o ";
+//       dout.flush();
+//     }
+//     dout << endl;
+//   }
+//   dout << endl << "Cells infected in WEST:" << endl;
+//   for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
+//     for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
+//       if (SolnBlk.cut[i][j].west == INFECTED) dout << "w ";
+//       else dout << "o ";
+//       dout.flush();
+//     }
+//     dout << endl;
+//   }
+//   dout << endl << "Cells infected in NORTHEAST:" << endl;
+//   for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
+//     for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
+//       if (SolnBlk.cut[i][j].north_east == INFECTED) dout << "a ";
+//       else dout << "o ";
+//       dout.flush();
+//     }
+//     dout << endl;
+//   }
+//   dout << endl << "Cells infected in SOUTHWEST:" << endl;
+//   for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
+//     for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
+//       if (SolnBlk.cut[i][j].south_west == INFECTED) dout << "d ";
+//       else dout << "o ";
+//       dout.flush();
+//     }
+//     dout << endl;
+//   }
+  dout << "Cells that are infected somewhere:" << endl;
   for (int j = SolnBlk.JCu+1; j >= SolnBlk.JCl-1; j--) {
     for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
       if (SolnBlk.cut[i][j].center == INFECTED ||
@@ -771,7 +777,16 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
  	  SolnBlk.cut[i][j].west  == INFECTED ||
  	  SolnBlk.cut[i][j].north_east == INFECTED ||
  	  SolnBlk.cut[i][j].south_west == INFECTED) {
- 	dout << "+ ";
+	if ( (SolnBlk.cut[i][j].center == INFECTED && (i == SolnBlk.ICu+1 || i == SolnBlk.ICl-1 || j == SolnBlk.JCu+1 || j == SolnBlk.JCl-1)) ||
+	     (SolnBlk.cut[i][j].north == INFECTED && i == SolnBlk.ICu+1) ||
+	     (SolnBlk.cut[i][j].south == INFECTED && i == SolnBlk.ICl-1) ||
+	     (SolnBlk.cut[i][j].east == INFECTED && j == SolnBlk.JCl-1) ||
+	     (SolnBlk.cut[i][j].west == INFECTED && j == SolnBlk.JCu+1) ) {
+	  // This point is a starting point.
+	  dout << "# ";
+	} else {
+	  dout << "+ ";
+	}
       } else {
  	dout << "o ";
       }
@@ -779,16 +794,23 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
     }
     dout << endl;
   }
+
   dout << endl;
   dout << endl;
   dout << endl << " Number of infected faces/centers = " << SolnBlk.Trace.np;
   dout << endl << " Number of starting points        = " << start.np;
   dout << endl;
+  
+  cout << "SAM == NOW PRINTING STARTING DATA" << endl;
+  
   dout << endl << " Starting data: ";
   for (int nspts = 0; nspts < start.np; nspts++) {
     dout << endl << nspts
 	 << " " << start[nspts];
   }
+
+  cout << "SAM == NOW PRINTING TRACE DATA" << endl;
+
   dout << endl << " Trace data: ";
   for (int nifs = 0; nifs < SolnBlk.Trace.np; nifs++) {
     dout << endl
@@ -802,10 +824,6 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
   dout << endl;
 #endif
 
-  cout << endl << "===WE ARE HERE===" << endl;
-  
-  return 0;
-
   // Declare required integer variables.
   int error_flag;
 
@@ -818,12 +836,18 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
   int icell, jcell, iface;
 
   // Trace all interfaces until there are no more starting points.
-  while (!start.np) {
+  while (start.np != ZERO) {
 
-    cout << "current startpoint =" << start[0] << endl;
+    cout << "SAM == START LIST BEFORE TRACING: ";
+    for (int sp = 0; sp < start.np; sp++) {
+      cout << start[sp] << " ";
+    }
+    cout << endl;
 
     // Reset counters.
     numpts = 0;
+
+    cout << "SAM == BEGINNING Trace_Interface_Spline using startpoint " << start[0] << endl;
 
     // Trace the interface at specified start point.
 #ifndef _RETRIEVE_DEBUG_
@@ -834,16 +858,26 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
 #endif
     if (error_flag) return error_flag;
 
+    cout << "SAM == TRACING COMPLETE FOR STARTPOINT " << start[0] << endl;
+
     // Add to linked list.
     npts.add(numpts);
+    
+    cout << "SAM == " << numpts << " POINTS TRACED. INTERFACE LIST LENGTH = " << npts.np << endl;
+
+    cout << "SAM == UPDATING START LIST" << endl;
 
     // Update start list.
     Update_Start_List(SolnBlk,start);
 
+    cout << "SAM == START LIST UPDATED SUCCESSFULLY" << endl;
   }
 
+  cout << "SAM == START LIST EXHAUSTED. LOOKING FOR UNTRACED CELLS" << endl;
+
   // Look for any more infected cells that have not been traced.
-  for (int it = 0; it <= SolnBlk.Trace.np; it++) {
+  for (int it = 0; it < SolnBlk.Trace.np; it++) {
+    numpts = 0;
     icell = SolnBlk.Trace[it].i;
     jcell = SolnBlk.Trace[it].j;
     iface = SolnBlk.Trace[it].face;
@@ -851,46 +885,72 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
 #ifndef _RETRIEVE_DEBUG_
     if (iface == CENTER && SolnBlk.cut[icell][jcell].center == INFECTED) {
       error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,it);
+      if (error_flag) return error_flag;
+      npts.add(numpts);
     } else if (iface == NORTH && SolnBlk.cut[icell][jcell].north == INFECTED) {
       error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,it);
+      if (error_flag) return error_flag;
+      npts.add(numpts);
     } else if (iface == SOUTH && SolnBlk.cut[icell][jcell].south == INFECTED) {
       error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,it);
+      if (error_flag) return error_flag;
+      npts.add(numpts);
     } else if (iface == EAST && SolnBlk.cut[icell][jcell].east == INFECTED) {
       error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,it);
+      if (error_flag) return error_flag;
+      npts.add(numpts);
     } else if (iface == WEST && SolnBlk.cut[icell][jcell].west == INFECTED) {
       error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,it);
+      if (error_flag) return error_flag;
+      npts.add(numpts);
     }
 #endif
 #ifdef _RETRIEVE_DEBUG_
     if (iface == CENTER && SolnBlk.cut[icell][jcell].center == INFECTED) {
+      cout << "SAM == FOUND UNTRACED CELL AT TRACE INDEX " << it << endl;
       error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,it,dout);
+      if (error_flag) return error_flag;
+      npts.add(numpts);
+      cout << "SAM == " << numpts << " POINTS TRACED. INTERFACE LIST LENGTH = " << npts.np << endl;
     } else if (iface == NORTH && SolnBlk.cut[icell][jcell].north == INFECTED) {
+      cout << "SAM == FOUND UNTRACED CELL AT TRACE INDEX " << it << endl;
       error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,it,dout);
+      if (error_flag) return error_flag;
+      npts.add(numpts);
+      cout << "SAM == " << numpts << " POINTS TRACED. INTERFACE LIST LENGTH = " << npts.np << endl;
     } else if (iface == SOUTH && SolnBlk.cut[icell][jcell].south == INFECTED) {
+      cout << "SAM == FOUND UNTRACED CELL AT TRACE INDEX " << it << endl;
       error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,it,dout);
+      if (error_flag) return error_flag;
+      npts.add(numpts);
+      cout << "SAM == " << numpts << " POINTS TRACED. INTERFACE LIST LENGTH = " << npts.np << endl;
     } else if (iface == EAST && SolnBlk.cut[icell][jcell].east == INFECTED) {
+      cout << "SAM == FOUND UNTRACED CELL AT TRACE INDEX " << it << endl;
       error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,it,dout);
+      if (error_flag) return error_flag;
+      npts.add(numpts);
+      cout << "SAM == " << numpts << " POINTS TRACED. INTERFACE LIST LENGTH = " << npts.np << endl;
     } else if (iface == WEST && SolnBlk.cut[icell][jcell].west == INFECTED) {
+      cout << "SAM == FOUND UNTRACED CELL AT TRACE INDEX " << it << endl;
       error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,it,dout);
+      if (error_flag) return error_flag;
+      npts.add(numpts);
+      cout << "SAM == " << numpts << " POINTS TRACED. INTERFACE LIST LENGTH = " << npts.np << endl;
     }
 #endif
 
-    if (error_flag) return error_flag;
-    
-    // Add to linked list.
-    npts.add(numpts);
   }
 
 #ifdef _RETRIEVE_DEBUG_
-  dout << endl << "==========================================";
-  dout << endl << "Number of interfaces traced = " << npts.np-1;
+  cout << endl << "==========================================";
+  cout << endl << "Number of interfaces traced = " << npts.np;
   for (int ni = 0; ni < npts.np; ni++) {
-    dout << endl << "Interface " << ni;
-    dout << endl << "Spline points:";
-    for (int pts = 0; pts <= npts[ni]; pts++) {
-      dout << endl << p[pts] << " " << F[pts];
+    cout << endl << "Interface " << ni;
+    cout << endl << "Spline points: " << npts[ni];
+    for (int pts = 0; pts < npts[ni]; pts++) {
+      cout << endl << pts << " " << p[pts] << " " << F[pts];
     }
-    dout << endl << "---------";
+    cout << endl << "---------";
   }
 #endif
 
@@ -1151,9 +1211,19 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
   
 }
 
+/******************************************************************//**
+ * Routine: Update_Start_List
+ *
+ * This routine removes start points that have already been traced
+ * by Trace_Interface_Spline.
+ *
+ **********************************************************************/
 void Update_Start_List(LevelSet2D_Quad_Block &SolnBlk,
 		       LinkedList<int> &start) {
+
   int ic, jc, iface, startpt;
+
+  cout << "SAM == THIS START LIST HAS " << start.np << " ELEMENTS" << endl;
 
   for (int i=0; i<start.np; i++) {
     startpt = start[i];
@@ -1165,7 +1235,9 @@ void Update_Start_List(LevelSet2D_Quad_Block &SolnBlk,
 	(iface == SOUTH  && SolnBlk.cut[ic][jc].south  == CLEAN) ||
 	(iface == EAST   && SolnBlk.cut[ic][jc].east   == CLEAN) || 
 	(iface == WEST   && SolnBlk.cut[ic][jc].west   == CLEAN)){
+      cout << "SAM == FOUND A VISITED START POINT AT INDEX " << i << " WITH VAL=" << start[i] << endl;
       start.remove(start.find(startpt));
+      cout << "SAM == SUCCESSFULLY REMOVED START POINT. NEW LIST LENGTH = " << start.np << endl;
     }
     i--;
   }
@@ -1443,7 +1515,7 @@ void Flag_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
 			const int &ic,
 			const int &jc,
 			const double &epsilon,
-			LinkedList<int> start) {
+			LinkedList<int> &start) {
 
   if (fabs(SolnBlk.U[ic][jc].psi) < epsilon) {
 
