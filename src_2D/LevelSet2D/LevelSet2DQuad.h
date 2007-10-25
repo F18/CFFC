@@ -52,7 +52,7 @@
 #define UNCHECKED       2  //!< Probably a deprecated flag.
 
 //! Interface retrieval debugging option. Uncomment to print debugging files.
-#define _RETRIEVE_DEBUG_
+// #define _RETRIEVE_DEBUG_
 
 /*!
  * Class: CutType
