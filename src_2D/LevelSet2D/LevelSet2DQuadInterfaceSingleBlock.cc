@@ -954,21 +954,6 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
 //   nsp++;
 //   numpts = 0;
 
-// #ifndef _RETRIEVE_DEBUG_
-//   //error_flag = Trace_Interface_Spline(SolnBlk,p,F,numpts,m);
-//   error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,start);
-// #endif
-// #ifdef _RETRIEVE_DEBUG_
-//   dout << endl << " Begin Trace"; dout.flush();
-//   //error_flag = Trace_Interface_Spline(SolnBlk,p,F,numpts,m,dout);
-//   error_flag = Trace_Interface_Spline(SolnBlk,p,F,epsilon,numpts,start,dout);
-//   dout << endl << "Number of points traced: " << numpts;
-//   dout << endl << " End Trace"; dout.flush();
-// #endif
-//   if (error_flag) return error_flag;
-//   npts.add(numpts);
-//     }
-//   }
 
   // Exit immediately if no interfaces have been found.
   if (!npts.np) { 
@@ -977,10 +962,6 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
     npts.deallocate();
     return 0;
   }
-
-  ///////////////////////////////////////////////////////////////////////
-  ///////////////////////////////////////////////////////////////////////
-  ///////////////////////////////////////////////////////////////////////
 
   // Parse the list of interfaces and clip interfaces as required.
   LinkedList<Vector2D> pn, Fn;       // spline points and velocities (finalized)
@@ -1058,72 +1039,6 @@ int Retrieve_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
       }
     }
   }
-
-
-  /* Jai's code
-  //  start = 0;
-
-  for (int ni = 0; ni < nsp; ni++) {
-    nptsn.add(0);
-    if (npts[ni] > 1) {
-      // If none of the traced nodes are within the block then disregard
-      // the trace.
-      in_counter = 0;
-      for (int np = start; np < npts[ni]; np++) {
- 	if (p[np].x >= Xmin.x && p[np].x <= Xmax.x && p[np].y >= Xmin.y && p[np].y <= Xmax.y) {
- 	  in_counter++;
- 	}
-      }
-      // None of the traced nodes are within the block but if the trace
-      // interesects the block (can occur at corners) then interpolate
-      // an internal point.
-      if (!in_counter) {
-	for (int np = start; np < npts[ni]-1; np++) {
-	  found = 0;
- 	  if ((p[np].x < Xmin.x || p[np].x > Xmax.x || p[np].y < Xmin.y || p[np].y > Xmax.y) &&
- 	      (p[np+1].x < Xmin.x || p[np+1].x > Xmax.x || p[np+1].y < Xmin.y || p[np+1].y > Xmax.y)) {
-  	    if (Line_Intersection(p[np],p[np+1],Vector2D(Xmin.x,Xmin.y),Vector2D(Xmax.x,Xmin.y),Xp1)) in_counter++;
- 	    if (Line_Intersection(p[np],p[np+1],Vector2D(Xmax.x,Xmin.y),Vector2D(Xmax.x,Xmax.y),Xp2)) in_counter++;
- 	    if (Line_Intersection(p[np],p[np+1],Vector2D(Xmax.x,Xmax.y),Vector2D(Xmin.x,Xmax.y),Xp3)) in_counter++;
- 	    if (Line_Intersection(p[np],p[np+1],Vector2D(Xmin.x,Xmax.y),Vector2D(Xmin.x,Xmin.y),Xp4)) in_counter++;
-	    if (in_counter == 2) {
-	      Xp = HALF*(Xp1 + Xp2 + Xp3 + Xp4);
- 	      fm = Linear_Interpolation(p[np],F[np],p[np+1],F[np+1],Xp);
-	      p.insert(Xp,np);
-	      F.insert(fm,np);
-	      found = 1;
-	    }
- 	  }
-	  if (found) break;
-	}
-      }
-      // Include the traced nodes.
-      if (in_counter) {
-        added_flag = 0;
-	for (int np = start; np < npts[ni]; np++) {
-	  if (!added_flag && np < npts[ni]-1) {
-	    if ((p[np].x < Xmin.x || p[np].x > Xmax.x || p[np].y < Xmin.y || p[np].y > Xmax.y) &&
-		(p[np+1].x >= Xmin.x && p[np+1].x <= Xmax.x && p[np+1].y >= Xmin.y && p[np+1].y <= Xmax.y)) {
-	      added_flag = 1;
-	    }
-	  }
-	  if (added_flag) {
-	    pn.add(p[np]);
-	    Fn.add(F[np]);
-	    nptsn.put(nptsn[ni]+1,ni);
-	    if (np+1 < npts[ni]) {
-	      if ((p[np].x < Xmin.x || p[np].x > Xmax.x || p[np].y < Xmin.y || p[np].y > Xmax.y) &&
-		  (p[np+1].x < Xmin.x || p[np+1].x > Xmax.x || p[np+1].y < Xmin.y || p[np+1].y > Xmax.y)) {
-		break;
-	      }
-	    }
-	  }
-	}
-      }
-    }
-    start = npts[ni];
-  }
-  */
 
   // Count the new number of interfaces (ignore all 1-point interfaces).
   int nnsp = 0;
