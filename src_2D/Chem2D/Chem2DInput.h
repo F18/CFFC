@@ -86,6 +86,9 @@ class Chem2D_Input_Parameters{
   int Time_Accurate, Local_Time_Stepping, 
       Maximum_Number_of_Time_Steps, N_Stage;
   double CFL_Number, Time_Max;
+
+  //! source term time-step size multiplyer
+  double Source_Term_Multiplyer;
   
   // Additional input parameters for dual time stepping
   int     Max_Inner_Steps, first_step;

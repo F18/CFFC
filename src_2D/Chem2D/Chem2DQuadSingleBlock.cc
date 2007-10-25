@@ -1900,7 +1900,7 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
       // Set Initial condtions on 1D grid
       for (int j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
 	for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	  if (SolnBlk.Grid.Cell[i][j].Xc.x <= 0.01){ //spatial relation, grid independent 
+	  if (SolnBlk.Grid.Cell[i][j].Xc.x <= ZERO){ //spatial relation, grid independent 
 	    SolnBlk.W[i][j] = Wl;  
 	  } else {
  	    SolnBlk.W[i][j] = Wr;	     
@@ -3200,7 +3200,8 @@ double CFL(Chem2D_Quad_Block &SolnBlk,
 	if (SolnBlk.W[i][j].React.reactset_flag != NO_REACTIONS){
 	  dt_chem = HALF/SolnBlk.W[i][j].dSwdU_max_diagonal(Input_Parameters.Preconditioning,
 							    SolnBlk.Flow_Type,
-							    delta_n,Input_Parameters.Solver_Type); 
+							    delta_n,Input_Parameters.Solver_Type);
+	  dt_chem *= Input_Parameters.Source_Term_Multiplyer; // scale source term
 	  SolnBlk.dt[i][j] = min(dt_chem, SolnBlk.dt[i][j]);	  
 	}
 	

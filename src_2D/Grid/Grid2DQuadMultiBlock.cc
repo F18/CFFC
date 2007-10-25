@@ -1697,10 +1697,10 @@ Grid2D_Quad_Block** Grid_1D_Flame(Grid2D_Quad_Block **Grid_ptr,
        of the rectangular box shaped domain representing
        each of the blocks in the grid. */
     
-    xc_NW = Vector2D(ZERO  , Heigth);
-    xc_NE = Vector2D(Length/Number_of_Blocks_Idir, Heigth);
-    xc_SE = Vector2D(Length/Number_of_Blocks_Idir, ZERO);
-    xc_SW = Vector2D(ZERO  , ZERO);
+    xc_NW = Vector2D(-Length/Number_of_Blocks_Idir/TWO,  Heigth/TWO);
+    xc_NE = Vector2D( Length/Number_of_Blocks_Idir/TWO,  Heigth/TWO);
+    xc_SE = Vector2D( Length/Number_of_Blocks_Idir/TWO, -Heigth/TWO);
+    xc_SW = Vector2D(-Length/Number_of_Blocks_Idir/TWO, -Heigth/TWO);
     
     /* Create the splines defining the north, south,
        east, and west boundaries of the rectangular boxes. */

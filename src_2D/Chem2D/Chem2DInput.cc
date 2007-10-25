@@ -70,6 +70,7 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.N_Stage = 1;
     IP.CFL_Number = 0.5;
     IP.Time_Max = ZERO;
+    IP.Source_Term_Multiplyer = 1.0;
     
     /* Dual time stepping */
     IP.Physical_CFL_Number = 0.9;
@@ -400,6 +401,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
                           1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.CFL_Number), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Source_Term_Multiplyer), 
                           1, 
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Time_Max), 
@@ -1053,6 +1057,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
                        1, 
                        MPI::INT, Source_Rank);
     Communicator.Bcast(&(IP.CFL_Number), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Source_Term_Multiplyer), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.Time_Max), 
@@ -2161,6 +2168,13 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        IP.Input_File >> IP.CFL_Number;
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.CFL_Number <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Source_Term_Multiplyer") == 0) {
+       i_command = 18;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Source_Term_Multiplyer;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.Source_Term_Multiplyer <= ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Box_Width") == 0) {
        i_command = 19;
