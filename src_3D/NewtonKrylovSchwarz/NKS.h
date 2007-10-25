@@ -39,10 +39,8 @@ class Hexa_Newton_Krylov_Schwarz_Solver {
   private:
 
   int blocksize;
-  int NumVar;
   //Overload this to change blocksize (ie Species N-1 etc. )
-  void set_blocksize(void) { blocksize = Solution_Data->Local_Solution_Blocks.Soln_Blks[0].NumVar(); 
-                             NumVar = blocksize; } 
+  void set_blocksize(void) { blocksize = Solution_Data->Local_Solution_Blocks.Soln_Blks[0].NumVar(); }
  
   double *L2norm_current, *L1norm_current, *Max_norm_current; 
   double L2norm_first, L1norm_first, Max_norm_first;  
@@ -74,8 +72,8 @@ class Hexa_Newton_Krylov_Schwarz_Solver {
   //Member Functions
   void Calculate_Norms(const int &);
   int Restart_NKS();
-  int Newton_Update();       //private ??
-  double Finite_Time_Step(const int &); //private ??
+  int Newton_Update();      
+  double Finite_Time_Step(const int &); 
 
   int Solve();
   int Steady_Solve(const double &,const int &);
@@ -121,14 +119,16 @@ allocate(){
     }
   } 
 
-//   //GMRES 
-//   GMRES = GMRES_(Data, Solution_Data, blocksize, DTS_SolnBlk);
+  //GMRES 
+  GMRES.Setup(*Data, *Solution_Data, *DTS_SolnBlk, blocksize);
 
-//   // Block Preconditoner
-//   Block_precon = new Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>[Used_blocks_count];
-//   for( int i=0; i<Used_blocks_count; i++) {                                    
-//     Block_precon[i].Create_Preconditioner(Data, Solution_Data,blocksize);
-//   }  
+  // Block Preconditoner
+  Block_precon = new Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>[Used_blocks_count];
+  for( int i=0; i<Used_blocks_count; i++) {                                    
+    Block_precon[i].Create_Preconditioner(Solution_Data->Local_Solution_Blocks.Soln_Blks[i],
+					  Solution_Data->Input,
+					  blocksize);
+  }  
 
   //Norms 
   L2norm_current = new double[Solution_Data->Input.Number_of_Residual_Norms]; 
@@ -232,8 +232,6 @@ template <typename SOLN_pSTATE, typename SOLN_cSTATE>
 int Hexa_Newton_Krylov_Schwarz_Solver<SOLN_pSTATE,SOLN_cSTATE>:: 
 Newton_Update(){
 
-  int Num_Var = Solution_Data->Local_Solution_Blocks.Soln_Blks[0].NumVar();
-
   /* Update Solution. No updates to Ghost Cells, let the BC's take care of it */
     for ( int Bcount = 0 ; Bcount < Data->Local_Adaptive_Block_List.Nblk; ++Bcount ) {      
       if (Data->Local_Adaptive_Block_List.Block[Bcount].used) {
@@ -246,10 +244,10 @@ Newton_Update(){
 		 i <= Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].ICu; i++){
 	  
 	      /* Update solutions in conversed variables  U = Uo + deltaU = Uo + denormalized(x) */	 
-	      for(int varindex =1; varindex <= Num_Var; varindex++){  
-// 	      Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].U[i][j][k][varindex] = 
-// 		Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].Uo[i][j][k][varindex] 
-// /		+  GMRES.deltaU(Bcount,i,j,k,varindex-1);
+	      for(int varindex =1; varindex <= Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].NumVar() ; varindex++){  
+	      Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].U[i][j][k][varindex] = 
+		Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].Uo[i][j][k][varindex] 
+		+  GMRES.deltaU(Bcount,i,j,k,varindex-1);
 	      } 	      	  
 	      // THIS FUNCTION HAS NO CHECKS FOR INVALID SOLUTIONS, 
 	      // YOU PROBABLY WANT TO CREATE A SPECIALIZATION OF THIS FUNCTION SPECIFIC 
@@ -429,18 +427,19 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
 
   /* Local Variabls */ 
   double dTime, CFL_current;
-  CPUTime total_cpu_time, start_total_cpu_time;
+  CPUTime total_cpu_time, start_total_cpu_time; //??
   bool limiter_check= true;
 
   // SHOULD BE IN GMRES !!!!!! ?????????
-  bool GMRES_Restarted = false, GMRES_Failed = false;
-  int GMRES_Restarts = 0, GMRES_Failures = 0, GMRES_Iters = 0, All_Iters_index = 0;
+  //bool GMRES_Restarted = false, GMRES_Failed = false;
+  //int GMRES_Restarts = 0, GMRES_Failures = 0, GMRES_Iters = 0, All_Iters_index = 0;
+
   int *GMRES_All_Iters = new int[Solution_Data->Input.NKS_IP.Maximum_Number_of_NKS_Iterations];
+  GMRES_All_Iters[0] = ZERO;
 
   //Reset relative Norms ???;
   L2norm_first = L1norm_first = Max_norm_first = ZERO;  
   L2norm_current_n = L1norm_current_n = Max_norm_current_n = ONE;
-
 
   /**************************************************************************/
   /******************* BEGIN NEWTON-KRYLOV-SCHWARZ CALCULATION **************/
@@ -611,8 +610,9 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
 		     + Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].Nghost; i++){	
 		Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].Uo[i][j][k]= 
 		  Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].U[i][j][k];
-	      }    	      		
-	      //Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].dt[i][j][k] *= CFL_current;
+	          	      		
+		//Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].dt[i][j][k] *= CFL_current;  //instead of above???
+	      }
 	    } 
 	  } 	  
 	} 
@@ -622,14 +622,12 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
 
       //DTS RULES: update Preconditioner only if GMRES iterations increase between Newton Its.
       bool GMRES_Iters_increaseing(true);
-      if( GMRES_Iters != 0){
-	if(GMRES_Iters ==1) {
-	  GMRES_Iters_increaseing = false;
-	} else if (GMRES_All_Iters[All_Iters_index-2] > GMRES_Iters) {
-	  GMRES_Iters_increaseing = true;
-	} else {
-	  GMRES_Iters_increaseing = false;
-	}
+      if( GMRES_All_Iters[Number_of_Newton_Steps-1] == 1){
+	GMRES_Iters_increaseing = false;
+      } else if (GMRES_All_Iters[Number_of_Newton_Steps-2] > GMRES_All_Iters[Number_of_Newton_Steps-1]) {
+	GMRES_Iters_increaseing = true;
+      } else {
+	GMRES_Iters_increaseing = false;
       }
 
       /**************************************************************************/
@@ -638,7 +636,7 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
       // Create/Update Jacobian Matrix(s) using Uo = U  
       if ( ( !Solution_Data->Input.NKS_IP.Dual_Time_Stepping &&
 	     (Number_of_Newton_Steps < Solution_Data->Input.NKS_IP.Min_Number_of_Newton_Steps_Requiring_Jacobian_Update || 
-	      L2norm_current_n > Solution_Data->Input.NKS_IP.Min_L2_Norm_Requiring_Jacobian_Update) ) ||                           
+	      L2norm_current_n > Solution_Data->Input.NKS_IP.Min_L2_Norm_Requiring_Jacobian_Update) ) || 
 	   ( Solution_Data->Input.NKS_IP.Dual_Time_Stepping && GMRES_Iters_increaseing) ) {                       
 	
 	cout << "\n Creating/Updating Jacobian Matrix"; 
@@ -650,7 +648,7 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
 	for ( int Bcount = 0 ; Bcount < Data->Local_Adaptive_Block_List.Nblk; ++Bcount ) {
 	  if (Solution_Data->Local_Solution_Blocks.Block_Used[Bcount] == ADAPTIVEBLOCK3D_USED){
 	    // Jacobian changed and Preconditioner updated 
-// 	    Block_precon[Bcount].Update_Jacobian_and_Preconditioner(DTS_SolnBlk[Bcount].DTS_dTime);
+	    Block_precon[Bcount].Update_Jacobian_and_Preconditioner(DTS_SolnBlk[Bcount].DTS_dTime);
 	  } 
 	} 
 
@@ -664,11 +662,10 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
       /************* LINEAR SYSTEM SOLVE WITH GMRES  ****************************/      
       /**************************************************************************/
       /* Solve system with right-preconditioned matrix free GMRES */  
-//       error_flag = GMRES_.solve(Block_precon, linear_tolerance,
-//                                  &GMRES_Restarted, &GMRES_Failed, &GMRES_Iters,
-// 				 &res_cputime, &res_nevals)
+      error_flag = GMRES.solve(Block_precon);
       if (CFFC_Primary_MPI_Processor() && error_flag) cout << "\n NKS2D: Error in GMRES \n";
-      GMRES_All_Iters[All_Iters_index++] = GMRES_Iters;
+
+      GMRES_All_Iters[Number_of_Newton_Steps] = GMRES.GMRES_Iterations();
       /**************************************************************************/      
  
 
