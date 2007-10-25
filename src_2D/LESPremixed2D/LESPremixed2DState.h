@@ -509,16 +509,6 @@ class LESPremixed2D_pState {
   //@{
   //! Returns burnt mixture mass fractions.
   LESPremixed2D_pState premixed_mfrac(const LESPremixed2D_pState &Wo);
-  //! Returns burnt state subject to Low Mach assumption.
-  int FlameJumpLowMach_x(LESPremixed2D_pState &Wu,
-			 LESPremixed2D_pState &Wb);
-  //! Returns burnt state in the x-direction.
-  int FlameJump_x(const LESPremixed2D_pState &Wu,
-		  LESPremixed2D_pState &Wb);
-  //! Returns the burnt state for any given direction.
-  int FlameJump_n(const LESPremixed2D_pState &Wu,
-		  LESPremixed2D_pState &Wb,
-		  const Vector2D &norm_dir);
   //@}
 
   //! @name FSD Model Source Term
@@ -968,11 +958,6 @@ class LESPremixed2D_pState {
    //! @name Premixed combustion.
    //@{
    LESPremixed2D_cState  premixed_mfrac(const LESPremixed2D_pState &Wo);
-   int FlameJump_x(const LESPremixed2D_cState &Uu,
-		   LESPremixed2D_cState &Ub);
-   int FlameJump_n(const LESPremixed2D_cState &Uu,
-		   LESPremixed2D_cState &Ub,
-		   const Vector2D &norm_dir);
    //@}
 
    //! @name Index operators.
@@ -2156,5 +2141,25 @@ extern LESPremixed2D_pState Rotate(const LESPremixed2D_pState &W,
 extern Vector2D HLLE_wavespeeds(const LESPremixed2D_pState &Wl,
                                 const LESPremixed2D_pState &Wr,
                                 const Vector2D &norm_dir); 
+
+/*******************************************************
+ * External Flame Jump Functions                       *
+ *******************************************************/
+
+//! Returns burnt state in the x-direction.
+int FlameJump_x(const LESPremixed2D_pState &Wu,
+		LESPremixed2D_pState &Wb);
+int FlameJump_x(const LESPremixed2D_cState &Uu,
+		LESPremixed2D_cState &Ub);
+//! Returns the burnt state for any given direction.
+int FlameJump_n(const LESPremixed2D_pState &Wu,
+		LESPremixed2D_pState &Wb,
+		const Vector2D &norm_dir);
+int FlameJump_n(const LESPremixed2D_cState &Uu,
+		LESPremixed2D_cState &Ub,
+		const Vector2D &norm_dir);
+//! Returns burnt state subject to Low Mach assumption.
+int FlameJumpLowMach_x(LESPremixed2D_pState &Wu,
+		       LESPremixed2D_pState &Wb);
 
 #endif //end _LESPREMIXED2D_STATE_INCLUDED 
