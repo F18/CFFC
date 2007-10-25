@@ -4,7 +4,7 @@
 #
 # SOLVER PARAMETERS:
 Time_Accurate = 
-0
+1
 Time_Integration_Type =
 Explicit_Runge_Kutta
 N_Stage =
@@ -62,7 +62,7 @@ Number_of_Ghost_Cells =
 Number_of_Blocks_Idir = 
 4
 Number_of_Blocks_Jdir =
-2
+4
 Number_of_Blocks_Per_Processor =
 128
 #
