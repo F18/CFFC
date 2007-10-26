@@ -83,24 +83,24 @@ void Output_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
     for ( j = SolnBlk.Grid.JCl; j <= SolnBlk.Grid.JCu; j++){
       //left
       if(SolnBlk.Grid.BCtypeW[j] != BC_NONE) {
-	Linear_Reconstruction_LeastSquares(SolnBlk, 
+	Linear_Reconstruction_LeastSquares(SolnBlk,
 					   SolnBlk.ICl, j, 
 					   LIMITER_BARTH_JESPERSEN);
 	dX = SolnBlk.Grid.Cell[SolnBlk.ICl-1][j].Xc -
 	  SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc;
-	SolnBlk.W[SolnBlk.ICl-1][j] = SolnBlk.W[SolnBlk.ICl][j] + 
+	SolnBlk.W[SolnBlk.ICl-1][j] = SolnBlk.W[SolnBlk.ICl][j] +
 	  (SolnBlk.phi[SolnBlk.ICl][j]^SolnBlk.dWdx[SolnBlk.ICl][j])*dX.x +
 	  (SolnBlk.phi[SolnBlk.ICl][j]^SolnBlk.dWdy[SolnBlk.ICl][j])*dX.y;
 	SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
       }
     //right
       if(SolnBlk.Grid.BCtypeE[j] != BC_NONE) {
-	Linear_Reconstruction_LeastSquares(SolnBlk, 
-					   SolnBlk.ICu, j, 
+	Linear_Reconstruction_LeastSquares(SolnBlk,
+					   SolnBlk.ICu, j,
 					   LIMITER_BARTH_JESPERSEN);
 	dX = SolnBlk.Grid.Cell[SolnBlk.ICu+1][j].Xc -
 	  SolnBlk.Grid.Cell[SolnBlk.ICu][j].Xc;
-	SolnBlk.W[SolnBlk.ICu+1][j] = SolnBlk.W[SolnBlk.ICu][j] + 
+	SolnBlk.W[SolnBlk.ICu+1][j] = SolnBlk.W[SolnBlk.ICu][j] +
 	  (SolnBlk.phi[SolnBlk.ICu][j]^SolnBlk.dWdx[SolnBlk.ICu][j])*dX.x +
 	  (SolnBlk.phi[SolnBlk.ICu][j]^SolnBlk.dWdy[SolnBlk.ICu][j])*dX.y;
 	SolnBlk.U[SolnBlk.ICu+1][j] = U(SolnBlk.W[SolnBlk.ICu+1][j]);
@@ -111,24 +111,24 @@ void Output_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
     for ( i = SolnBlk.Grid.ICl; i <= SolnBlk.Grid.ICu; i++){
       //bottom
       if(SolnBlk.Grid.BCtypeS[i] != BC_NONE) {
-	Linear_Reconstruction_LeastSquares(SolnBlk, 
-					   i, SolnBlk.JCl, 
+	Linear_Reconstruction_LeastSquares(SolnBlk,
+					   i, SolnBlk.JCl,
 					   LIMITER_BARTH_JESPERSEN);
 	dX = SolnBlk.Grid.Cell[i][SolnBlk.JCl-1].Xc -
 	  SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc;
-	SolnBlk.W[i][SolnBlk.JCl-1] = SolnBlk.W[i][SolnBlk.JCl] + 
+	SolnBlk.W[i][SolnBlk.JCl-1] = SolnBlk.W[i][SolnBlk.JCl] +
 	  (SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dWdx[i][SolnBlk.JCl])*dX.x +
 	  (SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dWdy[i][SolnBlk.JCl])*dX.y;
 	SolnBlk.U[i][SolnBlk.JCl-1] = U(SolnBlk.W[i][SolnBlk.JCl-1]);
       }
       //top
       if(SolnBlk.Grid.BCtypeN[i] != BC_NONE) {
-	Linear_Reconstruction_LeastSquares(SolnBlk, 
-					   i, SolnBlk.JCu, 
+	Linear_Reconstruction_LeastSquares(SolnBlk,
+					   i, SolnBlk.JCu,
 					   LIMITER_BARTH_JESPERSEN);
 	dX = SolnBlk.Grid.Cell[i][SolnBlk.JCu+1].Xc -
 	  SolnBlk.Grid.Cell[i][SolnBlk.JCu].Xc;
-	SolnBlk.W[i][SolnBlk.JCu+1] = SolnBlk.W[i][SolnBlk.JCu] + 
+	SolnBlk.W[i][SolnBlk.JCu+1] = SolnBlk.W[i][SolnBlk.JCu] +
 	  (SolnBlk.phi[i][SolnBlk.JCu]^SolnBlk.dWdx[i][SolnBlk.JCu])*dX.x +
 	  (SolnBlk.phi[i][SolnBlk.JCu]^SolnBlk.dWdy[i][SolnBlk.JCu])*dX.y;
 	SolnBlk.U[i][SolnBlk.JCu+1] = U(SolnBlk.W[i][SolnBlk.JCu+1]);
