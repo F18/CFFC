@@ -43,6 +43,9 @@ using namespace std;
 #include "../Planck.h"
 #include "SNBCK.h"
 
+// Use cubic splines or polynomial interpolants
+#define PLANCKMEAN_USE_SPLINES
+//#define PLANCKMEAN_USE_POLY
 
 /*********************************************************************
  *********************** CLASS DEFINITIONS ***************************

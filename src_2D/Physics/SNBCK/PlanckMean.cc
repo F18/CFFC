@@ -101,9 +101,17 @@ void PlanckMean :: Setup( const char *CFFC_PATH ) // Current path
   } // endfor - T
 
   // Build a natural cubic spline
+#ifdef PLANCKMEAN_USE_SPLINES
   spline( Tn,  kp_CO, Ninterp, 1.1E30, 1.1E30,  kp2_CO );
   spline( Tn, kp_CO2, Ninterp, 1.1E30, 1.1E30, kp2_CO2 );
   spline( Tn, kp_H2O, Ninterp, 1.1E30, 1.1E30, kp2_H2O );
+
+  //Polynomial
+#else //PLANCKMEAN_USE_POLY
+  polcof( Tn,  kp_CO, Ninterp,  kp2_CO );
+  polcof( Tn, kp_CO2, Ninterp, kp2_CO2 );
+  polcof( Tn, kp_H2O, Ninterp, kp2_H2O );
+#endif
 
 }
 
@@ -156,9 +164,17 @@ double PlanckMean :: EvalPlanckMean( const double p,        // pressure [atm]
   }
 
   // interpolate using the cubic spline
+#ifdef PLANCKMEAN_USE_SPLINES
   splint( Tn,  kp_CO,  kp2_CO, dT, Ninterp, T,  kkp_CO );
   splint( Tn, kp_CO2, kp2_CO2, dT, Ninterp, T, kkp_CO2 );
   splint( Tn, kp_H2O, kp2_H2O, dT, Ninterp, T, kkp_H2O );
+
+  //Polynomial
+#else //PLANCKMEAN_USE_POLY
+  polval(  kp2_CO, Ninterp, T,  kkp_CO );
+  polval( kp2_CO2, Ninterp, T, kkp_CO2 );
+  polval( kp2_H2O, Ninterp, T, kkp_H2O );
+#endif
 
   // compute planck mean using uncorrelated approximation
   // See Ju et al. in J Fluid Mech (1999)

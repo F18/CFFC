@@ -98,6 +98,10 @@ using namespace std;
 #include "../Planck.h"
 
 
+// Use cubic splines or polynomial interpolants
+#define SNBCK_USE_SPLINES
+//#define SNBCK_USE_POLY
+
 /*********************************************************************
  ***************************** CONSTANTS *****************************
  *********************************************************************/

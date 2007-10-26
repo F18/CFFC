@@ -368,7 +368,7 @@ inline void polcof(const double* xa, const double* ya, const int n,
  * Given an array of coefficients  cof[0..n] such that 
  * ya_i = sum_j cof_j*xa_i^j, evaluate the value of y at x.
  ********************************************************************/
-inline void polcof(const double* cof, const int n, const double x,
+inline void polval(const double* cof, const int n, const double x,
 		   double &y)
 {
   y = 0.0;

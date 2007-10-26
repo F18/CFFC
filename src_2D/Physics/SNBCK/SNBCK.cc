@@ -1514,13 +1514,24 @@ void SNBCK :: PreCalculateAbsorb( const double p_ref,    // pressure [atm]
   } // endfor - Temperature
 
 
-  // Build a natural cubic spline
+  // Build a natural cubic spline or compute polynomial coefficients
   for (int v=0; v<Nbands; v++) 
     for (int i=0; i<nquad[v]; i++) {
+
+      // spline
+#ifdef SNBCK_USE_SPLINES
       spline( Tn,  k_CO[v][i], Ninterp, 1.1E30, 1.1E30,  k2_CO[v][i] );
       spline( Tn, k_CO2[v][i], Ninterp, 1.1E30, 1.1E30, k2_CO2[v][i] );
       spline( Tn, k_H2O[v][i], Ninterp, 1.1E30, 1.1E30, k2_H2O[v][i] );
-    }
+
+      //Polynomial
+#else //SNBCK_USE_POLY
+      polcof( Tn,  k_CO[v][i], Ninterp,  k2_CO[v][i] );
+      polcof( Tn, k_CO2[v][i], Ninterp, k2_CO2[v][i] );
+      polcof( Tn, k_H2O[v][i], Ninterp, k2_H2O[v][i] );
+#endif
+
+    } // endfor
 
 }
 
@@ -1587,9 +1598,17 @@ void SNBCK :: CalculateAbsorb_Interp( const double p,        // pressure [atm]
     for (int i=0; i<nquad[v]; i++) {
 
       // interpolate using the cubic spline
+#ifdef SNBCK_USE_SPLINES
       splint( Tn,  k_CO[v][i],  k2_CO[v][i], dT, Ninterp, T,  kk_CO );
       splint( Tn, k_CO2[v][i], k2_CO2[v][i], dT, Ninterp, T, kk_CO2 );
       splint( Tn, k_H2O[v][i], k2_H2O[v][i], dT, Ninterp, T, kk_H2O );
+
+      // interpolate using polynomial
+#else //SNBCK_USE_POLY
+      polval(  k2_CO[v][i], Ninterp, T,  kk_CO );
+      polval( k2_CO2[v][i], Ninterp, T, kk_CO2 );
+      polval( k2_H2O[v][i], Ninterp, T, kk_H2O );
+#endif
 
       // compute absorbsion coefficient using uncorrelated approximation
       // See Liu and Smallwood (2004)
