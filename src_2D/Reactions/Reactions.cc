@@ -569,3 +569,51 @@ void Reaction_set::ct_equilibrate( ) const {
 
 } // end of ct_parse_mass_string
 
+
+/***********************************************************************
+
+  This function computes the composition of a hydrocarbon (CxHy), O2, 
+  and N2 mixture.  Cantera is used to convert molar fraction to mass
+  fraction.
+
+***********************************************************************/
+void Reaction_set::ct_composition( const string& fuel_species, 
+				   const double &phi,
+				   double* massFracs ) const {
+
+#ifdef _CANTERA_VERSION
+
+  // first, compute the stoichiometric fuel air ratio
+  double C_atoms=ct_gas->nAtoms(ct_gas->speciesIndex(fuel_species), ct_gas->elementIndex("C"));
+  double H_atoms=ct_gas->nAtoms(ct_gas->speciesIndex(fuel_species), ct_gas->elementIndex("H"));
+  double ax=C_atoms+H_atoms/4.0;
+  double fa_stoic=1.0/(4.76*ax);
+
+  // determine the composition
+  int nsp = ct_gas->nSpecies();  
+  double* x = new double[nsp];
+  for(int k=0; k<nsp; k++){
+    if(k==ct_gas->speciesIndex(fuel_species)){ x[k]=1.0; }
+    else if(k==ct_gas->speciesIndex("O2")){    x[k]=0.21/phi/fa_stoic; }
+    else if(k==ct_gas->speciesIndex("N2")){    x[k]=0.79/phi/fa_stoic; }
+    else{ x[k]=0.0; }
+  }
+
+  // compute composition 
+  // -> why do it yourself when you can get someone else to do it
+  ct_gas->setState_TPX(300.0, 101325.0, x);
+  for(int k=0;k<nsp;k++) massFracs[k] = ct_gas->massFraction(k);
+
+  // clean up memory
+  delete[] x;
+
+#else
+  cout<<"\n CODE NOT COMPILED WITH CANTERA!";
+  cout<<"\n YOU SHOULD NOT BE HERE!";
+  exit(-1);
+
+#endif //_CANTERA_VERSION
+
+
+} // end of ct_composition
+

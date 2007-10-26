@@ -167,6 +167,11 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.ct_mech_name = "none";
     IP.ct_mech_file = "none";
 
+    // reaction parameters
+    IP.equivalence_ratio = 1.0;
+    string_ptr = "CH4";
+    strcpy(IP.Fuel_Species, string_ptr);
+
     /***** END CHEM2D SPECFIC *****************/
     /******************************************/
     //BC
@@ -510,9 +515,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Re_lid),
 			  1,
 			  MPI::DOUBLE,0);
-    MPI::COMM_WORLD.Bcast(&(IP.flame_speed), 
-                          1, 
-                          MPI::DOUBLE, 0);
     /*********************************************************
      ******************* CHEM2D SPECIFIC *********************
      *********************************************************/
@@ -541,6 +543,17 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(IP.ct_Mech_File,
                           INPUT_PARAMETER_LENGTH_CHEM2D,
 			  MPI::CHAR, 0);
+
+    //reaction paramters
+    MPI::COMM_WORLD.Bcast(IP.Fuel_Species, 
+                          INPUT_PARAMETER_LENGTH_CHEM2D, 
+                          MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.equivalence_ratio), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.flame_speed), 
+                          1, 
+                          MPI::DOUBLE, 0);
 
     //delete current dynamic memory before changing num_species
     if(!CFFC_Primary_MPI_Processor()) {   
@@ -1168,9 +1181,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Re_lid), 
                        1, 
 		       MPI::DOUBLE,Source_Rank);
-    Communicator.Bcast(&(IP.flame_speed), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
     /*********************************************************
      ******************* CHEM2D SPECIFIC *********************
      *********************************************************/
@@ -1198,6 +1208,17 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     Communicator.Bcast(IP.ct_Mech_File,
 		       INPUT_PARAMETER_LENGTH_CHEM2D,
 		       MPI::CHAR, Source_Rank);
+    // reaction parameters
+    Communicator.Bcast(IP.Fuel_Species,
+		       INPUT_PARAMETER_LENGTH_CHEM2D,
+		       MPI::CHAR, Source_Rank);
+    Communicator.Bcast(&(IP.equivalence_ratio), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.flame_speed), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+
     //delete orginal dynamic memory before changing num_species
     if(!CFFC_Primary_MPI_Processor()) {  
       IP.Deallocate();  
@@ -2420,6 +2441,19 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 
        *************************************************************************
        *************************************************************************/
+
+    }else if (strcmp(IP.Next_Control_Parameter, "flame_speed") == 0) {
+       i_command = 518;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.flame_speed;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.flame_speed < 0) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Fuel_Species") == 0) {
+       i_command = 2;
+       Get_Next_Input_Control_Parameter(IP);
+       strcpy(IP.Fuel_Species, IP.Next_Control_Parameter);
+
        
        /*************************************/
        /**** REACTIONS SET FOR HARDCODED ****/
@@ -2612,6 +2646,26 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	 IP.Input_File.getline(buffer, sizeof(buffer));  
 	 IP.Line_Number = IP.Line_Number + 1; 
         
+	 // Get Initial Equivalence Ratio from user 
+	 // Here we use Cantera to compute the equivalent mass fractions:
+       } else if (strcmp(IP.Next_Control_Parameter, "Equivalence_Ratio") == 0){
+	 i_command = 518;
+	 IP.Line_Number = IP.Line_Number + 1;
+	 IP.Input_File >> IP.equivalence_ratio;
+	 IP.Input_File.getline(buffer, sizeof(buffer));
+
+	 //Set inital Values; 
+	 if (IP.equivalence_ratio < 0) {
+	   i_command = INVALID_INPUT_VALUE;
+	 } else {
+	   IP.Wo.React.ct_composition(IP.Fuel_Species, 
+				      IP.equivalence_ratio, 
+				      IP.mass_fractions);
+	   IP.Wo.set_initial_values(IP.mass_fractions);  
+	   IP.Uo.set_initial_values(IP.mass_fractions);  
+	   IP.Uo = U(IP.Wo);
+	 }
+	 
        //If no mass fraction data is set to defaults (all equal to 1/num_species) 
        } else {
 	 IP.Uo = U(IP.Wo);
@@ -2984,13 +3038,6 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        i_command = 520;
        IP.BluffBody_Data_Usage = 1;
        
-    }else if (strcmp(IP.Next_Control_Parameter, "flame_speed") == 0) {
-       i_command = 518;
-       IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.flame_speed;
-       IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.flame_speed < 0) i_command = INVALID_INPUT_VALUE;
-
     } else if (strcmp(IP.Next_Control_Parameter, "ICEMCFD_Topology_File") == 0) {
        i_command = 52;
       Get_Next_Input_Control_Parameter(IP);

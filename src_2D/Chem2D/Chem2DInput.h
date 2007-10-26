@@ -151,6 +151,12 @@ class Chem2D_Input_Parameters{
   int num_species;
   Chem2D_pState Wo;
   Chem2D_cState Uo;
+  //! Fuel species
+  char Fuel_Species[INPUT_PARAMETER_LENGTH_CHEM2D];
+  //! Fuel species
+  double equivalence_ratio;
+  //!laminar flame speed [m/s]
+  double flame_speed;
 
   //! Transport data type
   char trans_type[INPUT_PARAMETER_LENGTH_CHEM2D];
@@ -190,7 +196,6 @@ class Chem2D_Input_Parameters{
   double Reynolds_Number;
   double Kinematic_Viscosity_Wall;
   double Eddy_Viscosity_Limit_Coefficient;
-  double flame_speed;     //laminar flame speed [m/s]
   //@}
 
   //@{ @Debug Level 0 for none, 1,2,3... level of verboseness  

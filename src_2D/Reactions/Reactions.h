@@ -299,6 +299,9 @@ public:
   template<class SOLN_pSTATE>
   void ct_equilibrium( const SOLN_pSTATE &Wu, 
 		       SOLN_pSTATE &Wb) const;
+  // compute composition from equivalence ratio
+  void ct_composition( const string& fuel_species, const double &phi,
+		       double* massFracs) const;
   // compute analytical chemical source jacobian with cantera
   template<class SOLN_pSTATE>
   void ct_dSwdU(DenseMatrix &dSwdU, 
