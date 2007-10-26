@@ -1,10 +1,11 @@
-/************* LESPremixed2DQuadSolvers.cc ***************************** 
-   LESPremixed2DQuadSolvers.cc:  2D Solver for.... 
-     
-    NOTES:      
+/*****************************************************//**
+   \file LESPremixed2DQuadSolvers.cc
 
-   - based on Chem2D2DQuadSolvers.cc
-*****************************************************************/
+   2D Solver for.... 
+     
+   \note Based on Chem2D2DQuadSolvers.cc
+**********************************************************/
+
 #ifndef _LESPREMIXED2D_QUAD_INCLUDED
 #include "LESPremixed2DQuad.h"
 #endif // _LESPREMIXED2D_QUAD_INCLUDED
@@ -19,56 +20,53 @@
 #include "LESPremixed2DQuadNKS.h"
 #endif // _LESPREMIXED2D_NKS_INCLUDED 
 
-/********************************************************
- * Routine: LESPremixed2DQuadSolver                     *
- *                                                      *
- * Computes solutions to 2D .....  equations on 2D      *
- * quadrilateral multi-block solution-adaptive mesh.    *
- *                                                      *
+/****************************************************//**
+ * Routine: LESPremixed2DQuadSolver                     
+ *                                                      
+ * Computes solutions to 2D .....  equations on 2D      
+ * quadrilateral multi-block solution-adaptive mesh.    
+ *                                                      
  ********************************************************/
-int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
+int LESPremixed2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 
   /********************************************************  
    * Local variable declarations.                         *
    ********************************************************/
   
   // LESPremixed2D input variables and parameters:
-
   LESPremixed2D_Input_Parameters Input_Parameters;
   
-  /* Multi-block solution-adaptive quadrilateral mesh 
-     solution variables. */
+  // Multi-block solution-adaptive quadrilateral mesh solution variables.
   Grid2D_Quad_Block          **MeshBlk;
   QuadTreeBlock_DataStructure  QuadTree;
   AdaptiveBlockResourceList    List_of_Global_Solution_Blocks;
   AdaptiveBlock2D_List         List_of_Local_Solution_Blocks;
-  LESPremixed2D_Quad_Block           *Local_SolnBlk;
+  LESPremixed2D_Quad_Block    *Local_SolnBlk;
   
-  //Multigrid instantiation
+  // Multigrid instantiation.
   FAS_Multigrid2D_Solver<LESPremixed2D_cState, 
                          LESPremixed2D_Quad_Block, 
                          LESPremixed2D_Input_Parameters> MGSolver;
 
-
-  /* Define residual file and cpu time variables. */
+  // Define residual file and cpu time variables.
   ofstream residual_file;
   ofstream time_accurate_data_file;
   ofstream energy_file, turbulence_progress_file;
   CPUTime processor_cpu_time, total_cpu_time;
   time_t start_explicit, end_explicit;
 
-  /* Other local solution variables. */
+  // Other local solution variables.
   int number_of_time_steps, first_step, last_step,
-    command_flag, error_flag, line_number, 
-    i_stage, limiter_freezing_off;
+      command_flag, error_flag, line_number, 
+      i_stage, limiter_freezing_off;
   
   double Time, dTime, initial_residual_l2_norm;
 
-  /* Variables used for dual time stepping. */
+  // Variables used for dual time stepping.
   int n_inner = 0, n_inner_temp = 0;
   const double dual_eps = 1.0E-3;  // 5.0E-4;
 
-  /* Variables for unsteady turbulent flows. */
+  // Variables for unsteady turbulent flows.
   double TKEold, TKE, TKEo, viscosity; 
   double energy, enstrophy, u_prime, Taylor_scale, turbulent_burning_rate, turbulent_burning_rate_prog; 
   double flame_x;
@@ -78,39 +76,42 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
      Set default values for the input solution parameters and then read user 
      specified input values from the specified input parameter file.            
    *************************************************************************
-   *************************************************************************/  
-  //The primary MPI processor processes the input parameter file.
+   *************************************************************************/
+ 
+  // The primary MPI processor processes the input parameter file.
   if (CFFC_Primary_MPI_Processor()) {
     if (!batch_flag) {
-        cout << "\n Reading LESPremixed2D input data file `"
-             << Input_File_Name_ptr << "'."; 
-    } /* endif */
+      cout << "\n Reading LESPremixed2D input data file `"
+	   << Input_File_Name_ptr << "'."; 
+    }
+    // Process input file.
     error_flag = Process_Input_Control_Parameter_File(Input_Parameters,
 						      Input_File_Name_ptr,
 						      command_flag);
     if (!batch_flag && error_flag == 0) {
-        cout << Input_Parameters << "\n";
-        cout.flush();
-    } /* endif */
+      cout << Input_Parameters << "\n";
+      cout.flush();
+    }
   } else {
     error_flag = 0;
-  } /* endif */
+  }
 
+  // MPI barrier to ensure processor synchronization.
+  CFFC_Barrier_MPI();
 
   // Broadcast input solution parameters to other MPI processors.
-  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
   CFFC_Broadcast_MPI(&error_flag, 1);
   if (error_flag != 0) return (error_flag); 
   CFFC_Broadcast_MPI(&command_flag, 1);
-  if (command_flag == TERMINATE_CODE) return (0);
-
+  if (command_flag == TERMINATE_CODE) return 0;
   Broadcast_Input_Parameters(Input_Parameters);
  
-  /* Common Use Variables */
+  // Common Use Variables.
   const LESPremixed2D_pState LESPremixed2D_W_STDATM;
   const LESPremixed2D_pState LESPremixed2D_W_VACUUM(ZERO, Vector2D_ZERO, ZERO, ZERO);
   const LESPremixed2D_cState LESPremixed2D_U_STDATM; //default
   const LESPremixed2D_cState LESPremixed2D_U_VACUUM(ZERO, Vector2D_ZERO, ZERO, ZERO);
+
 #ifdef THICKENED_FLAME_ON
   const int NUM_VAR_LESPREMIXED2D = Input_Parameters.Wo.NUM_VAR_LESPREMIXED2D + 2;
 #else
@@ -125,7 +126,9 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
    *************************************************************************/
 
   execute_new_calculation: ;
-  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+
+  // MPI barrier to ensure processor synchronization.
+  CFFC_Barrier_MPI(); 
   
   /* Create initial mesh.  Read mesh from grid definition or data files 
      when specified by input parameters. */
@@ -144,20 +147,21 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       error_flag = 1;
     } else {
       error_flag = 0;
-    } /* endif */
+    }
     
      if (error_flag) {
        cout << "\n LESPremixed2D ERROR: Unable to create valid LESPremixed2D multi-block mesh.\n";
        cout.flush();
-     } /* endif */
+     }
   } else {
     MeshBlk = NULL;
-  } /* endif */
+  }
+
+  // MPI barrier to ensure processor synchronization.
+  CFFC_Barrier_MPI();
 
   // Broadcast the mesh to other MPI processors.
-  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-  CFFC_Broadcast_MPI(&error_flag, 1); // Broadcast mesh error flag.
-
+  CFFC_Broadcast_MPI(&error_flag, 1);
   if (error_flag) return (error_flag);
   MeshBlk = Broadcast_Multi_Block_Grid(MeshBlk, Input_Parameters);
 
@@ -173,30 +177,29 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     cout << "\n Creating multi-block quadtree data structure and assigning"
 	 << "\n LESPremixed2D solution blocks corresponding to initial mesh.";
   }
-  //needs to be run by each processor
+
+  // Needs to be run by each processor.
   Local_SolnBlk = Create_Initial_Solution_Blocks(MeshBlk,
 						 Local_SolnBlk,
 						 Input_Parameters,
 						 QuadTree,
 						 List_of_Global_Solution_Blocks,
 						 List_of_Local_Solution_Blocks);
-
-  
-  if (Local_SolnBlk == NULL){ return (1); }
+  if (Local_SolnBlk == NULL) return 1;
 
   /************************************************************************  
-   * Initialize LESPremixed2D solution variables, Initial conditions      *  
+   * Initialize LESPremixed2D solution variables.                         *  
    ************************************************************************/
 
-  /* Set the initial time level. */
+  // Set the initial time level.
   Time = ZERO;
   number_of_time_steps = 0;
 
-  /* Set the CPU time to zero. */
+  // Set the CPU time to zero.
   processor_cpu_time.zero();
   total_cpu_time.zero(); 
 
-  /* Initialize the conserved and primitive state solution variables. */
+  // Initialize the conserved and primitive state solution variables.
   if (!batch_flag){ 
     cout << "\n Prescribing LESPremixed2D initial data.";
   }
@@ -205,7 +208,12 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
    **************** RESTART SOLUTION or INITIAL CONDITIONS *****************
    *************************************************************************/
   if (Input_Parameters.i_ICs == IC_RESTART || Input_Parameters.i_ICs == IC_2DWRINKLED_FLAME) {
-    if (!batch_flag) cout << "\n Reading LESPremixed2D solution from restart data files.";
+
+    // Restart solution from restart files.
+    if (!batch_flag) {
+      cout << "\n Reading LESPremixed2D solution from restart data files.";
+    }
+    // Read the quadtree restart file.
     error_flag = Read_QuadTree(QuadTree,
 			       List_of_Global_Solution_Blocks,
 			       List_of_Local_Solution_Blocks, 
@@ -214,14 +222,14 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       cout << "\n LESPremixed2D ERROR: Unable to open LESPremixed2D quadtree data file "
 	   << "on processor "
 	   << List_of_Local_Solution_Blocks.ThisCPU
-	   << ".\n";
-      cout.flush();
-    } /* endif */
+	   << endl;
+    }
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
+    // Allocate the message bufferse.
     Allocate_Message_Buffers(List_of_Local_Solution_Blocks,
 			     Local_SolnBlk[0].NumVar()+NUM_COMP_VECTOR2D);
-
+    // Read the solution block restart files.
     error_flag = Read_Restart_Solution(Local_SolnBlk, 
 				       List_of_Local_Solution_Blocks, 
 				       Input_Parameters,
@@ -232,17 +240,15 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
          cout << "\n LESPremixed2D ERROR: Unable to open LESPremixed2D restart input data file(s) "
               << "on processor "
               << List_of_Local_Solution_Blocks.ThisCPU
-              << ".\n";
-         cout.flush();
-    } /* endif */
+              << endl;
+    }
     error_flag = CFFC_OR_MPI(error_flag); 
-    if (error_flag){ 
-      return (error_flag);
-    } 
-    // Ensure each processor has the correct time and time!!!
+    if (error_flag) return (error_flag);
+    // Ensure each processor has the correct time and time.
     number_of_time_steps = CFFC_Maximum_MPI(number_of_time_steps);
     Time = CFFC_Maximum_MPI(Time);
     processor_cpu_time.cput = CFFC_Maximum_MPI(processor_cpu_time.cput);
+
     Input_Parameters.Maximum_Number_of_Time_Steps = CFFC_Maximum_MPI(Input_Parameters.Maximum_Number_of_Time_Steps);
     Input_Parameters.Time_Max = CFFC_Maximum_MPI(Input_Parameters.Time_Max);
 
@@ -258,8 +264,8 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       ICs(Local_SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
     }
 
-    /****** Else apply initial conditions from input parameters *******/
-  } else {   
+  } else {
+    // Apply initial conditions from input parameters.
 
     // Send grid information between neighbouring blocks BEFORE applying ICs
     CFFC_Barrier_MPI(); 
@@ -269,28 +275,32 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 				   ON);     
 
     if ((Input_Parameters.i_ICs == IC_HOMOGENEOUS_TURBULENCE ||
-        Input_Parameters.i_ICs == IC_LESPREMIXED_2DFLAME)  && 
+	 Input_Parameters.i_ICs == IC_LESPREMIXED_2DFLAME)  && 
 	!Input_Parameters.Read_Fluctuations_From_File) {
                  
       if (CFFC_Primary_MPI_Processor()) {
         if (!batch_flag) cout << "\n Creating initial turbulence data.";  
-        // Create the initial  turbulent field and write the data in Initial_turbulence.dat
+        // Create the initial turbulent field and
+	// write the data in Initial_turbulence.dat
         Velocity_Fluctuations(MeshBlk, QuadTree, Input_Parameters);
         
       }
-      CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+
+      // MPI barrier to ensure processor synchronization.
+      CFFC_Barrier_MPI();
     }
 
     ICs(Local_SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
     Input_Parameters.TKEo = Total_TKE(Local_SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
-  } /* endif */
+  }
   
-  
+  // MPI barrier to ensure processor synchronization.
+  CFFC_Barrier_MPI();
+
   /******************************************************************************  
     Send solution information between neighbouring blocks to complete
     prescription of initial data. 
   *******************************************************************************/
-  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
  
   // OLD grid send_all_messages, moved before ICs to help with values used in BCs 
   // set from ICs, ie ghost cell node locations, changed before ICs 
@@ -300,17 +310,14 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
                                                   NUM_VAR_LESPREMIXED2D,
                                                   OFF);
   if (error_flag) {
-    cout << "\n LESPremixed2D ERROR: Message passing error during LESPremixed2D solution intialization "
-	 << "on processor "
+    cout << "\n LESPremixed2D ERROR: Message passing error during LESPremixed2D "
+	 << "\n solution intialization on processor "
 	 << List_of_Local_Solution_Blocks.ThisCPU
-	 << ".\n";
-    cout.flush();
-    exit(1);
-  } /* endif */ 
-
+	 << "." << endl;
+  }
   error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return (error_flag);
-    
+
   /*******************************************************************************
    ************************* BOUNDARY CONDITIONS *********************************
    *******************************************************************************/
