@@ -34,36 +34,36 @@ void CENO_Execution_Mode::Print_Info(std::ostream & out_file){
 
   // output execution mode
   if (CENO_SPEED_EFFICIENT == ON){
-    out_file << "\n     -> Execution Mode = " << "Speed Efficient";
+    out_file << "\n     -> Execution Mode: " << "Speed Efficient";
   } else {
-    out_file << "\n     -> Execution Mode = " << "Memory Efficient";
+    out_file << "\n     -> Execution Mode: " << "Memory Efficient";
   }
 
   // output monotonicity mode
   if (CENO_DROP_ORDER == ON){
-    out_file << "\n     -> Monotonicity Mode = " << "Yes (drop order)";
+    out_file << "\n     -> Monotonicity Mode: " << "Yes (drop order)";
   } else {
-    out_file << "\n     -> Monotonicity Mode = " << "No (don't drop order)";
+    out_file << "\n     -> Monotonicity Mode: " << "No (don't drop order)";
   }
 
   // output padding mode
   if (CENO_PADDING == ON){
-    out_file << "\n     -> Cell Padding = " << "Yes (flag adjacent cells too)";
+    out_file << "\n     -> Cell Padding: " << "Yes (flag adjacent cells too)";
   } else {
-    out_file << "\n     -> Cell Padding = " << "No";
+    out_file << "\n     -> Cell Padding: " << "No";
   }
 
   // output geom weighting type
   if (CENO_SQUARE_GEOM_WEIGHTING == ON){
-    out_file << "\n     -> Geom Weighting = " << "Inverse of squared distance";
+    out_file << "\n     -> Geom Weighting: " << "Inverse of squared distance";
   } else {
-    out_file << "\n     -> Geom Weighting = " << "Inverse distance";
+    out_file << "\n     -> Geom Weighting: " << "Inverse distance";
   }
 
   // output interface behavior
   if (FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE == ON){
-    out_file << "\n     -> Negative interface solutions = " << "Force with PWC";
+    out_file << "\n     -> Negative interface solutions: " << "Force with PWC";
   } else {
-    out_file << "\n     -> Negative interface solutions = " << "Exit with error";
+    out_file << "\n     -> Negative interface solutions: " << "Exit with error";
   }
 }

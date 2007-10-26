@@ -15,11 +15,11 @@
 #include "../CFD/CFD.h"
 
 /*!
- * \class CENO_EpsilonTol
+ * \class CENO_Tolerances
  * 
  * \brief Tolerance class for CENO reconstruction algorithm.
  *********************************************************/
-class CENO_EpsilonTol: public EpsilonTol{
+class CENO_Tolerances: public EpsilonTol{
 
  public:
   static double epsilon;                  //!< limit the maximum value taken by the smoothness indicator 
@@ -28,6 +28,7 @@ class CENO_EpsilonTol: public EpsilonTol{
   static double epsilon_relative_square;  //!< the square of the relative epsilon
   static double epsilon_absolute_square;  //!< the square of the absolute epsilon
   static double cross_epsilon;            //!< equal to 2*epsilon_relative*epsilon_absolute
+  static double Fit_Tolerance;	          //!< value used to distinguish between smooth and non-smooth solution reconstructions.
 
   /* These functions can be used to determine what 
      an acceptable tolerance is around the quantity U. */
@@ -46,7 +47,7 @@ class CENO_EpsilonTol: public EpsilonTol{
   static void SetDefaults(void);
 
  protected:
-  CENO_EpsilonTol(){};
+  CENO_Tolerances(){};
 
   // Update tolerances that depend on the values of other tolerances
   static void UpdateDependentTolerances(void);
@@ -59,12 +60,13 @@ class CENO_EpsilonTol: public EpsilonTol{
   static double epsilon_default;          //!< this is a copy of epsilon that cannot be modified at runtime
   static double epsilon_relative_default; //!< this is a copy of epsilon_relative that cannot be modified at runtime
   static double epsilon_absolute_default; //!< this is a copy of epsilon_absolute that cannot be modified at runtime
+  static double Fit_Tolerance_default;    //!< this is a copy of Fit_Tolerance that cannot be modified at runtime
 };
 
 /*!
  * Output the CENO tolerances to the standard output.
  */
-inline void CENO_EpsilonTol::Print_CENO_Tolerances(ostream& os){
+inline void CENO_Tolerances::Print_CENO_Tolerances(ostream& os){
   os << "\nCENO_Tolerances:\n"
      << "epsilon=" << epsilon << "\n"
      << "epsilon_relative=" << epsilon_relative << "\n"
@@ -81,7 +83,7 @@ inline void CENO_EpsilonTol::Print_CENO_Tolerances(ostream& os){
  * the solution can be considered smooth, without computing
  * the smoothness indicator.
  */
-inline double CENO_EpsilonTol::ToleranceAroundValue(const double & U){
+inline double CENO_Tolerances::ToleranceAroundValue(const double & U){
   return epsilon_absolute + epsilon_relative*fabs(U);
 }
 
@@ -89,7 +91,7 @@ inline double CENO_EpsilonTol::ToleranceAroundValue(const double & U){
  * Returns the square of DeltaU around the quantity U,
  * based on relative and absolute tolerance.
  */
-inline double CENO_EpsilonTol::SquareToleranceAroundValue(const double & U){
+inline double CENO_Tolerances::SquareToleranceAroundValue(const double & U){
   return epsilon_absolute_square + cross_epsilon*fabs(U) + epsilon_relative_square*U*U;
 }
 
@@ -97,7 +99,7 @@ inline double CENO_EpsilonTol::SquareToleranceAroundValue(const double & U){
  * Update tolerances that depend on the values of other tolerances
  * (e.g. epsilon_absolute_square depends on epsilon_absolute)
  */
-inline void CENO_EpsilonTol::UpdateDependentTolerances(void){
+inline void CENO_Tolerances::UpdateDependentTolerances(void){
   epsilon_absolute_square = epsilon_absolute * epsilon_absolute;
   epsilon_relative_square = epsilon_relative * epsilon_relative;
   cross_epsilon = 2.0 * epsilon_absolute * epsilon_relative;
@@ -106,10 +108,10 @@ inline void CENO_EpsilonTol::UpdateDependentTolerances(void){
 
 /*!
  * Parse the input control parameters for 
- * settings related to CENO_EpsilonTol class
+ * settings related to CENO_Tolerances class
  */
 template<class Input_Parameters_Type>
-inline void CENO_EpsilonTol::Parse_Next_Input_Control_Parameter(Input_Parameters_Type & IP,
+inline void CENO_Tolerances::Parse_Next_Input_Control_Parameter(Input_Parameters_Type & IP,
 								int & i_command){
 
   // Check if the next control parameter has already been identified
@@ -141,6 +143,12 @@ inline void CENO_EpsilonTol::Parse_Next_Input_Control_Parameter(Input_Parameters
     IP.Input_File.getline(buffer, sizeof(buffer));
     ChangedDefault_EpsilonRelative = true;
 
+  } else if (strcmp(IP.Next_Control_Parameter, "CENO_Tolerance") == 0) {
+    i_command = 0;
+    ++IP.Line_Number;
+    IP.Input_File >> Fit_Tolerance;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    
   } else {
     i_command = INVALID_INPUT_CODE;
     return;

@@ -43,7 +43,6 @@ class CFD1D_Input_Parameters{
   int i_Reconstruction;
   int i_ReconstructionMethod;
   int Space_Accuracy;
-  double CENO_Cutoff;
 
   // Limiter type indicator and related input parameters:
   char Limiter_Type[INPUT_PARAMETER_LENGTH_CFD1D];
@@ -91,9 +90,6 @@ class CFD1D_Input_Parameters{
   short verbose_flag;
 
   /* Access fields */
-  double & FitTolerance(void) {return CENO_Cutoff;}
-  const double & FitTolerance(void) const {return CENO_Cutoff;}
-
   short & Verbose(void) {return verbose_flag;}
   const short & Verbose(void) const {return verbose_flag;}
 
@@ -183,8 +179,7 @@ inline ostream &operator << (ostream &out_file,
     }
     if (IP.i_ReconstructionMethod == RECONSTRUCTION_CENO){
       CENO_Execution_Mode::Print_Info(out_file);
-      CENO_EpsilonTol::Print_Info(out_file);
-      out_file << "\n  -> Fit Tolerance = " << IP.FitTolerance();
+      CENO_Tolerances::Print_Info(out_file);
       out_file << "\n  -> Limiter: " << IP.Limiter_Type;
     }
 

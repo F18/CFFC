@@ -5,10 +5,15 @@
 #define _ACCURACY_ASSESSMENT_1D_INCLUDED
 
 /* Include required C++ libraries. */
-// None
+#include <iostream>
+#include <vector>
+#include <stdexcept>
 
 /* Using std namespace functions */
 using std::ostream;
+using std::vector;
+using std::endl;
+using std::runtime_error;
 
 /* Include CFFC header files */
 // None
@@ -32,15 +37,23 @@ public:
 				      const Input_Parameters_Type & IP);
   
 
+  template<class Soln_Block_Type, class Input_Parameters_Type>
+  static void AssessSolutionAccuracy(Soln_Block_Type * SolnBlk,
+				     const Input_Parameters_Type & IP);
 
+
+
+  static double L1(void) {return LNorms[1]; }
+  static double L2(void) {return LNorms[2]; }
+  static double LMax(void) {return LNorms[3]; }
 
 private:
   // Private constructor
   AccuracyAssessment1D(void){};
 
-  static vector<double> LNorms;
-  static bool AccuracyAssessed_Flag;
-  static bool Title_Error_Norms;
+  static vector<double> LNorms;	      //!< vector of error norms
+  static bool AccuracyAssessed_Flag;  //!<  
+  static bool Title_Error_Norms;      //!<  
 };
 
 /*!
@@ -50,6 +63,8 @@ template<class Soln_Block_Type, class Input_Parameters_Type>
 void AccuracyAssessment1D::PrintErrorNorms(Soln_Block_Type * SolnBlk,
 					   const Input_Parameters_Type & IP,
 					   ostream & os){
+  
+  
   
 //       if(AccuracyAssessed_flag){
 // 	std::cout << "\n The accuracy norms are:";
@@ -104,6 +119,39 @@ void AccuracyAssessment1D::OutputErrorNormsTecplot(Soln_Block_Type * SolnBlk,
 //       }
 
 }
+
+/*!
+ * 
+ */
+
+template<class Soln_Block_Type, class Input_Parameters_Type>
+void AccuracyAssessment1D::AssessSolutionAccuracy(Soln_Block_Type * SolnBlk,
+						  const Input_Parameters_Type & IP){
+
+  if (IP.ExactFunction == NULL){
+    std::cerr << endl
+	      << " ============================================================ " 
+	      << endl
+	      << " ERROR: The accuracy of the solution couldn't be determined!"
+	      << endl
+	      << " The exact solution is invalid!" << endl
+	      << " Please check the pointer to the exact solution or don't use "
+	      << endl
+	      << "the \"Print_Accuracy\" command!"
+	      << endl
+	      << " ============================================================ " 
+	      << endl;
+    
+    throw runtime_error("AssessSolutionAccuracy() ERROR! There is no exact solution specified for this problem.");
+  }
+
+
+//   L1() = ComputeSolutionErrorL1(IP.ExactFunction,IP,parameter);
+//   L2() = ComputeSolutionErrorL2(IP.ExactFunction,IP,parameter);
+  //  LMax() = L1()/X.dx;
+
+}
+
 
 
 

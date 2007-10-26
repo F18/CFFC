@@ -58,10 +58,15 @@ public:
 
   //@{ @name Defined public types:
   typedef SOLN_STATE Soln_State;
+  typedef HighOrder1D<Soln_State> ClassType;
   typedef Cell1D_Uniform GeometryType;
   typedef TaylorDerivativesContainer<OneD,Soln_State> DerivativesContainer;
   typedef TaylorDerivativesContainer<OneD,double> GeometricMoments;
   typedef typename DerivativesContainer::Derivative  Derivative;
+
+  typedef double (ClassType::*MemberFunction_OneArgument_Type)(const double &);
+  typedef double (ClassType::*MemberFunction_TwoArguments_Type)(const double &, const double &);
+  typedef double (ClassType::*MemberFunction_TwoArguments_OneParameter_Type)(const double &, const unsigned );
   //@}
   
   //@{ @name Constructors:
@@ -160,13 +165,11 @@ public:
   Soln_State SolutionAtCoordinates(const double & X_Coord){
     return TD.ComputeSolutionFor(X_Coord - CellCenter());
   }
-  /* Computation of right and left states (left and right are relative to the position of the centroid) */
+  /* @brief Computation of right and left states (left and right are relative to the position of the centroid) */
   Soln_State left_state(void);
   Soln_State right_state(void);
 
-  /*!
-   * Integrate over the domain of the geometry associated with this high-order solution
-   */
+  /*! @brief Integrate over the domain of the geometry associated with this high-order solution  */
   template<typename FO, class ReturnType>
   ReturnType IntegrateOverTheCell(const FO FuncObj, const int & digits, ReturnType _dummy_param);
   
@@ -174,9 +177,7 @@ public:
   void MustUpdatePseudoInverse(void) {PseudoInverseFlag = OFF;}
 
   //@{ @name Reconstructions:
-  /*! 
-   * Compute the unlimited high-order solution reconstruction.
-   */
+  /*! @brief Compute the unlimited high-order solution reconstruction.  */
   template<class Soln_Block_Type>
   void ComputeUnlimitedSolutionReconstruction(Soln_Block_Type *SolnBlk,
 					      const int iCell,
@@ -184,18 +185,14 @@ public:
 					      HighOrder1D<Soln_State> & (Soln_Block_Type::*AccessToHighOrderVar)(void) = 
 					      &Soln_Block_Type::CellHighOrder);
 
-  /*! 
-   * Compute the pseudo-inverse corresponding to the unlimited high-order solution reconstruction.
-   */
+  /*! @brief Compute the pseudo-inverse corresponding to the unlimited high-order solution reconstruction.  */
   template<class Soln_Block_Type>
   void ComputeReconstructionPseudoInverse(Soln_Block_Type *SolnBlk,
 					  const int iCell,
 					  HighOrder1D<Soln_State> & (Soln_Block_Type::*AccessToHighOrderVar)(void) = 
 					  &Soln_Block_Type::CellHighOrder);
 
-  /*! 
-   * Compute the second (low-order) reconstruction in the CENO algorithm.
-   */
+  /*! @brief Compute the second (low-order) reconstruction in the CENO algorithm.  */
   template<class Soln_Block_Type>
   void ComputeLowOrderReconstruction(Soln_Block_Type *SolnBlk, const int iCell, const int Limiter);
 
@@ -207,6 +204,22 @@ public:
 				  const int iCell,
 				  HighOrder1D<Soln_State> & (Soln_Block_Type::*AccessToHighOrderVar)(void) = 
 				  &Soln_Block_Type::CellHighOrder);
+  //@}
+
+
+  //@{ @name Error Evaluation:
+  /*! @brief Compute L1 norm of the solution error */
+  template<typename Function_Object_Type>
+  double ComputeSolutionErrorL1(const Function_Object_Type FuncObj, const unsigned parameter);
+
+  double ComputeSolutionErrorL1(HighOrder1D<Soln_State> & Obj, const unsigned parameter);
+
+  /*! @brief Compute the L2 norm of the solution error */
+  template<typename Function_Object_Type>
+  double ComputeSolutionErrorL2(const Function_Object_Type FuncObj, const unsigned parameter);
+
+  double ComputeSolutionErrorL2(const HighOrder1D<Soln_State> & Obj);
+
   //@}
 
   /* Friend functions */
@@ -337,7 +350,7 @@ HighOrder1D<SOLN_STATE> & HighOrder1D<SOLN_STATE>::operator=(const HighOrder1D<S
   return *this;
 }
 
-//! deallocate()
+// deallocate()
 /*! Deallocate memory when high-order is not required.
  *  Automatic deallocation is already provided when the 
  *  variables are deleted.
@@ -354,7 +367,7 @@ void HighOrder1D<SOLN_STATE>::deallocate(void){
   CellInadequateFit().reserve(0);
 }
 
-//! AssociateGeometry()
+// AssociateGeometry()
 /*! Assign a specific geometry to the high-order object.
  */
 template<class SOLN_STATE> inline
@@ -366,7 +379,7 @@ void HighOrder1D<SOLN_STATE>::AssociateGeometry(GeometryType & Cell){
   ComputeGeometricCoefficients(); 
 }
 
-//! NumberOfRings()
+// NumberOfRings()
 /*! Return the required number of neighbor rings
  */
 template<class SOLN_STATE> inline
@@ -395,7 +408,7 @@ int HighOrder1D<SOLN_STATE>::NumberOfRings(int number_of_Taylor_derivatives){
   }
 }
 
-//! SetRings()
+// SetRings()
 /*! Set the number of rings around the current cell
  * which will be used to form the supporting stencil
  * of the reconstruction. 
@@ -408,7 +421,7 @@ void HighOrder1D<SOLN_STATE>::SetRings(void){
   rings = NumberOfRings(TD.size());
 }
 
-//! Nghost(ReconstructionOrder)
+// Nghost(ReconstructionOrder)
 /*! Returns the minimum number of ghost cells for the solution domain
  *  required to carry out a reconstruction of order ReconstructionOrder
  */
@@ -423,10 +436,8 @@ int HighOrder1D<SOLN_STATE>::Nghost(int ReconstructionOrder){
   return 1 + 2* NumberOfRings(TD_size);
 }
 
-//! ComputeGeometricCoefficients()
-/*! 
- * 
- * Computes the geometric coefficients by computing integral      
+// ComputeGeometricCoefficients()
+/*! Computes the geometric coefficients by computing integral      
  * over the volume of the cell of the polynomial function having  
  * the form                                                       
  *       ((x-xCC)^n) and divide by length dx                       
@@ -454,11 +465,10 @@ void HighOrder1D<SOLN_STATE>::InitializeMonotonicityFlag(void){
   }
 }
 
-//! InitializeVariable()
+// InitializeVariable()
 /*! 
  * Allocate memory and initialize the high-order variables
  * based on the ReconstructionOrder and the ReconstructionMethod.
- * 
  */
 template<class SOLN_STATE>
 void HighOrder1D<SOLN_STATE>::InitializeVariable(int ReconstructionOrder, int ReconstructionMethod){
@@ -531,7 +541,7 @@ void HighOrder1D<SOLN_STATE>::InitializeVariable(int ReconstructionOrder, int Re
   }
 }
 
-//! InitializeVariable()
+// InitializeVariable()
 /*! 
  * Initialize the high-order variables with the parameters provided by
  * an input parameters object.
@@ -553,7 +563,7 @@ ReturnType HighOrder1D<SOLN_STATE>::IntegrateOverTheCell(const FO FuncObj,
 				    _dummy_param,digits);
 }
 
-//! ComputeUnlimitedSolutionReconstruction()
+// ComputeUnlimitedSolutionReconstruction()
 /*! 
  * Compute the unlimited high-order reconstruction for 
  * the computational cell iCell, using information provided by
@@ -599,7 +609,7 @@ ComputeUnlimitedSolutionReconstruction(Soln_Block_Type *SolnBlk,
   }
 }
 
-//! ComputeUnlimitedSolutionReconstruction()
+// ComputeUnlimitedSolutionReconstruction()
 /*! 
  * Compute the unlimited high-order reconstruction for 
  * the computational cell iCell, using information provided by
@@ -744,7 +754,7 @@ void HighOrder1D<SOLN_STATE>::ComputeLowOrderReconstruction(Soln_Block_Type *Sol
 
 }
 
-//! ComputeUnlimitedSolutionReconstruction()
+// ComputeUnlimitedSolutionReconstruction()
 /*! 
  * Compute the unlimited high-order reconstruction for 
  * the computational cell iCell, using information provided by
@@ -781,7 +791,7 @@ void HighOrder1D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type *SolnBl
     MeanSolution = SolnBlk[iCell].CellSolutionPrimVar(parameter);
 
     /* DeltaTolerance */
-    DeltaTol = CENO_EpsilonTol::SquareToleranceAroundValue(MeanSolution);
+    DeltaTol = CENO_Tolerances::SquareToleranceAroundValue(MeanSolution);
 
     // Compute the regression and residual sums
     ComputeSI = OFF;		/* assume that the smoothness indicator is not computed but assigned */
@@ -841,7 +851,7 @@ void HighOrder1D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type *SolnBl
     }
 
     (SolnBlk[iCell].*AccessToHighOrderVar)().CellSmoothnessIndicator(parameter) = 
-      (alpha/(max(CENO_EpsilonTol::epsilon,1.0 - alpha))) * AdjustmentCoeff;
+      (alpha/(max(CENO_Tolerances::epsilon,1.0 - alpha))) * AdjustmentCoeff;
 
   }//endfor -> parameter
 }
@@ -858,6 +868,81 @@ template<class SOLN_STATE> inline
 SOLN_STATE HighOrder1D<SOLN_STATE>::right_state(void){
   return SolutionAtCoordinates(CellCenter() + 0.5* CellDelta());
 }
+
+
+/*! 
+ * Compute the integral over the cell geometry of the error between the
+ * reconstructed polynomial and the function provided as input. 
+ *
+ * \param [in] FuncObj  The function relative to which the error is evaluated
+ * \param [in] parameter The parameter for which the reconstruction is evaluated
+ */
+template<class SOLN_STATE> 
+template<typename Function_Object_Type>
+double HighOrder1D<SOLN_STATE>::ComputeSolutionErrorL1(const Function_Object_Type FuncObj,
+						       const unsigned parameter){
+  
+  // Set the type of the returned value
+  double _dummy_param(0.0);
+
+  // set the pointer to the member function that is used to compute the solution of the polynomial reconstruction
+  MemberFunction_TwoArguments_OneParameter_Type ReconstructedSolution = &ClassType::SolutionAtCoordinates;
+
+  // Call the integration function
+  return IntegrateOverTheCell(error_function(FuncObj,
+					     wrapped_member_function_one_parameter(this,
+										   ReconstructedSolution,
+										   parameter,
+										   _dummy_param),
+					     _dummy_param),
+			      10,_dummy_param);
+}
+
+template<class SOLN_STATE> 
+double HighOrder1D<SOLN_STATE>::ComputeSolutionErrorL1(HighOrder1D<Soln_State> & Obj,
+						       const unsigned parameter){
+
+  // Set the type of the returned value
+  double _dummy_param(0.0);
+
+  // set the pointer to the member function that is used to compute the solution of the polynomial reconstruction
+  MemberFunction_TwoArguments_OneParameter_Type ReconstructedSolution = &ClassType::SolutionAtCoordinates;
+
+  // Call the computation of the error routine with a function given by a wrapper based on the argument
+  return ComputeSolutionErrorL1(wrapped_member_function_one_parameter(&Obj,
+								      ReconstructedSolution,
+								      parameter,
+								      _dummy_param),
+				parameter);
+}
+
+/*! 
+ * Compute the integral over the cell geometry of the squared error between the
+ * reconstructed polynomial and the function provided as input. 
+ *
+ * \param [in] FuncObj  The function relative to which the error is evaluated
+ * \param [in] parameter The parameter for which the reconstruction is evaluated
+ */
+template<class SOLN_STATE> 
+template<typename Function_Object_Type>
+double HighOrder1D<SOLN_STATE>::ComputeSolutionErrorL2(const Function_Object_Type FuncObj, const unsigned parameter){
+
+  // Set the type of the returned value
+  double _dummy_param(0.0);
+
+  // set the pointer to the member function that is used to compute the solution of the polynomial reconstruction
+  MemberFunction_TwoArguments_OneParameter_Type ReconstructedSolution = &ClassType::SolutionAtCoordinates;
+
+  // Call the integration function
+  return IntegrateOverTheCell(square_error_function(FuncObj,
+						    wrapped_member_function_one_parameter(this,
+											  ReconstructedSolution,
+											  parameter,
+											  _dummy_param),
+						    _dummy_param),
+			      10,_dummy_param);
+}
+
 
 // Friend functions
 //! operator== 
@@ -957,11 +1042,13 @@ double HighOrder1D<double>::SolutionAtCoordinates(const double & X_Coord, const 
 
 
 
-//! HighOrderSolutionReconstructionOverDomain()
+// HighOrderSolutionReconstructionOverDomain()
 /*! 
  * Compute the high-order reconstruction for each computational cell 
  * of the SolnBlk using the 'IP.i_ReconstructionMethod' algorithm.
- * 'AccessToHighOrderVar' is the member function of Soln_Block_Type 
+ *
+ * \param IP input parameter object. Provides the reconstruction method
+ * \param AccessToHighOrderVar member function of Soln_Block_Type 
  * that returns the high-order variable which is used in the
  * reconstruction process.
  */
@@ -1006,7 +1093,7 @@ void HighOrderSolutionReconstructionOverDomain(Soln_Block_Type *SolnBlk,
       //Step 3: Do a post-reconstruction analysis
       /* Check the smoothness condition */
       for(parameter=1; parameter<=Soln_Block_Type::HighOrderType::Soln_State::NumberOfVariables; ++parameter){
-	if( (SolnBlk[i].*AccessToHighOrderVar)().CellSmoothnessIndicator(parameter) < IP.FitTolerance() ){
+	if( (SolnBlk[i].*AccessToHighOrderVar)().CellSmoothnessIndicator(parameter) < CENO_Tolerances::Fit_Tolerance ){
 
 	  /* Flag the 'i' cell with non-smooth reconstruction */
 	  (SolnBlk[i].*AccessToHighOrderVar)().CellInadequateFit(parameter) = ON;

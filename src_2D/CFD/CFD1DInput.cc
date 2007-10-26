@@ -214,7 +214,6 @@ void Set_Default_Input_Parameters(CFD1D_Input_Parameters &IP) {
     IP.i_Reconstruction = RECONSTRUCTION_MUSCL;
     IP.i_ReconstructionMethod = RECONSTRUCTION_MUSCL;
     IP.Space_Accuracy = 2;
-    IP.CENO_Cutoff = 100;
     IP.ExactFunction = NULL;
 
     string_ptr = "VanLeer";
@@ -669,12 +668,6 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
 	      << "Space Accuracy set to 1" << endl;
        }/* endif */
 
-    } else if (strcmp(IP.Next_Control_Parameter, "CENO_Tolerance") == 0) {
-       i_command = 24;
-       IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.FitTolerance();
-       IP.Input_File.getline(buffer, sizeof(buffer));
-
     } else if (strcmp(IP.Next_Control_Parameter, "Reconstruct_In_Each_Stage") == 0) {
       i_command = 25;
       Get_Next_Input_Control_Parameter(IP);
@@ -717,8 +710,8 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
     /* Parse next control parameter with CENO_Execution_Mode parser */
     CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
 
-    /* Parse next control parameter with CENO_EpsilonTol parser */
-    CENO_EpsilonTol::Parse_Next_Input_Control_Parameter(IP,i_command);
+    /* Parse next control parameter with CENO_Tolerances parser */
+    CENO_Tolerances::Parse_Next_Input_Control_Parameter(IP,i_command);
 
     /* Return the parser command type indicator. */
 
