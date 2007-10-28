@@ -1052,6 +1052,7 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
 	                  ostream &Out_File) {
 
     int i, j;
+    Chem2D_cState omega;
 
     /* Cell centered shear and qflux */
     if (SolnBlk.Flow_Type != FLOWTYPE_INVISCID) {
@@ -1105,6 +1106,10 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
 		 <<"\"Le_"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n"; 
        } 
        
+       // reaction rates
+       for(int i =0 ;i<SolnBlk.W[0][0].ns;i++){
+	 Out_File<<"\"omega_"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
+       } 
        //Residuals
        Out_File << "\"dUdt_rho\" \\ \n"
                 << "\"dUdt_rhou\" \\ \n"
@@ -1192,6 +1197,12 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
 	   for(int k =0 ;k<SolnBlk.W[0][0].ns ;k++){	  
  	       Out_File<<" "<<SolnBlk.W[i][j].Schmidt_No(k) 
 		       <<" "<<SolnBlk.W[i][j].Lewis(k);  
+	   }
+	   // reaction rates
+	   omega = SolnBlk.W[i][j].Sw( SolnBlk.W[0][0].React.reactset_flag,
+				       SolnBlk.Flow_Type );
+	   for(int k =0 ;k<SolnBlk.W[0][0].ns ;k++){	  
+ 	       Out_File<<" "<<omega.rhospec[k].c/SolnBlk.W[0][0].specdata[k].Mol_mass();  
 	   }
 	   //Residuals
 	   Out_File << " " << SolnBlk.dUdt[i][j][0];
@@ -1874,16 +1885,20 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 	Wr.v.x = Wl.rho*Wl.v.x/Wr.rho;
 
 
-      } else if (Wo[0].React.reactset_flag == CANTERA) {
 	//
 	// CANTERA ICs: General form
 	//
+      } else if (Wo[0].React.reactset_flag == CANTERA) {
 
 	// set laminar flame speed
 	Wl.v.x = Input_Parameters.flame_speed;
 
-	// get equilibrium concentration
-	Wo[0].React.ct_equilibrium<Chem2D_pState>( /* unburnt */Wl, /* burnt */Wr );
+	// get equilibrium composition
+	// Wo[0].React.ct_equilibrium<Chem2D_pState>( /* unburnt */Wl, /* burnt */Wr );
+
+	// set exit mass fractions
+	for (int k=0; k<Input_Parameters.num_species; k++)
+	  Wr.spec[k].c = Input_Parameters.mass_fractions_out[k];
 
 	// compute flame jump conditions
 	if ( FlameJumpLowMach_x<Chem2D_pState>( /* unburnt */Wl, 

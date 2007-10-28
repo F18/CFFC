@@ -484,11 +484,42 @@ void Reaction_set::ct_parse_mass_string(const string& massFracStr,
 
 #ifdef _CANTERA_VERSION
 
-  // set mass fractions and make sure they sum to unity
-  ct_gas->setMassFractionsByName(massFracStr);
-  for(int index =0; index<num_species; index++){
-    massFracs[index] = ct_gas->massFraction(index);
-  }
+  //
+  // for a string of 'space' delimited mass fractions
+  //
+  if ( massFracStr.find(":",0) == string::npos ) {
+    
+    // get first position
+    string delimiters = " ";
+    string::size_type lastPos = massFracStr.find_first_not_of(delimiters, 0);
+    string::size_type pos     = massFracStr.find_first_of(delimiters, lastPos);
+
+    // parse the string and set mass fractions
+    int index = 0;
+    while (string::npos != pos || string::npos != lastPos) {
+      massFracs[index] = atof(massFracStr.substr(lastPos, pos - lastPos).c_str());
+      massFracs[index] = max(massFracs[index], ZERO);
+      lastPos = massFracStr.find_first_not_of(delimiters, pos);
+      pos = massFracStr.find_first_of(delimiters, lastPos);
+      index++;
+    } // endwhile
+
+    // normalize to unity
+    double sum(0.0);
+    for(int index=0; index<num_species; index++) sum += massFracs[index];
+    if (sum>TOLER) for(int index=0; index<num_species; index++) massFracs[index] /= sum;
+
+  //
+  // for a composition map (eg. CH4:0.5, O2:0.5)
+  //
+  } else {
+
+    // set mass fractions and make sure they sum to unity
+    ct_gas->setMassFractionsByName(massFracStr);
+    for(int index =0; index<num_species; index++)
+      massFracs[index] = ct_gas->massFraction(index);
+
+  } // endif
 
 #else
   cout<<"\n CODE NOT COMPILED WITH CANTERA!";
@@ -499,6 +530,63 @@ void Reaction_set::ct_parse_mass_string(const string& massFracStr,
 
 } // end of ct_parse_mass_string
 
+/***********************************************************************
+  Use cantera to parse the input mole fraction string of the form
+      CH4:0.5, O2:0.5
+  All other species will be assumed to have 0 mole fractions.  Cantera
+  also normalizes the mole fractions to sum to unity.  Returns them in
+  an array.
+***********************************************************************/
+void Reaction_set::ct_parse_mole_string(const string& moleFracStr, 
+					double* moleFracs) {
+
+#ifdef _CANTERA_VERSION
+
+  //
+  // for a string of 'space' delimited mole fractions
+  //
+  if ( moleFracStr.find(":",0) == string::npos ) {
+    
+    // get first position
+    string delimiters = " ";
+    string::size_type lastPos = moleFracStr.find_first_not_of(delimiters, 0);
+    string::size_type pos     = moleFracStr.find_first_of(delimiters, lastPos);
+
+    // parse the string and set molar fractions
+    int index = 0;
+    while (string::npos != pos || string::npos != lastPos) {
+      moleFracs[index] = atof(moleFracStr.substr(lastPos, pos - lastPos).c_str());
+      moleFracs[index] = max(moleFracs[index], ZERO);
+      lastPos = moleFracStr.find_first_not_of(delimiters, pos);
+      pos = moleFracStr.find_first_of(delimiters, lastPos);
+      index++;
+    } // endwhile
+
+    // normalize to unity
+    double sum(0.0);
+    for(int index=0; index<num_species; index++) sum += moleFracs[index];
+    if (sum>TOLER) for(int index=0; index<num_species; index++) moleFracs[index] /= sum;
+
+  //
+  // for a composition map (eg. CH4:0.5, O2:0.5)
+  //
+  } else {
+
+    // set mole fractions and make sure they sum to unity
+    ct_gas->setMoleFractionsByName(moleFracStr);
+    for(int index =0; index<num_species; index++)
+      moleFracs[index] = ct_gas->moleFraction(index);
+
+  } // endif
+
+#else
+  cout<<"\n CODE NOT COMPILED WITH CANTERA!";
+  cout<<"\n YOU SHOULD NOT BE HERE!";  
+  exit(-1);
+
+#endif //_CANTERA_VERSION
+
+} // end of ct_parse_mass_string
 
 
 /***********************************************************************
@@ -512,23 +600,50 @@ void Reaction_set::ct_parse_schmidt_string( const string& schmidtStr,
 
 #ifdef _CANTERA_VERSION
 
-  // declares
-  compositionMap xx;
-  int kk = ct_gas->nSpecies();
-  double s;
+  //
+  // for a string of 'space' delimited schmidt numbers
+  //
+  if ( schmidtStr.find(":",0) == string::npos ) {
+    
+    // get first position
+    string delimiters = " ";
+    string::size_type lastPos = schmidtStr.find_first_not_of(delimiters, 0);
+    string::size_type pos     = schmidtStr.find_first_of(delimiters, lastPos);
 
-  // build composition map and initialize
-  for (int k = 0; k < kk; k++) xx[ct_gas->speciesName(k)] = -1.0;
+    // parse the string and set schmidt numbers
+    int index = 0;
+    while (string::npos != pos || string::npos != lastPos) {
+      schmidt[index] = atof(schmidtStr.substr(lastPos, pos - lastPos).c_str());
+      if(schmidt[index]<0.0) schmidt[index] = ONE;
+      lastPos = schmidtStr.find_first_not_of(delimiters, pos);
+      pos = schmidtStr.find_first_of(delimiters, lastPos);
+      index++;
+    } // endwhile
 
-  // parse map
-  parseCompString(schmidtStr, xx);
+  //
+  // for a composition map (eg. CH4:0.5, O2:0.5)
+  //
+  } else {
 
-  // set schmidt numbers
-  for (int k = 0; k < kk; k++) { 
-    s = xx[ct_gas->speciesName(k)];
-    if (s > 0.0) schmidt[k] = s;
-    else schmidt[k] = ONE;
-  }
+    // declares
+    compositionMap xx;
+    int kk = ct_gas->nSpecies();
+    double s;
+    
+    // build composition map and initialize
+    for (int k = 0; k < kk; k++) xx[ct_gas->speciesName(k)] = -1.0;
+    
+    // parse map
+    parseCompString(schmidtStr, xx);
+    
+    // set schmidt numbers
+    for (int k = 0; k < kk; k++) { 
+      s = xx[ct_gas->speciesName(k)];
+      if (s > ZERO) schmidt[k] = s;
+      else schmidt[k] = ONE;
+    }
+    
+  } // endif
 
 #else
   cout<<"\n CODE NOT COMPILED WITH CANTERA!";
@@ -593,15 +708,15 @@ void Reaction_set::ct_composition( const string& fuel_species,
   int nsp = ct_gas->nSpecies();  
   double* x = new double[nsp];
   for(int k=0; k<nsp; k++){
-    if(k==ct_gas->speciesIndex(fuel_species)){ x[k]=1.0; }
-    else if(k==ct_gas->speciesIndex("O2")){    x[k]=0.21/phi/fa_stoic; }
-    else if(k==ct_gas->speciesIndex("N2")){    x[k]=0.79/phi/fa_stoic; }
+    if(k==ct_gas->speciesIndex(fuel_species)){ x[k]=phi; }
+    else if(k==ct_gas->speciesIndex("O2")){    x[k]=1.00*ax; }
+    else if(k==ct_gas->speciesIndex("N2")){    x[k]=3.76*ax; }
     else{ x[k]=0.0; }
   }
 
   // compute composition 
   // -> why do it yourself when you can get someone else to do it
-  ct_gas->setState_TPX(300.0, 101325.0, x);
+  ct_gas->setMoleFractions(x);
   for(int k=0;k<nsp;k++) massFracs[k] = ct_gas->massFraction(k);
 
   // clean up memory

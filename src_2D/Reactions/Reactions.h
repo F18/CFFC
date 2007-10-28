@@ -294,6 +294,8 @@ public:
 			     double* massFracs);
   void ct_parse_schmidt_string( const string& schmidtStr, 
 				double* schmidt);
+  void ct_parse_mole_string( const string& moleFracStr, 
+			     double* moleFracs);
   // compute equilibrium concetration with cantera
   void ct_equilibrate() const; // needed cause of DenseMatrix conflicts
   template<class SOLN_pSTATE>

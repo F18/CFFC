@@ -587,6 +587,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
       MPI::COMM_WORLD.Bcast(IP.Multispecies[i], 
 			    INPUT_PARAMETER_LENGTH_CHEM2D, 
 			    MPI::CHAR, 0);
+      MPI::COMM_WORLD.Bcast(&(IP.mass_fractions_out[i]), 
+			    1, 
+			    MPI::DOUBLE, 0);
     }
     //set recaction and species parameters
     if (!CFFC_Primary_MPI_Processor()) {      
@@ -1249,6 +1252,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
       Communicator.Bcast(IP.Multispecies[i], 
 			 INPUT_PARAMETER_LENGTH_CHEM2D, 
 			 MPI::CHAR, Source_Rank);
+      Communicator.Bcast(&(IP.mass_fractions_out[i]), 
+			    1, 
+			    MPI::DOUBLE, Source_Rank);
     }
     //set recaction and species parameters
     if (!CFFC_Primary_MPI_Processor()) {      
@@ -2442,18 +2448,6 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        *************************************************************************
        *************************************************************************/
 
-    }else if (strcmp(IP.Next_Control_Parameter, "flame_speed") == 0) {
-       i_command = 518;
-       IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.flame_speed;
-       IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.flame_speed < 0) i_command = INVALID_INPUT_VALUE;
-
-    } else if (strcmp(IP.Next_Control_Parameter, "Fuel_Species") == 0) {
-       i_command = 2;
-       Get_Next_Input_Control_Parameter(IP);
-       strcpy(IP.Fuel_Species, IP.Next_Control_Parameter);
-
        
        /*************************************/
        /**** REACTIONS SET FOR HARDCODED ****/
@@ -2567,7 +2561,7 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        if (strcmp(IP.Next_Control_Parameter, "Mechanism_File") == 0){
 	 Get_Next_Input_Control_Parameter(IP);
 	 IP.ct_mech_file = IP.Next_Control_Parameter;
-	 IP.Wo.React.ct_load_mechanism(IP.ct_mech_file, IP.ct_mech_name);   
+	 IP.Wo.React.ct_load_mechanism(IP.ct_mech_file, IP.ct_mech_name);
 	 IP.num_species = IP.Wo.React.num_species;      
        // if no reaction file was given, return in error
        } else {
@@ -2625,14 +2619,14 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        if(flag){
 	 Get_Next_Input_Control_Parameter(IP);
        }
-       if (strcmp(IP.Next_Control_Parameter, "Mass_Fractions") == 0){
 
-	 // Get Initial Mass Fractions from user 
-	 // Here we use Cantera to parse the string of the form:
-	 //       CH4:0.5, O2:0.5
-	 // All other species will be assumed to have 0 mass fractions.  
-	 // Cantera also normalizes the mass fractions to sum to unity.  
-	 // Returns them in an array.
+       // Get Initial Mass Fractions from user 
+       // Here we use Cantera to parse the string of the form:
+       //       CH4:0.5, O2:0.5
+       // All other species will be assumed to have 0 mass fractions.  
+       // Cantera also normalizes the mass fractions to sum to unity.  
+       // Returns them in an array.
+       if (strcmp(IP.Next_Control_Parameter, "Mass_Fractions") == 0){
 	 IP.Input_File.getline(buffer, sizeof(buffer)); 
 	 IP.Line_Number = IP.Line_Number + 1 ;
 	 IP.Wo.React.ct_parse_mass_string(buffer, IP.mass_fractions);
@@ -2641,13 +2635,32 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	 IP.Wo.set_initial_values(IP.mass_fractions);  
 	 IP.Uo.set_initial_values(IP.mass_fractions);  
 	 IP.Uo = U(IP.Wo);
+	         
+       // Get Initial Molar Fractions from user
+       // Here we use Cantera to parse the string of the form:
+       //       CH4:0.5, O2:0.5
+       // All other species will be assumed to have 0 molar fractions.
+       // Cantera also normalizes the molar fractions to sum to unity. 
+       // Returns them in an array.
+       } else if (strcmp(IP.Next_Control_Parameter, "Molar_Fractions") == 0){
+	 IP.Input_File.getline(buffer, sizeof(buffer)); 
+	 IP.Line_Number = IP.Line_Number + 1 ;
+	 IP.Wo.React.ct_parse_mole_string(buffer, IP.mass_fractions);
+
+	 // convert molar fractions to mass fractions
+	 double sum(0.0);
+	 for(int i=0; i<IP.num_species; i++) 
+	   sum += IP.mass_fractions[i]*IP.Wo.specdata[i].Mol_mass();
+	 for(int i=0; i<IP.num_species; i++) 
+	   IP.mass_fractions[i] = IP.mass_fractions[i]*IP.Wo.specdata[i].Mol_mass()/sum;
+
+	 //Set inital Values; 
+	 IP.Wo.set_initial_values(IP.mass_fractions);  
+	 IP.Uo.set_initial_values(IP.mass_fractions);  
+	 IP.Uo = U(IP.Wo);
 	 
-	 //fudge the line number and istream counters
-	 IP.Input_File.getline(buffer, sizeof(buffer));  
-	 IP.Line_Number = IP.Line_Number + 1; 
-        
-	 // Get Initial Equivalence Ratio from user 
-	 // Here we use Cantera to compute the equivalent mass fractions:
+       // Get Initial Equivalence Ratio from user 
+       // Here we use Cantera to compute the equivalent mass fractions:
        } else if (strcmp(IP.Next_Control_Parameter, "Equivalence_Ratio") == 0){
 	 i_command = 518;
 	 IP.Line_Number = IP.Line_Number + 1;
@@ -2671,6 +2684,7 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	 IP.Uo = U(IP.Wo);
 	 IP.Line_Number = IP.Line_Number - 1 ;
        }
+
 
       /******************************************/
       /**** NON REACTING, BUT MULTIPLE GASES ****/
@@ -2773,6 +2787,42 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        IP.Heat_Source = IP.Wo.rho*(IP.Wo.h(temp+IP.Temperature) - IP.Wo.Rtot()*IP.Temperature);
 
        IP.Input_File.getline(buffer, sizeof(buffer));
+
+       /********** EXIT MASS FRACTIONS ***********/
+    } else if (strcmp(IP.Next_Control_Parameter, "Exit_Mass_Fractions") == 0){
+      i_command = 42;
+
+      // read in mass fractions
+      double temp(0.0);
+      for(int i=0; i<IP.num_species; i++) {
+	IP.Input_File  >> IP.mass_fractions_out[i];
+	temp += IP.mass_fractions_out[i];
+      }
+
+      //check to make sure it adds to 1
+      if(temp < ONE-MICRO || temp > ONE+MICRO){ 
+	cout<<"\n Exit Mass Fractions summed to "<<temp<<". Should sum to 1\n";
+	i_command = INVALID_INPUT_VALUE;
+      }
+	 
+      //fudge the line number and istream counters
+      IP.Input_File.getline(buffer, sizeof(buffer));  
+      IP.Line_Number = IP.Line_Number + 1; 
+
+       /************* FLAME SPEED ****************/
+    } else if (strcmp(IP.Next_Control_Parameter, "Flame_Speed") == 0) {
+       i_command = 518;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.flame_speed;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.flame_speed < 0) i_command = INVALID_INPUT_VALUE;
+
+       /************* FUEL SPECIES ***************/
+    } else if (strcmp(IP.Next_Control_Parameter, "Fuel_Species") == 0) {
+       i_command = 2;
+       Get_Next_Input_Control_Parameter(IP);
+       strcpy(IP.Fuel_Species, IP.Next_Control_Parameter);
+
 
        /********* TRANSPORT DATA **********************************************
        // Transport-Lennard-Jones  - Use Lennard-Jones potentials or 

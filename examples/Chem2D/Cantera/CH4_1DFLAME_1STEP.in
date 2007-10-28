@@ -67,6 +67,8 @@ Number_of_Blocks_Jdir=
 ###############################
 CFL_Number=
 0.75
+Source_Term_Multiplyer=
+1.E+00
 Maximum_Number_of_Time_Steps=
 1000
 ##############################
@@ -77,23 +79,28 @@ Restart_Solution_Save_Frequency=
 ##################################
 # Chem2D Parameters
 ##################################
+# CH4, O2, CO2, H2O, N2
+Fuel_Species=
+CH4
 Cantera_Reaction_Mechanism=
 CH4_WD1b
 Mechanism_File=
 ../../../data/CANTERA_RXNS/CH4.xml
 Schmidt_Numbers=
-CH4:0.73 O2:0.8 H2O:0.66
+0.73 0.8 1.0 0.66 1.0
 Mass_Fractions=
-CH4:0.0551 O2:0.2202 N2:0.7247
+0.0551 0.2202 0.0 0.0 0.7247
+Exit_Mass_Fractions=
+0.0 0.0 0.1511 0.1242 0.7247
+# laminar flame speed [m/s]
+Flame_Speed=
+0.4101
 #################################
 # Non STD_ATM properties
 # T(K) and P(kPa)
 #################################
 Temperature=
 298.0
-# laminar flame speed [m/s]
-flame_speed=
-0.4101
 #################################
 # Execute program
 #################################

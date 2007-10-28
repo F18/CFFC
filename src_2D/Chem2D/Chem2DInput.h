@@ -157,6 +157,8 @@ class Chem2D_Input_Parameters{
   double equivalence_ratio;
   //!laminar flame speed [m/s]
   double flame_speed;
+  //! Array of exit mass fractions
+  double *mass_fractions_out;
 
   //! Transport data type
   char trans_type[INPUT_PARAMETER_LENGTH_CHEM2D];
@@ -347,7 +349,8 @@ class Chem2D_Input_Parameters{
     Multispecies = NULL;
     multispecies = NULL; 
     mass_fractions = NULL;
-    ICEMCFD_FileNames = NULL;
+    mass_fractions_out = NULL;
+   ICEMCFD_FileNames = NULL;
   }
 
   //! Default constructor.
@@ -385,6 +388,7 @@ inline void Chem2D_Input_Parameters::Allocate() {
   } 
   multispecies = new string[num_species]; 
   mass_fractions = new double[num_species];
+  mass_fractions_out = new double[num_species];
   Schmidt = new double[num_species];
 }
 
@@ -399,7 +403,10 @@ inline void Chem2D_Input_Parameters::Deallocate() {
   if(multispecies != NULL){
     delete[] multispecies; multispecies=NULL;
   }
-  
+
+  if (mass_fractions_out != NULL){
+    delete[] mass_fractions_out; mass_fractions_out=NULL;
+  }
   if(mass_fractions != NULL){
     delete[] mass_fractions; mass_fractions=NULL;
     if( Schmidt != NULL) delete[] Schmidt; Schmidt = NULL;
