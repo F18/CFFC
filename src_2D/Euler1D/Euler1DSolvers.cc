@@ -361,6 +361,8 @@ int Euler1DSolver(char *Input_File_Name_ptr,
             cout << "\n\n Starting a new calculation.";
             cout << Input_Parameters << "\n";
          } /* endif */
+	 // Reset internal flags AccuracyAssessment1D
+	 AccuracyAssessment1D::ResetForNewCalculation();
          goto execute_new_calculation;
 
      } else if (command_flag == TERMINATE_CODE) {
@@ -381,6 +383,8 @@ int Euler1DSolver(char *Input_File_Name_ptr,
             cout << "\n\n Continuing existing calculation.";
             cout << Input_Parameters << "\n";
          } /* endif */
+	 // Reset internal flags AccuracyAssessment1D
+	 AccuracyAssessment1D::ResetForNewCalculation();
          goto continue_existing_calculation;
 
      } else if (command_flag == WRITE_OUTPUT_CODE) {

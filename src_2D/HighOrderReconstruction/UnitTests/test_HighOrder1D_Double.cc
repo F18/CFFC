@@ -10,6 +10,7 @@
 /* Include CFFC header files */
 #include "TestData.h"
 #include "../HighOrder1D.h"
+#include "../../Math/UnitTests/TestFunctions/TestFunctions_1D.h"
 
 namespace tut
 {
@@ -541,7 +542,45 @@ namespace tut
     Check_Input_Output_Operator("initialized variable for RECONSTRUCTION_ENO", HO);
   }
 
+  /* Test 21:*/
+  template<>
+  template<>
+  void HighOrder1D_object::test<21>()
+  {
+    set_test_name("ComputeSolutionError()");
 
+    // set HighOrder1D variable
+    HighOrder1D<double> HO, HO2;
+
+    HO.InitializeVariable(3,RECONSTRUCTION_ENO);
+    HO2.InitializeVariable(2,RECONSTRUCTION_CENO);
+
+    Cell1D_Uniform Cell;
+    Cell.setloc(1.3);
+    Cell.setsize(2.1);
+
+    HO.AssociateGeometry(Cell);
+    HO2.AssociateGeometry(Cell);
+
+    // set values of TD
+    HO.CellDeriv(0) = 1.03; HO.CellDeriv(1) = 2.03;
+    HO.CellDeriv(2) = 3.03; HO.CellDeriv(3) = 4.03;
+
+    HO2.CellDeriv(0) = 1.03; HO2.CellDeriv(1) = 2.03;
+    HO2.CellDeriv(2) = 3.03;
+
+    // compute error
+    double ErrorL1, ErrorL2;
+    ErrorL1 = HO.ComputeSolutionErrorL1(mapped_function(Test_Example9, ErrorL1, -5.0, 5.0, -5.0, 5.0), 1);
+    ErrorL2 = HO.ComputeSolutionErrorL2(mapped_function(Test_Example9, ErrorL2, -5.0, 5.0, -5.0, 5.0), 1);
+
+    // == check
+    ensure_distance("L1 error norm", ErrorL1, 4.40320869669138, 1.0e-10);
+    ensure_distance("L2 error norm", ErrorL2, 21.90907364279464, 1.0e-10);
+
+    ErrorL1 = HO.ComputeSolutionErrorL1(HO2,1);
+    ensure_distance("Relative error norm", ErrorL1, 2.44924509375, 1.0e-12);
+  }
 
 }
 

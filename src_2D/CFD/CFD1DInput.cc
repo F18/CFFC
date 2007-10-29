@@ -255,6 +255,9 @@ void Set_Default_Input_Parameters(CFD1D_Input_Parameters &IP) {
 
     IP.Line_Number = 0;
 
+    // Set the default parameter used to compute the solution error (use the first variable)
+    IP.ErrorParameter = 1;
+
     // set output to verbose
     IP.Verbose() = ON;
 }

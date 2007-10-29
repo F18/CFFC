@@ -12,6 +12,8 @@
 #include "../../HighOrderReconstruction/HighOrder1D.h"
 #include "../Euler1D.h"
 #include "../Euler1D_HighOrder.h"
+#include "../../HighOrderReconstruction/AccuracyAssessment1D.h"
+#include "../ExactSolutions/ExactSolutions.h"
 
 namespace tut
 {
@@ -176,7 +178,7 @@ namespace tut
     // Set up domain
     SetUpDomain("sod_HighOrder.in");
 
-    // Reconstruct the solution in one of the cells
+    // Reconstruct the solution in all the cells
     HighOrderSolutionReconstructionOverDomain(SolnBlk,IP,&Euler1D_UniformMesh::CellHighOrder);
 
     // Set master and current files

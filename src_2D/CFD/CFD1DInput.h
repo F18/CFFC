@@ -89,6 +89,8 @@ class CFD1D_Input_Parameters{
   // Batch mode or verbose
   short verbose_flag;
 
+  unsigned ErrorParameter; //!< Error assessment parameter (the parameter used to compute the solution error)
+
   /* Access fields */
   short & Verbose(void) {return verbose_flag;}
   const short & Verbose(void) const {return verbose_flag;}

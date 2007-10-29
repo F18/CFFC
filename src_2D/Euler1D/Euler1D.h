@@ -1,4 +1,5 @@
-/* Euler1D.h:  Header file defining 1D Euler Solution Classes. */
+/*!\file Euler1D.h
+  \brief Header file defining 1D Euler Solution Classes. */
 
 #ifndef _EULER1D_INCLUDED
 #define _EULER1D_INCLUDED
@@ -19,59 +20,61 @@
 
 /* Define the classes. */
 
-/********************************************************
- * Class: Euler1D_UniformMesh                           *
- *                                                      *
- * Member functions                                     *
- *      W       -- Return primitive solution state.     *
- *      U       -- Return conserved solution state.     *
- *      X       -- Return cell geometry.                *
- *      dt      -- Return local time step.              *
- *    dUdt      -- Return the solution residual.        *
- *    dUdx      -- Return the unlimited solution        *
- *                 gradient.                            *
- *     phi      -- Return the solution slope limiters.  *
- *      Uo      -- Return initial solution state.       *
- *  Nghost      -- Number of ghost cells (!= 1 for      *
- *                 high-order)                          *
- *  HO_dWdx     -- High-order variable                  *
- *                                                      *
- * Member operators                                     *
- *      S -- a 1D Euler solution                        *
- *                                                      *
- * S = S;                                               *
- * S = S + S;                                           *
- * S = S - S;                                           *
- * S = +S;                                              *
- * S = -S;                                              *
- * S += S;                                              *
- * S -= S;                                              *
- * S == S;                                              *
- * S != S;                                              *
- * cout << S; (output function)                         *
- * cin  >> S; (input function)                          *
- *                                                      *
+/******************************************************//**
+ * Class: Euler1D_UniformMesh  
+ * 
+ * @brief Class definition of the 1D Euler computational cell (i.e. solution + geometry)
+ *                                                      
+ * Member functions                                     
+ * -     W       -- Return primitive solution state.     
+ * -     U       -- Return conserved solution state.     
+ * -     X       -- Return cell geometry.                
+ * -     dt      -- Return local time step.              
+ * -   dUdt      -- Return the solution residual.        
+ * -   dUdx      -- Return the unlimited solution        
+ * -                gradient.                            
+ * -    phi      -- Return the solution slope limiters.  
+ * -     Uo      -- Return initial solution state.       
+ * - Nghost      -- Number of ghost cells (!= 1 for      
+ * -                high-order)                          
+ * - HO_dWdx     -- High-order variable                  
+ *                                                      
+ * Member operators \n                                    
+ *      S -- a 1D Euler solution                        
+ *                                                      
+ * - S = S;                                               
+ * - S = S + S;                                           
+ * - S = S - S;                                           
+ * - S = +S;                                              
+ * - S = -S;                                              
+ * - S += S;                                              
+ * - S -= S;                                              
+ * - S == S;                                              
+ * - S != S;                                              
+ * - cout << S; (output function)                         
+ * - cin  >> S; (input function)                          
+ *                                                      
  ********************************************************/
 class Euler1D_UniformMesh{
 public:
-  typedef HighOrder1D<Euler1D_pState> HighOrderType;
-  typedef Euler1D_pState SOLN_pSTATE;
-  typedef Euler1D_cState SOLN_cSTATE;
+  typedef HighOrder1D<Euler1D_pState> HighOrderType; //!< high-order variable data type
+  typedef Euler1D_pState SOLN_pSTATE;                //!< primitive solution state type
+  typedef Euler1D_cState SOLN_cSTATE;                //!< conserved solution state type
 
-  Euler1D_pState    W;   // Primitive solution state.
-  Euler1D_cState    U;   // Conserved solution state.
-  Euler1D_pState CharactVar;    // Characteristic solution state.
-  Cell1D_Uniform    X;   // Cell geometry.
-  double           dt;   // Local time step.
-  Euler1D_cState dUdt;   // Solution residual.
-  Euler1D_cState TotaldUdt; // Solution residual. Used for RK4
-  Euler1D_pState dWdx;   // Unlimited solution gradient.
-  Euler1D_pState  phi;   // Solution slope limiter.
-  Euler1D_cState   Uo;   // Initial solution state.
+  Euler1D_pState    W;   //!< Primitive solution state.
+  Euler1D_cState    U;   //!< Conserved solution state.
+  Euler1D_pState CharactVar;    //!< Characteristic solution state.
+  Cell1D_Uniform    X;   //!< Cell geometry.
+  double           dt;   //!< Local time step.
+  Euler1D_cState dUdt;   //!< Solution residual.
+  Euler1D_cState TotaldUdt; //!< Solution residual. Used for RK4
+  Euler1D_pState dWdx;   //!< Unlimited solution gradient.
+  Euler1D_pState  phi;   //!< Solution slope limiter.
+  Euler1D_cState   Uo;   //!< Initial solution state.
   // Made public so can access them.
 
-  int Nghost;            // Number of ghost cells(!= 1 for high-order)
-  int ICl, ICu;	   // Indexes (Start & End)
+  int Nghost;            //!< Number of ghost cells(!= 1 for high-order)
+  int ICl, ICu;	   //!< Indexes (Start & End)
 
   /* Creation, copy, and assignment constructors. */
   Euler1D_UniformMesh(void);
@@ -81,27 +84,30 @@ public:
   Euler1D_UniformMesh(const Euler1D_cState &U0, const Cell1D_Uniform &X0);
 
   /* Field access */
-  const double & CellCenter(void) const {return X.x;}
-  const double & CellDelta (void) {return X.dx;}
+  const double & CellCenter(void) const {return X.x;} //!< return cell center
+  const double & CellDelta (void) {return X.dx;} //!< return cell delta
 
   /* Primitive variables */
   const Euler1D_pState & CellSolutionPrimVar(void) const {return W;}
-  Euler1D_pState & CellSolutionPrimVar(void) {return W;}
+  Euler1D_pState & CellSolutionPrimVar(void) {return W;} //!< return the primitive solution state
   const double & CellSolutionPrimVar(int & VarPosition) const { return W[VarPosition];}
-  double & CellSolutionPrimVar(int & VarPosition){ return W[VarPosition];}
+  double & CellSolutionPrimVar(int & VarPosition){ return W[VarPosition];} //!< return component of the primitive solution state
   /* Conservative variables */
-  const Euler1D_cState & CellSolutionConsVar(void) const {return U;}
-  Euler1D_cState & CellSolutionConsVar(void) {return U;}
+  const Euler1D_cState & CellSolutionConsVar(void) const {return U;} 
+  Euler1D_cState & CellSolutionConsVar(void) {return U;} //!< return the conserved solution state
   const double & CellSolutionConsVar(int & VarPosition) const { return U[VarPosition];}
-  double & CellSolutionConsVar(int & VarPosition) { return U[VarPosition];}
+  double & CellSolutionConsVar(int & VarPosition) { return U[VarPosition];} //!< return component of the conserved solution state
   /* Characteristic variables */
   const Euler1D_pState & CellSolutionCharactVar(void) const {return CharactVar;}
-  Euler1D_pState & CellSolutionCharactVar(void) {return CharactVar;}
+  Euler1D_pState & CellSolutionCharactVar(void) {return CharactVar;} //!< return the characteristic solution state
   const double & CellSolutionCharactVar(int & VarPosition) const { return CharactVar[VarPosition];}
-  double & CellSolutionCharactVar(int & VarPosition) { return CharactVar[VarPosition];}
+  double & CellSolutionCharactVar(int & VarPosition) { return CharactVar[VarPosition];} //!< return component of the characteristic solution state
   /* High-order variables */
-  HighOrderType & CellHighOrder(void) { return HO_dWdx; }
+  HighOrderType & CellHighOrder(void) { return HO_dWdx; } //!< return the high-order variable for the primitive solution state
   const HighOrderType & CellHighOrder(void) const { return HO_dWdx; }
+
+  /* Operating functions */
+  double SolutionAtCoordinates_PWL (const double & X_Coord, const unsigned parameter) ;
     
   /* Relational operators. */
   friend int operator ==(const Euler1D_UniformMesh &Soln1,
@@ -116,7 +122,7 @@ public:
 			       Euler1D_UniformMesh &Soln);
 
 private:
-  HighOrderType   HO_dWdx; // High-order derivatives container for the primitive solution state
+  HighOrderType   HO_dWdx; //!< High-order derivatives container for the primitive solution state
   
 };
 
@@ -165,6 +171,14 @@ inline Euler1D_UniformMesh::Euler1D_UniformMesh(const Euler1D_cState &U0,
   Uo = Euler1D_U_VACUUM;
 }
 
+//! Return the solution of the piecewise limited linear reconstruction at the coordinate X_Coord,
+//  for the required parameter.
+inline double Euler1D_UniformMesh::SolutionAtCoordinates_PWL (const double & X_Coord, const unsigned parameter) {
+  SOLN_pSTATE W_Temp;
+  double Distance(X_Coord - X.x);
+  W_Temp = W + (phi^dWdx)*Distance;
+  return W_Temp[parameter];
+}
 
 /********************************************************
  * Euler1D_UniformMesh -- Relational operators.         *

@@ -80,6 +80,9 @@ public:
      --------------------------------------------------------------------------------------- */
   static short FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE;
 
+
+  static int Limiter;   //!< the limiter used for the limited linear reconstruction performed for non-smooth solutions
+
   
   template<class Input_Parameters_Type>
   static void Parse_Next_Input_Control_Parameter(Input_Parameters_Type & IP, int & i_command);

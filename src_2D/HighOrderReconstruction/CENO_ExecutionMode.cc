@@ -12,6 +12,7 @@ short CENO_Execution_Mode::CENO_PADDING = OFF; // no padding
 short CENO_Execution_Mode::CENO_SQUARE_GEOM_WEIGHTING = OFF; // use 1.0/fabs(Distance)
 short CENO_Execution_Mode::CENO_CONSIDER_WEIGHTS = OFF;	// computation of smoothness indicator without weights
 short CENO_Execution_Mode::FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE = ON; // try to use the PWC at interface
+int CENO_Execution_Mode::Limiter = LIMITER_VANLEER;
 
 
 //! Set all flags to default values

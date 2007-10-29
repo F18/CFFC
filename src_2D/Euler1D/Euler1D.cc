@@ -1,19 +1,16 @@
-/* Euler1D.cc:  Subroutines for 1D Euler Solution Classes. */
+/*! \file Euler1D.cc
+  \brief Implementation of subroutines prototyped in Euler1D.h file. */
 
 /* Include 1D Euler solution header file. */
-
-#ifndef _EULER1D_INCLUDED
 #include "Euler1D.h"
-#endif // _EULER1D_INCLUDED
-
 #include "ExactSolutions/ExactSolutions.h"
 #include "Euler1D_HighOrder.h"
 
-/********************************************************
- * Routine: Allocate                                    *
- *                                                      *
- * Allocate memory for 1D Euler equation solution.      *
- *                                                      *
+/******************************************************//**
+ * Routine: Allocate                                    
+ *                                                      
+ * Allocate memory for 1D Euler equation solution.      
+ *                                                      
  ********************************************************/
 Euler1D_UniformMesh* Allocate(Euler1D_UniformMesh *Soln_ptr,
                               const CFD1D_Input_Parameters &IP) {
@@ -47,11 +44,11 @@ Euler1D_UniformMesh* Allocate(Euler1D_UniformMesh *Soln_ptr,
   return(Soln_ptr);
 }
 
-/********************************************************
- * Routine: Deallocate                                  *
- *                                                      *
- * Deallocate memory for 1D Euler equation solution.    *
- *                                                      *
+/******************************************************//**
+ * Routine: Deallocate                                  
+ *                                                      
+ * Deallocate memory for 1D Euler equation solution.    
+ *                                                      
  ********************************************************/
 Euler1D_UniformMesh* Deallocate(Euler1D_UniformMesh *Soln_ptr) {
 
@@ -64,12 +61,12 @@ Euler1D_UniformMesh* Deallocate(Euler1D_UniformMesh *Soln_ptr) {
   return(Soln_ptr);
 }
 
-/********************************************************
- * Routine: Output_Gnuplot                              *
- *                                                      *
- * Writes the solution to specified output stream       *
- * suitable for plotting with GNUPLOT.                  *
- *                                                      *
+/******************************************************//**
+ * Routine: Output_Gnuplot                              
+ *                                                      
+ * Writes the solution to specified output stream       
+ * suitable for plotting with GNUPLOT.                  
+ *                                                      
  ********************************************************/
 void Output_Gnuplot(Euler1D_UniformMesh *Soln,
                     const int Number_of_Cells,
@@ -128,12 +125,12 @@ void Output_Tecplot(Euler1D_UniformMesh *Soln,
  
 }
 
-/********************************************************
- * Routine: Output_Tecplot                              *
- *                                                      *
- * Writes the solution to specified output stream       *
- * suitable for plotting with TECPLOT.                  *
- *                                                      *
+/******************************************************//**
+ * Routine: Output_Tecplot                              
+ *                                                      
+ * Writes the solution to specified output stream       
+ * suitable for plotting with TECPLOT.                  
+ *                                                      
  ********************************************************/
 void Output_Tecplot(Euler1D_UniformMesh *Soln,
                     const int Number_of_Cells,
@@ -169,12 +166,12 @@ void Output_Tecplot(Euler1D_UniformMesh *Soln,
     
 }
 
-/********************************************************
- * Routine: Output_Tecplot_HighOrder                    *
- *                                                      *
- * Writes the solution to specified output stream       *
- * suitable for plotting with TECPLOT.                  *
- *                                                      *
+/******************************************************//**
+ * Routine: Output_Tecplot_HighOrder                    
+ *                                                      
+ * Writes the solution to specified output stream       
+ * suitable for plotting with TECPLOT.                  
+ *                                                      
  ********************************************************/
 void Output_Tecplot_HighOrder(Euler1D_UniformMesh *Soln,
 			      const int Number_of_Cells,
@@ -222,12 +219,12 @@ void Output_Tecplot_HighOrder(Euler1D_UniformMesh *Soln,
  
 }
 
-/********************************************************
- * Routine: Grid                                        *
- *                                                      *
- * Generates a uniform mesh and assign the locations of *
- * the cell centers to appropriate solution variables.  *
- *                                                      *
+/******************************************************//**
+ * Routine: Grid                                        
+ *                                                      
+ * Generates a uniform mesh and assign the locations of 
+ * the cell centers to appropriate solution variables.  
+ *                                                      
  ********************************************************/
 void Grid(Euler1D_UniformMesh *Soln,
           const double &xMin,
@@ -261,12 +258,12 @@ void Grid(Euler1D_UniformMesh *Soln,
   } /* endfor */
 }
 
-/********************************************************
- * Routine: ICs                                         *
- *                                                      *
- * Assigns initial conditions and data to the           *
- * solution variables.                                  *
- *                                                      *
+/******************************************************//**
+ * Routine: ICs                                         
+ *                                                      
+ * Assigns initial conditions and data to the           
+ * solution variables.                                  
+ *                                                      
  ********************************************************/
 void ICs(Euler1D_UniformMesh *Soln,
          char *gas_ptr,
@@ -498,13 +495,13 @@ void ICs(Euler1D_UniformMesh *Soln,
   }
 }
 
-/********************************************************
- * Routine: CFL                                         *
- *                                                      *
- * Determines the allowable global and local time steps *
- * (for explicit Euler time stepping scheme) according  *
- * to the Courant-Friedrichs-Lewy condition.            *
- *                                                      *
+/******************************************************//**
+ * Routine: CFL                                         
+ *                                                      
+ * Determines the allowable global and local time steps 
+ * (for explicit Euler time stepping scheme) according  
+ * to the Courant-Friedrichs-Lewy condition.            
+ *                                                      
  ********************************************************/
 double CFL(Euler1D_UniformMesh *Soln,
            const int Number_of_Cells) {
@@ -528,14 +525,14 @@ double CFL(Euler1D_UniformMesh *Soln,
 
 }
 
-/********************************************************
- * Routine: Linear_Reconstruction_MUSCL                 *
- *                                                      *
- * Peforms the reconstruction of a limited piecewise    *
- * linear solution state within each cell of the        *
- * computational mesh.  The MUSCL approach of Van Leer  *
- * (1978) is used.  Several slope limiters may be used. *
- *                                                      *
+/******************************************************//**
+ * Routine: Linear_Reconstruction_MUSCL                 
+ *                                                      
+ * Peforms the reconstruction of a limited piecewise    
+ * linear solution state within each cell of the        
+ * computational mesh.  The MUSCL approach of Van Leer  
+ * (1978) is used.  Several slope limiters may be used. 
+ *                                                      
  ********************************************************/
 void Linear_Reconstruction_MUSCL(Euler1D_UniformMesh *Soln,
                                  const int Number_of_Cells,
@@ -613,15 +610,15 @@ void Linear_Reconstruction_MUSCL(Euler1D_UniformMesh *Soln,
 
 }
 
-/********************************************************
- * Routine: Linear_Reconstruction_GreenGauss            *
- *                                                      *
- * Peforms the reconstruction of a limited piecewise    *
- * linear solution state within each cell of the        *
- * computational mesh.  A Green-Gauss approach is used  *
- * in the evaluation of the unlimited solution          *
- * gradients.  Several slope limiters may be used.      *
- *                                                      *
+/******************************************************//**
+ * Routine: Linear_Reconstruction_GreenGauss            
+ *                                                      
+ * Peforms the reconstruction of a limited piecewise    
+ * linear solution state within each cell of the        
+ * computational mesh.  A Green-Gauss approach is used  
+ * in the evaluation of the unlimited solution          
+ * gradients.  Several slope limiters may be used.      
+ *                                                      
  ********************************************************/
 void Linear_Reconstruction_GreenGauss(Euler1D_UniformMesh *Soln,
                                       const int Number_of_Cells,
@@ -682,14 +679,14 @@ void Linear_Reconstruction_GreenGauss(Euler1D_UniformMesh *Soln,
 
 }
 
-/********************************************************
- * Routine: Linear_Reconstruction_Characteristic        *
- *                                                      *
- * Peforms the reconstruction of a limited piecewise    *
- * linear solution state within each cell of the        *
- * computational mesh.  Characteristic reconstruction   *
- * is used and several slope limiters may be applied.   *
- *                                                      *
+/******************************************************//**
+ * Routine: Linear_Reconstruction_Characteristic        
+ *                                                      
+ * Peforms the reconstruction of a limited piecewise    
+ * linear solution state within each cell of the        
+ * computational mesh.  Characteristic reconstruction   
+ * is used and several slope limiters may be applied.   
+ *                                                      
  ********************************************************/
 void Linear_Reconstruction_Characteristic(Euler1D_UniformMesh *Soln,
                                           const int Number_of_Cells,
@@ -755,15 +752,15 @@ void Linear_Reconstruction_Characteristic(Euler1D_UniformMesh *Soln,
 
 }
 
-/********************************************************
- * Routine: Linear_Reconstruction_LeastSquares          *
- *                                                      *
- * Peforms the reconstruction of a limited piecewise    *
- * linear solution state within each cell of the        *
- * computational mesh.  A least squares approach is     *
- * used in the evaluation of the unlimited solution     *
- * gradients.  Several slope limiters may be used.      *
- *                                                      *
+/******************************************************//**
+ * Routine: Linear_Reconstruction_LeastSquares          
+ *                                                      
+ * Peforms the reconstruction of a limited piecewise    
+ * linear solution state within each cell of the        
+ * computational mesh.  A least squares approach is     
+ * used in the evaluation of the unlimited solution     
+ * gradients.  Several slope limiters may be used.      
+ *                                                      
  ********************************************************/
 void Linear_Reconstruction_LeastSquares(Euler1D_UniformMesh *Soln,
                                         const int Number_of_Cells,
@@ -845,15 +842,15 @@ void Linear_Reconstruction_LeastSquares(Euler1D_UniformMesh *Soln,
 
 }
 
-/********************************************************
- * Routine: dUdt_explicitEuler_upwind                   *
- *                                                      *
- * This routine updates the solution using a 1st-order  *
- * explicit Euler time integration and 1st-order upwind *
- * spatial discretization scheme in conjunction with    *
- * either the Godunov, Roe, Rusanov, HLLE, Linde, or    *
- * HLLC flux functions.                                 *
- *                                                      *
+/******************************************************//**
+ * Routine: dUdt_explicitEuler_upwind                   
+ *                                                      
+ * This routine updates the solution using a 1st-order  
+ * explicit Euler time integration and 1st-order upwind 
+ * spatial discretization scheme in conjunction with    
+ * either the Godunov, Roe, Rusanov, HLLE, Linde, or    
+ * HLLC flux functions.                                 
+ *                                                      
  ********************************************************/
 int dUdt_explicitEuler_upwind(Euler1D_UniformMesh *Soln,
 	                      const int Number_of_Cells,
@@ -940,13 +937,13 @@ int dUdt_explicitEuler_upwind(Euler1D_UniformMesh *Soln,
     
 }
 
-/********************************************************
- * Routine: dUdt_LaxFriedrichs                          *
- *                                                      *
- * This routine updates the solution using the          *
- * first-order single-stage Lax-Friedrichs scheme.      *
- * See Lax (1954).                                      *
- *                                                      *
+/******************************************************//**
+ * Routine: dUdt_LaxFriedrichs                          
+ *                                                      
+ * This routine updates the solution using the          
+ * first-order single-stage Lax-Friedrichs scheme.      
+ * See Lax (1954).                                      
+ *                                                      
  ********************************************************/
 int dUdt_LaxFriedrichs(Euler1D_UniformMesh *Soln,
 	               const int Number_of_Cells,
@@ -1009,13 +1006,13 @@ int dUdt_LaxFriedrichs(Euler1D_UniformMesh *Soln,
     
 }
 
-/********************************************************
- * Routine: dUdt_LaxWendroff                            *
- *                                                      *
- * This routine updates the solution using the          *
- * second-order two-step Lax-Wendroff scheme.           *
- * See Lax and Wendroff (1960, 1964).                   *
- *                                                      *
+/******************************************************//**
+ * Routine: dUdt_LaxWendroff                            
+ *                                                      
+ * This routine updates the solution using the          
+ * second-order two-step Lax-Wendroff scheme.           
+ * See Lax and Wendroff (1960, 1964).                   
+ *                                                      
  ********************************************************/
 int dUdt_LaxWendroff(Euler1D_UniformMesh *Soln,
 	             const int Number_of_Cells,
@@ -1089,15 +1086,15 @@ int dUdt_LaxWendroff(Euler1D_UniformMesh *Soln,
     
 }
 
-/********************************************************
- * Routine: dUdt_MacCormack                             *
- *                                                      *
- * This routine updates the solution using the          *
- * second-order predictor-corrector scheme of           *
- * MacCormack (1969, 1971).  Artificial viscosity of    *
- * the type devised by Harten and Zwas (1972) is        *
- * added to smooth the solution near discontinuities.   *
- *                                                      *
+/******************************************************//**
+ * Routine: dUdt_MacCormack                             
+ *                                                      
+ * This routine updates the solution using the          
+ * second-order predictor-corrector scheme of           
+ * MacCormack (1969, 1971).  Artificial viscosity of    
+ * the type devised by Harten and Zwas (1972) is        
+ * added to smooth the solution near discontinuities.   
+ *                                                      
  ********************************************************/
 int dUdt_MacCormack(Euler1D_UniformMesh *Soln,
 	            const int Number_of_Cells,
@@ -1236,13 +1233,13 @@ int dUdt_MacCormack(Euler1D_UniformMesh *Soln,
     
 }
 
-/********************************************************
- * Routine: dUdt_Hancock                                *
- *                                                      *
- * This routine updates the solution using the          *
- * second-order predictor-corrector TVD scheme of       *
- * Hancock (19??).  Various flux functions may be used. *
- *                                                      *
+/******************************************************//**
+ * Routine: dUdt_Hancock                                
+ *                                                      
+ * This routine updates the solution using the          
+ * second-order predictor-corrector TVD scheme of       
+ * Hancock (19??).  Various flux functions may be used. 
+ *                                                      
  ********************************************************/
 int dUdt_Hancock(Euler1D_UniformMesh *Soln,
 	         const int Number_of_Cells,
@@ -1375,15 +1372,15 @@ int dUdt_Hancock(Euler1D_UniformMesh *Soln,
     
 }
 
-/********************************************************
- * Routine: dUdt_2stage_2ndOrder_upwind                 *
- *                                                      *
- * This routine updates the solution using a two-stage  *
- * second-order explicit time integration scheme        *
- * and a 2nd-ororder limited upwind spatial             *
- * discretization scheme with either the Godunov, Roe,  *
- * Rusanov, HLLE, Linde, or HLLC flux functions.        *
- *                                                      *
+/******************************************************//**
+ * Routine: dUdt_2stage_2ndOrder_upwind                 
+ *                                                      
+ * This routine updates the solution using a two-stage  
+ * second-order explicit time integration scheme        
+ * and a 2nd-ororder limited upwind spatial             
+ * discretization scheme with either the Godunov, Roe,  
+ * Rusanov, HLLE, Linde, or HLLC flux functions.        
+ *                                                      
  ********************************************************/
 int dUdt_2stage_2ndOrder_upwind(Euler1D_UniformMesh *Soln,
 	                        const CFD1D_Input_Parameters &IP,
@@ -1577,9 +1574,17 @@ int dUdt_2stage_2ndOrder_upwind(Euler1D_UniformMesh *Soln,
     return (0);
 }
 
+/******************************************************//**
+ * Routine:  LimitedLinearReconstructionOverDomain         
+ *                                                      
+ * Peforms the reconstruction of a limited piecewise    
+ * linear solution state within each cell of the        
+ * computational mesh. The input parameters object specifies
+ * all the parameters necessary to perform the reconstruction
+ * (e.g. method, limiter etc.).
+ *                                                      
+ ********************************************************/
 void LimitedLinearReconstructionOverDomain(Euler1D_UniformMesh *Soln, const CFD1D_Input_Parameters &IP){
-
-  int ICl(Soln[0].ICl), ICu(Soln[0].ICu);
 
   switch(IP.i_Reconstruction) {
   case RECONSTRUCTION_MUSCL :

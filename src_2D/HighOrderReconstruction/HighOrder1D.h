@@ -210,13 +210,13 @@ public:
   //@{ @name Error Evaluation:
   /*! @brief Compute L1 norm of the solution error */
   template<typename Function_Object_Type>
-  double ComputeSolutionErrorL1(const Function_Object_Type FuncObj, const unsigned parameter);
+  double ComputeSolutionErrorL1(Function_Object_Type FuncObj, const unsigned parameter);
 
   double ComputeSolutionErrorL1(HighOrder1D<Soln_State> & Obj, const unsigned parameter);
 
   /*! @brief Compute the L2 norm of the solution error */
   template<typename Function_Object_Type>
-  double ComputeSolutionErrorL2(const Function_Object_Type FuncObj, const unsigned parameter);
+  double ComputeSolutionErrorL2(Function_Object_Type FuncObj, const unsigned parameter);
 
   double ComputeSolutionErrorL2(const HighOrder1D<Soln_State> & Obj);
 
