@@ -47,15 +47,6 @@ int Euler1DSolver(char *Input_File_Name_ptr,
   int number_of_time_steps,
       command_flag, error_flag, line_number, i;
 
-  /* Accuracy variables */
-  vector<double> LNorms; LNorms.reserve(3);
-  bool AccuracyAssessed_flag = false;
-  bool Title_Error_Norms = true;
-
-
-  /* Create memory storage variable for the ENO subroutines */
-  MemoryStorageENO_1D MemoryENO;
-
   double time, dtime;
 
   /********************************************************  
