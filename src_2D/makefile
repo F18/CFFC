@@ -119,11 +119,15 @@ else
 endif
 
 # HighOrderReconstruction
-SRC_HIGH_ORDER_RECONSTRUCTION = ReconstructionHelpers.cc CENO_Tolerances.cc CENO_ExecutionMode.cc ENO_ExecutionMode.cc
+SRC_HIGH_ORDER_RECONSTRUCTION = ReconstructionHelpers.cc \
+                                CENO_Tolerances.cc \
+                                CENO_ExecutionMode.cc \
+                                ENO_ExecutionMode.cc
 SRC_HIGH_ORDER_RECONSTRUCTION := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR), $(SRC_HIGH_ORDER_RECONSTRUCTION))
 
 # Add High-Order Reconstruction Testing If Required:
-SRC_HIGH_ORDER_RECONSTRUCTION_TESTS := test_HighOrder1D_Double.cc test_TaylorDerivatives2D_Double.cc
+SRC_HIGH_ORDER_RECONSTRUCTION_TESTS := test_HighOrder1D_Double.cc \
+                                       test_TaylorDerivatives2D_Double.cc
 SRC_HIGH_ORDER_RECONSTRUCTION_TESTS := $(addprefix $(HIGH_ORDER_RECONSTRUCTION_DIR)UnitTests/,$(SRC_HIGH_ORDER_RECONSTRUCTION_TESTS))
 ifeq ($(TUT_TESTING),ON) 
   SRC_HIGH_ORDER_RECONSTRUCTION += $(SRC_HIGH_ORDER_RECONSTRUCTION_TESTS)
@@ -355,7 +359,8 @@ SRC_BASE = $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_GRID) $(SRC_AMR) \
 ifeq ($(TUT_TESTING),ON) 
   SRC_BASE += $(SRC_TUT)
 endif
-SRC_CFFC = $(SRC_BASE) $(SRC_CFD1D_INPUT) $(SRC_SCALAR) $(SRC_HEAT) $(SRC_HYPERHEAT) $(SRC_EULER1D) $(SRC_MHD1D) \
+SRC_CFFC = $(SRC_BASE) \
+           $(SRC_CFD1D_INPUT) $(SRC_SCALAR) $(SRC_HEAT) $(SRC_HYPERHEAT) $(SRC_EULER1D) $(SRC_MHD1D) \
            $(SRC_ADVECTDIFFUSE) $(SRC_EULER) $(SRC_NAVIERSTOKES) $(SRC_CHEM) $(SRC_HIGHTEMP) \
            $(SRC_DUSTY) $(SRC_LESPREMIXED) $(SRC_GAUSSIAN) $(SRC_ION) $(SRC_ELECTROSTATIC) \
            $(SRC_RTE) $(SRC_INTERFACE) $(SRC_LEVELSET) \
