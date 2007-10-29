@@ -1,8 +1,0 @@
-Interface: Zalesak's disk
-Mesh: 100x100
-Time: 20000.000 (10 revolutions)
-
-Eikonal_Solution_Type = Sussman
-Eikonal_Sign_Function = Derivative
-
-I'm testing the effects of varying the Eikonal_Threshold.
