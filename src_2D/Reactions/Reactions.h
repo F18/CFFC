@@ -1505,10 +1505,10 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
   double dSdT, T0, e_k;
 
   // some constants
-  double rho = W.rho; // density
-  double Cv = W.Cv(); // constant volume specific heat
-  double e_N =        // internal energy of N2
-    W.spec[num_react_species-1].c *
+  double rho = W.rho;   // density [kg/m^3]
+  double Cv = W.Cv();   // constant volume specific heat [J/(kg*K)]
+  double E = W.E()/rho; // total energy [J/kg]
+  double e_N =          // internal energy of N2 [J/kg]
     ( W.specdata[num_react_species-1].Enthalpy(Temp) + 
       W.specdata[num_react_species-1].Heatofform() - 
       W.specdata[num_react_species-1].Rs()*Temp );
@@ -1548,7 +1548,7 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
     for (int i=0; i<num_react_species-1; i++) {
       
       // the i,j element of jacobian
-      dSwdU(NUM_VAR+i,NUM_VAR+j) += (M[i]/rho)*(r[i]-r0[i]) / eps;
+      dSwdU(NUM_VAR+i,NUM_VAR+j) += M[i]*(r[i]-r0[i]) / (rho*eps);
       
     } // endfor - rows
     
@@ -1590,7 +1590,7 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
     // d(rho w_dot_n) / d(rho)
     // = (1/(rho * Cv))*(0.5*u^2 +0.5*v^2 - e_N) * d(rho w_dot)_j/dT
     dSwdU(NUM_VAR+i,0) += 
-      ( 0.5*(W.v.x*W.v.x + W.v.y*W.v.y) - e_N ) * dSdT / ( rho * Cv );
+      ( W.v.x*W.v.x + W.v.y*W.v.y - E ) * dSdT / ( rho * Cv );
     
     // d(rho w_dot_n) / d(rho u)
     // = -(u/(rho * Cv)) * d(rho w_dot)_j/dT
@@ -1608,9 +1608,9 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
     // = - (e_k-e_N)/(rho * Cv) * d(rho w_dot)_j/dT
     for (int k=0; k<num_react_species-1; k++) {
       // internal energy species k
-      e_k = W.spec[k].c*(W.specdata[k].Enthalpy(Temp) + 
-			 W.specdata[k].Heatofform() -
-			 W.specdata[k].Rs()*Temp);
+      e_k = (W.specdata[k].Enthalpy(Temp) + 
+	     W.specdata[k].Heatofform() -
+	     W.specdata[k].Rs()*Temp);
       
       dSwdU(NUM_VAR+i,NUM_VAR+k) -=  (e_k-e_N) * dSdT / ( rho * Cv );
     } // endfor - species
