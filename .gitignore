@@ -22,21 +22,30 @@ tecplot.phy
 *.o*
 .gm_mpi
 *.core
+*.dat
+*.txt
 
 # latex document directories
 #*~
-#*.ps 
-#*.pdf 
-*.aux 
-#*.log 
-*.dvi 
+*.ps
+*.pdf
+*.aux
+#*.log
+*.dvi
 *.toc
+*.idx
+*.tex
+*.sty
+*.ilg
+*.ind
+*.ttf
 
 # html document directories
 *.html
 *.png
 *.gif
 *.css
+formula.repository
 images.tex
 images.log
 images.aux

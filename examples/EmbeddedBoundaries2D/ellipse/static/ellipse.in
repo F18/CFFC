@@ -50,9 +50,9 @@ Box_Height =
 Box_Width =
 2.00
 Number_of_Cells_Idir =
-100
+1000
 Number_of_Cells_Jdir =
-40
+400
 Number_of_Blocks_Idir =
 10
 Number_of_Blocks_Jdir =

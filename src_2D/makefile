@@ -860,6 +860,7 @@ $(EXE_LEVELSET2D): $(OBJ_LEVELSET_EXE) $(OBJ_BASE) $(OBJ_LEVELSET) $(OBJ_INTERFA
 	@echo '------------------------------------------------------------------------'
 	@echo ' '
 
+
 $(EXE_EMBEDDEDBOUNDARIES2D): $(OBJ_EMBEDDEDBOUNDARIES_EXE) $(OBJ_BASE) $(OBJ_EMBEDDEDBOUNDARIES) $(OBJ_INTERFACE) $(OBJ_LEVELSET) $(OBJ_EULER) $(OBJ_NAVIERSTOKES) $(OBJ_DUSTY) $(OBJ_ELECTROSTATIC) $(OBJ_ICEMCFD) $(OBJ_GAUSSIAN)
 	@echo ' '
 	@echo Building program $(EXE_EMBEDDEDBOUNDARIES2D) for a $(PLATFORM) platform.

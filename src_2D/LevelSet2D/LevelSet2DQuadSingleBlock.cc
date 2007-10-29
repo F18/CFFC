@@ -1,9 +1,9 @@
-/**********************************************************************
- * LevelSet2DQuadSingleBlock.cc                                       *
- *                                                                    *
- * Single-block versions of subroutines for 2D Level Set multi-block  *
- * quadrilateral mesh solution classes.                               *
- *                                                                    *
+/******************************************************************//**
+ * \file LevelSet2DQuadSingleBlock.cc                                 
+ *                                                                    
+ * Single-block versions of subroutines for 2D Level Set multi-block  
+ * quadrilateral mesh solution classes.                               
+ *                                                                    
  **********************************************************************/
 
 // Include 2D LevelSet quadrilateral mesh solution header file.
@@ -16,13 +16,13 @@
  * LevelSet2D_Quad_Block -- Single Block External Subroutines.        *
  **********************************************************************/
 
-/**********************************************************************
- * Routine: Broadcast_Solution_Block                                  *
- *                                                                    *
- * Broadcast quadrilateral solution block to all processors involved  *
- * in the calculation from the primary processor using the MPI        *
- * broadcast routine.                                                 *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Broadcast_Solution_Block                                  
+ *                                                                    
+ * Broadcast quadrilateral solution block to all processors involved  
+ * in the calculation from the primary processor using the MPI        
+ * broadcast routine.                                                 
+ *                                                                    
  **********************************************************************/
 void Broadcast_Solution_Block(LevelSet2D_Quad_Block &SolnBlk) {
 
@@ -107,13 +107,13 @@ void Broadcast_Solution_Block(LevelSet2D_Quad_Block &SolnBlk) {
 }
 
 #ifdef _MPI_VERSION
-/**********************************************************************
- * Routine: Broadcast_Solution_Block                                  *
- *                                                                    *
- * Broadcast quadrilateral solution block to all processors           *
- * associated with the specified communicator from the specified      *
- * processor using the MPI broadcast routine.                         *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Broadcast_Solution_Block                                  
+ *                                                                    
+ * Broadcast quadrilateral solution block to all processors           
+ * associated with the specified communicator from the specified      
+ * processor using the MPI broadcast routine.                         
+ *                                                                    
  **********************************************************************/
 void Broadcast_Solution_Block(LevelSet2D_Quad_Block &SolnBlk,
                               MPI::Intracomm &Communicator,
@@ -199,12 +199,12 @@ void Broadcast_Solution_Block(LevelSet2D_Quad_Block &SolnBlk,
 }
 #endif
 
-/**********************************************************************
- * Routine: Copy_Solution_Block                                       *
- *                                                                    *
- * Copies the solution information of quadrilateral solution block    *
- * SolnBlk2 to SolnBlk1.                                              *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Copy_Solution_Block                                       
+ *                                                                    
+ * Copies the solution information of quadrilateral solution block    
+ * SolnBlk2 to SolnBlk1.                                              
+ *                                                                    
  **********************************************************************/
 void Copy_Solution_Block(LevelSet2D_Quad_Block &SolnBlk1,
                          LevelSet2D_Quad_Block &SolnBlk2) {
@@ -246,13 +246,13 @@ void Copy_Solution_Block(LevelSet2D_Quad_Block &SolnBlk1,
 
 }
 
-/**********************************************************************
- * Routine: Prolong_Solution_Block                                    *
- *                                                                    *
- * Prolongs the solution information of one of the specified sectors  *
- * of the original quadrilateral solution block SolnBlk_Original to   *
- * the refined solution block SolnBlk_Fine.                           *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Prolong_Solution_Block                                    
+ *                                                                    
+ * Prolongs the solution information of one of the specified sectors  
+ * of the original quadrilateral solution block SolnBlk_Original to   
+ * the refined solution block SolnBlk_Fine.                           
+ *                                                                    
  **********************************************************************/
 int Prolong_Solution_Block(LevelSet2D_Quad_Block &SolnBlk_Fine,
 			   LevelSet2D_Quad_Block &SolnBlk_Original,
@@ -359,13 +359,13 @@ int Prolong_Solution_Block(LevelSet2D_Quad_Block &SolnBlk_Fine,
 
 }
 
-/**********************************************************************
- * Routine: Restrict_Solution_Block                                   *
- *                                                                    *
- * Restricts the solution information of four original fine           *
- * quadrilateral solution blocks to the coarse solution block         *
- * SolnBlk_Coarse.                                                    *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Restrict_Solution_Block                                   
+ *                                                                    
+ * Restricts the solution information of four original fine           
+ * quadrilateral solution blocks to the coarse solution block         
+ * SolnBlk_Coarse.                                                    
+ *                                                                    
  **********************************************************************/
 int Restrict_Solution_Block(LevelSet2D_Quad_Block &SolnBlk_Coarse,
 			    LevelSet2D_Quad_Block &SolnBlk_Original_SW,
@@ -473,11 +473,11 @@ int Restrict_Solution_Block(LevelSet2D_Quad_Block &SolnBlk_Coarse,
 
 }
 
-/**********************************************************************
- * Routine: Construct_Bulk_Flow_Field                                 *
- *                                                                    *
- * Constructs the bulk flow field on the specified solution block.    *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Construct_Bulk_Flow_Field                                 
+ *                                                                    
+ * Constructs the bulk flow field on the specified solution block.    
+ *                                                                    
  **********************************************************************/
 int Construct_Bulk_Flow_Field(LevelSet2D_Quad_Block &SolnBlk,
 			      LevelSet2D_Input_Parameters &IP) {
@@ -517,12 +517,12 @@ int Construct_Bulk_Flow_Field(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: BCs                                                       *
- *                                                                    *
- * Apply boundary conditions at boundaries of the specified           *
- * quadrilateral solution block.                                      *
- *                                                                    *
+/******************************************************************//**
+ * Routine: BCs                                                       
+ *                                                                    
+ * Apply boundary conditions at boundaries of the specified           
+ * quadrilateral solution block.                                      
+ *                                                                    
  **********************************************************************/
 void BCs(LevelSet2D_Quad_Block &SolnBlk) {
 
@@ -651,12 +651,12 @@ void BCs(LevelSet2D_Quad_Block &SolnBlk) {
 
 }
 
-/**********************************************************************
- * Routine: Set_Global_TimeStep                                       *
- *                                                                    *
- * Assigns global time step to specified solution block for           *
- * time-accurate calculations.                                        *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Set_Global_TimeStep                                       
+ *                                                                    
+ * Assigns global time step to specified solution block for           
+ * time-accurate calculations.                                        
+ *                                                                    
  **********************************************************************/
 void Set_Global_TimeStep(LevelSet2D_Quad_Block &SolnBlk,
                          const double &Dt_min) {
@@ -669,13 +669,13 @@ void Set_Global_TimeStep(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: L1_Norm_Residual                                          *
- *                                                                    *
- * Determines the L1-norm of the solution residual for the specified  *
- * quadrilateral solution block. Useful for monitoring convergence of *
- * the solution for steady state problems.                            *
- *                                                                    *
+/******************************************************************//**
+ * Routine: L1_Norm_Residual                                          
+ *                                                                    
+ * Determines the L1-norm of the solution residual for the specified  
+ * quadrilateral solution block. Useful for monitoring convergence of 
+ * the solution for steady state problems.                            
+ *                                                                    
  **********************************************************************/
 double L1_Norm_Residual(LevelSet2D_Quad_Block &SolnBlk,
 			const int &n) {
@@ -692,13 +692,13 @@ double L1_Norm_Residual(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: L2_Norm_Residual                                          *
- *                                                                    *
- * Determines the L2-norm of the solution residual for the specified  *
- * quadrilateral solution block. Useful for monitoring convergence of *
- * the solution for steady state problems.                            *
- *                                                                    *
+/******************************************************************//**
+ * Routine: L2_Norm_Residual                                          
+ *                                                                    
+ * Determines the L2-norm of the solution residual for the specified  
+ * quadrilateral solution block. Useful for monitoring convergence of 
+ * the solution for steady state problems.                            
+ *                                                                    
  **********************************************************************/
 double L2_Norm_Residual(LevelSet2D_Quad_Block &SolnBlk,
 			const int &n) {
@@ -716,13 +716,13 @@ double L2_Norm_Residual(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Max_Norm_Residual                                         *
- *                                                                    *
- * Determines the maximum norm of the solution residual for the       *
- * specified quadrilateral solution block.  Useful for monitoring     *
- * convergence of the solution for steady state problems.             *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Max_Norm_Residual                                         
+ *                                                                    
+ * Determines the maximum norm of the solution residual for the       
+ * specified quadrilateral solution block.  Useful for monitoring     
+ * convergence of the solution for steady state problems.             
+ *                                                                    
  **********************************************************************/
 double Max_Norm_Residual(LevelSet2D_Quad_Block &SolnBlk,
 			 const int &n) {
@@ -740,16 +740,16 @@ double Max_Norm_Residual(LevelSet2D_Quad_Block &SolnBlk,
   
 }
 
-/**********************************************************************
- * Routine: Store_Initial_Eikonal_Solution                            *
- *                                                                    *
- * This routines stores a copy of the solution prior to solving the   *
- * Eikonal equation.                                                  *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Store_Initial_Eikonal_Solution                            
+ *                                                                    
+ * This routines stores a copy of the solution prior to solving the   
+ * Eikonal equation.                                                  
+ *                                                                    
  **********************************************************************/
 int Store_Initial_Eikonal_Solution(LevelSet2D_Quad_Block &SolnBlk) {
 
-  // Stire the initial signed-distance function.
+  // Store the initial signed-distance function.
   for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
     for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
       SolnBlk.Uoo[i][j].psi = SolnBlk.U[i][j].psi;
@@ -760,15 +760,15 @@ int Store_Initial_Eikonal_Solution(LevelSet2D_Quad_Block &SolnBlk) {
   return 0;
 }
 
-/**********************************************************************
- * Routine: Calculate_Sign_Function                                   *
- *                                                                    *
- * This routines calculates and stores the sign function of the       *
- * signed distance function of the specified quadrilateral solution   *
- * block.  Required for the solution of the Eikonal equation for      *
- * redistancing the distance function and the scalar extension        *
- * equation.                                                          *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Calculate_Sign_Function                                   
+ *                                                                    
+ * This routines calculates and stores the sign function of the       
+ * signed distance function of the specified quadrilateral solution   
+ * block.  Required for the solution of the Eikonal equation for      
+ * redistancing the distance function and the scalar extension        
+ * equation.                                                          
+ *                                                                    
  **********************************************************************/
 int Calculate_Sign_Function(LevelSet2D_Quad_Block &SolnBlk,
 			    LevelSet2D_Input_Parameters &IP) {
@@ -793,13 +793,23 @@ int Calculate_Sign_Function(LevelSet2D_Quad_Block &SolnBlk,
     }
     break;
   case EIKONAL_SIGN_FUNCTION_SMEARED :
+    // Sussman, Smereka, Osher. J. comput. Phys. 114, 146-159 (1994).
     for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
       for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
 	SolnBlk.sign[i][j] = SolnBlk.U[i][j].psi/sqrt(sqr(SolnBlk.U[i][j].psi) + sqr(dx));
       }
     }
     break;
+  case EIKONAL_SIGN_FUNCTION_SMEARED_MACDONALD :
+    // Colin Macdonald and Steven J. Ruuth.
+    for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+      for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+	SolnBlk.sign[i][j] = SolnBlk.U[i][j].psi/sqrt(sqr(SolnBlk.Uo[i][j].psi)+dx);
+      }
+    }
+    break;
   case EIKONAL_SIGN_FUNCTION_DERIVATIVE :
+    // Peng, Merriman, Osher, Zhao and Kang
     for (int j = SolnBlk.JCl-SolnBlk.Nghost+1; j <= SolnBlk.JCu+SolnBlk.Nghost-1; j++) {
       for (int i = SolnBlk.ICl-SolnBlk.Nghost+1; i <= SolnBlk.ICu+SolnBlk.Nghost-1; i++) {
 	dU = sqrt(sqr((SolnBlk.U[i+1][j].psi-SolnBlk.U[i][j].psi)/dx) + 
@@ -815,15 +825,15 @@ int Calculate_Sign_Function(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Linear_Reconstruction_GreenGauss                          *
- *                                                                    *
- * Peforms the reconstruction of a limited piecewise linear solution  *
- * state within a given cell (i,j) of the computational mesh for the  *
- * specified quadrilateral solution block.  A Green-Gauss approach is *
- * used in the evaluation of the unlimited solution gradients.        *
- * Several slope limiters may be used.                                *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Linear_Reconstruction_GreenGauss                          
+ *                                                                    
+ * Peforms the reconstruction of a limited piecewise linear solution  
+ * state within a given cell (i,j) of the computational mesh for the  
+ * specified quadrilateral solution block.  A Green-Gauss approach is 
+ * used in the evaluation of the unlimited solution gradients.        
+ * Several slope limiters may be used.                                
+ *                                                                    
  **********************************************************************/
 void Linear_Reconstruction_GreenGauss(LevelSet2D_Quad_Block &SolnBlk,
 				      const int i,
@@ -960,15 +970,15 @@ void Linear_Reconstruction_GreenGauss(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Linear_Reconstruction_GreenGauss                          *
- *                                                                    *
- * Peforms the reconstruction of a limited piecewise linear solution  *
- * state within each cell of the computational mesh for the specified *
- * quadrilateral solution block.  A Green-Gauss approach is used in   *
- * the evaluation of the unlimited solution gradients.  Several slope *
- * limiters may be used.                                              *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Linear_Reconstruction_GreenGauss                          
+ *                                                                    
+ * Peforms the reconstruction of a limited piecewise linear solution  
+ * state within each cell of the computational mesh for the specified 
+ * quadrilateral solution block.  A Green-Gauss approach is used in   
+ * the evaluation of the unlimited solution gradients.  Several slope 
+ * limiters may be used.                                              
+ *                                                                    
  **********************************************************************/
 void Linear_Reconstruction_GreenGauss(LevelSet2D_Quad_Block &SolnBlk,
 				      const int Limiter) {
@@ -981,15 +991,15 @@ void Linear_Reconstruction_GreenGauss(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Laplacian_Reconstruction_GreenGauss                       *
- *                                                                    *
- * Peforms the reconstruction of the Laplacian of a specified         *
- * solution variable, n, within a given cell (i,j) of the             *
- * computational mesh for the specified Cartesian solution block.  A  *
- * Green-Gauss approach is used in the evaluation of the unlimited    *
- * solution gradients.                                                *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Laplacian_Reconstruction_GreenGauss                       
+ *                                                                    
+ * Peforms the reconstruction of the Laplacian of a specified         
+ * solution variable, n, within a given cell (i,j) of the             
+ * computational mesh for the specified Cartesian solution block.  A  
+ * Green-Gauss approach is used in the evaluation of the unlimited    
+ * solution gradients.                                                
+ *                                                                    
  **********************************************************************/
 void Laplacian_Reconstruction_GreenGauss(LevelSet2D_Quad_Block &SolnBlk,
 					 const int i,
@@ -1050,15 +1060,15 @@ void Laplacian_Reconstruction_GreenGauss(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Linear_Reconstruction_LeastSquares                        *
- *                                                                    *
- * Peforms the reconstruction of a limited piecewise linear solution  *
- * state within a given cell (i,j) of the computational mesh for the  *
- * specified quadrilateral solution block.  A least squares approach  *
- * is used in the evaluation of the unlimited solution gradients.     *
- * Several slope limiters may be used.                                *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Linear_Reconstruction_LeastSquares                        
+ *                                                                    
+ * Peforms the reconstruction of a limited piecewise linear solution  
+ * state within a given cell (i,j) of the computational mesh for the  
+ * specified quadrilateral solution block.  A least squares approach  
+ * is used in the evaluation of the unlimited solution gradients.     
+ * Several slope limiters may be used.                                
+ *                                                                    
  **********************************************************************/
 void Linear_Reconstruction_LeastSquares(LevelSet2D_Quad_Block &SolnBlk,
 				        const int i,
@@ -1174,15 +1184,15 @@ void Linear_Reconstruction_LeastSquares(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Linear_Reconstruction_LeastSquares                        *
- *                                                                    *
- * Peforms the reconstruction of a limited piecewise linear solution  *
- * state within each cell of the computational mesh of the specified  *
- * quadrilateral solution block.  A least squares approach is used in *
- * the evaluation of the unlimited solution gradients.  Several slope *
- * limiters may be used.                                              *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Linear_Reconstruction_LeastSquares                        
+ *                                                                    
+ * Peforms the reconstruction of a limited piecewise linear solution  
+ * state within each cell of the computational mesh of the specified  
+ * quadrilateral solution block.  A least squares approach is used in 
+ * the evaluation of the unlimited solution gradients.  Several slope 
+ * limiters may be used.                                              
+ *                                                                    
  **********************************************************************/
 void Linear_Reconstruction_LeastSquares(LevelSet2D_Quad_Block &SolnBlk,
                                         const int Limiter) {
@@ -1197,13 +1207,13 @@ void Linear_Reconstruction_LeastSquares(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: dUdx, dUdy, ddUdx2, ddUdy2, dddUdx3, dddUdy3              *
- *                                                                    *
- * Difference tables used for the essentially non-oscillatory         *
- * gradient reconstruction for the specified cell and the specified   *
- * solution variable.                                                 *
- *                                                                    *
+/******************************************************************//**
+ * Routine: dUdx, dUdy, ddUdx2, ddUdy2, dddUdx3, dddUdy3              
+ *                                                                    
+ * Difference tables used for the essentially non-oscillatory         
+ * gradient reconstruction for the specified cell and the specified   
+ * solution variable.                                                 
+ *                                                                    
  **********************************************************************/
 double dUdx(LevelSet2D_Quad_Block &SolnBlk, const int &i, const int &j, const int &n) {
   return (SolnBlk.U[i+1][j][n]-SolnBlk.U[i][j][n])/(SolnBlk.Grid.Cell[i+1][j].Xc.x-SolnBlk.Grid.Cell[i][j].Xc.x);
@@ -1229,15 +1239,15 @@ double dddUdy3(LevelSet2D_Quad_Block &SolnBlk, const int &i, const int &j, const
   return (ddUdy2(SolnBlk,i,j+1,n)-ddUdy2(SolnBlk,i,j,n))/(3.0*(SolnBlk.Grid.Cell[i][j+1].Xc.y-SolnBlk.Grid.Cell[i][j].Xc.y));
 }
 
-/**********************************************************************
- * Routine: Reconstruction_EssentiallyNonOscillatory                  *
- *                                                                    *
- * Peforms the reconstruction of a limited piecewise linear solution  *
- * variable, n, within a given cell (i,j) of the computational mesh   *
- * for the specified Cartesian solution block.  A Essentially Non-    *
- * Oscillatory approach is used in the evaluation of the unlimited    *
- * solution gradients.                                                *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Reconstruction_EssentiallyNonOscillatory                  
+ *                                                                    
+ * Peforms the reconstruction of a limited piecewise linear solution  
+ * variable, n, within a given cell (i,j) of the computational mesh   
+ * for the specified Cartesian solution block.  A Essentially Non-    
+ * Oscillatory approach is used in the evaluation of the unlimited    
+ * solution gradients.                                                
+ *                                                                    
  **********************************************************************/
 void Reconstruction_EssentiallyNonOscillatory(LevelSet2D_Quad_Block &SolnBlk,
 					      const int i,
@@ -1314,15 +1324,15 @@ void Reconstruction_EssentiallyNonOscillatory(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Reconstruction_EssentiallyNonOscillatory                  *
- *                                                                    *
- * Peforms the reconstruction of a limited piecewise linear solution  *
- * variable, n, within each cell of the computational mesh for the    *
- * specified Cartesian solution block.  A Essentially Non-Oscillatory *
- * approach is used in the evaluation of the unlimited solution       *
- * gradients.                                                         *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Reconstruction_EssentiallyNonOscillatory                  
+ *                                                                    
+ * Peforms the reconstruction of a limited piecewise linear solution  
+ * variable, n, within each cell of the computational mesh for the    
+ * specified Cartesian solution block.  A Essentially Non-Oscillatory 
+ * approach is used in the evaluation of the unlimited solution       
+ * gradients.                                                         
+ *                                                                    
  **********************************************************************/
 void Reconstruction_EssentiallyNonOscillatory(LevelSet2D_Quad_Block &SolnBlk,
 					      const int n,
@@ -1338,12 +1348,12 @@ void Reconstruction_EssentiallyNonOscillatory(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Reconstruction_WeightedEssentiallyNonOscillatory          *
- *                                                                    *
- * Calculates the 5th order accurate WENO gradient given a 5 finite   *
- * difference stencils.                                               *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Reconstruction_WeightedEssentiallyNonOscillatory          
+ *                                                                    
+ * Calculates the 5th order accurate WENO gradient given 5 finite     
+ * difference stencils.                                               
+ *                                                                    
  **********************************************************************/
 double Reconstruction_WeightedEssentiallyNonOscillatory(const double v1,
 							const double v2,
@@ -1381,17 +1391,17 @@ double Reconstruction_WeightedEssentiallyNonOscillatory(const double v1,
 
 }
 
-/**********************************************************************
- * Routine: Reconstruction_WeightedEssentiallyNonOscillatory          *
- *                                                                    *
- * Performs the reconstruction of a limited piecewise linear solution *
- * variable, n, within each cell of the computational mesh for the    *
- * specified Cartesian solution block.  A Weighted Essentially        *
- * Non-Oscillatory approach is used in the evaluation of the          *
- * unlimited solution gradients.                                      *
- *                                                                    *
- * Refer to Osher/Fedkiw's book, page 34, for the WENO scheme.        *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Reconstruction_WeightedEssentiallyNonOscillatory          
+ *                                                                    
+ * Performs the reconstruction of a limited piecewise linear solution 
+ * variable, n, within each cell of the computational mesh for the    
+ * specified Cartesian solution block.  A Weighted Essentially        
+ * Non-Oscillatory approach is used in the evaluation of the          
+ * unlimited solution gradients.                                      
+ *                                                                    
+ * Refer to Osher/Fedkiw's book, page 34, for the WENO scheme.        
+ *                                                                    
  **********************************************************************/
 void Reconstruction_WeightedEssentiallyNonOscillatory(LevelSet2D_Quad_Block &SolnBlk,
 						      const int i,
@@ -1456,15 +1466,15 @@ void Reconstruction_WeightedEssentiallyNonOscillatory(LevelSet2D_Quad_Block &Sol
 
 }
 
-/**********************************************************************
- * Routine: Reconstruction_WeightedEssentiallyNonOscillatory          *
- *                                                                    *
- * Peforms the reconstruction of a limited piecewise linear solution  *
- * variable, n, within each cell of the computational mesh for the    *
- * specified Cartesian solution block.  A Weighted Essentially Non-   *
- * Oscillatory approach is used in the evaluation of the unlimited    *
- * solution gradients.                                                *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Reconstruction_WeightedEssentiallyNonOscillatory          
+ *                                                                    
+ * Peforms the reconstruction of a limited piecewise linear solution  
+ * variable, n, within each cell of the computational mesh for the    
+ * specified Cartesian solution block.  A Weighted Essentially Non-   
+ * Oscillatory approach is used in the evaluation of the unlimited    
+ * solution gradients.                                                
+ *                                                                    
  **********************************************************************/
 void Reconstruction_WeightedEssentiallyNonOscillatory(LevelSet2D_Quad_Block &SolnBlk,
 						      const int n) {
@@ -1479,12 +1489,142 @@ void Reconstruction_WeightedEssentiallyNonOscillatory(LevelSet2D_Quad_Block &Sol
 
 }
 
-/**********************************************************************
- * Routine: Calculate_Refinement_Criteria                             *
- *                                                                    *
- * Calculate refinement criteria for the solution block.  Called by   *
- * AMR and Initial_AMR functions found in AMR.h.                      *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Reconstruction_Curvature                                  
+ *                                                                    
+ * Performs the reconstruction of the curvature of the specified      
+ * variable, n, within each cell of the computational mesh for the    
+ * specified Cartesian solution block.                                
+ *                                                                    
+ **********************************************************************/
+void Reconstruction_Curvature(LevelSet2D_Quad_Block &SolnBlk,
+			      LevelSet2D_Input_Parameters &IP,
+			      const int n) {
+
+  /* Carry out the reconstruction of the curvature in each cell of
+     the computational mesh. */
+  switch(IP.i_Curvature_Scheme) {
+  case CURVATURE_SCHEME_LAPLACIAN:
+    for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
+      for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
+	Reconstruction_Curvature_Laplacian(SolnBlk,i,j,n);
+      }
+    }
+    break;
+  case CURVATURE_SCHEME_REGULAR:
+    for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
+      for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
+	Reconstruction_Curvature_Regular(SolnBlk,i,j,n);
+      }
+    }
+    break;
+  default:
+    for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
+      for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
+	Reconstruction_Curvature_Laplacian(SolnBlk,i,j,n);
+      }
+    }
+    break;
+  };
+
+}
+
+/******************************************************************//**
+ * Routine: Reconstruction_Curvature_Laplacian                        
+ *                                                                    
+ * Performs the reconstruction of the Laplacian of variable n, for    
+ * use in curvature driven motion of the level set function. N must   
+ * close to a signed distance function for accurate approximation.    
+ *                                                                    
+ * See: Osher p.43. Eqn. (4.6).                                       
+ *                                                                    
+ **********************************************************************/
+void Reconstruction_Curvature_Laplacian(LevelSet2D_Quad_Block &SolnBlk,
+					const int i,
+					const int j,
+					const int n) {
+
+  double dx, dy, laplacian;
+
+  // Carry out the reconstruction of the Laplacian in each cell.
+  dx = SolnBlk.Grid.Cell[i][j].Xc.x - SolnBlk.Grid.Cell[i-1][j].Xc.x;
+  dy = SolnBlk.Grid.Cell[i][j].Xc.y - SolnBlk.Grid.Cell[i][j-1].Xc.y;
+  laplacian = ZERO;
+  
+  SolnBlk.ddUdxx[i][j].psi = (SolnBlk.U[i+1][j].psi - TWO*SolnBlk.U[i][j].psi + SolnBlk.U[i-1][j].psi)/sqr(dx);
+  SolnBlk.ddUdyy[i][j].psi = (SolnBlk.U[i][j+1].psi - TWO*SolnBlk.U[i][j].psi + SolnBlk.U[i][j-1].psi)/sqr(dy);
+  laplacian = SolnBlk.ddUdxx[i][j].psi + SolnBlk.ddUdyy[i][j].psi;
+  
+  if ( laplacian > (ONE/max(dx,dy)) ) {
+    SolnBlk.kappa[i][j].psi = ONE/max(dx,dy);
+  } else if ( laplacian < (-ONE/max(dx,dy)) ) {
+    SolnBlk.kappa[i][j].psi = -ONE/max(dx,dy);
+  } else {
+    SolnBlk.kappa[i][j].psi = laplacian;
+  }
+
+  // Set gradient magnitude.
+  // Note: The magnitude of the gradient is obviously not 1,
+  // but for the approximation, we set it to 1.
+  SolnBlk.gradMag[i][j].psi = ONE;
+
+}
+
+/******************************************************************//**
+ * Routine: Reconstruction_Curvature_Regular                          
+ *                                                                    
+ * Performs the reconstruction of the curvature of the level set for  
+ * use in curvature driven motion. The curvature is calculated using  
+ * the regular expression composed of single and double partial       
+ * derivatives in the x and y directions.                             
+ *                                                                    
+ * See: Osher, pp. 12. Eqn (1.8) and accompanying notes.
+ *
+ **********************************************************************/
+void Reconstruction_Curvature_Regular(LevelSet2D_Quad_Block &SolnBlk,
+				      const int i,
+				      const int j,
+				      const int n) {
+  
+  double phix, phiy;            // centered, first derivatives
+  double phixx, phiyy, phixy;   // centered, second derivatives
+  double dx, dy;
+
+  dx = fabs(SolnBlk.Grid.Cell[i][j].Xc.x - SolnBlk.Grid.Cell[i+1][j].Xc.x);
+  dy = fabs(SolnBlk.Grid.Cell[i][j].Xc.y - SolnBlk.Grid.Cell[i][j+1].Xc.y);
+
+  // Get the first and second deratives.
+  phix = HALF*(SolnBlk.U[i+1][j].psi - SolnBlk.U[i-1][j].psi)/dx;
+  phiy = HALF*(SolnBlk.U[i][j+1].psi - SolnBlk.U[i][j-1].psi)/dy;
+  phixx = (SolnBlk.U[i+1][j].psi - TWO*SolnBlk.U[i][j].psi + SolnBlk.U[i-1][j].psi) / sqr(dx);
+  phiyy = (SolnBlk.U[i][j+1].psi - TWO*SolnBlk.U[i][j].psi + SolnBlk.U[i][j-1].psi) / sqr(dy);
+  phixy = ((SolnBlk.U[i+1][j+1].psi-SolnBlk.U[i-1][j+1].psi)-(SolnBlk.U[i+1][j-1].psi-SolnBlk.U[i-1][j-1].psi)) / (FOUR*dx*dy);
+
+  // Get the gradient magnitude.
+  SolnBlk.gradMag[i][j].psi = sqrt( sqr(phix)+sqr(phiy) );
+
+  // Get the curvature.
+  if (SolnBlk.gradMag[i][j].psi < 1e-3) {
+    // Catch the divide by zero case.
+    SolnBlk.kappa[i][j].psi = ZERO;
+  } else {
+    // Regular expression.
+    SolnBlk.kappa[i][j].psi = (sqr(phix)*phiyy - TWO*phix*phiy*phixy + sqr(phiy)*phixx) / (SolnBlk.gradMag[i][j].psi*SolnBlk.gradMag[i][j].psi*SolnBlk.gradMag[i][j].psi);
+    if (SolnBlk.kappa[i][j].psi > (ONE/dx)) {
+      SolnBlk.kappa[i][j].psi = ONE/dx;
+    } else if (SolnBlk.kappa[i][j].psi < (-ONE/dx)) {
+      SolnBlk.kappa[i][j].psi = -ONE/dx;
+    }
+  }
+
+}
+
+/******************************************************************//**
+ * Routine: Calculate_Refinement_Criteria                             
+ *                                                                    
+ * Calculate refinement criteria for the solution block.  Called by   
+ * AMR and Initial_AMR functions found in AMR.h.                      
+ *                                                                    
  **********************************************************************/
 void Calculate_Refinement_Criteria(double *refinement_criteria,
 				   LevelSet2D_Input_Parameters &IP,
@@ -1546,14 +1686,14 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
 
 }
 
-/**********************************************************************
- * Routine: Fix_Refined_Block_Boundaries                              *
- *                                                                    *
- * Adjusts the locations of the boundary nodes of a solution block so *
- * that the new node locations match with cell volumes of adjacent    *
- * solution blocks that have lower levels of mesh refinement (i.e.,   *
- * are coarser solution blocks).                                      *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Fix_Refined_Block_Boundaries                              
+ *                                                                    
+ * Adjusts the locations of the boundary nodes of a solution block so 
+ * that the new node locations match with cell volumes of adjacent    
+ * solution blocks that have lower levels of mesh refinement (i.e.,   
+ * are coarser solution blocks).                                      
+ *                                                                    
  **********************************************************************/
 void Fix_Refined_Block_Boundaries(LevelSet2D_Quad_Block &SolnBlk,
                                   const int Fix_North_Boundary,
@@ -1622,12 +1762,12 @@ void Fix_Refined_Block_Boundaries(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Unfix_Refined_Block_Boundaries                            *
- *                                                                    *
- * Returns the adjusted the locations of the boundary nodes of a      *
- * solution block to their original unmodified positions.             *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Unfix_Refined_Block_Boundaries                            
+ *                                                                    
+ * Returns the adjusted the locations of the boundary nodes of a      
+ * solution block to their original unmodified positions.             
+ *                                                                    
  **********************************************************************/
 void Unfix_Refined_Block_Boundaries(LevelSet2D_Quad_Block &SolnBlk) {
 

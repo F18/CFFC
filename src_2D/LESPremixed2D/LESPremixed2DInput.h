@@ -1,11 +1,10 @@
-/****************** LESPremixed2DInput.h ************************************
-  This class defines the all the input parameters read from the 
-  standard input and the input parameter file.  It is based on 
-  the Chem2DInput class and extended for the LESPremixed2D flow
-  solver.
-
-  - based on Chem2DInput.h 
-***********************************************************************/
+/******************************************************************//**
+ * \file  LESPremixed2DInput.h
+ *
+ * Header file describing 2D LESPremixed input parameter class.
+ *
+ * \note Based on Chem2DInput.h 
+ **********************************************************************/
 
 
 #ifndef _LESPREMIXED2D_INPUT_INCLUDED
@@ -57,69 +56,85 @@ using namespace std;
  * @brief Definition and manipulation of 2D premixed reacting gas input
  *        variables.
  *
+ * This class defines the all the input parameters read from the 
+ * standard input and the input parameter file.  It is based on 
+ * the Chem2DInput class and extended for the LESPremixed2D flow
+ * solver.
+ *
  */
 class LESPremixed2D_Input_Parameters{
   private:
   public:
-  //@{ @name Input file parameters.
-  //! Input file name:
+
+  //! @name Input file parameters.
+  //@{
+  //! Input file name.
   char Input_File_Name[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
-  //! Input file stream:
+  //! Input file stream.
   ifstream Input_File;
-  //! Input file line number:
+  //! Input file line number.
   int Line_Number;
   //@}
 
-  // Input file line number, the index of solution parameters:
+  //! Input file line number, the index of solution parameters:
   int Solution_Parameters_Index;
   
-  // Time integration type indicator and related input parameters:
+  //! @name Time integration type indicator and related input parameters:
+  //@{
   char Time_Integration_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int i_Time_Integration;
   int Time_Accurate, Local_Time_Stepping, 
       Maximum_Number_of_Time_Steps, N_Stage;
   double CFL_Number, Time_Max;
+  //@}
   
-  // Additional input parameters for dual time stepping
-  int     Max_Inner_Steps, first_step;
-  double  dTime, Physical_CFL_Number;
+  //! @name Additional input parameters for dual time stepping
+  //@{
+  int Max_Inner_Steps, first_step;
+  double dTime, Physical_CFL_Number;
+  //@}
 
-  //@{ @name Implicit residual smoothing control parameters:
+  //! @name Implicit residual smoothing control parameters:
+  //@{
   int Residual_Smoothing;
   double Residual_Smoothing_Epsilon;
   int Residual_Smoothing_Gauss_Seidel_Iterations;
   //@}
 
-  //@{ @name Multigrid related input parameters:
+  //! Multigrid related input parameters.
   Multigrid_Input_Parameters Multigrid_IP;
-  //@}
 
-  //@{ @name NKS related input parametrs:
-  NKS_Input_Parameters  NKS_IP;
+  //! @name NKS related input parameters:
+  //@{
+  NKS_Input_Parameters NKS_IP;
   int Solver_Type; 
   //@}
 
-  //@{ @name Reconstruction type indicator and related input parameters:
+  //! @name Reconstruction type indicator and related input parameters:
+  //@{
   char Reconstruction_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int i_Reconstruction;
   //@}
 
-  //@{ @name Limiter type indicator and related input parameters:
+  //! @name Limiter type indicator and related input parameters:
+  //@{
   char Limiter_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int i_Limiter;
-  int  Freeze_Limiter;
+  int Freeze_Limiter;
   int i_Residual_Variable;
   double Freeze_Limiter_Residual_Level;
   //@}
 
-  //@{ @name Flux function type and related input parameters:
+  //! @name Flux function type and related input parameters:
+  //@{
   char Flux_Function_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int i_Flux_Function;
   char Viscous_Flux_Evaluation_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int i_Viscous_Flux_Evaluation;
   //@}
 
-  //@{ @name Initial condition type indicator and related input parameters:
+  //! @name Initial condition type indicator and related input parameters:
+  //@{
   char ICs_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int i_ICs;
   int i_Grid_Level;
@@ -130,29 +145,24 @@ class LESPremixed2D_Input_Parameters{
   int Preconditioning, Dual_Time_Stepping;
   //@}
 
-  //@{ @name Reacting flow input parameters.
+  //! @name Reacting flow input parameters.
+  //@{
   string react_name;
   char React_Name[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   char **Multispecies;
-  //! Array of species names
-  string *multispecies;
-  //! Array of mass fractions
-  double *mass_fractions;
-  
+  string *multispecies;       //!< Array of species names
+  double *mass_fractions;     //!< Array of mass fractions
 
   string scalar_system_name;
   char Scalar_system_name[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   char **Scalars;
-  //! Array of scalar names
-  string *scalars;
-  //! Array of scalar values
-  double *scalar_values;
+  string *scalars;            //!< Array of scalar names
+  double *scalar_values;      //!< Array of scalar values
 
   int num_species;
   int num_scalars;
   LESPremixed2D_pState Wo;
   LESPremixed2D_cState Uo;
-  
  
   //! Transport data type
   char trans_type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
@@ -161,26 +171,30 @@ class LESPremixed2D_Input_Parameters{
   //! BC Pressure Gradient 
   double Pressure_Gradient;
 
-  //! Root path of CFFC 
-  char CFFC_Path[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
-  void get_cffc_path();
-  //@}
-
   //! Mechanism name
   string ct_mech_name;
   char ct_Mech_Name[INPUT_PARAMETER_LENGTH_CHEM2D];
+
   //! Mechanism file
   string ct_mech_file;
   char ct_Mech_File[INPUT_PARAMETER_LENGTH_CHEM2D];
   //@}
 
-  //@{ @name Subfilter scale modelling and related parameters:
+  //! @name CFFC Path
+  //@{
+  char CFFC_Path[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
+  void get_cffc_path();
+  //@}
+
+  //! @name Subfilter scale modelling and related parameters:
+  //@{
   double Smagorinsky_Constant;
   double Yoshizawa_coefficient;
   double filter_width;
   //@}
 
-  //@{ @name Premixed flame parameters:
+  //! @name Premixed flame parameters:
+  //@{
   double laminar_flame_speed;
   double laminar_flame_thickness;
   double TFactor;
@@ -198,12 +212,14 @@ class LESPremixed2D_Input_Parameters{
   int  Read_Fluctuations_From_File;
   double TKEo;
 
-  //@{ @name Flow type indicator and related input parameters:
+  //! @name Flow type indicator and related input parameters:
+  //@{ 
   char Flow_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int FlowType;
   //@}
 
-  //@{ @name Flow geometry (planar or axisymmetric):
+  //! @name Flow geometry (planar or axisymmetric):
+  //@{ 
   char Flow_Geometry_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int Axisymmetric; //0 no, 1 yes
   double Global_Schmidt;  //depricated, use each individual Schmidt's
@@ -216,11 +232,11 @@ class LESPremixed2D_Input_Parameters{
   int debug_level;
   //@}
 
-  //@{ @name Gravity indicator (yes/no) = (1,0).
+  //! @name Gravity indicator (yes/no) = (1,0).
   int Gravity;
-  //@}
 
-  //@{ @name Grid type indicator and related input parameters:
+  //! @name Grid type indicator and related input parameters:
+  //@{
   char Grid_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   char NACA_Aerofoil_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int i_Grid;
@@ -248,7 +264,8 @@ class LESPremixed2D_Input_Parameters{
   char **ICEMCFD_FileNames;
   //@}
 
-  //@{ @name Mesh stretching factor.
+  //! @name Mesh stretching factor.
+  //@{
   int i_Mesh_Stretching;
   int Mesh_Stretching_Type_Idir;
   int Mesh_Stretching_Type_Jdir;
@@ -256,7 +273,8 @@ class LESPremixed2D_Input_Parameters{
   double Mesh_Stretching_Factor_Jdir;
   //@}
 
-  //@{ @name Boundary conditions:
+  //! @name Boundary conditions:
+  //@{
   char Boundary_Conditions_Specified[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   int BCs_Specified;
   char BC_North_Type[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
@@ -266,15 +284,16 @@ class LESPremixed2D_Input_Parameters{
   int BC_North, BC_South, BC_East, BC_West;
   //@}
 
-  //@{ @name Flow constants:
+  //! Flow constants:
   double Moving_wall_velocity;
-  //@}
 
-  //@{ @name Morton Re-Ordering
+  //! @name Morton Re-Ordering
+  //@{
   int Morton, Morton_Reordering_Frequency;
   //@}
 
-  //@{ @name AMR input parameters:
+  //! @name AMR input parameters:
+  //@{
   //! Unsteady AMR flag.
   int AMR;
   //! Unsteady AMR frequency.
@@ -313,7 +332,8 @@ class LESPremixed2D_Input_Parameters{
   int i_Smooth_Quad_Block;
   //@}
 
-  //@{ @name Output parameters:
+  //! @name Output parameters:
+  //@{ 
   //! Output file name:
   char Output_File_Name[INPUT_PARAMETER_LENGTH_LESPREMIXED2D];
   //! Multi-block mesh definition input file names:
@@ -334,11 +354,13 @@ class LESPremixed2D_Input_Parameters{
   int Output_Progress_Frequency;
   //@}
 
-  //@{ @name Multi-block solution-adaption and parallel domain decomposition input parameters:
+  //! @name Multi-block solution-adaption and parallel domain decomposition input parameters:
+  //@{
   int Number_of_Processors, Number_of_Blocks_Per_Processor;
   //@}
 
-  //@{ @name Constructor and destructor.
+  //! @name Constructor and destructor.
+  //@{
   //! Default constructor.
   LESPremixed2D_Input_Parameters(){
     Multispecies = NULL;
@@ -349,7 +371,6 @@ class LESPremixed2D_Input_Parameters{
     scalar_values = NULL;
     ICEMCFD_FileNames = NULL;
   }
-
   //! Default constructor.
   ~LESPremixed2D_Input_Parameters(){
     for (int i = 0; i < 3; i++) {
@@ -361,7 +382,8 @@ class LESPremixed2D_Input_Parameters{
   }
   //@}
 
-  //@{ @name Allocation and deallocation.
+  //! @name Allocation and deallocation.
+  //@{
   //! Allocate Memory.
   void Allocate();
   void Allocate_species();
@@ -372,7 +394,8 @@ class LESPremixed2D_Input_Parameters{
   void Deallocate_scalars();
   //@}
 
-  //@{ @name Input-output operators:
+  //! @name Input-output operators:
+  //@{
   friend ostream &operator << (ostream &out_file, const LESPremixed2D_Input_Parameters &IP);
   friend istream &operator >> (istream &in_file, LESPremixed2D_Input_Parameters &IP);
   //@}

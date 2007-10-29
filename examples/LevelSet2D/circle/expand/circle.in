@@ -52,9 +52,9 @@ Number_of_Cells_Jdir =
 Number_of_Ghost_Cells =
 3
 Number_of_Blocks_Idir =
-1
+2
 Number_of_Blocks_Jdir =
-1
+2
 Number_of_Blocks_Per_Processor =
 16
 #
@@ -62,7 +62,7 @@ Number_of_Blocks_Per_Processor =
 Hamilton_Jacobi_CFL_Number =
 0.25
 Time_Max =
-200.0
+00.0
 Maximum_Number_of_Time_Steps =
 0
 #
@@ -98,7 +98,7 @@ Number_of_Scalar_Extension_Iterations =
 #
 # INITIAL AMR PARAMETERS:
 Number_of_Uniform_Mesh_Refinements =
-1
+0
 Number_of_Initial_Mesh_Refinements =
 0
 #

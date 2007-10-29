@@ -1,9 +1,9 @@
-/**********************************************************************
- * LevelSet2DQuadScalarExtensionSingleBlock.cc                        *
- *                                                                    *
- * Scalar extension single-block versions of subroutines for 2D Level *
- * Set multi-block quadrilateral mesh solution classes.               *
- *                                                                    *
+/******************************************************************//**
+ * \file LevelSet2DQuadScalarExtensionSingleBlock.cc                  
+ *                                                                    
+ * Scalar extension single-block versions of subroutines for 2D Level 
+ * Set multi-block quadrilateral mesh solution classes.               
+ *                                                                    
  **********************************************************************/
 
 // Include 2D LevelSet quadrilateral mesh solution header file.
@@ -17,13 +17,13 @@
  *                          Subroutines.                              *
  **********************************************************************/
 
-/**********************************************************************
- * Routine: CFL_Scalar_Extension                                      *
- *                                                                    *
- * Determines the allowable global and local time steps (for explicit *
- * Euler time stepping scheme) for the specified quadrilateral        *
- * solution block according to the Courant-Friedrichs-Lewy condition. *
- *                                                                    *
+/******************************************************************//**
+ * Routine: CFL_Scalar_Extension                                      
+ *                                                                    
+ * Determines the allowable global and local time steps (for explicit 
+ * Euler time stepping scheme) for the specified quadrilateral        
+ * solution block according to the Courant-Friedrichs-Lewy condition. 
+ *                                                                    
  **********************************************************************/
 double CFL_Scalar_Extension(LevelSet2D_Quad_Block &SolnBlk) {
 
@@ -47,12 +47,12 @@ double CFL_Scalar_Extension(LevelSet2D_Quad_Block &SolnBlk) {
 
 }
 
-/**********************************************************************
- * Routine: dUdt_Multistage_Scalar_Extension                          *
- *                                                                    *
- * This routine evaulates the stage solution residual for the scalar  *
- * (front speed) extension equation on the specified solution block.  *
- *                                                                    *
+/******************************************************************//**
+ * Routine: dUdt_Multistage_Scalar_Extension                          
+ *                                                                    
+ * This routine evaulates the stage solution residual for the scalar  
+ * (front speed) extension equation on the specified solution block.  
+ *                                                                    
  **********************************************************************/
 int dUdt_Multistage_Scalar_Extension(LevelSet2D_Quad_Block &SolnBlk,
 				     const int i_stage,
@@ -189,12 +189,12 @@ int dUdt_Multistage_Scalar_Extension(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Update_Multistage_Scalar_Extension                        *
- *                                                                    *
- * This routine updates solution states of the given solution block   *
- * for a variety of multi-stage explicit time integration schemes.    *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Update_Multistage_Scalar_Extension                        
+ *                                                                    
+ * This routine updates solution states of the given solution block   
+ * for a variety of multi-stage explicit time integration schemes.    
+ *                                                                    
  **********************************************************************/
 int Update_Multistage_Scalar_Extension(LevelSet2D_Quad_Block &SolnBlk,
 				       const int i_stage,
