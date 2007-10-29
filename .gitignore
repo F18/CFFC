@@ -22,8 +22,8 @@ tecplot.phy
 *.o*
 .gm_mpi
 *.core
-*.dat
-*.txt
+#*.dat
+#*.txt
 
 # latex document directories
 #*~
