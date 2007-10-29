@@ -611,9 +611,6 @@ help:
 	@echo "|                                                                                   |"
 	@echo "+-----------------------------------------------------------------------------------+"
 
-dum: 
-	@echo $(SRC_EULER1D)
-
 all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
      $(EXE_EULER1D) $(EXE_SOLVERS1D) \
      $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
