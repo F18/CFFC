@@ -336,14 +336,38 @@ double Slip_T(const Gaussian2D_pState &W,
 	      const Gaussian2D_pState &dWdx,
 	      const Gaussian2D_pState &dWdy,
 	      const Vector2D &norm_dir) {
-  double _dTdn; //underscore to avoid same name as function dTdn()
+  double Tk, _dTdn; //underscore to avoid same name as function dTdn()
+  double T_close, T_far, Tk_damped;
+  double temp1, temp2;
 
   //I need the negative sign because this function takes the
   //outward facing normal from the first cell inside the domain.
   //I need the opposite sign.
   _dTdn = -dTdn(W,dWdx,dWdy,norm_dir);
 
-  return T + W.gt()*_dTdn;
+  Tk = T + W.gt()*_dTdn;
+  //return Tk;
+  //if Tk is between T & T.W(), return Tk (no damping)
+  if( fabs(Tk - 0.5*(T+W.T())) <= fabs(0.5*(T-W.T())) ){
+    return Tk;
+  }
+
+  //damp if needed in order to avoid wild oscillations
+  //for high-Knudsen-number cases.
+  if(fabs(Tk-T)/fabs(Tk-W.T()) > 1.0) {
+    T_close = W.T();
+    T_far   = T;
+  } else {
+    T_far   = W.T();
+    T_close = T;
+  }
+
+  temp1 = 2.0*(Tk-T_close) / ( sgn(T_close-T_far)*(fabs(T_close-T_far)+TOLER) );
+  temp2 = 0.5*(T_close-T_far);
+
+  Tk_damped = T_close + temp2*(1.0-exp(-temp1));
+
+  return Tk_damped;
 }
 
 /********************************************************
