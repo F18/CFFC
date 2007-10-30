@@ -3292,6 +3292,7 @@ extern double dTdn(const Gaussian2D_pState &W,
 
 extern double Slip_T(const Gaussian2D_pState &W,
 		     const double &T,
+		     const double &old_T,
 		     const Gaussian2D_pState &dWdx,
 		     const Gaussian2D_pState &dWdy,
 		     const Vector2D &norm_dir);
@@ -3313,6 +3314,7 @@ extern Gaussian2D_pState Isothermal_Wall(const Gaussian2D_pState &W,
 extern Gaussian2D_pState Isothermal_Wall_Slip_T(const Gaussian2D_pState &W,
 						const Vector2D &V,
 						const double &T,
+						const double &old_T,
 						const Gaussian2D_pState &dWdx,
 						const Gaussian2D_pState &dWdy,
 						const Vector2D &norm_dir);
@@ -3329,6 +3331,7 @@ extern Gaussian2D_pState Knudsen_Layer_Isothermal(const Gaussian2D_pState &W,
 extern Gaussian2D_pState Knudsen_Layer_Isothermal_Slip_T(const Gaussian2D_pState &W,
 							 const Vector2D &V,
 							 const double &T,
+							 const double &old_T,
 							 const Gaussian2D_pState &dWdx,
 							 const Gaussian2D_pState &dWdy,
 							 const Vector2D &norm_dir);

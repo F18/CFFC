@@ -333,6 +333,7 @@ double dTdn(const Gaussian2D_pState &W,
  ********************************************************/
 double Slip_T(const Gaussian2D_pState &W,
 	      const double &T,
+	      const double &old_T,
 	      const Gaussian2D_pState &dWdx,
 	      const Gaussian2D_pState &dWdy,
 	      const Vector2D &norm_dir) {
@@ -340,34 +341,18 @@ double Slip_T(const Gaussian2D_pState &W,
   double T_close, T_far, Tk_damped;
   double temp1, temp2;
 
+  double damping = 0.999; //damping factor
+
   //I need the negative sign because this function takes the
   //outward facing normal from the first cell inside the domain.
   //I need the opposite sign.
   _dTdn = -dTdn(W,dWdx,dWdy,norm_dir);
 
   Tk = T + W.gt()*_dTdn;
-  //return Tk;
-  //if Tk is between T & T.W(), return Tk (no damping)
-  if( fabs(Tk - 0.5*(T+W.T())) <= fabs(0.5*(T-W.T())) ){
-    return Tk;
-  }
 
-  //damp if needed in order to avoid wild oscillations
-  //for high-Knudsen-number cases.
-  if(fabs(Tk-T)/fabs(Tk-W.T()) > 1.0) {
-    T_close = W.T();
-    T_far   = T;
-  } else {
-    T_far   = W.T();
-    T_close = T;
-  }
 
-  temp1 = 2.0*(Tk-T_close) / ( sgn(T_close-T_far)*(fabs(T_close-T_far)+TOLER) );
-  temp2 = 0.5*(T_close-T_far);
-
-  Tk_damped = T_close + temp2*(1.0-exp(-temp1));
-
-  return Tk_damped;
+  //damping can be required for high-knudsen-number situations.
+  return (1.0-damping)*Tk + damping*old_T;
 }
 
 /********************************************************
@@ -498,12 +483,13 @@ Gaussian2D_pState Isothermal_Wall(const Gaussian2D_pState &W,
 Gaussian2D_pState Isothermal_Wall_Slip_T(const Gaussian2D_pState &W,
 					 const Vector2D &V,
 					 const double &T,
+					 const double &T_old,
 					 const Gaussian2D_pState &dWdx,
 					 const Gaussian2D_pState &dWdy,
 					 const Vector2D &norm_dir) {
   double Tk;
 
-  Tk = Slip_T(W,T,dWdx,dWdy,norm_dir);
+  Tk = Slip_T(W,T,T_old,dWdx,dWdy,norm_dir);
 
   return Isothermal_Wall(W,V,Tk,norm_dir);
 }
@@ -646,12 +632,13 @@ Gaussian2D_pState Knudsen_Layer_Isothermal(const Gaussian2D_pState &W,
 Gaussian2D_pState Knudsen_Layer_Isothermal_Slip_T(const Gaussian2D_pState &W,
 						  const Vector2D &V,
 						  const double &T,
+						  const double &T_old,
 						  const Gaussian2D_pState &dWdx,
 						  const Gaussian2D_pState &dWdy,
 						  const Vector2D &norm_dir) {
   double Tk;
 
-  Tk = Slip_T(W,T,dWdx,dWdy,norm_dir);
+  Tk = Slip_T(W,T,T_old,dWdx,dWdy,norm_dir);
 
   return Knudsen_Layer_Isothermal(W,V,Tk,norm_dir);
 }

@@ -1674,6 +1674,7 @@ void BCs(Gaussian2D_Quad_Block &SolnBlk,
 	  case BC_TEMPERATURE_SLIP :
 	    SolnBlk.W[SolnBlk.ICl-1][j] = Isothermal_Wall_Slip_T(SolnBlk.W[SolnBlk.ICl][j],
 								 SolnBlk.WoW[j].v, SolnBlk.WoW[j].T(),
+								 SolnBlk.W[SolnBlk.ICl-1][j].T(),
 								 SolnBlk.phi[SolnBlk.ICl][j]^SolnBlk.dWdx[SolnBlk.ICl][j],
 								 SolnBlk.phi[SolnBlk.ICl][j]^SolnBlk.dWdy[SolnBlk.ICl][j],
 								 SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
@@ -1815,6 +1816,7 @@ void BCs(Gaussian2D_Quad_Block &SolnBlk,
 	  case BC_TEMPERATURE_SLIP :
 	    SolnBlk.W[SolnBlk.ICu+1][j] = Isothermal_Wall_Slip_T(SolnBlk.W[SolnBlk.ICu][j],
 								 SolnBlk.WoE[j].v,SolnBlk.WoE[j].T(),
+								 SolnBlk.W[SolnBlk.ICu+1][j].T(),
 								 SolnBlk.phi[SolnBlk.ICu][j]^SolnBlk.dWdx[SolnBlk.ICu][j],
 								 SolnBlk.phi[SolnBlk.ICu][j]^SolnBlk.dWdy[SolnBlk.ICu][j],
 								 SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
@@ -1941,6 +1943,7 @@ void BCs(Gaussian2D_Quad_Block &SolnBlk,
 	  case BC_TEMPERATURE_SLIP :
 	    SolnBlk.W[i][SolnBlk.JCl-1] = Isothermal_Wall_Slip_T(SolnBlk.W[i][SolnBlk.JCl],
 								 SolnBlk.WoS[i].v, SolnBlk.WoS[i].T(),
+								 SolnBlk.W[i][SolnBlk.JCl-1].T(),
 								 SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dWdx[i][SolnBlk.JCl],
 								 SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dWdy[i][SolnBlk.JCl],
 								 SolnBlk.Grid.nfaceS(i,SolnBlk.JCl));
@@ -2055,6 +2058,7 @@ void BCs(Gaussian2D_Quad_Block &SolnBlk,
 	  case BC_TEMPERATURE_SLIP :
 	    SolnBlk.W[i][SolnBlk.JCu+1] = Isothermal_Wall_Slip_T(SolnBlk.W[i][SolnBlk.JCu],
 								 SolnBlk.WoN[i].v, SolnBlk.WoN[i].T(),
+								 SolnBlk.W[i][SolnBlk.JCu+1].T(),
 								 SolnBlk.phi[i][SolnBlk.JCu]^SolnBlk.dWdx[i][SolnBlk.JCu],
 								 SolnBlk.phi[i][SolnBlk.JCu]^SolnBlk.dWdy[i][SolnBlk.JCu],
 								 SolnBlk.Grid.nfaceN(i,SolnBlk.JCu));
@@ -4944,6 +4948,7 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 	      Wl = Isothermal_Wall(Wr, SolnBlk.WoW[j].v,SolnBlk.WoW[j].T(), SolnBlk.Grid.nfaceW(i+1, j));
 	    } else if(SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP) {
 	      Wl = Isothermal_Wall_Slip_T(Wr, SolnBlk.WoW[j].v,SolnBlk.WoW[j].T(),
+					  SolnBlk.W[i][j].T(),
 					  SolnBlk.phi[i+1][j]^SolnBlk.dWdx[i+1][j],
 					  SolnBlk.phi[i+1][j]^SolnBlk.dWdy[i+1][j],
 					  SolnBlk.Grid.nfaceW(i+1, j));
@@ -4976,6 +4981,7 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 	      Wr = Isothermal_Wall(Wl, SolnBlk.WoE[j].v, SolnBlk.WoE[j].T(), SolnBlk.Grid.nfaceE(i, j)); 
 	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP) {
 	      Wr = Isothermal_Wall_Slip_T(Wl, SolnBlk.WoE[j].v, SolnBlk.WoE[j].T(),
+					  SolnBlk.W[i+1][j].T(),
 					  SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j],
 					  SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j],
 					  SolnBlk.Grid.nfaceE(i, j));
@@ -5047,6 +5053,7 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 		// WEST face of cell (i+1,j) is a TEMPERATURE_SLIP boundary.
 		elliptic_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
 		Wu = Knudsen_Layer_Isothermal_Slip_T(Wr, SolnBlk.WoW[j].v, SolnBlk.WoW[j].T(),
+						     SolnBlk.W[i][j].T(),
 						     SolnBlk.phi[i+1][j]^SolnBlk.dWdx[i+1][j],
 						     SolnBlk.phi[i+1][j]^SolnBlk.dWdy[i+1][j],
 						     SolnBlk.Grid.nfaceW(i+1, j));
@@ -5085,6 +5092,7 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 		// EAST face of cell (i,j) is a TEMPERATURE_SLIP boundary.
 		elliptic_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
 		Wu = Knudsen_Layer_Isothermal_Slip_T(Wl, SolnBlk.WoE[j].v, SolnBlk.WoE[j].T(),
+						     SolnBlk.W[i+1][j].T(),
 						     SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j],
 						     SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j],
 						     SolnBlk.Grid.nfaceE(i, j));
@@ -5204,6 +5212,7 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 	    Wl = Isothermal_Wall(Wr, SolnBlk.WoS[i].v, SolnBlk.WoS[i].T(), SolnBlk.Grid.nfaceS(i, j+1));
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP) {
 	    Wl = Isothermal_Wall_Slip_T(Wr, SolnBlk.WoS[i].v, SolnBlk.WoS[i].T(), 
+					SolnBlk.W[i][j].T(),
 					SolnBlk.phi[i][j+1]^SolnBlk.dWdx[i][j+1],
 					SolnBlk.phi[i][j+1]^SolnBlk.dWdy[i][j+1],
 					SolnBlk.Grid.nfaceS(i, j+1));
@@ -5236,6 +5245,7 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 	    Wr = Isothermal_Wall(Wl, SolnBlk.WoN[i].v, SolnBlk.WoN[i].T(), SolnBlk.Grid.nfaceN(i, j));
 	  } else if (SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP) {
 	    Wr = Isothermal_Wall_Slip_T(Wl, SolnBlk.WoN[i].v, SolnBlk.WoN[i].T(),
+					SolnBlk.W[i][j+1].T(),
 					SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j],
 					SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j],
 					SolnBlk.Grid.nfaceN(i, j));
@@ -5307,6 +5317,7 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 	      // SOUTH face of cell (i,j+1) is a TEMPERATURE_SLIP boundary.
 	      elliptic_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
 	      Wu = Knudsen_Layer_Isothermal_Slip_T(Wr, SolnBlk.WoS[i].v, SolnBlk.WoS[i].T(),
+						   SolnBlk.W[i][j].T(),
 						   SolnBlk.phi[i][j+1]^SolnBlk.dWdx[i][j+1],
 						   SolnBlk.phi[i][j+1]^SolnBlk.dWdy[i][j+1],
 						   SolnBlk.Grid.nfaceS(i, j+1));
@@ -5345,6 +5356,7 @@ void dUdt_Residual_Evaluation(Gaussian2D_Quad_Block &SolnBlk,
 	      // NORTH face of cell (i,j) is a TEMPERATURE_SLIP boundary.
 	      elliptic_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
 	      Wu = Knudsen_Layer_Isothermal_Slip_T(Wl, SolnBlk.WoN[i].v, SolnBlk.WoN[i].T(),
+						   SolnBlk.W[i][j+1].T(),
 						   SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j],
 						   SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j],
 						   SolnBlk.Grid.nfaceN(i, j));
@@ -5577,6 +5589,7 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
 		 Wl = Isothermal_Wall(Wr, SolnBlk.WoW[j].v, SolnBlk.WoW[j].T(), SolnBlk.Grid.nfaceW(i+1, j));
 	       } else if (SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP) {
 		 Wl = Isothermal_Wall_Slip_T(Wr, SolnBlk.WoW[j].v, SolnBlk.WoW[j].T(),
+					     SolnBlk.W[i][j].T(),
 					     SolnBlk.phi[i+1][j]^SolnBlk.dWdx[i+1][j],
 					     SolnBlk.phi[i+1][j]^SolnBlk.dWdy[i+1][j],
 					     SolnBlk.Grid.nfaceW(i+1, j));
@@ -5609,6 +5622,7 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
                  Wr = Isothermal_Wall(Wl, SolnBlk.WoE[j].v, SolnBlk.WoE[j].T(), SolnBlk.Grid.nfaceE(i, j));
                } else if (SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP) {
                  Wr = Isothermal_Wall_Slip_T(Wl, SolnBlk.WoE[j].v, SolnBlk.WoE[j].T(),
+					     SolnBlk.W[i+1][j].T(),
 					     SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j],
 					     SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j],
 					     SolnBlk.Grid.nfaceE(i, j));
@@ -5680,6 +5694,7 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
 		   // WEST face of cell (i+1,j) is a TEMPERATURE_SLIP boundary.
 		   elliptic_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
 		   Wu = Knudsen_Layer_Isothermal_Slip_T(Wr, SolnBlk.WoW[j].v, SolnBlk.WoW[j].T(),
+							SolnBlk.W[i][j].T(),
 							SolnBlk.phi[i+1][j]^SolnBlk.dWdx[i+1][j],
 							SolnBlk.phi[i+1][j]^SolnBlk.dWdy[i+1][j],
 							SolnBlk.Grid.nfaceW(i+1, j));
@@ -5718,6 +5733,7 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
 		   // EAST face of cell (i,j) is a TEMPERATURE_SLIP boundary.
 		   elliptic_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
 		   Wu = Knudsen_Layer_Isothermal_Slip_T(Wl, SolnBlk.WoE[j].v, SolnBlk.WoE[j].T(),
+							SolnBlk.W[i+1][j].T(),
 							SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j],
 							SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j],
 							SolnBlk.Grid.nfaceE(i, j));
@@ -5839,6 +5855,7 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
 	       Wl = Isothermal_Wall(Wr, SolnBlk.WoS[i].v, SolnBlk.WoS[i].T(), SolnBlk.Grid.nfaceS(i, j+1));
              } else if (SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP) {
 	       Wl = Isothermal_Wall_Slip_T(Wr, SolnBlk.WoS[i].v, SolnBlk.WoS[i].T(),
+					   SolnBlk.W[i][j].T(),
 					   SolnBlk.phi[i][j+1]^SolnBlk.dWdx[i][j+1],
 					   SolnBlk.phi[i][j+1]^SolnBlk.dWdy[i][j+1],
 					   SolnBlk.Grid.nfaceS(i, j+1));
@@ -5871,6 +5888,7 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
 	      Wr = Isothermal_Wall(Wl, SolnBlk.WoN[i].v, SolnBlk.WoN[i].T(), SolnBlk.Grid.nfaceN(i, j));
 	    } else if (SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP) {
 	      Wr = Isothermal_Wall_Slip_T(Wl, SolnBlk.WoN[i].v, SolnBlk.WoN[i].T(),
+					  SolnBlk.W[i][j+1].T(),
 					  SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j],
 					  SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j],
 					  SolnBlk.Grid.nfaceN(i, j));
@@ -5945,6 +5963,7 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
 		// SOUTH face of cell (i,j+1) is a TEMPERATURE_SLIP boundary.
 		elliptic_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
 		Wu = Knudsen_Layer_Isothermal_Slip_T(W_temp, SolnBlk.WoS[i].v, SolnBlk.WoS[i].T(),
+						     SolnBlk.W[i][j].T(),
 						     SolnBlk.phi[i][j+1]^SolnBlk.dWdx[i][j+1],
 						     SolnBlk.phi[i][j+1]^SolnBlk.dWdy[i][j+1],
 						     SolnBlk.Grid.nfaceS(i, j+1));
@@ -5986,6 +6005,7 @@ int dUdt_Multistage_Explicit(Gaussian2D_Quad_Block &SolnBlk,
 		// NORTH face of cell (i,j) is a TEMPERATURE_SLIP boundary.
 		elliptic_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
 		Wu = Knudsen_Layer_Isothermal_Slip_T(W_temp, SolnBlk.WoN[i].v, SolnBlk.WoN[i].T(),
+						     SolnBlk.W[i][j+1].T(),
 						     SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j],
 						     SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j],
 						     SolnBlk.Grid.nfaceN(i, j));
