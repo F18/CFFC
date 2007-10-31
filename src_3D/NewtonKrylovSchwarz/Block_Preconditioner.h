@@ -23,6 +23,19 @@
 #include "../Math/Matrix.h"
 #include "../Math/Vector2D.h"
 
+#include "NKS_DTS.h"
+
+enum ThreeDStencils { FIRST_ORDER_STENCIL = 7,
+		  SECOND_ORDER_STENCIL = 27 }; 
+
+enum Locations {  STENCIL_CENTER = 0,		  
+                  STENCIL_NORTH = 1,
+		  STENCIL_SOUTH = 2,
+		  STENCIL_EAST  = 3,
+		  STENCIL_WEST  = 4,
+		  STENCIL_TOP   = 5,
+		  STENCIL_BOTTOM = 6 };
+
 /********************************************************
  * Class: Block_Preconditioner                          *
  *                                                      *
@@ -36,10 +49,10 @@ class Block_Preconditioner {
   int Jacobian_stencil_size; 
 
   void Get_Block_Index(const int &i, int *);
-  void Get_Block_Index(const int &,const int &, int *, int *);
+  void Get_Block_Index(const int &,const int &,const int &, int *, int *);
   void Setup_Jacobian_approximation();          //called from Create_Preconditioner
   void Setup_Preconditioner();                  //called from Update_Jacobian
-  void Implicit_Euler(const int&,const int&, DenseMatrix*);                     //called from Update_Jacobian       
+  void Implicit_Euler(const int&,const int&,const int&, DenseMatrix*, const double&);      //called from Update_Jacobian       
   void First_Order_Inviscid_Jacobian_HLLE(const int&,const int&, DenseMatrix*); //called from Update_Jacobian
   void First_Order_Inviscid_Jacobian_Roe(const int&,const int&, DenseMatrix*);  //called from Update_Jacobian
   void First_Order_Inviscid_Jacobian_AUSM_plus_up(const int&,const int&, DenseMatrix*);  //called from Update_Jacobian
@@ -155,14 +168,23 @@ template <typename SOLN_pSTATE, typename SOLN_cSTATE>
 inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
 Get_Block_Index(const int &i, int *Block_index_j)
 {
-//   //Determine Block_Indicies for Block Matrix formation
-//   if( Jacobian_stencil_size == 5){        
-//     Block_index_j[NORTH] = i - SolnBlk->NCi ; 
-//     Block_index_j[EAST] = ( i%SolnBlk->NCi != 0) ? i-1 : -1;
-//     Block_index_j[CENTER] = i;     
-//     Block_index_j[WEST] = ( (i+1)%SolnBlk->NCi != 0) ? i+1 : -1;
-//     Block_index_j[SOUTH] = i + SolnBlk->NCi ;   
-//   }  else if ( Jacobian_stencil_size == 9) {
+  //Determine Block_Indicies for Block Matrix formation
+  if( Jacobian_stencil_size == FIRST_ORDER_STENCIL){        
+
+    Block_index_j[STENCIL_CENTER] = i;   
+    if ( i > SolnBlk->NCi) {  
+      Block_index_j[STENCIL_NORTH] = (i%(SolnBlk->NCi*SolnBlk->NCj) >= SolnBlk->NCi) ? i - SolnBlk->NCi : -1;  
+      Block_index_j[STENCIL_SOUTH] = ( (i+SolnBlk->NCi)%(SolnBlk->NCi*SolnBlk->NCj) >= SolnBlk->NCi) ? i + SolnBlk->NCi : -1;   
+    } else {
+      Block_index_j[STENCIL_NORTH] = i - SolnBlk->NCi;
+      Block_index_j[STENCIL_SOUTH] = i + SolnBlk->NCi;
+    }
+    Block_index_j[STENCIL_EAST] = ( i%SolnBlk->NCi != 0) ? i-1 : -1;
+    Block_index_j[STENCIL_WEST] = ( (i+1)%SolnBlk->NCi != 0) ? i+1 : -1;
+    Block_index_j[STENCIL_TOP] =  SolnBlk->NCi* SolnBlk->NCj + i ;
+    Block_index_j[STENCIL_BOTTOM] = i - SolnBlk->NCi* SolnBlk->NCj;   
+    
+  }  else if ( Jacobian_stencil_size == SECOND_ORDER_STENCIL) {
 //     Block_index_j[NE] = ( (i - SolnBlk->NCi)%SolnBlk->NCi != 0) ? i - SolnBlk->NCi - 1 : -1;
 //     Block_index_j[NORTH] = i - SolnBlk->NCi;
 //     Block_index_j[NW] = ( (i - SolnBlk->NCi+1)%SolnBlk->NCi != 0) ? i - SolnBlk->NCi + 1 : -1;
@@ -172,7 +194,7 @@ Get_Block_Index(const int &i, int *Block_index_j)
 //     Block_index_j[SE] = ( (i + SolnBlk->NCi)%SolnBlk->NCi != 0) ? i + SolnBlk->NCi - 1 : -1;
 //     Block_index_j[SOUTH] = i + SolnBlk->NCi;
 //     Block_index_j[SW] = ( (i + SolnBlk->NCi+1)%SolnBlk->NCi != 0) ? i + SolnBlk->NCi + 1 : -1;
-//   }  
+  }  
 }
 
 /****************************************************************
@@ -180,31 +202,38 @@ Get_Block_Index(const int &i, int *Block_index_j)
  ****************************************************************/
 template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
 inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
-Get_Block_Index(const int &cell_index_i,const int &cell_index_j, int *Block_index_i, int *Block_index_j)
+Get_Block_Index(const int &cell_index_i, const int &cell_index_j, const int &cell_index_k,
+		int *Block_index_i, int *Block_index_j)
 { 
-//   //J index 
-//   for( int i=0; i<Jacobian_stencil_size; i++)  
-//     Block_index_j[i] = cell_index_j*SolnBlk->NCi+cell_index_i; 
+  //J index 
+  for( int i=0; i<Jacobian_stencil_size; i++)  
+    Block_index_j[i] = cell_index_j*SolnBlk->NCi+cell_index_i; 
 
-//   //I index 
-//   if( Jacobian_stencil_size == 5){        
-//     /*! Determine 1st order Block_Indicies for Cell (i,j)   
-//      *
-//      *            ---  
-//      *           | 1 |
-//      *        --- --- ---
-//      *       | 2 | 0 | 4 |                
-//      *        --- --- ---
-//      *           | 3 |
-//      *            ---
-//      */
-//     Block_index_i[NORTH] = (cell_index_j - 1)*SolnBlk->NCi+cell_index_i;  //NORTH  
-//     Block_index_i[EAST] = cell_index_j*SolnBlk->NCi+cell_index_i-1;       //EAST     
-//     Block_index_i[CENTER] = cell_index_j*SolnBlk->NCi+cell_index_i;       //CENTER   
-//     Block_index_i[WEST] = cell_index_j*SolnBlk->NCi+cell_index_i+1;       //WEST         
-//     Block_index_i[SOUTH] = (cell_index_j + 1)*SolnBlk->NCi+cell_index_i;  //SOUTH    
+  //I index 
+  if( Jacobian_stencil_size == FIRST_ORDER_STENCIL){        
+    /*! Determine 1st order Block_Indicies for Cell (i,j)   
+     *                    
+     *            ---    6
+     *           | 1 | / 
+     *        --- --- ---
+     *       | 4 | 0 | 3 |                
+     *        --- --- ---
+     *         / | 2 |
+     *       5    ---
+     */  
+    Block_index_i[STENCIL_CENTER] = cell_index_j*SolnBlk->NCi+cell_index_i;       //CENTER    //FIX !!!!!!
+
+    Block_index_i[STENCIL_NORTH] = (cell_index_j - 1)*SolnBlk->NCi+cell_index_i;  //NORTH  
+    Block_index_i[STENCIL_SOUTH] = (cell_index_j + 1)*SolnBlk->NCi+cell_index_i;  //SOUTH    
     
-//   }  else if ( Jacobian_stencil_size == 9) {
+    Block_index_i[STENCIL_EAST] = cell_index_j*SolnBlk->NCi+cell_index_i-1;       //EAST     
+    Block_index_i[STENCIL_WEST] = cell_index_j*SolnBlk->NCi+cell_index_i+1;       //WEST         
+ 
+   //  Block_index_j[STENCIL_TOP] =  SolnBlk->NCi* SolnBlk->NCj + i ;
+//     Block_index_j[STENCIL_BOTTOM] = i - SolnBlk->NCi* SolnBlk->NCj;   
+    
+
+  }  else if ( Jacobian_stencil_size == SECOND_ORDER_STENCIL) {
 //     /*! Determine 2nd order Block_Indicies for Cell (i,j)   
 //      *
 //      *        --- --- ---
@@ -224,7 +253,7 @@ Get_Block_Index(const int &cell_index_i,const int &cell_index_j, int *Block_inde
 //     Block_index_i[SE] = (cell_index_j + 1)*SolnBlk->NCi+cell_index_i-1;    //SE     
 //     Block_index_i[SOUTH] = (cell_index_j + 1)*SolnBlk->NCi+cell_index_i;   //SOUTH    
 //     Block_index_i[SW] = (cell_index_j + 1)*SolnBlk->NCi+cell_index_i+1;    //SW  
-//   }  
+  }  
 
 }
 
@@ -242,19 +271,21 @@ Create_Preconditioner(Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> &SolnBlk_ptr,
   Input = &(Input_ptr);
   blocksize = _blocksize;       //number of equations
 
-//   if (Input->NKS_IP.Jacobian_Order == SOURCE_TERMS_ONLY ||
-//       Input->NKS_IP.Jacobian_Order == FIRST_ORDER_INVISCID_HLLE ||
-//       Input->NKS_IP.Jacobian_Order == FIRST_ORDER_INVISCID_ROE || 
-//       Input->NKS_IP.Jacobian_Order == FIRST_ORDER_INVISCID_AUSMPLUSUP) {
-//     Jacobian_stencil_size = 5; //2D!!!
-//   } else if (Input->NKS_IP.Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_HLLE ||
-//              Input->NKS_IP.Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_ROE ||
-//              Input->NKS_IP.Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_AUSMPLUSUP) {
-//     Jacobian_stencil_size = 9;  //2D!!
-//   } else {
-//     cerr<<"\n Invalid Jacobian Preconditioner Order "<<Input->NKS_IP.Jacobian_Order;
-//     exit(1);
-//   }
+  if (Input->NKS_IP.Jacobian_Order == SOURCE_TERMS_ONLY ||
+      Input->NKS_IP.Jacobian_Order == FIRST_ORDER_INVISCID_HLLE ||
+      Input->NKS_IP.Jacobian_Order == FIRST_ORDER_INVISCID_ROE || 
+      Input->NKS_IP.Jacobian_Order == FIRST_ORDER_INVISCID_AUSMPLUSUP) {
+    Jacobian_stencil_size = FIRST_ORDER_STENCIL; 
+  } else if (Input->NKS_IP.Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_HLLE ||
+             Input->NKS_IP.Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_ROE ||
+             Input->NKS_IP.Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_AUSMPLUSUP) {
+    Jacobian_stencil_size = SECOND_ORDER_STENCIL;  
+    cerr<<"\n 2nd order Preconditioner Jacobian not finished yet! ";
+    exit(1);
+  } else {
+    cerr<<"\n Invalid Jacobian Preconditioner Order "<<Input->NKS_IP.Jacobian_Order;
+    exit(1);
+  }
     
   //Sets up memory for Approximate Jacobian (Block_Jacobian_approx)
   Setup_Jacobian_approximation(); 
@@ -267,60 +298,63 @@ template <typename SOLN_pSTATE, typename SOLN_cSTATE>
 void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
 Setup_Jacobian_approximation(){
 
-//   int block_mat_size = SolnBlk->NCi* SolnBlk->NCj*SolnBlk->NCk;   //block matrix size based on icells*jcells
-//   int nnz;
+  int block_mat_size = SolnBlk->NCi * SolnBlk->NCj * SolnBlk->NCk;   //block matrix size based on icells*jcells
+  int nnz;
 
-//   cerr<<"\n Setup_Jacobian_approximation MISSING 3D SETUP \n";
+  //! 1st order 3D Jacobian, Sparse Block Matrix Memory Allocation of non-zero block entries
+  if( Jacobian_stencil_size == FIRST_ORDER_STENCIL){        
+    nnz = 2*( 2*( 8 + 5*(SolnBlk->NCi-2)) + (10 + 6*(SolnBlk->NCi-2))*(SolnBlk->NCj-2) ) 
+       + (SolnBlk->NCk-2)*(  2*(10 + 6*(SolnBlk->NCi-2)) + (12 + 7*(SolnBlk->NCi-2))*(SolnBlk->NCj-2) );
 
-//   //! 1st order 2D Jacobian, Sparse Block Matrix Memory Allocation of non-zero block entries
-//   if( Jacobian_stencil_size == 5){        
-//     nnz = 5*block_mat_size - 2*(SolnBlk->NCi + SolnBlk->NCj); 
-//     //! 2nd order 2D Jacobian
-//   }  else if ( Jacobian_stencil_size == 9) {
-//     nnz = 9*block_mat_size - 6*(SolnBlk->NCi + SolnBlk->NCj) + 4;    
-//   }      
+    //! 2nd order 3D Jacobian
+  }  else if ( Jacobian_stencil_size == SECOND_ORDER_STENCIL) {
+    //nnz = 9*block_mat_size - 6*(SolnBlk->NCi + SolnBlk->NCj) + 4;    
+  }      
 
-//   //!Temporary Storage Arrays
-//   int *i_index = new int[nnz];      //location of dense local blocks, in global sparse block Matrix   
-//   int *j_index = new int[nnz];
-//   double *Data = new double [nnz*blocksize*blocksize];
-//   int *block_i = new int[Jacobian_stencil_size];
+  //cout<<"\n\n nnz = "<<nnz<<" for NCi= "<<SolnBlk->NCi<<" NCj= "<<SolnBlk->NCj<<" NCk= "<<SolnBlk->NCk;
+
+  //!Temporary Storage Arrays
+  int *i_index = new int[nnz];      //location of dense local blocks, in global sparse block Matrix   
+  int *j_index = new int[nnz]; 
+  double *Data = new double [nnz*blocksize*blocksize];
+  int *block_j = new int[Jacobian_stencil_size];
   
-//   //!Setup Stencil for approximate Jacobian
-//   int nnz_count = 0;   
-//   //! Loop through each row of Block Matrix
-//   for (int i=0; i< block_mat_size; i++){       
-//     Get_Block_Index(i,block_i);
-//     int stencil = 0;
-//     //! Determine which entries correspond to 1st, 2nd, etc. order stencil    
-//     //cout<<"\n i "<<i;
-//     while( stencil < Jacobian_stencil_size) { 
-//       int j = block_i[stencil];
-//       //cout<<" "<<j;
-//       if( j >= 0 && j < block_mat_size){	
-// 	i_index[nnz_count] = i+1;  // bpkit assumes Fortran indexing ie. starting at 1 
-// 	j_index[nnz_count] = j+1;
-// 	for(int k=0; k<blocksize*blocksize; k++){ //initialize Block Matrix as identity matrix
-// 	  if( i == j && k%(blocksize+1) == 0){
-// 	    Data[nnz_count*blocksize*blocksize + k] = ONE;
-// 	  } else {
-// 	    Data[nnz_count*blocksize*blocksize + k] = ZERO;
-// 	  }
-// 	}	 
-// 	nnz_count++;
-//       }
-//       stencil++;	
-//     }      
-//   }
+  //!Setup Stencil for approximate Jacobian
+  int nnz_count(0);   
+  //! Loop through each row of Block Matrix
+  for (int i=0; i< block_mat_size; i++){       
+    Get_Block_Index(i,block_j);
+    int stencil = 0; int local=0;
+    //! Determine which entries correspond to 1st, 2nd, etc. order stencil    
+    // cout<<"\n i "<<i<<" j(s) "; cout.flush();
+    while( stencil < Jacobian_stencil_size) { 
+      int j = block_j[stencil];
+      //cout<<" "<<j; cout.flush();
+      if( j >= 0 && j < block_mat_size){	
+	i_index[nnz_count] = i+1;  // bpkit assumes Fortran indexing ie. starting at 1 
+	j_index[nnz_count] = j+1;
+	for(int k=0; k<blocksize*blocksize; k++){ //initialize Block Matrix as identity matrix
+	  if( i == j && k%(blocksize+1) == 0){
+	    Data[nnz_count*blocksize*blocksize + k] = ONE;
+	  } else {
+	    Data[nnz_count*blocksize*blocksize + k] = ZERO;
+	  }
+	}	 
+	local++;
+	nnz_count++;
+      }
+      stencil++; 
+    } //cout<<"  tot = "<<local;     
+  }
 
-//   if( nnz != nnz_count){ cerr<<"\n Number of nonzero blocks mismatch error in approximate Jacobian formation "
-// 			     <<nnz<<" != "<<nnz_count<<"\n"; exit(1); }
+  if( nnz != nnz_count){ cerr<<"\n Number of nonzero blocks mismatch error in approximate Jacobian formation "
+			     <<nnz<<" != "<<nnz_count<<"\n"; exit(1); }
 
-//   //! Create Sparse bpkit "BlockMat" Block Matrix 
-//   Block_Jacobian_approx.setup(block_mat_size,nnz,i_index,j_index,Data,blocksize);                  
+  //! Create Sparse bpkit "BlockMat" Block Matrix 
+  Block_Jacobian_approx.setup(block_mat_size,nnz,i_index,j_index,Data,blocksize);                  
   
-//   //! Clean up local memory
-//   delete[] i_index; delete[] j_index; delete[] Data;  delete[] block_i;
+  //! Clean up local memory
+  delete[] i_index; delete[] j_index;  delete[] Data;  delete[] block_j;
 
 }
 
@@ -333,78 +367,79 @@ void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
 Update_Jacobian_and_Preconditioner(const double &DTS_dTime)
 {
   
-//   //!Local Variables and Temporary Storage
-//   int block_mat_size = SolnBlk->NCi*SolnBlk->NCj; 
-//   DenseMatrix *Jacobian_Data = new DenseMatrix[Jacobian_stencil_size];
-//   for(int i=0; i<Jacobian_stencil_size; i++) { Jacobian_Data[i] = DenseMatrix(blocksize,blocksize,ZERO); }
-//   int *block_i = new int[Jacobian_stencil_size]; 
-//   int *block_j = new int[Jacobian_stencil_size]; 
+  //!Local Variables and Temporary Storage
+  int block_mat_size = SolnBlk->NCi*SolnBlk->NCj; 
+  DenseMatrix *Jacobian_Data = new DenseMatrix[Jacobian_stencil_size];
+  for(int i=0; i<Jacobian_stencil_size; i++) { Jacobian_Data[i] = DenseMatrix(blocksize,blocksize,ZERO); }
+  int *block_i = new int[Jacobian_stencil_size]; 
+  int *block_j = new int[Jacobian_stencil_size]; 
 
-//   //! Initially assume no overlap
-//   int JCl_overlap = 0, JCu_overlap = 0, ICu_overlap =0, ICl_overlap = 0;
+  //! Initially assume no overlap
+  int JCl_overlap = 0, JCu_overlap = 0, ICu_overlap =0, ICl_overlap = 0, KCl_overlap = 0, KCu_overlap = 0;
   
 //   //! If overlap determine which block boundaries are internal, ie. BC_NONE
-//   if(Input_Parameters->NKS_IP.GMRES_Overlap){	
-//     if (SolnBlk->Grid.BCtypeS[SolnBlk->ICl] == BC_NONE)  JCl_overlap = Input_Parameters->NKS_IP.GMRES_Overlap;
-//     if (SolnBlk->Grid.BCtypeN[SolnBlk->ICu] == BC_NONE)  JCu_overlap = Input_Parameters->NKS_IP.GMRES_Overlap;
-//     if (SolnBlk->Grid.BCtypeE[SolnBlk->JCu] == BC_NONE)  ICu_overlap = Input_Parameters->NKS_IP.GMRES_Overlap;
-//     if (SolnBlk->Grid.BCtypeW[SolnBlk->JCl] == BC_NONE)  ICl_overlap = Input_Parameters->NKS_IP.GMRES_Overlap;
+//   if(Input->NKS_IP.GMRES_Overlap){	
+//     if (SolnBlk->Grid.BCtypeS[SolnBlk->ICl] == BC_NONE)  JCl_overlap = Input->NKS_IP.GMRES_Overlap;
+//     if (SolnBlk->Grid.BCtypeN[SolnBlk->ICu] == BC_NONE)  JCu_overlap = Input->NKS_IP.GMRES_Overlap;
+//     if (SolnBlk->Grid.BCtypeE[SolnBlk->JCu] == BC_NONE)  ICu_overlap = Input->NKS_IP.GMRES_Overlap;
+//     if (SolnBlk->Grid.BCtypeW[SolnBlk->JCl] == BC_NONE)  ICl_overlap = Input->NKS_IP.GMRES_Overlap;
 //   }
 
-//   //*********************************************************************************//
-//   /*! Calculate Jacobians for each cell and Update Global Jacobian Block Matrix
-//    * loop through all non-ghost cells, including overlap cells.  Ghost cells already
-//    * set to Zero or Identity by initialization.
-//    **********************************************************************************/
-//   for(int i= SolnBlk->ICl - ICl_overlap; i<= SolnBlk->ICu + ICu_overlap; i++){    
-//     for(int j= SolnBlk->JCl - JCl_overlap; j<= SolnBlk->JCu + ICu_overlap; j++){  
-  
-//       //--------------------------------------------------------------------------//
-//       //! Calculate Local Approximate Jacobian                        
-//       switch(Input_Parameters->NKS_IP.Jacobian_Order){
-//       case SOURCE_TERMS_ONLY :
-// 	Implicit_Euler(i,j, Jacobian_Data);
-// 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);
-// 	break;
-//       case FIRST_ORDER_INVISCID_HLLE : 
-// 	Implicit_Euler(i,j, Jacobian_Data);
-// 	First_Order_Inviscid_Jacobian_HLLE(i,j, Jacobian_Data);
-// 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);                       
-// 	break;
-//       case FIRST_ORDER_INVISCID_ROE : 
-// 	Implicit_Euler(i,j, Jacobian_Data);
-// 	First_Order_Inviscid_Jacobian_Roe(i,j, Jacobian_Data);
-// 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);
-// 	break;
-//       case FIRST_ORDER_INVISCID_AUSMPLUSUP : 
-// 	Implicit_Euler(i,j, Jacobian_Data);
-// 	First_Order_Inviscid_Jacobian_AUSM_plus_up(i,j, Jacobian_Data);
-// 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);
-// 	break;
-//       case SECOND_ORDER_DIAMOND_WITH_HLLE:
-// 	Implicit_Euler(i,j, Jacobian_Data);
-// 	First_Order_Inviscid_Jacobian_HLLE(i,j, Jacobian_Data);   
-// 	Second_Order_Viscous_Jacobian(i,j, Jacobian_Data);    
-// 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);   
-// 	break;
-//       case SECOND_ORDER_DIAMOND_WITH_ROE :	
-// 	Implicit_Euler(i,j, Jacobian_Data);
-// 	First_Order_Inviscid_Jacobian_Roe(i,j, Jacobian_Data);
-// 	Second_Order_Viscous_Jacobian(i,j, Jacobian_Data);    
-// 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]); 
-// 	break;
-//       case SECOND_ORDER_DIAMOND_WITH_AUSMPLUSUP :	
-// 	Implicit_Euler(i,j, Jacobian_Data);
-// 	First_Order_Inviscid_Jacobian_AUSM_plus_up(i,j, Jacobian_Data);
-// 	Second_Order_Viscous_Jacobian(i,j, Jacobian_Data);    
-// 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);  
-// 	break;
-//       }
-                  
-//       //--------------------------------------------------------------------------//
-//       //! Get Block Matrix locations that have components from a given Cell(i,j)
-//       Get_Block_Index(i,j, block_i, block_j);
-      
+  //*********************************************************************************//
+  /*! Calculate Jacobians for each cell and Update Global Jacobian Block Matrix
+   * loop through all non-ghost cells, including overlap cells.  Ghost cells already
+   * set to Zero or Identity by initialization.
+   **********************************************************************************/
+  for(int i= SolnBlk->ICl - ICl_overlap; i<= SolnBlk->ICu + ICu_overlap; i++){    
+    for(int j= SolnBlk->JCl - JCl_overlap; j<= SolnBlk->JCu + ICu_overlap; j++){  
+      for(int k= SolnBlk->KCl - KCl_overlap; k<= SolnBlk->KCu + KCu_overlap; k++){  
+
+	//--------------------------------------------------------------------------//
+	//! Calculate Local Approximate Jacobian                        
+	switch(Input->NKS_IP.Jacobian_Order){
+	case SOURCE_TERMS_ONLY :
+	  Implicit_Euler(i,j,k, Jacobian_Data,DTS_dTime);
+	  Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);
+	  break;
+	case FIRST_ORDER_INVISCID_HLLE : 
+	  Implicit_Euler(i,j,k, Jacobian_Data,DTS_dTime);
+	  First_Order_Inviscid_Jacobian_HLLE(i,j, Jacobian_Data);
+	  Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);                       
+	  break;
+	case FIRST_ORDER_INVISCID_ROE : 
+	  Implicit_Euler(i,j,k, Jacobian_Data,DTS_dTime);
+	  First_Order_Inviscid_Jacobian_Roe(i,j, Jacobian_Data);
+	  Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);
+	  break;
+// 	case FIRST_ORDER_INVISCID_AUSMPLUSUP : 
+// 	  Implicit_Euler(i,j, Jacobian_Data);
+// 	  First_Order_Inviscid_Jacobian_AUSM_plus_up(i,j, Jacobian_Data);
+// 	  Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);
+// 	  break;
+// 	case SECOND_ORDER_DIAMOND_WITH_HLLE:
+// 	  Implicit_Euler(i,j, Jacobian_Data);
+// 	  First_Order_Inviscid_Jacobian_HLLE(i,j, Jacobian_Data);   
+// 	  Second_Order_Viscous_Jacobian(i,j, Jacobian_Data);    
+// 	  Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);   
+// 	  break;
+// 	case SECOND_ORDER_DIAMOND_WITH_ROE :	
+// 	  Implicit_Euler(i,j, Jacobian_Data);
+// 	  First_Order_Inviscid_Jacobian_Roe(i,j, Jacobian_Data);
+// 	  Second_Order_Viscous_Jacobian(i,j, Jacobian_Data);    
+// 	  Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]); 
+// 	  break;
+// 	case SECOND_ORDER_DIAMOND_WITH_AUSMPLUSUP :	
+// 	  Implicit_Euler(i,j, Jacobian_Data);
+// 	  First_Order_Inviscid_Jacobian_AUSM_plus_up(i,j, Jacobian_Data);
+// 	  Second_Order_Viscous_Jacobian(i,j, Jacobian_Data);    
+// 	  Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);  
+// 	  break;
+	}
+	
+	//--------------------------------------------------------------------------//
+	//! Get Block Matrix locations that have components from a given Cell(i,j)
+	Get_Block_Index(i,j,k, block_i, block_j);
+	
 //       //fudge for iGhost Cell reset to zero   //jGhost cell already zero                
 //       if(block_i[NORTH] < TWO*SolnBlk->NCi) Jacobian_Data[NORTH].zero();
 //       if(block_i[SOUTH] > block_mat_size - TWO*SolnBlk->NCi) Jacobian_Data[SOUTH].zero();
@@ -415,26 +450,27 @@ Update_Jacobian_and_Preconditioner(const double &DTS_dTime)
 // 	if(block_i[SE] > block_mat_size - TWO*SolnBlk->NCi)    Jacobian_Data[SE].zero();
 // 	if(block_i[SW] > block_mat_size - TWO*SolnBlk->NCi)    Jacobian_Data[SW].zero();
 //       }
-//       //--------------------------------------------------------------------------//
-//       //! Update BlockMat with Local Approximate Jacobians 
-//       for( int block = 0; block < Jacobian_stencil_size; block++){
-// 	// Normalize
-// 	normalize_Preconditioner_dFdU(Jacobian_Data[block]);
+	//--------------------------------------------------------------------------//
+	//! Update BlockMat with Local Approximate Jacobians 
+	for( int block = 0; block < Jacobian_stencil_size; block++){
+	  // Normalize
+	  normalize_Preconditioner_dFdU(Jacobian_Data[block]);
+	  
+	  //can be sped up by more intelligent logic in bkpkit (BlockMat.cc  "setblock")
+	  Block_Jacobian_approx.setblock( block_i[block], block_j[block], DenseMatrix_to_DenseMat(Jacobian_Data[block]));
+	  
+	  Jacobian_Data[block].zero(); //Just in case to avoid +=/-= issues
+	}     
 
-// 	//can be sped up by more intelligent logic in bkpkit (BlockMat.cc  "setblock")
-// 	Block_Jacobian_approx.setblock( block_i[block], block_j[block], DenseMatrix_to_DenseMat(Jacobian_Data[block]));
-
-// 	Jacobian_Data[block].zero(); //Just in case to avoid +=/-= issues
-//       }     
-
-//     }
-//   }
+      }
+    }
+  }
   
-//   //Local Memory cleanup
-//   delete[] Jacobian_Data; delete[] block_i; delete[] block_j;
+  // Local Memory cleanup
+  delete[] Jacobian_Data; delete[] block_i; delete[] block_j;
 
-//   //Setup appropriate Preconditioner after Jacobian has been formed/Updated
-//   Setup_Preconditioner();
+  //Setup appropriate Preconditioner after Jacobian has been formed/Updated
+  Setup_Preconditioner();
 }
 
 /*****************************************************************************
@@ -442,11 +478,15 @@ Update_Jacobian_and_Preconditioner(const double &DTS_dTime)
  *****************************************************************************/ 
 template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
 inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
-Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jacobian){   
+Implicit_Euler(const int &cell_index_i,const int &cell_index_j,const int &cell_index_k,
+	       DenseMatrix* Jacobian,const double& DTS_dTime){   
 
-  DenseMatrix II(blocksize,blocksize);  
-  II.identity();    
-  Jacobian[CENTER] -= (II / (SolnBlk->dt[cell_index_i][cell_index_j]));
+  DenseMatrix Diag(blocksize,blocksize);      
+  Diag.identity();    
+  //Cacluate LHS depeneding on Steady State of Dual Time Stepping
+  Diag *= LHS_Time<SOLN_pSTATE,SOLN_cSTATE>(*Input, SolnBlk->dt[cell_index_i][cell_index_j][cell_index_k],DTS_dTime);  
+  Jacobian[CENTER] -= Diag;
+
 }
 
 /*****************************************************************************
