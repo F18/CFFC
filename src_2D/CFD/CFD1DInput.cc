@@ -40,7 +40,7 @@ int CFD1D_Input_Parameters::Nghost(void) const{
     break;
 
   case RECONSTRUCTION_CENO:
-    // This number if function of the specified reconstruction order
+    // This number is function of the specified reconstruction order
     // Use 'int' type to get the number of ghost cells (it doesn't matter which type is used!)
     Number_Of_Ghost_Cells = HighOrder1D<int>::Nghost(ReconstructionOrder());
     break;
@@ -137,7 +137,7 @@ void CFD1D_Input_Parameters::Get_Next_Input_Control_Parameter(void){
 
       // Get the ControlParameter
       for(i=IndexFirstChar, index=0;  i<LineSize;  ++i, ++index){
-	if (buffer[i] == ' ' || buffer[i] == '='){
+	if (buffer[i] == ' ' || buffer[i] == '=' || buffer[i] == '\t'){
 	  ControlParameter[index] = '\0';
 	  break;
 	} else {

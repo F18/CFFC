@@ -1,37 +1,25 @@
-/* AdvectDiffuse2DQuadSolvers.cc:  2D Advection Diffusion Equation 
-                                   Multi-Block Quadrilateral Mesh Solvers. */
+/*! \file AdvectDiffuse2DQuadSolvers.cc
+  @brief 2D Advection Diffusion Equation Multi-Block Quadrilateral Mesh Solvers. */
 
-/* Include 2D advection diffusion equation quadrilateral mesh solution header file. */
+/* Include required C++ libraries. */
+// None
 
-#ifndef _ADVECTDIFFUSE2D_QUAD_INCLUDED
-#include "AdvectDiffuse2DQuad.h"
-#endif // _ADVECTDIFFUSE2D_QUAD_INCLUDED
+/* Using std namespace functions */
+// None
 
-/* Include the multigrid header file. */
+/* Include CFFC header files */
+#include "AdvectDiffuse2DQuad.h" /* Include 2D advection diffusion equation quadrilateral mesh solution header file. */
+#include "../FASMultigrid2D/FASMultigrid2D.h" /* Include the multigrid header file. */
+#include "AdvectDiffuse2DQuadMultigrid.h" /* Include 2D advection diffusion multigrid specializations header file. */
+#include "AdvectDiffuse2DQuad_NKS.h" /* Include 2D advection diffusion equation Newton-Krylov-Schwarz solver header file. */
 
-#ifndef _FASMULTIGRID2D_INCLUDED
-#include "../FASMultigrid2D/FASMultigrid2D.h"
-#endif // _FASMULTIGRID2D_INCLUDED
-
-/* Include 2D advection diffusion multigrid specializations header file. */
-
-#ifndef _ADVECTDIFFUSE2D_QUAD_MULTIGRID_INCLUDED
-#include "AdvectDiffuse2DQuadMultigrid.h"
-#endif // _ADVECTDIFFUSE2D_QUAD_MULTIGRID_INCLUDED
-
-/* Include 2D advection diffusion equation Newton-Krylov-Schwarz solver header file. */
-
-#ifndef _ADVECTDIFFUSE2D_QUAD_NKS_INCLUDED
-#include "AdvectDiffuse2DQuad_NKS.h"
-#endif // _ADVECTDIFFUSE2D_QUAD_NKS_INCLUDED
-
-/********************************************************
- * Routine: AdvectDiffuse2DQuadSolver                   *
- *                                                      *
- * Computes solutions to 2D advection diffusion         *
- * equations on 2D quadrilateral multi-block            *
- * solution-adaptive mesh.                              *
- *                                                      *
+/******************************************************//**
+ * Routine: AdvectDiffuse2DQuadSolver                   
+ *                                                      
+ * Computes solutions to 2D advection diffusion         
+ * equations on 2D quadrilateral multi-block            
+ * solution-adaptive mesh.                              
+ *                                                      
  ********************************************************/
 int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
                               int batch_flag) {
@@ -83,6 +71,7 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
      if (!batch_flag) {
         cout << "\n Reading AdvectDiffuse2D input data file `"
              << Input_File_Name_ptr << "'.";
+	cout.flush();
      } /* endif */
      error_flag = Process_Input_Control_Parameter_File(Input_Parameters,
                                                        Input_File_Name_ptr,
@@ -172,7 +161,7 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
      cout << "\n  -> Total Number of Used Blocks: " 
           << QuadTree.countUsedBlocks();
      cout << "\n  -> Total Number of Computational Cells: " 
-          << QuadTree.countUsedCells() << "\n"; 
+          << QuadTree.countUsedCells();
      cout << "\n  -> Refinement Efficiency: " 
           << QuadTree.efficiencyRefinement() << "\n";
      cout.flush();
@@ -1140,7 +1129,7 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
                 command_flag == INVALID_INPUT_VALUE) {
          line_number = -line_number;
          cout << "\n AdvectDiffuse2D ERROR: Error reading AdvectDiffuse2D data at line #"
-	      << -line_number  << " of input data file.";
+	      << -line_number  << " of input data file.\n";
          cout.flush();
          return (line_number);
      } /* endif */

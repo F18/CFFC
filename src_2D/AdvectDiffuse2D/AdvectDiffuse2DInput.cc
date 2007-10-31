@@ -1,31 +1,152 @@
 /* AdvectDiffuse2DInput.cc:  Subroutines for 
                              2D Advection Diffusion Equation Input Classes. */
 
-/* Include 2D advection diffusion equation input parameter header file. */
+/* Include required C++ libraries. */
+// None
 
-#ifndef _ADVECTDIFFUSE2D_INPUT_INCLUDED
-#include "AdvectDiffuse2DInput.h"
-#endif // _ADVECTDIFFUSE2D_INPUT_INCLUDED
+/* Using std namespace functions */
+// None
 
-#ifndef _FASMULTIGRID2DINPUT_INCLUDED
-#include "FASMultigrid2DInput.h"
-#endif // _FASMULTIGRID2DINPUT_INCLUDED
-
-/* Include AdvectDiffuse2D_Quad_Block header file. */
-#include "AdvectDiffuse2DQuad.h"
+/* Include CFFC header files */
+#include "AdvectDiffuse2DInput.h" /* Include 2D advection diffusion equation input parameter header file. */
+#include "../FASMultigrid2D/FASMultigrid2DInput.h"  
+#include "AdvectDiffuse2DQuad.h"  /* Include AdvectDiffuse2D_Quad_Block header file. */
 
 /*************************************************************
- * AdvectDiffuse2D_Input_Parameters -- External subroutines. *
+ * AdvectDiffuse2D_Input_Parameters -- Member functions.     *
  *************************************************************/
 
-/********************************************************
- * Routine: SetExactSolutionPointer                     *
- *                                                      *
- * Sets the value of the ExactSolution pointer.         *
- * For initial conditions which have exact solutions,   *
- * the function pointer points to the exact solution    *
- * function, otherwise it points to NULL.               *
- *                                                      *
+/*!
+ * \todo Set CENO ghost cells based on the HighOrder2D<int>::Nghost(ReconstructionOrder())
+ */
+int AdvectDiffuse2D_Input_Parameters::Nghost(void) const{
+
+  int Number_Of_Ghost_Cells(0);
+  
+  switch(i_ReconstructionMethod){
+
+  case RECONSTRUCTION_CENO:
+    // This number if function of the specified reconstruction order
+    // Use 'int' type to get the number of ghost cells (it doesn't matter which type is used!)
+    Number_Of_Ghost_Cells = 5;
+    break;
+
+  default:
+    Number_Of_Ghost_Cells = 2;
+  }
+
+  return Number_Of_Ghost_Cells;
+}
+
+/******************************************************//**
+ * Parse the input file
+ ********************************************************/
+int AdvectDiffuse2D_Input_Parameters::Parse_Input_File(char *Input_File_Name_ptr){
+
+  ostringstream msg;
+  int command_flag;
+
+  strcpy(Input_File_Name, Input_File_Name_ptr);
+  Open_Input_File(*this);
+  if (Input_File.fail()) {
+    msg << "AdvectDiffuse2D_Input_Parameters::Parse_Input_File() ERROR: Unable to open "
+	<<string(Input_File_Name_ptr) 
+	<< " input data file.";
+    if (Verbose()) {
+      cerr << msg.str() << endl;
+    }
+    throw runtime_error(msg.str());
+  } /* endif */
+
+  if (Verbose()) {
+    cout << "\n Reading input data file `"
+	 << Input_File_Name << "'." << endl;
+    cout.flush();
+  }
+  while (1) {
+    Get_Next_Input_Control_Parameter();
+    command_flag = Parse_Next_Input_Control_Parameter(*this);
+    if (command_flag == EXECUTE_CODE) {
+      break;
+      
+    } else if (command_flag == TERMINATE_CODE) {
+      return (0);
+      
+    } else if (command_flag == INVALID_INPUT_CODE ||
+	       command_flag == INVALID_INPUT_VALUE) {
+      Line_Number = -Line_Number;
+      
+      msg << "AdvectDiffuse2D_Input_Parameters::Parse_Input_File() ERROR: Error reading data at line # " 
+	  << -Line_Number
+	  << " of input data file.";
+      if (Verbose()){
+	cerr << msg.str() << endl;
+      }
+      
+      throw runtime_error(msg.str());
+    } /* endif */
+  } /* endwhile */
+}
+
+/******************************************************//**
+ * Get the next input control parameter from the input  
+ * file.                                                
+ ********************************************************/
+void AdvectDiffuse2D_Input_Parameters::Get_Next_Input_Control_Parameter(void){
+
+  int i, index, LineSize, IndexFirstChar(0);
+  char buffer[256], ControlParameter[256];
+
+  // Initialize ControlParameter and Next_Control_Parameter to end of string
+  ControlParameter[0] = '\0';
+  strcpy(Next_Control_Parameter, ControlParameter);
+
+  // While the input stream is 'good' for reading and the end of file is not attained
+  while ( Input_File.good() && !Input_File.getline(buffer, sizeof(buffer)).eof() ){
+
+    // Process the line 
+    Line_Number = Line_Number + 1;
+    LineSize = Input_File.gcount(); // Get the size of the line. Last character is "\0"!
+
+    // Determine the index of the first character different than 'space' and 'tab'
+    for (i=0; i<LineSize; ++i){
+      if (buffer[i] != ' ' && buffer[i] != '\t'){
+	IndexFirstChar = i;
+	break;
+      }
+    }
+
+    /* Parse the line if the first character different than 'space' 
+       is also different than '#' or end of string ('\0').
+       Otherwise skip the line because it is either a comment or an empty line. */
+    if ( buffer[IndexFirstChar] != '#' && buffer[IndexFirstChar] != '\0'){
+
+      // Get the ControlParameter
+      for(i=IndexFirstChar, index=0;  i<LineSize;  ++i, ++index){
+	if (buffer[i] == ' ' || buffer[i] == '=' || buffer[i] == '\t'){
+	  ControlParameter[index] = '\0';
+	  break;
+	} else {
+	  ControlParameter[index] = buffer[i];
+	}
+      }
+
+      // Set the Next_Control_Parameter
+      strcpy(Next_Control_Parameter, ControlParameter);
+      break;
+    }
+
+  }//endwhile
+}
+
+/******************************************************//**
+ * Routine: SetExactSolutionPointer                     
+ *                                                      
+ * Sets the value of the ExactSolution pointer.         
+ * For initial conditions which have exact solutions,   
+ * the function pointer points to the exact solution    
+ * function, otherwise it points to NULL.               
+ *                                                      
  ********************************************************/
 void AdvectDiffuse2D_Input_Parameters::SetExactSolutionPointer(void){
 
@@ -129,11 +250,15 @@ void AdvectDiffuse2D_Input_Parameters::SetExactSolutionPointer(void){
   }
 }
 
-/********************************************************
- * Routine: Open_Input_File                             *
- *                                                      *
- * Opens the appropriate input data file.               *
- *                                                      *
+/*************************************************************
+ * AdvectDiffuse2D_Input_Parameters -- External subroutines. *
+ *************************************************************/
+
+/******************************************************//**
+ * Routine: Open_Input_File                             
+ *                                                      
+ * Opens the appropriate input data file.               
+ *                                                      
  ********************************************************/
 void Open_Input_File(AdvectDiffuse2D_Input_Parameters &IP) {
 
@@ -145,11 +270,11 @@ void Open_Input_File(AdvectDiffuse2D_Input_Parameters &IP) {
 
 }
 
-/********************************************************
- * Routine: Close_Input_File                            *
- *                                                      *
- * Closes the appropriate input data file.              *
- *                                                      *
+/******************************************************//**
+ * Routine: Close_Input_File                            
+ *                                                      
+ * Closes the appropriate input data file.              
+ *                                                      
  ********************************************************/
 void Close_Input_File(AdvectDiffuse2D_Input_Parameters &IP) {
 
@@ -158,16 +283,16 @@ void Close_Input_File(AdvectDiffuse2D_Input_Parameters &IP) {
 
 }
 
-/********************************************************
- * Routine: Set_Default_Input_Parameters                *
- *                                                      *
- * Assigns default values to the input parameters.      *
- *                                                      *
+/******************************************************//**
+ * Routine: Set_Default_Input_Parameters                
+ *                                                      
+ * Assigns default values to the input parameters.      
+ *                                                      
  ********************************************************/
 void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
 
     int i;
-    char *string_ptr;// = new char[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
+    char *string_ptr;
 
     // CFFC root directory path:
     IP.get_cffc_path();
@@ -200,8 +325,6 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Space_Accuracy = 1;
     IP.IncludeHighOrderBoundariesRepresentation = OFF;
     IP.i_ReconstructionMethod = RECONSTRUCTION_LEAST_SQUARES;
-    IP.CENO_Cutoff = 100;
-    IP.CENO_RefinementUnits = 1.0;
 
     string_ptr = "Barth_Jespersen";
     strcpy(IP.Limiter_Type, string_ptr);
@@ -361,20 +484,20 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.i_Smooth_Quad_Block = ON;
 
     // Number of iterations of disturbing the mesh (create an unsmooth interior mesh)
-    IP.IterationsOfInteriorNodesDisturbancies = 0;
+    IP.IterationsOfInteriorNodesDisturbances = 0;
 
     // Number of control points on the 2D spline (used for some grids)
     IP.Num_Of_Spline_Control_Points = 361;
 
 }
 
-/********************************************************
- * Routine: Broadcast_Input_Parameters                  *
- *                                                      *
- * Broadcast the input parameters variables to all      *
- * processors involved in the calculation from the      *
- * primary processor using the MPI broadcast routine.   *
- *                                                      *
+/******************************************************//**
+ * Routine: Broadcast_Input_Parameters                  
+ *                                                      
+ * Broadcast the input parameters variables to all      
+ * processors involved in the calculation from the      
+ * primary processor using the MPI broadcast routine.   
+ *                                                      
  ********************************************************/
 void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
 
@@ -438,12 +561,6 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.i_ReconstructionMethod), 
                           1, 
                           MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.CENO_Cutoff), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.CENO_RefinementUnits), 
-                          1, 
-                          MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Space_Accuracy), 
                           1, 
                           MPI::INT, 0);
@@ -719,7 +836,7 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
 			  1,
 			  MPI::INT,0);
 
-    MPI::COMM_WORLD.Bcast(&(IP.IterationsOfInteriorNodesDisturbancies),
+    MPI::COMM_WORLD.Bcast(&(IP.IterationsOfInteriorNodesDisturbances),
 			  1,
 			  MPI::INT,0);
 
@@ -806,14 +923,14 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
 }
 
 #ifdef _MPI_VERSION
-/********************************************************
- * Routine: Broadcast_Input_Parameters                  *
- *                                                      *
- * Broadcast the input parameters variables to all      *
- * processors associated with the specified communicator*
- * from the specified processor using the MPI broadcast *
- *routine.                                              *
- *                                                      *
+/******************************************************//**
+ * Routine: Broadcast_Input_Parameters                  
+ *                                                      
+ * Broadcast the input parameters variables to all      
+ * processors associated with the specified communicator
+ * from the specified processor using the MPI broadcast 
+ * routine.                                              
+ *                                                      
  ********************************************************/
 void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
                                 MPI::Intracomm &Communicator, 
@@ -879,12 +996,6 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.i_ReconstructionMethod), 
 		       1, 
 		       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.CENO_Cutoff), 
-		       1, 
-		       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.CENO_RefinementUnits), 
-		       1, 
-		       MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.Space_Accuracy), 
 		       1, 
 		       MPI::INT, Source_Rank);
@@ -1158,7 +1269,7 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
 		       1,
 		       MPI::INT,Source_Rank);
 
-    Communicator.Bcast(&(IP.IterationsOfInteriorNodesDisturbancies),
+    Communicator.Bcast(&(IP.IterationsOfInteriorNodesDisturbances),
 		       1,
 		       MPI::INT,Source_Rank);
 
@@ -1244,60 +1355,23 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
 }
 #endif
 
-/********************************************************
- * Routine: Get_Next_Input_Control_Parameter            *
- *                                                      *
- * Get the next input control parameter from the input  *
- * file.                                                *
- *                                                      *
+/******************************************************//**
+ * Routine: Get_Next_Input_Control_Parameter            
+ *                                                      
+ * Get the next input control parameter from the input  
+ * file.                                                
+ *                                                      
  ********************************************************/
 void Get_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
-
-  int i, LineSize, IndexFirstChar(0);
-  char buffer[256], ControlParameter[256];
-  
-  // Initialize ControlParameter and IP.Next_Control_Parameter
-  ControlParameter[0] = '\0';
-  strcpy(IP.Next_Control_Parameter, ControlParameter);
-
-  while (!IP.Input_File.getline(buffer, sizeof(buffer)).eof() ){
-    
-    // process the line 
-    IP.Line_Number = IP.Line_Number + 1;
-    LineSize = IP.Input_File.gcount(); // The size of the line. Last character is "\0"
-    
-    for (i=0; i<=LineSize; ++i){
-      if (buffer[i] != ' ' && buffer[i] != '\t'){	// determine the index of the first character different than 'space'
-	IndexFirstChar = i;
-	break;
-      }
-    }
-    
-    if ( buffer[IndexFirstChar] != '#' && buffer[IndexFirstChar] != '\0'){
-      // If the first character different than 'space' is also different than '#' or '\n',
-      // then the line is not a comment or empty line.
-      for(i=IndexFirstChar; i<LineSize; ++i){
-	// get the ControlParameter
-	if (buffer[i] == ' ' || buffer[i] == '=' || buffer[i] == '\t'){
-	  ControlParameter[i-IndexFirstChar] = '\0';
-	  break;
-	} else {
-	  ControlParameter[i-IndexFirstChar] = buffer[i];
-	}
-      }
-      
-      strcpy(IP.Next_Control_Parameter, ControlParameter);
-      break;
-    }
-  }//endwhile
+  return IP.Get_Next_Input_Control_Parameter();
 }
 
-/********************************************************
- * Routine: Parse_Next_Input_Control_Parameter          *
- *                                                      *
- * Parses and executes the next input control parameter *
- * from the input file.                                 *
- *                                                      *
+/******************************************************//**
+ * Routine: Parse_Next_Input_Control_Parameter          
+ *                                                      
+ * Parses and executes the next input control parameter 
+ * from the input file.                                 
+ *                                                      
  ********************************************************/
 int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
 
@@ -1332,8 +1406,8 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Time_Integration_Type, "Multigrid") == 0) {
       IP.i_Time_Integration = TIME_STEPPING_MULTIGRID;
     } else {
-      IP.i_Time_Integration = TIME_STEPPING_EXPLICIT_EULER;
-      IP.N_Stage = 1;
+      std::cout << "\n ==> Unknown time marching scheme!";
+      i_command = INVALID_INPUT_VALUE;
     } /* endif */
 
   } else if (strcmp(IP.Next_Control_Parameter, "Reconstruction_Type") == 0) {
@@ -1351,7 +1425,8 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
       IP.i_ReconstructionMethod = RECONSTRUCTION_CENO;
     } else {
-      IP.i_Reconstruction = RECONSTRUCTION_GREEN_GAUSS;
+      std::cout << "\n ==> Unknown reconstruction method!";
+      i_command = INVALID_INPUT_VALUE;
     } /* endif */
 
   } else if (strcmp(IP.Next_Control_Parameter, "Limiter_Type") == 0) {
@@ -1372,7 +1447,8 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Limiter_Type, "Venkatakrishnan") == 0) {
       IP.i_Limiter = LIMITER_VENKATAKRISHNAN;
     } else {
-      IP.i_Limiter = LIMITER_VANLEER ;
+      std::cout << "\n ==> Unknown limiter type!";
+      i_command = INVALID_INPUT_VALUE;
     } /* endif */
 
   } else if (strcmp(IP.Next_Control_Parameter, "ICs_Type") == 0) {
@@ -1456,7 +1532,7 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.ExactSolution = NULL;
       IP.ExactSolution_Flag = -1;
     } else {
-      std::cout << "\n ==> Unknown initial condition! ";
+      std::cout << "\n ==> Unknown initial condition!";
       i_command = INVALID_INPUT_VALUE;
     } /* endif */
 
@@ -2026,9 +2102,9 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter, "AMR") == 0) {
     i_command = 65;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0 || strcmp(IP.Next_Control_Parameter,"On") == 0) {
       IP.AMR = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0 || strcmp(IP.Next_Control_Parameter,"Off") == 0 ){
       IP.AMR = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -2116,9 +2192,9 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Mesh_Stretching") == 0) {
     i_command = 101;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0 || strcmp(IP.Next_Control_Parameter,"On") == 0 ) {
       IP.i_Mesh_Stretching = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0 || strcmp(IP.Next_Control_Parameter,"Off") == 0) {
       IP.i_Mesh_Stretching = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -2173,11 +2249,29 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
     if (IP.Mesh_Stretching_Factor_Jdir < ONE) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(IP.Next_Control_Parameter,"Smooth_Quad_Block") == 0) {
-    i_command = 106;
+    i_command = 0;
+    Get_Next_Input_Control_Parameter(IP);
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0 || strcmp(IP.Next_Control_Parameter,"On") == 0) {
+      IP.i_Smooth_Quad_Block = ON;
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0 || strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      IP.i_Smooth_Quad_Block = OFF;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+    }
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Iteration_Disturb_Mesh") == 0) {
+    i_command = 0;
     IP.Line_Number = IP.Line_Number + 1;
-    IP.Input_File >> IP.i_Smooth_Quad_Block;
-    IP.Input_File.getline(buffer,sizeof(buffer));
-    if (IP.i_Smooth_Quad_Block < 0 || IP.i_Smooth_Quad_Block > 1) i_command = INVALID_INPUT_VALUE;
+    IP.Input_File >> IP.IterationsOfInteriorNodesDisturbances;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    if (IP.IterationsOfInteriorNodesDisturbances < 0 ) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Number_Spline_Points") == 0) {
+    i_command = 101;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Num_Of_Spline_Control_Points;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    if (IP.Num_Of_Spline_Control_Points <= TWO) i_command = INVALID_INPUT_VALUE;
 
     /**************************************
      * Multigrid Related Input Parameters */
@@ -2280,8 +2374,7 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.Multigrid_IP.i_Smoothing = TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING;
       IP.N_Stage = 4;
     } else {
-      IP.Multigrid_IP.i_Smoothing = TIME_STEPPING_EXPLICIT_EULER;
-      IP.N_Stage = 1;
+      i_command = INVALID_INPUT_VALUE;
     } /* endif */
 
     /* End of Multigrid related Input parsing *
@@ -2291,9 +2384,9 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
     i_command = 500;
     Get_Next_Input_Control_Parameter(IP);
     strcpy(IP.Boundary_Conditions_Specified,IP.Next_Control_Parameter);
-    if (strcmp(IP.Boundary_Conditions_Specified,"ON") == 0) {
+    if (strcmp(IP.Boundary_Conditions_Specified,"ON") == 0 || strcmp(IP.Boundary_Conditions_Specified,"On") == 0) {
       IP.BCs_Specified = ON;
-    } else if (strcmp(IP.Boundary_Conditions_Specified,"OFF") == 0) {
+    } else if (strcmp(IP.Boundary_Conditions_Specified,"OFF") == 0 || strcmp(IP.Boundary_Conditions_Specified,"Off") == 0) {
       IP.BCs_Specified = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -2478,32 +2571,16 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
 	   << "Space Accuracy set to 1" << endl;
     }/* endif */
 
-  } else if (strcmp(IP.Next_Control_Parameter, "CENO_Tolerance") == 0){
-    i_command = 211;
-    IP.Line_Number ++;
-    if(!(IP.Input_File >> IP.FitTolerance()))
-      i_command = INVALID_INPUT_VALUE;
-    IP.Input_File.setf(ios::skipws);
-    IP.Input_File.getline(buffer, sizeof(buffer));
-    
-  } else if (strcmp(IP.Next_Control_Parameter, "CENO_Units") == 0){
-    i_command = 211;
-    IP.Line_Number ++;
-    if(!(IP.Input_File >> IP.CENO_RefinementUnits))
-      i_command = INVALID_INPUT_VALUE;
-    IP.Input_File.setf(ios::skipws);
-    IP.Input_File.getline(buffer, sizeof(buffer));
-
   } else if (strcmp(IP.Next_Control_Parameter, "High_Order_Boundary") == 0) {
-    i_command = 212;
-    IP.Line_Number = IP.Line_Number + 1;
-    IP.Input_File >> IP.IncludeHighOrderBoundariesRepresentation;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-    if (IP.IncludeHighOrderBoundariesRepresentation != 0 && IP.IncludeHighOrderBoundariesRepresentation != 1){
+    i_command = 0;
+    Get_Next_Input_Control_Parameter(IP);
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0 || strcmp(IP.Next_Control_Parameter,"On") == 0) {
       IP.IncludeHighOrderBoundariesRepresentation = ON;
-      cout << "\n --> Boundary Accuracy was turned to High-Order!.\n";
-    }/* endif */
-
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0 || strcmp(IP.Next_Control_Parameter,"Off") == 0) {
+      IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+    }
   } else if (strcmp(IP.Next_Control_Parameter, "Execute") == 0) {
     i_command = EXECUTE_CODE;
 
@@ -2554,18 +2631,25 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
 
   } /* endif */
 
-    /* Return the parser command type indicator. */
+  /* Parse next control parameter with CENO_Execution_Mode parser */
+  CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
+  
+  /* Parse next control parameter with CENO_Tolerances parser */
+  CENO_Tolerances::Parse_Next_Input_Control_Parameter(IP,i_command);
+  
+
+  /* Return the parser command type indicator. */
 
   return (i_command);
 
 }
 
-/********************************************************
- * Routine: Process_Input_Control_Parameter_File        *
- *                                                      *
- * Reads, parses, and executes the list of input        *
- * control parameters from the standard input file.     *
- *                                                      *
+/******************************************************//**
+ * Routine: Process_Input_Control_Parameter_File        
+ *                                                      
+ * Reads, parses, and executes the list of input        
+ * control parameters from the standard input file.     
+ *                                                      
  ********************************************************/
 int Process_Input_Control_Parameter_File(AdvectDiffuse2D_Input_Parameters &Input_Parameters,
                                          char *Input_File_Name_ptr,

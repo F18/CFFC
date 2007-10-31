@@ -4,35 +4,20 @@
 #ifndef _ADVECTDIFFUSE2D_INPUT_INCLUDED
 #define _ADVECTDIFFUSE2D_INPUT_INCLUDED
 
-/* Include 2D advection diffusion equation solution state, 
-   2D cell, and 2D quadrilateral multiblock grid header files. */
+/* Include required C++ libraries. */
+// None
 
-#ifndef _ADVECTDIFFUSE2D_STATE_INCLUDED
-#include "AdvectDiffuse2DState.h"
-#endif // _ADVECTDIFFUSE2D_STATE_INCLUDED
+/* Using std namespace functions */
+// None
 
-#ifndef _CELL2D_INCLUDED
-#include "../Grid/Cell2D.h"
-#endif // _CELL2D_INCLUDED
-
-#ifndef _GRID2D_QUAD_BLOCK_INCLUDED
-#include "../Grid/Grid2DQuad.h"
-#endif // _GRID2D_QUAD_BLOCK_INCLUDED
-
-/* Include multigrid input header file. */
-
-#ifndef _FASMULTIGRID2DINPUT_INCLUDED
-#include "../FASMultigrid2D/FASMultigrid2DInput.h"
-#endif // _FASMULTIGRID2DINPUT_INCLUDED
-
-/* Include ICEMCFD input header file. */
-
-#ifndef _ICEMCFD_INCLUDED
-#include "../ICEM/ICEMCFD.h"
-#endif // _ICEMCFD_INCLUDED
-
-// Include TypeDefinition header file.
-#include "../Utilities/TypeDefinition.h"
+/* Include CFFC header files */
+#include "AdvectDiffuse2DState.h" // Include 2D advection diffusion equation solution state header file
+#include "../Grid/Grid2DQuad.h"   // Include 2D quadrilateral multiblock grid header file
+#include "../FASMultigrid2D/FASMultigrid2DInput.h" // Include multigrid input header file.
+#include "../ICEM/ICEMCFD.h"      // Include ICEMCFD input header file.
+#include "../Utilities/TypeDefinition.h" // Include TypeDefinition header file.
+#include "../HighOrderReconstruction/CENO_ExecutionMode.h" // Include high-order CENO execution mode header file
+#include "../HighOrderReconstruction/CENO_Tolerances.h"	   // Include high-order CENO tolerances header file
 
 /* Define the structures and classes. */
 
@@ -45,8 +30,8 @@
 #define VELOCITY_FIELD_UNIFORM     1
 #define VELOCITY_FIELD_ROTATING    2
 
-/*!
- * Class: AdvectDiffuse2D_Input_Parameters
+/*! 
+ * \class AdvectDiffuse2D_Input_Parameters
  *
  * @brief Definition and manipulation of 2D Advection-Diffusion input variables.
  *
@@ -114,9 +99,6 @@ public:
   int i_Reconstruction;		/*!< Index to store the reconstruction type. */
   int i_ReconstructionMethod;	/*!< Index to store the reconstruction method. */
   int Space_Accuracy;		/*!< Parameter to show the order of accuracy in space. */
-  double CENO_Cutoff;		/*!< Value used by the CENO reconstruction to differentiate 
-				 between smooth and non-smooth solution content.*/
-  double CENO_RefinementUnits;	/*!< Parameter used in the AMR process when the CENO approach is employed. */
   int IncludeHighOrderBoundariesRepresentation;	/*!< Flag for including or excluding high-order BCs. */
   //@}
 
@@ -175,7 +157,7 @@ public:
   double X_Scale, X_Rotate;
   Vector2D X_Shift;
   char **ICEMCFD_FileNames;
-  int IterationsOfInteriorNodesDisturbancies; /*<! Number of iterations of disturbing the mesh
+  int IterationsOfInteriorNodesDisturbances; /*<! Number of iterations run to move (disturb) the interior nodes.
 						 (create an unsmooth interior mesh). */
   int Num_Of_Spline_Control_Points;  /*<! Number of points used to define the spline curve. */
   //@}
@@ -244,6 +226,8 @@ public:
   int Restart_Solution_Save_Frequency;
   //! Output progress frequency:
   int Output_Progress_Frequency;
+  //! Batch mode or verbose
+  short verbose_flag;
   //@}
 
   //@{ @name Multi-block solution-adaption and parallel domain decomposition input parameters:
@@ -262,16 +246,25 @@ public:
   void get_cffc_path();
   //@}
 
-  //@{ @name Field access to the high-order variables:
+  //@{ @name Reconstruction related member functions:
   int ReconstructionOrder(void) {return (Space_Accuracy-1);} //!< return order of reconstruction based on Space_Accuracy
   int & Limiter(void) {return i_Limiter;}                    //!< write/read selected limiter
   const int & Limiter(void) const {return i_Limiter;}        //!< return selected limiter (read only)
-  double & FitTolerance(void) {return CENO_Cutoff;}          //!< write/read CENO tolerance
-  const double & FitTolerance(void) const {return CENO_Cutoff;}  //!< return CENO tolerance (read only)
+  /*!
+   * \brief Return the number of required ghost cells for the specified ReconstructionMethod
+   */
+  int Nghost(void) const;
   //@}
 
-  //@{ @name Member function to set the exact solution pointer.
-  void SetExactSolutionPointer(void); //!< set the pointer to the exact solution if it exists. Otherwise, the pointer is NULL
+  //@{ @name Access fields:
+  short & Verbose(void) {return verbose_flag;}
+  const short & Verbose(void) const {return verbose_flag;}
+  //@}
+
+  //@{ @name Operating functions:
+  int Parse_Input_File(char *Input_File_Name_ptr); //!< \brief Parse input file
+  void Get_Next_Input_Control_Parameter(void);    //!< \brief Read the next input control parameter
+  void SetExactSolutionPointer(void); //!< \brief set the pointer to the exact solution if it exists
   //@}
 
   //@{ @name Input-output operators:
@@ -334,15 +327,35 @@ inline ostream &operator << (ostream &out_file,
     out_file << "\n\n Solving 2D advection diffusion equations (IBVP/BVP) on multi-block solution-adaptive quadrilateral mesh.";
     out_file << "\n  -> Input File Name: " 
              << IP.Input_File_Name;
+
+    // ==== Initial condition parameters ====
+    out_file << "\n  -> Initial Conditions: " 
+             << IP.ICs_Type;
+    out_file << "\n  -> Flow Velocity Field: " 
+             << IP.Velocity_Field_Type; 
+    out_file << "\n  -> Advection velocity x-direction: " 
+             << IP.a;
+    out_file << "\n  -> Advection velocity y-direction: " 
+             << IP.b;
+    out_file << "\n  -> Diffusion Coefficient : " 
+             << IP.Kappa;
+    out_file << "\n  -> Relaxation Time : " 
+             << IP.Tau;
+
+    // ==== Boundary conditions ====
+    if (IP.BCs_Specified) {
+      out_file << "\n  -> Boundary conditions specified as: "
+	       << "\n     -> BC_North = " << IP.BC_North_Type
+	       << "\n     -> BC_South = " << IP.BC_South_Type
+	       << "\n     -> BC_East = " << IP.BC_East_Type
+	       << "\n     -> BC_West = " << IP.BC_West_Type;
+    }
+
+    // ==== Time marching scheme parameters ====
     if (IP.Time_Accurate) { 
        out_file << "\n  -> Time Accurate (Unsteady) Solution";
     } else {
        out_file << "\n  -> Time Invariant (Steady-State) Solution";
-    }
-    if (IP.Axisymmetric) { 
-       out_file << "\n  -> 2D Axisymmetric Geometry";
-    } else {
-       out_file << "\n  -> 2D Planar Geometry";
     }
     out_file << "\n  -> Time Integration: " 
              << IP.Time_Integration_Type;
@@ -366,19 +379,57 @@ inline ostream &operator << (ostream &out_file,
       out_file << "\n  -> Gauss_Seidel_Iterations: " 
                << IP.Residual_Smoothing_Gauss_Seidel_Iterations;
     } /* endif */
+    out_file << "\n  -> CFL Number: " 
+             << IP.CFL_Number;
+    out_file << "\n  -> Maximum Time: " 
+             << IP.Time_Max;
+    out_file << "\n  -> Maximum Number of Time Steps (Iterations): " 
+             << IP.Maximum_Number_of_Time_Steps;
+    out_file << "\n  -> Maximum Number of NKS Iterations: " 
+             << IP.Maximum_Number_of_NKS_Iterations;
+    out_file << "\n  -> Maximum Number of GMRES Iterations: " 
+             << IP.Maximum_Number_of_GMRES_Iterations;
+
+    // ==== Spatial approximation parameters ====
+    if (IP.Axisymmetric) { 
+       out_file << "\n  -> 2D Axisymmetric Geometry";
+    } else {
+       out_file << "\n  -> 2D Planar Geometry";
+    }
+    if (IP.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+      out_file << "\n  -> Space Accuracy : ";
+      switch(IP.Space_Accuracy){
+      case 1: 
+	out_file << "1st-order";
+	break;
+      case 2:
+	out_file << "2nd-order";
+	break;		
+      case 3:		
+	out_file << "3rd-order";
+	break;		
+      case 4:		
+	out_file << "4th-order";
+	break;		
+      case 5:		
+	out_file << "5th-order";
+	break;		
+      case 6:		
+	out_file << "6th-order";
+	break;
+      default:
+	out_file << "bigger than 6th-order";
+      }
+    } else {
+      out_file << "\n  -> Space Accuracy : 2nd-order";
+    }
     out_file << "\n  -> Reconstruction: " 
              << IP.Reconstruction_Type;
     if (IP.i_ReconstructionMethod == RECONSTRUCTION_CENO){
-      out_file << "\n  -> Fit Tolerance: "
-	       << IP.FitTolerance();
-      out_file << "\n  -> Reference State: "
+      CENO_Execution_Mode::Print_Info(out_file);
+      CENO_Tolerances::Print_Info(out_file);
+      out_file << "\n     -> Reference State: "
 	       << IP.RefU;
-    }
-    out_file << "\n  -> Boundary Accuracy: ";
-    if (IP.IncludeHighOrderBoundariesRepresentation == OFF){
-      out_file << "2nd-Order";
-    } else {
-      out_file << "High-Order";
     }
     out_file << "\n  -> Limiter: " 
              << IP.Limiter_Type;
@@ -386,43 +437,13 @@ inline ostream &operator << (ostream &out_file,
       out_file << "\n  -> Freeze Limiter when L2-norm of residual is < "
 	       << IP.Freeze_Limiter_Residual_Level;
     } /* endif */
-    if (IP.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
-      out_file << "\n  -> Space Accuracy : ";
-      switch(IP.Space_Accuracy){
-      case 1: 
-	out_file << "1st order";
-	break;
-      case 2:
-	out_file << "2nd order";
-	break;
-      case 3:
-	out_file << "3rd order";
-	break;
-      case 4:
-	out_file << "4th order";
-	break;
-      case 5:
-	out_file << "5th order";
-	break;
-      case 6:
-	out_file << "6th order";
-	break;
-      default:
-	out_file << "bigger than 6th order";
-      }
+    if (IP.IncludeHighOrderBoundariesRepresentation == OFF){
+      out_file << "\n  -> Boundary Accuracy: " << "2nd-Order";
+    } else {
+      out_file << "\n  -> Boundary Accuracy: " << "high-order";
     }
-    out_file << "\n  -> Initial Conditions: " 
-             << IP.ICs_Type;
-    out_file << "\n  -> Flow Velocity Field: " 
-             << IP.Velocity_Field_Type; 
-    out_file << "\n  -> Advection velocity x-direction: " 
-             << IP.a;
-    out_file << "\n  -> Advection velocity y-direction: " 
-             << IP.b;
-    out_file << "\n  -> Diffusion Coefficient : " 
-             << IP.Kappa;
-    out_file << "\n  -> Relaxation Time : " 
-             << IP.Tau;
+
+    // ==== Grid parameters ====
     out_file << "\n  -> Grid: " 
              << IP.Grid_Type;
     switch(IP.i_Grid) {
@@ -507,16 +528,9 @@ inline ostream &operator << (ostream &out_file,
     } else {
       out_file << "No";
     }
-    if (IP.IterationsOfInteriorNodesDisturbancies > 0){
+    if (IP.IterationsOfInteriorNodesDisturbances > 0){
       out_file << "\n  -> Disturbed Interior Quad Block Nodes: "
-	       << IP.IterationsOfInteriorNodesDisturbancies << " iterations.";
-    }
-    if (IP.BCs_Specified) {
-      out_file << "\n  -> Boundary conditions specified as: "
-	       << "\n     -> BC_North = " << IP.BC_North_Type
-	       << "\n     -> BC_South = " << IP.BC_South_Type
-	       << "\n     -> BC_East = " << IP.BC_East_Type
-	       << "\n     -> BC_West = " << IP.BC_West_Type;
+	       << IP.IterationsOfInteriorNodesDisturbances << " iterations.";
     }
     out_file << "\n  -> Mesh shift, scale, and rotate: " 
              << IP.X_Shift << " " << IP.X_Scale << " " << IP.X_Rotate;
@@ -530,6 +544,8 @@ inline ostream &operator << (ostream &out_file,
              << IP.Number_of_Cells_Jdir;
     out_file << "\n  -> Number of Ghost Cells: "
 	     << IP.Number_of_Ghost_Cells;
+
+    // ==== AMR parameters ====
     if (IP.Number_of_Initial_Mesh_Refinements > 0)
     out_file << "\n  -> Number of Initial Mesh Refinements : " 
              << IP.Number_of_Initial_Mesh_Refinements;
@@ -539,27 +555,10 @@ inline ostream &operator << (ostream &out_file,
     if (IP.Number_of_Boundary_Mesh_Refinements > 0)
     out_file << "\n  -> Number of Boundary Mesh Refinements : " 
 	     << IP.Number_of_Boundary_Mesh_Refinements;
-    out_file << "\n  -> CFL Number: " 
-             << IP.CFL_Number;
-    out_file << "\n  -> Maximum Time: " 
-             << IP.Time_Max;
-    out_file << "\n  -> Maximum Number of Time Steps (Iterations): " 
-             << IP.Maximum_Number_of_Time_Steps;
-    out_file << "\n  -> Maximum Number of NKS Iterations: " 
-             << IP.Maximum_Number_of_NKS_Iterations;
-    out_file << "\n  -> Maximum Number of GMRES Iterations: " 
-             << IP.Maximum_Number_of_GMRES_Iterations;
     out_file << "\n  -> Number of Processors: " 
              << IP.Number_of_Processors;
     out_file << "\n  -> Number of Blocks Per Processor: " 
              << IP.Number_of_Blocks_Per_Processor;
-    out_file << "\n  -> Output File Name: " 
-             << IP.Output_File_Name;
-    out_file << "\n  -> Output Format: " 
-             << IP.Output_Format_Type;
-    out_file << "\n  -> Restart Solution Save Frequency: "
-             << IP.Restart_Solution_Save_Frequency
-             << " steps (iterations)"; 
     if (IP.AMR) {
       out_file << "\n  -> AMR Frequency: "
 	       << IP.AMR_Frequency
@@ -578,12 +577,17 @@ inline ostream &operator << (ostream &out_file,
 	       << IP.Maximum_Refinement_Level
 	       << "\n  -> Minimum Refinement Level: "
 	       << IP.Minimum_Refinement_Level;
-      
-      if (IP.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
-	out_file << "\n  -> Refinement Smoothness Units: "
-		 << IP.CENO_RefinementUnits;
-      }
     }
+
+    // ==== Output parameters ====
+    out_file << "\n  -> Output File Name: " 
+             << IP.Output_File_Name;
+    out_file << "\n  -> Output Format: " 
+             << IP.Output_Format_Type;
+    out_file << "\n  -> Restart Solution Save Frequency: "
+             << IP.Restart_Solution_Save_Frequency
+             << " steps (iterations)"; 
+    out_file.flush();
     return (out_file);
 }
 

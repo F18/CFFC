@@ -11,6 +11,7 @@
 bool CENO_Tolerances::ChangedDefault_Epsilon = false;
 bool CENO_Tolerances::ChangedDefault_EpsilonAbsolute = false;
 bool CENO_Tolerances::ChangedDefault_EpsilonRelative = false;
+bool CENO_Tolerances::ChangedDefault_AMR_Smoothness_Units = false;
 
 /*!
  * This value is used to differentiate between smooth and non-smooth solution reconstructions.
@@ -19,6 +20,12 @@ bool CENO_Tolerances::ChangedDefault_EpsilonRelative = false;
  * reconstruction switched to a piecewise limited linear one.
  */
 double CENO_Tolerances::Fit_Tolerance = 4000;
+
+/*!
+ * This value is used in the computation of AMR criteria based on smoothness indicator
+ */
+double CENO_Tolerances::AMR_Smoothness_Units = 1.0;
+
 
 /*!
  * This value is used in the post-reconstruction analysis.
@@ -46,7 +53,7 @@ double CENO_Tolerances::epsilon_default = CENO_Tolerances::epsilon;
 double CENO_Tolerances::epsilon_absolute_default = CENO_Tolerances::epsilon_absolute;
 double CENO_Tolerances::epsilon_relative_default = CENO_Tolerances::epsilon_relative;
 double CENO_Tolerances::Fit_Tolerance_default = CENO_Tolerances::Fit_Tolerance;
-
+double CENO_Tolerances::AMR_Smoothness_Units_default = CENO_Tolerances::AMR_Smoothness_Units;
 
 /*! Print the current execution mode
  *  at the output stream
@@ -57,6 +64,12 @@ void CENO_Tolerances::Print_Info(std::ostream & out_file){
   // output Fit_Tolerance
   out_file << "\n     -> Fit Tolerance: " << Fit_Tolerance
 	   << "  (default value = " << Fit_Tolerance_default << ")";
+
+  // output AMR_Smoothness_Units
+  if (ChangedDefault_AMR_Smoothness_Units){
+    out_file << "\n     -> AMR Smoothness Units: " << AMR_Smoothness_Units
+	     << "  (default value = " << AMR_Smoothness_Units_default << ")";
+  }
 
   // output epsilon
   if (ChangedDefault_Epsilon){
@@ -84,7 +97,8 @@ void CENO_Tolerances::SetDefaults(void){
   epsilon = epsilon_default;
   epsilon_absolute = epsilon_absolute_default;
   epsilon_relative = epsilon_relative_default;
-  Fit_Tolerance_default = Fit_Tolerance;
+  Fit_Tolerance = Fit_Tolerance_default;
+  AMR_Smoothness_Units = AMR_Smoothness_Units_default;
 
   UpdateDependentTolerances();
 }
