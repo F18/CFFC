@@ -1,32 +1,35 @@
 #ifndef _NKS_DTS_INCLUDED
 #define _NKS_DTS_INCLUDED
 
-// /******************** TEMPLATED FUNCTIONS **************************************************************/
+// Generic DTS 
+#include "DTS.h"
 
-// /*! *******************************************************************
-//  * LHS_Time                                                           *
-//  *                                                                    *
-//  * Left Hand Side time componenet                                     *
-//  *        [ I*LHS_Time + J ] = -R(Un)                                 *
-//  *                                                                    *
-//  **********************************************************************/
-// template <typename INPUT_TYPE>
-// inline double LHS_Time(INPUT_TYPE &Input_Parameters, double& d_tau, const double &DTS_dTime){
+/******************** TEMPLATED FUNCTIONS **************************************************************/
+
+/*! *******************************************************************
+ * LHS_Time                                                           *
+ *                                                                    *
+ * Left Hand Side time componenet                                     *
+ *        [ I*LHS_Time + J ] = -R(Un)                                 *
+ *                                                                    *
+ **********************************************************************/
+template  <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline double LHS_Time(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &Input, double& d_tau, const double &DTS_dTime){
   
-//   // Dual Time Stepping 
-//   if (Input_Parameters.NKS_IP.Dual_Time_Stepping){
-//     // Implicit Euler
-//     if (Input_Parameters.NKS_IP.Physical_Time_Integration == TIME_STEPPING_IMPLICIT_EULER) {
-//       return (ONE/d_tau + ONE/DTS_dTime);      
-//       //BDF2
-//     } else if (Input_Parameters.NKS_IP.Physical_Time_Integration == TIME_STEPPING_IMPLICIT_SECOND_ORDER_BACKWARD) {
-//       return (ONE/d_tau + THREE/(TWO*DTS_dTime));     
-//     }
-//   }
+  // Dual Time Stepping 
+  if (Input.NKS_IP.Dual_Time_Stepping){
+    // Implicit Euler
+    if (Input.NKS_IP.Physical_Time_Integration == TIME_STEPPING_IMPLICIT_EULER) {
+      return (ONE/d_tau + ONE/DTS_dTime);      
+      //BDF2
+    } else if (Input.NKS_IP.Physical_Time_Integration == TIME_STEPPING_IMPLICIT_SECOND_ORDER_BACKWARD) {
+      return (ONE/d_tau + THREE/(TWO*DTS_dTime));     
+    }
+  }
    
-//   //Standard
-//   return ONE/(d_tau);  
-// }
+  //Standard
+  return ONE/(d_tau);  
+}
 
 /*! *************************************************************************
  *  Overloading dUdt_Residual_Evaluation function to include Dual Time 
