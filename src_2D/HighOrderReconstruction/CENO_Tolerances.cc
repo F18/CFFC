@@ -1,17 +1,17 @@
 /*!\file CENO_Tolerances.cc
   \brief Source file defining the values of the numerical tolerances declared in CENO_Tolerances.h */
 
+/* Include required C++ libraries. */
+// None
+
+/* Using std namespace functions */
+// None
+
+/* Include CFFC header files */
+#include "../MPI/MPI.h"
 #include "CENO_Tolerances.h"
 
 // CENO_Tolerances class
-
-/*!
- * These flags are 'true' if the correspondent default tolerances have been changed, otherwise are 'false'. 
- */
-bool CENO_Tolerances::ChangedDefault_Epsilon = false;
-bool CENO_Tolerances::ChangedDefault_EpsilonAbsolute = false;
-bool CENO_Tolerances::ChangedDefault_EpsilonRelative = false;
-bool CENO_Tolerances::ChangedDefault_AMR_Smoothness_Units = false;
 
 /*!
  * This value is used to differentiate between smooth and non-smooth solution reconstructions.
@@ -66,25 +66,25 @@ void CENO_Tolerances::Print_Info(std::ostream & out_file){
 	   << "  (default value = " << Fit_Tolerance_default << ")";
 
   // output AMR_Smoothness_Units
-  if (ChangedDefault_AMR_Smoothness_Units){
+  if (AMR_Smoothness_Units != AMR_Smoothness_Units_default){
     out_file << "\n     -> AMR Smoothness Units: " << AMR_Smoothness_Units
 	     << "  (default value = " << AMR_Smoothness_Units_default << ")";
   }
 
   // output epsilon
-  if (ChangedDefault_Epsilon){
+  if (epsilon != epsilon_default){
     out_file << "\n     -> Epsilon: " << epsilon 
 	     << "  (default value = " << epsilon_default << ")";
   }
 
   // output absolute epsilon
-  if (ChangedDefault_EpsilonAbsolute){
+  if (epsilon_absolute != epsilon_absolute_default){
     out_file << "\n     -> Absolute allowed DeltaU: " << epsilon_absolute
 	     << "  (default value = " << epsilon_absolute_default << ")";
   }
 
   // output relative epsilon
-  if (ChangedDefault_EpsilonRelative){
+  if (epsilon_relative != epsilon_relative_default){
     out_file << "\n     -> Relative allowed DeltaU: " << epsilon_relative
 	     << "  (default value = " << epsilon_relative_default << ")";
   }
@@ -101,4 +101,36 @@ void CENO_Tolerances::SetDefaults(void){
   AMR_Smoothness_Units = AMR_Smoothness_Units_default;
 
   UpdateDependentTolerances();
+}
+
+/*!
+ * Broadcast the CENO_Tolerances variables to all      
+ * processors associated with the specified communicator
+ * from the specified processor using the MPI broadcast 
+ * routine.
+ *
+ * \todo Switch to a user-difined datatype
+ */
+void CENO_Tolerances::Broadcast(void){
+#ifdef _MPI_VERSION
+  
+  MPI::COMM_WORLD.Bcast(&epsilon,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&epsilon_relative,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&epsilon_absolute,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&Fit_Tolerance,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&AMR_Smoothness_Units,
+			1, 
+			MPI::DOUBLE, 0);
+
+  // Update all dependent tolerances
+  UpdateDependentTolerances();
+#endif
 }

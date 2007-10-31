@@ -89,6 +89,8 @@ public:
 
   static void Print_Info(std::ostream & out_file);
 
+  static void Broadcast(void);
+
 private:
   CENO_Execution_Mode(void){};
 

@@ -918,6 +918,12 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
 			  1,
 			  MPI::INT, 0);
 
+    // CENO_Execution_Mode variables
+    CENO_Execution_Mode::Broadcast();
+    
+    // CENO_Tolerances variables
+    CENO_Tolerances::Broadcast();
+
 #endif
 
 }

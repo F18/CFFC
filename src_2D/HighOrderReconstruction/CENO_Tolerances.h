@@ -47,17 +47,13 @@ class CENO_Tolerances: public EpsilonTol{
 
   static void SetDefaults(void);
 
+  static void Broadcast(void);
+
  protected:
   CENO_Tolerances(){};
 
   // Update tolerances that depend on the values of other tolerances
   static void UpdateDependentTolerances(void);
-
-  // flag to track changes to the default values
-  static bool ChangedDefault_Epsilon;
-  static bool ChangedDefault_EpsilonAbsolute;
-  static bool ChangedDefault_EpsilonRelative;
-  static bool ChangedDefault_AMR_Smoothness_Units;
 
   static double epsilon_default;          //!< this is a copy of epsilon that cannot be modified at runtime
   static double epsilon_relative_default; //!< this is a copy of epsilon_relative that cannot be modified at runtime
@@ -132,21 +128,18 @@ inline void CENO_Tolerances::Parse_Next_Input_Control_Parameter(Input_Parameters
     ++IP.Line_Number;
     IP.Input_File >> epsilon;
     IP.Input_File.getline(buffer, sizeof(buffer));
-    ChangedDefault_Epsilon = true;
 
   } else if (strcmp(IP.Next_Control_Parameter, "CENO_Absolute_Epsilon") == 0) {
     i_command = 0;
     ++IP.Line_Number;
     IP.Input_File >> epsilon_absolute;
     IP.Input_File.getline(buffer, sizeof(buffer));
-    ChangedDefault_EpsilonAbsolute = true;
 
   } else if (strcmp(IP.Next_Control_Parameter, "CENO_Relative_Epsilon") == 0) {
     i_command = 0;
     ++IP.Line_Number;
     IP.Input_File >> epsilon_relative;
     IP.Input_File.getline(buffer, sizeof(buffer));
-    ChangedDefault_EpsilonRelative = true;
 
   } else if (strcmp(IP.Next_Control_Parameter, "CENO_Tolerance") == 0) {
     i_command = 0;
@@ -159,14 +152,13 @@ inline void CENO_Tolerances::Parse_Next_Input_Control_Parameter(Input_Parameters
     ++IP.Line_Number;
     IP.Input_File >> AMR_Smoothness_Units;
     IP.Input_File.getline(buffer, sizeof(buffer));
-    ChangedDefault_AMR_Smoothness_Units = true;
     
   } else {
     i_command = INVALID_INPUT_CODE;
     return;
   } // endif
 
-  // Update all tolerances
+  // Update all dependent tolerances
   UpdateDependentTolerances();
 }
 
