@@ -167,6 +167,7 @@ class Gaussian2D_pState{
     static double         omega;   // Viscosity exponent
     static double        mu_not;   // Reference viscosity
     static double            pr;   // Prandtl number
+    static double     T_damping;   // Damping for slip_T boundary condition
                                    // Made public so can access them.
 		      
     /* Creation, copy, and assignment constructors. */

@@ -13,14 +13,15 @@
 /****************************************************************
  * Gaussian2D_pState -- Create storage and assign gas constants.*
  ****************************************************************/
-double Gaussian2D_pState::M        = MOLE_WT_AIR;
-int    Gaussian2D_pState::atoms    = GAUSSIAN_DIATOMIC;
-int    Gaussian2D_pState::gas      = GAS_AIR;
-double Gaussian2D_pState::alpha_m  = ONE;
-double Gaussian2D_pState::alpha_t  = ONE;
-double Gaussian2D_pState::omega    = OMEGA_AIR;
-double Gaussian2D_pState::mu_not   = MU_NOT_AIR;
-double Gaussian2D_pState::pr       = 0.6666666666666666667;
+double Gaussian2D_pState::M         = MOLE_WT_AIR;
+int    Gaussian2D_pState::atoms     = GAUSSIAN_DIATOMIC;
+int    Gaussian2D_pState::gas       = GAS_AIR;
+double Gaussian2D_pState::alpha_m   = ONE;
+double Gaussian2D_pState::alpha_t   = ONE;
+double Gaussian2D_pState::omega     = OMEGA_AIR;
+double Gaussian2D_pState::mu_not    = MU_NOT_AIR;
+double Gaussian2D_pState::pr        = 0.6666666666666666667;
+double Gaussian2D_pState::T_damping = 0.0;
 /****************************************************************
  * Gaussian2D_cState -- Create storage and assign gas constants.*
  ****************************************************************/
@@ -341,8 +342,6 @@ double Slip_T(const Gaussian2D_pState &W,
   double T_close, T_far, Tk_damped;
   double temp1, temp2;
 
-  double damping = 0.999; //damping factor
-
   //I need the negative sign because this function takes the
   //outward facing normal from the first cell inside the domain.
   //I need the opposite sign.
@@ -352,7 +351,7 @@ double Slip_T(const Gaussian2D_pState &W,
 
 
   //damping can be required for high-knudsen-number situations.
-  return (1.0-damping)*Tk + damping*old_T;
+  return (1.0-W.T_damping)*Tk + W.T_damping*old_T;
 }
 
 /********************************************************

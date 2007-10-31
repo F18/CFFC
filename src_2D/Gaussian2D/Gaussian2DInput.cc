@@ -133,6 +133,7 @@ void Set_Default_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
     // Boundary Conditions
     IP.alpha_m = 1.0;
     IP.alpha_t = 1.0;
+    IP.T_damping = 0.0;
     IP.Ramp_by_Mach_Number = 0.0;
     IP.Number_of_Time_Steps_to_Ramp = 0; 
     string_ptr = "OFF";
@@ -605,6 +606,12 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
       IP.Wo.alpha_t = IP.alpha_t;
       IP.Uo.alpha_t = IP.alpha_t;
     } // endif 
+    MPI::COMM_WORLD.Bcast(&(IP.T_damping),
+                          1,
+                          MPI::DOUBLE, 0);
+    if (!CFFC_Primary_MPI_Processor()) {
+      IP.Wo.T_damping = IP.T_damping;
+    } // endif
     MPI::COMM_WORLD.Bcast(&(IP.Ramp_by_Mach_Number), 
                           1, 
                           MPI::DOUBLE, 0);
@@ -1176,6 +1183,12 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP,
     if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
       IP.Wo.alpha_t = IP.alpha_t;
       IP.Uo.alpha_t = IP.alpha_t;
+    } // endif
+    Communicator.Bcast(&(IP.T_damping),
+                       1,
+                       MPI::DOUBLE, Source_Rank);
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+      IP.Wo.T_damping = IP.T_damping;
     } // endif
     Communicator.Bcast(&(IP.Ramp_by_Mach_Number), 
                        1, 
@@ -2123,6 +2136,13 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
        IP.Uo.alpha_t = IP.alpha_t;
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.alpha_t < ZERO || IP.alpha_t > ONE) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Slip_T_BC_damping") == 0) {
+       i_command = 43;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.T_damping;
+       IP.Wo.T_damping = IP.T_damping;
+       IP.Input_File.getline(buffer, sizeof(buffer));
 
     } else if (strcmp(IP.Next_Control_Parameter, "Ramp_by_Mach_Number") == 0) {
        i_command = 43;
