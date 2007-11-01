@@ -5,7 +5,6 @@
 #define _ADVECTDIFFUSE2D_STATE_INCLUDED
 
 /* Include required C++ libraries. */
-
 #include <cstdio>
 #include <iostream>
 #include <iomanip>
@@ -14,30 +13,21 @@
 #include <cstdlib>
 #include <cstring>
 
+/* Using std namespace functions */
 using namespace std;
 
-/* Include math macro, CFD, and 2D vector header files. */
-
-#ifndef _MATH_MACROS_INCLUDED
-#include "../Math/Math.h"
-#endif // _MATH_MACROS_INCLUDED
-
-#ifndef _CFD_INCLUDED
-#include "../CFD/CFD.h"
-#endif // _CFD_INCLUDED
-
-#ifndef _VECTOR2D_INCLUDED
-#include "../Math/Vector2D.h"
-#endif //_VECTOR2D_INCLUDED
-
-#include "AdvectDiffuse2DExactSolutions.h"
+/* Include CFFC header files */
+#include "../Math/Math.h" /* Include math macro header files. */
+#include "../CFD/CFD.h"   /* Include CFD header files. */
+#include "../Math/Vector2D.h" /* Include vector header files. */
+#include "AdvectDiffuse2DExactSolutions.h" /* Include 2D advection diffusion exact solutions header file */
 
 /* Define the classes. */
 
 #define	NUM_VAR_ADVECTDIFFUSE2D    1
 
 /*!
- * Class: AdvectDiffuse2D_State
+ * \class AdvectDiffuse2D_State
  *
  * @brief Solution state class definition for the 2D advection-diffusion
  *        equation.
