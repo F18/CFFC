@@ -33,6 +33,7 @@ ELECTROSTATIC_DIR = Electrostatic2D/
 EOS_DIR = EquationOfState/
 EULER_1D_DIR = Euler1D/
 EULER_2D_DIR = Euler2D/
+LEVERMORE_1D_DIR = Levermore1D/
 GRID_DIR = Grid/
 HIGHTEMP_DIR = HighTemp2D/
 ICEMCFD_DIR = ICEM/
@@ -55,7 +56,6 @@ NASADATA_DIR = $(PHYSICS_DIR)NASAData/
 SNBCK_DIR = $(PHYSICS_DIR)SNBCK/
 REACTIONS_DIR = Reactions/
 HIGH_ORDER_RECONSTRUCTION_DIR = HighOrderReconstruction/
-
 #
 # Set default f90 module directory
 MODULE_DIR = F90_Modules
@@ -216,6 +216,9 @@ SRC_SOLVERS1D = $(SRC_MATH) $(SRC_CFD) $(SRC_CFD1D_INPUT) $(SRC_GRID_1D) \
 
 SRC_SOLVERS1D_EXE = $(SOLVERS1D_DIR)Solvers1D.cc
 SRC_SOLVERS1D_SOLVER = $(SRC_SOLVERS1D_EXE) $(SRC_SOLVERS1D)
+
+# Levermore 1D:
+SRC_LEVERMORE1D_EXE = $(LEVERMORE_1D_DIR)Levermore1DMain.cc
 
 # Advectdiffuse2D:
 SRC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.cc \
@@ -499,6 +502,9 @@ OBJ_EULER1D_SOLVER := $(patsubst %.cc,%.o, $(filter %.cc, $(SRC_EULER1D_SOLVER))
 		      $(patsubst %.c,%.o, $(filter %.c, $(SRC_EULER1D_SOLVER))) \
 		      $(patsubst %.f,%.o, $(filter %.f, $(SRC_EULER1D_SOLVER)))
 
+# Levermore1D solver objects:
+OBJ_LEVERMORE1D_EXE := $(SRC_LEVERMORE1D_EXE:.cc=.o)
+
 # Solvers1D solver objects:
 OBJ_SOLVERS1D_SOLVER := $(patsubst %.cc,%.o, $(filter %.cc, $(SRC_SOLVERS1D_SOLVER))) \
 		        $(patsubst %.c,%.o, $(filter %.c, $(SRC_SOLVERS1D_SOLVER))) \
@@ -614,6 +620,7 @@ EXE_ICEMCFD_UTIL1 = icemcfd2tecplot
 EXE_ICEMCFD_UTIL2 = icemcfd2grid2dquad
 EXE_EULER1D = euler1D
 EXE_SOLVERS1D = solvers1D
+EXE_LEVERMORE1D = levermore1D
 EXE_ADVECTDIFFUSE2D = advectdiffuse2D
 EXE_EULER2D = euler2D
 EXE_NAVIERSTOKES2D = navierstokes2D
@@ -648,6 +655,7 @@ help:
 	@echo "|        make icemcfd2grid2dquad   compile icemcfd2grid2dquad program               |"
 	@echo "|        make euler1D              compile euler1D stand alone program              |"
 	@echo "|        make euler1D-new          compile euler1D program from scratch             |"
+	@echo "|        make levermore1D          compile levermore1D stand alone program          |"
 	@echo "|        make solvers1D            compile solvers1D stand alone program            |"
 	@echo "|        make solvers1D-new        compile solvers1D program from scratch           |"
 	@echo "|        make advectdiffuse2D      compile advectdiffuse2D stand alone program      |"
@@ -699,7 +707,7 @@ all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
      $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
      $(EXE_HIGHTEMP2D) $(EXE_DUSTY2D) $(EXE_LESPREMIXED2D) $(EXE_GAUSSIAN2D) \
      $(EXE_ION5MOMENT2D) $(EXE_ELECTROSTATIC2D) $(EXE_RTE2D) $(EXE_LEVELSET2D) \
-     $(EXE_EMBEDDEDBOUNDARIES2D)
+     $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_LEVERMORE1D)
 	@echo ' '
 	@echo All programs have been brought up to date.
 	@echo '------------------------------------------'
@@ -807,6 +815,17 @@ $(EXE_SOLVERS1D)-new:
 	@$(MAKE) --no-print-directory libraries-all 
 	@$(MAKE) --no-print-directory $(EXE_SOLVERS1D)
 
+
+$(EXE_LEVERMORE1D): $(OBJ_LEVERMORE1D_EXE)
+	@echo ' '
+	@echo Building program $(EXE_LEVERMORE1D) for a $(PLATFORM) platform.
+	@echo '-----------------------------------------------------------'
+	@echo ' '
+	$(LD) -o $(EXE_LEVERMORE1D) $(OBJ_LEVERMORE1D_EXE) $(LDFLAGS)
+	@echo ' '
+	@echo Program $(EXE_LEVERMORE1D) has been brought up to date.
+	@echo '---------------------------------------------------'
+	@echo ' '
 
 $(EXE_ADVECTDIFFUSE2D): $(OBJ_ADVECTDIFFUSE_EXE) $(OBJ_BASE) $(OBJ_ADVECTDIFFUSE) $(OBJ_ICEMCFD)
 	@echo ' '
@@ -999,12 +1018,12 @@ install-all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) $(EXE_EULER1D
         $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
         $(EXE_HIGHTEMP2D) $(EXE_DUSTY2D) $(EXE_LESPREMIXED2D) $(EXE_GAUSSIAN2D) \
         $(EXE_ION5MOMENT2D) $(EXE_ELECTROSTATIC2D) $(EXE_RTE2D) $(EXE_LEVELSET2D) \
-        $(EXE_EMBEDDEDBOUNDARIES2D) 
+        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_LEVERMORE1D)
 	@for f in $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) $(EXE_EULER1D) $(EXE_SOLVERS1D) \
         $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
         $(EXE_HIGHTEMP2D) $(EXE_DUSTY2D) $(EXE_LESPREMIXED2D) $(EXE_GAUSSIAN2D) \
         $(EXE_ION5MOMENT2D) $(EXE_ELECTROSTATIC2D) $(EXE_RTE2D) $(EXE_LEVELSET2D) \
-        $(EXE_EMBEDDEDBOUNDARIES2D); \
+        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_LEVERMORE1D); \
 	do \
 	  echo "Installing $$f"; \
 	  cp $$f $(CFFC_BIN_DIR); \
@@ -1027,7 +1046,7 @@ uninstall-all:
         $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
         $(EXE_HIGHTEMP2D) $(EXE_DUSTY2D) $(EXE_LESPREMIXED2D) $(EXE_GAUSSIAN2D) \
         $(EXE_ION5MOMENT2D) $(EXE_ELECTROSTATIC2D) $(EXE_RTE2D) $(EXE_LEVELSET2D) \
-        $(EXE_EMBEDDEDBOUNDARIES2D); \
+        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_LEVERMORE1D); \
 	do \
 	  echo "Uninstalling $$f"; \
 	  cd $(CFFC_BIN_DIR); \
@@ -1085,6 +1104,7 @@ clean:
 	rm -f $(AMR_DIR)*.o $(AMR_DIR)*.il $(AMR_DIR)*~
 	rm -f $(SYSTEM_DIR)*.o $(SYSTEM_DIR)*.il $(SYSTEM_DIR)*~
 	rm -f $(EULER_1D_DIR)*.o $(EULER_1D_DIR)*.il $(EULER_1D_DIR)*~ $(EULER_1D_DIR)*.bak
+	rm -f $(LEVERMORE_1D_DIR)*.o $(LEVERMORE_1D_DIR)*.il $(LEVERMORE_1D_DIR)*~ $(LEVERMORE_1D_DIR)*.bak
 	rm -f $(EULER_1D_DIR)ExactSolutions/*.o $(EULER_1D_DIR)ExactSolutions/*.il $(EULER_1D_DIR)ExactSolutions/*~ $(EULER_1D_DIR)ExactSolutions/*.bak
 	rm -f $(EULER_1D_DIR)UnitTests/*.o $(EULER_1D_DIR)UnitTests/*.il $(EULER_1D_DIR)UnitTests/*~ $(EULER_1D_DIR)UnitTests/*.bak
 	rm -f $(SOLVERS1D_DIR)*.o $(SOLVERS1D_DIR)*.il $(SOLVERS1D_DIR)*~ $(SOLVERS1D_DIR)*.depend
@@ -1120,6 +1140,7 @@ clean:
 	rm -f $(EXE_MAIN)
 	rm -f $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2)
 	rm -f $(EXE_EULER1D)
+	rm -f $(EXE_LEVERMORE1D)
 	rm -f $(EXE_SOLVERS1D)
 	rm -f $(EXE_ADVECTDIFFUSE2D)
 	rm -f $(EXE_EULER2D)
@@ -1223,6 +1244,7 @@ ifeq ($(strip $(filter $(MAKECMDGOALS), $(NODEP_LIST)) ), )
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_ICEMCFD_UTIL2)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_SOLVERS1D_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_EULER1D_EXE)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_LEVERMORE1D_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_ADVECTDIFFUSE_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_EULER_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_NAVIERSTOKES_EXE)))
