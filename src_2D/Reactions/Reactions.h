@@ -1025,6 +1025,7 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
 #ifdef _CANTERA_VERSION
 
   case CANTERA:
+  
     //ct_dSwdU<SOLN_pSTATE>( dSwdU, W, Temp, Press );
     ct_dSwdU_FiniteDiff<SOLN_pSTATE>( dSwdU, W, Temp, Press );
     //Finite_Difference_dSwdU<SOLN_pSTATE,SOLN_cSTATE>(dSwdU, W);
@@ -1497,12 +1498,12 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
   int NUM_VAR = W.NumVarSansSpecies();
 
   // perturbation factor
-  double abs_tol = 1.E-6; // absolute tolerance (sqrt(machine eps))
-  double rel_tol = 1.E-5; // relative tolerance
+  static const double abs_tol = 1.E-6; // absolute tolerance (sqrt(machine eps))
+  static const double rel_tol = 1.E-5; // relative tolerance
   double eps;
 
   // temporary storage
-  double dSdT, T0, e_k;
+  double dSdT, T0, e_k, csave_k, csave_N;
 
   // some constants
   double rho = W.rho;   // density [kg/m^3]
@@ -1525,7 +1526,7 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
   //------------------------------------------------
   // Compute \frac{ \partial S_j }{ \partial \rho Y_k }
   //------------------------------------------------
-	
+
   //
   // iterate over the species (jac columns)
   //
@@ -1535,6 +1536,8 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
     eps = abs_tol + fabs(c[j])*rel_tol;
 
     // perturb the species concetration array
+    csave_k = c[j];
+    csave_N = c[num_species-1];
     c[j] += eps;
     c[num_species-1] -= eps;
 
@@ -1551,11 +1554,10 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
       dSwdU(NUM_VAR+i,NUM_VAR+j) += M[i]*(r[i]-r0[i]) / (rho*eps);
       
     } // endfor - rows
-    
 
     // unperturb
-    c[j] -= eps;
-    c[num_species-1] += eps;
+    c[j] = csave_k;
+    c[num_species-1] = csave_N;
 
   } // endfor - columns
 
@@ -1565,7 +1567,7 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
   ***********************************************
   *
   * COMMENT OUT THIS BLOCK OF CODE FOR dS/dT=0 ASSUMPTION
-  */
+  *
   //------------------------------------------------
   // Compute \frac{ \partial S_j }{ \partial T }
   //------------------------------------------------
@@ -1617,7 +1619,7 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
 
   } // endfor - rows
   
- /*
+  *
   ***********************************************
   * END FROZEN TEMPERATURE ASSUMPTION
   ***********************************************
