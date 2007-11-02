@@ -33,8 +33,8 @@ enum Locations {  STENCIL_CENTER = 0,
 		  STENCIL_SOUTH = 2,
 		  STENCIL_EAST  = 3,
 		  STENCIL_WEST  = 4,
-		  STENCIL_TOP   = 5,
-		  STENCIL_BOTTOM = 6 };
+		  STENCIL_BOTTOM = 5,
+		  STENCIL_TOP   = 6 };
 
 /********************************************************
  * Class: Block_Preconditioner                          *
@@ -53,10 +53,10 @@ class Block_Preconditioner {
   void Setup_Jacobian_approximation();          //called from Create_Preconditioner
   void Setup_Preconditioner();                  //called from Update_Jacobian
   void Implicit_Euler(const int&,const int&,const int&, DenseMatrix*, const double&);      //called from Update_Jacobian       
-  void First_Order_Inviscid_Jacobian_HLLE(const int&,const int&, DenseMatrix*); //called from Update_Jacobian
-  void First_Order_Inviscid_Jacobian_Roe(const int&,const int&, DenseMatrix*);  //called from Update_Jacobian
-  void First_Order_Inviscid_Jacobian_AUSM_plus_up(const int&,const int&, DenseMatrix*);  //called from Update_Jacobian
-  void Second_Order_Viscous_Jacobian(const int&,const int&, DenseMatrix*);      //called from Update_Jacobian
+  void First_Order_Inviscid_Jacobian_HLLE(const int&,const int&,const int&, DenseMatrix*); //called from Update_Jacobian
+  void First_Order_Inviscid_Jacobian_Roe(const int&,const int&,const int&, DenseMatrix*);  //called from Update_Jacobian
+  void First_Order_Inviscid_Jacobian_AUSM_plus_up(const int&,const int&,const int&, DenseMatrix*);  //called from Update_Jacobian
+  void Second_Order_Viscous_Jacobian(const int&,const int&,const int&, DenseMatrix*);      //called from Update_Jacobian
 
   DenseMatrix Rotation_Matrix(const Vector2D &nface, const int &A_matrix); //Used in Jacobian_LocalBlock
   DenseMat DenseMatrix_to_DenseMat(const DenseMatrix &B); 
@@ -99,7 +99,7 @@ class Block_Preconditioner {
   //Viscous
   void Preconditioner_dFVdU(DenseMatrix &, const int, const int, const int, const int, const int ,const int);
   //Source 
-  void Preconditioner_dSdU(int cell_index_i, int cell_index_j, DenseMatrix &Jacobian);
+  void Preconditioner_dSdU(int,int,int,DenseMatrix&);
   void normalize_Preconditioner_dFdU(DenseMatrix &dFdU);
 
   //Destructor / memory cleanup
@@ -148,9 +148,7 @@ Preconditioner_dFVdU(DenseMatrix &dFvdU, const int Rii, const int Rjj,
 // BLANK UNLESS OTHERWISE SPECIALIZED
 template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
 inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
-Preconditioner_dSdU( int cell_index_i, int cell_index_j, DenseMatrix &Jacobian) {
-//   cerr<<"\n EXPLICIT SPECIALIZATION OF Preconditioner_dSdU for Block_Preconditioner2D.h requried \n";
-//   exit(1);
+Preconditioner_dSdU( int cell_index_i, int cell_index_j, int cell_index_k, DenseMatrix &Jacobian) {
 }
 
 template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
@@ -181,9 +179,9 @@ Get_Block_Index(const int &i, int *Block_index_j)
     }
     Block_index_j[STENCIL_EAST] = ( i%SolnBlk->NCi != 0) ? i-1 : -1;
     Block_index_j[STENCIL_WEST] = ( (i+1)%SolnBlk->NCi != 0) ? i+1 : -1;
-    Block_index_j[STENCIL_TOP] =  SolnBlk->NCi* SolnBlk->NCj + i ;
     Block_index_j[STENCIL_BOTTOM] = i - SolnBlk->NCi* SolnBlk->NCj;   
-    
+    Block_index_j[STENCIL_TOP] =  SolnBlk->NCi* SolnBlk->NCj + i ;
+        
   }  else if ( Jacobian_stencil_size == SECOND_ORDER_STENCIL) {
 //     Block_index_j[NE] = ( (i - SolnBlk->NCi)%SolnBlk->NCi != 0) ? i - SolnBlk->NCi - 1 : -1;
 //     Block_index_j[NORTH] = i - SolnBlk->NCi;
@@ -207,39 +205,37 @@ Get_Block_Index(const int &cell_index_i, const int &cell_index_j, const int &cel
 { 
   //J index 
   for( int i=0; i<Jacobian_stencil_size; i++)  
-    Block_index_j[i] = cell_index_j*SolnBlk->NCi+cell_index_i; 
+    Block_index_j[i] = cell_index_k*(SolnBlk->NCi*SolnBlk->NCj) + 
+                       cell_index_j*SolnBlk->NCi + cell_index_i; 
 
   //I index 
   if( Jacobian_stencil_size == FIRST_ORDER_STENCIL){        
     /*! Determine 1st order Block_Indicies for Cell (i,j)   
      *                    
-     *            ---    6
+     *            ---    5
      *           | 1 | / 
      *        --- --- ---
      *       | 4 | 0 | 3 |                
      *        --- --- ---
      *         / | 2 |
-     *       5    ---
+     *       6    ---
      */  
-    Block_index_i[STENCIL_CENTER] = cell_index_j*SolnBlk->NCi+cell_index_i;       //CENTER    //FIX !!!!!!
-
-    Block_index_i[STENCIL_NORTH] = (cell_index_j - 1)*SolnBlk->NCi+cell_index_i;  //NORTH  
-    Block_index_i[STENCIL_SOUTH] = (cell_index_j + 1)*SolnBlk->NCi+cell_index_i;  //SOUTH    
+    Block_index_i[STENCIL_CENTER] = cell_index_k*(SolnBlk->NCi*SolnBlk->NCj) +
+                                    cell_index_j*SolnBlk->NCi+cell_index_i;      
+    Block_index_i[STENCIL_NORTH]  = Block_index_i[STENCIL_CENTER] - SolnBlk->NCi;
+    Block_index_i[STENCIL_SOUTH]  = Block_index_i[STENCIL_CENTER] + SolnBlk->NCi;   
+    Block_index_i[STENCIL_EAST]   = Block_index_i[STENCIL_CENTER] - 1;
+    Block_index_i[STENCIL_WEST]   = Block_index_i[STENCIL_CENTER] + 1;   
+    Block_index_i[STENCIL_BOTTOM] = Block_index_i[STENCIL_CENTER] - (SolnBlk->NCi*SolnBlk->NCj);
+    Block_index_i[STENCIL_TOP]    = Block_index_i[STENCIL_CENTER] + (SolnBlk->NCi*SolnBlk->NCj);
     
-    Block_index_i[STENCIL_EAST] = cell_index_j*SolnBlk->NCi+cell_index_i-1;       //EAST     
-    Block_index_i[STENCIL_WEST] = cell_index_j*SolnBlk->NCi+cell_index_i+1;       //WEST         
- 
-   //  Block_index_j[STENCIL_TOP] =  SolnBlk->NCi* SolnBlk->NCj + i ;
-//     Block_index_j[STENCIL_BOTTOM] = i - SolnBlk->NCi* SolnBlk->NCj;   
-    
-
   }  else if ( Jacobian_stencil_size == SECOND_ORDER_STENCIL) {
 //     /*! Determine 2nd order Block_Indicies for Cell (i,j)   
 //      *
 //      *        --- --- ---
 //      *       | 5 | 1 | 8 |
 //      *        --- --- --- 
-//      *       | 2 | 0 | 4 | 
+//      *       | 2 | 0 | 4 |               //2D -> Needs to be replace by 3D (27)
 //      *       --- --- --- -
 //      *       | 6 | 3 | 7 |
 //      *        --- --- ---
@@ -328,7 +324,7 @@ Setup_Jacobian_approximation(){
     //! Determine which entries correspond to 1st, 2nd, etc. order stencil    
     // cout<<"\n i "<<i<<" j(s) "; cout.flush();
     while( stencil < Jacobian_stencil_size) { 
-      int j = block_j[stencil];
+      int j = block_j[stencil]; 
       //cout<<" "<<j; cout.flush();
       if( j >= 0 && j < block_mat_size){	
 	i_index[nnz_count] = i+1;  // bpkit assumes Fortran indexing ie. starting at 1 
@@ -368,7 +364,7 @@ Update_Jacobian_and_Preconditioner(const double &DTS_dTime)
 {
   
   //!Local Variables and Temporary Storage
-  int block_mat_size = SolnBlk->NCi*SolnBlk->NCj; 
+  int block_mat_size = SolnBlk->NCi*SolnBlk->NCj*SolnBlk->NCk; 
   DenseMatrix *Jacobian_Data = new DenseMatrix[Jacobian_stencil_size];
   for(int i=0; i<Jacobian_stencil_size; i++) { Jacobian_Data[i] = DenseMatrix(blocksize,blocksize,ZERO); }
   int *block_i = new int[Jacobian_stencil_size]; 
@@ -399,61 +395,71 @@ Update_Jacobian_and_Preconditioner(const double &DTS_dTime)
 	switch(Input->NKS_IP.Jacobian_Order){
 	case SOURCE_TERMS_ONLY :
 	  Implicit_Euler(i,j,k, Jacobian_Data,DTS_dTime);
-	  Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);
+	  Preconditioner_dSdU(i,j,k,Jacobian_Data[STENCIL_CENTER]);
 	  break;
 	case FIRST_ORDER_INVISCID_HLLE : 
 	  Implicit_Euler(i,j,k, Jacobian_Data,DTS_dTime);
-	  First_Order_Inviscid_Jacobian_HLLE(i,j, Jacobian_Data);
-	  Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);                       
+	  First_Order_Inviscid_Jacobian_HLLE(i,j,k, Jacobian_Data);
+	  Preconditioner_dSdU(i,j,k,Jacobian_Data[STENCIL_CENTER]);                       
 	  break;
 	case FIRST_ORDER_INVISCID_ROE : 
 	  Implicit_Euler(i,j,k, Jacobian_Data,DTS_dTime);
-	  First_Order_Inviscid_Jacobian_Roe(i,j, Jacobian_Data);
-	  Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);
+	  First_Order_Inviscid_Jacobian_Roe(i,j,k, Jacobian_Data);
+	  Preconditioner_dSdU(i,j,k,Jacobian_Data[STENCIL_CENTER]);
 	  break;
-// 	case FIRST_ORDER_INVISCID_AUSMPLUSUP : 
-// 	  Implicit_Euler(i,j, Jacobian_Data);
-// 	  First_Order_Inviscid_Jacobian_AUSM_plus_up(i,j, Jacobian_Data);
-// 	  Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);
-// 	  break;
-// 	case SECOND_ORDER_DIAMOND_WITH_HLLE:
-// 	  Implicit_Euler(i,j, Jacobian_Data);
-// 	  First_Order_Inviscid_Jacobian_HLLE(i,j, Jacobian_Data);   
-// 	  Second_Order_Viscous_Jacobian(i,j, Jacobian_Data);    
-// 	  Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);   
-// 	  break;
-// 	case SECOND_ORDER_DIAMOND_WITH_ROE :	
-// 	  Implicit_Euler(i,j, Jacobian_Data);
-// 	  First_Order_Inviscid_Jacobian_Roe(i,j, Jacobian_Data);
-// 	  Second_Order_Viscous_Jacobian(i,j, Jacobian_Data);    
-// 	  Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]); 
-// 	  break;
-// 	case SECOND_ORDER_DIAMOND_WITH_AUSMPLUSUP :	
-// 	  Implicit_Euler(i,j, Jacobian_Data);
-// 	  First_Order_Inviscid_Jacobian_AUSM_plus_up(i,j, Jacobian_Data);
-// 	  Second_Order_Viscous_Jacobian(i,j, Jacobian_Data);    
-// 	  Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);  
-// 	  break;
+	case FIRST_ORDER_INVISCID_AUSMPLUSUP : 
+	  Implicit_Euler(i,j,k, Jacobian_Data,DTS_dTime);
+	  First_Order_Inviscid_Jacobian_AUSM_plus_up(i,j,k, Jacobian_Data);
+	  Preconditioner_dSdU(i,j,k,Jacobian_Data[STENCIL_CENTER]);
+	  break;
+	case SECOND_ORDER_DIAMOND_WITH_HLLE:
+	  Implicit_Euler(i,j,k, Jacobian_Data,DTS_dTime);
+	  First_Order_Inviscid_Jacobian_HLLE(i,j,k, Jacobian_Data);   
+	  Second_Order_Viscous_Jacobian(i,j,k, Jacobian_Data);    
+	  Preconditioner_dSdU(i,j,k,Jacobian_Data[STENCIL_CENTER]);   
+	  break;
+	case SECOND_ORDER_DIAMOND_WITH_ROE :	
+	  Implicit_Euler(i,j,k, Jacobian_Data,DTS_dTime);
+	  First_Order_Inviscid_Jacobian_Roe(i,j,k, Jacobian_Data);
+	  Second_Order_Viscous_Jacobian(i,j,k, Jacobian_Data);    
+	  Preconditioner_dSdU(i,j,k,Jacobian_Data[STENCIL_CENTER]); 
+	  break;
+	case SECOND_ORDER_DIAMOND_WITH_AUSMPLUSUP :	
+	  Implicit_Euler(i,j,k, Jacobian_Data,DTS_dTime);
+	  First_Order_Inviscid_Jacobian_AUSM_plus_up(i,j,k, Jacobian_Data);
+	  Second_Order_Viscous_Jacobian(i,j,k, Jacobian_Data);    
+	  Preconditioner_dSdU(i,j,k,Jacobian_Data[STENCIL_CENTER]);  
+	  break;
 	}
 	
 	//--------------------------------------------------------------------------//
 	//! Get Block Matrix locations that have components from a given Cell(i,j)
-	Get_Block_Index(i,j,k, block_i, block_j);
 	
-//       //fudge for iGhost Cell reset to zero   //jGhost cell already zero                
-//       if(block_i[NORTH] < TWO*SolnBlk->NCi) Jacobian_Data[NORTH].zero();
-//       if(block_i[SOUTH] > block_mat_size - TWO*SolnBlk->NCi) Jacobian_Data[SOUTH].zero();
+	Get_Block_Index(i,j,k, block_i, block_j);
+// 	cout<<"\n i "<<i<<" j "<<j<<" k "<<k<<" j "<<block_j[0]<<" i ";
+// 	for( int block = 0; block < Jacobian_stencil_size; block++) cout<<" "<<block_i[block];	
+	
+	//HARD CODED FOR 2 GHOST CELLS & ZERO OVERLAP ???
 
-//       if(Jacobian_stencil_size == 9){		
+	//fudge for iGhost Cell reset to zero   //jGhost cell already zero                
+	if(block_i[STENCIL_NORTH] < k*(SolnBlk->NCi*SolnBlk->NCj) + TWO*SolnBlk->NCi)    { Jacobian_Data[STENCIL_NORTH].zero(); /* cout<<"\n NZERO";*/}
+	if(block_i[STENCIL_SOUTH] > (k+1)*(SolnBlk->NCi*SolnBlk->NCj) - TWO*SolnBlk->NCi){ Jacobian_Data[STENCIL_SOUTH].zero();  /*cout<<"\n SZERO";*/}
+	if(block_i[STENCIL_BOTTOM] < TWO*(SolnBlk->NCi*SolnBlk->NCj))                    { Jacobian_Data[STENCIL_BOTTOM].zero(); /*cout<<"\n BZERO";*/}
+	if(block_i[STENCIL_TOP] > block_mat_size - TWO*(SolnBlk->NCi*SolnBlk->NCj))      { Jacobian_Data[STENCIL_TOP].zero();    /*cout<<"\n TZERO";*/}
+
+//       if(Jacobian_stencil_size == SECOND_ORDER_STENCIL){		
 // 	if(block_i[NE] < TWO*SolnBlk->NCi)    Jacobian_Data[NE].zero();
 // 	if(block_i[NW] < TWO*SolnBlk->NCi)    Jacobian_Data[NW].zero(); 
 // 	if(block_i[SE] > block_mat_size - TWO*SolnBlk->NCi)    Jacobian_Data[SE].zero();
 // 	if(block_i[SW] > block_mat_size - TWO*SolnBlk->NCi)    Jacobian_Data[SW].zero();
 //       }
-	//--------------------------------------------------------------------------//
+// 	//--------------------------------------------------------------------------//
 	//! Update BlockMat with Local Approximate Jacobians 
 	for( int block = 0; block < Jacobian_stencil_size; block++){
 	  // Normalize
+
+// 	  cout<<endl<<Jacobian_Data[block];
+
 	  normalize_Preconditioner_dFdU(Jacobian_Data[block]);
 	  
 	  //can be sped up by more intelligent logic in bkpkit (BlockMat.cc  "setblock")
@@ -474,7 +480,7 @@ Update_Jacobian_and_Preconditioner(const double &DTS_dTime)
 }
 
 /*****************************************************************************
- *  Add finite time step to diagonal.                                        *
+ *  Add finite time step to dia gonal.                                        *
  *****************************************************************************/ 
 template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
 inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
@@ -485,7 +491,7 @@ Implicit_Euler(const int &cell_index_i,const int &cell_index_j,const int &cell_i
   Diag.identity();    
   //Cacluate LHS depeneding on Steady State of Dual Time Stepping
   Diag *= LHS_Time<SOLN_pSTATE,SOLN_cSTATE>(*Input, SolnBlk->dt[cell_index_i][cell_index_j][cell_index_k],DTS_dTime);  
-  Jacobian[CENTER] -= Diag;
+  Jacobian[STENCIL_CENTER] -= Diag;
 
 }
 
@@ -495,9 +501,15 @@ Implicit_Euler(const int &cell_index_i,const int &cell_index_j,const int &cell_i
  *****************************************************************************/ 
 template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
 inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
-First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index_j, 
+First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index_j,const int &cell_index_k, 
 				   DenseMatrix* Jacobian){              
   
+
+  //     !!!!!!!!!!!!! 3D !!!!!!!!!!!!
+
+//   DenseMatrix test(blocksize,blocksize,cell_index_i+cell_index_j+cell_index_k); 
+//   for( int block = 0; block < Jacobian_stencil_size; block++) Jacobian[block] += test;
+
 //   //! Caculate normal vectors -> in Vector2D format. 
 //   Vector2D nface_N = SolnBlk->Grid.nfaceN(cell_index_i,cell_index_j-1);
 //   Vector2D nface_S = SolnBlk->Grid.nfaceS(cell_index_i,cell_index_j+1);
@@ -515,7 +527,7 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
 // 				       SolnBlk->W[cell_index_i][cell_index_j], nface_W);
 
 //   //checks necessary ????
-//   //if ((lambdas_W.y-lambdas_W.x) == ZERO) cout << " WEST : HLLE_wavespeeds " << endl;
+//   //if ((lambdas_W.y-lambdas_W.x) == ZERO) cout << " STENCIL_WEST : HLLE_wavespeeds " << endl;
  
 //   //! Calculate constants gamma and beta -> scalar values. 
 //   double gamma_N = (lambdas_N.x*lambdas_N.y)/(lambdas_N.y-lambdas_N.x);
@@ -553,30 +565,30 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
 
 //   //! Calculate Jacobian matrix -> blocksizexblocksize matrix in DenseMatrix format
 //   //North
-//   Jacobian[NORTH] = (SolnBlk->Grid.lfaceN(cell_index_i,cell_index_j-1) 
+//   Jacobian[STENCIL_NORTH] = (SolnBlk->Grid.lfaceN(cell_index_i,cell_index_j-1) 
 // 		 * AI_N * (beta_N * dFdU_N + gamma_N * II) * A_N); 
 
 //   //South
-//   Jacobian[SOUTH] = (SolnBlk->Grid.lfaceS(cell_index_i,cell_index_j+1) 
+//   Jacobian[STENCIL_SOUTH] = (SolnBlk->Grid.lfaceS(cell_index_i,cell_index_j+1) 
 // 		 * AI_S * (beta_S * dFdU_S + gamma_S * II) * A_S);
 
 //   //East
-//   Jacobian[EAST] = (SolnBlk->Grid.lfaceE(cell_index_i-1,cell_index_j) 
+//   Jacobian[STENCIL_EAST] = (SolnBlk->Grid.lfaceE(cell_index_i-1,cell_index_j) 
 // 		 * AI_E * (beta_E * dFdU_E + gamma_E * II) * A_E);
 
 //   //West
-//   Jacobian[WEST] = (SolnBlk->Grid.lfaceW(cell_index_i+1,cell_index_j) 
+//   Jacobian[STENCIL_WEST] = (SolnBlk->Grid.lfaceW(cell_index_i+1,cell_index_j) 
 // 		 * AI_W * (beta_W * dFdU_W + gamma_W * II) * A_W);
 
 //   //Center calculated from neighbours
 //   //! Using the fact that dF/dU(right) = - dF/dU(left) 
-//   Jacobian[CENTER] += (Jacobian[NORTH] + Jacobian[SOUTH] + Jacobian[EAST]  + Jacobian[WEST])
+//   Jacobian[STENCIL_CENTER] += (Jacobian[STENCIL_NORTH] + Jacobian[STENCIL_SOUTH] + Jacobian[STENCIL_EAST]  + Jacobian[STENCIL_WEST])
 //     /SolnBlk->Grid.Cell[cell_index_i][cell_index_j].A;
 
-//   Jacobian[NORTH] = -Jacobian[NORTH]/SolnBlk->Grid.Cell[cell_index_i][cell_index_j-1].A;
-//   Jacobian[SOUTH] = -Jacobian[SOUTH]/SolnBlk->Grid.Cell[cell_index_i][cell_index_j+1].A;
-//   Jacobian[EAST] = -Jacobian[EAST]/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j].A;
-//   Jacobian[WEST] = -Jacobian[WEST]/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j].A;
+//   Jacobian[STENCIL_NORTH] = -Jacobian[STENCIL_NORTH]/SolnBlk->Grid.Cell[cell_index_i][cell_index_j-1].A;
+//   Jacobian[STENCIL_SOUTH] = -Jacobian[STENCIL_SOUTH]/SolnBlk->Grid.Cell[cell_index_i][cell_index_j+1].A;
+//   Jacobian[STENCIL_EAST] = -Jacobian[STENCIL_EAST]/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j].A;
+//   Jacobian[STENCIL_WEST] = -Jacobian[STENCIL_WEST]/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j].A;
 
 }
 
@@ -586,24 +598,24 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
  *****************************************************************************/
 template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
 inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
-First_Order_Inviscid_Jacobian_Roe(const int &cell_index_i,const int &cell_index_j, 
+First_Order_Inviscid_Jacobian_Roe(const int &cell_index_i,const int &cell_index_j,const int &cell_index_k,  
 				   DenseMatrix* Jacobian){              
     
 //   //! Calculate Jacobian matrix -> blocksizexblocksize matrix in DenseMatrix format
-//   Preconditioner_dFIdU_Roe(Jacobian[NORTH],cell_index_i,cell_index_j,NORTH);
-//   Preconditioner_dFIdU_Roe(Jacobian[SOUTH],cell_index_i,cell_index_j,SOUTH); 
-//   Preconditioner_dFIdU_Roe(Jacobian[EAST],cell_index_i,cell_index_j,EAST);        
-//   Preconditioner_dFIdU_Roe(Jacobian[WEST],cell_index_i,cell_index_j,WEST); 
+//   Preconditioner_dFIdU_Roe(Jacobian[STENCIL_NORTH],cell_index_i,cell_index_j,STENCIL_NORTH);
+//   Preconditioner_dFIdU_Roe(Jacobian[STENCIL_SOUTH],cell_index_i,cell_index_j,STENCIL_SOUTH); 
+//   Preconditioner_dFIdU_Roe(Jacobian[STENCIL_EAST],cell_index_i,cell_index_j,STENCIL_EAST);        
+//   Preconditioner_dFIdU_Roe(Jacobian[STENCIL_WEST],cell_index_i,cell_index_j,STENCIL_WEST); 
 
 //   //Center calculated from neighbours
 //   //! Using the fact that dF/dU(right) = - dF/dU(left) 
-//   Jacobian[CENTER] += (Jacobian[NORTH] + Jacobian[SOUTH] + Jacobian[EAST]  + Jacobian[WEST])
+//   Jacobian[STENCIL_CENTER] += (Jacobian[STENCIL_NORTH] + Jacobian[STENCIL_SOUTH] + Jacobian[STENCIL_EAST]  + Jacobian[STENCIL_WEST])
 //                      /SolnBlk->Grid.Cell[cell_index_i][cell_index_j].A;
 
-//   Jacobian[NORTH] = -Jacobian[NORTH]/SolnBlk->Grid.Cell[cell_index_i][cell_index_j-1].A;
-//   Jacobian[SOUTH] = -Jacobian[SOUTH]/SolnBlk->Grid.Cell[cell_index_i][cell_index_j+1].A;
-//   Jacobian[EAST] = -Jacobian[EAST]/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j].A;
-//   Jacobian[WEST] = -Jacobian[WEST]/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j].A;
+//   Jacobian[STENCIL_NORTH] = -Jacobian[STENCIL_NORTH]/SolnBlk->Grid.Cell[cell_index_i][cell_index_j-1].A;
+//   Jacobian[STENCIL_SOUTH] = -Jacobian[STENCIL_SOUTH]/SolnBlk->Grid.Cell[cell_index_i][cell_index_j+1].A;
+//   Jacobian[STENCIL_EAST] = -Jacobian[STENCIL_EAST]/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j].A;
+//   Jacobian[STENCIL_WEST] = -Jacobian[STENCIL_WEST]/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j].A;
 
 }
 
@@ -613,23 +625,23 @@ First_Order_Inviscid_Jacobian_Roe(const int &cell_index_i,const int &cell_index_
  ****************************************************************************/
 template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
 inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
-First_Order_Inviscid_Jacobian_AUSM_plus_up(const int &cell_index_i,const int &cell_index_j, 
+First_Order_Inviscid_Jacobian_AUSM_plus_up(const int &cell_index_i,const int &cell_index_j,const int &cell_index_k,  
 					   DenseMatrix* Jacobian){              
 
 //   //! Calculate Jacobian matrix -> blocksizexblocksize matrix in DenseMatrix format
-//   Preconditioner_dFIdU_AUSM_plus_up(Jacobian[NORTH],cell_index_i,cell_index_j,NORTH);
-//   Preconditioner_dFIdU_AUSM_plus_up(Jacobian[SOUTH],cell_index_i,cell_index_j,SOUTH); 
-//   Preconditioner_dFIdU_AUSM_plus_up(Jacobian[EAST],cell_index_i,cell_index_j,EAST);        
-//   Preconditioner_dFIdU_AUSM_plus_up(Jacobian[WEST],cell_index_i,cell_index_j,WEST); 
+//   Preconditioner_dFIdU_AUSM_plus_up(Jacobian[STENCIL_NORTH],cell_index_i,cell_index_j,STENCIL_NORTH);
+//   Preconditioner_dFIdU_AUSM_plus_up(Jacobian[STENCIL_SOUTH],cell_index_i,cell_index_j,STENCIL_SOUTH); 
+//   Preconditioner_dFIdU_AUSM_plus_up(Jacobian[STENCIL_EAST],cell_index_i,cell_index_j,STENCIL_EAST);        
+//   Preconditioner_dFIdU_AUSM_plus_up(Jacobian[STENCIL_WEST],cell_index_i,cell_index_j,STENCIL_WEST); 
 
 //   //! Using the fact that dF/dU(right) = - dF/dU(left) 
-//   Jacobian[CENTER] += (Jacobian[NORTH] + Jacobian[SOUTH] + Jacobian[EAST]  + Jacobian[WEST])
+//   Jacobian[STENCIL_CENTER] += (Jacobian[STENCIL_NORTH] + Jacobian[STENCIL_SOUTH] + Jacobian[STENCIL_EAST]  + Jacobian[STENCIL_WEST])
 //     /SolnBlk->Grid.Cell[cell_index_i][cell_index_j].A;
 
-//   Jacobian[NORTH] = -Jacobian[NORTH]/SolnBlk->Grid.Cell[cell_index_i][cell_index_j-1].A;
-//   Jacobian[SOUTH] = -Jacobian[SOUTH]/SolnBlk->Grid.Cell[cell_index_i][cell_index_j+1].A;
-//   Jacobian[EAST] = -Jacobian[EAST]/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j].A;
-//   Jacobian[WEST] = -Jacobian[WEST]/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j].A;
+//   Jacobian[STENCIL_NORTH] = -Jacobian[STENCIL_NORTH]/SolnBlk->Grid.Cell[cell_index_i][cell_index_j-1].A;
+//   Jacobian[STENCIL_SOUTH] = -Jacobian[STENCIL_SOUTH]/SolnBlk->Grid.Cell[cell_index_i][cell_index_j+1].A;
+//   Jacobian[STENCIL_EAST] = -Jacobian[STENCIL_EAST]/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j].A;
+//   Jacobian[STENCIL_WEST] = -Jacobian[STENCIL_WEST]/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j].A;
   
 }
 
@@ -638,7 +650,7 @@ First_Order_Inviscid_Jacobian_AUSM_plus_up(const int &cell_index_i,const int &ce
  ****************************************************************************/
 template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
 inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
-Second_Order_Viscous_Jacobian(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jacobian){
+Second_Order_Viscous_Jacobian(const int &cell_index_i,const int &cell_index_j,const int &cell_index_k, DenseMatrix* Jacobian){
 
 //   // A real cludge with all the DenseMatrices and recalculations, 
 //   //  but just to test, need to change for performance....
@@ -651,64 +663,64 @@ Second_Order_Viscous_Jacobian(const int &cell_index_i,const int &cell_index_j, D
 //   //call dWdU, but this needs to be done in Preconditioner_dFVdU
   
 //   //***************** dR(i,j)/dU(i,j) *********************************************/
-//   //CENTER
+//   //STENCIL_CENTER
 //   Preconditioner_dFVdU(JacobianN,cell_index_i,cell_index_j,
-// 		       cell_index_i,cell_index_j,NORTH,CENTER);
+// 		       cell_index_i,cell_index_j,STENCIL_NORTH,STENCIL_CENTER);
 //   Preconditioner_dFVdU(JacobianS,cell_index_i,cell_index_j,
-// 		       cell_index_i,cell_index_j,SOUTH,CENTER);
+// 		       cell_index_i,cell_index_j,STENCIL_SOUTH,STENCIL_CENTER);
 //   Preconditioner_dFVdU(JacobianE,cell_index_i,cell_index_j,
-// 		       cell_index_i,cell_index_j,EAST,CENTER);
+// 		       cell_index_i,cell_index_j,STENCIL_EAST,STENCIL_CENTER);
 //   Preconditioner_dFVdU(JacobianW,cell_index_i,cell_index_j,
-// 		       cell_index_i,cell_index_j,WEST,CENTER);
+// 		       cell_index_i,cell_index_j,STENCIL_WEST,STENCIL_CENTER);
 
-//   Jacobian[CENTER] += (JacobianN + JacobianS + JacobianE  + JacobianW) 
+//   Jacobian[STENCIL_CENTER] += (JacobianN + JacobianS + JacobianE  + JacobianW) 
 //     /SolnBlk->Grid.Cell[cell_index_i][cell_index_j].A;
 
 
 //   /***************** dR(i,j-1)/dU(i,j) *********************************************/
-//   //NORTH                           
+//   //STENCIL_NORTH                           
 //   JacobianN.zero();
 //   Preconditioner_dFVdU(JacobianN,cell_index_i,cell_index_j-1,
-// 		       cell_index_i,cell_index_j,EAST,NORTH); 
+// 		       cell_index_i,cell_index_j,STENCIL_EAST,STENCIL_NORTH); 
 //   Preconditioner_dFVdU(JacobianN,cell_index_i,cell_index_j-1,
-// 		       cell_index_i,cell_index_j,NORTH,NORTH); 
+// 		       cell_index_i,cell_index_j,STENCIL_NORTH,STENCIL_NORTH); 
 //   Preconditioner_dFVdU(JacobianN,cell_index_i,cell_index_j-1,
-// 		       cell_index_i,cell_index_j,WEST,NORTH); 
+// 		       cell_index_i,cell_index_j,STENCIL_WEST,STENCIL_NORTH); 
  
 //   /***************** dR(i,j+1)/dU(i,j) *********************************************/
-//   //SOUTH 
+//   //STENCIL_SOUTH 
 //   JacobianS.zero();
 //   Preconditioner_dFVdU(JacobianS,cell_index_i,cell_index_j+1,
-// 		       cell_index_i,cell_index_j,EAST,SOUTH);
+// 		       cell_index_i,cell_index_j,STENCIL_EAST,STENCIL_SOUTH);
 //   Preconditioner_dFVdU(JacobianS,cell_index_i,cell_index_j+1,
-// 		       cell_index_i,cell_index_j,SOUTH,SOUTH);
+// 		       cell_index_i,cell_index_j,STENCIL_SOUTH,STENCIL_SOUTH);
 //   Preconditioner_dFVdU(JacobianS,cell_index_i,cell_index_j+1,
-// 		       cell_index_i,cell_index_j,WEST,SOUTH);
+// 		       cell_index_i,cell_index_j,STENCIL_WEST,STENCIL_SOUTH);
   
 //   /***************** dR(i-1,j)/dU(i,j) *********************************************/
-//   //EAST 
+//   //STENCIL_EAST 
 //   JacobianE.zero();
 //   Preconditioner_dFVdU(JacobianE,cell_index_i-1,cell_index_j,
-// 		       cell_index_i,cell_index_j,NORTH,EAST);
+// 		       cell_index_i,cell_index_j,STENCIL_NORTH,STENCIL_EAST);
 //   Preconditioner_dFVdU(JacobianE,cell_index_i-1,cell_index_j,
-// 		       cell_index_i,cell_index_j,EAST,EAST);
+// 		       cell_index_i,cell_index_j,STENCIL_EAST,STENCIL_EAST);
 //   Preconditioner_dFVdU(JacobianE,cell_index_i-1,cell_index_j,
-// 		       cell_index_i,cell_index_j,SOUTH,EAST);
+// 		       cell_index_i,cell_index_j,STENCIL_SOUTH,STENCIL_EAST);
 
 //   /***************** dR(i+1,j)/dU(i,j) *********************************************/
-//   //WEST
+//   //STENCIL_WEST
 //   JacobianW.zero(); 
 //   Preconditioner_dFVdU(JacobianW,cell_index_i+1,cell_index_j,
-// 		       cell_index_i,cell_index_j, NORTH,WEST);
+// 		       cell_index_i,cell_index_j, STENCIL_NORTH,STENCIL_WEST);
 //   Preconditioner_dFVdU(JacobianW,cell_index_i+1,cell_index_j,
-// 		       cell_index_i,cell_index_j, WEST,WEST);
+// 		       cell_index_i,cell_index_j, STENCIL_WEST,STENCIL_WEST);
 //   Preconditioner_dFVdU(JacobianW,cell_index_i+1,cell_index_j,
-// 		       cell_index_i,cell_index_j, SOUTH,WEST);
+// 		       cell_index_i,cell_index_j, STENCIL_SOUTH,STENCIL_WEST);
 
-//   Jacobian[NORTH] += JacobianN/SolnBlk->Grid.Cell[cell_index_i][cell_index_j-1].A;
-//   Jacobian[SOUTH] += JacobianS/SolnBlk->Grid.Cell[cell_index_i][cell_index_j+1].A;
-//   Jacobian[EAST] += JacobianE/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j].A;
-//   Jacobian[WEST] += JacobianW/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j].A; 
+//   Jacobian[STENCIL_NORTH] += JacobianN/SolnBlk->Grid.Cell[cell_index_i][cell_index_j-1].A;
+//   Jacobian[STENCIL_SOUTH] += JacobianS/SolnBlk->Grid.Cell[cell_index_i][cell_index_j+1].A;
+//   Jacobian[STENCIL_EAST] += JacobianE/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j].A;
+//   Jacobian[STENCIL_WEST] += JacobianW/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j].A; 
 
 //   /********************************************************************************/
 //   //CORNERS reuse matrices
@@ -716,35 +728,35 @@ Second_Order_Viscous_Jacobian(const int &cell_index_i,const int &cell_index_j, D
 //   JacobianE.zero();  JacobianW.zero();
 
 //   /***************** dR(i+1,j+1)/dU(i,j) *********************************************/
-//   //SOUTHWEST
+//   //STENCIL_SOUTHSTENCIL_WEST
 //   Preconditioner_dFVdU(JacobianS,cell_index_i+1,cell_index_j+1,
-// 		       cell_index_i,cell_index_j,SOUTH,SW);
+// 		       cell_index_i,cell_index_j,STENCIL_SOUTH,SW);
 //   Preconditioner_dFVdU(JacobianS,cell_index_i+1,cell_index_j+1,
-// 		       cell_index_i,cell_index_j, WEST,SW);  
+// 		       cell_index_i,cell_index_j, STENCIL_WEST,SW);  
 //   Jacobian[SW] += JacobianS/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j+1].A;
   
 //   /***************** dR(i-1,j+1)/dU(i,j) *********************************************/
-//   //SOUTHEAST
+//   //STENCIL_SOUTHSTENCIL_EAST
 //   Preconditioner_dFVdU(JacobianE,cell_index_i-1,cell_index_j+1,
-// 		       cell_index_i,cell_index_j,SOUTH,SE);
+// 		       cell_index_i,cell_index_j,STENCIL_SOUTH,SE);
 //   Preconditioner_dFVdU(JacobianE,cell_index_i-1,cell_index_j+1,
-// 		       cell_index_i,cell_index_j,EAST,SE);  
+// 		       cell_index_i,cell_index_j,STENCIL_EAST,SE);  
 //   Jacobian[SE] += JacobianE/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j+1].A;
 
 //   /***************** dR(i+1,j-1)/dU(i,j) *********************************************/
-//   //NORTHWEST
+//   //STENCIL_NORTHSTENCIL_WEST
 //   Preconditioner_dFVdU(JacobianW,cell_index_i+1,cell_index_j-1,
-// 		       cell_index_i,cell_index_j, NORTH,NW);
+// 		       cell_index_i,cell_index_j, STENCIL_NORTH,NW);
 //   Preconditioner_dFVdU(JacobianW,cell_index_i+1,cell_index_j-1,
-// 		       cell_index_i,cell_index_j, WEST,NW);  
+// 		       cell_index_i,cell_index_j, STENCIL_WEST,NW);  
 //   Jacobian[NW] += JacobianW/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j-1].A;
 
 //   /***************** dR(i-1,j-1)/dU(i,j) *********************************************/
-//   //NORTHEAST
+//   //STENCIL_NORTHSTENCIL_EAST
 //   Preconditioner_dFVdU(JacobianN,cell_index_i-1,cell_index_j-1,
-// 		       cell_index_i,cell_index_j, NORTH,NE);
+// 		       cell_index_i,cell_index_j, STENCIL_NORTH,NE);
 //   Preconditioner_dFVdU(JacobianN,cell_index_i-1,cell_index_j-1,
-// 		       cell_index_i,cell_index_j, EAST,NE);  
+// 		       cell_index_i,cell_index_j, STENCIL_EAST,NE);  
 //   Jacobian[NE] += JacobianN/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j-1].A;
 
 
@@ -758,12 +770,13 @@ inline void Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
 Setup_Preconditioner()
 {
   deallocate_Precon(); // cludge of a workaround to fix up how BpPrecon uses memory in .setup
- 
+  
   ILUK_Precon = new BILUK;
   Jacobi_Precon = new BJacobi;
   
   if (Input->NKS_IP.GMRES_Block_Preconditioner == Block_ILUK ) {      
     /* ILU(k) */   
+    ILUK_Precon->growth = Input->NKS_IP.GMRES_ILUK_Level_of_Fill+1; // BPKIT HACK -> increases storage needed for high level of fill
     ILUK_Precon->localprecon(LP_INVERSE);  // currently using "exact" local inverse, many other options which may be cheaper !!!!!
     ILUK_Precon->setup(Block_Jacobian_approx, Input->NKS_IP.GMRES_ILUK_Level_of_Fill);
   } else if (Input->NKS_IP.GMRES_Block_Preconditioner == Block_Jacobi) {
@@ -821,7 +834,7 @@ Rotation_Matrix(const Vector2D &nface, const int &A_matrix)
   double cos_angle = nface.x; 
   double sin_angle = nface.y;
     
-  DenseMatrix mat(blocksize,blocksize);
+  DenseMatrix mat(blocksize,blocksize); //TEMP
   mat.identity();
 
   if (A_matrix) {             

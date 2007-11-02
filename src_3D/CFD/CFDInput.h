@@ -232,7 +232,7 @@ class CFD_Input_Parameters{
     N_Stage = 1;
     CFL_Number = HALF;
     Time_Max = ZERO;
-    p_Norm_Indicator = 1;
+    p_Norm_Indicator = 1;              //This is a stupid NAME!
     Number_of_Residual_Norms =1;
     // Reconstruction type indicator and related input parameters:
     strcpy(Reconstruction_Type, "Least_Squares");

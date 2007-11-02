@@ -116,17 +116,28 @@ normalize_Preconditioner_dFdU(DenseMatrix &dFdU)
   double ao  = Euler3D_W_STDATM.a();
 
   dFdU(0,0) *= (ONE/ao);
-  dFdU(0,3) *=  ao;
+  dFdU(0,4) *=  ao;
+
   dFdU(1,0) *= (ONE/sqr(ao));
   dFdU(1,1) *= (ONE/ao);
   dFdU(1,2) *= (ONE/ao);
+  dFdU(1,3) *= (ONE/ao);
+
   dFdU(2,0) *= (ONE/sqr(ao));
   dFdU(2,1) *= (ONE/ao);
   dFdU(2,2) *= (ONE/ao);
-  dFdU(3,0) *= (ONE/cube(ao));
-  dFdU(3,1) *= (ONE/sqr(ao));
-  dFdU(3,2) *= (ONE/sqr(ao));
-  dFdU(3,3) *= (ONE/ao); 
+  dFdU(2,3) *= (ONE/ao);
+
+  dFdU(3,0) *= (ONE/sqr(ao));
+  dFdU(3,1) *= (ONE/ao);
+  dFdU(3,2) *= (ONE/ao);
+  dFdU(3,3) *= (ONE/ao);
+
+  dFdU(4,0) *= (ONE/cube(ao));
+  dFdU(4,1) *= (ONE/sqr(ao));
+  dFdU(4,2) *= (ONE/sqr(ao));
+  dFdU(4,3) *= (ONE/sqr(ao));  
+  dFdU(4,4) *= (ONE/ao); 
 }
 
 /************************************************************************/
