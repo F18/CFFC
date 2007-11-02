@@ -115,6 +115,8 @@ public:
   Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> *SolnBlk;
   Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> *Input;
 
+  DTS_Hexa_Block<SOLN_pSTATE,SOLN_cSTATE> *DTS_SolnBlk;
+
   /****************************************************************/
   /************** Creation and copy constructors. *****************/
   /****************************************************************/  
@@ -122,7 +124,7 @@ public:
 		      scalar_dim(0), search_directions(0),
 		      normalize_valuesR(NULL), normalize_valuesU(NULL),
 		      s(NULL), cs(NULL), sn(NULL), b(NULL), x(NULL),
-		      H(NULL), W(NULL), V(NULL), SolnBlk(NULL), Input(NULL),
+		      H(NULL), W(NULL), V(NULL), SolnBlk(NULL), Input(NULL), DTS_SolnBlk(NULL),
 		      vector_switch(1), NCi(0), ICl(0), ICu(0), 
 		      NCj(0), JCl(0), JCu(0), NCk(0), KCl(0), KCu(0), Nghost(0) {}
   
@@ -132,7 +134,8 @@ public:
   /* Allocate and deallocate memory for GMRES_Block variables. */
   void allocate(Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> &SolnBlk_ptr,
 		Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &Input_ptr,
-		const int &_blocksize);  
+		const int &_blocksize,
+		DTS_Hexa_Block<SOLN_pSTATE,SOLN_cSTATE> &DTS_SolnBlk_ptr);  
 
   void deallocate();
   ~GMRES_Block() { deallocate(); }
@@ -233,12 +236,13 @@ template <typename SOLN_pSTATE,typename SOLN_cSTATE>
 void GMRES_Block<SOLN_pSTATE,SOLN_cSTATE>::
 allocate( Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> &SolnBlk_ptr,
 	  Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &Input_ptr,
-	  const int &_blocksize) 
+	  const int &_blocksize,
+	  DTS_Hexa_Block<SOLN_pSTATE,SOLN_cSTATE> &DTS_SolnBlk_ptr) 
 {  
   //set pointer to solution block and set all necessary GMRES information
   SolnBlk = &(SolnBlk_ptr);
   Input = &(Input_ptr);
-
+  DTS_SolnBlk = &(DTS_SolnBlk_ptr);
   NCi = SolnBlk->NCi;  ICl = SolnBlk->ICl;  ICu = SolnBlk->ICu;
   NCj = SolnBlk->NCj;  JCl = SolnBlk->JCl;  JCu = SolnBlk->JCu;
   NCk = SolnBlk->NCk;  KCl = SolnBlk->KCl;  KCu = SolnBlk->KCu;
@@ -434,7 +438,11 @@ calculate_Matrix_Free(const double &epsilon)
 	  //Matrix Free V(i+1) 
 	  V[(search_directions+1)*scalar_dim+iter] = 
 	    ( normalizeR(SolnBlk->dUdt[i][j][k][0][var+1],var) - b[iter]) / epsilon 
-	    -  normalizeUtoR( W[(search_directions)*scalar_dim + iter] / (SolnBlk->dt[i][j][k]),var);
+	    -  normalizeUtoR( W[(search_directions)*scalar_dim + iter] *
+			      LHS_Time<SOLN_pSTATE,SOLN_cSTATE>(*Input, 
+								SolnBlk->dt[i][j][k],
+								DTS_SolnBlk->DTS_dTime),var);  
+
 	  
 // #ifdef _NKS_VERBOSE_NAN_CHECK
 // 	// nan check most commonly caused by nans in dUdt !!!!
@@ -475,7 +483,10 @@ calculate_Matrix_Free_Restart(const double &epsilon)
 	  int iter = index(i,j,k);		
 	  //Matrix Free V(0) 
 	  V[iter] =  ( normalizeR(SolnBlk->dUdt[i][j][k][0][var+1],var) - b[iter]) / epsilon 
-	    - normalizeUtoR( x[iter] / ( SolnBlk->dt[i][j][k]) , var);
+	    - normalizeUtoR( x[iter] *  LHS_Time<SOLN_pSTATE,SOLN_cSTATE>(*Input, 
+									  SolnBlk->dt[i][j][k],
+									  DTS_SolnBlk->DTS_dTime),var);  
+
 	}      
       }
     } 
@@ -710,7 +721,7 @@ Setup(HexaSolver_Data &Data_ptr,
     if (Data->Local_Adaptive_Block_List.Block[Bcount].used == ADAPTIVEBLOCK3D_USED) {
       G[Bcount].allocate(Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount], 
 			 Solution_Data->Input,
-			 block_size);
+			 block_size,DTS_SolnBlk[Bcount]);
     } 
   } 
 }
@@ -1317,8 +1328,8 @@ solve(Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE> *Block_precon) {
       if (Data->Local_Adaptive_Block_List.Block[Bcount].used == ADAPTIVEBLOCK3D_USED) {   	  
 	total_norm_b += sqr(G[Bcount].L2_Norm( G[Bcount].b));	
 	for(int i=0; i< blocksize; i++){	
-// 	  total_norm_eqn_b[i] += sqr(G[Bcount].L2_Norm(i, G[Bcount].b));	
-// 	  total_norm_eqn_r[i] += sqr(G[Bcount].L2_Norm(i, G[Bcount].V));		  
+	  total_norm_eqn_b[i] += sqr(G[Bcount].L2_Norm(i, G[Bcount].b));	
+	  total_norm_eqn_r[i] += sqr(G[Bcount].L2_Norm(i, G[Bcount].V));		  
 	}
       }
     } 

@@ -41,7 +41,7 @@ int dUdt_Residual_Evaluation_DTS(HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTA
 				 DTS_Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> *DTS_SolnBlk,
 				 const int Block){
 				 
-  int error_flag = Solution_Data->Local_Solution_Blocks.Soln_Blks[Block].dUdt_Multistage_Explicit(0,Solution_Data->Input);
+  int error_flag = Solution_Data->Local_Solution_Blocks.Soln_Blks[Block].dUdt_Residual_Evaluation(Solution_Data->Input);
 
 //   // Add dual time stepping Source Term to Residual ie. dUdt[i][j][0]
 //   if ( Solution_Data->Input.NKS_IP.Dual_Time_Stepping) {

@@ -158,16 +158,16 @@ Calculate_Norms(const int &Number_of_Newton_Steps){
   // Calculate 1-, 2-, and max-norms of density residual (dUdt) for all blocks. 
   
   // NEED TO MOD THIS FOR  Number_of_Residual_Norms >1
-  L1norm_current[0] = Solution_Data->Local_Solution_Blocks.L1_Norm_Residual();       
-  L2norm_current[0] = Solution_Data->Local_Solution_Blocks.L2_Norm_Residual();
-  Max_norm_current[0] = Solution_Data->Local_Solution_Blocks.Max_Norm_Residual();
+  L1norm_current[Solution_Data->Input.p_Norm_Indicator] = Solution_Data->Local_Solution_Blocks.L1_Norm_Residual();       
+  L2norm_current[Solution_Data->Input.p_Norm_Indicator] = Solution_Data->Local_Solution_Blocks.L2_Norm_Residual();
+  Max_norm_current[Solution_Data->Input.p_Norm_Indicator] = Solution_Data->Local_Solution_Blocks.Max_Norm_Residual();
   
-  for(int q=0; q < Solution_Data->Input.Number_of_Residual_Norms; q++){
-    L1norm_current[q] = CFFC_Summation_MPI(L1norm_current[q]);      // L1 norm for all processors.
-    L2norm_current[q] = sqr(L2norm_current[q]);
-    L2norm_current[q] = sqrt(CFFC_Summation_MPI(L2norm_current[q])); // L2 norm for all processors.
-    Max_norm_current[q] = CFFC_Maximum_MPI(Max_norm_current[q]);     // Max norm for all processors.
-  }
+//   for(int q=0; q < Solution_Data->Input.Number_of_Residual_Norms; q++){
+//     L1norm_current[q] = CFFC_Summation_MPI(L1norm_current[q]);      // L1 norm for all processors.
+//     L2norm_current[q] = sqr(L2norm_current[q]);
+//     L2norm_current[q] = sqrt(CFFC_Summation_MPI(L2norm_current[q])); // L2 norm for all processors.
+//     Max_norm_current[q] = CFFC_Maximum_MPI(Max_norm_current[q]);     // Max norm for all processors.
+//   }
   
   //Relative Norms used for CFL scaling during startup
   if (Number_of_Newton_Steps == 1 ) {
@@ -307,7 +307,8 @@ Solve(){
   /**************************************************************************/  
   // NKS Specific Output 
   if (CFFC_Primary_MPI_Processor() && !Data->batch_flag){
-    //cout << Solution_Data->Input.NKS_IP; // Causes linking error ?
+    //cout << Solution_Data->Input.NKS_IP;   // Causes linking error ?? so call output directly
+    Solution_Data->Input.NKS_IP.Output(cout);
     //Input_Parameters.NKS_IP.Memory_Estimates(blocksize,SolnBlk[0].NCi*SolnBlk[0].NCj,Used_blocks_count);
   }  
 
@@ -508,16 +509,15 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
     if (CFFC_Primary_MPI_Processor() &&
 	(!Solution_Data->Input.NKS_IP.Dual_Time_Stepping ||
 	 (Solution_Data->Input.NKS_IP.Dual_Time_Stepping && Number_of_Newton_Steps == 1)) ) {  //Output only 1st Step when using DTS
-      
-//       Output_Progress_to_File(residual_file,
-// 			      number_of_explicit_time_steps+real_NKS_Step,
-// 			      Physical_Time*THOUSAND,
-// 			      total_cpu_time, 
-// 			      L1norm_current,      //maybe switch to current_n so all scale from 1 ???
-// 			      L2norm_current,
-// 			      Max_norm_current,
-// 			      SolnBlk[0].residual_variable-1,
-// 			      SolnBlk[0].Number_of_Residual_Norms);
+
+      Output_Progress_to_File(Data->residual_file,
+			      Data->number_of_explicit_time_steps+Number_of_Newton_Steps,  //DTS!!!
+			      physical_time*THOUSAND,
+			      Data->total_cpu_time, 
+			      L1norm_current[Solution_Data->Input.p_Norm_Indicator],      //maybe switch to current_n so all scale from 1 ???
+			      L2norm_current[Solution_Data->Input.p_Norm_Indicator],
+			      Max_norm_current[Solution_Data->Input.p_Norm_Indicator]);  //mod to output "N" norms
+			      
     }
 
     /************************** Restart ***************************************/

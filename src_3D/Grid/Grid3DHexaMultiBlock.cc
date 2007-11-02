@@ -1771,8 +1771,7 @@ void Grid3D_Hexa_Multi_Block::Create_Grid(Grid3D_Input_Parameters &Input) {
     switch(Input.i_Grid) {
       case GRID_CUBE :
         Create_Grid_Cube(Input);
-        break;
-
+        break;      
       case GRID_CHANNEL_XDIR :
       case GRID_CHANNEL_YDIR:
       case GRID_CHANNEL_ZDIR:
@@ -1984,12 +1983,12 @@ void Grid3D_Hexa_Multi_Block::Create_Grid_Channel(Grid3D_Input_Parameters &Input
                 } /* endif */
 
 	        if (jBlk == Input.NBlk_Jdir-1) {
-                   BC_north = BC_WALL_VISCOUS;
+		   BC_north = BC_CONSTANT_EXTRAPOLATION;//BC_WALL_VISCOUS;
                 } else {
                    BC_north = BC_NONE;
                 } /* endif */
                 if (jBlk == 0) {
-                   BC_south = BC_WALL_VISCOUS;
+		   BC_south = BC_CONSTANT_EXTRAPOLATION;//BC_WALL_VISCOUS;
                 } else {
                    BC_south = BC_NONE;
                 } /* endif */

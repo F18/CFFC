@@ -159,7 +159,13 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
         Box_Height = ONE;
 
      } else if (strcmp(Grid_Type, "Channel") == 0) {
-        i_Grid = GRID_CHANNEL;
+        i_Grid = GRID_CHANNEL_ZDIR;
+        Box_Length = 0.2;
+        Box_Width = 0.001;
+        Box_Height = 0.001;
+
+     } else if (strcmp(Grid_Type, "Channel_X") == 0) {
+        i_Grid = GRID_CHANNEL_XDIR;
         Box_Length = 0.2;
         Box_Width = 0.001;
         Box_Height = 0.001;
@@ -319,6 +325,21 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
      i_command = 3027;
      value >> value_string;
      strcpy(ICEMCFD_FileNames[2], value_string.c_str());
+
+  } else if (strcmp(code, "Box_Width") == 0) {   
+     i_command = 3028;
+     value >> Box_Width;
+     if (Box_Width <ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Box_Height") == 0) {
+     i_command = 3029;
+     value >> Box_Height;
+     if (Box_Height <ZERO) i_command = INVALID_INPUT_VALUE;
+    
+  } else if (strcmp(code, "Box_Length") == 0) {
+     i_command = 3030;
+     value >> Box_Length;
+     if (Box_Length <ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else {
      i_command = INVALID_INPUT_CODE;

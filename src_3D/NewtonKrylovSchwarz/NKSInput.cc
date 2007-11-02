@@ -422,56 +422,6 @@ int NKS_Input_Parameters::Check_Inputs(void) {
 
 }
 
-/***************************************************************************
- * NKS_Input_Parameters::Memory Estimates - Estimate memory usage.         *
- ***************************************************************************/
-void NKS_Input_Parameters::Memory_Estimates(const int &blocksize, 
-                                            const int &block_mat_size,
-                                            const int &used_blocks){
-
-  cerr <<" \n NKS_Input_Parameters::Memory_Estimates not working yet ";
-
-//   int INT = sizeof(int);  //4 bytes
-//   int DOUBLE = sizeof(double); //8bytes
-//   double MB = 1024.0*1024.0;
-
-//   double GMRES = DOUBLE*( (blocksize+1) + 
-// 			  (GMRES_Restart +1) +
-// 			  (GMRES_Restart*2) +
-// 			  (block_mat_size*blocksize) +
-// 			  (GMRES_Restart +1)*(GMRES_Restart) +
-// 			  (GMRES_Restart)*(block_mat_size*blocksize) +
-// 			  (GMRES_Restart+1)*(block_mat_size*blocksize) );
-  
-//   int nnz = 5*block_mat_size;  //ONLY FOR 1st order, 13 for 2nd
-  
-//   int JACOBIAN = DOUBLE*(nnz*blocksize*blocksize) +
-//                  INT * ( (block_mat_size +1)*3 + nnz );
-
-				    				    
-//   //ONLY FOR ILU
-//   int upper = nnz*blocksize*blocksize / 2 - block_mat_size;
-//   int lower = upper;
-
-//   int PRECON = DOUBLE*( (block_mat_size*blocksize*blocksize) +
-// 			( GMRES_ILUK_Level_of_Fill + 2)*(upper) +
-// 			( GMRES_ILUK_Level_of_Fill + 2)*(upper) + block_mat_size ) +
-//                INT * (  (block_mat_size +1)*2 +
-// 			( GMRES_ILUK_Level_of_Fill + 2)*(upper) +
-// 			( GMRES_ILUK_Level_of_Fill + 2)*(upper) + block_mat_size );
-
-  
-//   //Output
-//   cout<<" NKS Memory Requirement Estimate (MB)";
-//   cout<<"\n Preconditioner (ILU) = "<<PRECON/MB; 
-//   cout<<"\n GMRES                = "<<GMRES/MB; 
-//   cout<<"\n Jacobian             = "<<JACOBIAN/MB; 
-//   cout<<"\n Total                = "<<(PRECON+JACOBIAN+GMRES)/MB; 
-//   cout<<endl;
-//   for (int star=0;star<75;star++) {cout<<"*";}
-//   cout <<endl;
-
-} 
 
 /***************************************************************************
  * NKS_Input_Parameters -- Input-output operators.                         *
@@ -604,3 +554,54 @@ void NKS_Input_Parameters::Output(ostream &fout) const {
   fout << endl;
 
 }
+
+/***************************************************************************
+ * NKS_Input_Parameters::Memory Estimates - Estimate memory usage.         *
+ ***************************************************************************/
+void NKS_Input_Parameters::Memory_Estimates(const int &blocksize, 
+                                            const int &block_mat_size,
+                                            const int &used_blocks){
+
+  cerr <<" \n NKS_Input_Parameters::Memory_Estimates not working yet ";
+
+//   int INT = sizeof(int);  //4 bytes
+//   int DOUBLE = sizeof(double); //8bytes
+//   double MB = 1024.0*1024.0;
+
+//   double GMRES = DOUBLE*( (blocksize+1) + 
+// 			  (GMRES_Restart +1) +
+// 			  (GMRES_Restart*2) +
+// 			  (block_mat_size*blocksize) +
+// 			  (GMRES_Restart +1)*(GMRES_Restart) +
+// 			  (GMRES_Restart)*(block_mat_size*blocksize) +
+// 			  (GMRES_Restart+1)*(block_mat_size*blocksize) );
+  
+//   int nnz = 5*block_mat_size;  //ONLY FOR 1st order, 13 for 2nd
+  
+//   int JACOBIAN = DOUBLE*(nnz*blocksize*blocksize) +
+//                  INT * ( (block_mat_size +1)*3 + nnz );
+
+				    				    
+//   //ONLY FOR ILU
+//   int upper = nnz*blocksize*blocksize / 2 - block_mat_size;
+//   int lower = upper;
+
+//   int PRECON = DOUBLE*( (block_mat_size*blocksize*blocksize) +
+// 			( GMRES_ILUK_Level_of_Fill + 2)*(upper) +
+// 			( GMRES_ILUK_Level_of_Fill + 2)*(upper) + block_mat_size ) +
+//                INT * (  (block_mat_size +1)*2 +
+// 			( GMRES_ILUK_Level_of_Fill + 2)*(upper) +
+// 			( GMRES_ILUK_Level_of_Fill + 2)*(upper) + block_mat_size );
+
+  
+//   //Output
+//   cout<<" NKS Memory Requirement Estimate (MB)";
+//   cout<<"\n Preconditioner (ILU) = "<<PRECON/MB; 
+//   cout<<"\n GMRES                = "<<GMRES/MB; 
+//   cout<<"\n Jacobian             = "<<JACOBIAN/MB; 
+//   cout<<"\n Total                = "<<(PRECON+JACOBIAN+GMRES)/MB; 
+//   cout<<endl;
+//   for (int star=0;star<75;star++) {cout<<"*";}
+//   cout <<endl;
+
+} 
