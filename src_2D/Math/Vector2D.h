@@ -206,6 +206,8 @@ class Vector2D{
     //@{ Relational operators.
     friend int operator ==(const Vector2D &V1, const Vector2D &V2);
     friend int operator !=(const Vector2D &V1, const Vector2D &V2);
+    friend bool operator >=(const Vector2D &V1, const Vector2D &V2){ return (V1.x >= V2.x) && (V1.y >= V2.y);}
+    friend bool operator <=(const Vector2D &V1, const Vector2D &V2){ return (V1.x <= V2.x) && (V1.y <= V2.y);}
     //@}
     
     //@{ @name Input-output operators.

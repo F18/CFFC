@@ -595,6 +595,22 @@ inline char *Date_And_Time() {
 #define IC_BLUNT_BODY                 307
 
 /********************************************************
+ * CFD -- Velocity Field Types                          *
+ ********************************************************/
+#define VELOCITY_FIELD_QUIESCENT                        0
+#define VELOCITY_FIELD_UNIFORM                          1
+#define VELOCITY_FIELD_UNIFORM_X_DIRECTION              2
+#define VELOCITY_FIELD_UNIFORM_Y_DIRECTION              3
+#define VELOCITY_FIELD_ROTATIONAL_WRT_ORIGIN            4
+#define VELOCITY_FIELD_ROTATIONAL_WRT_ARBITRATY_POINT   5
+
+/********************************************************
+ * CFD -- Angular Velocity Field Variation Types        *
+ ********************************************************/
+#define ANGULAR_VELOCITY_CONSTANT               0
+#define ANGULAR_VELOCITY_INVERS_PROPORTIONAL    1
+
+/********************************************************
  * CFD -- Time Integration (Time-Stepping) Types.       *
  ********************************************************/
 
