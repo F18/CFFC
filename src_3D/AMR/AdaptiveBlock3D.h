@@ -116,6 +116,24 @@ namespace BE
    
    };
 }
+/********************************************************
+ * Class:MeshBLKs_to_LocalBLKs                          *
+ *                                                      *
+ * Member                                               *
+ *         cpu    --  return the cpu                    *
+ *         blknum --  return the block number in        * 
+ *                    a local block list                *
+ ********************************************************/
+class MeshBLKs_to_LocalBLKs{
+
+  public:
+
+   int cpu;
+   int blknum;
+   
+   
+};
+
 
 
 /* Define the classes. */

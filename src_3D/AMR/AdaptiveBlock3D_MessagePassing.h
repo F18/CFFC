@@ -64,99 +64,114 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
   } /* endif */
    
     /* Load the send buffers of each solution block. */
-  for ( i_blk = 0 ; i_blk < Soln_Block_List.Nblk ; ++i_blk ) {
+  for ( i_blk = 0 ; i_blk <= Soln_Block_List.Nblk-1 ; ++i_blk ) {
      
-     // assign the boudnary element info
-     n_bound_elem[BE::BSW] = Soln_Block_List.Block[i_blk].nBSW;
-     info_bound_elem[BE::BSW] =  Soln_Block_List.Block[i_blk].infoBSW[0];
+  
+     if(Soln_Block_List.Block[i_blk].used){
+        // assign the boudnary element info
+        n_bound_elem[BE::BSW] = Soln_Block_List.Block[i_blk].nBSW;
+        info_bound_elem[BE::BSW] =  Soln_Block_List.Block[i_blk].infoBSW[0];
+        
+        n_bound_elem[BE::SW] = Soln_Block_List.Block[i_blk].nSW;
+        info_bound_elem[BE::SW] =  Soln_Block_List.Block[i_blk].infoSW[0];
+        
+        n_bound_elem[BE::TSW] = Soln_Block_List.Block[i_blk].nTSW;
+        info_bound_elem[BE::TSW] =  Soln_Block_List.Block[i_blk].infoTSW[0];
+        
+        n_bound_elem[BE::BW] = Soln_Block_List.Block[i_blk].nBW;
+        info_bound_elem[BE::BW] =  Soln_Block_List.Block[i_blk].infoBW[0];
+        
+        n_bound_elem[BE::W] = Soln_Block_List.Block[i_blk].nW;
+        info_bound_elem[BE::W] =  Soln_Block_List.Block[i_blk].infoW[0];
+        
+        n_bound_elem[BE::TW] = Soln_Block_List.Block[i_blk].nTW;
+        info_bound_elem[BE::TW] =  Soln_Block_List.Block[i_blk].infoTW[0];
+        
+        n_bound_elem[BE::BNW] = Soln_Block_List.Block[i_blk].nBNW;
+        info_bound_elem[BE::BNW] =  Soln_Block_List.Block[i_blk].infoBNW[0];
+        
+        n_bound_elem[BE::NW] = Soln_Block_List.Block[i_blk].nNW;
+        info_bound_elem[BE::NW] =  Soln_Block_List.Block[i_blk].infoNW[0];
+        
+        n_bound_elem[BE::TNW] = Soln_Block_List.Block[i_blk].nTNW;
+        info_bound_elem[BE::TNW] =  Soln_Block_List.Block[i_blk].infoTNW[0];
+        
+        n_bound_elem[BE::BS] = Soln_Block_List.Block[i_blk].nBS;
+        info_bound_elem[BE::BS] =  Soln_Block_List.Block[i_blk].infoBS[0];
+        
+        n_bound_elem[BE::S] = Soln_Block_List.Block[i_blk].nS;
+        info_bound_elem[BE::S] =  Soln_Block_List.Block[i_blk].infoS[0];
+        
+        n_bound_elem[BE::TS] = Soln_Block_List.Block[i_blk].nTS;
+        info_bound_elem[BE::TS] =  Soln_Block_List.Block[i_blk].infoTS[0];
+        
+        n_bound_elem[BE::B] = Soln_Block_List.Block[i_blk].nB;
+        info_bound_elem[BE::B] =  Soln_Block_List.Block[i_blk].infoB[0];
+        
+        n_bound_elem[BE::T] = Soln_Block_List.Block[i_blk].nT;
+        info_bound_elem[BE::T] =  Soln_Block_List.Block[i_blk].infoT[0];
+        
+        n_bound_elem[BE::BN] = Soln_Block_List.Block[i_blk].nBN;
+        info_bound_elem[BE::BN] =  Soln_Block_List.Block[i_blk].infoBN[0];
+        
+        n_bound_elem[BE::N] = Soln_Block_List.Block[i_blk].nN;
+        info_bound_elem[BE::N] =  Soln_Block_List.Block[i_blk].infoN[0];
+        
+        n_bound_elem[BE::TN] = Soln_Block_List.Block[i_blk].nTN;
+        info_bound_elem[BE::TN] =  Soln_Block_List.Block[i_blk].infoTN[0];
+        
+        n_bound_elem[BE::BSE] = Soln_Block_List.Block[i_blk].nBSE;
+        info_bound_elem[BE::BSE] =  Soln_Block_List.Block[i_blk].infoBSE[0];
+        
+        n_bound_elem[BE::SE] = Soln_Block_List.Block[i_blk].nSE;
+        info_bound_elem[BE::SE] =  Soln_Block_List.Block[i_blk].infoSE[0];
+        
+        n_bound_elem[BE::TSE] = Soln_Block_List.Block[i_blk].nTSE;
+        info_bound_elem[BE::TSE] =  Soln_Block_List.Block[i_blk].infoTSE[0];
+        
+        n_bound_elem[BE::BE] = Soln_Block_List.Block[i_blk].nBE;
+        info_bound_elem[BE::BE] =  Soln_Block_List.Block[i_blk].infoBE[0];
+        
+        n_bound_elem[BE::E] = Soln_Block_List.Block[i_blk].nE;
+        info_bound_elem[BE::E] =  Soln_Block_List.Block[i_blk].infoE[0];
+        
+        n_bound_elem[BE::TE] = Soln_Block_List.Block[i_blk].nTE;
+        info_bound_elem[BE::TE] =  Soln_Block_List.Block[i_blk].infoTE[0]; 
+        
+        n_bound_elem[BE::BNE] = Soln_Block_List.Block[i_blk].nBNE;
+        info_bound_elem[BE::BNE] =  Soln_Block_List.Block[i_blk].infoBNE[0]; 
+        
+        n_bound_elem[BE::NE] = Soln_Block_List.Block[i_blk].nNE;
+        info_bound_elem[BE::NE] =  Soln_Block_List.Block[i_blk].infoNE[0];  
+        
+        n_bound_elem[BE::TNE] = Soln_Block_List.Block[i_blk].nTNE;
+        info_bound_elem[BE::TNE] =  Soln_Block_List.Block[i_blk].infoTNE[0]; 
      
-     n_bound_elem[BE::SW] = Soln_Block_List.Block[i_blk].nSW;
-     info_bound_elem[BE::SW] =  Soln_Block_List.Block[i_blk].infoSW[0];
-     
-     n_bound_elem[BE::TSW] = Soln_Block_List.Block[i_blk].nTSW;
-     info_bound_elem[BE::TSW] =  Soln_Block_List.Block[i_blk].infoTSW[0];
-     
-     n_bound_elem[BE::BW] = Soln_Block_List.Block[i_blk].nBW;
-     info_bound_elem[BE::BW] =  Soln_Block_List.Block[i_blk].infoBW[0];
-      
-     n_bound_elem[BE::W] = Soln_Block_List.Block[i_blk].nW;
-     info_bound_elem[BE::W] =  Soln_Block_List.Block[i_blk].infoW[0];
-      
-     n_bound_elem[BE::TW] = Soln_Block_List.Block[i_blk].nTW;
-     info_bound_elem[BE::TW] =  Soln_Block_List.Block[i_blk].infoTW[0];
-      
-     n_bound_elem[BE::BNW] = Soln_Block_List.Block[i_blk].nBNW;
-     info_bound_elem[BE::BNW] =  Soln_Block_List.Block[i_blk].infoBNW[0];
- 
-     n_bound_elem[BE::NW] = Soln_Block_List.Block[i_blk].nNW;
-     info_bound_elem[BE::NW] =  Soln_Block_List.Block[i_blk].infoNW[0];
+        for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) {
+           if (  CFFC_MPI::This_Processor_Number == iProc ) {
+              cout<<"\n In loading send buffer: "<<endl;
+              cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number;
+              cout<<"  i_blk = "<<i_blk<<" used= "<<Soln_Block_List.Block[i_blk].used<<"\n  BE:E = "<<BE::E<<" infoE = "<< info_bound_elem[BE::E];
+              cout<<"\n  BE:W = "<<BE::W<<" infoW = "<< info_bound_elem[BE::W];
+              System::sleep(0.1);
+           }
+           MPI::COMM_WORLD.Barrier();
+        }
 
-     n_bound_elem[BE::TNW] = Soln_Block_List.Block[i_blk].nTNW;
-     info_bound_elem[BE::TNW] =  Soln_Block_List.Block[i_blk].infoTNW[0];
-     
-     n_bound_elem[BE::BS] = Soln_Block_List.Block[i_blk].nBS;
-     info_bound_elem[BE::BS] =  Soln_Block_List.Block[i_blk].infoBS[0];
-
-     n_bound_elem[BE::S] = Soln_Block_List.Block[i_blk].nS;
-     info_bound_elem[BE::S] =  Soln_Block_List.Block[i_blk].infoS[0];
-
-     n_bound_elem[BE::TS] = Soln_Block_List.Block[i_blk].nTS;
-     info_bound_elem[BE::TS] =  Soln_Block_List.Block[i_blk].infoTS[0];
-     
-     n_bound_elem[BE::B] = Soln_Block_List.Block[i_blk].nB;
-     info_bound_elem[BE::B] =  Soln_Block_List.Block[i_blk].infoB[0];
-     
-     n_bound_elem[BE::T] = Soln_Block_List.Block[i_blk].nT;
-     info_bound_elem[BE::T] =  Soln_Block_List.Block[i_blk].infoT[0];
-     
-     n_bound_elem[BE::BN] = Soln_Block_List.Block[i_blk].nBN;
-     info_bound_elem[BE::BN] =  Soln_Block_List.Block[i_blk].infoBN[0];
-     
-     n_bound_elem[BE::N] = Soln_Block_List.Block[i_blk].nN;
-     info_bound_elem[BE::N] =  Soln_Block_List.Block[i_blk].infoN[0];
-     
-     n_bound_elem[BE::TN] = Soln_Block_List.Block[i_blk].nTN;
-     info_bound_elem[BE::TN] =  Soln_Block_List.Block[i_blk].infoTN[0];
-     
-     n_bound_elem[BE::BSE] = Soln_Block_List.Block[i_blk].nBSE;
-     info_bound_elem[BE::BSE] =  Soln_Block_List.Block[i_blk].infoBSE[0];
-     
-     n_bound_elem[BE::SE] = Soln_Block_List.Block[i_blk].nSE;
-     info_bound_elem[BE::SE] =  Soln_Block_List.Block[i_blk].infoSE[0];
-     
-     n_bound_elem[BE::TSE] = Soln_Block_List.Block[i_blk].nTSE;
-     info_bound_elem[BE::TSE] =  Soln_Block_List.Block[i_blk].infoTSE[0];
-     
-     n_bound_elem[BE::BE] = Soln_Block_List.Block[i_blk].nBE;
-     info_bound_elem[BE::BE] =  Soln_Block_List.Block[i_blk].infoBE[0];
-     
-     n_bound_elem[BE::E] = Soln_Block_List.Block[i_blk].nE;
-     info_bound_elem[BE::E] =  Soln_Block_List.Block[i_blk].infoE[0];
-     
-     n_bound_elem[BE::TE] = Soln_Block_List.Block[i_blk].nTE;
-     info_bound_elem[BE::TE] =  Soln_Block_List.Block[i_blk].infoTE[0]; 
-     
-     n_bound_elem[BE::BNE] = Soln_Block_List.Block[i_blk].nBNE;
-     info_bound_elem[BE::BNE] =  Soln_Block_List.Block[i_blk].infoBNE[0]; 
-     
-     n_bound_elem[BE::NE] = Soln_Block_List.Block[i_blk].nNE;
-     info_bound_elem[BE::NE] =  Soln_Block_List.Block[i_blk].infoNE[0];  
-
-     n_bound_elem[BE::TNE] = Soln_Block_List.Block[i_blk].nTNE;
-     info_bound_elem[BE::TNE] =  Soln_Block_List.Block[i_blk].infoTNE[0]; 
-     
-      
+     }
      
      for (int ii = -1; ii<2; ii++){
         for (int jj = -1; jj<2; jj++){
            for (int kk = -1; kk<2; kk++){
               
               i_bound_elem = 9*(ii+1) + 3*(jj+1) + (kk+1);
+              
+              
               if (Soln_Block_List.Block[i_blk].used  && (n_bound_elem[i_bound_elem] == 1) && (i_bound_elem != 13) &&
                   (Soln_Block_List.Block[i_blk].info.level == info_bound_elem[i_bound_elem].level)) {
                  
                  if (!Send_Mesh_Geometry_Only) {
-                  
+                    
                     buffer_size_neighbour = ((abs(ii)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)))*
                        ((abs(jj)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)))*
                        ((abs(kk)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)))*(Number_of_Solution_Variables);
@@ -224,8 +239,6 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                     k_min = (!kk)*Soln_Blks[i_blk].KCl + n_kmin;
                     k_max = (!kk)*Soln_Blks[i_blk].KCu + n_kmax;
                     k_inc = 1;
-                    
-                 
                   
                     i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_sendbuf[i_blk][i_bound_elem],
                                                         l,buffer_size_neighbour,
@@ -234,16 +247,20 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                                                         k_min,k_max,k_inc);
 
 
-/*                     for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+                 /*    for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
 /*                        if (  CFFC_MPI::This_Processor_Number == iProc ) { */
+/*                           cout<<"\n In loading send buffer function #1"<<endl; */
 /*                           cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl; */
-/*                           cout<<"\n min = ("<<i_min<<", "<<j_min<<", "<<k_min<<")       max = ("<<i_max<<","<<j_max<<","<<k_max<<") "; */
-/*                           cout<<"\n i_blk = "<<i_blk<<"  i_bound_element = "<<i_bound_elem<<"   buffer_size_neighbour= "<<buffer_size_neighbour<<endl; */
+/*                           cout<<"\n i_blk = "<<i_blk<<"  i_bound_element = "<<i_bound_elem<<"   buffer_size= "<<buffer_size_neighbour<<endl; */
+/*                           cout<<"\n i_min = "<<i_min<<"  j_min = "<<j_min<<"   k_min "<<k_min<<endl; */
+/*                           cout<<"\n i_max = "<<i_max<<"  j_max = "<<j_max<<"   k_max "<<k_max<<endl; */
                           
 /*                           System::sleep(0.1); */
 /*                        } */
 /*                        MPI::COMM_WORLD.Barrier(); */
 /*                     } */
+
+
                                      
                     if (i != 0) return(2200);
                  } /* endif */
@@ -413,9 +430,11 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
   
 
   }   /* endfor */
- 
-    /* Loading of send buffers complete.  Return zero value. */
   
+ 
+  
+    /* Loading of send buffers complete.  Return zero value. */
+ 
     return(0);
 
 }
@@ -508,123 +527,139 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
     /* Unload the receive buffers for each solution block. */
 
     for ( i_blk = 0 ; i_blk <= Soln_Block_List.Nblk-1 ; ++i_blk ) {
+
+       if (Soln_Block_List.Block[i_blk].used ){
+          
+          // assign the boudnary element info
+          n_bound_elem[BE::BSW] = Soln_Block_List.Block[i_blk].nBSW;
+          info_bound_elem[BE::BSW] =  Soln_Block_List.Block[i_blk].infoBSW[0];
+          
+          n_bound_elem[BE::SW] = Soln_Block_List.Block[i_blk].nSW;
+          info_bound_elem[BE::SW] =  Soln_Block_List.Block[i_blk].infoSW[0];
+          
+          n_bound_elem[BE::TSW] = Soln_Block_List.Block[i_blk].nTSW;
+          info_bound_elem[BE::TSW] =  Soln_Block_List.Block[i_blk].infoTSW[0];
+          
+          n_bound_elem[BE::BW] = Soln_Block_List.Block[i_blk].nBW;
+          info_bound_elem[BE::BW] =  Soln_Block_List.Block[i_blk].infoBW[0];
+          
+          n_bound_elem[BE::W] = Soln_Block_List.Block[i_blk].nW;
+          info_bound_elem[BE::W] =  Soln_Block_List.Block[i_blk].infoW[0];
+          
+          n_bound_elem[BE::TW] = Soln_Block_List.Block[i_blk].nTW;
+          info_bound_elem[BE::TW] =  Soln_Block_List.Block[i_blk].infoTW[0];
+          
+          n_bound_elem[BE::BNW] = Soln_Block_List.Block[i_blk].nBNW;
+          info_bound_elem[BE::BNW] =  Soln_Block_List.Block[i_blk].infoBNW[0];
+          
+          n_bound_elem[BE::NW] = Soln_Block_List.Block[i_blk].nNW;
+          info_bound_elem[BE::NW] =  Soln_Block_List.Block[i_blk].infoNW[0];
+          
+          n_bound_elem[BE::TNW] = Soln_Block_List.Block[i_blk].nTNW;
+          info_bound_elem[BE::TNW] =  Soln_Block_List.Block[i_blk].infoTNW[0];
+          
+          n_bound_elem[BE::BS] = Soln_Block_List.Block[i_blk].nBS;
+          info_bound_elem[BE::BS] =  Soln_Block_List.Block[i_blk].infoBS[0];
+          
+          n_bound_elem[BE::S] = Soln_Block_List.Block[i_blk].nS;
+          info_bound_elem[BE::S] =  Soln_Block_List.Block[i_blk].infoS[0];
+          
+          n_bound_elem[BE::TS] = Soln_Block_List.Block[i_blk].nTS;
+          info_bound_elem[BE::TS] =  Soln_Block_List.Block[i_blk].infoTS[0];
+          
+          n_bound_elem[BE::B] = Soln_Block_List.Block[i_blk].nB;
+          info_bound_elem[BE::B] =  Soln_Block_List.Block[i_blk].infoB[0];
+          
+          n_bound_elem[BE::T] = Soln_Block_List.Block[i_blk].nT;
+          info_bound_elem[BE::T] =  Soln_Block_List.Block[i_blk].infoT[0];
+          
+          n_bound_elem[BE::BN] = Soln_Block_List.Block[i_blk].nBN;
+          info_bound_elem[BE::BN] =  Soln_Block_List.Block[i_blk].infoBN[0];
+          
+          n_bound_elem[BE::N] = Soln_Block_List.Block[i_blk].nN;
+          info_bound_elem[BE::N] =  Soln_Block_List.Block[i_blk].infoN[0];
+          
+          n_bound_elem[BE::TN] = Soln_Block_List.Block[i_blk].nTN;
+          info_bound_elem[BE::TN] =  Soln_Block_List.Block[i_blk].infoTN[0];
+          
+          n_bound_elem[BE::BSE] = Soln_Block_List.Block[i_blk].nBSE;
+          info_bound_elem[BE::BSE] =  Soln_Block_List.Block[i_blk].infoBSE[0];
+          
+          n_bound_elem[BE::SE] = Soln_Block_List.Block[i_blk].nSE;
+          info_bound_elem[BE::SE] =  Soln_Block_List.Block[i_blk].infoSE[0];
+          
+          n_bound_elem[BE::TSE] = Soln_Block_List.Block[i_blk].nTSE;
+          info_bound_elem[BE::TSE] =  Soln_Block_List.Block[i_blk].infoTSE[0];
+          
+          n_bound_elem[BE::BE] = Soln_Block_List.Block[i_blk].nBE;
+          info_bound_elem[BE::BE] =  Soln_Block_List.Block[i_blk].infoBE[0];
+          
+          n_bound_elem[BE::E] = Soln_Block_List.Block[i_blk].nE;
+          info_bound_elem[BE::E] =  Soln_Block_List.Block[i_blk].infoE[0];
+
+       /*    for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+/*              if (  CFFC_MPI::This_Processor_Number == iProc ) { */
+/*                 cout<<"\n In unloading buffer function #o"<<endl; */
+/*                 cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl; */
+/*                 cout<<"\n i_blk = "<<i_blk<<"  BE:E = "<<BE::E<<" info = "<< info_bound_elem[BE::E]; */
+                
+/*                 System::sleep(0.1); */
+/*              } */
+/*              MPI::COMM_WORLD.Barrier(); */
+/*           } */
+                    
+          
+          n_bound_elem[BE::TE] = Soln_Block_List.Block[i_blk].nTE;
+          info_bound_elem[BE::TE] =  Soln_Block_List.Block[i_blk].infoTE[0]; 
+          
+          n_bound_elem[BE::BNE] = Soln_Block_List.Block[i_blk].nBNE;
+          info_bound_elem[BE::BNE] =  Soln_Block_List.Block[i_blk].infoBNE[0]; 
+          
+          n_bound_elem[BE::NE] = Soln_Block_List.Block[i_blk].nNE;
+          info_bound_elem[BE::NE] =  Soln_Block_List.Block[i_blk].infoNE[0];  
+          
+          n_bound_elem[BE::TNE] = Soln_Block_List.Block[i_blk].nTNE;
+          info_bound_elem[BE::TNE] =  Soln_Block_List.Block[i_blk].infoTNE[0]; 
+          
+       }
        
-   // assign the boudnary element info
-     n_bound_elem[BE::BSW] = Soln_Block_List.Block[i_blk].nBSW;
-     info_bound_elem[BE::BSW] =  Soln_Block_List.Block[i_blk].infoBSW[0];
-     
-     n_bound_elem[BE::SW] = Soln_Block_List.Block[i_blk].nSW;
-     info_bound_elem[BE::SW] =  Soln_Block_List.Block[i_blk].infoSW[0];
-     
-     n_bound_elem[BE::TSW] = Soln_Block_List.Block[i_blk].nTSW;
-     info_bound_elem[BE::TSW] =  Soln_Block_List.Block[i_blk].infoTSW[0];
-     
-     n_bound_elem[BE::BW] = Soln_Block_List.Block[i_blk].nBW;
-     info_bound_elem[BE::BW] =  Soln_Block_List.Block[i_blk].infoBW[0];
-      
-     n_bound_elem[BE::W] = Soln_Block_List.Block[i_blk].nW;
-     info_bound_elem[BE::W] =  Soln_Block_List.Block[i_blk].infoW[0];
-      
-     n_bound_elem[BE::TW] = Soln_Block_List.Block[i_blk].nTW;
-     info_bound_elem[BE::TW] =  Soln_Block_List.Block[i_blk].infoTW[0];
-      
-     n_bound_elem[BE::BNW] = Soln_Block_List.Block[i_blk].nBNW;
-     info_bound_elem[BE::BNW] =  Soln_Block_List.Block[i_blk].infoBNW[0];
- 
-     n_bound_elem[BE::NW] = Soln_Block_List.Block[i_blk].nNW;
-     info_bound_elem[BE::NW] =  Soln_Block_List.Block[i_blk].infoNW[0];
-
-     n_bound_elem[BE::TNW] = Soln_Block_List.Block[i_blk].nTNW;
-     info_bound_elem[BE::TNW] =  Soln_Block_List.Block[i_blk].infoTNW[0];
-     
-     n_bound_elem[BE::BS] = Soln_Block_List.Block[i_blk].nBS;
-     info_bound_elem[BE::BS] =  Soln_Block_List.Block[i_blk].infoBS[0];
-
-     n_bound_elem[BE::S] = Soln_Block_List.Block[i_blk].nS;
-     info_bound_elem[BE::S] =  Soln_Block_List.Block[i_blk].infoS[0];
-
-     n_bound_elem[BE::TS] = Soln_Block_List.Block[i_blk].nTS;
-     info_bound_elem[BE::TS] =  Soln_Block_List.Block[i_blk].infoTS[0];
-     
-     n_bound_elem[BE::B] = Soln_Block_List.Block[i_blk].nB;
-     info_bound_elem[BE::B] =  Soln_Block_List.Block[i_blk].infoB[0];
-     
-     n_bound_elem[BE::T] = Soln_Block_List.Block[i_blk].nT;
-     info_bound_elem[BE::T] =  Soln_Block_List.Block[i_blk].infoT[0];
-     
-     n_bound_elem[BE::BN] = Soln_Block_List.Block[i_blk].nBN;
-     info_bound_elem[BE::BN] =  Soln_Block_List.Block[i_blk].infoBN[0];
-     
-     n_bound_elem[BE::N] = Soln_Block_List.Block[i_blk].nN;
-     info_bound_elem[BE::N] =  Soln_Block_List.Block[i_blk].infoN[0];
-     
-     n_bound_elem[BE::TN] = Soln_Block_List.Block[i_blk].nTN;
-     info_bound_elem[BE::TN] =  Soln_Block_List.Block[i_blk].infoTN[0];
-     
-     n_bound_elem[BE::BSE] = Soln_Block_List.Block[i_blk].nBSE;
-     info_bound_elem[BE::BSE] =  Soln_Block_List.Block[i_blk].infoBSE[0];
-     
-     n_bound_elem[BE::SE] = Soln_Block_List.Block[i_blk].nSE;
-     info_bound_elem[BE::SE] =  Soln_Block_List.Block[i_blk].infoSE[0];
-     
-     n_bound_elem[BE::TSE] = Soln_Block_List.Block[i_blk].nTSE;
-     info_bound_elem[BE::TSE] =  Soln_Block_List.Block[i_blk].infoTSE[0];
-     
-     n_bound_elem[BE::BE] = Soln_Block_List.Block[i_blk].nBE;
-     info_bound_elem[BE::BE] =  Soln_Block_List.Block[i_blk].infoBE[0];
-     
-     n_bound_elem[BE::E] = Soln_Block_List.Block[i_blk].nE;
-     info_bound_elem[BE::E] =  Soln_Block_List.Block[i_blk].infoE[0];
-     
-     n_bound_elem[BE::TE] = Soln_Block_List.Block[i_blk].nTE;
-     info_bound_elem[BE::TE] =  Soln_Block_List.Block[i_blk].infoTE[0]; 
-     
-     n_bound_elem[BE::BNE] = Soln_Block_List.Block[i_blk].nBNE;
-     info_bound_elem[BE::BNE] =  Soln_Block_List.Block[i_blk].infoBNE[0]; 
-     
-     n_bound_elem[BE::NE] = Soln_Block_List.Block[i_blk].nNE;
-     info_bound_elem[BE::NE] =  Soln_Block_List.Block[i_blk].infoNE[0];  
-
-     n_bound_elem[BE::TNE] = Soln_Block_List.Block[i_blk].nTNE;
-     info_bound_elem[BE::TNE] =  Soln_Block_List.Block[i_blk].infoTNE[0]; 
-
-     for (int ii = -1; ii<2; ii++){
-        for (int jj = -1; jj<2; jj++){
-           for (int kk = -1; kk<2; kk++){
-              
-              i_bound_elem = 9*(ii+1) + 3*(jj+1) + (kk+1);
-              
-              if (Soln_Block_List.Block[i_blk].used  && (n_bound_elem[i_bound_elem] == 1) && (i_bound_elem != 13) &&
-                  (Soln_Block_List.Block[i_blk].info.level == info_bound_elem[i_bound_elem].level)) {
-                 
-                 if (!Send_Mesh_Geometry_Only) {
-                    
-                    buffer_size =  ((abs(ii)*Soln_Block_List.Block[i_blk].info.dimen.ghost)+ ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)))*
-                    ((abs(jj)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)))*
-                    ((abs(kk)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)))*( Soln_Blks[i_blk].NumVar());
-              
-              if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                 
-                 buffer_size = buffer_size + 
-                    ((abs(ii)*Soln_Block_List.Block[i_blk].info.dimen.ghost)+ ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)))*
-                    ((abs(jj)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)))*
-                    ((abs(kk)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)))*(NUM_COMP_VECTOR3D);
-              
-                 } else {
-                    buffer_size = ((abs(ii)*Soln_Block_List.Block[i_blk].info.dimen.ghost)+ ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)))*
-                       ((abs(jj)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)))*
-                       ((abs(kk)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)))*(NUM_COMP_VECTOR3D);
-                    
-                 } /* endif */
-                 l = -1;
-                 
-                 // Unload ghost cell solution information as required.
-                 if (!Send_Mesh_Geometry_Only) {
-                    
-                    if( ii == -1 ){
-                       n_imin = Soln_Blks[i_blk].Nghost;
-                       n_imax = Soln_Blks[i_blk].ICl +1;
-                       
+       for (int ii = -1; ii<2; ii++){
+          for (int jj = -1; jj<2; jj++){
+             for (int kk = -1; kk<2; kk++){
+                
+                i_bound_elem = 9*(ii+1) + 3*(jj+1) + (kk+1);
+                
+                if (Soln_Block_List.Block[i_blk].used  && (n_bound_elem[i_bound_elem] == 1) && (i_bound_elem != 13) &&
+                    (Soln_Block_List.Block[i_blk].info.level == info_bound_elem[i_bound_elem].level)) {
+                   
+                   if (!Send_Mesh_Geometry_Only) {
+                      
+                      buffer_size =  ((abs(ii)*Soln_Block_List.Block[i_blk].info.dimen.ghost)+ ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)))*
+                         ((abs(jj)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)))*
+                         ((abs(kk)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)))*( Soln_Blks[i_blk].NumVar());
+                      
+                      if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
+                         
+                         buffer_size = buffer_size + 
+                            ((abs(ii)*Soln_Block_List.Block[i_blk].info.dimen.ghost)+ ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)))*
+                            ((abs(jj)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)))*
+                            ((abs(kk)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)))*(NUM_COMP_VECTOR3D);
+                      
+                   } else {
+                      buffer_size = ((abs(ii)*Soln_Block_List.Block[i_blk].info.dimen.ghost)+ ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)))*
+                         ((abs(jj)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)))*
+                         ((abs(kk)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)))*(NUM_COMP_VECTOR3D);
+                      
+                   } /* endif */
+                   l = -1;
+                   
+                   // Unload ghost cell solution information as required.
+                   if (!Send_Mesh_Geometry_Only) {
+                      
+                      if( ii == -1 ){
+                         n_imin = Soln_Blks[i_blk].Nghost;
+                         n_imax = Soln_Blks[i_blk].ICl +1;
+                         
                     }else if( ii == 1){
                        n_imin =  Soln_Blks[i_blk].ICu-1;
                        n_imax = Soln_Blks[i_blk].ICu;
@@ -667,48 +702,70 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                     k_min = (!kk)*Soln_Blks[i_blk].KCl + n_kmin;
                     k_max = (!kk)*Soln_Blks[i_blk].KCu + n_kmax;
                     k_inc = 1;
-
-                    cout<<"\n in Unloading the buffers"<<endl;
-                 
-                    for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) {
-                       if (  CFFC_MPI::This_Processor_Number == iProc ) {
-                          cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl;
-                          cout<<"\n min = ("<<i_min<<", "<<j_min<<", "<<k_min<<")       max = ("<<i_max<<","<<j_max<<","<<k_max<<") ";
-                          cout<<"\n i_blk = "<<i_blk<<"  i_bound_element = "<<i_bound_elem<<"   buffer_size= "<<buffer_size<<endl;
+                    
+                 /*    for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+/*                        if (  CFFC_MPI::This_Processor_Number == iProc ) { */
+/*                           cout<<"\n In unloading buffer function #1"<<endl; */
+/*                           cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl; */
+/*                           cout<<"\n i_blk = "<<i_blk<<"  i_bound_element = "<<i_bound_elem<<"   buffer_size= "<<buffer_size<<endl; */
+/*                           cout<<"\n i_min = "<<i_min<<"  j_min = "<<j_min<<"   k_min "<<k_min<<endl; */
+/*                           cout<<"\n i_max = "<<i_max<<"  j_max = "<<j_max<<"   k_max "<<k_max<<endl; */
                           
-                          System::sleep(0.1);
-                       }
-                       MPI::COMM_WORLD.Barrier();
-                    }
+/*                           System::sleep(0.1); */
+/*                        } */
+/*                        MPI::COMM_WORLD.Barrier(); */
+/*                     } */
                     // transform the neighbour's index to my index
+
                     info_bound_elem[i_bound_elem].blkorient.my_index(i_min, j_min, k_min);
                     info_bound_elem[i_bound_elem].blkorient.my_index(i_max, j_max, k_max);
                     
+
+/*                     for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+/*                        if (  CFFC_MPI::This_Processor_Number == iProc ) { */
+/*                           cout<<"\n In unloading buffer function #3"<<endl; */
+/*                           cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl; */
+/*                           cout<<"\n i_blk = "<<i_blk<<"  i_bound_element = "<<i_bound_elem<<"   buffer_size= "<<buffer_size<<endl; */
+                          
+/*                           System::sleep(0.1); */
+/*                        } */
+/*                        MPI::COMM_WORLD.Barrier(); */
+/*                     } */
+                    
+                  
                     recv_bound_elem = info_bound_elem[i_bound_elem].blkorient.compute_message_tag(
                        info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[0],
-                       info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[1], 
+                       info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[1],
                        info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[2]);
                     
                     recv_blknum = info_bound_elem[i_bound_elem].blknum;
                     
-                    for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) {
-                       if (  CFFC_MPI::This_Processor_Number == iProc ) {
-                          cout<<"\n min = ("<<i_min<<", "<<j_min<<", "<<k_min<<")       max = ("<<i_max<<","<<j_max<<","<<k_max<<") ";
-                          cout<<"\n recv_blk = "<<recv_blknum<<"  recv_bound_element = "<<recv_bound_elem<<"   buffer_size= "<<buffer_size<<endl;
-                          
-                          System::sleep(0.1);
-                       }
-                       MPI::COMM_WORLD.Barrier();
-                    }
-                    //    cout<<"\n recv bound elem = "<<recv_bound_elem<<"  recv_blknum =  "<<recv_blknum<<endl;
-                    i = Soln_Blks[recv_blknum].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_recbuf[recv_blknum][recv_bound_elem],
+                  
+    
+                    i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem],
                                                              l,buffer_size,
                                                              i_min,i_max,i_inc,j_min,j_max,j_inc,
                                                              k_min,k_max,k_inc);
+                     
+/*                     i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_recbuf[recv_blknum][recv_bound_elem], */
+/*                                                              l,buffer_size, */
+/*                                                              i_min,i_max,i_inc,j_min,j_max,j_inc, */
+/*                                                              k_min,k_max,k_inc); */
                     
-                    
+               /*      for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+/*                        if (  CFFC_MPI::This_Processor_Number == iProc ) { */
+/*                           cout<<"\n In unloading buffer function #4"<<endl; */
+/*                           cout<<"\n min = ("<<i_min<<", "<<j_min<<", "<<k_min<<")       max = ("<<i_max<<","<<j_max<<","<<k_max<<") "; */
+/*                           cout<<"\n blkorient : "<<info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[0]<<"  " */
+/*                               <<info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[1]<<"  "<< */
+/*                              info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[2]<<"  "<<endl; */
+                          
+/*                           System::sleep(0.1); */
+/*                        } */
+/*                        MPI::COMM_WORLD.Barrier(); */
+/*                     } */
                     if (i != 0) return(2200);
-                 } /* endif */
+                   } /* endif */
                  // Unload ghost cell mesh information as required.
                  if (Send_Mesh_Geometry_Only ||
                      Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
@@ -759,16 +816,9 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                     k_max = (!kk)*Soln_Blks[i_blk].Grid.KNu + n_kmax;
                     k_inc = 1;
            
-
-                    
-
                     // transform the neighbour's index to my index
                     info_bound_elem[i_bound_elem].blkorient.my_index(i_min, j_min, k_min);
                     info_bound_elem[i_bound_elem].blkorient.my_index(i_max, j_max, k_max);
-/* 	cout<<"\nat Unload Top buffer_size ="<<buffer_size; */
-/* 	cout<<" i_min= "<<i_min<< " i_max= "<<i_max<< " i_inc= "<<i_inc << " j_min= "<<j_min<< " j_max= "<<j_max */
-/* 	    << " j_inc= "<<j_inc<< " k_min= "<< k_min << " k_max= "<<k_max<< " k_inc= "<<k_inc <<" l="<<l; */
-
 
                     recv_bound_elem = info_bound_elem[i_bound_elem].blkorient.compute_message_tag(
                        info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[0],
@@ -905,7 +955,7 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
         }
      }
     }
-    
+ 
     /* Unloading of receive buffers complete.  Return zero value. */
     
     return(0);
@@ -974,12 +1024,13 @@ int Send_All_Messages(Hexa_Soln_Block *Soln_Blks,
     int error_flag;
 
     /* Load message buffers at block interfaces with no cell resolution change. */
-
-  
+   
     error_flag = Load_Send_Message_Buffers_NoResChange(Soln_Blks,
                                                        Soln_Block_List,
                                                        Number_of_Solution_Variables,
                                                        Send_Mesh_Geometry_Only);
+    
+  
     if (error_flag) {
        cout << "\n " << CFFC_Version() 
             << " Message Passing Error: Load_Send_Message_Buffers_NoResChange, "
@@ -988,7 +1039,6 @@ int Send_All_Messages(Hexa_Soln_Block *Soln_Blks,
     } /* endif */
 
   
-    
     /* Exchange message buffers at block interfaces with no cell resolution change. */
 
     error_flag = AdaptiveBlock3D_List::Exchange_Messages_NoResChange(Soln_Block_List,
@@ -1000,7 +1050,16 @@ int Send_All_Messages(Hexa_Soln_Block *Soln_Blks,
        return(error_flag);
     } /* endif */
 
-        /* Unload message buffers at block interfaces with no cell resolution change. */
+    for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) {
+       if (  CFFC_MPI::This_Processor_Number == iProc ) {
+          cout<<"\n Send All Messages @ #3"<<endl;
+          
+          System::sleep(0.1);
+       }
+       MPI::COMM_WORLD.Barrier();
+    }
+    
+/* Unload message buffers at block interfaces with no cell resolution change. */
 
     error_flag = Unload_Receive_Message_Buffers_NoResChange(Soln_Blks,
                                                             Soln_Block_List,
@@ -1013,6 +1072,14 @@ int Send_All_Messages(Hexa_Soln_Block *Soln_Blks,
        return(error_flag);
     } /* endif */
 
+    for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) {
+       if (  CFFC_MPI::This_Processor_Number == iProc ) {
+          cout<<"\n Send All Messages @ #4"<<endl;
+          
+          System::sleep(0.1);
+       }
+       MPI::COMM_WORLD.Barrier();
+    }
 
     /* Update corner ghost cell information for cases where there are no corner neighbours. */
 

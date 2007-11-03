@@ -29,6 +29,11 @@
 #include "MortonOrdering.h"
 #endif // _MORTON_ORDERING_INCLUDED
 
+#ifndef  _SYSTEM_LINUX_INCLUDED
+#include "../System/System_Linux.h"
+#endif //_SYSTEM_LINUX_INCLUDED
+
+
 /******************************************************************
  * AMR -- Templated subroutines.                                  *
  ******************************************************************/
@@ -54,7 +59,6 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
    
    int n_cpu, n_blk;
    int nused=0;
-   int totalblks = Initial_Mesh.NBlk_Kdir*Initial_Mesh.NBlk_Jdir*Initial_Mesh.NBlk_Idir;
 
    
    /* Create (allocate) octree data structure. */
@@ -85,16 +89,51 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
    
    /* Loop over all initial mesh blocks and assign Octree root blocks and
       local solution block information as required. */
+   MeshBLKs_to_LocalBLKs   *blknumber_convt;
 
-   cout<<"\n   CFFC_MPI::This_Processor_Number  "<< CFFC_MPI::This_Processor_Number<<endl; 
+   blknumber_convt = new MeshBLKs_to_LocalBLKs [Initial_Mesh.NBlk];
+   //  cout<<"\n   CFFC_MPI::This_Processor_Number  "<< CFFC_MPI::This_Processor_Number<<endl; 
+   for ( int nb = 0 ; nb <Initial_Mesh.NBlk ; ++nb ){
+      if (Initial_Mesh.Grid_Blks[nb].Allocated) { // Mesh block is used!!!!
+         // Get next free solution block from list of available
+         // solution blocks.
+         if (Global_Adaptive_Block_List.Nfree > 0) {
+            n_cpu = Global_Adaptive_Block_List.nextCPU();
+            n_blk = Global_Adaptive_Block_List.nextBlock();
+            Global_Adaptive_Block_List.update_next();
+            
+            blknumber_convt[nb].cpu =  n_cpu;
+            blknumber_convt[nb].blknum = n_blk;
+            
+          /*   for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+/*                if (  CFFC_MPI::This_Processor_Number == iProc ) { */
+/*                   cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl; */
+/*                   cout<<"\n nblk = "<<nb<<" n_cpu = "<<n_cpu<<" n_blk "<<n_blk; */
+/*                   cout<<"\n   blknumber_convt["<<nb<<"].cpu ="<< blknumber_convt[nb].cpu<<" blknumber= "<<blknumber_convt[nb].blknum<<endl; */
+                  
+/*                   System::sleep(0.1); */
+/*                } */
+/*                MPI::COMM_WORLD.Barrier(); */
+/*             } */
+
+         } else {
+            cout << "\n"
+                 << " AMR Error: Create_Initial_Solution_Blocks, Insufficient number of hexahedrial solution blocks.\n";
+            return (1);
+         } /* endif */
+      }
+   }
    
-   for ( int nb = 0 ; nb < totalblks ; ++nb ){
-      cout<<"\n nb = "<<nb<<"  allocated is "<<Initial_Mesh.Grid_Blks[nb].Allocated<<endl;
+   Global_Adaptive_Block_List.initialize();
+   
+   
+   for ( int nb = 0 ; nb <Initial_Mesh.NBlk ; ++nb ){
+      // cout<<"\n nb = "<<nb<<"  allocated is "<<Initial_Mesh.Grid_Blks[nb].Allocated<<endl;
       if (Initial_Mesh.Grid_Blks[nb].Allocated) { // Mesh block is used!!!!
          
          // Get next free solution block from list of available
          // solution blocks.
-            if (Global_Adaptive_Block_List.Nfree > 0) {
+         if (Global_Adaptive_Block_List.Nfree > 0) {
             n_cpu = Global_Adaptive_Block_List.nextCPU();
             n_blk = Global_Adaptive_Block_List.nextBlock();
             Global_Adaptive_Block_List.update_next();
@@ -154,36 +193,188 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
               
          // block number of the neighbouring blocks in each direction
          // for each of the block in the roots
-         Octree.Roots[nb].block.infoT[0].blknum = Initial_Mesh.Connectivity[nb].neighT;
-         Octree.Roots[nb].block.infoB[0].blknum = Initial_Mesh.Connectivity[nb].neighB;
-         Octree.Roots[nb].block.infoN[0].blknum = Initial_Mesh.Connectivity[nb].neighN;
-         Octree.Roots[nb].block.infoS[0].blknum = Initial_Mesh.Connectivity[nb].neighS;
-         Octree.Roots[nb].block.infoE[0].blknum = Initial_Mesh.Connectivity[nb].neighE;
-         Octree.Roots[nb].block.infoW[0].blknum = Initial_Mesh.Connectivity[nb].neighW;
+         if(Initial_Mesh.Connectivity[nb].neighT>=0){
+            Octree.Roots[nb].block.infoT[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighT].blknum;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighB>=0){
+            Octree.Roots[nb].block.infoB[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighB].blknum;
+         }
+         
+         if(Initial_Mesh.Connectivity[nb].neighN>=0){
+            Octree.Roots[nb].block.infoN[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighN].blknum;
+         }
+         
+         if(Initial_Mesh.Connectivity[nb].neighS>=0){
+            
+            Octree.Roots[nb].block.infoS[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighS].blknum;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighE>=0){
+            
+            Octree.Roots[nb].block.infoE[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighE].blknum;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighW>=0){
+            Octree.Roots[nb].block.infoW[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighW].blknum;
+         }
+            
+         if(Initial_Mesh.Connectivity[nb].neighNW>=0){
+            Octree.Roots[nb].block.infoNW[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighNW[0]].blknum;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighNE>=0){
+            Octree.Roots[nb].block.infoNE[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighNE[0]].blknum;
+         }
+         
+         if(Initial_Mesh.Connectivity[nb].neighSE>=0){
+            Octree.Roots[nb].block.infoSE[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighSE[0]].blknum;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighSW>=0){
+            Octree.Roots[nb].block.infoSW[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighSW[0]].blknum;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighTN>=0){
+            Octree.Roots[nb].block.infoTN[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighTN[0]].blknum;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighTS>=0){
+            Octree.Roots[nb].block.infoTS[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighTS[0]].blknum;
+         }
+         
+         if(Initial_Mesh.Connectivity[nb].neighTE>=0){
+            Octree.Roots[nb].block.infoTE[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighTE[0]].blknum;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighTW>=0){
+            Octree.Roots[nb].block.infoTW[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighTW[0]].blknum;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighBN>=0){
+            Octree.Roots[nb].block.infoBN[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighBN[0]].blknum;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighBS>=0){
+            Octree.Roots[nb].block.infoBS[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighBS[0]].blknum;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighBE>=0){
+            Octree.Roots[nb].block.infoBE[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighBE[0]].blknum;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighBW>=0){
+            Octree.Roots[nb].block.infoBW[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighBW[0]].blknum;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighTNW>=0){
+            Octree.Roots[nb].block.infoTNW[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighTNW[0]].blknum;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighTSW>=0){
+            Octree.Roots[nb].block.infoTSW[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighTSW[0]].blknum;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighTNE>=0){
+            Octree.Roots[nb].block.infoTNE[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighTNE[0]].blknum;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighTSE>=0){
+            Octree.Roots[nb].block.infoTSE[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighTSE[0]].blknum;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighBNW>=0){
+            Octree.Roots[nb].block.infoBNW[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighBNW[0]].blknum;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighBSW>=0){
+            Octree.Roots[nb].block.infoBSW[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighBSW[0]].blknum;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighBNE>=0){
+            Octree.Roots[nb].block.infoBNE[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighBNE[0]].blknum;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighBSE>=0){
+            Octree.Roots[nb].block.infoBSE[0].blknum = blknumber_convt[Initial_Mesh.Connectivity[nb].neighBSE[0]].blknum;
+         }
+                     
+         if(Initial_Mesh.Connectivity[nb].neighT>=0){
+            Octree.Roots[nb].block.infoT[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighT].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighB>=0){
+            Octree.Roots[nb].block.infoB[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighB].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighN>=0){
+            Octree.Roots[nb].block.infoN[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighN].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighS>=0){
+            Octree.Roots[nb].block.infoS[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighS].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighE>=0){
+            Octree.Roots[nb].block.infoE[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighE].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighW>=0){
+            Octree.Roots[nb].block.infoW[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighW].cpu;
 
-         Octree.Roots[nb].block.infoNW[0].blknum = Initial_Mesh.Connectivity[nb].neighNW[0];
-         Octree.Roots[nb].block.infoNE[0].blknum = Initial_Mesh.Connectivity[nb].neighNE[0];
-         Octree.Roots[nb].block.infoSE[0].blknum = Initial_Mesh.Connectivity[nb].neighSE[0];
-         Octree.Roots[nb].block.infoSW[0].blknum = Initial_Mesh.Connectivity[nb].neighSW[0];
-         Octree.Roots[nb].block.infoTN[0].blknum = Initial_Mesh.Connectivity[nb].neighTN[0];
-         Octree.Roots[nb].block.infoTS[0].blknum = Initial_Mesh.Connectivity[nb].neighTS[0];
-         Octree.Roots[nb].block.infoTE[0].blknum = Initial_Mesh.Connectivity[nb].neighTE[0];
-         Octree.Roots[nb].block.infoTW[0].blknum = Initial_Mesh.Connectivity[nb].neighTW[0];
-         Octree.Roots[nb].block.infoBN[0].blknum = Initial_Mesh.Connectivity[nb].neighBN[0];
-         Octree.Roots[nb].block.infoBS[0].blknum = Initial_Mesh.Connectivity[nb].neighBS[0];
-         Octree.Roots[nb].block.infoBE[0].blknum = Initial_Mesh.Connectivity[nb].neighBE[0];
-         Octree.Roots[nb].block.infoBW[0].blknum = Initial_Mesh.Connectivity[nb].neighBW[0];
-
-        
-         Octree.Roots[nb].block.infoTNW[0].blknum = Initial_Mesh.Connectivity[nb].neighTNW[0];
-         Octree.Roots[nb].block.infoTSW[0].blknum = Initial_Mesh.Connectivity[nb].neighTSW[0];
-         Octree.Roots[nb].block.infoTNE[0].blknum = Initial_Mesh.Connectivity[nb].neighTNE[0];
-         Octree.Roots[nb].block.infoTSE[0].blknum = Initial_Mesh.Connectivity[nb].neighTSE[0];
-         Octree.Roots[nb].block.infoBNW[0].blknum = Initial_Mesh.Connectivity[nb].neighBNW[0];
-         Octree.Roots[nb].block.infoBSW[0].blknum = Initial_Mesh.Connectivity[nb].neighBSW[0];
-         Octree.Roots[nb].block.infoBNE[0].blknum = Initial_Mesh.Connectivity[nb].neighBNE[0];
-         Octree.Roots[nb].block.infoBSE[0].blknum = Initial_Mesh.Connectivity[nb].neighBSE[0];
-
+         /*    for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+/*                if (  CFFC_MPI::This_Processor_Number == iProc ) { */
+/*                   cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl; */
+/*                   cout<<"\n intial mesh's block "<<nb<<"'s west neigbor = "<<Initial_Mesh.Connectivity[nb].neighW<<endl; */
+                  
+/*                   cout<<"\n  Octree.Roots["<<nb<<"].block.infoW[0].cpu "<< Octree.Roots[nb].block.infoW[0].cpu; */
+              
+                  
+/*                   System::sleep(0.1); */
+/*                } */
+/*                MPI::COMM_WORLD.Barrier(); */
+/*             } */
+            
+         }
+                  
+         
+         if(Initial_Mesh.Connectivity[nb].neighNW>=0){
+            Octree.Roots[nb].block.infoNW[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighNW[0]].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighNE>=0){
+            Octree.Roots[nb].block.infoNE[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighNE[0]].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighSE>=0){
+            Octree.Roots[nb].block.infoSE[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighSE[0]].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighSW>=0){
+            Octree.Roots[nb].block.infoSW[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighSW[0]].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighTN>=0){
+            Octree.Roots[nb].block.infoTN[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighTN[0]].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighTS>=0){
+            Octree.Roots[nb].block.infoTS[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighTS[0]].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighTE>=0){
+            Octree.Roots[nb].block.infoTE[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighTE[0]].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighTW>=0){
+            Octree.Roots[nb].block.infoTW[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighTW[0]].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighBN>=0){
+            Octree.Roots[nb].block.infoBN[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighBN[0]].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighBS>=0){
+            Octree.Roots[nb].block.infoBS[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighBS[0]].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighBE>=0){
+            Octree.Roots[nb].block.infoBE[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighBE[0]].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighBW>=0){
+            Octree.Roots[nb].block.infoBW[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighBW[0]].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighTNW>=0){
+            
+            Octree.Roots[nb].block.infoTNW[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighTNW[0]].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighTSW>=0){
+            Octree.Roots[nb].block.infoTSW[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighTSW[0]].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighTNE>=0){
+            Octree.Roots[nb].block.infoTNE[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighTNE[0]].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighTSE>=0){
+            Octree.Roots[nb].block.infoTSE[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighTSE[0]].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighBNW>=0){
+            Octree.Roots[nb].block.infoBNW[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighBNW[0]].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighBSW>=0){
+            Octree.Roots[nb].block.infoBSW[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighBSW[0]].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighBNE>=0){
+            Octree.Roots[nb].block.infoBNE[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighBNE[0]].cpu;
+         }
+         if(Initial_Mesh.Connectivity[nb].neighBSE>=0){
+            Octree.Roots[nb].block.infoBSE[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighBSE[0]].cpu;
+         }
+                                                            
          // block orientation information of the neighbouring blocks in each direction
          // for each of the block in the roots
          Octree.Roots[nb].block.infoT[0].blkorient = Initial_Mesh.Connectivity[nb].neighT_info;
@@ -215,25 +406,24 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          Octree.Roots[nb].block.infoBNE[0].blkorient = Initial_Mesh.Connectivity[nb].neighBNE_info[0];
          Octree.Roots[nb].block.infoBSE[0].blkorient = Initial_Mesh.Connectivity[nb].neighBSE_info[0];
 
-         Octree.Roots[nb].parent_ptr = NULL;
-         Octree.Roots[nb].childTNW_ptr = NULL;
-         Octree.Roots[nb].childTNE_ptr = NULL;
-         Octree.Roots[nb].childTSE_ptr = NULL;
-         Octree.Roots[nb].childTSW_ptr = NULL;
-         Octree.Roots[nb].childBNW_ptr = NULL;
-         Octree.Roots[nb].childBNE_ptr = NULL;
-         Octree.Roots[nb].childBSE_ptr = NULL;
-         Octree.Roots[nb].childBSW_ptr = NULL;
-         Octree.Blocks[n_cpu][n_blk] = &(Octree.Roots[nb]);
-          
-         Local_Adaptive_Block_List.Block[n_blk] = Octree.Roots[nb].block;
+         /*    Octree.Roots[nb].parent_ptr = NULL; */
+/*          Octree.Roots[nb].childTNW_ptr = NULL; */
+/*          Octree.Roots[nb].childTNE_ptr = NULL; */
+/*          Octree.Roots[nb].childTSE_ptr = NULL; */
+/*          Octree.Roots[nb].childTSW_ptr = NULL; */
+/*          Octree.Roots[nb].childBNW_ptr = NULL; */
+/*          Octree.Roots[nb].childBNE_ptr = NULL; */
+/*          Octree.Roots[nb].childBSE_ptr = NULL; */
+/*          Octree.Roots[nb].childBSW_ptr = NULL; */
+         
+         Octree.Blocks[n_cpu][n_blk] = &(Octree.Roots[nb]); 
          
          // For solution blocks on this processor (or processor
          // element), add block to local list, create the solution
          // block, and copy the appropriate block of the
          // initial hexarilateral mesh to the solution block mesh.
          if (Global_Adaptive_Block_List.ThisCPU == n_cpu) {
-            //  Local_Adaptive_Block_List.Block[n_blk] = Octree.Roots[nb].block;
+            Local_Adaptive_Block_List.Block[n_blk] = Octree.Roots[nb].block;
             Local_Solution_Blocks.Soln_Blks[n_blk].Create_Block(Initial_Mesh.Grid_Blks[nb]);
             Local_Solution_Blocks.Soln_Blks[n_blk].Flow_Type = Input.i_Flow_Type;
             Local_Solution_Blocks.Block_Used[n_blk] = HEXA_BLOCK_USED;
@@ -244,208 +434,300 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
       } /* endif */
       
    } /* endfor */
-   //assigning the dimensions
-   for ( int nb = 0 ; nb < totalblks ; ++nb ){
-      // cpu and dimen sector and level assignment
+
+   /* dimen, sector and level assignment. */
+   for ( int nb = 0 ; nb <Initial_Mesh.NBlk ; ++nb ){
       if(Octree.Roots[nb].block.infoT[0].blknum>=0){
-         Octree.Roots[nb].block.infoT[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoT[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoT[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoT[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoT[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoT[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoT[0].level =  Octree.Roots[Octree.Roots[nb].block.infoT[0].blknum].block.info.level;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoT[0].dimen =  Octree.Roots[nb].block.infoT[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoT[0].sector =  Octree.Roots[nb].block.infoT[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoT[0].level =  Octree.Roots[nb].block.infoT[0].level;
+         
       }
       
       if(Octree.Roots[nb].block.infoB[0].blknum>=0) {
-         Octree.Roots[nb].block.infoB[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoB[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoB[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoB[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoB[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoB[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoB[0].level =  Octree.Roots[Octree.Roots[nb].block.infoB[0].blknum].block.info.level;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoB[0].dimen =  Octree.Roots[nb].block.infoB[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoB[0].sector =  Octree.Roots[nb].block.infoB[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoB[0].level =  Octree.Roots[nb].block.infoB[0].level;
       }
       
       if(Octree.Roots[nb].block.infoN[0].blknum>=0){
-         Octree.Roots[nb].block.infoN[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoN[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoN[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoN[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoN[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoN[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoN[0].level =  Octree.Roots[Octree.Roots[nb].block.infoN[0].blknum].block.info.level;
-
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoN[0].dimen =  Octree.Roots[nb].block.infoN[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoN[0].sector =  Octree.Roots[nb].block.infoN[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoN[0].level =  Octree.Roots[nb].block.infoN[0].level;
       }
       
       if(Octree.Roots[nb].block.infoS[0].blknum>=0){
-         Octree.Roots[nb].block.infoS[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoS[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoS[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoS[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoS[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoS[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoS[0].level =  Octree.Roots[Octree.Roots[nb].block.infoS[0].blknum].block.info.level;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoS[0].dimen =  Octree.Roots[nb].block.infoS[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoS[0].sector =  Octree.Roots[nb].block.infoS[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoS[0].level =  Octree.Roots[nb].block.infoS[0].level;
+
       }
+
+
       
       if(Octree.Roots[nb].block.infoE[0].blknum>=0){
-         Octree.Roots[nb].block.infoE[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoE[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoE[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoE[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoE[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoE[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoE[0].level =  Octree.Roots[Octree.Roots[nb].block.infoE[0].blknum].block.info.level;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoE[0].dimen =  Octree.Roots[nb].block.infoE[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoE[0].sector =  Octree.Roots[nb].block.infoE[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoE[0].level =  Octree.Roots[nb].block.infoE[0].level;
       }
       
       if(Octree.Roots[nb].block.infoW[0].blknum>=0) {
-         Octree.Roots[nb].block.infoW[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoW[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoW[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoW[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoW[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoW[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoW[0].level =  Octree.Roots[Octree.Roots[nb].block.infoW[0].blknum].block.info.level;
-         
-    
-             
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoW[0].dimen =  Octree.Roots[nb].block.infoW[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoW[0].sector =  Octree.Roots[nb].block.infoW[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoW[0].level =  Octree.Roots[nb].block.infoW[0].level;
       }
-            
+      
       if(Octree.Roots[nb].block.infoNW[0].blknum>=0){
-         Octree.Roots[nb].block.infoNW[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoNW[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoNW[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoNW[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoNW[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoNW[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoNW[0].level =  Octree.Roots[Octree.Roots[nb].block.infoNW[0].blknum].block.info.level;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoNW[0].dimen =  Octree.Roots[nb].block.infoNW[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoNW[0].sector =  Octree.Roots[nb].block.infoNW[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoNW[0].level =  Octree.Roots[nb].block.infoNW[0].level;
       }
       
       if(Octree.Roots[nb].block.infoNE[0].blknum>=0){
-         Octree.Roots[nb].block.infoNE[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoNE[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoNE[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoNE[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoNE[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoNE[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoNE[0].level =  Octree.Roots[Octree.Roots[nb].block.infoNE[0].blknum].block.info.level;
-
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoNE[0].dimen =  Octree.Roots[nb].block.infoNE[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoNE[0].sector =  Octree.Roots[nb].block.infoNE[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoNE[0].level =  Octree.Roots[nb].block.infoNE[0].level;
       }
       
       if(Octree.Roots[nb].block.infoSE[0].blknum>=0) {
-         Octree.Roots[nb].block.infoSE[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoSE[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoSE[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoSE[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoSE[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoSE[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoSE[0].level =  Octree.Roots[Octree.Roots[nb].block.infoSE[0].blknum].block.info.level;
-      
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoSE[0].dimen =  Octree.Roots[nb].block.infoSE[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoSE[0].sector =  Octree.Roots[nb].block.infoSE[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoSE[0].level =  Octree.Roots[nb].block.infoSE[0].level;
       }
+      
       if(Octree.Roots[nb].block.infoSW[0].blknum>=0){
-         Octree.Roots[nb].block.infoSW[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoSW[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoSW[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoSW[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoSW[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoSW[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoSW[0].level =  Octree.Roots[Octree.Roots[nb].block.infoSW[0].blknum].block.info.level;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoSW[0].dimen =  Octree.Roots[nb].block.infoSW[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoSW[0].sector =  Octree.Roots[nb].block.infoSW[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoSW[0].level =  Octree.Roots[nb].block.infoSW[0].level;
       }
       
       if(Octree.Roots[nb].block.infoTN[0].blknum>=0){
-         Octree.Roots[nb].block.infoTN[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoTN[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoTN[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoTN[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoTN[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoTN[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoTN[0].level =  Octree.Roots[Octree.Roots[nb].block.infoTN[0].blknum].block.info.level;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTN[0].dimen =  Octree.Roots[nb].block.infoTN[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTN[0].sector =  Octree.Roots[nb].block.infoTN[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTN[0].level =  Octree.Roots[nb].block.infoTN[0].level;
       }
       
       if(Octree.Roots[nb].block.infoTS[0].blknum>=0){
-         Octree.Roots[nb].block.infoTS[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoTS[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoTS[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoTS[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoTS[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoTS[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoTS[0].level =  Octree.Roots[Octree.Roots[nb].block.infoTS[0].blknum].block.info.level;
+     Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTS[0].dimen =  Octree.Roots[nb].block.infoTS[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTS[0].sector =  Octree.Roots[nb].block.infoTS[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTS[0].level =  Octree.Roots[nb].block.infoTS[0].level;
       }
       
       if(Octree.Roots[nb].block.infoTE[0].blknum>=0){
-         Octree.Roots[nb].block.infoTE[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoTE[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoTE[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoTE[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoTE[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoTE[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoTE[0].level =  Octree.Roots[Octree.Roots[nb].block.infoTE[0].blknum].block.info.level;
-      
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTE[0].dimen =  Octree.Roots[nb].block.infoTE[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTE[0].sector =  Octree.Roots[nb].block.infoTE[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTE[0].level =  Octree.Roots[nb].block.infoTE[0].level;
       }
       
       if(Octree.Roots[nb].block.infoTW[0].blknum>=0){
-         Octree.Roots[nb].block.infoTW[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoTW[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoTW[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoTW[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoTW[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoTW[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoTW[0].level =  Octree.Roots[Octree.Roots[nb].block.infoTW[0].blknum].block.info.level;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTW[0].dimen =  Octree.Roots[nb].block.infoTW[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTW[0].sector =  Octree.Roots[nb].block.infoTW[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTW[0].level =  Octree.Roots[nb].block.infoTW[0].level;
+
       }
       
       if(Octree.Roots[nb].block.infoBN[0].blknum>=0){
-         Octree.Roots[nb].block.infoBN[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoBN[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoBN[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoBN[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoBN[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoBN[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoBN[0].level =  Octree.Roots[Octree.Roots[nb].block.infoBN[0].blknum].block.info.level;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBN[0].dimen =  Octree.Roots[nb].block.infoBN[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBN[0].sector =  Octree.Roots[nb].block.infoBN[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBN[0].level =  Octree.Roots[nb].block.infoBN[0].level;
       }
       
       if(Octree.Roots[nb].block.infoBS[0].blknum>=0){
-         Octree.Roots[nb].block.infoBS[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoBS[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoBS[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoBS[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoBS[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoBS[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoBS[0].level =  Octree.Roots[Octree.Roots[nb].block.infoBS[0].blknum].block.info.level;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBS[0].dimen =  Octree.Roots[nb].block.infoBS[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBS[0].sector =  Octree.Roots[nb].block.infoBS[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBS[0].level =  Octree.Roots[nb].block.infoBS[0].level;
       }
       
       if(Octree.Roots[nb].block.infoBE[0].blknum>=0){
-         Octree.Roots[nb].block.infoBE[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoBE[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoBE[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoBE[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoBE[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoBE[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoBE[0].level =  Octree.Roots[Octree.Roots[nb].block.infoBE[0].blknum].block.info.level;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBE[0].dimen =  Octree.Roots[nb].block.infoBE[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBE[0].sector =  Octree.Roots[nb].block.infoBE[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBE[0].level =  Octree.Roots[nb].block.infoBE[0].level;
+         
       }
       
       if(Octree.Roots[nb].block.infoBW[0].blknum>=0){
-         Octree.Roots[nb].block.infoBW[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoBW[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoBW[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoBW[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoBW[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoBW[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoBW[0].level =  Octree.Roots[Octree.Roots[nb].block.infoBW[0].blknum].block.info.level;
-      
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBW[0].dimen =  Octree.Roots[nb].block.infoBW[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBW[0].sector =  Octree.Roots[nb].block.infoBW[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBW[0].level =  Octree.Roots[nb].block.infoBW[0].level;
       }
       
       if(Octree.Roots[nb].block.infoTNW[0].blknum>=0){
-         Octree.Roots[nb].block.infoTNW[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoTNW[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoTNW[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoTNW[0].blknum].block.info.dimen;   
          Octree.Roots[nb].block.infoTNW[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoTNW[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoTNW[0].level =  Octree.Roots[Octree.Roots[nb].block.infoTNW[0].blknum].block.info.level;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTNW[0].dimen =  Octree.Roots[nb].block.infoTNW[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTNW[0].sector =  Octree.Roots[nb].block.infoTNW[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTNW[0].level =  Octree.Roots[nb].block.infoTNW[0].level;
       }
       
       if(Octree.Roots[nb].block.infoTSW[0].blknum>=0){
-         Octree.Roots[nb].block.infoTSW[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoTSW[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoTSW[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoTSW[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoTSW[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoTSW[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoTSW[0].level =  Octree.Roots[Octree.Roots[nb].block.infoTSW[0].blknum].block.info.level;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTSW[0].dimen =  Octree.Roots[nb].block.infoTSW[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTSW[0].sector =  Octree.Roots[nb].block.infoTSW[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTSW[0].level =  Octree.Roots[nb].block.infoTSW[0].level;
       }
       
       if(Octree.Roots[nb].block.infoTNE[0].blknum>=0){
-         Octree.Roots[nb].block.infoTNE[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoTNE[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoTNE[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoTNE[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoTNE[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoTNE[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoTNE[0].level =  Octree.Roots[Octree.Roots[nb].block.infoTNE[0].blknum].block.info.level;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTNE[0].dimen =  Octree.Roots[nb].block.infoTNE[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTNE[0].sector =  Octree.Roots[nb].block.infoTNE[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTNE[0].level =  Octree.Roots[nb].block.infoTNE[0].level;
       }
       
       if(Octree.Roots[nb].block.infoTSE[0].blknum>=0){
-         Octree.Roots[nb].block.infoTSE[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoTSE[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoTSE[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoTSE[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoTSE[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoTSE[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoTSE[0].level =  Octree.Roots[Octree.Roots[nb].block.infoTSE[0].blknum].block.info.level;
-
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTSE[0].dimen =  Octree.Roots[nb].block.infoTSE[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTSE[0].sector =  Octree.Roots[nb].block.infoTSE[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTSE[0].level =  Octree.Roots[nb].block.infoTSE[0].level;
       }
       
       if(Octree.Roots[nb].block.infoBNW[0].blknum>=0){
-         Octree.Roots[nb].block.infoBNW[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoBNW[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoBNW[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoBNW[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoBNW[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoBNW[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoBNW[0].level =  Octree.Roots[Octree.Roots[nb].block.infoBNW[0].blknum].block.info.level;  
-
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBNW[0].dimen =  Octree.Roots[nb].block.infoBNW[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBNW[0].sector =  Octree.Roots[nb].block.infoBNW[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBNW[0].level =  Octree.Roots[nb].block.infoBNW[0].level;
       }
       
       if(Octree.Roots[nb].block.infoBSW[0].blknum>=0){
-         Octree.Roots[nb].block.infoBSW[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoBSW[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoBSW[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoBSW[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoBSW[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoBSW[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoBSW[0].level =  Octree.Roots[Octree.Roots[nb].block.infoBSW[0].blknum].block.info.level;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBSW[0].dimen =  Octree.Roots[nb].block.infoBSW[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBSW[0].sector =  Octree.Roots[nb].block.infoBSW[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBSW[0].level =  Octree.Roots[nb].block.infoBSW[0].level;
       }
       
       if(Octree.Roots[nb].block.infoBNE[0].blknum>=0){
-         Octree.Roots[nb].block.infoBNE[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoBNE[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoBNE[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoBNE[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoBNE[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoBNE[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoBNE[0].level =  Octree.Roots[Octree.Roots[nb].block.infoBNE[0].blknum].block.info.level;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBNE[0].dimen =  Octree.Roots[nb].block.infoBNE[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBNE[0].sector =  Octree.Roots[nb].block.infoBNE[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBNE[0].level =  Octree.Roots[nb].block.infoBNE[0].level;
       }
       
       if(Octree.Roots[nb].block.infoBSE[0].blknum>=0){
-         Octree.Roots[nb].block.infoBSE[0].cpu =  Octree.Roots[Octree.Roots[nb].block.infoBSE[0].blknum].block.info.cpu;
          Octree.Roots[nb].block.infoBSE[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoBSE[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoBSE[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoBSE[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoBSE[0].level =  Octree.Roots[Octree.Roots[nb].block.infoBSE[0].blknum].block.info.level;
-
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBSE[0].dimen =  Octree.Roots[nb].block.infoBSE[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBSE[0].sector =  Octree.Roots[nb].block.infoBSE[0].sector;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBSE[0].level =  Octree.Roots[nb].block.infoBSE[0].level;
+         
       }
-      
-       
-      Local_Adaptive_Block_List.Block[nb] = Octree.Roots[nb].block;  
-//      cout<<"\n   CFFC_MPI::This_Processor_Number  "<< CFFC_MPI::This_Processor_Number<<endl;
-//      cout<<"\n nb = "<<nb<<"   "<< Local_Adaptive_Block_List.Block[nb].infoE[0]<<endl;
-      
+   } /* end of assignment of dimension, level and sector information  */
    
+   // block orientation from roots block (global numbering system) to local block list (local block number system).
+   for ( int nb = 0 ; nb <Initial_Mesh.NBlk ; ++nb ){
+      
+      if(blknumber_convt[nb].cpu ==  CFFC_MPI::This_Processor_Number){
+         
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoT[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoT[0];  
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoB[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoB[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoN[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoN[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoS[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoS[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoE[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoE[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoW[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoW[0]; 
+         
+         for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) {
+            if (  CFFC_MPI::This_Processor_Number == iProc ) {
+               cout<<"\n In AMR octree: "<<endl;
+               cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number;
+               cout<<" nb = "<<nb<<" blknumber_convt[nb].blknum "<< blknumber_convt[nb].blknum
+                   <<"\n  infoE = "<< Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoE[0]
+                   <<"\n  infoW = "<< Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoW[0];
+               
+               
+               System::sleep(0.1);
+            }
+            MPI::COMM_WORLD.Barrier();
+         }
+
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoNW[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoNW[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoNE[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoNE[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoSE[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoSE[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoSW[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoSW[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoTN[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTN[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoTS[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTS[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoTE[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTE[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoTW[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTW[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoBN[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBN[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoBS[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBS[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoBE[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBE[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoBW[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBW[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoTNW[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTNW[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoTSW[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTSW[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoTNE[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTNE[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoTSE[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTSE[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoBNW[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBNW[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoBSW[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBSW[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoBNE[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBNE[0]; 
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoBSE[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBSE[0]; 
+      }
    }
+   
   
    /* Renumber all solution blocks, assigning a unique global block number. */
 
@@ -467,6 +749,10 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
  
     /* Solution block allocation and assignment complete.
        Return pointer to local solution blocks. */
+
+
+    delete []blknumber_convt;
+    
 
     return(0);
 

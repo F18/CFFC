@@ -2980,9 +2980,18 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::LoadSendBuffer(double *buffer,
         } /* endfor */
      } /* endfor */
   } /* endfor */
+  
 
+ /*  for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+/*      if (  CFFC_MPI::This_Processor_Number == iProc ) { */
+/*         cout<<"\n at the end of load send buffer "<<endl;       */
+/*         System::sleep(0.1); */
+/*      } */
+/*      MPI::COMM_WORLD.Barrier(); */
+/*   } */
+   
   return(0);
-
+  
 }
 
 /*******************************************************************************

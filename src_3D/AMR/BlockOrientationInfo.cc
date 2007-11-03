@@ -4,7 +4,9 @@
 #include"BlockOrientationInfo.h"
 #endif// _BLOCK_ORIENTATION_INFO_INCLUDED
 
-
+#ifndef  _SYSTEM_LINUX_INCLUDED
+#include "../System/System_Linux.h"
+#endif //_SYSTEM_LINUX_INCLUDED
 ostream &operator << (ostream &out_file, 
                       const Block_Orientation_Info &BlkIO) {
    out_file.precision(10);
@@ -48,7 +50,8 @@ istream &operator >> (istream &in_file,
 
 void  Block_Orientation_Info::set_block_orientation_info(
    BlkC::BlockConnectivity &blkc, const int iblk, 
-   const int my_i, const int my_j, const my_k, int &iblk_neigh){
+   const int my_i, const int my_j, const int my_k, 
+   int &iblk_neigh){
    
    direction_me_to_neighbour[0] = my_i;
    direction_me_to_neighbour[1] = my_j;
@@ -115,7 +118,20 @@ void  Block_Orientation_Info::my_index(int &i_index, int &j_index,  int &k_index
  *============================================================================*/
 void Block_Orientation_Info::neighbour_index(
    int &i_index, int &j_index,  int &k_index){
-   
+     
+   for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) {
+      if (  CFFC_MPI::This_Processor_Number == iProc ) {
+         cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl;
+         cout<<"\n ctm "<<ctm_offsets[0]<<"  "<<ctm_offsets[1]<<"  "<<ctm_offsets[2]<<"  "
+             <<ctm_offsets[3]<<"  "<<ctm_offsets[4]<<"  "<<ctm_offsets[5]<<endl;
+         
+         
+         System::sleep(0.1);
+      }
+      MPI::COMM_WORLD.Barrier();
+   }
+                    
+
    CoordTransform transformationMatrix(ctm_offsets);
    transformationMatrix.reverse();
    transformationMatrix.transform(i_index, j_index, k_index);

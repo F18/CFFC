@@ -49,7 +49,8 @@ class  Block_Orientation_Info{
    // member functions
    void set_block_orientation_info(BlkC::BlockConnectivity &blkc, 
                                    const int blockIndex, const int my_i, 
-                                   const int my_j, const my_k, int &iblk_neigh);
+                                   const int my_j, const int my_k, 
+                                   int &iblk_neigh);
    int compute_message_tag(const int i_index, const int j_index,  const int k_index);
    int convert_boundary_elements_from_ijk_to_orientations(const int my_i, const int my_j, const int my_k);
    void my_index(int &i_index, int &j_index, int &k_index);
