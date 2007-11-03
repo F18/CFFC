@@ -82,11 +82,11 @@ namespace tut
 
     set_test_name("Uniform velocity field, 0 degrees");
 
-    VelocityFields::Set_UniformFlow_Parameters(10.0,0);
-    
+    VelocityFields::Set_UniformFlow_MagnitudeAngleVelocity(10.0,0);
+
     // === check
-    ensure_equals("Xdir", VelocityFields::Uniform_Flow_Xdir(1.0,2.0), Vector2D(10.0,0.0));
-    ensure_equals("Ydir", VelocityFields::Uniform_Flow_Ydir(1.0,2.0), Vector2D(0.0,0.0));
+    ensure_equals("XAxis", VelocityFields::Uniform_Flow_XAxis(1.0,2.0), Vector2D(10.0,0.0));
+    ensure_equals("YAxis", VelocityFields::Uniform_Flow_YAxis(1.0,2.0), Vector2D(0.0,0.0));
     ensure_equals("Uniform flow", VelocityFields::Uniform_Flow(1.0,2.0), Vector2D(10.0,0.0));
   }
 
@@ -98,13 +98,13 @@ namespace tut
 
     set_test_name("Uniform velocity field, 30 degrees");
 
-    VelocityFields::Set_UniformFlow_Parameters(10.0,30);
+    VelocityFields::Set_UniformFlow_MagnitudeAngleVelocity(10.0,30);
 
     Vector2D tol(1.0e-13);
 
     // === check
-    ensure_distance("Xdir", VelocityFields::Uniform_Flow_Xdir(1.0,2.0), Vector2D(8.660254037844386467637e+0,0.0), tol);
-    ensure_distance("Ydir", VelocityFields::Uniform_Flow_Ydir(1.0,2.0), Vector2D(0.0,5.0), tol);
+    ensure_distance("XAxis", VelocityFields::Uniform_Flow_XAxis(1.0,2.0), Vector2D(8.660254037844386467637e+0,0.0), tol);
+    ensure_distance("YAxis", VelocityFields::Uniform_Flow_YAxis(1.0,2.0), Vector2D(0.0,5.0), tol);
     ensure_distance("Uniform flow", VelocityFields::Uniform_Flow(1.0,2.0), Vector2D(8.660254037844386467637e+0,5.0), tol);
   }
 
@@ -116,13 +116,13 @@ namespace tut
 
     set_test_name("Uniform velocity field, 330 degrees");
 
-    VelocityFields::Set_UniformFlow_Parameters(10.0,330);
+    VelocityFields::Set_UniformFlow_MagnitudeAngleVelocity(10.0,330);
 
     Vector2D tol(1.0e-13);
 
     // === check
-    ensure_distance("Xdir", VelocityFields::Uniform_Flow_Xdir(1.0,2.0), Vector2D(8.660254037844386467637e+0,0.0), tol);
-    ensure_distance("Ydir", VelocityFields::Uniform_Flow_Ydir(1.0,2.0), Vector2D(0.0,-5.0), tol);
+    ensure_distance("XAxis", VelocityFields::Uniform_Flow_XAxis(1.0,2.0), Vector2D(8.660254037844386467637e+0,0.0), tol);
+    ensure_distance("YAxis", VelocityFields::Uniform_Flow_YAxis(1.0,2.0), Vector2D(0.0,-5.0), tol);
     ensure_distance("Uniform flow", VelocityFields::Uniform_Flow(1.0,2.0), Vector2D(8.660254037844386467637e+0,-5.0), tol);
   }
 
@@ -134,13 +134,13 @@ namespace tut
 
     set_test_name("Uniform velocity field, 210 degrees");
 
-    VelocityFields::Set_UniformFlow_Parameters(10.0,210);
+    VelocityFields::Set_UniformFlow_MagnitudeAngleVelocity(10.0,210);
 
     Vector2D tol(1.0e-13);
 
     // === check
-    ensure_distance("Xdir", VelocityFields::Uniform_Flow_Xdir(1.0,2.0), Vector2D(-8.660254037844386467637e+0,0.0), tol);
-    ensure_distance("Ydir", VelocityFields::Uniform_Flow_Ydir(1.0,2.0), Vector2D(0.0,-5.0), tol);
+    ensure_distance("XAxis", VelocityFields::Uniform_Flow_XAxis(1.0,2.0), Vector2D(-8.660254037844386467637e+0,0.0), tol);
+    ensure_distance("YAxis", VelocityFields::Uniform_Flow_YAxis(1.0,2.0), Vector2D(0.0,-5.0), tol);
     ensure_distance("Uniform flow", VelocityFields::Uniform_Flow(1.0,2.0), Vector2D(-8.660254037844386467637e+0,-5.0), tol);
   }
 
@@ -168,7 +168,7 @@ namespace tut
     set_test_name("Rotational velocity field about arbitrary point");
 
     VelocityFields::Set_UniformRotationalFlow_Parameters(10.0, Vector2D(2.5,4.5));
-    
+
     // === check
     ensure_equals("Velocity", VelocityFields::Rotational_Flow_About_Arbitrary_Point(5.5,8.5), Vector2D(-40,30));
   }
@@ -179,10 +179,10 @@ namespace tut
   void AdvectDiffuse2DState_object::test<7>()
   {
 
-    set_test_name("Rotational velocity field about origin, invers variation angular velocity");
+    set_test_name("Rotational velocity field about origin, inverse variation angular velocity");
 
-    VelocityFields::Set_RotationalFlow_Parameters(10.0, VelocityFields::InversVariationAngularVelocity);
-    
+    VelocityFields::Set_RotationalFlow_Parameters(10.0, "Inverse_Proportional_Distance");
+
     // === check
     ensure_equals("Velocity First Point", VelocityFields::Rotational_Flow_About_Arbitrary_Point(3,4), Vector2D(-8,6));
     ensure_equals("Velocity Second Point", VelocityFields::Rotational_Flow_About_Arbitrary_Point(6,8), Vector2D(-8,6));
@@ -194,10 +194,10 @@ namespace tut
   void AdvectDiffuse2DState_object::test<8>()
   {
 
-    set_test_name("Rotational velocity field about arbitrary point, invers variation angular velocity");
+    set_test_name("Rotational velocity field about arbitrary point, inverse variation angular velocity");
 
-    VelocityFields::Set_RotationalFlow_Parameters(10.0, VelocityFields::InversVariationAngularVelocity, Vector2D(2.5,4.5));
-    
+    VelocityFields::Set_RotationalFlow_Parameters(10.0, "Inverse_Proportional_Distance", Vector2D(2.5,4.5));
+
     // === check
     ensure_equals("Velocity First Point", VelocityFields::Rotational_Flow_About_Arbitrary_Point(5.5,8.5), Vector2D(-8,6));
     ensure_equals("Velocity Second Point", VelocityFields::Rotational_Flow_About_Arbitrary_Point(8.5,12.5), Vector2D(-8,6));
