@@ -128,6 +128,10 @@ using namespace std;
 class Chem2D_pState {
 
    private:
+   //@{ @name Temporary storage:
+   static double *spec_tmp;
+   //@}
+
    //all public ....
    protected:
    public:
@@ -495,6 +499,7 @@ class Chem2D_pState {
    void Deallocate_static(void){ 
      if(specdata != NULL) { delete[] specdata; specdata = NULL; }
      if(Schmidt != NULL) { delete[] Schmidt; Schmidt = NULL; }
+     if(spec_tmp != NULL) { delete[] spec_tmp; spec_tmp = NULL; }
    }
 
 #ifdef STATIC_NUMBER_OF_SPECIES    
@@ -519,6 +524,10 @@ class Chem2D_pState {
  ***************************************************************************/
  class Chem2D_cState {
    private: 
+   //@{ @name Temporary storage:
+   static double *spec_tmp;
+   //@}
+
    //all public .... yes I know ....
    protected:
    public:
@@ -784,11 +793,11 @@ class Chem2D_pState {
    friend istream& operator >> (istream &in_file,  Chem2D_cState &U);
 
    /**************** Destructors ******************************/
-   void Deallocate_static(void){ if(specdata != NULL) delete[] specdata; 
-                                   specdata = NULL; 
- 				if(Schmidt != NULL) delete[] Schmidt; 
- 				  Schmidt = NULL; 
-                               }
+   void Deallocate_static(void){ 
+     if(specdata != NULL) { delete[] specdata; specdata = NULL; }
+     if(Schmidt != NULL)  { delete[] Schmidt;   Schmidt = NULL; }
+     if(spec_tmp != NULL) { delete[] spec_tmp; spec_tmp = NULL; }
+   }
 
 #ifdef STATIC_NUMBER_OF_SPECIES  
    void rhospecnull() {}          

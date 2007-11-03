@@ -27,6 +27,7 @@ double Chem2D_pState::high_temp_range = 300.0;
 double Chem2D_pState::Mref=0.5;
 double* Chem2D_pState::Schmidt=NULL;
 double Chem2D_pState::gravity_z=-9.81;
+double* Chem2D_pState::spec_tmp=NULL;
 
 int Chem2D_cState::ns = 1; 
 int Chem2D_cState::NUM_VAR_CHEM2D = NUM_CHEM2D_VAR_SANS_SPECIES;   
@@ -36,6 +37,7 @@ double Chem2D_cState::high_temp_range = 300.0;
 double Chem2D_cState::Mref=0.5;
 double* Chem2D_cState::Schmidt=NULL;
 double Chem2D_cState::gravity_z=-9.81;
+double* Chem2D_cState::spec_tmp=NULL;
 
 //k-omega Turbulence model coefficients
 double Chem2D_pState::alpha = FIVE/NINE; //13.0/15.0; 
@@ -104,6 +106,7 @@ void Chem2D_pState::set_species_data(const int &n,const string *S,const char *PA
   Deallocate_static();
   specdata = new NASARP1311data[ns]; 
   Schmidt = new double[ns];
+  spec_tmp = new double[ns];
   for(int i=0; i<ns; i++){
     //overwrite default data  
     specdata[i].Getdata(S[i],PATH,trans_data);  
@@ -141,6 +144,7 @@ void Chem2D_cState::set_species_data(const int &n, const string *S, const char *
   Deallocate_static();
   specdata = new NASARP1311data[ns];
   Schmidt = new double[ns];
+  spec_tmp = new double[ns];
   for(int i=0; i<ns; i++){
     //overwrite default data  
     specdata[i].Getdata(S[i],PATH,trans_data);
@@ -397,30 +401,21 @@ double Chem2D_pState::Hs(void) const{
 double Chem2D_pState::mu() const{
   double sum =0.0; 
   double Temp = T();
-#ifdef STATIC_NUMBER_OF_SPECIES
-  double  vis[STATIC_NUMBER_OF_SPECIES];
-#else
-  double  *vis = new double[ns];
-#endif
 
   for(int i=0; i<ns; i++){
     double phi = 0.0;
     for (int j=0; j<ns; j++){
       if(i == 0){
-	vis[j] = specdata[j].Viscosity(Temp);
+	spec_tmp[j] = specdata[j].Viscosity(Temp);
       }
       phi += (spec[j].c / specdata[j].Mol_mass())*
-	pow(ONE + sqrt(vis[i]/vis[j])*
+	pow(ONE + sqrt(spec_tmp[i]/spec_tmp[j])*
 	    pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
 	sqrt(EIGHT*(ONE +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
     }
-    sum += (spec[i].c * vis[i]) / 
+    sum += (spec[i].c * spec_tmp[i]) / 
       (specdata[i].Mol_mass() * phi);
   }  
-
-#ifndef STATIC_NUMBER_OF_SPECIES  
-  delete[] vis;
-#endif
 
   return sum;
 
@@ -436,12 +431,15 @@ double Chem2D_pState::dmudT(void) const{
   for(int i=0; i<ns; i++){
     double phi = 0.0;
     for (int j=0; j<ns; j++){
+      if(i == 0){
+	spec_tmp[j] = specdata[j].dViscositydT(Temp);
+      }
       phi += (spec[j].c / specdata[j].Mol_mass())*
-	pow(1.0 + sqrt(specdata[i].dViscositydT(Temp)/specdata[j].dViscositydT(Temp))*
+	pow(1.0 + sqrt(spec_tmp[i]/spec_tmp[j])*
 	    pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
        sqrt(8.0*(1.0 +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
     }
-    sum += (spec[i].c * specdata[i].dViscositydT(Temp) ) / 
+    sum += (spec[i].c * spec_tmp[i] ) / 
       (specdata[i].Mol_mass() * phi);
   }  
   return sum;
@@ -453,21 +451,16 @@ double Chem2D_pState::dmudT(void) const{
 double Chem2D_pState::kappa(void) const{
   double sum = 0.0;  
   double Temp = T();
-#ifdef STATIC_NUMBER_OF_SPECIES
-  double  vis[STATIC_NUMBER_OF_SPECIES];
-#else
-  double  *vis = new double[ns];
-#endif
 
   for(int i=0; i<ns; i++){
     double phi = 0.0;
     for (int j=0; j<ns; j++){
       if(i == 0){
-	vis[j] = specdata[j].Viscosity(Temp);
+	spec_tmp[j] = specdata[j].Viscosity(Temp);
       }
       if(i != j){
 	phi += (spec[j].c / specdata[j].Mol_mass())*
-	  pow(ONE + sqrt(vis[i]/vis[j])*
+	  pow(ONE + sqrt(spec_tmp[i]/spec_tmp[j])*
 	      pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
 	  sqrt(EIGHT*(ONE +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
       }
@@ -485,9 +478,6 @@ double Chem2D_pState::kappa(void) const{
 //     two += spec[i].c/specdata[i].ThermalConduct(Temp,p);
 //   }
 //   sum = HALF*(one + ONE/two);
-#ifndef STATIC_NUMBER_OF_SPECIES
-  delete[] vis;
-#endif
 
   return sum;
 
@@ -2460,12 +2450,15 @@ double Chem2D_cState::mu(void) const{
   for(int i=0; i<ns; i++){
     double phi = 0.0;
     for (int j=0; j<ns; j++){
+      if(i == 0){
+	spec_tmp[j] = specdata[j].Viscosity(Temp);
+      }
       phi += ((rhospec[j].c/rho) / specdata[j].Mol_mass())*
-	pow(1.0 + sqrt(specdata[i].Viscosity(Temp)/specdata[j].Viscosity(Temp))*
+	pow(1.0 + sqrt(spec_tmp[i]/spec_tmp[j])*
 	    pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
        sqrt(8.0*(1.0 +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
     }
-    sum += ((rhospec[i].c/rho)* specdata[i].Viscosity(Temp) ) / 
+    sum += ((rhospec[i].c/rho)* spec_tmp[i] ) / 
       (specdata[i].Mol_mass() * phi);
   }  
   
@@ -2479,12 +2472,15 @@ double Chem2D_cState::dmudT(void) const{
   for(int i=0; i<ns; i++){
     double phi = 0.0;
     for (int j=0; j<ns; j++){
+      if(i == 0){
+	spec_tmp[j] = specdata[j].dViscositydT(Temp);
+      }
       phi += (rhospec[j].c/rho / specdata[j].Mol_mass())*
-	pow(1.0 + sqrt(specdata[i].dViscositydT(Temp)/specdata[j].dViscositydT(Temp))*
+	pow(1.0 + sqrt(spec_tmp[i]/spec_tmp[j])*
 	    pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
        sqrt(8.0*(1.0 +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
     }
-    sum += (rhospec[i].c/rho * specdata[i].dViscositydT(Temp) ) / 
+    sum += (rhospec[i].c/rho * spec_tmp[i] ) / 
       (specdata[i].Mol_mass() * phi);
   }  
   return sum;
