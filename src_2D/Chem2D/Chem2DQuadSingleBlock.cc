@@ -6376,13 +6376,6 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	/* Include source terms associated with radiation */
 	SolnBlk.dUdt[i][j][0].E += SolnBlk.Srad[i][j];
 	
-	/* Include physical time derivative for dual time stepping */
-	if (Input_Parameters.Dual_Time_Stepping) {
-	  //cout << "Source[0] dual time" << endl;
-	  SolnBlk.dUdt[i][j][0] -= SolnBlk.W[i][j].S_dual_time_stepping(SolnBlk.U[i][j], SolnBlk.Ut[i][j], 
-									SolnBlk.Uold[i][j], 
-									dTime, Input_Parameters.first_step);
-	}  
 	/*****************************************/
 	/*****************************************/
 	
@@ -7740,26 +7733,6 @@ int Update_Solution_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
   /* Solution successfully updated. */
   return (0);
   
-}
-/********************************************************
- * Routine: Update_Dual_Solution_States                 *
- *                                                      *
- * This routine updates solution states of the given    *
- * solution block at different times, required in the   *
- * dual time stepping.                                  * 
- *                                                      *
- ********************************************************/
-int Update_Dual_Solution_States(Chem2D_Quad_Block &SolnBlk) {
-
-  for (int j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-    for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-      SolnBlk.Uold[i][j] = SolnBlk.Ut[i][j];  // Solution at time t(n-1)
-      SolnBlk.Ut[i][j] = SolnBlk.U[i][j];     // Solution at time t(n)
-    }
-  }
-
-  /* Solution successfully updated. */
-  return (0);
 }
 
 /**********************************************************************

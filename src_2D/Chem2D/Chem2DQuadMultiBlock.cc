@@ -1308,33 +1308,6 @@ int Update_Solution_Multistage_Explicit(Chem2D_Quad_Block *Soln_ptr,
 
 }
 
-/********************************************************
- * Routine: Update_Dual_Solution_States                 *
- *                                                      *
- * This routine updates solution states of the given    *
- * solution block corresponding to different times,     *
- * required in the dual time stepping.                  * 
- *                                                      *
- ********************************************************/
-int Update_Dual_Solution_States(Chem2D_Quad_Block *Soln_ptr,
-                                 AdaptiveBlock2D_List &Soln_Block_List) {
-    int i, error_flag;
- 
-    error_flag = 0;
-
-    /* Update the solution states required by the dual time stepping for each * 
-     *  solution block.                                                       */
-
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-          error_flag =  Update_Dual_Solution_States(Soln_ptr[i]);
-          if (error_flag) return (error_flag);
-       }
-    }  
-    
-    return(error_flag); 
-}
-
 
 //FROM DUSTY2D
 
