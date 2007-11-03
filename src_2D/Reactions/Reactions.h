@@ -1499,7 +1499,7 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
 
   // perturbation factor
   static const double abs_tol = 1.E-6; // absolute tolerance (sqrt(machine eps))
-  static const double rel_tol = 1.E-5; // relative tolerance
+  static const double rel_tol = 1.E-6; // relative tolerance
   double eps;
 
   // temporary storage
@@ -1514,12 +1514,15 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
       W.specdata[num_react_species-1].Heatofform() - 
       W.specdata[num_react_species-1].Rs()*Temp );
 
+  
   //------------------------------------------------
   // setup
   //------------------------------------------------
 
   // initial unperturbed values reaction rates
-  ct_gas->setState_TPY(Temp, Press, c);
+  ct_gas->setMassFractions_NoNorm(c);
+  ct_gas->setTemperature(Temp);
+  ct_gas->setPressure(Press);
   ct_gas->getNetProductionRates(r0);
 
 
@@ -1542,7 +1545,7 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
     c[num_species-1] -= eps;
 
     // compute the perturbed reaction rates
-    ct_gas->setState_TPY(Temp, Press, c);
+    ct_gas->setMassFractions_NoNorm(c);
     ct_gas->getNetProductionRates(r);
     
     //
@@ -1552,7 +1555,7 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
       
       // the i,j element of jacobian
       dSwdU(NUM_VAR+i,NUM_VAR+j) += M[i]*(r[i]-r0[i]) / (rho*eps);
-      
+
     } // endfor - rows
 
     // unperturb
@@ -1567,7 +1570,7 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
   ***********************************************
   *
   * COMMENT OUT THIS BLOCK OF CODE FOR dS/dT=0 ASSUMPTION
-  *
+  */
   //------------------------------------------------
   // Compute \frac{ \partial S_j }{ \partial T }
   //------------------------------------------------
@@ -1578,7 +1581,8 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
   T0 = Temp + eps;
 
   // compute the perturbed reaction rates
-  ct_gas->setState_TPY(T0, Press, c);
+  ct_gas->setMassFractions_NoNorm(c);
+  ct_gas->setTemperature(T0);
   ct_gas->getNetProductionRates(r);
   
   //
@@ -1618,8 +1622,8 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
     } // endfor - species
 
   } // endfor - rows
-  
-  *
+        
+ /*
   ***********************************************
   * END FROZEN TEMPERATURE ASSUMPTION
   ***********************************************

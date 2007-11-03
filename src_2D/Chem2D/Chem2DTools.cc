@@ -67,19 +67,7 @@ int Open_Time_Accurate_File(ofstream &Time_Accurate_File,
 	//	cout<<"\"c"<<Soln.specdata[i].Speciesname()<<"\" \\ \n";
       }   
       //Viscous Terms 
-      Time_Accurate_File << "\"qflux_x\" \\ \n"  
-			 << "\"qflux_y\" \\ \n"   
-			 << "\"Tau_xx\" \\ \n"  //rr -axisymmetric
-			 << "\"Tau_xy\" \\ \n"  //rz
-			 << "\"Tau_yy\" \\ \n"  //zz
-			 << "\"Tau_zz\" \\ \n" //thetatheta 
-			 << "\"theta_x\" \\ \n"  
-			 << "\"theta_y\" \\ \n"   
-			 << "\"lambda_xx\" \\ \n"   //rr -axisymmetric
-			 << "\"lambda_xy\" \\ \n"   //rz
-			 << "\"lambda_yy\" \\ \n"   //zz
-			 << "\"lambda_zz\" \\ \n"	
-			 << "\"T\" \\ \n"
+      Time_Accurate_File << "\"T\" \\ \n"
 			 << "\"e\" \\ \n"
 			 << "\"es\" \\ \n"
 			 << "\"e_ref\" \\ \n"; 
