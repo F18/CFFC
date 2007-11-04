@@ -1,0 +1,158 @@
+# 1D Premixed Flame Test Case
+#
+Debug_Level=
+1
+########################
+# Set solver parameters
+########################
+Time_Integration_Type =
+Explicit_Euler
+#Explicit_Predictor_Corrector
+# 0 no, 1 yes (explicit time accurate)
+Time_Accurate = 
+1
+# 0 for none, 1 for Yes, 4 for Semi-Implicit
+Local_Time_Stepping=
+4
+# Least_Squares, Green_Gauss
+Reconstruction_Type =
+Least_Squares
+# Zero, Barth_Jespersen, Venkatakrishnan, VanLeer, VanAlbada
+Limiter_Type = 
+Zero
+# HLLE, Linde
+Flux_Function_Type =
+HLLE
+Flow_Type=
+Inviscid
+Residual_Variable =
+4
+###############################
+# Set time stepping parameters
+###############################
+CFL_Number =
+1.0
+Source_Term_Multiplyer=
+1.0E+02
+Time_Max = 
+0.02
+Maximum_Number_of_Time_Steps=
+1
+############################
+# IMPLICIT NKS PARAMETERS
+############################
+GMRES_Overlap =
+0
+GMRES_Initial_Tolerance =
+1.0e-01
+GMRES_Final_Tolerance =
+1.0e-01
+# Internal tolerance when using DTS
+NKS_Overall_Tolerance =
+1.0e-3
+GMRES_Block_Preconditioner = 
+ILUK
+#( ILUK, Diagonal)
+GMRES_ILUK_Level_of_Fill = 
+4
+GMRES_Check =
+OFF
+# Implict Euler Startup
+NKS_Finite_Time_Step =
+OFF
+NKS_Finite_Time_Step_Initial_CFL =
+1000.0
+# Max & Final used differently
+NKS_Finite_Time_Step_Final_CFL =
+1e12
+NKS_Finite_Time_Step_Max_CFL =
+1e12
+GMRES_Normalization = 
+ON
+Jacobian_Order =
+First_Order_Inviscid_HLLE
+#
+#################################
+# Dual-Time Stepping (Implicit Time Accurate)
+NKS_Dual_Time_Stepping =
+ON
+NKS_Physical_Time_Integration =
+Second_Order_Backwards
+#Implicit_Euler
+#Second_Order_Backwards
+#
+NKS_Physical_Time_CFL =
+1.0
+# Outer loop Max steps 
+Maximum_Number_of_NKS_DTS_Steps =
+0
+#################################
+# (Internal NKS when using DTS)
+Maximum_Number_of_NKS_Iterations =
+8
+Maximum_Number_of_GMRES_Iterations =
+80
+GMRES_Restart =
+80 
+###############################
+#
+##############################
+Output_File_Name= 
+box
+Restart_Solution_Save_Frequency=
+1000
+Time_Accurate_Plot_Frequency=
+2
+#########################
+# Set initial conditions
+#########################
+ICs_Type= 
+Uniform
+Grid_Type=
+Square
+Number_of_Cells_Idir= 
+2
+Number_of_Cells_Jdir=
+2
+Number_of_Blocks_Idir= 
+1
+Number_of_Blocks_Jdir=
+1
+##################################
+# Chem2D Parameters
+#################################
+Transport_Data_Type=
+Transport-Lennard-Jones
+Cantera_Reaction_Mechanism=
+gri30
+Mechanism_File=
+../../../data/CANTERA_RXNS/gri30.xml
+Molar_Fractions=
+H2:1.0, O2:0.5, N2:1.88
+#################################
+# Non STD_ATM properties
+# T(K) and P(kPa)
+#################################ls
+Temperature=
+1800.00
+#################################
+# Execute program
+#################################
+Execute
+# The next section is used by the 
+# postprocessor , until terminate
+#######################
+# Write output
+#######################
+Write_Output
+Write_Output_Cells
+#Write_Output_Mesh
+#Write_Mesh_Definition
+#Write_Output_Mesh_Cells
+#Write_Output_Mesh_Nodes
+Write_Restart
+#######################
+# Terminate program
+#######################
+Terminate
+
