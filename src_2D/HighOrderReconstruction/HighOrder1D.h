@@ -56,7 +56,8 @@ class HighOrder1D{
   
 public: 
 
-  //@{ @name Defined public types:
+  //! @name Defined public types:
+  //@{
   typedef SOLN_STATE Soln_State;
   typedef HighOrder1D<Soln_State> ClassType;
   typedef Cell1D_Uniform GeometryType;
@@ -69,22 +70,26 @@ public:
   typedef double (ClassType::*MemberFunction_TwoArguments_OneParameter_Type)(const double &, const unsigned );
   //@}
   
-  //@{ @name Constructors:
+  //! @name Constructors:
+  //@{
   HighOrder1D(void);		//!< Simple constructor 
   HighOrder1D(int ReconstructionOrder, GeometryType & Cell); //!< Advanced constructor
   HighOrder1D( const HighOrder1D & rhs); //!< Copy constructor
   //@}
 
 
-  //@{ @name Destructors:
+  //! @name Destructors:
+  //@{
   ~HighOrder1D(void){ Geom = NULL;}
   void deallocate(void);
   //@} 
 
   HighOrder1D<Soln_State> & operator=(const HighOrder1D<Soln_State> & rhs); //!< Assignment operator
 
-  //@{ @name Field access functions:
-  //@{ @name Taylor Derivatives:
+  //! @name Field access functions:
+  //@{
+  //! @name Taylor Derivatives:
+  //@{
   const DerivativesContainer & CellDeriv(void) const {return TD;}
   DerivativesContainer & CellDeriv(void) {return TD;}
   const Soln_State & CellDeriv(const int & p1) const {return TD(p1);}
@@ -108,28 +113,32 @@ public:
   MemoryStorageENO_1D & ENO_MemoryPool(void){ return ENO_Mem; }
   const MemoryStorageENO_1D & ENO_MemoryPool(void) const { return ENO_Mem; }
 
-  //@{ @name Monotonicity info for high-order
+  //! @name Monotonicity info for high-order
+  //@{
   const vector<short int> & CellInadequateFit(void) const { return LimitedCell;}
   vector<short int> & CellInadequateFit(void){ return LimitedCell;}
   const short int & CellInadequateFit( const int VarPosition) const { return LimitedCell[VarPosition-1];}
   short int & CellInadequateFit( const int VarPosition){ return LimitedCell[VarPosition-1];}
   //@}
 
-  //@{ @name Smoothness indicator
+  //! @name Smoothness indicator
+  //@{
   const Soln_State & CellSmoothnessIndicator(void) const { return SI;}
   Soln_State & CellSmoothnessIndicator(void){ return SI;}
   const double & CellSmoothnessIndicator(const int & VarPosition)const{ return SI[VarPosition];}
   double & CellSmoothnessIndicator( const int & VarPosition){ return SI[VarPosition];}
   //@}
 
-  //@{ @name Pseudo-inverse of the LHS term in the CENO reconstruction
+  //! @name Pseudo-inverse of the LHS term in the CENO reconstruction
+  //@{
   DenseMatrix & LHS(void) {return CENO_LHS;}
   const DenseMatrix & LHS(void) const {return CENO_LHS;}
   double & LHS(const int & IndexI, const int & IndexJ) {return CENO_LHS(IndexI,IndexJ);}
   const double & LHS(const int & IndexI, const int & IndexJ) const {return CENO_LHS(IndexI,IndexJ);}
   //@}
 
-  //@{ @name Geometric weights assigned to the cells that are part of the stencil
+  //! @name Geometric weights assigned to the cells that are part of the stencil
+  //@{
   ColumnVector & GeomWeights(void){return CENO_Geometric_Weights;}
   const ColumnVector & GeomWeights(void) const {return CENO_Geometric_Weights;}
   double & GeomWeights(const int & Index){return CENO_Geometric_Weights(Index);}
@@ -137,7 +146,8 @@ public:
   //@}
   //@}
 
-  //@{ @name Cell geometry
+  //! @name Cell geometry
+  //@{
   GeometryType* Geometry(void){return Geom;}
   const GeometryType* Geometry(void) const {return Geom;}
   GeometryType & CellGeometry(void){return *Geom;}
@@ -176,7 +186,8 @@ public:
   bool IsPseudoInversePreComputed(void) const { return (PseudoInverseFlag==ON) ? true:false; }
   void MustUpdatePseudoInverse(void) {PseudoInverseFlag = OFF;}
 
-  //@{ @name Reconstructions:
+  //! @name Reconstructions:
+  //@{
   /*! @brief Compute the unlimited high-order solution reconstruction.  */
   template<class Soln_Block_Type>
   void ComputeUnlimitedSolutionReconstruction(Soln_Block_Type *SolnBlk,
@@ -198,7 +209,8 @@ public:
 
   //@}
 
-  //@{ @name CENO Analysis:
+  //! @name CENO Analysis:
+  //@{
   template<class Soln_Block_Type>
   void ComputeSmoothnessIndicator(Soln_Block_Type *SolnBlk,
 				  const int iCell,
@@ -207,7 +219,8 @@ public:
   //@}
 
 
-  //@{ @name Error Evaluation:
+  //! @name Error Evaluation:
+  //@{
   /*! @brief Compute L1 norm of the solution error */
   template<typename Function_Object_Type>
   double ComputeSolutionErrorL1(Function_Object_Type FuncObj, const unsigned parameter);

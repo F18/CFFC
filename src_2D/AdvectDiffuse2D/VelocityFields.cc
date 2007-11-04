@@ -8,7 +8,9 @@
 // None
 
 /* Include CFFC header files */
+#include "../MPI/MPI.h"
 #include "VelocityFields.h"
+#include "../Utilities/Utilities.h"
 
 short  VelocityFields::i_Velocity_Field_Type = VELOCITY_FIELD_QUIESCENT;     //!< still flow (no advection)
 VelocityFields::Velocity VelocityFields::CartesianVelocity = Vector2D(0.0);  //!< flow velocity set to ZERO (no advection)
@@ -45,7 +47,7 @@ int VelocityFields::Set_Velocity_Field_Type(const char * FieldType){
 }
 
 /*!
- * Set the corresponding index for the space variation of the angular velocity based on the input 
+ * Set the corresponding spatial variation of the angular velocity
  * \param VariationType C-type string providing the name of the angular velocity variation
  * \return If the VariationType is recognized the returned value is '0', otherwise is 'INVALID_INPUT_CODE'
  */
@@ -60,6 +62,26 @@ int VelocityFields::Set_Angular_Velocity_Variation(const char * VariationType){
     return INVALID_INPUT_CODE;
   }
   return 0;
+}
+
+/*!
+ * Set the RotationalIntensity pointer to the spatial variation of the angular velocity
+ * \param VariationIndex the index of the angular velocity variation
+ * \throw runtime_error if the index is not recognized
+ */
+void VelocityFields::Set_Angular_Velocity_Variation(void){
+  switch(i_RotationalIntensity){
+  case ANGULAR_VELOCITY_CONSTANT:
+    RotationalIntensity = ConstantAngularVelocity;
+    break;
+    
+  case ANGULAR_VELOCITY_INVERSE_PROPORTIONAL:
+    RotationalIntensity = InverseVariationAngularVelocity;
+    break;
+
+  default:
+    throw runtime_error("VelocityFields::Set_Angular_Velocity_Variation() ERROR: Unknown angular velocity variation index");
+  }
 }
 
 /*!
@@ -115,10 +137,8 @@ void VelocityFields::Set_UniformFlow_MagnitudeAngleVelocity(const double & Veloc
 
 /*!
  * Set a uniform flow which has the flow velocity provided by the input parameters.
- * \param VelocityMagnitude the magnitude of the velocity vector
- * \param FlowAngle the angle of the uniform flow relative to the x-axis
- * 
- * \note the FlowAngle is in degrees!
+ * \param Velocity_XAxis velocity in the x-direction
+ * \param Velocity_YAxis velocity in the y-direction
  */
 void VelocityFields::Set_UniformFlow_CartesianVelocity(const double & Velocity_XAxis,
 						       const double & Velocity_YAxis){
@@ -142,6 +162,12 @@ void VelocityFields::Set_UniformFlow_CartesianVelocity(const double & Velocity_X
   ComputeMagnitudeAngleVelocity();
 }
 
+/*!
+ * Set a rotational flow with a variational angular flow velocity
+ * \param ReferenceAngularVelocity the reference angular flow velocity
+ * \param AngularVelocityVariation C-type string providing the name of the angular velocity variation
+ * \param ReferencePoint the center of rotation
+ */
 void VelocityFields::Set_RotationalFlow_Parameters(const double & ReferenceAngularVelocity,
 						   const char * AngularVelocityVariation,
 						   const Vector2D & ReferencePoint){
@@ -156,6 +182,11 @@ void VelocityFields::Set_RotationalFlow_Parameters(const double & ReferenceAngul
   Set_Angular_Velocity_Variation(AngularVelocityVariation); 
 }
 
+/*!
+ * Set a rotational flow with a constant angular flow velocity
+ * \param AngularVelocity the angular flow velocity
+ * \param ReferencePoint the center of rotation
+ */
 void VelocityFields::Set_UniformRotationalFlow_Parameters(const double & AngularVelocity,
 							  const Vector2D & ReferencePoint){
 
@@ -173,17 +204,17 @@ void VelocityFields::Print_Info(std::ostream & out_file){
 
   switch(i_Velocity_Field_Type){
   case VELOCITY_FIELD_QUIESCENT:
-    out_file << "\n  -> Velocity Field Type: Quiescent Flow \n";
+    out_file << "\n  -> Flow Velocity Field: Quiescent Flow";
     break;
 
   case VELOCITY_FIELD_UNIFORM:
-    out_file << "\n  -> Velocity Field Type: Uniform Flow";
+    out_file << "\n  -> Flow Velocity Field: Uniform Flow";
     out_file << "\n     -> Velocity Magnitude: " << MagnitudeAngleVelocity.x;
     out_file << "\n     -> Flow Angle: " << Degrees(MagnitudeAngleVelocity.y) << " degrees";
     break;
 
   case VELOCITY_FIELD_UNIFORM_X_DIRECTION:
-    out_file << "\n  -> Velocity Field Type: Uniform Flow";
+    out_file << "\n  -> Flow Velocity Field: Uniform Flow";
     out_file << "\n     -> Velocity Magnitude: " << CartesianVelocity.x;
     if (CartesianVelocity.x > 0){
       out_file << "\n     -> Flow Angle: " << 0 << " degrees (parallel to x-axis)";
@@ -193,7 +224,7 @@ void VelocityFields::Print_Info(std::ostream & out_file){
     break;
 
   case VELOCITY_FIELD_UNIFORM_Y_DIRECTION:
-    out_file << "\n  -> Velocity Field Type: Uniform Flow";
+    out_file << "\n  -> Flow Velocity Field: Uniform Flow";
     out_file << "\n     -> Velocity Magnitude: " << CartesianVelocity.y;
     if (CartesianVelocity.y > 0){
       out_file << "\n     -> Flow Angle: " << 90 << " degrees (parallel to y-axis)";
@@ -203,8 +234,8 @@ void VelocityFields::Print_Info(std::ostream & out_file){
     break;
 
   case VELOCITY_FIELD_ROTATIONAL_WRT_ARBITRATY_POINT:
-    out_file << "\n  -> Velocity Field Type: Rotationary Flow";
-    out_file << "\n     -> Center of Rotation: (" << CenterOfRotation.x << "," << CenterOfRotation.y << ")";
+    out_file << "\n  -> Flow Velocity Field: Rotationary Flow";
+    out_file << "\n     -> Center of Rotation: " << CenterOfRotation;
     out_file << "\n     -> Angular Velocity Variation: ";
     switch(i_RotationalIntensity){
     case ANGULAR_VELOCITY_CONSTANT:
@@ -219,10 +250,89 @@ void VelocityFields::Print_Info(std::ostream & out_file){
     break;
 
   case VELOCITY_FIELD_UNIFORM_ROTATIONAL_WRT_ARBITRATY_POINT:
-    out_file << "\n  -> Velocity Field Type: Rotationary Flow";
-    out_file << "\n     -> Center of Rotation: (" << CenterOfRotation.x << "," << CenterOfRotation.y << ")";
+    out_file << "\n  -> Flow Velocity Field: Uniform Rotationary Flow";
+    out_file << "\n     -> Center of Rotation: " << CenterOfRotation;
+    // make sure that the RotationalIntensity pointer is set correctly
+    if (i_RotationalIntensity != ANGULAR_VELOCITY_CONSTANT){
+      RotationalIntensity = ConstantAngularVelocity;
+      i_RotationalIntensity = ANGULAR_VELOCITY_CONSTANT;
+    }
     out_file << "\n     -> Angular Velocity Variation: Constant";
     out_file << "\n     -> Angular velocity: " << omega;
     break;
   }  
+}
+
+/*!
+ * Broadcast the VelocityFields variables to all      
+ * processors associated with the specified communicator
+ * from the specified processor using the MPI broadcast 
+ * routine.
+ *
+ * \todo Switch to a user-difined datatype
+ */
+void VelocityFields::Broadcast(void){
+#ifdef _MPI_VERSION
+  
+  MPI::COMM_WORLD.Bcast(&i_Velocity_Field_Type,
+			1, 
+			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&CartesianVelocity.x,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&CartesianVelocity.y,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&MagnitudeAngleVelocity.x,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&MagnitudeAngleVelocity.y,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&omega,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&CenterOfRotation.x,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&CenterOfRotation.y,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&i_RotationalIntensity,
+			1, 
+			MPI::SHORT, 0);
+  // Set RotationalIntensity pointer based on i_RotationalIntensity value
+  Set_Angular_Velocity_Variation();
+  
+#endif
+}
+
+/*!
+ * Set the passed pointer to the current velocity flow field.
+ *
+ * \param VelocityField this pointer will be set to point to the current flow field
+ */
+void VelocityFields::Connect_Pointer_To_Flow_Field(VelocityFields::VelocityFieldTypeRef VelocityField){
+
+  switch(i_Velocity_Field_Type){
+  case VELOCITY_FIELD_QUIESCENT:
+    VelocityField = VelocityFields::Quiescent_Flow;
+    break;
+  case VELOCITY_FIELD_UNIFORM:
+    VelocityField = VelocityFields::Uniform_Flow;
+    break;
+  case VELOCITY_FIELD_UNIFORM_X_DIRECTION:
+    VelocityField = VelocityFields::Uniform_Flow_XAxis;
+    break;
+  case VELOCITY_FIELD_UNIFORM_Y_DIRECTION:
+    VelocityField = VelocityFields::Uniform_Flow_YAxis;
+    break;
+  case VELOCITY_FIELD_ROTATIONAL_WRT_ARBITRATY_POINT:
+    VelocityField = VelocityFields::Rotational_Flow_About_Arbitrary_Point;
+    break;
+  case VELOCITY_FIELD_UNIFORM_ROTATIONAL_WRT_ARBITRATY_POINT:
+    VelocityField = VelocityFields::Rotational_Flow_About_Arbitrary_Point;
+    break;
+  }
+
 }

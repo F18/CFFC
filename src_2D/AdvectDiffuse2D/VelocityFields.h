@@ -18,16 +18,18 @@
 /*!
  * \class VelocityFields
  *
- * @brief Collection of velocity fields for the 2D problems
- *
+ * @brief Collection of velocity fields for 2D problems
+ * \nosubgrouping
  */
 
 class VelocityFields{
 public:
-  typedef Vector2D Velocity;
-  typedef Velocity (*VelocityFieldType)(const double &, const double &);
+  typedef Vector2D Velocity;	//!< Velocity type
+  typedef Velocity (*VelocityFieldType)(const double &, const double &); //!< Velocity field type
+  typedef Velocity (*&VelocityFieldTypeRef)(const double &, const double &); //!< Reference to velocity field type
 
-  //@{ @name Functions that set class parameters
+  //! @name Functions that set class parameters
+  //@{
   static void Set_UniformFlow_MagnitudeAngleVelocity(const double & VelocityMagnitude, const double & FlowAngle);
   static void Set_UniformFlow_CartesianVelocity(const double & Velocity_XAxis = 0.0, const double & Velocity_YAxis = 0.0);
   static void Set_UniformRotationalFlow_Parameters(const double & AngularVelocity,
@@ -37,7 +39,9 @@ public:
 					    const Vector2D & ReferencePoint = Vector2D(0.0,0.0));
   //@}
 
-  //@{ @name Defined velocity fields
+  //! @name Defined velocity fields
+  //@{
+  static Velocity Quiescent_Flow(const double &x, const double &y);
   static Velocity Uniform_Flow_XAxis(const double &x, const double &y);
   static Velocity Uniform_Flow_YAxis(const double &x, const double &y);
   static Velocity Uniform_Flow(const double &x, const double &y);
@@ -45,7 +49,8 @@ public:
   static Velocity Rotational_Flow_About_Arbitrary_Point(const double &x, const double &y);
   //@}
 
-  //@{ @name Defined angular velocity space variations
+  //! @name Defined angular velocity space variations
+  //@{
   /*! Imposes a constant angular velocity */
   static double ConstantAngularVelocity(const double x, const double y){ return omega; }
 
@@ -53,40 +58,55 @@ public:
   static double InverseVariationAngularVelocity(const double x, const double y){ return omega/sqrt(x*x + y*y); }
   //@}
 
+  //! @name Functions for input-output and broadcast
+  //@{
   template<class Input_Parameters_Type>
   static void Parse_Next_Input_Control_Parameter(Input_Parameters_Type & IP, int & i_command);
-
   static void Print_Info(std::ostream & out_file);
+  static void Broadcast(void);
+  //@}
 
-  static void Broadcast(void){};
+  //! @name Functions for setting external pointers
+  //@{
+  static void Connect_Pointer_To_Flow_Field(VelocityFieldTypeRef VelocityField);
+  //@}
 
 private:
-  //!< Private default constructor
+  //! Private default constructor
   VelocityFields(void);
 
-  //@{ @name Parameters used to determine a particular type of velocity field
+  //! @name Parameters used to determine a particular type of velocity field
+  //@{
   static short i_Velocity_Field_Type;     //!< type indicator for the velocity field
   static Velocity CartesianVelocity;      //!< flow velocity in the x-axis and y-axis
-  static Vector2D MagnitudeAngleVelocity; //!< velocity given by magnitude and angle relative to the x-axis (measured counterclockwise in radians)
+  static Vector2D MagnitudeAngleVelocity; //!< velocity given by magnitude and angle relative 
+                                          // to the x-axis (measured counterclockwise in radians)
   static FunctionType2D RotationalIntensity;  //!< pointer to the function that describes the space variation of angular velocity
   static short i_RotationalIntensity;         //!< type indicator for space variation of angular velocity
   static double omega;		              //!< flow angular velocity
   static Vector2D CenterOfRotation;           //!< the center around which the flow rotates
   //@}
 
-  //@{ @name Transformation functions
+  //! @name Transformation functions
+  //@{
   static void ComputeCartesianVelocity(void);
   static void ComputeMagnitudeAngleVelocity(void);
   static double Radians(const double &AngleInDegrees){return (PI*AngleInDegrees)/180.0; }
   static double Degrees(const double &AngleInRadians){return (180*AngleInRadians)/PI; }
   //@}
 
-  //@{ @name Set field types
+  //! @name Set field types
+  //@{
   static int Set_Velocity_Field_Type(const char * FieldType);
   static int Set_Angular_Velocity_Variation(const char * VariationType);
+  static void Set_Angular_Velocity_Variation(void);
   //@}
 
 };
+
+inline Vector2D VelocityFields::Quiescent_Flow(const double &x, const double &y){
+  return Vector2D(0.0);
+}
 
 inline Vector2D VelocityFields::Uniform_Flow_XAxis(const double &x, const double &y){
   return Vector2D(CartesianVelocity.x,0.0);
@@ -149,7 +169,9 @@ void VelocityFields::Parse_Next_Input_Control_Parameter(Input_Parameters_Type & 
   } else if (strcmp(IP.Next_Control_Parameter, "Flow_Angle") == 0) {
     i_command = 0;
     ++IP.Line_Number;
-    IP.Input_File >> Degrees(MagnitudeAngleVelocity.y);
+    IP.Input_File >> MagnitudeAngleVelocity.y;
+    // transform the degrees to radians
+    MagnitudeAngleVelocity.y = Radians(MagnitudeAngleVelocity.y);
     IP.Input_File.getline(buffer, sizeof(buffer));
     ComputeCartesianVelocity();	// update the polar velocities
   } else if (strcmp(IP.Next_Control_Parameter, "Angular_Velocity") == 0) {
@@ -161,6 +183,7 @@ void VelocityFields::Parse_Next_Input_Control_Parameter(Input_Parameters_Type & 
     i_command = 0;
     ++IP.Line_Number;
     IP.Input_File >> CenterOfRotation;
+    IP.Input_File.setf(ios::skipws);
     IP.Input_File.getline(buffer, sizeof(buffer));
   } else {
     i_command = INVALID_INPUT_CODE;

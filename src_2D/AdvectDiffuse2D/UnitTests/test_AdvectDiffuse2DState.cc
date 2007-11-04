@@ -203,6 +203,24 @@ namespace tut
     ensure_equals("Velocity Second Point", VelocityFields::Rotational_Flow_About_Arbitrary_Point(8.5,12.5), Vector2D(-8,6));
   }
 
+  /* Test 9:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<9>()
+  {
+
+    set_test_name("Connect_Pointer_To_Flow_Field()");
+
+    AdvectDiffuse2D_State_New State;
+
+    VelocityFields::Set_RotationalFlow_Parameters(10.0, "Inverse_Proportional_Distance", Vector2D(2.5,4.5));
+
+    VelocityFields::Connect_Pointer_To_Flow_Field(State.V);
+
+    // === check
+    ensure_equals("Velocity First Point", State.V(5.5,8.5), Vector2D(-8,6));
+    ensure_equals("Velocity Second Point", State.V(8.5,12.5), Vector2D(-8,6));
+  }
   
   
 

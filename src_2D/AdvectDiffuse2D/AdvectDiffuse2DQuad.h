@@ -146,11 +146,13 @@
 class AdvectDiffuse2D_Quad_Block{
 private:
 public:
-  //@{ @name Solution state arrays:
+  //! @name Solution state arrays:
+  //@{
   AdvectDiffuse2D_State    **U; //!< Solution state.
   //@}
 
-  //@{ @name Grid block information:
+  //! @name Grid block information:
+  //@{
   int                      NCi, //!< Total number of i-direction cells.
                            ICl, //!< First i-direction non-ghost cell counter.
                            ICu; //!< Final i-direction non-ghost cell counter.
@@ -161,7 +163,8 @@ public:
   Grid2D_Quad_Block       Grid; //!< 2D quadrilateral grid geometry.
   //@}
 
-  //@{ @name Residual and time-stepping arrays:
+  //! @name Residual and time-stepping arrays:
+  //@{
   double                  **dt; //!< Local time step.
   double               ***dudt; //!< Solution residual.
   double                  **uo; //!< Initial solution.
@@ -169,39 +172,45 @@ public:
   static int residual_variable; //!< Static integer that indicates which variable is used for residual calculations.
   //@}
 
-  //@{ @name Solution gradient arrays:
+  //! @name Solution gradient arrays:
+  //@{
   double                **dudx; //!< Unlimited solution gradient (x-direction).
   double                **dudy; //!< Unlimited solution gradient (y-direction).
   double                 **phi; //!< Solution slope limiter.
   //@}
 
-  //@{ @name Boundary solution flux arrays:
+  //! @name Boundary solution flux arrays:
+  //@{
   double                *FluxN, //!< North boundary solution flux.
                         *FluxS, //!< South boundary solution flux.
                         *FluxE, //!< East boundary solution flux.
                         *FluxW; //!< West boundary solution flux.
   //@}
 
-  //@{ @name Problem indicator flags:
+  //! @name Problem indicator flags:
+  //@{
   int             Axisymmetric; //!< Axisymmetric geometry indicator.
   int           Freeze_Limiter; //!< Limiter freezing indicator.
   static char*   solutionTitle; //!< Solution title info
   //@}
 
-  //@{ @name Boundary condtion reference states:
+  //! @name Boundary condtion reference states:
+  //@{
   AdvectDiffuse2D_State   *UoN, //!< Boundary condition reference states for north boundary.
                           *UoS, //!< Boundary condition reference states for south boundary.
                           *UoE, //!< Boundary condition reference states for east boundary.
                           *UoW; //!< Boundary condition reference states for west boundary.
   //@}
 
-  //@{ @name Pointers to exact solutions
+  //! @name Pointers to exact solutions
+  //@{
   typedef Vector2D (* Exact_Gradient_Function) (const double, const double);
   static Exact_Gradient_Function ExactGrad; /* Exact gradient for equations with analytic solution */
   static FunctionType2D ExactSoln;          /* Exact solution for equations with analytic solution */
   //@}
 	      
-  //@{ @name Creation, copy, and assignment constructors.
+  //! @name Creation, copy, and assignment constructors.
+  //@{
   //! Creation constructor.
   AdvectDiffuse2D_Quad_Block(void) {
     NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
@@ -233,7 +242,8 @@ public:
   // AdvectDiffuse2D_Quad_Block operator = (const AdvectDiffuse2D_Quad_Block &Soln);
   // Use automatically generated assignment operator.
 
-  //@{ @name Allocate and deallocate functions.
+  //! @name Allocate and deallocate functions.
+  //@{
   //! Allocate memory for structured quadrilateral solution block.
     void allocate(const int Ni, const int Nj, const int Ng);
 
@@ -241,7 +251,8 @@ public:
   void deallocate(void);
   //@}
 
-  //@{ @name Bilinear interplation (Zingg & Yarrow).
+  //! @name Bilinear interplation (Zingg & Yarrow).
+  //@{
   //! Return solution state at specified node.
   AdvectDiffuse2D_State Un(const int ii, const int jj);
 
@@ -262,23 +273,27 @@ public:
   double unSW(const int ii, const int jj); //!< Return solution state at cell SW node.
   //@}
 
-  //@{ @name Evaluate diffusive flux for the cell.
+  //! @name Evaluate diffusive flux for the cell.
+  //@{
   void evalDiffusiveFlux(const int ii, const int jj);
   //@}
 
-  //@{ @name Member functions for limiter freezing.
+  //! @name Member functions for limiter freezing.
+  //@{
   void evaluate_limiters(void);
   void freeze_limiters(void);
   //@}
 
-  //@{ @name Input-output operators.
+  //! @name Input-output operators.
+  //@{
   friend ostream &operator << (ostream &out_file,
 			       const AdvectDiffuse2D_Quad_Block &Soln);
   friend istream &operator >> (istream &in_file,
 			       AdvectDiffuse2D_Quad_Block &Soln);
   //@}
 
-  //@{ @name Member functions required for message passing.
+  //! @name Member functions required for message passing.
+  //@{
   //! Number of solution state variables.
   int NumVar(void);
   //! Load send message passing buffer.

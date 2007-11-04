@@ -78,15 +78,17 @@ private:
 
 public:
 
-  //@{ @name Solution state variables and associated constants:
+  //! @name Solution state variables and associated constants:
+  //@{
   double  u;   // Solution.
   AdvectionVelocityType  V;   // Advection velocity as function of 'x' and 'y'.
   //@}
 
-  //@{ @name Creation and copy constructors.
+  //! @name Creation and copy constructors.
+  //@{
   //! Creation constructor.
   AdvectDiffuse2D_State_New(void) {
-    V = VelocityFields::Uniform_Flow;
+    V = VelocityFields::Quiescent_Flow;
   }
 
   //! Copy constructor.
@@ -128,39 +130,50 @@ public:
   // Use automatically generated destructor.
   //@}
 
-  //@{ @name Useful operators.
+  //! @name Useful operators.
+  //@{
   //! Vacuum/zero operator.
   //@}
 
-  //@{ @name Advective Flux.
+  //! @name Advective Flux.
+  //@{
   //@}
 
-  //@{ @name Regular source term.
+  //! @name Regular source term.
+  //@{
   //@}
 
-  //@{ @name Axisymmetric source term.
+  //! @name Axisymmetric source term.
+  //@{
   //@}
 
-  //@{ @name Evaluates diffusive flux.
+  //! @name Evaluates diffusive flux.
+  //@{
   //@}
 
   /* @name Assignment operator. */
+  //@{
   // AdvectDiffuse2D_State_New operator = (const AdvectDiffuse2D_State_New &W);
   // Use automatically generated assignment operator.
 
-  //@{ @name Binary arithmetic operators.
+  //! @name Binary arithmetic operators.
+  //@{
   //@}
 
-  //@{ @name Unary arithmetic operators.
+  //! @name Unary arithmetic operators.
+  //@{
   //@}
 
-  //@{ @name Shortcut arithmetic operators.
+  //! @name Shortcut arithmetic operators.
+  //@{
   //@}
 
-  //@{ @name Relational operators.
+  //! @name Relational operators.
+  //@{
   //@}
 
-  //@{ @name Input-output operators.
+  //! @name Input-output operators.
+  //@{
   //@}
 
 };

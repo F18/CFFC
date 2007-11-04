@@ -73,7 +73,8 @@ using namespace std;
 class AdvectDiffuse2D_State{
 private:
 public:
-  //@{ @name Solution state variables and associated constants:
+  //! @name Solution state variables and associated constants:
+  //@{
   double          u;   // Solution.
   Vector2D        V;   // Advection velocity (2D vector).
   double          k;   // Diffusion coefficient.
@@ -81,7 +82,8 @@ public:
   Vector2D       Fd;   // Diffusive flux (2D vector).
   //@}
 
-  //@{ @name Creation, copy, and assignment constructors.
+  //! @name Creation, copy, and assignment constructors.
+  //@{
   //! Creation constructor.
   AdvectDiffuse2D_State(void) {
     u = ZERO; V.zero(); k = ONE; T = ONE; Fd.zero();
@@ -126,40 +128,47 @@ public:
   // Use automatically generated destructor.
   //@}
 
-  //@{ @name Useful operators.
+  //! @name Useful operators.
+  //@{
   //! Vacuum/zero operator.
   void Vacuum(void) { u = ZERO; }
   //@}
 
-  //@{ @name Advective Flux.
+  //! @name Advective Flux.
+  //@{
   Vector2D F(void);
   Vector2D F(void) const;
   friend Vector2D F(const AdvectDiffuse2D_State &U);
   //@}
 
-  //@{ @name Regular source term.
+  //! @name Regular source term.
+  //@{
   double s(void);
   double s(void) const;
   friend double s(const AdvectDiffuse2D_State &U);
   //@}
 
-  //@{ @name Axisymmetric source term.
+  //! @name Axisymmetric source term.
+  //@{
   double s_axi(const Vector2D &X);
   double s_axi(const Vector2D &X) const;
   friend double s_axi(const AdvectDiffuse2D_State &U, const Vector2D &X);
   //@}
 
-  //@{ @name Evaluates diffusive flux.
+  //! @name Evaluates diffusive flux.
+  //@{
   Vector2D F_diff(const double &dudx, const double &dudy);
   Vector2D F_diff(const double &dudx, const double &dudy) const;
   friend Vector2D F_diff(const AdvectDiffuse2D_State &U, const double &dudx, const double &dudy);
   //@}
 
   /* @name Assignment operator. */
+  //@{
   // AdvectDiffuse2D_State operator = (const AdvectDiffuse2D_State &W);
   // Use automatically generated assignment operator.
 
-  //@{ @name Binary arithmetic operators.
+  //! @name Binary arithmetic operators.
+  //@{
   friend AdvectDiffuse2D_State operator +(const AdvectDiffuse2D_State &U1, const AdvectDiffuse2D_State &U2);
   friend AdvectDiffuse2D_State operator -(const AdvectDiffuse2D_State &U1, const AdvectDiffuse2D_State &U2);
   friend AdvectDiffuse2D_State operator *(const AdvectDiffuse2D_State &U1, const AdvectDiffuse2D_State &U2);
@@ -168,24 +177,28 @@ public:
   friend AdvectDiffuse2D_State operator /(const AdvectDiffuse2D_State &U, const double &a);
   //@}
 
-  //@{ @name Unary arithmetic operators.
+  //! @name Unary arithmetic operators.
+  //@{
   friend AdvectDiffuse2D_State operator +(const AdvectDiffuse2D_State &U);
   friend AdvectDiffuse2D_State operator -(const AdvectDiffuse2D_State &U);
   //@}
 
-  //@{ @name Shortcut arithmetic operators.
+  //! @name Shortcut arithmetic operators.
+  //@{
   friend AdvectDiffuse2D_State &operator +=(AdvectDiffuse2D_State &U1, const AdvectDiffuse2D_State &U2);
   friend AdvectDiffuse2D_State &operator -=(AdvectDiffuse2D_State &U1, const AdvectDiffuse2D_State &U2);
   AdvectDiffuse2D_State &operator *=(const double &a);
   AdvectDiffuse2D_State &operator /=(const double &a);
   //@}
 
-  //@{ @name Relational operators.
+  //! @name Relational operators.
+  //@{
   friend int operator ==(const AdvectDiffuse2D_State &U1, const AdvectDiffuse2D_State &U2);
   friend int operator !=(const AdvectDiffuse2D_State &U1, const AdvectDiffuse2D_State &U2);
   //@}
 
-  //@{ @name Input-output operators.
+  //! @name Input-output operators.
+  //@{
   friend ostream &operator << (ostream &out_file, const AdvectDiffuse2D_State &U);
   friend istream &operator >> (istream &in_file,  AdvectDiffuse2D_State &U);
   //@}

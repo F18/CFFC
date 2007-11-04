@@ -11,6 +11,9 @@
 #include "AdvectDiffuse2DInput.h" /* Include 2D advection diffusion equation input parameter header file. */
 #include "../FASMultigrid2D/FASMultigrid2DInput.h"  
 #include "AdvectDiffuse2DQuad.h"  /* Include AdvectDiffuse2D_Quad_Block header file. */
+#include "../HighOrderReconstruction/CENO_ExecutionMode.h" // Include high-order CENO execution mode header file
+#include "../HighOrderReconstruction/CENO_Tolerances.h"	   // Include high-order CENO tolerances header file
+#include "AdvectDiffuse2DParameterFields.h" /* Include 2D advection diffusion parameter fields */
 
 /*************************************************************
  * AdvectDiffuse2D_Input_Parameters -- Member functions.     *
@@ -248,6 +251,291 @@ void AdvectDiffuse2D_Input_Parameters::SetExactSolutionPointer(void){
     AdvectDiffuse2D_Quad_Block::ExactGrad = NULL;
     
   }
+}
+
+/***************************************************************
+ * AdvectDiffuse2D_Input_Parameters -- Input-output operators. *
+ ***************************************************************/
+ostream &operator << (ostream &out_file,
+		      const AdvectDiffuse2D_Input_Parameters &IP) {
+    out_file << setprecision(6);
+    out_file << "\n  -> CFFC Path: " 
+	     << IP.CFFC_Path;
+    out_file << "\n\n Solving 2D advection diffusion equations (IBVP/BVP) on multi-block solution-adaptive quadrilateral mesh.";
+    out_file << "\n  -> Input File Name: " 
+             << IP.Input_File_Name;
+
+    // ==== Initial condition parameters ====
+    out_file << "\n  -> Initial Conditions: " 
+             << IP.ICs_Type;
+    out_file << "\n  -> Flow Velocity Field: " 
+             << IP.Velocity_Field_Type; 
+    out_file << "\n  -> Advection velocity x-direction: " 
+             << IP.a;
+    out_file << "\n  -> Advection velocity y-direction: " 
+             << IP.b;
+
+    // ====    Velocity field parameters ====
+    VelocityFields::Print_Info(out_file);
+
+
+    out_file << "\n  -> Diffusion Coefficient : " 
+             << IP.Kappa;
+    out_file << "\n  -> Relaxation Time : " 
+             << IP.Tau;
+
+    // ==== Boundary conditions ====
+    if (IP.BCs_Specified) {
+      out_file << "\n  -> Boundary conditions specified as: "
+	       << "\n     -> BC_North = " << IP.BC_North_Type
+	       << "\n     -> BC_South = " << IP.BC_South_Type
+	       << "\n     -> BC_East = " << IP.BC_East_Type
+	       << "\n     -> BC_West = " << IP.BC_West_Type;
+    }
+
+    // ==== Time marching scheme parameters ====
+    if (IP.Time_Accurate) { 
+       out_file << "\n  -> Time Accurate (Unsteady) Solution";
+    } else {
+       out_file << "\n  -> Time Invariant (Steady-State) Solution";
+    }
+    out_file << "\n  -> Time Integration: " 
+             << IP.Time_Integration_Type;
+    out_file << "\n  -> Number of Stages in Multi-Stage Scheme: " 
+             << IP.N_Stage;
+    /*****************************************************
+     *                     Multigrid                     */
+    if (IP.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
+      out_file << IP.Multigrid_IP;
+    }
+    /*****************************************************/
+    if (IP.Local_Time_Stepping == GLOBAL_TIME_STEPPING) {
+      out_file << "\n  -> Global Time Stepping";
+    } else if (IP.Local_Time_Stepping == SCALAR_LOCAL_TIME_STEPPING) {
+      out_file << "\n  -> Local Time Stepping";
+    } /* endif */
+    if (IP.Residual_Smoothing) {
+      out_file << "\n  -> Residual Smoothing";
+      out_file << "\n  -> Epsilon: " 
+               << IP.Residual_Smoothing_Epsilon;
+      out_file << "\n  -> Gauss_Seidel_Iterations: " 
+               << IP.Residual_Smoothing_Gauss_Seidel_Iterations;
+    } /* endif */
+    out_file << "\n  -> CFL Number: " 
+             << IP.CFL_Number;
+    out_file << "\n  -> Maximum Time: " 
+             << IP.Time_Max;
+    out_file << "\n  -> Maximum Number of Time Steps (Iterations): " 
+             << IP.Maximum_Number_of_Time_Steps;
+    out_file << "\n  -> Maximum Number of NKS Iterations: " 
+             << IP.Maximum_Number_of_NKS_Iterations;
+    out_file << "\n  -> Maximum Number of GMRES Iterations: " 
+             << IP.Maximum_Number_of_GMRES_Iterations;
+
+    // ==== Spatial approximation parameters ====
+    if (IP.Axisymmetric) { 
+       out_file << "\n  -> 2D Axisymmetric Geometry";
+    } else {
+       out_file << "\n  -> 2D Planar Geometry";
+    }
+    if (IP.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+      out_file << "\n  -> Space Accuracy : ";
+      switch(IP.Space_Accuracy){
+      case 1: 
+	out_file << "1st-order";
+	break;
+      case 2:
+	out_file << "2nd-order";
+	break;		
+      case 3:		
+	out_file << "3rd-order";
+	break;		
+      case 4:		
+	out_file << "4th-order";
+	break;		
+      case 5:		
+	out_file << "5th-order";
+	break;		
+      case 6:		
+	out_file << "6th-order";
+	break;
+      default:
+	out_file << "bigger than 6th-order";
+      }
+    } else {
+      out_file << "\n  -> Space Accuracy : 2nd-order";
+    }
+    out_file << "\n  -> Reconstruction: " 
+             << IP.Reconstruction_Type;
+    if (IP.i_ReconstructionMethod == RECONSTRUCTION_CENO){
+      CENO_Execution_Mode::Print_Info(out_file);
+      CENO_Tolerances::Print_Info(out_file);
+      out_file << "\n     -> Reference State: "
+	       << IP.RefU;
+    }
+    out_file << "\n  -> Limiter: " 
+             << IP.Limiter_Type;
+    if (IP.Limiter_Type != LIMITER_ZERO && IP.Freeze_Limiter) {
+      out_file << "\n  -> Freeze Limiter when L2-norm of residual is < "
+	       << IP.Freeze_Limiter_Residual_Level;
+    } /* endif */
+    if (IP.IncludeHighOrderBoundariesRepresentation == OFF){
+      out_file << "\n  -> Boundary Accuracy: " << "2nd-Order";
+    } else {
+      out_file << "\n  -> Boundary Accuracy: " << "high-order";
+    }
+
+    // ==== Grid parameters ====
+    out_file << "\n  -> Grid: " 
+             << IP.Grid_Type;
+    switch(IP.i_Grid) {
+      case GRID_SQUARE :
+        out_file << "\n  -> Size of Solution Domain: " 
+                 << IP.Box_Width;
+        break;
+      case GRID_RECTANGULAR_BOX :
+        out_file << "\n  -> Width of Solution Domain: " 
+                 << IP.Box_Width;
+        out_file << "\n  -> Height of Solution Domain: " 
+                 << IP.Box_Height;
+        break;
+      case GRID_FLAT_PLATE :
+        out_file << "\n  -> Plate Length: " 
+                 << IP.Plate_Length;
+        break;
+      case GRID_PIPE :
+        out_file << "\n  -> Pipe Length: " 
+                 << IP.Pipe_Length;
+        out_file << "\n  -> Pipe Radius: " 
+                 << IP.Pipe_Radius;
+        break;
+      case GRID_BLUNT_BODY :
+        out_file << "\n  -> Cylinder Radius: " 
+                 << IP.Blunt_Body_Radius;
+        break;
+      case GRID_ROCKET_MOTOR :
+	out_file << "\n  -> Length of Chamber (m): "
+		 << IP.Chamber_Length;
+	out_file << "\n  -> Radius of Chamber (m): "
+		 << IP.Chamber_Radius;
+	out_file << "\n  -> Distance from Chamber to Nozzle Throat (m): "
+		 << IP.Chamber_To_Throat_Length;
+	out_file << "\n  -> Length of the Nozzle (m): "
+		 << IP.Nozzle_Length;
+	out_file << "\n  -> Radius of the Nozzle at Throat (m): "
+		 << IP.Nozzle_Radius_Throat;
+	out_file << "\n  -> Radius of the Nozzle at Exit(m): "
+		 << IP.Nozzle_Radius_Exit;
+	out_file << "\n  -> Radius of the Propellant Grain (m): "
+		 << IP.Grain_Radius;
+	out_file << "\n  -> Nozzle type: "
+		 << IP.Nozzle_Type;
+        break;
+      case GRID_CIRCULAR_CYLINDER :
+        out_file << "\n  -> Cylinder Radius: " 
+                 << IP.Cylinder_Radius;
+        break;
+      case GRID_ELLIPSE :
+        out_file << "\n  -> Width of Ellipse along x-axis: " 
+                 << IP.Ellipse_Length_X_Axis;
+        out_file << "\n  -> Height of Ellipse along y-axis: " 
+                 << IP.Ellipse_Length_Y_Axis;
+        break;
+      case GRID_NACA_AEROFOIL :
+        out_file << "\n  -> NACA " 
+                 << IP.NACA_Aerofoil_Type;
+        out_file << "\n  -> Chord Length: " 
+                 << IP.Chord_Length;
+        break;
+      case GRID_FREE_JET :
+        out_file << "\n  -> Orifice Radius: " 
+                 << IP.Orifice_Radius;
+        break;
+      case GRID_ICEMCFD :
+        break;
+      case GRID_READ_FROM_DEFINITION_FILE :
+        break;
+      case GRID_READ_FROM_GRID_DATA_FILE :
+        break;
+      default:
+        out_file << "\n  -> Width of Solution Domain: " 
+                 << IP.Box_Width;
+        out_file << "\n  -> Height of Solution Domain: " 
+                 << IP.Box_Height;
+        break;
+    } /* endswitch */
+    out_file << "\n  -> Smooth Quad Block: ";
+    if (IP.i_Smooth_Quad_Block){
+      out_file << "Yes";
+    } else {
+      out_file << "No";
+    }
+    if (IP.IterationsOfInteriorNodesDisturbances > 0){
+      out_file << "\n  -> Disturbed Interior Quad Block Nodes: "
+	       << IP.IterationsOfInteriorNodesDisturbances << " iterations.";
+    }
+    out_file << "\n  -> Mesh shift, scale, and rotate: " 
+             << IP.X_Shift << " " << IP.X_Scale << " " << IP.X_Rotate;
+    out_file << "\n  -> Number of Blocks i-direction: "
+             << IP.Number_of_Blocks_Idir;
+    out_file << "\n  -> Number of Blocks j-direction: " 
+             << IP.Number_of_Blocks_Jdir;
+    out_file << "\n  -> Number of Cells i-direction: "
+             << IP.Number_of_Cells_Idir;
+    out_file << "\n  -> Number of Cells j-direction: " 
+             << IP.Number_of_Cells_Jdir;
+    out_file << "\n  -> Number of Ghost Cells: "
+	     << IP.Number_of_Ghost_Cells;
+
+    // ==== AMR parameters ====
+    if (IP.Number_of_Initial_Mesh_Refinements > 0)
+    out_file << "\n  -> Number of Initial Mesh Refinements : " 
+             << IP.Number_of_Initial_Mesh_Refinements;
+    if (IP.Number_of_Uniform_Mesh_Refinements > 0)
+    out_file << "\n  -> Number of Uniform Mesh Refinements : " 
+	     << IP.Number_of_Uniform_Mesh_Refinements;
+    if (IP.Number_of_Boundary_Mesh_Refinements > 0)
+    out_file << "\n  -> Number of Boundary Mesh Refinements : " 
+	     << IP.Number_of_Boundary_Mesh_Refinements;
+    out_file << "\n  -> Number of Processors: " 
+             << IP.Number_of_Processors;
+    out_file << "\n  -> Number of Blocks Per Processor: " 
+             << IP.Number_of_Blocks_Per_Processor;
+    if (IP.AMR) {
+      out_file << "\n  -> AMR Frequency: "
+	       << IP.AMR_Frequency
+	       << " steps (iterations)";
+      if(IP.AMR_Global_Reference == ON){
+	out_file << "\n  -> AMR Reference: Absolute Simulation Start";
+      } else {
+	out_file << "\n  -> AMR Reference: Current Simulation Start";
+      }
+      
+      out_file << "\n  -> Threshold for Refinement: "
+	       << IP.Threshold_for_Refinement
+	       << "\n  -> Threshold for Coarsening: "
+	       << IP.Threshold_for_Coarsening
+	       << "\n  -> Maximum Refinement Level: "
+	       << IP.Maximum_Refinement_Level
+	       << "\n  -> Minimum Refinement Level: "
+	       << IP.Minimum_Refinement_Level;
+    }
+
+    // ==== Output parameters ====
+    out_file << "\n  -> Output File Name: " 
+             << IP.Output_File_Name;
+    out_file << "\n  -> Output Format: " 
+             << IP.Output_Format_Type;
+    out_file << "\n  -> Restart Solution Save Frequency: "
+             << IP.Restart_Solution_Save_Frequency
+             << " steps (iterations)"; 
+    out_file.flush();
+    return (out_file);
+}
+
+istream &operator >> (istream &in_file,
+		      AdvectDiffuse2D_Input_Parameters &IP) {
+  return (in_file);
 }
 
 /*************************************************************
@@ -923,6 +1211,9 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     
     // CENO_Tolerances variables
     CENO_Tolerances::Broadcast();
+
+    // VelocityFields variables
+    VelocityFields::Broadcast();
 
 #endif
 
@@ -2637,12 +2928,14 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
 
   } /* endif */
 
+  /* Parse next control parameter with VelocityFields parser */
+  VelocityFields::Parse_Next_Input_Control_Parameter(IP,i_command);
+
   /* Parse next control parameter with CENO_Execution_Mode parser */
   CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
   
   /* Parse next control parameter with CENO_Tolerances parser */
   CENO_Tolerances::Parse_Next_Input_Control_Parameter(IP,i_command);
-  
 
   /* Return the parser command type indicator. */
 
