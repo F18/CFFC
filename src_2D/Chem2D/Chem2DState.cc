@@ -531,63 +531,105 @@ double Chem2D_pState::gamma_guess(void) const{
    enthalpy
 ***************************************************/
 double Chem2D_pState::T(double &h_s) const{
-  double T = ZERO;
-  //--------- Initial Guess ------------------------------//
-  //using a polytropic gas assumption with gamma@200;
-  double Tguess = (h_s/Rtot())*(ONE/(ONE/(gamma_guess() - ONE) +ONE));
-  //--------- newtons method to get T --------------------//
-  int numit =0;
+
+  // declares
+  double RTOT = Rtot();  
+
+  // set iteration parameters
+  int Nmax = 20;
+  double err;
+
+  // determine limits
   double Tmin = low_temp_range;
   double Tmax = high_temp_range;
-  //check for start value
-  if(Tguess > Tmin && Tguess < Tmax){
-    T=Tguess;
-  } else { 
-   T=Tmin;
-  }
+  double fmin = hs(Tmin) - h_s;
+  double fmax = hs(Tmax) - h_s;
 
-  double fa = hs(Tmin) - h_s;
-  double fn = hs(T) - h_s; 
-  double dfn = hprime(T);
-  
-  while( fabs(Tmax-Tmin) > CONV_TOLERANCE && fabs(fn) 
-	 > CONV_TOLERANCE && numit<20 && T >= low_temp_range){  
-    if(T >= Tmin && T <= Tmax){
-      T = T - fn/dfn;
-      if(T >= Tmax) T = HALF*(Tmax + Tmin);	
-      //Bisection
+
+  //------------------------------------------------
+  // Initial Guess
+  //------------------------------------------------
+  //using a polytropic gas assumption with gamma@200;
+  double Tguess = (h_s/Rtot())*(ONE/(ONE/(gamma_guess() - ONE) +ONE));
+
+  //check for start value
+  double Tn;
+  if (Tguess < Tmin )
+    Tn=Tmin;
+  else if (Tguess > Tmax)
+    Tn=Tmax;
+  else
+    Tn=Tguess;
+
+  // compute function values
+  double fn = hs(Tn) - h_s; 
+  double dfn = hprime(Tn);
+  double dTn = fabs(Tmax - Tmin);
+  double dT0 = dTn;
+
+  // orient search such that f(Tmin)<0
+  if (fmin >= ZERO) {
+    double tmp(Tmax);
+    Tmax = Tmin;
+    Tmin = tmp;
+  }  
+
+
+  //------------------------------------------------
+  // Newton-Raphson iteration
+  //------------------------------------------------
+  int i;
+  for ( i=1; i<=Nmax; i++){
+
+    // use bisection if Newton out of range or not decreasing 
+    // fast enough
+    if ( (((Tn-Tmax)*dfn-fn)*((Tn-Tmin)*dfn-fn) >= ZERO) || 
+	 (fabs(TWO*fn) > fabs(dT0*dfn)) ) {
+      dT0 = dTn;
+      dTn = HALF*(Tmax-Tmin);
+      Tn = Tmin + dTn;
+
+    // Newton acceptable 
     } else {
-      T = HALF*(Tmax + Tmin);
-    } 
-    fn = hs(T) - h_s;  
-    dfn = hprime(T); 
-    //change bisection range
-    if ( fa*fn <=ZERO){
-      Tmax = T;
-    } else {
-      Tmin = T;
-      fa = fn;
+      dT0 = dTn;
+      dTn = fn/dfn;
+      Tn -= dTn;
     }
-    numit++;
-  }
+
+    // Convergence test
+    err = fabs(dTn);
+    if ( err<=CONV_TOLERANCE ) break;
+
+    // evaluate new guess
+    fn = hs(Tn) - h_s;  
+    dfn = hprime(Tn); 
+
+    // change bisection bracket
+    if ( fn < ZERO)  Tmin=Tn;
+    else Tmax = Tn;
+
+  } // end Newton-Raphson
+
 
 #ifdef _CHEM2D_NO_LOWER_T_CHECK
-  if (numit>=19){
-    T = max(Tguess,low_temp_range); 
+  if (i>=Nmax || err>CONV_TOLERANCE){
+    Tn = max(Tguess,low_temp_range); 
     cout<<"\nTemperature didn't converge in Chem2D_cState::T(void)";
-    cout<<" with polytopic Tguess "<<Tguess<<" using "<<T;
+    cout<<" with polytopic Tguess "<<Tguess<<" using "<<Tn;
+    cout<<", err="<<err;
   }
 #else
-  if (numit>=19 || T <= low_temp_range){
-    T = max(Tguess,low_temp_range); 
+  if (i>=Nmax || err>CONV_TOLERANCE || Tn <= low_temp_range){
+    Tn = max(Tguess,low_temp_range); 
     cout<<"\nTemperature didn't converge in Chem2D_cState::T(void)";
     cout<<" with polytopic Tguess "<<Tguess<<", or lower than Tmin "
-	<<low_temp_range<<" using "<<T;
+	<<low_temp_range<<" using "<<Tn;
+    cout<<", err="<<err;
   }
 #endif // _CHEM2D_NO_LOWER_T_CHECK
 
   //return value
-  return T;
+  return Tn;
 }
     
 /****************************************************
@@ -2337,68 +2379,104 @@ double Chem2D_cState::gamma_guess(void) const{
   in the header.
 **********************************************************************/
 double Chem2D_cState::T(void) const{
-  double T = ZERO;
+
+  // declares
   double RTOT = Rtot();  
-  //--------- Initial Guess ------------------------------//
-  //using a polytropic gas assumption with gamma@200;
-  double Tguess = (gamma_guess() - ONE)*(E - HALF*rhov.sqr()/rho-rhok)/(rho*RTOT);
-  //--------- global newtons method to get T ---------------//
   double A = (E - HALF*rhov*rhov/rho -rhok)/rho;
-  //Note that there is k (turbulent kinetic energy) in above both variables 
-  //Need to set a flag for the choice of laminar and turbulent flow 
-  int numit =0;
+
+  // set iteration parameters
+  int Nmax = 50;
+  double err;
+
+  // determine limits
   double Tmin = low_temp_range;
   double Tmax = high_temp_range;
+  double fmin = h(Tmin) - Tmin*RTOT - A;
+  double fmax = h(Tmax) - Tmax*RTOT - A;
+
+  //------------------------------------------------
+  // Initial Guess
+  //------------------------------------------------
+  //using a polytropic gas assumption with gamma@200;
+  double Tguess = (gamma_guess() - ONE)*(E - HALF*rhov.sqr()/rho-rhok)/(rho*RTOT);
 
   //check for start value
-  if(Tguess > Tmin && Tguess < Tmax){
-    T=Tguess;
-  } else {
-    T=Tmin;
-  }
-  
-  double fa = h(Tmin) - Tmin*RTOT - A;
-  double fn = h(T) - T*RTOT - A;
-  double dfn = hprime(T) - RTOT;
-  while( fabs(Tmax-Tmin) > CONV_TOLERANCE && fabs(fn) > CONV_TOLERANCE && numit<20 && T >= low_temp_range){    
-    // Newton 
-    if(T >= Tmin && T <= Tmax){
-      T = T - fn/dfn;
-      if(T >= Tmax) T = HALF*(Tmax + Tmin);	
-      //Bisection
-    } else {
-      T = HALF*(Tmax + Tmin);
-    } 
-    //evaluate function and derivative
-    fn = h(T) - T*RTOT - A;
-    dfn = hprime(T) - RTOT;  
-    //change bisection range
-    if ( fa*fn <=ZERO){
-      Tmax = T;
-    } else {
-      Tmin = T;
-      fa = fn;
-    }
-    numit++;
+  double Tn;
+  if (Tguess < Tmin )
+    Tn=Tmin;
+  else if (Tguess > Tmax)
+    Tn=Tmax;
+  else
+    Tn=Tguess;
+
+  // compute function values
+  double fn = h(Tn) - Tn*RTOT - A;
+  double dfn = hprime(Tn) - RTOT;
+  double dTn = fabs(Tmax - Tmin);
+  double dT0 = dTn;
+
+  // orient search such that f(Tmin)<0
+  if (fmin >= ZERO) {
+    double tmp(Tmax);
+    Tmax = Tmin;
+    Tmin = tmp;
   }  
 
+  
+  //------------------------------------------------
+  // Newton-Raphson iteration
+  //------------------------------------------------
+  int i;
+  for ( i=1; i<=Nmax; i++){
+
+    // use bisection if Newton out of range or not decreasing 
+    // fast enough
+    if ( (((Tn-Tmax)*dfn-fn)*((Tn-Tmin)*dfn-fn) >= ZERO) || 
+	 (fabs(TWO*fn) > fabs(dT0*dfn)) ) {
+      dT0 = dTn;
+      dTn = HALF*(Tmax-Tmin);
+      Tn = Tmin + dTn;
+
+    // Newton acceptable 
+    } else {
+      dT0 = dTn;
+      dTn = fn/dfn;
+      Tn -= dTn;
+    }
+
+    // Convergence test
+    err = fabs(dTn);
+    if ( err<=CONV_TOLERANCE ) break;
+
+    // evaluate new guess
+    fn = h(Tn) - Tn*RTOT - A;
+    dfn = hprime(Tn) - RTOT;
+
+    // change bisection bracket
+    if ( fn < ZERO)  Tmin=Tn;
+    else Tmax = Tn;
+
+  } // end Newton-Raphson
+
 #ifdef _CHEM2D_NO_LOWER_T_CHECK
-  if (numit>=19){
-    T = max(Tguess,low_temp_range); 
+  if (i>=Nmax || err>CONV_TOLERANCE){
+    Tn = max(Tguess,low_temp_range); 
     cout<<"\nTemperature didn't converge in Chem2D_cState::T(void)";
-    cout<<" with polytopic Tguess "<<Tguess<<" using "<<T;
+    cout<<" with polytopic Tguess "<<Tguess<<" using "<<Tn;
+    cout<<", err="<<err;
   }
 #else
-  if (numit>=19 || T <= low_temp_range){
-    T = max(Tguess,low_temp_range); 
+  if (i>=Nmax || err>CONV_TOLERANCE || Tn <= low_temp_range){
+    Tn = max(Tguess,low_temp_range); 
     cout<<"\nTemperature didn't converge in Chem2D_cState::T(void)";
     cout<<" with polytopic Tguess "<<Tguess<<", or lower than Tmin "
-	<<low_temp_range<<" using "<<T;
+	<<low_temp_range<<" using "<<Tn;
+    cout<<", err="<<err;
   }
 #endif // _CHEM2D_NO_LOWER_T_CHECK
 
   // return value
-  return T;
+  return Tn;
 } 
 
 
