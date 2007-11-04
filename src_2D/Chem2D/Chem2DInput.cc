@@ -2514,7 +2514,6 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	 //Set inital Values; 
 	 IP.Wo.set_initial_values(IP.mass_fractions);  
 	 IP.Uo.set_initial_values(IP.mass_fractions);  
-	 IP.Uo = U(IP.Wo);
 	 
 	 //fudge the line number and istream counters
 	 IP.Input_File.getline(buffer, sizeof(buffer));  
@@ -2528,10 +2527,13 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 
 	 //If no mass fraction data is set to defaults (all equal to 1/num_species) 
        } else {
-	 IP.Uo = U(IP.Wo);
 	 IP.Line_Number = IP.Line_Number - 1 ;
        }
          
+       // recalculate density and initialize conserved state
+       IP.Wo.rho = IP.Pressure/(IP.Wo.Rtot()*IP.Temperature); 	
+       IP.Uo = U(IP.Wo);
+
        
        /***************************************/
        /**** REACTIONS FOR USER DEFINED *******/ 
@@ -2634,7 +2636,6 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	 //Set inital Values; 
 	 IP.Wo.set_initial_values(IP.mass_fractions);  
 	 IP.Uo.set_initial_values(IP.mass_fractions);  
-	 IP.Uo = U(IP.Wo);
 	         
        // Get Initial Molar Fractions from user
        // Here we use Cantera to parse the string of the form:
@@ -2657,7 +2658,6 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	 //Set inital Values; 
 	 IP.Wo.set_initial_values(IP.mass_fractions);  
 	 IP.Uo.set_initial_values(IP.mass_fractions);  
-	 IP.Uo = U(IP.Wo);
 	 
        // Get Initial Equivalence Ratio from user 
        // Here we use Cantera to compute the equivalent mass fractions:
@@ -2676,14 +2676,16 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 				      IP.mass_fractions);
 	   IP.Wo.set_initial_values(IP.mass_fractions);  
 	   IP.Uo.set_initial_values(IP.mass_fractions);  
-	   IP.Uo = U(IP.Wo);
 	 }
 	 
        //If no mass fraction data is set to defaults (all equal to 1/num_species) 
        } else {
-	 IP.Uo = U(IP.Wo);
 	 IP.Line_Number = IP.Line_Number - 1 ;
        }
+
+       // recalculate density and initialize conserved state
+       IP.Wo.rho = IP.Pressure/(IP.Wo.Rtot()*IP.Temperature); 	
+       IP.Uo = U(IP.Wo);
 
 
       /******************************************/
@@ -2738,7 +2740,6 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	 //Set inital Values; 
 	 IP.Wo.set_initial_values(IP.mass_fractions);  
 	 IP.Uo.set_initial_values(IP.mass_fractions);
-	 IP.Uo = U(IP.Wo);
 	 
 	 //fudge the line number and istream counters
 	 IP.Input_File.getline(buffer, sizeof(buffer));  
@@ -2746,9 +2747,12 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        } 
        //If no mass fraction data is set to defaults (all equal to 1/num_species)
        else{        
-	 IP.Uo = U(IP.Wo);
 	 IP.Line_Number = IP.Line_Number - 1 ;
        }
+
+      // recalculate density and initialize conserved state
+      IP.Wo.rho = IP.Pressure/(IP.Wo.Rtot()*IP.Temperature); 	
+      IP.Uo = U(IP.Wo);
     
       /************* TEMPERATURE *************/
     } else if (strcmp(IP.Next_Control_Parameter, "Temperature") == 0) {
