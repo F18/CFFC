@@ -536,7 +536,7 @@ double Chem2D_pState::T(double &h_s) const{
   double RTOT = Rtot();  
 
   // set iteration parameters
-  int Nmax = 20;
+  int Nmax = 50;
   double err;
 
   // determine limits
@@ -614,14 +614,14 @@ double Chem2D_pState::T(double &h_s) const{
 #ifdef _CHEM2D_NO_LOWER_T_CHECK
   if (i>=Nmax || err>CONV_TOLERANCE){
     Tn = max(Tguess,low_temp_range); 
-    cout<<"\nTemperature didn't converge in Chem2D_cState::T(void)";
+    cout<<"\nTemperature didn't converge in Chem2D_pState::T(double &h_s)";
     cout<<" with polytopic Tguess "<<Tguess<<" using "<<Tn;
     cout<<", err="<<err;
   }
 #else
   if (i>=Nmax || err>CONV_TOLERANCE || Tn <= low_temp_range){
     Tn = max(Tguess,low_temp_range); 
-    cout<<"\nTemperature didn't converge in Chem2D_cState::T(void)";
+    cout<<"\nTemperature didn't converge in Chem2D_pState::T(double &h_s)";
     cout<<" with polytopic Tguess "<<Tguess<<", or lower than Tmin "
 	<<low_temp_range<<" using "<<Tn;
     cout<<", err="<<err;
