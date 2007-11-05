@@ -487,7 +487,7 @@ public:
     static Euler3D_Polytropic_cState FluxHLLE_n(const Euler3D_Polytropic_cState &Ul,
                                                 const Euler3D_Polytropic_cState &Ur,
                                                 const Vector3D &norm_dir);
-
+ 
     //! Roe flux function in x-direction given 2 primitive states
     static Euler3D_Polytropic_cState FluxRoe_x(const Euler3D_Polytropic_pState &Wl, 
                                                const Euler3D_Polytropic_pState &Wr);
@@ -510,11 +510,18 @@ public:
     static Euler3D_Polytropic_cState FluxRoe_n(const Euler3D_Polytropic_pState &Wl,
                                                const Euler3D_Polytropic_pState &Wr,
                                                const Vector3D &norm_dir);
-    //! Roe flux function in n-direction given 2 conservative states and a direction
+    //! Roe flux function in n-direction given 2 conservative states and a direction 
     static Euler3D_Polytropic_cState FluxRoe_n(const Euler3D_Polytropic_cState &Ul,
                                                const Euler3D_Polytropic_cState &Ur,
                                                const Vector3D &norm_dir);
-//@}
+    //@}   
+    //! HLLE wavespeeds in n-direction given 2 primitive states and a direction
+    static Vector2D HLLE_wavespeeds(const Euler3D_Polytropic_pState &Wl,
+				    const Euler3D_Polytropic_pState &Wr,
+				    const Vector3D &norm_dir);
+
+    //! Returns rotated primitive state aligned with norm_dir
+    static Euler3D_Polytropic_pState Rotate(const Vector3D &norm_dir);
 
     //! Roe Average given 2 primitive states
     static Euler3D_Polytropic_pState RoeAverage(const Euler3D_Polytropic_pState &Wl,

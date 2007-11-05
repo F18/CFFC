@@ -33,7 +33,7 @@ class DTS_Hexa_Block {
 
   //! Constructor.
   DTS_Hexa_Block(const int i, const int j, const int k){
-    allocates(i,j,k);
+    allocate(i,j,k);
   }
 
   //! Destructor.
