@@ -221,6 +221,24 @@ namespace tut
     ensure_equals("Velocity First Point", State.V(5.5,8.5), Vector2D(-8,6));
     ensure_equals("Velocity Second Point", State.V(8.5,12.5), Vector2D(-8,6));
   }
+
+  /* Test 10:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<10>()
+  {
+
+    set_test_name("Connect_Pointer_To_Diffusion_Field()");
+
+    AdvectDiffuse2D_State_New State;
+
+    DiffusionFields::Set_ConstantDiffusionField(10.0);
+
+    DiffusionFields::Connect_Pointer_To_Diffusion_Field(State.k);
+
+    // === check
+    ensure_equals("Diffusion coeff. @ location", State.k(5.5,8.5,0.0), 10.0 );
+  }
   
   
 

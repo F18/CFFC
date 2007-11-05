@@ -73,28 +73,30 @@ using namespace std;
  * \endverbatim
  */
 class AdvectDiffuse2D_State_New{
-private:
-  typedef VelocityFields::VelocityFieldType AdvectionVelocityType;
-
 public:
+  //! @name Defined datatypes
+  //@{
+  typedef VelocityFields::VelocityFieldType AdvectionVelocityType;
+  typedef DiffusionFields::NonlinearDiffusionFieldType DiffusionFieldType;
+  //@}
 
   //! @name Solution state variables and associated constants:
   //@{
   double  u;   // Solution.
-  AdvectionVelocityType  V;   // Advection velocity as function of 'x' and 'y'.
+  static AdvectionVelocityType  V;      // Advection velocity as function of 'x' and 'y'.
+  static DiffusionFieldType k;		// Non-linear diffusion coefficient as function of 'x', 'y' and 'u'
   //@}
 
   //! @name Creation and copy constructors.
   //@{
-  //! Creation constructor.
-  AdvectDiffuse2D_State_New(void) {
-    V = VelocityFields::Quiescent_Flow;
-  }
+  //! Default constructor.
+  AdvectDiffuse2D_State_New(void): u(0.0){ }
+
+  //! Value Constructor
+  AdvectDiffuse2D_State_New(const double &Val): u(Val){ }
 
   //! Copy constructor.
-  AdvectDiffuse2D_State_New(const AdvectDiffuse2D_State_New &U) {
-
-  }
+  AdvectDiffuse2D_State_New(const AdvectDiffuse2D_State_New &U){ }
 
   //! Assignment constructor.
   AdvectDiffuse2D_State_New(const double &uu,

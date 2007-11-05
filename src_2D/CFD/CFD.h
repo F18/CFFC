@@ -611,6 +611,13 @@ inline char *Date_And_Time() {
 #define ANGULAR_VELOCITY_INVERSE_PROPORTIONAL    1
 
 /********************************************************
+ * CFD -- Diffusion Field Types                         *
+ ********************************************************/
+#define DIFFUSION_FIELD_ZERO                                 0
+#define DIFFUSION_FIELD_CONSTANT                             1
+
+
+/********************************************************
  * CFD -- Time Integration (Time-Stepping) Types.       *
  ********************************************************/
 

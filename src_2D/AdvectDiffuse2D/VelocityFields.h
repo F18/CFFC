@@ -12,7 +12,6 @@
 
 /* Include CFFC header files */
 #include "../Math/Vector2D.h"
-#include "../Utilities/TypeDefinition.h"
 #include "../CFD/CFD.h"
 
 /*!
@@ -24,9 +23,12 @@
 
 class VelocityFields{
 public:
+  //! @name Defined public types
+  //@{
   typedef Vector2D Velocity;	//!< Velocity type
   typedef Velocity (*VelocityFieldType)(const double &, const double &); //!< Velocity field type
   typedef Velocity (*&VelocityFieldTypeRef)(const double &, const double &); //!< Reference to velocity field type
+  //@}
 
   //! @name Functions that set class parameters
   //@{
@@ -104,33 +106,43 @@ private:
 
 };
 
+/*! Defines a quiescent flow (zero velocity) */
 inline Vector2D VelocityFields::Quiescent_Flow(const double &x, const double &y){
   return Vector2D(0.0);
 }
 
+/*! Defines a uniform flow parallel with x-axis */
 inline Vector2D VelocityFields::Uniform_Flow_XAxis(const double &x, const double &y){
   return Vector2D(CartesianVelocity.x,0.0);
 }
 
+/*! Defines a uniform flow parallel with y-axis */
 inline Vector2D VelocityFields::Uniform_Flow_YAxis(const double &x, const double &y){
   return Vector2D(0.0,CartesianVelocity.y);
 }
 
+/*! Defines a uniform flow */
 inline Vector2D VelocityFields::Uniform_Flow(const double &x, const double &y){
   return Vector2D(CartesianVelocity.x,CartesianVelocity.y);
 }
 
+/*!
+ * Defines a rotational flow centered in (0,0) (Origin) that has an angular velocity given by the RotationalIntensity function
+ */
 inline Vector2D VelocityFields::Rotational_Flow_About_Origin(const double &x, const double &y){
   return RotationalIntensity(x,y)*Vector2D(-y,x);
 }
 
+/*!
+ * Defines a rotational flow centered in an arbitrary point that has an angular velocity given by the RotationalIntensity function
+ */
 inline Vector2D VelocityFields::Rotational_Flow_About_Arbitrary_Point(const double &x, const double &y){
   // do a translation of the center of rotation
   return Rotational_Flow_About_Origin(x-CenterOfRotation.x, y-CenterOfRotation.y);
 }
 
 //! Parse the input control parameters for 
-//  settings related to CENO_Execution_Mode class
+//  settings related to VelocityFields class
 template<class Input_Parameters_Type> inline
 void VelocityFields::Parse_Next_Input_Control_Parameter(Input_Parameters_Type & IP, int & i_command){
 

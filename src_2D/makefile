@@ -177,7 +177,9 @@ SRC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadSolvers.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuad_NKS.cc \
 		    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DExactSolutions.cc \
-                    $(ADVECTDIFFUSE_DIR)VelocityFields.cc
+                    $(ADVECTDIFFUSE_DIR)VelocityFields.cc \
+                    $(ADVECTDIFFUSE_DIR)DiffusionFields.cc \
+		    $(ADVECTDIFFUSE_DIR)New_AdvectDiffuse2DState.cc
 SRC_ADVECTDIFFUSE_EXE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.cc
 
 # Add AdvectDiffuse 2D Testing If Required:
@@ -1000,6 +1002,7 @@ clean:
 	rm -f $(EULER_1D_DIR)UnitTests/*.o $(EULER_1D_DIR)UnitTests/*.il $(EULER_1D_DIR)UnitTests/*~ $(EULER_1D_DIR)UnitTests/*.bak
 	rm -f $(SOLVERS1D_DIR)*.o $(SOLVERS1D_DIR)*.il $(SOLVERS1D_DIR)*~ $(SOLVERS1D_DIR)*.depend
 	rm -f $(ADVECTDIFFUSE_DIR)*.o $(ADVECTDIFFUSE_DIR)*.il $(ADVECTDIFFUSE_DIR)*~ $(ADVECTDIFFUSE_DIR)*.depend $(ADVECTDIFFUSE_DIR)*.bak
+	rm -f $(ADVECTDIFFUSE_DIR)UnitTests/*.o $(ADVECTDIFFUSE_DIR)UnitTests/*.il $(ADVECTDIFFUSE_DIR)UnitTests/*~ $(ADVECTDIFFUSE_DIR)UnitTests/*.bak
 	rm -f $(EULER_2D_DIR)*.o $(EULER_2D_DIR)*.il $(EULER_2D_DIR)*~ $(EULER_2D_DIR)*.depend $(EULER_2D_DIR)*.bak
 	rm -f $(NAVIERSTOKES_DIR)*.o $(NAVIERSTOKES_DIR)*.il $(NAVIERSTOKES_DIR)*~ $(NAVIERSTOKES_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
 	rm -f $(CHEM_DIR)*.o $(CHEM_DIR)*.il $(CHEM_DIR)*~ $(CHEM_DIR)*.depend $(CHEM_DIR)*.bak

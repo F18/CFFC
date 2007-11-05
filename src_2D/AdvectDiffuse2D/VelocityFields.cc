@@ -12,7 +12,8 @@
 #include "VelocityFields.h"
 #include "../Utilities/Utilities.h"
 
-short  VelocityFields::i_Velocity_Field_Type = VELOCITY_FIELD_QUIESCENT;     //!< still flow (no advection)
+// ===  Static member variables ===
+short VelocityFields::i_Velocity_Field_Type = VELOCITY_FIELD_QUIESCENT;     //!< still flow (no advection)
 VelocityFields::Velocity VelocityFields::CartesianVelocity = Vector2D(0.0);  //!< flow velocity set to ZERO (no advection)
 Vector2D VelocityFields::MagnitudeAngleVelocity = Vector2D(0.0);  //!< flow velocity set to ZERO (no advection)
 double VelocityFields::omega = 0.0;                               //!< angular flow velocity set to ZERO (irotational flow)
@@ -269,7 +270,7 @@ void VelocityFields::Print_Info(std::ostream & out_file){
  * from the specified processor using the MPI broadcast 
  * routine.
  *
- * \todo Switch to a user-difined datatype
+ * \todo Switch to a user-defined datatype
  */
 void VelocityFields::Broadcast(void){
 #ifdef _MPI_VERSION

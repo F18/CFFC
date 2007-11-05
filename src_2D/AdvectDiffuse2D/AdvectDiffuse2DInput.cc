@@ -278,9 +278,12 @@ ostream &operator << (ostream &out_file,
     // ====    Velocity field parameters ====
     VelocityFields::Print_Info(out_file);
 
-
     out_file << "\n  -> Diffusion Coefficient : " 
              << IP.Kappa;
+
+    // ====    Diffusion field parameters ====
+    DiffusionFields::Print_Info(out_file);
+
     out_file << "\n  -> Relaxation Time : " 
              << IP.Tau;
 
@@ -1214,6 +1217,9 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
 
     // VelocityFields variables
     VelocityFields::Broadcast();
+
+    // DiffusionFields variables
+    DiffusionFields::Broadcast();
 
 #endif
 
@@ -2930,6 +2936,9 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
 
   /* Parse next control parameter with VelocityFields parser */
   VelocityFields::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  /* Parse next control parameter with DiffusionFields parser */
+  DiffusionFields::Parse_Next_Input_Control_Parameter(IP,i_command);
 
   /* Parse next control parameter with CENO_Execution_Mode parser */
   CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
