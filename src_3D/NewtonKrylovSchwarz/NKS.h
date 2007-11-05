@@ -434,7 +434,7 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
   //int GMRES_Restarts = 0, GMRES_Failures = 0, GMRES_Iters = 0, All_Iters_index = 0;
 
   int *GMRES_All_Iters = new int[Solution_Data->Input.NKS_IP.Maximum_Number_of_NKS_Iterations];
-  GMRES_All_Iters[0] = ZERO;
+  GMRES_All_Iters[0] = 0;
 
   //Reset relative Norms ???;
   L2norm_first = L1norm_first = Max_norm_first = ZERO;  

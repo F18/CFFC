@@ -88,19 +88,43 @@
 //   return 0; 
 // }
 
-// /*!**************************************************************
-//  * Specialization of Block_Preconditioner::Preconditioner_dFdU  *
-//  *                                                              *
-//  * Calculates the dFdU matrix used to generate the approximate  *               
-//  * Jacobian for the Block Preconditioner.                       *
-//  ****************************************************************/
-// template<> inline void Block_Preconditioner<Euler2D_pState,
-// 					    Euler2D_Quad_Block,					    
-// 					    Euler2D_Input_Parameters>::
-// Preconditioner_dFIdU(DenseMatrix &_dFdU, Euler2D_pState W)
-// {
-//   W.dFdU(_dFdU);
-// }
+/*!**************************************************************
+ * Specialization of Block_Preconditioner::Preconditioner_dFdU  *
+ *                                                              *
+ * Calculates the dFdU matrix used to generate the approximate  *               
+ * Jacobian for the Block Preconditioner.                       *
+ ****************************************************************/
+template<> inline void Block_Preconditioner<Euler3D_Polytropic_pState, 
+					    Euler3D_Polytropic_cState>::
+Preconditioner_dFIdU(DenseMatrix &_dFdU,Euler3D_Polytropic_pState W)
+{
+  W.dFxdU(_dFdU);
+}
+
+
+/*!**************************************************************
+ * Specialization of Block_Preconditioner::Preconditioner_dFIdU *
+ *                                                              *
+ * Calculates the dFdU matrix used to generate the approximate  *               
+ * Jacobian for the Block Preconditioner.                       *
+ ****************************************************************/ 
+template<> inline void Block_Preconditioner<Euler3D_Polytropic_pState, 
+					    Euler3D_Polytropic_cState>::
+Preconditioner_dFIdU_Roe(DenseMatrix &_dFIdU, int ii, int jj, int kk, int Orient)
+{ 
+    
+  //DenseMatrix dFI_dW(blocksize,blocksize,ZERO);
+  
+  //dFIdW_Inviscid_ROE(dFI_dW, *SolnBlk,*Input_Parameters, ii,jj,Orient);  
+  //dFIdW_Inviscid_ROE_FD(dFI_dW, *SolnBlk,*Input_Parameters, ii,jj,Orient);
+ 
+  //transformation Jacobian 
+  //DenseMatrix dWdU(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO); 
+  //transformation Jacobian  Wo == W here 
+  //SolnBlk->W[ii][jj].dWdU(dWdU, SolnBlk->Flow_Type);
+  //_dFIdU += dFI_dW*dWdU;
+
+}
 
 /*!**************************************************************
  * Specialization of Block_Preconditioner::                     *
