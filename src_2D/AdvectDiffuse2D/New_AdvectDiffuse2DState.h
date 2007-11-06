@@ -156,14 +156,15 @@ public:
 
   //! @name Unary arithmetic operators.
   //@{
-  friend AdvectDiffuse2D_State_New & operator +(const AdvectDiffuse2D_State_New &U);
-  friend AdvectDiffuse2D_State_New & operator -(const AdvectDiffuse2D_State_New &U);
+  friend AdvectDiffuse2D_State_New operator +(const AdvectDiffuse2D_State_New &U);
+  friend AdvectDiffuse2D_State_New operator -(const AdvectDiffuse2D_State_New &U);
   //@}
 
   //! @name Shortcut arithmetic operators.
   //@{
-  AdvectDiffuse2D_State_New & operator +=(AdvectDiffuse2D_State_New &U);
-  AdvectDiffuse2D_State_New & operator -=(AdvectDiffuse2D_State_New &U);
+  AdvectDiffuse2D_State_New & operator +=(const AdvectDiffuse2D_State_New &U);
+  AdvectDiffuse2D_State_New & operator -=(const AdvectDiffuse2D_State_New &U);
+  AdvectDiffuse2D_State_New & operator *=(const AdvectDiffuse2D_State_New &U);
   AdvectDiffuse2D_State_New & operator *=(const double &a);
   AdvectDiffuse2D_State_New & operator /=(const double &a);
   //@}
@@ -298,52 +299,62 @@ inline const double & AdvectDiffuse2D_State_New::operator[](const int & index) c
 
 //! summation between states
 inline AdvectDiffuse2D_State_New AdvectDiffuse2D_State_New::operator +(const AdvectDiffuse2D_State_New &U) const {
-  
+  return AdvectDiffuse2D_State_New(u + U.u);
 }
 
 //! subtraction between states
 inline AdvectDiffuse2D_State_New AdvectDiffuse2D_State_New::operator -(const AdvectDiffuse2D_State_New &U) const {
-
+  return AdvectDiffuse2D_State_New(u - U.u);
 }
 
 //! multiplication between states
 inline AdvectDiffuse2D_State_New AdvectDiffuse2D_State_New::operator *(const AdvectDiffuse2D_State_New &U) const {
-
+  return AdvectDiffuse2D_State_New(u * U.u);
 }
 
 //! multiplication with scalar
 inline AdvectDiffuse2D_State_New AdvectDiffuse2D_State_New::operator *(const double &a) const{
-
+  return AdvectDiffuse2D_State_New(a * u);
 }
 
 //! unary arithmetic + operator
-inline AdvectDiffuse2D_State_New & operator +(const AdvectDiffuse2D_State_New &U){
-  
+inline AdvectDiffuse2D_State_New operator +(const AdvectDiffuse2D_State_New &U){
+  return U;
 }
 
 //! unary arithmetic - operator
-inline AdvectDiffuse2D_State_New & operator -(const AdvectDiffuse2D_State_New &U){
-  
+inline AdvectDiffuse2D_State_New operator -(const AdvectDiffuse2D_State_New &U){
+  return AdvectDiffuse2D_State_New(-U.u);
 }
 
 //! shortcut summation
-inline AdvectDiffuse2D_State_New & AdvectDiffuse2D_State_New::operator +=(AdvectDiffuse2D_State_New &U){
-
+inline AdvectDiffuse2D_State_New & AdvectDiffuse2D_State_New::operator +=(const AdvectDiffuse2D_State_New &U){
+  u += U.u;
+  return *this;
 }
 
 //! shortcut subtraction
-inline AdvectDiffuse2D_State_New & AdvectDiffuse2D_State_New::operator -=(AdvectDiffuse2D_State_New &U){
-  
+inline AdvectDiffuse2D_State_New & AdvectDiffuse2D_State_New::operator -=(const AdvectDiffuse2D_State_New &U){
+  u -= U.u;
+  return *this;
+}
+
+//! shortcut multiplication
+inline AdvectDiffuse2D_State_New & AdvectDiffuse2D_State_New::operator *=(const AdvectDiffuse2D_State_New &U){
+  u *= U.u;
+  return *this;
 }
 
 //! shortcut multiplication with scalar
 inline AdvectDiffuse2D_State_New & AdvectDiffuse2D_State_New::operator *=(const double &a){
-  
+  u *= a;
+  return *this;
 }
 
 //! shortcut division with scalar
 inline AdvectDiffuse2D_State_New & AdvectDiffuse2D_State_New::operator /=(const double &a){
-
+  u /= a;
+  return *this;
 }
 
 //! equal operator 

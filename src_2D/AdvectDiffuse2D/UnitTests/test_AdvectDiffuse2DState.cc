@@ -239,8 +239,352 @@ namespace tut
     // === check
     ensure_equals("Diffusion coeff. @ location", State.k(5.5,8.5,0.0), 10.0 );
   }
+
+  /* Test 11:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<11>()
+  {
+
+    set_test_name("operator ==");
+
+    AdvectDiffuse2D_State_New State(12.2323), State_Copy(12.2323);
+
+    // === check
+    ensure_equals("equal states", State == State_Copy, true );
+  }
   
+  /* Test 12:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<12>()
+  {
+
+    set_test_name("operator ==");
+
+    AdvectDiffuse2D_State_New State(12.2323), State_Copy(12.232);
+
+    // === check
+    ensure_equals("different states", State == State_Copy, false );
+  }
+
+  /* Test 13:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<13>()
+  {
+
+    set_test_name("operator !=");
+
+    AdvectDiffuse2D_State_New State(12.2323), State_Copy(12.232);
+
+    // === check
+    ensure_equals("different states", State != State_Copy, true );
+  }
   
+  /* Test 14:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<14>()
+  {
+
+    set_test_name("operator !=");
+
+    AdvectDiffuse2D_State_New State(12.2323), State_Copy(12.2323);
+
+    // === check
+    ensure_equals("equal states", State != State_Copy, false);
+  }
+
+  /* Test 15:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<15>()
+  {
+
+    set_test_name("Assignment operator");
+
+    AdvectDiffuse2D_State_New State(12.2323), State_Copy;
+
+    // === check
+    ensure_equals("different states", State != State_Copy, true);
+
+    // use operator =
+    State_Copy = State;
+
+    // === check operator
+    ensure_equals("equal states", State == State_Copy, true);
+  }
+
+  /* Test 16:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<16>()
+  {
+
+    set_test_name("Copy constructor");
+
+    AdvectDiffuse2D_State_New State(12.2323), State_Copy(State);
+
+    // === check
+    ensure_equals("equal states", State == State_Copy, true);
+  }
+
+  /* Test 17:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<17>()
+  {
+
+    set_test_name("operator +");
+
+    AdvectDiffuse2D_State_New A(12.2323), B(A), C, Result(12.2323*2);
+
+    // summation
+    C = A + B;
+
+    // === check
+    ensure_equals("unmodified A", A, AdvectDiffuse2D_State_New(12.2323) );
+    ensure_equals("unmodified B", B, AdvectDiffuse2D_State_New(12.2323) );
+    ensure_equals("summation", C , Result);
+  }
+
+  /* Test 18:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<18>()
+  {
+
+    set_test_name("operator -");
+
+    AdvectDiffuse2D_State_New A(12.2323), B(12.2325), C, Result(-0.0002), tol(1.0e-14);
+
+    // subtraction
+    C = A - B;
+
+    // === check
+    ensure_equals("unmodified A", A, AdvectDiffuse2D_State_New(12.2323) );
+    ensure_equals("unmodified B", B, AdvectDiffuse2D_State_New(12.2325) );
+    ensure_distance("subtraction", C , Result, tol);
+  }
+
+  /* Test 19:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<19>()
+  {
+
+    set_test_name("operator *");
+
+    AdvectDiffuse2D_State_New A(12.2323), B(12.2325), C, Result(12.2323*12.2325);
+
+    // multiplication
+    C = A * B;
+
+    // === check
+    ensure_equals("unmodified A", A, AdvectDiffuse2D_State_New(12.2323) );
+    ensure_equals("unmodified B", B, AdvectDiffuse2D_State_New(12.2325) );
+    ensure_equals("multiplication", C , Result);
+  }
+
+  /* Test 20:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<20>()
+  {
+
+    set_test_name("operator * ");
+
+    double a(-0.2323);
+    AdvectDiffuse2D_State_New A(12.2323), B, C, Result(12.2323*a);
+
+    // multiplication
+    B = A * a;
+    C = a * A;
+
+    // === check
+    ensure_equals("unmodified A", A, AdvectDiffuse2D_State_New(12.2323) );
+    ensure_equals("scalar multiplication I", B , Result);
+    ensure_equals("scalar multiplication II", C , Result);
+  }
+
+  /* Test 21:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<21>()
+  {
+
+    set_test_name("operator / ");
+
+    double a(-0.2323);
+    AdvectDiffuse2D_State_New A(12.2323), B, C, Result(12.2323/a);
+
+    // division
+    B = A / a;
+
+    // === check
+    ensure_equals("unmodified A", A, AdvectDiffuse2D_State_New(12.2323) );
+    ensure_equals("division with scalar", B , Result);
+  }
+
+  /* Test 22:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<22>()
+  {
+
+    set_test_name("unary operator + ");
+
+    AdvectDiffuse2D_State_New A(12.2323), B, Result(12.2323);
+
+    // unary operator
+    B = + A;
+
+    // === check
+    ensure_equals("unmodified A", A, AdvectDiffuse2D_State_New(12.2323) );
+    ensure_equals("result", B , Result);
+  }
+
+  /* Test 23:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<23>()
+  {
+
+    set_test_name("unary operator - ");
+
+    AdvectDiffuse2D_State_New A(12.2323), B, Result(-12.2323);
+
+    // unary operator
+    B = - A;
+
+    // === check
+    ensure_equals("unmodified A", A, AdvectDiffuse2D_State_New(12.2323) );
+    ensure_equals("result", B , Result);
+  }
+
+  /* Test 24:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<24>()
+  {
+
+    set_test_name("operator +=");
+
+    AdvectDiffuse2D_State_New A(12.2323), B(A), Result(12.2323*2);
+
+    // summation
+    A += B;
+
+    // === check
+    ensure_equals("unmodified B", B, AdvectDiffuse2D_State_New(12.2323) );
+    ensure_equals("summation", A , Result);
+  }
+
+  /* Test 25:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<25>()
+  {
+
+    set_test_name("operator -=");
+
+    AdvectDiffuse2D_State_New A(12.2323), B(12.2325),  Result(-0.0002), tol(1.0e-13);
+
+    // subtraction
+    A -= B;
+
+    // === check
+    ensure_equals("unmodified B", B, AdvectDiffuse2D_State_New(12.2325) );
+    ensure_distance("subtraction", A , Result, tol);
+  }
+
+  /* Test 26:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<26>()
+  {
+
+    set_test_name("operator *=");
+
+    AdvectDiffuse2D_State_New A(12.2323), B(12.2325), Result(12.2323*12.2325);
+
+    // multiplication
+    A *= B;
+
+    // === check
+    ensure_equals("unmodified B", B, AdvectDiffuse2D_State_New(12.2325) );
+    ensure_equals("multiplication", A , Result);
+  }
+
+  /* Test 27:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<27>()
+  {
+
+    set_test_name("operator * ");
+
+    double a(-0.2323);
+    AdvectDiffuse2D_State_New A(12.2323), Result(12.2323*a);
+
+    // multiplication
+    A *= a;
+
+    // === check
+    ensure_equals("scalar multiplication", A , Result);
+  }
+
+  /* Test 28:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<28>()
+  {
+
+    set_test_name("operator / ");
+
+    double a(-0.2323);
+    AdvectDiffuse2D_State_New A(12.2323), Result(12.2323/a);
+
+    // division
+    A /= a;
+
+    // === check
+    ensure_equals("division with scalar", A , Result);
+  }
+
+  /* Test 29:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<29>()
+  {
+
+    set_test_name("combination of operators ");
+
+    double a(-0.2323);
+    AdvectDiffuse2D_State_New A(12.2323), B(-0.2324), C(-34.24), Result(12.2323 - (12.2323 + (-0.2324))*(-34.24)/a );
+
+    // division
+    A += -(A + B)*C/a;
+
+    // === check
+    ensure_equals("division with scalar", A , Result);
+  }
+
+  /* Test 30:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<30>()
+  {
+
+    set_test_name("input-output operators ");
+
+    AdvectDiffuse2D_State_New A(12.2323);
+
+    // === check
+    Check_Input_Output_Operator(A);
+  }
+
 
 }
 
