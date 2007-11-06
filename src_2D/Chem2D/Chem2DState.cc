@@ -612,21 +612,11 @@ double Chem2D_pState::T(double &h_s) const{
   } // end Newton-Raphson
 
 
-#ifdef _CHEM2D_NO_LOWER_T_CHECK
   if (i>Nmax){
     cout<<"\nTemperature didn't converge in Chem2D_pState::T(double &h_s)";
     cout<<" with polytopic Tguess "<<Tguess<<" using "<<Tn;
     cout<<", err="<<err<<", its="<<i;
   }
-#else
-  if (i>Nmax || Tn <= low_temp_range){
-    Tn = max(Tguess,low_temp_range); 
-    cout<<"\nTemperature didn't converge in Chem2D_pState::T(double &h_s)";
-    cout<<" with polytopic Tguess "<<Tguess<<", or lower than Tmin "
-	<<low_temp_range<<" using "<<Tn;
-    cout<<", err="<<err<<", its="<<i;
-  }
-#endif // _CHEM2D_NO_LOWER_T_CHECK
 
   //return value
   return Tn;
@@ -2459,21 +2449,11 @@ double Chem2D_cState::T(void) const{
 
   } // end Newton-Raphson
 
-#ifdef _CHEM2D_NO_LOWER_T_CHECK
   if (i>Nmax){
     cout<<"\nTemperature didn't converge in Chem2D_cState::T(void)";
     cout<<" with polytopic Tguess "<<Tguess<<" using "<<Tn;
     cout<<", err="<<err<<", its="<<i;
   }
-#else
-  if (i>Nmax || Tn <= low_temp_range){
-    Tn = max(Tguess,low_temp_range); 
-    cout<<"\nTemperature didn't converge in Chem2D_cState::T(void)";
-    cout<<" with polytopic Tguess "<<Tguess<<", or lower than Tmin "
-	<<low_temp_range<<" using "<<Tn;
-    cout<<", err="<<err<<", its="<<i;
-  }
-#endif // _CHEM2D_NO_LOWER_T_CHECK
 
   // return value
   return Tn;

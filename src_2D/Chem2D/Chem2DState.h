@@ -89,11 +89,6 @@ using namespace std;
 // predetermined for faster calculations.., however it is not as general 
 #define STATIC_NUMBER_OF_SPECIES 6 //2 AIR, 6 2STEP_CH4
 
-// Flag for Lower bounds check on T in Chem2D_cState::T(void)
-// If you define this, then the value of T computed in 
-// Chem2D_cState::T(void) will not be checked against the lowest
-// limit of T defined in the species data ( NASARP1311data::Low_range() ).
-#define _CHEM2D_NO_LOWER_T_CHECK
 
 /*!
  * Class: Chem2D_pState
