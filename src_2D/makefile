@@ -218,6 +218,15 @@ SRC_SOLVERS1D_EXE = $(SOLVERS1D_DIR)Solvers1D.cc
 SRC_SOLVERS1D_SOLVER = $(SRC_SOLVERS1D_EXE) $(SRC_SOLVERS1D)
 
 # Levermore 1D:
+SRC_LEVERMORE1D = #none yet
+SRC_LEVERMORE1D := $(addprefix $(LEVERMORE_1D_DIR), $(SRC_LEVERMORE1D))
+
+# Add Levermore 1D Testing If Required:
+SRC_LEVERMORE1D_TESTS = #none yet
+SRC_LEVERMORE1D_TESTS := $(addprefix $(LEVERMORE_1D_DIR)UnitTests/, $(SRC_LEVERMORE1D_TESTS))
+ifeq ($(TUT_TESTING),ON)
+  SRC_LEVERMORE1D += $(SRC_LEVERMORE1D_TESTS)
+endif
 SRC_LEVERMORE1D_EXE = $(LEVERMORE_1D_DIR)Levermore1DMain.cc
 
 # Advectdiffuse2D:
@@ -461,6 +470,15 @@ SRC_MAIN = cffc2D.cc
 SRC_ICEMCFD_UTIL1 = $(ICEMCFD_DIR)icemcfd2tecplot.cc 
 SRC_ICEMCFD_UTIL2 = $(ICEMCFD_DIR)icemcfd2grid2dquad.cc
 
+# Levermore 1D:
+SRC_LEVERMORE1D_SOLVER = $(SRC_MATH) $(SRC_CFD) $(SRC_GRID_1D) \
+                         $(SRC_SYSTEM) $(SRC_LEVERMORE1D) $(SRC_LEVERMORE1D_EXE)
+
+# Add Unit Testing to Levermore 1D:
+ifeq ($(TUT_TESTING),ON)
+  SRC_LEVERMORE1D_SOLVER += $(SRC_TUT)
+endif
+
 #################################################################################
 # Compiled object code files (automatically generated with pattern substitution)
 #################################################################################
@@ -489,6 +507,7 @@ OBJ_SCALAR = $(SRC_SCALAR:.cc=.o)
 OBJ_HEAT = $(SRC_HEAT:.cc=.o)
 OBJ_HYPERHEAT = $(SRC_HYPERHEAT:.cc=.o)
 OBJ_EULER1D = $(SRC_EULER1D:.cc=.o)
+OBJ_LEVERMORE1D = $(SRC_LEVERMORE1D:.cc=.o)
 OBJ_MHD1D = $(SRC_MHD1D:.cc=.o)
 OBJ_CFD1D_INPUT := $(SRC_CFD1D_INPUT:.cc=.o)
 
@@ -503,7 +522,9 @@ OBJ_EULER1D_SOLVER := $(patsubst %.cc,%.o, $(filter %.cc, $(SRC_EULER1D_SOLVER))
 		      $(patsubst %.f,%.o, $(filter %.f, $(SRC_EULER1D_SOLVER)))
 
 # Levermore1D solver objects:
-OBJ_LEVERMORE1D_EXE := $(SRC_LEVERMORE1D_EXE:.cc=.o)
+OBJ_LEVERMORE1D_SOLVER := $(patsubst %.cc,%.o, $(filter %.cc, $(SRC_LEVERMORE1D_SOLVER))) \
+		          $(patsubst %.c,%.o, $(filter %.c, $(SRC_LEVERMORE1D_SOLVER))) \
+		          $(patsubst %.f,%.o, $(filter %.f, $(SRC_LEVERMORE1D_SOLVER)))
 
 # Solvers1D solver objects:
 OBJ_SOLVERS1D_SOLVER := $(patsubst %.cc,%.o, $(filter %.cc, $(SRC_SOLVERS1D_SOLVER))) \
@@ -816,12 +837,12 @@ $(EXE_SOLVERS1D)-new:
 	@$(MAKE) --no-print-directory $(EXE_SOLVERS1D)
 
 
-$(EXE_LEVERMORE1D): $(OBJ_LEVERMORE1D_EXE)
+$(EXE_LEVERMORE1D): $(OBJ_LEVERMORE1D_SOLVER)
 	@echo ' '
 	@echo Building program $(EXE_LEVERMORE1D) for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_LEVERMORE1D) $(OBJ_LEVERMORE1D_EXE) $(LDFLAGS)
+	$(LD) -o $(EXE_LEVERMORE1D) $(OBJ_LEVERMORE1D_SOLVER) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_LEVERMORE1D) has been brought up to date.
 	@echo '---------------------------------------------------'

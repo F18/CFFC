@@ -214,7 +214,7 @@ int main(int num_arg, char *arg_ptr[]) {
    *********************************************************************/
 
   if (test_flag) {
-    //error_flag = Perform_UnitTesting(TestSuite, TestNumber, TestRootPath);
+    error_flag = Perform_UnitTesting(TestSuite, TestNumber, TestRootPath);
     return (error_flag);
   } /* endif */
 
