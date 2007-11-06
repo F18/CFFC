@@ -364,6 +364,7 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.Freeze_Limiter = 0;
    
     IP.i_Residual_Variable = 1; //density
+    IP.Number_of_Residual_Norms = 4; // density, (u,v)-momentum, energy
 
     // Limiter_switch
     IP.Freeze_Limiter_Residual_Level = 1e-4;
@@ -1004,6 +1005,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
 			  MPI::INT, 0);
 
     MPI::COMM_WORLD.Bcast(&(IP.i_Residual_Variable), 
+			  1, 
+			  MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Number_of_Residual_Norms), 
 			  1, 
 			  MPI::INT, 0);
     // Freeze_Limiter_Residual_Level
@@ -1670,6 +1674,9 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
                        MPI::INT, Source_Rank);
 
     Communicator.Bcast(&(IP.i_Residual_Variable), 
+                       1, 
+                       MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.Number_of_Residual_Norms), 
                        1, 
                        MPI::INT, Source_Rank);
 
@@ -2765,7 +2772,8 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       } else {
 	IP.Wo.rho = IP.Pressure/(IP.Wo.Rtot()*IP.Temperature); 	
 	//IP.Wo.v.zero();
-      } /* endif */
+	IP.Uo = U(IP.Wo);
+     } /* endif */
    
       /************* PRESSURE ****************/
     } else if (strcmp(IP.Next_Control_Parameter, "Pressure") == 0) {
@@ -2780,6 +2788,7 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	 IP.Wo.rho = IP.Pressure/(IP.Wo.Rtot()*IP.Temperature); 
 	 IP.Wo.p = IP.Pressure;	
 	 //IP.Wo.v.zero();
+	 IP.Uo = U(IP.Wo);
        } /* endif */
 
        /************* HEAT SOURCE ****************/
@@ -3132,6 +3141,15 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       IP.Input_File >> IP.i_Residual_Variable;                     //as apposed to 1, 2, or 4
       IP.Input_File.getline(buffer, sizeof(buffer));
       if (IP.i_Residual_Variable < ZERO) i_command = INVALID_INPUT_VALUE;
+      else if (IP.i_Residual_Variable > IP.Number_of_Residual_Norms) 
+	IP.Number_of_Residual_Norms = IP.i_Residual_Variable;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Residual_Variables") == 0) {
+      i_command = 666;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Number_of_Residual_Norms;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      if (IP.Number_of_Residual_Norms < ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Freeze_Limiter") == 0) {
       // Freeze_Limiter:

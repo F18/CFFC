@@ -73,6 +73,10 @@ void ICs(Chem2D_Quad_Block *Soln_ptr,
   /* Define various reference flow states. */
   Wo[0] = Input_Parameters.Wo;
     
+  // set block static variables
+  Soln_ptr[0].residual_variable = Input_Parameters.i_Residual_Variable;
+  Soln_ptr[0].Number_of_Residual_Norms = Input_Parameters.Number_of_Residual_Norms;
+
   //Assign initial data for each solution block.
   for (int i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
     if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {

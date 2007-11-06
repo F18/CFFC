@@ -119,6 +119,7 @@ class Chem2D_Input_Parameters{
   int i_Limiter;
   int  Freeze_Limiter;
   int i_Residual_Variable;
+  int Number_of_Residual_Norms;
   double Freeze_Limiter_Residual_Level;
   //@}
 
