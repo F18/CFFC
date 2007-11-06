@@ -536,8 +536,8 @@ double Chem2D_pState::T(double &h_s) const{
   double RTOT = Rtot();  
 
   // set iteration parameters
-  int Nmax = 50;
-  double err;
+  static const int Nmax = 50;
+  double err, tol;
 
   // determine limits
   double Tmin = low_temp_range;
@@ -598,7 +598,8 @@ double Chem2D_pState::T(double &h_s) const{
 
     // Convergence test
     err = fabs(dTn);
-    if ( err<=CONV_TOLERANCE ) break;
+    tol = CONV_ATOLERANCE + fabs(Tn)*CONV_RTOLERANCE;
+    if ( err<tol ) break;
 
     // evaluate new guess
     fn = hs(Tn) - h_s;  
@@ -612,19 +613,18 @@ double Chem2D_pState::T(double &h_s) const{
 
 
 #ifdef _CHEM2D_NO_LOWER_T_CHECK
-  if (i>=Nmax || err>CONV_TOLERANCE){
-    Tn = max(Tguess,low_temp_range); 
+  if (i>Nmax){
     cout<<"\nTemperature didn't converge in Chem2D_pState::T(double &h_s)";
     cout<<" with polytopic Tguess "<<Tguess<<" using "<<Tn;
-    cout<<", err="<<err;
+    cout<<", err="<<err<<", its="<<i;
   }
 #else
-  if (i>=Nmax || err>CONV_TOLERANCE || Tn <= low_temp_range){
+  if (i>Nmax || Tn <= low_temp_range){
     Tn = max(Tguess,low_temp_range); 
     cout<<"\nTemperature didn't converge in Chem2D_pState::T(double &h_s)";
     cout<<" with polytopic Tguess "<<Tguess<<", or lower than Tmin "
 	<<low_temp_range<<" using "<<Tn;
-    cout<<", err="<<err;
+    cout<<", err="<<err<<", its="<<i;
   }
 #endif // _CHEM2D_NO_LOWER_T_CHECK
 
@@ -2385,8 +2385,8 @@ double Chem2D_cState::T(void) const{
   double A = (E - HALF*rhov*rhov/rho -rhok)/rho;
 
   // set iteration parameters
-  int Nmax = 50;
-  double err;
+  static const int Nmax = 50;
+  double err, tol;
 
   // determine limits
   double Tmin = low_temp_range;
@@ -2446,7 +2446,8 @@ double Chem2D_cState::T(void) const{
 
     // Convergence test
     err = fabs(dTn);
-    if ( err<=CONV_TOLERANCE ) break;
+    tol = CONV_ATOLERANCE + fabs(Tn)*CONV_RTOLERANCE;
+    if ( err<tol ) break;
 
     // evaluate new guess
     fn = h(Tn) - Tn*RTOT - A;
@@ -2459,19 +2460,18 @@ double Chem2D_cState::T(void) const{
   } // end Newton-Raphson
 
 #ifdef _CHEM2D_NO_LOWER_T_CHECK
-  if (i>=Nmax || err>CONV_TOLERANCE){
-    Tn = max(Tguess,low_temp_range); 
+  if (i>Nmax){
     cout<<"\nTemperature didn't converge in Chem2D_cState::T(void)";
     cout<<" with polytopic Tguess "<<Tguess<<" using "<<Tn;
-    cout<<", err="<<err;
+    cout<<", err="<<err<<", its="<<i;
   }
 #else
-  if (i>=Nmax || err>CONV_TOLERANCE || Tn <= low_temp_range){
+  if (i>Nmax || Tn <= low_temp_range){
     Tn = max(Tguess,low_temp_range); 
     cout<<"\nTemperature didn't converge in Chem2D_cState::T(void)";
     cout<<" with polytopic Tguess "<<Tguess<<", or lower than Tmin "
 	<<low_temp_range<<" using "<<Tn;
-    cout<<", err="<<err;
+    cout<<", err="<<err<<", its="<<i;
   }
 #endif // _CHEM2D_NO_LOWER_T_CHECK
 
