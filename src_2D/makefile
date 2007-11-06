@@ -486,6 +486,9 @@ OBJ_ELECTROSTATIC_EXE = $(SRC_ELECTROSTATIC_EXE:.cc=.o)
 # Rte2D:
 OBJ_RTE = $(SRC_RTE:.cc=.o)
 OBJ_RTE_EXE = $(SRC_RTE_EXE:.cc=.o)
+ifeq ($(CHEM2D_WITH_RTE),ON)
+  OBJ_CHEM += $(OBJ_RTE)
+endif
 
 # EmbeddedBoundaries2D:
 OBJ_INTERFACE = $(SRC_INTERFACE:.cc=.o)
@@ -763,12 +766,12 @@ $(EXE_NAVIERSTOKES2D): $(OBJ_NAVIERSTOKES_EXE) $(OBJ_BASE) $(OBJ_NAVIERSTOKES) $
 	@echo '----------------------------------------------------------'
 	@echo ' '
 
-$(EXE_CHEM2D): $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_SNBCK) $(OBJ_CHEM) $(OBJ_RTE) $(OBJ_ICEMCFD)
+$(EXE_CHEM2D): $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_SNBCK) $(OBJ_CHEM) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_CHEM2D) for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_CHEM2D) $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_SNBCK) $(OBJ_CHEM) $(OBJ_RTE) $(OBJ_ICEMCFD) $(LDFLAGS)
+	$(LD) -o $(EXE_CHEM2D) $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_SNBCK) $(OBJ_CHEM) $(OBJ_ICEMCFD) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_CHEM2D) has been brought up to date.
 	@echo '--------------------------------------------------'

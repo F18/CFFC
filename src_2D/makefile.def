@@ -45,6 +45,11 @@ DO_CHECKS = ON
 #                ATTENTION: All your checks with 'assert' will be turned OFF!!!!
 NO_ASSERT = OFF
 
+# Compile Chem2D coupled with Rte2D:
+# Set to ON for coupled solver
+# Set to OFF for Chem2D without Rte capability
+CHEM2D_WITH_RTE = OFF
+
 #-----------------------------------------------------------#
 #       Platform Specific Compiler Flags                    #
 #-----------------------------------------------------------#
@@ -515,3 +520,10 @@ endif
 ifeq ($(NO_ASSERT),ON)
   CPPFLAGS += -DNDEBUG
 endif
+
+#
+# Add 
+ifeq ($(CHEM2D_WITH_RTE),ON)
+  CPPFLAGS += -D_CHEM2D_WITH_RTE
+endif
+

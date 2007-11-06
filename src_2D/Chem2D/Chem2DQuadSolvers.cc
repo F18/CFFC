@@ -20,7 +20,9 @@
 #endif // _CHEM2D_NKS_INCLUDED 
 
 /* Include Rte2D solver Sepcialization header file. */
+#ifdef _CHEM2D_WITH_RTE
 #include "Chem2DQuadRte.h"
+#endif
 
 
 /********************************************************
@@ -54,7 +56,9 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
                          Chem2D_Input_Parameters> MGSolver;
   
   // Radiation solver object pointer and parameters
+#ifdef _CHEM2D_WITH_RTE
   Rte2DSolver *RteSolver(NULL);     // object pointer
+#endif
   bool Rte_PostProcess(false);      // don't post process radiation solution after solve
   int Rte_batch_flag(1);            // don't print out information
   int number_sequential_solves(0);  // current sequential solve number
@@ -409,6 +413,8 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   ************************************************************************/
   if (Input_Parameters.Radiation == RADIATION_RTE){
 
+#ifdef _CHEM2D_WITH_RTE
+
     if (!batch_flag) cout << "\n Setting up radiation solver.";
 
     // deallocate radiation solver just in case
@@ -450,6 +456,14 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 
     // set the current number of sequential solves and the update frequency
     number_sequential_solves = 0;
+
+#else
+
+    cerr << " \nCoupled Chem2D / Rte2D solver requested."
+	 << " Recompile code with _CHEM2D_WITH_RTE #define.\n";
+    exit(-1);
+
+#endif //_CHEM2D_WITH_RTE
 
   } // endif
 
@@ -1067,6 +1081,8 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   if (Input_Parameters.Radiation == RADIATION_RTE &&
       Input_Parameters.Max_Number_Sequential_Solves > 0) {
 
+#ifdef _CHEM2D_WITH_RTE
+
     if (!batch_flag) cout << "\n Solving radiation transfer equation...";
 
     // perform sequential solve
@@ -1102,6 +1118,8 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       cout << "\n Total CPU Time          = " << total_cpu_time.min() << " min";
       cout << endl << string(70,'=') << endl;
     } // endif - continue
+
+#endif // _CHEM2D_WITH_RTE
 
   } // endif - radiation
 
@@ -1188,10 +1206,12 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       Chem2D_Quad_Block::deallocate_static();
 
       // deallocate radiation solver
+#ifdef _CHEM2D_WITH_RTE
       if (RteSolver != NULL) {
 	delete RteSolver;
 	RteSolver = NULL;
       } //endif
+#endif // _CHEM2D_WITH_RTE
 
       // Close input data file.
       if (!batch_flag) cout << "\n\n Closing Chem2D input data file.";
@@ -1625,6 +1645,9 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
      **************** POSTPROCESS RADIATION CODE *****************************
      *************************************************************************/ 
     else if (command_flag == POSTPROCESS_RADIATION_CODE) {
+
+#ifdef _CHEM2D_WITH_RTE
+
       // Output solution data.
       if (!batch_flag) cout << "\n Postprocessing Rte2D solution.";
       
@@ -1638,6 +1661,9 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       } /* endif */
       error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
+
+#endif //_CHEM2D_WITH_RTE
+
     }
  
 
