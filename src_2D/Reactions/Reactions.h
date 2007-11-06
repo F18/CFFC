@@ -1542,7 +1542,7 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
     csave_k = c[j];
     csave_N = c[num_species-1];
     c[j] += eps;
-    c[num_species-1] -= eps;
+    c[num_species-1] = max(c[num_species-1]-eps, ZERO);
 
     // compute the perturbed reaction rates
     ct_gas->setMassFractions_NoNorm(c);
@@ -1570,7 +1570,7 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
   ***********************************************
   *
   * COMMENT OUT THIS BLOCK OF CODE FOR dS/dT=0 ASSUMPTION
-  */
+  *
   //------------------------------------------------
   // Compute \frac{ \partial S_j }{ \partial T }
   //------------------------------------------------
@@ -1623,7 +1623,7 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
 
   } // endfor - rows
         
- /*
+  *
   ***********************************************
   * END FROZEN TEMPERATURE ASSUMPTION
   ***********************************************

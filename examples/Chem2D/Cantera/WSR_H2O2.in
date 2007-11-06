@@ -6,8 +6,9 @@ Debug_Level=
 # Set solver parameters
 ########################
 Time_Integration_Type =
-Explicit_Euler
-#Explicit_Predictor_Corrector
+Explicit_Runge_Kutta
+N_Stage =
+4
 # 0 no, 1 yes (explicit time accurate)
 Time_Accurate = 
 1
@@ -25,19 +26,21 @@ Flux_Function_Type =
 HLLE
 Flow_Type=
 Inviscid
+Number_of_Residual_Variables =
+15
 Residual_Variable =
-4
+7
 ###############################
 # Set time stepping parameters
 ###############################
 CFL_Number =
 1.0
 Source_Term_Multiplyer=
-1.0E+02
+1.0E+00
 Time_Max = 
-0.02
+3.e-3
 Maximum_Number_of_Time_Steps=
-1
+0
 ############################
 # IMPLICIT NKS PARAMETERS
 ############################
@@ -51,17 +54,17 @@ GMRES_Final_Tolerance =
 NKS_Overall_Tolerance =
 1.0e-3
 GMRES_Block_Preconditioner = 
-ILUK
+Diagonal
 #( ILUK, Diagonal)
 GMRES_ILUK_Level_of_Fill = 
-4
+0
 GMRES_Check =
 OFF
 # Implict Euler Startup
 NKS_Finite_Time_Step =
 OFF
 NKS_Finite_Time_Step_Initial_CFL =
-1000.0
+1e12
 # Max & Final used differently
 NKS_Finite_Time_Step_Final_CFL =
 1e12
@@ -70,7 +73,7 @@ NKS_Finite_Time_Step_Max_CFL =
 GMRES_Normalization = 
 ON
 Jacobian_Order =
-First_Order_Inviscid_HLLE
+Source_Terms_Only
 #
 #################################
 # Dual-Time Stepping (Implicit Time Accurate)
@@ -81,15 +84,17 @@ Second_Order_Backwards
 #Implicit_Euler
 #Second_Order_Backwards
 #
-NKS_Physical_Time_CFL =
-1.0
+#NKS_Physical_Time_CFL =
+#100000.0
+NKS_Physical_Time_Step =
+1.e-08
 # Outer loop Max steps 
 Maximum_Number_of_NKS_DTS_Steps =
-0
+100000
 #################################
 # (Internal NKS when using DTS)
 Maximum_Number_of_NKS_Iterations =
-8
+100
 Maximum_Number_of_GMRES_Iterations =
 80
 GMRES_Restart =
@@ -111,9 +116,9 @@ Uniform
 Grid_Type=
 Square
 Number_of_Cells_Idir= 
-2
+3
 Number_of_Cells_Jdir=
-2
+3
 Number_of_Blocks_Idir= 
 1
 Number_of_Blocks_Jdir=
@@ -124,17 +129,19 @@ Number_of_Blocks_Jdir=
 Transport_Data_Type=
 Transport-Lennard-Jones
 Cantera_Reaction_Mechanism=
-gri30
+h2o2
 Mechanism_File=
-../../../data/CANTERA_RXNS/gri30.xml
+../../../data/CANTERA_RXNS/h2o2.xml
 Molar_Fractions=
-H2:1.0, O2:0.5, N2:1.88
+H2:1.0, O2:0.5
 #################################
 # Non STD_ATM properties
 # T(K) and P(kPa)
 #################################ls
 Temperature=
-1800.00
+1200.00
+Pressure=
+1013.25
 #################################
 # Execute program
 #################################
