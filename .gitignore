@@ -61,6 +61,7 @@ tags
 # 1D executables
 solvers1D
 euler1D
+levermore1D
 
 # 2D executables
 cffc2D
