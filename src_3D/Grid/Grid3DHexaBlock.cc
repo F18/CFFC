@@ -573,29 +573,28 @@ void  Grid3D_Hexa_Block::Output_Cells_Tecplot(const int Block_Number,
 		<< "\"z\" \n"
                 << "ZONE T =  \"Block Number = " << Block_Number
                 << "\" \\ \n"
-                << "I = " << ICu - ICl + 1 << " \\ \n"
-                << "J = " << JCu - JCl + 1 << " \\ \n"
-		<< "K = " << KCu - KCl + 1 << " \\ \n"
+                << "I = " << ICu - ICl + 2*Nghost+ 1 << " \\ \n"
+                << "J = " << JCu - JCl + 2*Nghost + 1 << " \\ \n"
+		<< "K = " << KCu - KCl  + 2*Nghost+ 1 << " \\ \n"
                 << "F = POINT \n";
 
     } else {
        Out_File << "ZONE T =  \"Block Number = " << Block_Number
                 << "\" \\ \n"
-                << "I = " << ICu - ICl + 1 << " \\ \n"
-                << "J = " << JCu - JCl + 1 << " \\ \n"
-		<< "K = " << KCu - KCl + 1 << " \\ \n"
+                << "I = " << ICu - ICl  + 2*Nghost+ 1 << " \\ \n"
+                << "J = " << JCu - JCl  + 2*Nghost+ 1 << " \\ \n"
+		<< "K = " << KCu - KCl  + 2*Nghost+ 1 << " \\ \n"
                 << "F = POINT \n";
     } /* endif */
 
-    for (int k = KCl ; k <= KCu ; ++k) {
-      for (int j  = JCl ; j <= JCu ; ++j ) {
-	for (int i = ICl ; i <= ICu ; ++i ) {
+    for (int k = KCl - Nghost ; k <= KCu + Nghost ; ++k) {
+      for (int j  = JCl - Nghost ; j <= JCu + Nghost ; ++j ) {
+	for (int i = ICl - Nghost ; i <= ICu + Nghost ; ++i ) {
 	  Out_File << " " << Cell[i][j][k].Xc << "\n";
 	} /* endfor */
       } /* endfor */
     }/*endfor*/
     Out_File << setprecision(6);
-
 }
 
 /********************************************************

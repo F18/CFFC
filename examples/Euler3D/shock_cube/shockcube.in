@@ -30,22 +30,22 @@ Cube
 Number_of_Cells_Idir = 
 4
 Number_of_Cells_Jdir =
-8
+4
 Number_of_Cells_Kdir =
-8
+4
 Number_of_Blocks_Idir = 
 2
 Number_of_Blocks_Jdir =
-1
+2
 Number_of_Blocks_Kdir =
-1
+2
 ###############################
 # Set time stepping parameters
 ###############################
 CFL_Number =
 0.1
 Time_Max = 
-0.2
+0.
 Maximum_Number_of_Time_Steps =
 0
 Number_of_Blocks_Per_Processor =
@@ -60,7 +60,7 @@ Execute
 # Write output
 #######################
 Write_Output_Nodes
-Write_Output
+Write_Output_Cells
 #Write_Restart
 #######################
 # Terminate program

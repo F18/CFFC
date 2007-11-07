@@ -18,6 +18,7 @@
 #include "../System/System_Linux.h"
 #endif //_SYSTEM_LINUX_INCLUDED
 
+
 /*************************************************************
  * AdaptiveBlock3D -- Templated message passing subroutines. *
  *************************************************************/
@@ -50,9 +51,13 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
    int i_bound_elem; // index for boundary element, face edge or vertex
    int n_bound_elem[27];
    int n_imin, n_imax, n_jmin, n_jmax, n_kmin, n_kmax;
+   int i_temp;
    
    AdaptiveBlock3D_Info info_bound_elem[27];
-
+   int compact_trans_matrix[3]; // orientation of the block that receives message.
+   int ti[3]; // ti[0] -i, ti[1] -j, ti[2] - k; computational orientation of the block that receives message.
+   int ts[3]; // sign of the computational orientation of the block that receives message.
+   int id_min[3], id_max[3], inc[3];
  
   /* Check to see if the number of solution variables specified
      in the calling argument is correct. */
@@ -147,16 +152,16 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
         n_bound_elem[BE::TNE] = Soln_Block_List.Block[i_blk].nTNE;
         info_bound_elem[BE::TNE] =  Soln_Block_List.Block[i_blk].infoTNE[0]; 
      
-        for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) {
-           if (  CFFC_MPI::This_Processor_Number == iProc ) {
-              cout<<"\n In loading send buffer: "<<endl;
-              cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number;
-              cout<<"  i_blk = "<<i_blk<<" used= "<<Soln_Block_List.Block[i_blk].used<<"\n  BE:E = "<<BE::E<<" infoE = "<< info_bound_elem[BE::E];
-              cout<<"\n  BE:W = "<<BE::W<<" infoW = "<< info_bound_elem[BE::W];
-              System::sleep(0.1);
-           }
-           MPI::COMM_WORLD.Barrier();
-        }
+    /*     for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+/*            if (  CFFC_MPI::This_Processor_Number == iProc ) { */
+/*               cout<<"\n In loading send buffer: "<<endl; */
+/*               cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number; */
+/*               cout<<"  i_blk = "<<i_blk<<" used= "<<Soln_Block_List.Block[i_blk].used<<"\n  BE:E = "<<BE::E<<" infoE = "<< info_bound_elem[BE::E]; */
+/*               cout<<"\n  BE:W = "<<BE::W<<" infoW = "<< info_bound_elem[BE::W]; */
+/*               System::sleep(0.1); */
+/*            } */
+/*            MPI::COMM_WORLD.Barrier(); */
+/*         } */
 
      }
      
@@ -165,7 +170,8 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
            for (int kk = -1; kk<2; kk++){
               
               i_bound_elem = 9*(ii+1) + 3*(jj+1) + (kk+1);
-              
+
+          
               
               if (Soln_Block_List.Block[i_blk].used  && (n_bound_elem[i_bound_elem] == 1) && (i_bound_elem != 13) &&
                   (Soln_Block_List.Block[i_blk].info.level == info_bound_elem[i_bound_elem].level)) {
@@ -239,17 +245,10 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                     k_min = (!kk)*Soln_Blks[i_blk].KCl + n_kmin;
                     k_max = (!kk)*Soln_Blks[i_blk].KCu + n_kmax;
                     k_inc = 1;
-                  
-                    i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_sendbuf[i_blk][i_bound_elem],
-                                                        l,buffer_size_neighbour,
-                                                        i_min,i_max,i_inc,
-                                                        j_min,j_max,j_inc,
-                                                        k_min,k_max,k_inc);
 
-
-                 /*    for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+/*                     for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
 /*                        if (  CFFC_MPI::This_Processor_Number == iProc ) { */
-/*                           cout<<"\n In loading send buffer function #1"<<endl; */
+/*                           cout<<"\n In Loading send buffer function before transformation "<<endl; */
 /*                           cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl; */
 /*                           cout<<"\n i_blk = "<<i_blk<<"  i_bound_element = "<<i_bound_elem<<"   buffer_size= "<<buffer_size_neighbour<<endl; */
 /*                           cout<<"\n i_min = "<<i_min<<"  j_min = "<<j_min<<"   k_min "<<k_min<<endl; */
@@ -261,6 +260,68 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 /*                     } */
 
 
+                    compact_trans_matrix[0] = info_bound_elem[i_bound_elem].blkorient.ctm_offsets[0];
+                    compact_trans_matrix[1] = info_bound_elem[i_bound_elem].blkorient.ctm_offsets[1];
+                    compact_trans_matrix[2] = info_bound_elem[i_bound_elem].blkorient.ctm_offsets[2];
+                   
+                    ts[0] = sgn(compact_trans_matrix[0]);
+                    ts[1] = sgn(compact_trans_matrix[1]);
+                    ts[2] = sgn(compact_trans_matrix[2]);
+                    
+                    ti[0] = abs(compact_trans_matrix[0]) -1;
+                    ti[1] = abs(compact_trans_matrix[1]) -1;
+                    ti[2] = abs(compact_trans_matrix[2]) -1;
+
+                    if(ts[0] <0 ){
+                       i_inc = -1;
+                       i_temp = i_min;
+                       i_min = i_max;
+                       i_max = i_temp;
+                    }
+                    if(ts[1] <0 ){
+                       j_inc = -1;
+                       i_temp = j_min;
+                       j_min = j_max;
+                       j_max = i_temp;
+                    }
+                    if(ts[2] <0 ){
+                       k_inc = -1;
+                       i_temp = k_min;
+                       k_min = k_max;
+                       k_max = i_temp;
+                    }
+                    
+                    id_min[0] = i_min;
+                    id_min[1] = j_min;
+                    id_min[2] = k_min;
+                    id_max[0] = i_max;
+                    id_max[1] = j_max;
+                    id_max[2] = k_max;
+                    inc[0] = i_inc;
+                    inc[1] = j_inc;
+                    inc[2] = k_inc;
+                    
+                   /*  for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+/*                        if (  CFFC_MPI::This_Processor_Number == iProc ) { */
+/*                           if(i_bound_elem == 18){ */
+                             
+/*                              cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl; */
+/*                              cout<<"\n i_blk = "<<i_blk<<"  i_bound_element = "<<i_bound_elem<<"   buffer_size= "<<buffer_size_neighbour<<endl; */
+/*                              cout<<"\n i_min = "<<i_min<<"  j_min = "<<j_min<<"   k_min "<<k_min<<endl; */
+/*                              cout<<"\n i_max = "<<i_max<<"  j_max = "<<j_max<<"   k_max "<<k_max<<endl; */
+/*                              cout<<"\n ctm[0] = "<< compact_trans_matrix[0]<<" ctm[1] = "<< compact_trans_matrix[1]<<" ctm[2] = "<< compact_trans_matrix[2]; */
+/*                              cout<<"\n ti[0] = "<< ti[0]<<" ti[1] = "<< ti[1]<<" ti[2] = "<< ti[2]; */
+/*                           } */
+                          
+/*                           System::sleep(0.1); */
+/*                        } */
+/*                        MPI::COMM_WORLD.Barrier(); */
+/*                     } */
+
+
+                    i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_sendbuf[i_blk][i_bound_elem],
+                                                        l,buffer_size_neighbour, id_min, id_max, inc, ti);
+                     
                                      
                     if (i != 0) return(2200);
                  } /* endif */
@@ -657,55 +718,55 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                    if (!Send_Mesh_Geometry_Only) {
                       
                       if( ii == -1 ){
-                         n_imin = Soln_Blks[i_blk].Nghost;
-                         n_imax = Soln_Blks[i_blk].ICl +1;
+                         n_imin = Soln_Blks[i_blk].Nghost-2;
+                         n_imax = Soln_Blks[i_blk].Nghost-1;
                          
-                    }else if( ii == 1){
-                       n_imin =  Soln_Blks[i_blk].ICu-1;
-                       n_imax = Soln_Blks[i_blk].ICu;
+                      }else if( ii == 1){
+                         n_imin =  Soln_Blks[i_blk].ICu+ 1;
+                         n_imax = Soln_Blks[i_blk].ICu+ Soln_Blks[i_blk].Nghost;
+                         
+                      }else{
+                         n_imin = 0;
+                         n_imax = 0;
+                      }
+                      if( jj == -1 ){
+                         n_jmin = Soln_Blks[i_blk].Nghost-2;
+                         n_jmax = Soln_Blks[i_blk].Nghost-1;
                        
-                    }else{
-                       n_imin = 0;
-                       n_imax = 0;
-                    }
-                    if( jj == -1 ){
-                       n_jmin = Soln_Blks[i_blk].Nghost;
-                       n_jmax = Soln_Blks[i_blk].JCl +1;
-                       
-                    }else if( jj == 1){
-                       n_jmin =  Soln_Blks[i_blk].JCu-1;
-                       n_jmax = Soln_Blks[i_blk].JCu;
-                       
-                    }else{
-                       n_jmin = 0;
-                       n_jmax = 0;
-                    }
-                    if( kk == -1 ){
-                       n_kmin = Soln_Blks[i_blk].Nghost;
-                       n_kmax = Soln_Blks[i_blk].KCl +1;
-                       
-                    }else if( kk == 1){
-                       n_kmin =  Soln_Blks[i_blk].KCu-1;
-                       n_kmax = Soln_Blks[i_blk].KCu;
-                       
-                    }else{
-                       n_kmin = 0;
-                       n_kmax = 0;
-                    }
+                      }else if( jj == 1){
+                         n_jmin =  Soln_Blks[i_blk].JCu+1;
+                         n_jmax = Soln_Blks[i_blk].JCu + Soln_Blks[i_blk].Nghost;
+                         
+                      }else{
+                         n_jmin = 0;
+                         n_jmax = 0;
+                      }
+                      if( kk == -1 ){
+                         n_kmin = Soln_Blks[i_blk].Nghost-2;
+                         n_kmax = Soln_Blks[i_blk].Nghost-1;
+                         
+                      }else if( kk == 1){
+                         n_kmin =  Soln_Blks[i_blk].KCu + 1;
+                         n_kmax = Soln_Blks[i_blk].KCu +  Soln_Blks[i_blk].Nghost;
+                         
+                      }else{
+                         n_kmin = 0;
+                         n_kmax = 0;
+                      }
    
-                    i_min = (!ii)*Soln_Blks[i_blk].ICl + n_imin;
-                    i_max = (!ii)*Soln_Blks[i_blk].ICu + n_imax;
-                    i_inc = 1;
-                    j_min = (!jj)*Soln_Blks[i_blk].JCl + n_jmin;
-                    j_max = (!jj)*Soln_Blks[i_blk].JCu + n_jmax;
-                    j_inc = 1;
-                    k_min = (!kk)*Soln_Blks[i_blk].KCl + n_kmin;
-                    k_max = (!kk)*Soln_Blks[i_blk].KCu + n_kmax;
-                    k_inc = 1;
+                      i_min = (!ii)*Soln_Blks[i_blk].ICl + n_imin;
+                      i_max = (!ii)*Soln_Blks[i_blk].ICu + n_imax;
+                      i_inc = 1;
+                      j_min = (!jj)*Soln_Blks[i_blk].JCl + n_jmin;
+                      j_max = (!jj)*Soln_Blks[i_blk].JCu + n_jmax;
+                      j_inc = 1;
+                      k_min = (!kk)*Soln_Blks[i_blk].KCl + n_kmin;
+                      k_max = (!kk)*Soln_Blks[i_blk].KCu + n_kmax;
+                      k_inc = 1;
                     
-                 /*    for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+/*                     for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
 /*                        if (  CFFC_MPI::This_Processor_Number == iProc ) { */
-/*                           cout<<"\n In unloading buffer function #1"<<endl; */
+/*                           cout<<"\n In unloading buffer function received location "<<endl; */
 /*                           cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl; */
 /*                           cout<<"\n i_blk = "<<i_blk<<"  i_bound_element = "<<i_bound_elem<<"   buffer_size= "<<buffer_size<<endl; */
 /*                           cout<<"\n i_min = "<<i_min<<"  j_min = "<<j_min<<"   k_min "<<k_min<<endl; */
@@ -717,89 +778,80 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 /*                     } */
                     // transform the neighbour's index to my index
 
-                    info_bound_elem[i_bound_elem].blkorient.my_index(i_min, j_min, k_min);
-                    info_bound_elem[i_bound_elem].blkorient.my_index(i_max, j_max, k_max);
+/*                     info_bound_elem[i_bound_elem].blkorient.my_index(i_min, j_min, k_min); */
+/*                     info_bound_elem[i_bound_elem].blkorient.my_index(i_max, j_max, k_max); */
                     
 
-/*                     for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+               /*      for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
 /*                        if (  CFFC_MPI::This_Processor_Number == iProc ) { */
-/*                           cout<<"\n In unloading buffer function #3"<<endl; */
+/*                           cout<<"\n In unloading buffer function # my location "<<endl; */
 /*                           cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl; */
 /*                           cout<<"\n i_blk = "<<i_blk<<"  i_bound_element = "<<i_bound_elem<<"   buffer_size= "<<buffer_size<<endl; */
+/*                           cout<<"\n i_min = "<<i_min<<"  j_min = "<<j_min<<"   k_min "<<k_min<<endl; */
+/*                           cout<<"\n i_max = "<<i_max<<"  j_max = "<<j_max<<"   k_max "<<k_max<<endl; */
                           
 /*                           System::sleep(0.1); */
 /*                        } */
 /*                        MPI::COMM_WORLD.Barrier(); */
 /*                     } */
-                    
-                  
-                    recv_bound_elem = info_bound_elem[i_bound_elem].blkorient.compute_message_tag(
-                       info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[0],
-                       info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[1],
-                       info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[2]);
-                    
-                    recv_blknum = info_bound_elem[i_bound_elem].blknum;
-                    
-                  
-    
-                    i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem],
+                      
+                   /*    for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+/*                          if (  CFFC_MPI::This_Processor_Number == iProc ) { */
+/*                             cout<<"\n In unloading buffer function  "<<endl; */
+/*                             cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl; */
+/*                             cout<<"\n i_blk = "<<i_blk<<"  i_bound_element = "<<i_bound_elem<<"   buffer_size= "<<buffer_size<<endl; */
+/*                             cout<<"\n i_min = "<<i_min<<"  j_min = "<<j_min<<"   k_min "<<k_min<<endl; */
+/*                             cout<<"\n i_max = "<<i_max<<"  j_max = "<<j_max<<"   k_max "<<k_max<<endl; */
+                            
+/*                             System::sleep(0.1); */
+/*                          } */
+/*                          MPI::COMM_WORLD.Barrier(); */
+/*                       } */
+                      
+                      i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem],
                                                              l,buffer_size,
                                                              i_min,i_max,i_inc,j_min,j_max,j_inc,
                                                              k_min,k_max,k_inc);
-                     
-/*                     i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_recbuf[recv_blknum][recv_bound_elem], */
-/*                                                              l,buffer_size, */
-/*                                                              i_min,i_max,i_inc,j_min,j_max,j_inc, */
-/*                                                              k_min,k_max,k_inc); */
                     
-               /*      for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
-/*                        if (  CFFC_MPI::This_Processor_Number == iProc ) { */
-/*                           cout<<"\n In unloading buffer function #4"<<endl; */
-/*                           cout<<"\n min = ("<<i_min<<", "<<j_min<<", "<<k_min<<")       max = ("<<i_max<<","<<j_max<<","<<k_max<<") "; */
-/*                           cout<<"\n blkorient : "<<info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[0]<<"  " */
-/*                               <<info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[1]<<"  "<< */
-/*                              info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[2]<<"  "<<endl; */
-                          
-/*                           System::sleep(0.1); */
-/*                        } */
-/*                        MPI::COMM_WORLD.Barrier(); */
-/*                     } */
+        
+
+                 
                     if (i != 0) return(2200);
                    } /* endif */
                  // Unload ghost cell mesh information as required.
                  if (Send_Mesh_Geometry_Only ||
                      Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
                     if( ii == -1 ){
-                       n_imin = Soln_Blks[i_blk].Nghost;
-                       n_imax = Soln_Blks[i_blk].Grid.INl +1;
+                       n_imin = Soln_Blks[i_blk].Nghost-2;
+                       n_imax = Soln_Blks[i_blk].Nghost-1;
                        
                     }else if( ii == 1){
-                       n_imin =  Soln_Blks[i_blk].Grid.INu-1;
-                       n_imax = Soln_Blks[i_blk].Grid.INu;
+                       n_imin =  Soln_Blks[i_blk].Grid.INu+1;
+                       n_imax = Soln_Blks[i_blk].Grid.INu+Soln_Blks[i_blk].Nghost;
                        
                     }else{
                        n_imin = 0;
                        n_imax = 0;
                     }
                     if( jj == -1 ){
-                       n_jmin = Soln_Blks[i_blk].Nghost;
-                       n_jmax = Soln_Blks[i_blk].Grid.JNl +1;
+                       n_jmin = Soln_Blks[i_blk].Nghost - 2;
+                       n_jmax = Soln_Blks[i_blk].Nghost - 1;
                        
                     }else if( jj == 1){
-                       n_jmin =  Soln_Blks[i_blk].Grid.JNu-1;
-                       n_jmax = Soln_Blks[i_blk].Grid.JNu;
+                       n_jmin =  Soln_Blks[i_blk].Grid.JNu+1;
+                       n_jmax = Soln_Blks[i_blk].Grid.JNu + Soln_Blks[i_blk].Nghost;
                        
                     }else{
                        n_jmin = 0;
                        n_jmax = 0;
                     }
                     if( kk == -1 ){
-                       n_kmin = Soln_Blks[i_blk].Nghost;
-                       n_kmax = Soln_Blks[i_blk].Grid.KNl +1;
+                       n_kmin = Soln_Blks[i_blk].Nghost - 2;
+                       n_kmax = Soln_Blks[i_blk].Nghost - 1;
                        
                     }else if( kk == 1){
-                       n_kmin =  Soln_Blks[i_blk].Grid.KNu-1;
-                       n_kmax = Soln_Blks[i_blk].Grid.KNu;
+                       n_kmin =  Soln_Blks[i_blk].Grid.KNu+1;
+                       n_kmax = Soln_Blks[i_blk].Grid.KNu+ Soln_Blks[i_blk].Nghost;
                        
                     }else{
                        n_kmin = 0;
@@ -815,17 +867,8 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                     k_min = (!kk)*Soln_Blks[i_blk].Grid.KNl + n_kmin;
                     k_max = (!kk)*Soln_Blks[i_blk].Grid.KNu + n_kmax;
                     k_inc = 1;
-           
-                    // transform the neighbour's index to my index
-                    info_bound_elem[i_bound_elem].blkorient.my_index(i_min, j_min, k_min);
-                    info_bound_elem[i_bound_elem].blkorient.my_index(i_max, j_max, k_max);
+                            
 
-                    recv_bound_elem = info_bound_elem[i_bound_elem].blkorient.compute_message_tag(
-                       info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[0],
-                       info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[1], 
-                       info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[2]);
-                    
-                    recv_blknum = info_bound_elem[i_bound_elem].blknum;
                     
                     x_ref = Soln_Blks[i_blk].Grid.Node[i_min][j_min][k_min-1].X; // Reference node location.
                     for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
@@ -841,36 +884,36 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                     
                     
                     if( ii == -1 ){
-                       n_imin = Soln_Blks[i_blk].Nghost;
-                       n_imax = Soln_Blks[i_blk].ICl +1;
+                       n_imin = Soln_Blks[i_blk].Nghost -2 ;
+                       n_imax = Soln_Blks[i_blk].Nghost -1 ;
                        
                     }else if( ii == 1){
-                       n_imin =  Soln_Blks[i_blk].ICu-1;
-                       n_imax = Soln_Blks[i_blk].ICu;
+                       n_imin = Soln_Blks[i_blk].ICu+1;
+                       n_imax = Soln_Blks[i_blk].ICu + Soln_Blks[i_blk].Nghost;
                        
                     }else{
                        n_imin = 0;
                        n_imax = 0;
                     }
                     if( jj == -1 ){
-                       n_jmin = Soln_Blks[i_blk].Nghost;
-                       n_jmax = Soln_Blks[i_blk].JCl +1;
+                       n_jmin = Soln_Blks[i_blk].Nghost - 2;
+                       n_jmax = Soln_Blks[i_blk].Nghost - 1;
                        
                     }else if( jj == 1){
-                       n_jmin =  Soln_Blks[i_blk].JCu-1;
-                       n_jmax = Soln_Blks[i_blk].JCu;
+                       n_jmin =  Soln_Blks[i_blk].JCu+1;
+                       n_jmax = Soln_Blks[i_blk].JCu+ Soln_Blks[i_blk].Nghost;
                        
                     }else{
                        n_jmin = 0;
                        n_jmax = 0;
                     }
                     if( kk == -1 ){
-                       n_kmin = Soln_Blks[i_blk].Nghost;
-                       n_kmax = Soln_Blks[i_blk].KCl +1;
+                       n_kmin = Soln_Blks[i_blk].Nghost - 2;
+                       n_kmax =  Soln_Blks[i_blk].Nghost - 1;
                        
                     }else if( kk == 1){
-                       n_kmin =  Soln_Blks[i_blk].KCu-1;
-                       n_kmax = Soln_Blks[i_blk].KCu;
+                       n_kmin =  Soln_Blks[i_blk].KCu+1;
+                       n_kmax = Soln_Blks[i_blk].KCu+ Soln_Blks[i_blk].Nghost;
                        
                     }else{
                        n_kmin = 0;
@@ -887,66 +930,56 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                     k_max = (!kk)*Soln_Blks[i_blk].KCu + n_kmax;
                     k_inc = 1;
                     
-                    // transform the neighbour's index to my index
-                    info_bound_elem[i_bound_elem].blkorient.my_index(i_min, j_min, k_min);
-                    info_bound_elem[i_bound_elem].blkorient.my_index(i_max, j_max, k_max);
-
-
-                    recv_bound_elem = info_bound_elem[i_bound_elem].blkorient.compute_message_tag(
-                       info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[0],
-                       info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[1], 
-                       info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[2]);
-                    
-                    recv_blknum = info_bound_elem[i_bound_elem].blknum;
+                  
                     
                     // boundary needs to be checked ... Oct. 19 2007
                     for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
                        for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
                           for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-                             Soln_Blks[ recv_blknum].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i,j,k);
-                             Soln_Blks[ recv_blknum].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
+                             Soln_Blks[ i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i,j,k);
+                             Soln_Blks[ i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
                           } /* endfor */
                     for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
                        for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                           l = l + 1;
                           if (l >= buffer_size) return(2202);
-                          Soln_Blks[recv_blknum].Grid.BCtypeW[j][k] =
-                             int(Soln_Block_List.message_noreschange_recbuf[recv_blknum][recv_bound_elem][l]);
+                          Soln_Blks[i_blk].Grid.BCtypeW[j][k] =
+                             int(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem][l]);
                        } /* endfor */
                     for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
                        for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ){
                           l = l + 1;
                           if (l >= buffer_size) return(2203);
-                          Soln_Blks[recv_blknum].Grid.BCtypeE[j][k] =
-                             int(Soln_Block_List.message_noreschange_recbuf[recv_blknum][recv_bound_elem][l]);
+                          Soln_Blks[i_blk].Grid.BCtypeE[j][k] =
+                             int(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem][l]);
                        } /* endfor */
                     for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
                        for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
                           l = l + 1;
                           if (l >= buffer_size) return(2204);
-                          Soln_Blks[recv_blknum].Grid.BCtypeS[i][k] =
-                             int(Soln_Block_List.message_noreschange_recbuf[recv_blknum][recv_bound_elem][l]);
+                          Soln_Blks[i_blk].Grid.BCtypeS[i][k] =
+                             int(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem][l]);
                        } /* endfor */
                     for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
                        for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
                           l = l + 1;
                           if (l >= buffer_size) return(2205);
-                          Soln_Blks[recv_blknum].Grid.BCtypeN[i][k] =
-                             int(Soln_Block_List.message_noreschange_recbuf[recv_blknum][recv_bound_elem][l]);
+                          Soln_Blks[i_blk].Grid.BCtypeN[i][k] =
+                             int(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem][l]);
                        } /* endfor */
                     for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
                        for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
                           l = l + 1;
                           if (l >= buffer_size) return(2205);
-                          Soln_Blks[recv_blknum].Grid.BCtypeT[i][j] =
-                             int(Soln_Block_List.message_noreschange_recbuf[recv_blknum][recv_bound_elem][l]);
+                          Soln_Blks[i_blk].Grid.BCtypeT[i][j] =
+                             int(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem][l]);
                        } /* endfor */
                     for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
                        for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
                           l = l + 1;
                           if (l >= buffer_size) return(2205);
-                          Soln_Blks[recv_blknum].Grid.BCtypeB[i][j] =
-                             int(Soln_Block_List.message_noreschange_recbuf[recv_blknum][recv_bound_elem][l]);
+                          Soln_Blks[i_blk].Grid.BCtypeB[i][j] =
+                             int(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem][l]);
                        } /* endfor */
 
                  } /* endif */
@@ -1039,6 +1072,18 @@ int Send_All_Messages(Hexa_Soln_Block *Soln_Blks,
     } /* endif */
 
   
+    
+  /*   for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+/*        if (  CFFC_MPI::This_Processor_Number == iProc ) { */
+/*           cout<<"\n  after loading buffer function received location "<<endl; */
+/*           cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl; */
+     
+      
+/*           System::sleep(0.1); */
+/*        } */
+/*        MPI::COMM_WORLD.Barrier(); */
+/*     }        */
+
     /* Exchange message buffers at block interfaces with no cell resolution change. */
 
     error_flag = AdaptiveBlock3D_List::Exchange_Messages_NoResChange(Soln_Block_List,
@@ -1050,14 +1095,16 @@ int Send_All_Messages(Hexa_Soln_Block *Soln_Blks,
        return(error_flag);
     } /* endif */
 
-    for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) {
-       if (  CFFC_MPI::This_Processor_Number == iProc ) {
-          cout<<"\n Send All Messages @ #3"<<endl;
-          
-          System::sleep(0.1);
-       }
-       MPI::COMM_WORLD.Barrier();
-    }
+  /*   for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+/*        if (  CFFC_MPI::This_Processor_Number == iProc ) { */
+/*           cout<<"\n  after exchange  buffer function received location "<<endl; */
+/*           cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl; */
+      
+      
+/*           System::sleep(0.1); */
+/*        } */
+/*        MPI::COMM_WORLD.Barrier(); */
+/*     }        */
     
 /* Unload message buffers at block interfaces with no cell resolution change. */
 
@@ -1071,15 +1118,18 @@ int Send_All_Messages(Hexa_Soln_Block *Soln_Blks,
             << "flag = " << error_flag << ".\n";
        return(error_flag);
     } /* endif */
+ 
+  /*   for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+/*        if (  CFFC_MPI::This_Processor_Number == iProc ) { */
+/*           cout<<"\n  after unloading  buffer function received location "<<endl; */
+/*           cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl; */
+      
+      
+/*           System::sleep(0.1); */
+/*        } */
+/*        MPI::COMM_WORLD.Barrier(); */
+/*     }        */
 
-    for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) {
-       if (  CFFC_MPI::This_Processor_Number == iProc ) {
-          cout<<"\n Send All Messages @ #4"<<endl;
-          
-          System::sleep(0.1);
-       }
-       MPI::COMM_WORLD.Barrier();
-    }
 
     /* Update corner ghost cell information for cases where there are no corner neighbours. */
 

@@ -271,8 +271,6 @@ int HexaSolver(char *Input_File_Name_ptr,
    /* Prescribe boundary data consistent with initial data. */
 
  
-   
-
    Local_Solution_Blocks.BCs(Input);
 
    /********************************************************  

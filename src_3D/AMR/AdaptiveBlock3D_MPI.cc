@@ -78,19 +78,7 @@ int  AdaptiveBlock3D_List::Exchange_Messages_NoResChange(AdaptiveBlock3D_List &B
          
          n_bound_elem[BE::W] = Blk_List.Block[i_blk].nW;
          info_bound_elem[BE::W] =  Blk_List.Block[i_blk].infoW[0];
-             
-      //    for ( int iProc = 0; iProc <  CFFC_MPI::Number_of_Processors; ++iProc ) {
-//             if (  CFFC_MPI::This_Processor_Number == iProc ) {
-               
-//                cout<<"\n  CFFC_MPI::This_Processor_Number = "<<CFFC_MPI::This_Processor_Number
-//                    <<"i_blk = "<<i_blk<<" BE::W =  "<<BE::W<<"  info = "<< info_bound_elem[BE::W]<<endl;
-//                cout<<"\n i_blk = "<<i_blk<<"used = "<<Blk_List.Block[i_blk].used<<endl;
-               
-//                System::sleep(0.1);
-//             }
-//             MPI::COMM_WORLD.Barrier();
-//          }
-           
+ 
          n_bound_elem[BE::TW] = Blk_List.Block[i_blk].nTW;
          info_bound_elem[BE::TW] =  Blk_List.Block[i_blk].infoTW[0];
          
@@ -142,15 +130,6 @@ int  AdaptiveBlock3D_List::Exchange_Messages_NoResChange(AdaptiveBlock3D_List &B
          n_bound_elem[BE::E] = Blk_List.Block[i_blk].nE;
          info_bound_elem[BE::E] =  Blk_List.Block[i_blk].infoE[0];
          
-        //  for ( int iProc = 0; iProc <  CFFC_MPI::Number_of_Processors; ++iProc ) {
-//             if (  CFFC_MPI::This_Processor_Number == iProc ) {
-               
-//                cout<<"\n i_blk = "<<i_blk<<" BE::E =  "<<BE::E<<"  info = "<< info_bound_elem[BE::E]<<endl;
-               
-//                System::sleep(0.1);
-//             }
-//             MPI::COMM_WORLD.Barrier();
-//          }                           
          n_bound_elem[BE::TE] = Blk_List.Block[i_blk].nTE;
          info_bound_elem[BE::TE] =  Blk_List.Block[i_blk].infoTE[0]; 
          
@@ -191,17 +170,7 @@ int  AdaptiveBlock3D_List::Exchange_Messages_NoResChange(AdaptiveBlock3D_List &B
                         tag_receive = neighbour_blk*tag_base +  tag_base_neigh;
                         tag_send = i_blk*tag_base + i_bound_elem;
                         
-                    //     for ( int iProc = 0; iProc <  CFFC_MPI::Number_of_Processors; ++iProc ) {
-//                            if (  CFFC_MPI::This_Processor_Number == iProc ) {
-//                               cout<<"\n In exchange message function"<<endl;
-//                               cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl;
-//                               cout<<"\n i_block = "<<i_blk<<" i_bound_elem =  "<<i_bound_elem<< " i_cpu = "<<i_cpu<<" neighbour_cpu = "<< neighbour_cpu<<"  neighbour_blk=  "<< neighbour_blk<<endl;
-//                               cout<<"\n tag_receive = "<<  tag_receive<<" tag_send = "<<  tag_send<<"  tag_base_neigh = "<<tag_base_neigh<<endl;
-//                               System::sleep(0.1);
-//                            }
-//                            MPI::COMM_WORLD.Barrier();
-//                         }
-                        
+                   
                      
                         request = MPI::COMM_WORLD.Irecv
                            (Blk_List.message_noreschange_recbuf[i_blk][i_bound_elem],
@@ -225,6 +194,19 @@ int  AdaptiveBlock3D_List::Exchange_Messages_NoResChange(AdaptiveBlock3D_List &B
                            tag_send);
                         number_send_requests = number_send_requests + 1;
                         send_requests[number_send_requests-1] = request;
+
+
+                     //    for ( int iProc = 0; iProc <  CFFC_MPI::Number_of_Processors; ++iProc ) {
+//                            if (  CFFC_MPI::This_Processor_Number == iProc ) {
+//                               cout<<"\n In exchange message function"<<endl;
+//                               cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl;
+//                               cout<<"\n i_block = "<<i_blk<<" i_bound_elem =  "<<i_bound_elem<< " i_cpu = "<<i_cpu<<" neighbour_cpu = "<< neighbour_cpu<<"  neighbour_blk=  "<< neighbour_blk<<endl;
+//                               cout<<"\n tag_receive = "<<  tag_receive<<" tag_send = "<<  tag_send<<"  tag_base_neigh = "<<tag_base_neigh<<endl;
+//                               System::sleep(0.1);
+//                            }
+//                            MPI::COMM_WORLD.Barrier();
+//                         }
+                        
                         
                       
                      } else {
@@ -237,6 +219,16 @@ int  AdaptiveBlock3D_List::Exchange_Messages_NoResChange(AdaptiveBlock3D_List &B
                            info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[0],
                            info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[1], 
                            info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[2]);
+
+                     //    for ( int iProc = 0; iProc <  CFFC_MPI::Number_of_Processors; ++iProc ) {
+//                            if (  CFFC_MPI::This_Processor_Number == iProc ) {
+//                               cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl;
+//                               cout<<"\n i_block = "<<i_blk<<" i_bound_elem =  "<<i_bound_elem<<"  neighbour_blk=  "<< neighbour_blk
+//                                   <<"tag_base_neigh =  "<<tag_base_neigh<<endl;
+//                               System::sleep(0.1);
+//                            }
+//                            MPI::COMM_WORLD.Barrier();
+//                         }
                         
                         for (l = 0; l <= buffer_size-1; ++l) {
                            

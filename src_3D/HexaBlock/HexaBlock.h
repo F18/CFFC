@@ -237,6 +237,13 @@ class Hexa_Block{
                       const int k_min,
                       const int k_max,
                       const int k_inc);
+   int LoadSendBuffer(double *buffer,
+                      int &buffer_count,
+                      const int buffer_size,
+                      const int *id_start,
+                      const int *id_end,
+                      const int *inc,
+                      const int *neigh_orient);
 
    int LoadSendBuffer_F2C(double *buffer,
                           int &buffer_count,
@@ -1146,32 +1153,56 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::ICs(const int i_ICtype,
 	 } /* endfor */
          break; 
 
-      case IC_SHOCK_BOX :
-	 Wl = SOLN_pSTATE(IPs.Wo);
-         Wl.rho = DENSITY_STDATM;
-         Wl.v = Vector3D_ZERO;
-         Wl.p = PRESSURE_STDATM;
-         Wr = SOLN_pSTATE(IPs.Wo);
-         Wr.rho = EIGHT*DENSITY_STDATM;
-         Wr.v = Vector3D_ZERO;
-         Wr.p = TEN*PRESSURE_STDATM; 
-         for (k = KCl-Nghost; k <= KCu+Nghost; ++k) {
-	    for (j = JCl-Nghost; j <= JCu+Nghost; ++j) {
-               for (i = ICl-Nghost; i <= ICu+Nghost; ++i) {
-		  if (Grid.Cell[i][j][k].Xc.x <= ZERO &&
-                      Grid.Cell[i][j][k].Xc.y <= ZERO &&
-                      Grid.Cell[i][j][k].Xc.z <= ZERO) {
-                      W[i][j][k] = Wl; 
-                  } else {
-                      W[i][j][k] = Wr;
-                  } /* end if */
-                  U[i][j][k] = W[i][j][k].U();
-	       } /* endfor */
-	    } /* endfor */
-	 } /* endfor */
-         break;
+   case IC_SHOCK_BOX :
+      Wl = SOLN_pSTATE(IPs.Wo);
+      Wl.rho = DENSITY_STDATM;
+      Wl.v = Vector3D_ZERO;
+      Wl.p = PRESSURE_STDATM;
+      Wr = SOLN_pSTATE(IPs.Wo);
+      Wr.rho = EIGHT*DENSITY_STDATM;
+      Wr.v = Vector3D_ZERO;
+      Wr.p = TEN*PRESSURE_STDATM;
+      for (k = KCl-Nghost; k <= KCu+Nghost; ++k) {
+         for (j = JCl-Nghost; j <= JCu+Nghost; ++j) {
+            for (i = ICl-Nghost; i <= ICu+Nghost; ++i) {
+               if (Grid.Cell[i][j][k].Xc.x <= ZERO &&
+                   Grid.Cell[i][j][k].Xc.y <= ZERO &&
+                   Grid.Cell[i][j][k].Xc.z <= ZERO) {
+                  W[i][j][k] = Wl;
+               } else {
+                  W[i][j][k] = Wr;
+               } /* end if */
+               U[i][j][k] = W[i][j][k].U();
+            } /* endfor */
+         } /* endfor */
+      } /* endfor */
 
-      case IC_UNIFORM :
+/*       for ( int iProc = 0; iProc <  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+/*          if (  CFFC_MPI::This_Processor_Number == iProc ) { */
+            
+/*             Wl = SOLN_pSTATE(IPs.Wo);  */
+/*             Wl.rho =  CFFC_MPI::This_Processor_Number + 1 ; */
+            
+/*             for (k = KCl-Nghost; k <= KCu+Nghost; ++k) {  */
+/*                for (j = JCl-Nghost; j <= JCu+Nghost; ++j) { */
+/*                   for (i = ICl-Nghost; i <= ICu+Nghost; ++i) { */
+                     
+/*                      W[i][j][k] = Wl; */
+                     
+/*                      U[i][j][k] = W[i][j][k].U(); */
+/*                   } /\* endfor *\/ */
+/*                } /\* endfor *\/ */
+/*             } /\* endfor *\/ */
+            
+/*          } */
+
+
+/*          MPI::COMM_WORLD.Barrier(); */
+/*       } */
+
+      break;
+
+   case IC_UNIFORM :
       default:
          // Set the solution state to the initial state Wo[0].
 	 for (k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
@@ -2959,17 +2990,17 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::LoadSendBuffer(double *buffer,
                                                          int &buffer_count,
                                                          const int buffer_size,
-                                                         const int i_min, 
+                                                         const int i_min,
                                                          const int i_max,
                                                          const int i_inc,
-                                                         const int j_min, 
+                                                         const int j_min,
                                                          const int j_max,
                                                          const int j_inc,
-						         const int k_min, 
+						         const int k_min,
                                                          const int k_max,
-                                                         const int k_inc) {
-  int i, j, k,t;
-  for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) 
+                                                         const int k_inc ) {
+  int i, j, k, t;
+  for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
     for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
      for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
         for ( t = 1 ; t <= NumVar(); ++ t) {
@@ -2989,6 +3020,56 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::LoadSendBuffer(double *buffer,
 /*      } */
 /*      MPI::COMM_WORLD.Barrier(); */
 /*   } */
+   
+  return(0);
+  
+}
+
+
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::LoadSendBuffer(double *buffer,
+                                                         int &buffer_count,
+                                                         const int buffer_size,
+                                                         const int *id_start, 
+                                                         const int *id_end,
+                                                         const int *inc,
+                                                         const int *neigh_orient) {
+   int indices[3];
+   
+   int &i = indices[0];
+   int &j = indices[1];
+   int &k = indices[2];
+   
+   int & rcv_i =  indices[neigh_orient[0]];
+   int & rcv_j =  indices[neigh_orient[1]];
+   int & rcv_k =  indices[neigh_orient[2]];
+
+   const int rcv_i_s =  id_start[neigh_orient[0]];
+   const int rcv_j_s =  id_start[neigh_orient[1]];
+   const int rcv_k_s =  id_start[neigh_orient[2]];
+
+   const int rcv_i_e =  id_end[neigh_orient[0]];
+   const int rcv_j_e =  id_end[neigh_orient[1]];
+   const int rcv_k_e =  id_end[neigh_orient[2]];
+
+   const int rcv_i_c =  inc[neigh_orient[0]];
+   const int rcv_j_c =  inc[neigh_orient[1]];
+   const int rcv_k_c =  inc[neigh_orient[2]];
+
+   for (rcv_k = rcv_k_s ; (rcv_k - rcv_k_s)*(rcv_k - rcv_k_e)<=0 ; rcv_k+= rcv_k_c) {
+      for (rcv_j = rcv_j_s ; (rcv_j - rcv_j_s)*(rcv_j - rcv_j_e)<=0 ; rcv_j+= rcv_j_c) {
+         for (rcv_i = rcv_i_s ; (rcv_i - rcv_i_s)*(rcv_i - rcv_i_e)<=0 ; rcv_i+= rcv_i_c) {
+            
+            for ( int t = 1 ; t <= NumVar(); ++ t) {
+               buffer_count = buffer_count + 1;
+               
+               if (buffer_count >= buffer_size) return(1);
+               buffer[buffer_count] = U[i][j][k][t];
+            } /* endfor */
+         } /* endfor */
+      } /* endfor */
+   } /* endfor */
+   
    
   return(0);
   
@@ -3059,19 +3140,27 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::UnloadReceiveBuffer(double *buffer,
                                                        const int k_max,
                                                        const int k_inc) {
 
-  int i, j,k;
+   
+ 
+  int i, j, k;
   for (k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc) {
      for (j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc) {
         for (i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc) {
+
+          
            for (int nV = 1 ; nV <=NumVar() ; ++ nV) {
               buffer_count = buffer_count + 1;
               if (buffer_count >= buffer_size) return(1);    
+
               U[i][j][k][nV] = buffer[buffer_count];
            } /* endfor */
            W[i][j][k] = U[i][j][k].W();
         } /* endfor */
      } /* endfor */
   } /* endfor */ 
+  
+ 
+   
 
   return(0);
 

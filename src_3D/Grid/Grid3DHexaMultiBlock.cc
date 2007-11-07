@@ -6,7 +6,9 @@
 #ifndef GRID3D_HEXA_MULTIBLOCK_INCLUDED
 #include "Grid3DHexaMultiBlock.h"
 #endif //_GRID3D_HEXA_MULTIBLOCK_INCLUDED
-
+#ifndef  _SYSTEM_LINUX_INCLUDED
+#include "../System/System_Linux.h"
+#endif //_SYSTEM_LINUX_INCLUDED
 /********************************************************
  * Routine: Allocate                                    *
  *                                                      *
@@ -1632,6 +1634,16 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighBSE_info[0].set_block_orientation_info(
             blkConn, iblk, BlkC::IMax, BlkC::JMin, BlkC::KMin, 
             Connectivity[iblk].neighBSE[0]);
+
+       //   for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) {
+//             if (  CFFC_MPI::This_Processor_Number == iProc ) {
+//                cout<<"\n In Grid3DHexaBlock : "<<endl;
+//                cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number;
+//                cout<<"  i_blk = "<<iblk<<"  Connectivity[iblk].num_neighBSE = "<< Connectivity[iblk].num_neighBSE;
+//                System::sleep(0.1);
+//             }
+//             MPI::COMM_WORLD.Barrier();
+//          }
 
          // for roots only 
          if(Connectivity[iblk].num_neighT>ONE || Connectivity[iblk].num_neighB>ONE ||

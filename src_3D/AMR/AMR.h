@@ -171,7 +171,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          Octree.Roots[nb].block.nTSW = Initial_Mesh.Connectivity[nb].num_neighTSW;
          Octree.Roots[nb].block.nTNE = Initial_Mesh.Connectivity[nb].num_neighTNE;
          Octree.Roots[nb].block.nTSE = Initial_Mesh.Connectivity[nb].num_neighTSE;
-         Octree.Roots[nb].block.nBNW  = Initial_Mesh.Connectivity[nb].num_neighBNW;
+         Octree.Roots[nb].block.nBSE  = Initial_Mesh.Connectivity[nb].num_neighBSE;
          Octree.Roots[nb].block.nBSW = Initial_Mesh.Connectivity[nb].num_neighBSW;
          Octree.Roots[nb].block.nBNE = Initial_Mesh.Connectivity[nb].num_neighBNE;
          Octree.Roots[nb].block.nBNW = Initial_Mesh.Connectivity[nb].num_neighBNW;
@@ -544,7 +544,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          Octree.Roots[nb].block.infoTS[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoTS[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoTS[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoTS[0].blknum].block.info.sector;
          Octree.Roots[nb].block.infoTS[0].level =  Octree.Roots[Octree.Roots[nb].block.infoTS[0].blknum].block.info.level;
-     Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTS[0].dimen =  Octree.Roots[nb].block.infoTS[0].dimen;
+         Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTS[0].dimen =  Octree.Roots[nb].block.infoTS[0].dimen;
          Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTS[0].sector =  Octree.Roots[nb].block.infoTS[0].sector;
          Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoTS[0].level =  Octree.Roots[nb].block.infoTS[0].level;
       }
@@ -691,19 +691,19 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoE[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoE[0]; 
          Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoW[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoW[0]; 
          
-         for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) {
-            if (  CFFC_MPI::This_Processor_Number == iProc ) {
-               cout<<"\n In AMR octree: "<<endl;
-               cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number;
-               cout<<" nb = "<<nb<<" blknumber_convt[nb].blknum "<< blknumber_convt[nb].blknum
-                   <<"\n  infoE = "<< Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoE[0]
-                   <<"\n  infoW = "<< Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoW[0];
+     /*     for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+/*             if (  CFFC_MPI::This_Processor_Number == iProc ) { */
+/*                cout<<"\n In AMR octree: "<<endl; */
+/*                cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number; */
+/*                cout<<" nb = "<<nb<<" blknumber_convt[nb].blknum "<< blknumber_convt[nb].blknum */
+/*                    <<"\n  infoE = "<< Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoE[0] */
+/*                    <<"\n  infoW = "<< Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoW[0]; */
                
                
-               System::sleep(0.1);
-            }
-            MPI::COMM_WORLD.Barrier();
-         }
+/*                System::sleep(0.1); */
+/*             } */
+/*             MPI::COMM_WORLD.Barrier(); */
+/*          } */
 
          Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoNW[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoNW[0]; 
          Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoNE[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoNE[0]; 
