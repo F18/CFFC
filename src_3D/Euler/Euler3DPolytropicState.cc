@@ -1904,17 +1904,22 @@ Vector2D Euler3D_Polytropic_pState::HLLE_wavespeeds(const Euler3D_Polytropic_pSt
 /*!
 * Routine: Rotate
 *                                                      
-* This function returns the primitive state aligned
-* with norm_dir
+* This function returns the primitive state aligned with x-axis
+* with norm_dir.
 *                                                      
 */ 
 Euler3D_Polytropic_pState Euler3D_Polytropic_pState::Rotate(const Vector3D &norm_dir) {
-  Euler3D_Polytropic_pState W_rotated;
 
-  
-  cout<<"\n I don't know";
-    
-  return W_rotated;
+  // for a 3D unit normal rotated to align with the x-axis
+  double Ct = norm_dir.x;  //cos_angle
+  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
+  Vector3D rt(0,norm_dir.z,-norm_dir.y); //rotation axis  
+
+  return Euler3D_Polytropic_pState(rho,
+				   v.x*Ct - v.y*rt.z*St + v.z*rt.y*St,
+				   v.x*rt.z*St + v.y*(rt.y*rt.y*(ONE-Ct)+Ct) + v.z*(rt.y*rt.z*(ONE-Ct)),
+				   -v.x*rt.y*St +  v.y*(rt.y*rt.z*(ONE-Ct)) + v.z*(rt.z*rt.z*(ONE-Ct)+Ct),
+				   p);
 }
 
 

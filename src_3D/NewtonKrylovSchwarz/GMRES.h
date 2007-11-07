@@ -480,7 +480,7 @@ calculate_Matrix_Free_Restart(const double &epsilon)
     for (int j = JCl - JCl_overlap; j <= JCu + JCu_overlap; j++) {
       for (int i = ICl - ICl_overlap; i <= ICu + ICu_overlap; i++) {
 	for(int var =0; var < blocksize; var++){	
-	  int iter = index(i,j,k);		
+	  int iter = index(i,j,k,var);		
 	  //Matrix Free V(0) 
 	  V[iter] =  ( normalizeR(SolnBlk->dUdt[i][j][k][0][var+1],var) - b[iter]) / epsilon 
 	    - normalizeUtoR( x[iter] *  LHS_Time<SOLN_pSTATE,SOLN_cSTATE>(*Input, 
