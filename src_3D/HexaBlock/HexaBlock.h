@@ -2098,8 +2098,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
 dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 
-   int i, j, k,  k_residual;
-   double omega; 
+  int i, j, k;
    Vector3D dX;
    
    SOLN_pSTATE Wl, Wr;
@@ -2129,7 +2128,7 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
  
    // Add i-direction (zeta-direction) fluxes.
    for ( k  =  KCl-1 ; k <=  KCu+1 ; ++k ){
-      for ( j  =  JCl-1 ; j <=  JCu+1 ; ++j ) {	
+     for ( j  =  JCl-1 ; j <=  JCu+1 ; ++j ) {	
 	dUdt[ ICl-1][j][k][0] = U_VACUUM;      
 	
 	for ( i =  ICl-1 ; i <=  ICu ; ++i ) {

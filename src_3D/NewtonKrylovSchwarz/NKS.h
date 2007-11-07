@@ -242,18 +242,18 @@ Newton_Update(){
 	    for (int i = Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].ICl; 
 		 i <= Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].ICu; i++){
 
-	      cout<<"\n Uo["<<i<<","<<j<<","<<k<<"] = "<<Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].Uo[i][j][k];
-	      cout<<"\n dU["<<i<<","<<j<<","<<k<<"] = ";
+// 	      cout<<"\n Uo["<<i<<","<<j<<","<<k<<"] = "<<Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].Uo[i][j][k];
+// 	      cout<<"\n dU["<<i<<","<<j<<","<<k<<"] = ";
 
-	      /* Update solutions in conversed variables  U = Uo + deltaU = Uo + denormalized(x) */	 
+	      //Update solutions in conversed variables  U = Uo + deltaU = Uo + denormalized(x)	 
 	      for(int varindex =1; varindex <= Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].NumVar() ; varindex++){  
-	      Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].U[i][j][k][varindex] = 
+		Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].U[i][j][k][varindex] = 
 		Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].Uo[i][j][k][varindex] 
 		+  GMRES.deltaU(Bcount,i,j,k,varindex-1);
-	      cout<<" "<<GMRES.deltaU(Bcount,i,j,k,varindex-1);
+// 	      cout<<" "<<GMRES.deltaU(Bcount,i,j,k,varindex-1);
 	      } 	      	  
 
-	      cout<<"\n U["<<i<<","<<j<<","<<k<<"] = "<<Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].U[i][j][k];
+// 	      cout<<"\n U["<<i<<","<<j<<","<<k<<"] = "<<Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].U[i][j][k];
 
 	      // THIS FUNCTION HAS NO CHECKS FOR INVALID SOLUTIONS, 
 	      // YOU PROBABLY WANT TO CREATE A SPECIALIZATION OF THIS FUNCTION SPECIFIC 
