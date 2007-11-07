@@ -1127,6 +1127,7 @@ clean:
 	rm -f $(SYSTEM_DIR)*.o $(SYSTEM_DIR)*.il $(SYSTEM_DIR)*~
 	rm -f $(EULER_1D_DIR)*.o $(EULER_1D_DIR)*.il $(EULER_1D_DIR)*~ $(EULER_1D_DIR)*.bak
 	rm -f $(LEVERMORE_1D_DIR)*.o $(LEVERMORE_1D_DIR)*.il $(LEVERMORE_1D_DIR)*~ $(LEVERMORE_1D_DIR)*.bak
+	rm -f $(LEVERMORE_1D_DIR)UnitTests/*.o $(LEVERMORE_1D_DIR)UnitTests/*.il $(LEVERMORE_1D_DIR)UnitTests/*~ $(LEVERMORE_1D_DIR)UnitTests/*.bak
 	rm -f $(EULER_1D_DIR)ExactSolutions/*.o $(EULER_1D_DIR)ExactSolutions/*.il $(EULER_1D_DIR)ExactSolutions/*~ $(EULER_1D_DIR)ExactSolutions/*.bak
 	rm -f $(EULER_1D_DIR)UnitTests/*.o $(EULER_1D_DIR)UnitTests/*.il $(EULER_1D_DIR)UnitTests/*~ $(EULER_1D_DIR)UnitTests/*.bak
 	rm -f $(SOLVERS1D_DIR)*.o $(SOLVERS1D_DIR)*.il $(SOLVERS1D_DIR)*~ $(SOLVERS1D_DIR)*.depend
