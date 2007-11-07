@@ -939,8 +939,6 @@ inline ostream &operator << (ostream &out_file,
   out_file << SolnBlk.debug_level <<"\n";
   out_file << SolnBlk.Moving_wall_velocity <<"\n";
   out_file << SolnBlk.Pressure_gradient <<"\n";
-  out_file << SolnBlk.residual_variable <<"\n";
-  out_file << SolnBlk.Number_of_Residual_Norms <<"\n";
   if (SolnBlk.NCi == 0 || SolnBlk.NCj == 0) return(out_file);
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
@@ -974,8 +972,6 @@ inline istream &operator >> (istream &in_file,
   in_file >> SolnBlk.debug_level;
   in_file >> SolnBlk.Moving_wall_velocity;
   in_file >> SolnBlk.Pressure_gradient;
-  in_file >> SolnBlk.residual_variable;
-  in_file >> SolnBlk.Number_of_Residual_Norms;
   in_file.unsetf(ios::skipws);
   if (ni == 0 || nj == 0) {
       SolnBlk.deallocate(); return(in_file);
