@@ -78,11 +78,11 @@ namespace templated_metaprogramming {
   }
 
 
-  template<int N_term> inline double dot_product_double_array(double *in_1, double *in_2) {
+  template<int N_term> inline double dot_product_double_array(const double *in_1, const double *in_2) {
     return ( in_1[N_term]*in_2[N_term] + dot_product_double_array<N_term-1>(in_1,in_2) );
   }
 
-  template<> inline double dot_product_double_array<0>(double *in_1, double *in_2) {
+  template<> inline double dot_product_double_array<0>(const double *in_1, const double *in_2) {
     return ( in_1[0]*in_2[0] );
   }
 
