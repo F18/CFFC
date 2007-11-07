@@ -558,79 +558,60 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
   DenseMatrix A_Top( Rotation_Matrix_3D(nface_Top, 1) );
   DenseMatrix AI_Top( Rotation_Matrix_3D(nface_Top, 0) );
 
+  //! Calculate dFdU using solutions in the rotated frame -> matrix in DenseMatrix format. 
+  DenseMatrix dFdU_N(blocksize,blocksize,ZERO); 
+  DenseMatrix dFdU_S(blocksize,blocksize,ZERO); 
+  DenseMatrix dFdU_E(blocksize,blocksize,ZERO); 
+  DenseMatrix dFdU_W(blocksize,blocksize,ZERO); 
+  DenseMatrix dFdU_Top(blocksize,blocksize,ZERO); 
+  DenseMatrix dFdU_Bot(blocksize,blocksize,ZERO); 
 
-  cout<<"\n N "<<nface_N;
-  cout<<"\n A_N \n"<<A_N<<endl;
-
-  cout<<"\n S "<<nface_S;
-  cout<<"\n A_S \n"<<A_S<<endl; 
-
-  cout<<"\n E "<<nface_E;
-  cout<<"\n A_E \n"<<A_E<<endl;
-
-  cout<<"\n W "<<nface_W;
-  cout<<"\n A_W \n"<<A_W<<endl;
-
-  cout<<"\n Top "<<nface_Top;
-  cout<<"\n A_Top \n"<<A_Top<<endl;
-
-  cout<<"\n Bot "<<nface_Bot;
-  cout<<"\n A_Bot \n"<<A_Bot<<endl;
-
-//   //! Calculate dFdU using solutions in the rotated frame -> matrix in DenseMatrix format. 
-//   DenseMatrix dFdU_N(blocksize,blocksize,ZERO); 
-//   DenseMatrix dFdU_S(blocksize,blocksize,ZERO); 
-//   DenseMatrix dFdU_E(blocksize,blocksize,ZERO); 
-//   DenseMatrix dFdU_W(blocksize,blocksize,ZERO); 
-//   DenseMatrix dFdU_Top(blocksize,blocksize,ZERO); 
-//   DenseMatrix dFdU_Bot(blocksize,blocksize,ZERO); 
-
-//   //Solution Rotate provided in pState 
-//   Preconditioner_dFIdU( dFdU_N, SolnBlk->W[cell_index_i][cell_index_j][cell_index_k].Rotate(nface_N));   //ISSUES WITH ROTATE IN 3D!!!!
-//   Preconditioner_dFIdU( dFdU_S, SolnBlk->W[cell_index_i][cell_index_j][cell_index_k].Rotate(nface_S));
-//   Preconditioner_dFIdU( dFdU_E, SolnBlk->W[cell_index_i][cell_index_j][cell_index_k].Rotate(nface_E));
-//   Preconditioner_dFIdU( dFdU_W, SolnBlk->W[cell_index_i][cell_index_j][cell_index_k].Rotate(nface_W));
-//   Preconditioner_dFIdU( dFdU_Bot, SolnBlk->W[cell_index_i][cell_index_j][cell_index_k].Rotate(nface_Bot));
-//   Preconditioner_dFIdU( dFdU_Top, SolnBlk->W[cell_index_i][cell_index_j][cell_index_k].Rotate(nface_Top));
+  //Solution Rotate provided in pState 
+  Preconditioner_dFIdU( dFdU_N, SolnBlk->W[cell_index_i][cell_index_j][cell_index_k].Rotate(nface_N));   
+  Preconditioner_dFIdU( dFdU_S, SolnBlk->W[cell_index_i][cell_index_j][cell_index_k].Rotate(nface_S));
+  Preconditioner_dFIdU( dFdU_E, SolnBlk->W[cell_index_i][cell_index_j][cell_index_k].Rotate(nface_E));
+  Preconditioner_dFIdU( dFdU_W, SolnBlk->W[cell_index_i][cell_index_j][cell_index_k].Rotate(nface_W));
+  Preconditioner_dFIdU( dFdU_Bot, SolnBlk->W[cell_index_i][cell_index_j][cell_index_k].Rotate(nface_Bot));
+  Preconditioner_dFIdU( dFdU_Top, SolnBlk->W[cell_index_i][cell_index_j][cell_index_k].Rotate(nface_Top));
   
-//   DenseMatrix II(blocksize,blocksize);  II.identity();    
+  DenseMatrix II(blocksize,blocksize);  II.identity();     
 
-//   //! Calculate Jacobian matrix -> blocksizexblocksize matrix in DenseMatrix format
-//   //North
-//   Jacobian[STENCIL_NORTH] = (SolnBlk->Grid.AfaceN(cell_index_i,cell_index_j-1,cell_index_k) 
-// 		 * AI_N * (beta_N * dFdU_N + gamma_N * II) * A_N); 
+  //! Calculate Jacobian matrix -> blocksizexblocksize matrix in DenseMatrix format
+  //North
+  Jacobian[STENCIL_NORTH] = (SolnBlk->Grid.AfaceN(cell_index_i,cell_index_j-1,cell_index_k) 
+		 * AI_N * (beta_N * dFdU_N + gamma_N * II) * A_N); 
 
-//   //South
-//   Jacobian[STENCIL_SOUTH] = (SolnBlk->Grid.AfaceS(cell_index_i,cell_index_j+1,cell_index_k) 
-// 		 * AI_S * (beta_S * dFdU_S + gamma_S * II) * A_S);
+  //South
+  Jacobian[STENCIL_SOUTH] = (SolnBlk->Grid.AfaceS(cell_index_i,cell_index_j+1,cell_index_k) 
+		 * AI_S * (beta_S * dFdU_S + gamma_S * II) * A_S);
 
-//   //East
-//   Jacobian[STENCIL_EAST] = (SolnBlk->Grid.AfaceE(cell_index_i-1,cell_index_j,cell_index_k) 
-// 		 * AI_E * (beta_E * dFdU_E + gamma_E * II) * A_E);
+  //East
+  Jacobian[STENCIL_EAST] = (SolnBlk->Grid.AfaceE(cell_index_i-1,cell_index_j,cell_index_k) 
+		 * AI_E * (beta_E * dFdU_E + gamma_E * II) * A_E);
 
-//   //West
-//   Jacobian[STENCIL_WEST] = (SolnBlk->Grid.AfaceW(cell_index_i+1,cell_index_j,cell_index_k) 
-// 		 * AI_W * (beta_W * dFdU_W + gamma_W * II) * A_W);
+  //West
+  Jacobian[STENCIL_WEST] = (SolnBlk->Grid.AfaceW(cell_index_i+1,cell_index_j,cell_index_k) 
+		 * AI_W * (beta_W * dFdU_W + gamma_W * II) * A_W);
 
-//   //Bottom
-//   Jacobian[STENCIL_BOTTOM] = (SolnBlk->Grid.AfaceBot(cell_index_i+1,cell_index_j,cell_index_k-1) 
-// 			      * AI_Bot * (beta_Bot * dFdU_Bot + gamma_Bot * II) * A_Bot);
+  //Bottom
+  Jacobian[STENCIL_BOTTOM] = (SolnBlk->Grid.AfaceBot(cell_index_i+1,cell_index_j,cell_index_k-1) 
+			      * AI_Bot * (beta_Bot * dFdU_Bot + gamma_Bot * II) * A_Bot);
 
-//   //Top
-//   Jacobian[STENCIL_TOP] = (SolnBlk->Grid.AfaceTop(cell_index_i+1,cell_index_j,cell_index_k+1) 
-// 			   * AI_Top * (beta_Top * dFdU_Top + gamma_Top * II) * A_Top);
+  //Top
+  Jacobian[STENCIL_TOP] = (SolnBlk->Grid.AfaceTop(cell_index_i+1,cell_index_j,cell_index_k+1) 
+			   * AI_Top * (beta_Top * dFdU_Top + gamma_Top * II) * A_Top);
 
-//   //Center calculated from neighbours
-//   //! Using the fact that dF/dU(right) = - dF/dU(left) 
-//   Jacobian[STENCIL_CENTER] += (Jacobian[STENCIL_NORTH] + Jacobian[STENCIL_SOUTH] + Jacobian[STENCIL_EAST]  + Jacobian[STENCIL_WEST] +
-// 			       Jacobian[STENCIL_BOTTOM] + Jacobian[STENCIL_TOP])/SolnBlk->Grid.volume(cell_index_i,cell_index_j,cell_index_k);
+  //Center calculated from neighbours
+  //! Using the fact that dF/dU(right) = - dF/dU(left) 
+  Jacobian[STENCIL_CENTER] += (Jacobian[STENCIL_NORTH] + Jacobian[STENCIL_SOUTH] + Jacobian[STENCIL_EAST]  + Jacobian[STENCIL_WEST] +
+			       Jacobian[STENCIL_BOTTOM] + Jacobian[STENCIL_TOP])/SolnBlk->Grid.volume(cell_index_i,cell_index_j,cell_index_k);
 
-//   Jacobian[STENCIL_NORTH] = -Jacobian[STENCIL_NORTH]/SolnBlk->Grid.volume(cell_index_i,cell_index_j-1,cell_index_k);
-//   Jacobian[STENCIL_SOUTH] = -Jacobian[STENCIL_SOUTH]/SolnBlk->Grid.volume(cell_index_i,cell_index_j+1,cell_index_k);
-//   Jacobian[STENCIL_EAST] = -Jacobian[STENCIL_EAST]/SolnBlk->Grid.volume(cell_index_i-1,cell_index_j,cell_index_k);
-//   Jacobian[STENCIL_WEST] = -Jacobian[STENCIL_WEST]/SolnBlk->Grid.volume(cell_index_i+1,cell_index_j,cell_index_k);
-//   Jacobian[STENCIL_BOTTOM] = -Jacobian[STENCIL_BOTTOM]/SolnBlk->Grid.volume(cell_index_i,cell_index_j,cell_index_k-1);
-//   Jacobian[STENCIL_TOP] = -Jacobian[STENCIL_TOP]/SolnBlk->Grid.volume(cell_index_i,cell_index_j,cell_index_k+1);
+  Jacobian[STENCIL_NORTH] = -Jacobian[STENCIL_NORTH]/SolnBlk->Grid.volume(cell_index_i,cell_index_j-1,cell_index_k);
+  Jacobian[STENCIL_SOUTH] = -Jacobian[STENCIL_SOUTH]/SolnBlk->Grid.volume(cell_index_i,cell_index_j+1,cell_index_k);
+  Jacobian[STENCIL_EAST] = -Jacobian[STENCIL_EAST]/SolnBlk->Grid.volume(cell_index_i-1,cell_index_j,cell_index_k);
+  Jacobian[STENCIL_WEST] = -Jacobian[STENCIL_WEST]/SolnBlk->Grid.volume(cell_index_i+1,cell_index_j,cell_index_k);
+  Jacobian[STENCIL_BOTTOM] = -Jacobian[STENCIL_BOTTOM]/SolnBlk->Grid.volume(cell_index_i,cell_index_j,cell_index_k-1);
+  Jacobian[STENCIL_TOP] = -Jacobian[STENCIL_TOP]/SolnBlk->Grid.volume(cell_index_i,cell_index_j,cell_index_k+1);
 
 }
 
@@ -859,6 +840,66 @@ DenseMatrix_to_DenseMat(const DenseMatrix &B) {
   return A;
 } 
 
+
+/*********************************************************
+ * Routine: Rotation_Matrix_3D                           *
+ *                                                       *
+ * This function returns either the rotation matrix, A,  *
+ * or the inverse of A.                                  *
+ *                                                       *
+ * Note: A_matrix = 1 for returning A.                   *
+ *                = 0 for returning inverse of A.        *
+ *                                                       *
+ *********************************************************/
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline DenseMatrix Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
+Rotation_Matrix_3D(const Vector3D &nface, const int &A_matrix) 
+{
+
+  // for a 3D unit normal rotated to align with the x-axis
+  double cos_angle = nface.x;
+  double sin_angle = sqrt( nface.y*nface.y + nface.z*nface.z);
+
+  Vector3D rot_axis(0,nface.z,-nface.y);
+
+  DenseMatrix mat(blocksize,blocksize); //TEMP
+  mat.identity();
+
+  if (A_matrix) {             
+    // Rotation Matrix, A                 
+    mat(1,1) = cos_angle;
+    mat(1,2) = -rot_axis.z*sin_angle;
+    mat(1,3) = rot_axis.y*sin_angle;
+
+    mat(2,1) = rot_axis.z*sin_angle;
+    mat(2,2) = rot_axis.y*rot_axis.y*(ONE-cos_angle)+cos_angle;
+    mat(2,3) = rot_axis.y*rot_axis.z*(ONE-cos_angle);    
+
+    mat(3,1) = -rot_axis.y*sin_angle;
+    mat(3,2) = rot_axis.y*rot_axis.z*(ONE-cos_angle);
+    mat(3,3) = rot_axis.z*rot_axis.z*(ONE-cos_angle)+cos_angle;    
+
+    //Inverse
+  }else {
+    mat(1,1) = cos_angle;
+    mat(1,2) = rot_axis.z*sin_angle;
+    mat(1,3) = -rot_axis.y*sin_angle;
+
+    mat(2,1) = -rot_axis.z*sin_angle;
+    mat(2,2) = rot_axis.y*rot_axis.y*(ONE-cos_angle)+cos_angle;
+    mat(2,3) = rot_axis.y*rot_axis.z*(ONE-cos_angle);    
+
+    mat(3,1) = rot_axis.y*sin_angle;
+    mat(3,2) = rot_axis.y*rot_axis.z*(ONE-cos_angle);
+    mat(3,3) = rot_axis.z*rot_axis.z*(ONE-cos_angle)+cos_angle;     
+
+    //mat.pseudo_inverse_override();
+  } 
+
+  return mat;
+
+} /* End of Rotation_Matrix. */
+
 /*********************************************************
  * Routine: Rotation_Matrix                              *
  *                                                       *
@@ -895,55 +936,6 @@ Rotation_Matrix_2D(const Vector2D &nface, const int &A_matrix)
   } /* endif */
 
   return mat;
-
-} /* End of Rotation_Matrix. */
-
-/*********************************************************
- * Routine: Rotation_Matrix                              *
- *                                                       *
- * This function returns either the rotation matrix, A,  *
- * or the inverse of A.                                  *
- *                                                       *
- * Note: A_matrix = 1 for returning A.                   *
- *                = 0 for returning inverse of A.        *
- *                                                       *
- *********************************************************/
-template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
-inline DenseMatrix Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE>::
-Rotation_Matrix_3D(const Vector3D &nface, const int &A_matrix) 
-{
-
-  // for a 3D unit normal rotated to align with the x-axis
-  double cos_angle = nface.x;
-  double sin_angle = sqrt( nface.y*nface.y + nface.z*nface.z);
-
-  Vector3D rot_axis(0,nface.z,-nface.y);
-
-  DenseMatrix mat(blocksize,blocksize); //TEMP
-  mat.identity();
-
-  //if (A_matrix) {             
-    // Rotation Matrix, A                 
-    mat(1,1) = cos_angle;
-    mat(1,2) = -rot_axis.z*sin_angle;
-    mat(1,3) = rot_axis.y*sin_angle;
-
-    mat(2,1) = rot_axis.z*cos_angle;
-    mat(2,2) = rot_axis.y*rot_axis.y*(1-cos_angle)+cos_angle;
-    mat(2,3) = rot_axis.y*rot_axis.z*(1-cos_angle);    
-
-    mat(3,1) = -rot_axis.y*sin_angle;
-    mat(3,2) = rot_axis.y*rot_axis.z*(1-cos_angle);
-    mat(3,3) = rot_axis.z*rot_axis.z*(1-cos_angle)+cos_angle;    
-
-    //}
-
-    //Inverse
-    if(!A_matrix){
-    mat.pseudo_inverse_override();
-  } 
-
-    return mat;
 
 } /* End of Rotation_Matrix. */
 

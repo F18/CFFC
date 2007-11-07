@@ -493,7 +493,7 @@ public:
 				    const Vector3D &norm_dir);
 
     //! Returns rotated primitive state aligned with norm_dir
-    static Euler3D_Polytropic_pState Rotate(const Vector3D &norm_dir);
+    Euler3D_Polytropic_pState Rotate(const Vector3D &norm_dir);
 
     //! Roe Average given 2 primitive states
     static Euler3D_Polytropic_pState RoeAverage(const Euler3D_Polytropic_pState &Wl,
