@@ -221,6 +221,8 @@ int Read_Restart_Solution(Chem2D_Quad_Block *Soln_ptr,
 	  Soln_ptr[i].Gravity = Input_Parameters.Gravity;
 	  Soln_ptr[i].debug_level = Input_Parameters.debug_level;
 	  Soln_ptr[i].Moving_wall_velocity = Input_Parameters.Moving_wall_velocity;
+	  Soln_ptr[i].residual_variable = Input_Parameters.i_Residual_Variable;
+	  Soln_ptr[i].Number_of_Residual_Norms = Input_Parameters.Number_of_Residual_Norms;
 	  /*********************************************************************/
 	  	  
           // Close restart file.

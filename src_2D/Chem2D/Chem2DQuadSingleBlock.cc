@@ -62,7 +62,7 @@ void Broadcast_Solution_Block(Chem2D_Quad_Block &SolnBlk) {
 
 #ifdef _MPI_VERSION
 
-  int ni, nj, ng, nr, block_allocated, buffer_size;
+  int ni, nj, ng, nr, nn, block_allocated, buffer_size;
     double *buffer;
 
     int NUM_VAR_CHEM2D = SolnBlk.NumVar(); 
@@ -73,6 +73,7 @@ void Broadcast_Solution_Block(Chem2D_Quad_Block &SolnBlk) {
       nj = SolnBlk.NCj;
       ng = SolnBlk.Nghost;
       nr = SolnBlk.residual_variable;
+      nn = SolnBlk.Number_of_Residual_Norms;
       if (SolnBlk.U != NULL) {
 	block_allocated = 1;
       } else {
@@ -84,6 +85,7 @@ void Broadcast_Solution_Block(Chem2D_Quad_Block &SolnBlk) {
     MPI::COMM_WORLD.Bcast(&nj, 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&ng, 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&nr, 1, MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&nn, 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&block_allocated, 1, MPI::INT, 0);
 
     /* On non-primary MPI processors, allocate (re-allocate) 
@@ -96,6 +98,7 @@ void Broadcast_Solution_Block(Chem2D_Quad_Block &SolnBlk) {
       }
       // Set the block static variables if they were not previously assigned.
       if (SolnBlk.residual_variable != nr) SolnBlk.residual_variable = nr;
+      if (SolnBlk.Number_of_Residual_Norms != nn) SolnBlk.Number_of_Residual_Norms = nn;
     } 
 
     /* Broadcast the axisymmetric/planar flow, viscous, turbulent, and gravity indicators. */
@@ -250,7 +253,7 @@ void Broadcast_Solution_Block(Chem2D_Quad_Block &SolnBlk,
                              const int Source_CPU) {
 
   int Source_Rank = 0;
-  int ni, nj, ng, nr, block_allocated, buffer_size;
+  int ni, nj, ng, nr, nn, block_allocated, buffer_size;
   double *buffer;
 
   int NUM_VAR_CHEM2D = SolnBlk.NumVar();
@@ -262,6 +265,7 @@ void Broadcast_Solution_Block(Chem2D_Quad_Block &SolnBlk,
     nj = SolnBlk.NCj;
     ng = SolnBlk.Nghost; 
     nr = SolnBlk.residual_variable;
+    nn = SolnBlk.Number_of_Residual_Norms;
     if (SolnBlk.U != NULL) {
       block_allocated = 1;
     } else {
@@ -272,7 +276,8 @@ void Broadcast_Solution_Block(Chem2D_Quad_Block &SolnBlk,
   Communicator.Bcast(&ni, 1, MPI::INT, Source_Rank);
   Communicator.Bcast(&nj, 1, MPI::INT, Source_Rank); 
   Communicator.Bcast(&ng, 1, MPI::INT, Source_Rank);
-  Communicator.Bcast(&nr,1,MPI::INT,Source_Rank);
+  Communicator.Bcast(&nr, 1, MPI::INT, Source_Rank);
+  Communicator.Bcast(&nn, 1, MPI::INT, Source_Rank);
   Communicator.Bcast(&block_allocated, 1, MPI::INT, Source_Rank);
 
   /* On non-source MPI processors, allocate (re-allocate) 
@@ -285,6 +290,7 @@ void Broadcast_Solution_Block(Chem2D_Quad_Block &SolnBlk,
     } /* endif */
     //Set the block static variables if they were not previously assigned.
     if (SolnBlk.residual_variable != nr) SolnBlk.residual_variable = nr;
+    if (SolnBlk.Number_of_Residual_Norms != nn) SolnBlk.Number_of_Residual_Norms = nn;
   } /* endif */
 
     /* Broadcast the axisymmetric/planar flow indicator. */
