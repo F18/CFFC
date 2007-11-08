@@ -50,7 +50,10 @@ class CENO_Tolerances: public EpsilonTol{
   static void Broadcast(void);
 
  protected:
-  CENO_Tolerances(){};
+  CENO_Tolerances();      //!< Private default constructor
+  CENO_Tolerances(const CENO_Tolerances&); //!< Private copy constructor
+  CENO_Tolerances& operator=(const CENO_Tolerances&); //!< Private assignment operator
+
 
   // Update tolerances that depend on the values of other tolerances
   static void UpdateDependentTolerances(void);

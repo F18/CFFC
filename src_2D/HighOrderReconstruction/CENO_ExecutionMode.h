@@ -91,8 +91,10 @@ public:
 
   static void Broadcast(void);
 
-private:
-  CENO_Execution_Mode(void){};
+protected:
+  CENO_Execution_Mode(void);   //!< Private default constructor
+  CENO_Execution_Mode(const CENO_Execution_Mode&); //!< Private copy constructor
+  CENO_Execution_Mode& operator=(const CENO_Execution_Mode&); //!< Private assignment operator
 
 };
 

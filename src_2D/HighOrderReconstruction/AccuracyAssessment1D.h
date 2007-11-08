@@ -73,8 +73,10 @@ public:
   static void ResetForNewCalculation(void){ AccuracyAssessed_Flag = false; }
 
 private:
-  // Private constructor
-  AccuracyAssessment1D(void){};
+  AccuracyAssessment1D(void);     //!< Private default constructor
+  AccuracyAssessment1D(const AccuracyAssessment1D&); //!< Private copy constructor
+  AccuracyAssessment1D& operator=(const AccuracyAssessment1D&); //!< Private assignment operator
+
 
   static vector<double> LNorms;	      //!< vector of error norms
   static bool AccuracyAssessed_Flag;  //!< internal flag used to avoid re-assessment of an already determined error
