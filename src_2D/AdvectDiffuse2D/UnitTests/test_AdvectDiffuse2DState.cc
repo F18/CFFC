@@ -585,6 +585,144 @@ namespace tut
     Check_Input_Output_Operator(A);
   }
 
+  /* Test 31:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<31>()
+  {
+
+    set_test_name("Advective flux");
+
+    VelocityFields::Set_RotationalFlow_Parameters(10.0, "Inverse_Proportional_Distance", Vector2D(2.5,4.5));
+    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State_New::V);
+
+    AdvectDiffuse2D_State_New A(12.2323);
+    Vector2D Result = Vector2D(-8,6)*12.2323, tol(1.0e-13);
+
+    // === check advective flux
+    ensure_distance("Fa at Point", A.Fa(8.5,12.5), Result, tol);
+    ensure_distance("Second Fa call", Fa(A,8.5,12.5), Result, tol);
+  }
+
+  /* Test 32:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<32>()
+  {
+
+    set_test_name("Diffusive flux");
+
+    // Set velocity field
+    VelocityFields::Set_RotationalFlow_Parameters(10.0, "Inverse_Proportional_Distance", Vector2D(2.5,4.5));
+    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State_New::V);
+
+    // Set diffusion field
+    DiffusionFields::Set_ConstantDiffusionField(10.0);
+    DiffusionFields::Connect_Pointer_To_Diffusion_Field(AdvectDiffuse2D_State_New::k);
+
+    // Set initial data
+    AdvectDiffuse2D_State_New A(12.2323);
+    double dUdx(1.5), dUdy(3.4);
+    Vector2D tol(1.0e-13), GradU(dUdx,dUdy), Result(-10.0*dUdx,-10*dUdy);
+
+    // === check diffusive flux
+    ensure_distance("Fd at Point", A.Fd(dUdx,dUdy,8.5,12.5), Result, tol);
+    ensure_distance("Fd call 2"  , A.Fd(GradU,8.5,12.5), Result, tol);
+    ensure_distance("Fd call 3"  , Fd(A,dUdx,dUdy,8.5,12.5), Result, tol);
+    ensure_distance("Fd call 4"  , Fd(A,GradU,8.5,12.5), Result, tol);
+  }
+
+  /* Test 33:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<33>()
+  {
+
+    set_test_name("Upwind advective flux");
+
+    // Set velocity field
+    VelocityFields::Set_RotationalFlow_Parameters(10.0, "Inverse_Proportional_Distance", Vector2D(2.5,4.5));
+    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State_New::V);
+
+    // Set initial data
+    AdvectDiffuse2D_State_New A(12.0), B(5.0);
+    Vector2D Normal(1,0);
+    
+    // === check advective flux
+    ensure_distance("Fa I", Fa(A,B,8.5,12.5,Normal), -40.0, tol);
+  }
+
+  /* Test 34:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<34>()
+  {
+
+    set_test_name("Upwind advective flux");
+
+    // Set velocity field
+    VelocityFields::Set_RotationalFlow_Parameters(10.0, "Inverse_Proportional_Distance", Vector2D(2.5,4.5));
+    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State_New::V);
+
+    // Set initial data
+    AdvectDiffuse2D_State_New A(12.0), B(5.0);
+    Vector2D Normal(0,1);
+    
+    // === check advective flux
+    ensure_distance("Fa I", Fa(A,B,8.5,12.5,Normal), 72.0, tol);
+  }
+
+  /* Test 35:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<35>()
+  {
+
+    set_test_name("Diffusive flux");
+
+    // Set velocity field
+    VelocityFields::Set_RotationalFlow_Parameters(10.0, "Inverse_Proportional_Distance", Vector2D(2.5,4.5));
+    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State_New::V);
+
+    // Set diffusion field
+    DiffusionFields::Set_ConstantDiffusionField(10.0);
+    DiffusionFields::Connect_Pointer_To_Diffusion_Field(AdvectDiffuse2D_State_New::k);
+
+    // Set initial data
+    AdvectDiffuse2D_State_New Ul(12.2323), Ur(5.34);
+    double dUdx_L(1.5), dUdy_L(3.4), dUdx_R(1.5), dUdy_R(3.4);
+    Vector2D Normal(1,0);
+    double Result(-10*1.5);
+
+    // === check diffusive flux
+    ensure_distance("Fd at Point", Fd(Ul,dUdx_L,dUdy_L,Ur,dUdx_R,dUdy_R,8.5,12.5,Normal), Result, tol);
+  }
+
+  /* Test 36:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<36>()
+  {
+
+    set_test_name("Diffusive flux");
+
+    // Set velocity field
+    VelocityFields::Set_RotationalFlow_Parameters(10.0, "Inverse_Proportional_Distance", Vector2D(2.5,4.5));
+    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State_New::V);
+
+    // Set diffusion field
+    DiffusionFields::Set_ConstantDiffusionField(10.0);
+    DiffusionFields::Connect_Pointer_To_Diffusion_Field(AdvectDiffuse2D_State_New::k);
+
+    // Set initial data
+    AdvectDiffuse2D_State_New Ul(12.2323), Ur(5.34);
+    double dUdx_L(1.5), dUdy_L(6.4), dUdx_R(3.5), dUdy_R(3.4);
+    Vector2D Normal(0,1);
+    double Result(-10*0.5*(6.4+3.4));
+
+    // === check diffusive flux
+    ensure_distance("Fd at Point", Fd(Ul,dUdx_L,dUdy_L,Ur,dUdx_R,dUdy_R,8.5,12.5,Normal), Result, tol);
+  }
 
 }
 

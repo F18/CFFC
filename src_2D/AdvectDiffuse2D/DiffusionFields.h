@@ -57,9 +57,10 @@ public:
   static void Connect_Pointer_To_Diffusion_Field(NonlinearDiffusionFieldTypeRef DiffusionField);
   //@}
 
-private:
-  //! Private default constructor
-  DiffusionFields(void);
+protected:
+  DiffusionFields(void);   //!< Private default constructor
+  DiffusionFields(const DiffusionFields&); //!< Private copy constructor
+  DiffusionFields& operator=(const DiffusionFields&); //!< Private assignment operator
 
   //! @name Parameters used to determine a particular type of diffusion field
   //@{

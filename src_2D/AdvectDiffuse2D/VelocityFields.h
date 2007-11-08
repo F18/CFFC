@@ -73,9 +73,10 @@ public:
   static void Connect_Pointer_To_Flow_Field(VelocityFieldTypeRef VelocityField);
   //@}
 
-private:
-  //! Private default constructor
-  VelocityFields(void);
+protected:
+  VelocityFields(void);   //!< Private default constructor
+  VelocityFields(const VelocityFields&); //!< Private copy constructor
+  VelocityFields& operator=(const VelocityFields&); //!< Private assignment operator
 
   //! @name Parameters used to determine a particular type of velocity field
   //@{
