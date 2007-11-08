@@ -536,7 +536,7 @@ double Chem2D_pState::T(double &h_s) const{
   double RTOT = Rtot();  
 
   // set iteration parameters
-  static const int Nmax = 50;
+  static const int Nmax = 20;
   double err, tol;
 
   // determine limits
@@ -2375,7 +2375,7 @@ double Chem2D_cState::T(void) const{
   double A = (E - HALF*rhov*rhov/rho -rhok)/rho;
 
   // set iteration parameters
-  static const int Nmax = 50;
+  static const int Nmax = 20;
   double err, tol;
 
   // determine limits
