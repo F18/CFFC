@@ -328,7 +328,7 @@ class Gaussian2D_pState{
     double burningrate(void) const; //needed for compatibility with embeddedboundaries2D
 
     /* Mean Free Path */
-    double mfp(void);
+    double mfp(void) const;
 
     /* Conserved solution state. */
     Gaussian2D_cState U(void);
@@ -1105,7 +1105,7 @@ inline double Gaussian2D_pState::sound(void) const {
  * Gaussian2D_pState::R -- Specific Gas Constant.       *
  ********************************************************/
 inline double Gaussian2D_pState::R(void) const {
-  return R_UNIVERSAL/M;
+  return R_UNIVERSAL/M*THOUSAND;
 }
 
 /********************************************************
@@ -1272,7 +1272,7 @@ inline double Gaussian2D_pState::bulk_viscosity(void) const{
 /********************************************************
  * Gaussian2D_pState -- Mean Free Path (hard spheres)   *
  ********************************************************/
-inline double Gaussian2D_pState::mfp(void){
+inline double Gaussian2D_pState::mfp(void) const {
   if(pressure() < TOLER || d < TOLER) {
     return MILLION;
   } else {
@@ -2904,7 +2904,7 @@ inline double Gaussian2D_pState::tr() const {
  * with gamma.                                               *
  *************************************************************/
 inline double Gaussian2D_pState::gt() const {
-  return (2.0-alpha_t)/alpha_t * sqrt(2*PI*R()*T()) * K()/((Gamma()+1.0)*Cv()*pressure());
+  return (10.0*PI)/16.0 * (2.0-alpha_t)/alpha_t * Gamma()/(Gamma()+1.0) * mfp()/pr;
 }
 
 /*************************************************************
