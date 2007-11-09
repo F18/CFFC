@@ -8596,11 +8596,6 @@ Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
 //   Fix_Refined_Block_Boundaries(Local_SolnBlk,
 //     			       *Local_Solution_Block_List);
 
-  // Unadjust the mesh.
-  Mesh_Unadjustment();   //ADDED BY JAMES FOR GHOST CELL TROUBLES WHEN MESH REFINEMENT 
-                         //IS DONE ON BOUNDARIES
-                         //I also changed the lines commented with &*&*&*&*&*&*
-
   cout << "Sam says: done Mesh_Unadjustment routine." << endl;
 
   // Re-allocate memory for all message passing buffers used to send
@@ -8623,8 +8618,8 @@ Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
   if (Interface_Component_List.Ni && Perform_Mesh_Adjustment) {
 
     for (int nb = 0; nb < Local_Solution_Block_List->Nblk; nb++) {
-      if (Local_Solution_Block_List->Block[nb].used == ADAPTIVEBLOCK2D_USED){// &&         //&*&*&*&*&*&*&*&*&*&*&*&*&*&*
-	//Local_Solution_Block_List->RefineFlag[nb] == ADAPTIVEBLOCK2D_NOCHANGE) {         //&*&*&*&*&*&*&*&*&*&*&*&*&*&*
+      if (Local_Solution_Block_List->Block[nb].used == ADAPTIVEBLOCK2D_USED &&
+	  Local_Solution_Block_List->RefineFlag[nb] == ADAPTIVEBLOCK2D_NOCHANGE) {
 	error_flag = Pre_Mesh_Adjustment_Painting(nb);
 	if (!error_flag) Adjustment_Data[nb].Initialize();
 	if (!error_flag) error_flag = Mesh_Adjustment_Sharp_Corners(nb);
