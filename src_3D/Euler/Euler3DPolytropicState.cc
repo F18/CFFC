@@ -1839,48 +1839,11 @@ Vector2D Euler3D_Polytropic_pState::HLLE_wavespeeds(const Euler3D_Polytropic_pSt
 						    const Vector3D &norm_dir){
 
     Vector2D wavespeed;
-    Euler3D_Polytropic_pState  Wa_n, lambdas_l, lambdas_r, lambdas_a;  
-    double Wl_ur_norm, Wl_ur_tang;
-    double Wr_ur_norm, Wr_ur_tang ;
-    Vector3D Wl_ur_tang_vector, Wr_ur_tang_vector;
-    Vector3D Wl_ur_tang_unit_vector, Wr_ur_tang_unit_vector;
-    Euler3D_Polytropic_pState Wl_rotated, Wr_rotated;
+    Euler3D_Polytropic_pState  Wa_n, lambdas_l, lambdas_r, lambdas_a;  //Lots of TEMPS
+    Euler3D_Polytropic_pState Wl_rotated(Wl.Rotate(norm_dir));
+    Euler3D_Polytropic_pState Wr_rotated(Wr.Rotate(norm_dir));
 
-    /* Use rotated values to calculate eignvalues */
-    Wl_rotated.Copy(Wl);
-    Wr_rotated.Copy(Wr);
-
-    // Left state velocity in rotated frame
-    Wl_ur_norm = dot(Wl.v, norm_dir);
-    Wl_ur_tang = abs(Wl.v - Wl_ur_norm*norm_dir);
-    Wl_ur_tang_vector = (Wl.v - Wl_ur_norm*norm_dir);
-    if(Wl_ur_tang != ZERO){
-        Wl_ur_tang_unit_vector =  Wl_ur_tang_vector/Wl_ur_tang;
-    }else{
-        Wl_ur_tang_unit_vector= Vector3D_ZERO;
-    }
-    Wl_rotated.rho = Wl.rho;
-    Wl_rotated.v.x = Wl_ur_norm ;
-    Wl_rotated.v.y = Wl_ur_tang;
-    Wl_rotated.v.z = ZERO;
-    Wl_rotated.p = Wl.p;
-
-    // Right state velocity in rotated frame
-    Wr_ur_norm = dot(Wr.v, norm_dir);
-    Wr_ur_tang_vector = Wr.v - Wr_ur_norm*norm_dir;
-    Wr_ur_tang = abs(Wr.v - Wr_ur_norm*norm_dir);
-    if( Wr_ur_tang != ZERO){
-        Wr_ur_tang_unit_vector =  Wr_ur_tang_vector/Wr_ur_tang ;
-    }else{
-        Wr_ur_tang_unit_vector= Vector3D_ZERO;  
-    }
-    Wr_rotated.rho = Wr.rho;
-    Wr_rotated.v.x = Wr_ur_norm;
-    Wr_rotated.v.y = dot( Wr_ur_tang_vector, Wl_ur_tang_unit_vector);
-    Wr_rotated.v.z = abs( Wr_ur_tang_vector -Wr_rotated.v.y* Wl_ur_tang_unit_vector);
-    Wr_rotated.p = Wr.p;
-
-    /* Evaluate the Roe-average primitive solution state. */ 
+    /* Evaluate the Roe-average primitive solution state. */                           //ISSUES
     Wa_n = Wa_n.RoeAverage(Wl_rotated, Wr_rotated);
     
     /* Evaluate the left, right, and average state eigenvalues. */
@@ -1898,7 +1861,6 @@ Vector2D Euler3D_Polytropic_pState::HLLE_wavespeeds(const Euler3D_Polytropic_pSt
     wavespeed.y = max(wavespeed.y, ZERO); //lambda plus 
 
     return (wavespeed);
-
 }
 
 /*!
@@ -1908,12 +1870,12 @@ Vector2D Euler3D_Polytropic_pState::HLLE_wavespeeds(const Euler3D_Polytropic_pSt
 * with norm_dir.
 *                                                      
 */ 
-Euler3D_Polytropic_pState Euler3D_Polytropic_pState::Rotate(const Vector3D &norm_dir) {
+Euler3D_Polytropic_pState Euler3D_Polytropic_pState::Rotate(const Vector3D &norm_dir) const {
 
   // for a 3D unit normal rotated to align with the x-axis
   double Ct = norm_dir.x;  //cos_angle
   double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
-  Vector3D rt(0,norm_dir.z,-norm_dir.y); //rotation axis  
+  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
 
   return Euler3D_Polytropic_pState(rho,
 				   v.x*Ct - v.y*rt.z*St + v.z*rt.y*St,
