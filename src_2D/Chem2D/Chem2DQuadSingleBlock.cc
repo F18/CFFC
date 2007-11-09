@@ -1897,16 +1897,16 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
       } else if (Wo[0].React.reactset_flag == CANTERA) {
 
 	// set laminar flame speed
-	Wl.v.x = Input_Parameters.flame_speed;
+ 	Wl.v.x = Input_Parameters.flame_speed;
 
 	// get equilibrium composition
-	// Wo[0].React.ct_equilibrium<Chem2D_pState>( /* unburnt */Wl, /* burnt */Wr );
+	Wo[0].React.ct_equilibrium<Chem2D_pState>( /* unburnt */Wl, /* burnt */Wr );
 
 	// set exit mass fractions
-	for (int k=0; k<Input_Parameters.num_species; k++)
-	  Wr.spec[k].c = Input_Parameters.mass_fractions_out[k];
+ 	//for (int k=0; k<Input_Parameters.num_species; k++)
+	//  Wr.spec[k].c = Input_Parameters.mass_fractions_out[k];
 
-	// compute flame jump conditions
+	// compute flame jump conditions for T and v
 	if ( FlameJumpLowMach_x<Chem2D_pState>( /* unburnt */Wl, 
 						/*  burnt  */Wr ) ) {
 	  cerr << "\nChem2DQuadSingleBlock.cc::ICs() - "
@@ -1914,8 +1914,16 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 	  exit(-1);
 	} // endif - flame
 
+	// fix constant pressure
+	double T( Wr.T() );
+	Wr.p = Wl.p;
+	Wr.rho = Wr.p/(Wr.Rtot()*T);
+
+
       } else {
-	cout<<"\n No 1D_Premixed Flame Initial Conditions for "<<Wo[0].React.Reaction_system; exit(1);
+	cout<<"\n No 1D_Premixed Flame Initial Conditions for "
+	    <<Wo[0].React.Reaction_system; 
+	exit(1);
       }
      
       // Set Initial condtions on 1D grid

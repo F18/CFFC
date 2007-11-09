@@ -68,7 +68,7 @@ Number_of_Blocks_Jdir=
 CFL_Number=
 0.75
 Source_Term_Multiplyer=
-1.E+00
+1.E+03
 Maximum_Number_of_Time_Steps=
 1000
 ##############################
@@ -88,10 +88,8 @@ Mechanism_File=
 ../../../data/CANTERA_RXNS/CH4.xml
 Schmidt_Numbers=
 0.73 0.8 1.0 0.66 1.0
-Mass_Fractions=
-0.0551 0.2202 0.0 0.0 0.7247
-Exit_Mass_Fractions=
-0.0 0.0 0.1511 0.1242 0.7247
+Equivalence_Ratio=
+1.0
 # laminar flame speed [m/s]
 Flame_Speed=
 0.4101
