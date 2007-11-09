@@ -204,6 +204,7 @@ using namespace std;
  *                    cell east face.
  *      lfaceW     -- Return the length of the
  *                    cell west face.
+ *      cell_perimeter  -- Return Perimeter of the cell
  *      nfaceN     -- Return the unit vector in the
  *                    direction normal to the cell
  *                    north face.
@@ -411,6 +412,10 @@ class Grid2D_Quad_Block{
 
     double lfaceW(const Cell2D &Cell) const;
     double lfaceW(const int ii, const int jj) const;
+    //@}
+
+    //@{ @name Get cell perimeter.
+    double cell_perimeter(const int ii, const int jj) const;
     //@}
 
     //@{ @name Get the unit vector normal to the cell faces.
@@ -799,6 +804,13 @@ inline double Grid2D_Quad_Block::lfaceW(const Cell2D &Cell) const {
 
 inline double Grid2D_Quad_Block::lfaceW(const int ii, const int jj) const {
     return (abs(Node[ii][jj].X-Node[ii][jj+1].X));
+}
+
+/*************************************************************************
+ * Grid2D_Quad_Block::cell_perimeter -- Get cell perimeter.              *
+ *************************************************************************/
+inline double Grid2D_Quad_Block::cell_perimeter(const int ii, const int jj) const {
+  return lfaceE(ii,jj)+lfaceN(ii,jj)+lfaceW(ii,jj)+lfaceS(ii,jj);
 }
 
 /*************************************************************************
