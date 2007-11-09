@@ -821,31 +821,13 @@ inline Vector2D Grid2D_Quad_Block::nfaceN(const Cell2D &Cell) const {
 }
 
 inline Vector2D Grid2D_Quad_Block::nfaceN(const int ii, const int jj) const {
-  return (Vector2D( (Node[ii][jj+1].X.y - Node[ii+1][jj+1].X.y),
-		    -(Node[ii][jj+1].X.x - Node[ii+1][jj+1].X.x))/
-	  abs(Node[ii][jj+1].X - Node[ii+1][jj+1].X));
-//    if (lfaceN(ii,jj) > NANO) return (Vector2D( (Node[ii][jj+1].X.y - Node[ii+1][jj+1].X.y),
-//  					      -(Node[ii][jj+1].X.x - Node[ii+1][jj+1].X.x))/
-//  				    abs(Node[ii][jj+1].X - Node[ii+1][jj+1].X));
-//    if (ii > 0 && ii < NCi-1) {
-//      if (lfaceN(ii-1,jj) > ZERO && lfaceN(ii+1,jj) > ZERO) {
-//        return HALF*(nfaceN(ii-1,jj) + nfaceN(ii+1,jj));
-//      } else if (lfaceN(ii-1,jj) > ZERO) {
-//        return nfaceN(ii-1,jj);
-//      } else if (lfaceN(ii+1,jj) > ZERO) {
-//        return nfaceN(ii+1,jj);
-//      } else {
-//        assert(1==2);
-//      }
-//    } else if (ii > 0) {
-//      if (lfaceN(ii-1,jj) > ZERO) return nfaceN(ii-1,jj);
-//      else assert(1==2);
-//    } else if (ii < NCi-1) {
-//      if (lfaceN(ii+1,jj) > ZERO) return nfaceN(ii+1,jj);
-//      else assert(1==2);
-//    } else {
-//      assert(1==2);
-//    }
+  if(lfaceN(ii,jj) > NANO*cell_perimeter(ii,jj)) {
+       return (Vector2D( (Node[ii][jj+1].X.y - Node[ii+1][jj+1].X.y),
+			 -(Node[ii][jj+1].X.x - Node[ii+1][jj+1].X.x))/
+	       abs(Node[ii][jj+1].X - Node[ii+1][jj+1].X));
+     } else {
+       return ihat;
+     }
 }
 
 inline Vector2D Grid2D_Quad_Block::nfaceS(const Cell2D &Cell) const {
@@ -853,31 +835,13 @@ inline Vector2D Grid2D_Quad_Block::nfaceS(const Cell2D &Cell) const {
 }
 
 inline Vector2D Grid2D_Quad_Block::nfaceS(const int ii, const int jj) const {
-  return (Vector2D( (Node[ii+1][jj].X.y - Node[ii][jj].X.y),
-		    -(Node[ii+1][jj].X.x - Node[ii][jj].X.x))/
-	  abs(Node[ii+1][jj].X - Node[ii][jj].X));
-//    if (lfaceS(ii,jj) > NANO) return (Vector2D( (Node[ii+1][jj].X.y - Node[ii][jj].X.y),
-//  					      -(Node[ii+1][jj].X.x - Node[ii][jj].X.x))/
-//  				    abs(Node[ii+1][jj].X - Node[ii][jj].X));
-//    if (ii > 0 && ii < NCi-1) {
-//      if (lfaceS(ii-1,jj) > ZERO && lfaceS(ii+1,jj) > ZERO) {
-//        return HALF*(nfaceS(ii-1,jj) + nfaceS(ii+1,jj));
-//      } else if (lfaceS(ii-1,jj) > ZERO) {
-//        return nfaceS(ii-1,jj);
-//      } else if (lfaceS(ii+1,jj) > ZERO) {
-//        return nfaceS(ii+1,jj);
-//      } else {
-//        assert(1==2);
-//      }
-//    } else if (ii > 0) {
-//      if (lfaceS(ii-1,jj) > ZERO) return nfaceS(ii-1,jj);
-//      else assert(1==2);
-//    } else if (ii < NCi-1) {
-//      if (lfaceS(ii+1,jj) > ZERO) return nfaceS(ii+1,jj);
-//      else assert(1==2);
-//    } else {
-//      assert(1==2);
-//    }
+  if(lfaceS(ii,jj) > NANO*cell_perimeter(ii,jj)) {
+    return (Vector2D( (Node[ii+1][jj].X.y - Node[ii][jj].X.y),
+		      -(Node[ii+1][jj].X.x - Node[ii][jj].X.x))/
+	    abs(Node[ii+1][jj].X - Node[ii][jj].X));
+  } else {
+    return ihat;
+  }
 }
 
 inline Vector2D Grid2D_Quad_Block::nfaceE(const Cell2D &Cell) const {
@@ -885,31 +849,13 @@ inline Vector2D Grid2D_Quad_Block::nfaceE(const Cell2D &Cell) const {
 }
 
 inline Vector2D Grid2D_Quad_Block::nfaceE(const int ii, const int jj) const {
-  return (Vector2D( (Node[ii+1][jj+1].X.y - Node[ii+1][jj].X.y),
-		    -(Node[ii+1][jj+1].X.x - Node[ii+1][jj].X.x))/
-	  abs(Node[ii+1][jj+1].X-Node[ii+1][jj].X));
-//    if (lfaceE(ii,jj) > NANO) return (Vector2D( (Node[ii+1][jj+1].X.y - Node[ii+1][jj].X.y),
-//  					      -(Node[ii+1][jj+1].X.x - Node[ii+1][jj].X.x))/
-//  				    abs(Node[ii+1][jj+1].X-Node[ii+1][jj].X));
-//    if (jj > 0 && jj < NCj-1) {
-//      if (lfaceE(ii,jj-1) > ZERO && lfaceE(ii,jj+1) > ZERO) {
-//        return HALF*(nfaceE(ii,jj-1) + nfaceE(ii,jj+1));
-//      } else if (lfaceE(ii,jj-1) > ZERO) {
-//        return nfaceE(ii,jj-1);
-//      } else if (lfaceE(ii,jj+1) > ZERO) {
-//        return nfaceE(ii,jj+1);
-//      } else {
-//        assert(1==2);
-//      }
-//    } else if (jj > 0) {
-//      if (lfaceE(ii,jj-1) > ZERO) return nfaceE(ii,jj-1);
-//      else assert(1==2);
-//    } else if (jj < NCj-1) {
-//      if (lfaceE(ii,jj+1) > ZERO) return nfaceE(ii,jj+1);
-//      else assert(1==2);
-//    } else {
-//      assert(1==2);
-//    }
+  if(lfaceE(ii,jj) > NANO*cell_perimeter(ii,jj)) {
+    return (Vector2D( (Node[ii+1][jj+1].X.y - Node[ii+1][jj].X.y),
+		      -(Node[ii+1][jj+1].X.x - Node[ii+1][jj].X.x))/
+	    abs(Node[ii+1][jj+1].X-Node[ii+1][jj].X));
+  } else {
+    return ihat;
+  }
 }
 
 inline Vector2D Grid2D_Quad_Block::nfaceW(const Cell2D &Cell) const {
@@ -917,31 +863,13 @@ inline Vector2D Grid2D_Quad_Block::nfaceW(const Cell2D &Cell) const {
 }
 
 inline Vector2D Grid2D_Quad_Block::nfaceW(const int ii, const int jj) const {
-  return (Vector2D( (Node[ii][jj].X.y - Node[ii][jj+1].X.y),
- 		    -(Node[ii][jj].X.x - Node[ii][jj+1].X.x))/
- 	  abs(Node[ii][jj].X - Node[ii][jj+1].X));
-//    if (lfaceW(ii,jj) > NANO) return (Vector2D( (Node[ii][jj].X.y - Node[ii][jj+1].X.y),
-//  					      -(Node[ii][jj].X.x - Node[ii][jj+1].X.x))/
-//  				    abs(Node[ii][jj].X - Node[ii][jj+1].X));
-//    if (jj > 0 && jj < NCj-1) {
-//      if (lfaceW(ii,jj-1) > ZERO && lfaceW(ii,jj+1) > ZERO) {
-//        return HALF*(nfaceW(ii,jj-1) + nfaceW(ii,jj+1));
-//      } else if (lfaceW(ii,jj-1) > ZERO) {
-//        return nfaceW(ii,jj-1);
-//      } else if (lfaceW(ii,jj+1) > ZERO) {
-//        return nfaceW(ii,jj+1);
-//      } else {
-//        assert(1==2);
-//      }
-//    } else if (jj > 0) {
-//      if (lfaceW(ii,jj-1) > ZERO) return nfaceW(ii,jj-1);
-//      else assert(1==2);
-//    } else if (jj < NCj-1) {
-//      if (lfaceW(ii,jj+1) > ZERO) return nfaceW(ii,jj+1);
-//      else assert(1==2);
-//    } else {
-//      assert(1==2);
-//    }
+  if(lfaceW(ii,jj) > NANO*cell_perimeter(ii,jj)) {
+    return (Vector2D( (Node[ii][jj].X.y - Node[ii][jj+1].X.y),
+		      -(Node[ii][jj].X.x - Node[ii][jj+1].X.x))/
+	    abs(Node[ii][jj].X - Node[ii][jj+1].X));
+  } else {
+    return ihat;
+  }
 }
 
 /*************************************************************************
