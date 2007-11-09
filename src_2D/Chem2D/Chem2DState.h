@@ -78,8 +78,7 @@ using namespace std;
 //Temperature convergence tolerance in
 //Chem2D_cState::T(void)
 // these should be moved to CFD.h or Math.h
-#define CONV_RTOLERANCE 1e-8   //Rel Tolerance used for temperature convergence
-#define CONV_ATOLERANCE 1e-15  //Abs Tolerance used for temperature convergence
+#define CONV_TOLERANCE  1e-8   //Tolerance used for temperature convergence
 #define SPEC_TOLERANCE  1e-8   //Used in negative_speccheck for species round off (was MICRO)      
 
 //number of fixed variables in the Chem2D class

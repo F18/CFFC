@@ -537,7 +537,6 @@ double Chem2D_pState::T(double &h_s) const{
 
   // set iteration parameters
   static const int Nmax = 20;
-  double err, tol;
 
   // determine limits
   double Tmin = low_temp_range;
@@ -596,14 +595,12 @@ double Chem2D_pState::T(double &h_s) const{
       Tn -= dTn;
     }
 
-    // Convergence test
-    err = fabs(dTn);
-    tol = CONV_ATOLERANCE + fabs(Tn)*CONV_RTOLERANCE;
-    if ( err<tol ) break;
-
     // evaluate new guess
     fn = hs(Tn) - h_s;  
     dfn = hprime(Tn); 
+
+    // Convergence test
+    if ( fabs(dTn)<CONV_TOLERANCE || fabs(fn)<CONV_TOLERANCE ) break;
 
     // change bisection bracket
     if ( fn < ZERO)  Tmin=Tn;
@@ -615,7 +612,6 @@ double Chem2D_pState::T(double &h_s) const{
   if (i>Nmax){
     cout<<"\nTemperature didn't converge in Chem2D_pState::T(double &h_s)";
     cout<<" with polytopic Tguess "<<Tguess<<" using "<<Tn;
-    cout<<", err="<<err<<", its="<<i;
   }
 
   //return value
@@ -2376,7 +2372,6 @@ double Chem2D_cState::T(void) const{
 
   // set iteration parameters
   static const int Nmax = 20;
-  double err, tol;
 
   // determine limits
   double Tmin = low_temp_range;
@@ -2434,14 +2429,12 @@ double Chem2D_cState::T(void) const{
       Tn -= dTn;
     }
 
-    // Convergence test
-    err = fabs(dTn);
-    tol = CONV_ATOLERANCE + fabs(Tn)*CONV_RTOLERANCE;
-    if ( err<tol ) break;
-
     // evaluate new guess
     fn = h(Tn) - Tn*RTOT - A;
     dfn = hprime(Tn) - RTOT;
+
+    // Convergence test
+    if ( fabs(dTn)<CONV_TOLERANCE || fabs(fn)<CONV_TOLERANCE ) break;
 
     // change bisection bracket
     if ( fn < ZERO)  Tmin=Tn;
@@ -2452,7 +2445,6 @@ double Chem2D_cState::T(void) const{
   if (i>Nmax){
     cout<<"\nTemperature didn't converge in Chem2D_cState::T(void)";
     cout<<" with polytopic Tguess "<<Tguess<<" using "<<Tn;
-    cout<<", err="<<err<<", its="<<i;
   }
 
   // return value
