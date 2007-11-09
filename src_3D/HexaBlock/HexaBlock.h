@@ -124,6 +124,7 @@ class Hexa_Block{
    /* Allocate memory for structured hexahedrial solution block. */
    void allocate(void);
    void allocate(const int Ni, const int Nj, const int Nk, const int Ng);
+   void allocate(const int Ni, const int Nj, const int Nk, const int Ng, const int FLOWTYPE);
  
    /* Deallocate memory for structured hexahedral solution block. */
    void deallocate(void);
@@ -156,6 +157,8 @@ class Hexa_Block{
    /* Other important member functions. */
 
    void Create_Block(Grid3D_Hexa_Block &Grid2);
+   
+   void Create_Block(Grid3D_Hexa_Block &Grid2, const int flow_type);
 
    void Copy(Hexa_Block &Block2);
 
@@ -370,7 +373,7 @@ istream &operator >> (istream &in_file,
 
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate(void){
-     
+   
    W = new SOLN_pSTATE**[NCi]; 
    U = new SOLN_cSTATE**[NCi];
    Uo = new SOLN_cSTATE**[NCi];
@@ -445,6 +448,8 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate(void){
    // Only allocate for turbulent flows
    if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
        Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+   
+      
       WallData = new Turbulent3DWallData**[NCi]; 
       for (int i = 0; i <= NCi-1 ; ++i) {
          WallData[i] = new Turbulent3DWallData*[NCj]; 
@@ -471,6 +476,23 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate(const int Ni,
     Grid.allocate(Ni, Nj, Nk, Ng);
     allocate();
 
+}
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+   void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate(const int Ni, 
+                                                       const int Nj, 
+                                                       const int Nk, 
+                                                       const int Ng,
+                                                       const int FLOWTYPE) {
+   
+   assert(Ni > 1 && Nj > 1  && Nk > 1 && Ng > 1 && !Allocated); 
+   NCi=Ni+2*Ng; ICl=Ng; ICu=Ni+Ng-1; 
+   NCj=Nj+2*Ng; JCl=Ng; JCu=Nj+Ng-1;
+   NCk=Nk+2*Ng; KCl=Ng; KCu=Nk+Ng-1; Nghost=Ng;
+   Flow_Type = FLOWTYPE; Freeze_Limiter = OFF;
+   Allocated = HEXA_BLOCK_USED;
+   Grid.allocate(Ni, Nj, Nk, Ng);
+   allocate();
+   
 }
 
 /**************************************************************************
@@ -609,6 +631,36 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Create_Block(Grid3D_Hexa_Block &Grid2
 }
 
 /********************************************************
+ * Routine: Create_Block                                *
+ *                                                      *
+ * Create a new hexahedral solution block.              *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+   void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Create_Block(Grid3D_Hexa_Block &Grid2,
+                                                           const int flow_type) {
+   
+   if (Grid2.Allocated) {
+      if (NCi != Grid2.NCi ||
+          NCj != Grid2.NCj ||
+          NCk != Grid2.NCk ||
+          Nghost != Grid2.Nghost) {
+	 if (Allocated) {
+            deallocate();
+         } /*endif */
+         
+         allocate(Grid2.NCi-2*Grid2.Nghost, 
+                  Grid2.NCj-2*Grid2.Nghost, 
+                  Grid2.NCk-2*Grid2.Nghost, 
+                  Grid2.Nghost, flow_type);
+      } /* endif */
+      
+      Grid.Copy(Grid2);
+   } /* endif */
+   
+}
+
+/********************************************************
  * Routine: Copy                                        *
  *                                                      *
  * Make a copy of solution block contents contained in  *
@@ -631,7 +683,8 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Copy(Hexa_Block<SOLN_pSTATE, SOLN_cST
          allocate(Block2.NCi-2*Block2.Nghost, 
                   Block2.NCj-2*Block2.Nghost, 
                   Block2.NCk-2*Block2.Nghost, 
-                  Block2.Nghost);
+                  Block2.Nghost,
+                  flow_type);
       } /* endif */
 
       // Copy the grid.

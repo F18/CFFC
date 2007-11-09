@@ -296,23 +296,8 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          }
          if(Initial_Mesh.Connectivity[nb].neighW>=0){
             Octree.Roots[nb].block.infoW[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighW].cpu;
-
-         /*    for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
-/*                if (  CFFC_MPI::This_Processor_Number == iProc ) { */
-/*                   cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl; */
-/*                   cout<<"\n intial mesh's block "<<nb<<"'s west neigbor = "<<Initial_Mesh.Connectivity[nb].neighW<<endl; */
-                  
-/*                   cout<<"\n  Octree.Roots["<<nb<<"].block.infoW[0].cpu "<< Octree.Roots[nb].block.infoW[0].cpu; */
-              
-                  
-/*                   System::sleep(0.1); */
-/*                } */
-/*                MPI::COMM_WORLD.Barrier(); */
-/*             } */
             
          }
-                  
-         
          if(Initial_Mesh.Connectivity[nb].neighNW>=0){
             Octree.Roots[nb].block.infoNW[0].cpu = blknumber_convt[Initial_Mesh.Connectivity[nb].neighNW[0]].cpu;
          }
@@ -424,10 +409,29 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          // initial hexarilateral mesh to the solution block mesh.
          if (Global_Adaptive_Block_List.ThisCPU == n_cpu) {
             Local_Adaptive_Block_List.Block[n_blk] = Octree.Roots[nb].block;
-            Local_Solution_Blocks.Soln_Blks[n_blk].Create_Block(Initial_Mesh.Grid_Blks[nb]);
-            Local_Solution_Blocks.Soln_Blks[n_blk].Flow_Type = Input.i_Flow_Type;
+            Local_Solution_Blocks.Soln_Blks[n_blk].Create_Block(Initial_Mesh.Grid_Blks[nb], Input.i_Flow_Type);
             Local_Solution_Blocks.Block_Used[n_blk] = HEXA_BLOCK_USED;
+
+// spcifying initial conditions so that testing the bluff body burner message passing...       xinfeng Nov. 8;    
+ /*            for (int k =  Local_Solution_Blocks.Soln_Blks[n_blk].KCl- 2 ; k <=  Local_Solution_Blocks.Soln_Blks[n_blk].KCu+ 2 ; ++k) { */
+/*                for (int j  =  Local_Solution_Blocks.Soln_Blks[n_blk].JCl- 2 ; j <=  Local_Solution_Blocks.Soln_Blks[n_blk].JCu+ 2 ; ++j) { */
+/*                   for (int i =  Local_Solution_Blocks.Soln_Blks[n_blk].ICl- 2 ; i <=  Local_Solution_Blocks.Soln_Blks[n_blk].ICu+ 2 ; ++i) { */
+                     
+/*                      Local_Solution_Blocks.Soln_Blks[n_blk].W[i][j][k] = Input.Wo; */
+/*                      Local_Solution_Blocks.Soln_Blks[n_blk].W[i][j][k].rho = (nb+1)*100 + i ; */
+/*                      Local_Solution_Blocks.Soln_Blks[n_blk].U[i][j][k] = Local_Solution_Blocks.Soln_Blks[n_blk].W[i][j][k].U( ); */
+                     
+/*                   } */
+/*                } */
+               
+/*             } */
+ 
+
+
          } /* endif */
+
+
+         
       } else{
          Octree.Roots[nb].block.used = 0;
          nused++;
@@ -437,6 +441,35 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
 
    /* dimen, sector and level assignment. */
    for ( int nb = 0 ; nb <Initial_Mesh.NBlk ; ++nb ){
+
+
+      /*    for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+/*             if (  CFFC_MPI::This_Processor_Number == iProc ) { */
+/*                if(nb==0){ */
+/*                   cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl; */
+/*                   cout<<"\n T blk_num = "<< Octree.Roots[nb].block.infoT[0].blknum <<" B blk_num = "<< Octree.Roots[nb].block.infoB[0].blknum */
+/*                       <<" N blk_num = "<< Octree.Roots[nb].block.infoN[0].blknum<<" S blk_num = "<< Octree.Roots[nb].block.infoS[0].blknum */
+/*                       <<" E blk_num = "<< Octree.Roots[nb].block.infoE[0].blknum<<" W blk_num = "<< Octree.Roots[nb].block.infoW[0].blknum */
+/*                       <<" NE blk_num = "<< Octree.Roots[nb].block.infoNE[0].blknum<<" NW blk_num = "<< Octree.Roots[nb].block.infoNW[0].blknum */
+/*                       <<"\n SE blk_num = "<< Octree.Roots[nb].block.infoSE[0].blknum<<" SW blk_num = "<< Octree.Roots[nb].block.infoSW[0].blknum */
+/*                       <<" TN blk_num = "<< Octree.Roots[nb].block.infoTN[0].blknum<<" TS blk_num = "<< Octree.Roots[nb].block.infoTS[0].blknum */
+/*                       <<" TE blk_num = "<< Octree.Roots[nb].block.infoTE[0].blknum<<" TW blk_num = "<< Octree.Roots[nb].block.infoTW[0].blknum */
+/*                       <<" \n BN blk_num = "<< Octree.Roots[nb].block.infoBN[0].blknum<<" BS blk_num = "<< Octree.Roots[nb].block.infoBS[0].blknum */
+/*                       <<" BW blk_num = "<< Octree.Roots[nb].block.infoBW[0].blknum<<" BE blk_num = "<< Octree.Roots[nb].block.infoBE[0].blknum */
+/*                       <<" TNW blk_num = "<< Octree.Roots[nb].block.infoTNW[0].blknum<<" TNE blk_num = "<< Octree.Roots[nb].block.infoTNE[0].blknum */
+/*                       <<"\n TSW blk_num = "<< Octree.Roots[nb].block.infoTSW[0].blknum<<" TSE blk_num = "<< Octree.Roots[nb].block.infoTSE[0].blknum */
+/*                       <<" BNW blk_num = "<< Octree.Roots[nb].block.infoBNW[0].blknum<<" BNE blk_num = "<< Octree.Roots[nb].block.infoBNE[0].blknum */
+/*                       <<" BSW blk_num = "<< Octree.Roots[nb].block.infoBSW[0].blknum<<" BSE blk_num = "<< Octree.Roots[nb].block.infoBSE[0].blknum; */
+                                 
+               
+/*                } */
+               
+               
+/*                System::sleep(0.1); */
+/*             } */
+/*             MPI::COMM_WORLD.Barrier(); */
+/*          } */
+
       if(Octree.Roots[nb].block.infoT[0].blknum>=0){
          Octree.Roots[nb].block.infoT[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoT[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoT[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoT[0].blknum].block.info.sector;

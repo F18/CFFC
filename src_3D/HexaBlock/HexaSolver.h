@@ -58,7 +58,7 @@ int HexaSolver(char *Input_File_Name_ptr,
    double Time, dTime;
    double residual_l2norm_first, residual_ratio;
    double residual_l1_norm, residual_l2_norm, residual_max_norm;
- 
+    
    /********************************************************  
     * Set default values for the input solution parameters *
     * and then read user specified input values from the   *
@@ -177,7 +177,8 @@ int HexaSolver(char *Input_File_Name_ptr,
                                                             Octree,
                                                             Global_Adaptive_Block_List,
                                                             Local_Adaptive_Block_List);
-   
+
+ 
    /********************************************************  
     * Initialize solution variables.                       *
     ********************************************************/
@@ -246,9 +247,12 @@ int HexaSolver(char *Input_File_Name_ptr,
       Input.Maximum_Number_of_Time_Steps = CFFC_Maximum_MPI(Input.Maximum_Number_of_Time_Steps);
       
    } else {
+
       error_flag = Wall_Distance(Local_Solution_Blocks.Soln_Blks,
                                  Octree, 
                                  Local_Adaptive_Block_List);
+
+
       if (error_flag) {
          cout << "\n  ERROR: Difficulty determining the wall distance "
               << "on processor "<< CFFC_MPI::This_Processor_Number
@@ -263,7 +267,9 @@ int HexaSolver(char *Input_File_Name_ptr,
 
    /* Send solution information between neighbouring blocks to complete
      prescription of initial data. */
-
+ 
+ 
+   
    Send_All_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Local_Solution_Blocks.Soln_Blks,
                                                             Local_Adaptive_Block_List,
                                                             Local_Solution_Blocks.Soln_Blks[0].NumVar(),
@@ -271,7 +277,12 @@ int HexaSolver(char *Input_File_Name_ptr,
    /* Prescribe boundary data consistent with initial data. */
 
  
+  
+
+
    Local_Solution_Blocks.BCs(Input);
+
+ 
 
    /********************************************************  
     * Solve IBVP or BVP for conservation form of PDEs      *

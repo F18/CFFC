@@ -1210,7 +1210,7 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
 
    case  IC_TURBULENT_COFLOW:
   
-      max_mean_velocity = BluffBody_Coflow_Air_Velocity;
+    //   max_mean_velocity = BluffBody_Coflow_Air_Velocity;
       
       for (  k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) 
          for (  j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) 
@@ -1223,11 +1223,12 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
                
        
                W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300.0);
-               tempvalue = W[i][j][k].v.z*(HALF*(IPs.Grid_IP.Radius_Coflow_Inlet_Pipe-IPs.Grid_IP.Radius_Bluff_Body))/
-                  (W[i][j][k].mu()/W[i][j][k].rho);
-               WallData[i][j][k].tauw = 0.0228*W[i][j][k].rho*max_mean_velocity*max_mean_velocity/pow(tempvalue, 0.25);
-               WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
-               W[i][j][k].k = 0.5*WallData[i][j][k].utau*WallData[i][j][k].utau/sqrt(W[0][0][0].k_omega_model.beta_star);
+              //  tempvalue = W[i][j][k].v.z*(HALF*(IPs.Grid_IP.Radius_Coflow_Inlet_Pipe-IPs.Grid_IP.Radius_Bluff_Body))/
+//                   (W[i][j][k].mu()/W[i][j][k].rho);
+
+//                WallData[i][j][k].tauw = 0.0228*W[i][j][k].rho*max_mean_velocity*max_mean_velocity/pow(tempvalue, 0.25);
+//                WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
+               W[i][j][k].k = ONE; //0.5*WallData[i][j][k].utau*WallData[i][j][k].utau/sqrt(W[0][0][0].k_omega_model.beta_star);
                
                WallData[i][j][k].yplus = WallData[i][j][k].ywall*WallData[i][j][k].utau/(W[i][j][k].mu()/W[i][j][k].rho);
                if(WallData[i][j][k].ywall !=ZERO){
@@ -1290,9 +1291,11 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
                      }
                   }
                }
-            
-               
+             
                if(IPs.Species_IP.num_species == 3){ 
+                  
+              
+
                   if(!BluffBody_Data_Usage){
 
                      if(fabs(Grid.Cell[i][j][k].Xc.x)<=IPs.Grid_IP.Radius_Fuel_Line && 
@@ -1306,15 +1309,21 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
                      
                   }// specifying the methane concentration at fuel orifice
                
+               
                   // This is nonreacting multispecies mixing evaluation case
                   // the fuel is indicated in the input file
                   // The experimental data is available. 
                   if(BluffBody_Data_Usage){
+
+                  
+
                      xn = Grid.Cell[i][j][k].Xc.z;
                      yn = fabs(Grid.Cell[i][j][k].Xc.x);
                      Xt.x = xn*1000;
                      Xt.y = yn*1000; // note: times 100 to convert data from m to mm. 
                   
+                  
+
                      if((fabs(Xt.x)<=IPs.Grid_IP.Radius_Bluff_Body*1000)){
                         fc = NRSF.interpolation(Xt).x;
                         W[i][j][k].spec[0] = fc; 
@@ -1331,11 +1340,12 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
                   }
                }
                
-            
+              
+
                W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300.0);
                U[i][j][k] = W[i][j][k].U();
             
-         
+
             }
          
       break;

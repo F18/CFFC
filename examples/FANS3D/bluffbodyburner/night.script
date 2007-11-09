@@ -1,7 +1,7 @@
 #!/bin/tcsh
-#PBS -N fans3d
+#PBS -N bluffbodycoflow
 #PBS -q qmaster
-#PBS -l walltime=4:00:00,nodes=2:ppn=4:parallel-2G,other=night
+#PBS -l walltime=4:00:00,nodes=1:ppn=4:parallel-2G,other=night
 #PBS -W group_list=xinfeng
 
 cd /nfs/fe03/d1/cfd/xinfeng/CFFC/examples/FANS3D/bluffbodyburner/
@@ -10,7 +10,6 @@ cat turbulent_channel_cells_cpu*.dat>turbulent_channel_cells.dat
 cat turbulent_channel_nodes_cpu*.dat>turbulent_channel_nodes.dat
 rm turbulent_channel_cells_cpu*.dat
 rm turbulent_channel_nodes_cpu*.dat
-rm *.soln
-rm fans3d.e*
-rm fans3d.o*
+rm bluffbodycoflow.e*
+rm bluffbodycoflow.o*
 

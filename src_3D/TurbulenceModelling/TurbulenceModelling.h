@@ -327,6 +327,7 @@ int Wall_Distance(HEXA_BLOCK *Solution_Block,
 		  Vector3D &n_wall,
 		  double &y_wall,
 		  int &BC_wall) {
+
    
   int error_flag;
   double y_wall_temp;
@@ -354,6 +355,7 @@ int Wall_Distance(HEXA_BLOCK *Solution_Block,
      } /* endif */
   } /* endfor */
   
+  
   // Wall distance successfully found.
 
   return 0;
@@ -372,8 +374,8 @@ template <class HEXA_BLOCK>
 int Wall_Distance(HEXA_BLOCK *Solution_Block,
                   Octree_DataStructure &Octree,
                   AdaptiveBlock3D_List &LocalSolnBlockList) {
-   
-  if (Solution_Block[0].Flow_Type != FLOWTYPE_TURBULENT_RANS_K_OMEGA) return (0);
+  
+   if (Solution_Block[0].Flow_Type != FLOWTYPE_TURBULENT_RANS_K_OMEGA) return (0);
 
   int error_flag;
   int buffer_size;
@@ -390,11 +392,12 @@ int Wall_Distance(HEXA_BLOCK *Solution_Block,
   wall_buffer_size = 7;
   wall_buffer = new double[wall_buffer_size];
 #endif
-
+  
   // Compute the distance to the nearest wall for the centroid of every cell.
   for (int iCPU = 0; iCPU < Octree.Ncpu; iCPU++) { // Loop over available processors.
     for (int iBLK = 0; iBLK < Octree.Nblk; iBLK++) { // Loop over available blocks.
-      if (Octree.Blocks[iCPU][iBLK] != NULL) {
+       
+       if (Octree.Blocks[iCPU][iBLK] != NULL) {
 	if (Octree.Blocks[iCPU][iBLK]->block.used) {
 
           // Determine dimensions of block of interest.
@@ -403,12 +406,15 @@ int Wall_Distance(HEXA_BLOCK *Solution_Block,
 	  klow = 0;
 
 	  if (LocalSolnBlockList.ThisCPU == iCPU) {
+             
              iup = LocalSolnBlockList.Block[iBLK].info.dimen.i - 1 +
 	           2*LocalSolnBlockList.Block[iBLK].info.dimen.ghost;
              jup = LocalSolnBlockList.Block[iBLK].info.dimen.j - 1 +
 	           2*LocalSolnBlockList.Block[iBLK].info.dimen.ghost;
              kup = LocalSolnBlockList.Block[iBLK].info.dimen.k - 1 +
 	           2*LocalSolnBlockList.Block[iBLK].info.dimen.ghost;
+
+
 	  } else {
              iup = 0;
              jup = 0;
@@ -424,7 +430,7 @@ int Wall_Distance(HEXA_BLOCK *Solution_Block,
           nk = kup - klow + 1;
 	  x_buffer = new double[3*ni*nj*nk];
           
-	  // Get coordinates of cell centers.
+          // Get coordinates of cell centers.
 	  if (LocalSolnBlockList.ThisCPU == iCPU) {
              buffer_size = 0;
              for (int k = klow; k <= kup; k++) {
@@ -439,11 +445,12 @@ int Wall_Distance(HEXA_BLOCK *Solution_Block,
              } /* endfor */
 	  } /* endif */
               
+
 #ifdef _MPI_VERSION
 	  buffer_size = 3*ni*nj*nk;
 	  MPI::COMM_WORLD.Bcast(x_buffer, buffer_size, MPI::DOUBLE, iCPU);
 #endif
-     
+
 	  // Calculate normal distance to the wall.
 	  buffer_size = 0;
           for (int k = klow; k <= kup; k++) {
@@ -462,6 +469,7 @@ int Wall_Distance(HEXA_BLOCK *Solution_Block,
                                               BC_wall);
                    if (error_flag) return error_flag;
 
+                   
 #ifdef _MPI_VERSION
                    // The following routine will reduce the y_wall variable
                    // to be the minimum value of y_wall on the p processors.
@@ -496,11 +504,13 @@ int Wall_Distance(HEXA_BLOCK *Solution_Block,
 #endif
 
                    if (LocalSolnBlockList.ThisCPU == iCPU) {
+                      
                       Solution_Block[iBLK].WallData[i][j][k].ywall = y_wall;
                       Solution_Block[iBLK].WallData[i][j][k].Xwall = X_wall;
                       Solution_Block[iBLK].WallData[i][j][k].nwall = n_wall;
                       Solution_Block[iBLK].WallData[i][j][k].BCwall = BC_wall;
                    } /* endif */
+
                 } /* endfor */
              } /* endfor */
           } /* endfor */
