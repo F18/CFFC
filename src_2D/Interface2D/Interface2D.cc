@@ -245,7 +245,7 @@ void Interface2D::Star(const Vector2D &Origin,
   double theta, dtheta;
 
   // Set the number of spline points.
-  npts = TWO*Num_Ext_Pts + 1;
+  npts = 2*Num_Ext_Pts + 1;
 
   // Set angles.
   theta = 0.0;
