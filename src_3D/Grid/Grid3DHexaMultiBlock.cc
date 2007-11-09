@@ -587,12 +587,13 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid(Grid3D_Input_Parameters &Input) {
       case GRID_PIPE :
         Create_Grid_Pipe(Input);
         break;
-
+ 
       case GRID_BLUFF_BODY_BURNER :
         Create_Grid_Bluff_Body_Burner(Input);
         break;
 
       case GRID_ICEMCFD :
+	cout<<"\n NO ICEM IN 3D... YET ... ";
         //Create_Grid_ICEMCFD(Input);
         break;
 
@@ -1787,6 +1788,10 @@ void Grid3D_Hexa_Multi_Block::Create_Grid(Grid3D_Input_Parameters &Input) {
       case GRID_PIPE :
         Create_Grid_Pipe(Input);
         break;
+         
+      case GRID_BUMP_CHANNEL_FLOW :
+	Create_Grid_Bump_Channel_Flow(Input);
+	break;
 
       case GRID_BLUFF_BODY_BURNER :
         Create_Grid_Bluff_Body_Burner(Input);
@@ -2307,6 +2312,84 @@ void Grid3D_Hexa_Multi_Block::Create_Grid_Pipe(Grid3D_Input_Parameters &Input) {
                                    Grid2D_Pipe_XYplane,
                                    numblk_idir_pipe,
 		                   numblk_jdir_pipe);
+
+}
+
+
+/**********************************************************************
+ * Routine: Grid_Bump_Channel_Flow                                    *
+ *                                                                    *
+ * Generates a single block quadilateral mesh with clustering for     *
+ * predicting supersonic flow around a cirucular cylinder blunt body. *
+ *                                                                    *
+ **********************************************************************/
+void Grid3D_Hexa_Multi_Block::Create_Grid_Bump_Channel_Flow(Grid3D_Input_Parameters &Input) {
+
+  Grid2D_Quad_Block **Grid2D_XYplane;
+   int BC_top, BC_bottom;
+
+  //Fixed at 4x2
+  int Number_of_Blocks_Idir, Number_of_Blocks_Jdir;
+  int Smooth_Bump = 1; //use smooth bump.
+  
+  /* Allocate required memory. */
+
+  Input.NBlk_Idir = 4;
+  Input.NBlk_Jdir = 2;
+  Input.NBlk_Kdir = 1;
+
+  Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
+
+  /* Creat 2D cross-section grids from which the 3D grid
+     will be extruded. */
+  Grid2D_XYplane = Grid_Bump_Channel_Flow( Grid2D_XYplane,
+					   Number_of_Blocks_Idir,
+					   Number_of_Blocks_Jdir,
+					   Smooth_Bump,
+					   Input.NCells_Idir,
+					   Input.NCells_Jdir,
+					   Input.Nghost);
+				
+  /* Create the mesh for each block representing
+     the complete grid. */
+  
+  for (int kBlk = 0; kBlk <= Input.NBlk_Kdir-1; ++kBlk) {
+    for (int jBlk = 0; jBlk <= Input.NBlk_Jdir-1; ++jBlk) {
+      for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
+	
+	/* Extrude each of the grid blocks from the
+	   appropriate 2D grid in XY-plane. */
+	
+	Grid_Blks[iBlk][jBlk][kBlk].Extrude(Grid2D_XYplane[iBlk][jBlk],
+					    Input.NCells_Kdir,
+					    Input.Stretching_Type_Kdir,
+					    Input.Stretching_Factor_Kdir,			       
+					    (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,					    
+					    (double(kBlk+1)/double(Input.NBlk_Kdir))*Input.Box_Length);
+
+	/* Assign top and bottom boundary conditions. */
+	
+	if (kBlk == Input.NBlk_Kdir-1) {
+	  BC_top = BC_CONSTANT_EXTRAPOLATION;
+	} else {
+	  BC_top = BC_NONE;
+	} /* endif */
+	if (kBlk == 0) {
+	  BC_bottom = BC_CONSTANT_EXTRAPOLATION;
+	} else {
+	  BC_bottom = BC_NONE;
+	} /* endif */
+	
+	Grid_Blks[iBlk][jBlk][kBlk].Set_BCs_Zdir(BC_top, BC_bottom);
+	
+      } 
+    } 
+  } 
+  
+  /* Deallocate 2D grid. */
+  Grid2D_XYplane = Deallocate_Multi_Block_Grid(Grid2D_XYplane,
+						    Number_of_Blocks_Idir,
+						    Number_of_Blocks_Jdir);
 
 }
 
