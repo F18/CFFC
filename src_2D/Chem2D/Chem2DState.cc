@@ -533,23 +533,27 @@ double Chem2D_pState::gamma_guess(void) const{
 double Chem2D_pState::T(double &h_s) const{
 
   // declares
-  double RTOT = Rtot();  
+  double RTOT(Rtot());
 
   // set iteration parameters
   static const int Nmax = 20;
 
   // determine limits
-  double Tmin = low_temp_range;
-  double Tmax = high_temp_range;
-  double fmin = hs(Tmin) - h_s;
-  double fmax = hs(Tmax) - h_s;
+#ifdef TLOWERBOUNDS
+  double Tmin(TLOWERBOUNDS);
+#else
+  double Tmin(low_temp_range);
+#endif
+  double Tmax(high_temp_range);
+  //double fmin(hs(Tmin) - h_s);
+  //double fmax(hs(Tmax) - h_s);
 
 
   //------------------------------------------------
   // Initial Guess
   //------------------------------------------------
   //using a polytropic gas assumption with gamma@200;
-  double Tguess = (h_s/Rtot())*(ONE/(ONE/(gamma_guess() - ONE) +ONE));
+  double Tguess( (h_s/Rtot())*(ONE/(ONE/(gamma_guess() - ONE) +ONE)) );
 
   //check for start value
   double Tn;
@@ -561,17 +565,13 @@ double Chem2D_pState::T(double &h_s) const{
     Tn=Tguess;
 
   // compute function values
-  double fn = hs(Tn) - h_s; 
-  double dfn = hprime(Tn);
-  double dTn = fabs(Tmax - Tmin);
-  double dT0 = dTn;
+  double fn( hs(Tn) - h_s );
+  double dfn( hprime(Tn) );
+  double dTn( fabs(Tmax - Tmin) );
+  double dT0( dTn );
 
-  // orient search such that f(Tmin)<0
-  if (fmin >= ZERO) {
-    double tmp(Tmax);
-    Tmax = Tmin;
-    Tmin = tmp;
-  }  
+  // No need to orient search such that f(Tmin)<0,
+  // already oriented.
 
 
   //------------------------------------------------
@@ -2367,23 +2367,27 @@ double Chem2D_cState::gamma_guess(void) const{
 double Chem2D_cState::T(void) const{
 
   // declares
-  double RTOT = Rtot();  
-  double A = (E - HALF*rhov*rhov/rho -rhok)/rho;
+  double RTOT( Rtot() );  
+  double A( (E - HALF*rhov*rhov/rho -rhok)/rho );
 
   // set iteration parameters
   static const int Nmax = 20;
 
   // determine limits
-  double Tmin = low_temp_range;
-  double Tmax = high_temp_range;
-  double fmin = h(Tmin) - Tmin*RTOT - A;
-  double fmax = h(Tmax) - Tmax*RTOT - A;
+#ifdef TLOWERBOUNDS
+  double Tmin(TLOWERBOUNDS);
+#else
+  double Tmin(low_temp_range);
+#endif
+  double Tmax(high_temp_range);
+  //double fmin( h(Tmin) - Tmin*RTOT - A );
+  //double fmax( h(Tmax) - Tmax*RTOT - A );
 
   //------------------------------------------------
   // Initial Guess
   //------------------------------------------------
   //using a polytropic gas assumption with gamma@200;
-  double Tguess = (gamma_guess() - ONE)*(E - HALF*rhov.sqr()/rho-rhok)/(rho*RTOT);
+  double Tguess( (gamma_guess() - ONE)*(E - HALF*rhov.sqr()/rho-rhok)/(rho*RTOT) );
 
   //check for start value
   double Tn;
@@ -2395,17 +2399,13 @@ double Chem2D_cState::T(void) const{
     Tn=Tguess;
 
   // compute function values
-  double fn = h(Tn) - Tn*RTOT - A;
-  double dfn = hprime(Tn) - RTOT;
-  double dTn = fabs(Tmax - Tmin);
-  double dT0 = dTn;
+  double fn( h(Tn) - Tn*RTOT - A );
+  double dfn( hprime(Tn) - RTOT );
+  double dTn( fabs(Tmax - Tmin) );
+  double dT0( dTn );
 
-  // orient search such that f(Tmin)<0
-  if (fmin >= ZERO) {
-    double tmp(Tmax);
-    Tmax = Tmin;
-    Tmin = tmp;
-  }  
+  // No need to orient search such that f(Tmin)<0,
+  // already oriented.
 
   
   //------------------------------------------------

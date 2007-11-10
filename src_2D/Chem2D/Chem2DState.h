@@ -79,7 +79,8 @@ using namespace std;
 //Chem2D_cState::T(void)
 // these should be moved to CFD.h or Math.h
 #define CONV_TOLERANCE  1e-8   //Tolerance used for temperature convergence
-#define SPEC_TOLERANCE  1e-8   //Used in negative_speccheck for species round off (was MICRO)      
+#define SPEC_TOLERANCE  1e-8   //Used in negative_speccheck for species round off (was MICRO)
+//#define TLOWERBOUNDS   200.0   //Uncoment this fix a lower bounds in T calculation
 
 //number of fixed variables in the Chem2D class
 #define NUM_CHEM2D_VAR_SANS_SPECIES 6  //rho, v(2), p, k and omega
