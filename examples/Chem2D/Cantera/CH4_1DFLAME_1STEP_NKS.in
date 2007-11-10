@@ -15,8 +15,8 @@ Freeze_Limiter =
 Freeze_Limiter_Residual_Level = 
 0.1
 # 1 rho, 4 energy (follows index operator for pstate)
-#Residual_Variable =
-#1
+Residual_Variable =
+1
 ############################
 # NKS PARAMETERS
 ############################
@@ -99,6 +99,8 @@ Number_of_Blocks_Jdir=
 ###############################
 CFL_Number=
 0.75
+Source_Term_Multiplyer=
+1.E+00
 Maximum_Number_of_Time_Steps=
 50
 ####### Implicit ###############
@@ -116,23 +118,26 @@ Restart_Solution_Save_Frequency=
 ##################################
 # Chem2D Parameters
 ##################################
+# CH4, O2, CO2, H2O, N2
+Fuel_Species=
+CH4
 Cantera_Reaction_Mechanism=
 CH4_WD1b
 Mechanism_File=
 ../../../data/CANTERA_RXNS/CH4.xml
 Schmidt_Numbers=
 CH4:0.73 O2:0.8 H2O:0.66
-Mass_Fractions=
-CH4:0.0551 O2:0.2202 N2:0.7247
+Equivalence_Ratio=
+1.0
+# laminar flame speed [m/s]
+Flame_Speed=
+0.4101
 #################################
 # Non STD_ATM properties
 # T(K) and P(kPa)
 #################################ls
 Temperature=
 298.0
-# laminar flame speed [m/s]
-flame_speed=
-0.4101
 #################################
 # Execute program
 #################################
