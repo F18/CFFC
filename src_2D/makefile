@@ -179,11 +179,13 @@ SRC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.cc \
 		    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DExactSolutions.cc \
                     $(ADVECTDIFFUSE_DIR)VelocityFields.cc \
                     $(ADVECTDIFFUSE_DIR)DiffusionFields.cc \
+                    $(ADVECTDIFFUSE_DIR)SourceTermFields.cc \
+                    $(ADVECTDIFFUSE_DIR)SourceFields.cc \
 		    $(ADVECTDIFFUSE_DIR)New_AdvectDiffuse2DState.cc
 SRC_ADVECTDIFFUSE_EXE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.cc
 
 # Add AdvectDiffuse 2D Testing If Required:
-SRC_ADVECTDIFFUSE_TESTS = test_AdvectDiffuse2DState.cc
+SRC_ADVECTDIFFUSE_TESTS = test_AdvectDiffuse2DState.cc test_SourceTermFields.cc
 SRC_ADVECTDIFFUSE_TESTS := $(addprefix $(ADVECTDIFFUSE_DIR)UnitTests/, $(SRC_ADVECTDIFFUSE_TESTS))
 ifeq ($(TUT_TESTING),ON) 
   SRC_ADVECTDIFFUSE += $(SRC_ADVECTDIFFUSE_TESTS)

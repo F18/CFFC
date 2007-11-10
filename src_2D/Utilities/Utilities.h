@@ -15,6 +15,7 @@
 #include <fstream>
 #include <iomanip>
 #include <stdexcept>
+#include <iostream>
 
 /* Using std namespace functions */
 using std::cout;
