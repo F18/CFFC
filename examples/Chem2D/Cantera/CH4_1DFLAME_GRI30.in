@@ -98,9 +98,11 @@ Number_of_Blocks_Jdir=
 # Set time stepping parameters
 ###############################
 CFL_Number=
-100.0
+0.75
+Source_Term_Multiplyer=
+1.E+03
 Maximum_Number_of_Time_Steps=
-3000
+1000
 ####### Implicit ###############
 Maximum_Number_of_NKS_Iterations =
 0
@@ -118,23 +120,25 @@ Restart_Solution_Save_Frequency=
 ##################################
 Transport_Data_Type=
 Transport-Lennard-Jones
+Fuel_Species=
+CH4
 Cantera_Reaction_Mechanism=
 gri30_noNOX
 Mechanism_File=
 ../../../data/CANTERA_RXNS/gri30_noNOX.xml
 Schmidt_Numbers=
 CH4:0.73 O2:0.8 H2O:0.66
-Mass_Fractions=
-CH4:0.0551 O2:0.2202 N2:0.7247
+Equivalence_Ratio=
+1.0
+# laminar flame speed [m/s]
+Flame_Speed=
+0.4101
 #################################
 # Non STD_ATM properties
 # T(K) and P(kPa)
 #################################
 Temperature=
 298.0
-# laminar flame speed [m/s]
-flame_speed=
-0.3839
 #################################
 # Execute program
 #################################
