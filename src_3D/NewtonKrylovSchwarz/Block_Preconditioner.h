@@ -593,11 +593,11 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
 		 * AI_W * (beta_W * dFdU_W + gamma_W * II) * A_W);
   
   //Top
-  Jacobian[STENCIL_TOP] = (SolnBlk->Grid.AfaceTop(cell_index_i+1,cell_index_j,cell_index_k+1) 
+  Jacobian[STENCIL_TOP] = (SolnBlk->Grid.AfaceTop(cell_index_i,cell_index_j,cell_index_k+1) 
 			   * AI_Top * (beta_Top * dFdU_Top + gamma_Top * II) * A_Top);
 
   //Bottom
-  Jacobian[STENCIL_BOTTOM] = (SolnBlk->Grid.AfaceBot(cell_index_i+1,cell_index_j,cell_index_k-1) 
+  Jacobian[STENCIL_BOTTOM] = (SolnBlk->Grid.AfaceBot(cell_index_i,cell_index_j,cell_index_k-1) 
 			      * AI_Bot * (beta_Bot * dFdU_Bot + gamma_Bot * II) * A_Bot);
 
 
@@ -612,6 +612,7 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
   Jacobian[STENCIL_WEST] = -Jacobian[STENCIL_WEST]/SolnBlk->Grid.volume(cell_index_i+1,cell_index_j,cell_index_k);
   Jacobian[STENCIL_TOP] = -Jacobian[STENCIL_TOP]/SolnBlk->Grid.volume(cell_index_i,cell_index_j,cell_index_k-1);
   Jacobian[STENCIL_BOTTOM] = -Jacobian[STENCIL_BOTTOM]/SolnBlk->Grid.volume(cell_index_i,cell_index_j,cell_index_k+1);
+
 
 }
 

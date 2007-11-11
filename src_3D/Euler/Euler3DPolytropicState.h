@@ -761,7 +761,9 @@ public:
     //! istream >> U
     friend istream& operator >> (istream &in_file,  Euler3D_Polytropic_cState &U);
     //@}
-    
+
+  Euler3D_Polytropic_cState RotateI(const Vector3D &norm_dir) const;
+
 };
 
 
