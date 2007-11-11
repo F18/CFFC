@@ -26,7 +26,8 @@
  *                                                        *
  **********************************************************/
 int  AdaptiveBlock3D_List::Exchange_Messages_NoResChange(AdaptiveBlock3D_List &Blk_List,
-                                                         const int Number_of_Solution_Variables) {
+                                                         const int Number_of_Solution_Variables,
+                                                         const int Send_Mesh_Geometry_Only) {
    //cout<<"\n/*in Exchange_Messages_NoResChange"; cout.flush();
    int i_cpu, i_blk, neighbour_cpu, neighbour_blk, 
       buffer_size, buffer_size_neighbour, l;
@@ -148,17 +149,43 @@ int  AdaptiveBlock3D_List::Exchange_Messages_NoResChange(AdaptiveBlock3D_List &B
                for (int kk = -1; kk<2; kk++){
                   
                   i_bound_elem = 9*(ii+1) + 3*(jj+1) + (kk+1);
-               
+                  
                   if ((n_bound_elem[i_bound_elem] == 1) 
                       && (i_bound_elem != 13) &&
                       (Blk_List.Block[i_blk].info.level == info_bound_elem[i_bound_elem].level)) {
-                 
+                     
                      neighbour_cpu = info_bound_elem[i_bound_elem].cpu;
                      neighbour_blk = info_bound_elem[i_bound_elem].blknum;
                      
-                     buffer_size = ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*
-                        ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)))*
-                        ((abs(kk)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)))*(Number_of_Solution_Variables);
+                     if (!Send_Mesh_Geometry_Only) {
+                        buffer_size = ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*
+                           ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)))*
+                           ((abs(kk)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)))*(Number_of_Solution_Variables);
+                        
+                        if (Number_of_Solution_Variables >Number_of_Solution_Variables)
+                           buffer_size = buffer_size_neighbour +
+                              ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost)+ ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)+1))*
+                              ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)+1))*
+                              ((abs(kk)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)+1))*(NUM_COMP_VECTOR3D);
+                        
+                     } else {
+                        buffer_size = ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)+1))*
+                           ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j) +1))*
+                           ((abs(kk)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)+1))*(NUM_COMP_VECTOR3D)+
+                           (((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*(((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)))*
+                           (((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)));
+                        
+                     } /* endif */
+  
+//                         for ( int iProc = 0; iProc <  CFFC_MPI::Number_of_Processors; ++iProc ) {
+//                            if (  CFFC_MPI::This_Processor_Number == iProc ) {
+//                               cout<<"\n Exchange Message : CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl;
+//                               cout<<"\n i_block = "<<i_blk<<" i_bound_elem =  "<<i_bound_elem<<"  neighbour_blk=  "<< neighbour_blk
+//                                   <<" buff_size  =  "<<buffer_size<<endl;
+//                               System::sleep(0.1);
+//                            }
+//                            MPI::COMM_WORLD.Barrier();
+//                         }
                      
                      if (neighbour_cpu != i_cpu) {
                         
@@ -246,9 +273,15 @@ int  AdaptiveBlock3D_List::Exchange_Messages_NoResChange(AdaptiveBlock3D_List &B
       
    }  /* endfor */
 
+   /* Explicitly Deallocate send buffers memory */
+   for(int i=0; i < number_send_requests; i++){
+      send_requests[i].Free(); 
+   }
+
    /* Wait for all messages to be received. */
-    
+   
    if (number_receive_requests > 0) {
+      
       MPI::Request::Waitall(number_receive_requests, receive_requests);
    } /* endif */
 
@@ -258,10 +291,9 @@ int  AdaptiveBlock3D_List::Exchange_Messages_NoResChange(AdaptiveBlock3D_List &B
    receive_requests = NULL;
    delete []send_requests;
    send_requests = NULL;
-   
-   
+  
    /* Message passing complete.  Return zero value. */
-
+   
    return(0);
 
 }

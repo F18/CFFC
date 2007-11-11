@@ -221,6 +221,8 @@ void  AdaptiveBlock3D_List::Allocate_Message_Buffers_NoResChange(AdaptiveBlock3D
    int i_bound_elem; // index for boundary element, face edge or vertex
    int n_bound_elem[27];
    int j_neigh;
+   int buffer_size_soln, buffer_size_geometry, buffer_size_bcs;
+   
    
    AdaptiveBlock3D_Info info_bound_elem[27];
 
@@ -356,31 +358,44 @@ void  AdaptiveBlock3D_List::Allocate_Message_Buffers_NoResChange(AdaptiveBlock3D
                    (n_bound_elem[i_bound_elem] == 1) && (i_bound_elem != 13) &&
                    (Blk_List.Block[i_blk].info.level ==  info_bound_elem[i_bound_elem].level)) {
               
-        
-                  buffer_size = ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*
-                     ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)))*
-                     ((abs(kk)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)))*(Number_of_Solution_Variables);
+                     buffer_size_soln = ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*
+                        ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)))*
+                        ((abs(kk)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)))*(Number_of_Solution_Variables) ;
                   
-                  buffer_size_neighbour = buffer_size;
-                  
-                  Blk_List.message_noreschange_sendbuf[i_blk][i_bound_elem] = new double[buffer_size_neighbour];
-                  
-                                 
-                  for (l = 0; l <= buffer_size_neighbour-1; ++l)
-                     Blk_List.message_noreschange_sendbuf[i_blk][i_bound_elem][l] = ZERO;
+                     buffer_size_geometry =   ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost)+ ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)+1))*
+                        ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)+1))*
+                        ((abs(kk)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)+1))*(NUM_COMP_VECTOR3D);
+                       
+                     buffer_size_bcs =  ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)+1))*
+                           ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j) +1))*
+                           ((abs(kk)*Blk_List.Block[i_blk].info.dimen.ghost) + ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)+1))*(NUM_COMP_VECTOR3D)+
+                           (((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*(((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)))*
+                           (((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)));
+                        
+                     
+                     buffer_size = max(max(buffer_size_soln, buffer_size_geometry), buffer_size_bcs);
+                     
 
-                  Blk_List.message_noreschange_recbuf[i_blk][i_bound_elem] = new double[buffer_size];
-                  for (l = 0; l <= buffer_size-1; ++l) 
-                     Blk_List.message_noreschange_recbuf[i_blk][i_bound_elem][l] = ZERO;
-               } else {
-                  Blk_List.message_noreschange_sendbuf[i_blk][i_bound_elem] = 
-                     new double[1];
-                  Blk_List.message_noreschange_sendbuf[i_blk][i_bound_elem][0] = ZERO;
-                  Blk_List.message_noreschange_recbuf[i_blk][i_bound_elem] = 
-                     new double[1];
+                     buffer_size_neighbour = buffer_size;
+                     
+                     Blk_List.message_noreschange_sendbuf[i_blk][i_bound_elem] = new double[buffer_size_neighbour];
+                  
+                     
+                     for (l = 0; l <= buffer_size_neighbour-1; ++l)
+                        Blk_List.message_noreschange_sendbuf[i_blk][i_bound_elem][l] = ZERO;
+                     
+                     Blk_List.message_noreschange_recbuf[i_blk][i_bound_elem] = new double[buffer_size];
+                     for (l = 0; l <= buffer_size-1; ++l) 
+                        Blk_List.message_noreschange_recbuf[i_blk][i_bound_elem][l] = ZERO;
+                  } else {
+                     Blk_List.message_noreschange_sendbuf[i_blk][i_bound_elem] = 
+                        new double[1];
+                     Blk_List.message_noreschange_sendbuf[i_blk][i_bound_elem][0] = ZERO;
+                     Blk_List.message_noreschange_recbuf[i_blk][i_bound_elem] = 
+                        new double[1];
                   Blk_List.message_noreschange_recbuf[i_blk][i_bound_elem][0] = ZERO;
-               } /* endif */
-               
+                  } /* endif */
+                  
             }/* end of for k*/
          }/* end of for j*/
       }/* end of for i*/
@@ -487,7 +502,8 @@ void  AdaptiveBlock3D_List::Deallocate_Message_Buffers_ResChange(AdaptiveBlock3D
  *                                                        *
  **********************************************************/
 int  AdaptiveBlock3D_List::Exchange_Messages(AdaptiveBlock3D_List &Blk_List,
-                      const int Number_of_Solution_Variables) {
+                                             const int Number_of_Solution_Variables,
+                                             const int Send_Mesh_Geometry_Only) {
 
     int error_flag;
 
@@ -495,7 +511,8 @@ int  AdaptiveBlock3D_List::Exchange_Messages(AdaptiveBlock3D_List &Blk_List,
        with no cell resolution change. */
 
     error_flag = Exchange_Messages_NoResChange(Blk_List,
-                                               Number_of_Solution_Variables);
+                                               Number_of_Solution_Variables,
+                                               Send_Mesh_Geometry_Only);
     if (error_flag) return(error_flag);
 
     /* Exchange message buffers at block interfaces, 

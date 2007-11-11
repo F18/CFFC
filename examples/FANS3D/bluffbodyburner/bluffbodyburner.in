@@ -69,6 +69,7 @@ Execute
 # Write output
 #######################
 Write_Output_Cells
+Write_Output_Nodes
 Write_Output
 Write_Restart
 #######################

@@ -54,7 +54,7 @@ int HexaSolver(char *Input_File_Name_ptr,
    int number_of_time_steps, first_step,
        command_flag, error_flag, line_number, 
        i_stage, perform_explicit_time_marching, limiter_freezing_off;
-   
+   int i_error;
    double Time, dTime;
    double residual_l2norm_first, residual_ratio;
    double residual_l1_norm, residual_l2_norm, residual_max_norm;
@@ -269,29 +269,36 @@ int HexaSolver(char *Input_File_Name_ptr,
      prescription of initial data. */
  
  
-   
-   Send_All_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Local_Solution_Blocks.Soln_Blks,
-                                                            Local_Adaptive_Block_List,
-                                                            Local_Solution_Blocks.Soln_Blks[0].NumVar(),
-                                                            OFF);
-   /* Prescribe boundary data consistent with initial data. */
+   i_error = Send_All_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Local_Solution_Blocks.Soln_Blks,
+                                                                Local_Adaptive_Block_List,
+                                                                NUM_COMP_VECTOR3D,
+                                                                ON);
 
- 
   
+   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+   
+   if(!i_error)  Send_All_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Local_Solution_Blocks.Soln_Blks,
+                                                                    Local_Adaptive_Block_List,
+                                                                    Local_Solution_Blocks.Soln_Blks[0].NumVar(),
+                                                                    OFF);
 
 
+/*  Send_All_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Local_Solution_Blocks.Soln_Blks, */
+/*                                                                     Local_Adaptive_Block_List, */
+/*                                                                     Local_Solution_Blocks.Soln_Blks[0].NumVar(), */
+/*                                                                     OFF); */
+   /* Prescribe boundary data consistent with initial data. */
+   
    Local_Solution_Blocks.BCs(Input);
-
- 
-
+   
    /********************************************************  
     * Solve IBVP or BVP for conservation form of PDEs      *
     * on multi-block body-fitted AMR hexadedral mesh.      *
     ********************************************************/
-
-   continue_existing_calculation: ;
+   
+  continue_existing_calculation: ;
    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
- 
+   
    /* Open residual file and reset the CPU time. */
 
    first_step = 1;
