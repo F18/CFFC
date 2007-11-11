@@ -186,6 +186,8 @@ Calculate_Norms(const int &Number_of_Newton_Steps){
   L1norm_current_n   = L1norm_current[Solution_Data->Input.p_Norm_Indicator-1] / L1norm_first; 
   Max_norm_current_n = Max_norm_current[Solution_Data->Input.p_Norm_Indicator-1] / Max_norm_first;
 
+  //ADD CHECK FOR NAN's ie. if (L2_norm_current_n != L2_norm_current_n) exit(1);
+
 }
 
 /*! *****************************************************************************************
@@ -268,7 +270,9 @@ Newton_Update(){
       } 
     } 
   
-  cout<<"\n USING GENERIC NEWTON_UPDATE \n";
+ //    if(Number_of_Newton_Steps ==1 ) {
+//       cout<<"\n WARNING: USING GENERIC NEWTON_UPDATE \n";
+//     }
 
   return 0; 
 }
@@ -314,7 +318,9 @@ Solve(){
 
   /**************************************************************************/  
   // NKS Specific Output 
-  if (CFFC_Primary_MPI_Processor() && !Data->batch_flag){
+  if (CFFC_Primary_MPI_Processor() && !Data->batch_flag){ 
+    cout << "\n\n Beginning NKS computations on " << Date_And_Time() << ".\n\n";
+
     //cout << Solution_Data->Input.NKS_IP;   // Causes linking error ?? so call output directly
     Solution_Data->Input.NKS_IP.Output(cout);
     //Input_Parameters.NKS_IP.Memory_Estimates(blocksize,SolnBlk[0].NCi*SolnBlk[0].NCj,Used_blocks_count);
@@ -346,8 +352,8 @@ Solve(){
       // Determine global time step using a "fixed" time step or using a CFL                                                       
       if(Solution_Data->Input.NKS_IP.Physical_Time_Step > ZERO){
 	DTS_dTime = Solution_Data->Input.NKS_IP.Physical_Time_Step;
-      } else {
-	//DTS_dTime = CFL(SolnBlk, List_of_Local_Solution_Blocks, Solution_Data->Input);  
+      } else { 
+	DTS_dTime = Solution_Data->Local_Solution_Blocks.CFL(Solution_Data->Input); 
 	DTS_dTime = Solution_Data->Input.NKS_IP.Physical_Time_CFL_Number*CFFC_Minimum_MPI(DTS_dTime); 
 	
 	//Last Time sized to get Time_Max
@@ -361,7 +367,7 @@ Solve(){
       // Store Previous Solution & Physical Time Step 
       for (int Bcount = 0; Bcount <  Data->Local_Adaptive_Block_List.Nblk; Bcount++) {
 	if ( Data->Local_Adaptive_Block_List.Block[Bcount].used == ADAPTIVEBLOCK3D_USED) {
-	  //DTS_SolnBlk[Bcount].Store_Previous(SolnBlk[Bcount]);
+	  DTS_SolnBlk[Bcount].Store_Previous(Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount]);
 	  DTS_SolnBlk[Bcount].DTS_dTime = DTS_dTime;
 	}
       } 
@@ -414,6 +420,9 @@ Solve(){
   } else { 
     error_flag = Steady_Solve(Data->Time, DTS_Step);
   }
+ 
+
+  if (!Data->batch_flag) cout << "\n\n NKS computations complete on " << Date_And_Time() << ".\n"; cout.flush();
 
   /**************************************************************************/  
   return CFFC_OR_MPI(error_flag); 
@@ -435,7 +444,7 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
   /* Local Variabls */ 
   double dTime, CFL_current;
   CPUTime total_cpu_time, start_total_cpu_time; //??
-  bool limiter_check= true;
+  bool limiter_check(true);
 
   // SHOULD BE IN GMRES !!!!!! ?????????
   //bool GMRES_Restarted = false, GMRES_Failed = false;
@@ -518,8 +527,10 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
 	(!Solution_Data->Input.NKS_IP.Dual_Time_Stepping ||
 	 (Solution_Data->Input.NKS_IP.Dual_Time_Stepping && Number_of_Newton_Steps == 1)) ) {  //Output only 1st Step when using DTS
 
+      int real_NKS_Step = Solution_Data->Input.NKS_IP.Dual_Time_Stepping ? DTS_Step : (Number_of_Newton_Steps-1);
+
       Output_Progress_to_File(Data->residual_file,
-			      Data->number_of_explicit_time_steps+Number_of_Newton_Steps,  //DTS!!!
+			      Data->number_of_explicit_time_steps+real_NKS_Step,  //DTS!!!
 			      physical_time*THOUSAND,
 			      Data->total_cpu_time, 
 			      L1norm_current[Solution_Data->Input.p_Norm_Indicator-1],      //maybe switch to current_n so all scale from 1 ???
@@ -535,7 +546,7 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
     /**************************************************************************/
     // Freeze Limiters if Residual less than given value or # of orders of reduction.
     if (Solution_Data->Input.Freeze_Limiter && limiter_check){
-      if (Number_of_Newton_Steps > 1 &&  L2norm_current[Solution_Data->Input.p_Norm_Indicator] 
+      if (Number_of_Newton_Steps > 1 &&  L2norm_current[Solution_Data->Input.p_Norm_Indicator-1] 
 	  <= Solution_Data->Input.Freeze_Limiter_Residual_Level)  {    // absolute
 	//if (Number_of_Newton_Steps > 1 &&  L2norm_current_n <= Solution_Data->Input.Freeze_Limiter_Residual_Level)  {  // relative 
 	if (CFFC_Primary_MPI_Processor()) {
@@ -550,6 +561,7 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
     /**************************************************************************/
     /***************** NEWTON STEP ********************************************/
     /**************************************************************************/
+ 
     if (L2norm_current_n > Solution_Data->Input.NKS_IP.Overall_Tolerance){  
      
       /************************** TIME STEP *************************************/ 
@@ -588,7 +600,8 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
       /**************************************************************************/
       // Print out Newtwon Step info at the beginning of the iteration. 
       cout.precision(10);
-      if (CFFC_Primary_MPI_Processor()) {      	
+      if (CFFC_Primary_MPI_Processor() && 
+	  (!Solution_Data->Input.NKS_IP.Dual_Time_Stepping || Number_of_Newton_Steps ==1 )) {
 	cout << "\n Newton Step (Outer It.) = " << Number_of_Newton_Steps << " L2norm = "
 	     << L2norm_current[Solution_Data->Input.p_Norm_Indicator-1] << " L2norm_ratio = " << L2norm_current_n 
 	     << " CFL = " << CFL_current <<" min_deltat = "<<CFL_current*dTime;
@@ -628,13 +641,13 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
 
       //DTS RULES: update Preconditioner only if GMRES iterations increase between Newton Its.
       bool GMRES_Iters_increaseing(true);
-//       if( GMRES_All_Iters[Number_of_Newton_Steps-1] == 1){
-// 	GMRES_Iters_increaseing = false;
-//       } else if (GMRES_All_Iters[Number_of_Newton_Steps-2] > GMRES_All_Iters[Number_of_Newton_Steps-1]) {
+      if( Number_of_Newton_Steps != 1){
+	GMRES_Iters_increaseing = false;
+ //      } else if (GMRES_All_Iters[Number_of_Newton_Steps-2] > GMRES_All_Iters[Number_of_Newton_Steps-1]) {
 // 	GMRES_Iters_increaseing = true;
 //       } else {
 // 	GMRES_Iters_increaseing = false;
-//       }
+      }
 
       /**************************************************************************/
       /************* PRECONDTIONER "BLOCK" JACOBIANS ****************************/      
@@ -682,21 +695,21 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
       /**************************************************************************/
       
 
-//       /**************************************************************************/
-//       /* Exchange solution information between neighbouring blocks. */    
-//       error_flag = Send_All_Messages(SolnBlk,
-// 				     List_of_Local_Solution_Blocks,
-// 				     Num_Var, 
-// 				     OFF);
-//       if (error_flag) {
-//          cout << "\n 2D_NKS ERROR: 2D message passing error on processor "
-// 	      << List_of_Local_Solution_Blocks.ThisCPU
-// 	      << ".\n";
-//          cout.flush();
-//       } /* endif */
-//       error_flag = CFFC_OR_MPI(error_flag);
-//       if (error_flag) return (error_flag);
-//       /**************************************************************************/
+      /**************************************************************************/
+      /* Exchange solution information between neighbouring blocks. */    
+      error_flag = Send_All_Messages( Solution_Data->Local_Solution_Blocks.Soln_Blks,
+				      Data->Local_Adaptive_Block_List,
+				      Solution_Data->Local_Solution_Blocks.Soln_Blks[0].NumVar(), 
+				      OFF);
+      if (error_flag) {
+         cout << "\n 3D_NKS ERROR: 3D message passing error on processor "
+	      << CFFC_MPI::This_Processor_Number
+	      << ".\n";
+         cout.flush();
+      } /* endif */
+      error_flag = CFFC_OR_MPI(error_flag);
+      if (error_flag) return (error_flag);
+      /**************************************************************************/
 
       /**************************************************************************/  
       /* Apply boundary conditions for Newton step. */

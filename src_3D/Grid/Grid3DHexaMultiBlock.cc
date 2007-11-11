@@ -2330,7 +2330,7 @@ void Grid3D_Hexa_Multi_Block::Create_Grid_Bump_Channel_Flow(Grid3D_Input_Paramet
 
   //Fixed at 4x2
   int Number_of_Blocks_Idir, Number_of_Blocks_Jdir;
-  int Smooth_Bump = 1; //use smooth bump.
+  int Smooth_Bump = 0; //don't use smooth bump.
   
   /* Allocate required memory. */
 
@@ -2370,12 +2370,12 @@ void Grid3D_Hexa_Multi_Block::Create_Grid_Bump_Channel_Flow(Grid3D_Input_Paramet
 	/* Assign top and bottom boundary conditions. */
 	
 	if (kBlk == Input.NBlk_Kdir-1) {
-	  BC_top = BC_CONSTANT_EXTRAPOLATION;
+	  BC_top = BC_REFLECTION;//BC_CONSTANT_EXTRAPOLATION;
 	} else {
 	  BC_top = BC_NONE;
 	} /* endif */
 	if (kBlk == 0) {
-	  BC_bottom = BC_CONSTANT_EXTRAPOLATION;
+	  BC_bottom =BC_REFLECTION;// BC_CONSTANT_EXTRAPOLATION;
 	} else {
 	  BC_bottom = BC_NONE;
 	} /* endif */

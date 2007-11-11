@@ -611,7 +611,7 @@ UnloadReceiveBuffer(double *buffer,
   for (int k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc) {
     for (int j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc) {
       for (int i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc) {
-	for (int nV = 1 ; nV <=NumVar() ; ++ nV) {          
+	for (int nV = 0 ; nV < blocksize ; nV++) {          
 	  buffer_count++;
 	  if (buffer_count >= buffer_size) return(1);
 	  if (vector_switch) {
@@ -1259,8 +1259,8 @@ solve(Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE> *Block_precon) {
       //Standard Output
       if (relative_residual <= Solution_Data->Input.NKS_IP.GMRES_Initial_Tolerance || 
 	  Number_of_GMRES_Iterations+1 > Solution_Data->Input.NKS_IP.Maximum_Number_of_GMRES_Iterations ) {
-
-	if (CFFC_Primary_MPI_Processor()) { 
+	  
+	if (CFFC_Primary_MPI_Processor()&& !Solution_Data->Input.NKS_IP.Dual_Time_Stepping) { 
 	  cout << "\n Finished GMRES with (Inner Iterations) = " << Number_of_GMRES_Iterations << " resid0 = " 
 	       << resid0 << " resid = " << relative_residual*resid0 << " relative_residual = " << relative_residual<<endl;
 	} 
