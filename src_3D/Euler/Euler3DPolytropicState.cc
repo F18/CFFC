@@ -1824,11 +1824,6 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxHLLE_n(const Euler3D_Po
     //Evaluate the intermediate state solution flux in the rotated frame.
     Euler3D_Polytropic_cState Flux_rot = FluxHLLE_x(Wl_rot, Wr_rot);
     
-//     if( Flux != Flux_rot.RotateI(norm_dir)){
-//       cout<<"\n Flux_X "<<Flux;
-//       cout<<"\n Flux_M "<<Flux_rot.RotateI(norm_dir);
-//     }
-
     return (Flux_rot.RotateI(norm_dir));
        
 }
@@ -1855,7 +1850,7 @@ Vector2D Euler3D_Polytropic_pState::HLLE_wavespeeds(const Euler3D_Polytropic_pSt
 						    const Vector3D &norm_dir){
 
     Vector2D wavespeed;
-    Euler3D_Polytropic_pState  Wa_n, lambdas_l, lambdas_r, lambdas_a;  //Lots of TEMPS
+    Euler3D_Polytropic_pState Wa_n, lambdas_l, lambdas_r, lambdas_a;  //Lots of TEMPS
     Euler3D_Polytropic_pState Wl_rotated(Wl.Rotate(norm_dir));
     Euler3D_Polytropic_pState Wr_rotated(Wr.Rotate(norm_dir));
 

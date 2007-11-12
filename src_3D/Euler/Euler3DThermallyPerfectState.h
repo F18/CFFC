@@ -486,11 +486,17 @@ class Euler3D_ThermallyPerfect_pState {
    double hprime(void) const;  
    //! Derivative of specific enthalpy wrt temperature, dh/dT
    double hprime(double &Temp) const;
+<<<<<<< HEAD:src_3D/Euler/Euler3DThermallyPerfectState.h
 
    //! Mixture momentum
+=======
+>>>>>>> Added NKS Changes to Euler3DThermallyPerfectState:src_3D/Euler/Euler3DThermallyPerfectState.h
    Vector3D rhov(void) const;      
+<<<<<<< HEAD:src_3D/Euler/Euler3DThermallyPerfectState.h
 
    //! Mixture temperature
+=======
+>>>>>>> Added NKS Changes to Euler3DThermallyPerfectState:src_3D/Euler/Euler3DThermallyPerfectState.h
    double T(void) const;         
    //! Mixture temperature given sensible enthalpy 
    double T(double &h_s) const;   
@@ -583,12 +589,45 @@ class Euler3D_ThermallyPerfect_pState {
    Euler3D_ThermallyPerfect_pState lp_x(const int &index) ; 
    //! x-direction primitive eignenvectors
    Euler3D_ThermallyPerfect_pState lp_x(const int &index) const; 
+<<<<<<< HEAD:src_3D/Euler/Euler3DThermallyPerfectState.h
 //@}
+=======
+
+/** @name Flux Jacobians */
+/*        -------------- */
+   //@{
+   void dFIxdU(DenseMatrix &dFxdU);         //!< x-direction Flux Jacobian
+   //@}
+
+   /* Index operator */
+   double &operator[](int index);
+   const double &operator[](int index) const;
+
+   /* Binary arithmetic operators. */
+   Euler3D_ThermallyPerfect_pState operator +(const Euler3D_ThermallyPerfect_pState &W) const;
+   Euler3D_ThermallyPerfect_pState operator -(const Euler3D_ThermallyPerfect_pState &W) const;
+   Euler3D_ThermallyPerfect_pState operator *(const double &a) const;
+   friend Euler3D_ThermallyPerfect_pState operator *(const double &a, const Euler3D_ThermallyPerfect_pState &W);
+   Euler3D_ThermallyPerfect_pState operator /(const double &a) const;
+   double operator *(const Euler3D_ThermallyPerfect_pState &W) const;
+   Euler3D_ThermallyPerfect_pState operator ^(const Euler3D_ThermallyPerfect_pState &W) const;
+>>>>>>> Added NKS Changes to Euler3DThermallyPerfectState:src_3D/Euler/Euler3DThermallyPerfectState.h
   
+<<<<<<< HEAD:src_3D/Euler/Euler3DThermallyPerfectState.h
 /** @name Numerical Flux Functions */
 /*        ------------------------ */
 //@{
    //! Returns Roe-averaged primitive solution state
+=======
+   /* Assignment Operator. */ 
+   Euler3D_ThermallyPerfect_pState& operator =(const Euler3D_ThermallyPerfect_pState &W); 
+  
+   /* Shortcut arithmetic operators. */
+   Euler3D_ThermallyPerfect_pState& operator +=(const Euler3D_ThermallyPerfect_pState &W);
+   Euler3D_ThermallyPerfect_pState& operator -=(const Euler3D_ThermallyPerfect_pState &W);
+  
+   // Flux functions
+>>>>>>> Added NKS Changes to Euler3DThermallyPerfectState:src_3D/Euler/Euler3DThermallyPerfectState.h
    static Euler3D_ThermallyPerfect_pState RoeAverage(const Euler3D_ThermallyPerfect_pState &Wl,
                                                      const Euler3D_ThermallyPerfect_pState &Wr);
 
@@ -624,6 +663,7 @@ class Euler3D_ThermallyPerfect_pState {
                                                        const Euler3D_ThermallyPerfect_pState  &lambda_l,
                                                        const Euler3D_ThermallyPerfect_pState  &lambda_r);
 
+<<<<<<< HEAD:src_3D/Euler/Euler3DThermallyPerfectState.h
    //! Returns positive waves speeds (eigenvalues) using Harten entropy fix
    static Euler3D_ThermallyPerfect_pState lambda_plus(const Euler3D_ThermallyPerfect_pState  &lambda_a,
                                                       const Euler3D_ThermallyPerfect_pState  &lambda_l,
@@ -634,6 +674,17 @@ class Euler3D_ThermallyPerfect_pState {
 /*        ------------------- */
 //@{
    //! Return reflected solution state after application of reflection BC
+=======
+  //! HLLE wavespeeds in n-direction given 2 primitive states and a direction
+  static Vector2D HLLE_wavespeeds(const Euler3D_ThermallyPerfect_pState &Wl,
+				  const Euler3D_ThermallyPerfect_pState &Wr,
+				  const Vector3D &norm_dir);
+  
+  //! Returns rotated primitive state aligned with norm_dir
+  Euler3D_ThermallyPerfect_pState Rotate(const Vector3D &norm_dir) const;				  
+  
+  // Boundary Conditions
+>>>>>>> Added NKS Changes to Euler3DThermallyPerfectState:src_3D/Euler/Euler3DThermallyPerfectState.h
    static Euler3D_ThermallyPerfect_pState Reflect(const Euler3D_ThermallyPerfect_pState &W, 
                                                   const Vector3D &norm_dir);
 
@@ -1150,7 +1201,30 @@ class Euler3D_ThermallyPerfect_cState {
    //! Input stream operator
    friend istream& operator >> (istream &in_file,  
                                 Euler3D_ThermallyPerfect_cState &U);
+<<<<<<< HEAD:src_3D/Euler/Euler3DThermallyPerfectState.h
 //@}  
+=======
+
+  Euler3D_ThermallyPerfect_cState RotateI(const Vector3D &norm_dir) const;
+
+   /* Destructors */
+   void Deallocate_static(void) {
+     if (specdata != NULL) delete[] specdata;
+     specdata = NULL;
+     if(Schmidt != NULL)  delete[] Schmidt;
+     Schmidt = NULL;
+   }
+
+   void Deallocate(void) {
+     if (rhospec != NULL) delete[] rhospec;
+     rhospec = NULL;
+   }
+  
+   ~Euler3D_ThermallyPerfect_cState(){ 
+     Deallocate();
+   }
+  
+>>>>>>> Added NKS Changes to Euler3DThermallyPerfectState:src_3D/Euler/Euler3DThermallyPerfectState.h
 };
 
 /***************************************************************************************

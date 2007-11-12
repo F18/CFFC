@@ -25,6 +25,10 @@
 #include "Euler3DThermallyPerfectHexaBlock.h"
 #endif // _EULER3D_THERMALLYPERFECT_HEXA_BLOCK_INCLUDED
 
+#ifndef _EULER3D_THERMALLYPERFECT_NKS_INLCUDED
+#include "Euler3DThermallyPerfectNKS.h"
+#endif //_EULER3D_THERMALLYPERFECT_NKS_INLCUDED
+
 #ifndef _MPI_INCLUDED
 #include "../MPI/MPI.h"
 #endif // _MPI_INCLUDED

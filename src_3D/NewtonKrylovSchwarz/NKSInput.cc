@@ -449,9 +449,11 @@ void NKS_Input_Parameters::Output(ostream &fout) const {
   for (int star=0;star<75;star++){fout <<"*";}
   fout << "\n********                   Newton-Krylov-Schwarz                 **********" << endl;   
   for (int star=0;star<75;star++){fout<<"*";}
-  
-  fout <<"\n Overall Tolerance     ====> " << Overall_Tolerance << endl;
 
+  fout <<"\n NKS Max Steps         ====> "<<Maximum_Number_of_NKS_Iterations <<endl;
+  
+  fout <<" Overall Tolerance     ====> " << Overall_Tolerance << endl;
+ 
   fout << " Relaxation Multiplier ====> " << Relaxation_multiplier << endl;
 
   //DTS
