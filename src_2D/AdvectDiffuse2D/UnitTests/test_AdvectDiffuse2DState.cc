@@ -568,7 +568,7 @@ namespace tut
     A += -(A + B)*C/a;
 
     // === check
-    ensure_equals("division with scalar", A , Result);
+    ensure_distance("division with scalar", A , Result, AdvectDiffuse2D_State_New(fabs(Result[1])*1.0));
   }
 
   /* Test 30:*/

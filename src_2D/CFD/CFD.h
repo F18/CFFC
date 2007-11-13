@@ -616,6 +616,12 @@ inline char *Date_And_Time() {
 #define DIFFUSION_FIELD_ZERO                                 0
 #define DIFFUSION_FIELD_CONSTANT                             1
 
+/*****************************************************
+ * CFD -- Source Field Types                         *
+ ****************************************************/
+#define SOURCE_FIELD_ZERO                                 0
+#define SOURCE_FIELD_LINEAR_VARIATION                     1
+#define SOURCE_FIELD_EXPONENTIAL_VARIATION                2
 
 /********************************************************
  * CFD -- Time Integration (Time-Stepping) Types.       *

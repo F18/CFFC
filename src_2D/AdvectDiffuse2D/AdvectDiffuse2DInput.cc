@@ -13,7 +13,6 @@
 #include "AdvectDiffuse2DQuad.h"  /* Include AdvectDiffuse2D_Quad_Block header file. */
 #include "../HighOrderReconstruction/CENO_ExecutionMode.h" // Include high-order CENO execution mode header file
 #include "../HighOrderReconstruction/CENO_Tolerances.h"	   // Include high-order CENO tolerances header file
-#include "AdvectDiffuse2DParameterFields.h" /* Include 2D advection diffusion parameter fields */
 
 /*************************************************************
  * AdvectDiffuse2D_Input_Parameters -- Member functions.     *
@@ -286,6 +285,9 @@ ostream &operator << (ostream &out_file,
 
     out_file << "\n  -> Relaxation Time : " 
              << IP.Tau;
+
+    // ====    Source field parameters ====
+    IP.SourceTerm->Print_Info(out_file);
 
     // ==== Boundary conditions ====
     if (IP.BCs_Specified) {
@@ -633,6 +635,8 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     string_ptr = "Uniform";
     strcpy(IP.Velocity_Field_Type, string_ptr);
     IP.i_Velocity_Field = VELOCITY_FIELD_UNIFORM;
+
+    IP.SourceTerm->SetSourceField(SOURCE_FIELD_ZERO); // set the default source term (no source field)
 
     IP.Uo = AdvectDiffuse2D_State(ONE,
  	                          IP.a,
@@ -1220,6 +1224,9 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
 
     // DiffusionFields variables
     DiffusionFields::Broadcast();
+
+    // SourceTermFields variables
+    IP.SourceTerm->Broadcast();
 
 #endif
 
@@ -2939,6 +2946,9 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
 
   /* Parse next control parameter with DiffusionFields parser */
   DiffusionFields::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  /* Parse next control parameter with SourceTerm parser */
+  IP.SourceTerm->Parse_Next_Input_Control_Parameter(IP,i_command);
 
   /* Parse next control parameter with CENO_Execution_Mode parser */
   CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);

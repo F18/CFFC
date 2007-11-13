@@ -16,6 +16,7 @@
 #include "../FASMultigrid2D/FASMultigrid2DInput.h" // Include multigrid input header file.
 #include "../ICEM/ICEMCFD.h"      // Include ICEMCFD input header file.
 #include "../Utilities/TypeDefinition.h" // Include TypeDefinition header file.
+#include "AdvectDiffuse2DParameterFields.h" /* Include 2D advection diffusion parameter fields */
 
 /* Define the structures and classes. */
 
@@ -135,6 +136,7 @@ public:
   double Kappa, a, b, Tau;
   FunctionType2D KappaVariation;          /*!< Function pointer which is set to the diffusion coefficient variation. */
   FunctionType2D SourceTermVariation;	    /*!< Function pointer which is set to the source term variation. */
+  SourceTermFields *SourceTerm;
   //@}
 
   //! @name Convection velocity field type parameters:
@@ -305,6 +307,9 @@ public:
  ***********************************************************************/
 inline AdvectDiffuse2D_Input_Parameters::AdvectDiffuse2D_Input_Parameters(void){
   ICEMCFD_FileNames = NULL;
+
+  // Get access to the SourceTermField
+  SourceTerm = &SourceTermFields::getInstance();
 }
 
 /************************************************************************

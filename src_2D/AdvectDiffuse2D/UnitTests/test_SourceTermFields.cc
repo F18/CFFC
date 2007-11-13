@@ -10,6 +10,7 @@
 /* Include CFFC header files */
 #include "TestData.h"
 #include "../SourceTermFields.h"
+#include "../AdvectDiffuse2DInput.h"
 
 namespace tut
 {
@@ -79,73 +80,25 @@ namespace tut
   template<>
   void SourceTermFields_object::test<1>()
   {
-    set_test_name("Test Basic field type");
-
-    SourceFieldBasicType * FieldS;
-
-    FieldS = new ZERO_SourceField;
-
-    Print_(FieldS->FieldSoln(10.0));
-    Print_(FieldS->FieldRequireIntegration());
-
-    delete FieldS;
-
-    FieldS = new Linear_SourceField;
-
-    Print_(FieldS->FieldSoln(12.0));
-    Print_(FieldS->FieldRequireIntegration());
-
-    delete FieldS;
-
-    FieldS = new Exponential_SourceField;
-
-    Print_(FieldS->FieldSoln(2.0,4.0,1.2));
-    Print_(FieldS->FieldRequireIntegration());
-
-    delete FieldS;
-
-
-    Print_("Here")
-
-    SourceTermFields& myField = SourceTermFields::getInstance();
-    myField.SetSource(3);
-    if(myField.Source->FieldRequireIntegration()){
-      Print_(myField.Source->FieldSoln(2,4,1.2));
-    } else {
-      Print_(myField.Source->FieldSoln(12.0));
-    }
-  }
-
-  /* Test 2:*/
-  template<>
-  template<>
-  void SourceTermFields_object::test<2>()
-  {
-    set_test_name("Input param");
+    set_test_name("Set source term in input parameters");
+    set_local_input_path("SourceTermFieldsData");
+    set_local_output_path("SourceTermFieldsData");
 
     AdvectDiffuse2D_Input_Parameters IP;
-    strcpy(IP.Next_Control_Parameter, "Source_Linear_Tau_Coeff");
-    int i_command = INVALID_INPUT_CODE;
 
-    SourceTermFields& myField = SourceTermFields::getInstance();
-    myField.SetSource(2);
-    myField.Source->Parse_Next_Input_Control_Parameter(IP,i_command);
-    if(myField.Source->FieldRequireIntegration()){
-      Print_(myField.Source->FieldSoln(2,4,1.2));
-    } else {
-      Print_(myField.Source->FieldSoln(12.0));
-    }
+    IP.Verbose() = OFF;
+    Set_Default_Input_Parameters(IP);
 
+    // Set input file name
+    Open_Input_File("AdvectDiffuse2D_Test.in");
+
+    // Parse the input file
+    IP.Parse_Input_File(input_file_name);
+
+    // == check that the SourceTerm object was generated correctly
+    ensure_equals("FieldRequireIntegration()", IP.SourceTerm->FieldRequireIntegration(), true);
+    ensure_distance("Computed value", IP.SourceTerm->operator()(2,4,1.2), 0.03888717100122214, tol);
   }
-
-  /* Test 3:*/
-  template<>
-  template<>
-  void SourceTermFields_object::test<3>()
-  {
-
-  }
-
 
 }
 
