@@ -279,6 +279,7 @@ void Modify_Neighbours_of_Root_Solution_Blocks(QuadTreeBlock_DataStructure
 //         QuadTree.Roots[1][1].block.infoS[0].reset();
         break;
       case GRID_CIRCULAR_CYLINDER :
+      case GRID_ADIABATIC_CIRCULAR_CYLINDER :
       case GRID_ELLIPSE :
       case GRID_NACA_AEROFOIL_OGRID :
         QuadTree.Roots[0][0].block.nW = 1;
@@ -620,6 +621,7 @@ void Modify_Neighbours_of_Root_Solution_Blocks(QuadTreeBlock_DataStructure
 
         break;
       case GRID_CIRCULAR_CYLINDER :
+      case GRID_ADIABATIC_CIRCULAR_CYLINDER :
       case GRID_ELLIPSE :
       case GRID_NACA_AEROFOIL_OGRID :
         if (LocalSolnBlockList.ThisCPU == QuadTree.Roots[0][0].block.info.cpu) {
