@@ -515,3 +515,13 @@ endif
 ifeq ($(NO_ASSERT),ON)
   CPPFLAGS += -DNDEBUG
 endif
+
+#
+# Add proper precompile flag for solvers that include high-order ENO with CHARACTERISTICS
+# If you want your solver to include this feature add its name to the SOLVERS_LIST.
+SOLVERS_LIST := euler1D 
+ifdef MAKECMDGOALS
+ifneq ($(strip $(filter $(MAKECMDGOALS), $(SOLVERS_LIST)) ), )
+  CPPFLAGS += -D__INCLUDE_ENO_CHARACTERISTICS__
+endif
+endif

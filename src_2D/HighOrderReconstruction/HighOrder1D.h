@@ -591,6 +591,7 @@ ComputeUnlimitedSolutionReconstruction(Soln_Block_Type *SolnBlk,
 				       HighOrder1D<Soln_State> & (Soln_Block_Type::*AccessToHighOrderVar)(void)){
 
   vector<int> i_index(StencilSize()); 
+  string msg;
 
   switch(ReconstructionMethod){
   case RECONSTRUCTION_CENO:
@@ -613,7 +614,15 @@ ComputeUnlimitedSolutionReconstruction(Soln_Block_Type *SolnBlk,
     break;
 
   case RECONSTRUCTION_ENO_CHARACTERISTIC:
+#ifdef __INCLUDE_ENO_CHARACTERISTICS__ 
+    // include this function only for states that have characteristic variables defined
     ENO_Characteristics_Reconstruction(*this,SolnBlk,AccessToHighOrderVar,iCell,ENO_MemoryPool());
+#else
+    // throw an error if this part gets called when characteristics are not defined
+    msg = "HighOrder1D ERROR: ENO with characteristic variables is not included in this compiled version. ";
+    msg += "To include this feature the pre-compile flag '__INCLUDE_ENO_CHARACTERISTICS__' must be defined.";
+    throw runtime_error(msg.c_str());
+#endif
     break;
     
   default:
