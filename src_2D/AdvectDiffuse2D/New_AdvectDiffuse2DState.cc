@@ -13,5 +13,5 @@
 // ===  Static member variables ===
 AdvectDiffuse2D_State_New::AdvectionVelocityType AdvectDiffuse2D_State_New::V = VelocityFields::Quiescent_Flow;
 AdvectDiffuse2D_State_New::DiffusionFieldType AdvectDiffuse2D_State_New::k = DiffusionFields::Zero_Diffusion;
-
+SourceTermFields* AdvectDiffuse2D_State_New::SourceTerm = NULL;
 

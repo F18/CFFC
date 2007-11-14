@@ -35,6 +35,7 @@ using namespace std;
  *      x     -- Return x-component.
  *      y     -- Return y-component.
  *      abs   -- Absolute value (magnitude) of vector.
+ *      fabs  -- Vector of absolute values.
  *      sqr   -- Square of vector.
  *      dot   -- Inner product of two vectors.
  *      cross -- Cross product of two vectors (scalar).
@@ -108,6 +109,10 @@ class Vector2D{
     double abs(void);
     double abs(void) const;
     friend double abs(const Vector2D &V);
+    //@}
+
+    //@{ @name Vector of absolute values.
+    friend Vector2D fabs(const Vector2D &V){ return Vector2D(fabs(V.x), fabs(V.y));}
     //@}
 
     //@{ @name Square of vector.

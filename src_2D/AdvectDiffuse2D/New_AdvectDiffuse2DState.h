@@ -41,6 +41,7 @@ using namespace std;
  *     u        -- Return solution.
  *     V        -- Return advection velocity field
  *     k        -- Return diffusion coefficient field
+ * SourceTerm   -- Return source term field
  *
  * Member functions
  *    Fa        -- Return advective flux.
@@ -81,18 +82,19 @@ public:
 
   //! @name Solution state variables and associated constants:
   //@{
-  double  u;   // Solution.
-  static AdvectionVelocityType  V;      // Advection velocity as function of 'x' and 'y'.
-  static DiffusionFieldType k;		// Non-linear diffusion coefficient as function of 'x', 'y' and 'u'
+  double  u;                            //!< Solution.
+  static AdvectionVelocityType  V;      //!< Advection velocity as function of 'x' and 'y'.
+  static DiffusionFieldType k;		//!< Non-linear diffusion coefficient as function of 'x', 'y' and 'u'
+  static SourceTermFields *SourceTerm;  //!< Non-linear source term as function of 'x', 'y' and 'u' or only '\f$\bar{u}\f$'
   //@}
 
   //! @name Creation and copy constructors.
   //@{
   //! Default constructor.
-  AdvectDiffuse2D_State_New(void): u(0.0){ }
+  AdvectDiffuse2D_State_New(void);
 
   //! Value Constructor
-  AdvectDiffuse2D_State_New(const double &uu): u(uu){ };
+  AdvectDiffuse2D_State_New(const double &uu);
 
   //! Copy constructor.
   AdvectDiffuse2D_State_New(const AdvectDiffuse2D_State_New &U){ u = U.u; }
@@ -146,10 +148,17 @@ public:
 
   //! @name Regular source term.
   //@{
+  //! \brief Evaluate integral source field
+  double s(void) const;
+  friend double s(const AdvectDiffuse2D_State_New &U);
+  //! \brief Evaluate pointwise source field
+  double s(const double &x, const double &y, const double &u) const;
   //@}
 
   //! @name Axisymmetric source term.
   //@{
+  double s_axi(const Vector2D &X) const;
+  friend double s_axi(const AdvectDiffuse2D_State_New &U, const Vector2D &X);
   //@}
 
   /*! @name Assignment operator. */
@@ -162,6 +171,9 @@ public:
   double &operator[](const int & index);
   const double &operator[](const int & index) const;
   //@}
+
+  /*! Absolute value */
+  friend AdvectDiffuse2D_State_New fabs(const AdvectDiffuse2D_State_New &U){ return AdvectDiffuse2D_State_New(fabs(U.u));}
 
   //! @name Binary arithmetic operators.
   //@{
@@ -203,6 +215,16 @@ public:
   //@}
 };
 
+// Default constructor.
+inline AdvectDiffuse2D_State_New::AdvectDiffuse2D_State_New(void): u(0.0){
+  // Get access to the SourceTermField
+  SourceTerm = &SourceTermFields::getInstance();
+}
+
+// Value Constructor
+inline AdvectDiffuse2D_State_New::AdvectDiffuse2D_State_New(const double &uu): u(uu){
+  SourceTerm = &SourceTermFields::getInstance();
+}
 
 /*!
  * Compute the Riemann state
@@ -361,6 +383,41 @@ inline double Fd(const AdvectDiffuse2D_State_New &Ul,
   
   return -AdvectDiffuse2D_State_New::k(x,y,0.5*(Ul.u+Ur.u)) * ( 0.5 *( (dudx_L + dudx_R)*norm_dir.x +
 								       (dudy_L + dudy_R)*norm_dir.y ) );
+}
+
+/*!
+ * Integral source term (i.e function of the average solution)
+ */
+inline double AdvectDiffuse2D_State_New::s(void) const{
+  return SourceTerm->operator()(u);
+}
+
+/*!
+ * Integral source term (i.e function of the average solution)
+ */
+inline double s(const AdvectDiffuse2D_State_New &U){
+  return U.SourceTerm->operator()(U.u);
+}
+
+/*!
+ * Pointwise defined source term (i.e function of the Cartesian coordinates and the solution at the point)
+ */
+inline double AdvectDiffuse2D_State_New::s(const double &x, const double &y, const double &u) const{
+  return SourceTerm->operator()(x,y,u);
+}
+
+/*!
+ * Axisymmetric source term.
+ */
+inline double AdvectDiffuse2D_State_New::s_axi(const Vector2D &X) const {
+    return (ZERO);
+}
+
+/*!
+ * Axisymmetric source term.
+ */
+inline double s_axi(const AdvectDiffuse2D_State_New &U, const Vector2D &X) {
+  return (ZERO);
 }
 
 /*!

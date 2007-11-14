@@ -134,16 +134,13 @@ public:
   //! @name Diffusion coefficient, advection speeds, and relaxation time:
   //@{
   double Kappa, a, b, Tau;
-  FunctionType2D KappaVariation;          /*!< Function pointer which is set to the diffusion coefficient variation. */
-  FunctionType2D SourceTermVariation;	    /*!< Function pointer which is set to the source term variation. */
-  SourceTermFields *SourceTerm;
+  SourceTermFields *SourceTerm;        /*!< Pointer to the source term field. */
   //@}
 
   //! @name Convection velocity field type parameters:
   //@{
   char Velocity_Field_Type[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   int i_Velocity_Field;
-  FunctionType2D VelocityField;	    /*!< Function pointer which is set to the velocity field. */
   //@}
 
   //! @name Flow geometry (planar or axisymmetric):

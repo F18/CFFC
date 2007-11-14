@@ -365,7 +365,7 @@ namespace tut
     // === check
     ensure_equals("unmodified A", A, AdvectDiffuse2D_State_New(12.2323) );
     ensure_equals("unmodified B", B, AdvectDiffuse2D_State_New(12.2325) );
-    ensure_distance("subtraction", C , Result, tol);
+    ensure_distance("subtraction", C , Result, AcceptedError(Result));
   }
 
   /* Test 19:*/
@@ -722,6 +722,33 @@ namespace tut
 
     // === check diffusive flux
     ensure_distance("Fd at Point", Fd(Ul,dUdx_L,dUdy_L,Ur,dUdx_R,dUdy_R,8.5,12.5,Normal), Result, tol);
+  }
+
+  /* Test 37:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<37>()
+  {
+
+    set_test_name("Source term function s()");
+
+    // Set initial data
+    AdvectDiffuse2D_State_New U(12.2323);
+    double Result;
+
+    // Set the source field
+    U.SourceTerm->SetSourceField(SOURCE_FIELD_EXPONENTIAL_VARIATION);
+
+    // == check pointwise field
+    Result = 54.59815003314424;
+    ensure_distance("Pointwise field", U.s(1.2,3.4,4), 54.59815003314424, AcceptedError(Result) );
+
+    // Set the source field
+    U.SourceTerm->SetSourceField(SOURCE_FIELD_LINEAR_VARIATION);
+
+    // == check integral field
+    Result = 12.2323;
+    ensure_distance("Integral field", U.s(), 12.2323, AcceptedError(Result) );
   }
 
 }

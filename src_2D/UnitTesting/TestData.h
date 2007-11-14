@@ -33,43 +33,51 @@ using std::ostringstream;
 namespace tut {
 
   // TestData class definition
+  /*!
+   * \class TestData
+   *
+   * @brief Class that provides basic functionality to each test suite
+   */
   class TestData{
   public:
-    int digits;			// Number of exact imposed digits --> gives the precision
-    double tol;	                // Numerical tolerance for comparing the solutions
-    double EpsMachine;          // Machine accuracy
-    char output_file_name[TESTDATA_PATH_LENGTH_FILE];	// Output file name
-    char input_file_name[TESTDATA_PATH_LENGTH_FILE];	// Input file name
-    int  RunRegression;		// Flag for running regression
-    int  verbose;		// Flag for running verbose
+    int digits;			//!< Number of exact imposed digits --> gives the precision
+    double tol;	                //!< Numerical tolerance for comparing the solutions
+    double EpsMachine;          //!< Machine accuracy
+    char output_file_name[TESTDATA_PATH_LENGTH_FILE];	//!< Output file name
+    char input_file_name[TESTDATA_PATH_LENGTH_FILE];	//!< Input file name
+    int  RunRegression;		//!< Flag for running regression
+    int  verbose;		//!< Flag for running verbose
 
-    char *MasterFile, *CurrentFile; /* File name variables used for regression tests */
-    char* Msg;			/* message variable */
-    std::string Message;		/* message variable */
+    char *MasterFile, *CurrentFile; //!< File name variables used for regression tests
+    char* Msg;			//!< message variable
+    std::string Message;		//!< message variable
 
-    /* Root_Path is the reference path for all relative paths. */
+    /*! Root_Path is the reference path for all relative paths. */
     static char* Root_Path;
 
-    /* Relative path to the "Root_Path" directory for output and input data */
+    /*! Relative path to the "Root_Path" directory for output and input data */
     char* Global_TestSuite_Path;
 
-    /* Local output and input path --> specific for each test */
+    /*! Local output and input path --> specific for each test */
     char *Local_Output_Path, *Local_Input_Path;
 
-    // Constructor
+    //! Constructor
     TestData(void);
 
-    // Destructor
+    //! Destructor
     ~TestData(void);
 
-    // Set the path to the root directory
+    //! Set the path to the root directory
     static void Set_Root_Path(std::string & Path_To_Root_Location);
 
-    // Fiels Access
+    //! @name Fiels Access
+    //@{
     ofstream & out(void){ return output_file; }
     ifstream & in(void){return in_file; }
     ostringstream & ostm(void){ return output_string_stream;}
+    //@}
 
+    //! @name Input-output stream operations
     // Open the output file
     void Open_Output_File(const char * file_name);
     void Open_Output_File(char * file_name){const char * ptr = file_name; return Open_Output_File(ptr);}
@@ -97,11 +105,21 @@ namespace tut {
     void set_test_suite_path(char * dir_name);
     void set_local_output_path(char * dir_name);
     void set_local_input_path(char * dir_name);
+    //@}
 
-    /* ostmClear() --> clears output_string_stream */
+    /*! ostmClear() --> clears output_string_stream */
     void ostmClear(void){ ostm().str(""); ostm().clear(); }
 
-    /* Run Regression Test --> compares the CurrentFile against the MasterFile, ignoring numeric differences within the 
+    /*! Compute the accepted error relative to the value of the passed object using the default provided tolerance */
+    template<class T>
+    T AcceptedError(const T & Obj){ return tol*(T(1.0) + fabs(Obj)); }
+
+    /*! Compute the accepted error relative to the value of the passed object using the passed tolerance */
+    template<class T>
+    T AcceptedError(const T & Obj,
+		    const double & tolerance){ return tolerance*(T(1.0) + fabs(Obj)); }
+
+    /*! Run Regression Test --> compares the CurrentFile against the MasterFile, ignoring numeric differences within the 
                                given absolute or relative tolerances.
                                The files are compared starting at line 'CompareStartsAtLine' 
                                (this argument can be used to jump over text that is changes at every runtime) */
@@ -123,7 +141,7 @@ namespace tut {
 									       std::invalid_argument,
 									       tut::failure);
 
-    /* Check_Input_Output_Operator --> outputs the initial Obj to a file and then reads the file in order
+    /*! Check_Input_Output_Operator --> outputs the initial Obj to a file and then reads the file in order
                                        to initialize an object of the same type as Obj. 
 				       Outputs the second object to a different file and then compares
 				       them with a tight tolerance using numdiff. 
@@ -154,23 +172,23 @@ namespace tut {
     };
 
   protected:
-    ofstream output_file;	// Output file stream
-    ifstream in_file;		// Input file stream
-    ostringstream output_string_stream; // Stream for formating to strings 
+    ofstream output_file;	//!< Output file stream
+    ifstream in_file;		//!< Input file stream
+    ostringstream output_string_stream; //!< Stream for formating to strings 
                                         // (To retrieve the resulting string (of type std::string),
-                                        //  you call the member function str() )
+                                        // you call the member function str() )
 
   private:
-    /* Check the existance of the Global paths */
+    /*! Check the existance of the Global paths */
     void check_global_paths(void);
 
-    /* Check the existance of the Root path */
+    /*! Check the existance of the Root path */
     static void check_root_path(void);
 
-    // Length of the root path string (includes the end of string character)
+    //! Length of the root path string (includes the end of string character)
     static int Root_Path_Length;
 
-    // Enforce the end of path slash
+    //! Enforce the end of path slash
     static void enforce_slash_in_path(std::string & path);
   };
 
