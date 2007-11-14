@@ -585,7 +585,9 @@ void Output_Drag(Gaussian2D_Quad_Block &SolnBlk,
 
   for(i = SolnBlk.Grid.ICl; i <= SolnBlk.Grid.ICu; i++) {
 
-    if(SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL){
+    if(SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL ||
+       SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+       SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP){
 
       Linear_Reconstruction_LeastSquares(SolnBlk,i,SolnBlk.Grid.JCl,
 					 LIMITER_VENKATAKRISHNAN);
@@ -640,7 +642,9 @@ void Output_Drag(Gaussian2D_Quad_Block &SolnBlk,
       lift += cell_lift;
     }
 
-    if(SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL){
+    if(SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL ||
+       SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+       SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP){
       //Not Done
     }
   }
@@ -649,11 +653,15 @@ void Output_Drag(Gaussian2D_Quad_Block &SolnBlk,
 
   for(i = SolnBlk.Grid.JCl; i <= SolnBlk.Grid.JCu; i++) {
 
-    if(SolnBlk.Grid.BCtypeE[i] == BC_ADIABATIC_WALL){
+    if(SolnBlk.Grid.BCtypeE[i] == BC_ADIABATIC_WALL ||
+       SolnBlk.Grid.BCtypeE[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+       SolnBlk.Grid.BCtypeE[i] == BC_TEMPERATURE_SLIP){
       //Not Done
     }
 
-    if(SolnBlk.Grid.BCtypeW[i] == BC_ADIABATIC_WALL){
+    if(SolnBlk.Grid.BCtypeW[i] == BC_ADIABATIC_WALL ||
+       SolnBlk.Grid.BCtypeW[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+       SolnBlk.Grid.BCtypeW[i] == BC_TEMPERATURE_SLIP){
       //Not Done
     }
   }
