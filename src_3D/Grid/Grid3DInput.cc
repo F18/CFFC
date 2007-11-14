@@ -87,6 +87,15 @@ void Grid3D_Input_Parameters::Broadcast(void) {
    MPI::COMM_WORLD.Bcast(&(X_Rotate),
                          1,
                          MPI::DOUBLE, 0);
+   MPI::COMM_WORLD.Bcast(&(Box_Length),
+                         1,
+                         MPI::DOUBLE, 0);
+   MPI::COMM_WORLD.Bcast(&(Box_Width),
+                         1,
+                         MPI::DOUBLE, 0);
+   MPI::COMM_WORLD.Bcast(&(Box_Height),
+                         1,
+                         MPI::DOUBLE, 0);
 
    // Pipe parameters:
    MPI::COMM_WORLD.Bcast(&(Pipe_Radius),
@@ -187,6 +196,12 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
      } else if (strcmp(Grid_Type, "ICEMCFD") == 0) {
         i_Grid = GRID_ICEMCFD;
         ICEMCFD_FileNames = ICEMCFD_get_filenames();
+
+     } else if (strcmp(Grid_Type, "Turbulent_Premixed_Flame") == 0) {
+        i_Grid = GRID_TURBULENT_PREMIXED_FLAME;
+        Box_Length = 1.0;
+        Box_Width = 1.0;
+        Box_Height = 1.0;
 
      } else {
         i_command = INVALID_INPUT_VALUE;
@@ -320,6 +335,21 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
      value >> value_string;
      strcpy(ICEMCFD_FileNames[2], value_string.c_str());
 
+  } else if (strcmp(code, "Box_Length") == 0) {
+     i_command = 3028;
+     value >> Box_Length;
+     if (Box_Length < 0) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Box_Width") == 0) {
+     i_command = 3029;
+     value >> Box_Width;
+     if (Box_Width < 0) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Box_Height") == 0) {
+     i_command = 3030;
+     value >> Box_Height;
+     if (Box_Height < 0) i_command = INVALID_INPUT_VALUE;
+
   } else {
      i_command = INVALID_INPUT_CODE;
 
@@ -387,6 +417,15 @@ void Grid3D_Input_Parameters::Output(ostream &out_file) const {
         out_file << "\n  -> Height of Solution Domain (m): "
                  << Box_Height;
         break;
+      case GRID_TURBULENT_PREMIXED_FLAME :
+        out_file << "\n  -> Length of Solution Domain (m): "
+                 << Box_Length;
+        out_file << "\n  -> Width of Solution Domain (m): "
+                 << Box_Width;
+        out_file << "\n  -> Height of Solution Domain (m): "
+                 << Box_Height;
+        break;
+
      default:
         out_file << "\n  -> Length of Solution Domain (m): "
                  << Box_Length;

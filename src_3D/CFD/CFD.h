@@ -224,6 +224,8 @@ inline char *Date_And_Time() {
 #define GRID_1DFLAME                         51
 #define GRID_LAMINAR_FLAME                   52
 
+#define GRID_TURBULENT_PREMIXED_FLAME        60
+
 /**********************************************************************
  * CFD -- Nozzle Types.                                               *
  **********************************************************************/
@@ -431,6 +433,8 @@ inline char *Date_And_Time() {
 #define FLOWTYPE_TURBULENT_DES                         9
 #define FLOWTYPE_TURBULENT_DES_K_OMEGA                10
 #define FLOWTYPE_TURBULENT_DNS                        11
+#define FLOWTYPE_TURBULENT_LES_C_FSD_K                12
+#define FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY      13
 
 /**********************************************************************
  * CFD -- Particle-phase formulation.                                 *
@@ -576,6 +580,8 @@ inline char *Date_And_Time() {
 #define IC_ELECTRIC_FIELD_DOUBLE_QUADRUPOLE  203
 #define IC_ELECTRIC_FIELD_DOUBLE_OCTAPOLE    204
 
+#define IC_TURBULENT_PREMIXED_FLAME   300
+
 /********************************************************
  * CFD -- Time Integration (Time-Stepping) Types.       *
  ********************************************************/
@@ -681,7 +687,7 @@ inline char *Date_And_Time() {
 #define FLUX_FUNCTION_OSHER                            7
 #define FLUX_FUNCTION_VANLEER                          8
 #define FLUX_FUNCTION_AUSM                             9
-#define FLUX_FUNCTION_AUSMplus                        10
+#define FLUX_FUNCTION_AUSM_PLUS_UP                    10
 #define	FLUX_FUNCTION_ROE_PRECON_WS                   11
 #define	FLUX_FUNCTION_HLLE_PRECON_WS                  12
 
@@ -754,6 +760,14 @@ inline char *Date_And_Time() {
 #define CHASNOV                         4
 #define BELL_DAY                        5
 
+/********************************************************
+ * CFD -- Subfilter scale models for LES.               *
+ ********************************************************/
+ 
+#define NO_MODEL                        0
+#define SMAGORINSKY_YOSHIZAWA           1
+#define SFS_K_EQUATION                  2
+
 /**********************************************************************
  * CFD -- Inline functions.                                           *
  **********************************************************************/
@@ -805,7 +819,7 @@ inline double vanalbada(const double &x, const double &y,
 		        const double &epsi)
    { return (x*y+sqr(epsi))*(x+y)/(sqr(x)+sqr(y)+TWO*sqr(epsi)); }
 
-// Inline functions for AUSMplusUP flux calculation.
+// Inline functions for AUSMPlusUp flux calculation.
 // M+1
 inline double Mplus_1(double M)
   { return 0.5*(M + fabs(M)); }
