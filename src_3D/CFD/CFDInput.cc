@@ -288,6 +288,10 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
           i_Flow_Type = FLOWTYPE_TURBULENT_RANS_K_OMEGA;
        } else if (strcmp(Flow_Type, "Turbulent-LES") == 0) {
           i_Flow_Type = FLOWTYPE_TURBULENT_LES;
+       } else if (strcmp(Flow_Type, "Turbulent-LES-C-Fsd-k") == 0) {
+	 i_Flow_Type = FLOWTYPE_TURBULENT_LES_C_FSD_K;
+       } else if (strcmp(Flow_Type, "Turbulent-LES-C-Fsd-Smagorinsky") == 0) {
+	 i_Flow_Type = FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY;
        } else if (strcmp(Flow_Type, "Turbulent-DES-k-omega") == 0) {
           i_Flow_Type = FLOWTYPE_TURBULENT_DES_K_OMEGA;
        } else if (strcmp(Flow_Type, "Turbulent-DNS") == 0) {
@@ -454,6 +458,8 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
           i_Flux_Function = FLUX_FUNCTION_LINDE;
        } else if (strcmp(Flux_Function_Type, "HLLC") == 0) {
           i_Flux_Function = FLUX_FUNCTION_HLLC;
+       } else if (strcmp(Flux_Function_Type, "AUSM_plus_up") == 0) {
+          i_Flux_Function = FLUX_FUNCTION_AUSM_PLUS_UP;
        } else {
           i_command = INVALID_INPUT_VALUE;
        } /* endif */
@@ -594,6 +600,8 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
           i_ICs = IC_TURBULENT_DIFFUSION_FLAME;
        } else if (strcmp(ICs_Type, "Turbulent_Free_Jet_Flame") == 0) {
           i_ICs = IC_FREE_JET_FLAME;
+       }else if (strcmp(ICs_Type, "Turbulent_Premixed_Flame") == 0) {
+          i_ICs = IC_TURBULENT_PREMIXED_FLAME;
        } else if (strcmp(ICs_Type, "Restart") == 0) {
           i_ICs = IC_RESTART;
        } else {
@@ -1082,6 +1090,10 @@ void CFD_Input_Parameters::Output_Problem_Type(ostream &out_file) const {
       out_file << "\n  -> Turbulent flow: RANS with k-oemga turbulence model";
    } else if (i_Flow_Type == FLOWTYPE_TURBULENT_LES) {
       out_file << "\n  -> Turbulent flow: LES ";
+   } else if (i_Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
+      out_file << "\n  -> Turbulent flow: LES with C-Fsd-k model";
+   } else if (i_Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) {
+      out_file << "\n  -> Turbulent flow: LES with C-Fsd-Smagorinsky model";
    } else if (i_Flow_Type == FLOWTYPE_TURBULENT_DES_K_OMEGA) {
       out_file << "\n  -> Turbulent flow: DES with k-oemga SGS turbulence model ";
    } else if (i_Flow_Type == FLOWTYPE_TURBULENT_DNS) {

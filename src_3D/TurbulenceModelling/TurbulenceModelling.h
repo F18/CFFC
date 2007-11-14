@@ -6,6 +6,13 @@
 #ifndef _TURBULENCE_MODELLING_INCLUDED 
 #define _TURBULENCE_MODELLING_INCLUDED
 
+// Required C++ libraries
+#include <cmath> 
+#include <cassert>
+#include <cstdlib>     // defines the drand48() function
+#include <ctime>       // defines the time() function
+#include <limits>
+#include <complex>
 
 /* Include required CFFC header files. */
 
@@ -558,13 +565,13 @@ class RandomFieldRogallo{
     RandomFieldRogallo(const int &SPECTRUM) : spectrum_flag(SPECTRUM) { }  
 
 
-      double k_1(const int &n1, const double &L1) const { return /*2.0*PI*/double(n1); }///L1; }
+      double k_1(const int &n1, const double &L1) const { return double(n1); }//2.0*PI*n1/L1; }//double(n1); }
 
-      double k_2(const int &n2, const double &L2) const { return /*2.0*PI*/double(n2); }///L2; }
+      double k_2(const int &n2, const double &L2) const { return double(n2); }//2.0*PI*n2/L2; }//double(n2); }
 
-      double k_3(const int &n3, const double &L3) const { return /*2.0*PI*/double(n3); }///L3; }
+      double k_3(const int &n3, const double &L3) const { return double(n3); }//2.0*PI*n3/L3; }//double(n3); }
 
-    double random_double() const { return  drand48(); }
+      double random_double() const { return  drand48(); }
 
 
     // alpha and beta as defined by Rogallo, 1981
@@ -655,7 +662,7 @@ Energy_Spectrum_Value(const double &abs_wave_num) const {
     /*****  Haworth and Poinsot paper  *****/
   case HAWORTH_POINSOT :
     //double EE, kp, 
-    u = 15.5;  Lp = TWO*PI/8.0;  // kp=4.0, u=2.5  kp=8
+    u = 10.5;  Lp = TWO*PI/8.0;  // kp=4.0, u=2.5  kp=8
     kp = TWO*PI/Lp;
     EE = (32.0/3.0) * sqrt(2.0/PI)* (u*u/kp) * pow(k/kp, 4.0) * exp(-2.0*(k/kp)*(k/kp));
     break;
@@ -664,7 +671,7 @@ Energy_Spectrum_Value(const double &abs_wave_num) const {
   case CHASNOV :  
     //double a_s, EE, kp = 4.0 /*8.0 20.0 4.0*/, u = 0.095; /*0.1 28.3 21.21  0.001*/  
     //int s = 3;
-    s = 3.0;
+    s = 3;
     kp = 4.0;
     u = 0.009; 
     // u = 0.001  ->  Re_lambda = 10 
@@ -722,7 +729,6 @@ Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
   Ny = IPs./*IP_Grid.JCells*/NCells_Jdir * IPs.NBlk_Jdir;//InitMeshBlks.NBlk_Jdir;//->NBJ;
   Nz = IPs./*IP_Grid.KCells*/NCells_Kdir * IPs.NBlk_Kdir;//InitMeshBlks.NBlk_Kdir;//->NBK;
 
-
   double        scaling_factor = 1.0/double(Nx*Ny*Nz);  // Scaling factor for the complex to real transform
 
   double        *u, *v, *w;        // Arrays to store the velocity fluctuations in physical space
@@ -743,7 +749,7 @@ Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
 
 
   
-  int seed = 3; 
+  int seed = 5; 
   //int seed = time(NULL);   // assigns the current time to the seed
   srand48(seed);             // changes the seed for drand48()
   int iconj, jconj;          // Position of the conjugate complex for the i index
@@ -941,15 +947,15 @@ Write_Initial_Turbulent_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
   Nblks_j = IPs.NBlk_Jdir;//InitMeshBlks.NBlk_Jdir;//->NBJ;
   Nblks_k = IPs.NBlk_Kdir;//InitMeshBlks.NBlk_Kdir;//->NBK;
 
-  cout << "\n\n Nblks_i: " << Nblks_i << "\t Nblks_j: " 
-       << Nblks_j << "\t Nblks_k: " << Nblks_k;
+/*   cout << "\n\n Nblks_i: " << Nblks_i << "\t Nblks_j: "  */
+/*        << Nblks_j << "\t Nblks_k: " << Nblks_k; */
 
   ICblk = IPs./*IP_Grid.ICells*/NCells_Idir; //  /Nblks_i;  // Cells per block in the I direction
   JCblk = IPs./*IP_Grid.JCells*/NCells_Jdir; //  /Nblks_j;  // Cells per block in the J direction
   KCblk = IPs./*IP_Grid.KCells*/NCells_Kdir; //  /Nblks_k;  // Cells per block in the J direction
   
-  cout << "\n ICblk: " << ICblk << "\t JCblk: " 
-       << JCblk << "\t KCblk: " << KCblk;
+/*   cout << "\n ICblk: " << ICblk << "\t JCblk: "  */
+/*        << JCblk << "\t KCblk: " << KCblk; */
 
 
   int Nx, Ny, Nz;

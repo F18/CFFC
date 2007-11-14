@@ -147,12 +147,15 @@ int Initial_Conditions(HexaSolver_Data &Data,
     // NON RESTART 
   } else {    
 
+     if (Solution_Data.Input.i_Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+         Solution_Data.Input.i_Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ){ 
     /////////////////////////////////////////////////////
-    //RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>  Create_Turbulence(HAWORTH_POINSOT);   //LES ONLY !GENERIC TYPE??????????
-    //Create_Turbulence.Generate_Velocity_Fluctuations(Initial_Mesh, Input.Grid_IP); 
-    //cout << "\n\n INITIAL TURBULENT FLUCTUATIONS GENERATED. \n\n";
-    /////////////////////////////////////////////////////
-    
+    RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>  Create_Turbulence(HAWORTH_POINSOT);   //LES ONLY !GENERIC TYPE??????????
+    Create_Turbulence.Generate_Velocity_Fluctuations(Data.Initial_Mesh, Solution_Data.Input.Grid_IP);
+    //    cout << "\n\n INITIAL TURBULENT FLUCTUATIONS GENERATED. \n\n";
+   ///////////////////////////////////////////////////// 
+     } 
+
     error_flag = Wall_Distance(Solution_Data.Local_Solution_Blocks.Soln_Blks,  // Turbulence function in GENERIC TYPE????
 			       Data.Octree, 
 			       Data.Local_Adaptive_Block_List);

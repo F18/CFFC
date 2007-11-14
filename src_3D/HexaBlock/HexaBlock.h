@@ -81,13 +81,23 @@ class Hexa_Block{
                    **WoE, **WoW,  // north, south, east, west, top
                    **WoT, **WoB;  // bottom boundaries.
    
+   double       ****d_dWdx_dW;  // derivatives of primitive parameter gradients
+   double       ****d_dWdy_dW;  // derivatives of primitive parameter gradients
+   double       ****d_dWdz_dW;  // derivatives of primitive parameter gradients
+
+   SOLN_pSTATE   ***d_dWdx_dx;  // second derivatives of primitive parameter  
+   SOLN_pSTATE   ***d_dWdy_dy;  // second derivatives of primitive parameter  
+   SOLN_pSTATE   ***d_dWdz_dz;  // second derivatives of primitive parameter  
+   SOLN_pSTATE   ***d_dWdx_dy;  // second derivatives of primitive parameter  
+   SOLN_pSTATE   ***d_dWdx_dz;  // second derivatives of primitive parameter  
+   SOLN_pSTATE   ***d_dWdy_dz;  // second derivatives of primitive parameter  
+
    // Only allocate for turbulent flow (depending on flow type indicator)
    Turbulent3DWallData ***WallData;
 		      
    int Allocated; // Indicates whether or not the solution block has been allocated.
 
    /* Constructors. */
-
    Hexa_Block(void) {
       NCi=0; ICl=0; ICu=0; NCj=0; JCl=0; JCu=0;
       NCk=0; KCl=0; KCu=0; Nghost=0; 
@@ -95,6 +105,9 @@ class Hexa_Block{
       Allocated = HEXA_BLOCK_NOT_USED;
       dt = NULL; W = NULL; U = NULL; dUdt = NULL;
       dWdx = NULL; dWdy = NULL; dWdz = NULL;
+      d_dWdx_dW = NULL; d_dWdy_dW = NULL; d_dWdz_dW = NULL;
+      d_dWdx_dx = NULL; d_dWdy_dy = NULL; d_dWdz_dz = NULL;
+      d_dWdx_dy = NULL; d_dWdx_dz = NULL; d_dWdy_dz = NULL;
       phi = NULL; Uo = NULL;
       //FluxN = NULL; FluxS = NULL;
       //FluxE = NULL; FluxW = NULL;
@@ -209,6 +222,8 @@ class Hexa_Block{
                                            const int Limiter);
 
    void Linear_Reconstruction_LeastSquares(const int Limiter);
+
+   void Reconstruction_Second_Derivatives(void);
 
    int Wall_Shear(void);
    
@@ -371,6 +386,15 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate(void){
    dWdx = new SOLN_pSTATE**[NCi];
    dWdy = new SOLN_pSTATE**[NCi];
    dWdz = new SOLN_pSTATE**[NCi];
+   d_dWdx_dW = new double***[NCi];
+   d_dWdy_dW = new double***[NCi];
+   d_dWdz_dW = new double***[NCi];
+   d_dWdx_dx = new SOLN_pSTATE**[NCi]; 
+   d_dWdy_dy = new SOLN_pSTATE**[NCi]; 
+   d_dWdz_dz = new SOLN_pSTATE**[NCi]; 
+   d_dWdx_dy = new SOLN_pSTATE**[NCi]; 
+   d_dWdx_dz = new SOLN_pSTATE**[NCi]; 
+   d_dWdy_dz = new SOLN_pSTATE**[NCi]; 
    phi = new SOLN_pSTATE**[NCi]; 
    dt = new double**[NCi];
    
@@ -382,6 +406,15 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate(void){
       dWdx[i] = new SOLN_pSTATE*[NCj];
       dWdy[i] = new SOLN_pSTATE*[NCj];
       dWdz[i] = new SOLN_pSTATE*[NCj];
+      d_dWdx_dW[i] = new double**[NCj];
+      d_dWdy_dW[i] = new double**[NCj];
+      d_dWdz_dW[i] = new double**[NCj];
+      d_dWdx_dx[i] = new SOLN_pSTATE*[NCj]; 
+      d_dWdy_dy[i] = new SOLN_pSTATE*[NCj]; 
+      d_dWdz_dz[i] = new SOLN_pSTATE*[NCj]; 
+      d_dWdx_dy[i] = new SOLN_pSTATE*[NCj]; 
+      d_dWdx_dz[i] = new SOLN_pSTATE*[NCj]; 
+      d_dWdy_dz[i] = new SOLN_pSTATE*[NCj]; 
       phi[i] = new SOLN_pSTATE*[NCj];
       dt[i] = new double*[NCj];
       for (int j = 0; j <= NCj-1 ; ++j) {
@@ -392,10 +425,22 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate(void){
          dWdx[i][j] = new SOLN_pSTATE[NCk]; 
          dWdy[i][j] = new SOLN_pSTATE[NCk];
          dWdz[i][j] = new SOLN_pSTATE[NCk];
+         d_dWdx_dW[i][j] = new double*[NCk]; 
+         d_dWdy_dW[i][j] = new double*[NCk]; 
+         d_dWdz_dW[i][j] = new double*[NCk]; 
+         d_dWdx_dx[i][j] = new SOLN_pSTATE[NCk];  
+         d_dWdy_dy[i][j] = new SOLN_pSTATE[NCk];  
+         d_dWdz_dz[i][j] = new SOLN_pSTATE[NCk];  
+         d_dWdx_dy[i][j] = new SOLN_pSTATE[NCk];  
+         d_dWdx_dz[i][j] = new SOLN_pSTATE[NCk];  
+         d_dWdy_dz[i][j] = new SOLN_pSTATE[NCk];  
          phi[i][j] = new SOLN_pSTATE[NCk]; 
          dt[i][j] = new double [NCk];
          for (int k = 0; k <= NCk-1 ; ++k) {
             dUdt[i][j][k]=new SOLN_cSTATE[NUMBER_OF_RESIDUAL_VECTORS];
+            d_dWdx_dW[i][j][k] = new double [7]; 
+            d_dWdy_dW[i][j][k] = new double [7]; 
+            d_dWdz_dW[i][j][k] = new double [7]; 
          } /* endfor */
       } /* endfor */
    } /* endfor */
@@ -416,8 +461,19 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate(void){
             dWdx[i][j][k] = W_VACUUM; 
             dWdy[i][j][k] = W_VACUUM;
             dWdz[i][j][k] = W_VACUUM; 
+            d_dWdx_dx[i][j][k] = W_VACUUM;  
+            d_dWdy_dy[i][j][k] = W_VACUUM;  
+            d_dWdz_dz[i][j][k] = W_VACUUM;  
+            d_dWdx_dy[i][j][k] = W_VACUUM;  
+            d_dWdx_dz[i][j][k] = W_VACUUM;  
+            d_dWdy_dz[i][j][k] = W_VACUUM;  
             phi[i][j][k] =  W_VACUUM; 
             dt[i][j][k] = ZERO;
+	    for ( int n = 0 ; n <= 6 ; ++n ) {
+            d_dWdx_dW[i][j][k][n] = ZERO; 
+            d_dWdy_dW[i][j][k][n] = ZERO; 
+            d_dWdz_dW[i][j][k][n] = ZERO; 
+	    }
          } /* endfor */
       } /* endfor */
    } /* endfor */
@@ -487,6 +543,15 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::deallocate(void) {
             delete []dWdx[i][j]; dWdx[i][j] = NULL; 
             delete []dWdy[i][j]; dWdy[i][j] = NULL;
             delete []dWdz[i][j]; dWdz[i][j] = NULL;
+            delete []d_dWdx_dW[i][j]; d_dWdx_dW[i][j] = NULL; 
+            delete []d_dWdy_dW[i][j]; d_dWdy_dW[i][j] = NULL; 
+            delete []d_dWdz_dW[i][j]; d_dWdz_dW[i][j] = NULL; 
+            delete []d_dWdx_dx[i][j]; d_dWdx_dx[i][j] = NULL; 
+            delete []d_dWdy_dy[i][j]; d_dWdy_dy[i][j] = NULL; 
+            delete []d_dWdz_dz[i][j]; d_dWdz_dz[i][j] = NULL; 
+            delete []d_dWdx_dy[i][j]; d_dWdx_dy[i][j] = NULL; 
+            delete []d_dWdx_dz[i][j]; d_dWdx_dz[i][j] = NULL; 
+            delete []d_dWdy_dz[i][j]; d_dWdy_dz[i][j] = NULL; 
             delete []phi[i][j]; phi[i][j] = NULL; 
             delete []dt[i][j]; dt[i][j] = NULL; 
          } /* endfor */
@@ -497,6 +562,15 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::deallocate(void) {
          delete []dWdx[i]; dWdx[i] = NULL; 
          delete []dWdy[i]; dWdy[i] = NULL;
          delete []dWdz[i]; dWdz[i] = NULL;
+         delete []d_dWdx_dW[i]; d_dWdx_dW[i] = NULL; 
+         delete []d_dWdy_dW[i]; d_dWdy_dW[i] = NULL; 
+         delete []d_dWdz_dW[i]; d_dWdz_dW[i] = NULL; 
+         delete []d_dWdx_dx[i]; d_dWdx_dx[i] = NULL; 
+         delete []d_dWdy_dy[i]; d_dWdy_dy[i] = NULL; 
+         delete []d_dWdz_dz[i]; d_dWdz_dz[i] = NULL; 
+         delete []d_dWdx_dy[i]; d_dWdx_dy[i] = NULL; 
+         delete []d_dWdx_dz[i]; d_dWdx_dz[i] = NULL; 
+         delete []d_dWdy_dz[i]; d_dWdy_dz[i] = NULL; 
          delete []phi[i]; phi[i] = NULL; 
          delete []dt[i]; dt[i] = NULL; 
       } /* endfor */
@@ -505,6 +579,15 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::deallocate(void) {
       delete []Uo; Uo = NULL; delete []dUdt; dUdt = NULL;
       delete []dWdx; dWdx = NULL; delete []dWdy; dWdy = NULL; 
       delete []dWdz; dWdz = NULL; 
+      delete []d_dWdx_dW; d_dWdx_dW = NULL; 
+      delete []d_dWdy_dW; d_dWdy_dW = NULL; 
+      delete []d_dWdz_dW; d_dWdz_dW = NULL; 
+      delete []d_dWdx_dx; d_dWdx_dx = NULL; 
+      delete []d_dWdy_dy; d_dWdy_dy = NULL; 
+      delete []d_dWdz_dz; d_dWdz_dz = NULL; 
+      delete []d_dWdx_dy; d_dWdx_dy = NULL; 
+      delete []d_dWdx_dz; d_dWdx_dz = NULL; 
+      delete []d_dWdy_dz; d_dWdy_dz = NULL; 
       delete []phi; phi = NULL; delete []dt; dt = NULL; 
 
       //Boundary references
@@ -1227,6 +1310,30 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             U[ICl-2][j][k] = U[ICu-2][j][k];
             break;
 
+      case BC_INFLOW_SUBSONIC :
+        // all fixed except pressure which is constant extrapolation
+	W[ICl-1][j][k] = WoW[j][k];
+        W[ICl-1][j][k].p = W[ICl][j][k].p;
+//        W[ICl-1][j][k].v.x = W[ICu][j][k].v.x*W[ICu][i][k].rho/WoW[j][k].rho;
+	U[ICl-1][j][k] = W[ICl-1][j][k].U();
+		
+	W[ICl-2][j][k] = WoW[j][k];
+        W[ICl-2][j][k].p = W[ICl][j][k].p;
+//         W[ICl-2][j][k] = W[ICl-1][j][k];
+	U[ICl-2][j][k] = W[ICl-2][j][k].U();
+	break;
+
+      case BC_OUTFLOW_SUBSONIC :
+	// all constant extrapolation except pressure which is fixed.
+	W[ICl-1][j][k] = W[ICl][j][k]; 
+	W[ICl-1][j][k].p = WoW[j][k].p;
+	U[ICl-1][j][k] = W[ICl-1][j][k].U();
+	
+	W[ICl-2][j][k] = W[ICl][j][k]; 
+	W[ICl-2][j][k].p = WoW[j][k].p;
+	U[ICl-2][j][k] = W[ICl-2][j][k].U();
+	break;
+
          case BC_NO_SLIP :
             W[ICl-1][j][k] = SOLN_pSTATE::No_Slip(W[ICl][j][k],WoW[j][k], 
                                                   Grid.nfaceW(ICl,j,k),
@@ -1308,6 +1415,29 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             W[ICu+2][j][k] = W[ICl+2][j][k];
             U[ICu+2][j][k] = U[ICl+2][j][k];
             break;
+
+	case BC_INFLOW_SUBSONIC :
+          // all fixed except pressure which is constant extrapolation
+	  W[ICu+1][j][k] = WoE[j][k];
+          W[ICu+1][j][k].p = W[ICu][j][k].p;
+	  U[ICu+1][j][k] = W[ICu+1][j][k].U();
+
+	  W[ICu+2][j][k] = WoE[j][k];
+          W[ICu+2][j][k].p = W[ICu][j][k].p;
+	  U[ICu+2][j][k] = W[ICu+2 ][j][k].U();
+	  break;
+
+	case BC_OUTFLOW_SUBSONIC :
+	  // all constant extrapolation except pressure which is fixed.
+	  W[ICu+1][j][k] = W[ICu][j][k]; 
+	  W[ICu+1][j][k].p = WoE[j][k].p;
+	  U[ICu+1][j][k] = W[ICu+1][j][k].U();
+
+	  W[ICu+2][j][k] = W[ICu][j][k]; 
+	  W[ICu+2][j][k].p = WoE[j][k].p;
+// 	  W[ICu+2][j][k] = W[ICu+1][j][k]; 
+	  U[ICu+2][j][k] = W[ICu+2][j][k].U();
+	  break;
 
          case BC_NO_SLIP :
             W[ICu+1][j][k] = SOLN_pSTATE::No_Slip(W[ICu][j][k], 
@@ -1883,7 +2013,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Linear_Reconstruction_LeastSquares(co
    int n, n2, n_pts, i_index[26], j_index[26], k_index[26];
    double u0Min, u0Max, uHexa[6], PHI;
    double DxDx_ave, DxDy_ave, DyDy_ave, DxDz_ave, DyDz_ave, DzDz_ave;
-   double D;;
+   double D, DD1, DD2, DD3;
    Vector3D dX;
    
    /* solnvec in  DU (DUDx_ave, DUDy_ave, DUDz_ave, D1, D2, D3) 
@@ -1950,6 +2080,10 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Linear_Reconstruction_LeastSquares(co
       DzDz_ave = ZERO;
       D = ZERO;
       
+      double Sum_dx =ZERO;
+      double Sum_dy =ZERO;
+      double Sum_dz =ZERO;
+
       for ( n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
          dX =  Grid.Cell[ i_index[n2] ][ j_index[n2] ][ k_index[n2] ].Xc - 
             Grid.Cell[i][j][k].Xc;
@@ -1965,6 +2099,10 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Linear_Reconstruction_LeastSquares(co
          DyDz_ave += dX.y*dX.z;
          DzDz_ave += dX.z*dX.z;
          
+	    Sum_dx += dX.x;
+	    Sum_dy += dX.y;
+	    Sum_dz += dX.z;
+
       } /* endfor */
       
       DUDx_ave = DUDx_ave/double(n_pts);
@@ -2000,6 +2138,26 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Linear_Reconstruction_LeastSquares(co
       dWdy[i][j][k] = D2/D;
       dWdz[i][j][k] = D3/D;
       
+	Sum_dx =Sum_dx/double(n_pts);
+	Sum_dy =Sum_dy/double(n_pts);
+	Sum_dz =Sum_dz/double(n_pts);
+
+      DD1 = Sum_dx*(DyDy_ave*DzDz_ave - DyDz_ave*DyDz_ave)+ 
+            Sum_dy*(DxDz_ave*DyDz_ave - DxDy_ave*DzDz_ave)+
+            Sum_dz*(DxDy_ave*DyDz_ave - DxDz_ave*DyDy_ave);
+      
+      DD2 = Sum_dx*(DxDz_ave*DyDz_ave - DxDy_ave*DzDz_ave)+ 
+            Sum_dy*(DxDx_ave*DzDz_ave - DxDz_ave*DxDz_ave)+
+            Sum_dz*(DxDy_ave*DxDz_ave - DxDx_ave*DyDz_ave);
+
+      DD1 = Sum_dx*(DxDy_ave*DyDz_ave - DxDz_ave*DyDy_ave)+ 
+            Sum_dy*(DxDz_ave*DxDy_ave - DxDx_ave*DyDz_ave)+
+            Sum_dz*(DxDx_ave*DyDy_ave - DxDy_ave*DxDy_ave);
+
+       d_dWdx_dW[i][j][k][0] = DD1/D; 
+       d_dWdy_dW[i][j][k][0] = DD2/D; 
+       d_dWdy_dW[i][j][k][0] = DD3/D; 
+
       if (! Freeze_Limiter) {
          for ( n = 1 ; n <= num_vars ; ++n ) {
             
@@ -2081,8 +2239,63 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Linear_Reconstruction_LeastSquares(co
        dWdy[i][j][k].Vacuum();
        dWdz[i][j][k].Vacuum();
        phi[i][j][k].Vacuum(); 
+       d_dWdx_dW[i][j][k][0]=ZERO; 
+       d_dWdy_dW[i][j][k][0]=ZERO; 
+       d_dWdz_dW[i][j][k][0]=ZERO; 
    } /* endif */
     
+}
+
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+   void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+   Reconstruction_Second_Derivatives() {
+  double DX, DY, DZ;
+  int i, j, k;
+
+    for (  k  = KCl; k <= KCu; ++k ) {
+      for ( j  = JCl; j <= JCu; ++j ) {
+	for ( i = ICl; i <= ICu; ++i ) {
+
+	  if (i == ICu || j == JCu || k == KCu) {
+	    //BFW
+	  DX = Grid.Cell[i][j][k].Xc.x - Grid.Cell[i-1][j][k].Xc.x;
+	  DY = Grid.Cell[i][j][k].Xc.y - Grid.Cell[i][j-1][k].Xc.y;
+	  DZ = Grid.Cell[i][j][k].Xc.z - Grid.Cell[i][j][k-1].Xc.z;
+	  d_dWdx_dx[i][j][k] = ( dWdx[i][j][k] - dWdx[i-1][j][k] )/ DX;
+	  d_dWdy_dy[i][j][k] = ( dWdy[i][j][k] - dWdy[i][j-1][k] )/ DY;
+	  d_dWdz_dz[i][j][k] = ( dWdz[i][j][k] - dWdz[i][j][k-1] )/ DZ;      
+	  d_dWdx_dy[i][j][k] = ( dWdx[i][j][k] - dWdx[i][j-1][k] )/ DY;
+	  d_dWdx_dz[i][j][k] = ( dWdx[i][j][k] - dWdx[i][j][k-1] )/ DZ;
+	  d_dWdy_dz[i][j][k] = ( dWdy[i][j][k] - dWdy[i][j][k-1] )/ DZ;
+
+	  }else if (i == ICl || j == JCl || k == KCl){
+	    //FFW
+	  DX = Grid.Cell[i+1][j][k].Xc.x - Grid.Cell[i][j][k].Xc.x;
+	  DY = Grid.Cell[i][j+1][k].Xc.y - Grid.Cell[i][j][k].Xc.y;
+	  DZ = Grid.Cell[i][j][k+1].Xc.z - Grid.Cell[i][j][k].Xc.z;
+	  d_dWdx_dx[i][j][k] = ( dWdx[i+1][j][k] - dWdx[i][j][k] )/ DX;
+	  d_dWdy_dy[i][j][k] = ( dWdy[i][j+1][k] - dWdy[i][j][k] )/ DY;
+	  d_dWdz_dz[i][j][k] = ( dWdz[i][j][k+1] - dWdz[i][j][k] )/ DZ;
+	  d_dWdx_dy[i][j][k] = ( dWdx[i][j+1][k] - dWdx[i][j][k] )/ DY;
+	  d_dWdx_dz[i][j][k] = ( dWdx[i][j][k+1] - dWdx[i][j][k] )/ DZ;	  
+          d_dWdy_dz[i][j][k] = ( dWdy[i][j][k+1] - dWdy[i][j][k] )/ DZ;
+
+	  }else{
+
+	  DX = Grid.Cell[i+1][j][k].Xc.x - Grid.Cell[i-1][j][k].Xc.x;
+	  DY = Grid.Cell[i][j+1][k].Xc.y - Grid.Cell[i][j-1][k].Xc.y;
+	  DZ = Grid.Cell[i][j][k+1].Xc.z - Grid.Cell[i][j][k-1].Xc.z;
+	  d_dWdx_dx[i][j][k] = ( dWdx[i+1][j][k] - dWdx[i-1][j][k] )/ DX; 
+	  d_dWdy_dy[i][j][k] = ( dWdy[i][j+1][k] - dWdy[i][j-1][k] )/ DY;
+	  d_dWdz_dz[i][j][k] = ( dWdz[i][j][k+1] - dWdz[i][j][k-1] )/ DZ;
+	  d_dWdx_dy[i][j][k] = ( dWdx[i][j+1][k] - dWdx[i][j-1][k] )/ DY;
+	  d_dWdx_dz[i][j][k] = ( dWdx[i][j][k+1] - dWdx[i][j][k-1] )/ DZ;
+	  d_dWdy_dz[i][j][k] = ( dWdy[i][j][k+1] - dWdy[i][j][k-1] )/ DZ;
+
+	  }
+	}
+      }
+    }
 }
 
 /********************************************************
@@ -2556,7 +2769,6 @@ Update_Solution_Multistage_Explicit(const int i_stage,
    
    int k_residual;
    double omega;
-   
    int num_vars = NumVar();
 
    /* Perform update of solution variables for stage 

@@ -14,11 +14,27 @@
  *  LESPremixed2D Specialization of blocksize to use N-1 not N variables                    *
  ********************************************************************************************/
 template <> int set_blocksize(LESPremixed2D_Quad_Block &SolnBlk){ 
+  
 #ifdef THICKENED_FLAME_ON
   return (SolnBlk.NumVar()-3);
 #else
+   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
+        return (SolnBlk.NumVar()-SolnBlk.W[0][0].ns);
+   }else{
   return (SolnBlk.NumVar()-1);
+   }
 #endif 
+
 }
 
 
@@ -35,13 +51,28 @@ int Newton_Update(LESPremixed2D_Quad_Block *SolnBlk,
 		  LESPremixed2D_Input_Parameters &Input_Parameters,
 		  GMRES_RightPrecon_MatrixFree<LESPremixed2D_pState,LESPremixed2D_Quad_Block,LESPremixed2D_Input_Parameters> &GMRES,
       double Relaxation_multiplier) {
-
+  int Num_Var;
 #ifdef THICKENED_FLAME_ON
-  int Num_Var = SolnBlk[0].NumVar()-2;
+  Num_Var = SolnBlk[0].NumVar()-2;
 #else
-  int Num_Var = SolnBlk[0].NumVar();
-  //  int Num_Var = SolnBlk[0].NumVar()-5;
+
+   if ( SolnBlk[0].Flow_Type == FLOWTYPE_LAMINAR_C || 
+	SolnBlk[0].Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+	SolnBlk[0].Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+	SolnBlk[0].Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+	SolnBlk[0].Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+	SolnBlk[0].Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+	SolnBlk[0].Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	SolnBlk[0].Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+	SolnBlk[0].Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+	SolnBlk[0].Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+	SolnBlk[0].Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
+       Num_Var =  SolnBlk[0].NumVar()-SolnBlk[0].W[0][0].ns;
+   }else{
+  Num_Var = SolnBlk[0].NumVar();
+   }
 #endif  	
+
   int error_flag = 0;
   
    /* Update Solution. No updates to Ghost Cells, let the BC's take care of it */
@@ -134,7 +165,7 @@ template <> double Finite_Time_Step(const LESPremixed2D_Input_Parameters &Input_
   double CFL_current;
 
   //SER 
-  if (L2norm_current_n > Input_Parameters.NKS_IP.Min_Finite_Time_Step_Norm_Ratio) { 
+   if (L2norm_current_n > Input_Parameters.NKS_IP.Min_Finite_Time_Step_Norm_Ratio ) { 
     //Original works for Invisicd, Viscous OK, Reacting seems to be more picky
     CFL_current = Input_Parameters.NKS_IP.Finite_Time_Step_Initial_CFL*
       pow( max(ONE, ONE/L2norm_current_n),ONE ); 
@@ -192,7 +223,6 @@ Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jac
     DenseMatrix II(blocksize,blocksize);  
     II.identity();    
     Jacobian[CENTER] -= II*LHS_Time<LESPremixed2D_Input_Parameters>(*Input_Parameters, SolnBlk->dt[cell_index_i][cell_index_j],DTS_dTime);
- 
   }
 
 }
@@ -224,11 +254,27 @@ template<> inline void Block_Preconditioner<LESPremixed2D_pState,
 					    LESPremixed2D_Input_Parameters>::
 Preconditioner_dFIdU_Roe(DenseMatrix &_dFIdU, int ii, int jj, int Orient)
 { 
+   int NUM_VAR_LESPREMIXED2D;
 #ifdef THICKENED_FLAME_ON
-  int NUM_VAR_LESPREMIXED2D = SolnBlk->NumVar()-3;   
+   NUM_VAR_LESPREMIXED2D = SolnBlk->NumVar()-3;   
 #else
-  int NUM_VAR_LESPREMIXED2D = SolnBlk->NumVar()-1;
+   if ( SolnBlk->Flow_Type == FLOWTYPE_LAMINAR_C || 
+	SolnBlk->Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+	SolnBlk->Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+	SolnBlk->Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+	SolnBlk->Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+	SolnBlk->Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+	SolnBlk->Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	SolnBlk->Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+	SolnBlk->Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+	SolnBlk->Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+ 	SolnBlk->Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
+        NUM_VAR_LESPREMIXED2D =  SolnBlk->NumVar()-SolnBlk->W[0][0].ns;
+   }else{
+   NUM_VAR_LESPREMIXED2D = SolnBlk->NumVar()-1;
+   }
 #endif
+
   DenseMatrix dFI_dW(NUM_VAR_LESPREMIXED2D,NUM_VAR_LESPREMIXED2D,ZERO);
   
   dFIdW_Inviscid_ROE(dFI_dW, *SolnBlk,*Input_Parameters, ii,jj,Orient);  
@@ -253,11 +299,28 @@ template<> inline void Block_Preconditioner<LESPremixed2D_pState,
 					    LESPremixed2D_Input_Parameters>::
 Preconditioner_dFIdU_AUSM_plus_up(DenseMatrix &_dFIdU, int ii, int jj, int Orient)
 {   
+   int NUM_VAR_LESPREMIXED2D;
 #ifdef THICKENED_FLAME_ON
-  int NUM_VAR_LESPREMIXED2D = SolnBlk->NumVar()-3;   
+   NUM_VAR_LESPREMIXED2D = SolnBlk->NumVar()-3;   
 #else
-  int NUM_VAR_LESPREMIXED2D = SolnBlk->NumVar()-1;
+   if ( SolnBlk->Flow_Type == FLOWTYPE_LAMINAR_C || 
+	SolnBlk->Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+	SolnBlk->Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+	SolnBlk->Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+	SolnBlk->Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+	SolnBlk->Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+	SolnBlk->Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	SolnBlk->Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+	SolnBlk->Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+	SolnBlk->Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+	SolnBlk->Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
+        NUM_VAR_LESPREMIXED2D =  SolnBlk->NumVar()-SolnBlk->W[0][0].ns;
+   }else{
+   NUM_VAR_LESPREMIXED2D = SolnBlk->NumVar()-1;
+   }
 #endif
+
+
   DenseMatrix dFIdW(NUM_VAR_LESPREMIXED2D,NUM_VAR_LESPREMIXED2D,ZERO);
   
   dFIdW_Inviscid_AUSM_plus_up(dFIdW, *SolnBlk,*Input_Parameters, ii,jj,Orient);
@@ -304,14 +367,33 @@ Preconditioner_dFVdU(DenseMatrix &dFvdU, const int Rii, const int Rjj,
     break;  
   }
 
+   int NUM_VAR_LESPREMIXED2D;
 #ifdef THICKENED_FLAME_ON
-  int NUM_VAR_LESPREMIXED2D = SolnBlk->NumVar()-3;  
+   NUM_VAR_LESPREMIXED2D = SolnBlk->NumVar()-3;  
 #else
-  int NUM_VAR_LESPREMIXED2D = SolnBlk->NumVar()-1;
+   if ( SolnBlk->Flow_Type == FLOWTYPE_LAMINAR_C || 
+	SolnBlk->Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+	SolnBlk->Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+	SolnBlk->Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+	SolnBlk->Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+	SolnBlk->Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+	SolnBlk->Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	SolnBlk->Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+	SolnBlk->Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+	SolnBlk->Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+	SolnBlk->Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
+        NUM_VAR_LESPREMIXED2D =  SolnBlk->NumVar()-SolnBlk->W[0][0].ns;
+   }else{
+   NUM_VAR_LESPREMIXED2D = SolnBlk->NumVar()-1;
+   }
 #endif
+
   int ns = SolnBlk->W[Rii][Rjj].ns-1; 
   //int Matrix_size = 2*NUM_VAR_LESPREMIXED2D+2;      // 14+Ns ?????  for variable R,k,mu, ie functions of ci see dRdU.cc
-  int Matrix_size = 14 + ns;
+  //  int Matrix_size = 14 + ns;
+  //don't forget to put it back
+  //  int Matrix_size = 10 + ns;
+  int Matrix_size = 14;
 
   DenseMatrix dFvdWf(NUM_VAR_LESPREMIXED2D, Matrix_size,ZERO);
   DenseMatrix dWfdWx(Matrix_size, NUM_VAR_LESPREMIXED2D,ZERO); 
@@ -323,7 +405,6 @@ Preconditioner_dFVdU(DenseMatrix &dFvdU, const int Rii, const int Rjj,
   dWfdWc_Diamond(dWfdWx,dWfdWy,*SolnBlk, Orient_face, Rii, Rjj, Orient_cell); 
   
   dGVdW = lface * (nface.x*(dFvdWf*dWfdWx) + nface.y*(dGvdWf*dWfdWy));
-    
   //transformation Jacobian
   DenseMatrix dWdU(NUM_VAR_LESPREMIXED2D,NUM_VAR_LESPREMIXED2D,ZERO); 
 
@@ -355,7 +436,7 @@ Preconditioner_dSdU(int ii, int jj, DenseMatrix &dRdU){
  * Normalizes the dFdU matrix used to generate the approximate  *               
  * Jacobian for the Block Preconditioner.                       *
  ****************************************************************/
-void normalize_preconditioner(DenseMatrix &dFdU) 
+inline void normalize_Preconditioner(DenseMatrix &dFdU) 
 { 
  
   LESPremixed2D_pState W_STD_ATM;
@@ -378,14 +459,14 @@ void normalize_preconditioner(DenseMatrix &dFdU)
 
   //scalars and cs's all have same normalization.
   for(int i=NUM_LESPREMIXED2D_VAR_SANS_SPECIES; 
-      i< NUM_LESPREMIXED2D_VAR_SANS_SPECIES + W_STD_ATM.nscal + W_STD_ATM.ns-1; i++){   		  
+      i< NUM_LESPREMIXED2D_VAR_SANS_SPECIES + W_STD_ATM.nscal;/*put it back + W_STD_ATM.ns-1;*/ i++){   		  
     dFdU(0,i) *= (ONE/ao);
     dFdU(1,i) *= (ONE/(ao*ao));
     dFdU(2,i) *= (ONE/(ao*ao));
     dFdU(3,i) *= (ONE/(ao*ao*ao));
     dFdU(i,0) *= (ONE/ao);
     dFdU(i,3) *= ao;
-    for(int j=NUM_LESPREMIXED2D_VAR_SANS_SPECIES; j< NUM_LESPREMIXED2D_VAR_SANS_SPECIES + W_STD_ATM.nscal + W_STD_ATM.ns-1; j++){   
+    for(int j=NUM_LESPREMIXED2D_VAR_SANS_SPECIES; j< NUM_LESPREMIXED2D_VAR_SANS_SPECIES + W_STD_ATM.nscal;/*put it back + W_STD_ATM.ns-1;*/ j++){   
       dFdU(i,j) *= (ONE/ao);            
     }
   } 
@@ -397,7 +478,7 @@ template<> inline void Block_Preconditioner<LESPremixed2D_pState,
 					    LESPremixed2D_Input_Parameters>::
 normalize_Preconditioner_dFdU(DenseMatrix &dFdU) 
 { 
-  normalize_preconditioner(dFdU); 
+  normalize_Preconditioner(dFdU); 
 }
 
 
@@ -611,11 +692,13 @@ calculate_Matrix_Free_Restart(const double &epsilon)
 	  for(int l =0; l < blocksize; l++){
 	    value += Precon(k,l) * denormalizeU( x[index(i,j,l)],l);
 	  }
-	  V[iter] -= normalizeR(value/(SolnBlk->dt[i][j]),k);
+	  //	  V[iter] -= normalizeR(value/(SolnBlk->dt[i][j]),k);
+	  V[iter] -= normalizeR(value * LHS_Time<LESPremixed2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
 	  
 	//No Preconditioner
 	} else { // z/h
-	  V[iter] -= normalizeUtoR(x[iter]/(SolnBlk->dt[i][j]),k);	
+	  //	  V[iter] -= normalizeUtoR(x[iter]/(SolnBlk->dt[i][j]),k);	
+	  V[iter] -= normalizeUtoR(x[iter] * LHS_Time<LESPremixed2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);	
 	}
       }  
     

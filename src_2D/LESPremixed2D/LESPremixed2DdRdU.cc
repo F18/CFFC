@@ -18,12 +18,27 @@ void PointImplicitBlockJacobi(DenseMatrix &dRdU,
 			      LESPremixed2D_Quad_Block &SolnBlk,
 			      LESPremixed2D_Input_Parameters &Input_Parameters,
 			      const int &ii, const int &jj){
-   
+  int NUM_VAR_LESPREMIXED2D;   
 #ifdef THICKENED_FLAME_ON
-  int NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-3; 
+  NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-3; 
 #else
-  int NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-1; 
+  NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-1; 
 #endif
+
+  if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
+       SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+       SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+       SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+       SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD) { 
+       NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-SolnBlk.W[0][0].ns; 
+  }
+
   DenseMatrix dRdW(NUM_VAR_LESPREMIXED2D,NUM_VAR_LESPREMIXED2D,ZERO);  
 
   //Inviscid dRdU
@@ -60,6 +75,7 @@ void SemiImplicitBlockJacobi(DenseMatrix &dSdU,
 			     const int &solver_type,
 			     const int &ii, const int &jj){ 
   
+    int NUM_VAR_LESPREMIXED2D;
   if( (SolnBlk.Axisymmetric && SolnBlk.Flow_Type != FLOWTYPE_INVISCID) ||
        SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K ||
        SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
@@ -75,11 +91,10 @@ void SemiImplicitBlockJacobi(DenseMatrix &dSdU,
        SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD) { 
 
 #ifdef THICKENED_FLAME_ON
-    int NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-3; 
+     NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-3; 
 #else
-    int NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-1;
+     NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-1;
 #endif
-
    if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
 	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
 	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
@@ -91,11 +106,11 @@ void SemiImplicitBlockJacobi(DenseMatrix &dSdU,
 	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
 	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
 	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
-      NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-SolnBlk.W[0][0].ns;
+        NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-SolnBlk.W[0][0].ns;
     }
 
     DenseMatrix dRdW(NUM_VAR_LESPREMIXED2D,NUM_VAR_LESPREMIXED2D,ZERO);  
-    
+
     // Add Source Jacobians (viscous axisymmetric, turbulence)
     SemiImplicitBlockJacobi_dSdW(dRdW,SolnBlk,EXPLICIT,ii,jj);                          
     
@@ -277,12 +292,27 @@ DenseMatrix Rotation_matrix2(Vector2D nface, int Size,  int A_matrix)
 void dFIdW_Inviscid_HLLE(DenseMatrix &dRdW, LESPremixed2D_Quad_Block &SolnBlk,
 			 LESPremixed2D_Input_Parameters &Input_Parameters, 
 			 const int &ii, const int &jj, const int Orient){
-
+  int NUM_VAR_LESPREMIXED2D;
 #ifdef THICKENED_FLAME_ON
-  int NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-2; 
+  NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-2; 
 #else
-  int NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar(); 
+  NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar(); 
 #endif
+
+   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
+        NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-SolnBlk.W[0][0].ns;
+    }
+
   int overlap = Input_Parameters.NKS_IP.GMRES_Overlap;
 
    DenseMatrix dFidW(NUM_VAR_LESPREMIXED2D, NUM_VAR_LESPREMIXED2D,ZERO);    
@@ -352,6 +382,7 @@ void dFIdW_Inviscid_ROE(DenseMatrix& dRdW, LESPremixed2D_Quad_Block &SolnBlk,
    
   int overlap = Input_Parameters.NKS_IP.GMRES_Overlap;
   int Ri, Rj;
+  int NUM_VAR_LESPREMIXED2D;
 
   if (ii < SolnBlk.ICl -overlap || ii > SolnBlk.ICu + overlap ||
       jj < SolnBlk.JCl -overlap || jj > SolnBlk.JCu + overlap) {
@@ -360,7 +391,22 @@ void dFIdW_Inviscid_ROE(DenseMatrix& dRdW, LESPremixed2D_Quad_Block &SolnBlk,
      cout<<"\n Hey I am not suppose to be here! \n"; exit(1);
 
   } else {     
-    int NUM_VAR_LESPREMIXED2D = dRdW.get_n();  //  SolnBlk.NumVar()-1;    
+
+   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
+        NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-SolnBlk.W[0][0].ns;
+   }else{
+        NUM_VAR_LESPREMIXED2D = dRdW.get_n();  //  SolnBlk.NumVar()-1;    
+   }
     DenseMatrix dFidW(NUM_VAR_LESPREMIXED2D, NUM_VAR_LESPREMIXED2D,ZERO);
     
     Vector2D nface,DX; double lface;   
@@ -474,6 +520,7 @@ void dFIdW_Inviscid_ROE_FD(DenseMatrix& dRdW, LESPremixed2D_Quad_Block &SolnBlk,
    
   int overlap = Input_Parameters.NKS_IP.GMRES_Overlap;
   int Ri, Rj;
+  int NUM_VAR_LESPREMIXED2D;
 
   if (ii < SolnBlk.ICl -overlap || ii > SolnBlk.ICu + overlap ||
       jj < SolnBlk.JCl -overlap || jj > SolnBlk.JCu + overlap) {
@@ -482,7 +529,22 @@ void dFIdW_Inviscid_ROE_FD(DenseMatrix& dRdW, LESPremixed2D_Quad_Block &SolnBlk,
      cout<<"\n Hey I am not suppose to be here! \n"; exit(1);
 
   } else {     
-     int NUM_VAR_LESPREMIXED2D = dRdW.get_n();   
+
+   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
+        NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-SolnBlk.W[0][0].ns;
+   }else{
+        NUM_VAR_LESPREMIXED2D = dRdW.get_n();   
+   }
      DenseMatrix dFidW(NUM_VAR_LESPREMIXED2D, NUM_VAR_LESPREMIXED2D,ZERO);
      
      Vector2D nface, DX;   double lface;
@@ -765,6 +827,7 @@ void dFIdW_Inviscid_AUSM_plus_up(DenseMatrix& dRdW, LESPremixed2D_Quad_Block &So
    
   int overlap = Input_Parameters.NKS_IP.GMRES_Overlap;
   int Ri, Rj;
+  int NUM_VAR_LESPREMIXED2D;
 
   if (ii < SolnBlk.ICl -overlap || ii > SolnBlk.ICu + overlap ||
       jj < SolnBlk.JCl -overlap || jj > SolnBlk.JCu + overlap) {
@@ -772,7 +835,22 @@ void dFIdW_Inviscid_AUSM_plus_up(DenseMatrix& dRdW, LESPremixed2D_Quad_Block &So
      cout<<"\n Hey I am not suppose to be here! \n"; exit(1);
 
   } else {     
-    int NUM_VAR_LESPREMIXED2D = dRdW.get_n();  //  SolnBlk.NumVar();    
+
+   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
+        NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-SolnBlk.W[0][0].ns;
+   }else{
+        NUM_VAR_LESPREMIXED2D = dRdW.get_n();  //  SolnBlk.NumVar();    
+   }
     DenseMatrix dFidW(NUM_VAR_LESPREMIXED2D, NUM_VAR_LESPREMIXED2D,ZERO);
     
     Vector2D nface,DX; double lface;   
@@ -830,18 +908,37 @@ void dGVdW_Viscous(DenseMatrix &dRdW, LESPremixed2D_Quad_Block &SolnBlk,
 		   LESPremixed2D_Input_Parameters &Input_Parameters,
 		   const int &ii, const int &jj){
 
+  int NUM_VAR_LESPREMIXED2D;
 #ifdef THICKENED_FLAME_ON   
-   int NUM_VAR_LESPREMIXED2D = SolnBlk.NumVar()-3; 
+  NUM_VAR_LESPREMIXED2D = SolnBlk.NumVar()-3; 
 #else
-   int NUM_VAR_LESPREMIXED2D = SolnBlk.NumVar()-1;
+  NUM_VAR_LESPREMIXED2D = SolnBlk.NumVar()-1;
 #endif
    int ns = SolnBlk.W[ii][jj].ns-1;
+   int matrix_size;
 
-   DenseMatrix dFvdWf(NUM_VAR_LESPREMIXED2D, 14+(ns),ZERO);
-   DenseMatrix dWfdWx(14+(ns), NUM_VAR_LESPREMIXED2D,ZERO);  
-   DenseMatrix dGvdWf(NUM_VAR_LESPREMIXED2D, 14+(ns),ZERO);
-   DenseMatrix dWfdWy(14+(ns), NUM_VAR_LESPREMIXED2D,ZERO);
-   
+   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
+        NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-SolnBlk.W[0][0].ns;
+	matrix_size = 2*NUM_VAR_LESPREMIXED2D+2;
+   }else{
+     matrix_size = 14+ns;
+   }   
+
+   DenseMatrix dFvdWf(NUM_VAR_LESPREMIXED2D, matrix_size,/*14+(ns),*/ZERO);
+   DenseMatrix dWfdWx(matrix_size,/*14+(ns),*/ NUM_VAR_LESPREMIXED2D,ZERO);  
+   DenseMatrix dGvdWf(NUM_VAR_LESPREMIXED2D, matrix_size,/*14+(ns),*/ZERO);
+   DenseMatrix dWfdWy(matrix_size,/*14+(ns),*/ NUM_VAR_LESPREMIXED2D,ZERO);
+
    DenseMatrix dGVdW(NUM_VAR_LESPREMIXED2D,NUM_VAR_LESPREMIXED2D,ZERO);
    Vector2D nface;
 
@@ -901,6 +998,7 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
    double  *h, *dcdx, *dcdy, *dhdT;
    double dUdx,dUdy, dVdx,dVdy;
    //double dkdx, dkdy, domegadx, domegady;
+   double *dscalardx, *dscalardy;
    double drhodx, drhody, dpdx, dpdy, Temp;
    double radius;
    
@@ -913,7 +1011,9 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
    dcdx = new double [ns_values]; 
    dcdy = new double [ns_values];
    dhdT = new double [ns_values];
-  
+   int num = SolnBlk.W[ii][jj].nscal;
+   dscalardx = new double [num];
+   dscalardy = new double [num];
    switch(Orient){
      /****************************** NORTH ******************************/
    case NORTH:
@@ -934,11 +1034,26 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
      dUdy = SolnBlk.dWdy_faceN[ii][jj].v.x;
      dVdx = SolnBlk.dWdx_faceN[ii][jj].v.y;
      dVdy = SolnBlk.dWdy_faceN[ii][jj].v.y;
-     // dkdx = SolnBlk.dWdx_faceN[ii][jj].k;
+//      dkdx = SolnBlk.dWdx_faceN[ii][jj].k;
 //      dkdy = SolnBlk.dWdy_faceN[ii][jj].k;
 //      domegadx = SolnBlk.dWdx_faceN[ii][jj].omega;
 //      domegady = SolnBlk.dWdy_faceN[ii][jj].omega;
-
+   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
+     for ( num = 0; num<SolnBlk.W[ii][jj].nscal; num++ ) {
+       dscalardx[num] = SolnBlk.dWdx_faceN[ii][jj].scalar[num];
+       dscalardy[num] = SolnBlk.dWdy_faceN[ii][jj].scalar[num];
+     }
+   }
      if (SolnBlk.Axisymmetric == AXISYMMETRIC_X) {
        radius = (SolnBlk.Grid.xfaceN(ii,jj).x < MICRO) ? MICRO : SolnBlk.Grid.xfaceN(ii,jj).x;     
      } else if (SolnBlk.Axisymmetric == AXISYMMETRIC_Y) {    
@@ -965,11 +1080,26 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
      dUdy = SolnBlk.dWdy_faceE[ii][jj].v.x;
      dVdx = SolnBlk.dWdx_faceE[ii][jj].v.y;
      dVdy = SolnBlk.dWdy_faceE[ii][jj].v.y;
-     // dkdx = SolnBlk.dWdx_faceE[ii][jj].k;
+//      dkdx = SolnBlk.dWdx_faceE[ii][jj].k;
 //      dkdy = SolnBlk.dWdy_faceE[ii][jj].k;
 //      domegadx = SolnBlk.dWdx_faceE[ii][jj].omega;
 //      domegady = SolnBlk.dWdy_faceE[ii][jj].omega;
-
+   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
+     for ( num = 0; num<SolnBlk.W[ii][jj].nscal; num++ ) {
+       dscalardx[num] = SolnBlk.dWdx_faceE[ii][jj].scalar[num];
+       dscalardy[num] = SolnBlk.dWdy_faceE[ii][jj].scalar[num];
+     }
+   }
      if (SolnBlk.Axisymmetric == AXISYMMETRIC_X) {
        radius = ( SolnBlk.Grid.xfaceE(ii,jj).x < MICRO) ? MICRO : SolnBlk.Grid.xfaceE(ii,jj).x;     
      } else if (SolnBlk.Axisymmetric == AXISYMMETRIC_Y) {    
@@ -996,11 +1126,26 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
      dUdy = SolnBlk.dWdy_faceS[ii][jj].v.x;
      dVdx = SolnBlk.dWdx_faceS[ii][jj].v.y;
      dVdy = SolnBlk.dWdy_faceS[ii][jj].v.y;
-     // dkdx = SolnBlk.dWdx_faceS[ii][jj].k;
+//      dkdx = SolnBlk.dWdx_faceS[ii][jj].k;
 //      dkdy = SolnBlk.dWdy_faceS[ii][jj].k;
 //      domegadx = SolnBlk.dWdx_faceS[ii][jj].omega;
 //      domegady = SolnBlk.dWdy_faceS[ii][jj].omega;  
-     
+   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
+     for ( int num = 0; num<SolnBlk.W[ii][jj].nscal; num++ ) {
+       dscalardx[num] = SolnBlk.dWdx_faceS[ii][jj].scalar[num];
+       dscalardy[num] = SolnBlk.dWdy_faceS[ii][jj].scalar[num];
+     }
+   }     
      if (SolnBlk.Axisymmetric == AXISYMMETRIC_X) {
        radius = (SolnBlk.Grid.xfaceS(ii,jj).x < MICRO) ? MICRO : SolnBlk.Grid.xfaceS(ii,jj).x;     
      } else if (SolnBlk.Axisymmetric == AXISYMMETRIC_Y) {    
@@ -1026,11 +1171,26 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
      dUdy = SolnBlk.dWdy_faceW[ii][jj].v.x;
      dVdx = SolnBlk.dWdx_faceW[ii][jj].v.y;
      dVdy = SolnBlk.dWdy_faceW[ii][jj].v.y;
-     // dkdx = SolnBlk.dWdx_faceW[ii][jj].k;
+//      dkdx = SolnBlk.dWdx_faceW[ii][jj].k;
 //      dkdy = SolnBlk.dWdy_faceW[ii][jj].k;
 //      domegadx = SolnBlk.dWdx_faceW[ii][jj].omega;
 //      domegady = SolnBlk.dWdy_faceW[ii][jj].omega;
-     
+   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
+     for ( num = 0; num<SolnBlk.W[ii][jj].nscal; num++ ) {
+       dscalardx[num] = SolnBlk.dWdx_faceW[ii][jj].scalar[num];
+       dscalardy[num] = SolnBlk.dWdy_faceW[ii][jj].scalar[num];
+     }
+   }     
      if (SolnBlk.Axisymmetric == AXISYMMETRIC_X) {
        radius = (SolnBlk.Grid.xfaceW(ii,jj).x < MICRO) ? MICRO : SolnBlk.Grid.xfaceW(ii,jj).x;     
      } else if (SolnBlk.Axisymmetric == AXISYMMETRIC_Y) {    
@@ -1048,32 +1208,96 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
    mu = QuadraturePoint_W.mu();
    Rmix =  QuadraturePoint_W.Rtot();
    
-   /*********************** X - DIRECTION **************************************/
-
-   dFvdWf(1, 7) += FOUR/THREE*mu;
-   dFvdWf(1, 10) -= TWO/THREE*mu;
-   dFvdWf(2, 8) += mu;
-   dFvdWf(2, 9) += mu;  
-   
    double Sum_q(ZERO);
    double Sum_dq(ZERO);
-   
+   double Sum_dhdC(ZERO);
+
+   /*********************** X - DIRECTION **************************************/
+
    for(int Num = 0; Num<ns_values; Num++){
-      Sum_q +=  dhdT[Num]/(rho*Rmix)*mu/QuadraturePoint_W.Schmidt[Num]*dcdx[Num];
-      Sum_dq -= dhdT[Num]*(mu/QuadraturePoint_W.Schmidt[Num])*dcdx[Num]*p/(rho*rho*Rmix);
+      Sum_q +=    dhdT[Num]*(mu+mu_t)/QuadraturePoint_W.Schmidt[Num]*dcdx[Num]/(rho*Rmix);
+      Sum_dq -=   dhdT[Num]*(mu+mu_t)/QuadraturePoint_W.Schmidt[Num]*dcdx[Num]*p/(rho*rho*Rmix);
+      Sum_dhdC -= dhdT[Num]*(mu+mu_t)/QuadraturePoint_W.Schmidt[Num]*dcdx[Num]*dcdx[Num]*p/(rho*rho*Rmix);
    } 
+
+   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
+   Tensor2D strain_rate;
+   strain_rate = SolnBlk.W[ii][jj].Strain_Rate(SolnBlk.dWdx[ii][jj],SolnBlk.dWdy[ii][jj],SolnBlk.Flow_Type,SolnBlk.Axisymmetric,SolnBlk.Grid.Cell[ii][jj].Xc);  
+   mu_t =  QuadraturePoint_W.mu_t(strain_rate,SolnBlk.Flow_Type);
+   kappa_t = QuadraturePoint_W.Kappa_turb(mu_t);
+   Sc_t =  QuadraturePoint_W.Sc_turb();
+
+   dFvdWf(1, 7) += FOUR/THREE*(mu+mu_t);
+   dFvdWf(1, 10) -= TWO/THREE*(mu+mu_t);
+   dFvdWf(2, 8) += mu+mu_t;
+   dFvdWf(2, 9) += mu+mu_t;  
+   dFvdWf(3,0) += (kappa+kappa_t)*(-dpdx+TWO*p*drhodx/rho)/(rho*rho*Rmix)+Sum_dq;
+   dFvdWf(3,1) += TWO*(mu+mu_t)*(TWO/THREE*dUdx-dVdy/THREE);
+   dFvdWf(3,2) += (mu+mu_t)*(dUdy+dVdx);
+   dFvdWf(3,3) += -drhodx/(rho*rho*Rmix)*(kappa+kappa_t)+Sum_q;
+   dFvdWf(3,4) += Sum_dhdC;
+   dFvdWf(3,6) -= p/(rho*rho*Rmix)*(kappa+kappa_t);
+   dFvdWf(3,7) += FOUR/THREE*QuadraturePoint_W.v.x*(mu+mu_t);
+   dFvdWf(3,8) += QuadraturePoint_W.v.y*(mu+mu_t);
+   dFvdWf(3,9) = dFvdWf(3,8);
+   dFvdWf(3,10) -= TWO/THREE*QuadraturePoint_W.v.x*(mu+mu_t);
+   dFvdWf(3,11) = (kappa+kappa_t)/(rho*Rmix); 
+   for(int Num = 0; Num<2; Num++){
+     dFvdWf(4+Num, 12+Num) = mu_t/Sc_t;
+   }
+   }else{
+
+//    dFvdWf(1, 7) += FOUR/THREE*mu;
+//    dFvdWf(1, 10) -= TWO/THREE*mu;
+//    dFvdWf(2, 8) += mu;
+//    dFvdWf(2, 9) += mu;  
+
+//    dFvdWf(3,6) -= p/(rho*rho*Rmix)*kappa;
+//    dFvdWf(3,7) += FOUR/THREE*QuadraturePoint_W.v.x*mu;
+//    dFvdWf(3,8) += QuadraturePoint_W.v.y*mu;
+//    dFvdWf(3,9) = dFvdWf(3,8);
+//    dFvdWf(3,10) -= TWO/THREE*QuadraturePoint_W.v.x*mu;
+//    dFvdWf(3,11) = kappa/(rho*Rmix); 
+
+   //multispecies
+//    for(int Num = 0; Num<(ns_species); Num++){
+//      dFvdWf(3,14+Num) = mu/QuadraturePoint_W.Schmidt[Num]*h[Num];  //+  H3???
+//      dFvdWf(6+Num, 14+Num) = mu/QuadraturePoint_W.Schmidt[Num];
+//    }
+
+   dFvdWf(1, 5) += FOUR/THREE*mu;
+   dFvdWf(1, 8) -= TWO/THREE*mu;
+   dFvdWf(2, 6) += mu;
+   dFvdWf(2, 7) += mu;  
 
    dFvdWf(3,0) += kappa*(-dpdx/(rho*rho*Rmix) +TWO*p*drhodx/(rho*rho*rho*Rmix))+Sum_dq;
    dFvdWf(3,1) += TWO*mu*(TWO/THREE*dUdx - dVdy/THREE);
    dFvdWf(3,2) += mu*(dUdy+dVdx);
    dFvdWf(3,3) += -drhodx/(rho*rho*Rmix)*kappa+Sum_q;
 
-   dFvdWf(3,6) -= p/(rho*rho*Rmix)*kappa;
-   dFvdWf(3,7) += FOUR/THREE*QuadraturePoint_W.v.x*mu;
-   dFvdWf(3,8) += QuadraturePoint_W.v.y*mu;
-   dFvdWf(3,9) = dFvdWf(3,8);
-   dFvdWf(3,10) -= TWO/THREE*QuadraturePoint_W.v.x*mu;
-   dFvdWf(3,11) = kappa/(rho*Rmix); 
+   dFvdWf(3,4) -= p/(rho*rho*Rmix)*kappa;
+   dFvdWf(3,5) += FOUR/THREE*QuadraturePoint_W.v.x*mu;
+   dFvdWf(3,6) += QuadraturePoint_W.v.y*mu;
+   dFvdWf(3,7) = dFvdWf(3,6);
+   dFvdWf(3,8) -= TWO/THREE*QuadraturePoint_W.v.x*mu;
+   dFvdWf(3,9) = kappa/(rho*Rmix); 
+
+   for(int Num = 0; Num<(ns_species-1); Num++){
+     dFvdWf(3,10+Num) = mu/QuadraturePoint_W.Schmidt[Num]*h[Num];  //+  H3???
+     dFvdWf(4+Num, 10+Num) = mu/QuadraturePoint_W.Schmidt[Num];
+   }
+
+   }
 
    // Axisymmetric
    if(SolnBlk.Axisymmetric == AXISYMMETRIC_Y){
@@ -1086,13 +1310,6 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
      dFvdWf(3,1) -=  FOUR/THREE*mu*QuadraturePoint_W.v.x/radius;
    }
  
-   //multispecies
-   for(int Num = 0; Num<(ns_species); Num++){
-     dFvdWf(3,14+Num) = mu/QuadraturePoint_W.Schmidt[Num]*h[Num];  //+  H3???
-     dFvdWf(6+Num, 14+Num) = mu/QuadraturePoint_W.Schmidt[Num];
-   }
-
-
 
    //Turbulence
 //    if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
@@ -1191,30 +1408,96 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
    
    /*********************** Y - DIRECTION **************************************/
 
-   dGvdWf(1, 8) += mu;
-   dGvdWf(1, 9) += mu; 
-   dGvdWf(2, 7) -= TWO/THREE*mu;
-   dGvdWf(2, 10) += FOUR/THREE*mu;
-
-   Sum_q = ZERO;  Sum_dq = ZERO;
+   Sum_q = ZERO;  Sum_dq = ZERO;  Sum_dhdC = ZERO;
 
    for(int Num = 0; Num<ns_values; Num++){
-      Sum_q +=  dhdT[Num]/(rho*Rmix)*mu/QuadraturePoint_W.Schmidt[Num]*dcdy[Num];
-      Sum_dq -= dhdT[Num]*(mu/QuadraturePoint_W.Schmidt[Num])*dcdy[Num]*p/(rho*rho*Rmix);
+      Sum_q +=    dhdT[Num]*(mu+mu_t)/QuadraturePoint_W.Schmidt[Num]*dcdy[Num]/(rho*Rmix);
+      Sum_dq -=   dhdT[Num]*(mu+mu_t)/QuadraturePoint_W.Schmidt[Num]*dcdy[Num]*p/(rho*rho*Rmix);
+      Sum_dhdC -= dhdT[Num]*(mu+mu_t)/QuadraturePoint_W.Schmidt[Num]*dcdy[Num]*dcdy[Num]*p/(rho*rho*Rmix);
    } 
-   
+
+   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
+   Tensor2D strain_rate;
+   strain_rate = SolnBlk.W[ii][jj].Strain_Rate(SolnBlk.dWdx[ii][jj],SolnBlk.dWdy[ii][jj],SolnBlk.Flow_Type,SolnBlk.Axisymmetric,SolnBlk.Grid.Cell[ii][jj].Xc);  
+   mu_t =  QuadraturePoint_W.mu_t(strain_rate,SolnBlk.Flow_Type);
+   kappa_t = QuadraturePoint_W.Kappa_turb(mu_t);
+   Sc_t =  QuadraturePoint_W.Sc_turb();
+
+   dGvdWf(1, 8) += mu+mu_t;
+   dGvdWf(1, 9) += mu+mu_t; 
+   dGvdWf(2, 7) -= TWO/THREE*(mu+mu_t);
+   dGvdWf(2, 10) += FOUR/THREE*(mu+mu_t);
+   dGvdWf(3,0) += (kappa+kappa_t)*(-dpdy+TWO*p*drhody/rho)/(rho*rho*Rmix)+Sum_dq; 
+   dGvdWf(3,1) += (mu+mu_t)*(dUdy +dVdx);
+   dGvdWf(3,2) += TWO*(mu+mu_t)*(TWO/THREE*dVdy-dUdx/THREE);
+   dGvdWf(3,3) += -drhody/(rho*rho*Rmix)*(kappa+kappa_t)+Sum_q;
+   dGvdWf(3,4) += Sum_dhdC;
+   dGvdWf(3,6) -= p/(rho*rho*Rmix)*(kappa+kappa_t);
+   dGvdWf(3,7) -= TWO/THREE*QuadraturePoint_W.v.y*(mu+mu_t);
+   dGvdWf(3,8) += QuadraturePoint_W.v.x*(mu+mu_t);
+   dGvdWf(3,9) = dGvdWf(3,8);
+   dGvdWf(3,10) += FOUR/THREE*QuadraturePoint_W.v.y*(mu+mu_t);
+   dGvdWf(3,11) = (kappa+kappa_t)/(rho*Rmix); 
+   for(int Num = 0; Num<2; Num++){
+      dGvdWf(4+Num, 12+Num) =  mu_t/Sc_t;
+   }
+   }else{
+//    dGvdWf(1, 8) += mu;
+//    dGvdWf(1, 9) += mu; 
+//    dGvdWf(2, 7) -= TWO/THREE*mu;
+//    dGvdWf(2, 10) += FOUR/THREE*mu;
+
+//    dGvdWf(3,0) += kappa*(-dpdy/(rho*rho*Rmix) +TWO*p*drhody/(rho*rho*rho*Rmix))+Sum_dq; 
+//    dGvdWf(3,1) += mu*(dUdy +dVdx);
+//    dGvdWf(3,2) += TWO*mu*(TWO/THREE*dVdy-dUdx/THREE);
+//    dGvdWf(3,3) += -drhody/(rho*rho*Rmix)*kappa+Sum_q;
+
+//    dGvdWf(3,6) -= p/(rho*rho*Rmix)*kappa;
+//    dGvdWf(3,7) -= TWO/THREE*QuadraturePoint_W.v.y*mu;
+//    dGvdWf(3,8) += QuadraturePoint_W.v.x*mu;
+//    dGvdWf(3,9) = dGvdWf(3,8);
+//    dGvdWf(3,10) += FOUR/THREE*QuadraturePoint_W.v.y*mu;
+//    dGvdWf(3,11) = kappa/(rho*Rmix); 
+
+   //multispecies
+//    for(int Num = 0; Num<(ns_species); Num++){
+//       dGvdWf(3,14+Num) = mu/QuadraturePoint_W.Schmidt[Num]*h[Num];
+//       dGvdWf(6+Num, 14+Num) =  mu/QuadraturePoint_W.Schmidt[Num];
+//    }
+
+   dGvdWf(1, 6) += mu;
+   dGvdWf(1, 7) += mu; 
+   dGvdWf(2, 5) -= TWO/THREE*mu;
+   dGvdWf(2, 8) += FOUR/THREE*mu;
+  
    dGvdWf(3,0) += kappa*(-dpdy/(rho*rho*Rmix) +TWO*p*drhody/(rho*rho*rho*Rmix))+Sum_dq; 
    dGvdWf(3,1) += mu*(dUdy +dVdx);
    dGvdWf(3,2) += TWO*mu*(TWO/THREE*dVdy-dUdx/THREE);
    dGvdWf(3,3) += -drhody/(rho*rho*Rmix)*kappa+Sum_q;
-   dGvdWf(3,6) -= p/(rho*rho*Rmix)*kappa;
- 
-   dGvdWf(3,7) -= TWO/THREE*QuadraturePoint_W.v.y*mu;
-   dGvdWf(3,8) += QuadraturePoint_W.v.x*mu;
-   dGvdWf(3,9) = dGvdWf(3,8);
-   dGvdWf(3,10) += FOUR/THREE*QuadraturePoint_W.v.y*mu;
-   dGvdWf(3,11) = kappa/(rho*Rmix); 
 
+   dGvdWf(3,4) -= p/(rho*rho*Rmix)*kappa;
+   dGvdWf(3,5) -= TWO/THREE*QuadraturePoint_W.v.y*mu;
+   dGvdWf(3,6) += QuadraturePoint_W.v.x*mu;
+   dGvdWf(3,7) = dGvdWf(3,6);
+   dGvdWf(3,8) += FOUR/THREE*QuadraturePoint_W.v.y*mu;
+   dGvdWf(3,9) = kappa/(rho*Rmix); 
+
+   for(int Num = 0; Num<(ns_species); Num++){
+      dGvdWf(3,10+Num) = mu/QuadraturePoint_W.Schmidt[Num]*h[Num];
+      dGvdWf(4+Num, 10+Num) =  mu/QuadraturePoint_W.Schmidt[Num];
+   }
+   }
+ 
    //Axisymmetric 
    if(SolnBlk.Axisymmetric == AXISYMMETRIC_Y){    
      dGvdWf(2,2) -=  TWO/THREE*mu/radius;
@@ -1225,13 +1508,6 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
      dGvdWf(3,1) -=  TWO/THREE*mu*QuadraturePoint_W.v.y/radius;
      dGvdWf(3,2) -=  TWO/THREE*mu*QuadraturePoint_W.v.x/radius;
    }
-
-   //multispecies
-   for(int Num = 0; Num<(ns_species); Num++){
-      dGvdWf(3,14+Num) = mu/QuadraturePoint_W.Schmidt[Num]*h[Num];
-      dGvdWf(6+Num, 14+Num) =  mu/QuadraturePoint_W.Schmidt[Num];
-   }
-
 
 //    if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
 //        SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
@@ -1327,7 +1603,8 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
    delete []dcdx;   dcdx = NULL;
    delete []dcdy;   dcdy = NULL;
    delete []dhdT;   dhdT = NULL;   
-   
+   delete []dscalardx; dscalardx = NULL;
+   delete []dscalardy; dscalardy = NULL;
 }
 
 
@@ -1447,37 +1724,94 @@ void dWfdWc_Diamond(DenseMatrix &dWfdWc_x,DenseMatrix &dWfdWc_y, LESPremixed2D_Q
    d_dWd_dW_Diamond(d_dWdx_dW,d_dWdy_dW,SolnBlk,LL,RR,Orient_cell,Orient_face,i,j);
  
    /*********************** X - DIRECTION **************************************/
-   for(int nn=0; nn<6; nn++){
+ 
+   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
+
+     for(int nn=0; nn<SolnBlk.NumVar()-SolnBlk.W[i][j].ns; nn++){
       dWfdWc_x(nn,nn) = HALF*(LL+RR);
       dWfdWc_y(nn,nn) = dWfdWc_x(nn,nn);
    } 
- 
+
    dWfdWc_x(6,0) = d_dWdx_dW;
-   dWfdWc_x(7,1) = d_dWdx_dW;        //NOTE 7,1 & 8,1 same for X and Y 
+   dWfdWc_x(7,1) = d_dWdx_dW;        //NOTE 5,1 & 6,1 same for X and Y 
    dWfdWc_x(8,1) = d_dWdy_dW;
    dWfdWc_x(9,2) =  dWfdWc_x(7,1);
    dWfdWc_x(10,2) =  dWfdWc_x(8,1);
    dWfdWc_x(11,3) = d_dWdx_dW;
-   dWfdWc_x(12,4) = d_dWdx_dW;
-   dWfdWc_x(13,5) = d_dWdx_dW;
    
-   for(int Num=0; Num<(ns); Num++){
-     dWfdWc_x(14+Num,6+Num) =  d_dWdx_dW;
-     dWfdWc_y(14+Num,6+Num) =  d_dWdy_dW;
-   }
-
-   /*********************** Y - DIRECTION **************************************/
    dWfdWc_y(6,0) = d_dWdy_dW;   
    dWfdWc_y(7,1) = d_dWdx_dW;
    dWfdWc_y(8,1) = d_dWdy_dW;
    dWfdWc_y(9,2) =  dWfdWc_y(7,1);
    dWfdWc_y(10,2) =  dWfdWc_y(8,1);
    dWfdWc_y(11,3) = d_dWdy_dW;
-   dWfdWc_y(12,4) = d_dWdy_dW;
-   dWfdWc_y(13,5) = d_dWdy_dW;
-     
-}
 
+   for(int Num=0; Num<SolnBlk.W[i][j].nscal; Num++){
+     dWfdWc_x(12+Num,4+Num) =  d_dWdx_dW;
+     dWfdWc_y(12+Num,4+Num) =  d_dWdy_dW;
+   }
+   }else{
+//    dWfdWc_x(6,0) = d_dWdx_dW;
+//    dWfdWc_x(7,1) = d_dWdx_dW;        //NOTE 7,1 & 8,1 same for X and Y 
+//    dWfdWc_x(8,1) = d_dWdy_dW;
+//    dWfdWc_x(9,2) =  dWfdWc_x(7,1);
+//    dWfdWc_x(10,2) =  dWfdWc_x(8,1);
+//    dWfdWc_x(11,3) = d_dWdx_dW;
+//    dWfdWc_x(12,4) = d_dWdx_dW;
+//    dWfdWc_x(13,5) = d_dWdx_dW;
+   
+//    for(int Num=0; Num<(ns); Num++){
+//      dWfdWc_x(14+Num,6+Num) =  d_dWdx_dW;
+//      dWfdWc_y(14+Num,6+Num) =  d_dWdy_dW;
+//    }
+
+   for(int nn=0; nn<4; nn++){
+      dWfdWc_x(nn,nn) = HALF*(LL+RR);
+      dWfdWc_y(nn,nn) = dWfdWc_x(nn,nn);
+   } 
+ 
+   dWfdWc_x(4,0) = d_dWdx_dW;
+   dWfdWc_x(5,1) = d_dWdx_dW;        //NOTE 5,1 & 6,1 same for X and Y 
+   dWfdWc_x(6,1) = d_dWdy_dW;
+   dWfdWc_x(7,2) =  dWfdWc_x(5,1);
+   dWfdWc_x(8,2) =  dWfdWc_x(6,1);
+   dWfdWc_x(9,3) = d_dWdx_dW;
+   
+   /*********************** Y - DIRECTION **************************************/
+
+
+//    dWfdWc_y(6,0) = d_dWdy_dW;   
+//    dWfdWc_y(7,1) = d_dWdx_dW;
+//    dWfdWc_y(8,1) = d_dWdy_dW;
+//    dWfdWc_y(9,2) =  dWfdWc_y(7,1);
+//    dWfdWc_y(10,2) =  dWfdWc_y(8,1);
+//    dWfdWc_y(11,3) = d_dWdy_dW;
+//    dWfdWc_y(12,4) = d_dWdy_dW;
+//    dWfdWc_y(13,5) = d_dWdy_dW;
+
+   dWfdWc_y(4,0) = d_dWdy_dW;   
+   dWfdWc_y(5,1) = d_dWdx_dW;
+   dWfdWc_y(6,1) = d_dWdy_dW;
+   dWfdWc_y(7,2) =  dWfdWc_y(5,1);
+   dWfdWc_y(8,2) =  dWfdWc_y(6,1);
+   dWfdWc_y(9,3) = d_dWdy_dW;
+
+   for(int Num=0; Num<(ns); Num++){
+     dWfdWc_x(10+Num,4+Num) =  d_dWdx_dW;
+     dWfdWc_y(10+Num,4+Num) =  d_dWdy_dW;
+   }
+}
+}
 /********************************************************
  * Routine: d_dWd_dW_Diamond                            *
  *                                                      *

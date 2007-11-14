@@ -98,6 +98,9 @@ class Grid3D_Hexa_Multi_Block_List{
         case GRID_ICEMCFD :
           //Create_Grid_ICEMCFD(Input);
           break;
+        case GRID_TURBULENT_PREMIXED_FLAME :
+	  Create_Grid_Turbulent_Premixed_Flame(Input);
+	  break;
         default:
           Create_Grid_Cube(Input);
           break;
@@ -142,6 +145,8 @@ class Grid3D_Hexa_Multi_Block_List{
     void Create_Grid_Pipe(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Bluff_Body_Burner(Grid3D_Input_Parameters &Input);
+
+    void Create_Grid_Turbulent_Premixed_Flame(Grid3D_Input_Parameters &Input);
 
     void Find_Neighbours(void);
 
@@ -199,6 +204,9 @@ class Grid3D_Hexa_Multi_Block{
         case GRID_ICEMCFD :
           Create_Grid_ICEMCFD(Input);
           break;
+        case GRID_TURBULENT_PREMIXED_FLAME :
+	  Create_Grid_Turbulent_Premixed_Flame(Input);
+	  break;
         default:
           Create_Grid_Cube(Input);
           break;
@@ -243,6 +251,8 @@ class Grid3D_Hexa_Multi_Block{
     void Create_Grid_Bluff_Body_Burner(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_ICEMCFD(Grid3D_Input_Parameters &Input);
+
+    void Create_Grid_Turbulent_Premixed_Flame(Grid3D_Input_Parameters &Input);
 
   private:
     //copy and assignment are not permitted
